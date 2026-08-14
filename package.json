@@ -1,6 +1,6 @@
 {
   "name": "echoes-three",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Echoes — top-down party roguelike (Three.js web build)",
   "private": true,
   "type": "module",

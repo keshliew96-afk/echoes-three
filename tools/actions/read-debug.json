@@ -1,0 +1,4 @@
+[
+  { "type": "wait", "ms": 1000 },
+  { "type": "eval", "code": "({ version: window.__echoes.version, tick: window.__echoes.tick, fps: window.__echoes.fps, entities: window.__echoes.entityCount, state: window.__echoes.state() })" }
+]
