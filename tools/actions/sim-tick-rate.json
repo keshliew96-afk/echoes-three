@@ -1,0 +1,4 @@
+[
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(async () => { const e = window.__echoes; const a = { tick: e.tick, draws: e.rngDraws, t: performance.now() }; await new Promise((r) => setTimeout(r, 3000)); const b = { tick: e.tick, draws: e.rngDraws, t: performance.now() }; const dt = (b.t - a.t) / 1000; return { tickRate: +(((b.tick - a.tick) / dt).toFixed(2)), drawsPerSec: +(((b.draws - a.draws) / dt).toFixed(1)), renderFps: e.fps, entities: e.entityCount, seed: e.seed, version: e.version }; })()" }
+]

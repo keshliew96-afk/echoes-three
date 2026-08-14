@@ -1,0 +1,10 @@
+[
+  { "type": "wait", "ms": 2000 },
+  { "type": "eval", "code": "({ t: 'sample1', fps: window.__echoes.fps, tick: window.__echoes.tick, version: window.__echoes.version })" },
+  { "type": "wait", "ms": 3000 },
+  { "type": "eval", "code": "({ t: 'sample2', fps: window.__echoes.fps, tick: window.__echoes.tick })" },
+  { "type": "wait", "ms": 3000 },
+  { "type": "eval", "code": "({ t: 'sample3', fps: window.__echoes.fps, tick: window.__echoes.tick })" },
+  { "type": "eval", "code": "new Promise(res => { let n = 0; const t0 = performance.now(); function f() { n++; if (performance.now() - t0 < 2000) requestAnimationFrame(f); else res({ t: 'rafProbe', rafFps: Math.round(n / ((performance.now() - t0) / 1000) * 10) / 10 }); } requestAnimationFrame(f); })" },
+  { "type": "eval", "code": "(() => { const c = document.querySelector('canvas'); return { t: 'canvas', bw: c.width, bh: c.height, cssw: c.clientWidth, cssh: c.clientHeight, dpr: devicePixelRatio, iw: innerWidth, ih: innerHeight }; })()" }
+]

@@ -14,13 +14,9 @@ import {
   PlaneGeometry,
   SphereGeometry,
 } from 'three';
-import { PALETTE, CLASS_ACCENTS } from '../data/palette.js';
+import { PALETTE, CLASS_ACCENTS, ACT1_GROUND } from '../data/palette.js';
 import { toonMaterial, addOutline } from '../render/toon.js';
 import { makeGlowSprite, getRadialTexture } from '../render/glow.js';
-
-// Act-1 woodland ground tone, inside BUILD_BRIEF §19.3's band (HSV hue 100deg,
-// sat 60%, val 55%) — derived from the brief's ranges, not invented.
-const GROUND_GREEN = '#548C38';
 
 function blobShadow(radius = 0.45, opacity = 0.35) {
   const mat = new MeshBasicMaterial({
@@ -44,7 +40,7 @@ export function createRenderTestScene(stage, { outline = true } = {}) {
   // Ground plane (combat playfield footprint, §13: ~24x16 u).
   const ground = new Mesh(
     new PlaneGeometry(24, 16),
-    toonMaterial({ color: GROUND_GREEN })
+    toonMaterial({ color: ACT1_GROUND })
   );
   ground.rotation.x = -Math.PI / 2;
   root.add(ground);

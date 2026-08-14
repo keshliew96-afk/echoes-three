@@ -16,6 +16,11 @@ export const PALETTE = Object.freeze({
   paleGold: '#D9B872', // Glint currency
 });
 
+// Derived environment tone (not a §19.1 semantic color): Act-1 woodland ground
+// inside the §19.3 band (HSV hue 100deg, sat 60%, val 55%) — derived from the
+// brief's ranges, not invented.
+export const ACT1_GROUND = '#548C38';
+
 // Class accents (BUILD_BRIEF §19.1) — rings, HP bars, cloak trim.
 export const CLASS_ACCENTS = Object.freeze({
   healer: '#33513C',

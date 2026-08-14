@@ -1,0 +1,4 @@
+[
+  { "type": "wait", "ms": 31000 },
+  { "type": "eval", "code": "(() => { const e = window.__echoes; const w = e.events.filter((ev) => ev.tick >= 1200 && ev.tick < 1800); return { seed: e.seed, windowTicks: '1200-1799', count: w.length, events: w }; })()" }
+]

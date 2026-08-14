@@ -1,0 +1,15 @@
+[
+  { "type": "wait", "ms": 400 },
+
+  { "type": "key", "key": "Space", "ms": 1500 },
+  { "type": "key", "key": "Digit1", "ms": 40 },
+  { "type": "key", "key": "Space", "ms": 40 },
+  { "type": "key", "key": "Digit2", "ms": 40 },
+  { "type": "key", "key": "Space", "ms": 40 },
+  { "type": "key", "key": "Tab", "ms": 30 },
+  { "type": "key", "key": "KeyR", "ms": 30 },
+  { "type": "key", "key": "F2", "ms": 30 },
+
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "(() => { const evs = window.__echoes.events.filter((e) => e.type === 'intent' || e.type === 'intent_denied'); const tally = {}; for (const e of evs) { const k = `${e.type}:${e.kind}${e.reason ? ':' + e.reason : ''}`; tally[k] = (tally[k] ?? 0) + 1; } return { sequence: evs.map((e) => `${e.tick} ${e.type} ${e.kind}${e.reason ? ' [' + e.reason + ']' : ''}${e.index !== undefined ? ' idx' + e.index : ''}`), tally }; })()" }
+]

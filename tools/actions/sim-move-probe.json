@@ -1,0 +1,13 @@
+[
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "(() => ({ at: 'start', probe: window.__echoes.state().party[0] }))()" },
+  { "type": "keydown", "key": "KeyD" },
+  { "type": "wait", "ms": 1000 },
+  { "type": "keyup", "key": "KeyD" },
+  { "type": "eval", "code": "(() => ({ at: 'after 1s KeyD (expect x +~2.4)', probe: window.__echoes.state().party[0] }))()" },
+  { "type": "keydown", "key": "KeyW" },
+  { "type": "key", "key": "Space", "ms": 40 },
+  { "type": "wait", "ms": 400 },
+  { "type": "keyup", "key": "KeyW" },
+  { "type": "eval", "code": "(() => ({ at: 'after W-dodge (expect z -~1.8 dash - plus held-W run)', probe: window.__echoes.state().party[0] }))()" }
+]
