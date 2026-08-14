@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"(()=>{const c=document.querySelector('canvas');return {before:{cw:c.width,ch:c.height,iw:innerWidth,ih:innerHeight}}})()"},
+  {"type":"eval","code":"(()=>{Object.defineProperty(window,'innerWidth',{value:900,configurable:true});Object.defineProperty(window,'innerHeight',{value:560,configurable:true});window.dispatchEvent(new Event('resize'));return 'dispatched-resize-900x560'})()"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"(()=>{const c=document.querySelector('canvas');const e=window.__echoes;return {after:{cw:c.width,ch:c.height},tick:e.tick,fps:e.fps,entities:e.entityCount}})()"},
+  {"type":"eval","code":"(()=>{for(let i=0;i<25;i++){Object.defineProperty(window,'innerWidth',{value:600+i*40,configurable:true});Object.defineProperty(window,'innerHeight',{value:400+i*20,configurable:true});window.dispatchEvent(new Event('resize'))}return 'thrashed-25-resizes'})()"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"(()=>{const c=document.querySelector('canvas');const e=window.__echoes;return {afterThrash:{cw:c.width,ch:c.height},tick:e.tick,fps:e.fps}})()"}
+]

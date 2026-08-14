@@ -28,17 +28,27 @@ export const CRIT = Object.freeze({
   mult: 1.5,
 });
 
-// §7 Healer row — the numbers the sim-core player probe needs now; the full
-// class table lands in data/classes.js with the player-controller block.
-export const PROBE = Object.freeze({
-  moveSpeed: 2.4, // u/s (Healer move_speed)
+// §7 Healer row (player class). Full four-class table lands in
+// data/classes.js with the ally block; the player controller needs this row.
+export const HEALER = Object.freeze({
+  maxHp: 100,
+  moveSpeed: 2.4, // u/s
+  attackIntervalTicks: 30, // 0.5 s hold-to-repeat basic
+  basicPower: 8,
+  basicSpeed: 5.2, // u/s basic projectile
+  basicRange: 5.0, // u max travel — bolts expire here
+  // Graybox collision scaffold (not brief numbers): capsule footprint radius
+  // for wall collision (chibi body mass ~0.6 u wide) and the bolt's swept
+  // radius vs walls.
+  radius: 0.3,
+  boltRadius: 0.05,
 });
 
 // §13 Combat playfield ~24x16 u inside walls (half-extents, XZ plane).
 export const ARENA = Object.freeze({
   halfW: 12,
   halfD: 8,
-  wallMargin: 0.3, // simple clamp radius until swept wall collision lands
+  wallMargin: 0.3, // legacy clamp radius (wisp harness); actors pass their own radius
 });
 
 // docs/TESTING.md — window.__echoes.events keeps the last 200 sim events.
@@ -80,14 +90,21 @@ export const OUTLINE = Object.freeze({
   thickness: 0.028,
 });
 
-// 3/4 top-down camera rig (elevation chosen for the storybook 3/4 read;
-// follow smoothing + aim lookahead land with the player-controller block).
+// 3/4 top-down camera rig (elevation chosen for the storybook 3/4 read).
+// Follow: exponential smoothing toward player + slight lead toward the cursor
+// (§22: smoothed follow, aim lookahead <= 0.8 u, player never leaves frame).
+// followStiffness/lookaheadFactor are authored tunables (the brief binds only
+// the 0.8 u cap); stiffness 6/s => ~0.17 s lag, max lag during a 7.2 u/s dash
+// ~1.2 u — well inside the ~5 u ground half-height of the frame.
 export const CAMERA = Object.freeze({
   fov: 45,
   near: 0.1,
   far: 200,
   distance: 12,
   elevationDeg: 52,
+  followStiffness: 6, // 1/s exponential smoothing rate
+  lookaheadFactor: 0.12, // fraction of player->cursor distance contributed as lead
+  lookaheadMax: 0.8, // u (§22 binding cap)
 });
 
 // §1 Performance: canvas fully responsive; devicePixelRatio capped at 2.

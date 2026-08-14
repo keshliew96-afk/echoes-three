@@ -1,0 +1,13 @@
+[
+  { "type": "eval", "code": "window.__echoes.cmd('teleport', 0, 0)" },
+  { "type": "mousemove", "x": 1150, "y": 450 },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => ({ at: 'pre-hold', tick: window.__echoes.tick }))()" },
+  { "type": "mousedown", "button": "right" },
+  { "type": "wait", "ms": 1600 },
+  { "type": "mouseup", "button": "right" },
+  { "type": "wait", "ms": 1200 },
+  { "type": "eval", "code": "window.__echoes.events.filter((e) => e.type === 'basic_fire').map((e) => ({ tick: e.tick, x: e.x, z: e.z, dx: e.dx, dz: e.dz }))" },
+  { "type": "eval", "code": "window.__echoes.events.filter((e) => e.type === 'projectile_despawn').map((e) => ({ tick: e.tick, cause: e.cause, traveled: e.traveled }))" },
+  { "type": "eval", "code": "(() => ({ at: 'post', liveBolts: window.__echoes.state().projectiles.length }))()" }
+]

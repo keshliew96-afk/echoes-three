@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"(()=>{const e=window.__echoes;window.__qa0={tick:e.tick,draws:e.rngDraws,now:performance.now()};return {t0:window.__qa0}})()"},
+  {"type":"wait","ms":5000},
+  {"type":"eval","code":"(()=>{const e=window.__echoes;const s=(performance.now()-window.__qa0.now)/1000;return {dtSec:s,tickRate:(e.tick-window.__qa0.tick)/s,drawRate:(e.rngDraws-window.__qa0.draws)/s,fps:e.fps,tick:e.tick,entities:e.entityCount,seed:e.seed,version:e.version}})()"}
+]

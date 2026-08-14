@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"(()=>{const e=window.__echoes;let r={};try{r.teleport=e.cmd('teleport',3,3)}catch(err){r.teleportErr=String(err)}try{r.setHp=e.cmd('setHp',1,0.5)}catch(err){r.setHpErr=String(err)}try{r.killAll=e.cmd('killAllEnemies')}catch(err){r.killAllErr=String(err)}return r})()"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{const s=window.__echoes.state();return {probe:s.party&&s.party[0],enemy1:s.enemies&&s.enemies.find(x=>x.id===1),nEnemies:s.enemies&&s.enemies.length}})()"}
+]

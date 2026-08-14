@@ -4,9 +4,10 @@
 // never mutate sim state), resize wiring, debug API (window.__echoes).
 //
 // URL params:
-//   ?scene=simtest|rendertest  scene select (simtest is the default until the
-//                              camp/game scenes land; rendertest stays for
-//                              renderer comparison captures)
+//   ?scene=graybox|simtest|rendertest  scene select (graybox — the playable
+//                              Healer arena — is the default; simtest keeps
+//                              the wisp harness for determinism captures,
+//                              rendertest stays for renderer comparisons)
 //   ?seed=123                  force the gameplay RNG seed (determinism tests)
 //   ?debug=1                   sim debug overlay (tick / entities / RNG draws)
 //   ?bloom=0 ?vignette=0 ?grade=0 ?outline=0   post/outline toggles (default on)
@@ -15,7 +16,9 @@ import { VERSION } from './version.js';
 import { createStage } from './render/stage.js';
 import { createRenderTestScene } from './scenes/rendertest.js';
 import { createSimTestScene } from './scenes/simtest.js';
+import { createGrayboxScene } from './scenes/graybox.js';
 import { createDebugOverlay } from './ui/debug.js';
+import { createProtoHud } from './ui/protohud.js';
 import { createClock } from './core/clock.js';
 import { createGameplayRng, createCosmeticRng } from './core/rng.js';
 import { createRegistry } from './core/registry.js';
@@ -71,17 +74,31 @@ function screenToWorld(sx, sy) {
 }
 
 const input = createInputController({ screenToWorld });
-const world = createWorld({ rng, registry, events: bus });
 
-// Scene registry — later blocks add camp/combat and flip the default to the game.
+// Scene registry — later blocks add camp/combat rooms on top of graybox.
 const SCENES = {
+  graybox: createGrayboxScene,
   simtest: createSimTestScene,
   rendertest: createRenderTestScene,
 };
-const DEFAULT_SCENE = 'simtest';
-const sceneKey = params.get('scene') ?? DEFAULT_SCENE;
-const buildScene = SCENES[sceneKey] ?? SCENES[DEFAULT_SCENE];
+const DEFAULT_SCENE = 'graybox';
+const sceneKey = SCENES[params.get('scene')] ? params.get('scene') : DEFAULT_SCENE;
+
+// The deterministic wisp harness belongs to the simtest proving ground only;
+// the game scenes get a clean world (enemies land with their own block).
+const world = createWorld({ rng, registry, events: bus, harness: sceneKey === 'simtest' });
+
+const buildScene = SCENES[sceneKey];
 const activeScene = buildScene(stage, toggles, { world, cosmetic });
+
+// Proto command bar (dodge cooldown radial + §17 denial nudges) rides with
+// the playable scene only, so simtest/rendertest captures stay unchanged.
+const hud =
+  sceneKey === 'graybox'
+    ? createProtoHud(bus, {
+        dodgeRemaining: () => Math.max(0, world.player.dodgeReadyTick - clock.tick),
+      })
+    : null;
 
 const overlay = createDebugOverlay(VERSION, {
   debug: flag('debug', false),
@@ -126,6 +143,7 @@ stage.renderer.setAnimationLoop((now) => {
   activeScene.update?.(now / 1000, alpha);
   stage.render();
   overlay.update();
+  hud?.update();
 
   frameTimes.push(frameMs);
   if (frameTimes.length > FRAME_WINDOW) frameTimes.shift();

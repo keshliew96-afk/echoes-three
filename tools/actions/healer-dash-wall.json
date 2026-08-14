@@ -1,0 +1,21 @@
+[
+  { "type": "eval", "code": "window.__echoes.cmd('teleport', 0, 0)" },
+  { "type": "mousemove", "x": 1150, "y": 450 },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; return { at: 'open-field-pre-dash (aim +x, no move keys)', tick: window.__echoes.tick, x: p.x, z: p.z }; })()" },
+  { "type": "key", "key": "Space", "ms": 40 },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; return { at: 'open-field-post-dash (expect x +1.8 exactly)', tick: window.__echoes.tick, x: p.x, z: p.z, dashTicksLeft: p.dashTicksLeft }; })()" },
+  { "type": "eval", "code": "window.__echoes.cmd('teleport', 10.5, 0)" },
+  { "type": "wait", "ms": 1100 },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; return { at: 'wall-pre-dash (from x=10.5 toward +x wall; bound 11.7)', tick: window.__echoes.tick, x: p.x, z: p.z }; })()" },
+  { "type": "key", "key": "Space", "ms": 40 },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; return { at: 'wall-post-dash (expect x = 11.7, never beyond)', tick: window.__echoes.tick, x: p.x, z: p.z, dodgeReadyTick: p.dodgeReadyTick }; })()" },
+  { "type": "wait", "ms": 1100 },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; return { at: 'flush-pre-dash (already at wall)', tick: window.__echoes.tick, x: p.x, dodgeReadyTick: p.dodgeReadyTick }; })()" },
+  { "type": "key", "key": "Space", "ms": 40 },
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; return { at: 'flush-post-dash (zero travel, cooldown still spent)', tick: window.__echoes.tick, x: p.x, dodgeReadyTick: p.dodgeReadyTick }; })()" },
+  { "type": "eval", "code": "window.__echoes.events.filter((e) => e.type === 'dash_end' || (e.type === 'intent' && e.kind === 'dodge')).slice(-8)" }
+]

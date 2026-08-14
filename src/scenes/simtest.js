@@ -1,7 +1,8 @@
-// ?scene=simtest — sim-core proving ground (the default scene until the game
-// scenes land). Renders the sim world's entities read-only: the player probe
-// (WASD/dodge-driven, Healer accent) and the harness wisps (Bone), each with
-// ink outline + blob contact shadow. Positions are interpolated px/pz -> x/z
+// ?scene=simtest — sim-core proving ground (graybox is the default game scene
+// now; this URL keeps the deterministic wisp harness for determinism
+// captures). Renders the sim world's entities read-only: the player
+// (WASD/dodge-driven, Healer accent), harness wisps (Bone), bolts
+// (Parchment), each with ink outline + blob contact shadow. Positions are interpolated px/pz -> x/z
 // by the clock alpha every frame — the render layer NEVER mutates sim state.
 import {
   CircleGeometry,
@@ -59,8 +60,9 @@ export function createSimTestScene(stage, toggles, { world }) {
   root.add(ground);
 
   const templates = {
-    probe: makeMarkerTemplate(CLASS_ACCENTS.healer, 0.28),
+    player: makeMarkerTemplate(CLASS_ACCENTS.healer, 0.28),
     wisp: makeMarkerTemplate(PALETTE.bone, 0.18),
+    bolt: makeMarkerTemplate(PALETTE.parchment, 0.08),
   };
 
   const markers = new Map(); // entity id -> Group

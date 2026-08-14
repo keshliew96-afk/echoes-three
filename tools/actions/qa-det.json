@@ -1,0 +1,5 @@
+[
+  {"type":"wait","ms":30000},
+  {"type":"eval","code":"(()=>{const e=window.__echoes;return {tickNow:e.tick,evCount:e.events.length,drawsNow:e.rngDraws}})()"},
+  {"type":"eval","code":"JSON.stringify(window.__echoes.events.filter(function(ev){return ev.tick<=1500}))"}
+]

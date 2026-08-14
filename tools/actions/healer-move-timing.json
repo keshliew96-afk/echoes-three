@@ -1,0 +1,18 @@
+[
+  { "type": "eval", "code": "window.__echoes.cmd('teleport', 0, 0)" },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; return { at: 'pre-instant', tick: window.__echoes.tick, x: p.x, z: p.z }; })()" },
+  { "type": "keydown", "key": "KeyD" },
+  { "type": "wait", "ms": 66 },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; return { at: 'instant-66ms-into-D (speed over first ticks must already be 2.4)', tick: window.__echoes.tick, x: p.x, z: p.z }; })()" },
+  { "type": "wait", "ms": 1000 },
+  { "type": "keyup", "key": "KeyD" },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; return { at: 'cardinal-end', tick: window.__echoes.tick, x: p.x, z: p.z }; })()" },
+  { "type": "eval", "code": "window.__echoes.cmd('teleport', 0, 0)" },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; return { at: 'diag-start', tick: window.__echoes.tick, x: p.x, z: p.z }; })()" },
+  { "type": "keydown", "key": "KeyW" },
+  { "type": "keydown", "key": "KeyD" },
+  { "type": "wait", "ms": 1000 },
+  { "type": "keyup", "key": "KeyW" },
+  { "type": "keyup", "key": "KeyD" },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; return { at: 'diag-end (|d| / dt must equal cardinal 2.4)', tick: window.__echoes.tick, x: p.x, z: p.z }; })()" }
+]

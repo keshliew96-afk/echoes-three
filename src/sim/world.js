@@ -1,21 +1,22 @@
 // Sim root (§4). Each tick runs two phases:
-//   1. CONTINUOUS — apply move/aim/held states, advance dashes (projectiles,
-//      channels, zone clocks as those blocks land).
+//   1. CONTINUOUS — apply move/aim/held states, advance dashes and
+//      projectiles (channels, zone clocks as those blocks land).
 //   2. DISCRETE — resolve accepted discrete actions in the binding total order:
 //      ① deferred maturations, ascending spawn ordinal of the carrying entity
 //      ② actor resolutions: party by party_index 0-3, then enemies by spawn
 //        ordinal; per actor: targeting/party commands (never suppressed), then
 //        dodge (same-tick dodge beats skill/basic fires, §5), then skills
-//        ascending slot, then basic-attack fire
+//        ascending slot, then basic-attack fire (slot 4)
 //      ③ technique continuations, depth-first after their triggering impact
 //      ④ persistent-zone scheduled ticks, ascending zone spawn ordinal
 // The ordering skeleton is real; ①③④ are live queues that later blocks feed.
 //
-// This block also ships a deterministic HARNESS population ("wisps") that
-// exercises spawn ordinals, seeded-RNG draws, the damage/crit roll shape, and
-// event emission until real enemies land — plus the player intent PROBE that
-// consumes the closed intent vocabulary (move/aim/dodge/skills/targeting) and
-// emits intent / intent_denied events.
+// This block: the PLAYER (Healer, party_index 0) is fully playable per §5/§7 —
+// 8-dir instant movement, mouse aim, dodge roll with swept wall collision
+// (wall contact terminates the dash, no slide), and the hold-to-repeat basic
+// bolt (5.2 u/s projectile, 0.5 s interval, 5.0 u range, first shot immediate).
+// The deterministic wisp HARNESS from the sim-core block survives behind the
+// `harness` option (on for ?scene=simtest, off in the game scenes).
 //
 // Sim discipline (binding): no DOM access, no render imports, no wall-clock —
 // integer tick counts and the seeded stream only.
@@ -23,44 +24,51 @@ import {
   TICK_HZ,
   DODGE,
   CRIT,
-  PROBE,
+  HEALER,
   ARENA,
   HARNESS,
 } from '../core/constants.js';
 import { DENIAL } from '../core/intents.js';
+import { innerBounds, walkStep, sweptStep } from './movement.js';
+import { createProjectileSystem } from './projectiles.js';
 
 const TICK_DT = 1 / TICK_HZ; // seconds per tick, for u/s -> u/tick
+const r2 = (v) => Math.round(v * 100) / 100;
 
-export function createWorld({ rng, registry, events }) {
+export function createWorld({ rng, registry, events, harness = true }) {
   let currentTick = 0;
 
   // ① deferred maturations: { carrierOrdinal, resolve() } — sorted by carrier
-  // spawn ordinal each tick. Projectile impacts / delayed Echo recasts land
-  // here in later blocks.
+  // spawn ordinal each tick. Delayed Echo recasts land here in later blocks.
   let deferred = [];
   // ③ technique continuations — depth-first queue (Bounce hops, Detonate
   // bursts). Populated by the build-system block; drained in order here.
   const continuations = [];
 
-  // --- Player probe (party_index 0). Real Healer actor arrives with the
-  // player-controller block; the probe already obeys §5 movement/dodge rules.
-  const probe = registry.spawn({
-    kind: 'probe',
+  const projectiles = createProjectileSystem({ registry, events });
+
+  // --- Player (Healer, party_index 0, party anchor). §5 movement/dodge,
+  // §7 basic geometry: projectile 5.2 u/s, range 5.0, interval 0.5 s.
+  const player = registry.spawn({
+    kind: 'player',
     partyIndex: 0,
     x: 0,
     z: 0,
     px: 0,
     pz: 0,
+    radius: HEALER.radius,
     facing: { x: 1, z: 0 }, // last nonzero move direction
-    aim: null, // last valid aim (world pos)
+    aim: null, // latest aim (world pos)
+    lastAimDir: { x: 1, z: 0 }, // §6: aim exactly on caster reuses last valid aim
     dashTicksLeft: 0,
     dashVel: { x: 0, z: 0 }, // u per tick, locked at activation (§5)
     dodgeReadyTick: 0,
+    nextBasicTick: 0, // earliest tick the held basic may fire again
     skills: [null, null, null, null], // empty until the draft block
   });
-  events.emit(0, 'spawn', { id: probe.id, kind: 'probe' });
+  events.emit(0, 'spawn', { id: player.id, kind: 'player' });
 
-  // --- Harness wisps.
+  // --- Harness wisps (sim-core proving population; ?scene=simtest only).
   function spawnWisp(x, z) {
     // Draw order is fixed: (position x, position z if not given), angle,
     // attack stagger — determinism depends on this order never changing.
@@ -83,14 +91,16 @@ export function createWorld({ rng, registry, events }) {
     events.emit(currentTick, 'spawn', {
       id: wisp.id,
       kind: 'wisp',
-      x: Math.round(sx * 100) / 100,
-      z: Math.round(sz * 100) / 100,
+      x: r2(sx),
+      z: r2(sz),
     });
     return wisp;
   }
 
-  let maintainPopulation = true; // killAllEnemies() turns respawn off
-  for (let i = 0; i < HARNESS.population; i++) spawnWisp();
+  let maintainPopulation = harness; // killAllEnemies() turns respawn off
+  if (harness) {
+    for (let i = 0; i < HARNESS.population; i++) spawnWisp();
+  }
 
   function killWisp(wisp) {
     events.emit(currentTick, 'death', { id: wisp.id, kind: 'wisp' });
@@ -108,23 +118,27 @@ export function createWorld({ rng, registry, events }) {
       e.pz = e.z;
     }
 
-    // Probe held states. Dash overrides move for its full travel window;
-    // direction and speed were locked at activation (§5).
-    if (snapshot.aim) probe.aim = snapshot.aim;
-    if (probe.dashTicksLeft > 0) {
-      probe.x += probe.dashVel.x;
-      probe.z += probe.dashVel.z;
-      probe.dashTicksLeft -= 1;
-      if (clampToArena(probe)) probe.dashTicksLeft = 0; // wall contact ends dash
+    // Player held states. Dash overrides move for its full travel window;
+    // direction and speed were locked at activation (§5). Wall contact
+    // terminates the dash at the contact point — swept, no slide.
+    if (snapshot.aim) player.aim = snapshot.aim;
+    if (player.dashTicksLeft > 0) {
+      const { hit } = sweptStep(player, player.dashVel.x, player.dashVel.z, player.radius);
+      player.dashTicksLeft -= 1;
+      if (hit) player.dashTicksLeft = 0;
+      if (player.dashTicksLeft === 0) endDash(hit ? 'wall' : 'complete', snapshot);
     } else {
       const { x, z } = snapshot.move;
       if (x !== 0 || z !== 0) {
-        probe.x += x * PROBE.moveSpeed * TICK_DT;
-        probe.z += z * PROBE.moveSpeed * TICK_DT;
-        probe.facing = { x, z };
-        clampToArena(probe);
+        // §5: velocity = dir * move_speed, instant (no ramp). Walking slides
+        // along walls; only the dash hard-stops.
+        walkStep(player, x * HEALER.moveSpeed * TICK_DT, z * HEALER.moveSpeed * TICK_DT, player.radius);
+        player.facing = { x, z };
       }
     }
+
+    // Projectiles advance (swept) after actors.
+    projectiles.step(currentTick);
 
     // Wisp drift (velocity applied; decisions happen in their resolution).
     for (const e of registry.all()) {
@@ -135,15 +149,13 @@ export function createWorld({ rng, registry, events }) {
     }
   }
 
-  function clampToArena(e) {
-    const mx = ARENA.halfW - ARENA.wallMargin;
-    const mz = ARENA.halfD - ARENA.wallMargin;
-    let hit = false;
-    if (e.x < -mx) { e.x = -mx; hit = true; }
-    if (e.x > mx) { e.x = mx; hit = true; }
-    if (e.z < -mz) { e.z = -mz; hit = true; }
-    if (e.z > mz) { e.z = mz; hit = true; }
-    return hit;
+  function endDash(cause, snapshot) {
+    events.emit(currentTick, 'dash_end', { cause });
+    // §5: after the dash, a still-held basic attack restarts its FULL
+    // interval (hard reset) — never a queued instant shot.
+    if (snapshot.basicAttackHeld) {
+      player.nextBasicTick = currentTick + HEALER.attackIntervalTicks;
+    }
   }
 
   function bounceOffWalls(e) {
@@ -166,9 +178,9 @@ export function createWorld({ rng, registry, events }) {
       }
     }
 
-    // ② actor resolutions: party by party_index (probe = 0), then enemies by
+    // ② actor resolutions: party by party_index (player = 0), then enemies by
     // ascending spawn ordinal.
-    resolveProbe(snapshot);
+    resolvePlayer(snapshot);
     for (const e of registry.all()) {
       if (e.kind === 'wisp' && registry.byId(e.id)) resolveWisp(e);
     }
@@ -180,11 +192,11 @@ export function createWorld({ rng, registry, events }) {
     while (continuations.length > 0) continuations.shift().resolve();
   }
 
-  // --- Probe intent resolution. Presses arrive in press order but resolve in
+  // --- Player intent resolution. Presses arrive in press order but resolve in
   // the §4 per-actor order: targeting/party commands (never suppressed) ->
   // dodge -> skills ascending slot -> basic fire. One discrete intent of each
   // kind per tick; duplicates denied (no queue, no refund).
-  function resolveProbe(snapshot) {
+  function resolvePlayer(snapshot) {
     const accepted = new Map(); // kind -> press (first of each kind)
     for (const press of snapshot.presses) {
       if (accepted.has(press.kind)) {
@@ -206,10 +218,10 @@ export function createWorld({ rng, registry, events }) {
     // Dodge — own timer, outside the skill pipeline; same-tick dodge beats
     // skill and basic fires (§5).
     if (accepted.has('dodge')) {
-      if (currentTick < probe.dodgeReadyTick) {
+      if (currentTick < player.dodgeReadyTick) {
         deny('dodge', DENIAL.onCooldown);
       } else {
-        startDash();
+        startDash(snapshot);
         events.emit(currentTick, 'intent', { kind: 'dodge' });
       }
     }
@@ -219,34 +231,80 @@ export function createWorld({ rng, registry, events }) {
     for (let slot = 0; slot < 4; slot++) {
       const kind = `skill_${slot + 1}`;
       if (!accepted.has(kind)) continue;
-      if (probe.dashTicksLeft > 0) {
+      if (player.dashTicksLeft > 0) {
         deny(kind, DENIAL.prioritySuppressed);
-      } else if (probe.skills[slot] === null) {
+      } else if (player.skills[slot] === null) {
         deny(kind, DENIAL.emptySlot);
       }
       // (a real skill fire lands with the skills block)
     }
 
-    // Basic-attack fire (slot 4): suppressed during dash; the weapon itself
-    // arrives with the combat block. Held state is continuous — no event spam.
+    // Basic-attack fire (slot 4).
+    resolveBasic(snapshot);
+  }
+
+  // §5/§7 basic attack: free, hold-to-repeat at attack_interval, first shot
+  // immediate on press (nextBasicTick starts in the past), rate never exceeds
+  // the interval. During a dash a due fire is suppressed (priority_suppressed,
+  // §5) and re-armed — one denial per attempt, no queue, no refund.
+  function resolveBasic(snapshot) {
+    if (!snapshot.basicAttackHeld) return;
+    if (currentTick < player.nextBasicTick) return;
+    if (player.dashTicksLeft > 0) {
+      deny('basic_attack', DENIAL.prioritySuppressed);
+      player.nextBasicTick = currentTick + HEALER.attackIntervalTicks;
+      return;
+    }
+    const dir = aimDirection();
+    projectiles.spawn(currentTick, {
+      x: player.x,
+      z: player.z,
+      dirX: dir.x,
+      dirZ: dir.z,
+      speed: HEALER.basicSpeed,
+      range: HEALER.basicRange,
+      radius: HEALER.boltRadius,
+    });
+    events.emit(currentTick, 'basic_fire', {
+      x: r2(player.x),
+      z: r2(player.z),
+      dx: r2(dir.x),
+      dz: r2(dir.z),
+    });
+    player.nextBasicTick = currentTick + HEALER.attackIntervalTicks;
+  }
+
+  // Unit direction from player toward the cursor. §6: aim exactly on the
+  // caster (degenerate) reuses the last valid aim direction.
+  function aimDirection() {
+    if (player.aim) {
+      const ax = player.aim.x - player.x;
+      const az = player.aim.z - player.z;
+      const len = Math.hypot(ax, az);
+      if (len > 1e-4) {
+        player.lastAimDir = { x: ax / len, z: az / len };
+        return player.lastAimDir;
+      }
+    }
+    return player.lastAimDir;
   }
 
   function deny(kind, reason) {
     events.emit(currentTick, 'intent_denied', { kind, reason });
   }
 
-  function startDash() {
+  function startDash(snapshot) {
     // Direction = this tick's move vector; if zero, dash toward aim; if aim is
     // degenerate, last facing. Locked at activation (§5).
     let dx = 0;
     let dz = 0;
-    const move = probe.moveThisTick ?? { x: 0, z: 0 };
+    const move = snapshot.move;
     if (move.x !== 0 || move.z !== 0) {
       dx = move.x;
       dz = move.z;
-    } else if (probe.aim) {
-      const ax = probe.aim.x - probe.x;
-      const az = probe.aim.z - probe.z;
+    } else if (player.aim) {
+      const ax = player.aim.x - player.x;
+      const az = player.aim.z - player.z;
       const len = Math.hypot(ax, az);
       if (len > 1e-6) {
         dx = ax / len;
@@ -254,13 +312,13 @@ export function createWorld({ rng, registry, events }) {
       }
     }
     if (dx === 0 && dz === 0) {
-      dx = probe.facing.x;
-      dz = probe.facing.z;
+      dx = player.facing.x;
+      dz = player.facing.z;
     }
     const perTick = DODGE.distance / DODGE.durationTicks;
-    probe.dashVel = { x: dx * perTick, z: dz * perTick };
-    probe.dashTicksLeft = DODGE.durationTicks;
-    probe.dodgeReadyTick = currentTick + DODGE.cooldownTicks;
+    player.dashVel = { x: dx * perTick, z: dz * perTick };
+    player.dashTicksLeft = DODGE.durationTicks;
+    player.dodgeReadyTick = currentTick + DODGE.cooldownTicks;
   }
 
   // --- Wisp resolution: one heading-jitter roll per tick (keeps the draw
@@ -319,7 +377,6 @@ export function createWorld({ rng, registry, events }) {
 
   function step(tick, snapshot) {
     currentTick = tick;
-    probe.moveThisTick = snapshot.move;
     continuousPhase(snapshot);
     discretePhase(snapshot);
   }
@@ -335,14 +392,20 @@ export function createWorld({ rng, registry, events }) {
       wallet: null, // glint block
       party: [
         {
-          id: probe.id,
-          kind: probe.kind,
-          x: probe.x,
-          z: probe.z,
-          dashTicksLeft: probe.dashTicksLeft,
-          dodgeReadyTick: probe.dodgeReadyTick,
+          id: player.id,
+          kind: player.kind,
+          x: player.x,
+          z: player.z,
+          aim: player.aim,
+          dashTicksLeft: player.dashTicksLeft,
+          dodgeReadyTick: player.dodgeReadyTick,
+          nextBasicTick: player.nextBasicTick,
         },
       ],
+      projectiles: registry
+        .all()
+        .filter((e) => e.kind === 'bolt')
+        .map((e) => ({ id: e.id, x: r2(e.x), z: r2(e.z), traveled: r2(e.traveled) })),
       enemies: registry
         .all()
         .filter((e) => e.kind === 'wisp')
@@ -358,12 +421,12 @@ export function createWorld({ rng, registry, events }) {
       }
       case 'teleport': {
         const [x, z] = args;
-        probe.x = x;
-        probe.z = z;
-        probe.px = x;
-        probe.pz = z;
-        clampToArena(probe);
-        return { x: probe.x, z: probe.z };
+        const { mx, mz } = innerBounds(player.radius);
+        player.x = Math.min(mx, Math.max(-mx, x));
+        player.z = Math.min(mz, Math.max(-mz, z));
+        player.px = player.x;
+        player.pz = player.z;
+        return { x: player.x, z: player.z };
       }
       case 'setHp': {
         const [id, pct] = args;
@@ -388,7 +451,7 @@ export function createWorld({ rng, registry, events }) {
   return {
     step,
     cmd,
-    probe,
+    player,
     entities: () => registry.all(),
     snapshotState,
   };

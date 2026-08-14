@@ -1,0 +1,14 @@
+[
+  {"type":"eval","code":"(()=>{const c=window.__echoes.cmd;let out={};try{out.noArgs=c()}catch(e){out.noArgsErr=String(e)}try{out.list=c('list')}catch(e){out.listErr=String(e)}try{out.help=c('help')}catch(e){out.helpErr=String(e)}return out})()"},
+  {"type":"eval","code":"(()=>{window.__qaT0=window.__echoes.tick;return {t0:window.__qaT0}})()"},
+  {"type":"keydown","key":"Space"},
+  {"type":"wait","ms":100},
+  {"type":"key","key":"Digit1","ms":40},
+  {"type":"wait","ms":120},
+  {"type":"keyup","key":"Space"},
+  {"type":"eval","code":"(()=>{const T=window.__qaT0;return {phase:'skill1-during-dash',t1:window.__echoes.tick,ev:window.__echoes.events.filter(e=>e.tick>T&&e.kind)}})()"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"(()=>{window.__qaT1=window.__echoes.tick;const e=window.__echoes;let r={};try{r.spawn=e.cmd('spawn','wisp',1,1)}catch(err){r.spawnErr=String(err)}return {t1:window.__qaT1,r,entities:e.entityCount}})()"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{const e=window.__echoes;return {entitiesAfter:e.entityCount,newEv:e.events.filter(x=>x.tick>=window.__qaT1)}})()"}
+]

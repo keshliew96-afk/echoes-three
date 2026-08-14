@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"(()=>{const e=window.__echoes; if(!e) return 'NO __echoes'; const keys=Object.keys(e); return {keys, version:e.version, tick:e.tick, fps:e.fps, entityCount:e.entityCount, seed:e.seed, eventsLen:e.events&&e.events.length, evSample:e.events&&e.events.slice(0,5), typeofState:typeof e.state, typeofCmd:typeof e.cmd}})()"},
+  {"type":"eval","code":"(()=>{const e=window.__echoes; try{return {state:e.state()}}catch(err){return {stateError:String(err)}}})()"},
+  {"type":"eval","code":"(()=>{const e=window.__echoes; const out={}; for(const k of Object.keys(e)){const v=e[k]; out[k]=typeof v==='function'?'fn':(typeof v==='object'&&v!==null?(Array.isArray(v)?'array('+v.length+')':'obj:'+Object.keys(v).join(',')):v)} return out})()"}
+]
