@@ -1,0 +1,10 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.5,0); window.__x0 = __echoes.state().enemies[0].x; ({ id: window.__t, x0: window.__x0 })" },
+  { "type": "mousemove", "x": 1035, "y": 452 },
+  { "type": "wait", "ms": 150 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "new Promise((res) => { const off = __echoes.on('hit', () => { const a = __echoes.state().enemies[0]; setTimeout(() => { const b = __echoes.state().enemies[0]; off(); res({ xAtHit: a.x, kbTicksAtHit: a.kbTicks, xAfter120: b.x, kbTicksAfter: b.kbTicks }); }, 120); }); setTimeout(() => { off(); res({ timeout: true }); }, 4000); })" },
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "({ x0: window.__x0, stats: __echoes.stats, vfx: __echoes.state().vfx, events: __echoes.events.slice(-20) })" }
+]

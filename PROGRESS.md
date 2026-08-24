@@ -5,7 +5,16 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: PHASE 2 — Round A foundations (blocks 1-4) building
+## Status: ⏸ PAUSED by user (2026-08-24, after Round B fix commits)
+
+### Resume point — do this first
+1. Start the dev server: `npm run dev` in this folder (port 5199), or preview_start "echoes-dev".
+2. Re-run Round B to finish it: `Workflow({scriptPath: "C:\Users\keshl\.claude\projects\C--Users-keshl-OneDrive-Desktop-----\3d94cc26-ac5d-4ee9-8985-3b471cd8f4f1\workflows\scripts\echoes-round-b-wf_62eab492-0d2.js", resumeFromRunId: "wf_62eab492-0d2"})` — round-1 builders/critics replay from cache; it picks up at the round-2 critics (both round-2 builder fixes are already committed: 2fdc480 env, 09d06a3 critters), then runs integration + baseline reference-bar scoring.
+3. Then Round C: blocks 7-10 — enemies/waves, ally AI + downed/revive, healer skill kit, node build system. Blocks 11-14 (run structure/draft/shop/boss, HUD, camp hub, final polish) follow.
+
+State at pause: 7 commits, v0.2.5. Playable graybox arena (default scene) with movement/dodge/bolts/juice; dressed Act-1 arena at `?scene=arena&variant=1|2|3`; critter gallery at `?scene=chartest`. Player is still a capsule — the chibi Healer swap happens in the integration step.
+
+## Round A all-PASS; Round B mid-loop
 
 | # | Time (session) | Event |
 |---|----------------|-------|
@@ -24,6 +33,10 @@ pixels and running gameplay only.
 
 | 13 | T6 | Round A critics: renderer/post PASS (5/5 criteria, pixel-anchored; 2 advisory notes: shader warnings, outline ink warms under bloom overlap) and sim core PASS (4/4; byte-identical seeded runs, denial codes verified). Block 3 critic + block 4 hit session limit → stalled 9 days. |
 | 14 | T7 | Session resumed 2026-08-24: dev server relaunched, graybox smoke capture clean (65fps, v0.2.2). Round A resumed from cache — block 3 critic + block 4 builder/critic running live. |
+| 19 | T11 | Round B r2 builder fixes committed — env (2fdc480): walls now darker than floor, drifting motes + flame flicker, contact blob shadows; critters (09d06a3): Tank ring legible, bow gripped, fox brush visible. PAUSED by user before the r2 critics ran. Pause frame: captures/pause-arena.png (156fps, 0 errors). |
+| 18 | T10 | Round B r1 landed both blocks + both critic verdicts (credits died in r2, resumed on opus-5). Arena committed ac08c73 (3 variants, canvas hue-noise ground, 9 instanced prop types, violet monolith, 340-440 grass tufts/variant) — critic REJECT: walls render lighter than floor (lum 86 vs 58), environment frozen (0.16% pixel change over 2s — motes/flames static), no contact blob shadows. Critters committed 4e10b3b — critic REJECT 5.5/6: silhouettes/heads(43.4-44.3%)/anims/downed/warmth all pass, only Tank identity ring illegible (within 10% value of its own shadow). Fix rounds running. |
+| 17 | T9 | Usage limit killed all 12 Round B agents mid-flight; reset + resumed. Partial work on disk survived: all 4 chibi critters already render in ?scene=chartest (verified frame, 164fps, 0 errors) + src/env/ arena WIP. Round B re-running live. |
+| 16 | T8 | Round A COMPLETE — 4/4 blocks PASS (healer controller critic: dash exactly 1.8u/15 ticks, wall clamp verified, ±73px aim lookahead measured; combat juice critic: knockback via body-centroid scans, 6% crit over 200 hits, decal cap 40, i-frame zero-instance). Round B launched: arena env + chibi party parallel loops → integration → baseline reference-bar scoring. |
 | 15 | T7 | Combat juice core built (v0.2.3): §9 instance pipeline (sim/combat.js — one seeded crit roll 5%/1.5x, HP, death, heals w/ clamp + full_heal, i-frame targets = zero instance/zero draw + hit_immune), projectile↔entity swept collision resolving as §4 ① deferred maturations, training dummy (`cmd('spawn','dummy',x,z)`), knockback 0.12u basic/0.30u skill over 5 ticks swept vs walls, kill hitstop 3 ticks via clock budget, 3-tick white emissive hit flash, pooled DOM damage numerals (Parchment/BrightHeal/BruiseUmber grammar, 2px outline, tabular, cap 12 oldest-recycled, crit x1.4 larger), kill squash-stretch pop + 12-sprite burst + dark splat decals (~20s, cap 40, cosmetic rot/scale), kill screenshake 0.06u/120ms, WebAudio synth slots shoot/hit/kill/heal emitting `sound` events into the ring. Debug API grew: `stats`, `on()`, `state().vfx`, cmds iframe/hitOnce/critTest/heal. Verified via captures: hit frame w/ flash+numbers+trail; kb drift 2.5→2.98 over 4 hits in events; 200-hit critTest = 12 crits (6%, band 3-8%); crit "12" visibly larger than "8"s in frame; warm-run tick trace froze exactly 3 ticks at death then resumed 60Hz; 45 kills → decals capped 40, visible at 14s, gone by 21s; i-framed dummy took 3 bolts → 3 hit_immune, 0 draws, 0 numerals, hp 20; heal crit 90 clamped to 29 + full_heal + green +90; simtest seed-424242 double-run event window byte-identical; smoke + rendertest exit 0. |
 
 ## Block board (builder ⇄ critic state)
@@ -34,8 +47,8 @@ pixels and running gameplay only.
 | Scaffold + renderer/post stack | built (v0.2.0) | PASS | 1 |
 | Sim core, RNG & input abstraction | built (v0.2.1) | PASS | 1 |
 | Arena/environment generation | pending | — | — |
-| Player controller + camera | built (v0.2.2) | critic running | 1 |
-| Combat core (hit/hurt, numbers, juice) | built (v0.2.3) | awaiting critic | 1 |
+| Player controller + camera | built (v0.2.2) | PASS | 1 |
+| Combat core (hit/hurt, numbers, juice) | built (v0.2.3) | PASS | 1 |
 | Enemies + AI + waves | pending | — | — |
 | Party AI allies | pending | — | — |
 | VFX/particles | pending | — | — |

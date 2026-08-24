@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.5,0); ({ id: window.__t })" },
+  { "type": "wait", "ms": 200 },
+  { "type": "eval", "code": "new Promise((res) => { let tries = 0; const id = window.__t; const step = () => { const r = __echoes.cmd('hitOnce', id); __echoes.cmd('setHp', id, 1); tries += 1; if (r && r.crit) return res({ tries, hit: r }); if (tries >= 400) return res({ noCrit: true, tries }); setTimeout(step, 130); }; step(); })" }
+]

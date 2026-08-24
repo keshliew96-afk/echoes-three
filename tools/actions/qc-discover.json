@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "({ keys: Object.keys(__echoes), version: __echoes.version, seed: __echoes.seed, entityCount: __echoes.entityCount })" },
+  { "type": "eval", "code": "({ cmdProbe: String(__echoes.cmd).slice(0, 400), stats: __echoes.stats || null })" },
+  { "type": "eval", "code": "window.__d = __echoes.cmd('spawn','dummy',2.5,0); ({ spawned: window.__d, state: __echoes.state() })" },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "({ events: __echoes.events.slice(-12), vfx: __echoes.state().vfx || null })" }
+]

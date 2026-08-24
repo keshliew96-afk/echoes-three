@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "window.__ids = []; for (let i = 0; i < 5; i++) { const id = __echoes.cmd('spawn','dummy',2 + i * 0.9, (i % 2) ? 1 : -1); __echoes.cmd('setHp', id, 0.05); window.__ids.push(id); } ({ ids: window.__ids })" },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "new Promise((res) => { const t0 = performance.now(); const tick0 = __echoes.tick; window.__ids.forEach(id => __echoes.cmd('hitOnce', id)); const samples = []; const loop = () => { samples.push([Math.round((performance.now() - t0) * 10) / 10, __echoes.tick]); if (performance.now() - t0 < 700) requestAnimationFrame(loop); else { let frozenMs = 0; for (let i = 1; i < samples.length; i++) { if (samples[i][1] === tick0) frozenMs = samples[i][0]; } res({ tick0, frozenMsObserved: frozenMs, kills: __echoes.stats.kills, hitstopEvents: __echoes.events.filter(e => e.type === 'hitstop').map(e => ({ tick: e.tick, ticks: e.ticks })), head: samples.slice(0, 30) }); } }; loop(); })" }
+]

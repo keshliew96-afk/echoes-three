@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "window.__ids = [__echoes.cmd('spawn','dummy',1.8,0), __echoes.cmd('spawn','dummy',2.6,0.8), __echoes.cmd('spawn','dummy',2.6,-0.8)]; ({ ids: window.__ids })" },
+  { "type": "wait", "ms": 200 },
+  { "type": "eval", "code": "window.__ids.forEach(id => __echoes.cmd('hitOnce', id)); 'hit-all'" },
+  { "type": "wait", "ms": 120 }
+]

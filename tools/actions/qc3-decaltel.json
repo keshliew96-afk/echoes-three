@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.5,0); __echoes.cmd('setHp', window.__t, 0.05); ({ id: window.__t })" },
+  { "type": "mousemove", "x": 1035, "y": 452 },
+  { "type": "wait", "ms": 150 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "new Promise((res) => { const out = []; const t0 = performance.now(); const sample = (label) => out.push({ label, sec: Math.round((performance.now() - t0) / 100) / 10, decals: __echoes.state().vfx.decals }); const offd = __echoes.on('death', () => { sample('at-death'); }); setTimeout(() => sample('t1s'), 1000); setTimeout(() => sample('t10s'), 10000); setTimeout(() => sample('t18s'), 18000); setTimeout(() => sample('t23s'), 23000); setTimeout(() => { offd(); res(out); }, 25500); })" }
+]

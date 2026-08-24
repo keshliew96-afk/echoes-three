@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.5,0); window.__d0 = __echoes.rngDraws; ({ id: window.__t, draws0: window.__d0 })" },
+  { "type": "mousemove", "x": 1035, "y": 452 },
+  { "type": "wait", "ms": 150 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "eval", "code": "new Promise((res) => { let n = 0, crits = 0, critAmts = [], normAmts = []; const off = __echoes.on('hit', (e) => { n += 1; if (e.crit) { crits += 1; critAmts.push(e.amount); } else if (normAmts.length < 5) normAmts.push(e.amount); __echoes.cmd('setHp', e.target, 1); if (n % 10 === 0) __echoes.cmd('spawn', 'dummy', 2.5, 0); if (n >= 200) { off(); res({ hits: n, crits, critAmts, normAmts, rate: crits / n }); } }); setTimeout(() => { off(); res({ timeout: true, hits: n, crits }); }, 150000); })" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "({ stats: __echoes.stats, rngDrawsDelta: __echoes.rngDraws - window.__d0, enemies: __echoes.state().enemies.length, vfx: __echoes.state().vfx })" }
+]

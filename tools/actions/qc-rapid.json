@@ -1,0 +1,23 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.5,0); ({ id: window.__t })" },
+  { "type": "mousemove", "x": 1035, "y": 452 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "key", "key": "Space", "ms": 40 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "keydown", "key": "KeyW" },
+  { "type": "keydown", "key": "KeyD" },
+  { "type": "key", "key": "Space", "ms": 40 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "keyup", "key": "KeyW" },
+  { "type": "keyup", "key": "KeyD" },
+  { "type": "keydown", "key": "KeyA" },
+  { "type": "key", "key": "Space", "ms": 40 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "keyup", "key": "KeyA" },
+  { "type": "wait", "ms": 600 },
+  { "type": "eval", "code": "({ stats: __echoes.stats, tick: __echoes.tick, fps: __echoes.fps, tail: __echoes.events.slice(-8), vfx: __echoes.state().vfx })" }
+]

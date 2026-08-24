@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"({ version: __echoes.version, fps: __echoes.fps, tick: __echoes.tick, entities: __echoes.entityCount, seed: __echoes.seed, scene: new URLSearchParams(location.search).get('scene'), variant: new URLSearchParams(location.search).get('variant') })"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state(); return { party: s.party ? s.party.map(p=>({x:p.x,z:p.z,hp:p.hp})) : null, enemies: s.enemies, keys: Object.keys(s) };})()"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"({ fpsAfter2s: __echoes.fps })"}
+]

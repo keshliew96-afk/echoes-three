@@ -1,0 +1,4 @@
+[
+  {"type":"eval","code":"(()=>{const c=document.querySelector('canvas'); c.style.transformOrigin='84% 6%'; c.style.transform='scale(3.2)'; return 'zoom-monolith';})()"},
+  {"type":"wait","ms":300}
+]

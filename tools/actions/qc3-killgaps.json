@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "window.__ids = [__echoes.cmd('spawn','dummy',2.5,0), __echoes.cmd('spawn','dummy',3.5,1), __echoes.cmd('spawn','dummy',3.5,-1), __echoes.cmd('spawn','dummy',2.0,1.5)]; window.__ids.forEach(id => __echoes.cmd('setHp', id, 0.05)); ({ ids: window.__ids })" },
+  { "type": "eval", "code": "new Promise((res) => { const gaps = []; let last = performance.now(); const t0 = last; let killIdx = 0; const killTimes = []; const doKill = () => { if (killIdx >= window.__ids.length) return; killTimes.push(Math.round(performance.now() - t0)); __echoes.cmd('hitOnce', window.__ids[killIdx]); killIdx += 1; setTimeout(doKill, 1200); }; setTimeout(doKill, 300); const loop = () => { const now = performance.now(); const d = now - last; if (d > 40) gaps.push({ at: Math.round(now - t0), gapMs: Math.round(d) }); last = now; if (now - t0 < 5600) requestAnimationFrame(loop); else res({ killTimes, gaps, kills: __echoes.stats.kills }); }; loop(); })" },
+  { "type": "eval", "code": "({ vfx: __echoes.state().vfx, hitstops: __echoes.events.filter(e => e.type === 'hitstop') })" }
+]

@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.5,0); window.__d0 = __echoes.rngDraws; window.__s0 = JSON.parse(JSON.stringify(__echoes.stats)); ({ id: window.__t, hp0: __echoes.state().enemies[0].hp, iframeRet: __echoes.cmd('iframe', window.__t, 2500) })" },
+  { "type": "mousemove", "x": 1035, "y": 452 },
+  { "type": "wait", "ms": 150 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "wait", "ms": 1150 },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "({ hpNow: __echoes.state().enemies[0].hp, iframed: __echoes.state().enemies[0].iframed, rngDrawsDelta: __echoes.rngDraws - window.__d0, statsBefore: window.__s0, statsNow: __echoes.stats, vfx: __echoes.state().vfx, hitEvents: __echoes.events.filter(e => e.type === 'hit').length, immuneEvents: __echoes.events.filter(e => e.type === 'hit_immune'), soundEvents: __echoes.events.filter(e => e.type === 'sound').map(e => e.slot) })" }
+]

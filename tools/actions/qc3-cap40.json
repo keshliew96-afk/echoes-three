@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "const ids = []; for (let i = 0; i < 45; i++) { const x = -5 + (i % 9) * 1.25; const z = -2.5 + Math.floor(i / 9) * 1.25; ids.push(__echoes.cmd('spawn','dummy',x,z)); } ({ spawned: ids.length, enemies: __echoes.state().enemies.length })" },
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "__echoes.cmd('killAllEnemies'); 'killed'" },
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "({ stats: __echoes.stats, vfx: __echoes.state().vfx, enemies: __echoes.state().enemies.length, deathEvents: __echoes.events.filter(e => e.type === 'death').length })" }
+]

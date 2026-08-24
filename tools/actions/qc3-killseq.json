@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.5,0); __echoes.cmd('setHp', window.__t, 0.05); ({ id: window.__t, hp: __echoes.state().enemies[0].hp })" },
+  { "type": "mousemove", "x": 517, "y": 226 },
+  { "type": "wait", "ms": 150 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "wait", "ms": 330 }
+]

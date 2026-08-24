@@ -1,0 +1,8 @@
+[
+  {"type":"mousemove","x":1100,"y":450},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"(()=>{const p=__echoes.state().party[0]; const dx=p.aim.x-p.x, dz=p.aim.z-p.z; const L=Math.hypot(dx,dz); window.__t=__echoes.cmd('spawn','dummy', p.x+(dx/L)*3, p.z+(dz/L)*3); return {player:[p.x,p.z], aim:[p.aim.x,p.aim.z], dummy:__echoes.state().enemies};})()"},
+  {"type":"mousedown","button":"right"},
+  {"type":"eval","code":"new Promise((res)=>{let n=0; const off=__echoes.on('hit',()=>{n+=1; if(n>=2){off(); res({hitsSeen:n});}}); setTimeout(()=>{off(); res({timeout:true, hitsSeen:n});}, 5000);})"},
+  {"type":"eval","code":"({stats:__echoes.stats, dummyHp:__echoes.state().enemies.map(e=>e.hp), fps:__echoes.fps})"}
+]

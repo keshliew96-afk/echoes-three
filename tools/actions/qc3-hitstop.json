@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.5,0); __echoes.cmd('setHp', window.__t, 0.05); ({ id: window.__t })" },
+  { "type": "mousemove", "x": 1035, "y": 452 },
+  { "type": "wait", "ms": 150 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "eval", "code": "new Promise((res) => { const samples = []; let deathAt = null; const offd = __echoes.on('death', () => { deathAt = { t: performance.now(), tick: __echoes.tick }; }); const t0 = performance.now(); const loop = () => { samples.push([Math.round(performance.now() - t0), __echoes.tick]); if (performance.now() - t0 < 1400) requestAnimationFrame(loop); else { offd(); const stalls = []; for (let i = 1; i < samples.length; i++) { if (samples[i][1] === samples[i-1][1] && samples[i][0] - samples[i-1][0] >= 0) { const prev = stalls[stalls.length-1]; if (prev && prev.tick === samples[i][1]) prev.ms = samples[i][0] - prev.start; else stalls.push({ tick: samples[i][1], start: samples[i-1][0], ms: samples[i][0] - samples[i-1][0] }); } } res({ deathAt, longStalls: stalls.filter(s => s.ms >= 25), sampleCount: samples.length, firstT: samples[0], lastT: samples[samples.length-1] }); } }; loop(); })" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "({ stats: __echoes.stats, vfx: __echoes.state().vfx, tail: __echoes.events.slice(-12) })" }
+]

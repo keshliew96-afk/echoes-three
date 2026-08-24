@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "window.__ids = []; for (let i = 0; i < 24; i++) { const x = -4 + (i % 8) * 1.15; const z = -2 + Math.floor(i / 8) * 1.6; window.__ids.push(__echoes.cmd('spawn','dummy',x,z)); } ({ spawned: window.__ids.length })" },
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "new Promise((res) => { let i = 0, maxN = 0, hits = 0; const t0 = performance.now(); const iv = setInterval(() => { const id = window.__ids[i % window.__ids.length]; i += 1; const r = __echoes.cmd('hitOnce', id); if (r) hits += 1; __echoes.cmd('setHp', id, 1); const n = __echoes.state().vfx.numerals; if (n > maxN) maxN = n; if (performance.now() - t0 > 2400) { clearInterval(iv); res({ hits, maxNumerals: maxN, numeralsNow: __echoes.state().vfx.numerals }); } }, 40); })" }
+]

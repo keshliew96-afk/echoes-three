@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.5,0); ({ id: window.__t })" },
+  { "type": "mousemove", "x": 1035, "y": 452 },
+  { "type": "wait", "ms": 150 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "wait", "ms": 300 }
+]

@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "window.__b = __echoes.cmd('spawn','dummy',4.8,0); window.__a = __echoes.cmd('spawn','dummy',-2,0); __echoes.cmd('setHp', window.__a, 0.05); ({ a: window.__a, b: window.__b })" },
+  { "type": "mousemove", "x": 1250, "y": 452 },
+  { "type": "wait", "ms": 150 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "new Promise((res) => { const samples = []; let killAt = null; const t0 = performance.now(); setTimeout(() => { killAt = { rel: Math.round(performance.now() - t0), tickBefore: __echoes.tick, ret: __echoes.cmd('hitOnce', window.__a) }; }, 250); const loop = () => { const s = __echoes.state(); const p = s.projectiles[0]; samples.push([Math.round((performance.now() - t0) * 10) / 10, __echoes.tick, p ? Math.round(p.x * 1000) / 1000 : null]); if (performance.now() - t0 < 800) requestAnimationFrame(loop); else res({ killAt, n: samples.length, samples: samples.filter((x) => x[0] > 150 && x[0] < 550) }); }; loop(); })" },
+  { "type": "eval", "code": "({ tail: __echoes.events.filter(e => ['hitstop','death','hit'].includes(e.type)).slice(-6) })" }
+]

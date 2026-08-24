@@ -1,0 +1,4 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.5,0); ({ id: window.__t, seed: __echoes.seed })" },
+  { "type": "eval", "code": "new Promise((res) => { const rolls = []; let i = 0; const iv = setInterval(() => { const r = __echoes.cmd('hitOnce', window.__t); rolls.push(r && r.crit ? 1 : 0); __echoes.cmd('setHp', window.__t, 1); i += 1; if (i >= 40) { clearInterval(iv); res({ seed: __echoes.seed, pattern: rolls.join(''), crits: rolls.reduce((a, b) => a + b, 0) }); } }, 30); })" }
+]
