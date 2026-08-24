@@ -17,6 +17,8 @@ import { createStage } from './render/stage.js';
 import { createRenderTestScene } from './scenes/rendertest.js';
 import { createSimTestScene } from './scenes/simtest.js';
 import { createGrayboxScene } from './scenes/graybox.js';
+import { createCharTestScene } from './scenes/chartest.js';
+import { createArenaScene } from './scenes/arena.js';
 import { createDebugOverlay } from './ui/debug.js';
 import { createProtoHud } from './ui/protohud.js';
 import { createClock } from './core/clock.js';
@@ -81,6 +83,8 @@ const SCENES = {
   graybox: createGrayboxScene,
   simtest: createSimTestScene,
   rendertest: createRenderTestScene,
+  chartest: createCharTestScene,
+  arena: createArenaScene,
 };
 const DEFAULT_SCENE = 'graybox';
 const sceneKey = SCENES[params.get('scene')] ? params.get('scene') : DEFAULT_SCENE;

@@ -1,0 +1,17 @@
+[
+  { "type": "keydown", "key": "KeyW" },
+  { "type": "wait", "ms": 300 },
+  { "type": "keyup", "key": "KeyW" },
+  { "type": "keydown", "key": "KeyA" },
+  { "type": "wait", "ms": 200 },
+  { "type": "keyup", "key": "KeyA" },
+  { "type": "key", "key": "Space", "ms": 80 },
+  { "type": "wait", "ms": 400 },
+  { "type": "mousemove", "x": 1000, "y": 430 },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "(() => { const p = __echoes.state().party[0]; const dx = p.aim.x - p.x, dz = p.aim.z - p.z; const L = Math.hypot(dx, dz); window.__t = __echoes.cmd('spawn','dummy', p.x + (dx/L)*2.5, p.z + (dz/L)*2.5); __echoes.cmd('spawn','dummy', p.x + (dx/L)*3.6 - (dz/L)*0.5, p.z + (dz/L)*3.6 + (dx/L)*0.5); return { player: [p.x, p.z], enemies: __echoes.state().enemies }; })()" },
+  { "type": "mousedown", "button": "right" },
+  { "type": "eval", "code": "new Promise((res) => { let n = 0; const off = __echoes.on('hit', () => { __echoes.cmd('setHp', window.__t, 1); n += 1; if (n >= 3) { off(); res({ hitsSeen: n }); } }); setTimeout(() => { off(); res({ timeout: true, hitsSeen: n }); }, 6000); })" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ tick: __echoes.tick, fps: __echoes.fps, stats: __echoes.stats, vfx: __echoes.state().vfx, dodge: __echoes.state().party[0].dodgeReadyTick })" }
+]
