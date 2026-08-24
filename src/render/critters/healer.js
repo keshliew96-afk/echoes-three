@@ -134,9 +134,14 @@ export function buildHealer(rig, trackAccent) {
     staff.position.y = staffRestY + 0.24 * P.prop;
     staff.rotation.x = -0.12 * Math.max(0, P.prop);
     const heat = P.gem * (1 - P.desat);
-    gemMat.emissiveIntensity = 0.25 + 1.3 * heat;
-    gemMat.color.set(PALETTE.brightHeal).lerp(mix('#FFFFFF', '#FFFFFF', 0), heat * 0.55);
-    glow.material.opacity = 0.2 + 0.65 * heat;
+    gemMat.emissiveIntensity = (0.25 + 1.3 * heat) * (1 - P.desat);
+    // Downed (§10): the gem goes out with the rest of the accent, so a
+    // collapsed Healer never keeps a live Bright Heal emitter burning.
+    gemMat.color
+      .set(PALETTE.brightHeal)
+      .lerp(mix('#FFFFFF', '#FFFFFF', 0), heat * 0.55)
+      .lerp(mix(PALETTE.voidCharcoal, PALETTE.warmGrey, 0.25), P.desat);
+    glow.material.opacity = (0.2 + 0.65 * heat) * (1 - P.desat);
     const gs = 0.34 * (1 + 0.5 * heat);
     glow.scale.set(gs, gs, 1);
     gem.rotation.y = t * 1.2;

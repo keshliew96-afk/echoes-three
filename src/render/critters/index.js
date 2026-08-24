@@ -30,7 +30,11 @@ const BUILDERS = {
   archer: buildArcher,
 };
 
-const RING_RADIUS = { healer: 0.44, tank: 0.6, swordsman: 0.42, archer: 0.4 };
+// Sized so the ring's inner ink edge (0.668 * radius) clears each critter's
+// widest body radius — otherwise the body sits ON the band and the marker
+// reads as a hat brim instead of a ring drawn on the ground (verified in
+// capture: Tank cloak halfWidth 0.435 vs a 0.6 ring).
+const RING_RADIUS = { healer: 0.5, tank: 0.66, swordsman: 0.47, archer: 0.45 };
 const FALL_ANGLE = Math.PI / 2 - 0.1; // §10: collapse to horizontal
 const FALL_LIFT = 0.22; // keeps the lying body resting on (not in) the ground
 
@@ -45,7 +49,7 @@ export function createCritter(classId, { cosmetic = null } = {}) {
   // Blob kept INSIDE the bell footprint: a wider blob's near half sits closer
   // to the camera than the body and renders over the belly at low camera
   // elevations (verified in capture — the Tank read as "inside a dark bowl").
-  group.add(blobShadow(RING_RADIUS[classId] * 0.55));
+  group.add(blobShadow(RING_RADIUS[classId] * 0.45));
 
   const yawGroup = new Group();
   group.add(yawGroup);

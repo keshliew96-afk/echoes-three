@@ -102,8 +102,12 @@ export function mitten(color, r = 0.055) {
   return m;
 }
 
-// --- Contact shadow: soft dark blob under every entity (§19.2).
-export function blobShadow(radius, opacity = 0.33) {
+// --- Contact shadow: soft dark blob under every entity (§19.2). Kept small
+// and light on purpose — a wide dark disc filling the identity ring turned the
+// pair into a "dinner plate" (dark well + bright rim) under the low gallery
+// camera; leaving plain ground between shadow and ring keeps the ring reading
+// as a marker drawn ON the floor.
+export function blobShadow(radius, opacity = 0.26) {
   const mat = new MeshBasicMaterial({
     map: getRadialTexture(),
     color: new Color('#000000'),
@@ -117,79 +121,94 @@ export function blobShadow(radius, opacity = 0.33) {
   return blob;
 }
 
-// --- Identity ring: soft-edged annulus texture (faint interior fill + strong
-// rim) so it reads as a "soft ground ellipse" under the 3/4 camera, in the
-// EXACT class-accent hex (toneMapped:false keeps the hex from being lifted by
-// the grade). depthTest:false + a high renderOrder keep it visible when
-// characters overlap (§17: visible under occlusion, constant opacity).
-let ringTexture = null;
-function getRingTexture() {
-  if (ringTexture) return ringTexture;
-  const size = 128;
+// --- Identity ring: a band in the EXACT class-accent hex, INKED ON BOTH EDGES
+// with Void Charcoal, over a faint interior wash — a marker drawn on the floor
+// in the same storybook ink language as the character outlines. toneMapped
+// false keeps the hex from being lifted; a depthTest:false overlay keeps it
+// visible when characters overlap (§17 Zone 3).
+//
+// The double ink edge exists because an accent band alone is not enough: the
+// Tank accent #6B6157 is a low-chroma warm grey that lands within ~10% value of
+// both the contact shadow and typical ground, so its ring read as a mud puddle
+// rather than a marker (pixel-probed in captures/crit5-idle.png and
+// crit5-overlap.png). Ink at ~12% luminance separates the band from ANY ground
+// value while the identifying hue stays exactly the class accent.
+//
+// A Bone/Parchment highlight rim (the other contrast option) was built and
+// rejected on captures: a bright complete ellipse around a darker interior
+// turned every ring into a dinner plate with the critter sitting in it —
+// worst on the Tank, whose coat is the same warm grey as its accent.
+function radialTexture(stops, size = 256) {
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d');
   const half = size / 2;
-  // White rim = the exact accent hex after the material tint; the soft dark
-  // outer stop tints to a faint charcoal ink edge, so even a grey accent
-  // (Tank #6B6157) separates from any ground tone — same ink language as the
-  // character outlines. (Verified: without it the Tank ring vanished on the
-  // neutral gallery ground.) The rim band sits far out (0.72+) so it circles
-  // AROUND the bell cloak instead of crossing the body silhouette — critter
-  // ring radii are sized so cloakHalfWidth < 0.75 * radius.
   const grad = ctx.createRadialGradient(half, half, 0, half, half, half);
-  grad.addColorStop(0.0, 'rgba(255,255,255,0.10)');
-  grad.addColorStop(0.55, 'rgba(255,255,255,0.13)');
-  grad.addColorStop(0.72, 'rgba(255,255,255,0.85)');
-  grad.addColorStop(0.86, 'rgba(255,255,255,0.85)');
-  grad.addColorStop(0.93, 'rgba(24,22,19,0.5)');
-  grad.addColorStop(1.0, 'rgba(24,22,19,0)');
+  for (const [at, css] of stops) grad.addColorStop(at, css);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
-  ringTexture = new CanvasTexture(canvas);
-  ringTexture.colorSpace = SRGBColorSpace;
-  return ringTexture;
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  return tex;
 }
 
-// Two layers: a depth-tested base ring (so the rim's far arc hides behind
-// the critter's OWN body instead of painting a band across it — a single
-// depthTest:false ring drew a full-strength "bowl" over the squat Tank,
-// verified in capture) + a faint depth-ignoring overlay that keeps every
-// ring readable when critters overlap or walls occlude them (§17 Zone 3).
+// Ink stops are near-black in the texture, so the material tint (the class
+// accent) only ever darkens them further — one texture carries both the
+// tintable band and its untintable-in-practice ink edges.
+const INK = (a) => `rgba(18,16,14,${a})`;
+const ACC = (a) => `rgba(255,255,255,${a})`;
+
+let accentTex = null;
+function getAccentTexture() {
+  if (accentTex) return accentTex;
+  // Radii are fractions of the ring's half-size: faint wash -> inner ink edge
+  // -> accent band -> outer ink edge -> soft fade. The band sits far out so it
+  // circles AROUND the bell cloak instead of crossing the body — ring radii are
+  // sized so cloakHalfWidth stays under ~0.72 * radius.
+  accentTex = radialTexture([
+    [0.0, ACC(0.05)],
+    [0.6, ACC(0.07)],
+    [0.645, ACC(0.08)],
+    [0.672, INK(0.82)],
+    [0.696, INK(0.82)],
+    [0.72, ACC(1.0)],
+    [0.848, ACC(1.0)],
+    [0.871, INK(0.88)],
+    [0.897, INK(0.82)],
+    [0.928, INK(0.14)],
+    [0.965, INK(0)],
+  ]);
+  return accentTex;
+}
+
+// Two layers. The depth-tested base lets the far arc hide behind the critter's
+// OWN body (a single depthTest:false ring painted a full-strength "bowl" across
+// the squat Tank — verified in capture); the faint depth-ignoring overlay keeps
+// every ring readable when critters overlap or walls occlude them (§17 Zone 3:
+// visible under occlusion, constant opacity).
 export function identityRing(accentHex, radius) {
   const geo = new PlaneGeometry(radius * 2, radius * 2);
   const group = new Group();
-  const base = new Mesh(
-    geo,
-    new MeshBasicMaterial({
-      map: getRingTexture(),
-      color: new Color(accentHex),
-      transparent: true,
-      opacity: 0.95,
-      depthWrite: false,
-      toneMapped: false, // exact class-accent hex, exempt from palette shifts
-    })
-  );
-  base.rotation.x = -Math.PI / 2;
-  base.position.y = 0.01;
-  base.renderOrder = 2;
-  group.add(base);
-  const overlay = new Mesh(
-    geo,
-    new MeshBasicMaterial({
-      map: getRingTexture(),
-      color: new Color(accentHex),
-      transparent: true,
-      opacity: 0.38,
-      depthWrite: false,
-      depthTest: false, // survives occlusion by other critters/walls
-      toneMapped: false,
-    })
-  );
-  overlay.rotation.x = -Math.PI / 2;
-  overlay.position.y = 0.012;
-  overlay.renderOrder = 6;
-  group.add(overlay);
+  const layer = (opacity, depthTest, y, order) => {
+    const m = new Mesh(
+      geo,
+      new MeshBasicMaterial({
+        map: getAccentTexture(),
+        color: new Color(accentHex),
+        transparent: true,
+        opacity,
+        depthWrite: false,
+        depthTest,
+        toneMapped: false, // exact class-accent hex, exempt from palette shifts
+      })
+    );
+    m.rotation.x = -Math.PI / 2;
+    m.position.y = y;
+    m.renderOrder = order;
+    group.add(m);
+  };
+  layer(1.0, true, 0.01, 2);
+  layer(0.34, false, 0.012, 6);
   return group;
 }

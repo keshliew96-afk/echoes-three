@@ -91,18 +91,26 @@ export function buildArcher(rig, trackAccent) {
   tailPivot.add(tail);
   rig.add(tailPivot);
 
-  // Bow held to the left side: open C arc (torus segment) + chord string —
-  // the negative-space read. Back of the bow faces outward, string inward.
+  // Bow held out to the left: open C arc (torus segment) + chord string — the
+  // negative-space read. The arc's belly faces the body and its opening faces
+  // AWAY, so the enclosed negative space falls on background rather than on the
+  // torso, and the riser (mid-limb) lands at a natural arm reach where the grip
+  // paw can actually touch it. (Mirrored from the first pass, where the riser
+  // sat 0.56 u out and the paw hung in mid-arc with nothing to hold — the
+  // floating-prop finding in captures/crit5-close3.png.)
   const bow = new Group();
-  bow.position.set(-0.27, 0.48, 0.08);
-  const arcR = 0.29;
+  const arcR = 0.255;
+  bow.position.set(-0.255, 0.485, 0.09);
   const arcStart = (70 * Math.PI) / 180;
   const arcLen = (220 * Math.PI) / 180;
-  const limb = new Mesh(new TorusGeometry(arcR, 0.02, 8, 30, arcLen), toonMaterial({ color: wood.getHex() }));
-  limb.rotation.z = arcStart;
-  addOutline(limb, { thickness: 0.014 });
-  bow.add(limb);
-  // String: vertical chord between the two limb tips (x = cos(70°)·R).
+  const limb = new Mesh(
+    new TorusGeometry(arcR, 0.021, 8, 34, arcLen),
+    toonMaterial({ color: wood.getHex() })
+  );
+  limb.rotation.z = arcStart; // spans 70°..290°: the belly faces the body, so
+  addOutline(limb, { thickness: 0.014 }); // the outer silhouette stays a clean
+  bow.add(limb); //                          open arc against the background
+  // String: vertical chord between the two limb tips, tucked at the torso.
   const tipX = Math.cos(arcStart) * arcR;
   const tipY = Math.sin(arcStart) * arcR;
   const string = new Mesh(
@@ -111,6 +119,16 @@ export function buildArcher(rig, trackAccent) {
   );
   string.position.set(tipX, 0, 0);
   bow.add(string);
+  // Riser: a wrapped grip ON the limb centerline at the arc apex — the visible
+  // contact point the grip paw closes around (the first pass parked the paw in
+  // mid-arc, touching nothing: the floating-prop finding in crit5-close3.png).
+  const riser = new Mesh(
+    new CylinderGeometry(0.029, 0.029, 0.155, 10),
+    toonMaterial({ color: mix(PALETTE.bruiseUmber, PALETTE.voidCharcoal, 0.45).getHex() })
+  );
+  riser.position.set(-arcR, 0, 0);
+  addOutline(riser, { thickness: 0.012 });
+  bow.add(riser);
   rig.add(bow);
 
   // Quiver on the back with two arrow shafts.
@@ -131,10 +149,17 @@ export function buildArcher(rig, trackAccent) {
   }
   rig.add(quiver);
 
-  // Paw on the bow grip.
-  const paw = mitten(fur.getHex());
-  paw.position.set(-0.26, 0.48, 0.09);
-  rig.add(paw);
+  // Grip paw: parented to the bow and sitting ON the riser (limb centerline),
+  // so it stays welded to the grip through every clip.
+  const paw = mitten(fur.getHex(), 0.058);
+  paw.position.set(-arcR, 0, 0.016); // concentric with the riser, so the grip
+  //                                    reads as contact from any camera
+  bow.add(paw);
+  // Free paw tucked at the hip on the quiver side (the party's mitten idiom —
+  // no arms, just contact points).
+  const pawFree = mitten(fur.getHex(), 0.052);
+  pawFree.position.set(0.18, 0.33, 0.12);
+  rig.add(pawFree);
 
   function apply(P) {
     // Long ears sway in counter-phase; droop when downed.
@@ -143,11 +168,12 @@ export function buildArcher(rig, trackAccent) {
     ears[0].rotation.x = -0.06 + 0.35 * Math.min(0, P.ear * 1.6);
     ears[1].rotation.x = ears[0].rotation.x;
     tailPivot.rotation.y = P.tail * 0.6;
-    // Cast = raise the bow to aim height, slight cant.
+    // Cast = raise the bow to aim height, slight cant. The grip paw rides the
+    // bow group, so it never leaves the riser.
     const draw = Math.max(0, P.prop);
-    bow.position.y = 0.48 + 0.16 * draw + 0.06 * Math.min(0, P.prop);
+    bow.position.y = 0.485 + 0.16 * draw + 0.06 * Math.min(0, P.prop);
     bow.rotation.z = -0.18 * draw;
-    paw.position.y = bow.position.y + 0.01;
+    pawFree.position.y = 0.33 + 0.05 * draw;
   }
 
   return {

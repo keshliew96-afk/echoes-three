@@ -2,7 +2,18 @@
 // (~8° body lean — the party's only asymmetric lean), long sharp snout, big
 // pointed ears, white-tipped tail, sword held as a diagonal line off the
 // roundness. Class accent #6B2E3A (dusty wine — never Ember red-orange).
-import { BoxGeometry, CapsuleGeometry, ConeGeometry, CylinderGeometry, Group, Mesh, SphereGeometry } from 'three';
+import {
+  BoxGeometry,
+  CapsuleGeometry,
+  CatmullRomCurve3,
+  ConeGeometry,
+  CylinderGeometry,
+  Group,
+  Mesh,
+  SphereGeometry,
+  TubeGeometry,
+  Vector3,
+} from 'three';
 import { CLASS_ACCENTS, PALETTE } from '../../data/palette.js';
 import { toonMaterial, addOutline } from '../toon.js';
 import { bell, mix, addEyes, mitten } from './common.js';
@@ -78,17 +89,40 @@ export function buildSwordsman(rig, trackAccent) {
   addEyes(head, { rx: R * sx, ry: R * sy, rz: R * sz, azimuthDeg: 26 });
   rig.add(head);
 
-  // Big fox tail, white-tipped, swept back-up.
+  // Big fox brush, white-tipped: a long curl that sweeps back, UP and out to
+  // the off-sword side so the white tip breaks the silhouette from the 3/4
+  // gallery/gameplay camera. (The first pass tucked a short capsule straight
+  // behind the body — from the play camera the tail never read at all, and
+  // when the hurt flinch swung it into view the tip sat in shadow, reading
+  // dark maroon: BUILD_BRIEF §19.2's white-tipped tail was invisible.)
   const tailPivot = new Group();
-  tailPivot.position.set(-0.04, 0.16, -0.24);
-  const tailBody = new Mesh(new CapsuleGeometry(0.072, 0.2, 8, 12), toonMaterial({ color: fur.getHex() }));
-  tailBody.rotation.x = -1.05; // sweep up-back
-  tailBody.position.set(0, 0.06, -0.1);
+  tailPivot.position.set(-0.05, 0.12, -0.2);
+  const tailCurve = new CatmullRomCurve3([
+    new Vector3(0, 0, 0),
+    new Vector3(-0.12, -0.01, 0.0),
+    new Vector3(-0.24, 0.06, 0.03),
+    new Vector3(-0.33, 0.17, 0.05),
+  ]);
+  // Heavy brush: at arm gauge (and with a round white ball on the end) the
+  // curl read as a raised ARM waving a mitten — verified in capture. A fat
+  // taper plus a lozenge tip aligned with the tail axis reads as fox brush.
+  const tailBody = new Mesh(
+    new TubeGeometry(tailCurve, 24, 0.105, 12),
+    toonMaterial({ color: fur.getHex() })
+  );
   addOutline(tailBody, { thickness: 0.016 });
   tailPivot.add(tailBody);
-  const tailTip = new Mesh(new SphereGeometry(0.06, 12, 10), toonMaterial({ color: PALETTE.bone }));
-  tailTip.position.set(0, 0.17, -0.19);
-  addOutline(tailTip, { thickness: 0.012 });
+  // Near-white brush tip (Bone lifted toward Parchment): must stay clearly the
+  // lightest mass on the fox even in the toon shadow band, and long enough to
+  // read as "white-tipped tail" (§19.2) rather than a held prop.
+  const tipColor = mix(PALETTE.bone, PALETTE.parchment, 0.85);
+  const tailTip = new Mesh(
+    new CapsuleGeometry(0.093, 0.12, 8, 14),
+    toonMaterial({ color: tipColor.getHex() })
+  );
+  tailTip.position.set(-0.315, 0.145, 0.045);
+  tailTip.rotation.z = 0.685; // align the capsule axis with the tail's end
+  addOutline(tailTip, { thickness: 0.014 });
   tailPivot.add(tailTip);
   rig.add(tailPivot);
 
@@ -115,21 +149,25 @@ export function buildSwordsman(rig, trackAccent) {
   sword.rotation.x = -0.12;
   rig.add(sword);
 
-  // Paws: dark fox mittens — one on the grip, one free.
+  // Paws: dark fox mittens, BOTH stacked on the sword grip. A free paw on the
+  // tail side was the other half of the "raised arm" read — with the left side
+  // clear, the brush is unambiguous, and a two-handed grip suits the class.
   const pawSword = mitten(mix(fur, PALETTE.voidCharcoal, 0.55).getHex());
-  pawSword.position.set(0.27, 0.41, 0.11);
-  rig.add(pawSword);
-  const pawFree = mitten(mix(fur, PALETTE.voidCharcoal, 0.55).getHex());
-  pawFree.position.set(-0.24, 0.34, 0.1);
-  rig.add(pawFree);
+  pawSword.position.set(0, 0.045, 0.012);
+  sword.add(pawSword);
+  const pawFree = mitten(mix(fur, PALETTE.voidCharcoal, 0.55).getHex(), 0.05);
+  pawFree.position.set(0, -0.02, 0.012);
+  sword.add(pawFree);
 
   function apply(P) {
     ears[0].rotation.z = -0.24 - P.ear - P.collapse * 0.45;
     ears[1].rotation.z = 0.24 + P.ear * 0.85 + P.collapse * 0.45;
     ears[0].rotation.x = -0.3 * Math.min(0, P.ear * 2); // pin back on flinch
     ears[1].rotation.x = ears[0].rotation.x;
-    tailPivot.rotation.y = 0.35 * P.tail;
-    tailPivot.rotation.x = 0.12 * P.tail;
+    // Swing the brush without letting the white tip duck behind the torso.
+    tailPivot.rotation.y = 0.26 * P.tail;
+    tailPivot.rotation.z = 0.14 * P.tail;
+    tailPivot.rotation.x = 0.08 * P.tail - 0.5 * P.collapse;
     // Cast = slash: cock further back on wind-up, sweep down-forward on release.
     sword.rotation.z = -0.72 + 0.95 * P.prop;
     sword.rotation.x = -0.12 - 0.5 * Math.max(0, P.prop);

@@ -46,17 +46,23 @@ const clipFns = {
     T.gem = 0.3 + 0.15 * Math.sin(TAU * 0.8 * t + ph.c);
   },
 
-  // Walk: double-bounce bob per stride + forward lean toward the move vector
-  // (§19.2 walk bob + lean; the gallery leans toward facing).
+  // Walk: bouncy stride bob + forward lean toward the move vector (§19.2 walk
+  // bob + lean; the gallery leans toward facing). Cadence slowed and amplitude
+  // raised from the first pass (2.1 Hz / 0.05 u read as a tight jiggle that a
+  // 220 ms capture interval aliased to near-zero) — 1.55 Hz / 0.085 u gives a
+  // ~645 ms bounce that reads bouncy at 60 fps and survives coarse sampling.
+  // The landing squash on each footfall sells weight.
   walk(t, ph, T) {
-    const f = 2.1; // stride Hz
-    T.bob = 0.05 * 0.5 * (1 - Math.cos(TAU * f * t + ph.a));
-    T.breathe = 1 + 0.02 * Math.sin(TAU * f * t + ph.a);
-    T.squash = 1;
-    T.pitch = 0.15 + 0.025 * Math.sin(TAU * f * t + ph.a);
-    T.roll = 0.06 * Math.sin(TAU * (f / 2) * t + ph.a);
-    T.ear = 0.24 * Math.sin(TAU * f * t + ph.b);
-    T.tail = 0.55 * Math.sin(TAU * 0.9 * t + ph.c);
+    const f = 1.55; // stride Hz
+    const p = TAU * f * t + ph.a;
+    const lift = 0.5 * (1 - Math.cos(p)); // 0 at footfall, 1 at apex
+    T.bob = 0.085 * lift;
+    T.breathe = 1 + 0.045 * (lift - 0.5); // stretch airborne, squash on impact
+    T.squash = 1 - 0.03 * (lift - 0.5);
+    T.pitch = 0.15 + 0.045 * Math.sin(p);
+    T.roll = 0.085 * Math.sin(TAU * (f / 2) * t + ph.a);
+    T.ear = 0.3 * Math.sin(p + 0.9);
+    T.tail = 0.6 * Math.sin(TAU * 0.75 * t + ph.c);
     T.prop = 0;
     T.gem = 0.3;
   },

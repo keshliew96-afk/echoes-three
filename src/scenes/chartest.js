@@ -13,7 +13,12 @@
 //                                      rings overlap (ring-visibility test)
 //   ?closeup=0..3                      frame one critter's head/face close up
 //                                      (eye/glint/ink inspection)
+//   ?cam=game                          re-frame at the real gameplay camera
+//                                      elevation (CAMERA.elevationDeg) instead
+//                                      of the low straight-on gallery angle —
+//                                      how identity rings actually read in play
 import { Color, Group, Mesh, PlaneGeometry, Vector3 } from 'three';
+import { CAMERA } from '../core/constants.js';
 import { PALETTE } from '../data/palette.js';
 import { toonMaterial } from '../render/toon.js';
 import { createCritter, CRITTER_CLASSES, CLIPS } from '../render/critters/index.js';
@@ -76,11 +81,15 @@ export function createCharTestScene(stage, toggles, { cosmetic }) {
     const cz = c.group.position.z;
     const cy = (c.metrics.headTopY + c.metrics.headBottomY) / 2;
     const d = 1.6;
-    stage.camera.position.set(cx, cy + d * Math.sin(CAM_ELEV * 0.5), cz + d * Math.cos(CAM_ELEV * 0.5));
+    // Look down far enough that the ground horizon stays out of frame (at a
+    // shallower tilt the 45 deg fov clipped sky into the top of the capture).
+    const ce = CAM_ELEV * 0.78;
+    stage.camera.position.set(cx, cy + d * Math.sin(ce), cz + d * Math.cos(ce));
     stage.camera.lookAt(new Vector3(cx, cy, cz));
   } else {
     const dist = zoomcheck ? CAM_DIST_ZOOMCHECK : CAM_DIST;
-    stage.camera.position.set(0, LOOK_Y + dist * Math.sin(CAM_ELEV), dist * Math.cos(CAM_ELEV));
+    const elev = params.get('cam') === 'game' ? (CAMERA.elevationDeg * Math.PI) / 180 : CAM_ELEV;
+    stage.camera.position.set(0, LOOK_Y + dist * Math.sin(elev), dist * Math.cos(elev));
     stage.camera.lookAt(new Vector3(0, LOOK_Y, 0));
   }
 
