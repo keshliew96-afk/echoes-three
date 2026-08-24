@@ -1,0 +1,3 @@
+[
+  { "type": "eval", "code": "window.__echoes.state().vfx ?? window.__echoes.state()" }
+]
