@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "window.__echoes.cmd('teleport', -2, 0)" },
+  { "type": "mousemove", "x": 1400, "y": 450 },
+  { "type": "wait", "ms": 150 },
+  { "type": "keydown", "key": "Space" },
+  { "type": "eval", "code": "(async () => { const e=window.__echoes; const t0=performance.now(); let seen=false; let endTick=0; while (performance.now()-t0 < 4000) { const p=e.state().party[0]; if (p.dashTicksLeft > 0) seen=true; if (seen && p.dashTicksLeft === 0) { endTick=e.tick; break; } await new Promise(r=>requestAnimationFrame(r)); } while (performance.now()-t0 < 5000 && e.tick < endTick + 12) { await new Promise(r=>requestAnimationFrame(r)); } const p=e.state().party[0]; return { at:'post-dash-sync', tick:e.tick, endTick, x:p.x, dashTicksLeft:p.dashTicksLeft }; })()" }
+]

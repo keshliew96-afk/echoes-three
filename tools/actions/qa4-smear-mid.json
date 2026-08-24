@@ -1,0 +1,10 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -2, 0)"},
+  {"type":"wait","ms":700},
+  {"type":"mousemove","x":1200,"y":450},
+  {"type":"wait","ms":120},
+  {"type":"keydown","key":"Space"},
+  {"type":"wait","ms":100},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'shot-moment', tick:window.__echoes.tick, x:p.x, dashTicksLeft:p.dashTicksLeft}})()"},
+  {"type":"keyup","key":"Space"}
+]

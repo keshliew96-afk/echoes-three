@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "window.__echoes.cmd('teleport', 0, 0)" },
+  { "type": "mousemove", "x": 1300, "y": 450 },
+  { "type": "wait", "ms": 120 },
+  { "type": "keydown", "key": "Space" },
+  { "type": "eval", "code": "(async () => { const e=window.__echoes; const t0=performance.now(); while (performance.now()-t0 < 3000) { const p=e.state().party[0]; if (p.dashTicksLeft > 0 && p.dashTicksLeft <= 13) break; await new Promise(r=>requestAnimationFrame(r)); } return { at:'dash-started', tick:e.tick, dashTicksLeft:e.state().party[0].dashTicksLeft }; })()" },
+  { "type": "mousedown", "button": "right" },
+  { "type": "eval", "code": "(async () => { const e=window.__echoes; const startTick=e.tick; const t0=performance.now(); while (performance.now()-t0 < 2000 && e.tick < startTick + 3) { await new Promise(r=>requestAnimationFrame(r)); } return { at:'nudge-window', tick:e.tick, dashTicksLeft:e.state().party[0].dashTicksLeft, evTail:e.events.slice(-3) }; })()" }
+]

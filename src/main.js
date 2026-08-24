@@ -25,6 +25,7 @@ import { createRegistry } from './core/registry.js';
 import { createEventBus } from './core/events.js';
 import { createInputController } from './core/input.js';
 import { createWorld } from './sim/world.js';
+import { createSynth } from './audio/synth.js';
 
 const params = new URLSearchParams(window.location.search);
 const flag = (name, def = true) => {
@@ -86,10 +87,22 @@ const sceneKey = SCENES[params.get('scene')] ? params.get('scene') : DEFAULT_SCE
 
 // The deterministic wisp harness belongs to the simtest proving ground only;
 // the game scenes get a clean world (enemies land with their own block).
-const world = createWorld({ rng, registry, events: bus, harness: sceneKey === 'simtest' });
+// requestHitstop bridges the §9 juice contract (kill/melee hitstop) into the
+// clock, which owns the 4-per-20-tick budget cap.
+const world = createWorld({
+  rng,
+  registry,
+  events: bus,
+  harness: sceneKey === 'simtest',
+  requestHitstop: clock.requestHitstop,
+});
+
+// §21/§9 sound slots: synth subscribes to sim events, emits `sound` events
+// back into the ring (the observable contract in headless captures).
+createSynth(bus);
 
 const buildScene = SCENES[sceneKey];
-const activeScene = buildScene(stage, toggles, { world, cosmetic });
+const activeScene = buildScene(stage, toggles, { world, cosmetic, bus });
 
 // Proto command bar (dodge cooldown radial + §17 denial nudges) rides with
 // the playable scene only, so simtest/rendertest captures stay unchanged.
@@ -174,10 +187,19 @@ window.__echoes = {
   get events() {
     return bus.buffer();
   },
+  // Cumulative §9 pipeline counters (hits/crits/immune/heals/kills) — survive
+  // the 200-event ring, for long scripted audits like the 200-hit crit test.
+  get stats() {
+    return { ...world.stats };
+  },
+  // Subscribe to live sim events from test scripts (e.g. await the exact hit
+  // moment before capturing). Returns the unsubscribe function.
+  on: (type, fn) => bus.on(type, fn),
   state: () => ({
     scene: activeScene.name,
     toggles,
     ...world.snapshotState(),
+    ...(activeScene.debugState ? { vfx: activeScene.debugState() } : {}),
   }),
   cmd: (name, ...args) => world.cmd(name, ...args),
 };

@@ -1,0 +1,18 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -11, 7)"},
+  {"type":"wait","ms":500},
+  {"type":"mousemove","x":1300,"y":300},
+  {"type":"wait","ms":100},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"keydown","key":"KeyW"},
+  {"type":"key","key":"Space","ms":40},
+  {"type":"wait","ms":1300},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'chase-1', tick:window.__echoes.tick, x:p.x, z:p.z}})()"},
+  {"type":"key","key":"Space","ms":40},
+  {"type":"wait","ms":1300},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'chase-2', tick:window.__echoes.tick, x:p.x, z:p.z}})()"},
+  {"type":"key","key":"Space","ms":40},
+  {"type":"wait","ms":1300},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'chase-3', tick:window.__echoes.tick, x:p.x, z:p.z}})()"},
+  {"type":"key","key":"Space","ms":40}
+]

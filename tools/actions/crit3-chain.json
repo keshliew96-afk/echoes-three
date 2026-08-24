@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "window.__echoes.cmd('teleport', -10, 6)" },
+  { "type": "mousemove", "x": 1300, "y": 300 },
+  { "type": "wait", "ms": 100 },
+  { "type": "keydown", "key": "KeyD" },
+  { "type": "keydown", "key": "KeyW" },
+  { "type": "eval", "code": "(() => { window.__critSpace = setInterval(() => { window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ', bubbles: true })); setTimeout(() => window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', key: ' ', bubbles: true })), 80); }, 1400); return 'space-interval-installed'; })()" }
+]

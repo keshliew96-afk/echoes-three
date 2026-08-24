@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -3, 0)"},
+  {"type":"wait","ms":700},
+  {"type":"mousemove","x":1250,"y":430},
+  {"type":"wait","ms":120},
+  {"type":"mousedown","button":"right"}
+]

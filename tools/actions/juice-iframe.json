@@ -1,0 +1,10 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.5,0); window.__d0 = __echoes.rngDraws; ({ id: window.__t, draws0: window.__d0, iframeUntil: __echoes.cmd('iframe', window.__t, 900) })" },
+  { "type": "mousemove", "x": 1000, "y": 350 },
+  { "type": "wait", "ms": 120 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "wait", "ms": 1300 },
+  { "type": "mouseup", "button": "right" },
+  { "type": "wait", "ms": 900 },
+  { "type": "eval", "code": "({ drawsDelta: __echoes.rngDraws - window.__d0, stats: __echoes.stats, enemies: __echoes.state().enemies, vfx: __echoes.state().vfx, immuneEvents: __echoes.events.filter(e => e.type === 'hit_immune'), hitEvents: __echoes.events.filter(e => e.type === 'hit').length })" }
+]

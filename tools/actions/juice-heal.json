@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('setHp', 0, 0.5); ({ hpBefore: __echoes.state().party[0].hp })" },
+  { "type": "eval", "code": "({ heal1: __echoes.cmd('heal'), hpAfter1: __echoes.state().party[0].hp })" },
+  { "type": "eval", "code": "({ heal2: __echoes.cmd('heal', 0, 60), hpAfter2: __echoes.state().party[0].hp, fullHeals: __echoes.events.filter(e => e.type === 'full_heal'), healSounds: __echoes.events.filter(e => e.type === 'sound' && e.slot === 'heal').length, vfx: __echoes.state().vfx })" }
+]

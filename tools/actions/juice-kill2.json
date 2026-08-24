@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "window.__a = __echoes.cmd('spawn','dummy',2.0,0); window.__b = __echoes.cmd('spawn','dummy',4.4,0); [window.__a, window.__b]" },
+  { "type": "mousemove", "x": 1000, "y": 350 },
+  { "type": "wait", "ms": 120 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "eval", "code": "new Promise((res) => { const samples = []; const t0 = performance.now(); const deaths = []; const offD = __echoes.on('death', (ev) => { deaths.push({ tick: ev.tick, wallMs: Math.round(performance.now() - t0) }); }); const iv = setInterval(() => { samples.push([Math.round(performance.now() - t0), __echoes.tick]); if (deaths.length >= 2 && performance.now() - t0 > deaths[1].wallMs + 300) { clearInterval(iv); offD(); const d = deaths[1].wallMs; res({ deaths, hitstops: __echoes.events.filter(e => e.type === 'hitstop'), around2nd: samples.filter(s => Math.abs(s[0] - d) < 220) }); } if (performance.now() - t0 > 9000) { clearInterval(iv); offD(); res({ timeout: true, deaths, tail: samples.slice(-20) }); } }, 10); })" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "({ stats: __echoes.stats, vfx: __echoes.state().vfx })" }
+]

@@ -1,0 +1,15 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', 0, 0)"},
+  {"type":"wait","ms":500},
+  {"type":"mousemove","x":1200,"y":450},
+  {"type":"wait","ms":120},
+  {"type":"keydown","key":"Space"},
+  {"type":"wait","ms":50},
+  {"type":"keyup","key":"Space"},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":30},
+  {"type":"mouseup","button":"right"},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":20},
+  {"type":"mouseup","button":"right"}
+]

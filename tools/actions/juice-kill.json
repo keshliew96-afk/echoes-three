@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.0,0); window.__t" },
+  { "type": "mousemove", "x": 1000, "y": 350 },
+  { "type": "wait", "ms": 120 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "eval", "code": "new Promise((res) => { const samples = []; const t0 = performance.now(); let deathAt = null; const offD = __echoes.on('death', (ev) => { deathAt = { tick: ev.tick, wallMs: Math.round(performance.now() - t0) }; }); const iv = setInterval(() => { samples.push([Math.round(performance.now() - t0), __echoes.tick]); if (deathAt && performance.now() - t0 > deathAt.wallMs + 250) { clearInterval(iv); offD(); res({ deathAt, hitstopEvents: __echoes.events.filter(e => e.type === 'hitstop'), samples: samples.filter(s => !deathAt || Math.abs(s[0] - deathAt.wallMs) < 160) }); } if (performance.now() - t0 > 7000) { clearInterval(iv); offD(); res({ timeout: true, samples: samples.slice(-20) }); } }, 10); })" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "({ stats: __echoes.stats, vfx: __echoes.state().vfx, tail: __echoes.events.filter(e => ['hit','death','hitstop','sound'].includes(e.type)).slice(-12) })" }
+]

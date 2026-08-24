@@ -24,6 +24,7 @@ import {
   TICK_HZ,
   DODGE,
   CRIT,
+  DUMMY,
   HEALER,
   ARENA,
   HARNESS,
@@ -31,11 +32,12 @@ import {
 import { DENIAL } from '../core/intents.js';
 import { innerBounds, walkStep, sweptStep } from './movement.js';
 import { createProjectileSystem } from './projectiles.js';
+import { createCombat } from './combat.js';
 
 const TICK_DT = 1 / TICK_HZ; // seconds per tick, for u/s -> u/tick
 const r2 = (v) => Math.round(v * 100) / 100;
 
-export function createWorld({ rng, registry, events, harness = true }) {
+export function createWorld({ rng, registry, events, harness = true, requestHitstop = null }) {
   let currentTick = 0;
 
   // ① deferred maturations: { carrierOrdinal, resolve() } — sorted by carrier
@@ -45,13 +47,58 @@ export function createWorld({ rng, registry, events, harness = true }) {
   // bursts). Populated by the build-system block; drained in order here.
   const continuations = [];
 
-  const projectiles = createProjectileSystem({ registry, events });
+  // Cumulative pipeline counters (debug API: __echoes.stats) — lets a 200-hit
+  // crit-frequency audit outlive the 200-event ring buffer.
+  const stats = { hits: 0, crits: 0, immune: 0, heals: 0, healCrits: 0, kills: 0 };
+
+  // §5/§9: i-framed targets produce no instance at all. The player is i-framed
+  // for the dash's full travel window; test targets get a debug window via
+  // cmd('iframe', id, ticks).
+  function isIframed(e) {
+    if (e === player && player.dashTicksLeft > 0) return true;
+    return (e.iframeUntilTick ?? 0) > currentTick;
+  }
+
+  const combat = createCombat({
+    registry,
+    events,
+    rng,
+    stats,
+    getTick: () => currentTick,
+    requestHitstop,
+    isIframed,
+  });
+
+  // Projectile impacts are §4 ① deferred maturations: detected in the
+  // continuous phase, resolved same-tick in the discrete phase by ascending
+  // carrier (bolt) spawn ordinal. Knockback direction = flight direction.
+  function queueImpact(tick, bolt, target) {
+    const len = Math.hypot(bolt.vx, bolt.vz);
+    const dirX = len > 1e-9 ? bolt.vx / len : 0;
+    const dirZ = len > 1e-9 ? bolt.vz / len : 0;
+    const targetId = target.id;
+    const { power, delivery } = bolt;
+    deferred.push({
+      carrierOrdinal: bolt.id,
+      resolve: () => {
+        const t = registry.byId(targetId);
+        if (!t) return; // died to an earlier same-tick maturation
+        combat.applyDamage(t, power, { delivery, dirX, dirZ });
+      },
+    });
+  }
+
+  const projectiles = createProjectileSystem({ registry, events, onImpact: queueImpact });
 
   // --- Player (Healer, party_index 0, party anchor). §5 movement/dodge,
   // §7 basic geometry: projectile 5.2 u/s, range 5.0, interval 0.5 s.
   const player = registry.spawn({
     kind: 'player',
     partyIndex: 0,
+    faction: 'party',
+    hp: HEALER.maxHp,
+    maxHp: HEALER.maxHp,
+    knockbackable: false, // §9/A5: party members are never knocked back
     x: 0,
     z: 0,
     px: 0,
@@ -108,6 +155,39 @@ export function createWorld({ rng, registry, events, harness = true }) {
     if (maintainPopulation) spawnWisp();
   }
 
+  // --- Training dummy (combat-juice proving target; __echoes.cmd('spawn',
+  // 'dummy', x, z)). Static hostile body: hittable by party bolts,
+  // knockbackable (non-boss), full §9 pipeline + juice on hit/kill.
+  function spawnDummy(x = 2, z = 0) {
+    const { mx, mz } = innerBounds(DUMMY.radius);
+    const sx = Math.min(mx, Math.max(-mx, x));
+    const sz = Math.min(mz, Math.max(-mz, z));
+    const d = registry.spawn({
+      kind: 'dummy',
+      faction: 'hostile',
+      hittable: true,
+      knockbackable: true,
+      x: sx,
+      z: sz,
+      px: sx,
+      pz: sz,
+      radius: DUMMY.radius,
+      hp: DUMMY.hp,
+      maxHp: DUMMY.hp,
+      kbVx: 0,
+      kbVz: 0,
+      kbTicks: 0,
+      iframeUntilTick: 0,
+    });
+    events.emit(currentTick, 'spawn', { id: d.id, kind: 'dummy', x: r2(sx), z: r2(sz) });
+    return d;
+  }
+
+  function firstDummy() {
+    for (const e of registry.all()) if (e.kind === 'dummy') return e;
+    return null;
+  }
+
   // ---------------------------------------------------------------- phases --
 
   function continuousPhase(snapshot) {
@@ -135,6 +215,16 @@ export function createWorld({ rng, registry, events, harness = true }) {
         walkStep(player, x * HEALER.moveSpeed * TICK_DT, z * HEALER.moveSpeed * TICK_DT, player.radius);
         player.facing = { x, z };
       }
+    }
+
+    // §9 #3 knockback displacement: impulse away from the hit over kbTicks,
+    // swept vs walls (no slide — wall contact ends the impulse). Runs before
+    // projectiles so bolts sweep against final positions this tick.
+    for (const e of registry.all()) {
+      if (!(e.kbTicks > 0)) continue;
+      const { hit } = sweptStep(e, e.kbVx, e.kbVz, e.radius);
+      e.kbTicks -= 1;
+      if (hit) e.kbTicks = 0;
     }
 
     // Projectiles advance (swept) after actors.
@@ -264,6 +354,9 @@ export function createWorld({ rng, registry, events, harness = true }) {
       speed: HEALER.basicSpeed,
       range: HEALER.basicRange,
       radius: HEALER.boltRadius,
+      power: HEALER.basicPower,
+      delivery: 'basic',
+      faction: player.faction,
     });
     events.emit(currentTick, 'basic_fire', {
       x: r2(player.x),
@@ -390,10 +483,13 @@ export function createWorld({ rng, registry, events, harness = true }) {
       rngDraws: rng.drawIndex,
       room: null, // run/room blocks
       wallet: null, // glint block
+      stats: { ...stats },
       party: [
         {
           id: player.id,
           kind: player.kind,
+          hp: player.hp,
+          maxHp: player.maxHp,
           x: player.x,
           z: player.z,
           aim: player.aim,
@@ -408,15 +504,27 @@ export function createWorld({ rng, registry, events, harness = true }) {
         .map((e) => ({ id: e.id, x: r2(e.x), z: r2(e.z), traveled: r2(e.traveled) })),
       enemies: registry
         .all()
-        .filter((e) => e.kind === 'wisp')
-        .map((e) => ({ id: e.id, x: e.x, z: e.z, hp: e.hp })),
+        .filter((e) => e.kind === 'wisp' || e.kind === 'dummy')
+        .map((e) => ({
+          id: e.id,
+          kind: e.kind,
+          x: r2(e.x),
+          z: r2(e.z),
+          hp: e.hp,
+          kbTicks: e.kbTicks ?? 0,
+          iframed: (e.iframeUntilTick ?? 0) > currentTick,
+        })),
     };
   }
 
   function cmd(name, ...args) {
     switch (name) {
       case 'spawn': {
-        const [, x, z] = args; // (type, x, z) — every type is a wisp for now
+        const [type, x, z] = args; // ('dummy'|'wisp', x, z)
+        // Wisps exist only in the simtest harness (they have no game-scene
+        // visuals); game scenes get combat-juice training dummies.
+        if (type === 'wisp' && harness) return spawnWisp(x, z).id;
+        if (type === 'dummy' || !harness) return spawnDummy(x, z).id;
         return spawnWisp(x, z).id;
       }
       case 'teleport': {
@@ -431,16 +539,71 @@ export function createWorld({ rng, registry, events, harness = true }) {
       case 'setHp': {
         const [id, pct] = args;
         const e = registry.byId(id);
-        if (!e || e.kind !== 'wisp') return null;
+        if (!e || e.maxHp === undefined) return null;
         e.hp = e.maxHp * pct;
-        if (e.hp <= 0) killWisp(e);
+        if (e.hp <= 0) {
+          if (e.kind === 'wisp') killWisp(e);
+          else if (e.kind === 'dummy') combat.kill(e); // full kill juice
+        }
         return e.hp;
       }
       case 'killAllEnemies': {
         maintainPopulation = false;
-        const wisps = registry.all().filter((e) => e.kind === 'wisp');
-        for (const w of wisps) killWisp(w);
-        return wisps.length;
+        const hostiles = registry.all().filter((e) => e.kind === 'wisp' || e.kind === 'dummy');
+        for (const h of hostiles) {
+          if (h.kind === 'wisp') killWisp(h);
+          else combat.kill(h);
+        }
+        return hostiles.length;
+      }
+      // --- Combat-juice test commands (docs/TESTING.md: cmd surface grows
+      // with each block). All of them go through the REAL §9 pipeline.
+      case 'iframe': {
+        // Debug i-frame window on any entity: hits during it produce zero
+        // instance (no roll, no number/flash/HP change) + a hit_immune event.
+        const [id, ticks = 60] = args;
+        const e = registry.byId(id);
+        if (!e) return null;
+        e.iframeUntilTick = currentTick + ticks;
+        return e.iframeUntilTick;
+      }
+      case 'hitOnce': {
+        // One basic-power damage instance on a dummy (default: first dummy),
+        // through combat.applyDamage — real crit roll, knockback, juice.
+        const [id] = args;
+        const t = id != null ? registry.byId(id) : firstDummy();
+        if (!t || t.kind !== 'dummy') return null;
+        const len = Math.hypot(t.x - player.x, t.z - player.z);
+        const dirX = len > 1e-6 ? (t.x - player.x) / len : 1;
+        const dirZ = len > 1e-6 ? (t.z - player.z) / len : 0;
+        return combat.applyDamage(t, HEALER.basicPower, { delivery: 'basic', dirX, dirZ });
+      }
+      case 'critTest': {
+        // N pipeline hits on one dummy (topped up before each hit so it never
+        // dies) — every hit draws a real seeded crit roll. Summary lands in
+        // the event ring so __echoes.events can be checked after the fact.
+        const [n = 200] = args;
+        const t = firstDummy() ?? spawnDummy();
+        let hits = 0;
+        let crits = 0;
+        for (let i = 0; i < n; i++) {
+          t.hp = t.maxHp; // top-up outside the pipeline (no heal roll)
+          const r = combat.applyDamage(t, HEALER.basicPower, { delivery: 'basic', dirX: 1, dirZ: 0 });
+          if (!r || r.immune) continue;
+          hits += 1;
+          if (r.crit) crits += 1;
+        }
+        const summary = { hits, crits, rate: hits > 0 ? r2(crits / hits) : 0 };
+        events.emit(currentTick, 'crit_test', summary);
+        return summary;
+      }
+      case 'heal': {
+        // One heal instance through the pipeline (crit roll, clamp,
+        // full_heal). Default target: the player; default power: Swift Mend
+        // (§7, power 14).
+        const [id, amount = 14] = args;
+        const t = registry.byId(id ?? player.id);
+        return combat.applyHeal(t, amount);
       }
       default:
         console.warn(`__echoes.cmd('${name}') lands with a later block`);
@@ -452,7 +615,11 @@ export function createWorld({ rng, registry, events, harness = true }) {
     step,
     cmd,
     player,
+    stats,
     entities: () => registry.all(),
     snapshotState,
+    get tick() {
+      return currentTick;
+    },
   };
 }

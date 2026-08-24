@@ -15,10 +15,73 @@ export const DODGE = Object.freeze({
   cooldownTicks: 72, // 1.2 s
 });
 
-// §9 Hitstop cap: no stacking above 4 ticks per 20-tick window (ruling A10).
+// §9 Hitstop: global sim pause 2 ticks on melee-arc connects, 3 ticks on kill
+// blows; cap: no stacking above 4 ticks per 20-tick window (ruling A10).
 export const HITSTOP = Object.freeze({
   budgetTicks: 4,
   windowTicks: 20,
+  meleeTicks: 2,
+  killTicks: 3,
+});
+
+// §9 Knockback (juice contract #3): non-boss enemies get a positional impulse
+// away from the hit — 0.12 u over 80 ms on basic hits, 0.30 u on skill hits;
+// swept vs walls; boss immune; party members never knocked back (ruling A5).
+// 80 ms ≈ 5 ticks at 60 Hz (integer tick counts only).
+export const KNOCKBACK = Object.freeze({
+  basicDist: 0.12, // u
+  skillDist: 0.3, // u
+  durationTicks: 5, // ≈80 ms
+});
+
+// §9 juice contract #1: victim mesh flashes white ~3 frames (emissive
+// modulation, never a material swap). Tick-denominated (3 ticks = 3 render
+// frames at 60 fps) so the flash freezes with the sim during kill hitstop.
+export const HITFLASH = Object.freeze({
+  ticks: 3,
+  intensity: 1.0, // emissiveIntensity while lit
+});
+
+// §1 + §17 damage numerals: cap 12 simultaneous (oldest fades early), numeral
+// floor 20 px, rise-and-fade, scale with magnitude. pxPerPoint/critScale/
+// lifetime are authored render tunables inside the §17 grammar (scale with
+// magnitude; crit visibly larger).
+export const DAMAGE_NUMBERS = Object.freeze({
+  cap: 12,
+  lifeSec: 0.8,
+  riseU: 0.85, // world-u vertical rise over the lifetime
+  baseY: 1.15, // spawn height over the victim (u)
+  minPx: 20, // §17 numeral floor
+  pxPerPoint: 0.9, // font px added per point of magnitude
+  critScale: 1.4, // crits render visibly larger
+});
+
+// §9 juice contract #6: persistent kill decals — dark splat, cosmetic-stream
+// rotation/scale, fades after ~20 s, cap 40 (oldest removed, §1 ceiling).
+export const DECALS = Object.freeze({
+  cap: 40,
+  fadeSec: 20,
+  holdFrac: 0.75, // fraction of fadeSec at full opacity before the fade-out
+  minRadius: 0.28, // u, cosmetic-stream scale range
+  maxRadius: 0.5,
+  opacity: 0.55,
+});
+
+// §9 juice contract #7: small screenshake on kills / player-adjacent
+// explosions, never ordinary hits. Brief ceilings: ≤0.06 u offset, ≤120 ms.
+export const SCREENSHAKE = Object.freeze({
+  amp: 0.06, // u camera offset (ceiling used as the authored default)
+  durationSec: 0.12,
+});
+
+// Training-dummy scaffold (combat juice block; not a brief entity). Combat
+// numbers borrow the Thorn Boar row (§11) like the wisp harness does — HP 20
+// dies in three 8-power basics, exercising the kill juice. radius is the same
+// graybox collision scaffold value as the Healer capsule.
+export const DUMMY = Object.freeze({
+  hp: 20, // Thorn Boar HP (§11)
+  radius: 0.3, // graybox scaffold footprint
+  height: 0.95, // render scaffold — just under the 1.05 u character height
 });
 
 // §7 Crit: 0.05 chance / 1.5x mult, all classes, damage AND heals, strict

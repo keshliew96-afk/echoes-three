@@ -1,0 +1,18 @@
+[
+  { "type": "eval", "code": "window.__echoes.cmd('teleport', -4, 0)" },
+  { "type": "mousemove", "x": 1300, "y": 450 },
+  { "type": "wait", "ms": 120 },
+  { "type": "keydown", "key": "KeyD" },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => { const e=window.__echoes, p=e.state().party[0]; return { at:'pre', tick:e.tick, x:p.x, evLen:e.events.length, projLen:e.state().projectiles.length }; })()" },
+  { "type": "keydown", "key": "Space" },
+  { "type": "eval", "code": "(async () => { const e=window.__echoes; const t0=performance.now(); while (performance.now()-t0 < 3000) { const p=e.state().party[0]; if (p.dashTicksLeft > 0 && p.dashTicksLeft <= 12) break; await new Promise(r=>requestAnimationFrame(r)); } const p=e.state().party[0]; return { at:'dash-started', tick:e.tick, x:p.x, dashTicksLeft:p.dashTicksLeft }; })()" },
+  { "type": "mousedown", "button": "right" },
+  { "type": "eval", "code": "(async () => { const e=window.__echoes; const t0=performance.now(); const startTick=e.tick; while (performance.now()-t0 < 2000 && e.tick < startTick + 4) { await new Promise(r=>requestAnimationFrame(r)); } const p=e.state().party[0]; return { at:'during-dash-rmb-held', tick:e.tick, x:p.x, dashTicksLeft:p.dashTicksLeft, projLen:e.state().projectiles.length, evTail:e.events.slice(-5) }; })()" },
+  { "type": "keyup", "key": "Space" },
+  { "type": "eval", "code": "(async () => { const e=window.__echoes; const t0=performance.now(); while (performance.now()-t0 < 4000) { const p=e.state().party[0]; if (p.dashTicksLeft === 0) break; await new Promise(r=>requestAnimationFrame(r)); } const p=e.state().party[0]; return { at:'dash-over', tick:e.tick, x:p.x, projLen:e.state().projectiles.length, evTail:e.events.slice(-8) }; })()" },
+  { "type": "wait", "ms": 700 },
+  { "type": "eval", "code": "(() => { const e=window.__echoes, p=e.state().party[0]; return { at:'after-700ms-D-still-held', tick:e.tick, x:p.x, projLen:e.state().projectiles.length, evTail:e.events.slice(-10) }; })()" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "keyup", "key": "KeyD" }
+]

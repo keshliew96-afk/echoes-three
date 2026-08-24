@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', 0, 0)"},
+  {"type":"mousemove","x":1560,"y":450},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'cursor-far-right', x:p.x, z:p.z, aim:p.aim}})()"}
+]

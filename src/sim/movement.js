@@ -30,16 +30,27 @@ export function walkStep(e, dx, dz, radius) {
   return hit;
 }
 
+// Pure first-contact parameter for a swept circle vs the arena walls: the
+// fraction t in [0,1] of step (dx, dz) traveled before wall contact (1 = no
+// contact, may exceed 1 pre-clamp). Shared by sweptStep and the projectile
+// system (which must compare wall-contact t against entity-impact t without
+// mutating the bolt first).
+export function sweptContactT(x, z, dx, dz, radius) {
+  const { mx, mz } = innerBounds(radius);
+  let t = 1;
+  if (dx > 0) t = Math.min(t, (mx - x) / dx);
+  else if (dx < 0) t = Math.min(t, (-mx - x) / dx);
+  if (dz > 0) t = Math.min(t, (mz - z) / dz);
+  else if (dz < 0) t = Math.min(t, (-mz - z) / dz);
+  return t;
+}
+
 // Advance along (dx, dz), stopping at the FIRST wall contact (no slide).
 // Returns { hit, t }: t in [0,1] is the fraction of the step actually
 // traveled (t=0 => already flush against the wall: zero travel, §5).
 export function sweptStep(e, dx, dz, radius) {
   const { mx, mz } = innerBounds(radius);
-  let t = 1;
-  if (dx > 0) t = Math.min(t, (mx - e.x) / dx);
-  else if (dx < 0) t = Math.min(t, (-mx - e.x) / dx);
-  if (dz > 0) t = Math.min(t, (mz - e.z) / dz);
-  else if (dz < 0) t = Math.min(t, (-mz - e.z) / dz);
+  let t = sweptContactT(e.x, e.z, dx, dz, radius);
   const hit = t < 1;
   t = Math.max(0, Math.min(1, t));
   e.x += dx * t;

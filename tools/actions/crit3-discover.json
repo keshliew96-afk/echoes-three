@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"(()=>{const e=window.__echoes; if(!e) return 'NO __echoes'; return {keys:Object.keys(e), version:e.version, tick:e.tick, fps:e.fps, entityCount:e.entityCount, seed:e.seed, eventsLen:e.events&&e.events.length}})()"},
+  {"type":"eval","code":"(()=>{const s=window.__echoes.state(); return s})()"},
+  {"type":"eval","code":"(()=>{return window.__echoes.events.slice(-20)})()"}
+]

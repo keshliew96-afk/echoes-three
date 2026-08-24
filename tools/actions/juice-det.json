@@ -1,0 +1,4 @@
+[
+  { "type": "wait", "ms": 8000 },
+  { "type": "eval", "code": "(() => { const e = window.__echoes; const w = e.events.filter((ev) => ev.tick >= 240 && ev.tick < 420); return { seed: e.seed, draws: e.rngDraws, windowTicks: '240-419', count: w.length, events: w }; })()" }
+]

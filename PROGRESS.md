@@ -22,16 +22,20 @@ pixels and running gameplay only.
 | 11 | T4 | Sim core block built (v0.2.1): clock (60Hz accumulator + hitstop budget + interpolation alpha), seeded/cosmetic RNG streams w/ draw index, spawn-ordinal registry, event ring (200), closed intent vocabulary + DOM-free sim (input controller layer is the only DOM reader), §4 total-order discrete phase skeleton, deterministic wisp harness, ?debug=1 overlay, full window.__echoes (seed/events/state/cmd). Verified: tickRate 60.00 @ 164fps render; two ?seed=424242 runs byte-identical event windows; 1.5s key hold = exactly 1 intent; empty_slot/priority_suppressed/on_cooldown/duplicate_in_tick denial paths live. |
 | 12 | T5 | Healer graybox controller + camera built (v0.2.2): ?scene=graybox is the new DEFAULT — walled 24x16 arena, playable Healer capsule (WASD instant 8-dir, mouse ground-plane aim, RMB hold-to-repeat bolt 5.2u/s / 30-tick interval / 5.0u expiry, Space dodge 1.8u/15 ticks/72-tick cd), sim/movement.js (walk-slide + swept no-slide wall collision), sim/projectiles.js (registry bolts, swept, impact-beats-expiry), §22 follow camera (exp smoothing 6/s + aim lookahead cap 0.8u), dash smear ghosts (hard-cleared at dash end), proto command bar (dodge radial wipe + §17 skip-pulse/wipe nudges). Verified via captures: speed 2.4 from first tick, diagonal magnitude == cardinal (0.04/tick), dash exactly 1.8u / wall-stop at 11.7 / flush = zero travel + cd spent, 4 fires in 1.6s at exact 30-tick spacing all expiring traveled=5, mid-dash repeat + fresh press both denied priority_suppressed with x advancing throughout, player on-frame across full dodge-chain crossing, smear + nudge frames captured. simtest/rendertest regression captures clean; wisp harness now simtest-only. |
 
+| 13 | T6 | Round A critics: renderer/post PASS (5/5 criteria, pixel-anchored; 2 advisory notes: shader warnings, outline ink warms under bloom overlap) and sim core PASS (4/4; byte-identical seeded runs, denial codes verified). Block 3 critic + block 4 hit session limit → stalled 9 days. |
+| 14 | T7 | Session resumed 2026-08-24: dev server relaunched, graybox smoke capture clean (65fps, v0.2.2). Round A resumed from cache — block 3 critic + block 4 builder/critic running live. |
+| 15 | T7 | Combat juice core built (v0.2.3): §9 instance pipeline (sim/combat.js — one seeded crit roll 5%/1.5x, HP, death, heals w/ clamp + full_heal, i-frame targets = zero instance/zero draw + hit_immune), projectile↔entity swept collision resolving as §4 ① deferred maturations, training dummy (`cmd('spawn','dummy',x,z)`), knockback 0.12u basic/0.30u skill over 5 ticks swept vs walls, kill hitstop 3 ticks via clock budget, 3-tick white emissive hit flash, pooled DOM damage numerals (Parchment/BrightHeal/BruiseUmber grammar, 2px outline, tabular, cap 12 oldest-recycled, crit x1.4 larger), kill squash-stretch pop + 12-sprite burst + dark splat decals (~20s, cap 40, cosmetic rot/scale), kill screenshake 0.06u/120ms, WebAudio synth slots shoot/hit/kill/heal emitting `sound` events into the ring. Debug API grew: `stats`, `on()`, `state().vfx`, cmds iframe/hitOnce/critTest/heal. Verified via captures: hit frame w/ flash+numbers+trail; kb drift 2.5→2.98 over 4 hits in events; 200-hit critTest = 12 crits (6%, band 3-8%); crit "12" visibly larger than "8"s in frame; warm-run tick trace froze exactly 3 ticks at death then resumed 60Hz; 45 kills → decals capped 40, visible at 14s, gone by 21s; i-framed dummy took 3 bolts → 3 hit_immune, 0 draws, 0 numerals, hp 20; heal crit 90 clamped to 29 + full_heal + green +90; simtest seed-424242 double-run event window byte-identical; smoke + rendertest exit 0. |
+
 ## Block board (builder ⇄ critic state)
 
 | Block | Builder | Critic verdict | Round |
 |-------|---------|----------------|-------|
-| Design brief | running | — | 1 |
-| Scaffold + renderer/post stack | built (v0.2.0) | awaiting critic | 1 |
-| Sim core, RNG & input abstraction | built (v0.2.1) | awaiting critic | 1 |
+| Design brief | done | — | 1 |
+| Scaffold + renderer/post stack | built (v0.2.0) | PASS | 1 |
+| Sim core, RNG & input abstraction | built (v0.2.1) | PASS | 1 |
 | Arena/environment generation | pending | — | — |
-| Player controller + camera | built (v0.2.2) | awaiting critic | 1 |
-| Combat core (hit/hurt, numbers, juice) | pending | — | — |
+| Player controller + camera | built (v0.2.2) | critic running | 1 |
+| Combat core (hit/hurt, numbers, juice) | built (v0.2.3) | awaiting critic | 1 |
 | Enemies + AI + waves | pending | — | — |
 | Party AI allies | pending | — | — |
 | VFX/particles | pending | — | — |

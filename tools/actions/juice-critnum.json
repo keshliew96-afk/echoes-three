@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',3,0); window.__t" },
+  { "type": "eval", "code": "new Promise((res) => { let tries = 0; const id = window.__t; const step = () => { const r = __echoes.cmd('hitOnce', id); __echoes.cmd('setHp', id, 1); tries += 1; if (r && r.crit) return res({ tries, hit: r }); if (tries >= 150) return res({ noCrit: true, tries }); setTimeout(step, 150); }; step(); })" },
+  { "type": "eval", "code": "({ vfx: __echoes.state().vfx, tail: __echoes.events.filter(e => e.type === 'hit').slice(-5) })" }
+]

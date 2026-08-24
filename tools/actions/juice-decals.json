@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "for (let i = 0; i < 45; i++) { const id = __echoes.cmd('spawn', 'dummy', -9 + (i % 9) * 2.2, -5.5 + Math.floor(i / 9) * 2.6); __echoes.cmd('setHp', id, 0); } ({ kills: __echoes.stats.kills, vfx: __echoes.state().vfx })" },
+  { "type": "wait", "ms": 700 },
+  { "type": "eval", "code": "({ vfx: __echoes.state().vfx, hitstopGrants: __echoes.events.filter(e => e.type === 'hitstop').length })" }
+]

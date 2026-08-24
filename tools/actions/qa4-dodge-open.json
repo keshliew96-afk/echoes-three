@@ -1,0 +1,18 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', 0, 0)"},
+  {"type":"mousemove","x":1200,"y":450},
+  {"type":"wait","ms":120},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'pre', tick:window.__echoes.tick, x:p.x, z:p.z, aim:p.aim, dodgeReadyTick:p.dodgeReadyTick}})()"},
+  {"type":"key","key":"Space","ms":40},
+  {"type":"wait","ms":60},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'mid-dash', tick:window.__echoes.tick, x:p.x, z:p.z, dashTicksLeft:p.dashTicksLeft}})()"},
+  {"type":"wait","ms":320},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'post-dash (dist from pre must be 1.8)', tick:window.__echoes.tick, x:p.x, z:p.z, dashTicksLeft:p.dashTicksLeft, dodgeReadyTick:p.dodgeReadyTick}})()"},
+  {"type":"key","key":"Space","ms":40},
+  {"type":"wait","ms":120},
+  {"type":"eval","code":"(()=>{const e=window.__echoes; const p=e.state().party[0]; return {at:'second-press-during-cd', tick:e.tick, x:p.x, z:p.z, last6:e.events.slice(-6)}})()"},
+  {"type":"wait","ms":1100},
+  {"type":"key","key":"Space","ms":40},
+  {"type":"wait","ms":350},
+  {"type":"eval","code":"(()=>{const e=window.__echoes; const p=e.state().party[0]; return {at:'third-press-after-cd (must travel again)', tick:e.tick, x:p.x, z:p.z, last8:e.events.slice(-8)}})()"}
+]

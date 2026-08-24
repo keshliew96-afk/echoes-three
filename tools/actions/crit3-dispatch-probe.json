@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "window.__echoes.cmd('teleport', 0, 0)" },
+  { "type": "eval", "code": "(() => { window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ', bubbles: true })); return 'dispatched-window'; })()" },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => { const e=window.__echoes, p=e.state().party[0]; return { at:'after-window-dispatch', dashTicksLeft:p.dashTicksLeft, dodgeReadyTick:p.dodgeReadyTick, x:p.x, z:p.z, evTail:e.events.slice(-3) }; })()" },
+  { "type": "eval", "code": "(() => { document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ', bubbles: true })); return 'dispatched-document'; })()" },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => { const e=window.__echoes, p=e.state().party[0]; return { at:'after-doc-dispatch', dashTicksLeft:p.dashTicksLeft, dodgeReadyTick:p.dodgeReadyTick, x:p.x, z:p.z, evTail:e.events.slice(-3) }; })()" }
+]

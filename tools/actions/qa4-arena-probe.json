@@ -1,0 +1,21 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', 100, 0)"},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'tp-x100', x:p.x, z:p.z}})()"},
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -100, 0)"},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'tp-xneg100', x:p.x, z:p.z}})()"},
+  {"type":"eval","code":"window.__echoes.cmd('teleport', 0, 100)"},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'tp-z100', x:p.x, z:p.z}})()"},
+  {"type":"eval","code":"window.__echoes.cmd('teleport', 0, -100)"},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'tp-zneg100', x:p.x, z:p.z}})()"},
+  {"type":"eval","code":"window.__echoes.cmd('teleport', 11.5, 0)"},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"wait","ms":1500},
+  {"type":"keyup","key":"KeyD"},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'walk-into-east-wall', x:p.x, z:p.z}})()"},
+  {"type":"eval","code":"window.__echoes.cmd('teleport', 0, 7.5)"},
+  {"type":"keydown","key":"KeyS"},
+  {"type":"wait","ms":1500},
+  {"type":"keyup","key":"KeyS"},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0]; return {at:'walk-into-south-wall', x:p.x, z:p.z}})()"},
+  {"type":"eval","code":"window.__echoes.cmd('teleport', 0, 0)"}
+]

@@ -1,0 +1,6 @@
+[
+  { "type": "mousedown", "button": "right" },
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "(() => { const e=window.__echoes, p=e.state().party[0]; const pr=e.state().projectiles; return { at:'rmb-no-aim-ever', tick:e.tick, x:p.x, z:p.z, proj:pr, finiteProj: pr.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.z)), evTail:e.events.slice(-5) }; })()" },
+  { "type": "mouseup", "button": "right" }
+]

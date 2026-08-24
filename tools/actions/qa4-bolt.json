@@ -1,0 +1,19 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', 0, 0)"},
+  {"type":"wait","ms":600},
+  {"type":"mousemove","x":1200,"y":450},
+  {"type":"wait","ms":120},
+  {"type":"eval","code":"(()=>{const e=window.__echoes; const p=e.state().party[0]; return {at:'pre', tick:e.tick, aim:p.aim, nextBasicTick:p.nextBasicTick}})()"},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":100},
+  {"type":"eval","code":"(()=>{const e=window.__echoes; return {at:'first-shot (spawn tick must equal press tick)', tick:e.tick, projectiles:e.state().projectiles, last4:e.events.slice(-4)}})()"},
+  {"type":"wait","ms":250},
+  {"type":"eval","code":"(()=>{const e=window.__echoes; return {at:'flight-A', tick:e.tick, projectiles:e.state().projectiles}})()"},
+  {"type":"wait","ms":250},
+  {"type":"eval","code":"(()=>{const e=window.__echoes; return {at:'flight-B (2nd bolt due at +30 ticks)', tick:e.tick, projectiles:e.state().projectiles}})()"},
+  {"type":"wait","ms":700},
+  {"type":"eval","code":"(()=>{const e=window.__echoes; return {at:'later', tick:e.tick, projectiles:e.state().projectiles, projEvents:e.events.filter(v=>v.kind==='bolt'||String(v.type).includes('proj')||String(v.type).includes('expire')||String(v.type).includes('fire'))}})()"},
+  {"type":"mouseup","button":"right"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"(()=>{const e=window.__echoes; return {at:'final (all expired)', tick:e.tick, projectiles:e.state().projectiles, allEvTypes:[...new Set(e.events.map(v=>v.type))], projEvents:e.events.filter(v=>v.kind==='bolt'||String(v.type).includes('proj')||String(v.type).includes('expire'))}})()"}
+]

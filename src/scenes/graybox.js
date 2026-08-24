@@ -18,10 +18,21 @@ import {
   RingGeometry,
 } from 'three';
 import { ACT1_GROUND, CLASS_ACCENTS, PALETTE } from '../data/palette.js';
-import { ARENA, DODGE, HEALER, TICK_HZ } from '../core/constants.js';
+import {
+  ARENA,
+  DODGE,
+  DUMMY,
+  HEALER,
+  HITFLASH,
+  SCREENSHAKE,
+  TICK_HZ,
+} from '../core/constants.js';
 import { toonMaterial, addOutline } from '../render/toon.js';
 import { makeGlowSprite, getRadialTexture } from '../render/glow.js';
 import { createFollowRig } from '../render/camera.js';
+import { createNumberPool } from '../render/numbers.js';
+import { createParticlePool } from '../render/vfx/particles.js';
+import { createDecalPool } from '../render/vfx/decals.js';
 
 // Graybox scaffold numbers (render-only): wall height 0.75 u sits inside the
 // §13 band (70-80% of the 1.05 u standing height — never fully occludes);
@@ -32,6 +43,9 @@ const CAPSULE_LEN = 1.05 - 2 * HEALER.radius; // §1: standing height ~1.05 u
 const LEAN_MAX = 0.16; // rad, body lean toward the move vector (§3)
 const SMEAR_FADE = 0.12; // s, per-ghost fade (hard-cleared at dash end)
 const TRAIL_FADE = 0.15; // s, bolt trail sprite fade
+// Kill-pop timing (render scaffold): anticipation stretch, then collapse pop.
+const POP_STRETCH_SEC = 0.09;
+const POP_TOTAL_SEC = 0.26;
 
 function blobShadow(radius, opacity = 0.35) {
   const mat = new MeshBasicMaterial({
@@ -47,7 +61,7 @@ function blobShadow(radius, opacity = 0.35) {
   return blob;
 }
 
-export function createGrayboxScene(stage, toggles, { world }) {
+export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
   const root = new Group();
   root.name = 'graybox';
   stage.scene.add(root);
@@ -119,6 +133,57 @@ export function createGrayboxScene(stage, toggles, { world }) {
     g.add(blobShadow(0.14, 0.25));
     return g;
   }
+
+  // --- Training dummies + the §9 juice contract. Rigs sync to sim entities;
+  // hit flash is EMISSIVE modulation on the rig's own material (never a
+  // material swap), tick-denominated so it freezes with the sim during kill
+  // hitstop. Dummy body is Bone (neutral prop, not an enemy design — never
+  // Ember/violet, those are enemy-attack/corruption-exclusive).
+  const dummies = new Map(); // entity id -> { group, body, mat, flashUntilTick }
+  const dummyGeo = new CapsuleGeometry(DUMMY.radius, DUMMY.height - 2 * DUMMY.radius, 6, 14);
+  function makeDummyRig() {
+    const mat = toonMaterial({
+      color: PALETTE.bone,
+      emissive: new Color('#FFFFFF'),
+      emissiveIntensity: 0,
+    });
+    const body = new Mesh(dummyGeo, mat);
+    body.position.y = DUMMY.height / 2;
+    addOutline(body);
+    const group = new Group();
+    group.add(body);
+    group.add(blobShadow(0.44));
+    return { group, mat, flashUntilTick: 0 };
+  }
+
+  // Kill pop: squash-stretch on the whole rig (anticipation stretch, collapse
+  // pop), lit white-hot while it plays.
+  const dying = []; // { rig, age }
+
+  const numbers = createNumberPool({ camera: stage.camera, cosmetic });
+  const particles = createParticlePool(root, cosmetic);
+  const decals = createDecalPool(root, cosmetic);
+  let shakeLeft = 0; // s of screenshake remaining (kills only, §9 #7)
+
+  bus.on('hit', (ev) => {
+    const rig = dummies.get(ev.target);
+    if (rig) rig.flashUntilTick = ev.tick + HITFLASH.ticks; // §9 #1: ~3 frames
+    numbers.spawn({ x: ev.x, z: ev.z, amount: ev.amount, kind: 'damage', crit: ev.crit });
+  });
+  bus.on('heal', (ev) => {
+    numbers.spawn({ x: ev.x, z: ev.z, amount: ev.amount, kind: 'heal', crit: ev.crit });
+  });
+  bus.on('death', (ev) => {
+    const rig = dummies.get(ev.id);
+    if (rig) {
+      dummies.delete(ev.id);
+      rig.mat.emissiveIntensity = HITFLASH.intensity; // white-hot through the pop
+      dying.push({ rig, age: 0 });
+    }
+    particles.burst(ev.x, ev.z); // §9 #6 burst
+    decals.spawn(ev.x, ev.z); // §9 #6 persistent decal
+    shakeLeft = SCREENSHAKE.durationSec; // §9 #7 — kills only, never plain hits
+  });
 
   // --- Fading sprite pools: dash smear ghosts + bolt trails. Ghosts are
   // translucent capsule after-images; the smear is hard-cleared the frame the
@@ -239,9 +304,78 @@ export function createGrayboxScene(stage, toggles, { world }) {
       }
     }
 
+    // Dummies: sync rigs to sim entities (interpolated), drive the hit flash
+    // off the sim tick (world.tick freezes during hitstop, so a kill flash
+    // holds through the frozen frames).
+    const seenDummies = new Set();
+    for (const e of world.entities()) {
+      if (e.kind !== 'dummy') continue;
+      seenDummies.add(e.id);
+      let rig = dummies.get(e.id);
+      if (!rig) {
+        rig = makeDummyRig();
+        dummies.set(e.id, rig);
+        root.add(rig.group);
+      }
+      rig.group.position.set(e.px + (e.x - e.px) * alpha, 0, e.pz + (e.z - e.pz) * alpha);
+      rig.mat.emissiveIntensity = world.tick < rig.flashUntilTick ? HITFLASH.intensity : 0;
+    }
+    for (const [id, rig] of dummies) {
+      if (!seenDummies.has(id)) {
+        // Despawned without a death event reaching us (safety net).
+        root.remove(rig.group);
+        dummies.delete(id);
+      }
+    }
+
+    // Kill pops: stretch up + narrow, then collapse flat and vanish.
+    for (let i = dying.length - 1; i >= 0; i--) {
+      const d = dying[i]; // rig group stays parented to root through the pop
+      d.age += dt;
+      if (d.age >= POP_TOTAL_SEC) {
+        root.remove(d.rig.group);
+        dying.splice(i, 1);
+        continue;
+      }
+      const s = d.rig.group.scale;
+      if (d.age < POP_STRETCH_SEC) {
+        const t = d.age / POP_STRETCH_SEC;
+        s.set(1 - 0.3 * t, 1 + 0.45 * t, 1 - 0.3 * t); // anticipation stretch
+      } else {
+        const t = (d.age - POP_STRETCH_SEC) / (POP_TOTAL_SEC - POP_STRETCH_SEC);
+        s.set(0.7 + 0.9 * t, Math.max(0.04, 1.45 * (1 - t) * (1 - t)), 0.7 + 0.9 * t); // squash pop
+        d.rig.mat.emissiveIntensity = HITFLASH.intensity * (1 - t);
+      }
+    }
+
+    particles.update(dt);
+    decals.update(dt);
+
     // §22 camera: smoothed follow + aim lookahead, driven by render dt.
     followRig.update(dt, ix, iz, player.aim);
+
+    // §9 #7 screenshake: small decaying camera offset, kills only.
+    if (shakeLeft > 0) {
+      shakeLeft = Math.max(0, shakeLeft - dt);
+      const f = shakeLeft / SCREENSHAKE.durationSec;
+      stage.camera.position.x += cosmetic.range(-1, 1) * SCREENSHAKE.amp * f;
+      stage.camera.position.z += cosmetic.range(-1, 1) * SCREENSHAKE.amp * f;
+    }
+
+    // Numbers project AFTER the camera settles this frame.
+    numbers.update(dt);
   }
 
-  return { name: 'graybox', root, update };
+  // Render-side juice counters for __echoes.state().vfx — lets captures
+  // assert the ≤12 numeral cap and the ≤40 decal cap objectively.
+  function debugState() {
+    return {
+      numerals: numbers.count(),
+      decals: decals.count(),
+      particles: particles.count(),
+      dummies: dummies.size,
+    };
+  }
+
+  return { name: 'graybox', root, update, debugState };
 }

@@ -1,0 +1,4 @@
+[
+  { "type": "eval", "code": "window.__t = __echoes.cmd('spawn','dummy',2.5,0); __echoes.cmd('critTest', 200)" },
+  { "type": "eval", "code": "({ stats: __echoes.stats, vfx: __echoes.state().vfx, summary: __echoes.events.filter(e => e.type === 'crit_test') })" }
+]

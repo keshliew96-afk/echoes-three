@@ -1,0 +1,19 @@
+[
+  { "type": "eval", "code": "window.__echoes.cmd('teleport', -3, 0)" },
+  { "type": "mousemove", "x": 1300, "y": 450 },
+  { "type": "wait", "ms": 100 },
+  { "type": "eval", "code": "(() => { const e=window.__echoes, p=e.state().party[0]; return { at:'pre', tick:e.tick, x:p.x, z:p.z, dashTicksLeft:p.dashTicksLeft, dodgeReadyTick:p.dodgeReadyTick, evLen:e.events.length }; })()" },
+  { "type": "keydown", "key": "Space" },
+  { "type": "wait", "ms": 90 },
+  { "type": "eval", "code": "(() => { const e=window.__echoes, p=e.state().party[0]; return { at:'mid-dash-key-still-down', tick:e.tick, x:p.x, z:p.z, dashTicksLeft:p.dashTicksLeft, dodgeReadyTick:p.dodgeReadyTick }; })()" },
+  { "type": "keyup", "key": "Space" },
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "(() => { const e=window.__echoes, p=e.state().party[0]; return { at:'post-dash', tick:e.tick, x:p.x, z:p.z, dashTicksLeft:p.dashTicksLeft, dodgeReadyTick:p.dodgeReadyTick }; })()" },
+  { "type": "key", "key": "Space", "ms": 40 },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "(() => { const e=window.__echoes, p=e.state().party[0]; return { at:'cooldown-repress', tick:e.tick, x:p.x, z:p.z, dashTicksLeft:p.dashTicksLeft, dodgeReadyTick:p.dodgeReadyTick, evTail:e.events.slice(-6) }; })()" },
+  { "type": "wait", "ms": 1100 },
+  { "type": "key", "key": "Space", "ms": 40 },
+  { "type": "wait", "ms": 350 },
+  { "type": "eval", "code": "(() => { const e=window.__echoes, p=e.state().party[0]; return { at:'second-dash-end', tick:e.tick, x:p.x, z:p.z, dashTicksLeft:p.dashTicksLeft, dodgeReadyTick:p.dodgeReadyTick, evTail:e.events.slice(-8) }; })()" }
+]
