@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', 0, 6.5)"},
+  {"type":"wait","ms":1200},
+  { "type": "eval", "code": "(async()=>{const c=document.querySelector('canvas');const gl=c.getContext('webgl2')||c.getContext('webgl');const w=c.width,h=c.height;const buf=new Uint8Array(w*h*4);const rd=()=>new Promise(r=>requestAnimationFrame(()=>{gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,buf);r();}));let ok=false;for(let i=0;i<8&&!ok;i++){await rd();let s=0;for(let k=0;k<buf.length;k+=4001)s+=buf[k];ok=s>0;}const lum=(x,y)=>{const yy=h-1-y;const o=(yy*w+x)*4;return 0.2126*buf[o]+0.7152*buf[o+1]+0.0722*buf[o+2];};const rect=(x0,y0,x1,y1)=>{let s=0,n=0;for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){s+=lum(x,y);n++;}return Math.round(s/n);};const prof=[];for(let y=300;y<896;y+=12)prof.push([y,rect(300,y,1300,y+12)]);return {ok,southProfile:prof};})()" }
+]

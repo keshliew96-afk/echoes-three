@@ -9,6 +9,7 @@ import {
   InstancedMesh,
   Matrix4,
   Quaternion,
+  SRGBColorSpace,
   Vector3,
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -47,7 +48,7 @@ function sampleSpot(spec, cosmetic, tries = 24) {
     const z = cosmetic.range(-ARENA.halfD + 0.35, ARENA.halfD - 0.35);
     if (pathClearance(spec, x, z) < 0.22) continue;
     const central = Math.abs(x) < ARENA.halfW * 0.58 && Math.abs(z) < ARENA.halfD * 0.56;
-    if (central && !cosmetic.chance(0.45)) continue;
+    if (central && !cosmetic.chance(0.78)) continue;
     return { x, z };
   }
   return null;
@@ -75,12 +76,15 @@ export function buildFoliage(root, spec, cosmetic) {
     s.set(sc, sc * r(0.8, 1.25), sc);
     m.compose(p, q, s);
     grass.setMatrixAt(placed, m);
-    // Blades sit mostly DARKER + more saturated than the ground so tufts read
-    // as foliage, not pale spikes (the lit-side toon band lifts them ~1 step).
+    // Blades sit a hair lighter + more saturated than the ground so tufts read
+    // as foliage silhouettes, not pale spikes. Authored in DISPLAY space — the
+    // linear-space default of setHSL rendered these ~2 value steps too bright
+    // and they came out as yellow-white confetti spikes on the grass.
     c.setHSL(
       (g.h + r(-12, 10)) / 360,
-      Math.min(1, g.s + r(0.06, 0.22)),
-      Math.max(0.1, g.l + r(-0.14, 0.01))
+      Math.min(1, g.s + r(0.05, 0.2)),
+      Math.max(0.03, g.l + r(0.02, 0.105)),
+      SRGBColorSpace
     );
     grass.setColorAt(placed, c);
     placed += 1;
@@ -89,12 +93,13 @@ export function buildFoliage(root, spec, cosmetic) {
   if (grass.instanceColor) grass.instanceColor.needsUpdate = true;
   root.add(grass);
 
-  // --- Flowers: warm-tinted blossoms in loose clusters.
-  const flowerGeo = new IcosahedronGeometry(0.05, 0);
-  flowerGeo.translate(0, 0.08, 0);
+  // --- Flowers: warm-tinted blossoms in loose clusters. Small and muted (see
+  // FLOWER_TINTS) — the previous near-white blossoms read as scattered confetti.
+  const flowerGeo = new IcosahedronGeometry(0.042, 0);
+  flowerGeo.translate(0, 0.075, 0);
   const flowers = new InstancedMesh(flowerGeo, toonMaterial({ color: '#FFFFFF' }), spec.flowers);
   flowers.frustumCulled = false;
-  const clusterN = Math.max(4, Math.round(spec.flowers / 8));
+  const clusterN = Math.max(3, Math.round(spec.flowers / 14));
   const clusters = [];
   for (let i = 0; i < clusterN; i++) {
     const spot = sampleSpot(spec, cosmetic);
@@ -103,8 +108,8 @@ export function buildFoliage(root, spec, cosmetic) {
   let placedF = 0;
   while (placedF < spec.flowers && clusters.length > 0) {
     const cl = clusters[Math.floor(r(0, clusters.length))];
-    const x = cl.x + r(-0.9, 0.9);
-    const z = cl.z + r(-0.9, 0.9);
+    const x = cl.x + r(-0.5, 0.5);
+    const z = cl.z + r(-0.5, 0.5);
     if (Math.abs(x) > ARENA.halfW - 0.3 || Math.abs(z) > ARENA.halfD - 0.3) continue;
     if (pathClearance(spec, x, z) < 0.15) continue;
     q.setFromAxisAngle(UP, r(0, Math.PI * 2));

@@ -26,7 +26,15 @@ import { OUTLINE } from '../core/constants.js';
 import { toonMaterial, getOutlineMaterial, addOutline } from '../render/toon.js';
 import { getRadialTexture } from '../render/glow.js';
 import { PALETTE } from '../data/palette.js';
-import { ENV } from './colors.js';
+import { ENV, hslColor } from './colors.js';
+
+// Ground-plane render order band. The additive warm light pools draw FIRST, the
+// contact shadows draw on top of them: a black alpha-blended blob under an
+// additive pool gets its darkening added straight back, which is why the first
+// cut measured no shadow under anything. Everything the graybox scene owns
+// (identity rings, kill decals, its own blobs) sits at the default 0 and so
+// still composites above both.
+export const ORDER = Object.freeze({ pool: -12, shadow: -8 });
 
 const UP = new Vector3(0, 1, 0);
 
@@ -88,18 +96,47 @@ function addInstancedProp(root, layers, transforms) {
   }
 }
 
-// One InstancedMesh of soft dark ellipses = every prop's contact shadow.
+// Contact-shadow falloff. The shared glow texture is a bloom halo — it is 55%
+// transparent a quarter of the way out, so a blob using it reads as a diffuse
+// smudge rather than a grounded shadow. This one keeps a solid core out to ~45%
+// of the radius and then falls off, which is what makes a prop sit ON the floor.
+let sharedContactTexture = null;
+export function getContactTexture() {
+  if (sharedContactTexture) return sharedContactTexture;
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const half = size / 2;
+  const grad = ctx.createRadialGradient(half, half, 0, half, half, half);
+  grad.addColorStop(0.0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.45, 'rgba(255,255,255,0.92)');
+  grad.addColorStop(0.72, 'rgba(255,255,255,0.42)');
+  grad.addColorStop(1.0, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  sharedContactTexture = tex;
+  return tex;
+}
+
+// One InstancedMesh of soft dark ellipses = every prop's contact shadow
+// (reference bar check 8: grounding). Sized to each footprint and centred on
+// the prop BASE, so nothing floats.
 export function buildShadowInstances(root, shadows) {
   if (shadows.length === 0) return;
   const geo = new CircleGeometry(1, 20).rotateX(-Math.PI / 2);
   const mat = new MeshBasicMaterial({
-    map: getRadialTexture(),
+    map: getContactTexture(),
     color: new Color('#000000'),
     transparent: true,
-    opacity: 0.34,
+    opacity: 0.72,
     depthWrite: false,
   });
   const im = new InstancedMesh(geo, mat, shadows.length);
+  im.renderOrder = ORDER.shadow;
   im.frustumCulled = false;
   const m = new Matrix4();
   const q = new Quaternion();
@@ -165,7 +202,7 @@ function buildMonolith(root, [x, z, yaw], shadows, emitters, cosmetic) {
     color: ENV.monolith,
     emissive: new Color(PALETTE.godstuffViolet),
     emissiveMap: veinTexture(cosmetic),
-    emissiveIntensity: 1.6,
+    emissiveIntensity: 2.6, // veins have to survive the dark-woodland grade
   });
   const mesh = new Mesh(geo, mat);
   mesh.position.set(x, 0, z);
@@ -331,6 +368,45 @@ export function buildProps(root, spec, cosmetic) {
     }
   }
 
+  // --- Fallen logs (lying trunk + a mossy cap so it isn't a bare tube).
+  const logGeo = new CylinderGeometry(0.19, 0.22, 1.5, 9).rotateZ(Math.PI / 2);
+  logGeo.translate(0, 0.19, 0);
+  const logMossGeo = new CylinderGeometry(0.2, 0.2, 0.34, 9, 1, false, 0, Math.PI).rotateZ(Math.PI / 2);
+  logMossGeo.translate(0.24, 0.19, 0);
+  const mMoss = toonMaterial({ color: hslColor(spec.ground.h + 18, 0.44, 0.19) });
+  const logT = place(spec.logs, ([x, z, yaw = 0]) => ({ x, z, yaw, s: r(0.85, 1.15) }));
+  if (logT.length) {
+    addInstancedProp(
+      root,
+      [
+        { geo: logGeo, mat: mBark, ink: true },
+        { geo: logMossGeo, mat: mMoss, ink: false },
+      ],
+      logT
+    );
+    for (const t of logT) shadows.push({ x: t.x, z: t.z, rx: 0.9 * t.s, rz: 0.3 * t.s, yaw: t.yaw });
+  }
+
+  // --- Bushes / ferns (3 squashed lobes of dark foliage; edge silhouette
+  // breakers per reference C, never taller than a character).
+  const bushGeo = mergeGeometries([
+    new IcosahedronGeometry(0.3, 0).translate(0, 0.2, 0),
+    new IcosahedronGeometry(0.22, 0).translate(0.26, 0.13, 0.1),
+    new IcosahedronGeometry(0.2, 0).translate(-0.2, 0.12, -0.14),
+  ]);
+  const mBush = toonMaterial({ color: hslColor(spec.ground.h + 8, 0.48, 0.17) });
+  const bushT = place(spec.bushes, ([x, z]) => ({
+    x,
+    z,
+    yaw: r(0, Math.PI * 2),
+    s: r(0.85, 1.35),
+    sy: r(0.7, 1.0),
+  }));
+  if (bushT.length) {
+    addInstancedProp(root, [{ geo: bushGeo, mat: mBush, ink: true }], bushT);
+    for (const t of bushT) shadows.push({ x: t.x, z: t.z, rx: 0.5 * t.s, rz: 0.42 * t.s });
+  }
+
   // --- Boulders (squashed icosahedra, mossy-cool stone).
   const boulderGeo = new IcosahedronGeometry(0.32, 0);
   boulderGeo.translate(0, 0.21, 0);
@@ -349,5 +425,18 @@ export function buildProps(root, spec, cosmetic) {
   // --- Corruption monolith (single hero prop).
   if (spec.monolith) buildMonolith(root, spec.monolith, shadows, emitters, cosmetic);
 
-  return { emitters, shadows };
+  // Widen every footprint, and nudge it a little toward the camera (+z). Props
+  // ring the arena EDGES, so a perfectly centred blob hides behind its own prop
+  // at the far wall and the prop reads as floating; the offset guarantees a
+  // visible crescent of contact shadow in front of every base.
+  for (const sh of shadows) {
+    sh.rx *= 1.35;
+    if (sh.rz !== undefined) sh.rz *= 1.35;
+    sh.z += 0.13;
+  }
+
+  // Prop types placed (reference bar check 4 counts distinct silhouettes):
+  // slab, stump, fence, crate, barrel, torch post, lantern, log, bush, boulder,
+  // monolith = 11.
+  return { emitters, shadows, mats: { glass: mGlass } };
 }

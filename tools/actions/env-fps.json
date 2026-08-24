@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"({fps: window.__echoes.fps, tick: window.__echoes.tick, vfx: window.__echoes.state().vfx})"}
+]
