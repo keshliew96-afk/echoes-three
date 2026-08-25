@@ -5,7 +5,7 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ▶ RESUMED — Round B round-2 critics + integration running
+## Status: ▶ Round B REMEDIATION running (arena lighting + critter legibility), then integration
 
 ### Resume point — do this first
 1. Start the dev server: `npm run dev` in this folder (port 5199), or preview_start "echoes-dev".
@@ -33,6 +33,7 @@ State at pause: 7 commits, v0.2.5. Playable graybox arena (default scene) with m
 
 | 13 | T6 | Round A critics: renderer/post PASS (5/5 criteria, pixel-anchored; 2 advisory notes: shader warnings, outline ink warms under bloom overlap) and sim core PASS (4/4; byte-identical seeded runs, denial codes verified). Block 3 critic + block 4 hit session limit → stalled 9 days. |
 | 14 | T7 | Session resumed 2026-08-24: dev server relaunched, graybox smoke capture clean (65fps, v0.2.2). Round A resumed from cache — block 3 critic + block 4 builder/critic running live. |
+| 20 | T12 | Round B ran to completion: BOTH blocks REJECTED after 3 rounds — verdicts saved to docs/critiques/. Arena: content density excellent (FLAT 1.19% vs <20% bar, 10-11 prop types, walls correctly darker, violet confined to monolith, gameplay intact) but the frame has NO LIGHT — LUMA >160 = 0.041% vs reference 3.418%, 9/16 buckets; plus zero prop contact shadows and no ink on props. Critters: silhouettes/head-ratios/ring-hexes/downed/warmth pass, but Tank ring invisible for the 3rd time, glints oversized (reads as enemy slit-eyes), lean 35-45° vs 8° spec, sword vanishes mid-attack, staff gem off-palette with no glow. Built tools/analyze.mjs (luma/flat/hue metrics) so builders self-verify with the critic's own numbers; added to TESTING.md as a mandatory gate. Remediation workflow launched with numeric exit gates. |
 | 19 | T11 | Round B r2 builder fixes committed — env (2fdc480): walls now darker than floor, drifting motes + flame flicker, contact blob shadows; critters (09d06a3): Tank ring legible, bow gripped, fox brush visible. PAUSED by user before the r2 critics ran. Pause frame: captures/pause-arena.png (156fps, 0 errors). |
 | 18 | T10 | Round B r1 landed both blocks + both critic verdicts (credits died in r2, resumed on opus-5). Arena committed ac08c73 (3 variants, canvas hue-noise ground, 9 instanced prop types, violet monolith, 340-440 grass tufts/variant) — critic REJECT: walls render lighter than floor (lum 86 vs 58), environment frozen (0.16% pixel change over 2s — motes/flames static), no contact blob shadows. Critters committed 4e10b3b — critic REJECT 5.5/6: silhouettes/heads(43.4-44.3%)/anims/downed/warmth all pass, only Tank identity ring illegible (within 10% value of its own shadow). Fix rounds running. |
 | 17 | T9 | Usage limit killed all 12 Round B agents mid-flight; reset + resumed. Partial work on disk survived: all 4 chibi critters already render in ?scene=chartest (verified frame, 164fps, 0 errors) + src/env/ arena WIP. Round B re-running live. |
