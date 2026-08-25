@@ -2,15 +2,22 @@
 // mix of §19.1 palette anchors (same discipline as data/palette.js ACT1_GROUND:
 // derived from the brief's ranges, never invented hexes). Color families in an
 // Act-1 combat frame: green-woodland (ground/foliage), warm-party
-// (wood/amber/gold props + light pools), ember-danger reserved for enemy
-// telegraphs — the monolith's God-stuff Violet is the act's single corruption
-// accent.
+// (wood/amber/gold props + light pools) and the COOL indigo-teal fill that the
+// warm pools read against — the monolith's God-stuff Violet is the act's single
+// corruption accent and the only violet allowed in frame.
 //
-// VALUE NOTE: the stage key light is a 2.4-intensity directional plus a 1.0
-// hemisphere fill, so an up-facing toon surface receives >1.0 irradiance before
-// ACES compresses it. Albedos here are therefore authored a stop or two BELOW
-// their nominal palette value — measured against captured pixels, not guessed —
-// so props land in the woodland value range instead of blowing to near-white.
+// LIGHT MODEL (§19.3 "warm:cool light ratio ~= 70:30"): the arena drives a warm
+// amber directional key at ~70% of the ground irradiance and an indigo-teal
+// hemisphere fill at ~30%, tuned so the BLUE channel of the total is a hair
+// ABOVE the red on an unlit up-facing surface. Warmth then arrives only where a
+// torch pool, a lantern pool or a canopy dapple lands — that contrast IS the
+// warm:cool story. Consequence for authoring: the shade end of every ground /
+// foliage ramp is a desaturated blue-green, never a dark warm green, or the
+// amber pools have nothing to be warm against.
+//
+// VALUE NOTE: an up-facing toon surface still receives >1.0 irradiance before
+// ACES compresses it, so albedos here are authored a stop or two BELOW their
+// nominal palette value — measured against captured pixels, not guessed.
 import { Color, SRGBColorSpace } from 'three';
 import { PALETTE } from '../data/palette.js';
 
@@ -27,20 +34,55 @@ const shade = (c, f) => c.clone().multiplyScalar(f);
 // painted.
 export const hslColor = (h, s, l) => new Color().setHSL(h / 360, s, l, SRGBColorSpace);
 
+// The cool half of the Act-1 light/value story. `ambient` is the critic-bound
+// indigo-teal target for unlit ground; everything else is derived from it so
+// the exterior, the mist and the canopy stay one family.
+export const COOL = Object.freeze({
+  ambient: '#1B2438', // indigo-teal cool fill target for shade
+  sky: '#7E9AD2', // hemisphere sky tint (desaturated Signal Blue direction)
+  apron: '#181d25', // exterior forest floor base — cool blue-grey, never green
+  apronLift: '#242c37', // its lit mottle
+  mist: '#78889E', // fog band just beyond the wall
+  // Canopy tones sit CLOSE together and deep: a bright lit lobe over a dark
+  // one, at tree scale, reads from a top-down camera as a pale plate floating
+  // on dark water rather than as a forest. Two near values + no ink keeps the
+  // surround a soft mass.
+  canopy: '#1e242e', // treetop shadow mass
+  canopyLit: '#2c3540', // treetop lit lobe (teal, still cool)
+  trunk: '#171b22',
+});
+
 export const ENV = Object.freeze({
   // Woods & timber (warm family: bruise umber lifted toward hearth amber).
-  bark: shade(mix(PALETTE.bruiseUmber, PALETTE.hearthAmber, 0.22), 0.8),
-  plank: shade(mix(PALETTE.bruiseUmber, PALETTE.hearthAmber, 0.38), 0.8),
-  stumpTop: shade(mix(PALETTE.bone, PALETTE.hearthAmber, 0.35), 0.5),
+  bark: shade(mix(PALETTE.bruiseUmber, PALETTE.hearthAmber, 0.2), 0.42),
+  barkDark: shade(mix(PALETTE.bruiseUmber, PALETTE.voidCharcoal, 0.35), 0.6),
+  plank: shade(mix(PALETTE.bruiseUmber, PALETTE.hearthAmber, 0.3), 0.4),
+  plankLit: shade(mix(PALETTE.bruiseUmber, PALETTE.hearthAmber, 0.44), 0.52),
+  stumpTop: shade(mix(PALETTE.bone, PALETTE.hearthAmber, 0.35), 0.28),
   // Stone (neutral family: warm grey / bone / charcoal blends).
-  stone: shade(mix(PALETTE.warmGrey, PALETTE.bone, 0.5), 0.42),
-  stoneCool: shade(mix(PALETTE.warmGrey, PALETTE.voidCharcoal, 0.25), 0.55),
-  iron: shade(mix(PALETTE.voidCharcoal, PALETTE.warmGrey, 0.4), 0.85),
-  // Lantern glass: pale gold pushed past 1.0 so the bloom pass catches it
-  // (§19.3: every light emitter carries a glow).
-  glassLit: mix(PALETTE.paleGold, PALETTE.parchment, 0.35).multiplyScalar(1.55),
-  // Corruption monolith stone — dark, desaturated, cool-neutral.
-  monolith: shade(mix(PALETTE.voidCharcoal, PALETTE.warmGrey, 0.4), 0.7),
+  stone: shade(mix(PALETTE.warmGrey, PALETTE.bone, 0.5), 0.2),
+  stoneLit: shade(mix(PALETTE.bone, PALETTE.parchment, 0.3), 0.26),
+  stoneCool: shade(mix(PALETTE.warmGrey, COOL.ambient, 0.42), 0.3),
+  iron: shade(mix(PALETTE.voidCharcoal, PALETTE.warmGrey, 0.4), 0.7),
+  // Lantern glass: warm gold, kept at a value the bloom pass lifts into a halo
+  // WITHOUT clipping the core to featureless white (the previous 1.55x did).
+  glassLit: mix(PALETTE.paleGold, PALETTE.hearthAmber, 0.4).multiplyScalar(0.95),
+  // Corruption monolith stone — near-black and COOL, so the violet emissive
+  // veins stay saturated violet instead of lifting into grey-mauve.
+  monolith: mix(PALETTE.voidCharcoal, COOL.ambient, 0.55).multiplyScalar(0.55),
+  monolithBase: mix(PALETTE.voidCharcoal, COOL.ambient, 0.35).multiplyScalar(0.8),
+});
+
+// Wall stone: the built boundary. Warm-neutral grey-green so it separates from
+// the COOL exterior by hue as well as by value (the previous cut let the wall
+// and the void read as one continuous dark mass).
+export const WALL = Object.freeze({
+  // Multipliers applied to the variant's floor tone in LINEAR space. 0.60
+  // linear ~= 0.80 of the displayed value = the §19.3 "exactly one value step
+  // darker than the adjoining floor".
+  bodyFactor: 0.78,
+  capFactor: 0.86, // coping course: a lighter rim so the top edge reads built
+  stoneMix: 0.42, // how far the floor tone is pulled toward dry-stone grey
 });
 
 // Flower blossom tints. Strictly warm-family gold/amber: a previous cut used
@@ -49,10 +91,10 @@ export const ENV = Object.freeze({
 // corruption violet). These sit well below the emitter values so they dress the
 // ground instead of competing with the light sources.
 export const FLOWER_TINTS = Object.freeze([
-  shade(mix(PALETTE.paleGold, PALETTE.bruiseUmber, 0.4), 0.5),
-  shade(mix(PALETTE.hearthAmber, PALETTE.bruiseUmber, 0.45), 0.55),
-  shade(mix(PALETTE.paleGold, PALETTE.hearthAmber, 0.5), 0.42),
-  shade(mix(PALETTE.hearthAmber, PALETTE.voidCharcoal, 0.35), 0.6),
+  shade(mix(PALETTE.paleGold, PALETTE.bruiseUmber, 0.4), 0.55),
+  shade(mix(PALETTE.hearthAmber, PALETTE.bruiseUmber, 0.45), 0.6),
+  shade(mix(PALETTE.paleGold, PALETTE.hearthAmber, 0.5), 0.46),
+  shade(mix(PALETTE.hearthAmber, PALETTE.voidCharcoal, 0.35), 0.65),
 ]);
 
 export { mix, shade };

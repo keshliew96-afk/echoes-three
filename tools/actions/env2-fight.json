@@ -1,0 +1,17 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport',-3,1)"},
+  {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',1.2,-0.6)"},
+  {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',2.6,1.8)"},
+  {"type":"wait","ms":400},
+  {"type":"key","key":"KeyD","ms":500},
+  {"type":"mousemove","x":1000,"y":380},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":1200},
+  {"type":"mouseup","button":"right"},
+  {"type":"key","key":"Space","ms":80},
+  {"type":"wait","ms":200},
+  {"type":"keydown","key":"KeyA"},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"JSON.stringify({fps: __echoes.fps, tick: __echoes.tick, stats: __echoes.stats})"}
+]

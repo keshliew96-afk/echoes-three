@@ -1,20 +1,34 @@
 // Act-1 ground: one canvas-painted floor texture per arena (§19.3 "no dead
 // ground": hue-noise cells, macro dapple, dirt path, moss patches, leaf
-// litter, cracks — all canvas-generated, no downloads), plus a dark apron
-// plane beyond the walls so the island sits in a moody surround (reference C)
-// instead of raw void. All randomness comes from the COSMETIC stream.
+// litter, cracks — all canvas-generated, no downloads), plus a COOL indigo
+// apron beyond the walls (mist band + canopy crowns + rocks) so out-of-bounds
+// reads as a dressed forest edge instead of a dead void. All randomness comes
+// from the COSMETIC stream.
+//
+// TEMPERATURE CONTRACT (see env/colors.js): the LIT ramp is the §19.3 green
+// band (hue 70-110); the SHADE ramp is a desaturated blue-green pushed toward
+// COOL.ambient, and a final additive indigo lift guarantees the blue channel
+// sits at or above the red in every unlit region. Warm arrives only from the
+// torch/lantern/dapple pools — that contrast is the warm:cool 70:30 read.
 import { CanvasTexture, Mesh, PlaneGeometry, SRGBColorSpace } from 'three';
 import { ARENA } from '../core/constants.js';
 import { toonMaterial } from '../render/toon.js';
 
 const TEX_W = 2048;
+const APRON_MARGIN = 26; // world u of dressed exterior painted around the arena
+
+// Additive indigo lift applied to the finished floor. Raises the blue channel
+// by ~34/255 everywhere, which is decisive in shade (blue becomes the largest
+// channel) and negligible under the amber pools (which stay red-dominant).
+const COOL_LIFT_B = 24; // default blue channel of the additive cool lift
+const APRON_LIFT = 'rgb(5,8,15)';
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 const hsl = (h, s, l, a = 1) =>
   `hsla(${Math.round(h)},${Math.round(clamp01(s) * 100)}%,${Math.round(clamp01(l) * 100)}%,${a})`;
 
 // Stamp soft radial blobs along a world-space polyline.
-function stampAlong(ctx, toC, pts, stepU, fn) {
+function stampAlong(pts, stepU, fn) {
   for (let i = 0; i < pts.length - 1; i++) {
     const [ax, az] = pts[i];
     const [bx, bz] = pts[i + 1];
@@ -22,7 +36,7 @@ function stampAlong(ctx, toC, pts, stepU, fn) {
     const steps = Math.max(1, Math.ceil(segLen / stepU));
     for (let s = 0; s < steps; s++) {
       const t = s / steps;
-      fn(ax + (bx - ax) * t, az + (bz - az) * t, i, toC);
+      fn(ax + (bx - ax) * t, az + (bz - az) * t, i);
     }
   }
 }
@@ -37,6 +51,32 @@ function blob(ctx, x, y, radius, color) {
   ctx.fill();
 }
 
+// Per-texel grain. The reference-bar "no dead ground" check measures 12x12
+// screen blocks for a <6 span in luma AND every channel; a painted canvas can
+// still resolve to a flat block wherever two soft gradients overlap, so the
+// floor and the apron both get a final grain pass that makes a truly flat block
+// impossible. Granularity 2 texels keeps the grain alive through mip level 1.
+function grain(ctx, W, H, amp, cosmetic) {
+  const img = ctx.getImageData(0, 0, W, H);
+  const d = img.data;
+  const step = 2;
+  for (let y = 0; y < H; y += step) {
+    for (let x = 0; x < W; x += step) {
+      const n = (cosmetic.range(-1, 1) * amp) | 0;
+      const nb = (cosmetic.range(-1, 1) * amp * 0.7) | 0;
+      for (let dy = 0; dy < step && y + dy < H; dy++) {
+        for (let dx = 0; dx < step && x + dx < W; dx++) {
+          const i = ((y + dy) * W + (x + dx)) * 4;
+          d[i] = Math.min(255, Math.max(0, d[i] + n));
+          d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + n));
+          d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + nb));
+        }
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
 export function paintGroundCanvas(spec, cosmetic) {
   const fw = ARENA.halfW * 2;
   const fd = ARENA.halfD * 2;
@@ -45,26 +85,35 @@ export function paintGroundCanvas(spec, cosmetic) {
   const ppu = W / fw; // pixels per world unit
   const cx = (wx) => (wx + ARENA.halfW) * ppu;
   const cz = (wz) => (wz + ARENA.halfD) * ppu;
-  const toC = { cx, cz, ppu };
   const r = (a, b) => cosmetic.range(a, b);
   const g = spec.ground;
+  const shH = g.shadeH ?? 170;
+  const shS = g.shadeS ?? 0.26;
+  const shL = g.shadeL ?? Math.max(0.05, g.l - 0.13);
 
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
 
-  // 1 — base fill.
-  ctx.fillStyle = hsl(g.h, g.s, g.l);
+  // 1 — base fill: a saturated §19.3 green (hue 70-110), a touch under the lit
+  // value. The COOL half of the ramp arrives as painted shade + the additive
+  // lift, so the field's SATURATED pixels stay in the brief's green band while
+  // its unlit ones go blue-dominant.
+  ctx.fillStyle = hsl(g.h + 4, g.s * 0.86, g.l * 0.62 + shL * 0.38 + 0.05);
   ctx.fillRect(0, 0, W, H);
 
   // 2 — hue-noise mottling: jittered rotated ellipses on a loose lattice (a
   // hard rect grid reads as a checkerboard at gameplay zoom — verified in
-  // capture), lightness delta kept small so the noise stays organic.
+  // capture). Every other cell samples the COOL end of the ramp so the mottle
+  // carries temperature variation, not just value.
   const cell = 20;
   for (let y = 0; y < H + cell; y += cell) {
     for (let x = 0; x < W + cell; x += cell) {
-      ctx.fillStyle = hsl(g.h + r(-8, 8), g.s + r(-0.06, 0.07), g.l + r(-0.035, 0.035), 0.55);
+      const cool = cosmetic.chance(0.36);
+      ctx.fillStyle = cool
+        ? hsl(shH + r(-14, 14), shS + r(-0.03, 0.05), shL + r(0.0, 0.06), 0.5)
+        : hsl(g.h + r(-9, 9), g.s + r(-0.05, 0.1), g.l + r(-0.04, 0.05), 0.5);
       ctx.beginPath();
       ctx.ellipse(
         x + r(-8, 8),
@@ -79,57 +128,74 @@ export function paintGroundCanvas(spec, cosmetic) {
     }
   }
 
-  // 3 — macro dapple: large soft warm-light / cool-shade pools (§19.3 dappled
-  // low-moderate value contrast; gradients only for large light falloff).
-  // Alphas are tuned for the darker (post value-fix) base — a flat green field
-  // is the reference bar's check-1 failure mode, so the dapple has to survive
-  // the key light.
-  for (let i = 0; i < 70; i++) {
-    const R = r(90, 340);
-    const warm = i % 2 === 0;
-    const color = warm
-      ? hsl(g.h - 26, g.s + 0.08, g.l + 0.1, 0.22)
-      : hsl(g.h + 18, g.s + 0.06, Math.max(0.02, g.l - 0.07), 0.24);
-    blob(ctx, r(0, W), r(0, H), R, color);
+  // 3 — macro dapple: large soft pools of LIT warm green vs COOL blue-green
+  // shade (§19.3 dappled low-moderate value contrast). This is where the
+  // warm:cool story lives on the floor itself.
+  for (let i = 0; i < 60; i++) {
+    blob(ctx, r(0, W), r(0, H), r(120, 380), hsl(g.h - 8, g.s + 0.16, g.l + 0.06, 0.26));
   }
-  // Sun-bleached dry-grass patches: hue variety INSIDE the green family, so the
-  // field never resolves to one flat value (reference bar check 1).
-  for (let i = 0; i < 16; i++) {
-    blob(ctx, r(0, W), r(0, H), r(70, 220), hsl(g.h - 34, 0.34, g.l + 0.12, 0.3));
+  for (let i = 0; i < 30; i++) {
+    blob(ctx, r(0, W), r(0, H), r(220, 560), hsl(shH + r(-10, 12), shS + 0.02, shL + 0.035, 0.34));
   }
-  // A few deep canopy shadows (bigger, darker) for real value range.
+  // Sun-bleached dry-grass patches: hue variety INSIDE the green band (a wider
+  // offset here is what dragged variant 2 down to hue 50-60 last round).
+  for (let i = 0; i < 10; i++) {
+    blob(ctx, r(0, W), r(0, H), r(70, 200), hsl(g.h - 14, 0.38, g.l + 0.09, 0.24));
+  }
+  // Deep canopy shadows (bigger, darker, coolest) for real value range.
   for (let i = 0; i < 16; i++) {
-    blob(ctx, r(0, W), r(0, H), r(180, 420), hsl(g.h + 22, 0.36, Math.max(0.015, g.l - 0.1), 0.3));
+    blob(ctx, r(0, W), r(0, H), r(180, 430), hsl(shH + 8, shS + 0.04, Math.max(0.02, shL - 0.02), 0.24));
   }
 
-  // 4 — dirt path(s): dark under-stroke, jittered dirt body, dry highlights,
-  // pebbles. Dirt browns are the warm family (hue ~28) per §19.3 dirt-path
-  // patches.
+  // 3b — cool ambient lift, applied HERE rather than at the end: the dirt path,
+  // the leaf litter and the moss are warm surfaces painted on top of it, and a
+  // +24 blue over the track turned the beaten dirt mauve last iteration.
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = `rgb(3,7,${g.coolLift ?? COOL_LIFT_B})`;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'source-over';
+
+  // 4 — dirt path(s): cool dark under-stroke, jittered warm dirt body, dry
+  // highlights, wheel ruts, pebbles.
   const dirtH = g.dirtH ?? 28;
   const dirtL = g.dirtL ?? 0.2;
   for (const path of spec.paths) {
-    // Blob radii are fractions of the HALF width (radius = w/2 keeps the
-    // painted track at its authored width; the first cut rendered ~2.4x wide).
     const wPx = path.w * ppu;
-    stampAlong(ctx, toC, path.pts, 0.09, (wx, wz) => {
-      blob(ctx, cx(wx) + r(-6, 6), cz(wz) + r(-6, 6), wPx * 0.62, hsl(dirtH - 2, 0.3, dirtL * 0.6, 0.16));
+    // Cool shadow lip so the track sits INTO the ground rather than on it.
+    stampAlong(path.pts, 0.09, (wx, wz) => {
+      blob(ctx, cx(wx) + r(-6, 6), cz(wz) + r(-6, 6), wPx * 0.66, hsl(shH, 0.28, shL * 0.75, 0.2));
     });
-    stampAlong(ctx, toC, path.pts, 0.05, (wx, wz) => {
-      const jx = r(-0.1, 0.1) * ppu;
-      const jz = r(-0.1, 0.1) * ppu;
+    stampAlong(path.pts, 0.05, (wx, wz) => {
       blob(
         ctx,
-        cx(wx) + jx,
-        cz(wz) + jz,
+        cx(wx) + r(-0.1, 0.1) * ppu,
+        cz(wz) + r(-0.1, 0.1) * ppu,
         wPx * 0.42 * r(0.8, 1.1),
-        hsl(dirtH + r(-4, 4), 0.32, dirtL + r(-0.03, 0.04), 0.62)
+        hsl(dirtH + r(-5, 5), 0.33, dirtL + r(-0.045, 0.05), 0.62)
       );
     });
-    stampAlong(ctx, toC, path.pts, 0.16, (wx, wz) => {
-      blob(ctx, cx(wx) + r(-8, 8), cz(wz) + r(-8, 8), wPx * 0.17, hsl(dirtH + 6, 0.3, dirtL + 0.09, 0.3));
+    stampAlong(path.pts, 0.16, (wx, wz) => {
+      blob(ctx, cx(wx) + r(-8, 8), cz(wz) + r(-8, 8), wPx * 0.17, hsl(dirtH + 6, 0.3, dirtL + 0.1, 0.32));
     });
+    // Two wheel ruts: darker parallel scuffs offset either side of the centre.
+    for (const side of [-1, 1]) {
+      stampAlong(path.pts, 0.08, (wx, wz, seg) => {
+        const [ax, az] = path.pts[seg];
+        const [bx, bz] = path.pts[seg + 1];
+        const L = Math.hypot(bx - ax, bz - az) || 1;
+        const nx = -(bz - az) / L;
+        const nz = (bx - ax) / L;
+        blob(
+          ctx,
+          cx(wx + nx * side * path.w * 0.24) + r(-4, 4),
+          cz(wz + nz * side * path.w * 0.24) + r(-4, 4),
+          wPx * 0.13,
+          hsl(dirtH - 4, 0.28, dirtL * 0.55, 0.22)
+        );
+      });
+    }
     // Pebbles strewn across the beaten track.
-    const perPath = Math.round(spec.ground.pebbleN / spec.paths.length);
+    const perPath = Math.round(g.pebbleN / spec.paths.length);
     for (let i = 0; i < perPath; i++) {
       const seg = Math.floor(r(0, path.pts.length - 1));
       const [ax, az] = path.pts[seg];
@@ -137,21 +203,18 @@ export function paintGroundCanvas(spec, cosmetic) {
       const t = r(0, 1);
       const px = cx(ax + (bx - ax) * t) + r(-wPx * 0.38, wPx * 0.38);
       const pz = cz(az + (bz - az) * t) + r(-wPx * 0.38, wPx * 0.38);
-      ctx.fillStyle = cosmetic.chance(0.7) ? hsl(38, 0.14, 0.4, 0.85) : hsl(30, 0.2, 0.12, 0.8);
+      ctx.fillStyle = cosmetic.chance(0.6) ? hsl(40, 0.12, 0.42, 0.85) : hsl(200, 0.16, 0.11, 0.8);
       ctx.beginPath();
       ctx.arc(px, pz, r(1.5, 3.6), 0, Math.PI * 2);
       ctx.fill();
     }
   }
 
-  // 5 — moss patches: clustered dark blobs + pale lichen speckles, biased
-  // toward the walls so the center stays readable.
+  // 5 — moss patches: clustered blobs + pale lichen speckles, biased toward
+  // the walls so the center stays readable.
   for (let i = 0; i < g.mossN; i++) {
-    const edge = cosmetic.chance(0.65);
-    const mx = edge && cosmetic.chance(0.5) ? r(0, 1) < 0.5 ? r(0, 3.2) : r(fw - 3.2, fw) : r(0, fw);
-    const mz = edge && mx > 3.2 && mx < fw - 3.2 ? (r(0, 1) < 0.5 ? r(0, 2.6) : r(fd - 2.6, fd)) : r(0, fd);
-    const bx = mx * ppu;
-    const bz = (mz * ppu * H) / (fd * ppu); // == mz*ppu, kept explicit
+    const bx = r(0, W);
+    const bz = r(0, H);
     const n = 3 + Math.floor(r(0, 4));
     for (let b = 0; b < n; b++) {
       blob(
@@ -159,21 +222,19 @@ export function paintGroundCanvas(spec, cosmetic) {
         bx + r(-55, 55),
         bz + r(-55, 55),
         r(28, 85),
-        hsl(g.h + 24 + r(-6, 6), 0.5, g.l + 0.05 + r(0, 0.04), 0.34)
+        hsl(g.h + 22 + r(-6, 6), 0.5, g.l + 0.03 + r(0, 0.04), 0.3)
       );
     }
     for (let b = 0; b < 5; b++) {
-      blob(ctx, bx + r(-60, 60), bz + r(-60, 60), r(5, 14), hsl(g.h - 12, 0.4, g.l + 0.07, 0.24));
+      blob(ctx, bx + r(-60, 60), bz + r(-60, 60), r(5, 14), hsl(g.h - 10, 0.42, g.l + 0.08, 0.24));
     }
   }
 
-  // 6 — leaf litter: small rotated ellipses in dry warm tones, denser at the
-  // tree line (edges).
+  // 6 — leaf litter: small rotated ellipses, denser at the tree line (edges).
   for (let i = 0; i < g.leafN; i++) {
-    const nearEdge = cosmetic.chance(0.6);
     let lx = r(0, W);
     let lz = r(0, H);
-    if (nearEdge) {
+    if (cosmetic.chance(0.6)) {
       const side = Math.floor(r(0, 4));
       const band = 4 * ppu;
       if (side === 0) lz = r(0, band);
@@ -184,7 +245,10 @@ export function paintGroundCanvas(spec, cosmetic) {
     ctx.save();
     ctx.translate(lx, lz);
     ctx.rotate(r(0, Math.PI * 2));
-    ctx.fillStyle = hsl(38 + r(-16, 16), 0.42, 0.24 + r(-0.06, 0.09), 0.72);
+    // Litter stays inside the warm-dirt family but a hair cooler than before —
+    // a hue-38 mass at this density is what pulled a whole variant's histogram
+    // below the §19.3 green floor.
+    ctx.fillStyle = hsl(44 + r(-10, 14), 0.34, 0.23 + r(-0.05, 0.08), 0.6);
     ctx.beginPath();
     ctx.ellipse(0, 0, r(3.5, 7), r(1.6, 3), 0, 0, Math.PI * 2);
     ctx.fill();
@@ -197,7 +261,7 @@ export function paintGroundCanvas(spec, cosmetic) {
     let x = r(0.1 * W, 0.9 * W);
     let z = r(0.1 * H, 0.9 * H);
     let ang = r(0, Math.PI * 2);
-    ctx.strokeStyle = hsl(g.h + 10, 0.2, Math.max(0.02, g.l - 0.09), 0.42);
+    ctx.strokeStyle = hsl(shH, 0.25, Math.max(0.02, shL - 0.06), 0.45);
     ctx.beginPath();
     ctx.moveTo(x, z);
     const steps = 6 + Math.floor(r(0, 8));
@@ -210,28 +274,26 @@ export function paintGroundCanvas(spec, cosmetic) {
     ctx.stroke();
   }
 
-  // 8 — corruption blight: a desaturated dark stain under the monolith (part
+  // 8 — corruption blight: a desaturated cool stain under the monolith (part
   // of the §11/§19.3 "one corruption tell" — the violet itself stays on the
   // monolith so it remains the only violet in frame).
   if (spec.monolith) {
-    const [mx, , mz2] = [spec.monolith[0], 0, spec.monolith[1]];
-    blob(ctx, cx(mx), cz(mz2), 1.25 * ppu, 'hsla(0,0%,8%,0.4)');
-    for (let i = 0; i < 10; i++) {
-      blob(ctx, cx(mx) + r(-1.4, 1.4) * ppu, cz(mz2) + r(-1.4, 1.4) * ppu, r(6, 16), 'hsla(0,0%,10%,0.5)');
+    const mx = spec.monolith[0];
+    const mz = spec.monolith[1];
+    blob(ctx, cx(mx), cz(mz), 1.5 * ppu, 'hsla(250,18%,6%,0.45)');
+    for (let i = 0; i < 12; i++) {
+      blob(ctx, cx(mx) + r(-1.6, 1.6) * ppu, cz(mz) + r(-1.6, 1.6) * ppu, r(6, 18), 'hsla(250,14%,8%,0.5)');
     }
   }
 
-  // 9 — edge shade: soft charcoal falloff where the floor meets the walls
-  // (grounds the wall band; §19.3 gradients only for large light falloff).
-  // Deliberately LIGHT (0.10, not the 0.28 of the first cut): §19.3 requires the
-  // wall to read one value step darker than the ADJOINING floor, and a heavy
-  // edge shade darkens exactly the strip a critic samples against the wall.
-  const shade = 'rgba(15,13,10,';
-  const band = 70;
+  // 9 — edge shade: soft COOL falloff where the floor meets the walls. Kept
+  // light (§19.3 wants the wall one value step under the ADJOINING floor, and a
+  // heavy edge shade darkens exactly the strip that gets sampled).
+  const band = 64;
   const mkGrad = (x0, y0, x1, y1) => {
     const grad = ctx.createLinearGradient(x0, y0, x1, y1);
-    grad.addColorStop(0, `${shade}0.10)`);
-    grad.addColorStop(1, `${shade}0)`);
+    grad.addColorStop(0, 'rgba(12,18,34,0.12)');
+    grad.addColorStop(1, 'rgba(12,18,34,0)');
     return grad;
   };
   ctx.fillStyle = mkGrad(0, 0, 0, band);
@@ -242,6 +304,9 @@ export function paintGroundCanvas(spec, cosmetic) {
   ctx.fillRect(0, 0, band, H);
   ctx.fillStyle = mkGrad(W, 0, W - band, 0);
   ctx.fillRect(W - band, 0, band, H);
+
+  // 10 — grain (guarantees no flat 12x12 block anywhere on the floor).
+  grain(ctx, W, H, 9, cosmetic);
 
   return canvas;
 }
@@ -260,58 +325,114 @@ export function buildGroundMesh(spec, cosmetic) {
   return mesh;
 }
 
-// Dark surround beyond the walls: very dark cool-green forest floor fading to
-// the void at its rim — the "saturated island vs desaturated dark surround"
-// attention funnel from reference C. Sits just below the floor plane.
-//
-// The first cut painted a 10 px lattice on a 512 canvas stretched over ~46 x 36
-// world units, which resolved on screen as giant faint blocks and read as an
-// unfinished checker. Now it is soft organic mottle at a much finer cell plus
-// canopy-crown blobs, so out-of-bounds reads as dark woodland.
+// Dressed exterior beyond the walls: a COOL indigo forest floor with a mist
+// band hugging the wall, canopy crowns, undergrowth and rock masses, fading to
+// the void at the rim — the "saturated island vs desaturated dark surround"
+// attention funnel from reference C and the cool-void-vs-warm-action funnel of
+// reference D. The 3D treeline (env/treeline.js) stands on top of this.
 export function buildApronMesh(spec, cosmetic) {
-  const size = 1024;
+  const worldW = ARENA.halfW * 2 + APRON_MARGIN * 2;
+  const worldD = ARENA.halfD * 2 + APRON_MARGIN * 2;
+  const W = 1600;
+  const H = Math.round(W * (worldD / worldW));
+  const ppu = W / worldW;
   const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = W;
+  canvas.height = H;
   const ctx = canvas.getContext('2d');
   const r = (a, b) => cosmetic.range(a, b);
-  const g = spec.ground;
 
-  ctx.fillStyle = hsl(g.h + 14, 0.32, 0.17);
-  ctx.fillRect(0, 0, size, size);
+  // World -> canvas.
+  const cx = (wx) => (wx + worldW / 2) * ppu;
+  const cz = (wz) => (wz + worldD / 2) * ppu;
+  // The arena rect in canvas space (the apron is hidden under the floor there).
+  const inner = {
+    x0: cx(-ARENA.halfW), x1: cx(ARENA.halfW),
+    z0: cz(-ARENA.halfD), z1: cz(ARENA.halfD),
+  };
 
-  // Fine organic mottle (soft ellipses, never a hard lattice).
-  for (let i = 0; i < 2600; i++) {
+  ctx.fillStyle = 'hsl(212,14%,11%)'; // COOL.apron — deep, so the island reads brighter
+  ctx.fillRect(0, 0, W, H);
+
+  // Fine organic mottle — cool indigo/teal undergrowth, never dark green.
+  for (let i = 0; i < 4200; i++) {
     ctx.save();
-    ctx.translate(r(0, size), r(0, size));
+    ctx.translate(r(0, W), r(0, H));
     ctx.rotate(r(0, Math.PI));
-    ctx.fillStyle = hsl(g.h + 14 + r(-14, 14), 0.32, 0.12 + r(0, 0.08), 0.5);
+    ctx.fillStyle = hsl(210 + r(-20, 26), 0.12 + r(-0.05, 0.08), 0.09 + r(0, 0.09), 0.55);
     ctx.beginPath();
-    ctx.ellipse(0, 0, r(4, 13), r(3, 8), 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, r(4, 14), r(3, 9), 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
-  // Canopy crowns: dark rounded masses reading as treetops seen from above.
-  for (let i = 0; i < 260; i++) {
-    const cxp = r(0, size);
-    const cyp = r(0, size);
-    const R = r(9, 26);
-    blob(ctx, cxp, cyp, R * 1.35, hsl(g.h + 24, 0.36, 0.06, 0.4)); // crown shadow
-    blob(ctx, cxp - R * 0.2, cyp - R * 0.25, R, hsl(g.h + 4, 0.38, 0.21 + r(0, 0.06), 0.7));
+
+  // Canopy crowns seen from above: dark rounded masses with a cool lit lobe.
+  for (let i = 0; i < 1400; i++) {
+    const px = r(0, W);
+    const pz = r(0, H);
+    const R = r(8, 28);
+    blob(ctx, px, pz, R * 1.4, 'rgba(4,7,12,0.55)');
+    blob(ctx, px - R * 0.22, pz - R * 0.28, R, hsl(202 + r(-14, 18), 0.24, 0.055 + r(0, 0.045), 0.75));
   }
-  // Rim fade to transparent so the apron melts into the charcoal background.
-  const rim = ctx.createRadialGradient(size / 2, size / 2, size * 0.2, size / 2, size / 2, size * 0.5);
+  // A few large dark shapes (boulder fields / deep hollows) for macro contrast.
+  for (let i = 0; i < 46; i++) {
+    blob(ctx, r(0, W), r(0, H), r(70, 190), 'rgba(8,10,14,0.5)');
+  }
+  // ...and a few pale cool clearings so the surround has a value range.
+  for (let i = 0; i < 30; i++) {
+    blob(ctx, r(0, W), r(0, H), r(60, 150), 'rgba(74,84,100,0.12)');
+  }
+
+  // Mist band: a bright cool haze hugging the outside of the wall. This is the
+  // value break that stops the wall and the void reading as one dark mass.
+  const mistW = 6.0 * ppu;
+  const mistGrad = (x0, y0, x1, y1) => {
+    const gr = ctx.createLinearGradient(x0, y0, x1, y1);
+    gr.addColorStop(0, 'rgba(122,136,156,0.2)');
+    gr.addColorStop(0.3, 'rgba(92,104,124,0.1)');
+    gr.addColorStop(1, 'rgba(56,66,82,0)');
+    return gr;
+  };
+  ctx.fillStyle = mistGrad(0, inner.z0, 0, inner.z0 - mistW);
+  ctx.fillRect(inner.x0 - mistW, inner.z0 - mistW, inner.x1 - inner.x0 + 2 * mistW, mistW);
+  ctx.fillStyle = mistGrad(0, inner.z1, 0, inner.z1 + mistW);
+  ctx.fillRect(inner.x0 - mistW, inner.z1, inner.x1 - inner.x0 + 2 * mistW, mistW);
+  ctx.fillStyle = mistGrad(inner.x0, 0, inner.x0 - mistW, 0);
+  ctx.fillRect(inner.x0 - mistW, inner.z0 - mistW, mistW, inner.z1 - inner.z0 + 2 * mistW);
+  ctx.fillStyle = mistGrad(inner.x1, 0, inner.x1 + mistW, 0);
+  ctx.fillRect(inner.x1, inner.z0 - mistW, mistW, inner.z1 - inner.z0 + 2 * mistW);
+  // Drifting fog puffs riding the band, so it is not a clean ramp.
+  for (let i = 0; i < 340; i++) {
+    const side = Math.floor(r(0, 4));
+    let px;
+    let pz;
+    if (side === 0) { px = r(inner.x0 - mistW, inner.x1 + mistW); pz = inner.z0 - r(0, mistW); }
+    else if (side === 1) { px = r(inner.x0 - mistW, inner.x1 + mistW); pz = inner.z1 + r(0, mistW); }
+    else if (side === 2) { px = inner.x0 - r(0, mistW); pz = r(inner.z0 - mistW, inner.z1 + mistW); }
+    else { px = inner.x1 + r(0, mistW); pz = r(inner.z0 - mistW, inner.z1 + mistW); }
+    blob(ctx, px, pz, r(30, 95), `rgba(120,134,154,${r(0.05, 0.13).toFixed(3)})`);
+  }
+
+  // Rim fade to the charcoal background at the far edge only.
+  const rim = ctx.createRadialGradient(W / 2, H / 2, W * 0.28, W / 2, H / 2, W * 0.56);
   rim.addColorStop(0, 'rgba(0,0,0,0)');
-  rim.addColorStop(0.55, 'rgba(0,0,0,0.12)');
-  rim.addColorStop(0.85, 'rgba(0,0,0,0.55)');
+  rim.addColorStop(0.6, 'rgba(0,0,0,0.35)');
   rim.addColorStop(1, 'rgba(0,0,0,0.95)');
   ctx.fillStyle = rim;
-  ctx.fillRect(0, 0, size, size);
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = APRON_LIFT;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'source-over';
+
+  grain(ctx, W, H, 5, cosmetic);
 
   const tex = new CanvasTexture(canvas);
   tex.colorSpace = SRGBColorSpace;
+  tex.anisotropy = 4;
   const mesh = new Mesh(
-    new PlaneGeometry(ARENA.halfW * 2 + 50, ARENA.halfD * 2 + 46),
+    new PlaneGeometry(worldW, worldD),
     toonMaterial({ color: '#FFFFFF', map: tex, transparent: true, depthWrite: false })
   );
   mesh.rotation.x = -Math.PI / 2;

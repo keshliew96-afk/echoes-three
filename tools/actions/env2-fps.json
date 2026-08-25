@@ -1,0 +1,18 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport',-10.5,-6.8)"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"'corner ' + __echoes.fps"},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"wait","ms":2500},
+  {"type":"keyup","key":"KeyD"},
+  {"type":"eval","code":"'moving ' + __echoes.fps"},
+  {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',0,0)"},
+  {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',1,1)"},
+  {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',2,-1)"},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"'combat ' + __echoes.fps"},
+  {"type":"eval","code":"window.__echoes.cmd('teleport',0,7.4)"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"'southwall ' + __echoes.fps"}
+]
