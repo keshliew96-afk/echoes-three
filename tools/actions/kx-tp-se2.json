@@ -1,0 +1,2 @@
+[{"type":"eval","code":"window.__echoes.cmd('teleport',10,6.2)"},{"type":"wait","ms":2000},
+ {"type":"eval","code":"JSON.stringify(window.__echoes.state().party)"}]

@@ -1,0 +1,2 @@
+[{"type":"keydown","key":"KeyD"},{"type":"keydown","key":"KeyS"},{"type":"wait","ms":4500},{"type":"keyup","key":"KeyD"},{"type":"keyup","key":"KeyS"},{"type":"wait","ms":900},
+ {"type":"eval","code":"JSON.stringify(window.__echoes.state().party)"}]

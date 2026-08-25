@@ -1,0 +1,3 @@
+[
+  {"type":"eval","code":"(()=>{const e=window.__echoes; if(!e) return 'NO API'; return {version:e.version, fps:e.fps, tick:e.tick, entities:e.entityCount, keys:Object.keys(e), state:JSON.stringify(e.state()).slice(0,900)};})()"}
+]

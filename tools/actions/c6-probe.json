@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"(()=>{const e=window.__echoes;return {version:e.version,fps:e.fps,ents:e.entityCount,keys:Object.keys(e)};})()"},
+  {"type":"eval","code":"(()=>{const s=window.__echoes.state();return JSON.stringify(s).slice(0,1500);})()"},
+  {"type":"eval","code":"(()=>{const s=window.__echoes;return s.state().arena||s.state().room||'no-arena-key';})()"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"window.__echoes.fps"}
+]

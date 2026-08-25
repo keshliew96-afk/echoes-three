@@ -1,0 +1,4 @@
+[{"type":"keydown","key":"KeyD"},{"type":"wait","ms":1500},{"type":"keyup","key":"KeyD"},
+ {"type":"keydown","key":"KeyA"},{"type":"wait","ms":1500},{"type":"keyup","key":"KeyA"},
+ {"type":"wait","ms":1500},
+ {"type":"eval","code":"window.__echoes.fps"}]

@@ -5,7 +5,7 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ⏸ PAUSED by user (2026-08-24, after Round B fix commits)
+## Status: ▶ RESUMED — Round B round-2 critics + integration running
 
 ### Resume point — do this first
 1. Start the dev server: `npm run dev` in this folder (port 5199), or preview_start "echoes-dev".

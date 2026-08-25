@@ -52,3 +52,21 @@ then judge frames. Determinism checks: load twice with the same `?seed=`, diff
 - Rubric: `docs/REFERENCE_BAR.md` (+ `docs/reference/pass-the-fear.png`)
 - Design truth: `docs/BUILD_BRIEF.md`
 - Progress log: `PROGRESS.md` (update after every round)
+
+## Frame analyzer (mandatory for visual blocks)
+
+`node tools/analyze.mjs [--box x,y,w,h] [--ref] <png...>` turns "does it look
+right" into the same numbers the critics measure:
+
+| Metric | Meaning | Bar |
+|---|---|---|
+| `LUMA >160 / >200` | value range — is there any light in the frame? | gameplay frames: **>160 ≥ 1.5%**, **>200 ≥ 0.4%**, **≥13/16 buckets** |
+| `FLAT` | % of 8x8 blocks that are one flat colour | **< 20%** (REFERENCE_BAR check 1) |
+| `HUEMIX` | warm / foliage / cool split | Act-1 needs visible warm pools, cool only in shadow pockets |
+| `SAT` | mean saturation of coloured pixels | Act-1 grass 0.55–0.65 |
+| `HUES` | pixel counts in reserved bands | violet only on corruption; danger only on enemy threats; heal only on healing |
+
+`--ref` appends `docs/reference/pass-the-fear.png` for side-by-side comparison.
+It measures **>160 3.418%, >200 1.427%, 16/16 buckets** — that is the benchmark.
+A frame whose whole histogram sits below bucket 8 is murk, no matter how much
+content it contains: fix lighting/exposure, not content.

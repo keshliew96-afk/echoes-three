@@ -1,0 +1,5 @@
+[{"type":"eval","code":"window.__echoes.cmd('teleport',10,6.2)"},
+ {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',9,6.2)"},
+ {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',10,4.5)"},
+ {"type":"wait","ms":2200},
+ {"type":"eval","code":"JSON.stringify(window.__echoes.state().party)+'|'+JSON.stringify(window.__echoes.state().enemies)"}]

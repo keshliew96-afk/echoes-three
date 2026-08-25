@@ -1,0 +1,17 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport',-3,1)"},
+  {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',2,-1)"},
+  {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',3,2)"},
+  {"type":"wait","ms":400},
+  {"type":"key","key":"KeyD","ms":650},
+  {"type":"key","key":"KeyW","ms":400},
+  {"type":"mousemove","x":1000,"y":380},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":900},
+  {"type":"mouseup","button":"right"},
+  {"type":"key","key":"Space","ms":80},
+  {"type":"wait","ms":250},
+  {"type":"keydown","key":"KeyA"},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":600}
+]
