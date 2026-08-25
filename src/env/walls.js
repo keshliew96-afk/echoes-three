@@ -31,8 +31,8 @@ import {
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { ARENA } from '../core/constants.js';
 import { PALETTE } from '../data/palette.js';
-import { toonMaterial, addOutline } from '../render/toon.js';
-import { getPropInkMaterial, inkGeometry } from './props.js';
+import { toonMaterial } from '../render/toon.js';
+import { addPropInk, getPropInkMaterial, inkGeometry, PROP_INK_PX } from './props.js';
 import { hslColor, mix, WALL } from './colors.js';
 
 const UP = new Vector3(0, 1, 0);
@@ -96,7 +96,7 @@ export function buildWalls(root, spec, cosmetic) {
   ]);
   const bodyMesh = new Mesh(body, bodyMat);
   bodyMesh.name = 'arena-wall';
-  addOutline(bodyMesh, { thickness: 0.026 });
+  addPropInk(bodyMesh, PROP_INK_PX);
   root.add(bodyMesh);
 
   // --- Coping rim: a narrow lighter lip along the OUTER top edge of each run.
@@ -109,7 +109,7 @@ export function buildWalls(root, spec, cosmetic) {
     mkBox(RIM_W, ARENA.halfD * 2, outerW - RIM_W / 2, 0, RIM_H, WALL_HEIGHT),
   ]);
   const rimMesh = new Mesh(rim, rimMat);
-  addOutline(rimMesh, { thickness: 0.02 });
+  addPropInk(rimMesh, 1.4);
   root.add(rimMesh);
 
   // --- Dry-stone capstones along the top: the run that makes the boundary a
@@ -147,7 +147,7 @@ export function buildWalls(root, spec, cosmetic) {
   const capGeo = new BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
   const capMat = toonMaterial({ color: '#FFFFFF' });
   const capMesh = new InstancedMesh(capGeo, capMat, stones.length);
-  const capInk = new InstancedMesh(inkGeometry(capGeo, 0.007), getPropInkMaterial(), stones.length);
+  const capInk = new InstancedMesh(inkGeometry(capGeo), getPropInkMaterial(1.0), stones.length);
   capMesh.frustumCulled = false;
   capInk.frustumCulled = false;
   const m = new Matrix4();
@@ -269,7 +269,7 @@ export function buildWalls(root, spec, cosmetic) {
   footRun(-ARENA.halfW + inset, -ARENA.halfD + 0.2, -ARENA.halfW + inset, ARENA.halfD - 0.2);
   footRun(ARENA.halfW - inset, -ARENA.halfD + 0.2, ARENA.halfW - inset, ARENA.halfD - 0.2);
   const footMesh = new InstancedMesh(footGeo, footMat, foots.length);
-  const footInk = new InstancedMesh(inkGeometry(footGeo, 0.018), getPropInkMaterial(), foots.length);
+  const footInk = new InstancedMesh(inkGeometry(footGeo), getPropInkMaterial(1.3), foots.length);
   const footWeed = new InstancedMesh(mossGeo, mossMat, foots.length);
   footMesh.frustumCulled = false;
   footInk.frustumCulled = false;

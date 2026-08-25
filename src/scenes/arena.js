@@ -27,6 +27,7 @@ import {
   AdditiveBlending,
   BufferAttribute,
   BufferGeometry,
+  CanvasTexture,
   CircleGeometry,
   Color,
   DynamicDrawUsage,
@@ -37,6 +38,7 @@ import {
   PointsMaterial,
   MeshBasicMaterial,
   LinearSRGBColorSpace,
+  SRGBColorSpace,
 } from 'three';
 import { ARENA, CAMERA, DUMMY } from '../core/constants.js';
 import { PALETTE } from '../data/palette.js';
@@ -47,13 +49,20 @@ import { buildGroundMesh, buildApronMesh } from '../env/ground.js';
 import { buildTreeline } from '../env/treeline.js';
 import { buildWalls } from '../env/walls.js';
 import { buildFoliage } from '../env/foliage.js';
-import { buildProps, buildShadowInstances, makeShadowMaterial, ORDER, VEIN_VIOLET } from '../env/props.js';
+import {
+  buildProps,
+  buildShadowInstances,
+  makeShadowMaterial,
+  setPropInkViewport,
+  ORDER,
+  VEIN_VIOLET,
+} from '../env/props.js';
 import { makeFlameSprite, createEmberField } from '../env/flame.js';
 import { COOL, mix } from '../env/colors.js';
 
 // Render-cosmetic scaffold numbers (grouped; not brief-bound gameplay values).
 const FIREFLY_COUNT = 120;
-const TORCH_LIGHT = { intensity: 5.8, distance: 10, decay: 2 };
+const TORCH_LIGHT = { intensity: 13.0, distance: 11, decay: 2 };
 // Contact-shadow radii. The blob texture holds a near-solid core out to 50% of
 // the radius and feathers to nothing at 100%, so a 0.54 u disc puts its SOLID
 // part at ~0.27 u — the capsule footprint — with a soft edge past it. Sizing the
@@ -74,48 +83,97 @@ const CAM_OFF_Z = CAMERA.distance * Math.cos((CAMERA.elevationDeg * Math.PI) / 1
 const CAM_CLAMP = { x: 7.0, zMin: -4.0, zMax: 5.0 };
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
-// §19.3 lighting for Act 1. The stage ships a generic warm key + warm-ish
-// hemisphere; an arena needs the COOL half of the 70:30 ratio to actually be
-// cool, or every shadow is just a darker warm and the amber pools have nothing
-// to read against. Key stays the warm 70%; the hemisphere fill is pushed to
-// indigo-teal and lifted so an unlit up-facing surface ends up blue-dominant.
-// Measured luminance split of the two contributions on an up-facing surface:
-// key 1.36 vs fill 0.61 = 69:31, i.e. the §19.3 warm:cool 70:30 ratio, with the
-// fill's blue channel landing just above the key's red so unlit ground is
-// blue-dominant.
+// §19.3 lighting for Act 1 (round-4 remediation, critique F2 + F3).
+//
+// three.js is physically lit: a DirectionalLight of intensity I lands on an
+// up-facing surface as I/PI, and a HemisphereLight the same way. Round 3 shipped
+// key 2.1 + fill 2.15, i.e. a TOTAL irradiance of ~0.75 on flat ground — every
+// albedo in the arena was multiplied DOWN before ACES compressed it again. That
+// is why 99.8% of the frame measured below luma 144.
+//
+// Solved rather than eyeballed (see render/stage.js for the ACES inverse):
+//   key  4.0 warm  -> direct irradiance 4.0/PI * keyColor  = lum 0.86
+//   fill 1.9 cool  -> indirect          1.9/PI * skyColor  = lum 0.20
+// which is a warm:cool luminance split of 81:19 at the light rig; the painted
+// cool shade in the floor texture and the cool apron carry the rest of the
+// 70:30 story, and F3's inverted warm:cool pixel ratio flips with it.
 const ACT1_LIGHT = {
-  keyIntensity: 2.1,
-  fillIntensity: 2.15,
-  keyColor: new Color(PALETTE.hearthAmber).lerp(new Color('#FFFFFF'), 0.5),
+  keyIntensity: 4.0,
+  fillIntensity: 1.9,
+  keyColor: new Color(PALETTE.hearthAmber).lerp(new Color('#FFFFFF'), 0.42),
   skyColor: new Color(COOL.sky),
   groundColor: new Color(COOL.ambient),
 };
 
-function tuneActOneLighting(scene) {
+// `mood` is the per-variant light multiplier (env/variants.js): a clearing at
+// noon, a dry crossroads under a hard sun and a shaded hollow are three
+// different rooms even before the props differ (critique F8).
+function tuneActOneLighting(scene, mood = {}) {
   let key = null;
   let fill = null;
   for (const obj of scene.children) {
     if (obj.isDirectionalLight && !key) key = obj;
     else if (obj.isHemisphereLight && !fill) fill = obj;
   }
+  const kMul = mood.key ?? 1;
+  const fMul = mood.fill ?? 1;
   if (key) {
     key.color.copy(ACT1_LIGHT.keyColor);
-    key.intensity = ACT1_LIGHT.keyIntensity;
+    if (mood.warmth) key.color.lerp(new Color(PALETTE.hearthAmber), mood.warmth);
+    key.intensity = ACT1_LIGHT.keyIntensity * kMul;
   }
   if (fill) {
     fill.color.copy(ACT1_LIGHT.skyColor);
     fill.groundColor.copy(ACT1_LIGHT.groundColor);
-    fill.intensity = ACT1_LIGHT.fillIntensity;
+    fill.intensity = ACT1_LIGHT.fillIntensity * fMul;
   }
-  return { key: !!key, fill: !!fill };
+  return { key: !!key, fill: !!fill, keyIntensity: key ? key.intensity : 0 };
+}
+
+// The rig never rotates (fixed 3/4 top-down), so "toward the camera" is a
+// constant world vector. Offsetting a billboard along it moves the sprite
+// CLOSER to the camera with (by construction) zero screen displacement — the
+// fix for F7, where the south torch's flame was depth-clipped by its own post.
+const EL = (CAMERA.elevationDeg * Math.PI) / 180;
+const TOWARD_CAM = { y: Math.sin(EL), z: Math.cos(EL) };
+const FLAME_LIFT = 0.26; // world u along the view axis
+
+// Canopy sun-shaft falloff. The shared glow texture is a bloom halo — it is
+// already down to 55% alpha a QUARTER of the way out — so a light pool built on
+// it has a needle-thin bright centre and reads as fog, never as a patch of sun
+// on the grass. This ramp holds a broad plateau and then falls, which is what
+// puts a real >200-luma region on the floor (critique F2's value range) and
+// what makes the pool read as light rather than haze.
+let sharedShaftTexture = null;
+function getShaftTexture() {
+  if (sharedShaftTexture) return sharedShaftTexture;
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const half = size / 2;
+  const grad = ctx.createRadialGradient(half, half, 0, half, half, half);
+  grad.addColorStop(0.0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.2, 'rgba(255,255,255,0.9)');
+  grad.addColorStop(0.45, 'rgba(255,255,255,0.6)');
+  grad.addColorStop(0.7, 'rgba(255,255,255,0.27)');
+  grad.addColorStop(0.88, 'rgba(255,255,255,0.08)');
+  grad.addColorStop(1.0, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  sharedShaftTexture = tex;
+  return tex;
 }
 
 // Flat additive radial disc lying on the ground — the "pool of light" read.
-function groundPool(color, radius, opacity, y) {
+function groundPool(color, radius, opacity, y, broad = false) {
   const mesh = new Mesh(
     new CircleGeometry(1, 28),
     new MeshBasicMaterial({
-      map: getRadialTexture(),
+      map: broad ? getShaftTexture() : getRadialTexture(),
       color: new Color(color),
       transparent: true,
       opacity,
@@ -151,7 +209,7 @@ export function createArenaScene(stage, toggles, ctx) {
   const vParam = parseInt(params.get('variant') ?? '1', 10);
   const spec = VARIANTS[vParam] ?? VARIANTS[1];
 
-  const lightsTuned = tuneActOneLighting(stage.scene);
+  const lightsTuned = tuneActOneLighting(stage.scene, spec.mood);
 
   // --- The playable inside: same world/player/juice as ?scene=graybox. Its
   // placeholder floor + walls are the only top-level Plane/Box meshes in the
@@ -237,60 +295,66 @@ export function createArenaScene(stage, toggles, ctx) {
 
   for (const em of emitters) {
     if (em.kind === 'flame') {
-      const body = makeFlameSprite(0.46);
-      body.position.set(em.x, em.y + 0.11, em.z);
+      // Flame billboard, pushed FLAME_LIFT along the view axis so the torch
+      // shaft can never depth-clip its own fire (F7), and authored above 1.0 in
+      // linear so its core clears the bloom threshold and reads as a LIGHT
+      // SOURCE with a white-hot centre rather than a painted decal (F2).
+      const fy = em.y + 0.13 + TOWARD_CAM.y * FLAME_LIFT;
+      const fz = em.z + TOWARD_CAM.z * FLAME_LIFT;
+      const body = makeFlameSprite(0.7, 1, 3.2);
+      body.position.set(em.x, fy, fz);
       body.renderOrder = 8;
       root.add(body);
-      const glow = makeGlowSprite({ color: PALETTE.hearthAmber, size: 1.0, opacity: 0.42 });
-      glow.position.set(em.x, em.y + 0.06, em.z);
+      const glow = makeGlowSprite({ color: PALETTE.hearthAmber, size: 1.5, opacity: 0.62 });
+      glow.position.set(em.x, em.y + 0.08 + TOWARD_CAM.y * FLAME_LIFT, fz);
       root.add(glow);
-      const pool = groundPool(PALETTE.hearthAmber, 2.05, 0.33, poolY());
+      const pool = groundPool(PALETTE.hearthAmber, 2.5, 0.62, poolY(), true);
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
-      flames.push({ body, glow, pool, x: em.x, y: em.y, z: em.z, phase: cosmetic.range(0, Math.PI * 2) });
-      fireSources.push({ x: em.x, y: em.y + 0.2, z: em.z });
+      flames.push({ body, glow, pool, x: em.x, y: fy, z: fz, phase: cosmetic.range(0, Math.PI * 2) });
+      fireSources.push({ x: em.x, y: em.y + 0.2, z: fz });
     } else if (em.kind === 'lantern') {
       // A lantern is a FIRE, not a cold lamp: a small flame inside the glass
       // plus a warm halo, so it registers as the same emitter family as the
       // torches beside it.
-      const wick = makeFlameSprite(0.16, 0.95);
-      wick.position.set(em.x, em.y + 0.01, em.z);
+      const wick = makeFlameSprite(0.24, 0.95, 2.8);
+      wick.position.set(em.x, em.y + 0.01 + TOWARD_CAM.y * 0.1, em.z + TOWARD_CAM.z * 0.1);
       wick.renderOrder = 8;
       root.add(wick);
-      const glow = makeGlowSprite({ color: PALETTE.hearthAmber, size: 0.8, opacity: 0.55 });
+      const glow = makeGlowSprite({ color: PALETTE.hearthAmber, size: 1.15, opacity: 0.8 });
       glow.material.color.copy(mix(PALETTE.hearthAmber, PALETTE.paleGold, 0.35));
       glow.position.set(em.x, em.y, em.z);
       root.add(glow);
-      const pool = groundPool(mix(PALETTE.hearthAmber, PALETTE.paleGold, 0.4), 1.55, 0.22, poolY());
+      const pool = groundPool(mix(PALETTE.hearthAmber, PALETTE.paleGold, 0.4), 1.9, 0.44, poolY());
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
-      pulses.push({ glow, base: 0.52, rate: 3.1, amp: 0.18, jitter: 0.05, phase: cosmetic.range(0, Math.PI * 2), wick });
+      pulses.push({ glow, base: 0.78, rate: 3.1, amp: 0.18, jitter: 0.05, phase: cosmetic.range(0, Math.PI * 2), wick });
       fireSources.push({ x: em.x, y: em.y + 0.08, z: em.z });
     } else if (em.kind === 'monolith') {
       // God-stuff Violet halo — the ONLY violet in the frame rides this prop.
       // toneMapped:false keeps the halo CHROMATIC: an ACES-compressed violet
       // sprite over dark stone measured as neutral dark teal last round, i.e.
       // the "subtle glow" carried none of the accent colour.
-      const glow = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 1.8, opacity: 0.42 });
+      const glow = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 2.3, opacity: 0.6 });
       glow.material.toneMapped = false;
       // Same pre-compensated violet as the veins so the HALO carries the accent
       // hue too (an ACES-flattened violet sprite measured as neutral dark teal).
       glow.material.color.setRGB(VEIN_VIOLET[0], VEIN_VIOLET[1], VEIN_VIOLET[2], LinearSRGBColorSpace);
       glow.position.set(em.x, em.y, em.z);
       root.add(glow);
-      const spark = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 0.42, opacity: 0.3 });
+      const spark = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 0.6, opacity: 0.55 });
       spark.material.toneMapped = false;
       spark.material.color.setRGB(VEIN_VIOLET[0], VEIN_VIOLET[1], VEIN_VIOLET[2], LinearSRGBColorSpace);
       spark.position.set(em.x, em.y + 0.18, em.z);
       root.add(spark);
-      const pool = groundPool(PALETTE.godstuffViolet, 1.15, 0.3, poolY());
+      const pool = groundPool(PALETTE.godstuffViolet, 1.45, 0.42, poolY());
       pool.material.color.setRGB(VEIN_VIOLET[0], VEIN_VIOLET[1], VEIN_VIOLET[2], LinearSRGBColorSpace);
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
-      pulses.push({ glow, base: 0.42, rate: 0.9, amp: 0.12, jitter: 0, phase: cosmetic.range(0, Math.PI * 2), spark });
+      pulses.push({ glow, base: 0.6, rate: 0.9, amp: 0.12, jitter: 0, phase: cosmetic.range(0, Math.PI * 2), spark });
     }
   }
 
@@ -298,16 +362,36 @@ export function createArenaScene(stage, toggles, ctx) {
 
   // Mid-field warm canopy dapples: guarantee >=2 warm pools in any gameplay
   // frame (torches hug the walls and can sit outside the camera rect).
-  const dappleColor = mix(PALETTE.hearthAmber, PALETTE.parchment, 0.18);
+  const dappleColor = mix(PALETTE.hearthAmber, PALETTE.paleGold, 0.3);
   const dapples = [];
   for (const [px, pz, pr] of spec.sunPools ?? []) {
-    const pool = groundPool(dappleColor, pr, 0.17, poolY());
+    const base = spec.mood?.dapple ?? 0.42;
+    const pool = groundPool(dappleColor, pr, base, poolY(), true);
+    // Sunlight through leaves is never a circle. Each shaft gets its own
+    // aspect ratio and in-plane rotation so the floor reads as dappled canopy
+    // light instead of a row of stamped discs.
+    const ax = cosmetic.range(0.72, 1.35);
+    const az = (1 / ax) * cosmetic.range(0.9, 1.2);
+    const spin = cosmetic.range(0, Math.PI);
+    pool.scale.set(pr * ax, pr * az, 1);
+    pool.rotation.z = spin;
     pool.position.x = px;
     pool.position.z = pz;
     root.add(pool);
+    // ...and a hotter inner core. A single soft falloff peaks for only a few
+    // pixels, so its brightest ring sat right on the luma-200 boundary and
+    // wandered across it frame to frame; the core is what makes the shaft
+    // land a stable region of real highlight (critique F2's value range).
+    const core = groundPool(dappleColor, pr * 0.46, base * 0.8, poolY(), true);
+    core.scale.set(pr * 0.46 * ax, pr * 0.46 * az, 1);
+    core.rotation.z = spin;
+    core.position.x = px;
+    core.position.z = pz;
+    root.add(core);
     dapples.push({
       pool,
-      base: 0.17,
+      core,
+      base,
       x: px,
       z: pz,
       phase: cosmetic.range(0, Math.PI * 2),
@@ -385,6 +469,10 @@ export function createArenaScene(stage, toggles, ctx) {
     // The graybox inside runs first: player rig, bolts, dummies, juice, camera.
     inner.update(elapsedSec, alpha);
 
+    // Prop/wall ink is expanded in clip space, so it needs the live canvas size
+    // to stay a constant 2 px (same contract as the critters' ink).
+    setPropInkViewport(window.innerWidth, window.innerHeight);
+
     const dt =
       lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, elapsedSec - lastElapsed));
     lastElapsed = elapsedSec;
@@ -437,13 +525,13 @@ export function createArenaScene(stage, toggles, ctx) {
         Math.sin(tSec * 29 + f.phase * 2.7) * 0.3 +
         Math.sin(tSec * 6.3 + f.phase * 0.6) * 0.2;
       const jit = cosmetic.range(-0.05, 0.05);
-      const h = 0.46 * (1 + 0.24 * n + jit);
+      const h = 0.7 * (1 + 0.22 * n + jit);
       f.body.scale.set(h * 0.66 * (1 - 0.1 * n), h, 1);
       f.body.position.x = f.x + Math.sin(tSec * 5.1 + f.phase) * 0.014;
-      f.body.position.y = f.y + 0.11 + 0.02 * n;
-      f.glow.material.opacity = Math.max(0.14, 0.44 + 0.2 * n + jit);
-      f.glow.scale.setScalar(1.0 * (1 + 0.1 * n));
-      f.pool.material.opacity = Math.max(0.12, 0.33 + 0.11 * n);
+      f.body.position.y = f.y + 0.02 * n;
+      f.glow.material.opacity = Math.max(0.2, 0.66 + 0.24 * n + jit);
+      f.glow.scale.setScalar(1.5 * (1 + 0.1 * n));
+      f.pool.material.opacity = Math.max(0.24, 0.62 + 0.16 * n);
     }
     // Lanterns + monolith halos: soft pulses (monolith "subtle glow" §19.3).
     for (const pu of pulses) {
@@ -451,22 +539,28 @@ export function createArenaScene(stage, toggles, ctx) {
       const k = pu.base + pu.amp * Math.sin(tSec * pu.rate + pu.phase) + j;
       pu.glow.material.opacity = Math.max(0.1, k);
       if (pu.wick) {
-        const w = 0.16 * (1 + 0.16 * Math.sin(tSec * 9.4 + pu.phase));
+        const w = 0.24 * (1 + 0.16 * Math.sin(tSec * 9.4 + pu.phase));
         pu.wick.scale.set(w * 0.66, w, 1);
       }
-      if (pu.spark) pu.spark.material.opacity = Math.max(0.1, 0.26 + 0.14 * Math.sin(tSec * 1.7 + pu.phase));
+      if (pu.spark) pu.spark.material.opacity = Math.max(0.2, 0.5 + 0.2 * Math.sin(tSec * 1.7 + pu.phase));
     }
     // The monolith's own veins breathe with the halo (capped well below the
     // clipping point so the vein cores stay violet instead of blowing white).
     if (monolithMat) {
-      monolithMat.emissiveIntensity = 1.5 + 0.28 * Math.sin(tSec * 0.9);
+      monolithMat.emissiveIntensity = 1.9 + 0.35 * Math.sin(tSec * 0.9);
     }
     // Canopy dapples breathe AND creep, like sunlight through moving leaves —
     // the one large-area motion in the frame, kept slow so it never wobbles.
     for (const d of dapples) {
-      d.pool.material.opacity = d.base * (1 + 0.32 * Math.sin(tSec * 0.7 + d.phase));
-      d.pool.position.x = d.x + Math.sin(tSec * 0.33 + d.phase) * d.drift;
-      d.pool.position.z = d.z + Math.cos(tSec * 0.27 + d.phase * 1.4) * d.drift;
+      const k = 1 + 0.28 * Math.sin(tSec * 0.7 + d.phase);
+      const dx = d.x + Math.sin(tSec * 0.33 + d.phase) * d.drift;
+      const dz = d.z + Math.cos(tSec * 0.27 + d.phase * 1.4) * d.drift;
+      d.pool.material.opacity = d.base * k;
+      d.pool.position.x = dx;
+      d.pool.position.z = dz;
+      d.core.material.opacity = d.base * 0.8 * k;
+      d.core.position.x = dx;
+      d.core.position.z = dz;
     }
     // The real torch PointLights flicker with their flames.
     for (const tl of torchLights) {

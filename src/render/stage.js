@@ -27,13 +27,46 @@ import { MAX_PIXEL_RATIO, POST } from '../core/constants.js';
 import { PALETTE } from '../data/palette.js';
 import { createCamera, updateCameraAspect } from './camera.js';
 
+// ---------------------------------------------------------------------------
+// EXPOSURE / POST TUNING (round-4 remediation, critique F2).
+//
+// Round 3 measured 0.008% of the frame above luma 200 and only 9 of 16
+// luminance buckets used — the frame had no light in it. The cause was a chain
+// of three compounding cuts, all of them here:
+//
+//   * three.js is physically-lit: a DirectionalLight of intensity I lands on an
+//     up-facing surface as I/PI. At the shipped key 2.1 + hemisphere 2.15 that
+//     is a TOTAL irradiance of ~0.75 — i.e. every albedo in the scene was being
+//     DARKENED before it ever reached the tonemapper.
+//   * ACES then compresses again (three multiplies by exposure/0.6 and fits the
+//     RRT+ODT curve), so a 0.10 linear floor lands at display 89, not 130-150.
+//   * a 0.35 vignette crushed the corners a further 35% on top of that.
+//
+// The numbers below are solved against the ACES curve rather than eyeballed:
+// display luma 140 on the open floor needs ~0.29 linear pre-tonemap, display 50
+// in a shadow pocket needs ~0.05, and the bloom threshold has to sit under the
+// emissive cores (a value of 0.75 linear = display ~185, so only real emitters
+// bloom). Verified with tools/analyze.mjs on captured frames, never guessed.
+// ---------------------------------------------------------------------------
+export const EXPOSURE = 1.04; // ACES input gain (renderer.toneMappingExposure)
+export const BLOOM = Object.freeze({
+  threshold: 0.68, // linear; emitter cores are authored above 1.0
+  strength: 1.15,
+  radius: 0.6,
+});
+export const VIGNETTE = 0.16; // was 0.35 — F2: corners were crushed to luma 15-25
+// Base (non-arena) light rig. Scenes may re-tune these; the arena does, in
+// src/scenes/arena.js.
+const KEY_INTENSITY = 3.6;
+const FILL_INTENSITY = 2.0;
+
 // Vignette + color grade in one final pass (§19.5: soft vignette ~0.35 at
 // corners; slight warm lift, gentle contrast S-curve, ~5% saturation boost).
 const GradeShader = {
   name: 'EchoesGradeShader',
   uniforms: {
     tDiffuse: { value: null },
-    uVignette: { value: POST.vignetteStrength }, // 0 disables
+    uVignette: { value: VIGNETTE }, // 0 disables
     uGrade: { value: 1 }, // 0 disables
   },
   vertexShader: /* glsl */ `
@@ -76,6 +109,7 @@ const GradeShader = {
   `,
 };
 
+
 // toggles: { bloom, vignette, grade } booleans (URL-param driven, default on);
 // msaa: composer target sample count (?msaa=N debug knob).
 export function createStage({ container, toggles = {} } = {}) {
@@ -88,6 +122,10 @@ export function createStage({ container, toggles = {} } = {}) {
   const renderer = new WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.toneMapping = ACESFilmicToneMapping;
+  // ACES input gain. The composer renders to a HalfFloat target, so the
+  // tonemap actually runs in OutputPass; the renderer property is what that
+  // pass reads.
+  renderer.toneMappingExposure = EXPOSURE;
   const pixelRatio = Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO);
   renderer.setPixelRatio(pixelRatio);
   renderer.setSize(width, height);
@@ -100,13 +138,13 @@ export function createStage({ container, toggles = {} } = {}) {
   // Colors derived from palette anchors (hearth amber key, signal-blue-leaning
   // cool sky), desaturated toward white so albedo stays readable.
   const keyColor = new Color(PALETTE.hearthAmber).lerp(new Color('#FFFFFF'), 0.55);
-  const key = new DirectionalLight(keyColor, 2.4);
+  const key = new DirectionalLight(keyColor, KEY_INTENSITY);
   key.position.set(4, 8, 3);
   scene.add(key);
 
   const skyColor = new Color(PALETTE.signalBlue).lerp(new Color('#FFFFFF'), 0.45);
   const groundColor = new Color(PALETTE.voidCharcoal);
-  const fill = new HemisphereLight(skyColor, groundColor, 1.0);
+  const fill = new HemisphereLight(skyColor, groundColor, FILL_INTENSITY);
   scene.add(fill);
 
   const camera = createCamera(width / height);
@@ -124,9 +162,9 @@ export function createStage({ container, toggles = {} } = {}) {
 
   const bloomPass = new UnrealBloomPass(
     new Vector2(width, height),
-    POST.bloomStrength,
-    POST.bloomRadius,
-    POST.bloomThreshold
+    BLOOM.strength,
+    BLOOM.radius,
+    BLOOM.threshold
   );
   bloomPass.enabled = bloom;
   composer.addPass(bloomPass);
@@ -140,7 +178,7 @@ export function createStage({ container, toggles = {} } = {}) {
   composer.addPass(new OutputPass());
 
   const gradePass = new ShaderPass(GradeShader);
-  gradePass.uniforms.uVignette.value = vignette ? POST.vignetteStrength : 0;
+  gradePass.uniforms.uVignette.value = vignette ? VIGNETTE : 0;
   gradePass.uniforms.uGrade.value = grade ? 1 : 0;
   gradePass.enabled = vignette || grade;
   composer.addPass(gradePass);

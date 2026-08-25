@@ -17,6 +17,7 @@ import {
   CanvasTexture,
   Color,
   DynamicDrawUsage,
+  LinearSRGBColorSpace,
   Points,
   PointsMaterial,
   SRGBColorSpace,
@@ -94,7 +95,13 @@ export function getFlameTexture() {
 }
 
 // Alpha-blended flame billboard. size = world-space height.
-export function makeFlameSprite(size = 0.34, opacity = 1) {
+// `gain` is an HDR multiplier applied in the LINEAR working space: the painted
+// core tops out at ~0.88 linear, which sits just under the bloom pass's
+// threshold, so an ungained flame produces no halo at all and the frame ends up
+// with nothing above luma 200 (critique F2). A gain of ~2.5-3 puts the core at
+// 2.2-2.6 linear — comfortably above threshold, blooming to a white-hot centre
+// inside an amber body, exactly the emitter read of the reference frame.
+export function makeFlameSprite(size = 0.34, opacity = 1, gain = 1) {
   const material = new SpriteMaterial({
     map: getFlameTexture(),
     transparent: true,
@@ -102,6 +109,9 @@ export function makeFlameSprite(size = 0.34, opacity = 1) {
     opacity,
     toneMapped: false, // keeps the amber chromatic; the core still blooms
   });
+  if (gain !== 1) {
+    material.color.setRGB(gain, gain * 0.93, gain * 0.84, LinearSRGBColorSpace);
+  }
   const sprite = new Sprite(material);
   sprite.scale.set(size * 0.66, size, 1);
   return sprite;
@@ -118,7 +128,9 @@ export function createEmberField(root, sources, cosmetic, perSource = 9) {
   const pos = new Float32Array(n * 3);
   const col = new Float32Array(n * 3);
   const data = [];
-  const hot = new Color(PALETTE.hearthAmber).lerp(new Color(PALETTE.parchment), 0.35);
+  const hot = new Color(PALETTE.hearthAmber)
+    .lerp(new Color(PALETTE.parchment), 0.35)
+    .multiplyScalar(2.1); // HDR: embers are sparks, they belong above threshold
   const cool = new Color(PALETTE.hearthAmber).lerp(new Color(PALETTE.bruiseUmber), 0.3);
 
   for (const s of sources) {

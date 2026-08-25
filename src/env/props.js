@@ -5,29 +5,36 @@
 // inverted-hull ink outline (§19.2) and a blob contact shadow (reference bar
 // check 8) via the shared shadow instancer.
 //
-// Three rules this module exists to keep, each one a previous reject:
+// Four rules this module exists to keep, each one a previous reject:
 //
-// 1. INK MUST CLOSE. An inverted-hull outline is only visible where the hull's
-//    BACK faces poke past the object's silhouette. Along the bottom edge of a
-//    prop standing on the ground, that back-facing part of the hull is the piece
-//    displaced DOWNWARD — i.e. below y = 0, buried in the floor. Result: ink on
-//    the top and far edges, nothing along the bottom and near edges, which is
-//    exactly the half-outlined crates and barrels an earlier cut shipped. The
-//    fix is to floor the hull at the ground plane (INK_FLOOR) so the bottom ring
-//    sits just above the floor instead of under it. Props also use their own ink
-//    material with no polygon-offset bias (see getPropInkMaterial), since a
-//    slope-scaled depth push on a near-edge-on sliver hides it again.
-// 2. SHADOWS ARE CONTACT SHADOWS. One shared soft-edged blob per prop, CENTRED
-//    on the footprint (no directional offset — an offset blob reads as a
-//    detached smudge), radius derived from the prop's own footprint, black at a
-//    fixed alpha (dest*(1-a) — a multiply by any other name). Self-illuminating
-//    props get the faint tier so a torch never punches a hole in its own pool.
-// 3. PROPS COME IN CLUSTERS. Placement is authored as cluster anchors in
-//    env/variants.js; this module scatters 2-4 props per anchor with 0.65-1.35x
-//    scale jitter. An evenly spaced single-file ring of identical primitives is
-//    the "bead necklace" reject; every type also carries at least one
-//    silhouette-breaking detail layer (crate lid + slats, slab crack + moss,
-//    stump root flare + ring cut, ...).
+// 1. INK IS SCREEN-SPACE, AND IT MATCHES THE PARTY. The critters carry a
+//    constant 2.0 px inverted-hull line (render/critters/common.js INK_PX). A
+//    world-space hull — what round 3 shipped here — scales with mass and camera
+//    distance, so the environment's line never agreed with the party's and the
+//    critters read as thick-outlined stickers pasted on a differently-drawn
+//    painting. Props, walls and the monolith now expand their hull in CLIP
+//    space through the same technique, at the same 2 px (see getPropInkMaterial
+//    below). A clip-space push also has no up/down bias, which retires the old
+//    "ink closes on the top edge but is buried under the floor along the
+//    bottom" failure for free. Ground, grass and flowers stay inkless.
+// 2. SHADOWS ARE CONTACT SHADOWS THAT READ OUTSIDE THE SILHOUETTE. One shared
+//    soft blob per prop, CENTRED on the footprint (an offset blob reads as a
+//    detached smudge), radius SHADOW_SPREAD x the prop's own footprint, solid
+//    to 55% of that radius before it feathers. Round 3 sized both the disc and
+//    its solid core so small that the darkening landed entirely underneath the
+//    prop casting it — the shadows existed and measured invisible. Every
+//    `foot` below must therefore cover the prop's WIDEST ground layer (root
+//    flare, companion chunk, chip), not just its trunk. Self-illuminating props
+//    get the faint tier so a torch never punches a hole in its own pool.
+// 3. PROPS COME IN CLUSTERS THAT TOUCH BUT NEVER INTERPENETRATE. Placement is
+//    authored as cluster anchors in env/variants.js; this module scatters 2-4
+//    props per anchor with 0.65-1.35x scale jitter, THROUGH a footprint
+//    rejection test that also keeps every prop inside the wall's inner face. An
+//    evenly spaced single-file ring of identical primitives is the "bead
+//    necklace" reject; a crate buried inside a stump inside a barrel is the
+//    "dumped heap" reject. Both are excluded by construction.
+// 4. EVERY TYPE CARRIES A SILHOUETTE-BREAKING DETAIL LAYER (crate lid + slats,
+//    slab inset course + chipped corners + moss, stump root flare + ring cut).
 import {
   BackSide,
   BoxGeometry,
@@ -44,13 +51,15 @@ import {
   MeshBasicMaterial,
   MeshToonMaterial,
   Quaternion,
+  ShaderMaterial,
   SRGBColorSpace,
   TorusGeometry,
+  Vector2,
   Vector3,
 } from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { ARENA, OUTLINE } from '../core/constants.js';
-import { toonMaterial, addOutline, getGradientMap } from '../render/toon.js';
+import { ARENA } from '../core/constants.js';
+import { toonMaterial, getGradientMap } from '../render/toon.js';
 import { PALETTE } from '../data/palette.js';
 import { ENV, hslColor, mix } from './colors.js';
 
@@ -61,50 +70,97 @@ import { ENV, hslColor, mix } from './colors.js';
 export const ORDER = Object.freeze({ pool: -12, shadow: -8 });
 
 const UP = new Vector3(0, 1, 0);
-const PROP_INK = 0.034; // slightly heavier than the character ink; props are bigger
-const INK_FLOOR = 0.005; // hull vertices never sink below the ground plane
 
-// Prop ink: same smoothed-normal displacement hull as the character outline,
-// but WITHOUT the polygon-offset bias (see rule 1 above).
-let sharedPropInk = null;
-export function getPropInkMaterial() {
-  if (sharedPropInk) return sharedPropInk;
-  sharedPropInk = new MeshBasicMaterial({
-    color: new Color(PALETTE.voidCharcoal),
-    side: BackSide,
-    toneMapped: false,
-  });
-  return sharedPropInk;
+// ---------------------------------------------------------------------------
+// INK (round-4 remediation). The party critters carry an inverted-hull line of
+// a CONSTANT 2.0 SCREEN PIXELS (render/critters/common.js INK_PX). Round 3's
+// environment used a world-space hull instead, so prop ink drifted with mass
+// and camera distance and the party read as thick-lined stickers pasted onto a
+// differently-drawn painting. This is the same technique the critters use —
+// merged/re-normalled hull expanded in CLIP space — so every discrete prop,
+// wall and capstone now carries a line of exactly the weight the party does.
+//
+// Ground, grass tufts and flowers stay inkless by design: they are texture, not
+// silhouette.
+// ---------------------------------------------------------------------------
+export const PROP_INK_PX = 2.0; // matches critters/common.js INK_PX
+const DETAIL_INK_PX = 1.4; // secondary layers (lids, hoops, chips, footings)
+
+const inkViewport = new Vector2(1600, 900);
+const inkColor = new Color(PALETTE.voidCharcoal);
+const inkMats = new Map();
+
+// Called once per frame from the arena scene with the canvas size, so the line
+// stays 2 px through a window resize.
+export function setPropInkViewport(width, height) {
+  inkViewport.set(width, height);
 }
 
-// Same smoothed-normal displacement as render/toon.js addOutline, but
-// returning a geometry so it can back an InstancedMesh hull (children of an
-// InstancedMesh don't inherit instancing, so the per-mesh helper can't serve
-// instanced props).
-export function inkGeometry(source, thickness = OUTLINE.thickness, floorY = INK_FLOOR) {
+export function getPropInkMaterial(px = PROP_INK_PX) {
+  const key = px.toFixed(2);
+  const hit = inkMats.get(key);
+  if (hit) return hit;
+  const mat = new ShaderMaterial({
+    uniforms: {
+      uPx: { value: px },
+      uViewport: { value: inkViewport },
+      uColor: { value: inkColor },
+    },
+    side: BackSide,
+    // Pushed back in depth so the hull only survives OUTSIDE a silhouette: a
+    // half-buried layer (a crate slat, a stump root) would otherwise paint its
+    // ink across the mass it is embedded in.
+    polygonOffset: true,
+    polygonOffsetFactor: 3,
+    polygonOffsetUnits: 3,
+    vertexShader: /* glsl */ `
+      uniform float uPx;
+      uniform vec2 uViewport;
+      void main() {
+        #ifdef USE_INSTANCING
+          mat4 iM = instanceMatrix;
+        #else
+          mat4 iM = mat4( 1.0 );
+        #endif
+        vec4 local = iM * vec4( position, 1.0 );
+        vec3 nLocal = normalize( mat3( iM ) * normal );
+        vec4 clip = projectionMatrix * modelViewMatrix * local;
+        vec2 np = ( projectionMatrix * vec4( normalize( normalMatrix * nLocal ), 0.0 ) ).xy;
+        float l = length( np );
+        if ( l > 1e-5 ) clip.xy += ( np / l ) * ( uPx * 2.0 / uViewport ) * clip.w;
+        gl_Position = clip;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uColor;
+      void main() { gl_FragColor = vec4( uColor, 1.0 ); }
+    `,
+  });
+  inkMats.set(key, mat);
+  return mat;
+}
+
+// Hull geometry for the ink pass: positions only, vertices merged and normals
+// re-averaged (split normals tear the hull open along a box's hard edges). The
+// expansion itself happens in the shader, so no world-space displacement — and
+// therefore none of round 3's "ink closes on the top edge but not the bottom"
+// problem either, since a clip-space push has no up/down bias at all.
+export function inkGeometry(source) {
   let geo = source.clone();
   for (const name of Object.keys(geo.attributes)) {
     if (name !== 'position') geo.deleteAttribute(name);
   }
   geo = mergeVertices(geo);
   geo.computeVertexNormals();
-  const pos = geo.attributes.position;
-  const nor = geo.attributes.normal;
-  // Only lift geometry that actually rests on the ground; a prop layer authored
-  // above the floor (lantern glass, crate lid) keeps its full hull.
-  geo.computeBoundingBox();
-  const grounded = geo.boundingBox.min.y <= 0.02;
-  for (let i = 0; i < pos.count; i++) {
-    const y = pos.getY(i) + nor.getY(i) * thickness;
-    pos.setXYZ(
-      i,
-      pos.getX(i) + nor.getX(i) * thickness,
-      grounded ? Math.max(floorY, y) : y,
-      pos.getZ(i) + nor.getZ(i) * thickness
-    );
-  }
-  pos.needsUpdate = true;
   return geo;
+}
+
+// Screen-space ink child for a non-instanced mesh (monolith, wall runs).
+export function addPropInk(mesh, px = PROP_INK_PX) {
+  const hull = new Mesh(inkGeometry(mesh.geometry), getPropInkMaterial(px));
+  hull.name = `${mesh.name || 'mesh'}-ink`;
+  mesh.add(hull);
+  return hull;
 }
 
 // layers: [{ geo, mat, ink: false | thickness }] — geo pre-translated so y=0 is
@@ -117,8 +173,8 @@ function addInstancedProp(root, layers, transforms) {
     meshes.push(im);
     if (layer.ink) {
       const hull = new InstancedMesh(
-        inkGeometry(layer.geo, layer.ink === true ? PROP_INK : layer.ink),
-        getPropInkMaterial(),
+        inkGeometry(layer.geo),
+        getPropInkMaterial(layer.ink === true ? PROP_INK_PX : layer.ink),
         transforms.length
       );
       hull.frustumCulled = false;
@@ -144,10 +200,16 @@ function addInstancedProp(root, layers, transforms) {
   return meshes;
 }
 
-// Contact-shadow falloff. The shared glow texture is a bloom halo — 55%
-// transparent a quarter of the way out — so a blob using it reads as a diffuse
-// smudge rather than a grounded shadow. This one keeps a solid core out to ~45%
-// of the radius and then falls off, which is what makes a prop sit ON the floor.
+// Contact-shadow falloff (critique F1). Round 3 kept the solid core out to only
+// 50% of the radius, so a crate whose blob radius was 1.45x its 0.3 u footprint
+// put its SOLID darkening at 0.22 u — narrower than the crate's own 0.25 u
+// half-width. The shadow existed (debugState reported 46-49 of them) and was
+// entirely hidden underneath the prop that cast it, which is exactly what the
+// critic measured: identical luminance under a prop and beside it.
+//
+// This ramp holds full opacity out to 62% of the radius and only then feathers,
+// and SHADOW_SPREAD below sizes the disc at 1.75x the footprint, so a readable
+// dark crescent always lands on open ground outside the silhouette.
 let sharedContactTexture = null;
 export function getContactTexture() {
   if (sharedContactTexture) return sharedContactTexture;
@@ -159,8 +221,9 @@ export function getContactTexture() {
   const half = size / 2;
   const grad = ctx.createRadialGradient(half, half, 0, half, half, half);
   grad.addColorStop(0.0, 'rgba(255,255,255,1)');
-  grad.addColorStop(0.5, 'rgba(255,255,255,0.94)');
-  grad.addColorStop(0.78, 'rgba(255,255,255,0.4)');
+  grad.addColorStop(0.55, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.72, 'rgba(255,255,255,0.82)');
+  grad.addColorStop(0.88, 'rgba(255,255,255,0.34)');
   grad.addColorStop(1.0, 'rgba(255,255,255,0)');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
@@ -169,6 +232,12 @@ export function getContactTexture() {
   sharedContactTexture = tex;
   return tex;
 }
+
+// Disc radius as a multiple of the prop's ground footprint, and the Z stretch
+// that pushes the readable part of the blob toward the camera at the rig's
+// 52 deg pitch (the player capsule already uses the same trick).
+export const SHADOW_SPREAD = 1.6;
+const SHADOW_Z_STRETCH = 1.3;
 
 // Shared factory for every contact shadow in the arena (props, player,
 // entities). Pure black at a fixed alpha over the already-composited ground =
@@ -181,6 +250,12 @@ export function makeShadowMaterial(opacity = 0.48) {
     opacity,
     depthWrite: false,
     toneMapped: false,
+    // The blob sits 7.5 mm above the floor; polygonOffset keeps it off the
+    // floor's depth values entirely so it can never z-fight with the ground
+    // plane or with a ground decal at a glancing camera angle.
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4,
   });
 }
 
@@ -194,7 +269,7 @@ export function buildShadowInstances(root, shadows) {
   const q = new Quaternion();
   const p = new Vector3();
   const s = new Vector3();
-  for (const [faint, opacity] of [[false, 0.55], [true, 0.2]]) {
+  for (const [faint, opacity] of [[false, 0.62], [true, 0.34]]) {
     const list = shadows.filter((sh) => !!sh.faint === faint);
     if (list.length === 0) continue;
     const im = new InstancedMesh(geo, makeShadowMaterial(opacity), list.length);
@@ -203,7 +278,7 @@ export function buildShadowInstances(root, shadows) {
     list.forEach((sh, i) => {
       q.setFromAxisAngle(UP, sh.yaw ?? 0);
       p.set(sh.x, 0.0075, sh.z); // centred: no directional offset, ever
-      s.set(sh.rx, 1, sh.rz ?? sh.rx);
+      s.set(sh.rx, 1, (sh.rz ?? sh.rx) * SHADOW_Z_STRETCH);
       m.compose(p, q, s);
       im.setMatrixAt(i, m);
     });
@@ -220,24 +295,42 @@ export function buildShadowInstances(root, shadows) {
 function propTypes(mats, spec) {
   const T = {};
 
-  // --- Stone slab: canted block + crack channel + moss patch + broken chip.
+  // --- Stone slab (critique F4). Round 3 parked the "broken chip" at x = 0.62
+  // while the slab body ends at x = 0.46, so the chip floated with a 1-2 px
+  // strip of grass showing between it and the stone: on screen it read as a
+  // detached pale quad, not as a piece knocked off the slab. It now overlaps
+  // the body and sits lower, and the top face carries a raised inset course, a
+  // bevelled lip, chipped corners and moss so the slab is not the largest flat
+  // fill in the frame any more.
   {
     const body = new BoxGeometry(0.92, 0.15, 0.64).translate(0, 0.075, 0);
+    // Raised inset course on the top face — the value break that stops the
+    // slab reading as one untextured plane.
+    const course = new BoxGeometry(0.66, 0.045, 0.42).translate(-0.03, 0.168, 0.01);
     const crack = mergeGeometries([
-      new BoxGeometry(0.03, 0.02, 0.5).translate(0.1, 0.152, 0.02),
-      new BoxGeometry(0.28, 0.02, 0.028).translate(-0.16, 0.152, -0.12),
+      new BoxGeometry(0.028, 0.03, 0.44).translate(0.12, 0.185, 0.02),
+      new BoxGeometry(0.24, 0.03, 0.026).translate(-0.1, 0.185, -0.1),
+      new BoxGeometry(0.02, 0.03, 0.2).translate(-0.22, 0.185, 0.14),
     ]);
-    const moss = new IcosahedronGeometry(0.15, 0).scale(1, 0.22, 0.8).translate(-0.26, 0.155, 0.1);
-    const chip = new BoxGeometry(0.26, 0.1, 0.22).translate(0.62, 0.05, 0.2);
+    const moss = mergeGeometries([
+      new IcosahedronGeometry(0.15, 0).scale(1, 0.22, 0.8).translate(-0.3, 0.155, 0.12),
+      new IcosahedronGeometry(0.08, 0).scale(1, 0.24, 0.85).translate(0.3, 0.16, -0.2),
+    ]);
+    // Chipped corners: wedges cut INTO the slab silhouette, overlapping it.
+    const chips = mergeGeometries([
+      new BoxGeometry(0.24, 0.09, 0.2).rotateY(0.5).translate(0.4, 0.045, 0.24),
+      new BoxGeometry(0.16, 0.07, 0.14).rotateY(-0.6).translate(-0.42, 0.038, -0.24),
+    ]);
     T.slab = {
       layers: [
-        { geo: body, mat: mats.stone, ink: PROP_INK },
+        { geo: body, mat: mats.stone, ink: PROP_INK_PX },
+        { geo: chips, mat: mats.stoneCool, ink: 1.5 },
+        { geo: course, mat: mats.stoneLit, ink: DETAIL_INK_PX },
         { geo: crack, mat: mats.stoneDark },
         { geo: moss, mat: mats.moss },
-        { geo: chip, mat: mats.stoneLit, ink: 0.02 },
       ],
-      foot: 0.5,
-      rz: 0.36,
+      foot: 0.52,
+      rz: 0.4,
     };
   }
 
@@ -260,12 +353,15 @@ function propTypes(mats, spec) {
     );
     T.stump = {
       layers: [
-        { geo: trunk, mat: mats.bark, ink: PROP_INK },
-        { geo: roots, mat: mats.barkDark, ink: 0.02 },
+        { geo: trunk, mat: mats.bark, ink: PROP_INK_PX },
+        { geo: roots, mat: mats.barkDark, ink: 1.5 },
         { geo: top, mat: mats.stumpTop },
         { geo: ring, mat: mats.barkDark },
       ],
-      foot: 0.4,
+      // Footprint has to cover the ROOT FLARE (cones out to ~0.39), not just
+      // the trunk: an undersized foot is what buries a contact shadow under the
+      // prop it belongs to (critique F1).
+      foot: 0.46,
     };
   }
 
@@ -286,8 +382,8 @@ function propTypes(mats, spec) {
     ]);
     T.fence = {
       layers: [
-        { geo: posts, mat: mats.bark, ink: 0.02 },
-        { geo: rails, mat: mats.plank, ink: 0.016 },
+        { geo: posts, mat: mats.bark, ink: 1.5 },
+        { geo: rails, mat: mats.plank, ink: DETAIL_INK_PX },
         { geo: caps, mat: mats.barkDark },
       ],
       foot: 0.56,
@@ -308,8 +404,8 @@ function propTypes(mats, spec) {
     const knot = new BoxGeometry(0.1, 0.05, 0.1).translate(0.1, 0.47, -0.09);
     T.crate = {
       layers: [
-        { geo: body, mat: mats.plank, ink: PROP_INK },
-        { geo: lid, mat: mats.plankLit, ink: 0.018 },
+        { geo: body, mat: mats.plank, ink: PROP_INK_PX },
+        { geo: lid, mat: mats.plankLit, ink: DETAIL_INK_PX },
         { geo: slats, mat: mats.barkDark },
         { geo: knot, mat: mats.iron },
       ],
@@ -328,8 +424,8 @@ function propTypes(mats, spec) {
     const bung = new CylinderGeometry(0.035, 0.035, 0.05, 6).rotateX(Math.PI / 2).translate(0, 0.26, 0.225);
     T.barrel = {
       layers: [
-        { geo: body, mat: mats.bark, ink: PROP_INK },
-        { geo: lid, mat: mats.plankLit, ink: 0.018 },
+        { geo: body, mat: mats.bark, ink: PROP_INK_PX },
+        { geo: lid, mat: mats.plankLit, ink: DETAIL_INK_PX },
         { geo: hoops, mat: mats.iron },
         { geo: bung, mat: mats.barkDark },
       ],
@@ -354,8 +450,8 @@ function propTypes(mats, spec) {
       .translate(0.42, 0.32, 0.16);
     T.log = {
       layers: [
-        { geo: trunk, mat: mats.bark, ink: PROP_INK },
-        { geo: branch, mat: mats.barkDark, ink: 0.02 },
+        { geo: trunk, mat: mats.bark, ink: PROP_INK_PX },
+        { geo: branch, mat: mats.barkDark, ink: 1.5 },
         { geo: mossCap, mat: mats.moss },
         { geo: hollow, mat: mats.barkDark },
       ],
@@ -377,10 +473,10 @@ function propTypes(mats, spec) {
     ]);
     T.bush = {
       layers: [
-        { geo: base, mat: mats.bush, ink: PROP_INK },
-        { geo: crown, mat: mats.bushLit, ink: 0.02 },
+        { geo: base, mat: mats.bush, ink: PROP_INK_PX },
+        { geo: crown, mat: mats.bushLit, ink: 1.5 },
       ],
-      foot: 0.42,
+      foot: 0.48, // outermost lobe sits at 0.27 + r 0.23
     };
   }
 
@@ -391,11 +487,11 @@ function propTypes(mats, spec) {
     const moss = new IcosahedronGeometry(0.16, 0).scale(1, 0.2, 0.85).translate(-0.06, 0.4, 0.06);
     T.boulder = {
       layers: [
-        { geo: main, mat: mats.stoneCool, ink: PROP_INK },
-        { geo: chunk, mat: mats.stoneCool, ink: 0.02 },
+        { geo: main, mat: mats.stoneCool, ink: PROP_INK_PX },
+        { geo: chunk, mat: mats.stoneCool, ink: 1.5 },
         { geo: moss, mat: mats.moss },
       ],
-      foot: 0.4,
+      foot: 0.5, // companion chunk reaches 0.38 + r 0.17
     };
   }
 
@@ -408,9 +504,9 @@ function propTypes(mats, spec) {
     const moss = new IcosahedronGeometry(0.1, 0).scale(1, 0.25, 0.8).translate(0.16, 0.16, 0.12);
     T.cairn = {
       layers: [
-        { geo: s0, mat: mats.stone, ink: PROP_INK },
-        { geo: s1, mat: mats.stoneLit, ink: 0.024 },
-        { geo: s2, mat: mats.stoneCool, ink: 0.02 },
+        { geo: s0, mat: mats.stone, ink: PROP_INK_PX },
+        { geo: s1, mat: mats.stoneLit, ink: 1.5 },
+        { geo: s2, mat: mats.stoneCool, ink: 1.5 },
         { geo: moss, mat: mats.moss },
       ],
       foot: 0.32,
@@ -432,10 +528,10 @@ function propTypes(mats, spec) {
     ]);
     T.torch = {
       layers: [
-        { geo: pole, mat: mats.bark, ink: 0.02 },
-        { geo: cup, mat: mats.iron, ink: 0.02 },
+        { geo: pole, mat: mats.bark, ink: 1.5 },
+        { geo: cup, mat: mats.iron, ink: 1.5 },
         { geo: binding, mat: mats.barkDark },
-        { geo: footing, mat: mats.stoneCool, ink: 0.018 },
+        { geo: footing, mat: mats.stoneCool, ink: DETAIL_INK_PX },
       ],
       foot: 0.24,
       faint: true, // self-illuminating: faint shadow tier
@@ -462,11 +558,11 @@ function propTypes(mats, spec) {
     ]);
     T.lantern = {
       layers: [
-        { geo: pole, mat: mats.iron, ink: 0.018 },
-        { geo: arm, mat: mats.iron, ink: 0.014 },
-        { geo: cap, mat: mats.iron, ink: 0.014 },
-        { geo: glass, mat: mats.glass, ink: 0.014 },
-        { geo: footing, mat: mats.stoneCool, ink: 0.016 },
+        { geo: pole, mat: mats.iron, ink: DETAIL_INK_PX },
+        { geo: arm, mat: mats.iron, ink: 1.15 },
+        { geo: cap, mat: mats.iron, ink: 1.15 },
+        { geo: glass, mat: mats.glass, ink: 1.15 },
+        { geo: footing, mat: mats.stoneCool, ink: DETAIL_INK_PX },
       ],
       foot: 0.26,
       faint: true,
@@ -545,8 +641,11 @@ function veinTexture(cosmetic) {
 // the literal palette hex measured back as a desaturated grey-mauve, because
 // ACES compresses chroma hard: this is the numeric inverse of the filmic curve
 // per channel, and its luminance (0.33) sits well under the 0.85 bloom
-// threshold so the vein cores can never clip to white.
-export const VEIN_VIOLET = [0.251, 0.203, 1.612];
+// threshold. Round 4 raises it 2.5x on purpose: the monolith is a LIGHT SOURCE
+// in the reference language, so the vein cores now sit at luminance ~0.95 —
+// just over the bloom threshold — and bloom out to the God-stuff Violet peak
+// #F1ECFA while the halo skirt stays saturated violet.
+export const VEIN_VIOLET = [1.05, 0.72, 1.95];
 const VEIN_LINEAR = VEIN_VIOLET;
 
 // The vein network is GEOMETRY, not an emissiveMap. A canvas map wraps 160 px
@@ -604,7 +703,7 @@ function buildMonolith(root, [x, z, yaw], shadows, emitters, cosmetic, footprint
   const mesh = new Mesh(geo, mat);
   mesh.position.set(x, 0, z);
   mesh.rotation.y = yaw;
-  addOutline(mesh, { thickness: PROP_INK });
+  addPropInk(mesh);
   root.add(mesh);
 
   const veinMat = new MeshBasicMaterial({ toneMapped: false });
@@ -622,7 +721,7 @@ function buildMonolith(root, [x, z, yaw], shadows, emitters, cosmetic, footprint
   );
   plinth.position.set(x, 0, z);
   plinth.rotation.y = yaw;
-  addOutline(plinth, { thickness: PROP_INK });
+  addPropInk(plinth);
   root.add(plinth);
 
   const step = new Mesh(
@@ -631,10 +730,10 @@ function buildMonolith(root, [x, z, yaw], shadows, emitters, cosmetic, footprint
   );
   step.position.set(x, 0, z);
   step.rotation.y = yaw + 0.18;
-  addOutline(step, { thickness: 0.024 });
+  addPropInk(step, 1.5);
   root.add(step);
 
-  shadows.push({ x, z, rx: 0.82, rz: 0.74 });
+  shadows.push({ x, z, rx: 0.98, rz: 0.9 });
   footprints.push({ x, z, r: 0.78 });
   emitters.push({ kind: 'monolith', x, y: 0.78, z });
   return mat;
@@ -643,27 +742,51 @@ function buildMonolith(root, [x, z, yaw], shadows, emitters, cosmetic, footprint
 // ---------------------------------------------------------------------------
 // Cluster expansion: authored anchors -> 2-4 scattered props with scale jitter.
 // ---------------------------------------------------------------------------
-function expandClusters(spec, cosmetic, types) {
+function expandClusters(spec, cosmetic, types, seedDiscs = []) {
   const byType = new Map();
   const r = (a, b) => cosmetic.range(a, b);
-  const limX = ARENA.halfW - 0.5;
-  const limZ = ARENA.halfD - 0.5;
+  // The wall's inner face is exactly the playfield rect (walls.js builds
+  // outward from it), so a prop must keep its whole footprint inside it or it
+  // clips through the wall base — critique F5's "jagged seam where crate, grass
+  // and outside-rock all meet".
+  const placedDiscs = seedDiscs.slice();
+  const fits = (x, z, rad) => {
+    if (Math.abs(x) + rad > ARENA.halfW - 0.06) return false;
+    if (Math.abs(z) + rad > ARENA.halfD - 0.06) return false;
+    for (const d of placedDiscs) {
+      // Silhouettes may TOUCH (0.86 of the summed radii) but never interpenetrate.
+      if (Math.hypot(x - d.x, z - d.z) < (rad + d.r) * 0.86) return false;
+    }
+    return true;
+  };
 
   for (const [ax, az, spread, recipe] of spec.clusters ?? []) {
     const tokens = recipe.split(/\s+/).filter(Boolean);
     const base = r(0, Math.PI * 2);
     tokens.forEach((tk, i) => {
-      if (!types[tk]) return;
-      const ang = base + (i / Math.max(1, tokens.length)) * Math.PI * 2 + r(-0.5, 0.5);
-      const rad = i === 0 ? r(0, spread * 0.3) : spread * r(0.45, 1.05);
-      const x = Math.max(-limX, Math.min(limX, ax + Math.cos(ang) * rad));
-      const z = Math.max(-limZ, Math.min(limZ, az + Math.sin(ang) * rad * 0.72));
+      const def = types[tk];
+      if (!def) return;
       const s = r(0.65, 1.35);
+      const rad = Math.max(def.foot, def.rz ?? 0) * s;
+      // Up to 14 tries on a widening ring; a prop that still cannot find room
+      // is DROPPED rather than shoved into its neighbour (critique F5: the SE
+      // pile where a crate sat inside a stump inside a barrel).
+      let spot = null;
+      for (let attempt = 0; attempt < 14 && !spot; attempt++) {
+        const grow = 1 + attempt * 0.16;
+        const ang = base + (i / Math.max(1, tokens.length)) * Math.PI * 2 + r(-0.5, 0.5);
+        const dist = i === 0 && attempt === 0 ? r(0, spread * 0.3) : spread * grow * r(0.5, 1.1);
+        const x = ax + Math.cos(ang) * dist;
+        const z = az + Math.sin(ang) * dist * 0.72;
+        if (fits(x, z, rad)) spot = { x, z };
+      }
+      if (!spot) return;
+      placedDiscs.push({ x: spot.x, z: spot.z, r: rad });
       if (!byType.has(tk)) byType.set(tk, []);
-      byType.get(tk).push({ x, z, yaw: r(0, Math.PI * 2), s, sy: s * r(0.88, 1.14) });
+      byType.get(tk).push({ x: spot.x, z: spot.z, yaw: r(0, Math.PI * 2), s, sy: s * r(0.88, 1.14) });
     });
   }
-  return byType;
+  return { byType, placedDiscs };
 }
 
 // Build every placed prop for a variant. Returns { emitters, shadows,
@@ -693,18 +816,38 @@ export function buildProps(root, spec, cosmetic) {
   };
 
   const types = propTypes(mats, spec);
-  const placed = expandClusters(spec, cosmetic, types);
 
-  // Torches and lanterns keep their authored positions (their light pools are
-  // part of the layout), so they join the same table by hand.
-  placed.set(
-    'torch',
-    (spec.torches ?? []).map(([x, z]) => ({ x, z, yaw: r(0, Math.PI * 2), s: r(0.9, 1.1) }))
-  );
-  placed.set(
-    'lantern',
-    (spec.lanterns ?? []).map(([x, z, yaw = 0]) => ({ x, z, yaw, s: 1 }))
-  );
+  // Torches, lanterns and the monolith keep their AUTHORED positions (their
+  // light pools and the act tell are part of the layout), so they are resolved
+  // first and seeded into the cluster rejection table: a scattered crate can
+  // then never end up buried inside a torch footing (critique F5).
+  const clampIn = (v, lim, rad) => Math.max(-(lim - rad - 0.06), Math.min(lim - rad - 0.06, v));
+  const torchT = (spec.torches ?? []).map(([x, z]) => {
+    const sc = r(0.9, 1.1);
+    return {
+      x: clampIn(x, ARENA.halfW, types.torch.foot * sc),
+      z: clampIn(z, ARENA.halfD, types.torch.foot * sc),
+      yaw: r(0, Math.PI * 2),
+      s: sc,
+    };
+  });
+  const lanternT = (spec.lanterns ?? []).map(([x, z, yaw = 0]) => ({
+    x: clampIn(x, ARENA.halfW, types.lantern.foot),
+    z: clampIn(z, ARENA.halfD, types.lantern.foot),
+    yaw,
+    s: 1,
+  }));
+  const seedDiscs = [
+    ...torchT.map((t) => ({ x: t.x, z: t.z, r: types.torch.foot * t.s + 0.28 })),
+    ...lanternT.map((t) => ({ x: t.x, z: t.z, r: types.lantern.foot + 0.3 })),
+  ];
+  if (spec.monolith) {
+    seedDiscs.push({ x: spec.monolith[0], z: spec.monolith[1], r: 0.86 });
+  }
+
+  const { byType: placed } = expandClusters(spec, cosmetic, types, seedDiscs);
+  placed.set('torch', torchT);
+  placed.set('lantern', lanternT);
 
   let typeCount = 0;
   for (const [name, transforms] of placed) {
@@ -718,8 +861,8 @@ export function buildProps(root, spec, cosmetic) {
       shadows.push({
         x: t.x,
         z: t.z,
-        rx: def.foot * sc * 1.45,
-        rz: (def.rz ?? def.foot) * sc * 1.45,
+        rx: def.foot * sc * SHADOW_SPREAD,
+        rz: (def.rz ?? def.foot) * sc * SHADOW_SPREAD,
         yaw: t.yaw,
         faint: !!def.faint,
       });

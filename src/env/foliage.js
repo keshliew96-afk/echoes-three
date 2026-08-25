@@ -108,15 +108,19 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
     if (cool) {
       c.setHSL(
         (g.h * 0.45 + shH * 0.55 + r(-10, 10)) / 360,
-        Math.min(1, shS + r(0.1, 0.22)),
-        Math.max(0.03, shL + r(0.06, 0.13)),
+        Math.min(1, shS + r(0.1, 0.2)),
+        Math.max(0.03, shL + r(0.05, 0.11)),
         SRGBColorSpace
       );
     } else {
       c.setHSL(
         (g.h + r(-10, 8)) / 360,
-        Math.min(1, g.s + r(0.02, 0.16)),
-        Math.max(0.03, g.l + r(0.01, 0.1)),
+        Math.min(1, g.s + r(0.0, 0.12)),
+        // Blades sit a step UNDER the lit floor value. Round 3's floor was so
+        // dark that grass authored at floor value read fine; with the floor
+        // lifted to its §19.3 value the same numbers turn the tufts into
+        // yellow-white confetti, so they are keyed off the floor, not fixed.
+        Math.max(0.03, g.l * 0.78 + r(-0.01, 0.07)),
         SRGBColorSpace
       );
     }

@@ -66,7 +66,11 @@ export const ENV = Object.freeze({
   iron: shade(mix(PALETTE.voidCharcoal, PALETTE.warmGrey, 0.4), 0.7),
   // Lantern glass: warm gold, kept at a value the bloom pass lifts into a halo
   // WITHOUT clipping the core to featureless white (the previous 1.55x did).
-  glassLit: mix(PALETTE.paleGold, PALETTE.hearthAmber, 0.4).multiplyScalar(0.95),
+  // 2.9x is an HDR gain, not a tint: MeshBasicMaterial values above 1.0 in the
+  // linear working space are what carries the glass over the bloom pass's
+  // threshold so a lantern reads as a lit lantern (critique F2). ACES pulls the
+  // core back to a warm near-white with an amber bloom skirt.
+  glassLit: mix(PALETTE.paleGold, PALETTE.hearthAmber, 0.4).multiplyScalar(2.9),
   // Corruption monolith stone — near-black and COOL, so the violet emissive
   // veins stay saturated violet instead of lifting into grey-mauve.
   monolith: mix(PALETTE.voidCharcoal, COOL.ambient, 0.55).multiplyScalar(0.55),
