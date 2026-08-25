@@ -5,7 +5,40 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ▶ Round B REMEDIATION running (arena lighting + critter legibility), then integration
+## Status: ⏸ PAUSED by user (during Round B remediation)
+
+### Resume point — do this first
+1. Start the dev server (`npm run dev`, port 5199) if it is not up.
+2. Resume the remediation workflow: `Workflow({scriptPath: "C:\Users\keshl\.claude\projects\C--Users-keshl-OneDrive-Desktop------echoes-three\3d94cc26-ac5d-4ee9-8985-3b471cd8f4f1\workflows\scripts\echoes-round-b-fix-wf_1dfeccac-395.js", resumeFromRunId: "wf_1dfeccac-395"})` — the arena fix round replays from cache; the critter fixer restarts (its work was uncommitted mid-edit but IS functional on disk). Then critics re-verify, integration runs, and the 10-check baseline is scored.
+3. Then Round C: blocks 7-10 — enemies/waves, ally AI + downed/revive, healer skill kit, node build system. Blocks 11-14 (run structure/draft/shop/boss, HUD, camp hub, final polish) follow.
+
+### Measured state at pause (v0.2.6)
+Arena lighting fix WORKED — `captures/pause2-arena.png` vs the reference frame:
+
+| Metric | Before fix | After fix | Reference | Gate |
+|---|---|---|---|---|
+| LUMA >160 | 0.041% | **3.238%** | 3.418% | >=1.5% PASS |
+| LUMA >200 | 0.008% | **0.494%** | 1.427% | >=0.4% PASS |
+| Buckets used | 9/16 | **14/16** | 16/16 | >=13 PASS |
+| FLAT | 1.19% | **1.68%** | 16.68% | <20% PASS |
+
+Critters (`captures/pause2-chartest.png`) now read as storybook plush: all four
+identity rings legible INCLUDING the Tank (fixed after 3 failed rounds), eyes are
+large dark beans with small glints, staff gem glows Bright Heal green, faces
+visible (lean corrected). 164fps, zero errors.
+
+### My own visual notes for the next critic round (not yet agent-verified)
+- Arena: the warm light pools now read as ~8 amber ellipses floating in open grass
+  with no visible emitter casting them — in the reference every pool has a source.
+  Tie each pool to a torch/lantern/fire, or cut the sourceless ones.
+- Arena: props are clustered almost entirely along the north wall; the south half
+  of the play space is undressed grass. Distribute edge dressing around all four
+  edges.
+- Critters: the Tank ring now reads near-white rather than Stone Umber #6B6157 with
+  a Bone rim — legible, but check it against the spec hue.
+- Critters: rings render as hard flat discs; the brief calls for a soft-edged
+  ground ellipse. Archer's bow still reads as a closed 'D', fox tail as a pale
+  flipper.
 
 ### Resume point — do this first
 1. Start the dev server: `npm run dev` in this folder (port 5199), or preview_start "echoes-dev".

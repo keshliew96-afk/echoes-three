@@ -42,10 +42,23 @@ export function createCharTestScene(stage, toggles, { cosmetic }) {
 
   // Neutral ground: desaturated warm-grey pulled slightly cool, so the party
   // reads as the warmest, most saturated thing in frame (§19.2 warmth test).
-  const groundMix = params.get('ground') === 'light' ? 0.28 : params.get('ground') === 'dark' ? 0.78 : 0.58;
+  //
+  // VALUE (round-4). The gallery floor rendered at luma 136-163 — brighter than
+  // any surface the game actually ships. Measured on the live build: the Act-1
+  // arena floor runs luma 30-101 (captures/r4-arena.png) and the reference
+  // frame's painted stone bridge 67-74 (docs/reference/pass-the-fear.png). A
+  // proving ground for ground-decal contrast has to sit in the band the game
+  // uses, so the default lands near 110. `?ground=light` keeps the old, much
+  // brighter floor as an explicit worst-case stress test for ring legibility,
+  // and `?ground=dark` covers the arena's shaded pockets.
+  const groundMix = params.get('ground') === 'light' ? 0.6 : params.get('ground') === 'dark' ? 0.94 : 0.84;
+  // Cool cast applied as a CHANNEL RATIO, not a lerp toward Signal Blue: at
+  // this ground value a linear lerp toward a saturated blue swamps the neutral
+  // (Signal Blue's linear blue is 0.69 against the floor's 0.04) and the
+  // gallery turned into a blue field instead of a neutral proving ground.
   const groundColor = new Color(PALETTE.bone)
     .lerp(new Color(PALETTE.voidCharcoal), groundMix)
-    .lerp(new Color(PALETTE.signalBlue), 0.16);
+    .multiply(new Color().setRGB(0.86, 0.97, 1.18));
   const ground = new Mesh(new PlaneGeometry(300, 300), toonMaterial({ color: groundColor }));
   ground.rotation.x = -Math.PI / 2;
   root.add(ground);

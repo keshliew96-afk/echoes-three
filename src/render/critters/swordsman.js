@@ -30,14 +30,37 @@ import {
 } from 'three';
 import { CLASS_ACCENTS, PALETTE } from '../../data/palette.js';
 import { toonMaterial } from '../toon.js';
-import { bell, bodyPanel, brushTail, mix, part, faceDecal, faceMarkings, exactHex, mitten, makeArm, aimArm } from './common.js';
+import {
+  bell,
+  bodyPanel,
+  brushTail,
+  mix,
+  part,
+  faceDecal,
+  faceMarkings,
+  exactHex,
+  makeSwingSmear,
+  mitten,
+  makeArm,
+  aimArm,
+} from './common.js';
+import { FALL_ANGLE } from './index.js';
 
 const HIP = 0.155;
+// Every garment's bottom ring is lifted clear of the floor. The ink hull is
+// expanded in CLIP space, so a hem sitting exactly at y=0 pushed its hull BELOW
+// the ground plane, where the floor and the identity-ring decal clipped it —
+// round-3 F10 measured the healer's hem ink simply stopping partway along.
+const HEM = 0.022;
 const HEAD_C = 0.659;
 const HEAD_R = 0.238;
 const SX = 0.95, SY = 0.97, SZ = 1.03;
 const EAR_TOP = 1.11;
-const LEAN = 0.2; // rad — the party's only asymmetric rest lean
+// rad — the party's only asymmetric rest lean. §19.2 says "~8°"; round 3 ran
+// 0.2 here and the walk clip stacked another 0.19 on top for a 22° pitch that
+// hid the face and folded both ears into one spike. index.js additionally
+// hard-clamps the sum at 0.21 rad (12.0°).
+const LEAN = 0.12;
 
 export function buildSwordsman(rig, trackAccent) {
   const accent = CLASS_ACCENTS.swordsman;
@@ -56,8 +79,8 @@ export function buildSwordsman(rig, trackAccent) {
   const tunicMat = trackAccent(toonMaterial({ color: tunicHex }));
   const tunic = part(
     bell([
-      [0, 0.0],
-      [0.155, 0.0],
+      [0, HEM],
+      [0.155, HEM],
       [0.2, 0.04],
       [0.215, 0.12],
       [0.205, 0.22],
@@ -134,7 +157,7 @@ export function buildSwordsman(rig, trackAccent) {
   const ears = [];
   for (const side of [-1, 1]) {
     const pivot = new Group();
-    pivot.position.set(side * 0.115, 0.175, -0.035);
+    pivot.position.set(side * 0.142, 0.168, -0.03);
     const ear = part(new ConeGeometry(0.082, 0.3, 12), furHex);
     ear.position.y = 0.15;
     pivot.add(ear);
@@ -144,58 +167,83 @@ export function buildSwordsman(rig, trackAccent) {
     const tip = part(new ConeGeometry(0.034, 0.115, 10), mix(PALETTE.voidCharcoal, PALETTE.bruiseUmber, 0.35).getHex());
     tip.position.y = 0.2425;
     pivot.add(tip);
-    pivot.rotation.z = side * -0.22;
-    pivot.rotation.x = -0.12;
+    pivot.rotation.z = side * -0.27; // splayed: the pair stays two spikes
+    pivot.rotation.x = -0.08;
     head.add(pivot);
     ears.push(pivot);
   }
 
-  // --- Fox brush: sweeps back and UP, white-tipped, rooted inside the tunic so
-  // a collapsed body can never leave it floating clear with a closed outline.
+  // --- Fox brush (round-3 F11: it read as a rigid traffic cone).
+  // Three things make it a BRUSH now: the spine is an S — back, out, down, then
+  // hooked UP at the tip — so the silhouette carries a curve instead of a
+  // straight taper; the taper is halved (0.34, so the tip is 66% of the base
+  // rather than 38%) so it stays fat like fur rather than narrowing to a point;
+  // and the Bone tip is closed with a rounded cap placed at the hook, which is
+  // the part of the tail the 3/4 camera can actually see against background.
   const tailPivot = new Group();
-  tailPivot.position.set(0, 0.24, -0.06);
+  tailPivot.position.set(0, 0.215, -0.07);
   body.add(tailPivot);
-  // The brush sweeps BACK AND OUT TO THE SIDE, and is built as a chain of
-  // overlapping, shrinking balls that ends in the white tip. Two earlier shapes
-  // failed on captures: swept UP, the light tip projected above the shoulders
-  // from the 3/4 camera and read as a raised paw waving a mitten; as a tube
-  // plus a separate light cap, the cap detached and read as a traffic cone. An
-  // overlapping chain cannot come apart and tapers on its own.
-  // The brush sweeps BACK, OUT TO THE SIDE and DOWN. Under a 3/4 camera every
-  // unit of depth lifts a mass ~0.55 u of screen height, so a level tail
-  // projects above the shoulders and reads as a raised paw; sloping it down
-  // lands the white tip below the chin where a fox brush belongs.
+  const TAIL_R = 0.115;
+  // The spine drops as it sweeps: under a 3/4 camera every unit of -Z lifts a
+  // mass up the screen, so a level tail projects beside the shoulder and reads
+  // as a raised paw (which is exactly what the first pass at this fix did).
+  // Ending BELOW the root, out to the side and back, lands the brush at hip
+  // height where a fox tail belongs, and the final control point hooks it up
+  // again so the Bone tip is silhouetted against background.
   const tailCurve = new CatmullRomCurve3([
     new Vector3(0, 0, 0),
-    new Vector3(-0.15, -0.06, -0.07),
-    new Vector3(-0.28, -0.14, -0.11),
-    new Vector3(-0.38, -0.2, -0.13),
+    new Vector3(-0.16, -0.07, -0.03),
+    new Vector3(-0.32, -0.13, -0.06),
+    new Vector3(-0.45, -0.125, -0.09),
+    new Vector3(-0.55, -0.03, -0.1), // the hook: lifts the Bone tip into view
   ]);
-  tailPivot.add(
-    brushTail(tailCurve, {
-      radius: 0.12,
-      colorA: furHex,
-      colorB: mix(PALETTE.bone, PALETTE.parchment, 0.8).getHex(),
-      split: 0.42,
-      taper: 0.62,
-    })
-  );
+  // Bone, NOT Parchment: a near-Parchment tip on a LIT toon material clears the
+  // composer's bloom threshold under the key light and the brush turned into a
+  // glowing white blob beside the shoulder. Bone is the brightest palette value
+  // that stays a solid colour here.
+  const tipHex = mix(PALETTE.bone, PALETTE.parchment, 0.15).getHex();
+  const brush = brushTail(tailCurve, {
+      radius: TAIL_R,
+      // Russet base, Bone tip: on the fox's pale tan fur a Bone tip alone has
+      // barely two value steps of contrast and the "white-tipped tail" species
+      // tell disappears. Darkening the base is what makes the tip read.
+      colorA: mix(fur, PALETTE.bruiseUmber, 0.72).getHex(),
+      colorB: tipHex,
+      split: 0.56, // the last ~44% goes Bone — a TIP, not a white tail
+      tubular: 34,
+  });
+  tailPivot.add(brush);
+  tailPivot.add(brush.userData.cap);
 
-  // --- Sword: a real blade (tapered point + crossguard + wrapped grip), held
-  // as a clean diagonal that breaks the body outline. The rejected build had a
-  // square-ended board floating with no paw anywhere near the grip.
+  // --- Sword (round-3 F2: the blade vanished through most of the attack).
+  // The cause was the swing rotating about Y and X, which aligned the blade
+  // axis with the view vector on the release frames — a 4-sided flat blade seen
+  // end-on is ~3 px of nothing. The swing is now confined to ONE axis, Z, which
+  // is the axis whose arc lies in the camera plane at every gameplay elevation,
+  // so the blade sweeps as a broad diagonal line and is never foreshortened
+  // past its own width. Constant small X/Y tilts keep it from looking like a
+  // flat cut-out without ever pointing it at the lens.
+  const SWORD_REST_Z = -0.65;
+  const SWORD_ARC = 1.5; // rad each way -> a 172° wind-up-to-release arc
   const sword = new Group();
-  sword.position.set(0.26, 0.3, 0.07);
-  sword.rotation.z = -0.85;
-  sword.rotation.x = -0.22;
+  sword.position.set(0.26, 0.31, 0.08);
+  sword.rotation.z = SWORD_REST_Z;
+  sword.rotation.x = -0.15;
+  sword.rotation.y = 0.12;
   body.add(sword);
   const blade = part(
-    new CylinderGeometry(0.006, 0.032, 0.44, 4),
-    mix(PALETTE.bone, PALETTE.parchment, 0.65).getHex()
+    new CylinderGeometry(0.008, 0.046, 0.5, 4),
+    // Steel, not light: mixed toward Parchment the LIT blade cleared the
+    // composer's bloom threshold and the sword grew an emitter halo, which
+    // REFERENCE_BAR reserves for actual light sources.
+    mix(PALETTE.bone, PALETTE.warmGrey, 0.24).getHex()
   );
-  blade.rotation.y = Math.PI / 4;
-  blade.scale.z = 0.42;
-  blade.position.y = 0.245;
+  // NO yaw on the blade: a 4-segment cylinder puts its vertices on +-X/+-Z, so
+  // squashing Z alone gives a diamond section whose BROAD face is the XY plane
+  // — the plane the swing lives in. Rotating it 45 degrees (as round 3 did)
+  // turned the broad face diagonal and the blade measured ~2 px on screen.
+  blade.scale.z = 0.34;
+  blade.position.y = 0.28;
   sword.add(blade);
   const guard = part(
     new BoxGeometry(0.17, 0.032, 0.05),
@@ -209,6 +257,15 @@ export function buildSwordsman(rig, trackAccent) {
   const pommel = part(new SphereGeometry(0.032, 10, 8), mix(PALETTE.bruiseUmber, PALETTE.paleGold, 0.45).getHex());
   pommel.position.y = -0.118;
   sword.add(pommel);
+
+  // Swing smear: the release layer REFERENCE_BAR check 10 asks for. It shares
+  // the sword's pivot and plane, so the arc it paints is exactly the arc the
+  // blade travelled, with the leading edge welded to the blade.
+  const smear = makeSwingSmear({ innerR: 0.13, outerR: 0.62, span: 1.7, color: PALETTE.parchment });
+  smear.position.copy(sword.position);
+  smear.rotation.x = sword.rotation.x;
+  smear.rotation.y = sword.rotation.y;
+  body.add(smear);
   const gripPaw = mitten(mix(fur, PALETTE.bruiseUmber, 0.45).getHex(), 0.058);
   gripPaw.position.set(0, -0.05, 0.0);
   sword.add(gripPaw);
@@ -235,7 +292,7 @@ export function buildSwordsman(rig, trackAccent) {
     feet.push(foot);
   }
 
-  function apply(P) {
+  function apply(P, t, fallSign = 1) {
     ears[0].rotation.z = -0.22 - P.ear - P.collapse * 0.45;
     ears[1].rotation.z = 0.22 + P.ear * 0.85 + P.collapse * 0.45;
     ears[0].rotation.x = -0.12 + 0.4 * Math.min(0, P.ear * 1.6);
@@ -243,12 +300,24 @@ export function buildSwordsman(rig, trackAccent) {
     tailPivot.rotation.y = 0.3 * P.tail;
     tailPivot.rotation.x = 0.12 * P.tail - 0.45 * P.collapse;
 
-    // Cast = slash: cock back on the wind-up, sweep down-forward on release.
-    // Slash sweeps mostly in Z (screen plane) — swinging it hard about X tipped
-    // the blade at the camera and the sword vanished on the release frame.
-    sword.rotation.z = -0.9 + 1.35 * P.prop;
-    sword.rotation.x = -0.22 - 0.2 * Math.max(0, P.prop) + 0.4 * Math.min(0, P.prop);
-    sword.rotation.y = 0.45 * P.prop;
+    // Cast = slash: blade cocked back over the shoulder on the wind-up
+    // (prop -1 -> z +0.85), then a 172° sweep down and across on the release
+    // (prop +1 -> z -2.15). Pure Z, so the blade stays broadside to the camera
+    // for every frame of the clip.
+    // Downed (round-3 F8): counter-rotate the collapse so the blade lies FLAT
+    // on the ground beside the fox, in front of the body, instead of being
+    // flung behind it where the capture found nothing at all.
+    const lay = P.collapse;
+    const flat = -fallSign * (Math.PI / 2 + FALL_ANGLE) + 0.25;
+    const swingZ = (SWORD_REST_Z - SWORD_ARC * P.prop) * (1 - lay) + flat * lay;
+    sword.rotation.z = swingZ;
+    sword.rotation.x = (-0.15 - 0.08 * Math.max(0, P.prop)) * (1 - lay);
+    sword.rotation.y = 0.12 * (1 - lay);
+    sword.position.set(0.26 * (1 - lay) + 0.04 * lay, 0.31 * (1 - lay) + 0.1 * lay, 0.08 + 0.3 * lay);
+    // Smear trails the blade: its leading edge sits on the blade axis.
+    smear.rotation.z = swingZ + Math.PI / 2;
+    smear.material.uniforms.uOpacity.value = 0.85 * P.swing;
+    smear.visible = P.swing > 0.02;
 
     feet[0].position.z = 0.24 + 0.1 * P.stride;
     feet[1].position.z = 0.24 - 0.1 * P.stride;
@@ -272,7 +341,7 @@ export function buildSwordsman(rig, trackAccent) {
       chinY: HEAD_C - HEAD_R * SY,
       headR: HEAD_R * SX,
       halfWidth: 0.24,
-      ringRadius: 0.42,
+      ringRadius: 0.46,
       hipY: HIP,
     },
   };

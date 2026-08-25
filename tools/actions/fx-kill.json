@@ -1,0 +1,15 @@
+[
+  { "type": "keydown", "key": "KeyD" },
+  { "type": "wait", "ms": 250 },
+  { "type": "keyup", "key": "KeyD" },
+  { "type": "key", "key": "Space", "ms": 80 },
+  { "type": "wait", "ms": 350 },
+  { "type": "mousemove", "x": 1000, "y": 430 },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "(() => { const p = __echoes.state().party[0]; const dx = p.aim.x - p.x, dz = p.aim.z - p.z; const L = Math.hypot(dx, dz); __echoes.cmd('spawn','dummy', p.x + (dx/L)*2.2, p.z + (dz/L)*2.2); return __echoes.state().enemies.length; })()" },
+  { "type": "mousedown", "button": "right" },
+  { "type": "eval", "code": "new Promise((res) => { const t0 = Date.now(); const iv = setInterval(() => { const s = __echoes.stats; if (s.kills > 0 || Date.now() - t0 > 8000) { clearInterval(iv); res({ kills: s.kills, hits: s.hits }); } }, 100); })" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "({ stats: __echoes.stats, vfx: __echoes.state().vfx, fps: __echoes.fps })" }
+]

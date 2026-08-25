@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(() => { const v = window.__echoes.state().vfx; return {variant:v.variant, name:v.variantName, propTypes:v.propTypes, propShadows:v.propShadows, emitters:v.emitters, grass:v.grass, flowers:v.flowers, fps: window.__echoes.fps}; })()"}
+]

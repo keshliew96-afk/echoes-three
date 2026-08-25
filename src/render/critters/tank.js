@@ -16,6 +16,8 @@ import { toonMaterial } from '../toon.js';
 import { bell, bodyPanel, mix, exactHex, part, faceDecal, faceMarkings, mitten, makeArm, aimArm } from './common.js';
 
 const HIP = 0.19;
+// Hems clear of the floor — see the note in healer.js (round-3 F10).
+const HEM = 0.022;
 const HEAD_C = 0.767;
 const HEAD_R = 0.232;
 const SX = 1.08, SY = 0.92, SZ = 1.0;
@@ -39,9 +41,9 @@ export function buildTank(rig, trackAccent) {
   const coatMat = trackAccent(toonMaterial({ color: furHex }));
   const coat = part(
     bell([
-      [0, 0.0],
-      [0.23, 0.0],
-      [0.31, 0.05],
+      [0, HEM],
+      [0.23, HEM],
+      [0.31, 0.055],
       [0.335, 0.15],
       [0.325, 0.27],
       [0.295, 0.39],
@@ -71,9 +73,19 @@ export function buildTank(rig, trackAccent) {
   tabard.scale.set(BODY_SCALE_X, 1, 1.06);
   trackAccent(tabard.material);
   body.add(tabard);
-  const buckle = part(new BoxGeometry(0.11, 0.08, 0.05), PALETTE.paleGold);
+  // Round-3 F9: this buckle shipped in Pale Gold and measured #DBAE5A —
+  // hsv(39, 0.59, 0.86), squarely inside the Hearth Amber family §19.1 reserves
+  // for positive UI / Legendary / selection / Victory / camp fire. It was also
+  // the single highest-value pixel on the character, pulling the eye to the
+  // belly instead of the face. Retinted to dark leather; the matching gold stud
+  // that clipped out from behind the shoulder block is deleted outright.
+  const leatherHex = mix(PALETTE.bruiseUmber, PALETTE.voidCharcoal, 0.28).getHex();
+  const buckle = part(new BoxGeometry(0.105, 0.075, 0.05), leatherHex);
   buckle.position.set(0, 0.2, 0.35);
   body.add(buckle);
+  const buckleTongue = part(new BoxGeometry(0.055, 0.03, 0.02), mix(PALETTE.bone, PALETTE.bruiseUmber, 0.45).getHex());
+  buckleTongue.position.set(0, 0.2, 0.385);
+  body.add(buckleTongue);
   // Narrow accent collar AT the chin: it separates fur from garment and puts
   // the neck pinch on the head-measurement line (proportion note in healer.js).
   const collar = part(new CylinderGeometry(0.125, 0.165, 0.075, 20), mix(accent, PALETTE.voidCharcoal, 0.2).getHex());
@@ -102,10 +114,19 @@ export function buildTank(rig, trackAccent) {
       paint: (ctx, S) => {
         ctx.fillStyle = blaze;
         ctx.fillRect(S * 0.425, 0, S * 0.15, S);
+        // The mask stripes PINCH at the eye line (y ~0.58 of the patch) so the
+        // dark bean is never continuous with them: round 3 measured the Tank's
+        // eyes reading as two glowing white crescents inside black bands, i.e.
+        // the enemy treatment §19.2 reserves for corrupted beasts.
         ctx.fillStyle = stripe;
         for (const side of [-1, 1]) {
+          const cx = S * (0.5 + side * 0.235);
           ctx.beginPath();
-          ctx.ellipse(S * (0.5 + side * 0.215), S * 0.5, S * 0.075, S * 0.42, 0, 0, Math.PI * 2);
+          ctx.moveTo(cx - S * 0.075, 0);
+          ctx.quadraticCurveTo(cx - S * 0.028, S * 0.58, cx - S * 0.06, S);
+          ctx.lineTo(cx + S * 0.06, S);
+          ctx.quadraticCurveTo(cx + S * 0.028, S * 0.58, cx + S * 0.075, 0);
+          ctx.closePath();
           ctx.fill();
         }
       },
@@ -135,7 +156,19 @@ export function buildTank(rig, trackAccent) {
   nose.position.set(0, -0.072, SZ * HEAD_R * 0.78 + 0.07);
   head.add(nose);
 
-  head.add(faceDecal({ R: HEAD_R, sx: SX, sy: SY, sz: SZ, eyeW: 0.1, eyeH: 0.115, spread: 0.215, drop: 0.58 }));
+  head.add(
+    faceDecal({
+      R: HEAD_R,
+      sx: SX,
+      sy: SY,
+      sz: SZ,
+      eyeW: 0.115,
+      eyeH: 0.135,
+      spread: 0.215,
+      drop: 0.58,
+      sclera: 0.34, // light fur ring: separates the bean from the mask stripe
+    })
+  );
 
   // --- THE squared mass: a shoulder block, ending well above the ground.
   const shield = new Group();
@@ -149,9 +182,6 @@ export function buildTank(rig, trackAccent) {
   const slab = part(new BoxGeometry(0.085, 0.22, 0.26), accent, { mat: slabMat });
   slab.position.set(0.13, -0.19, 0);
   shield.add(slab);
-  const rivet = part(new BoxGeometry(0.055, 0.055, 0.055), PALETTE.paleGold);
-  rivet.position.set(0.172, -0.19, 0);
-  shield.add(rivet);
 
   // --- Arms + widest-stance feet.
   const armR = makeArm(furHex, 0.06, 0.22);

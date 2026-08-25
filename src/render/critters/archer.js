@@ -27,16 +27,29 @@ import { toonMaterial } from '../toon.js';
 import { bell, bodyPanel, mix, part, faceDecal, faceMarkings, exactHex, mitten, makeArm, aimArm } from './common.js';
 
 const HIP = 0.17;
+// Hems clear of the floor — see the note in healer.js (round-3 F10).
+const HEM = 0.022;
 const HEAD_C = 0.7458;
 const HEAD_R = 0.2685;
 const SX = 0.9, SY = 1.02, SZ = 0.94;
 const EAR_TOP = 1.3;
-const ARC_R = 0.225;
-const BOW_X = -0.3;
-const BOW_Y = 0.38;
-const BOW_TILT = 0.25; // yaw: rakes the string plane back so it never crosses
-//                        the chest as a hard line (the rejected build drew it
-//                        straight over the torso)
+// BOW GEOMETRY (round-3 F12: "the bow reads as a hoop/handbag and the arm
+// impales it"). The riser used to sit at the arc's OUTBOARD extreme with the
+// arc's opening facing the body, so the bow arm had to travel from the shoulder
+// through the opening, across the interior, and out the far side — the paw
+// poked out beyond the limbs and the whole thing read as a handbag with a
+// skewer through it.
+//
+// The bow group's ORIGIN is now the riser, and the arc bulges OUTBOARD from it.
+// The arm therefore stops dead at the grip and never enters the arc; the paw is
+// pushed forward of the bow plane (+Z) so it visibly closes on the riser in
+// front; and the plane is yawed so the C and its string chord both project as
+// open shapes from the 3/4 camera instead of collapsing edge-on.
+const ARC_R = 0.25;
+const BOW_X = -0.29;
+const BOW_Y = 0.44;
+const BOW_Z = 0.15;
+const BOW_TILT = 0.3; // yaw: keeps the C in the camera plane instead of edge-on
 
 export function buildArcher(rig, trackAccent) {
   const accent = CLASS_ACCENTS.archer;
@@ -55,9 +68,9 @@ export function buildArcher(rig, trackAccent) {
   const tunicMat = trackAccent(toonMaterial({ color: mix(accent, PALETTE.warmGrey, 0.16).getHex() }));
   const tunic = part(
     bell([
-      [0, 0.0],
-      [0.135, 0.0],
-      [0.175, 0.04],
+      [0, HEM],
+      [0.135, HEM],
+      [0.175, 0.045],
       [0.185, 0.13],
       [0.175, 0.27],
       [0.155, 0.38],
@@ -162,19 +175,24 @@ export function buildArcher(rig, trackAccent) {
   tailPivot.add(tail);
   body.add(tailPivot);
 
-  // --- Bow: open C arc clear of the torso, opening facing outboard.
+  // --- Bow: an open C hung off the riser, opening outboard.
   const bow = new Group();
-  bow.position.set(BOW_X, BOW_Y, 0.05);
+  bow.position.set(BOW_X, BOW_Y, BOW_Z);
   bow.rotation.y = BOW_TILT;
+  bow.rotation.z = 0.12;
   body.add(bow);
-  const ARC_SPAN = (220 * Math.PI) / 180;
-  const limb = part(new TorusGeometry(ARC_R, 0.021, 8, 40, ARC_SPAN), wood);
-  limb.rotation.z = Math.PI - ARC_SPAN / 2; // arc centred on -X: the convex
-  bow.add(limb); //                            limbs face outboard, away from
-  //                                           the body, like a real bow
-  // String: the chord closing the arc on the BODY side. Together with the limbs
-  // it encloses the open negative space the art bible asks the bow to make.
-  const tipX = -Math.cos(ARC_SPAN / 2) * ARC_R;
+  const ARC_SPAN = (215 * Math.PI) / 180;
+  const limb = part(new TorusGeometry(ARC_R, 0.021, 8, 44, ARC_SPAN), wood);
+  // The arc's MIDPOINT lands on the group origin and the limbs sweep OUTBOARD
+  // from it, so the whole bow lives on the far side of the grip from the
+  // shoulder. That is the geometric reason the arm can no longer impale it:
+  // there is nothing between the shoulder and the paw to pass through.
+  limb.position.x = -ARC_R;
+  limb.rotation.z = -ARC_SPAN / 2;
+  bow.add(limb);
+  // String: the chord closing the arc. Together with the limbs it encloses the
+  // open negative space §19.2 asks the bow to make.
+  const tipX = -ARC_R + Math.cos(ARC_SPAN / 2) * ARC_R;
   const tipY = Math.sin(ARC_SPAN / 2) * ARC_R;
   const string = new Mesh(
     new CylinderGeometry(0.0075, 0.0075, tipY * 2, 6),
@@ -182,31 +200,35 @@ export function buildArcher(rig, trackAccent) {
   );
   string.position.set(tipX, 0, 0);
   bow.add(string);
-  // Riser: the wrapped grip at the arc's midpoint — the outermost point, which
-  // is exactly where an extended bow arm puts the paw.
+  // Riser: the wrapped grip AT the origin — the point nearest the shoulder,
+  // which is the only point an extended bow arm can actually close on.
   const riser = part(
-    new CylinderGeometry(0.03, 0.03, 0.15, 10),
+    new CylinderGeometry(0.03, 0.03, 0.17, 10),
     mix(PALETTE.bruiseUmber, PALETTE.voidCharcoal, 0.4).getHex()
   );
-  riser.position.set(-ARC_R, 0, 0);
   bow.add(riser);
-  const gripPaw = mitten(furHex, 0.058);
-  gripPaw.position.set(-ARC_R, 0, 0.02);
+  // Paw IN FRONT of the arc (+Z in bow space), so from the play camera the
+  // mitten visibly overlaps the riser rather than being skewered by it.
+  const gripPaw = mitten(furHex, 0.06);
+  gripPaw.position.set(0, 0, 0.062);
   bow.add(gripPaw);
 
-  // Quiver on the back with two arrows.
+  // Quiver on the back with two arrows. Round-3 F12 also found it clipping
+  // INTO the skull with a stray green fletching nub emerging out of the head:
+  // it is reseated lower and further back, and raked backwards rather than
+  // upright, so the arrow tips clear the head sphere by ~0.09 u at rest.
   const quiver = new Group();
-  quiver.position.set(0.15, 0.4, -0.16);
-  quiver.rotation.z = -0.32;
+  quiver.position.set(0.155, 0.33, -0.185);
+  quiver.rotation.set(-0.5, 0, -0.34);
   const tube = part(new CylinderGeometry(0.052, 0.046, 0.25, 10), wood);
   quiver.add(tube);
   for (const [ox, oz] of [[-0.016, 0.012], [0.021, -0.016]]) {
-    const shaft = new Mesh(new CylinderGeometry(0.008, 0.008, 0.2, 6), toonMaterial({ color: PALETTE.bone }));
-    shaft.position.set(ox, 0.2, oz);
+    const shaft = new Mesh(new CylinderGeometry(0.008, 0.008, 0.18, 6), toonMaterial({ color: PALETTE.bone }));
+    shaft.position.set(ox, 0.185, oz);
     quiver.add(shaft);
     const fletch = new Mesh(new SphereGeometry(0.024, 8, 6), toonMaterial({ color: accent }));
     fletch.scale.set(0.7, 1.4, 0.7);
-    fletch.position.set(ox, 0.29, oz);
+    fletch.position.set(ox, 0.265, oz);
     quiver.add(fletch);
   }
   body.add(quiver);
@@ -220,7 +242,7 @@ export function buildArcher(rig, trackAccent) {
   body.add(armR);
   const drawPaw = mitten(furHex, 0.052);
   body.add(drawPaw);
-  const gripLocal = new Vector3(-ARC_R, 0, 0.02);
+  const gripLocal = new Vector3(0, 0, 0.03);
   const gripWorld = new Vector3();
 
   const feet = [];
@@ -244,13 +266,14 @@ export function buildArcher(rig, trackAccent) {
     // string back on the wind-up and snaps forward on the release.
     const draw = Math.max(0, P.prop);
     const wind = Math.min(0, P.prop);
-    bow.position.y = BOW_Y + 0.15 * draw + 0.05 * wind;
-    bow.position.x = BOW_X - 0.07 * draw;
-    bow.rotation.y = BOW_TILT - 0.2 * draw;
-    bow.rotation.z = -0.2 * draw;
+    bow.position.y = BOW_Y + 0.13 * draw + 0.04 * wind;
+    bow.position.x = BOW_X - 0.05 * draw;
+    bow.position.z = BOW_Z + 0.05 * draw;
+    bow.rotation.y = BOW_TILT - 0.22 * draw;
+    bow.rotation.z = 0.12 - 0.28 * draw;
     // Draw paw rides the string: pulled back to the cheek on the wind-up, snaps
     // forward on release.
-    drawPaw.position.set(-0.09 + 0.02 * draw + 0.05 * wind, bow.position.y + 0.06 * draw, 0.05 - 0.17 * draw - 0.05 * wind);
+    drawPaw.position.set(-0.11 + 0.03 * draw + 0.05 * wind, bow.position.y + 0.05 * draw, 0.02 - 0.16 * draw - 0.05 * wind);
 
     feet[0].position.z = 0.22 + 0.095 * P.stride;
     feet[1].position.z = 0.22 - 0.095 * P.stride;
@@ -274,7 +297,7 @@ export function buildArcher(rig, trackAccent) {
       chinY: HEAD_C - HEAD_R * SY,
       headR: HEAD_R * SX,
       halfWidth: 0.2,
-      ringRadius: 0.4,
+      ringRadius: 0.44,
       hipY: HIP,
     },
   };

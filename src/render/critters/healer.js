@@ -11,11 +11,22 @@
 // The staff is held OUT TO THE SIDE and slightly forward, with a small gem
 // glow: at head height and centred it erased her right eye at gallery framing
 // and turned her face into a white-green blob on the cast clip.
-import { CylinderGeometry, Group, Mesh, OctahedronGeometry, QuadraticBezierCurve3, SphereGeometry, TubeGeometry, Vector3 } from 'three';
+import {
+  CylinderGeometry,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  OctahedronGeometry,
+  QuadraticBezierCurve3,
+  SphereGeometry,
+  TubeGeometry,
+  Vector3,
+} from 'three';
 import { CLASS_ACCENTS, PALETTE } from '../../data/palette.js';
 import { toonMaterial } from '../toon.js';
 import { makeGlowSprite } from '../glow.js';
-import { bell, bodyPanel, mix, addInk, part, faceDecal, mitten, makeArm, aimArm } from './common.js';
+import { bell, bodyPanel, mix, exactColor, exactColorNearest, part, faceDecal, mitten, makeArm, aimArm } from './common.js';
+import { FALL_ANGLE } from './index.js';
 
 // Proportion note: the acceptance measures head mass (dome -> chin) over total
 // standing height INCLUDING ears, read off a straight-on capture. Geometry is
@@ -25,6 +36,11 @@ import { bell, bodyPanel, mix, addInk, part, faceDecal, mitten, makeArm, aimArm 
 // a wide cowl at chin height reads as part of the head and pushed the measured
 // figure past 50%.
 const HIP = 0.2;
+// Garment hems sit clear of the floor: the clip-space ink hull on a hem at
+// exactly y=0 expands BELOW the ground plane, where the floor and the identity
+// ring clip it (round-3 F10 — the healer's hem ink stopped a third of the way
+// along and dashed hull pixels poked through the ring).
+const HEM = 0.022;
 const HEAD_C = 0.784;
 const HEAD_R = 0.235;
 const SX = 1.02, SY = 0.96, SZ = 0.99;
@@ -50,9 +66,9 @@ export function buildHealer(rig, trackAccent) {
   const cloakMat = trackAccent(toonMaterial({ color: accent }));
   const cloak = part(
     bell([
-      [0, 0.0],
-      [0.21, 0.0],
-      [0.31, 0.05],
+      [0, HEM],
+      [0.21, HEM],
+      [0.31, 0.055],
       [0.34, 0.14],
       [0.33, 0.25],
       [0.3, 0.35],
@@ -146,7 +162,7 @@ export function buildHealer(rig, trackAccent) {
 
   // --- Staff: vertical, held out to the side, gem well clear of the face.
   const staff = new Group();
-  staff.position.set(0.34, 0, 0.19);
+  staff.position.set(0.4, 0, 0.2);
   body.add(staff);
   const shaft = part(
     new CylinderGeometry(0.024, 0.029, 0.81, 10),
@@ -154,18 +170,39 @@ export function buildHealer(rig, trackAccent) {
   );
   shaft.position.y = 0.455;
   staff.add(shaft);
-  const gemMat = toonMaterial({ color: PALETTE.brightHeal });
-  gemMat.emissive.set(PALETTE.brightHeal);
-  gemMat.emissiveIntensity = 0.4;
-  const gem = new Mesh(new OctahedronGeometry(0.05), gemMat);
-  gem.position.y = 0.9;
-  addInk(gem);
+  // --- THE GEM (round-3 F6). It measured #C0EEA0 — a pale chartreuse 38 hue
+  // degrees off Bright Heal — with a hard ink border and zero halo, i.e. the
+  // party's only light emitter emitted nothing. Three changes:
+  //   * unlit MeshBasicMaterial on the post-chain-compensated Bright Heal, so
+  //     the core lands on EXACTLY #5FE873 in the final frame instead of being
+  //     dragged pale by the toon ramp and the warm key light;
+  //   * no ink hull — a Void Charcoal outline around a light source is what
+  //     made it read as a painted chip;
+  //   * a two-layer additive halo (§19.4 "core + glow + particles"): the core
+  //     is authored well above the bloom threshold so UnrealBloomPass bleeds it
+  //     into the surrounding pixels, and both halo layers ramp with the cast.
+  const GEM_Y = 0.93;
+  const gemMat = new MeshBasicMaterial({ color: exactColorNearest(PALETTE.brightHeal) });
+  const gem = new Mesh(new OctahedronGeometry(0.052), gemMat);
+  gem.position.y = GEM_Y;
+  gem.renderOrder = 2;
   staff.add(gem);
-  // Glow radius cut ~60% from the rejected build: the halo used to erase an eye
-  // and, on the cast clip, the whole face.
-  const glow = makeGlowSprite({ color: PALETTE.brightHeal, size: 0.115, opacity: 0.36 });
-  glow.position.y = 0.9;
+  const GLOW_BASE = 0.26;
+  // The halo is the layer that carries the bloom: authored ~3x the in-gamut
+  // gem value, it clears the composer's bloom threshold and bleeds into the
+  // surrounding pixels (REFERENCE_BAR check 2: every emitter has a glow halo).
+  const glow = makeGlowSprite({
+    color: exactColorNearest(PALETTE.brightHeal).multiplyScalar(3.1),
+    size: GLOW_BASE,
+    opacity: 0.6,
+  });
+  glow.position.y = GEM_Y;
   staff.add(glow);
+  // Tight inner flare: keeps a hot core inside the wide halo so the emitter
+  // reads as a point of light rather than a green smudge.
+  const flare = makeGlowSprite({ color: exactColor(PALETTE.parchment).multiplyScalar(1.6), size: GLOW_BASE * 0.4, opacity: 0.55 });
+  flare.position.y = GEM_Y;
+  staff.add(flare);
 
   const gripPaw = mitten(furHex, 0.058);
   gripPaw.position.set(0, 0.5, 0.014);
@@ -188,30 +225,48 @@ export function buildHealer(rig, trackAccent) {
 
   const gripWorld = new Vector3();
   const gripLocal = new Vector3(0, 0.5, 0.014);
+  const gemBase = exactColorNearest(PALETTE.brightHeal);
+  const gemDown = exactColor(mix(PALETTE.warmGrey, PALETTE.voidCharcoal, 0.45).getHex());
 
-  function apply(P, t) {
+  function apply(P, t, fallSign = 1) {
     ears[0].rotation.z = -0.26 - P.ear - P.collapse * 0.5;
     ears[1].rotation.z = 0.26 + P.ear * 0.8 + P.collapse * 0.5;
     tailPivot.rotation.y = P.tail * 0.8;
     tailPivot.rotation.z = 0.2 * P.tail;
 
     // Cast: staff lifts and cants forward, gem flares.
-    staff.position.y = 0.26 * Math.max(0, P.prop) + 0.05 * Math.min(0, P.prop);
-    staff.rotation.x = -0.2 * Math.max(0, P.prop);
-    staff.rotation.z = 0.12 * P.prop;
+    // Downed (round-3 F8): the staff is never hidden — it swings DOWN to lie
+    // flat on the ground beside the body, so the third mass stays on screen at
+    // the exact moment the player needs to identify who went down.
+    // The collapse rotates the whole rig about Z by fallSign * FALL_ANGLE, so a
+    // fixed downed angle lands differently depending on which way the body
+    // fell. Counter-rotating by that exact amount puts the staff FLAT on the
+    // ground in world space whichever side the healer drops on, and +Z keeps it
+    // in front of the body rather than under it.
+    const lay = P.collapse;
+    const flat = -fallSign * (Math.PI / 2 + FALL_ANGLE);
+    staff.position.y = (0.26 * Math.max(0, P.prop) + 0.05 * Math.min(0, P.prop)) * (1 - lay) - 0.1 * lay;
+    staff.position.x = 0.4 * (1 - lay) + 0.02 * lay;
+    staff.position.z = 0.19 * (1 - lay) + 0.34 * lay;
+    staff.rotation.x = -0.2 * Math.max(0, P.prop) * (1 - lay);
+    staff.rotation.z = (0.12 * P.prop) * (1 - lay) + flat * lay;
 
     staff.updateMatrix();
     aimArm(armR, gripWorld.copy(gripLocal).applyMatrix4(staff.matrix));
     aimArm(armL, freePaw.position);
 
+    // Emitter heat: the CORE hex never moves (it is the reserved Bright Heal
+    // hex and must measure as such in every frame) — the cast is carried by the
+    // halo, which roughly triples in area and doubles in opacity on release.
     const heat = P.gem * (1 - P.desat);
-    gemMat.emissiveIntensity = (0.2 + 1.1 * heat) * (1 - P.desat);
-    gemMat.color
-      .set(PALETTE.brightHeal)
-      .lerp(mix(PALETTE.voidCharcoal, PALETTE.warmGrey, 0.25), P.desat);
-    glow.material.opacity = (0.18 + 0.45 * heat) * (1 - P.desat);
-    const gs = 0.115 * (1 + 0.4 * heat);
+    gemMat.color.copy(gemBase).lerp(gemDown, P.desat);
+    const gs = GLOW_BASE * (1 + 1.15 * heat);
     glow.scale.set(gs, gs, 1);
+    glow.material.opacity = (0.34 + 0.62 * heat) * (1 - P.desat);
+    const fs = GLOW_BASE * 0.42 * (1 + 0.9 * heat);
+    flare.scale.set(fs, fs, 1);
+    flare.material.opacity = (0.3 + 0.6 * heat) * (1 - P.desat);
+    gem.scale.setScalar(1 + 0.22 * heat);
     gem.rotation.y = t * 1.1;
   }
 

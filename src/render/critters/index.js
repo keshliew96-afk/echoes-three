@@ -43,8 +43,15 @@ const BUILDERS = {
   archer: buildArcher,
 };
 
-const FALL_ANGLE = 1.36; // rad (~78°) — §10 "collapses horizontal"
+export const FALL_ANGLE = 1.36; // rad (~78°) — §10 "collapses horizontal"
 const LIE_HEIGHT = 0.19; // height of a lying body's long axis
+// §19.2 "~8° body lean". 0.21 rad = 12.0° is the hard ceiling for any clip on
+// any class (basePitch included); the flinch may rock further BACK, which tips
+// the face UP toward the camera and is therefore never a legibility problem.
+const PITCH_MAX = 0.21;
+const PITCH_MIN = -0.36;
+const HEAD_COUNTER = 0.88; // fraction of torso pitch cancelled at the neck
+const CHIN_UP = 0.18; // rad (~10.3°) — presents the face to a 52° top-down cam
 
 export function createCritter(classId, { cosmetic = null } = {}) {
   const build = BUILDERS[classId];
@@ -77,7 +84,11 @@ export function createCritter(classId, { cosmetic = null } = {}) {
   // across it.
   const ringRadius = M.ringRadius ?? M.halfWidth / 0.7;
   const ring = groundRing(accent, ringRadius);
-  const shadow = groundShadow(M.halfWidth * 0.78);
+  // Shadow pulled in to 0.60 of the ring radius: the ring's Bone inner rim
+  // starts at 0.632, so the shadow's falloff can no longer sit ON the ring and
+  // darken the identical footprint (round-3 F1 measured exactly that on the
+  // Tank, whose accent luma was already below the ground's).
+  const shadow = groundShadow(Math.min(M.halfWidth * 0.78, ringRadius * 0.56), 0.44);
   const decals = new Group();
   decals.add(ring);
   decals.add(shadow);
@@ -112,12 +123,27 @@ export function createCritter(classId, { cosmetic = null } = {}) {
     rig.position.set(0, -pivotH + P.bob * upright, -0.11 * P.recoil * upright);
     rig.scale.set(P.squash, P.breathe, P.squash);
 
+    // LEAN (round-3 F4). The walk/attack lean measured 35-45° of visible pitch
+    // and hid every face behind the crown at the gameplay camera, folding the
+    // fox's ear pair into one dark spike. §19.2 specs "~8° body lean". The
+    // torso pitch is therefore hard-clamped here — one place, all classes, all
+    // clips, so no clip can ever re-introduce the defect — and the head is
+    // counter-rotated to stay near-vertical with a small chin-up bias, which is
+    // what keeps eyes and ears readable at the 52° gameplay elevation.
     const torso = built.torso;
-    torso.rotation.x = built.basePitch + P.pitch * upright;
+    const pitch = Math.min(PITCH_MAX, Math.max(PITCH_MIN, built.basePitch + P.pitch * upright));
+    torso.rotation.x = pitch;
     torso.rotation.z = P.roll * upright;
     torso.rotation.y = P.yaw * upright;
+    built.head.rotation.x = -pitch * HEAD_COUNTER - CHIN_UP * upright;
+    // Shoulder counter-rotation carries the walk instead of the lean.
+    built.head.rotation.y = -P.yaw * 0.55 * upright;
 
-    built.apply(P, t);
+    // fallSign is handed to the class rig so a DOWNED critter can counter-rotate
+    // its prop flat against the ground instead of letting the collapse fling it
+    // behind the body (round-3 F8: the healer's staff and the fox's sword both
+    // vanished at the exact moment the player needs to identify who went down).
+    built.apply(P, t, fallSign);
 
     // Decals: ring grows to fit the collapsed silhouette, shadow stretches
     // along the fall axis so a downed body is still grounded.
@@ -130,6 +156,10 @@ export function createCritter(classId, { cosmetic = null } = {}) {
       lastDesat = P.desat;
       for (const a of accentMats) a.mat.color.copy(a.orig).lerp(a.target, P.desat);
     }
+    // §19.1 assigns Bone #C9C2B3 to "downed/neutral rings": the ring lerps to
+    // Bone on the same curve that drives the body to charcoal (round-3 F7 —
+    // downed rings were staying as saturated as the standing party's).
+    ring.userData.setDesat(P.desat);
   }
 
   update(0); // rest pose before the first frame

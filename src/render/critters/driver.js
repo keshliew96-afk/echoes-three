@@ -40,6 +40,7 @@ function defaultPose() {
     prop: 0,
     gem: 0.3,
     recoil: 0,
+    swing: 0,
     collapse: 0,
     desat: 0,
   };
@@ -60,26 +61,31 @@ const clipFns = {
     T.stride = 0;
     T.prop = 0;
     T.recoil = 0;
+    T.swing = 0;
     T.gem = 0.3 + 0.15 * Math.sin(TAU * 0.8 * t + ph.c);
   },
 
-  // Walk: stride-driven feet + bouncy bob + a constant forward lean. 1.55 Hz
-  // gives a ~645 ms bounce that survives a 250 ms capture interval.
+  // Walk: stride-driven feet + bouncy hip bob + shoulder counter-rotation.
+  // 1.55 Hz gives a ~645 ms bounce that survives a 250 ms capture interval.
+  // The LEAN is deliberately small (peak 0.105 rad = 6.0°, and 12.0° once the
+  // fox's rest lean is added) — round 3 cranked it to 35-45° and lost every
+  // face behind the crown; the motion now lives in bob, roll and yaw instead.
   walk(t, ph, T) {
     const f = 1.55; // stride Hz
     const p = TAU * f * t + ph.a;
     const lift = 0.5 * (1 - Math.cos(2 * p)); // two footfalls per stride cycle
     T.stride = Math.sin(p);
-    T.bob = 0.075 * lift;
-    T.breathe = 1 + 0.05 * (lift - 0.5); // stretch airborne, squash on impact
-    T.squash = 1 - 0.035 * (lift - 0.5);
-    T.pitch = 0.14 + 0.05 * Math.sin(2 * p); // §19.2 lean toward the move vector
-    T.roll = 0.1 * Math.sin(p);
-    T.yaw = 0.13 * Math.sin(p);
+    T.bob = 0.095 * lift;
+    T.breathe = 1 + 0.06 * (lift - 0.5); // stretch airborne, squash on impact
+    T.squash = 1 - 0.042 * (lift - 0.5);
+    T.pitch = 0.07 + 0.035 * Math.sin(2 * p); // §19.2 "~8°" lean toward the move
+    T.roll = 0.14 * Math.sin(p);
+    T.yaw = 0.2 * Math.sin(p);
     T.ear = 0.34 * Math.sin(p + 0.9);
     T.tail = 0.65 * Math.sin(p);
     T.prop = 0;
     T.recoil = 0;
+    T.swing = 0;
     T.gem = 0.3;
   },
 
@@ -101,27 +107,30 @@ const clipFns = {
       T.squash = 1 + 0.08 * k;
       T.pitch = -0.16 * k;
       T.yaw = -0.42 * k;
-      T.prop = -0.7 * k;
+      T.prop = -1 * k; // full cock-back: blade over the shoulder
       T.gem = 0.35 + 0.35 * k;
       T.ear = -0.28 * k;
+      T.swing = 0;
     } else if (u < 0.42) {
       const k = easeOut((u - 0.3) / 0.12); // release pop
       T.breathe = 0.88 + 0.28 * k;
       T.squash = 1.08 - 0.14 * k;
-      T.pitch = -0.16 + 0.36 * k;
+      T.pitch = -0.16 + 0.3 * k;
       T.yaw = -0.42 + 0.72 * k;
-      T.prop = -0.7 + 1.7 * k;
+      T.prop = -1 + 2 * k;
       T.gem = 1;
       T.ear = -0.28 + 0.5 * k;
+      T.swing = 1; // smear/trail is live through the whole release
     } else if (u < 0.78) {
       const k = smooth((u - 0.42) / 0.36); // follow-through hold
       T.breathe = 1.16 - 0.14 * k;
       T.squash = 0.94 + 0.06 * k;
-      T.pitch = 0.2 - 0.14 * k;
+      T.pitch = 0.14 - 0.08 * k;
       T.yaw = 0.3 - 0.22 * k;
       T.prop = 1 - 0.2 * k;
       T.gem = 1 - 0.4 * k;
       T.ear = 0.22 * (1 - k);
+      T.swing = Math.max(0, 1 - k * 2.2); // decays over ~250 ms
     } else {
       const k = smooth((u - 0.78) / 0.22); // recover
       T.breathe = 1.02 - 0.02 * k;
@@ -131,6 +140,7 @@ const clipFns = {
       T.prop = 0.8 * (1 - k);
       T.gem = 0.6 - 0.3 * k;
       T.ear = 0;
+      T.swing = 0;
     }
   },
 
@@ -142,6 +152,7 @@ const clipFns = {
     const u = (t % P) / P;
     T.bob = 0;
     T.stride = 0;
+    T.swing = 0;
     T.tail = 0.1 * Math.sin(TAU * 1.2 * t + ph.c);
     T.prop = -0.25;
     T.gem = 0.12;
@@ -150,7 +161,7 @@ const clipFns = {
       const k = u / 0.045; // snap (2 frames at 60 Hz)
       T.breathe = 1 - 0.19 * k;
       T.squash = 1 + 0.16 * k;
-      T.pitch = -0.5 * k;
+      T.pitch = -0.34 * k;
       T.roll = 0.18 * k;
       T.ear = -0.75 * k;
       T.recoil = k;
@@ -159,7 +170,7 @@ const clipFns = {
       const tremble = 0.03 * Math.sin(TAU * 6 * t);
       T.breathe = 0.81 + 0.03 * s;
       T.squash = 1.16 - 0.03 * s;
-      T.pitch = -0.5 + 0.05 * s + tremble; // held flinch
+      T.pitch = -0.34 + 0.04 * s + tremble; // held flinch
       T.roll = 0.18 - 0.02 * s;
       T.ear = -0.75;
       T.recoil = 1;
@@ -167,7 +178,7 @@ const clipFns = {
       const k = smooth((u - 0.45) / 0.23);
       T.breathe = 0.84 + 0.16 * k;
       T.squash = 1.13 - 0.13 * k;
-      T.pitch = -0.45 * (1 - k);
+      T.pitch = -0.31 * (1 - k);
       T.roll = 0.16 * (1 - k);
       T.ear = -0.75 + 0.8 * k;
       T.recoil = 1 - k;
@@ -197,6 +208,7 @@ const clipFns = {
     T.prop = 0;
     T.gem = 0;
     T.recoil = 0;
+    T.swing = 0;
     T.collapse = 1;
     T.desat = 1;
   },
@@ -243,6 +255,10 @@ export function createPoseDriver(cosmetic) {
       const s = downAge - FALL_SEC;
       collapse -= 0.05 * Math.sin(s * 16) * Math.exp(-s * 7); // thud bounce
     }
+    // `swing` gates the attack smear: it must snap on with the release frame,
+    // so it is copied rather than exponentially blended (an 18/s filter loses
+    // ~40% of a 120 ms pulse).
+    pose.swing = target.swing;
     pose.collapse = collapse;
     pose.desat += (target.desat - pose.desat) * (1 - Math.exp(-5 * dt));
 
