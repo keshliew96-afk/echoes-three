@@ -2,25 +2,38 @@
 // integrator attaches to sim entities:
 //
 //   const critter = createCritter('healer', { cosmetic });
-//   scene.add(critter.group);            // position critter.group per tick
-//   critter.setYaw(rad);                 // aim facing (§3: yaw follows aim)
-//   critter.setAnim('walk');             // idle|walk|cast|hurt|downed
-//   critter.update(dt);                  // render dt seconds — pose + clips
+//   scene.add(critter.group);          // position critter.group per tick
+//   critter.setYaw(rad);               // aim facing (§3: yaw follows aim)
+//   critter.setAnim('walk');           // idle|walk|cast|hurt|downed
+//   critter.update(dt);                // render dt seconds — pose + clips
+//   setInkViewport(w, h);              // once per frame/resize, whole party
 //
-// group's origin is the feet on the ground plane. The identity ring + contact
-// shadow live outside the animated rig, so they stay grounded through every
-// clip (incl. the §10 horizontal collapse, where cloak/prop accents
-// desaturate toward charcoal but the ring keeps its exact class hex).
-import { Group } from 'three';
+// RIG LAYOUT (the shape of this tree is the fix for two rejected captures):
+//
+//   group            entity origin, feet on the ground plane
+//    └ yawGroup      aim facing
+//       ├ decals     identity ring + contact shadow — OUTSIDE the animated rig
+//       │            so they stay welded to the ground through every clip, and
+//       │            depth-tested so they can never paint over a body
+//       └ fallPivot  §10 collapse. Sits at the body's MID-HEIGHT, so the
+//          │         horizontal collapse rotates about the body centre and the
+//          │         downed critter stays inside its own identity ring (the old
+//          │         rig pivoted at the feet and threw the head 140 px clear of
+//          │         the ring, i.e. clear of the revive target)
+//          └ rig     bob / breathe / squash / feet (feet stay planted flat)
+//             └ torso  THE single lean pivot at hip height: pitch, roll, yaw.
+//                      Head, arms and props are all children, so a lean can
+//                      never separate the head from the shoulders.
+import { Group, Vector3 } from 'three';
 import { CLASS_ACCENTS } from '../../data/palette.js';
-import { blobShadow, identityRing, desatTarget } from './common.js';
+import { groundRing, groundShadow, desatTarget, setInkViewport } from './common.js';
 import { createPoseDriver, CLIPS } from './driver.js';
 import { buildHealer } from './healer.js';
 import { buildTank } from './tank.js';
 import { buildSwordsman } from './swordsman.js';
 import { buildArcher } from './archer.js';
 
-export { CLIPS };
+export { CLIPS, setInkViewport };
 export const CRITTER_CLASSES = ['healer', 'tank', 'swordsman', 'archer'];
 
 const BUILDERS = {
@@ -30,13 +43,8 @@ const BUILDERS = {
   archer: buildArcher,
 };
 
-// Sized so the ring's inner ink edge (0.668 * radius) clears each critter's
-// widest body radius — otherwise the body sits ON the band and the marker
-// reads as a hat brim instead of a ring drawn on the ground (verified in
-// capture: Tank cloak halfWidth 0.435 vs a 0.6 ring).
-const RING_RADIUS = { healer: 0.5, tank: 0.66, swordsman: 0.47, archer: 0.45 };
-const FALL_ANGLE = Math.PI / 2 - 0.1; // §10: collapse to horizontal
-const FALL_LIFT = 0.22; // keeps the lying body resting on (not in) the ground
+const FALL_ANGLE = 1.36; // rad (~78°) — §10 "collapses horizontal"
+const LIE_HEIGHT = 0.19; // height of a lying body's long axis
 
 export function createCritter(classId, { cosmetic = null } = {}) {
   const build = BUILDERS[classId];
@@ -45,19 +53,16 @@ export function createCritter(classId, { cosmetic = null } = {}) {
 
   const group = new Group();
   group.name = `critter-${classId}`;
-  group.add(identityRing(accent, RING_RADIUS[classId]));
-  // Blob kept INSIDE the bell footprint: a wider blob's near half sits closer
-  // to the camera than the body and renders over the belly at low camera
-  // elevations (verified in capture — the Tank read as "inside a dark bowl").
-  group.add(blobShadow(RING_RADIUS[classId] * 0.45));
-
   const yawGroup = new Group();
   group.add(yawGroup);
-  const rig = new Group();
-  yawGroup.add(rig);
 
-  // Accent-material tracker: every material registered here desaturates
-  // toward charcoal while downed (§10) and restores on revive.
+  const fallPivot = new Group();
+  yawGroup.add(fallPivot);
+  const rig = new Group();
+  fallPivot.add(rig);
+
+  // Accent-material tracker: everything registered here desaturates toward
+  // charcoal while downed (§10) and restores on revive.
   const accentMats = [];
   const trackAccent = (mat) => {
     accentMats.push({ mat, orig: mat.color.clone(), target: desatTarget(mat.color) });
@@ -65,9 +70,30 @@ export function createCritter(classId, { cosmetic = null } = {}) {
   };
 
   const built = build(rig, trackAccent);
-  const basePitch = built.basePitch ?? 0;
+  const M = built.metrics;
+
+  // Ring sized so its bright band (0.74-0.85 of the radius) clears the widest
+  // body mass — the band circles the critter on the floor instead of cutting
+  // across it.
+  const ringRadius = M.ringRadius ?? M.halfWidth / 0.7;
+  const ring = groundRing(accent, ringRadius);
+  const shadow = groundShadow(M.halfWidth * 0.78);
+  const decals = new Group();
+  decals.add(ring);
+  decals.add(shadow);
+  yawGroup.add(decals);
+
+  // Collapse geometry: pivot at the body's mid-height keeps the centroid over
+  // the entity position; the ring grows to cover the horizontal silhouette so
+  // the revive target still sits under the body.
+  const pivotH = M.domeTopY * 0.5;
+  // Margin covers the props that swing out with the body (the healer's staff
+  // reaches further than her head does).
+  const lyingReach = Math.max(pivotH, M.domeTopY - pivotH) * Math.sin(FALL_ANGLE) + M.headR;
+  const ringDownScale = Math.max(1, (lyingReach + 0.15) / ringRadius);
+
   const driver = createPoseDriver(cosmetic);
-  // Fall side alternates so a downed party doesn't stack identically.
+  // Fall side alternates so a downed party does not stack identically.
   const fallSign = (cosmetic ? cosmetic.chance(0.5) : Math.random() < 0.5) ? 1 : -1;
 
   let t = 0;
@@ -79,12 +105,26 @@ export function createCritter(classId, { cosmetic = null } = {}) {
     const c = P.collapse;
     const upright = 1 - c;
 
+    // Collapse about the body centre (see header).
+    fallPivot.position.y = pivotH * upright + LIE_HEIGHT * c;
+    fallPivot.rotation.z = fallSign * FALL_ANGLE * c;
+
+    rig.position.set(0, -pivotH + P.bob * upright, -0.11 * P.recoil * upright);
     rig.scale.set(P.squash, P.breathe, P.squash);
-    rig.position.y = P.bob * upright + FALL_LIFT * c;
-    rig.rotation.x = (basePitch + P.pitch) * upright;
-    rig.rotation.z = P.roll * upright + fallSign * FALL_ANGLE * c;
+
+    const torso = built.torso;
+    torso.rotation.x = built.basePitch + P.pitch * upright;
+    torso.rotation.z = P.roll * upright;
+    torso.rotation.y = P.yaw * upright;
 
     built.apply(P, t);
+
+    // Decals: ring grows to fit the collapsed silhouette, shadow stretches
+    // along the fall axis so a downed body is still grounded.
+    const rs = 1 + (ringDownScale - 1) * c;
+    ring.scale.set(rs, rs, 1);
+    shadow.scale.set(1 + 1.9 * c, 1 + 0.25 * c, 1);
+    shadow.position.x = fallSign * 0.06 * c;
 
     if (Math.abs(P.desat - lastDesat) > 0.002) {
       lastDesat = P.desat;
@@ -92,15 +132,23 @@ export function createCritter(classId, { cosmetic = null } = {}) {
     }
   }
 
+  update(0); // rest pose before the first frame
+
   return {
     classId,
     accent,
     group,
-    metrics: built.metrics,
+    metrics: { ...M, ringRadius },
     setAnim: driver.setAnim,
     getAnim: () => driver.anim,
     setYaw: (rad) => {
       yawGroup.rotation.y = rad;
+    },
+    // World-space helper for the integrator (portrait render targets, VFX
+    // anchors): the head centre of the posed model.
+    headWorld: (out = new Vector3()) => {
+      built.head.getWorldPosition(out);
+      return out;
     },
     update,
   };
