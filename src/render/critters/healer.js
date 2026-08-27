@@ -307,6 +307,10 @@ export function buildHealer(rig, trackAccent) {
     apply,
     torso,
     head,
+    // The staff-gem mesh — the class's emitter tip. The integrator reads its
+    // world position so bolts visibly LEAVE the gem (§19.2: the gem brightens
+    // on cast; §19.4: the projectile is born at its emitter).
+    tip: gem,
     basePitch: 0,
     metrics: {
       standHeight: EAR_TOP,

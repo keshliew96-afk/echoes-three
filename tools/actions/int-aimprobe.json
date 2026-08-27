@@ -1,0 +1,14 @@
+[
+  {"type":"mousemove","x":1050,"y":450},
+  {"type":"wait","ms":120},
+  {"type":"eval","code":"({p1050_450: __echoes.state().party[0].aim})"},
+  {"type":"mousemove","x":1050,"y":520},
+  {"type":"wait","ms":120},
+  {"type":"eval","code":"({p1050_520: __echoes.state().party[0].aim})"},
+  {"type":"mousemove","x":1100,"y":560},
+  {"type":"wait","ms":120},
+  {"type":"eval","code":"({p1100_560: __echoes.state().party[0].aim})"},
+  {"type":"mousemove","x":1000,"y":600},
+  {"type":"wait","ms":120},
+  {"type":"eval","code":"({p1000_600: __echoes.state().party[0].aim})"}
+]

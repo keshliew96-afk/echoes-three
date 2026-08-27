@@ -1,0 +1,16 @@
+[
+  {"type":"eval","code":"[__echoes.cmd('spawn','dummy',2.2,0.6), __echoes.cmd('spawn','dummy',3.0,-0.8), __echoes.cmd('spawn','dummy',2.6,1.6)]"},
+  {"type":"mousemove","x":1050,"y":460},
+  {"type":"wait","ms":150},
+  {"type":"mousedown","button":"right"},
+  {"type":"keydown","key":"KeyA"},
+  {"type":"wait","ms":900},
+  {"type":"keyup","key":"KeyA"},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"wait","ms":900},
+  {"type":"keyup","key":"KeyD"},
+  {"type":"key","key":"Space","ms":60},
+  {"type":"wait","ms":800},
+  {"type":"mouseup","button":"right"},
+  {"type":"eval","code":"({fps: __echoes.fps, stats: __echoes.stats, entities: __echoes.entityCount, party: __echoes.state().vfx.party})"}
+]

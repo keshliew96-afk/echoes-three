@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"window.__pid = __echoes.state().party[0].id; __echoes.cmd('setHp', window.__pid, 0.05); __echoes.cmd('hitOnce', window.__pid); 'downed'"},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"__echoes.cmd('setHp', window.__pid, 0.3); 'revived'"},
+  {"type":"wait","ms":800},
+  {"type":"eval","code":"({anim: __echoes.state().vfx.party.healerAnim, hp: __echoes.state().party[0].hp})"}
+]

@@ -43,6 +43,13 @@ const CAPSULE_LEN = 1.05 - 2 * HEALER.radius; // §1: standing height ~1.05 u
 const LEAN_MAX = 0.16; // rad, body lean toward the move vector (§3)
 const SMEAR_FADE = 0.12; // s, per-ghost fade (hard-cleared at dash end)
 const TRAIL_FADE = 0.15; // s, bolt trail sprite fade
+const BOLT_Y = 0.55; // bolt flight height (render)
+// Muzzle blend: with a bolt-origin provider installed (setBoltOrigin — the
+// dressed arena hands in the Healer's staff-gem tip), a new bolt's render
+// group is born AT that point and converges onto its sim path over the first
+// BOLT_MUZZLE_U of travel (~0.21 s at 5.2 u/s). Render-only: the sim path is
+// untouched, and without a provider (plain ?scene=graybox) nothing changes.
+const BOLT_MUZZLE_U = 1.1;
 // Kill-pop timing (render scaffold): anticipation stretch, then collapse pop.
 const POP_STRETCH_SEC = 0.09;
 const POP_TOTAL_SEC = 0.26;
@@ -124,15 +131,24 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     const g = new Group();
     const core = new Mesh(boltCoreGeo, boltCoreMat);
     core.rotation.z = Math.PI / 2; // capsule long axis -> flight axis (set per frame)
-    core.position.y = 0.55;
+    core.position.y = BOLT_Y;
     core.name = 'core';
     g.add(core);
     const glow = makeGlowSprite({ color: PALETTE.hearthAmber, size: 0.6, opacity: 0.8 });
-    glow.position.y = 0.55;
+    glow.position.y = BOLT_Y;
     g.add(glow);
-    g.add(blobShadow(0.14, 0.25));
+    const shadow = blobShadow(0.14, 0.25);
+    g.add(shadow);
+    // Kept addressable: during the muzzle blend the group rides above y=0 and
+    // the contact shadow must stay ON the ground (§9 #8: grounding, incl.
+    // projectiles) — the update loop counter-offsets it.
+    g.userData.shadowMesh = shadow;
     return g;
   }
+
+  // Bolt-origin provider (see BOLT_MUZZLE_U). Installed by wrapping scenes via
+  // scene.setBoltOrigin(fn); fn returns the world-space muzzle {x, y, z}.
+  let boltOrigin = null;
 
   // --- Training dummies + the §9 juice contract. Rigs sync to sim entities;
   // hit flash is EMISSIVE modulation on the rig's own material (never a
@@ -168,7 +184,15 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
   bus.on('hit', (ev) => {
     const rig = dummies.get(ev.target);
     if (rig) rig.flashUntilTick = ev.tick + HITFLASH.ticks; // §9 #1: ~3 frames
-    numbers.spawn({ x: ev.x, z: ev.z, amount: ev.amount, kind: 'damage', crit: ev.crit });
+    // §17 Zone 3 numeral grammar: party-incoming damage is Bruise Umber (drops
+    // with lateral shake); outgoing stays Parchment. ev.kind is the victim's.
+    numbers.spawn({
+      x: ev.x,
+      z: ev.z,
+      amount: ev.amount,
+      kind: ev.kind === 'player' ? 'incoming' : 'damage',
+      crit: ev.crit,
+    });
   });
   bus.on('heal', (ev) => {
     numbers.spawn({ x: ev.x, z: ev.z, amount: ev.amount, kind: 'heal', crit: ev.crit });
@@ -218,10 +242,10 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
 
   const trails = []; // { sprite, age }
   const trailPool = [];
-  function spawnTrail(x, z) {
+  function spawnTrail(x, z, y = BOLT_Y) {
     let s = trailPool.pop();
     if (!s) s = makeGlowSprite({ color: PALETTE.hearthAmber, size: 0.28, opacity: 0.4 });
-    s.position.set(x, 0.55, z);
+    s.position.set(x, y, z);
     s.material.opacity = 0.4;
     root.add(s);
     trails.push({ sprite: s, age: 0 });
@@ -274,16 +298,26 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
       let g = bolts.get(e.id);
       if (!g) {
         g = makeBolt();
+        // Muzzle sample happens ONCE, at birth (the gem keeps moving with the
+        // cast pose; the blend needs a fixed origin to converge from).
+        g.userData.muzzle = boltOrigin ? boltOrigin() : null;
         bolts.set(e.id, g);
         root.add(g);
       }
       const bx = e.px + (e.x - e.px) * alpha;
       const bz = e.pz + (e.z - e.pz) * alpha;
-      g.position.set(bx, 0, bz);
+      // Muzzle blend: full offset at traveled=0 (the bolt IS at the gem tip),
+      // gone by BOLT_MUZZLE_U. Deterministic in distance, not wall time.
+      const m = g.userData.muzzle;
+      const f = m ? Math.max(0, 1 - e.traveled / BOLT_MUZZLE_U) : 0;
+      if (m && f <= 0) g.userData.muzzle = null;
+      const gy = m ? (m.y - BOLT_Y) * f : 0;
+      g.position.set(bx + (m ? (m.x - bx) * f : 0), gy, bz + (m ? (m.z - bz) * f : 0));
+      g.userData.shadowMesh.position.y = 0.008 - gy; // shadow stays on the ground
       // Euler (0, yaw, PI/2), order XYZ: Rz tips the capsule's long axis to
       // -X, then Ry(yaw) spins it onto the flight direction (vx, vz).
       g.getObjectByName('core').rotation.y = Math.atan2(e.vz, -e.vx);
-      spawnTrail(bx, bz);
+      spawnTrail(g.position.x, g.position.z, BOLT_Y + gy);
     }
     for (const [id, g] of bolts) {
       if (!seen.has(id)) {
@@ -377,5 +411,15 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     };
   }
 
-  return { name: 'graybox', root, update, debugState };
+  return {
+    name: 'graybox',
+    root,
+    update,
+    debugState,
+    // Integration hook: install a world-space bolt-origin provider (the arena
+    // hands in the Healer's staff-gem tip). No provider = legacy behaviour.
+    setBoltOrigin: (fn) => {
+      boltOrigin = fn;
+    },
+  };
 }

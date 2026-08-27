@@ -1,0 +1,12 @@
+[
+  {"type":"mousemove","x":1150,"y":430},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"window.__x0 = __echoes.state().party[0].x; ({x0: window.__x0})"},
+  {"type":"keydown","key":"Space"},
+  {"type":"wait","ms":80},
+  {"type":"eval","code":"({midDash: __echoes.state().party[0].dashTicksLeft, anim: __echoes.state().vfx.party.healerAnim})"},
+  {"type":"keyup","key":"KeyD"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"({dashAfter: __echoes.state().party[0].dashTicksLeft, dx: Math.round((__echoes.state().party[0].x - window.__x0)*100)/100, ev: __echoes.events.filter(e=>e.type==='dash_end').slice(-1)})"}
+]

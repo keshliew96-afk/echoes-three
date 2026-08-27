@@ -1,0 +1,7 @@
+[
+  {"type":"mousemove","x":1150,"y":430},
+  {"type":"keydown","key":"KeyW"},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"({anim: __echoes.state().vfx.party.healerAnim, x: __echoes.state().party[0].x, z: __echoes.state().party[0].z, fps: __echoes.fps})"}
+]

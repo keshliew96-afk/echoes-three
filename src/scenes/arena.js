@@ -39,8 +39,10 @@ import {
   MeshBasicMaterial,
   LinearSRGBColorSpace,
   SRGBColorSpace,
+  Vector3,
 } from 'three';
-import { ARENA, CAMERA, DUMMY } from '../core/constants.js';
+import { ARENA, CAMERA, DUMMY, TICK_HZ } from '../core/constants.js';
+import { createCritter, setInkViewport } from '../render/critters/index.js';
 import { PALETTE } from '../data/palette.js';
 import { makeGlowSprite, getRadialTexture } from '../render/glow.js';
 import { createGrayboxScene } from './graybox.js';
@@ -63,14 +65,36 @@ import { COOL, mix } from '../env/colors.js';
 // Render-cosmetic scaffold numbers (grouped; not brief-bound gameplay values).
 const FIREFLY_COUNT = 120;
 const TORCH_LIGHT = { intensity: 13.0, distance: 11, decay: 2 };
-// Contact-shadow radii. The blob texture holds a near-solid core out to 50% of
-// the radius and feathers to nothing at 100%, so a 0.54 u disc puts its SOLID
-// part at ~0.27 u — the capsule footprint — with a soft edge past it. Sizing the
-// whole disc to 1.05x the footprint (as a literal reading of the note would)
-// hides the entire shadow under the capsule at this camera pitch: measured, only
-// 10% darkening leaked out past the body.
-const PLAYER_SHADOW_R = 0.5;
+// Contact-shadow radius for sim bodies (training dummies / future enemies).
+// The blob texture holds a near-solid core out to 50% of the radius and
+// feathers to nothing at 100%. The PLAYER's grounding moved to the critter
+// factory (v0.3.0): the chibi Healer carries her own §17 identity ring +
+// contact shadow, engineered together so the shadow's falloff can never
+// darken the ring band (the round-3 F1 defect).
 const ENTITY_SHADOW_R = DUMMY.radius * 1.7;
+
+// --- v0.3.0 party integration -----------------------------------------------
+// The playable Healer renders as the chibi mouse critter; the other three
+// party critters idle near spawn (no AI yet — idle clips only, per the
+// integration scope). They are NON-COLLIDING sim-side: BUILD_BRIEF §12 gives
+// allies only a 0.26 u soft separation push (no hard collider), A6 rules
+// arenas open, and idle placement needs neither — bolts already pass allies
+// (§7: the Healer's bolt passes non-hittable bodies; projectiles collide with
+// `hittable` hostiles only).
+const ALLY_SPOTS = [
+  // [classId, x, z] — a loose camp arc just north of the (0,0) spawn, clear
+  // of the midfield fight lanes and every variant's prop clusters.
+  ['tank', -1.9, -1.0],
+  ['swordsman', 1.8, -1.3],
+  ['archer', -0.35, -2.2],
+];
+// Healer clip arbitration (downed > hurt > cast > walk/idle):
+const CAST_PHASE = 0.45; // s into the cast clip = the release pop (§6 instant cast)
+const CAST_HOLD_MOVING = 0.28; // s — short while kiting so runs still read as running
+const CAST_HOLD_STILL = 0.5; // s — full pop + follow-through when standing
+const HURT_HOLD = 0.62; // s — snap + held flinch (driver holds ~40% of the cycle)
+const MOVE_EPS = 0.3; // u/s — sim speed above which the walk clip drives
+const YAW_RATE = 10; // 1/s exponential smoothing toward aim (§3/A1 smooth yaw)
 
 // Follow-camera focus clamp. The arena is 24x16 u and the rig looks ~9 u past
 // the far edge of frame, so an unclamped wall-hug puts ~48% of the screen
@@ -204,7 +228,7 @@ function contactBlob(radius, opacity) {
 }
 
 export function createArenaScene(stage, toggles, ctx) {
-  const { cosmetic, world } = ctx;
+  const { cosmetic, world, bus } = ctx;
   const params = new URLSearchParams(window.location.search);
   const vParam = parseInt(params.get('variant') ?? '1', 10);
   const spec = VARIANTS[vParam] ?? VARIANTS[1];
@@ -221,30 +245,18 @@ export function createArenaScene(stage, toggles, ctx) {
   );
   for (const p of placeholders) inner.root.remove(p);
 
-  // The graybox player rig carries a placeholder grounding treatment: a very
-  // soft wide glow-textured blob plus a bright class-accent identity ring at
-  // 0.9 opacity. Over dressed ground that composite reads as a hollow teal
-  // selection ring — brighter than the dirt it stands on — not as a shadow.
-  // Retune it here (the arena owns its grounding look; graybox.js is another
-  // builder's file and stays untouched): the identity ring keeps its Sage
-  // accent but tightens onto the capsule base at a calm opacity, the soft blob
-  // drops to a faint ambient occlusion, and a filled neutral-dark contact
-  // shadow is added underneath.
+  // The graybox player rig (capsule + placeholder ring + blob shadow) is the
+  // scaffold the chibi Healer replaces (v0.3.0): hide the whole rig — its sim
+  // wiring (movement, dash, smear ghosts, bolts, camera) keeps running — and
+  // mount the critter-factory mouse on the same sim state below. The critter
+  // brings its own §17 identity ring (constant opacity, exact class accent)
+  // and contact shadow, so no rig retune is needed any more.
   let identityRing = null;
   inner.root.traverse((o) => {
     if (!identityRing && o.isMesh && o.geometry?.type === 'RingGeometry') identityRing = o;
   });
-  const playerRig = identityRing ? identityRing.parent : null;
-  if (identityRing) {
-    identityRing.scale.setScalar(1.0);
-    identityRing.material.opacity = 0.5;
-    identityRing.renderOrder = 1;
-  }
-  if (playerRig) {
-    for (const child of playerRig.children) {
-      if (child.isMesh && child.geometry?.type === 'CircleGeometry') child.material.opacity = 0.16;
-    }
-  }
+  const capsuleRig = identityRing ? identityRing.parent : null;
+  if (capsuleRig) capsuleRig.visible = false;
 
   const root = new Group();
   root.name = `arena-v${spec.id}`;
@@ -269,11 +281,41 @@ export function createArenaScene(stage, toggles, ctx) {
   // --- The built boundary (walls + coping + capstone run).
   const wallInfo = buildWalls(root, spec, cosmetic);
 
-  // --- Player contact shadow (reference bar check 8): a FILLED soft-edged
-  // ellipse, pure black over the composited ground (dest*(1-a) — a darken with
-  // no hue of its own), sized to the capsule footprint. No ring, no hole.
-  const playerShadow = contactBlob(PLAYER_SHADOW_R, 0.6);
-  root.add(playerShadow);
+  // --- The playable Healer: chibi mouse from the critter factory, riding the
+  // graybox sim (position/aim/dash/hp are read-only; clips are render state).
+  const healerRig = createCritter('healer', { cosmetic });
+  root.add(healerRig.group);
+
+  // Bolts leave the staff-gem tip (§19.2: the gem brightens on cast) — hand
+  // the graybox bolt renderer the live gem world position as its muzzle.
+  const muzzleV = new Vector3();
+  if (inner.setBoltOrigin && healerRig.tipWorld) {
+    inner.setBoltOrigin(() => healerRig.tipWorld(muzzleV));
+  }
+
+  // --- Idle party members near spawn (badger Tank, fox Swordsman, hare
+  // Archer): idle clips only, facing loosely back toward the spawn point.
+  const allies = ALLY_SPOTS.map(([classId, ax, az]) => {
+    const c = createCritter(classId, { cosmetic });
+    c.group.position.set(ax, 0, az);
+    c.setYaw(Math.atan2(-ax, -az));
+    c.setAnim('idle');
+    root.add(c.group);
+    return c;
+  });
+
+  // Healer clip state (event flags consumed by the per-frame arbitration).
+  let castLeft = 0;
+  let hurtLeft = 0;
+  let firedFlag = false;
+  let hurtFlag = false;
+  let healerYaw = 0;
+  bus.on('basic_fire', () => {
+    firedFlag = true;
+  });
+  bus.on('hit', (ev) => {
+    if (ev.target === world.player.id) hurtFlag = true;
+  });
 
   // --- Entity contact shadows: same treatment for every sim body in the arena
   // (training dummies today, enemies when they land), so nothing ever floats.
@@ -490,10 +532,59 @@ export function createArenaScene(stage, toggles, ctx) {
       stage.camera.lookAt(cxp, 0, czp);
     }
 
-    // Player contact shadow follows the interpolated capsule position.
+    // --- The Healer rig rides the sim body (same interpolation the capsule
+    // used); ring + shadow are children of the rig and ride along.
     const p = world.player;
-    playerShadow.position.x = p.px + (p.x - p.px) * alpha;
-    playerShadow.position.z = p.pz + (p.z - p.pz) * alpha;
+    const ix = p.px + (p.x - p.px) * alpha;
+    const iz = p.pz + (p.z - p.pz) * alpha;
+    healerRig.group.position.set(ix, 0, iz);
+
+    // §3/A1: yaw turns smoothly toward aim (shortest arc). Frozen while downed.
+    if (p.hp > 0) {
+      let tx = p.lastAimDir?.x ?? 1;
+      let tz = p.lastAimDir?.z ?? 0;
+      if (p.aim) {
+        const adx = p.aim.x - ix;
+        const adz = p.aim.z - iz;
+        const al = Math.hypot(adx, adz);
+        if (al > 1e-3) {
+          tx = adx / al;
+          tz = adz / al;
+        }
+      }
+      let dy = Math.atan2(tx, tz) - healerYaw;
+      while (dy > Math.PI) dy -= Math.PI * 2;
+      while (dy < -Math.PI) dy += Math.PI * 2;
+      healerYaw += dy * (1 - Math.exp(-YAW_RATE * dt));
+      healerRig.setYaw(healerYaw);
+    }
+
+    // Clip arbitration: downed > hurt > cast > walk/idle. Event flags were
+    // raised during this frame's sim ticks; holds are wall-clock render state.
+    const simSpeed = Math.hypot(p.x - p.px, p.z - p.pz) * TICK_HZ;
+    const moving = simSpeed > MOVE_EPS;
+    if (firedFlag) {
+      firedFlag = false;
+      castLeft = moving ? CAST_HOLD_MOVING : CAST_HOLD_STILL;
+      healerRig.setAnim('cast', CAST_PHASE); // re-trigger AT the release pop
+    }
+    if (hurtFlag) {
+      hurtFlag = false;
+      hurtLeft = HURT_HOLD;
+      healerRig.setAnim('hurt', 0); // hurt beats a cast raised the same frame
+    }
+    castLeft = Math.max(0, castLeft - dt);
+    hurtLeft = Math.max(0, hurtLeft - dt);
+    if (p.hp <= 0) healerRig.setAnim('downed');
+    else if (hurtLeft > 0) healerRig.setAnim('hurt');
+    else if (castLeft > 0) healerRig.setAnim('cast');
+    else healerRig.setAnim(moving ? 'walk' : 'idle');
+
+    healerRig.update(dt);
+    for (const a of allies) a.update(dt);
+    // Critter ink is clip-space-expanded; it needs the live canvas size (same
+    // contract as the prop ink above).
+    setInkViewport(window.innerWidth, window.innerHeight);
 
     // Entity contact shadows: one per live sim body, recycled on despawn.
     const seen = new Set();
@@ -604,6 +695,17 @@ export function createArenaScene(stage, toggles, ctx) {
       ...(inner.debugState ? inner.debugState() : {}),
       variant: spec.id,
       variantName: spec.name,
+      // v0.3.0 party integration — lets captures assert clip state + presence.
+      party: {
+        healerAnim: healerRig.getAnim(),
+        healerYaw: Math.round(healerYaw * 100) / 100,
+        allies: allies.map((a) => ({
+          classId: a.classId,
+          anim: a.getAnim(),
+          x: a.group.position.x,
+          z: a.group.position.z,
+        })),
+      },
       grass: foliage.grassCount,
       flowers: foliage.flowerCount,
       propTypes: typeCount,

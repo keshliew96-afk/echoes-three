@@ -5,12 +5,15 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ▶ RESUMED — Round B remediation continuing (critics re-verify fixes, then integration + baseline)
+## Status: ▶ Round B COMPLETE — v0.3.0 INTEGRATED: dressed arena is the default scene with the chibi party riding the live sim
 
 ### Resume point — do this first
 1. Start the dev server (`npm run dev`, port 5199) if it is not up.
-2. Resume the remediation workflow: `Workflow({scriptPath: "C:\Users\keshl\.claude\projects\C--Users-keshl-OneDrive-Desktop------echoes-three\3d94cc26-ac5d-4ee9-8985-3b471cd8f4f1\workflows\scripts\echoes-round-b-fix-wf_1dfeccac-395.js", resumeFromRunId: "wf_1dfeccac-395"})` — the arena fix round replays from cache; the critter fixer restarts (its work was uncommitted mid-edit but IS functional on disk). Then critics re-verify, integration runs, and the 10-check baseline is scored.
-3. Then Round C: blocks 7-10 — enemies/waves, ally AI + downed/revive, healer skill kit, node build system. Blocks 11-14 (run structure/draft/shop/boss, HUD, camp hub, final polish) follow.
+2. Round B is done (arena + critters critic-passed, integration committed at
+   v0.3.0). Next: score the 10-check reference-bar baseline on the integrated
+   default scene, then Round C: blocks 7-10 — enemies/waves, ally AI +
+   downed/revive, healer skill kit, node build system. Blocks 11-14 (run
+   structure/draft/shop/boss, HUD, camp hub, final polish) follow.
 
 ### Measured state at pause (v0.2.6)
 Arena lighting fix WORKED — `captures/pause2-arena.png` vs the reference frame:
@@ -40,10 +43,11 @@ visible (lean corrected). 164fps, zero errors.
   ground ellipse. Archer's bow still reads as a closed 'D', fox tail as a pale
   flipper.
 
-## Round A all-PASS; Round B mid-loop
+## Round A all-PASS; Round B complete (integration landed)
 
 | # | Time (session) | Event |
 |---|----------------|-------|
+| 21 | T13 | **v0.3.0 integration committed.** Dressed arena (?variant=1|2|3) is now the DEFAULT scene (graybox stays at ?scene=graybox for regression; proto HUD rides both). Player capsule replaced by the chibi mouse Healer wired to sim state: walk clip while moving, cast clip re-triggered AT the release pop on every bolt fire, hurt clip on damage taken (incoming numerals now Bruise Umber per §17), downed clip at 0 HP (new sim rule: party HP<=0 = `downed` event + floor at 0, never despawn — §10), smooth yaw-to-aim, dash smear intact (frame-verified mid-dash D5 with trail). Bolts spawn visually FROM the staff-gem tip and converge onto the sim path over 1.1 u (graybox `setBoltOrigin` hook; inert without a provider). Badger Tank / fox Swordsman / hare Archer idle near spawn (non-colliding per §12/A6, idle clips, own rings). Verified: int-smoke 4.52%>160 / 0.77%>200 / 14 buckets / FLAT 1.66% (v2: 9.13/2.30, v3: 6.58/2.40); kill juice (3 hits→kill, numerals+decal+burst+pop in frame); hurt/downed/revive evals green; fps 84 in combat, 156-164 idle (bar >=55); seeded simtest event windows byte-identical twice; qa*/qc* regression files all exit 0. |
 | 1 | T0 | Recon: found GameStudio "Echoes" concept + art bible (approved). Node v24, npm 11 available. |
 | 2 | T0 | Wrote docs/REFERENCE_BAR.md — 10-point pixel rubric + responsiveness bar distilled from the 4 reference screenshots. |
 | 3 | T0 | Launching design-digest workflow over GameStudio GDDs → BUILD_BRIEF.md. |
@@ -73,11 +77,13 @@ visible (lean corrected). 164fps, zero errors.
 | Design brief | done | — | 1 |
 | Scaffold + renderer/post stack | built (v0.2.0) | PASS | 1 |
 | Sim core, RNG & input abstraction | built (v0.2.1) | PASS | 1 |
-| Arena/environment generation | pending | — | — |
+| Arena/environment generation | built (v0.2.6) | PASS (after fix rounds) | 4 |
+| Chibi party critters | built (v0.2.7) | PASS (after fix rounds) | 4 |
 | Player controller + camera | built (v0.2.2) | PASS | 1 |
 | Combat core (hit/hurt, numbers, juice) | built (v0.2.3) | PASS | 1 |
+| Integration: arena + party as default scene | built (v0.3.0) | self-verified (captures + analyze.mjs + qa/qc regression) | 1 |
 | Enemies + AI + waves | pending | — | — |
-| Party AI allies | pending | — | — |
+| Party AI allies | pending (idle placeholders in arena since v0.3.0) | — | — |
 | VFX/particles | pending | — | — |
 | HUD/UI | pending | — | — |
 | Run structure (rooms, draft, shop, boss) | pending | — | — |

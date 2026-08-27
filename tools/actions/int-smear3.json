@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"(()=>{const d=document.createElement('div');d.id='qa-tick';d.style.cssText='position:fixed;top:44px;left:8px;z-index:99999;font:bold 22px monospace;color:#fff;background:#000;padding:2px 6px;';document.body.appendChild(d);const e=window.__echoes;const loop=()=>{const p=e.state().party[0];d.textContent='T'+e.tick+' D'+p.dashTicksLeft+' X'+p.x.toFixed(2);requestAnimationFrame(loop)};loop();return 'overlay-on'})()"},
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -5, 0)"},
+  {"type":"wait","ms":400},
+  {"type":"mousemove","x":1200,"y":450},
+  {"type":"wait","ms":100},
+  {"type":"eval","code":"(()=>{const tap=(ms)=>{setTimeout(()=>window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',key:' ',bubbles:true,cancelable:true})),ms);setTimeout(()=>window.dispatchEvent(new KeyboardEvent('keyup',{code:'Space',key:' ',bubbles:true,cancelable:true})),ms+120)};for(let i=0;i<8;i++)tap(200+i*1350);return 'scheduled-8'})()"}
+]

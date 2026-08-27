@@ -1,0 +1,10 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',2.5,0)"},
+  {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',4.2,0.1)"},
+  {"type":"wait","ms":200},
+  {"type":"mousemove","x":1100,"y":420},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":650}
+]

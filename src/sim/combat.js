@@ -84,7 +84,25 @@ export function createCombat({
       z: r2(target.z),
     });
 
-    if (target.hp <= 0) kill(target, { delivery });
+    if (target.hp <= 0) {
+      if (target.partyIndex !== undefined) {
+        // §10: HP <= 0 on a party member = DOWNED, never death/despawn. The
+        // full downed contract (crawl, revive channel, diminishing returns)
+        // lands with its own block; the sim-side floor + event land here so
+        // the integrated Healer rig can play the §10 collapse. hp = 0 keeps
+        // the body outside the pipeline (no instance ever targets a downed
+        // character — the guard at the top of this function).
+        target.hp = 0;
+        events.emit(tick, 'downed', {
+          id: target.id,
+          kind: target.kind,
+          x: r2(target.x),
+          z: r2(target.z),
+        });
+      } else {
+        kill(target, { delivery });
+      }
+    }
     return { amount, crit };
   }
 

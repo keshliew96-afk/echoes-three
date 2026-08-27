@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"JSON.stringify({v:window.__echoes.version,fps:window.__echoes.fps,seed:window.__echoes.seed,st:window.__echoes.state()})"}
+]

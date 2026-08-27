@@ -229,10 +229,15 @@ export function createPoseDriver(cosmetic) {
   let tClip = rand(0, 10); // desync gallery critters
   let downAge = 0;
 
-  function setAnim(name) {
-    if (!clipFns[name] || name === clip) return;
+  // `phase` (seconds into the clip) serves instant actions (§6: press -> fire):
+  // the integrated Healer starts `cast` AT the release pop instead of sitting
+  // through 450 ms of wind-up after the bolt has already left. Passing a phase
+  // also RE-TRIGGERS the same clip (hold-to-repeat fire pops every shot);
+  // without one, same-clip calls stay no-ops so per-frame arbitration is free.
+  function setAnim(name, phase) {
+    if (!clipFns[name] || (name === clip && phase === undefined)) return;
     clip = name;
-    tClip = 0;
+    tClip = phase ?? 0;
   }
 
   function update(dt) {

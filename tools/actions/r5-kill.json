@@ -1,0 +1,22 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',2.5,0)"},
+  {"type":"wait","ms":200},
+  {"type":"key","key":"KeyW","ms":250},
+  {"type":"key","key":"KeyS","ms":250},
+  {"type":"key","key":"Space","ms":60},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"(()=>{const p=window.__echoes.state().party[0];return JSON.stringify([p.x,p.z])})()"},
+  {"type":"eval","code":"window.__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":300},
+  {"type":"mousemove","x":1100,"y":420},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":700},
+  {"type":"mousemove","x":1100,"y":425},
+  {"type":"wait","ms":1600},
+  {"type":"mouseup","button":"right"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"JSON.stringify({fps:window.__echoes.fps,stats:window.__echoes.stats,enemies:window.__echoes.state().enemies})"},
+  {"type":"eval","code":"JSON.stringify(window.__echoes.events.filter(e=>['hit','kill','death','intent','dash_end','hit_immune'].includes(e.type)).slice(-20))"}
+]

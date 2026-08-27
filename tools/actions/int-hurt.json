@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"window.__pid = __echoes.state().party[0].id; __echoes.cmd('hitOnce', window.__pid)"},
+  {"type":"wait","ms":150},
+  {"type":"eval","code":"({anim: __echoes.state().vfx.party.healerAnim, hp: __echoes.state().party[0].hp, tail: __echoes.events.filter(e=>e.type==='hit').slice(-1)})"}
+]

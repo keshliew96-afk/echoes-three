@@ -4,10 +4,14 @@
 // never mutate sim state), resize wiring, debug API (window.__echoes).
 //
 // URL params:
-//   ?scene=graybox|simtest|rendertest  scene select (graybox — the playable
-//                              Healer arena — is the default; simtest keeps
+//   ?scene=arena|graybox|simtest|rendertest|chartest  scene select (arena —
+//                              the dressed Act-1 woodland with the chibi party
+//                              — is the default; graybox stays reachable for
+//                              controller regression captures; simtest keeps
 //                              the wisp harness for determinism captures,
-//                              rendertest stays for renderer comparisons)
+//                              rendertest for renderer comparisons, chartest
+//                              is the critter gallery)
+//   ?variant=1|2|3             arena layout variant (arena scene only)
 //   ?seed=123                  force the gameplay RNG seed (determinism tests)
 //   ?debug=1                   sim debug overlay (tick / entities / RNG draws)
 //   ?bloom=0 ?vignette=0 ?grade=0 ?outline=0   post/outline toggles (default on)
@@ -86,7 +90,7 @@ const SCENES = {
   chartest: createCharTestScene,
   arena: createArenaScene,
 };
-const DEFAULT_SCENE = 'graybox';
+const DEFAULT_SCENE = 'arena'; // v0.3.0: the dressed arena is the game scene
 const sceneKey = SCENES[params.get('scene')] ? params.get('scene') : DEFAULT_SCENE;
 
 // The deterministic wisp harness belongs to the simtest proving ground only;
@@ -109,9 +113,10 @@ const buildScene = SCENES[sceneKey];
 const activeScene = buildScene(stage, toggles, { world, cosmetic, bus });
 
 // Proto command bar (dodge cooldown radial + §17 denial nudges) rides with
-// the playable scene only, so simtest/rendertest captures stay unchanged.
+// the playable scenes only, so simtest/rendertest/chartest captures stay
+// unchanged.
 const hud =
-  sceneKey === 'graybox'
+  sceneKey === 'graybox' || sceneKey === 'arena'
     ? createProtoHud(bus, {
         dodgeRemaining: () => Math.max(0, world.player.dodgeReadyTick - clock.tick),
       })

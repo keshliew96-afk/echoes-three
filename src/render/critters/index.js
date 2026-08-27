@@ -180,6 +180,14 @@ export function createCritter(classId, { cosmetic = null } = {}) {
       built.head.getWorldPosition(out);
       return out;
     },
+    // World-space emitter tip (the Healer's staff gem) — null on classes
+    // without one. Bolts spawn visually from this point (integration block).
+    tipWorld: built.tip
+      ? (out = new Vector3()) => {
+          built.tip.getWorldPosition(out);
+          return out;
+        }
+      : null,
     update,
   };
 }
