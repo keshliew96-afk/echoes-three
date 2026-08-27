@@ -94,7 +94,9 @@ export function buildArcher(rig, trackAccent) {
     { color: PALETTE.bone, phiLength: 1.1 }
   );
   body.add(bib);
-  const collar = part(new CylinderGeometry(0.09, 0.12, 0.065, 18), mix(accent, PALETTE.voidCharcoal, 0.25).getHex());
+  // Tracked so a downed Archer's collar desaturates with the rest of the accent.
+  const collarMat = trackAccent(toonMaterial({ color: mix(accent, PALETTE.voidCharcoal, 0.25).getHex() }));
+  const collar = part(new CylinderGeometry(0.09, 0.12, 0.065, 18), accent, { mat: collarMat });
   collar.position.y = 0.5;
   body.add(collar);
   // Warm-grey belt (the shared party base showing as trim on every class).
@@ -255,9 +257,12 @@ export function buildArcher(rig, trackAccent) {
   }
 
   function apply(P) {
-    // Long ears sway in counter-phase; droop when downed.
-    ears[0].rotation.z = -0.075 - P.ear * 0.55 - P.collapse * 0.95;
-    ears[1].rotation.z = 0.075 + P.ear * 0.45 + P.collapse * 0.95;
+    // COMMON-MODE ear sway (see healer.js): the pair sways as a unit with a
+    // constant splay. Counter-phase sway crossed the two long ears — the
+    // party's only vertical double-spike — into a single mass at the sway
+    // peak, exactly the "ears splay and merge" read round 3 rejected.
+    ears[0].rotation.z = -0.075 + 0.45 * P.ear - P.collapse * 0.95;
+    ears[1].rotation.z = 0.075 + 0.45 * P.ear + P.collapse * 0.95;
     ears[0].rotation.x = -0.05 + 0.3 * Math.min(0, P.ear * 1.6);
     ears[1].rotation.x = ears[0].rotation.x;
     tailPivot.rotation.y = P.tail * 0.6;

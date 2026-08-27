@@ -88,7 +88,9 @@ export function buildTank(rig, trackAccent) {
   body.add(buckleTongue);
   // Narrow accent collar AT the chin: it separates fur from garment and puts
   // the neck pinch on the head-measurement line (proportion note in healer.js).
-  const collar = part(new CylinderGeometry(0.125, 0.165, 0.075, 20), mix(accent, PALETTE.voidCharcoal, 0.2).getHex());
+  // Tracked so a downed Tank's collar desaturates with the rest of the accent.
+  const collarMat = trackAccent(toonMaterial({ color: mix(accent, PALETTE.voidCharcoal, 0.2).getHex() }));
+  const collar = part(new CylinderGeometry(0.125, 0.165, 0.075, 20), accent, { mat: collarMat });
   collar.position.y = 0.552;
   body.add(collar);
 
@@ -214,8 +216,9 @@ export function buildTank(rig, trackAccent) {
   body.add(tailPivot);
 
   function apply(P) {
-    ears[0].rotation.z = -0.18 - P.ear * 0.6 - P.collapse * 0.4;
-    ears[1].rotation.z = 0.18 + P.ear * 0.5 + P.collapse * 0.4;
+    // COMMON-MODE ear sway (see healer.js): constant splay, no convergence.
+    ears[0].rotation.z = -0.18 + 0.5 * P.ear - P.collapse * 0.4;
+    ears[1].rotation.z = 0.18 + 0.5 * P.ear + P.collapse * 0.4;
     tailPivot.rotation.y = P.tail * 0.5;
 
     // Cast = shield bash: the block leads forward and up on the release while

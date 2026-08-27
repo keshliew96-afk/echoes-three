@@ -108,7 +108,10 @@ export function buildSwordsman(rig, trackAccent) {
   const belt = part(new CylinderGeometry(0.19, 0.205, 0.055, 20), mix(PALETTE.warmGrey, PALETTE.bruiseUmber, 0.2).getHex());
   belt.position.y = 0.165;
   body.add(belt);
-  const collar = part(new CylinderGeometry(0.095, 0.13, 0.07, 18), mix(accent, PALETTE.voidCharcoal, 0.25).getHex());
+  // Tracked: the untracked wine collar stayed fully saturated on the downed
+  // fox while the rest of the accent went to charcoal (rem-downed capture).
+  const collarMat = trackAccent(toonMaterial({ color: mix(accent, PALETTE.voidCharcoal, 0.25).getHex() }));
+  const collar = part(new CylinderGeometry(0.095, 0.13, 0.07, 18), accent, { mat: collarMat });
   collar.position.y = 0.452;
   body.add(collar);
 
@@ -197,11 +200,12 @@ export function buildSwordsman(rig, trackAccent) {
     new Vector3(-0.45, -0.125, -0.09),
     new Vector3(-0.55, -0.03, -0.1), // the hook: lifts the Bone tip into view
   ]);
-  // Bone, NOT Parchment: a near-Parchment tip on a LIT toon material clears the
-  // composer's bloom threshold under the key light and the brush turned into a
-  // glowing white blob beside the shoulder. Bone is the brightest palette value
-  // that stays a solid colour here.
-  const tipHex = mix(PALETTE.bone, PALETTE.parchment, 0.15).getHex();
+  // Bone, NOT Parchment — and not even 15% toward Parchment: that mix still
+  // cleared the bloom threshold under the key light and the tail tip grew a
+  // soft emitter halo in every capture (rem-base ground beside the tip read
+  // luma 105-132 against a 99.5 floor). REFERENCE_BAR reserves glow halos for
+  // actual light emitters, so the tip is pure Bone.
+  const tipHex = PALETTE.bone;
   const brush = brushTail(tailCurve, {
       radius: TAIL_R,
       // Russet base, Bone tip: on the fox's pale tan fur a Bone tip alone has
@@ -293,8 +297,12 @@ export function buildSwordsman(rig, trackAccent) {
   }
 
   function apply(P, t, fallSign = 1) {
-    ears[0].rotation.z = -0.22 - P.ear - P.collapse * 0.45;
-    ears[1].rotation.z = 0.22 + P.ear * 0.85 + P.collapse * 0.45;
+    // COMMON-MODE ear sway (see healer.js): constant splay, so the two pointed
+    // ears — the class's silhouette key — can never fold into one spike. The
+    // old differential sway crossed them at the walk clip's negative peak
+    // (measured: both dark tips merged at rem-walkgame_00, gameplay camera).
+    ears[0].rotation.z = -0.24 + 0.6 * P.ear - P.collapse * 0.45;
+    ears[1].rotation.z = 0.24 + 0.6 * P.ear + P.collapse * 0.45;
     ears[0].rotation.x = -0.12 + 0.4 * Math.min(0, P.ear * 1.6);
     ears[1].rotation.x = ears[0].rotation.x;
     tailPivot.rotation.y = 0.3 * P.tail;
@@ -316,7 +324,11 @@ export function buildSwordsman(rig, trackAccent) {
     sword.position.set(0.26 * (1 - lay) + 0.04 * lay, 0.31 * (1 - lay) + 0.1 * lay, 0.08 + 0.3 * lay);
     // Smear trails the blade: its leading edge sits on the blade axis.
     smear.rotation.z = swingZ + Math.PI / 2;
-    smear.material.uniforms.uOpacity.value = 0.85 * P.swing;
+    // 0.62, not 0.85: at 0.85 the additive smear went near-opaque white at its
+    // leading edge and the blade inside it stopped reading as a blade on the
+    // release frame (rem-cast_02) — the smear must trail the blade, never
+    // swallow it.
+    smear.material.uniforms.uOpacity.value = 0.62 * P.swing;
     smear.visible = P.swing > 0.02;
 
     feet[0].position.z = 0.24 + 0.1 * P.stride;

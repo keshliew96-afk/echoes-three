@@ -12,6 +12,7 @@
 // glow: at head height and centred it erased her right eye at gallery framing
 // and turned her face into a white-green blob on the cast clip.
 import {
+  Color,
   CylinderGeometry,
   Group,
   Mesh,
@@ -19,6 +20,7 @@ import {
   OctahedronGeometry,
   QuadraticBezierCurve3,
   SphereGeometry,
+  SRGBColorSpace,
   TubeGeometry,
   Vector3,
 } from 'three';
@@ -100,7 +102,11 @@ export function buildHealer(rig, trackAccent) {
 
   // Narrow accent collar AT the chin: it separates fur from garment and puts
   // the silhouette's neck pinch exactly where the head measurement wants it.
-  const collar = part(new CylinderGeometry(0.115, 0.15, 0.075, 20), mix(accent, PALETTE.voidCharcoal, 0.2).getHex());
+  // Collar is accent-derived, so it is TRACKED: an untracked collar kept its
+  // full class colour on a downed body whose every other accent had gone to
+  // charcoal (measured as a saturated band at the fox's neck in rem-downed).
+  const collarMat = trackAccent(toonMaterial({ color: mix(accent, PALETTE.voidCharcoal, 0.2).getHex() }));
+  const collar = part(new CylinderGeometry(0.115, 0.15, 0.075, 20), accent, { mat: collarMat });
   collar.position.y = 0.565;
   body.add(collar);
   // Warm Grey #9C9186 sash — the shared party base, visible on every class.
@@ -182,7 +188,19 @@ export function buildHealer(rig, trackAccent) {
   //     is authored well above the bloom threshold so UnrealBloomPass bleeds it
   //     into the surrounding pixels, and both halo layers ramp with the cast.
   const GEM_Y = 0.93;
-  const gemMat = new MeshBasicMaterial({ color: exactColorNearest(PALETTE.brightHeal) });
+  // ACES HUE-SKEW COMPENSATION (round-4 measurement): even with every layer
+  // authored from Bright Heal, the FINAL gem facet measured hue 110 — the ACES
+  // curve rotates bright greens toward yellow, and the additive halo layers
+  // stack the same skew on the same pixels. exactColorNearest can only invert
+  // value, not this hue rotation (it converges at low value where the skew is
+  // small, then the additive overlays re-skew the sum). So the whole gem family
+  // is authored UP-hue by the measured error; the shift constant is tuned
+  // against probed pixels of a real capture until the facet lands in the
+  // reserved band (133 +/- 10).
+  const gemHSL = { h: 0, s: 0, l: 0 };
+  new Color(PALETTE.brightHeal).getHSL(gemHSL, SRGBColorSpace);
+  const gemAuthored = new Color().setHSL(gemHSL.h + 18 / 360, gemHSL.s, gemHSL.l, SRGBColorSpace).getHex();
+  const gemMat = new MeshBasicMaterial({ color: exactColorNearest(gemAuthored) });
   const gem = new Mesh(new OctahedronGeometry(0.052), gemMat);
   gem.position.y = GEM_Y;
   gem.renderOrder = 2;
@@ -192,7 +210,7 @@ export function buildHealer(rig, trackAccent) {
   // gem value, it clears the composer's bloom threshold and bleeds into the
   // surrounding pixels (REFERENCE_BAR check 2: every emitter has a glow halo).
   const glow = makeGlowSprite({
-    color: exactColorNearest(PALETTE.brightHeal).multiplyScalar(3.1),
+    color: exactColorNearest(gemAuthored).multiplyScalar(3.1),
     size: GLOW_BASE,
     opacity: 0.6,
   });
@@ -200,7 +218,16 @@ export function buildHealer(rig, trackAccent) {
   staff.add(glow);
   // Tight inner flare: keeps a hot core inside the wide halo so the emitter
   // reads as a point of light rather than a green smudge.
-  const flare = makeGlowSprite({ color: exactColor(PALETTE.parchment).multiplyScalar(1.6), size: GLOW_BASE * 0.4, opacity: 0.55 });
+  // NOT Parchment (round-4 measurement): a warm-white flare additively parked on
+  // the gem's own pixels dragged the measured core to hue 95-105 — up to 40
+  // degrees off the reserved Bright Heal band the gate names. The hot core is
+  // now a whitened Bright Heal, so the extra light pushes the gem toward white
+  // ALONG its own hue instead of toward yellow.
+  const flare = makeGlowSprite({
+    color: exactColorNearest(gemAuthored).lerp(exactColor(PALETTE.parchment), 0.12).multiplyScalar(1.9),
+    size: GLOW_BASE * 0.32,
+    opacity: 0.5,
+  });
   flare.position.y = GEM_Y;
   staff.add(flare);
 
@@ -225,12 +252,18 @@ export function buildHealer(rig, trackAccent) {
 
   const gripWorld = new Vector3();
   const gripLocal = new Vector3(0, 0.5, 0.014);
-  const gemBase = exactColorNearest(PALETTE.brightHeal);
+  const gemBase = exactColorNearest(gemAuthored);
   const gemDown = exactColor(mix(PALETTE.warmGrey, PALETTE.voidCharcoal, 0.45).getHex());
 
   function apply(P, t, fallSign = 1) {
-    ears[0].rotation.z = -0.26 - P.ear - P.collapse * 0.5;
-    ears[1].rotation.z = 0.26 + P.ear * 0.8 + P.collapse * 0.5;
+    // COMMON-MODE ear sway: both ears rotate by the same signed amount, so the
+    // pair sways as a V with a CONSTANT splay. The old differential sway
+    // (ears[0] -P.ear, ears[1] +0.8*P.ear) closed the splay whenever P.ear went
+    // negative — at the walk clip's sway peak the two ears converged into one
+    // silhouette spike, the exact round-3 F4 defect the lean clamp was meant to
+    // bury. Same construction on all four classes.
+    ears[0].rotation.z = -0.26 + 0.7 * P.ear - P.collapse * 0.5;
+    ears[1].rotation.z = 0.26 + 0.7 * P.ear + P.collapse * 0.5;
     tailPivot.rotation.y = P.tail * 0.8;
     tailPivot.rotation.z = 0.2 * P.tail;
 
@@ -263,9 +296,9 @@ export function buildHealer(rig, trackAccent) {
     const gs = GLOW_BASE * (1 + 1.15 * heat);
     glow.scale.set(gs, gs, 1);
     glow.material.opacity = (0.34 + 0.62 * heat) * (1 - P.desat);
-    const fs = GLOW_BASE * 0.42 * (1 + 0.9 * heat);
+    const fs = GLOW_BASE * 0.32 * (1 + 0.9 * heat);
     flare.scale.set(fs, fs, 1);
-    flare.material.opacity = (0.3 + 0.6 * heat) * (1 - P.desat);
+    flare.material.opacity = (0.2 + 0.55 * heat) * (1 - P.desat);
     gem.scale.setScalar(1 + 0.22 * heat);
     gem.rotation.y = t * 1.1;
   }
