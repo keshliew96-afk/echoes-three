@@ -5,7 +5,7 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ⏸ PAUSED by user (during Round B remediation)
+## Status: ▶ RESUMED — Round B remediation continuing (critics re-verify fixes, then integration + baseline)
 
 ### Resume point — do this first
 1. Start the dev server (`npm run dev`, port 5199) if it is not up.
