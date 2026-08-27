@@ -1,0 +1,15 @@
+[
+  {"type":"eval","code":"(()=>{const s=__echoes.state().party[0];window.__a={t:__echoes.tick,x:s.x,z:s.z};return window.__a})()"},
+  {"type":"keydown","key":"KeyW"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"(()=>{const s=__echoes.state().party[0];const b={t:__echoes.tick,x:s.x,z:s.z};const a=window.__a;window.__b=b;return {b:b,perTick:{dx:Math.round((b.x-a.x)/(b.t-a.t)*10000)/10000,dz:Math.round((b.z-a.z)/(b.t-a.t)*10000)/10000},anim:__echoes.state().vfx.party.healerAnim}})()"},
+  {"type":"keyup","key":"KeyW"},
+  {"type":"keydown","key":"KeyS"},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"(()=>{const s=__echoes.state().party[0];const c={t:__echoes.tick,x:s.x,z:s.z};const b=window.__b;const dt=c.t-b.t;const mag=Math.hypot((c.x-b.x)/dt,(c.z-b.z)/dt);return {diagMagPerTick:Math.round(mag*10000)/10000,anim:__echoes.state().vfx.party.healerAnim}})()"},
+  {"type":"keyup","key":"KeyS"},
+  {"type":"keyup","key":"KeyD"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>({restAnim:__echoes.state().vfx.party.healerAnim}))()"}
+]

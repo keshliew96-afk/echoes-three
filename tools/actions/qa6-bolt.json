@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);'tp'"},
+  {"type":"wait","ms":300},
+  {"type":"mousemove","x":1150,"y":420},
+  {"type":"wait","ms":150},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":70},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return {proj:s.projectiles,player:{x:s.party[0].x,z:s.party[0].z},anim:s.vfx.party.healerAnim}})()"}
+]

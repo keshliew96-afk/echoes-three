@@ -1,0 +1,12 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);'tp'"},
+  {"type":"wait","ms":300},
+  {"type":"mousemove","x":1150,"y":420},
+  {"type":"wait","ms":150},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":40},
+  {"type":"eval","code":"({castAnim:__echoes.state().vfx.party.healerAnim})"},
+  {"type":"mouseup","button":"right"},
+  {"type":"wait","ms":700},
+  {"type":"eval","code":"({afterAnim:__echoes.state().vfx.party.healerAnim})"}
+]

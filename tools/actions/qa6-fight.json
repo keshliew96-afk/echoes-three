@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"[__echoes.cmd('spawn','dummy',2.4,0.4),__echoes.cmd('spawn','dummy',3.2,-0.6),__echoes.cmd('spawn','dummy',2.8,1.4)]"},
+  {"type":"mousemove","x":1100,"y":440},
+  {"type":"wait","ms":150},
+  {"type":"mousedown","button":"right"}
+]

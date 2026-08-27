@@ -1,0 +1,12 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',-4,2);'tp'"},
+  {"type":"wait","ms":300},
+  {"type":"mousemove","x":1200,"y":450},
+  {"type":"wait","ms":150},
+  {"type":"eval","code":"(()=>{const s=__echoes.state().party[0];window.__x0=s.x;window.__z0=s.z;return {x0:s.x,z0:s.z}})()"},
+  {"type":"key","key":"Space","ms":80},
+  {"type":"wait","ms":100},
+  {"type":"eval","code":"(()=>{const s=__echoes.state().party[0];return {dashLeft:s.dashTicksLeft,anim:__echoes.state().vfx.party.healerAnim}})()"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{const s=__echoes.state().party[0];return {dist:Math.round(Math.hypot(s.x-window.__x0,s.z-window.__z0)*1000)/1000,tail:__echoes.events.slice(-6)}})()"}
+]

@@ -1,0 +1,10 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',10.5,0);'tp'"},
+  {"type":"wait","ms":300},
+  {"type":"mousemove","x":1400,"y":450},
+  {"type":"wait","ms":150},
+  {"type":"eval","code":"(()=>{const s=__echoes.state().party[0];window.__x0=s.x;return {x0:s.x}})()"},
+  {"type":"key","key":"Space","ms":80},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"(()=>{const s=__echoes.state().party[0];return {x:Math.round(s.x*1000)/1000,traveled:Math.round((s.x-window.__x0)*1000)/1000,tail:__echoes.events.slice(-4)}})()"}
+]
