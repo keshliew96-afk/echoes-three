@@ -40,13 +40,6 @@ visible (lean corrected). 164fps, zero errors.
   ground ellipse. Archer's bow still reads as a closed 'D', fox tail as a pale
   flipper.
 
-### Resume point — do this first
-1. Start the dev server: `npm run dev` in this folder (port 5199), or preview_start "echoes-dev".
-2. Re-run Round B to finish it: `Workflow({scriptPath: "C:\Users\keshl\.claude\projects\C--Users-keshl-OneDrive-Desktop-----\3d94cc26-ac5d-4ee9-8985-3b471cd8f4f1\workflows\scripts\echoes-round-b-wf_62eab492-0d2.js", resumeFromRunId: "wf_62eab492-0d2"})` — round-1 builders/critics replay from cache; it picks up at the round-2 critics (both round-2 builder fixes are already committed: 2fdc480 env, 09d06a3 critters), then runs integration + baseline reference-bar scoring.
-3. Then Round C: blocks 7-10 — enemies/waves, ally AI + downed/revive, healer skill kit, node build system. Blocks 11-14 (run structure/draft/shop/boss, HUD, camp hub, final polish) follow.
-
-State at pause: 7 commits, v0.2.5. Playable graybox arena (default scene) with movement/dodge/bolts/juice; dressed Act-1 arena at `?scene=arena&variant=1|2|3`; critter gallery at `?scene=chartest`. Player is still a capsule — the chibi Healer swap happens in the integration step.
-
 ## Round A all-PASS; Round B mid-loop
 
 | # | Time (session) | Event |
