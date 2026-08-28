@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = (c) => { window.dispatchEvent(new KeyboardEvent('keydown', { code: c })); window.dispatchEvent(new KeyboardEvent('keyup', { code: c })); }; __echoes.cmd('restoreSkillState', { slots: [ { id: 'spirit_bolt', remaining: 0 }, null, null, null ], override: null }); __echoes.cmd('teleport', -4.9, -1.0); __echoes.cmd('spawn','dummy', -1.4, -1.0); return { loadout: __echoes.state().skills.map(s => s && s.id) }; })()" },
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "new Promise((res) => { const off = __echoes.on('hit', (ev) => { off(); res({ impact: ev }); }); window.__press('Digit1'); setTimeout(() => { off(); res({ timeout: true }); }, 3000); })" },
+  { "type": "wait", "ms": 60 }
+]

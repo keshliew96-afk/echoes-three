@@ -1,0 +1,11 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = (c) => { window.dispatchEvent(new KeyboardEvent('keydown', { code: c })); window.dispatchEvent(new KeyboardEvent('keyup', { code: c })); }; __echoes.cmd('restoreSkillState', { slots: [ { id: 'mending_bolt', remaining: 0 }, { id: 'swift_mend', remaining: 0 }, { id: 'sanctuary', remaining: 0 }, { id: 'warding_aura', remaining: 0 } ], override: null }); __echoes.cmd('teleport', -4.9, -1.0); const st = __echoes.state(); const ids = {}; for (const p of st.party) ids[p.partyIndex ?? 0] = p.id; __echoes.cmd('setHp', ids[0], 0.5); __echoes.cmd('setHp', ids[1], 0.5); window.__press('F2'); return { loadout: __echoes.state().skills.map(s => s && s.id) }; })()" },
+  { "type": "wait", "ms": 250 },
+  { "type": "eval", "code": "(() => { window.__press('Digit3'); return 'sanctuary at self'; })()" },
+  { "type": "wait", "ms": 350 },
+  { "type": "eval", "code": "(() => { window.__press('Digit2'); return 'swift mend forced on tank'; })()" },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => { window.__press('Digit1'); return 'mending bolt east toward tank'; })()" },
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "({ state: { zones: __echoes.state().zones.length, skillBolts: __echoes.state().skillBolts, skillfx: __echoes.state().skillfx, healOverride: __echoes.state().healOverride } })" }
+]

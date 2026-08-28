@@ -93,3 +93,4 @@ visible (lean corrected). 164fps, zero errors.
 | Camp hub scene | pending | — | — |
 | Audio | pending | — | — |
 | Final polish vs reference bar | pending | — | — |
+| Healer skill kit & delivery shapes | built (v0.3.3) | self-verified (sk-* captures + analyze.mjs + qa/qc regression) | 1 |

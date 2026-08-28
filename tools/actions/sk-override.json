@@ -1,0 +1,23 @@
+[
+  { "type": "eval", "code": "(() => { window.__sinceTick = (t0, types) => __echoes.events.filter(e => e.tick >= t0 && (!types || types.includes(e.type))); window.__press = (c) => { window.dispatchEvent(new KeyboardEvent('keydown', { code: c })); window.dispatchEvent(new KeyboardEvent('keyup', { code: c })); }; return { skills: __echoes.state().skills.map(s => s && s.id), healOverride: __echoes.state().healOverride }; })()" },
+
+  { "type": "eval", "code": "(() => { __echoes.cmd('teleport', -1, -1.5); const st = __echoes.state(); const ids = {}; for (const p of st.party) ids[p.partyIndex ?? 0] = p.id; window.__ids = ids; __echoes.cmd('setHp', ids[0], 0.5); __echoes.cmd('setHp', ids[1], 0.5); __echoes.cmd('setHp', ids[2], 0.9); __echoes.cmd('setHp', ids[3], 0.9); window.__tA = __echoes.tick; window.__press('Digit2'); return { note: 'case A tiebreak: self and tank both 0.5 -> §8 caster-first tiebreak, expect target 0 (self)' }; })()" },
+  { "type": "wait", "ms": 200 },
+  { "type": "eval", "code": "({ caseA_selfTiebreak: window.__sinceTick(window.__tA, ['heal','skill_cast']) })" },
+
+  { "type": "eval", "code": "(() => { window.__tB = __echoes.tick; window.__press('F2'); return new Promise((res) => setTimeout(() => res({ caseB_setOverride: window.__sinceTick(window.__tB, ['heal_override']), stateOverride: __echoes.state().healOverride }), 200)); })()" },
+  { "type": "wait", "ms": 2600 },
+  { "type": "eval", "code": "(() => { __echoes.cmd('setHp', window.__ids[1], 0.9); __echoes.cmd('setHp', window.__ids[3], 0.3); window.__tB2 = __echoes.tick; window.__press('Digit2'); return new Promise((res) => setTimeout(() => res({ caseB_forced: window.__sinceTick(window.__tB2, ['heal','skill_cast','intent_denied']), note: 'archer(0.3) is lowest but F2 forces tank(pi 1, 0.9) -> expect target 1, override forced' }), 200)); })()" },
+
+  { "type": "wait", "ms": 2600 },
+  { "type": "eval", "code": "(() => { __echoes.cmd('teleport', 5.0, 3.0); window.__tC = __echoes.tick; window.__press('Digit2'); return new Promise((res) => setTimeout(() => { const st = __echoes.state(); const tank = st.party.find(p => p.partyIndex === 1); res({ caseC_fallback: window.__sinceTick(window.__tC, ['heal','skill_cast','intent_denied']), tankDist: Math.round(Math.hypot(tank.x - st.party[0].x, tank.z - st.party[0].z) * 100) / 100, note: 'tank AND archer out of range 3.2 -> smart-target falls back to SELF; override must SURVIVE', overrideAfter: st.healOverride }); }, 200)); })()" },
+
+  { "type": "wait", "ms": 2600 },
+  { "type": "eval", "code": "(() => { __echoes.cmd('teleport', -1, -1.5); window.__tD = __echoes.tick; window.__press('Digit2'); return new Promise((res) => setTimeout(() => res({ caseD_resume: window.__sinceTick(window.__tD, ['heal','skill_cast']), note: 'back in range: forced tank (0.9 frac, NOT lowest - archer is 0.3) resumes WITHOUT re-pressing F2', overrideNow: __echoes.state().healOverride }), 200)); })()" },
+
+  { "type": "eval", "code": "(() => { window.__tE = __echoes.tick; window.__press('F2'); return new Promise((res) => setTimeout(() => res({ caseE_clearToggle: window.__sinceTick(window.__tE, ['heal_override']), stateOverride: __echoes.state().healOverride }), 200)); })()" },
+  { "type": "eval", "code": "(() => { window.__tF = __echoes.tick; window.__press('F2'); return new Promise((res) => setTimeout(() => { window.__press('F4'); setTimeout(() => res({ caseF_replace: window.__sinceTick(window.__tF, ['heal_override']), stateOverride: __echoes.state().healOverride, note: 'F2 then F4 -> replace: expect index 1 then 3' }), 200); }, 200)); })()" },
+
+  { "type": "wait", "ms": 2600 },
+  { "type": "eval", "code": "(() => { __echoes.cmd('setHp', window.__ids[3], 0); __echoes.cmd('setHp', window.__ids[1], 0.7); window.__tG = __echoes.tick; window.__press('Digit2'); return new Promise((res) => setTimeout(() => res({ caseG_downedFallback: window.__sinceTick(window.__tG, ['heal','skill_cast']), note: 'override F4 -> archer DOWNED (hp 0) -> fallback to smart (tank 0.7 lowest of self 0.5? self was healed in caseA/C...), override retained at 3', overrideAfter: __echoes.state().healOverride, partyHp: __echoes.state().party.map(p => [p.partyIndex ?? 0, p.hp, p.maxHp]) }), 200)); })()" }
+]

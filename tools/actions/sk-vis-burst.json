@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = (c) => { window.dispatchEvent(new KeyboardEvent('keydown', { code: c })); window.dispatchEvent(new KeyboardEvent('keyup', { code: c })); }; __echoes.cmd('restoreSkillState', { slots: [ { id: 'nova_bloom', remaining: 0 }, { id: 'guardian_bond', remaining: 0 }, { id: 'restorative_wave', remaining: 0 }, null ], override: null }); __echoes.cmd('teleport', -1, -1.5); for (const p of __echoes.state().party) __echoes.cmd('setHp', p.id, 0.5); return { note: 'nova (ring, cap 3) + bond (beams to bottom-2) + wave (55deg wedge east) all fired the same JS turn; all-green heal read', loadout: __echoes.state().skills.map(s => s && s.id) }; })()" },
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "(() => { ['Digit1','Digit2','Digit3'].forEach(c => window.dispatchEvent(new KeyboardEvent('keydown', { code: c }))); ['Digit1','Digit2','Digit3'].forEach(c => window.dispatchEvent(new KeyboardEvent('keyup', { code: c }))); return 'burst pressed'; })()" },
+  { "type": "wait", "ms": 220 },
+  { "type": "eval", "code": "({ casts: __echoes.events.filter(e => e.type === 'skill_cast').map(c => ({ tick: c.tick, slot: c.slot, skill: c.skill, targets: c.targets })), heals: __echoes.events.filter(e => e.type === 'heal').map(h => ({ target: h.target, source: h.source, amount: h.amount })), skillfx: __echoes.state().skillfx })" }
+]

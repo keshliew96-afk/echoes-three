@@ -39,7 +39,9 @@ export function createCombat({
   //   attacker: source entity id (event payload only)
   // Returns { amount, crit } | { immune: true } | null (target outside the
   // pipeline — dead/Downed/missing).
-  function applyDamage(target, base, { delivery = 'basic', dirX = 0, dirZ = 0, attacker = null } = {}) {
+  // source: optional skill-id label (skills block) — rides the event so tests
+  // and the HUD can attribute an instance to the skill that produced it.
+  function applyDamage(target, base, { delivery = 'basic', dirX = 0, dirZ = 0, attacker = null, source = null } = {}) {
     const tick = getTick();
     if (!target || !(target.hp > 0)) return null; // outside the pipeline
     if (isIframed(target)) {
@@ -76,6 +78,7 @@ export function createCombat({
       target: target.id,
       kind: target.kind,
       attacker,
+      source,
       amount,
       crit,
       delivery,
@@ -124,7 +127,7 @@ export function createCombat({
   }
 
   // One heal instance: same crit roll, clamped at max_hp, full_heal per §9.
-  function applyHeal(target, base, { healer = null } = {}) {
+  function applyHeal(target, base, { healer = null, source = null } = {}) {
     const tick = getTick();
     if (!target || !(target.hp > 0)) return null; // Downed/dead: outside the pipeline
     const crit = rng.chance(CRIT.chance);
@@ -137,6 +140,7 @@ export function createCombat({
     events.emit(tick, 'heal', {
       target: target.id,
       healer,
+      source,
       amount: preClamp,
       applied: r2(applied),
       crit,

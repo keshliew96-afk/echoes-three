@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "(() => { __echoes.cmd('restoreSkillState', { slots: [ { id: 'warding_aura', remaining: 0 }, null, null, null ], override: null }); __echoes.cmd('teleport', -0.6, -2.0); const st = __echoes.state(); const archer = st.party.find(p => p.partyIndex === 3); __echoes.cmd('setHp', archer.id, 0.5); return { note: 'warding aura only; archer 0.32u inside the 0.9u field at 50% hp', skills: st.skills ? __echoes.state().skills.map(s => s && s.id) : null }; })()" },
+  { "type": "eval", "code": "new Promise((res) => { const off = __echoes.on('aura_pulse', (ev) => { off(); res({ pulse: { tick: ev.tick, healed: ev.healed }, skillfx: __echoes.state().skillfx }); }); setTimeout(() => { off(); res({ timeout: true }); }, 2500); })" },
+  { "type": "wait", "ms": 120 }
+]

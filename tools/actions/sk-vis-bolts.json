@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = (c) => { window.dispatchEvent(new KeyboardEvent('keydown', { code: c })); window.dispatchEvent(new KeyboardEvent('keyup', { code: c })); }; __echoes.cmd('restoreSkillState', { slots: [ { id: 'mending_bolt', remaining: 0 }, { id: 'spirit_bolt', remaining: 0 }, null, null ], override: null }); __echoes.cmd('teleport', -4.9, -1.0); const st = __echoes.state(); const tank = st.party.find(p => p.partyIndex === 1); __echoes.cmd('setHp', tank.id, 0.5); __echoes.cmd('spawn','dummy', -0.5, -1.0); return { loadout: __echoes.state().skills.map(s => s && s.id), note: 'mending bolt (heal, green) + spirit bolt (damage, parchment/amber) fired same JS turn, both flying east: tank in heal path at 3.0u, dummy at 4.4u' }; })()" },
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "(() => { window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit1' })); window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit2' })); window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit1' })); window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit2' })); return 'both pressed'; })()" },
+  { "type": "wait", "ms": 260 },
+  { "type": "eval", "code": "({ inFlight: __echoes.state().skillBolts, casts: __echoes.events.filter(e => e.type === 'skill_cast').map(c => ({ tick: c.tick, slot: c.slot, skill: c.skill })) })" }
+]

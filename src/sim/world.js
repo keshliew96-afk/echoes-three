@@ -33,6 +33,7 @@ import { DENIAL } from '../core/intents.js';
 import { innerBounds, walkStep, sweptStep } from './movement.js';
 import { createProjectileSystem } from './projectiles.js';
 import { createCombat } from './combat.js';
+import { createSkillSystem, STARTING_SKILLS, PARTY_ALLIES } from './skills.js';
 
 const TICK_DT = 1 / TICK_HZ; // seconds per tick, for u/s -> u/tick
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -114,6 +115,44 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     skills: [null, null, null, null], // empty until the draft block
   });
   events.emit(0, 'spawn', { id: player.id, kind: 'player' });
+
+  // --- Sim-side party allies (skills block): static bodies at the arena's
+  // idle-critter spots (§7 max_hp rows) so the healer kit has real §8 targets
+  // — smart-target fractions, Guardian Bond bottom-2, aura/zone occupancy.
+  // The ally-AI block owns movement/kits; until then they stand and take heals.
+  for (const spec of PARTY_ALLIES) {
+    const ally = registry.spawn({
+      kind: 'ally',
+      classId: spec.classId,
+      partyIndex: spec.partyIndex,
+      faction: 'party',
+      hittable: true,
+      knockbackable: false, // §9/A5: party members are never knocked back
+      hp: spec.maxHp,
+      maxHp: spec.maxHp,
+      x: spec.x,
+      z: spec.z,
+      px: spec.x,
+      pz: spec.z,
+      radius: spec.radius,
+    });
+    events.emit(0, 'spawn', { id: ally.id, kind: 'ally', classId: spec.classId });
+  }
+
+  // --- Healer skill kit (skills block, §6–§8). The world keeps the dash /
+  // priority rules; the skill system owns slots, cooldowns, delivery shapes,
+  // smart-targeting and the F1–F4 heal override. Skill-bolt impacts ride the
+  // same §4 ① deferred queue as basic bolts.
+  const skillSys = createSkillSystem({
+    player,
+    registry,
+    events,
+    combat,
+    getTick: () => currentTick,
+    isIframed,
+    queueDeferred: (carrierOrdinal, resolve) => deferred.push({ carrierOrdinal, resolve }),
+  });
+  for (const id of STARTING_SKILLS) skillSys.giveSkill(id); // §7 starting kit
 
   // --- Harness wisps (sim-core proving population; ?scene=simtest only).
   function spawnWisp(x, z) {
@@ -227,8 +266,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       if (hit) e.kbTicks = 0;
     }
 
-    // Projectiles advance (swept) after actors.
+    // Projectiles advance (swept) after actors. Skill bolts share the phase.
     projectiles.step(currentTick);
+    skillSys.step(currentTick);
 
     // Wisp drift (velocity applied; decisions happen in their resolution).
     for (const e of registry.all()) {
@@ -275,7 +315,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       if (e.kind === 'wisp' && registry.byId(e.id)) resolveWisp(e);
     }
 
-    // ④ persistent-zone scheduled ticks land here (zones block).
+    // ④ persistent-zone scheduled ticks, ascending zone spawn ordinal, then
+    // the Warding Aura cadence (skills block).
+    skillSys.zonePhase();
   }
 
   function drainContinuations() {
@@ -301,8 +343,13 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     for (const kind of ['target_cycle', 'target_select', 'rally']) {
       const press = accepted.get(kind);
       if (!press) continue;
-      const detail = kind === 'target_select' ? { index: press.index } : {};
-      events.emit(currentTick, 'intent', { kind, ...detail });
+      if (kind === 'target_select') {
+        // §8 heal-target override toggle (F1–F4) — durable, never suppressed.
+        const override = skillSys.toggleOverride(press.index);
+        events.emit(currentTick, 'intent', { kind, index: press.index, override });
+        continue;
+      }
+      events.emit(currentTick, 'intent', { kind });
     }
 
     // Dodge — own timer, outside the skill pipeline; same-tick dodge beats
@@ -316,17 +363,18 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       }
     }
 
-    // Skills ascending slot 0-3. During a dash all skill/basic fires are
-    // suppressed (§5); otherwise every slot is empty until the draft block.
+    // Skills ascending slot 0-3 (§4). During a dash all skill/basic fires are
+    // suppressed (§5) — the world owns that rule; the skill system owns
+    // empty/passive/cooldown denials and the actual §6 instant-cast fire.
+    // Same-frame multi-skill presses all fire here, ascending slot.
     for (let slot = 0; slot < 4; slot++) {
       const kind = `skill_${slot + 1}`;
       if (!accepted.has(kind)) continue;
       if (player.dashTicksLeft > 0) {
         deny(kind, DENIAL.prioritySuppressed);
-      } else if (player.skills[slot] === null) {
-        deny(kind, DENIAL.emptySlot);
+      } else {
+        skillSys.tryFire(slot);
       }
-      // (a real skill fire lands with the skills block)
     }
 
     // Basic-attack fire (slot 4).
@@ -497,7 +545,47 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
           dodgeReadyTick: player.dodgeReadyTick,
           nextBasicTick: player.nextBasicTick,
         },
+        // Sim-side allies (skills block): §8 heal targets.
+        ...registry
+          .all()
+          .filter((e) => e.kind === 'ally')
+          .map((a) => ({
+            id: a.id,
+            kind: a.kind,
+            classId: a.classId,
+            partyIndex: a.partyIndex,
+            hp: a.hp,
+            maxHp: a.maxHp,
+            x: r2(a.x),
+            z: r2(a.z),
+          })),
       ],
+      // Skill-kit state (skills block): slots/cooldowns, heal override, zones.
+      skills: skillSys.slotsView(),
+      healOverride: skillSys.getOverride(),
+      zones: registry
+        .all()
+        .filter((e) => e.kind === 'zone')
+        .map((z) => ({
+          id: z.id,
+          skill: z.skill,
+          x: r2(z.x),
+          z: r2(z.z),
+          radius: z.radius,
+          ticksDone: z.ticksDone,
+          nextTickTick: z.nextTickTick,
+        })),
+      skillBolts: registry
+        .all()
+        .filter((e) => e.kind === 'skillbolt')
+        .map((e) => ({
+          id: e.id,
+          skill: e.skill,
+          heal: e.heal,
+          x: r2(e.x),
+          z: r2(e.z),
+          traveled: r2(e.traveled),
+        })),
       projectiles: registry
         .all()
         .filter((e) => e.kind === 'bolt')
@@ -543,7 +631,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         e.hp = e.maxHp * pct;
         if (e.hp <= 0) {
           if (e.kind === 'wisp') killWisp(e);
-          else if (e.kind === 'dummy') combat.kill(e); // full kill juice
+          // Full kill juice for non-party targets; party members (partyIndex
+          // defined) stay downed, never killed/despawned (§10).
+          else if (e.partyIndex === undefined) combat.kill(e);
         }
         return e.hp;
       }
@@ -607,6 +697,23 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         const t = registry.byId(id ?? player.id);
         return combat.applyHeal(t, amount);
       }
+      // --- Skill-kit test commands (skills block, docs/TESTING.md).
+      case 'giveSkill': {
+        const [id] = args;
+        return skillSys.giveSkill(id);
+      }
+      case 'healOverride': {
+        // Same durable toggle as F1-F4 (§8), scriptable.
+        const [index] = args;
+        return skillSys.toggleOverride(index);
+      }
+      case 'skillState':
+        // Persistence plumbing for the run block: remaining cooldown ticks.
+        return skillSys.serialize();
+      case 'restoreSkillState': {
+        const [data] = args;
+        return skillSys.restore(data);
+      }
       default:
         console.warn(`__echoes.cmd('${name}') lands with a later block`);
         return null;
@@ -619,6 +726,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     player,
     stats,
     entities: () => registry.all(),
+    // Skill-slot view for the HUD (skills block): [{id, abbrev, passive,
+    // remainingTicks, totalTicks} | null] x4.
+    skillSlots: () => skillSys.slotsView(),
     snapshotState,
     get tick() {
       return currentTick;

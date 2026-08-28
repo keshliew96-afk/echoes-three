@@ -32,6 +32,7 @@ import { createEventBus } from './core/events.js';
 import { createInputController } from './core/input.js';
 import { createWorld } from './sim/world.js';
 import { createSynth } from './audio/synth.js';
+import { createSkillFx } from './render/skillfx/index.js';
 
 const params = new URLSearchParams(window.location.search);
 const flag = (name, def = true) => {
@@ -112,13 +113,22 @@ createSynth(bus);
 const buildScene = SCENES[sceneKey];
 const activeScene = buildScene(stage, toggles, { world, cosmetic, bus });
 
-// Proto command bar (dodge cooldown radial + §17 denial nudges) rides with
-// the playable scenes only, so simtest/rendertest/chartest captures stay
-// unchanged.
+// Skill-delivery VFX layer (skills block): heal bursts/+HP glyphs, skill
+// bolts, Sanctuary zones, Warding Aura field, override reticle — rides the
+// playable scenes alongside the proto HUD.
+const skillfx =
+  sceneKey === 'graybox' || sceneKey === 'arena'
+    ? createSkillFx({ stage, world, bus, cosmetic })
+    : null;
+
+// Proto command bar (4 skill slots + dodge cooldown radial + §17 denial
+// nudges) rides with the playable scenes only, so simtest/rendertest/chartest
+// captures stay unchanged.
 const hud =
   sceneKey === 'graybox' || sceneKey === 'arena'
     ? createProtoHud(bus, {
         dodgeRemaining: () => Math.max(0, world.player.dodgeReadyTick - clock.tick),
+        skillSlots: () => world.skillSlots(),
       })
     : null;
 
@@ -163,6 +173,7 @@ stage.renderer.setAnimationLoop((now) => {
 
   // Render side: read-only over sim state, interpolated by alpha.
   activeScene.update?.(now / 1000, alpha);
+  skillfx?.update(now / 1000, alpha);
   stage.render();
   overlay.update();
   hud?.update();
@@ -209,6 +220,7 @@ window.__echoes = {
     toggles,
     ...world.snapshotState(),
     ...(activeScene.debugState ? { vfx: activeScene.debugState() } : {}),
+    ...(skillfx ? { skillfx: skillfx.debugCounts() } : {}),
   }),
   cmd: (name, ...args) => world.cmd(name, ...args),
 };

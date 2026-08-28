@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = (c) => { window.dispatchEvent(new KeyboardEvent('keydown', { code: c })); window.dispatchEvent(new KeyboardEvent('keyup', { code: c })); }; __echoes.cmd('restoreSkillState', { slots: [ { id: 'mending_bolt', remaining: 0 }, { id: 'nova_bloom', remaining: 0 }, { id: 'sanctuary', remaining: 0 }, { id: 'guardian_bond', remaining: 0 } ], override: null }); __echoes.cmd('teleport', -1, -1.5); for (const p of __echoes.state().party) __echoes.cmd('setHp', p.id, 0.35); return { loadout: __echoes.state().skills.map(s => s && s.id) }; })()" },
+  { "type": "eval", "code": "new Promise((res) => { const t0 = performance.now(); let presses = 0; const iv = setInterval(() => { ['Digit1','Digit2','Digit3','Digit4'].forEach(c => window.__press(c)); presses += 4; window.dispatchEvent(new KeyboardEvent(presses % 8 === 0 ? 'keydown' : 'keyup', { code: 'KeyW' })); if (performance.now() - t0 > 3500) { clearInterval(iv); window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyW' })); res({ presses }); } }, 120); })" },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "({ test: 'full skill spam fps (>=55 headless bar)', fps: __echoes.fps, tick: __echoes.tick, entities: __echoes.entityCount, skillfx: __echoes.state().skillfx, stats: __echoes.stats })" }
+]

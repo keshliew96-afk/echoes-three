@@ -1,0 +1,10 @@
+[
+  { "type": "eval", "code": "(() => { window.__t0 = __echoes.tick; return { t0: window.__t0, note: 'trusted-input rerun of the qa-priority dash window: Space (dash), then a REAL Digit1 keydown during the dash' }; })()" },
+  { "type": "keydown", "key": "Space" },
+  { "type": "wait", "ms": 100 },
+  { "type": "key", "key": "Digit1", "ms": 40 },
+  { "type": "wait", "ms": 120 },
+  { "type": "keyup", "key": "Space" },
+  { "type": "wait", "ms": 800 },
+  { "type": "eval", "code": "({ dashWindow: __echoes.events.filter(e => e.tick > window.__t0 && (e.type === 'intent' || e.type === 'intent_denied' || e.type === 'skill_cast' || e.type === 'dash_end')).map(e => ({ tick: e.tick, type: e.type, kind: e.kind ?? e.skill, reason: e.reason, cause: e.cause })) })" }
+]
