@@ -33,12 +33,14 @@ import { DENIAL } from '../core/intents.js';
 import { innerBounds, walkStep, sweptStep } from './movement.js';
 import { createProjectileSystem } from './projectiles.js';
 import { createCombat } from './combat.js';
+import { createEnemySystem } from './enemies.js';
+import { createWaveDirector } from './waves.js';
 import { createSkillSystem, STARTING_SKILLS, PARTY_ALLIES } from './skills.js';
 
 const TICK_DT = 1 / TICK_HZ; // seconds per tick, for u/s -> u/tick
 const r2 = (v) => Math.round(v * 100) / 100;
 
-export function createWorld({ rng, registry, events, harness = true, requestHitstop = null }) {
+export function createWorld({ rng, registry, events, harness = true, requestHitstop = null, room = null }) {
   let currentTick = 0;
 
   // ① deferred maturations: { carrierOrdinal, resolve() } — sorted by carrier
@@ -99,6 +101,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     faction: 'party',
     hp: HEALER.maxHp,
     maxHp: HEALER.maxHp,
+    hittable: true, // enemy shots sweep vs the player (enemies block)
     knockbackable: false, // §9/A5: party members are never knocked back
     x: 0,
     z: 0,
@@ -153,6 +156,28 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     queueDeferred: (carrierOrdinal, resolve) => deferred.push({ carrierOrdinal, resolve }),
   });
   for (const id of STARTING_SKILLS) skillSys.giveSkill(id); // §7 starting kit
+
+  // --- Enemies & waves (enemies block, §11): Thorn Boar / Spitting Mantis AI
+  // with the telegraph cadence governor, seeded wave schedules and the
+  // kill_all / defend win conditions. All logic lives in sim/enemies.js +
+  // sim/waves.js; the world only calls the phase hooks in the §4 total order
+  // and routes debug cmds. `?room=kill_all|defend` starts a room at boot.
+  const enemies = createEnemySystem({
+    registry,
+    events,
+    rng,
+    combat,
+    getTick: () => currentTick,
+    queueImpact,
+  });
+  const waves = createWaveDirector({
+    registry,
+    events,
+    rng,
+    enemies,
+    getTick: () => currentTick,
+  });
+  if (room === 'kill_all' || room === 'defend') waves.startRoom(room);
 
   // --- Harness wisps (sim-core proving population; ?scene=simtest only).
   function spawnWisp(x, z) {
@@ -256,6 +281,11 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       }
     }
 
+    // Enemies (enemies block, §11): steering/retreat + enemy-shot flight —
+    // before knockback so displaced bodies still sweep against walls, before
+    // projectiles so party bolts sweep against final enemy positions.
+    enemies.continuous();
+
     // §9 #3 knockback displacement: impulse away from the hit over kbTicks,
     // swept vs walls (no slide — wall contact ends the impulse). Runs before
     // projectiles so bolts sweep against final positions this tick.
@@ -314,10 +344,17 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     for (const e of registry.all()) {
       if (e.kind === 'wisp' && registry.byId(e.id)) resolveWisp(e);
     }
+    // ② continued: real enemies (boar bites, mantis telegraph starts/fires)
+    // in ascending spawn-ordinal order (enemies block, §11).
+    enemies.resolveAll();
 
     // ④ persistent-zone scheduled ticks, ascending zone spawn ordinal, then
     // the Warding Aura cadence (skills block).
     skillSys.zonePhase();
+
+    // Encounter director: spawn-telegraph maturations, wave triggers, and the
+    // §11 clear predicates (evaluated end of tick).
+    waves.step();
   }
 
   function drainContinuations() {
@@ -529,7 +566,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       tick: currentTick,
       seed: rng.seed,
       rngDraws: rng.drawIndex,
-      room: null, // run/room blocks
+      room: waves.roomState(), // enemies block (§11 win conditions); null outside rooms
       wallet: null, // glint block
       stats: { ...stats },
       party: [
@@ -592,7 +629,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         .map((e) => ({ id: e.id, x: r2(e.x), z: r2(e.z), traveled: r2(e.traveled) })),
       enemies: registry
         .all()
-        .filter((e) => e.kind === 'wisp' || e.kind === 'dummy')
+        .filter(
+          (e) => e.kind === 'wisp' || e.kind === 'dummy' || e.kind === 'boar' || e.kind === 'mantis'
+        )
         .map((e) => ({
           id: e.id,
           kind: e.kind,
@@ -601,14 +640,27 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
           hp: e.hp,
           kbTicks: e.kbTicks ?? 0,
           iframed: (e.iframeUntilTick ?? 0) > currentTick,
+          // Enemies-block fields (undefined on wisp/dummy, dropped by JSON):
+          state: e.state,
+          targetId: e.targetId ?? undefined,
+          telegraph: e.telegraph
+            ? { x: r2(e.telegraph.x), z: r2(e.telegraph.z), resolveTick: e.telegraph.resolveTick }
+            : undefined,
         })),
+      // Enemy shots in flight (enemies block; §11 4.0 u/s telegraphed shots).
+      eshots: registry
+        .all()
+        .filter((e) => e.kind === 'eshot')
+        .map((e) => ({ id: e.id, x: r2(e.x), z: r2(e.z), traveled: r2(e.traveled) })),
     };
   }
 
   function cmd(name, ...args) {
     switch (name) {
       case 'spawn': {
-        const [type, x, z] = args; // ('dummy'|'wisp', x, z)
+        const [type, x, z] = args; // ('dummy'|'wisp'|'boar'|'mantis', x, z)
+        // Real §11 enemies (enemies block) — full AI/telegraph/juice pipeline.
+        if (type === 'boar' || type === 'mantis') return enemies.debugSpawn(type, x, z);
         // Wisps exist only in the simtest harness (they have no game-scene
         // visuals); game scenes get combat-juice training dummies.
         if (type === 'wisp' && harness) return spawnWisp(x, z).id;
@@ -631,21 +683,35 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         e.hp = e.maxHp * pct;
         if (e.hp <= 0) {
           if (e.kind === 'wisp') killWisp(e);
-          // Full kill juice for non-party targets; party members (partyIndex
-          // defined) stay downed, never killed/despawned (§10).
+          // Full kill juice for dummies, real enemies and the Waystone; party
+          // members (partyIndex defined) stay downed, never killed/despawned.
           else if (e.partyIndex === undefined) combat.kill(e);
         }
         return e.hp;
       }
       case 'killAllEnemies': {
         maintainPopulation = false;
-        const hostiles = registry.all().filter((e) => e.kind === 'wisp' || e.kind === 'dummy');
+        const hostiles = registry
+          .all()
+          .filter(
+            (e) =>
+              e.kind === 'wisp' || e.kind === 'dummy' || e.kind === 'boar' || e.kind === 'mantis'
+          );
         for (const h of hostiles) {
           if (h.kind === 'wisp') killWisp(h);
           else combat.kill(h);
         }
         return hostiles.length;
       }
+      // --- Enemies-block test commands (§11 rooms/waves, docs/TESTING.md).
+      case 'startRoom': {
+        const [m] = args; // 'kill_all' | 'defend'
+        return waves.startRoom(m ?? 'kill_all');
+      }
+      case 'startWave':
+        return waves.forceNextWave();
+      case 'clearRoom':
+        return waves.forceClear();
       // --- Combat-juice test commands (docs/TESTING.md: cmd surface grows
       // with each block). All of them go through the REAL §9 pipeline.
       case 'iframe': {
@@ -729,6 +795,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // Skill-slot view for the HUD (skills block): [{id, abbrev, passive,
     // remainingTicks, totalTicks} | null] x4.
     skillSlots: () => skillSys.slotsView(),
+    // Spawn telegraphs in flight (enemies block) — render-layer state sync.
+    pendingSpawns: () => waves.pendingSpawnsList(),
     snapshotState,
     get tick() {
       return currentTick;

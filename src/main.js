@@ -33,6 +33,7 @@ import { createInputController } from './core/input.js';
 import { createWorld } from './sim/world.js';
 import { createSynth } from './audio/synth.js';
 import { createSkillFx } from './render/skillfx/index.js';
+import { createEnemyLayer } from './render/enemies/index.js';
 
 const params = new URLSearchParams(window.location.search);
 const flag = (name, def = true) => {
@@ -104,6 +105,8 @@ const world = createWorld({
   events: bus,
   harness: sceneKey === 'simtest',
   requestHitstop: clock.requestHitstop,
+  // ?room=kill_all|defend (enemies block, §11): start a wave room at boot.
+  room: params.get('room'),
 });
 
 // §21/§9 sound slots: synth subscribes to sim events, emits `sound` events
@@ -119,6 +122,13 @@ const activeScene = buildScene(stage, toggles, { world, cosmetic, bus });
 const skillfx =
   sceneKey === 'graybox' || sceneKey === 'arena'
     ? createSkillFx({ stage, world, bus, cosmetic })
+    : null;
+
+// Enemy render layer (enemies block): boar/mantis rigs, Ember attack
+// telegraphs, violet spawn shimmers, enemy shots, the defend-room Waystone.
+const enemyfx =
+  sceneKey === 'graybox' || sceneKey === 'arena'
+    ? createEnemyLayer({ stage, world, bus, cosmetic })
     : null;
 
 // Proto command bar (4 skill slots + dodge cooldown radial + §17 denial
@@ -174,6 +184,7 @@ stage.renderer.setAnimationLoop((now) => {
   // Render side: read-only over sim state, interpolated by alpha.
   activeScene.update?.(now / 1000, alpha);
   skillfx?.update(now / 1000, alpha);
+  enemyfx?.update(now / 1000, alpha);
   stage.render();
   overlay.update();
   hud?.update();

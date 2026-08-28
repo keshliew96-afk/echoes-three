@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('startWave')" },
+  { "type": "wait", "ms": 1000 },
+  { "type": "eval", "code": "__echoes.cmd('startWave')" },
+  { "type": "wait", "ms": 1000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); const comp=__echoes.events.filter(e=>e.type==='spawn_telegraph').map(e=>[e.wave,e.etype,e.x,e.z]); return {seed:s.seed, waveSizes:s.room.waveSizes, wavesTotal:s.room.wavesTotal, comp}})()" }
+]

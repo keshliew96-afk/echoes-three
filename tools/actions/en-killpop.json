@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "(()=>{__echoes.cmd('teleport',7,0); window.__death=new Promise(r=>{const un=__echoes.on('death',ev=>{un();r(ev)})}); return __echoes.cmd('spawn','boar',9.5,0)})()" },
+  { "type": "mousemove", "x": 1100, "y": 450 },
+  { "type": "wait", "ms": 120 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "eval", "code": "new Promise(res=>{window.__death.then(ev=>res(ev)); setTimeout(()=>res({timeout:true}),9000)})" },
+  { "type": "mouseup", "button": "right" }
+]

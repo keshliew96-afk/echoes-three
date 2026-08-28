@@ -1,0 +1,10 @@
+[
+  { "type": "mousemove", "x": 1150, "y": 450 },
+  { "type": "eval", "code": "(()=>{__echoes.cmd('teleport',7,0); window.__fire=new Promise(r=>{const un=__echoes.on('enemy_fire',ev=>{un();r(ev)})}); return {mantis:__echoes.cmd('spawn','mantis',10.4,0), hp0:__echoes.state().party[0].hp}})()" },
+  { "type": "eval", "code": "(async()=>await window.__fire)()" },
+  { "type": "wait", "ms": 300 },
+  { "type": "key", "key": "Space", "ms": 80 },
+  { "type": "wait", "ms": 800 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return {hp:s.party[0].hp, immune:s.stats.immune, dashLeft:s.party[0].dashTicksLeft}})()" },
+  { "type": "eval", "code": "__echoes.events.filter(e=>['telegraph_start','telegraph_resolve','enemy_fire','hit_immune','hit','eshot_despawn','intent','dash_end'].includes(e.type)).slice(-24)" }
+]

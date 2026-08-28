@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "(()=>{window.__evlog=[]; for(const t of ['hit','death','hitstop','sound','enemy_spawn']) __echoes.on(t,ev=>window.__evlog.push(ev)); return {boar:(__echoes.cmd('teleport',7,0), __echoes.cmd('spawn','boar',9.5,0)), st0:{...__echoes.stats}}})()" },
+  { "type": "mousemove", "x": 1100, "y": 450 },
+  { "type": "wait", "ms": 120 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "wait", "ms": 2600 },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "(()=>{const L=window.__evlog; const hits=L.filter(e=>e.type==='hit'&&(e.kind==='boar'||e.kind==='mantis')); return {hits:hits.map(h=>({tick:h.tick,amount:h.amount,kb:h.kb,kind:h.kind})), deaths:L.filter(e=>e.type==='death').map(e=>({tick:e.tick,kind:e.kind})), hitstops:L.filter(e=>e.type==='hitstop'), sounds:L.filter(e=>e.type==='sound').length, stats:{...__echoes.stats}}})()" }
+]

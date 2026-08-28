@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "(()=>{const ids=[]; for(const [t,x,z] of [['boar',3,0],['boar',-3,1],['boar',0,3.2],['mantis',3.2,2.6],['mantis',-3.2,2.6],['mantis',0,-3.4]]) ids.push(__echoes.cmd('spawn',t,x,z)); return ids})()" },
+  { "type": "mousemove", "x": 1000, "y": 400 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "eval", "code": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const samples=[]; for(let i=0;i<20;i++){ await sleep(600); const en=__echoes.state().enemies.filter(e=>e.kind==='boar'||e.kind==='mantis').length; samples.push({fps:__echoes.fps, en}); if(en===0) break; } const withSix=samples.filter(s=>s.en>=5).map(s=>s.fps); const all=samples.map(s=>s.fps); return {samples, maxWith5plus:Math.max(...withSix), max:Math.max(...all)}})()" },
+  { "type": "mouseup", "button": "right" }
+]

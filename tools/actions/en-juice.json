@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "(__echoes.cmd('teleport',7,0), __echoes.cmd('spawn','boar',9.5,0))" },
+  { "type": "mousemove", "x": 1100, "y": 450 },
+  { "type": "wait", "ms": 120 },
+  { "type": "mousedown", "button": "right" }
+]

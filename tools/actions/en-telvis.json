@@ -1,0 +1,5 @@
+[
+  { "type": "mousemove", "x": 1150, "y": 450 },
+  { "type": "eval", "code": "(()=>{__echoes.cmd('teleport',7,0); return __echoes.cmd('spawn','mantis',10.2,0.6)})()" },
+  { "type": "wait", "ms": 260 }
+]

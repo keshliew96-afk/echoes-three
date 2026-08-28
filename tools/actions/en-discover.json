@@ -1,0 +1,4 @@
+[
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return {room:s.room, enemies:s.enemies, eshots:s.eshots, party:s.party.map(p=>({id:p.id,kind:p.kind,hp:p.hp})), vfx:s.vfx}})()" },
+  { "type": "eval", "code": "__echoes.events.filter(e=>['room_start','wave_start','spawn_telegraph','enemy_spawn','telegraph_start','telegraph_resolve','enemy_fire','enemy_bite','room_cleared'].includes(e.type)).slice(-40)" }
+]

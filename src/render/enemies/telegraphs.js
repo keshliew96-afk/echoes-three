@@ -1,0 +1,182 @@
+// Telegraph decals (BUILD_BRIEF §11): the Ember Danger ground decal + hazard
+// chevron under every telegraphed enemy attack (opacity pulse 2 Hz — §19.1
+// colourblind fence: telegraphs PULSE, never shimmer; danger is decal +
+// chevron, never colour alone), and the violet spawn shimmer (0.8 s, §11 —
+// violet because a spawn IS corruption arriving, never Ember).
+//
+// The Ember decal is normal-blended (an additive red over a green floor would
+// hue-shift toward yellow and out of the analyzer's danger band); its texture
+// is alpha-only and the material carries the post-chain-exact Ember so the
+// measured pixels land on #FF5A36.
+import {
+  CanvasTexture,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  PlaneGeometry,
+  SRGBColorSpace,
+} from 'three';
+import { PALETTE } from '../../data/palette.js';
+import { makeGlowSprite } from '../glow.js';
+import { EMBER_EXACT, TELL_VIOLET } from './style.js';
+
+// §11: opacity pulse 2 Hz (also under the §17 "<=3 Hz" Zone-3 ceiling).
+export const PULSE_HZ = 2;
+// Scaffold sizes (render-only): impact zone sized to shot + target footprint.
+const DECAL_RADIUS = 0.55;
+const CHEVRON_SIZE = 0.5;
+
+function canvasTexture(draw, size = 256) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  draw(ctx, size);
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  return tex;
+}
+
+// Impact-zone decal: hard outer ring + translucent fill + hot centre dot —
+// reads as "the shot lands HERE" at one glance (Pass-the-Fear telegraph
+// grammar: dark core, bright rim).
+let impactTex = null;
+function getImpactTexture() {
+  if (impactTex) return impactTex;
+  impactTex = canvasTexture((ctx, S) => {
+    const c = S / 2;
+    const A = (a) => `rgba(255,255,255,${a})`;
+    ctx.fillStyle = A(0.3); // translucent fill
+    ctx.beginPath();
+    ctx.arc(c, c, S * 0.44, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = A(1); // bright rim ring
+    ctx.lineWidth = S * 0.055;
+    ctx.beginPath();
+    ctx.arc(c, c, S * 0.44, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = A(0.95); // hot centre dot
+    ctx.beginPath();
+    ctx.arc(c, c, S * 0.09, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  return impactTex;
+}
+
+// Hazard chevron: double arrow pointing +X (rotated onto the shot lane).
+let chevronTex = null;
+function getChevronTexture() {
+  if (chevronTex) return chevronTex;
+  chevronTex = canvasTexture((ctx, S) => {
+    ctx.strokeStyle = 'rgba(255,255,255,1)';
+    ctx.lineWidth = S * 0.11;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (const ox of [0.18, 0.5]) {
+      ctx.beginPath();
+      ctx.moveTo(S * ox, S * 0.16);
+      ctx.lineTo(S * (ox + 0.3), S * 0.5);
+      ctx.lineTo(S * ox, S * 0.84);
+      ctx.stroke();
+    }
+  }, 128);
+  return chevronTex;
+}
+
+function flatDecal(tex, color, size, y, renderOrder) {
+  const mesh = new Mesh(
+    new PlaneGeometry(size, size),
+    new MeshBasicMaterial({
+      map: tex,
+      color,
+      transparent: true,
+      depthWrite: false,
+      toneMapped: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -4,
+      polygonOffsetUnits: -4,
+    })
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = y;
+  mesh.renderOrder = renderOrder;
+  return mesh;
+}
+
+// One attack telegraph: { group, impact, chevron, setPulse(t), aimAt(...) }.
+export function makeAttackTelegraph() {
+  const group = new Group();
+  group.name = 'telegraph';
+  const impact = flatDecal(getImpactTexture(), EMBER_EXACT.clone(), DECAL_RADIUS * 2, 0.022, 2);
+  group.add(impact);
+  const chevron = flatDecal(getChevronTexture(), EMBER_EXACT.clone(), CHEVRON_SIZE, 0.021, 2);
+  group.add(chevron);
+
+  return {
+    group,
+    // impact zone at (x, z); chevron sits on the lane toward the shooter,
+    // pointing INTO the impact (the incoming direction reads at a glance).
+    aimAt(x, z, fromX, fromZ) {
+      group.position.set(x, 0, z);
+      const dx = x - fromX;
+      const dz = z - fromZ;
+      const d = Math.hypot(dx, dz) || 1;
+      const back = Math.min(1.0, d * 0.45);
+      chevron.position.set((-dx / d) * (DECAL_RADIUS + back * 0.5), 0.021, (-dz / d) * (DECAL_RADIUS + back * 0.5));
+      // Plane +X (texture arrow) -> world (dx, dz) after the flat rotation.
+      chevron.rotation.z = Math.atan2(-dz, dx);
+    },
+    // §11 2 Hz opacity pulse; the chevron pulses in the same phase.
+    setPulse(tSec) {
+      const k = 0.62 + 0.38 * Math.sin(Math.PI * 2 * PULSE_HZ * tSec);
+      impact.material.opacity = k;
+      chevron.material.opacity = Math.min(1, k + 0.15);
+    },
+  };
+}
+
+// Violet spawn shimmer (§11: 0.8 s, "violet shimmer, not Ember"): a pulsing
+// violet ground sigil + soft additive halo + rising corruption motes.
+export function makeSpawnShimmer(cosmetic) {
+  const group = new Group();
+  group.name = 'spawn-shimmer';
+  const sigil = flatDecal(getImpactTexture(), TELL_VIOLET.clone(), 1.1, 0.02, 2);
+  group.add(sigil);
+  const halo = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 1.4, opacity: 0.45 });
+  halo.material.toneMapped = false;
+  halo.material.color.copy(TELL_VIOLET);
+  halo.position.y = 0.35;
+  group.add(halo);
+  const motes = [];
+  for (let i = 0; i < 4; i++) {
+    const m = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 0.16, opacity: 0.8 });
+    m.material.toneMapped = false;
+    m.material.color.copy(TELL_VIOLET);
+    group.add(m);
+    motes.push({
+      sprite: m,
+      ang: cosmetic.range(0, Math.PI * 2),
+      r: cosmetic.range(0.15, 0.42),
+      speed: cosmetic.range(0.8, 1.6),
+      phase: cosmetic.range(0, 1),
+    });
+  }
+
+  return {
+    group,
+    update(tSec) {
+      // Telegraphs pulse (§19.1 fence) — a touch faster than attacks so the
+      // two cadences read apart.
+      const k = 0.55 + 0.45 * Math.sin(Math.PI * 2 * 3 * tSec);
+      sigil.material.opacity = 0.5 + 0.35 * k;
+      halo.material.opacity = 0.3 + 0.25 * k;
+      for (const m of motes) {
+        const u = (tSec * m.speed + m.phase) % 1;
+        m.sprite.position.set(Math.cos(m.ang) * m.r, 0.1 + u * 0.9, Math.sin(m.ang) * m.r);
+        m.sprite.material.opacity = 0.8 * (1 - u);
+      }
+    },
+  };
+}
+
+export { DECAL_RADIUS };

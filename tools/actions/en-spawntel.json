@@ -1,0 +1,4 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('startWave')" },
+  { "type": "wait", "ms": 350 }
+]

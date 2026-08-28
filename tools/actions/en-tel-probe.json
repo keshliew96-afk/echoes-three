@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('spawn','mantis',-2.7,0.9)" },
+  { "type": "wait", "ms": 350 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return {enemies:s.enemies, tick:s.tick}})()" }
+]

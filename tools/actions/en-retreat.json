@@ -1,0 +1,4 @@
+[
+  { "type": "wait", "ms": 1500 },
+  { "type": "eval", "code": "__echoes.cmd('clearRoom')" }
+]
