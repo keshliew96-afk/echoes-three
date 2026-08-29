@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('clearRoom');return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const d=window.__echoes.runUi();return {screen:d.screen,buttons:d.buttons,cards:d.cards.map(c=>c.name),subline:d.subline,free:d.freeSkillSlots,text:d.text};})()"
+ }
+]

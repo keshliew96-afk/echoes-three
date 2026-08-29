@@ -38,6 +38,8 @@ import { createWaveDirector } from './waves.js';
 import { createSkillSystem, STARTING_SKILLS, PARTY_ALLIES } from './skills.js';
 import { createBuildSystem } from './nodes.js';
 import { createAllySystem } from './allies.js';
+import { createBossSystem } from './boss.js';
+import { createRunSystem } from './run.js';
 
 // §10: a Downed character crawls at 0.8 u/s (movement only, cannot act).
 const DOWNED_CRAWL_SPEED = 0.8;
@@ -154,6 +156,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   // Build system (nodes block, §15) is created below; the skill system takes
   // its §15.4 resolver through this late-bound hook (identity until it lands).
   let buildSys = null;
+  let runSys = null; // run block (§2/§13): late-bound, owns combat_active
   const skillSys = createSkillSystem({
     player,
     registry,
@@ -221,10 +224,44 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     queueContinuation: (fn) => continuations.push({ resolve: fn }),
     getSkillSlots: () => skillSys.slotsView(),
     isCombatActive: () => {
+      // §2 "between-rooms only": while a RUN is live the run system owns the
+      // combat_active truth (it also covers the boss room and the meta
+      // screens); outside a run the standalone `?room=` harness rules.
+      if (runSys && runSys.isActive()) return runSys.combatActive();
       const r = waves.roomState();
       return !!(r && !r.cleared);
     },
   });
+
+  // --- Run structure (run block, §2/§13/§14/§16): the 8-room run frame, the
+  // room-clear boundary sequence, drafts/path/shop, the Glint wallet, and the
+  // room-8 Hollow Stag (sim/boss.js). The world only calls its three phase
+  // hooks in the §4 total order and routes the debug cmds.
+  const bossSys = createBossSystem({
+    registry,
+    events,
+    rng,
+    combat,
+    getTick: () => currentTick,
+    enemies,
+    bus: events,
+  });
+  runSys = createRunSystem({
+    rng,
+    registry,
+    events,
+    getTick: () => currentTick,
+    player,
+    waves,
+    enemies,
+    boss: bossSys,
+    skillSys,
+    buildSys,
+    allySys,
+    combat,
+  });
+  events.on('room_cleared', (ev) => runSys.onRoomCleared(ev));
+  events.on('defeat', () => runSys.onDefeat());
 
   // --- Harness wisps (sim-core proving population; ?scene=simtest only).
   function spawnWisp(x, z) {
@@ -340,6 +377,10 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // projectiles so party bolts sweep against final enemy positions.
     enemies.continuous();
 
+    // Run block (§11 boss): the Hollow Stag steers/lunges with the enemy pass,
+    // so its body settles before knockback and projectile sweeps.
+    runSys.continuous();
+
     // §9 #3 knockback displacement: impulse away from the hit over kbTicks,
     // swept vs walls (no slide — wall contact ends the impulse). Runs before
     // projectiles so bolts sweep against final positions this tick.
@@ -418,6 +459,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // in ascending spawn-ordinal order (enemies block, §11).
     enemies.resolveAll();
     drainContinuations();
+    // ② continued: the boss (run block) resolves with the enemy pass.
+    runSys.discrete();
+    drainContinuations();
 
     // ④ persistent-zone scheduled ticks, ascending zone spawn ordinal, then
     // the Warding Aura cadence (skills block). Zone/aura heals can carry
@@ -435,6 +479,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // Encounter director: spawn-telegraph maturations, wave triggers, and the
     // §11 clear predicates (evaluated end of tick).
     waves.step();
+    // Run block: boss add phases + the boss-room clear predicate (end of
+    // tick, like every other room predicate) and the transition-fade clock.
+    runSys.endOfTick();
   }
 
   function drainContinuations() {
@@ -664,7 +711,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       seed: rng.seed,
       rngDraws: rng.drawIndex,
       room: waves.roomState(), // enemies block (§11 win conditions); null outside rooms
-      wallet: null, // glint block
+      wallet: runSys.wallet(), // §14 Glint wallet (run block)
+      run: runSys.view(), // §2/§13/§16 run frame, phase, reward/path/shop, boss
       stats: { ...stats },
       party: [
         {
@@ -959,6 +1007,12 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       default: {
         // Ally-block test commands (mark / cycleMark / rally / allyState /
         // reviveState / downAll / breakRevive / reviveFlinchBreak).
+        // Run-block test commands (startRun / runState / draftTake /
+        // draftDecline / pathFocus / pathChoose / shopBuy / shopAdvance /
+        // skipToRoom / bossHp / killBoss / wallet / draftPools / endRun /
+        // returnToCamp), then the ally-block ones.
+        const ran = runSys.cmd(name, args);
+        if (ran !== undefined) return ran;
         const handled = allySys.cmd(name, args);
         if (handled !== undefined) return handled;
         console.warn(`__echoes.cmd('${name}') lands with a later block`);
@@ -980,6 +1034,11 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // preview() and drives socket()/unsocket() through the same sim entry
     // points as __echoes.cmd.
     buildSystem: () => buildSys,
+    // Run-block accessor (§2/§13/§16): the run UI screens read view() and
+    // drive the same entry points __echoes.cmd does; the boss render layer
+    // reads the Stag body read-only.
+    runSystem: () => runSys,
+    bossSystem: () => bossSys,
     // Ally-block accessor (render layer reads the mark, the revive channels
     // and the per-ally AI state read-only; it never mutates sim state).
     allySystem: () => allySys,

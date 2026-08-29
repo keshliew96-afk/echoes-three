@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('skipToRoom',8);window.__q=[];for(const t of ['boss_quake_start','boss_quake_resolve','boss_trample','boss_trample_hit','telegraph_start'])E.on(t,(ev)=>window.__q.push({type:t,tick:ev.tick,resolveTick:ev.resolveTick,telegraphTicks:ev.telegraphTicks,radius:ev.radius,victims:ev.victims,playerTargeted:ev.playerTargeted}));window.__ka=setInterval(()=>E.cmd('bossHp',0.9),100);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 9000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const q=window.__q;const st=q.filter(e=>e.type==='boss_quake_start');const rs=q.filter(e=>e.type==='boss_quake_resolve');return {starts:st.length,resolves:rs.length,pairs:rs.map((r,i)=>({telegraphTicks:r.telegraphTicks,seconds:+(r.telegraphTicks/60).toFixed(3),radius:r.radius,victims:r.victims})),gaps:st.slice(1).map((s,i)=>s.tick-st[i].tick),trample:q.filter(e=>e.type==='boss_trample').length};})()"
+ }
+]

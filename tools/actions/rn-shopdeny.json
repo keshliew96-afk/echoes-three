@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('skipToRoom',7);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return [E.cmd('shopBuy',0),E.cmd('shopBuy',1)];})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const before=E.cmd('runState');const r=E.cmd('shopBuy',2);const d=E.runUi();return {wallet:before.wallet,denied:r,plaques:d.plaques,cards:d.cards.map(c=>({name:c.name,opacity:c.opacity,filter:c.filter})),owned:d.owned,text:d.text};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 90
+ }
+]

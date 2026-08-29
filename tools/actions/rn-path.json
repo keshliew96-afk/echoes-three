@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('clearRoom');return E.cmd('runState').phase;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({phase:window.__echoes.cmd('runState').phase,ui:window.__echoes.runUi&&window.__echoes.runUi().screen}))()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd('draftTake');return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const d=window.__echoes.runUi();return {screen:d.screen,doors:d.doors,free:d.freeSkillSlots,text:d.text};})()"
+ }
+]

@@ -1,0 +1,90 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('clearRoom');window.__pc=[];E.on('path_chosen',(ev)=>window.__pc.push(ev.tick));window.__dt=[];E.on('draft_taken',(ev)=>window.__dt.push(ev.tick));return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "S0=(()=>{const E=window.__echoes;const d=E.runUi();const v=E.cmd('runState');return {screen:d.screen,phase:v.phase,room:v.room,held:d.held,stale:d.stale,focus:v.path?v.path.focus:null};})()"
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "S1_afterFirstEnter=(()=>{const E=window.__echoes;const d=E.runUi();const v=E.cmd('runState');return {screen:d.screen,phase:v.phase,room:v.room,held:d.held,stale:d.stale,focus:v.path?v.path.focus:null};})()"
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "S2_stillHeld=(()=>{const E=window.__echoes;const d=E.runUi();const v=E.cmd('runState');return {screen:d.screen,phase:v.phase,room:v.room,held:d.held,stale:d.stale,focus:v.path?v.path.focus:null};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({draftTaken:window.__dt,pathChosen:window.__pc}))()"
+ },
+ {
+  "type": "keyup",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "keyup",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "S3_afterFreshPress=(()=>{const E=window.__echoes;const d=E.runUi();const v=E.cmd('runState');return {screen:d.screen,phase:v.phase,room:v.room,held:d.held,stale:d.stale,focus:v.path?v.path.focus:null};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({draftTaken:window.__dt,pathChosen:window.__pc}))()"
+ }
+]

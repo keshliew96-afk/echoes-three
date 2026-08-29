@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const v=window.__echoes.cmd('runState');return {active:v.active,phase:v.phase,room:v.room,mode:v.mode,modes:v.frame&&v.frame.modes};})()"
+ }
+]

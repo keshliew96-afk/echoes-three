@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('skipToRoom',8);window.__ka=setInterval(()=>E.cmd('bossHp',0.85),100);window.__q=[];for(const t of ['boss_quake_start','boss_quake_resolve','boss_trample'])E.on(t,(ev)=>window.__q.push(t+' t'+ev.tick+' '+JSON.stringify(ev)));return E.cmd('runState').boss;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({boss:window.__echoes.cmd('runState').boss,bossfx:window.__echoes.state().bossfx,hudkeys:Object.keys(window.__echoes.hud||{})}))()"
+ }
+]

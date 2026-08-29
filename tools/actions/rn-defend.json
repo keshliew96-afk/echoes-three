@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{\n  const E=window.__echoes; const evs=[];\n  for (const t of ['room_enter','wave_start','room_cleared','reward_offer','waystone_hit','glint_gain']) E.on(t,(ev)=>evs.push(t+' t'+ev.tick+' '+JSON.stringify(Object.keys(ev).filter(k=>k!=='tick'&&k!=='type').slice(0,4).reduce((o,k)=>{o[k]=ev[k];return o;},{}))));\n  const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));\n  E.cmd('startRun');\n  const frame=E.cmd('runState').frame; const target=frame.defendAt[0];\n  E.cmd('skipToRoom',target);\n  const t0=E.tick; let guard=0;\n  while(guard++<800){\n    const v=E.cmd('runState');\n    if(v.phase!=='combat') break;\n    E.cmd('killAllEnemies');\n    await sleep(90);\n  }\n  const v=E.cmd('runState');\n  const room=E.state().room;\n  return {defendRoom:target, ticksInRoom:E.tick-t0, seconds:+((E.tick-t0)/60).toFixed(1), phase:v.phase, reward:v.reward&&{type:v.reward.type,id:v.reward.id}, wallet:v.wallet, room, evs:evs.slice(0,26)};\n})()"
+ }
+]

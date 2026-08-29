@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const s=[];for(let i=0;i<12;i++){await new Promise(r=>setTimeout(r,400));s.push(E.fps);}s.sort((a,b)=>a-b);return {min:s[0],median:s[6],max:s[11],all:s};})()"
+ }
+]

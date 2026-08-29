@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const r=window.__echoes.cmd('startRun');return {phase:r.phase,room:r.room,modes:r.frame.modes};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const r=window.__echoes.cmd('skipToRoom',8);return {phase:r.phase,room:r.room,mode:r.mode,wallet:r.wallet,boss:r.boss};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {run:s.run&&{phase:s.run.phase,room:s.run.room,boss:s.run.boss},ents:s.entities?s.entities.length:null};})()"
+ }
+]

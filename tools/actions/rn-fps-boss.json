@@ -1,0 +1,18 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('skipToRoom',8);window.__ka=setInterval(()=>E.cmd('bossHp',0.6),100);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const s=[];for(let i=0;i<12;i++){await new Promise(r=>setTimeout(r,400));s.push(E.fps);}s.sort((a,b)=>a-b);return {min:s[0],median:s[6],max:s[11],all:s};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({adds:window.__echoes.cmd('runState').boss.adds,ents:window.__echoes.entityCount}))()"
+ }
+]

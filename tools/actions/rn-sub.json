@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('giveSkill','nova_bloom');E.cmd('giveSkill','spirit_bolt');E.cmd('clearRoom');return E.cmd('draftPools');})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const d=window.__echoes.runUi();const v=window.__echoes.cmd('runState');return {screen:d.screen,subline:d.subline,free:d.freeSkillSlots,reward:v.reward,buttons:d.buttons,cards:d.cards.map(c=>c.name)};})()"
+ }
+]

@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('skipToRoom',8);window.__ka=setInterval(()=>{E.cmd('bossHp',0.9);E.cmd('teleport',0,2.6);},100);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3200
+ }
+]

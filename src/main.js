@@ -38,6 +38,8 @@ import { createAllyLayer } from './render/allies/index.js';
 import { createSocketScreen } from './ui/socket/index.js';
 import { createTechFx } from './render/techfx/index.js';
 import { createSiphonFizzleCue } from './ui/socket/fizzle.js';
+import { createBossLayer } from './render/boss/index.js';
+import { createRunUi } from './ui/run/index.js';
 
 const params = new URLSearchParams(window.location.search);
 const flag = (name, def = true) => {
@@ -170,6 +172,20 @@ const fizzleCue =
   sceneKey === 'graybox' || sceneKey === 'arena'
     ? createSiphonFizzleCue({ bus, camera: stage.camera })
     : null;
+// Boss render layer (run block, §11 Hollow Stag): the Stag rig, its
+// feverish warm boss-light (the room's brightest emitter, room dimmed a stop),
+// and the Antler Quake Ember ring telegraph.
+const bossfx =
+  sceneKey === 'graybox' || sceneKey === 'arena'
+    ? createBossLayer({ stage, world, bus, cosmetic })
+    : null;
+// Run meta screens (run block, §16/§18): draft, path doors, shop shelf,
+// victory/defeat pages + the §13 transition fade. `?run=1` boots into room 1
+// (the camp hub that normally starts a run is its own block).
+const runUi =
+  sceneKey === 'graybox' || sceneKey === 'arena'
+    ? createRunUi({ bus, world, socket: socketScreen, autostart: params.get('run') === '1' })
+    : null;
 
 const overlay = createDebugOverlay(VERSION, {
   debug: flag('debug', false),
@@ -209,7 +225,10 @@ function computeFps() {
 // through untouched (it mutates nothing).
 function sampleIntents() {
   const snap = input.sample();
-  if (!socketScreen?.isOpen()) return snap;
+  // The run's meta screens (draft / path / shop / end) are modal for the same
+  // reason (§16 "Zero build interaction mid-combat" and its mirror: zero
+  // gameplay input while a between-rooms page is up).
+  if (!socketScreen?.isOpen() && !runUi?.isOpen()) return snap;
   snap.move.x = 0;
   snap.move.z = 0;
   snap.basicAttackHeld = false;
@@ -232,9 +251,11 @@ stage.renderer.setAnimationLoop((now) => {
   enemyfx?.update(now / 1000, alpha);
   allyfx?.update(now / 1000, alpha);
   techfx?.update(now / 1000);
+  bossfx?.update(now / 1000, alpha);
   fizzleCue?.update(now / 1000);
   stage.render();
   overlay.update();
+  runUi?.update();
   hud?.update();
 
   frameTimes.push(frameMs);
@@ -250,6 +271,9 @@ stage.renderer.setAnimationLoop((now) => {
 // --- Debug API (docs/TESTING.md). cmd surface grows as systems land.
 window.__echoes = {
   version: VERSION,
+  // Run meta-screen probe surface (run block): active screen, door glyphs,
+  // card/plaque boxes, fresh-press key sets.
+  runUi: runUi ? runUi.debug : null,
   get tick() {
     return clock.tick;
   },
@@ -282,6 +306,7 @@ window.__echoes = {
     ...(skillfx ? { skillfx: skillfx.debugCounts() } : {}),
     ...(allyfx ? { allyfx: allyfx.debugCounts() } : {}),
     ...(techfx ? { techfx: techfx.debugCounts() } : {}),
+    ...(bossfx ? { bossfx: bossfx.debugCounts() } : {}),
   }),
   cmd: (name, ...args) => {
     // UI-level commands route to the socket screen (docs/TESTING.md).
