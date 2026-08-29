@@ -1,0 +1,14 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;E.cmd('teleport',0,0);const pts=[[-10.2,-6.6],[10.2,-6.6],[-10.2,6.6],[10.2,6.6],[0,-6.6],[0,6.6],[-10.2,0],[10.2,0]];pts.forEach((p,i)=>E.cmd('spawn',i%2?'mantis':'boar',p[0],p[1]));return pts.length;})()"
+  },
+  {
+    "type": "wait",
+    "ms": 300
+  },
+  {
+    "type": "eval",
+    "code": "(async()=>{const E=window.__echoes;const a0=E.hud.threat();const m0=E.hud.markers();const f=[];for(let i=0;i<6;i++){await new Promise(r=>setTimeout(r,220));f.push(E.fps);}return {auditAtSpawn:a0,markersAtSpawn:m0,fps:f,minFps:Math.min(...f),auditNow:E.hud.threat(),markersNow:E.hud.markers().length};})()"
+  }
+]

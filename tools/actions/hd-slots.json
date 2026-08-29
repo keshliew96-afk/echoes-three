@@ -1,0 +1,28 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;E.cmd('giveSkill','nova_bloom');E.cmd('giveSkill','warding_aura');E.cmd('grantNode','bounce');const r=E.cmd('socket','nova_bloom','bounce');return {socket:r,build:E.cmd('buildView').skills.map(s=>({id:s.id,sk:s.sockets}))};})()"
+  },
+  {
+    "type": "mousemove",
+    "x": 900,
+    "y": 400
+  },
+  {
+    "type": "wait",
+    "ms": 400
+  },
+  {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 50
+  },
+  {
+    "type": "wait",
+    "ms": 400
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{return window.__echoes.hud.slots().map(s=>({k:s.key,a:s.abbrev,p:s.passive,e:s.empty,c:s.counting,n:s.numeral,deg:s.wipeDeg}));})()"
+  }
+]

@@ -1,0 +1,58 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;E.cmd('startRoom','kill_all');E.cmd('teleport',1.5,-1.0);E.cmd('giveSkill','nova_bloom');E.cmd('giveSkill','spirit_bolt');return 1;})()"
+  },
+  {
+    "type": "mousemove",
+    "x": 1000,
+    "y": 300
+  },
+  {
+    "type": "wait",
+    "ms": 1400
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;const p=E.state().party;const f=(i)=>p.find(q=>(q.partyIndex??0)===i);E.cmd('setHp',f(1).id,0.42);E.cmd('setHp',f(2).id,0.18);for(const q of [[9.9,-6.3],[-10.0,5.9],[9.6,6.1]])E.cmd('spawn','boar',q[0],q[1]);return 1;})()"
+  },
+  {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 50
+  },
+  {
+    "type": "wait",
+    "ms": 120
+  },
+  {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 50
+  },
+  {
+    "type": "wait",
+    "ms": 120
+  },
+  {
+    "type": "key",
+    "key": "Space",
+    "ms": 40
+  },
+  {
+    "type": "wait",
+    "ms": 560
+  },
+  {
+    "type": "mousedown",
+    "button": "right"
+  },
+  {
+    "type": "wait",
+    "ms": 120
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const h=window.__echoes.hud;return {slots:h.slots().map(s=>({k:s.key,a:s.abbrev,c:s.counting,n:s.numeral,deg:s.wipeDeg,key:s.keyBox,ab:s.abbrevBox,nb:s.numBox})),ports:h.portraits().map(p=>({i:p.index,st:p.state,w:p.hpWidth,n:p.numeral})),banner:h.banner(),threat:h.threat(),metrics:h.metrics(),fps:window.__echoes.fps};})()"
+  }
+]

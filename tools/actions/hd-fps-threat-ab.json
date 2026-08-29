@@ -1,0 +1,19 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;E.cmd('teleport',0,0);const pts=[[-10.2,-6.6],[10.2,-6.6],[-10.2,6.6],[10.2,6.6],[0,-6.6],[0,6.6],[-10.2,0],[10.2,0]];pts.forEach((p,i)=>E.cmd('spawn',i%2?'mantis':'boar',p[0],p[1]));return 1;})()"
+  },
+  {
+    "type": "mousemove",
+    "x": 900,
+    "y": 300
+  },
+  {
+    "type": "wait",
+    "ms": 1000
+  },
+  {
+    "type": "eval",
+    "code": "(async()=>{const E=window.__echoes;const win=async()=>{await new Promise(r=>setTimeout(r,600));const a=[];for(let i=0;i<5;i++){await new Promise(r=>setTimeout(r,280));a.push(E.fps);}return Math.round(a.reduce((x,y)=>x+y,0)/a.length*10)/10;};const on=[],off=[];for(let k=0;k<3;k++){E.hud.setEnabled(true);on.push(await win());E.hud.setEnabled(false);off.push(await win());}E.hud.setEnabled(true);return {on,off,ents:E.entityCount,markers:E.hud.markers().length};})()"
+  }
+]

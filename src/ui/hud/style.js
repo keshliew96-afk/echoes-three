@@ -1,0 +1,519 @@
+// HUD stylesheet (BUILD_BRIEF §17 grammar). Every colour is derived from
+// data/palette.js — the HUD is a calm geometric instrument panel of Void
+// Charcoal plates, Warm Grey chrome and Parchment ink, and it NEVER adopts
+// environment tinting (it is DOM above the canvas, so no scene light and no
+// composer pass can reach it; tools/actions/hd-tint.json proves it by
+// comparing HUD pixels across a dark frame and a brazier-lit one).
+//
+// ============================ SIZING CONTRACT ============================
+// §17: "designed at 1920x1080 virtual px and uniformly scaled by
+// min(innerWidth/1920, innerHeight/1080)". EVERYTHING here — geometry AND
+// type — is authored once in that virtual space and scaled by one number,
+// so the layout is literally identical at every window size.
+//
+// ONE documented deviation, forced by the §17 legibility floors (text >=16
+// real px, numerals >=20 real px). At 1024x640 the pure §17 scale is
+// min(0.5333, 0.5926) = 0.5333, at which a 30 px numeral lands at 16 px —
+// under the floor. The earlier build answered that by inflating the TYPE
+// inside fixed geometry, which collapsed the skill-slot abbrev box to ~6 px
+// and clipped its glyph into the countdown numeral. So instead the scale is
+// CLAMPED BELOW at
+//     MIN_SCALE = max(16.4 / FS_KEY, 20.6 / FS_NUM) = 0.6867
+// and the two zones are anchored to the WINDOW edges (index.js computes the
+// virtual offsets --zb / --zt) so the clamp can never push a zone off-screen.
+// Above the clamp — every window from 1318x742 up, which includes 1600x900,
+// 1920x1080 and 2560x1440 — the scale is exactly §17's min().
+//
+// Sizes below are therefore virtual px, and the real px a reader sees is
+// `virtual * s`. The type floors then hold at the clamp:
+//     FS_KEY 24 * 0.6867 = 16.48 real px  (floor 16)
+//     FS_NUM 30 * 0.6867 = 20.60 real px  (floor 20)
+//
+// COLLISION FENCE (criterion 1). A tile is 64x64 with a 2 px rim, so its
+// inner box is 60 px tall, and it is cut into two DISJOINT bands:
+//     rows  0..26  key chip   ("1".."4" / "SPC" / "F1".."F4")
+//     rows 27..60  glyph band (the skill abbrev OR the countdown numeral)
+// The abbrev and the numeral share the lower band and are mutually exclusive
+// — `.is-counting` hides the abbrev outright — so the sub-1 s numeral cannot
+// collide with the abbrev at any scale, by construction rather than by
+// tuning. tools/actions/hd-boxes.json asserts the rectangles never intersect.
+import { PALETTE, CLASS_ACCENTS } from '../../data/palette.js';
+
+const hex2rgb = (h) => [
+  parseInt(h.slice(1, 3), 16),
+  parseInt(h.slice(3, 5), 16),
+  parseInt(h.slice(5, 7), 16),
+];
+
+// Palette-only blends: every colour in this file is either a §19.1 hex or a
+// mix of two of them, so nothing here invents a colour.
+export function mix(a, b, t) {
+  const A = hex2rgb(a);
+  const B = hex2rgb(b);
+  return (
+    '#' +
+    [0, 1, 2]
+      .map((i) =>
+        Math.round(A[i] + (B[i] - A[i]) * t)
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')
+  );
+}
+
+// ------------------------------------------------------------- metrics ---
+export const FS_KEY = 24; // key chips + skill abbrevs  (>=16 real px floor)
+export const FS_LAB = 26; // banner labels
+export const FS_NUM = 30; // ALL numerals               (>=20 real px floor)
+export const TEXT_FLOOR = 16.4; // 16 px + margin for sub-pixel rounding
+export const NUM_FLOOR = 20.6; // 20 px + margin
+export const MIN_SCALE = Math.max(TEXT_FLOOR / FS_KEY, NUM_FLOOR / FS_NUM);
+
+const TILE = 64; // §17 "Portrait 64x64" — skill/dodge slots match it
+const KEY_H = 26; // key-chip band height (top of the tile)
+const NUM_H = 33; // numeral-strip height (bottom of the tile)
+const HP_H = 10; // portrait HP bar
+const HP_GAP = 2;
+const BAR_PAD = 5;
+const BN_PAD = 4;
+
+const C = PALETTE.voidCharcoal;
+export const CHROME = {
+  plate: C, // opaque charcoal plate (§17: combat text always on an opaque plate)
+  plateHi: mix(C, PALETTE.warmGrey, 0.1),
+  plateSunk: mix(C, '#000000', 0.35),
+  rim: mix(C, PALETTE.warmGrey, 0.44),
+  rimDim: mix(C, PALETTE.warmGrey, 0.24),
+  rimHot: mix(C, PALETTE.warmGrey, 0.72), // hover = chrome +1 value step
+  ink: PALETTE.parchment,
+  inkDim: PALETTE.warmGrey,
+};
+
+// Class accent + a lifted twin for the HP-bar highlight. The accents are dark
+// by design (§19.1); the lift keeps the bar readable on a charcoal track
+// without changing its hue.
+export const ACCENTS = Object.fromEntries(
+  Object.entries(CLASS_ACCENTS).map(([k, v]) => [
+    k,
+    { base: v, lift: mix(v, PALETTE.parchment, 0.55), deep: mix(v, C, 0.45) },
+  ])
+);
+
+export const FONT_STACK =
+  "system-ui, 'Segoe UI Variable Display', 'Segoe UI', ui-rounded, 'Nunito', 'Trebuchet MS', sans-serif";
+
+export function hudCss() {
+  return `
+/* ---------------------------------------------------------------- roots -- */
+/* The 1920x1080 virtual canvas, centred on the window and uniformly scaled.
+   --zb / --zt are the zones' offsets from the canvas edges, recomputed on
+   resize so each zone lands a fixed number of REAL px from the window edge
+   even when --s is clamped above the letterbox scale. */
+#hud {
+  position: fixed;
+  left: 50%; top: 50%;
+  width: 1920px; height: 1080px;
+  margin: -540px 0 0 -960px;
+  transform: scale(var(--s, 1));
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  user-select: none;
+  z-index: 12;
+  font-family: ${FONT_STACK};
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  -webkit-font-smoothing: antialiased;
+  color: ${CHROME.ink};
+}
+#hud-threat {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  z-index: 11;
+  font-family: ${FONT_STACK};
+}
+#hud * { box-sizing: border-box; }
+
+/* ------------------------------------------- ZONE 1 — command bar (§17) -- */
+.hud-bar {
+  position: absolute;
+  left: 50%;
+  bottom: var(--zb, 20px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: ${BAR_PAD}px 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, ${CHROME.plateHi} 0%, ${CHROME.plate} 42%, ${CHROME.plate} 100%);
+  border: 2px solid ${CHROME.rim};
+  box-shadow: inset 0 0 0 1px ${CHROME.plateSunk}, 0 3px 0 0 ${CHROME.plateSunk};
+}
+.hud-group { display: flex; gap: 7px; align-items: flex-start; }
+.hud-sep {
+  width: 2px;
+  height: ${TILE}px;
+  margin: 0 -5px;
+  border-radius: 1px;
+  background: ${CHROME.rimDim};
+}
+
+/* ---------------------------------------------------- portrait tile (§17) */
+.hud-port {
+  position: relative;
+  width: ${TILE}px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.hud-port-tile {
+  position: relative;
+  width: ${TILE}px; height: ${TILE}px;
+  border-radius: 12px;
+  border: 2px solid var(--accent, ${CHROME.rim});
+  /* A lifted-charcoal studio backdrop: the critter's own ink line IS Void
+     Charcoal, so a pure charcoal plate would swallow the silhouette. */
+  background: linear-gradient(180deg, ${mix(C, PALETTE.warmGrey, 0.26)} 0%, ${mix(C, PALETTE.warmGrey, 0.08)} 62%, ${CHROME.plateSunk} 100%);
+  overflow: hidden;
+}
+.hud-port-crop { position: absolute; inset: 0; overflow: hidden; }
+.hud-port-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  transform-origin: 50% 50%;
+}
+.hud-port-fallback {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; font-weight: 800; color: var(--accentLift, ${CHROME.ink});
+}
+/* inner frame — the Critical value-pulse target (1 -> 3 px, charcoal<->bone) */
+.hud-port-inner {
+  position: absolute; inset: 2px;
+  border-radius: 8px;
+  border: 0 solid transparent;
+  pointer-events: none;
+}
+/* Selected override (F1-F4 / click): STATIC 2 px Hearth Amber outline (§17) */
+.hud-port-sel {
+  position: absolute; inset: -4px;
+  border-radius: 15px;
+  border: 2px solid ${PALETTE.hearthAmber};
+  display: none;
+  pointer-events: none;
+}
+.hud-port.is-selected .hud-port-sel { display: block; }
+/* colour-blind fence (§19.1): selection is also a SHAPE — a corner tab */
+.hud-port-tab {
+  position: absolute; top: -1px; right: -1px;
+  width: 0; height: 0;
+  border-left: 15px solid transparent;
+  border-top: 15px solid ${PALETTE.hearthAmber};
+  display: none;
+  pointer-events: none;
+}
+.hud-port.is-selected .hud-port-tab { display: block; }
+/* Rally confirm: outer expanding-ring flash on all 4 at once (§8/§17). It is a
+   separate element from .hud-port-inner so it composites with Critical. */
+.hud-port-rally {
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  border: 3px solid ${PALETTE.hearthAmber};
+  opacity: 0;
+  pointer-events: none;
+}
+@keyframes hud-rally {
+  0%   { transform: scale(1);    opacity: 0.95; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+.hud-port-rally.go { animation: hud-rally 380ms ease-out; }
+
+/* KEY-CHIP BAND: rows 0..${KEY_H} of every tile, portrait and slot alike. */
+.hud-port-key, .hud-slot-key {
+  position: absolute; left: 0; top: 0;
+  height: ${KEY_H}px;
+  padding: 0 6px;
+  display: flex; align-items: center;
+  border-bottom-right-radius: 9px;
+  background: ${CHROME.plate};
+  color: ${CHROME.inkDim};
+  font-size: ${FS_KEY}px;
+  font-weight: 800;
+  line-height: 1;
+  z-index: 3;
+}
+/* Critical: persistent >=20 px HP numeral on its own opaque plate, in the
+   tile's GLYPH BAND — disjoint from the key chip above it. */
+.hud-port-num {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: ${NUM_H}px;
+  display: none;
+  align-items: center; justify-content: center;
+  background: ${CHROME.plate};
+  border-top: 1px solid ${CHROME.rimDim};
+  color: ${CHROME.ink};
+  font-size: ${FS_NUM}px;
+  font-weight: 800;
+  line-height: 1;
+  z-index: 4;
+}
+.hud-port.is-critical .hud-port-num { display: flex; }
+
+/* Downed: horizontal portrait treatment + hollow Bone ring with a hold-E
+   glyph; Being-revived fills that ring clockwise in Parchment (§17). */
+.hud-port.is-downed .hud-port-tile { border-color: ${PALETTE.bone}; }
+.hud-port.is-downed .hud-port-crop { clip-path: inset(24% 0 24% 0); }
+.hud-port.is-downed .hud-port-img {
+  transform: rotate(78deg) scale(0.8);
+  filter: grayscale(0.88) brightness(0.95);
+}
+.hud-port-ring {
+  position: absolute; inset: 0;
+  display: none;
+  z-index: 4;
+}
+.hud-port.is-downed .hud-port-ring { display: block; }
+.hud-port-ring .rk { fill: none; stroke: ${CHROME.plate}; stroke-width: 11; opacity: 0.62; }
+.hud-port-ring .rb { fill: none; stroke: ${PALETTE.bone}; stroke-width: 5; }
+.hud-port-ring .rf {
+  fill: none; stroke: ${PALETTE.parchment}; stroke-width: 7;
+  stroke-linecap: butt;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+/* While Downed the tile belongs to the revive instrument, so the F-key chip
+   stands down: a downed ally is not a legal heal-override recipient (§8 —
+   an override on a downed member falls back to smart-target), and the chip
+   would otherwise sit exactly on the ring's 12 o'clock start. It returns the
+   moment the ally is up. That leaves the ring's sweep unbroken and the E chip
+   centred inside it — no glyph in the tile overlaps another. */
+.hud-port.is-downed .hud-port-key { display: none; }
+.hud-port-e {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  height: 26px; padding: 0 7px;
+  border-radius: 7px;
+  display: none;
+  align-items: center; justify-content: center;
+  background: ${CHROME.plate};
+  font-size: ${FS_KEY}px;
+  font-weight: 800;
+  line-height: 1;
+  color: ${PALETTE.bone};
+  z-index: 5;
+}
+.hud-port.is-downed .hud-port-e { display: flex; }
+@keyframes hud-shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+.hud-port.shake { animation: hud-shake 160ms ease-out; }
+
+/* HP bar: class accent on a charcoal track (§17) */
+.hud-port-hp {
+  position: relative;
+  margin-top: ${HP_GAP}px;
+  height: ${HP_H}px;
+  border-radius: 3px;
+  background: ${CHROME.plate};
+  border: 1px solid ${CHROME.rimDim};
+  overflow: hidden;
+}
+.hud-port-hp i {
+  display: block; height: 100%; width: 100%;
+  background: linear-gradient(180deg, var(--accentLift) 0%, var(--accentLift) 34%, var(--accent) 62%, var(--accentDeep) 100%);
+  box-shadow: inset 0 -1px 0 ${CHROME.plateSunk};
+}
+/* Hover: chrome +1 value step ONLY (§17) — no layout, no colour semantics. */
+.hud-port:hover .hud-port-tile,
+.hud-port.is-hover .hud-port-tile { background: ${CHROME.plateHi}; border-color: ${CHROME.rimHot}; }
+.hud-port:hover .hud-port-key,
+.hud-port.is-hover .hud-port-key { color: ${CHROME.ink}; background: ${CHROME.plateHi}; }
+.hud-port:hover .hud-port-hp,
+.hud-port.is-hover .hud-port-hp { border-color: ${CHROME.rimHot}; }
+
+/* ------------------------------------------------------- skill/dodge slot */
+.hud-slot {
+  position: relative;
+  width: ${TILE}px; height: ${TILE}px;
+  border-radius: 12px;
+  background: ${CHROME.plate};
+  border: 2px solid ${CHROME.rim};
+  overflow: hidden;
+}
+.hud-slot.is-empty { border-style: dashed; border-color: ${CHROME.rimDim}; }
+.hud-slot.is-empty .hud-slot-abbrev { color: ${CHROME.rimHot}; }
+.hud-slot-key { background: ${CHROME.plateHi}; z-index: 2; }
+/* GLYPH BAND. The abbrev owns it while the slot is ready; .is-counting
+   hides the abbrev and the numeral strip owns it instead. The two are
+   mutually exclusive, so they can never overlap. */
+.hud-slot-abbrev {
+  position: absolute;
+  left: 2px; right: 2px;
+  top: ${KEY_H + 1}px; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  font-size: ${FS_KEY}px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: ${CHROME.ink};
+  z-index: 2;
+}
+.hud-slot.is-counting .hud-slot-abbrev { display: none; }
+.hud-slot-abbrev svg { width: 30px; height: 26px; display: block; }
+.hud-slot-wipe { position: absolute; inset: 0; z-index: 3; }
+/* The on_cooldown nudge paints HERE, not on the wipe itself: the wipe's own
+   background-image is the conic charcoal veil, so a background-colour flash on
+   it would only show through the wedge that is already spent — the opposite of
+   the icon the player needs. This layer sits above the veil and washes the
+   whole tile. */
+.hud-slot-flash { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.hud-slot-num {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: ${NUM_H}px;
+  display: none;
+  align-items: center; justify-content: center;
+  background: ${CHROME.plate};
+  border-top: 1px solid ${CHROME.rimDim};
+  color: ${CHROME.ink};
+  font-size: ${FS_NUM}px;
+  font-weight: 800;
+  line-height: 1;
+  z-index: 5;
+}
+.hud-slot.is-counting .hud-slot-num { display: flex; }
+/* Passive slot (Warding Aura): static glyph, never a wipe (§7/§17) */
+.hud-slot.is-passive { border-color: ${ACCENTS.healer.lift}; }
+/* The passive marker lives in the KEY-CHIP band (top-right), never in the
+   glyph band, so it cannot touch the abbrev. */
+.hud-slot-passive {
+  position: absolute; right: 5px; top: 4px;
+  font-size: 17px; color: ${ACCENTS.healer.lift};
+  line-height: 1;
+  display: none; z-index: 2;
+}
+.hud-slot.is-passive .hud-slot-passive { display: block; }
+/* Grey-socketed-node marker: hollow icon + diagonal strike, persistent (§17) */
+.hud-slot-grey { position: absolute; inset: 0; display: none; z-index: 6; }
+.hud-slot.is-grey .hud-slot-grey { display: block; }
+.hud-slot.is-grey .hud-slot-abbrev { color: ${CHROME.inkDim}; }
+
+/* denial nudges — ICON level, ~180 ms, restart on repeat, never alarms (§17).
+   Three DIFFERENT channels so the three reasons are told apart without colour:
+     on_cooldown        -> a Warm Grey wash across the icon   (fill)
+     empty_slot         -> the dashed frame blinks Parchment  (frame)
+     priority_suppressed-> the icon skip-pulses in scale      (motion) */
+@keyframes hud-wipe-nudge {
+  0%,100% { background-color: transparent; }
+  40%     { background-color: ${PALETTE.warmGrey}66; }
+}
+.hud-nudge-wipe { animation: hud-wipe-nudge 180ms ease-out; }
+@keyframes hud-frame-blink {
+  0%,100% { border-color: ${CHROME.rimDim}; }
+  50%     { border-color: ${PALETTE.parchment}; }
+}
+.hud-nudge-blink { animation: hud-frame-blink 180ms ease-out; }
+@keyframes hud-skip-pulse {
+  0%   { transform: scale(1); }
+  42%  { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+.hud-nudge-skip { animation: hud-skip-pulse 180ms ease-out; }
+/* ready-pop: 120 ms scale 1 -> 1.15 -> 1 + plate flash charcoal -> warm grey */
+@keyframes hud-ready-pop {
+  0%   { transform: scale(1);    background: ${CHROME.plate}; }
+  45%  { transform: scale(1.15); background: ${PALETTE.warmGrey}; }
+  100% { transform: scale(1);    background: ${CHROME.plate}; }
+}
+.hud-ready { animation: hud-ready-pop 120ms ease-out; }
+
+/* ------------------------------------------- ZONE 2 — room banner (§17) -- */
+#hud-banner {
+  position: absolute;
+  left: 50%; top: var(--zt, 18px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: ${BN_PAD}px 20px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, ${CHROME.plateHi} 0%, ${CHROME.plate} 46%);
+  border: 2px solid ${CHROME.rim};
+  box-shadow: inset 0 0 0 1px ${CHROME.plateSunk};
+  opacity: 0;
+  transition: opacity 240ms ease;
+  white-space: nowrap;
+}
+#hud-banner.show { opacity: 1; }
+#hud-banner.boss {
+  gap: 12px;
+  padding: ${BN_PAD}px 26px;
+  border-color: ${PALETTE.godstuffViolet};
+  box-shadow: inset 0 0 0 1px ${CHROME.plateSunk}, 0 0 0 3px ${CHROME.plate},
+              0 0 0 4px ${mix(C, PALETTE.godstuffViolet, 0.55)};
+}
+.hud-bn-label {
+  font-size: ${FS_LAB}px;
+  font-weight: 800;
+  line-height: ${FS_NUM}px;
+  letter-spacing: 0.09em;
+  color: ${CHROME.ink};
+}
+.hud-bn-sub { color: ${CHROME.inkDim}; letter-spacing: 0.12em; }
+.hud-bn-num {
+  font-size: ${FS_NUM}px;
+  font-weight: 800;
+  line-height: ${FS_NUM}px;
+  color: ${CHROME.ink};
+}
+.hud-bn-num.warn { color: ${PALETTE.hearthAmber}; }
+.hud-bn-pips { display: flex; gap: 7px; align-items: center; height: ${FS_NUM}px; }
+.hud-bn-pip {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid ${CHROME.rimHot};
+  background: transparent;
+}
+.hud-bn-pip.done { background: ${PALETTE.parchment}; border-color: ${PALETTE.parchment}; }
+.hud-bn-pip.now  { background: ${PALETTE.hearthAmber}; border-color: ${PALETTE.hearthAmber}; }
+.hud-bn-bar {
+  position: relative;
+  width: 300px; height: 18px;
+  border-radius: 4px;
+  background: ${CHROME.plateSunk};
+  border: 1px solid ${CHROME.rimDim};
+  overflow: hidden;
+}
+#hud-banner.boss .hud-bn-bar { width: 460px; height: 22px; }
+.hud-bn-bar i {
+  display: block; height: 100%; width: 100%;
+  background: linear-gradient(180deg, var(--barLift) 0%, var(--barBase) 62%);
+  transition: width 140ms linear;
+}
+
+/* --------------------------------------- off-screen threat markers (§17) -- */
+/* Real-pixel layer (NOT inside the 1080p scaler): these are world-anchored
+   pointers that must sit exactly on the window edge at any resolution. */
+#hud-threat .tm {
+  position: absolute;
+  left: 0; top: 0;
+  width: 42px; height: 42px;
+  margin: -21px 0 0 -21px;
+  will-change: transform;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.75));
+}
+#hud-threat .tm svg { width: 42px; height: 42px; display: block; overflow: visible; }
+#hud-threat .tm .tm-plate { fill: ${CHROME.plate}; stroke: ${CHROME.rimHot}; stroke-width: 2; }
+#hud-threat .tm .tm-head { fill: ${PALETTE.bone}; stroke: ${CHROME.plate}; stroke-width: 2.5; stroke-linejoin: round; }
+#hud-threat .tm.telegraph .tm-head { fill: ${PALETTE.emberDanger}; }
+#hud-threat .tm.telegraph .tm-ring { stroke: ${PALETTE.emberDanger}; }
+#hud-threat .tm.spawn .tm-head { fill: none; stroke: ${PALETTE.godstuffViolet}; stroke-width: 3.5; }
+#hud-threat .tm.spawn .tm-dot { fill: ${PALETTE.godstuffViolet}; }
+#hud-threat .tm .tm-ring { fill: none; stroke: none; stroke-width: 2.5; }
+#hud-threat .tm.marked .tm-ring { stroke: ${PALETTE.signalBlue}; }
+`;
+}

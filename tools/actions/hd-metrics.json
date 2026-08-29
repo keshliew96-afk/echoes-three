@@ -1,0 +1,6 @@
+[
+  {
+    "type": "eval",
+    "code": "(async()=>{const m=await import('/src/render/critters/index.js');const out={};for(const c of m.CRITTER_CLASSES){const k=m.createCritter(c,{});out[c]=k.metrics;}return out;})()"
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{return window.__echoes.cmd('skipToRoom',8)&&'ok';})()"
+  },
+  {
+    "type": "wait",
+    "ms": 2000
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;E.cmd('bossHp',0.64);return 'hp';})()"
+  },
+  {
+    "type": "wait",
+    "ms": 600
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const h=window.__echoes.hud;return {banner:h.banner(),metrics:h.metrics()};})()"
+  }
+]

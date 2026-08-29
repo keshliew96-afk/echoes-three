@@ -1,0 +1,27 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{window.__echoes.cmd('teleport',0,0);return 1;})()"
+  },
+  {
+    "type": "mousemove",
+    "x": 1000,
+    "y": 300
+  },
+  {
+    "type": "mousedown",
+    "button": "right"
+  },
+  {
+    "type": "wait",
+    "ms": 1200
+  },
+  {
+    "type": "eval",
+    "code": "(async()=>{const E=window.__echoes;const s=(m)=>new Promise(r=>setTimeout(r,m));const pts=[[-10.2,-6.6],[10.2,-6.6],[-10.2,6.6],[10.2,6.6],[0,-6.6],[0,6.6]];const top=()=>{if(E.entityCount<12)pts.forEach((p,i)=>E.cmd('spawn',i%2?'mantis':'boar',p[0],p[1]));};const on=[],off=[];for(let k=0;k<8;k++){top();E.hud.setEnabled(true);await s(280);on.push(E.fps);top();E.hud.setEnabled(false);await s(280);off.push(E.fps);}E.hud.setEnabled(true);const avg=a=>Math.round(a.reduce((x,y)=>x+y,0)/a.length*10)/10;return {on,off,onAvg:avg(on),offAvg:avg(off),onMin:Math.min(...on),offMin:Math.min(...off),ents:E.entityCount,markers:E.hud.markers().length};})()"
+  },
+  {
+    "type": "mouseup",
+    "button": "right"
+  }
+]

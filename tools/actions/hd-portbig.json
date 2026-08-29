@@ -1,0 +1,10 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{const imgs=[...document.querySelectorAll('.hud-port-img')];const box=document.createElement('div');box.style.cssText='position:fixed;left:0;top:0;z-index:9999;display:flex;background:#111';for(const im of imgs){const n=document.createElement('img');n.src=im.src;n.style.cssText='width:256px;height:256px;image-rendering:auto';box.appendChild(n);}document.body.appendChild(box);return imgs.length;})()"
+  },
+  {
+    "type": "wait",
+    "ms": 400
+  }
+]

@@ -1,0 +1,39 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;const p=E.state().party;const byIdx=(i)=>i===0?p[0]:p.find(q=>q.partyIndex===i);E.cmd('setHp',byIdx(1).id,0.28);E.cmd('setHp',byIdx(2).id,0.15);E.cmd('setHp',byIdx(3).id,0);return 'set';})()"
+  },
+  {
+    "type": "wait",
+    "ms": 300
+  },
+  {
+    "type": "key",
+    "key": "F1",
+    "ms": 60
+  },
+  {
+    "type": "wait",
+    "ms": 200
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const h=window.__echoes.hud;h.hover(1,true);h.freeze(0);return 1;})()"
+  },
+  {
+    "type": "wait",
+    "ms": 300
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;const p=E.state().party;const byIdx=(i)=>i===0?p[0]:p.find(q=>q.partyIndex===i);E.cmd('setHp',byIdx(1).id,0.28);E.cmd('setHp',byIdx(2).id,0.15);E.cmd('setHp',byIdx(3).id,0);return 'set';})()"
+  },
+  {
+    "type": "wait",
+    "ms": 120
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const h=window.__echoes.hud;return h.portraits();})()"
+  }
+]

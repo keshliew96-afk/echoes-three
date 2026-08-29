@@ -1,0 +1,18 @@
+[
+  {
+    "type": "wait",
+    "ms": 1500
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;const r=E.state().room;const ws=r&&r.waystone;if(ws)E.cmd('setHp',ws.id,0.62);return E.state().room;})()"
+  },
+  {
+    "type": "wait",
+    "ms": 500
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const h=window.__echoes.hud;return {banner:h.banner(),metrics:h.metrics()};})()"
+  }
+]

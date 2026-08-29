@@ -1,0 +1,6 @@
+[
+  {
+    "type": "eval",
+    "code": "(async()=>{const E=window.__echoes;E.cmd('teleport',0,-1.6);E.cmd('spawn','mantis',0,2.0);E.cmd('spawn','mantis',-1.6,2.4);const t0=Date.now();let a=null;while(Date.now()-t0<6000){a=E.hud.threat();const m=E.hud.markers();if(m.some(x=>x.telegraph))return {audit:a,markers:m,fps:E.fps,waited:Date.now()-t0};await new Promise(r=>setTimeout(r,40));}return {audit:a,markers:E.hud.markers(),fps:E.fps,timeout:true};})()"
+  }
+]

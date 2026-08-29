@@ -1,0 +1,22 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;E.cmd('teleport',0,0);E.cmd('startRoom','kill_all');return 'room';})()"
+  },
+  {
+    "type": "wait",
+    "ms": 120
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{return window.__echoes.cmd('startWave');})()"
+  },
+  {
+    "type": "wait",
+    "ms": 320
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;return {audit:E.hud.threat(),markers:E.hud.markers(),fps:E.fps,pending:E.state().room};})()"
+  }
+]

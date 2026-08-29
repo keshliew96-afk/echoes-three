@@ -1,0 +1,20 @@
+[
+  {
+    "type": "mousemove",
+    "x": 900,
+    "y": 400
+  },
+  {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 40
+  },
+  {
+    "type": "wait",
+    "ms": 55
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const h=window.__echoes.hud;const n=h.pinAnimations(85);return {pinned:n,nudges:h.nudges(),anims:h.animations()};})()"
+  }
+]

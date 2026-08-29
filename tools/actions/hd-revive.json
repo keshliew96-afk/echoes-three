@@ -1,0 +1,14 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;const p=E.state().party;const a=p.find(q=>q.partyIndex===3);E.cmd('setHp',a.id,0);return a.id;})()"
+  },
+  {
+    "type": "wait",
+    "ms": 2600
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{return window.__echoes.hud.portraits();})()"
+  }
+]

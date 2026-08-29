@@ -1,0 +1,37 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;E.cmd('startRoom','kill_all');E.cmd('teleport',3.2,-4.6);return 1;})()"
+  },
+  {
+    "type": "mousemove",
+    "x": 400,
+    "y": 200
+  },
+  {
+    "type": "wait",
+    "ms": 700
+  },
+  {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 50
+  },
+  {
+    "type": "wait",
+    "ms": 150
+  },
+  {
+    "type": "key",
+    "key": "Space",
+    "ms": 40
+  },
+  {
+    "type": "wait",
+    "ms": 500
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const h=window.__echoes.hud;const m=h.metrics();const s=h.slots();return {m,boxes:s.map(x=>({k:x.key,key:x.keyBox,ab:x.abbrevBox,nb:x.numBox,c:x.counting}))};})()"
+  }
+]

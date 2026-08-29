@@ -1,0 +1,46 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{window.__echoes.cmd('startRoom','kill_all');return 1;})()"
+  },
+  {
+    "type": "mousemove",
+    "x": 900,
+    "y": 400
+  },
+  {
+    "type": "wait",
+    "ms": 2500
+  },
+  {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 60
+  },
+  {
+    "type": "wait",
+    "ms": 200
+  },
+  {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 60
+  },
+  {
+    "type": "wait",
+    "ms": 150
+  },
+  {
+    "type": "key",
+    "key": "Space",
+    "ms": 60
+  },
+  {
+    "type": "wait",
+    "ms": 520
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const h=window.__echoes.hud;return {metrics:h.metrics(),banner:h.banner(),slots:h.slots().map(s=>({k:s.key,a:s.abbrev,c:s.counting,n:s.numeral,deg:s.wipeDeg,key:s.keyBox,ab:s.abbrevBox,nb:s.numBox}))};})()"
+  }
+]

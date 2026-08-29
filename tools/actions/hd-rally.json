@@ -1,0 +1,24 @@
+[
+  {
+    "type": "mousemove",
+    "x": 900,
+    "y": 400
+  },
+  {
+    "type": "wait",
+    "ms": 300
+  },
+  {
+    "type": "key",
+    "key": "KeyR",
+    "ms": 40
+  },
+  {
+    "type": "wait",
+    "ms": 120
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const h=window.__echoes.hud;const n=h.pinAnimations(150);return {pinned:n,nudges:h.nudges(),anims:h.animations()};})()"
+  }
+]

@@ -1,0 +1,6 @@
+[
+  {
+    "type": "eval",
+    "code": "(async()=>{const E=window.__echoes;const B=()=>E.hud.banner();const raf=()=>new Promise(r=>requestAnimationFrame(r));\n const t0=performance.now();E.cmd('startRoom','kill_all');let inStart=null,inEnd=null;while(performance.now()-t0<1500){const o=B().opacity;if(inStart===null&&o>0.01)inStart=performance.now()-t0;if(o>0.995){inEnd=performance.now()-t0;break;}await raf();}\n await new Promise(r=>setTimeout(r,300));\n const t1=performance.now();E.cmd('killAllEnemies');E.cmd('clearRoom');let outStart=null,outEnd=null;while(performance.now()-t1<1500){const o=B().opacity;if(outStart===null&&o<0.995)outStart=performance.now()-t1;if(o<0.005){outEnd=performance.now()-t1;break;}await raf();}\n return {transition:B().transition,fadeInFirstMoveMs:Math.round(inStart),fadeInDoneMs:Math.round(inEnd),fadeOutFirstMoveMs:Math.round(outStart),fadeOutDoneMs:Math.round(outEnd)};})()"
+  }
+]

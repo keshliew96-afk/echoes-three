@@ -1,0 +1,53 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{window.__echoes.cmd('startRoom','kill_all');return 1;})()"
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;E.cmd('teleport',3.2,-4.6);E.cmd('placeAlly',1,2.2,-2.9);E.cmd('placeAlly',2,4.2,-2.9);E.cmd('placeAlly',3,3.2,-1.9);return 'p';})()"
+  },
+  {
+    "type": "mousemove",
+    "x": 900,
+    "y": 300
+  },
+  {
+    "type": "wait",
+    "ms": 900
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;E.cmd('teleport',3.2,-4.6);E.cmd('placeAlly',1,2.2,-2.9);E.cmd('placeAlly',2,4.2,-2.9);E.cmd('placeAlly',3,3.2,-1.9);return 'p';})()"
+  },
+  {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 50
+  },
+  {
+    "type": "wait",
+    "ms": 200
+  },
+  {
+    "type": "key",
+    "key": "Space",
+    "ms": 40
+  },
+  {
+    "type": "wait",
+    "ms": 500
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;E.cmd('teleport',3.2,-4.6);E.cmd('placeAlly',1,2.2,-2.9);E.cmd('placeAlly',2,4.2,-2.9);E.cmd('placeAlly',3,3.2,-1.9);return 'p';})()"
+  },
+  {
+    "type": "wait",
+    "ms": 120
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const h=window.__echoes.hud;return {metrics:h.metrics(),fps:window.__echoes.fps};})()"
+  }
+]

@@ -24,7 +24,7 @@ import { createGrayboxScene } from './scenes/graybox.js';
 import { createCharTestScene } from './scenes/chartest.js';
 import { createArenaScene } from './scenes/arena.js';
 import { createDebugOverlay } from './ui/debug.js';
-import { createProtoHud } from './ui/protohud.js';
+import { createHud } from './ui/hud/index.js';
 import { createClock } from './core/clock.js';
 import { createGameplayRng, createCosmeticRng } from './core/rng.js';
 import { createRegistry } from './core/registry.js';
@@ -146,17 +146,14 @@ const allyfx =
     ? createAllyLayer({ stage, world, bus, cosmetic, scene: activeScene })
     : null;
 
-// Proto command bar (4 skill slots + dodge cooldown radial + §17 denial
-// nudges) rides with the playable scenes only, so simtest/rendertest/chartest
-// captures stay unchanged.
+// Combat HUD (§17): Zone-1 command bar (4 model-rendered party portraits with
+// the full state machine + 4 skill slots + dodge, one cooldown grammar, §17
+// denial nudges), Zone-2 contextual room banner, and the world-anchored
+// off-screen threat pointers. Rides with the playable scenes only, so
+// simtest/rendertest/chartest captures stay unchanged.
 const hud =
   sceneKey === 'graybox' || sceneKey === 'arena'
-    ? createProtoHud(bus, {
-        dodgeRemaining: () => Math.max(0, world.player.dodgeReadyTick - clock.tick),
-        skillSlots: () => world.skillSlots(),
-        // Party portraits for the §8 F1–F4 override mark (skills block).
-        party: () => world.entities().filter((e) => e.partyIndex !== undefined),
-      })
+    ? createHud({ bus, world, stage, cosmetic })
     : null;
 
 // Socket screen (nodes block, §15/§16): the between-rooms build workbench
@@ -256,7 +253,7 @@ stage.renderer.setAnimationLoop((now) => {
   stage.render();
   overlay.update();
   runUi?.update();
-  hud?.update();
+  hud?.update(now);
 
   frameTimes.push(frameMs);
   if (frameTimes.length > FRAME_WINDOW) frameTimes.shift();
@@ -271,6 +268,9 @@ stage.renderer.setAnimationLoop((now) => {
 // --- Debug API (docs/TESTING.md). cmd surface grows as systems land.
 window.__echoes = {
   version: VERSION,
+  // HUD probe surface (§17 block): portrait states, cooldown boxes, zone
+  // metrics, banner mode and the off-screen threat audit.
+  hud: hud ? hud.debug : null,
   // Run meta-screen probe surface (run block): active screen, door glyphs,
   // card/plaque boxes, fresh-press key sets.
   runUi: runUi ? runUi.debug : null,

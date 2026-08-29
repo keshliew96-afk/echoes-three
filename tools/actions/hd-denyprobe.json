@@ -1,0 +1,43 @@
+[
+  {
+    "type": "mousemove",
+    "x": 900,
+    "y": 400
+  },
+  {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 40
+  },
+  {
+    "type": "wait",
+    "ms": 400
+  },
+  {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 40
+  },
+  {
+    "type": "wait",
+    "ms": 150
+  },
+  {
+    "type": "key",
+    "key": "Space",
+    "ms": 30
+  },
+  {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 30
+  },
+  {
+    "type": "wait",
+    "ms": 200
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{return window.__echoes.events.filter(e=>e.type==='intent_denied'||e.type==='skill_cast'||e.type==='dodge').slice(-12);})()"
+  }
+]

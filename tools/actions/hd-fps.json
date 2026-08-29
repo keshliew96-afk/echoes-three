@@ -1,0 +1,27 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;E.cmd('startRoom','kill_all');E.cmd('teleport',0,0);return 1;})()"
+  },
+  {
+    "type": "mousemove",
+    "x": 900,
+    "y": 300
+  },
+  {
+    "type": "mousedown",
+    "button": "right"
+  },
+  {
+    "type": "wait",
+    "ms": 1500
+  },
+  {
+    "type": "eval",
+    "code": "(async()=>{const E=window.__echoes;const s=[];for(let i=0;i<16;i++){await new Promise(r=>setTimeout(r,450));s.push({fps:E.fps,ents:E.entityCount,markers:E.hud.markers().length});}const f=s.map(x=>x.fps);return {samples:s,min:Math.min(...f),mean:Math.round(f.reduce((a,b)=>a+b,0)/f.length*10)/10,maxEnts:Math.max(...s.map(x=>x.ents)),maxMarkers:Math.max(...s.map(x=>x.markers))};})()"
+  },
+  {
+    "type": "mouseup",
+    "button": "right"
+  }
+]
