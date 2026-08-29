@@ -1,0 +1,14 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);__echoes.cmd('placeAlly',3,2.0,0);__echoes.cmd('placeAlly',1,2.6,0.4);__echoes.cmd('placeAlly',2,1.0,1.5);const p=__echoes.state().party;__echoes.cmd('setHp',p[3].id,0);return 'archer-down';})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<900;i++){const ch=__echoes.cmd('allyState').channels[0];if(ch&&ch.progress>110)return JSON.stringify({tick:__echoes.tick,ch});await new Promise(r=>setTimeout(r,16));}return 'timeout';})()"},
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',-4,3);window.__lg=setInterval(()=>{const v=__echoes.cmd('allyState');console.log('CK '+JSON.stringify({t:__echoes.tick,ch:v.channels,st:v.allies.map(a=>a.state)}));},100);return 'moved';})()"},
+  {"type":"wait","ms":150},
+  {"type":"key","key":"KeyR","ms":60},
+  {"type":"wait","ms":3000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__lg);return JSON.stringify(__echoes.events.filter(e=>['revive_break','revive_drain_end','rally','ally_regroup','revive_start'].includes(e.type)).slice(-10));})()"},
+  {"type":"eval","code":"(()=>{const p=__echoes.state().party;__echoes.cmd('setHp',p[0].id,0);return JSON.stringify({stage:'player-down-then-rally'});})()"},
+  {"type":"wait","ms":400},
+  {"type":"key","key":"KeyR","ms":60},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{return JSON.stringify(__echoes.events.filter(e=>e.type==='intent_denied').slice(-3));})()"}
+]

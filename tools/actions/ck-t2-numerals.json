@@ -1,0 +1,4 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);const p=__echoes.state().party[0];__echoes.cmd('iframe',p.id,7200);window.__b=__echoes.cmd('spawn','boar',1.0,0.3);__echoes.cmd('iframe',window.__b,7200);window.__log=[];__echoes.on('hit',e=>{setTimeout(()=>{const els=[...document.querySelectorAll('.dmg-num')].filter(el=>el.style.visibility==='visible');window.__log.push({victim:e.kind,amount:e.amount,target:e.target,nums:els.map(el=>[el.textContent,el.style.color])});},0);});return 'armed';})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<3000;i++){if(window.__log.length>=2)return JSON.stringify(window.__log.slice(0,2));await new Promise(r=>setTimeout(r,4));}return JSON.stringify({timeout:true,log:window.__log});})()"}
+]

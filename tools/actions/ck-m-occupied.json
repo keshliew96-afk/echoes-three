@@ -1,0 +1,12 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);__echoes.cmd('placeAlly',3,2.0,0);__echoes.cmd('placeAlly',1,2.6,0.4);__echoes.cmd('placeAlly',2,-6,6);const p=__echoes.state().party;__echoes.cmd('setHp',p[3].id,0);return JSON.stringify(p.map(x=>[x.id,x.hp,x.x,x.z]));})()"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'ai-channel',ch:v.channels,st:v.allies.map(a=>a.state)});})()"},
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',1.6,0);return 'player-adjacent';})()"},
+  {"type":"keydown","key":"KeyE"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'player-holds-E',ch:v.channels,denials:__echoes.events.filter(e=>e.type==='intent_denied').slice(-3),preempt:__echoes.events.filter(e=>e.type==='rescue_preempt').slice(-2)});})()"},
+  {"type":"keyup","key":"KeyE"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{return JSON.stringify({allEvents:__echoes.events.filter(e=>['revive_start','revive_break','intent_denied','ally_rescue','rescue_preempt'].includes(e.type)).slice(-10)});})()"}
+]

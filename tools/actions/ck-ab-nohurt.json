@@ -1,0 +1,4 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,2.2);window.__b=__echoes.cmd('spawn','boar',0,-1.2);__echoes.cmd('iframe',window.__b,9000);window.__log=[];__echoes.on('hit',e=>{if(e.kind==='ally')window.__log.push(e);});return 'armed';})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<3000;i++){if(window.__log.length)break;await new Promise(r=>setTimeout(r,4));}await new Promise(r=>setTimeout(r,420));return JSON.stringify({tick:__echoes.tick,allies:__echoes.cmd('allyState').allies.map(a=>[a.id,a.x,a.z])});})()"}
+]

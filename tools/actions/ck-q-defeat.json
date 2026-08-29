@@ -1,0 +1,16 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);return 'ok';})()"},
+  {"type":"eval","code":"(()=>{const p=__echoes.state().party;const t0=__echoes.tick;for(const a of p.slice(1))__echoes.cmd('setHp',a.id,0);return JSON.stringify({t0,threeDown:__echoes.state().party.map(x=>[x.id,x.hp])});})()"},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"(()=>{return JSON.stringify({defeatAfter3:__echoes.events.filter(e=>e.type==='defeat').length,state:__echoes.cmd('reviveState').defeated});})()"},
+  {"type":"eval","code":"(()=>{const p=__echoes.state().party;const t0=__echoes.tick;__echoes.cmd('setHp',p[0].id,0);const t1=__echoes.tick;return JSON.stringify({tickAtKill:t0,tickAfterCmd:t1,party:__echoes.state().party.map(x=>[x.id,x.hp])});})()"},
+  {"type":"wait","ms":250},
+  {"type":"eval","code":"(()=>{return JSON.stringify({defeat:__echoes.events.filter(e=>e.type==='defeat'),tickNow:__echoes.tick});})()"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"(()=>{return JSON.stringify({defeatCount:__echoes.events.filter(e=>e.type==='defeat').length,channels:__echoes.cmd('reviveState').channels,party:__echoes.state().party.map(x=>[x.id,x.hp,x.downed])});})()"},
+  {"type":"eval","code":"(()=>{const p=__echoes.state().party;__echoes.cmd('setHp',p[0].id,0.5);return 'player-back-up';})()"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{const t0=__echoes.tick;const r=__echoes.cmd('downAll');return JSON.stringify({t0,r});})()"},
+  {"type":"wait","ms":250},
+  {"type":"eval","code":"(()=>{const d=__echoes.events.filter(e=>e.type==='defeat');return JSON.stringify({allDefeats:d.map(e=>e.tick),last:d[d.length-1],tickNow:__echoes.tick});})()"}
+]

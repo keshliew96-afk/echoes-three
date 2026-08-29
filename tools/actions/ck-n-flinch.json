@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);__echoes.cmd('reviveFlinchBreak',true);const p=__echoes.state().party;window.__pid=p[0].id;__echoes.cmd('setHp',window.__pid,0);return JSON.stringify({flinch:__echoes.cmd('reviveFlinchBreak',true)});})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<900;i++){const ch=__echoes.cmd('allyState').channels[0];if(ch&&ch.progress>70)return JSON.stringify({tick:__echoes.tick,ch,reviverPos:__echoes.cmd('allyState').allies.filter(a=>a.reviveTarget!==null).map(a=>[a.id,a.x,a.z])});await new Promise(r=>setTimeout(r,16));}return 'timeout';})()"},
+  {"type":"eval","code":"(()=>{const rv=__echoes.cmd('allyState').allies.find(a=>a.reviveTarget!==null);window.__b=__echoes.cmd('spawn','boar',rv.x+0.45,rv.z+0.15);window.__lg=setInterval(()=>{const v=__echoes.cmd('allyState');console.log('CK '+JSON.stringify({t:__echoes.tick,ch:v.channels}));},100);return JSON.stringify({boar:window.__b,rv});})()"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__lg);return JSON.stringify(__echoes.events.filter(e=>['revive_break','revive_start','hit','enemy_hit'].includes(e.type)).slice(-8));})()"}
+]

@@ -1,0 +1,20 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);window.__ids=[__echoes.cmd('spawn','dummy',1.5,0),__echoes.cmd('spawn','dummy',-2,1)];for(const i of window.__ids)__echoes.cmd('iframe',i,9000);return 'ok';})()"},
+  {"type":"wait","ms":1200},
+  {"type":"key","key":"KeyR","ms":20},{"type":"key","key":"KeyR","ms":20},{"type":"key","key":"KeyR","ms":20},{"type":"key","key":"KeyR","ms":20},{"type":"key","key":"KeyR","ms":20},{"type":"key","key":"KeyR","ms":20},{"type":"key","key":"KeyR","ms":20},{"type":"key","key":"KeyR","ms":20},
+  {"type":"key","key":"Tab","ms":20},{"type":"key","key":"Tab","ms":20},{"type":"key","key":"Tab","ms":20},{"type":"key","key":"Tab","ms":20},{"type":"key","key":"Tab","ms":20},{"type":"key","key":"Tab","ms":20},
+  {"type":"key","key":"KeyE","ms":20},{"type":"key","key":"KeyE","ms":20},{"type":"key","key":"KeyE","ms":20},{"type":"key","key":"KeyE","ms":20},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');const E=__echoes.events;return JSON.stringify({rallies:E.filter(e=>e.type==='rally').length,marks:E.filter(e=>e.type==='mark').map(e=>e.id),denials:E.filter(e=>e.type==='intent_denied').map(e=>e.reason),st:v.allies.map(a=>a.state),tg:v.allies.map(a=>a.target),mark:v.mark,ch:v.channels});})()"},
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);const p=__echoes.state().party;__echoes.cmd('setHp',p[1].id,0);__echoes.cmd('placeAlly',1,0.58,0);__echoes.cmd('placeAlly',2,-8,7);__echoes.cmd('placeAlly',3,8,-7);__echoes.cmd('setHp',p[2].id,0);__echoes.cmd('setHp',p[3].id,0);return JSON.stringify({dist:0.58});})()"},
+  {"type":"keydown","key":"KeyE"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"(()=>{return JSON.stringify({at058:__echoes.cmd('allyState').channels});})()"},
+  {"type":"keyup","key":"KeyE"},
+  {"type":"eval","code":"(()=>{__echoes.cmd('placeAlly',1,0.68,0);return 'moved-to-0.68';})()"},
+  {"type":"wait","ms":300},
+  {"type":"keydown","key":"KeyE"},
+  {"type":"wait","ms":700},
+  {"type":"eval","code":"(()=>{return JSON.stringify({at068:__echoes.cmd('allyState').channels,denials:__echoes.events.filter(e=>e.type==='intent_denied').slice(-3)});})()"},
+  {"type":"keyup","key":"KeyE"}
+]

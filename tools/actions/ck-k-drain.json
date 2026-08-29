@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);const p=__echoes.state().party;for(const a of p.slice(1))__echoes.cmd('setHp',a.id,0);__echoes.cmd('placeAlly',1,0.42,0);__echoes.cmd('placeAlly',2,-5,5);__echoes.cmd('placeAlly',3,5,-5);return 'setup';})()"},
+  {"type":"wait","ms":300},
+  {"type":"keydown","key":"KeyE"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<600;i++){const ch=__echoes.cmd('allyState').channels[0];if(ch&&ch.pct>=0.62)return JSON.stringify({tick:__echoes.tick,ch});await new Promise(r=>setTimeout(r,16));}return 'timeout';})()"},
+  {"type":"keyup","key":"KeyE"},
+  {"type":"eval","code":"(()=>{window.__lg=setInterval(()=>{const v=__echoes.cmd('allyState');console.log('CK '+JSON.stringify({t:__echoes.tick,ch:v.channels}));},120);return JSON.stringify({brk:__echoes.events.filter(e=>e.type==='revive_break').slice(-1)});})()"}
+]

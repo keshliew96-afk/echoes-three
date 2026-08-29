@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);window.__pid=__echoes.state().party[0].id;return window.__pid;})()"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"(()=>{__echoes.cmd('setHp',window.__pid,0);window.__lg=setInterval(()=>{const v=__echoes.cmd('allyState');console.log('CK '+JSON.stringify({t:__echoes.tick,ch:v.channels,hp:__echoes.state().party[0].hp}));},250);return 'downed';})()"},
+  {"type":"wait","ms":700}
+]

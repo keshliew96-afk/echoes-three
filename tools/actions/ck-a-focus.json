@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"window.__ck={s:[]};window.__ckT=setInterval(()=>{const v=__echoes.cmd('allyState');window.__ck.s.push({t:__echoes.tick,mark:v.mark,tg:v.allies.map(a=>a.target),st:v.allies.map(a=>a.state),d:v.allies.map(a=>a.anchorDist)});},50);'sampler-on'"},
+  {"type":"wait","ms":16000},
+  {"type":"eval","code":"clearInterval(window.__ckT);const S=window.__ck.s;const live=S.filter(r=>r.tg.every(x=>x!==null));const same=live.filter(r=>r.tg[0]===r.tg[1]&&r.tg[1]===r.tg[2]);const maxd=[0,1,2].map(i=>Math.max(...S.map(r=>r.d[i])));const over=S.filter(r=>r.d.some(x=>x>3.4)).length;JSON.stringify({samples:S.length,liveTgt:live.length,sameTgt:same.length,sameFrac:+(same.length/Math.max(1,live.length)).toFixed(3),maxAnchorDist:maxd,samplesOver3_4:over,distinctTargets:[...new Set(live.flatMap(r=>r.tg))].length})"},
+  {"type":"eval","code":"JSON.stringify(window.__ck.s.filter((r,i)=>i%20===0).slice(0,16))"},
+  {"type":"eval","code":"JSON.stringify(__echoes.events.filter(e=>['ally_attack','ally_skill','ally_target','wave_start','spawn'].includes(e.type)).slice(-12))"}
+]

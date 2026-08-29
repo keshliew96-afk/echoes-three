@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);__echoes.cmd('placeAlly',1,0.8,0);const p=__echoes.state().party;__echoes.cmd('setHp',p[0].id,0);return JSON.stringify({tickNow:__echoes.tick});})()"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{return JSON.stringify({tickNow:__echoes.tick,tail:__echoes.events.slice(-8).map(e=>[e.tick,e.type])});})()"}
+]

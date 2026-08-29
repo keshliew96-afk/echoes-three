@@ -1,0 +1,4 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,3.0);const p=__echoes.state().party;__echoes.cmd('setHp',p[2].id,0);__echoes.cmd('setHp',p[3].id,0);__echoes.cmd('placeAlly',2,-6,7);__echoes.cmd('placeAlly',3,6,7);__echoes.cmd('placeAlly',1,0,0.2);window.__b=__echoes.cmd('spawn','boar',0,-0.6);window.__im=__echoes.on('hit',e=>{if(e.target===window.__b)__echoes.cmd('setHp',e.target,1);});return 'ok';})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<2000;i++){const e=__echoes.events.filter(x=>x.type==='hit'&&x.kind==='ally');if(e.length)return JSON.stringify({hit:e[e.length-1],tick:__echoes.tick,ally:__echoes.cmd('allyState').allies[0]});await new Promise(r=>setTimeout(r,4));}return 'timeout';})()"}
+]

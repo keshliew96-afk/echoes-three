@@ -1,0 +1,14 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);window.__pid=__echoes.state().party[0].id;return window.__pid;})()"},
+  {"type":"wait","ms":800},
+  {"type":"eval","code":"(()=>{const t=__echoes.tick;__echoes.cmd('setHp',window.__pid,0);return JSON.stringify({downTick:t,party:__echoes.state().party.map(p=>[p.id,p.hp,p.downed])});})()"},
+  {"type":"wait","ms":120},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'t+120ms',tick:__echoes.tick,st:v.allies.map(a=>a.state),rev:v.allies.map(a=>a.reviveTarget),ch:v.channels,ev:__echoes.events.filter(e=>['downed','ally_rescue','revive_start'].includes(e.type)).slice(-4)});})()"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');const p=__echoes.state().party;return JSON.stringify({stage:'t+1.6s',tick:__echoes.tick,ch:v.channels,st:v.allies.map(a=>a.state),reviverPos:v.allies.map(a=>[a.x,a.z]),bodyPos:[p[0].x,p[0].z]});})()"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'t+3.6s',ch:v.channels});})()"},
+  {"type":"wait","ms":2200},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');const p=__echoes.state().party[0];return JSON.stringify({stage:'t+5.8s',ch:v.channels,playerHp:p.hp,downed:p.downed,ev:__echoes.events.filter(e=>e.type==='revive').slice(-2)});})()"},
+  {"type":"eval","code":"(()=>{return JSON.stringify(__echoes.events.filter(e=>['revive_start','revive','ally_rescue','downed'].includes(e.type)).slice(-8));})()"}
+]

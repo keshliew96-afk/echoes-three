@@ -1,0 +1,4 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);window.__pid=__echoes.state().party[0].id;__echoes.cmd('setHp',window.__pid,0);return 'downed';})()"},
+  {"type":"eval","code":"(async()=>{const want=25/100;for(let i=0;i<600;i++){const ch=__echoes.cmd('allyState').channels[0];if(ch&&ch.pct>=want)return JSON.stringify({tick:__echoes.tick,ch});await new Promise(r=>setTimeout(r,16));}return 'timeout';})()"}
+]

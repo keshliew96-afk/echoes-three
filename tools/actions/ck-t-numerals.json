@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);window.__log=[];__echoes.on('hit',e=>{const tag=e.kind;setTimeout(()=>{const els=[...document.querySelectorAll('.dmg-num')].filter(el=>el.style.visibility==='visible');window.__log.push({victim:tag,amount:e.amount,nums:els.map(el=>[el.textContent,el.style.color])});},0);});return 'hooked';})()"},
+  {"type":"eval","code":"(()=>{const p=__echoes.state().party[0];__echoes.cmd('hitOnce',p.id);return 'player-hit';})()"},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"(()=>{return JSON.stringify({playerHit:window.__log.slice(-1)});})()"},
+  {"type":"eval","code":"(()=>{window.__log=[];window.__bs=[__echoes.cmd('spawn','boar',1.2,0.4)];__echoes.on('hit',e=>{if(window.__bs.includes(e.target))__echoes.cmd('setHp',e.target,1);});return 'boar';})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<2000;i++){const a=window.__log.filter(r=>r.victim==='ally');if(a.length)return JSON.stringify({allyHit:a.slice(0,2)});await new Promise(r=>setTimeout(r,4));}return 'timeout';})()"}
+]

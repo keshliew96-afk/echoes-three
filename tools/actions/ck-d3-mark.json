@@ -1,0 +1,16 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"eval","code":"(()=>{window.__ids=[__echoes.cmd('spawn','dummy',1.6,0),__echoes.cmd('spawn','dummy',2.6,1.2)];window.__frz=setInterval(()=>{for(const i of window.__ids)__echoes.cmd('iframe',i,120);},400);return JSON.stringify(window.__ids);})()"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');const en=__echoes.state().enemies.map(e=>({id:e.id,x:e.x,z:e.z,d:+Math.hypot(e.x,e.z).toFixed(2)}));return JSON.stringify({stage:'nomark',mark:v.mark,tg:v.allies.map(a=>a.target),en});})()"},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":700},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'tab1',mark:v.mark,tg:v.allies.map(a=>a.target),d:v.allies.map(a=>a.anchorDist)});})()"},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');const en=__echoes.state().enemies.map(e=>({id:e.id,x:e.x,z:e.z,d:+Math.hypot(e.x,e.z).toFixed(2)}));return JSON.stringify({stage:'tab2',mark:v.mark,tg:v.allies.map(a=>a.target),d:v.allies.map(a=>a.anchorDist),en});})()"},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({live:[0,1,2].map(i=>v.allies[i].target===v.mark)});})()"},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'tab3-wrap',mark:v.mark,tg:v.allies.map(a=>a.target),allOnMark:v.allies.every(a=>a.target===v.mark)});})()"}
+]

@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);return 'ok';})()"},
+  {"type":"eval","code":"(async()=>{const out=[];const p=__echoes.state().party;const tid=p[1].id;for(let k=0;k<4;k++){__echoes.cmd('setHp',tid,0);let done=null;for(let i=0;i<800;i++){const evs=__echoes.events.filter(e=>e.type==='revive'&&e.target===tid);if(evs.length>k){done=evs[evs.length-1];break;}await new Promise(r=>setTimeout(r,16));}out.push(done?{n:k,pct:done.pct,hp:done.hp,repeat:done.repeat,free:done.free,tick:done.tick}:{n:k,fail:true});await new Promise(r=>setTimeout(r,300));}return JSON.stringify(out);})()"},
+  {"type":"eval","code":"(()=>{return JSON.stringify({repeats:__echoes.cmd('reviveState').repeats});})()"},
+  {"type":"eval","code":"(()=>{__echoes.cmd('roomBoundary');return JSON.stringify({afterBoundary:__echoes.cmd('reviveState').repeats});})()"},
+  {"type":"eval","code":"(async()=>{const p=__echoes.state().party;const tid=p[1].id;__echoes.cmd('setHp',tid,0);let done=null;for(let i=0;i<800;i++){const evs=__echoes.events.filter(e=>e.type==='revive'&&e.target===tid);if(evs.length){done=evs[evs.length-1];if(done.tick>__echoes.tick-900&&done.repeat===0)break;}await new Promise(r=>setTimeout(r,16));}return JSON.stringify({afterBoundaryRevive:done});})()"}
+]

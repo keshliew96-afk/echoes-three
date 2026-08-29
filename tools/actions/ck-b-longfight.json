@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"eval","code":"window.__sp=setInterval(()=>{const st=__echoes.state();const n=st.enemies.length;if(n<4){for(let i=0;i<3;i++){const a=Math.random()*6.283,r=5+Math.random()*3;__echoes.cmd('spawn','boar',Math.cos(a)*r,Math.sin(a)*r);}}},1200);'spawner-on'"},
+  {"type":"eval","code":"window.__ck={s:[]};window.__ckT=setInterval(()=>{const v=__echoes.cmd('allyState');const st=__echoes.state();window.__ck.s.push({t:__echoes.tick,tg:v.allies.map(a=>a.target),st:v.allies.map(a=>a.state),d:v.allies.map(a=>a.anchorDist),ne:st.enemies.length});},50);'sampler-on'"},
+  {"type":"wait","ms":24000},
+  {"type":"eval","code":"clearInterval(window.__ckT);clearInterval(window.__sp);const S=window.__ck.s;const live=S.filter(r=>r.tg.every(x=>x!==null));const same=live.filter(r=>r.tg[0]===r.tg[1]&&r.tg[1]===r.tg[2]);const maxd=[0,1,2].map(i=>Math.max(...S.map(r=>r.d[i])));const over=S.filter(r=>r.d.some(x=>x>3.4)).length;const worst=Math.max(...S.map(r=>Math.max(...r.d)));const states=[...new Set(S.flatMap(r=>r.st))];JSON.stringify({samples:S.length,liveTgt:live.length,sameFrac:+(same.length/Math.max(1,live.length)).toFixed(3),maxAnchorDist:maxd,worst:+worst.toFixed(2),samplesOver3_4:over,states,enemiesSeen:[...new Set(S.map(r=>r.ne))]})"},
+  {"type":"eval","code":"const E=__echoes.events;const casts={};for(const e of E)if(e.type==='ally_cast'){casts[e.skill]=casts[e.skill]||{n:0,ex:e};casts[e.skill].n++;}JSON.stringify(Object.entries(casts).map(([k,v])=>({skill:k,n:v.n,ex:v.ex})))"},
+  {"type":"eval","code":"JSON.stringify(__echoes.events.filter(e=>e.type==='ally_basic').slice(-4))"}
+]

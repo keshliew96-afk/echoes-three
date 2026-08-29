@@ -1,0 +1,12 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);return 'ok';})()"},
+  {"type":"wait","ms":3000},
+  {"type":"eval","code":"(()=>{window.__I=[];window.__it=setInterval(()=>window.__I.push(__echoes.fps),250);return 'idle armed';})()"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__it);const f=window.__I;const s=f.slice().sort((a,b)=>a-b);return JSON.stringify({idle:{n:f.length,min:s[0],median:s[Math.floor(s.length/2)],mean:+(f.reduce((a,b)=>a+b,0)/f.length).toFixed(1)}});})()"},
+  {"type":"eval","code":"(()=>{[[3.2,1.0],[-3.0,1.2],[2.6,-2.2],[-2.4,-2.4],[1.2,3.0],[-1.4,3.0]].forEach((p,i)=>__echoes.cmd('spawn',i%2?'mantis':'boar',p[0],p[1]));window.__im=__echoes.on('hit',e=>{__echoes.cmd('setHp',e.target,1)});return 'six immortal enemies';})()"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"(()=>{window.__F=[];window.__ft=setInterval(()=>window.__F.push(__echoes.fps),250);return 'fight armed';})()"},
+  {"type":"wait","ms":16000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__ft);const f=window.__F.slice();const s=f.slice().sort((a,b)=>a-b);const st=__echoes.state();return JSON.stringify({fight:{n:f.length,min:s[0],p5:s[Math.floor(s.length*0.05)],median:s[Math.floor(s.length/2)],mean:+(f.reduce((a,b)=>a+b,0)/f.length).toFixed(1),max:s[s.length-1]},enemies:st.enemies.length,ents:__echoes.entityCount,allies:st.party_ai.allies.map(a=>[a.state,a.hp])});})()"}
+]

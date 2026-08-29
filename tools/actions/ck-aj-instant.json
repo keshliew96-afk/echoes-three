@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);window.__d=[__echoes.cmd('spawn','dummy',1.4,0),__echoes.cmd('spawn','dummy',-1.4,0.5)];for(const i of window.__d)__echoes.cmd('iframe',i,9000);return 'ok';})()"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"(async()=>{const before=__echoes.cmd('allyState');const t0=__echoes.tick;__echoes.cmd('rally');let t1=null,n=0;for(let i=0;i<600;i++){const v=__echoes.cmd('allyState');if(v.allies.every(a=>a.state==='rally'&&a.target===null)){t1=__echoes.tick;break;}await new Promise(r=>requestAnimationFrame(r));n++;}return JSON.stringify({beforeStates:before.allies.map(a=>[a.state,a.target]),t0,t1,deltaTicks:t1-t0,frames:n});})()"}
+]

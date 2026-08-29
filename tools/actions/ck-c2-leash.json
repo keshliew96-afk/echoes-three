@@ -1,0 +1,12 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',-6,0)"},
+  {"type":"eval","code":"__echoes.cmd('spawn','dummy',6,0)"},
+  {"type":"wait","ms":5000},
+  {"type":"eval","code":"(()=>{window.__ck={s:[]};window.__ckT=setInterval(()=>{const v=__echoes.cmd('allyState');const p=__echoes.state().party[0];window.__ck.s.push({t:__echoes.tick,px:+p.x.toFixed(2),pz:+p.z.toFixed(2),d:v.allies.map(a=>a.anchorDist),st:v.allies.map(a=>a.state),tg:v.allies.map(a=>a.target)});},50);return 'on';})()"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"(()=>{const S=window.__ck.s;return JSON.stringify({phase:'parked-settled',samples:S.length,maxAnchorDist:[0,1,2].map(i=>Math.max(...S.map(r=>r.d[i]))),over:S.filter(r=>r.d.some(x=>x>3.41)).length,states:[...new Set(S.flatMap(r=>r.st))],last:S[S.length-1]});})()"},
+  {"type":"eval","code":"(()=>{window.__ck.s=[];__echoes.cmd('teleport',-11.5,-7);return 'moved';})()"},
+  {"type":"wait","ms":7000},
+  {"type":"eval","code":"(()=>{const S=window.__ck.s;const flips=[];let prev=null;for(const r of S){const k=r.st.join('|');if(k!==prev){flips.push({t:r.t,st:k,d:r.d});prev=k;}}return JSON.stringify({phase:'after-move',samples:S.length,stateFlips:flips.length,flips:flips.slice(0,16),maxAfterSettle:[0,1,2].map(i=>Math.max(...S.slice(60).map(r=>r.d[i]))),last:S[S.length-1]});})()"},
+  {"type":"eval","code":"(()=>{clearInterval(window.__ckT);return JSON.stringify(__echoes.events.filter(e=>e.type==='ally_regroup').slice(-8));})()"}
+]

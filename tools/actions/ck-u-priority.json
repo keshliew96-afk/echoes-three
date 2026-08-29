@@ -1,0 +1,14 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);__echoes.cmd('placeAlly',1,1.2,0);__echoes.cmd('placeAlly',2,-1.2,0);__echoes.cmd('placeAlly',3,0,1.2);const p=__echoes.state().party;__echoes.cmd('setHp',p[3].id,0);return 'archer-down';})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<900;i++){const ch=__echoes.cmd('allyState').channels[0];if(ch&&ch.progress>60)return JSON.stringify({tick:__echoes.tick,ch});await new Promise(r=>setTimeout(r,16));}return 'timeout';})()"},
+  {"type":"eval","code":"(()=>{const p=__echoes.state().party;const t0=__echoes.tick;__echoes.cmd('setHp',p[0].id,0);return JSON.stringify({t0});})()"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({ch:v.channels,st:v.allies.map(a=>[a.state,a.reviveTarget]),ev:__echoes.events.filter(e=>['rescue_preempt','revive_break','ally_rescue','revive_start'].includes(e.type)).slice(-6)});})()"},
+  {"type":"wait","ms":5500},
+  {"type":"eval","code":"(()=>{const p=__echoes.state().party;return JSON.stringify({party:p.map(x=>[x.id,x.hp,x.downed]),ev:__echoes.events.filter(e=>e.type==='revive').slice(-3)});})()"},
+  {"type":"wait","ms":6500},
+  {"type":"eval","code":"(()=>{const p=__echoes.state().party;return JSON.stringify({stage:'serial-done',party:p.map(x=>[x.id,x.hp,x.downed]),ev:__echoes.events.filter(e=>e.type==='revive').slice(-3)});})()"},
+  {"type":"eval","code":"(()=>{const p=__echoes.state().party;for(const a of p.slice(1))__echoes.cmd('setHp',a.id,0.2);__echoes.cmd('setHp',p[0].id,0);return JSON.stringify({stage:'all-allies-20pct',party:__echoes.state().party.map(x=>[x.id,x.hp])});})()"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'ineligible',ch:v.channels,st:v.allies.map(a=>[a.state,a.hp,a.reviveTarget]),playerDown:__echoes.state().party[0].hp});})()"}
+]

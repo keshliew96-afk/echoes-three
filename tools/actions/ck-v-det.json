@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":9000},
+  {"type":"eval","code":"(()=>{const E=__echoes.events.map(e=>e.tick+':'+e.type+':'+(e.id??e.target??e.skill??'')+':'+(e.amount??e.pct??''));const st=__echoes.state();return JSON.stringify({n:E.length,sig:E.join('|').slice(0,1400),draws:st.rngDraws,seed:st.seed,allies:st.party_ai.allies.map(a=>[a.x,a.z,a.hp,a.target])});})()"}
+]

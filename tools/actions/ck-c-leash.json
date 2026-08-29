@@ -1,0 +1,11 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',-6,0)"},
+  {"type":"eval","code":"__echoes.cmd('spawn','dummy',6,0)"},
+  {"type":"eval","code":"window.__ck={s:[]};window.__ckT=setInterval(()=>{const v=__echoes.cmd('allyState');const p=__echoes.state().party[0];window.__ck.s.push({t:__echoes.tick,px:+p.x.toFixed(2),pz:+p.z.toFixed(2),ax:v.allies.map(a=>a.x),az:v.allies.map(a=>a.z),d:v.allies.map(a=>a.anchorDist),st:v.allies.map(a=>a.state),tg:v.allies.map(a=>a.target)});},50);'on'"},
+  {"type":"wait","ms":9000},
+  {"type":"eval","code":"const S=window.__ck.s;const maxd=[0,1,2].map(i=>Math.max(...S.map(r=>r.d[i])));const last=S[S.length-1];JSON.stringify({phase:'parked',samples:S.length,maxAnchorDist:maxd,over:S.filter(r=>r.d.some(x=>x>3.41)).length,tailStates:[...new Set(S.slice(-40).flatMap(r=>r.st))],last,enemyAlive:__echoes.state().enemies.length})"},
+  {"type":"eval","code":"window.__ck.s=[];__echoes.cmd('teleport',-11,-6);'moved-player-away'"},
+  {"type":"wait","ms":7000},
+  {"type":"eval","code":"const S=window.__ck.s;const flips=[];let prev=null;for(const r of S){const k=r.st.join('|');if(k!==prev){flips.push({t:r.t,st:k,d:r.d});prev=k;}}JSON.stringify({phase:'after-move',samples:S.length,maxAnchorDist:[0,1,2].map(i=>Math.max(...S.map(r=>r.d[i]))),over:S.filter(r=>r.d.some(x=>x>3.41)).length,stateFlips:flips.length,flips:flips.slice(0,16),last:S[S.length-1]})"},
+  {"type":"eval","code":"clearInterval(window.__ckT);JSON.stringify(__echoes.events.filter(e=>e.type==='ally_regroup').slice(-6))"}
+]

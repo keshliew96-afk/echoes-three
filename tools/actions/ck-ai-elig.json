@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);__echoes.cmd('placeAlly',1,0.8,0);__echoes.cmd('placeAlly',2,2.4,1.2);__echoes.cmd('placeAlly',3,3.0,0.2);const p=__echoes.state().party;__echoes.cmd('setHp',p[1].id,0.25);__echoes.cmd('setHp',p[0].id,0);return JSON.stringify({tickNow:__echoes.tick});})()"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{return JSON.stringify({tickNow:__echoes.tick,nEvents:__echoes.events.length,tail:__echoes.events.slice(-6).map(e=>[e.tick,e.type,e.partyIndex??e.id??'']),st:__echoes.cmd('allyState').allies.map(a=>[a.partyIndex,a.hp,a.state])});})()"}
+]

@@ -1,0 +1,14 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);return JSON.stringify({room:__echoes.cmd('startRoom','kill_all')});})()"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{const p=__echoes.state().party;__echoes.cmd('setHp',p[2].id,0);__echoes.cmd('setHp',p[3].id,0);return JSON.stringify({downed:__echoes.state().party.map(x=>[x.id,x.hp])});})()"},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(()=>{__echoes.cmd('killAllEnemies');__echoes.cmd('clearRoom');return 'cleared';})()"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"(()=>{const p=__echoes.state().party;return JSON.stringify({afterClear:p.map(x=>[x.id,x.hp,x.downed]),revives:__echoes.events.filter(e=>e.type==='revive').slice(-4),repeats:__echoes.cmd('reviveState').repeats,mark:__echoes.cmd('allyState').mark});})()"},
+  {"type":"eval","code":"(()=>{return JSON.stringify({defend:__echoes.cmd('startRoom','defend')});})()"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');const st=__echoes.state();return JSON.stringify({anchor:v.anchor,leash:v.leash,room:st.room,allyAnchorDist:v.allies.map(a=>a.anchorDist),allyPos:v.allies.map(a=>[a.x,a.z])});})()"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({anchor:v.anchor,d:v.allies.map(a=>a.anchorDist),over:v.allies.filter(a=>a.anchorDist>3.41).length,st:v.allies.map(a=>a.state)});})()"}
+]

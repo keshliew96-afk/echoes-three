@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);return 'ok';})()"},
+  {"type":"wait","ms":800},
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',-4.5,3.5);__echoes.cmd('rally');return 'rallied';})()"},
+  {"type":"wait","ms":900}
+]

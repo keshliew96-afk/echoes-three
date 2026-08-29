@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);[[3.2,1.0],[-3.0,1.2],[2.6,-2.2],[-2.4,-2.4],[1.2,3.0],[-1.4,3.0]].forEach((p,i)=>__echoes.cmd('spawn',i%2?'mantis':'boar',p[0],p[1]));window.__im=__echoes.on('hit',e=>{__echoes.cmd('setHp',e.target,1)});return 'six immortal enemies';})()"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"(()=>{window.__F=[];window.__ft=setInterval(()=>window.__F.push(__echoes.fps),200);return 'armed';})()"},
+  {"type":"wait","ms":20000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__ft);const f=window.__F.slice();const s=f.slice().sort((a,b)=>a-b);const st=__echoes.state();return JSON.stringify({n:f.length,min:s[0],p5:s[Math.floor(s.length*0.05)],p10:s[Math.floor(s.length*0.1)],median:s[Math.floor(s.length/2)],mean:+(f.reduce((a,b)=>a+b,0)/f.length).toFixed(1),below55:f.filter(x=>x<55).length,below60:f.filter(x=>x<60).length,enemies:st.enemies.length,ents:__echoes.entityCount,samples:f});})()"}
+]

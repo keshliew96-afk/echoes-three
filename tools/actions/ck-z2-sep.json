@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);window.__bs=[];for(const p of [[5,2],[-5,2],[4,-4],[-4,-4],[0,6],[6,0]])window.__bs.push(__echoes.cmd('spawn','mantis',p[0],p[1]));window.__im=__echoes.on('hit',e=>{if(window.__bs.includes(e.target))__echoes.cmd('setHp',e.target,1);});return 'ok';})()"},
+  {"type":"eval","code":"(()=>{window.__ck={s:[]};window.__ckT=setInterval(()=>{const v=__echoes.cmd('allyState');const st=__echoes.state();const p=[st.party[0].x,st.party[0].z];window.__ck.s.push({t:__echoes.tick,dp:v.allies.map(a=>+Math.hypot(a.x-p[0],a.z-p[1]).toFixed(3))});},33);return 'on';})()"},
+  {"type":"wait","ms":16000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__ckT);const S=window.__ck.s;const mins=S.map(r=>Math.min(...r.dp));const s=mins.slice().sort((a,b)=>a-b);return JSON.stringify({samples:S.length,minEver:+s[0].toFixed(3),median:+s[Math.floor(s.length/2)].toFixed(3),under030:mins.filter(x=>x<0.3).length,under060:mins.filter(x=>x<0.6).length,pctUnder060:+(100*mins.filter(x=>x<0.6).length/mins.length).toFixed(1)});})()"}
+]

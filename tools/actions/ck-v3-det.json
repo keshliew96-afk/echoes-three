@@ -1,0 +1,4 @@
+[
+  {"type":"eval","code":"(()=>{window.__acc=new Map();window.__t=setInterval(()=>{for(const e of __echoes.events){const k=e.tick+':'+e.type+':'+(e.id??e.target??e.skill??e.index??'')+':'+(e.amount??e.pct??e.x??'');window.__acc.set(k,e.tick);}},40);return 'acc';})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<6000;i++){if(__echoes.tick>=900)break;await new Promise(r=>setTimeout(r,4));}clearInterval(window.__t);const keys=[...window.__acc.entries()].filter(([k,t])=>t<=800).map(([k])=>k).sort();return JSON.stringify({n:keys.length,sig:keys.join('|')});})()"}
+]

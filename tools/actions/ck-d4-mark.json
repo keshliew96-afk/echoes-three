@@ -1,0 +1,22 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"eval","code":"(()=>{window.__ids=[__echoes.cmd('spawn','dummy',1.6,0),__echoes.cmd('spawn','dummy',2.6,1.4),__echoes.cmd('spawn','dummy',-2.2,-1.6)];for(const i of window.__ids)__echoes.cmd('iframe',i,7200);return JSON.stringify(window.__ids);})()"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');const en=__echoes.state().enemies.map(e=>({id:e.id,x:e.x,z:e.z,d:+Math.hypot(e.x,e.z).toFixed(2)}));return JSON.stringify({stage:'nomark',mark:v.mark,tg:v.allies.map(a=>a.target),en});})()"},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":700},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'tab1',mark:v.mark,tg:v.allies.map(a=>a.target),allOnMark:v.allies.every(a=>a.target===v.mark),d:v.allies.map(a=>a.anchorDist)});})()"},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'tab2',mark:v.mark,tg:v.allies.map(a=>a.target),allOnMark:v.allies.every(a=>a.target===v.mark),d:v.allies.map(a=>a.anchorDist)});})()"},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'tab3',mark:v.mark,tg:v.allies.map(a=>a.target),allOnMark:v.allies.every(a=>a.target===v.mark),d:v.allies.map(a=>a.anchorDist)});})()"},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'tab4-wrap',mark:v.mark,tg:v.allies.map(a=>a.target),allOnMark:v.allies.every(a=>a.target===v.mark),marks:__echoes.events.filter(e=>e.type==='mark').map(e=>e.id)});})()"},
+  {"type":"eval","code":"(()=>{const t0=__echoes.tick;__echoes.cmd('mark',window.__ids[2]);const v=__echoes.cmd('allyState');return JSON.stringify({stage:'instant-switch',tick0:t0,mark:v.mark,tgSameTick:v.allies.map(a=>a.target)});})()"},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'switch+frames',tick:__echoes.tick,mark:v.mark,tg:v.allies.map(a=>a.target)});})()"},
+  {"type":"wait","ms":120},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'switch+120ms',tick:__echoes.tick,mark:v.mark,tg:v.allies.map(a=>a.target),allOnMark:v.allies.every(a=>a.target===v.mark)});})()"}
+]

@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);return 'ok';})()"},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',-10,5);__echoes.cmd('rally');window.__ck=[];window.__t=setInterval(()=>{const v=__echoes.cmd('allyState');window.__ck.push({t:__echoes.tick,p:v.allies.map(a=>[a.x,a.z]),st:v.allies.map(a=>a.state)});},16);return 'rallied';})()"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__t);const S=window.__ck;const out=[];for(let i=0;i<3;i++){let best=0;const sp=[];for(let k=1;k<S.length;k++){const dt=S[k].t-S[k-1].t;if(dt<=0)continue;const d=Math.hypot(S[k].p[i][0]-S[k-1].p[i][0],S[k].p[i][1]-S[k-1].p[i][1]);if(S[k].st[i]==='rally'&&S[k-1].st[i]==='rally'&&dt>=2)sp.push(d/(dt/60));}sp.sort((a,b)=>a-b);out.push({i,n:sp.length,median:+(sp[Math.floor(sp.length/2)]||0).toFixed(3),p90:+(sp[Math.floor(sp.length*0.9)]||0).toFixed(3),max:+(sp[sp.length-1]||0).toFixed(3)});}return JSON.stringify({speeds:out,spec:{tank:2.1,swordsman:2.65,archer:2.5}});})()"}
+]

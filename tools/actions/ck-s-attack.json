@@ -1,0 +1,4 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);window.__d=__echoes.cmd('spawn','dummy',1.4,0.2);window.__im=__echoes.on('hit',e=>{if(e.target===window.__d)__echoes.cmd('setHp',e.target,60);});return 'ok';})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<900;i++){const e=__echoes.events.filter(x=>x.type==='ally_cast'&&x.classId==='tank');if(e.length)return JSON.stringify(e[e.length-1]);await new Promise(r=>setTimeout(r,4));}return 'timeout';})()"}
+]

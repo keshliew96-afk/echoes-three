@@ -1,0 +1,3 @@
+[
+  {"type":"eval","code":"(async()=>{for(let i=0;i<4000;i++){if(__echoes.tick>=700)break;await new Promise(r=>setTimeout(r,4));}const st=__echoes.state();const E=__echoes.events.filter(e=>e.tick<=700).map(e=>e.tick+':'+e.type+':'+(e.id??e.target??e.skill??'')).join('|');return JSON.stringify({tick:st.tick,draws:st.rngDraws,party:st.party.map(p=>[p.id,p.hp,p.x,p.z]),enemies:st.enemies.map(e=>[e.id,e.kind,e.x,e.z,e.hp]),ai:st.party_ai.allies.map(a=>[a.state,a.target,a.x,a.z]),evTail:E.slice(-900)});})()"}
+]

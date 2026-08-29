@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);window.__bs=[];for(const p of [[5,2],[-5,2],[4,-4],[-4,-4],[0,6],[6,0]])window.__bs.push(__echoes.cmd('spawn','mantis',p[0],p[1]));window.__im=__echoes.on('hit',e=>{if(window.__bs.includes(e.target))__echoes.cmd('setHp',e.target,1);});return 'ok';})()"},
+  {"type":"eval","code":"(()=>{window.__ck={s:[]};window.__ckT=setInterval(()=>{const v=__echoes.cmd('allyState');const st=__echoes.state();const pts=[[st.party[0].x,st.party[0].z],...v.allies.map(a=>[a.x,a.z])];const ds=[];for(let i=0;i<4;i++)for(let j=i+1;j<4;j++)ds.push(+Math.hypot(pts[i][0]-pts[j][0],pts[i][1]-pts[j][1]).toFixed(3));window.__ck.s.push({t:__echoes.tick,ds});},33);return 'on';})()"},
+  {"type":"wait","ms":14000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__ckT);const S=window.__ck.s;const allyPairs=S.map(r=>Math.min(r.ds[3],r.ds[4],r.ds[5]));const anyPair=S.map(r=>Math.min(...r.ds));return JSON.stringify({samples:S.length,minAllyAllyEver:+Math.min(...allyPairs).toFixed(3),medAllyAlly:+allyPairs.sort((a,b)=>a-b)[Math.floor(allyPairs.length/2)].toFixed(3),minAnyPairEver:+Math.min(...anyPair).toFixed(3),under026:S.filter(r=>Math.min(r.ds[3],r.ds[4],r.ds[5])<0.26).length});})()"}
+]

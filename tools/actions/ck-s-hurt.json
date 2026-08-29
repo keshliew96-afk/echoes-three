@@ -1,0 +1,4 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);__echoes.cmd('spawn','boar',1.0,0.4);__echoes.cmd('spawn','boar',-1.0,0.4);return 'ok';})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<1200;i++){const e=__echoes.events.filter(x=>x.type==='hit'&&x.kind==='ally');if(e.length)return JSON.stringify(e[e.length-1]);await new Promise(r=>setTimeout(r,4));}return 'timeout';})()"}
+]

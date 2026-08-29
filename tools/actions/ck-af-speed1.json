@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);__echoes.cmd('placeAlly',2,11,7);__echoes.cmd('placeAlly',3,-11,7);__echoes.cmd('placeAlly',1,0,-6);return 'parked';})()"},
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,6.5);__echoes.cmd('rally');window.__ck=[];window.__t=setInterval(()=>{const v=__echoes.cmd('allyState');window.__ck.push({t:__echoes.tick,p:v.allies.map(a=>[a.x,a.z]),st:v.allies.map(a=>a.state)});},16);return 'rallied';})()"},
+  {"type":"wait","ms":3000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__t);const S=window.__ck;const out=[];for(let i=0;i<3;i++){const idx=[];for(let k=0;k<S.length;k++)if(S[k].st[i]==='rally')idx.push(k);if(idx.length<12){out.push({i,short:idx.length});continue;}const a=S[idx[2]],b=S[idx[Math.min(idx.length-3,idx[2]+70)]];const d=Math.hypot(b.p[i][0]-a.p[i][0],b.p[i][1]-a.p[i][1]);const dt=(b.t-a.t)/60;out.push({i,from:a.p[i],to:b.p[i],dist:+d.toFixed(3),secs:+dt.toFixed(3),speed:+(d/dt).toFixed(3)});}return JSON.stringify({out,spec:[2.1,2.65,2.5]});})()"}
+]

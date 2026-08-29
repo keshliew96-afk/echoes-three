@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"eval","code":"(()=>{window.__id=__echoes.cmd('spawn','dummy',0,-2.4);__echoes.cmd('iframe',window.__id,7200);return window.__id;})()"},
+  {"type":"wait","ms":1800},
+  {"type":"eval","code":"(()=>{__echoes.cmd('mark',window.__id);const v=__echoes.cmd('allyState');return JSON.stringify({mark:v.mark,tg:v.allies.map(a=>a.target),en:__echoes.state().enemies.map(e=>[e.id,e.x,e.z])});})()"},
+  {"type":"wait","ms":300}
+]

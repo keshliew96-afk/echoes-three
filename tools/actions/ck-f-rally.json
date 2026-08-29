@@ -1,0 +1,13 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"eval","code":"(()=>{window.__ids=[__echoes.cmd('spawn','dummy',2.0,0.6),__echoes.cmd('spawn','dummy',-1.8,1.4),__echoes.cmd('spawn','dummy',0.5,-2.2)];for(const i of window.__ids)__echoes.cmd('iframe',i,7200);return JSON.stringify(window.__ids);})()"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'engaged',st:v.allies.map(a=>a.state),tg:v.allies.map(a=>a.target),d:v.allies.map(a=>a.anchorDist)});})()"},
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',-7,4.5);window.__ck={s:[]};window.__ckT=setInterval(()=>{const v=__echoes.cmd('allyState');window.__ck.s.push({t:__echoes.tick,st:v.allies.map(a=>a.state),tg:v.allies.map(a=>a.target),d:v.allies.map(a=>a.anchorDist),g:v.allies.map(a=>a.graceUntilTick),rp:v.rallyPoint});},16);return 'moved+sampling';})()"},
+  {"type":"wait","ms":150},
+  {"type":"key","key":"KeyR","ms":60},
+  {"type":"eval","code":"(()=>{const v=__echoes.cmd('allyState');return JSON.stringify({stage:'R-pressed',tick:__echoes.tick,st:v.allies.map(a=>a.state),tg:v.allies.map(a=>a.target),rp:v.rallyPoint});})()"},
+  {"type":"wait","ms":8000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__ckT);const S=window.__ck.s;const flips=[];let prev=null;for(const r of S){const k=r.st.join('|');if(k!==prev){flips.push({t:r.t,st:k,d:r.d,tg:r.tg});prev=k;}}return JSON.stringify({samples:S.length,flips:flips.slice(0,12)});})()"},
+  {"type":"eval","code":"(()=>{const E=__echoes.events.filter(e=>['rally','ally_regroup','rally_end'].includes(e.type));return JSON.stringify(E.slice(-12));})()"}
+]

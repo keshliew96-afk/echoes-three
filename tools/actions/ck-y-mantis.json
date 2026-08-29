@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,0);window.__bs=[];for(const p of [[5,2],[-5,2],[4,-4],[-4,-4],[0,6],[6,0]])window.__bs.push(__echoes.cmd('spawn','mantis',p[0],p[1]));window.__im=__echoes.on('hit',e=>{if(window.__bs.includes(e.target))__echoes.cmd('setHp',e.target,1);});return JSON.stringify(window.__bs);})()"},
+  {"type":"eval","code":"(()=>{window.__ck={s:[]};window.__ckT=setInterval(()=>{const v=__echoes.cmd('allyState');window.__ck.s.push({t:__echoes.tick,d:v.allies.map(a=>a.anchorDist),st:v.allies.map(a=>a.state),tg:v.allies.map(a=>a.target)});},33);return 'on';})()"},
+  {"type":"wait","ms":22000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__ckT);const S=window.__ck.s;const live=S.filter(r=>r.tg.every(x=>x!==null));const same=live.filter(r=>r.tg[0]===r.tg[1]&&r.tg[1]===r.tg[2]);const flips=[];let prev=null;for(const r of S){const k=r.st.join('|');if(k!==prev){flips.push([r.t,k]);prev=k;}}return JSON.stringify({samples:S.length,maxAnchorDist:[0,1,2].map(i=>+Math.max(...S.map(r=>r.d[i])).toFixed(2)),over:S.filter(r=>r.d.some(x=>x>3.41)).length,sameFrac:+(same.length/Math.max(1,live.length)).toFixed(3),liveN:live.length,stateFlips:flips.length,flips:flips.slice(0,10),enemies:__echoes.state().enemies.length});})()"}
+]
