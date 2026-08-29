@@ -20,8 +20,9 @@ export const RUN_CSS = `
     position: fixed; inset: 0; z-index: 28; display: none;
     align-items: center; justify-content: center;
     /* §16: Zone 1 persists BENEATH — the card page lifts off the command bar
-       instead of sitting on top of it. */
-    padding-bottom: 132px;
+       instead of sitting on top of it. The same reserve feeds the scaler in
+       ui/run/index.js, so a tall page shrinks instead of running off the top. */
+    padding-bottom: var(--rn-reserve, 120px);
     font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
     color: ${PALETTE.parchment};
     user-select: none;

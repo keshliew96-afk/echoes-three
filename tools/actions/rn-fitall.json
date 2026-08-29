@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('clearRoom');return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const r=document.getElementById('run-screen');const pg=r.querySelector('.rn-draft');const b=pg.getBoundingClientRect();return {draft:{top:Math.round(b.top),bottom:Math.round(b.bottom)},scale:getComputedStyle(r).getPropertyValue('--rn-s').trim()};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd('draftTake');return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const r=document.getElementById('run-screen');const pg=r.querySelector('.rn-path');const b=pg.getBoundingClientRect();const d=window.__echoes.runUi();return {path:{top:Math.round(b.top),bottom:Math.round(b.bottom)},doors:d.doors.map(x=>x.box),scale:getComputedStyle(r).getPropertyValue('--rn-s').trim()};})()"
+ }
+]

@@ -77,16 +77,23 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   let signature = '';
 
   // §17/A7 uniform virtual scale — the socket screen's grammar: the pages are
-  // AUTHORED at DESIGN px (every label at/above the 16 px text floor, every
+  // AUTHORED at their own px (every label at/above the 16 px text floor, every
   // numeral at/above 20, the §16 doors at exactly 160x220) and scaled by
   // min(1, fit) so they never overflow a small window and never inflate past
-  // their authored ratio on a large one.
-  const DESIGN = { w: 980, h: 780 };
+  // their authored ratio on a large one. The fit is measured against the LIVE
+  // page (offsetWidth/Height are layout values, untouched by the transform),
+  // so the tall shop shelf shrinks while the short draft card stays at 1:1.
+  const DESIGN = { w: 980, h: 700 };
+  const RESERVE = 120; // px kept clear at the bottom for the Zone 1 bar
   function fitScale() {
+    const pg = current !== 'none' ? screens[current].el : null;
+    const w = pg && pg.offsetWidth ? pg.offsetWidth : DESIGN.w;
+    const h = pg && pg.offsetHeight ? pg.offsetHeight : DESIGN.h;
+    rootEl.style.setProperty('--rn-reserve', `${RESERVE}px`);
     const s = Math.min(
       1,
-      (window.innerWidth - 40) / DESIGN.w,
-      (window.innerHeight - 40) / DESIGN.h
+      (window.innerWidth - 40) / w,
+      (window.innerHeight - 28 - RESERVE) / h
     );
     rootEl.style.setProperty('--rn-s', s.toFixed(4));
     return s;
@@ -111,6 +118,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     rootEl.classList.toggle('rn-open', on);
     veil.classList.toggle('rn-open', on);
     if (on) screens[name].el.style.display = '';
+    fitScale();
     // Every key that was already down when this page appeared is stale: it
     // belongs to the press that OPENED the page, never to a commit on it.
     markAllHeldStale();
@@ -155,6 +163,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     if (sig === signature) return;
     signature = sig;
     screens[current].render(v);
+    fitScale(); // content changed => the page's layout height may have changed
   }
 
   // ----------------------------------------------------------- input --

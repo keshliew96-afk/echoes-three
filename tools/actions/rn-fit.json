@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('skipToRoom',7);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const r=document.getElementById('run-screen');const pg=r.querySelector('.rn-shop');const b=pg.getBoundingClientRect();const bar=document.querySelector('.hud-bar');const bb=bar?bar.getBoundingClientRect():null;return {scale:getComputedStyle(r).getPropertyValue('--rn-s').trim(),page:{top:Math.round(b.top),bottom:Math.round(b.bottom),h:Math.round(b.height)},bar:bb?{top:Math.round(bb.top)}:null,vh:window.innerHeight};})()"
+ }
+]

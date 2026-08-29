@@ -1,0 +1,54 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('skipToRoom',7);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('shopBuy',0);E.cmd('shopBuy',1);return E.cmd('runState').wallet;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "REST=(()=>[...document.querySelectorAll('#run-screen .rn-plaque')].map(p=>({price:p.querySelector('.rn-price').textContent,x:+p.getBoundingClientRect().x.toFixed(1),deny:p.classList.contains('rn-deny')})))()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>window.__echoes.cmd('shopBuy',2))()"
+ },
+ {
+  "type": "wait",
+  "ms": 45
+ },
+ {
+  "type": "eval",
+  "code": "SHAKE_45ms=(()=>[...document.querySelectorAll('#run-screen .rn-plaque')].map(p=>({price:p.querySelector('.rn-price').textContent,x:+p.getBoundingClientRect().x.toFixed(1),deny:p.classList.contains('rn-deny')})))()"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "SHAKE_105ms=(()=>[...document.querySelectorAll('#run-screen .rn-plaque')].map(p=>({price:p.querySelector('.rn-price').textContent,x:+p.getBoundingClientRect().x.toFixed(1),deny:p.classList.contains('rn-deny')})))()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "AFTER_500ms=(()=>[...document.querySelectorAll('#run-screen .rn-plaque')].map(p=>({price:p.querySelector('.rn-price').textContent,x:+p.getBoundingClientRect().x.toFixed(1),deny:p.classList.contains('rn-deny')})))()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const d=window.__echoes.runUi();return {cards:d.cards.map(c=>({name:c.name,opacity:c.opacity,filter:c.filter,display:'visible'}))};})()"
+ }
+]
