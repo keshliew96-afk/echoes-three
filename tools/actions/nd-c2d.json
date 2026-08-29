@@ -1,0 +1,22 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('grantNode','siphon'); __echoes.cmd('grantNode','ascend'); const s1=__echoes.cmd('socket','mending_bolt','siphon',0); const s2=__echoes.cmd('socket','mending_bolt','ascend',1); return { phase:'siphon-invariance-20-casts', s1, s2, mb:__echoes.cmd('buildView').skills.find(k=>k.id==='mending_bolt'), preview:__echoes.cmd('buildPreview','mending_bolt','siphon') }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 200
+  },
+  {
+    "type": "eval",
+    "code": "(async () => { const sleep = ms => new Promise(r=>setTimeout(r,ms)); window.__drains=[]; window.__heals=[]; window.__fizzles=0; window.__casts=0; for (let i=0;i<20;i++) { __echoes.cmd('killAllEnemies'); __echoes.cmd('teleport',0,0); __echoes.cmd('placeAlly',1,3.0,0); __echoes.cmd('placeAlly',2,-4,-0.6); __echoes.cmd('placeAlly',3,-4,0.8); __echoes.cmd('setHp', window.__ids[1], 0.2); __echoes.cmd('spawn','dummy',4.9,0); const s=__echoes.cmd('skillState'); for (const sl of s.slots) if (sl) sl.remaining=0; __echoes.cmd('restoreSkillState', s); const t=__echoes.tick; window.__press('Digit1'); let n=0; const landed=()=>__echoes.events.some(e=>e.tick>=t && (e.type==='siphon_drain'||e.type==='siphon_fizzle')); while(n<60 && !landed()){ await sleep(30); n++; } await sleep(60); window.__casts++; for (const e of __echoes.events.filter(e=>e.tick>=t)) { if (e.type==='hit' && e.source==='mending_bolt:siphon') window.__drains.push({amount:e.amount,crit:e.crit}); else if (e.type==='heal' && e.source==='mending_bolt') window.__heals.push({amount:e.amount,crit:e.crit}); else if (e.type==='siphon_fizzle') window.__fizzles++; } } return { casts: window.__casts, drains: window.__drains.length, heals: window.__heals.length, fizzles: window.__fizzles }; })()"
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const d=window.__drains, h=window.__heals; return { test:'siphon-invariance-20-casts', drainCount: d.length, drainAmounts: [...new Set(d.map(x=>x.amount))], drainCrits: d.filter(x=>x.crit).length, allExactly5_5: d.length>0 && d.every(x=>x.amount===5.5 && x.crit===false), fizzleCount: window.__fizzles, primaryHealCount: h.length, primaryHealAmounts: [...new Set(h.map(x=>x.amount))], primaryHealCrits: h.filter(x=>x.crit).length, resolvedPower: __echoes.cmd('buildView').skills.find(k=>k.id==='mending_bolt').resolved.power }; })()"
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const before=__echoes.state().stats; const ct=__echoes.cmd('critTest',400); for (let i=0;i<400;i++){ __echoes.cmd('setHp', window.__ids[1], 0.2); __echoes.cmd('heal', window.__ids[1], 22); } const after=__echoes.state().stats; return { test:'crit-rng-is-live-in-the-same-pipeline', critTest: ct, damageCrits: after.crits-before.crits, healSamples: after.heals-before.heals, healCrits: after.healCrits-before.healCrits, note:'the 22 Siphon drains above drew 0 of these rolls' }; })()"
+  }
+]

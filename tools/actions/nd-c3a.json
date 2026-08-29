@@ -12,6 +12,10 @@
     "code": "(() => { window.__t0=__echoes.tick; window.__press('Digit1'); return { fired: window.__t0 }; })()"
   },
   {
+    "type": "eval",
+    "code": "(async () => { const s=ms=>new Promise(r=>setTimeout(r,ms)); const t0=window.__t1??window.__t0; const landed=()=>__echoes.events.some(e=>e.tick>=t0 && (e.type==='heal'||e.type==='hit'||e.type==='siphon_fizzle'||e.type==='hit_immune'||e.type==='skill_bolt_despawn')); let n=0; while(n<150 && !landed()){ await s(40); n++; } await s(150); return { gate:'impact-landed', waitedMs:n*40, tick:__echoes.tick, sinceCast:__echoes.tick-t0 }; })()"
+  },
+  {
     "type": "wait",
     "ms": 200
   },

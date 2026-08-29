@@ -1,0 +1,26 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('giveSkill','spirit_bolt'); __echoes.cmd('grantNode','bounce'); __echoes.cmd('grantNode','bounce'); __echoes.cmd('grantNode','bounce'); const s1=__echoes.cmd('socket','spirit_bolt','bounce',0); const s2=__echoes.cmd('socket','spirit_bolt','bounce',1); const s3=__echoes.cmd('socket','spirit_bolt','bounce'); for (const i of [1,2,3]) __echoes.cmd('setHp', window.__ids[i], 0); __echoes.cmd('teleport',-1,0); window.__A=__echoes.cmd('spawn','dummy',1.2,0); window.__B=__echoes.cmd('spawn','dummy',2.4,0.6); window.__C=__echoes.cmd('spawn','dummy',3.5,1.1); return { phase:'two-bounce-copies-two-hops', s1, s2, thirdCopyDenied:s3, sb:__echoes.cmd('buildView').skills.find(k=>k.id==='spirit_bolt'), A:window.__A, B:window.__B, C:window.__C }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 250
+  },
+  {
+    "type": "eval",
+    "code": "(() => { window.__t0=__echoes.tick; window.__press('Digit3'); return { fired: window.__t0 }; })()"
+  },
+  {
+    "type": "eval",
+    "code": "(async () => { const s=ms=>new Promise(r=>setTimeout(r,ms)); const t0=window.__t1??window.__t0; const landed=()=>__echoes.events.some(e=>e.tick>=t0 && (e.type==='heal'||e.type==='hit'||e.type==='siphon_fizzle'||e.type==='hit_immune'||e.type==='skill_bolt_despawn')); let n=0; while(n<150 && !landed()){ await s(40); n++; } await s(150); return { gate:'impact-landed', waitedMs:n*40, tick:__echoes.tick, sinceCast:__echoes.tick-t0 }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 60
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const st=__echoes.state(); const ev=window.__evs(window.__t0,['hit','bounce_hop','death']); return { test:'bounce-duplicate-two-hops', evs: ev, hops: ev.filter(e=>e.type==='bounce_hop').map(e=>({hop:e.hop,to:e.to,power:e.power})), hopCount: ev.filter(e=>e.type==='bounce_hop').length, hp: { A: st.enemies.find(e=>e.id===window.__A)?.hp ?? 'gone', B: st.enemies.find(e=>e.id===window.__B)?.hp ?? 'gone', C: st.enemies.find(e=>e.id===window.__C)?.hp ?? 'gone' }, numerals: st.vfx.numerals }; })()"
+  }
+]

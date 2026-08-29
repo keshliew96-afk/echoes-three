@@ -1,8 +1,26 @@
 [
-  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; const n1=__echoes.cmd('grantNode','siphon'); const n2=__echoes.cmd('grantNode','ascend'); const s1=__echoes.cmd('socket','mending_bolt','siphon'); const s2=__echoes.cmd('socket','mending_bolt','ascend'); __echoes.cmd('setHp', window.__ids[1], 0.2); window.__D=__echoes.cmd('spawn','dummy',-1.0,-1.0); __echoes.cmd('teleport',-4.5,-1.0); return { version:__echoes.version, s1, s2, D:window.__D, mb:__echoes.cmd('buildView').skills.find(k=>k.id==='mending_bolt') }; })()" },
-  { "type": "wait", "ms": 200 },
-  { "type": "eval", "code": "new Promise(res => { const t0=__echoes.tick; window.__press('Digit1'); setTimeout(() => { const st=__echoes.state(); res({ test:'siphon-drain-5.5-immune-to-ascend', t0, evs: window.__evs(t0,['skill_cast','heal','siphon_drain','hit','siphon_fizzle']), tank: st.party.find(p=>p.partyIndex===1).hp, dummyHp: st.enemies.find(e=>e.id===window.__D)?.hp }); }, 620); })" },
-  { "type": "eval", "code": "(() => { __echoes.cmd('killAllEnemies'); __echoes.cmd('setHp', window.__ids[1], 0.2); return { phase:'fizzle-armed' }; })()" },
-  { "type": "wait", "ms": 3400 },
-  { "type": "eval", "code": "new Promise(res => { const t0=__echoes.tick; window.__press('Digit1'); setTimeout(() => { res({ test:'siphon-fizzle-nobody-near', t0, evs: window.__evs(t0,['skill_cast','heal','siphon_drain','siphon_fizzle','hit']) }); }, 560); })" }
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; const n1=__echoes.cmd('grantNode','siphon'); const n2=__echoes.cmd('grantNode','ascend'); const s1=__echoes.cmd('socket','mending_bolt','siphon'); const s2=__echoes.cmd('socket','mending_bolt','ascend'); __echoes.cmd('setHp', window.__ids[1], 0.2); window.__D=__echoes.cmd('spawn','dummy',-1.0,-1.0); __echoes.cmd('teleport',-4.5,-1.0); return { version:__echoes.version, s1, s2, D:window.__D, mb:__echoes.cmd('buildView').skills.find(k=>k.id==='mending_bolt') }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 200
+  },
+  {
+    "type": "eval",
+    "code": "(async () => { const t0=__echoes.tick; window.__press('Digit1'); await (async () => { const s=ms=>new Promise(r=>setTimeout(r,ms)); let n=0; const landed=()=>__echoes.events.some(e=>e.tick>=t0 && (e.type==='heal'||e.type==='siphon_fizzle')); while(n<150 && !landed()){ await s(40); n++; } await s(150); })(); const st=__echoes.state(); return { test:'siphon-drain-5.5-immune-to-ascend', t0, evs: window.__evs(t0,['skill_cast','heal','siphon_drain','hit','siphon_fizzle']), tank: st.party.find(p=>p.partyIndex===1).hp }; })()"
+  },
+  {
+    "type": "eval",
+    "code": "(() => { __echoes.cmd('killAllEnemies'); __echoes.cmd('setHp', window.__ids[1], 0.2); return { phase:'fizzle-armed' }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 3400
+  },
+  {
+    "type": "eval",
+    "code": "(async () => { const t0=__echoes.tick; window.__press('Digit1'); await (async () => { const s=ms=>new Promise(r=>setTimeout(r,ms)); let n=0; const landed=()=>__echoes.events.some(e=>e.tick>=t0 && (e.type==='heal'||e.type==='siphon_fizzle')); while(n<150 && !landed()){ await s(40); n++; } await s(150); })(); return { test:'siphon-fizzle-nobody-near', t0, evs: window.__evs(t0,['skill_cast','heal','siphon_drain','siphon_fizzle','hit']), fizzleCues: document.querySelectorAll('.nd-fizzle').length }; })()"
+  }
 ]

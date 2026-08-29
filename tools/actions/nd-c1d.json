@@ -1,0 +1,26 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('grantNode','bounce'); __echoes.cmd('grantNode','bounce'); const h1=__echoes.cmd('socket','mending_bolt','bounce',0); const h2=__echoes.cmd('socket','mending_bolt','bounce',1); __echoes.cmd('teleport',-2.6,0); __echoes.cmd('placeAlly',1,-1.0,0); __echoes.cmd('placeAlly',3,0.0,0.7); __echoes.cmd('placeAlly',2,1.0,1.2); __echoes.cmd('setHp', window.__ids[0], 1.0); __echoes.cmd('setHp', window.__ids[1], 0.3); __echoes.cmd('setHp', window.__ids[3], 0.4); __echoes.cmd('setHp', window.__ids[2], 0.5); return { phase:'two-bounce-copies-two-heal-hops', h1, h2, mb:__echoes.cmd('buildView').skills.find(k=>k.id==='mending_bolt') }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 220
+  },
+  {
+    "type": "eval",
+    "code": "(() => { window.__t0=__echoes.tick; window.__press('Digit1'); return { fired: window.__t0, party: __echoes.state().party.map(p=>({i:p.partyIndex,x:p.x,z:p.z,hp:p.hp})) }; })()"
+  },
+  {
+    "type": "eval",
+    "code": "(async () => { const s=ms=>new Promise(r=>setTimeout(r,ms)); const t0=window.__t1??window.__t0; const landed=()=>__echoes.events.some(e=>e.tick>=t0 && (e.type==='heal'||e.type==='hit'||e.type==='siphon_fizzle'||e.type==='hit_immune'||e.type==='skill_bolt_despawn')); let n=0; while(n<150 && !landed()){ await s(40); n++; } await s(150); return { gate:'impact-landed', waitedMs:n*40, tick:__echoes.tick, sinceCast:__echoes.tick-t0 }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 60
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const st=__echoes.state(); const ev=window.__evs(window.__t0,['heal','bounce_hop']); return { test:'bounce-duplicate-two-heal-hops', evs: ev, hops: ev.filter(e=>e.type==='bounce_hop').map(e=>({hop:e.hop,to:e.to,power:e.power})), hopCount: ev.filter(e=>e.type==='bounce_hop').length, healCount: ev.filter(e=>e.type==='heal').length, numerals: st.vfx.numerals, party: st.party.map(p=>({i:p.partyIndex,hp:p.hp,x:p.x,z:p.z})) }; })()"
+  }
+]
