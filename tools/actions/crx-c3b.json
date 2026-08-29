@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__sleep=(ms)=>new Promise(r=>setTimeout(r,ms));window.__mark=()=>__echoes.events.length;window.__since=(n,t)=>__echoes.events.slice(n).filter(e=>!t||e.type===t);window.__press=(c)=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:c,bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:c,bubbles:true}));};window.__move=async(x,y)=>{window.dispatchEvent(new MouseEvent('mousemove',{clientX:x,clientY:y,bubbles:true,cancelable:true}));await window.__sleep(35);return window.__echoes.state().party[0].aim;};window.__aim=async(wx,wz)=>{const e=window.__echoes;let sx=innerWidth/2,sy=innerHeight/2;let a=await window.__move(sx,sy);for(let i=0;i<25&&a;i++){const d=Math.hypot(wx-a.x,wz-a.z);if(d<0.02)return{ok:true,sx,sy,aim:a,i,d};const h=20;const ax=await window.__move(sx+h,sy);const ay=await window.__move(sx,sy+h);const j11=(ax.x-a.x)/h,j12=(ay.x-a.x)/h,j21=(ax.z-a.z)/h,j22=(ay.z-a.z)/h;const det=j11*j22-j12*j21;if(Math.abs(det)<1e-12)break;const ex=wx-a.x,ez=wz-a.z;let dsx=(j22*ex-j12*ez)/det,dsy=(-j21*ex+j11*ez)/det;const L=Math.hypot(dsx,dsy),cap=400;if(L>cap){dsx*=cap/L;dsy*=cap/L;}sx=Math.max(3,Math.min(innerWidth-3,sx+dsx));sy=Math.max(3,Math.min(innerHeight-3,sy+dsy));a=await window.__move(sx,sy);}return{ok:false,sx,sy,aim:a};};window.__equip=(ids)=>{const slots=ids.map(id=>id?{id,remaining:0}:null);while(slots.length<4)slots.push(null);return __echoes.cmd('restoreSkillState',{slots,override:null});};'ready'})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__nums=()=>[...document.querySelectorAll('.dmg-num')].filter(n=>n.style.visibility!=='hidden'&&n.style.opacity!=='0').map(n=>({t:n.textContent,color:n.style.color,size:n.style.fontSize}));window.__ids=()=>{const o={};for(const p of __echoes.state().party)o[p.partyIndex]=p.id;return o;};window.__park=()=>{__echoes.cmd('placeAlly',1,-10.5,-6.5);__echoes.cmd('placeAlly',2,-9.5,-6.5);__echoes.cmd('placeAlly',3,-8.5,-6.5);};window.__ev=(t0,types)=>__echoes.events.filter(e=>e.tick>=t0&&(!types||types.includes(e.type)));window.__dir=async(sx,sy)=>{const a=await window.__move(sx,sy);const p=__echoes.state().party[0];const dx=a.x-p.x,dz=a.z-p.z;const L=Math.hypot(dx,dz);return{ux:dx/L,uz:dz/L,p,aim:a};};return 'lib2';})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const c=__echoes.cmd;c('killAllEnemies');window.__park();window.__equip(['mending_bolt',null,null,null]);\nc('teleport',0,2);await window.__sleep(1400);\nconst d=await window.__dir(800,220);\nwindow.__P=[d.p.x,d.p.z];window.__A=[d.p.x+d.ux*2.0,d.p.z+d.uz*2.0];\nwindow.__arm=()=>{const c=__echoes.cmd;c('killAllEnemies');\nc('teleport',window.__A[0],window.__A[1]);c('rally');c('placeAlly',1,window.__A[0],window.__A[1]);\nc('teleport',window.__P[0],window.__P[1]);return true;};\nconst ids=window.__ids();window.__tank=ids[1];c('setHp',ids[1],0.1);\nconst r=[];c('grantNode','sharpen');c('grantNode','sharpen');r.push(c('socket','mending_bolt','sharpen',0));r.push(c('socket','mending_bolt','sharpen',1));\nreturn{sockets:r,mb:c('buildView').skills.find(k=>k.id==='mending_bolt'),prev_ascend:c('buildPreview','mending_bolt','ascend'),prev_quicken:c('buildPreview','mending_bolt','quicken')};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__arm();window.__t0=__echoes.tick;window.__press('Digit1');return{t0:window.__t0};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({test:'C3b-two-sharpens=33',evs:window.__ev(window.__t0,['heal']),nums:window.__nums()}))()"
+ }
+]
