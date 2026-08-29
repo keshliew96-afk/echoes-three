@@ -29,7 +29,27 @@ const GHOST_MAX = 7;
 // "visibly different opacities" the advisory asks for. The §5 contract is
 // unaffected because clear() hard-drops every ghost the frame the dash ends.
 export const GHOST_FADE_SEC = 0.26;
-const GHOST_OPACITY = 0.42;
+
+// Spawn alpha 0.38 (was 0.42) on a CONCAVE fade curve (was linear). Measured
+// cause, fix-round-2 C5 advisory: the dash covers 1.8 u in 0.25 s (§5) and a
+// chibi body is ~0.55 u across, so consecutive silhouettes ALWAYS overlap —
+// the trail's brightness at any point is the composite of 2-3 ghosts, not one.
+// On the linear ramp the front three composited to alpha ~0.68 and the frozen
+// trail row measured L 184-206 across ~90 continuous px: grass fully hidden,
+// per-ghost steps under 5% luma, i.e. the "dense caterpillar" the advisory
+// rejected. The exponent puts the ladder where the composite is what
+// separates: each ghost's own alpha now falls ~25% per step instead of ~13%,
+// so the trail reads as a staggered ramp with the ground visible through it,
+// and the peak still sits ~60 luma over the grass it crosses.
+const GHOST_FADE_POW = 1.7;
+const GHOST_OPACITY = 0.38;
+
+// Opacity of a ghost that is `age` seconds old. One definition, used by both
+// spawn() (which BACK-DATES ghosts, see below) and update().
+const fadeAlpha = (age) => {
+  const t = 1 - age / GHOST_FADE_SEC;
+  return t <= 0 ? 0 : GHOST_OPACITY * Math.pow(t, GHOST_FADE_POW);
+};
 
 const SKIP_NAMES = new Set(['face', 'markings', 'swing-smear', 'contact-shadow']);
 
@@ -103,7 +123,7 @@ export function createAfterimages(critter, sceneRoot, { color = null } = {}) {
     }
     ghost.age = age;
     ghost.live = true;
-    ghost.mat.opacity = GHOST_OPACITY * (1 - age / GHOST_FADE_SEC);
+    ghost.mat.opacity = fadeAlpha(age);
     ghost.root.visible = true;
   }
 
@@ -111,7 +131,7 @@ export function createAfterimages(critter, sceneRoot, { color = null } = {}) {
     for (const g of ghosts) {
       if (!g.live) continue;
       g.age += dt;
-      const o = GHOST_OPACITY * (1 - g.age / GHOST_FADE_SEC);
+      const o = fadeAlpha(g.age);
       if (o <= 0) {
         g.live = false;
         g.root.visible = false;

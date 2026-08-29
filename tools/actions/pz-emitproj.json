@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{const {stage,root,emitters}=window.__arenaProbe;const V3=Object.getPrototypeOf(stage.camera.position).constructor;const out=[];root.traverse(o=>{if(o.isSprite&&o.material&&o.material.map&&o.renderOrder===8){const w=o.getWorldPosition(new V3());const c=w.clone().project(stage.camera);out.push({sx:Math.round((c.x*0.5+0.5)*window.innerWidth),sy:Math.round((-c.y*0.5+0.5)*window.innerHeight),h:+o.scale.y.toFixed(2),wx:+w.x.toFixed(2),wy:+w.y.toFixed(2),wz:+w.z.toFixed(2)});}});console.log('[FLAMES]',JSON.stringify(out));return out.length})()"}
+]

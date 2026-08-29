@@ -391,17 +391,30 @@ export function createArenaScene(stage, toggles, ctx) {
   // Dash smear (baseline-v030 F6): staggered silhouette afterimages of the
   // posed chibi Healer replace the graybox capsule ghosts, which composited
   // into one solid slab (and were the wrong body besides). One ghost is frozen
-  // every SMEAR_TICK_SPACING sim ticks of dash travel — 4 over the 15-tick
+  // at each SMEAR_TICK_OFFSETS entry of dash travel — up to 6 over the 15-tick
   // dash, each fading on its own clock — and §5's contract holds: every ghost
   // is hard-cleared the frame the dash ends.
-  // 2 sim ticks between afterimages over the 15-tick dash. Spacing 4 was
-  // measured as unreachable in practice: the trail was ACCUMULATED one ghost
-  // per render frame, and a capture-harness frame can swallow the whole dash
-  // (logged: dashTicksLeft 15 -> 14 -> 13, then one 216 ms hitch and the dash
-  // was over), so a mid-dash frame showed one ghost, not a trail. The schedule
-  // below is now REBUILT from dash state every frame instead of accumulated,
-  // so the trail is identical at any render rate.
-  const SMEAR_TICK_SPACING = 2;
+  // Uniform 2-tick spacing was measured as unreachable in practice when the
+  // trail was ACCUMULATED one ghost per render frame: a capture-harness frame
+  // can swallow the whole dash (logged: dashTicksLeft 15 -> 14 -> 13, then one
+  // 216 ms hitch and the dash was over), so a mid-dash frame showed one ghost,
+  // not a trail. The schedule below is REBUILT from dash state every frame
+  // instead of accumulated, so the trail is identical at any render rate.
+  //
+  // FIX ROUND 2 (C5 advisory) — the offsets are a LADDER, not a constant
+  // spacing. The dash is 1.8 u in 15 ticks (§5) and a chibi body is ~0.55 u
+  // across: at a flat 2 ticks the silhouettes sat 0.24 u apart, i.e. every
+  // point of the trail was covered by 2-3 ghosts and the frozen row measured
+  // L 184-206 across ~90 continuous px — one pale slab. Widening the flat
+  // spacing to 3 would have fixed the density but broken the count (only two
+  // ghosts exist until tick 9 of 15, and criterion 5 wants >=3 in a MID-dash
+  // frame), so the ladder keeps the first two offsets tight — 3 ghosts exist
+  // from tick 6, exactly as before — and spreads everything older to 3 ticks
+  // (0.36 u, ~33 screen px at gameplay zoom, against a ~50 px body), which is
+  // where the separation actually has to appear. The 15-tick offset is the
+  // dash's own length: it exists so the trail still reaches the dash origin,
+  // and it lands at 0.25 s of a 0.26 s fade, i.e. essentially zero alpha.
+  const SMEAR_TICK_OFFSETS = [1.5, 3, 6, 9, 12, 15];
   if (inner.setSmearEnabled) inner.setSmearEnabled(false);
   const afterimages = createAfterimages(healerRig, root);
   let lastGhostTick = -1;
@@ -474,7 +487,18 @@ export function createArenaScene(stage, toggles, ctx) {
       body.position.set(em.x, fy, fz);
       body.renderOrder = 8;
       root.add(body);
-      const glow = makeGlowSprite({ color: EMBER_GLOW.halo, size: 1.05, opacity: 0.45 });
+      // Halo 0.85 / 0.30 (was 1.05 / 0.45), i.e. the brazier bowl's proportions
+      // (0.8 / 0.42) rather than a third again as wide. Fix-round-2 C1 quality
+      // advisory: the wall torches read as near-white COLUMNS instead of fire —
+      // sampled down the v2 north torch's axis the sprite measured hue 36-50 at
+      // saturation 0.15-0.22, against hue 39-49 at saturation 0.32-0.55 for a
+      // brazier bowl in the same frame. The cause is the additive cream halo
+      // sitting ON the flame over a PALE STONE WALL: the bowls fire over dark
+      // ground, where the same halo has somewhere to fall off to, but on the
+      // north wall the halo, the wall and the flame's own bloom skirt all sum
+      // in one bright neighbourhood and wash the painted amber out of the fire.
+      // Trimming the halo hands the emitter's colour back to the flame sprite.
+      const glow = makeGlowSprite({ color: EMBER_GLOW.halo, size: 0.85, opacity: 0.3 });
       glow.position.set(em.x, em.y + 0.08 + TOWARD_CAM.y * FLAME_LIFT, fz);
       root.add(glow);
       // Pool footprint kept TIGHT (radius 2.0): the broad shaft texture's
@@ -494,7 +518,7 @@ export function createArenaScene(stage, toggles, ctx) {
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
-      flames.push({ body, glow, pool, poolO: 0.4, glowS: 1.05, glowO: 0.45, x: em.x, y: fy, z: fz, phase: cosmetic.range(0, Math.PI * 2) });
+      flames.push({ body, glow, pool, poolO: 0.4, glowS: 0.85, glowO: 0.3, x: em.x, y: fy, z: fz, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.2, z: fz });
     } else if (em.kind === 'brazier') {
       // Mid-field fire bowl (baseline-v030 F1): the emitter that OWNS the
@@ -802,8 +826,8 @@ export function createArenaScene(stage, toggles, ctx) {
     healerRig.update(dt);
     for (const a of allies) a.update(dt);
 
-    // Dash afterimages: one ghost per SMEAR_TICK_SPACING sim ticks of dash
-    // travel (staggered silhouettes, not a per-frame slab); hard-clear at dash
+    // Dash afterimages: one ghost per SMEAR_TICK_OFFSETS entry of dash travel
+    // (staggered silhouettes, not a per-frame slab); hard-clear at dash
     // end (§5). The schedule runs on SIM TICKS and CATCHES UP: a slow render
     // loop (headless captures run ~4-10 fps while the 60 Hz accumulator
     // bursts) would otherwise realize only one ghost per rendered frame —
@@ -814,9 +838,9 @@ export function createArenaScene(stage, toggles, ctx) {
     if (smearWarmFrames > 0 && --smearWarmFrames === 0) afterimages.clear();
     if (p.dashTicksLeft > 0) {
       // The trail is a pure FUNCTION of how far into the dash the body is: at
-      // `elapsed` ticks travelled, silhouettes are frozen at elapsed-2, -4, -6…
-      // back along the locked dash direction, each pre-aged by exactly the sim
-      // time it is behind the body. Rebuilding it every frame (rather than
+      // `elapsed` ticks travelled, silhouettes are frozen at elapsed minus each
+      // SMEAR_TICK_OFFSETS entry, back along the locked dash direction, each
+      // pre-aged by exactly the sim time it is behind the body. Rebuilding it every frame (rather than
       // accumulating one ghost per rendered frame) is what makes a mid-dash
       // capture show the same >=3-ghost staggered trail whether the page is
       // running at 165 fps or hitching through the whole dash in one frame.
@@ -833,8 +857,9 @@ export function createArenaScene(stage, toggles, ctx) {
         mvz = 0;
       }
       afterimages.clear();
-      for (let k = 1; k <= 7; k++) {
-        const back = k * SMEAR_TICK_SPACING; // sim ticks behind the body
+      for (const back of SMEAR_TICK_OFFSETS) {
+        // `back` = sim ticks behind the body. Fractional offsets are fine: it
+        // only ever scales a distance and an age, never indexes a tick.
         if (back > elapsed) break;
         afterimages.spawn(-mvx * stepU * back, -mvz * stepU * back, back / TICK_HZ);
       }

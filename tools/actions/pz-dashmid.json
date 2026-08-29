@@ -1,0 +1,23 @@
+[
+  {
+    "type": "mousemove",
+    "x": 1350,
+    "y": 455
+  },
+  {
+    "type": "wait",
+    "ms": 200
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyD',key:'d',bubbles:true}));const origRaf=window.requestAnimationFrame.bind(window);window.__pzFrozen=false;const watch=()=>{if(!window.__pzFrozen){const s=window.__echoes.state();const g=s.vfx.party.smearGhosts;const d=s.party[0].dashTicksLeft;if(d>=7&&d<=9&&g>0){const t=performance.now();window.__pzAt={ghosts:g,dashTicksLeft:d,elapsed:15-d,x:s.party[0].x,z:s.party[0].z};window.requestAnimationFrame=(cb)=>origRaf(()=>cb(t));window.__pzFrozen=true;clearInterval(window.__pzDash);}}origRaf(watch);};origRaf(watch);window.__pzDash=setInterval(()=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',key:' ',bubbles:true}));setTimeout(()=>window.dispatchEvent(new KeyboardEvent('keyup',{code:'Space',key:' ',bubbles:true})),30);},300);return 'armed';})()"
+  },
+  {
+    "type": "wait",
+    "ms": 6000
+  },
+  {
+    "type": "eval",
+    "code": "({frozen:window.__pzFrozen, at:window.__pzAt})"
+  }
+]

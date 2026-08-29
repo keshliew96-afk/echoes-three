@@ -1,0 +1,5 @@
+[
+  {"type":"mousemove","x":1500,"y":430},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{const fire=()=>{window.dispatchEvent(new MouseEvent('mousedown',{button:2,bubbles:true}));setTimeout(()=>window.dispatchEvent(new MouseEvent('mouseup',{button:2,bubbles:true})),40);};[320,1000,1700,2400,3100].forEach(t=>setTimeout(fire,t));return 'scheduled'})()"}
+]

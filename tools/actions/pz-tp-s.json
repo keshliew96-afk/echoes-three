@@ -1,0 +1,5 @@
+[
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"window.__echoes.cmd('teleport',0,6)"},
+  {"type":"wait","ms":1800}
+]

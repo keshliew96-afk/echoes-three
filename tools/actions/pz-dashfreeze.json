@@ -1,0 +1,9 @@
+[
+  {"type":"mousemove","x":1350,"y":455},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"(()=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyD',key:'d',bubbles:true}));const origRaf=window.requestAnimationFrame.bind(window);window.__czFrozen=false;const watch=()=>{if(!window.__czFrozen){const s=window.__echoes.state();const g=s.vfx.party.smearGhosts;const d=s.party[0].dashTicksLeft;if(g>=5&&d>0){const t=performance.now();window.__czAt={g:g,d:d,x:s.party[0].x,z:s.party[0].z};window.requestAnimationFrame=(cb)=>origRaf(()=>cb(t));window.__czFrozen=true;clearInterval(window.__czDash);}}origRaf(watch);};origRaf(watch);window.__czDash=setInterval(()=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',key:' ',bubbles:true}));setTimeout(()=>window.dispatchEvent(new KeyboardEvent('keyup',{code:'Space',key:' ',bubbles:true})),30);},300);return 'armed';})()"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"({frozen:window.__czFrozen, at:window.__czAt, ghosts:window.__echoes.state().vfx.party.smearGhosts, dash:window.__echoes.state().party[0].dashTicksLeft, tick:window.__echoes.tick})"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"({tick2:window.__echoes.tick, ghosts2:window.__echoes.state().vfx.party.smearGhosts})"}
+]

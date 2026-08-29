@@ -1,0 +1,39 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{const raf=window.requestAnimationFrame.bind(window);let frozen=null;window.requestAnimationFrame=(cb)=>raf((t)=>{if(frozen!==null)return;cb(t);});const e=window.__echoes;const check=()=>{if(frozen!==null)return;const s=e.state();const b=(s.projectiles||[]).find(p=>p.x>-5.0);if(b){const{stage}=window.__arenaProbe;const V3=Object.getPrototypeOf(stage.camera.position).constructor;const air=new V3(b.x,b.y!==undefined?b.y:0.45,b.z).project(stage.camera);const gnd=new V3(b.x,0.02,b.z).project(stage.camera);frozen=1;console.log(\"[FREEZE-BOLT]\",JSON.stringify({x:+b.x.toFixed(2),z:+b.z.toFixed(2),sx:Math.round((air.x*0.5+0.5)*window.innerWidth),sy:Math.round((-air.y*0.5+0.5)*window.innerHeight),gx:Math.round((gnd.x*0.5+0.5)*window.innerWidth),gy:Math.round((-gnd.y*0.5+0.5)*window.innerHeight)}));return;}raf(check);};raf(check);return \"armed\"})()"
+  },
+  {
+    "type": "eval",
+    "code": "window.__echoes.cmd('teleport', -8, 2)"
+  },
+  {
+    "type": "wait",
+    "ms": 700
+  },
+  {
+    "type": "mousemove",
+    "x": 1500,
+    "y": 430
+  },
+  {
+    "type": "wait",
+    "ms": 250
+  },
+  {
+    "type": "mousedown",
+    "button": "right"
+  },
+  {
+    "type": "wait",
+    "ms": 50
+  },
+  {
+    "type": "mouseup",
+    "button": "right"
+  },
+  {
+    "type": "wait",
+    "ms": 1400
+  }
+]
