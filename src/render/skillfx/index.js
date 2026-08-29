@@ -476,6 +476,19 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       curtain.position.y = WAVE_WALL / 2 - 0.035;
       curtain.renderOrder = 2; // above the ground VFX and the bodies' shadows
       curtain.name = 'curtain';
+      // Bright leading edge along the top of the curtain. The height-faded
+      // wall alone reads as a soft green area behind the party; a hard bright
+      // line at its crest is what makes it read as a WAVE FRONT sweeping
+      // through them. It is a child of the curtain, so it rides the curtain's
+      // rise (scale.y) for free.
+      const crest = new Mesh(
+        new CylinderGeometry(WAVE.range * 1.008, WAVE.range * 1.008, 0.055, 26, 1, true, -wedgeHalf, wedgeHalf * 2),
+        groundMat(HEAL, 0.9)
+      );
+      crest.position.y = WAVE_WALL / 2;
+      crest.renderOrder = 3;
+      crest.name = 'crest';
+      curtain.add(crest);
       g.add(curtain);
     }
     g.position.set(x, 0.035, z);
@@ -953,6 +966,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       // a wave passing through the party rather than as a fence.
       const cur = w.g.getObjectByName('curtain');
       cur.material.opacity = 0.55 * (1 - t) * (1 - t);
+      cur.getObjectByName('crest').material.opacity = 0.95 * (1 - t);
       cur.scale.y = 0.55 + 0.75 * t;
       cur.position.y = (WAVE_WALL * cur.scale.y) / 2 - 0.035;
       const s = 1 + 0.18 * t;
