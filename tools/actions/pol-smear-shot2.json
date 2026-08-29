@@ -3,6 +3,6 @@
   {"type":"wait","ms":400},
   {"type":"mousemove","x":1200,"y":300},
   {"type":"eval","code":"(()=>{const dn=(c)=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c,key:c,bubbles:true}));const up=(c)=>window.dispatchEvent(new KeyboardEvent('keyup',{code:c,key:c,bubbles:true}));dn('KeyD');for(let i=0;i<3;i++){setTimeout(()=>{dn('Space');setTimeout(()=>up('Space'),110);},250+i*1400);}setTimeout(()=>up('KeyD'),5000);return 'go'})()"},
-  {"type":"wait","ms":1835},
+  {"type":"wait","ms": 1815},
   {"type":"eval","code":"(()=>{const {stage,root}=window.__arenaProbe;const s=window.__echoes.state();const p=s.party[0];const V=root.position.clone().set(p.x,0.5,p.z).project(stage.camera);console.log('[SHOT]',JSON.stringify({dtl:p.dashTicksLeft,ghosts:s.vfx.party.smearGhosts,sx:Math.round((V.x*0.5+0.5)*window.innerWidth),sy:Math.round((-V.y*0.5+0.5)*window.innerHeight)}));return 'x'})()"}
 ]
