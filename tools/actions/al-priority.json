@@ -1,0 +1,10 @@
+[
+  { "type": "eval", "code": "window.__P=[];for(const t of ['ally_rescue','revive_start','revive','downed']) __echoes.on(t,ev=>window.__P.push(ev));__echoes.cmd('teleport',0,0)" },
+  { "type": "eval", "code": "(()=>{__echoes.cmd('setHp',3,0);__echoes.cmd('setHp',0,0);return{downed:[0,3],tick:__echoes.tick}})()" },
+  { "type": "wait", "ms": 1200 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'assigned',rescues:window.__P.filter(e=>e.type==='ally_rescue'),channels:s.party_ai.channels,note:'§12 priority = the players body first'}})()" },
+  { "type": "wait", "ms": 5500 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'after-first',revives:window.__P.filter(e=>e.type==='revive').map(e=>({t:e.tick,idx:e.targetIndex,pct:e.pct})),playerHp:s.party[0].hp,archerHp:s.party[3].hp,rescues:window.__P.filter(e=>e.type==='ally_rescue').map(e=>({t:e.tick,by:e.partyIndex,target:e.targetIndex}))}})()" },
+  { "type": "wait", "ms": 7000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'after-second',revives:window.__P.filter(e=>e.type==='revive').map(e=>({t:e.tick,idx:e.targetIndex,pct:e.pct})),partyHp:s.party.map(m=>Math.round(m.hp)),rescues:window.__P.filter(e=>e.type==='ally_rescue').map(e=>({t:e.tick,by:e.partyIndex,target:e.targetIndex}))}})()" }
+]

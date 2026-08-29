@@ -1,0 +1,11 @@
+[
+  { "type": "eval", "code": "window.__R=[];for(const t of ['room_start','wave_start','room_cleared','mark','revive','defeat','rally']) __echoes.on(t,ev=>window.__R.push(ev));__echoes.cmd('teleport',0,0);__echoes.cmd('startRoom','kill_all')" },
+  { "type": "wait", "ms": 1500 },
+  { "type": "key", "key": "Tab", "ms": 60 },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'wave1',room:{w:s.room.waveIndex,total:s.room.wavesTotal,alive:s.room.aliveEnemies},mark:s.party_ai.mark,targets:s.party_ai.allies.map(a=>a.target)}})()" },
+  { "type": "wait", "ms": 25000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'late',room:{w:s.room.waveIndex,total:s.room.wavesTotal,alive:s.room.aliveEnemies,cleared:s.room.cleared},partyHp:s.party.map(m=>m.hp),mark:s.party_ai.mark,allyStates:s.party_ai.allies.map(a=>a.state),events:window.__R.map(e=>e.type+'@'+e.tick)}})()" },
+  { "type": "wait", "ms": 25000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'end',room:{w:s.room.waveIndex,total:s.room.wavesTotal,alive:s.room.aliveEnemies,cleared:s.room.cleared},partyHp:s.party.map(m=>Math.round(m.hp)),markAfterClear:s.party_ai.mark,repeats:s.party_ai.repeats,events:window.__R.map(e=>e.type+'@'+e.tick),hits:__echoes.stats.hits,kills:__echoes.stats.kills,fps:__echoes.fps}})()" }
+]
