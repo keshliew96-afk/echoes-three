@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0);__echoes.cmd('placeAlly',1,-2.6,-1.4);__echoes.cmd('placeAlly',2,-2.2,0.6);__echoes.cmd('placeAlly',3,-2.9,1.6)" },
+  { "type": "eval", "code": "window.__d=__echoes.cmd('spawn','dummy',2.0,0.3);__echoes.cmd('iframe',window.__d,3000);window.__d" },
+  { "type": "wait", "ms": 500 },
+  { "type": "key", "key": "Tab", "ms": 60 },
+  { "type": "wait", "ms": 700 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();const e=s.enemies.find(x=>x.id===window.__d);return{mark:s.party_ai.mark,targets:s.party_ai.allies.map(a=>a.target),allSnapped:s.party_ai.allies.every(a=>a.target===s.party_ai.mark),markPos:e?[e.x,e.z]:null,note:'i-framed dummy: no knockback drift, no damage'}})()" }
+]
