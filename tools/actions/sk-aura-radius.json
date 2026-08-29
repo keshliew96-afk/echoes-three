@@ -9,6 +9,6 @@
  },
  {
   "type": "eval",
-  "code": "(async()=>{const e=window.__echoes,c=e.cmd;c('restoreSkillState',{slots:[{id:'spirit_bolt',remaining:0},null,null,null],override:null});c('teleport',0,-3);for(const i of [0,1,2,3])c('setHp',i,0.3);c('placeAlly',1,-5,-5);c('placeAlly',2,5,-5);c('placeAlly',3,-5,5);await window.__sleep(300);const a=await window.__aim(0,2.0);const T=e.tick;const mine=()=>e.state().skillBolts.find(b=>b.skill==='spirit_bolt');const w=await window.__waitFor(()=>{if(!mine()&&!window.__evOf(T,'skill_cast').length)window.__press('Digit1');const b=mine();return b&&b.traveled>=2.2?b:null;},9000);window.__freeze();return {case:'spirit_bolt frozen mid-flight',frozen:w.v||null,waited:w.waited,tick:e.tick,aim:a.aim,vfx:e.state().skillfx};})()"
+  "code": "(async()=>{const e=window.__echoes,c=e.cmd;c('restoreSkillState',{slots:[{id:'warding_aura',remaining:0},null,null,null],override:null});c('teleport',0,0);for(const i of [0,1,2,3])c('setHp',i,0.4);c('placeAlly',1,0.8,0);c('placeAlly',2,1.25,0);c('placeAlly',3,3.0,0);await window.__sleep(150);const T=e.tick;const snap=()=>e.state().party.map(m=>({id:m.id,d:+Math.hypot(m.x,m.z).toFixed(3),hp:m.hp}));const pre=snap();const w=await window.__waitFor(()=>window.__evOf(T,'aura_pulse').length>=2?window.__evOf(T,'aura_pulse'):null,4000);return {case:'WARDING AURA 0.9 u field: ally at 0.80 u inside, 1.25 u outside',T,pre,post:snap(),pulses:w.v||[],ticks:(w.v||[]).map(p=>p.tick),area:0.9};})()"
  }
 ]

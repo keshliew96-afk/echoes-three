@@ -337,23 +337,40 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   // ------------------------------------------------------------ skill bolts --
   // Sync render rigs to sim 'skillbolt' entities (§19.4 3-layer + shadow).
   const boltRigs = new Map(); // id -> group
-  const boltCoreGeo = new CapsuleGeometry(0.06, 0.15, 4, 10);
+  const boltCoreGeo = new CapsuleGeometry(0.075, 0.18, 4, 10);
   function makeBoltRig(heal) {
     const g = new Group();
     const core = new Mesh(
       boltCoreGeo,
-      new MeshBasicMaterial({ color: new Color(heal ? HEAL : PARCH), toneMapped: false })
+      new MeshBasicMaterial({
+        color: new Color(heal ? HEAL : PARCH),
+        toneMapped: false,
+        // The core joins the TRANSPARENT pass (opacity 1, no depth write) only
+        // so renderOrder can put it ON TOP of its own additive glow. Drawn
+        // under the glow it composites to the ground hue (a Bright Heal bolt
+        // over lit grass measured h~96 = foliage, not the authored h129);
+        // drawn over it, the core keeps its §19.1 hue and the glow stays the
+        // halo around it. depthTest off = §19.4 z-order "projectiles always
+        // render above" characters and environment.
+        transparent: true,
+        opacity: 1,
+        depthWrite: false,
+        depthTest: false,
+      })
     );
     core.rotation.z = Math.PI / 2;
     core.position.y = BOLT_Y;
     core.name = 'core';
+    core.renderOrder = 6;
     g.add(core);
     const glow = makeGlowSprite({ color: heal ? HEAL : AMBER, size: 0.55, opacity: 0.85 });
     glow.position.y = BOLT_Y;
+    glow.renderOrder = 4;
     g.add(glow);
     // Contact shadow: wide + dark enough to survive the additive glow above it
-    // (§19.2 / REFERENCE_BAR check 8: every flier is grounded).
-    g.add(blobShadow(0.2, 0.55));
+    // (§19.2 / REFERENCE_BAR check 8: every flier is grounded). It has to beat
+    // the glow it sits under, so it is wider than the glow's bright core.
+    g.add(blobShadow(0.26, 0.7));
     return g;
   }
 
@@ -419,18 +436,25 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   // ------------------------------------------------------ override reticle --
   // §8/§17: Hearth Amber mark on the F1–F4 override target — ring + 4 notch
   // wedges (shape channel), gently spinning so it reads as a MARK, not a ring.
+  // The ring sits CONCENTRIC OUTSIDE the class identity ring (§17's revive-ring
+  // grammar) and paints AFTER it: the identity ring is an opaque charcoal plate
+  // (allies block) and friendly ground VFX are additive, so at a negative
+  // renderOrder the amber ring was drawn first and both washed it out — only
+  // the notches survived. renderOrder 1 is still below every character mesh
+  // (opaque pass) and the ring stays depth-tested, so bodies occlude it.
   const reticle = new Group();
-  const retRing = new Mesh(new RingGeometry(0.46, 0.62, 40), markMat(AMBER, 0.95));
+  const RET_ORDER = 1;
+  const retRing = new Mesh(new RingGeometry(0.54, 0.7, 44), markMat(AMBER, 0.95));
   retRing.rotation.x = -Math.PI / 2;
-  retRing.renderOrder = -3;
+  retRing.renderOrder = RET_ORDER;
   reticle.add(retRing);
   const notchGeo = new PlaneGeometry(0.14, 0.24);
   for (let i = 0; i < 4; i++) {
     const n = new Mesh(notchGeo, markMat(AMBER, 1));
     n.rotation.x = -Math.PI / 2;
     n.rotation.z = -(i * Math.PI) / 2;
-    n.position.set(Math.cos((i * Math.PI) / 2) * 0.74, 0, Math.sin((i * Math.PI) / 2) * 0.74);
-    n.renderOrder = -3;
+    n.position.set(Math.cos((i * Math.PI) / 2) * 0.82, 0, Math.sin((i * Math.PI) / 2) * 0.82);
+    n.renderOrder = RET_ORDER;
     reticle.add(n);
   }
   // Overhead caret: the half of the mark that CANNOT be washed out by ground

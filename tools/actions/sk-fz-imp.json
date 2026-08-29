@@ -5,6 +5,10 @@
  },
  {
   "type": "eval",
-  "code": "(async()=>{const e=window.__echoes,c=e.cmd;c('restoreSkillState',{slots:[{id:'spirit_bolt',remaining:0},null,null,null],override:null});c('teleport',0,-1.2);c('placeAlly',1,-5,-5);c('placeAlly',2,5,-5);c('placeAlly',3,-5,5);c('spawn','dummy',0,1.4);await window.__sleep(250);const a=await window.__aim(0,4);const T=e.tick;let hitAt=null;const off=e.on('hit',(x)=>{if(!hitAt&&x.source==='spirit_bolt')hitAt=performance.now();});window.__press('Digit1');const t0=Date.now();while(Date.now()-t0<6000&&!hitAt)await new Promise(r=>requestAnimationFrame(r));while(performance.now()-hitAt<120)await new Promise(r=>setTimeout(r,4));window.requestAnimationFrame=()=>0;return {case:'spirit bolt impact frozen 120 ms after the hit',ev:window.__ev(T,['skill_cast','hit','skill_bolt_despawn']),vfx:e.state().skillfx,enemies:e.state().enemies};})()"
+  "code": "(()=>{window.__waitFor=async(pred,ms=6000)=>{const t0=performance.now();while(performance.now()-t0<ms){const v=pred();if(v)return {ok:true,v,waited:+(performance.now()-t0).toFixed(0)};await new Promise(r=>requestAnimationFrame(r));}return {ok:false,waited:ms};};window.__evOf=(T,type)=>window.__echoes.events.filter(e=>e.tick>=T&&e.type===type);window.__hold=async(ms)=>{const t0=performance.now();while(performance.now()-t0<ms)await new Promise(r=>requestAnimationFrame(r));return +(performance.now()-t0).toFixed(0);};window.__freeze=()=>{window.requestAnimationFrame=()=>0;};'ready'})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes,c=e.cmd;const P=new URLSearchParams(location.search);const frames=+(P.get('frames')||2);c('restoreSkillState',{slots:[{id:'spirit_bolt',remaining:0},null,null,null],override:null});c('teleport',0,-1.2);await window.__sleep(250);const a=await window.__aim(0,4);const d=c('spawn','dummy',0,0.2);const T=e.tick;const w=await window.__waitFor(()=>{if(!window.__evOf(T,'skill_cast').length)window.__press('Digit1');return e.events.find(x=>x.tick>=T&&x.type==='hit'&&x.source==='spirit_bolt');},9000);for(let i=0;i<frames;i++)await new Promise(r=>requestAnimationFrame(r));window.__freeze();return {case:'SPIRIT BOLT impact frozen N frames after the hit',frames,dummy:d,hit:w.v||null,waited:w.waited,vfx:e.state().skillfx};})()"
  }
 ]

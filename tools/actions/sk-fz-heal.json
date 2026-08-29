@@ -5,6 +5,10 @@
  },
  {
   "type": "eval",
-  "code": "(async()=>{const e=window.__echoes,c=e.cmd;const hold=+(new URLSearchParams(location.search).get('hold')||100);c('restoreSkillState',{slots:[{id:'swift_mend',remaining:0},null,null,null],override:0});c('teleport',0,-1.0);for(const i of [0,1,2,3])c('setHp',i,0.3);await window.__sleep(250);const T=e.tick;const t0=performance.now();window.__press('Digit1');while(performance.now()-t0<hold)await new Promise(r=>setTimeout(r,4));window.requestAnimationFrame=()=>0;return {case:'self heal burst frozen',holdMs:hold,elapsed:+(performance.now()-t0).toFixed(0),ev:window.__ev(T,['skill_cast','heal']),vfx:e.state().skillfx};})()"
+  "code": "(()=>{window.__waitFor=async(pred,ms=6000)=>{const t0=performance.now();while(performance.now()-t0<ms){const v=pred();if(v)return {ok:true,v,waited:+(performance.now()-t0).toFixed(0)};await new Promise(r=>requestAnimationFrame(r));}return {ok:false,waited:ms};};window.__evOf=(T,type)=>window.__echoes.events.filter(e=>e.tick>=T&&e.type===type);window.__hold=async(ms)=>{const t0=performance.now();while(performance.now()-t0<ms)await new Promise(r=>requestAnimationFrame(r));return +(performance.now()-t0).toFixed(0);};window.__freeze=()=>{window.requestAnimationFrame=()=>0;};'ready'})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes,c=e.cmd;const P=new URLSearchParams(location.search);const frames=+(P.get('frames')||3);const nocast=P.get('nocast')==='1';c('restoreSkillState',{slots:[{id:'swift_mend',remaining:0},null,null,null],override:0});c('teleport',0,-1.0);for(const i of [0,1,2,3])c('setHp',i,0.3);await window.__sleep(400);const T=e.tick;let w={ok:false,waited:0,v:null},held=0;const t0=performance.now();if(!nocast){window.__press('Digit1');w=await window.__waitFor(()=>window.__evOf(T,'skill_cast')[0]);for(let i=0;i<frames;i++)await new Promise(r=>requestAnimationFrame(r));held=+(performance.now()-t0).toFixed(0);}window.__freeze();return {case:nocast?'CONTROL no cast':'heal burst frozen N frames after the cast',frames,castSeenAfterMs:w.waited,msSinceKey:held,cast:w.v||null,vfx:e.state().skillfx,playerScreen:e.state().party?undefined:null};})()"
  }
 ]

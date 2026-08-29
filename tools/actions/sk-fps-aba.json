@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__sleep=(ms)=>new Promise(r=>setTimeout(r,ms));window.__move=async(x,y)=>{window.dispatchEvent(new MouseEvent('mousemove',{clientX:x,clientY:y,bubbles:true,cancelable:true}));await window.__sleep(35);return window.__echoes.state().party[0].aim;};window.__aim=async(wx,wz)=>{const e=window.__echoes;let sx=innerWidth/2,sy=innerHeight/2;let a=await window.__move(sx,sy);for(let i=0;i<25&&a;i++){const d=Math.hypot(wx-a.x,wz-a.z);if(d<0.02)return{ok:true,sx,sy,aim:a,i,d};const h=20;const ax=await window.__move(sx+h,sy);const ay=await window.__move(sx,sy+h);const j11=(ax.x-a.x)/h,j12=(ay.x-a.x)/h,j21=(ax.z-a.z)/h,j22=(ay.z-a.z)/h;const det=j11*j22-j12*j21;if(Math.abs(det)<1e-12)break;const ex=wx-a.x,ez=wz-a.z;let dsx=(j22*ex-j12*ez)/det,dsy=(-j21*ex+j11*ez)/det;const L=Math.hypot(dsx,dsy),cap=400;if(L>cap){dsx*=cap/L;dsy*=cap/L;}sx=Math.max(3,Math.min(innerWidth-3,sx+dsx));sy=Math.max(3,Math.min(innerHeight-3,sy+dsy));a=await window.__move(sx,sy);}return{ok:false,sx,sy,aim:a};};window.__press=(code)=>{window.dispatchEvent(new KeyboardEvent('keydown',{code,bubbles:true,cancelable:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code,bubbles:true,cancelable:true}));};window.__ev=(T,types)=>window.__echoes.events.filter(e=>e.tick>=T&&types.includes(e.type));'ready'})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes,c=e.cmd;window.__meas=async(ms)=>{let n=0;const t0=performance.now();let t=t0;const fr=[];while(t-t0<ms){const p=t;await new Promise(r=>requestAnimationFrame(r));t=performance.now();n++;fr.push(t-p);}fr.sort((a,b)=>a-b);return {rafFps:+(n*1000/(t-t0)).toFixed(1),medMs:+fr[Math.floor(fr.length/2)].toFixed(2),medFps:+(1000/fr[Math.floor(fr.length/2)]).toFixed(1),p90Ms:+fr[Math.floor(fr.length*0.9)].toFixed(2)};};const KIT=[{id:'mending_bolt',remaining:0},{id:'nova_bloom',remaining:0},{id:'sanctuary',remaining:0},{id:'restorative_wave',remaining:0}];c('restoreSkillState',{slots:KIT,override:null});c('teleport',0,0);await window.__sleep(200);const a=await window.__aim(0,5);window.__spam=()=>{const iv=setInterval(()=>{c('restoreSkillState',{slots:KIT,override:null});for(const i of [0,1,3])c('setHp',i,0.3);for(const k of ['Digit1','Digit2','Digit3','Digit4'])window.__press(k);},100);return ()=>clearInterval(iv);};await window.__meas(6000);return {phase:'warmup 6 s burned, aim',aimOk:a.ok,entities:e.entityCount};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes;const r=await window.__meas(4000);return {phase:\"A1 idle\",...r,vfx:e.state().skillfx};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes;const stop=window.__spam();await window.__sleep(600);let peak=0,pv=null;const w=setInterval(()=>{const v=e.state().skillfx;const s=v.motes+v.flashes+v.glyphs+v.rings+v.wedges+v.boltRigs+v.zoneRigs;if(s>peak){peak=s;pv=v;}},60);const r=await window.__meas(4000);clearInterval(w);stop();return {phase:\"B1 full spam\",...r,peak,pv};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes;const r=await window.__meas(4000);return {phase:\"A2 idle again\",...r,vfx:e.state().skillfx};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes;const stop=window.__spam();await window.__sleep(600);let peak=0,pv=null;const w=setInterval(()=>{const v=e.state().skillfx;const s=v.motes+v.flashes+v.glyphs+v.rings+v.wedges+v.boltRigs+v.zoneRigs;if(s>peak){peak=s;pv=v;}},60);const r=await window.__meas(4000);clearInterval(w);stop();return {phase:\"B2 full spam again\",...r,peak,pv};})()"
+ }
+]

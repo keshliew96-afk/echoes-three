@@ -5,6 +5,10 @@
  },
  {
   "type": "eval",
-  "code": "(async()=>{const e=window.__echoes,c=e.cmd;c('restoreSkillState',{slots:[{id:'mending_bolt',remaining:0},null,null,null],override:null});c('teleport',0,-3);for(const i of [0,1,2,3])c('setHp',i,0.3);await window.__sleep(250);const a=await window.__aim(0,2.0);const t0=Date.now();let fired=false,frozen=null;while(Date.now()-t0<8000){if(!fired)window.__press('Digit1');const b=e.state().skillBolts[0];if(b){fired=true;if(b.traveled>=2.2){frozen={tick:e.tick,bolt:b};window.requestAnimationFrame=()=>0;break;}}await new Promise(r=>requestAnimationFrame(r));}return {case:'mending bolt frozen mid-flight',frozen,aim:a.aim};})()"
+  "code": "(()=>{window.__waitFor=async(pred,ms=6000)=>{const t0=performance.now();while(performance.now()-t0<ms){const v=pred();if(v)return {ok:true,v,waited:+(performance.now()-t0).toFixed(0)};await new Promise(r=>requestAnimationFrame(r));}return {ok:false,waited:ms};};window.__evOf=(T,type)=>window.__echoes.events.filter(e=>e.tick>=T&&e.type===type);window.__hold=async(ms)=>{const t0=performance.now();while(performance.now()-t0<ms)await new Promise(r=>requestAnimationFrame(r));return +(performance.now()-t0).toFixed(0);};window.__freeze=()=>{window.requestAnimationFrame=()=>0;};'ready'})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes,c=e.cmd;c('restoreSkillState',{slots:[{id:'mending_bolt',remaining:0},null,null,null],override:null});c('teleport',0,-3);for(const i of [0,1,2,3])c('setHp',i,0.3);c('placeAlly',1,-5,-5);c('placeAlly',2,5,-5);c('placeAlly',3,-5,5);await window.__sleep(300);const a=await window.__aim(0,2.0);const T=e.tick;const mine=()=>e.state().skillBolts.find(b=>b.skill==='mending_bolt');const w=await window.__waitFor(()=>{if(!mine()&&!window.__evOf(T,'skill_cast').length)window.__press('Digit1');const b=mine();return b&&b.traveled>=2.2?b:null;},9000);window.__freeze();return {case:'mending_bolt frozen mid-flight',frozen:w.v||null,waited:w.waited,tick:e.tick,aim:a.aim,vfx:e.state().skillfx};})()"
  }
 ]
