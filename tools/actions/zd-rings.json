@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const p=window.__arenaProbe;const st=p.stage;const V=st.camera.position.constructor;const inScene=[];st.scene.traverse(o=>{if(o.name===\"identity-ring\"){let q=o.parent;while(q&&!String(q.name).startsWith(\"critter-\"))q=q.parent;const w=o.getWorldPosition(new V());inScene.push([q?q.name:\"?\",+w.x.toFixed(2),+w.z.toFixed(2)]);}});return JSON.stringify({inScene});})()"
+ }
+]

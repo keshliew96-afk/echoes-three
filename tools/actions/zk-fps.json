@@ -1,0 +1,14 @@
+[
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=(ms)=>new Promise(r=>setTimeout(r,ms));window.__echoes.cmd(\"teleport\",6,-4);await s(4000);const a=[];for(let i=0;i<10;i++){a.push(window.__echoes.fps);await s(400);}a.sort((x,y)=>x-y);return {samples:a.map(v=>Math.round(v*10)/10),median:a[5],min:a[0],max:a[9],ents:window.__echoes.entityCount};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ }
+]

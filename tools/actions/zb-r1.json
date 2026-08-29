@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const p=window.__arenaProbe;const cam=p.stage.camera;const W=innerWidth,H=innerHeight;const V=p.root.position.constructor;const raf=window.requestAnimationFrame.bind(window);await new Promise(r=>raf(r));window.requestAnimationFrame=()=>0;const out=[];p.stage.scene.traverse(o=>{if(o.name!=='identity-ring')return;const w=o.getWorldPosition(new V());const ws=o.getWorldScale(new V());let half=0;o.traverse(c=>{if(c.geometry&&c.geometry.parameters&&c.geometry.parameters.width){const hw=c.geometry.parameters.width/2*ws.x;if(hw>half)half=hw;}});let owner=o.parent;while(owner&&!String(owner.name).startsWith('critter-'))owner=owner.parent;const c0=w.clone().project(cam);const e=w.clone();e.x+=half*0.98;const e2=e.project(cam);const cx=(c0.x*.5+.5)*W,cy=(-c0.y*.5+.5)*H,ex=(e2.x*.5+.5)*W;out.push({who:owner?owner.name.slice(8):'?',cx:+cx.toFixed(1),cy:+cy.toFixed(1),rx:+Math.abs(ex-cx).toFixed(2)});});return out;})()"
+ }
+]

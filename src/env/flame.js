@@ -71,12 +71,22 @@ export function getFlameTexture() {
   flamePath(W / 2 + 2, H - 16, 26, 44, -3);
   ctx.fill();
 
-  // White-hot core, small and low — this is the ONLY part above the bloom
-  // threshold, so bloom gives it a halo instead of eating the whole flame.
+  // White-hot core, low in the flame — with GAIN_MAX at 0.96 this is the ONLY
+  // part above the bloom threshold, so bloom gives it a halo instead of eating
+  // the whole flame.
+  // ROUND D: grown 26 -> 33 px and its mid stop lifted. Capping the gain to
+  // keep the SATURATED gold body out of the bloom pass cost the frame its
+  // brightest pixels (variant 1 spawn: LUMA >200 1.14% -> 0.64%), and the
+  // honest way to buy them back is to make the part that is ALLOWED to bloom
+  // bigger, because it is near-neutral: this core measures HSV saturation
+  // 0.13, and its mid stop 0.20 — both far under the analyzer's 0.35 gate, so
+  // however much of it lands on the party it can only brighten them, never
+  // rotate them into a reserved band.
   ctx.filter = 'blur(5px)';
-  g = ctx.createRadialGradient(W / 2, H - 46, 0, W / 2, H - 46, 26);
-  g.addColorStop(0, 'rgba(244,239,230,0.98)');
-  g.addColorStop(0.5, 'rgba(246,226,180,0.6)');
+  g = ctx.createRadialGradient(W / 2, H - 46, 0, W / 2, H - 46, 33);
+  g.addColorStop(0, 'rgba(248,244,236,1.0)');
+  g.addColorStop(0.45, 'rgba(250,237,203,0.74)');
+  g.addColorStop(0.78, 'rgba(246,214,140,0.26)');
   g.addColorStop(1, 'rgba(240,180,90,0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
@@ -124,7 +134,34 @@ export function getFlameTexture() {
 // up there that the flame's DISPLAY value barely moves — modelled, the body
 // goes from display 238 to 231 — the change is almost entirely in what the
 // bloom pass sees.
-export const GAIN_MAX = 1.6;
+//
+// ROUND D — 1.6 was solved against the wrong stop. The texture has THREE
+// painted bodies, and 0.4333 is the OUTER one. Re-solved per stop (sRGB ->
+// linear, Rec.709 luminance):
+//
+//   outer body   rgba(232,162,61,.92)   0.4335   x1.6 = 0.694   hue 36
+//   licking tips rgba(240,178,80,.50)   0.5060   x1.6 = 0.810   hue 36
+//   INNER body   rgba(247,214,140,.95)  0.6976   x1.6 = 1.116   hue 37
+//   white core   rgba(244,239,230,.98)  0.8667   x1.6 = 1.387   hue 38, sat 0.13
+//
+// i.e. at 1.6 the inner gold body sat at 1.12 linear — 64% ABOVE the 0.68
+// bloom threshold — so the thing UnrealBloomPass smeared over the frame was a
+// heavily SATURATED amber, not the near-neutral core. Measured on one frozen
+// frame with the party leashed into a brazier pool (tools/zd-layers.js,
+// variant 3): hiding just the eleven flame sprites took the reserved-band
+// count 641 -> 279 px, and the bloom's own addition sampled over the party
+// measured (+27.6, +15.7, +9.3) — an add with HSV saturation 0.66, which is
+// what turns dark party pixels (ink, shadowed fur, the Swordsman's wine
+// tunic) into h5-25 Ember pixels no material-stage fix can reach.
+//
+// GAIN_MAX = 0.96 is the largest gain that keeps every COLOURED stop under the
+// threshold (inner body 0.670 < 0.68) while the near-neutral white core still
+// clears it at 0.832. The bloom skirt is therefore a saturation-0.13 cream:
+// an additive that low in chroma cannot rotate anything it lands on into a
+// reserved band, it can only brighten it. The flame's DISPLAY value barely
+// moves — ACES at 1.04 exposure maps 0.83 to ~232 and 0.42 to ~194 — so the
+// fire still reads as the brightest thing inside its own pool.
+export const GAIN_MAX = 0.96;
 
 export function makeFlameSprite(size = 0.34, opacity = 1, gain = 1) {
   const material = new SpriteMaterial({

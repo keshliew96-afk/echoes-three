@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{\nconst E=()=>window.__echoes;\nwindow.__sleep=(ms)=>new Promise(r=>setTimeout(r,ms));\nwindow.__tick=()=>E().tick;\nwindow.__mark=()=>E().events.length;\nwindow.__since=(n,types)=>E().events.slice(n).filter(e=>!types||types.includes(e.type));\nwindow.__waitTick=async(t)=>{while(E().tick<t){await window.__sleep(8);}return E().tick;};\nwindow.__move=async(x,y)=>{window.dispatchEvent(new MouseEvent('mousemove',{clientX:x,clientY:y,bubbles:true,cancelable:true}));await window.__sleep(35);return E().state().party[0].aim;};\nwindow.__aim=async(wx,wz)=>{let sx=innerWidth/2,sy=innerHeight/2;let a=await window.__move(sx,sy);for(let i=0;i<25&&a;i++){const d=Math.hypot(wx-a.x,wz-a.z);if(d<0.02)return{ok:true,sx,sy,aim:a,d:Math.round(d*1000)/1000};const h=20;const ax=await window.__move(sx+h,sy);const ay=await window.__move(sx,sy+h);const j11=(ax.x-a.x)/h,j12=(ay.x-a.x)/h,j21=(ax.z-a.z)/h,j22=(ay.z-a.z)/h;const det=j11*j22-j12*j21;if(Math.abs(det)<1e-12)break;const ex=wx-a.x,ez=wz-a.z;let dsx=(j22*ex-j12*ez)/det,dsy=(-j21*ex+j11*ez)/det;const L=Math.hypot(dsx,dsy),cap=400;if(L>cap){dsx*=cap/L;dsy*=cap/L;}sx=Math.max(3,Math.min(innerWidth-3,sx+dsx));sy=Math.max(3,Math.min(innerHeight-3,sy+dsy));a=await window.__move(sx,sy);}return{ok:false,sx,sy,aim:a};};\nwindow.__press=(c)=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:c,bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:c,bubbles:true}));};\nwindow.__equip=(ids)=>{const slots=ids.map(id=>id?{id,remaining:0}:null);while(slots.length<4)slots.push(null);return E().cmd('restoreSkillState',{slots,override:null});};\nwindow.__hp=(id,p)=>E().cmd('setHp',id,p);\nwindow.__pa=(i,x,z)=>E().cmd('placeAlly',i,x,z);\nwindow.__tp=(x,z)=>E().cmd('teleport',x,z);\nwindow.__party=()=>E().state().party.map(p=>({id:p.id,pi:p.partyIndex===undefined?0:p.partyIndex,hp:Math.round(p.hp*100)/100,mx:p.maxHp,f:Math.round(p.hp/p.maxHp*1000)/1000,x:Math.round(p.x*1000)/1000,z:Math.round(p.z*1000)/1000}));\nwindow.__slots=()=>E().state().skills;\nwindow.__r=(v)=>Math.round(v*1000)/1000;\nreturn 'ready';})()\n"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{try{return await (async()=>{__equip(['guardian_bond']);__tp(0,0);__pa(1,0.62,0.18);__pa(2,-0.6,0.26);__pa(3,0.06,-0.66);__hp(0,0.3);__hp(1,0.3);__hp(2,0.3);__hp(3,0.3);await __sleep(300);__press('Digit1');await __sleep(45);window.requestAnimationFrame=()=>0;return {fx:window.__echoes.state().fx};})();}catch(e){return {err:String(e)}}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ }
+]

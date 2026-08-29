@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const v=window.__echoes.state().vfx;return JSON.stringify({ringOverlay:v.ringOverlay,bandGuard:v.bandGuard,variant:v.variant});})()"
+ }
+]

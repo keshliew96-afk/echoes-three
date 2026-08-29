@@ -1,0 +1,22 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "// One frozen frame, many layer configurations: which layer actually puts\r\n// pixels in the reserved h5-25 band? Returns {config: count} plus the bloom\r\n// add sampled at the base centroid.\r\n(() => {\r\n  const p = window.__arenaProbe;\r\n  const st = p.stage;\r\n  const raf = window.requestAnimationFrame.bind(window);\r\n  window.requestAnimationFrame = () => 0;\r\n  const cv = document.createElement('canvas');\r\n  const ctx = cv.getContext('2d', { willReadFrequently: true });\r\n  const gl = st.renderer.domElement;\r\n  const hsv = (r, g, b) => {\r\n    r /= 255; g /= 255; b /= 255;\r\n    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;\r\n    let h = 0;\r\n    if (d) {\r\n      if (mx === r) h = 60 * (((g - b) / d) % 6);\r\n      else if (mx === g) h = 60 * ((b - r) / d + 2);\r\n      else h = 60 * ((r - g) / d + 4);\r\n    }\r\n    if (h < 0) h += 360;\r\n    return [h, mx ? d / mx : 0];\r\n  };\r\n  const grab = () => {\r\n    st.render();\r\n    cv.width = gl.width; cv.height = gl.height;\r\n    ctx.drawImage(gl, 0, 0);\r\n    return ctx.getImageData(0, 0, cv.width, cv.height);\r\n  };\r\n  const count = (img) => {\r\n    const d = img.data; let n = 0, sx = 0, sy = 0;\r\n    for (let i = 0, px = 0; i < d.length; i += 4, px++) {\r\n      const r = d[i], g = d[i + 1], b = d[i + 2];\r\n      if (0.2126 * r + 0.7152 * g + 0.0722 * b <= 40) continue;\r\n      const [h, s] = hsv(r, g, b);\r\n      if (s > 0.35 && h >= 5 && h < 25) { n++; sx += px % img.width; sy += (px / img.width) | 0; }\r\n    }\r\n    return n ? [n, Math.round(sx / n), Math.round(sy / n)] : [0, -1, -1];\r\n  };\r\n  const hide = (pred) => { const l = []; st.scene.traverse((o) => { if (o.visible && pred(o)) { o.visible = false; l.push(o); } }); return l; };\r\n  const show = (l) => l.forEach((o) => { o.visible = true; });\r\n  const under = (o, name) => { for (let q = o; q; q = q.parent) if (q.name === name) return true; return false; };\r\n\r\n  const preds = {\r\n    halos: (o) => o.isSprite && o.material?.blending === 2,\r\n    flamebodies: (o) => o.isSprite && o.material?.blending !== 2,\r\n    pools: (o) => o.isMesh && o.material?.blending === 2 && o.geometry?.type === 'CircleGeometry',\r\n    alladd: (o) => (o.isMesh || o.isSprite || o.isPoints) && o.material?.blending === 2,\r\n    bodies: (o) => String(o.name).startsWith('critter-'),\r\n    fireall: (o) => (o.isSprite || (o.isMesh && o.material?.blending === 2 && o.geometry?.type === 'CircleGeometry')),\r\n  };\r\n  const out = { base: count(grab()) };\r\n  for (const [k, f] of Object.entries(preds)) {\r\n    const l = hide(f);\r\n    out['no_' + k] = count(grab());\r\n    out['no_' + k].push(l.length);\r\n    show(l);\r\n  }\r\n  // guard off\r\n  p.setGuard(-14, 34, 0.3, 0);\r\n  out.guardOff = count(grab());\r\n  p.setGuard(-14, 34, 0.3, 1);\r\n  out.guardOn = count(grab());\r\n  // bodies + guard off\r\n  p.setGuard(-14, 34, 0.3, 0);\r\n  const hb = hide(preds.bodies);\r\n  out.guardOff_noBodies = count(grab());\r\n  show(hb);\r\n  p.setGuard(-14, 34, 0.3, 1);\r\n  window.requestAnimationFrame = raf;\r\n  return out;\r\n})()\r\n"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ }
+]

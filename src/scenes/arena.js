@@ -65,6 +65,8 @@ import { makeFlameSprite, createEmberField } from '../env/flame.js';
 import { COOL, EMBER_GLOW, mix } from '../env/colors.js';
 import { variantLayoutRng } from '../env/layout.js';
 import { createAfterimages } from '../render/critters/afterimage.js';
+import { mountRingOverlay, ringOverlayInfo } from '../render/critters/common.js';
+import { installBandGuard, bandGuardInfo } from '../env/bandguard.js';
 
 // Render-cosmetic scaffold numbers (grouped; not brief-bound gameplay values).
 const FIREFLY_COUNT = 120;
@@ -319,6 +321,13 @@ export function createArenaScene(stage, toggles, ctx) {
 
   const lightsTuned = tuneActOneLighting(stage.scene, spec.mood);
 
+  // §17 Zone 3: identity rings are "exempt from all palette/lighting shifts".
+  // Mount the post-bloom ring compositor (render/critters/common.js) so the
+  // arena's brazier pools and the fires' bloom skirt cannot add into the
+  // class-accent band — the arena is the only scene here that owns a post
+  // stack, so it is the scene that mounts the pass.
+  mountRingOverlay(stage);
+
   // --- The playable inside: same world/player/juice as ?scene=graybox. Its
   // placeholder floor + walls are the only top-level Plane/Box meshes in the
   // graybox root at build time — strip them, keep everything else (player rig,
@@ -514,11 +523,22 @@ export function createArenaScene(stage, toggles, ctx) {
       // floor than a tighter, hotter one — the hot version clipped its core
       // to a desaturated near-white that the analyzer does not count as warm
       // at all, and that reads as a spotlight rather than as firelight.
-      const pool = groundPool(EMBER_GLOW.pool, 2.4, 0.4, poolY(), true);
+      // ROUND D — pool opacities raised (torch 0.40 -> 0.66, brazier
+      // 0.42 -> 0.72, lantern 0.38 -> 0.58). Capping the flame gain at
+      // env/flame.js GAIN_MAX 0.96 (so only the near-NEUTRAL white core is a
+      // bloom source) removed the fires' blown-out skirt, and with it ~7000 px
+      // of the frame's LUMA >200 (variant 1 spawn measured 1.14% -> 0.55%).
+      // That light has to come back from a source that cannot re-create the
+      // problem, and the POOL is it: at 0.72 its core composites to ~0.57
+      // linear — display ~206, i.e. inside the >200 bucket — while staying
+      // clear of the 0.68 bloom threshold, so it brightens the floor without
+      // smearing anything over the party. It is also the physically right
+      // place for the light: a fire on a floor makes a hot floor.
+      const pool = groundPool(EMBER_GLOW.pool, 2.4, 0.66, poolY(), true);
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
-      flames.push({ body, glow, pool, poolO: 0.4, glowS: 0.85, glowO: 0.3, x: em.x, y: fy, z: fz, phase: cosmetic.range(0, Math.PI * 2) });
+      flames.push({ body, glow, pool, poolO: 0.66, glowS: 0.85, glowO: 0.3, x: em.x, y: fy, z: fz, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.2, z: fz });
     } else if (em.kind === 'brazier') {
       // Mid-field fire bowl (baseline-v030 F1): the emitter that OWNS the
@@ -587,7 +607,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // which is the §19.3 warm-dominant story on a coin flip. The warmth
       // moves from the bloom skirt (which hid the emitter) into the POOL
       // (which is what a fire on a floor actually does).
-      const pool = groundPool(EMBER_GLOW.pool, 3.0 * poolR, 0.42, poolY(), true);
+      const pool = groundPool(EMBER_GLOW.pool, 3.0 * poolR, 0.72, poolY(), true);
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
@@ -600,7 +620,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // the ground around the pedestal to featureless white, which is exactly
       // what turned the emitter into a backlit smudge — the F1 defect this
       // whole prop exists to fix. The FLAME is the hot centre now.)
-      flames.push({ body, glow, pool, poolO: 0.42, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.95, phase: cosmetic.range(0, Math.PI * 2) });
+      flames.push({ body, glow, pool, poolO: 0.72, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.95, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.12, z: fz });
     } else if (em.kind === 'lantern') {
       // A lantern is a FIRE, not a cold lamp: a small flame inside the glass
@@ -614,7 +634,7 @@ export function createArenaScene(stage, toggles, ctx) {
       glow.material.color.copy(EMBER_GLOW.halo);
       glow.position.set(em.x, em.y, em.z);
       root.add(glow);
-      const pool = groundPool(EMBER_GLOW.pool, 1.9, 0.38, poolY());
+      const pool = groundPool(EMBER_GLOW.pool, 1.9, 0.58, poolY());
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
@@ -971,7 +991,19 @@ export function createArenaScene(stage, toggles, ctx) {
     }
     flyPosAttr.needsUpdate = true;
     flyColAttr.needsUpdate = true;
+
+    // §19.1 reserved-band guard (src/env/bandguard.js): rigs and props built
+    // after this scene (party critters, hot-added dressing) pick the guard up
+    // on a 30-frame cadence. Already-guarded materials are a WeakSet hit.
+    bandGuard.rescan();
   }
+
+  // §19.1: Ember Danger belongs to enemy threats alone. The arena's warm key +
+  // torch/brazier PointLights were rotating saturated party albedo (worst case
+  // the Swordsman's wine tunic) straight into the reserved h5-25 band whenever
+  // the party stood in a pool. The guard makes that impossible at the material
+  // stage, for LIT non-threat surfaces only (src/env/bandguard.js).
+  const bandGuard = installBandGuard(stage.scene);
 
   // Render-side probe handle for capture-harness evals (tools/capture.mjs
   // `eval` actions): lets a verification script project prop instances to
@@ -986,6 +1018,10 @@ export function createArenaScene(stage, toggles, ctx) {
     stage,
     root,
     emitters,
+    // §19.1 band-guard knob: lets a capture sweep the guard edges inside ONE
+    // page session instead of one build per candidate value.
+    setGuard: bandGuard.setGuard,
+    guardInfo: bandGuardInfo,
     pick(sx, sy, depth = 3) {
       pickNdc.set((sx / window.innerWidth) * 2 - 1, -(sy / window.innerHeight) * 2 + 1);
       pickRay.setFromCamera(pickNdc, stage.camera);
@@ -1007,6 +1043,10 @@ export function createArenaScene(stage, toggles, ctx) {
       ...(inner.debugState ? inner.debugState() : {}),
       variant: spec.id,
       variantName: spec.name,
+      // Post-bloom identity-ring compositor (§17 lighting exemption).
+      ringOverlay: ringOverlayInfo(),
+      // §19.1 reserved-band guard (lit non-threat materials).
+      bandGuard: bandGuardInfo(),
       // v0.3.0 party integration — lets captures assert clip state + presence.
       party: {
         healerAnim: healerRig.getAnim(),

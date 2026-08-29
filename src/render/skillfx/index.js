@@ -27,10 +27,14 @@
 // the event bus, consumes the COSMETIC stream exclusively.
 import {
   AdditiveBlending,
+  BackSide,
+  BufferAttribute,
+  BufferGeometry,
   CanvasTexture,
   CapsuleGeometry,
   CircleGeometry,
   Color,
+  CylinderGeometry,
   DoubleSide,
   Group,
   Mesh,
@@ -44,6 +48,7 @@ import {
 import { PALETTE } from '../../data/palette.js';
 import { SKILLS } from '../../sim/skills.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
+import { exactColor } from '../critters/common.js';
 
 // Cosmetic scaffold tunables (render-only, not brief numbers).
 const BOLT_Y = 0.55; // matches the basic bolt's flight height
@@ -52,6 +57,28 @@ const MOTE_CAP = 240;
 const HEAL = PALETTE.brightHeal;
 const AMBER = PALETTE.hearthAmber;
 const PARCH = PALETTE.parchment;
+
+// ACES cannot render Bright Heal #5FE873 at full value: a saturated green that
+// bright needs a NEGATIVE red primary, the solve clamps, and the pixel that
+// actually lands is hue 107 with the red channel pinned — which is how a heal
+// bolt ended up the same hue as ACT1_GROUND #548C38 (h100) and read only by
+// luma. Solved offline against the shipped post chain (tools/zk-solve.mjs),
+// 95% of Bright Heal's DISPLAY value is inside the gamut and converges to
+// residual 0.0004: it renders as rgb(90,220,109) = hue 128.7, saturation 0.59
+// against the palette's hue 128.8 / saturation 0.59. So the heal core gives up
+// 5% of value and keeps the colour exactly. Its linear luminance (0.419) also
+// lands under the bloom threshold, so the core cannot wash itself out either.
+function dimHex(hex, k) {
+  const s = new Color(hex).getHexString(SRGBColorSpace);
+  const v = parseInt(s, 16);
+  return (
+    '#' +
+    [(v >> 16) & 255, (v >> 8) & 255, v & 255]
+      .map((x) => Math.round(x * k).toString(16).padStart(2, '0'))
+      .join('')
+  );
+}
+const HEAL_CORE = dimHex(PALETTE.brightHeal, 0.95);
 
 // ---------------------------------------------------------------- textures --
 let glyphTexture = null;
@@ -99,6 +126,58 @@ function groundMat(color, opacity) {
     blending: AdditiveBlending,
     depthWrite: false,
     toneMapped: false, // stays chromatic — ACES would grey the accent out
+    side: DoubleSide,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// ABOVE-THE-PLANE SLICES (Round D, skills criterion 3)
+//
+// Restorative Wave, Guardian Bond and Sanctuary are the three party-TARGETED
+// shapes, so they are cast exactly when the party is bunched — and all three
+// drew on the ground plane only, where four overlapping chibi silhouettes and
+// their contact shadows cover the delivery shape completely (Round C: "the
+// sim-side effect exists but is almost entirely hidden under the ally
+// bodies"). Each therefore grows a slice that stands ABOVE the character
+// plane: a standing arc curtain on the wave, a bowed ribbon over the heads on
+// the bond, a standing wall of light on the sanctuary. Chibi standing height
+// is ~1.05 u (§19.2), so the slices run to ~1.0-1.6 u — high enough that a
+// body cannot hide them, low enough that they never cover a face.
+//
+// All three fade OUT with height so nothing reads as a solid box: one shared
+// vertical gradient, opaque at the ground, gone at the top.
+let riseTexture = null;
+function getRiseTexture() {
+  if (riseTexture) return riseTexture;
+  const canvas = document.createElement('canvas');
+  canvas.width = 4;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  const g = ctx.createLinearGradient(0, 64, 0, 0); // v=0 is the TOP of the map
+  g.addColorStop(0.0, 'rgba(255,255,255,0)');
+  g.addColorStop(0.16, 'rgba(255,255,255,0.95)');
+  g.addColorStop(0.45, 'rgba(255,255,255,0.5)');
+  g.addColorStop(0.78, 'rgba(255,255,255,0.16)');
+  g.addColorStop(1.0, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 4, 64);
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  riseTexture = tex;
+  return tex;
+}
+
+// Additive standing-light material: the same chromatic contract as groundMat
+// (never tone-mapped, so Bright Heal stays Bright Heal) plus the height fade.
+function riseMat(color, opacity) {
+  return new MeshBasicMaterial({
+    map: getRiseTexture(),
+    color: new Color(color),
+    transparent: true,
+    opacity,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    toneMapped: false,
     side: DoubleSide,
   });
 }
@@ -254,6 +333,54 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   // wide soft glow strip (motes ride the heal burst at the recipient).
   const beams = [];
   const beamPool = [];
+  const arcPool = [];
+  // The bond ARC: a ribbon that leaves the caster's staff, bows over the
+  // party's heads and lands on the recipient. Built once with a fixed segment
+  // count and re-pointed per cast (no per-cast geometry churn); the two rails
+  // are offset in the XZ plane, so the ribbon lies FLAT to a 3/4 top-down
+  // camera and reads as a band of light rather than as an edge-on line.
+  const BOND_SEG = 18;
+  const BOND_LIFT = 1.55; // u at the apex — well clear of the ~1.05 u party
+  const BOND_END_Y = 0.62; // u — leaves and lands at chest/staff height
+  function makeBondRibbon(width, color, opacity) {
+    const geo = new BufferGeometry();
+    const pos = new Float32Array((BOND_SEG + 1) * 2 * 3);
+    const uv = new Float32Array((BOND_SEG + 1) * 2 * 2);
+    const idx = new Uint16Array(BOND_SEG * 6);
+    for (let i = 0; i <= BOND_SEG; i++) {
+      const t = i / BOND_SEG;
+      uv[(i * 2) * 2] = t; uv[(i * 2) * 2 + 1] = 0.22;
+      uv[(i * 2 + 1) * 2] = t; uv[(i * 2 + 1) * 2 + 1] = 0.22;
+      if (i < BOND_SEG) {
+        const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
+        idx.set([a, b, c, b, d, c], i * 6);
+      }
+    }
+    geo.setAttribute('position', new BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new BufferAttribute(uv, 2));
+    geo.setIndex(new BufferAttribute(idx, 1));
+    const m = new Mesh(geo, riseMat(color, opacity));
+    m.frustumCulled = false;
+    m.userData.width = width;
+    return m;
+  }
+  function aimBondRibbon(m, x0, z0, x1, z1) {
+    const pos = m.geometry.attributes.position.array;
+    const dx = x1 - x0, dz = z1 - z0;
+    const len = Math.hypot(dx, dz) || 1;
+    const px = (-dz / len) * m.userData.width;
+    const pz = (dx / len) * m.userData.width;
+    for (let i = 0; i <= BOND_SEG; i++) {
+      const t = i / BOND_SEG;
+      const x = x0 + dx * t;
+      const z = z0 + dz * t;
+      const y = BOND_END_Y + 4 * (BOND_LIFT - BOND_END_Y) * t * (1 - t);
+      pos[(i * 2) * 3] = x - px; pos[(i * 2) * 3 + 1] = y; pos[(i * 2) * 3 + 2] = z - pz;
+      pos[(i * 2 + 1) * 3] = x + px; pos[(i * 2 + 1) * 3 + 1] = y; pos[(i * 2 + 1) * 3 + 2] = z + pz;
+    }
+    m.geometry.attributes.position.needsUpdate = true;
+    m.geometry.computeBoundingSphere();
+  }
   function spawnBeam(x0, z0, x1, z1, color = HEAL) {
     const dx = x1 - x0;
     const dz = z1 - z0;
@@ -282,7 +409,28 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     b.position.set((x0 + x1) / 2, 0.04, (z0 + z1) / 2);
     b.rotation.y = -Math.atan2(dz, dx);
     root.add(b);
-    beams.push({ g: b, age: 0, life: 0.3 });
+    // Above-plane slice: a wide dim rail with a bright thin rail inside it,
+    // both bowing over the party's heads. They carry WORLD-space vertices, so
+    // they hang off `root` directly instead of the beam's rotated group.
+    let arc = arcPool.pop();
+    if (!arc) {
+      arc = new Group();
+      const arcGlow = makeBondRibbon(0.14, color, 0.42);
+      arcGlow.renderOrder = 2;
+      arcGlow.name = 'arcGlow';
+      const arcCore = makeBondRibbon(0.05, color, 0.95);
+      arcCore.renderOrder = 3;
+      arcCore.name = 'arcCore';
+      arc.add(arcGlow);
+      arc.add(arcCore);
+    }
+    for (const name of ['arcGlow', 'arcCore']) {
+      const m = arc.getObjectByName(name);
+      m.material.color.set(color);
+      aimBondRibbon(m, x0, z0, x1, z1);
+    }
+    root.add(arc);
+    beams.push({ g: b, arc, age: 0, life: 0.3 });
     // Motes strung along the link so the layer count holds everywhere.
     const n = Math.max(2, Math.round(len * 2));
     for (let i = 1; i < n; i++) {
@@ -295,6 +443,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   // skill table, never re-typed here).
   const WAVE = SKILLS.restorative_wave;
   const wedgeHalf = (WAVE.area * Math.PI) / 180;
+  const WAVE_WALL = 1.15; // u — clears the ~1.05 u chibi standing height (§19.2)
   const wedges = [];
   const wedgePool = [];
   function spawnWedge(x, z, dirX, dirZ) {
@@ -317,6 +466,17 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       rim.name = 'rim';
       g.add(fill);
       g.add(rim);
+      // Standing arc curtain at the wedge's outer edge. Geometry is authored
+      // centred on +Z (three's CylinderGeometry theta 0 points +Z and grows
+      // toward +X), so aiming is one rotation.y = PI/2 - yaw.
+      const curtain = new Mesh(
+        new CylinderGeometry(WAVE.range, WAVE.range, WAVE_WALL, 26, 1, true, -wedgeHalf, wedgeHalf * 2),
+        riseMat(HEAL, 0.5)
+      );
+      curtain.position.y = WAVE_WALL / 2 - 0.035;
+      curtain.renderOrder = 2; // above the ground VFX and the bodies' shadows
+      curtain.name = 'curtain';
+      g.add(curtain);
     }
     g.position.set(x, 0.035, z);
     // Geometry is centered on local +X; Euler order XYZ applies Rz first, so
@@ -324,6 +484,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     const yaw = Math.atan2(dirZ, dirX);
     g.getObjectByName('fill').rotation.z = -yaw;
     g.getObjectByName('rim').rotation.z = -yaw;
+    g.getObjectByName('curtain').rotation.y = Math.PI / 2 - yaw;
     root.add(g);
     wedges.push({ g, age: 0, life: 0.32 });
     // Motes sprayed through the arc.
@@ -337,13 +498,15 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   // ------------------------------------------------------------ skill bolts --
   // Sync render rigs to sim 'skillbolt' entities (§19.4 3-layer + shadow).
   const boltRigs = new Map(); // id -> group
-  const boltCoreGeo = new CapsuleGeometry(0.075, 0.18, 4, 10);
+  const boltCoreGeo = new CapsuleGeometry(0.092, 0.20, 4, 10); // +22% radius: the old core was ~10 px in flight, thin enough that FXAA blended its whole width into the grass
   function makeBoltRig(heal) {
     const g = new Group();
     const core = new Mesh(
       boltCoreGeo,
       new MeshBasicMaterial({
-        color: new Color(heal ? HEAL : PARCH),
+        // Authored through the post-chain inverse so the pixel that lands on
+        // screen IS the palette hex (§19.1), not what ACES makes of it.
+        color: heal ? exactColor(HEAL_CORE) : exactColor(PARCH),
         toneMapped: false,
         // The core joins the TRANSPARENT pass (opacity 1, no depth write) only
         // so renderOrder can put it ON TOP of its own additive glow. Drawn
@@ -363,6 +526,39 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     core.name = 'core';
     core.renderOrder = 6;
     g.add(core);
+    // §19.2 ink line on the projectile. Round C measured the Mending Bolt's
+    // in-flight core at hue 101 / sat 0.37 against Bright Heal's authored
+    // hue 129 / sat 0.59 — the SAME hue as ACT1_GROUND #548C38 (h100), so the
+    // heal bolt only read by luma over grass. Two causes, both fixed here:
+    //   * `toneMapped: false` does nothing in this pipeline. The composer
+    //     renders to a HalfFloat target, so materials never tonemap; ACES runs
+    //     later in OutputPass over the whole frame and rotates the authored hex
+    //     on its way to the screen. The core is now authored through
+    //     `exactColorNearest` (render/critters/common.js), which inverts ACES +
+    //     the grade — the same solver the Healer's staff gem uses, and the
+    //     `Nearest` variant because a saturated Bright Heal at full value is
+    //     outside the ACES gamut and would clamp its hue away.
+    //   * the core is only ~10 px across in flight, so the shipped FXAA pass
+    //     blended its edge straight into the grass behind it. A Void Charcoal
+    //     inverted hull gives every one of those blends a DARK partner instead
+    //     of a green one, which is what keeps the core's own hue measurable —
+    //     and it is the storybook ink line the rest of the game already wears.
+    const ink = new Mesh(
+      boltCoreGeo,
+      new MeshBasicMaterial({
+        color: exactColor(PALETTE.voidCharcoal),
+        side: BackSide,
+        transparent: true,
+        opacity: 0.95,
+        depthWrite: false,
+        depthTest: false,
+      })
+    );
+    ink.rotation.z = Math.PI / 2;
+    ink.position.y = BOLT_Y;
+    ink.scale.setScalar(1.34);
+    ink.renderOrder = 5;
+    g.add(ink);
     const glow = makeGlowSprite({ color: heal ? HEAL : AMBER, size: 0.55, opacity: 0.85 });
     glow.position.y = BOLT_Y;
     glow.renderOrder = 4;
@@ -390,6 +586,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   // ------------------------------------------------------------------ zones --
   // Sanctuary: layered translucent discs + rim + motes (§19.4 AoE grammar).
   const zoneRigs = new Map(); // id -> { g, radius, emit }
+  const ZONE_WALL = 1.25; // u — clears the ~1.05 u chibi standing height (§19.2)
   function makeZoneRig(radius) {
     const g = new Group();
     const fill = new Mesh(new CircleGeometry(radius, 40), groundMat(HEAL, 0.13));
@@ -410,6 +607,25 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     const halo = makeGlowSprite({ color: HEAL, size: radius * 2.4, opacity: 0.2 });
     halo.position.y = 0.25;
     g.add(halo);
+    // Above-plane slice: a standing wall of light around the zone edge. The
+    // Sanctuary disc is the shape the party stands INSIDE, so on the ground
+    // plane alone it is exactly what four bunched bodies cover; the wall is
+    // what still says "you are in the zone" when they do. Fades out with
+    // height (getRiseTexture), so it reads as light rising off the rim.
+    // Opacity 0.20 (a first cut ran 0.42): a Sanctuary lives 4 s (§7), and at
+    // 0.42 the near half of the wall sat over the party for all four of them —
+    // measured on a bunched capture, the four bodies washed to near-white and
+    // lost the REFERENCE_BAR check-3 silhouette read. At 0.20 the wall is a
+    // veil in front and a clear standing rim behind, and the zone still reads
+    // from above the bodies.
+    const wall = new Mesh(
+      new CylinderGeometry(radius, radius, ZONE_WALL, 44, 1, true),
+      riseMat(HEAL, 0.20)
+    );
+    wall.position.y = ZONE_WALL / 2;
+    wall.renderOrder = 2;
+    wall.name = 'wall';
+    g.add(wall);
     return g;
   }
 
@@ -590,6 +806,10 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       rig.g.scale.set(breathe, 1, breathe);
       const rim = rig.g.getObjectByName('rim');
       rim.material.opacity = 0.55 + 0.35 * (rig.pulseT / 0.35) + 0.08 * Math.sin(tSec * 3 + e.id);
+      // The wall breathes with the rim and flares on every zone tick, so the
+      // 1.0 s cadence (§6) is legible from above the bodies too.
+      const wall = rig.g.getObjectByName('wall');
+      wall.material.opacity = 0.17 + 0.20 * (rig.pulseT / 0.35) + 0.03 * Math.sin(tSec * 2.2 + e.id);
       rig.moteClock += dt;
       if (rig.moteClock > 0.22) {
         rig.moteClock = 0;
@@ -706,12 +926,16 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       if (b.age >= b.life) {
         root.remove(b.g);
         beamPool.push(b.g);
+        root.remove(b.arc);
+        arcPool.push(b.arc);
         beams.splice(i, 1);
         continue;
       }
       const t = b.age / b.life;
       b.g.getObjectByName('core').material.opacity = 0.85 * (1 - t);
       b.g.getObjectByName('glow').material.opacity = 0.35 * (1 - t);
+      b.arc.getObjectByName('arcCore').material.opacity = 0.95 * (1 - t);
+      b.arc.getObjectByName('arcGlow').material.opacity = 0.45 * (1 - t * t);
     }
     for (let i = wedges.length - 1; i >= 0; i--) {
       const w = wedges[i];
@@ -725,6 +949,12 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       const t = w.age / w.life;
       w.g.getObjectByName('fill').material.opacity = 0.3 * (1 - t);
       w.g.getObjectByName('rim').material.opacity = 0.75 * (1 - t);
+      // The curtain sweeps: it rises fast and thins out, so the shape reads as
+      // a wave passing through the party rather than as a fence.
+      const cur = w.g.getObjectByName('curtain');
+      cur.material.opacity = 0.55 * (1 - t) * (1 - t);
+      cur.scale.y = 0.55 + 0.75 * t;
+      cur.position.y = (WAVE_WALL * cur.scale.y) / 2 - 0.035;
       const s = 1 + 0.18 * t;
       w.g.scale.set(s, 1, s);
     }

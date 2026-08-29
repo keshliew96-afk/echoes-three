@@ -1,0 +1,22 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "// In-page A/B danger-band probe. Freezes rAF, then renders the SAME frame\n// under several layer configurations and counts reserved-band pixels\n// (analyzer gate: s>0.35, L>40, 5<=h<25) for each. Returns JSON.\n(() => {\n  const p = window.__arenaProbe;\n  const st = p.stage;\n  const raf = window.requestAnimationFrame.bind(window);\n  window.requestAnimationFrame = () => 0;\n  const cv = document.createElement('canvas');\n  const ctx = cv.getContext('2d', { willReadFrequently: true });\n  const gl = st.renderer.domElement;\n  const hsv = (r, g, b) => {\n    r /= 255; g /= 255; b /= 255;\n    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;\n    let h = 0;\n    if (d) {\n      if (mx === r) h = 60 * (((g - b) / d) % 6);\n      else if (mx === g) h = 60 * ((b - r) / d + 2);\n      else h = 60 * ((r - g) / d + 4);\n    }\n    if (h < 0) h += 360;\n    return [h, mx ? d / mx : 0, mx * 255];\n  };\n  const grab = () => {\n    st.render();\n    cv.width = gl.width; cv.height = gl.height;\n    ctx.drawImage(gl, 0, 0);\n    return ctx.getImageData(0, 0, cv.width, cv.height);\n  };\n  const count = (img) => {\n    const d = img.data; let n = 0; let sx = 0, sy = 0;\n    for (let i = 0, px = 0; i < d.length; i += 4, px++) {\n      const r = d[i], g = d[i + 1], b = d[i + 2];\n      const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;\n      if (L <= 40) continue;\n      const [h, s] = hsv(r, g, b);\n      if (s > 0.35 && h >= 5 && h < 25) { n++; sx += px % img.width; sy += (px / img.width) | 0; }\n    }\n    return { n, cx: n ? Math.round(sx / n) : -1, cy: n ? Math.round(sy / n) : -1 };\n  };\n  const sets = {};\n  const hide = (pred) => { const l = []; st.scene.traverse((o) => { if (pred(o) && o.visible) { o.visible = false; l.push(o); } }); return l; };\n  const show = (l) => l.forEach((o) => { o.visible = true; });\n  const bodies = (o) => String(o.name).startsWith('critter-');\n\n  const base = grab();\n  sets.base = count(base);\n  st.bloomPass.enabled = false;\n  const nb = grab();\n  sets.noBloom = count(nb);\n  st.bloomPass.enabled = true;\n  const hb = hide(bodies);\n  sets.noBody = count(grab());\n  st.bloomPass.enabled = false;\n  sets.noBodyNoBloom = count(grab());\n  st.bloomPass.enabled = true;\n  show(hb);\n\n  // bloom delta over the base danger centroid neighbourhood\n  const cx = sets.base.cx, cy = sets.base.cy, R = 30;\n  let dr = 0, dg = 0, db = 0, m = 0;\n  if (cx >= 0) {\n    for (let y = Math.max(0, cy - R); y < Math.min(base.height, cy + R); y++)\n      for (let x = Math.max(0, cx - R); x < Math.min(base.width, cx + R); x++) {\n        const i = (y * base.width + x) * 4;\n        dr += base.data[i] - nb.data[i];\n        dg += base.data[i + 1] - nb.data[i + 1];\n        db += base.data[i + 2] - nb.data[i + 2];\n        m++;\n      }\n  }\n  sets.bloomAdd = m ? { r: +(dr / m).toFixed(1), g: +(dg / m).toFixed(1), b: +(db / m).toFixed(1) } : null;\n  window.requestAnimationFrame = raf;\n  return sets;\n})()\n"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ }
+]

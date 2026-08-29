@@ -1,0 +1,14 @@
+[
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=(ms)=>new Promise(r=>setTimeout(r,ms));window.__echoes.cmd(\"teleport\",6,-4);await s(3500);const p=window.__arenaProbe;const st=p.stage;const raf=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=()=>0;await s(150);const gl=st.renderer.getContext();const ring=st.composer.passes.find(q=>q.constructor.name===\"RingOverlayPass\");const time=(n)=>{st.render();gl.finish();const t0=performance.now();for(let i=0;i<n;i++)st.render();gl.finish();return (performance.now()-t0)/n;};const A=[],B=[],C=[];for(let k=0;k<7;k++){A.push(time(24));ring.enabled=false;p.setGuard(0,0,9,0);B.push(time(24));ring.enabled=true;p.setGuard(-14,34,0.3,1);C.push(time(24));}const med=(a)=>{const b=[...a].sort((x,y)=>x-y);return +b[Math.floor(b.length/2)].toFixed(2);};window.requestAnimationFrame=raf;return {shipped:med(A),off:med(B),shipped2:med(C),A:A.map(v=>+v.toFixed(2)),B:B.map(v=>+v.toFixed(2))};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ }
+]

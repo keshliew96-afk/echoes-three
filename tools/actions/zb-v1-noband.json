@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const p=window.__arenaProbe;let n=0;p.stage.scene.traverse(o=>{if(o.name===\"identity-ring\"){o.children.forEach(c=>{if(c.material&&c.material.blending!==2){c.visible=false;n++;}});}});return n;})()"
+ }
+]

@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',4.4,-1.2)"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();const p=window.__arenaProbe;const V=p.stage.camera.position.constructor;const out={player:[s.player?s.player.x:null,s.player?s.player.z:null]};const rings=[];p.stage.scene.traverse(o=>{if(o.name===\"identity-ring\"){const w=o.getWorldPosition(new V());let q=o.parent;while(q&&!String(q.name).startsWith(\"critter-\"))q=q.parent;rings.push([q?q.name.slice(8):\"?\",+w.x.toFixed(2),+w.z.toFixed(2)]);}});out.rings=rings;out.em=p.emitters.filter(e=>e.kind===\"brazier\").map(e=>[+e.x.toFixed(2),+e.z.toFixed(2)]);return JSON.stringify(out);})()"
+ }
+]
