@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(200); E.cmd('skipToRoom',8); await s(60);\n const bid=E.cmd('runState').boss.id;\n const iv=setInterval(()=>{E.cmd('iframe',bid,120); E.cmd('bossHp',0.9,true);},80);\n await s(1800); window.__iv=iv;\n const st=E.state(); const v=E.cmd('runState');\n return {boss:v.boss, bossfx:st.bossfx, banner:E.hud.banner(), fps:E.fps};\n})()"
+ }
+]

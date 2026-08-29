@@ -207,18 +207,13 @@ export const RUN_CSS = `
   }
   .rn-plaque .rn-cur { font-size: 16px; color: ${PALETTE.warmGrey}; letter-spacing: 0.14em; }
   /* §16 insufficient funds: plaque EMPHASIS + one ~300 ms shake. The item is
-     never hidden, never greyed, never disabled for price. */
+     never hidden, never greyed, never disabled for price. The lateral offset is
+     written per frame from ui/run/shop.js (see the note there: a CSS transform
+     keyframe is composited, and a composited animation never reaches the
+     capture harness's pixels). This rule owns the STATIC half of the emphasis. */
   .rn-plaque.rn-deny {
-    animation: rn-shake 300ms ease;
     border-color: ${PALETTE.hearthAmber};
     box-shadow: 0 0 18px ${PALETTE.hearthAmber}66;
-  }
-  @keyframes rn-shake {
-    0%,100% { transform: translateX(0); }
-    15% { transform: translateX(-6px); }
-    35% { transform: translateX(5px); }
-    55% { transform: translateX(-4px); }
-    75% { transform: translateX(3px); }
   }
   .rn-owned { font-size: 17px; color: ${PALETTE.bone}; }
   .rn-stamp {

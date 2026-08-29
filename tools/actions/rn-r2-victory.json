@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(150);\n for(let g=0; g<400; g++){ const v=E.cmd('runState');\n  if(v.phase==='victory') break;\n  if(v.phase==='combat'){ if(v.room===8){ E.cmd('killAllEnemies'); E.cmd('killBoss'); } else E.cmd('killAllEnemies'); if(v.mode==='defend') E.cmd('clearRoom'); }\n  else if(v.phase==='reward') E.cmd('draftTake');\n  else if(v.phase==='path') E.cmd('pathChoose',1);\n  else if(v.phase==='shop'){ E.cmd('shopBuy',0); E.cmd('shopAdvance'); }\n  await s(70); }\n await s(500);\n const v=E.cmd('runState'); const d=E.runUi();\n return {phase:v.phase, summary:v.summary, screen:d.screen, text:d.text, buttons:d.buttons, veil:d.veil};\n})()"
+ }
+]

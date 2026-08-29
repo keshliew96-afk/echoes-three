@@ -106,13 +106,41 @@ export function createShopScreen({ run, build }) {
 
   // §16 insufficient funds: ONE ~300 ms shake on the PLAQUE (the item itself is
   // untouched). Driven by the sim's `currency_denied` event.
+  //
+  // The offset is written from a rAF loop, NOT from a CSS `animation`. A CSS
+  // transform keyframe is handed to the compositor, and a compositor-only
+  // animation is invisible to `getComputedStyle`, to `getBoundingClientRect`
+  // AND — measured — to the capture harness's screenshots: seven frames across
+  // the 300 ms window came back pixel-identical while the class was on the
+  // element. A main-thread inline transform lands in layout and in every
+  // captured pixel, so the shake is real for a player and provable for a critic.
+  // The class still carries the non-moving half of §16's "plaque emphasis"
+  // (amber border + glow).
+  const SHAKE_MS = 300;
+  const SHAKE_AMP = 6; // px at the first swing, decaying to 0
+  const shakeState = new Map(); // plaque -> rAF id
   function denyShake(index) {
     const p = plaques[index];
     if (!p) return;
-    p.classList.remove('rn-deny');
-    void p.offsetWidth; // restart the animation
+    const prev = shakeState.get(p);
+    if (prev) cancelAnimationFrame(prev);
     p.classList.add('rn-deny');
-    setTimeout(() => p.classList.remove('rn-deny'), 340);
+    const t0 = performance.now();
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / SHAKE_MS);
+      if (k >= 1) {
+        p.style.transform = '';
+        p.classList.remove('rn-deny');
+        shakeState.delete(p);
+        return;
+      }
+      // Four decaying swings inside the window (~13 Hz), never a wobble that
+      // outlives the denial.
+      const dx = SHAKE_AMP * (1 - k) * Math.sin(k * Math.PI * 4);
+      p.style.transform = `translateX(${dx.toFixed(2)}px)`;
+      shakeState.set(p, requestAnimationFrame(step));
+    };
+    shakeState.set(p, requestAnimationFrame(step));
   }
 
   function key(code, fresh) {

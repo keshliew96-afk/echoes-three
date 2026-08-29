@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(200); E.cmd('skipToRoom',8); await s(1500);\n for(let i=0;i<80 && !E.cmd('runState').boss.sealed;i++) await s(60);\n const v=E.cmd('runState'); const st=E.state();\n return {boss:v.boss, bossfx:st.bossfx, banner:E.hud.banner()};\n})()"
+ }
+]

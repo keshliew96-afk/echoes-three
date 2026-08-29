@@ -16,7 +16,7 @@
 //
 // Render-only: reads sim state read-only, never mutates it.
 import { Group, Vector3 } from 'three';
-import { HITFLASH, TICK_HZ } from '../../core/constants.js';
+import { HITFLASH, TICK_HZ, CAMERA } from '../../core/constants.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { buildStag } from './stag.js';
@@ -31,6 +31,34 @@ const DEATH_SEC = 1.1;
 // halving — the scene rig runs at 0.5x while the Stag is alive.
 const ROOM_DIM = 0.5;
 
+// --- Room-8 camera treatment ------------------------------------------------
+// The follow rig frames the PLAYER. That is right for six combat rooms and
+// wrong for the boss: the Stag enters 4.2 u north of the party spawn and stands
+// 3.0 u tall, so a player-centred frame pins it against the top edge and buries
+// the violet-veined rack — its only §11 identity feature — behind the Zone-2
+// boss banner. §11 makes the Stag "the room's single brightest light source",
+// which it cannot be if its brightest pixels are off-frame, so room 8 gets its
+// own treatment: while the Stag lives the whole rig TRANSLATES toward it by a
+// fraction of the party->Stag offset, capped, smoothed, and re-clamped to the
+// arena's own focus box. The player never leaves frame (the bias is at most a
+// little over half the distance to a boss that is itself closing) and the
+// screenshake offset rides through untouched — position and look-at point move
+// by the identical delta, so the camera's orientation is unchanged.
+const BOSS_CAM = {
+  weight: 0.62, // fraction of the focus->Stag offset taken as bias
+  maxZ: 3.4, // u — cap along the screen-vertical axis
+  maxX: 1.6, // u — cap sideways (the frame is wide; it needs far less help)
+  lift: 1.1, // u of extra northward bias for the 3.0 u rack above the hooves
+  stiffness: 5, // 1/s exponential ease so entry/death glide instead of snapping
+  // The arena's own focus clamp (scenes/arena.js CAM_CLAMP) — re-applied after
+  // the bias so a boss hard against a wall can never reveal the exterior.
+  clampX: 7.0,
+  clampZmin: -4.0,
+  clampZmax: 5.0,
+};
+const CAM_OFF_Z = CAMERA.distance * Math.cos((CAMERA.elevationDeg * Math.PI) / 180);
+const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+
 export function createBossLayer({ stage, world, bus, cosmetic }) {
   const root = new Group();
   root.name = 'bossfx';
@@ -41,6 +69,8 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   const bursts = [];
   const dying = [];
   let dimmed = null; // [{ light, intensity }] captured when the room darkens
+  const camBias = { x: 0, z: 0 }; // live room-8 framing bias (see BOSS_CAM)
+  let camBiasPrimed = false; // the entry frame snaps; everything after it eases
 
   // --- shader pre-warm --------------------------------------------------
   // Building the Stag rig costs one ~900 ms frame the first time its ~10
@@ -154,6 +184,64 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     dimmed = null;
   }
 
+  // --- Room-8 framing (see BOSS_CAM). Runs AFTER the scene has settled the
+  // follow rig for this frame and before stage.render(), so it is the last word
+  // on where the camera sits without any scene owning boss knowledge.
+  const _dir = new Vector3();
+  function frameBoss(dt) {
+    const cam = stage.camera;
+    // The ground point currently under frame centre, read back off the camera's
+    // own forward ray — that keeps whatever the scene did (clamp, shake) intact
+    // instead of trying to recompute it.
+    cam.getWorldDirection(_dir);
+    if (Math.abs(_dir.y) < 1e-5) return;
+    const t = -cam.position.y / _dir.y;
+    const fx = cam.position.x + _dir.x * t;
+    const fz = cam.position.z + _dir.z * t;
+
+    let wantX = 0;
+    let wantZ = 0;
+    if (rec) {
+      const p = rec.rig.group.position;
+      wantX = clamp((p.x - fx) * BOSS_CAM.weight, -BOSS_CAM.maxX, BOSS_CAM.maxX);
+      // `lift` biases a little further north than the midpoint because the
+      // Stag's mass runs 3.0 u UP from the point being framed.
+      wantZ = clamp(
+        (p.z - fz) * BOSS_CAM.weight - BOSS_CAM.lift,
+        -BOSS_CAM.maxZ,
+        BOSS_CAM.maxZ
+      );
+    }
+    if (rec && !camBiasPrimed) {
+      // The frame the Stag appears, the treatment SNAPS. Easing in from zero
+      // spent ~0.5 s with the rack pinned against the banner — exactly the
+      // frame a room-entry capture lands on. The snap hides inside the §13
+      // transition fade; every later adjustment eases.
+      camBias.x = wantX;
+      camBias.z = wantZ;
+      camBiasPrimed = true;
+    } else {
+      const a = 1 - Math.exp(-BOSS_CAM.stiffness * Math.max(0, dt));
+      camBias.x += (wantX - camBias.x) * a;
+      camBias.z += (wantZ - camBias.z) * a;
+    }
+    if (!rec && Math.abs(camBias.x) < 1e-4 && Math.abs(camBias.z) < 1e-4) {
+      camBiasPrimed = false;
+      return;
+    }
+
+    // Re-clamp the biased focus to the arena's own box, then translate position
+    // and look-at by the identical delta (orientation, and the shake riding on
+    // it, unchanged).
+    const tx = clamp(fx + camBias.x, -BOSS_CAM.clampX, BOSS_CAM.clampX);
+    const tz = clamp(fz + camBias.z, BOSS_CAM.clampZmin, BOSS_CAM.clampZmax);
+    const dx = tx - fx;
+    const dz = tz - fz;
+    cam.position.x += dx;
+    cam.position.z += dz;
+    cam.lookAt(tx, 0, tz);
+  }
+
   let lastElapsed = null;
 
   function update(tSec, alpha) {
@@ -182,6 +270,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
           walkPhase: 0,
           telegraphK: 0,
           lungeK: 0,
+          sealK: 0,
           flashUntilTick: 0,
         };
         darkenRoom();
@@ -204,6 +293,11 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       rec.telegraphK += (telTarget - rec.telegraphK) * (1 - Math.exp(-12 * dt));
       const lungeTarget = ent.lungeTicksLeft > 0 ? 1 : 0;
       rec.lungeK += (lungeTarget - rec.lungeK) * (1 - Math.exp(-18 * dt));
+      // Hollow Seal (sim/boss.js): while a spawned add wave is outstanding the
+      // Stag's hide will not open. The tell is the corruption itself flaring —
+      // God-stuff Violet on the boss, which §19.1 reserves for exactly this.
+      const sealTarget = ent.sealed ? 1 : 0;
+      rec.sealK += (sealTarget - rec.sealK) * (1 - Math.exp(-8 * dt));
 
       const hpFrac = Math.max(0, ent.hp / ent.maxHp);
       rec.rig.pose({
@@ -212,6 +306,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
         moveK: Math.min(1, simSpeed / 1.4),
         telegraphK: rec.telegraphK,
         lungeK: rec.lungeK,
+        sealK: rec.sealK,
         hpFrac,
       });
 
@@ -267,6 +362,8 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       for (const m of d.rig.mats) m.emissiveIntensity = Math.max(0, 1 - k * 1.6);
       d.rig.pose({ t: tSec, walkPhase: 0, moveK: 0, telegraphK: 0, lungeK: 0, hpFrac: 0 });
     }
+
+    frameBoss(dt); // last word on the camera this frame (room 8 only)
   }
 
   // Screen-space box of the Stag (body + rack + ground pool), so a capture can
@@ -317,6 +414,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       dimmedLights: dimmed ? dimmed.length : 0,
       warmed,
       pooled: spareRigs.length,
+      camBias: { x: Math.round(camBias.x * 100) / 100, z: Math.round(camBias.z * 100) / 100 },
       screenBox: screenBox(),
     };
   }

@@ -87,7 +87,8 @@ export function createRunSystem({
   let pendingRoom = 0; // room the fade is walking toward
   let fadeUntilTick = 0;
   let rewardFor = {}; // room index -> promised reward type
-  let clearedRooms = 0;
+  let clearedRooms = 0; // COMBAT rooms cleared — drives the §14 stipend only
+  let roomsDone = 0; // every room left behind (combat + the shop) — the §18 summary row
   let startTick = 0;
 
   // ------------------------------------------------------------ run frame --
@@ -120,6 +121,7 @@ export function createRunSystem({
     active = true;
     wallet = RUN.startingGlint;
     clearedRooms = 0;
+    roomsDone = 0;
     rewardFor = { 1: 'skill' }; // §2: room 1's reward is always a Skill draft
     summary = null;
     startTick = getTick();
@@ -193,8 +195,12 @@ export function createRunSystem({
     skillSys.clearOverride();
     events.emit(tick, 'heal_override', { index: null });
     // 5. stipend (+12 per combat-room clear, incl. the boss, incl. after a
-    //    defend soft-fail).
+    //    defend soft-fail). `clearedRooms` is the COMBAT counter the §14
+    //    arithmetic rides on; `roomsDone` is the §18 summary's "rooms cleared"
+    //    and counts every room left behind, the shop included — a flawless run
+    //    must read 8 / 8, not 7 / 8.
     clearedRooms += 1;
+    roomsDone = Math.max(roomsDone, roomIndex);
     gainGlint(RUN.stipend, 'clear_stipend');
 
     if (roomIndex === RUN.bossRoom) {
@@ -246,10 +252,15 @@ export function createRunSystem({
     const promised = rewardFor[roomIndex] ?? 'skill';
     reward = draft.offer(promised);
     phase = 'reward';
+    // NOTE (binding, whole module): the bus builds every event as
+    // `{ tick, type, ...payload }` (core/events.js), so a payload key named
+    // `type` OVERWRITES the event's own type and makes the event unfindable by
+    // `events.some(e => e.type === 'reward_offer')`. The reward's kind
+    // therefore rides on `reward:` here, in draft_taken and in draft_declined.
     events.emit(getTick(), 'reward_offer', {
       room: roomIndex,
       promised,
-      type: reward.type,
+      reward: reward.type,
       id: reward.id,
       substituted: reward.substituted,
       line: reward.line,
@@ -265,10 +276,10 @@ export function createRunSystem({
     const taken = { type: reward.type, id: reward.id };
     if (reward.type === 'skill') {
       const r = skillSys.giveSkill(reward.id); // -> first empty slot (§16)
-      events.emit(tick, 'draft_taken', { type: 'skill', id: reward.id, slot: r.slot ?? null });
+      events.emit(tick, 'draft_taken', { reward: 'skill', id: reward.id, slot: r.slot ?? null });
     } else {
       buildSys.grantNode(reward.id, 'drafted'); // -> bench, never auto-socketed
-      events.emit(tick, 'draft_taken', { type: 'node', id: reward.id, bench: true });
+      events.emit(tick, 'draft_taken', { reward: 'node', id: reward.id, bench: true });
     }
     reward = null;
     afterReward(taken);
@@ -279,7 +290,7 @@ export function createRunSystem({
     if (phase !== 'reward') return null;
     const type = reward ? reward.type : null;
     const id = reward ? reward.id : null;
-    events.emit(getTick(), 'draft_declined', { type, id }); // declines have no memory
+    events.emit(getTick(), 'draft_declined', { reward: type, id }); // declines have no memory
     reward = null;
     afterReward(null);
     return { declined: true, type, id };
@@ -396,7 +407,14 @@ export function createRunSystem({
 
   function advanceFromShop() {
     if (phase !== 'shop') return null;
-    events.emit(getTick(), 'shop_close', { wallet, sold: shop.stock.filter((s) => s.sold).length });
+    // The shop room is a room the player leaves behind, so it counts toward
+    // the §18 summary row (it pays no stipend — `clearedRooms` is untouched).
+    roomsDone = Math.max(roomsDone, RUN.shopRoom);
+    events.emit(getTick(), 'shop_close', {
+      wallet,
+      sold: shop.stock.filter((s) => s.sold).length,
+      roomsDone,
+    });
     beginFade(RUN.bossRoom); // one-way (§16)
     return { nextRoom: RUN.bossRoom };
   }
@@ -406,7 +424,8 @@ export function createRunSystem({
     const b = buildSys.view();
     return {
       result,
-      rooms: clearedRooms,
+      rooms: roomsDone, // §18 "ROOMS CLEARED n / 8" — every room left behind
+      combatRooms: clearedRooms, // the §14 stipend counter (max 7)
       lastRoom: roomIndex,
       glint: wallet,
       seed: frame ? frame.seed : null,
@@ -461,6 +480,8 @@ export function createRunSystem({
     frame = null;
     rewardFor = {};
     pendingRoom = 0;
+    roomsDone = 0;
+    clearedRooms = 0;
     wallet = RUN.startingGlint;
     phase = 'idle';
     boss.despawn();
@@ -528,6 +549,7 @@ export function createRunSystem({
       mode: frame && roomIndex ? frame.modes[roomIndex - 1] : null,
       wallet,
       clearedRooms,
+      roomsDone,
       freeSkillSlots: draft.freeSkillSlots(),
       frame: frame
         ? { seed: frame.seed, modes: [...frame.modes], defendAt: [...frame.defendAt], sides: [...frame.sides] }
@@ -615,11 +637,14 @@ export function createRunSystem({
           clearedRooms += 1;
           gainGlint(RUN.stipend, 'skip_stipend');
         }
+        roomsDone = Math.max(roomsDone, n - 1); // every room before n is behind us
         enterRoom(n);
         return view();
       }
       case 'bossHp':
-        return boss.setHpPct(args[0] ?? 0.5);
+        // ('bossHp', pct[, skipPhases]) — skipPhases marks the add waves at or
+        // above pct as already played so the Hollow Seal lets the Stag sit there.
+        return boss.setHpPct(args[0] ?? 0.5, args[1] === true);
       case 'killBoss': {
         const b = boss.entity();
         if (!b) return null;

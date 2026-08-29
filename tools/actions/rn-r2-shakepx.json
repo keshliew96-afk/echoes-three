@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(200); E.cmd('skipToRoom',7); await s(600); E.cmd('wallet',10); await s(150);\n const p=document.querySelectorAll('#run-screen .rn-plaque')[2]; const r=p.getBoundingClientRect();\n E.cmd('shopBuy',2);\n return {box:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}};\n})()"
+ }
+]

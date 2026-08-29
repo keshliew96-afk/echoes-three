@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(200); E.cmd('skipToRoom',7); await s(500); E.cmd('wallet',10); await s(80);\n const pl=()=>document.querySelectorAll('#run-screen .rn-plaque')[2];\n const samp=()=>{const p=pl();const cs=getComputedStyle(p);const r=p.getBoundingClientRect();\n   return {tf:cs.transform,anim:cs.animationName,x:Math.round(r.x*10)/10,border:cs.borderColor,shadow:cs.boxShadow.slice(0,40)};};\n const out=[['pre',samp()]];\n E.cmd('shopBuy',2);\n for(let i=0;i<9;i++){ await s(35); out.push(['t'+((i+1)*35),samp()]); }\n return {reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches, samples:out};\n})()"
+ }
+]

@@ -1,0 +1,18 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n window.__D=[]; E.on('currency_denied',e=>window.__D.push(JSON.stringify({node:e.node,price:e.price,wallet:e.wallet})));\n window.__P=[]; E.on('shop_purchase',e=>window.__P.push(JSON.stringify({node:e.node,price:e.price,wallet:e.wallet,owned:e.owned})));\n E.cmd('startRun'); await s(200); E.cmd('skipToRoom',7); await s(500);\n const v=E.cmd('runState'); const st=v.shop.stock;\n const prices=st.map(x=>x.price); const sorted=[...prices].sort((a,b)=>a-b);\n return {wallet:v.wallet, stock:st, prices, sumAll3:prices.reduce((a,b)=>a+b,0),\n   pairSums:[[0,1],[0,2],[1,2]].map(p=>prices[p[0]]+prices[p[1]]),\n   all3Affordable: prices.reduce((a,b)=>a+b,0)<=v.wallet,\n   anyTwoAffordable: [[0,1],[0,2],[1,2]].every(p=>prices[p[0]]+prices[p[1]]<=v.wallet),\n   ui:E.runUi()};\n})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('shopBuy',0); await s(120); E.cmd('shopBuy',1); await s(200);\n const v=E.cmd('runState'); const d=E.runUi();\n const r3=E.cmd('shopBuy',2); await s(60);\n return {afterTwo:{wallet:v.wallet,stock:v.shop.stock}, thirdBuy:r3, purchases:window.__P, denials:window.__D, owned:d.owned};\n})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const d=window.__echoes.runUi();return {screen:d.screen,cards:d.cards,plaques:d.plaques,owned:d.owned,text:d.text};})()"
+ }
+]

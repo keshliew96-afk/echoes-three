@@ -1,0 +1,603 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{\n  const E=window.__echoes;\n  window.__L=[];\n  const P=['boss_spawn','boss_adds','boss_seal_start','boss_seal_break','boss_quake_start','boss_quake_resolve','boss_trample','room_cleared','run_end'];\n  for (const t of P) E.on(t,(ev)=>window.__L.push(t+' t'+ev.tick+(ev.pct!==undefined?' pct'+ev.pct:'')+(ev.reason?' '+ev.reason:'')+(ev.telegraphTicks!==undefined?' tel'+ev.telegraphTicks:'')));\n  E.on('death',(ev)=>{ if(ev.kind==='stag'||ev.kind==='boar'||ev.kind==='mantis') window.__L.push('death t'+ev.tick+' '+ev.kind); });\n  window.__HP=[];\n  window.__t=setInterval(()=>{const v=E.cmd('runState'); if(v.boss) window.__HP.push(E.tick+':'+v.boss.hp+':'+(v.boss.sealed?'S':'-')+':'+v.boss.phasesFired+':'+v.boss.adds); },250);\n  E.cmd('startRun'); setTimeout(()=>E.cmd('skipToRoom',8),150);\n  return 1;\n})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 380
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 340
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const E=window.__echoes; clearInterval(window.__t); const v=E.cmd('runState');\n  return {phase:v.phase, boss:v.boss, summary:v.summary, log:window.__L, hp:window.__HP, fps:E.fps, tick:E.tick};\n})()"
+ }
+]

@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n const a=E.state().bossfx;\n E.cmd('startRun'); await s(800); const b=E.state().bossfx;\n E.cmd('skipToRoom',8); await s(1500); const c=E.state().bossfx;\n E.cmd('killBoss'); await s(1500); const d=E.state().bossfx;\n E.cmd('endRun','victory'); await s(600); const e=E.state().bossfx;\n return {boot:a.camBias, room1:b.camBias, boss:c.camBias, afterKill:d.camBias, afterRun:e.camBias, bossFlag:[a.boss,b.boss,c.boss,d.boss,e.boss]};\n})()"
+ }
+]

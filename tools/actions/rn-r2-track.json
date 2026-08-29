@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(200); E.cmd('skipToRoom',8); await s(60);\n const b=E.cmd('runState').boss.id; window.__iv=setInterval(()=>{E.cmd('iframe',b,600);E.cmd('bossHp',0.9,true);},100);\n const rows=[];\n for(let i=0;i<26;i++){ await s(120); const v=E.cmd('runState'); const st=E.state();\n  rows.push({t:E.tick, bz:v.boss.z, pz:st.party[0].z, bias:st.bossfx.camBias.z, box:st.bossfx.screenBox.y, quake:!!v.boss.quake}); }\n return {rows};\n})()"
+ }
+]

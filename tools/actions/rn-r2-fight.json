@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{\n  const s=ms=>new Promise(r=>setTimeout(r,ms));\n  const E=window.__echoes;\n  const log=[];\n  for (const t of ['boss_spawn','boss_adds','boss_seal_start','boss_seal_break','boss_quake_start','boss_quake_resolve','boss_trample','death','room_cleared','run_end'])\n    E.on(t,(ev)=>{ if(t!=='death'||ev.kind==='stag'||ev.kind==='boar'||ev.kind==='mantis') log.push(t+' t'+ev.tick+(ev.pct!==undefined?' pct'+ev.pct:'')+(ev.kind?' '+ev.kind:'')+(ev.reason?' '+ev.reason:'')); });\n  E.cmd('startRun'); await s(200);\n  E.cmd('skipToRoom',8); await s(60);\n  const spawnTick=E.tick;\n  const hp=[];\n  for(let i=0;i<70;i++){ const v=E.cmd('runState'); hp.push([E.tick,v.boss?v.boss.hp:null,v.boss?v.boss.sealed:null,v.boss?v.boss.phasesFired:null,v.boss?v.boss.adds:null]); if(v.phase==='victory'||v.phase==='defeat')break; await s(400); }\n  const v=E.cmd('runState');\n  return {spawnTick, endTick:E.tick, seconds:(E.tick-spawnTick)/60, phase:v.phase, boss:v.boss, summary:v.summary, log, hpSeries:hp.map(r=>r.join(':')), fps:E.fps};\n})()"
+ }
+]

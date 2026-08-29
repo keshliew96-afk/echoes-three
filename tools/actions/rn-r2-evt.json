@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{\n  const s=ms=>new Promise(r=>setTimeout(r,ms));\n  const E=window.__echoes;\n  E.cmd('startRun'); await s(250);\n  E.cmd('clearRoom'); await s(400);\n  const ring1=E.events;\n  const off=ring1.filter(e=>e.type==='reward_offer');\n  E.cmd('draftTake'); await s(300);\n  const ring2=E.events;\n  const tk=ring2.filter(e=>e.type==='draft_taken');\n  return {\n    hasRewardOffer: ring1.some(e=>e.type==='reward_offer'),\n    rewardOffer: off.map(e=>JSON.stringify(e)),\n    hasDraftTaken: ring2.some(e=>e.type==='draft_taken'),\n    draftTaken: tk.map(e=>JSON.stringify(e)),\n    typesTail: ring2.slice(-12).map(e=>e.type)\n  };\n})()"
+ }
+]

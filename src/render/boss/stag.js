@@ -340,8 +340,8 @@ export function buildStag() {
       yaw.rotation.y = r;
     },
     // pose: { t, walkPhase, moveK, telegraphK (0..1 quake wind-up),
-    //         lungeK (0..1 trample), hpFrac }
-    pose({ t, walkPhase, moveK, telegraphK = 0, lungeK = 0, hpFrac = 1 }) {
+    //         lungeK (0..1 trample), sealK (0..1 Hollow Seal), hpFrac }
+    pose({ t, walkPhase, moveK, telegraphK = 0, lungeK = 0, sealK = 0, hpFrac = 1 }) {
       const trot = Math.sin(walkPhase);
       const breathe = 0.012 * Math.sin(t * 1.6);
       rig.position.y = breathe + 0.05 * Math.abs(trot) * moveK - 0.1 * telegraphK;
@@ -358,7 +358,14 @@ export function buildStag() {
       legs[2].rotation.x = -trot * 0.5 * moveK;
       // Corruption breathes; it flares while the quake winds up and burns
       // hotter as the Stag is worn down.
-      const fever = 0.72 + 0.16 * Math.sin(t * 2.4) + 0.5 * telegraphK + (1 - hpFrac) * 0.3;
+      // The seal adds its own faster beat on top of the resting breath, so a
+      // sealed Stag reads as actively refusing to fall rather than merely bright.
+      const fever =
+        0.72 +
+        0.16 * Math.sin(t * 2.4) +
+        0.5 * telegraphK +
+        (1 - hpFrac) * 0.3 +
+        sealK * (0.34 + 0.22 * Math.sin(t * 7.5));
       // Glow budget: the rack has to be the brightest thing in the room
       // WITHOUT blowing the frame to white — capped so the >200 luma band
       // stays near the reference bar's ~1.4% while the boss box still reads

@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(200); E.cmd('skipToRoom',7); await s(500);\n E.cmd('wallet',10); await s(80);\n window.__X=[]; const pl=()=>document.querySelectorAll('#run-screen .rn-plaque')[2];\n window.__samp=()=>{const p=pl();const r=p.getBoundingClientRect();return {x:Math.round(r.x*100)/100,cls:p.className};};\n window.__X.push(['pre',window.__samp()]);\n E.cmd('shopBuy',2);\n for(let i=0;i<10;i++){ await s(40); window.__X.push(['t'+(i*40),window.__samp()]); }\n const d=E.runUi();\n const xs=window.__X.map(a=>a[1].x); const min=Math.min(...xs),max=Math.max(...xs);\n return {samples:window.__X, spreadPx:Math.round((max-min)*100)/100, card2:d.cards[2], plaques:d.plaques, wallet:E.cmd('runState').wallet};\n})()"
+ }
+]

@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(200); E.cmd('skipToRoom',8); await s(30);\n const b=E.cmd('runState').boss.id;\n // Freeze the Stag at its ENTRY position: i-frames + a teleport back to spawn\n // every tick-ish, so the measured frame is the worst-case entry framing.\n window.__iv=setInterval(()=>{E.cmd('iframe',b,600);E.cmd('bossHp',0.95,true);},60);\n await s(260);\n document.getElementById('hud-banner').style.display='none';\n await s(120);\n const st=E.state(); const v=E.cmd('runState');\n return {bz:v.boss.z, bias:st.bossfx.camBias, box:st.bossfx.screenBox};\n})()"
+ }
+]

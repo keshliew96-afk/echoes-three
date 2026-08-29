@@ -1,0 +1,76 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(250);\n E.cmd('giveSkill','nova_bloom'); E.cmd('grantNode','sharpen'); E.cmd('grantNode','quicken'); await s(80);\n E.cmd('spawn','boar',2,-1); await s(200);\n E.cmd('cycleMark'); E.cmd('rally'); E.cmd('healOverride',1); await s(120);\n E.cmd('setHp',E.state().party[0].id,0.55); await s(100);\n return 1;})()"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "key",
+  "key": "Space",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "A=(()=>{const E=window.__echoes;const s=E.state();return {tick:E.tick,phase:s.run.phase,room:s.run.room,wallet:s.wallet,hp:s.party.map(p=>Math.round(p.hp)),cds:s.skills.map(x=>x?x.id+':'+x.remainingTicks:null),bench:s.build.bench.map(b=>b.node),sockets:s.build.skills.flatMap(sk=>sk.sockets.map((so,i)=>so?(sk.id+'#'+i+'='+so.node):null).filter(Boolean)),mark:s.party_ai.mark,rally:s.party_ai.rallyPoint,override:s.healOverride,dodgeReady:s.party[0].dodgeReadyTick};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd('clearRoom');return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {sock:E.cmd('socket','mending_bolt','sharpen'),sock2:E.cmd('socket','swift_mend','quicken')};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "B=(()=>{const E=window.__echoes;const s=E.state();return {tick:E.tick,phase:s.run.phase,room:s.run.room,wallet:s.wallet,hp:s.party.map(p=>Math.round(p.hp)),cds:s.skills.map(x=>x?x.id+':'+x.remainingTicks:null),bench:s.build.bench.map(b=>b.node),sockets:s.build.skills.flatMap(sk=>sk.sockets.map((so,i)=>so?(sk.id+'#'+i+'='+so.node):null).filter(Boolean)),mark:s.party_ai.mark,rally:s.party_ai.rallyPoint,override:s.healOverride,dodgeReady:s.party[0].dodgeReadyTick};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd('draftDecline');return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd('pathChoose',0);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "C=(()=>{const E=window.__echoes;const s=E.state();return {tick:E.tick,phase:s.run.phase,room:s.run.room,wallet:s.wallet,hp:s.party.map(p=>Math.round(p.hp)),cds:s.skills.map(x=>x?x.id+':'+x.remainingTicks:null),bench:s.build.bench.map(b=>b.node),sockets:s.build.skills.flatMap(sk=>sk.sockets.map((so,i)=>so?(sk.id+'#'+i+'='+so.node):null).filter(Boolean)),mark:s.party_ai.mark,rally:s.party_ai.rallyPoint,override:s.healOverride,dodgeReady:s.party[0].dodgeReadyTick};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd('endRun','victory');return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "D=(()=>{const E=window.__echoes;const s=E.state();return {tick:E.tick,phase:s.run.phase,room:s.run.room,wallet:s.wallet,hp:s.party.map(p=>Math.round(p.hp)),cds:s.skills.map(x=>x?x.id+':'+x.remainingTicks:null),bench:s.build.bench.map(b=>b.node),sockets:s.build.skills.flatMap(sk=>sk.sockets.map((so,i)=>so?(sk.id+'#'+i+'='+so.node):null).filter(Boolean)),mark:s.party_ai.mark,rally:s.party_ai.rallyPoint,override:s.healOverride,dodgeReady:s.party[0].dodgeReadyTick};})()"
+ }
+]

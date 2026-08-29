@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(1800);\n E.cmd('healOverride',2); E.cmd('rally'); const m=E.cmd('cycleMark'); await s(200);\n const pre=(()=>{const st=E.state();return {phase:st.run.phase,room:st.run.room,mark:st.party_ai.mark,rally:st.party_ai.rallyPoint,override:st.healOverride,enemies:st.enemies?st.enemies.length:null};})();\n E.cmd('clearRoom'); await s(700);\n const post=(()=>{const st=E.state();return {phase:st.run.phase,room:st.run.room,mark:st.party_ai.mark,rally:st.party_ai.rallyPoint,override:st.healOverride};})();\n return {cycleMarkReturn:m, pre, post};\n})()"
+ }
+]

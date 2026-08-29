@@ -205,8 +205,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   });
   // §16: "Taking a node chains straight into the Socket screen with the
   // candidate pre-focused." The socket screen owns that focus; we only open it.
+  // `ev.reward` (not `ev.type`): the bus builds events as
+  // `{ tick, type, ...payload }`, so the reward's kind cannot live on `type`
+  // without erasing the event's own name — see the note in sim/run.js.
   bus.on('draft_taken', (ev) => {
-    if (ev.type === 'node' && socket) socket.cmd('openSocket');
+    if (ev.reward === 'node' && socket) socket.cmd('openSocket');
   });
   // A run ending or a room starting must never leave a page hanging.
   bus.on('room_start', () => setScreen('none'));

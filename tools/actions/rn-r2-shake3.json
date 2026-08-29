@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(200); E.cmd('skipToRoom',7); await s(600); E.cmd('wallet',10); await s(120);\n const p=document.querySelectorAll('#run-screen .rn-plaque')[2];\n const out=[]; const r0=p.getBoundingClientRect();\n E.cmd('shopBuy',2);\n for(let i=0;i<14;i++){ await new Promise(r=>requestAnimationFrame(r));\n   const r=p.getBoundingClientRect();\n   out.push({t:Math.round(performance.now()), tf:getComputedStyle(p).transform, dx:Math.round((r.x-r0.x)*100)/100, cls:p.className}); }\n await s(400);\n return {base:{x:Math.round(r0.x),y:Math.round(r0.y),w:Math.round(r0.width),h:Math.round(r0.height)},\n   samples:out, dxSpread: Math.round((Math.max(...out.map(o=>o.dx))-Math.min(...out.map(o=>o.dx)))*100)/100,\n   afterCls:p.className, afterTf:getComputedStyle(p).transform,\n   card:E.runUi().cards[2]};\n})()"
+ }
+]

@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(200); E.cmd('skipToRoom',7); await s(600); E.cmd('wallet',10); await s(120);\n const p=document.querySelectorAll('#run-screen .rn-plaque')[2];\n window.__box=p.getBoundingClientRect();\n E.cmd('shopBuy',2);\n const a=p.getAnimations?p.getAnimations():[];\n return {plaqueBox:{x:Math.round(window.__box.x),y:Math.round(window.__box.y),w:Math.round(window.__box.width),h:Math.round(window.__box.height)}, anims:a.map(x=>({name:x.animationName,playState:x.playState,ct:x.currentTime}))};\n})()"
+ }
+]

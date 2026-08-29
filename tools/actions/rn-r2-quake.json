@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const E=window.__echoes;\n E.cmd('startRun'); await s(200); E.cmd('skipToRoom',8); await s(60);\n const b=E.cmd('runState').boss.id; window.__iv=setInterval(()=>{E.cmd('iframe',b,600);E.cmd('bossHp',0.9,true);},100);\n window.__q=[]; E.on('boss_quake_start',e=>window.__q.push('start t'+e.tick+' resolve@'+e.resolveTick));\n E.on('boss_quake_resolve',e=>window.__q.push('resolve t'+e.tick+' tel='+e.telegraphTicks+' victims='+e.victims));\n for(let i=0;i<200;i++){ const v=E.cmd('runState'); if(v.boss.quake && E.tick-v.boss.quake.startTick>12 && v.boss.quake.resolveTick-E.tick>8) break; await s(25); }\n const v=E.cmd('runState');\n return {quake:v.boss.quake, tick:E.tick, log:window.__q, fx:E.state().bossfx};\n})()"
+ }
+]
