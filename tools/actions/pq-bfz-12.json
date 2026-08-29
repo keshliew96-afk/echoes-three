@@ -1,0 +1,9 @@
+[
+  {"type":"wait","ms":500},
+  {"type":"mousemove","x":1300,"y":520},
+  {"type":"wait","ms":150},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":40},
+  {"type":"mouseup","button":"right"},
+  {"type":"eval","code":"(async()=>{const e=window.__echoes;const p=window.__arenaProbe;const V=p.root.position.constructor;const raf=window.requestAnimationFrame.bind(window);const t0=Date.now();while(Date.now()-t0<6000){const b=e.state().projectiles[0];if(b&&b.traveled>=1.2)break;await new Promise(r=>raf(r));}await new Promise(r=>raf(r));const b=e.state().projectiles[0];if(!b)return {no:'bolt'};let core=null,sh=null,glow=null;p.stage.scene.traverse(o=>{const w=o.getWorldPosition(new V());const d=Math.hypot(w.x-b.x,w.z-b.z);if(d>0.8)return;if(o.isMesh&&o.name==='core')core={w,o};else if(o.isMesh&&w.y<0.05&&Math.abs(o.rotation.x+Math.PI/2)<0.05&&o.material.color&&o.material.color.getHex()===0)sh={w,sc:o.getWorldScale(new V()),op:o.material.opacity,geo:o.geometry.parameters};else if(o.isSprite&&o.scale.x>0.5)glow={w,sc:o.scale.x};});window.requestAnimationFrame=()=>0;const W=innerWidth,H=innerHeight,cam=p.stage.camera;const pr=(w)=>{const v=w.clone().project(cam);return [Math.round((v.x*.5+.5)*W),Math.round((-v.y*.5+.5)*H)];};const shR=sh?(()=>{const a=sh.w.clone();const b2=sh.w.clone();b2.x+=(sh.geo.width?sh.geo.width/2:0.5)*sh.sc.x;const pa=pr(a),pb=pr(b2);return Math.abs(pb[0]-pa[0]);})():null;return {tick:e.tick,bolt:{x:+b.x.toFixed(2),z:+b.z.toFixed(2),tr:+b.traveled.toFixed(2)},core:core?{w:[+core.w.x.toFixed(3),+core.w.y.toFixed(3),+core.w.z.toFixed(3)],s:pr(core.w)}:null,shadow:sh?{w:[+sh.w.x.toFixed(3),+sh.w.y.toFixed(3),+sh.w.z.toFixed(3)],s:pr(sh.w),radPx:shR,scale:+sh.sc.x.toFixed(3),op:+sh.op.toFixed(2),geo:sh.geo}:null,glow:glow?{s:pr(glow.w),sc:+glow.sc.toFixed(2)}:null};})()"}
+]

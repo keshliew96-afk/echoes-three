@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);'ok'"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();window.__tk=s.party_ai.allies[0].id;__echoes.cmd('setHp',window.__tk,0);return{tank:window.__tk}})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<2500;i++){const s=__echoes.state();const t=s.party_ai.allies.find(a=>a.id===window.__tk);if(t&&!t.downed&&t.hp>0)return{tankHp:t.hp,tick:s.tick};await new Promise(r=>setTimeout(r,10))}return 'timeout'})()"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"__echoes.cmd('teleport',5.0,3.0);'walk party'"},
+  {"type":"wait","ms":3500},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const t=s.party_ai.allies[0];console.log('[STATE] tank hp='+t.hp+' downed='+t.downed+' state='+t.state+' clips='+s.allyfx.anims.join(','));return{tx:t.x,tz:t.z,px:s.party[0].x,pz:s.party[0].z}})()"}
+]

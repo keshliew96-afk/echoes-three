@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__EV=[];['ally_rescue','revive_start','revive','revive_break','downed','defeat'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0);({playerHp:__echoes.state().party[0].hp,downed:__echoes.state().party[0].downed})"},
+  {"type":"eval","code":"window.__L=[];window.__t=setInterval(()=>{const s=__echoes.state();window.__L.push({t:__echoes.tick,hp:s.party[0].hp,ch:s.party_ai.channels.map(c=>[c.reviver,c.progress,c.draining]),st:s.party_ai.allies.map(a=>a.state),ring:s.allyfx.reviveRingScreen.map(r=>[r.id,Math.round(r.cx),Math.round(r.cy),Math.round(r.outerPx)])})},250);'armed'"},
+  {"type":"wait","ms":500}
+]

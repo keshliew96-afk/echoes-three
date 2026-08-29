@@ -1,0 +1,16 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__un=__echoes.on('hit',e=>__echoes.cmd('setHp',e.target,1));window.__EV=[];['rally','rally_end','ally_regroup','revive_start','revive_break','revive','intent_denied','defeat'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"window.__D=[[2.6,1.2],[-2.4,1.4],[0.4,2.6]].map(p=>__echoes.cmd('spawn','dummy',p[0],p[1]));window.__D"},
+  {"type":"wait","ms":3000},
+  {"type":"eval","code":"__echoes.cmd('teleport',-5.5,-3.5);(()=>{const v=__echoes.state().party_ai;return{phase:'pre-rally',player:[-5.5,-3.5],states:v.allies.map(a=>a.state),targets:v.allies.map(a=>a.target),pos:v.allies.map(a=>[a.x,a.z]),anchorDist:v.allies.map(a=>a.anchorDist)}})()"},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"window.__T0=__echoes.tick;'t0'"},
+  {"type":"key","key":"KeyR","ms":50},
+  {"type":"wait","ms":120},
+  {"type":"eval","code":"(()=>{const v=__echoes.state().party_ai;return{phase:'rally+~7ticks',dt:__echoes.tick-window.__T0,states:v.allies.map(a=>a.state),targets:v.allies.map(a=>a.target),rallyPoint:v.rallyPoint,ev:window.__EV.slice(-6)}})()"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"(()=>{const v=__echoes.state().party_ai;const t=__echoes.tick;return{phase:'arrived',states:v.allies.map(a=>a.state),pos:v.allies.map(a=>[a.x,a.z]),anchorDist:v.allies.map(a=>a.anchorDist),graceLeft:v.allies.map(a=>a.graceUntilTick-t),targets:v.allies.map(a=>a.target),ev:window.__EV.filter(e=>['rally','ally_regroup','rally_end'].includes(e.type))}})()"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"(()=>{const v=__echoes.state().party_ai;return{phase:'post-grace',states:v.allies.map(a=>a.state),targets:v.allies.map(a=>a.target),ev:window.__EV.filter(e=>e.type==='rally_end')}})()"}
+]

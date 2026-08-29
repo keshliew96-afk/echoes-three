@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__EV=[];['ally_rescue','revive_start','revive','revive_break','downed','defeat','intent_denied'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"window.__T0=__echoes.tick;__echoes.cmd('setHp',0,0);({t0:window.__T0,playerHp:__echoes.state().party[0].hp})"},
+  {"type":"eval","code":"window.__L=[];window.__t=setInterval(()=>{const s=__echoes.state();window.__L.push({t:__echoes.tick,hp:s.party[0].hp,ch:s.party_ai.channels.map(c=>[c.reviver,c.progress,c.draining]),st:s.party_ai.allies.map(a=>a.state),rd:s.party_ai.allies.map(a=>Math.round(Math.hypot(a.x-s.party[0].x,a.z-s.party[0].z)*100)/100),ring:s.allyfx.reviveRingScreen.map(r=>[r.id,Math.round(r.cx),Math.round(r.cy),Math.round(r.outerPx)])})},200);'armed'"},
+  {"type":"wait","ms":8000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__t);return{t0:window.__T0,ev:window.__EV,log:window.__L.filter((_,i)=>i%2===0),final:{hp:__echoes.state().party[0].hp,maxHp:__echoes.state().party[0].maxHp}}})()"}
+]

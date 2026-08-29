@@ -1,0 +1,5 @@
+[
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"(()=>{const p=window.__arenaProbe;const em=p.emitters;return {isArr:Array.isArray(em), len: em&&em.length, sample: em&&em.slice?JSON.parse(JSON.stringify(em.slice(0,4))):String(em)};})()"},
+  {"type":"eval","code":"(()=>{const p=window.__arenaProbe;const cam=p.stage.camera;const W=innerWidth,H=innerHeight;const V=p.root.position.constructor;const out=p.emitters.map(e=>{const pos=e.position?e.position:(e.obj&&e.obj.position)||e;const v=new V(pos.x,pos.y!==undefined?pos.y:0,pos.z);const s=v.clone().project(cam);return {k:e.kind||e.type||e.name||'?',wx:+(+pos.x).toFixed(2),wy:+(+(pos.y||0)).toFixed(2),wz:+(+pos.z).toFixed(2),sx:Math.round((s.x*.5+.5)*W),sy:Math.round((-s.y*.5+.5)*H)};});return out;})()"}
+]

@@ -1,0 +1,6 @@
+[
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -3.3, 1.8)"},
+  {"type":"wait","ms":1800},
+  {"type":"eval","code":"(()=>{const p=window.__arenaProbe;const cam=p.stage.camera;const V=p.root.position.constructor;const s=window.__echoes.state();const pl=s.party[0];const v=new V(pl.x,0.02,pl.z);v.project(cam);return {pos:[pl.x,pl.z],s:[Math.round((v.x*0.5+0.5)*innerWidth),Math.round((-v.y*0.5+0.5)*innerHeight)]};})()"}
+]

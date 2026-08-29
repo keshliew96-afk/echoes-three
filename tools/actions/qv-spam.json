@@ -1,0 +1,21 @@
+[
+  {"type":"eval","code":"window.__EV=[];['rally','rally_end','mark','revive','revive_start','revive_break','intent_denied','defeat','ally_regroup'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));__echoes.cmd('teleport',0,0);window.__un=__echoes.on('hit',e=>{if(e.target>3)__echoes.cmd('setHp',e.target,1)});'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"[[1.5,0.5],[-1.5,0.6],[0.5,1.6]].map(p=>__echoes.cmd('spawn','dummy',p[0],p[1]))"},
+  {"type":"wait","ms":1200},
+  {"type":"key","key":"Tab","ms":16},{"type":"key","key":"Tab","ms":16},{"type":"key","key":"Tab","ms":16},{"type":"key","key":"Tab","ms":16},{"type":"key","key":"Tab","ms":16},{"type":"key","key":"Tab","ms":16},{"type":"key","key":"Tab","ms":16},{"type":"key","key":"Tab","ms":16},
+  {"type":"key","key":"KeyR","ms":16},{"type":"key","key":"KeyR","ms":16},{"type":"key","key":"KeyR","ms":16},{"type":"key","key":"KeyR","ms":16},{"type":"key","key":"KeyR","ms":16},
+  {"type":"keydown","key":"KeyE"},{"type":"wait","ms":80},{"type":"keyup","key":"KeyE"},
+  {"type":"keydown","key":"KeyE"},{"type":"wait","ms":80},{"type":"keyup","key":"KeyE"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"({phase:'spam1',mark:__echoes.state().party_ai.mark,markEvents:window.__EV.filter(e=>e.type==='mark').map(e=>[e.tick,e.id,e.n??e.reason??'']),rallyEvents:window.__EV.filter(e=>e.type==='rally').map(e=>[e.tick,e.x,e.z]),denials:window.__EV.filter(e=>e.type==='intent_denied').map(e=>[e.tick,e.kind,e.reason]),allies:__echoes.state().party_ai.allies.map(a=>[a.state,a.target])})"},
+  {"type":"eval","code":"(()=>{const m=__echoes.state().party_ai.mark;__echoes.cmd('setHp',m,0);return{killedMark:m}})()"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"({phase:'mark-death',mark:__echoes.state().party_ai.mark,markEv:window.__EV.filter(e=>e.type==='mark').slice(-3),targets:__echoes.state().party_ai.allies.map(a=>a.target)})"},
+  {"type":"eval","code":"(()=>{__echoes.cmd('teleport',4.0,3.0);const a=__echoes.cmd('rally');__echoes.cmd('teleport',-4.0,-3.0);const b=__echoes.cmd('rally');return{repointA:a,repointB:b,rallyPoint:__echoes.state().party_ai.rallyPoint}})()"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"({phase:'repoint',rallyPoint:__echoes.state().party_ai.rallyPoint,states:__echoes.state().party_ai.allies.map(a=>a.state),rallyEvents:window.__EV.filter(e=>e.type==='rally').map(e=>[e.tick,e.x,e.z])})"},
+  {"type":"eval","code":"(()=>{__echoes.cmd('setHp',0,0);const out=[];for(let i=0;i<40;i++){out.push(__echoes.cmd('rally'))}return{fortyRalliesWhileDowned:out.filter(o=>o&&o.denied).length,sample:out[0]}})()"},
+  {"type":"wait","ms":1000},
+  {"type":"eval","code":"({phase:'end',ok:true,defeat:window.__EV.filter(e=>e.type==='defeat').length,channels:__echoes.state().party_ai.channels,ents:__echoes.entityCount})"}
+]

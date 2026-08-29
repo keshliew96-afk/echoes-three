@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"(async()=>{while(__echoes.tick<400)await new Promise(r=>setTimeout(r,8));return{startTick:__echoes.tick,seed:__echoes.seed}})()"},
+  {"type":"eval","code":"window.__T0=400;window.__EV=[];for(const t of ['ally_basic','ally_cast','hit','death','azone_spawn','azone_tick','mark']) __echoes.on(t,e=>window.__EV.push({t:e.tick-window.__T0,y:t,s:e.skill||'',a:e.amount!==undefined?e.amount:'',c:e.crit?1:0}));__echoes.cmd('teleport',0,0);[[1.5,0.8],[-1.4,1.1],[0.4,1.9]].map(p=>__echoes.cmd('spawn','boar',p[0],p[1]));'armed'"},
+  {"type":"eval","code":"(async()=>{while(__echoes.tick<1300)await new Promise(r=>setTimeout(r,8));return{endTick:__echoes.tick,n:window.__EV.length}})()"},
+  {"type":"eval","code":"(()=>{const s=JSON.stringify(window.__EV);let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h+s.charCodeAt(i))|0}return{count:window.__EV.length,hash:h,first8:window.__EV.slice(0,8),last4:window.__EV.slice(-4),rngDraws:__echoes.rngDraws,seed:__echoes.seed}})()"}
+]

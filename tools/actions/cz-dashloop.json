@@ -1,0 +1,6 @@
+[
+  {"type":"mousemove","x":1350,"y":455},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"(()=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyD',key:'d',bubbles:true}));window.__czDash=setInterval(()=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',key:' ',bubbles:true}));setTimeout(()=>window.dispatchEvent(new KeyboardEvent('keyup',{code:'Space',key:' ',bubbles:true})),30);},260);return 'armed';})()"},
+  {"type":"wait","ms":300}
+]

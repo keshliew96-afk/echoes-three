@@ -1,0 +1,13 @@
+[
+ {"type":"eval","code":"(()=>{const c=__echoes.cmd;c('restoreSkillState',{slots:[{id:'mending_bolt',remaining:0},{id:'warding_aura',remaining:0},null,null],override:null});for(const n of ['ascend','sharpen']) c('grantNode',n);return JSON.stringify({capDenyPassive:c('socket','warding_aura','ascend',0),capDenyPassiveAuto:c('socket','warding_aura','ascend'),okB:c('socket','mending_bolt','ascend',1)});})()"},
+ {"type":"eval","code":"(()=>{const c=__echoes.cmd;const r={before:c('buildView').combatActive,room:c('startRoom','kill_all')};return JSON.stringify(r);})()"},
+ {"type":"wait","ms":400},
+ {"type":"eval","code":"(()=>{const c=__echoes.cmd;return JSON.stringify({combatActive:c('buildView').combatActive,socketDuringCombat:c('socket','mending_bolt','sharpen',0),unsocketDuringCombat:c('unsocket','mending_bolt',1),openSocket:c('openSocket'),isOpen:document.getElementById('socket-screen').classList.contains('nd-open')});})()"},
+ {"type":"eval","code":"(()=>{for(let i=0;i<40;i++){window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyB',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyB',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keydown',{code:'Escape',bubbles:true}));}return JSON.stringify({open:document.getElementById('socket-screen').classList.contains('nd-open'),toast:document.querySelector('#socket-screen .nd-toast').textContent});})()"},
+ {"type":"wait","ms":300},
+ {"type":"eval","code":"(()=>{const c=__echoes.cmd;c('killAllEnemies');c('clearRoom');return JSON.stringify({cleared:true});})()"},
+ {"type":"wait","ms":500},
+ {"type":"eval","code":"(()=>{const c=__echoes.cmd;const r={combatActive:c('buildView').combatActive,open:c('openSocket')};return JSON.stringify(r);})()"},
+ {"type":"wait","ms":300},
+ {"type":"eval","code":"(()=>{const cells=[...document.querySelectorAll('#socket-screen .nd-cell')];const cards=[...document.querySelectorAll('#socket-screen .nd-card')];for(let i=0;i<60;i++){if(cards.length)cards[i%cards.length].click();if(cells.length)cells[i%cells.length].click();}return JSON.stringify({open:document.getElementById('socket-screen').classList.contains('nd-open'),view:__echoes.cmd('buildView')});})()"}
+]

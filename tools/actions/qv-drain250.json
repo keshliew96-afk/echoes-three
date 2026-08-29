@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"window.__EV=[];['revive_break','revive_drain_end'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));__echoes.cmd('teleport',0,0);'hooked'"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"__echoes.cmd('setHp',3,0);'archer down'"},
+  {"type":"wait","ms":4200},
+  {"type":"eval","code":"(()=>{const c=__echoes.state().party_ai.channels[0];window.__r=setInterval(()=>__echoes.cmd('rally'),300);return{atBreak:c}})()"},
+  {"type":"wait","ms":250},
+  {"type":"eval","code":"({ring:__echoes.state().allyfx.reviveRingScreen,ch:__echoes.state().party_ai.channels,ev:window.__EV.map(e=>[e.type,e.tick,e.progress??''])})"}
+]

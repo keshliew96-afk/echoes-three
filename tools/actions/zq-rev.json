@@ -1,0 +1,10 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0.5,0.5)"},
+  {"type":"eval","code":"window.__EV=[];for(const t of ['downed','revive_start','revive','revive_break','intent_denied','revive_drain_end','ally_rescue','defeat']) __echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e)));'armed'"},
+  {"type":"wait","ms":800},
+  {"type":"eval","code":"window.__t0=__echoes.tick;__echoes.cmd('setHp',0,0);({downTick:window.__t0,hp:__echoes.state().party[0].hp})"},
+  {"type":"eval","code":"window.__S=[];window.__raf=()=>{const s=__echoes.state();const c=s.party_ai.channels[0]||null;window.__S.push({tick:s.tick,hp:s.party[0].hp,downed:s.party[0].downed,st:s.party_ai.allies.map(a=>a.state),ch:c?{tg:c.target,rv:c.reviver,p:c.progress,d:c.draining}:null});window.__id=requestAnimationFrame(window.__raf)};window.__raf();'raf'"},
+  {"type":"wait","ms":9000},
+  {"type":"eval","code":"(()=>{cancelAnimationFrame(window.__id);const S=window.__S;const E=window.__EV;const start=E.find(e=>e.type==='revive_start');const done=E.find(e=>e.type==='revive');const rescue=E.filter(e=>e.type==='ally_rescue');const chFrames=S.filter(s=>s.ch);const maxP=Math.max(...chFrames.map(s=>s.ch.p),0);return{downTick:window.__t0,downed:E.filter(e=>e.type==='downed').map(e=>({t:e.tick,id:e.id})),rescue:rescue.map(e=>({t:e.tick,ally:e.id!==undefined?e.id:null,keys:Object.keys(e)})),reviveStart:start?{t:start.tick,keys:Object.keys(start),o:JSON.parse(JSON.stringify(start))}:null,reviveDone:done?JSON.parse(JSON.stringify(done)):null,channelTicks:done&&start?done.tick-start.tick:null,maxProgress:maxP,hpAfter:S[S.length-1].hp,statesAfter:S[S.length-1].st,breaks:E.filter(e=>e.type==='revive_break').length}})()"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{hp:s.party[0].hp,maxHp:s.party[0].maxHp,pct:s.party[0].hp/s.party[0].maxHp,downed:s.party[0].downed,repeats:s.party_ai.repeats}})()"}
+]

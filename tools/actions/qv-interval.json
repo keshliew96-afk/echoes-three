@@ -1,0 +1,10 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__A=[];__echoes.on('ally_basic',e=>window.__A.push([e.tick,e.id]));window.__un=__echoes.on('hit',e=>{if(e.target>3)__echoes.cmd('setHp',e.target,1)});'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"[[0.8,0.3],[-0.8,0.4],[0.3,-0.9]].map(p=>__echoes.cmd('spawn','dummy',p[0],p[1]))"},
+  {"type":"wait","ms":18000},
+  {"type":"eval","code":"(()=>{const by={};for(const [t,id] of window.__A){(by[id]=by[id]||[]).push(t)}const o={};for(const k in by){const t=by[k];const g=[];for(let i=1;i<t.length;i++)g.push(t[i]-t[i-1]);const c={};g.forEach(x=>c[x]=(c[x]||0)+1);o[k]={n:t.length,gapHistogram:c}}return{expect:'tank(1)=39t/0.65s, sword(2)=21t/0.35s, archer(3)=24t/0.40s',got:o}})()"},
+  {"type":"eval","code":"(()=>{window.__P=[];window.__lt=-1;window.__go=1;__echoes.cmd('teleport',7,4);(function L(){if(!window.__go)return;const t=__echoes.tick;if(t!==window.__lt){window.__lt=t;const v=__echoes.state().party_ai;window.__P.push([t,v.allies.map(a=>[a.x,a.z])])}requestAnimationFrame(L)})();return 'walk sampler'})()"},
+  {"type":"wait","ms":3000},
+  {"type":"eval","code":"(()=>{window.__go=0;const P=window.__P;const sp=[0,1,2].map(k=>{const v=[];for(let i=1;i<P.length;i++){const dt=P[i][0]-P[i-1][0];if(dt<1||dt>3)continue;const d=Math.hypot(P[i][1][k][0]-P[i-1][1][k][0],P[i][1][k][1]-P[i-1][1][k][1]);v.push(d/dt*60)}v.sort((a,b)=>a-b);return{p90:Math.round(v[Math.floor(v.length*0.9)]*100)/100,max:Math.round(v[v.length-1]*100)/100,n:v.length}});return{expect:'tank 2.10, sword 2.65, archer 2.50 u/s',got:sp}})()"}
+]

@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{const p=window.__arenaProbe;const cam=p.stage.camera;const THREE=p.root.constructor;const out=[];p.stage.scene.traverse(o=>{if(o.name==='identity-ring'){const w=o.getWorldPosition(new o.position.constructor());const band=o.children.find(c=>c.geometry&&c.geometry.type==='PlaneGeometry'&&c.renderOrder===-1);const half=band?band.geometry.parameters.width/2:0;const s=new o.position.constructor().copy(o.scale);const R=half*0.962*o.getWorldScale(new o.position.constructor()).x;const c=w.clone().project(cam);const e=w.clone();e.x+=R;const ep=e.project(cam);out.push({x:Math.round((c.x*0.5+0.5)*window.innerWidth),y:Math.round((-c.y*0.5+0.5)*window.innerHeight),rx:+(Math.abs(ep.x-c.x)*0.5*window.innerWidth).toFixed(1),R:+R.toFixed(3),wx:+w.x.toFixed(2),wz:+w.z.toFixed(2)});}});console.log('[RINGS]',JSON.stringify(out));return out.length})()"}
+]

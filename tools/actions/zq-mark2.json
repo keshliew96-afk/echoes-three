@@ -1,0 +1,14 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"eval","code":"window.__un=__echoes.on('hit',e=>{__echoes.cmd('setHp',e.target,1)});window.__ids={DECOY:__echoes.cmd('spawn','dummy',0.7,-0.7),MARK:__echoes.cmd('spawn','dummy',2.3,0.7)};window.__ids"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'pre',tg:s.party_ai.allies.map(a=>a.target),ids:window.__ids}})()"},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":120},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":150},
+  {"type":"eval","code":"window.__S=[];window.__t=setInterval(()=>{const s=__echoes.state();const m=s.enemies.find(e=>e.id===s.party_ai.mark);window.__S.push({tick:s.tick,mark:s.party_ai.mark,tg:s.party_ai.allies.map(a=>a.target),markAnchorDist:m?Math.round(100*Math.hypot(m.x-s.party[0].x,m.z-s.party[0].z))/100:null,ad:s.party_ai.allies.map(a=>a.anchorDist)})},80);'sampling'"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__t);const S=window.__S;const inLeash=S.filter(s=>s.markAnchorDist!=null&&s.markAnchorDist<=3.4);const allOn=inLeash.filter(s=>s.tg.every(t=>t===s.mark));return{samples:S.length,markIs:window.__ids.MARK,markStable:[...new Set(S.map(s=>s.mark))],inLeashFrames:inLeash.length,allThreeOnMark:allOn.length,pct:inLeash.length?Math.round(1000*allOn.length/inLeash.length)/10:null,offenders:inLeash.filter(s=>!s.tg.every(t=>t===s.mark)).slice(0,5),maxMarkAnchorDist:Math.max(...S.map(s=>s.markAnchorDist||0)),last:S[S.length-1]}})()"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{markPos:s.enemies.filter(e=>e.id===s.party_ai.mark).map(e=>({x:e.x,z:e.z})),player:{x:s.party[0].x,z:s.party[0].z},allEnemies:s.enemies.map(e=>({id:e.id,x:e.x,z:e.z}))}})()"}
+]

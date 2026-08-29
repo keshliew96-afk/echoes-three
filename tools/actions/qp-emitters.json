@@ -1,0 +1,5 @@
+[
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{const {stage,root,emitters}=window.__arenaProbe;const V=new (window.THREE?window.THREE.Vector3:Object)();const out=emitters.map(e=>{const v={x:e.x,y:e.y||0,z:e.z};const p=root.localToWorld?null:null;const c=stage.camera;const vec=new (Object.getPrototypeOf(c.position).constructor)(v.x,v.y,v.z);vec.project(c);return {kind:e.kind,wx:Math.round(v.x*100)/100,wz:Math.round(v.z*100)/100,sx:Math.round((vec.x*0.5+0.5)*window.innerWidth),sy:Math.round((-vec.y*0.5+0.5)*window.innerHeight)};});console.log('[EMITTERS]',JSON.stringify(out));return out.length})()"},
+  {"type":"eval","code":"(()=>{const s=window.__echoes.state();console.log('[VFXSTATE]',JSON.stringify({variant:s.vfx&&s.vfx.variant,emitters:s.vfx&&s.vfx.emitters,propTypes:s.vfx&&s.vfx.propTypes,flowers:s.vfx&&s.vfx.flowers,grass:s.vfx&&s.vfx.grass}));return 'ok'})()"}
+]

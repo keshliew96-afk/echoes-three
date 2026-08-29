@@ -1,0 +1,11 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', 0, 0)"},
+  {"type":"mousemove","x":1200,"y":450},
+  {"type":"eval","code":"window.__echoes.cmd('spawn','dummy',2,0)"},
+  {"type":"wait","ms":150},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":1500},
+  {"type":"mouseup","button":"right"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"({seed:window.__echoes.seed, stats:window.__echoes.state().stats, ev:window.__echoes.events.filter(e=>e.type==='hit'||e.type==='damage'||e.type==='crit'||e.type==='projectile_spawn').map(e=>[e.type,e.tick,e.amount??e.id??0])})"}
+]

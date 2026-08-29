@@ -1,0 +1,21 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__un=__echoes.on('hit',e=>{if(e.target>3)__echoes.cmd('setHp',e.target,1)});window.__e=[['boar',2.2,1.0],['boar',-2.0,1.4],['boar',0.5,2.4],['mantis',3.0,-1.6],['mantis',-2.8,-1.2],['mantis',1.6,-2.8]].map(p=>__echoes.cmd('spawn',p[0],p[1],p[2]));window.__e"},
+  {"type":"mousemove","x":1000,"y":380},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"window.__F=[];window.__t=setInterval(()=>{const s=__echoes.state();window.__F.push({fps:__echoes.fps,ents:__echoes.entityCount,en:s.enemies.length})},120);'sampling'"},
+  {"type":"keydown","key":"KeyA"},
+  {"type":"wait","ms":1200},
+  {"type":"keyup","key":"KeyA"},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"wait","ms":1200},
+  {"type":"keyup","key":"KeyD"},
+  {"type":"key","key":"Digit1","ms":60},
+  {"type":"wait","ms":1500},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":3000},
+  {"type":"key","key":"KeyR","ms":60},
+  {"type":"wait","ms":3000},
+  {"type":"mouseup","button":"right"},
+  {"type":"eval","code":"(()=>{clearInterval(window.__t);const F=window.__F.map(x=>x.fps).filter(x=>x>0);F.sort((a,b)=>a-b);const min=F[0],p05=F[Math.floor(F.length*0.05)],med=F[Math.floor(F.length/2)],avg=F.reduce((a,b)=>a+b,0)/F.length;return{samples:F.length,min:min,p05:p05,median:med,avg:Math.round(avg*10)/10,maxEnemies:Math.max(...window.__F.map(x=>x.en)),maxEntities:Math.max(...window.__F.map(x=>x.ents)),under55:F.filter(x=>x<55).length}})()"}
+]

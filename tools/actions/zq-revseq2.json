@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0.5,0.5)"},
+  {"type":"eval","code":"window.__T0=performance.now();for(const t of ['downed','revive_start','revive','revive_break','ally_rescue','revive_drain_end']) __echoes.on(t,e=>console.log('[EV] '+Math.round(performance.now()-window.__T0)+'ms '+t+' '+JSON.stringify(e)));setInterval(()=>{const s=__echoes.state();const c=s.party_ai.channels[0];console.log('[PROBE] '+Math.round(performance.now()-window.__T0)+'ms tick='+s.tick+' hp='+s.party[0].hp+' down='+s.party[0].downed+' ch='+(c?c.reviver+':'+c.progress+(c.draining?'D':''):'-')+' st='+s.party_ai.allies.map(a=>a.state).join(','))},250);'armed'"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0);console.log('[MARK] downed at '+Math.round(performance.now()-window.__T0)+'ms');'downed'"},
+  {"type":"wait","ms":700}
+]

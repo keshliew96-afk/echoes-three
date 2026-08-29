@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{__echoes.cmd('hitOnce',1); return 'hit-ally-1';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>JSON.stringify([...document.querySelectorAll('div')].filter(d=>{const t=(d.textContent||'').trim(); return t.length>0 && t.length<4 && !isNaN(Number(t));}).map(d=>({t:d.textContent.trim(),c:getComputedStyle(d).color}))))()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{__echoes.cmd('hitOnce',0); return 'hit-player-0';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>JSON.stringify([...document.querySelectorAll('div')].filter(d=>{const t=(d.textContent||'').trim(); return t.length>0 && t.length<4 && !isNaN(Number(t));}).map(d=>({t:d.textContent.trim(),c:getComputedStyle(d).color}))))()"
+ }
+]

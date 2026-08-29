@@ -1,0 +1,9 @@
+[
+  {"type":"mousemove","x":1350,"y":455},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"wait","ms":200},
+  {"type":"keydown","key":"Space"},
+  {"type":"keyup","key":"Space"},
+  {"type":"wait","ms":90},
+  {"type":"eval","code":"(()=>{const s=window.__echoes.state();const p=window.__arenaProbe;const cam=p.stage.camera;const V=p.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const pl=s.party[0];const v=new V(pl.x,0.02,pl.z);v.project(cam);return {ghosts:s.vfx.party.smearGhosts, dashTicks:pl.dashTicksLeft, pos:[pl.x,pl.z], s:[Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)]};})()"}
+]

@@ -1,0 +1,10 @@
+[
+  {"type":"wait","ms":500},
+  {"type":"mousemove","x":1300,"y":520},
+  {"type":"wait","ms":120},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":40},
+  {"type":"mouseup","button":"right"},
+  {"type":"wait","ms":440},
+  {"type":"eval","code":"(()=>{const p=window.__arenaProbe;const cam=p.stage.camera;const W=innerWidth,H=innerHeight;const V=p.root.position.constructor;const s=window.__echoes.state();const b=s.projectiles[0];if(!b)return {no:'bolt'};let sh=null,core=null;p.stage.scene.traverse(o=>{if(!o.isMesh)return;const w=o.getWorldPosition(new V());const d2=Math.hypot(w.x-b.x,w.z-b.z);if(d2<0.6){if(o.name==='core')core=w;else if(w.y<0.05&&Math.abs(o.rotation.x+Math.PI/2)<0.05&&o.material.color&&o.material.color.getHex()===0)sh={w,sc:o.scale.x,op:o.material.opacity};}});const pr=(w)=>{const v=w.clone().project(cam);return [Math.round((v.x*.5+.5)*W),Math.round((-v.y*.5+.5)*H)];};return {bolt:{x:+b.x.toFixed(2),z:+b.z.toFixed(2),tr:+b.traveled.toFixed(2)},coreS:core?pr(core):null,shadow:sh?{wx:+sh.w.x.toFixed(3),wz:+sh.w.z.toFixed(3),s:pr(sh.w),scale:+sh.sc.toFixed(3),op:+sh.op.toFixed(2)}:null};})()"}
+]

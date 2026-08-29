@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes;const raf=window.requestAnimationFrame.bind(window);const T0=e.tick;const K=(c)=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:c,key:c==='Space'?' ':'x',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:c,key:c==='Space'?' ':'x',bubbles:true}));};const keys=['Space','Digit1','Digit2','Digit3','Digit4','KeyR','Tab','F1','F2','KeyE','KeyW','KeyA','KeyS','KeyD','KeyB'];const t0=Date.now();let i=0;while(Date.now()-t0<6000){for(let k=0;k<8;k++)K(keys[(i+k)%keys.length]);window.dispatchEvent(new MouseEvent('mousedown',{button:2,buttons:2,bubbles:true}));window.dispatchEvent(new MouseEvent('mouseup',{button:2,buttons:0,bubbles:true}));window.dispatchEvent(new MouseEvent('mousemove',{clientX:100+((i*97)%1400),clientY:100+((i*53)%700),bubbles:true}));i++;await new Promise(r=>raf(r));}const s=e.state();const ev=e.events.filter(v=>v.tick>=T0);const c={};for(const v of ev)c[v.type]=(c[v.type]||0)+1;return {iters:i,fps:e.fps,tick:e.tick,ents:e.entityCount,hp:s.party.map(p=>p.hp),types:c};})()"
+ }
+]

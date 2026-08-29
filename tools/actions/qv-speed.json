@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);'ok'"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"(()=>{window.__P=[];window.__lt=-1;window.__go=1;__echoes.cmd('placeAlly',1,-6,-4);__echoes.cmd('placeAlly',2,-6,0);__echoes.cmd('placeAlly',3,-6,4);__echoes.cmd('teleport',7,0);(function L(){if(!window.__go)return;const t=__echoes.tick;if(t!==window.__lt){window.__lt=t;const v=__echoes.state().party_ai;window.__P.push([t,v.allies.map(a=>[a.x,a.z])])}requestAnimationFrame(L)})();return 'spread + walk'})()"},
+  {"type":"wait","ms":3500},
+  {"type":"eval","code":"(()=>{window.__go=0;const P=window.__P;const q=(v,p)=>v[Math.min(v.length-1,Math.floor(v.length*p))];const sp=[0,1,2].map(k=>{const v=[];for(let i=1;i<P.length;i++){const dt=P[i][0]-P[i-1][0];if(dt!==1)continue;const d=Math.hypot(P[i][1][k][0]-P[i-1][1][k][0],P[i][1][k][1]-P[i-1][1][k][1]);if(d<1e-4)continue;v.push(d*60)}v.sort((a,b)=>a-b);return{n:v.length,p10:+q(v,0.1).toFixed(3),p50:+q(v,0.5).toFixed(3),p90:+q(v,0.9).toFixed(3),max:+v[v.length-1].toFixed(3)}});return{expect:'tank 2.10, sword 2.65, archer 2.50 u/s',got:sp}})()"}
+]

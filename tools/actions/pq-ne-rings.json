@@ -1,0 +1,22 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const p=window.__arenaProbe;const cam=p.stage.camera;const W=innerWidth,H=innerHeight;const V=p.root.position.constructor;const out=[];p.stage.scene.traverse(o=>{if(o.name!=='identity-ring')return;const w=o.getWorldPosition(new V());const ws=o.getWorldScale(new V());let half=0;o.traverse(c=>{if(c.geometry&&c.geometry.parameters&&c.geometry.parameters.width&&c.material&&c.material.blending!==2){const hw=c.geometry.parameters.width/2*ws.x;if(hw>half)half=hw;}});const c0=w.clone().project(cam);const e=w.clone();e.x+=half;const e2=e.project(cam);const cx=(c0.x*.5+.5)*W,cy=(-c0.y*.5+.5)*H,ex=(e2.x*.5+.5)*W;out.push({wx:+w.x.toFixed(2),wz:+w.z.toFixed(2),cx:+cx.toFixed(1),cy:+cy.toFixed(1),hp:+Math.abs(ex-cx).toFixed(2)});});return out;})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {party:s.party.map(p=>[+p.x.toFixed(2),+p.z.toFixed(2)])};})()"
+ }
+]

@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"window.__EV=[];['ally_rescue','revive_start','revive'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));__echoes.cmd('teleport',0,0);'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const t=s.party_ai.allies.find(a=>a.id===1);__echoes.cmd('teleport',t.x+0.3,t.z+0.3);__echoes.cmd('setHp',1,0.25);__echoes.cmd('setHp',3,0.9);__echoes.cmd('setHp',2,0);return{tankHpFrac:0.25,archerHpFrac:0.9,downed:'swordsman',pos:s.party_ai.allies.map(a=>[a.id,a.x,a.z])}})()"},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{rescues:window.__EV.filter(e=>e.type==='ally_rescue').map(e=>[e.tick,e.id,e.target,e.dist]),hp:s.party_ai.allies.map(a=>[a.id,a.hp,a.maxHp,Math.round(a.hp/a.maxHp*100)+'%']),channels:s.party_ai.channels}})()"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"({ev:window.__EV.map(e=>[e.type,e.tick,e.id??'',e.target,e.reviver??''])})"}
+]

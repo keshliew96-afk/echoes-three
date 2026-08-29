@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"__echoes.cmd('startRoom','defend');'defend started'"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{room:s.room,anchor:s.party_ai.anchor,leash:s.party_ai.leash,player:[s.party[0].x,s.party[0].z]}})()"},
+  {"type":"eval","code":"__echoes.cmd('teleport',-8,-4);'player yanked far from waystone'"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const ws=s.enemies;return{anchor:s.party_ai.anchor,allyAnchorDist:s.party_ai.allies.map(a=>a.anchorDist),allyPos:s.party_ai.allies.map(a=>[a.x,a.z]),playerPos:[s.party[0].x,s.party[0].z],room:s.room}})()"}
+]

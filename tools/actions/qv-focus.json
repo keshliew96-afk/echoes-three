@@ -1,0 +1,11 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"window.__ids={A:__echoes.cmd('spawn','dummy',2.0,0),B:__echoes.cmd('spawn','dummy',-2.5,1.5),C:__echoes.cmd('spawn','dummy',6.5,0)};window.__un=__echoes.on('hit',e=>{const s=__echoes.state();__echoes.cmd('setHp',e.target,1)});window.__ids"},
+  {"type":"eval","code":"window.__S=[];window.__t=setInterval(()=>{const v=__echoes.state().party_ai;window.__S.push({tick:__echoes.tick,tg:v.allies.map(a=>a.target),st:v.allies.map(a=>a.state),ad:v.allies.map(a=>a.anchorDist)})},200);'armed'"},
+  {"type":"wait","ms":8000},
+  {"type":"eval","code":"(()=>{const S=window.__S;const uniq=S.map(s=>new Set(s.tg.filter(t=>t!=null)).size);const maxAd=[0,1,2].map(i=>Math.max(...S.map(s=>s.ad[i])));return{phase:'near-enemies',samples:S.length,ids:window.__ids,allSameTargetFrames:uniq.filter(u=>u<=1).length,splitFrames:uniq.filter(u=>u>1).length,distinctTargetSets:[...new Set(S.map(s=>JSON.stringify(s.tg)))].slice(0,8),maxAnchorDist:maxAd}})()"},
+  {"type":"eval","code":"__echoes.cmd('setHp',window.__ids.A,0);__echoes.cmd('setHp',window.__ids.B,0);window.__S2=[];window.__t2=setInterval(()=>{const v=__echoes.state().party_ai;window.__S2.push({tick:__echoes.tick,tg:v.allies.map(a=>a.target),st:v.allies.map(a=>a.state),ad:v.allies.map(a=>a.anchorDist),x:v.allies.map(a=>a.x),z:v.allies.map(a=>a.z)})},200);'far-only armed'"},
+  {"type":"wait","ms":10000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__t);clearInterval(window.__t2);const S=window.__S2;const maxAd=[0,1,2].map(i=>Math.max(...S.map(s=>s.ad[i])));const st=[...new Set(S.map(s=>JSON.stringify(s.st)))];return{phase:'far-enemy-only',samples:S.length,maxAnchorDist:maxAd,leash:__echoes.state().party_ai.leash,states:st.slice(0,8),lastTargets:S[S.length-1].tg,lastPos:{x:S[S.length-1].x,z:S[S.length-1].z},enemiesAlive:__echoes.state().enemies.length}})()"}
+]

@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__un=__echoes.on('hit',e=>__echoes.cmd('setHp',e.target,1));'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"window.__D=[[5.2,0.4],[-5.6,-0.8]].map(p=>__echoes.cmd('spawn','dummy',p[0],p[1]));window.__D"},
+  {"type":"eval","code":"window.__S=[];window.__last=-1;window.__go=true;(function loop(){if(!window.__go)return;const t=__echoes.tick;if(t!==window.__last){window.__last=t;const v=__echoes.state().party_ai;window.__S.push({t,st:v.allies.map(a=>a.state),ad:v.allies.map(a=>a.anchorDist)});}requestAnimationFrame(loop)})();'rAF sampler'"},
+  {"type":"wait","ms":16000},
+  {"type":"eval","code":"(()=>{window.__go=false;const S=window.__S;const gaps=[];for(let i=1;i<S.length;i++)gaps.push(S[i].t-S[i-1].t);const over=[];const trans=[];for(let i=0;i<S.length;i++){for(let k=0;k<3;k++){if(S[i].ad[k]>3.4001)over.push([S[i].t,k,S[i].ad[k]]);if(i>0&&S[i-1].st[k]!=='engage'&&S[i].st[k]==='engage')trans.push([S[i].t,k,S[i-1].st[k],S[i].ad[k]]);}}return{samples:S.length,maxTickGap:Math.max(...gaps),gap1:gaps.filter(g=>g===1).length,maxAnchorDist:[0,1,2].map(k=>Math.max(...S.map(s=>s.ad[k]))),overLeash:over.length,overSample:over.slice(0,5),transitions:trans.length,violations:trans.filter(t=>t[3]>2.7201),transSample:trans.slice(0,10)}})()"}
+]

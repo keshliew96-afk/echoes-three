@@ -862,13 +862,14 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         return e.iframeUntilTick;
       }
       case 'hitOnce': {
-        // One basic-power damage instance on a dummy (default: first dummy)
-        // or on the PLAYER (pass the player id — drives the integrated rig's
-        // hurt clip / §10 downed), through combat.applyDamage — real crit
+        // One basic-power damage instance on a dummy (default: first dummy),
+        // on the PLAYER, or on an ALLY (pass the entity id — drives the rig's
+        // hurt clip / §10 downed, and the §17 Bruise-Umber incoming numeral
+        // that the whole party shares), through combat.applyDamage — real crit
         // roll, knockback (party exempt per A5), juice.
         const [id] = args;
         const t = id != null ? registry.byId(id) : firstDummy();
-        if (!t || (t.kind !== 'dummy' && t.kind !== 'player')) return null;
+        if (!t || (t.kind !== 'dummy' && t.kind !== 'player' && t.kind !== 'ally')) return null;
         const len = Math.hypot(t.x - player.x, t.z - player.z);
         const dirX = len > 1e-6 ? (t.x - player.x) / len : 1;
         const dirZ = len > 1e-6 ? (t.z - player.z) / len : 0;

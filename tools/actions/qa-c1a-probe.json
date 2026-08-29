@@ -1,0 +1,11 @@
+[
+  {"type":"eval","code":"(()=>{const g=__echoes.cmd('giveSkill','spirit_bolt');__echoes.cmd('grantNode','bounce');const s=__echoes.cmd('socket','spirit_bolt','bounce');const d1=__echoes.cmd('spawn','dummy',3,0);const d2=__echoes.cmd('spawn','dummy',4.3,0);return JSON.stringify({g,s,d1,d2,sb:__echoes.cmd('buildView').skills.find(x=>x.id==='spirit_bolt')})})()"},
+  {"type":"mousemove","x":1100,"y":450},
+  {"type":"wait","ms":150},
+  {"type":"eval","code":"JSON.stringify({aim:__echoes.state().party[0].aim,enemies:__echoes.state().enemies,slots:__echoes.state().skills.map(s=>s&&s.id)})"},
+  {"type":"keydown","key":"Digit3"},
+  {"type":"keyup","key":"Digit3"},
+  {"type":"wait","ms":1400},
+  {"type":"eval","code":"JSON.stringify(__echoes.events.filter(e=>['hit','bounce_hop','skill_cast','death','heal','siphon_drain'].includes(e.type)))"},
+  {"type":"eval","code":"JSON.stringify(__echoes.state().enemies)"}
+]

@@ -1,0 +1,17 @@
+[
+  {"type":"eval","code":"window.__EV=[];for(const t of ['revive_start','revive_break','revive','intent_denied','revive_drain_end','downed']) __echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e)));'armed'"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const tank=s.party_ai.allies[0];__echoes.cmd('teleport',tank.x+0.35,tank.z);__echoes.cmd('setHp',tank.id,0);return{tank:tank.id,tankPos:{x:tank.x,z:tank.z},player:__echoes.state().party[0]}})()"},
+  {"type":"keydown","key":"KeyE"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'after-E',channels:s.party_ai.channels,playerReviving:s.party[0].reviving,ev:window.__EV.map(e=>e.type+'@'+e.tick)}})()"},
+  {"type":"wait","ms":1700},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();window.__pre=s.party_ai.channels[0];return{phase:'pre-break',ch:s.party_ai.channels}})()"},
+  {"type":"eval","code":"window.__D=[];window.__raf=()=>{const s=__echoes.state();const c=s.party_ai.channels[0];window.__D.push({tick:s.tick,p:c?c.progress:null,d:c?c.draining:null});window.__idr=requestAnimationFrame(window.__raf)};window.__raf();'draining sampler on'"},
+  {"type":"keydown","key":"KeyW"},
+  {"type":"wait","ms":900},
+  {"type":"keyup","key":"KeyW"},
+  {"type":"keyup","key":"KeyE"},
+  {"type":"eval","code":"(()=>{cancelAnimationFrame(window.__idr);const D=window.__D.filter(x=>x.p!=null);const brk=window.__EV.find(e=>e.type==='revive_break');const dr=D.filter(x=>x.d);const first=dr[0],last=dr[dr.length-1];const dt=last&&first?last.tick-first.tick:0;const dp=last&&first?first.p-last.p:0;const fills=D.filter(x=>!x.d);const f0=fills[0],f1=fills[fills.length-1];return{break:brk?{t:brk.tick,reason:brk.reason,progress:brk.progress,drainRate:brk.drainRate}:null,fillSlope:f1&&f0&&f1.tick>f0.tick?((f1.p-f0.p)/(f1.tick-f0.tick)).toFixed(3):null,drainSamples:dr.length,drainTicks:dt,drainDelta:dp,drainSlope:dt?(dp/dt).toFixed(3):null,tail:D.slice(-6),drainEnd:window.__EV.filter(e=>e.type==='revive_drain_end').map(e=>e.tick)}})()"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'post-drain',ch:s.party_ai.channels,events:window.__EV.map(e=>e.type+'@'+e.tick+(e.reason?':'+e.reason:''))}})()"}
+]

@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes;const raf=window.requestAnimationFrame.bind(window);const T0=e.tick;e.cmd('startRoom','kill_all');const K=(c,d)=>window.dispatchEvent(new KeyboardEvent(d?'keydown':'keyup',{code:c,key:c==='Space'?' ':c.slice(-1).toLowerCase(),bubbles:true}));const M=(x,y)=>window.dispatchEvent(new MouseEvent('mousemove',{clientX:x,clientY:y,bubbles:true}));const t0=Date.now();let i=0;while(Date.now()-t0<9000){i++;M(800+300*Math.cos(i/7),450+200*Math.sin(i/7));window.dispatchEvent(new MouseEvent('mousedown',{button:2,buttons:2,bubbles:true}));if(i%13===0){K('Space',true);setTimeout(()=>K('Space',false),40);} if(i%11===0){K('Digit1',true);setTimeout(()=>K('Digit1',false),30);} await new Promise(r=>raf(r));}window.dispatchEvent(new MouseEvent('mouseup',{button:2,buttons:0,bubbles:true}));const ev=e.events.filter(v=>v.tick>=T0);const cnt={};for(const v of ev)cnt[v.type]=(cnt[v.type]||0)+1;const s=e.state();return {fps:e.fps,tick:e.tick,enemies:(s.enemies||[]).length,room:s.room,stats:e.stats,types:cnt};})()"
+ }
+]

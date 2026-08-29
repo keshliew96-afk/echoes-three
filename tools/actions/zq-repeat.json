@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"window.__EV=[];for(const t of ['revive_start','revive_break','revive','downed','intent_denied']) __echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e)));'armed'"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const a=s.party_ai.allies;__echoes.cmd('setHp',a[1].id,0.2);__echoes.cmd('setHp',a[2].id,0.2);const tank=a[0];__echoes.cmd('teleport',tank.x+0.35,tank.z);window.__tank=tank.id;return{tank:tank.id,repeats:s.party_ai.repeats}})()"},
+  {"type":"keydown","key":"KeyE"},
+  {"type":"eval","code":"(async()=>{const out=[];for(let k=0;k<4;k++){__echoes.cmd('setHp',window.__tank,0);let done=null;for(let i=0;i<1500;i++){const ev=window.__EV.filter(e=>e.type==='revive');if(ev.length>k){done=ev[k];break}await new Promise(r=>setTimeout(r,10))}const st=__echoes.state();out.push({cycle:k,pct:done?done.pct:null,hp:done?done.hp:null,repeatIdx:done?done.repeat:null,tick:done?done.tick:null,repeats:st.party_ai.repeats});await new Promise(r=>setTimeout(r,200))}return out})()"},
+  {"type":"keyup","key":"KeyE"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{repeats:s.party_ai.repeats,tankHp:s.party_ai.allies[0].hp,maxHp:s.party_ai.allies[0].maxHp,frac:s.party_ai.allies[0].hp/s.party_ai.allies[0].maxHp}})()"},
+  {"type":"eval","code":"(()=>{__echoes.cmd('roomBoundary');const s=__echoes.state();return{afterBoundary:{repeats:s.party_ai.repeats,mark:s.party_ai.mark,rallyPoint:s.party_ai.rallyPoint,hps:s.party.map(p=>p.hp)}}})()"}
+]

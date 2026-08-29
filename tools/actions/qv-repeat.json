@@ -1,0 +1,20 @@
+[
+  {"type":"eval","code":"window.__EV=[];['revive','revive_start','defeat','downed'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));__echoes.cmd('teleport',0,0);'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0);'down1'"},
+  {"type":"wait","ms":6200},
+  {"type":"eval","code":"({r1:window.__EV.filter(e=>e.type==='revive'),hp:__echoes.state().party[0].hp,repeats:__echoes.cmd('reviveState').repeats})"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0);'down2'"},
+  {"type":"wait","ms":6200},
+  {"type":"eval","code":"({r2:window.__EV.filter(e=>e.type==='revive'),hp:__echoes.state().party[0].hp,repeats:__echoes.cmd('reviveState').repeats})"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0);'down3'"},
+  {"type":"wait","ms":6200},
+  {"type":"eval","code":"({r3:window.__EV.filter(e=>e.type==='revive').map(e=>[e.tick,e.pct,e.hp,e.repeat]),hp:__echoes.state().party[0].hp})"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0);'down4'"},
+  {"type":"wait","ms":6200},
+  {"type":"eval","code":"({r4:window.__EV.filter(e=>e.type==='revive').map(e=>[e.tick,e.pct,e.hp,e.repeat]),hp:__echoes.state().party[0].hp,floorCheck:'expect 30,20,10,10'})"},
+  {"type":"eval","code":"({boundary:__echoes.cmd('roomBoundary'),repeatsAfterBoundary:__echoes.cmd('reviveState').repeats})"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0);'down5 after boundary'"},
+  {"type":"wait","ms":6200},
+  {"type":"eval","code":"({r5:window.__EV.filter(e=>e.type==='revive').map(e=>[e.tick,e.pct,e.hp,e.repeat]),hp:__echoes.state().party[0].hp})"}
+]

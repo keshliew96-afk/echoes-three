@@ -1,0 +1,10 @@
+[
+ {"type":"eval","code":"(()=>{const c=__echoes.cmd; c('restoreSkillState',{slots:[{id:'mending_bolt',remaining:0},{id:'warding_aura',remaining:0},{id:'restorative_wave',remaining:0},{id:'spirit_bolt',remaining:0}],override:null}); for(const n of ['multiply','multiply','siphon','siphon','sharpen','sharpen','sharpen']) c('grantNode',n); const r={}; r.first=c('socket','spirit_bolt','multiply',0); r.dupCmd=c('socket','spirit_bolt','multiply',1); r.sip1=c('socket','mending_bolt','siphon',0); r.sipDup=c('socket','mending_bolt','siphon',1); r.sh1=c('socket','restorative_wave','sharpen',0); r.sh2=c('socket','restorative_wave','sharpen',1); r.sh3=c('socket','restorative_wave','sharpen',1); r.view=c('buildView'); return JSON.stringify(r);})()"},
+ {"type":"eval","code":"JSON.stringify(__echoes.cmd('openSocket'))"},
+ {"type":"wait","ms":400},
+ {"type":"eval","code":"(()=>{window.__mark=__echoes.events.length; const cards=[...document.querySelectorAll('#socket-screen .nd-card')]; const i=cards.findIndex(c=>c.textContent.indexOf('Multiply')>=0); cards[i].click(); return JSON.stringify({picked:i,cards:cards.map(c=>c.textContent.trim().slice(0,40))});})()"},
+ {"type":"wait","ms":250},
+ {"type":"eval","code":"(()=>{const rows=[...document.querySelectorAll('#socket-screen .nd-row')]; const r=rows.find(x=>x.textContent.indexOf('Spirit Bolt')>=0); const cells=[...r.querySelectorAll('.nd-cell')]; cells[1].click(); return JSON.stringify({prev:r.querySelector('.nd-prev')?r.querySelector('.nd-prev').textContent.trim():null});})()"},
+ {"type":"wait","ms":120},
+ {"type":"eval","code":"(()=>{const rows=[...document.querySelectorAll('#socket-screen .nd-row')]; const r=rows.find(x=>x.textContent.indexOf('Spirit Bolt')>=0); const cells=[...r.querySelectorAll('.nd-cell')]; return JSON.stringify({classes:cells.map(c=>c.className),glyph:cells.map(c=>getComputedStyle(c.querySelector('.nd-blockglyph')).display),xform:cells.map(c=>getComputedStyle(c).transform),denials:__echoes.events.slice(window.__mark).filter(e=>e.type==='socket_denied'),toast:document.querySelector('#socket-screen .nd-toast').textContent});})()"}
+]

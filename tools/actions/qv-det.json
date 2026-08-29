@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"window.__H=[];window.__C=[];__echoes.on('hit',e=>window.__H.push([e.tick,e.source,e.target,e.amount,e.crit?1:0,e.skill||e.delivery]));__echoes.on('ally_cast',e=>window.__C.push([e.tick,e.id,e.skill]));'hooked'"},
+  {"type":"eval","code":"(async()=>{await new Promise(r=>{const i=setInterval(()=>{if(__echoes.tick>=400){clearInterval(i);r()}},8)});__echoes.cmd('teleport',0,0);__echoes.cmd('spawn','dummy',1.6,0.3);__echoes.cmd('spawn','dummy',-1.5,0.9);__echoes.cmd('spawn','dummy',0.4,-1.7);return{spawnTick:__echoes.tick,seed:__echoes.seed}})()"},
+  {"type":"eval","code":"(async()=>{await new Promise(r=>{const i=setInterval(()=>{if(__echoes.tick>=1600){clearInterval(i);r()}},8)});return{endTick:__echoes.tick,seed:__echoes.seed,rngDraws:__echoes.rngDraws,hits:window.__H.length,casts:window.__C.length,hash:JSON.stringify(window.__H).length,H:window.__H.slice(0,40),C:window.__C.slice(0,20)}})()"}
+]

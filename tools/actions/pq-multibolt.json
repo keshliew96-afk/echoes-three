@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes;const p=window.__arenaProbe;const V=p.root.position.constructor;const raf=window.requestAnimationFrame.bind(window);e.cmd('giveSkill','spirit_bolt');e.cmd('startRoom','kill_all');const M=(x,y)=>window.dispatchEvent(new MouseEvent('mousemove',{clientX:x,clientY:y,bubbles:true}));M(1250,470);const K=(c)=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:c,key:'1',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:c,key:'1',bubbles:true}));};const t0=Date.now();let snap=null;while(Date.now()-t0<12000){K('Digit1');K('Digit2');K('Digit3');window.dispatchEvent(new MouseEvent('mousedown',{button:2,buttons:2,bubbles:true}));const s=e.state();const all=[].concat(s.projectiles||[],s.skillBolts||[],s.eshots||[]);if(all.length>=2){ const res=all.map(b=>{let sh=null,core=null;p.stage.scene.traverse(o=>{if(!o.isMesh)return;const w=o.getWorldPosition(new V());if(Math.hypot(w.x-b.x,w.z-b.z)>0.55)return;if(w.y<0.05&&Math.abs(o.rotation.x+Math.PI/2)<0.05&&o.material.color&&o.material.color.getHex()===0)sh={x:+w.x.toFixed(2),z:+w.z.toFixed(2),op:+o.material.opacity.toFixed(2)};if(o.name==='core')core={x:+w.x.toFixed(2),z:+w.z.toFixed(2)};}); return {b:{x:+b.x.toFixed(2),z:+b.z.toFixed(2),owner:b.owner!==undefined?b.owner:null,skill:b.skillId||null},core,shadow:sh};}); snap={n:all.length,res};break;}await new Promise(r=>raf(r));}window.dispatchEvent(new MouseEvent('mouseup',{button:2,buttons:0,bubbles:true}));return snap||{no:'never 2 bolts'};})()"
+ }
+]

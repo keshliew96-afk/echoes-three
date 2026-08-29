@@ -1,0 +1,15 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__A=[];window.__B=[];__echoes.on('ally_basic',e=>window.__B.push([e.id,e.tick]));window.__t=setInterval(()=>window.__A.push([__echoes.tick,__echoes.state().allyfx.anims.join(',')]),80);'hooked'"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"({idleAnims:[...new Set(window.__A.map(a=>a[1]))]})"},
+  {"type":"eval","code":"window.__A=[];[[3.2,1.0],[-3.0,1.2],[2.6,-2.2],[-2.4,-2.4],[1.2,3.0],[-1.4,3.0]].map((p,i)=>__echoes.cmd('spawn',i%2?'mantis':'boar',p[0],p[1]));window.__im=__echoes.on('hit',e=>{if(e.target>3)__echoes.cmd('setHp',e.target,1)});'6 enemies'"},
+  {"type":"wait","ms":3000},
+  {"type":"eval","code":"({walkAttackAnims:[...new Set(window.__A.map(a=>a[1]))].slice(0,20)})"},
+  {"type":"eval","code":"window.__F=[];window.__ft=setInterval(()=>window.__F.push(__echoes.fps),250);'fps armed'"},
+  {"type":"wait","ms":10000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__ft);const f=window.__F;const s=__echoes.state();return{fps:{n:f.length,min:Math.min(...f),max:Math.max(...f),mean:Math.round(f.reduce((a,b)=>a+b,0)/f.length*10)/10,samples:f},enemies:s.enemies.length,ents:__echoes.entityCount,allies:s.party_ai.allies.map(a=>a.state)}})()"},
+  {"type":"eval","code":"window.__A=[];__echoes.cmd('setHp',2,0);'swordsman down'"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"({downedAnims:[...new Set(window.__A.map(a=>a[1]))].slice(0,12)})"},
+  {"type":"eval","code":"(()=>{clearInterval(window.__t);const set=new Set();for(const a of window.__A)a[1].split(',').forEach(x=>set.add(x));return{allClipsSeen:[...set]}})()"}
+]

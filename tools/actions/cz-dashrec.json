@@ -1,0 +1,7 @@
+[
+  {"type":"mousemove","x":1350,"y":455},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"(()=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyD',key:'d',bubbles:true}));window.__czHist={};window.__czMax=0;const tick=()=>{const s=window.__echoes.state();const g=s.vfx.party.smearGhosts;const d=s.party[0].dashTicksLeft;if(d>0){window.__czHist[g]=(window.__czHist[g]||0)+1;if(g>window.__czMax)window.__czMax=g;}requestAnimationFrame(tick);};requestAnimationFrame(tick);window.__czDash=setInterval(()=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',key:' ',bubbles:true}));setTimeout(()=>window.dispatchEvent(new KeyboardEvent('keyup',{code:'Space',key:' ',bubbles:true})),30);},300);return 'armed';})()"},
+  {"type":"wait","ms":9000},
+  {"type":"eval","code":"({hist:window.__czHist,max:window.__czMax})"}
+]

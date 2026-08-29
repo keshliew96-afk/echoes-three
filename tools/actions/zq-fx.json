@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0.5,0.5)"},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0)"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<900;i++){const c=__echoes.state().party_ai.channels[0];if(c&&c.progress>=20)return {p:c.progress,fx:JSON.parse(JSON.stringify(__echoes.state().allyfx))};await new Promise(r=>setTimeout(r,8));}return 'timeout'})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<900;i++){const c=__echoes.state().party_ai.channels[0];if(c&&c.progress>=200)return {p:c.progress,fx:JSON.parse(JSON.stringify(__echoes.state().allyfx))};await new Promise(r=>setTimeout(r,8));}return 'timeout'})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<900;i++){const c=__echoes.state().party_ai.channels[0];if(c&&c.progress>=280)return {p:c.progress,fx:JSON.parse(JSON.stringify(__echoes.state().allyfx))};await new Promise(r=>setTimeout(r,8));}return 'timeout'})()"}
+]

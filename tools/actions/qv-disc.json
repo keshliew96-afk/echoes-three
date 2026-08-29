@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":800},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{scene:s.scene,version:__echoes.version,tick:__echoes.tick,room:s.room,party:s.party,party_ai:s.party_ai,enemies:s.enemies?s.enemies.length:null,allyfx:s.allyfx,skills:s.skills}})()"}
+]

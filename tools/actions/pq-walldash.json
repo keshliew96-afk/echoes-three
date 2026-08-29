@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes;const p=window.__arenaProbe;const raf=window.requestAnimationFrame.bind(window);e.cmd('teleport',11.6,0);const M=(x,y)=>window.dispatchEvent(new MouseEvent('mousemove',{clientX:x,clientY:y,bubbles:true}));M(1590,450);await new Promise(r=>setTimeout(r,400));const G=[];p.stage.scene.traverse(o=>{if(o.name==='dash-afterimage')G.push(o);});const K=(c,d)=>window.dispatchEvent(new KeyboardEvent(d?'keydown':'keyup',{code:c,key:' ',bubbles:true}));const T0=e.tick;K('Space',true);setTimeout(()=>K('Space',false),40);const log=[];const t0=Date.now();while(Date.now()-t0<1500){log.push([e.tick,e.state().party[0].dashTicksLeft,G.filter(g=>g.visible).length]);await new Promise(r=>raf(r));}await new Promise(r=>setTimeout(r,600));return {x:+e.state().party[0].x.toFixed(2),ghostsAfter:G.filter(g=>g.visible).length,ev:e.events.filter(v=>v.tick>=T0&&/dash/.test(v.type)),log:log.slice(0,14)};})()"
+ }
+]

@@ -1,0 +1,14 @@
+[
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const p=window.__arenaProbe;let hid=0,lit=0;p.root.traverse(o=>{const m=o.material;if(!m)return;if(m.blending!==2)return;const flat=o.isMesh&&Math.abs((o.rotation.x||0)+Math.PI/2)<0.05;if(o.isSprite||flat){o.visible=false;hid++;}});p.stage.scene.traverse(o=>{if(o.isLight&&o.type==='PointLight'){o.intensity=0;lit++;}});return {hid,lit};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ }
+]

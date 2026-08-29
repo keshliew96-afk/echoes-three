@@ -1,0 +1,11 @@
+[
+  {"type":"eval","code":"window.__EV=[];['ally_rescue','revive_start','revive'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{const a=__echoes.state().party_ai.allies.find(a=>a.id===2);__echoes.cmd('teleport',a.x+0.9,a.z+0.9);return{sword:[a.x,a.z]}})()"},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"(()=>{__echoes.cmd('setHp',2,0);__echoes.cmd('setHp',0,0);const s=__echoes.state();return{t:__echoes.tick,dists:s.party_ai.allies.map(a=>({id:a.id,toPlayer:Math.round(Math.hypot(a.x-s.party[0].x,a.z-s.party[0].z)*100)/100}))}})()"},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"({phase:'choice',firstRescue:window.__EV.filter(e=>e.type==='ally_rescue').map(e=>[e.tick,e.id,e.target]),channels:__echoes.state().party_ai.channels})"},
+  {"type":"wait","ms":11000},
+  {"type":"eval","code":"({phase:'end',ev:window.__EV.map(e=>[e.type,e.tick,e.id??'',e.target,e.reviver??'']),party:__echoes.state().party.map(p=>[p.id,p.hp])})"}
+]

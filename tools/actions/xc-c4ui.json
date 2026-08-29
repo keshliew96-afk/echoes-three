@@ -1,0 +1,11 @@
+[
+ {"type":"eval","code":"(()=>{const c=__echoes.cmd;c('restoreSkillState',{slots:[{id:'sanctuary',remaining:0},{id:'warding_aura',remaining:0},{id:'restorative_wave',remaining:0},{id:'nova_bloom',remaining:0}],override:null});for(const n of ['multiply','multiply','multiply','bounce']) c('grantNode',n);return JSON.stringify(c('buildView').skills.map(s=>s.id));})()"},
+ {"type":"eval","code":"JSON.stringify(__echoes.cmd('openSocket'))"},
+ {"type":"wait","ms":400},
+ {"type":"eval","code":"(()=>{const cards=[...document.querySelectorAll('#socket-screen .nd-card')];const i=cards.findIndex(c=>c.textContent.indexOf('Multiply')>=0);cards[i].click();return JSON.stringify({picked:i});})()"},
+ {"type":"wait","ms":250},
+ {"type":"eval","code":"(()=>{const rows=[...document.querySelectorAll('#socket-screen .nd-row')];const out={};for(const r of rows){const nm=r.querySelector('.nd-skill-name').textContent;const cells=[...r.querySelectorAll('.nd-cell')];out[nm]={prev:r.querySelector('.nd-prev')?r.querySelector('.nd-prev').textContent.trim():null,cellClasses:cells.map(c=>c.className),strike:cells.map(c=>getComputedStyle(c.querySelector('.nd-strike')).display),inert:cells.map(c=>getComputedStyle(c.querySelector('.nd-inert-badge')).display),fit:cells.map(c=>getComputedStyle(c.querySelector('.nd-fit-badge')).display)};}return JSON.stringify(out);})()"},
+ {"type":"eval","code":"(()=>{const rows=[...document.querySelectorAll('#socket-screen .nd-row')];const r=rows.find(x=>x.textContent.indexOf('Sanctuary')>=0);const cells=[...r.querySelectorAll('.nd-cell')];cells[0].click();return 'clicked';})()"},
+ {"type":"wait","ms":250},
+ {"type":"eval","code":"(()=>{const rows=[...document.querySelectorAll('#socket-screen .nd-row')];const r=rows.find(x=>x.textContent.indexOf('Sanctuary')>=0);const cells=[...r.querySelectorAll('.nd-cell')];return JSON.stringify({toast:document.querySelector('#socket-screen .nd-toast').textContent,toastVisible:getComputedStyle(document.querySelector('#socket-screen .nd-toast')).opacity,cell0:cells[0].className,strike:getComputedStyle(cells[0].querySelector('.nd-strike')).display,view:__echoes.cmd('buildView').skills.find(s=>s.id==='sanctuary')});})()"}
+]

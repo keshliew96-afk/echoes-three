@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":700},
+  {"type":"eval","code":"(()=>{const p=window.__arenaProbe;const cam=p.stage.camera;const W=innerWidth,H=innerHeight;const V=p.root.position.constructor;const ems=p.emitters.map(e=>({k:e.kind,x:e.x,y:e.y,z:e.z}));const out=[];p.root.traverse(o=>{const m=o.material;if(!m)return;const add=(m.blending===2);const isSprite=o.isSprite;const flat=o.isMesh&&Math.abs((o.rotation.x||0)+Math.PI/2)<0.05;if(!add)return;if(!(isSprite||flat))return;const w=o.getWorldPosition(new V());const s=w.clone().project(cam);const sc=o.getWorldScale(new V());const near=ems.map(e=>({k:e.k,d:+Math.hypot(e.x-w.x,e.z-w.z).toFixed(2)})).sort((a,b)=>a.d-b.d)[0];out.push({n:o.name||o.type,kind:isSprite?'sprite':'ground',vis:o.visible,wx:+w.x.toFixed(2),wy:+w.y.toFixed(2),wz:+w.z.toFixed(2),sx:Math.round((s.x*.5+.5)*W),sy:Math.round((-s.y*.5+.5)*H),sc:+Math.max(sc.x,sc.y).toFixed(2),near:near&&near.k,nd:near&&near.d});});return {count:out.length,pools:out};})()"}
+]

@@ -1,0 +1,16 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);__echoes.cmd('startRoom','kill_all')"},
+  {"type":"eval","code":"window.__S=[];window.__raf=()=>{const s=__echoes.state();window.__S.push({t:s.tick,ad:s.party_ai.allies.map(a=>a.ad!==undefined?a.ad:a.anchorDist),st:s.party_ai.allies.map(a=>a.state)});window.__id=requestAnimationFrame(window.__raf)};window.__raf();'raf'"},
+  {"type":"mousemove","x":1100,"y":300},
+  {"type":"mousedown","button":"right"},
+  {"type":"keydown","key":"KeyW"},{"type":"wait","ms":1400},{"type":"keyup","key":"KeyW"},
+  {"type":"keydown","key":"KeyD"},{"type":"wait","ms":1600},{"type":"keyup","key":"KeyD"},
+  {"type":"keydown","key":"KeyS"},{"type":"wait","ms":1800},{"type":"keyup","key":"KeyS"},
+  {"type":"keydown","key":"KeyA"},{"type":"wait","ms":2000},{"type":"keyup","key":"KeyA"},
+  {"type":"keydown","key":"KeyW"},{"type":"keydown","key":"KeyD"},{"type":"wait","ms":1500},{"type":"keyup","key":"KeyW"},{"type":"keyup","key":"KeyD"},
+  {"type":"key","key":"Space","ms":60},
+  {"type":"keydown","key":"KeyS"},{"type":"keydown","key":"KeyA"},{"type":"wait","ms":1800},{"type":"keyup","key":"KeyS"},{"type":"keyup","key":"KeyA"},
+  {"type":"wait","ms":3000},
+  {"type":"mouseup","button":"right"},
+  {"type":"eval","code":"(()=>{cancelAnimationFrame(window.__id);const S=window.__S;const mx=[0,1,2].map(i=>Math.max(...S.map(s=>s.ad[i])));const over=S.filter(s=>s.ad.some(d=>d>3.41)).length;const worst=S.reduce((m,s)=>{const d=Math.max(...s.ad);return d>m.d?{d:d,t:s.t,st:s.st,ad:s.ad}:m},{d:0});return{samples:S.length,maxAnchorDist:mx,framesOverLeash:over,worst:worst,fps:__echoes.fps,enemies:__echoes.state().enemies.length}})()"}
+]

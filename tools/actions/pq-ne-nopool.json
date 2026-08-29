@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const p=window.__arenaProbe;const raf=window.requestAnimationFrame.bind(window);window.__echoes.cmd('teleport',6,-4);await new Promise(r=>setTimeout(r,3000));let n=0;p.root.traverse(o=>{const m=o.material;if(!m||m.blending!==2)return;const flat=o.isMesh&&Math.abs((o.rotation.x||0)+Math.PI/2)<0.05;if((o.isSprite||flat)&&!(o.parent&&o.parent.name==='identity-ring')){o.visible=false;n++;}});await new Promise(r=>setTimeout(r,400));return {hiddenPools:n};})()"
+ }
+]

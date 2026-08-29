@@ -1,0 +1,18 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"eval","code":"window.__un=__echoes.on('hit',e=>{__echoes.cmd('setHp',e.target,1)});window.__d=[__echoes.cmd('spawn','dummy',1.6,0.6),__echoes.cmd('spawn','dummy',-1.4,1.1)];window.__EV=[];for(const t of ['rally','ally_regroup','rally_end','ally_basic','ally_cast','revive_start','revive_break','intent_denied','azone_spawn']) __echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e)));window.__d"},
+  {"type":"wait","ms":3000},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'engaged',st:s.party_ai.allies.map(a=>a.state),tg:s.party_ai.allies.map(a=>a.target),attacks:window.__EV.filter(e=>e.type==='ally_basic'||e.type==='ally_cast').length}})()"},
+  {"type":"eval","code":"__echoes.cmd('teleport',-5.5,4.0);window.__rt=__echoes.tick;window.__preAtk=window.__EV.filter(e=>e.type==='ally_basic'||e.type==='ally_cast').length;'moved'"},
+  {"type":"key","key":"KeyR","ms":50},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'immediately-after-R',tickNow:s.tick,rTick:window.__rt,st:s.party_ai.allies.map(a=>a.state),rallyPoint:s.party_ai.rallyPoint,player:{x:s.party[0].x,z:s.party[0].z}}})()"},
+  {"type":"wait","ms":5000},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const E=window.__EV;const rally=E.filter(e=>e.type==='rally');const reg=E.filter(e=>e.type==='ally_regroup');const end=E.filter(e=>e.type==='rally_end');const atk=E.filter(e=>e.type==='ally_basic'||e.type==='ally_cast');const first=rally[0];const during=atk.filter(e=>e.tick>=first.tick&&e.tick<=Math.max(...end.map(x=>x.tick)));const grace=reg.map(r=>{const m=end.find(x=>x.id===r.id&&x.tick>=r.tick);return m?m.tick-r.tick:null});return{rally:rally.map(e=>({t:e.tick,x:e.x,z:e.z,allies:e.allies})),regroups:reg.map(e=>({t:e.tick,i:e.partyIndex,dist:e.dist,graceTicks:e.graceTicks})),rallyEnds:end.map(e=>({t:e.tick,i:e.partyIndex})),graceLenTicks:grace,attacksDuringRally:during.length,attacksBefore:window.__preAtk,distToRallyPoint:s.party_ai.allies.map(a=>Math.round(100*Math.hypot(a.x-s.party_ai.rallyPoint.x,a.z-s.party_ai.rallyPoint.z))/100),stateNow:s.party_ai.allies.map(a=>a.state)}})()"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();window.__downId=s.party_ai.allies[0].id;__echoes.cmd('setHp',window.__downId,0);return{downed:window.__downId}})()"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'channeling',channels:s.party_ai.channels,st:s.party_ai.allies.map(a=>a.state)}})()"},
+  {"type":"eval","code":"window.__r2=__echoes.tick;'armed2'"},
+  {"type":"key","key":"KeyR","ms":50},
+  {"type":"wait","ms":120},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const brk=window.__EV.filter(e=>e.type==='revive_break');return{phase:'rally-vs-channel',rTick:window.__r2,breaks:brk.map(e=>({t:e.tick,reason:e.reason,target:e.target,progress:e.progress})),channels:s.party_ai.channels,st:s.party_ai.allies.map(a=>a.state),rallyEvents:window.__EV.filter(e=>e.type==='rally').map(e=>e.tick)}})()"}
+]

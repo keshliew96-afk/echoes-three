@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{const p=window.__arenaProbe;const cam=p.stage.camera;const V=p.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const st=window.__echoes.state();const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const out=st.party.map(a=>({k:a.classId||a.kind,x:a.x,z:a.z,s:proj(a.x,0.02,a.z)}));return {out, idU: st.allyfx.identityU};})()"}
+]

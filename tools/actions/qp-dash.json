@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"(()=>{const d=document.createElement('div');d.id='qp-ov';d.style.cssText='position:fixed;top:60px;left:8px;z-index:99999;font:bold 20px monospace;color:#fff;background:#000;padding:2px 6px;';document.body.appendChild(d);const e=window.__echoes;const loop=()=>{const s=e.state();const p=s.party[0];d.textContent='T'+e.tick+' DTL'+p.dashTicksLeft+' G'+(s.vfx&&s.vfx.party?s.vfx.party.smearGhosts:'-');requestAnimationFrame(loop)};loop();return 'ov'})()"},
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -6, 3)"},
+  {"type":"wait","ms":500},
+  {"type":"mousemove","x":1400,"y":450},
+  {"type":"wait","ms":150},
+  {"type":"eval","code":"(()=>{const dn=(c)=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c,key:c,bubbles:true}));const up=(c)=>window.dispatchEvent(new KeyboardEvent('keyup',{code:c,key:c,bubbles:true}));dn('KeyD');for(let i=0;i<6;i++){setTimeout(()=>{dn('Space');setTimeout(()=>up('Space'),90);},150+i*1300);}setTimeout(()=>up('KeyD'),9000);return 'dashes-scheduled'})()"}
+]

@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"eval","code":"window.__un=__echoes.on('hit',e=>{__echoes.cmd('setHp',e.target,1)});window.__d=__echoes.cmd('spawn','dummy',0.2,0.9);window.__d"},
+  {"type":"wait","ms":1000},
+  {"type":"eval","code":"window.__S=[];window.__raf=()=>{const s=__echoes.state();window.__S.push({tick:s.tick,px:s.party[0].x,al:s.party_ai.allies.map(a=>({st:a.state,ad:a.anchorDist,tg:a.target}))});window.__id=requestAnimationFrame(window.__raf)};window.__raf();'raf sampling'"},
+  {"type":"eval","code":"__echoes.cmd('teleport',8.5,0)"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"(()=>{cancelAnimationFrame(window.__id);const S=window.__S;const out=[];for(let i=1;i<S.length;i++){for(let k=0;k<3;k++){const a=S[i-1].al[k],b=S[i].al[k];if(a.st!==b.st)out.push({k:k,from:a.st,to:b.st,tick:S[i].tick,adBefore:a.ad,adAfter:b.ad});}}const maxAd=[0,1,2].map(k=>Math.max(...S.map(s=>s.al[k].ad)));const dedup=[];let last='';for(const o of out){const key=o.k+o.from+o.to;if(key!==last){dedup.push(o);last=key}}return{samples:S.length,transitions:dedup,maxAnchorDist:maxAd,returnToEngage:dedup.filter(o=>o.from==='return'&&o.to==='engage'),final:S[S.length-1]}})()"}
+]

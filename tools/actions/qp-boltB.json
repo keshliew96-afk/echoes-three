@@ -1,0 +1,11 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -6, 2)"},
+  {"type":"wait","ms":600},
+  {"type":"mousemove","x":1500,"y":430},
+  {"type":"wait","ms":200},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":60},
+  {"type":"mouseup","button":"right"},
+  {"type":"wait","ms":420},
+  {"type":"eval","code":"(()=>{const {stage,root}=window.__arenaProbe;const s=window.__echoes.state();const out=(s.projectiles||[]).map(b=>{const V=new (Object.getPrototypeOf(stage.camera.position).constructor)(b.x,b.y!==undefined?b.y:0.45,b.z);V.project(stage.camera);return {x:Math.round(b.x*100)/100,z:Math.round(b.z*100)/100,sx:Math.round((V.x*0.5+0.5)*window.innerWidth),sy:Math.round((-V.y*0.5+0.5)*window.innerHeight)};});const G=(s.projectiles||[]).map(b=>{const V=new (Object.getPrototypeOf(stage.camera.position).constructor)(b.x,0.02,b.z);V.project(stage.camera);return {gx:Math.round((V.x*0.5+0.5)*window.innerWidth),gy:Math.round((-V.y*0.5+0.5)*window.innerHeight)};});console.log('[BOLT]',JSON.stringify({air:out,ground:G,n:(s.projectiles||[]).length}));return 'x'})()"}
+]

@@ -1,0 +1,6 @@
+[
+  {"type":"wait","ms":500},
+  {"type":"mousemove","x":1350,"y":455},
+  {"type":"wait","ms":150},
+  {"type":"eval","code":"(async()=>{const e=window.__echoes;const raf=window.requestAnimationFrame.bind(window);const log=[];const t0=Date.now();const K=(c,d)=>window.dispatchEvent(new KeyboardEvent(d?'keydown':'keyup',{code:c,key:c==='Space'?' ':'d',bubbles:true}));K('KeyD',true);await new Promise(r=>setTimeout(r,200));const T=e.tick;K('Space',true);setTimeout(()=>K('Space',false),40);while(Date.now()-t0<2500){const s=e.state();log.push([e.tick,s.party[0].dashTicksLeft,s.vfx&&s.vfx.party?s.vfx.party.smearGhosts:-1,+s.party[0].x.toFixed(2)]);await new Promise(r=>raf(r));}K('KeyD',false);return {T,events:e.events.filter(v=>v.tick>=T&&/dash/.test(v.type)).slice(0,6),log:log.filter(l=>l[1]>0||l[2]>0).slice(0,40)};})()"}
+]

@@ -1,0 +1,13 @@
+[
+  {"type":"eval","code":"window.__A=new Set();window.__poll=setInterval(()=>{const s=__echoes.state();for(const a of s.allyfx.anims)window.__A.add(a)},60);'armed'"},
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__un=__echoes.on('hit',e=>{if(e.target>3)__echoes.cmd('setHp',e.target,1)});[[2.6,1.2],[-2.4,1.6],[1.0,2.8]].map(p=>__echoes.cmd('spawn','boar',p[0],p[1]))"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"({phase:'combat',clips:[...window.__A]})"},
+  {"type":"eval","code":"__echoes.cmd('teleport',6.5,-3.5);'walk allies'"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"({phase:'walk',clips:[...window.__A]})"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();__echoes.cmd('setHp',s.party_ai.allies[1].id,0);return 'down swordsman'})()"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"({phase:'downed',clips:[...window.__A],st:__echoes.state().party_ai.allies.map(a=>a.state+':'+a.hp)})"},
+  {"type":"eval","code":"(()=>{clearInterval(window.__poll);const s=__echoes.state();return{clips:[...window.__A],rings:s.allyfx.reviveRings,fps:__echoes.fps}})()"}
+]

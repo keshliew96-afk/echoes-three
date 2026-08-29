@@ -1,0 +1,13 @@
+[
+  {"type":"eval","code":"JSON.stringify({v:__echoes.version,scene:__echoes.state().scene,party:__echoes.state().party.map(p=>({id:p.id,cls:p.classId||p.kind,x:p.x,z:p.z,hp:p.hp,max:p.maxHp})),skills:__echoes.state().skills})"},
+  {"type":"mousemove","x":1100,"y":450},
+  {"type":"wait","ms":150},
+  {"type":"eval","code":"JSON.stringify({mouse:'1100,450',aim:__echoes.state().party[0].aim,px:__echoes.state().party[0].x,pz:__echoes.state().party[0].z})"},
+  {"type":"mousemove","x":800,"y":250},
+  {"type":"wait","ms":150},
+  {"type":"eval","code":"JSON.stringify({mouse:'800,250',aim:__echoes.state().party[0].aim})"},
+  {"type":"mousemove","x":500,"y":650},
+  {"type":"wait","ms":150},
+  {"type":"eval","code":"JSON.stringify({mouse:'500,650',aim:__echoes.state().party[0].aim})"},
+  {"type":"eval","code":"JSON.stringify({build:__echoes.cmd('buildView')})"}
+]

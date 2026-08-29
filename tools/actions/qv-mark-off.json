@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"window.__N=__echoes.cmd('spawn','dummy',1.2,0);window.__F=__echoes.cmd('spawn','dummy',-3.0,0);window.__un=__echoes.on('hit',e=>__echoes.cmd('setHp',e.target,1));({N:window.__N,F:window.__F})"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"(()=>{const v=__echoes.state().party_ai;return{mark:v.mark,targets:v.allies.map(a=>a.target),N:window.__N,F:window.__F,fxmark:__echoes.state().allyfx.mark}})()"}
+]

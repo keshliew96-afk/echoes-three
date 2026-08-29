@@ -1,0 +1,19 @@
+[
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "mousemove",
+  "x": 1350,
+  "y": 455
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes;const p=window.__arenaProbe;const raf=window.requestAnimationFrame.bind(window);const G=[];p.stage.scene.traverse(o=>{if(o.name==='dash-afterimage')G.push(o);});const alpha=g=>{let a=0;g.traverse(c=>{if(c.material&&c.material.opacity>a)a=c.material.opacity;});return a;};const K=(c,d)=>window.dispatchEvent(new KeyboardEvent(d?'keydown':'keyup',{code:c,key:c==='Space'?' ':'a',bubbles:true}));K('Space',true);await new Promise(r=>setTimeout(r,50));K('Space',false);await new Promise(r=>setTimeout(r,1600));const log=[];const t0=Date.now();K('Space',true);setTimeout(()=>K('Space',false),40);while(Date.now()-t0<700){log.push([Date.now()-t0,G.map(g=>g.visible?+alpha(g).toFixed(3):-1).join('/')]);await new Promise(r=>raf(r));}return {fps:e.fps,log};})()"
+ }
+]

@@ -1,0 +1,10 @@
+[
+ {"type":"eval","code":"(()=>{const c=__echoes.cmd; c('restoreSkillState',{slots:[{id:'mending_bolt',remaining:0},{id:'warding_aura',remaining:0},{id:'restorative_wave',remaining:0},{id:'spirit_bolt',remaining:0}],override:null}); for(const n of ['ascend','multiply','multiply','echo']) c('grantNode',n); return JSON.stringify(c('buildView').bench);})()"},
+ {"type":"eval","code":"JSON.stringify(__echoes.cmd('openSocket'))"},
+ {"type":"wait","ms":400},
+ {"type":"eval","code":"(()=>{window.__mark=__echoes.events.length; const cards=[...document.querySelectorAll('#socket-screen .nd-card')]; const i=cards.findIndex(c=>c.textContent.indexOf('Ascend')>=0); cards[i].click(); return JSON.stringify({picked:i});})()"},
+ {"type":"wait","ms":250},
+ {"type":"eval","code":"(()=>{const rows=[...document.querySelectorAll('#socket-screen .nd-row')]; const r=rows.find(r=>r.textContent.indexOf('Mending Bolt')>=0); const cells=[...r.querySelectorAll('.nd-cell')]; cells[0].click(); return JSON.stringify({cells:cells.length});})()"},
+ {"type":"wait","ms":120},
+ {"type":"eval","code":"(()=>{const rows=[...document.querySelectorAll('#socket-screen .nd-row')]; const r=rows.find(x=>x.textContent.indexOf('Mending Bolt')>=0); const cells=[...r.querySelectorAll('.nd-cell')]; return JSON.stringify({classes:cells.map(c=>c.className), blockGlyphShown:cells.map(c=>getComputedStyle(c.querySelector('.nd-blockglyph')).display), xform:cells.map(c=>getComputedStyle(c).transform), denials:__echoes.events.slice(window.__mark).filter(e=>e.type==='socket_denied'), toast:document.querySelector('#socket-screen .nd-toast').textContent});})()"}
+]

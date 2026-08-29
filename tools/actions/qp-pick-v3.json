@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"(()=>{const p=window.__arenaProbe;const pts=[[599,402],[610,395],[39,112],[1213,67],[1395,267],[957,355]];const out=pts.map(([x,y])=>({at:[x,y],hits:p.pick(x,y,2)}));console.log('[PICK3]',JSON.stringify(out));return 'ok'})()"}
+]

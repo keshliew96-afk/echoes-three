@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__un=__echoes.on('hit',e=>{if(e.target>3)__echoes.cmd('setHp',e.target,0.9)});[[2.0,1.2],[-1.8,1.4],[0.6,2.2]].map(p=>__echoes.cmd('spawn','boar',p[0],p[1]))"},
+  {"type":"wait","ms":1500},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();console.log('[STATE] mark='+s.party_ai.mark+' tg='+s.party_ai.allies.map(a=>a.target).join(',')+' rings='+s.allyfx.reviveRings+' markfx='+JSON.stringify(s.allyfx.mark));return s.party_ai.mark})()"}
+]

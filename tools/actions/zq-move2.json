@@ -1,0 +1,14 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);__echoes.cmd('startRoom','kill_all')"},
+  {"type":"eval","code":"window.__O=[];window.__N=0;window.__raf=()=>{const s=__echoes.state();window.__N++;for(const a of s.party_ai.allies){if(a.anchorDist>3.41)window.__O.push({t:s.tick,i:a.partyIndex,d:a.anchorDist,st:a.state,tg:a.target})}window.__id=requestAnimationFrame(window.__raf)};window.__raf();'raf'"},
+  {"type":"mousemove","x":1100,"y":300},
+  {"type":"mousedown","button":"right"},
+  {"type":"keydown","key":"KeyW"},{"type":"wait","ms":1500},{"type":"keyup","key":"KeyW"},
+  {"type":"keydown","key":"KeyD"},{"type":"wait","ms":1700},{"type":"keyup","key":"KeyD"},
+  {"type":"keydown","key":"KeyS"},{"type":"wait","ms":1900},{"type":"keyup","key":"KeyS"},
+  {"type":"keydown","key":"KeyA"},{"type":"wait","ms":2100},{"type":"keyup","key":"KeyA"},
+  {"type":"keydown","key":"KeyW"},{"type":"keydown","key":"KeyA"},{"type":"wait","ms":1700},{"type":"keyup","key":"KeyW"},{"type":"keyup","key":"KeyA"},
+  {"type":"wait","ms":2500},
+  {"type":"mouseup","button":"right"},
+  {"type":"eval","code":"(()=>{cancelAnimationFrame(window.__id);const O=window.__O;const byState={};for(const o of O)byState[o.st]=(byState[o.st]||0)+1;return{totalFrames:window.__N,overLeashSamples:O.length,byState:byState,maxD:O.length?Math.max(...O.map(o=>o.d)):0,engageOverLeash:O.filter(o=>o.st==='engage').slice(0,6)}})()"}
+]

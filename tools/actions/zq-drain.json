@@ -1,0 +1,13 @@
+[
+  {"type":"eval","code":"window.__EV=[];for(const t of ['revive_start','revive_break','revive','intent_denied','revive_drain_end','downed']) __echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e)));'armed'"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const a=s.party_ai.allies;__echoes.cmd('setHp',a[1].id,0.2);__echoes.cmd('setHp',a[2].id,0.2);const tank=a[0];__echoes.cmd('teleport',tank.x+0.35,tank.z);__echoes.cmd('setHp',tank.id,0);return{tank:tank.id,allyHp:__echoes.state().party_ai.allies.map(x=>x.hp+'/'+x.maxHp)}})()"},
+  {"type":"keydown","key":"KeyE"},
+  {"type":"wait","ms":2600},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'pre-break',ch:s.party_ai.channels,rings:s.allyfx.reviveRings}})()"},
+  {"type":"eval","code":"window.__D=[];window.__raf=()=>{const s=__echoes.state();const c=s.party_ai.channels[0];window.__D.push({tick:s.tick,p:c?c.progress:null,d:c?c.draining:null,rings:s.allyfx.reviveRings});window.__idr=requestAnimationFrame(window.__raf)};window.__raf();'sampler'"},
+  {"type":"keydown","key":"KeyW"},
+  {"type":"wait","ms":1600},
+  {"type":"keyup","key":"KeyW"},
+  {"type":"keyup","key":"KeyE"},
+  {"type":"eval","code":"(()=>{cancelAnimationFrame(window.__idr);const D=window.__D;const brk=window.__EV.find(e=>e.type==='revive_break');const uniq=[];for(const x of D){if(!uniq.length||uniq[uniq.length-1].tick!==x.tick)uniq.push(x)}const fill=uniq.filter(x=>x.p!=null&&!x.d);const dr=uniq.filter(x=>x.p!=null&&x.d);const slope=(arr)=>{if(arr.length<2)return null;const a=arr[0],b=arr[arr.length-1];return b.tick>a.tick?((b.p-a.p)/(b.tick-a.tick)).toFixed(3):null};return{break:brk?{t:brk.tick,reason:brk.reason,progress:brk.progress,drainRate:brk.drainRate}:null,fillSlopePerTick:slope(fill),drainSlopePerTick:slope(dr),drainSamples:dr.length,drainFrom:dr[0],drainTo:dr[dr.length-1],ringsDuringDrain:[...new Set(dr.map(x=>x.rings))],drainEnd:window.__EV.filter(e=>e.type==='revive_drain_end').map(e=>e.tick),after:__echoes.state().party_ai.channels,evs:window.__EV.map(e=>e.type+'@'+e.tick+(e.reason?':'+e.reason:''))}})()"}
+]

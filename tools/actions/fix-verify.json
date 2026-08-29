@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('giveSkill','mending_bolt'); __echoes.cmd('giveSkill','spirit_bolt'); 'given'"},
+  {"type":"wait","ms":300},
+  {"type":"key","key":"Digit1","ms":60},
+  {"type":"wait","ms":2700},
+  {"type":"eval","code":"JSON.stringify(__echoes.state().skills||__echoes.cmd('skillView')||'n/a')"}
+]

@@ -1,0 +1,6 @@
+[
+  {"type":"mousemove","x":1350,"y":470},
+  {"type":"wait","ms":150},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":110}
+]

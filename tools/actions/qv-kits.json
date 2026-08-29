@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__C=[];window.__H=[];window.__A=[];__echoes.on('ally_cast',e=>window.__C.push(e));__echoes.on('ally_basic',e=>window.__A.push(e));__echoes.on('hit',e=>{window.__H.push({t:e.tick,src:e.source,tgt:e.target,amt:e.amount,crit:e.crit,d:e.delivery,skill:e.skill});__echoes.cmd('setHp',e.target,1)});'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"[[1.0,0.4],[-1.0,0.5],[0.2,1.2],[2.0,-0.6],[-1.8,-0.9],[0.6,-1.6]].map((p,i)=>__echoes.cmd('spawn',i%2?'mantis':'boar',p[0],p[1]))"},
+  {"type":"wait","ms":22000},
+  {"type":"eval","code":"(()=>{const byS={};for(const c of window.__C){(byS[c.skill]=byS[c.skill]||[]).push(c.tick)}const cds={};for(const k in byS){const t=byS[k];const gaps=[];for(let i=1;i<t.length;i++)gaps.push(t[i]-t[i-1]);cds[k]={casts:t.length,gaps}}return{casts:window.__C.length,perSkill:cds,sampleCasts:window.__C.slice(0,10)}})()"},
+  {"type":"eval","code":"(()=>{const byS={};for(const h of window.__H){const k=(h.skill||h.d||'?')+'|'+h.src;(byS[k]=byS[k]||[]).push(h.amt)}const o={};for(const k in byS){const v=byS[k];o[k]={n:v.length,vals:[...new Set(v)].sort((a,b)=>a-b)}}return o})()"}
+]

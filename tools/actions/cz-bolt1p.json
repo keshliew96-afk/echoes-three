@@ -1,0 +1,9 @@
+[
+  {"type":"mousemove","x":1350,"y":455},
+  {"type":"wait","ms":150},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":40},
+  {"type":"mouseup","button":"right"},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"({proj: window.__echoes.state().projectiles, ev: window.__echoes.events.filter(e=>e.type==='basic_fire'||e.type==='projectile_spawn'||e.type==='projectile_expire').slice(-6)})"}
+]

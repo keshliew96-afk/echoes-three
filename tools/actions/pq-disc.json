@@ -1,0 +1,7 @@
+[
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"({keys:Object.keys(window.__echoes), version:window.__echoes.version, tick:window.__echoes.tick, fps:window.__echoes.fps, ents:window.__echoes.entityCount})"},
+  {"type":"eval","code":"(()=>{const s=window.__echoes.state();return {topKeys:Object.keys(s), party:s.party&&s.party.map(p=>({id:p.id,cls:p.cls||p.klass||p.class,x:p.x,z:p.z,hp:p.hp})), enemies:(s.enemies||[]).length, room:s.room, variant:s.variant};})()"},
+  {"type":"eval","code":"(()=>{const c=window.__echoes.cmd; return typeof c==='function'? (window.__echoes.commands||window.__echoes.cmds||'no-list') : 'nocmd';})()"},
+  {"type":"eval","code":"(()=>{try{return window.__echoes.cmd('help')}catch(e){return 'err:'+e.message}})()"}
+]

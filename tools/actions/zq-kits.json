@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"eval","code":"window.__H=[];window.__un=__echoes.on('hit',e=>{window.__H.push({t:e.tick,tgt:e.target,amt:e.amount,crit:e.crit,src:e.source,by:e.attacker});__echoes.cmd('setHp',e.target,1)});window.__C=[];__echoes.on('ally_cast',e=>window.__C.push(JSON.parse(JSON.stringify(e))));__echoes.on('ally_basic',e=>window.__C.push(Object.assign({basic:true},JSON.parse(JSON.stringify(e)))));window.__ids=[[0.7,0.5],[-0.8,0.4],[0.2,-0.9],[1.4,-0.4]].map(p=>__echoes.cmd('spawn','dummy',p[0],p[1]));'armed'"},
+  {"type":"wait","ms":32000},
+  {"type":"eval","code":"(()=>{const C=window.__C;const byS={};for(const c of C){const k=(c.basic?'BASIC:':'')+(c.skill||c.classId);const e=byS[k]||(byS[k]={cls:c.classId,n:0,ticks:[],power:c.power,cd:c.cd,shape:c.shape,reach:c.reach,half:c.halfAngle,radius:c.radius,count:c.count,speed:c.speed});e.n++;e.ticks.push(c.tick)}for(const k in byS){const t=byS[k].ticks;const g=[];for(let i=1;i<t.length;i++)g.push(t[i]-t[i-1]);byS[k].gaps=g;byS[k].minGapTicks=g.length?Math.min(...g):null;byS[k].ticks=undefined}return byS})()"},
+  {"type":"eval","code":"(()=>{const H=window.__H;const bySrc={};for(const h of H){const k=h.src||'basic:'+h.by;const e=bySrc[k]||(bySrc[k]={n:0,amts:{},crits:0});e.n++;e.amts[h.amt]=(e.amts[h.amt]||0)+1;if(h.crit)e.crits++}return bySrc})()"}
+]

@@ -1,0 +1,21 @@
+[
+  {"type":"mousemove","x":1350,"y":455},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"wait","ms":200},
+  {"type":"keydown","key":"Space"},
+  {"type":"keyup","key":"Space"},
+  {"type":"wait","ms":40},
+  {"type":"eval","code":"({t:40,g:window.__echoes.state().vfx.party.smearGhosts,d:window.__echoes.state().party[0].dashTicksLeft})"},
+  {"type":"wait","ms":40},
+  {"type":"eval","code":"({t:80,g:window.__echoes.state().vfx.party.smearGhosts,d:window.__echoes.state().party[0].dashTicksLeft})"},
+  {"type":"wait","ms":40},
+  {"type":"eval","code":"({t:120,g:window.__echoes.state().vfx.party.smearGhosts,d:window.__echoes.state().party[0].dashTicksLeft})"},
+  {"type":"wait","ms":40},
+  {"type":"eval","code":"({t:160,g:window.__echoes.state().vfx.party.smearGhosts,d:window.__echoes.state().party[0].dashTicksLeft})"},
+  {"type":"wait","ms":40},
+  {"type":"eval","code":"({t:200,g:window.__echoes.state().vfx.party.smearGhosts,d:window.__echoes.state().party[0].dashTicksLeft})"},
+  {"type":"wait","ms":40},
+  {"type":"eval","code":"({t:240,g:window.__echoes.state().vfx.party.smearGhosts,d:window.__echoes.state().party[0].dashTicksLeft})"},
+  {"type":"wait","ms":60},
+  {"type":"eval","code":"({t:300,g:window.__echoes.state().vfx.party.smearGhosts,d:window.__echoes.state().party[0].dashTicksLeft})"}
+]

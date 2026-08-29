@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"({v:window.__echoes.version, tick:window.__echoes.tick, fps:window.__echoes.fps, ents:window.__echoes.entityCount, state:window.__echoes.state()})"}
+]

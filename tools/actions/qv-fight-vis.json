@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__un=__echoes.on('hit',e=>{if(e.target>3)__echoes.cmd('setHp',e.target,1)});'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"[[2.0,0.8],[-2.0,0.9],[1.0,2.0],[-1.0,-2.0],[2.4,-1.4],[-2.4,-1.2]].map((p,i)=>__echoes.cmd('spawn',i%2?'mantis':'boar',p[0],p[1]))"},
+  {"type":"wait","ms":5000},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{allies:s.party_ai.allies.map(a=>[a.id,a.state,a.hp]),enemies:s.enemies.length,anims:s.allyfx.anims,wedges:s.allyfx.wedges,zones:s.allyfx.zones,fps:__echoes.fps}})()"}
+]

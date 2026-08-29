@@ -1,0 +1,17 @@
+[
+  {"type":"eval","code":"window.__M=[];__echoes.on('mark',e=>window.__M.push([e.tick,e.id,e.reason??'']));__echoes.cmd('teleport',0,0);[1,2,3].map(i=>__echoes.cmd('setHp',i,0));'allies down - no knockback'"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"window.__D={near:__echoes.cmd('spawn','dummy',1.0,0),mid:__echoes.cmd('spawn','dummy',3.0,0),far:__echoes.cmd('spawn','dummy',5.0,0)};window.__D"},
+  {"type":"wait","ms":400},
+  {"type":"key","key":"Tab","ms":30},{"type":"wait","ms":120},
+  {"type":"key","key":"Tab","ms":30},{"type":"wait","ms":120},
+  {"type":"key","key":"Tab","ms":30},{"type":"wait","ms":120},
+  {"type":"key","key":"Tab","ms":30},{"type":"wait","ms":120},
+  {"type":"key","key":"Tab","ms":30},{"type":"wait","ms":200},
+  {"type":"eval","code":"({ids:window.__D,cycle:window.__M,expect:'near,mid,far,near,mid',enemies:__echoes.state().enemies.map(e=>[e.id,e.x,e.z])})"},
+  {"type":"eval","code":"(()=>{__echoes.cmd('killAllEnemies');return 'cleared'})()"},
+  {"type":"wait","ms":300},
+  {"type":"key","key":"Tab","ms":30},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"({emptyRoomTab:window.__M.slice(-2),mark:__echoes.state().party_ai.mark})"}
+]

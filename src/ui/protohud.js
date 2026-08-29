@@ -296,6 +296,7 @@ export function createProtoHud(bus, { dodgeRemaining, skillSlots = null, party =
         // Empty slot: dim hollow frame (§17).
         el.slot.classList.add('proto-empty');
         el.glyph.textContent = '·';
+        el.glyph.style.visibility = 'visible';
         paintWipe(el, 0);
         el.num.style.visibility = 'hidden';
         el.wasReady = true;
@@ -305,6 +306,7 @@ export function createProtoHud(bus, { dodgeRemaining, skillSlots = null, party =
       if (s.passive) {
         // Passive (Warding Aura): static glyph, never a cooldown wipe (§7/§17).
         el.glyph.textContent = `◈${s.abbrev}`;
+        el.glyph.style.visibility = 'visible';
         paintWipe(el, 0);
         el.num.style.visibility = 'hidden';
         continue;
@@ -312,12 +314,17 @@ export function createProtoHud(bus, { dodgeRemaining, skillSlots = null, party =
       el.glyph.textContent = s.abbrev;
       const remaining = s.remainingTicks;
       paintWipe(el, s.totalTicks > 0 ? remaining / s.totalTicks : 0);
-      // <1.0 s remaining -> ≥20 px Parchment numeral (§17).
+      // <1.0 s remaining -> ≥20 px Parchment numeral (§17). The numeral and the
+      // abbrev share the slot's centred flex box, so the glyph steps aside while
+      // the countdown owns the plate — otherwise both render in the same pixels
+      // and neither is legible (the numeral is the live information here).
       if (remaining > 0 && remaining < TICK_HZ) {
         el.num.textContent = (remaining / TICK_HZ).toFixed(1);
         el.num.style.visibility = 'visible';
+        el.glyph.style.visibility = 'hidden';
       } else {
         el.num.style.visibility = 'hidden';
+        el.glyph.style.visibility = 'visible';
       }
       // Ready-pop: 120 ms scale + plate flash when the wipe completes (§17).
       const ready = remaining === 0;

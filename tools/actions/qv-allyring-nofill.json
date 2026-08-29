@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"__echoes.cmd('setHp',3,0);'archer down'"},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"window.__r=setInterval(()=>__echoes.cmd('rally'),400);'rally spam keeps allies off the body'"},
+  {"type":"wait","ms":3400},
+  {"type":"eval","code":"clearInterval(window.__r);({ring:__echoes.state().allyfx.reviveRingScreen,ch:__echoes.state().party_ai.channels,st:__echoes.state().party_ai.allies.map(a=>a.state)})"}
+]

@@ -1,0 +1,15 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"window.__D=[[1.4,0.2],[-1.6,-0.3],[0.2,1.9],[-0.4,-2.0]].map(p=>__echoes.cmd('spawn','dummy',p[0],p[1]));window.__un=__echoes.on('hit',e=>__echoes.cmd('setHp',e.target,1));window.__D"},
+  {"type":"eval","code":"window.__keep=setInterval(()=>{const s=__echoes.state();const v=s.party_ai;if(v.mark==null)return;const m=s.enemies.find(e=>e.id===v.mark);if(m)__echoes.cmd('teleport',m.x,m.z)},120);'anchor follows mark'"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"window.__S=[];window.__t=setInterval(()=>{const s=__echoes.state();const v=s.party_ai;const m=s.enemies.find(e=>e.id===v.mark);window.__S.push({t:__echoes.tick,mk:v.mark,tg:v.allies.map(a=>a.target),mdA:m?Math.round(Math.hypot(m.x-s.party[0].x,m.z-s.party[0].z)*100)/100:null})},100);'armed'"},
+  {"type":"eval","code":"__echoes.cmd('mark',window.__D[3])"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"__echoes.cmd('mark',window.__D[2])"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"__echoes.cmd('mark',window.__D[0])"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"(()=>{clearInterval(window.__t);clearInterval(window.__keep);const S=window.__S;const inL=S.filter(s=>s.mk!=null&&s.mdA!=null&&s.mdA<=3.4);const ok=inL.filter(s=>s.tg.every(t=>t===s.mk));const bad=inL.filter(s=>!s.tg.every(t=>t===s.mk));return{samples:S.length,inLeash:inL.length,allOnMark:ok.length,violationCount:bad.length,firstViolations:bad.slice(0,8),marks:[...new Set(S.map(s=>s.mk))]}})()"}
+]

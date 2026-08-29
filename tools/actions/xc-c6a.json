@@ -1,0 +1,7 @@
+[
+ {"type":"eval","code":"(()=>{const c=__echoes.cmd; c('restoreSkillState',{slots:[{id:'mending_bolt',remaining:0},{id:'sanctuary',remaining:0},{id:'warding_aura',remaining:0},{id:'restorative_wave',remaining:0}],override:null}); for(const n of ['sharpen','ascend','multiply','multiply','bounce','quicken','siphon','echo','detonate']) c('grantNode',n); const r={}; r.a=c('socket','mending_bolt','sharpen',0); r.b=c('socket','mending_bolt','ascend',1); r.c=c('socket','sanctuary','multiply',0); r.d=c('socket','warding_aura','bounce',0); r.e=c('socket','restorative_wave','multiply',0); r.view=c('buildView'); return JSON.stringify(r);})()"},
+ {"type":"eval","code":"JSON.stringify(__echoes.cmd('openSocket'))"},
+ {"type":"wait","ms":500},
+ {"type":"eval","code":"(()=>{const cards=[...document.querySelectorAll('#socket-screen .nd-card')]; const q=cards.findIndex(c=>c.textContent.indexOf('Quicken')>=0); if(q>=0) cards[q].click(); return JSON.stringify({cards:cards.map(c=>c.textContent.trim()),focused:q});})()"},
+ {"type":"wait","ms":400}
+]

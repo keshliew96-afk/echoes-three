@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"(()=>{const ev=window.__echoes.events.filter(e=>e.tick<=180).map(e=>e.tick+':'+e.type).join('|');const h=ev.split('').reduce((a,c)=>((a*31+c.charCodeAt(0))>>>0),7);console.log('[DET2]',JSON.stringify({n:ev.split('|').length,hash:h,tail:ev.slice(-160)}));return h})()"}
+]

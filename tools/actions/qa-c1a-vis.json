@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"(()=>{__echoes.cmd('setHp',1,0);__echoes.cmd('setHp',2,0);__echoes.cmd('setHp',3,0);__echoes.cmd('giveSkill','spirit_bolt');__echoes.cmd('grantNode','bounce');__echoes.cmd('socket','spirit_bolt','bounce');__echoes.cmd('spawn','dummy',3,0);__echoes.cmd('spawn','dummy',4.3,0);return 'ok'})()"},
+  {"type":"mousemove","x":1100,"y":450},
+  {"type":"wait","ms":200},
+  {"type":"keydown","key":"Digit3"},
+  {"type":"keyup","key":"Digit3"},
+  {"type":"wait","ms":580}
+]

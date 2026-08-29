@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__un=__echoes.on('hit',e=>{if(e.target>3)__echoes.cmd('setHp',e.target,0.9)});[[2.2,1.4],[-1.6,1.6]].map(p=>__echoes.cmd('spawn','boar',p[0],p[1]))"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"__echoes.cmd('teleport',-6.0,-3.0);console.log('[STATE] pre-R st='+__echoes.state().party_ai.allies.map(a=>a.state+':'+a.anchorDist).join(' '));'moved'"},
+  {"type":"wait","ms":200},
+  {"type":"key","key":"KeyR","ms":60},
+  {"type":"wait","ms":2600},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();console.log('[STATE] post-regroup st='+s.party_ai.allies.map(a=>a.state+':'+Math.round(100*Math.hypot(a.x-s.party[0].x,a.z-s.party[0].z))/100).join(' '));return 1})()"}
+]

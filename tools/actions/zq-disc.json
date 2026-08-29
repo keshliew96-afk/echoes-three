@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"Object.keys(window.__echoes)"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return Object.keys(s)})()"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return JSON.parse(JSON.stringify({room:s.room,party:s.party,enemies:s.enemies}))})()"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return JSON.parse(JSON.stringify(s.party_ai||null))})()"},
+  {"type":"eval","code":"(()=>{try{return String(__echoes.cmd.toString()).slice(0,4000)}catch(e){return 'x'}})()"},
+  {"type":"eval","code":"(()=>{const t={};for(const e of __echoes.events){t[e.type]=(t[e.type]||0)+1}return t})()"},
+  {"type":"eval","code":"__echoes.version+' tick='+__echoes.tick+' fps='+__echoes.fps"}
+]

@@ -1,0 +1,13 @@
+[
+  {"type":"eval","code":"window.__EV=[];for(const t of ['revive_start','revive_break','revive','ally_rescue','downed']) __echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e)));__echoes.cmd('teleport',0,0);'armed'"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();window.__tank=s.party_ai.allies[0].id;__echoes.cmd('setHp',window.__tank,0);return{downedTank:window.__tank}})()"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'ally-channel',ch:s.party_ai.channels,st:s.party_ai.allies.map(a=>a.state)}})()"},
+  {"type":"eval","code":"window.__pt=__echoes.tick;__echoes.cmd('setHp',0,0);({playerDownAt:window.__pt})"},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'after-player-down',ch:s.party_ai.channels,st:s.party_ai.allies.map(a=>a.state),rev:s.party_ai.allies.map(a=>a.reviveTarget),evs:window.__EV.map(e=>e.type+'@'+e.tick+(e.reason?':'+e.reason:'')+(e.target!==undefined?' tgt='+e.target:'')+(e.reviver!==undefined?' by='+e.reviver:''))}})()"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'after-player-revived',hp:s.party[0].hp,ch:s.party_ai.channels,st:s.party_ai.allies.map(a=>a.state),serialCheck:s.party_ai.channels.filter(c=>!c.draining&&c.reviver!=null).length,evs:window.__EV.filter(e=>e.type==='revive'||e.type==='revive_start').map(e=>e.type+'@'+e.tick+' tgt='+e.target+' by='+e.reviver)}})()"},
+  {"type":"wait","ms":8000},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'final',hps:s.party.map(p=>p.hp),ch:s.party_ai.channels,evs:window.__EV.filter(e=>e.type==='revive').map(e=>e.type+'@'+e.tick+' tgt='+e.target+' pct='+e.pct)}})()"}
+]

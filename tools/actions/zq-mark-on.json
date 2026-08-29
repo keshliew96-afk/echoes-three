@@ -1,0 +1,21 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"eval","code":"window.__un=__echoes.on('hit',e=>{__echoes.cmd('setHp',e.target,1)});window.__ids={A:__echoes.cmd('spawn','dummy',2.0,0.2),B:__echoes.cmd('spawn','dummy',-2.6,1.4),C:__echoes.cmd('spawn','dummy',4.6,-2.2)};window.__M=[];__echoes.on('mark',e=>window.__M.push(e));window.__ids"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'pre-tab',mark:s.party_ai.mark,tg:s.party_ai.allies.map(a=>a.target)}})()"},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'tab1',mark:s.party_ai.mark,expectNearest:window.__ids.A,tg:s.party_ai.allies.map(a=>a.target)}})()"},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'tab2',mark:s.party_ai.mark,expect:window.__ids.B,tg:s.party_ai.allies.map(a=>a.target),st:s.party_ai.allies.map(a=>a.state),ad:s.party_ai.allies.map(a=>a.anchorDist)}})()"},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'tab3-far',mark:s.party_ai.mark,expect:window.__ids.C,tg:s.party_ai.allies.map(a=>a.target),st:s.party_ai.allies.map(a=>a.state),ad:s.party_ai.allies.map(a=>a.anchorDist),markEvents:window.__M.map(e=>({t:e.tick,id:e.id,n:e.n}))}})()"},
+  {"type":"key","key":"Tab","ms":60},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'tab4-wrap',mark:s.party_ai.mark,expectWrapTo:window.__ids.A,tg:s.party_ai.allies.map(a=>a.target)}})()"},
+  {"type":"eval","code":"__echoes.cmd('mark',window.__ids.C);'forced C for reticle frame'"},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'final',mark:s.party_ai.mark,tg:s.party_ai.allies.map(a=>a.target),ad:s.party_ai.allies.map(a=>a.anchorDist),enemyPos:s.enemies.map(e=>({id:e.id,x:e.x,z:e.z}))}})()"}
+]

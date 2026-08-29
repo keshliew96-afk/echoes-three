@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"window.__N=__echoes.cmd('spawn','dummy',1.4,0.2);window.__F=__echoes.cmd('spawn','dummy',-1.6,-0.3);window.__un=__echoes.on('hit',e=>__echoes.cmd('setHp',e.target,1));({N:window.__N,F:window.__F})"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"__echoes.cmd('mark',window.__F);window.__S=[];window.__t=setInterval(()=>{const s=__echoes.state();const v=s.party_ai;const m=s.enemies.find(e=>e.id===v.mark);window.__S.push({t:__echoes.tick,mk:v.mark,tg:v.allies.map(a=>a.target),mdA:m?Math.round(Math.hypot(m.x-s.party[0].x,m.z-s.party[0].z)*100)/100:null,mdAlly:m?v.allies.map(a=>Math.round(Math.hypot(m.x-a.x,m.z-a.z)*100)/100):null,st:v.allies.map(a=>a.state)})},100);'armed'"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__t);const S=window.__S;const inLeash=S.filter(s=>s.mdA!==null&&s.mdA<=3.4);const allOnMark=inLeash.filter(s=>s.tg.every(t=>t===s.mk));const bad=inLeash.filter(s=>!s.tg.every(t=>t===s.mk)).slice(0,6);return{samples:S.length,inLeashSamples:inLeash.length,allOnMark:allOnMark.length,violations:bad,markId:window.__F}})()"}
+]

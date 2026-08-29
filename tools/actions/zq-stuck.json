@@ -1,0 +1,14 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0.5,0.5);window.__EV=[];for(const t of ['revive','downed']) __echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e)));'armed'"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();window.__tank=s.party_ai.allies[0].id;__echoes.cmd('setHp',0,0);__echoes.cmd('setHp',window.__tank,0);return{clipsNow:s.allyfx.anims}})()"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"({phase:'both-down',clips:__echoes.state().allyfx.anims,rings:__echoes.state().allyfx.reviveRings})"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<2500;i++){const s=__echoes.state();if(!s.party[0].downed&&s.party[0].hp>0&&!s.party_ai.allies[0].downed&&s.party_ai.allies[0].hp>0)return{hp:s.party[0].hp,tankHp:s.party_ai.allies[0].hp,tick:s.tick};await new Promise(r=>setTimeout(r,10))}return{timeout:true,st:__echoes.state().party.map(p=>p.hp)}})()"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"({phase:'2.5s-after-revive',clips:__echoes.state().allyfx.anims,rings:__echoes.state().allyfx.reviveRings,hps:__echoes.state().party.map(p=>p.hp),downed:__echoes.state().party.map(p=>p.downed)})"},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"wait","ms":1500},
+  {"type":"keyup","key":"KeyD"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"({phase:'after-walk',clips:__echoes.state().allyfx.anims,downed:__echoes.state().party.map(p=>p.downed),hp:__echoes.state().party[0].hp})"}
+]

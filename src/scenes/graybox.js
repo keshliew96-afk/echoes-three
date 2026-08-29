@@ -232,12 +232,15 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     const rig = dummies.get(ev.target);
     if (rig) rig.flashUntilTick = ev.tick + HITFLASH.ticks; // §9 #1: ~3 frames
     // §17 Zone 3 numeral grammar: party-incoming damage is Bruise Umber (drops
-    // with lateral shake); outgoing stays Parchment. ev.kind is the victim's.
+    // with lateral shake); outgoing stays Parchment. ev.kind is the victim's —
+    // §19.1 reserves Bruise Umber for the WHOLE party, allies included, so the
+    // player can tell "we are being hurt" from "we are hurting them" at a glance.
+    const partyVictim = ev.kind === 'player' || ev.kind === 'ally';
     numbers.spawn({
       x: ev.x,
       z: ev.z,
       amount: ev.amount,
-      kind: ev.kind === 'player' ? 'incoming' : 'damage',
+      kind: partyVictim ? 'incoming' : 'damage',
       crit: ev.crit,
     });
   });

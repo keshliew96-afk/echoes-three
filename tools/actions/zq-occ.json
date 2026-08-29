@@ -1,0 +1,10 @@
+[
+  {"type":"eval","code":"window.__EV=[];for(const t of ['revive_start','intent_denied','revive']) __echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e)));'armed'"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();window.__tk=s.party_ai.allies[0].id;__echoes.cmd('setHp',window.__tk,0);return window.__tk})()"},
+  {"type":"wait","ms":1400},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const t=s.party_ai.allies[0];__echoes.cmd('teleport',t.x+0.35,t.z);return{ch:s.party_ai.channels}})()"},
+  {"type":"keydown","key":"KeyE"},
+  {"type":"wait","ms":600},
+  {"type":"keyup","key":"KeyE"},
+  {"type":"eval","code":"({denials:(window.__EV||[]).filter(e=>e.type==='intent_denied').map(e=>({t:e.tick,kind:e.kind,reason:e.reason,by:e.by,occupiedBy:e.occupiedBy})),channels:__echoes.state().party_ai.channels,starts:(window.__EV||[]).filter(e=>e.type==='revive_start').map(e=>({t:e.tick,by:e.reviver}))})"}
+]

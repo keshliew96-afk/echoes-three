@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"window.__EV=[];for(const t of ['revive_start','revive_break','revive','hit','downed','revive_drain_end']) __echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e)));__echoes.cmd('reviveFlinchBreak',true)"},
+  {"type":"eval","code":"__echoes.cmd('teleport',0.5,0.5);__echoes.cmd('setHp',0,0);'player down'"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<600;i++){const c=__echoes.state().party_ai.channels[0];if(c&&c.progress>=60){const s=__echoes.state();const r=s.party_ai.allies.find(a=>a.id===c.reviver);__echoes.cmd('spawn','boar',r.x+0.25,r.z+0.25);return{p:c.progress,reviver:c.reviver,rx:r.x,rz:r.z}}await new Promise(res=>setTimeout(res,8))}return 'timeout'})()"},
+  {"type":"eval","code":"window.__D=[];window.__raf=()=>{const s=__echoes.state();const c=s.party_ai.channels[0];window.__D.push({tick:s.tick,p:c?c.progress:null,d:c?c.draining:null});window.__idr=requestAnimationFrame(window.__raf)};window.__raf();'sampler'"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"(()=>{cancelAnimationFrame(window.__idr);const brk=window.__EV.filter(e=>e.type==='revive_break');const hits=window.__EV.filter(e=>e.type==='hit'&&e.target!==undefined);return{breaks:brk.map(e=>({t:e.tick,reason:e.reason,progress:e.progress,drainRate:e.drainRate})),hitsOnParty:hits.slice(0,6).map(h=>({t:h.tick,target:h.target,amount:h.amount})),evs:window.__EV.map(e=>e.type+'@'+e.tick+(e.reason?':'+e.reason:'')).slice(0,25)}})()"}
+]

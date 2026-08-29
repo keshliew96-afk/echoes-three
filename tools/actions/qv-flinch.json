@@ -1,0 +1,12 @@
+[
+  {"type":"eval","code":"window.__EV=[];['revive_start','revive_break','revive','revive_drain_end','intent_denied'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));__echoes.cmd('teleport',0,0);({flinch:__echoes.cmd('reviveFlinchBreak',true)})"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"__echoes.cmd('setHp',3,0);'archer down'"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'mid',channels:s.party_ai.channels}})()"},
+  {"type":"eval","code":"(()=>{const ch=__echoes.state().party_ai.channels[0];const r=ch.reviver;const before=ch.progress;__echoes.cmd('hitOnce',r);return{reviver:r,before,after:__echoes.state().party_ai.channels}})()"},
+  {"type":"wait","ms":250},
+  {"type":"eval","code":"(()=>{return{phase:'post-hit',channels:__echoes.state().party_ai.channels,ev:window.__EV.map(e=>[e.type,e.tick,e.reason??e.progress??''])}})()"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"({phase:'end',ev:window.__EV.map(e=>[e.type,e.tick,e.reason??e.progress??''])})"}
+]

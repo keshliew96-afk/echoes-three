@@ -1,0 +1,7 @@
+[
+  {"type":"mousemove","x":1350,"y":470},
+  {"type":"wait","ms":150},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":260},
+  {"type":"eval","code":"(()=>{const p=window.__arenaProbe;const cam=p.stage.camera;const V=p.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const pr=window.__echoes.state().projectiles;return pr.map(b=>{const v=new V(b.x,0.02,b.z);v.project(cam);const g=[Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];const v2=new V(b.x,0.45,b.z);v2.project(cam);return {id:b.id,w:[b.x,b.z],ground:g,air:[Math.round((v2.x*0.5+0.5)*W),Math.round((-v2.y*0.5+0.5)*H)]};});})()"}
+]

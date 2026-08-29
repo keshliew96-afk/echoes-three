@@ -1,0 +1,19 @@
+[
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "mousemove",
+  "x": 1350,
+  "y": 455
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes;const p=window.__arenaProbe;const V=p.root.position.constructor;const raf=window.requestAnimationFrame.bind(window);const G=[];p.stage.scene.traverse(o=>{if(o.name==='dash-afterimage')G.push(o);});const alpha=g=>{let a=0;g.traverse(c=>{if(c.material&&c.material.opacity>a)a=c.material.opacity;});return a;};const live=()=>G.filter(g=>g.visible&&alpha(g)>0.005).length;const K=(c,d)=>window.dispatchEvent(new KeyboardEvent(d?'keydown':'keyup',{code:c,key:c==='Space'?' ':'a',bubbles:true}));K('Space',true);await new Promise(r=>setTimeout(r,50));K('Space',false);await new Promise(r=>setTimeout(r,1700));const t0=Date.now();K('Space',true);setTimeout(()=>K('Space',false),40);let best=0;while(Date.now()-t0<900){const n=live();if(n>best)best=n;if(n>=4)break;await new Promise(r=>raf(r));}await new Promise(r=>raf(r));const n=live();window.requestAnimationFrame=()=>0;const W=innerWidth,H=innerHeight,cam=p.stage.camera;const pr=(w)=>{const v=w.clone().project(cam);return [Math.round((v.x*.5+.5)*W),Math.round((-v.y*.5+.5)*H)];};const out=G.filter(g=>g.visible&&alpha(g)>0.005).map(g=>{const w=g.getWorldPosition(new V());return {op:+alpha(g).toFixed(3),wx:+w.x.toFixed(3),wz:+w.z.toFixed(3),s:pr(w)};});out.sort((a,b)=>a.wx-b.wx);const st=e.state();return {live:n,best,dashLeft:st.party[0].dashTicksLeft,player:{x:+st.party[0].x.toFixed(3),z:+st.party[0].z.toFixed(3),s:pr(new V(st.party[0].x,0,st.party[0].z))},ghosts:out};})()"
+ }
+]

@@ -1,0 +1,13 @@
+[
+  {"type":"eval","code":"window.__EV=[];['ally_rescue','revive_start','revive_break','revive','downed','intent_denied'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));__echoes.cmd('teleport',0,0);'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"__echoes.cmd('setHp',2,0);({t:__echoes.tick,downed:'swordsman'})"},
+  {"type":"wait","ms":1600},
+  {"type":"eval","code":"({phase:'sword-channel',channels:__echoes.state().party_ai.channels,ev:window.__EV.map(e=>[e.type,e.tick,e.target??e.id,e.reviver??''])})"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0);({t:__echoes.tick,downed:'player'})"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"({phase:'player-down',channels:__echoes.state().party_ai.channels,ev:window.__EV.map(e=>[e.type,e.tick,e.target??e.id,e.reviver??''])})"},
+  {"type":"eval","code":"window.__CC=[];window.__ct=setInterval(()=>{const c=__echoes.state().party_ai.channels.filter(x=>!x.draining);window.__CC.push(c.length)},100);'concurrency armed'"},
+  {"type":"wait","ms":12000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__ct);return{phase:'end',maxConcurrentChannels:Math.max(...window.__CC),party:__echoes.state().party.map(p=>[p.id,p.hp]),ev:window.__EV.map(e=>[e.type,e.tick,e.target??e.id,e.reviver??e.pct??''])}})()"}
+]

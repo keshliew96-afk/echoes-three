@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return {keys:Object.keys(s), scene:s.scene, party:s.party, ai:s.party_ai};})()"},
+  {"type":"eval","code":"__echoes.cmd('allyState')"},
+  {"type":"eval","code":"__echoes.cmd('reviveState')"},
+  {"type":"eval","code":"__echoes.events.slice(-8)"}
+]

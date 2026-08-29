@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',-3.5,2.5);'moved'"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();console.log('[STATE] hp='+s.party[0].hp+' downed='+s.party[0].downed);return 1})()"}
+]

@@ -1,0 +1,14 @@
+[
+  {"type":"eval","code":"window.__EV=[];for(const t of ['defeat','downed','revive_start']) __echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e)));'armed'"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const a=s.party_ai.allies;__echoes.cmd('setHp',a[0].id,0);__echoes.cmd('setHp',a[1].id,0);return{downed3:false,hps:__echoes.state().party.map(p=>p.hp)}})()"},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'two-down',hps:s.party.map(p=>p.hp),defeat:window.__EV.filter(e=>e.type==='defeat').length,st:s.party_ai.allies.map(a=>a.state),channels:s.party_ai.channels,defeated:s.party_ai.defeated}})()"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();__echoes.cmd('setHp',s.party_ai.allies[2].id,0);return{phase:'three-down',hps:__echoes.state().party.map(p=>p.hp)}})()"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{return{phase:'after-three',defeatCount:window.__EV.filter(e=>e.type==='defeat').length,defeated:__echoes.state().party_ai.defeated}})()"},
+  {"type":"eval","code":"window.__tk=__echoes.tick;__echoes.cmd('setHp',0,0);({armedAtTick:window.__tk})"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{const d=window.__EV.filter(e=>e.type==='defeat');const dn=window.__EV.filter(e=>e.type==='downed');return{playerDownedAtTick:window.__tk,defeat:d.map(e=>JSON.parse(JSON.stringify(e))),downedEvents:dn.map(e=>({t:e.tick,id:e.id})),defeated:__echoes.state().party_ai.defeated,hps:__echoes.state().party.map(p=>p.hp)}})()"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"(()=>{return{defeatCountAfter:window.__EV.filter(e=>e.type==='defeat').length,revivesStarted:window.__EV.filter(e=>e.type==='revive_start').length,state:__echoes.state().party_ai.allies.map(a=>a.state)}})()"}
+]

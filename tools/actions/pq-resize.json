@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes;const raf=window.requestAnimationFrame.bind(window);const out=[];for(const [w,h] of [[1024,640],[800,900],[1600,900]]){window.resizeTo?0:0;Object.defineProperty(window,'innerWidth',{value:w,configurable:true});Object.defineProperty(window,'innerHeight',{value:h,configurable:true});window.dispatchEvent(new Event('resize'));await new Promise(r=>setTimeout(r,300));out.push([w,h,e.fps]);}return out;})()"
+ }
+]

@@ -1,0 +1,10 @@
+[
+  {"type":"wait","ms":500},
+  {"type":"mousemove","x":1300,"y":520},
+  {"type":"wait","ms":120},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":60},
+  {"type":"mouseup","button":"right"},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"(()=>{const p=window.__arenaProbe;const V=p.root.position.constructor;const s=window.__echoes.state();const b=s.projectiles[0];if(!b)return 'no bolt';const out=[];p.stage.scene.traverse(o=>{if(!o.isMesh&&!o.isSprite&&!o.isPoints)return;const w=o.getWorldPosition(new V());const d=Math.hypot(w.x-b.x,w.z-b.z);if(d<0.6)out.push({n:o.name||'(anon)',t:o.type,vis:o.visible,ro:o.renderOrder,blend:o.material&&o.material.blending,col:o.material&&o.material.color?'#'+o.material.color.getHexString():null,x:+w.x.toFixed(3),y:+w.y.toFixed(3),z:+w.z.toFixed(3),sx:+o.scale.x.toFixed(3),sy:+o.scale.y.toFixed(3),rx:+(o.rotation.x).toFixed(2)});});return {bolt:b,near:out};})()"}
+]

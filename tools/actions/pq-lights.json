@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":700},
+  {"type":"eval","code":"(()=>{const p=window.__arenaProbe;const cam=p.stage.camera;const W=innerWidth,H=innerHeight;const V=p.root.position.constructor;const ems=p.emitters.map(e=>({k:e.kind,x:e.x,y:e.y,z:e.z}));const out=[];p.stage.scene.traverse(o=>{if(!o.isLight)return;const w=o.getWorldPosition(new V());const s=w.clone().project(cam);const near=ems.map(e=>({k:e.k,d:+Math.hypot(e.x-w.x,e.z-w.z).toFixed(2)})).sort((a,b)=>a.d-b.d)[0];out.push({t:o.type,col:'#'+o.color.getHexString(),i:+o.intensity.toFixed(2),dist:o.distance!==undefined?+o.distance.toFixed(2):null,wx:+w.x.toFixed(2),wy:+w.y.toFixed(2),wz:+w.z.toFixed(2),sx:Math.round((s.x*.5+.5)*W),sy:Math.round((-s.y*.5+.5)*H),near:near?near.k:null,nd:near?near.d:null});});return out;})()"}
+]

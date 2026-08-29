@@ -1,0 +1,17 @@
+[
+  {"type":"eval","code":"window.__EV=[];['defeat','downed','intent_denied','revive','rally'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));__echoes.cmd('teleport',0,0);'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"[1,2,3].map(i=>__echoes.cmd('setHp',i,0));({t:__echoes.tick,downed:__echoes.state().party_ai.allies.map(a=>a.downed)})"},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"({phase:'3-down',defeat:__echoes.cmd('reviveState').defeated,ev:window.__EV.filter(e=>e.type==='defeat')})"},
+  {"type":"eval","code":"({rallyWhileAlive:__echoes.cmd('rally')})"},
+  {"type":"eval","code":"(()=>{const t0=__echoes.tick;__echoes.cmd('setHp',0,0);return{t0,afterPlayerDown:__echoes.state().party[0].downed}})()"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"({phase:'4-down',defeated:__echoes.cmd('reviveState').defeated,defeatEv:window.__EV.filter(e=>e.type==='defeat'),downEv:window.__EV.filter(e=>e.type==='downed').map(e=>[e.tick,e.id])})"},
+  {"type":"eval","code":"({rallyWhileDowned:__echoes.cmd('rally'),denials:window.__EV.filter(e=>e.type==='intent_denied').map(e=>[e.tick,e.kind,e.reason])})"},
+  {"type":"key","key":"KeyR","ms":50},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"({denialsAfterRkey:window.__EV.filter(e=>e.type==='intent_denied').map(e=>[e.tick,e.kind,e.reason])})"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"({phase:'stuck-down',party:__echoes.state().party.map(p=>[p.id,p.hp,p.downed??p.hp<=0]),channels:__echoes.state().party_ai.channels,defeatCount:window.__EV.filter(e=>e.type==='defeat').length})"}
+]

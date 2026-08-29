@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__un=__echoes.on('hit',e=>__echoes.cmd('setHp',e.target,1));'immortal'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"window.__D=__echoes.cmd('spawn','dummy',2.4,0.0);__echoes.cmd('mark',window.__D);({d:window.__D,mark:__echoes.state().party_ai.mark})"},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{mark:s.party_ai.mark,fx:s.allyfx.mark,enemy:s.enemies.map(e=>[e.id,e.x,e.z]),player:[s.party[0].x,s.party[0].z]}})()"}
+]

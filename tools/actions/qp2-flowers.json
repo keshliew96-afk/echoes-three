@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{const {stage,root}=window.__arenaProbe;const V3=Object.getPrototypeOf(stage.camera.position).constructor;const M4=Object.getPrototypeOf(stage.camera.matrixWorld).constructor;const out=[];root.traverse(o=>{if(o.isInstancedMesh&&o.geometry.type==='IcosahedronGeometry'){const m=new M4();for(let i=0;i<o.count;i++){o.getMatrixAt(i,m);const p=new V3().setFromMatrixPosition(m);const v=p.clone().project(stage.camera);const sx=Math.round((v.x*0.5+0.5)*window.innerWidth),sy=Math.round((-v.y*0.5+0.5)*window.innerHeight);if(sx>120&&sx<1480&&sy>120&&sy<760)out.push([sx,sy,+p.x.toFixed(2),+p.z.toFixed(2)]);}}});console.log('[FLOWERS]',JSON.stringify({n:out.length,sample:out.slice(0,14)}));return out.length})()"}
+]

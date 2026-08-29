@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"window.__EV=[];['ally_rescue','revive_start','revive'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));'hooked'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"(()=>{__echoes.cmd('placeAlly',2,0,0);__echoes.cmd('placeAlly',1,0.55,0.1);__echoes.cmd('placeAlly',3,2.8,0.2);__echoes.cmd('teleport',0.2,0.3);__echoes.cmd('setHp',1,0.25);__echoes.cmd('setHp',3,0.9);__echoes.cmd('setHp',2,0);const s=__echoes.state();return{setup:s.party_ai.allies.map(a=>[a.id,a.x,a.z,a.hp,a.maxHp])}})()"},
+  {"type":"wait","ms":800},
+  {"type":"eval","code":"({caseA_lowHpTankNearest:window.__EV.filter(e=>e.type==='ally_rescue').map(e=>[e.tick,e.id,e.target,e.dist]),ch:__echoes.state().party_ai.channels})"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"({caseA_end:window.__EV.map(e=>[e.type,e.tick,e.id??'',e.target,e.reviver??''])})"}
+]

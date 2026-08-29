@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0.5,0.5)"},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0)"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<900;i++){const c=__echoes.state().party_ai.channels[0];if(c&&!c.draining&&c.progress>=30)return {progress:c.progress,pct:c.progress/300,tick:__echoes.tick};await new Promise(r=>setTimeout(r,8));}return 'timeout'})()"}
+]

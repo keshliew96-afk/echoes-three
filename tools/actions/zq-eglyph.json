@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const a=s.party_ai.allies;__echoes.cmd('setHp',a[1].id,0.2);__echoes.cmd('setHp',a[2].id,0.2);__echoes.cmd('setHp',a[0].id,0);__echoes.cmd('teleport',3.0,2.0);return 'tank down, others ineligible'})()"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();console.log('[STATE] ch='+JSON.stringify(s.party_ai.channels)+' rings='+s.allyfx.reviveRings+' screen='+JSON.stringify(s.allyfx.reviveRingScreen));return 1})()"}
+]

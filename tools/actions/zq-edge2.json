@@ -1,0 +1,13 @@
+[
+  {"type":"eval","code":"window.__EV=[];for(const t of ['rally','intent_denied','revive','downed','mark']) __echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e)));__echoes.cmd('teleport',0,0);'armed'"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0);'player down'"},
+  {"type":"wait","ms":250},
+  {"type":"keydown","key":"KeyR"},{"type":"keyup","key":"KeyR"},
+  {"type":"wait","ms":250},
+  {"type":"eval","code":"({phase:'rally-while-downed',denied:(window.__EV||[]).filter(e=>e.type==='intent_denied').map(e=>e.kind+':'+e.reason),rallies:(window.__EV||[]).filter(e=>e.type==='rally').length,st:__echoes.state().party_ai.allies.map(a=>a.state)})"},
+  {"type":"wait","ms":7000},
+  {"type":"eval","code":"({phase:'recovered',hp:__echoes.state().party[0].hp})"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();__echoes.cmd('setHp',s.party_ai.allies[0].id,0);__echoes.cmd('setHp',s.party_ai.allies[1].id,0);return 'downed two'})()"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"(()=>{__echoes.cmd('roomBoundary');const s=__echoes.state();return{phase:'boundary',freeRevives:(window.__EV||[]).filter(e=>e.type==='revive').map(e=>({t:e.tick,tgt:e.target,pct:e.pct,free:e.free})),hps:s.party.map(p=>p.hp),fracs:s.party.map(p=>Math.round(100*p.hp/p.maxHp)/100),mark:s.party_ai.mark,rallyPoint:s.party_ai.rallyPoint,repeats:s.party_ai.repeats,channels:s.party_ai.channels}})()"}
+]

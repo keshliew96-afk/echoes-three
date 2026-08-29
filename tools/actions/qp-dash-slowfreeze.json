@@ -1,0 +1,10 @@
+[
+  {"type":"eval","code":"(()=>{const raf=window.requestAnimationFrame.bind(window);let virt=performance.now();let frozen=false;window.__qp={get frozen(){return frozen;},freeze(){frozen=true;}};window.requestAnimationFrame=(cb)=>raf(()=>{if(!frozen)virt+=8;cb(virt);});const d=document.createElement('div');d.id='qp-ov';d.style.cssText='position:fixed;top:60px;left:8px;z-index:99999;font:bold 20px monospace;color:#fff;background:#000;padding:2px 6px;';document.body.appendChild(d);const e=window.__echoes;const check=()=>{const s=e.state();const p=s.party[0];const g=s.vfx&&s.vfx.party?s.vfx.party.smearGhosts:-1;d.textContent='T'+e.tick+' DTL'+p.dashTicksLeft+' G'+g+(frozen?' FROZEN':'');if(!frozen&&p.dashTicksLeft>0&&p.dashTicksLeft<=8){frozen=true;console.log('[FREEZE] dtl='+p.dashTicksLeft+' ghosts='+g+' tick='+e.tick);}raf(check);};raf(check);return 'armed-slowmo'})()"},
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -6, 3)"},
+  {"type":"wait","ms":900},
+  {"type":"mousemove","x":1400,"y":450},
+  {"type":"wait","ms":150},
+  {"type":"eval","code":"(()=>{const dn=(c)=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c,key:c,bubbles:true}));const up=(c)=>window.dispatchEvent(new KeyboardEvent('keyup',{code:c,key:c,bubbles:true}));dn('KeyD');setTimeout(()=>{dn('Space');setTimeout(()=>up('Space'),90);},200);return 'dash'})()"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"(()=>{const s=window.__echoes.state();console.log('[POST]',JSON.stringify({dtl:s.party[0].dashTicksLeft,ghosts:s.vfx.party.smearGhosts,frozen:window.__qp.frozen,px:Math.round(s.party[0].x*100)/100,pz:Math.round(s.party[0].z*100)/100}));return 'ok'})()"}
+]

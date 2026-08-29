@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"JSON.stringify(window.__echoes.state()).slice(0,3000)"},
+  {"type":"eval","code":"JSON.stringify(window.__echoes.events.map(e=>e.type).reduce((a,t)=>{a[t]=(a[t]||0)+1;return a;},{}))"},
+  {"type":"eval","code":"({version:window.__echoes.version,tick:window.__echoes.tick,fps:window.__echoes.fps,ents:window.__echoes.entityCount})"}
+]
