@@ -1,0 +1,23 @@
+[
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "mousemove",
+  "x": 1000,
+  "y": 400
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ }
+]

@@ -1,0 +1,42 @@
+# Round C critic verdict — Healer skill kit & delivery shapes
+
+VERDICT: REJECT
+
+## Summary
+
+REJECT — 1 blocking defect. The sim/gameplay side of the block is genuinely excellent: all 8 skills, all 6 delivery shapes, smart-targeting, override semantics, instant-cast contract, persistence and the color law verified against BUILD_BRIEF numbers with my own captures/probes (67 action JSONs under tools/actions/hk-*, helpers tools/hk-mk.mjs, tools/hk-px.mjs, tools/hk-core.mjs). The blocker is in this block's own file src/ui/protohud.js: the <1.0 s cooldown numeral is painted dead-centre on top of the still-visible skill abbrev, producing an unreadable glyph mash in the permanent HUD on every single cast.
+
+MEASURED, EVERY NUMBER FROM MY OWN PROBES (BUILD_BRIEF value in parens):
+- Mending Bolt: heal 22 (22), cd 210 ticks (3.5 s), speed 5.200 u/s (5.2), expiry traveled 5.00 (5.0), 1 bolt (count 1), passed a dummy at x=2.0 and expired at 5.0 (passes enemies). [hk-mb, hk-mbrange, hk-speed]
+- Swift Mend: heal 14 (14), cd 150 (2.5 s), range gate 3.2 exact (ally at 3.17→picked, at 5.0→skipped to next-lowest), caster exempt from range test (self healed with all allies at 5 u). [hk-sm, hk-sm2]
+- Nova Bloom: 16/target (16), cd 420 (7 s), radius 1.4 exact (1.35 in / 1.45 out), cap 3 of 4 candidates, nearest-first order [0,1,2]. [hk-nova]
+- Sanctuary: 6/tick (6), cd 540 (9 s), placement clamped to exactly 3.8 from an aim at 6.0, radius 1.0 exact (0.95 in / 1.06 out), EXACTLY 4 zone_ticks at ticks 421/481/541/601 (60-tick cadence, first at +1.0 s) then zone_expire. [hk-sanct, hk-sanct2, hk-sanct3]
+- Spirit Bolt: damage 18 (18), cd 240 (4 s), speed 5.013 u/s (5.0), expiry traveled 4.80 (4.8), damage numeral renders Parchment "18". [hk-gbsb, hk-speed, hk-sbimp2]
+- Warding Aura: passive:true / totalTicks 0 (no wipe), press → intent_denied empty_slot with zero cast, pulses at ticks 479/539/599/659 (exactly 1.0 s), heal 3 (3), radius 0.9 exact (0.87 in / 0.94 out). [hk-aura, hk-misc]
+- Guardian Bond: 12 each (12), cd 360 (6 s), hit exactly the two lowest-HP-fraction allies (f=0.30 and f=0.20) and skipped the f=0.20 ally when moved past range 3.4; a forced override recipient is excluded from the remaining N-1 pick. [hk-gbsb]
+- Restorative Wave: 15 (15), cd 300 (5 s), half-angle 55° exact (53.13° in / 57.19° out), reach 1.1 exact (1.05 in / 1.18 out), targets behind the aim excluded, count 4 saturating on a 4-member party. [hk-wave, hk-wave2]
+
+COLOR LAW (pixel-measured): heal numerals rgb(113,224,123) hue 115 sat 0.52 ≈ Bright Heal #5FE873; +HP glyph present on every heal instance; nova ring / sanctuary rim+disc+motes / aura ring / wave wedge all green-only; motes and numerals visibly rise and fade by ~650 ms. Spirit Bolt core rgb(255,248,234) = Parchment, glow hue 38-46 amber, impact motes amber, damage numeral Parchment — zero green on damage, zero Ember/violet on heal. Both bolts cast a visible dark contact-shadow blob; core+glow+trail = 3 layers. [hk-anova, hk-mote*, hk-zoneclean, hk-wedge2, hk-sbz2, hk-sbimp2]
+
+TARGETING/OVERRIDE: no override → lowest HP fraction; all-equal fractions → caster first (target id 0); F1/F2/F3/F4 (real puppeteer keys) → override 0/1/2/3, same key clears, other key replaces; tank moved to x=5 → skill_cast override:"fallback" onto the smart target with getOverride still 1, and it resumed "forced" when the tank returned with NO re-press; a downed override also falls back without clearing. In-world mark = Hearth Amber ring + notch glyphs + caret; HUD portrait = amber outline + amber caret (colour + shape channel). [hk-ovr, hk-ovr2, hk-fkeys, hk-ret, hk-hud]
+
+INPUT: press→skill_cast latency = 1 tick on 6/6 trials (no cast bar). 4 keys in one frame → 4 casts on the SAME tick (401 in-page, 411 via real puppeteer keydowns), ascending slot. Movement held through casts at a constant 2.400 u/s with zero stalled segments. Dash → skill_1/skill_3 denied priority_suppressed; same-tick Space+Digit1 → dodge wins, skill denied. 12-press spam → 1 cast + on_cooldown/duplicate_in_tick denials, no queue. Firing with aim never set is safe (default dir 1/0, ground_aoe places at caster). [hk-move, hk-input, hk-edge]
+
+PERSISTENCE / DETERMINISM / STABILITY: skillState serialises remaining ticks + override (187/406); wiping the loadout then restoring re-arms exactly 187/406, restores override 3, resumes aura pulses, and the restored cooldown really gates the fire (intent_denied on_cooldown). Two loads at ?seed=4242 produced byte-identical heal/cast streams and 8 RNG draws. No leak: 15 s of sustained spam then idle → all skillfx pools 0, entity count 4, JS heap 55→34 MB. Zero PAGEERRORs across ~35 capture runs; smoke exits 0 (v0.3.15 tree).
+
+FPS: headless swiftshader is extremely noisy (pure idle alone ranged 38.1–79.0 fps inside single sessions), so absolute numbers are unusable. Interleaved same-session A/B is the honest measure: defend-room fight 54.4 (no casts) vs 52.7 (full spam) and 67.7 vs 72.6; open-arena idle-vs-spam deltas −2% and −5%. Skill VFX marginal cost is ~0-5% frame time — no evidence the block breaks the 60 fps target.
+
+## Failures
+
+### F1
+
+BLOCKING — src/ui/protohud.js: the sub-1.0 s cooldown numeral is drawn directly on top of the skill abbrev, rendering both illegible. Proven at native 1:1 resolution in captures/hk-hud2.png and captures/hk-wipe.png (crops captures/h-mb2.png, captures/w-1x.png, captures/w-3x.png): slot 1 with mending_bolt at remainingTicks 52 (0.87 s) shows '0.8' and 'MB' fused into an unreadable blob; slot 4 with spirit_bolt at remainingTicks 48 shows '0.8' fused with 'SB'. This is deterministic by construction, not a headless artifact: `.proto-cd-num` is `position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:20px` with no background plate, and update() sets `el.num.style.visibility='visible'` in the `remaining < TICK_HZ` branch WITHOUT ever hiding `el.glyph`, which the slot's own centred flex places in the identical pixels. It fires in the last second of every cooldown of every skill, i.e. on every cast, in the only permanent UI on screen — REFERENCE_BAR check 9 (UI polish) and BUILD_BRIEF §17 ('<1.0 s remaining -> >=20 px Parchment numeral', 'combat text always sits on an opaque charcoal plate'). FIX: in the `remaining > 0 && remaining < TICK_HZ` branch set `el.glyph.style.visibility='hidden'` (restoring it in the else branch and in the passive/empty branches), or give `.proto-cd-num` an opaque `${PALETTE.voidCharcoal}` plate covering the tile, or move the numeral to a free corner of the 52x52 tile. Re-verify with a 1:1 crop of the bottom-centre strip while a skill sits at remainingTicks < 60.
+
+### F2
+
+ADVISORY (non-blocking) — heal bolt core washes to the arena's own grass hue in flight. captures/hk-mbz2.png, box 972,405 32x26: the Mending Bolt core's brightest pixels measure rgb(173,232,146), hue 101 deg, sat 0.37, versus Bright Heal #5FE873 at hue 129 deg, sat 0.59 — and ACT1_GROUND #548C38 sits at hue 100 deg, so the in-flight heal bolt is the same hue as the grass it flies over and only reads by luma. The colour law is NOT violated (it is still green, never Parchment or Ember, and the impact/numeral/glyph measure hue 115 sat 0.52), but the additive core over green ground plus ACES + bloom eats ~28 deg of hue and a third of the saturation. Compare the Spirit Bolt, which holds its identity cleanly at rgb(255,248,234) Parchment with an amber halo. FIX direction: raise the heal core's saturation or drop its additive intensity so the peak lands nearer hue 125-130 (a small charcoal ink rim or a darker inner core would also separate it from the grass), then re-measure with tools/hk-core.mjs on a mid-flight frame.
+
+### F3
+
+ADVISORY (non-blocking) — Restorative Wave, Guardian Bond beams and the Sanctuary disc are near-invisible when the party is bunched. captures/hk-wedge (fx reports wedges:1) and captures/hk-beam (beams:1) show the sim-side effect existing but almost entirely hidden under the ally bodies; the same Sanctuary zone that is faint in captures/hk-asanct.png reads beautifully in captures/hk-zoneclean.png once cast on open ground. Nothing is broken — the shapes draw all three layers and the correct colour — but the ground-plane-only treatment loses to overlapping chibi silhouettes in exactly the bunched-party case these party-targeted skills are used in. FIX direction: lift a slice of the wedge/beam above the character plane (or add a brief above-head rim) so the delivery shape survives occlusion.
+
