@@ -1,0 +1,15 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0)" },
+  { "type": "wait", "ms": 1200 },
+  { "type": "eval", "code": "[[2.5,1.5],[-2.5,1.5],[3,-2],[-3,-2],[1.5,3],[-1.5,3]].map((p,i)=>__echoes.cmd('spawn', i%2?'mantis':'boar', p[0], p[1]));window.__un=__echoes.on('hit',ev=>{__echoes.cmd('setHp',ev.target,1);});'6 immortal enemies; the party is rendered in both phases'" },
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "window.__r=setInterval(()=>__echoes.cmd('rally'),300);'PHASE A: rally-spam parks the ally AI (no kits, no ally VFX) with everything else identical'" },
+  { "type": "wait", "ms": 2000 },
+  { "type": "eval", "code": "window.__A=[];window.__ta=setInterval(()=>window.__A.push(__echoes.fps),200);'sampling A'" },
+  { "type": "wait", "ms": 6000 },
+  { "type": "eval", "code": "clearInterval(window.__ta);clearInterval(window.__r);'PHASE B: release the allies into full combat'" },
+  { "type": "wait", "ms": 2000 },
+  { "type": "eval", "code": "window.__B=[];window.__tb=setInterval(()=>window.__B.push(__echoes.fps),200);'sampling B'" },
+  { "type": "wait", "ms": 6000 },
+  { "type": "eval", "code": "(()=>{clearInterval(window.__tb);const m=f=>Math.round(f.reduce((x,y)=>x+y,0)/f.length*10)/10;const A=window.__A,B=window.__B;const s=__echoes.state();return{phaseA_alliesParked:{n:A.length,mean:m(A),min:Math.min(...A),max:Math.max(...A)},phaseB_alliesFighting:{n:B.length,mean:m(B),min:Math.min(...B),max:Math.max(...B)},allyCostPct:Math.round((1-m(B)/m(A))*1000)/10,enemies:s.enemies.length,allyStates:s.party_ai.allies.map(a=>a.state),ents:__echoes.entityCount,hits:__echoes.stats.hits}})()" }
+]

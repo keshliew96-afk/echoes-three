@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0);__echoes.cmd('startRoom','kill_all');__echoes.cmd('killAllEnemies')" },
+  { "type": "eval", "code": "window.__V=[];for(const t of ['revive','room_cleared','room_start','wave_start']) __echoes.on(t,ev=>window.__V.push(ev));'logging'" },
+  { "type": "wait", "ms": 600 },
+  { "type": "eval", "code": "window.__cyc=0;__echoes.cmd('setHp',3,0);window.__w=setInterval(()=>{const s=__echoes.state();if(s.party[3].hp>0&&window.__cyc<2){window.__cyc++;__echoes.cmd('setHp',3,0);}},100);'cycling x3'" },
+  { "type": "wait", "ms": 20000 },
+  { "type": "eval", "code": "(()=>{clearInterval(window.__w);const s=__echoes.state();return{phase:'three-repeats',revives:window.__V.filter(e=>e.type==='revive').map(e=>({t:e.tick,i:e.targetIndex,pct:e.pct,hp:e.hp,free:e.free})),repeatsCounter:s.party_ai.repeats,boundaryEvents:window.__V.filter(e=>e.type!=='revive').map(e=>e.type+'@'+e.tick),archerHp:s.party[3].hp}})()" }
+]

@@ -1,0 +1,13 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0.15,-2.2);__echoes.cmd('reviveFlinchBreak',true)" },
+  { "type": "eval", "code": "window.__F=[];for(const t of ['downed','revive_start','revive_break','revive_drain_end','hit','revive']) __echoes.on(t,ev=>window.__F.push(ev));'logging'" },
+  { "type": "eval", "code": "__echoes.cmd('setHp',1,0.2);__echoes.cmd('setHp',2,0.2);__echoes.cmd('setHp',3,0);'archer down; tank+swordsman under the 30% AI-reviver floor so the PLAYER owns the channel'" },
+  { "type": "keydown", "key": "KeyE" },
+  { "type": "wait", "ms": 2400 },
+  { "type": "eval", "code": "window.__P=[];window.__pi=setInterval(()=>{const c=__echoes.state().party_ai.channels[0];window.__P.push({t:__echoes.tick,p:c?c.progress:null,d:c?c.draining:null});},50);(()=>{const s=__echoes.state();return{phase:'charged',channels:s.party_ai.channels,playerHp:s.party[0].hp}})()" },
+  { "type": "wait", "ms": 200 },
+  { "type": "eval", "code": "(()=>{window.__ft=__echoes.tick;const r=__echoes.cmd('hitOnce',0);return{phase:'FLINCH: damage the reviver',tick:window.__ft,dmg:r}})()" },
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "(()=>{clearInterval(window.__pi);const P=window.__P;const br=window.__F.filter(e=>e.type==='revive_break');const de=window.__F.filter(e=>e.type==='revive_drain_end');const dr=P.filter(x=>x.d===true);let rate=null;if(dr.length>1){const a=dr[0],b=dr[dr.length-1];rate=(a.p-b.p)/(b.t-a.t);}const hits=window.__F.filter(e=>e.type==='hit'&&e.target===0);return{phase:'flinch-break',hitTick:window.__ft,hitsOnReviver:hits.map(h=>({t:h.tick,amount:h.amount})),breaks:br.map(e=>({t:e.tick,reason:e.reason,progress:e.progress,pct:e.pct,drainRate:e.drainRate})),drainEndTick:de.map(e=>e.tick),measuredDrainTicksPerTick:rate?Math.round(rate*100)/100:null,expected:2,drainSamples:dr,playerHp:__echoes.state().party[0].hp}})()" },
+  { "type": "keyup", "key": "KeyE" }
+]

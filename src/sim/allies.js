@@ -649,11 +649,35 @@ export function createAllySystem({
     a.aiState = 'engage';
     if (target) {
       const d = distTo(a, target.x, target.z);
+      // §12 "steer to own attack/skill range" — but the standing spot itself is
+      // LEASH-CAPPED ("never pursued past the boundary"). Pick the goal on the
+      // line to the target at own stand-off range, then project that goal into
+      // the leash disc. Two consequences, both required by §12:
+      //   - closing in never takes the ally past the ring, and
+      //   - an ally the ANCHOR's own motion left outside walks back to the ring
+      //     every tick instead of parking out there, even while it still has a
+      //     target in reach (a stand-off ally used to just turn to face, so the
+      //     excess distance ratcheted in permanently and an archer could hold
+      //     station at 2x the leash).
+      let gx = a.x;
+      let gz = a.z;
       if (d > S.standRange) {
-        a.moving = moveToward(a, target.x, target.z, Math.min(step, d - S.standRange));
-      } else {
-        face(a, target.x - a.x, target.z - a.z);
+        const t = (d - S.standRange) / d;
+        gx = a.x + (target.x - a.x) * t;
+        gz = a.z + (target.z - a.z) * t;
       }
+      const gdx = gx - anchor.x;
+      const gdz = gz - anchor.z;
+      const gd = Math.hypot(gdx, gdz);
+      if (gd > LEASH.radius) {
+        const s = LEASH.radius / gd;
+        gx = anchor.x + gdx * s;
+        gz = anchor.z + gdz * s;
+      }
+      const md = Math.hypot(gx - a.x, gz - a.z);
+      if (md > 1e-4) a.moving = moveToward(a, gx, gz, Math.min(step, md));
+      // Aim always tracks the target, whichever way the feet are going.
+      face(a, target.x - a.x, target.z - a.z);
     } else if (d0 > LEASH.radius * LEASH.reengageFactor) {
       // Nothing to fight: drift back inside the re-engage ring.
       a.moving = moveToward(a, anchor.x, anchor.z, step);

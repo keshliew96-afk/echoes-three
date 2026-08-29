@@ -1,0 +1,16 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0);window.__un=__echoes.on('hit',ev=>{__echoes.cmd('setHp',ev.target,1);});'both sides immortal so the fight runs the whole window'" },
+  { "type": "eval", "code": "window.__ids=[[3.0,1.5],[-3.2,1.4],[3.4,-2.1],[-3.1,-2.2],[1.6,3.4],[-1.7,3.3]].map((p,i)=>__echoes.cmd('spawn', i%2?'mantis':'boar', p[0], p[1]));window.__ids" },
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "window.__L=[];(function rec(){const s=__echoes.state();window.__L.push({t:s.tick,a:s.party_ai.allies.map(x=>({i:x.partyIndex,st:x.state,d:x.anchorDist,tg:x.target}))});window.__raf=requestAnimationFrame(rec);})();'per-frame sampling'" },
+  { "type": "wait", "ms": 6000 },
+  { "type": "keydown", "key": "KeyA" },
+  { "type": "wait", "ms": 2200 },
+  { "type": "keyup", "key": "KeyA" },
+  { "type": "wait", "ms": 3000 },
+  { "type": "keydown", "key": "KeyS" },
+  { "type": "wait", "ms": 2000 },
+  { "type": "keyup", "key": "KeyS" },
+  { "type": "wait", "ms": 6000 },
+  { "type": "eval", "code": "(()=>{cancelAnimationFrame(window.__raf);const raw=window.__L;const H=[];for(const r of raw){if(!H.length||H[H.length-1].t!==r.t)H.push(r);}const out={};let sameTarget=0,nullT=0;const tally={};for(const r of H){const tg=r.a.map(x=>x.tg);if(tg.every(t=>t!==null)&&tg[0]===tg[1]&&tg[1]===tg[2])sameTarget++;if(tg.some(t=>t===null))nullT++;for(const t of tg)tally[t]=(tally[t]||0)+1;}for(const idx of [1,2,3]){const rows=H.map(r=>r.a.find(x=>x.i===idx));const eng=rows.filter(r=>r.st==='engage');out[idx]={maxAnchorDist:Math.max(...rows.map(r=>r.d)),maxWhileEngaged:eng.length?Math.max(...eng.map(r=>r.d)):null,ticksOverLeashWhileEngaged:eng.filter(r=>r.d>3.4).length,ticksOverLeashAny:rows.filter(r=>r.d>3.4).length,states:rows.reduce((m,r)=>{m[r.st]=(m[r.st]||0)+1;return m;},{})};}return{tickSamples:H.length,leash:3.4,focusFire:{allThreeSameTarget:sameTarget,pct:Math.round(1000*sameTarget/H.length)/10,samplesWithNullTarget:nullT,targetTally:tally},perAlly:out,fps:__echoes.fps,hits:__echoes.stats.hits}})()" }
+]

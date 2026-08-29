@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0);'tp'" },
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "window.__EV=[];['downed','ally_rescue','revive_start','revive','revive_break'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));__echoes.cmd('setHp',0,0);'player down, camera already settled'" },
+  { "type": "wait", "ms": 1400 },
+  { "type": "eval", "code": "window.__t=setInterval(()=>{const s=__echoes.state();const c=s.party_ai.channels[0];const r=s.allyfx.reviveRingScreen[0];console.log('SEQ2 '+JSON.stringify({tick:s.tick,hp:s.party[0].hp,pct:c?c.pct:null,rev:c?c.reviver:null,box:r?r.band:null,ally:s.party_ai.allies.map(a=>a.state).join(','),ev:window.__EV.map(e=>e.type+'@'+e.tick+(e.pct!==undefined?':'+e.pct:''))}));},250);'armed'" },
+  { "type": "wait", "ms": 120 }
+]

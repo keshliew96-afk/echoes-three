@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0);'player is the leash anchor at the origin'" },
+  { "type": "eval", "code": "window.__d=__echoes.cmd('spawn','dummy',9.0,0);__echoes.cmd('iframe',window.__d,60000);'an i-framed target 9.0u out: outside the 3.4 ring AND outside every ally reach, so §12 forces a disengage (no knockback drift)'" },
+  { "type": "wait", "ms": 800 },
+  { "type": "eval", "code": "__echoes.cmd('placeAlly',1,5.2,0);__echoes.cmd('placeAlly',2,5.0,0.6);__echoes.cmd('placeAlly',3,5.1,-0.6);'allies parked OUTSIDE the ring'" },
+  { "type": "eval", "code": "window.__H=[];(function rec(){const s=__echoes.state();window.__H.push({t:s.tick,a:s.party_ai.allies.map(x=>({i:x.partyIndex,st:x.state,d:x.anchorDist}))});window.__raf=requestAnimationFrame(rec);})();'per-frame sampling (~1 tick granularity)'" },
+  { "type": "wait", "ms": 6000 },
+  { "type": "eval", "code": "(()=>{cancelAnimationFrame(window.__raf);const H=window.__H.filter((r,i)=>i>=6);const dedup=[];for(const r of H){if(!dedup.length||dedup[dedup.length-1].t!==r.t)dedup.push(r);}const out={};for(const idx of [1,2,3]){const rows=dedup.map(r=>({t:r.t,...r.a.find(x=>x.i===idx)}));const flips=[];for(let k=1;k<rows.length;k++){if(rows[k-1].st==='return'&&rows[k].st==='engage')flips.push({tick:rows[k].t,dPrev:rows[k-1].d,dAt:rows[k].d});}const eng=rows.filter(r=>r.st==='engage');out[idx]={returnedFrom:rows.find(r=>r.st==='return')?rows.find(r=>r.st==='return').d:null,reengageFlips:flips,maxAnchorDistWhileEngagedAfterReturn:eng.length?Math.max(...eng.filter(r=>r.t>=(flips[0]?flips[0].tick:1e9)).map(r=>r.d),0):0};}return{leash:3.4,reengageRing:2.72,oneTickOfWalk:{tank:0.035,swordsman:0.044,archer:0.042},perAlly:out,tickSamples:dedup.length}})()" }
+]

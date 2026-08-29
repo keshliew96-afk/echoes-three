@@ -1,0 +1,16 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0);__echoes.cmd('startRoom','kill_all');__echoes.cmd('killAllEnemies')" },
+  { "type": "eval", "code": "window.__V=[];for(const t of ['downed','ally_rescue','revive_start','revive','room_cleared','room_start']) __echoes.on(t,ev=>window.__V.push(ev));'logging'" },
+  { "type": "wait", "ms": 600 },
+  { "type": "eval", "code": "window.__cyc=0;__echoes.cmd('setHp',3,0);window.__w=setInterval(()=>{const s=__echoes.state();const a=s.party[3];if(a.hp>0&&window.__cyc<4){window.__cyc++;__echoes.cmd('setHp',3,0);}},100);'cycling: re-down the archer the instant it is revived'" },
+  { "type": "wait", "ms": 34000 },
+  { "type": "eval", "code": "(()=>{clearInterval(window.__w);const rev=window.__V.filter(e=>e.type==='revive'&&e.targetIndex===3);const s=__echoes.state();return{phase:'same-room-repeats',revives:rev.map(e=>({t:e.tick,pct:e.pct,hp:e.hp,repeatIndexAtStart:e.repeat,free:e.free})),expectedPcts:[0.3,0.2,0.1,0.1],expectedHp:[24,16,8,8],maxHp:80,repeatsCounter:s.party_ai.repeats,room:s.room.mode}})()" },
+  { "type": "eval", "code": "(()=>{const t0=__echoes.tick;__echoes.cmd('clearRoom');return{phase:'room-clear-resets-diminishing',tickAtCmd:t0}})()" },
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'after-clear',repeatsCounter:s.party_ai.repeats,partyHp:s.party.map(m=>({i:m.partyIndex,hp:Math.round(m.hp*10)/10,pct:Math.round(100*m.hp/m.maxHp)}))}})()" },
+  { "type": "eval", "code": "(()=>{__echoes.cmd('startRoom','kill_all');__echoes.cmd('killAllEnemies');window.__V2=[];__echoes.on('revive',e=>window.__V2.push(e));return{phase:'new-room-armed',repeats:__echoes.state().party_ai.repeats}})()" },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "__echoes.cmd('setHp',3,0)" },
+  { "type": "wait", "ms": 7000 },
+  { "type": "eval", "code": "(()=>{return{phase:'new-room-first-revive',revives:window.__V2.map(e=>({t:e.tick,i:e.targetIndex,pct:e.pct,hp:e.hp,free:e.free})),note:'diminishing reset by the room boundary => back to 30%'}})()" }
+]

@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0);__echoes.cmd('placeAlly',1,-2.6,-1.4);__echoes.cmd('placeAlly',2,-2.2,0.6);__echoes.cmd('placeAlly',3,-2.9,1.6)" },
+  { "type": "eval", "code": "window.__d=__echoes.cmd('spawn','dummy',2.0,0.3);__echoes.cmd('iframe',window.__d,20000);window.__d" },
+  { "type": "wait", "ms": 600 },
+  { "type": "eval", "code": "__echoes.cmd('mark',window.__d)" },
+  { "type": "wait", "ms": 900 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();const e=s.enemies.find(x=>x.id===window.__d);return{phase:'RETICLE-ON',mark:s.party_ai.mark,targets:s.party_ai.allies.map(a=>a.target),allSnapped:s.party_ai.mark!=null&&s.party_ai.allies.every(a=>a.target===s.party_ai.mark),markPos:e?[Math.round(e.x*100)/100,Math.round(e.z*100)/100]:null,screen:__echoes.project?__echoes.project(e.x,e.z):null}})()" }
+]

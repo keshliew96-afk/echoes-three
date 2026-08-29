@@ -1,0 +1,11 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0);__echoes.cmd('placeAlly',1,-9,5);__echoes.cmd('placeAlly',2,-9,-5);__echoes.cmd('placeAlly',3,9,-5);'allies parked out of leash+reach so the PLAYER owns the kill (qa6-kill regression, ally-aware)'" },
+  { "type": "eval", "code": "window.__trace=[];(function rec(){window.__trace.push(__echoes.tick);requestAnimationFrame(rec)})();'trace-on'" },
+  { "type": "eval", "code": "window.__d1=__echoes.cmd('spawn','dummy',2.0,0);'spawned:'+window.__d1" },
+  { "type": "mousemove", "x": 1100, "y": 450 },
+  { "type": "wait", "ms": 150 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "eval", "code": "new Promise(res=>{const off=__echoes.on('death',ev=>{off();setTimeout(()=>res({death:ev,stats:__echoes.stats}),150)});setTimeout(()=>res({timeout:true,stats:__echoes.stats,tail:__echoes.events.slice(-10)}),6000)})" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "(()=>{const t=window.__trace;let maxRun=1,run=1;for(let i=1;i<t.length;i++){if(t[i]===t[i-1]){run++;if(run>maxRun)maxRun=run}else run=1}const hits=__echoes.events.filter(e=>e.type==='hit');return {maxRunSameTick:maxRun,traceLen:t.length,hitSample:hits.slice(0,4),vfx:{numerals:__echoes.state().vfx.numerals,decals:__echoes.state().vfx.decals},evTail:__echoes.events.slice(-8)}})()" }
+]
