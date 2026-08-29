@@ -5,14 +5,10 @@
  },
  {
   "type": "eval",
-  "code": "(async()=>{const e=window.__echoes,c=e.cmd;c('restoreSkillState',{slots:[{id:'mending_bolt',remaining:0},{id:'nova_bloom',remaining:0},{id:'sanctuary',remaining:0},{id:'restorative_wave',remaining:0}],override:null});c('teleport',0,0);for(let i=0;i<4;i++)c('spawn','dummy',-2+i*1.2,2.2);await window.__sleep(200);return e.entityCount;})()"
+  "code": "(async()=>{const e=window.__echoes,c=e.cmd;const KIT=[{id:'mending_bolt',remaining:0},{id:'nova_bloom',remaining:0},{id:'sanctuary',remaining:0},{id:'restorative_wave',remaining:0}];c('restoreSkillState',{slots:KIT,override:null});c('teleport',0,0);for(let i=0;i<4;i++)c('spawn','dummy',-2+i*1.2,2.2);await window.__sleep(200);const a=await window.__aim(0,5);return {entities:e.entityCount,aim:a.aim};})()"
  },
  {
   "type": "eval",
-  "code": "window.__aim(0,5)"
- },
- {
-  "type": "eval",
-  "code": "(async()=>{const e=window.__echoes;const iv=setInterval(()=>{for(const k of ['Digit1','Digit2','Digit3','Digit4'])window.__press(k);window.__echoes.cmd('setHp',0,0.3);window.__echoes.cmd('setHp',1,0.3);window.__echoes.cmd('setHp',3,0.3);},120);await window.__sleep(700);let frames=0;const t0=performance.now();let t=t0;while(t-t0<4000){await new Promise(r=>requestAnimationFrame(r));frames++;t=performance.now();}clearInterval(iv);const sk=e.state().skillfx;return {case:'full skill spam fps',rafFps:+(frames*1000/(t-t0)).toFixed(1),meterFps:e.fps,frames,ms:+(t-t0).toFixed(0),vfx:sk};})()"
+  "code": "(async()=>{const e=window.__echoes,c=e.cmd;const KIT=[{id:'mending_bolt',remaining:0},{id:'nova_bloom',remaining:0},{id:'sanctuary',remaining:0},{id:'restorative_wave',remaining:0}];let peak=null;const iv=setInterval(()=>{c('restoreSkillState',{slots:KIT,override:null});for(const i of [0,1,3])c('setHp',i,0.3);for(const k of ['Digit1','Digit2','Digit3','Digit4'])window.__press(k);const v=e.state().skillfx;if(!peak||v.motes>peak.motes)peak=v;},100);await window.__sleep(900);let frames=0;const t0=performance.now();let t=t0;const fr=[];while(t-t0<5000){const p=t;await new Promise(r=>requestAnimationFrame(r));t=performance.now();frames++;fr.push(t-p);}clearInterval(iv);fr.sort((a,b)=>a-b);const med=fr[Math.floor(fr.length/2)];return {case:'every skill re-armed and fired every 100 ms for 5 s',rafFps:+(frames*1000/(t-t0)).toFixed(1),medianFrameFps:+(1000/med).toFixed(1),meterFps:e.fps,frames,ms:+(t-t0).toFixed(0),peakVfx:peak,endVfx:e.state().skillfx,entities:e.entityCount};})()"
  }
 ]
