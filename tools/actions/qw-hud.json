@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__sleep=(ms)=>new Promise(r=>setTimeout(r,ms));window.__mark=()=>__echoes.events.length;window.__since=(n,t)=>__echoes.events.slice(n).filter(e=>!t||e.type===t);window.__press=(c)=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:c,bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:c,bubbles:true}));};window.__move=async(x,y)=>{window.dispatchEvent(new MouseEvent('mousemove',{clientX:x,clientY:y,bubbles:true,cancelable:true}));await window.__sleep(35);return window.__echoes.state().party[0].aim;};window.__aim=async(wx,wz)=>{const e=window.__echoes;let sx=innerWidth/2,sy=innerHeight/2;let a=await window.__move(sx,sy);for(let i=0;i<25&&a;i++){const d=Math.hypot(wx-a.x,wz-a.z);if(d<0.02)return{ok:true,sx,sy,aim:a,i,d};const h=20;const ax=await window.__move(sx+h,sy);const ay=await window.__move(sx,sy+h);const j11=(ax.x-a.x)/h,j12=(ay.x-a.x)/h,j21=(ax.z-a.z)/h,j22=(ay.z-a.z)/h;const det=j11*j22-j12*j21;if(Math.abs(det)<1e-12)break;const ex=wx-a.x,ez=wz-a.z;let dsx=(j22*ex-j12*ez)/det,dsy=(-j21*ex+j11*ez)/det;const L=Math.hypot(dsx,dsy),cap=400;if(L>cap){dsx*=cap/L;dsy*=cap/L;}sx=Math.max(3,Math.min(innerWidth-3,sx+dsx));sy=Math.max(3,Math.min(innerHeight-3,sy+dsy));a=await window.__move(sx,sy);}return{ok:false,sx,sy,aim:a};};window.__equip=(ids)=>{const slots=ids.map(id=>id?{id,remaining:0}:null);while(slots.length<4)slots.push(null);return __echoes.cmd('restoreSkillState',{slots,override:null});};'ready'})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=__echoes,c=e.cmd;c('killAllEnemies');window.__equip(['mending_bolt','warding_aura','nova_bloom','sanctuary']);c('teleport',0,0);await window.__sleep(500);c('placeAlly',1,0.7,0.2);c('placeAlly',2,-0.7,0.2);c('placeAlly',3,0.1,-0.7);await window.__sleep(400);const st=e.state();window.__I={};for(const p of st.party)window.__I[p.partyIndex??0]=p.id;const slots=[...document.querySelectorAll('.proto-slot')].map(s=>({cls:s.className,key:s.querySelector('.proto-key')?.textContent,glyph:s.querySelector('.proto-glyph')?.textContent,wipeBg:s.querySelector('.proto-wipe')?getComputedStyle(s.querySelector('.proto-wipe')).background.slice(0,120):null,wipeOpacity:s.querySelector('.proto-wipe')?getComputedStyle(s.querySelector('.proto-wipe')).opacity:null,cdNum:s.querySelector('.proto-cd-num')?.textContent}));return{phase:'HUD at rest, MB/WA/NB/SA equipped',slots};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=__echoes,c=e.cmd;window.__press('Digit1');window.__press('Digit3');await window.__sleep(400);const slots=[...document.querySelectorAll('.proto-slot')].map(s=>({key:s.querySelector('.proto-key')?.textContent,glyph:s.querySelector('.proto-glyph')?.textContent,wipeOpacity:s.querySelector('.proto-wipe')?getComputedStyle(s.querySelector('.proto-wipe')).opacity:null,wipeImg:s.querySelector('.proto-wipe')?getComputedStyle(s.querySelector('.proto-wipe')).backgroundImage.slice(0,160):null,cdNum:s.querySelector('.proto-cd-num')?.textContent}));return{phase:'after firing slot1 (MB, 3.5s) + slot3 (NB, 7s): radial wipes on 1 and 3, WA slot untouched',slots,skills:e.state().skills.map(s=>s&&{id:s.id,rem:s.remainingTicks,total:s.totalTicks,passive:s.passive})};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=__echoes;await window.__sleep(2900);const slots=[...document.querySelectorAll('.proto-slot')].map(s=>({key:s.querySelector('.proto-key')?.textContent,cdNum:s.querySelector('.proto-cd-num')?.textContent,cdOpacity:s.querySelector('.proto-cd-num')?getComputedStyle(s.querySelector('.proto-cd-num')).opacity:null}));return{phase:'sub-1s remaining on MB: >=20px parchment numeral should show',slots,skills:__echoes.state().skills.map(s=>s&&{id:s.id,rem:s.remainingTicks})};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=__echoes;window.__press('F3');await window.__sleep(200);const ports=[...document.querySelectorAll('.proto-port')].map(p=>({cls:p.className,key:p.querySelector('.proto-port-key')?.textContent,borderColor:getComputedStyle(p).borderColor,boxShadow:getComputedStyle(p).boxShadow.slice(0,90),caret:p.querySelector('.proto-port-caret')?getComputedStyle(p.querySelector('.proto-port-caret')).opacity:null}));return{phase:'F3 override on party_index 2 -> Amber portrait mark',healOverride:e.state().healOverride,skillfxOverride:e.state().skillfx.overrideIndex,ports};})()"
+ }
+]
