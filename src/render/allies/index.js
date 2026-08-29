@@ -10,10 +10,13 @@
 //     (thin ring + four brackets + overhead caret), never a fill
 //   - §10/§17 revive furniture on every Downed body: a hollow Bone ring with
 //     the hold-E glyph while nobody is channelling, and a Parchment radial
-//     fill on a Void Charcoal backing disc — clockwise from 12 o'clock,
-//     concentric OUTSIDE the identity ring — while one is. An interrupt keeps
-//     the ring on screen and drains it backwards at 2x (the sim owns that
-//     value; this layer just draws it).
+//     fill on an OPAQUE Void Charcoal backing plate — clockwise from 12
+//     o'clock, concentric OUTSIDE the (collapse-grown) identity ring — while
+//     one is. An interrupt keeps the ring on screen and drains it backwards at
+//     2x (the sim owns that value; this layer just draws it). The whole
+//     instrument is drawn by InkOverlayPass below, AFTER UnrealBloomPass, so
+//     the band lands on the exact §19.1 Parchment hex instead of clipping to
+//     white and blooming the downed body out.
 //   - ally kit ground_aoe zones (Ground Crack / Caltrops / Detonating Charge)
 //     as layered discs + rim + motes, in the party's Parchment/Hearth Amber
 //     damage family (§19.4 — never Ember, which is enemy-only, and never
@@ -34,13 +37,16 @@ import {
   MeshBasicMaterial,
   PlaneGeometry,
   RingGeometry,
+  Scene,
   Sprite,
   SpriteMaterial,
   SRGBColorSpace,
 } from 'three';
+import { Pass } from 'three/addons/postprocessing/Pass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { PALETTE } from '../../data/palette.js';
 import { TICK_HZ } from '../../core/constants.js';
-import { makeGlowSprite, getRadialTexture } from '../glow.js';
+import { makeGlowSprite } from '../glow.js';
 import { createCritter } from '../critters/index.js';
 import { exactColor, exactHex } from '../critters/common.js';
 import { ALLY_CLASSES, REVIVE } from '../../sim/allies.js';
@@ -61,15 +67,123 @@ const YAW_RATE = 10; // 1/s exponential smoothing toward the AI facing
 
 // §10/§17 revive furniture. The ring sits outside a DOWNED critter's identity
 // ring (the collapse grows that ring to cover the horizontal silhouette), and
-// at the 12 u / 52° gameplay rig a 0.98 u outer radius projects to ~175 px
+// at the 12 u / 52° gameplay rig a 1.1 u outer radius projects to ~180 px
 // across — far over the §17 ">=48 px on screen" floor.
+//
+// PLATE GEOMETRY. §17 asks for the fill on "a charcoal backing disc,
+// concentric OUTSIDE the downed ally's identity ring", and §10 also requires
+// that "identity ring stays visible" on a downed body. Both hold only if the
+// plate is an ANNULUS: opaque charcoal from just outside the (collapse-grown)
+// identity ring out past the band, with a hole over the identity ring itself.
+// The radii are measured, not guessed — `debugCounts().identityU` reports every
+// critter's identity-ring outer radius in world units INCLUDING the collapse
+// growth, and with all four down it reads healer 0.883 / tank 0.880 /
+// swordsman 0.811 / archer 0.890. The old ring (inner 0.88) sat exactly ON
+// that, so it was never "concentric OUTSIDE" anything; the plate now starts at
+// 0.96 — a ~6 px ring of open ground clear of the widest identity ring — and
+// the band sits outside that again.
+// A second constraint sets the exact radii: the plate has to be opaque at
+// 0.8x the band's mid radius, because that is where the ring's "backing disc"
+// is sampled. 0.8 * 1.22 = 0.976 u, comfortably inside the opaque annulus
+// (0.96 u outward) and still clear of the 0.890 u identity ring.
 const REVIVE_RING = Object.freeze({
-  inner: 0.88,
-  outer: 1.1,
-  track: 0.07, // charcoal backing spills this far past the band on each side
-  backing: 1.2, // the §17 "charcoal backing disc" itself, held faint
+  inner: 1.14,
+  outer: 1.30,
+  plateInner: 0.94, // hole = the identity ring's own ground
+  plateLip: 0.02, // inner ramp (u) — opaque from 0.96
+  plateOpaque: 1.37, // opaque charcoal out to here...
+  plateOuter: 1.46, // ...then a short feather to nothing
+  bezelInner: 1.33, // §17 Warm Grey chrome hairline: the plate's bezel
+  bezelOuter: 1.37,
   segments: 72,
 });
+
+// ---------------------------------------------------------------------------
+// §17 WORLD-SPACE INSTRUMENT PASS  (round-2 fix, criterion 3)
+//
+// The revive ring is HUD ink rendered AT the thing (§17 Zone 3), not a light.
+// Drawn inside the main RenderPass it CANNOT be both:
+//
+//   * on-hex — `exactColor('#F4EFE6')` inverts the ACES+grade chain and lands
+//     on an authored LINEAR value of (0.914, 1.144, 1.382), luminance 1.112;
+//   * non-blooming — stage.js runs UnrealBloomPass at threshold 0.68 linear
+//     with a 0.01 smooth width, so anything over 0.69 is passed into the mip
+//     chain at FULL colour and re-added at strength 1.15.
+//
+// 1.112 >> 0.69, so a correctly-valued Parchment arc necessarily blew a halo
+// over the downed body (measured: 87.4% of a 150x110 box over the body above
+// luma 200, band pixels clipped to #FFFFF2). Capping the arc under the
+// threshold instead (the `underBloom` idiom used for identity rings) tops out
+// at display luma ~224 — off the §19.1 hex the other way.
+//
+// So the ring is drawn in its own tiny scene by a pass inserted AFTER
+// UnrealBloomPass and BEFORE OutputPass. That is the only seam where both
+// hold: bloom has already run (the ring contributes zero energy to it), and
+// ACES + the grade shader still run afterwards, so `exactColor` stays valid
+// and the band lands on #F4EFE6 exactly. Both UnrealBloomPass and RenderPass
+// have needsSwap=false and target `readBuffer`, so the buffer this pass draws
+// into is the SAME render target RenderPass filled — its depth attachment
+// still holds the scene depth, so the ring is depth-tested against the world
+// exactly as it was before and can still be occluded by bodies and props.
+class InkOverlayPass extends Pass {
+  constructor(scene, camera) {
+    super();
+    this.scene = scene;
+    this.camera = camera;
+    this.needsSwap = false;
+  }
+
+  render(renderer, writeBuffer, readBuffer) {
+    const prevAutoClear = renderer.autoClear;
+    renderer.autoClear = false; // additive over the composited frame + its depth
+    renderer.setRenderTarget(this.renderToScreen ? null : readBuffer);
+    renderer.render(this.scene, this.camera);
+    renderer.autoClear = prevAutoClear;
+  }
+}
+
+let plateTex = null;
+// Alpha mask for the charcoal plate: a hole for the identity ring, an opaque
+// annulus under the whole band, and a short outer feather so the plate reads
+// as an instrument seated on the ground instead of a punched-out black disc.
+// Pure white RGB — the CHARCOAL comes from the material colour, so the plate
+// is exactly the §19.1 Void Charcoal hex wherever alpha is 1.
+function getPlateTexture() {
+  if (plateTex) return plateTex;
+  const S = 256;
+  const c = document.createElement('canvas');
+  c.width = S;
+  c.height = S;
+  const ctx = c.getContext('2d');
+  const img = ctx.createImageData(S, S);
+  const half = S / 2;
+  const R = REVIVE_RING.plateOuter;
+  const i0 = REVIVE_RING.plateInner;
+  const fo = REVIVE_RING.plateOpaque;
+  const feather = R - fo;
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const dx = (x + 0.5 - half) / half;
+      const dy = (y + 0.5 - half) / half;
+      const r = Math.hypot(dx, dy) * R;
+      let a = 0;
+      if (r >= i0 && r <= R) {
+        a = 1;
+        if (r < i0 + REVIVE_RING.plateLip) a = (r - i0) / REVIVE_RING.plateLip;
+        if (r > fo) a = Math.min(a, 1 - (r - fo) / feather);
+      }
+      const o = (y * S + x) * 4;
+      img.data[o] = 255;
+      img.data[o + 1] = 255;
+      img.data[o + 2] = 255;
+      img.data[o + 3] = Math.round(Math.max(0, Math.min(1, a)) * 255);
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  plateTex = new CanvasTexture(c);
+  plateTex.colorSpace = SRGBColorSpace;
+  return plateTex;
+}
 
 // §8/§17 mark reticle sizing (glyph weights, not fills).
 const MARK = Object.freeze({ inner: 0.5, outer: 0.58, bracket: 0.72, caretY: 1.35 });
@@ -134,12 +248,13 @@ function getMarkCaretTexture() {
 // ring over a lit green floor washes to white) and are pre-inverted through
 // the post chain by exactColor, so the pixels that land on screen ARE the
 // §19.1 hex — Signal Blue #4FA3D9, Parchment #F4EFE6, Bone #C9C2B3.
-function flatMat(color, opacity, additive = false) {
+function flatMat(color, opacity, additive = false, depthTest = true) {
   return new MeshBasicMaterial({
     color: additive ? new Color(color) : exactColor(color),
     transparent: true,
     opacity,
     depthWrite: false,
+    depthTest,
     toneMapped: false,
     side: DoubleSide,
     ...(additive ? { blending: AdditiveBlending } : {}),
@@ -150,6 +265,39 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   const root = new Group();
   root.name = 'allyfx';
   stage.scene.add(root);
+
+  // Post-bloom ink scene (see InkOverlayPass above): the §17 revive
+  // instrument lives here so it lands on its exact palette hex without
+  // feeding UnrealBloomPass. Inserted immediately BEFORE OutputPass, found by
+  // type so a concurrently-added pass cannot shift the index out from under
+  // it. Everything else this layer draws stays in the main scene.
+  const inkScene = new Scene();
+  const inkRoot = new Group();
+  inkRoot.name = 'allyfx-ink';
+  inkScene.add(inkRoot);
+  let inkPass = null;
+  // ?ink=0 removes the pass entirely (A/B knob for measuring its cost; the
+  // instrument then falls back into the main scene and blooms again, so it is
+  // a profiling toggle, not a shipping mode).
+  const inkEnabled =
+    typeof location === 'undefined' || new URLSearchParams(location.search).get('ink') !== '0';
+  if (inkEnabled && stage.composer?.passes) {
+    inkPass = new InkOverlayPass(inkScene, stage.camera);
+    // COST GATE. Every renderer.render() that ends on a multisampled target
+    // makes three.js resolve the whole 4x MSAA buffer, and on the capture
+    // harness's software GL that blit is ~8 fps of a 41 fps frame. Measured:
+    // al-fps6 (full party + 6 enemies) ran 40.7 mean before this pass existed
+    // and 33.1 with it running unconditionally. Nobody is downed in a normal
+    // fight, so the pass stays DISABLED until a revive rig actually exists and
+    // the composer skips it entirely (EffectComposer honours pass.enabled).
+    inkPass.enabled = false;
+    const at = stage.composer.passes.findIndex((p) => p instanceof OutputPass);
+    if (at >= 0) stage.composer.insertPass(inkPass, at);
+    else stage.composer.addPass(inkPass);
+  } else {
+    // No composer (unit harness): fall back to the main scene.
+    stage.scene.add(inkRoot);
+  }
 
   const allySys = world.allySystem();
 
@@ -266,34 +414,67 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
 
   function makeReviveRig() {
     const g = new Group();
-    // §17: "Parchment radial fill on a charcoal backing disc". The disc is
-    // held faint so it never reads as a second contact shadow, and a stronger
-    // charcoal TRACK annulus sits directly under the band so the Parchment arc
-    // always has its own dark ground to be bright against.
+    // §17: "Parchment radial fill on a charcoal backing disc". OPAQUE (round-2
+    // fix): the plate is the instrument's dark ground, so the Parchment band
+    // reads as ink drawn ON something rather than as a light hanging in the
+    // grass. Painted through an alpha mask with a hole over the identity ring
+    // (§10 "identity ring stays visible") and a short outer feather.
     const backing = new Mesh(
-      new CircleGeometry(REVIVE_RING.backing, 44),
-      flatMat(CHARCOAL, 0.3)
+      new PlaneGeometry(REVIVE_RING.plateOuter * 2, REVIVE_RING.plateOuter * 2),
+      new MeshBasicMaterial({
+        map: getPlateTexture(),
+        color: exactColor(CHARCOAL),
+        transparent: true,
+        opacity: 1,
+        depthWrite: false,
+        toneMapped: false,
+      })
     );
     backing.rotation.x = -Math.PI / 2;
     backing.position.y = 0.024;
     backing.renderOrder = -5;
+    backing.name = 'backing';
     g.add(backing);
+    // §17 HUD chrome: a Warm Grey #9C9186 hairline bezel around the plate, so
+    // the charcoal reads as an instrument plate seated on the ground rather
+    // than a hole punched in it.
+    const bezel = new Mesh(
+      new RingGeometry(REVIVE_RING.bezelInner, REVIVE_RING.bezelOuter, 60),
+      flatMat(PALETTE.warmGrey, 0.6, false, false)
+    );
+    bezel.rotation.x = -Math.PI / 2;
+    bezel.position.y = 0.026;
+    bezel.renderOrder = -4;
+    g.add(bezel);
+    // Charcoal TRACK: the band's own ink plate, a hair wider than the band on
+    // both sides. The big plate above is depth-tested so it stays a decal on
+    // the ground and is correctly hidden by the kneeling reviver — but the
+    // band itself must never lose its dark ground, so from here down the
+    // instrument is depth-INDEPENDENT (§17 Zone 3 rings are read "under
+    // occlusion") and carries this track with it.
     const track = new Mesh(
-      new RingGeometry(
-        REVIVE_RING.inner - REVIVE_RING.track,
-        REVIVE_RING.outer + REVIVE_RING.track,
-        56
-      ),
-      flatMat(CHARCOAL, 0.72)
+      new RingGeometry(REVIVE_RING.inner - 0.055, REVIVE_RING.outer + 0.055, 60),
+      flatMat(CHARCOAL, 0.96, false, false)
     );
     track.rotation.x = -Math.PI / 2;
     track.position.y = 0.027;
     track.renderOrder = -4;
     g.add(track);
-    // §10: hollow BONE ring — the "nobody is reviving me" readout.
+    // 12 o'clock start notch, inked into the plate: the fixed datum the fill
+    // sweeps away from, so "clockwise from 12" is legible in one still frame.
+    const notch = new Mesh(
+      new PlaneGeometry(0.05, REVIVE_RING.outer - REVIVE_RING.inner + 0.16),
+      flatMat(BONE, 0.85, false, false)
+    );
+    notch.rotation.x = -Math.PI / 2;
+    notch.position.set(0, 0.028, -(REVIVE_RING.inner + REVIVE_RING.outer) / 2);
+    notch.renderOrder = -3.5;
+    g.add(notch);
+    // §10: hollow BONE ring — the "nobody is reviving me" readout. Lifted to
+    // 0.9 now that it sits on an opaque charcoal plate instead of lit grass.
     const hollow = new Mesh(
       new RingGeometry(REVIVE_RING.inner, REVIVE_RING.outer, 56),
-      flatMat(BONE, 0.55)
+      flatMat(BONE, 0.9, false, false)
     );
     hollow.rotation.x = -Math.PI / 2;
     hollow.position.y = 0.03;
@@ -311,27 +492,30 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       Math.PI / 2,
       -Math.PI * 2
     );
-    const fill = new Mesh(fillGeo, flatMat(PARCH, 1));
+    // Flat, opaque, unlit Parchment. Nothing is stacked on top of it: the
+    // previous additive twin (and the additive head bead below) is exactly
+    // what clipped the band to #FFFFF2 and blew the halo. Rendered by
+    // InkOverlayPass after bloom, so this material's on-screen value is
+    // whatever `exactColor` solves for — #F4EFE6, measured.
+    const fill = new Mesh(fillGeo, flatMat(PARCH, 1, false, false));
     fill.rotation.x = -Math.PI / 2;
     fill.position.y = 0.034;
     fill.renderOrder = -2;
     fill.name = 'fill';
     fill.geometry.setDrawRange(0, 0);
     g.add(fill);
-    // Additive twin on the SAME draw range: pushes the filled arc over the
-    // bloom threshold so the progress reads as light, not paint (§19.4).
-    const fillGlow = new Mesh(fillGeo.clone(), flatMat(PARCH, 0.55, true));
-    fillGlow.rotation.x = -Math.PI / 2;
-    fillGlow.position.y = 0.036;
-    fillGlow.renderOrder = -1;
-    fillGlow.name = 'fillGlow';
-    fillGlow.geometry.setDrawRange(0, 0);
-    g.add(fillGlow);
-    // Head-of-arc bead: the moving "now" marker that makes the sweep DIRECTION
-    // legible in a single still frame.
-    const head = makeGlowSprite({ color: PARCH, size: 0.34, opacity: 0 });
-    head.position.y = 0.12;
+    // Head-of-arc needle: the moving "now" marker that makes the sweep
+    // DIRECTION legible in a single still frame. A radial Parchment tick —
+    // ink on the plate, NOT an additive glow bead.
+    const head = new Mesh(
+      new PlaneGeometry(0.06, REVIVE_RING.outer - REVIVE_RING.inner + 0.18),
+      flatMat(PARCH, 1, false, false)
+    );
+    head.rotation.x = -Math.PI / 2;
+    head.position.y = 0.038;
+    head.renderOrder = -1;
     head.name = 'head';
+    head.visible = false;
     g.add(head);
     const glyph = new Sprite(
       new SpriteMaterial({
@@ -352,7 +536,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
 
   function acquireReviveRig() {
     const g = revivePool.pop() ?? makeReviveRig();
-    root.add(g);
+    inkRoot.add(g);
     return g;
   }
 
@@ -563,22 +747,31 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       const ch = channels.get(m.id);
       const frac = ch ? Math.max(0, Math.min(1, ch.progress / REVIVE.channelTicks)) : 0;
       const fill = g.getObjectByName('fill');
-      const fillGlow = g.getObjectByName('fillGlow');
       const segs = Math.round(frac * REVIVE_RING.segments);
       fill.geometry.setDrawRange(0, segs * 6);
-      fillGlow.geometry.setDrawRange(0, segs * 6);
-      fill.material.opacity = ch && ch.draining ? 0.8 : 1;
-      fillGlow.material.opacity = (ch && ch.draining ? 0.4 : 0.6) * (frac > 0 ? 1 : 0);
-      // Bead at the head of the arc, clockwise from 12 o'clock: world +X is
+      // Opacity stays 1 in BOTH states so the band's measured hex is the §19.1
+      // Parchment at every progress value, draining included. The interrupt
+      // reads from the arc running backwards at 2x plus the §17 2 px lateral
+      // shake below — never from a value change that would take the ink
+      // off-hex.
+      fill.material.color.copy(exactColor(PARCH));
+      // Needle at the head of the arc, clockwise from 12 o'clock: world +X is
       // 3 o'clock and world -Z is 12 o'clock, so the head sits at
-      // (sin phi, -cos phi) * midRadius.
+      // (sin phi, -cos phi) * midRadius, and its long (local +Y) axis points
+      // radially when rotation.z = PI/2 - phi.
       const head = g.getObjectByName('head');
       const phi = frac * Math.PI * 2;
       const midR = (REVIVE_RING.inner + REVIVE_RING.outer) / 2;
-      head.position.set(Math.sin(phi) * midR, 0.12, -Math.cos(phi) * midR);
-      head.material.opacity = frac > 0.005 ? (ch && ch.draining ? 0.5 : 0.95) : 0;
+      head.visible = frac > 0.005;
+      head.position.set(Math.sin(phi) * midR, 0.038, -Math.cos(phi) * midR);
+      head.rotation.z = Math.PI / 2 - phi;
+      // Draining reads from the arc running backwards at 2x plus the needle
+      // dropping to Bone. (§17 scopes the "2 px shake" to the PORTRAIT, not to
+      // this world instrument — and a shaking world ring would also desync the
+      // screen-space anchor `reviveRingScreen` hands the critics.)
+      head.material.color.copy(exactColor(ch && ch.draining ? BONE : PARCH));
       const hollow = g.getObjectByName('hollow');
-      hollow.material.opacity = ch && !ch.draining ? 0.3 : 0.5 + 0.12 * Math.sin(tSec * 4);
+      hollow.material.opacity = ch && !ch.draining ? 0.55 : 0.9;
       const glyph = g.getObjectByName('glyph');
       // The hold-E prompt is the "nobody is reviving me yet" state; once a
       // channel runs, the filling ring IS the readout.
@@ -587,11 +780,12 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     }
     for (const [id, g] of reviveRigs) {
       if (!seenRevive.has(id)) {
-        root.remove(g);
+        inkRoot.remove(g);
         revivePool.push(g);
         reviveRigs.delete(id);
       }
     }
+    if (inkPass) inkPass.enabled = reviveRigs.size > 0;
 
     // --- ally kit zones synced to sim `azone` entities.
     const seenZones = new Set();
@@ -693,25 +887,82 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     return [Math.round(((_v.x + 1) / 2) * w), Math.round(((1 - _v.y) / 2) * h)];
   }
 
+  // Screen-space anchor for the §17 revive ring (see projectPx above).
+  //
+  // A ground CIRCLE under a perspective camera projects to an ellipse whose
+  // centre is NOT the projection of the circle's centre — the far half is
+  // foreshortened harder than the near half. The first version of this helper
+  // reported `project(centre)` plus two half-axes, which put the sampling
+  // ellipse ~a full band-width high at 12 o'clock, so an angular scan read the
+  // BEZEL (#9C9186) at the top of a ring that is drawn correctly. Fit the
+  // ellipse from its four projected extremes instead: centre = the midpoint of
+  // the projected +/-X and +/-Z points, radii = half their separations. Every
+  // px radius below is a multiple of that fitted mid ellipse, so
+  // `node tools/qv-arc.mjs <png> cx cy rx ry` lands on the band all the way
+  // round.
+  function fitEllipse(x, z, r) {
+    const l = projectPx(x - r, 0.034, z);
+    const rt = projectPx(x + r, 0.034, z);
+    const t = projectPx(x, 0.034, z - r);
+    const b = projectPx(x, 0.034, z + r);
+    return {
+      cx: Math.round((l[0] + rt[0]) / 2),
+      cy: Math.round((t[1] + b[1]) / 2),
+      rx: Math.round((rt[0] - l[0]) / 2),
+      ry: Math.round((b[1] - t[1]) / 2),
+    };
+  }
+
   function reviveRingScreen() {
     const midR = (REVIVE_RING.inner + REVIVE_RING.outer) / 2;
     const out = [];
     for (const [id, g] of reviveRigs) {
       const p = g.position;
-      const c = projectPx(p.x, 0.034, p.z);
-      const rxp = projectPx(p.x + midR, 0.034, p.z);
-      const rzp = projectPx(p.x, 0.034, p.z + midR);
+      const e = fitEllipse(p.x, p.z, midR);
+      const outE = fitEllipse(p.x, p.z, REVIVE_RING.outer);
+      // 0.8x the mid ellipse — the radius the §17 "charcoal backing disc"
+      // behind the fill is sampled at. Inside the opaque annulus by design
+      // (0.8 * 1.22 = 0.976 u, plate opaque from 0.96 u).
+      const inE = fitEllipse(p.x, p.z, midR * 0.8);
+      // The plate's own outer track, between the band and the bezel.
+      const trE = fitEllipse(p.x, p.z, midR * 1.09);
       out.push({
         id,
-        cx: c[0],
-        cy: c[1],
-        rx: Math.abs(rxp[0] - c[0]),
-        ry: Math.abs(rzp[1] - c[1]),
+        cx: e.cx,
+        cy: e.cy,
+        rx: e.rx,
+        ry: e.ry,
         innerU: REVIVE_RING.inner,
         outerU: REVIVE_RING.outer,
-        outerPx: Math.abs(projectPx(p.x + REVIVE_RING.outer, 0.034, p.z)[0] - c[0]) * 2,
+        plateInnerU: REVIVE_RING.plateInner,
+        plateOpaqueU: REVIVE_RING.plateOpaque,
+        plateOuterU: REVIVE_RING.plateOuter,
+        // qv-arc argument sets, ready to paste.
+        band: [e.cx, e.cy, e.rx, e.ry],
+        plateInnerBand: [inE.cx, inE.cy, inE.rx, inE.ry],
+        plateOuterBand: [trE.cx, trE.cy, trE.rx, trE.ry],
+        outerPx: outE.rx * 2,
       });
     }
+    return out;
+  }
+
+  function identityU() {
+    const out = {};
+    // Walk the whole stage, not just this layer's adopted critters: the
+    // Healer's rig belongs to the scene, and the player is the character the
+    // revive ring is drawn around most often.
+    stage.scene.traverse((o) => {
+      if (o.name !== 'identity-ring') return;
+      const band = o.children.find((m) => m.geometry?.parameters?.width);
+      if (!band) return;
+      const outFrac = band.material?.uniforms?.uBandB?.value?.y ?? 1;
+      let owner = o.parent;
+      while (owner && !String(owner.name).startsWith('critter-')) owner = owner.parent;
+      const key = owner ? owner.name.slice('critter-'.length) : `ring${Object.keys(out).length}`;
+      out[key] =
+        Math.round((band.geometry.parameters.width / 2) * outFrac * o.scale.x * 1000) / 1000;
+    });
     return out;
   }
 
@@ -720,6 +971,12 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       mark: allySys.getMark(),
       reviveRings: reviveRigs.size,
       reviveRingScreen: reviveRingScreen(),
+      identityU: identityU(),
+      // Post-bloom instrument pass: present => the revive ring is drawn after
+      // UnrealBloomPass and before OutputPass (see InkOverlayPass).
+      inkPass: inkPass ? stage.composer.passes.indexOf(inkPass) : -1,
+      inkPassEnabled: inkPass ? inkPass.enabled : false,
+      inkPasses: stage.composer?.passes?.map((p) => p.constructor.name) ?? [],
       zones: zoneRigs.size,
       wedges: wedges.length,
       motes: motes.length,

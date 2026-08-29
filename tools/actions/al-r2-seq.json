@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);'tp'"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"window.__EV=[];['downed','ally_rescue','revive_start','revive','revive_break','defeat'].forEach(t=>__echoes.on(t,e=>window.__EV.push(Object.assign({type:t},e))));'hooked'"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0);'player down'"},
+  {"type":"eval","code":"window.__t=setInterval(()=>{const s=__echoes.state();const c=s.party_ai.channels[0];console.log('SEQ '+JSON.stringify({tick:s.tick,hp:s.party[0].hp,pct:c?c.pct:null,rev:c?c.reviver:null,drain:c?c.draining:null,ring:s.allyfx.reviveRingScreen[0]?s.allyfx.reviveRingScreen[0].band:null,ev:window.__EV.map(e=>e.type+'@'+e.tick+(e.pct!==undefined?':'+e.pct:'')+(e.hp!==undefined?':hp'+e.hp:''))}));},400);'armed'"},
+  {"type":"wait","ms":200}
+]

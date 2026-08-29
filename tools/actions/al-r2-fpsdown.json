@@ -1,0 +1,11 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"[[2.5,1.5],[-2.5,1.5],[3,-2],[-3,-2],[1.5,3],[-1.5,3]].map((p,i)=>__echoes.cmd('spawn', i%2? 'mantis':'boar', p[0], p[1]))"},
+  {"type":"eval","code":"window.__un=__echoes.on('hit',ev=>{__echoes.cmd('setHp',ev.target,1);});'immortal'"},
+  {"type":"eval","code":"window.__d=setInterval(()=>{const s=__echoes.state();if(s.party[3].hp>0)__echoes.cmd('setHp',3,0);},300);'archer pinned down: the ink pass runs the whole window'"},
+  {"type":"wait","ms":3000},
+  {"type":"eval","code":"window.__f=[];window.__t=setInterval(()=>{window.__f.push(__echoes.fps);},250);'armed'"},
+  {"type":"wait","ms":8000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__t);clearInterval(window.__d);const f=window.__f||[];const s=__echoes.state();const sorted=[...f].sort((a,b)=>a-b);return{n:f.length,median:sorted[Math.floor(sorted.length/2)],mean:Math.round(f.reduce((a,b)=>a+b,0)/f.length*10)/10,min:Math.min(...f),max:Math.max(...f),rings:s.allyfx.reviveRings,inkOn:s.allyfx.inkPassEnabled,enemies:s.enemies.length}})()"}
+]

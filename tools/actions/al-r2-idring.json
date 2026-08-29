@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"[0,1,2,3].map(i=>__echoes.cmd('setHp',i,0));'all four down'"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"({identityU:__echoes.state().allyfx.identityU,rings:__echoes.state().allyfx.reviveRingScreen.length})"}
+]
