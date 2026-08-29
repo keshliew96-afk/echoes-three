@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "(()=>{const log=[]; window.__vq=log; for(const t of ['wave_start','room_cleared','death']) __echoes.on(t,ev=>log.push(ev)); return {room:__echoes.state().room, tick:__echoes.tick}})()" },
+  { "type": "wait", "ms": 12500 },
+  { "type": "eval", "code": "(()=>{const r=__echoes.state().room; return {afterTimer:{waveIndex:r.waveIndex,alive:r.aliveEnemies,pending:r.pendingSpawns,cleared:r.cleared}, tick:__echoes.tick, waveStarts:window.__vq.filter(e=>e.type==='wave_start').map(e=>({tick:e.tick,index:e.index}))}})()" },
+  { "type": "wait", "ms": 1200 },
+  { "type": "eval", "code": "(()=>{return {killed:__echoes.cmd('killAllEnemies'), tick:__echoes.tick}})()" },
+  { "type": "wait", "ms": 3000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); const r=s.room; const cl=window.__vq.find(e=>e.type==='room_cleared'); return {final:{waveIndex:r.waveIndex,wavesTotal:r.wavesTotal,alive:r.aliveEnemies,pending:r.pendingSpawns,cleared:r.cleared}, eshots:s.eshots.length, enemiesRaw:s.enemies.map(e=>({kind:e.kind,state:e.state,hp:e.hp})), clearedEv:cl?cl.tick:null, tick:__echoes.tick}})()" }
+]

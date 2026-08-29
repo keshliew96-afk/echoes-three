@@ -1,0 +1,10 @@
+[
+  {"type":"eval","code":"window.__probe={ev:[]};__echoes.on('*',e=>{if(['hit','death','hitstop','enemy_spawn','sound'].includes(e.type))__probe.ev.push(e)});__echoes.cmd('teleport',5,2)"},
+  {"type":"eval","code":"__echoes.cmd('spawn','boar',8.5,2)"},
+  {"type":"mousemove","x":1250,"y":420},
+  {"type":"wait","ms":200},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":2500},
+  {"type":"mouseup","button":"right"},
+  {"type":"eval","code":"({probe:__probe.ev.map(e=>({ty:e.type,t:e.tick,kind:e.kind,amt:e.amount,kb:e.kb,ticks:e.ticks,slot:e.slot})),boars:__echoes.state().enemies.filter(e=>e.kind==='boar').length})"}
+]

@@ -1,0 +1,5 @@
+[
+  {"type":"wait","ms":800},
+  {"type":"eval","code":"({ v: window.__echoes.version, keys: Object.keys(window.__echoes), tick: window.__echoes.tick, fps: window.__echoes.fps, seed: window.__echoes.seed })"},
+  {"type":"eval","code":"JSON.stringify(window.__echoes.state()).slice(0,3000)"}
+]

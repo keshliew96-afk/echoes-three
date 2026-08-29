@@ -1,0 +1,11 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('giveSkill','nova_bloom'); c('giveSkill','sanctuary'); c('teleport', 0, 0); for (let i = 0; i < 6; i++) c('spawn','dummy', -2 + i * 0.8, 1.6); c('setHp', 0, 0.4); c('setHp', 1, 0.4); c('setHp', 3, 0.4); return window.__echoes.entityCount; })()" },
+  { "type": "mousemove", "x": 1000, "y": 550 },
+  { "type": "keydown", "key": "KeyW" },
+  { "type": "mousedown", "button": "right" },
+  { "type": "eval", "code": "(() => { const ks = ['Digit1','Digit2','Digit3','Digit4','Space']; window.__qFps = []; let n = 0; window.__qIv = setInterval(() => { n++; for (const k of ks) { window.dispatchEvent(new KeyboardEvent('keydown', { code: k })); window.dispatchEvent(new KeyboardEvent('keyup', { code: k })); } if (n % 4 === 0) window.__qFps.push(window.__echoes.fps); }, 250); return 'spamming'; })()" },
+  { "type": "wait", "ms": 11000 },
+  { "type": "eval", "code": "(() => { clearInterval(window.__qIv); const f = window.__qFps; return { samples: f, min: Math.min(...f), mean: Math.round(f.reduce((a, b) => a + b, 0) / f.length * 10) / 10, tick: window.__echoes.tick, ents: window.__echoes.entityCount, denials: window.__echoes.events.filter(e => e.type === 'intent_denied').length }; })()" },
+  { "type": "mouseup", "button": "right" },
+  { "type": "keyup", "key": "KeyW" }
+]

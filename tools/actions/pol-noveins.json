@@ -1,0 +1,5 @@
+[
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(() => { const { root } = window.__arenaProbe; let hid = []; root.traverse((o) => { if (o.isMesh && !o.isInstancedMesh && o.material && o.material.color && o.material.color.b > 1.4 && o.material.toneMapped === false && !o.isSprite) { o.visible = false; hid.push(o.geometry.type); } }); return { hid }; })()" },
+  { "type": "wait", "ms": 300 }
+]

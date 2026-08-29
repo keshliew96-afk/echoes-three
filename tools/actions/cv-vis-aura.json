@@ -1,0 +1,3 @@
+[
+  { "type": "eval", "code": "(async()=>{const E=window.__echoes;const tk=n=>new Promise(res=>{const t0=E.tick;const iv=setInterval(()=>{if(E.tick>=t0+n){clearInterval(iv);res()}},4)});const st=()=>E.state();const log={};log.g=E.cmd('giveSkill','warding_aura');const P=st().party;const ids={0:P[0].id};for(const p of P.slice(1))ids[p.partyIndex]=p.id;E.cmd('teleport',-1.9,-0.2);E.cmd('setHp',ids[1],0.5);await tk(40);await new Promise(res=>{const off=E.on('aura_pulse',()=>{off();res()})});log.fx=st().skillfx;return log})()" }
+]

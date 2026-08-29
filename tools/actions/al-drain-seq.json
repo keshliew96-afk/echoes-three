@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "window.__L=[];for(const t of ['downed','ally_rescue','revive_start','revive_break','revive_drain_end','rally']) __echoes.on(t,ev=>window.__L.push(ev));'log'" },
+  { "type": "eval", "code": "__echoes.cmd('teleport',2.15,-2.2);__echoes.cmd('setHp',3,0)" },
+  { "type": "wait", "ms": 4200 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'pre-break',ch:s.party_ai.channels,ring:s.allyfx.reviveRingScreen,log:window.__L.map(e=>e.type+'@'+e.tick)}})()" },
+  { "type": "key", "key": "KeyR", "ms": 60 },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'post-break',ch:s.party_ai.channels,ring:s.allyfx.reviveRingScreen,breaks:window.__L.filter(e=>e.type==='revive_break')}})()" }
+]

@@ -1,0 +1,11 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0)" },
+  { "type": "eval", "code": "window.__un=__echoes.on('hit',ev=>{__echoes.cmd('setHp',ev.target,1);});window.__ids=[[1.2,0.6],[1.5,-0.8],[3.4,0.2]].map(p=>__echoes.cmd('spawn','dummy',p[0],p[1]));window.__ids" },
+  { "type": "eval", "code": "window.__K={cast:[],basic:[],hit:[],zone:[]};__echoes.on('ally_cast',e=>window.__K.cast.push(e));__echoes.on('ally_basic',e=>window.__K.basic.push(e));__echoes.on('hit',e=>{if(e.source)window.__K.hit.push(e);});__echoes.on('azone_tick',e=>window.__K.zone.push(e));'logging'" },
+  { "type": "wait", "ms": 20000 },
+  { "type": "eval", "code": "(()=>{const K=window.__K;const byId={};for(const c of K.cast){(byId[c.skill]=byId[c.skill]||[]).push(c);}const cd={};for(const [k,v] of Object.entries(byId)){const t=v.map(x=>x.tick).sort((a,b)=>a-b);const gaps=[];for(let i=1;i<t.length;i++)gaps.push(t[i]-t[i-1]);cd[k]={casts:t.length,cdSec:v[0].cd,expectedTicks:Math.round(v[0].cd*60),gaps,power:v[0].power,shape:v[0].shape,cls:v[0].classId};}return{skillCooldowns:cd}})()" },
+  { "type": "eval", "code": "(()=>{const K=window.__K;const dmg={};for(const h of K.hit){const d=dmg[h.source]=dmg[h.source]||{amounts:{},n:0};d.amounts[h.amount]=(d.amounts[h.amount]||0)+1;d.n++;}return{damageBySource:dmg}})()" },
+  { "type": "eval", "code": "(()=>{const K=window.__K;const b={};for(const e of K.basic){(b[e.classId]=b[e.classId]||[]).push(e.tick);}const out={};for(const [k,t] of Object.entries(b)){t.sort((a,b)=>a-b);const gaps=[];for(let i=1;i<t.length;i++)gaps.push(t[i]-t[i-1]);const min=Math.min(...gaps);out[k]={n:t.length,minGapTicks:min,modeGap:gaps.sort((a,b)=>gaps.filter(x=>x===a).length-gaps.filter(x=>x===b).length).pop()};}return{basicIntervals:out,expected:{tank:39,swordsman:21,archer:24}}})()" },
+  { "type": "eval", "code": "(()=>{const K=window.__K;const z={};for(const e of K.zone){(z[e.skill]=z[e.skill]||[]).push(e.n);}return{zoneTicks:z,castShapes:[...new Set(K.cast.map(c=>c.classId+':'+c.skill+':'+c.shape))]}})()" },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{fps:__echoes.fps,anims:s.allyfx.anims,zones:s.allyfx.zones,ents:__echoes.entityCount,hits:__echoes.stats.hits}})()" }
+]

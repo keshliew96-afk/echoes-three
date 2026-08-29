@@ -1,0 +1,4 @@
+[
+  { "type": "eval", "code": "(() => { const s = window.__echoes.state(); return { version: window.__echoes.version, seed: window.__echoes.seed, tick: window.__echoes.tick, scene: s.scene, player: s.player, allies: s.allies, skills: s.skills, healOverride: s.healOverride, keys: Object.keys(s) }; })()" },
+  { "type": "eval", "code": "(() => { const s = window.__echoes.state(); return { party: (s.allies||[]).map(a=>({id:a.id,classId:a.classId,partyIndex:a.partyIndex,x:a.x,z:a.z,hp:a.hp,maxHp:a.maxHp})), playerFull: s.player }; })()" }
+]

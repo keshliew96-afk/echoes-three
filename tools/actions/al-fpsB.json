@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);__echoes.cmd('setHp',0,0)"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"({label:'player-downed-ring',fps:__echoes.fps,ents:__echoes.entityCount,ch:__echoes.state().party_ai.channels})"}
+]

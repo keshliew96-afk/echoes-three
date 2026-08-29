@@ -1,0 +1,5 @@
+[
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(() => { const { root, emitters } = window.__arenaProbe; const em = emitters.find(e => e.kind === 'monolith'); let hid = 0; root.traverse((o) => { if (o.isSprite && Math.hypot(o.position.x - em.x, o.position.z - em.z) < 1.6) { o.visible = false; hid++; } }); return { hid }; })()" },
+  { "type": "wait", "ms": 300 }
+]

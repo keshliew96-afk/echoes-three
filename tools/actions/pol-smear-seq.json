@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -5, 1)"},
+  {"type":"wait","ms":400},
+  {"type":"mousemove","x":1250,"y":460},
+  {"type":"wait","ms":120},
+  {"type":"eval","code":"(()=>{const tap=(ms)=>{setTimeout(()=>window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',key:' ',bubbles:true,cancelable:true})),ms);setTimeout(()=>window.dispatchEvent(new KeyboardEvent('keyup',{code:'Space',key:' ',bubbles:true,cancelable:true})),ms+140)};for(let i=0;i<8;i++)tap(200+i*1500);return 'taps-scheduled'})()"}
+]

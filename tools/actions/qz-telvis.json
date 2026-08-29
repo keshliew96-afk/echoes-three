@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',7,4)"},
+  {"type":"eval","code":"__echoes.cmd('spawn','mantis',9.5,4)"},
+  {"type":"wait","ms":80}
+]

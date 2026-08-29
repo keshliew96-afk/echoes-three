@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"const s=__echoes.state();s.party.slice(1).forEach(a=>__echoes.cmd('setHp',a.id,0));__echoes.cmd('teleport',5,7)"},
+  {"type":"eval","code":"__echoes.cmd('spawn','boar',5,2.5);__echoes.cmd('spawn','mantis',3.2,4.5)"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"({enemies:__echoes.state().enemies.map(e=>({id:e.id,kind:e.kind,x:e.x,z:e.z}))})"}
+]

@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "(()=>{__echoes.cmd('teleport',0,0); const b=__echoes.cmd('spawn','boar',2.6,0.6); const m=__echoes.cmd('spawn','mantis',3.4,-1.2); return {b,m}})()" },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); const e=s.enemies.find(e=>e.kind==='boar'); window.__b=e; return e})()" },
+  { "type": "mousemove", "x": 1060, "y": 480 },
+  { "type": "mousedown", "button": "right" }
+]

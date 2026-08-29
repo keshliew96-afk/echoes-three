@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('teleport', 0.1, -1.0); c('setHp', 1, 0.3); window.__qT = window.__echoes.tick; return { T: window.__qT }; })()" },
+  { "type": "mousemove", "x": 300, "y": 450 },
+  { "type": "wait", "ms": 150 },
+  { "type": "key", "key": "Digit1", "ms": 40 }
+]

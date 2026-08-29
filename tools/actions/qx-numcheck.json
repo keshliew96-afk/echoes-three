@@ -1,0 +1,11 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('giveSkill','spirit_bolt'); c('giveSkill','guardian_bond'); c('teleport', 0, -1.5); c('spawn','dummy', 1.3, -1.5); c('setHp', 1, 0.5); c('setHp', 3, 0.5); return 1; })()" },
+  { "type": "mousemove", "x": 1100, "y": 450 },
+  { "type": "wait", "ms": 150 },
+  { "type": "key", "key": "Digit3", "ms": 40 },
+  { "type": "wait", "ms": 420 },
+  { "type": "eval", "code": "(() => [...document.querySelectorAll('.dmg-num')].filter(e => e.style.visibility === 'visible').map(e => ({ text: e.textContent, color: getComputedStyle(e).color })))()" },
+  { "type": "key", "key": "Digit4", "ms": 40 },
+  { "type": "wait", "ms": 250 },
+  { "type": "eval", "code": "(() => [...document.querySelectorAll('.dmg-num')].filter(e => e.style.visibility === 'visible').map(e => ({ text: e.textContent, color: getComputedStyle(e).color })))()" }
+]

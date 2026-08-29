@@ -20,7 +20,7 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { ARENA } from '../core/constants.js';
-import { FLOWER_TINTS } from './colors.js';
+import { FLOWER_TINTS, hslColor } from './colors.js';
 import { toonMaterial } from '../render/toon.js';
 import { pathClearance } from './variants.js';
 
@@ -132,11 +132,26 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
   root.add(grass);
 
   // --- Flowers: warm-tinted blossoms in loose clusters. Small and muted (see
-  // FLOWER_TINTS) — near-white blossoms read as scattered confetti.
+  // FLOWER_TINTS) — near-white blossoms read as scattered confetti. Each
+  // blossom sits on a visible green STEM (a second instanced layer sharing the
+  // same transforms): baseline-v030 F7 measured the bare floating blossoms as
+  // detached orange berries hovering in mid-air.
   const flowerGeo = new IcosahedronGeometry(0.042, 0);
-  flowerGeo.translate(0, 0.075, 0);
+  flowerGeo.translate(0, 0.1, 0);
   const flowers = new InstancedMesh(flowerGeo, toonMaterial({ color: '#FFFFFF' }), spec.flowers);
   flowers.frustumCulled = false;
+  const stemGeo = mergeGeometries([
+    new ConeGeometry(0.014, 0.115, 5, 1, true).translate(0, 0.0575, 0),
+    // A pair of tiny leaf cones so the stem reads as a plant, not a pin.
+    new ConeGeometry(0.02, 0.055, 4, 1, true).rotateZ(1.05).translate(0.026, 0.038, 0),
+    new ConeGeometry(0.017, 0.05, 4, 1, true).rotateZ(-1.15).translate(-0.024, 0.05, 0.008),
+  ]);
+  const stems = new InstancedMesh(
+    stemGeo,
+    toonMaterial({ color: hslColor(g.h + 8, Math.min(1, g.s + 0.05), Math.max(0.05, g.l * 0.72)) }),
+    spec.flowers
+  );
+  stems.frustumCulled = false;
   const clusterN = Math.max(3, Math.round(spec.flowers / 14));
   const clusters = [];
   for (let i = 0; i < clusterN; i++) {
@@ -158,11 +173,15 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
     s.set(sc, sc, sc);
     m.compose(p, q, s);
     flowers.setMatrixAt(placedF, m);
+    stems.setMatrixAt(placedF, m);
     flowers.setColorAt(placedF, FLOWER_TINTS[Math.floor(r(0, FLOWER_TINTS.length))]);
     placedF += 1;
   }
   flowers.count = placedF;
+  stems.count = placedF;
   if (flowers.instanceColor) flowers.instanceColor.needsUpdate = true;
+  stems.instanceMatrix.needsUpdate = true;
+  root.add(stems);
   root.add(flowers);
 
   return { grassCount: placed, flowerCount: placedF };

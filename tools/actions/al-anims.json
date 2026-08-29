@@ -1,0 +1,38 @@
+[
+  {
+    "type": "eval",
+    "code": "__echoes.cmd('teleport',0,0)"
+  },
+  {
+    "type": "eval",
+    "code": "window.__un=__echoes.on('hit',ev=>{__echoes.cmd('setHp',ev.target,1);});window.__ids=[[5.5,1.0],[5.8,-1.4],[5.2,2.4]].map(p=>__echoes.cmd('spawn','boar',p[0],p[1]));window.__ids"
+  },
+  {
+    "type": "eval",
+    "code": "window.__A=[];window.__at=setInterval(()=>{const s=__echoes.state();window.__A.push(s.allyfx.anims.join('|'));},60);'sampling'"
+  },
+  {
+    "type": "wait",
+    "ms": 5000
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const m=__echoes.state().party[3];window.__ab=__echoes.cmd('spawn','boar',m.x,m.z);return{archerAt:[m.x,m.z],boar:window.__ab}})()"
+  },
+  {
+    "type": "wait",
+    "ms": 6000
+  },
+  {
+    "type": "eval",
+    "code": "window.__un();[1,2,3].map(id=>__echoes.cmd('setHp',id,0))"
+  },
+  {
+    "type": "wait",
+    "ms": 1500
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{clearInterval(window.__at);const A=window.__A;const seen={tank:{},swordsman:{},archer:{}};for(const row of A){for(const part of row.split('|')){const [k,v]=part.split(':');if(seen[k])seen[k][v]=(seen[k][v]||0)+1;}}return{samples:A.length,clipFrames:seen,required:['walk','cast','hurt','downed'],allyHits:__echoes.events.filter(e=>e.type==='hit'&&e.kind==='ally').length}})()"
+  }
+]

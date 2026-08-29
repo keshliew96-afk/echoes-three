@@ -1,0 +1,16 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0)" },
+  { "type": "eval", "code": "window.__un=__echoes.on('hit',ev=>{__echoes.cmd('setHp',ev.target,1);});window.__ids=[[3.2,1.2],[3.6,-1.4]].map(p=>__echoes.cmd('spawn','dummy',p[0],p[1]));window.__ids" },
+  { "type": "eval", "code": "window.__R=[];for(const t of ['rally','ally_regroup','rally_end','ally_basic','ally_cast','intent','revive_break']) __echoes.on(t,ev=>window.__R.push(ev));'logging'" },
+  { "type": "wait", "ms": 3500 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();__echoes.cmd('teleport',-4.5,3.5);return{phase:'pre-rally',allies:s.party_ai.allies.map(a=>({i:a.partyIndex,st:a.state,tg:a.target,x:a.x,z:a.z})),attacksSoFar:window.__R.filter(e=>e.type==='ally_basic'||e.type==='ally_cast').length}})()" },
+  { "type": "wait", "ms": 250 },
+  { "type": "eval", "code": "window.__rt=__echoes.tick;'armed'" },
+  { "type": "key", "key": "KeyR", "ms": 60 },
+  { "type": "wait", "ms": 250 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();const r=window.__R.filter(e=>e.type==='rally');return{phase:'just-after-R',rallyEvents:r,rallyPoint:s.party_ai.rallyPoint,allies:s.party_ai.allies.map(a=>({i:a.partyIndex,st:a.state,tg:a.target,d:Math.round(100*Math.hypot(a.x-s.party[0].x,a.z-s.party[0].z))/100}))}})()" },
+  { "type": "wait", "ms": 3000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'regrouped',allies:s.party_ai.allies.map(a=>({i:a.partyIndex,st:a.state,tg:a.target,grace:a.graceUntilTick,d:Math.round(100*Math.hypot(a.x-s.party_ai.rallyPoint.x,a.z-s.party_ai.rallyPoint.z))/100})),regroups:window.__R.filter(e=>e.type==='ally_regroup').map(e=>({t:e.tick,i:e.partyIndex,dist:e.dist,graceTicks:e.graceTicks,until:e.graceUntilTick}))}})()" },
+  { "type": "wait", "ms": 3000 },
+  { "type": "eval", "code": "(()=>{const R=window.__R;const rally=R.find(e=>e.type==='rally');const reg=R.filter(e=>e.type==='ally_regroup');const end=R.filter(e=>e.type==='rally_end');const atk=R.filter(e=>(e.type==='ally_basic'||e.type==='ally_cast'));const during=atk.filter(e=>e.tick>=rally.tick&&e.tick<=Math.max(...end.map(x=>x.tick)));const graceLen=reg.map(r=>{const e=end.find(x=>x.id===r.id&&x.tick>=r.tick);return e?e.tick-r.tick:null});return{rallyTick:rally.tick,rallyAt:{x:rally.x,z:rally.z},alliesInEvent:rally.allies,regroups:reg.map(e=>({t:e.tick,i:e.partyIndex,dist:e.dist,graceTicks:e.graceTicks})),rallyEnds:end.map(e=>({t:e.tick,i:e.partyIndex})),graceLengthTicks:graceLen,expectedGrace:60,attacksDuringRallyWindow:during.length,totalAttacks:atk.length,stateNow:__echoes.state().party_ai.allies.map(a=>a.state)}})()" }
+]

@@ -1,0 +1,21 @@
+[
+  {"type":"eval","code":"window.__probe={ev:[]};__echoes.on('*',e=>{if(['room_soft_fail','room_cleared','death','waystone_spawn'].includes(e.type))__probe.ev.push(e)});__echoes.state().room"},
+  {"type":"eval","code":"__echoes.cmd('setHp',__echoes.state().room.waystone.id,0)"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"({afterKill:__echoes.state().room,sf:__probe.ev.map(e=>({ty:e.type,t:e.tick}))})"},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":1000},
+  {"type":"eval","code":"__echoes.cmd('startWave')"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":1000},
+  {"type":"eval","code":"__echoes.cmd('startWave')"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":1000},
+  {"type":"eval","code":"__echoes.cmd('startWave')"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"({final:__echoes.state().room,ev:__probe.ev.map(e=>({ty:e.type,t:e.tick,kind:e.kind})),playerAlive:__echoes.state().party[0].hp}) "}
+]

@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "(() => { const s = window.__echoes.state(); return { party: s.party, room: s.room }; })()" },
+  { "type": "wait", "ms": 6000 },
+  { "type": "eval", "code": "(() => ({ fpsAfterIdle: window.__echoes.fps, tick: window.__echoes.tick }))()" }
+]

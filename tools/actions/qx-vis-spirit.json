@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('giveSkill','spirit_bolt'); c('teleport', -1.5, 0.5); c('spawn','dummy', 2.0, 0.5); return 1; })()" },
+  { "type": "mousemove", "x": 1300, "y": 450 },
+  { "type": "wait", "ms": 150 },
+  { "type": "key", "key": "Digit3", "ms": 40 }
+]

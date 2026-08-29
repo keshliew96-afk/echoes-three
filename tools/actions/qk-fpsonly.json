@@ -1,0 +1,4 @@
+[
+ {"type":"eval","code":"(()=>{window.__rafFps=(ms)=>new Promise(res=>{let n=0;const t0=performance.now();const loop=()=>{const now=performance.now();n++;if(now-t0<ms)requestAnimationFrame(loop);else res({frames:n,fps:+(n/((now-t0)/1000)).toFixed(1)});};requestAnimationFrame(loop);});return 'ok';})()"},
+ {"type":"eval","code":"window.__rafFps(2500)"}
+]

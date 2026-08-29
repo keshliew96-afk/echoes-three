@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,5)"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,50)"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"__echoes.cmd('spawn','mantis',3.0,5)"},
+  {"type":"eval","code":"window.__ev=[];__echoes.on('telegraph_resolve',e=>window.__ev.push(e.tick+' TR'));__echoes.on('hit',e=>{if(e.target===0)window.__ev.push(e.tick+' HIT')});__echoes.on('eshot_despawn',e=>window.__ev.push(e.tick+' ESD '+e.cause));'armed'"},
+  {"type":"wait","ms":16000},
+  {"type":"eval","code":"(!window.__ev?{reloaded:1}:{ev:window.__ev, en:__echoes.state().enemies.map(e=>e.id+' '+e.x+','+e.z)})"}
+]

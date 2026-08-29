@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__sleep=(ms)=>new Promise(r=>setTimeout(r,ms));window.__mark=()=>__echoes.events.length;window.__since=(n,t)=>__echoes.events.slice(n).filter(e=>!t||e.type===t);window.__press=(c)=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:c,bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:c,bubbles:true}));};window.__move=async(x,y)=>{window.dispatchEvent(new MouseEvent('mousemove',{clientX:x,clientY:y,bubbles:true,cancelable:true}));await window.__sleep(35);return window.__echoes.state().party[0].aim;};window.__aim=async(wx,wz)=>{const e=window.__echoes;let sx=innerWidth/2,sy=innerHeight/2;let a=await window.__move(sx,sy);for(let i=0;i<25&&a;i++){const d=Math.hypot(wx-a.x,wz-a.z);if(d<0.02)return{ok:true,sx,sy,aim:a,i,d};const h=20;const ax=await window.__move(sx+h,sy);const ay=await window.__move(sx,sy+h);const j11=(ax.x-a.x)/h,j12=(ay.x-a.x)/h,j21=(ax.z-a.z)/h,j22=(ay.z-a.z)/h;const det=j11*j22-j12*j21;if(Math.abs(det)<1e-12)break;const ex=wx-a.x,ez=wz-a.z;let dsx=(j22*ex-j12*ez)/det,dsy=(-j21*ex+j11*ez)/det;const L=Math.hypot(dsx,dsy),cap=400;if(L>cap){dsx*=cap/L;dsy*=cap/L;}sx=Math.max(3,Math.min(innerWidth-3,sx+dsx));sy=Math.max(3,Math.min(innerHeight-3,sy+dsy));a=await window.__move(sx,sy);}return{ok:false,sx,sy,aim:a};};window.__equip=(ids)=>{const slots=ids.map(id=>id?{id,remaining:0}:null);while(slots.length<4)slots.push(null);return __echoes.cmd('restoreSkillState',{slots,override:null});};'ready'})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=__echoes,c=e.cmd;c('killAllEnemies');window.__equip(['sanctuary','warding_aura',null,null]);c('teleport',0,0);await window.__sleep(500);c('placeAlly',1,0.6,0.3);c('placeAlly',2,-0.6,0.3);c('placeAlly',3,0.1,-0.7);await window.__sleep(400);const st=e.state();const I={};for(const p of st.party)I[p.partyIndex??0]=p.id;for(const k of[0,1,2,3])c('setHp',I[k],0.3);await window.__sleep(80);window.__press('Digit1');await window.__sleep(1000);return{fired:'sanctuary',zones:e.state().zones};})()"
+ }
+]

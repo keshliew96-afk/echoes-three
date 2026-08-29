@@ -1,0 +1,5 @@
+[
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(()=>{const {stage,root}=window.__arenaProbe;const cam=stage.camera;const w=window.innerWidth,h=window.innerHeight;const out=[];root.traverse(o=>{if(!o.isSprite)return;const v=o.getWorldPosition(new o.position.constructor());v.project(cam);out.push([o.material.map&&o.material.map.image&&o.material.map.image.width, Math.round((v.x*0.5+0.5)*w), Math.round((-v.y*0.5+0.5)*h), +o.scale.x.toFixed(2)]);});return JSON.stringify(out.filter(a=>a[1]>150&&a[1]<560&&a[2]>420&&a[2]<720));})()" },
+  { "type": "eval", "code": "JSON.stringify(window.__arenaProbe.pick(351,590))" }
+]

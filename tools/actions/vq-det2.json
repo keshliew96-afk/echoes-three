@@ -1,0 +1,3 @@
+[
+  { "type": "eval", "code": "(()=>{const tel=[]; const un=__echoes.on('spawn_telegraph',ev=>tel.push([ev.wave,ev.etype,ev.x,ev.z])); let guard=0; while(__echoes.cmd('startWave')!==null && guard<10) guard++; un(); const boot=__echoes.events.filter(e=>e.type==='spawn_telegraph').map(e=>[e.wave,e.etype,e.x,e.z]); const seen={}; for(const r of boot.concat(tel)) seen[r.join('|')]=r; const rows=Object.values(seen).sort((a,b)=>a[0]-b[0]||String(a).localeCompare(String(b))); const r=__echoes.state().room; return {seed:__echoes.seed, waveSizes:r.waveSizes, wavesTotal:r.wavesTotal, composition:rows}})()" }
+]

@@ -1,0 +1,6 @@
+[
+  { "type": "mousemove", "x": 1150, "y": 450 },
+  { "type": "eval", "code": "(()=>{__echoes.cmd('teleport',7,0); const rec={starts:[],resolves:[],fires:[],hits:[],immunes:[]}; window.__rec=rec; __echoes.on('telegraph_start',e=>rec.starts.push(e)); __echoes.on('telegraph_resolve',e=>rec.resolves.push(e)); __echoes.on('enemy_fire',e=>rec.fires.push(e)); __echoes.on('hit',e=>rec.hits.push(e)); __echoes.on('hit_immune',e=>rec.immunes.push(e)); const id=__echoes.cmd('spawn','mantis',10.4,0); return {mantis:id, hp0:__echoes.state().party[0].hp, playerId:__echoes.state().party[0].id}})()" },
+  { "type": "wait", "ms": 3000 },
+  { "type": "eval", "code": "(()=>{const r=window.__rec; const s=__echoes.state(); const pairs=r.starts.map(st=>{const f=r.fires.find(f=>f.id===st.id && r.resolves.some(rv=>rv.id===st.id)); return {startTick:st.tick, resolveTick:st.resolveTick, promisedTicks:st.resolveTick-st.tick, x:st.x, z:st.z, playerTargeted:st.playerTargeted}}); return {pairs, resolves:r.resolves.map(e=>({tick:e.tick,id:e.id})), hitsOnPlayer:r.hits.filter(h=>h.target===s.party[0].id||h.id===s.party[0].id), allHits:r.hits.slice(0,6), immunes:r.immunes.length, hpNow:s.party[0].hp}})()" }
+]

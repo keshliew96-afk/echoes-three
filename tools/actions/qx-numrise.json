@@ -1,0 +1,17 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('setHp', 0, 0.3); return 1; })()" },
+  { "type": "key", "key": "Digit2", "ms": 40 },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => { const els = [...document.querySelectorAll('.dmg-num')].filter(e => e.style.display !== 'none' && e.textContent.includes('+')); window.__qN = els.map(e => ({ text: e.textContent, top: e.getBoundingClientRect().top, color: getComputedStyle(e).color })); return window.__qN; })()" },
+  { "type": "wait", "ms": 250 },
+  { "type": "eval", "code": "(() => { const els = [...document.querySelectorAll('.dmg-num')].filter(e => e.style.display !== 'none' && e.textContent.includes('+')); return { later: els.map(e => ({ text: e.textContent, top: e.getBoundingClientRect().top, color: getComputedStyle(e).color })), earlier: window.__qN }; })()" },
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; const d = c('spawn','dummy', 1.5, 0.0); window.__qD = d; return { d }; })()" },
+  { "type": "mousemove", "x": 1000, "y": 450 },
+  { "type": "wait", "ms": 150 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "wait", "ms": 350 },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "(() => { const els = [...document.querySelectorAll('.dmg-num')].filter(e => e.style.display !== 'none' && !e.textContent.includes('+')); window.__qO = els.map(e => ({ text: e.textContent, top: e.getBoundingClientRect().top, color: getComputedStyle(e).color })); return window.__qO; })()" },
+  { "type": "wait", "ms": 250 },
+  { "type": "eval", "code": "(() => { const els = [...document.querySelectorAll('.dmg-num')].filter(e => e.style.display !== 'none' && !e.textContent.includes('+')); return { later: els.map(e => ({ text: e.textContent, top: e.getBoundingClientRect().top, color: getComputedStyle(e).color })), earlier: window.__qO }; })()" }
+]

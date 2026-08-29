@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -3.5, 1.5)"},
+  {"type":"wait","ms":500},
+  {"type":"mousemove","x":1200,"y":300},
+  {"type":"eval","code":"(()=>{const dn=(c)=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c,key:c,bubbles:true}));const up=(c)=>window.dispatchEvent(new KeyboardEvent('keyup',{code:c,key:c,bubbles:true}));window.__SM=[];let n=0;let last=performance.now();const log=()=>{const now=performance.now();const s=window.__echoes.state();const p=s.party[0];window.__SM.push([Math.round(now-last),p.dashTicksLeft,s.vfx&&s.vfx.party?s.vfx.party.smearGhosts:-1]);last=now;if(n++<400)requestAnimationFrame(log)};dn('KeyD');requestAnimationFrame(log);for(let i=0;i<4;i++){setTimeout(()=>{dn('Space');setTimeout(()=>up('Space'),110);},400+i*1500);}setTimeout(()=>up('KeyD'),6200);return 'go'})()"},
+  {"type":"wait","ms":6600},
+  {"type":"eval","code":"JSON.stringify({dashFrames: window.__SM.filter(a=>a[1]>0), maxGhosts: Math.max(...window.__SM.map(a=>a[2])), slowFrames: window.__SM.filter(a=>a[0]>90).length})"}
+]

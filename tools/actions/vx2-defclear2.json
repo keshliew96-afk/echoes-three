@@ -1,0 +1,19 @@
+[
+  {"type":"eval","code":"window.__mark='alive';window.__probe={ev:[]};__echoes.on('*',e=>{if(['room_cleared','room_soft_fail','enemy_retreat','enemy_despawn'].includes(e.type))__probe.ev.push(e)});__echoes.state().room"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":5000},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":5000},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":5000},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":5000},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"({t:'t28',mark:window.__mark,room:__echoes.state().room})"},
+  {"type":"wait","ms":8000},
+  {"type":"eval","code":"({t:'t36-final-wave',mark:window.__mark,room:__echoes.state().room})"},
+  {"type":"wait","ms":9000},
+  {"type":"eval","code":"({t:'t45plus',mark:window.__mark,room:__echoes.state().room,ev:window.__probe?__probe.ev.map(e=>({ty:e.type,t:e.tick,id:e.id,cause:e.cause})):'PROBE-LOST',enemiesLeft:__echoes.state().enemies.filter(e=>e.kind==='boar'||e.kind==='mantis').length})"}
+]

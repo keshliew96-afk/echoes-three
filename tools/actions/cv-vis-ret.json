@@ -1,0 +1,3 @@
+[
+  { "type": "eval", "code": "(async()=>{const E=window.__echoes;const tk=n=>new Promise(res=>{const t0=E.tick;const iv=setInterval(()=>{if(E.tick>=t0+n){clearInterval(iv);res()}},4)});const kd=c=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c}));const ku=c=>window.dispatchEvent(new KeyboardEvent('keyup',{code:c}));const st=()=>E.state();const log={};kd('F2');await tk(2);ku('F2');await tk(20);log.ov=st().healOverride;log.fx=st().skillfx;return log})()" }
+]

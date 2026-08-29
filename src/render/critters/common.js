@@ -582,21 +582,88 @@ function radialTexture(stops, size = 256) {
 // chain, linear 0.85 tonemaps to display luma 232, so a non-blooming band can
 // still be twice the ground's value. Pushing past it (the first attempt did)
 // makes UnrealBloomPass wash the entire frame and destroys every class hue.
+// RING REDESIGN (baseline-v030 F5). The previous ring carried its legibility in
+// a value-lifted PASTEL core (L 0.85) with the exact accent as a thin outer
+// stroke — measured on captures, the pastel dominated and the rings read
+// off-palette (Swordsman #EEC6CD "pink", Healer "mint-cyan"). The advisory asks
+// for the CLASS HUE back with legibility kept, and its own fallback names the
+// mechanism: a >=2px dark rim stroke. So the ring is now
+//
+//   [ink stroke]  [ accent band — hue-true, value-lifted to L~0.54 ]  [ink stroke]
+//
+// The band is the accent's own hue at (near) its own saturation, lifted only in
+// VALUE, so its measured hue sits within a couple of degrees of the class hex
+// (`ringBand` below + exactColor's post-chain inversion). Legibility rides the
+// two cool-dark ink strokes (INK_COOL below): ~3-5px each at the gameplay
+// camera, a hard dark edge against both the band and any ground. The Healer's band keeps her own
+// low saturation (HSV sat ~0.33) ON PURPOSE — Sage's hue 138 lives inside the
+// reserved Bright Heal analyzer band (h110-150, s>0.35), and staying under the
+// 0.35 sat gate is what keeps her ring from ever counting as heal output.
 const RING = Object.freeze({
-  rimIn: 0.596,
-  rimOut: 0.664,
-  coreIn: 0.664,
-  coreOut: 0.816,
-  // The dark gap between the bright core and the exact-accent stroke is 5% of
-  // the plane half-size on purpose: at 2% the core's 213-luma band bled through
-  // MSAA into the stroke and the Swordsman's ring measured #6D353F instead of
-  // #6B2E3A. 5% is ~4 px of clean separation even on the smallest ring at the
-  // most foreshortened point of the ellipse.
-  accIn: 0.876,
-  accOut: 0.962,
+  // Strokes widened (0.076 -> 0.104/0.094 of the half-size) so that at the
+  // ellipse's foreshortened top/bottom FXAA can never blend the accent band
+  // and the lit ground inside one filter neighbourhood: measured on captures,
+  // the thin-stroke rings smeared band+ink+gold-grass into 2-3 px fringes at
+  // h5-25 / s0.35-0.49 — the reserved Ember Danger band — and the party's four
+  // rings were the single largest danger-band contributor in a no-enemy frame
+  // (368 px -> 139 with rings hidden). Wider ink = every FXAA gradient is
+  // band<->ink or ink<->ground, and INK_COOL below keeps both of those safe.
+  // Strokes widened once more (inner 0.104 -> 0.116, outer 0.094 -> 0.110 of
+  // the half-size): measured on a ring scan, the Swordsman's OUTER stroke fell
+  // to ~1.5 px on the side that sits inside a brazier pool, where the bright
+  // ground and FXAA eat into it. The §17 legibility fallback is a >=2 px dark
+  // rim, so it has to survive the brightest ground in the arena.
+  inkInA: 0.564, // inner ink stroke
+  inkOutA: 0.68,
+  bandIn: 0.68, // hue-true accent band
+  bandOut: 0.852,
+  inkInB: 0.852, // outer ink stroke
+  inkOutB: 0.962,
   edge: 0.009, // antialias width, fraction of the plane half-size
   outer: 0.962, // where the ring's outermost pixel sits; sets the plane size
 });
+
+// Ring ink tone: Void Charcoal pulled toward the deep-indigo contact-shadow
+// family (env/props.js uses #101A2C for the same measured reason). Charcoal
+// itself is a WARM dark (h~17): its FXAA blend with gold-lit grass lands at
+// h22-25 / s0.36-0.38 — inside the reserved danger gate once the grade's
+// red-lift does its work. The indigo bias makes every ink<->warm-ground and
+// ink<->band gradient pass through neutral instead. Still reads as the same
+// storybook dark rim (§17's >=2 px legibility stroke).
+const INK_COOL = mix(PALETTE.voidCharcoal, '#101A2C', 0.55).getHex();
+
+// Hue-true band tone: the accent's own hue, saturation clamped into a readable
+// band (floor lifts the Tank's near-neutral 0.10 so its hue is measurable at
+// all; ceiling keeps every band under the analyzer's reserved-hue sat gates),
+// value lifted to sit above the ground.
+export function ringBand(hex) {
+  const hsl = { h: 0, s: 0, l: 0 };
+  new Color(hex).getHSL(hsl, SRGBColorSpace);
+  // PRE-COMPENSATION. The advisory asks the rings to measure back on their
+  // class-accent hexes, and the band is authored at the accent's own hue — but
+  // the post chain (warm gold key x albedo, ACES, then the grade's
+  // `c *= vec3(1.045,1.010,0.965)` red lift) rotates what actually reaches the
+  // screen. Measured on ring scans of a spawn frame, the rotation is roughly
+  // PROPORTIONAL to hue over the green/gold range and reversed near the red
+  // end, because there it is the key's missing blue that moves the hue:
+  //     Tank  #6B6157 h30   painted 30  -> measured 30.0  (deficit  0.0)
+  //     Archer#6E7A3F h72   painted 72  -> measured 63.8  (deficit  8.4)
+  //     Healer#33513C h138  painted 138 -> measured 123.1 (deficit 14.9)
+  //     Sword #6B2E3A h348  painted 340 -> measured 353.7 (SURPLUS 13.7)
+  // So the band is painted at hue + 0.11*hue over 20-200 degrees, and the
+  // wine-family accents keep a NEGATIVE rotation (-14, was -8) away from the
+  // 0-degree boundary — which is also what holds their antialias fringe against
+  // gold-lit grass out of the reserved h5-25 Ember band at the s>0.35 gate.
+  let h = hsl.h;
+  const deg = h * 360;
+  if (deg > 316 || deg < 12) h = h - 14 / 360;
+  else if (deg > 20 && deg < 200) h = h + (deg * 0.11) / 360;
+  if (h < 0) h += 1;
+  if (h > 1) h -= 1;
+  return new Color()
+    .setHSL(h, Math.min(0.24, Math.max(0.18, hsl.s)), 0.54, SRGBColorSpace)
+    .getHex();
+}
 
 // Additive halo shaped like the ring, peaking over the bright core and dying
 // out before the exact-accent stroke (so the stroke stays measurable). This is
@@ -668,9 +735,10 @@ export function underBloom(color, headroom = 0.92) {
   return color;
 }
 
-// Identity ring (§17 Zone 3): concentric ground ellipse carrying the EXACT
-// class-accent hex on its outer stroke, a value-lifted core that supplies the
-// legibility, and a Bone inner rim. DEPTH-TESTED decal at y=0.012 with
+// Identity ring (§17 Zone 3): concentric ground ellipse — a hue-true class-
+// accent band between two Void Charcoal ink strokes (see the RING note above:
+// the strokes carry legibility, the band carries the class hue). DEPTH-TESTED
+// decal at y=0.012 with
 // depthWrite off and a negative renderOrder: it can never paint over the
 // character standing in it, but two overlapping party members' rings still
 // blend on the floor between them.
@@ -682,21 +750,25 @@ export function groundRing(accentHex, radius) {
   const group = new Group();
   group.name = 'identity-ring';
 
-  const rim = exactColor(PALETTE.bone);
-  const core = underBloom(exactColor(liftAccent(accentHex)));
-  const acc = exactColor(accentHex);
-  const downRim = exactColor(PALETTE.bone);
-  const downCore = underBloom(exactColor(liftAccent(PALETTE.bone, 0.85, 0.2)));
-  const downAcc = exactColor(PALETTE.bone);
+  // Strokes are cool-dark ink (INK_COOL — the §17 legibility fallback: >=2px
+  // dark rim, indigo-biased so its blends with warm-lit ground never land in
+  // the reserved danger band); the band is the hue-true value-lifted accent.
+  // Downed: the band goes to Bone (§19.1 "downed/neutral rings"), strokes ink.
+  const rim = exactColor(INK_COOL);
+  const core = underBloom(exactColor(ringBand(accentHex)));
+  const acc = exactColor(INK_COOL);
+  const downRim = exactColor(INK_COOL);
+  const downCore = exactColor(PALETTE.bone);
+  const downAcc = exactColor(INK_COOL);
 
   const uniforms = {
     uRim: { value: rim.clone() },
     uCore: { value: core.clone() },
     uAcc: { value: acc.clone() },
-    // xy = rim in/out, zw = core in/out
-    uBandA: { value: new Vector4(RING.rimIn, RING.rimOut, RING.coreIn, RING.coreOut) },
-    // xy = accent stroke in/out
-    uBandB: { value: new Vector2(RING.accIn, RING.accOut) },
+    // xy = inner-stroke in/out, zw = band in/out
+    uBandA: { value: new Vector4(RING.inkInA, RING.inkOutA, RING.bandIn, RING.bandOut) },
+    // xy = outer-stroke in/out
+    uBandB: { value: new Vector2(RING.inkInB, RING.inkOutB) },
   };
   const mat = new ShaderMaterial({
     uniforms,
@@ -754,9 +826,28 @@ export function groundRing(accentHex, radius) {
 
   // Additive halo under the core band (rendered BEFORE it, so the opaque
   // exact-accent stroke is never lifted off-hex by its own ring).
+  // The halo's ADDITION is desaturated almost all the way to parchment (0.86).
+  // Measured by hiding layers on the same frame: with everything else
+  // unchanged the arena's reserved Ember-band count went 539 px (as shipped)
+  // -> 241 px (halos hidden) -> 72 px (whole rings hidden). The four ring
+  // HALOS were the single largest contributor in the frame — an additive tint
+  // that still carries an accent (the Swordsman's wine especially) lands
+  // h5-20 wherever it feathers over warm-lit grass. The class hue is the
+  // BAND's job; the halo only has to say "there is a light on the floor here",
+  // so it is now essentially cream. Same brightness, same read.
+  // ...and 0.86 toward Parchment was still not enough, because PARCHMENT
+  // ITSELF is a warm white (#F4EFE6, r/b = 1.06) and `exactColor` inverts the
+  // post chain, which warms the linear value further. Re-measured by layer on
+  // one frame: base 785 px in the reserved band, 129 px with the four halos
+  // hidden. So the halo addition is NEUTRAL — a plain white light, no accent
+  // at all. An additive neutral over grass raises every channel together and
+  // cannot rotate the ground's hue; the class identity is the BAND's job and
+  // the band is measurably on-hex (within 2-11 degrees of every accent).
+  const glowTint = new Color(1, 1, 1);
   const glowMat = new MeshBasicMaterial({
     map: getRingGlowTexture(),
-    color: core.clone().multiplyScalar(0.3),
+    color: glowTint.clone().multiplyScalar(0.3),
+    toneMapped: false,
     transparent: true,
     blending: AdditiveBlending,
     depthWrite: false,
@@ -780,16 +871,20 @@ export function groundRing(accentHex, radius) {
     uniforms.uRim.value.copy(rim).lerp(downRim, t);
     uniforms.uCore.value.copy(core).lerp(downCore, t);
     uniforms.uAcc.value.copy(acc).lerp(downAcc, t);
-    glowMat.color.copy(uniforms.uCore.value).multiplyScalar(0.3);
+    // Downed rings keep the same neutral halo (the state reads from the band
+    // going Bone and the pose collapsing, never from the halo's hue).
+    glowMat.color.setRGB(0.3, 0.3, 0.3);
   };
   return group;
 }
 
 // Soft contact shadow (§19.2) — same decal rules, sorted below the ring.
+// Deep-indigo dark (the env prop-shadow family), not warm charcoal: a warm
+// dark feathering over warm-lit grass is another danger-band gradient.
 export function groundShadow(radius, opacity = 0.34) {
   const mat = new MeshBasicMaterial({
     map: getShadowTexture(),
-    color: exactColor(PALETTE.voidCharcoal),
+    color: exactColor('#141B29'),
     transparent: true,
     opacity,
     depthWrite: false,

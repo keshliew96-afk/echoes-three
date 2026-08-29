@@ -1,0 +1,3 @@
+[
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); return {mode:s.room?s.room.mode:null, waves:s.room?s.room.waveSizes:null, cleared:s.room?s.room.cleared:null, aliveEnemies:s.room?s.room.aliveEnemies:null, pending:s.room?s.room.pendingSpawns:null}})()" }
+]

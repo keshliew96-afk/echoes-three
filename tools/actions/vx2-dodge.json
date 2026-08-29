@@ -1,0 +1,13 @@
+[
+  {"type":"eval","code":"window.__probe={ev:[]};__echoes.on('*',e=>{if(['telegraph_start','telegraph_resolve','enemy_fire','hit','hit_immune','eshot_despawn','dash_end'].includes(e.type))__probe.ev.push(e)});window.__tg=new Promise(res=>{const un=__echoes.on('telegraph_start',e=>{un();res({start:e.tick,resolveTick:e.resolveTick,x:e.x,z:e.z,pt:e.playerTargeted})})});__echoes.cmd('teleport',6,4)"},
+  {"type":"eval","code":"__echoes.cmd('spawn','mantis',9,4)"},
+  {"type":"eval","code":"Promise.race([window.__tg,new Promise(r=>setTimeout(()=>r('TG_TIMEOUT'),6000))])"},
+  {"type":"wait","ms":810},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"keydown","key":"Space"},
+  {"type":"wait","ms":60},
+  {"type":"keyup","key":"Space"},
+  {"type":"keyup","key":"KeyD"},
+  {"type":"wait","ms":1000},
+  {"type":"eval","code":"({hp:__echoes.state().party[0].hp,stats:__echoes.stats,probe:__probe.ev})"}
+]

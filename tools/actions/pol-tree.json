@@ -1,0 +1,4 @@
+[
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "(() => { const { root } = window.__arenaProbe; const out=[]; root.traverse(o=>{ if(o.parent===root) out.push([o.type, o.name||'', o.children.length]); }); return out; })()" }
+]

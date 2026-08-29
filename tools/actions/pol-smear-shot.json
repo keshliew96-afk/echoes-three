@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -4.5, 1.5)"},
+  {"type":"wait","ms":400},
+  {"type":"mousemove","x":1200,"y":300},
+  {"type":"eval","code":"(()=>{const dn=(c)=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c,key:c,bubbles:true}));const up=(c)=>window.dispatchEvent(new KeyboardEvent('keyup',{code:c,key:c,bubbles:true}));dn('KeyD');for(let i=0;i<3;i++){setTimeout(()=>{dn('Space');setTimeout(()=>up('Space'),110);},250+i*1500);}setTimeout(()=>up('KeyD'),5000);window.__G=[];const log=()=>{const s=window.__echoes.state();window.__G.push([s.party[0].dashTicksLeft, s.vfx.party.smearGhosts]);requestAnimationFrame(log)};requestAnimationFrame(log);return 'go'})()"},
+  {"type":"wait","ms":1620}
+]

@@ -1,0 +1,5 @@
+[
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(() => { const { root } = window.__arenaProbe; let hid = 0; root.traverse((o) => { if (o.isMesh && o.material && o.material.blending === 2 && o.material.map && Math.abs(o.rotation.x + Math.PI/2) < 0.01 && o.position.y < 0.05) { o.visible = false; hid++; } }); return { hid }; })()" },
+  { "type": "wait", "ms": 300 }
+]

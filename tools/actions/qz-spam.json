@@ -1,0 +1,23 @@
+[
+  {"type":"eval","code":"__echoes.cmd('startRoom','kill_all')"},
+  {"type":"eval","code":"[__echoes.cmd('startWave'),__echoes.cmd('startWave'),__echoes.cmd('startWave'),__echoes.cmd('startWave'),__echoes.cmd('startWave')]"},
+  {"type":"eval","code":"[__echoes.cmd('spawn','boar',999,-999),__echoes.cmd('spawn','mantis',-999,999),__echoes.cmd('spawn','boar',0,0),__echoes.cmd('spawn','goblin',0,0)]"},
+  {"type":"eval","code":"__echoes.state().enemies.map(e=>e.kind+' '+e.x+','+e.z)"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"[__echoes.cmd('clearRoom'),__echoes.cmd('clearRoom'),__echoes.cmd('startWave')]"},
+  {"type":"eval","code":"__echoes.cmd('startRoom','defend')"},
+  {"type":"eval","code":"__echoes.cmd('startRoom','bogus')"},
+  {"type":"eval","code":"({room:__echoes.state().room, ents:__echoes.entityCount})"},
+  {"type":"key","key":"Space","ms":30},
+  {"type":"key","key":"Space","ms":30},
+  {"type":"key","key":"Digit1","ms":30},
+  {"type":"key","key":"Digit2","ms":30},
+  {"type":"key","key":"Tab","ms":30},
+  {"type":"key","key":"KeyR","ms":30},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":600},
+  {"type":"mouseup","button":"right"},
+  {"type":"eval","code":"[__echoes.cmd('setHp',4,-1),__echoes.cmd('setHp',9999,0.5),__echoes.cmd('startRoom','kill_all')]"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"({room:__echoes.state().room, ents:__echoes.entityCount, en:__echoes.state().enemies.length})"}
+]

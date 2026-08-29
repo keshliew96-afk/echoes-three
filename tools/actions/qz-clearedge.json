@@ -1,0 +1,13 @@
+[
+  {"type":"eval","code":"__echoes.cmd('startRoom','kill_all')"},
+  {"type":"eval","code":"let r=__echoes.state().room; while(r.waveIndex < r.wavesTotal-1){__echoes.cmd('startWave'); r=__echoes.state().room;} r"},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"eval","code":"({t:__echoes.tick, room:__echoes.state().room})"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"({t:__echoes.tick, room:__echoes.state().room})"},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"({t:__echoes.tick, room:__echoes.state().room})"},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":250},
+  {"type":"eval","code":"({t:__echoes.tick, room:__echoes.state().room, ev:__echoes.events.filter(e=>e.type==='room_cleared').map(e=>e.tick)})"}
+]

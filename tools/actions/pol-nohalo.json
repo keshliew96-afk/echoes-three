@@ -1,0 +1,5 @@
+[
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(() => { const { root } = window.__arenaProbe; let hid = 0; root.traverse((o) => { if (o.name === 'identity-ring') { for (const c of o.children) { if (c.material && c.material.map && c.material.blending === 2) { c.visible = false; hid++; } } } }); return { hid }; })()" },
+  { "type": "wait", "ms": 300 }
+]

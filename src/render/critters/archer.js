@@ -45,7 +45,13 @@ const EAR_TOP = 1.3;
 // pushed forward of the bow plane (+Z) so it visibly closes on the riser in
 // front; and the plane is yawed so the C and its string chord both project as
 // open shapes from the 3/4 camera instead of collapsing edge-on.
-const ARC_R = 0.25;
+// ARC SPAN (baseline-v030 F5): 215 degrees of torus plus a chord string closed
+// the silhouette into a solid 'D' at gameplay zoom. §19.2 asks for "an open
+// negative-space arc": the span is cut to 160 degrees — a true C whose opening
+// stays wider than its depth — and the string is dropped entirely, so the
+// negative space reads THROUGH the arc from every yaw.
+const ARC_R = 0.27;
+const ARC_SPAN = (160 * Math.PI) / 180;
 const BOW_X = -0.29;
 const BOW_Y = 0.44;
 const BOW_Z = 0.15;
@@ -183,8 +189,7 @@ export function buildArcher(rig, trackAccent) {
   bow.rotation.y = BOW_TILT;
   bow.rotation.z = 0.12;
   body.add(bow);
-  const ARC_SPAN = (215 * Math.PI) / 180;
-  const limb = part(new TorusGeometry(ARC_R, 0.021, 8, 44, ARC_SPAN), wood);
+  const limb = part(new TorusGeometry(ARC_R, 0.023, 8, 44, ARC_SPAN), wood);
   // The arc's MIDPOINT lands on the group origin and the limbs sweep OUTBOARD
   // from it, so the whole bow lives on the far side of the grip from the
   // shoulder. That is the geometric reason the arm can no longer impale it:
@@ -192,16 +197,17 @@ export function buildArcher(rig, trackAccent) {
   limb.position.x = -ARC_R;
   limb.rotation.z = -ARC_SPAN / 2;
   bow.add(limb);
-  // String: the chord closing the arc. Together with the limbs it encloses the
-  // open negative space §19.2 asks the bow to make.
-  const tipX = -ARC_R + Math.cos(ARC_SPAN / 2) * ARC_R;
-  const tipY = Math.sin(ARC_SPAN / 2) * ARC_R;
-  const string = new Mesh(
-    new CylinderGeometry(0.0075, 0.0075, tipY * 2, 6),
-    toonMaterial({ color: mix(PALETTE.bone, PALETTE.bruiseUmber, 0.25).getHex() })
-  );
-  string.position.set(tipX, 0, 0);
-  bow.add(string);
+  // Nocks: small caps on the open tips, so the C ends deliberately instead of
+  // reading as a snapped hoop. (No string — see the ARC SPAN note above.)
+  for (const side of [-1, 1]) {
+    const tip = part(new SphereGeometry(0.03, 8, 6), mix(PALETTE.bruiseUmber, PALETTE.voidCharcoal, 0.4).getHex(), { ink: false });
+    tip.position.set(
+      -ARC_R + Math.cos(side * ARC_SPAN * 0.5) * ARC_R,
+      Math.sin(side * ARC_SPAN * 0.5) * ARC_R,
+      0
+    );
+    bow.add(tip);
+  }
   // Riser: the wrapped grip AT the origin — the point nearest the shoulder,
   // which is the only point an extended bow arm can actually close on.
   const riser = part(

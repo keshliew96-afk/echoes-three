@@ -1,0 +1,14 @@
+[
+  {"type":"eval","code":"window.__probe={ev:__echoes.events.filter(e=>['room_start','wave_start','spawn_telegraph','enemy_spawn','room_cleared'].includes(e.type))};__echoes.on('*',e=>{if(['room_start','wave_start','spawn_telegraph','enemy_spawn','room_cleared','enemy_retreat','enemy_despawn'].includes(e.type))__probe.ev.push(e)});__echoes.state().room"},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":1300},
+  {"type":"eval","code":"__echoes.state().room"},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":1300},
+  {"type":"eval","code":"__echoes.state().room"},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":1300},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"({room:__echoes.state().room,waves:__probe.ev.filter(e=>e.type==='wave_start').map(e=>[e.index,e.size]),comp:__probe.ev.filter(e=>e.type==='spawn_telegraph').map(e=>[e.wave,e.etype,e.x,e.z]),spawned:__probe.ev.filter(e=>e.type==='enemy_spawn').map(e=>[e.wave,e.etype,e.x,e.z]),cleared:__probe.ev.filter(e=>e.type==='room_cleared')})"}
+]

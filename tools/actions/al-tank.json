@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',-2,-1);__echoes.cmd('placeAlly',1,-2.4,-1);__echoes.cmd('placeAlly',2,8,5);__echoes.cmd('placeAlly',3,8,-5)" },
+  { "type": "eval", "code": "window.__un=__echoes.on('hit',ev=>{__echoes.cmd('setHp',ev.target,1);});window.__d=__echoes.cmd('spawn','dummy',-1.5,-1);window.__d" },
+  { "type": "eval", "code": "window.__T={c:[],b:[],h:[]};__echoes.on('ally_cast',e=>{if(e.classId==='tank')window.__T.c.push(e);});__echoes.on('ally_basic',e=>{if(e.classId==='tank')window.__T.b.push(e);});__echoes.on('hit',e=>{if(e.attacker===1)window.__T.h.push(e);});'log'" },
+  { "type": "wait", "ms": 14000 },
+  { "type": "eval", "code": "(()=>{const T=window.__T;const bySkill={};for(const c of T.c){const s=bySkill[c.skill]=bySkill[c.skill]||{power:c.power,cd:c.cd,shape:c.shape,reach:c.reach,halfAngle:c.halfAngle,count:c.count,ticks:[]};s.ticks.push(c.tick);}for(const s of Object.values(bySkill)){s.ticks.sort((a,b)=>a-b);s.gaps=s.ticks.slice(1).map((t,i)=>t-s.ticks[i]);s.expectedCdTicks=Math.round(s.cd*60);}const bt=T.b.map(e=>e.tick).sort((a,b)=>a-b);const bg=bt.slice(1).map((t,i)=>t-bt[i]);const dmg={};for(const h of T.h){(dmg[h.source]=dmg[h.source]||{})[h.amount]=((dmg[h.source]||{})[h.amount]||0)+1;}return{tankSkills:bySkill,tankBasics:{n:bt.length,gaps:bg,expected:39,power:T.b.length?9:null},tankDamage:dmg,ally1Pos:__echoes.state().party[1]}})()" }
+]

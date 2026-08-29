@@ -1,0 +1,12 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',6,0)"},
+  {"type":"wait","ms":1800},
+  {"type":"eval","code":"__echoes.cmd('spawn','boar',7.2,0)"},
+  {"type":"wait","ms":200},
+  {"type":"eval","code":"window.__all=new Map();window.__t=setInterval(()=>{for(const ev of __echoes.events)window.__all.set(ev.tick+'|'+ev.type+'|'+(ev.id!==undefined?ev.id:'')+'|'+(ev.target!==undefined?ev.target:''),ev);},80);'armed'"},
+  {"type":"eval","code":"window.__p0=JSON.stringify(__echoes.state().enemies)"},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":2200},
+  {"type":"mouseup","button":"right"},
+  {"type":"eval","code":"clearInterval(window.__t);({p0:window.__p0, ev:[...window.__all.values()].filter(e=>['hit','death','hitstop','sound','decal'].includes(e.type)).sort((a,b)=>a.tick-b.tick).map(e=>e.tick+' '+e.type+' '+(e.kind||'')+(e.slot?' '+e.slot:'')+(e.amount!==undefined?' amt'+e.amount:'')+(e.kb!==undefined?' kb'+e.kb:'')+(e.ticks!==undefined?' st'+e.ticks:'')+(e.cause?' '+e.cause:''))})"}
+]

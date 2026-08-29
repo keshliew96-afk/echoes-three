@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"window.__F=[];window.__t=setInterval(()=>window.__F.push([__echoes.tick,__echoes.fps]),1000);'armed'"},
+  {"type":"wait","ms":14000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__t);return{samples:window.__F,ents:__echoes.entityCount,allyfx:__echoes.state().allyfx,skillfx:__echoes.state().skillfx}})()"}
+]

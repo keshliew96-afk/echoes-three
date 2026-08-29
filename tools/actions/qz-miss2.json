@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,5)"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,50)"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"[[3.0,5],[3.4,5.3],[3.4,4.7]].map(p=>__echoes.cmd('spawn','mantis',p[0],p[1]))"},
+  {"type":"eval","code":"window.__ev=[];window.__pos={};__echoes.on('telegraph_start',e=>{const en=__echoes.state().enemies.find(q=>q.id===e.id);window.__pos[e.tick]=[e.id,en.x,en.z];window.__ev.push(e.tick+' TS e'+e.id+' at '+en.x+','+en.z)});__echoes.on('telegraph_resolve',e=>{const en=__echoes.state().enemies.find(q=>q.id===e.id);window.__ev.push(e.tick+' TR e'+e.id+' at '+(en?en.x+','+en.z:'?'))});__echoes.on('hit',e=>{if(e.target===0)window.__ev.push(e.tick+' HIT')});__echoes.on('eshot_despawn',e=>window.__ev.push(e.tick+' ESD '+e.cause));'armed'"},
+  {"type":"wait","ms":16000},
+  {"type":"eval","code":"(!window.__ev?{reloaded:1}:{ev:window.__ev})"}
+]

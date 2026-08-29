@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); return { g: __echoes.cmd('giveSkill','sanctuary') }; })()" },
+  { "type": "mousemove", "x": 1550, "y": 100 },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => { const p=__echoes.state().party[0]; return { aim: p.aim, player: [p.x,p.z], aimDist: p.aim ? Math.round(Math.hypot(p.aim.x-p.x,p.aim.z-p.z)*100)/100 : null }; })()" },
+  { "type": "eval", "code": "(() => { window.__t=__echoes.tick; window.__press('Digit3'); return { armed:'SA-clamp' }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "(() => { const z = window.__evs(window.__t,['zone_spawn'])[0]; const p=__echoes.state().party[0]; return { test:'SA-clamp-3.8', zone: z, distFromPlayer: z ? Math.round(Math.hypot(z.x-p.x,z.z-p.z)*100)/100 : null, casts: window.__evs(window.__t,['skill_cast']) }; })()" }
+]

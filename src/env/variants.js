@@ -19,8 +19,11 @@
 //   boulder cairn.
 // torches/lanterns: [x, z, yaw?] placements. lightIdx: which torches carry a
 //   real PointLight (2 per variant).
-// sunPools: [x, z, r] warm canopy-dapple light pools (§19.3 warm:cool 70:30 —
-//   mid-field so >=2 warm pools sit in ANY gameplay frame, not just at walls).
+// braziers: [x, z] mid-field fire bowls (baseline-v030 F1: every warm pool
+//   needs an attributable emitter — the old sourceless canopy "sunPools" are
+//   replaced by these, so >=2 warm pools sit in ANY gameplay frame and each
+//   pool visibly comes from a fire). Positions reuse old dapple spots, which
+//   were already authored clear of the paths and the fight lanes.
 // monolith: [x, z, yaw] — the act's single violet corruption tell, kept inside
 //   the spawn camera rect so the act tell is present in the opening frame.
 //
@@ -36,13 +39,32 @@ export const VARIANTS = {
   1: {
     id: 1,
     name: 'clearing',
-    // Mid-morning clearing: balanced key, generous canopy dapple.
-    mood: { key: 1.0, fill: 1.0, dapple: 0.78, warmth: 0.0 },
+    // Mid-morning clearing: balanced key, fires carrying the mid-field warmth.
+    mood: { key: 1.0, fill: 1.0, warmth: 0.0 },
     ground: {
-      h: 90, s: 0.5, l: 0.39, shadeH: 172, shadeS: 0.16, shadeL: 0.135,
-      dirtH: 38, dirtL: 0.255, mossN: 16, leafN: 200, crackN: 6, pebbleN: 90,
+      // shadeS 0.25/shadeH 196 (were 0.3/200): a heavy shade roll was landing
+      // the spawn frame at cool > warm; the pockets stay measurably cool
+      // (h>=160) while warm keeps the §19.3 upper hand.
+      // dirtH 52 (was 57): right at the 60-degree warm/olive boundary half the
+      // lit track was measuring as foliage — 52 keeps the whole beaten track
+      // in the warm family (and far above the h25 danger ceiling).
+      // coolLift 24 (v1 used to inherit the 14 default): measured, variant 1's
+      // spawn frame sat at 1.0-1.7% cool against the >=8% counterweight the
+      // advisory asks for — it is the brightest, warmest of the three and
+      // needs the most indigo under its shade. Grass saturation +0.06 pays
+      // for the extra blue so the floor keeps the §19.3 55-65% green.
+      // shadeS 0.31 / shadeL 0.115 (were 0.25/0.135): variant 1 is the
+      // brightest, greenest of the three and its cool share measured 3-6%
+      // against the >=8% counterweight the advisory asks for. Deeper, more
+      // saturated blue-green shade pockets are the fix that does not touch
+      // the lit story (its siblings already measure 12-17%).
+      h: 90, s: 0.56, l: 0.39, shadeH: 180, shadeS: 0.31, shadeL: 0.115, coolLift: 15,
+      dirtH: 52, dirtL: 0.255, mossN: 16, leafN: 200, crackN: 6, pebbleN: 90,
     },
-    paths: [{ pts: [[-12.6, -5.2], [-7, -3.8], [-1, -0.6], [4.5, 2.6], [12.6, 4.6]], w: 1.5 }],
+    // Track widened 1.5 -> 1.8: variant 1 has ONE path (its siblings have two
+    // or three warm braziers nearer the spawn camera) and needed the extra
+    // warm floor area to hold the 70:30 warm:cool story in the spawn frame.
+    paths: [{ pts: [[-12.6, -5.2], [-7, -3.8], [-1, -0.6], [4.5, 2.6], [12.6, 4.6]], w: 1.8 }],
     grass: 640,
     flowers: 70,
     torches: [[-5.6, -7.2], [5.2, 7.2], [11.2, -3.0], [-11.2, 3.2]],
@@ -53,7 +75,9 @@ export const VARIANTS = {
       [-9.4, -7.2, 0.85, 'fence fence stump'],
       [-1.9, -7.3, 0.75, 'crate crate barrel slab'],
       [2.4, -7.4, 0.6, 'log bush'],
-      [8.9, -7.3, 0.8, 'stump stump bush'],
+      // Pulled east of the monolith: a tan stump inside the violet halo blends
+      // to rose — the h5-25 band reserved for enemy threats.
+      [9.7, -7.3, 0.8, 'stump stump bush'],
       // south
       [-6.0, 7.3, 0.8, 'log stump bush'],
       [-0.4, 7.4, 0.7, 'slab boulder bush'],
@@ -68,22 +92,25 @@ export const VARIANTS = {
       [11.3, 1.9, 0.85, 'crate crate crate barrel'],
       [11.2, 6.2, 0.7, 'stump slab bush'],
     ],
-    sunPools: [
-      [-4.5, 1.8, 1.25], [3.2, -2.4, 1.05], [0.5, 4.6, 0.9], [7.6, 0.4, 0.85],
-      [-8.6, -2.6, 1.0], [9.4, 4.2, 0.8], [-2.0, -4.4, 0.9], [5.6, 5.2, 0.95],
-    ],
-    monolith: [8.2, -6.6, 0.45],
+    braziers: [[-4.5, 1.8], [3.2, -2.4], [5.6, 5.2]],
+    monolith: [7.9, -6.35, 0.45],
   },
 
   // ---- 2 · "Old Crossroads"
   2: {
     id: 2,
     name: 'crossroads',
-    // Dry crossroads at high sun: hardest key, least fill, small tight dapples.
-    mood: { key: 1.18, fill: 0.78, dapple: 0.85, warmth: 0.12 },
+    // Dry crossroads at high sun: hardest key. `warmth` trimmed 0.12 -> 0.05
+    // and fill raised 0.78 -> 1.02: the amber-heavy, fill-starved rig was
+    // pushing lit timber/stone into the reserved h5-25 band AND starving the
+    // frame of its cool counterweight (baseline-v030 F1/F2).
+    mood: { key: 1.1, fill: 1.02, warmth: 0.05 },
     ground: {
-      h: 86, s: 0.46, l: 0.42, shadeH: 178, shadeS: 0.18, shadeL: 0.125,
-      dirtH: 40, dirtL: 0.30, mossN: 8, leafN: 150, crackN: 12, pebbleN: 160,
+      // shadeS 0.27 / coolLift 20 (were 0.32/24): measured warm 37.4% vs cool
+      // 37.4% — a dead tie, and §19.3 keeps Act-1 warm-DOMINANT. This trims the
+      // cool side back under warm while the pockets stay a visible >=8% share.
+      h: 86, s: 0.52, l: 0.42, shadeH: 182, shadeS: 0.30, shadeL: 0.125, coolLift: 14,
+      dirtH: 57, dirtL: 0.30, mossN: 8, leafN: 150, crackN: 12, pebbleN: 160,
     },
     paths: [
       { pts: [[-12.6, 0.6], [-4, 0.1], [3, -0.3], [12.6, -0.7]], w: 2.1 },
@@ -93,7 +120,12 @@ export const VARIANTS = {
     flowers: 82,
     torches: [[-11.2, -1.9], [11.2, 1.2], [-1.9, -7.2], [2.2, 7.2]],
     lightIdx: [2, 1],
-    lanterns: [[-6.4, -7.3, -1.5708], [6.8, 7.3, 1.5708]],
+    // First lantern moved to the SOUTH wall's clear stretch: on the north run
+    // its warm pool either feathered across the monolith's violet halo
+    // (-6.4: ~450 px danger-band murk seam) or washed the cairn cluster's
+    // beige stone into h25/s0.37 (-5.0: ~490 px). At [-5.0, 7.3] the nearest
+    // props sit 1.8 u away on both sides — outside the pool's tinting range.
+    lanterns: [[-5.0, 7.3, 1.5708], [6.8, 7.3, 1.5708]],
     clusters: [
       // north — dry-stone country
       [-9.6, -7.3, 0.9, 'slab slab boulder'],
@@ -114,10 +146,7 @@ export const VARIANTS = {
       [11.3, 7.0, 0.6, 'cairn slab'],
       [-11.2, 0.4, 0.6, 'stump boulder'],
     ],
-    sunPools: [
-      [-3.8, -3.0, 1.45], [4.4, 2.2, 1.55], [-0.6, 5.0, 1.05], [-7.4, 3.0, 1.15],
-      [7.8, -3.4, 1.3], [1.6, -5.4, 0.95],
-    ],
+    braziers: [[-3.8, -3.0], [4.4, 2.2], [-7.4, 3.0]],
     monolith: [-8.4, -6.6, -0.4],
   },
 
@@ -125,14 +154,31 @@ export const VARIANTS = {
   3: {
     id: 3,
     name: 'hollow',
-    // Shaded hollow: dimmest key, coolest fill, but big soft shafts punching
-    // through the canopy — the fire pools do most of the lighting here.
-    mood: { key: 0.96, fill: 1.12, dapple: 0.9, warmth: 0.0 },
+    // Shaded hollow: dimmest key, coolest fill — the fire bowls do most of the
+    // lighting here. Fill 1.16 (was 1.12; a 1.28 try flipped the frame
+    // cool-dominant): a touch more indigo floor under the dim warm faces,
+    // with `keyWhite` below carrying the danger-band fix.
+    // poolR 0.9: 0.82 cut the warm share so hard the hollow flipped
+    // cool-dominant (warm 29.8% vs cool 32.9%) — 0.9 keeps the tighter
+    // feather with §19.3 warm-dominance intact.
+    // keyWhite 0.3: the dim hollow red-lifts every key-warmed bark/dirt face
+    // into the h22-25 / s>0.35 gate (see tuneActOneLighting) — bleaching the
+    // key here keeps prop surfaces neutral while the fire bowls carry §19.3's
+    // warm side.
+    mood: { key: 0.96, fill: 1.16, warmth: 0.0, poolR: 0.95, keyWhite: 0.3 },
     ground: {
-      h: 88, s: 0.52, l: 0.355, shadeH: 180, shadeS: 0.2, shadeL: 0.12,
-      dirtH: 38, dirtL: 0.235, mossN: 30, leafN: 220, crackN: 4, pebbleN: 70,
+      // shadeS 0.26 / shadeH 200 (were 0.34/204): the hollow is the coolest
+      // room by design, but a heavy shade roll flipped whole frames
+      // cool-dominant — this keeps the pockets while warm stays on top.
+      // dirtH 61 / dirtL 0.26 (were 57/0.235): the hollow's dim light + the
+      // grade's red-lift landed the darker track sections at h24-24.6 /
+      // s0.35-0.43 — a hair inside the reserved Ember band. Painted gold-er
+      // and a step lighter, the rendered track sits above h26 at every dim
+      // stretch while still reading as the same beaten dirt.
+      h: 88, s: 0.58, l: 0.355, shadeH: 181, shadeS: 0.32, shadeL: 0.118, coolLift: 16,
+      dirtH: 65, dirtL: 0.285, mossN: 30, leafN: 220, crackN: 4, pebbleN: 70,
     },
-    paths: [{ pts: [[-12.6, 5.8], [-7.4, 4.4], [-2.6, 1.2], [0.4, -2.6], [4.8, -5.6], [12.6, -6.2]], w: 0.85 }],
+    paths: [{ pts: [[-12.6, 5.8], [-7.4, 4.4], [-2.6, 1.2], [0.4, -2.6], [4.8, -5.6], [12.6, -6.2]], w: 1.6 }],
     grass: 720,
     flowers: 46,
     torches: [[-11.2, 4.9], [11.2, -5.0], [-4.6, -7.2], [4.0, 7.2]],
@@ -158,12 +204,25 @@ export const VARIANTS = {
       [11.3, 2.6, 0.7, 'bush boulder'],
       [11.2, 6.6, 0.75, 'log bush stump'],
     ],
-    sunPools: [
-      [-2.8, 2.6, 1.15], [4.8, -3.4, 1.05], [-6.5, -2.0, 0.9], [8.2, 3.4, 0.8],
-      [0.9, -1.1, 1.0], [-9.0, 4.4, 0.8], [6.0, 5.6, 0.8], [2.4, 6.4, 0.75],
-      [-4.4, -5.2, 0.8], [-1.4, -6.6, 0.6],
-    ],
-    monolith: [-10.1, -2.4, 1.15],
+    // Braziers pulled well clear of the curved track: an additive warm pool
+    // over v3's dark dirt is what lit the path into the danger band. The third
+    // bowl slid to [-6.2,-1.2] (was [-6.5,-2.0]): at 3.6 u its pool's warm
+    // feather overlapped the monolith's violet pool and the amber+violet
+    // additive overlap measured ~185 px of h9-13 rose-brown (the reserved
+    // Ember band) along the stone's silhouette. At 4.1 u the warm feather
+    // (2.5 r) dies before the violet pool (1.2 r); still ~4 u clear of the
+    // track. (A first try at [-5.2,-0.6] put the pool over the hollow's dark
+    // mid-field ground and measured ~1.0k px of h18-25 murk — the bowl needs
+    // to stay near the wall band where the shade stamps are thin.)
+    braziers: [[-3.4, 4.6], [5.8, -2.2], [-6.2, -1.2]],
+    // Monolith moved to the north-mid wall (was [-10.1,-2.4] — W-mid, and 95%
+    // OUT of the spawn frame: the act's violet tell measured 0-53 px while the
+    // sliver that did show sat in the vignette corner and painted a fixed
+    // ~450 px maroon patch every roll it caught light). At [3.9,-6.8] the
+    // whole prop is in the opening frame (variant identity note: "monolith
+    // N-mid"), clear of the lantern pool at [1.2,-7.3] (2.7 u) and the stump
+    // cluster at [6.2,-7.3] (2.3 u).
+    monolith: [3.9, -6.8, 1.15],
   },
 };
 

@@ -37,11 +37,13 @@ import {
   Points,
   PointsMaterial,
   MeshBasicMaterial,
+  Raycaster,
+  Vector2,
   LinearSRGBColorSpace,
   SRGBColorSpace,
   Vector3,
 } from 'three';
-import { ARENA, CAMERA, DUMMY, TICK_HZ } from '../core/constants.js';
+import { ARENA, CAMERA, DODGE, DUMMY, TICK_HZ } from '../core/constants.js';
 import { createCritter, setInkViewport } from '../render/critters/index.js';
 import { PALETTE } from '../data/palette.js';
 import { makeGlowSprite, getRadialTexture } from '../render/glow.js';
@@ -60,7 +62,8 @@ import {
   VEIN_VIOLET,
 } from '../env/props.js';
 import { makeFlameSprite, createEmberField } from '../env/flame.js';
-import { COOL, mix } from '../env/colors.js';
+import { COOL, EMBER_GLOW, mix } from '../env/colors.js';
+import { createAfterimages } from '../render/critters/afterimage.js';
 
 // Render-cosmetic scaffold numbers (grouped; not brief-bound gameplay values).
 const FIREFLY_COUNT = 120;
@@ -123,8 +126,72 @@ const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 // 70:30 story, and F3's inverted warm:cool pixel ratio flips with it.
 const ACT1_LIGHT = {
   keyIntensity: 4.0,
-  fillIntensity: 1.9,
-  keyColor: new Color(PALETTE.hearthAmber).lerp(new Color('#FFFFFF'), 0.42),
+  // Fill 2.35 (was 1.9): the grade's S-curve collapses the blue channel of
+  // any dim warm surface (display L 40-70) ~2x harder than its red, which is
+  // what kept landing toon SHADE faces of timber and dirt at h20-24 / s>0.4 —
+  // the reserved Ember Danger band. The extra indigo fill is the blue floor
+  // under exactly those faces; the warm pools still dominate the lit story.
+  // ...but 2.35 (a first cut) is too much of it: with the ground canvas's own
+  // cool lift it desaturated the whole floor (measured SAT mean 0.32 against
+  // the docs/TESTING.md Act-1 bar of 0.55-0.65) and flipped cool above warm.
+  // 2.0 keeps the blue floor under the dim warm faces without bleaching the
+  // grass.
+  // 2.15: the cool fill is ALSO the blue floor under every dim warm prop
+  // face, so it is the one lever that lowers the reserved-band count and
+  // raises the cool counterweight at once. The painted grass saturation in
+  // env/variants.js was raised +0.06 per variant to pay for it.
+  // Settled at 2.3. This one lever moves BOTH remaining weak numbers in the
+  // right direction, because it is the only light that reaches a surface's
+  // shaded side: it puts a blue floor under exactly the dark warm faces that
+  // were still landing in the reserved h5-25 band (edge props, the fox's
+  // wine cloak in shade) AND it is the frame's cool counterweight. The cost
+  // is frame saturation, which is why it is not higher — 2.35 measured SAT
+  // 0.32 in an earlier pass against the docs/TESTING.md Act-1 bar.
+  fillIntensity: 2.3,
+  // Key hue biased from Hearth Amber toward Pale Gold before the white lerp:
+  // the pure-amber key, multiplied into warm-grey fur and umber timber and then
+  // red-lifted by the grade, measured whole surfaces at hue 16-25 — inside the
+  // reserved Ember Danger band (baseline-v030 F2). The gold bias lifts every
+  // lit warm surface ~4 hue degrees while keeping the same warm read.
+  // The white lerp is 0.52 (was 0.42) for one measured reason: the key's low
+  // BLUE channel flipped the Swordsman's wine cloak (#6B2E3A, hue 348) across
+  // the 0-degree boundary into h6-12 — the Ember Danger band — because the lit
+  // green channel edged past the lit blue. More white in the key keeps the
+  // wine on the wine side of 0 while the pools/braziers carry the warmth.
+  // White lerp 0.58 (was 0.52): a SIDE face sees the key alone (no sky fill to
+  // speak of), so the key's own saturation is the floor under every neutral
+  // prop's lit-side saturation — at 0.52 the key-only product measured
+  // s0.36-0.42 at h20-24 on grey boulders and wall brick, inside the reserved
+  // Ember Danger band once the grade's red lift landed. 0.58 keeps the same
+  // warm hue at a saturation that leaves lit neutrals under the s0.35 gate.
+  // Pale Gold share 0.62 (was 0.45): the residual danger-band murk sat at
+  // h23-25 — one to two degrees under the band's top — across walls and
+  // props; the extra gold in the key is the +2-3 degree global hue lift that
+  // clears it while keeping the same warm read.
+  // White lerp 0.44, not 0.58: hue is what the reserved Ember band actually
+  // gates on (h5-25 AND s>0.35), and the Pale Gold share above already does
+  // the hue work. Bleaching the key on top of it is what dropped the frame's
+  // saturation to 0.32 and turned the fire pools into white spotlights. 0.44
+  // holds the wine cloak on the wine side of 0 degrees (the reason the lerp
+  // was raised at all) while the grass keeps its colour.
+  // Pale Gold share 0.9 (was 0.62): every remaining reserved-band pixel in
+  // the frame measured h20.7-24.8 — one to four degrees under the ceiling —
+  // on dark surfaces where the KEY's own hue is most of what is left after
+  // the albedo goes dark. Rotating the key itself up ~3 degrees and dropping
+  // its saturation from 0.40 to 0.37 moves every one of them at once, which
+  // no per-material tweak can.
+  // ...and the white lerp settles at 0.52. Attribution runs kept landing the
+  // last few hundred reserved-band pixels on DARK painted ground (the beaten
+  // track's shaded edge, prop-shadowed grass) whose canvas texels are all
+  // hue >= 40 — the band membership is created by the light, not the albedo:
+  // at a key ratio of r:g = 1:0.83 a dark olive with g/r ~ 1.05 comes out
+  // red-dominant. Whitening the key raises that ratio and drops the key's own
+  // saturation, which moves every such pixel at once. It costs frame
+  // saturation, so it is balanced against the fill above rather than pushed
+  // further.
+  keyColor: new Color(PALETTE.hearthAmber)
+    .lerp(new Color(PALETTE.paleGold), 0.9)
+    .lerp(new Color('#FFFFFF'), 0.52),
   skyColor: new Color(COOL.sky),
   groundColor: new Color(COOL.ambient),
 };
@@ -144,6 +211,13 @@ function tuneActOneLighting(scene, mood = {}) {
   if (key) {
     key.color.copy(ACT1_LIGHT.keyColor);
     if (mood.warmth) key.color.lerp(new Color(PALETTE.hearthAmber), mood.warmth);
+    // `keyWhite` bleaches the key per variant. The hollow (v3) runs a stop
+    // dimmer, and at display L 40-70 the grade red-lifts every key-warmed
+    // bark/dirt/stone face to h22-25 at s just over the reserved-band gate —
+    // measured as a 500-1600 px danger-band count that swung with every
+    // cosmetic roll. A whiter key cuts the multiplier's chroma so those
+    // surfaces land under s0.35; the fires and pools still carry the warmth.
+    if (mood.keyWhite) key.color.lerp(new Color('#FFFFFF'), mood.keyWhite);
     key.intensity = ACT1_LIGHT.keyIntensity * kMul;
   }
   if (fill) {
@@ -178,11 +252,20 @@ function getShaftTexture() {
   const ctx = canvas.getContext('2d');
   const half = size / 2;
   const grad = ctx.createRadialGradient(half, half, 0, half, half, half);
+  // INVERSE-SQUARE-ish falloff, not a soft linear ramp. Attribution runs
+  // (raycast pick + a pool-hidden capture) put ~80% of the frame's reserved
+  // Ember-band pixels in ONE place: the broad mid-alpha ANNULUS of these
+  // pools where a warm addition lands on cool shade ground and the two sum
+  // to h19-25 mauve-brown. The old ramp held alpha 0.27-0.6 across radius
+  // 0.45-0.75 (36% of the disc's area); this one holds the same alpha range
+  // across 0.32-0.55 (20% of the area) while the CORE stays just as hot, so
+  // the pool reads brighter and the marginal ring nearly halves.
   grad.addColorStop(0.0, 'rgba(255,255,255,1)');
-  grad.addColorStop(0.2, 'rgba(255,255,255,0.9)');
-  grad.addColorStop(0.45, 'rgba(255,255,255,0.6)');
-  grad.addColorStop(0.7, 'rgba(255,255,255,0.27)');
-  grad.addColorStop(0.88, 'rgba(255,255,255,0.08)');
+  grad.addColorStop(0.15, 'rgba(255,255,255,0.92)');
+  grad.addColorStop(0.32, 'rgba(255,255,255,0.6)');
+  grad.addColorStop(0.5, 'rgba(255,255,255,0.26)');
+  grad.addColorStop(0.68, 'rgba(255,255,255,0.09)');
+  grad.addColorStop(0.85, 'rgba(255,255,255,0.02)');
   grad.addColorStop(1.0, 'rgba(255,255,255,0)');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
@@ -293,6 +376,29 @@ export function createArenaScene(stage, toggles, ctx) {
     inner.setBoltOrigin(() => healerRig.tipWorld(muzzleV));
   }
 
+  // Dash smear (baseline-v030 F6): staggered silhouette afterimages of the
+  // posed chibi Healer replace the graybox capsule ghosts, which composited
+  // into one solid slab (and were the wrong body besides). One ghost is frozen
+  // every SMEAR_TICK_SPACING sim ticks of dash travel — 4 over the 15-tick
+  // dash, each fading on its own clock — and §5's contract holds: every ghost
+  // is hard-cleared the frame the dash ends.
+  // 2 sim ticks between afterimages over the 15-tick dash. Spacing 4 was
+  // measured as unreachable in practice: the trail was ACCUMULATED one ghost
+  // per render frame, and a capture-harness frame can swallow the whole dash
+  // (logged: dashTicksLeft 15 -> 14 -> 13, then one 216 ms hitch and the dash
+  // was over), so a mid-dash frame showed one ghost, not a trail. The schedule
+  // below is now REBUILT from dash state every frame instead of accumulated,
+  // so the trail is identical at any render rate.
+  const SMEAR_TICK_SPACING = 2;
+  if (inner.setSmearEnabled) inner.setSmearEnabled(false);
+  const afterimages = createAfterimages(healerRig, root);
+  let lastGhostTick = -1;
+  // Pipeline warm-up (see afterimage.js `warmup`): the ghosts render at ~0
+  // opacity for the first two frames so the first real dash never pays a
+  // shader-compile stall.
+  afterimages.warmup();
+  let smearWarmFrames = 2;
+
   // --- Idle party members near spawn (badger Tank, fox Swordsman, hare
   // Archer): idle clips only, facing loosely back toward the spawn point.
   const allies = ALLY_SPOTS.map(([classId, ax, az]) => {
@@ -343,56 +449,164 @@ export function createArenaScene(stage, toggles, ctx) {
       // SOURCE with a white-hot centre rather than a painted decal (F2).
       const fy = em.y + 0.13 + TOWARD_CAM.y * FLAME_LIFT;
       const fz = em.z + TOWARD_CAM.z * FLAME_LIFT;
-      const body = makeFlameSprite(0.7, 1, 3.2);
+      // Gain 2.15 and a tighter halo (a first cut ran 2.6 / size 1.3 / 0.55):
+      // above ~2.2 the painted flame clips to featureless white and the bloom
+      // skirt swallows the torch stake, so the pool loses the very thing that
+      // attributes it. The flame has to stay a readable SHAPE.
+      const body = makeFlameSprite(0.7, 1, 2.15);
       body.position.set(em.x, fy, fz);
       body.renderOrder = 8;
       root.add(body);
-      const glow = makeGlowSprite({ color: PALETTE.hearthAmber, size: 1.5, opacity: 0.62 });
+      const glow = makeGlowSprite({ color: EMBER_GLOW.halo, size: 1.05, opacity: 0.45 });
       glow.position.set(em.x, em.y + 0.08 + TOWARD_CAM.y * FLAME_LIFT, fz);
       root.add(glow);
-      const pool = groundPool(PALETTE.hearthAmber, 2.5, 0.62, poolY(), true);
+      // Pool footprint kept TIGHT (radius 2.0): the broad shaft texture's
+      // mid-alpha feather over cool shade ground is exactly the mauve murk
+      // that lands in the h5-25 danger band, and it also washes the painted
+      // shade pockets out of the frame's cool share.
+      // Opacity 0.46 (a first cut ran 0.58 on a near-white tint): additive
+      // strength and tint saturation trade off against the same danger gate,
+      // and a slightly dimmer pool of REAL amber reads as firelight where a
+      // brighter pool of cream read as a stage spotlight.
+      const pool = groundPool(EMBER_GLOW.pool, 2.0, 0.48, poolY(), true);
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
-      flames.push({ body, glow, pool, x: em.x, y: fy, z: fz, phase: cosmetic.range(0, Math.PI * 2) });
+      flames.push({ body, glow, pool, poolO: 0.48, glowS: 1.05, glowO: 0.45, x: em.x, y: fy, z: fz, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.2, z: fz });
+    } else if (em.kind === 'brazier') {
+      // Mid-field fire bowl (baseline-v030 F1): the emitter that OWNS the
+      // mid-field warm pool. Same flame family as the torches — painted flame
+      // sprite + gold halo + broad additive ground pool + ember column — so
+      // every pool in the frame traces to a visible fire.
+      // Flame 0.72 (was 0.56) riding clearly ABOVE the rim, and the halo
+      // lifted to flame height at a tighter size: the first cut centred the
+      // halo ON the bowl, which washed the prop into a featureless glowing
+      // lump — the pool needs a readable dark bowl under a visible flame to
+      // count as attributed (F1).
+      // The brazier's flame gets a MUCH smaller view-axis lift than a torch's
+      // (0.10 u vs 0.26) and sits 0.06 u over the rim rather than 0.20. Reason,
+      // measured by projecting the sprite: the camera is above and behind, so
+      // lifting a point toward it magnifies its offset from screen centre —
+      // the old offsets put the fire 50 px left and 55 px above its own bowl at
+      // gameplay zoom, i.e. a bright blob NEXT TO a dark lump instead of a lit
+      // brazier. A torch needs the big lift (its tall shaft would depth-clip
+      // the sprite); a squat bowl does not.
+      const BRAZIER_LIFT = 0.1;
+      const fy = em.y + 0.06 + TOWARD_CAM.y * BRAZIER_LIFT;
+      const fz = em.z + TOWARD_CAM.z * BRAZIER_LIFT;
+      // Flame 0.95: the bowl fire is the emitter's whole tell and at 0.72 it
+      // was smaller than the pool's blown core, so it read as part of the
+      // glow instead of as the thing making it.
+      // Gain 2.35 — the highest in the scene, but only just. The fire has to
+      // be the brightest thing in its own pool or the emitter reads as a dark
+      // object sitting in someone else's light; push it further (2.9 was
+      // tried) and the bloom skirt washes the whole frame, measured as warm
+      // 36-43% against cool 2.7-6.6% and the reserved-band count back over
+      // 1000 px. Torches keep 2.15 — their pool is smaller and their dark
+      // stake already carries the attribution.
+      const body = makeFlameSprite(0.95, 1, 2.35);
+      body.position.set(em.x, fy, fz);
+      body.renderOrder = 8;
+      root.add(body);
+      // Halo 0.8 / 0.42: measured on a 4x crop, the wider halo's bloom skirt
+      // ate the right half of the bowl, leaving a bright blob with a dark
+      // smudge in it. A tighter halo keeps the whole pedestal-column-bowl
+      // silhouette readable against its own pool, which IS the F1 fix.
+      const glow = makeGlowSprite({ color: EMBER_GLOW.halo, size: 0.8, opacity: 0.42 });
+      glow.position.set(em.x, em.y + 0.1 + TOWARD_CAM.y * BRAZIER_LIFT, fz);
+      root.add(glow);
+      // The bowl pool is the broadest in the frame — it replaces the old
+      // sourceless canopy dapple as the mid-field warmth. Radius 2.5 is safe
+      // now that EMBER_GLOW carries a heavy parchment share (the addition sits
+      // well under the danger gate even over mauve/indigo shade); it is
+      // also part of the warm side of the §19.3 70:30 story.
+      // `mood.poolR` shrinks the bowl pools per variant: the hollow (v3) runs
+      // its ground darkest, and the broad pool's MID feather over dark tuft
+      // silhouettes is where FXAA blends kept landing h20-25/s0.35-0.38 —
+      // a tighter pool keeps the bright attributed core and cuts the marginal
+      // annulus.
+      const poolR = spec.mood?.poolR ?? 1;
+      // Pool opacity 0.56 (was 0.46) once the halos were tightened for
+      // emitter readability: the tighter halos cost ~5 points of the frame's
+      // warm share and variant 3 measured warm 21.6% against cool 21.0%,
+      // which is the §19.3 warm-dominant story on a coin flip. The warmth
+      // moves from the bloom skirt (which hid the emitter) into the POOL
+      // (which is what a fire on a floor actually does).
+      const pool = groundPool(EMBER_GLOW.pool, 2.5 * poolR, 0.5, poolY(), true);
+      pool.position.x = em.x;
+      pool.position.z = em.z;
+      root.add(pool);
+      // Core 0.30 at radius 1.05 (a first cut ran 0.50 at 1.20): stacked on
+      // the pool below it, the fat bright core clipped to featureless white —
+      // measured rgb(255,242,208) at saturation 0.18 dead centre — which is
+      // exactly the "sourceless white blob" read the F1 advisory is about. A
+      // smaller, dimmer core keeps a hot centre that still carries hue.
+      // (No second "hot core" pool. It stacked on the pool above and clipped
+      // the ground around the pedestal to featureless white, which is exactly
+      // what turned the emitter into a backlit smudge — the F1 defect this
+      // whole prop exists to fix. The FLAME is the hot centre now.)
+      flames.push({ body, glow, pool, poolO: 0.5, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.95, phase: cosmetic.range(0, Math.PI * 2) });
+      fireSources.push({ x: em.x, y: em.y + 0.12, z: fz });
     } else if (em.kind === 'lantern') {
       // A lantern is a FIRE, not a cold lamp: a small flame inside the glass
       // plus a warm halo, so it registers as the same emitter family as the
       // torches beside it.
-      const wick = makeFlameSprite(0.24, 0.95, 2.8);
+      const wick = makeFlameSprite(0.24, 0.95, 2.3);
       wick.position.set(em.x, em.y + 0.01 + TOWARD_CAM.y * 0.1, em.z + TOWARD_CAM.z * 0.1);
       wick.renderOrder = 8;
       root.add(wick);
       const glow = makeGlowSprite({ color: PALETTE.hearthAmber, size: 1.15, opacity: 0.8 });
-      glow.material.color.copy(mix(PALETTE.hearthAmber, PALETTE.paleGold, 0.35));
+      glow.material.color.copy(EMBER_GLOW.halo);
       glow.position.set(em.x, em.y, em.z);
       root.add(glow);
-      const pool = groundPool(mix(PALETTE.hearthAmber, PALETTE.paleGold, 0.4), 1.9, 0.44, poolY());
+      const pool = groundPool(EMBER_GLOW.pool, 1.65, 0.44, poolY());
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
-      pulses.push({ glow, base: 0.78, rate: 3.1, amp: 0.18, jitter: 0.05, phase: cosmetic.range(0, Math.PI * 2), wick });
+      pulses.push({ glow, base: 0.7, rate: 3.1, amp: 0.16, jitter: 0.05, phase: cosmetic.range(0, Math.PI * 2), wick });
       fireSources.push({ x: em.x, y: em.y + 0.08, z: em.z });
     } else if (em.kind === 'monolith') {
       // God-stuff Violet halo — the ONLY violet in the frame rides this prop.
       // toneMapped:false keeps the halo CHROMATIC: an ACES-compressed violet
       // sprite over dark stone measured as neutral dark teal last round, i.e.
       // the "subtle glow" carried none of the accent colour.
-      const glow = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 2.3, opacity: 0.6 });
+      // Size 1.9 (was 2.3): the violet halo riding over a neighbouring tan
+      // stump blends to rose — inside the h5-25 danger band. Tighter halo,
+      // same pulse.
+      // Halo/pool violet rides the veins' pre-compensated tone with the RED
+      // trimmed 18%: the untrimmed halo washing the monolith's own warm-key-lit
+      // bevels blended to rose streaks measured at h8-16 / s0.38-0.48 — inside
+      // the reserved Ember band. Blue-leaning violet stays firmly in the
+      // analyzer's violet band (245-285) while its warm-surface blends fall
+      // toward neutral mauve instead of rose. (Vein emissive keeps the full
+      // VEIN_VIOLET — the streak cores are what carry the accent.)
+      // [0.66, 0.5, 1.95]: deep blue-violet (post-chain hue ~247, inside the
+      // violet band) whose warm-surface blends can never be red-lifted into
+      // the reserved Ember band — the older red-heavier halo painted the
+      // monolith's own key-lit face maroon in vignette-dim frames.
+      const HALO_VIOLET = [0.66, 0.5, 1.95];
+      const glow = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 1.9, opacity: 0.6 });
       glow.material.toneMapped = false;
-      // Same pre-compensated violet as the veins so the HALO carries the accent
-      // hue too (an ACES-flattened violet sprite measured as neutral dark teal).
-      glow.material.color.setRGB(VEIN_VIOLET[0], VEIN_VIOLET[1], VEIN_VIOLET[2], LinearSRGBColorSpace);
+      // Same pre-compensated violet family as the veins so the HALO carries the
+      // accent hue too (an ACES-flattened violet sprite measured as neutral
+      // dark teal).
+      glow.material.color.setRGB(HALO_VIOLET[0], HALO_VIOLET[1], HALO_VIOLET[2], LinearSRGBColorSpace);
       glow.position.set(em.x, em.y, em.z);
       root.add(glow);
       const spark = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 0.6, opacity: 0.55 });
       spark.material.toneMapped = false;
-      spark.material.color.setRGB(VEIN_VIOLET[0], VEIN_VIOLET[1], VEIN_VIOLET[2], LinearSRGBColorSpace);
+      spark.material.color.setRGB(HALO_VIOLET[0], HALO_VIOLET[1], HALO_VIOLET[2], LinearSRGBColorSpace);
       spark.position.set(em.x, em.y + 0.18, em.z);
       root.add(spark);
-      const pool = groundPool(PALETTE.godstuffViolet, 1.45, 0.42, poolY());
-      pool.material.color.setRGB(VEIN_VIOLET[0], VEIN_VIOLET[1], VEIN_VIOLET[2], LinearSRGBColorSpace);
+      // Radius 1.2 keeps the violet wash off the neighbouring warm-lit stone:
+      // violet + amber additive overlap lands rose-brown INSIDE h5-25.
+      // The GROUND pool goes bluer and softer still (red x0.62, opacity 0.34):
+      // over vignette-dark ground the grade crushes the addition's blue and the
+      // old pool measured a maroon slick around the plinth; the vein cores and
+      // halo carry the violet tell, the pool only has to read as underglow.
+      const pool = groundPool(PALETTE.godstuffViolet, 1.2, 0.34, poolY());
+      pool.material.color.setRGB(HALO_VIOLET[0] * 0.62, HALO_VIOLET[1], HALO_VIOLET[2], LinearSRGBColorSpace);
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
@@ -402,44 +616,9 @@ export function createArenaScene(stage, toggles, ctx) {
 
   const embers = createEmberField(root, fireSources, cosmetic, 9);
 
-  // Mid-field warm canopy dapples: guarantee >=2 warm pools in any gameplay
-  // frame (torches hug the walls and can sit outside the camera rect).
-  const dappleColor = mix(PALETTE.hearthAmber, PALETTE.paleGold, 0.3);
-  const dapples = [];
-  for (const [px, pz, pr] of spec.sunPools ?? []) {
-    const base = spec.mood?.dapple ?? 0.42;
-    const pool = groundPool(dappleColor, pr, base, poolY(), true);
-    // Sunlight through leaves is never a circle. Each shaft gets its own
-    // aspect ratio and in-plane rotation so the floor reads as dappled canopy
-    // light instead of a row of stamped discs.
-    const ax = cosmetic.range(0.72, 1.35);
-    const az = (1 / ax) * cosmetic.range(0.9, 1.2);
-    const spin = cosmetic.range(0, Math.PI);
-    pool.scale.set(pr * ax, pr * az, 1);
-    pool.rotation.z = spin;
-    pool.position.x = px;
-    pool.position.z = pz;
-    root.add(pool);
-    // ...and a hotter inner core. A single soft falloff peaks for only a few
-    // pixels, so its brightest ring sat right on the luma-200 boundary and
-    // wandered across it frame to frame; the core is what makes the shaft
-    // land a stable region of real highlight (critique F2's value range).
-    const core = groundPool(dappleColor, pr * 0.46, base * 0.8, poolY(), true);
-    core.scale.set(pr * 0.46 * ax, pr * 0.46 * az, 1);
-    core.rotation.z = spin;
-    core.position.x = px;
-    core.position.z = pz;
-    root.add(core);
-    dapples.push({
-      pool,
-      core,
-      base,
-      x: px,
-      z: pz,
-      phase: cosmetic.range(0, Math.PI * 2),
-      drift: cosmetic.range(0.1, 0.22),
-    });
-  }
+  // (The old mid-field "canopy dapple" pools are gone: baseline-v030 F1 ruled
+  // every warm pool needs a visible emitter, so the mid-field warmth now comes
+  // from the brazier fire bowls handled in the emitter loop above.)
 
   // Real warm light: 2 torches per variant (spec.lightIdx) carry PointLights.
   const flameEmitters = emitters.filter((e) => e.kind === 'flame');
@@ -448,7 +627,17 @@ export function createArenaScene(stage, toggles, ctx) {
     const em = flameEmitters[idx];
     if (!em) continue;
     const light = new PointLight(
-      new Color(PALETTE.hearthAmber).lerp(new Color('#FFFFFF'), 0.2),
+      // Gold-white, not raw amber: the torch light MULTIPLIES nearby wall and
+      // stone albedo, and an amber-heavy product lands lit masonry in h5-25.
+      // White lerp 0.78 (was 0.7; before that 0.55): the brick strip behind
+      // each LIT torch kept measuring h24-25/s0.35-0.40 in the DIM hollow
+      // variant (~150-200 px per torch there). The whiter multiplier keeps
+      // the pool warm (the flame + halo carry the color) while lit brick
+      // stays above h25 / under s0.35 in all three variants.
+      // White lerp 0.60 (a first cut ran 0.78): the Pale Gold half already
+      // carries the hue lift that keeps lit masonry above h25, and the extra
+      // white only bleached the torch pools.
+      new Color(PALETTE.hearthAmber).lerp(new Color(PALETTE.paleGold), 0.5).lerp(new Color('#FFFFFF'), 0.6),
       TORCH_LIGHT.intensity,
       TORCH_LIGHT.distance,
       TORCH_LIGHT.decay
@@ -582,6 +771,48 @@ export function createArenaScene(stage, toggles, ctx) {
 
     healerRig.update(dt);
     for (const a of allies) a.update(dt);
+
+    // Dash afterimages: one ghost per SMEAR_TICK_SPACING sim ticks of dash
+    // travel (staggered silhouettes, not a per-frame slab); hard-clear at dash
+    // end (§5). The schedule runs on SIM TICKS and CATCHES UP: a slow render
+    // loop (headless captures run ~4-10 fps while the 60 Hz accumulator
+    // bursts) would otherwise realize only one ghost per rendered frame —
+    // missed spawn ticks are back-dated along the locked dash direction, each
+    // placed where the body was on its spawn tick and pre-aged on its own
+    // fade clock, so a mid-dash frame shows the same >=3-ghost trail at any
+    // render rate.
+    if (smearWarmFrames > 0 && --smearWarmFrames === 0) afterimages.clear();
+    if (p.dashTicksLeft > 0) {
+      // The trail is a pure FUNCTION of how far into the dash the body is: at
+      // `elapsed` ticks travelled, silhouettes are frozen at elapsed-2, -4, -6…
+      // back along the locked dash direction, each pre-aged by exactly the sim
+      // time it is behind the body. Rebuilding it every frame (rather than
+      // accumulating one ghost per rendered frame) is what makes a mid-dash
+      // capture show the same >=3-ghost staggered trail whether the page is
+      // running at 165 fps or hitching through the whole dash in one frame.
+      const elapsed = DODGE.durationTicks - p.dashTicksLeft;
+      const stepU = DODGE.distance / DODGE.durationTicks; // u per dash tick
+      let mvx = p.x - p.px;
+      let mvz = p.z - p.pz;
+      const mvl = Math.hypot(mvx, mvz);
+      if (mvl > 1e-6) {
+        mvx /= mvl;
+        mvz /= mvl;
+      } else {
+        mvx = 0;
+        mvz = 0;
+      }
+      afterimages.clear();
+      for (let k = 1; k <= 7; k++) {
+        const back = k * SMEAR_TICK_SPACING; // sim ticks behind the body
+        if (back > elapsed) break;
+        afterimages.spawn(-mvx * stepU * back, -mvz * stepU * back, back / TICK_HZ);
+      }
+      lastGhostTick = world.tick;
+    } else if (lastGhostTick >= 0) {
+      afterimages.clear();
+      lastGhostTick = -1;
+    }
     // Critter ink is clip-space-expanded; it needs the live canvas size (same
     // contract as the prop ink above).
     setInkViewport(window.innerWidth, window.innerHeight);
@@ -616,13 +847,15 @@ export function createArenaScene(stage, toggles, ctx) {
         Math.sin(tSec * 29 + f.phase * 2.7) * 0.3 +
         Math.sin(tSec * 6.3 + f.phase * 0.6) * 0.2;
       const jit = cosmetic.range(-0.05, 0.05);
-      const h = 0.7 * (1 + 0.22 * n + jit);
+      const base = f.scale ?? 0.7; // torches 0.7, brazier bowls 0.56
+      const h = base * (1 + 0.22 * n + jit);
       f.body.scale.set(h * 0.66 * (1 - 0.1 * n), h, 1);
       f.body.position.x = f.x + Math.sin(tSec * 5.1 + f.phase) * 0.014;
       f.body.position.y = f.y + 0.02 * n;
-      f.glow.material.opacity = Math.max(0.2, 0.66 + 0.24 * n + jit);
-      f.glow.scale.setScalar(1.5 * (1 + 0.1 * n));
-      f.pool.material.opacity = Math.max(0.24, 0.62 + 0.16 * n);
+      f.glow.material.opacity = Math.max(0.16, (f.glowO ?? 0.45) + 0.18 * n + jit);
+      f.glow.scale.setScalar((f.glowS ?? 1.05) * (1 + 0.1 * n)); // braziers ride a tighter halo
+      f.pool.material.opacity = Math.max(0.24, (f.poolO ?? 0.6) + 0.14 * n);
+      if (f.core) f.core.material.opacity = Math.max(0.08, (f.coreO ?? 0.16) + 0.05 * n);
     }
     // Lanterns + monolith halos: soft pulses (monolith "subtle glow" §19.3).
     for (const pu of pulses) {
@@ -639,19 +872,6 @@ export function createArenaScene(stage, toggles, ctx) {
     // clipping point so the vein cores stay violet instead of blowing white).
     if (monolithMat) {
       monolithMat.emissiveIntensity = 1.9 + 0.35 * Math.sin(tSec * 0.9);
-    }
-    // Canopy dapples breathe AND creep, like sunlight through moving leaves —
-    // the one large-area motion in the frame, kept slow so it never wobbles.
-    for (const d of dapples) {
-      const k = 1 + 0.28 * Math.sin(tSec * 0.7 + d.phase);
-      const dx = d.x + Math.sin(tSec * 0.33 + d.phase) * d.drift;
-      const dz = d.z + Math.cos(tSec * 0.27 + d.phase * 1.4) * d.drift;
-      d.pool.material.opacity = d.base * k;
-      d.pool.position.x = dx;
-      d.pool.position.z = dz;
-      d.core.material.opacity = d.base * 0.8 * k;
-      d.core.position.x = dx;
-      d.core.position.z = dz;
     }
     // The real torch PointLights flicker with their flames.
     for (const tl of torchLights) {
@@ -690,6 +910,35 @@ export function createArenaScene(stage, toggles, ctx) {
     flyColAttr.needsUpdate = true;
   }
 
+  // Render-side probe handle for capture-harness evals (tools/capture.mjs
+  // `eval` actions): lets a verification script project prop instances to
+  // screen space and attribute a pixel region to the mesh that owns it.
+  // Read-only debug aid — nothing in the scene reads it.
+  // `pick(sx, sy)` raycasts a SCREEN pixel and names the mesh + material colour
+  // that owns it — the attribution step behind "which prop is putting pixels in
+  // the reserved Ember band". Cheap and read-only; built lazily on first use.
+  const pickRay = new Raycaster();
+  const pickNdc = new Vector2();
+  window.__arenaProbe = {
+    stage,
+    root,
+    emitters,
+    pick(sx, sy, depth = 3) {
+      pickNdc.set((sx / window.innerWidth) * 2 - 1, -(sy / window.innerHeight) * 2 + 1);
+      pickRay.setFromCamera(pickNdc, stage.camera);
+      return pickRay
+        .intersectObjects([root], true)
+        .filter((h) => h.object.visible && h.object.material && h.object.type !== 'Points')
+        .slice(0, depth)
+        .map((h) => ({
+          name: h.object.name || h.object.parent?.name || h.object.geometry?.type || '?',
+          type: h.object.type,
+          dist: Math.round(h.distance * 100) / 100,
+          color: h.object.material.color ? '#' + h.object.material.color.getHexString() : null,
+        }));
+    },
+  };
+
   function debugState() {
     return {
       ...(inner.debugState ? inner.debugState() : {}),
@@ -699,6 +948,7 @@ export function createArenaScene(stage, toggles, ctx) {
       party: {
         healerAnim: healerRig.getAnim(),
         healerYaw: Math.round(healerYaw * 100) / 100,
+        smearGhosts: afterimages.count(),
         allies: allies.map((a) => ({
           classId: a.classId,
           anim: a.getAnim(),
@@ -724,5 +974,5 @@ export function createArenaScene(stage, toggles, ctx) {
     };
   }
 
-  return { name: `arena-v${spec.id}`, root, update, debugState };
+  return { name: `arena-v${spec.id}`, root, update, debugState, allies };
 }

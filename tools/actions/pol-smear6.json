@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -3.5, 1.5)"},
+  {"type":"wait","ms":500},
+  {"type":"mousemove","x":1200,"y":300},
+  {"type":"wait","ms":150},
+  {"type":"eval","code":"(()=>{const dn=(c)=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c,key:c,bubbles:true}));const up=(c)=>window.dispatchEvent(new KeyboardEvent('keyup',{code:c,key:c,bubbles:true}));window.__SM=[];let n=0;const log=()=>{const s=window.__echoes.state();const p=s.party[0];window.__SM.push([window.__echoes.tick,p.dashTicksLeft,s.vfx&&s.vfx.party?s.vfx.party.smearGhosts:-1]);if(n++<90)requestAnimationFrame(log)};dn('KeyD');setTimeout(()=>{dn('Space');setTimeout(()=>up('Space'),120);requestAnimationFrame(log);},250);setTimeout(()=>up('KeyD'),1200);return 'go'})()"},
+  {"type":"wait","ms":1600},
+  {"type":"eval","code":"JSON.stringify({frames:window.__SM.length, dash:window.__SM.filter(a=>a[1]>0), maxGhosts:Math.max(...window.__SM.map(a=>a[2]))})"}
+]

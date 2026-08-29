@@ -1,0 +1,3 @@
+[
+ {"type":"eval","code":"(()=>{const out={};try{Object.defineProperty(window.location,'reload',{configurable:true,writable:true,value:()=>{console.log('[qk] reload blocked');}});out.defineOk=true;}catch(e){out.defineErr=String(e);}try{out.reloadIsPatched=(''+window.location.reload).includes('blocked');}catch(e){out.chk=String(e);}return out;})()"}
+]

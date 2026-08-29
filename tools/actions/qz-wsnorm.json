@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,-3)"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"({ws:__echoes.state().room.waystone, en:__echoes.state().enemies.length})"}
+]

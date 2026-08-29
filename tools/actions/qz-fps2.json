@@ -1,0 +1,10 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"[[2.5,1.5],[-2.5,1.5],[3,-2],[-3,-2],[1.5,3],[-1.5,3]].map((p,i)=>__echoes.cmd('spawn', i%2? 'mantis':'boar', p[0], p[1]))"},
+  {"type":"eval","code":"[__echoes.cmd('setHp',0,50), [4,5,6,7,8,9].map(id=>__echoes.cmd('setHp',id,20))]"},
+  {"type":"wait","ms":3000},
+  {"type":"eval","code":"window.__f=[];window.__t=setInterval(()=>{window.__f.push(__echoes.fps);},400);'armed'"},
+  {"type":"wait","ms":24000},
+  {"type":"eval","code":"clearInterval(window.__t);(!window.__f? {reloaded:true} : {n:window.__f.length, min:Math.min(...window.__f), mean:Math.round(window.__f.reduce((a,b)=>a+b,0)/window.__f.length*10)/10, last10:window.__f.slice(-10), ents:__echoes.entityCount, en:__echoes.state().enemies.length})"}
+]

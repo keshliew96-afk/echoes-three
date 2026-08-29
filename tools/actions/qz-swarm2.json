@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,5)"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,50)"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"[[2.5,5],[-3.4,5],[0,7.5],[0,2.6],[2.4,6.7],[-2.4,3.3]].map(p=>__echoes.cmd('spawn','mantis',p[0],p[1]))"},
+  {"type":"eval","code":"window.__ev=[];window.__mx=0;__echoes.on('telegraph_start',e=>window.__ev.push(e.tick+' TS e'+e.id+' pt'+(e.playerTargeted?1:0)));__echoes.on('telegraph_resolve',e=>window.__ev.push(e.tick+' TR e'+e.id+' pt'+(e.playerTargeted?1:0)));__echoes.on('hit',e=>{if(e.target===0)window.__ev.push(e.tick+' HIT amt'+e.amount)});window.__t=setInterval(()=>{let n=0;for(const e of __echoes.state().enemies) if(e.telegraph)n++; if(n>window.__mx)window.__mx=n;},16);'armed'"},
+  {"type":"wait","ms":20000},
+  {"type":"eval","code":"clearInterval(window.__t);(!window.__ev?{reloaded:1}:{maxConcurrent:window.__mx, ev:window.__ev})"}
+]

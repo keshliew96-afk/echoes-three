@@ -1,0 +1,3 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; __echoes.cmd('giveSkill','restorative_wave'); const ids=__echoes.state().party.map(p=>p.id); __echoes.cmd('setHp', ids[0], 0.5); __echoes.cmd('setHp', ids[1], 0.4); __echoes.cmd('teleport',-2.5,-1.0); window.__press('Digit3'); return { fired:'restorative_wave east onto tank' }; })()" }
+]

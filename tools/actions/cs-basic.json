@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "(() => { __echoes.cmd('teleport',-2,0); const d=__echoes.cmd('spawn','dummy', 1.0, 0); window.__t=__echoes.tick; window.__d=d; return { armed:'basic regression', d }; })()" },
+  { "type": "mousedown", "button": "right" },
+  { "type": "wait", "ms": 1300 },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "(() => { const evs=__echoes.events.filter(e=>e.tick>=window.__t && ['basic_fire','hit','death'].includes(e.type)); return { test:'basic-regression', evs, stats: __echoes.stats }; })()" }
+]

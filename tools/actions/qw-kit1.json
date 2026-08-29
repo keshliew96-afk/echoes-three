@@ -1,0 +1,34 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__sleep=(ms)=>new Promise(r=>setTimeout(r,ms));window.__mark=()=>__echoes.events.length;window.__since=(n,t)=>__echoes.events.slice(n).filter(e=>!t||e.type===t);window.__press=(c)=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:c,bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:c,bubbles:true}));};window.__move=async(x,y)=>{window.dispatchEvent(new MouseEvent('mousemove',{clientX:x,clientY:y,bubbles:true,cancelable:true}));await window.__sleep(35);return window.__echoes.state().party[0].aim;};window.__aim=async(wx,wz)=>{const e=window.__echoes;let sx=innerWidth/2,sy=innerHeight/2;let a=await window.__move(sx,sy);for(let i=0;i<25&&a;i++){const d=Math.hypot(wx-a.x,wz-a.z);if(d<0.02)return{ok:true,sx,sy,aim:a,i,d};const h=20;const ax=await window.__move(sx+h,sy);const ay=await window.__move(sx,sy+h);const j11=(ax.x-a.x)/h,j12=(ay.x-a.x)/h,j21=(ax.z-a.z)/h,j22=(ay.z-a.z)/h;const det=j11*j22-j12*j21;if(Math.abs(det)<1e-12)break;const ex=wx-a.x,ez=wz-a.z;let dsx=(j22*ex-j12*ez)/det,dsy=(-j21*ex+j11*ez)/det;const L=Math.hypot(dsx,dsy),cap=400;if(L>cap){dsx*=cap/L;dsy*=cap/L;}sx=Math.max(3,Math.min(innerWidth-3,sx+dsx));sy=Math.max(3,Math.min(innerHeight-3,sy+dsy));a=await window.__move(sx,sy);}return{ok:false,sx,sy,aim:a};};window.__equip=(ids)=>{const slots=ids.map(id=>id?{id,remaining:0}:null);while(slots.length<4)slots.push(null);return __echoes.cmd('restoreSkillState',{slots,override:null});};'ready'})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=__echoes,c=e.cmd;window.__equip(['mending_bolt','spirit_bolt']);c('teleport',-6,4);c('placeAlly',1,8,-6);c('placeAlly',2,9,-6);c('placeAlly',3,10,-6);await window.__sleep(120);const a=await window.__aim(0,4);const st=e.state();return{setup:'MB slot1 / SB slot2, player (-6,4), allies parked far SE',aim:a.ok,aimAt:a.aim,player:{x:st.party[0].x,z:st.party[0].z},skills:st.skills.map(s=>s&&{id:s.id,total:s.totalTicks,rem:s.remainingTicks})};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=__echoes;const m=window.__mark();window.__press('Digit1');await window.__sleep(1400);const evs=window.__since(m);const sp=evs.filter(x=>x.type==='skill_bolt_spawn');const dp=evs.filter(x=>x.type==='skill_bolt_despawn');const cast=evs.filter(x=>x.type==='skill_cast');return{test:'MB free flight (no ally in path): count, range, speed',casts:cast.map(x=>({tick:x.tick,skill:x.skill,shape:x.shape,dx:x.dx,dz:x.dz})),spawns:sp.map(x=>({tick:x.tick,skill:x.skill,heal:x.heal,x:x.x,z:x.z,dx:x.dx,dz:x.dz})),despawns:dp.map(x=>({tick:x.tick,cause:x.cause,traveled:x.traveled,x:x.x,z:x.z})),flightTicks:dp.length&&sp.length?dp[0].tick-sp[0].tick:null,impliedSpeed:dp.length&&sp.length?+(dp[0].traveled/((dp[0].tick-sp[0].tick)/60)).toFixed(3):null,healsDuring:window.__since(m,'heal').length};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=__echoes;const m=window.__mark();window.__press('Digit1');await window.__sleep(120);const d=window.__since(m,'intent_denied');const sk=e.state().skills[0];return{test:'MB refire while on cooldown',denied:d,slotView:sk};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=__echoes,c=e.cmd;await window.__sleep(3600);const m=window.__mark();window.__press('Digit1');await window.__sleep(150);const casts=window.__since(m,'skill_cast');const denied=window.__since(m,'intent_denied');return{test:'MB ready again after 3.5s (210 ticks)',casts:casts.map(x=>({tick:x.tick,skill:x.skill})),denied};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=__echoes,c=e.cmd;window.__equip(['mending_bolt','spirit_bolt']);c('teleport',-6,4);c('placeAlly',1,-2.5,4);const tank=e.state().party.find(p=>p.partyIndex===1);c('setHp',tank.id,0.4);const dum=c('spawn','dummy',-4.0,4);await window.__sleep(120);const a=await window.__aim(0,4);const m=window.__mark();const t0=e.tick;window.__press('Digit1');await window.__sleep(1200);const st=e.state();return{test:'MB passes enemy, heals first ally in path; power=22',castTick:t0,aimOk:a.ok,dummyId:dum,dummyHp:st.enemies.find(x=>x.id===dum)?.hp,tankId:tank.id,heals:window.__since(m,'heal').map(h=>({tick:h.tick,target:h.target,source:h.source,amount:h.amount,applied:h.applied,crit:h.crit})),hits:window.__since(m,'hit').map(h=>({target:h.target,amount:h.amount,source:h.source})),despawns:window.__since(m,'skill_bolt_despawn').map(x=>({cause:x.cause,traveled:x.traveled}))};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=__echoes,c=e.cmd;c('teleport',-6,4);c('placeAlly',1,8,-6);const dum=c('spawn','dummy',-1.2,4);await window.__sleep(120);const a=await window.__aim(0,4);const m=window.__mark();window.__press('Digit2');await window.__sleep(1400);const st=e.state();return{test:'Spirit Bolt: damage 18, speed 5.0, range 4.8, target dummy at 4.8u',aimOk:a.ok,dummyId:dum,dummyHp:st.enemies.find(x=>x.id===dum)?.hp,casts:window.__since(m,'skill_cast').map(x=>({tick:x.tick,skill:x.skill,shape:x.shape})),spawns:window.__since(m,'skill_bolt_spawn').map(x=>({tick:x.tick,skill:x.skill,heal:x.heal})),hits:window.__since(m,'hit').map(h=>({tick:h.tick,target:h.target,amount:h.amount,crit:h.crit,source:h.source,delivery:h.delivery,kb:h.kb})),heals:window.__since(m,'heal').length,despawns:window.__since(m,'skill_bolt_despawn').map(x=>({tick:x.tick,cause:x.cause,traveled:x.traveled})),slot2:st.skills[1]};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=__echoes,c=e.cmd;c('killAllEnemies');c('teleport',-6,4);await window.__sleep(4200);const a=await window.__aim(0,4);const m=window.__mark();window.__press('Digit2');await window.__sleep(1500);const sp=window.__since(m,'skill_bolt_spawn');const dp=window.__since(m,'skill_bolt_despawn');return{test:'Spirit Bolt free flight: range/speed',spawns:sp.map(x=>({tick:x.tick,skill:x.skill})),despawns:dp.map(x=>({tick:x.tick,cause:x.cause,traveled:x.traveled})),flightTicks:dp.length&&sp.length?dp[0].tick-sp[0].tick:null,impliedSpeed:dp.length&&sp.length?+(dp[0].traveled/((dp[0].tick-sp[0].tick)/60)).toFixed(3):null,slot2:e.state().skills[1]};})()"
+ }
+]

@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "(()=>{const rec={retreats:[],despawns:[],hits:[],immunes:[],clearedTick:null,eshotClears:[]}; window.__rt=rec; __echoes.on('enemy_retreat',e=>rec.retreats.push(e)); __echoes.on('enemy_despawn',e=>rec.despawns.push(e)); __echoes.on('room_cleared',e=>rec.clearedTick=e.tick); __echoes.on('eshot_despawn',e=>{if(e.cause==='room_clear')rec.eshotClears.push(e)}); __echoes.on('hit',e=>{if(rec.clearedTick!=null)rec.hits.push(e)}); __echoes.on('hit_immune',e=>{if(rec.clearedTick!=null)rec.immunes.push(e)}); __echoes.cmd('startRoom','kill_all'); return true})()" },
+  { "type": "wait", "ms": 2200 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); window.__preClear=s.enemies.filter(e=>e.state==='active').map(e=>({id:e.id,kind:e.kind,x:e.x,z:e.z})); __echoes.cmd('clearRoom'); return {activeAtClear:window.__preClear.length}})()" },
+  { "type": "wait", "ms": 2000 },
+  { "type": "eval", "code": "(()=>{const r=window.__rt; const s=__echoes.state(); const pre=window.__preClear; const moved=r.despawns.filter(d=>d.cause==='retreat').map(d=>{const p=pre.find(q=>q.id===d.id); return {id:d.id, gapTicks:d.tick-r.clearedTick}}); return {clearedTick:r.clearedTick, retreats:r.retreats.length, retreatDespawns:moved, eshotRoomClears:r.eshotClears.length, hitsAfterClear:r.hits.length, enemiesLeft:s.enemies.length, roomCleared:s.room?s.room.cleared:null}})()" }
+]

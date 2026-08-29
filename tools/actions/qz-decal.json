@@ -1,0 +1,11 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',6,0)"},
+  {"type":"wait","ms":1800},
+  {"type":"eval","code":"__echoes.cmd('spawn','boar',7.6,0)"},
+  {"type":"wait","ms":200},
+  {"type":"mousedown","button":"right"},
+  {"type":"wait","ms":1600},
+  {"type":"mouseup","button":"right"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"({en:__echoes.state().enemies.length, ev:__echoes.events.filter(e=>e.type==='death').map(e=>e.tick+' '+e.kind+' '+e.x+','+e.z)})"}
+]

@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',5,2)"},
+  {"type":"eval","code":"__echoes.cmd('spawn','boar',8.5,2)"},
+  {"type":"mousemove","x":1250,"y":420},
+  {"type":"wait","ms":300},
+  {"type":"mousedown","button":"right"}
+]

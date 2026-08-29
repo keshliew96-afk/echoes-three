@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',7,4)"},
+  {"type":"wait","ms":1800},
+  {"type":"eval","code":"__echoes.cmd('spawn','mantis',9.5,4)"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"({hp:__echoes.state().party[0].hp, ev:__echoes.events.filter(e=>['telegraph_start','telegraph_resolve','hit','hit_immune'].includes(e.type)).map(e=>e.tick+' '+e.type+(e.amount?' amt'+e.amount:''))})"}
+]

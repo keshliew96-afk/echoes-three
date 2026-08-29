@@ -1,0 +1,19 @@
+[
+  {"type":"eval","code":"window.__probe={ev:[]};__echoes.on('*',e=>{if(['room_cleared','room_soft_fail','enemy_retreat','enemy_despawn','waystone_spawn'].includes(e.type))__probe.ev.push(e)});__echoes.state().room"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"({t:'pre-final-wave',room:__echoes.state().room})"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"({t:'final-wave-alive',room:__echoes.state().room})"},
+  {"type":"wait","ms":8000},
+  {"type":"eval","code":"({t:'post-timer',room:__echoes.state().room,ev:__probe.ev.map(e=>({ty:e.type,t:e.tick,id:e.id,cause:e.cause})),enemiesLeft:__echoes.state().enemies.filter(e=>e.kind==='boar'||e.kind==='mantis').length,ws:__echoes.state().room?__echoes.state().room.waystone:'n/a'})"}
+]

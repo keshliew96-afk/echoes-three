@@ -1,0 +1,5 @@
+[
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(() => { const { root } = window.__arenaProbe; let hid=0; for (const c of root.children) { if ((c.name||'').startsWith('critter-')) { c.visible=false; hid++; } } return {hid}; })()" },
+  { "type": "wait", "ms": 300 }
+]

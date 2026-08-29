@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('giveSkill','sanctuary'); c('teleport', -1.2, -1.2); c('setHp', 0, 0.3); c('setHp', 1, 0.3); return 1; })()" },
+  { "type": "mousemove", "x": 760, "y": 470 },
+  { "type": "wait", "ms": 150 },
+  { "type": "key", "key": "Digit3", "ms": 40 },
+  { "type": "wait", "ms": 700 }
+]

@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "window.__L=[];for(const t of ['revive_start','revive_break','revive_drain_end']) __echoes.on(t,ev=>window.__L.push(ev));'log'" },
+  { "type": "eval", "code": "__echoes.cmd('teleport',2.15,-2.2);__echoes.cmd('setHp',3,0)" },
+  { "type": "wait", "ms": 5400 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'pre-break',ch:s.party_ai.channels}})()" },
+  { "type": "key", "key": "KeyR", "ms": 60 },
+  { "type": "wait", "ms": 1700 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{at:'c',waited:1700,tick:s.tick,ch:s.party_ai.channels,ring:s.allyfx.reviveRingScreen,log:window.__L.map(e=>e.type+'@'+e.tick+(e.progress!==undefined?' p='+e.progress:''))}})()" }
+]

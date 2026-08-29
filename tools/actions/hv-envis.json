@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "(()=>{__echoes.cmd('teleport',-6,4.5); const pid=__echoes.state().party[0].id; __echoes.cmd('iframe',pid,600); const b=__echoes.cmd('spawn','boar',-4.2,4.0); const m=__echoes.cmd('spawn','mantis',-3.6,5.4); return {b,m}})()" },
+  { "type": "wait", "ms": 550 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); return s.enemies.map(e=>({id:e.id,kind:e.kind,x:e.x,z:e.z}))})()" }
+]

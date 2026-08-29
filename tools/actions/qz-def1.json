@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',10,7)"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"({tick:__echoes.tick, room:__echoes.state().room})"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"({tick:__echoes.tick, room:__echoes.state().room, en:__echoes.state().enemies.map(e=>e.id+' '+e.kind+' d'+Math.round(Math.hypot(e.x-0,e.z-1.6)*10)/10+' tgt'+e.targetId)})"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"({tick:__echoes.tick, room:__echoes.state().room, en:__echoes.state().enemies.map(e=>e.id+' '+e.kind+' tgt'+e.targetId)})"}
+]

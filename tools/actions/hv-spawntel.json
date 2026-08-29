@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "(()=>{const info=__echoes.cmd('startRoom','kill_all'); return info})()" },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); return {tick:s.tick, room:s.room, pendingTels:__echoes.events.filter(e=>e.type==='spawn_telegraph').map(e=>({x:e.x,z:e.z,etype:e.etype,spawnTick:e.spawnTick,tick:e.tick}))}})()" }
+]

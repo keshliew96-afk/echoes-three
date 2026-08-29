@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"eval","code":"__echoes.cmd('teleport',0,-3)"},
+  {"type":"eval","code":"__echoes.cmd('setHp',4,0)"},
+  {"type":"wait","ms":2600},
+  {"type":"eval","code":"({ws:__echoes.state().room.waystone})"}
+]

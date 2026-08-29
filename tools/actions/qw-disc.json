@@ -1,0 +1,6 @@
+[
+ { "type": "eval", "code": "(()=>{window.__sleep=(ms)=>new Promise(r=>setTimeout(r,ms));window.__mark=()=>__echoes.events.length;window.__since=(n,t)=>__echoes.events.slice(n).filter(e=>!t||e.type===t);window.__press=(c)=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:c,bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:c,bubbles:true}));};const st=__echoes.state();return {version:__echoes.version,scene:st.scene,seed:__echoes.seed,tick:st.tick,skills:st.skills,healOverride:st.healOverride,party:st.party.map(p=>({id:p.id,pi:p.partyIndex??0,cls:p.classId||'healer',hp:p.hp,max:p.maxHp,x:p.x,z:p.z})),zones:st.zones,keys:Object.keys(st)};})()" },
+ { "type": "wait", "ms": 1500 },
+ { "type": "eval", "code": "(()=>{const st=__echoes.state();return {t2:st.tick,partyMoved:st.party.map(p=>({pi:p.partyIndex??0,x:p.x,z:p.z})),allyState:__echoes.cmd('allyState')};})()" },
+ { "type": "eval", "code": "(()=>{const h=document.querySelector('#hud')||document.body;const els=[...document.querySelectorAll('[class*=proto]')].map(e=>e.className);return {protoEls:els.slice(0,40),count:els.length};})()" }
+]

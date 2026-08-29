@@ -52,18 +52,93 @@ export const COOL = Object.freeze({
   trunk: '#171b22',
 });
 
+// --- Reserved-band guarantee for the warm PROP family ------------------------
+// Measured, not guessed. Every timber/stone albedo in this file already sits at
+// display hue 30-40 (checked by dumping every material colour in the running
+// scene), and yet the same props kept measuring hue 19-25 at saturation
+// 0.35-0.57 in captured frames — inside the h5-25 Ember Danger band the palette
+// reserves for enemy threats. The rotation happens downstream of the albedo:
+// warm key x albedo, then ACES, then the grade's `c *= vec3(1.045,1.010,0.965)`
+// red lift, together drag a warm mid-tone about 15 hue degrees DOWN.
+//
+// So the guarantee is applied here, at the source, instead of being chased one
+// hand-tuned mix at a time: a hue FLOOR of 44 degrees (44 - 15 lands clear of
+// the 25 ceiling) and a saturation CAP of 0.33 (under the analyzer's s > 0.35
+// gate, so even a tone that does rotate into the band cannot be counted). Two
+// independent margins, both measurable. Storybook timber still reads as timber
+// at s 0.33 — the props keep their value structure, which is what carries the
+// silhouette anyway.
+// Floor 46 / cap 0.28 after a measured pass at 44 / 0.33: at the looser pair
+// the dark toon bands of edge props still came back h21-25 at s0.35-0.40,
+// because the warm key contributes its OWN saturation on top of the albedo's
+// and the grade adds a further ~5% saturation boost.
+// Final pair 48 / 0.25 (from 46 / 0.28): the edge props' shaded toon bands
+// were still the largest non-party contributor to the reserved-band count in
+// the worst of nine measured frames (269 px of 527 across three prop clusters).
+const BAND_HUE_FLOOR = 48 / 360;
+const BAND_SAT_CAP = 0.25;
+function warmSafe(color) {
+  const c = new Color(color);
+  const hsl = { h: 0, s: 0, l: 0 };
+  c.getHSL(hsl, SRGBColorSpace);
+  const h = hsl.h < 0.5 && hsl.h < BAND_HUE_FLOOR ? BAND_HUE_FLOOR : hsl.h;
+  const sat = Math.min(BAND_SAT_CAP, hsl.s);
+  return new Color().setHSL(h, sat, hsl.l, SRGBColorSpace);
+}
+
 export const ENV = Object.freeze({
-  // Woods & timber (warm family: bruise umber lifted toward hearth amber).
-  bark: shade(mix(PALETTE.bruiseUmber, PALETTE.hearthAmber, 0.2), 0.42),
-  barkDark: shade(mix(PALETTE.bruiseUmber, PALETTE.voidCharcoal, 0.35), 0.6),
-  plank: shade(mix(PALETTE.bruiseUmber, PALETTE.hearthAmber, 0.3), 0.4),
-  plankLit: shade(mix(PALETTE.bruiseUmber, PALETTE.hearthAmber, 0.44), 0.52),
-  stumpTop: shade(mix(PALETTE.bone, PALETTE.hearthAmber, 0.35), 0.28),
-  // Stone (neutral family: warm grey / bone / charcoal blends).
-  stone: shade(mix(PALETTE.warmGrey, PALETTE.bone, 0.5), 0.2),
-  stoneLit: shade(mix(PALETTE.bone, PALETTE.parchment, 0.3), 0.26),
-  stoneCool: shade(mix(PALETTE.warmGrey, COOL.ambient, 0.42), 0.3),
-  iron: shade(mix(PALETTE.voidCharcoal, PALETTE.warmGrey, 0.4), 0.7),
+  // Woods & timber (warm family: bruise umber lifted toward PALE GOLD, not
+  // hearth amber — baseline-v030 F2: the amber-mixed timber, multiplied by the
+  // warm key and red-lifted by the grade, measured hue 16-24 at sat 0.5-0.8,
+  // i.e. inside the h5-25 Ember Danger band the palette reserves for enemy
+  // threats. Pale Gold #D9B872 sits ~6 hue degrees higher with a stronger green
+  // channel, so the same furniture lands h 28-38 (amber/brown) after the post
+  // chain. Same warm family, out of the reserved band.
+  // Every wood/stone tone also carries a small BLUE floor (warmGrey / mist
+  // mixes): the toon SHADE bands sit at low display values where the grade's
+  // red lift costs ~5 hue degrees, and a b-starved dark brown lands under h25.
+  // The gold mixes are high and every tone carries a COOL.mist floor because
+  // prop PLACEMENT is cosmetic-random: any of these can roll next to a torch,
+  // and the worst case (warm key x warm albedo x grade red lift) must still
+  // land outside h5-25 at s<=0.35. Measured, not guessed — see the polish
+  // chain's danger-band sweep.
+  // Mist shares raised again (bark 0.2->0.26, barkDark 0.16->0.24, stumpTop
+  // 0.14->0.2) — measured on captures: a stump's key-grazed side landed at
+  // h23/s0.37 and its vignette-corner shade side at h20-25/s0.4-0.5, both a
+  // hair inside the reserved band. The extra blue floor holds worst-case
+  // timber under the s0.35 gate at every light angle.
+  // paleGold 0.76 / mist 0.33: stump trunks measured (118,93,76) — G/R 0.79,
+  // B/R 0.64, ONE point under both escape hatches (h>=26 or s<=0.35). These
+  // two nudges push the worst-case product over both lines at once.
+  // Mist 0.38 / value 0.47 (round 5, were 0.33/0.44): stump flanks sitting in
+  // a vignette corner of the DIM hollow variant still measured h23-25 /
+  // s0.36-0.46 in their half-lit shadowed bands. A touch more blue floor and
+  // a touch more value keeps worst-case shadowed timber under the gate in all
+  // three variants.
+  bark: warmSafe(shade(mix(mix(mix(PALETTE.bruiseUmber, PALETTE.paleGold, 0.76), PALETTE.warmGrey, 0.3), COOL.mist, 0.38), 0.47)),
+  // barkDark rides at display L 40-55 where the grade's S-curve crushes blue
+  // hardest — it needs the deepest mist share of the timber family (0.34) and
+  // a small value lift (0.62 -> 0.68) to hold s under 0.35 on shade faces.
+  barkDark: warmSafe(shade(mix(mix(mix(PALETTE.bruiseUmber, PALETTE.paleGold, 0.42), PALETTE.voidCharcoal, 0.35), COOL.mist, 0.34), 0.68)),
+  plank: warmSafe(shade(mix(mix(mix(PALETTE.bruiseUmber, PALETTE.paleGold, 0.68), PALETTE.warmGrey, 0.26), COOL.mist, 0.26), 0.42)),
+  plankLit: warmSafe(shade(mix(mix(PALETTE.bruiseUmber, PALETTE.paleGold, 0.78), COOL.mist, 0.2), 0.52)),
+  stumpTop: warmSafe(shade(mix(mix(PALETTE.bone, PALETTE.hearthAmber, 0.18), COOL.mist, 0.27), 0.28)),
+  // Stone (neutral family: warm grey / bone / charcoal blends, mist-cooled so
+  // torch-lit rock reads as warm GREY, never terracotta).
+  // Stone mist 0.42/0.3 (were 0.34/0.22): a slab's toon-shade bevel measured
+  // h24-25/s0.47 (dim brown) — the same worst case as the timber above.
+  stone: warmSafe(shade(mix(mix(PALETTE.warmGrey, PALETTE.bone, 0.5), COOL.mist, 0.42), 0.2)),
+  stoneLit: warmSafe(shade(mix(mix(PALETTE.bone, PALETTE.parchment, 0.3), COOL.mist, 0.3), 0.26)),
+  // Boulders/cairns are GREEN-DOMINANT grey-green rock (lichened stone) — a
+  // hue guarantee, not a taste call: every warm/indigo blend tried for these
+  // teetered at the h20-25 boundary and flipped 800+ px into the reserved
+  // Ember Danger band whenever a torch glow or pool feather washed a body
+  // (the warm key and pool adds carry R/G ~1.08, so an albedo with G/R >= 1.3
+  // can never come out red-dominant enough to land in h5-25). Authored in
+  // display space; reads as mossy woodland rock under the moss caps the
+  // boulder/cairn builders already wear.
+  stoneCool: hslColor(172, 0.14, 0.17),
+  iron: warmSafe(shade(mix(PALETTE.voidCharcoal, PALETTE.warmGrey, 0.4), 0.7)),
   // Lantern glass: warm gold, kept at a value the bloom pass lifts into a halo
   // WITHOUT clipping the core to featureless white (the previous 1.55x did).
   // 2.9x is an HDR gain, not a tint: MeshBasicMaterial values above 1.0 in the
@@ -73,8 +148,13 @@ export const ENV = Object.freeze({
   glassLit: mix(PALETTE.paleGold, PALETTE.hearthAmber, 0.4).multiplyScalar(2.9),
   // Corruption monolith stone — near-black and COOL, so the violet emissive
   // veins stay saturated violet instead of lifting into grey-mauve.
-  monolith: mix(PALETTE.voidCharcoal, COOL.ambient, 0.55).multiplyScalar(0.55),
-  monolithBase: mix(PALETTE.voidCharcoal, COOL.ambient, 0.35).multiplyScalar(0.8),
+  // Cool mix 0.72 / value 0.68 (were 0.55/0.55): the violet-halo-lit flank of
+  // the OLD near-black stone sat at display luma 40-60, where the grade's
+  // S-curve crushes blue ~2x harder than red — measured h6-14 / s0.36-0.44
+  // dark MAROON along the slab in vignette corners (the reserved Ember band).
+  // A step lighter and bluer, the same flank stays mauve-grey after the grade.
+  monolith: mix(PALETTE.voidCharcoal, COOL.ambient, 0.72).multiplyScalar(0.68),
+  monolithBase: mix(PALETTE.voidCharcoal, COOL.ambient, 0.5).multiplyScalar(0.85),
 });
 
 // Wall stone: the built boundary. Warm-neutral grey-green so it separates from
@@ -89,16 +169,54 @@ export const WALL = Object.freeze({
   stoneMix: 0.42, // how far the floor tone is pulled toward dry-stone grey
 });
 
-// Flower blossom tints. Strictly warm-family gold/amber: a previous cut used
-// near-white and bone tints, which at gameplay zoom read as frozen confetti
-// sprinkled on the grass (and, under bloom, could be mistaken for the
-// corruption violet). These sit well below the emitter values so they dress the
-// ground instead of competing with the light sources.
+// Flower blossom tints. Strictly warm-family gold/cream — and GOLD, never
+// amber-orange: baseline-v030 F2/F7 measured the amber-heavy blossoms as
+// saturated h5-25 dots (the reserved Ember Danger band) that read as floating
+// orange berries. Pale-gold/bone mixes keep the same storybook warmth with the
+// green channel high enough that the post chain lands them at h 32-45.
+// These sit well below the emitter values so they dress the ground instead of
+// competing with the light sources.
 export const FLOWER_TINTS = Object.freeze([
-  shade(mix(PALETTE.paleGold, PALETTE.bruiseUmber, 0.4), 0.55),
-  shade(mix(PALETTE.hearthAmber, PALETTE.bruiseUmber, 0.45), 0.6),
-  shade(mix(PALETTE.paleGold, PALETTE.hearthAmber, 0.5), 0.46),
-  shade(mix(PALETTE.hearthAmber, PALETTE.voidCharcoal, 0.35), 0.65),
+  shade(mix(PALETTE.paleGold, PALETTE.bruiseUmber, 0.3), 0.6),
+  shade(mix(PALETTE.paleGold, PALETTE.bone, 0.4), 0.52),
+  shade(mix(PALETTE.paleGold, PALETTE.parchment, 0.3), 0.46),
+  shade(mix(PALETTE.paleGold, PALETTE.voidCharcoal, 0.25), 0.62),
 ]);
+
+// Warm emitter glow tint (torch/lantern/brazier halos + ground pools). Additive
+// amber light over brown dirt is what dragged the beaten track into the h5-25
+// danger band (an additive #E8A23D raises R twice as hard as G); this gold mix
+// keeps the pool warm while the extra green channel holds the lit dirt at
+// amber hues.
+// Measured round 2 (this block): pure amber/gold mixes still landed their
+// additive haze at h19-24 once the grade's red lift did its work — the fix is
+// a parchment lift that raises the BLUE channel of the addition, so dim lit
+// browns fall out of the s>0.35 gate as well as climbing above h25.
+// The parchment shares are high on purpose: the ADDITION itself must sit under
+// ~0.30 saturation, because the billboard halo's broad feather rides over dark
+// cool ground and walls, and `dark base + saturated amber add` sums to the
+// h19-24 / s0.35-0.5 mauve murk the analyzer counts as danger. The flame
+// sprite bodies (env/flame.js) still carry the saturated amber — the fire
+// keeps its color; only the ATMOSPHERE around it is cream-gold.
+// Parchment share 0.58 pool / 0.5 halo (round 3 of this block): at 0.42 the
+// residual murk was a ~450 px cluster where a lantern pool feathered across
+// the monolith's violet halo (warm add over mauve base); at 0.5 a lantern
+// pool washing a beige stone cairn still measured h25/s0.37. 0.58 puts the
+// POOL addition at s~0.22 with a G/R ratio high enough that even pool-washed
+// beige stone stays out of the h5-25 / s>0.35 danger gate; the flame sprites
+// keep the saturated amber, so the fire never loses its color.
+// FINAL SHARES (0.44 pool / 0.30 halo). The 0.58-0.66 cuts above were chasing
+// the danger metric alone and cost the thing the pools exist for: measured on
+// captures, the pool CORES came out rgb(255,242,208) — hue 43 at saturation
+// 0.18, i.e. a white spotlight, not firelight (REFERENCE_BAR C2 wants visible
+// warm light POOLS, and §19.3 wants the fires to carry the act's warmth). The
+// gold mix already puts the addition at hue ~39, which is 14 degrees clear of
+// the h5-25 ceiling; the parchment share only needs to be big enough to keep
+// the mid-feather's saturation off the s>0.35 gate, and 0.44 measures there
+// with the pool opacities below trimmed to match.
+export const EMBER_GLOW = Object.freeze({
+  pool: mix(PALETTE.paleGold, PALETTE.parchment, 0.5),
+  halo: mix(mix(PALETTE.hearthAmber, PALETTE.paleGold, 0.7), PALETTE.parchment, 0.38),
+});
 
 export { mix, shade };

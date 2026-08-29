@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',4,3)"},
+  {"type":"wait","ms":1600},
+  {"type":"eval","code":"__echoes.cmd('startRoom','kill_all')"},
+  {"type":"wait","ms":330},
+  {"type":"eval","code":"({tick:__echoes.tick, pend:__echoes.state().room.pendingSpawns, ev:__echoes.events.filter(e=>e.type==='spawn_telegraph').map(e=>e.etype+' '+e.x+','+e.z+' @'+e.spawnTick)})"}
+]

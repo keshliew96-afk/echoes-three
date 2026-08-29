@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const g=__echoes.cmd('giveSkill','spirit_bolt'); const n=__echoes.cmd('grantNode','bounce'); const s=__echoes.cmd('socket','spirit_bolt','bounce'); __echoes.cmd('teleport',-1,0); window.__A=__echoes.cmd('spawn','dummy',1.5,0); window.__B=__echoes.cmd('spawn','dummy',2.6,0.8); return { version:__echoes.version, g, n, s, A:window.__A, B:window.__B, view:__echoes.cmd('buildView').skills.find(k=>k.id==='spirit_bolt') }; })()" },
+  { "type": "wait", "ms": 200 },
+  { "type": "eval", "code": "new Promise(res => { const t0=__echoes.tick; window.__press('Digit3'); setTimeout(() => { const st=__echoes.state(); res({ test:'bounce-ricochet-damage', t0, evs: window.__evs(t0,['skill_cast','skill_bolt_spawn','hit','bounce_hop','death','detonate']), A_hp: st.enemies.find(e=>e.id===window.__A)?.hp ?? 'gone', B_hp: st.enemies.find(e=>e.id===window.__B)?.hp ?? 'gone' }); }, 620); })" }
+]

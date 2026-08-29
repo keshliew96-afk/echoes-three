@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0)" },
+  { "type": "eval", "code": "window.__L=[];for(const t of ['downed','ally_rescue','revive_start','revive']) __echoes.on(t,ev=>window.__L.push(ev));__echoes.cmd('setHp',0,0)" },
+  { "type": "wait", "ms": 3000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{at:'b',tick:s.tick,ch:s.party_ai.channels,ring:s.allyfx.reviveRingScreen,playerHp:s.party[0].hp,log:window.__L.map(e=>e.type+'@'+e.tick+(e.pct?' pct='+e.pct:''))}})()" }
+]

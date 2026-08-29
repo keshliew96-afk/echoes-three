@@ -1,0 +1,12 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"window.__f1=[];window.__t=setInterval(()=>window.__f1.push(__echoes.fps),250);'armed'"},
+  {"type":"wait","ms":5000},
+  {"type":"eval","code":"clearInterval(window.__t);({idle:{n:window.__f1.length,mean:Math.round(window.__f1.reduce((a,b)=>a+b,0)/window.__f1.length*10)/10,min:Math.min(...window.__f1),max:Math.max(...window.__f1)}})"},
+  {"type":"eval","code":"[[2.5,1.5],[-2.5,1.5],[3,-2],[-3,-2],[1.5,3],[-1.5,3]].map((p,i)=>__echoes.cmd('spawn', i%2? 'mantis':'boar', p[0], p[1]));window.__un=__echoes.on('hit',ev=>{__echoes.cmd('setHp',ev.target,1);});'6 enemies immortal'"},
+  {"type":"wait","ms":3000},
+  {"type":"eval","code":"window.__f2=[];window.__t2=setInterval(()=>window.__f2.push(__echoes.fps),250);'armed2'"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"(()=>{clearInterval(window.__t2);const a=window.__f1,b=window.__f2;const m=f=>Math.round(f.reduce((x,y)=>x+y,0)/f.length*10)/10;return{idlePartyOnly:{mean:m(a),min:Math.min(...a),max:Math.max(...a)},fullFightSixEnemies:{mean:m(b),min:Math.min(...b),max:Math.max(...b)},ents:__echoes.entityCount,hits:__echoes.stats.hits}})()"}
+]

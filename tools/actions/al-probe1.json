@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0)" },
+  { "type": "eval", "code": "[[3,1],[3.5,-1],[4.5,0.5]].map(p=>__echoes.cmd('spawn','boar',p[0],p[1]))" },
+  { "type": "wait", "ms": 3000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); return {ai:s.party_ai, enemies:s.enemies.map(e=>({id:e.id,kind:e.kind,hp:e.hp,x:e.x,z:e.z}))}})()" },
+  { "type": "wait", "ms": 3000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); const ev=__echoes.events.filter(e=>e.type==='ally_cast'||e.type==='ally_basic').slice(-8); return {ai:s.party_ai.allies, enemies:s.enemies.map(e=>({id:e.id,hp:e.hp})), ev}})()" }
+]

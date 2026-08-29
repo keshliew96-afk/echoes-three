@@ -1,0 +1,14 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',11,-7)"},
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"__echoes.cmd('killAllEnemies')"},
+  {"type":"eval","code":"window.__b=__echoes.cmd('spawn','boar',8,5)"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"({phase:'uncontested', b:__echoes.state().enemies.filter(e=>e.id===window.__b).map(e=>'tgt'+e.targetId+' at '+e.x+','+e.z), ws:__echoes.state().room.waystone})"},
+  {"type":"eval","code":"__echoes.cmd('teleport',6,4)"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"({phase:'interposed', b:__echoes.state().enemies.filter(e=>e.id===window.__b).map(e=>'tgt'+e.targetId+' at '+e.x+','+e.z)})"},
+  {"type":"eval","code":"__echoes.cmd('teleport',11,-7)"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"({phase:'reverted', b:__echoes.state().enemies.filter(e=>e.id===window.__b).map(e=>'tgt'+e.targetId+' at '+e.x+','+e.z)})"}
+]

@@ -1,0 +1,4 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; __echoes.cmd('giveSkill','spirit_bolt'); __echoes.cmd('teleport',-2,0.5); __echoes.cmd('spawn','dummy', 2.5, 0.5); window.__press('Digit3'); return { fired:'spirit_bolt at dummy 4.5u east' }; })()" },
+  { "type": "wait", "ms": 250 }
+]

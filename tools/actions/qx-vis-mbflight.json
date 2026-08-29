@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "(() => { window.__echoes.cmd('teleport', -8, 4); return 1; })()" },
+  { "type": "mousemove", "x": 1300, "y": 500 },
+  { "type": "wait", "ms": 150 },
+  { "type": "key", "key": "Digit1", "ms": 40 },
+  { "type": "wait", "ms": 250 },
+  { "type": "eval", "code": "(() => { const s = window.__echoes.state(); return { bolts: s.skillBolts, p: [s.party[0].x, s.party[0].z] }; })()" }
+]

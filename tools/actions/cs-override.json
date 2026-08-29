@@ -1,0 +1,45 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; window.__t=__echoes.tick; return { armed:'F2-set', overrideBefore: st.healOverride }; })()" },
+  { "type": "key", "key": "F2", "ms": 40 },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => { const i=window.__ids; __echoes.cmd('teleport', 0, -1.5); __echoes.cmd('setHp', i[1], 0.9); __echoes.cmd('setHp', i[3], 0.3); const oe = window.__evs(window.__t,['heal_override','intent']); window.__t=__echoes.tick; window.__press('Digit2'); return { test:'F2-set', overrideEvents: oe, stateOverride: __echoes.state().healOverride }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'F2-forces-tank-over-lowest-archer', evs: window.__evs(window.__t,['skill_cast','heal','intent_denied']) })" },
+
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "(() => { window.__t=__echoes.tick; window.__press('Digit2'); return { armed:'still-forced-second-cast' }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'still-forced-second-cast', evs: window.__evs(window.__t,['skill_cast','heal']), stateOverride: __echoes.state().healOverride })" },
+
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "(() => { const i=window.__ids; __echoes.cmd('teleport', 4.5, -1.3); __echoes.cmd('setHp', i[2], 0.5); window.__t=__echoes.tick; window.__press('Digit2'); return { armed:'out-of-range-fallback', note:'tank 6.41u > 3.2 range; sword 2.7u in range at 0.5' }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'out-of-range-fallback', evs: window.__evs(window.__t,['skill_cast','heal','intent_denied']), overrideStill: __echoes.state().healOverride })" },
+
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "(() => { const i=window.__ids; __echoes.cmd('teleport', 0, -1.5); __echoes.cmd('setHp', i[3], 0.3); window.__t=__echoes.tick; window.__press('Digit2'); return { armed:'resume-when-valid', note:'back in range: forced tank must resume with NO re-press' }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'resume-when-valid', evs: window.__evs(window.__t,['skill_cast','heal']), stateOverride: __echoes.state().healOverride })" },
+
+  { "type": "eval", "code": "(() => { window.__t=__echoes.tick; return { armed:'F2-toggle-clear' }; })()" },
+  { "type": "key", "key": "F2", "ms": 40 },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "({ test:'F2-toggle-clear', evs: window.__evs(window.__t,['heal_override']), stateOverride: __echoes.state().healOverride })" },
+
+  { "type": "eval", "code": "(() => { window.__t=__echoes.tick; return { armed:'F1-then-F3-replace' }; })()" },
+  { "type": "key", "key": "F1", "ms": 40 },
+  { "type": "wait", "ms": 100 },
+  { "type": "key", "key": "F3", "ms": 40 },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "({ test:'F1-then-F3-replace', evs: window.__evs(window.__t,['heal_override']), stateOverride: __echoes.state().healOverride })" },
+
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "(() => { const i=window.__ids; __echoes.cmd('setHp', i[3], 0); window.__t=__echoes.tick; window.__press('Digit2'); return { armed:'downed-override-fallback', note:'F3 override -> archer DOWNED at hp 0; expect fallback, override retained 3... wait F3 is index 2 (swordsman). Downing swordsman instead', fix: __echoes.cmd('setHp', i[3], 0.8) }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'downed-check-abort', evs: window.__evs(window.__t,['skill_cast','heal']), stateOverride: __echoes.state().healOverride })" },
+
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "(() => { const i=window.__ids; __echoes.cmd('setHp', i[2], 0); __echoes.cmd('setHp', i[1], 0.85); window.__t=__echoes.tick; window.__press('Digit2'); return { armed:'downed-override-fallback', note:'override index 2 = swordsman now DOWNED (hp 0); expect smart fallback (tank 0.85 vs archer 0.8 vs self 1.0 -> archer), override retained 2' }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'downed-override-fallback', evs: window.__evs(window.__t,['skill_cast','heal']), overrideStill: __echoes.state().healOverride, partyHp: __echoes.state().party.map(p=>[p.partyIndex??0, p.hp+'/'+p.maxHp]) })" }
+]

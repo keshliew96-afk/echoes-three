@@ -1,0 +1,34 @@
+[
+  { "type": "eval", "code": "window.__B=[];for(const t of ['revive_start','revive','revive_break','revive_drain_end','intent_denied','ally_rescue','downed','rally']) __echoes.on(t,ev=>window.__B.push(ev));'logging'" },
+  { "type": "eval", "code": "(()=>{__echoes.cmd('teleport',0.15,-2.2);__echoes.cmd('setHp',3,0);return{phase:'A-setup',archer:__echoes.state().party[3],player:{x:__echoes.state().party[0].x,z:__echoes.state().party[0].z}}})()" },
+  { "type": "keydown", "key": "KeyE" },
+  { "type": "wait", "ms": 2000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'A-occupied',channels:s.party_ai.channels,allies:s.party_ai.allies.map(a=>({i:a.partyIndex,st:a.state,rev:a.reviveTarget})),denials:window.__B.filter(e=>e.type==='intent_denied'&&e.reason==='revive_occupied'),log:window.__B.map(e=>e.type+(e.reason?':'+e.reason:'')+'@'+e.tick)}})()" },
+  { "type": "keyup", "key": "KeyE" },
+  { "type": "eval", "code": "__echoes.cmd('setHp',3,1);window.__B=[];'reset'" },
+  { "type": "wait", "ms": 1200 },
+
+  { "type": "eval", "code": "(()=>{__echoes.cmd('setHp',1,0.2);__echoes.cmd('setHp',2,0.2);__echoes.cmd('teleport',0.15,-2.2);__echoes.cmd('setHp',3,0);const s=__echoes.state();return{phase:'B-setup',note:'tank+swordsman below the 30% eligibility floor => no AI rescuer',hp:s.party.map(m=>m.hp+'/'+m.maxHp)}})()" },
+  { "type": "keydown", "key": "KeyE" },
+  { "type": "wait", "ms": 2600 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'B-charged',channels:s.party_ai.channels,allies:s.party_ai.allies.map(a=>({i:a.partyIndex,st:a.state,hpFrac:Math.round(100*a.hp/a.maxHp)})),rescueAssigned:window.__B.filter(e=>e.type==='ally_rescue').length}})()" },
+  { "type": "eval", "code": "window.__P=[];window.__pi=setInterval(()=>{const c=__echoes.state().party_ai.channels[0];window.__P.push({t:__echoes.tick,p:c?c.progress:null,d:c?c.draining:null});},60);'drain-sampling'" },
+  { "type": "keydown", "key": "KeyW" },
+  { "type": "wait", "ms": 1600 },
+  { "type": "keyup", "key": "KeyW" },
+  { "type": "eval", "code": "(()=>{clearInterval(window.__pi);const P=window.__P;const br=window.__B.filter(e=>e.type==='revive_break');const de=window.__B.filter(e=>e.type==='revive_drain_end');const drain=P.filter(x=>x.d===true);let rate=null;if(drain.length>1){const a=drain[0],b=drain[drain.length-1];rate=(a.p-b.p)/(b.t-a.t);}return{phase:'B-break',breaks:br.map(e=>({t:e.tick,reason:e.reason,progress:e.progress,pct:e.pct,drainRate:e.drainRate})),drainEnd:de.map(e=>e.tick),samples:P,measuredDrainTicksPerTick:rate?Math.round(rate*100)/100:null,expected:2}})()" },
+  { "type": "wait", "ms": 900 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'B-restart',channels:s.party_ai.channels,note:'E still held, player stationary again => a FRESH channel from 0 (never resumes)',log:window.__B.map(e=>e.type+(e.reason?':'+e.reason:'')+'@'+e.tick)}})()" },
+  { "type": "keyup", "key": "KeyE" },
+
+  { "type": "eval", "code": "(()=>{__echoes.cmd('setHp',1,1);__echoes.cmd('setHp',2,1);__echoes.cmd('setHp',3,1);__echoes.cmd('teleport',7,4);window.__B=[];return{phase:'C-setup'}})()" },
+  { "type": "wait", "ms": 1500 },
+  { "type": "eval", "code": "__echoes.cmd('setHp',3,0)" },
+  { "type": "wait", "ms": 3000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'C-ai-channelling',channels:s.party_ai.channels,allies:s.party_ai.allies.map(a=>({i:a.partyIndex,st:a.state,rev:a.reviveTarget}))}})()" },
+  { "type": "key", "key": "KeyR", "ms": 60 },
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'C-rally-interrupt',breaks:window.__B.filter(e=>e.type==='revive_break').map(e=>({t:e.tick,reason:e.reason,progress:e.progress,drainRate:e.drainRate})),channels:s.party_ai.channels,allies:s.party_ai.allies.map(a=>({i:a.partyIndex,st:a.state,rev:a.reviveTarget}))}})()" },
+
+  { "type": "eval", "code": "(()=>{__echoes.cmd('setHp',0,0);const t0=__echoes.tick;const r=__echoes.cmd('rally');return{phase:'D-rally-while-downed',tick:t0,result:r,denials:__echoes.events.filter(e=>e.type==='intent_denied'&&e.kind==='rally')}})()" }
+]

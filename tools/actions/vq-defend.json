@@ -1,0 +1,10 @@
+[
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); const r=s.room; window.__t0=__echoes.tick; return {mode:r.mode, defendTicksLeft:r.defendTicksLeft, waystone:r.waystone, waveSizes:r.waveSizes, party:s.party.map(p=>({id:p.id,hp:p.hp}))}})()" },
+  { "type": "wait", "ms": 2000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); const ids=s.party.slice(1).map(p=>p.id); for(const id of ids) __echoes.cmd('setHp',id,0); __echoes.cmd('teleport',-10.5,-6.5); return {downedAllies:ids, tickLeft:s.room.defendTicksLeft}})()" },
+  { "type": "wait", "ms": 4000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); return {phase:'uncontested', wsHp:s.room.waystone?s.room.waystone.hp:null, enemies:s.enemies.filter(e=>e.state==='active').map(e=>({id:e.id,kind:e.kind,target:e.targetId,x:e.x,z:e.z})), wsId:s.room.waystone?s.room.waystone.id:null, defendTicksLeft:s.room.defendTicksLeft}})()" },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); const e=s.enemies.find(e=>e.state==='active'); if(e) __echoes.cmd('teleport',e.x+0.9,e.z); return {tpNextTo:e?e.id:null}})()" },
+  { "type": "wait", "ms": 700 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); return {phase:'contested', playerPos:[s.party[0].x,s.party[0].z], playerHp:s.party[0].hp, enemies:s.enemies.filter(e=>e.state==='active').map(e=>({id:e.id,kind:e.kind,target:e.targetId})), playerId:s.party[0].id}})()" }
+]

@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; __echoes.cmd('teleport',-5.5,5.5); window.__press('Digit1'); return { fired:'MB east over dark south grass' }; })()" },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "(() => ({ bolt: __echoes.state().skillBolts, player: [__echoes.state().party[0].x, __echoes.state().party[0].z] }))()" }
+]

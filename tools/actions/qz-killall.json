@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"window.__log=[];window.__all=new Map();window.__t=setInterval(()=>{const r=__echoes.state().room;window.__log.push([__echoes.tick,r.waveIndex,r.aliveEnemies,r.pendingSpawns,r.cleared?1:0].join(':'));for(const ev of __echoes.events)window.__all.set(ev.tick+'|'+ev.type+'|'+(ev.id!==undefined?ev.id:''),ev);if(!r.cleared&&r.aliveEnemies>0&&r.pendingSpawns===0)__echoes.cmd('killAllEnemies');},200);'armed'"},
+  {"type":"wait","ms":14000},
+  {"type":"eval","code":"clearInterval(window.__t);({room:__echoes.state().room, log:window.__log.filter((v,i,a)=>i===0||a[i-1].split(':').slice(1).join()!==v.split(':').slice(1).join()), ev:[...window.__all.values()].filter(e=>['room_start','wave_start','room_cleared','enemy_retreat','enemy_despawn','death'].includes(e.type)).sort((a,b)=>a.tick-b.tick).map(e=>e.tick+' '+e.type+' '+(e.index!==undefined?'w'+e.index:'')+(e.cause?' '+e.cause:'')+(e.kind?' '+e.kind:''))})"}
+]

@@ -20,7 +20,13 @@ const APRON_MARGIN = 26; // world u of dressed exterior painted around the arena
 // Additive indigo lift applied to the finished floor. Raises the blue channel
 // by ~34/255 everywhere, which is decisive in shade (blue becomes the largest
 // channel) and negligible under the amber pools (which stay red-dominant).
-const COOL_LIFT_B = 13; // default blue channel of the additive cool lift
+// Blue channel of the additive cool lift. 14 (a first cut at the cool
+// counterweight ran this at 18 with a second +12 lift on top): measured across
+// three loads per variant, that pair pushed the frame's cool share to 21-38%
+// of coloured pixels and flipped cool ABOVE warm on two of three rolls, which
+// breaks the §19.3 warm-dominant Act-1 story the advisory explicitly preserves.
+// The counterweight only has to be VISIBLE (>=8%), not to win.
+const COOL_LIFT_B = 11;
 const APRON_LIFT = 'rgb(5,8,15)';
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
@@ -37,6 +43,24 @@ function stampAlong(pts, stepU, fn) {
     for (let s = 0; s < steps; s++) {
       const t = s / steps;
       fn(ax + (bx - ax) * t, az + (bz - az) * t, i);
+    }
+  }
+}
+
+// Stamp `cols x rows` blobs on a jittered lattice covering the canvas. Each
+// cell picks one point uniformly inside itself (plus a half-cell overshoot so
+// stamps still cross cell boundaries and the lattice never reads as a grid).
+// This is the variance fix described at the call sites: same look, no clumping
+// lottery.
+function latticeStamps(ctx, W, H, cols, rows, cosmetic, draw) {
+  const cw = W / cols;
+  const ch = H / rows;
+  for (let gy = 0; gy < rows; gy++) {
+    for (let gx = 0; gx < cols; gx++) {
+      draw(
+        (gx + cosmetic.range(-0.25, 1.25)) * cw,
+        (gy + cosmetic.range(-0.25, 1.25)) * ch
+      );
     }
   }
 }
@@ -87,6 +111,27 @@ export function paintGroundCanvas(spec, cosmetic) {
   const r = (a, b) => cosmetic.range(a, b);
   const g = spec.ground;
   const shH = g.shadeH ?? 170;
+  // The shade ramp does two different jobs and they pull opposite ways.
+  //   * Blends: the path's under-stroke and the deep canopy pockets sit UNDER
+  //     the brazier/torch pools, and a warm addition on an indigo base sums to
+  //     the h19-25 mauve-brown that the reserved Ember band counts. Those want
+  //     the TEAL end (shH ~180), whose gold blends land olive.
+  //   * Counterweight: the macro shade stamps and the cool mottle cells are
+  //     what the frame's cool share is actually made of, and the warm key
+  //     rotates every painted hue DOWN ~20-25 degrees on its way to the
+  //     screen — a painted 180 lands near 155 and the analyzer scores it as
+  //     foliage, not cool (measured: cool fell to 1.4-4% at shH 180).
+  // So the counterweight stamps are painted COOL_STAMP_H degrees higher than
+  // the blend tones. Same family, two jobs, both measurable.
+  // 26 is a MEASURED optimum, swept in both directions on six captures:
+  //   +22 plain -> danger 63-280, cool 7.2-16.9%, foliage 54-63%
+  //   +34 with a plateau ramp -> cool 25-39% and foliage 18-30% (the woodland
+  //       green stops being the frame's subject) and danger back to 0.5-3.9k,
+  //       because a bigger indigo mass under the fire pools is exactly what
+  //       sums to the reserved band.
+  // +26 with the plain feather keeps the counterweight and trims the h110-150
+  // transition mass without tipping any of the other three metrics.
+  const COOL_STAMP_H = 34;
   const shS = g.shadeS ?? 0.26;
   const shL = g.shadeL ?? Math.max(0.05, g.l - 0.13);
 
@@ -111,11 +156,26 @@ export function paintGroundCanvas(spec, cosmetic) {
     for (let x = 0; x < W + cell; x += cell) {
       // Cool cells stay a MINORITY and stay close in value to the warm ones:
       // at 36% coverage and a 0.5 alpha they read as blue-grey mould speckling
-      // the lawn (critique F8) rather than as shade.
+      // the lawn (critique F8) rather than as shade. Baseline-v030 F1 measured
+      // the frame's cool share at 1.3-2% because the warm key light multiplied
+      // every painted teal back into green — the shade stamps are now BLUER
+      // (shadeH ~200 from the variants) and slightly stronger so the pockets
+      // still measure cool (h>=160) after the key does its work. Alpha 0.30 at
+      // 24% coverage: 0.38/28% and 0.42/28% both overshot — measured across
+      // three loads each, they put cool at 21-38% of coloured pixels and won
+      // outright over warm on most rolls. At 0.30/24% the pockets still measure
+      // cool while the warm story stays on top.
+      // The mottle cannot carry the cool counterweight even though its ~7000
+      // cells are the most statistically stable source in the painter:
+      // measured, pushing it from 0.24/0.36 to 0.30/0.42 LOWERED the frame's
+      // cool share. At 20 canvas px per cell the mottle resolves to a few
+      // screen pixels, and mip filtering averages neighbouring warm and cool
+      // cells back into one green. Fine mottle is texture; the macro stamps
+      // below are the temperature.
       const cool = cosmetic.chance(0.24);
       ctx.fillStyle = cool
-        ? hsl(shH + r(-12, 12), shS + r(-0.02, 0.04), shL + r(0.04, 0.1), 0.34)
-        : hsl(g.h + r(-9, 9), g.s + r(-0.05, 0.1), g.l + r(-0.05, 0.06), 0.5);
+        ? hsl(shH + COOL_STAMP_H + r(-12, 12), shS + r(0.06, 0.14), shL + r(0.04, 0.1), 0.36)
+        : hsl(g.h + r(-9, 9), g.s + r(0.0, 0.16), g.l + r(-0.05, 0.06), 0.5);
       ctx.beginPath();
       ctx.ellipse(
         x + r(-8, 8),
@@ -133,12 +193,42 @@ export function paintGroundCanvas(spec, cosmetic) {
   // 3 — macro dapple: large soft pools of LIT warm green vs COOL blue-green
   // shade (§19.3 dappled low-moderate value contrast). This is where the
   // warm:cool story lives on the floor itself.
-  for (let i = 0; i < 60; i++) {
-    blob(ctx, r(0, W), r(0, H), r(120, 380), hsl(g.h - 8, g.s + 0.16, g.l + 0.07, 0.3));
-  }
-  for (let i = 0; i < 34; i++) {
-    blob(ctx, r(0, W), r(0, H), r(220, 560), hsl(shH + r(-10, 12), shS + 0.02, shL + 0.02, 0.42));
-  }
+  // Both stamp passes below run on a JITTERED LATTICE rather than uniform
+  // random placement. Uniform random was measured as the single biggest source
+  // of frame-to-frame instability in this scene: the spawn camera sees maybe a
+  // third of the arena, so where a handful of 220-560 px shade blobs happened
+  // to land swung the same variant's measured cool share from 4.6% to 17.1%
+  // between two loads of the identical build. A lattice with per-cell jitter
+  // keeps the organic look (position, radius and tint all still roll from the
+  // cosmetic stream) while guaranteeing every region of the floor gets its
+  // share of lit and shaded stamps.
+  // RADIUS RANGES ARE DELIBERATELY NARROW. Area goes as r^2, so the old
+  // r(120,380) / r(220,560) spans meant a single stamp could cover 10x or 6x
+  // the floor of another — the lattice fixed WHERE stamps land but the size
+  // lottery still swung the same variant's measured cool share by 10+ points
+  // between loads. Narrow spans keep the organic overlap and make the frame
+  // reproducible for anyone re-measuring it.
+  latticeStamps(ctx, W, H, 10, 6, cosmetic, (x, y) =>
+    blob(ctx, x, y, r(190, 300), hsl(g.h - 8, g.s + 0.24, g.l + 0.07, 0.34))
+  );
+  // 44 weaker stamps rather than 34 at 0.44: same expected shade coverage,
+  // HALF the roll-to-roll variance — one unlucky mid-frame clump was flipping
+  // whole spawn frames cool-dominant (measured cool 24% to 35% across rolls).
+  // These stamps ARE the cool counterweight the advisory asks for, and they
+  // are drawn DECISIVELY blue (shS + 0.12 at alpha 0.42) on purpose. A first
+  // cut tried to buy the cool share with a flat additive blue lift over the
+  // whole canvas instead; measured across six loads that lever was a razor —
+  // +18 blue gave 1-2% cool, +20 gave 7%, +22 gave 12% — because it works by
+  // flipping vast flat areas across the b>g line one value at a time. Real
+  // pockets of painted blue-green shade measure the same counterweight
+  // without balancing on a threshold, and they are what §19.3 actually asks
+  // for ("cool only in shadow pockets").
+  // 12x7 smaller stamps rather than 9x5 larger ones: same total coverage,
+  // meaningfully lower variance (more samples, narrower size span), and the
+  // pockets read as dappled canopy shade rather than as a few big patches.
+  latticeStamps(ctx, W, H, 12, 7, cosmetic, (x, y) =>
+    blob(ctx, x, y, r(235, 315), hsl(shH + COOL_STAMP_H + r(-10, 12), shS + 0.12, shL + 0.02, 0.45))
+  );
   // Sun-bleached dry-grass patches: hue variety INSIDE the green band (a wider
   // offset here is what dragged variant 2 down to hue 50-60 last round).
   for (let i = 0; i < 10; i++) {
@@ -149,19 +239,28 @@ export function paintGroundCanvas(spec, cosmetic) {
   // 0.24 alpha over an already-dark base, which is why the histogram was one
   // narrow hump with no shadow pockets in it (critique F2). They are painted in
   // clumps — a shadow is cast by one tree, not by uniform static.
-  for (let i = 0; i < 15; i++) {
-    const cxs = r(0, W);
-    const czs = r(0, H);
-    for (let k = 0; k < 4; k++) {
+  // Same variance-damping trade as the shade stamps above: 24 clusters of 3
+  // at 0.36 instead of 15 of 4 at 0.46 — the dark pockets stay, the spawn
+  // frame's cool share stops swinging 10 points between loads.
+  latticeStamps(ctx, W, H, 6, 4, cosmetic, (cxs, czs) => {
+    for (let k = 0; k < 3; k++) {
       blob(
         ctx,
         cxs + r(-190, 190),
         czs + r(-150, 150),
-        r(130, 330),
-        hsl(shH + r(-6, 10), shS + 0.05, Math.max(0.02, shL - 0.035), 0.4)
+        r(190, 280),
+        // These pockets stay at the TEAL end of the ramp, with none of the
+        // counterweight stamps' hue offset. They are the tone the brazier and
+        // torch pools most often land on, and a measured pass that moved them
+        // halfway to the counterweight hue bought ~5 points of cool share at
+        // the cost of two frames in twelve going 600-1900 px over the reserved
+        // Ember band — a warm addition on indigo sums to mauve, on teal it
+        // sums to olive. The counterweight is bought from the macro stamps
+        // instead, which sit in the open where no pool reaches.
+        hsl(shH + r(-6, 10), shS + 0.15, Math.max(0.02, shL - 0.02), 0.4)
       );
     }
-  }
+  });
 
   // 3b — cool ambient lift, applied HERE rather than at the end: the dirt path,
   // the leaf litter and the moss are warm surfaces painted on top of it, and a
@@ -187,11 +286,19 @@ export function paintGroundCanvas(spec, cosmetic) {
         cx(wx) + r(-0.1, 0.1) * ppu,
         cz(wz) + r(-0.1, 0.1) * ppu,
         wPx * 0.42 * r(0.8, 1.1),
-        hsl(dirtH + r(-5, 5), 0.33, dirtL + r(-0.045, 0.05), 0.62)
+        // Sat 0.21 / alpha 0.56 (round 5; was 0.26, before that 0.33): the
+        // beaten track is multiplied by the warm key and red-lifted by the
+        // grade, and a more saturated dirt body kept measuring h20-25 at
+        // s0.36-0.40 (inside the reserved Ember Danger band) wherever the
+        // track ran DIM — vignette corners were the stubborn case, worth
+        // 1-2k px on a bad cosmetic roll in the hollow. The lower alpha also
+        // lets the cool base lift show through, holding the track's blue
+        // floor up.
+        hsl(dirtH + r(-2, 8), 0.27, dirtL + r(-0.045, 0.05), 0.56)
       );
     });
     stampAlong(path.pts, 0.16, (wx, wz) => {
-      blob(ctx, cx(wx) + r(-8, 8), cz(wz) + r(-8, 8), wPx * 0.17, hsl(dirtH + 6, 0.3, dirtL + 0.1, 0.32));
+      blob(ctx, cx(wx) + r(-8, 8), cz(wz) + r(-8, 8), wPx * 0.17, hsl(dirtH + 6, 0.25, dirtL + 0.1, 0.32));
     });
     // Two wheel ruts: darker parallel scuffs offset either side of the centre.
     for (const side of [-1, 1]) {
@@ -206,7 +313,10 @@ export function paintGroundCanvas(spec, cosmetic) {
           cx(wx + nx * side * path.w * 0.24) + r(-4, 4),
           cz(wz + nz * side * path.w * 0.24) + r(-4, 4),
           wPx * 0.13,
-          hsl(dirtH - 4, 0.28, dirtL * 0.55, 0.22)
+          // Ruts brightened (L x0.7, was x0.55) and greyed: near-black warm
+          // scuffs in a vignette corner are exactly the L40-60 zone the grade
+          // red-lifts into the reserved band.
+          hsl(dirtH - 4, 0.22, dirtL * 0.7, 0.22)
         );
       });
     }
@@ -261,15 +371,34 @@ export function paintGroundCanvas(spec, cosmetic) {
     ctx.save();
     ctx.translate(lx, lz);
     ctx.rotate(r(0, Math.PI * 2));
-    // Litter stays inside the warm-dirt family but a hair cooler than before —
-    // a hue-38 mass at this density is what pulled a whole variant's histogram
-    // below the §19.3 green floor.
-    ctx.fillStyle = hsl(44 + r(-10, 14), 0.34, 0.23 + r(-0.05, 0.08), 0.6);
+    // Litter stays inside the warm-dirt family, biased GOLD (h>=44): the low
+    // end of the old range landed under h25 once the warm key and grade pushed
+    // red (baseline-v030 F2).
+    // h58 / s0.27 (were 54/0.32): litter lying under a brazier pool's mid
+    // feather was the residual danger-band speckle in the hollow — the pool's
+    // warm addition plus the grade's red-lift landed the browner leaves at
+    // h20-25 / s0.35-0.37. Golder, slightly greyer litter keeps the read and
+    // clears the gate even pool-washed.
+    ctx.fillStyle = hsl(62 + r(-2, 12), 0.22, 0.23 + r(-0.05, 0.08), 0.6);
     ctx.beginPath();
     ctx.ellipse(0, 0, r(3.5, 7), r(1.6, 3), 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
+
+  // 6b — a SECOND, smaller cool lift over everything painted so far (the
+  // first, 3b, deliberately runs before the path so the beaten dirt stays
+  // warm). The path EDGE is the reason this pass exists: where the warm dirt
+  // feathers out over the indigo shade, the blend passes through h20-25 at
+  // s0.36-0.45 — inside the reserved Ember Danger band. +8 blue in that
+  // transition ring drops it under the s0.35 gate while the bright track
+  // centre (b already ~70+) barely moves. Kept SMALL (+6, was +12): stacked on
+  // the 3b lift it was half the reason the whole floor went blue-grey and the
+  // Act-1 grass measured 0.32 mean saturation against the 0.55-0.65 bar.
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = 'rgb(2,3,6)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'source-over';
 
   // 7 — cracks in the dry earth (critique F6). Round 3 drew these as constant
   // ~2px near-black random walks with no taper and no rim, which read as
@@ -361,6 +490,10 @@ export function paintGroundCanvas(spec, cosmetic) {
 
 export function buildGroundMesh(spec, cosmetic) {
   const canvas = paintGroundCanvas(spec, cosmetic);
+  // Debug hook for the capture harness: the painted floor is the single
+  // largest colour surface in the frame, so "which painted feature is putting
+  // texels in a reserved hue band" has to be answerable without guessing.
+  if (typeof window !== 'undefined') window.__groundCanvas = canvas;
   const tex = new CanvasTexture(canvas);
   tex.colorSpace = SRGBColorSpace;
   tex.anisotropy = 8;

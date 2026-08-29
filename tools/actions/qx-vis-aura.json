@@ -1,0 +1,13 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('giveSkill','warding_aura'); c('teleport', -0.5, -1.9); c('setHp', 3, 0.2); const slots = document.querySelectorAll('#proto-hud .proto-slot'); const s3 = slots[2]; return { auraGlyph: s3.querySelector('.proto-glyph').textContent, auraWipeBg: s3.querySelector('.proto-wipe').style.background, auraNum: s3.querySelector('.proto-cd-num').style.visibility }; })()" },
+  { "type": "key", "key": "Digit1", "ms": 40 },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "(() => { const slots = document.querySelectorAll('#proto-hud .proto-slot'); const s1 = slots[0]; window.__qW1 = s1.querySelector('.proto-wipe').style.background; return { mbWipe: window.__qW1 }; })()" },
+  { "type": "wait", "ms": 800 },
+  { "type": "eval", "code": "(() => { const slots = document.querySelectorAll('#proto-hud .proto-slot'); const s1 = slots[0]; const s3 = slots[2]; return { mbWipeLater: s1.querySelector('.proto-wipe').style.background, wasEarlier: window.__qW1, auraWipeStill: s3.querySelector('.proto-wipe').style.background, auraGlyphStill: s3.querySelector('.proto-glyph').textContent }; })()" },
+  { "type": "eval", "code": "(() => { window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit3' })); window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit3' })); window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit4' })); window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit4' })); return 'pressed'; })()" },
+  { "type": "wait", "ms": 90 },
+  { "type": "eval", "code": "(() => { const slots = document.querySelectorAll('#proto-hud .proto-slot'); return { auraSlotClasses: slots[2].className, emptySlotClasses: slots[3].className, auraWipeAfterPress: slots[2].querySelector('.proto-wipe').style.background }; })()" },
+  { "type": "wait", "ms": 1400 },
+  { "type": "eval", "code": "(() => { const slots = document.querySelectorAll('#proto-hud .proto-slot'); const s1 = slots[0]; const view = window.__echoes.state().skills; return { mbRemaining: view[0].remainingTicks, cdNumVisible: s1.querySelector('.proto-cd-num').style.visibility, cdNumText: s1.querySelector('.proto-cd-num').textContent, fontSize: getComputedStyle(s1.querySelector('.proto-cd-num')).fontSize, color: getComputedStyle(s1.querySelector('.proto-cd-num')).color }; })()" }
+]

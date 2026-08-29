@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,50)"},
+  {"type":"wait","ms":4500},
+  {"type":"eval","code":"({pre:__echoes.state().enemies.map(e=>e.id+' '+e.kind+' '+e.x+','+e.z)})"},
+  {"type":"eval","code":"__echoes.cmd('clearRoom')"},
+  {"type":"wait","ms":420},
+  {"type":"eval","code":"({post:__echoes.state().enemies.map(e=>e.id+' '+e.state+' '+e.x+','+e.z)})"}
+]

@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"({t:__echoes.tick, now:Math.round(performance.now())})"},
+  {"type":"wait","ms":1000},
+  {"type":"eval","code":"({t:__echoes.tick, now:Math.round(performance.now())})"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"({t:__echoes.tick, now:Math.round(performance.now()), fps:__echoes.fps})"}
+]

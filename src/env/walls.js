@@ -33,7 +33,7 @@ import { ARENA } from '../core/constants.js';
 import { PALETTE } from '../data/palette.js';
 import { toonMaterial } from '../render/toon.js';
 import { addPropInk, getPropInkMaterial, inkGeometry, PROP_INK_PX } from './props.js';
-import { hslColor, mix, WALL } from './colors.js';
+import { COOL, hslColor, mix, WALL } from './colors.js';
 
 const UP = new Vector3(0, 1, 0);
 
@@ -71,8 +71,12 @@ export function buildWalls(root, spec, cosmetic) {
   const floorLuma = LUMA(floor.clone().convertLinearToSRGB());
 
   // Dry-stone: the floor tone pulled toward a warm-neutral grey so the wall
-  // separates from the COOL exterior by hue as well as by value.
-  const stoneish = mix(floor, new Color(PALETTE.warmGrey), WALL.stoneMix);
+  // separates from the COOL exterior by hue as well as by value. A small mist
+  // mix keeps the blue channel up: torch-glow additive over a blue-starved
+  // wall band measured h23-24 at s~0.5 — inside the Ember Danger band.
+  // Mist 0.3 (was 0.22): the brick strip a LIT torch multiplies still sat at
+  // h24-25/s0.37 — the extra blue floor rides under exactly that strip.
+  const stoneish = mix(mix(floor, new Color(PALETTE.warmGrey), WALL.stoneMix), new Color(COOL.mist), 0.3);
   const bodyColor = toDisplayLuma(stoneish, floorLuma * WALL.bodyFactor);
   const rimColor = toDisplayLuma(stoneish, floorLuma * WALL.capFactor);
   const capLight = toDisplayLuma(stoneish, floorLuma * WALL.bodyFactor * 1.05);

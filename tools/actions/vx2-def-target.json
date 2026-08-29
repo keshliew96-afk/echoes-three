@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"window.__probe={ev:[]};__echoes.on('*',e=>{if(['hit','enemy_bite','room_soft_fail','room_cleared'].includes(e.type))__probe.ev.push(e)});__echoes.state().room"},
+  {"type":"wait","ms":3500},
+  {"type":"eval","code":"({phase:'contested',playerId:__echoes.state().party[0].id,targets:__echoes.state().enemies.filter(e=>e.kind==='boar'||e.kind==='mantis').map(e=>({id:e.id,kind:e.kind,target:e.targetId})),ws:__echoes.state().room.waystone})"},
+  {"type":"eval","code":"const s=__echoes.state();s.party.slice(1).forEach(a=>__echoes.cmd('setHp',a.id,0));__echoes.cmd('teleport',-10,-6);'downed allies + teleported'"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"({phase:'uncontested',ticksLeft:__echoes.state().room.defendTicksLeft,ws:__echoes.state().room.waystone,targets:__echoes.state().enemies.filter(e=>e.kind==='boar'||e.kind==='mantis').map(e=>({id:e.id,kind:e.kind,target:e.targetId})),wsHits:__probe.ev.filter(e=>e.type==='hit'&&e.kind==='waystone').map(e=>({t:e.tick,amt:e.amount})),playerHits:__probe.ev.filter(e=>e.type==='hit'&&e.kind==='player').length})"}
+]

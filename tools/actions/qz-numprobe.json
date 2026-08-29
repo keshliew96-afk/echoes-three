@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',7,4)"},
+  {"type":"wait","ms":1800},
+  {"type":"eval","code":"Array.from(document.querySelectorAll('.dmg-num')).map(n=>[n.textContent,n.style.visibility,n.style.opacity,n.style.transform])"},
+  {"type":"eval","code":"__echoes.cmd('spawn','mantis',9.5,4)"},
+  {"type":"wait","ms":140},
+  {"type":"eval","code":"({tick:__echoes.tick, nums:Array.from(document.querySelectorAll('.dmg-num')).map(n=>[n.textContent,n.style.visibility,n.style.opacity]), tel:__echoes.state().enemies.map(e=>e.telegraph)})"},
+  {"type":"eval","code":"({decalObjs: (()=>{let n=0; const s=[]; window.__scene && 0; return 'na';})()})"}
+]

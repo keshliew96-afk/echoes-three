@@ -1,0 +1,4 @@
+[
+  { "type": "eval", "code": "(() => { __echoes.cmd('giveSkill','warding_aura'); const ids=__echoes.state().party.map(p=>p.id); __echoes.cmd('setHp', ids[1], 0.3); __echoes.cmd('teleport',-1.9,-0.45); return { on:'warding_aura, tank 0.55u inside 0.9' }; })()" },
+  { "type": "wait", "ms": 800 }
+]

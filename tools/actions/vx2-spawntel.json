@@ -1,0 +1,4 @@
+[
+  {"type":"eval","code":"window.__probe={ev:[]};__echoes.on('*',e=>{if(e.type==='spawn_telegraph'||e.type==='enemy_spawn')__probe.ev.push(e)});0"},
+  {"type":"eval","code":"__echoes.cmd('startRoom','kill_all')"}
+]

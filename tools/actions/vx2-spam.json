@@ -1,0 +1,16 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,3)"},
+  {"type":"eval","code":"[[2,3],[-2,3],[0,6]].map(p=>__echoes.cmd('spawn','mantis',p[0],p[1]));__echoes.cmd('spawn','boar',4,4);__echoes.cmd('spawn','boar',-4,4)"},
+  {"type":"mousedown","button":"right"},
+  {"type":"key","key":"Space","ms":30},{"type":"key","key":"Digit1","ms":30},{"type":"key","key":"Digit2","ms":30},{"type":"key","key":"Space","ms":30},
+  {"type":"key","key":"Digit1","ms":30},{"type":"key","key":"Digit2","ms":30},{"type":"key","key":"Digit3","ms":30},{"type":"key","key":"Digit4","ms":30},
+  {"type":"key","key":"Space","ms":30},{"type":"key","key":"Digit1","ms":30},{"type":"key","key":"Space","ms":30},{"type":"key","key":"Digit2","ms":30},
+  {"type":"keydown","key":"KeyW"},{"type":"key","key":"Space","ms":30},{"type":"keyup","key":"KeyW"},
+  {"type":"keydown","key":"KeyS"},{"type":"key","key":"Space","ms":30},{"type":"keyup","key":"KeyS"},
+  {"type":"wait","ms":2500},
+  {"type":"mouseup","button":"right"},
+  {"type":"eval","code":"({tick:__echoes.tick,hp:__echoes.state().party[0].hp,ents:__echoes.entityCount})"},
+  {"type":"eval","code":"__echoes.cmd('spawn','boar',50,50)"},
+  {"type":"eval","code":"__echoes.cmd('startWave')"},
+  {"type":"eval","code":"({oob:__echoes.state().enemies.filter(e=>e.kind==='boar').map(e=>({x:e.x,z:e.z}))})"}
+]

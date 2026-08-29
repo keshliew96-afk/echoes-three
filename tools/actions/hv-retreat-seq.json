@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "(()=>{__echoes.cmd('startRoom','kill_all'); return true})()" },
+  { "type": "wait", "ms": 2200 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); window.__preClear=s.enemies.filter(e=>e.state==='active').map(e=>({id:e.id,kind:e.kind,x:e.x,z:e.z})); return {active:window.__preClear.length, forced:__echoes.cmd('clearRoom')}})()" }
+]

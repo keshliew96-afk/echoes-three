@@ -1,0 +1,6 @@
+[
+  { "type": "mousemove", "x": 800, "y": 450 },
+  { "type": "eval", "code": "(()=>{__echoes.cmd('teleport',0,0); window.__ts=null; __echoes.on('telegraph_start',e=>{if(!window.__ts)window.__ts=e}); return {mantis:__echoes.cmd('spawn','mantis',2.9,0)}})()" },
+  { "type": "wait", "ms": 200 },
+  { "type": "eval", "code": "window.__ts" }
+]

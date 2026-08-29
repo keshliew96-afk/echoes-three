@@ -1,0 +1,4 @@
+[
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"(()=>{const {stage, root} = window.__arenaProbe; const cam = stage.camera; const st = window.__echoes.state(); const w=window.innerWidth, h=window.innerHeight; const proj=(x,z)=>{const v=root.position.clone().set(x,0.02,z).project(cam); return [Math.round((v.x*0.5+0.5)*w), Math.round((-v.y*0.5+0.5)*h)];}; const out={healer: proj(st.party[0].x, st.party[0].z)}; const allies=(st.vfx&&st.vfx.party?st.vfx.party.allies:[])||[]; for (const a of allies) out[a.classId]=proj(a.x,a.z); return out;})()"}
+]

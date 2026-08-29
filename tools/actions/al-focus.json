@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0)" },
+  { "type": "eval", "code": "window.__ids=[[3.0,0.4],[3.4,1.8],[-2.8,1.2],[0.4,3.2]].map(p=>__echoes.cmd('spawn','boar',p[0],p[1])); window.__ids" },
+  { "type": "eval", "code": "window.__un=__echoes.on('hit',ev=>{__echoes.cmd('setHp',ev.target,1);});'immortal-both-sides'" },
+  { "type": "eval", "code": "window.__S=[];window.__s=setInterval(()=>{const s=__echoes.state();window.__S.push({t:s.tick,a:s.party_ai.allies.map(a=>({i:a.partyIndex,st:a.state,tg:a.target,d:a.anchorDist}))});},200);'sampling'" },
+  { "type": "wait", "ms": 14000 },
+  { "type": "eval", "code": "(()=>{clearInterval(window.__s);const S=window.__S;const n=S.length;let same=0,nulls=0;const maxD=[0,0,0];const over=[];const tally={};for(const r of S){const tg=r.a.map(x=>x.tg);if(tg.every(t=>t!==null)&&tg[0]===tg[1]&&tg[1]===tg[2])same++;if(tg.some(t=>t===null))nulls++;for(const t of tg) tally[t]=(tally[t]||0)+1;r.a.forEach((x,i)=>{if(x.d>maxD[i])maxD[i]=x.d;if(x.d>3.4)over.push({t:r.t,i:x.i,d:x.d,st:x.st});});}return{samples:n,allSameTarget:same,pctSame:Math.round(1000*same/n)/10,samplesWithNullTarget:nulls,targetTally:tally,maxAnchorDist:maxD,leash:3.4,overLeash:over.length,overSample:over.slice(0,5),last:S[S.length-1],hits:__echoes.stats.hits,fps:__echoes.fps}})()" }
+]

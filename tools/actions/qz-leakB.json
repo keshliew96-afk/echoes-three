@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,-3)"},
+  {"type":"eval","code":"__echoes.cmd('setHp',4,50)"},
+  {"type":"wait","ms":40000},
+  {"type":"eval","code":"({tick:__echoes.tick, en:__echoes.state().enemies.length})"}
+]

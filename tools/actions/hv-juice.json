@@ -1,0 +1,14 @@
+[
+  { "type": "eval", "code": "(()=>{const rec={hits:[],deaths:[],hitstops:[],downed:[]}; window.__ju=rec; __echoes.on('hit',e=>rec.hits.push(e)); __echoes.on('death',e=>rec.deaths.push(e)); __echoes.on('hitstop',e=>rec.hitstops.push(e)); __echoes.cmd('teleport',0,0); const dummyId=__echoes.cmd('spawn','dummy',2.2,1.4); const boarId=__echoes.cmd('spawn','boar',2.2,-1.4); window.__ids={dummyId,boarId}; return window.__ids})()" },
+  { "type": "mousemove", "x": 1050, "y": 330 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "wait", "ms": 1300 },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "(()=>{const r=window.__ju; return {dummyHits:r.hits.filter(h=>h.kind==='dummy').map(h=>({amount:h.amount,kb:h.kb,delivery:h.delivery,crit:h.crit}))}})()" },
+  { "type": "mousemove", "x": 1050, "y": 560 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "wait", "ms": 2600 },
+  { "type": "mouseup", "button": "right" },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "(()=>{const r=window.__ju; const s=__echoes.state(); return {boarHits:r.hits.filter(h=>h.kind==='boar').map(h=>({amount:h.amount,kb:h.kb,delivery:h.delivery,crit:h.crit})), deaths:r.deaths.map(d=>({kind:d.kind,tick:d.tick})), hitstops:r.hitstops, boarAlive:s.enemies.some(e=>e.kind==='boar'), vfx:s.vfx}})()" }
+]

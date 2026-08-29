@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0)" },
+  { "type": "eval", "code": "__echoes.cmd('setHp',0,0)" },
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{ring:s.allyfx.reviveRingScreen,ch:s.party_ai.channels}})()" }
+]

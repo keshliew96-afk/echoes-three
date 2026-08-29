@@ -1,0 +1,18 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__sleep=(ms)=>new Promise(r=>setTimeout(r,ms));window.__move=async(x,y)=>{window.dispatchEvent(new MouseEvent('mousemove',{clientX:x,clientY:y,bubbles:true,cancelable:true}));await window.__sleep(35);return window.__echoes.state().party[0].aim;};window.__aim=async(wx,wz)=>{const e=window.__echoes;let sx=innerWidth/2,sy=innerHeight/2;let a=await window.__move(sx,sy);for(let i=0;i<25&&a;i++){const d=Math.hypot(wx-a.x,wz-a.z);if(d<0.02)return{ok:true,sx,sy,aim:a,i,d};const h=20;const ax=await window.__move(sx+h,sy);const ay=await window.__move(sx,sy+h);const j11=(ax.x-a.x)/h,j12=(ay.x-a.x)/h,j21=(ax.z-a.z)/h,j22=(ay.z-a.z)/h;const det=j11*j22-j12*j21;if(Math.abs(det)<1e-12)break;const ex=wx-a.x,ez=wz-a.z;let dsx=(j22*ex-j12*ez)/det,dsy=(-j21*ex+j11*ez)/det;const L=Math.hypot(dsx,dsy),cap=400;if(L>cap){dsx*=cap/L;dsy*=cap/L;}sx=Math.max(3,Math.min(innerWidth-3,sx+dsx));sy=Math.max(3,Math.min(innerHeight-3,sy+dsy));a=await window.__move(sx,sy);}return{ok:false,sx,sy,aim:a};};window.__ev=(T,types)=>window.__echoes.events.filter(e=>e.tick>=T&&types.includes(e.type));'ready'})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes,c=e.cmd;c('restoreSkillState',{slots:[{id:'swift_mend',remaining:0},null,null,null],override:null});c('teleport',0,-1);for(const i of [0,1,2,3])c('setHp',i,0.3);await window.__sleep(200);const T=e.tick;for(let i=0;i<3;i++){window.dispatchEvent(new KeyboardEvent('keydown',{code:'Digit1',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:'Digit1',bubbles:true}));}await window.__sleep(250);return {case:'3 same-key presses in one tick',ev:e.events.filter(x=>x.tick>=T&&['skill_cast','intent_denied','heal'].includes(x.type)).map(x=>({t:x.tick,ty:x.type,kind:x.kind,reason:x.reason,skill:x.skill}))};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes;await window.__sleep(200);const T=e.tick;for(const k of ['Digit2','Digit3','Digit4']){window.dispatchEvent(new KeyboardEvent('keydown',{code:k,bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:k,bubbles:true}));}await window.__sleep(250);return {case:'empty slots 2-4',ev:e.events.filter(x=>x.tick>=T&&x.type==='intent_denied').map(x=>({t:x.tick,kind:x.kind,reason:x.reason}))};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const e=window.__echoes,c=e.cmd;c('restoreSkillState',{slots:[{id:'mending_bolt',remaining:0},{id:'sanctuary',remaining:0},null,null],override:null});c('teleport',3,3);await window.__sleep(150);const p=e.state().party[0];const a=await window.__aim(p.x,p.z);await window.__sleep(120);const T=e.tick;const t0=Date.now();while(Date.now()-t0<3000){window.dispatchEvent(new KeyboardEvent('keydown',{code:'Digit1',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:'Digit1',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keydown',{code:'Digit2',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:'Digit2',bubbles:true}));await window.__sleep(8);if(e.events.some(x=>x.type==='skill_cast'&&x.tick>=T))break;}await window.__sleep(200);return {case:'aim exactly on caster (degenerate)',aim:a.aim,player:{x:p.x,z:p.z},ev:e.events.filter(x=>x.tick>=T&&['skill_cast','zone_spawn','skill_bolt_spawn'].includes(x.type))};})()"
+ }
+]

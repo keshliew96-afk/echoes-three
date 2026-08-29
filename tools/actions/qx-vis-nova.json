@@ -1,0 +1,4 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('giveSkill','nova_bloom'); c('teleport', -0.9, -1.4); c('setHp', 0, 0.5); c('setHp', 1, 0.5); c('setHp', 3, 0.5); return 1; })()" },
+  { "type": "key", "key": "Digit3", "ms": 40 }
+]

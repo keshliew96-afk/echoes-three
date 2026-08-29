@@ -1,0 +1,3 @@
+[
+  { "type": "eval", "code": "(() => { const r=[]; for (let i=0;i<60;i++){ const h=__echoes.cmd('heal', undefined, 14); r.push(h && h.crit ? 1 : 0); } return { seed: __echoes.seed, bits: r.join(''), draws: __echoes.state().rngDraws, tick: __echoes.tick }; })()" }
+]

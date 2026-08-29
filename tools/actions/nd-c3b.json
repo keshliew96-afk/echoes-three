@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('grantNode','sharpen'); __echoes.cmd('grantNode','ascend'); __echoes.cmd('socket','mending_bolt','sharpen'); __echoes.cmd('socket','mending_bolt','ascend'); __echoes.cmd('setHp', window.__ids[1], 0.2); __echoes.cmd('teleport',-4.5,-1.0); return { armed: true }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "window.__press('Digit1'); ({ fired: __echoes.tick })" },
+  { "type": "wait", "ms": 520 }
+]

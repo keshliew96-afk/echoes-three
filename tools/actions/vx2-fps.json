@@ -1,0 +1,19 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,3)"},
+  {"type":"eval","code":"[['boar',8,5],['boar',-8,5],['boar',0,-6],['mantis',6,-3],['mantis',-6,-3],['mantis',3,6]].map(p=>__echoes.cmd('spawn',p[0],p[1],p[2]))"},
+  {"type":"mousemove","x":1000,"y":400},
+  {"type":"mousedown","button":"right"},
+  {"type":"keydown","key":"KeyA"},
+  {"type":"wait","ms":1500},
+  {"type":"keyup","key":"KeyA"},
+  {"type":"keydown","key":"KeyD"},
+  {"type":"wait","ms":1500},
+  {"type":"keyup","key":"KeyD"},
+  {"type":"key","key":"Space","ms":60},
+  {"type":"keydown","key":"KeyW"},
+  {"type":"wait","ms":1500},
+  {"type":"keyup","key":"KeyW"},
+  {"type":"wait","ms":1500},
+  {"type":"mouseup","button":"right"},
+  {"type":"eval","code":"({fps:__echoes.fps,tick:__echoes.tick,entities:__echoes.entityCount,alive:__echoes.state().enemies.filter(e=>e.kind==='boar'||e.kind==='mantis').length})"}
+]

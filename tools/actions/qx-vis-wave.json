@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('giveSkill','restorative_wave'); c('teleport', -0.9, -1.4); c('setHp', 0, 0.5); c('setHp', 1, 0.5); return 1; })()" },
+  { "type": "mousemove", "x": 634, "y": 512 },
+  { "type": "wait", "ms": 150 },
+  { "type": "key", "key": "Digit3", "ms": 40 }
+]

@@ -1,0 +1,14 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',11,-7)"},
+  {"type":"wait","ms":400},
+  {"type":"eval","code":"window.__all=new Map();window.__t=setInterval(()=>{for(const ev of __echoes.events)window.__all.set(ev.tick+'|'+ev.type+'|'+(ev.id!==undefined?ev.id:''),ev);},100);'armed'"},
+  {"type":"eval","code":"({before:__echoes.state().room})"},
+  {"type":"eval","code":"__echoes.cmd('setHp',4,0)"},
+  {"type":"wait","ms":300},
+  {"type":"eval","code":"({afterKill:__echoes.state().room, tick:__echoes.tick})"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"({mid:__echoes.state().room, tick:__echoes.tick})"},
+  {"type":"eval","code":"window.__k=setInterval(()=>{const r=__echoes.state().room; if(!r.cleared && r.aliveEnemies>0 && r.pendingSpawns===0) __echoes.cmd('killAllEnemies');},250);'burning'"},
+  {"type":"wait","ms":42000},
+  {"type":"eval","code":"clearInterval(window.__t);clearInterval(window.__k);({end:__echoes.state().room, tick:__echoes.tick, party:__echoes.state().party.map(p=>p.kind+':'+p.hp), ev:[...window.__all.values()].filter(e=>['room_soft_fail','room_cleared','wave_start','death','enemy_retreat','enemy_despawn'].includes(e.type)).sort((a,b)=>a.tick-b.tick).map(e=>e.tick+' '+e.type+(e.index!==undefined?' w'+e.index:'')+(e.kind?' '+e.kind:'')+(e.cause?' '+e.cause:''))})"}
+]

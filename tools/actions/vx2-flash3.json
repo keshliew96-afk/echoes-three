@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"const s=__echoes.state();s.party.slice(1).forEach(a=>__echoes.cmd('setHp',a.id,0));__echoes.cmd('teleport',-2,2)"},
+  {"type":"eval","code":"__echoes.cmd('spawn','boar',1,2);__echoes.cmd('spawn','boar',1.4,2.4);__echoes.cmd('spawn','boar',1.4,1.6);__echoes.cmd('spawn','boar',1.8,2)"},
+  {"type":"wait","ms":1200},
+  {"type":"mousemove","x":1100,"y":450},
+  {"type":"mousedown","button":"right"}
+]

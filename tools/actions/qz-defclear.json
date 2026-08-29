@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,-3)"},
+  {"type":"eval","code":"__echoes.cmd('setHp',4,50)"},
+  {"type":"eval","code":"window.__all=new Map();window.__t=setInterval(()=>{for(const ev of __echoes.events)window.__all.set(ev.tick+'|'+ev.type+'|'+(ev.id!==undefined?ev.id:''),ev);},100);({t0:__echoes.tick, ws:__echoes.state().room.waystone})"},
+  {"type":"eval","code":"new Promise(r=>{const i=setInterval(()=>{const s=__echoes.state().room; if(s&&s.cleared){clearInterval(i);r({clearTick:__echoes.tick, room:s});}},50)})"},
+  {"type":"wait","ms":450},
+  {"type":"eval","code":"({tick:__echoes.tick, en:__echoes.state().enemies.map(e=>e.id+' '+e.kind+' '+e.state+' '+e.x+','+e.z)})"}
+]

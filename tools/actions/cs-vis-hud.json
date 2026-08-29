@@ -1,0 +1,4 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; __echoes.cmd('giveSkill','warding_aura'); __echoes.cmd('giveSkill','nova_bloom'); const ids=__echoes.state().party.map(p=>p.id); __echoes.cmd('setHp', ids[1], 0.5); window.__press('Digit1'); window.__press('Digit2'); window.__press('Digit4'); window.__press('F2'); return { fired:'MB+SM+NB, WA passive in slot 3, F2 override on' }; })()" },
+  { "type": "wait", "ms": 1600 }
+]

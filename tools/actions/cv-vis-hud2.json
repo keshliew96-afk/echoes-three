@@ -1,0 +1,3 @@
+[
+  { "type": "eval", "code": "(async()=>{const E=window.__echoes;const tk=n=>new Promise(res=>{const t0=E.tick;const iv=setInterval(()=>{if(E.tick>=t0+n){clearInterval(iv);res()}},4)});const kd=c=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c}));const ku=c=>window.dispatchEvent(new KeyboardEvent('keyup',{code:c}));const st=()=>E.state();const log={};log.g=E.cmd('giveSkill','warding_aura');kd('Digit3');await tk(2);ku('Digit3');await tk(30);log.slots=st().skills;return log})()" }
+]

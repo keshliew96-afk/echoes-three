@@ -1,0 +1,6 @@
+[
+  { "type": "mousemove", "x": 1100, "y": 450 },
+  { "type": "eval", "code": "(()=>{__echoes.cmd('teleport',6,0); const log=[]; window.__vq=log; for(const t of ['telegraph_start','telegraph_resolve','enemy_fire','eshot_despawn','hit','hit_immune']) __echoes.on(t,ev=>log.push(ev)); const id=__echoes.cmd('spawn','mantis',9.2,0); return {mantis:id, hp0:__echoes.state().party[0].hp, tick:__echoes.tick}})()" },
+  { "type": "wait", "ms": 2000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); return {hp1:s.party[0].hp, log:window.__vq.slice(0,20)}})()" }
+]

@@ -1,0 +1,26 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('setHp', window.__ids[1], 0.5); window.__t=__echoes.tick; window.__press('Digit2'); return { armed:'cast-SM', t: window.__t }; })()" },
+  { "type": "wait", "ms": 1000 },
+  { "type": "eval", "code": "(() => { window.__s1 = __echoes.cmd('skillState'); return { test:'serialize-1s-later', s1: window.__s1, tick: __echoes.tick }; })()" },
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(() => { const s2 = __echoes.cmd('skillState'); return { test:'serialize-ticking-down', s2, deltaVsS1: window.__s1.slots[1] && s2.slots[1] ? window.__s1.slots[1].remaining - s2.slots[1].remaining : null }; })()" },
+
+  { "type": "eval", "code": "(() => { const ok = __echoes.cmd('restoreSkillState', { slots: [ { id:'mending_bolt', remaining:120 }, { id:'swift_mend', remaining:30 }, null, null ], override: 2 }); return { test:'restore', ok, skills: __echoes.state().skills, healOverride: __echoes.state().healOverride }; })()" },
+
+  { "type": "eval", "code": "(() => { window.__t=__echoes.tick; return { armed:'MB-denied-on-restored-cd' }; })()" },
+  { "type": "key", "key": "Digit1", "ms": 40 },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'MB-denied-on-restored-cd', evs: window.__evs(window.__t,['skill_cast','intent_denied']) })" },
+
+  { "type": "wait", "ms": 2100 },
+  { "type": "eval", "code": "(() => { window.__t=__echoes.tick; return { armed:'MB-ready-after-120-ticks' }; })()" },
+  { "type": "key", "key": "Digit1", "ms": 40 },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'MB-ready-after-restored-cd', evs: window.__evs(window.__t,['skill_cast','intent_denied']) })" },
+
+  { "type": "eval", "code": "(() => { const i=window.__ids; __echoes.cmd('teleport', 0, -1.5); __echoes.cmd('setHp', i[1], 0.3); __echoes.cmd('setHp', i[2], 0.9); window.__t=__echoes.tick; window.__press('Digit2'); return { armed:'override-restored-forces-sword', expect: i[2] }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'override-restored-forces-sword', evs: window.__evs(window.__t,['skill_cast','heal','intent_denied']), healOverride: __echoes.state().healOverride })" },
+
+  { "type": "eval", "code": "({ final:true, skills: __echoes.state().skills, fps: __echoes.fps })" }
+]

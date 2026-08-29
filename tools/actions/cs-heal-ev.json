@@ -1,0 +1,7 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; const st=__echoes.state(); window.__ids=st.party.map(p=>p.id); __echoes.cmd('setHp', window.__ids[1], 0.5); __echoes.cmd('setHp', window.__ids[2], 0.4); __echoes.cmd('teleport',-4.9,-1.0); window.__t=__echoes.tick; window.__press('Digit1'); return { armed:'MB', ids: window.__ids, party: st.party.map(p=>[p.partyIndex??0,p.classId||'healer',p.x,p.z]) }; })()" },
+  { "type": "wait", "ms": 620 },
+  { "type": "eval", "code": "(() => { window.__press('Digit2'); return { fired:'SM' }; })()" },
+  { "type": "wait", "ms": 200 },
+  { "type": "eval", "code": "(() => ({ heals: __echoes.events.filter(e=>e.tick>=window.__t && e.type==='heal').map(h=>[h.tick,h.target,h.source,h.amount,h.x,h.z]), fr: __echoes.state().party.map(p=>[p.partyIndex??0, Math.round(p.hp/p.maxHp*100)/100]) }))()" }
+]

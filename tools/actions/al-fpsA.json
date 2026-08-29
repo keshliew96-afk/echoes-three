@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"({label:'idle-party',fps:__echoes.fps,ents:__echoes.entityCount})"}
+]

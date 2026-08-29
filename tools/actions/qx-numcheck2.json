@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('giveSkill','guardian_bond'); c('teleport', 0, -1.5); c('setHp', 1, 0.5); c('setHp', 3, 0.5); window.__qT = window.__echoes.tick; window.__qS = []; const live = () => [...document.querySelectorAll('.dmg-num')].filter(e => e.style.visibility === 'visible').map(e => e.textContent + '|' + getComputedStyle(e).color); const iv = setInterval(() => { window.__qS.push(live()); if (window.__qS.length > 12) clearInterval(iv); }, 80); return 'armed'; })()" },
+  { "type": "key", "key": "Digit3", "ms": 40 },
+  { "type": "wait", "ms": 1200 },
+  { "type": "eval", "code": "(() => ({ E: window.__echoes.events.filter(e => e.tick >= window.__qT && ['skill_cast','heal','intent_denied'].includes(e.type)).map(e => ({ tick: e.tick, type: e.type, skill: e.skill ?? e.source, target: e.target, amount: e.amount, reason: e.reason })), samples: window.__qS }))()" }
+]

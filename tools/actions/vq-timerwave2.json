@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "(()=>{const log=[]; window.__vq=log; for(const t of ['wave_start','room_cleared','downed']) __echoes.on(t,ev=>log.push(ev)); window.__hb=setInterval(()=>{const s=__echoes.state(); __echoes.cmd('setHp', s.party[0].id, 1);},1000); return {room:__echoes.state().room}})()" },
+  { "type": "wait", "ms": 13000 },
+  { "type": "eval", "code": "(()=>{const r=__echoes.state().room; return {afterTimer:{waveIndex:r.waveIndex,alive:r.aliveEnemies,pending:r.pendingSpawns,cleared:r.cleared}, waveStarts:window.__vq.filter(e=>e.type==='wave_start').map(e=>({tick:e.tick,index:e.index}))}})()" },
+  { "type": "eval", "code": "(()=>{return {killed:__echoes.cmd('killAllEnemies'), tick:__echoes.tick}})()" },
+  { "type": "wait", "ms": 3000 },
+  { "type": "eval", "code": "(()=>{clearInterval(window.__hb); const s=__echoes.state(); const r=s.room; const cl=window.__vq.find(e=>e.type==='room_cleared'); return {final:{waveIndex:r.waveIndex,alive:r.aliveEnemies,pending:r.pendingSpawns,cleared:r.cleared}, party:s.party.map(p=>({id:p.id,hp:p.hp})), downedEvents:window.__vq.filter(e=>e.type==='downed').map(e=>({tick:e.tick,target:e.target})), clearedEv:cl?cl.tick:null, tick:__echoes.tick}})()" }
+]

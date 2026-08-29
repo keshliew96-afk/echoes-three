@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"window.__probe={ev:[]};__echoes.on('*',e=>{if(['enemy_retreat','enemy_despawn','room_cleared','hit','eshot_despawn'].includes(e.type))__probe.ev.push(e)});__echoes.state().room"},
+  {"type":"eval","code":"({alive:__echoes.state().room.aliveEnemies,tick:__echoes.tick})"},
+  {"type":"eval","code":"__echoes.cmd('clearRoom')"},
+  {"type":"wait","ms":1600},
+  {"type":"eval","code":"({room:__echoes.state().room,enemiesLeft:__echoes.state().enemies.filter(e=>e.kind==='boar'||e.kind==='mantis').length,probe:__probe.ev.map(e=>({ty:e.type,t:e.tick,id:e.id,etype:e.etype,cause:e.cause}))})"}
+]

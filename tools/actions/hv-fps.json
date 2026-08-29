@@ -1,0 +1,16 @@
+[
+  { "type": "eval", "code": "(()=>{__echoes.cmd('teleport',0,0); const pid=__echoes.state().party[0].id; __echoes.cmd('iframe',pid,1500); for(const [t,x,z] of [['boar',4,2],['boar',-4,2],['boar',4,-2],['mantis',3,3],['mantis',-3,-3],['mantis',5,0]]) __echoes.cmd('spawn',t,x,z); window.__fpsSamples=[]; window.__fpsIv=setInterval(()=>{const s=__echoes.state(); window.__fpsSamples.push({fps:Math.round(__echoes.fps*10)/10, enemies:s.enemies.filter(e=>e.state==='active').length}); const alive=s.enemies.filter(e=>e.state==='active').length; if(alive<6){ const t=alive%2?'boar':'mantis'; __echoes.cmd('spawn',t, (Math.random()*8-4)|0, (Math.random()*6-3)|0);} },500); return 'go'})()" },
+  { "type": "mousemove", "x": 1000, "y": 400 },
+  { "type": "mousedown", "button": "right" },
+  { "type": "key", "key": "KeyW", "ms": 900 },
+  { "type": "key", "key": "KeyA", "ms": 900 },
+  { "type": "key", "key": "KeyS", "ms": 900 },
+  { "type": "key", "key": "KeyD", "ms": 900 },
+  { "type": "key", "key": "KeyW", "ms": 900 },
+  { "type": "key", "key": "KeyA", "ms": 900 },
+  { "type": "key", "key": "KeyS", "ms": 900 },
+  { "type": "key", "key": "KeyD", "ms": 900 },
+  { "type": "wait", "ms": 3000 },
+  { "type": "mouseup", "button": "right" },
+  { "type": "eval", "code": "(()=>{clearInterval(window.__fpsIv); const ss=window.__fpsSamples; const fps=ss.map(s=>s.fps); return {samples:ss, minFps:Math.min(...fps), meanFps:Math.round(fps.reduce((a,b)=>a+b,0)/fps.length*10)/10, n:fps.length}})()" }
+]

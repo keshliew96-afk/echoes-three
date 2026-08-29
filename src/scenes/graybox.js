@@ -8,6 +8,7 @@
 // x/z by the clock alpha (never mutates sim).
 import {
   BoxGeometry,
+  CanvasTexture,
   CapsuleGeometry,
   CircleGeometry,
   Color,
@@ -16,6 +17,7 @@ import {
   MeshBasicMaterial,
   PlaneGeometry,
   RingGeometry,
+  SRGBColorSpace,
 } from 'three';
 import { ACT1_GROUND, CLASS_ACCENTS, PALETTE } from '../data/palette.js';
 import {
@@ -63,6 +65,49 @@ function blobShadow(radius, opacity = 0.35) {
     depthWrite: false,
   });
   const blob = new Mesh(new CircleGeometry(radius, 24), mat);
+  blob.rotation.x = -Math.PI / 2;
+  blob.position.y = 0.008;
+  return blob;
+}
+
+// Bolt contact shadow (baseline-v030 F3). The generic blobShadow above uses the
+// bloom-halo radial texture, which is already down to ~55% alpha a quarter of
+// the way out — at bolt scale (0.14 u) the darkening measured invisible and the
+// critic ruled the projectiles ungrounded (§19.2: contact shadow under every
+// entity INCLUDING projectiles). This texture holds a near-solid core to 55% of
+// the radius before feathering, same ramp family as the env prop shadows.
+let boltShadowTex = null;
+function getBoltShadowTexture() {
+  if (boltShadowTex) return boltShadowTex;
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const half = size / 2;
+  const grad = ctx.createRadialGradient(half, half, 0, half, half, half);
+  grad.addColorStop(0.0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.55, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.75, 'rgba(255,255,255,0.7)');
+  grad.addColorStop(0.9, 'rgba(255,255,255,0.25)');
+  grad.addColorStop(1.0, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  boltShadowTex = new CanvasTexture(canvas);
+  boltShadowTex.colorSpace = SRGBColorSpace;
+  return boltShadowTex;
+}
+
+function boltContactShadow(radius, opacity) {
+  const mat = new MeshBasicMaterial({
+    map: getBoltShadowTexture(),
+    color: new Color('#000000'),
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  const blob = new Mesh(new CircleGeometry(radius, 20), mat);
   blob.rotation.x = -Math.PI / 2;
   blob.position.y = 0.008;
   return blob;
@@ -137,7 +182,9 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     const glow = makeGlowSprite({ color: PALETTE.hearthAmber, size: 0.6, opacity: 0.8 });
     glow.position.y = BOLT_Y;
     g.add(glow);
-    const shadow = blobShadow(0.14, 0.25);
+    // Solid-core contact blob (baseline-v030 F3): sized and weighted so the
+    // moving bolt visibly darkens the ground under its flight path.
+    const shadow = boltContactShadow(0.19, 0.5);
     g.add(shadow);
     // Kept addressable: during the muzzle blend the group rides above y=0 and
     // the contact shadow must stay ON the ground (§9 #8: grounding, incl.
@@ -255,6 +302,7 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
   const player = world.player;
   let lastElapsed = null;
   let lean = { x: 0, z: 0 };
+  let smearEnabled = true; // arena replaces the capsule smear with critter ghosts
 
   function update(elapsedSec, alpha = 1) {
     const dt = lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, elapsedSec - lastElapsed));
@@ -280,7 +328,9 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     body.rotation.z = lean.z;
 
     // Dash smear: ghost per frame while dashing; ALL ghosts vanish at dash end.
-    if (player.dashTicksLeft > 0) {
+    // A wrapping scene that renders its own smear (the dressed arena's chibi
+    // afterimages) suppresses the capsule ghosts via setSmearEnabled(false).
+    if (player.dashTicksLeft > 0 && smearEnabled) {
       spawnGhost(ix, iz);
       for (const gh of ghosts) {
         gh.age += dt;
@@ -420,6 +470,11 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     // hands in the Healer's staff-gem tip). No provider = legacy behaviour.
     setBoltOrigin: (fn) => {
       boltOrigin = fn;
+    },
+    // Integration hook: a wrapping scene that renders its own dash smear turns
+    // the graybox capsule ghosts off (plain ?scene=graybox keeps them).
+    setSmearEnabled: (v) => {
+      smearEnabled = !!v;
     },
   };
 }

@@ -1,0 +1,9 @@
+[
+  { "type": "mousemove", "x": 1150, "y": 450 },
+  { "type": "eval", "code": "(()=>{__echoes.cmd('teleport',7,0); window.__fire=new Promise(r=>{const un=__echoes.on('enemy_fire',ev=>{un();r(ev)}); }); const rec={hits:[],immunes:[],dashEnd:[]}; window.__rec=rec; __echoes.on('hit',e=>rec.hits.push(e)); __echoes.on('hit_immune',e=>rec.immunes.push(e)); __echoes.on('dash_end',e=>rec.dashEnd.push(e)); return {mantis:__echoes.cmd('spawn','mantis',10.4,0), hp0:__echoes.state().party[0].hp}})()" },
+  { "type": "eval", "code": "(async()=>{const f=await window.__fire; window.__fireTick=f.tick; return f})()" },
+  { "type": "wait", "ms": 300 },
+  { "type": "key", "key": "Space", "ms": 80 },
+  { "type": "wait", "ms": 900 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); const r=window.__rec; return {hpAfter:s.party[0].hp, immuneEvents:r.immunes, hitsOnAnything:r.hits, dashEnds:r.dashEnd.map(e=>e.tick), fireTick:window.__fireTick, eshotsLeft:s.eshots.length}})()" }
+]

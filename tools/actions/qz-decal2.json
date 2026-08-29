@@ -1,0 +1,9 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',6,0)"},
+  {"type":"wait","ms":1800},
+  {"type":"eval","code":"[[7.2,-1],[7.2,0],[7.2,1],[8.4,-1],[8.4,0],[8.4,1]].map(([x,z])=>__echoes.cmd('spawn','boar',x,z))"},
+  {"type":"wait","ms":60},
+  {"type":"eval","code":"__echoes.state().enemies.map(e=>__echoes.cmd('setHp',e.id,0))"},
+  {"type":"eval","code":"__echoes.events.filter(e=>e.type==='death').map(e=>JSON.stringify(e))"},
+  {"type":"wait","ms":1500}
+]

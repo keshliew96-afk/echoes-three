@@ -53,8 +53,10 @@ export function getFlameTexture() {
   let g = ctx.createLinearGradient(0, H - 8, 0, 18);
   g.addColorStop(0, 'rgba(232,162,61,0.92)');
   g.addColorStop(0.45, 'rgba(232,162,61,0.80)');
-  g.addColorStop(0.82, 'rgba(214,120,44,0.32)');
-  g.addColorStop(1, 'rgba(190,96,40,0)');
+  // Tip stops hold the green channel up: the old red-heavy tips put the
+  // flame's edge pixels under hue 25 (the reserved Ember Danger band).
+  g.addColorStop(0.82, 'rgba(214,146,54,0.32)');
+  g.addColorStop(1, 'rgba(190,124,52,0)');
   ctx.fillStyle = g;
   flamePath(W / 2, H - 10, 46, 14, 4);
   ctx.fill();
@@ -110,7 +112,13 @@ export function makeFlameSprite(size = 0.34, opacity = 1, gain = 1) {
     toneMapped: false, // keeps the amber chromatic; the core still blooms
   });
   if (gain !== 1) {
-    material.color.setRGB(gain, gain * 0.93, gain * 0.84, LinearSRGBColorSpace);
+    // Near-white gain tint. The bloom pass spreads whatever sits above its
+    // threshold across the dark surround, and with a red-heavy gain the spread
+    // was measured as the h19-24 / s0.35-0.5 mauve murk that dominates the
+    // danger-band count (v3: 31k danger px with bloom on, 1.2k with bloom
+    // off). The painted TEXTURE carries the amber; the HDR overflow that the
+    // bloom smears must be cream, not orange.
+    material.color.setRGB(gain, gain * 0.97, gain * 0.88, LinearSRGBColorSpace);
   }
   const sprite = new Sprite(material);
   sprite.scale.set(size * 0.66, size, 1);

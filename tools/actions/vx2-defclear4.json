@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"window.__probe={ev:[]};__echoes.on('*',e=>{if(['room_cleared','room_soft_fail','enemy_retreat','enemy_despawn'].includes(e.type))__probe.ev.push(e)});window.__wsHeal=setInterval(()=>{try{const r=__echoes.state().room;if(r&&r.waystone)__echoes.cmd('heal',r.waystone.id,300)}catch(err){}},400);__echoes.state().room"},
+  {"type":"wait","ms":10000},
+  {"type":"eval","code":"({t:'mid',room:__echoes.state().room})"},
+  {"type":"eval","code":"Promise.race([new Promise(res=>{const un=__echoes.on('room_cleared',e=>{un();clearInterval(window.__wsHeal);res({cleared_at_tick:e.tick,mode:e.mode,softFailed:e.softFailed})})}),new Promise(r=>setTimeout(()=>{r('CLEAR_TIMEOUT')},55000))])"},
+  {"type":"wait","ms":1600},
+  {"type":"eval","code":"({t:'final',room:__echoes.state().room,ev:__probe.ev.map(e=>({ty:e.type,t:e.tick,id:e.id,etype:e.etype,cause:e.cause})),enemiesLeft:__echoes.state().enemies.filter(e=>e.kind==='boar'||e.kind==='mantis').length})"}
+]

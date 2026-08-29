@@ -1,0 +1,15 @@
+[
+  { "type": "eval", "code": "(()=>{__echoes.cmd('teleport',6,0); const starts=[]; const resolves=[]; window.__sw={starts,resolves}; __echoes.on('telegraph_start',e=>starts.push(e)); __echoes.on('telegraph_resolve',e=>resolves.push(e)); const ids=[]; for(const [x,z] of [[9.1,0],[3.1,0.5],[6,3.0],[8.3,2.3],[3.9,-2.3],[6,-3.0]]) ids.push(__echoes.cmd('spawn','mantis',x,z)); return ids})()" },
+  { "type": "key", "key": "KeyW", "ms": 1400 },
+  { "type": "key", "key": "KeyA", "ms": 1400 },
+  { "type": "key", "key": "Space", "ms": 80 },
+  { "type": "key", "key": "KeyS", "ms": 1400 },
+  { "type": "key", "key": "KeyD", "ms": 1400 },
+  { "type": "key", "key": "Space", "ms": 80 },
+  { "type": "key", "key": "KeyW", "ms": 1200 },
+  { "type": "key", "key": "KeyA", "ms": 1200 },
+  { "type": "key", "key": "Space", "ms": 80 },
+  { "type": "key", "key": "KeyS", "ms": 1200 },
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "(()=>{const {starts,resolves}=window.__sw; const ps=starts.filter(e=>e.playerTargeted); const pr=resolves.filter(e=>e.playerTargeted).map(e=>e.tick).sort((a,b)=>a-b); let minResGap=1e9; for(let i=1;i<pr.length;i++) minResGap=Math.min(minResGap,pr[i]-pr[i-1]); let maxCon=0; for(const s of ps){let c=0; for(const o of ps){ if(o.tick<s.resolveTick && s.tick<o.resolveTick && o.tick<=s.tick) c++; } maxCon=Math.max(maxCon,c);} return {nStartsPlayer:ps.length,nResolvesPlayer:pr.length,minResolveGapTicks:minResGap,maxConcurrentPlayerTel:maxCon,hp:__echoes.state().party[0].hp,fps:__echoes.fps}})()" }
+]

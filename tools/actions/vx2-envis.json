@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',5,2)"},
+  {"type":"eval","code":"__echoes.cmd('spawn','boar',8,2);__echoes.cmd('spawn','mantis',2.2,2)"},
+  {"type":"wait","ms":1100},
+  {"type":"eval","code":"({enemies:__echoes.state().enemies.map(e=>({id:e.id,kind:e.kind,x:e.x,z:e.z,tel:e.telegraph}))})"}
+]

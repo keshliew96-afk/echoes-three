@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0)"},
+  {"type":"wait","ms":5000},
+  {"type":"eval","code":"window.__f=[];window.__t=setInterval(()=>{window.__f.push(__echoes.fps);},400);'armed'"},
+  {"type":"wait","ms":24000},
+  {"type":"eval","code":"clearInterval(window.__t);({n:window.__f.length, min:Math.min(...window.__f), mean:Math.round(window.__f.reduce((a,b)=>a+b,0)/window.__f.length*10)/10, ents:__echoes.entityCount})"}
+]

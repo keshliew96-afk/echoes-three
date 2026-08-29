@@ -1,0 +1,16 @@
+[
+  { "type": "eval", "code": "(()=>{const rec={softFail:null,cleared:null,deaths:[]}; window.__df=rec; __echoes.on('room_soft_fail',e=>rec.softFail=e); __echoes.on('room_cleared',e=>rec.cleared=e); __echoes.on('death',e=>rec.deaths.push(e)); const s=__echoes.state(); return {mode:s.room?s.room.mode:null, defendTicksLeft:s.room?s.room.defendTicksLeft:null, waystone:s.room?s.room.waystone:null, party:s.party.map(p=>({id:p.id,kind:p.kind,hp:p.hp,x:p.x,z:p.z})), enemies:s.enemies.map(e=>({id:e.id,kind:e.kind,x:e.x,z:e.z,target:e.targetId,state:e.state}))}})()" },
+  { "type": "wait", "ms": 1500 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); const en=s.enemies.filter(e=>e.state==='active'); if(!en.length) return {err:'no active enemies'}; const e0=en[0]; __echoes.cmd('teleport', e0.x+0.9, e0.z); window.__near=e0.id; return {teleportedNextTo:e0.id, at:[e0.x+0.9,e0.z]}})()" },
+  { "type": "wait", "ms": 700 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); const pid=s.party[0].id; const near=s.enemies.find(e=>e.id===window.__near); return {contested:{nearEnemyTarget:near?near.target:null, playerId:pid, playerHp:s.party[0].hp, allTargets:s.enemies.filter(e=>e.state==='active').map(e=>({id:e.id,kind:e.kind,target:e.target||e.targetId}))}}})()" },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); for(const p of s.party.slice(1)) __echoes.cmd('setHp',p.id,0); __echoes.cmd('teleport',-11,-7); window.__wsHp0=s.room.waystone?s.room.waystone.hp:null; return {alliesDowned:s.party.slice(1).map(p=>p.id), wsHp0:window.__wsHp0}})()" },
+  { "type": "wait", "ms": 1500 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); return {uncontestedTargets:s.enemies.filter(e=>e.state==='active').map(e=>({id:e.id,kind:e.kind,target:e.targetId,x:e.x,z:e.z})), waystoneId:s.room.waystone?s.room.waystone.id:null, wsHpNow:s.room.waystone?s.room.waystone.hp:null, playerPos:[s.party[0].x,s.party[0].z]}})()" },
+  { "type": "wait", "ms": 6000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); return {wsHpAfter6s:s.room.waystone?s.room.waystone.hp:null, defendTicksLeft:s.room.defendTicksLeft, aliveEnemies:s.room.aliveEnemies}})()" },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); const wsId=s.room.waystone.id; __echoes.cmd('setHp',wsId,0); return {killedWaystone:wsId}})()" },
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); return {softFailEvent:window.__df.softFail, roomAfterWsDeath:{mode:s.room.mode,softFailed:s.room.softFailed,cleared:s.room.cleared,defendTicksLeft:s.room.defendTicksLeft,waystone:s.room.waystone}, tickAdvancing:s.tick, playerHp:s.party[0].hp}})()" },
+  { "type": "eval", "code": "new Promise(done=>{let w; do { w=__echoes.cmd('startWave'); } while(w!==null); const t0=Date.now(); const iv=setInterval(()=>{const s=__echoes.state(); if(!s.room.cleared){ for(const e of s.enemies.filter(e=>e.state==='active')) __echoes.cmd('setHp',e.id,0); } if(s.room.cleared || Date.now()-t0>25000){ clearInterval(iv); setTimeout(()=>{const s2=__echoes.state(); done({cleared:s2.room.cleared, softFailed:s2.room.softFailed, clearedEvent:window.__df.cleared, tick:s2.tick});},400);} },400);})" }
+]

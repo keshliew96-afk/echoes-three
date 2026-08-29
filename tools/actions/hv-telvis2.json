@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "(()=>{const s=__echoes.state(); for(const p of s.party.slice(1)) __echoes.cmd('setHp',p.id,0); __echoes.cmd('teleport',-6,4.5); return 'allies downed'})()" },
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "new Promise(r=>{const un=__echoes.on('telegraph_start',ev=>{un(); r(ev)}); __echoes.cmd('spawn','mantis',-3.2,4.5);})" }
+]

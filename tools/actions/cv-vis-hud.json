@@ -1,0 +1,3 @@
+[
+  { "type": "eval", "code": "(async()=>{const E=window.__echoes;const tk=n=>new Promise(res=>{const t0=E.tick;const iv=setInterval(()=>{if(E.tick>=t0+n){clearInterval(iv);res()}},4)});const kd=c=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c}));const ku=c=>window.dispatchEvent(new KeyboardEvent('keyup',{code:c}));const st=()=>E.state();const log={};log.g1=E.cmd('giveSkill','nova_bloom');log.g2=E.cmd('giveSkill','sanctuary');const P=st().party;const ids={0:P[0].id};for(const p of P.slice(1))ids[p.partyIndex]=p.id;E.cmd('setHp',ids[1],0.5);kd('Digit1');kd('Digit2');kd('Digit3');kd('Digit4');await tk(3);ku('Digit1');ku('Digit2');ku('Digit3');ku('Digit4');await tk(95);log.slots=st().skills;return log})()" }
+]

@@ -1,0 +1,19 @@
+[
+  {"type":"eval","code":"__echoes.cmd('setHp',0,50)"},
+  {"type":"mousemove","x":1000,"y":400},
+  {"type":"mousedown","button":"right"},
+  {"type":"key","key":"KeyD","ms":600},
+  {"type":"key","key":"Space","ms":40},
+  {"type":"key","key":"KeyW","ms":500},
+  {"type":"key","key":"Digit1","ms":30},
+  {"type":"key","key":"KeyA","ms":700},
+  {"type":"key","key":"Space","ms":40},
+  {"type":"key","key":"KeyS","ms":600},
+  {"type":"key","key":"Digit2","ms":30},
+  {"type":"wait","ms":6000},
+  {"type":"key","key":"KeyD","ms":800},
+  {"type":"key","key":"Space","ms":40},
+  {"type":"wait","ms":8000},
+  {"type":"mouseup","button":"right"},
+  {"type":"eval","code":"({room:__echoes.state().room, hp:__echoes.state().party[0].hp, stats:__echoes.stats})"}
+]

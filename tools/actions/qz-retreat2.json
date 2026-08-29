@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"window.__all=new Map();window.__t=setInterval(()=>{for(const ev of __echoes.events)window.__all.set(ev.tick+'|'+ev.type+'|'+(ev.id!==undefined?ev.id:''),ev);},100);'armed'"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"__echoes.cmd('clearRoom')"},
+  {"type":"wait","ms":1600},
+  {"type":"eval","code":"clearInterval(window.__t);({tick:__echoes.tick, en:__echoes.state().enemies.length, room:__echoes.state().room, ev:[...window.__all.values()].filter(e=>['room_cleared','enemy_retreat','enemy_despawn','hit','eshot_despawn'].includes(e.type)).sort((a,b)=>a.tick-b.tick).map(e=>e.tick+' '+e.type+' '+(e.id!==undefined?'e'+e.id:'')+(e.cause?' '+e.cause:''))})"}
+]

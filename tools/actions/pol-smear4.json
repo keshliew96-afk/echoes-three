@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"window.__echoes.cmd('teleport', -3, 1)"},
+  {"type":"wait","ms":400},
+  {"type":"mousemove","x":620,"y":230},
+  {"type":"wait","ms":100},
+  {"type":"eval","code":"(()=>{let n=0;const log=()=>{const s=window.__echoes.state();const p=s.party[0];console.log('[SMEAR]',JSON.stringify({f:n++,tick:window.__echoes.tick,dtl:p.dashTicksLeft,ghosts:s.vfx&&s.vfx.party?s.vfx.party.smearGhosts:null,x:Math.round(p.x*100)/100}));if(n<40)requestAnimationFrame(log)};window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',key:' ',bubbles:true,cancelable:true}));requestAnimationFrame(log);setTimeout(()=>window.dispatchEvent(new KeyboardEvent('keyup',{code:'Space',key:' ',bubbles:true,cancelable:true})),300);return 'dash+log'})()"}
+]

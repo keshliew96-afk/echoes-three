@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('setHp', 0, 0.3); window.__qT = window.__echoes.tick; const fire = () => { window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit2' })); window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit2' })); }; fire(); fire(); return { T: window.__qT }; })()" },
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "(() => { const E = window.__echoes.events.filter(e => e.tick >= window.__qT && ['skill_cast','intent_denied','heal'].includes(e.type)); return E.map(e => ({ tick: e.tick, type: e.type, skill: e.skill, kind: e.kind, reason: e.reason, amount: e.amount })); })()" },
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; const r1 = c('giveSkill','nova_bloom'); const r2 = c('giveSkill','sanctuary'); const r3 = c('giveSkill','spirit_bolt'); return { r1, r2, r3, slots: window.__echoes.state().skills.map(s => s && s.id) }; })()" }
+]

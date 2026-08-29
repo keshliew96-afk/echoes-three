@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "(() => { window.__echoes.cmd('setHp', 0, 0.3); const live = () => [...document.querySelectorAll('.dmg-num')].filter(e => e.style.visibility === 'visible').map(e => ({ text: e.textContent, top: Math.round(e.getBoundingClientRect().top * 10) / 10, color: getComputedStyle(e).color })); window.__qLive = live; window.__qSamples = []; const t0 = performance.now(); const iv = setInterval(() => { window.__qSamples.push({ ms: Math.round(performance.now() - t0), els: live() }); if (performance.now() - t0 > 900) clearInterval(iv); }, 90); return 'armed'; })()" },
+  { "type": "key", "key": "Digit2", "ms": 40 },
+  { "type": "wait", "ms": 1200 },
+  { "type": "eval", "code": "window.__qSamples" }
+]

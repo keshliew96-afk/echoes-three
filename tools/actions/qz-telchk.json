@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',7,4)"},
+  {"type":"wait","ms":1800},
+  {"type":"eval","code":"({tick:__echoes.tick, hp:__echoes.state().party[0].hp, ents:__echoes.state().enemies.length})"},
+  {"type":"eval","code":"__echoes.cmd('spawn','mantis',9.5,4)"},
+  {"type":"wait","ms":140},
+  {"type":"eval","code":"({tick:__echoes.tick, hp:__echoes.state().party[0].hp, en:__echoes.state().enemies, ev:__echoes.events.slice(-12).map(e=>e.tick+' '+e.type+' '+(e.amount||'')+' '+(e.target!==undefined?'t'+e.target:''))})"}
+]

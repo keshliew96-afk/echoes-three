@@ -1,0 +1,27 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const g1=__echoes.cmd('giveSkill','nova_bloom'); const g2=__echoes.cmd('giveSkill','sanctuary'); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; return { version:__echoes.version, g1, g2, slots: st.skills, party: st.party.map(p=>[p.partyIndex??0,p.id,p.kind,p.classId||'healer',p.hp+'/'+p.maxHp,p.x,p.z]) }; })()" },
+
+  { "type": "eval", "code": "({ check:'cooldown-config', skills: __echoes.state().skills })" },
+
+  { "type": "eval", "code": "new Promise(res => { __echoes.cmd('teleport',-4.9,-1.0); __echoes.cmd('setHp', window.__ids[1], 0.5); const dum=__echoes.cmd('spawn','dummy',-3.4,-1.0); const t0=__echoes.tick; window.__press('Digit1'); setTimeout(() => { const evs=window.__evs(t0,['skill_cast','skill_bolt_spawn','skill_bolt_despawn','heal','hit','intent_denied']); const st=__echoes.state(); res({ test:'MB-pass-enemy', t0, dum, evs, dummyHp: st.enemies.find(e=>e.id===dum)?.hp, tankHp: st.party.find(p=>p.partyIndex===1).hp }); }, 900); })" },
+
+  { "type": "wait", "ms": 2800 },
+  { "type": "eval", "code": "new Promise(res => { __echoes.cmd('teleport',-6,2); const t0=__echoes.tick; window.__press('Digit1'); setTimeout(()=>{ res({ test:'MB-range-speed', t0, evs: window.__evs(t0,['skill_cast','skill_bolt_spawn','skill_bolt_despawn','intent_denied']) }); }, 1400); })" },
+
+  { "type": "eval", "code": "(() => { __echoes.cmd('teleport',-1,-1.5); const i=window.__ids; __echoes.cmd('setHp', i[0], 1.0); __echoes.cmd('setHp', i[1], 0.9); __echoes.cmd('setHp', i[2], 0.4); __echoes.cmd('setHp', i[3], 0.7); window.__t=__echoes.tick; window.__press('Digit2'); return { armed:'SM-smart', expectTarget: i[2] }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'SM-smart', evs: window.__evs(window.__t,['skill_cast','heal','intent_denied']) })" },
+
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "(() => { const i=window.__ids; for (const k of [0,1,2,3]) __echoes.cmd('setHp', i[k], 0.5); window.__t=__echoes.tick; window.__press('Digit2'); return { armed:'SM-self-tiebreak', expectTarget: i[0] }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'SM-self-tiebreak', evs: window.__evs(window.__t,['skill_cast','heal','intent_denied']) })" },
+
+  { "type": "eval", "code": "(() => { const i=window.__ids; for (const k of [0,1,2,3]) __echoes.cmd('setHp', i[k], 0.5); __echoes.cmd('teleport',-1.1,-1.6); window.__t=__echoes.tick; window.__press('Digit3'); return { armed:'NB' }; })()" },
+  { "type": "wait", "ms": 200 },
+  { "type": "eval", "code": "(() => { const st=__echoes.state(); const dists = st.party.map(m => [m.partyIndex??0, Math.round(Math.hypot(m.x-st.party[0].x, m.z-st.party[0].z)*100)/100]); return { test:'NB-area-count-power', evs: window.__evs(window.__t,['skill_cast','heal','intent_denied']), dists }; })()" },
+
+  { "type": "eval", "code": "new Promise(res => { const i=window.__ids; __echoes.cmd('teleport',-1.9,-1.0); __echoes.cmd('setHp', i[0], 0.5); __echoes.cmd('setHp', i[1], 0.3); const t0=__echoes.tick; window.__press('Digit4'); setTimeout(()=>{ const evs=window.__evs(t0,['skill_cast','zone_spawn','zone_tick','zone_expire']); const heals=window.__evs(t0,['heal']).filter(h=>h.source==='sanctuary'); res({ test:'SA-4ticks', t0, evs, heals: heals.map(h=>[h.tick,h.target,h.amount,h.crit]), zonesLeft: __echoes.state().zones.length }); }, 4700); })" },
+
+  { "type": "eval", "code": "({ final:true, skills: __echoes.state().skills, stats: __echoes.stats, fps: __echoes.fps })" }
+]

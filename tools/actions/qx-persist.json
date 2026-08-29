@@ -1,0 +1,16 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('giveSkill','sanctuary'); c('teleport', -8, 4); return window.__echoes.state().skills.map(s => s && s.id); })()" },
+  { "type": "mousemove", "x": 1590, "y": 880 },
+  { "type": "wait", "ms": 200 },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; window.__qT = window.__echoes.tick; return { T: window.__qT, aimDist: p.aim ? Math.round(Math.hypot(p.aim.x - p.x, p.aim.z - p.z) * 100) / 100 : null }; })()" },
+  { "type": "key", "key": "Digit3", "ms": 40 },
+  { "type": "wait", "ms": 300 },
+  { "type": "eval", "code": "(() => { const p = window.__echoes.state().party[0]; const z = window.__echoes.events.filter(e => e.tick >= window.__qT && e.type === 'zone_spawn')[0]; return { zone: z, zoneDist: z ? Math.round(Math.hypot(z.x - p.x, z.z - p.z) * 100) / 100 : null }; })()" },
+  { "type": "key", "key": "Digit1", "ms": 40 },
+  { "type": "wait", "ms": 120 },
+  { "type": "key", "key": "Digit2", "ms": 40 },
+  { "type": "wait", "ms": 200 },
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('healOverride', 2); window.__qSaved = c('skillState'); window.__qSaveTick = window.__echoes.tick; return { saved: window.__qSaved, saveTick: window.__qSaveTick }; })()" },
+  { "type": "wait", "ms": 1500 },
+  { "type": "eval", "code": "(() => { const before = window.__echoes.state().skills.map(s => s && { id: s.id, rem: s.remainingTicks }); const r = window.__echoes.cmd('restoreSkillState', window.__qSaved); const after = window.__echoes.state().skills.map(s => s && { id: s.id, rem: s.remainingTicks }); return { before, restored: r, after, override: window.__echoes.state().healOverride, elapsed: window.__echoes.tick - window.__qSaveTick }; })()" }
+]

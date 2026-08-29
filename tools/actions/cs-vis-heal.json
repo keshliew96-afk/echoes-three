@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; const ids=__echoes.state().party.map(p=>p.id); __echoes.cmd('setHp', ids[1], 0.5); __echoes.cmd('setHp', ids[2], 0.4); __echoes.cmd('teleport',-4.9,-1.0); window.__press('Digit1'); return { fired:'MB at tank 3u east' }; })()" },
+  { "type": "wait", "ms": 620 },
+  { "type": "eval", "code": "(() => { window.__press('Digit2'); return { fired:'SM smart -> swordsman 0.4' }; })()" },
+  { "type": "wait", "ms": 150 }
+]

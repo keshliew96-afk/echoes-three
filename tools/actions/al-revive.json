@@ -1,0 +1,21 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0)" },
+  { "type": "eval", "code": "window.__L=[];for(const t of ['downed','ally_rescue','revive_start','revive','revive_break','revive_drain_end','defeat','intent_denied']) __echoes.on(t,ev=>window.__L.push(ev));'logging'" },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{player:s.party[0],allies:s.party.slice(1).map(a=>({id:a.id,cls:a.classId,x:a.x,z:a.z,hp:a.hp}))}})()" },
+  { "type": "eval", "code": "__echoes.cmd('setHp',0,0)" },
+  { "type": "wait", "ms": 1200 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'after-down',playerHp:s.party[0].hp,downed:s.party[0].downed,ai:s.party_ai.allies.map(a=>({i:a.partyIndex,st:a.state,rev:a.reviveTarget,d:a.anchorDist})),ch:s.party_ai.channels,log:window.__L.map(e=>e.type+'@'+e.tick)}})()" },
+  { "type": "wait", "ms": 2500 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'mid-channel',ch:s.party_ai.channels,rings:s.allyfx.reviveRings}})()" },
+  { "type": "wait", "ms": 4000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();const r=window.__L.filter(e=>e.type==='revive');return{phase:'revive-1',playerHp:s.party[0].hp,maxHp:s.party[0].maxHp,pct:s.party[0].hp/s.party[0].maxHp,revives:r,channels:s.party_ai.channels,repeats:s.party_ai.repeats}})()" },
+  { "type": "eval", "code": "__echoes.cmd('setHp',0,0)" },
+  { "type": "wait", "ms": 7000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'revive-2',playerHp:s.party[0].hp,pct:s.party[0].hp/s.party[0].maxHp,repeats:s.party_ai.repeats}})()" },
+  { "type": "eval", "code": "__echoes.cmd('setHp',0,0)" },
+  { "type": "wait", "ms": 7000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();return{phase:'revive-3',playerHp:s.party[0].hp,pct:s.party[0].hp/s.party[0].maxHp,repeats:s.party_ai.repeats}})()" },
+  { "type": "eval", "code": "__echoes.cmd('setHp',0,0)" },
+  { "type": "wait", "ms": 7000 },
+  { "type": "eval", "code": "(()=>{const s=__echoes.state();const r=window.__L.filter(e=>e.type==='revive').map(e=>({tick:e.tick,target:e.target,pct:e.pct,hp:e.hp,repeat:e.repeat,reviver:e.reviver,free:e.free}));const st=window.__L.filter(e=>e.type==='revive_start').map(e=>e.tick);const durations=r.map((x,i)=>st[i]!==undefined?x.tick-st[i]:null);return{phase:'revive-4',playerHp:s.party[0].hp,pct:s.party[0].hp/s.party[0].maxHp,allRevives:r,channelDurationTicks:durations,expected:300,repeats:s.party_ai.repeats}})()" }
+]

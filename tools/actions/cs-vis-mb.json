@@ -1,0 +1,4 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; __echoes.cmd('teleport',-6,2); window.__press('Digit1'); return { fired:'mending_bolt +x' }; })()" },
+  { "type": "wait", "ms": 300 }
+]

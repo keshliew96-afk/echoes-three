@@ -1,0 +1,6 @@
+[
+  { "type": "eval", "code": "(() => { const g=__echoes.cmd('giveSkill','restorative_wave'); __echoes.cmd('grantNode','multiply'); __echoes.cmd('grantNode','bounce'); const pWave=__echoes.cmd('buildPreview','restorative_wave','multiply'); const pMB=__echoes.cmd('buildPreview','mending_bolt','multiply'); const kv=__echoes.cmd('kitVerdict','multiply'); const s=__echoes.cmd('socket','restorative_wave','multiply'); const v=__echoes.cmd('buildView').skills.find(k=>k.id==='restorative_wave'); return { test:'saturation-inert', previewOnWave: pWave, previewOnMendingBolt: pMB, kitVerdict: kv, socket: s, wave: v }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "(() => { const o=__echoes.cmd('openSocket'); const cards=[...document.querySelectorAll('.nd-card')]; const bi=cards.findIndex(c=>c.textContent.includes('Bounce')); if (bi>=0) cards[bi].click(); return { o, focusedBounce: bi }; })()" },
+  { "type": "wait", "ms": 350 }
+]

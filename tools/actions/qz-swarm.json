@@ -1,0 +1,8 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,5)"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"['3,5','-3,5','2.1,7.1','-2.1,7.1','2.1,2.9','-2.1,2.9'].map(p=>{const [x,z]=p.split(',').map(Number);return __echoes.cmd('spawn','mantis',x,z);})"},
+  {"type":"eval","code":"window.__all=new Map(); window.__maxc=0; window.__nsamp=0; window.__t=setInterval(()=>{const s=__echoes.state(); let n=0; for(const e of s.enemies) if(e.telegraph) n++; if(n>window.__maxc) window.__maxc=n; window.__nsamp++; for(const ev of __echoes.events) window.__all.set(ev.tick+'|'+ev.type+'|'+(ev.id!==undefined?ev.id:'')+'|'+(ev.target!==undefined?ev.target:''), ev);},16); 'armed'"},
+  {"type":"wait","ms":14000},
+  {"type":"eval","code":"clearInterval(window.__t); ({maxConcurrent:window.__maxc, samples:window.__nsamp, hp:__echoes.state().party[0].hp, tel:[...window.__all.values()].filter(e=>e.type==='telegraph_start'||e.type==='telegraph_resolve').map(e=>e.tick+' '+e.type+' e'+e.id+' pt'+(e.playerTargeted?1:0)+(e.target!==undefined?' t'+e.target:''))})"}
+]

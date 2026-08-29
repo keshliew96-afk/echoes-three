@@ -36,6 +36,11 @@ import { createCombat } from './combat.js';
 import { createEnemySystem } from './enemies.js';
 import { createWaveDirector } from './waves.js';
 import { createSkillSystem, STARTING_SKILLS, PARTY_ALLIES } from './skills.js';
+import { createBuildSystem } from './nodes.js';
+import { createAllySystem } from './allies.js';
+
+// §10: a Downed character crawls at 0.8 u/s (movement only, cannot act).
+const DOWNED_CRAWL_SPEED = 0.8;
 
 const TICK_DT = 1 / TICK_HZ; // seconds per tick, for u/s -> u/tick
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -146,6 +151,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   // priority rules; the skill system owns slots, cooldowns, delivery shapes,
   // smart-targeting and the F1–F4 heal override. Skill-bolt impacts ride the
   // same §4 ① deferred queue as basic bolts.
+  // Build system (nodes block, §15) is created below; the skill system takes
+  // its §15.4 resolver through this late-bound hook (identity until it lands).
+  let buildSys = null;
   const skillSys = createSkillSystem({
     player,
     registry,
@@ -154,6 +162,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     getTick: () => currentTick,
     isIframed,
     queueDeferred: (carrierOrdinal, resolve) => deferred.push({ carrierOrdinal, resolve }),
+    resolve: (def) => (buildSys ? buildSys.resolveDef(def) : def),
   });
   for (const id of STARTING_SKILLS) skillSys.giveSkill(id); // §7 starting kit
 
@@ -178,6 +187,44 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     getTick: () => currentTick,
   });
   if (room === 'kill_all' || room === 'defend') waves.startRoom(room);
+
+  // --- Ally AI, party command verbs and the downed/revive contract (ally
+  // block, §7 kits / §8 mark+rally / §10 downed+revive / §12 leash+targeting).
+  // The world only calls its three phase hooks in the §4 total order and
+  // routes the player-only command intents + debug cmds into it.
+  const allySys = createAllySystem({
+    player,
+    registry,
+    events,
+    combat,
+    rng,
+    getTick: () => currentTick,
+    getRoomState: () => waves.roomState(),
+  });
+  events.on('room_cleared', () => allySys.onRoomBoundary('room_clear'));
+  events.on('room_start', () => allySys.onRoomBoundary('room_start'));
+  events.on('hit', (ev) => allySys.onHit(ev));
+
+  // --- Build system (nodes block, §15): the 8-node pool, sockets/bench, the
+  // flat->pct->mult->technique->clamp resolver and the depth-1 technique
+  // primitives. Techniques ride the §4 ③ continuation queue; Echo recasts are
+  // §4 ① maturations run from buildSys.discrete(). combat_active truth = a
+  // live un-cleared wave room (§2: between-rooms only build interaction).
+  buildSys = createBuildSystem({
+    player,
+    registry,
+    events,
+    combat,
+    getTick: () => currentTick,
+    isIframed,
+    queueDeferred: (carrierOrdinal, resolve) => deferred.push({ carrierOrdinal, resolve }),
+    queueContinuation: (fn) => continuations.push({ resolve: fn }),
+    getSkillSlots: () => skillSys.slotsView(),
+    isCombatActive: () => {
+      const r = waves.roomState();
+      return !!(r && !r.cleared);
+    },
+  });
 
   // --- Harness wisps (sim-core proving population; ?scene=simtest only).
   function spawnWisp(x, z) {
@@ -275,11 +322,18 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       const { x, z } = snapshot.move;
       if (x !== 0 || z !== 0) {
         // §5: velocity = dir * move_speed, instant (no ramp). Walking slides
-        // along walls; only the dash hard-stops.
-        walkStep(player, x * HEALER.moveSpeed * TICK_DT, z * HEALER.moveSpeed * TICK_DT, player.radius);
+        // along walls; only the dash hard-stops. §10: a Downed player keeps
+        // movement only, at the 0.8 u/s crawl.
+        const spd = player.hp > 0 ? HEALER.moveSpeed : DOWNED_CRAWL_SPEED;
+        walkStep(player, x * spd * TICK_DT, z * spd * TICK_DT, player.radius);
         player.facing = { x, z };
       }
     }
+
+    // Ally AI steering + revive channels (ally block, §10/§12) — party bodies
+    // settle before the enemy pass so enemy nearest-target scans and party
+    // bolts both sweep against final positions.
+    allySys.continuous(snapshot);
 
     // Enemies (enemies block, §11): steering/retreat + enemy-shot flight —
     // before knockback so displaced bodies still sweep against walls, before
@@ -296,9 +350,11 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       if (hit) e.kbTicks = 0;
     }
 
-    // Projectiles advance (swept) after actors. Skill bolts share the phase.
+    // Projectiles advance (swept) after actors. Skill bolts share the phase;
+    // Echo-recast bolts (nodes block) fly on the same swept subsystem.
     projectiles.step(currentTick);
     skillSys.step(currentTick);
+    buildSys.step(currentTick);
 
     // Wisp drift (velocity applied; decisions happen in their resolution).
     for (const e of registry.all()) {
@@ -328,6 +384,12 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   }
 
   function discretePhase(snapshot) {
+    // Delayed Echo recasts mature first (§4 ① — nodes block): direct/nova/arc
+    // recasts resolve instantly, projectile recasts spawn echo bolts whose
+    // impacts join this tick's deferred batch below.
+    buildSys.discrete();
+    drainContinuations(); // ③ techniques triggered by instant echo recasts
+
     // ① deferred maturations, ascending carrier spawn ordinal.
     if (deferred.length > 0) {
       const batch = deferred.sort((a, b) => a.carrierOrdinal - b.carrierOrdinal);
@@ -339,18 +401,36 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     }
 
     // ② actor resolutions: party by party_index (player = 0), then enemies by
-    // ascending spawn ordinal.
+    // ascending spawn ordinal. ③ technique continuations (nodes block: Bounce
+    // hops, Siphon, Detonate bursts) nest depth-first right after the actor
+    // resolutions that triggered them.
     resolvePlayer(snapshot);
+    drainContinuations();
+    // ② continued: party_index 1-3 (ally block) — the player's revive-channel
+    // arbitration also lands here so it sees the post-dodge state (§5: a
+    // same-tick dodge beats a revive-channel start).
+    allySys.resolveAll(snapshot);
+    drainContinuations();
     for (const e of registry.all()) {
       if (e.kind === 'wisp' && registry.byId(e.id)) resolveWisp(e);
     }
     // ② continued: real enemies (boar bites, mantis telegraph starts/fires)
     // in ascending spawn-ordinal order (enemies block, §11).
     enemies.resolveAll();
+    drainContinuations();
 
     // ④ persistent-zone scheduled ticks, ascending zone spawn ordinal, then
-    // the Warding Aura cadence (skills block).
+    // the Warding Aura cadence (skills block). Zone/aura heals can carry
+    // techniques (Siphon per tick per occupant) — drain ③ after.
     skillSys.zonePhase();
+    drainContinuations();
+
+    // ④ continued: ally damage zones (ally block, §7 ground_aoe kit rows),
+    // then the §2 defeat rule on live HP so an all-four-down lands its
+    // `defeat` event on the exact tick — before the room's clear predicate,
+    // which §2 says defeat outranks.
+    allySys.endOfTick();
+    drainContinuations();
 
     // Encounter director: spawn-telegraph maturations, wave triggers, and the
     // §11 clear predicates (evaluated end of tick).
@@ -386,8 +466,21 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         events.emit(currentTick, 'intent', { kind, index: press.index, override });
         continue;
       }
+      // §8 party-shared enemy mark (Tab) and rally (R) — ally block.
+      if (kind === 'target_cycle') {
+        events.emit(currentTick, 'intent', { kind, mark: allySys.cycleMark() });
+        continue;
+      }
+      if (kind === 'rally') {
+        events.emit(currentTick, 'intent', { kind, rally: allySys.rally() });
+        continue;
+      }
       events.emit(currentTick, 'intent', { kind });
     }
+
+    // §10: a Downed character cannot act. Targeting/party commands above are
+    // never suppressed; dodge, skills and the basic below are.
+    if (player.hp <= 0) return;
 
     // Dodge — own timer, outside the skill pipeline; same-tick dodge beats
     // skill and basic fires (§5).
@@ -424,6 +517,10 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   // §5) and re-armed — one denial per attempt, no queue, no refund.
   function resolveBasic(snapshot) {
     if (!snapshot.basicAttackHeld) return;
+    // §10: a held attack carried into a revive channel is consumed silently
+    // (neither fires nor breaks). A FRESH press still fires here and breaks
+    // the channel in the ally block's resolution below.
+    if (allySys.basicSuppressed()) return;
     if (currentTick < player.nextBasicTick) return;
     if (player.dashTicksLeft > 0) {
       deny('basic_attack', DENIAL.prioritySuppressed);
@@ -581,6 +678,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
           dashTicksLeft: player.dashTicksLeft,
           dodgeReadyTick: player.dodgeReadyTick,
           nextBasicTick: player.nextBasicTick,
+          // §10 downed state + the live revive channel this body is running.
+          downed: player.hp <= 0,
+          reviving: player.reviveTargetId ?? null,
         },
         // Sim-side allies (skills block): §8 heal targets.
         ...registry
@@ -591,14 +691,23 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
             kind: a.kind,
             classId: a.classId,
             partyIndex: a.partyIndex,
-            hp: a.hp,
+            hp: r2(a.hp),
             maxHp: a.maxHp,
             x: r2(a.x),
             z: r2(a.z),
+            // Ally-block AI state (§12) so captures can assert leash/target.
+            downed: !!a.downed,
+            state: a.aiState ?? null,
+            target: a.targetId ?? null,
+            reviving: a.reviveTargetId ?? null,
           })),
       ],
+      // Ally AI / mark / rally / revive-channel truth (ally block).
+      party_ai: allySys.view(),
       // Skill-kit state (skills block): slots/cooldowns, heal override, zones.
       skills: skillSys.slotsView(),
+      // Build-system state (nodes block, §15): bench, sockets, resolved stats.
+      build: buildSys.view(),
       healOverride: skillSys.getOverride(),
       zones: registry
         .all()
@@ -611,6 +720,20 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
           radius: z.radius,
           ticksDone: z.ticksDone,
           nextTickTick: z.nextTickTick,
+        })),
+      // Ally kit ground_aoe zones (ally block, §7 Ground Crack / Caltrops /
+      // Detonating Charge).
+      azones: registry
+        .all()
+        .filter((e) => e.kind === 'azone')
+        .map((z) => ({
+          id: z.id,
+          skill: z.skill,
+          x: r2(z.x),
+          z: r2(z.z),
+          radius: z.radius,
+          ticksDone: z.ticksDone,
+          totalTicks: z.totalTicks,
         })),
       skillBolts: registry
         .all()
@@ -795,9 +918,44 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         const [data] = args;
         return skillSys.restore(data);
       }
-      default:
+      // --- Build-system test commands (nodes block, docs/TESTING.md).
+      case 'grantNode': {
+        const [id, provenance] = args;
+        return buildSys.grantNode(id, provenance ?? 'drafted');
+      }
+      case 'socket': {
+        const [skillId, nodeId, slot] = args;
+        return buildSys.socket(skillId, nodeId, slot ?? null);
+      }
+      case 'unsocket': {
+        const [skillId, slot] = args;
+        return buildSys.unsocket(skillId, slot);
+      }
+      case 'buildView':
+        return buildSys.view();
+      case 'buildPreview': {
+        const [skillId, nodeId] = args;
+        return buildSys.preview(skillId, nodeId);
+      }
+      case 'kitVerdict': {
+        const [nodeId] = args;
+        return buildSys.kitVerdict(nodeId);
+      }
+      case 'buildState':
+        // Persistence plumbing for the run block (§13 bench + assignments).
+        return buildSys.serialize();
+      case 'restoreBuildState': {
+        const [data] = args;
+        return buildSys.restore(data);
+      }
+      default: {
+        // Ally-block test commands (mark / cycleMark / rally / allyState /
+        // reviveState / downAll / breakRevive / reviveFlinchBreak).
+        const handled = allySys.cmd(name, args);
+        if (handled !== undefined) return handled;
         console.warn(`__echoes.cmd('${name}') lands with a later block`);
         return null;
+      }
     }
   }
 
@@ -810,6 +968,13 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // Skill-slot view for the HUD (skills block): [{id, abbrev, passive,
     // remainingTicks, totalTicks} | null] x4.
     skillSlots: () => skillSys.slotsView(),
+    // Build-system accessor (nodes block): the socket screen reads view()/
+    // preview() and drives socket()/unsocket() through the same sim entry
+    // points as __echoes.cmd.
+    buildSystem: () => buildSys,
+    // Ally-block accessor (render layer reads the mark, the revive channels
+    // and the per-ally AI state read-only; it never mutates sim state).
+    allySystem: () => allySys,
     // Spawn telegraphs in flight (enemies block) — render-layer state sync.
     pendingSpawns: () => waves.pendingSpawnsList(),
     snapshotState,

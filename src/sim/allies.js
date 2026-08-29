@@ -1,0 +1,1307 @@
+// Ally AI + the party command verbs + the downed/revive contract
+// (BUILD_BRIEF §7 ally kits, §8 mark/rally, §10 downed & revive, §12 ally AI).
+//
+// Every stat in ALLY_CLASSES / ALLY_KITS is the §7 table VERBATIM. The handful
+// of steering scaffolds (stand-off distance, rally arrival radius, revive
+// approach distance) are DERIVED from brief figures and labelled where they
+// appear — nothing here is invented out of thin air.
+//
+// What this module owns:
+//
+//   LEASH (§12) — reference is the room's live leash_anchor: the party anchor
+//     (the player) in kill_all/boss/shop, the Waystone in defend until
+//     soft-fail flips it. Radius 3.4 u. An ally NEVER advances outward past
+//     that ring (marked targets are leash-capped, never pursued past the
+//     boundary); beyond it with no in-range target it disengages and walks to
+//     the anchor, and only re-engages once inside 0.8 x radius. Anchor
+//     tracking follows a Downed anchor's crawl for free (it reads live x/z).
+//
+//   TARGETING (§8/§12) — with no mark, ONE shared computation picks the enemy
+//     nearest the leash anchor (ties by ascending spawn ordinal), which is
+//     what produces natural focus fire. The player's Tab mark overrides for
+//     all allies and is honored live; a mark that dies is cleared, a mark that
+//     drifts out of leash+reach is NOT cleared — the ally falls back to
+//     nearest-to-anchor and resumes the mark when it is reachable again.
+//
+//   RALLY (§8) — R captures the player's position that tick; every ally breaks
+//     engagement (revive channels included) and moves there; on arrival it
+//     holds with no re-engagement for 1.0 s, then resumes. Re-press re-points
+//     immediately. Denied `not_anchor` while the player is Downed.
+//
+//   DOWNED / REVIVE (§10) — hold-E 5.0 s stationary channel within 0.6 u of a
+//     downed body, one reviver per body (second attempt denied
+//     `revive_occupied`), revive at 30% max_hp with -10 pp per same-room
+//     repeat (floor 10%), free 30% revive for everyone on room clear (exempt
+//     from diminishing), breaks reset to 0 and drain in reverse at 2x, and all
+//     four Downed on one tick emits `defeat`.
+//
+//   AI REVIVE (§12) — serial rescue, player's body first then longest-Downed;
+//     reviver = nearest eligible ally with HP >= 30% of its own max;
+//     eagerness unconditional (it breaks off combat immediately). Rally
+//     interrupts an AI channel (reset, not resume).
+//
+// Sim discipline: no DOM, no render imports, no wall clock — integer tick
+// counts only. The only seeded-RNG draws this module causes are the crit rolls
+// inside combat.applyDamage, taken in resolution order, so one seed replays.
+import { TICK_HZ } from '../core/constants.js';
+import { DENIAL } from '../core/intents.js';
+import { walkStep } from './movement.js';
+import { clampPlacement, countFinal, clampHalfAngle, createSkillBolts, fanDirections } from './shapes.js';
+
+const TICK_DT = 1 / TICK_HZ;
+const r2 = (v) => Math.round(v * 100) / 100;
+const secTicks = (s) => Math.round(s * TICK_HZ);
+const CD_FLOOR_TICKS = secTicks(0.5); // §6 cooldown floor, shared with the healer kit
+const ZONE_CADENCE_TICKS = secTicks(1.0); // §6: zone cadence 1.0 s, first tick at 1.0 s
+
+// §12 leash: radius 3.4 u, re-engage only once inside 0.8 x radius.
+export const LEASH = Object.freeze({ radius: 3.4, reengageFactor: 0.8 });
+
+// §12 ally separation: 0.26 u soft push (same figure the enemy block reuses).
+const SEPARATION = 0.26;
+const SEP_STEP_CAP = 0.02; // u per tick of separation correction (scaffold)
+
+// §10 revive contract.
+export const REVIVE = Object.freeze({
+  channelTicks: secTicks(5.0), // 5.0 s uninterrupted
+  range: 0.6, // u — "within 0.6 u of a downed ally"
+  basePct: 0.3, // restored to 30% max_hp
+  stepPct: 0.1, // -10 pp per same-room repeat
+  floorPct: 0.1, // floor 10%
+  drainMult: 2, // interrupt = reverse drain at 2x speed (§10/§17)
+  aiMinHpFrac: 0.3, // §12: reviver = nearest eligible ally with HP >= 30% of own max
+  // Scaffold: an AI reviver stops just INSIDE the §10 0.6 u adjacency figure
+  // (0.92 x) — far enough out that the reviver kneels BESIDE the body instead
+  // of on top of it (which hid both the body and its revive ring), close
+  // enough that it can never sit on the break boundary. The reviver freezes
+  // the moment its channel starts, so nothing can drift it back out.
+  approach: 0.55,
+});
+
+// §8 rally: hold 1.0 s with no re-engagement on arrival.
+export const RALLY = Object.freeze({
+  graceTicks: secTicks(1.0),
+  // Arrival radius derived from the bodies themselves: two 0.3 u capsules plus
+  // the §12 separation push is the tightest three allies can legally cluster.
+  arriveDist: 0.3 * 2 + SEPARATION,
+});
+
+// §7 party class rows — VERBATIM (max_hp / move_speed / attack_interval /
+// basic_attack_power / basic geometry). `standRange` is the only scaffold: the
+// distance the AI closes to, derived as a fraction of its own basic reach so
+// the attack always lands with margin (§12 "steer to own attack/skill range").
+export const ALLY_CLASSES = Object.freeze({
+  tank: Object.freeze({
+    classId: 'tank',
+    partyIndex: 1,
+    maxHp: 150,
+    moveSpeed: 2.1,
+    attackIntervalTicks: secTicks(0.65),
+    basicPower: 9,
+    basicShape: 'melee_arc',
+    basicRange: 0.9, // arc reach 0.90
+    basicHalfAngle: 50, // half-angle 50°
+    standRange: 0.9 * 0.85,
+  }),
+  swordsman: Object.freeze({
+    classId: 'swordsman',
+    partyIndex: 2,
+    maxHp: 95,
+    moveSpeed: 2.65,
+    attackIntervalTicks: secTicks(0.35),
+    basicPower: 11,
+    basicShape: 'melee_arc',
+    basicRange: 0.75, // arc reach 0.75
+    basicHalfAngle: 40, // half-angle 40°
+    standRange: 0.75 * 0.85,
+  }),
+  archer: Object.freeze({
+    classId: 'archer',
+    partyIndex: 3,
+    maxHp: 80,
+    moveSpeed: 2.5,
+    attackIntervalTicks: secTicks(0.4),
+    basicPower: 12,
+    basicShape: 'projectile',
+    basicRange: 4.5, // range 4.5
+    basicSpeed: 5.6, // projectile 5.6 u/s
+    standRange: 4.5 * 0.8,
+  }),
+});
+
+const BOLT_RADIUS = 0.05; // same swept-vs-wall scaffold radius as every other bolt
+
+// §7 ally kits — fixed, all damage, table rows VERBATIM.
+//   melee_arc: range = reach u, area = half-angle °, count = max targets
+//   nova:      area = burst radius u, count = max targets
+//   projectile:range = max travel u, count = simultaneous bolts, speed u/s
+//   ground_aoe:range = max placement u, area = zone radius u, durationSec
+export const ALLY_KITS = Object.freeze({
+  // Tank (badger): Heavy Slam (arc 34, 5 s, 1.00/40°, cap 3) · Brutal Cleave
+  // (arc 16/target, 4 s, 0.95/80°, cap 6) · Ground Crack (ground_aoe 10/tick,
+  // 8 s, range 2.6, radius 0.9, 4 s) · Whirling Guard (nova 20/target, 9 s,
+  // 1.3, cap 5).
+  tank: Object.freeze([
+    Object.freeze({ id: 'heavy_slam', name: 'Heavy Slam', abbrev: 'HS', shape: 'melee_arc', power: 34, cd: 5, range: 1.0, area: 40, count: 3 }),
+    Object.freeze({ id: 'brutal_cleave', name: 'Brutal Cleave', abbrev: 'BC', shape: 'melee_arc', power: 16, cd: 4, range: 0.95, area: 80, count: 6 }),
+    Object.freeze({ id: 'ground_crack', name: 'Ground Crack', abbrev: 'GC', shape: 'ground_aoe', power: 10, cd: 8, range: 2.6, area: 0.9, durationSec: 4 }),
+    Object.freeze({ id: 'whirling_guard', name: 'Whirling Guard', abbrev: 'WG', shape: 'nova', power: 20, cd: 9, area: 1.3, count: 5 }),
+  ]),
+  // Swordsman (fox): Flurry (arc 11/hit, 3 s, 0.80/60°, cap 6) · Lunge Strike
+  // (arc 26, 4 s, 1.30/30°, cap 2) · Blade Storm (nova 14/target, 7 s, 1.0,
+  // cap 5) · Caltrops (ground_aoe 8/tick, 6.5 s, range 2.0, radius 0.70, 5 s).
+  swordsman: Object.freeze([
+    Object.freeze({ id: 'flurry', name: 'Flurry', abbrev: 'FL', shape: 'melee_arc', power: 11, cd: 3, range: 0.8, area: 60, count: 6 }),
+    Object.freeze({ id: 'lunge_strike', name: 'Lunge Strike', abbrev: 'LS', shape: 'melee_arc', power: 26, cd: 4, range: 1.3, area: 30, count: 2 }),
+    Object.freeze({ id: 'blade_storm', name: 'Blade Storm', abbrev: 'BS', shape: 'nova', power: 14, cd: 7, area: 1.0, count: 5 }),
+    Object.freeze({ id: 'caltrops', name: 'Caltrops', abbrev: 'CT', shape: 'ground_aoe', power: 8, cd: 6.5, range: 2.0, area: 0.7, durationSec: 5 }),
+  ]),
+  // Archer (hare): Piercing Shot (projectile 30, 3 s, 5.5, speed 6.2) · Volley
+  // (projectile 14/bolt, 4.5 s, 4.8, count 3 fan, speed 5.4) · Detonating
+  // Charge (ground_aoe 12/tick, 7 s, range 4.2, radius 0.85, 3 s) · Sundering
+  // Nova (nova 16/target, 8 s, 1.1, cap 4).
+  archer: Object.freeze([
+    Object.freeze({ id: 'piercing_shot', name: 'Piercing Shot', abbrev: 'PS', shape: 'projectile', power: 30, cd: 3, range: 5.5, speed: 6.2, count: 1 }),
+    Object.freeze({ id: 'volley', name: 'Volley', abbrev: 'VO', shape: 'projectile', power: 14, cd: 4.5, range: 4.8, speed: 5.4, count: 3 }),
+    Object.freeze({ id: 'detonating_charge', name: 'Detonating Charge', abbrev: 'DC', shape: 'ground_aoe', power: 12, cd: 7, range: 4.2, area: 0.85, durationSec: 3 }),
+    Object.freeze({ id: 'sundering_nova', name: 'Sundering Nova', abbrev: 'SN', shape: 'nova', power: 16, cd: 8, area: 1.1, count: 4 }),
+  ]),
+});
+
+// Range test per delivery shape (§7: "AI casts a kit skill when: target in
+// shape range AND off cooldown").
+function shapeRange(def) {
+  if (def.shape === 'nova') return def.area; // burst radius
+  return def.range; // arc reach / projectile travel / placement range
+}
+
+const dist2 = (ax, az, bx, bz) => {
+  const dx = ax - bx;
+  const dz = az - bz;
+  return dx * dx + dz * dz;
+};
+const distTo = (e, x, z) => Math.hypot(e.x - x, e.z - z);
+
+export function createAllySystem({
+  player,
+  registry,
+  events,
+  combat,
+  rng, // reserved: ally rolls all live inside combat's crit pipeline
+  getTick,
+  getRoomState = () => null,
+}) {
+  // --- party command state (§8, party-shared)
+  let mark = null; // enemy spawn ordinal, or null
+  let rallyPoint = null; // { x, z } captured on the rally tick
+  let defeated = false;
+  let flinchBreaks = false; // opt-in: see the header note on §10's closed break list
+
+  // §10 repeat-revive diminishing, per party_index, reset every room.
+  const repeats = [0, 0, 0, 0];
+
+  // Active revive channels: target entity id -> channel record.
+  //   { targetId, reviverId, progress (ticks), draining }
+  const channels = new Map();
+
+  // Player-side channel bookkeeping (§10 "a held attack carried into the
+  // channel is consumed silently").
+  let carriedBasic = false;
+  let prevBasicHeld = false;
+
+  // Ally kit bolts ride their own subsystem instance (owner tag keeps the
+  // healer kit from double-stepping them, §6 speeds are per-skill data).
+  const bolts = createSkillBolts({
+    registry,
+    events,
+    owner: 'ally_kits',
+    onImpact: (tick, bolt, target) => {
+      const len = Math.hypot(bolt.vx, bolt.vz);
+      const dirX = len > 1e-9 ? bolt.vx / len : 0;
+      const dirZ = len > 1e-9 ? bolt.vz / len : 0;
+      const targetId = target.id;
+      const { power, skill, sourceId } = bolt;
+      const t = registry.byId(targetId);
+      if (!t) return;
+      combat.applyDamage(t, power, { delivery: 'skill', dirX, dirZ, attacker: sourceId, source: skill });
+    },
+  });
+
+  // ------------------------------------------------------------- selectors --
+  const party = () =>
+    registry
+      .all()
+      .filter((e) => e.partyIndex !== undefined)
+      .sort((a, b) => a.partyIndex - b.partyIndex);
+
+  const allyList = () => registry.all().filter((e) => e.kind === 'ally');
+
+  // Living, hittable hostiles (boar / mantis / dummy). Retreating enemies drop
+  // `hittable` on the clear tick, so they leave the set for free (§13).
+  const hostiles = () =>
+    registry.all().filter((e) => e.faction === 'hostile' && e.hittable && e.hp > 0);
+
+  // §12: the room's live leash_anchor — the Waystone in a defend room until
+  // soft-fail flips it back to the party.
+  function leashAnchor() {
+    const rs = getRoomState();
+    if (rs && rs.mode === 'defend' && !rs.softFailed && rs.waystone) {
+      const ws = registry.byId(rs.waystone.id);
+      if (ws && ws.hp > 0) return ws;
+    }
+    return player;
+  }
+
+  // Nearest hostile to (x, z); ties break by ascending spawn ordinal (strict
+  // `<` over the registry's ascending scan, §1).
+  function nearestHostileTo(x, z) {
+    let best = null;
+    let bestD2 = Infinity;
+    for (const e of hostiles()) {
+      const d2 = dist2(e.x, e.z, x, z);
+      if (d2 < bestD2) {
+        bestD2 = d2;
+        best = e;
+      }
+    }
+    return best;
+  }
+
+  // ------------------------------------------------------- mark (Tab, §8) --
+  // Party-shared focus target. First press = nearest enemy to the PLAYER;
+  // repeats cycle outward by distance (ties ascending spawn id); past the
+  // farthest it wraps to nearest; the list is recomputed fresh each press.
+  function cycleMark() {
+    const tick = getTick();
+    const list = hostiles().sort((a, b) => {
+      const da = dist2(a.x, a.z, player.x, player.z);
+      const db = dist2(b.x, b.z, player.x, player.z);
+      return da !== db ? da - db : a.id - b.id;
+    });
+    if (list.length === 0) {
+      events.emit(tick, 'mark', { id: null, reason: 'no_enemies' }); // §8 empty room: no-op
+      return null;
+    }
+    let next;
+    if (mark === null) next = list[0];
+    else {
+      const i = list.findIndex((e) => e.id === mark);
+      next = i < 0 || i + 1 >= list.length ? list[0] : list[i + 1];
+    }
+    mark = next.id;
+    events.emit(tick, 'mark', { id: mark, kind: next.kind, x: r2(next.x), z: r2(next.z), n: list.length });
+    return mark;
+  }
+
+  function setMark(id) {
+    const tick = getTick();
+    if (id === null || id === undefined) {
+      mark = null;
+      events.emit(tick, 'mark', { id: null, reason: 'cleared' });
+      return null;
+    }
+    const e = registry.byId(id);
+    if (!e || e.faction !== 'hostile' || !(e.hp > 0)) return null;
+    mark = id;
+    events.emit(tick, 'mark', { id: mark, kind: e.kind, x: r2(e.x), z: r2(e.z) });
+    return mark;
+  }
+
+  function clearMark(reason) {
+    if (mark === null) return;
+    mark = null;
+    events.emit(getTick(), 'mark', { id: null, reason });
+  }
+
+  // ------------------------------------------------------ rally (R, §8) --
+  function rally() {
+    const tick = getTick();
+    if (player.hp <= 0) {
+      // §8: rally is unavailable to everyone while the player is Downed.
+      events.emit(tick, 'intent_denied', { kind: 'rally', reason: DENIAL.notAnchor });
+      return { denied: DENIAL.notAnchor };
+    }
+    rallyPoint = { x: player.x, z: player.z }; // captured THIS tick
+    const ids = [];
+    for (const a of allyList()) {
+      const ch = a.reviveTargetId != null ? channels.get(a.reviveTargetId) : null;
+      if (ch) breakChannel(ch, 'rally', tick); // §12: rally interrupts an AI channel (reset)
+      a.aiState = 'rally';
+      a.graceUntilTick = -1;
+      a.targetId = null;
+      ids.push(a.id);
+    }
+    events.emit(tick, 'rally', { x: r2(rallyPoint.x), z: r2(rallyPoint.z), allies: ids });
+    return { x: r2(rallyPoint.x), z: r2(rallyPoint.z), allies: ids };
+  }
+
+  // ------------------------------------------------ downed bookkeeping (§10) --
+  function markDown(m, tick, emitEvent) {
+    if (m.downed) return;
+    m.downed = true;
+    m.downedTick = tick;
+    // The body's own channel (if it was being revived) is meaningless now;
+    // a channel this member was RUNNING breaks (§10: "or the reviver going
+    // Downed (target stays down)").
+    if (m.reviveTargetId != null) {
+      const ch = channels.get(m.reviveTargetId);
+      if (ch) breakChannel(ch, 'reviver_downed', tick);
+    }
+    if (m.kind === 'ally') {
+      m.aiState = 'engage';
+      m.targetId = null;
+    }
+    if (emitEvent) {
+      events.emit(tick, 'downed', { id: m.id, kind: m.kind, x: r2(m.x), z: r2(m.z) });
+    }
+  }
+
+  function refreshDowned(tick) {
+    for (const m of party()) {
+      if (m.hp <= 0) {
+        // combat.js already emits `downed` for pipeline damage; a cmd-driven
+        // HP floor (docs/TESTING.md setHp) has no event, so emit one here.
+        if (!m.downed) markDown(m, tick, true);
+      } else if (m.downed) {
+        m.downed = false;
+        m.downedTick = -1;
+      }
+    }
+  }
+
+  // -------------------------------------------------- revive channels (§10) --
+  function startChannel(reviver, target, tick) {
+    const ex = channels.get(target.id);
+    if (ex && !ex.draining && ex.reviverId !== null && ex.reviverId !== reviver.id) {
+      events.emit(tick, 'intent_denied', {
+        kind: 'revive_hold',
+        reason: DENIAL.reviveOccupied,
+        target: target.id,
+        by: reviver.id,
+        occupiedBy: ex.reviverId,
+      });
+      return false;
+    }
+    if (ex && ex.reviverId === reviver.id) return true; // already channelling
+    // A drained-out channel never resumes: the new one starts at 0 (§10).
+    const ch = { targetId: target.id, reviverId: reviver.id, progress: 0, draining: false };
+    channels.set(target.id, ch);
+    reviver.reviveTargetId = target.id;
+    if (reviver.id === player.id) carriedBasic = prevBasicHeld;
+    events.emit(tick, 'revive_start', {
+      target: target.id,
+      targetIndex: target.partyIndex,
+      reviver: reviver.id,
+      reviverIndex: reviver.partyIndex,
+      totalTicks: REVIVE.channelTicks,
+    });
+    return true;
+  }
+
+  // §10: progress resets to 0 and never resumes; §17 shows that reset as a
+  // reverse drain at 2x the fill speed, so the ring keeps a visible remainder
+  // that unwinds instead of snapping to empty.
+  function breakChannel(ch, reason, tick) {
+    if (ch.draining) return;
+    const rev = ch.reviverId != null ? registry.byId(ch.reviverId) : null;
+    if (rev) {
+      rev.reviveTargetId = null;
+      if (rev.kind === 'ally' && rev.aiState === 'revive') rev.aiState = 'engage';
+    }
+    if (ch.reviverId === player.id) carriedBasic = false;
+    events.emit(tick, 'revive_break', {
+      target: ch.targetId,
+      reviver: ch.reviverId,
+      reason,
+      progress: ch.progress,
+      pct: r2(ch.progress / REVIVE.channelTicks),
+      drainRate: REVIVE.drainMult,
+    });
+    ch.reviverId = null;
+    ch.draining = true;
+  }
+
+  function completeChannel(ch, tick) {
+    const target = registry.byId(ch.targetId);
+    const rev = ch.reviverId != null ? registry.byId(ch.reviverId) : null;
+    channels.delete(ch.targetId);
+    if (rev) {
+      rev.reviveTargetId = null;
+      if (rev.kind === 'ally') rev.aiState = 'engage';
+    }
+    if (rev && rev.id === player.id) carriedBasic = false;
+    if (!target) return;
+    const n = repeats[target.partyIndex] ?? 0;
+    // §10: 30% -> -10 pp per repeat, floor 10%, same character/same room,
+    // manual revives only (the room-clear freebie below is exempt).
+    const pct = Math.max(REVIVE.floorPct, REVIVE.basePct - REVIVE.stepPct * n);
+    repeats[target.partyIndex] = n + 1;
+    target.hp = target.maxHp * pct;
+    target.downed = false;
+    target.downedTick = -1;
+    events.emit(tick, 'revive', {
+      target: target.id,
+      targetIndex: target.partyIndex,
+      reviver: ch.reviverId,
+      pct: r2(pct),
+      hp: r2(target.hp),
+      repeat: n,
+      free: false,
+    });
+  }
+
+  // §13 room-clear boundary step 3: every Downed party member revives free at
+  // 30% max_hp, exempt from diminishing; step 4 clears targeting state.
+  // A room START only resets the per-room state — §13 is explicit that party
+  // HP and Downed state PERSIST across rooms, so no free revive there.
+  function onRoomBoundary(reason) {
+    const tick = getTick();
+    const freeRevive = reason !== 'room_start';
+    for (const ch of [...channels.values()]) {
+      channels.delete(ch.targetId);
+      const rev = ch.reviverId != null ? registry.byId(ch.reviverId) : null;
+      if (rev) {
+        rev.reviveTargetId = null;
+        if (rev.kind === 'ally') rev.aiState = 'engage';
+      }
+    }
+    carriedBasic = false;
+    // §13 step 2: every live combat entity ends at the boundary — no ally zone
+    // tick and no ally bolt may land after the clear tick.
+    for (const e of registry.all()) {
+      if (e.kind === 'azone') {
+        events.emit(tick, 'azone_expire', { id: e.id, skill: e.skill, cause: reason });
+        registry.despawn(e.id);
+      } else if (e.kind === 'skillbolt' && e.boltOwner === 'ally_kits') {
+        events.emit(tick, 'skill_bolt_despawn', {
+          id: e.id,
+          skill: e.skill,
+          heal: false,
+          cause: reason,
+          traveled: r2(e.traveled),
+          x: r2(e.x),
+          z: r2(e.z),
+        });
+        registry.despawn(e.id);
+      }
+    }
+    for (const m of party()) {
+      if (m.hp > 0 || !freeRevive) continue;
+      m.hp = m.maxHp * REVIVE.basePct;
+      m.downed = false;
+      m.downedTick = -1;
+      events.emit(tick, 'revive', {
+        target: m.id,
+        targetIndex: m.partyIndex,
+        reviver: null,
+        pct: REVIVE.basePct,
+        hp: r2(m.hp),
+        repeat: null,
+        free: true,
+      });
+    }
+    for (let i = 0; i < 4; i++) repeats[i] = 0; // diminishing resets each room
+    clearMark(reason);
+    rallyPoint = null;
+    for (const a of allyList()) {
+      a.aiState = 'engage';
+      a.graceUntilTick = -1;
+      a.targetId = null;
+    }
+    defeated = false;
+  }
+
+  // --------------------------------------------------------- ally spin-up --
+  // The world spawns the three ally bodies (skills block); this block gives
+  // them their AI fields the first time it sees them.
+  function ensureAllyFields(a) {
+    if (a.aiState !== undefined) return;
+    const S = ALLY_CLASSES[a.classId];
+    a.aiState = 'engage';
+    a.targetId = null;
+    a.leashOut = false;
+    a.graceUntilTick = -1;
+    a.reviveTargetId = null;
+    a.nextBasicTick = 0;
+    a.cds = [0, 0, 0, 0];
+    a.moveSpeed = S.moveSpeed;
+    a.faceX = 0;
+    a.faceZ = 1;
+    a.moving = false;
+    a.castLeftTicks = 0; // render hint: how long the attack clip should hold
+    a.downed = a.hp <= 0;
+    a.downedTick = a.hp <= 0 ? getTick() : -1;
+  }
+
+  // -------------------------------------------------------------- steering --
+  function face(a, dx, dz) {
+    const l = Math.hypot(dx, dz);
+    if (l > 1e-6) {
+      a.faceX = dx / l;
+      a.faceZ = dz / l;
+    }
+  }
+
+  function moveToward(a, x, z, step) {
+    const dx = x - a.x;
+    const dz = z - a.z;
+    const d = Math.hypot(dx, dz);
+    if (d < 1e-6) return false;
+    const adv = Math.min(step, d);
+    walkStep(a, (dx / d) * adv, (dz / d) * adv, a.radius);
+    face(a, dx, dz);
+    return adv > 1e-6;
+  }
+
+  // §12: a marked target is leash-capped. The ally may honor the mark only
+  // while it can be reached WITHOUT leaving the ring; otherwise it falls back
+  // to nearest-to-anchor and resumes the mark when it is reachable again (the
+  // mark itself is never cleared by this).
+  function pickTarget(a, anchor) {
+    const S = ALLY_CLASSES[a.classId];
+    if (mark !== null) {
+      const m = registry.byId(mark);
+      if (m && m.hp > 0 && m.hittable) {
+        const reachable = distTo(m, anchor.x, anchor.z) <= LEASH.radius + S.basicRange;
+        if (reachable) return m;
+      }
+    }
+    return nearestHostileTo(anchor.x, anchor.z);
+  }
+
+  function steerAlly(a, tick, anchor) {
+    const S = ALLY_CLASSES[a.classId];
+    const step = S.moveSpeed * TICK_DT;
+    const d0 = distTo(a, anchor.x, anchor.z);
+    a.leashD0 = d0; // pre-move distance; the post-separation clamp reads it
+    a.moving = false;
+
+    if (a.aiState === 'rally') {
+      if (a.graceUntilTick >= 0) {
+        if (tick >= a.graceUntilTick) {
+          a.aiState = 'engage';
+          a.graceUntilTick = -1;
+          events.emit(tick, 'rally_end', { id: a.id, partyIndex: a.partyIndex });
+        }
+        return; // §8: hold with NO re-engagement through the grace window
+      }
+      if (!rallyPoint) {
+        a.aiState = 'engage';
+        return;
+      }
+      const d = distTo(a, rallyPoint.x, rallyPoint.z);
+      if (d > RALLY.arriveDist) {
+        a.moving = moveToward(a, rallyPoint.x, rallyPoint.z, step);
+      } else {
+        a.graceUntilTick = tick + RALLY.graceTicks;
+        events.emit(tick, 'ally_regroup', {
+          id: a.id,
+          partyIndex: a.partyIndex,
+          x: r2(a.x),
+          z: r2(a.z),
+          dist: r2(d),
+          graceTicks: RALLY.graceTicks,
+          graceUntilTick: a.graceUntilTick,
+        });
+      }
+      return;
+    }
+
+    if (a.aiState === 'revive') {
+      const body = a.reviveTargetId != null ? registry.byId(a.reviveTargetId) : null;
+      if (!body || body.hp > 0) {
+        a.aiState = 'engage';
+        a.reviveTargetId = null;
+        return;
+      }
+      const ch = channels.get(body.id);
+      const channelling = ch && !ch.draining && ch.reviverId === a.id;
+      if (channelling) {
+        // §10 requires the reviver to be STATIONARY. Once the channel is
+        // running the AI stops steering entirely (and the separation pass
+        // below leaves it alone), so nothing can nudge it into a self-inflicted
+        // "nonzero move" break.
+        face(a, body.x - a.x, body.z - a.z);
+        return;
+      }
+      const d = distTo(a, body.x, body.z);
+      if (d > REVIVE.approach) {
+        a.moving = moveToward(a, body.x, body.z, step);
+      } else {
+        face(a, body.x - a.x, body.z - a.z);
+      }
+      return;
+    }
+
+    // --- engage / return (§12 leash + shared targeting)
+    const target = pickTarget(a, anchor);
+    a.targetId = target ? target.id : null;
+    const inReach = target ? distTo(a, target.x, target.z) <= S.basicRange : false;
+    if (!a.leashOut && d0 > LEASH.radius && !inReach) a.leashOut = true;
+    if (a.leashOut && d0 <= LEASH.radius * LEASH.reengageFactor) a.leashOut = false;
+
+    if (a.leashOut) {
+      a.aiState = 'return';
+      a.moving = moveToward(a, anchor.x, anchor.z, step);
+      return;
+    }
+
+    a.aiState = 'engage';
+    if (target) {
+      const d = distTo(a, target.x, target.z);
+      if (d > S.standRange) {
+        a.moving = moveToward(a, target.x, target.z, Math.min(step, d - S.standRange));
+      } else {
+        face(a, target.x - a.x, target.z - a.z);
+      }
+    } else if (d0 > LEASH.radius * LEASH.reengageFactor) {
+      // Nothing to fight: drift back inside the re-engage ring.
+      a.moving = moveToward(a, anchor.x, anchor.z, step);
+    }
+  }
+
+  // Hard leash cap (§12: "Marked targets are leash-capped — never pursued past
+  // the boundary"). Applied AFTER the separation push, which is the other
+  // thing that can displace a body outward. An ally never ENDS a tick further
+  // from the anchor than the ring, or than it already was — so any distance
+  // over 3.4 u can only come from the anchor itself having moved, and the
+  // state machine above is already walking the ally home.
+  function clampLeash(a, anchor) {
+    const d = distTo(a, anchor.x, anchor.z);
+    const cap = Math.max(LEASH.radius, a.leashD0 ?? LEASH.radius);
+    if (d > cap && d > 1e-6) {
+      const s = cap / d;
+      a.x = anchor.x + (a.x - anchor.x) * s;
+      a.z = anchor.z + (a.z - anchor.z) * s;
+    }
+  }
+
+  // §12 ally separation: 0.26 u soft push so the party never collapses into a
+  // single silhouette. Rallying/reviving allies push too (they must not stack
+  // on the rally point or the body).
+  function isChannelling(a) {
+    const ch = a.reviveTargetId != null ? channels.get(a.reviveTargetId) : null;
+    return !!(ch && !ch.draining && ch.reviverId === a.id);
+  }
+
+  function separate(list) {
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i];
+      if (isChannelling(a)) continue; // a stationary reviver is never pushed (§10)
+      for (let j = 0; j < list.length; j++) {
+        if (i === j) continue;
+        const b = list[j];
+        const dx = a.x - b.x;
+        const dz = a.z - b.z;
+        const d = Math.hypot(dx, dz);
+        const want = a.radius + b.radius + SEPARATION * 0.5;
+        if (d < want && d > 1e-6) {
+          const push = Math.min(SEP_STEP_CAP, (want - d) * 0.5);
+          walkStep(a, (dx / d) * push, (dz / d) * push, a.radius);
+        }
+      }
+    }
+  }
+
+  // ------------------------------------------------------- AI revive (§12) --
+  // Serial rescue: player's body first, then longest-Downed. Reviver = the
+  // NEAREST eligible ally (living, HP >= 30% of its own max, not rallying).
+  // Eagerness is unconditional — it breaks off combat the moment it is picked.
+  function assignRescuer(tick) {
+    const bodies = party().filter((m) => m.hp <= 0);
+    if (bodies.length === 0) return;
+    const allies = allyList();
+    if (allies.some((a) => a.aiState === 'revive')) return; // serial: one rescue at a time
+    bodies.sort((a, b) => {
+      if ((a.partyIndex === 0) !== (b.partyIndex === 0)) return a.partyIndex === 0 ? -1 : 1;
+      if (a.downedTick !== b.downedTick) return a.downedTick - b.downedTick; // longest-Downed
+      return a.partyIndex - b.partyIndex;
+    });
+    for (const body of bodies) {
+      const ch = channels.get(body.id);
+      if (ch && !ch.draining) continue; // already claimed (player or ally)
+      let best = null;
+      let bestD2 = Infinity;
+      for (const a of allies) {
+        if (a.hp <= 0 || a.aiState === 'rally') continue;
+        if (a.hp < a.maxHp * REVIVE.aiMinHpFrac) continue;
+        const d2 = dist2(a.x, a.z, body.x, body.z);
+        if (d2 < bestD2) {
+          bestD2 = d2;
+          best = a;
+        }
+      }
+      if (!best) continue;
+      best.aiState = 'revive';
+      best.reviveTargetId = body.id;
+      best.targetId = null;
+      events.emit(tick, 'ally_rescue', {
+        id: best.id,
+        partyIndex: best.partyIndex,
+        target: body.id,
+        targetIndex: body.partyIndex,
+        dist: r2(Math.sqrt(bestD2)),
+      });
+      return;
+    }
+  }
+
+  // ---------------------------------------------------- continuous phase --
+  // Called from the world's continuous phase (§4 phase 1: move/aim/held
+  // states, dashes, projectiles, CHANNELS, zone clocks).
+  function continuous(snapshot) {
+    const tick = getTick();
+    refreshDowned(tick);
+
+    if (mark !== null) {
+      const m = registry.byId(mark);
+      if (!m || !(m.hp > 0) || !m.hittable) clearMark('mark_gone');
+    }
+
+    const anchor = leashAnchor();
+    const allies = allyList();
+    for (const a of allies) ensureAllyFields(a);
+
+    assignRescuer(tick);
+
+    for (const a of allies) {
+      if (a.hp <= 0) {
+        a.moving = false;
+        continue; // §10: Downed characters cannot act
+      }
+      steerAlly(a, tick, anchor);
+    }
+    separate(allies.filter((a) => a.hp > 0));
+    for (const a of allies) {
+      // Rally and revive are explicit override verbs (§8/§12: "every ally
+      // breaks engagement", "eagerness unconditional") — the leash governs
+      // combat pursuit, so those two states are exempt.
+      if (a.hp <= 0 || a.aiState === 'rally' || a.aiState === 'revive') continue;
+      clampLeash(a, anchor);
+    }
+
+    // --- channels: break checks that do not need the player's snapshot, then
+    // advance / drain. Progress is an integer tick count (§1).
+    for (const ch of [...channels.values()]) {
+      if (ch.draining) {
+        ch.progress -= REVIVE.drainMult; // §10/§17: reverse drain at 2x
+        if (ch.progress <= 0) {
+          channels.delete(ch.targetId);
+          events.emit(tick, 'revive_drain_end', { target: ch.targetId });
+        }
+        continue;
+      }
+      const target = registry.byId(ch.targetId);
+      const rev = ch.reviverId != null ? registry.byId(ch.reviverId) : null;
+      if (!target || !rev) {
+        channels.delete(ch.targetId);
+        continue;
+      }
+      if (target.hp > 0) {
+        // Revived by another path (free room-clear revive) — nothing to do.
+        channels.delete(ch.targetId);
+        if (rev) rev.reviveTargetId = null;
+        continue;
+      }
+      if (rev.hp <= 0) {
+        breakChannel(ch, 'reviver_downed', tick);
+        continue;
+      }
+      if (distTo(rev, target.x, target.z) > REVIVE.range) {
+        breakChannel(ch, 'out_of_range', tick);
+        continue;
+      }
+      if (rev.kind === 'ally' && (rev.moving || rev.aiState !== 'revive')) {
+        breakChannel(ch, rev.aiState === 'rally' ? 'rally' : 'move', tick);
+        continue;
+      }
+      ch.progress += 1;
+    }
+
+    bolts.step(tick);
+  }
+
+  // ------------------------------------------------------ discrete phase --
+  // §4 ②: party actor resolutions run party_index 0..3. The world resolves the
+  // player (index 0) first and then calls this for indices 1..3 — plus the
+  // player's own revive-channel arbitration, which must see the post-dodge
+  // state (§5: same-tick dodge beats a revive-channel start).
+  function resolveAll(snapshot) {
+    const tick = getTick();
+
+    // --- player channel (§10). The breaking intent executes normally this
+    // tick; the world already resolved it before calling in here.
+    const moving = snapshot.move.x !== 0 || snapshot.move.z !== 0;
+    const dodging = player.dashTicksLeft > 0;
+    const skillPressed = snapshot.presses.some((p) => p.kind && p.kind.startsWith('skill_'));
+    const freshBasic = snapshot.basicAttackHeld && !prevBasicHeld;
+
+    const pch = player.reviveTargetId != null ? channels.get(player.reviveTargetId) : null;
+    if (pch && !pch.draining && pch.reviverId === player.id) {
+      let reason = null;
+      if (player.hp <= 0) reason = 'reviver_downed';
+      else if (moving) reason = 'move';
+      else if (dodging) reason = 'dodge';
+      else if (skillPressed) reason = 'skill';
+      else if (freshBasic && !carriedBasic) reason = 'attack';
+      else if (!snapshot.reviveHeld) reason = 'released';
+      if (reason) breakChannel(pch, reason, tick);
+    }
+
+    if (
+      player.reviveTargetId == null &&
+      snapshot.reviveHeld &&
+      player.hp > 0 &&
+      !moving &&
+      !dodging &&
+      !skillPressed
+    ) {
+      const body = nearestDownedNear(player, REVIVE.range);
+      if (body) startChannel(player, body, tick);
+    }
+
+    // --- ally channel starts + kit resolutions, ascending party_index.
+    const allies = allyList().sort((a, b) => a.partyIndex - b.partyIndex);
+    for (const a of allies) {
+      if (a.hp <= 0) continue;
+      if (a.aiState === 'revive') {
+        const body = a.reviveTargetId != null ? registry.byId(a.reviveTargetId) : null;
+        if (body && body.hp <= 0 && !a.moving && distTo(a, body.x, body.z) <= REVIVE.range) {
+          const held = channels.get(body.id);
+          if (held && !held.draining && held.reviverId !== null && held.reviverId !== a.id) {
+            // §10 one reviver per body. Deny ONCE and hand the rescue back to
+            // the assignment pass (§12 serial rescue), which will look for the
+            // next unclaimed body — never a per-tick denial spray.
+            startChannel(a, body, tick);
+            a.aiState = 'engage';
+            a.reviveTargetId = null;
+          } else {
+            startChannel(a, body, tick);
+          }
+        }
+        continue; // §12: breaks off combat entirely while rescuing
+      }
+      if (a.aiState === 'rally') continue; // §8: engagement is broken during a rally
+      resolveAllyAttack(a, tick);
+    }
+
+    // Completions (§10: 5.0 s uninterrupted).
+    for (const ch of [...channels.values()]) {
+      if (!ch.draining && ch.progress >= REVIVE.channelTicks) completeChannel(ch, tick);
+    }
+
+    prevBasicHeld = snapshot.basicAttackHeld;
+    if (!snapshot.basicAttackHeld) carriedBasic = false;
+  }
+
+  function nearestDownedNear(reviver, range) {
+    let best = null;
+    let bestD2 = range * range;
+    for (const m of party()) {
+      if (m.id === reviver.id || m.hp > 0) continue;
+      const d2 = dist2(m.x, m.z, reviver.x, reviver.z);
+      if (d2 <= bestD2) {
+        // Prefer the nearer body; equal distance breaks by party_index.
+        if (!best || d2 < bestD2 || m.partyIndex < best.partyIndex) {
+          bestD2 = d2;
+          best = m;
+        }
+      }
+    }
+    return best;
+  }
+
+  // §7: "AI casts a kit skill when: target in shape range AND off cooldown;
+  // skills fire ascending slot; AI basic-attacks between casts." One kit skill
+  // per tick, lowest eligible slot; the basic only fires on a non-cast tick.
+  function resolveAllyAttack(a, tick) {
+    const target = a.targetId != null ? registry.byId(a.targetId) : null;
+    if (!target || !(target.hp > 0)) return;
+    const S = ALLY_CLASSES[a.classId];
+    const kit = ALLY_KITS[a.classId];
+    const d = distTo(a, target.x, target.z);
+
+    for (let slot = 0; slot < kit.length; slot++) {
+      const def = kit[slot];
+      if (tick < a.cds[slot]) continue;
+      if (d > shapeRange(def)) continue;
+      fireAllySkill(a, def, slot, target, tick);
+      a.cds[slot] = tick + Math.max(CD_FLOOR_TICKS, secTicks(def.cd));
+      return;
+    }
+
+    if (tick < a.nextBasicTick) return;
+    if (d > S.basicRange) return;
+    fireAllyBasic(a, S, target, tick);
+    a.nextBasicTick = tick + S.attackIntervalTicks;
+  }
+
+  // --- enemy-side delivery-shape selectors (mirror of sim/shapes.js, which
+  // selects PARTY members for the healer's heals). Multi-hits within one
+  // delivery resolve near->far, ties by ascending target id (§4 ①).
+  function sortNearFar(list, x, z) {
+    return list.sort((p, q) => {
+      const dp = dist2(p.x, p.z, x, z);
+      const dq = dist2(q.x, q.z, x, z);
+      return dp !== dq ? dp - dq : p.id - q.id;
+    });
+  }
+
+  function enemiesInArc(a, dirX, dirZ, reach, halfAngleDeg, count) {
+    const r2max = reach * reach;
+    const half = (clampHalfAngle(halfAngleDeg) * Math.PI) / 180;
+    const cosHalf = Math.cos(half);
+    const alen = Math.hypot(dirX, dirZ) || 1;
+    const ax = dirX / alen;
+    const az = dirZ / alen;
+    const hit = hostiles().filter((e) => {
+      const dx = e.x - a.x;
+      const dz = e.z - a.z;
+      const d2 = dx * dx + dz * dz;
+      if (d2 > r2max) return false;
+      const d = Math.sqrt(d2);
+      if (d < 1e-4) return true;
+      return (dx / d) * ax + (dz / d) * az >= cosHalf;
+    });
+    sortNearFar(hit, a.x, a.z);
+    return Number.isFinite(count) ? hit.slice(0, countFinal(count)) : hit;
+  }
+
+  function enemiesInNova(a, radius, count) {
+    const r2max = radius * radius;
+    const hit = hostiles().filter((e) => dist2(e.x, e.z, a.x, a.z) <= r2max);
+    sortNearFar(hit, a.x, a.z);
+    return hit.slice(0, countFinal(count));
+  }
+
+  function fireAllyBasic(a, S, target, tick) {
+    const dirX = target.x - a.x;
+    const dirZ = target.z - a.z;
+    const l = Math.hypot(dirX, dirZ) || 1;
+    const dx = dirX / l;
+    const dz = dirZ / l;
+    face(a, dx, dz);
+    a.castLeftTicks = Math.max(a.castLeftTicks, 12);
+    const ev = { id: a.id, partyIndex: a.partyIndex, classId: a.classId, shape: S.basicShape, dx: r2(dx), dz: r2(dz) };
+    if (S.basicShape === 'melee_arc') {
+      // §5: melee classes swing an arc on live aim hitting ALL targets in it.
+      const targets = enemiesInArc(a, dx, dz, S.basicRange, S.basicHalfAngle, Infinity);
+      ev.reach = S.basicRange;
+      ev.halfAngle = S.basicHalfAngle;
+      ev.targets = targets.map((t) => t.id);
+      events.emit(tick, 'ally_basic', ev);
+      for (const t of targets) {
+        const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
+        combat.applyDamage(t, S.basicPower, {
+          delivery: 'basic',
+          dirX: (t.x - a.x) / tl,
+          dirZ: (t.z - a.z) / tl,
+          attacker: a.id,
+          source: `${a.classId}_basic`,
+        });
+      }
+      return;
+    }
+    events.emit(tick, 'ally_basic', ev);
+    bolts.spawn(tick, {
+      x: a.x,
+      z: a.z,
+      dirX: dx,
+      dirZ: dz,
+      speed: S.basicSpeed,
+      range: S.basicRange,
+      radius: BOLT_RADIUS,
+      power: S.basicPower,
+      skill: `${a.classId}_basic`,
+      heal: false,
+      sourceId: a.id,
+    });
+  }
+
+  function fireAllySkill(a, def, slot, target, tick) {
+    const dirX = target.x - a.x;
+    const dirZ = target.z - a.z;
+    const l = Math.hypot(dirX, dirZ) || 1;
+    const dx = dirX / l;
+    const dz = dirZ / l;
+    face(a, dx, dz);
+    a.castLeftTicks = Math.max(a.castLeftTicks, 24);
+    const cast = {
+      id: a.id,
+      partyIndex: a.partyIndex,
+      classId: a.classId,
+      skill: def.id,
+      slot,
+      shape: def.shape,
+      power: def.power,
+      cd: def.cd,
+      target: target.id,
+      x: r2(a.x),
+      z: r2(a.z),
+      dx: r2(dx),
+      dz: r2(dz),
+    };
+
+    if (def.shape === 'melee_arc') {
+      const targets = enemiesInArc(a, dx, dz, def.range, def.area, def.count);
+      cast.reach = def.range;
+      cast.halfAngle = def.area;
+      cast.targets = targets.map((t) => t.id);
+      events.emit(tick, 'ally_cast', cast);
+      for (const t of targets) {
+        const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
+        combat.applyDamage(t, def.power, {
+          delivery: 'skill',
+          dirX: (t.x - a.x) / tl,
+          dirZ: (t.z - a.z) / tl,
+          attacker: a.id,
+          source: def.id,
+        });
+      }
+      return;
+    }
+
+    if (def.shape === 'nova') {
+      const targets = enemiesInNova(a, def.area, def.count);
+      cast.radius = def.area;
+      cast.targets = targets.map((t) => t.id);
+      events.emit(tick, 'ally_cast', cast);
+      for (const t of targets) {
+        const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
+        combat.applyDamage(t, def.power, {
+          delivery: 'skill',
+          dirX: (t.x - a.x) / tl,
+          dirZ: (t.z - a.z) / tl,
+          attacker: a.id,
+          source: def.id,
+        });
+      }
+      return;
+    }
+
+    if (def.shape === 'projectile') {
+      cast.count = countFinal(def.count);
+      events.emit(tick, 'ally_cast', cast);
+      for (const dir of fanDirections(dx, dz, def.count)) {
+        bolts.spawn(tick, {
+          x: a.x,
+          z: a.z,
+          dirX: dir.x,
+          dirZ: dir.z,
+          speed: def.speed,
+          range: def.range,
+          radius: BOLT_RADIUS,
+          power: def.power,
+          skill: def.id,
+          heal: false,
+          sourceId: a.id,
+        });
+      }
+      return;
+    }
+
+    // ground_aoe: placed at the target, clamped to the skill's placement range.
+    const pos = clampPlacement(a, { x: target.x, z: target.z }, def.range);
+    const zone = registry.spawn({
+      kind: 'azone',
+      skill: def.id,
+      classId: a.classId,
+      x: pos.x,
+      z: pos.z,
+      px: pos.x,
+      pz: pos.z,
+      radius: def.area,
+      power: def.power,
+      sourceId: a.id,
+      ticksDone: 0,
+      totalTicks: Math.round(secTicks(def.durationSec) / ZONE_CADENCE_TICKS),
+      nextTickTick: tick + ZONE_CADENCE_TICKS, // §6: first tick 1.0 s after placement
+    });
+    cast.zone = zone.id;
+    cast.zx = r2(pos.x);
+    cast.zz = r2(pos.z);
+    cast.radius = def.area;
+    events.emit(tick, 'ally_cast', cast);
+    events.emit(tick, 'azone_spawn', {
+      id: zone.id,
+      skill: def.id,
+      classId: a.classId,
+      x: r2(pos.x),
+      z: r2(pos.z),
+      radius: def.area,
+      totalTicks: zone.totalTicks,
+    });
+  }
+
+  // §4 ④: persistent-zone scheduled ticks, ascending zone spawn ordinal. Each
+  // tick creates normal instances (own crit roll; i-frame/Downed suppression).
+  function zonePhase(tick) {
+    for (const z of registry.all()) {
+      if (z.kind !== 'azone' || tick < z.nextTickTick) continue;
+      z.ticksDone += 1;
+      z.nextTickTick += ZONE_CADENCE_TICKS;
+      const occupants = hostiles().filter(
+        (e) => dist2(e.x, e.z, z.x, z.z) <= z.radius * z.radius
+      );
+      sortNearFar(occupants, z.x, z.z);
+      const hitIds = [];
+      for (const t of occupants) {
+        const tl = Math.hypot(t.x - z.x, t.z - z.z) || 1;
+        const r = combat.applyDamage(t, z.power, {
+          delivery: 'skill',
+          dirX: (t.x - z.x) / tl,
+          dirZ: (t.z - z.z) / tl,
+          attacker: z.sourceId,
+          source: z.skill,
+        });
+        if (r && !r.immune) hitIds.push(t.id);
+      }
+      events.emit(tick, 'azone_tick', { id: z.id, skill: z.skill, n: z.ticksDone, hit: hitIds });
+      if (z.ticksDone >= z.totalTicks) {
+        events.emit(tick, 'azone_expire', { id: z.id, skill: z.skill });
+        registry.despawn(z.id);
+      }
+    }
+  }
+
+  // End-of-tick: ally zones tick in the §4 ④ slot, then the §2 defeat rule is
+  // evaluated on live HP so a cmd-driven or pipeline-driven fourth down lands
+  // its `defeat` event on the exact tick the party is fully down.
+  function endOfTick() {
+    const tick = getTick();
+    zonePhase(tick);
+    const p = party();
+    const allDown = p.length >= 4 && p.every((m) => m.hp <= 0);
+    if (allDown && !defeated) {
+      defeated = true;
+      events.emit(tick, 'defeat', {
+        reason: 'all_downed',
+        party: p.map((m) => ({ index: m.partyIndex, id: m.id, hp: r2(m.hp) })),
+      });
+    } else if (!allDown && defeated) {
+      defeated = false;
+    }
+    // Render hint decay (attack clip hold), tick-denominated like every timer.
+    for (const a of allyList()) if (a.castLeftTicks > 0) a.castLeftTicks -= 1;
+  }
+
+  // ------------------------------------------------------------ views/cmd --
+  function channelView() {
+    return [...channels.values()].map((ch) => ({
+      target: ch.targetId,
+      reviver: ch.reviverId,
+      progress: ch.progress,
+      total: REVIVE.channelTicks,
+      pct: r2(ch.progress / REVIVE.channelTicks),
+      draining: ch.draining,
+    }));
+  }
+
+  function view() {
+    return {
+      mark,
+      rallyPoint: rallyPoint ? { x: r2(rallyPoint.x), z: r2(rallyPoint.z) } : null,
+      anchor: leashAnchor().id,
+      leash: LEASH.radius,
+      defeated,
+      repeats: [...repeats],
+      channels: channelView(),
+      allies: allyList().map((a) => ({
+        id: a.id,
+        classId: a.classId,
+        partyIndex: a.partyIndex,
+        hp: r2(a.hp),
+        maxHp: a.maxHp,
+        downed: !!a.downed,
+        state: a.aiState ?? 'engage',
+        target: a.targetId ?? null,
+        reviveTarget: a.reviveTargetId ?? null,
+        x: r2(a.x),
+        z: r2(a.z),
+        anchorDist: r2(distTo(a, leashAnchor().x, leashAnchor().z)),
+        moving: !!a.moving,
+        graceUntilTick: a.graceUntilTick ?? -1,
+        cds: (a.cds ?? [0, 0, 0, 0]).map((c) => Math.max(0, c - getTick())),
+      })),
+    };
+  }
+
+  // Render-side read-only accessors.
+  const getMark = () => mark;
+  const getChannels = () => channels;
+  const playerChanneling = () => player.reviveTargetId != null;
+  // §10: a HELD attack carried into the channel is consumed silently — the
+  // world's basic-fire resolver asks here before firing.
+  const basicSuppressed = () => playerChanneling() && carriedBasic;
+
+  function cmd(name, args) {
+    const tick = getTick();
+    switch (name) {
+      case 'mark':
+        return setMark(args[0] ?? null);
+      case 'cycleMark':
+        return cycleMark();
+      case 'rally':
+        return rally();
+      case 'allyState':
+        return view();
+      case 'reviveState':
+        return { channels: channelView(), repeats: [...repeats], defeated };
+      case 'downAll': {
+        // Defeat probe (docs/TESTING.md): floor every party member's HP. The
+        // `defeat` event lands on the next tick's end-of-tick evaluation.
+        for (const m of party()) m.hp = 0;
+        return party().map((m) => ({ index: m.partyIndex, hp: m.hp }));
+      }
+      case 'breakRevive': {
+        // Force a break on the active channel with an arbitrary reason so the
+        // §17 2x reverse drain can be captured for any cause.
+        const [reason = 'debug'] = args;
+        const ch = [...channels.values()].find((c) => !c.draining);
+        if (!ch) return null;
+        breakChannel(ch, reason, tick);
+        return { target: ch.targetId, progress: ch.progress };
+      }
+      case 'reviveFlinchBreak': {
+        // OPT-IN. §10's break list is closed (nonzero move, dodge, skill cast,
+        // fresh attack press, reviver going Downed) and does NOT include being
+        // damaged, so the default is OFF; this flag exists so a damage-flinch
+        // break can still be exercised on demand.
+        flinchBreaks = !!args[0];
+        return flinchBreaks;
+      }
+      case 'roomBoundary':
+        onRoomBoundary('debug_boundary');
+        return true;
+      default:
+        return undefined;
+    }
+  }
+
+  // §10 (opt-in, see cmd('reviveFlinchBreak')): a damage instance on the
+  // reviver breaks the channel. Off by default — the brief's break list is
+  // closed and damage is not on it.
+  function onHit(ev) {
+    if (!flinchBreaks) return;
+    const ch = [...channels.values()].find((c) => !c.draining && c.reviverId === ev.target);
+    if (ch) breakChannel(ch, 'flinch', ev.tick);
+  }
+
+  return {
+    continuous,
+    resolveAll,
+    endOfTick,
+    cycleMark,
+    rally,
+    onRoomBoundary,
+    onHit,
+    view,
+    cmd,
+    getMark,
+    getChannels,
+    playerChanneling,
+    basicSuppressed,
+    ALLY_CLASSES,
+    ALLY_KITS,
+  };
+}

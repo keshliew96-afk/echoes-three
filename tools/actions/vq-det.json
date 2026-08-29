@@ -1,0 +1,11 @@
+[
+  { "type": "eval", "code": "(()=>{const log=[]; window.__vq=log; for(const t of ['spawn_telegraph','enemy_spawn']) __echoes.on(t,ev=>log.push(ev)); return __echoes.state().room.waveSizes})()" },
+  { "type": "wait", "ms": 1200 },
+  { "type": "eval", "code": "__echoes.cmd('killAllEnemies')" },
+  { "type": "wait", "ms": 1500 },
+  { "type": "eval", "code": "__echoes.cmd('killAllEnemies')" },
+  { "type": "wait", "ms": 1500 },
+  { "type": "eval", "code": "__echoes.cmd('killAllEnemies')" },
+  { "type": "wait", "ms": 1500 },
+  { "type": "eval", "code": "(()=>{const boot=__echoes.events.filter(e=>e.type==='room_start').map(e=>e.waves); const tel=window.__vq.filter(e=>e.type==='spawn_telegraph').map(e=>[e.wave,e.etype,e.x,e.z]); const sp=window.__vq.filter(e=>e.type==='enemy_spawn').map(e=>[e.wave,e.etype,e.x,e.z]); return {seed:__echoes.seed, waveSizes:__echoes.state().room.waveSizes, bootTel:__echoes.events.filter(e=>e.type==='spawn_telegraph').map(e=>[e.wave,e.etype,e.x,e.z]), tel, sp, cleared:__echoes.state().room.cleared}})()" }
+]

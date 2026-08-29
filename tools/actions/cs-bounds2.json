@@ -1,0 +1,17 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids=st.party.map(p=>p.id); __echoes.cmd('giveSkill','sanctuary'); __echoes.cmd('giveSkill','restorative_wave'); const i=window.__ids; __echoes.cmd('teleport', -1.9, 0.05); __echoes.cmd('setHp', i[1], 0.3); __echoes.cmd('setHp', i[0], 0.5); window.__t=__echoes.tick; window.__press('Digit3'); return { armed:'SA-radius-out: zone at player, tank 1.05u > 1.0, expect ticks heal player only' }; })()" },
+  { "type": "wait", "ms": 1300 },
+  { "type": "eval", "code": "({ test:'SA-radius-out-1.05', ticks: window.__evs(window.__t,['zone_tick']).map(z=>[z.tick,z.healed]), zone: window.__evs(window.__t,['zone_spawn'])[0] })" },
+  { "type": "wait", "ms": 8200 },
+  { "type": "eval", "code": "(() => { const i=window.__ids; __echoes.cmd('teleport', -1.9, -0.05); __echoes.cmd('setHp', i[0], 0.5); window.__t=__echoes.tick; window.__press('Digit3'); return { armed:'SA-radius-in: tank 0.95u <= 1.0, expect ticks heal player+tank' }; })()" },
+  { "type": "wait", "ms": 1300 },
+  { "type": "eval", "code": "({ test:'SA-radius-in-0.95', ticks: window.__evs(window.__t,['zone_tick']).map(z=>[z.tick,z.healed]) })" },
+
+  { "type": "eval", "code": "(() => { const i=window.__ids; __echoes.cmd('teleport', -2.35, -1.536); __echoes.cmd('setHp', i[1], 0.4); __echoes.cmd('setHp', i[0], 0.5); window.__t=__echoes.tick; window.__press('Digit4'); return { armed:'RW-angle-in: tank at 50deg off aim (1,0), d 0.7 — inside 55deg half-angle' }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'RW-angle-in-50deg', evs: window.__evs(window.__t,['skill_cast','heal']) })" },
+  { "type": "wait", "ms": 5100 },
+  { "type": "eval", "code": "(() => { const i=window.__ids; __echoes.cmd('teleport', -2.25, -1.606); __echoes.cmd('setHp', i[0], 0.5); window.__t=__echoes.tick; window.__press('Digit4'); return { armed:'RW-angle-out: tank at 60deg off aim, d 0.7 — outside 55deg' }; })()" },
+  { "type": "wait", "ms": 150 },
+  { "type": "eval", "code": "({ test:'RW-angle-out-60deg', evs: window.__evs(window.__t,['skill_cast','heal']) })" }
+]

@@ -34,6 +34,9 @@ import { createWorld } from './sim/world.js';
 import { createSynth } from './audio/synth.js';
 import { createSkillFx } from './render/skillfx/index.js';
 import { createEnemyLayer } from './render/enemies/index.js';
+import { createAllyLayer } from './render/allies/index.js';
+import { createSocketScreen } from './ui/socket/index.js';
+import { createSiphonFizzleCue } from './ui/socket/fizzle.js';
 
 const params = new URLSearchParams(window.location.search);
 const flag = (name, def = true) => {
@@ -131,6 +134,15 @@ const enemyfx =
     ? createEnemyLayer({ stage, world, bus, cosmetic })
     : null;
 
+// Ally render layer (ally block): the three party critters ride their sim AI
+// bodies, plus the §17 Signal Blue mark reticle, the §10 revive rings and the
+// ally kit ground_aoe zones / swipe VFX. It adopts the arena's party critters
+// when the scene exposes them, so a character is never built twice.
+const allyfx =
+  sceneKey === 'graybox' || sceneKey === 'arena'
+    ? createAllyLayer({ stage, world, bus, cosmetic, scene: activeScene })
+    : null;
+
 // Proto command bar (4 skill slots + dodge cooldown radial + §17 denial
 // nudges) rides with the playable scenes only, so simtest/rendertest/chartest
 // captures stay unchanged.
@@ -142,6 +154,15 @@ const hud =
         // Party portraits for the §8 F1–F4 override mark (skills block).
         party: () => world.entities().filter((e) => e.partyIndex !== undefined),
       })
+    : null;
+
+// Socket screen (nodes block, §15/§16): the between-rooms build workbench
+// (B key / cmd('openSocket')) + the §17 Siphon "nobody near" fizzle cue.
+const socketScreen =
+  sceneKey === 'graybox' || sceneKey === 'arena' ? createSocketScreen({ bus, world }) : null;
+const fizzleCue =
+  sceneKey === 'graybox' || sceneKey === 'arena'
+    ? createSiphonFizzleCue({ bus, camera: stage.camera })
     : null;
 
 const overlay = createDebugOverlay(VERSION, {
@@ -187,6 +208,8 @@ stage.renderer.setAnimationLoop((now) => {
   activeScene.update?.(now / 1000, alpha);
   skillfx?.update(now / 1000, alpha);
   enemyfx?.update(now / 1000, alpha);
+  allyfx?.update(now / 1000, alpha);
+  fizzleCue?.update(now / 1000);
   stage.render();
   overlay.update();
   hud?.update();
@@ -234,6 +257,12 @@ window.__echoes = {
     ...world.snapshotState(),
     ...(activeScene.debugState ? { vfx: activeScene.debugState() } : {}),
     ...(skillfx ? { skillfx: skillfx.debugCounts() } : {}),
+    ...(allyfx ? { allyfx: allyfx.debugCounts() } : {}),
   }),
-  cmd: (name, ...args) => world.cmd(name, ...args),
+  cmd: (name, ...args) => {
+    // UI-level commands route to the socket screen (docs/TESTING.md).
+    if (socketScreen && (name === 'openSocket' || name === 'closeSocket'))
+      return socketScreen.cmd(name);
+    return world.cmd(name, ...args);
+  },
 };

@@ -1,0 +1,13 @@
+[
+  { "type": "eval", "code": "(()=>{const log=[]; window.__vq=log; for(const t of ['wave_start','spawn_telegraph','enemy_spawn','death','room_cleared','enemy_retreat','enemy_despawn']) __echoes.on(t,ev=>log.push(ev)); const boot=__echoes.events.filter(e=>['room_start','wave_start','spawn_telegraph','enemy_spawn'].includes(e.type)); return {boot, room:__echoes.state().room}})()" },
+  { "type": "wait", "ms": 1500 },
+  { "type": "eval", "code": "(()=>{const r=__echoes.state().room; return {k1:__echoes.cmd('killAllEnemies'), room:{waveIndex:r.waveIndex,alive:r.aliveEnemies,pending:r.pendingSpawns,cleared:r.cleared}}})()" },
+  { "type": "wait", "ms": 1600 },
+  { "type": "eval", "code": "(()=>{const r=__echoes.state().room; return {k2:__echoes.cmd('killAllEnemies'), room:{waveIndex:r.waveIndex,alive:r.aliveEnemies,pending:r.pendingSpawns,cleared:r.cleared}}})()" },
+  { "type": "wait", "ms": 1600 },
+  { "type": "eval", "code": "(()=>{const r=__echoes.state().room; return {k3:__echoes.cmd('killAllEnemies'), room:{waveIndex:r.waveIndex,alive:r.aliveEnemies,pending:r.pendingSpawns,cleared:r.cleared}}})()" },
+  { "type": "wait", "ms": 1600 },
+  { "type": "eval", "code": "(()=>{const r=__echoes.state().room; return {k4:__echoes.cmd('killAllEnemies'), room:{waveIndex:r.waveIndex,alive:r.aliveEnemies,pending:r.pendingSpawns,cleared:r.cleared}}})()" },
+  { "type": "wait", "ms": 800 },
+  { "type": "eval", "code": "(()=>{const log=window.__vq; const deaths=log.filter(e=>e.type==='death'&&(e.kind==='boar'||e.kind==='mantis')).map(e=>e.tick); const cl=log.find(e=>e.type==='room_cleared'); const r=__echoes.state().room; return {final:{waveIndex:r.waveIndex,wavesTotal:r.wavesTotal,waveSizes:r.waveSizes,alive:r.aliveEnemies,pending:r.pendingSpawns,cleared:r.cleared}, nDeaths:deaths.length, lastDeathTick:deaths.length?Math.max(...deaths):null, clearedEv:cl?{tick:cl.tick,mode:cl.mode,softFailed:cl.softFailed}:null, waveStarts:log.filter(e=>e.type==='wave_start').map(e=>({tick:e.tick,index:e.index,size:e.size})), spawnsByWave:log.filter(e=>e.type==='enemy_spawn').map(e=>({w:e.wave,t:e.etype}))}})()" }
+]

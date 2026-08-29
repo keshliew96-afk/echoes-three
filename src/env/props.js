@@ -87,7 +87,13 @@ export const PROP_INK_PX = 2.0; // matches critters/common.js INK_PX
 const DETAIL_INK_PX = 1.4; // secondary layers (lids, hoops, chips, footings)
 
 const inkViewport = new Vector2(1600, 900);
-const inkColor = new Color(PALETTE.voidCharcoal);
+// Ink is Void Charcoal pulled toward the deep-indigo shadow family: charcoal
+// alone is a WARM dark (h~17), and the FXAA gradient where a prop's silhouette
+// line meets pool-lit ground blended through h8-25 / s0.35-0.48 — the reserved
+// Ember Danger band (measured on the monolith's flank and stump edges). The
+// indigo bias makes those 1-px blends pass through neutral; on screen it is
+// the same storybook dark line.
+const inkColor = new Color(PALETTE.voidCharcoal).lerp(new Color('#101A2C'), 0.55);
 const inkMats = new Map();
 
 // Called once per frame from the arena scene with the canvas size, so the line
@@ -240,12 +246,16 @@ export const SHADOW_SPREAD = 1.6;
 const SHADOW_Z_STRETCH = 1.3;
 
 // Shared factory for every contact shadow in the arena (props, player,
-// entities). Pure black at a fixed alpha over the already-composited ground =
-// dest*(1-alpha): a darken/multiply with no hue of its own.
+// entities). Deep INDIGO rather than pure black: an alpha blend lands
+// dest*(1-a) + indigo*a, and that small blue floor matters — a pure-black
+// multiply over warm-lit amber ground preserved the ground's hue while the
+// grade's S-curve collapsed its blue at the darker value, which measured the
+// whole shadow ring at h20-24 / s>0.38 (the reserved Ember Danger band).
+// Cool shadows are also the painterly-correct read under a warm key.
 export function makeShadowMaterial(opacity = 0.48) {
   return new MeshBasicMaterial({
     map: getContactTexture(),
-    color: new Color('#000000'),
+    color: new Color('#101A2C'),
     transparent: true,
     opacity,
     depthWrite: false,
@@ -575,6 +585,57 @@ function propTypes(mats, spec) {
     };
   }
 
+  // --- Brazier: a squat stone-footed fire bowl (baseline-v030 F1: the
+  // mid-field warm pools need an attributable emitter — this is it). Stone
+  // pedestal + iron bowl + HDR coal bed; the arena mounts the flame sprite,
+  // glow, ground pool and ember column on the `brazier` emitter.
+  {
+    // STANDING fire basket (third cut). A squat bowl — at any size — sat
+    // entirely inside its own glow/bloom disc and washed into a featureless
+    // tan lump, so the pool read as sourceless again (the exact F1 defect).
+    // Height is what saves the torches: their dark stake extends BELOW the
+    // glow core. Same trick here — a dark iron column lifts the bowl to
+    // ~0.66 u, so the silhouette (column + bowl) reads against the bright
+    // pool: pool -> dark stem -> dark bowl -> flame. Still well under the
+    // Tank-height prop ceiling (§19.3).
+    // Raised again (column 0.42 -> 0.60, bowl top 0.65 -> 0.83): at the lower
+    // height the whole prop sat inside the bright core of its own pool and a
+    // 4x crop read it as "a dark lump beside a light" rather than as the fire
+    // that makes the light — the exact F1 failure. The taller stem lifts the
+    // bowl and flame clear of the blown core, so the silhouette runs
+    // pool -> dark base -> dark stem -> dark bowl -> flame. Top ~0.86 u,
+    // still under the §19.3 Tank-height prop ceiling (~1.05 u).
+    const footBase = new CylinderGeometry(0.21, 0.28, 0.11, 8).translate(0, 0.055, 0);
+    const column = new CylinderGeometry(0.06, 0.085, 0.6, 7).translate(0, 0.4, 0);
+    const bowl = new CylinderGeometry(0.29, 0.13, 0.2, 10).translate(0, 0.73, 0);
+    const rim = new TorusGeometry(0.275, 0.028, 6, 16).rotateX(Math.PI / 2).translate(0, 0.83, 0);
+    // Coal bed: small hot lumps in the lantern-glass HDR gold, so the bowl
+    // visibly holds fire even before the flame sprite is mounted on top.
+    const coals = mergeGeometries([
+      new IcosahedronGeometry(0.095, 0).scale(1, 0.55, 1).translate(0, 0.82, 0),
+      new IcosahedronGeometry(0.07, 0).scale(1, 0.6, 1).translate(0.095, 0.81, -0.05),
+      new IcosahedronGeometry(0.064, 0).scale(1, 0.6, 1).translate(-0.075, 0.81, 0.07),
+    ]);
+    const footing = mergeGeometries([
+      new IcosahedronGeometry(0.12, 0).scale(1, 0.5, 1).translate(0.2, 0.045, 0.07),
+      new IcosahedronGeometry(0.1, 0).scale(1, 0.5, 1).translate(-0.17, 0.04, -0.1),
+      new IcosahedronGeometry(0.085, 0).scale(1, 0.5, 1).translate(0.025, 0.038, 0.2),
+    ]);
+    T.brazier = {
+      layers: [
+        { geo: footBase, mat: mats.stoneCool, ink: PROP_INK_PX },
+        { geo: column, mat: mats.ironDark, ink: PROP_INK_PX },
+        { geo: bowl, mat: mats.ironDark, ink: PROP_INK_PX },
+        { geo: rim, mat: mats.ironDark },
+        { geo: coals, mat: mats.glass },
+        { geo: footing, mat: mats.stoneCool, ink: DETAIL_INK_PX },
+      ],
+      foot: 0.38,
+      faint: true, // self-illuminating: faint shadow tier
+      emitter: (t) => ({ kind: 'brazier', x: t.x, y: 0.86 * (t.sy ?? t.s ?? 1), z: t.z }),
+    };
+  }
+
   void spec;
   return T;
 }
@@ -645,7 +706,13 @@ function veinTexture(cosmetic) {
 // in the reference language, so the vein cores now sit at luminance ~0.95 —
 // just over the bloom threshold — and bloom out to the God-stuff Violet peak
 // #F1ECFA while the halo skirt stays saturated violet.
-export const VEIN_VIOLET = [1.05, 0.72, 1.95];
+// Red 0.88 (was 1.05): where the vein glow FEATHERS over dark stone (and the
+// vignette dims it further, display L 40-60) the grade crushes the blue
+// channel ~2x harder than the red, and the old red-heavier violet measured
+// h6-14 / s0.36-0.44 dark MAROON along the monolith's flank — inside the
+// reserved Ember band. Blue-leaning violet keeps the bright cores in the
+// analyzer's violet band while the dim feather falls to neutral mauve.
+export const VEIN_VIOLET = [0.88, 0.72, 1.95];
 const VEIN_LINEAR = VEIN_VIOLET;
 
 // The vein network is GEOMETRY, not an emissiveMap. A canvas map wraps 160 px
@@ -809,6 +876,11 @@ export function buildProps(root, spec, cosmetic) {
     stoneDark: toonMaterial({ color: mix(ENV.stoneCool, PALETTE.voidCharcoal, 0.45) }),
     stoneCool: toonMaterial({ color: ENV.stoneCool }),
     iron: toonMaterial({ color: ENV.iron }),
+    // Brazier bowls only: charcoal-heavy iron. The bowl sits INSIDE its own
+    // pool + halo + bloom wash, and ordinary iron came out as a featureless
+    // tan lump — the emitter must survive as a dark silhouette to attribute
+    // the pool (baseline-v030 F1).
+    ironDark: toonMaterial({ color: mix(ENV.iron, new Color(PALETTE.voidCharcoal), 0.6) }),
     glass: new MeshBasicMaterial({ color: new Color(ENV.glassLit), toneMapped: false }),
     moss: toonMaterial({ color: hslColor(spec.ground.h + 18, 0.4, 0.215) }),
     bush: toonMaterial({ color: hslColor(spec.ground.h + 26, 0.34, 0.19) }),
@@ -837,9 +909,19 @@ export function buildProps(root, spec, cosmetic) {
     yaw,
     s: 1,
   }));
+  const brazierT = (spec.braziers ?? []).map(([x, z]) => {
+    const sc = r(0.95, 1.1);
+    return {
+      x: clampIn(x, ARENA.halfW, types.brazier.foot * sc),
+      z: clampIn(z, ARENA.halfD, types.brazier.foot * sc),
+      yaw: r(0, Math.PI * 2),
+      s: sc,
+    };
+  });
   const seedDiscs = [
     ...torchT.map((t) => ({ x: t.x, z: t.z, r: types.torch.foot * t.s + 0.28 })),
     ...lanternT.map((t) => ({ x: t.x, z: t.z, r: types.lantern.foot + 0.3 })),
+    ...brazierT.map((t) => ({ x: t.x, z: t.z, r: types.brazier.foot * t.s + 0.3 })),
   ];
   if (spec.monolith) {
     seedDiscs.push({ x: spec.monolith[0], z: spec.monolith[1], r: 0.86 });
@@ -848,6 +930,7 @@ export function buildProps(root, spec, cosmetic) {
   const { byType: placed } = expandClusters(spec, cosmetic, types, seedDiscs);
   placed.set('torch', torchT);
   placed.set('lantern', lanternT);
+  if (brazierT.length > 0) placed.set('brazier', brazierT);
 
   let typeCount = 0;
   for (const [name, transforms] of placed) {

@@ -1,0 +1,8 @@
+[
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "JSON.stringify(window.__arenaProbe.pick(751,36))" },
+  { "type": "eval", "code": "JSON.stringify(window.__arenaProbe.pick(1056,27))" },
+  { "type": "eval", "code": "JSON.stringify(window.__arenaProbe.pick(1437,51))" },
+  { "type": "eval", "code": "JSON.stringify(window.__arenaProbe.pick(971,340))" },
+  { "type": "eval", "code": "JSON.stringify(window.__arenaProbe.pick(697,60))" }
+]

@@ -1,0 +1,14 @@
+[
+  { "type": "eval", "code": "(() => { const c = window.__echoes.cmd; c('giveSkill','nova_bloom'); c('giveSkill','restorative_wave'); c('teleport', -0.9, -1.4); c('setHp', 0, 0.5); c('setHp', 1, 0.5); c('setHp', 3, 0.5); return { base: window.__echoes.state().skillfx }; })()" },
+  { "type": "eval", "code": "(() => { window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit3' })); window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit3' })); return 'nova'; })()" },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => window.__echoes.state().skillfx)()" },
+  { "type": "wait", "ms": 600 },
+  { "type": "eval", "code": "(() => { window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit4' })); window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit4' })); return 'wave'; })()" },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => window.__echoes.state().skillfx)()" },
+  { "type": "wait", "ms": 600 },
+  { "type": "eval", "code": "(() => { window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit2' })); window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit2' })); return 'swiftmend'; })()" },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => window.__echoes.state().skillfx)()" }
+]

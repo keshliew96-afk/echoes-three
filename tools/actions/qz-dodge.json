@@ -1,0 +1,11 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',7,4)"},
+  {"type":"wait","ms":1800},
+  {"type":"eval","code":"__echoes.cmd('spawn','mantis',9.5,4)"},
+  {"type":"wait","ms":860},
+  {"type":"keydown","key":"Space"},
+  {"type":"wait","ms":60},
+  {"type":"keyup","key":"Space"},
+  {"type":"wait","ms":1600},
+  {"type":"eval","code":"({hp:__echoes.state().party[0].hp, ev:__echoes.events.filter(e=>['telegraph_start','telegraph_resolve','enemy_fire','hit','hit_immune','eshot_despawn','intent'].includes(e.type)).map(e=>e.tick+' '+e.type+' '+(e.kind||'')+(e.reason?' '+e.reason:'')+(e.amount?' amt'+e.amount:'')+(e.cause?' '+e.cause:''))})"}
+]

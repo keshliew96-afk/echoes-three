@@ -1,0 +1,7 @@
+[
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(() => { const { root } = window.__arenaProbe; let n = 0; root.traverse((o) => { if (o.isMesh && o.material && o.material.emissiveMap) { o.material.emissiveIntensity = 0; o.material.userData.lock = true; n++; } }); const probe = window.__arenaProbe; probe.lockEmissive = true; return { n }; })()" },
+  { "type": "wait", "ms": 120 },
+  { "type": "eval", "code": "(() => { const { root } = window.__arenaProbe; root.traverse((o) => { if (o.isMesh && o.material && o.material.emissiveMap) { o.material.emissiveIntensity = 0; } }); return 'zeroed-again'; })()" },
+  { "type": "wait", "ms": 60 }
+]

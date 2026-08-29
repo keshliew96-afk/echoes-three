@@ -1,0 +1,5 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; const n=__echoes.cmd('grantNode','bounce'); const s=__echoes.cmd('socket','mending_bolt','bounce'); __echoes.cmd('setHp', window.__ids[1], 0.5); __echoes.cmd('setHp', window.__ids[3], 0.6); __echoes.cmd('teleport',-4.5,-1.0); return { version:__echoes.version, n, s, ids:window.__ids }; })()" },
+  { "type": "wait", "ms": 200 },
+  { "type": "eval", "code": "new Promise(res => { const t0=__echoes.tick; window.__press('Digit1'); setTimeout(() => { const st=__echoes.state(); res({ test:'bounce-chain-heal', t0, evs: window.__evs(t0,['skill_cast','skill_bolt_spawn','heal','bounce_hop']), tank: st.party.find(p=>p.partyIndex===1).hp, archer: st.party.find(p=>p.partyIndex===3).hp, swordsman: st.party.find(p=>p.partyIndex===2).hp }); }, 620); })" }
+]

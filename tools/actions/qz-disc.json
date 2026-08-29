@@ -1,0 +1,5 @@
+[
+  {"type":"wait","ms":500},
+  {"type":"eval","code":"({v:__echoes.version, tick:__echoes.tick, room:__echoes.state().room, party:__echoes.state().party, enemies:__echoes.state().enemies})"},
+  {"type":"eval","code":"__echoes.events.slice(0,25)"}
+]

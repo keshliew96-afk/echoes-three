@@ -1,0 +1,13 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0)" },
+  { "type": "eval", "code": "window.__un=__echoes.on('hit',ev=>{__echoes.cmd('setHp',ev.target,1);});window.__ids=[[8.5,0],[-7.5,3],[2,7]].map(p=>__echoes.cmd('spawn','dummy',p[0],p[1]));window.__ids" },
+  { "type": "eval", "code": "window.__S=[];window.__s=setInterval(()=>{const s=__echoes.state();window.__S.push({t:s.tick,px:s.party[0].x,pz:s.party[0].z,a:s.party_ai.allies.map(a=>({i:a.partyIndex,st:a.state,tg:a.target,d:a.anchorDist}))});},150);'sampling'" },
+  { "type": "wait", "ms": 9000 },
+  { "type": "eval", "code": "(()=>{const S=window.__S;const maxD=[0,0,0];for(const r of S) r.a.forEach((x,i)=>{if(x.d>maxD[i])maxD[i]=x.d;});return{phase:'static',samples:S.length,maxAnchorDist:maxD,last:S[S.length-1]}})()" },
+  { "type": "eval", "code": "window.__mark=window.__S.length;'mark'" },
+  { "type": "keydown", "key": "KeyW" },
+  { "type": "wait", "ms": 2500 },
+  { "type": "keyup", "key": "KeyW" },
+  { "type": "wait", "ms": 3500 },
+  { "type": "eval", "code": "(()=>{clearInterval(window.__s);const S=window.__S;const A=S.slice(0,window.__mark),B=S.slice(window.__mark);const mx=(arr,f)=>arr.reduce((m,r)=>Math.max(m,...r.a.map(f)),0);const engMax=(arr)=>arr.reduce((m,r)=>Math.max(m,...r.a.filter(x=>x.st==='engage').map(x=>x.d)),0);const states={};for(const r of B) for(const x of r.a) states[x.st]=(states[x.st]||0)+1;return{staticPhase:{n:A.length,maxAnchorDist:mx(A,x=>x.d),maxWhileEngaged:engMax(A)},movingPhase:{n:B.length,maxAnchorDist:mx(B,x=>x.d),maxWhileEngaged:engMax(B),states},settledAfterStop:S[S.length-1],leash:3.4}})()" }
+]

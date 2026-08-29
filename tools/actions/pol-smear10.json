@@ -1,0 +1,35 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{try{const AC=window.AudioContext||window.webkitAudioContext;AC.prototype.__off=true;}catch(e){};return 'x'})()"
+  },
+  {
+    "type": "eval",
+    "code": "window.__echoes.cmd('teleport', -3.5, 1.5)"
+  },
+  {
+    "type": "wait",
+    "ms": 500
+  },
+  {
+    "type": "mousemove",
+    "x": 1200,
+    "y": 300
+  },
+  {
+    "type": "wait",
+    "ms": 150
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const dn=(c)=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c,key:c,bubbles:true}));const up=(c)=>window.dispatchEvent(new KeyboardEvent('keyup',{code:c,key:c,bubbles:true}));window.__SM=[];let n=0;let last=performance.now();const log=()=>{const now=performance.now();const s=window.__echoes.state();const p=s.party[0];window.__SM.push([Math.round(now-last),window.__echoes.tick,p.dashTicksLeft,s.vfx&&s.vfx.party?s.vfx.party.smearGhosts:-1]);last=now;if(n++<70)requestAnimationFrame(log)};dn('KeyD');requestAnimationFrame(log);setTimeout(()=>{dn('Space');setTimeout(()=>up('Space'),120);},420);setTimeout(()=>up('KeyD'),1200);return 'go'})()"
+  },
+  {
+    "type": "wait",
+    "ms": 1800
+  },
+  {
+    "type": "eval",
+    "code": "JSON.stringify(window.__SM.slice(10,40))"
+  }
+]

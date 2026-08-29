@@ -1,0 +1,3 @@
+[
+  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; __echoes.cmd('giveSkill','nova_bloom'); const ids=__echoes.state().party.map(p=>p.id); for (const id of ids) __echoes.cmd('setHp', id, 0.5); __echoes.cmd('teleport',-1.1,-1.6); window.__press('Digit3'); return { fired:'nova' }; })()" }
+]

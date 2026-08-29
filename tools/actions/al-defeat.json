@@ -1,0 +1,70 @@
+[
+  {
+    "type": "eval",
+    "code": "__echoes.cmd('teleport',0,0)"
+  },
+  {
+    "type": "eval",
+    "code": "window.__D=[];for(const t of ['defeat','downed','revive']) __echoes.on(t,ev=>window.__D.push(ev));'logging'"
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const t0=__echoes.tick;const r=[1,2,3].map(id=>__echoes.cmd('setHp',id,0));return{phase:'three-down',tickAtCmd:t0,hps:r}})()"
+  },
+  {
+    "type": "wait",
+    "ms": 900
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const s=__echoes.state();return{phase:'three-down-check',partyHp:s.party.map(m=>m.hp),defeated:s.party_ai.defeated,defeatEvents:window.__D.filter(e=>e.type==='defeat'),note:'player still up => NO defeat'}})()"
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const t0=__echoes.tick;const hp=__echoes.cmd('setHp',0,0);return{phase:'fourth-down',tickAtCmd:t0,playerHp:hp}})()"
+  },
+  {
+    "type": "wait",
+    "ms": 500
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const s=__echoes.state();const d=window.__D.filter(e=>e.type==='defeat');return{phase:'defeat-check',partyHp:s.party.map(m=>m.hp),defeated:s.party_ai.defeated,defeatEvents:d,tickNow:__echoes.tick}})()"
+  },
+  {
+    "type": "wait",
+    "ms": 2000
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const d=window.__D.filter(e=>e.type==='defeat');return{phase:'no-duplicates',defeatCount:d.length,defeats:d,allEvents:window.__D.map(e=>e.type+'@'+e.tick)}})()"
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const t0=__echoes.tick;__echoes.cmd('clearRoom');return{phase:'room-clear-free-revive',tickAtCmd:t0}})()"
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{__echoes.cmd('startRoom','kill_all');return{phase:'room-start',room:__echoes.state().room,repeats:__echoes.state().party_ai.repeats,partyHp:__echoes.state().party.map(m=>m.hp),note:'room START must NOT revive (13: HP/Downed persist across rooms)'}})()"
+  },
+  {
+    "type": "wait",
+    "ms": 400
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const s=__echoes.state();return{phase:'after-room-start',partyHp:s.party.map(m=>m.hp),defeated:s.party_ai.defeated}})()"
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const t0=__echoes.tick;__echoes.cmd('clearRoom');return{phase:'clear',tickAtCmd:t0}})()"
+  },
+  {
+    "type": "wait",
+    "ms": 600
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const s=__echoes.state();return{phase:'after-clear',partyHp:s.party.map(m=>({hp:m.hp,max:m.maxHp,pct:Math.round(100*m.hp/m.maxHp)})),repeats:s.party_ai.repeats,defeated:s.party_ai.defeated,freeRevives:window.__D.filter(e=>e.type==='revive'&&e.free).map(e=>({t:e.tick,i:e.targetIndex,pct:e.pct,hp:e.hp}))}})()"
+  }
+]

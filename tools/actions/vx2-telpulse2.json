@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',6,4)"},
+  {"type":"wait","ms":1800},
+  {"type":"eval","code":"window.__tg=new Promise(res=>{const un=__echoes.on('telegraph_start',e=>{un();res({start:e.tick,resolveTick:e.resolveTick})})});__echoes.cmd('spawn','mantis',9,4)"},
+  {"type":"eval","code":"Promise.race([window.__tg,new Promise(r=>setTimeout(()=>r('TG_TIMEOUT'),6000))])"}
+]

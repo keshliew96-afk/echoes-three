@@ -1,0 +1,43 @@
+[
+  {
+    "type": "eval",
+    "code": "window.__echoes.cmd('teleport', -6, 3)"
+  },
+  {
+    "type": "wait",
+    "ms": 500
+  },
+  {
+    "type": "mousemove",
+    "x": 1400,
+    "y": 430
+  },
+  {
+    "type": "wait",
+    "ms": 200
+  },
+  {
+    "type": "mousedown",
+    "button": "right"
+  },
+  {
+    "type": "wait",
+    "ms": 60
+  },
+  {
+    "type": "mouseup",
+    "button": "right"
+  },
+  {
+    "type": "wait",
+    "ms": 430
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const {stage}=window.__arenaProbe;let hid=0;stage.scene.traverse(o=>{if(o.isMesh&&o.material&&o.material.color&&o.material.color.getHexString()==='000000'&&o.geometry&&o.geometry.type==='CircleGeometry'){o.visible=false;hid++;}});console.log('[HID]',hid);return hid})()"
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const {stage,root}=window.__arenaProbe;const s=window.__echoes.state();const out=(s.projectiles||[]).map(b=>{const V=root.position.clone().set(b.x,0.02,b.z).project(stage.camera);return {x:b.x,z:b.z,sx:Math.round((V.x*0.5+0.5)*window.innerWidth),sy:Math.round((-V.y*0.5+0.5)*window.innerHeight)};});console.log('[BOLT]',JSON.stringify(out));return 'x'})()"
+  }
+]

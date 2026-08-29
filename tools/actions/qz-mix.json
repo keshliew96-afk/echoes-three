@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"(()=>{let boars=0,mant=0,waves=[],sizes=[];const off=__echoes.on('spawn_telegraph',e=>{if(e.etype==='boar')boars++;else mant++;});for(let i=0;i<40;i++){const r=__echoes.cmd('startRoom','kill_all'); waves.push(r.waves.length); sizes.push(...r.waves);} off(); return {units:boars+mant, boarPct:Math.round(boars/(boars+mant)*1000)/10, waveCounts:[...new Set(waves)].sort(), minWaves:Math.min(...waves), maxWaves:Math.max(...waves), minSize:Math.min(...sizes), maxSize:Math.max(...sizes)};})()"},
+  {"type":"eval","code":"(()=>{let n3=0,n4=0,sizes=[];for(let i=0;i<40;i++){const r=__echoes.cmd('startRoom','defend'); sizes.push(...r.waves); n3+=r.waves.length;} return {defendWaveLens:[...new Set(sizes)].sort(), totalWaves:n3};})()"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"({room:__echoes.state().room, ents:__echoes.entityCount})"}
+]
