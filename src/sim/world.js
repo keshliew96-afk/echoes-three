@@ -676,6 +676,21 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         player.pz = player.z;
         return { x: player.x, z: player.z };
       }
+      // Skills-block test command: park a sim ally body at (x, z) so
+      // count-capped shapes can be driven past their cap (e.g. 4 candidates
+      // inside Nova Bloom's 1.4 u burst). Sim-only — the arena draws ally rigs
+      // at fixed camp spots, so run cap probes in ?scene=graybox.
+      case 'placeAlly': {
+        const [index, x, z] = args;
+        const a = registry.all().find((e) => e.kind === 'ally' && e.partyIndex === index);
+        if (!a) return null;
+        const { mx, mz } = innerBounds(a.radius);
+        a.x = Math.min(mx, Math.max(-mx, x));
+        a.z = Math.min(mz, Math.max(-mz, z));
+        a.px = a.x;
+        a.pz = a.z;
+        return { id: a.id, x: r2(a.x), z: r2(a.z) };
+      }
       case 'setHp': {
         const [id, pct] = args;
         const e = registry.byId(id);

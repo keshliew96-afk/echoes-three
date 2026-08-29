@@ -139,6 +139,8 @@ const hud =
     ? createProtoHud(bus, {
         dodgeRemaining: () => Math.max(0, world.player.dodgeReadyTick - clock.tick),
         skillSlots: () => world.skillSlots(),
+        // Party portraits for the §8 F1–F4 override mark (skills block).
+        party: () => world.entities().filter((e) => e.partyIndex !== undefined),
       })
     : null;
 

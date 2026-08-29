@@ -108,7 +108,10 @@ export const PARTY_ALLIES = Object.freeze([
 
 const cdTicks = (def) => Math.max(CD_FLOOR_TICKS, secTicks(def.cd ?? 0));
 
-export function createSkillSystem({ player, registry, events, combat, getTick, isIframed, queueDeferred }) {
+// resolve(def) -> def is the build-system stat hook (§15.4): the node block
+// passes its flat->pct->mult->clamp resolver so socketed stat nodes shape live
+// casts; the default identity keeps this module standalone.
+export function createSkillSystem({ player, registry, events, combat, getTick, isIframed, queueDeferred, resolve = (def) => def }) {
   // slots[i] = { id, readyTick } | null. player.skills mirrors the ids so any
   // module reading the entity sees the same truth.
   const slots = [null, null, null, null];
@@ -137,7 +140,15 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
     });
   }
 
-  const bolts = createSkillBolts({ registry, events, onImpact: queueBoltImpact });
+  // `owner` tags every bolt this instance spawns so a SECOND bolt subsystem on
+  // the same registry (the build block's Echo recasts) can never also advance
+  // the kit's bolts — a double step would double every §7 bolt speed.
+  const bolts = createSkillBolts({
+    registry,
+    events,
+    onImpact: queueBoltImpact,
+    owner: 'healer_kit',
+  });
 
   function aimDir() {
     // §6: aim exactly on the caster reuses the last valid aim (same rule the
@@ -193,8 +204,9 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
       events.emit(tick, 'intent_denied', { kind, reason: DENIAL.onCooldown });
       return false;
     }
-    fire(def, slot, tick);
-    s.readyTick = tick + cdTicks(def); // instant cast: fire → cooldown starts
+    const rdef = resolve(def); // §15.4: socketed stat nodes shape the live cast
+    fire(rdef, slot, tick);
+    s.readyTick = tick + cdTicks(rdef); // instant cast: fire → cooldown starts
     return true;
   }
 
@@ -324,7 +336,7 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
 
     if (aura.on && tick >= aura.nextPulseTick) {
       aura.nextPulseTick += AURA_CADENCE_TICKS;
-      const def = SKILLS.warding_aura;
+      const def = resolve(SKILLS.warding_aura); // §15.4 hook (Sharpen/Ascend live on the aura)
       const inField = party().filter(
         (m) =>
           m.id !== player.id && // "heals allies inside" — the field's own caster is not her own ally
@@ -364,7 +376,7 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
     const tick = getTick();
     return slots.map((s) => {
       if (!s) return null;
-      const def = SKILLS[s.id];
+      const def = resolve(SKILLS[s.id]); // resolved cd so the HUD wipe shows Quicken
       const passive = def.shape === 'aura';
       return {
         id: s.id,

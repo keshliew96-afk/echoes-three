@@ -27,6 +27,7 @@ import { sweptContactT, sweptStep } from './movement.js';
 const r2 = (v) => Math.round(v * 100) / 100;
 const FAN_STEP_RAD = (12 * Math.PI) / 180; // §6: 12° spacing
 const ARC_EPS = 1e-4; // a target at the caster's own position is always in-arc
+let nextBoltOwnerSeq = 0; // one id per createSkillBolts instance (see below)
 
 export const countFinal = (count) => Math.max(1, Math.floor(count));
 export const clampHalfAngle = (deg) => Math.min(90, Math.max(10, deg));
@@ -173,12 +174,19 @@ export function clampPlacement(caster, aim, range) {
 // difference: heal bolts contact PARTY members other than the caster and pass
 // enemies; damage bolts contact hittable hostiles (i-framed bodies are still
 // contacted — the §9 pipeline resolves the contact to hit_immune).
-export function createSkillBolts({ registry, events, onImpact }) {
+export function createSkillBolts({ registry, events, onImpact, owner = null }) {
+  // Owner tag: more than one subsystem instance can share the registry (the
+  // healer kit + the build block's Echo recasts). Each instance advances ONLY
+  // the bolts it spawned — otherwise every bolt would be stepped once per live
+  // instance and fly at N x its briefed speed (§6: speeds are per-skill data).
+  const me = owner ?? `bolts#${(nextBoltOwnerSeq += 1)}`;
+
   // opts: { x, z, dirX, dirZ, speed, range, radius, power, skill, heal, sourceId }
   function spawn(tick, opts) {
     const perTick = opts.speed / TICK_HZ;
     const b = registry.spawn({
       kind: 'skillbolt',
+      boltOwner: me,
       x: opts.x,
       z: opts.z,
       px: opts.x,
@@ -214,7 +222,7 @@ export function createSkillBolts({ registry, events, onImpact }) {
   // Continuous-phase advance (§4 phase 1) — call once per tick after actors.
   function step(tick) {
     for (const b of registry.all()) {
-      if (b.kind !== 'skillbolt') continue;
+      if (b.kind !== 'skillbolt' || b.boltOwner !== me) continue;
       const stepLen = Math.hypot(b.vx, b.vz);
       const remaining = b.range - b.traveled;
       let dx = b.vx;

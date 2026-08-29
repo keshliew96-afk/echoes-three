@@ -16,7 +16,7 @@
 import { PALETTE } from '../data/palette.js';
 import { DODGE, TICK_HZ } from '../core/constants.js';
 
-export function createProtoHud(bus, { dodgeRemaining, skillSlots = null }) {
+export function createProtoHud(bus, { dodgeRemaining, skillSlots = null, party = null }) {
   const style = document.createElement('style');
   style.textContent = `
     #proto-hud {
@@ -75,6 +75,65 @@ export function createProtoHud(bus, { dodgeRemaining, skillSlots = null }) {
       visibility: hidden;
     }
     .proto-divider { width: 6px; }
+    /* Party portrait chips (skills block): the F1-F4 override needs a portrait
+       to mark - §8 asks for portrait OR reticle; this proto strip carries the
+       portrait half until the Zone-1 command bar block lands. */
+    .proto-port {
+      position: relative;
+      width: 44px;
+      height: 52px;
+      border-radius: 10px;
+      background: ${PALETTE.voidCharcoal}E6;
+      border: 2px solid ${PALETTE.warmGrey}66;
+      color: ${PALETTE.parchment};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 700;
+      overflow: hidden;
+    }
+    .proto-port-key {
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      color: ${PALETTE.warmGrey};
+    }
+    .proto-port-hp {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      bottom: 4px;
+      height: 4px;
+      border-radius: 2px;
+      background: ${PALETTE.voidCharcoal};
+      overflow: hidden;
+    }
+    .proto-port-hp i {
+      display: block;
+      height: 100%;
+      width: 100%;
+      background: ${PALETTE.bone};
+    }
+    /* Override mark: Hearth Amber plate + ring + a caret glyph, so the mark is
+       colour AND shape (§17: never colour alone). */
+    .proto-port.proto-marked {
+      border-color: ${PALETTE.hearthAmber};
+      box-shadow: 0 0 0 2px ${PALETTE.hearthAmber}AA, 0 0 10px ${PALETTE.hearthAmber}80;
+      color: ${PALETTE.hearthAmber};
+    }
+    .proto-port-caret {
+      position: absolute;
+      top: 1px;
+      right: 3px;
+      font-size: 12px;
+      line-height: 12px;
+      color: ${PALETTE.hearthAmber};
+      visibility: hidden;
+    }
+    .proto-port.proto-marked .proto-port-caret { visibility: visible; }
     @keyframes proto-skip-pulse {
       0% { transform: scale(1); }
       40% { transform: scale(1.15); }
@@ -129,6 +188,40 @@ export function createProtoHud(bus, { dodgeRemaining, skillSlots = null }) {
     return { slot, glyph, wipe, num, lastDeg: -1, wasReady: true };
   }
 
+  // Party portraits (F1-F4 override targets), a divider, then the skill slots.
+  const PORTRAITS = [
+    { key: 'F1', label: 'H' },
+    { key: 'F2', label: 'T' },
+    { key: 'F3', label: 'S' },
+    { key: 'F4', label: 'A' },
+  ];
+  const portEls = [];
+  for (const p of PORTRAITS) {
+    const el = document.createElement('div');
+    el.className = 'proto-port';
+    const k = document.createElement('span');
+    k.className = 'proto-port-key';
+    k.textContent = p.key;
+    el.appendChild(k);
+    const caret = document.createElement('span');
+    caret.className = 'proto-port-caret';
+    caret.textContent = '▼';
+    el.appendChild(caret);
+    const name = document.createElement('span');
+    name.textContent = p.label;
+    el.appendChild(name);
+    const hp = document.createElement('div');
+    hp.className = 'proto-port-hp';
+    const fill = document.createElement('i');
+    hp.appendChild(fill);
+    el.appendChild(hp);
+    rootEl.appendChild(el);
+    portEls.push({ el, fill, lastPct: -1 });
+  }
+  const portDivider = document.createElement('div');
+  portDivider.className = 'proto-divider';
+  rootEl.appendChild(portDivider);
+
   // 4 skill slots (execution order), a divider, then dodge + basic.
   const skillEls = [];
   for (let i = 0; i < 4; i++) skillEls.push(makeSlot('·', String(i + 1)));
@@ -145,6 +238,13 @@ export function createProtoHud(bus, { dodgeRemaining, skillSlots = null }) {
     void el.offsetWidth;
     el.classList.add(cls);
   }
+
+  // §8 durable override: the sim emits heal_override on every set/clear/replace
+  // (and on restore), so the portrait mark mirrors sim truth, never HUD guesses.
+  let overrideIndex = null;
+  bus.on('heal_override', (ev) => {
+    overrideIndex = ev.index;
+  });
 
   bus.on('intent_denied', (ev) => {
     if (ev.kind === 'basic_attack' && ev.reason === 'priority_suppressed') nudge(basic.slot);
@@ -171,6 +271,21 @@ export function createProtoHud(bus, { dodgeRemaining, skillSlots = null }) {
 
   function update() {
     paintWipe(dodge, dodgeRemaining() / DODGE.cooldownTicks);
+
+    if (party) {
+      const members = party();
+      for (let i = 0; i < 4; i++) {
+        const el = portEls[i];
+        const m = members.find((e) => e.partyIndex === i);
+        const pct = m && m.maxHp > 0 ? Math.max(0, Math.min(1, m.hp / m.maxHp)) : 0;
+        const rounded = Math.round(pct * 100);
+        if (rounded !== el.lastPct) {
+          el.lastPct = rounded;
+          el.fill.style.width = `${rounded}%`;
+        }
+        el.el.classList.toggle('proto-marked', overrideIndex === i);
+      }
+    }
 
     if (!skillSlots) return;
     const view = skillSlots();

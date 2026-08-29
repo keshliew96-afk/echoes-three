@@ -103,6 +103,45 @@ function groundMat(color, opacity) {
   });
 }
 
+// Non-additive mark material. Additive amber over the aura's green glow washes
+// out to near-white; the §8 override mark must stay Hearth Amber and stay
+// readable on top of friendly ground VFX, so it composites normally.
+function markMat(color, opacity) {
+  return new MeshBasicMaterial({
+    color: new Color(color),
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    toneMapped: false,
+    side: DoubleSide,
+  });
+}
+
+// Hearth Amber caret (shape channel), charcoal-inked so it reads against the
+// party bodies and the heal glow it floats over.
+let caretTexture = null;
+function getCaretTexture() {
+  if (caretTexture) return caretTexture;
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  ctx.beginPath();
+  ctx.moveTo(20, 22);
+  ctx.lineTo(108, 22);
+  ctx.lineTo(64, 106);
+  ctx.closePath();
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 14;
+  ctx.strokeStyle = PALETTE.voidCharcoal;
+  ctx.stroke();
+  ctx.fillStyle = AMBER;
+  ctx.fill();
+  caretTexture = new CanvasTexture(canvas);
+  caretTexture.colorSpace = SRGBColorSpace;
+  return caretTexture;
+}
+
 export function createSkillFx({ stage, world, bus, cosmetic }) {
   const root = new Group();
   root.name = 'skillfx';
@@ -180,10 +219,15 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   }
 
   // The full §17 heal read at one point: core + glow + motes + glyph.
+  // §19.4 "instant impacts hold >=3-5 frames": the core alone is a 60 Hz
+  // blink, so the burst is a 3-stage read - a hard core, a HOLD core that
+  // keeps bright (v>0.75) Bright Heal pixels on screen for ~0.4 s (24 frames),
+  // and a wide soft glow - then motes + glyph carry the tail.
   function healBurst(x, z) {
-    spawnFlash(x, 0.5, z, { color: HEAL, size: 0.34, opacity: 0.95, life: 0.22, grow: 0.25 }); // core
-    spawnFlash(x, 0.5, z, { color: HEAL, size: 0.85, opacity: 0.5, life: 0.38, grow: 0.6 }); // glow
-    spawnMotes(x, z, { color: HEAL, count: 8 });
+    spawnFlash(x, 0.5, z, { color: HEAL, size: 0.34, opacity: 0.95, life: 0.36, grow: 0.3 }); // core
+    spawnFlash(x, 0.5, z, { color: HEAL, size: 0.52, opacity: 0.85, life: 0.5, grow: 0.45 }); // hold core
+    spawnFlash(x, 0.5, z, { color: HEAL, size: 0.95, opacity: 0.55, life: 0.62, grow: 0.7 }); // glow
+    spawnMotes(x, z, { color: HEAL, count: 10, lifeMin: 0.6, lifeMax: 1.05 });
     spawnGlyph(x, z);
   }
 
@@ -307,7 +351,9 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     const glow = makeGlowSprite({ color: heal ? HEAL : AMBER, size: 0.55, opacity: 0.85 });
     glow.position.y = BOLT_Y;
     g.add(glow);
-    g.add(blobShadow(0.13, 0.25)); // §19.2/reference check 8: fliers are grounded
+    // Contact shadow: wide + dark enough to survive the additive glow above it
+    // (§19.2 / REFERENCE_BAR check 8: every flier is grounded).
+    g.add(blobShadow(0.2, 0.55));
     return g;
   }
 
@@ -374,18 +420,34 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   // §8/§17: Hearth Amber mark on the F1–F4 override target — ring + 4 notch
   // wedges (shape channel), gently spinning so it reads as a MARK, not a ring.
   const reticle = new Group();
-  const retRing = new Mesh(new RingGeometry(0.5, 0.56, 40), groundMat(AMBER, 0.85));
+  const retRing = new Mesh(new RingGeometry(0.46, 0.62, 40), markMat(AMBER, 0.95));
   retRing.rotation.x = -Math.PI / 2;
-  retRing.renderOrder = -4;
+  retRing.renderOrder = -3;
   reticle.add(retRing);
-  const notchGeo = new PlaneGeometry(0.1, 0.16);
+  const notchGeo = new PlaneGeometry(0.14, 0.24);
   for (let i = 0; i < 4; i++) {
-    const n = new Mesh(notchGeo, groundMat(AMBER, 0.95));
+    const n = new Mesh(notchGeo, markMat(AMBER, 1));
     n.rotation.x = -Math.PI / 2;
     n.rotation.z = -(i * Math.PI) / 2;
-    n.position.set(Math.cos((i * Math.PI) / 2) * 0.66, 0, Math.sin((i * Math.PI) / 2) * 0.66);
+    n.position.set(Math.cos((i * Math.PI) / 2) * 0.74, 0, Math.sin((i * Math.PI) / 2) * 0.74);
+    n.renderOrder = -3;
     reticle.add(n);
   }
+  // Overhead caret: the half of the mark that CANNOT be washed out by ground
+  // glow (aura ring, Sanctuary disc, heal bursts all live on the floor).
+  const retCaret = new Sprite(
+    new SpriteMaterial({
+      map: getCaretTexture(),
+      transparent: true,
+      depthWrite: false,
+      depthTest: false,
+      toneMapped: false,
+    })
+  );
+  retCaret.scale.set(0.42, 0.42, 1);
+  retCaret.position.set(0, 1.42, 0);
+  retCaret.renderOrder = 20;
+  reticle.add(retCaret);
   reticle.position.y = 0.032;
   reticle.visible = false;
   root.add(reticle);
@@ -550,6 +612,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
         const mz = m.pz !== undefined ? m.pz + (m.z - m.pz) * alpha : m.z;
         reticle.position.set(mx, 0.032, mz);
         reticle.rotation.y = tSec * 0.9;
+        retCaret.position.y = 1.42 + 0.09 * Math.sin(tSec * 3.4);
       } else {
         reticle.visible = false;
       }
