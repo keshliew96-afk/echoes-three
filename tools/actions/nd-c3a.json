@@ -1,0 +1,22 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('grantNode','sharpen'); __echoes.cmd('grantNode','sharpen'); __echoes.cmd('grantNode','ascend'); __echoes.cmd('grantNode','quicken'); const base=__echoes.cmd('buildView').skills.find(k=>k.id==='mending_bolt').resolved; const s1=__echoes.cmd('socket','mending_bolt','sharpen',0); const p2=__echoes.cmd('buildPreview','mending_bolt','sharpen'); const s2=__echoes.cmd('socket','mending_bolt','sharpen',1); const twoSharpen=__echoes.cmd('buildView').skills.find(k=>k.id==='mending_bolt').resolved; const u=__echoes.cmd('unsocket','mending_bolt',1); const pAsc=__echoes.cmd('buildPreview','mending_bolt','ascend'); const s3=__echoes.cmd('socket','mending_bolt','ascend',1); const stacked=__echoes.cmd('buildView').skills.find(k=>k.id==='mending_bolt').resolved; const u2=__echoes.cmd('unsocket','mending_bolt',0); const u3=__echoes.cmd('unsocket','mending_bolt',1); const pQ=__echoes.cmd('buildPreview','mending_bolt','quicken'); const sQ=__echoes.cmd('socket','mending_bolt','quicken',0); const quick=__echoes.cmd('buildView').skills.find(k=>k.id==='mending_bolt').resolved; return { test:'resolver-order', base, s1, previewSecondSharpen:p2, s2, twoSharpen, previewAscendOverSharpen:pAsc, stacked, quickenPreview:pQ, quick, slotsBeforeCast: __echoes.state().skills[0] }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 200
+  },
+  {
+    "type": "eval",
+    "code": "(() => { window.__t0=__echoes.tick; window.__press('Digit1'); return { fired: window.__t0 }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 200
+  },
+  {
+    "type": "eval",
+    "code": "(() => { return { test:'quicken-live-cooldown', slot0: __echoes.state().skills[0], expectTotalTicks: Math.round(2.975*60) }; })()"
+  }
+]

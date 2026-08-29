@@ -1,6 +1,22 @@
 [
-  { "type": "eval", "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('grantNode','sharpen'); __echoes.cmd('grantNode','ascend'); __echoes.cmd('socket','mending_bolt','sharpen'); __echoes.cmd('socket','mending_bolt','ascend'); __echoes.cmd('setHp', window.__ids[1], 0.2); __echoes.cmd('teleport',-4.5,-1.0); return { armed: true }; })()" },
-  { "type": "wait", "ms": 150 },
-  { "type": "eval", "code": "window.__press('Digit1'); ({ fired: __echoes.tick })" },
-  { "type": "wait", "ms": 520 }
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('teleport',-2.6,0); __echoes.cmd('placeAlly',1,-1.0,0); __echoes.cmd('placeAlly',2,-6,-3); __echoes.cmd('placeAlly',3,-6,3); __echoes.cmd('setHp', window.__ids[1], 0.2); __echoes.cmd('grantNode','sharpen'); __echoes.cmd('grantNode','ascend'); const s1=__echoes.cmd('socket','mending_bolt','sharpen',0); const s2=__echoes.cmd('socket','mending_bolt','ascend',1); return { s1, s2, mb:__echoes.cmd('buildView').skills.find(k=>k.id==='mending_bolt') }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 200
+  },
+  {
+    "type": "eval",
+    "code": "(() => { window.__t0=__echoes.tick; window.__press('Digit1'); return { fired: window.__t0 }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 700
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const st=__echoes.state(); return { test:'stacked-55-onscreen', all: __echoes.events.filter(e=>e.tick>=window.__t0).map(e=>e.type+'@'+e.tick), evs: window.__evs(window.__t0,['skill_cast','heal','skill_bolt_spawn','skill_bolt_despawn']), tank: st.party.find(p=>p.partyIndex===1), player: st.party[0] }; })()"
+  }
 ]

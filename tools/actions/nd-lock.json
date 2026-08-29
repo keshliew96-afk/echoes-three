@@ -1,0 +1,9 @@
+[
+  { "type": "eval", "code": "(() => { window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); __echoes.cmd('grantNode','sharpen'); const openBefore=__echoes.cmd('openSocket'); const closed=__echoes.cmd('closeSocket'); const room=__echoes.cmd('startRoom','kill_all'); window.__t0=__echoes.tick; return { openBetweenRooms: openBefore, closed, room: room && room.mode ? room.mode : room }; })()" },
+  { "type": "wait", "ms": 500 },
+  { "type": "eval", "code": "(() => { const view=__echoes.cmd('buildView'); const openDuring=__echoes.cmd('openSocket'); const sock=__echoes.cmd('socket','mending_bolt','sharpen'); return { test:'combat-lock', combatActive: view.combatActive, openDuringCombat: openDuring, socketDuringCombat: sock, denials: window.__evs(window.__t0,['socket_denied']) }; })()" },
+  { "type": "eval", "code": "(() => { __echoes.cmd('killAllEnemies'); __echoes.cmd('clearRoom'); return { cleared:true }; })()" },
+  { "type": "wait", "ms": 400 },
+  { "type": "eval", "code": "(() => { const view=__echoes.cmd('buildView'); const o=__echoes.cmd('openSocket'); const s=__echoes.cmd('socket','mending_bolt','sharpen'); return { test:'unlocked-after-clear', combatActive: view.combatActive, open:o, socket:s }; })()" },
+  { "type": "wait", "ms": 250 }
+]

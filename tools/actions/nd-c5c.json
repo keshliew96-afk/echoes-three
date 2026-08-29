@@ -1,0 +1,14 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); window.__row = (name) => [...document.querySelectorAll('.nd-row')].find(r=>r.textContent.includes(name)); window.__focus = (name) => { const c=[...document.querySelectorAll('.nd-card')].find(c=>c.textContent.includes(name)); if(c) c.click(); return !!c; }; const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('giveSkill','warding_aura'); __echoes.cmd('grantNode','echo'); const pv=__echoes.cmd('buildPreview','warding_aura','echo'); const s=__echoes.cmd('socket','warding_aura','echo'); __echoes.cmd('teleport',0,0); __echoes.cmd('placeAlly',1,0.5,0); __echoes.cmd('placeAlly',2,-0.6,0.3); __echoes.cmd('placeAlly',3,-4,3); __echoes.cmd('setHp', window.__ids[1], 0.4); __echoes.cmd('setHp', window.__ids[2], 0.4); window.__t0=__echoes.tick; return { preview:pv, socket:s, aura:__echoes.cmd('buildView').skills.find(k=>k.id==='warding_aura') }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 7200
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const ev=window.__evs(window.__t0,['aura_pulse','heal']); const pulses=ev.filter(e=>e.type==='aura_pulse'); const echoes=pulses.filter(p=>p.echo); const gaps=[]; for(let i=1;i<echoes.length;i++) gaps.push(echoes[i].tick-echoes[i-1].tick); return { test:'echo-aura-reapply', totalPulses:pulses.length, echoPulses:echoes.map(p=>({tick:p.tick, healed:p.healed})), echoGapTicks:gaps, healAmounts:[...new Set(ev.filter(e=>e.type==='heal').map(e=>e.amount))], party: __echoes.state().party.map(p=>({i:p.partyIndex,hp:p.hp,x:p.x,z:p.z})) }; })()"
+  }
+]

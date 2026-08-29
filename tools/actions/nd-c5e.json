@@ -1,0 +1,42 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; for (const i of [1,2,3]) __echoes.cmd('setHp', window.__ids[i], 0); __echoes.cmd('giveSkill','spirit_bolt'); __echoes.cmd('grantNode','bounce'); __echoes.cmd('grantNode','detonate'); const sB=__echoes.cmd('socket','spirit_bolt','bounce',0); const sD=__echoes.cmd('socket','spirit_bolt','detonate',1); __echoes.cmd('teleport',-1,0); window.__A=__echoes.cmd('spawn','dummy',1.2,0); window.__B=__echoes.cmd('spawn','dummy',2.6,0.2); window.__C=__echoes.cmd('spawn','dummy',3.2,0.4); __echoes.cmd('setHp', window.__B, 0.5); return { phase:'hop-kill-must-not-detonate', sB, sD, A:window.__A, B:window.__B, C:window.__C, sb:__echoes.cmd('buildView').skills.find(k=>k.id==='spirit_bolt') }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 250
+  },
+  {
+    "type": "eval",
+    "code": "(() => { window.__t0=__echoes.tick; window.__press('Digit3'); return { fired: window.__t0 }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 700
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const st=__echoes.state(); const ev=window.__evs(window.__t0,['hit','bounce_hop','death','detonate']); return { test:'depth1-hop-kill-no-detonate', evs: ev, detonateCount: ev.filter(e=>e.type==='detonate').length, hp: { A: st.enemies.find(e=>e.id===window.__A)?.hp ?? 'gone', B: st.enemies.find(e=>e.id===window.__B)?.hp ?? 'gone', C: st.enemies.find(e=>e.id===window.__C)?.hp ?? 'gone' } }; })()"
+  },
+  {
+    "type": "eval",
+    "code": "(() => { __echoes.cmd('killAllEnemies'); window.__A2=__echoes.cmd('spawn','dummy',1.2,0); window.__D=__echoes.cmd('spawn','dummy',1.9,0.3); window.__E=__echoes.cmd('spawn','dummy',2.5,0.6); __echoes.cmd('setHp', window.__A2, 0.5); return { phase2:'primary-kill-detonates; detonate-kill-must-not-re-detonate', A2:window.__A2, D:window.__D, E:window.__E }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 3600
+  },
+  {
+    "type": "eval",
+    "code": "(() => { window.__t1=__echoes.tick; window.__press('Digit3'); return { fired2: window.__t1 }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 700
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const st=__echoes.state(); const ev=window.__evs(window.__t1,['hit','bounce_hop','death','detonate']); return { test:'depth1-primary-kill-detonates-once', evs: ev, detonateCount: ev.filter(e=>e.type==='detonate').length, hp: { A2: st.enemies.find(e=>e.id===window.__A2)?.hp ?? 'gone', D: st.enemies.find(e=>e.id===window.__D)?.hp ?? 'gone', E: st.enemies.find(e=>e.id===window.__E)?.hp ?? 'gone' } }; })()"
+  }
+]

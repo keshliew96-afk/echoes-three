@@ -57,6 +57,29 @@ const SHAPE_LABEL = {
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+// §15.2 feasibility of one candidate across a whole skill row. A slot is legal
+// when its rarity cap admits the node AND socketing there (displacing only that
+// slot's own occupant) keeps the copies on this skill within the node's limit.
+// With no legal slot the row must read as the hard block it is — a cap-blocked
+// or limit-blocked candidate NEVER shows a live contribution line (§16).
+// Returns the reason string, or null when at least one slot would take it.
+function hardBlockReason(sys, sk, nodeId) {
+  const info = sys.nodeInfo(nodeId);
+  if (!info) return null;
+  let capFits = false;
+  for (let i = 0; i < sk.caps.length; i++) {
+    if (info.rarityRank > sys.rarityRank(sk.caps[i])) continue;
+    capFits = true;
+    const copies = sk.sockets.filter((s, j) => j !== i && s && s.node === nodeId).length;
+    if (copies + 1 <= info.limit) return null;
+  }
+  if (capFits) return `repeat limit — ${info.limit} per skill already socketed here`;
+  const caps = [...new Set(sk.caps)].join('/');
+  return `${info.rarity} node — ${
+    sk.caps.length === 1 ? 'this skill’s only slot caps' : 'every slot here caps'
+  } at ${caps}`;
+}
+
 export function createSocketScreen({ bus, world }) {
   const build = () => world.buildSystem();
 
@@ -341,14 +364,22 @@ export function createSocketScreen({ bus, world }) {
       if (sk.base.count !== null) stats.push(fmtStat('count', sk.base.count, sk.resolved.count));
 
       // §16 live preview: focused candidate × this skill — computed
-      // contribution and reason, straight from the sim's preview().
+      // contribution and reason, straight from the sim's preview(). A
+      // candidate no slot on this row can legally take (§15.2 rarity cap /
+      // repetition limit) never shows a live contribution: it reads as the
+      // hard block it is, with the reason.
       let prevHtml = '';
       if (candidate) {
-        const p = sys.preview(sk.id, candidate);
-        if (!p.error) {
-          const cls = p.verdict.state === 'live' ? 'nd-live' : 'nd-warn';
-          const mark = p.verdict.state === 'live' ? '◆' : p.verdict.state === 'inert' ? '＋0' : '⃠';
-          prevHtml = `<div class="nd-prev"><span class="${cls}">${mark}</span> ${esc(p.lines.join(' — '))}</div>`;
+        const block = hardBlockReason(sys, sk, candidate);
+        if (block) {
+          prevHtml = `<div class="nd-prev"><span class="nd-warn">⊘</span> ${esc(block)}</div>`;
+        } else {
+          const p = sys.preview(sk.id, candidate);
+          if (!p.error) {
+            const cls = p.verdict.state === 'live' ? 'nd-live' : 'nd-warn';
+            const mark = p.verdict.state === 'live' ? '◆' : p.verdict.state === 'inert' ? '＋0' : '⊘';
+            prevHtml = `<div class="nd-prev"><span class="${cls}">${mark}</span> ${esc(p.lines.join(' — '))}</div>`;
+          }
         }
       }
 
@@ -390,10 +421,17 @@ export function createSocketScreen({ bus, world }) {
             // Candidate preview on a vacant target cell.
             const v = sys.verdictFor(sk.id, candidate);
             const cinfo = sys.nodeInfo(candidate);
+            // §15.2 hard blocks for THIS cell: rarity cap, or the repetition
+            // limit counting the copies the other slots already hold. A cell
+            // that would refuse never advertises a fit.
             const capBlocked = cinfo.rarityRank > sys.rarityRank(cap);
+            const copiesElsewhere = sk.sockets.filter(
+              (s, j) => j !== slot && s && s.node === candidate
+            ).length;
+            const blocked = capBlocked || copiesElsewhere + 1 > cinfo.limit;
             glyphChar = NODE_GLYPH[candidate] ?? '?';
             cell.style.setProperty('--rar', RARITY_COLOR[cinfo.rarity]);
-            if (capBlocked) {
+            if (blocked) {
               cell.classList.add('nd-capped'); // ⊘ hint — clicking still tries + shakes
               hollow = true;
             } else if (v.state === 'grey') {

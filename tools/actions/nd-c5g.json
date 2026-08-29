@@ -1,0 +1,22 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('grantNode','echo'); __echoes.cmd('grantNode','bounce'); const sE=__echoes.cmd('socket','mending_bolt','echo',0); const sB=__echoes.cmd('socket','mending_bolt','bounce',1); __echoes.cmd('teleport',-2.6,0); __echoes.cmd('placeAlly',1,-1.0,0); __echoes.cmd('placeAlly',3,-0.3,0.9); __echoes.cmd('placeAlly',2,-5,3); __echoes.cmd('setHp', window.__ids[1], 0.2); __echoes.cmd('setHp', window.__ids[3], 0.2); const pv=__echoes.cmd('buildPreview','mending_bolt','echo'); return { sE, sB, preview:pv }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 250
+  },
+  {
+    "type": "eval",
+    "code": "(() => { window.__t0=__echoes.tick; window.__press('Digit1'); return { fired: window.__t0 }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 2200
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const ev=window.__evs(window.__t0,['skill_cast','echo_armed','echo_recast','heal','bounce_hop']); return { test:'echo-recast-is-primary-and-arms-once', evs: ev, recasts: ev.filter(e=>e.type==='echo_recast').length, armed: ev.filter(e=>e.type==='echo_armed').length, hops: ev.filter(e=>e.type==='bounce_hop').length, party: __echoes.state().party.map(p=>({i:p.partyIndex,hp:p.hp})) }; })()"
+  }
+]

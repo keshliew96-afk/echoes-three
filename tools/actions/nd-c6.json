@@ -1,0 +1,18 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => { window.__focus = (name) => { const c=[...document.querySelectorAll('.nd-card')].find(c=>c.textContent.includes(name)); if(c) c.click(); return !!c; }; __echoes.cmd('giveSkill','restorative_wave'); __echoes.cmd('giveSkill','warding_aura'); for (const n of ['sharpen','multiply','bounce','detonate','ascend','siphon','quicken','echo']) __echoes.cmd('grantNode',n); __echoes.cmd('socket','mending_bolt','sharpen',0); __echoes.cmd('socket','mending_bolt','echo',1); __echoes.cmd('socket','restorative_wave','multiply',0); __echoes.cmd('socket','restorative_wave','bounce',1); __echoes.cmd('socket','warding_aura','detonate',0); const o=__echoes.cmd('openSocket'); return { o, view:__echoes.cmd('buildView') }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 350
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const ok=window.__focus('Ascend'); return { focusedAscend: ok, previews: [...document.querySelectorAll('.nd-row')].map(r=>({skill: r.querySelector('.nd-skill-name').textContent, prev: (r.querySelector('.nd-prev')||{}).textContent})), fits: [...document.querySelectorAll('.nd-cell.nd-fits')].length, capped: [...document.querySelectorAll('.nd-cell.nd-capped')].length, grey: [...document.querySelectorAll('.nd-cell.nd-grey')].length, inert: [...document.querySelectorAll('.nd-cell.nd-inert')].length, overflowX: document.documentElement.scrollWidth > window.innerWidth, pageH: document.querySelector('.nd-page').getBoundingClientRect().height, winH: window.innerHeight }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 300
+  }
+]

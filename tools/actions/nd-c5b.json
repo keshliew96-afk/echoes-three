@@ -1,0 +1,22 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); window.__row = (name) => [...document.querySelectorAll('.nd-row')].find(r=>r.textContent.includes(name)); window.__focus = (name) => { const c=[...document.querySelectorAll('.nd-card')].find(c=>c.textContent.includes(name)); if(c) c.click(); return !!c; }; const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('grantNode','siphon'); __echoes.cmd('grantNode','siphon'); __echoes.cmd('grantNode','bounce'); __echoes.cmd('grantNode','bounce'); __echoes.cmd('grantNode','bounce'); const s1=__echoes.cmd('socket','mending_bolt','siphon',0); const b1=__echoes.cmd('socket','swift_mend','bounce',0); const b2=__echoes.cmd('socket','swift_mend','bounce',1); const b3=__echoes.cmd('socket','swift_mend','bounce',1); const o=__echoes.cmd('openSocket'); window.__t0=__echoes.tick; return { socketSiphon1:s1, bounce1:b1, bounce2:b2, bounce3_over_limit:b3, o }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 300
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const ok=window.__focus('Siphon'); const row=window.__row('Mending Bolt'); const cell=row.querySelectorAll('.nd-cell')[1]; cell.click(); return { focused:ok }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 140
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const row=window.__row('Mending Bolt'); const cell=row.querySelectorAll('.nd-cell')[1]; return { test:'repetition-limit-block', cellClass: cell.className, blockGlyphShown: getComputedStyle(cell.querySelector('.nd-blockglyph')).display, evs: window.__evs(window.__t0,['socket_denied','node_socketed']), toast: document.querySelector('.nd-toast').textContent, slot1Class: window.__row('Mending Bolt').querySelectorAll('.nd-cell')[1].className, rowPreview: (window.__row('Mending Bolt').querySelector('.nd-prev')||{}).textContent, mb: __echoes.cmd('buildView').skills.find(k=>k.id==='mending_bolt'), sm: __echoes.cmd('buildView').skills.find(k=>k.id==='swift_mend') }; })()"
+  }
+]

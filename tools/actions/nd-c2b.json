@@ -1,0 +1,22 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('teleport',0,0); __echoes.cmd('placeAlly',1,3.0,0); __echoes.cmd('placeAlly',2,-4,-0.6); __echoes.cmd('placeAlly',3,-4,0.8); __echoes.cmd('setHp', window.__ids[1], 0.2); __echoes.cmd('grantNode','siphon'); __echoes.cmd('grantNode','sharpen'); const s1=__echoes.cmd('socket','mending_bolt','siphon'); const s2=__echoes.cmd('socket','mending_bolt','sharpen'); window.__D=__echoes.cmd('spawn','dummy',4.9,0); return { phase:'sharpen', s1, s2, D:window.__D, statsBefore:{...__echoes.stats}, mb:__echoes.cmd('buildView').skills.find(k=>k.id==='mending_bolt'), preview:__echoes.cmd('buildPreview','mending_bolt','siphon') }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 250
+  },
+  {
+    "type": "eval",
+    "code": "(() => { window.__t0=__echoes.tick; window.__press('Digit1'); return { fired: window.__t0 }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 900
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const st=__echoes.state(); return { test:'siphon-sharpen', evs: window.__evs(window.__t0,['skill_cast','heal','siphon_drain','siphon_fizzle','hit']), statsAfter:{...__echoes.stats}, tank: st.party.find(p=>p.partyIndex===1), dummy: st.enemies.find(e=>e.id===window.__D) }; })()"
+  }
+]

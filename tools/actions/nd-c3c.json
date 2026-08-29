@@ -1,0 +1,18 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; __echoes.cmd('grantNode','sharpen'); __echoes.cmd('grantNode','ascend'); __echoes.cmd('grantNode','quicken'); __echoes.cmd('socket','mending_bolt','sharpen',0); __echoes.cmd('socket','mending_bolt','ascend',1); const o=__echoes.cmd('openSocket'); return { o, bench:__echoes.cmd('buildView').bench }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 300
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const cards=[...document.querySelectorAll('.nd-card')]; const qi=cards.findIndex(c=>c.textContent.includes('Quicken')); if (qi>=0) cards[qi].click(); return { focusedQuicken: qi, rows: [...document.querySelectorAll('.nd-row')].map(r=>r.textContent.replace(/\\s+/g,' ').trim()) }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 300
+  }
+]

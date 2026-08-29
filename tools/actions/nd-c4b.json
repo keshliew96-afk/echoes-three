@@ -1,6 +1,18 @@
 [
-  { "type": "eval", "code": "(() => { const g=__echoes.cmd('giveSkill','restorative_wave'); __echoes.cmd('grantNode','multiply'); __echoes.cmd('grantNode','bounce'); const pWave=__echoes.cmd('buildPreview','restorative_wave','multiply'); const pMB=__echoes.cmd('buildPreview','mending_bolt','multiply'); const kv=__echoes.cmd('kitVerdict','multiply'); const s=__echoes.cmd('socket','restorative_wave','multiply'); const v=__echoes.cmd('buildView').skills.find(k=>k.id==='restorative_wave'); return { test:'saturation-inert', previewOnWave: pWave, previewOnMendingBolt: pMB, kitVerdict: kv, socket: s, wave: v }; })()" },
-  { "type": "wait", "ms": 150 },
-  { "type": "eval", "code": "(() => { const o=__echoes.cmd('openSocket'); const cards=[...document.querySelectorAll('.nd-card')]; const bi=cards.findIndex(c=>c.textContent.includes('Bounce')); if (bi>=0) cards[bi].click(); return { o, focusedBounce: bi }; })()" },
-  { "type": "wait", "ms": 350 }
+  {
+    "type": "eval",
+    "code": "(() => { window.__press = c => { window.dispatchEvent(new KeyboardEvent('keydown',{code:c})); window.dispatchEvent(new KeyboardEvent('keyup',{code:c})); }; window.__evs = (t0,types) => __echoes.events.filter(e => e.tick>=t0 && (!types||types.includes(e.type))); const st=__echoes.state(); window.__ids={}; for (const p of st.party) window.__ids[p.partyIndex??0]=p.id; const g1=__echoes.cmd('giveSkill','restorative_wave'); const g2=__echoes.cmd('giveSkill','sanctuary'); __echoes.cmd('grantNode','multiply'); __echoes.cmd('grantNode','multiply'); __echoes.cmd('grantNode','bounce'); const pWave=__echoes.cmd('buildPreview','restorative_wave','multiply'); const pSanct=__echoes.cmd('buildPreview','sanctuary','multiply'); const pMB=__echoes.cmd('buildPreview','mending_bolt','multiply'); const kv=__echoes.cmd('kitVerdict','multiply'); const sW=__echoes.cmd('socket','restorative_wave','multiply',0); const sS=__echoes.cmd('socket','sanctuary','multiply',0); const sB=__echoes.cmd('socket','restorative_wave','bounce',1); const v=__echoes.cmd('buildView'); return { test:'saturation-inert', previewOnWave:pWave, previewOnSanctuary:pSanct, previewOnMendingBolt:pMB, kitVerdictMultiply:kv, socketWave:sW, socketSanctuary:sS, socketBounceWave:sB, wave:v.skills.find(k=>k.id==='restorative_wave'), sanctuary:v.skills.find(k=>k.id==='sanctuary'), livingParty: __echoes.state().party.filter(p=>p.hp>0).length }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 250
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const o=__echoes.cmd('openSocket'); return { o, cells: [...document.querySelectorAll('.nd-cell')].map(c=>c.className) }; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 400
+  }
 ]
