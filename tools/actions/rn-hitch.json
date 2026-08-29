@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');window.__f=[];let last=performance.now();const loop=()=>{const n=performance.now();window.__f.push(Math.round(n-last));last=n;requestAnimationFrame(loop);};requestAnimationFrame(loop);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__mark=window.__f.length;window.__t0=window.__echoes.tick;window.__echoes.cmd('skipToRoom',8);return {mark:window.__mark,tick:window.__t0};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const f=window.__f;const after=f.slice(window.__mark,window.__mark+12);const before=f.slice(Math.max(0,window.__mark-12),window.__mark);return {beforeMs:before,afterMs:after,worstAfter:Math.max(...after),ticksAdvanced:window.__echoes.tick-window.__t0};})()"
+ }
+]

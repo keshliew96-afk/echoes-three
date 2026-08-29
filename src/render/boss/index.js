@@ -44,6 +44,85 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   const dying = [];
   let dimmed = null; // [{ light, intensity }] captured when the room darkens
 
+  // --- shader pre-warm --------------------------------------------------
+  // Building the Stag rig costs one ~900 ms frame the first time its ~10
+  // materials reach the GL compiler — which, un-warmed, lands exactly on the
+  // tick the boss room opens (measured: a 937 ms frame, 50 sim ticks lost).
+  // §1's "no >100 ms hitches" makes that a defect, so the rig, the quake ring
+  // and one burst are built and COMPILED a few frames after boot, parked far
+  // under the floor, and then pooled for reuse.
+  const spareRigs = [];
+  let warmFrames = 0;
+  let warmed = false;
+
+  // The Stag's two lights are created ONCE and never leave the scene: three.js
+  // keys shader programs on the scene's light counts, so adding a PointLight
+  // mid-fight recompiles EVERY material in the arena (measured: a 459 ms
+  // frame even with the rig pre-warmed). They live at intensity 0 on the
+  // layer root until a Stag exists, then reparent onto its shoulders — a
+  // reparent inside the same scene leaves the light count untouched.
+  const keyLight = new PointLight(
+    PALETTE.hearthAmber,
+    0,
+    BOSS_LIGHT.distance,
+    BOSS_LIGHT.decay
+  );
+  keyLight.userData.bossLight = true;
+  const violetLight = new PointLight(PALETTE.godstuffViolet, 0, 7, 2);
+  violetLight.userData.bossLight = true;
+  violetLight.position.set(0, 1.9, 0);
+  root.add(keyLight);
+  root.add(violetLight);
+
+  function parkLights() {
+    keyLight.intensity = 0;
+    violetLight.intensity = 0;
+    keyLight.position.set(0, 0, 0);
+    root.add(keyLight); // reparent, not remove: the light count must not move
+    root.add(violetLight);
+    violetLight.position.set(0, 1.9, 0);
+  }
+  function prewarm() {
+    if (warmed) return;
+    warmed = true;
+    const rig = buildStag(cosmetic);
+    rig.group.position.set(0, -60, 0);
+    root.add(rig.group);
+    const r = makeQuakeRing(STAG.quake.radius);
+    r.group.position.set(0, -60, 0);
+    root.add(r.group);
+    const b = makeQuakeBurst(STAG.quake.radius);
+    b.group.position.set(0, -60, 0);
+    root.add(b.group);
+    try {
+      stage.renderer.compile(stage.scene, stage.camera);
+    } catch (e) {
+      /* compile is an optimisation, never a correctness dependency */
+    }
+    root.remove(r.group);
+    root.remove(b.group);
+    root.remove(rig.group);
+    spareRigs.push(rig);
+  }
+
+  // Take a rig from the pool (or build one) with every animated value back at
+  // its spawn state — the death clip squashes scale and burns emissive.
+  function acquireRig() {
+    const rig = spareRigs.pop() || buildStag(cosmetic);
+    rig.group.position.set(0, 0, 0);
+    rig.group.scale.set(1, 1, 1);
+    rig.group.visible = true;
+    for (const m of rig.mats) m.emissiveIntensity = 0;
+    return rig;
+  }
+
+  function releaseRig(rig) {
+    root.remove(rig.group);
+    rig.group.scale.set(1, 1, 1);
+    for (const m of rig.mats) m.emissiveIntensity = 0;
+    if (spareRigs.length < 2) spareRigs.push(rig);
+  }
+
   bus.on('hit', (ev) => {
     if (rec && ev.target === rec.id) rec.flashUntilTick = ev.tick + HITFLASH.ticks;
   });
@@ -59,12 +138,13 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     dying.push({ rig: rec.rig, age: 0 });
     dropRing();
     restoreRoom();
-    if (rec.light) rec.light.intensity = BOSS_LIGHT.intensity;
+    parkLights();
     rec = null;
   });
   bus.on('boss_despawn', (ev) => {
     if (!rec || ev.id !== rec.id) return;
-    root.remove(rec.rig.group);
+    parkLights();
+    releaseRig(rec.rig);
     dropRing();
     restoreRoom();
     rec = null;
@@ -102,6 +182,8 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     const dt = lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastElapsed));
     lastElapsed = tSec;
     const tick = world.tick;
+    // A dozen frames in: the boot burst is over, nothing is being fought yet.
+    if (!warmed && ++warmFrames > 12) prewarm();
 
     let ent = null;
     for (const e of world.entities()) {
@@ -113,26 +195,20 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
 
     if (ent) {
       if (!rec || rec.id !== ent.id) {
-        const rig = buildStag(cosmetic);
+        const rig = acquireRig();
         root.add(rig.group);
-        const light = new PointLight(
-          PALETTE.hearthAmber,
-          BOSS_LIGHT.intensity,
-          BOSS_LIGHT.distance,
-          BOSS_LIGHT.decay
-        );
-        light.userData.bossLight = true;
-        rig.lightMount.add(light);
+        keyLight.position.set(0, 0, 0);
+        keyLight.intensity = BOSS_LIGHT.intensity;
+        rig.lightMount.add(keyLight);
         // A second, violet fill from the rack: corruption lighting the room.
-        const violet = new PointLight(PALETTE.godstuffViolet, BOSS_LIGHT.intensity * 0.28, 7, 2);
-        violet.position.set(0, 1.9, 0);
-        violet.userData.bossLight = true;
-        rig.lightMount.add(violet);
+        violetLight.position.set(0, 1.9, 0);
+        violetLight.intensity = BOSS_LIGHT.intensity * 0.28;
+        rig.lightMount.add(violetLight);
         rec = {
           id: ent.id,
           rig,
-          light,
-          violet,
+          light: keyLight,
+          violet: violetLight,
           yaw: Math.atan2(ent.faceX ?? 0, ent.faceZ ?? 1),
           walkPhase: 0,
           telegraphK: 0,
@@ -191,7 +267,8 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
         dropRing();
       }
     } else if (rec) {
-      root.remove(rec.rig.group);
+      parkLights();
+      releaseRig(rec.rig);
       dropRing();
       restoreRoom();
       rec = null;
@@ -215,7 +292,9 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       d.age += dt;
       const k = d.age / DEATH_SEC;
       if (k >= 1) {
-        root.remove(d.rig.group);
+        // The dead rig goes back to the pool: its lights were parented to the
+        // rig and die with it, so only the visual state needs resetting.
+        releaseRig(d.rig);
         dying.splice(i, 1);
         continue;
       }
@@ -223,9 +302,6 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       d.rig.group.scale.set(1 + k * 0.35, Math.max(0.02, squash), 1 + k * 0.35);
       for (const m of d.rig.mats) m.emissiveIntensity = Math.max(0, 1 - k * 1.6);
       d.rig.pose({ t: tSec, walkPhase: 0, moveK: 0, telegraphK: 0, lungeK: 0, hpFrac: 0 });
-      d.rig.group.traverse((o) => {
-        if (o.isPointLight) o.intensity *= 0.9;
-      });
     }
   }
 
@@ -275,6 +351,8 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       dying: dying.length,
       roomDimmed: !!dimmed,
       dimmedLights: dimmed ? dimmed.length : 0,
+      warmed,
+      pooled: spareRigs.length,
       screenBox: screenBox(),
     };
   }

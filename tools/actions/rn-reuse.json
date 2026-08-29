@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('skipToRoom',8);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({after1:window.__echoes.state().bossfx,phase:window.__echoes.cmd('runState').phase}))()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('skipToRoom',8);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({after2:window.__echoes.state().bossfx,boss:window.__echoes.cmd('runState').boss}))()"
+ }
+]

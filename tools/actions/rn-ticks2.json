@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__log=[];for(const t of ['run_start','run_end','room_cleared','room_enter'])E.on(t,(ev)=>window.__log.push(t+' t'+ev.tick+(ev.ticks!==undefined?' ticks='+ev.ticks:'')+(ev.index!==undefined?' room'+ev.index:'')));E.cmd('startRun');E.cmd('giveSkill','nova_bloom');E.cmd('grantNode','sharpen');E.cmd('skipToRoom',8);return {t:E.tick};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('killAllEnemies');E.cmd('killBoss');return {t:E.tick,phase:E.cmd('runState').phase};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({t:window.__echoes.tick,log:window.__log,summaryTicks:window.__echoes.cmd('runState').summary.ticks}))()"
+ }
+]

@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__log=[];E.on('run_start',(ev)=>window.__log.push('run_start t'+ev.tick));E.on('run_end',(ev)=>window.__log.push('run_end t'+ev.tick+' ticks='+ev.ticks));E.on('room_cleared',(ev)=>window.__log.push('room_cleared t'+ev.tick+' '+ev.mode));E.cmd('startRun');return {t:E.tick};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd('skipToRoom',8);return {t:E.tick,phase:r.phase,room:r.room};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({t:window.__echoes.tick,log:window.__log,phase:window.__echoes.cmd('runState').phase}))()"
+ }
+]
