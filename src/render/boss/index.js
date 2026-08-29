@@ -4,17 +4,18 @@
 //   - the Stag rig (render/boss/stag.js) synced to the sim body (interpolated
 //     px/pz -> x/z), yaw-smoothed, with walk / quake-windup / trample clips
 //   - "the room's single brightest light source (feverish warm boss-light;
-//     room a stop darker than normal Act-1)": while the boss lives, every
-//     scene light is dimmed one stop and a warm PointLight rides the Stag's
-//     shoulders, so the brightest pixels in frame are the rack and the pool
-//     under its hooves
+//     room a stop darker than normal Act-1)": while the boss lives every scene
+//     light is dimmed one stop and the Stag wears additive emitters (warm
+//     ground pool + spill, violet rack halo), so the brightest pixels in frame
+//     are the rack and the pool under its hooves. No real light rides the boss
+//     — see the note by the layer state below for why.
 //   - Antler Quake telegraph: the §11 Ember ring at the locked impact point,
 //     radius 1.6 u, 2 Hz pulse + chevrons + a wind-in sweep, then a burst
 //     flash on resolve
 //   - §9 #1 hit flash on the boss body, and a violet-white collapse on death
 //
 // Render-only: reads sim state read-only, never mutates it.
-import { Group, PointLight, Vector3 } from 'three';
+import { Group, Vector3 } from 'three';
 import { HITFLASH, TICK_HZ } from '../../core/constants.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
@@ -29,9 +30,6 @@ const DEATH_SEC = 1.1;
 // §11 "room a stop darker than normal Act-1": one photographic stop is a
 // halving — the scene rig runs at 0.5x while the Stag is alive.
 const ROOM_DIM = 0.5;
-// The boss light itself (§11 "feverish warm boss-light"). Warm, close-range,
-// bright enough to be the room's key.
-const BOSS_LIGHT = { intensity: 11.5, distance: 8.4, decay: 2 };
 
 export function createBossLayer({ stage, world, bus, cosmetic }) {
   const root = new Group();
@@ -55,33 +53,15 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   let warmFrames = 0;
   let warmed = false;
 
-  // The Stag's two lights are created ONCE and never leave the scene: three.js
-  // keys shader programs on the scene's light counts, so adding a PointLight
-  // mid-fight recompiles EVERY material in the arena (measured: a 459 ms
-  // frame even with the rig pre-warmed). They live at intensity 0 on the
-  // layer root until a Stag exists, then reparent onto its shoulders — a
-  // reparent inside the same scene leaves the light count untouched.
-  const keyLight = new PointLight(
-    PALETTE.hearthAmber,
-    0,
-    BOSS_LIGHT.distance,
-    BOSS_LIGHT.decay
-  );
-  keyLight.userData.bossLight = true;
-  const violetLight = new PointLight(PALETTE.godstuffViolet, 0, 7, 2);
-  violetLight.userData.bossLight = true;
-  violetLight.position.set(0, 1.9, 0);
-  root.add(keyLight);
-  root.add(violetLight);
-
-  function parkLights() {
-    keyLight.intensity = 0;
-    violetLight.intensity = 0;
-    keyLight.position.set(0, 0, 0);
-    root.add(keyLight); // reparent, not remove: the light count must not move
-    root.add(violetLight);
-    violetLight.position.set(0, 1.9, 0);
-  }
+  // NO real light rides the Stag, by measurement. three.js keys every shader
+  // program on the scene's light counts, so a boss PointLight costs either a
+  // ~460 ms recompile on the frame it is added (a §1 hitch violation) or — if
+  // it is parked in the scene from boot to keep the count constant — a
+  // permanent frame-rate tax on EVERY scene (measured: 55.2 -> 41.3 fps in the
+  // plain arena). §11's "feverish warm boss-light" is therefore carried the
+  // way the rest of Act 1 carries its emitters (§19.3, "every light emitter
+  // carries an additive radial glow sprite"): the room drops a stop and the
+  // Stag's own additive pool/halo out-measure every torch in it.
   function prewarm() {
     if (warmed) return;
     warmed = true;
@@ -138,12 +118,10 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     dying.push({ rig: rec.rig, age: 0 });
     dropRing();
     restoreRoom();
-    parkLights();
     rec = null;
   });
   bus.on('boss_despawn', (ev) => {
     if (!rec || ev.id !== rec.id) return;
-    parkLights();
     releaseRig(rec.rig);
     dropRing();
     restoreRoom();
@@ -197,18 +175,9 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       if (!rec || rec.id !== ent.id) {
         const rig = acquireRig();
         root.add(rig.group);
-        keyLight.position.set(0, 0, 0);
-        keyLight.intensity = BOSS_LIGHT.intensity;
-        rig.lightMount.add(keyLight);
-        // A second, violet fill from the rack: corruption lighting the room.
-        violetLight.position.set(0, 1.9, 0);
-        violetLight.intensity = BOSS_LIGHT.intensity * 0.28;
-        rig.lightMount.add(violetLight);
         rec = {
           id: ent.id,
           rig,
-          light: keyLight,
-          violet: violetLight,
           yaw: Math.atan2(ent.faceX ?? 0, ent.faceZ ?? 1),
           walkPhase: 0,
           telegraphK: 0,
@@ -245,10 +214,6 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
         lungeK: rec.lungeK,
         hpFrac,
       });
-      // Fever: the boss-light burns hotter as it is worn down and while the
-      // quake winds up — never dim enough to lose the room's key.
-      rec.light.intensity = BOSS_LIGHT.intensity * (1 + 0.3 * (1 - hpFrac) + 0.35 * rec.telegraphK);
-      rec.violet.intensity = BOSS_LIGHT.intensity * 0.28 * (1 + 0.5 * rec.telegraphK);
 
       const lit = tick < rec.flashUntilTick ? HITFLASH.intensity : 0;
       for (const m of rec.rig.mats) m.emissiveIntensity = lit;
@@ -267,7 +232,6 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
         dropRing();
       }
     } else if (rec) {
-      parkLights();
       releaseRig(rec.rig);
       dropRing();
       restoreRoom();

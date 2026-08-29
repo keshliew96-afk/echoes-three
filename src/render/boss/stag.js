@@ -16,7 +16,9 @@
 //
 // Faces +Z. Every animation value arrives per frame through `pose`.
 import {
+  AdditiveBlending,
   BoxGeometry,
+  CircleGeometry,
   ConeGeometry,
   CylinderGeometry,
   Group,
@@ -27,7 +29,7 @@ import {
 import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
 import { PALETTE } from '../../data/palette.js';
-import { makeGlowSprite } from '../glow.js';
+import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { HIDE, TELL_VIOLET } from '../enemies/style.js';
 
 // God-stuff Violet peak, post-chain exact — the veins are white-hot violet.
@@ -261,7 +263,7 @@ export function buildStag() {
   antlers.position.set(0, 0.2, -0.02);
   head.add(antlers);
   for (const side of [-1, 1]) antlers.add(buildAntler(side, rackMat, veinMats, glows));
-  const rackHalo = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 1.85, opacity: 0.5 });
+  const rackHalo = makeGlowSprite({ color: PALETTE.godstuffVioletPeak, size: 2.2, opacity: 0.72 });
   rackHalo.material.toneMapped = false;
   rackHalo.position.set(0, 1.0, 0);
   antlers.add(rackHalo);
@@ -291,14 +293,38 @@ export function buildStag() {
 
   // --- Ground pool: the warm boss-light landing on the floor under the body
   // (the light itself is a PointLight the layer parents here).
-  const pool = makeGlowSprite({ color: PALETTE.hearthAmber, size: 2.4, opacity: 0.24 });
-  pool.material.toneMapped = false;
-  pool.material.rotation = 0;
-  pool.position.set(0, 0.05, -0.35);
-  // Lay it on the floor by using a plane-like squash (sprites always face the
-  // camera; at this camera pitch a flattened sprite reads as a pool).
-  pool.scale.set(2.6, 1.5, 1);
+  // §11 "feverish warm boss-light": with no real light on the rig, the pool
+  // and its wider spill ARE the boss-light — the warm floor the Stag stands
+  // in, and the only warm emitter in a room that just dropped a stop.
+  //
+  // These are ground-plane MESHES, not sprites: a sprite is camera-facing, and
+  // a flattened one this size intersects the floor and gets sliced into a hard
+  // warm band across the frame. A disc lying at y ~ 0 always reads as light on
+  // the ground.
+  const groundGlow = (radius, color, opacity) => {
+    const m = new Mesh(
+      new CircleGeometry(radius, 28),
+      new MeshBasicMaterial({
+        map: getRadialTexture(),
+        color,
+        transparent: true,
+        blending: AdditiveBlending,
+        depthWrite: false,
+        toneMapped: false,
+      })
+    );
+    m.material.opacity = opacity;
+    m.rotation.x = -Math.PI / 2;
+    return m;
+  };
+  const pool = groundGlow(1.7, PALETTE.hearthAmber, 0.62);
+  pool.position.set(0, 0.03, -0.3);
   yaw.add(pool);
+  // Wider, softer spill so the warm falloff reads as light on the floor and
+  // not as a decal with an edge.
+  const spill = groundGlow(3.4, PALETTE.hearthAmber, 0.3);
+  spill.position.set(0, 0.02, -0.3);
+  yaw.add(spill);
 
   yaw.add(groundShadow(1.0, 0.5));
 
@@ -337,13 +363,14 @@ export function buildStag() {
       // WITHOUT blowing the frame to white — capped so the >200 luma band
       // stays near the reference bar's ~1.4% while the boss box still reads
       // measurably hotter than the floor around it.
-      rackHalo.material.opacity = Math.min(1.0, 0.58 * fever);
-      cavityGlow.material.opacity = Math.min(0.7, 0.36 * fever + 0.12 * lungeK);
+      rackHalo.material.opacity = Math.min(1.1, 0.72 * fever);
+      cavityGlow.material.opacity = Math.min(0.85, 0.46 * fever + 0.12 * lungeK);
       for (const g of glows) {
         if (g === rackHalo || g === cavityGlow) continue;
-        g.material.opacity = Math.min(0.6, 0.34 * fever);
+        g.material.opacity = Math.min(0.75, 0.44 * fever);
       }
-      pool.material.opacity = Math.min(0.6, 0.34 + 0.07 * Math.sin(t * 1.9) + 0.12 * telegraphK);
+      pool.material.opacity = Math.min(0.95, 0.62 + 0.09 * Math.sin(t * 1.9) + 0.16 * telegraphK);
+      spill.material.opacity = Math.min(0.46, 0.3 + 0.05 * Math.sin(t * 1.9) + 0.08 * telegraphK);
     },
   };
 }
