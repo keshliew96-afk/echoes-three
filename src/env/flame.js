@@ -97,12 +97,35 @@ export function getFlameTexture() {
 }
 
 // Alpha-blended flame billboard. size = world-space height.
-// `gain` is an HDR multiplier applied in the LINEAR working space: the painted
-// core tops out at ~0.88 linear, which sits just under the bloom pass's
-// threshold, so an ungained flame produces no halo at all and the frame ends up
-// with nothing above luma 200 (critique F2). A gain of ~2.5-3 puts the core at
-// 2.2-2.6 linear — comfortably above threshold, blooming to a white-hot centre
-// inside an amber body, exactly the emitter read of the reference frame.
+// `gain` is an HDR multiplier applied in the LINEAR working space.
+//
+// GAIN CEILING (fix round 2 — the single measured cause of the residual
+// reserved-band count AND of the collapsing cool share). The gain multiplies
+// the WHOLE painted texture, not just its white core, so it decides how much
+// of the flame clears the bloom pass's threshold:
+//
+//   linear luminance of the amber BODY  = 0.4333 * gain * 0.92 (its alpha)
+//   linear luminance of the white CORE  = 0.8668 * gain
+//   bloom threshold (render/stage.js)   = 0.68
+//
+// At the shipped gains (2.15 / 2.35) the amber body measured 0.86-0.94 — the
+// ENTIRE orange flame was a bloom source, and UnrealBloomPass at radius 0.6
+// smeared that orange energy over the whole frame as a low-frequency veil.
+// Measured by hiding exactly the nine flame sprites on one load: the frame's
+// reserved-band count fell 375 -> 26 px and its cool share rose 15.1% -> 32.7%.
+// The veil was also warming every dark pixel by ~(+45,+25,+7): the identity
+// rings' ink strokes rendered at rgb(71,53,44) h20 s0.38 instead of the
+// authored rgb(26,28,37) h229 — i.e. the "sourceless" danger pixels were the
+// bloom of the fires landing on the party's own ink.
+//
+// So the gain is capped where the module's own header always claimed it was:
+// only the near-white core clears the threshold. GAIN_MAX = 1.6 keeps the body
+// at 0.638 (under 0.68) and the core at 1.39 (over it). ACES compresses so hard
+// up there that the flame's DISPLAY value barely moves — modelled, the body
+// goes from display 238 to 231 — the change is almost entirely in what the
+// bloom pass sees.
+export const GAIN_MAX = 1.6;
+
 export function makeFlameSprite(size = 0.34, opacity = 1, gain = 1) {
   const material = new SpriteMaterial({
     map: getFlameTexture(),
@@ -112,13 +135,14 @@ export function makeFlameSprite(size = 0.34, opacity = 1, gain = 1) {
     toneMapped: false, // keeps the amber chromatic; the core still blooms
   });
   if (gain !== 1) {
-    // Near-white gain tint. The bloom pass spreads whatever sits above its
-    // threshold across the dark surround, and with a red-heavy gain the spread
-    // was measured as the h19-24 / s0.35-0.5 mauve murk that dominates the
-    // danger-band count (v3: 31k danger px with bloom on, 1.2k with bloom
-    // off). The painted TEXTURE carries the amber; the HDR overflow that the
-    // bloom smears must be cream, not orange.
-    material.color.setRGB(gain, gain * 0.97, gain * 0.88, LinearSRGBColorSpace);
+    const g = Math.min(gain, GAIN_MAX);
+    // The gain tint is now essentially NEUTRAL. It used to be (1, 0.97, 0.88),
+    // which was described as "cream" but is a MULTIPLIER on an amber texture —
+    // it made the overflow warmer, not cooler. With the body held under the
+    // threshold the only thing that blooms is the painted parchment core, so
+    // the skirt is cream by construction; the tiny residual warm bias here is
+    // just enough that a fire never blooms blue-white.
+    material.color.setRGB(g, g * 0.985, g * 0.955, LinearSRGBColorSpace);
   }
   const sprite = new Sprite(material);
   sprite.scale.set(size * 0.66, size, 1);

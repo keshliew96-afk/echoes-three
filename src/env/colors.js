@@ -214,9 +214,21 @@ export const FLOWER_TINTS = Object.freeze([
 // the h5-25 ceiling; the parchment share only needs to be big enough to keep
 // the mid-feather's saturation off the s>0.35 gate, and 0.44 measures there
 // with the pool opacities below trimmed to match.
+// FIX ROUND 2 — parchment shares cut back to 0.26 pool / 0.20 halo. The heavy
+// cream shares above were bought to fight a reserved-band count whose real
+// cause turned out to be the flame sprites' bloom overflow (env/flame.js
+// GAIN_MAX), not the pool tint: with the fires capped, the whole-frame band
+// count fell from 533 px to under 80 with the cream pools still in place, i.e.
+// the cream was paying for nothing. It cost the thing the pools exist for — a
+// pool core measured rgb(255,242,208), hue 43 at SATURATION 0.18, which the
+// analyzer does not even count as a warm pixel (its colour gate is s > 0.12)
+// and which reads on screen as a white stage spotlight, not firelight.
+// At 0.26/0.20 the addition sits around s 0.36-0.42 at hue ~40 — 15 degrees
+// clear of the h25 Ember ceiling, chromatic enough to read as fire and to
+// count toward the §19.3 warm-dominant split.
 export const EMBER_GLOW = Object.freeze({
-  pool: mix(PALETTE.paleGold, PALETTE.parchment, 0.5),
-  halo: mix(mix(PALETTE.hearthAmber, PALETTE.paleGold, 0.7), PALETTE.parchment, 0.38),
+  pool: mix(PALETTE.paleGold, PALETTE.parchment, 0.26),
+  halo: mix(mix(PALETTE.hearthAmber, PALETTE.paleGold, 0.7), PALETTE.parchment, 0.2),
 });
 
 export { mix, shade };

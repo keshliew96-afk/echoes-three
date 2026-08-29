@@ -45,9 +45,15 @@ export const VARIANTS = {
       // shadeS 0.25/shadeH 196 (were 0.3/200): a heavy shade roll was landing
       // the spawn frame at cool > warm; the pockets stay measurably cool
       // (h>=160) while warm keeps the §19.3 upper hand.
-      // dirtH 52 (was 57): right at the 60-degree warm/olive boundary half the
-      // lit track was measuring as foliage — 52 keeps the whole beaten track
-      // in the warm family (and far above the h25 danger ceiling).
+      // dirtH 46 (was 52, before that 57). The track is the largest warm
+      // SURFACE in the frame and its hue decides which bucket it counts in:
+      // painted at 52-65 the rendered dirt was landing at 48-60, i.e. half of
+      // it scored as foliage, and the Act-1 warm share came out under the cool
+      // counterweight. The old high hues were bought to clear the h25 Ember
+      // ceiling; with the flame bloom veil capped (env/flame.js GAIN_MAX) the
+      // frame's whole reserved-band count is under 80 px, so 46 sits ~20
+      // degrees clear of the ceiling AND lands the whole track in the warm
+      // family. Variants 2/3 moved the same way (57 -> 48, 65 -> 50).
       // coolLift 24 (v1 used to inherit the 14 default): measured, variant 1's
       // spawn frame sat at 1.0-1.7% cool against the >=8% counterweight the
       // advisory asks for — it is the brightest, warmest of the three and
@@ -59,7 +65,7 @@ export const VARIANTS = {
       // saturated blue-green shade pockets are the fix that does not touch
       // the lit story (its siblings already measure 12-17%).
       h: 90, s: 0.56, l: 0.39, shadeH: 180, shadeS: 0.31, shadeL: 0.115, coolLift: 15,
-      dirtH: 52, dirtL: 0.255, mossN: 16, leafN: 200, crackN: 6, pebbleN: 90,
+      dirtH: 46, dirtL: 0.255, mossN: 16, leafN: 200, crackN: 6, pebbleN: 90,
     },
     // Track widened 1.5 -> 1.8: variant 1 has ONE path (its siblings have two
     // or three warm braziers nearer the spawn camera) and needed the extra
@@ -110,7 +116,7 @@ export const VARIANTS = {
       // 37.4% — a dead tie, and §19.3 keeps Act-1 warm-DOMINANT. This trims the
       // cool side back under warm while the pockets stay a visible >=8% share.
       h: 86, s: 0.52, l: 0.42, shadeH: 182, shadeS: 0.30, shadeL: 0.125, coolLift: 14,
-      dirtH: 57, dirtL: 0.30, mossN: 8, leafN: 150, crackN: 12, pebbleN: 160,
+      dirtH: 48, dirtL: 0.30, mossN: 8, leafN: 150, crackN: 12, pebbleN: 160,
     },
     paths: [
       { pts: [[-12.6, 0.6], [-4, 0.1], [3, -0.3], [12.6, -0.7]], w: 2.1 },
@@ -165,7 +171,12 @@ export const VARIANTS = {
     // into the h22-25 / s>0.35 gate (see tuneActOneLighting) — bleaching the
     // key here keeps prop surfaces neutral while the fire bowls carry §19.3's
     // warm side.
-    mood: { key: 0.96, fill: 1.16, warmth: 0.0, poolR: 0.95, keyWhite: 0.3 },
+    // poolR 1.1 and fill 1.06 (fix round 2): the hollow is the room where the
+    // fire bowls do the lighting, and with the flame bloom veil capped it was
+    // the one variant whose warm share ran close to its cool counterweight
+    // (21.4% vs 15.6%). Wider fire pools + a touch less indigo fill widen the
+    // §19.3 warm-dominant margin without touching the pockets themselves.
+    mood: { key: 0.96, fill: 1.06, warmth: 0.0, poolR: 1.1, keyWhite: 0.3 },
     ground: {
       // shadeS 0.26 / shadeH 200 (were 0.34/204): the hollow is the coolest
       // room by design, but a heavy shade roll flipped whole frames
@@ -175,8 +186,8 @@ export const VARIANTS = {
       // s0.35-0.43 — a hair inside the reserved Ember band. Painted gold-er
       // and a step lighter, the rendered track sits above h26 at every dim
       // stretch while still reading as the same beaten dirt.
-      h: 88, s: 0.58, l: 0.355, shadeH: 181, shadeS: 0.32, shadeL: 0.118, coolLift: 16,
-      dirtH: 65, dirtL: 0.285, mossN: 30, leafN: 220, crackN: 4, pebbleN: 70,
+      h: 88, s: 0.58, l: 0.355, shadeH: 181, shadeS: 0.30, shadeL: 0.125, coolLift: 14,
+      dirtH: 50, dirtL: 0.285, mossN: 30, leafN: 220, crackN: 4, pebbleN: 70,
     },
     paths: [{ pts: [[-12.6, 5.8], [-7.4, 4.4], [-2.6, 1.2], [0.4, -2.6], [4.8, -5.6], [12.6, -6.2]], w: 1.6 }],
     grass: 720,

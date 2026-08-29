@@ -63,6 +63,7 @@ import {
 } from '../env/props.js';
 import { makeFlameSprite, createEmberField } from '../env/flame.js';
 import { COOL, EMBER_GLOW, mix } from '../env/colors.js';
+import { variantLayoutRng } from '../env/layout.js';
 import { createAfterimages } from '../render/critters/afterimage.js';
 
 // Render-cosmetic scaffold numbers (grouped; not brief-bound gameplay values).
@@ -345,24 +346,35 @@ export function createArenaScene(stage, toggles, ctx) {
   root.name = `arena-v${spec.id}`;
   stage.scene.add(root);
 
+  // --- Room DRESSING runs off the per-variant LAYOUT stream, not the cosmetic
+  // one (env/layout.js). Fix-round-2 finding: the floor's shade pockets are the
+  // frame's cool counterweight and the grass/prop scatter is most of its
+  // coloured-pixel denominator, so drawing them from an unseeded stream made
+  // the frame's measured cool share swing 6.8%-30.7% and its reserved-band
+  // count 59-760 px on the SAME variant, load to load. The dressing of a room
+  // is a property of the room; only things that must be alive frame to frame
+  // (flame flicker, embers, motes, particle spread, idle sway) keep the
+  // cosmetic stream below.
+  const layout = variantLayoutRng(spec.id);
+
   // --- Ground + dressed exterior.
-  root.add(buildGroundMesh(spec, cosmetic));
-  root.add(buildApronMesh(spec, cosmetic));
-  const treeline = buildTreeline(root, spec, cosmetic);
+  root.add(buildGroundMesh(spec, layout));
+  root.add(buildApronMesh(spec, layout));
+  const treeline = buildTreeline(root, spec, layout);
 
   // --- Props first: their footprints mask the foliage scatter, so a blade of
   // grass can never grow through a crate face.
   const { emitters, shadows, footprints, mats, typeCount, monolithMat } = buildProps(
     root,
     spec,
-    cosmetic
+    layout
   );
   buildShadowInstances(root, shadows);
-  const foliage = buildFoliage(root, spec, cosmetic, footprints);
+  const foliage = buildFoliage(root, spec, layout, footprints);
   const glassBase = mats?.glass ? mats.glass.color.clone() : null;
 
   // --- The built boundary (walls + coping + capstone run).
-  const wallInfo = buildWalls(root, spec, cosmetic);
+  const wallInfo = buildWalls(root, spec, layout);
 
   // --- The playable Healer: chibi mouse from the critter factory, riding the
   // graybox sim (position/aim/dash/hp are read-only; clips are render state).
@@ -449,11 +461,16 @@ export function createArenaScene(stage, toggles, ctx) {
       // SOURCE with a white-hot centre rather than a painted decal (F2).
       const fy = em.y + 0.13 + TOWARD_CAM.y * FLAME_LIFT;
       const fz = em.z + TOWARD_CAM.z * FLAME_LIFT;
-      // Gain 2.15 and a tighter halo (a first cut ran 2.6 / size 1.3 / 0.55):
-      // above ~2.2 the painted flame clips to featureless white and the bloom
-      // skirt swallows the torch stake, so the pool loses the very thing that
-      // attributes it. The flame has to stay a readable SHAPE.
-      const body = makeFlameSprite(0.7, 1, 2.15);
+      // Gain 1.55 (was 2.15) and a tighter halo (a first cut ran 2.6 / size
+      // 1.3 / 0.55): above ~2.2 the painted flame clips to featureless white
+      // and the bloom skirt swallows the torch stake, so the pool loses the
+      // very thing that attributes it. The flame has to stay a readable SHAPE.
+      // 1.55 is the fix-round-2 cap (env/flame.js GAIN_MAX): it holds the
+      // AMBER BODY under the bloom threshold so only the painted white core
+      // blooms. Above it the whole orange flame is a bloom source and
+      // UnrealBloomPass spreads that orange over the frame as the veil that
+      // was putting the party's own ink strokes in the reserved h5-25 band.
+      const body = makeFlameSprite(0.7, 1, 1.55);
       body.position.set(em.x, fy, fz);
       body.renderOrder = 8;
       root.add(body);
@@ -468,11 +485,16 @@ export function createArenaScene(stage, toggles, ctx) {
       // strength and tint saturation trade off against the same danger gate,
       // and a slightly dimmer pool of REAL amber reads as firelight where a
       // brighter pool of cream read as a stage spotlight.
-      const pool = groundPool(EMBER_GLOW.pool, 2.0, 0.48, poolY(), true);
+      // Radius 2.4 at opacity 0.40 (was 2.0 at 0.48): with the tint back on
+      // real gold, a BROADER, dimmer pool puts more chromatic warm on the
+      // floor than a tighter, hotter one — the hot version clipped its core
+      // to a desaturated near-white that the analyzer does not count as warm
+      // at all, and that reads as a spotlight rather than as firelight.
+      const pool = groundPool(EMBER_GLOW.pool, 2.4, 0.4, poolY(), true);
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
-      flames.push({ body, glow, pool, poolO: 0.48, glowS: 1.05, glowO: 0.45, x: em.x, y: fy, z: fz, phase: cosmetic.range(0, Math.PI * 2) });
+      flames.push({ body, glow, pool, poolO: 0.4, glowS: 1.05, glowO: 0.45, x: em.x, y: fy, z: fz, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.2, z: fz });
     } else if (em.kind === 'brazier') {
       // Mid-field fire bowl (baseline-v030 F1): the emitter that OWNS the
@@ -492,20 +514,28 @@ export function createArenaScene(stage, toggles, ctx) {
       // gameplay zoom, i.e. a bright blob NEXT TO a dark lump instead of a lit
       // brazier. A torch needs the big lift (its tall shaft would depth-clip
       // the sprite); a squat bowl does not.
-      const BRAZIER_LIFT = 0.1;
+      // 0.03, effectively zero (fix round 2). The view-axis lift magnifies a
+      // sprite's distance from screen centre, and at 0.10 the bowl fires were
+      // measuring 13-20 px off their own bowls at gameplay zoom — a flame
+      // beside a dark lump rather than a flame IN it. A squat bowl cannot
+      // depth-clip its own billboard the way a tall torch stake can (that is
+      // what FLAME_LIFT is for), so the brazier needs almost none.
+      const BRAZIER_LIFT = 0.03;
       const fy = em.y + 0.06 + TOWARD_CAM.y * BRAZIER_LIFT;
       const fz = em.z + TOWARD_CAM.z * BRAZIER_LIFT;
       // Flame 0.95: the bowl fire is the emitter's whole tell and at 0.72 it
       // was smaller than the pool's blown core, so it read as part of the
       // glow instead of as the thing making it.
-      // Gain 2.35 — the highest in the scene, but only just. The fire has to
-      // be the brightest thing in its own pool or the emitter reads as a dark
-      // object sitting in someone else's light; push it further (2.9 was
-      // tried) and the bloom skirt washes the whole frame, measured as warm
-      // 36-43% against cool 2.7-6.6% and the reserved-band count back over
-      // 1000 px. Torches keep 2.15 — their pool is smaller and their dark
-      // stake already carries the attribution.
-      const body = makeFlameSprite(0.95, 1, 2.35);
+      // Gain 1.6 — the highest in the scene, but only just, and now capped at
+      // env/flame.js GAIN_MAX so the amber body stays under the bloom
+      // threshold. The fire still has to be the brightest thing in its own
+      // pool or the emitter reads as a dark object sitting in someone else's
+      // light; the white-hot painted core does that job at 1.39 linear while
+      // the body sits at 0.638. The old 2.35 put the BODY at 0.94 — the whole
+      // orange teardrop became bloom fuel, which is what blew the bowl out to
+      // a featureless white blob (the F1 advisory's re-raise) and veiled the
+      // frame warm. Torches run 1.55, the lantern wick 1.5.
+      const body = makeFlameSprite(0.95, 1, 1.6);
       body.position.set(em.x, fy, fz);
       body.renderOrder = 8;
       root.add(body);
@@ -533,7 +563,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // which is the §19.3 warm-dominant story on a coin flip. The warmth
       // moves from the bloom skirt (which hid the emitter) into the POOL
       // (which is what a fire on a floor actually does).
-      const pool = groundPool(EMBER_GLOW.pool, 2.5 * poolR, 0.5, poolY(), true);
+      const pool = groundPool(EMBER_GLOW.pool, 3.0 * poolR, 0.42, poolY(), true);
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
@@ -546,13 +576,13 @@ export function createArenaScene(stage, toggles, ctx) {
       // the ground around the pedestal to featureless white, which is exactly
       // what turned the emitter into a backlit smudge — the F1 defect this
       // whole prop exists to fix. The FLAME is the hot centre now.)
-      flames.push({ body, glow, pool, poolO: 0.5, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.95, phase: cosmetic.range(0, Math.PI * 2) });
+      flames.push({ body, glow, pool, poolO: 0.42, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.95, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.12, z: fz });
     } else if (em.kind === 'lantern') {
       // A lantern is a FIRE, not a cold lamp: a small flame inside the glass
       // plus a warm halo, so it registers as the same emitter family as the
       // torches beside it.
-      const wick = makeFlameSprite(0.24, 0.95, 2.3);
+      const wick = makeFlameSprite(0.24, 0.95, 1.5);
       wick.position.set(em.x, em.y + 0.01 + TOWARD_CAM.y * 0.1, em.z + TOWARD_CAM.z * 0.1);
       wick.renderOrder = 8;
       root.add(wick);
@@ -560,7 +590,7 @@ export function createArenaScene(stage, toggles, ctx) {
       glow.material.color.copy(EMBER_GLOW.halo);
       glow.position.set(em.x, em.y, em.z);
       root.add(glow);
-      const pool = groundPool(EMBER_GLOW.pool, 1.65, 0.44, poolY());
+      const pool = groundPool(EMBER_GLOW.pool, 1.9, 0.38, poolY());
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
@@ -852,9 +882,17 @@ export function createArenaScene(stage, toggles, ctx) {
       f.body.scale.set(h * 0.66 * (1 - 0.1 * n), h, 1);
       f.body.position.x = f.x + Math.sin(tSec * 5.1 + f.phase) * 0.014;
       f.body.position.y = f.y + 0.02 * n;
-      f.glow.material.opacity = Math.max(0.16, (f.glowO ?? 0.45) + 0.18 * n + jit);
+      // Breath amplitudes trimmed (halo 0.18 -> 0.09, pool 0.14 -> 0.05). The
+      // pool is the frame's warm AREA, so a +-0.14 swing on a 0.42 base was a
+      // +-33% modulation of how much floor reads warm — measured, it moved the
+      // same variant's warm/cool split by 3-4 points between two frames of the
+      // same load, which is variance the §19.3 warm-dominant gate should not
+      // have to absorb. The FLICKER still reads: the flame sprite's scale
+      // (0.22 n), its sway, the halo's scale and the torch PointLights all keep
+      // their full amplitude — only the two big soft AREAS are damped.
+      f.glow.material.opacity = Math.max(0.16, (f.glowO ?? 0.45) + 0.09 * n + jit);
       f.glow.scale.setScalar((f.glowS ?? 1.05) * (1 + 0.1 * n)); // braziers ride a tighter halo
-      f.pool.material.opacity = Math.max(0.24, (f.poolO ?? 0.6) + 0.14 * n);
+      f.pool.material.opacity = Math.max(0.24, (f.poolO ?? 0.6) + 0.05 * n);
       if (f.core) f.core.material.opacity = Math.max(0.08, (f.coreO ?? 0.16) + 0.05 * n);
     }
     // Lanterns + monolith halos: soft pulses (monolith "subtle glow" §19.3).

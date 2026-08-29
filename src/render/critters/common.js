@@ -613,14 +613,29 @@ const RING = Object.freeze({
   // to ~1.5 px on the side that sits inside a brazier pool, where the bright
   // ground and FXAA eat into it. The §17 legibility fallback is a >=2 px dark
   // rim, so it has to survive the brightest ground in the arena.
-  inkInA: 0.564, // inner ink stroke
-  inkOutA: 0.68,
-  bandIn: 0.68, // hue-true accent band
-  bandOut: 0.852,
-  inkInB: 0.852, // outer ink stroke
-  inkOutB: 0.962,
+  // FIX ROUND 2 — the BAND is widened from 0.172 to 0.228 of the half-size
+  // (+33%) and the strokes trimmed to pay for it. Reason, measured: the shipped
+  // post stack ends in an FXAA pass (main.js defaults msaa=0), and at the
+  // Archer's ring radius the old band was 4.7 screen px across on its major
+  // axis and under 3 px on the foreshortened bottom arc — narrow enough that
+  // FXAA blended ink into the band's own interior and the ring's measured hue
+  // moved 5-13 degrees off the class accent depending on which arc was
+  // sampled. A wider band is measurably its authored colour; both strokes stay
+  // over the §17 >=2 px legibility floor (3.5-4.1 px on the major axis,
+  // 2.2-2.5 px foreshortened, measured with tools/qp-ring2.mjs).
+  // Widths are chosen so BOTH strokes clear the §17 >=2 px legibility floor on
+  // the ring's FORESHORTENED bottom arc (cos 52 deg = 0.6155 of the major-axis
+  // width) at the smallest ring in the party, after the shipped FXAA pass has
+  // eaten ~0.4 px off each edge. Archer ring radius 35.8 px on screen ->
+  // half 36.5 px -> stroke 0.125 * 36.5 = 4.6 px major / 2.8 px minor.
+  inkInA: 0.51, // inner ink stroke
+  inkOutA: 0.635,
+  bandIn: 0.635, // hue-true accent band
+  bandOut: 0.855,
+  inkInB: 0.855, // outer ink stroke
+  inkOutB: 0.98,
   edge: 0.009, // antialias width, fraction of the plane half-size
-  outer: 0.962, // where the ring's outermost pixel sits; sets the plane size
+  outer: 0.98, // where the ring's outermost pixel sits; sets the plane size
 });
 
 // Ring ink tone: Void Charcoal pulled toward the deep-indigo contact-shadow
@@ -654,15 +669,38 @@ export function ringBand(hex) {
   // wine-family accents keep a NEGATIVE rotation (-14, was -8) away from the
   // 0-degree boundary — which is also what holds their antialias fringe against
   // gold-lit grass out of the reserved h5-25 Ember band at the s>0.35 gate.
-  let h = hsl.h;
-  const deg = h * 360;
-  if (deg > 316 || deg < 12) h = h - 14 / 360;
-  else if (deg > 20 && deg < 200) h = h + (deg * 0.11) / 360;
-  if (h < 0) h += 1;
-  if (h > 1) h -= 1;
-  return new Color()
-    .setHSL(h, Math.min(0.24, Math.max(0.18, hsl.s)), 0.54, SRGBColorSpace)
-    .getHex();
+  // FIX ROUND 2 — the pre-compensation is GONE, and the saturation clamp is
+  // now hue-aware.
+  //
+  // The rotation table above was measured on frames the arena fires' bloom
+  // overflow was warming by ~(+45,+25,+7) everywhere (env/flame.js GAIN_MAX);
+  // it was correcting for the veil, not for the post chain. Re-measured on the
+  // capped build with tools/qp-ring2.mjs, the pre-compensated bands came out
+  // Healer 154 vs accent 138 and Archer 67 vs 72 — the compensation itself was
+  // now the error. `exactColor` already inverts ACES + the grade exactly, so
+  // the band is authored at the accent's OWN hue and renders there.
+  //
+  // Saturation: §17 wants the class accent, and the advisory's note is that a
+  // hue-correct-but-washed band still reads pastel ("pastel pink rather than
+  // wine"). So a band whose hue sits clear of every reserved analyzer band
+  // (Ember h5-25, Bright Heal h110-150, God-stuff h245-285, all gated at
+  // s > 0.35) now carries a real chroma; a band inside or within 10 degrees of
+  // one stays under the gate so a ring can never be counted as heal output or
+  // as an enemy telegraph. Healer Sage (h138) and Tank (h30, ten degrees off
+  // the Ember ceiling) take the low clamp; Swordsman wine (h348) and Archer
+  // olive (h72) take the high one.
+  const deg = hsl.h * 360;
+  const near = (lo, hi) => deg >= lo - 10 && deg <= hi + 10;
+  const reserved = near(5, 25) || near(110, 150) || near(245, 285);
+  const sat = reserved
+    ? Math.min(0.24, Math.max(0.18, hsl.s))
+    : Math.min(0.40, Math.max(0.30, hsl.s * 1.6));
+  // Reserved-hue bands buy back in VALUE what they give up in chroma: at HSL
+  // L 0.58 the Healer's Sage band measures ~1.7x the adjacent ground luma (the
+  // §17 legibility ratio) while its HSV saturation drops to ~0.27, further
+  // under the analyzer's 0.35 Bright-Heal gate than it was at L 0.54.
+  const light = reserved ? 0.58 : 0.54;
+  return new Color().setHSL(hsl.h, sat, light, SRGBColorSpace).getHex();
 }
 
 // Additive halo shaped like the ring, peaking over the bright core and dying
@@ -677,15 +715,18 @@ function getRingGlowTexture() {
   // 1.162x the band plane, that puts the peak over the bright core (band 0.79)
   // and zero before the exact-accent stroke (band 0.898), so the stroke's
   // measured hex can never be lifted off-palette by its own ring's halo.
+  // Re-aimed for the widened band (fix round 2). In glow-plane fractions the
+  // inner ink now ends at 0.546, the band spans 0.546-0.736 and the outer ink
+  // starts at 0.736, so the halo is zero until 0.545, peaks at 0.635 (band
+  // centre) and is dead by 0.735. It can neither wash the inner stroke — which
+  // is one of the two legibility rims — nor lift the outer one off-hue.
   ringGlowTex = radialTexture([
     [0.0, A(0.0)],
-    [0.5, A(0.0)],
-    [0.56, A(0.22)],
-    [0.62, A(0.7)],
-    [0.68, A(1.0)],
-    [0.72, A(0.62)],
-    [0.75, A(0.12)],
-    [0.765, A(0.0)],
+    [0.545, A(0.0)],
+    [0.59, A(0.35)],
+    [0.635, A(1.0)],
+    [0.70, A(0.5)],
+    [0.735, A(0.0)],
     [1.0, A(0.0)],
   ]);
   return ringGlowTex;

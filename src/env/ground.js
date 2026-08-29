@@ -27,6 +27,15 @@ const APRON_MARGIN = 26; // world u of dressed exterior painted around the arena
 // breaks the §19.3 warm-dominant Act-1 story the advisory explicitly preserves.
 // The counterweight only has to be VISIBLE (>=8%), not to win.
 const COOL_LIFT_B = 11;
+
+// Cool counterweight geometry (fix round 2). The frame's cool share is now
+// sized by AREA — stamp count x plateau area — instead of by a peak alpha
+// sitting on the blue-beats-green threshold. Swept on 12 loads per variant;
+// see the note on plateauBlob above.
+const COOL_COLS = 10;
+const COOL_ROWS = 6;
+const COOL_R0 = 130;
+const COOL_R1 = 172;
 const APRON_LIFT = 'rgb(5,8,15)';
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
@@ -75,6 +84,34 @@ function blob(ctx, x, y, radius, color) {
   ctx.fill();
 }
 
+// PLATEAU stamp — a soft blob with a FLAT core. This is the shape the cool
+// counterweight is painted with, and the shape is the point.
+//
+// A plain radial blob's alpha falls from its peak at the very centre, so the
+// area of it that actually crosses the "blue channel beats green" line is a
+// thin disc balanced on a threshold: measured, dropping the counterweight
+// stamps' peak alpha from 0.45 to 0.30 took the frame's cool share from 21-31%
+// to 2.4-6.7%. That is a razor, exactly what the fix-round-2 critique rejected
+// ("the counterweight collapses on some loads").
+//
+// With a plateau, `plateau * radius` of the stamp is painted at the FULL alpha
+// and is decisively cool — well past the threshold, not on it — so the cool
+// area is a geometric constant of the layout (stamp count x plateau area) and
+// the peak alpha stops being a tuning knob at all. The remaining feather keeps
+// the pockets reading as dappled canopy shade rather than as painted discs.
+function plateauBlob(ctx, x, y, radius, color, plateau = 0.5) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
+  const fade = (a) => color.replace(/[\d.]+\)$/, a + ')');
+  g.addColorStop(0, color);
+  g.addColorStop(plateau, color);
+  g.addColorStop(plateau + (1 - plateau) * 0.42, fade(0.55));
+  g.addColorStop(1, fade(0));
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 // Per-texel grain. The reference-bar "no dead ground" check measures 12x12
 // screen blocks for a <6 span in luma AND every channel; a painted canvas can
 // still resolve to a flat block wherever two soft gradients overlap, so the
@@ -100,6 +137,12 @@ function grain(ctx, W, H, amp, cosmetic, step = 4) {
   ctx.putImageData(img, 0, 0);
 }
 
+// `cosmetic` here is the per-variant LAYOUT stream (env/layout.js), passed in
+// by the arena scene — NOT the unseeded cosmetic stream. The floor's shade
+// pockets ARE the frame's cool counterweight, and drawing them from an unseeded
+// stream is what let the measured cool share swing 6.8%-30.7% on the same
+// variant between loads (fix-round-2 critique). A room's floor is now identical
+// on every load and its numbers are reproducible.
 export function paintGroundCanvas(spec, cosmetic) {
   const fw = ARENA.halfW * 2;
   const fd = ARENA.halfD * 2;
@@ -131,7 +174,15 @@ export function paintGroundCanvas(spec, cosmetic) {
   //       sums to the reserved band.
   // +26 with the plain feather keeps the counterweight and trims the h110-150
   // transition mass without tipping any of the other three metrics.
-  const COOL_STAMP_H = 34;
+  // FIX ROUND 2: 16, not 34. The +34 offset was measured against a frame the
+  // flame sprites' bloom veil was warming by ~(+45,+25,+7) on every dark pixel
+  // — a painted 180 really did land near 155 back then. With the fires capped
+  // (env/flame.js GAIN_MAX) the rotation is small, and +34 painted the shade
+  // pockets at display hue 210-235: pure blue discs that read as PUDDLES on a
+  // lawn, not as canopy shade. +16 lands them at 175-200 — the blue-green
+  // shade end §19.3 asks for — still 15+ degrees clear of the h160 line the
+  // analyzer counts as cool.
+  const COOL_STAMP_H = 16;
   const shS = g.shadeS ?? 0.26;
   const shL = g.shadeL ?? Math.max(0.05, g.l - 0.13);
 
@@ -226,8 +277,29 @@ export function paintGroundCanvas(spec, cosmetic) {
   // 12x7 smaller stamps rather than 9x5 larger ones: same total coverage,
   // meaningfully lower variance (more samples, narrower size span), and the
   // pockets read as dappled canopy shade rather than as a few big patches.
-  latticeStamps(ctx, W, H, 12, 7, cosmetic, (x, y) =>
-    blob(ctx, x, y, r(235, 315), hsl(shH + COOL_STAMP_H + r(-10, 12), shS + 0.12, shL + 0.02, 0.45))
+  // FIX ROUND 2 sizing: r(200, 260) at alpha 0.30 (was r(235,315) at 0.45).
+  // The counterweight was sized against a frame whose warm side was mostly the
+  // flame sprites' BLOOM VEIL; with that veil capped (env/flame.js GAIN_MAX)
+  // the same stamps measured cool 21-31% against warm 22-25%, i.e. they
+  // out-weighed the warm story the §19.3 70:30 split makes dominant. Trimmed
+  // to land cool ~12-15% of coloured pixels: still 1.5x the advisory's >=8%
+  // floor with the whole spread of measured loads inside it, and now a
+  // constant of the variant (the layout stream above) rather than a per-load
+  // lottery.
+  latticeStamps(ctx, W, H, COOL_COLS, COOL_ROWS, cosmetic, (x, y) =>
+    plateauBlob(
+      ctx,
+      x,
+      y,
+      r(COOL_R0, COOL_R1),
+      // A DESATURATED blue-green one value step under the lit floor, which is
+      // what §19.3's shade ramp asks for — the plateau SHAPE (not the chroma)
+      // is what makes the counterweight measurable, so the tone can afford to
+      // be the quiet one. At the earlier shS+0.08 / shL+0.02 the pockets read
+      // as blue puddles on a lawn rather than as canopy shade.
+      hsl(shH + COOL_STAMP_H + r(-10, 12), shS + 0.02, shL + 0.075, 0.5),
+      0.5
+    )
   );
   // Sun-bleached dry-grass patches: hue variety INSIDE the green band (a wider
   // offset here is what dragged variant 2 down to hue 50-60 last round).
