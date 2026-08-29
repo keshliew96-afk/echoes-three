@@ -1,0 +1,7 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0.5,0.5);'ok'"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0)"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<2500;i++){const s=__echoes.state();if(!s.party[0].downed&&s.party[0].hp>0)return{revivedAtTick:s.tick,hp:s.party[0].hp};await new Promise(r=>setTimeout(r,10))}return 'timeout'})()"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'post-revive',hp:s.party[0].hp,downed:s.party[0].downed,x:s.party[0].x,z:s.party[0].z,collapse:(s.allyfx&&s.allyfx.collapse)||null}})()"}
+]

@@ -1,0 +1,10 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);__echoes.cmd('startRoom','kill_all');__echoes.cmd('killAllEnemies');'clean room'"},
+  {"type":"wait","ms":600},
+  {"type":"eval","code":"__echoes.cmd('downAll')"},
+  {"type":"wait","ms":2500},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'all-down',collapse:s.allyfx.collapse,anims:s.allyfx.anims,healerAnim:s.vfx.party.healerAnim,rings:s.allyfx.reviveRings,defeat:__echoes.events.filter(e=>e.type==='defeat').map(e=>e.tick)}})()"},
+  {"type":"eval","code":"__echoes.cmd('clearRoom');'room clear = free 30% revive for everyone'"},
+  {"type":"wait","ms":1400},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'all-up',collapse:s.allyfx.collapse,anims:s.allyfx.anims,healerAnim:s.vfx.party.healerAnim,rings:s.allyfx.reviveRings,hp:s.party.map(m=>Math.round(m.hp))}})()"}
+]

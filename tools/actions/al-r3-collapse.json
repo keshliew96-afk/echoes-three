@@ -1,0 +1,10 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0.5,0.5);'ok'"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();window.__tk=s.party_ai.allies[0].id;return{collapse0:s.allyfx.collapse,tank:window.__tk}})()"},
+  {"type":"eval","code":"__echoes.cmd('setHp',0,0);__echoes.cmd('setHp',window.__tk,0);'downed both'"},
+  {"type":"wait","ms":900},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'down',collapse:s.allyfx.collapse,anims:s.allyfx.anims,healerAnim:s.vfx.party.healerAnim}})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<3000;i++){const s=__echoes.state();const t=s.party_ai.allies.find(a=>a.id===window.__tk);if(!s.party[0].downed&&t&&!t.downed)return{bothUpAtTick:s.tick,hp0:s.party[0].hp,hpTank:t.hp};await new Promise(r=>setTimeout(r,10))}return 'timeout'})()"},
+  {"type":"wait","ms":1500},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'after',collapse:s.allyfx.collapse,anims:s.allyfx.anims,healerAnim:s.vfx.party.healerAnim,hp:[s.party[0].hp,s.party_ai.allies[0].hp]}})()"}
+]

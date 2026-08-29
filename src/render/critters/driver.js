@@ -217,6 +217,13 @@ const clipFns = {
 const BLEND_RATE = 18; // 1/s — snappy enough to keep the hurt snap intact
 const FALL_SEC = 0.45; // §10 collapse travel time
 const RISE_RATE = 3;
+// `downAge` is an age, so it would otherwise integrate for the whole time a
+// body lies there — and the rise unwinds it at RISE_RATE, which made getting up
+// take (timeDowned / 3) seconds: a party member revived after a 14 s down stayed
+// flat for ~4.5 s AFTER regaining HP. Cap it just past the settle bounce
+// (exp(-0.8*7) = 0.4% of the thud amplitude is already invisible), so the rise
+// is a constant ~0.42 s no matter how long the body was down.
+const DOWN_AGE_MAX = FALL_SEC + 0.8;
 
 const BLENDED = ['bob', 'breathe', 'squash', 'pitch', 'roll', 'yaw', 'ear', 'tail', 'stride', 'prop', 'gem', 'recoil'];
 
@@ -242,6 +249,16 @@ export function createPoseDriver(cosmetic) {
 
   function update(dt) {
     tClip += dt;
+    // `collapse`/`desat` are LATCHING targets: only `downed` writes them, so
+    // (unlike prop/recoil/swing, which every clip zeroes) they must be cleared
+    // here or a body that has ever been downed stays collapsed and charcoal
+    // forever — the `downAge` integrator below could never take its `else`
+    // branch, RISE_RATE was dead code, and a revived hero kept reading as a
+    // corpse for the rest of the room (round-2 critic, captures/zq-stuck2.png).
+    // Reset first, let the active clip re-assert them: `downed` sets both to 1
+    // every frame, every other clip leaves them at 0 and the body rises.
+    target.collapse = 0;
+    target.desat = 0;
     clipFns[clip](tClip, ph, target);
 
     // `stride` is a 1.55 Hz carrier; blending it through the same exponential
@@ -252,7 +269,7 @@ export function createPoseDriver(cosmetic) {
 
     // Collapse: accelerating fall (ease-in) + a small settle bounce; recovery
     // is a quick smooth rise.
-    if (target.collapse > 0.5) downAge += dt;
+    if (target.collapse > 0.5) downAge = Math.min(DOWN_AGE_MAX, downAge + dt);
     else downAge = Math.max(0, downAge - RISE_RATE * dt);
     const c = Math.min(1, downAge / FALL_SEC);
     let collapse = c * c; // gravity: slow start, fast landing

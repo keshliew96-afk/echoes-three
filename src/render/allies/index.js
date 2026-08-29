@@ -47,7 +47,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { PALETTE } from '../../data/palette.js';
 import { TICK_HZ } from '../../core/constants.js';
 import { makeGlowSprite } from '../glow.js';
-import { createCritter } from '../critters/index.js';
+import { createCritter, FALL_ANGLE } from '../critters/index.js';
 import { exactColor, exactHex } from '../critters/common.js';
 import { ALLY_CLASSES, REVIVE } from '../../sim/allies.js';
 
@@ -346,6 +346,24 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       if (st) st.hurtLeft = HURT_HOLD;
     }
   });
+  // §17 "interrupt = reverse drain at 2x speed". The SIM's drain record is the
+  // only arc when nothing restarts (a reviver forced to walk away), but a
+  // reviver that is merely flinched is still holding E and standing still, so
+  // §10 lets it open a FRESH channel on the very next tick — which replaced the
+  // draining record and made the ring snap 0.56 -> 0 with no visible unwind.
+  // The reset is therefore also tracked here, render-side: one drain per body,
+  // seeded from the event's own progress and unwound at the sim's own rate
+  // (drainMult ticks per tick => 2 * TICK_HZ / channelTicks of the ring per
+  // second). The arc drawn is max(live channel, drain), so in the move case it
+  // is identical to the sim's own arc and in the flinch case the ring runs
+  // backwards at 2x and is overtaken by the restarted fill.
+  const DRAIN_PCT_PER_SEC = (REVIVE.drainMult * TICK_HZ) / REVIVE.channelTicks;
+  const drains = new Map(); // body id -> remaining ring fraction
+  bus.on('revive_break', (ev) => {
+    const pct = typeof ev.pct === 'number' ? ev.pct : 0;
+    if (pct > 0) drains.set(ev.target, Math.max(drains.get(ev.target) ?? 0, pct));
+  });
+  bus.on('revive', (ev) => drains.delete(ev.target));
   bus.on('azone_tick', (ev) => {
     const rig = zoneRigs.get(ev.id);
     if (!rig) return;
@@ -745,7 +763,10 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       const bz = m.pz + (m.z - m.pz) * alpha;
       g.position.set(bx, 0, bz);
       const ch = channels.get(m.id);
-      const frac = ch ? Math.max(0, Math.min(1, ch.progress / REVIVE.channelTicks)) : 0;
+      const live = ch ? Math.max(0, Math.min(1, ch.progress / REVIVE.channelTicks)) : 0;
+      const drain = drains.get(m.id) ?? 0;
+      const frac = Math.max(live, drain);
+      const draining = (ch && ch.draining) || drain > live;
       const fill = g.getObjectByName('fill');
       const segs = Math.round(frac * REVIVE_RING.segments);
       fill.geometry.setDrawRange(0, segs * 6);
@@ -769,14 +790,19 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       // dropping to Bone. (§17 scopes the "2 px shake" to the PORTRAIT, not to
       // this world instrument — and a shaking world ring would also desync the
       // screen-space anchor `reviveRingScreen` hands the critics.)
-      head.material.color.copy(exactColor(ch && ch.draining ? BONE : PARCH));
+      head.material.color.copy(exactColor(draining ? BONE : PARCH));
       const hollow = g.getObjectByName('hollow');
-      hollow.material.opacity = ch && !ch.draining ? 0.55 : 0.9;
+      hollow.material.opacity = ch && !draining ? 0.55 : 0.9;
       const glyph = g.getObjectByName('glyph');
       // The hold-E prompt is the "nobody is reviving me yet" state; once a
       // channel runs, the filling ring IS the readout.
-      glyph.visible = !ch || ch.draining;
+      glyph.visible = !ch || draining;
       glyph.position.y = 1.05 + 0.06 * Math.sin(tSec * 2.6);
+    }
+    for (const [id, v] of drains) {
+      const next = v - DRAIN_PCT_PER_SEC * dt;
+      if (next <= 0 || !seenRevive.has(id)) drains.delete(id);
+      else drains.set(id, next);
     }
     for (const [id, g] of reviveRigs) {
       if (!seenRevive.has(id)) {
@@ -966,10 +992,41 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     return out;
   }
 
+  // Round-3 probe (BLOCKING critic finding): the collapse latch. A critter's
+  // fall is ONE rotation on its fallPivot (`group > yawGroup > fallPivot`,
+  // critters/index.js), so `|rot.z| / FALL_ANGLE` IS the pose's collapse value
+  // — 1 = lying flat, 0 = upright — readable for every party member without a
+  // new accessor on the shared factory. `__echoes.state().allyfx.collapse`
+  // therefore proves from the sim side what the frames show: a revived body
+  // rises instead of staying pinned in the downed pose.
+  function collapseOf(group) {
+    const yawG = group?.children?.[0];
+    const fallPivot = yawG?.children?.[0];
+    if (!fallPivot) return null;
+    return Math.round((Math.abs(fallPivot.rotation.z) / FALL_ANGLE) * 1000) / 1000;
+  }
+
+  function collapseMap() {
+    const out = {};
+    for (const [classId, c] of critters) out[classId] = collapseOf(c.group);
+    // The Healer rig belongs to the scene, not this layer; it is found by the
+    // factory's own group name so the probe covers the whole party.
+    const healer = stage.scene?.getObjectByName?.('critter-healer');
+    if (healer) out.healer = collapseOf(healer);
+    return out;
+  }
+
   function debugCounts() {
     return {
       mark: allySys.getMark(),
+      collapse: collapseMap(),
       reviveRings: reviveRigs.size,
+      // Drawn ring fraction per downed body (live channel vs the §17 reverse
+      // drain), so a capture can measure the unwind instead of eyeballing it.
+      reviveDrawn: [...reviveRigs.keys()].map((id) => ({
+        id,
+        drain: Math.round((drains.get(id) ?? 0) * 1000) / 1000,
+      })),
       reviveRingScreen: reviveRingScreen(),
       identityU: identityU(),
       // Post-bloom instrument pass: present => the revive ring is drawn after

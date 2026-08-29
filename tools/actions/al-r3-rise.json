@@ -1,0 +1,5 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0.5,0.5);'ok'"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();window.__tk=s.party_ai.allies[0].id;__echoes.cmd('setHp',window.__tk,0);return{tank:window.__tk}})()"},
+  {"type":"eval","code":"(async()=>{const R=[];let t0=null;for(let i=0;i<4000;i++){const s=__echoes.state();const t=s.party_ai.allies.find(a=>a.id===window.__tk);if(t&&!t.downed&&t.hp>0){if(t0===null)t0=performance.now();R.push([Math.round(performance.now()-t0),s.allyfx.collapse.tank]);if(performance.now()-t0>1200)return{revivedHp:t.hp,samples:R.filter((_,k)=>k%3===0)}}await new Promise(r=>setTimeout(r,16))}return 'timeout'})()"}
+]

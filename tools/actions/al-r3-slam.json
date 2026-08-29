@@ -1,0 +1,6 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__C=[];for(const t of ['ally_cast','ally_basic','hit']) __echoes.on(t,ev=>window.__C.push(ev));'log'"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const tk=s.party_ai.allies.find(a=>a.partyIndex===1);window.__d=__echoes.cmd('spawn','dummy',tk.x+0.4,tk.z);window.__un=__echoes.on('hit',e=>{if(e.target===window.__d)__echoes.cmd('setHp',window.__d,1)});return{tank:[tk.x,tk.z],dummy:window.__d}})()"},
+  {"type":"wait","ms":12000},
+  {"type":"eval","code":"(()=>{const casts=window.__C.filter(e=>e.type==='ally_cast'&&e.classId==='tank');const slam=casts.filter(e=>e.skill==='heavy_slam');const gaps=[];for(let i=1;i<slam.length;i++)gaps.push(slam[i].tick-slam[i-1].tick);const dmg=window.__C.filter(e=>e.type==='hit'&&e.source==='heavy_slam').map(e=>e.amount);const basics=window.__C.filter(e=>e.type==='ally_basic'&&e.classId==='tank');const bgaps=[];for(let i=1;i<basics.length;i++)bgaps.push(basics[i].tick-basics[i-1].tick);return{heavySlam:{casts:slam.length,power:slam[0]?slam[0].power:null,cdSec:slam[0]?slam[0].cd:null,reach:slam[0]?slam[0].reach:null,halfAngle:slam[0]?slam[0].halfAngle:null,gapTicks:gaps,expected:300,damageAmounts:dmg.slice(0,6)},tankBasic:{n:basics.length,gapTicks:bgaps.slice(0,6),expected:39,power:9},allTankSkills:[...new Set(casts.map(e=>e.skill))]}})()"}
+]

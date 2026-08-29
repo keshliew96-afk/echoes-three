@@ -1,0 +1,11 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__P=[];for(const t of ['downed','ally_rescue','rescue_preempt','revive_start','revive_break','revive']) __echoes.on(t,ev=>window.__P.push(Object.assign({type:t},ev)));'log'"},
+  {"type":"eval","code":"__echoes.cmd('setHp',1,0);'tank down'"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<3000;i++){const s=__echoes.state();const c=s.party_ai.channels[0];if(c&&!c.draining&&c.pct>=0.35)return{waitedTo:c.pct,reviver:c.reviver,target:c.target,tick:s.tick};await new Promise(r=>setTimeout(r,16))}return 'timeout'})()"},
+  {"type":"eval","code":"(()=>{const t=__echoes.tick;__echoes.cmd('setHp',0,0);return{phase:'player-down-mid-rescue',tick:t}})()"},
+  {"type":"wait","ms":700},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();return{phase:'right-after',channels:s.party_ai.channels,allies:s.party_ai.allies.map(a=>({i:a.partyIndex,st:a.state,rev:a.reviveTarget})),log:window.__P.map(e=>e.type+'@'+e.tick+(e.reason?':'+e.reason:'')+(e.target!==undefined?' t='+e.target:''))}})()"},
+  {"type":"eval","code":"(async()=>{for(let i=0;i<3000;i++){const s=__echoes.state();if(s.party[0].hp>0)return{playerUpAtTick:s.tick,hp:s.party[0].hp};await new Promise(r=>setTimeout(r,16))}return 'timeout'})()"},
+  {"type":"wait","ms":6000},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const rev=window.__P.filter(e=>e.type==='revive');const dn=window.__P.filter(e=>e.type==='downed');return{phase:'final',downs:dn.map(e=>({t:e.tick,id:e.id})),revives:rev.map(e=>({t:e.tick,idx:e.targetIndex,pct:e.pct})),preempts:window.__P.filter(e=>e.type==='rescue_preempt').map(e=>({t:e.tick,by:e.partyIndex,dropped:e.droppedIndex,forIndex:e.forIndex})),partyHp:s.party.map(m=>Math.round(m.hp)),playerDownTicks:'see downs vs revives'}})()"}
+]

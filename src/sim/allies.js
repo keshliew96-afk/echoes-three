@@ -59,6 +59,19 @@ export const LEASH = Object.freeze({ radius: 3.4, reengageFactor: 0.8 });
 
 // §12 ally separation: 0.26 u soft push (same figure the enemy block reuses).
 const SEPARATION = 0.26;
+
+// Round-2 advisory (leash yo-yo). §12's hysteresis read literally — "beyond the
+// leash with no valid in-range target -> disengage, re-engage only inside
+// 0.8 x radius" — makes an ally whose target is parked permanently outside the
+// ring pace a 0.7 u loop forever (the critic measured 13 return<->engage flips
+// in 6 s at 2.72 u <-> 3.40 u). The cause is that the ring is exactly where the
+// ally's own steering PARKS it: the engage goal is leash-capped, so standing ON
+// the boundary was being read as "beyond the leash". Disengage therefore needs
+// the ally to be a full separation step (§12's own 0.26 u) OUTSIDE the ring —
+// a distance its steering can never produce, so it only happens when the anchor
+// itself has walked away, which is the case the hysteresis is actually for.
+// The re-engage threshold stays 0.8 x radius, verbatim.
+const LEASH_DEADZONE = SEPARATION;
 const SEP_STEP_CAP = 0.02; // u per tick of separation correction (scaffold)
 
 // §10 revive contract.
@@ -203,6 +216,14 @@ export function createAllySystem({
   // Active revive channels: target entity id -> channel record.
   //   { targetId, reviverId, progress (ticks), draining }
   const channels = new Map();
+
+  // Round-2 advisory (denial spam). `revive_hold` is a HELD intent, so the
+  // occupied-body denial used to fire on every tick E was down — 43 events in
+  // 0.7 s, which wiped the 200-entry event ring in ~3.3 s and restarted §17's
+  // 150-200 ms nudge every frame so it could never actually play. The denial is
+  // now edge-triggered per reviver: one event per (body, occupier) pair, re-armed
+  // when the key changes or the hold is released (§17 "restart on repeat").
+  const denialEdge = new Map(); // reviverId -> last emitted `${target}:${occupier}`
 
   // Player-side channel bookkeeping (§10 "a held attack carried into the
   // channel is consumed silently").
@@ -373,15 +394,20 @@ export function createAllySystem({
   function startChannel(reviver, target, tick) {
     const ex = channels.get(target.id);
     if (ex && !ex.draining && ex.reviverId !== null && ex.reviverId !== reviver.id) {
-      events.emit(tick, 'intent_denied', {
-        kind: 'revive_hold',
-        reason: DENIAL.reviveOccupied,
-        target: target.id,
-        by: reviver.id,
-        occupiedBy: ex.reviverId,
-      });
+      const key = `${target.id}:${ex.reviverId}`;
+      if (denialEdge.get(reviver.id) !== key) {
+        denialEdge.set(reviver.id, key);
+        events.emit(tick, 'intent_denied', {
+          kind: 'revive_hold',
+          reason: DENIAL.reviveOccupied,
+          target: target.id,
+          by: reviver.id,
+          occupiedBy: ex.reviverId,
+        });
+      }
       return false;
     }
+    denialEdge.delete(reviver.id);
     if (ex && ex.reviverId === reviver.id) return true; // already channelling
     // A drained-out channel never resumes: the new one starts at 0 (§10).
     const ch = { targetId: target.id, reviverId: reviver.id, progress: 0, draining: false };
@@ -637,7 +663,7 @@ export function createAllySystem({
     const target = pickTarget(a, anchor);
     a.targetId = target ? target.id : null;
     const inReach = target ? distTo(a, target.x, target.z) <= S.basicRange : false;
-    if (!a.leashOut && d0 > LEASH.radius && !inReach) a.leashOut = true;
+    if (!a.leashOut && d0 > LEASH.radius + LEASH_DEADZONE && !inReach) a.leashOut = true;
     if (a.leashOut && d0 <= LEASH.radius * LEASH.reengageFactor) a.leashOut = false;
 
     if (a.leashOut) {
@@ -735,12 +761,38 @@ export function createAllySystem({
     const bodies = party().filter((m) => m.hp <= 0);
     if (bodies.length === 0) return;
     const allies = allyList();
-    if (allies.some((a) => a.aiState === 'revive')) return; // serial: one rescue at a time
     bodies.sort((a, b) => {
       if ((a.partyIndex === 0) !== (b.partyIndex === 0)) return a.partyIndex === 0 ? -1 : 1;
       if (a.downedTick !== b.downedTick) return a.downedTick - b.downedTick; // longest-Downed
       return a.partyIndex - b.partyIndex;
     });
+    // §12 is BOTH "serial rescue" and "priority = player's body first". A plain
+    // serial gate satisfies the first and hides the second: the round-2 critic
+    // downed the player 38% into an ally's rescue of the tank and nothing moved
+    // for 9.6 s, so "player first" was invisible in the exact case it exists
+    // for. The gate is therefore a PREEMPTION: still exactly one rescue in
+    // flight, but when the player goes down mid-rescue of a lower-priority body
+    // the in-flight channel is broken (reset, per §10 — it never resumes) and
+    // the rescue is re-assigned to the top-priority body on the same tick.
+    const busy = allies.find((a) => a.aiState === 'revive');
+    if (busy) {
+      const cur = busy.reviveTargetId != null ? registry.byId(busy.reviveTargetId) : null;
+      const top = bodies[0];
+      // Only the player's body preempts, and never a rescue that is already on it.
+      if (!cur || !top || top.partyIndex !== 0 || cur.id === top.id) return;
+      const ch = channels.get(cur.id);
+      if (ch && !ch.draining) breakChannel(ch, 'priority_player', tick);
+      busy.aiState = 'engage';
+      busy.reviveTargetId = null;
+      events.emit(tick, 'rescue_preempt', {
+        id: busy.id,
+        partyIndex: busy.partyIndex,
+        dropped: cur.id,
+        droppedIndex: cur.partyIndex,
+        forTarget: top.id,
+        forIndex: top.partyIndex,
+      });
+    }
     for (const body of bodies) {
       const ch = channels.get(body.id);
       if (ch && !ch.draining) continue; // already claimed (player or ally)
@@ -759,6 +811,7 @@ export function createAllySystem({
       best.aiState = 'revive';
       best.reviveTargetId = body.id;
       best.targetId = null;
+      denialEdge.delete(best.id); // fresh assignment re-arms exactly one denial
       events.emit(tick, 'ally_rescue', {
         id: best.id,
         partyIndex: best.partyIndex,
@@ -855,6 +908,7 @@ export function createAllySystem({
 
     // --- player channel (§10). The breaking intent executes normally this
     // tick; the world already resolved it before calling in here.
+    if (!snapshot.reviveHeld) denialEdge.delete(player.id); // re-arm on release
     const moving = snapshot.move.x !== 0 || snapshot.move.z !== 0;
     const dodging = player.dashTicksLeft > 0;
     const skillPressed = snapshot.presses.some((p) => p.kind && p.kind.startsWith('skill_'));

@@ -1,0 +1,30 @@
+[
+  {
+    "type": "eval",
+    "code": "__echoes.cmd('teleport',0.15,-2.2);__echoes.cmd('reviveFlinchBreak',true);'setup'"
+  },
+  {
+    "type": "eval",
+    "code": "__echoes.cmd('setHp',1,0.2);__echoes.cmd('setHp',2,0.2);__echoes.cmd('setHp',3,0);'archer down, player owns the channel'"
+  },
+  {
+    "type": "keydown",
+    "key": "KeyE"
+  },
+  {
+    "type": "wait",
+    "ms": 2600
+  },
+  {
+    "type": "eval",
+    "code": "__echoes.cmd('hitOnce',0);'flinch'"
+  },
+  {
+    "type": "wait",
+    "ms": 700
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const s=__echoes.state();const c=s.party_ai.channels[0];const r=s.allyfx.reviveRingScreen[0];return{delayMs:700,tick:s.tick,live:c?c.pct:null,drain:s.allyfx.reviveDrawn[0].drain,drawn:Math.max(c?c.pct:0,s.allyfx.reviveDrawn[0].drain),band:r.band.map(v=>Math.round(v))}})()"
+  }
+]

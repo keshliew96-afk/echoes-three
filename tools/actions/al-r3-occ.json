@@ -1,0 +1,17 @@
+[
+  {"type":"eval","code":"window.__D=[];for(const t of ['downed','ally_rescue','revive_start','intent_denied']) __echoes.on(t,ev=>window.__D.push(ev));'log'"},
+  {"type":"eval","code":"__echoes.cmd('teleport',6,4);'player far away so an ALLY claims the body'"},
+  {"type":"wait","ms":1200},
+  {"type":"eval","code":"__echoes.cmd('setHp',3,0);'archer down'"},
+  {"type":"wait","ms":2600},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();const b=s.party_ai.allies.find(a=>a.partyIndex===3);__echoes.cmd('teleport',b.x+0.3,b.z);return{phase:'player-walks-in',ch:s.party_ai.channels,body:[b.x,b.z]}})()"},
+  {"type":"keydown","key":"KeyE"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"(()=>{const d=window.__D.filter(e=>e.type==='intent_denied'&&e.reason==='revive_occupied');const s=__echoes.state();return{phase:'held-E-2s',denials:d.length,ticks:d.map(e=>e.tick),ringLen:__echoes.events.length,ch:s.party_ai.channels}})()"},
+  {"type":"keyup","key":"KeyE"},
+  {"type":"wait","ms":300},
+  {"type":"keydown","key":"KeyE"},
+  {"type":"wait","ms":800},
+  {"type":"eval","code":"(()=>{const d=window.__D.filter(e=>e.type==='intent_denied'&&e.reason==='revive_occupied');return{phase:'re-press-rearms',denialsTotal:d.length,ticks:d.map(e=>e.tick)}})()"},
+  {"type":"keyup","key":"KeyE"}
+]

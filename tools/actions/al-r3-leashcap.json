@@ -1,0 +1,16 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0,0);window.__un=__echoes.on('hit',ev=>{__echoes.cmd('setHp',ev.target,1);});'immortal'"},
+  {"type":"eval","code":"[[3.0,1.5],[-3.2,1.4],[3.4,-2.1],[-3.1,-2.2],[1.6,3.4],[-1.7,3.3]].map((p,i)=>__echoes.cmd('spawn', i%2?'mantis':'boar', p[0], p[1]))"},
+  {"type":"wait","ms":2000},
+  {"type":"eval","code":"window.__L=[];(function rec(){const s=__echoes.state();window.__L.push({t:s.tick,px:s.party[0].x,pz:s.party[0].z,a:s.party_ai.allies.map(x=>({i:x.partyIndex,st:x.state,d:x.anchorDist}))});window.__raf=requestAnimationFrame(rec);})();'sampling'"},
+  {"type":"wait","ms":2500},
+  {"type":"keydown","key":"KeyA"},
+  {"type":"wait","ms":2200},
+  {"type":"keyup","key":"KeyA"},
+  {"type":"wait","ms":2500},
+  {"type":"keydown","key":"KeyS"},
+  {"type":"wait","ms":2000},
+  {"type":"keyup","key":"KeyS"},
+  {"type":"wait","ms":4000},
+  {"type":"eval","code":"(()=>{cancelAnimationFrame(window.__raf);const L=[];for(const r of window.__L){if(!L.length||L[L.length-1].t!==r.t)L.push(r);}const bad=[];for(let k=1;k<L.length;k++){const step=Math.hypot(L[k].px-L[k-1].px,L[k].pz-L[k-1].pz);for(let i=0;i<3;i++){const now=L[k].a[i],prev=L[k-1].a[i];const cap=Math.max(3.4,prev.d)+step+1e-6;if(now.d>cap)bad.push({t:L[k].t,i:now.i,prev:prev.d,now:now.d,step:Math.round(step*1000)/1000,over:Math.round((now.d-cap)*1000)/1000});}}return{ticks:L.length,violations:bad.length,worst:bad.slice(0,5),maxD:[1,2,3].map(i=>Math.max(...L.map(r=>r.a[i-1].d))),endD:L[L.length-1].a.map(x=>x.d),endStates:L[L.length-1].a.map(x=>x.st),invariant:'d(t) <= max(3.4, d(t-1)) + anchorStep'}})()"}
+]

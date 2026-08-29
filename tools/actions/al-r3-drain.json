@@ -1,0 +1,11 @@
+[
+  {"type":"eval","code":"__echoes.cmd('teleport',0.15,-2.2);__echoes.cmd('reviveFlinchBreak',true);window.__F=[];for(const t of ['revive_start','revive_break','revive']) __echoes.on(t,ev=>window.__F.push(ev));'setup'"},
+  {"type":"eval","code":"__echoes.cmd('setHp',1,0.2);__echoes.cmd('setHp',2,0.2);__echoes.cmd('setHp',3,0);'archer down; other allies under the 30% AI floor so the PLAYER owns the channel'"},
+  {"type":"keydown","key":"KeyE"},
+  {"type":"wait","ms":2600},
+  {"type":"eval","code":"window.__S=[];window.__si=setInterval(()=>{const s=__echoes.state();const c=s.party_ai.channels[0];window.__S.push({t:s.tick,live:c?c.pct:null,drain:s.allyfx.reviveDrawn[0]?s.allyfx.reviveDrawn[0].drain:null});},60);'sampling'"},
+  {"type":"eval","code":"(()=>{const s=__echoes.state();window.__ft=s.tick;__echoes.cmd('hitOnce',0);return{phase:'flinch',tick:s.tick,pctAtBreak:s.party_ai.channels[0].pct}})()"},
+  {"type":"wait","ms":2200},
+  {"type":"eval","code":"(()=>{clearInterval(window.__si);const S=window.__S;const d=S.filter(x=>x.drain>0);const first=d[0],last=d[d.length-1];const secs=first&&last?((last.t-first.t)/60):null;return{phase:'drained',breaks:window.__F.filter(e=>e.type==='revive_break').map(e=>({t:e.tick,reason:e.reason,pct:e.pct,drainRate:e.drainRate})),drainSamples:d.length,drainFrom:first?first.drain:null,drainTo:last?last.drain:null,secondsVisible:secs,measuredPctPerSec:first&&last&&secs?Math.round(100*(first.drain-last.drain)/secs)/100:null,expectedPctPerSec:0.4,samples:S.filter((_,i)=>i%2===0)}})()"},
+  {"type":"keyup","key":"KeyE"}
+]

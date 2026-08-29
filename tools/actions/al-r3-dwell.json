@@ -1,0 +1,8 @@
+[
+  { "type": "eval", "code": "__echoes.cmd('teleport',0,0);'anchor at origin'" },
+  { "type": "eval", "code": "window.__d=__echoes.cmd('spawn','dummy',9.0,0);__echoes.cmd('iframe',window.__d,60000);'unreachable i-framed target 9u out'" },
+  { "type": "wait", "ms": 600 },
+  { "type": "eval", "code": "window.__H=[];(function rec(){const s=__echoes.state();window.__H.push({t:s.tick,a:s.party_ai.allies.map(x=>({i:x.partyIndex,st:x.state,d:x.anchorDist}))});window.__raf=requestAnimationFrame(rec);})();'sampling'" },
+  { "type": "wait", "ms": 9000 },
+  { "type": "eval", "code": "(()=>{cancelAnimationFrame(window.__raf);const H=window.__H;const dedup=[];for(const r of H){if(!dedup.length||dedup[dedup.length-1].t!==r.t)dedup.push(r);}const out={};for(const idx of [1,2,3]){const rows=dedup.map(r=>({t:r.t,...r.a.find(x=>x.i===idx)}));let re=0,er=0;for(let k=1;k<rows.length;k++){if(rows[k-1].st==='return'&&rows[k].st==='engage')re++;if(rows[k-1].st==='engage'&&rows[k].st==='return')er++;}const ds=rows.map(r=>r.d);out[idx]={returnToEngage:re,engageToReturn:er,minD:Math.min(...ds),maxD:Math.max(...ds),lastD:ds[ds.length-1],lastState:rows[rows.length-1].st};}return{windowTicks:dedup.length,perAlly:out}})()" }
+]
