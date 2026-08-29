@@ -148,7 +148,7 @@ export function createBuildSystem({
   // ---------------------------------------------------------------- verdicts --
   // §15.3 shape capabilities + §15.5: grey = technique cell GREY or stat key
   // absent; saturation-inert = Multiply with realizable delta 0.
-  function verdictFor(def, nodeId) {
+  function verdictFor(def, nodeId, selfSlot = null) {
     const n = NODES[nodeId];
     if (!n) return { state: 'grey', reason: 'unknown_node' };
     if (n.kind === 'stat') {
@@ -157,11 +157,18 @@ export function createBuildSystem({
         n.id === 'multiply' &&
         (def.shape === 'direct' || def.shape === 'nova' || def.shape === 'melee_arc')
       ) {
-        // Count caps a target pop drawn from the party: realizable delta.
+        // §15.5 saturation-inert = realizable delta 0, and the delta is
+        // strictly WITH-this-copy minus WITHOUT-this-copy. For an ALREADY
+        // SOCKETED Multiply resolveDef().count already contains its +1, so
+        // the baseline c0 must exclude that slot — otherwise a contributing
+        // node reads as inert (Nova Bloom 3 → 4 realises +1: LIVE, while
+        // Restorative Wave 4 → 5 against ally pop 4 realises +0: INERT).
         const pop = livingPartyCount();
-        const c = Math.max(1, Math.floor(resolveDef(def).count));
-        if (Math.min(c + 1, pop) - Math.min(c, pop) === 0)
-          return { state: 'inert', reason: 'saturated', pop };
+        const slotIdx = selfSlotOf(def, nodeId, selfSlot);
+        const base = slotIdx >= 0 ? resolveWithout(def, slotIdx) : resolveDef(def);
+        const c0 = Math.max(1, Math.floor(base.count));
+        if (Math.min(c0 + 1, pop) - Math.min(c0, pop) === 0)
+          return { state: 'inert', reason: 'saturated', pop, c0 };
       }
       return { state: 'live' };
     }
@@ -205,6 +212,34 @@ export function createBuildSystem({
       out[stat] = v;
     }
     resolvedCache.set(def.id, out);
+    return out;
+  }
+
+  // Which slot (if any) already holds this node on this skill. An explicit
+  // caller-supplied index wins; otherwise we look it up, so every entry point
+  // (view/socket/kitVerdict/the exported probe) agrees on the baseline.
+  function selfSlotOf(def, nodeId, selfSlot = null) {
+    if (selfSlot !== null && selfSlot !== undefined) {
+      const list = assignments.get(def.id);
+      const rec = list && list[selfSlot];
+      return rec && rec.node === nodeId ? selfSlot : -1;
+    }
+    const list = assignments.get(def.id);
+    return list ? list.findIndex((s) => s && s.node === nodeId) : -1;
+  }
+
+  // Same pipeline with ONE socketed slot virtually emptied — the "without this
+  // copy" baseline the saturation test compares against.
+  function resolveWithout(def, slotIdx) {
+    const saved = assignments.get(def.id);
+    if (!saved || !saved[slotIdx]) return resolveDef(def);
+    const list = saved.slice();
+    list[slotIdx] = null;
+    assignments.set(def.id, list);
+    resolvedCache.delete(def.id);
+    const out = { ...resolveDef(def) };
+    assignments.set(def.id, saved);
+    resolvedCache.delete(def.id);
     return out;
   }
 
@@ -287,7 +322,9 @@ export function createBuildSystem({
     if (prev) bench.push(prev); // free swap — old node banks to the bench
     slots[target] = entry;
     invalidate();
-    const verdict = verdictFor(def, nodeId);
+    // The verdict is read back on the node AS SOCKETED — the baseline for a
+    // Multiply saturation test therefore excludes this very copy.
+    const verdict = verdictFor(def, nodeId, target);
     events.emit(getTick(), 'node_socketed', {
       skill: skillId,
       node: nodeId,
@@ -330,10 +367,12 @@ export function createBuildSystem({
     if (!list) return [];
     const def = SKILLS[skillId];
     const out = [];
-    for (const rec of list) {
+    for (let i = 0; i < list.length; i++) {
+      const rec = list[i];
       if (!rec) continue;
       const n = NODES[rec.node];
-      if (n.kind === 'technique' && verdictFor(def, rec.node).state === 'live') out.push(rec.node);
+      if (n.kind === 'technique' && verdictFor(def, rec.node, i).state === 'live')
+        out.push(rec.node);
     }
     return out;
   }
@@ -438,6 +477,12 @@ export function createBuildSystem({
           hop: i + 1,
           to: best.id,
           power: r2(power),
+          // Arc endpoints for the render layer (§19.4: the hop must read as
+          // an event, not just a second numeral).
+          fromX: r2(cx),
+          fromZ: r2(cz),
+          x: r2(best.x),
+          z: r2(best.z),
         });
         combat.applyHeal(best, power, { healer: player.id, source: `${skillId}:bounce` });
         cx = best.x;
@@ -478,6 +523,10 @@ export function createBuildSystem({
           hop: i + 1,
           to: best.id,
           power: r2(power),
+          fromX: r2(cx),
+          fromZ: r2(cz),
+          x: r2(best.x),
+          z: r2(best.z),
         });
         combat.applyDamage(best, power, {
           delivery: 'skill',
@@ -556,7 +605,16 @@ export function createBuildSystem({
         x: r2(best.x),
         z: r2(best.z),
       });
-      events.emit(tick, 'siphon_drain', { skill: skillId, ally: allyId, target: best.id, amount });
+      events.emit(tick, 'siphon_drain', {
+        skill: skillId,
+        ally: allyId,
+        target: best.id,
+        amount,
+        x: r2(best.x),
+        z: r2(best.z),
+        ax: r2(ally.x),
+        az: r2(ally.z),
+      });
       if (best.hp <= 0) combat.kill(best, { delivery: 'technique' });
     } finally {
       suppress -= 1;
@@ -584,7 +642,12 @@ export function createBuildSystem({
         x: r2(player.x),
         z: r2(player.z),
       });
-      events.emit(tick, 'siphon_selfheal', { skill: skillId, amount });
+      events.emit(tick, 'siphon_selfheal', {
+        skill: skillId,
+        amount,
+        x: r2(player.x),
+        z: r2(player.z),
+      });
     } finally {
       suppress -= 1;
     }
@@ -607,6 +670,7 @@ export function createBuildSystem({
       mode: 'damage',
       x: r2(x),
       z: r2(z),
+      radius: TECH.detonateRadiusU,
       power: r2(power),
       targets: targets.map((t) => t.id),
     });
@@ -646,6 +710,7 @@ export function createBuildSystem({
       mode: 'heal',
       x: r2(x),
       z: r2(z),
+      radius: TECH.detonateRadiusU,
       power: r2(power),
       targets: targets.map((t) => t.id),
     });
@@ -700,6 +765,8 @@ export function createBuildSystem({
       skill: rec.skill,
       shape: base.shape,
       power: r2(power),
+      x: r2(player.x),
+      z: r2(player.z),
     });
     if (base.shape === 'projectile') {
       for (const d of fanDirections(rec.cast.dx, rec.cast.dz, def.count)) {
@@ -838,17 +905,24 @@ export function createBuildSystem({
     if (!def || !n) return { error: 'unknown' };
     const v = verdictFor(def, nodeId);
     const lines = [];
+    // §16 honesty: when this skill already holds the node at its repetition
+    // limit, another copy is a hard block — the line must describe what the
+    // SOCKETED copy currently does, never a phantom stacked value.
+    const selfSlot = selfSlotOf(def, nodeId);
+    const copies = (assignments.get(def.id) ?? []).filter((s) => s && s.node === nodeId).length;
+    const seated = selfSlot >= 0 && copies >= n.limit;
     if (v.state === 'grey') {
       lines.push(GREY_REASONS[v.reason] ?? v.reason);
       lines.push('legal to socket — contributes nothing');
     } else if (v.state === 'inert') {
       lines.push(`+1 target — currently +0 (all ${v.pop} allies already hit)`);
     } else if (n.kind === 'stat') {
-      const cur = resolveDef(def);
-      const withC = resolveWith(def, nodeId);
       const unit = n.stat === 'cd' ? ' s' : '';
       const label = n.stat === 'cd' ? 'cooldown' : n.stat;
-      lines.push(`${label} ${fmt(cur[n.stat])}${unit} → ${fmt(withC[n.stat])}${unit}`);
+      const from = seated ? resolveWithout(def, selfSlot) : resolveDef(def);
+      const to = seated ? resolveDef(def) : resolveWith(def, nodeId);
+      lines.push(`${label} ${fmt(from[n.stat])}${unit} → ${fmt(to[n.stat])}${unit}`);
+      if (seated) lines.push('already socketed here — this is its live contribution');
     } else {
       const flat = r2(TECH.siphonFrac * flatStagePower(skillId));
       const heal = def.archetype === 'heal';
@@ -878,7 +952,7 @@ export function createBuildSystem({
         );
     }
     if (n.id === 'siphon') lines.push(SIPHON_CARD_LINE); // binding card line
-    return { verdict: v, lines };
+    return { verdict: v, seated, lines };
   }
 
   // §15.5 card verdict: non-grey AND non-inert on at least one owned skill.
@@ -901,8 +975,8 @@ export function createBuildSystem({
           archetype: def.archetype,
           shape: def.shape,
           caps: [...caps],
-          sockets: socketsOf(id).map((rec) =>
-            rec ? { node: rec.node, verdict: verdictFor(def, rec.node).state } : null
+          sockets: socketsOf(id).map((rec, slot) =>
+            rec ? { node: rec.node, verdict: verdictFor(def, rec.node, slot).state } : null
           ),
           base: { power: def.power, cd: def.cd ?? null, count: def.count ?? null },
           resolved: { power: r2(res.power), cd: res.cd !== undefined ? r3(res.cd) : null, count: res.count ?? null },
@@ -938,7 +1012,7 @@ export function createBuildSystem({
     unsocket,
     preview,
     kitVerdict,
-    verdictFor: (skillId, nodeId) => verdictFor(SKILLS[skillId], nodeId),
+    verdictFor: (skillId, nodeId, slot = null) => verdictFor(SKILLS[skillId], nodeId, slot),
     view,
     step,
     discrete,

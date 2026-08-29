@@ -95,7 +95,10 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
     // Scale with magnitude (§17); crits render visibly larger.
     let px = DAMAGE_NUMBERS.minPx + Math.abs(amount) * DAMAGE_NUMBERS.pxPerPoint;
     if (crit) px *= DAMAGE_NUMBERS.critScale;
-    el.textContent = `${k.prefix}${Math.round(amount)}`;
+    // Whole points print whole; a fractional instance keeps ONE decimal so a
+    // pinned value like the Siphon drain (5.5) is not rounded into a lie.
+    const shown = Math.round(amount * 10) / 10;
+    el.textContent = `${k.prefix}${Number.isInteger(shown) ? shown : shown.toFixed(1)}`;
     el.style.fontSize = `${Math.round(px)}px`;
     el.style.color = k.color;
     el.style.textShadow = outlineShadow(k.outline);

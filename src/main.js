@@ -36,6 +36,7 @@ import { createSkillFx } from './render/skillfx/index.js';
 import { createEnemyLayer } from './render/enemies/index.js';
 import { createAllyLayer } from './render/allies/index.js';
 import { createSocketScreen } from './ui/socket/index.js';
+import { createTechFx } from './render/techfx/index.js';
 import { createSiphonFizzleCue } from './ui/socket/fizzle.js';
 
 const params = new URLSearchParams(window.location.search);
@@ -160,6 +161,11 @@ const hud =
 // (B key / cmd('openSocket')) + the §17 Siphon "nobody near" fizzle cue.
 const socketScreen =
   sceneKey === 'graybox' || sceneKey === 'arena' ? createSocketScreen({ bus, world }) : null;
+// Technique VFX layer (nodes block, §15.3 x §19.4): Bounce arcs, Siphon
+// tethers, Detonate shock rings, Echo ghost pulses — core + glow + particles on
+// every reinterpretation primitive, so a technique reads without the numbers.
+const techfx =
+  sceneKey === 'graybox' || sceneKey === 'arena' ? createTechFx({ stage, bus, cosmetic }) : null;
 const fizzleCue =
   sceneKey === 'graybox' || sceneKey === 'arena'
     ? createSiphonFizzleCue({ bus, camera: stage.camera })
@@ -196,12 +202,28 @@ function computeFps() {
   return median > 0 ? 1000 / median : fps;
 }
 
+// §16: the socket screen is a modal meta screen — while it is open the sim
+// still ticks (cooldowns, auras, allies) but the Healer takes no orders.
+// Browsing the bench must never burn a cooldown or walk the player behind the
+// panel, so gameplay intents are swallowed at the controller seam; `aim` rides
+// through untouched (it mutates nothing).
+function sampleIntents() {
+  const snap = input.sample();
+  if (!socketScreen?.isOpen()) return snap;
+  snap.move.x = 0;
+  snap.move.z = 0;
+  snap.basicAttackHeld = false;
+  snap.reviveHeld = false;
+  snap.presses.length = 0;
+  return snap;
+}
+
 stage.renderer.setAnimationLoop((now) => {
   const frameMs = now - last;
   last = now;
 
   const alpha = clock.advance(frameMs, (tick) => {
-    world.step(tick, input.sample());
+    world.step(tick, sampleIntents());
   });
 
   // Render side: read-only over sim state, interpolated by alpha.
@@ -209,6 +231,7 @@ stage.renderer.setAnimationLoop((now) => {
   skillfx?.update(now / 1000, alpha);
   enemyfx?.update(now / 1000, alpha);
   allyfx?.update(now / 1000, alpha);
+  techfx?.update(now / 1000);
   fizzleCue?.update(now / 1000);
   stage.render();
   overlay.update();
@@ -258,6 +281,7 @@ window.__echoes = {
     ...(activeScene.debugState ? { vfx: activeScene.debugState() } : {}),
     ...(skillfx ? { skillfx: skillfx.debugCounts() } : {}),
     ...(allyfx ? { allyfx: allyfx.debugCounts() } : {}),
+    ...(techfx ? { techfx: techfx.debugCounts() } : {}),
   }),
   cmd: (name, ...args) => {
     // UI-level commands route to the socket screen (docs/TESTING.md).

@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{\n  const E=__echoes;\n  E.cmd('giveSkill','nova_bloom');\n  E.cmd('giveSkill','restorative_wave');\n  E.cmd('grantNode','multiply'); E.cmd('grantNode','multiply');\n  E.cmd('grantNode','bounce'); E.cmd('grantNode','ascend');\n  E.cmd('socket','nova_bloom','multiply',0);\n  E.cmd('socket','restorative_wave','multiply',0);\n  E.cmd('teleport',0,0);\n  E.cmd('placeAlly',1,0.6,0.3); E.cmd('placeAlly',2,-0.6,0.3); E.cmd('placeAlly',3,0,-0.7);\n  E.cmd('openSocket');\n  return JSON.stringify(E.cmd('buildView').skills.map(s=>({id:s.id,sockets:s.sockets,base:s.base,res:s.resolved})));\n})()"
+ },
+ {
+  "type": "wait",
+  "ms": 420
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{\n  const flat=(t)=>t.replace(/\\s+/g,' ').trim();\n  const rows=[...document.querySelectorAll('.nd-row')];\n  const out=rows.map(r=>({\n    name:flat(r.querySelector('.nd-skill-name').textContent),\n    stats:flat(r.querySelector('.nd-stats').textContent),\n    cells:[...r.querySelectorAll('.nd-cell')].map(c=>({\n      cls:c.className,\n      inertBadge:getComputedStyle(c.querySelector('.nd-inert-badge')).display,\n      strike:getComputedStyle(c.querySelector('.nd-strike')).display,\n      hollow:!!c.querySelector('.nd-glyph.nd-hollow')\n    }))\n  }));\n  const nova=rows.find(r=>r.querySelector('.nd-skill-name').textContent.includes('Nova'));\n  const b=nova.getBoundingClientRect();\n  const page=document.querySelector('.nd-page').getBoundingClientRect();\n  const capLab=document.querySelector('.nd-cap-label');\n  const cs=(sel,prop)=>getComputedStyle(document.querySelector(sel))[prop];\n  return JSON.stringify({\n    rows:out,\n    novaRect:{x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)},\n    pageRect:{x:Math.round(page.x),y:Math.round(page.y),w:Math.round(page.width),h:Math.round(page.height)},\n    scale:getComputedStyle(document.getElementById('socket-screen')).getPropertyValue('--nd-s').trim(),\n    capLabelPx:getComputedStyle(capLab).fontSize,\n    statsPx:cs('.nd-stats','fontSize'),\n    titlePx:cs('.nd-title','fontSize'),\n    subPx:cs('.nd-skill-sub','fontSize'),\n    docScrollW:document.documentElement.scrollWidth,\n    winW:window.innerWidth, winH:window.innerHeight\n  });\n})()"
+ }
+]

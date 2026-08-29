@@ -941,6 +941,13 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         const [nodeId] = args;
         return buildSys.kitVerdict(nodeId);
       }
+      case 'buildVerdict': {
+        // Raw §15.5 verdict for one node on one skill. `slot` names the socket
+        // the node already sits in, so the saturation baseline excludes that
+        // copy (omit it and it is looked up).
+        const [skillId, nodeId, slot] = args;
+        return buildSys.verdictFor(skillId, nodeId, slot ?? null);
+      }
       case 'buildState':
         // Persistence plumbing for the run block (§13 bench + assignments).
         return buildSys.serialize();

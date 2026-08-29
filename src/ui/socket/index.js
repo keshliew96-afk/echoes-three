@@ -97,7 +97,11 @@ export function createSocketScreen({ bus, world }) {
     #socket-screen.nd-open { display: flex; }
     #socket-screen * { box-sizing: border-box; }
     .nd-page {
-      width: min(94vw, 1000px); max-height: 94vh;
+      /* §17/A7 virtual-px grammar: the card is AUTHORED at these sizes (all
+         text at or above the 16 px floor, numerals at 20) and uniformly scaled
+         to fit the window by --nd-s, exactly like the HUD root. */
+      width: 1180px; max-height: 800px;
+      transform: scale(var(--nd-s, 1)); transform-origin: center center;
       display: flex; flex-direction: column;
       background: linear-gradient(175deg, #2b2723 0%, ${PALETTE.voidCharcoal} 55%);
       border: 2px solid ${PALETTE.warmGrey}77;
@@ -113,27 +117,27 @@ export function createSocketScreen({ bus, world }) {
       background: ${PALETTE.voidCharcoal}80;
     }
     .nd-title {
-      font-size: 20px; font-weight: 800; letter-spacing: 0.14em;
+      font-size: 30px; font-weight: 800; letter-spacing: 0.14em;
       color: ${PALETTE.parchment};
     }
-    .nd-orn { color: ${PALETTE.warmGrey}; font-size: 13px; letter-spacing: 0.3em; }
-    .nd-hint { margin-left: auto; font-size: 13px; color: ${PALETTE.warmGrey}; }
+    .nd-orn { color: ${PALETTE.warmGrey}; font-size: 17px; letter-spacing: 0.3em; }
+    .nd-hint { margin-left: auto; font-size: 17px; color: ${PALETTE.warmGrey}; }
     .nd-hint b { color: ${PALETTE.bone}; font-weight: 700; }
     .nd-lock {
       display: none; margin: 10px 20px 0; padding: 8px 12px;
       border: 1px solid ${PALETTE.warmGrey}66; border-radius: 8px;
       background: ${PALETTE.voidCharcoal}; color: ${PALETTE.bone};
-      font-size: 15px; text-align: center;
+      font-size: 19px; text-align: center;
     }
     .nd-lock.nd-on { display: block; }
-    .nd-body { overflow-y: auto; padding: 10px 20px 14px; }
+    .nd-body { overflow-y: auto; min-height: 0; padding: 12px 24px 16px; }
     .nd-sect {
-      font-size: 12px; font-weight: 700; letter-spacing: 0.22em;
+      font-size: 17px; font-weight: 700; letter-spacing: 0.22em;
       color: ${PALETTE.warmGrey}; margin: 8px 0 6px;
     }
     /* ---------------------------------------------------------------- bench */
     .nd-bench { display: flex; flex-wrap: wrap; gap: 8px; min-height: 46px; }
-    .nd-bench-empty { font-size: 14px; color: ${PALETTE.warmGrey}; padding: 6px 2px; }
+    .nd-bench-empty { font-size: 17px; color: ${PALETTE.warmGrey}; padding: 6px 2px; }
     .nd-card {
       display: flex; align-items: center; gap: 8px;
       padding: 6px 10px 6px 6px; cursor: pointer;
@@ -152,36 +156,39 @@ export function createSocketScreen({ bus, world }) {
     }
     @keyframes nd-shimmer { from { background-position: 130% 0; } to { background-position: -130% 0; } }
     .nd-card-icon {
-      width: 30px; height: 30px; border-radius: 7px; flex: none;
+      width: 38px; height: 38px; border-radius: 7px; flex: none;
       display: flex; align-items: center; justify-content: center;
-      font-size: 17px; background: #2e2a25; color: var(--rar, ${PALETTE.bone});
+      font-size: 22px; background: #2e2a25; color: var(--rar, ${PALETTE.bone});
       border: 1px solid ${PALETTE.warmGrey}44;
     }
-    .nd-card-name { font-size: 15px; font-weight: 700; line-height: 1.1; }
-    .nd-card-sub { font-size: 11px; color: ${PALETTE.warmGrey}; letter-spacing: 0.05em; }
+    .nd-card-name { font-size: 19px; font-weight: 700; line-height: 1.1; }
+    .nd-card-sub { font-size: 16px; color: ${PALETTE.warmGrey}; letter-spacing: 0.05em; }
     /* ----------------------------------------------------------- skill rows */
     .nd-row {
-      display: grid; grid-template-columns: 172px 1fr auto; gap: 8px 14px;
+      display: grid; grid-template-columns: 210px 1fr auto; gap: 8px 16px;
       align-items: center; padding: 7px 10px; margin-bottom: 6px;
       background: ${PALETTE.voidCharcoal}B3;
       border: 1px solid ${PALETTE.warmGrey}33; border-radius: 12px;
     }
-    .nd-skill-name { font-size: 16px; font-weight: 700; }
-    .nd-skill-sub { font-size: 11px; color: ${PALETTE.warmGrey}; letter-spacing: 0.04em; }
+    .nd-skill-name { font-size: 21px; font-weight: 700; }
+    .nd-skill-sub { font-size: 16px; color: ${PALETTE.warmGrey}; letter-spacing: 0.04em; }
     .nd-stats {
-      font-size: 14px; color: ${PALETTE.bone};
+      font-size: 20px; color: ${PALETTE.bone};
       font-variant-numeric: tabular-nums; line-height: 1.45;
     }
     .nd-stats .nd-mod { color: ${PALETTE.hearthAmber}; font-weight: 700; }
-    .nd-prev { font-size: 13px; color: ${PALETTE.warmGrey}; margin-top: 2px; }
+    .nd-prev { font-size: 17px; color: ${PALETTE.warmGrey}; margin-top: 2px; }
+    /* §15.5 per-row realized-contribution note for a grey / inert SOCKETED node */
+    .nd-note { font-size: 17px; color: ${PALETTE.bone}; margin-top: 2px; }
+    .nd-note .nd-warn { color: ${PALETTE.bone}; font-weight: 800; margin-right: 3px; }
     .nd-prev .nd-live { color: ${PALETTE.hearthAmber}; }
     .nd-prev .nd-warn { color: ${PALETTE.bone}; }
     .nd-cells { display: flex; gap: 10px; }
     .nd-cellwrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
     .nd-cell {
-      position: relative; width: 46px; height: 46px; border-radius: 10px;
+      position: relative; width: 56px; height: 56px; border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 22px; cursor: pointer;
+      font-size: 28px; cursor: pointer;
       background: #2e2a25; border: 2px solid var(--cap, ${PALETTE.warmGrey});
     }
     .nd-cell.nd-vacant { border-style: dashed; background: ${PALETTE.voidCharcoal}; }
@@ -202,24 +209,24 @@ export function createSocketScreen({ bus, world }) {
     .nd-inert-badge { display: none; position: absolute; right: -7px; top: -7px;
       background: ${PALETTE.voidCharcoal}; border: 1px solid ${PALETTE.bone};
       border-radius: 7px; padding: 0 4px;
-      font-size: 11px; font-weight: 800; color: ${PALETTE.bone};
+      font-size: 16px; font-weight: 800; color: ${PALETTE.bone};
       font-variant-numeric: tabular-nums; pointer-events: none;
     }
     .nd-cell.nd-inert .nd-inert-badge { display: block; }
     /* live-preview badge on a vacant target cell */
     .nd-fit-badge { display: none; position: absolute; right: -6px; top: -6px;
-      color: ${PALETTE.hearthAmber}; font-size: 13px; pointer-events: none;
+      color: ${PALETTE.hearthAmber}; font-size: 18px; pointer-events: none;
       text-shadow: 0 0 3px ${PALETTE.voidCharcoal};
     }
     .nd-cell.nd-fits .nd-fit-badge { display: block; }
     /* cap hard-block hint on an impossible cell */
     .nd-capblock { display: none; position: absolute; right: -7px; top: -8px;
-      color: ${PALETTE.bone}; font-size: 15px; pointer-events: none;
+      color: ${PALETTE.bone}; font-size: 20px; pointer-events: none;
       text-shadow: 0 0 3px ${PALETTE.voidCharcoal};
     }
     .nd-cell.nd-capped .nd-capblock { display: block; }
     .nd-cap-label {
-      font-size: 10px; letter-spacing: 0.08em; color: var(--cap, ${PALETTE.warmGrey});
+      font-size: 16px; letter-spacing: 0.08em; color: var(--cap, ${PALETTE.warmGrey});
       text-transform: uppercase;
     }
     /* §16 rejection: shake + block glyph */
@@ -232,7 +239,7 @@ export function createSocketScreen({ bus, world }) {
     .nd-blockglyph {
       position: absolute; inset: 0; display: none;
       align-items: center; justify-content: center;
-      font-size: 30px; color: ${PALETTE.bone};
+      font-size: 38px; color: ${PALETTE.bone};
       background: ${PALETTE.voidCharcoal}B3; border-radius: 8px;
       pointer-events: none;
     }
@@ -242,16 +249,16 @@ export function createSocketScreen({ bus, world }) {
       border-top: 1px solid ${PALETTE.warmGrey}44; padding: 10px 20px 12px;
       background: ${PALETTE.voidCharcoal}80; min-height: 58px;
     }
-    .nd-foot-title { font-size: 15px; font-weight: 800; }
-    .nd-foot-title .nd-rar { font-weight: 700; font-size: 12px; letter-spacing: 0.1em;
+    .nd-foot-title { font-size: 20px; font-weight: 800; }
+    .nd-foot-title .nd-rar { font-weight: 700; font-size: 16px; letter-spacing: 0.1em;
       text-transform: uppercase; margin-left: 8px; }
-    .nd-foot-line { font-size: 14px; color: ${PALETTE.bone}; margin-top: 3px; }
-    .nd-foot-verdict { font-size: 13px; color: ${PALETTE.warmGrey}; margin-top: 3px; font-style: italic; }
+    .nd-foot-line { font-size: 18px; color: ${PALETTE.bone}; margin-top: 3px; }
+    .nd-foot-verdict { font-size: 17px; color: ${PALETTE.warmGrey}; margin-top: 3px; font-style: italic; }
     .nd-toast {
       position: absolute; left: 50%; top: 8%; transform: translateX(-50%);
       background: ${PALETTE.voidCharcoal}; color: ${PALETTE.bone};
       border: 1px solid ${PALETTE.warmGrey}88; border-radius: 8px;
-      padding: 7px 14px; font-size: 15px; opacity: 0; pointer-events: none;
+      padding: 9px 18px; font-size: 19px; opacity: 0; pointer-events: none;
       transition: opacity 0.18s ease;
     }
     .nd-toast.nd-show { opacity: 1; }
@@ -280,6 +287,24 @@ export function createSocketScreen({ bus, world }) {
       <div class="nd-toast"></div>
     </div>`;
   document.body.appendChild(rootEl);
+
+  // §17/A7 uniform virtual scaler: the card is AUTHORED at DESIGN_W x DESIGN_H
+  // virtual px (every label >= the 16 px text floor, stat numerals at 20) and
+  // scaled by min(1, fit) — the same grammar the HUD root uses, so type never
+  // drops below its authored ratio and the panel always fits the window.
+  const DESIGN_W = 1180;
+  const DESIGN_H = 800;
+  function fitScale() {
+    const s = Math.min(
+      1,
+      (window.innerWidth - 24) / DESIGN_W,
+      (window.innerHeight - 24) / DESIGN_H
+    );
+    rootEl.style.setProperty('--nd-s', s.toFixed(4));
+    return s;
+  }
+  fitScale();
+  window.addEventListener('resize', fitScale);
   const lockEl = rootEl.querySelector('.nd-lock');
   const benchEl = rootEl.querySelector('.nd-bench');
   const rowsEl = rootEl.querySelector('.nd-rows');
@@ -383,12 +408,29 @@ export function createSocketScreen({ bus, world }) {
         }
       }
 
+      // §15.5: a SOCKETED node that is grey or saturation-inert states its own
+      // realized contribution in the row, so the amber stat delta above it can
+      // never be read as a promise the node does not keep (a resolved
+      // `count 4 → 5` against an ally pop of 4 realizes +0, and says so).
+      let noteHtml = '';
+      for (let slot = 0; slot < sk.sockets.length; slot++) {
+        const rec = sk.sockets[slot];
+        if (!rec || rec.verdict === 'live') continue;
+        const info = sys.nodeInfo(rec.node);
+        const p = sys.preview(sk.id, rec.node);
+        const why = p && p.lines ? p.lines[0] : rec.verdict;
+        const mark = rec.verdict === 'inert' ? '＋0' : '⊘';
+        noteHtml += `<div class="nd-note"><span class="nd-warn">${mark}</span> ${esc(
+          info ? info.name : rec.node
+        )}: ${esc(why)}</div>`;
+      }
+
       row.innerHTML = `
         <div>
           <div class="nd-skill-name">${esc(sk.name)}</div>
           <div class="nd-skill-sub">${sk.archetype} · ${SHAPE_LABEL[sk.shape] ?? sk.shape}</div>
         </div>
-        <div class="nd-stats">${stats.join(' · ')}${prevHtml}</div>
+        <div class="nd-stats">${stats.join(' · ')}${noteHtml}${prevHtml}</div>
         <div class="nd-cells"></div>`;
       const cells = row.querySelector('.nd-cells');
 
@@ -530,6 +572,7 @@ export function createSocketScreen({ bus, world }) {
       }
       open = true;
       focusIdx = null;
+      fitScale();
       rootEl.classList.add('nd-open');
       renderAll();
     } else {
@@ -558,6 +601,11 @@ export function createSocketScreen({ bus, world }) {
     if (ev.verdict === 'grey') toast('grey socket — contributes nothing on this skill');
   });
   bus.on('node_unsocketed', () => open && renderAll());
+  // §16: a room starting flips combat_active — the workbench must never be the
+  // thing holding the Healer still, so it closes itself the moment combat opens.
+  bus.on('room_start', () => {
+    if (open) setOpen(false);
+  });
   bus.on('build_restored', () => open && renderAll());
   bus.on('skill_equip', () => open && renderAll());
   bus.on('socket_denied', (ev) => {

@@ -7,8 +7,12 @@ import { Vector3 } from 'three';
 import { PALETTE } from '../../data/palette.js';
 
 const LIFE_SEC = 0.9;
-const RISE_U = 0.35;
-const BASE_Y = 1.05;
+const RISE_U = 0.22;
+// The §17 heal numerals rise OUT of DAMAGE_NUMBERS.baseY 1.15; this plate hangs
+// top-anchored just under the ally's feet (0.16 u, drifting to 0.38) with a
+// small lateral bias, so the two Zone-3 cues from one heal never stack.
+const BASE_Y = 0.16;
+const LATERAL_PX = -30;
 const CAP = 4;
 
 export function createSiphonFizzleCue({ bus, camera, container = document.body }) {
@@ -83,9 +87,9 @@ export function createSiphonFizzleCue({ bus, camera, container = document.body }
         rec.el.style.opacity = '0';
         continue;
       }
-      const sx = (v.x * 0.5 + 0.5) * w;
+      const sx = (v.x * 0.5 + 0.5) * w + LATERAL_PX;
       const sy = (0.5 - v.y * 0.5) * h;
-      rec.el.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px) translate(-50%, -100%)`;
+      rec.el.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px) translate(-50%, 0%)`;
       rec.el.style.opacity = t < 0.55 ? '1' : `${(1 - (t - 0.55) / 0.45).toFixed(3)}`;
     }
   }
