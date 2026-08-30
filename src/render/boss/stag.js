@@ -263,7 +263,12 @@ export function buildStag() {
   antlers.position.set(0, 0.2, -0.02);
   head.add(antlers);
   for (const side of [-1, 1]) antlers.add(buildAntler(side, rackMat, veinMats, glows));
-  const rackHalo = makeGlowSprite({ color: PALETTE.godstuffVioletPeak, size: 2.2, opacity: 0.72 });
+  // Halo pulled well back: at size 2.2 / opacity 0.72 this additive sprite sat
+  // over the rack and washed the violet veins to white before they reached the
+  // frame (measured: 0 violet px in the antler box), and it fed the bloom
+  // blowout that erased the whole silhouette. Smaller and dimmer, it haloes the
+  // rack instead of replacing it — the veins are the read, not the glow.
+  const rackHalo = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 1.35, opacity: 0.34 });
   rackHalo.material.toneMapped = false;
   rackHalo.position.set(0, 1.0, 0);
   antlers.add(rackHalo);

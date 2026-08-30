@@ -17,6 +17,11 @@
 // Render-only: reads sim state read-only, never mutates it.
 import { Group, Vector3 } from 'three';
 import { HITFLASH, TICK_HZ, CAMERA } from '../../core/constants.js';
+
+// Boss-specific hit-flash envelope (see the 'hit' handler below). `peak` sits
+// under HITFLASH.intensity because the emissive area here is ~5x a chibi's;
+// `refractoryTicks` guarantees a real trough between flashes at any fire rate.
+const BOSS_FLASH = Object.freeze({ ticks: 5, peak: 0.5, refractoryTicks: 8 });
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { buildStag } from './stag.js';
@@ -64,7 +69,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   root.name = 'bossfx';
   stage.scene.add(root);
 
-  let rec = null; // { id, rig, light, yaw, walkPhase, telegraphK, lungeK, flashUntilTick }
+  let rec = null; // { id, rig, light, yaw, walkPhase, telegraphK, lungeK, flashStartTick }
   let ring = null;
   const bursts = [];
   const dying = [];
@@ -133,8 +138,17 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     if (spareRigs.length < 2) spareRigs.push(rig);
   }
 
+  // The Stag is a 2.2x-scale body, so a full-intensity emissive latch is a very
+  // different thing on it than on a 1.05 u chibi: at the observed boss hit rate
+  // (median gap 3 ticks, exactly HITFLASH.ticks) a re-armable latch never falls
+  // back to 0 and the whole silhouette — plus half the Antler Quake ring behind
+  // it — disappears into an UnrealBloomPass blowout. So the boss flash is a
+  // DECAYING ENVELOPE with a refractory gap: each hit still reads, but sustained
+  // fire can no longer hold the body at peak.
   bus.on('hit', (ev) => {
-    if (rec && ev.target === rec.id) rec.flashUntilTick = ev.tick + HITFLASH.ticks;
+    if (!rec || ev.target !== rec.id) return;
+    if (ev.tick - rec.flashStartTick < BOSS_FLASH.refractoryTicks) return;
+    rec.flashStartTick = ev.tick;
   });
   bus.on('boss_quake_resolve', (ev) => {
     const b = makeQuakeBurst(ev.radius ?? STAG.quake.radius);
@@ -144,7 +158,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   });
   bus.on('death', (ev) => {
     if (!rec || ev.id !== rec.id) return;
-    for (const m of rec.rig.mats) m.emissiveIntensity = HITFLASH.intensity;
+    for (const m of rec.rig.mats) m.emissiveIntensity = BOSS_FLASH.peak;
     dying.push({ rig: rec.rig, age: 0 });
     dropRing();
     restoreRoom();
@@ -271,7 +285,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
           telegraphK: 0,
           lungeK: 0,
           sealK: 0,
-          flashUntilTick: 0,
+          flashStartTick: -999,
         };
         darkenRoom();
       }
@@ -310,7 +324,13 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
         hpFrac,
       });
 
-      const lit = tick < rec.flashUntilTick ? HITFLASH.intensity : 0;
+      // Linear decay from the hit tick; peak capped below HITFLASH.intensity so
+      // the Stag's brightest pixel stays under the bloom knee (threshold 0.85).
+      const flashAge = tick - rec.flashStartTick;
+      const lit =
+        flashAge >= 0 && flashAge < BOSS_FLASH.ticks
+          ? BOSS_FLASH.peak * (1 - flashAge / BOSS_FLASH.ticks)
+          : 0;
       for (const m of rec.rig.mats) m.emissiveIntensity = lit;
 
       // Quake ring, straight off sim entity state.
