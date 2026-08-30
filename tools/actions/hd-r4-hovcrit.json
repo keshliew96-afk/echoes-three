@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');if(m==='camp'){E.cmd('campBegin');return 'camp->run';}E.cmd('startRun');return 'arena';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('killAllEnemies');const P=E.state().party;const f=(i)=>P.find(q=>(q.partyIndex??0)===i).id;E.cmd('setHp',f(1),0.14);E.hud.hover(3,true);E.hud.freeze(0.25);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('killAllEnemies');const P=E.state().party;const f=(i)=>P.find(q=>(q.partyIndex??0)===i).id;E.cmd('setHp',f(1),0.14);E.hud.hover(3,true);E.hud.freeze(0.25);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const t=[...document.querySelectorAll('.hud-port-tile')];const inr=[...document.querySelectorAll('.hud-port-inner')];return t.map((n,i)=>({i,state:E.hud.portraits()[i].state,hover:E.hud.portraits()[i].hover,border:getComputedStyle(n).borderTopColor,inner:getComputedStyle(inr[i]).borderTopColor+' '+getComputedStyle(inr[i]).borderTopWidth,bg:getComputedStyle(n).backgroundImage.slice(0,60)}));})()"
+ }
+]

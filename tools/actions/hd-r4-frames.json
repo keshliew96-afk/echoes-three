@@ -1,0 +1,42 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');if(m==='camp'){E.cmd('campBegin');return 'camp->run';}E.cmd('startRun');return 'arena';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.hud.setEnabled(true);E.cmd('killAllEnemies');E.cmd('teleport',0,-3.5);for(let i=0;i<8;i++)E.cmd('spawn','boar',-7+i*1.9,4.6);for(let i=0;i<2;i++)E.cmd('spawn','mantis',-4+i*8,-5.2);window.__T=[];let last=performance.now();window.__raf=true;const step=()=>{const n=performance.now();window.__T.push(n-last);last=n;if(window.__raf)requestAnimationFrame(step);};requestAnimationFrame(step);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__raf=false;const t=window.__T.slice(3).sort((a,b)=>a-b);const n=t.length;const sum=t.reduce((a,b)=>a+b,0);return {phase:'hud on',frames:n,median:+t[Math.floor(n/2)].toFixed(1),p95:+t[Math.floor(n*0.95)].toFixed(1),max:+t[n-1].toFixed(1),over100:t.filter(x=>x>100).length,meanFps:+(1000/(sum/n)).toFixed(1)};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.hud.setEnabled(false);E.cmd('killAllEnemies');E.cmd('teleport',0,-3.5);for(let i=0;i<8;i++)E.cmd('spawn','boar',-7+i*1.9,4.6);for(let i=0;i<2;i++)E.cmd('spawn','mantis',-4+i*8,-5.2);window.__T=[];let last=performance.now();window.__raf=true;const step=()=>{const n=performance.now();window.__T.push(n-last);last=n;if(window.__raf)requestAnimationFrame(step);};requestAnimationFrame(step);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__raf=false;const t=window.__T.slice(3).sort((a,b)=>a-b);const n=t.length;const sum=t.reduce((a,b)=>a+b,0);return {phase:'hud off',frames:n,median:+t[Math.floor(n/2)].toFixed(1),p95:+t[Math.floor(n*0.95)].toFixed(1),max:+t[n-1].toFixed(1),over100:t.filter(x=>x>100).length,meanFps:+(1000/(sum/n)).toFixed(1)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.hud.setEnabled(true);return 1;})()"
+ }
+]
