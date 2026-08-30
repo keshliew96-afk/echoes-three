@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");const f=E.state().run.frame;const i=f.modes.indexOf(\"defend\");E.cmd(\"skipToRoom\",i+1);return {modes:f.modes,to:i+1};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;const b=h.banner();const r=window.__echoes.state().room;return {banner:b,room:r&&{mode:r.mode,cleared:r.cleared,waveIndex:r.waveIndex,wavesTotal:r.wavesTotal,alive:r.aliveEnemies,waystone:r.waystone,ticksLeft:r.defendTicksLeft},zone2:h.metrics().zone2,pct:h.metrics().zonePctOfHeight};})()"
+ }
+]

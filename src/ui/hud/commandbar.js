@@ -7,7 +7,12 @@
 //   Hurt      (25-50%) BAR LENGTH ONLY — no other chrome change
 //   Critical  (<25%)   frame + track value-pulse charcoal<->bone at 2 Hz,
 //                      inner frame 1 -> 3 px, persistent >=20 px HP numeral;
-//                      the character art itself is never tinted
+//                      the character art itself is never tinted OR COVERED —
+//                      the numeral shares the tile's reserved top chrome band
+//                      with the F-key chip (round 2 rejected a bottom strip
+//                      that ate 51.6% of the tile and hid the face), and the
+//                      track's charcoal<->bone pulse rides its OUTLINE so the
+//                      fill stays the brighter element at every phase
 //   Downed             horizontal portrait crop + hollow Bone ring + hold-E
 //   Being-revived      that ring fills CLOCKWISE FROM 12 in Parchment
 //   Revive-interrupted reverse drain at 2x + a single 2 px shake
@@ -17,15 +22,17 @@
 // can pin its phase with __echoes.hud.freeze(t) and prove the 2 Hz rate.
 //
 // COOLDOWNS (one grammar for skills + dodge): clockwise radial wipe from 12,
-// 70% charcoal overlay; <1.0 s remaining -> >=20 px Parchment numeral on its
+// 70% charcoal overlay on a LIFTED charcoal icon field (a 70% charcoal veil on
+// a pure charcoal plate is invisible, and its conic edge then only shows by
+// slicing the abbrev glyph); the veil is painted UNDER the type and the glyph
+// dims uniformly instead. <1.0 s remaining -> >=20 px Parchment numeral on its
 // own opaque plate in the tile's bottom strip (a box that is DISJOINT from the
 // abbrev box at every scale — see style.js); ready-pop 120 ms.
 import { PALETTE } from '../../data/palette.js';
 import { DODGE, TICK_HZ } from '../../core/constants.js';
-import { ACCENTS, CHROME } from './style.js';
+import { ACCENTS, CHROME, mix } from './style.js';
 
 const CLASS_BY_INDEX = ['healer', 'tank', 'swordsman', 'archer'];
-const PORTRAIT_KEYS = ['F1', 'F2', 'F3', 'F4'];
 const PORTRAIT_LETTER = { healer: 'H', tank: 'T', swordsman: 'S', archer: 'A' };
 const REVIVE_TOTAL_TICKS = 300; // §10 5.0 s channel (allies.js REVIVE.channelTicks)
 const RING_R = 27; // svg units in a 70-box viewBox
@@ -48,11 +55,38 @@ const svgEl = (tag, cls, parent) => {
 // Icon-level nudge: remove -> reflow -> re-add so a repeat restarts it (§17).
 // Every nudge is logged so a capture can prove WHICH element animated and that
 // nothing outside the command bar ever does (criterion 3: no screen alarms).
+//
+// CLASS FENCE (round-2 defect). `animation` is a shorthand: two nudge classes
+// sitting on one node let STYLESHEET ORDER pick the winner, so a single
+// dash-cancel (priority_suppressed -> hud-nudge-skip) used to kill that slot's
+// empty_slot frame blink forever. Two fences now:
+//   1. every nudge kind owns its own ELEMENT and its own animated property
+//      (flash layer / frame layer / the tile itself), and
+//   2. applying any nudge strips EVERY nudge class from that node first, and
+//      each class removes itself on animationend, so residue cannot build up.
+const NUDGE_CLASSES = [
+  'hud-nudge-wipe',
+  'hud-nudge-blink',
+  'hud-nudge-skip',
+  'hud-ready',
+  'hud-peak-wipe',
+  'hud-peak-blink',
+  'hud-peak-skip',
+  'hud-peak-ready',
+];
 const nudgeLog = [];
+function clearNudges(node) {
+  for (const c of NUDGE_CLASSES) node.classList.remove(c);
+}
 function nudge(node, cls) {
-  node.classList.remove(cls);
+  clearNudges(node);
   void node.offsetWidth;
   node.classList.add(cls);
+  node.addEventListener(
+    'animationend',
+    () => node.classList.remove(cls),
+    { once: true }
+  );
   nudgeLog.push({
     t: Math.round(performance.now()),
     cls,
@@ -96,9 +130,18 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       fb.textContent = PORTRAIT_LETTER[classId];
     }
     const inner = el('div', 'hud-port-inner', tile);
-    const key = el('span', 'hud-port-key proto-port-key', tile);
-    key.textContent = PORTRAIT_KEYS[i];
-    const num = el('span', 'hud-port-num', tile);
+    // ONE top-band plate: F-key chip on the left, Critical HP numeral on the
+    // right, flexed apart. §17 wants a persistent >=20 px numeral AND the
+    // character art untouched; the top band is the tile's reserved chrome
+    // strip (portraits.js frames the bust to keep it empty), so the numeral
+    // lands there instead of over the face.
+    const top = el('div', 'hud-port-top', tile);
+    const key = el('span', 'hud-port-key proto-port-key', top);
+    // "F" + ordinal. The "F" stands down while Critical so the HP numeral fits
+    // the same band (see style.js) — the ordinal still names the F-row key.
+    el('i', null, key).textContent = 'F';
+    key.append(String(i + 1));
+    const num = el('span', 'hud-port-num', top);
 
     // Downed / being-revived ring: hollow Bone backing + Parchment clockwise
     // fill, drawn as an SVG so the fill is a true radial sweep from 12.
@@ -134,19 +177,30 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     });
     cell.addEventListener('contextmenu', (ev) => ev.preventDefault());
 
+    // Critical value-pulse LUT: the FILL brightens from its class-accent
+    // highlight toward Parchment, so its luma stays far above the charcoal
+    // track at every phase k (see paintCritical + the POLARITY FENCE note in
+    // style.js). 21 steps is finer than a 2 Hz pulse can be read.
+    const critFill = [];
+    for (let q = 0; q <= 20; q++) critFill.push(mix(acc.lift, PALETTE.parchment, 0.6 * (q / 20)));
+
     ports.push({
       i,
       classId,
+      critFill,
       cell,
       tile,
       inner,
       hp,
       fill,
       num,
+      key,
+      top,
       rf,
       rally,
       img,
       state: 'healthy',
+      lastK: -1,
       lastPct: -1,
       lastState: '',
       lastFill: -1,
@@ -167,6 +221,9 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     passive.textContent = '◈';
     const wipe = el('div', 'hud-slot-wipe proto-wipe', slot);
     const flash = el('div', 'hud-slot-flash', slot);
+    // Dedicated layer for the empty_slot frame blink — its own element and its
+    // own property, so it can never share a node with the skip-pulse.
+    const frame = el('div', 'hud-slot-frame', slot);
     const num = el('span', 'hud-slot-num proto-cd-num', slot);
     // Grey-socketed-node marker: hollow icon + diagonal strike, persistent.
     // The strike crosses the GLYPH band only (rows 27..60 of the 60 px inner
@@ -181,7 +238,18 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     line.setAttribute('stroke', CHROME.inkDim);
     line.setAttribute('stroke-width', '3');
     line.setAttribute('stroke-linecap', 'round');
-    return { slot, abbrev, wipe, flash, num, lastDeg: -1, wasReady: true, counting: false };
+    return {
+      slot,
+      abbrev,
+      wipe,
+      flash,
+      frame,
+      num,
+      lastDeg: -1,
+      wasReady: true,
+      counting: false,
+      cooling: false,
+    };
   }
 
   const skillGroup = el('div', 'hud-group hud-group-skill', bar);
@@ -216,18 +284,40 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   bus.on('intent_denied', (ev) => {
     const kind = ev.kind ?? '';
     if (kind === 'dodge') {
-      if (ev.reason === 'on_cooldown') nudge(dodge.flash, 'hud-nudge-wipe');
-      else nudge(dodge.slot, 'hud-nudge-skip');
+      denyNudge(dodge, ev.reason);
       return;
     }
     const m = /^skill_([1-4])$/.exec(kind);
     if (!m) return;
     const s = skillEls[Number(m[1]) - 1];
-    if (!s) return;
-    if (ev.reason === 'on_cooldown') nudge(s.flash, 'hud-nudge-wipe');
-    else if (ev.reason === 'empty_slot') nudge(s.slot, 'hud-nudge-blink');
-    else nudge(s.slot, 'hud-nudge-skip'); // priority_suppressed / duplicate
+    if (s) denyNudge(s, ev.reason);
   });
+
+  // One routing table for every denial reason, so the three channels stay
+  // told apart: fill wash / frame blink / motion skip. The empty_slot blink
+  // rides BOTH the dedicated 3 px frame overlay (the pixel signal) and the
+  // slot's own dashed border (what §17 describes, and what the round-2 probe
+  // reads), which is safe because of the strip below.
+  const NUDGE_TARGET = {
+    on_cooldown: (s) => [[s.flash, 'hud-nudge-wipe']],
+    empty_slot: (s) => [
+      [s.frame, 'hud-nudge-blink'],
+      [s.slot, 'hud-nudge-blink'],
+    ],
+    priority_suppressed: (s) => [[s.slot, 'hud-nudge-skip']],
+  };
+  // EVERY denial resets the whole slot first — all three layers, live classes
+  // and held debug peaks alike — so a slot can never carry two nudge states at
+  // once and stylesheet order can never pick the winner. This is the fence the
+  // round-2 defect needed: a dash-cancel's skip-pulse used to survive on the
+  // node and permanently outrank that slot's empty_slot frame blink.
+  function denyNudge(s, reason) {
+    clearNudges(s.slot);
+    clearNudges(s.flash);
+    clearNudges(s.frame);
+    const pick = NUDGE_TARGET[reason] ?? NUDGE_TARGET.priority_suppressed;
+    for (const [node, cls] of pick(s)) nudge(node, cls);
+  }
 
   // -------------------------------------------------------- cooldowns ---
   // §17 clockwise radial wipe from 12 o'clock, 70% charcoal overlay.
@@ -247,6 +337,13 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     if (counting !== s.counting) {
       s.counting = counting;
       s.slot.classList.toggle('is-counting', counting);
+    }
+    // The veil now sits UNDER the type (style.js), so the glyph is dimmed as a
+    // whole instead of being sliced by the conic edge.
+    const cooling = remainingTicks > 0;
+    if (cooling !== s.cooling) {
+      s.cooling = cooling;
+      s.slot.classList.toggle('is-cooling', cooling);
     }
     const ready = remainingTicks <= 0;
     if (ready && !s.wasReady) nudge(s.slot, 'hud-ready');
@@ -290,7 +387,9 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
         if (state !== 'critical') {
           p.inner.style.borderWidth = '0px';
           p.inner.style.borderColor = 'transparent';
-          p.hp.style.background = CHROME.plate;
+          p.hp.style.outlineColor = '';
+          p.fill.style.background = '';
+          p.lastK = -1;
         }
       }
 
@@ -303,12 +402,20 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       }
 
       if (state === 'critical') {
-        // Frame + track value pulse; the character art is never touched.
+        // Frame + track-outline value pulse; the character art is never
+        // touched, and the track INTERIOR stays Void Charcoal so the bar can
+        // never invert its reading at the bone end of the pulse (round-2
+        // defect: at 15% HP the empty 85% was 1.6x brighter than the fill).
         const c = CHAR.map((v, i) => Math.round(v + (BONE[i] - v) * k));
         const col = `rgb(${c[0]},${c[1]},${c[2]})`;
         p.inner.style.borderWidth = `${(1 + 2 * k).toFixed(2)}px`;
         p.inner.style.borderColor = col;
-        p.hp.style.background = col;
+        p.hp.style.outlineColor = col;
+        const q = Math.round(k * 20);
+        if (q !== p.lastK) {
+          p.lastK = q;
+          p.fill.style.background = p.critFill[q];
+        }
         const hpNum = Math.max(0, Math.ceil(m.hp));
         if (hpNum !== p.lastPct) {
           p.lastPct = hpNum;
@@ -391,20 +498,38 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
         return !!skillEls[slot];
       },
       portraits: () =>
-        ports.map((p) => ({
-          index: p.i,
-          classId: p.classId,
-          state: p.state,
-          selected: p.cell.classList.contains('is-selected'),
-          hover: p.cell.classList.contains('is-hover'),
-          hpWidth: p.fill.style.width,
-          numeral: p.cell.classList.contains('is-critical') ? p.num.textContent : null,
-          innerBorder: p.inner.style.borderWidth,
-          innerColor: p.inner.style.borderColor,
-          reviveOffset: Number(p.rf.getAttribute('stroke-dashoffset')),
-          reviveTotal: RING_C,
-          hasImage: !!p.img,
-        })),
+        ports.map((p) => {
+          const crit = p.cell.classList.contains('is-critical');
+          const fillCs = getComputedStyle(p.fill);
+          const trackCs = getComputedStyle(p.hp);
+          return {
+            index: p.i,
+            classId: p.classId,
+            state: p.state,
+            selected: p.cell.classList.contains('is-selected'),
+            hover: p.cell.classList.contains('is-hover'),
+            hpWidth: p.fill.style.width,
+            numeral: crit ? p.num.textContent : null,
+            innerBorder: p.inner.style.borderWidth,
+            innerColor: p.inner.style.borderColor,
+            // Criterion 1: the key chip and the Critical numeral share the top
+            // band; these two boxes must never intersect.
+            keyBox: rect(p.key),
+            numBox: rect(p.num),
+            tileBox: rect(p.tile),
+            hpBox: rect(p.hp),
+            fillBox: rect(p.fill),
+            // Criterion 2/5 polarity proof, straight off the computed style.
+            fillColor: fillCs.backgroundColor,
+            fillImage: fillCs.backgroundImage.slice(0, 60),
+            trackColor: trackCs.backgroundColor,
+            trackBorder: trackCs.borderTopColor,
+            trackOutline: trackCs.outlineColor,
+            reviveOffset: Number(p.rf.getAttribute('stroke-dashoffset')),
+            reviveTotal: RING_C,
+            hasImage: !!p.img,
+          };
+        }),
       slots: () =>
         [...skillEls, dodge].map((s) => ({
           key: s.slot.querySelector('.hud-slot-key').textContent,
@@ -415,10 +540,20 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
           wipeDeg: s.lastDeg,
           empty: s.slot.classList.contains('is-empty'),
           passive: s.slot.classList.contains('is-passive'),
+          cooling: s.cooling,
           keyBox: rect(s.slot.querySelector('.hud-slot-key')),
           abbrevBox: rect(s.abbrev),
           numBox: rect(s.num),
           tileBox: rect(s.slot),
+          nudge: {
+            slot: s.slot.className,
+            flash: s.flash.className,
+            frame: s.frame.className,
+            frameBorder: getComputedStyle(s.frame).borderTopColor,
+            flashBg: getComputedStyle(s.flash).backgroundColor,
+            transform: getComputedStyle(s.slot).transform,
+            anim: getComputedStyle(s.slot).animationName,
+          },
         })),
       overrideIndex: () => overrideIndex,
       // Criterion 3 evidence: the denial nudges that fired, and proof that
@@ -434,19 +569,74 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
             playState: a.playState,
           };
         }),
-      // Freeze every live animation at `ms` into its timeline so a still frame
-      // can show a 180 ms nudge at its peak.
-      pinAnimations: (ms) => {
-        const live = document.getAnimations();
-        for (const a of live) {
-          try {
-            a.currentTime = ms;
-            a.pause();
-          } catch (e) {
-            /* finished animations reject a seek */
+      // HOLD a denial nudge at its keyframe PEAK as a STATIC class, so a
+      // screenshot can prove the pixel half of criterion 3. Round 2 rejected
+      // `pinAnimations` because a paused WAAPI animation did not survive the
+      // HUD's per-frame class writes; a plain class does. The peak classes in
+      // style.js carry the exact declarations the 40-50% keyframes reach.
+      //   target: 0..3 skill slot, 'dodge', or 'all'
+      //   kind:   'on_cooldown' | 'empty_slot' | 'priority_suppressed' | 'ready'
+      //   holdMs: 0 (or omitted) holds until the next forceNudge/clear call
+      forceNudge: (target, kind, holdMs = 0) => {
+        const PEAK = {
+          on_cooldown: (s) => [s.flash, 'hud-peak-wipe'],
+          empty_slot: (s) => [s.frame, 'hud-peak-blink'],
+          priority_suppressed: (s) => [s.slot, 'hud-peak-skip'],
+          ready: (s) => [s.slot, 'hud-peak-ready'],
+        };
+        const pick = PEAK[kind];
+        if (!pick) return { ok: false, reason: 'unknown kind: ' + kind };
+        const targets =
+          target === 'all'
+            ? [...skillEls, dodge]
+            : target === 'dodge'
+              ? [dodge]
+              : skillEls[target]
+                ? [skillEls[target]]
+                : [];
+        if (!targets.length) return { ok: false, reason: 'unknown target' };
+        const applied = [];
+        for (const s of targets) {
+          const [node, cls] = pick(s);
+          clearNudges(node);
+          node.classList.add(cls);
+          applied.push({ cls, target: node.className, box: rect(node) });
+          if (holdMs > 0) setTimeout(() => node.classList.remove(cls), holdMs);
+        }
+        return { ok: true, kind, applied };
+      },
+      // Back-compatible name for the round-2 probe, now honest: a paused WAAPI
+      // animation did not survive the HUD's per-frame class writes, so instead
+      // of pretending, every LIVE nudge is converted to its STATIC peak class
+      // and held there until clearNudges() (or the next real nudge on that
+      // node). `ms` is accepted and ignored — the peak is the peak.
+      pinAnimations: (ms = 0) => {
+        const PEAK = {
+          'hud-nudge-wipe': 'hud-peak-wipe',
+          'hud-nudge-blink': 'hud-peak-blink',
+          'hud-nudge-skip': 'hud-peak-skip',
+          'hud-ready': 'hud-peak-ready',
+        };
+        const held = [];
+        for (const a of document.getAnimations()) {
+          const t = a.effect && a.effect.target;
+          if (!t || !t.classList) continue;
+          for (const [live, peak] of Object.entries(PEAK)) {
+            if (!t.classList.contains(live)) continue;
+            t.classList.remove(live);
+            t.classList.add(peak);
+            held.push({ from: live, to: peak, target: t.className, box: rect(t) });
           }
         }
-        return live.length;
+        return { pinned: held.length, held, note: 'held as static peak classes' };
+      },
+      clearNudges: () => {
+        for (const s of [...skillEls, dodge]) {
+          clearNudges(s.slot);
+          clearNudges(s.flash);
+          clearNudges(s.frame);
+        }
+        return true;
       },
     },
   };

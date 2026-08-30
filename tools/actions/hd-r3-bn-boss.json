@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"skipToRoom\",8);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;const b=h.banner();const r=window.__echoes.state().room;return {banner:b,room:r&&{mode:r.mode,cleared:r.cleared,waveIndex:r.waveIndex,wavesTotal:r.wavesTotal,alive:r.aliveEnemies,waystone:r.waystone,ticksLeft:r.defendTicksLeft},zone2:h.metrics().zone2,pct:h.metrics().zonePctOfHeight};})()"
+ }
+]

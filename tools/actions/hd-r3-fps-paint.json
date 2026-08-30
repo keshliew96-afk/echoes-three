@@ -1,0 +1,62 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);for(let i=0;i<22;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z);}document.getElementById(\"hud\").style.display=\"\";document.getElementById(\"hud-threat\").style.display=\"\";return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return {phase:\"both\",fps:window.__echoes.fps,entities:window.__echoes.entityCount};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);for(let i=0;i<22;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z);}document.getElementById(\"hud\").style.display=\"\";document.getElementById(\"hud-threat\").style.display=\"none\";return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return {phase:\"bar only\",fps:window.__echoes.fps,entities:window.__echoes.entityCount};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);for(let i=0;i<22;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z);}document.getElementById(\"hud\").style.display=\"none\";document.getElementById(\"hud-threat\").style.display=\"\";return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return {phase:\"threat only\",fps:window.__echoes.fps,entities:window.__echoes.entityCount};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);for(let i=0;i<22;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z);}document.getElementById(\"hud\").style.display=\"none\";document.getElementById(\"hud-threat\").style.display=\"none\";return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return {phase:\"neither\",fps:window.__echoes.fps,entities:window.__echoes.entityCount};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{document.getElementById(\"hud\").style.display=\"\";document.getElementById(\"hud-threat\").style.display=\"\";return 1;})()"
+ }
+]

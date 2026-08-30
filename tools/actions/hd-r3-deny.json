@@ -1,0 +1,91 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=document.querySelectorAll(\"#proto-hud .hud-slot\");const s=S[2];const f=s.querySelector(\".hud-slot-frame\");const fl=s.querySelector(\".hud-slot-flash\");const cs=getComputedStyle;return {slotCls:s.className,slotAnim:cs(s).animationName,frameCls:f.className,frameAnim:cs(f).animationName,frameBorder:cs(f).borderTopColor,flashAnim:cs(fl).animationName,flashBg:cs(fl).backgroundColor,anims:window.__echoes.hud.animations(),lastDenials:window.__echoes.events.filter(e=>e.type===\"intent_denied\").slice(-3)};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "keydown",
+  "key": "Space"
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 40
+ },
+ {
+  "type": "keyup",
+  "key": "Space"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=document.querySelectorAll(\"#proto-hud .hud-slot\");const s=S[2];const f=s.querySelector(\".hud-slot-frame\");const fl=s.querySelector(\".hud-slot-flash\");const cs=getComputedStyle;return {slotCls:s.className,slotAnim:cs(s).animationName,frameCls:f.className,frameAnim:cs(f).animationName,frameBorder:cs(f).borderTopColor,flashAnim:cs(fl).animationName,flashBg:cs(fl).backgroundColor,anims:window.__echoes.hud.animations(),lastDenials:window.__echoes.events.filter(e=>e.type===\"intent_denied\").slice(-3)};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=document.querySelectorAll(\"#proto-hud .hud-slot\");const s=S[2];const f=s.querySelector(\".hud-slot-frame\");const fl=s.querySelector(\".hud-slot-flash\");const cs=getComputedStyle;return {slotCls:s.className,slotAnim:cs(s).animationName,frameCls:f.className,frameAnim:cs(f).animationName,frameBorder:cs(f).borderTopColor,flashAnim:cs(fl).animationName,flashBg:cs(fl).backgroundColor,anims:window.__echoes.hud.animations(),lastDenials:window.__echoes.events.filter(e=>e.type===\"intent_denied\").slice(-3)};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=document.querySelectorAll(\"#proto-hud .hud-slot\");const s=S[0];const fl=s.querySelector(\".hud-slot-flash\");const cs=getComputedStyle;return {slot1FlashAnim:cs(fl).animationName,slot1FlashBg:cs(fl).backgroundColor,nudges:window.__echoes.hud.nudges(),outsideBar:window.__echoes.hud.animations().filter(x=>!x.insideBar)};})()"
+ }
+]

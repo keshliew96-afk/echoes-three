@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const r=[...document.querySelectorAll(\".hud-port-tile\")].map(n=>{const b=n.getBoundingClientRect();return [Math.round(b.x),Math.round(b.y),Math.round(b.width),Math.round(b.height)];});return r;})()"
+ }
+]

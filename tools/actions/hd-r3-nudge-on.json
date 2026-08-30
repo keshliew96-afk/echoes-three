@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"restoreSkillState\",{slots:[{id:\"mending_bolt\",remaining:200},{id:\"swift_mend\",remaining:0},null,null],override:null});return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;return [h.forceNudge(0,\"on_cooldown\"),h.forceNudge(1,\"priority_suppressed\"),h.forceNudge(2,\"empty_slot\"),h.forceNudge(\"dodge\",\"ready\")].map(x=>x.ok);})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=[...document.querySelectorAll(\"#proto-hud .hud-slot\")];const cs=getComputedStyle;return S.map((s,i)=>{const b=s.getBoundingClientRect();const g=s.querySelector(\".hud-slot-abbrev\").getBoundingClientRect();return {i,tile:[Math.round(b.x),Math.round(b.y),Math.round(b.width),Math.round(b.height)],glyphW:Math.round(g.width*10)/10,flashBg:cs(s.querySelector(\".hud-slot-flash\")).backgroundColor,frameBorder:cs(s.querySelector(\".hud-slot-frame\")).borderTopColor,tf:cs(s).transform};});})()"
+ }
+]

@@ -1,0 +1,31 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"giveSkill\",\"warding_aura\");E.cmd(\"giveSkill\",\"sanctuary\");const p=E.state().party;E.cmd(\"setHp\",p[1].id,0.42);E.cmd(\"setHp\",p[2].id,0.16);E.cmd(\"restoreSkillState\",{slots:[{id:\"mending_bolt\",remaining:150},{id:\"swift_mend\",remaining:52},{id:\"warding_aura\",remaining:0},{id:\"sanctuary\",remaining:0}],override:null});E.hud.freeze(0.25);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "key",
+  "key": "F1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;E.cmd(\"setHp\",p[1].id,0.42);E.cmd(\"setHp\",p[2].id,0.16);E.hud.freeze(0.25);const h=E.hud;const S=h.slots(),P=h.portraits();const boxes=[];for(const s of S){boxes.push([s.key+\":key\",s.keyBox],[s.key+\":ab\",s.abbrevVisible?s.abbrevBox:null],[s.key+\":num\",s.counting?s.numBox:null]);}for(const q of P){boxes.push([\"F\"+(q.index+1)+\":key\",q.keyBox],[\"F\"+(q.index+1)+\":num\",q.numeral?q.numBox:null]);}const live=boxes.filter(b=>b[1]&&b[1].w>0);const hits=[];for(let i=0;i<live.length;i++)for(let j=i+1;j<live.length;j++){const A=live[i][1],B=live[j][1];if(A.x<B.x+B.w&&B.x<A.x+A.w&&A.y<B.y+B.h&&B.y<A.y+A.h)hits.push(live[i][0]+\" x \"+live[j][0]);}return {overlaps:hits,glyphs:live.length,metrics:h.metrics(),chrome:h.chrome()};})()"
+ }
+]

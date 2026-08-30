@@ -72,7 +72,7 @@ export const MIN_SCALE = Math.max(TEXT_FLOOR / FS_KEY, NUM_FLOOR / FS_NUM);
 
 const TILE = 64; // §17 "Portrait 64x64" — skill/dodge slots match it
 const KEY_H = 26; // key-chip band height (top of the tile)
-const NUM_H = 33; // numeral-strip height (bottom of the tile)
+const NUM_H = 33; // skill-slot numeral-strip height (bottom of the slot tile)
 const HP_H = 10; // portrait HP bar
 const HP_GAP = 2;
 const BAR_PAD = 5;
@@ -195,6 +195,7 @@ export function hudCss() {
   border-radius: 8px;
   border: 0 solid transparent;
   pointer-events: none;
+  z-index: 5;
 }
 /* Selected override (F1-F4 / click): STATIC 2 px Hearth Amber outline (§17) */
 .hud-port-sel {
@@ -207,10 +208,10 @@ export function hudCss() {
 .hud-port.is-selected .hud-port-sel { display: block; }
 /* colour-blind fence (§19.1): selection is also a SHAPE — a corner tab */
 .hud-port-tab {
-  position: absolute; top: -1px; right: -1px;
+  position: absolute; bottom: 12px; right: -1px;
   width: 0; height: 0;
   border-left: 15px solid transparent;
-  border-top: 15px solid ${PALETTE.hearthAmber};
+  border-bottom: 15px solid ${PALETTE.hearthAmber};
   display: none;
   pointer-events: none;
 }
@@ -230,8 +231,61 @@ export function hudCss() {
 }
 .hud-port-rally.go { animation: hud-rally 380ms ease-out; }
 
-/* KEY-CHIP BAND: rows 0..${KEY_H} of every tile, portrait and slot alike. */
-.hud-port-key, .hud-slot-key {
+/* PORTRAIT TOP BAND (rows 0..${KEY_H}). ONE opaque charcoal plate carrying the
+   F-key chip on the left and — while Critical — the persistent HP numeral on
+   the right. See the ART FENCE note above: this band is the only chrome that
+   ever sits on the tile, and it is the band the bust is framed to keep empty.
+   The two glyph boxes are flexed apart with a hard 4 px gutter, so they are
+   disjoint at every scale (criterion 1: no overlapping glyphs). */
+.hud-port-top {
+  position: absolute; left: 0; top: 0;
+  height: ${KEY_H}px;
+  display: flex; align-items: center;
+  gap: 3px;
+  padding: 0 3px;
+  overflow: hidden;
+  border-bottom-right-radius: 9px;
+  background: ${CHROME.plate};
+  z-index: 3;
+}
+.hud-port.is-critical .hud-port-top {
+  right: 0;
+  justify-content: space-between;
+  border-bottom-right-radius: 0;
+  border-bottom: 1px solid ${CHROME.rimDim};
+}
+/* While Critical the chip drops the "F" and keeps the row ordinal: "F3" plus a
+   30 px two-digit numeral needs 50 real px of a 50 real px band, which would
+   put two glyph boxes flush against each other. The ordinal alone is 12 px, so
+   the numeral gets a real gutter and the band never has to clip. */
+.hud-port.is-critical .hud-port-key i { display: none; }
+.hud-port-key i { font-style: normal; }
+.hud-port-key {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: ${CHROME.inkDim};
+  font-size: ${FS_KEY}px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+/* Critical: persistent >=20 px HP numeral, right-hand end of the same plate.
+   The character art is never tinted AND never covered below this band. */
+.hud-port-num {
+  flex: 0 0 auto;
+  display: none;
+  color: ${CHROME.ink};
+  font-size: ${FS_NUM}px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+.hud-port.is-critical .hud-port-num { display: block; }
+.hud-slot-key {
   position: absolute; left: 0; top: 0;
   height: ${KEY_H}px;
   padding: 0 6px;
@@ -244,22 +298,6 @@ export function hudCss() {
   line-height: 1;
   z-index: 3;
 }
-/* Critical: persistent >=20 px HP numeral on its own opaque plate, in the
-   tile's GLYPH BAND — disjoint from the key chip above it. */
-.hud-port-num {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  height: ${NUM_H}px;
-  display: none;
-  align-items: center; justify-content: center;
-  background: ${CHROME.plate};
-  border-top: 1px solid ${CHROME.rimDim};
-  color: ${CHROME.ink};
-  font-size: ${FS_NUM}px;
-  font-weight: 800;
-  line-height: 1;
-  z-index: 4;
-}
-.hud-port.is-critical .hud-port-num { display: flex; }
 
 /* Downed: horizontal portrait treatment + hollow Bone ring with a hold-E
    glyph; Being-revived fills that ring clockwise in Parchment (§17). */
@@ -289,7 +327,7 @@ export function hudCss() {
    would otherwise sit exactly on the ring's 12 o'clock start. It returns the
    moment the ally is up. That leaves the ring's sweep unbroken and the E chip
    centred inside it — no glyph in the tile overlaps another. */
-.hud-port.is-downed .hud-port-key { display: none; }
+.hud-port.is-downed .hud-port-top { display: none; }
 .hud-port-e {
   position: absolute; left: 50%; top: 50%;
   transform: translate(-50%, -50%);
@@ -312,7 +350,14 @@ export function hudCss() {
 }
 .hud-port.shake { animation: hud-shake 160ms ease-out; }
 
-/* HP bar: class accent on a charcoal track (§17) */
+/* HP bar: class accent on a charcoal track (§17).
+   POLARITY FENCE. The track interior is ALWAYS Void Charcoal, at every phase
+   of the Critical pulse: the filled part must stay the brighter element or the
+   bar inverts its reading (a 15%-HP bar that looks 85% full). §17's
+   "track value-pulse charcoal<->bone" is therefore carried by the track's
+   OUTLINE (2 px while Critical) plus the tile's inner frame, and the VALUE
+   pulse rides the fill itself, which brightens toward Parchment. See
+   commandbar.js paintCritical(). */
 .hud-port-hp {
   position: relative;
   margin-top: ${HP_GAP}px;
@@ -322,6 +367,10 @@ export function hudCss() {
   border: 1px solid ${CHROME.rimDim};
   overflow: hidden;
 }
+/* The Critical track pulse rides an OUTLINE, which is painted outside the
+   border box: the track's 10 px interior is never narrowed, so a probe that
+   samples the track always samples Void Charcoal. */
+.hud-port.is-critical .hud-port-hp { outline: 2px solid transparent; }
 .hud-port-hp i {
   display: block; height: 100%; width: 100%;
   background: linear-gradient(180deg, var(--accentLift) 0%, var(--accentLift) 34%, var(--accent) 62%, var(--accentDeep) 100%);
@@ -330,23 +379,34 @@ export function hudCss() {
 /* Hover: chrome +1 value step ONLY (§17) — no layout, no colour semantics. */
 .hud-port:hover .hud-port-tile,
 .hud-port.is-hover .hud-port-tile { background: ${CHROME.plateHi}; border-color: ${CHROME.rimHot}; }
+.hud-port:hover .hud-port-top,
+.hud-port.is-hover .hud-port-top { background: ${CHROME.plateHi}; }
 .hud-port:hover .hud-port-key,
-.hud-port.is-hover .hud-port-key { color: ${CHROME.ink}; background: ${CHROME.plateHi}; }
+.hud-port.is-hover .hud-port-key { color: ${CHROME.ink}; }
 .hud-port:hover .hud-port-hp,
 .hud-port.is-hover .hud-port-hp { border-color: ${CHROME.rimHot}; }
 
 /* ------------------------------------------------------- skill/dodge slot */
+/* ICON FIELD. §17 spends the cooldown as a "70% charcoal overlay" — which is
+   invisible on a pure Void Charcoal plate, and whose conic edge then only
+   shows by cutting a hard diagonal through the abbrev glyph. So the slot's
+   field is charcoal LIFTED toward Warm Grey (the same studio backdrop the
+   portrait tiles use): the veil now darkens the FIELD, the wipe reads as a
+   clock, and the glyph is dimmed uniformly by .is-cooling instead of being
+   sliced. Parchment ink on this field measures 9.4:1 (criterion 5). */
 .hud-slot {
   position: relative;
   width: ${TILE}px; height: ${TILE}px;
   border-radius: 12px;
-  background: ${CHROME.plate};
+  background: linear-gradient(180deg, ${mix(C, PALETTE.warmGrey, 0.30)} 0%, ${mix(C, PALETTE.warmGrey, 0.22)} 100%);
+  box-shadow: inset 0 -2px 0 0 ${CHROME.plateSunk};
   border: 2px solid ${CHROME.rim};
   overflow: hidden;
 }
 .hud-slot.is-empty { border-style: dashed; border-color: ${CHROME.rimDim}; }
+.hud-slot.is-empty { background: ${CHROME.plate}; }
 .hud-slot.is-empty .hud-slot-abbrev { color: ${CHROME.rimHot}; }
-.hud-slot-key { background: ${CHROME.plateHi}; z-index: 2; }
+.hud-slot-key { background: ${CHROME.plateHi}; z-index: 4; }
 /* GLYPH BAND. The abbrev owns it while the slot is ready; .is-counting
    hides the abbrev and the numeral strip owns it instead. The two are
    mutually exclusive, so they can never overlap. */
@@ -365,13 +425,30 @@ export function hudCss() {
 }
 .hud-slot.is-counting .hud-slot-abbrev { display: none; }
 .hud-slot-abbrev svg { width: 30px; height: 26px; display: block; }
-.hud-slot-wipe { position: absolute; inset: 0; z-index: 3; }
+.hud-slot-abbrev svg path { fill: ${CHROME.ink}; }
+/* Cooling: the glyph dims UNIFORMLY (5.1:1 on the field) — the veil never
+   half-lights a letter. */
+.hud-slot.is-cooling .hud-slot-abbrev { color: ${mix(PALETTE.parchment, C, 0.3)}; }
+.hud-slot.is-cooling .hud-slot-abbrev svg path { fill: ${mix(PALETTE.parchment, C, 0.3)}; }
+/* z-index 1: UNDER the key chip (4), the abbrev (2) and the numeral (5). */
+.hud-slot-wipe { position: absolute; inset: 0; z-index: 1; }
 /* The on_cooldown nudge paints HERE, not on the wipe itself: the wipe's own
    background-image is the conic charcoal veil, so a background-colour flash on
    it would only show through the wedge that is already spent — the opposite of
    the icon the player needs. This layer sits above the veil and washes the
    whole tile. */
-.hud-slot-flash { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.hud-slot-flash { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+/* Dedicated frame layer for the empty_slot blink. Every denial nudge owns its
+   OWN element and its OWN animated property, so two reasons can never land on
+   one node and let stylesheet order pick the winner (the round-2 defect: a
+   dash-cancel's skip-pulse permanently killed the frame blink on that slot). */
+.hud-slot-frame {
+  position: absolute; inset: 0;
+  border: 3px solid transparent;
+  border-radius: 12px;
+  z-index: 7;
+  pointer-events: none;
+}
 .hud-slot-num {
   position: absolute; left: 0; right: 0; bottom: 0;
   height: ${NUM_H}px;
@@ -413,7 +490,7 @@ export function hudCss() {
 }
 .hud-nudge-wipe { animation: hud-wipe-nudge 180ms ease-out; }
 @keyframes hud-frame-blink {
-  0%,100% { border-color: ${CHROME.rimDim}; }
+  0%,100% { border-color: transparent; }
   50%     { border-color: ${PALETTE.parchment}; }
 }
 .hud-nudge-blink { animation: hud-frame-blink 180ms ease-out; }
@@ -425,11 +502,27 @@ export function hudCss() {
 .hud-nudge-skip { animation: hud-skip-pulse 180ms ease-out; }
 /* ready-pop: 120 ms scale 1 -> 1.15 -> 1 + plate flash charcoal -> warm grey */
 @keyframes hud-ready-pop {
-  0%   { transform: scale(1);    background: ${CHROME.plate}; }
-  45%  { transform: scale(1.15); background: ${PALETTE.warmGrey}; }
-  100% { transform: scale(1);    background: ${CHROME.plate}; }
+  0%   { transform: scale(1);    box-shadow: inset 0 0 0 40px transparent; }
+  45%  { transform: scale(1.15); box-shadow: inset 0 0 0 40px ${PALETTE.warmGrey}; }
+  100% { transform: scale(1);    box-shadow: inset 0 0 0 40px transparent; }
 }
 .hud-ready { animation: hud-ready-pop 120ms ease-out; }
+
+/* STATIC PEAK classes. A 180 ms nudge is a coin-flip for a screenshot, and
+   pausing a WAAPI animation does not survive the HUD's per-frame class writes
+   (round-2 defect: __echoes.hud.pinAnimations reverted 400 ms later). These
+   classes carry the keyframe PEAK as plain declarations — no animation, no
+   timeline — so __echoes.hud.forceNudge(target, kind, holdMs) can hold a real
+   nudge at its peak for as long as a capture needs and the pixels are the same
+   pixels the animation reaches at 40-50%. */
+/* Scoped through #hud so a held peak outranks the state rules it has to beat
+   (a running animation wins the cascade on its own, but a STATIC class does
+   not: plain .hud-peak-blink loses to .hud-slot.is-empty's dim border, which
+   is exactly the "border stays rimDim" symptom round 2 reported). */
+#hud .hud-peak-wipe  { background-color: ${PALETTE.warmGrey}66; }
+#hud .hud-peak-blink { border-color: ${PALETTE.parchment}; }
+#hud .hud-peak-skip  { transform: scale(1.14); }
+#hud .hud-peak-ready { transform: scale(1.15); box-shadow: inset 0 0 0 40px ${PALETTE.warmGrey}; }
 
 /* ------------------------------------------- ZONE 2 — room banner (§17) -- */
 #hud-banner {
@@ -445,7 +538,7 @@ export function hudCss() {
   border: 2px solid ${CHROME.rim};
   box-shadow: inset 0 0 0 1px ${CHROME.plateSunk};
   opacity: 0;
-  transition: opacity 240ms ease;
+  transition: opacity 170ms linear;
   white-space: nowrap;
 }
 #hud-banner.show { opacity: 1; }
@@ -497,16 +590,25 @@ export function hudCss() {
 
 /* --------------------------------------- off-screen threat markers (§17) -- */
 /* Real-pixel layer (NOT inside the 1080p scaler): these are world-anchored
-   pointers that must sit exactly on the window edge at any resolution. */
+   pointers that must sit exactly on the window edge at any resolution.
+   The WRAPPER only translates; the arrow SVG carries the rotation and the
+   count badge stays upright, so a merged pointer can be read as "3 threats
+   that way" without tilting its numeral. */
+/* No will-change here: up to MAX_MARKERS pointers would each be promoted to
+   their own compositor layer, which costs more than the transform it saves. */
 #hud-threat .tm {
   position: absolute;
   left: 0; top: 0;
+  width: 0; height: 0;
+}
+#hud-threat .tm-rot {
+  position: absolute;
+  left: -21px; top: -21px;
   width: 42px; height: 42px;
-  margin: -21px 0 0 -21px;
-  will-change: transform;
+  display: block;
+  overflow: visible;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.75));
 }
-#hud-threat .tm svg { width: 42px; height: 42px; display: block; overflow: visible; }
 #hud-threat .tm .tm-plate { fill: ${CHROME.plate}; stroke: ${CHROME.rimHot}; stroke-width: 2; }
 #hud-threat .tm .tm-head { fill: ${PALETTE.bone}; stroke: ${CHROME.plate}; stroke-width: 2.5; stroke-linejoin: round; }
 #hud-threat .tm.telegraph .tm-head { fill: ${PALETTE.emberDanger}; }
@@ -515,5 +617,27 @@ export function hudCss() {
 #hud-threat .tm.spawn .tm-dot { fill: ${PALETTE.godstuffViolet}; }
 #hud-threat .tm .tm-ring { fill: none; stroke: none; stroke-width: 2.5; }
 #hud-threat .tm.marked .tm-ring { stroke: ${PALETTE.signalBlue}; }
+/* Merge badge: when two threats share a perimeter cell their pointers merge
+   into one and the badge counts them, so raising the marker budget never
+   leaves a direction unmarked (criterion 6). >=20 px numeral, upright. */
+#hud-threat .tm-badge {
+  position: absolute;
+  left: 0; top: 0;
+  margin: -14px 0 0 -17px;
+  min-width: 34px; height: 28px;
+  padding: 0 4px;
+  border-radius: 8px;
+  display: none;
+  align-items: center; justify-content: center;
+  background: ${CHROME.plate};
+  border: 2px solid ${CHROME.rimHot};
+  color: ${CHROME.ink};
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.7);
+}
+#hud-threat .tm.merged .tm-badge { display: flex; }
 `;
 }

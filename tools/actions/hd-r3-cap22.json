@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__F=[];window.__fi=setInterval(()=>window.__F.push(window.__echoes.fps),200);const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);let k=0;for(let i=0;i<22;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;if(E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z))k++;}return k;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const a=E.hud.threat();const dom=[...document.querySelectorAll(\"#hud-threat .tm\")].filter(n=>n.style.display!==\"none\");const badges=dom.filter(n=>n.className.indexOf(\"merged\")>=0).map(n=>n.querySelector(\".tm-badge\").textContent);let sum=0;for(const b of badges)sum+=Number(b.slice(1));window.__A={offFrame:a.offFrame,markersDrawn:a.markersDrawn,covered:a.covered,uncued:a.uncued,budget:a.markerBudget,domMarkers:dom.length,badges,badgeSum:sum,singles:dom.length-badges.length,accountedFor:sum+(dom.length-badges.length),entities:E.entityCount};return window.__A;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 4000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{clearInterval(window.__fi);const f=window.__F.slice(3).sort((a,b)=>a-b);return Object.assign({fpsMin:f[0],fpsMedian:f[Math.floor(f.length/2)],fpsMax:f[f.length-1],fpsSamples:f.length},window.__A);})()"
+ }
+]

@@ -26,8 +26,26 @@ import { PALETTE } from '../../data/palette.js';
 
 // 256 px render, displayed at 70 virtual px -> the 2 px storybook ink line is
 // authored against a 64 px viewport so it stays ~2 px at display size.
-const RENDER_PX = 256;
+const RENDER_PX = 384;
 const INK_REF_PX = 64;
+
+// ART FENCE. The tile's TOP-LEFT chip band is reserved chrome (F-key, and the
+// Critical HP numeral beside it) — commandbar.js/style.js never put chrome
+// anywhere else on a portrait. Two per-class framing knobs keep the identity
+// features out from under it:
+//   xBias  fraction of the frame WIDTH the bust is pushed right, so a feature
+//          that lives high on the silhouette clears the chip horizontally.
+//   earPad extra crown headroom, in head radii, for a long-eared class.
+// The archer's numbers come from a measured column profile of its own render:
+// the hare's ears occupy x 37-60% and y 18-48% of the frame, and the "F4" chip
+// covers x 0-53%, y 0-41% of the tile — so the ears were entirely behind it,
+// which is why F4 read as the same round cream head as F1 (round-2 note a).
+const FRAMING = {
+  healer: { xBias: 0.09, earPad: 0.0 },
+  tank: { xBias: 0.03, earPad: 0.0 },
+  swordsman: { xBias: 0.11, earPad: 0.05 },
+  archer: { xBias: 0.19, earPad: 0.1 },
+};
 
 export function renderClassPortraits({ cosmetic = null } = {}) {
   const out = {};
@@ -82,7 +100,11 @@ export function renderClassPortraits({ cosmetic = null } = {}) {
       // Ears are identity (the hare's especially), so the frame reaches for
       // earTopY, but never further than one head-radius above the crown — a
       // long-eared class would otherwise shrink its own face to nothing.
-      const crown = Math.min(M.earTopY + 0.03, M.domeTopY + M.headR * 1.45);
+      const fr = FRAMING[classId] ?? { xBias: 0, earPad: 0 };
+      const crown = Math.min(
+        M.earTopY + 0.03,
+        M.domeTopY + M.headR * (1.45 + fr.earPad * 4)
+      );
       const bottom = M.chinY - M.headR * 0.45;
       // HEADROOM. The tile's top-left carries the F1-F4 key chip (26 of the
       // tile's 64 virtual px, a floor-driven size), so the bust is framed with
@@ -97,8 +119,11 @@ export function renderClassPortraits({ cosmetic = null } = {}) {
       cam.bottom = -half;
       cam.near = 0.01;
       cam.far = 20;
-      cam.position.set(0, cy, 4);
-      cam.lookAt(0, cy, 0);
+      // Push the bust sideways inside its own frame (see ART FENCE above):
+      // moving the CAMERA left slides the content right.
+      const bias = -fr.xBias * half * 2;
+      cam.position.set(bias, cy, 4);
+      cam.lookAt(bias, cy, 0);
       cam.updateProjectionMatrix();
 
       renderer.render(scene, cam);

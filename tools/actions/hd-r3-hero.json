@@ -1,0 +1,35 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"giveSkill\",\"warding_aura\");E.cmd(\"giveSkill\",\"sanctuary\");const p=E.state().party;E.cmd(\"setHp\",p[1].id,0.42);E.cmd(\"setHp\",p[2].id,0.16);E.cmd(\"spawn\",\"boar\",2.2,-1.4);E.cmd(\"spawn\",\"mantis\",-2.6,1.0);E.cmd(\"healOverride\",3);E.hud.hover(1,true);E.hud.freeze(0.5);return p.map(q=>q.id);})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"restoreSkillState\",{slots:[{id:\"mending_bolt\",remaining:150},{id:\"swift_mend\",remaining:52},{id:\"warding_aura\",remaining:0},{id:\"sanctuary\",remaining:0}],override:null});return E.cmd(\"skillState\");})()"
+ },
+ {
+  "type": "key",
+  "key": "Space",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 420
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;E.cmd(\"setHp\",p[1].id,0.42);E.cmd(\"setHp\",p[2].id,0.16);E.hud.freeze(0.5);const h=E.hud;const S=h.slots(),P=h.portraits();const boxes=[];for(const s of S){boxes.push([s.key+\":key\",s.keyBox],[s.key+\":abbrev\",s.abbrevVisible?s.abbrevBox:null],[s.key+\":num\",s.counting?s.numBox:null]);}for(const p2 of P){boxes.push([\"F\"+(p2.index+1)+\":key\",p2.keyBox],[\"F\"+(p2.index+1)+\":num\",p2.numeral?p2.numBox:null]);}const live=boxes.filter(b=>b[1]&&b[1].w>0);const hits=[];for(let i=0;i<live.length;i++)for(let j=i+1;j<live.length;j++){const A=live[i][1],B=live[j][1];if(A.x<B.x+B.w&&B.x<A.x+A.w&&A.y<B.y+B.h&&B.y<A.y+A.h)hits.push(live[i][0]+\" x \"+live[j][0]);}return {glyphBoxes:live.length,overlaps:hits,slots:S.map(s=>({k:s.key,ab:s.abbrev,cd:s.wipeDeg,n:s.numeral,cool:s.cooling,passive:s.passive})),ports:P.map(p3=>({i:p3.index,st:p3.state,n:p3.numeral,fill:p3.fillColor,track:p3.trackColor,sel:p3.selected,hov:p3.hover})),metrics:h.metrics()};})()"
+ }
+]

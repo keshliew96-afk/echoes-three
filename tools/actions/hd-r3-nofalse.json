@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"teleport\",0,0);for(let i=0;i<10;i++)E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",0,0);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 4000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const a=E.hud.threat();const ent=a.threats.filter(r=>r.key[0]===\"e\");return {entities:ent.length,inFrame:ent.filter(r=>r.inSafeFrame).length,offFrame:a.offFrame,markersDrawn:a.markersDrawn,domMarkers:a.domMarkers,uncued:a.uncued,fps:E.fps,rows:ent.slice(0,8).map(r=>({k:r.key,sx:r.sx,sy:r.sy,inFrame:r.inSafeFrame,marker:r.marker}))};})()"
+ }
+]

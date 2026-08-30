@@ -1,0 +1,54 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"teleport\",0,0);let k=0;for(let i=0;i<40;i++){const a=i/40*Math.PI*2;if(E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",Math.cos(a)*9,Math.sin(a)*6))k++;}return k;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const a=E.hud.threat();return {phase:\"ON\",fps:E.fps,entities:E.entityCount,markers:a.markersDrawn,offFrame:a.offFrame,uncued:a.uncued};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const a=E.hud.threat();return {phase:\"ON2\",fps:E.fps,entities:E.entityCount,markers:a.markersDrawn,offFrame:a.offFrame,uncued:a.uncued};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.hud.setEnabled(false);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return {phase:\"OFF\",fps:window.__echoes.fps,entities:window.__echoes.entityCount};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.hud.setEnabled(true);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const a=E.hud.threat();return {phase:\"ON3\",fps:E.fps,entities:E.entityCount,markers:a.markersDrawn,offFrame:a.offFrame,uncued:a.uncued};})()"
+ }
+]

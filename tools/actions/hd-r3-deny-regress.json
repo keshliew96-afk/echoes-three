@@ -1,0 +1,94 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__D=new Promise(res=>{const off=window.__echoes.on(\"intent_denied\",(e)=>{off&&off();res(e);});});return \"armed\";})()"
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 20
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return window.__D.then((e)=>{const h=window.__echoes.hud;h.pinAnimations(90);const s=document.querySelectorAll(\"#proto-hud .hud-slot\")[2];const f=s.querySelector(\".hud-slot-frame\");const fl=s.querySelector(\".hud-slot-flash\");const cs=getComputedStyle;return {tag:\"A empty_slot (fresh slot 3)\",reason:e.reason,slotCls:s.className,slotBorder:cs(s).borderTopColor,slotTf:cs(s).transform,frameBorder:cs(f).borderTopColor,flashBg:cs(fl).backgroundColor,outsideBar:h.animations().filter(x=>!x.insideBar).length};});})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__D=new Promise(res=>{const off=window.__echoes.on(\"intent_denied\",(e)=>{off&&off();res(e);});});return \"armed\";})()"
+ },
+ {
+  "type": "keydown",
+  "key": "Space"
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 20
+ },
+ {
+  "type": "keyup",
+  "key": "Space"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return window.__D.then((e)=>{const h=window.__echoes.hud;h.pinAnimations(90);const s=document.querySelectorAll(\"#proto-hud .hud-slot\")[2];const f=s.querySelector(\".hud-slot-frame\");const fl=s.querySelector(\".hud-slot-flash\");const cs=getComputedStyle;return {tag:\"B priority_suppressed (dash-cancel, SAME slot 3)\",reason:e.reason,slotCls:s.className,slotBorder:cs(s).borderTopColor,slotTf:cs(s).transform,frameBorder:cs(f).borderTopColor,flashBg:cs(fl).backgroundColor,outsideBar:h.animations().filter(x=>!x.insideBar).length};});})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__D=new Promise(res=>{const off=window.__echoes.on(\"intent_denied\",(e)=>{off&&off();res(e);});});return \"armed\";})()"
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 20
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return window.__D.then((e)=>{const h=window.__echoes.hud;h.pinAnimations(90);const s=document.querySelectorAll(\"#proto-hud .hud-slot\")[2];const f=s.querySelector(\".hud-slot-frame\");const fl=s.querySelector(\".hud-slot-flash\");const cs=getComputedStyle;return {tag:\"C empty_slot AFTER the dash-cancel (round-2 defect)\",reason:e.reason,slotCls:s.className,slotBorder:cs(s).borderTopColor,slotTf:cs(s).transform,frameBorder:cs(f).borderTopColor,flashBg:cs(fl).backgroundColor,outsideBar:h.animations().filter(x=>!x.insideBar).length};});})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"restoreSkillState\",{slots:[{id:\"mending_bolt\",remaining:300},{id:\"swift_mend\",remaining:0},null,null],override:null});return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__D=new Promise(res=>{const off=window.__echoes.on(\"intent_denied\",(e)=>{off&&off();res(e);});});return \"armed\";})()"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 20
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return window.__D.then((e)=>{const h=window.__echoes.hud;h.pinAnimations(90);const s=document.querySelectorAll(\"#proto-hud .hud-slot\")[0];const f=s.querySelector(\".hud-slot-frame\");const fl=s.querySelector(\".hud-slot-flash\");const cs=getComputedStyle;return {tag:\"D on_cooldown (slot 1)\",reason:e.reason,slotCls:s.className,slotBorder:cs(s).borderTopColor,slotTf:cs(s).transform,frameBorder:cs(f).borderTopColor,flashBg:cs(fl).backgroundColor,outsideBar:h.animations().filter(x=>!x.insideBar).length};});})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return {denialSequence:window.__echoes.events.filter(e=>e.type===\"intent_denied\").map(e=>e.kind+\":\"+e.reason),nudges:window.__echoes.hud.nudges().map(n=>n.cls+\" on \"+n.target)};})()"
+ }
+]

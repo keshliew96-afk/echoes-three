@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const b=document.getElementById(\"hud-banner\");window.__S=[];window.__T0=null;window.__echoes.on(\"room_cleared\",()=>{if(window.__T0===null)window.__T0=performance.now();});window.__iv=setInterval(()=>{if(window.__T0===null)return;window.__S.push([Math.round(performance.now()-window.__T0),+getComputedStyle(b).opacity,b.classList.contains(\"show\")?1:0]);},12);return \"armed\";})()"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"clearRoom\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{clearInterval(window.__iv);const S=window.__S;const gone=S.find(r=>r[1]<0.01);return {samples:S.slice(0,16),firstZeroMs:gone?gone[0]:null,transition:getComputedStyle(document.getElementById(\"hud-banner\")).transitionDuration};})()"
+ }
+]

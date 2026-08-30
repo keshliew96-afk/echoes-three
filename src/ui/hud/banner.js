@@ -74,7 +74,9 @@ export function createBanner() {
     else if (room && !room.cleared && room.mode === 'defend') next = 'defend';
     else if (room && !room.cleared && room.mode === 'kill_all') next = 'kill_all';
 
+    let changed = false;
     if (next !== mode) {
+      changed = true;
       mode = next;
       root.classList.toggle('boss', mode === 'boss');
       root.classList.toggle('show', mode !== 'none');
@@ -84,20 +86,20 @@ export function createBanner() {
       num.style.display = mode === 'kill_all' ? 'inline' : 'inline';
       lastKey = '';
     }
-    if (mode === 'none') return;
+    if (mode === 'none') return changed;
 
     if (mode === 'boss') {
       const name = (boss.name ?? 'THE HOLLOW STAG').toUpperCase();
       const frac = boss.maxHp > 0 ? boss.hp / boss.maxHp : 0;
       const key = `b|${name}|${Math.round(boss.hp)}|${boss.maxHp}`;
-      if (key === lastKey) return;
+      if (key === lastKey) return changed;
       lastKey = key;
       label.textContent = name;
       label.className = 'hud-bn-label';
       showBar(PALETTE.godstuffViolet, mix(PALETTE.godstuffViolet, PALETTE.godstuffVioletPeak, 0.6), frac);
       num.textContent = `${Math.max(0, Math.ceil(boss.hp))}/${boss.maxHp}`;
       num.className = 'hud-bn-num';
-      return;
+      return true;
     }
 
     if (mode === 'defend') {
@@ -106,7 +108,7 @@ export function createBanner() {
       const maxHp = ws ? ws.maxHp : 150;
       const left = room.defendTicksLeft ?? 0;
       const key = `d|${hp}|${maxHp}|${Math.ceil(left / TICK_HZ)}|${room.softFailed}`;
-      if (key === lastKey) return;
+      if (key === lastKey) return changed;
       lastKey = key;
       label.textContent = room.softFailed ? 'WAYSTONE LOST' : 'WAYSTONE';
       showBar(PALETTE.hearthAmber, mix(PALETTE.hearthAmber, PALETTE.parchment, 0.45), maxHp > 0 ? hp / maxHp : 0);
@@ -114,7 +116,7 @@ export function createBanner() {
       num.className = 'hud-bn-num';
       timer.textContent = clock(left);
       timer.className = 'hud-bn-num' + (left <= 10 * TICK_HZ ? ' warn' : '');
-      return;
+      return true;
     }
 
     // kill_all
@@ -123,17 +125,19 @@ export function createBanner() {
     const shown = Math.min(total, idx + 1);
     const alive = room.aliveEnemies + room.pendingSpawns;
     const key = `k|${shown}|${total}|${alive}`;
-    if (key === lastKey) return;
+    if (key === lastKey) return changed;
     lastKey = key;
     label.textContent = `WAVE ${shown}/${total}`;
     setPips(total, idx, idx);
     num.textContent = `${alive} LEFT`;
     num.className = 'hud-bn-label hud-bn-sub';
+    return true;
   }
 
   return {
     el: root,
     update,
+    isVisible: () => mode !== 'none',
     debug: {
       boss: (d) => {
         bossOverride = d ? { name: d.name ?? 'THE HOLLOW STAG', hp: d.hp ?? 200, maxHp: d.maxHp ?? 200 } : null;

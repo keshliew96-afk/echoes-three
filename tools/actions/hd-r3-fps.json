@@ -1,0 +1,44 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"teleport\",0,0);let k=0;for(let i=0;i<30;i++){const a=i/30*Math.PI*2;if(E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",Math.cos(a)*9,Math.sin(a)*6))k++;}return k;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "mousemove",
+  "x": 1100,
+  "y": 300
+ },
+ {
+  "type": "key",
+  "key": "KeyW",
+  "ms": 400
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const a=E.hud.threat();return {fps:E.fps,entities:E.entityCount,offFrame:a.offFrame,markers:a.markersDrawn,uncued:a.uncued,dom:a.domMarkers};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const a=E.hud.threat();return {fps:E.fps,offFrame:a.offFrame,markers:a.markersDrawn,uncued:a.uncued};})()"
+ }
+]

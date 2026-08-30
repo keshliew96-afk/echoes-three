@@ -1,0 +1,38 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"giveSkill\",\"warding_aura\");E.cmd(\"giveSkill\",\"sanctuary\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"restoreSkillState\",{slots:[{id:\"mending_bolt\",remaining:150},{id:\"swift_mend\",remaining:52},{id:\"warding_aura\",remaining:0},{id:\"sanctuary\",remaining:0}],override:null});E.hud.freeze(0.25);const p=E.state().party;E.cmd(\"setHp\",p[1].id,0.42);E.cmd(\"setHp\",p[2].id,0.16);E.cmd(\"teleport\",3.2,-2.4);E.cmd(\"placeAlly\",1,2.3000000000000003,-1.9);E.cmd(\"placeAlly\",2,4.1000000000000005,-1.9);E.cmd(\"placeAlly\",3,3.2,-3.3);return E.state().party.map(q=>[q.x,q.z]);})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"restoreSkillState\",{slots:[{id:\"mending_bolt\",remaining:150},{id:\"swift_mend\",remaining:52},{id:\"warding_aura\",remaining:0},{id:\"sanctuary\",remaining:0}],override:null});E.hud.freeze(0.25);const p=E.state().party;E.cmd(\"setHp\",p[1].id,0.42);E.cmd(\"setHp\",p[2].id,0.16);E.cmd(\"teleport\",3.2,-2.4);E.cmd(\"placeAlly\",1,2.3000000000000003,-1.9);E.cmd(\"placeAlly\",2,4.1000000000000005,-1.9);E.cmd(\"placeAlly\",3,3.2,-3.3);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;return {bar:h.metrics().zone1Box,chrome:h.chrome(),fps:window.__echoes.fps};})()"
+ }
+]

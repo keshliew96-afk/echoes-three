@@ -1,0 +1,47 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;const b=(i)=>p.find(q=>q.partyIndex===i)||p[0];E.cmd(\"killAllEnemies\");E.cmd(\"setHp\",b(1).id,0.40);E.cmd(\"setHp\",b(2).id,0.15);E.cmd(\"setHp\",b(3).id,0);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "key",
+  "key": "F1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;h.hover(1,true);h.freeze(0.25);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;const b=(i)=>p.find(q=>q.partyIndex===i)||p[0];E.cmd(\"setHp\",b(1).id,0.40);E.cmd(\"setHp\",b(2).id,0.15);E.cmd(\"setHp\",b(3).id,0);E.hud.freeze(0.25);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const P=window.__echoes.hud.portraits();return P.map(p=>({i:p.index,st:p.state,sel:p.selected,hov:p.hover,n:p.numeral,fill:p.fillColor,track:p.trackColor,tb:p.trackBorder,to:p.trackOutline,ib:p.innerBorder,ic:p.innerColor,w:p.hpWidth,rev:Math.round(p.reviveOffset)}));})()"
+ }
+]

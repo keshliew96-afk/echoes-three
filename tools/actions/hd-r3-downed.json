@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");const p=E.state().party;for(const q of p)if(q.partyIndex>0)E.cmd(\"setHp\",q.id,0);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const P=window.__echoes.hud.portraits();return P.map(p=>({i:p.index,st:p.state,rev:Math.round(p.reviveOffset),tot:Math.round(p.reviveTotal)}));})()"
+ }
+]

@@ -1,0 +1,94 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);for(let i=0;i<22;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z);}return E.entityCount;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.hud.setEnabled(true);const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);for(let i=0;i<22;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z);}return E.entityCount;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {hud:true,fps:E.fps,entities:E.entityCount};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.hud.setEnabled(false);const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);for(let i=0;i<22;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z);}return E.entityCount;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {hud:false,fps:E.fps,entities:E.entityCount};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.hud.setEnabled(true);const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);for(let i=0;i<22;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z);}return E.entityCount;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {hud:true,fps:E.fps,entities:E.entityCount};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.hud.setEnabled(false);const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);for(let i=0;i<22;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z);}return E.entityCount;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {hud:false,fps:E.fps,entities:E.entityCount};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.hud.setEnabled(true);const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);for(let i=0;i<22;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z);}return E.entityCount;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {hud:true,fps:E.fps,entities:E.entityCount};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.hud.setEnabled(false);const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);for(let i=0;i<22;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z);}return E.entityCount;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {hud:false,fps:E.fps,entities:E.entityCount};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.hud.setEnabled(true);return 1;})()"
+ }
+]

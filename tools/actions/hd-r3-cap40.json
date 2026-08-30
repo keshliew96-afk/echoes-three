@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);let k=0;for(let i=0;i<40;i++){const x=-9+(i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;if(E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z))k++;}return k;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=window.__echoes.hud.threat();const dom=[...document.querySelectorAll(\"#hud-threat .tm\")].filter(n=>n.style.display!==\"none\");const badges=dom.filter(n=>n.className.indexOf(\"merged\")>=0).map(n=>n.querySelector(\".tm-badge\").textContent);let sum=0;for(const b of badges)sum+=parseInt(b.replace(/D/g,\"\"),10);return {offFrame:a.offFrame,markersDrawn:a.markersDrawn,covered:a.covered,uncued:a.uncued,budget:a.markerBudget,domMarkers:dom.length,mergedBadges:badges,badgeSum:sum,singles:dom.length-badges.length,zones:a.zones};})()"
+ }
+]

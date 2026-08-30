@@ -68,9 +68,35 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
     // canvas is letterboxed by height, i.e. whenever s == H/1080).
     root.style.setProperty('--zb', `${((540 * s - H / 2 + BAR_EDGE_PX) / s).toFixed(2)}px`);
     root.style.setProperty('--zt', `${((540 * s - H / 2 + BANNER_EDGE_PX) / s).toFixed(2)}px`);
-    // Keep the threat pointers clear of the command bar strip.
-    const r = bar.el.getBoundingClientRect();
-    threat.setBarHeight(Math.max(60, window.innerHeight - r.top + 16));
+    publishZones();
+  }
+
+  // The threat layer keeps its pointers off BOTH HUD zones (and docks a
+  // pointer that would land on one onto that zone's rim), so a cue is never
+  // hidden under the chrome it is warning about and never floats in open
+  // grass. The rectangles are real window px — the threat layer lives outside
+  // the 1080p scaler.
+  // COST. getBoundingClientRect forces a synchronous layout of the whole
+  // 1920x1080 virtual canvas, so this must NOT run per frame. The two zone
+  // rectangles only move on resize or when the banner changes what it says,
+  // and banner.update() reports exactly that, so the rects are read on those
+  // two edges only.
+  const zoneList = [];
+  function publishZones() {
+    const b1 = bar.el.getBoundingClientRect();
+    const b2 = banner.el.getBoundingClientRect();
+    zoneList.length = 0;
+    zoneList.push({
+      x: b1.x,
+      y: b1.y,
+      w: b1.width,
+      h: window.innerHeight - b1.y,
+      edge: 'bottom',
+    });
+    if (banner.isVisible() && b2.width > 1) {
+      zoneList.push({ x: b2.x, y: 0, w: b2.width, h: b2.y + b2.height, edge: 'top' });
+    }
+    threat.setZones(zoneList);
   }
   layout();
   window.addEventListener('resize', layout);
@@ -150,7 +176,9 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
     bar.update(now, { members, channels, tick: world.tick, greySkills });
 
     if (nowMs >= roomPollAt) pollRoom(nowMs);
-    banner.update(room, runBoss ?? bossEntity);
+    // The banner reports when it actually repainted; only then can its zone
+    // rectangle have moved.
+    if (banner.update(room, runBoss ?? bossEntity)) publishZones();
 
     threat.update(now, entities);
   }
@@ -169,6 +197,10 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
     boss: banner.debug.boss,
     threat: threat.debug.audit,
     markers: threat.debug.markers,
+    zones: () => {
+      publishZones();
+      return threat.debug.audit().zones;
+    },
     relayout: layout,
     setEnabled: (on) => {
       enabled = !!on;
@@ -219,11 +251,15 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
     chrome: () => {
       const cs = getComputedStyle(bar.el);
       const slot = bar.el.querySelector('.hud-slot');
+      const slotCs = slot ? getComputedStyle(slot) : null;
+      const port = bar.el.querySelector('.hud-port-tile');
       return {
         barBackground: cs.backgroundImage.slice(0, 120),
         barBorder: cs.borderTopColor,
-        slotBackground: slot ? getComputedStyle(slot).backgroundColor : null,
+        slotBackground: slotCs ? slotCs.backgroundColor : null,
+        slotField: slotCs ? slotCs.backgroundImage.slice(0, 120) : null,
         slotColor: slot ? getComputedStyle(slot.querySelector('.hud-slot-abbrev')).color : null,
+        portraitPlate: port ? getComputedStyle(port).backgroundImage.slice(0, 120) : null,
       };
     },
   };
