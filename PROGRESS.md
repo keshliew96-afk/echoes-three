@@ -5,7 +5,28 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ▶ Round D closing — run structure built (8/8 rooms play), boss blowout fixed by me; camp + HUD/carried-fix critics finishing (v0.4.11)
+## Status: ⏸ PAUSED by user (mid Round D, v0.4.13)
+
+### Resume point — do this first
+1. Start the dev server (`npm run dev`, port 5199) if it is not up.
+2. Resume Round D: `Workflow({scriptPath: "C:\Users\keshl\.claude\projects\C--Users-keshl-OneDrive-Desktop------echoes-three\3d94cc26-ac5d-4ee9-8985-3b471cd8f4f1\workflows\scripts\echoes-round-d-wf_dd82be98-2d0.js", resumeFromRunId: "wf_dd82be98-2d0"})` — run-structure and HUD replay from cache; camp-hub build/critic and the HUD/carried-fix critics finish. NOTE: there is uncommitted (working, booting) builder work in src/ui/run/**, src/render/skillfx, src/env/props.js, src/render/numbers.js — leave it for the agents that own it.
+3. Then the FINAL block 14: reference-bar certification — score all 10 checks on camp/combat/shop/boss frames, prove camp→8 rooms→victory and a defeat loop end-to-end at 60fps with zero console errors, fix what it rejects.
+
+### Measured state at pause (v0.4.13) — camp scene vs the binding reference
+
+| Metric | Camp (captures/pause3-boot.png) | Reference frame | Gate |
+|---|---|---|---|
+| LUMA >160 | 1.944% | 3.418% | >=1.5% PASS |
+| LUMA >200 | 0.537% | 1.427% | >=0.4% PASS |
+| Buckets | 15/16 | 16/16 | >=13 PASS |
+| FLAT | 11.37% | 16.68% | <20% PASS |
+| HUEMIX | warm 28.8 / cool 67.6 | warm 22.5 / cool 76.4 | funnel matches |
+| Ember band | 374 px | — | <500 PASS |
+
+The game BOOTS INTO CAMP: night camp with the Hearth-Fire, all four critters
+idling around it, tents, benches, lanterns, market stall, cart, violet portal,
+fireflies, at 83 fps. The warm-vs-cool attention funnel now matches the
+reference structure, and the reserved Ember band is finally under its bar.
 
 ### Resume point — do this first
 1. Start the dev server (`npm run dev`, port 5199) if it is not up.
