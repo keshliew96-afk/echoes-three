@@ -1,0 +1,14 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=()=>window.__echoes;const sl=(m)=>new Promise(r=>setTimeout(r,m));E().cmd('teleport',-2,0);await sl(1500);window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyD',bubbles:true}));await sl(80);window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',bubbles:true}));await sl(110);window.requestAnimationFrame=()=>0;const st=window.__arenaProbe.stage;st.render();const s=E().state();const p=s.party[0];const V=st.camera.position.constructor;const v=new V(p.x,0.5,p.z).project(st.camera);const sx=Math.round((v.x*0.5+0.5)*st.renderer.domElement.width);const sy=Math.round((-v.y*0.5+0.5)*st.renderer.domElement.height);return {x:p.x,sx,sy,ghosts:(window.__arenaProbe.debugState?window.__arenaProbe.debugState():{}).party?.smearGhosts};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ }
+]

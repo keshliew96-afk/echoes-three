@@ -145,7 +145,19 @@ export const ENV = Object.freeze({
   // linear working space are what carries the glass over the bloom pass's
   // threshold so a lantern reads as a lit lantern (critique F2). ACES pulls the
   // core back to a warm near-white with an amber bloom skirt.
-  glassLit: mix(PALETTE.paleGold, PALETTE.hearthAmber, 0.4).multiplyScalar(2.9),
+  // FIX ROUND 2 — 2.9x -> 1.65x. At 2.9 linear the glass sat 4.3x over the
+  // 0.68 bloom threshold, and UnrealBloomPass (strength 1.15, radius 0.6) turned
+  // that into a metre-wide amber skirt that painted every ground decal near the
+  // prop. Measured per arc on variant 3 with the party leashed around a lantern
+  // at (8.6,-3.8): the Swordsman's fire-facing arc read h1.4 rgb(203,122,118)
+  // against his h348.2 accent, and the ring's own dark ink stroke was lifted
+  // from luma ~45 to 108 — §17 makes identity rings exempt from lighting, and
+  // this was the largest single violation of that. It also never met its own
+  // goal: at 2.9 the core WAS clipped to featureless white (captures/xe-v3-sw
+  // .png). At 1.65 the glass still clears the threshold, so the lantern keeps a
+  // real bloom halo (REFERENCE_BAR check 2), but the skirt no longer reaches the
+  // floor around it.
+  glassLit: mix(PALETTE.paleGold, PALETTE.hearthAmber, 0.4).multiplyScalar(1.65),
   // Corruption monolith stone — near-black and COOL, so the violet emissive
   // veins stay saturated violet instead of lifting into grey-mauve.
   // Cool mix 0.72 / value 0.68 (were 0.55/0.55): the violet-halo-lit flank of

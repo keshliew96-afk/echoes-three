@@ -1,0 +1,14 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=(ms)=>new Promise(r=>setTimeout(r,ms));const E=()=>window.__echoes;E().cmd('teleport',6,-4);await s(4000);const samp=async(n)=>{const a=[];for(let i=0;i<n;i++){a.push(E().fps);await s(350);}a.sort((x,y)=>x-y);return a[Math.floor(a.length/2)];};const st=window.__arenaProbe.stage;const rings=[];st.scene.traverse(o=>{if(o.name==='identity-ring')rings.push(o);});const out={rings:rings.length};out.withRings1=await samp(8);for(const r of rings)r.visible=false;out.noRings=await samp(8);for(const r of rings)r.visible=true;out.withRings2=await samp(8);out.ents=E().entityCount;return out;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ }
+]

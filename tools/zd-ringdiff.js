@@ -22,6 +22,19 @@
 // outside the ring, halo included), the band/ground ratio (§17's >=1.6
 // legibility fallback), and the darkest ink pixel + its width on the outer
 // stroke (§17's >=2 px dark rim fallback).
+//
+// FIX ROUND 2 — the A/B mask is now built with BLOOM DISABLED, and only the
+// colour/ground samples are read from the bloomed frames. Reason, measured on
+// variant 3 at (8.6,-3.8): the Swordsman stands about half a metre behind a
+// lit lantern prop, and UnrealBloomPass is a GLOBAL effect — hiding his ring
+// band changes the frame, so the bloom over the lantern changes too, and every
+// lantern pixel inside the ring annulus cleared the old difference test. The
+// probe then reported those pixels as band: hCore 36.1 rgb(222,163,73) on the W
+// arc, i.e. a fully saturated GOLD carrying LESS blue than the wine band has,
+// which no additive veil can produce. With bloom off for the two mask grabs the
+// only thing that can move a pixel is the band itself, and that arc reads the
+// authored wine. The threshold is also raised 12 -> 24: the band is opaque
+// where it paints, so a real band pixel moves by far more than that.
 (() => {
   const p = window.__arenaProbe;
   const st = p.stage;
@@ -106,10 +119,17 @@
       return !inside;
     });
     for (const c of others) c.visible = false;
-    r.A = grab();
+    r.A = grab(); // shipped, bloom on -> band + ink colour
     r.band.material.visible = false;
-    r.B = grab();
+    r.B = grab(); // band hidden, bloom on -> adjacent-ground luma
+    // Mask pair, bloom OFF: with the global bloom out of the way the only
+    // pixels that can differ are the ones the band itself paints.
+    const wasBloom = st.bloomPass ? st.bloomPass.enabled : null;
+    if (st.bloomPass) st.bloomPass.enabled = false;
+    r.Bm = grab();
     r.band.material.visible = true;
+    r.Am = grab();
+    if (st.bloomPass) st.bloomPass.enabled = wasBloom;
     for (const c of others) c.visible = true;
   }
 
@@ -134,7 +154,8 @@
         let ang = (Math.atan2(v, u) * 180) / Math.PI; if (ang < 0) ang += 360;
         const oi = Math.round(ang / 45) % 8;
         const a = at(r.A, x, y), b = at(r.B, x, y);
-        const moved = Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) > 12;
+        const am = at(r.Am, x, y), bm = at(r.Bm, x, y);
+        const moved = Math.abs(am[0] - bm[0]) + Math.abs(am[1] - bm[1]) + Math.abs(am[2] - bm[2]) > 24;
         if (rad >= R.band[0] && rad <= R.band[1] && moved) {
           r.oct[oi].band.push(a);
           mask[(y - y0) * bw + (x - x0)] = 1;
@@ -179,8 +200,8 @@
           const sx = Math.round(cx + r.ex[0] * ux * t + r.ez[0] * uz * t);
           const sy = Math.round(cy + r.ex[1] * ux * t + r.ez[1] * uz * t);
           if (sx < 0 || sy < 0 || sx >= W || sy >= H) continue;
-          const a = at(r.A, sx, sy), b = at(r.B, sx, sy);
-          if (Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) > 12) seen++;
+          const a = at(r.Am, sx, sy), b = at(r.Bm, sx, sy);
+          if (Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) > 24) seen++;
         }
         if (seen < 3) continue; // this ray's band is occluded — not a rim sample
         let inkSeen = 0;
@@ -188,8 +209,9 @@
           const sx = Math.round(cx + r.ex[0] * ux * t + r.ez[0] * uz * t);
           const sy = Math.round(cy + r.ex[1] * ux * t + r.ez[1] * uz * t);
           if (sx < 0 || sy < 0 || sx >= W || sy >= H) continue;
-          const a = at(r.A, sx, sy), b = at(r.B, sx, sy);
-          const moved = Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) > 12;
+          const a = at(r.A, sx, sy);
+          const am = at(r.Am, sx, sy), bm = at(r.Bm, sx, sy);
+          const moved = Math.abs(am[0] - bm[0]) + Math.abs(am[1] - bm[1]) + Math.abs(am[2] - bm[2]) > 24;
           if (moved) inkSeen++;
           if (moved && luma(...a) < gl0 * 0.72) n++;
         }

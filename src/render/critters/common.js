@@ -27,7 +27,6 @@
 //    hex"; before this, #6B2E3A left the composer as #6f1723.
 import {
   BufferGeometry,
-  Scene,
   AdditiveBlending,
   BackSide,
   BufferAttribute,
@@ -50,8 +49,6 @@ import {
   Vector3,
   Vector4,
 } from 'three';
-import { Pass } from 'three/addons/postprocessing/Pass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE } from '../../data/palette.js';
 import { POST } from '../../core/constants.js';
@@ -706,14 +703,53 @@ export function ringBand(hex) {
   // olive (h72) take the high one.
   const deg = hsl.h * 360;
   const near = (lo, hi) => deg >= lo - 10 && deg <= hi + 10;
-  const reserved = near(5, 25) || near(110, 150) || near(245, 285);
+  const heal = near(110, 150);
+  const reserved = near(5, 25) || heal || near(245, 285);
+
+  // FIX ROUND 2b — CHROMA IS HUE ARMOUR, and only the Healer needed armour.
+  //
+  // Nothing drawn before UnrealBloomPass is bloom-exempt, and the party's own
+  // lit bodies bloom: attributed on one frozen frame with tools/xe-ringwho.js,
+  // hiding the Healer's garment `panel` alone moved her band's mean rgb from
+  // (133,176,142) to (126,173,139) and hiding every mesh drawn after the band
+  // put it exactly on (124,172,138) = the authored h137.5, WITH BLOOM STILL ON.
+  // So the veil landing on a ring is a small warm addition of about
+  // (+9,+4,+4) — and how many DEGREES that costs depends entirely on how much
+  // absolute chroma the band has to start with. For a green-max band the hue
+  // is 120 + 60*(b-r)/d, so the rotation from a fixed (dr, db) shrinks like
+  // 1/d. Measured per class on the arena's own frames:
+  //     Swordsman wine  d 93  -> 348.9-351.0 vs 348.2  (<= 1.6 deg)
+  //     Archer olive    d 93  ->  71.7- 72.3 vs  72.2  (<= 0.5 deg)
+  //     Tank ochre      d 39  ->  30.0- 30.2 vs  30.0  (<= 0.2 deg: a WARM
+  //                                band, and the veil is warm, so it moves
+  //                                along the band's own axis, not across it)
+  //     Healer sage     d 48  -> 125.3-135.1 vs 138.0  (up to 12.7 deg)
+  // Only the cool low-chroma band drifts, so only it is re-authored — in HSV,
+  // which is the space the frame analyzer actually gates on. HSL trades chroma
+  // away as lightness rises (HSL 138/0.24/0.70 gives d 37, WORSE than the
+  // shipped d 48); HSV holds saturation while value buys absolute chroma, so
+  // HSV(138, 0.34, 0.845) lands d 73 (+52%) and cuts the same veil to ~3 deg.
+  // The 0.34 is the ceiling that matters: the analyzer counts Bright Heal at
+  // h110-150 AND s > 0.35, and this band's pixels measure ~0.32 on screen, so
+  // a Healer ring still cannot be counted as heal output. The Tank keeps the
+  // old low clamp deliberately — h30 sits ten degrees off the Ember ceiling,
+  // its band is provably stable at 0.2 deg, and giving it chroma would push
+  // its antialias fringe against gold-lit grass INTO the h5-25 danger band
+  // that criterion 1 reserves for enemy threats.
+  if (heal) {
+    const sv = 0.34;
+    const vv = 0.845; // just under the underBloom() ceiling; see groundRing
+    const l = vv * (1 - sv / 2);
+    const sl = (vv - l) / Math.min(l, 1 - l);
+    return new Color().setHSL(hsl.h, sl, l, SRGBColorSpace).getHex();
+  }
   const sat = reserved
     ? Math.min(0.24, Math.max(0.18, hsl.s))
     : Math.min(0.40, Math.max(0.30, hsl.s * 1.6));
   // Reserved-hue bands buy back in VALUE what they give up in chroma: at HSL
-  // L 0.58 the Healer's Sage band measures ~1.7x the adjacent ground luma (the
-  // §17 legibility ratio) while its HSV saturation drops to ~0.27, further
-  // under the analyzer's 0.35 Bright-Heal gate than it was at L 0.54.
+  // L 0.58 the Tank's band measures ~1.7x the adjacent ground luma (the §17
+  // legibility ratio) while its HSV saturation drops to ~0.23, well under the
+  // analyzer's 0.35 reserved-hue gate.
   const light = reserved ? 0.58 : 0.54;
   return new Color().setHSL(hsl.h, sat, light, SRGBColorSpace).getHex();
 }
@@ -802,134 +838,38 @@ export function underBloom(color, headroom = 0.92) {
 }
 
 // ---------------------------------------------------------------------------
-// §17 IDENTITY-RING OVERLAY PASS  (Round D, polish criteria 1+2)
+// §17 IDENTITY-RING LIGHTING EXEMPTION  (Round D fix 2)
 //
 // §17 Zone 3 binds identity rings to "class-accent hex, constant opacity,
-// EXEMPT FROM ALL PALETTE/LIGHTING SHIFTS". Drawn inside the main RenderPass
-// the ring band is unlit, but it is not lighting-exempt, because two things
-// still land on its pixels AFTER it is drawn:
+// EXEMPT FROM ALL PALETTE/LIGHTING SHIFTS". Round D first shipped that
+// exemption as a compositor pass inserted AFTER UnrealBloomPass, and that was
+// the wrong instrument: post-bloom, the only depth such a pass can test
+// against is OPAQUE scene depth, so the ring got painted over every
+// TRANSPARENT thing it overlapped — including the enemy Ember telegraph decal,
+// which §19.4 deliberately puts ABOVE friendly ground VFX and which §11
+// requires legible for >=0.7 s. Measured on one frozen frame with a mantis
+// telegraph live, shipped vs the four band materials hidden, the reserved
+// h5-25 count read 515 vs 872 px on variant 1 (-41%), 594 vs 673 on variant 2,
+// 597 vs 817 on variant 3 — the rings were erasing 12-41% of the danger cue on
+// every telegraphed attack, and since every enemy targets the NEAREST party
+// member (§11) the decal is always centred on a ring.
+//
+// The exemption never needed z-order supremacy, because both things that were
+// landing on the band after it drew are gone at their source:
 //
 //   * the additive brazier/lantern ground pools (src/scenes/arena.js
-//     `groundPool`) draw over it on the same ground plane, and
-//   * UnrealBloomPass adds the fires' skirt over the whole neighbourhood.
+//     groundPool) sort at ORDER.pool = -12 — they draw BEFORE the band at
+//     renderOrder -1 and so cannot add into it; and
+//   * the fires' bloom skirt, which src/env/flame.js now caps at GAIN_MAX 0.96
+//     so only the near-neutral (sat 0.13) white core clears the 0.68
+//     threshold. An equal addition to all three channels cannot rotate a hue.
 //
-// Measured on a frame with the leashed party standing in a brazier pool
-// (captures/zb-v1.png, v0.3.18): the Swordsman's pool-facing arc read
-// rgb 208-211/125-131/118-120 = hue 4.7-7.8 — 17-24 degrees off #6B2E3A and
-// INSIDE the h5-25 Ember Danger band the palette reserves for enemy threats,
-// while the Tank's arc was blown to L 234-249 with no band and no rim left.
-//
-// So the band + both ink strokes are composited by a pass inserted AFTER
-// UnrealBloomPass and BEFORE OutputPass — the same seam src/render/allies
-// uses for the §10 revive instrument, and the only one where both hold:
-// bloom has already run (nothing can be added on top of the ring), and ACES +
-// the grade still run afterwards, so `exactColor`'s inversion stays valid and
-// the band lands on its authored hue exactly. RenderPass/UnrealBloomPass both
-// target `readBuffer`, whose depth attachment still holds the scene depth, so
-// the ring is depth-tested against the world exactly as before: the ground
-// shows it, a body standing on it still occludes it.
-//
-// The ring MESH stays where it always was in the critter hierarchy (the ally
-// layer's `identityU()` probe walks `identity-ring`'s children for the band's
-// geometry + uniforms) — it is simply made invisible in the main scene and a
-// PROXY sharing the same geometry and the same material instance is drawn in
-// the overlay scene at the band's world matrix. Sharing the material means
-// `setDesat` keeps working with no extra plumbing.
-class RingOverlayPass extends Pass {
-  constructor(scene, camera, sync) {
-    super();
-    this.scene = scene;
-    this.camera = camera;
-    this.sync = sync;
-    this.needsSwap = false;
-  }
-
-  render(renderer, writeBuffer, readBuffer) {
-    if (!this.sync()) return;
-    const prevAutoClear = renderer.autoClear;
-    renderer.autoClear = false; // composite over the frame + keep its depth
-    renderer.setRenderTarget(this.renderToScreen ? null : readBuffer);
-    renderer.render(this.scene, this.camera);
-    renderer.autoClear = prevAutoClear;
-  }
-}
-
-// Every ring built so far: { band (in the critter rig), proxy (in the overlay
-// scene) }. Rings are created once per party member and never disposed, so a
-// plain array is the whole lifetime story.
-const ringProxies = [];
-let ringOverlay = null;
-
-// Liveness test for a ring proxy: every node up the chain visible AND the chain
-// actually rooted in the scene this pass composites over.
-//
-// The root check is not paranoia. `groundRing` registers EVERY ring it builds,
-// and src/ui/hud/portraits.js builds a full critter per class to render the §17
-// portrait busts, then detaches them (`scene.remove(critter.group)`). A
-// detached group is still `visible === true`, so a visibility-only test kept
-// four extra proxies "live" and the pass drew them at their last world matrix —
-// the portrait scene's origin — i.e. four stacked rings sitting on the arena
-// floor at world (0, 0), composited after bloom so nothing could hide them.
-// Requiring the chain to end at the live scene drops those four.
-function liveIn(obj, world) {
-  let o = obj;
-  for (; o; o = o.parent) {
-    if (!o.visible) return false;
-    if (o === world) return true;
-  }
-  return false;
-}
-
-function adoptRing(rec) {
-  rec.band.visible = false;
-  ringOverlay.scene.add(rec.proxy);
-}
-
-// Mounted by the scene that owns the post stack (src/scenes/arena.js). Scenes
-// without a composer (the critter gallery, the unit harnesses) never call it
-// and keep the in-scene band, which is why `groundRing` builds both.
-// `?ringpass=0` is the A/B knob: it leaves the ring in the main scene so the
-// pass's cost and its colour effect can be measured against each other.
-export function mountRingOverlay(stage) {
-  if (ringOverlay || !stage?.composer?.passes) return null;
-  const enabled =
-    typeof location === 'undefined' ||
-    new URLSearchParams(location.search).get('ringpass') !== '0';
-  if (!enabled) return null;
-  const scene = new Scene(); // background null => the pass never force-clears
-  const world = stage.scene;
-  const pass = new RingOverlayPass(scene, stage.camera, () => {
-    let any = false;
-    for (const rec of ringProxies) {
-      // The band itself is held invisible in the main scene, so the ring's
-      // real visibility is read from its PARENT chain (ring group > decals >
-      // critter rig > scene): hide the critter and its ring goes with it.
-      const live = !!rec.band.parent && liveIn(rec.band.parent, world);
-      rec.proxy.visible = live;
-      if (!live) continue;
-      any = true;
-      rec.proxy.matrix.copy(rec.band.matrixWorld);
-      rec.proxy.matrixWorldNeedsUpdate = true;
-    }
-    return any;
-  });
-  const at = stage.composer.passes.findIndex((p) => p instanceof OutputPass);
-  if (at >= 0) stage.composer.insertPass(pass, at);
-  else stage.composer.addPass(pass);
-  ringOverlay = { scene, pass };
-  for (const rec of ringProxies) adoptRing(rec);
-  return ringOverlay;
-}
-
-// Debug/critic accessor: how many rings the overlay is compositing.
-export function ringOverlayInfo() {
-  return {
-    mounted: !!ringOverlay,
-    rings: ringProxies.length,
-    drawn: ringProxies.filter((r) => r.proxy.visible).length,
-  };
-}
-
+// So the band is just an UNLIT ShaderMaterial sitting at its authored place in
+// the ground-decal stack: above the environment pools and contact shadows,
+// below the character mass that occludes it, and far below the telegraph
+// group at renderOrder 2. Measured per arc with the pass removed
+// (tools/xe-ringarc.js) the pool-facing and away arcs agree to a fraction of a
+// degree on all four classes. History: docs/critiques/polish-roundC.md F1/F2.
 // Identity ring (§17 Zone 3): concentric ground ellipse — a hue-true class-
 // accent band between two Void Charcoal ink strokes (see the RING note above:
 // the strokes carry legibility, the band carries the class hue). DEPTH-TESTED
@@ -1016,22 +956,11 @@ export function groundRing(accentHex, radius) {
   const band = new Mesh(new PlaneGeometry(half * 2, half * 2), mat);
   band.rotation.x = -Math.PI / 2;
   band.position.y = 0.012;
+  // renderOrder -1: AFTER the environment ground stack (pools ORDER.pool
+  // -12, contact shadows -8/-2) so nothing warm can add into the band, and
+  // FAR BELOW the `telegraph` group's 2 — §19.4's z-order, restored.
   band.renderOrder = -1;
   group.add(band);
-
-  // Overlay proxy (see the RING OVERLAY PASS note above): the SAME geometry
-  // and the SAME material instance, drawn post-bloom at the band's world
-  // matrix. Registered whether or not a composer exists; `mountRingOverlay`
-  // adopts it and hides the in-scene band. Until then the band draws normally,
-  // so the critter gallery and the unit harnesses are unchanged.
-  const proxy = new Mesh(band.geometry, mat);
-  proxy.name = 'identity-ring-overlay';
-  proxy.matrixAutoUpdate = false;
-  proxy.frustumCulled = false;
-  proxy.renderOrder = -1;
-  const rec = { band, proxy };
-  ringProxies.push(rec);
-  if (ringOverlay) adoptRing(rec);
 
   // Additive halo under the core band (rendered BEFORE it, so the opaque
   // exact-accent stroke is never lifted off-hex by its own ring).

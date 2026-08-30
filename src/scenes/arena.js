@@ -65,7 +65,6 @@ import { makeFlameSprite, createEmberField } from '../env/flame.js';
 import { COOL, EMBER_GLOW, mix } from '../env/colors.js';
 import { variantLayoutRng } from '../env/layout.js';
 import { createAfterimages } from '../render/critters/afterimage.js';
-import { mountRingOverlay, ringOverlayInfo } from '../render/critters/common.js';
 import { installBandGuard, bandGuardInfo } from '../env/bandguard.js';
 
 // Render-cosmetic scaffold numbers (grouped; not brief-bound gameplay values).
@@ -278,6 +277,25 @@ function getShaftTexture() {
   return tex;
 }
 
+// FIX ROUND 2 — EMITTER HALOS SORT UNDER THE IDENTITY RINGS.
+//
+// A glow halo is an ADDITIVE LIGHT DECAL, the same family as `groundPool`, and
+// §17 Zone 3 makes identity rings "exempt from all palette/lighting shifts".
+// Drawn at renderOrder 6-8 the halos were painting over the ring bands of any
+// party member leashed near a fire: measured per arc on variant 3 with the party
+// at (8.6,-3.8) (tools/zd-ringdiff.js), the Swordsman stands 0.66 u from a
+// brazier and his fire-facing arc read h3.8 rgb(205,124,114) against his h348.2
+// accent — salmon, inside the h5-25 Ember band criterion 1 reserves for enemy
+// threats — with the ring's own dark ink stroke lifted from luma ~45 to 107.
+// With bloom disabled the same arc still read 14 deg off, so it was never the
+// bloom skirt: it was these sprites. HALO_ORDER puts them where the pools
+// already are relative to the ring — after the ground and the contact shadows,
+// BEFORE the band at renderOrder -1 — which is the z-order the critic's fix
+// direction (a) names: the ring above the additive light decals, and far below
+// the `telegraph` group's 2. Nothing else changes: the halos are depthTest'd
+// sprites, so a body in front of a fire still occludes its glow, and the flame
+// sprites themselves stay at renderOrder 8.
+const HALO_ORDER = -1.5;
 // Flat additive radial disc lying on the ground — the "pool of light" read.
 function groundPool(color, radius, opacity, y, broad = false) {
   const mesh = new Mesh(
@@ -320,13 +338,6 @@ export function createArenaScene(stage, toggles, ctx) {
   const spec = VARIANTS[vParam] ?? VARIANTS[1];
 
   const lightsTuned = tuneActOneLighting(stage.scene, spec.mood);
-
-  // §17 Zone 3: identity rings are "exempt from all palette/lighting shifts".
-  // Mount the post-bloom ring compositor (render/critters/common.js) so the
-  // arena's brazier pools and the fires' bloom skirt cannot add into the
-  // class-accent band — the arena is the only scene here that owns a post
-  // stack, so it is the scene that mounts the pass.
-  mountRingOverlay(stage);
 
   // --- The playable inside: same world/player/juice as ?scene=graybox. Its
   // placeholder floor + walls are the only top-level Plane/Box meshes in the
@@ -508,6 +519,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // in one bright neighbourhood and wash the painted amber out of the fire.
       // Trimming the halo hands the emitter's colour back to the flame sprite.
       const glow = makeGlowSprite({ color: EMBER_GLOW.halo, size: 0.85, opacity: 0.3 });
+      glow.renderOrder = HALO_ORDER;
       glow.position.set(em.x, em.y + 0.08 + TOWARD_CAM.y * FLAME_LIFT, fz);
       root.add(glow);
       // Pool footprint kept TIGHT (radius 2.0): the broad shaft texture's
@@ -534,11 +546,25 @@ export function createArenaScene(stage, toggles, ctx) {
       // clear of the 0.68 bloom threshold, so it brightens the floor without
       // smearing anything over the party. It is also the physically right
       // place for the light: a fire on a floor makes a hot floor.
-      const pool = groundPool(EMBER_GLOW.pool, 2.4, 0.66, poolY(), true);
+      // FIX ROUND 2 — pool opacities trimmed back (torch 0.66 -> 0.44,
+      // brazier 0.72 -> 0.46, lantern 0.58 -> 0.34). The Round-D note above
+      // solved the pool's core against the 0.68 bloom threshold ON ITS OWN, but
+      // the pool is ADDITIVE: what UnrealBloomPass thresholds is pool + the lit
+      // ground under it + a PointLight that sits at the same emitter, and that
+      // sum cleared 0.68 comfortably. So the POOLED GROUND became a bloom
+      // source, and its skirt is warm gold. Measured on variant 3 with the
+      // party leashed at (8.6,-3.8), per-arc with tools/zd-ringdiff.js: the
+      // Healer's brazier-facing arc read h124.6 against her h138.0 accent
+      // (13.4 deg) as shipped and h138.1 (0.1 deg) with bloom disabled — i.e.
+      // every degree of that drift was the pooled ground's own bloom landing on
+      // an unlit decal, which is exactly the §17 exemption criterion 2 asks
+      // for. The frame can afford it: the >200 gate is 0.4% and the three
+      // variants were measuring 2.96-3.58%.
+      const pool = groundPool(EMBER_GLOW.pool, 2.4, 0.44, poolY(), true);
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
-      flames.push({ body, glow, pool, poolO: 0.66, glowS: 0.85, glowO: 0.3, x: em.x, y: fy, z: fz, phase: cosmetic.range(0, Math.PI * 2) });
+      flames.push({ body, glow, pool, poolO: 0.44, glowS: 0.85, glowO: 0.3, x: em.x, y: fy, z: fz, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.2, z: fz });
     } else if (em.kind === 'brazier') {
       // Mid-field fire bowl (baseline-v030 F1): the emitter that OWNS the
@@ -588,6 +614,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // smudge in it. A tighter halo keeps the whole pedestal-column-bowl
       // silhouette readable against its own pool, which IS the F1 fix.
       const glow = makeGlowSprite({ color: EMBER_GLOW.halo, size: 0.8, opacity: 0.42 });
+      glow.renderOrder = HALO_ORDER;
       glow.position.set(em.x, em.y + 0.1 + TOWARD_CAM.y * BRAZIER_LIFT, fz);
       root.add(glow);
       // The bowl pool is the broadest in the frame — it replaces the old
@@ -607,7 +634,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // which is the §19.3 warm-dominant story on a coin flip. The warmth
       // moves from the bloom skirt (which hid the emitter) into the POOL
       // (which is what a fire on a floor actually does).
-      const pool = groundPool(EMBER_GLOW.pool, 3.0 * poolR, 0.72, poolY(), true);
+      const pool = groundPool(EMBER_GLOW.pool, 3.0 * poolR, 0.46, poolY(), true);
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
@@ -620,7 +647,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // the ground around the pedestal to featureless white, which is exactly
       // what turned the emitter into a backlit smudge — the F1 defect this
       // whole prop exists to fix. The FLAME is the hot centre now.)
-      flames.push({ body, glow, pool, poolO: 0.72, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.95, phase: cosmetic.range(0, Math.PI * 2) });
+      flames.push({ body, glow, pool, poolO: 0.46, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.95, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.12, z: fz });
     } else if (em.kind === 'lantern') {
       // A lantern is a FIRE, not a cold lamp: a small flame inside the glass
@@ -630,15 +657,26 @@ export function createArenaScene(stage, toggles, ctx) {
       wick.position.set(em.x, em.y + 0.01 + TOWARD_CAM.y * 0.1, em.z + TOWARD_CAM.z * 0.1);
       wick.renderOrder = 8;
       root.add(wick);
-      const glow = makeGlowSprite({ color: PALETTE.hearthAmber, size: 1.15, opacity: 0.8 });
+      // Halo trimmed 1.15/0.80 -> 0.82/0.34 (and the pulse base 0.70 -> 0.32,
+      // amp 0.16 -> 0.07, below). A lantern hangs at chest height, so its halo
+      // sprite is a camera-facing disc that covers the FLOOR around it, and at
+      // 0.8 additive amber it was washing every ground decal within about a
+      // metre: on variant 3 the party leashes either side of this prop, and the
+      // Swordsman's and Archer's brazier-facing arcs measured h3.4 / h52.6
+      // against their h348.2 / h72.2 accents, with the ring's own dark ink
+      // stroke lifted to luma 154 against ground 192. The halo still reads as a
+      // halo (it is the same 0.42-0.46 family as the brazier's) — it just stops
+      // being a second, unattributed light source on the floor.
+      const glow = makeGlowSprite({ color: PALETTE.hearthAmber, size: 0.82, opacity: 0.34 });
+      glow.renderOrder = HALO_ORDER;
       glow.material.color.copy(EMBER_GLOW.halo);
       glow.position.set(em.x, em.y, em.z);
       root.add(glow);
-      const pool = groundPool(EMBER_GLOW.pool, 1.9, 0.58, poolY());
+      const pool = groundPool(EMBER_GLOW.pool, 1.9, 0.34, poolY());
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
-      pulses.push({ glow, base: 0.7, rate: 3.1, amp: 0.16, jitter: 0.05, phase: cosmetic.range(0, Math.PI * 2), wick });
+      pulses.push({ glow, base: 0.32, rate: 3.1, amp: 0.07, jitter: 0.05, phase: cosmetic.range(0, Math.PI * 2), wick });
       fireSources.push({ x: em.x, y: em.y + 0.08, z: em.z });
     } else if (em.kind === 'monolith') {
       // God-stuff Violet halo — the ONLY violet in the frame rides this prop.
@@ -661,6 +699,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // monolith's own key-lit face maroon in vignette-dim frames.
       const HALO_VIOLET = [0.66, 0.5, 1.95];
       const glow = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 1.9, opacity: 0.6 });
+      glow.renderOrder = HALO_ORDER;
       glow.material.toneMapped = false;
       // Same pre-compensated violet family as the veins so the HALO carries the
       // accent hue too (an ACES-flattened violet sprite measured as neutral
@@ -669,6 +708,7 @@ export function createArenaScene(stage, toggles, ctx) {
       glow.position.set(em.x, em.y, em.z);
       root.add(glow);
       const spark = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 0.6, opacity: 0.55 });
+      spark.renderOrder = HALO_ORDER;
       spark.material.toneMapped = false;
       spark.material.color.setRGB(HALO_VIOLET[0], HALO_VIOLET[1], HALO_VIOLET[2], LinearSRGBColorSpace);
       spark.position.set(em.x, em.y + 0.18, em.z);
@@ -1043,8 +1083,6 @@ export function createArenaScene(stage, toggles, ctx) {
       ...(inner.debugState ? inner.debugState() : {}),
       variant: spec.id,
       variantName: spec.name,
-      // Post-bloom identity-ring compositor (§17 lighting exemption).
-      ringOverlay: ringOverlayInfo(),
       // §19.1 reserved-band guard (lit non-threat materials).
       bandGuard: bandGuardInfo(),
       // v0.3.0 party integration — lets captures assert clip state + presence.

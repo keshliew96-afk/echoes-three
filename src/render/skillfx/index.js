@@ -488,6 +488,24 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       crest.position.y = WAVE_WALL / 2;
       crest.renderOrder = 3;
       crest.name = 'crest';
+      // FIX ROUND 2 — dark inner edge under the crest. The curtain is an
+      // ADDITIVE Bright-Heal green standing on Act-1 grass, which is itself
+      // green (ACT1_GROUND h100, and an open-grass box measures 86% of its
+      // pixels inside the analyzer's h110-150 band), so the curtain's own
+      // fill has almost no hue contrast with what it sweeps over and the
+      // whole read hung on one bright line. A NON-additive Void Charcoal
+      // band immediately under the crest gives that line something to be
+      // bright against — the same trick the heal bolt got with its ink hull.
+      // Drawn after the curtain (renderOrder 2.5) so it actually darkens it,
+      // and before the crest (3) so the crest stays the top layer.
+      const inkEdge = new Mesh(
+        new CylinderGeometry(WAVE.range * 1.004, WAVE.range * 1.004, 0.14, 26, 1, true, -wedgeHalf, wedgeHalf * 2),
+        markMat(PALETTE.voidCharcoal, 0.55)
+      );
+      inkEdge.position.y = WAVE_WALL / 2 - 0.083;
+      inkEdge.renderOrder = 2.5;
+      inkEdge.name = 'inkEdge';
+      curtain.add(inkEdge);
       curtain.add(crest);
       g.add(curtain);
     }
@@ -960,13 +978,23 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
         continue;
       }
       const t = w.age / w.life;
-      w.g.getObjectByName('fill').material.opacity = 0.3 * (1 - t);
-      w.g.getObjectByName('rim').material.opacity = 0.75 * (1 - t);
-      // The curtain sweeps: it rises fast and thins out, so the shape reads as
-      // a wave passing through the party rather than as a fence.
+      // §19.4 "instant impacts hold >=3-5 frames": the wave used to start
+      // fading on frame 1, so by 280 ms (t 0.875) the crest was at opacity
+      // 0.12 and the curtain fill at 0.009 — a faint thin arc, which is what
+      // Round C measured. The crest and the curtain now HOLD at full value
+      // through t <= HOLD (0.35 of a 0.32 s life = 112 ms = ~7 frames at 60
+      // Hz) and then fade on a tail that is deliberately slower than linear,
+      // so the shape is still readable at the end of the sweep instead of
+      // gone. The rise (scale.y) is untouched — that is what makes it read as
+      // a wave FRONT passing through the party rather than a fence.
+      const HOLD = 0.35;
+      const tail = t <= HOLD ? 1 : 1 - (t - HOLD) / (1 - HOLD);
+      w.g.getObjectByName('fill').material.opacity = 0.3 * tail;
+      w.g.getObjectByName('rim').material.opacity = 0.75 * tail;
       const cur = w.g.getObjectByName('curtain');
-      cur.material.opacity = 0.55 * (1 - t) * (1 - t);
-      cur.getObjectByName('crest').material.opacity = 0.95 * (1 - t);
+      cur.material.opacity = 0.55 * Math.pow(tail, 1.4);
+      cur.getObjectByName('crest').material.opacity = 0.95 * Math.pow(tail, 0.7);
+      cur.getObjectByName('inkEdge').material.opacity = 0.55 * Math.pow(tail, 0.7);
       cur.scale.y = 0.55 + 0.75 * t;
       cur.position.y = (WAVE_WALL * cur.scale.y) / 2 - 0.035;
       const s = 1 + 0.18 * t;
