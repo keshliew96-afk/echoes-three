@@ -94,7 +94,7 @@ visible (lean corrected). 164fps, zero errors.
 | Enemies + AI + waves | built (v0.3.4) | self-verified (captures + analyze.mjs + events; awaiting critic) | 1 |
 | Party AI allies | pending (idle placeholders in arena since v0.3.0) | — | — |
 | VFX/particles | pending | — | — |
-| HUD/UI | pending | — | — |
+| HUD/UI (combat HUD + threat pointers) | built (v0.4.12) | self-verified fix round 4 (hd-r4-* captures + analyze.mjs + hd-contrast + threat audit) | 4 |
 | Run structure (rooms, draft, shop, boss) | pending | — | — |
 | Camp hub scene | pending | — | — |
 | Audio | pending | — | — |

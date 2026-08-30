@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');if(m==='camp'){E.cmd('campBegin');return 'camp->run';}E.cmd('startRun');return 'arena';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('killAllEnemies');const p=E.state().party;window.__pid=p.map(q=>[q.partyIndex??0,q.id]);for(const q of p)if((q.partyIndex??0)>0)E.cmd('setHp',q.id,0);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;for(const q of E.state().party)if((q.partyIndex??0)>0)E.cmd('setHp',q.id,0);return E.hud.portraits().map(p=>p.state);})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const cells=[...document.querySelectorAll('.hud-port')];return {states:E.hud.portraits().map(p=>p.state),tiles:cells.map(c=>{const b=c.querySelector('.hud-port-tile').getBoundingClientRect();return {box:[Math.round(b.x),Math.round(b.y),Math.round(b.width),Math.round(b.height)],ident:getComputedStyle(c.querySelector('.hud-port-ident')).borderTopColor,shown:getComputedStyle(c.querySelector('.hud-port-ident')).display,hpRim:getComputedStyle(c.querySelector('.hud-port-hp')).borderTopColor};})};})()"
+ }
+]

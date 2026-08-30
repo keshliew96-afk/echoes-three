@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');if(m==='camp'){E.cmd('campBegin');return 'camp->run';}E.cmd('startRun');return 'arena';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('killAllEnemies');E.cmd('teleport',0,0);window.__d=[];for(let k=0;k<4;k++)window.__d.push(E.cmd('spawn','dummy',-8.4-k*0.06,0.6+k*0.5));for(let k=0;k<4;k++)window.__d.push(E.cmd('spawn','dummy',8.4+k*0.06,-0.6-k*0.5));return window.__d.length;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{for(const id of window.__d){window.__echoes.cmd('hitOnce',id);}return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const Wd=innerWidth,H=innerHeight;const ns=[...document.querySelectorAll('.dmg-num')].filter(n=>getComputedStyle(n).visibility!=='hidden'&&Number(getComputedStyle(n).opacity)>0.05).map(n=>{const b=n.getBoundingClientRect();return {t:n.textContent,x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height),inside:b.x>=0&&b.y>=0&&b.x+b.width<=Wd&&b.y+b.height<=H,op:Number(getComputedStyle(n).opacity).toFixed(2),tf:getComputedStyle(n).transform.slice(0,60)};});const T=window.__echoes.hud;return {win:[Wd,H],visible:ns.length,outside:ns.filter(r=>!r.inside).length,ns,threatHits:T.threatHits(),markers:T.markers().map(m=>({x:m.x,y:m.y,c:m.count,tick:m.hitTick})),audit:(()=>{const a=T.threat();return {off:a.offFrame,cued:a.covered,uncued:a.uncued,drawn:a.markersDrawn};})()};})()"
+ }
+]

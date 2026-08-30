@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');if(m==='camp'){E.cmd('campBegin');return 'camp->run';}E.cmd('startRun');return 'arena';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('killAllEnemies');E.cmd('teleport',0,0);window.__F=[];window.__fi=setInterval(()=>window.__F.push(E.fps),200);const pts=[[-10.5,0],[10.5,0],[0,-6.5],[0,6.5],[-10.5,-6.5],[10.5,-6.5],[-10.5,6.5],[10.5,6.5]];let n=0;for(let i=0;i<pts.length;i++){if(E.cmd('spawn',i%2?'mantis':'boar',pts[i][0],pts[i][1]))n++;}return n;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 420
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;clearInterval(window.__fi);const a=E.hud.threat();const ent=a.threats.filter(r=>r.key[0]==='e');const f=window.__F.slice(2).sort((x,y)=>x-y);const dom=[...document.querySelectorAll('#hud-threat .tm')].filter(n=>n.style.display!=='none');return {win:a.window,enemies:ent.length,inFrame:ent.filter(r=>r.inSafeFrame).length,offFrame:a.offFrame,cued:a.covered,uncued:a.uncued,markersDrawn:a.markersDrawn,domMarkers:dom.length,fpsMin:f[0],fpsMedian:f[Math.floor(f.length/2)],fps:E.fps,rows:ent.map(r=>({k:r.key,x:r.x,z:r.z,sx:r.sx,sy:r.sy,inFrame:r.inSafeFrame,cued:r.marker,mi:r.markerIndex})),markers:E.hud.markers()};})()"
+ }
+]

@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');if(m==='camp'){E.cmd('campBegin');return 'camp->run';}E.cmd('startRun');return 'arena';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('killAllEnemies');E.cmd('giveSkill','warding_aura');E.cmd('giveSkill','sanctuary');const p=E.state().party;window.__pid=p.map(q=>[q.partyIndex??0,q.id]);const P=E.state().party;const f=(i)=>P.find(q=>(q.partyIndex??0)===i).id;E.cmd('setHp',f(1),0.40);E.cmd('setHp',f(2),0.15);E.cmd('setHp',f(3),0);E.cmd('healOverride',2);E.hud.hover(0,true);E.hud.freeze(0.5);return window.__pid;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const P=E.state().party;const f=(i)=>P.find(q=>(q.partyIndex??0)===i).id;E.cmd('setHp',f(1),0.40);E.cmd('setHp',f(2),0.15);E.cmd('setHp',f(3),0);E.hud.freeze(0.5);E.hud.hover(0,true);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const P=E.hud.portraits();const cells=[...document.querySelectorAll('.hud-port')];return P.map((p,i)=>{const cs=getComputedStyle(cells[i].querySelector('.hud-port-tile'));const ic=getComputedStyle(cells[i].querySelector('.hud-port-ident'));const hp=getComputedStyle(cells[i].querySelector('.hud-port-hp'));return {i:p.index,cls:p.classId,state:p.state,sel:p.selected,hov:p.hover,num:p.numeral,inner:p.innerBorder,innerCol:p.innerColor,fillImg:p.fillImage,track:p.trackColor,trackOutline:p.trackOutline,tileBorder:cs.borderTopColor,ident:ic.display+' '+ic.borderTopColor,hpRim:hp.borderTopColor,hpW:p.hpWidth,keyBox:p.keyBox,numBox:p.numBox,tileBox:p.tileBox};});})()"
+ }
+]

@@ -232,49 +232,57 @@ export function hudCss() {
 .hud-port-rally.go { animation: hud-rally 380ms ease-out; }
 
 /* PORTRAIT TOP BAND (rows 0..${KEY_H}). ONE opaque charcoal plate carrying the
-   F-key chip on the left and — while Critical — the persistent HP numeral on
-   the right. See the ART FENCE note above: this band is the only chrome that
-   ever sits on the tile, and it is the band the bust is framed to keep empty.
-   The two glyph boxes are flexed apart with a hard 4 px gutter, so they are
-   disjoint at every scale (criterion 1: no overlapping glyphs). */
+   F-key chip — "F1".."F4", the §8 heal-override affordance — at its NATURAL
+   width, in every state. See the ART FENCE note above: the bust is framed to
+   keep this band empty.
+   ROUND-3 DEFECT (criterion 1). The Critical HP numeral used to share this
+   flex line: the numeral was flex:0 0 auto and the chip flex:0 1 auto with
+   overflow:hidden, so on a Critical tile the chip was squeezed from 24.6 px
+   to 14.4 px and the label was CLIPPED mid-word ("F2" rendering as "2", 6 px
+   from a "30" -> the band read "230"). A label is never truncated to make room
+   now: the chip is flex:0 0 auto and the numeral has moved off this line
+   entirely, onto its own plate (see .hud-port-num). */
 .hud-port-top {
   position: absolute; left: 0; top: 0;
   height: ${KEY_H}px;
   display: flex; align-items: center;
-  gap: 3px;
-  padding: 0 3px;
-  overflow: hidden;
+  padding: 0 4px;
   border-bottom-right-radius: 9px;
   background: ${CHROME.plate};
   z-index: 3;
 }
-.hud-port.is-critical .hud-port-top {
-  right: 0;
-  justify-content: space-between;
-  border-bottom-right-radius: 0;
-  border-bottom: 1px solid ${CHROME.rimDim};
-}
-/* While Critical the chip drops the "F" and keeps the row ordinal: "F3" plus a
-   30 px two-digit numeral needs 50 real px of a 50 real px band, which would
-   put two glyph boxes flush against each other. The ordinal alone is 12 px, so
-   the numeral gets a real gutter and the band never has to clip. */
-.hud-port.is-critical .hud-port-key i { display: none; }
 .hud-port-key i { font-style: normal; }
 .hud-port-key {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
+  flex: 0 0 auto;
+  overflow: visible;
   color: ${CHROME.inkDim};
   font-size: ${FS_KEY}px;
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
 }
-/* Critical: persistent >=20 px HP numeral, right-hand end of the same plate.
-   The character art is never tinted AND never covered below this band. */
+/* CRITICAL NUMERAL (§17: persistent, >=20 px). Its own opaque plate in the
+   tile's BOTTOM-LEFT corner — the emptiest corner of the bust (portraits.js
+   frame (right/bottom offsets = the 2 px rim, the 2 px gap and the 10 px HP
+   track), so:
+     * it shares no line, and no plate, with the F-key chip — the two boxes are
+       disjoint by construction, at every scale (round-3 defect: the chip was
+       clipped to "2" and read as one number with the HP value);
+     * it never breaks the class frame and never covers ANY of the HP track,
+       so §17's Critical frame+track pulse stays fully legible underneath;
+     * the character art keeps its face — the plate is ~28% of the tile's inner
+       box, in the corner (round 2 rejected a bottom strip that ate 51.6%).
+   z-index 6 clears the tile (crop 0, top band 3, ring 4, inner frame 5). */
 .hud-port-num {
-  flex: 0 0 auto;
+  position: absolute;
+  left: 6px; bottom: ${HP_H + HP_GAP + 5}px;
+  height: 28px; min-width: 26px;
+  padding: 0 4px;
   display: none;
+  align-items: center; justify-content: flex-end;
+  border-radius: 7px 4px 7px 4px;
+  background: ${CHROME.plate};
+  border: 1px solid ${CHROME.rimDim};
   color: ${CHROME.ink};
   font-size: ${FS_NUM}px;
   font-weight: 800;
@@ -283,8 +291,9 @@ export function hudCss() {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
+  z-index: 6;
 }
-.hud-port.is-critical .hud-port-num { display: block; }
+.hud-port.is-critical .hud-port-num { display: flex; }
 .hud-slot-key {
   position: absolute; left: 0; top: 0;
   height: ${KEY_H}px;
@@ -302,6 +311,23 @@ export function hudCss() {
 /* Downed: horizontal portrait treatment + hollow Bone ring with a hold-E
    glyph; Being-revived fills that ring clockwise in Parchment (§17). */
 .hud-port.is-downed .hud-port-tile { border-color: ${PALETTE.bone}; }
+/* IDENTITY RING (§10: "accent color desaturates toward charcoal; identity ring
+   stays visible"). ROUND-3 DEFECT: the Bone downed ring replaced the accent
+   outright and the F-key chip stands down, so three downed tiles measured as
+   the same histogram — a healer could not tell WHO was down. A 2 px
+   class-accent hairline now sits concentric INSIDE the Bone ring, and the HP
+   track wears the accent on its rim, so class survives the downed treatment
+   without competing with the revive instrument. */
+.hud-port-ident {
+  position: absolute; inset: 0;
+  border-radius: 10px;
+  border: 2px solid var(--accentLift, ${PALETTE.bone});
+  display: none;
+  pointer-events: none;
+  z-index: 2;
+}
+.hud-port.is-downed .hud-port-ident { display: block; }
+.hud-port.is-downed .hud-port-hp { border-color: var(--accentLift, ${CHROME.rimDim}); }
 .hud-port.is-downed .hud-port-crop { clip-path: inset(24% 0 24% 0); }
 .hud-port.is-downed .hud-port-img {
   transform: rotate(78deg) scale(0.8);
@@ -376,9 +402,21 @@ export function hudCss() {
   background: linear-gradient(180deg, var(--accentLift) 0%, var(--accentLift) 34%, var(--accent) 62%, var(--accentDeep) 100%);
   box-shadow: inset 0 -1px 0 ${CHROME.plateSunk};
 }
-/* Hover: chrome +1 value step ONLY (§17) — no layout, no colour semantics. */
+/* Hover: +1 VALUE step ONLY (§17) — no layout, and no colour SEMANTICS.
+   ROUND-3 DEFECT. The old rule set border-color:rimHot and
+   swapped the plate gradient for a flat chrome fill, which threw away the
+   thing the frame is FOR: the class accent (measured rgb(110,122,63) Archer
+   -> rgb(122,113,104) neutral, i.e. hover erased class identity and landed a
+   hair off the Critical bone frame — two states reading the same in a static
+   frame). Hover now LIFTS what is already there: the same class accent one
+   value step up (--accentLift) and the same charcoal gradient one step
+   brighter. Hue is preserved, so hover can never be confused with Critical
+   (neutral bone) or Selected (Hearth Amber). */
 .hud-port:hover .hud-port-tile,
-.hud-port.is-hover .hud-port-tile { background: ${CHROME.plateHi}; border-color: ${CHROME.rimHot}; }
+.hud-port.is-hover .hud-port-tile {
+  background: linear-gradient(180deg, ${mix(C, PALETTE.warmGrey, 0.4)} 0%, ${mix(C, PALETTE.warmGrey, 0.2)} 62%, ${mix(C, PALETTE.warmGrey, 0.06)} 100%);
+  border-color: var(--accentLift, ${CHROME.rimHot});
+}
 .hud-port:hover .hud-port-top,
 .hud-port.is-hover .hud-port-top { background: ${CHROME.plateHi}; }
 .hud-port:hover .hud-port-key,
@@ -617,6 +655,17 @@ export function hudCss() {
 #hud-threat .tm.spawn .tm-dot { fill: ${PALETTE.godstuffViolet}; }
 #hud-threat .tm .tm-ring { fill: none; stroke: none; stroke-width: 2.5; }
 #hud-threat .tm.marked .tm-ring { stroke: ${PALETTE.signalBlue}; }
+/* HIT TICK. An off-frame enemy still takes damage, and §9's juice contract
+   wants that hit to READ. The clamped damage numeral (render/numbers.js) puts
+   the number on the frame edge; this ring is the pointer's own half of the
+   answer — a Parchment pulse on the disc that is warning about that enemy, so
+   the pointer says WHERE the threat is AND that damage is landing on it. */
+#hud-threat .tm .tm-hit {
+  fill: none;
+  stroke: ${PALETTE.parchment};
+  stroke-width: 3;
+  opacity: 0;
+}
 /* Merge badge: when two threats share a perimeter cell their pointers merge
    into one and the badge counts them, so raising the marker budget never
    leaves a direction unmarked (criterion 6). >=20 px numeral, upright. */

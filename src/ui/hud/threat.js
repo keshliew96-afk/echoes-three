@@ -66,6 +66,7 @@ const EDGE_INSET = 24; // px from the window edge to the marker centre
 const ZONE_PAD = 18; // px of clearance kept around a HUD zone rectangle
 const HYSTERESIS = 16; // px a marker must travel back inside before it clears
 const SPAWN_POLL_MS = 100;
+const HIT_FLASH_SEC = 0.34; // damage tick on a pointer whose threat was hit
 
 function makeMarker() {
   const wrap = document.createElement('div');
@@ -96,16 +97,35 @@ function makeMarker() {
   dot.setAttribute('cy', '21');
   dot.setAttribute('r', '3.6');
   dot.style.display = 'none';
-  svg.append(plate, ring, head, dot);
+  // Damage tick: a Parchment ring that pulses when the threat this pointer is
+  // warning about takes a hit (see HIT_FLASH_SEC).
+  const hit = document.createElementNS(SVG_NS, 'circle');
+  hit.setAttribute('class', 'tm-hit');
+  hit.setAttribute('cx', '20');
+  hit.setAttribute('cy', '21');
+  hit.setAttribute('r', '19.5');
+  svg.append(plate, ring, head, dot, hit);
   const badge = document.createElement('span');
   badge.className = 'tm-badge';
   wrap.append(svg, badge);
-  return { wrap, svg, head, ring, dot, badge, cls: 'tm', badgeText: '' };
+  return { wrap, svg, head, ring, dot, hit, badge, cls: 'tm', badgeText: '', lastHit: -1 };
 }
 
-export function createThreatLayer({ stage, world }) {
+export function createThreatLayer({ stage, world, bus = null }) {
   const root = document.createElement('div');
   root.id = 'hud-threat';
+
+  // ---- off-frame hit feedback (§9's juice contract, criterion 6) ----------
+  // A hit on an off-frame enemy still has to read. render/numbers.js clamps
+  // the damage numeral to the frame edge (it used to project to x=-1213, i.e.
+  // silently dropped); this map is the pointer's half of the same answer, so
+  // the chip that says WHERE the threat is also says that damage is landing.
+  const hitAt = new Map(); // threat key -> time (s) of its last hit
+  bus?.on?.('hit', (ev) => {
+    if (ev && ev.target !== undefined && ENEMY_KINDS.has(ev.kind)) {
+      hitAt.set('e' + ev.target, lastNow);
+    }
+  });
 
   const pool = [];
   const threats = []; // reused records for every off-frame threat
@@ -286,6 +306,7 @@ export function createThreatLayer({ stage, world }) {
       rec.telegraph = telegraph;
       rec.spawn = spawn;
       rec.marked = marked;
+      rec.hitT = hitAt.get(key) ?? 0;
       rec.auditIndex = audit ? audit.length - 1 : -1;
     };
 
@@ -340,6 +361,7 @@ export function createThreatLayer({ stage, world }) {
             g.telegraph = t.telegraph;
             g.spawn = t.spawn;
             g.marked = t.marked;
+            g.hitT = t.hitT;
             g.key = t.key;
             g.count = 0;
             g.members = g.members || [];
@@ -355,6 +377,8 @@ export function createThreatLayer({ stage, world }) {
         g.telegraph = g.telegraph || t.telegraph;
         g.marked = g.marked || t.marked;
         g.spawn = g.spawn && t.spawn;
+        // A merged pointer ticks for the freshest hit anywhere in its cell.
+        if (t.hitT > g.hitT) g.hitT = t.hitT;
       }
       if (cellMap.size <= MAX_MARKERS && groupCount <= MAX_MARKERS) {
         let covered = 0;
@@ -381,6 +405,11 @@ export function createThreatLayer({ stage, world }) {
 
   function update(now, entities) {
     lastNow = now;
+    // Expired ticks are dropped, so the map holds at most the enemies hit in
+    // the last HIT_FLASH_SEC and dead ids can never accumulate.
+    if (hitAt.size) {
+      for (const [k, t] of hitAt) if (now - t > HIT_FLASH_SEC) hitAt.delete(k);
+    }
     const nowMs = now * 1000;
     if (nowMs >= spawnPollAt) {
       spawnPollAt = nowMs + SPAWN_POLL_MS;
@@ -432,6 +461,14 @@ export function createThreatLayer({ stage, world }) {
           'translate(' + (bp.x - pt.x).toFixed(1) + 'px, ' + (bp.y - pt.y).toFixed(1) + 'px)';
       }
       m.wrap.style.opacity = d.telegraph ? pulse.toFixed(3) : '1';
+      // Damage tick — the pointer answers "is my damage landing?" as well as
+      // "where is it?". One style write while the tick decays, one to clear.
+      const f = d.hitT > 0 ? Math.max(0, 1 - (now - d.hitT) / HIT_FLASH_SEC) : 0;
+      const o = f > 0 ? Math.round((0.2 + 0.8 * f) * 100) / 100 : 0;
+      if (o !== m.lastHit) {
+        m.lastHit = o;
+        m.hit.style.opacity = String(o);
+      }
     }
     for (let i = groupCount; i < pool.length; i++) pool[i].wrap.style.display = 'none';
   }
@@ -467,7 +504,7 @@ export function createThreatLayer({ stage, world }) {
         };
       },
       markers: () =>
-        groups.slice(0, groupCount).map((d) => ({
+        groups.slice(0, groupCount).map((d, i) => ({
           key: d.key,
           x: Math.round(d.px ?? d.x),
           y: Math.round(d.py ?? d.y),
@@ -476,7 +513,11 @@ export function createThreatLayer({ stage, world }) {
           telegraph: d.telegraph,
           spawn: d.spawn,
           marked: d.marked,
+          // Off-frame hit feedback: the tick's live opacity on this pointer.
+          hitTick: pool[i] ? Number(pool[i].hit.style.opacity || 0) : 0,
         })),
+      // Which off-frame threats took a hit inside the last HIT_FLASH_SEC.
+      hits: () => [...hitAt.entries()].map(([k, t]) => ({ key: k, age: Math.round((lastNow - t) * 1000) })),
     },
   };
 }

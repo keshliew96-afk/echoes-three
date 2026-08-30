@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');if(m==='camp'){E.cmd('campBegin');return 'camp->run';}E.cmd('startRun');return 'arena';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('killAllEnemies');E.cmd('giveSkill','warding_aura');E.cmd('giveSkill','sanctuary');E.cmd('restoreSkillState',{slots:[{id:'mending_bolt',remaining:135},{id:'swift_mend',remaining:60},{id:'warding_aura',remaining:0},{id:'sanctuary',remaining:0}],override:null});return E.cmd('skillState');})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const S=E.hud.slots();const slots=[...document.querySelectorAll('.hud-slot')];return {slots:S.map((s,i)=>({k:s.key,deg:s.wipeDeg,cool:s.cooling,n:s.numeral,box:s.tileBox,wipe:getComputedStyle(slots[i].querySelector('.hud-slot-wipe')).backgroundImage})),total:E.cmd('skillState')};})()"
+ }
+]

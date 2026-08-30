@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');if(m==='camp'){E.cmd('campBegin');return 'camp->run';}E.cmd('startRun');return 'arena';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('killAllEnemies');E.cmd('giveSkill','warding_aura');E.hud.grey(3,true);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;const f=(i)=>p.find(q=>(q.partyIndex??0)===i).id;E.cmd('setHp',f(1),0.40);E.cmd('setHp',f(2),0.12);E.cmd('setHp',f(3),0);E.cmd('healOverride',2);E.hud.hover(1,true);E.hud.freeze(0.25);E.cmd('restoreSkillState',{slots:[{id:'mending_bolt',remaining:28},{id:'swift_mend',remaining:40},{id:'warding_aura',remaining:0}],override:null});return E.hud.slots().map(s=>[s.key,s.counting,s.numeral]);})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const SEL=['.hud-slot-key','.hud-port-key','.hud-slot-abbrev','.hud-slot-num','.hud-port-num','.hud-port-e','.hud-slot-passive','.hud-port-tab','.hud-slot-grey'];const tiles=[...document.querySelectorAll('.hud-port, .hud-slot')];const vis=(n)=>{const r=n.getBoundingClientRect();const cs=getComputedStyle(n);return r.width>0.5&&r.height>0.5&&cs.display!=='none'&&Number(cs.opacity)>0.01?r:null;};const hits=[];let pairs=0,boxes=0;for(const t of tiles){const rs=[];for(const s of SEL)for(const n of t.querySelectorAll(s)){const r=vis(n);if(r){rs.push({s,r});boxes++;}}for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i].r,b=rs[j].r;const ox=Math.min(a.right,b.right)-Math.max(a.left,b.left);const oy=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top);pairs++;if(ox>0.5&&oy>0.5)hits.push({tile:t.className,a:rs[i].s,b:rs[j].s,ox:Math.round(ox*10)/10,oy:Math.round(oy*10)/10});}}return {win:[innerWidth,innerHeight],scale:E.hud.metrics().scale,tiles:tiles.length,glyphBoxes:boxes,pairsChecked:pairs,overlaps:hits,ports:E.hud.portraits().map(p=>({i:p.index,st:p.state,sel:p.selected,n:p.numeral,keyBox:p.keyBox,numBox:p.numBox})),slots:E.hud.slots().map(s=>({k:s.key,ab:s.abbrev,abVis:s.abbrevVisible,c:s.counting,n:s.numeral,abBox:s.abbrevBox,numBox:s.numBox}))};})()"
+ }
+]

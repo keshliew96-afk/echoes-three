@@ -46,7 +46,7 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
   });
   root.appendChild(bar.el);
 
-  const threat = createThreatLayer({ stage, world });
+  const threat = createThreatLayer({ stage, world, bus });
 
   document.body.appendChild(root);
   document.body.appendChild(threat.el);
@@ -197,6 +197,7 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
     boss: banner.debug.boss,
     threat: threat.debug.audit,
     markers: threat.debug.markers,
+    threatHits: threat.debug.hits,
     zones: () => {
       publishZones();
       return threat.debug.audit().zones;

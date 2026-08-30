@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');if(m==='camp'){E.cmd('campBegin');return 'camp->run';}E.cmd('startRun');return 'arena';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('giveSkill','warding_aura');E.cmd('giveSkill','sanctuary');const p=E.state().party;const f=(i)=>p.find(q=>(q.partyIndex??0)===i);E.cmd('setHp',f(1).id,0.42);E.cmd('setHp',f(2).id,0.16);E.cmd('healOverride',3);E.hud.hover(1,true);E.hud.freeze(0.5);return p.map(q=>({i:q.partyIndex,hp:q.hp}));})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const P=E.hud.portraits();const rows=P.map(p=>{const cell=document.querySelectorAll('.hud-port')[p.index];const k=cell.querySelector('.hud-port-key');const n=cell.querySelector('.hud-port-num');const kc=getComputedStyle(k);const nc=getComputedStyle(n);const kb=k.getBoundingClientRect(),nb=n.getBoundingClientRect();const ov=(nc.display!=='none')&&kb.x<nb.x+nb.width&&nb.x<kb.x+kb.width&&kb.y<nb.y+nb.height&&nb.y<kb.y+kb.height;return {i:p.index,state:p.state,keyText:k.textContent,keyW:Math.round(kb.width*10)/10,keyX:Math.round(kb.x*10)/10,keyY:Math.round(kb.y*10)/10,keyOverflow:kc.overflow,keyFlex:kc.flex,keyScrollW:k.scrollWidth,keyClientW:k.clientWidth,clipped:k.scrollWidth>k.clientWidth+0.5,numDisplay:nc.display,numText:n.textContent,numBox:[Math.round(nb.x),Math.round(nb.y),Math.round(nb.width),Math.round(nb.height)],numFont:nc.fontSize,overlapKeyNum:ov};});return {win:[innerWidth,innerHeight],scale:E.hud.metrics().scale,rows};})()"
+ }
+]

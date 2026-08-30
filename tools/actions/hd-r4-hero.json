@@ -1,0 +1,34 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');if(m==='camp'){E.cmd('campBegin');return 'camp->run';}E.cmd('startRun');return 'arena';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;window.__pid=p.map(q=>[q.partyIndex??0,q.id]);return window.__pid;})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('giveSkill','warding_aura');E.cmd('giveSkill','sanctuary');E.cmd('spawn','boar',3.4,-2.2);E.cmd('spawn','mantis',-3.8,1.6);E.cmd('spawn','boar',-1.2,3.0);E.cmd('restoreSkillState',{slots:[{id:'mending_bolt',remaining:120},{id:'swift_mend',remaining:48},{id:'warding_aura',remaining:0},{id:'sanctuary',remaining:0}],override:null});return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;const f=(i)=>p.find(q=>(q.partyIndex??0)===i).id;E.cmd('setHp',f(1),0.40);E.cmd('setHp',f(2),0.15);E.cmd('healOverride',2);E.hud.hover(0,true);E.hud.freeze(0.25);return E.state().party.map(q=>[q.partyIndex??0,Math.round(q.hp)]);})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const h=E.hud;const S=h.slots(),P=h.portraits();const SEL=['.hud-slot-key','.hud-port-key','.hud-slot-abbrev','.hud-slot-num','.hud-port-num','.hud-port-e','.hud-slot-passive','.hud-port-tab'];const tiles=[...document.querySelectorAll('.hud-port, .hud-slot')];const vis=(n)=>{const r=n.getBoundingClientRect();const cs=getComputedStyle(n);return r.width>0.5&&r.height>0.5&&cs.display!=='none'&&Number(cs.opacity)>0.01?r:null;};const hits=[];let pairs=0;for(const t of tiles){const rs=[];for(const s of SEL)for(const n of t.querySelectorAll(s)){const r=vis(n);if(r)rs.push({s,r});}for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i].r,b=rs[j].r;const ox=Math.min(a.right,b.right)-Math.max(a.left,b.left);const oy=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top);pairs++;if(ox>0.5&&oy>0.5)hits.push({tile:t.className,a:rs[i].s,b:rs[j].s,ox:Math.round(ox),oy:Math.round(oy)});}}return {pairsChecked:pairs,overlaps:hits,slots:S.map(s=>({k:s.key,ab:s.abbrev,deg:s.wipeDeg,n:s.numeral,cool:s.cooling,empty:s.empty})),ports:P.map(p=>({i:p.index,st:p.state,sel:p.selected,hov:p.hover,n:p.numeral,fill:p.fillColor||p.fillImage.slice(0,40),border:getComputedStyle(document.querySelectorAll('.hud-port-tile')[p.index]).borderTopColor})),metrics:h.metrics(),banner:h.banner()};})()"
+ }
+]

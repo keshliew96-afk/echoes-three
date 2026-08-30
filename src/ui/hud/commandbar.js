@@ -6,13 +6,18 @@
 //   Healthy   (>50%)   static
 //   Hurt      (25-50%) BAR LENGTH ONLY — no other chrome change
 //   Critical  (<25%)   frame + track value-pulse charcoal<->bone at 2 Hz,
-//                      inner frame 1 -> 3 px, persistent >=20 px HP numeral;
-//                      the character art itself is never tinted OR COVERED —
-//                      the numeral shares the tile's reserved top chrome band
-//                      with the F-key chip (round 2 rejected a bottom strip
-//                      that ate 51.6% of the tile and hid the face), and the
-//                      track's charcoal<->bone pulse rides its OUTLINE so the
-//                      fill stays the brighter element at every phase
+//                      inner frame 1 -> 3 px, persistent >=20 px HP numeral.
+//                      The pulse is scoped to FRAME + TRACK: the inner ring
+//                      and the track's OUTLINE carry it, the track interior
+//                      stays Void Charcoal (so the bar cannot invert its
+//                      reading) and the FILL holds its class accent (so the
+//                      tile still says whose it is while the frame strobes).
+//                      The numeral owns its own plate at the cell's
+//                      bottom-right corner, inside the class frame: it
+//                      shares no line with the F-key chip (round 3: the chip
+//                      was clipped to "2" and fused with the numeral) and it
+//                      does not cover the face (round 2: a bottom strip ate
+//                      51.6% of the tile)
 //   Downed             horizontal portrait crop + hollow Bone ring + hold-E
 //   Being-revived      that ring fills CLOCKWISE FROM 12 in Parchment
 //   Revive-interrupted reverse drain at 2x + a single 2 px shake
@@ -30,7 +35,7 @@
 // abbrev box at every scale — see style.js); ready-pop 120 ms.
 import { PALETTE } from '../../data/palette.js';
 import { DODGE, TICK_HZ } from '../../core/constants.js';
-import { ACCENTS, CHROME, mix } from './style.js';
+import { ACCENTS, CHROME } from './style.js';
 
 const CLASS_BY_INDEX = ['healer', 'tank', 'swordsman', 'archer'];
 const PORTRAIT_LETTER = { healer: 'H', tank: 'T', swordsman: 'S', archer: 'A' };
@@ -130,18 +135,17 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       fb.textContent = PORTRAIT_LETTER[classId];
     }
     const inner = el('div', 'hud-port-inner', tile);
-    // ONE top-band plate: F-key chip on the left, Critical HP numeral on the
-    // right, flexed apart. §17 wants a persistent >=20 px numeral AND the
-    // character art untouched; the top band is the tile's reserved chrome
-    // strip (portraits.js frames the bust to keep it empty), so the numeral
-    // lands there instead of over the face.
+    // Class-identity hairline, concentric inside the Bone downed ring (§10).
+    el('div', 'hud-port-ident', tile);
+    // TOP BAND: the F-key chip alone, at its natural width, in EVERY state —
+    // "F1".."F4" is the §8 heal-override affordance and is never truncated.
+    // The Critical HP numeral does NOT share this line (round-3 defect: the
+    // chip was clipped to "2" and fused with the numeral); it owns its own
+    // plate on the cell, bottom-right, over the dead end of the HP track.
     const top = el('div', 'hud-port-top', tile);
     const key = el('span', 'hud-port-key proto-port-key', top);
-    // "F" + ordinal. The "F" stands down while Critical so the HP numeral fits
-    // the same band (see style.js) — the ordinal still names the F-row key.
     el('i', null, key).textContent = 'F';
     key.append(String(i + 1));
-    const num = el('span', 'hud-port-num', top);
 
     // Downed / being-revived ring: hollow Bone backing + Parchment clockwise
     // fill, drawn as an SVG so the fill is a true radial sweep from 12.
@@ -166,6 +170,9 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
 
     const hp = el('div', 'hud-port-hp proto-port-hp', cell);
     const fill = el('i', null, hp);
+    // Critical numeral plate — a child of the CELL, not of the tile (the tile
+    // clips with overflow:hidden and the plate carries its own rounded rim).
+    const num = el('span', 'hud-port-num', cell);
 
     // Full tile = click region (§17). Left-click toggles the §8 heal override,
     // exactly like F1-F4.
@@ -177,17 +184,9 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     });
     cell.addEventListener('contextmenu', (ev) => ev.preventDefault());
 
-    // Critical value-pulse LUT: the FILL brightens from its class-accent
-    // highlight toward Parchment, so its luma stays far above the charcoal
-    // track at every phase k (see paintCritical + the POLARITY FENCE note in
-    // style.js). 21 steps is finer than a 2 Hz pulse can be read.
-    const critFill = [];
-    for (let q = 0; q <= 20; q++) critFill.push(mix(acc.lift, PALETTE.parchment, 0.6 * (q / 20)));
-
     ports.push({
       i,
       classId,
-      critFill,
       cell,
       tile,
       inner,
@@ -200,7 +199,6 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       rally,
       img,
       state: 'healthy',
-      lastK: -1,
       lastPct: -1,
       lastState: '',
       lastFill: -1,
@@ -320,14 +318,26 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   }
 
   // -------------------------------------------------------- cooldowns ---
-  // §17 clockwise radial wipe from 12 o'clock, 70% charcoal overlay.
+  // §17 CLOCKWISE radial wipe from 12 o'clock, 70% charcoal overlay.
+  //
+  // ROUND-3 DEFECT. The veil used to be painted on the REMAINING side
+  // (`conic-gradient(veil <remaining>deg, transparent)`), which anchors the
+  // charcoal wedge at 12 and shrinks it back TOWARD 12 — the reveal boundary
+  // then travels counter-clockwise, the opposite of the spec. The veil is now
+  // painted on the ELAPSED side: transparent from 12 through <elapsed>, veil
+  // the rest, so the icon uncovers clockwise from 12 like every cooldown clock
+  // the player has ever used. `lastDeg` stays the REMAINING degrees (that is
+  // what the probes read: 360 at cast -> 0 at ready).
   const WIPE_RGBA = `rgba(34,31,27,0.7)`; // Void Charcoal #221F1B at 70%
   function paintWipe(s, frac) {
     const deg = Math.round(Math.min(1, Math.max(0, frac)) * 360);
     if (deg === s.lastDeg) return;
     s.lastDeg = deg;
+    const elapsed = 360 - deg;
     s.wipe.style.background =
-      deg > 0 ? `conic-gradient(${WIPE_RGBA} ${deg}deg, transparent 0deg)` : 'none';
+      deg > 0
+        ? `conic-gradient(transparent 0deg ${elapsed}deg, ${WIPE_RGBA} ${elapsed}deg 360deg)`
+        : 'none';
   }
 
   function paintCooldown(s, remainingTicks, totalTicks) {
@@ -389,7 +399,6 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
           p.inner.style.borderColor = 'transparent';
           p.hp.style.outlineColor = '';
           p.fill.style.background = '';
-          p.lastK = -1;
         }
       }
 
@@ -402,20 +411,21 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       }
 
       if (state === 'critical') {
-        // Frame + track-outline value pulse; the character art is never
-        // touched, and the track INTERIOR stays Void Charcoal so the bar can
-        // never invert its reading at the bone end of the pulse (round-2
-        // defect: at 15% HP the empty 85% was 1.6x brighter than the fill).
+        // §17 scopes the Critical value pulse to FRAME + TRACK. The frame is
+        // the inner ring (1 -> 3 px) and the track is its outline; the track
+        // INTERIOR stays Void Charcoal so the bar can never invert its reading
+        // at the bone end of the pulse (round-2 defect: at 15% HP the empty
+        // 85% was 1.6x brighter than the fill).
+        // ROUND-3 DEFECT: the FILL used to ride the same pulse and reached
+        // rgb(219,213,204) — bone, not the class accent. The fill is the one
+        // element still saying WHOSE tile this is while the frame strobes, so
+        // it now holds its class-accent gradient (--accentLift -> --accent ->
+        // --accentDeep, straight from the stylesheet) and never pulses.
         const c = CHAR.map((v, i) => Math.round(v + (BONE[i] - v) * k));
         const col = `rgb(${c[0]},${c[1]},${c[2]})`;
         p.inner.style.borderWidth = `${(1 + 2 * k).toFixed(2)}px`;
         p.inner.style.borderColor = col;
         p.hp.style.outlineColor = col;
-        const q = Math.round(k * 20);
-        if (q !== p.lastK) {
-          p.lastK = q;
-          p.fill.style.background = p.critFill[q];
-        }
         const hpNum = Math.max(0, Math.ceil(m.hp));
         if (hpNum !== p.lastPct) {
           p.lastPct = hpNum;
