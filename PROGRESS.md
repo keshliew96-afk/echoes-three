@@ -5,7 +5,7 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ⏸ PAUSED by user 2026-09-02 (Round D critic wave done 3/4, v0.4.13, commit aa3b00a)
+## Status: ⏸ PAUSED by user 2026-09-02 (Round D critic wave done 4/4, v0.4.13, commit aa3b00a)
 
 ### Resume point — do this first
 1. Start the dev server (`npm run dev`, port 5199) if it is not up.
@@ -24,9 +24,14 @@ pixels and running gameplay only.
      emitter (boss box >200 = 0.45% vs torches 7.8–10.9%); antlers read azure
      (195–244°) not violet (~259°); un-specced "Hollow Seal" immunity absorbs
      damage with no HUD tell. Path/draft/shop/persistence all PASS.
-   - **Carried fixes — critic still running at pause** (was writing
-     docs/critiques/fixes-roundD.md; if the file exists, read it, else re-run
-     that critic).
+   - **Carried fixes — PASS** (docs/critiques/fixes-roundD.md): Ember band
+     41/65 px (bar <500, was 628–1408); all four rings 0.1–7.4° off accent on
+     both arcs with 3.8–6.1 px dark rims; Bond ribbons + Sanctuary read over
+     bunched bodies; heal bolt core 127–128° (spec 129, was 101); LUMA holds on
+     3 variants; fps 163 idle / 83 fight. Advisories: heal glow over the
+     Swordsman's wine tunic sums into Ember (up to 485 px, 97% of bar) — make
+     body-touching heal layers non-additive; Restorative Wave crest faint;
+     telegraph loses ~40% Ember over a bright ring band.
 3. NEXT: launch 3 fix builders in parallel, then fresh critics on each:
    - Builder A (owns sim/run.js, sim/waves.js, sim/boss.js, render/boss/**):
      run_end must clear the wave schedule, pending telegraphs, enemies, eshots,
