@@ -5,7 +5,7 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ▶ RESUMED — Round D finishing (camp critic, HUD + carried-fix critics), then final certification (v0.4.13)
+## Status: ⏸ PAUSED by user (mid Round D, v0.4.13) — resume steps below are current
 
 ### Resume point — do this first
 1. Start the dev server (`npm run dev`, port 5199) if it is not up.
