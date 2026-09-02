@@ -1,0 +1,42 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 2600
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('killAllEnemies')"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__kyRaf=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=function(){return 0;};return 'frozen';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=window.__arenaProbe.stage;var n=0;S.scene.traverse(function(o){if(o.isInstancedMesh&&o.renderOrder===-8){o.visible=false;n++;}});S.render();return n;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "shot",
+  "name": "ky-a1noshadow"
+ }
+]

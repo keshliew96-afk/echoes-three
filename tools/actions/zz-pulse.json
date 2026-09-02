@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); window.__ids=__echoes.state().party.map(e=>e.id); __echoes.cmd('setHp', window.__ids[1], 0.15); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const out=[]; const tile=document.querySelectorAll('#hud .hud-port-cell, #hud .hud-port-tile'); for(let k=0;k<9;k++){ const ph=k/16; __echoes.hud.freeze(ph); const p=__echoes.hud.portraits()[1]; out.push({ph:+ph.toFixed(3), fill:p.fillColor, track:p.trackColor, inner:p.innerColor, ib:p.innerBorder, outline:p.trackOutline}); } return {mark:window.__zz, out}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.hud.freeze(0.25); const before=(()=>{const t=document.querySelectorAll('#hud .hud-port-tile')[3]; const cs=getComputedStyle(t); return {bg:cs.backgroundImage.slice(0,80), bc:cs.borderTopColor, bw:cs.borderTopWidth, filter:cs.filter, op:cs.opacity, box:cs.boxShadow.slice(0,90)};})(); __echoes.hud.hover(3,true); const after=(()=>{const t=document.querySelectorAll('#hud .hud-port-tile')[3]; const cs=getComputedStyle(t); return {bg:cs.backgroundImage.slice(0,80), bc:cs.borderTopColor, bw:cs.borderTopWidth, filter:cs.filter, op:cs.opacity, box:cs.boxShadow.slice(0,90)};})(); return {before, after}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ }
+]

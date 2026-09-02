@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const log=[];for(const t of ['boss_spawn','boss_add_wave','boss_phase','telegraph_start','telegraph_resolve','boss_quake','boss_trample','room_cleared','run_end','enemy_spawn','spawn_telegraph'])__echoes.on(t,e=>log.push({t:e.type,tk:e.tick,d:JSON.stringify(e).slice(0,150)}));window.__blog=log;__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',8);await s(1500);const v=__echoes.cmd('runState');return {room:v.room,mode:v.mode,phase:v.phase,boss:v.boss,banner:__echoes.hud.banner(),log:log.slice(0,12)};})()"
+ }
+]

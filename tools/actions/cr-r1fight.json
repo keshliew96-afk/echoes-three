@@ -1,0 +1,1 @@
+[{"type":"wait","ms":600},{"type":"eval","code":"(async()=>{const E=window.__echoes;const s=m=>new Promise(r=>setTimeout(r,m));E.cmd('startRun');await s(1500);return E.cmd('runState').room;})()"}]

@@ -1,0 +1,1 @@
+[{"type":"eval","code":"(()=>{__echoes.cmd('startRoom','kill_all');__echoes.cmd('downAll');return __echoes.cmd('allyState');})()"},{"type":"wait","ms":900},{"type":"eval","code":"__echoes.hud.portraits().map(p=>({i:p.index,st:p.state,rev:Math.round(p.reviveOffset*10)/10}))"}]

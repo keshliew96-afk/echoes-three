@@ -1,0 +1,56 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('rally')"
+ },
+ {
+  "type": "wait",
+  "ms": 4000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();var o=[];s.party.forEach(function(a){if(a.kind==='ally'){window.__echoes.cmd('setHp',a.id,0.35);o.push(a.id);}});return o;})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 1150,
+  "y": 600
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__kxN=-1;var raf=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=function(cb){if(window.__kxN===0)return 0;if(window.__kxN>0)window.__kxN--;return raf(cb);};window.__echoes.on('skill_bolt_spawn',function(){if(window.__kxN<0)window.__kxN=14;});return {armed:true};})()"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=window.__arenaProbe.stage,cam=S.camera,W=window.innerWidth,H=window.innerHeight;const s=window.__echoes.state();const out=[];const V=S.camera.position.constructor;(s.skillBolts||[]).forEach(function(b){const v=new V(b.x,0.55,b.z);const q=v.clone().project(cam);out.push({skill:b.skill,x:b.x,z:b.z,sx:Math.round(((q.x+1)/2)*W),sy:Math.round(((1-q.y)/2)*H)});});var cores=[];S.scene.traverse(function(o){if(o.name==='skillfx'){o.traverse(function(c){if(c.isMesh&&c.visible&&(c.name==='core'||c.name==='glow')){var v=new V();c.getWorldPosition(v);var q=v.clone().project(cam);cores.push([c.name,Math.round(((q.x+1)/2)*W),Math.round(((1-q.y)/2)*H),Math.round(v.y*100)/100]);}});}});return {bolts:out,cores:cores,tick:window.__echoes.tick};})()"
+ },
+ {
+  "type": "shot",
+  "name": "kx-bolt-A"
+ }
+]

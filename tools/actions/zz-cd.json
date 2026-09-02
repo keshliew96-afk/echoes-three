@@ -1,0 +1,44 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "key",
+  "key": "Space",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__P0=\"a\";(()=>1)()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const r=(n)=>{const b=n.getBoundingClientRect(); return {x:+b.x.toFixed(1),y:+b.y.toFixed(1),w:+b.width.toFixed(1),h:+b.height.toFixed(1)};}; const inter=(a,b)=>!(a.x+a.w<=b.x||b.x+b.w<=a.x||a.y+a.h<=b.y||b.y+b.h<=a.y); const out=[...document.querySelectorAll('#hud .hud-slot')].map((s,i)=>{const k=s.querySelector('.hud-slot-key'), ab=s.querySelector('.hud-slot-abbrev'), nu=s.querySelector('.hud-slot-num'); const kb=r(k), abb=r(ab), nb=r(nu); return {i, key:k.textContent, keyBox:kb, abbrev:ab.textContent.trim().slice(0,6), abbrevBox:abb, num:nu.textContent, numBox:nb, numVisible:nb.w>0.5&&Number(getComputedStyle(nu).opacity)>0.05, hitKeyNum:inter(kb,nb), hitAbbrevNum:inter(abb,nb), numFs:getComputedStyle(nu).fontSize, opacity:getComputedStyle(nu).opacity};}); return out; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 2400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const r=(n)=>{const b=n.getBoundingClientRect(); return {x:+b.x.toFixed(1),y:+b.y.toFixed(1),w:+b.width.toFixed(1),h:+b.height.toFixed(1)};}; const inter=(a,b)=>!(a.x+a.w<=b.x||b.x+b.w<=a.x||a.y+a.h<=b.y||b.y+b.h<=a.y); const out=[...document.querySelectorAll('#hud .hud-slot')].map((s,i)=>{const k=s.querySelector('.hud-slot-key'), ab=s.querySelector('.hud-slot-abbrev'), nu=s.querySelector('.hud-slot-num'); const kb=r(k), abb=r(ab), nb=r(nu); return {i, key:k.textContent, keyBox:kb, abbrev:ab.textContent.trim().slice(0,6), abbrevBox:abb, num:nu.textContent, numBox:nb, numVisible:nb.w>0.5&&Number(getComputedStyle(nu).opacity)>0.05, hitKeyNum:inter(kb,nb), hitAbbrevNum:inter(abb,nb), numFs:getComputedStyle(nu).fontSize, opacity:getComputedStyle(nu).opacity};}); return out; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({slots:__echoes.hud.slots().map(s=>({key:s.key,ab:s.abbrev,cnt:s.counting,num:s.numeral,deg:s.wipeDeg}))}))()"
+ }
+]

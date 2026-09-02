@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const s=__echoes.state(); const r=__echoes.cmd('runState'); const nums=[...document.querySelectorAll('.dmg-num')].filter(n=>getComputedStyle(n).visibility==='visible').map(n=>{const b=n.getBoundingClientRect(); return {t:n.textContent,x:Math.round(b.x),y:Math.round(b.y),o:getComputedStyle(n).opacity};}); return {mode:s.vfx&&s.vfx.mode, arena: !!(s.vfx&&s.vfx.arena), scene:s.scene, room:r.room, phase:r.phase, nums}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const s=__echoes.state(); const r=__echoes.cmd('runState'); const nums=[...document.querySelectorAll('.dmg-num')].filter(n=>getComputedStyle(n).visibility==='visible').map(n=>{const b=n.getBoundingClientRect(); return {t:n.textContent,x:Math.round(b.x),y:Math.round(b.y),o:getComputedStyle(n).opacity};}); return {mode:s.vfx&&s.vfx.mode, arena: !!(s.vfx&&s.vfx.arena), scene:s.scene, room:r.room, phase:r.phase, nums}; })()"
+ }
+]

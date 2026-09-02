@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({tick:window.__echoes.tick,v:window.__echoes.version}))()"
+ }
+]

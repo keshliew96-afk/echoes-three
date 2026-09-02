@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const out=[];for(let i=0;i<25;i++){__echoes.cmd('startRun');await s(40);__echoes.cmd('skipToRoom',7);await s(60);const v=__echoes.cmd('runState');out.push({w:v.wallet,p:v.shop.stock.map(x=>x.price),n:v.shop.stock.map(x=>x.node)});}const bad=out.filter(o=>{const p=[...o.p].sort((a,b)=>a-b);const all=p.reduce((a,b)=>a+b,0);const two=p[0]+p[1];return o.w!==72||all<=72||two>72||p.length!==3;});return {n:out.length,bad,sample:out.slice(0,6)};})()"
+ }
+]

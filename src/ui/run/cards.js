@@ -38,6 +38,22 @@ export const NODE_EFFECT = {
     'kills by this skill explode · full heals burst-heal — 50% power in 1.2 u.',
 };
 
+// The same effects in one breath. Used by the compact reflow (short windows),
+// where the height a four-line body costs is the difference between a page
+// that fits at 1:1 and a page whose type gets scaled under the §17 floors.
+// This is a SHORTER copy variant, never a hidden one: exactly one body string
+// is ever in the DOM.
+export const NODE_EFFECT_SHORT = {
+  sharpen: '+25% power on this skill.',
+  quicken: '−15% cooldown on this skill.',
+  multiply: '+1 count — one more bolt or target.',
+  ascend: '×2 power. Legendary: slot B only.',
+  bounce: 'one extra hop within 2.2 u — ricochet, or chain-heal.',
+  siphon: 'damage self-heals · heals scorch the nearest enemy.',
+  echo: 'the cast repeats 1.0 s later — 50% damage, 100% heal.',
+  detonate: 'kills explode · full heals burst — 50% within 1.2 u.',
+};
+
 const SHAPE_LABEL = {
   projectile: 'projectile',
   direct: 'direct',
@@ -79,22 +95,30 @@ export function skillCardHtml(id) {
 
 // A node candidate card body. `verdict` is the §15.5 kit line, `extra` any
 // binding card copy (Siphon's line).
-export function nodeCardHtml(id, { verdict = null, extra = null, owned = 0 } = {}) {
+export function nodeCardHtml(
+  id,
+  { verdict = null, extra = null, owned = 0, compact = false, bench = false } = {}
+) {
   const n = NODES[id];
   if (!n) return '';
+  const effect = (compact ? NODE_EFFECT_SHORT[id] : NODE_EFFECT[id]) ?? NODE_EFFECT[id] ?? '';
   return `
     <div class="rn-cardkind">NODE · ${esc(n.rarity)}</div>
     <div class="rn-cardicon">${NODE_GLYPH[id] ?? '?'}</div>
     <div class="rn-cardname">${esc(n.name)}</div>
     <div class="rn-cardsub">${esc(n.kind)} · limit ${n.limit}/skill</div>
-    <div class="rn-body">${esc(NODE_EFFECT[id] ?? '')}</div>
+    <div class="rn-body">${esc(effect)}</div>
     ${extra ? `<div class="rn-body">“${esc(extra)}”</div>` : ''}
     ${
       verdict
         ? `<div class="rn-verdict${verdict.startsWith('fits') ? '' : ' rn-cold'}">${esc(verdict)}</div>`
         : ''
     }
-    ${owned > 0 ? `<div class="rn-owned">you own ${owned}</div>` : ''}`;
+    ${
+      owned > 0
+        ? `<div class="rn-owned">you own ${owned}${bench ? ' · on the bench' : ''}</div>`
+        : ''
+    }`;
 }
 
 export function rarityOf(type, id) {

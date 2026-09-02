@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");const p=E.state().party;const by=(i)=>p.find(q=>q.partyIndex===i)||p[0];E.cmd(\"setHp\",by(2).id,0.15);E.hud.freeze(0.25);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;const by=(i)=>p.find(q=>q.partyIndex===i)||p[0];E.cmd(\"setHp\",by(2).id,0.15);return window.__echoes.hud.portraits()[2];})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ }
+]

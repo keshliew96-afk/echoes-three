@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {keys:Object.keys(s),party:s.party&&s.party.length,allies:s.allies&&s.allies.length,sample:JSON.stringify(s.party||s.allies||[]).slice(0,300)};})()"
+ }
+]

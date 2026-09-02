@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const log=[];for(const t of ['room_soft_fail','room_cleared','reward_forfeited','glint_gain','path_offer','room_enter'])__echoes.on(t,e=>log.push(JSON.stringify(e).slice(0,140)));__echoes.cmd('startRun');await s(150);const fr=__echoes.cmd('runState').frame;const d=fr.defendAt[0];__echoes.cmd('skipToRoom',d);await s(300);const ws=__echoes.state().room.waystone;__echoes.cmd('setHp',ws.id,0);await s(300);__echoes.cmd('clearRoom');await s(500);const v=__echoes.cmd('runState');return {defendRoom:d,waystone:ws,phase:v.phase,wallet:v.wallet,reward:v.reward,screen:__echoes.runUi().screen,log};})()"
+ }
+]

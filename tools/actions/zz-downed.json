@@ -1,0 +1,38 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); window.__ids=__echoes.state().party.map(e=>e.id); return window.__ids; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const q=[...document.querySelectorAll('#hud .hud-port-tile')]; const keys=[...document.querySelectorAll('#hud .hud-port-key')].map(n=>n.textContent); return {tiles:q.length, keys}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ids=window.__ids; __echoes.cmd('setHp', ids[1], 0.15); __echoes.hud.freeze(0.25); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const keys=[...document.querySelectorAll('#hud .hud-port-key')].map(n=>({t:n.textContent, r:n.getBoundingClientRect()})); const nums=[...document.querySelectorAll('#hud .hud-port-num')].map(n=>({t:n.textContent, r:n.getBoundingClientRect(), fs:getComputedStyle(n).fontSize})); return {keys,nums}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ids=window.__ids; __echoes.cmd('setHp', ids[1], 0); __echoes.cmd('setHp', ids[2], 0); __echoes.cmd('setHp', ids[3], 0); return __echoes.state().party.map(p=>p.hp); })()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({mark:window.__zz, tick:__echoes.tick, ports:__echoes.hud.portraits().map(p=>({i:p.index,state:p.state,ro:p.reviveOffset,rt:p.reviveTotal}))}))()"
+ }
+]

@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(150);const f=__echoes.cmd('runState').frame;__echoes.cmd('clearRoom');await s(300);const r=__echoes.cmd('runState').reward;__echoes.cmd('draftDecline');await s(150);__echoes.cmd('pathChoose',0);await s(500);__echoes.cmd('skipToRoom',7);await s(300);const st=__echoes.cmd('runState').shop.stock.map(x=>x.node+':'+x.price);return {seed:__echoes.seed,frame:f,reward:r&&(r.type+':'+r.id),shop:st};})()"
+ }
+]

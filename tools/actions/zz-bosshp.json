@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const hits=[];__echoes.on('damage',e=>hits.push(e));__echoes.on('hit',e=>hits.push(e));window.__h=hits;__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',8);const series=[];for(let i=0;i<14;i++){await s(100);const v=__echoes.cmd('runState');series.push([__echoes.tick,v.boss.hp,v.boss.pct,v.boss.adds,v.boss.phasesFired]);}return {series,hitSample:hits.slice(0,10).map(e=>JSON.stringify(e).slice(0,160)),nHits:hits.length};})()"
+ }
+]

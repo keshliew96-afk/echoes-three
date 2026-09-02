@@ -1,0 +1,22 @@
+[
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=()=>window.__echoes;const sl=(m)=>new Promise(r=>setTimeout(r,m));E().cmd('startRun');await sl(800);return JSON.stringify({pre:E().state().run.room});})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=()=>window.__echoes;const sl=(m)=>new Promise(r=>setTimeout(r,m));E().cmd('skipToRoom',8);await sl(2500);return JSON.stringify({room:E().state().run.room,mode:E().state().run.mode,ents:E().entityCount});})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ }
+]

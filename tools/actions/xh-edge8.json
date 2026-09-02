@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,0);const P=[[-5,-6.6],[5,-6.6],[-10.2,-3],[10.2,-3],[-10.2,3],[10.2,3],[-5,6.6],[5,6.6]];const ids=P.map(([x,z],i)=>E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z));return ids;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return window.__echoes.hud.threat();})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const ms=[...document.querySelectorAll(\"#hud-threat .tm\")].filter(n=>n.style.display!==\"none\").map(n=>({t:n.style.transform,c:n.className,o:n.style.opacity}));return {domMarkers:ms.length,list:ms};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return window.__echoes.hud.markers();})()"
+ }
+]

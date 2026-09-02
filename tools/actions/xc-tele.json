@@ -1,0 +1,14 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=()=>window.__echoes;const sl=(m)=>new Promise(r=>setTimeout(r,m));E().cmd('teleport',6,-4);await sl(2500);const id=E().cmd('spawn','mantis',9.2,-4);let seen=null;for(let i=0;i<600;i++){const st=E().state();const en=(st.enemies||[]).find(e=>e.id===id);if(en&&en.telegraph){seen={t:E().tick,tg:en.telegraph};window.requestAnimationFrame=()=>0;break;}await sl(16);}return JSON.stringify({id,seen,ents:E().entityCount});})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ }
+]

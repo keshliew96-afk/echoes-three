@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "JSON.stringify(window.__echoes.state()).slice(0,1500)"
+ },
+ {
+  "type": "eval",
+  "code": "Object.keys(window.__echoes)"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ }
+]

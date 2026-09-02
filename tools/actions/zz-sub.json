@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(150);__echoes.cmd('giveSkill','nova_bloom');__echoes.cmd('giveSkill','sanctuary');await s(60);__echoes.cmd('clearRoom');await s(350);const d=__echoes.runUi();const v=__echoes.cmd('runState');return {free:v.freeSkillSlots,reward:v.reward,subline:d.subline,buttons:d.buttons,cards:d.cards.length,text:d.text};})()"
+ }
+]

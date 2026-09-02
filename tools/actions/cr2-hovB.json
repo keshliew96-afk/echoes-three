@@ -1,0 +1,1 @@
+[{"type":"eval","code":"(()=>{__echoes.cmd('startRoom','kill_all');__echoes.cmd('setHp',1,0.40);return 1;})()"},{"type":"wait","ms":600},{"type":"mousemove","x":20,"y":20},{"type":"wait","ms":500}]

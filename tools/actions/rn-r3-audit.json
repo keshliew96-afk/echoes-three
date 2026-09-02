@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('skipToRoom',7); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const d=__echoes.runUi(); return d.typeAudit.map(t=>t.cls+'|'+t.authored+'|'+t.real+'|'+(t.numeral?'N':'t')+'|'+t.txt); })()"
+ }
+]

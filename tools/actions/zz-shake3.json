@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',7);await s(300);__echoes.cmd('shopBuy',2);await s(100);__echoes.cmd('shopBuy',1);await s(200);const p=document.querySelector('.rn-plaque');const before=p.getBoundingClientRect().x;__echoes.cmd('shopBuy',0);const out=[];for(let i=0;i<8;i++){await s(35);const pp=document.querySelector('.rn-plaque');const an=pp.getAnimations().map(a=>({n:a.animationName,t:Math.round(a.currentTime||0),st:a.playState}));out.push({t:i*35,rect:Math.round(pp.getBoundingClientRect().x*100)/100,an,cls:pp.className});}return {before,out,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};})()"
+ }
+]

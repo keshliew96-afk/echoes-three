@@ -1,4 +1,30 @@
-[{"type":"keydown","key":"KeyD"},{"type":"wait","ms":1500},{"type":"keyup","key":"KeyD"},
- {"type":"keydown","key":"KeyA"},{"type":"wait","ms":1500},{"type":"keyup","key":"KeyA"},
- {"type":"wait","ms":1500},
- {"type":"eval","code":"window.__echoes.fps"}]
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('rally')"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const out=[];for(let i=0;i<40;i++){await new Promise(function(r){setTimeout(r,250);});out.push(window.__echoes.fps);}out.sort(function(a,b){return a-b;});return {n:out.length,min:out[0],p10:out[4],median:out[20],max:out[39],all:out};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {party:s.party.length,fps:window.__echoes.fps};})()"
+ }
+]

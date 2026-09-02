@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); __echoes.cmd('teleport',0,0); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const P=[[-11,-7],[11,-7],[-11,7],[11,7],[0,-7.5],[0,7.5],[-11.5,0],[11.5,0]]; window.__sp=P.map(p=>__echoes.cmd('spawn','boar',p[0],p[1])); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const W=window.innerWidth,H=window.innerHeight; const out=[]; const walk=(n)=>{ for(const c of n.children){ const b=c.getBoundingClientRect(); const txt=(c.textContent||'').trim(); if(b.width>0&&b.height>0&&txt&&txt.length<8){ const off = b.x<0||b.y<0||b.x+b.width>W||b.y+b.height>H; if(off||b.y>H-60) out.push({t:txt.slice(0,8), cls:(c.className&&c.className.baseVal!==undefined?c.className.baseVal:c.className)+'', id:c.id, x:+b.x.toFixed(0),y:+b.y.toFixed(0),w:+b.width.toFixed(0),h:+b.height.toFixed(0), fs:getComputedStyle(c).fontSize, off}); } walk(c);} }; walk(document.body); return {mark:window.__zz, W,H, out:out.slice(0,25)}; })()"
+ }
+]

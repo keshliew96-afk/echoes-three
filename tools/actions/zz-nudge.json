@@ -1,0 +1,74 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "keydown",
+  "key": "Space"
+ },
+ {
+  "type": "wait",
+  "ms": 40
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 40
+ },
+ {
+  "type": "keyup",
+  "key": "Space"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({mark:window.__zz, denials:__echoes.events.filter(e=>e.type==='intent_denied').map(e=>({t:e.tick,kind:e.kind,reason:e.reason})), nudges:__echoes.hud.nudges(), anims:__echoes.hud.animations()}))()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.hud.forceNudge(0,'on_cooldown'); __echoes.hud.forceNudge(2,'empty_slot'); __echoes.hud.forceNudge(1,'priority_suppressed'); __echoes.hud.forceNudge('dodge','ready'); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({anims2:__echoes.hud.animations(), slots:__echoes.hud.slots().map(s=>({k:s.key,n:s.nudge.slot,f:s.nudge.flash,fr:s.nudge.frame,tr:s.nudge.transform,fb:s.nudge.frameBorder,bg:s.nudge.flashBg}))}))()"
+ }
+]

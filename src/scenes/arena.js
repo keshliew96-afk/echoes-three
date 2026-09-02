@@ -591,7 +591,22 @@ export function createArenaScene(stage, toggles, ctx) {
       // depth-clip its own billboard the way a tall torch stake can (that is
       // what FLAME_LIFT is for), so the brazier needs almost none.
       const BRAZIER_LIFT = 0.03;
-      const fy = em.y + 0.06 + TOWARD_CAM.y * BRAZIER_LIFT;
+      // FIX ROUND 2 — the fire has to clear its own bowl.
+      //
+      // The flame billboard is 0.95 u tall and the shared texture paints its
+      // white-hot core LOW, 24% up from the sprite's base (env/flame.js), so
+      // at the old +0.06 the core sat at world y 0.67 — under the bowl's rim
+      // at 0.858, i.e. behind the iron the camera is looking down at. What
+      // survived was the transparent TIP of the teardrop, which is why a 4x
+      // crop read "a gold dome with a soft warm bleed and no flame tongue, no
+      // white-hot core" (Round D advisory) and the emitter's fire-ness was
+      // carried by the pool decal alone. +0.32 puts the painted core at
+      // y 0.95, about 0.09 clear of the rim, while the sprite's own base
+      // (0.72) stays INSIDE the bowl so the flame still reads as rising out
+      // of the coals rather than hovering over them. This is geometry only —
+      // the gain (and therefore what the bloom pass sees) is untouched, so it
+      // cannot re-create the warm veil that criterion 1 is about.
+      const fy = em.y + 0.30 + TOWARD_CAM.y * BRAZIER_LIFT;
       const fz = em.z + TOWARD_CAM.z * BRAZIER_LIFT;
       // Flame 0.95: the bowl fire is the emitter's whole tell and at 0.72 it
       // was smaller than the pool's blown core, so it read as part of the
@@ -605,7 +620,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // orange teardrop became bloom fuel, which is what blew the bowl out to
       // a featureless white blob (the F1 advisory's re-raise) and veiled the
       // frame warm. Torches run 1.55, the lantern wick 1.5.
-      const body = makeFlameSprite(0.95, 1, 1.6);
+      const body = makeFlameSprite(0.8, 1, 1.6);
       body.position.set(em.x, fy, fz);
       body.renderOrder = 8;
       root.add(body);
@@ -647,7 +662,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // the ground around the pedestal to featureless white, which is exactly
       // what turned the emitter into a backlit smudge — the F1 defect this
       // whole prop exists to fix. The FLAME is the hot centre now.)
-      flames.push({ body, glow, pool, poolO: 0.46, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.95, phase: cosmetic.range(0, Math.PI * 2) });
+      flames.push({ body, glow, pool, poolO: 0.46, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.8, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.12, z: fz });
     } else if (em.kind === 'lantern') {
       // A lantern is a FIRE, not a cold lamp: a small flame inside the glass

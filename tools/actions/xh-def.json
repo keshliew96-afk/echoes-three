@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"skipToRoom\",4);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;return {banner:h.banner(),metrics:h.metrics(),room:window.__echoes.state().room};})()"
+ }
+]

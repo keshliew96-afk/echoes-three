@@ -1,0 +1,34 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(150);__echoes.cmd('clearRoom');await s(300);return {screen:__echoes.runUi().screen, phase:__echoes.cmd('runState').phase};})()"
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "keyup",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const d=__echoes.runUi();const v=__echoes.cmd('runState');return {freshScreen:d.screen, phase:v.phase, room:v.room};})()"
+ }
+]

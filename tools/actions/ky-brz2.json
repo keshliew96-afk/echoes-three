@@ -1,0 +1,26 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',5.4,-1.2)"
+ },
+ {
+  "type": "wait",
+  "ms": 2600
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('killAllEnemies')"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const P=window.__arenaProbe;const S=P.stage,cam=S.camera,W=window.innerWidth,H=window.innerHeight;const V=S.camera.position.constructor;var out=[];S.scene.traverse(function(o){if(!o.isSprite)return;var m=o.material&&o.material.map;if(!m||!m.image||m.image.height!==192)return;var w=o.getWorldPosition(new V());var q=w.clone().project(cam);out.push([Math.round(w.x*10)/10,Math.round(w.y*100)/100,Math.round(w.z*10)/10,Math.round(((q.x+1)/2)*W),Math.round(((1-q.y)/2)*H),Math.round(o.scale.y*100)/100]);});return out;})()"
+ }
+]

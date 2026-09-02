@@ -1,0 +1,1 @@
+[{"type":"eval","code":"(()=>{const s=__echoes.state();return {scene:s.scene,room:s.room,skills:(s.build&&s.build.skills||[]).map(k=>k.id),party:(s.party||[]).map(p=>({i:p.partyIndex,hp:p.hp,max:p.maxHp,id:p.id,kind:p.kind})),keys:Object.keys(s)};})()"}]

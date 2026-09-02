@@ -9,7 +9,7 @@
 //     fully visible and is NEVER greyed or hidden for price (§14/§16)
 //   - empty shelf: "nothing left to sell you"; Advance -> boss (one-way);
 //     Esc inert
-import { esc } from './style.js';
+import { esc, isCompact } from './style.js';
 import { nodeCardHtml, RARITY_COLOR } from './cards.js';
 import { NODES } from '../../sim/nodes.js';
 
@@ -48,6 +48,7 @@ export function createShopScreen({ run, build }) {
     shelf.innerHTML = '';
     plaques.length = 0;
     const sys = build();
+    const compact = isCompact(); // short windows reflow (see ui/run/style.js)
     (s.stock ?? []).forEach((item, i) => {
       const n = NODES[item.node];
       const wrap = document.createElement('div');
@@ -57,7 +58,7 @@ export function createShopScreen({ run, build }) {
       wrap.innerHTML = `
         <div class="rn-card${n && n.rarity === 'legendary' ? ' rn-legendary' : ''}"
              style="--rar:${RARITY_COLOR[item.rarity] ?? RARITY_COLOR.common}">
-          ${nodeCardHtml(item.node, { verdict, extra, owned: item.owned })}
+          ${nodeCardHtml(item.node, { verdict, extra, owned: item.owned, compact, bench: compact && item.sold })}
           ${item.sold ? '<div class="rn-stamp">SOLD</div>' : ''}
         </div>
         <div class="rn-plaque">
@@ -75,7 +76,13 @@ export function createShopScreen({ run, build }) {
     emptyEl.style.display = bare ? '' : 'none';
     emptyEl.textContent = bare ? 'nothing left to sell you' : '';
     const sold = (s.stock ?? []).filter((i) => i.sold);
-    if (sold.length === 0) {
+    // In the compact reflow the receipt rides ON the sold card ("you own N ·
+    // on the bench") instead of on its own note line: the §16 information is
+    // identical, it just costs 39 px less height, which is the difference
+    // between a page that fits at 1:1 and a page whose type gets scaled under
+    // the §17 floors. The note is REMOVED, never hidden — nothing invisible
+    // ever contributes to the page's textContent.
+    if (compact || sold.length === 0) {
       boughtEl.style.display = 'none';
       boughtEl.textContent = '';
     } else {

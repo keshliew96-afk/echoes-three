@@ -1,0 +1,50 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.dispatchEvent(new KeyboardEvent(\"keydown\",{code:\"Digit3\"}));window.dispatchEvent(new KeyboardEvent(\"keyup\",{code:\"Digit3\"}));return \"Digit3\";})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;h.pinAnimations(90);const s3=document.querySelectorAll(\"#proto-hud .hud-slot\")[2];const cs=getComputedStyle(s3);return {tag:\"A-empty-only\",cls:s3.className,anim:cs.animationName,border:cs.borderTopColor,transform:cs.transform};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.dispatchEvent(new KeyboardEvent(\"keydown\",{code:\"Space\"}));window.dispatchEvent(new KeyboardEvent(\"keyup\",{code:\"Space\"}));setTimeout(()=>{window.dispatchEvent(new KeyboardEvent(\"keydown\",{code:\"Digit3\"}));window.dispatchEvent(new KeyboardEvent(\"keyup\",{code:\"Digit3\"}));},60);return \"dash+3\";})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;h.pinAnimations(90);const s3=document.querySelectorAll(\"#proto-hud .hud-slot\")[2];const cs=getComputedStyle(s3);return {tag:\"B-after-skip\",cls:s3.className,anim:cs.animationName,border:cs.borderTopColor,transform:cs.transform};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.dispatchEvent(new KeyboardEvent(\"keydown\",{code:\"Digit3\"}));window.dispatchEvent(new KeyboardEvent(\"keyup\",{code:\"Digit3\"}));return \"Digit3\";})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;h.pinAnimations(90);const s3=document.querySelectorAll(\"#proto-hud .hud-slot\")[2];const cs=getComputedStyle(s3);return {tag:\"C-empty-after-skip\",cls:s3.className,anim:cs.animationName,border:cs.borderTopColor,transform:cs.transform};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return window.__echoes.events.filter(e=>e.type===\"intent_denied\").slice(-6);})()"
+ }
+]

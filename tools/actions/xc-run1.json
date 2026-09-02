@@ -1,0 +1,14 @@
+[
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=()=>window.__echoes;const sl=(m)=>new Promise(r=>setTimeout(r,m));const a=E().cmd('startRun');await sl(1500);return JSON.stringify({a,run:E().state().run,ents:E().entityCount});})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ }
+]

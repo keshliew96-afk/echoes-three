@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',8);await s(30);const v0=__echoes.cmd('runState');window.__bid=v0.boss.id;const iv=setInterval(()=>{__echoes.cmd('iframe',window.__bid,600);},200);window.__iv=iv;await s(2500);return {boss:__echoes.cmd('runState').boss,fx:__echoes.state().bossfx};})()"
+ }
+]

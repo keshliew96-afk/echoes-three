@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");const p=E.state().party;const a=p.find(q=>q.partyIndex===3);E.cmd(\"setHp\",a.id,0);return a.id;})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{for(let i=0;i<900;i++){const cs=window.__echoes.cmd(\"allyState\");const ch=cs&&cs.channels&&cs.channels[0];if(ch&&(ch.pct>=0.5))return JSON.stringify(ch);await new Promise(r=>setTimeout(r,16));}return \"timeout\";})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return window.__echoes.hud.portraits()[3];})()"
+ }
+]

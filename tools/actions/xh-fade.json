@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const b=document.getElementById(\"hud-banner\");window.__S=[];window.__T0=performance.now();window.__iv=setInterval(()=>{window.__S.push([Math.round(performance.now()-window.__T0),+getComputedStyle(b).opacity.slice(0,5)]);},25);return \"sampling\";})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__T0=performance.now();window.__S.length=0;window.__echoes.cmd(\"clearRoom\");return \"cleared\";})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{clearInterval(window.__iv);return window.__S;})()"
+ }
+]

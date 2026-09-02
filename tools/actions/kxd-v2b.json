@@ -1,0 +1,26 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',-3.8,-3)"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('rally')"
+ },
+ {
+  "type": "wait",
+  "ms": 5000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {enemies:s.enemies.length,party:s.party.map(function(a){return [Math.round(a.x*10)/10,Math.round(a.z*10)/10];})};})()"
+ }
+]

@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=__echoes.cmd('runState');const nums=[...document.querySelectorAll('.dmg-num')].map(n=>{const b=n.getBoundingClientRect();const cs=getComputedStyle(n);return {t:n.textContent,vis:cs.visibility,x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),o:cs.opacity};}).filter(n=>n.vis!=='hidden');return {tag:\"boot\",mode:s.vfx&&s.vfx.mode,arena:!!(s.vfx&&s.vfx.arena),room:r.room,phase:r.phase,tick:__echoes.tick,nums};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=__echoes.cmd('runState');const nums=[...document.querySelectorAll('.dmg-num')].map(n=>{const b=n.getBoundingClientRect();const cs=getComputedStyle(n);return {t:n.textContent,vis:cs.visibility,x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),o:cs.opacity};}).filter(n=>n.vis!=='hidden');return {tag:\"after1.5s\",mode:s.vfx&&s.vfx.mode,arena:!!(s.vfx&&s.vfx.arena),room:r.room,phase:r.phase,tick:__echoes.tick,nums};})()"
+ }
+]

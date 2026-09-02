@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',7);await s(300);const v=__echoes.cmd('runState');const d=__echoes.runUi();return {wallet:v.wallet,stock:v.shop.stock,screen:d.screen,plaques:d.plaques,cards:d.cards,owned:d.owned,text:d.text};})()"
+ }
+]

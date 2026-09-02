@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); __echoes.cmd('teleport',-6,-4); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ for(let k=0;k<16;k++){ const a=(k/16)*Math.PI*2; __echoes.cmd('spawn','boar', -6+Math.cos(a)*11, -4+Math.sin(a)*7); } return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const inter=(a,b)=>!(a.x+a.w<=b.x||b.x+b.w<=a.x||a.y+a.h<=b.y||b.y+b.h<=a.y); const vl=document.getElementById('version-label').getBoundingClientRect(); const fm=document.getElementById('fps-meter').getBoundingClientRect(); const V={x:vl.x,y:vl.y,w:vl.width,h:vl.height}, F={x:fm.x,y:fm.y,w:fm.width,h:fm.height}; const ms=[...document.querySelectorAll('#hud-threat .tm')].filter(n=>n.style.display!=='none').map(n=>{const b=n.getBoundingClientRect(); return {x:+b.x.toFixed(0),y:+b.y.toFixed(0),w:+b.width.toFixed(0),h:+b.height.toFixed(0)};}); return {mark:window.__zz, V, F, n:ms.length, overVersion:ms.filter(m=>inter(m,V)), overFps:ms.filter(m=>inter(m,F)), audit:(a=>({off:a.offFrame,uncued:a.uncued}))(__echoes.hud.threat())}; })()"
+ }
+]

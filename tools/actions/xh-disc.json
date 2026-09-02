@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {version:E.version,hasHud:!!E.hud,hudKeys:E.hud?Object.keys(E.hud):null,stateKeys:Object.keys(E.state()),room:E.state().room,run:E.state().run?{room:E.state().run.roomIndex,mode:E.state().run.mode}:null};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;return {metrics:h.metrics(),banner:h.banner(),slots:h.slots(),portraits:h.portraits()};})()"
+ }
+]

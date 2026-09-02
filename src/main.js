@@ -23,6 +23,7 @@ import { createSimTestScene } from './scenes/simtest.js';
 import { createGrayboxScene } from './scenes/graybox.js';
 import { createCharTestScene } from './scenes/chartest.js';
 import { createArenaScene } from './scenes/arena.js';
+import { createCampScene } from './scenes/camp.js';
 import { createDebugOverlay } from './ui/debug.js';
 import { createHud } from './ui/hud/index.js';
 import { createClock } from './core/clock.js';
@@ -40,6 +41,7 @@ import { createTechFx } from './render/techfx/index.js';
 import { createSiphonFizzleCue } from './ui/socket/fizzle.js';
 import { createBossLayer } from './render/boss/index.js';
 import { createRunUi } from './ui/run/index.js';
+import { updateNumberPools, flushNumberPools } from './render/numbers.js';
 
 const params = new URLSearchParams(window.location.search);
 const flag = (name, def = true) => {
@@ -67,7 +69,30 @@ const seed =
   seedParam !== null
     ? Number(seedParam) >>> 0
     : Math.floor(Math.random() * 0x100000000) >>> 0;
-const rng = createGameplayRng(seed);
+// The gameplay stream is REBUILT at each Begin Run (camp block, §2 "all run
+// state is wiped at run end"): this thin handle keeps one identity for every
+// consumer while `reseed` swaps the stream underneath. `?seed=` still forces
+// the FIRST stream, and every later run seed is a draw off the previous one,
+// so a seeded session stays deterministic end to end.
+let rngImpl = createGameplayRng(seed);
+const rng = {
+  stream: 'gameplay',
+  get seed() {
+    return rngImpl.seed;
+  },
+  get drawIndex() {
+    return rngImpl.drawIndex;
+  },
+  float: () => rngImpl.float(),
+  range: (a, b) => rngImpl.range(a, b),
+  int: (n) => rngImpl.int(n),
+  chance: (p) => rngImpl.chance(p),
+  pick: (a) => rngImpl.pick(a),
+  reseed: (s) => {
+    rngImpl = createGameplayRng(s >>> 0);
+    return rngImpl.seed;
+  },
+};
 const cosmetic = createCosmeticRng();
 
 const registry = createRegistry();
@@ -97,9 +122,16 @@ const SCENES = {
   rendertest: createRenderTestScene,
   chartest: createCharTestScene,
   arena: createArenaScene,
+  camp: createCampScene,
 };
-const DEFAULT_SCENE = 'arena'; // v0.3.0: the dressed arena is the game scene
+// v0.5.0: the game BOOTS INTO CAMP (§2 "the camp hub scene bookends runs").
+// The camp scene wraps the arena and swaps between them on run start/end, so
+// ?scene=arena still boots straight into the combat arena for regressions.
+const DEFAULT_SCENE = 'camp';
 const sceneKey = SCENES[params.get('scene')] ? params.get('scene') : DEFAULT_SCENE;
+// Scenes that carry the full game stack (sim FX layers + HUD + meta screens).
+const PLAYABLE =
+  sceneKey === 'graybox' || sceneKey === 'arena' || sceneKey === 'camp';
 
 // The deterministic wisp harness belongs to the simtest proving ground only;
 // the game scenes get a clean world (enemies land with their own block).
@@ -120,20 +152,36 @@ const world = createWorld({
 createSynth(bus);
 
 const buildScene = SCENES[sceneKey];
-const activeScene = buildScene(stage, toggles, { world, cosmetic, bus });
+const activeScene = buildScene(stage, toggles, { world, cosmetic, bus, rng });
+
+// --- Run-block wiring (append-only; see src/sim/run.js + src/render/numbers.js).
+// 1. A RUN ALWAYS SWAPS THE SCENE. camp.js already mirrors `run_end` ->
+//    setMode('camp'); without the other half, `?run=1` and a scripted
+//    __echoes.cmd('startRun') started room 1 while the camp dressing was still
+//    on screen (measured: runState().room === 1 with vfx.mode 'camp' and
+//    vfx.arena null), so every capture-driven review judged the wrong
+//    environment. Registered BEFORE createRunUi so its `?run=1` autostart is
+//    covered too. setMode short-circuits on an unchanged mode, so the portal
+//    press (which swaps first, then starts) is unaffected.
+bus.on('run_start', () => activeScene.cmd?.('campMode', ['run']));
+// 2. The damage-numeral pool is swept at every run boundary — the cosmetic
+//    half of run.js's sweepPlayerTransients. Without it, numerals in flight at
+//    the kill tick froze on the Victory card and rode into Camp.
+for (const evt of ['run_start', 'room_cleared', 'run_end', 'return_to_camp'])
+  bus.on(evt, () => flushNumberPools());
 
 // Skill-delivery VFX layer (skills block): heal bursts/+HP glyphs, skill
 // bolts, Sanctuary zones, Warding Aura field, override reticle — rides the
 // playable scenes alongside the proto HUD.
 const skillfx =
-  sceneKey === 'graybox' || sceneKey === 'arena'
+  PLAYABLE
     ? createSkillFx({ stage, world, bus, cosmetic })
     : null;
 
 // Enemy render layer (enemies block): boar/mantis rigs, Ember attack
 // telegraphs, violet spawn shimmers, enemy shots, the defend-room Waystone.
 const enemyfx =
-  sceneKey === 'graybox' || sceneKey === 'arena'
+  PLAYABLE
     ? createEnemyLayer({ stage, world, bus, cosmetic })
     : null;
 
@@ -142,7 +190,7 @@ const enemyfx =
 // ally kit ground_aoe zones / swipe VFX. It adopts the arena's party critters
 // when the scene exposes them, so a character is never built twice.
 const allyfx =
-  sceneKey === 'graybox' || sceneKey === 'arena'
+  PLAYABLE
     ? createAllyLayer({ stage, world, bus, cosmetic, scene: activeScene })
     : null;
 
@@ -152,35 +200,35 @@ const allyfx =
 // off-screen threat pointers. Rides with the playable scenes only, so
 // simtest/rendertest/chartest captures stay unchanged.
 const hud =
-  sceneKey === 'graybox' || sceneKey === 'arena'
+  PLAYABLE
     ? createHud({ bus, world, stage, cosmetic })
     : null;
 
 // Socket screen (nodes block, §15/§16): the between-rooms build workbench
 // (B key / cmd('openSocket')) + the §17 Siphon "nobody near" fizzle cue.
 const socketScreen =
-  sceneKey === 'graybox' || sceneKey === 'arena' ? createSocketScreen({ bus, world }) : null;
+  PLAYABLE ? createSocketScreen({ bus, world }) : null;
 // Technique VFX layer (nodes block, §15.3 x §19.4): Bounce arcs, Siphon
 // tethers, Detonate shock rings, Echo ghost pulses — core + glow + particles on
 // every reinterpretation primitive, so a technique reads without the numbers.
 const techfx =
-  sceneKey === 'graybox' || sceneKey === 'arena' ? createTechFx({ stage, bus, cosmetic }) : null;
+  PLAYABLE ? createTechFx({ stage, bus, cosmetic }) : null;
 const fizzleCue =
-  sceneKey === 'graybox' || sceneKey === 'arena'
+  PLAYABLE
     ? createSiphonFizzleCue({ bus, camera: stage.camera })
     : null;
 // Boss render layer (run block, §11 Hollow Stag): the Stag rig, its
 // feverish warm boss-light (the room's brightest emitter, room dimmed a stop),
 // and the Antler Quake Ember ring telegraph.
 const bossfx =
-  sceneKey === 'graybox' || sceneKey === 'arena'
+  PLAYABLE
     ? createBossLayer({ stage, world, bus, cosmetic })
     : null;
 // Run meta screens (run block, §16/§18): draft, path doors, shop shelf,
 // victory/defeat pages + the §13 transition fade. `?run=1` boots into room 1
 // (the camp hub that normally starts a run is its own block).
 const runUi =
-  sceneKey === 'graybox' || sceneKey === 'arena'
+  PLAYABLE
     ? createRunUi({ bus, world, socket: socketScreen, autostart: params.get('run') === '1' })
     : null;
 
@@ -250,6 +298,10 @@ stage.renderer.setAnimationLoop((now) => {
   techfx?.update(now / 1000);
   bossfx?.update(now / 1000, alpha);
   fizzleCue?.update(now / 1000);
+  // Damage numerals age HERE, in the one loop that never stops, after the
+  // scenes have settled their cameras (world->screen projection needs the
+  // final camera of this frame). No scene swap can freeze the pool.
+  updateNumberPools(Math.min(0.1, Math.max(0, frameMs / 1000)));
   stage.render();
   overlay.update();
   runUi?.update();
@@ -283,7 +335,10 @@ window.__echoes = {
   get entityCount() {
     return registry.count;
   },
-  seed,
+  get seed() {
+    return rng.seed;
+  },
+  bootSeed: seed,
   get rngDraws() {
     return rng.drawIndex;
   },
@@ -312,6 +367,12 @@ window.__echoes = {
     // UI-level commands route to the socket screen (docs/TESTING.md).
     if (socketScreen && (name === 'openSocket' || name === 'closeSocket'))
       return socketScreen.cmd(name);
+    // Camp-hub commands (camp block): the same entry points the portal press
+    // and the run-end handler drive.
+    if (activeScene.cmd) {
+      const r = activeScene.cmd(name, args);
+      if (r !== undefined) return r;
+    }
     return world.cmd(name, ...args);
   },
 };

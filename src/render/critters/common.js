@@ -737,6 +737,13 @@ export function ringBand(hex) {
   // its antialias fringe against gold-lit grass INTO the h5-25 danger band
   // that criterion 1 reserves for enemy threats.
   if (heal) {
+    // FIX ROUND 2 measured this ceiling again and left it alone. Raising it
+    // to 0.40 was tried against the one arc that still drifts (variant 3's
+    // Healer E arc, band core h123.8-125.3 against her 138.0 accent): the
+    // authored chroma went g-min 68 -> 80 and that arc moved 125.3 -> 123.8,
+    // i.e. not at all, because the addition landing on it grew with it. The
+    // drift there is bloom, not chroma starvation, so the 0.34 that keeps the
+    // band under the analyzer's h110-150 / s>0.35 gate is kept.
     const sv = 0.34;
     const vv = 0.845; // just under the underBloom() ceiling; see groundRing
     const l = vv * (1 - sv / 2);

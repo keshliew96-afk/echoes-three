@@ -1,0 +1,72 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('rally')"
+ },
+ {
+  "type": "wait",
+  "ms": 5000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();var o=[];s.party.forEach(function(a){if(a.kind==='ally'){window.__echoes.cmd('setHp',a.id,0.35);o.push(a.id);}});return o;})()"
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('giveSkill','sanctuary')"
+ },
+ {
+  "type": "mousemove",
+  "x": 740,
+  "y": 455
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__kyN=-1;var raf=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=function(cb){if(window.__kyN===0)return 0;if(window.__kyN>0)window.__kyN--;return raf(cb);};window.__echoes.on('skill_cast',function(){if(window.__kyN<0)window.__kyN=1;});return {armed:true};})()"
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {fx:s.skillfx,party:s.party.map(function(a){return [Math.round(a.x*100)/100,Math.round(a.z*100)/100];}),tick:window.__echoes.tick};})()"
+ },
+ {
+  "type": "shot",
+  "name": "ky-bsanct-A"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=window.__arenaProbe.stage;S.scene.traverse(function(o){if(o.name==='skillfx')o.visible=false;});S.render();return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "shot",
+  "name": "ky-bsanct-B"
+ }
+]

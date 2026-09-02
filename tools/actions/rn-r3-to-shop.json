@@ -1,0 +1,18 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('skipToRoom',7); return __echoes.cmd('runState').wallet; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ return __echoes.cmd('shopBuy',2); })()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ }
+]

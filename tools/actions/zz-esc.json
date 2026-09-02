@@ -1,0 +1,36 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(150);__echoes.cmd('clearRoom');await s(250);__echoes.cmd('draftDecline');await s(250);return __echoes.runUi().screen;})()"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const v=__echoes.cmd('runState');return {pathAfterEsc:__echoes.runUi().screen,phase:v.phase,room:v.room};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('skipToRoom',7);await s(350);return __echoes.runUi().screen;})()"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const v=__echoes.cmd('runState');return {shopAfterEsc:__echoes.runUi().screen,phase:v.phase,room:v.room};})()"
+ }
+]

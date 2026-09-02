@@ -1,0 +1,1 @@
+[{"type":"wait","ms":300},{"type":"eval","code":"(()=>(window.__arenaProbe.emitters||[]).map(e=>[e.kind,+e.x.toFixed(2),+e.z.toFixed(2)]))()"}]

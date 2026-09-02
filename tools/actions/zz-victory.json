@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const log=[];for(const t of ['room_cleared','run_end','run_wiped','glint_gain'])__echoes.on(t,e=>log.push(JSON.stringify(e).slice(0,220)));__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',8);await s(200);__echoes.cmd('killBoss');await s(120);__echoes.cmd('killAllEnemies');await s(600);const v=__echoes.cmd('runState');const d=__echoes.runUi();return {phase:v.phase,summary:v.summary,active:v.active,wallet:v.wallet,screen:d.screen,text:d.text,veil:d.veil,buttons:d.buttons,log};})()"
+ }
+]

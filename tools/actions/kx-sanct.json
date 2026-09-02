@@ -1,0 +1,64 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('rally')"
+ },
+ {
+  "type": "wait",
+  "ms": 5000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();var o=[];s.party.forEach(function(a){if(a.kind==='ally'){window.__echoes.cmd('setHp',a.id,0.35);o.push(a.id);}});return o;})()"
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('giveSkill','sanctuary')"
+ },
+ {
+  "type": "mousemove",
+  "x": 700,
+  "y": 470
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {party:s.party.map(function(a){return [a.kind,Math.round(a.x*100)/100,Math.round(a.z*100)/100,Math.round(a.hp)];}),fx:s.skillfx,ev:window.__echoes.events.slice(-4).map(function(e){return e.type;})};})()"
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{if(!window.__kxFrz){window.__kxFrz=window.requestAnimationFrame;window.requestAnimationFrame=function(){return 0;};}return {frozen:true,tick:window.__echoes.tick};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {party:s.party.map(function(a){return [a.kind,Math.round(a.x*100)/100,Math.round(a.z*100)/100,Math.round(a.hp)];}),fx:s.skillfx,ev:window.__echoes.events.slice(-4).map(function(e){return e.type;})};})()"
+ },
+ {
+  "type": "shot",
+  "name": "kx-sanct-700"
+ }
+]

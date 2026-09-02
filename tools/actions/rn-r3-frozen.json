@@ -1,0 +1,67 @@
+[
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('teleport',0,-6.4); return __echoes.cmd('campState').inPortal; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "key",
+  "key": "KeyE",
+  "ms": 120
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const s=__echoes.state(); return {mode:s.vfx.mode, room:__echoes.cmd('runState').room}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{ const E=window.__echoes, sleep=(m)=>new Promise(r=>setTimeout(r,m)); const tr=[]; let g=0,last=0; while(g++<400){ const v=E.cmd('runState'); if(v.phase==='victory'||v.phase==='defeat'){tr.push('END '+v.phase);break;} if(v.phase==='combat'){ if(v.room!==last){last=v.room;tr.push('R'+v.room+' '+v.mode);} if(v.room===8){ await sleep(1200); E.cmd('killBoss'); E.cmd('killAllEnemies'); } else { E.cmd('killAllEnemies'); if(v.mode==='defend') E.cmd('clearRoom'); } } else if(v.phase==='reward'){E.cmd('draftTake');E.cmd('closeSocket');} else if(v.phase==='path'){E.cmd('pathChoose',0);} else if(v.phase==='shop'){E.cmd('shopAdvance');} await sleep(60);} return tr; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const all=[...document.querySelectorAll('.dmg-num')]; const vis=all.filter(n=>getComputedStyle(n).visibility==='visible'); const s=__echoes.state(); return {tag:'victory+0.2s', mode:s.vfx&&s.vfx.mode, phase:__echoes.cmd('runState').phase, domTotal:all.length, visible:vis.length, poolCount:s.vfx&&s.vfx.numerals, sample:vis.slice(0,8).map(n=>{const b=n.getBoundingClientRect(); return n.textContent+'@'+Math.round(b.x)+','+Math.round(b.y)+' o'+getComputedStyle(n).opacity;})}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const all=[...document.querySelectorAll('.dmg-num')]; const vis=all.filter(n=>getComputedStyle(n).visibility==='visible'); const s=__echoes.state(); return {tag:'victory+2.7s', mode:s.vfx&&s.vfx.mode, phase:__echoes.cmd('runState').phase, domTotal:all.length, visible:vis.length, poolCount:s.vfx&&s.vfx.numerals, sample:vis.slice(0,8).map(n=>{const b=n.getBoundingClientRect(); return n.textContent+'@'+Math.round(b.x)+','+Math.round(b.y)+' o'+getComputedStyle(n).opacity;})}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ return __echoes.cmd('returnToCamp'); })()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const all=[...document.querySelectorAll('.dmg-num')]; const vis=all.filter(n=>getComputedStyle(n).visibility==='visible'); const s=__echoes.state(); return {tag:'camp+2.5s', mode:s.vfx&&s.vfx.mode, phase:__echoes.cmd('runState').phase, domTotal:all.length, visible:vis.length, poolCount:s.vfx&&s.vfx.numerals, sample:vis.slice(0,8).map(n=>{const b=n.getBoundingClientRect(); return n.textContent+'@'+Math.round(b.x)+','+Math.round(b.y)+' o'+getComputedStyle(n).opacity;})}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 4000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const all=[...document.querySelectorAll('.dmg-num')]; const vis=all.filter(n=>getComputedStyle(n).visibility==='visible'); const s=__echoes.state(); return {tag:'camp+6.5s', mode:s.vfx&&s.vfx.mode, phase:__echoes.cmd('runState').phase, domTotal:all.length, visible:vis.length, poolCount:s.vfx&&s.vfx.numerals, sample:vis.slice(0,8).map(n=>{const b=n.getBoundingClientRect(); return n.textContent+'@'+Math.round(b.x)+','+Math.round(b.y)+' o'+getComputedStyle(n).opacity;})}; })()"
+ }
+]

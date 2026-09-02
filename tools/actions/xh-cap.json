@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-4.5);let n=0;for(let i=0;i<22;i++){const x=-9+ (i%11)*1.8;const z=6.4-Math.floor(i/11)*0.8;if(E.cmd(\"spawn\",i%2?\"mantis\":\"boar\",x,z))n++;}return n;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=window.__echoes.hud.threat();return {offFrame:a.offFrame,markersDrawn:a.markersDrawn,uncued:a.uncued,total:a.threats.length};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const ms=[...document.querySelectorAll(\"#hud-threat .tm\")].filter(n=>n.style.display!==\"none\");return {domMarkers:ms.length};})()"
+ }
+]

@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const K=(c)=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:c,bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:c,bubbles:true}));};K('Digit1');window.__A=setInterval(()=>{K('Digit1');K('Digit3');},90);return 'storm';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;const s3=document.querySelectorAll(\"#proto-hud .hud-slot\")[2];const r=s3.getBoundingClientRect();return {nudges:h.nudges().slice(-3),border3:getComputedStyle(s3).borderTopColor,rect:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)},denials:window.__echoes.events.filter(e=>e.type===\"intent_denied\").length};})()"
+ }
+]

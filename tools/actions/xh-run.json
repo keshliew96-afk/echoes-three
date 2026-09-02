@@ -1,0 +1,18 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd(\"startRun\");return {run:r};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {room:s.room,run:s.run,enemies:(s.enemies||[]).length,party:s.party&&s.party.map(p=>({i:p.partyIndex,hp:p.hp,max:p.maxHp}))};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return {banner:window.__echoes.hud.banner(),metrics:window.__echoes.hud.metrics()};})()"
+ }
+]

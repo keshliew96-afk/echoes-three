@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({em:(window.__arenaProbe.emitters||[]).map(function(e){return [e.kind,Math.round(e.x*10)/10,Math.round(e.z*10)/10];})}))()"
+ }
+]

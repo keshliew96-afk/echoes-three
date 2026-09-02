@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); __echoes.cmd('teleport',-4.5,-2.7); for(let i=1;i<4;i++) __echoes.cmd('placeAlly',i,-4.5+(i-2)*0.7,-2.2); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const bar=document.getElementById('proto-hud'); const cs=getComputedStyle(bar); const slot=bar.querySelector('.hud-slot'); const scs=getComputedStyle(slot); return {mark:window.__zz, barBg:cs.backgroundColor, barImg:cs.backgroundImage.slice(0,150), barOpacity:cs.opacity, backdrop:cs.backdropFilter, slotBg:scs.backgroundColor, slotImg:scs.backgroundImage.slice(0,120), zone1:__echoes.hud.metrics().zone1Box, fps:__echoes.fps}; })()"
+ }
+]

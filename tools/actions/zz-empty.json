@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(200);for(const id of ['nova_bloom','sanctuary'])__echoes.cmd('giveSkill',id);for(const n of ['sharpen','quicken','multiply','ascend','bounce','siphon','echo','detonate'])__echoes.cmd('grantNode',n);await s(60);const pools=__echoes.cmd('draftPools');__echoes.cmd('clearRoom');await s(300);const v=__echoes.cmd('runState');const d=__echoes.runUi();return {pools,reward:v.reward,text:d.text,buttons:d.buttons,subline:d.subline};})()"
+ }
+]

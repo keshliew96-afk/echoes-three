@@ -1,0 +1,44 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',3.2,-4.4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('giveSkill','restorative_wave')"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const c=window.__echoes.cmd;c('teleport',3.2,-4.4);c('placeAlly',1,2.7,-4.0);c('placeAlly',2,3.7,-4.05);c('placeAlly',3,3.15,-3.75);return window.__echoes.state().party.map(p=>[+p.x.toFixed(2),+p.z.toFixed(2)]);})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 700,
+  "y": 620
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 40
+ },
+ {
+  "type": "wait",
+  "ms": 40
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({fx:window.__echoes.state().skillfx,ev:window.__echoes.events.slice(-6).map(e=>e.type+'@'+e.tick)}))()"
+ }
+]

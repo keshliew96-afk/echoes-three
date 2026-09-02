@@ -1,0 +1,30 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 4000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__kxTel=window.__kxTel||[];if(!window.__kxTelOn){window.__kxTelOn=true;window.__echoes.on('telegraph_start',function(e){window.__kxTel.push(e);if(!window.__kxFrz){window.__kxFrz=window.requestAnimationFrame;window.requestAnimationFrame=function(){return 0;};}});}return {armed:true};})()"
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('spawn','mantis',7.6,-5.4)"
+ },
+ {
+  "type": "wait",
+  "ms": 9000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({tel:window.__kxTel.length,tick:window.__echoes.tick,ev:window.__echoes.events.slice(-6).map(e=>e.type)}))()"
+ }
+]

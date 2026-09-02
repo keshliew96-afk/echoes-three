@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); __echoes.cmd('teleport',0,0); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('startWave'); return __echoes.state().room; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const a=__echoes.hud.threat(); return {mark:window.__zz, pending:(__echoes.state().room||{}).pendingSpawns, off:a.offFrame, uncued:a.uncued, drawn:a.markersDrawn, markers:__echoes.hud.markers(), threats:a.threats.map(t=>({k:t.kind,sx:t.sx,sy:t.sy,inF:t.inSafeFrame,spawn:t.spawn,tele:t.telegraph,m:!!t.marker}))}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const a=__echoes.hud.threat(); return {off:a.offFrame, uncued:a.uncued, drawn:a.markersDrawn, threats:a.threats.map(t=>({k:t.kind,sx:t.sx,sy:t.sy,inF:t.inSafeFrame,tele:t.telegraph,m:!!t.marker}))}; })()"
+ }
+]

@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(200);__echoes.cmd('skipToRoom',8);await s(60);const b=__echoes.cmd('runState').boss.id;const iv=setInterval(()=>__echoes.cmd('iframe',b,600),120);const f=[];for(let i=0;i<20;i++){await s(200);f.push(__echoes.fps);}clearInterval(iv);const v=__echoes.cmd('runState');return {fps:f,min:Math.min(...f.slice(4)),med:f.slice(4).sort((a,b)=>a-b)[Math.floor((f.length-4)/2)],entities:__echoes.entityCount,adds:v.boss.adds};})()"
+ }
+]

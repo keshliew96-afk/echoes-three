@@ -1,0 +1,38 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('teleport',0,-6.5); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>__echoes.cmd('campBegin'))()"
+ },
+ {
+  "type": "wait",
+  "ms": 3200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('skipToRoom',8); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 3500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const inter=(a,b)=>!(a.x+a.w<=b.x||b.x+b.w<=a.x||a.y+a.h<=b.y||b.y+b.h<=a.y); const g=(id)=>{const r=document.getElementById(id).getBoundingClientRect(); return {x:+r.x.toFixed(0),y:+r.y.toFixed(0),w:+r.width.toFixed(0),h:+r.height.toFixed(0)};}; const V=g('version-label'), F=g('fps-meter'); const ms=[...document.querySelectorAll('#hud-threat .tm')].filter(n=>n.style.display!=='none').map(n=>{const b=n.getBoundingClientRect(); return {x:+b.x.toFixed(0),y:+b.y.toFixed(0),w:+b.width.toFixed(0),h:+b.height.toFixed(0)};}); const W=window.innerWidth,H=window.innerHeight; const nums=[...document.querySelectorAll('.dmg-num')].filter(n=>Number(getComputedStyle(n).opacity)>0.05&&getComputedStyle(n).visibility!=='hidden').map(n=>{const b=n.getBoundingClientRect(); return {t:n.textContent,x:+b.x.toFixed(0),y:+b.y.toFixed(0),cut:(b.x<0&&b.x+b.width>0)||(b.y<0&&b.y+b.height>0)||(b.x<W&&b.x+b.width>W)||(b.y<H&&b.y+b.height>H), off:b.x+b.width<0||b.x>W||b.y+b.height<0||b.y>H};}); const a=__echoes.hud.threat(); return {mode:__echoes.cmd('campMode'), banner:__echoes.hud.banner(), markers:ms.length, overVersion:ms.filter(m=>inter(m,V)).length, overFps:ms.filter(m=>inter(m,F)).length, nums:nums.length, cutNums:nums.filter(n=>n.cut).length, offNums:nums.filter(n=>n.off).length, off:a.offFrame, uncued:a.uncued, fps:__echoes.fps}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const inter=(a,b)=>!(a.x+a.w<=b.x||b.x+b.w<=a.x||a.y+a.h<=b.y||b.y+b.h<=a.y); const g=(id)=>{const r=document.getElementById(id).getBoundingClientRect(); return {x:+r.x.toFixed(0),y:+r.y.toFixed(0),w:+r.width.toFixed(0),h:+r.height.toFixed(0)};}; const V=g('version-label'), F=g('fps-meter'); const ms=[...document.querySelectorAll('#hud-threat .tm')].filter(n=>n.style.display!=='none').map(n=>{const b=n.getBoundingClientRect(); return {x:+b.x.toFixed(0),y:+b.y.toFixed(0),w:+b.width.toFixed(0),h:+b.height.toFixed(0)};}); const W=window.innerWidth,H=window.innerHeight; const nums=[...document.querySelectorAll('.dmg-num')].filter(n=>Number(getComputedStyle(n).opacity)>0.05&&getComputedStyle(n).visibility!=='hidden').map(n=>{const b=n.getBoundingClientRect(); return {t:n.textContent,x:+b.x.toFixed(0),y:+b.y.toFixed(0),cut:(b.x<0&&b.x+b.width>0)||(b.y<0&&b.y+b.height>0)||(b.x<W&&b.x+b.width>W)||(b.y<H&&b.y+b.height>H), off:b.x+b.width<0||b.x>W||b.y+b.height<0||b.y>H};}); const a=__echoes.hud.threat(); return {mode:__echoes.cmd('campMode'), banner:__echoes.hud.banner(), markers:ms.length, overVersion:ms.filter(m=>inter(m,V)).length, overFps:ms.filter(m=>inter(m,F)).length, nums:nums.length, cutNums:nums.filter(n=>n.cut).length, offNums:nums.filter(n=>n.off).length, off:a.offFrame, uncued:a.uncued, fps:__echoes.fps}; })()"
+ }
+]

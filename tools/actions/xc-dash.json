@@ -1,0 +1,14 @@
+[
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=()=>window.__echoes;const sl=(m)=>new Promise(r=>setTimeout(r,m));E().cmd('teleport',0,0);await sl(1200);window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyD',bubbles:true}));await sl(60);window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:'Space',bubbles:true}));await sl(110);window.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyD',bubbles:true}));window.requestAnimationFrame=()=>0;const st=E().state();return JSON.stringify({dash:st.party[0].dashTicksLeft,ghosts:(st.party&&st.party.length)?undefined:0,x:st.party[0].x});})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ }
+]

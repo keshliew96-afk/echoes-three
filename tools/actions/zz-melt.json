@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));let spawn=null,dead=null;const hits=[];__echoes.on('boss_spawn',e=>spawn=e.tick);__echoes.on('death',e=>{if(e.kind==='stag'&&dead===null)dead=e.tick;});__echoes.on('hit',e=>{if(e.kind==='stag')hits.push(e.amount);});__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',8);await s(3000);const v=__echoes.cmd('runState');return {spawn,dead,ticksToKill:(dead!==null&&spawn!==null)?dead-spawn:null,seconds:(dead-spawn)/60,hits,phases:v.boss.phasesFired,cleared:v.boss.cleared,phase:v.phase};})()"
+ }
+]

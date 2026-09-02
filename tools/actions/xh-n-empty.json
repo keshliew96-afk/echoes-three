@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "keydown",
+  "key": "Digit3"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;return {pinned:h.pinAnimations(90),anims:h.animations(),nudges:h.nudges().slice(-3)};})()"
+ },
+ {
+  "type": "keyup",
+  "key": "Digit3"
+ }
+]

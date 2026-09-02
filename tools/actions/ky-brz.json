@@ -1,0 +1,26 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',5.4,-1.2)"
+ },
+ {
+  "type": "wait",
+  "ms": 2600
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('killAllEnemies')"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const P=window.__arenaProbe;const S=P.stage,cam=S.camera,W=window.innerWidth,H=window.innerHeight;const V=S.camera.position.constructor;var out=[];(P.emitters||[]).forEach(function(e){if(e.kind!=='brazier')return;var v=new V(e.x,e.y,e.z);v.project(cam);out.push([e.kind,Math.round(((v.x+1)/2)*W),Math.round(((1-v.y)/2)*H)]);});return out;})()"
+ }
+]

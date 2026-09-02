@@ -1,0 +1,26 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',3.2,-4.4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3200
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('giveSkill','restorative_wave')"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const p=window.__arenaProbe,cam=p.stage.camera,W=innerWidth,H=innerHeight,V=p.root.position.constructor;const o=[];p.stage.scene.traverse(x=>{if(x.name&&x.name.indexOf('critter-')===0){const w=x.getWorldPosition(new V());const v=w.clone().project(cam);o.push([x.name,Math.round((v.x*.5+.5)*W),Math.round((-v.y*.5+.5)*H),+w.x.toFixed(2),+w.z.toFixed(2)]);}});return {crit:o,st:window.__echoes.state().skillfx};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ }
+]

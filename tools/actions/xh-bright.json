@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",-4.5,-0.2);E.cmd(\"placeAlly\",1,-5.4,0.2);E.cmd(\"placeAlly\",2,-3.7,0.3);E.cmd(\"placeAlly\",3,-4.6,-1.0);E.cmd(\"restoreSkillState\",{slots:[{id:\"mending_bolt\",remaining:150},{id:\"swift_mend\",remaining:55},{id:\"nova_bloom\",remaining:0},{id:\"sanctuary\",remaining:0}],override:null});return E.state().party.map(p=>[p.x,p.z]);})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;return {chrome:h.chrome(),metrics:h.metrics().zone1Box};})()"
+ }
+]

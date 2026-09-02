@@ -1,0 +1,35 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");return true;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"giveSkill\",\"nova_bloom\");E.cmd(\"giveSkill\",\"sanctuary\");const s=E.state();const p=s.party;E.cmd(\"setHp\",p[1].id,0.4);E.cmd(\"setHp\",p[2].id,0.18);E.cmd(\"spawn\",\"boar\",1.6,-1.2);E.cmd(\"spawn\",\"mantis\",-2.2,0.8);E.cmd(\"healOverride\",0);return p.map(q=>({id:q.id,hp:q.hp,max:q.maxHp}));})()"
+ },
+ {
+  "type": "key",
+  "key": "Space",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"restoreSkillState\",{slots:[{id:\"mending_bolt\",remaining:150},{id:\"swift_mend\",remaining:52},{id:\"nova_bloom\",remaining:330},{id:\"sanctuary\",remaining:0}],override:null});return E.cmd(\"skillState\");})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;return {slots:h.slots(),portraits:h.portraits(),banner:h.banner(),metrics:h.metrics()};})()"
+ }
+]

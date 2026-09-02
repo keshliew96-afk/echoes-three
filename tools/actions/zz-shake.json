@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',7);await s(300);__echoes.cmd('shopBuy',2);await s(100);__echoes.cmd('shopBuy',1);await s(150);const p=document.querySelectorAll('.rn-plaque')[0];const c0=document.querySelectorAll('.rn-card')[0];__echoes.cmd('shopBuy',0);const tr=[];for(let i=0;i<10;i++){await s(35);tr.push(getComputedStyle(p).transform+'|op'+getComputedStyle(c0).opacity);}await s(400);return {tr,after:{anim:getComputedStyle(p).animationName,tr:getComputedStyle(p).transform,cardOp:getComputedStyle(c0).opacity,cardFilter:getComputedStyle(c0).filter,vis:getComputedStyle(c0).visibility,disp:getComputedStyle(c0).display}};})()"
+ }
+]

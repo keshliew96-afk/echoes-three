@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "keydown",
+  "key": "Digit3"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;const p=h.pinAnimations(90);const s3=document.querySelectorAll(\"#proto-hud .hud-slot\")[2];const s4=document.querySelectorAll(\"#proto-hud .hud-slot\")[3];return {pinned:p,cls3:s3.className,border3:getComputedStyle(s3).borderTopColor,border4:getComputedStyle(s4).borderTopColor,anims:h.animations()};})()"
+ },
+ {
+  "type": "keyup",
+  "key": "Digit3"
+ }
+]

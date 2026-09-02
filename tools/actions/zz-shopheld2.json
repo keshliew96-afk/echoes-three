@@ -1,0 +1,71 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',6);await s(250);__echoes.cmd('clearRoom');await s(350);const d=__echoes.runUi();return {screen:d.screen,phase:d.phase,room:d.room};})()"
+ },
+ {
+  "type": "key",
+  "key": "KeyD",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 80
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const d=__echoes.runUi();const v=__echoes.cmd('runState');return {screen:d.screen,phase:v.phase,room:v.room,held:d.held,stale:d.stale};})()"
+ },
+ {
+  "type": "keyup",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const v=__echoes.cmd('runState');return {afterFresh:__echoes.runUi().screen,phase:v.phase,room:v.room};})()"
+ }
+]

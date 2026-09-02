@@ -1,0 +1,47 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('giveSkill','guardian_bond')"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__kxN=-1;var raf=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=function(cb){if(window.__kxN===0)return 0;if(window.__kxN>0)window.__kxN--;return raf(cb);};window.__echoes.on('skill_cast',function(){if(window.__kxN<0)window.__kxN=1;});return {armed:true};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{var s=window.__echoes.state();s.party.forEach(function(a){if(a.kind==='ally')window.__echoes.cmd('setHp',a.id,0.35);});window.__echoes.cmd('placeAlly',1,3.8,-4);window.__echoes.cmd('placeAlly',2,6,-6.2);window.__echoes.cmd('placeAlly',3,7.54,-2.46);return 1;})()"
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {party:s.party.map(function(a){return [Math.round(a.x*100)/100,Math.round(a.z*100)/100,Math.round(a.hp)];}),beams:s.skillfx.beams};})()"
+ },
+ {
+  "type": "shot",
+  "name": "kxb-d22-A"
+ }
+]

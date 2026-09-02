@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',8.6,-3.8)"
+ },
+ {
+  "type": "wait",
+  "ms": 3500
+ },
+ {
+  "type": "eval",
+  "code": "JSON.stringify(window.__echoes.state().party.map(p=>[p.id,Math.round(p.x*100)/100,Math.round(p.z*100)/100]))"
+ }
+]

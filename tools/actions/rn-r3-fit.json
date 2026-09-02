@@ -1,0 +1,30 @@
+[
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('skipToRoom',7); return __echoes.cmd('runState').shop.stock.map(s=>s.node+':'+s.price); })()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const root=document.getElementById('run-screen'); const d=__echoes.runUi(); const pg=root.querySelector('.rn-page:not([style*=\"display: none\"])'); const pr=pg.getBoundingClientRect(); return {win:[innerWidth,innerHeight], fit:d.fit, floors:d.floors, pageRect:{top:Math.round(pr.top),bottom:Math.round(pr.bottom),h:Math.round(pr.height)}, owned:d.owned, text:d.text.slice(0,300)}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ return [__echoes.cmd('shopBuy',0), __echoes.cmd('shopBuy',1)]; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const root=document.getElementById('run-screen'); const d=__echoes.runUi(); const pg=root.querySelector('.rn-page:not([style*=\"display: none\"])'); const pr=pg.getBoundingClientRect(); return {win:[innerWidth,innerHeight], fit:d.fit, floors:d.floors, pageRect:{top:Math.round(pr.top),bottom:Math.round(pr.bottom),h:Math.round(pr.height)}, owned:d.owned, text:d.text.slice(0,300)}; })()"
+ }
+]

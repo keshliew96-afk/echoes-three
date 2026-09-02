@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('skipToRoom',7); return __echoes.cmd('runState').phase; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const root=document.getElementById('run-screen'); const s=parseFloat(getComputedStyle(root).getPropertyValue('--rn-s')); const pg=root.querySelector('.rn-page:not([style*=\"display: none\"])'); const q=(sel)=>{const e=pg.querySelector(sel); if(!e) return null; const f=parseFloat(getComputedStyle(e).fontSize); return {authored:f, real:Math.round(f*s*100)/100};}; const bar=document.querySelector('#hud'); const cb=document.querySelector('.cb-root')||document.querySelector('#hud > *'); return {win:[innerWidth,innerHeight], s, page:{w:pg.offsetWidth,h:pg.offsetHeight}, body:q('.rn-body'), kind:q('.rn-cardkind'), hint:q('.rn-hint'), price:q('.rn-price'), stripnum:q('.rn-strip .rn-num'), amt:q('.rn-amt'), stats:q('.rn-stats'), legend:q('.rn-legend'), hudChildren:[...document.querySelectorAll('#hud > *')].map(n=>({c:n.className,r:n.getBoundingClientRect().toJSON()})) }; })()"
+ }
+]

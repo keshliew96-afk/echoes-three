@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',7);await s(300);const b1=__echoes.cmd('shopBuy',2);await s(120);const b2=__echoes.cmd('shopBuy',1);await s(200);const v=__echoes.cmd('runState');const d=__echoes.runUi();window.__pre={b1,b2,wallet:v.wallet,owned:d.owned,bought:d.text.includes('you own'),cards:d.cards};return window.__pre;})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const dn=__echoes.cmd('shopBuy',0);await s(90);const d=__echoes.runUi();const p=document.querySelectorAll('.rn-plaque')[0];const cs=getComputedStyle(p);const card=document.querySelectorAll('.rn-card')[0];const ccs=getComputedStyle(card);return {denied:dn,plaques:d.plaques,plaqueTransform:cs.transform,plaqueAnim:cs.animationName,cardOpacity:ccs.opacity,cardFilter:ccs.filter,cardDisplay:ccs.display,cards:d.cards,wallet:d.wallet,text:d.text.slice(-260)};})()"
+ }
+]

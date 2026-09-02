@@ -1,0 +1,1 @@
+[{"type":"eval","code":"(()=>{__echoes.cmd('startRoom','defend');return 1;})()"},{"type":"wait","ms":2600},{"type":"eval","code":"(()=>({b:__echoes.hud.banner(),m:__echoes.hud.metrics(),txt:document.querySelector('#hud-banner')?document.querySelector('#hud-banner').textContent:null})) ()"}]

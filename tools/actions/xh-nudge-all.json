@@ -1,0 +1,43 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1000
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 30
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 30
+ },
+ {
+  "type": "key",
+  "key": "Space",
+  "ms": 20
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 30
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;const n=h.pinAnimations(80);return {pinned:n,anims:h.animations(),nudges:h.nudges()};})()"
+ }
+]

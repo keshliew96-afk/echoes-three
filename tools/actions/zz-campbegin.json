@@ -1,0 +1,38 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; return {mode:__echoes.cmd('campMode')}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ return __echoes.cmd('campBegin'); })()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({mode:__echoes.cmd('campMode'), run:(r=>({room:r.room,mode:r.mode,phase:r.phase}))(__echoes.cmd('runState')), enemies:(__echoes.state().enemies||[]).length}))()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const p=__echoes.state().party[1]; __echoes.cmd('hitOnce', p.id); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const nums=[...document.querySelectorAll('.dmg-num')].map(n=>{const b=n.getBoundingClientRect(); const cs=getComputedStyle(n); return {t:n.textContent,x:+b.x.toFixed(0),y:+b.y.toFixed(0),op:+Number(cs.opacity).toFixed(2),vis:cs.visibility};}).filter(n=>n.vis!=='hidden'&&n.op>0.05); return {scene:__echoes.state().scene, mode:__echoes.cmd('campMode'), n:nums.length, nums:nums.slice(0,8)}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 1000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const nums=[...document.querySelectorAll('.dmg-num')].map(n=>{const b=n.getBoundingClientRect(); const cs=getComputedStyle(n); return {t:n.textContent,x:+b.x.toFixed(0),y:+b.y.toFixed(0),op:+Number(cs.opacity).toFixed(2),vis:cs.visibility};}).filter(n=>n.vis!=='hidden'&&n.op>0.05); return {scene:__echoes.state().scene, mode:__echoes.cmd('campMode'), n:nums.length, nums:nums.slice(0,8)}; })()"
+ }
+]

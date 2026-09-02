@@ -1,0 +1,1 @@
+[{"type":"eval","code":"(()=>{__echoes.cmd('startRoom','kill_all');__echoes.cmd('setHp',1,0.40);__echoes.cmd('setHp',2,0.15);__echoes.cmd('setHp',3,0);return 1;})()"},{"type":"wait","ms":900},{"type":"eval","code":"(()=>{return __echoes.hud.portraits().map(p=>({i:p.index,st:p.state,hp:p.hpWidth,num:p.numeral,box:p.tileBox}));})()"}]

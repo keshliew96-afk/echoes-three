@@ -1,0 +1,27 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{__echoes.cmd('skipToRoom',8); return 'room8';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 300
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const e=__echoes.events.filter(x=>x.type==='hit'); return 'hits:'+e.length;})()"
+ }
+]

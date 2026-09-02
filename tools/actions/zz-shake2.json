@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',7);await s(300);__echoes.cmd('shopBuy',2);await s(100);__echoes.cmd('shopBuy',1);await s(200);__echoes.cmd('shopBuy',0);const tr=[];for(let i=0;i<10;i++){const d=__echoes.runUi();const p=document.querySelector('.rn-plaque');tr.push({t:i*40,shake:d.plaques[0].shaking,x:getComputedStyle(p).transform,op:d.cards[0].opacity,f:d.cards[0].filter});await s(40);}return tr;})()"
+ }
+]

@@ -1,0 +1,1 @@
+[{"type":"wait","ms":600},{"type":"eval","code":"(async()=>{const E=window.__echoes;const s=m=>new Promise(r=>setTimeout(r,m));E.cmd('startRun');await s(2000);const f=[];for(let i=0;i<30;i++){await s(250);f.push(E.fps);}f.sort((a,b)=>a-b);return {min:f[0],p10:f[3],med:f[15],max:f[29]};})()"}]

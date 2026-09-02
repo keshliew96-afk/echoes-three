@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;const by=(i)=>p.find(q=>q.partyIndex===i)||p[0];E.cmd(\"setHp\",by(2).id,0.15);E.cmd(\"restoreSkillState\",{slots:[{id:\"mending_bolt\",remaining:150},{id:\"swift_mend\",remaining:55},{id:\"nova_bloom\",remaining:0},{id:\"sanctuary\",remaining:0}],override:null});return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;const m=h.metrics();const s=h.slots();const boxes=s.map(x=>({k:x.key,key:x.keyBox,ab:x.abbrevBox,num:x.numBox,tile:x.tileBox}));return {m,boxes,banner:h.banner()};})()"
+ }
+]

@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('startRun'); return __echoes.cmd('runState'); })()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const r=__echoes.cmd('skipToRoom',8); return r&&{room:r.room,mode:r.mode,phase:r.phase}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({mark:window.__zz, tick:__echoes.tick, fps:__echoes.fps, scene:__echoes.state().scene, run:__echoes.cmd('runState'), banner:__echoes.hud.banner(), boss:__echoes.hud.boss?__echoes.hud.boss():null, m:__echoes.hud.metrics()}))()"
+ }
+]

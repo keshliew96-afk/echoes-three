@@ -1,0 +1,38 @@
+[
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('skipToRoom',1); return __echoes.cmd('runState').phase; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('killAllEnemies'); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const d=__echoes.runUi(); return {tag:'draft', screen:d.screen, fit:d.fit, floors:d.floors, doors:d.doors.map(x=>x.box), buttons:d.buttons}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('draftTake'); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const d=__echoes.runUi(); return {tag:'path', screen:d.screen, fit:d.fit, floors:d.floors, doors:d.doors.map(x=>x.box), buttons:d.buttons}; })()"
+ }
+]

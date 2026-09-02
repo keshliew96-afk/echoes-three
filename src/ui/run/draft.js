@@ -6,7 +6,7 @@
 //
 // `free_skill_slots` rides the screen strip so the player can see WHY a skill
 // reward turned into a node.
-import { esc } from './style.js';
+import { esc, isCompact } from './style.js';
 import { skillCardHtml, nodeCardHtml, RARITY_COLOR } from './cards.js';
 import { NODES } from '../../sim/nodes.js';
 
@@ -63,6 +63,7 @@ export function createDraftScreen({ run, build }) {
       }" style="--rar:${RARITY_COLOR[n ? n.rarity : 'common']}">${nodeCardHtml(r.id, {
         verdict,
         extra,
+        compact: isCompact(),
       })}</div>`;
     } else {
       host.innerHTML = `<div class="rn-card" style="--rar:${RARITY_COLOR.common}">

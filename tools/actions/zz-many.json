@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); __echoes.cmd('teleport',0,0); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ let n=0; for(let k=0;k<20;k++){ const a=(k/20)*Math.PI*2; const x=Math.cos(a)*11.2, z=Math.sin(a)*7.2; if(__echoes.cmd('spawn','boar',x,z)!=null) n++; } return n; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const a=__echoes.hud.threat(); return {mark:window.__zz, total:a.threats.length, off:a.offFrame, uncued:a.uncued, covered:a.covered, drawn:a.markersDrawn, dom:a.domMarkers, budget:a.markerBudget, merged:__echoes.hud.markers().filter(m=>m.count>1).length}; })()"
+ }
+]

@@ -274,7 +274,11 @@ export function makeShadowMaterial(opacity = 0.48) {
 // prop base. `faint` carries the self-illuminating props (torches, lanterns) so
 // a fire never sits in a black hole of its own making.
 export function buildShadowInstances(root, shadows) {
-  const geo = new CircleGeometry(1, 20).rotateX(-Math.PI / 2);
+  // 32 segments, not 20: at gameplay zoom a prop's blob is ~60 px across, and
+  // a 20-gon that size shows straight facets — a Round-D crop read the
+  // brazier's as "a hard-edged black contact polygon" rather than as a soft
+  // contact shadow. Same draw call, same instance count.
+  const geo = new CircleGeometry(1, 32).rotateX(-Math.PI / 2);
   const m = new Matrix4();
   const q = new Quaternion();
   const p = new Vector3();

@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ const v=__echoes.cmd('startRun'); return {seed:__echoes.seed, phase:v.phase, room:v.room, modes:v.frame.modes, defendAt:v.frame.defendAt, sides:v.frame.sides, rewardFor:v.rewardFor, wallet:v.wallet}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const v=__echoes.cmd('runState'); return {phase:v.phase, room:v.room, mode:v.mode, free:v.freeSkillSlots}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ return __echoes.events.slice(-12).map(e=>e.type+':'+e.tick); })()"
+ }
+]

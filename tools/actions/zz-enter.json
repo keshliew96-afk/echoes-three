@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ const s=__echoes.cmd('startRun'); return {s, scene:__echoes.state().scene}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const st=__echoes.state(); return {scene:st.scene, room:st.room, run:st.run&&{room:st.run.room,mode:st.run.mode,screen:st.run.screen}, enemies:(st.enemies||[]).length}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const st=__echoes.state(); return {enemies:(st.enemies||[]).map(e=>({id:e.id,type:e.type,x:e.x,z:e.z})), player:st.player, hudBanner:__echoes.hud&&__echoes.hud.banner()}; })()"
+ }
+]

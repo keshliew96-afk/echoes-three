@@ -1,0 +1,1 @@
+[{"type":"eval","code":"(()=>{__echoes.cmd('startRoom','kill_all');return 1;})()"},{"type":"wait","ms":600},{"type":"key","key":"Digit1","ms":40},{"type":"wait","ms":400},{"type":"eval","code":"__echoes.hud.clearNudges()"},{"type":"wait","ms":250}]

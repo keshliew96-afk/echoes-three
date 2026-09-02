@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');if(m==='camp'){E.cmd('campBegin');return 'camp->run';}E.cmd('startRun');return 'arena';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('killAllEnemies');E.cmd('teleport',0,0);window.__d=[];for(let k=0;k<4;k++)window.__d.push(E.cmd('spawn','dummy',-8.4-k*0.06,0.1+k*0.28));return {layers:document.querySelectorAll('#dmg-num-layer').length,d:window.__d};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{for(const id of window.__d){window.__echoes.cmd('hitOnce',id);}return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const layers=[...document.querySelectorAll('#dmg-num-layer')];return layers.map((L,i)=>({i,n:L.children.length,kids:[...L.children].map(n=>({t:n.textContent,v:getComputedStyle(n).visibility,tf:getComputedStyle(n).transform.slice(0,44)}))}));})()"
+ }
+]

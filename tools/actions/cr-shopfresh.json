@@ -1,0 +1,1 @@
+[{"type":"wait","ms":600},{"type":"eval","code":"(async()=>{const E=window.__echoes;const s=m=>new Promise(r=>setTimeout(r,m));\n E.cmd('startRun');await s(150);E.cmd('skipToRoom',7);await s(500);\n const v=E.cmd('runState');const u=E.runUi();\n return {wallet:v.wallet,stock:v.shop.stock,cards:u.cards,plaques:u.plaques,text:u.text};})()"}]

@@ -1,0 +1,62 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); window.__ids=__echoes.state().party.map(e=>e.id); __echoes.cmd('setHp', window.__ids[1], 0.15); window.__log=[]; return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.hud.freeze(0.0); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const p=__echoes.hud.portraits()[1]; return {ph:0, fill:p.fillColor, track:p.trackColor, inner:p.innerColor, ib:p.innerBorder}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.hud.freeze(0.25); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const p=__echoes.hud.portraits()[1]; return {ph:0.25, fill:p.fillColor, track:p.trackColor, inner:p.innerColor, ib:p.innerBorder}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.hud.freeze(0.125); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const p=__echoes.hud.portraits()[1]; return {ph:0.125, fill:p.fillColor, track:p.trackColor, inner:p.innerColor, ib:p.innerBorder}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "window.__before=\"x\";((()=>{ const t=document.querySelectorAll('#hud .hud-port-tile')[3]; const cs=getComputedStyle(t); return {bgImg:cs.backgroundImage.slice(0,60), bgCol:cs.backgroundColor, bc:cs.borderTopColor, bw:cs.borderTopWidth, filter:cs.filter, boxShadow:cs.boxShadow.slice(0,80)}; })())"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.hud.hover(3,true); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "((()=>{ const t=document.querySelectorAll('#hud .hud-port-tile')[3]; const cs=getComputedStyle(t); return {bgImg:cs.backgroundImage.slice(0,60), bgCol:cs.backgroundColor, bc:cs.borderTopColor, bw:cs.borderTopWidth, filter:cs.filter, boxShadow:cs.boxShadow.slice(0,80)}; })())"
+ }
+]

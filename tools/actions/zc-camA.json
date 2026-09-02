@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',3.2,-4.4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const p=window.__arenaProbe,c=p.stage.camera;const s=window.__echoes.state();return{scene:s.scene,room:s.room,en:(s.enemies||[]).length,cam:[+c.position.x.toFixed(2),+c.position.y.toFixed(2),+c.position.z.toFixed(2)],fov:c.fov,zoom:c.zoom,player:s.party?[+s.party[0].x.toFixed(2),+s.party[0].z.toFixed(2)]:null};})()"
+ }
+]

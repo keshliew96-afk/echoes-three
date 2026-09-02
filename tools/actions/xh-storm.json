@@ -1,0 +1,18 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const K=(c)=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:c,bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:c,bubbles:true}));};K('Digit1');window.__A=setInterval(()=>{K('Digit1');K('Digit3');},90);window.__B=setInterval(()=>{K('Space');setTimeout(()=>K('Digit2'),70);},1250);return 'storm';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ }
+]

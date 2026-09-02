@@ -1,0 +1,38 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; window.__samples=[]; window.__t0=null; const el=document.getElementById('hud-banner'); window.__el=el; window.__sample=()=>{ const o=Number(getComputedStyle(el).opacity); window.__samples.push([+(performance.now()-window.__t0).toFixed(1), +o.toFixed(3)]); if(performance.now()-window.__t0<600) requestAnimationFrame(window.__sample); }; return {op:Number(getComputedStyle(el).opacity)}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__t0=performance.now(); __echoes.cmd('clearRoom'); requestAnimationFrame(window.__sample); return {before:Number(getComputedStyle(window.__el).opacity)}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const s=window.__samples; const hidden=s.find(r=>r[1]<0.02); return {mark:window.__zz, n:s.length, first:s.slice(0,3), fadeDoneAtMs: hidden?hidden[0]:null, tail:s.slice(-3)}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__samples=[]; window.__t0=performance.now(); __echoes.cmd('startRoom','defend'); requestAnimationFrame(window.__sample); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const s=window.__samples; const shown=s.find(r=>r[1]>0.98); return {n:s.length, fadeInDoneAtMs: shown?shown[0]:null, first:s.slice(0,4), banner:__echoes.hud.banner().mode}; })()"
+ }
+]

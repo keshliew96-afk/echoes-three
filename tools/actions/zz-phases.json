@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const log=[];for(const t of ['boss_adds','boss_quake_start','boss_quake_resolve','telegraph_start','telegraph_resolve','room_cleared','run_end','boss_death','death'])__echoes.on(t,e=>log.push({t:e.type,tk:e.tick,pct:e.pct,n:e.spawned,tt:e.telegraphTicks,adds:e.adds?e.adds.map(a=>a.etype):undefined,id:e.id}));__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',8);await s(30);const bid=__echoes.cmd('runState').boss.id;const iv=setInterval(()=>__echoes.cmd('iframe',bid,600),120);await s(300);const marks=[];for(const p of [0.8,0.76,0.75,0.6,0.51,0.5,0.3,0.26,0.25]){__echoes.cmd('bossHp',p);await s(120);const v=__echoes.cmd('runState');marks.push([p,v.boss.pct,v.boss.phasesFired,v.boss.adds]);}clearInterval(iv);return {marks,log:log.filter(e=>e.t==='boss_adds'||e.t==='boss_quake_resolve')};})()"
+ }
+]

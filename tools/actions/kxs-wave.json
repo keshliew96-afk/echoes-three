@@ -1,0 +1,76 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('rally')"
+ },
+ {
+  "type": "wait",
+  "ms": 5000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();var o=[];s.party.forEach(function(a){if(a.kind==='ally'){window.__echoes.cmd('setHp',a.id,0.35);o.push(a.id);}});return o;})()"
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('giveSkill','restorative_wave')"
+ },
+ {
+  "type": "mousemove",
+  "x": 700,
+  "y": 470
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 110
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{if(!window.__kxFrz){window.__kxFrz=window.requestAnimationFrame;window.requestAnimationFrame=function(){return 0;};}return {frozen:true,tick:window.__echoes.tick};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {fx:s.skillfx};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{var out=[];window.__arenaProbe.stage.scene.traverse(function(o){if(o.name==='skillfx'){o.traverse(function(c){if(c.isMesh&&c.visible)out.push(c.name+'@'+Math.round(c.getWorldPosition(new c.position.constructor()).y*100)/100);});}});return out;})()"
+ },
+ {
+  "type": "shot",
+  "name": "kxs-wave-A"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=window.__arenaProbe.stage;var hid=0;S.scene.traverse(function(o){if(o.name==='skillfx'){o.visible=false;hid++;}});S.render();return {hid:hid};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "shot",
+  "name": "kxs-wave-B"
+ }
+]

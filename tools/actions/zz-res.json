@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const m=__echoes.hud.metrics(); const b=__echoes.hud.banner(); const r=(n)=>{const q=n.getBoundingClientRect(); return {x:+q.x.toFixed(1),y:+q.y.toFixed(1),w:+q.width.toFixed(1),h:+q.height.toFixed(1)};}; const bar=document.querySelector('#hud .hud-bar')||document.querySelector('#proto-hud'); const texts=[...document.querySelectorAll('#hud .hud-slot-key, #hud .hud-port-key, #hud .hud-bn-label, #hud .hud-slot-abbrev')].map(n=>+(parseFloat(getComputedStyle(n).fontSize)*m.scale).toFixed(2)); const nums=[...document.querySelectorAll('#hud .hud-slot-num, #hud .hud-port-num, #hud .hud-bn-num')].map(n=>+(parseFloat(getComputedStyle(n).fontSize)*m.scale).toFixed(2)); return {mark:window.__zz, m, banner:{mode:b.mode,text:b.text,opacity:b.opacity}, minText:Math.min.apply(null,texts), minNum:Math.min.apply(null,nums), nText:texts.length, nNum:nums.length, barBox: bar?r(bar):null, fps:__echoes.fps}; })()"
+ }
+]

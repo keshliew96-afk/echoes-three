@@ -1,0 +1,1 @@
+[{"type":"wait","ms":600},{"type":"eval","code":"(async()=>{const E=window.__echoes;const s=m=>new Promise(r=>setTimeout(r,m));E.cmd('startRun');await s(200);E.cmd('skipToRoom',4);await s(400);E.cmd('endRun','defeat');await s(700);const v=E.cmd('runState');const u=E.runUi();return{phase:v.phase,screen:u.screen,text:u.text,veil:u.veil};})()"},{"type":"wait","ms":600}]

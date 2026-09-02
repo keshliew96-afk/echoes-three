@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {scene:s.scene,enemies:(s.enemies||[]).length,player:s.player&&[s.player.x,s.player.z],allies:(s.allies||s.party||[]).map(a=>[Math.round(a.x*100)/100,Math.round(a.z*100)/100]),variant:s.vfx&&s.vfx.variant,bg:s.vfx&&s.vfx.bandGuard};})()"
+ }
+]

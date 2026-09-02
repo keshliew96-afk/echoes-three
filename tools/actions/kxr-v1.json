@@ -1,0 +1,30 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 6000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{if(!window.__kxFrz){window.__kxFrz=window.requestAnimationFrame;window.requestAnimationFrame=function(){return 0;};}return {frozen:true,tick:window.__echoes.tick};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({tick:window.__echoes.tick}))()"
+ },
+ {
+  "type": "eval",
+  "code": "(() => {\n  const P = window.__arenaProbe;\n  const stage = P.stage, cam = stage.camera, scene = stage.scene;\n  const W = window.innerWidth, H = window.innerHeight;\n  const rings = [];\n  scene.traverse((o) => {\n    if (o.name !== 'identity-ring') return;\n    let cls = '?';\n    for (let p = o; p; p = p.parent) {\n      if (p.name && p.name.startsWith('critter-')) { cls = p.name.slice(8); break; }\n    }\n    // the band mesh: PlaneGeometry with a ShaderMaterial carrying uBandA\n    let band = null;\n    o.traverse((c) => { if (!band && c.isMesh && c.material && c.material.uniforms && c.material.uniforms.uBandA) band = c; });\n    if (!band) return;\n    if (!o.visible) return;\n    let vis = true;\n    for (let p = o; p; p = p.parent) if (!p.visible) vis = false;\n    if (!vis) return;\n    band.updateWorldMatrix(true, false);\n    const wp = new (band.position.constructor)();\n    band.getWorldPosition(wp);\n    rings.push({ cls, band, wp });\n  });\n  const V3 = rings.length ? rings[0].wp.constructor : null;\n  const emitters = (P.emitters || []).map((e) => ({ kind: e.kind, x: e.x, z: e.z }));\n  const proj = (v) => {\n    const p = v.clone().project(cam);\n    return [Math.round(((p.x + 1) / 2) * W * 100) / 100, Math.round(((1 - p.y) / 2) * H * 100) / 100];\n  };\n  const out = rings.map((r) => {\n    const g = r.band.geometry.parameters;\n    const half = g.width / 2;\n    // nearest emitter direction in world XZ\n    let best = null, bd = 1e9;\n    for (const e of emitters) {\n      const d = Math.hypot(e.x - r.wp.x, e.z - r.wp.z);\n      if (d < bd) { bd = d; best = e; }\n    }\n    const emAng = best ? (Math.atan2(best.z - r.wp.z, best.x - r.wp.x) * 180) / Math.PI : null;\n    const samples = [];\n    for (let a = 0; a < 360; a += 3) {\n      const rad = (a * Math.PI) / 180;\n      const row = { a, pts: {} };\n      for (const [key, fr] of [['band', 0.755], ['ink', 0.93], ['g1', 1.12], ['g2', 1.25], ['in', 0.40]]) {\n        const local = new V3(Math.cos(rad) * fr * half, Math.sin(rad) * fr * half, 0);\n        const wv = r.band.localToWorld(local.clone());\n        row.pts[key] = proj(wv);\n      }\n      samples.push(row);\n    }\n    return {\n      cls: r.cls,\n      world: [Math.round(r.wp.x * 100) / 100, Math.round(r.wp.z * 100) / 100],\n      centre: proj(r.wp.clone()),\n      half,\n      nearestEmitter: best ? { kind: best.kind, dist: Math.round(bd * 100) / 100, ang: Math.round(emAng * 10) / 10 } : null,\n      samples,\n    };\n  });\n  return { rings: out, emitters, cam: [cam.position.x, cam.position.y, cam.position.z] };\n})()\n"
+ }
+]

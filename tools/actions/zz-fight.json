@@ -1,0 +1,65 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; window.__f=[]; const tick=()=>{ window.__f.push(performance.now()); requestAnimationFrame(tick); }; requestAnimationFrame(tick); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 1000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('teleport',0,0); const P=[[-3,-2],[3,-2],[-2,2],[2,2],[0,-3],[4,0],[-4,0],[1,3]]; P.forEach(p=>__echoes.cmd('spawn','boar',p[0],p[1])); [[6,-4],[-6,4]].forEach(p=>__echoes.cmd('spawn','mantis',p[0],p[1])); return __echoes.state().enemies.length; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__f=[]; return 1; })()"
+ },
+ {
+  "type": "mousemove",
+  "x": 900,
+  "y": 400
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const f=window.__f; const dts=[]; for(let i=1;i<f.length;i++) dts.push(f[i]-f[i-1]); dts.sort((a,b)=>a-b); const p=(q)=>dts[Math.floor(dts.length*q)]; return {mark:window.__zz, frames:f.length, spanMs:+(f[f.length-1]-f[0]).toFixed(0), meanFps:+(1000*(f.length-1)/(f[f.length-1]-f[0])).toFixed(1), medianMs:+p(0.5).toFixed(2), p95Ms:+p(0.95).toFixed(2), maxMs:+dts[dts.length-1].toFixed(2), hitches100:dts.filter(d=>d>100).length, echoesFps:__echoes.fps, enemies:__echoes.state().enemies.length}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({slots:__echoes.hud.slots().map(s=>({k:s.key,n:s.numeral,deg:s.wipeDeg})), ports:__echoes.hud.portraits().map(p=>({i:p.index,state:p.state,w:p.hpWidth})), threat:(a=>({off:a.offFrame,uncued:a.uncued,drawn:a.markersDrawn}))(__echoes.hud.threat())}))()"
+ }
+]

@@ -44,11 +44,12 @@ import {
   Sprite,
   SpriteMaterial,
   SRGBColorSpace,
+  Vector3,
 } from 'three';
 import { PALETTE } from '../../data/palette.js';
 import { SKILLS } from '../../sim/skills.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
-import { exactColor } from '../critters/common.js';
+import { exactColor, underBloom } from '../critters/common.js';
 
 // Cosmetic scaffold tunables (render-only, not brief numbers).
 const BOLT_Y = 0.55; // matches the basic bolt's flight height
@@ -180,6 +181,70 @@ function riseMat(color, opacity) {
     toneMapped: false,
     side: DoubleSide,
   });
+}
+
+// ---------------------------------------------------------------------------
+// BOND RIBBON RAILS (fix round 2)
+//
+// The bond's above-plane slice used the same additive `riseMat` as the wave
+// curtain, and over the party's own CREAM FUR an additive green can only ever
+// add toward white: measured on the bunched repro the ribbon landed on
+// rgb(248,249,218) / (255,254,231) — luma 245-253, hue 51-68, saturation
+// 0.09-0.13, i.e. a white blowout with no Bright Heal core in it at all
+// (§19.4 "Player heals: Bright Heal core + green glow"). So the ribbon is now
+// three rails with three different jobs:
+//
+//   glow  — additive, soft-edged, WIDE: the "+ green glow" halo. Feathered
+//           with a cross-ribbon falloff so it ends on a gradient, not a line.
+//   ink   — NON-additive Void Charcoal, mid width: the storybook rim. This is
+//           the same trick that rescued the wave crest and the heal-bolt hull;
+//           it gives the core something dark to be bright against, and it is
+//           what stops the glow's own wash from touching the core.
+//   core  — NON-additive Bright Heal, narrow: a REPLACEMENT, not an addition,
+//           so a ribbon pixel over cream fur measures the authored hue instead
+//           of the fur plus green. `underBloom` keeps it below the composer's
+//           bloom threshold so it cannot blow itself back out to white.
+let bandTexture = null;
+function getBandTexture() {
+  if (bandTexture) return bandTexture;
+  const canvas = document.createElement('canvas');
+  canvas.width = 4;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, 64);
+  g.addColorStop(0.0, 'rgba(255,255,255,0)');
+  g.addColorStop(0.3, 'rgba(255,255,255,0.8)');
+  g.addColorStop(0.5, 'rgba(255,255,255,1)');
+  g.addColorStop(0.7, 'rgba(255,255,255,0.8)');
+  g.addColorStop(1.0, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 4, 64);
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  bandTexture = tex;
+  return tex;
+}
+
+// depthTest is OFF on all three rails. The whole point of the above-plane
+// slice is that four overlapping chibi silhouettes cannot eat the delivery
+// shape (Round C F3); a depth-tested ribbon loses its two ENDS to the very
+// bodies it is bonding, which is exactly the "not traceable end-to-end" read.
+// The ribbon is a 0.42 s light-link in the air, not a ground decal, so it
+// composites above the character plane by design (§19.4 keeps FRIENDLY GROUND
+// VFX under the characters — the ground rails below still obey that).
+function ribbonMat(color, opacity, { additive = false, feather = false } = {}) {
+  const m = new MeshBasicMaterial({
+    color: new Color(color),
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    depthTest: false,
+    toneMapped: false,
+    side: DoubleSide,
+  });
+  if (additive) m.blending = AdditiveBlending;
+  if (feather) m.map = getBandTexture();
+  return m;
 }
 
 // Non-additive mark material. Additive amber over the aura's green glow washes
@@ -342,15 +407,99 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   const BOND_SEG = 18;
   const BOND_LIFT = 1.55; // u at the apex — well clear of the ~1.05 u party
   const BOND_END_Y = 0.62; // u — leaves and lands at chest/staff height
-  function makeBondRibbon(width, color, opacity) {
+  // FIX ROUND 2 — THE ARC'S SHAPE IS A FUNCTION OF LINK LENGTH.
+  //
+  // A fixed apex (1.55 u) with fixed ends (0.62 u) is a fixed 0.93 u of
+  // VERTICAL bow whatever the link measures. Over a 2.2 u link that projects
+  // as a wide bowed ribbon (verified). Over the 0.67-0.89 u links a RALLIED
+  // party actually stands at, the same curve projects as a ~55 px near-
+  // vertical loop standing inside the two silhouettes it connects — the
+  // shape was verified in the one case the failure never existed in.
+  //
+  // So short links bow SIDEWAYS instead of straight up. The lateral bulge is
+  // taken perpendicular to the link in the ground plane and always pushed
+  // AWAY from the camera, because on a 3/4 top-down camera both "up" and
+  // "away" project up-screen: the two add instead of cancelling, and the arc
+  // leaves the huddle in the one direction that cannot land back on it.
+  // The ends also rise to head height as the link shortens, so the ribbon
+  // starts at the top of a silhouette rather than buried in its chest.
+  const BOND_SHORT = 0.70; // u — fully bunched: a rallied party's link length
+  const BOND_LONG = 1.55; // u — at/above this the over-the-head arc reads
+  const BOND_BOW_MAX = 0.72; // u — ceiling on the lateral bulge
+  const BOND_OPEN = 0.058; // target apex-to-chord standoff, as a fraction of
+  // viewport height (~52 px at 900) — the arc has to be an OPEN shape on
+  // screen, and screen space is the only place that can be decided.
+  const BOND_SHORT_END = 0.92; // u — end height when fully bunched (head top)
+  const BOND_SHORT_APEX = 1.26; // u — apex when fully bunched
+  const camFwd = new Vector3();
+  const projV = new Vector3();
+  function projPx(x, y, z, w, h) {
+    projV.set(x, y, z).project(stage.camera);
+    return [(projV.x + 1) * 0.5 * w, (1 - projV.y) * 0.5 * h];
+  }
+  // Perpendicular standoff, in real screen pixels, of the arc's apex from the
+  // chord joining its two ends. This is the number that decides whether the
+  // ribbon reads as an ARC or as a line: a link pointing straight away from
+  // the camera projects its whole vertical bow onto its own chord, which is
+  // how a perfectly good 1.5 u arc still collapsed into a vertical band.
+  function apexPx(x0, z0, x1, z1, endY, apexY, sx, sz, bow, w, h) {
+    const a = projPx(x0, endY, z0, w, h);
+    const b = projPx(x1, endY, z1, w, h);
+    const m = projPx((x0 + x1) / 2 + sx * bow, apexY, (z0 + z1) / 2 + sz * bow, w, h);
+    let ux = b[0] - a[0], uy = b[1] - a[1];
+    const ul = Math.hypot(ux, uy);
+    if (ul < 1e-3) return Math.hypot(m[0] - a[0], m[1] - a[1]);
+    ux /= ul; uy /= ul;
+    return Math.abs((m[0] - a[0]) * uy - (m[1] - a[1]) * ux);
+  }
+  function bondShape(x0, z0, x1, z1, taken) {
+    const dx = x1 - x0, dz = z1 - z0;
+    const len = Math.hypot(dx, dz) || 1;
+    const k = Math.max(0, Math.min(1, (BOND_LONG - len) / (BOND_LONG - BOND_SHORT)));
+    const endY = BOND_END_Y + (BOND_SHORT_END - BOND_END_Y) * k;
+    const apexY = BOND_LIFT + (BOND_SHORT_APEX - BOND_LIFT) * k;
+    const el = stage.renderer.domElement;
+    const w = el.clientWidth || el.width || 1600;
+    const h = el.clientHeight || el.height || 900;
+    const want = BOND_OPEN * h;
+    // The projection is near-affine over a metre of ground, so one probe at
+    // 1 u of bow linearises the solve exactly enough.
+    const solve = (ax, az) => {
+      const d0 = apexPx(x0, z0, x1, z1, endY, apexY, ax, az, 0, w, h);
+      const d1 = apexPx(x0, z0, x1, z1, endY, apexY, ax, az, 1, w, h);
+      let bow = 0;
+      if (d0 < want && d1 > d0) bow = Math.min(BOND_BOW_MAX, (want - d0) / (d1 - d0));
+      return { bow, open: d0 + bow * (d1 - d0) };
+    };
+    // Bow perpendicular to the link, on whichever side buys more screen — for
+    // a 3/4 top-down camera that is the side AWAY from it, because "away" and
+    // "up" both project up-screen and therefore add instead of cancelling.
+    let sx = -dz / len, sz = dx / len;
+    stage.camera.getWorldDirection(camFwd);
+    if (sx * camFwd.x + sz * camFwd.z < 0) { sx = -sx; sz = -sz; }
+    let best = { sx, sz, ...solve(sx, sz) };
+    // Guardian Bond fires TWO links from one caster in the same tick. Both
+    // taking the same side nests one arc inside the other and the pair reads
+    // as one squiggle, so a second link that would bow within 60 degrees of a
+    // live one takes the other side instead — as long as that side still
+    // opens the arc up.
+    if (taken && taken.some((d) => d[0] * sx + d[1] * sz > 0.5)) {
+      const flip = solve(-sx, -sz);
+      if (flip.open >= want * 0.7) best = { sx: -sx, sz: -sz, ...flip };
+    }
+    return { sx: best.sx, sz: best.sz, bow: best.bow, endY, apexY };
+  }
+  function makeBondRibbon(width, material) {
     const geo = new BufferGeometry();
     const pos = new Float32Array((BOND_SEG + 1) * 2 * 3);
     const uv = new Float32Array((BOND_SEG + 1) * 2 * 2);
     const idx = new Uint16Array(BOND_SEG * 6);
     for (let i = 0; i <= BOND_SEG; i++) {
       const t = i / BOND_SEG;
-      uv[(i * 2) * 2] = t; uv[(i * 2) * 2 + 1] = 0.22;
-      uv[(i * 2 + 1) * 2] = t; uv[(i * 2 + 1) * 2 + 1] = 0.22;
+      // v runs ACROSS the ribbon now (0 on one rail, 1 on the other) so a
+      // feathered rail fades out at both edges instead of ending on a line.
+      uv[(i * 2) * 2] = t; uv[(i * 2) * 2 + 1] = 0;
+      uv[(i * 2 + 1) * 2] = t; uv[(i * 2 + 1) * 2 + 1] = 1;
       if (i < BOND_SEG) {
         const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
         idx.set([a, b, c, b, d, c], i * 6);
@@ -359,24 +508,36 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     geo.setAttribute('position', new BufferAttribute(pos, 3));
     geo.setAttribute('uv', new BufferAttribute(uv, 2));
     geo.setIndex(new BufferAttribute(idx, 1));
-    const m = new Mesh(geo, riseMat(color, opacity));
+    const m = new Mesh(geo, material);
     m.frustumCulled = false;
     m.userData.width = width;
     return m;
   }
-  function aimBondRibbon(m, x0, z0, x1, z1) {
+  function aimBondRibbon(m, x0, z0, x1, z1, sh) {
     const pos = m.geometry.attributes.position.array;
     const dx = x1 - x0, dz = z1 - z0;
-    const len = Math.hypot(dx, dz) || 1;
-    const px = (-dz / len) * m.userData.width;
-    const pz = (dx / len) * m.userData.width;
+    const w = m.userData.width;
+    const at = (t) => {
+      const bulge = sh.bow * Math.sin(Math.PI * t);
+      return [
+        x0 + dx * t + sh.sx * bulge,
+        sh.endY + 4 * (sh.apexY - sh.endY) * t * (1 - t),
+        z0 + dz * t + sh.sz * bulge,
+      ];
+    };
     for (let i = 0; i <= BOND_SEG; i++) {
       const t = i / BOND_SEG;
-      const x = x0 + dx * t;
-      const z = z0 + dz * t;
-      const y = BOND_END_Y + 4 * (BOND_LIFT - BOND_END_Y) * t * (1 - t);
-      pos[(i * 2) * 3] = x - px; pos[(i * 2) * 3 + 1] = y; pos[(i * 2) * 3 + 2] = z - pz;
-      pos[(i * 2 + 1) * 3] = x + px; pos[(i * 2 + 1) * 3 + 1] = y; pos[(i * 2 + 1) * 3 + 2] = z + pz;
+      const p = at(t);
+      // Rails ride the LOCAL tangent — a bowed centre line has no single
+      // perpendicular, and offsetting every point by the chord's normal
+      // pinches the ribbon at the bulge.
+      const a = at(Math.max(0, t - 0.03));
+      const b = at(Math.min(1, t + 0.03));
+      const tx = b[0] - a[0], tz = b[2] - a[2];
+      const tl = Math.hypot(tx, tz) || 1;
+      const px = (-tz / tl) * w, pz = (tx / tl) * w;
+      pos[(i * 2) * 3] = p[0] - px; pos[(i * 2) * 3 + 1] = p[1]; pos[(i * 2) * 3 + 2] = p[2] - pz;
+      pos[(i * 2 + 1) * 3] = p[0] + px; pos[(i * 2 + 1) * 3 + 1] = p[1]; pos[(i * 2 + 1) * 3 + 2] = p[2] + pz;
     }
     m.geometry.attributes.position.needsUpdate = true;
     m.geometry.computeBoundingSphere();
@@ -415,26 +576,53 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     let arc = arcPool.pop();
     if (!arc) {
       arc = new Group();
-      const arcGlow = makeBondRibbon(0.14, color, 0.42);
-      arcGlow.renderOrder = 2;
+      // Widths are HALF-widths in world units; at gameplay zoom the ground
+      // plane runs ~90-100 px/u, so this is an ~8 px Bright Heal line inside a
+      // ~4 px charcoal rim inside a feathered ~36 px glow — the same
+      // core/ink/halo proportion the heal bolt wears in flight.
+      const arcGlow = makeBondRibbon(0.19, ribbonMat(color, 0.26, { additive: true, feather: true }));
+      arcGlow.renderOrder = 11;
       arcGlow.name = 'arcGlow';
-      const arcCore = makeBondRibbon(0.05, color, 0.95);
-      arcCore.renderOrder = 3;
+      const arcInk = makeBondRibbon(0.085, ribbonMat(PALETTE.voidCharcoal, 0.62));
+      arcInk.renderOrder = 12;
+      arcInk.name = 'arcInk';
+      const arcCore = makeBondRibbon(0.042, ribbonMat('#ffffff', 0.94));
+      arcCore.renderOrder = 13;
       arcCore.name = 'arcCore';
       arc.add(arcGlow);
+      arc.add(arcInk);
       arc.add(arcCore);
     }
-    for (const name of ['arcGlow', 'arcCore']) {
+    const sh = bondShape(x0, z0, x1, z1, beams.filter((v) => v.age === 0).map((v) => v.dir));
+    for (const name of ['arcGlow', 'arcInk', 'arcCore']) {
       const m = arc.getObjectByName(name);
-      m.material.color.set(color);
-      aimBondRibbon(m, x0, z0, x1, z1);
+      if (name === 'arcInk') m.material.color.copy(exactColor(PALETTE.voidCharcoal));
+      // The core is a REPLACEMENT pixel, so it is authored through the post
+      // chain's inverse and capped under the bloom threshold: what lands on
+      // screen is the palette hex, and it cannot bloom itself back to white.
+      else if (name === 'arcCore') m.material.color.copy(underBloom(exactColor(color === HEAL ? HEAL_CORE : color)));
+      else m.material.color.set(color);
+      aimBondRibbon(m, x0, z0, x1, z1, sh);
     }
     root.add(arc);
-    beams.push({ g: b, arc, age: 0, life: 0.3 });
-    // Motes strung along the link so the layer count holds everywhere.
+    beams.push({ g: b, arc, age: 0, life: 0.42, dir: [sh.sx, sh.sz] });
+    // Motes strung along the link so the layer count holds everywhere — and
+    // along the ARC itself, so the above-plane slice carries its own particle
+    // layer instead of borrowing the ground rail's (§19.4 >=3 layers).
     const n = Math.max(2, Math.round(len * 2));
     for (let i = 1; i < n; i++) {
       spawnMotes(x0 + (dx * i) / n, z0 + (dz * i) / n, { color, count: 1, spread: 0.08 });
+    }
+    for (const t of [0.3, 0.5, 0.7]) {
+      const bulge = sh.bow * Math.sin(Math.PI * t);
+      spawnMotes(x0 + dx * t + sh.sx * bulge, z0 + dz * t + sh.sz * bulge, {
+        color,
+        count: 1,
+        spread: 0.06,
+        y: sh.endY + 4 * (sh.apexY - sh.endY) * t * (1 - t),
+        riseMin: 0.25,
+        riseMax: 0.6,
+      });
     }
   }
 
@@ -481,12 +669,26 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       // line at its crest is what makes it read as a WAVE FRONT sweeping
       // through them. It is a child of the curtain, so it rides the curtain's
       // rise (scale.y) for free.
+      // FIX ROUND 2 — the crest is the wave's SIGNAL layer, so it is the one
+      // layer that does not negotiate with the party's silhouettes. Two
+      // changes, both borrowed from the bond ribbon that failed the same test:
+      //   * NON-ADDITIVE Bright Heal. An additive green crest crossing the
+      //     party's cream fur can only add toward white (the bond measured
+      //     hue 51-68 / sat 0.09 doing exactly that); a replacement pixel
+      //     authored through the post-chain inverse lands on the palette hex
+      //     whatever it crosses, and `underBloom` stops it blowing itself out.
+      //   * depthTest OFF, so the wave FRONT is one continuous line through
+      //     the bunch instead of four disconnected slivers between bodies —
+      //     which is the whole point of the above-plane slice (Round C F3).
+      // The curtain body below it still depth-tests, so the volume of light
+      // stays behind the characters and only the leading edge crosses them.
       const crest = new Mesh(
-        new CylinderGeometry(WAVE.range * 1.008, WAVE.range * 1.008, 0.055, 26, 1, true, -wedgeHalf, wedgeHalf * 2),
-        groundMat(HEAL, 0.9)
+        new CylinderGeometry(WAVE.range * 1.008, WAVE.range * 1.008, 0.06, 26, 1, true, -wedgeHalf, wedgeHalf * 2),
+        ribbonMat('#ffffff', 0.9)
       );
+      crest.material.color.copy(underBloom(exactColor(HEAL_CORE)));
       crest.position.y = WAVE_WALL / 2;
-      crest.renderOrder = 3;
+      crest.renderOrder = 11;
       crest.name = 'crest';
       // FIX ROUND 2 — dark inner edge under the crest. The curtain is an
       // ADDITIVE Bright-Heal green standing on Act-1 grass, which is itself
@@ -500,10 +702,11 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       // and before the crest (3) so the crest stays the top layer.
       const inkEdge = new Mesh(
         new CylinderGeometry(WAVE.range * 1.004, WAVE.range * 1.004, 0.14, 26, 1, true, -wedgeHalf, wedgeHalf * 2),
-        markMat(PALETTE.voidCharcoal, 0.55)
+        ribbonMat('#ffffff', 0.55)
       );
-      inkEdge.position.y = WAVE_WALL / 2 - 0.083;
-      inkEdge.renderOrder = 2.5;
+      inkEdge.material.color.copy(exactColor(PALETTE.voidCharcoal));
+      inkEdge.position.y = WAVE_WALL / 2 - 0.084;
+      inkEdge.renderOrder = 10; // rides with the crest, under it
       inkEdge.name = 'inkEdge';
       curtain.add(inkEdge);
       curtain.add(crest);
@@ -963,10 +1166,17 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
         continue;
       }
       const t = b.age / b.life;
+      // §19.4 "instant impacts hold >=3-5 frames". The old ribbon started
+      // fading on frame 1, so the frame a critic freezes one tick after
+      // skill_cast already had the core at 0.6 — the same hold envelope the
+      // wave crest uses keeps the shape at full value for ~7 frames first.
+      const HOLD = 0.4;
+      const tail = t <= HOLD ? 1 : 1 - (t - HOLD) / (1 - HOLD);
       b.g.getObjectByName('core').material.opacity = 0.85 * (1 - t);
       b.g.getObjectByName('glow').material.opacity = 0.35 * (1 - t);
-      b.arc.getObjectByName('arcCore').material.opacity = 0.95 * (1 - t);
-      b.arc.getObjectByName('arcGlow').material.opacity = 0.45 * (1 - t * t);
+      b.arc.getObjectByName('arcCore').material.opacity = 0.94 * Math.pow(tail, 0.7);
+      b.arc.getObjectByName('arcInk').material.opacity = 0.62 * Math.pow(tail, 0.7);
+      b.arc.getObjectByName('arcGlow').material.opacity = 0.26 * Math.pow(tail, 1.4);
     }
     for (let i = wedges.length - 1; i >= 0; i--) {
       const w = wedges[i];

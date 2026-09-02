@@ -1,0 +1,46 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"skipToRoom\",8);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {t:120,boss:s.run&&s.run.boss&&{hp:s.run.boss.hp,pct:s.run.boss.pct,phases:s.run.boss.phasesFired},banner:window.__echoes.hud.banner().text};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {t:400,boss:s.run&&s.run.boss&&{hp:s.run.boss.hp,pct:s.run.boss.pct,phases:s.run.boss.phasesFired},banner:window.__echoes.hud.banner().text};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {t:1000,boss:s.run&&s.run.boss&&{hp:s.run.boss.hp,pct:s.run.boss.pct,phases:s.run.boss.phasesFired},banner:window.__echoes.hud.banner().text};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {t:2000,boss:s.run&&s.run.boss&&{hp:s.run.boss.hp,pct:s.run.boss.pct,phases:s.run.boss.phasesFired},banner:window.__echoes.hud.banner().text};})()"
+ }
+]

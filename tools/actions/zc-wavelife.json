@@ -1,0 +1,40 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',3.2,-4.4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('giveSkill','restorative_wave')"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const c=window.__echoes.cmd;c('teleport',3.2,-4.4);c('placeAlly',1,2.7,-4.0);c('placeAlly',2,3.7,-4.05);c('placeAlly',3,3.15,-3.75);return 1;})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 700,
+  "y": 620
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 30
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const p=window.__arenaProbe;const out=[];const t0=performance.now();for(let i=0;i<45;i++){const row={t:Math.round(performance.now()-t0)};p.stage.scene.traverse(o=>{if(o.name==='curtain'||o.name==='crest'||o.name==='wedgeFan'){const vis=o.visible&&(!o.parent||o.parent.visible);row[o.name]=(o.material?Math.round((o.material.opacity||0)*1000)/1000:'-')+(vis?'':'/hidden');}});out.push(row);await new Promise(r=>setTimeout(r,15));}return out;})()"
+ }
+]

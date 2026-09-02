@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const snap=()=>{const st=__echoes.state();const v=__echoes.cmd('runState');const a=__echoes.cmd('allyState');return {room:v.room,phase:v.phase,wallet:v.wallet,party:(st.party||st.allies||[]).length?undefined:undefined,hp:__echoes.state().entities?undefined:undefined,skills:__echoes.cmd('skillState'),build:__echoes.cmd('buildState'),mark:a.mark!==undefined?a.mark:a.markId,rally:a.rallyPoint,override:__echoes.state().skills?__echoes.state().skills.override:null,bodies:__echoes.state().party||null};};__echoes.cmd('startRun');await s(200);__echoes.cmd('giveSkill','nova_bloom');__echoes.cmd('grantNode','sharpen');__echoes.cmd('socket','mending_bolt','sharpen');__echoes.cmd('spawn','boar',2,2);await s(100);const en=__echoes.state().enemies;__echoes.cmd('mark',en&&en[0]?en[0].id:null);__echoes.cmd('rally');__echoes.cmd('healOverride',1);__echoes.cmd('setHp',0,0.55);await s(60);window.__A=snap();window.__A.raw=__echoes.state();__echoes.cmd('clearRoom');await s(250);__echoes.cmd('draftDecline');await s(200);__echoes.cmd('pathChoose',0);await s(600);window.__B=snap();window.__B.raw=__echoes.state();return {A:JSON.stringify(window.__A).slice(0,1500)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>JSON.stringify({B:window.__B}).slice(0,1500))()"
+ }
+]

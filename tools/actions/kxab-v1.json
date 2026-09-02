@@ -1,0 +1,54 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 6000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{if(!window.__kxFrz){window.__kxFrz=window.requestAnimationFrame;window.requestAnimationFrame=function(){return 0;};}return {frozen:true,tick:window.__echoes.tick};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(() => {\r\n  const P = window.__arenaProbe;\r\n  const stage = P.stage, cam = stage.camera, scene = stage.scene;\r\n  const W = window.innerWidth, H = window.innerHeight;\r\n  const rings = [];\r\n  scene.traverse((o) => {\r\n    if (o.name !== 'identity-ring') return;\r\n    let cls = '?';\r\n    for (let p = o; p; p = p.parent) {\r\n      if (p.name && p.name.startsWith('critter-')) { cls = p.name.slice(8); break; }\r\n    }\r\n    // the band mesh: PlaneGeometry with a ShaderMaterial carrying uBandA\r\n    let band = null;\r\n    o.traverse((c) => { if (!band && c.isMesh && c.material && c.material.uniforms && c.material.uniforms.uBandA) band = c; });\r\n    if (!band) return;\r\n    if (!o.visible) return;\r\n    let vis = true;\r\n    for (let p = o; p; p = p.parent) if (!p.visible) vis = false;\r\n    if (!vis) return;\r\n    band.updateWorldMatrix(true, false);\r\n    const wp = new (band.position.constructor)();\r\n    band.getWorldPosition(wp);\r\n    rings.push({ cls, band, wp });\r\n  });\r\n  const V3 = rings.length ? rings[0].wp.constructor : null;\r\n  const emitters = (P.emitters || []).map((e) => ({ kind: e.kind, x: e.x, z: e.z }));\r\n  const proj = (v) => {\r\n    const p = v.clone().project(cam);\r\n    return [Math.round(((p.x + 1) / 2) * W * 100) / 100, Math.round(((1 - p.y) / 2) * H * 100) / 100];\r\n  };\r\n  const out = rings.map((r) => {\r\n    const g = r.band.geometry.parameters;\r\n    const half = g.width / 2;\r\n    // nearest emitter direction in world XZ\r\n    let best = null, bd = 1e9;\r\n    for (const e of emitters) {\r\n      const d = Math.hypot(e.x - r.wp.x, e.z - r.wp.z);\r\n      if (d < bd) { bd = d; best = e; }\r\n    }\r\n    const emAng = best ? (Math.atan2(best.z - r.wp.z, best.x - r.wp.x) * 180) / Math.PI : null;\r\n    const samples = [];\r\n    for (let a = 0; a < 360; a += 3) {\r\n      const rad = (a * Math.PI) / 180;\r\n      const row = { a, pts: {} };\r\n      for (const [key, fr] of [['f050', 0.50], ['f063', 0.63], ['f0755', 0.755], ['f088', 0.88], ['f093', 0.93], ['f098', 0.98], ['f112', 1.12], ['f125', 1.25], ['f140', 1.40]]) {\r\n        const local = new V3(Math.cos(rad) * fr * half, Math.sin(rad) * fr * half, 0);\r\n        const wv = r.band.localToWorld(local.clone());\r\n        row.pts[key] = proj(wv);\r\n      }\r\n      samples.push(row);\r\n    }\r\n    return {\r\n      cls: r.cls,\r\n      world: [Math.round(r.wp.x * 100) / 100, Math.round(r.wp.z * 100) / 100],\r\n      centre: proj(r.wp.clone()),\r\n      half,\r\n      nearestEmitter: best ? { kind: best.kind, dist: Math.round(bd * 100) / 100, ang: Math.round(emAng * 10) / 10 } : null,\r\n      samples,\r\n    };\r\n  });\r\n  return { rings: out, emitters, cam: [cam.position.x, cam.position.y, cam.position.z] };\r\n})()\r\n"
+ },
+ {
+  "type": "shot",
+  "name": "kxab-v1-A"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=window.__arenaProbe.stage;S.bloomPass.enabled=false;S.render();return {bloom:S.bloomPass.enabled};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "shot",
+  "name": "kxab-v1-Anb"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=window.__arenaProbe.stage;const hid=[];S.scene.traverse(function(o){if(o.name==='identity-ring'){o.traverse(function(c){if(c.isMesh&&c.material&&c.material.uniforms&&c.material.uniforms.uBandA){c.visible=false;hid.push(c);}});}});window.__kxHid=hid;S.render();return {hidden:hid.length};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "shot",
+  "name": "kxab-v1-Bnb"
+ }
+]

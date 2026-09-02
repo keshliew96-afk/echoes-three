@@ -1,0 +1,70 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('skipToRoom',7); return __echoes.cmd('runState').wallet; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const v=__echoes.cmd('runState'); return {wallet:v.wallet, stock:v.shop.stock.map(s=>({node:s.node,price:s.price,affordable:s.affordable})), pairSums:[55,60,65], all3:90}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>[__echoes.cmd('shopBuy',0),__echoes.cmd('shopBuy',1)])()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const v=__echoes.cmd('runState'); return {wallet:v.wallet, affordable:v.shop.stock.map(s=>s.affordable)}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ps=[...document.querySelectorAll('.rn-plaque')].map(p=>{const st=getComputedStyle(p); return {tx:p.style.transform||'none', deny:p.classList.contains('rn-deny'), border:st.borderColor};}); const cs=[...document.querySelectorAll('.rn-item')].map(it=>{const c=it.querySelector('.rn-card'); const st=getComputedStyle(c); const r=c.getBoundingClientRect(); return {op:st.opacity, filter:st.filter, display:st.display, visible:r.width>0&&r.height>0, w:Math.round(r.width),h:Math.round(r.height)};}); return {ps,cs}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>__echoes.cmd('shopBuy',2))()"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ps=[...document.querySelectorAll('.rn-plaque')].map(p=>{const st=getComputedStyle(p); return {tx:p.style.transform||'none', deny:p.classList.contains('rn-deny'), border:st.borderColor};}); const cs=[...document.querySelectorAll('.rn-item')].map(it=>{const c=it.querySelector('.rn-card'); const st=getComputedStyle(c); const r=c.getBoundingClientRect(); return {op:st.opacity, filter:st.filter, display:st.display, visible:r.width>0&&r.height>0, w:Math.round(r.width),h:Math.round(r.height)};}); return {ps,cs}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 80
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ps=[...document.querySelectorAll('.rn-plaque')].map(p=>{const st=getComputedStyle(p); return {tx:p.style.transform||'none', deny:p.classList.contains('rn-deny'), border:st.borderColor};}); const cs=[...document.querySelectorAll('.rn-item')].map(it=>{const c=it.querySelector('.rn-card'); const st=getComputedStyle(c); const r=c.getBoundingClientRect(); return {op:st.opacity, filter:st.filter, display:st.display, visible:r.width>0&&r.height>0, w:Math.round(r.width),h:Math.round(r.height)};}); return {ps,cs}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 80
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ps=[...document.querySelectorAll('.rn-plaque')].map(p=>{const st=getComputedStyle(p); return {tx:p.style.transform||'none', deny:p.classList.contains('rn-deny'), border:st.borderColor};}); const cs=[...document.querySelectorAll('.rn-item')].map(it=>{const c=it.querySelector('.rn-card'); const st=getComputedStyle(c); const r=c.getBoundingClientRect(); return {op:st.opacity, filter:st.filter, display:st.display, visible:r.width>0&&r.height>0, w:Math.round(r.width),h:Math.round(r.height)};}); return {ps,cs}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ps=[...document.querySelectorAll('.rn-plaque')].map(p=>{const st=getComputedStyle(p); return {tx:p.style.transform||'none', deny:p.classList.contains('rn-deny'), border:st.borderColor};}); const cs=[...document.querySelectorAll('.rn-item')].map(it=>{const c=it.querySelector('.rn-card'); const st=getComputedStyle(c); const r=c.getBoundingClientRect(); return {op:st.opacity, filter:st.filter, display:st.display, visible:r.width>0&&r.height>0, w:Math.round(r.width),h:Math.round(r.height)};}); return {ps,cs}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const d=__echoes.runUi(); return {owned:d.owned, plaques:d.plaques, cards:d.cards, floors:d.floors}; })()"
+ }
+]

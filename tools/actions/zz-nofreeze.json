@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); window.__ids=__echoes.state().party.map(e=>e.id); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('setHp', window.__ids[1], 0.20); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const r=(n)=>{const b=n.getBoundingClientRect(); return {x:+b.x.toFixed(1),w:+b.width.toFixed(1)};}; const k=document.querySelectorAll('#hud .hud-port-key')[1]; const n2=document.querySelectorAll('#hud .hud-port-num')[1]; return {mark:window.__zz, frozen:'no', keyText:k.textContent, keyBox:r(k), numText:n2.textContent, numBox:r(n2), scale:__echoes.hud.metrics().scale}; })()"
+ }
+]

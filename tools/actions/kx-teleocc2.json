@@ -1,0 +1,64 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('rally')"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('giveSkill','sanctuary')"
+ },
+ {
+  "type": "mousemove",
+  "x": 820,
+  "y": 460
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('spawn','mantis',8.2,-5.6)"
+ },
+ {
+  "type": "wait",
+  "ms": 3500
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__kxN=-1;var raf=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=function(cb){if(window.__kxN===0)return 0;if(window.__kxN>0)window.__kxN--;return raf(cb);};window.__echoes.on('telegraph_start',function(){if(window.__kxN<0)window.__kxN=1;});return {armed:true};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 4000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {zones:(s.zones||[]).length,zoneRigs:s.skillfx.zoneRigs,enemies:s.enemies.length,n:window.__kxN};})()"
+ },
+ {
+  "type": "shot",
+  "name": "kx-teleocc2-A"
+ }
+]

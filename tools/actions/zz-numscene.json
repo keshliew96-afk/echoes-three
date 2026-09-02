@@ -1,0 +1,38 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; return __echoes.state().scene; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('startRun'); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const st=__echoes.state(); return {scene:st.scene, enemies:(st.enemies||[]).length}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const p=__echoes.state().party[1]; __echoes.cmd('hitOnce', p.id); __echoes.cmd('hitOnce', p.id); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const nums=[...document.querySelectorAll('.dmg-num')].map(n=>{const b=n.getBoundingClientRect(); const cs=getComputedStyle(n); return {t:n.textContent,x:+b.x.toFixed(0),y:+b.y.toFixed(0),op:cs.opacity,vis:cs.visibility,tr:cs.transform.slice(0,40)};}).filter(n=>n.vis!=='hidden'); return {scene:__echoes.state().scene, n:nums.length, nums:nums.slice(0,6)}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const nums=[...document.querySelectorAll('.dmg-num')].map(n=>{const b=n.getBoundingClientRect(); const cs=getComputedStyle(n); return {t:n.textContent,x:+b.x.toFixed(0),y:+b.y.toFixed(0),op:cs.opacity,vis:cs.visibility,tr:cs.transform.slice(0,40)};}).filter(n=>n.vis!=='hidden'); return {scene:__echoes.state().scene, n:nums.length, nums:nums.slice(0,6)}; })()"
+ }
+]

@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__errs=[];window.addEventListener('error',(e)=>{window.__errs.push(String(e.message)+' | '+String(e.error&&e.error.stack).slice(0,800));});return 1;})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=()=>window.__echoes;const sl=(m)=>new Promise(r=>setTimeout(r,m));E().cmd('startRun');await sl(800);E().cmd('skipToRoom',8);await sl(2500);return JSON.stringify({errs:window.__errs,room:E().state().run.room});})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ }
+]

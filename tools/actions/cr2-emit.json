@@ -1,0 +1,1 @@
+[{"type":"eval","code":"(()=>{const s=__echoes.state();return s.vfx.emitters;})()"}]

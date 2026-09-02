@@ -1,0 +1,30 @@
+[
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('skipToRoom',7); return __echoes.cmd('runState').shop.stock.map(s=>s.price); })()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const root=document.getElementById('run-screen'); const s=parseFloat(getComputedStyle(root).getPropertyValue('--rn-s')); const pg=root.querySelector('.rn-page:not([style*=\"display: none\"])'); const q=(sel)=>{const e=pg.querySelector(sel); if(!e) return null; const f=parseFloat(getComputedStyle(e).fontSize); return {a:f, r:Math.round(f*s*100)/100};}; const bar=document.querySelector('.hud-bar'); const br=bar?bar.getBoundingClientRect():null; return {win:[innerWidth,innerHeight], s, page:{w:pg.offsetWidth,h:pg.offsetHeight}, body:q('.rn-body'), kind:q('.rn-cardkind'), hint:q('.rn-hint'), price:q('.rn-price'), stripnum:q('.rn-strip .rn-num'), amt:q('.rn-amt'), owned:q('.rn-owned'), bar: br?{top:Math.round(br.top),h:Math.round(br.height)}:null }; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ return __echoes.cmd('shopBuy',0); })()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const root=document.getElementById('run-screen'); const s=parseFloat(getComputedStyle(root).getPropertyValue('--rn-s')); const pg=root.querySelector('.rn-page:not([style*=\"display: none\"])'); const q=(sel)=>{const e=pg.querySelector(sel); if(!e) return null; const f=parseFloat(getComputedStyle(e).fontSize); return {a:f, r:Math.round(f*s*100)/100};}; const bar=document.querySelector('.hud-bar'); const br=bar?bar.getBoundingClientRect():null; return {win:[innerWidth,innerHeight], s, page:{w:pg.offsetWidth,h:pg.offsetHeight}, body:q('.rn-body'), kind:q('.rn-cardkind'), hint:q('.rn-hint'), price:q('.rn-price'), stripnum:q('.rn-strip .rn-num'), amt:q('.rn-amt'), owned:q('.rn-owned'), bar: br?{top:Math.round(br.top),h:Math.round(br.height)}:null }; })()"
+ }
+]

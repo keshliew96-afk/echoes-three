@@ -1,0 +1,27 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('skipToRoom',8);E.cmd('killAllEnemies');E.cmd('killBoss');return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({screen:window.__echoes.runUi().screen,phase:window.__echoes.cmd('runState').phase}))()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();return {screen:E.runUi().screen,phase:s.run.phase,active:s.run.active,wallet:s.wallet,veil:E.runUi().veil.open,version:E.version,fps:E.fps};})()"
+ }
+]

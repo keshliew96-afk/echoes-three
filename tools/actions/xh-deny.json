@@ -1,0 +1,55 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1000
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "key",
+  "key": "Space",
+  "ms": 40
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;return {nudges:h.nudges(),anims:h.animations(),denials:window.__echoes.events.filter(e=>e.type===\"intent_denied\").slice(-8)};})()"
+ }
+]

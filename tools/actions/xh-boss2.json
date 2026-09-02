@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"skipToRoom\",8);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {runboss:s.run&&s.run.boss,ents:s.enemies&&s.enemies.map(e=>({k:e.kind,hp:e.hp,max:e.maxHp}))};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const r=window.__echoes.cmd(\"bossHp\",0.62);return r;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {runboss:s.run&&s.run.boss,banner:window.__echoes.hud.banner()};})()"
+ }
+]

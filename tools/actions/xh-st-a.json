@@ -1,0 +1,38 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;const by=(i)=>p.find(q=>q.partyIndex===i)||p[0];E.cmd(\"setHp\",by(1).id,0.38);E.cmd(\"setHp\",by(2).id,0.15);E.cmd(\"setHp\",by(3).id,0);E.cmd(\"healOverride\",0);return \"set\";})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const h=window.__echoes.hud;h.hover(1,true);h.freeze(0.25);return 1;})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;const by=(i)=>p.find(q=>q.partyIndex===i)||p[0];E.cmd(\"setHp\",by(1).id,0.38);E.cmd(\"setHp\",by(2).id,0.15);return \"reset\";})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const out=[];document.querySelectorAll(\"#proto-hud .hud-port\").forEach((c,i)=>{const t=c.querySelector(\".hud-port-tile\").getBoundingClientRect();out.push({i,x:Math.round(t.x),y:Math.round(t.y),w:Math.round(t.width),h:Math.round(t.height)});});return out;})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return window.__echoes.hud.portraits();})()"
+ }
+]

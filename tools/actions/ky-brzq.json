@@ -1,0 +1,18 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',5.4,-1.2)"
+ },
+ {
+  "type": "wait",
+  "ms": 2600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const P=window.__arenaProbe;const S=P.stage;var out=[];S.scene.traverse(function(o){if(!o.isMesh&&!o.isInstancedMesh&&!o.isSprite)return;var w=o.getWorldPosition(new (S.camera.position.constructor)());if(Math.hypot(w.x-3.2,w.z+2.4)<1.2)out.push([o.name||o.type,o.isInstancedMesh?('inst'+o.count):'',Math.round(w.x*100)/100,Math.round(w.y*100)/100,Math.round(w.z*100)/100,o.visible]);});return out.slice(0,40);})()"
+ }
+]

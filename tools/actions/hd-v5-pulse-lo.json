@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');E.cmd('startRun');return {was:m,now:E.cmd('campMode'),room:E.state().room&&E.state().room.mode};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('killAllEnemies');const p=E.state().party;const f=(i)=>p.find(q=>(q.partyIndex??0)===i).id;E.cmd('setHp',f(1),0.15);E.hud.freeze(0);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;const f=(i)=>p.find(q=>(q.partyIndex??0)===i).id;E.cmd('setHp',f(1),0.15);E.hud.freeze(0);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const P=E.hud.portraits()[1];const c=document.querySelectorAll('.hud-port')[1];const fill=getComputedStyle(c.querySelector('.hud-port-hp i'));return {phase:0,state:P.state,inner:P.innerBorder+' '+P.innerColor,trackOutline:P.trackOutline,trackInterior:P.trackColor,fillImage:fill.backgroundImage,numeral:P.numeral,numBox:P.numBox,keyBox:P.keyBox};})()"
+ }
+]

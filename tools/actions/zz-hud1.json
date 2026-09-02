@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; return {tick:__echoes.tick, v:__echoes.version}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const st=__echoes.state(); return {mark:window.__zz, tick:__echoes.tick, fps:__echoes.fps, scene:st.scene, room:st.room, enemies:(st.enemies||[]).map(e=>({t:e.type,x:e.x,z:e.z,hp:e.hp})), party:(st.party||[]).map(p=>({i:p.partyIndex,hp:p.hp,max:p.maxHp}))}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({metrics:__echoes.hud.metrics(), banner:__echoes.hud.banner()}))()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({slots:__echoes.hud.slots()}))()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({portraits:__echoes.hud.portraits()}))()"
+ }
+]

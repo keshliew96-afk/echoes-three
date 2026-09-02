@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");E.cmd(\"teleport\",0,-3);return 1;})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;E.cmd(\"startWave\");for(let i=0;i<200;i++){const ms=E.hud.markers();const sp=ms.filter(m=>m.spawn);if(sp.length)return JSON.stringify({wait:i*16,markers:ms});await new Promise(r=>setTimeout(r,16));}return \"no-spawn-markers\";})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const ms=[...document.querySelectorAll(\"#hud-threat .tm\")].filter(n=>n.style.display!==\"none\").map(n=>({c:n.className,t:n.style.transform}));return ms;})()"
+ }
+]

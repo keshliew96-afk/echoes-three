@@ -1,0 +1,54 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('skipToRoom',8); return __echoes.cmd('runState').room; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ns=[...document.querySelectorAll('.dmg-num')].filter(n=>getComputedStyle(n).visibility==='visible'&&Number(getComputedStyle(n).opacity)>0.05).map(n=>{const b=n.getBoundingClientRect(); return {t:n.textContent,x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)};}); let worst=0, pairs=[]; for(let i=0;i<ns.length;i++)for(let j=i+1;j<ns.length;j++){const a=ns[i],b=ns[j]; const ox=Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)); const oy=Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)); const area=ox*oy; const frac=area/Math.min(a.w*a.h,b.w*b.h); if(frac>0.001) pairs.push({a:a.t,b:b.t,frac:Math.round(frac*100)/100}); if(frac>worst) worst=frac; } return {n:ns.length, worstOverlapFrac:Math.round(worst*100)/100, pairs, ns}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ns=[...document.querySelectorAll('.dmg-num')].filter(n=>getComputedStyle(n).visibility==='visible'&&Number(getComputedStyle(n).opacity)>0.05).map(n=>{const b=n.getBoundingClientRect(); return {t:n.textContent,x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)};}); let worst=0, pairs=[]; for(let i=0;i<ns.length;i++)for(let j=i+1;j<ns.length;j++){const a=ns[i],b=ns[j]; const ox=Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)); const oy=Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)); const area=ox*oy; const frac=area/Math.min(a.w*a.h,b.w*b.h); if(frac>0.001) pairs.push({a:a.t,b:b.t,frac:Math.round(frac*100)/100}); if(frac>worst) worst=frac; } return {n:ns.length, worstOverlapFrac:Math.round(worst*100)/100, pairs, ns}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ns=[...document.querySelectorAll('.dmg-num')].filter(n=>getComputedStyle(n).visibility==='visible'&&Number(getComputedStyle(n).opacity)>0.05).map(n=>{const b=n.getBoundingClientRect(); return {t:n.textContent,x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)};}); let worst=0, pairs=[]; for(let i=0;i<ns.length;i++)for(let j=i+1;j<ns.length;j++){const a=ns[i],b=ns[j]; const ox=Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)); const oy=Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)); const area=ox*oy; const frac=area/Math.min(a.w*a.h,b.w*b.h); if(frac>0.001) pairs.push({a:a.t,b:b.t,frac:Math.round(frac*100)/100}); if(frac>worst) worst=frac; } return {n:ns.length, worstOverlapFrac:Math.round(worst*100)/100, pairs, ns}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ns=[...document.querySelectorAll('.dmg-num')].filter(n=>getComputedStyle(n).visibility==='visible'&&Number(getComputedStyle(n).opacity)>0.05).map(n=>{const b=n.getBoundingClientRect(); return {t:n.textContent,x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)};}); let worst=0, pairs=[]; for(let i=0;i<ns.length;i++)for(let j=i+1;j<ns.length;j++){const a=ns[i],b=ns[j]; const ox=Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)); const oy=Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)); const area=ox*oy; const frac=area/Math.min(a.w*a.h,b.w*b.h); if(frac>0.001) pairs.push({a:a.t,b:b.t,frac:Math.round(frac*100)/100}); if(frac>worst) worst=frac; } return {n:ns.length, worstOverlapFrac:Math.round(worst*100)/100, pairs, ns}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ns=[...document.querySelectorAll('.dmg-num')].filter(n=>getComputedStyle(n).visibility==='visible'&&Number(getComputedStyle(n).opacity)>0.05).map(n=>{const b=n.getBoundingClientRect(); return {t:n.textContent,x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)};}); let worst=0, pairs=[]; for(let i=0;i<ns.length;i++)for(let j=i+1;j<ns.length;j++){const a=ns[i],b=ns[j]; const ox=Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)); const oy=Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)); const area=ox*oy; const frac=area/Math.min(a.w*a.h,b.w*b.h); if(frac>0.001) pairs.push({a:a.t,b:b.t,frac:Math.round(frac*100)/100}); if(frac>worst) worst=frac; } return {n:ns.length, worstOverlapFrac:Math.round(worst*100)/100, pairs, ns}; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ns=[...document.querySelectorAll('.dmg-num')].filter(n=>getComputedStyle(n).visibility==='visible'&&Number(getComputedStyle(n).opacity)>0.05).map(n=>{const b=n.getBoundingClientRect(); return {t:n.textContent,x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)};}); let worst=0, pairs=[]; for(let i=0;i<ns.length;i++)for(let j=i+1;j<ns.length;j++){const a=ns[i],b=ns[j]; const ox=Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)); const oy=Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)); const area=ox*oy; const frac=area/Math.min(a.w*a.h,b.w*b.h); if(frac>0.001) pairs.push({a:a.t,b:b.t,frac:Math.round(frac*100)/100}); if(frac>worst) worst=frac; } return {n:ns.length, worstOverlapFrac:Math.round(worst*100)/100, pairs, ns}; })()"
+ }
+]

@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); __echoes.cmd('teleport',0,0); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const P=[[-11,-7],[11,-7],[-11,7],[11,7],[0,-7.5],[0,7.5],[-11.5,0],[11.5,0]]; window.__sp=P.map(p=>__echoes.cmd('spawn','boar',p[0],p[1])); return window.__sp; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const a=__echoes.hud.threat(); return {mark:window.__zz, tick:__echoes.tick, window:a.window, offFrame:a.offFrame, uncued:a.uncued, covered:a.covered, markersDrawn:a.markersDrawn, domMarkers:a.domMarkers, zones:a.zones, threats:a.threats.map(t=>({id:t.id,kind:t.kind,x:t.x,z:t.z,sx:t.sx,sy:t.sy,inSafeFrame:t.inSafeFrame,marker:!!t.marker}))}; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({markers:__echoes.hud.markers(), enemies:__echoes.state().enemies.map(e=>({id:e.id,x:e.x,z:e.z}))}))()"
+ }
+]

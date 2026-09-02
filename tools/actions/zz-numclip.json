@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); __echoes.cmd('teleport',0,0); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__d=[[-8.95,0.2],[-8.9,0.6],[-8.85,1.0]].map(p=>__echoes.cmd('spawn','dummy',p[0],p[1])); return window.__d; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ for(const id of window.__d){ __echoes.cmd('hitOnce', id); __echoes.cmd('hitOnce', id);} return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const W=window.innerWidth,H=window.innerHeight; const ns=[...document.querySelectorAll('.dmg-num')].filter(n=>Number(getComputedStyle(n).opacity)>0.05&&getComputedStyle(n).visibility!=='hidden').map(n=>{const b=n.getBoundingClientRect(); return {t:n.textContent, x:+b.x.toFixed(0), y:+b.y.toFixed(0), w:+b.width.toFixed(0), h:+b.height.toFixed(0), clipped: b.x<0&&b.x+b.width>0};}); return {mark:window.__zz, ns}; })()"
+ }
+]

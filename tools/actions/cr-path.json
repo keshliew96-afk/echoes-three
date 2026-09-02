@@ -1,0 +1,1 @@
+[{"type":"wait","ms":600},{"type":"eval","code":"(async () => {\n  const E=window.__echoes; const s=(m)=>new Promise(r=>setTimeout(r,m));\n  E.cmd('startRun'); await s(150); E.cmd('clearRoom'); await s(300); E.cmd('draftTake'); await s(400);\n  return { run: E.cmd('runState').phase, ui: E.runUi() };\n})()"}]

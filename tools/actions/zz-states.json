@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); const p=__echoes.state().party; window.__ids=p.map(e=>e.id); return window.__ids; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ const ids=window.__ids; __echoes.cmd('setHp', ids[0], 0.40); __echoes.cmd('setHp', ids[1], 0.15); __echoes.cmd('setHp', ids[2], 0); __echoes.cmd('healOverride', 3); __echoes.hud.hover(0,true); __echoes.hud.freeze(0.25); return __echoes.state().party.map(p=>({id:p.id,hp:p.hp,downed:p.downed})); })()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({mark:window.__zz, tick:__echoes.tick, portraits:__echoes.hud.portraits().map(p=>({i:p.index,state:p.state,sel:p.selected,hov:p.hover,w:p.hpWidth,num:p.numeral,ib:p.innerBorder,ic:p.innerColor,keyBox:p.keyBox,numBox:p.numBox,fill:p.fillColor,fillImg:p.fillImage,track:p.trackColor,ro:p.reviveOffset,rt:p.reviveTotal}))}))()"
+ }
+]

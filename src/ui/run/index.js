@@ -26,7 +26,7 @@
 // A commit needs `!e.repeat && !stale.has(code) && !held.has(code)`. Walking
 // draft -> path with Enter pinned down therefore stops dead at the doors, and
 // only a genuine release-and-press walks through.
-import { RUN_CSS } from './style.js';
+import { RUN_CSS, isCompact } from './style.js';
 import { createDraftScreen } from './draft.js';
 import { createPathScreen } from './path.js';
 import { createShopScreen } from './shop.js';
@@ -76,30 +76,63 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   let current = 'none';
   let signature = '';
 
-  // §17/A7 uniform virtual scale — the socket screen's grammar: the pages are
-  // AUTHORED at their own px (every label at/above the 16 px text floor, every
-  // numeral at/above 20, the §16 doors at exactly 160x220) and scaled by
-  // min(1, fit) so they never overflow a small window and never inflate past
-  // their authored ratio on a large one. The fit is measured against the LIVE
-  // page (offsetWidth/Height are layout values, untouched by the transform),
-  // so the tall shop shelf shrinks while the short draft card stays at 1:1.
+  // §17/A7 page fit. The pages are AUTHORED at their own px (every label
+  // at/above the 16 px text floor, every numeral at/above 20, the §16 doors at
+  // exactly 160x220). Uniform `transform: scale()` was the old lever and it
+  // BROKE the floors — see the long note in ./style.js. Now:
+  //
+  //   1. the bottom reserve is the MEASURED command bar, not a fixed 120 px
+  //      (the bar is itself HUD-scaled, so at 1024x640 it is 78 px tall, not
+  //      120 — reserving 120 threw away 42 px of usable page for nothing);
+  //   2. short windows get `.rn-compact`, which REFLOWS the page (tighter
+  //      rhythm, smaller ornament/icon, short node copy) with every type size
+  //      still at/above its floor;
+  //   3. --rn-s is clamped to a floor of 1 so no authored px is ever scaled
+  //      DOWN. Only a window below the §1 minimum (1024x640) — where the
+  //      compact page still does not fit — is allowed under the clamp, and
+  //      then shrinking beats clipping.
   const DESIGN = { w: 980, h: 700 };
-  const RESERVE = 120; // px kept clear at the bottom for the Zone 1 bar
+  const RESERVE_FALLBACK = 120; // px, until the HUD bar exists to be measured
+  const MIN_SCALE = 1; // §17 floors are REAL px: never scale the pages down
+  let lastFit = { s: 1, compact: false, reserve: RESERVE_FALLBACK, fit: 1 };
+
+  function reservePx() {
+    const bar = document.querySelector('.hud-bar');
+    if (bar) {
+      const r = bar.getBoundingClientRect();
+      if (r.height > 0) return Math.max(48, Math.round(window.innerHeight - r.top) + 6);
+    }
+    return RESERVE_FALLBACK;
+  }
+
   function fitScale() {
+    // Compact is decided by the WINDOW, never by the measured page, so the
+    // screens can pick their copy variant before they render (a page that
+    // reflowed only after measuring would need two renders to settle).
+    const compact = isCompact();
+    rootEl.classList.toggle('rn-compact', compact);
+    const reserve = reservePx();
+    rootEl.style.setProperty('--rn-reserve', `${reserve}px`);
     const pg = current !== 'none' ? screens[current].el : null;
     const w = pg && pg.offsetWidth ? pg.offsetWidth : DESIGN.w;
     const h = pg && pg.offsetHeight ? pg.offsetHeight : DESIGN.h;
-    rootEl.style.setProperty('--rn-reserve', `${RESERVE}px`);
-    const s = Math.min(
+    const fit = Math.min(
       1,
       (window.innerWidth - 40) / w,
-      (window.innerHeight - 28 - RESERVE) / h
+      (window.innerHeight - 28 - reserve) / h
     );
+    const s = Math.max(MIN_SCALE, fit);
     rootEl.style.setProperty('--rn-s', s.toFixed(4));
+    lastFit = { s, compact, reserve, fit: Math.round(fit * 1e4) / 1e4, page: { w, h } };
     return s;
   }
   fitScale();
-  window.addEventListener('resize', fitScale);
+  window.addEventListener('resize', () => {
+    fitScale();
+    // A resize can cross the compact threshold, which changes the COPY the
+    // cards carry — force the next update() to repaint.
+    signature = '';
+  });
 
   // ------------------------------------------------------- fresh-press --
   const held = new Set();
@@ -139,6 +172,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const p = v.path;
     const s = v.shop;
     return [
+      isCompact() ? 'c' : 'f', // the compact reflow changes the card copy
       v.phase,
       v.room,
       v.wallet,
@@ -265,10 +299,50 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
         price: p.querySelector('.rn-price')?.textContent ?? '',
         shaking: p.classList.contains('rn-deny'),
       }));
+      // §17 type-floor audit: every text/numeral node the live page draws,
+      // in REAL px (authored px x the live --rn-s). A critic can read the
+      // floors straight off this instead of trusting the CSS.
+      const pageEl = current === 'none' ? null : screens[current].el;
+      const typeAudit = [];
+      if (pageEl) {
+        const s = lastFit.s;
+        for (const n of pageEl.querySelectorAll('*')) {
+          if (n.offsetParent === null && n !== pageEl) continue;
+          const txt = [...n.childNodes]
+            .filter((c) => c.nodeType === 3)
+            .map((c) => c.textContent.trim())
+            .join('');
+          if (!txt) continue;
+          const fs = parseFloat(getComputedStyle(n).fontSize);
+          const cls = String(n.className || '');
+          // §17's numeral floor is about NUMERAL FIELDS (tabular-nums:
+          // HP/timer/price/count), not about prose that happens to contain a
+          // digit ("within 2.2 u"). Classify by role, not by regex.
+          const numeral = ['rn-num', 'rn-price', 'rn-amt', 'rn-stats'].some((c) =>
+            n.classList.contains(c)
+          );
+          typeAudit.push({
+            cls: cls || n.tagName.toLowerCase(),
+            txt: txt.slice(0, 22),
+            authored: fs,
+            real: Math.round(fs * s * 100) / 100,
+            numeral,
+          });
+        }
+      }
+      const floors = {
+        minText: typeAudit.length ? Math.min(...typeAudit.map((t) => t.real)) : null,
+        minNumeral: typeAudit.filter((t) => t.numeral).length
+          ? Math.min(...typeAudit.filter((t) => t.numeral).map((t) => t.real))
+          : null,
+      };
       return {
         screen: current,
         phase: v.phase,
         room: v.room,
+        fit: lastFit,
+        floors,
+        typeAudit,
         wallet: v.wallet,
         freeSkillSlots: v.freeSkillSlots,
         open: current !== 'none',

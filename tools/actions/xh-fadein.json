@@ -1,0 +1,22 @@
+[
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const b=document.getElementById(\"hud-banner\");window.__S=[];window.__T0=performance.now();window.__iv=setInterval(()=>{window.__S.push([Math.round(performance.now()-window.__T0),+getComputedStyle(b).opacity]);},20);return \"s\";})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__T0=performance.now();window.__S.length=0;window.__echoes.cmd(\"startRun\");return \"go\";})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{clearInterval(window.__iv);return window.__S.filter((s,i)=>i<20);})()"
+ }
+]

@@ -1,0 +1,22 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',3.2,-4.4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3400
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{\nconst p=window.__arenaProbe, cam=p.stage.camera, W=innerWidth, H=innerHeight;\nconst V=p.root.position.constructor;\nconst raf=window.requestAnimationFrame.bind(window);\nawait new Promise(r=>raf(r)); window.requestAnimationFrame=()=>0;\nconst out=[];\np.stage.scene.traverse(o=>{\n  if(o.name!=='identity-ring') return;\n  let cls='?'; for(let q=o.parent;q;q=q.parent){ if(q.name&&q.name.indexOf('critter-')===0){cls=q.name.slice(8);break;} }\n  let band=null; o.traverse(c=>{ if(c.material&&c.material.uniforms&&c.material.uniforms.uBandA) band=c; });\n  if(!band) return;\n  const ws=band.getWorldScale(new V());\n  const half=band.geometry.parameters.width/2*ws.x;\n  const u=band.material.uniforms;\n  const bIn=u.uBandA.value.z*half, bOut=u.uBandA.value.w*half;\n  const kIn=u.uBandB.value.x*half, kOut=u.uBandB.value.y*half;\n  const c0=band.getWorldPosition(new V());\n  const proj=(x,z)=>{const v=new V(x,c0.y,z).project(cam);return [Math.round((v.x*.5+.5)*W*10)/10, Math.round((-v.y*.5+.5)*H*10)/10];};\n  const pts=[];\n  for(let a=0;a<360;a+=5){\n    const rd=a*Math.PI/180, cs=Math.cos(rd), sn=Math.sin(rd);\n    const at=(r)=>proj(c0.x+r*cs, c0.z+r*sn);\n    pts.push({a, band:[at(bIn+(bOut-bIn)*0.3), at((bIn+bOut)/2), at(bIn+(bOut-bIn)*0.7)], ink:[at(kIn+(kOut-kIn)*0.35), at((kIn+kOut)/2), at(kIn+(kOut-kIn)*0.65)], gnd:[at(kOut*1.25), at(kOut*1.45)]});\n  }\n  out.push({cls, wx:+c0.x.toFixed(2), wz:+c0.z.toFixed(2), half:+half.toFixed(3), pts});\n});\nconst ems=(p.emitters||[]).map(e=>({k:e.kind,x:+e.x.toFixed(2),z:+e.z.toFixed(2)}));\nreturn {rings:out, emitters:ems};\n})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const p=window.__arenaProbe;window.__zc=[];p.stage.scene.traverse(o=>{if(o.name==='identity-ring')o.traverse(c=>{if(c.material)window.__zc.push(c);});});setTimeout(()=>{for(const c of window.__zc)c.visible=false;p.stage.render();},450);return window.__zc.length;})()"
+ }
+]

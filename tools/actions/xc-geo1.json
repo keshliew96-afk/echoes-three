@@ -1,0 +1,26 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const p=window.__arenaProbe;const st=p.stage;const V3=st.camera.position.constructor;const W=st.renderer.domElement.width,H=st.renderer.domElement.height;const proj=(v)=>{const q=v.clone().project(st.camera);return [Math.round((q.x*.5+.5)*W),Math.round((-q.y*.5+.5)*H)];};const out=[];st.scene.traverse((o)=>{if(o.name!=='identity-ring')return;let owner=o.parent;while(owner&&!String(owner.name).startsWith('critter-'))owner=owner.parent;let band=null;o.traverse((c)=>{if(c.isMesh&&c.material&&c.material.type==='ShaderMaterial')band=c;});if(!band)return;band.updateWorldMatrix(true,false);const ws=new V3();band.getWorldScale(ws);const half=band.geometry.parameters.width/2*ws.x;const c=new V3().setFromMatrixPosition(band.matrixWorld);const cc=proj(c);const aa=proj(new V3(c.x+half,c.y,c.z));const bb=proj(new V3(c.x,c.y,c.z+half));out.push({who:owner?owner.name.slice(8):'?',cx:cc[0],cy:cc[1],rx:Math.abs(aa[0]-cc[0]),rz:Math.abs(bb[1]-cc[1])});});return JSON.stringify(out);})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.requestAnimationFrame=()=>0;return 'frozen'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ }
+]

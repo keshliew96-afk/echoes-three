@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('clearRoom');window.__pc=[];E.on('path_chosen',(ev)=>window.__pc.push(ev.tick));return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const d=__echoes.runUi(); const v=__echoes.cmd('runState'); return {screen:d.screen, doors:d.doors, free:d.freeSkillSlots, held:d.held, stale:d.stale, chosen:window.__pc, floors:d.floors, fit:d.fit};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({stillPath:__echoes.cmd('runState').phase, chosen:window.__pc}))()"
+ }
+]

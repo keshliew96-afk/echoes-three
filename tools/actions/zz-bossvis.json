@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));__echoes.cmd('startRun');await s(150);__echoes.cmd('skipToRoom',8);await s(30);const v0=__echoes.cmd('runState');const bid=v0.boss.id;__echoes.cmd('iframe',bid,60000);await s(1600);__echoes.cmd('iframe',bid,60000);const v=__echoes.cmd('runState');const st=__echoes.state();return {boss:v.boss,bossfx:st.bossfx,banner:__echoes.hud.banner(),bossBanner:__echoes.hud.boss?1:0,fps:__echoes.fps};})()"
+ }
+]

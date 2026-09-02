@@ -1,0 +1,38 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',5.4,-1.2)"
+ },
+ {
+  "type": "wait",
+  "ms": 2600
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('killAllEnemies')"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__kyRaf=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=function(){return 0;};return 'frozen';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const P=window.__arenaProbe;const S=P.stage,cam=S.camera,W=window.innerWidth,H=window.innerHeight;const V=S.camera.position.constructor;const pr=function(x,y,z){var q=new V(x,y,z).project(cam);return [Math.round(((q.x+1)/2)*W),Math.round(((1-q.y)/2)*H)];};const st=window.__echoes.state();var pl=st.party[0];var out={W:W,H:H,canvas:[S.renderer.domElement.width,S.renderer.domElement.height,S.renderer.domElement.clientWidth,S.renderer.domElement.clientHeight],player:[pl.x,pl.z,pr(pl.x,0,pl.z)],cam:[Math.round(cam.position.x*10)/10,Math.round(cam.position.y*10)/10,Math.round(cam.position.z*10)/10],braz:[]};S.scene.traverse(function(o){if(!o.isSprite)return;var m=o.material&&o.material.map;if(!m||!m.image||m.image.height!==192)return;if(Math.abs(o.scale.y-0.95)>0.01)return;var w=o.getWorldPosition(new V());out.braz.push([Math.round(w.x*10)/10,Math.round(w.z*10)/10,pr(w.x,w.y,w.z),o.visible,o.material.opacity]);});return out;})()"
+ },
+ {
+  "type": "shot",
+  "name": "ky-brz4"
+ }
+]

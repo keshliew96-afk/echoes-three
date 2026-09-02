@@ -1,0 +1,1 @@
+[{"type":"wait","ms":400},{"type":"eval","code":"window.__echoes.cmd('teleport',9.8,-3)"},{"type":"wait","ms":3000},{"type":"eval","code":"(()=>{const s=window.__echoes.state();return{scene:s.scene,en:(s.enemies||[]).length,party:s.party.map(p=>[+p.x.toFixed(1),+p.z.toFixed(1)])};})()"}]

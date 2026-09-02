@@ -1,0 +1,35 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',5.6,-2.4)"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "key",
+  "key": "Space",
+  "ms": 40
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{var raf=window.requestAnimationFrame.bind(window);var stop=false;window.requestAnimationFrame=function(cb){if(stop)return 0;return raf(cb);};for(var i=0;i<400;i++){var s=window.__echoes.state();if(s.vfx&&s.vfx.party&&s.vfx.party.smearGhosts>=3){stop=true;return {ghosts:s.vfx.party.smearGhosts,i:i};}await new Promise(function(r){setTimeout(r,4);});}return {ghosts:-1};})()"
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "shot",
+  "name": "kx-dash2-A"
+ }
+]

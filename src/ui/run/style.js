@@ -15,6 +15,30 @@ export const esc = (s) =>
 // §16 path doors are authored at 160x220 design px.
 export const DOOR = Object.freeze({ w: 160, h: 220 });
 
+// --- THE TYPE FLOOR IS A REAL-PIXEL FLOOR (round-3 fix) -------------------
+// §17: "Floors: HUD text >= 16 px, numerals >= 20 px." The pages used to be
+// scaled uniformly by `transform: scale(--rn-s)` like the rest of the HUD,
+// which silently multiplied every authored size by the fit factor: at
+// 1600x900 a bought-from shop measured --rn-s 0.9104 (body 15.5 real px) and
+// at the §1 minimum window 1024x640 it measured 0.7246 — body 12.3 px, the
+// price numeral 17.4 px, the Glint numeral 15.9 px, i.e. UNDER BOTH floors.
+//
+// The fix is not a bigger scale, it is a smaller PAGE: below the height
+// budget the pages REFLOW (`.rn-compact` — tighter rhythm, smaller ornament,
+// short node copy) instead of shrinking their type, and --rn-s is clamped to
+// 1 so no authored px is ever scaled down. Every size inside the compact
+// block is >= 16 px, and every numeral (.rn-num, .rn-price, .rn-amt,
+// .rn-stats) >= 20 px, so the floors hold in REAL pixels at 1024x640 up.
+export const COMPACT_BELOW_H = 1200; // px of window height
+// Chosen so every window a desktop actually has (1024x640 .. 1920x1080) takes
+// the reflow and lands at --rn-s exactly 1: one layout, one set of real px,
+// nothing to scale. The roomier authored layout is what a >=1200 px tall
+// window (1440p and up) gets, where it fits with headroom.
+
+export function isCompact() {
+  return window.innerHeight < COMPACT_BELOW_H;
+}
+
 export const RUN_CSS = `
   #run-screen {
     position: fixed; inset: 0; z-index: 28; display: none;
@@ -84,7 +108,7 @@ export const RUN_CSS = `
     border: 2px solid ${PALETTE.voidCharcoal};
     box-shadow: 0 0 10px ${PALETTE.paleGold}66;
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px; color: #6B531F; font-weight: 900;
+    font-size: 16px; color: #6B531F; font-weight: 900;
   }
   .rn-glint .rn-amt {
     font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums;
@@ -259,6 +283,72 @@ export const RUN_CSS = `
   }
   #run-fade.rn-on { opacity: 1; }
 
+  /* ------------------------------------------------ compact reflow (§17) */
+  /* Short windows reflow the page instead of scaling its type down. Nothing
+     in here drops below the §17 floors: text >= 16 px, numerals >= 20 px.
+     Only NON-TEXT chrome (ornament rule, card icon, paddings, gaps) shrinks. */
+  #run-screen.rn-compact .rn-page { padding: 12px 22px 14px; }
+  #run-screen.rn-compact .rn-title { font-size: 24px; letter-spacing: 0.13em; }
+  /* The ornament stays — a display:none node still contributes to the page
+     textContent, and this block has the height for it. */
+  #run-screen.rn-compact .rn-orn { font-size: 16px; letter-spacing: 0.3em; margin: 0 0 6px; }
+  #run-screen.rn-compact .rn-sub { font-size: 16px; }
+  #run-screen.rn-compact .rn-hint { font-size: 16px; margin-top: 8px; }
+  #run-screen.rn-compact .rn-strip {
+    padding: 4px 12px; margin-bottom: 8px; font-size: 16px; gap: 8px;
+  }
+  #run-screen.rn-compact .rn-strip .rn-num { font-size: 20px; }
+  #run-screen.rn-compact .rn-coin { width: 24px; height: 24px; font-size: 16px; }
+  #run-screen.rn-compact .rn-glint .rn-amt { font-size: 22px; }
+
+  /* Compact card = two columns: the glyph badge sits BESIDE the kind/name
+     rows instead of above them. That is ~50 px of height per card recovered
+     without dropping a single word or a single point of type size. */
+  #run-screen.rn-compact .rn-card {
+    display: grid; grid-template-columns: 44px 1fr;
+    column-gap: 10px; row-gap: 4px; align-items: center;
+    padding: 10px 12px 12px; text-align: left;
+  }
+  #run-screen.rn-compact .rn-cardicon { grid-column: 1; grid-row: 1 / span 2; }
+  #run-screen.rn-compact .rn-cardkind { grid-column: 2; grid-row: 1; }
+  #run-screen.rn-compact .rn-cardname { grid-column: 2; grid-row: 2; text-align: left; }
+  #run-screen.rn-compact .rn-cardsub,
+  #run-screen.rn-compact .rn-stats,
+  #run-screen.rn-compact .rn-body,
+  #run-screen.rn-compact .rn-verdict,
+  #run-screen.rn-compact .rn-owned { grid-column: 1 / -1; text-align: left; }
+  #run-screen.rn-compact .rn-stats { justify-content: flex-start; }
+  #run-screen.rn-compact .rn-cardkind { font-size: 16px; letter-spacing: 0.2em; }
+  #run-screen.rn-compact .rn-cardicon {
+    width: 44px; height: 44px; border-radius: 10px; font-size: 26px;
+  }
+  #run-screen.rn-compact .rn-cardname { font-size: 20px; }
+  #run-screen.rn-compact .rn-cardsub { font-size: 16px; }
+  #run-screen.rn-compact .rn-body { font-size: 16px; line-height: 1.28; }
+  #run-screen.rn-compact .rn-verdict { font-size: 16px; }
+  #run-screen.rn-compact .rn-owned { font-size: 16px; }
+  #run-screen.rn-compact .rn-stats { font-size: 20px; gap: 10px; }
+  #run-screen.rn-compact .rn-stats i { font-size: 16px; }
+  #run-screen.rn-compact .rn-note { font-size: 16px; padding: 4px 12px; margin-top: 5px; line-height: 1.2; }
+
+  #run-screen.rn-compact .rn-buttons { margin-top: 10px; gap: 12px; }
+  #run-screen.rn-compact .rn-btn { min-width: 132px; padding: 7px 16px; font-size: 18px; }
+
+  /* Equal-height cards so the three plaques sit on one line. */
+  #run-screen.rn-compact .rn-shelf { gap: 20px; margin: 2px 0 0; align-items: stretch; }
+  #run-screen.rn-compact .rn-item .rn-card { flex: 1 1 auto; align-content: start; }
+  #run-screen.rn-compact .rn-item,
+  #run-screen.rn-compact .rn-item .rn-card { width: 252px; }
+  #run-screen.rn-compact .rn-item { gap: 7px; }
+  #run-screen.rn-compact .rn-plaque { padding: 5px 14px; }
+  #run-screen.rn-compact .rn-plaque .rn-price { font-size: 22px; }
+  #run-screen.rn-compact .rn-plaque .rn-cur { font-size: 16px; }
+  #run-screen.rn-compact .rn-stamp { font-size: 26px; }
+
+  #run-screen.rn-compact .rn-doors { gap: 34px; margin: 2px 0 0; }
+  #run-screen.rn-compact .rn-legend { font-size: 16px; margin-top: 10px; gap: 18px; }
+  #run-screen.rn-compact .rn-legend span b { font-size: 18px; }
+  #run-screen.rn-compact .rn-summary { font-size: 18px; gap: 4px 22px; margin: 4px 0 2px; }
 `;
 
 // Uniform 1920x1080 virtual-canvas scale (§17 / ruling A7) — kept as the

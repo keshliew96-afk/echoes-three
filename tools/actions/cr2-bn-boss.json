@@ -1,0 +1,1 @@
+[{"type":"eval","code":"(()=>{__echoes.cmd('startRun');return 1;})()"},{"type":"wait","ms":500},{"type":"eval","code":"(()=>{__echoes.cmd('skipToRoom',8);return 1;})()"},{"type":"wait","ms":4000},{"type":"eval","code":"(()=>({b:__echoes.hud.banner(),boss:__echoes.hud.boss(),txt:(document.querySelector('#hud-banner')||{}).textContent})) ()"}]

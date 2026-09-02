@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{ window.__zz=1; __echoes.cmd('killAllEnemies'); __echoes.cmd('teleport',0,0); window.__snap=[]; return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{ __echoes.cmd('startWave'); const t0=performance.now(); const step=()=>{ const a=__echoes.hud.threat(); const r=__echoes.state().room; window.__snap.push({ms:Math.round(performance.now()-t0), pend:r.pendingSpawns, off:a.offFrame, uncued:a.uncued, drawn:a.markersDrawn, spawnMarks:__echoes.hud.markers().filter(m=>m.spawn).length}); if(performance.now()-t0<900) setTimeout(step,60); }; step(); return 1; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({mark:window.__zz, snap:window.__snap}))()"
+ }
+]

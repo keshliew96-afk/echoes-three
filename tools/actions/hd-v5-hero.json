@@ -1,0 +1,34 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m=E.cmd('campMode');E.cmd('startRun');return {was:m,now:E.cmd('campMode'),room:E.state().room&&E.state().room.mode};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('giveSkill','warding_aura');E.cmd('giveSkill','sanctuary');E.cmd('spawn','boar',3.4,-2.2);E.cmd('spawn','mantis',-3.8,1.6);E.cmd('spawn','boar',-1.4,3.0);E.cmd('restoreSkillState',{slots:[{id:'mending_bolt',remaining:132},{id:'swift_mend',remaining:36},{id:'warding_aura',remaining:0},{id:'sanctuary',remaining:0}],override:null});return E.cmd('skillState');})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const p=E.state().party;const f=(i)=>p.find(q=>(q.partyIndex??0)===i).id;E.cmd('setHp',f(1),0.40);E.cmd('setHp',f(2),0.15);E.cmd('healOverride',3);E.hud.hover(0,true);E.hud.freeze(0.25);E.cmd('restoreSkillState',{slots:[{id:'mending_bolt',remaining:132},{id:'swift_mend',remaining:36},{id:'warding_aura',remaining:0},{id:'sanctuary',remaining:0}],override:null});return E.hud.portraits().map(q=>q.state);})()"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const SEL=['.hud-slot-key','.hud-port-key','.hud-slot-abbrev','.hud-slot-num','.hud-port-num','.hud-port-e','.hud-slot-passive','.hud-port-tab','.hud-bn-label','.hud-bn-num','.tm-badge'];const vis=(n)=>{const r=n.getBoundingClientRect();const cs=getComputedStyle(n);return r.width>0.5&&r.height>0.5&&cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity)>0.05};const nodes=[];for(const s of SEL)for(const n of document.querySelectorAll(s))if(vis(n))nodes.push({sel:s,txt:(n.textContent||'').trim().slice(0,6),r:n.getBoundingClientRect()});const hits=[];for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const a=nodes[i].r,b=nodes[j].r;const ox=Math.min(a.right,b.right)-Math.max(a.left,b.left);const oy=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top);if(ox>0.5&&oy>0.5)hits.push({a:nodes[i].sel+'\"'+nodes[i].txt+'\"',b:nodes[j].sel+'\"'+nodes[j].txt+'\"',ox:Math.round(ox),oy:Math.round(oy)})}return {glyphs:nodes.length,overlaps:hits.length,hits:hits.slice(0,6),boxes:nodes.map(n=>[n.sel.replace('.hud-','').replace('-',''),n.txt,Math.round(n.r.x),Math.round(n.r.y),Math.round(n.r.width),Math.round(n.r.height)])};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {slots:E.hud.slots().map(s=>({k:s.key,ab:s.abbrev,abVis:s.abbrevVisible,cnt:s.counting,num:s.numeral,deg:s.wipeDeg,abBox:s.abbrevBox,numBox:s.numBox})),ports:E.hud.portraits().map(p=>({i:p.index,st:p.state,sel:p.selected,hov:p.hover,hp:p.hpWidth,num:p.numeral,keyBox:p.keyBox,numBox:p.numBox})),fps:E.fps,metrics:E.hud.metrics()};})()"
+ }
+]

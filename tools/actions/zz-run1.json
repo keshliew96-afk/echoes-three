@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(async () => {\n  const sleep = (ms) => new Promise(r => setTimeout(r, ms));\n  const KEEP = ['run_start','room_enter','room_start','room_cleared','reward_offer','draft_taken','draft_declined','path_offer','path_chosen','room_transition','shop_open','shop_purchase','currency_denied','shop_close','glint_gain','run_end','run_wiped','reward_forfeited','boss_spawn','boss_phase','boss_adds','victory','defeat'];\n  const log = [];\n  for (const t of KEEP) __echoes.on(t, (ev) => log.push(Object.assign({ t: ev.type, tk: ev.tick }, ev)));\n  window.__log = log;\n  const R = () => __echoes.cmd('runState');\n  __echoes.cmd('startRun');\n  await sleep(120);\n  const trace = [];\n  for (let g = 0; g < 60; g++) {\n    const v = R();\n    trace.push(v.room + '/' + v.mode + '/' + v.phase);\n    if (v.phase === 'combat' && v.room === 8) break;\n    if (v.phase === 'combat') { __echoes.cmd('clearRoom'); await sleep(120); }\n    else if (v.phase === 'reward') { __echoes.cmd('draftTake'); await sleep(120); __echoes.cmd('closeSocket'); await sleep(60); }\n    else if (v.phase === 'path') { __echoes.cmd('pathChoose', 0); await sleep(450); }\n    else if (v.phase === 'shop') { break; }\n    else if (v.phase === 'fade') { await sleep(200); }\n    else break;\n  }\n  window.__trace = trace;\n  return { trace, v: R() };\n})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>window.__log.map(e=>e.t+'|r'+(e.room??e.index??'')+'|'+(e.mode??e.promised??e.type??e.reward??e.result??'')+'|w'+(e.wallet??'')).join(' ;; '))()"
+ }
+]

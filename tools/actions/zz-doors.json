@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));const offers=[];const bad=[];for(let run=0;run<6;run++){__echoes.cmd('startRun');await s(60);for(let g=0;g<40;g++){const v=__echoes.cmd('runState');if(v.phase==='combat'&&v.room<=6){__echoes.cmd('clearRoom');await s(90);}else if(v.phase==='reward'){__echoes.cmd('draftDecline');await s(90);}else if(v.phase==='path'){const o=v.path.options.map(x=>x.reward).sort().join('+');offers.push(o);const d=__echoes.runUi();if(d.doors.length!==2||d.doors.some(dd=>dd.glyphs.length!==2))bad.push({doors:d.doors.length,g:d.doors.map(dd=>dd.glyphs)});if(o!=='node+skill')bad.push(o);__echoes.cmd('pathChoose',0);await s(400);}else if(v.phase==='fade'){await s(150);}else break;}}return {n:offers.length,uniq:[...new Set(offers)],bad};})()"
+ }
+]

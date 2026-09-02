@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{\n  const E=window.__echoes; const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));\n  const trace=[]; let guard=0, lastRoom=0, dwell=0;\n  E.cmd(\"startRun\");\n  while(guard++<900){\n    const v=E.cmd(\"runState\");\n    if(v.phase===\"reward\"){ trace.push(\"STOP \"+v.phase+\" room\"+v.room); break; }\n    if(v.phase===\"victory\"||v.phase===\"defeat\"){ trace.push(\"END \"+v.phase); break; }\n    if(v.phase===\"combat\"){ if(v.room!==lastRoom){lastRoom=v.room;dwell=0;trace.push(\"ROOM \"+v.room+\" \"+v.mode);} dwell++; E.cmd(\"killAllEnemies\"); if(v.mode===\"defend\"&&dwell>18) E.cmd(\"clearRoom\"); }\n    else if(v.phase===\"reward\"){ trace.push(\"REWARD \"+v.reward.type+\":\"+v.reward.id); E.cmd(\"draftTake\"); E.cmd(\"closeSocket\"); }\n    else if(v.phase===\"path\"){ E.cmd(\"pathChoose\",0); }\n    else if(v.phase===\"shop\"){ E.cmd(\"shopAdvance\"); }\n    await sleep(70);\n  }\n  return trace;\n})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ }
+]

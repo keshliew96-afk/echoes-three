@@ -1,0 +1,1 @@
+[{"type":"eval","code":"(()=>{const s=__echoes.state();return {zones:s.zones,azones:s.azones,vfx:s.vfx&&Object.keys(s.vfx)};})()"}]

@@ -1,0 +1,42 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");window.__echoes.hud.setEnabled(false);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__F=[];window.__fi=setInterval(()=>{window.__F.push(window.__echoes.fps);},200);return \"s\";})()"
+ },
+ {
+  "type": "key",
+  "key": "KeyD",
+  "ms": 1200
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "key",
+  "key": "KeyA",
+  "ms": 1200
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 4000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{clearInterval(window.__fi);const f=window.__F.slice(4);f.sort((a,b)=>a-b);return {n:f.length,min:f[0],p10:f[Math.floor(f.length*0.1)],median:f[Math.floor(f.length/2)],max:f[f.length-1]};})()"
+ }
+]

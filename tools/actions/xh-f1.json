@@ -1,0 +1,73 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 40
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s3=document.querySelectorAll(\"#proto-hud .hud-slot\")[2];const cs=getComputedStyle(s3);return {tag:\"1-first-empty\",cls:s3.className,animName:cs.animationName};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "keydown",
+  "key": "Space"
+ },
+ {
+  "type": "keyup",
+  "key": "Space"
+ },
+ {
+  "type": "wait",
+  "ms": 40
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 40
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s3=document.querySelectorAll(\"#proto-hud .hud-slot\")[2];const cs=getComputedStyle(s3);return {tag:\"2-suppressed\",cls:s3.className,animName:cs.animationName};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 40
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s3=document.querySelectorAll(\"#proto-hud .hud-slot\")[2];const cs=getComputedStyle(s3);return {tag:\"3-empty-again\",cls:s3.className,animName:cs.animationName};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return window.__echoes.events.filter(e=>e.type===\"intent_denied\").map(e=>e.kind+\":\"+e.reason);})()"
+ }
+]
