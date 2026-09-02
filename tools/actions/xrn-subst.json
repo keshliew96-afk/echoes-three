@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"giveSkill\",\"nova_bloom\");E.cmd(\"giveSkill\",\"sanctuary\");return E.state().skills.map(s=>s&&s.id);})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"clearRoom\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const d=E.runUi();const v=E.cmd(\"runState\");const sub=[...document.querySelectorAll(\"#run-screen *\")].filter(n=>/offering a Node/i.test(n.textContent)&&n.children.length===0).map(n=>{const r=n.getBoundingClientRect();return {cls:n.className,txt:n.textContent.trim(),box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],fs:getComputedStyle(n).fontSize,color:getComputedStyle(n).color};});return {screen:d.screen,phase:v.phase,reward:v.reward,buttons:d.buttons,cards:d.cards.map(c=>c.name),subline:d.subline,text:d.text,subNodes:sub,floors:d.floors};})()"
+ }
+]

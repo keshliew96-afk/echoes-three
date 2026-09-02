@@ -1,0 +1,70 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"skipToRoom\",8);window.__xv=[];for(const t of [\"boss_adds\",\"run_end\",\"run_wiped\",\"room_cleared\",\"boss_despawn\",\"enemy_despawn\"])E.on(t,ev=>window.__xv.push(t+\" t\"+ev.tick));return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"bossHp\",0.7);return E.cmd(\"runState\").boss;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");return E.cmd(\"runState\").boss;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"bossHp\",0.45);return E.cmd(\"runState\").boss;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"bossHp\",0.2);return E.cmd(\"runState\").boss;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"killAllEnemies\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const b=E.cmd(\"runState\").boss;E.cmd(\"killBoss\");return b;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const v=E.cmd(\"runState\");const d=E.runUi();const s=E.state();return {phase:v.phase,screen:d.screen,buttons:d.buttons,text:d.text,veil:d.veil,events:window.__xv,summary:v.summary,enemies:s.enemies?s.enemies.length:null,wallet:s.wallet,skills:s.skills.map(x=>x&&x.id),fps:E.fps};})()"
+ }
+]

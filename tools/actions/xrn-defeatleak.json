@@ -1,0 +1,38 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "window.__xe0=(()=>{const s=window.__echoes.state();return {tick:window.__echoes.tick,enemies:s.enemies.map(e=>({id:e.id,t:e.type||e.etype,hp:e.hp,x:Math.round(e.x*10)/10,z:Math.round(e.z*10)/10}))};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"endRun\",\"defeat\");return E.cmd(\"runState\").phase;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "window.__xe1=(()=>{const s=window.__echoes.state();const d=window.__echoes.runUi();return {tick:window.__echoes.tick,phase:s.run.phase,screen:d.screen,text:d.text.slice(0,200),veil:d.veil,enemies:s.enemies.map(e=>({id:e.id,hp:e.hp,st:e.state||e.retreating,x:Math.round(e.x*10)/10,z:Math.round(e.z*10)/10})),vfxMode:s.vfx&&s.vfx.mode};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"returnToCamp\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();return {beforeEnd:window.__xe0,defeatScreen:window.__xe1,camp:{tick:E.tick,phase:s.run.phase,vfxMode:s.vfx&&s.vfx.mode,enemies:s.enemies.map(e=>({id:e.id,hp:e.hp,x:Math.round(e.x*10)/10,z:Math.round(e.z*10)/10})),enemyfxKeys:s.vfx&&Object.keys(s.vfx),ents:E.entityCount}};})()"
+ }
+]

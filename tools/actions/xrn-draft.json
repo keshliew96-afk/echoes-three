@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"clearRoom\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const d=E.runUi();const v=E.cmd(\"runState\");return {screen:d.screen,phase:v.phase,reward:v.reward,buttons:d.buttons,cards:d.cards,subline:d.subline,text:d.text,floors:d.floors,fit:d.fit,free:d.freeSkillSlots};})()"
+ }
+]

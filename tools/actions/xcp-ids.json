@@ -1,0 +1,1 @@
+[{"type":"eval","code":"(()=>{const s=__echoes.state();return {keys:Object.keys(s),party:s.party,player:s.player,wallet:s.wallet,skills:s.skills,run:__echoes.cmd(\"runState\")}})()"}]

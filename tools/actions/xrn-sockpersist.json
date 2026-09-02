@@ -1,0 +1,51 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"grantNode\",\"sharpen\");E.cmd(\"grantNode\",\"quicken\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"clearRoom\");const r1=E.cmd(\"socket\",\"mending_bolt\",\"sharpen\");const r2=E.cmd(\"socket\",\"swift_mend\",\"quicken\");const s=E.state();window.__xk=(st)=>({tick:E.tick,phase:st.run.phase,room:st.run.room,sockets:st.build.skills.flatMap(sk=>sk.sockets.map((so,i)=>so?(sk.id+\":\"+i+\":\"+so.node):null).filter(Boolean)),bench:st.build.bench.map(b=>b.node),cd:st.skills.map(x=>x?x.id+\":\"+x.remainingTicks:null),wallet:st.wallet});window.__xP=[[\"rewardScreen\",window.__xk(s)]];return {r1,r2};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"draftTake\");E.cmd(\"closeSocket\");E.cmd(\"pathChoose\",1);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__xP.push([\"room2\",window.__xk(E.state())]);E.cmd(\"skipToRoom\",7);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__xP.push([\"shop\",window.__xk(E.state())]);E.cmd(\"shopAdvance\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__xP.push([\"boss\",window.__xk(E.state())]);return window.__xP;})()"
+ }
+]

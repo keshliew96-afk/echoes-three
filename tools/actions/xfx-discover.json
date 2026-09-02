@@ -1,0 +1,22 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd(\"teleport\",6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 3500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {keys:Object.keys(s),scene:s.scene,enemies:(s.enemies||[]).length,party:s.party.map(p=>[p.kind,p.classId||\"player\",p.x,p.z,p.hp]),variant:s.vfx&&s.vfx.variant,bg:s.vfx&&s.vfx.bandGuard,skills:s.skills,fps:window.__echoes.fps};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=window.__arenaProbe.stage;const out=[];S.scene.traverse(o=>{if(o.name===\"identity-ring\"){const v=new S.camera.position.constructor();o.getWorldPosition(v);out.push({parent:o.parent&&o.parent.name,x:+v.x.toFixed(2),y:+v.y.toFixed(3),z:+v.z.toFixed(2),sc:[+o.scale.x.toFixed(3),+o.scale.y.toFixed(3),+o.scale.z.toFixed(3)],kids:o.children.map(c=>[c.name,c.type,c.scale.x.toFixed(3),c.renderOrder,c.material&&c.material.type])});}});return {rings:out,em:window.__arenaProbe.emitters.map(e=>[e.kind,e.x,e.z]).slice(0,20)};})()"
+ }
+]

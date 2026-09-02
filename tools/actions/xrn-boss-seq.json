@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"skipToRoom\",8);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2600
+ }
+]

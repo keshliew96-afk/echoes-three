@@ -1,0 +1,39 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',0,0)"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('startRoom','kill_all')"
+ },
+ {
+  "type": "mousemove",
+  "x": 900,
+  "y": 400
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 9000
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const ev=window.__echoes.events;const c={};ev.forEach(function(e){c[e.type]=(c[e.type]||0)+1;});const s=window.__echoes.state();return {tag:'fight',counts:c,stats:window.__echoes.stats,fps:window.__echoes.fps,enemies:s.enemies.length,party:s.party.map(function(p){return [p.kind,p.hp];})};})()"
+ }
+]

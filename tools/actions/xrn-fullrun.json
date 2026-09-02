@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(async()=>{\n  const E=window.__echoes; const evs=[]; const trace=[];\n  const KEEP=[\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"room_clear\",\"clear_stipend\",\"reward_offer\",\"draft_taken\",\"draft_declined\",\"path_offer\",\"path_chosen\",\"room_transition\",\"shop_open\",\"shop_purchase\",\"currency_denied\",\"shop_close\",\"boss_spawn\",\"boss_adds\",\"boss_seal_start\",\"boss_seal_break\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"reward_forfeited\"];\n  for(const t of KEEP) E.on(t,(ev)=>evs.push(t+\" t\"+ev.tick+\" \"+JSON.stringify(Object.fromEntries(Object.entries(ev).filter(([k])=>k!==\"tick\"&&k!==\"type\")))));\n  const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));\n  const t0=E.tick; E.cmd(\"startRun\");\n  const frame=E.cmd(\"runState\").frame;\n  let guard=0,last=0,dwell=0; const snaps=[];\n  while(guard++<1500){\n    const v=E.cmd(\"runState\");\n    if(v.phase===\"victory\"||v.phase===\"defeat\"){trace.push(\"END \"+v.phase+\" \"+JSON.stringify(v.summary));break;}\n    if(v.phase===\"combat\"){\n      if(v.room!==last){last=v.room;dwell=0;const s=E.state();trace.push(\"ROOM \"+v.room+\" \"+v.mode+\" wallet=\"+v.wallet+\" hp=\"+s.party.map(p=>p.hp).join(\"/\"));}\n      dwell++;\n      if(v.room===8){ if(dwell%3===0){ const b=v.boss; E.cmd(\"bossHp\",Math.max(0,(b.hp/b.maxHp)-0.1)); } E.cmd(\"killAllEnemies\"); if(v.boss&&v.boss.hp<=0){} }\n      else { E.cmd(\"killAllEnemies\"); if(v.mode===\"defend\"&&dwell>25) E.cmd(\"clearRoom\"); }\n    } else if(v.phase===\"reward\"){trace.push(\"REWARD r\"+v.room+\" promised=\"+v.reward.promised+\" -> \"+v.reward.type+\":\"+v.reward.id+(v.reward.substituted?\" SUB\":\"\")+\" free=\"+v.reward.freeSkillSlots+\" line=\"+v.reward.line);E.cmd(\"draftTake\");}\n    else if(v.phase===\"path\"){trace.push(\"PATH r\"+v.room+\" doors=\"+JSON.stringify(v.path.options)+\" free=\"+v.path.freeSkillSlots);E.cmd(\"pathChoose\",guard%2);}\n    else if(v.phase===\"shop\"){trace.push(\"SHOP wallet=\"+v.wallet+\" stock=\"+JSON.stringify(v.shop.stock.map(s=>[s.node,s.rarity,s.price,s.affordable])));E.cmd(\"shopBuy\",0);E.cmd(\"shopAdvance\");}\n    else if(v.phase===\"socket\"){E.cmd(\"closeSocket\");trace.push(\"SOCKET r\"+v.room);}\n    else {trace.push(\"phase \"+v.phase);}\n    await sleep(70);\n  }\n  return {seed:E.seed,frame,ticks:E.tick-t0,trace,evs};\n})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const v=E.cmd(\"runState\");const s=E.state();return {phase:v.phase,active:v.active,fps:E.fps,ui:E.runUi&&E.runUi().screen,summary:v.summary};})()"
+ }
+]

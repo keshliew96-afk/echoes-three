@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"skipToRoom\",8);window.__xq=[];for(const t of [\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_trample_hit\",\"telegraph_start\",\"telegraph_resolve\",\"boss_adds\"])E.on(t,ev=>window.__xq.push(t+\" t\"+ev.tick+\" \"+JSON.stringify(Object.fromEntries(Object.entries(ev).filter(([k])=>k!==\"tick\"&&k!==\"type\")))));return E.cmd(\"runState\").boss;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 6500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const v=E.cmd(\"runState\");const hb=typeof E.hud.boss===\"function\"?E.hud.boss():E.hud.boss;const dom=[...document.querySelectorAll(\"#hud *\")].filter(n=>n.children.length===0&&/HOLLOW STAG/i.test(n.textContent)).map(n=>{const r=n.getBoundingClientRect();return {cls:n.className,txt:n.textContent.trim(),box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],fs:getComputedStyle(n).fontSize};});return {boss:v.boss,bossfx:s.bossfx,hudBoss:hb,plate:dom,party:s.party.map(p=>({hp:p.hp,x:Math.round(p.x*10)/10,z:Math.round(p.z*10)/10})),events:window.__xq,fps:E.fps,ents:E.entityCount};})()"
+ }
+]

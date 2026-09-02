@@ -1,0 +1,44 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__xcp={};window.addEventListener(\"keydown\",e=>{if(e.code===\"KeyE\"&&!e.repeat)__xcp.eAt=performance.now()},true);__echoes.on(\"run_start\",ev=>{__xcp.runStartAt=performance.now();__xcp.runStartTick=__echoes.tick;__xcp.runSeed=ev.seed});__echoes.on(\"room_start\",ev=>{__xcp.roomStartAt=performance.now();__xcp.roomEv=ev});return \"armed\"})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 2700
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const c=__echoes.cmd(\"campState\");return {inPortal:c.inPortal,prompt:c.promptVisible,player:c.player}})()"
+ },
+ {
+  "type": "key",
+  "key": "KeyE",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const c=__echoes.cmd(\"campState\");const r=__echoes.cmd(\"runState\");return {x:__xcp,lastBegin:c.lastBegin,mode:c.mode,fading:c.fading,phase:r.phase,room:r.room??r.roomIndex,pressToRunStartMs:__xcp.runStartAt&&__xcp.eAt?Math.round(__xcp.runStartAt-__xcp.eAt):null,seedNow:__echoes.seed,bootSeed:__echoes.bootSeed,scene:__echoes.state().scene,vfxMode:__echoes.state().vfx?.mode}})()"
+ }
+]

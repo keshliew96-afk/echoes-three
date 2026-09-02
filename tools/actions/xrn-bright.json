@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"skipToRoom\",8);window.__xb=setInterval(()=>{E.cmd(\"teleport\",0,4.5);E.cmd(\"placeAlly\",1,-8,7);E.cmd(\"placeAlly\",2,-8.5,6);E.cmd(\"placeAlly\",3,-7.5,7.5);E.cmd(\"killAllEnemies\");},80);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();return {box:s.bossfx.screenBox,dimmed:s.bossfx.dimmedLights,roomDimmed:s.bossfx.roomDimmed,boss:E.cmd(\"runState\").boss,party:s.party.map(p=>[Math.round(p.x*10)/10,Math.round(p.z*10)/10,p.hp])};})()"
+ }
+]

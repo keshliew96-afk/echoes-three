@@ -1,0 +1,52 @@
+[
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__echoes.cmd('teleport',6,-4)"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{if(!window.__xfxRaf){window.__xfxRaf=window.requestAnimationFrame.bind(window);window.__xfxStopAt=null;window.requestAnimationFrame=function(cb){if(window.__xfxStopAt!==null&&performance.now()>=window.__xfxStopAt)return 0;return window.__xfxRaf(cb);};}return {installed:true};})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 1250,
+  "y": 620
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.on('skill_bolt_spawn',function(){if(window.__xfxStopAt===null)window.__xfxStopAt=performance.now()+600;});return {armed:'skill_bolt_spawn',ms:600};})()"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=window.__arenaProbe.stage,cam=S.camera;cam.updateMatrixWorld(true);const V=cam.position.constructor;const st=window.__echoes.state();const rings=[];S.scene.traverse(function(o){if(o.name!=='identity-ring')return;const v=new V();o.getWorldPosition(v);const band=o.children.find(function(c){return c.material&&c.material.type==='ShaderMaterial';});const half=band.geometry.parameters.width/2;let best=null,bd=1e9;for(const p of st.party){const d=Math.hypot(p.x-v.x,p.z-v.z);if(d<bd){bd=d;best=p;}}const q=v.clone().project(cam);rings.push({cls:best.kind==='player'?'healer':best.classId,wx:v.x,wz:v.z,half:half,core:'#'+band.material.uniforms.uCore.value.getHexString(),rim:'#'+band.material.uniforms.uRim.value.getHexString(),vis:o.visible,chk:[((q.x+1)/2)*innerWidth,((1-q.y)/2)*innerHeight]});});return {tag:'ringprobe',W:innerWidth,H:innerHeight,P:cam.projectionMatrix.elements,Vm:cam.matrixWorldInverse.elements,rings:rings,emitters:window.__arenaProbe.emitters.map(function(e){return {k:e.kind,x:e.x,z:e.z};}),enemies:st.enemies.length,party:st.party.map(function(p){return [p.kind,p.classId||'healer',+p.x.toFixed(2),+p.z.toFixed(2),Math.round(p.hp)];}),tick:window.__echoes.tick,fps:window.__echoes.fps,variant:st.vfx&&st.vfx.variant,zones:st.zones,bolts:st.skillBolts,fx:st.skillfx,skills:st.skills,ev:window.__echoes.events.slice(-6).map(function(e){return e.type;})};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=window.__arenaProbe.stage,cam=S.camera,V=cam.position.constructor;const out=[];S.scene.traverse(function(o){if(o.name!=='skillfx')return;o.traverse(function(c){if(c.isMesh&&c.visible&&(c.name==='core'||c.name==='glow')){const v=new V();c.getWorldPosition(v);const q=v.clone().project(cam);out.push({n:c.name,sx:((q.x+1)/2)*innerWidth,sy:((1-q.y)/2)*innerHeight,wy:v.y});}});});return {tag:'boltprobe',cores:out,bolts:window.__echoes.state().skillBolts};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const S=window.__arenaProbe.stage;setTimeout(function(){S.scene.traverse(function(o){if(o.name==='skillfx')o.visible=false;});S.render();},1500);return {hideScheduled:1500};})()"
+ }
+]

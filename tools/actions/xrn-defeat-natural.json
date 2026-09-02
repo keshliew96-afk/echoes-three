@@ -1,0 +1,35 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__xn=[];for(const t of [\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"enemy_hit\",\"hit\",\"damage\",\"downed\"])E.on(t,ev=>window.__xn.push(t+\" t\"+ev.tick));E.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();for(const p of s.party)E.cmd(\"setHp\",p.id,0);return {tick:E.tick,enemies:s.enemies.length};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "window.__xd1=(()=>{const E=window.__echoes;const s=E.state();const d=E.runUi();return {tick:E.tick,phase:s.run.phase,screen:d.screen,enemies:s.enemies.length,hp:s.party.map(p=>p.hp)};})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 3500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const endT=(window.__xn.find(x=>x.startsWith(\"run_end\"))||\"t0\").split(\" t\")[1]|0;const after=window.__xn.filter(x=>(+x.split(\" t\")[1])>endT);const banner=document.querySelector(\"#hud .hud-banner, #hud [class*=banner]\");return {defeatScreen:window.__xd1,camp:{tick:E.tick,phase:s.run.phase,vfxMode:s.vfx&&s.vfx.mode,enemies:s.enemies.map(e=>({id:e.id,hp:e.hp,x:Math.round(e.x*10)/10,z:Math.round(e.z*10)/10})),hp:s.party.map(p=>Math.round(p.hp)),ents:E.entityCount,bannerText:banner?banner.textContent.replace(/s+/g,\" \").trim():null,hudText:document.getElementById(\"hud\")?document.getElementById(\"hud\").textContent.replace(/s+/g,\" \").trim().slice(0,160):null},runEndTick:endT,eventsAfterEnd:after.slice(0,40),countAfterEnd:after.length};})()"
+ }
+]

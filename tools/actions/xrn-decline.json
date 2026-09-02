@@ -1,0 +1,35 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");window.__xd=[];for(const t of [\"draft_declined\",\"draft_taken\",\"path_offer\"])E.on(t,ev=>window.__xd.push(t+\" \"+JSON.stringify(ev)));return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"clearRoom\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "window.__xr=window.__echoes.cmd(\"runState\").reward;1"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const d=E.runUi();const v=E.cmd(\"runState\");return {offered:window.__xr,after:{phase:v.phase,screen:d.screen,skills:E.state().skills.map(x=>x&&x.id),free:v.freeSkillSlots},events:window.__xd,rerollOrConfirmText:/reroll|confirm|are you sure/i.test(d.text)};})()"
+ }
+]

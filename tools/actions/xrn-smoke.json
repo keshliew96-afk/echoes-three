@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();return {seed:E.seed,keys:Object.keys(s),run:s.run,party:s.party&&s.party.map(p=>({id:p.id,hp:p.hp,cls:p.cls||p.class})),cmds:E.cmd&&typeof E.cmd, runUi:!!E.runUi, hud:E.hud&&Object.keys(E.hud)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const v=window.__echoes.cmd(\"runState\");return v;})()"
+ }
+]

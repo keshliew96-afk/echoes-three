@@ -1,0 +1,39 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "mousemove",
+  "x": 900,
+  "y": 400
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const s=[];for(let i=0;i<14;i++){await new Promise(r=>setTimeout(r,400));s.push(Math.round(E.fps*10)/10);}const t=[...s].sort((a,b)=>a-b);return {min:t[0],median:t[7],max:t[13],all:s,ents:E.entityCount,tick:E.tick};})()"
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=window.__echoes.state();return {enemies:s.enemies.length,room:s.run.room,phase:s.run.phase};})()"
+ }
+]

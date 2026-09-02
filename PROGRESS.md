@@ -5,12 +5,45 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ⏸ PAUSED by user (mid Round D, v0.4.13) — resume steps below are current
+## Status: ⏸ PAUSED by user 2026-09-02 (Round D critic wave done 3/4, v0.4.13, commit aa3b00a)
 
 ### Resume point — do this first
 1. Start the dev server (`npm run dev`, port 5199) if it is not up.
-2. Resume Round D: `Workflow({scriptPath: "C:\Users\keshl\.claude\projects\C--Users-keshl-OneDrive-Desktop------echoes-three\3d94cc26-ac5d-4ee9-8985-3b471cd8f4f1\workflows\scripts\echoes-round-d-wf_dd82be98-2d0.js", resumeFromRunId: "wf_dd82be98-2d0"})` — run-structure and HUD replay from cache; camp-hub build/critic and the HUD/carried-fix critics finish. NOTE: there is uncommitted (working, booting) builder work in src/ui/run/**, src/render/skillfx, src/env/props.js, src/render/numbers.js — leave it for the agents that own it.
-3. Then the FINAL block 14: reference-bar certification — score all 10 checks on camp/combat/shop/boss frames, prove camp→8 rooms→victory and a defeat loop end-to-end at 60fps with zero console errors, fix what it rejects.
+2. Round D critic verdicts (fresh-context, own captures, prefixes xrn-/xcp-/xhd-/xfx-):
+   - **HUD — PASS** (docs/critiques/hud-roundD.md). Advisories only: two downed
+     portraits look identical (keep F-chip / class accent on the downed tile),
+     banner fade-out 293 ms is tight, world-space revive ring is oversized.
+   - **Camp — FAIL** (docs/critiques/camp-roundD.md): F1 combat leaks into camp
+     after run end (wave director keeps spawning; boars bite the party at the
+     forge); F2 stale WAVE banner + threat pointers on Victory/Defeat and into
+     camp; F3 no prop collision in camp (Healer walks into the hearth / through
+     tents). Static camp frame scored 18/20. Note `cmd('win'/'lose')` don't
+     exist — use `endRun`.
+   - **Run structure — FAIL** (docs/critiques/run-roundD.md): same run-end leak
+     (enemy_spawn x4 fires 48 ticks after run_end); Stag not the brightest
+     emitter (boss box >200 = 0.45% vs torches 7.8–10.9%); antlers read azure
+     (195–244°) not violet (~259°); un-specced "Hollow Seal" immunity absorbs
+     damage with no HUD tell. Path/draft/shop/persistence all PASS.
+   - **Carried fixes — critic still running at pause** (was writing
+     docs/critiques/fixes-roundD.md; if the file exists, read it, else re-run
+     that critic).
+3. NEXT: launch 3 fix builders in parallel, then fresh critics on each:
+   - Builder A (owns sim/run.js, sim/waves.js, sim/boss.js, render/boss/**):
+     run_end must clear the wave schedule, pending telegraphs, enemies, eshots,
+     zones and no-op spawning while `run.active === false`; boss room = Stag
+     its own brightest emitter + torches a stop down; rack/halo re-hued to
+     violet with white veins; remove the Hollow Seal or give it a lock glyph
+     + plate text and suppress numerals on absorbed hits.
+   - Builder B (owns scenes/camp.js, env/camp/**, ui/bookends/**, plus a
+     collider list handed to sim/movement.js): camp prop colliders for the
+     hearth/tents/stall/cart, allies hold their seats, Begin-Run prompt not
+     over the Tank, Victory wash less opaque (FLAT 59.7% → camp legible).
+   - Builder C (owns ui/hud/**): Zone-2 banner + threat pointers keyed to
+     run phase `combat` only, hidden on run_end/return_to_camp; downed-tile
+     identity advisory.
+4. Then the FINAL block 14: reference-bar certification — score all 10 checks on
+   camp/combat/shop/boss frames, prove camp→8 rooms→victory and a defeat loop
+   end-to-end at 60fps with zero console errors, fix what it rejects.
 
 ### Measured state at pause (v0.4.13) — camp scene vs the binding reference
 

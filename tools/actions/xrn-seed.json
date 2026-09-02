@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd(\"startRun\");const f=r.frame;const m=f.modes;E.cmd(\"skipToRoom\",7);const v=E.cmd(\"runState\");return {seed:E.seed,modes:m,killAll:m.filter(x=>x===\"kill_all\").length,defend:m.filter(x=>x===\"defend\").length,room1:m[0],defendAt:f.defendAt,rewardFor:r.rewardFor,shopWallet:v.wallet,stock:v.shop.stock.map(s=>[s.node,s.rarity,s.price]),sum:v.shop.stock.reduce((a,s)=>a+s.price,0)};})()"
+ }
+]

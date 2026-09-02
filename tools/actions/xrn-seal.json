@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"skipToRoom\",8);window.__xa=[];for(const t of [\"boss_absorb\",\"boss_seal_start\",\"boss_seal_break\"])E.on(t,ev=>window.__xa.push(t+\" t\"+ev.tick+\" \"+JSON.stringify(Object.fromEntries(Object.entries(ev).filter(([k])=>k!==\"tick\"&&k!==\"type\")))));return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"bossHp\",0.7);return E.cmd(\"runState\").boss;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const v=E.cmd(\"runState\");const b=v.boss;const ring=E.events.filter(e=>e.tick>b.hp&&(e.target===b.id||e.victim===b.id||e.id===b.id)&&/hit|damage/.test(e.type)).slice(-12).map(e=>e.type+\" t\"+e.tick+\" \"+(e.amount??e.dmg??e.value??\"\"));const types=[...new Set(E.events.map(e=>e.type))];const nums=[...document.querySelectorAll(\"#hud *, body > *\")].filter(n=>n.children.length===0&&/^d+$/.test(n.textContent.trim())&&n.offsetParent!==null).map(n=>{const r=n.getBoundingClientRect();return [n.textContent.trim(),Math.round(r.x),Math.round(r.y)];});const bn=document.querySelector(\"#hud\");return {boss:b,absorbEvents:window.__xa.slice(0,8),absorbCount:window.__xa.filter(x=>x.startsWith(\"boss_absorb\")).length,bossHitEvents:ring,eventTypes:types,numeralsOnScreen:nums.slice(0,20),hudBannerClasses:[...document.querySelectorAll(\"#hud [class*=bn], #hud [class*=boss]\")].map(n=>n.className+\"|\"+n.textContent.trim().slice(0,40)).slice(0,12)};})()"
+ }
+]

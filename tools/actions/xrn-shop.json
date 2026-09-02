@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"skipToRoom\",7);window.__xden=[];E.on(\"currency_denied\",ev=>window.__xden.push(ev));E.on(\"insufficient_funds\",ev=>window.__xden.push(ev));return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const d=E.runUi();const v=E.cmd(\"runState\");const glint=[...document.querySelectorAll(\"#run-screen *\")].filter(n=>n.children.length===0&&/72/.test(n.textContent)).map(n=>({cls:n.className,txt:n.textContent.trim(),color:getComputedStyle(n).color,fs:getComputedStyle(n).fontSize}));return {screen:d.screen,phase:v.phase,room:v.room,wallet:v.wallet,shop:v.shop,cards:d.cards,plaques:d.plaques,owned:d.owned,buttons:d.buttons,text:d.text,floors:d.floors,glintNodes:glint,bench:E.state().build.bench};})()"
+ }
+]
