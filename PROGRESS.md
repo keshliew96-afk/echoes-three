@@ -8,49 +8,30 @@ pixels and running gameplay only.
 ## Status: ▶ Round D2 rejections fixed directly (v0.4.15); D3 critics (run/boss, HUD) verifying; then FINAL certification
 
 ### Resume point — do this first
-1. Start the dev server (`npm run dev`, port 5199) if it is not up.
-2. Round D critic verdicts (fresh-context, own captures, prefixes xrn-/xcp-/xhd-/xfx-):
-   - **HUD — PASS** (docs/critiques/hud-roundD.md). Advisories only: two downed
-     portraits look identical (keep F-chip / class accent on the downed tile),
-     banner fade-out 293 ms is tight, world-space revive ring is oversized.
-   - **Camp — FAIL** (docs/critiques/camp-roundD.md): F1 combat leaks into camp
-     after run end (wave director keeps spawning; boars bite the party at the
-     forge); F2 stale WAVE banner + threat pointers on Victory/Defeat and into
-     camp; F3 no prop collision in camp (Healer walks into the hearth / through
-     tents). Static camp frame scored 18/20. Note `cmd('win'/'lose')` don't
-     exist — use `endRun`.
-   - **Run structure — FAIL** (docs/critiques/run-roundD.md): same run-end leak
-     (enemy_spawn x4 fires 48 ticks after run_end); Stag not the brightest
-     emitter (boss box >200 = 0.45% vs torches 7.8–10.9%); antlers read azure
-     (195–244°) not violet (~259°); un-specced "Hollow Seal" immunity absorbs
-     damage with no HUD tell. Path/draft/shop/persistence all PASS.
-   - **Carried fixes — PASS** (docs/critiques/fixes-roundD.md): Ember band
-     41/65 px (bar <500, was 628–1408); all four rings 0.1–7.4° off accent on
-     both arcs with 3.8–6.1 px dark rims; Bond ribbons + Sanctuary read over
-     bunched bodies; heal bolt core 127–128° (spec 129, was 101); LUMA holds on
-     3 variants; fps 163 idle / 83 fight. Advisories: heal glow over the
-     Swordsman's wine tunic sums into Ember (up to 485 px, 97% of bar) — make
-     body-touching heal layers non-additive; Restorative Wave crest faint;
-     telegraph loses ~40% Ember over a bright ring band.
-3. NEXT: launch 3 fix builders in parallel, then fresh critics on each:
-   - Builder A (owns sim/run.js, sim/waves.js, sim/boss.js, render/boss/**):
-     run_end must clear the wave schedule, pending telegraphs, enemies, eshots,
-     zones and no-op spawning while `run.active === false`; boss room = Stag
-     its own brightest emitter + torches a stop down; rack/halo re-hued to
-     violet with white veins; remove the Hollow Seal or give it a lock glyph
-     + plate text and suppress numerals on absorbed hits.
-   - Builder B (owns scenes/camp.js, env/camp/**, ui/bookends/**, plus a
-     collider list handed to sim/movement.js): camp prop colliders for the
-     hearth/tents/stall/cart, allies hold their seats, Begin-Run prompt not
-     over the Tank, Victory wash less opaque (FLAT 59.7% → camp legible).
-   - Builder C (owns ui/hud/**): Zone-2 banner + threat pointers keyed to
-     run phase `combat` only, hidden on run_end/return_to_camp; downed-tile
-     identity advisory.
-4. Then the FINAL block 14: reference-bar certification — score all 10 checks on
-   camp/combat/shop/boss frames, prove camp→8 rooms→victory and a defeat loop
-   end-to-end at 60fps with zero console errors, fix what it rejects.
+1. Start the dev server with preview_start "echoes-dev" (port 5199). If a stray
+   `node.exe` from a manual `npm run dev` holds the port, kill that PID first.
+2. Check docs/critiques/run-roundD3.md and hud-roundD3.md (critic prefixes
+   zrn-/zhd-). Both were launched at v0.4.15 (commit b136898) to re-verify:
+   - run/boss: Stag ttk ≥ 900 ticks with three add phases spaced ≥ 240 ticks;
+     banner truth incl. the FELLED state; Stag the room's brightest emitter,
+     antlers violet (245–285°); run-end leak stays fixed; path/draft/shop/
+     persistence unregressed.
+   - HUD: FELLED banner during add mop-up; `?scene=arena&room=kill_all` harness
+     boot draws banner + threat pointers; gate still pixel-absent on reward/
+     shop/Victory/Defeat/camp; portrait state machine + no-tint + size sweep.
+   Any REJECT: fix directly (or a builder with the file ownership from the log
+   row below), then a fresh critic.
+3. Camp D2 had exactly one failure (west road dead end) — fixed and verified
+   with the critic's own `ycp-paths.json` (all 4 roads 2.18–2.22 u/s); the cart
+   was also moved off the east-road centreline by the new `campRoadsClear()`
+   sweep. No separate camp re-critic: the certification pass re-checks camp.
+4. FINAL block 14 — reference-bar certification (fresh critic): score all 10
+   REFERENCE_BAR checks on camp / combat / shop / boss frames (pass ≥ 16/20, no
+   zero); prove camp → 8 rooms → victory and a defeat loop end-to-end at 60 fps
+   with zero console errors; re-check the camp west road, the cart, and that
+   `campRoadsClear()` reports 0; fix what it rejects and re-certify.
 
-### Measured state at pause (v0.4.13) — camp scene vs the binding reference
+### Camp scene vs the binding reference (v0.4.13, still current)
 
 | Metric | Camp (captures/pause3-boot.png) | Reference frame | Gate |
 |---|---|---|---|
@@ -63,44 +44,7 @@ pixels and running gameplay only.
 
 The game BOOTS INTO CAMP: night camp with the Hearth-Fire, all four critters
 idling around it, tents, benches, lanterns, market stall, cart, violet portal,
-fireflies, at 83 fps. The warm-vs-cool attention funnel now matches the
-reference structure, and the reserved Ember band is finally under its bar.
-
-### Resume point — do this first
-1. Start the dev server (`npm run dev`, port 5199) if it is not up.
-2. Round B is done (arena + critters critic-passed, integration committed at
-   v0.3.0). Next: score the 10-check reference-bar baseline on the integrated
-   default scene, then Round C: blocks 7-10 — enemies/waves, ally AI +
-   downed/revive, healer skill kit, node build system. Blocks 11-14 (run
-   structure/draft/shop/boss, HUD, camp hub, final polish) follow.
-
-### Measured state at pause (v0.2.6)
-Arena lighting fix WORKED — `captures/pause2-arena.png` vs the reference frame:
-
-| Metric | Before fix | After fix | Reference | Gate |
-|---|---|---|---|---|
-| LUMA >160 | 0.041% | **3.238%** | 3.418% | >=1.5% PASS |
-| LUMA >200 | 0.008% | **0.494%** | 1.427% | >=0.4% PASS |
-| Buckets used | 9/16 | **14/16** | 16/16 | >=13 PASS |
-| FLAT | 1.19% | **1.68%** | 16.68% | <20% PASS |
-
-Critters (`captures/pause2-chartest.png`) now read as storybook plush: all four
-identity rings legible INCLUDING the Tank (fixed after 3 failed rounds), eyes are
-large dark beans with small glints, staff gem glows Bright Heal green, faces
-visible (lean corrected). 164fps, zero errors.
-
-### My own visual notes for the next critic round (not yet agent-verified)
-- Arena: the warm light pools now read as ~8 amber ellipses floating in open grass
-  with no visible emitter casting them — in the reference every pool has a source.
-  Tie each pool to a torch/lantern/fire, or cut the sourceless ones.
-- Arena: props are clustered almost entirely along the north wall; the south half
-  of the play space is undressed grass. Distribute edge dressing around all four
-  edges.
-- Critters: the Tank ring now reads near-white rather than Stone Umber #6B6157 with
-  a Bone rim — legible, but check it against the spec hue.
-- Critters: rings render as hard flat discs; the brief calls for a soft-edged
-  ground ellipse. Archer's bow still reads as a closed 'D', fox tail as a pale
-  flipper.
+fireflies. The D2 camp critic scored the static frame 20/20.
 
 ## Round A all-PASS; Round B complete (integration landed)
 
