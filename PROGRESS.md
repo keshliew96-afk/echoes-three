@@ -5,7 +5,7 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ▶ ROUND D CLOSED (D3 run/boss + HUD PASS) — FINAL block 14 certification critic running at v0.4.16 (prefix cert-, → docs/critiques/certification.md)
+## Status: ⏸ PAUSED by user during FINAL certification (v0.4.16, 438f218). Round D closed. Resume = re-launch the certification critic (prompt in log row 31; prefix cert-; it may have left partial cert-* captures — a fresh critic should start over).
 
 ### Resume point — do this first
 1. Start the dev server with preview_start "echoes-dev" (port 5199). If a stray
