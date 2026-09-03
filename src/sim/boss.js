@@ -53,36 +53,14 @@ export const STAG = Object.freeze({
   addComposition: Object.freeze(['boar', 'boar', 'mantis']), // §11 2 Boars + 1 Mantis
   addCap: 7, // §11 concurrent cap <=7 in the boss room
   standoff: 0.15, // scaffold: stop just inside contact so the charge reads
-  // --- THE HOLLOW SEAL (documented deviation — see the block comment below).
-  // Open hide between a seal breaking and the next threshold arming. This is
-  // the BINDING FLOOR on add-wave spacing — 2.0 s, 1.67x §11's 1.2 s telegraph
-  // cadence unit — and it holds even when the party (or a debug
-  // `killAllEnemies`) wipes a wave the tick it lands. Two add waves therefore
-  // can never resolve inside one telegraph window by any route.
-  phaseGapTicks: 120,
-  // A seal lasts ONE FULL Antler Quake cooldown (4.0 s = 240 ticks) or until
-  // that wave's adds are dead, whichever comes first — so every add wave is
-  // guaranteed a complete primary cycle, and consecutive waves are >= 285 ticks
-  // (4.75 s) apart, far outside any single 1.2 s telegraph window. The time cap
-  // matters: a Spitting Mantis repositions to keep 3.5 u and the allies are
-  // leashed at 3.4 u, so "adds dead" alone is not a condition the party can
-  // always force.
-  sealTicks: 240,
 });
 
-// WHY THE SEAL EXISTS (design collision, escalated in the block report):
-// §11 authors the Stag at 200 HP; §12 authors the three ally kits. Measured,
-// the party's OPENING burst alone is ~207 damage in 62 ticks and its sustained
-// output is ~150 dps — so a plain 200 HP Stag dies in about one second, the
-// 4.0 s Antler Quake never completes a second cycle, and all three "adds at
-// 75/50/25% HP" waves resolve inside a third of a second. Both rows are
-// brief-verbatim and neither may be silently rewritten, so the collision is
-// resolved in the STRUCTURE the brief already asks for rather than in its
-// numbers: the Stag's hide seals at each unplayed add threshold. Its HP cannot
-// fall past 75/50/25% until that threshold's wave has been spawned AND cleared
-// (or `sealTicks` elapses). Every §11 number stays exactly as written; the
-// add waves become the pacing mechanism they are clearly meant to be, and the
-// fight plays as four damage windows separated by three add clears.
+// NO immunity, no HP floor. An earlier cut clamped the Stag's HP at each
+// unplayed add threshold ("the Hollow Seal") to stretch the fight against the
+// party's burst; it was not in §11, had no tell, and absorbed hits that still
+// popped numerals (Round D F5c). §11 is now implemented verbatim: adds spawn
+// at 75/50/25% and nothing else gates damage. Balance, if the fight needs it,
+// is a brief change — not a hidden mechanic.
 
 export function createBossSystem({ registry, events, rng, combat, getTick, enemies, bus }) {
   let bossId = null;
@@ -90,12 +68,6 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
   let cleared = false;
   let phasesFired = 0;
   let addIds = [];
-  // --- Hollow Seal state (see the STAG block comment).
-  let sealed = false;
-  let sealPct = 0;
-  let sealStartTick = 0;
-  let lastPhaseEndTick = -100000;
-  let absorbedTotal = 0;
   // Cross-block telegraph cadence: the last START tick of ANY player-targeted
   // telegraph, observed on the bus (mantis starts included).
   let lastPlayerTelegraphStart = -100000;
@@ -103,40 +75,6 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     bus.on('telegraph_start', (ev) => {
       if (ev.playerTargeted) lastPlayerTelegraphStart = ev.tick;
     });
-    // The seal has to hold INSIDE the damage instance, not at end of tick: a
-    // single ally burst can carry the Stag from 160 to below zero, and
-    // combat.applyDamage kills on `hp <= 0` immediately after it emits `hit`.
-    // Listening on `hit` puts this floor between those two statements — the
-    // number still pops, the flash still fires, the HP just stops at the
-    // unplayed threshold and the overkill is reported as absorbed.
-    bus.on('hit', (ev) => {
-      if (bossId === null || ev.target !== bossId) return;
-      const b = boss();
-      if (!b) return;
-      const floor = hpFloor(b);
-      if (floor <= 0 || b.hp >= floor) return;
-      const absorbed = floor - b.hp;
-      b.hp = floor;
-      absorbedTotal += absorbed;
-      events.emit(ev.tick, 'boss_absorb', {
-        id: b.id,
-        absorbed: r2(absorbed),
-        hp: r2(b.hp),
-        pct: r2(b.hp / b.maxHp),
-        sealed,
-        phase: phasesFired,
-      });
-    });
-  }
-
-  // The HP the Stag may not fall below right now: the sealed threshold while a
-  // wave is outstanding, the next unplayed threshold otherwise, and 0 once all
-  // three add waves have been played — from then on the Stag can be killed.
-  function hpFloor(b) {
-    if (!b) return 0;
-    if (sealed) return b.maxHp * sealPct;
-    if (phasesFired < STAG.addPhases.length) return b.maxHp * STAG.addPhases[phasesFired];
-    return 0;
   }
 
   const boss = () => (bossId !== null ? registry.byId(bossId) : null);
@@ -211,19 +149,12 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       lungeHit: false,
       faceX: 0,
       faceZ: 1,
-      sealed: false, // render-layer read-only mirror of the Hollow Seal
-      sealPct: 0,
     });
     bossId = e.id;
     active = true;
     cleared = false;
     phasesFired = 0;
     addIds = [];
-    sealed = false;
-    sealPct = 0;
-    sealStartTick = tick;
-    lastPhaseEndTick = -100000; // the first threshold arms the moment it is reached
-    absorbedTotal = 0;
     events.emit(tick, 'boss_spawn', {
       id: e.id,
       name: 'THE HOLLOW STAG',
@@ -396,51 +327,17 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     const b = boss();
 
     if (b && b.hp > 0) {
-      // --- Hollow Seal. One phase per tick, never a cascade: a threshold is
-      // reached, its wave spawns, and the Stag stays sealed at that HP until
-      // the wave is dead. Two consequences the critic asked for: the three add
-      // waves are always three distinct beats (>= phaseGapTicks apart, i.e.
-      // wider than any single 1.2 s telegraph window), and the fight lasts long
-      // enough for the 4.0 s Quake / 2.5 s Trample cycles to repeat.
-      if (sealed) {
-        const floor = b.maxHp * sealPct;
-        if (b.hp < floor) b.hp = floor;
-        const addsDown = liveAdds() === 0;
-        const expired = tick - sealStartTick >= STAG.sealTicks;
-        if (addsDown || expired) {
-          sealed = false;
-          lastPhaseEndTick = tick;
-          events.emit(tick, 'boss_seal_break', {
-            id: b.id,
-            pct: sealPct,
-            phase: phasesFired,
-            reason: addsDown ? 'adds_cleared' : 'timeout',
-            ticks: tick - sealStartTick,
-          });
-        }
-      } else if (phasesFired < STAG.addPhases.length) {
+      // §11 add waves, verbatim: at 75% / 50% / 25% HP spawn 2 Boars + 1
+      // Mantis (cap <= 7). One threshold resolves per tick so a single burst
+      // that crosses two of them still lands two distinct `boss_adds` beats;
+      // HP is never clamped and nothing here touches the damage pipeline.
+      if (phasesFired < STAG.addPhases.length) {
         const pct = STAG.addPhases[phasesFired];
-        const floor = b.maxHp * pct;
-        if (b.hp <= floor) {
-          b.hp = floor; // cannot fall past an unplayed add threshold
-          if (tick - lastPhaseEndTick >= STAG.phaseGapTicks) {
-            phasesFired += 1;
-            spawnAdds(tick, pct);
-            sealed = true;
-            sealPct = pct;
-            sealStartTick = tick;
-            events.emit(tick, 'boss_seal_start', {
-              id: b.id,
-              pct,
-              phase: phasesFired,
-              hp: r2(b.hp),
-              adds: liveAdds(),
-            });
-          }
+        if (b.hp <= b.maxHp * pct) {
+          phasesFired += 1;
+          spawnAdds(tick, pct);
         }
       }
-      b.sealed = sealed;
-      b.sealPct = sealed ? sealPct : 0;
       return;
     }
 
@@ -494,11 +391,6 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       z: b ? r2(b.z) : 0,
       phasesFired,
       adds: liveAdds(),
-      sealed,
-      sealPct: sealed ? sealPct : 0,
-      sealTicks: sealed ? getTick() - sealStartTick : 0,
-      hpFloor: r2(hpFloor(b)),
-      absorbed: r2(absorbedTotal),
       quake: b && b.telegraph
         ? {
             x: r2(b.telegraph.x),
@@ -524,19 +416,14 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     isCleared: () => cleared,
     // Test hook: drive the Stag to a HP fraction through the real pipeline's
     // sibling path (no crit roll — this is a debug setter, not an instance).
-    // The Hollow Seal still holds, so a probe that wants to sit BELOW an
-    // unplayed add threshold passes skipPhases = true to mark those waves as
-    // already played (`cmd('bossHp', 0.2, true)`).
+    // skipPhases = true marks the add waves at or above pct as already played,
+    // so a probe can park the Stag below a threshold without spawning adds.
     setHpPct: (pct, skipPhases = false) => {
       const b = boss();
       if (!b) return null;
       if (skipPhases) {
         while (phasesFired < STAG.addPhases.length && pct <= STAG.addPhases[phasesFired])
           phasesFired += 1;
-        sealed = false;
-        b.sealed = false;
-        b.sealPct = 0;
-        lastPhaseEndTick = getTick();
       }
       b.hp = Math.max(0, STAG.hp * pct);
       if (b.hp <= 0) combat.kill(b);

@@ -1,0 +1,18 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"skipToRoom\",8);window.__xb=setInterval(()=>{E.cmd(\"teleport\",0,4.5);E.cmd(\"placeAlly\",1,-8,7);E.cmd(\"placeAlly\",2,-8.5,6);E.cmd(\"placeAlly\",3,-7.5,7.5);E.cmd(\"killAllEnemies\");},80);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();return {box:s.bossfx.screenBox,dimmed:s.bossfx.dimmedLights,roomDimmed:s.bossfx.roomDimmed,boss:E.cmd(\"runState\").boss,party:s.party.map(p=>[Math.round(p.x*10)/10,Math.round(p.z*10)/10,p.hp])};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const P=window.__arenaProbe;const cam=P.stage.camera;const v=cam.position.clone();const W=innerWidth,H=innerHeight;const px=(o)=>{o.getWorldPosition(v);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const near=[];P.stage.scene.traverse(o=>{if(!(o.isMesh||o.isSprite))return;const [x,y]=px(o);if(Math.hypot(x-795,y-150)<70)near.push({name:o.name||o.parent?.name||o.type,type:o.type,geo:o.geometry?.type,x,y,col:o.material?.color?\"#\"+o.material.color.getHexString():null,op:o.material?.opacity,vis:o.visible,py:Math.round(o.position.y*100)/100});});const torches=P.emitters.filter(e=>e.kind===\"flame\").map(e=>{v.set(e.x,e.y+0.2,e.z);v.project(cam);return {x:Math.round((v.x*0.5+0.5)*W),y:Math.round((-v.y*0.5+0.5)*H),wx:e.x,wz:e.z,brazier:!!e.brazier,kind:e.kind};});return {near:near.slice(0,20),torches,pick:P.pick(795,150)};})()"
+ }
+]

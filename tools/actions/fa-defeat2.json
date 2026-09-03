@@ -1,0 +1,70 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__fa=[];window.__faHs=0;for(const t of [\"run_start\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"spawn_blocked\",\"hit\",\"room_cleared\",\"director_stop\",\"death\",\"boss_adds\"])E.on(t,ev=>window.__fa.push(t+\" t\"+ev.tick+(ev.enemies!==undefined?\" enemies=\"+ev.enemies:\"\")));E.on(\"hitstop\",ev=>{window.__faHs+=ev.ticks;});return 1;})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return window.__echoes.tick;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();for(const p of s.party)E.cmd(\"setHp\",p.id,0);return {tick:E.tick,enemies:s.enemies.length};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=E.cmd(\"runState\");const ends=window.__fa.filter(x=>x.startsWith(\"run_end\")).map(x=>+x.split(\" t\")[1]);const endT=ends.length?ends[ends.length-1]:0;const after=window.__fa.filter(x=>(+x.split(\" t\")[1])>endT&&!/^run_start|^run_end|^run_wiped|^return_to_camp|^director_stop/.test(x));const banner=document.querySelector(\"#hud .hud-banner, #hud [class*=banner]\");return {label:\"defeat-screen-1\",tick:E.tick,phase:r.phase,active:r.active,scene:s.scene,vfxMode:s.vfx&&s.vfx.mode,enemies:s.enemies.length,eshots:s.eshots?s.eshots.length:null,room:s.room,pending:E.state().enemyfx?E.state().enemyfx.spawnShimmers:null,hp:s.party.map(p=>Math.round(p.hp)),hitstopTicks:window.__faHs,runEndTick:endT,eventsAfterEnd:after.slice(0,30),countAfterEnd:after.length,bannerText:banner?banner.textContent.replace(/s+/g,\" \").trim():null,log:window.__fa.slice(-12)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>window.__echoes.cmd(\"returnToCamp\"))()"
+ },
+ {
+  "type": "wait",
+  "ms": 3500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=E.cmd(\"runState\");const ends=window.__fa.filter(x=>x.startsWith(\"run_end\")).map(x=>+x.split(\" t\")[1]);const endT=ends.length?ends[ends.length-1]:0;const after=window.__fa.filter(x=>(+x.split(\" t\")[1])>endT&&!/^run_start|^run_end|^run_wiped|^return_to_camp|^director_stop/.test(x));const banner=document.querySelector(\"#hud .hud-banner, #hud [class*=banner]\");return {label:\"camp-after-defeat-1\",tick:E.tick,phase:r.phase,active:r.active,scene:s.scene,vfxMode:s.vfx&&s.vfx.mode,enemies:s.enemies.length,eshots:s.eshots?s.eshots.length:null,room:s.room,pending:E.state().enemyfx?E.state().enemyfx.spawnShimmers:null,hp:s.party.map(p=>Math.round(p.hp)),hitstopTicks:window.__faHs,runEndTick:endT,eventsAfterEnd:after.slice(0,30),countAfterEnd:after.length,bannerText:banner?banner.textContent.replace(/s+/g,\" \").trim():null,log:window.__fa.slice(-12)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"startRun\");return window.__echoes.tick;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();for(const p of s.party)E.cmd(\"setHp\",p.id,0);return {tick:E.tick,enemies:s.enemies.length};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=E.cmd(\"runState\");const ends=window.__fa.filter(x=>x.startsWith(\"run_end\")).map(x=>+x.split(\" t\")[1]);const endT=ends.length?ends[ends.length-1]:0;const after=window.__fa.filter(x=>(+x.split(\" t\")[1])>endT&&!/^run_start|^run_end|^run_wiped|^return_to_camp|^director_stop/.test(x));const banner=document.querySelector(\"#hud .hud-banner, #hud [class*=banner]\");return {label:\"defeat-screen-2\",tick:E.tick,phase:r.phase,active:r.active,scene:s.scene,vfxMode:s.vfx&&s.vfx.mode,enemies:s.enemies.length,eshots:s.eshots?s.eshots.length:null,room:s.room,pending:E.state().enemyfx?E.state().enemyfx.spawnShimmers:null,hp:s.party.map(p=>Math.round(p.hp)),hitstopTicks:window.__faHs,runEndTick:endT,eventsAfterEnd:after.slice(0,30),countAfterEnd:after.length,bannerText:banner?banner.textContent.replace(/s+/g,\" \").trim():null,log:window.__fa.slice(-12)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>window.__echoes.cmd(\"returnToCamp\"))()"
+ },
+ {
+  "type": "wait",
+  "ms": 3500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=E.cmd(\"runState\");const ends=window.__fa.filter(x=>x.startsWith(\"run_end\")).map(x=>+x.split(\" t\")[1]);const endT=ends.length?ends[ends.length-1]:0;const after=window.__fa.filter(x=>(+x.split(\" t\")[1])>endT&&!/^run_start|^run_end|^run_wiped|^return_to_camp|^director_stop/.test(x));const banner=document.querySelector(\"#hud .hud-banner, #hud [class*=banner]\");return {label:\"camp-after-defeat-2\",tick:E.tick,phase:r.phase,active:r.active,scene:s.scene,vfxMode:s.vfx&&s.vfx.mode,enemies:s.enemies.length,eshots:s.eshots?s.eshots.length:null,room:s.room,pending:E.state().enemyfx?E.state().enemyfx.spawnShimmers:null,hp:s.party.map(p=>Math.round(p.hp)),hitstopTicks:window.__faHs,runEndTick:endT,eventsAfterEnd:after.slice(0,30),countAfterEnd:after.length,bannerText:banner?banner.textContent.replace(/s+/g,\" \").trim():null,log:window.__fa.slice(-12)};})()"
+ }
+]

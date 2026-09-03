@@ -31,19 +31,30 @@ export const HEARTH = Object.freeze({ x: 0, z: -0.2 });
 
 // §18: "walk the Healer to the glowing run-portal / gate marker and press E".
 // The gate stands on the north axis; PORTAL.radius is the interaction disc.
-export const PORTAL = Object.freeze({ x: 0, z: -6.9, radius: 1.7 });
+// Round D: 1.7 -> 1.9. The Healer's seat moved off the fire's axis (below),
+// so the gate road now runs beside the hearth's stone ring; the wider disc
+// keeps a 2.7 s straight walk from the seat landing on the sill with margin.
+export const PORTAL = Object.freeze({ x: 0, z: -6.9, radius: 1.9 });
 
 // Boot / return-from-run standing spots. The Healer is party_index 0 and takes
 // the near (camera-side) seat so the boot frame reads as "your party, seen over
 // your own shoulder"; the other three ring the fire.
 export const CAMP_SPOTS = Object.freeze({
-  healer: Object.freeze({ x: 0.1, z: 1.85, yaw: Math.PI }),
+  // Round D (F3): the hearth is SOLID now, and the Healer's old seat
+  // (0.1, 1.85) sat dead south of it — "walk north to the gate" ran straight
+  // into the stone ring. The seat moves a step east of the gate road
+  // (x 1.35 > ring 0.9 + body 0.3), so W from the seat passes the fire and
+  // lands on the sill; the Swordsman shifts along the bench end to make room.
+  healer: Object.freeze({ x: 1.35, z: 1.0, yaw: Math.PI }),
   tank: Object.freeze({ x: -1.95, z: 0.5, yaw: 1.9 }),
-  swordsman: Object.freeze({ x: 1.9, z: 0.6, yaw: -1.9 }),
+  swordsman: Object.freeze({ x: 2.3, z: 0.2, yaw: -1.9 }),
   // NOT on the fire's own screen axis: at (-0.2, -2.1) the Archer stood
   // directly behind the flame column from the 52-degree rig and was completely
   // occluded by it — measured on the first camp capture. Offset west.
-  archer: Object.freeze({ x: -2.5, z: -2.3, yaw: 0.7 }),
+  // Round D: nudged from (-2.5, -2.3) to sit at the END of the west bench
+  // rather than inside its collider box (env/camp/colliders.js) — a seated
+  // body that starts in a solid would be projected off its own seat.
+  archer: Object.freeze({ x: -2.3, z: -2.5, yaw: 0.7 }),
 });
 
 export const CAMP_SPEC = Object.freeze({
@@ -176,8 +187,9 @@ export const CAMP_SPEC = Object.freeze({
     // flanked by two rune stones so it stands ON the ground, not in front of a
     // wall.
     ['portal', PORTAL.x, PORTAL.z, 0, 1],
-    ['runestone', -1.95, -6.5, 0.34, 1],
-    ['runestone', 1.95, -6.5, -0.34, 1],
+    // +-2.15 (was +-1.95): the east stone sat on the Healer's new walk line.
+    ['runestone', -2.15, -6.5, 0.34, 1],
+    ['runestone', 2.15, -6.5, -0.34, 1],
   ]),
 });
 

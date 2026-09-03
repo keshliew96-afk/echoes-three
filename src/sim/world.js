@@ -75,7 +75,13 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     rng,
     stats,
     getTick: () => currentTick,
-    requestHitstop,
+    // Run block (§9 #4 x §2): kill hitstop is combat juice, so once a run has
+    // been played it is granted only while that run is in live combat — a
+    // leaked kill on the end card or in Camp must never stall the sim.
+    // runSys is late-bound below; the closure is only ever called at a kill.
+    requestHitstop: requestHitstop
+      ? (n) => (runSys && !runSys.combatAllowed() ? 0 : requestHitstop(n))
+      : null,
     isIframed,
   });
 

@@ -5,10 +5,12 @@
 //     px/pz -> x/z), yaw-smoothed, with walk / quake-windup / trample clips
 //   - "the room's single brightest light source (feverish warm boss-light;
 //     room a stop darker than normal Act-1)": while the boss lives every scene
-//     light is dimmed one stop and the Stag wears additive emitters (warm
-//     ground pool + spill, violet rack halo), so the brightest pixels in frame
-//     are the rack and the pool under its hooves. No real light rides the boss
-//     — see the note by the layer state below for why.
+//     light is dimmed one stop (scenes/arena.js takes the TORCH emitters —
+//     flame, halo, pool, PointLight — down the same stop while a Stag lives)
+//     and the Stag wears its own emitters (a white-violet crown core over the
+//     rack, a violet halo, the warm ground pool), so the brightest pixels in
+//     frame are the crown and the pool under its hooves. No real light rides
+//     the boss — see the note by the layer state below for why.
 //   - Antler Quake telegraph: the §11 Ember ring at the locked impact point,
 //     radius 1.6 u, 2 Hz pulse + chevrons + a wind-in sweep, then a burst
 //     flash on resolve
@@ -284,7 +286,6 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
           walkPhase: 0,
           telegraphK: 0,
           lungeK: 0,
-          sealK: 0,
           flashStartTick: -999,
         };
         darkenRoom();
@@ -307,11 +308,6 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       rec.telegraphK += (telTarget - rec.telegraphK) * (1 - Math.exp(-12 * dt));
       const lungeTarget = ent.lungeTicksLeft > 0 ? 1 : 0;
       rec.lungeK += (lungeTarget - rec.lungeK) * (1 - Math.exp(-18 * dt));
-      // Hollow Seal (sim/boss.js): while a spawned add wave is outstanding the
-      // Stag's hide will not open. The tell is the corruption itself flaring —
-      // God-stuff Violet on the boss, which §19.1 reserves for exactly this.
-      const sealTarget = ent.sealed ? 1 : 0;
-      rec.sealK += (sealTarget - rec.sealK) * (1 - Math.exp(-8 * dt));
 
       const hpFrac = Math.max(0, ent.hp / ent.maxHp);
       rec.rig.pose({
@@ -320,7 +316,6 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
         moveK: Math.min(1, simSpeed / 1.4),
         telegraphK: rec.telegraphK,
         lungeK: rec.lungeK,
-        sealK: rec.sealK,
         hpFrac,
       });
 

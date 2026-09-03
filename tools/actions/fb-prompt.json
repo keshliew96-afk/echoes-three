@@ -1,0 +1,1 @@
+[{"type":"mousemove","x":800,"y":200},{"type":"keydown","key":"KeyW"},{"type":"wait","ms":2700},{"type":"keyup","key":"KeyW"},{"type":"wait","ms":300},{"type":"eval","code":"(()=>{const c=__echoes.cmd(\"campState\");return {inPortal:c.inPortal,prompt:c.prompt,player:c.player,cam:[Math.round(c.player.x*100)/100]}})()"}]

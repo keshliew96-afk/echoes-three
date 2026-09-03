@@ -43,12 +43,17 @@ const BOOKEND_CSS = `
   /* VICTORY — warm high-key. Bright cream core falling to Hearth Amber at the
      frame edge: no dark corner anywhere, because "high-key" is a value
      statement and a vignetted victory would contradict it. This is the one
-     screen in the game whose environment is as warm as the party. */
+     screen in the game whose environment is as warm as the party.
+     Round D (camp critic A3): the first cut ran 0.74 / 0.66 / 0xA8 and
+     flattened the camp into beige fog — FLAT 59.7% of 8x8 blocks, the hearth
+     and tents illegible under it. §18 wants the WARM CAMP visible ("the
+     environment matches party warmth"), so the wash is a tint the scene
+     reads through, not a curtain. */
   #bk-wash.bk-victory {
     background: radial-gradient(ellipse at 50% 40%,
-      rgba(255, 247, 226, 0.74) 0%,
-      rgba(248, 214, 150, 0.66) 44%,
-      ${PALETTE.hearthAmber}A8 100%);
+      rgba(255, 247, 226, 0.40) 0%,
+      rgba(248, 214, 150, 0.36) 44%,
+      ${PALETTE.hearthAmber}5C 100%);
   }
 
   /* DEFEAT — soft violet-white, theatrical rather than harsh: a curtain call,

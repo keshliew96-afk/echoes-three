@@ -19,9 +19,11 @@ import {
   AdditiveBlending,
   BoxGeometry,
   CircleGeometry,
+  Color,
   ConeGeometry,
   CylinderGeometry,
   Group,
+  LinearSRGBColorSpace,
   Mesh,
   MeshBasicMaterial,
   SphereGeometry,
@@ -31,18 +33,43 @@ import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { HIDE, TELL_VIOLET } from '../enemies/style.js';
+import { VEIN_VIOLET } from '../../env/props.js';
 
-// God-stuff Violet peak, post-chain exact — the veins are white-hot violet.
-const VEIN = exactColor(PALETTE.godstuffViolet);
-// The peak is reserved for the hairline core INSIDE a filament — a whole rack
-// of near-white cones reads as a lens flare, not as veining (§19.2).
+// --- Colour recipe (Round D F5b: the rack measured 62-67% AZURE, 195-244 deg,
+// against 14-20% violet). Three things put it there and all three are gone:
+//   1. the rack surface was BONE, so the additive violet halo summed with a
+//      pale grey to white-blue instead of sitting on a violet base;
+//   2. the hide was the boar's saturated slate (hue ~215), so every violet
+//      pixel that feathered onto the body averaged into blue;
+//   3. the halo's own violet was the raw anchor, which ACES + the warm grade
+//      flatten to ~247 deg — the bottom edge of the analyzer's 245-285 band.
+// Now: the RACK is an opaque, unlit, post-chain-EXACT God-stuff Violet (hue
+// 259, sat 0.58 on screen) so it measures violet by itself; the VEINS are the
+// white peak #F1ECFA and nothing else; the halo/sparks ride the corrupted
+// monolith's pre-compensated VEIN_VIOLET recipe (env/props.js — the prop that
+// measures 72% violet in the same frames), with the red share lifted a little
+// so its mid-falloff lands ~255-262 instead of on the band edge; and the hide
+// is a DESATURATED charcoal-slate that counts in no hue band at all.
+// The peak white is reserved for the hairline vein filaments and the crown
+// core — a whole rack of near-white cones reads as a lens flare, not veining.
 const VEIN_CORE = exactColor(PALETTE.godstuffVioletPeak);
-// Bone rack, one value step under the veins so the filaments read ON it.
-const RACK = mix(PALETTE.bone, PALETTE.voidCharcoal, 0.55);
-// Hide: the boar's cold slate pushed darker — the boss body is a shadow the
-// antlers hang in.
-const HULK = HIDE.boarBody.clone().multiplyScalar(0.66);
-const HULK_DARK = HIDE.boarDark.clone().multiplyScalar(0.72);
+// Rack surface: God-stuff Violet one value step under the anchor so the white
+// veins read ON it (display #8F63EE = hue 259 / sat 0.58 / value 0.93).
+const RACK = exactColor('#8F63EE');
+// Additive violet for the halo, the tip sparks and the crown skirt — linear,
+// blue-leaning like the monolith's veins (their feather over dark ground must
+// fall to neutral mauve, never into the reserved Ember band).
+const HALO_LINEAR = [VEIN_VIOLET[0] * 1.12, VEIN_VIOLET[1] * 0.92, VEIN_VIOLET[2]];
+const haloViolet = (k = 1) =>
+  new Color().setRGB(HALO_LINEAR[0] * k, HALO_LINEAR[1] * k, HALO_LINEAR[2] * k, LinearSRGBColorSpace);
+// Crown core: the Stag's own hottest emitter (§11 "the room's single
+// brightest light source"). HDR white-violet in linear, well over the 0.68
+// bloom threshold, so its centre blooms to the peak and the skirt stays violet.
+const CROWN_LINEAR = [1.75, 1.55, 2.2];
+// Hide: the boar's slate desaturated toward warm grey and pushed dark — the
+// boss body is a shadow the antlers hang in, and it must not read as blue.
+const HULK = HIDE.boarBody.clone().lerp(new Color(PALETTE.warmGrey), 0.45).multiplyScalar(0.5);
+const HULK_DARK = HIDE.boarDark.clone().lerp(new Color(PALETTE.warmGrey), 0.4).multiplyScalar(0.6);
 
 const flashable = (color) =>
   toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0, flatShading: true });
@@ -81,7 +108,7 @@ function buildAntler(side, rackMat, veinMats, glows) {
   addInk(beam);
   half.add(beam);
 
-  // Violet vein running the beam (unlit filament laid just off the surface).
+  // White vein running the beam (unlit filament laid just off the surface).
   const vein = new Mesh(G.beam, veinMats.core);
   vein.scale.set(0.5, 1.0, 0.5);
   vein.position.copy(beam.position);
@@ -103,10 +130,10 @@ function buildAntler(side, rackMat, veinMats, glows) {
     tine.position.set(side * tx, ty, tz);
     tine.rotation.set(tilt * 0.5, side * tyaw, side * tilt);
     half.add(tine);
-    // Vein filament + tip spark on every other tine (alternating, so the rack
-    // reads as veined rather than uniformly lit).
-    const filament = new Mesh(G.tine, i % 2 === 0 ? veinMats.violet : veinMats.core);
-    filament.scale.set(0.62, len * 0.94, 0.62);
+    // White vein filament on every tine (hairline: 0.42 of the tine's girth so
+    // the violet rack stays the read and the vein is a line ON it).
+    const filament = new Mesh(G.tine, veinMats.core);
+    filament.scale.set(0.42, len * 0.94, 0.42);
     filament.position.copy(tine.position);
     filament.rotation.copy(tine.rotation);
     half.add(filament);
@@ -115,8 +142,9 @@ function buildAntler(side, rackMat, veinMats, glows) {
     // lamp. Violet (never the near-white peak) so a dozen additive sprites
     // cannot stack into a white hole where the silhouette should be.
     if (i % 2 === 0) {
-      const spark = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 0.24, opacity: 0.4 });
+      const spark = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 0.26, opacity: 0.4 });
       spark.material.toneMapped = false;
+      spark.material.color.copy(haloViolet(0.6));
       spark.position.set(
         side * tx + Math.sin(side * tilt) * len * 0.5,
         ty + Math.cos(tilt * 0.5) * len * 0.5,
@@ -148,7 +176,7 @@ export function buildStag() {
   // draw from the same two-step violet ramp.
   const veinBasic = {
     core: new MeshBasicMaterial({ color: VEIN_CORE, toneMapped: false }),
-    violet: new MeshBasicMaterial({ color: VEIN, toneMapped: false }),
+    violet: new MeshBasicMaterial({ color: RACK, toneMapped: false }),
   };
 
   // --- Body: long faceted barrel, shoulders high.
@@ -183,6 +211,7 @@ export function buildStag() {
   rig.add(cavity);
   const cavityGlow = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 0.7, opacity: 0.36 });
   cavityGlow.material.toneMapped = false;
+  cavityGlow.material.color.copy(haloViolet(0.55));
   cavityGlow.position.set(0, 1.18, 0.5);
   rig.add(cavityGlow);
   glows.push(cavityGlow);
@@ -190,7 +219,7 @@ export function buildStag() {
   // --- Dorsal ridge: angular bone plates up the spine with violet veining
   // between them. The back is the surface the 3/4 camera sees, so the
   // corruption tell lives here as well as on the rack.
-  const ridgeMat = track(flashable(RACK));
+  const ridgeMat = new MeshBasicMaterial({ color: RACK, toneMapped: false });
   for (let i = 0; i < 6; i++) {
     const k = i / 5;
     const plate = new Mesh(G.tine, ridgeMat);
@@ -237,7 +266,7 @@ export function buildStag() {
     color: exactColor(PALETTE.voidCharcoal),
     toneMapped: false,
   });
-  const glintMat = new MeshBasicMaterial({ color: VEIN, toneMapped: false });
+  const glintMat = new MeshBasicMaterial({ color: RACK, toneMapped: false });
   for (const side of [-1, 1]) {
     const eye = new Mesh(G.eye, eyeMat);
     eye.position.set(side * 0.17, 0.12, 0.3);
@@ -249,6 +278,7 @@ export function buildStag() {
     head.add(glint);
     const eyeGlow = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 0.22, opacity: 0.35 });
     eyeGlow.material.toneMapped = false;
+    eyeGlow.material.color.copy(haloViolet(0.6));
     eyeGlow.position.set(side * 0.19, 0.13, 0.36);
     head.add(eyeGlow);
     glows.push(eyeGlow);
@@ -257,7 +287,10 @@ export function buildStag() {
   // --- The rack: two mirrored antler halves + one big halo so the whole crown
   // blooms as one light (this is the pixel that has to be the brightest thing
   // in the room).
-  const rackMat = track(flashable(RACK));
+  // Unlit and outside the flash set: the rack is corruption, not hide — the
+  // warm key must not rotate it toward rose and the hit flash must not white
+  // it out (the flash is the BODY's, §9 #1).
+  const rackMat = new MeshBasicMaterial({ color: RACK, toneMapped: false });
   const veinMats = veinBasic;
   const antlers = new Group();
   antlers.position.set(0, 0.2, -0.02);
@@ -268,11 +301,23 @@ export function buildStag() {
   // frame (measured: 0 violet px in the antler box), and it fed the bloom
   // blowout that erased the whole silhouette. Smaller and dimmer, it haloes the
   // rack instead of replacing it — the veins are the read, not the glow.
-  const rackHalo = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 1.35, opacity: 0.34 });
+  // Round D F5a/F5b: the halo comes back up (1.35/0.34 -> 2.1/0.5) now that it
+  // sums onto a VIOLET rack instead of a bone one, and it carries the
+  // pre-compensated violet so its falloff measures in-band. Above it sits the
+  // CROWN CORE — the single hottest emitter in the room: a small HDR
+  // white-violet sprite at the centre of the rack whose bloom is what makes
+  // the Stag, not a torch, the brightest 24 px block in frame.
+  const rackHalo = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 2.1, opacity: 0.5 });
   rackHalo.material.toneMapped = false;
+  rackHalo.material.color.copy(haloViolet(1));
   rackHalo.position.set(0, 1.0, 0);
   antlers.add(rackHalo);
   glows.push(rackHalo);
+  const crownCore = makeGlowSprite({ color: PALETTE.godstuffVioletPeak, size: 0.72, opacity: 0.9 });
+  crownCore.material.toneMapped = false;
+  crownCore.material.color.setRGB(CROWN_LINEAR[0], CROWN_LINEAR[1], CROWN_LINEAR[2], LinearSRGBColorSpace);
+  crownCore.position.set(0, 1.02, 0.02);
+  antlers.add(crownCore);
 
   // --- Legs: long, thin, high-kneed — the height reads through the gap.
   const legMat = track(flashable(HULK_DARK));
@@ -375,7 +420,8 @@ export function buildStag() {
       // WITHOUT blowing the frame to white — capped so the >200 luma band
       // stays near the reference bar's ~1.4% while the boss box still reads
       // measurably hotter than the floor around it.
-      rackHalo.material.opacity = Math.min(1.1, 0.72 * fever);
+      rackHalo.material.opacity = Math.min(0.78, 0.62 * fever);
+      crownCore.material.opacity = Math.min(1.0, 0.82 * fever);
       cavityGlow.material.opacity = Math.min(0.85, 0.46 * fever + 0.12 * lungeK);
       for (const g of glows) {
         if (g === rackHalo || g === cavityGlow) continue;

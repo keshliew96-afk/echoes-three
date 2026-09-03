@@ -75,6 +75,16 @@ export function createRunSystem({
     slots: () => skillSys.slotsView(),
   });
 
+  // §2 "all run state wiped at run end" / §18 "Corruption never touches
+  // Camp": after the first run has been played, an enemy may spawn ONLY while
+  // a run is in live combat. Before any run the ?room=/?scene=arena harness
+  // keeps its ungated spawns. The same predicate gates kill hitstop
+  // (sim/world.js) so a stray kill can never stall the sim on an end card.
+  function combatAllowed() {
+    return !everStarted || (active && phase === 'combat');
+  }
+  enemies.setSpawnGate(combatAllowed);
+
   let active = false;
   let roomIndex = 0; // 1..8 while a run is live
   let phase = 'idle'; // idle | combat | reward | path | shop | fade | victory | defeat
@@ -90,6 +100,7 @@ export function createRunSystem({
   let clearedRooms = 0; // COMBAT rooms cleared — drives the §14 stipend only
   let roomsDone = 0; // every room left behind (combat + the shop) — the §18 summary row
   let startTick = 0;
+  let everStarted = false; // once true, enemies exist only inside live combat
 
   // ------------------------------------------------------------ run frame --
   // ONE fixed roll sequence (defend positions, then the 5 path side bits) so a
@@ -119,6 +130,7 @@ export function createRunSystem({
     wipeState({ silent: true });
     frame = rollFrame();
     active = true;
+    everStarted = true;
     wallet = RUN.startingGlint;
     clearedRooms = 0;
     roomsDone = 0;
@@ -484,6 +496,12 @@ export function createRunSystem({
     clearedRooms = 0;
     wallet = RUN.startingGlint;
     phase = 'idle';
+    // The encounter director stops dead (schedule + spawn telegraphs +
+    // Waystone), then the boss + adds, every hostile body and shot, and every
+    // zone go. From here combatAllowed() is false, so enemies.spawn is a hard
+    // no-op until the next run's first combat tick (Round D F6: the pending
+    // spawns used to mature 48 ticks after run_end and walk into Camp).
+    waves.stop('run_end');
     boss.despawn();
     enemies.reset();
     sweepPlayerTransients(tick, 'run_end');
@@ -511,8 +529,15 @@ export function createRunSystem({
     // at run end, so this only dismisses the end screen.
     if (phase !== 'victory' && phase !== 'defeat') return null;
     phase = 'idle';
-    events.emit(getTick(), 'return_to_camp', {});
-    return { phase };
+    // Debug assertion for §18: nothing hostile may ride into the hub. The
+    // count is taken BEFORE the belt-and-braces sweep so a leak is visible in
+    // the event payload even though the sweep removes it.
+    const leaked = registry.all().filter((e) => e.faction === 'hostile').length;
+    waves.stop('return_to_camp');
+    boss.despawn();
+    enemies.reset();
+    events.emit(getTick(), 'return_to_camp', { enemies: leaked });
+    return { phase, enemies: leaked };
   }
 
   // -------------------------------------------------------------- ticking --
@@ -643,7 +668,7 @@ export function createRunSystem({
       }
       case 'bossHp':
         // ('bossHp', pct[, skipPhases]) — skipPhases marks the add waves at or
-        // above pct as already played so the Hollow Seal lets the Stag sit there.
+        // above pct as already played, so no adds spawn for them.
         return boss.setHpPct(args[0] ?? 0.5, args[1] === true);
       case 'killBoss': {
         const b = boss.entity();
@@ -677,6 +702,7 @@ export function createRunSystem({
     cmd,
     isActive: () => active,
     combatActive,
+    combatAllowed,
     // UI entry points (src/ui/run/**) — the same paths __echoes.cmd drives.
     takeReward,
     declineReward,

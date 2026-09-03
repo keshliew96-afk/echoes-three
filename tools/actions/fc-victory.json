@@ -1,0 +1,52 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__X=window.__X||{};const E=window.__echoes;window.__X.pid=(i)=>{const p=E.state().party;const m=p.find(q=>(q.partyIndex??0)===i);return m?m.id:null;};window.__X.rects=()=>{const SEL=['.hud-slot-key','.hud-port-key','.hud-slot-abbrev','.hud-slot-num','.hud-port-num','.hud-port-e','.hud-slot-passive','.hud-bn-label','.hud-bn-num','.hud-bn-pips','.hud-bn-bar','.tm-badge'];const vis=(n)=>{const r=n.getBoundingClientRect();let p=n;while(p&&p!==document.body){const c=getComputedStyle(p);if(c.display==='none'||Number(c.opacity)<0.02)return null;p=p.parentElement;}return r.width>0.5&&r.height>0.5?r:null;};const rs=[];for(const s of SEL)for(const n of document.querySelectorAll(s)){const r=vis(n);if(r)rs.push({s,txt:(n.textContent||'').trim().slice(0,8),x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),fs:+(parseFloat(getComputedStyle(n).fontSize)).toFixed(1)});}const hits=[];for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i],b=rs[j];const ox=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x);const oy=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);if(ox>0.5&&oy>0.5)hits.push({a:a.s+':'+a.txt,b:b.s+':'+b.txt,ox:+ox.toFixed(1),oy:+oy.toFixed(1)});}return {n:rs.length,overlaps:hits,rects:rs};};return 'lib';})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"skipToRoom\",8);return \"r8\"})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd(\"runState\");const c=(()=>{try{return E.cmd(\"campState\")}catch(e){return null}})();const s=E.state();const bn=document.querySelector(\"#hud-banner\");const bcs=getComputedStyle(bn);const tms=[...document.querySelectorAll(\"#hud-threat .tm\")];const vis=tms.filter(n=>n.style.display!==\"none\");return {\"boss\":{tick:E.tick,phase:r.phase,active:r.active,combat:r.combatActive,hudCombat:E.hud.combat(),mode:c&&c.mode,enemies:s.enemies.length,room:s.room&&{mode:s.room.mode,cleared:s.room.cleared,alive:s.room.aliveEnemies,pending:s.room.pendingSpawns},banner:E.hud.banner(),bannerDom:{show:bn.classList.contains(\"show\"),opacity:bcs.opacity,visibility:bcs.visibility,display:bcs.display,text:bn.textContent},tm:{total:tms.length,visible:vis.length},threat:E.hud.threat(),slots:E.hud.slots().map(x=>({k:x.key,deg:x.wipeDeg,cool:x.cooling,cnt:x.counting,cls:x.nudge.slot})),override:E.hud.overrideIndex(),ports:E.hud.portraits().map(p=>p.state+(p.selected?\"+sel\":\"\")),anims:E.hud.animations().length}}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;E.cmd(\"bossHp\",0.05,true);const k=E.cmd(\"killBoss\");const t0=performance.now();while(performance.now()-t0<8000){const r=E.cmd(\"runState\");if(r.phase===\"victory\")break;await new Promise(r=>setTimeout(r,50));}return {killed:k,waitedMs:Math.round(performance.now()-t0),phase:E.cmd(\"runState\").phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd(\"runState\");const c=(()=>{try{return E.cmd(\"campState\")}catch(e){return null}})();const s=E.state();const bn=document.querySelector(\"#hud-banner\");const bcs=getComputedStyle(bn);const tms=[...document.querySelectorAll(\"#hud-threat .tm\")];const vis=tms.filter(n=>n.style.display!==\"none\");return {\"endCard\":{tick:E.tick,phase:r.phase,active:r.active,combat:r.combatActive,hudCombat:E.hud.combat(),mode:c&&c.mode,enemies:s.enemies.length,room:s.room&&{mode:s.room.mode,cleared:s.room.cleared,alive:s.room.aliveEnemies,pending:s.room.pendingSpawns},banner:E.hud.banner(),bannerDom:{show:bn.classList.contains(\"show\"),opacity:bcs.opacity,visibility:bcs.visibility,display:bcs.display,text:bn.textContent},tm:{total:tms.length,visible:vis.length},threat:E.hud.threat(),slots:E.hud.slots().map(x=>({k:x.key,deg:x.wipeDeg,cool:x.cooling,cnt:x.counting,cls:x.nudge.slot})),override:E.hud.overrideIndex(),ports:E.hud.portraits().map(p=>p.state+(p.selected?\"+sel\":\"\")),anims:E.hud.animations().length}}})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd(\"runState\");const c=(()=>{try{return E.cmd(\"campState\")}catch(e){return null}})();const s=E.state();const bn=document.querySelector(\"#hud-banner\");const bcs=getComputedStyle(bn);const tms=[...document.querySelectorAll(\"#hud-threat .tm\")];const vis=tms.filter(n=>n.style.display!==\"none\");return {\"camp\":{tick:E.tick,phase:r.phase,active:r.active,combat:r.combatActive,hudCombat:E.hud.combat(),mode:c&&c.mode,enemies:s.enemies.length,room:s.room&&{mode:s.room.mode,cleared:s.room.cleared,alive:s.room.aliveEnemies,pending:s.room.pendingSpawns},banner:E.hud.banner(),bannerDom:{show:bn.classList.contains(\"show\"),opacity:bcs.opacity,visibility:bcs.visibility,display:bcs.display,text:bn.textContent},tm:{total:tms.length,visible:vis.length},threat:E.hud.threat(),slots:E.hud.slots().map(x=>({k:x.key,deg:x.wipeDeg,cool:x.cooling,cnt:x.counting,cls:x.nudge.slot})),override:E.hud.overrideIndex(),ports:E.hud.portraits().map(p=>p.state+(p.selected?\"+sel\":\"\")),anims:E.hud.animations().length}}})()"
+ }
+]

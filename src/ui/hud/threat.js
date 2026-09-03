@@ -56,6 +56,13 @@
 // slots, the per-threat audit objects are built only when a probe asks for
 // them, and the sim's `pendingSpawns()` copies (a fresh array every call) are
 // polled at 10 Hz — a §11 spawn shimmer lasts 0.8 s.
+//
+// PHASE GATE (round D, camp critic F2). Pointers are combat chrome: index.js
+// passes the run system's "a room is in combat" verdict into update(), and
+// while it is false the layer draws NOTHING — every pointer node is removed
+// from the DOM and the hysteresis / hit / spawn caches are cleared — so a
+// stray enemy left behind by a sim leak cannot put a pointer on the Victory
+// card or over the campfire.
 import { Vector3 } from 'three';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -402,9 +409,32 @@ export function createThreatLayer({ stage, world, bus = null }) {
   }
 
   let lastNow = 0;
+  let live = false; // pointers exist in the DOM
 
-  function update(now, entities) {
+  // Drop every pointer and every cache. Idempotent; runs on the phase-gate
+  // edge and on the explicit run-end events.
+  function clear() {
+    threatCount = 0;
+    groupCount = 0;
+    shown.clear();
+    shownNext.clear();
+    hitAt.clear();
+    spawnCache = [];
+    spawnPollAt = 0;
+    if (pool.length) {
+      root.replaceChildren();
+      pool.length = 0;
+    }
+    live = false;
+  }
+
+  function update(now, entities, combat = true) {
     lastNow = now;
+    if (!combat) {
+      if (live || pool.length) clear();
+      return;
+    }
+    live = true;
     // Expired ticks are dropped, so the map holds at most the enemies hit in
     // the last HIT_FLASH_SEC and dead ids can never accumulate.
     if (hitAt.size) {
@@ -476,6 +506,7 @@ export function createThreatLayer({ stage, world, bus = null }) {
   return {
     el: root,
     update,
+    clear,
     setBarHeight,
     setZones,
     debug: {
@@ -484,12 +515,28 @@ export function createThreatLayer({ stage, world, bus = null }) {
       // demand, so the render path never pays for the audit objects.
       audit: () => {
         const rows = [];
+        if (!live) {
+          // Gated: nothing is scanned or drawn. Report the DOM truth.
+          return {
+            window: { w: window.innerWidth, h: window.innerHeight },
+            zones: zones.map((z) => ({ x: Math.round(z.x), y: Math.round(z.y), w: Math.round(z.w), h: Math.round(z.h) })),
+            gated: true,
+            threats: rows,
+            offFrame: 0,
+            markersDrawn: 0,
+            markerBudget: MAX_MARKERS,
+            covered: 0,
+            uncued: 0,
+            domMarkers: root.querySelectorAll('.tm').length,
+          };
+        }
         spawnCache = world.pendingSpawns?.() ?? [];
         scan(null, rows);
         paint(lastNow); // keep the DOM and the numbers describing one frame
         const off = rows.filter((a) => !a.inSafeFrame);
         return {
           window: { w: window.innerWidth, h: window.innerHeight },
+          gated: false,
           zones: zones.map((z) => ({ x: Math.round(z.x), y: Math.round(z.y), w: Math.round(z.w), h: Math.round(z.h) })),
           threats: rows,
           offFrame: off.length,

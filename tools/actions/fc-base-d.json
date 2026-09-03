@@ -1,0 +1,35 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__X=window.__X||{};const E=window.__echoes;window.__X.pid=(i)=>{const p=E.state().party;const m=p.find(q=>(q.partyIndex??0)===i);return m?m.id:null;};window.__X.rects=()=>{const SEL=['.hud-slot-key','.hud-port-key','.hud-slot-abbrev','.hud-slot-num','.hud-port-num','.hud-port-e','.hud-slot-passive','.hud-bn-label','.hud-bn-num','.hud-bn-pips','.hud-bn-bar','.tm-badge'];const vis=(n)=>{const r=n.getBoundingClientRect();let p=n;while(p&&p!==document.body){const c=getComputedStyle(p);if(c.display==='none'||Number(c.opacity)<0.02)return null;p=p.parentElement;}return r.width>0.5&&r.height>0.5?r:null;};const rs=[];for(const s of SEL)for(const n of document.querySelectorAll(s)){const r=vis(n);if(r)rs.push({s,txt:(n.textContent||'').trim().slice(0,8),x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),fs:+(parseFloat(getComputedStyle(n).fontSize)).toFixed(1)});}const hits=[];for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i],b=rs[j];const ox=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x);const oy=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);if(ox>0.5&&oy>0.5)hits.push({a:a.s+':'+a.txt,b:b.s+':'+b.txt,ox:+ox.toFixed(1),oy:+oy.toFixed(1)});}return {n:rs.length,overlaps:hits,rects:rs};};return 'lib';})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd('startRoom','kill_all');const s=E.cmd('runState');return {room:s&&s.room,phase:s&&s.phase,mode:r&&r.mode};})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const X=window.__X;E.cmd('teleport',0,0);E.cmd('setHp',X.pid(1),0);E.cmd('setHp',X.pid(2),0.12);E.cmd('setHp',X.pid(3),0);E.hud.freeze(0.25);if(E.hud.overrideIndex()!==null)E.cmd('healOverride',E.hud.overrideIndex());E.hud.hover(0,true);return E.hud.portraits().map(p=>p.state);})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const X=window.__X;E.cmd('teleport',0,0);E.cmd('setHp',X.pid(1),0);E.cmd('setHp',X.pid(2),0.12);E.cmd('setHp',X.pid(3),0);E.hud.freeze(0.25);if(E.hud.overrideIndex()!==null)E.cmd('healOverride',E.hud.overrideIndex());E.hud.hover(0,true);return E.hud.portraits().map(p=>p.state);})()"
+ },
+ {
+  "type": "wait",
+  "ms": 80
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const q=(s)=>[...document.querySelectorAll(s)].map(n=>{const r=n.getBoundingClientRect();const cs=getComputedStyle(n);return {x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),disp:cs.display,z:cs.zIndex,txt:n.textContent}});return {scale:E.hud.metrics().scale,keys:q(\".hud-port-key\"),tops:q(\".hud-port-top\"),es:q(\".hud-port-e\"),tiles:q(\".hud-port-tile\"),cells:q(\".hud-port\"),ports:E.hud.portraits().map(p=>({i:p.index,st:p.state,tile:p.tileBox})),rects:window.__X.rects(),banner:E.hud.banner(),run:(()=>{const r=E.cmd(\"runState\");return {active:r.active,phase:r.phase,combat:r.combatActive}})()};})()"
+ }
+]

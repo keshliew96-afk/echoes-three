@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__xf=[];window.__xt=setInterval(()=>{window.__xf.push(__echoes.fps)},250);return \"armed\"})()"
+ },
+ {
+  "type": "wait",
+  "ms": 8000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{clearInterval(window.__xt);const f=window.__xf||[];return {n:f.length,min:Math.min(...f),max:Math.max(...f),mean:Math.round(f.reduce((a,b)=>a+b,0)/f.length*10)/10,entities:__echoes.entityCount,mode:__echoes.cmd(\"campState\").mode}})()"
+ }
+]

@@ -70,6 +70,15 @@ import { installBandGuard, bandGuardInfo } from '../env/bandguard.js';
 // Render-cosmetic scaffold numbers (grouped; not brief-bound gameplay values).
 const FIREFLY_COUNT = 120;
 const TORCH_LIGHT = { intensity: 13.0, distance: 11, decay: 2 };
+// Room 8 (run block, §11 "room a stop darker", "boss = brightest emitter"):
+// while the Hollow Stag lives every FIRE emitter — wall torch AND brazier
+// bowl: painted flame, halo, pool and the torch PointLights — runs one
+// photographic stop (0.5x) down. Round D F5a measured the fires at 7.8-10.9%
+// LUMA >200 against the Stag's 0.45%; the boss layer's light dim never
+// reached them because the flicker loop below rewrites the torch intensity
+// every frame and the sprites are not lights. (The critic's "torches" are the
+// mid-field brazier bowls — the wall torches project off-frame in room 8.)
+const BOSS_TORCH_DIM = 0.5;
 // Contact-shadow radius for sim bodies (training dummies / future enemies).
 // The blob texture holds a near-solid core out to 50% of the radius and
 // feathers to nothing at 100%. The PLAYER's grounding moved to the critter
@@ -483,6 +492,7 @@ export function createArenaScene(stage, toggles, ctx) {
   const flames = []; // { body, glow, pool, phase }
   const pulses = []; // lantern/monolith halos
   const fireSources = []; // ember spawn points
+  let torchDim = 1; // room-8 torch stop-down, eased (see BOSS_TORCH_DIM)
   let poolSeq = 0;
   const poolY = () => 0.011 + poolSeq++ * 0.0008; // stagger, never z-fight
 
@@ -564,7 +574,7 @@ export function createArenaScene(stage, toggles, ctx) {
       pool.position.x = em.x;
       pool.position.z = em.z;
       root.add(pool);
-      flames.push({ body, glow, pool, poolO: 0.44, glowS: 0.85, glowO: 0.3, x: em.x, y: fy, z: fz, phase: cosmetic.range(0, Math.PI * 2) });
+      flames.push({ body, glow, pool, poolO: 0.44, glowS: 0.85, glowO: 0.3, x: em.x, y: fy, z: fz, torch: true, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.2, z: fz });
     } else if (em.kind === 'brazier') {
       // Mid-field fire bowl (baseline-v030 F1): the emitter that OWNS the
@@ -662,7 +672,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // the ground around the pedestal to featureless white, which is exactly
       // what turned the emitter into a backlit smudge — the F1 defect this
       // whole prop exists to fix. The FLAME is the hot centre now.)
-      flames.push({ body, glow, pool, poolO: 0.46, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.8, phase: cosmetic.range(0, Math.PI * 2) });
+      flames.push({ body, glow, pool, poolO: 0.46, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.8, torch: true, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.12, z: fz });
     } else if (em.kind === 'lantern') {
       // A lantern is a FIRE, not a cold lamp: a small flame inside the glass
@@ -968,10 +978,23 @@ export function createArenaScene(stage, toggles, ctx) {
       }
     }
 
+    // Room-8 torch stop-down (BOSS_TORCH_DIM): keyed off the live Stag body,
+    // eased over ~0.25 s so the step hides inside the §13 transition fade and
+    // the death collapse. Braziers, lanterns and the monolith are untouched.
+    let stagAlive = false;
+    for (const e of world.entities()) {
+      if (e.kind === 'stag' && e.hp > 0) {
+        stagAlive = true;
+        break;
+      }
+    }
+    torchDim += ((stagAlive ? BOSS_TORCH_DIM : 1) - torchDim) * (1 - Math.exp(-12 * dt));
+
     // Torch flames: fast flicker on the painted flame sprite (scale + a touch
     // of lateral sway) plus glow/pool breath, so a torch never reads as a
     // painted-on sticker.
     for (const f of flames) {
+      const dim = f.torch ? torchDim : 1;
       const n =
         Math.sin(tSec * 13 + f.phase) * 0.5 +
         Math.sin(tSec * 29 + f.phase * 2.7) * 0.3 +
@@ -990,9 +1013,10 @@ export function createArenaScene(stage, toggles, ctx) {
       // have to absorb. The FLICKER still reads: the flame sprite's scale
       // (0.22 n), its sway, the halo's scale and the torch PointLights all keep
       // their full amplitude — only the two big soft AREAS are damped.
-      f.glow.material.opacity = Math.max(0.16, (f.glowO ?? 0.45) + 0.09 * n + jit);
+      f.glow.material.opacity = Math.max(0.16, (f.glowO ?? 0.45) + 0.09 * n + jit) * dim;
       f.glow.scale.setScalar((f.glowS ?? 1.05) * (1 + 0.1 * n)); // braziers ride a tighter halo
-      f.pool.material.opacity = Math.max(0.24, (f.poolO ?? 0.6) + 0.05 * n);
+      f.pool.material.opacity = Math.max(0.24, (f.poolO ?? 0.6) + 0.05 * n) * dim;
+      f.body.material.opacity = dim;
       if (f.core) f.core.material.opacity = Math.max(0.08, (f.coreO ?? 0.16) + 0.05 * n);
     }
     // Lanterns + monolith halos: soft pulses (monolith "subtle glow" §19.3).
@@ -1014,7 +1038,9 @@ export function createArenaScene(stage, toggles, ctx) {
     // The real torch PointLights flicker with their flames.
     for (const tl of torchLights) {
       tl.light.intensity =
-        TORCH_LIGHT.intensity * (1 + 0.13 * Math.sin(tSec * 11 + tl.phase) + 0.07 * Math.sin(tSec * 23));
+        TORCH_LIGHT.intensity *
+        torchDim *
+        (1 + 0.13 * Math.sin(tSec * 11 + tl.phase) + 0.07 * Math.sin(tSec * 23));
     }
     // Lantern glass itself breathes (shared instanced material, so one value
     // drives every lantern — the offsets live on their glow sprites).

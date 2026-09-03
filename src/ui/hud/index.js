@@ -112,6 +112,12 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
     'room_enter',
     'room_transition',
   ];
+  // Run-end edges (round D, camp critic F2 / run critic F6): the banner,
+  // the threat pointers and the bar's own combat residue are cleared IN THE
+  // SAME JS TURN as the event, before the end card can paint over a live
+  // "WAVE 2/2" banner, and independently of whether the sim's wave director
+  // has actually stopped (it leaked enemies after run_end in round D).
+  const END_EVENTS = ['run_end', 'run_wiped', 'return_to_camp'];
 
   // ------------------------------------------------------------ update ---
   const members = [null, null, null, null];
@@ -125,6 +131,19 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
   let bossEntity = null;
   let runBoss = null;
   let roomPollAt = 0;
+  // PHASE GATE. Zone 2 and the threat layer are combat chrome and exist only
+  // while the run system says a room is in combat (kill_all / defend / boss).
+  // Outside a run the sim reports no active run and the gate is closed — a
+  // stray enemy, a stale wave schedule or a live `stag` entity cannot open
+  // it. Inside a run, a wave room that a probe restarted while the run sits
+  // on a meta page (waves.startRoom via cmd) still counts as combat.
+  let combat = false;
+  function readCombat() {
+    const rs = world.runSystem?.();
+    if (!rs) return !!(room && !room.cleared);
+    if (!rs.isActive()) return false;
+    return !!(rs.combatActive() || (room && !room.cleared));
+  }
 
   function pollRoom(nowMs) {
     roomPollAt = nowMs + ROOM_POLL_MS;
@@ -141,13 +160,25 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
   }
 
   // Re-read and repaint the banner IN THE SAME JS TURN as the room event, so
-  // the 240 ms CSS fade is the whole of the <=300 ms budget.
+  // the 150 ms CSS fade is the whole of the <=300 ms budget.
   for (const t of ROOM_EVENTS) {
     bus.on(t, () => {
       pollRoom(performance.now());
-      banner.update(room, runBoss ?? bossEntity);
+      combat = readCombat();
+      if (banner.update(room, combat ? runBoss ?? bossEntity : null, combat)) publishZones();
     });
   }
+  function endCombatChrome() {
+    combat = false;
+    room = null;
+    runBoss = null;
+    bossEntity = null;
+    banner.hide();
+    threat.clear();
+    bar.endRun();
+    publishZones();
+  }
+  for (const t of END_EVENTS) bus.on(t, endCombatChrome);
 
   // A/B switch for frame-cost probes only (tools/actions/hd-fps-ab.json):
   // when off, the whole HUD update is skipped and the overlay is hidden, so a
@@ -176,11 +207,12 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
     bar.update(now, { members, channels, tick: world.tick, greySkills });
 
     if (nowMs >= roomPollAt) pollRoom(nowMs);
+    combat = readCombat();
     // The banner reports when it actually repainted; only then can its zone
     // rectangle have moved.
-    if (banner.update(room, runBoss ?? bossEntity)) publishZones();
+    if (banner.update(room, combat ? runBoss ?? bossEntity : null, combat)) publishZones();
 
-    threat.update(now, entities);
+    threat.update(now, entities, combat);
   }
 
   // ------------------------------------------------------------- debug ---
@@ -193,6 +225,15 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
 
   const debug = {
     ...bar.debug,
+    // Round D phase gate: what the HUD believes about combat right now.
+    combat: () => ({
+      combat,
+      runActive: !!world.runSystem?.()?.isActive(),
+      combatActive: !!world.runSystem?.()?.combatActive(),
+      roomLive: !!(room && !room.cleared),
+      bannerMode: banner.debug.state().mode,
+      threatNodes: threat.el.querySelectorAll('.tm').length,
+    }),
     banner: banner.debug.state,
     boss: banner.debug.boss,
     threat: threat.debug.audit,

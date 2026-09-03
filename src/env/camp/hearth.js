@@ -149,6 +149,7 @@ export function createCampEmitters(root, emitters, cosmetic) {
   const lights = []; // real PointLights (hearth + forge only)
   const fireSources = []; // ember spawn points
   const motes = []; // violet gate motes
+  const trails = []; // hearth spark columns
 
   let hearthLight = null;
   let hearthFlame = null;
@@ -176,6 +177,33 @@ export function createCampEmitters(root, emitters, cosmetic) {
         small.position.set(em.x + 0.24 * s, fy + 0.12 * s, fz + 0.1);
         small.renderOrder = 8;
         root.add(small);
+        // Round D (camp critic A4): next to the reference's fires — each a
+        // white-hot core + orange body + rising trail — the hearth read as ONE
+        // bloomed blob. Three additions inside the same stack: an additive
+        // parchment CORE low in the fire (the only new bloom source, and a
+        // near-neutral one, so its skirt is cream and can never rotate a
+        // neighbour into Ember), two small fast TONGUES licking above the body
+        // so the silhouette breaks, and a tall spark column (createHearthTrail)
+        // that carries embers past the tripod instead of dying at the pot.
+        const hot = halo(
+          root,
+          mix(PALETTE.parchment, PALETTE.paleGold, 0.3),
+          0.5 * s,
+          0.9,
+          em.x,
+          fy + 0.08 * s,
+          fz + 0.14
+        );
+        hot.renderOrder = 9;
+        const tongueA = makeFlameSprite(0.4 * s, 0.92, 0.9);
+        tongueA.position.set(em.x - 0.08 * s, fy + 0.7 * s, fz + 0.12);
+        tongueA.renderOrder = 9;
+        root.add(tongueA);
+        const tongueB = makeFlameSprite(0.3 * s, 0.88, 0.9);
+        tongueB.position.set(em.x + 0.17 * s, fy + 0.62 * s, fz + 0.12);
+        tongueB.renderOrder = 9;
+        root.add(tongueB);
+        trails.push(createHearthTrail(root, { x: em.x, y: fy + 0.5 * s, z: fz + 0.1 }, cosmetic));
         const gl = halo(root, CAMP_GLOW.halo, 1.6 * s, 0.3, em.x, fy + 0.32 * s, fz);
         // The camp's principal light on the FLOOR: broad, hot at the centre.
         const pool = groundPool(root, CAMP_GLOW.pool, 3.8 * s, 0.46, em.x, em.z);
@@ -191,6 +219,12 @@ export function createCampEmitters(root, emitters, cosmetic) {
           poolO: 0.46,
           core,
           coreO: 0.2,
+          hot,
+          hotO: 0.9,
+          hotS: 0.5 * s,
+          tongues: [tongueA, tongueB],
+          tongueBase: [0.4 * s, 0.3 * s],
+          tongueY: [fy + 0.7 * s, fy + 0.62 * s],
           base: 1.18 * s,
           x: em.x,
           y: fy + 0.34 * s,
@@ -482,6 +516,20 @@ export function createCampEmitters(root, emitters, cosmetic) {
       f.glow.scale.setScalar(f.glowS * (1 + 0.09 * n));
       f.pool.material.opacity = Math.max(0.2, f.poolO + 0.05 * n);
       if (f.core) f.core.material.opacity = Math.max(0.16, f.coreO + 0.07 * n);
+      if (f.hot) {
+        const hn = Math.sin(tSec * 21 + f.phase * 1.3) * 0.5 + Math.sin(tSec * 47 + f.phase) * 0.5;
+        f.hot.material.opacity = Math.max(0.5, f.hotO + 0.12 * hn + jit);
+        f.hot.scale.setScalar(f.hotS * (1 + 0.12 * hn));
+      }
+      if (f.tongues) {
+        for (let i = 0; i < f.tongues.length; i++) {
+          const m = Math.sin(tSec * (19 + i * 9) + f.phase * (2.1 + i)) * 0.7 + n * 0.3;
+          const hh = f.tongueBase[i] * (1 + 0.42 * m);
+          f.tongues[i].scale.set(hh * 0.62, hh, 1);
+          f.tongues[i].position.y = f.tongueY[i] + 0.06 * m;
+          f.tongues[i].material.opacity = Math.max(0.3, 0.75 + 0.25 * m);
+        }
+      }
     }
 
     for (const p of pulses) {
@@ -504,6 +552,7 @@ export function createCampEmitters(root, emitters, cosmetic) {
     }
 
     embers.update(tSec);
+    for (const t of trails) t.update(tSec);
 
     if (gate) {
       const violet = RUNE_VIOLET;
@@ -535,8 +584,82 @@ export function createCampEmitters(root, emitters, cosmetic) {
       lights: lights.length,
       embers: embers.count,
       gateMotes: gate ? gate.n : 0,
+      trailSparks: trails.reduce((n, t) => n + t.count, 0),
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Hearth spark column (Round D A4): the reference's fires each trail embers
+// well above the flame. The shared Act-1 ember field tops out ~0.85 u over
+// its source (right for a torch); the hearth is the camp's ONE fire and its
+// column rises 0.9-1.7 u, drifting with the flame's own sway. Cosmetic stream.
+// ---------------------------------------------------------------------------
+function createHearthTrail(root, src, cosmetic, n = 44) {
+  const pos = new Float32Array(n * 3);
+  const col = new Float32Array(n * 3);
+  const hot = new Color(PALETTE.parchment).lerp(new Color(PALETTE.hearthAmber), 0.35).multiplyScalar(2.0);
+  const cool = new Color(PALETTE.hearthAmber).lerp(new Color(PALETTE.bruiseUmber), 0.45);
+  const data = [];
+  for (let i = 0; i < n; i++) {
+    data.push({
+      t: cosmetic.range(0, 1),
+      life: cosmetic.range(1.1, 2.2),
+      ox: cosmetic.range(-0.22, 0.22),
+      oz: cosmetic.range(-0.12, 0.12),
+      rise: cosmetic.range(0.9, 1.7),
+      drift: cosmetic.range(-0.16, 0.16),
+      wob: cosmetic.range(0.03, 0.1),
+      rate: cosmetic.range(2.5, 6),
+      phase: cosmetic.range(0, Math.PI * 2),
+    });
+  }
+  const geo = new BufferGeometry();
+  const pa = new BufferAttribute(pos, 3);
+  pa.setUsage(DynamicDrawUsage);
+  geo.setAttribute('position', pa);
+  const ca = new BufferAttribute(col, 3);
+  ca.setUsage(DynamicDrawUsage);
+  geo.setAttribute('color', ca);
+  const pts = new Points(
+    geo,
+    new PointsMaterial({
+      map: getRadialTexture(),
+      size: 0.085,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.95,
+      blending: AdditiveBlending,
+      depthWrite: false,
+      toneMapped: false,
+    })
+  );
+  pts.frustumCulled = false;
+  pts.renderOrder = 9;
+  root.add(pts);
+
+  let last = null;
+  function update(tSec) {
+    const dt = last === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - last));
+    last = tSec;
+    for (let i = 0; i < n; i++) {
+      const d = data[i];
+      d.t += dt / d.life;
+      if (d.t > 1) d.t -= Math.floor(d.t);
+      const f = d.t;
+      pos[i * 3] = src.x + d.ox * (1 - f * 0.3) + d.drift * f + Math.sin(tSec * d.rate + d.phase) * d.wob * f;
+      pos[i * 3 + 1] = src.y + d.rise * f;
+      pos[i * 3 + 2] = src.z + d.oz + Math.cos(tSec * d.rate * 0.7 + d.phase) * d.wob * f;
+      // Hot and small at birth, umber and fading at the top of the column.
+      const k = (1 - f) * (0.35 + 0.65 * (1 - f));
+      col[i * 3] = (hot.r * (1 - f) + cool.r * f) * k;
+      col[i * 3 + 1] = (hot.g * (1 - f) + cool.g * f) * k;
+      col[i * 3 + 2] = (hot.b * (1 - f) + cool.b * f) * k;
+    }
+    pa.needsUpdate = true;
+    ca.needsUpdate = true;
+  }
+  return { update, count: n };
 }
 
 // ---------------------------------------------------------------------------

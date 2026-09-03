@@ -100,6 +100,10 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
   // or retreating caster releases its slot implicitly); only the last START
   // needs remembering.
   let lastPlayerTelegraphStart = -100000;
+  // Spawn gate (run block, §2/§18): once a run has been played, enemies may
+  // only spawn while that run is in live combat — never on the end screens or
+  // in Camp. Installed by sim/run.js; null = ungated (the ?room= harness).
+  let spawnGate = null;
 
   function governorGrants(tick) {
     let telegraphing = 0;
@@ -116,6 +120,10 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     const S = ENEMY_STATS[etype];
     if (!S) return null;
     const tick = getTick();
+    if (spawnGate && !spawnGate()) {
+      events.emit(tick, "spawn_blocked", { etype, x: r2(x), z: r2(z), wave });
+      return null;
+    }
     const { mx, mz } = innerBounds(S.radius);
     const sx = Math.min(mx, Math.max(-mx, x));
     const sz = Math.min(mz, Math.max(-mz, z));
@@ -473,5 +481,8 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     despawnShots,
     reset,
     debugSpawn,
+    setSpawnGate: (fn) => {
+      spawnGate = typeof fn === "function" ? fn : null;
+    },
   };
 }

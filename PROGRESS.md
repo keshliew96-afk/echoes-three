@@ -5,7 +5,7 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ⏸ PAUSED by user 2026-09-02 (Round D critic wave done 4/4, v0.4.13, commit aa3b00a)
+## Status: ▶ Picked up in a new session — Round D fix builders A/B/C checkpointed (v0.4.14), fresh critics re-verifying; certification next
 
 ### Resume point — do this first
 1. Start the dev server (`npm run dev`, port 5199) if it is not up.

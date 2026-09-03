@@ -318,20 +318,25 @@ export function hudCss() {
    class-accent hairline now sits concentric INSIDE the Bone ring, and the HP
    track wears the accent on its rim, so class survives the downed treatment
    without competing with the revive instrument. */
+/* ROUND-D ADVISORY (two downed tiles read as one object: mean tile diff
+   14.4/channel vs 45.0 healthy). Three changes: the hairline and track rim
+   carry the class BASE accent (#6B6157 vs #6E7A3F are far apart; their lifts
+   were <=11/255 apart), the F-key chip stays up (see .hud-port-top below),
+   and the bust keeps enough colour and size to stay a badger / a hare. */
 .hud-port-ident {
   position: absolute; inset: 0;
   border-radius: 10px;
-  border: 2px solid var(--accentLift, ${PALETTE.bone});
+  border: 2px solid var(--accent, ${PALETTE.bone});
   display: none;
   pointer-events: none;
   z-index: 2;
 }
 .hud-port.is-downed .hud-port-ident { display: block; }
-.hud-port.is-downed .hud-port-hp { border-color: var(--accentLift, ${CHROME.rimDim}); }
+.hud-port.is-downed .hud-port-hp { border-color: var(--accent, ${CHROME.rimDim}); }
 .hud-port.is-downed .hud-port-crop { clip-path: inset(24% 0 24% 0); }
 .hud-port.is-downed .hud-port-img {
-  transform: rotate(78deg) scale(0.8);
-  filter: grayscale(0.88) brightness(0.95);
+  transform: rotate(78deg) scale(0.94);
+  filter: grayscale(0.45) brightness(0.92);
 }
 .hud-port-ring {
   position: absolute; inset: 0;
@@ -347,18 +352,22 @@ export function hudCss() {
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
 }
-/* While Downed the tile belongs to the revive instrument, so the F-key chip
-   stands down: a downed ally is not a legal heal-override recipient (§8 —
-   an override on a downed member falls back to smart-target), and the chip
-   would otherwise sit exactly on the ring's 12 o'clock start. It returns the
-   moment the ally is up. That leaves the ring's sweep unbroken and the E chip
-   centred inside it — no glyph in the tile overlaps another. */
-.hud-port.is-downed .hud-port-top { display: none; }
+/* DOWNED TOP BAND. Round 3 hid the F-key chip while Downed (the chip sat on
+   the ring's 12 o'clock start); round D measured the cost — two downed tiles
+   became the same Bone ring. The chip now STAYS UP, in the class accent, and
+   the hold-E glyph becomes a second keycap mirrored at the top-right. Both
+   caps paint ABOVE the ring (z 5 > ring 4) and the ring's visible arc is cut
+   to the span the caps leave free (commandbar.js ARC_START/ARC_SWEEP), so the
+   two chips never share a pixel with each other, with the ring, or with the
+   bust's crop band. A 64 px tile cannot hold a 26 px keycap, a 26 px E plate
+   and a full circle with no overlap; this is the composition that keeps all
+   three legible. */
+.hud-port.is-downed .hud-port-top { z-index: 5; }
+.hud-port.is-downed .hud-port-key { color: var(--accentLift, ${CHROME.inkDim}); }
 .hud-port-e {
-  position: absolute; left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  height: 26px; padding: 0 7px;
-  border-radius: 7px;
+  position: absolute; right: 0; top: 0;
+  height: ${KEY_H}px; padding: 0 4px;
+  border-bottom-left-radius: 9px;
   display: none;
   align-items: center; justify-content: center;
   background: ${CHROME.plate};
@@ -576,7 +585,10 @@ export function hudCss() {
   border: 2px solid ${CHROME.rim};
   box-shadow: inset 0 0 0 1px ${CHROME.plateSunk};
   opacity: 0;
-  transition: opacity 170ms linear;
+  /* 150 ms: the fade-out shares its <=300 ms budget with the reward page the
+     run UI builds in the same frame (measured 158-250 ms of main thread), and
+     banner.js anchors the transition before that build. */
+  transition: opacity 150ms linear;
   white-space: nowrap;
 }
 #hud-banner.show { opacity: 1; }

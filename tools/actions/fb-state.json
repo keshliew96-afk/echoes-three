@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const c=__echoes.cmd(\"campState\");return {scene:s.scene,mode:c.mode,runPhase:__echoes.cmd(\"runState\").phase,propTypes:c.propTypes,campNames:c.campPropTypes,shadows:c.propShadows,emitters:c.emitterKinds,lights:c.lights,embers:c.embers,gateMotes:c.gateMotes,fireflies:c.fireflies,grass:c.grass,vignette:c.vignette,exposure:c.exposure,key:c.keyIntensity,fill:c.fillIntensity,party:c.party,player:c.player,portal:c.portal,hearth:c.hearth,bandGuard:c.bandGuard,bookends:c.bookends,wall:c.wall,seed:__echoes.seed,bootSeed:__echoes.bootSeed,fps:__echoes.fps}})()"
+ }
+]

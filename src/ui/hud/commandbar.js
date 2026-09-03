@@ -40,8 +40,20 @@ import { ACCENTS, CHROME } from './style.js';
 const CLASS_BY_INDEX = ['healer', 'tank', 'swordsman', 'archer'];
 const PORTRAIT_LETTER = { healer: 'H', tank: 'T', swordsman: 'S', archer: 'A' };
 const REVIVE_TOTAL_TICKS = 300; // §10 5.0 s channel (allies.js REVIVE.channelTicks)
-const RING_R = 27; // svg units in a 70-box viewBox
+// DOWNED RING GEOMETRY (70-box viewBox over the tile's 60 px padding box).
+// Round D advisory: the F-key chip stays up on a downed tile (identity), and
+// the hold-E glyph becomes a second keycap at the top-right, so the top band
+// of the tile is chrome. The ring sits a little low (cy 41.5) and the two
+// keycaps CAP it: the Bone backing and the Parchment fill are drawn as one
+// arc that starts just past the E cap (~2:30) and sweeps clockwise to just
+// before the F cap (~9:30), so no stroke ever runs under a chip and the fill
+// can never "stall" under one. Angles are clockwise from 12.
+const RING_R = 23.5;
+const RING_CY = 41.5;
 const RING_C = 2 * Math.PI * RING_R;
+const ARC_START_DEG = 68;
+const ARC_SWEEP_DEG = 224;
+const ARC_LEN = (RING_C * ARC_SWEEP_DEG) / 360;
 const CRIT_HZ = 2; // §17 Critical value-pulse rate
 
 const el = (tag, cls, parent) => {
@@ -156,11 +168,13 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     const rf = svgEl('circle', 'rf', ring);
     for (const c of [rk, rb, rf]) {
       c.setAttribute('cx', '35');
-      c.setAttribute('cy', '35');
+      c.setAttribute('cy', String(RING_CY));
       c.setAttribute('r', String(RING_R));
+      // One visible arc for all three strokes (see RING geometry above).
+      c.setAttribute('stroke-dasharray', `${ARC_LEN} ${RING_C}`);
+      c.style.transform = `rotate(${-90 + ARC_START_DEG}deg)`;
     }
-    rf.setAttribute('stroke-dasharray', String(RING_C));
-    rf.setAttribute('stroke-dashoffset', String(RING_C));
+    rf.setAttribute('stroke-dashoffset', String(ARC_LEN));
     const eGlyph = el('span', 'hud-port-e', tile);
     eGlyph.textContent = 'E';
 
@@ -435,10 +449,10 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
 
       if (downedish) {
         const prog = ch ? Math.max(0, Math.min(1, ch.progress / REVIVE_TOTAL_TICKS)) : 0;
-        p.rf.setAttribute('stroke-dashoffset', String(RING_C * (1 - prog)));
+        p.rf.setAttribute('stroke-dashoffset', String(ARC_LEN * (1 - prog)));
         p.rf.style.stroke = ch && ch.draining ? PALETTE.bone : PALETTE.parchment;
-      } else if (p.rf.getAttribute('stroke-dashoffset') !== String(RING_C)) {
-        p.rf.setAttribute('stroke-dashoffset', String(RING_C));
+      } else if (p.rf.getAttribute('stroke-dashoffset') !== String(ARC_LEN)) {
+        p.rf.setAttribute('stroke-dashoffset', String(ARC_LEN));
       }
 
       p.cell.classList.toggle('is-selected', overrideIndex === p.i);
@@ -487,9 +501,32 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     }
   }
 
+  // RUN END (run_end / run_wiped / return_to_camp). The sim wipes cooldowns,
+  // HP and the heal override, and the bar repaints from that truth on the
+  // next frame — but two things are the bar's own and would otherwise leak
+  // into the end card / Camp: the override outline (only updated by the
+  // heal_override event, which the wipe does not emit) and the ready-pop
+  // that every slot would fire when its cooldown snaps to 0. Both are
+  // silenced here, along with any nudge / shake still animating.
+  function endRun() {
+    overrideIndex = null;
+    for (const s of [...skillEls, dodge]) {
+      clearNudges(s.slot);
+      clearNudges(s.flash);
+      clearNudges(s.frame);
+      s.wasReady = true;
+    }
+    for (const p of ports) {
+      p.cell.classList.remove('shake');
+      p.cell.classList.remove('is-selected');
+      p.rally.classList.remove('go');
+    }
+  }
+
   return {
     el: bar,
     update,
+    endRun,
     // Debug surface (docs/TESTING.md): every state a capture needs to pin.
     debug: {
       freeze: (t) => {
@@ -536,7 +573,15 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
             trackBorder: trackCs.borderTopColor,
             trackOutline: trackCs.outlineColor,
             reviveOffset: Number(p.rf.getAttribute('stroke-dashoffset')),
-            reviveTotal: RING_C,
+            reviveTotal: ARC_LEN,
+            arc: { startDeg: ARC_START_DEG, sweepDeg: ARC_SWEEP_DEG },
+            // Downed identity (round D advisory): the F-key chip stays up and
+            // the hairline / track rim carry the class BASE accent.
+            keyVisible: p.key.getBoundingClientRect().width > 1,
+            eBox: rect(p.tile.querySelector('.hud-port-e')),
+            identColor: getComputedStyle(p.tile.querySelector('.hud-port-ident')).borderTopColor,
+            keyColor: getComputedStyle(p.key).color,
+            imgFilter: p.img ? getComputedStyle(p.img).filter : null,
             hasImage: !!p.img,
           };
         }),

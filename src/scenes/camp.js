@@ -62,6 +62,8 @@ import { buildCampProps, RUNE_VIOLET } from '../env/camp/props.js';
 import { createCampEmitters, createCampFireflies } from '../env/camp/hearth.js';
 import { createFollowRig } from '../render/camera.js';
 import { createBookends } from '../ui/bookends/index.js';
+import { setStaticColliders } from '../sim/movement.js';
+import { buildCampColliders } from '../env/camp/colliders.js';
 
 // §18: "deep indigo/teal ambient". Two numbers carry the whole night read —
 // the key drops to a cold moon (a twelfth of the Act-1 sun) and the hemisphere
@@ -124,7 +126,11 @@ const CAMP_CSS = `
   }
   #camp-fade.cp-on { opacity: 1; }
   #camp-prompt {
-    position: fixed; left: 50%; bottom: 21%; transform: translateX(-50%) scale(var(--cp-s, 1));
+    /* Round D (camp critic A1): no longer parked at bottom 21%, where it sat
+       on the Tank once the camera had followed the Healer north. left/top are
+       driven every frame from the projected gate (placePrompt): the prompt
+       hangs over the lintel like a sign, and every critter is south of it. */
+    position: fixed; left: 50%; top: 0; transform: translate(-50%, -100%) scale(var(--cp-s, 1));
     transform-origin: bottom center;
     z-index: 13; pointer-events: none; display: none;
     align-items: center; gap: 12px;
@@ -292,6 +298,26 @@ export function createCampScene(stage, toggles, ctx) {
   // theatrical Defeat wash live in their own module (src/ui/bookends).
   const bookends = createBookends({ bus, world });
 
+  // ------------------------------------------------------ solid camp --
+  // Round D F3: the camp hands the sim its prop footprints, and the ally AI
+  // holds the three critters on their hearth seats (A2) — both only while the
+  // camp is the live scene. Cleared the instant a run starts, so the combat
+  // path never sees a collider or a seat.
+  const colliders = buildCampColliders(CAMP_SPEC);
+  const seats = Object.freeze({
+    1: { x: CAMP_SPOTS.tank.x, z: CAMP_SPOTS.tank.z },
+    2: { x: CAMP_SPOTS.swordsman.x, z: CAMP_SPOTS.swordsman.z },
+    3: { x: CAMP_SPOTS.archer.x, z: CAMP_SPOTS.archer.z },
+  });
+  function applyCampSim() {
+    setStaticColliders(colliders);
+    world.cmd('campSeats', seats);
+  }
+  function applyRunSim() {
+    setStaticColliders(null);
+    world.cmd('campSeats', null);
+  }
+
   // ------------------------------------------------------------- state --
   let mode = 'camp';
   let healerYaw = Math.PI;
@@ -348,6 +374,8 @@ export function createCampScene(stage, toggles, ctx) {
     for (const r of arenaRoots) r.visible = !inCamp;
     if (inCamp) applyCampLighting();
     else applyRunLighting();
+    if (inCamp) applyCampSim();
+    else applyRunSim();
   }
 
   // Park the whole party on its camp spots and snap the camera onto the fire.
@@ -369,6 +397,7 @@ export function createCampScene(stage, toggles, ctx) {
   }
 
   applyCampLighting();
+  applyCampSim();
   seatParty();
 
   // The run ending is what brings the world home (§2: "run end (victory or
@@ -392,6 +421,75 @@ export function createCampScene(stage, toggles, ctx) {
     const dx = p.x - PORTAL.x;
     const dz = p.z - (PORTAL.z + 0.55);
     return dx * dx + dz * dz <= PORTAL.radius * PORTAL.radius;
+  }
+
+  // --- Prompt anchoring (Round D A1). The prompt's bottom-centre rides the
+  // projected point above the gate's lintel (lintel top 1.96 u); it is
+  // clamped to stay on screen. Every critter stands south of the gate, and
+  // the Healer's head inside the disc projects well under the lintel, so the
+  // box can never cover a body. promptAudit() proves it per frame.
+  const PROMPT_ANCHOR = Object.freeze({ x: PORTAL.x, y: 2.35, z: PORTAL.z });
+  const pv = new Vector3();
+  function toScreen(x, y, z) {
+    pv.set(x, y, z).project(stage.camera);
+    return {
+      x: (pv.x + 1) * 0.5 * window.innerWidth,
+      y: (1 - pv.y) * 0.5 * window.innerHeight,
+    };
+  }
+  function placePrompt() {
+    const a = toScreen(PROMPT_ANCHOR.x, PROMPT_ANCHOR.y, PROMPT_ANCHOR.z);
+    const s = parseFloat(prompt.style.getPropertyValue('--cp-s')) || 1;
+    const h = (prompt.offsetHeight || 52) * s;
+    const top = Math.max(12 + h, Math.min(window.innerHeight * 0.7, a.y));
+    prompt.style.left = `${Math.round(a.x)}px`;
+    prompt.style.top = `${Math.round(top)}px`;
+  }
+  // Screen box of a critter standing at (x, z): 1.0 u wide, 1.3 u tall.
+  function critterBox(x, z) {
+    const pts = [
+      toScreen(x - 0.5, 0, z),
+      toScreen(x + 0.5, 0, z),
+      toScreen(x - 0.5, 1.3, z),
+      toScreen(x + 0.5, 1.3, z),
+    ];
+    let x0 = Infinity;
+    let y0 = Infinity;
+    let x1 = -Infinity;
+    let y1 = -Infinity;
+    for (const p of pts) {
+      if (p.x < x0) x0 = p.x;
+      if (p.x > x1) x1 = p.x;
+      if (p.y < y0) y0 = p.y;
+      if (p.y > y1) y1 = p.y;
+    }
+    return { x: r2(x0), y: r2(y0), w: r2(x1 - x0), h: r2(y1 - y0) };
+  }
+  const boxesTouch = (a, b) =>
+    a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  function promptAudit() {
+    const visible = prompt.classList.contains('cp-on');
+    const r = prompt.getBoundingClientRect();
+    const box = { x: r2(r.left), y: r2(r.top), w: r2(r.width), h: r2(r.height) };
+    const rigs = [{ classId: 'healer', g: healerRig.group }].concat(
+      allyRigs.map((a) => ({ classId: a.classId, g: a.rig.group }))
+    );
+    const critters = rigs.map(({ classId, g }) => ({
+      classId,
+      ...critterBox(g.position.x, g.position.z),
+    }));
+    const overlaps = visible ? critters.filter((c) => boxesTouch(box, c)).map((c) => c.classId) : [];
+    return { visible, box, critters, overlaps };
+  }
+  // Distance of each ally's SIM body from its authored seat (A2 probe).
+  function seatDrift() {
+    const out = {};
+    for (const a of allyRigs) {
+      const e = world.entities().find((x) => x.kind === 'ally' && x.partyIndex === a.partyIndex);
+      const spot = CAMP_SPOTS[a.classId];
+      out[a.classId] = e ? r2(Math.hypot(e.x - spot.x, e.z - spot.z)) : null;
+    }
+    return out;
   }
 
   function canBegin() {
@@ -531,6 +629,7 @@ export function createCampScene(stage, toggles, ctx) {
 
     fx.update(elapsedSec);
     flies.update(elapsedSec);
+    placePrompt();
 
     // Gate marker: brighter and a touch larger while the Healer stands in it.
     const now = withinPortal();
@@ -594,6 +693,10 @@ export function createCampScene(stage, toggles, ctx) {
       keyIntensity: keyLight ? Math.round(keyLight.intensity * 100) / 100 : null,
       fillIntensity: fillLight ? Math.round(fillLight.intensity * 100) / 100 : null,
       bookends: bookends.debug(),
+      colliders: colliders.length,
+      seats,
+      seatDrift: seatDrift(),
+      prompt: promptAudit(),
       party: {
         healerAnim: healerRig.getAnim(),
         healerYaw: Math.round(healerYaw * 100) / 100,

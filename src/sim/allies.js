@@ -823,10 +823,38 @@ export function createAllySystem({
     }
   }
 
+  // ------------------------------------------------------ camp seat hold --
+  // Camp block (§18 "the four party critters idle around the fire"; Round D
+  // camp critic A2/F3). While a seat map is installed the AI holds every ally
+  // ON its hearth seat: no targeting, no leash follow, no separation, no
+  // revive/rally — a critter that has sat down stays sat until the run
+  // starts. The only motion allowed is walking BACK to the seat if something
+  // displaced the body (walkStep, so the camp's prop colliders apply).
+  // Installed / cleared by scenes/camp.js through cmd('campSeats', map|null).
+  const SEAT_EPS = 0.01;
+  let campSeats = null; // { [partyIndex]: { x, z } } | null
+  function holdSeats() {
+    for (const a of allyList()) {
+      ensureAllyFields(a);
+      a.moving = false;
+      a.targetId = null;
+      a.leashOut = false;
+      a.aiState = 'engage';
+      const seat = campSeats[a.partyIndex];
+      if (!seat) continue;
+      if (distTo(a, seat.x, seat.z) > SEAT_EPS)
+        a.moving = moveToward(a, seat.x, seat.z, ALLY_CLASSES[a.classId].moveSpeed * TICK_DT);
+    }
+  }
+
   // ---------------------------------------------------- continuous phase --
   // Called from the world's continuous phase (§4 phase 1: move/aim/held
   // states, dashes, projectiles, CHANNELS, zone clocks).
   function continuous(snapshot) {
+    if (campSeats) {
+      holdSeats();
+      return;
+    }
     const tick = getTick();
     refreshDowned(tick);
 
@@ -1351,6 +1379,10 @@ export function createAllySystem({
       case 'roomBoundary':
         onRoomBoundary('debug_boundary');
         return true;
+      case 'campSeats':
+        // Camp block: install (object) or clear (null) the hearth seat hold.
+        campSeats = args && args[0] ? args[0] : null;
+        return !!campSeats;
       default:
         return undefined;
     }

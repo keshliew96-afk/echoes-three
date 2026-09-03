@@ -10,6 +10,21 @@
 // priority order: room.boss -> a live `stag` entity -> an injected descriptor
 // from __echoes.hud.boss({name, hp, maxHp}). Nothing in this file guesses; the
 // moment the sim owns a boss the first branch takes over untouched.
+//
+// PHASE GATE (round D, camp/run critics' F2/F6). The banner is COMBAT chrome:
+// it is only ever shown while the run system says a room is in combat, and
+// index.js passes that verdict in as `combat`. When it is false — reward /
+// path / shop pages, the Victory and Defeat cards, Camp, or no run at all —
+// the banner hides regardless of what the wave director or a stray entity
+// still reports, so a sim-side leak (enemies spawning after run_end) can
+// never draw "WAVE 2/2 · 1 LEFT" over an end card or the campfire.
+//
+// FADE TIMING. The <=300 ms fade-out shares its budget with the reward page
+// that the run UI builds in the same frame (measured 158-250 ms of main
+// thread). The show/hide toggle therefore FLUSHES style synchronously so the
+// CSS transition's start time is anchored before that build, and the
+// transition itself is 150 ms — the fade completes inside the stall instead
+// of starting after it.
 import { PALETTE } from '../../data/palette.js';
 import { CHROME, mix } from './style.js';
 import { TICK_HZ } from '../../core/constants.js';
@@ -65,12 +80,18 @@ export function createBanner() {
     barFill.style.width = `${Math.max(0, Math.min(1, frac)) * 100}%`;
   }
 
-  // room: waves.roomState() | null ; enemies: live enemy snapshot list
-  function update(room, bossEntity) {
-    const boss = (room && room.boss) || bossEntity || bossOverride;
+  let gated = false; // last `combat` verdict the banner was updated with
+
+  // room: waves.roomState() | null ; bossEntity: live boss descriptor | null ;
+  // combat: the run system's "a room is in combat" verdict (index.js). Nothing
+  // is shown while it is false.
+  function update(room, bossEntity, combat = true) {
+    gated = !combat;
+    const boss = combat ? (room && room.boss) || bossEntity || bossOverride : null;
 
     let next = 'none';
-    if (boss) next = 'boss';
+    if (!combat) next = 'none';
+    else if (boss) next = 'boss';
     else if (room && !room.cleared && room.mode === 'defend') next = 'defend';
     else if (room && !room.cleared && room.mode === 'kill_all') next = 'kill_all';
 
@@ -80,6 +101,9 @@ export function createBanner() {
       mode = next;
       root.classList.toggle('boss', mode === 'boss');
       root.classList.toggle('show', mode !== 'none');
+      // Anchor the opacity transition NOW (synchronous style flush), not at
+      // the next style recalc — which may sit behind the reward page build.
+      void root.offsetWidth;
       pips.style.display = mode === 'kill_all' ? 'flex' : 'none';
       bar.style.display = mode === 'kill_all' ? 'none' : 'block';
       timer.style.display = mode === 'defend' ? 'inline' : 'none';
@@ -134,9 +158,24 @@ export function createBanner() {
     return true;
   }
 
+  // Hard hide + state clear (run_end / run_wiped / return_to_camp): the mode
+  // drops to none in this JS turn and the stale text is emptied so nothing
+  // combat-flavoured survives into the end card or Camp.
+  function hide() {
+    const changed = update(null, null, false);
+    label.textContent = '';
+    num.textContent = '';
+    timer.textContent = '';
+    pips.replaceChildren();
+    pipCount = -1;
+    lastKey = '';
+    return changed;
+  }
+
   return {
     el: root,
     update,
+    hide,
     isVisible: () => mode !== 'none',
     debug: {
       boss: (d) => {
@@ -145,6 +184,8 @@ export function createBanner() {
       },
       state: () => ({
         mode,
+        gated, // true = hidden by the run-phase gate (no combat room live)
+        show: root.classList.contains('show'),
         text: root.textContent,
         opacity: Number(getComputedStyle(root).opacity),
         transition: getComputedStyle(root).transitionDuration,

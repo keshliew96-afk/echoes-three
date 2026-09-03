@@ -217,6 +217,29 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     events.emit(tick, 'room_cleared', { mode, softFailed });
   }
 
+  // Run end (§2 "all run state is wiped at run end"; §18 "Corruption never
+  // touches Camp"): the director stops DEAD. The schedule, every spawn
+  // telegraph in flight and the Waystone go, and `mode` drops to null so
+  // step() is a no-op until the next startRoom. Without this the pending
+  // spawns matured 48 ticks after run_end and the next wave rolled into the
+  // Defeat card and the camp (Round D F6).
+  function stop(cause = "run_end") {
+    if (mode === null && pending.length === 0) return false;
+    const tick = getTick();
+    if (waystoneId !== null && registry.byId(waystoneId)) registry.despawn(waystoneId);
+    const dropped = pending.length;
+    mode = null;
+    schedule = [];
+    waveIndex = -1;
+    pending = [];
+    fullySpawnedTick = -1;
+    cleared = false;
+    softFailed = false;
+    waystoneId = null;
+    events.emit(tick, "director_stop", { cause, droppedSpawns: dropped });
+    return true;
+  }
+
   // ------------------------------------------------------------- test hooks --
   const forceNextWave = () => {
     if (!mode || cleared || waveIndex >= schedule.length - 1) return null;
@@ -255,5 +278,5 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
   // Render-side accessor: spawn telegraphs in flight (read-only copies).
   const pendingSpawnsList = () => pending.map((p) => ({ ...p }));
 
-  return { startRoom, step, forceNextWave, forceClear, roomState, pendingSpawnsList };
+  return { startRoom, stop, step, forceNextWave, forceClear, roomState, pendingSpawnsList };
 }
