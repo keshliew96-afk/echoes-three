@@ -1,0 +1,27 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"skipToRoom\",8);window.__yk=setInterval(()=>{const b=E.cmd(\"runState\").boss;if(b&&b.active&&b.hp<90)E.cmd(\"bossHp\",0.6);},40);return E.tick;})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 300
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 7500
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const P=window.__arenaProbe;const cam=P.stage.camera;const W=innerWidth,H=innerHeight;const v=cam.position.clone();let stag=null;P.stage.scene.traverse(o=>{if(o.name===\"hollow-stag\")stag=o;});const parts=[];if(stag)stag.traverse(o=>{if(!o.isMesh)return;const g=o.geometry&&o.geometry.type;if(g!==\"ConeGeometry\"&&g!==\"CylinderGeometry\")return;o.getWorldPosition(v);const wy=v.y;v.project(cam);parts.push({g:g[0],wy:Math.round(wy*100)/100,sx:Math.round((v.x*0.5+0.5)*W),sy:Math.round((-v.y*0.5+0.5)*H)});});const ys=parts.map(p=>p.wy);const ymin=Math.min(...ys),ymax=Math.max(...ys);const rack=parts.filter(p=>p.wy>ymin+0.55*(ymax-ymin));const xs=rack.map(p=>p.sx),ys2=rack.map(p=>p.sy);const rb=rack.length?{x:Math.min(...xs),y:Math.min(...ys2),x1:Math.max(...xs),y1:Math.max(...ys2)}:null;const pad=48;const rackBox=rb?[rb.x-pad,rb.y-pad,rb.x1-rb.x+2*pad,rb.y1-rb.y+2*pad].map(Math.round):null;const tight=rb?[rb.x,rb.y,rb.x1-rb.x,rb.y1-rb.y]:null;const ems=P.emitters.map(e=>{v.set(e.x,(e.y||0)+0.2,e.z);v.project(cam);return {kind:e.kind,x:Math.round((v.x*0.5+0.5)*W),y:Math.round((-v.y*0.5+0.5)*H)};}).filter(e=>e.x>-50&&e.x<W+50&&e.y>-50&&e.y<H+50);const bfx=s.bossfx;const nums=[...document.querySelectorAll(\"#dmg-num-layer *\")].filter(n=>n.offsetParent!==null&&n.textContent.trim()).map(n=>{const r=n.getBoundingClientRect();return [n.textContent.trim(),Math.round(r.x),Math.round(r.y)];});const az=(s.azones||[]).map(z=>({k:z.kind||z.type||z.skill||z.id,x:Math.round(z.x*10)/10,z:Math.round(z.z*10)/10,r:z.radius,left:z.ticksLeft??z.remaining??z.endTick}));const out={tick:E.tick,fps:E.fps,bossBox:bfx&&bfx.screenBox?bfx.screenBox.box:null,bossfx:bfx,boss:E.cmd(\"runState\").boss,rackBox,tightRack:tight,rackParts:rack.length,emittersInFrame:ems,party:s.party.map(p=>[Math.round(p.x*10)/10,Math.round(p.z*10)/10,Math.round(p.hp)]),enemies:(s.enemies||[]).length,numerals:nums,azones:az};return out;})()"
+ }
+]

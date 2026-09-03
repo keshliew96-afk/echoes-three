@@ -59,3 +59,85 @@ export function buildCampColliders(spec = CAMP_SPEC) {
   }
   return out;
 }
+
+// --- Road clearance guard ---------------------------------------------------
+// Round D2 camp critic F1: the Round-D collider fix turned the authored west
+// road into a dead end (tent 3 + bedroll + forge on paths[1] left a 0.18 u
+// gap for a 0.60 u body). Sweep a body-radius circle (+ margin) along every
+// path centreline against the built colliders; any penetration is a layout
+// bug. Returns [] when every road is walkable, else one record per violating
+// sample. camp.js calls this at build time and warns; it is also exported so
+// a probe can run it headlessly (`node -e "import('./src/env/camp/colliders.js')
+// .then(m => console.log(m.campRoadsClear()))"`).
+export const ROAD_BODY_RADIUS = 0.3; // the party body radius sim/movement.js uses
+export const ROAD_MARGIN = 0.1; // a little air beyond the body
+// Props a road is AUTHORED to run into: both tracks end at the hearth's stone
+// ring ("two tracks, both through the fire"), and the gate road threads the
+// portal's two jambs (the sill between them is the doorway — a 0.60 u body
+// clears the 1.04 u gap, which is exactly the walkable width the spec wants).
+export const ROAD_TERMINI = Object.freeze(['hearth', 'portal']);
+
+function clearanceAt(colliders, x, z, radius) {
+  let best = Infinity;
+  let hit = null;
+  for (const c of colliders) {
+    let d;
+    if (c.hx === undefined) {
+      d = Math.hypot(x - c.x, z - c.z) - c.r - radius;
+    } else {
+      const yaw = c.yaw ?? 0;
+      const cs = Math.cos(yaw);
+      const sn = Math.sin(yaw);
+      const dx = x - c.x;
+      const dz = z - c.z;
+      const lx = dx * cs - dz * sn;
+      const lz = dx * sn + dz * cs;
+      const qx = Math.max(-c.hx, Math.min(c.hx, lx));
+      const qz = Math.max(-c.hz, Math.min(c.hz, lz));
+      const out = Math.hypot(lx - qx, lz - qz);
+      d = out > 0 ? out - radius : -Math.min(c.hx - Math.abs(lx), c.hz - Math.abs(lz)) - radius;
+    }
+    if (d < best) {
+      best = d;
+      hit = c;
+    }
+  }
+  return { clearance: best, hit };
+}
+
+export function campRoadsClear(
+  spec = CAMP_SPEC,
+  radius = ROAD_BODY_RADIUS + ROAD_MARGIN,
+  step = 0.1,
+  ignore = ROAD_TERMINI
+) {
+  const colliders = buildCampColliders(spec).filter((c) => !ignore.includes(c.id));
+  const out = [];
+  (spec.paths ?? []).forEach((path, pi) => {
+    const pts = path.pts;
+    for (let i = 0; i + 1 < pts.length; i++) {
+      const [x0, z0] = pts[i];
+      const [x1, z1] = pts[i + 1];
+      const len = Math.hypot(x1 - x0, z1 - z0);
+      const n = Math.max(1, Math.ceil(len / step));
+      for (let k = 0; k <= n; k++) {
+        const t = k / n;
+        const x = x0 + (x1 - x0) * t;
+        const z = z0 + (z1 - z0) * t;
+        const { clearance, hit } = clearanceAt(colliders, x, z, radius);
+        if (clearance < 0) {
+          out.push({
+            path: pi,
+            seg: i,
+            x: +x.toFixed(2),
+            z: +z.toFixed(2),
+            id: hit?.id ?? null,
+            at: hit ? [+hit.x.toFixed(2), +hit.z.toFixed(2)] : null,
+            clearance: +clearance.toFixed(3),
+          });
+        }
+      }
+    }
+  });
+  return out;
+}

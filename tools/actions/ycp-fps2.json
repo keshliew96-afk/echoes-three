@@ -1,0 +1,1 @@
+[{"type":"eval","code":"(async()=>{const E=__echoes;const s=[];for(let i=0;i<32;i++){await new Promise(r=>setTimeout(r,250));s.push(E.fps)}const mean=s.reduce((a,b)=>a+b,0)/s.length;return {samples:s,mean:+mean.toFixed(1),min:Math.min(...s),max:Math.max(...s)}})()"}]

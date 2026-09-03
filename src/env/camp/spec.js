@@ -155,13 +155,19 @@ export const CAMP_SPEC = Object.freeze({
     // Sleeping quarters — NW and NE of the fire, doors turned toward it.
     ['tent', -4.95, -3.35, 0.34, 1.05],
     ['tent', 4.85, -3.1, -0.36, 1.0],
-    ['tent', -7.5, 1.5, 1.42, 0.92],
+    // Tent 3 sits NORTH of the west road (Round D2 camp critic F1: at z 1.5
+    // its rotated footprint reached z 2.11 into the road band 1.4..3.0 and,
+    // with the bedroll and forge, left a 0.18 u gap for a 0.60 u body — the
+    // smithy road was a dead end). campRoadsClear() in colliders.js now
+    // guards every path centreline against exactly this.
+    ['tent', -7.5, -0.3, 1.42, 0.92],
     ['bedroll', -3.95, -2.15, 0.5, 1],
     ['bedroll', 5.75, -1.95, -0.55, 1],
-    ['bedroll', -6.5, 2.7, 1.5, 1],
+    ['bedroll', -6.25, -0.6, 1.5, 1], // beside tent 3, clear of its east wall
 
     // Smithy — west. Forge + anvil + rack, the "glowing item" facing the fire.
-    ['forge', -6.75, 3.05, 0.36, 1],
+    // Forge on the road's SOUTH verge only: north face >= road edge + body.
+    ['forge', -6.75, 3.95, 0.36, 1],
     ['anvil', -5.5, 3.7, 0.5, 1],
     ['rack', -4.15, 4.35, -0.12, 1],
 
@@ -170,7 +176,7 @@ export const CAMP_SPEC = Object.freeze({
     ['sack', 5.2, 3.3, 0.4, 1],
     ['sack', 5.62, 3.6, -0.5, 0.85],
     ['sack', 7.4, 3.5, 0.9, 0.92],
-    ['cart', 8.35, -1.4, 0.42, 1],
+    ['cart', 8.35, -1.95, 0.42, 1], // parked on the road's south verge — the sweep found its bed straddling the centreline
     ['sack', -3.35, 4.55, 0.2, 0.95],
 
     // Lit posts: two flanking the gate road, two out at the working corners.

@@ -1,0 +1,38 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{__echoes.cmd('skipToRoom',8);return 'r8';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const b=s.boss||s.room&&s.room.boss;const el=document.querySelector('.hud-bn-label');const nm=document.querySelector('.hud-bn-num');return JSON.stringify({tick:__echoes.tick,bossHp:b&&b.hp,adds:b&&b.adds,label:el&&el.textContent,num:nm&&nm.textContent});})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return JSON.stringify(__echoes.cmd('bossHp',400));})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const b=s.boss||s.room&&s.room.boss;const el=document.querySelector('.hud-bn-label');const nm=document.querySelector('.hud-bn-num');return JSON.stringify({tick:__echoes.tick,bossHp:b&&b.hp,adds:b&&b.adds,label:el&&el.textContent,num:nm&&nm.textContent});})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return JSON.stringify(__echoes.cmd('bossHp',0));})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const b=s.boss||s.room&&s.room.boss;const el=document.querySelector('.hud-bn-label');const nm=document.querySelector('.hud-bn-num');return JSON.stringify({tick:__echoes.tick,bossHp:b&&b.hp,adds:b&&b.adds,label:el&&el.textContent,num:nm&&nm.textContent});})()"
+ }
+]

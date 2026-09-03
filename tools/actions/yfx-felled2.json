@@ -1,0 +1,42 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{__echoes.cmd('skipToRoom',8);return 'r8';})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return 'hp->'+JSON.stringify(__echoes.cmd('bossHp',0.24));})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const b=(s.room&&s.room.boss)||s.boss||null;const el=document.querySelector('.hud-bn-label');const nm=document.querySelector('.hud-bn-num');const en=(s.enemies||[]).filter(e=>e.state==='active').length;return JSON.stringify({tick:__echoes.tick,roomCleared:s.room&&s.room.cleared,bossHp:b&&b.hp,bossAdds:b&&b.adds,activeEnemies:en,label:el&&el.textContent,num:nm&&nm.textContent});})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return 'hp->'+JSON.stringify(__echoes.cmd('bossHp',0));})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const b=(s.room&&s.room.boss)||s.boss||null;const el=document.querySelector('.hud-bn-label');const nm=document.querySelector('.hud-bn-num');const en=(s.enemies||[]).filter(e=>e.state==='active').length;return JSON.stringify({tick:__echoes.tick,roomCleared:s.room&&s.room.cleared,bossHp:b&&b.hp,bossAdds:b&&b.adds,activeEnemies:en,label:el&&el.textContent,num:nm&&nm.textContent});})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const b=(s.room&&s.room.boss)||s.boss||null;const el=document.querySelector('.hud-bn-label');const nm=document.querySelector('.hud-bn-num');const en=(s.enemies||[]).filter(e=>e.state==='active').length;return JSON.stringify({tick:__echoes.tick,roomCleared:s.room&&s.room.cleared,bossHp:b&&b.hp,bossAdds:b&&b.adds,activeEnemies:en,label:el&&el.textContent,num:nm&&nm.textContent});})()"
+ }
+]

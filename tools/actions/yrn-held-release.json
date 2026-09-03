@@ -1,0 +1,55 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");window.__xpc=[];E.on(\"path_chosen\",ev=>window.__xpc.push(ev.tick));return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd(\"clearRoom\");return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "keydown",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "window.__xA=(()=>{const E=window.__echoes;return {phase:E.cmd(\"runState\").phase,chosen:window.__xpc.slice(),held:E.runUi().held,stale:E.runUi().stale};})()"
+ },
+ {
+  "type": "keyup",
+  "key": "Enter"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "window.__xB=(()=>{const E=window.__echoes;return {phase:E.cmd(\"runState\").phase,chosen:window.__xpc.slice(),held:E.runUi().held,stale:E.runUi().stale};})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {A_heldFromDraft:window.__xA,B_afterRelease:window.__xB,C_afterFreshPress:{phase:E.cmd(\"runState\").phase,chosen:window.__xpc.slice(),room:E.cmd(\"runState\").room}};})()"
+ }
+]

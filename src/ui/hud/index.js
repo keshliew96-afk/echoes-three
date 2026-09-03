@@ -141,8 +141,13 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
   function readCombat() {
     const rs = world.runSystem?.();
     if (!rs) return !!(room && !room.cleared);
-    if (!rs.isActive()) return false;
-    return !!(rs.combatActive() || (room && !room.cleared));
+    // Mirror the sim's own spawn predicate (run.js combatAllowed): a live,
+    // uncleared wave room counts as combat even before any run has started —
+    // that is exactly the `?room=kill_all` harness boot docs/TESTING.md
+    // sanctions. `everStarted` stays true after any run, so the reward /
+    // end-card / camp gate cannot reopen through this branch.
+    const allowed = typeof rs.combatAllowed === 'function' ? rs.combatAllowed() : false;
+    return !!(rs.combatActive() || (allowed && room && !room.cleared));
   }
 
   function pollRoom(nowMs) {

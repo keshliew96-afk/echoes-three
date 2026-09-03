@@ -332,13 +332,20 @@ tell (angular growth / faint violet eye-glint).
 
 | Stat | **Thorn Boar** (melee rusher) | **Spitting Mantis** (ranged shooter) | **The Hollow Stag** (boss) |
 |---|---|---|---|
-| HP | 20 | 15 | 200 |
+| HP | 20 | 15 | 1800 (tuned — see note below; authored 200) |
 | move u/s | 2.0 | 1.6 (repositions to keep range) | 1.8 |
 | damage | contact 8 | shot 10 | primary 15 · secondary 12 |
 | attack cd | 0.8 s per target | 2.5 s | primary 4.0 s · secondary 2.5 s |
 | range | contact (0.35 u) | engage 3.5 u | see attacks |
 | telegraphed? | no | yes (0.7 s) | primary yes (0.7 s) · secondary no |
 
+- **Tuning note (Round D2, 2026-09-03):** the Stag's authored 200 HP was never
+  validated against this section's own kit numbers — measured party output is
+  ~220 opening burst + ~120 dps sustained, which killed the boss in 0.95 s with
+  all three add phases inside half a second. HP is now 1800 so the fight spans
+  the quake cadence and the three add waves, and add phases are additionally
+  spaced ≥ one quake cycle (4.0 s) apart. No hidden immunity; numerals stay
+  equal to HP deltas.
 - Enemy projectile speed 4.0 u/s (always slower than the player's 5.2, by
   design). Enemy attack VFX use the Ember family; enemy damage resolves through
   the same instance pipeline (i-frames/Downed suppress entirely).

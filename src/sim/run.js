@@ -701,6 +701,8 @@ export function createRunSystem({
     view,
     cmd,
     isActive: () => active,
+    // The spawn-gate predicate the HUD mirrors for the ?room= harness boot.
+    combatAllowed,
     combatActive,
     combatAllowed,
     // UI entry points (src/ui/run/**) — the same paths __echoes.cmd drives.

@@ -1,0 +1,42 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"grantNode\",\"siphon\");E.cmd(\"skipToRoom\",7);window.__xden=[];for(const t of [\"currency_denied\",\"insufficient_funds\",\"shop_purchase\"])E.on(t,ev=>window.__xden.push(t+\" \"+JSON.stringify(ev)));return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "window.__xs0=(()=>{const E=window.__echoes;const v=E.cmd(\"runState\");const d=E.runUi();return {wallet:v.wallet,stock:v.shop.stock.map(s=>[s.node,s.price,s.owned,s.affordable]),owned:d.owned};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"shopBuy\",0);E.cmd(\"shopBuy\",1);return E.cmd(\"runState\").wallet;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "window.__xs1=(()=>{const E=window.__echoes;const v=E.cmd(\"runState\");const d=E.runUi();const pl=[...document.querySelectorAll(\".rn-plaque\")].map(p=>{const r=p.getBoundingClientRect();return [Math.round(r.x*10)/10,Math.round(r.y*10)/10];});return {wallet:v.wallet,stock:v.shop.stock.map(s=>[s.node,s.price,s.sold,s.owned,s.affordable]),owned:d.owned,cards:d.cards,plaquesXY:pl,bench:E.state().build.bench.map(b=>b.node)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const target=[...document.querySelectorAll(\".rn-card\")].filter(c=>c.offsetParent!==null);const idx=E.cmd(\"runState\").shop.stock.findIndex(s=>!s.sold);const pl=[...document.querySelectorAll(\".rn-plaque\")][idx];const r0=pl.getBoundingClientRect();const samples=[];const res=E.cmd(\"shopBuy\",idx);const t0=performance.now();while(performance.now()-t0<600){const r=pl.getBoundingClientRect();samples.push([Math.round(performance.now()-t0),Math.round((r.x-r0.x)*100)/100,Math.round((r.y-r0.y)*100)/100,pl.classList.contains(\"rn-deny\")]);await new Promise(rq=>requestAnimationFrame(rq));}window.__xsh=samples;return {buyResult:res,idx};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const v=E.cmd(\"runState\");const d=E.runUi();const s=window.__xsh;const maxdx=Math.max(...s.map(x=>Math.abs(x[1])));const lastShake=s.filter(x=>x[3]).pop();return {before:window.__xs0,afterTwoBuys:window.__xs1,denied:window.__xden,walletNow:v.wallet,stockNow:v.shop.stock.map(x=>[x.node,x.price,x.sold,x.owned,x.affordable]),cardsNow:d.cards,plaquesNow:d.plaques,ownedNow:d.owned,shake:{samples:s.length,maxAbsDx:maxdx,shakeMsEnd:lastShake?lastShake[0]:null,first12:s.slice(0,12)},bench:E.state().build.bench.map(b=>b.node)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const idx=E.cmd(\"runState\").shop.stock.findIndex(s=>!s.sold);E.cmd(\"shopBuy\",idx);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 90
+ }
+]

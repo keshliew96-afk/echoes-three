@@ -1,0 +1,27 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"skipToRoom\",8);window.__yk=setInterval(()=>{const b=E.cmd(\"runState\").boss;if(b&&b.active&&b.hp<90)E.cmd(\"bossHp\",0.6);},40);return E.tick;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 300
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const s=[];const ents=[];for(let i=0;i<16;i++){await new Promise(r=>setTimeout(r,400));s.push(Math.round(E.fps*10)/10);ents.push(E.entityCount);}const t=[...s].sort((a,b)=>a-b);return {min:t[0],median:t[8],max:t[15],all:s,ents,tick:E.tick,boss:E.cmd(\"runState\").boss?E.cmd(\"runState\").boss.hp:null,enemies:E.state().enemies.length};})()"
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ }
+]

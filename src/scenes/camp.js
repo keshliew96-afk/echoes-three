@@ -63,7 +63,7 @@ import { createCampEmitters, createCampFireflies } from '../env/camp/hearth.js';
 import { createFollowRig } from '../render/camera.js';
 import { createBookends } from '../ui/bookends/index.js';
 import { setStaticColliders } from '../sim/movement.js';
-import { buildCampColliders } from '../env/camp/colliders.js';
+import { buildCampColliders, campRoadsClear } from '../env/camp/colliders.js';
 
 // §18: "deep indigo/teal ambient". Two numbers carry the whole night read —
 // the key drops to a cold moon (a twelfth of the Act-1 sun) and the hemisphere
@@ -304,6 +304,12 @@ export function createCampScene(stage, toggles, ctx) {
   // camp is the live scene. Cleared the instant a run starts, so the combat
   // path never sees a collider or a seat.
   const colliders = buildCampColliders(CAMP_SPEC);
+  // Layout guard (Round D2 camp critic F1): every authored road must stay
+  // walkable for a body — a prop on a path centreline is a bug, not dressing.
+  const roadViolations = campRoadsClear(CAMP_SPEC);
+  if (roadViolations.length) {
+    console.warn('[camp] road blocked by props:', roadViolations);
+  }
   const seats = Object.freeze({
     1: { x: CAMP_SPOTS.tank.x, z: CAMP_SPOTS.tank.z },
     2: { x: CAMP_SPOTS.swordsman.x, z: CAMP_SPOTS.swordsman.z },
@@ -694,6 +700,7 @@ export function createCampScene(stage, toggles, ctx) {
       fillIntensity: fillLight ? Math.round(fillLight.intensity * 100) / 100 : null,
       bookends: bookends.debug(),
       colliders: colliders.length,
+      roadViolations: roadViolations.length,
       seats,
       seatDrift: seatDrift(),
       prompt: promptAudit(),

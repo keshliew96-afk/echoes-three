@@ -114,14 +114,24 @@ export function createBanner() {
 
     if (mode === 'boss') {
       const name = (boss.name ?? 'THE HOLLOW STAG').toUpperCase();
-      const frac = boss.maxHp > 0 ? boss.hp / boss.maxHp : 0;
-      const key = `b|${name}|${Math.round(boss.hp)}|${boss.maxHp}`;
+      const frac = boss.maxHp > 0 ? Math.max(0, boss.hp / boss.maxHp) : 0;
+      // §11: clear = boss AND adds all dead, so the room can outlive the Stag.
+      // A felled boss is not "0/1800" — the plate says what the player still
+      // has to do (Round D2 HUD F1: the bar read a dead boss for the whole
+      // add mop-up).
+      const felled = boss.hp <= 0;
+      const adds = boss.adds ?? boss.addsAlive ?? (room && room.adds) ?? null;
+      const key = `b|${name}|${felled ? 'F' + adds : Math.round(boss.hp)}|${boss.maxHp}`;
       if (key === lastKey) return changed;
       lastKey = key;
-      label.textContent = name;
+      label.textContent = felled ? `${name} · FELLED` : name;
       label.className = 'hud-bn-label';
       showBar(PALETTE.godstuffViolet, mix(PALETTE.godstuffViolet, PALETTE.godstuffVioletPeak, 0.6), frac);
-      num.textContent = `${Math.max(0, Math.ceil(boss.hp))}/${boss.maxHp}`;
+      num.textContent = felled
+        ? adds != null && adds > 0
+          ? `${adds} ADD${adds === 1 ? '' : 'S'} REMAIN`
+          : 'CLEAR THE ADDS'
+        : `${Math.max(0, Math.ceil(boss.hp))}/${boss.maxHp}`;
       num.className = 'hud-bn-num';
       return true;
     }

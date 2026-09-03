@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd(\"startRun\");E.cmd(\"skipToRoom\",8);const b=E.cmd(\"runState\").boss;window.__ybid=b.id;window.__yt={hits:[],ev:[],hp:[]};for(const t of [\"boss_spawn\",\"boss_adds\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_death\",\"death\",\"room_cleared\",\"run_end\",\"enemy_spawn\"])E.on(t,ev=>window.__yt.ev.push(t+\" t\"+ev.tick+(ev.pct!==undefined?\" pct\"+ev.pct:\"\")+(ev.id!==undefined?\" id\"+ev.id:\"\")+(ev.target!==undefined?\" tgt\"+ev.target:\"\")));E.on(\"hit\",ev=>{if(ev.target===window.__ybid)window.__yt.hits.push([ev.tick,ev.amount,ev.attacker,ev.source,ev.crit?1:0]);});window.__ytHp=setInterval(()=>{const bb=E.cmd(\"runState\").boss;if(bb)window.__yt.hp.push([E.tick,Math.round(bb.hp)]);},50);return {bossId:b.id,hp:b.hp,tick:E.tick,party:E.state().party.map(p=>[Math.round(p.x*10)/10,Math.round(p.z*10)/10])};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 9000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;clearInterval(window.__ytHp);const T=window.__yt;const first=T.hits.length?T.hits[0][0]:null;const dead=T.hp.find(x=>x[1]<=0);const byAtt={};for(const h of T.hits){const k=(h[2]??\"?\")+\"/\"+(h[3]??\"?\");byAtt[k]=(byAtt[k]||0)+h[1];}return {tick:E.tick,boss:E.cmd(\"runState\").boss,hitCount:T.hits.length,firstHitTick:first,deadTick:dead?dead[0]:null,ttkTicksFromFirstHit:dead&&first!==null?dead[0]-first:null,sumDamage:T.hits.reduce((t,h)=>t+h.amount,0),dmgByAttacker:byAtt,maxHit:Math.max(0,...T.hits.map(h=>h[1])),crits:T.hits.filter(h=>h[4]).length,hits:T.hits.slice(0,40),hpTrace:T.hp.filter((x,i)=>i%4===0).slice(0,60),events:T.ev.slice(0,40),phase:E.cmd(\"runState\").phase};})()"
+ }
+]

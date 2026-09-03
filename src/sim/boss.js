@@ -32,7 +32,14 @@ const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
 
 export const STAG = Object.freeze({
-  hp: 200, // §11
+  // §11 authored 200 — but §11's own kit numbers give the party a measured
+  // ~220 opening burst and ~120 dps sustained (Round D2 run critic, yrn-ttk:
+  // 200 -> 0 in 57 ticks, all three add phases inside 31 ticks). The same
+  // section wants a fight that spans quake cycles (cd 4.0 s) and three SPACED
+  // add waves, so the HP row is the tuning knob that was never validated:
+  // 1800 buys ~15-20 s at that output with the adds pulling focus. Recorded as
+  // a tuning deviation in BUILD_BRIEF §11 — not a hidden mechanic.
+  hp: 1800,
   moveSpeed: 1.8, // §11 u/s
   scale: 2.2, // §11 party-height x2.2
   radius: 0.66, // 0.3 u party capsule x 2.2 (scaffold mapping of the scale row)
@@ -50,6 +57,10 @@ export const STAG = Object.freeze({
     lungeSpeed: 5.4, // scaffold: 3x walk — a lunge has to read as a lunge
   }),
   addPhases: Object.freeze([0.75, 0.5, 0.25]), // §11 add waves
+  // §11 cadence ("applies across boss + adds too"): a burst that crosses two
+  // thresholds may not fire two waves back to back — each add phase waits at
+  // least one quake cycle after the previous one.
+  addPhaseGapTicks: 240,
   addComposition: Object.freeze(['boar', 'boar', 'mantis']), // §11 2 Boars + 1 Mantis
   addCap: 7, // §11 concurrent cap <=7 in the boss room
   standoff: 0.15, // scaffold: stop just inside contact so the charge reads
@@ -67,6 +78,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
   let active = false;
   let cleared = false;
   let phasesFired = 0;
+  let lastAddsTick = -Infinity; // tick of the last add phase (cadence gate)
   let addIds = [];
   // Cross-block telegraph cadence: the last START tick of ANY player-targeted
   // telegraph, observed on the bus (mantis starts included).
@@ -154,6 +166,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     active = true;
     cleared = false;
     phasesFired = 0;
+    lastAddsTick = -Infinity;
     addIds = [];
     events.emit(tick, 'boss_spawn', {
       id: e.id,
@@ -331,10 +344,11 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       // Mantis (cap <= 7). One threshold resolves per tick so a single burst
       // that crosses two of them still lands two distinct `boss_adds` beats;
       // HP is never clamped and nothing here touches the damage pipeline.
-      if (phasesFired < STAG.addPhases.length) {
+      if (phasesFired < STAG.addPhases.length && tick - lastAddsTick >= STAG.addPhaseGapTicks) {
         const pct = STAG.addPhases[phasesFired];
         if (b.hp <= b.maxHp * pct) {
           phasesFired += 1;
+          lastAddsTick = tick;
           spawnAdds(tick, pct);
         }
       }
