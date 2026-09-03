@@ -1,0 +1,89 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');E.cmd('giveSkill','spirit_bolt');E.cmd('grantNode','sharpen');E.cmd('grantNode','bounce');E.cmd('socket','mending_bolt','sharpen');E.cmd('healOverride',2);E.cmd('wallet',31);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 50
+ },
+ {
+  "type": "key",
+  "key": "Digit3",
+  "ms": 50
+ },
+ {
+  "type": "key",
+  "key": "Space",
+  "ms": 50
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();E.cmd('setHp',s.party[0].id,0.4);E.cmd('setHp',s.party[1].id,0.6);E.cmd('cycleMark');E.cmd('rally');return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "window.__xsnap=()=>{const E=window.__echoes;const s=E.state();return {tick:E.tick,phase:s.run.phase,room:s.run.room,wallet:s.wallet,hp:s.party.map(p=>Math.round(p.hp*10)/10),skills:s.skills.map(x=>x?x.id+':'+x.remainingTicks:null),bench:s.build.bench.map(b=>b.node),sockets:s.build.skills.flatMap(sk=>sk.sockets.map((so,i)=>so?(sk.id+':'+i+':'+so.node):null).filter(Boolean)),mark:s.party_ai&&s.party_ai.mark,rally:s.party_ai&&s.party_ai.rallyPoint,override:s.healOverride,dodgeReady:s.party[0].dodgeReadyTick,enemies:s.enemies?s.enemies.length:null,proj:(s.projectiles?s.projectiles.length:0)+(s.skillBolts?s.skillBolts.length:0)};};window.__xA=window.__xsnap();1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd('clearRoom');window.__xA2=window.__xsnap();return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__xB=window.__xsnap();1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd('draftTake');window.__echoes.cmd('closeSocket');window.__echoes.cmd('pathChoose',0);return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "window.__xC=window.__xsnap();1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd('endRun','victory');return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__xD=window.__xsnap();1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__echoes.cmd('returnToCamp');return 1;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({A_combatBefore:window.__xA,A2_sameTickAfterClear:window.__xA2,B_rewardScreen:window.__xB,C_room2Combat:window.__xC,D_afterEndRun:window.__xD,E_camp:window.__xsnap()}))()"
+ }
+]

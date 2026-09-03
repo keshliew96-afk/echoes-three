@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const plateOf=()=>{const l=document.querySelector('#hud .hud-bn-label');const n=document.querySelector('#hud .hud-bn-num');const b=document.querySelector('#hud .hud-banner');const bs=b?getComputedStyle(b):null;return {label:l?l.textContent.trim():null,num:n?n.textContent.trim():null,cls:b?b.className:null,shown:bs?(bs.display!=='none'&&bs.visibility!=='hidden'&&+bs.opacity>0.05):null};};window.__zp={s:[],ev:[]};for(const t of ['boss_adds','room_cleared','run_end','death','boss_spawn'])E.on(t,e=>window.__zp.ev.push({t,tick:e.tick,id:e.id,pct:e.pct,spawned:e.spawned}));E.cmd('startRun');E.cmd('skipToRoom',8);window.__zpI=setInterval(()=>{const b=E.cmd('runState').boss;const p=plateOf();window.__zp.s.push([E.tick,b?Math.round(b.hp*100)/100:null,b?b.adds:null,p.label,p.num,p.shown]);},50);return E.tick;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const S=window.__zp.s.filter(x=>x[1]!=null&&x[1]>0);let match=0,maxDiff=0,bad=[];for(let i=0;i<S.length;i++){const m=/^(\\d+)\\/(\\d+)$/.exec(S[i][4]||'');if(!m){bad.push(S[i]);continue;}const pv=+m[1];const denom=+m[2];if(denom!==1800)bad.push(S[i]);const recent=S.slice(Math.max(0,i-6),i+1).map(x=>Math.ceil(x[1]));if(recent.includes(pv))match++;else bad.push(S[i]);maxDiff=Math.max(maxDiff,Math.abs(pv-Math.ceil(S[i][1])));}const b=E.cmd('runState').boss;window.__zpT=E.tick;const r=E.cmd('bossHp',0.24);return {samples:S.length,matched:match,maxAbsDiff:maxDiff,badSamples:bad.slice(0,10),first:S[0],last:S[S.length-1],labelsSeen:[...new Set(S.map(x=>x[3]))],bossBefore:b,setTo:r,tick:E.tick};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const plateOf=()=>{const l=document.querySelector('#hud .hud-bn-label');const n=document.querySelector('#hud .hud-bn-num');const b=document.querySelector('#hud .hud-banner');const bs=b?getComputedStyle(b):null;return {label:l?l.textContent.trim():null,num:n?n.textContent.trim():null,cls:b?b.className:null,shown:bs?(bs.display!=='none'&&bs.visibility!=='hidden'&&+bs.opacity>0.05):null};};const b=E.cmd('runState').boss;const p=plateOf();const r=E.cmd('bossHp',0);window.__zpK=E.tick;return {tick:E.tick,bossBeforeKill:b,plateBeforeKill:p,setTo:r};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const plateOf=()=>{const l=document.querySelector('#hud .hud-bn-label');const n=document.querySelector('#hud .hud-bn-num');const b=document.querySelector('#hud .hud-banner');const bs=b?getComputedStyle(b):null;return {label:l?l.textContent.trim():null,num:n?n.textContent.trim():null,cls:b?b.className:null,shown:bs?(bs.display!=='none'&&bs.visibility!=='hidden'&&+bs.opacity>0.05):null};};const b=E.cmd('runState').boss;const v=E.cmd('runState');const s=E.state();const after=window.__zp.s.filter(x=>x[0]>window.__zpK);const felled=after.filter(x=>/FELLED/.test(x[3]||''));const remainTexts=[...new Set(after.map(x=>x[4]))];return {tick:E.tick,ticksSinceKill:E.tick-window.__zpK,plateNow:plateOf(),boss:b,phase:v.phase,room:v.room,enemies:s.enemies.length,enemyStates:s.enemies.map(e=>e.state),events:window.__zp.ev,samplesAfterKill:after.length,felledSamples:felled.length,numTextsAfterKill:remainTexts,labelsAfterKill:[...new Set(after.map(x=>x[3]))],adds:b?b.adds:null,roomCleared:window.__zp.ev.some(e=>e.t==='room_cleared')};})()"
+ }
+]

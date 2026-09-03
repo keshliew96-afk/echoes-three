@@ -1,0 +1,51 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__yl=[];for(const t of ['run_start','run_end','run_wiped','return_to_camp','director_stop','wave_start','enemy_spawn','spawn_telegraph','telegraph_start','telegraph_resolve','hit','damage','boss_adds','enemy_shot','shot','zone_spawn','zone','death','downed','room_cleared','room_enter','room_start','boss_spawn','boss_quake_start','boss_quake_resolve','boss_trample'])E.on(t,ev=>window.__yl.push({t,tick:ev.tick,target:ev.target,kind:ev.kind,attacker:ev.attacker,amount:ev.amount,enemies:ev.enemies,reason:ev.reason}));E.cmd('startRun');return {tick:E.tick,seed:E.seed};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const t0=E.tick;const r=E.cmd('startWave');return {forcedWave:r,tick:t0};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const snap=(label)=>{const s=E.state();const r=E.cmd('runState');const arrs=Object.entries(s).filter(([k,v])=>Array.isArray(v)).map(([k,v])=>k+':'+v.length);const en=(s.enemies||[]).map(e=>({id:e.id,st:e.state,hp:Math.round(e.hp),type:e.etype||e.type||e.kind}));const banner=document.querySelector('#hud .hud-banner');const bs=banner?getComputedStyle(banner):null;const nums=[...document.querySelectorAll('#dmg-num-layer *')].filter(n=>n.offsetParent!==null&&n.textContent.trim()).map(n=>n.textContent.trim());return {label,tick:E.tick,phase:r.phase,active:r.active,room:r.room,scene:s.scene,arrays:arrs,enemies:en.length,activeEnemies:en.filter(e=>e.st==='active').length,eshots:s.eshots?s.eshots.length:null,zones:s.zones?s.zones.length:null,hp:s.party.map(p=>Math.round(p.hp*10)/10),ents:E.entityCount,bannerText:banner?banner.textContent.replace(/\\s+/g,' ').trim():null,bannerShown:bs?(bs.display!=='none'&&bs.visibility!=='hidden'&&+bs.opacity>0.05):null,numerals:nums,boss:r.boss};};const pre=snap('pre-end');const tele=window.__yl.filter(x=>x.t==='spawn_telegraph'&&x.tick>=E.tick-40).length;E.cmd('endRun','defeat');return {pre,pendingTelegraphsLast40:tele,endCmdTick:E.tick};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 5500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const snap=(label)=>{const s=E.state();const r=E.cmd('runState');const arrs=Object.entries(s).filter(([k,v])=>Array.isArray(v)).map(([k,v])=>k+':'+v.length);const en=(s.enemies||[]).map(e=>({id:e.id,st:e.state,hp:Math.round(e.hp),type:e.etype||e.type||e.kind}));const banner=document.querySelector('#hud .hud-banner');const bs=banner?getComputedStyle(banner):null;const nums=[...document.querySelectorAll('#dmg-num-layer *')].filter(n=>n.offsetParent!==null&&n.textContent.trim()).map(n=>n.textContent.trim());return {label,tick:E.tick,phase:r.phase,active:r.active,room:r.room,scene:s.scene,arrays:arrs,enemies:en.length,activeEnemies:en.filter(e=>e.st==='active').length,eshots:s.eshots?s.eshots.length:null,zones:s.zones?s.zones.length:null,hp:s.party.map(p=>Math.round(p.hp*10)/10),ents:E.entityCount,bannerText:banner?banner.textContent.replace(/\\s+/g,' ').trim():null,bannerShown:bs?(bs.display!=='none'&&bs.visibility!=='hidden'&&+bs.opacity>0.05):null,numerals:nums,boss:r.boss};};const ends=window.__yl.filter(x=>x.t==='run_end').map(x=>x.tick);const endT=ends.length?ends[ends.length-1]:-1;const rets=window.__yl.filter(x=>x.t==='return_to_camp').map(x=>x.tick);const retT=rets.length?rets[rets.length-1]:-1;const meta=new Set(['run_start','run_end','run_wiped','return_to_camp','director_stop']);const after=window.__yl.filter(x=>x.tick>endT&&!meta.has(x.t));const spawnish=after.filter(x=>/spawn|telegraph|wave|boss_adds/.test(x.t));const hitsAfterEnd=after.filter(x=>x.t==='hit'||x.t==='damage');const summary={runEndTick:endT,returnTick:retT,ticksSinceEnd:E.tick-endT,eventsAfterEnd:after.length,spawnishAfterEnd:spawnish.map(x=>x.t+' t'+x.tick),hitsAfterEnd:hitsAfterEnd.map(x=>x.t+' t'+x.tick+' '+x.kind+'#'+x.target+' '+x.amount).slice(0,10),afterTypes:[...new Set(after.map(x=>x.t))],metaLog:window.__yl.filter(x=>meta.has(x.t)).map(x=>x.t+' t'+x.tick+(x.enemies!==undefined?' enemies='+x.enemies:'')+(x.reason?' '+x.reason:''))};return Object.assign(snap('end-screen'),summary);})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__yhp0={tick:E.tick,hp:E.state().party.map(p=>Math.round(p.hp*10)/10)};return window.__yhp0;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 5200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const snap=(label)=>{const s=E.state();const r=E.cmd('runState');const arrs=Object.entries(s).filter(([k,v])=>Array.isArray(v)).map(([k,v])=>k+':'+v.length);const en=(s.enemies||[]).map(e=>({id:e.id,st:e.state,hp:Math.round(e.hp),type:e.etype||e.type||e.kind}));const banner=document.querySelector('#hud .hud-banner');const bs=banner?getComputedStyle(banner):null;const nums=[...document.querySelectorAll('#dmg-num-layer *')].filter(n=>n.offsetParent!==null&&n.textContent.trim()).map(n=>n.textContent.trim());return {label,tick:E.tick,phase:r.phase,active:r.active,room:r.room,scene:s.scene,arrays:arrs,enemies:en.length,activeEnemies:en.filter(e=>e.st==='active').length,eshots:s.eshots?s.eshots.length:null,zones:s.zones?s.zones.length:null,hp:s.party.map(p=>Math.round(p.hp*10)/10),ents:E.entityCount,bannerText:banner?banner.textContent.replace(/\\s+/g,' ').trim():null,bannerShown:bs?(bs.display!=='none'&&bs.visibility!=='hidden'&&+bs.opacity>0.05):null,numerals:nums,boss:r.boss};};const ends=window.__yl.filter(x=>x.t==='run_end').map(x=>x.tick);const endT=ends.length?ends[ends.length-1]:-1;const rets=window.__yl.filter(x=>x.t==='return_to_camp').map(x=>x.tick);const retT=rets.length?rets[rets.length-1]:-1;const meta=new Set(['run_start','run_end','run_wiped','return_to_camp','director_stop']);const after=window.__yl.filter(x=>x.tick>endT&&!meta.has(x.t));const spawnish=after.filter(x=>/spawn|telegraph|wave|boss_adds/.test(x.t));const hitsAfterEnd=after.filter(x=>x.t==='hit'||x.t==='damage');const summary={runEndTick:endT,returnTick:retT,ticksSinceEnd:E.tick-endT,eventsAfterEnd:after.length,spawnishAfterEnd:spawnish.map(x=>x.t+' t'+x.tick),hitsAfterEnd:hitsAfterEnd.map(x=>x.t+' t'+x.tick+' '+x.kind+'#'+x.target+' '+x.amount).slice(0,10),afterTypes:[...new Set(after.map(x=>x.t))],metaLog:window.__yl.filter(x=>meta.has(x.t)).map(x=>x.t+' t'+x.tick+(x.enemies!==undefined?' enemies='+x.enemies:'')+(x.reason?' '+x.reason:''))};const sn=snap('camp');summary.hpAtCampArrival=window.__yhp0;summary.hpUnchangedSinceArrival=JSON.stringify(window.__yhp0.hp)===JSON.stringify(sn.hp);summary.eventsSinceCampArrival=window.__yl.filter(x=>x.tick>window.__yhp0.tick&&!meta.has(x.t)).length;return Object.assign(sn,summary);})()"
+ }
+]

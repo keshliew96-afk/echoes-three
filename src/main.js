@@ -201,7 +201,7 @@ const allyfx =
 // simtest/rendertest/chartest captures stay unchanged.
 const hud =
   PLAYABLE
-    ? createHud({ bus, world, stage, cosmetic })
+    ? createHud({ bus, world, stage, cosmetic, scene: sceneKey })
     : null;
 
 // Socket screen (nodes block, §15/§16): the between-rooms build workbench

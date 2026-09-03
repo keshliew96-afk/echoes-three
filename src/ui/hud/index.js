@@ -23,7 +23,7 @@ const BAR_EDGE_PX = 16; // real px from the window bottom to the command bar
 const BANNER_EDGE_PX = 14; // real px from the window top to the banner
 const ROOM_POLL_MS = 100;
 
-export function createHud({ bus, world, stage, cosmetic = null }) {
+export function createHud({ bus, world, stage, cosmetic = null, scene = null }) {
   const style = document.createElement('style');
   style.id = 'hud-style';
   style.textContent = hudCss();
@@ -146,7 +146,13 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
     // that is exactly the `?room=kill_all` harness boot docs/TESTING.md
     // sanctions. `everStarted` stays true after any run, so the reward /
     // end-card / camp gate cannot reopen through this branch.
-    const allowed = typeof rs.combatAllowed === 'function' ? rs.combatAllowed() : false;
+    // The pre-run branch is scoped to the arena boot: in the CAMP scene the
+    // only thing that can create an uncleared room before a run is a debug
+    // `startRoom`, and the gate must stay shut over the campfire even then
+    // (D3 HUD A1). A real run in the camp scene lights up through
+    // combatActive(), so this never touches player-reachable combat.
+    const allowed =
+      scene !== 'camp' && typeof rs.combatAllowed === 'function' ? rs.combatAllowed() : false;
     return !!(rs.combatActive() || (allowed && room && !room.cleared));
   }
 
@@ -157,7 +163,7 @@ export function createHud({ bus, world, stage, cosmetic = null }) {
     // Room 8 (run block): the run system's own boss view carries the name
     // plate and the live/cleared flags, so it wins over the raw entity scan.
     const b = snap.run && snap.run.boss;
-    runBoss = b && b.active && !b.cleared ? { name: b.name, hp: b.hp, maxHp: b.maxHp } : null;
+    runBoss = b && b.active && !b.cleared ? { name: b.name, hp: b.hp, maxHp: b.maxHp, adds: b.adds } : null;
     greySkills.clear();
     for (const sk of snap.build?.skills ?? []) {
       if (sk.sockets?.some((r) => r && r.verdict === 'grey')) greySkills.add(sk.id);

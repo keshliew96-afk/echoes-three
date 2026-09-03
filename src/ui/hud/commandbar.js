@@ -357,7 +357,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   function paintCooldown(s, remainingTicks, totalTicks) {
     paintWipe(s, totalTicks > 0 ? remainingTicks / totalTicks : 0);
     const counting = remainingTicks > 0 && remainingTicks < TICK_HZ;
-    if (counting) s.num.textContent = (remainingTicks / TICK_HZ).toFixed(1);
+    if (counting) s.num.textContent = (Math.ceil(remainingTicks / (TICK_HZ / 10)) / 10).toFixed(1); // never "0.0" while ticks remain
     if (counting !== s.counting) {
       s.counting = counting;
       s.slot.classList.toggle('is-counting', counting);

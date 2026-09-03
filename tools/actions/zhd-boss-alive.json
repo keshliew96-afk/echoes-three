@@ -1,0 +1,38 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{window.__Y=window.__Y||{};const E=window.__echoes;\nwindow.__Y.pid=(i)=>{const p=E.state().party;const m=p.find(q=>(q.partyIndex??0)===i);return m?m.id:null;};\nwindow.__Y.rects=()=>{const SEL=['.hud-slot-key','.hud-port-key','.hud-slot-abbrev','.hud-slot-num','.hud-port-num','.hud-port-e','.hud-slot-passive','.hud-bn-label','.hud-bn-num','.hud-bn-pips','.hud-bn-bar','.tm-badge'];const vis=(n)=>{const r=n.getBoundingClientRect();let p=n;while(p&&p!==document.body){const c=getComputedStyle(p);if(c.display==='none'||Number(c.opacity)<0.02)return null;p=p.parentElement;}return r.width>0.5&&r.height>0.5?r:null;};const rs=[];for(const s of SEL)for(const n of document.querySelectorAll(s)){const r=vis(n);if(r)rs.push({s,txt:(n.textContent||'').trim().slice(0,12),x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),fs:+(parseFloat(getComputedStyle(n).fontSize)).toFixed(1)});}const hits=[];for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i],b=rs[j];const ox=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x);const oy=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);if(ox>0.5&&oy>0.5)hits.push({a:a.s+':'+a.txt,b:b.s+':'+b.txt,ox:+ox.toFixed(1),oy:+oy.toFixed(1)});}return {n:rs.length,overlaps:hits,rects:rs};};\nwindow.__Y.gate=()=>{const E=window.__echoes;const r=E.cmd('runState');const b=E.hud.banner();const t=E.hud.threat();const s=E.state();const bn=document.getElementById('hud-banner');const cs=getComputedStyle(bn);const wash=document.getElementById('bk-wash');const pages=[...document.querySelectorAll('#run-screen .rn-page')].filter(p=>getComputedStyle(p).display!=='none').map(p=>p.className);const m=E.hud.metrics();const lab=document.querySelector('.hud-bn-label');const num=document.querySelectorAll('.hud-bn-num')[0];return {tick:E.tick,version:E.version,phase:r&&r.phase,active:r&&r.active,combatActive:r&&r.combatActive,room:r&&r.room,runBoss:s.run&&s.run.boss?{hp:s.run.boss.hp,active:s.run.boss.active,cleared:s.run.boss.cleared,adds:s.run.boss.adds}:null,hudCombat:E.hud.combat(),banner:{mode:b.mode,gated:b.gated,show:b.show,opacity:b.opacity,text:b.text,label:lab&&lab.textContent,num:num&&num.textContent,box:b.box,cssOpacity:cs.opacity,display:cs.display},threat:{gated:t.gated,offFrame:t.offFrame,markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,covered:t.covered,uncued:t.uncued,tmNodes:document.querySelectorAll('#hud-threat .tm').length,tmVisible:[...document.querySelectorAll('#hud-threat .tm')].filter(n=>n.style.display!=='none'&&Number(getComputedStyle(n).opacity)>0.02).length},markers:E.hud.markers(),enemies:(s.enemies||[]).map(e=>({id:e.id,kind:e.kind,x:e.x,z:e.z})),roomState:s.room?{mode:s.room.mode,cleared:s.room.cleared,alive:s.room.aliveEnemies,pending:s.room.pendingSpawns,wave:s.room.waveIndex,wavesTotal:s.room.wavesTotal}:null,scene:s.scene,vfxMode:s.vfx&&s.vfx.mode,pages,washOpacity:wash?getComputedStyle(wash).opacity:null,zone1:m.zone1Box,zone2:m.zone2Box,fps:E.fps};};\nwindow.__Y.ports=()=>{const E=window.__echoes;const m=E.hud.metrics();return {tick:E.tick,scale:m.scale,ports:E.hud.portraits().map(p=>({i:p.index,c:p.classId,st:p.state,sel:p.selected,hov:p.hover,hp:p.hpWidth,num:p.numeral,inner:p.innerBorder+' '+p.innerColor,outline:p.trackOutline,trackBorder:p.trackBorder,fill:p.fillImage,keyVisible:p.keyVisible,keyBox:p.keyBox,keyColor:p.keyColor,keyText:document.querySelectorAll('.hud-port-key')[p.index].textContent,keyFs:+(parseFloat(getComputedStyle(document.querySelectorAll('.hud-port-key')[p.index]).fontSize)*m.scale).toFixed(2),identColor:p.identColor,eBox:p.eBox,imgFilter:p.imgFilter,numBox:p.numBox,tile:p.tileBox,hpBox:p.hpBox,rev:p.reviveOffset,revTot:p.reviveTotal,img:p.hasImage})),rects:window.__Y.rects(),revive:E.cmd('reviveState'),banner:E.hud.banner(),fps:E.fps};};\nwindow.__Y.boss=()=>{const E=window.__echoes;const s=E.state();const b=s.run&&s.run.boss;const bn=E.hud.banner();const lab=document.querySelector('.hud-bn-label');const num=document.querySelectorAll('.hud-bn-num')[0];const fill=document.querySelector('.hud-bn-bar i');const st=(s.enemies||[]).find(e=>e.kind==='stag');return {tick:E.tick,hp:b&&b.hp,max:b&&b.maxHp,act:b&&b.active,clr:b&&b.cleared,adds:b&&b.adds,ph:b&&b.phasesFired,stag:st?st.hp:null,en:(s.enemies||[]).length,mode:bn.mode,op:+bn.opacity.toFixed(2),show:bn.show,gated:bn.gated,label:lab&&lab.textContent,num:num&&num.textContent,fillW:fill&&fill.style.width,barDisp:fill&&fill.parentElement.style.display,box:bn.box,phase:E.cmd('runState').phase,tm:document.querySelectorAll('#hud-threat .tm').length};};\nreturn 'lib';})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const v=window.__echoes.cmd('skipToRoom',8);return {room:v.room,phase:v.phase};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>window.__Y.boss())()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>window.__Y.boss())()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>window.__Y.boss())()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>window.__Y.rects())()"
+ }
+]
