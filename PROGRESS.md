@@ -5,7 +5,7 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ▶ RESUMED 2026-09-04 (2nd resume) — FINAL CERTIFICATION workflow wf_30ef46f1-f39 relaunched from cache (capture technician certA1-* + critic E PASS replay; scorers, B/C/D critics, adjudicators, refuters, completeness audits, builders, synthesizer run live). v0.4.16 code, HEAD docs-only on top of 438f218. Clean GPU perf already on record (row 34).
+## Status: ▶ RESUMED 2026-09-05 (3rd resume) — FINAL CERTIFICATION workflow wf_30ef46f1-f39 relaunched with DISK CHECKPOINTS: every critic/scorer writes its report incrementally (STATUS: PARTIAL → COMPLETE) and a fresh instance continues from a partial report or returns a complete one without re-running, so usage-limit kills no longer lose the round. Capture technician cached; E report stamped COMPLETE. v0.4.16 code; GPU perf on record (row 34).
 
 ### Resume point — do this first
 1. Start the dev server with preview_start "echoes-dev" (port 5199). If a stray
@@ -50,6 +50,7 @@ fireflies. The D2 camp critic scored the static frame 20/20.
 
 | # | Time (session) | Event |
 |---|----------------|-------|
+| 37 | T29 | **Second resume also killed by the usage limit** (~18 min, 8 agents, 1.75M tokens; only the cached capture replay completed; the hardened script aborted cleanly with no cascade). Left on disk: a partial reference-matcher scorecard (docs/critiques/cert-score-ref-r1.md, 16 KB) and dead-critic captures (certB1 237 files, certD1 71, certC1 15). **Fix: disk checkpoints** — critics and scorers now create their report with `STATUS: PARTIAL` up front, append each probe as measured, and stamp `STATUS: COMPLETE` + verdict at the end; on relaunch an instance resumes from a partial report or returns a complete one immediately. Builders told to continue from uncommitted diffs. Relaunched from cache on a fresh dev server. |
 | 36 | T28 | **Resumed by user; workflow relaunched from cache** on a quiet machine (46% CPU, 7.2 GB free, fresh dev server pid 61200, no orphaned headless browsers). |
 | 35 | T27 | **PAUSED by user.** Workflow stopped ~10 min after the cache resume; nothing new completed, so the resumable state is unchanged from row 33/34 (capture + E cached; B/C/D critics, 3 scorers, adjudicators, refuters, completeness audits, builders and the synthesizer still to run). |
 | 34 | T26 | **GPU fps re-measured on a quiet machine** (tools/gpu-fps.mjs → captures/gpu-fps-quiet.json; ANGLE D3D11 on the AMD Radeon iGPU, 1600x900, seed 999, 8% CPU / 6 GB free, 0 page errors): steady-state mean 126 fps camp idle (p95 12.2 ms, max 18 ms), 122 fps Act-1 wave with 5 enemies (max 97 ms once, 0 gaps >100 ms), 129 fps room-6 defend, 95 fps boss with 5 adds (p95 17.9 ms, max 61 ms). Zero >100 ms gaps anywhere, warm-up included — the 121-516 ms hitches in row 33 were machine contention. Binding perf gate (60 fps desktop, no >100 ms hitch) is met by ≥1.6x. Workflow resumed from cache (capture + E replay; scorers, B/C/D critics, adjudicators, refuters run live). |
