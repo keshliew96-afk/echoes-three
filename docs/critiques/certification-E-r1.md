@@ -1,3 +1,6 @@
+STATUS: COMPLETE
+VERDICT: PASS (0 failures, 4 advisories) — completed critic run, cached in workflow journal
+
 # Certification block E — camp traversal (round 1, v0.4.16, prefix certE1-)
 
 **VERDICT: PASS** — 16/16 road legs clear (min 4.50 u, all others 4.70–5.76 u at
