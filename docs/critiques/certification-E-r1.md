@@ -234,3 +234,18 @@ certE1-cart-centre / -cart-north), zooms certE1-zoom-healer-boot / -healer-porta
 -version / -cart-north / -cart-boot / -stop-cart / -blobA / -blobB / -blob2A /
 -blob2B. Generators: tools/certE1-gen.mjs, tools/certE1-px.mjs. Action files:
 tools/actions/certE1-{boot,roadsW,roadsE,roadsNS,stops,seats,portal,cart}.json.
+
+## Resume check (second instance, 2026-09-06)
+
+Report found with STATUS: COMPLETE; probes NOT re-run. Verified on disk: all 28
+primary certE1 PNGs + certE1-zoom-version / -zoom-cart-north exist (the healer /
+cart / blob zooms are on disk as certE1-zoom-healer.png, certE1-zoom-portal-healer.png,
+certE1-zoom-cart.png — cited above under slightly different names; the four
+blob zooms were not persisted, the block-diff numbers stand from the console/px
+helper). Console re-grep (grep -a): "colliders":31 x9, "roadViolations":0 x10,
+seatDrift {0,0,0} x8, portal inPortal:true + promptVisible:true x2, zero non-EVAL
+"road" lines, zero [PAGEERROR]/[error]; 24 road legs in certE1-roads{W,E,NS}
+consoles all moved >= 4.5 u (min N3_sill 4.50, max W1 5.68). Spot-checked
+certE1-portalA.png (Begin Run plate at ~475-877,68-120; Healer on sill ~800,300;
+v0.4.16 at 10,870) and certE1-boot.png (cart ~1330-1450,200-290 on grass north of
+the east road; four critters with dark ground ellipses; v0.4.16 at 10,870).
