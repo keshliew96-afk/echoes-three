@@ -254,6 +254,40 @@ function builderPrompt(r, round) {
   ].join('\n\n')
 }
 
+const VISUAL_JOBS = [
+  { key: 'A-world',
+    theme: 'WORLD LIGHTING, VALUE RANGE, COLOUR STORY, GROUND AND PROP DRESSING (rubric checks 1, 2, 4, 7 and the world half of 6). Give every run arena the deep-shadow-versus-fire funnel of the reference: a cool indigo/teal ambient with a real black point (darkest LUMA bucket populated; buckets 0-2 far above the current 7%), warm torch and monolith pools that read as pools against it, a vignette that measurably darkens corners versus centre, and a visible grade (no raw saturated green). Move the Act-1 grass out of the reserved heal band (hue away from 110-150 deg while keeping sat 0.55-0.65 per the art bible) so heal numerals and heal rings own green. Ring EVERY arena edge (left, right, bottom, not only the top wall) with props - fences, rocks, stumps, barricades, torch towers, banners - while keeping >= 60% of the floor navigable. Give the boss room its own dressing (pillar/statue/vase ring per Reference B). Add the in-world peddler stall with a lantern for the room-7 shop variant and keep fireflies and torch flicker alive while the shop is open. Fix the camp forge flame hue out of the danger band (amber 30-40 deg like the hearth). The camp frame must keep or beat its round-1 scores.',
+    ownership: 'src/env/** (ground, foliage, colors, flame, props, walls, variants, layout, camp), src/render/stage.js (lights, exposure, bloom/vignette/grade post stack), and src/render/toon.js + src/render/glow.js only for global outline/halo parameters. Do NOT edit creature rigs, skill/tech VFX, numbers, src/ui/**, or src/sim/**.' },
+  { key: 'A-hud',
+    theme: 'UI POLISH AND THE SHOP SCREEN (rubric check 9 on every frame; shop frame checks 1, 2, 5, 7, 8, 9, 10). Skill slots get drawn icons instead of text abbreviations plus a radial cooldown sweep; add a location label top-left and a Glint currency counter top-right like Reference D; the boss plate gets an icon medallion, phase pips and ornamental caps. The shop must stop veiling the world: remove the full-screen charcoal modal and the backdrop blur so the lit arena and the party stay fully visible (at most a light 10-15% dim), and present the Peddler shelf as a compact ornate textured panel (parchment/wood grain, glow on plaques and on the Advance button, drawn card icons instead of unicode glyphs, no header wrap on Ascend, hover feedback) with real buy feedback (card flip or coin-fly plus stamp slam animated over >= 15 frames) and the existing deny shake kept. Rarity rims must be palette colours (Bone / Signal Blue / Hearth Amber are all art-bible colours - keep them). Every HUD element must still fit 1024x576 and 2560x1440 without overlap.',
+    ownership: 'src/ui/** (hud, run, socket, bookends) and their CSS; src/render/numbers.js only if numeral styling is needed. Do NOT edit src/env/**, src/render/** rigs or VFX, or src/sim/**.' },
+  { key: 'A-vfx',
+    theme: 'CREATURE READ, VFX LAYERING, GROUNDING AND MOTION JUICE (rubric checks 3, 5, 8, 10 and the creature half of 6). The mantis needs a real creature silhouette (head, limbs, body mass) readable at 50% zoom; the party must not fuse into one bloom-blown blob under a cast (clamp or threshold the cast bloom, keep dark outlines); the Hollow Stag idle pose must read as a stag (head, muzzle, legs, antlers) rather than an obelisk, its crown glow must keep a visible source shape under bloom, and it needs a real contact shadow; regular enemies lose violet accents (indigo/blue instead - violet is god-stuff only). Every projectile = coloured core + coloured glow + trail + particles with a ground shadow; telegraphs = dark scorched core + bright Ember rim + ember particles; quakes leave lingering scorch decals; hits spawn debris/smoke particles so state().vfx.particles is > 0 during combat. Knockback must be visible (>= 0.3 u of travel over several ticks) and kills / boss stomps must emit screenshake events that move the camera.',
+    ownership: 'src/render/enemies/**, src/render/boss/**, src/render/allies/**, src/render/critters/**, src/render/skillfx/**, src/render/techfx/**, src/render/vfx/**, src/render/numbers.js, src/render/camera.js for shake; in src/sim/** ONLY the knockback magnitude/duration and the screenshake/hitstop event emission. Another builder owns the room-clear numeral bug in src/sim/run.js + src/sim/world.js - do not touch that code path. Do NOT edit src/env/**, src/render/stage.js, or src/ui/**.' },
+]
+const JOB_OWNERSHIP = {
+  C: 'src/sim/run.js, src/sim/world.js, src/scenes/** (the room_cleared transient sweep that wipes the numeral pool on the kill tick). Do NOT edit src/render/** or src/ui/** - other builders own them concurrently.',
+  B: OWNERSHIP.B, E: OWNERSHIP.E, D: OWNERSHIP.D,
+}
+const SHOULDFIX_THEME = {
+  D: 'PERFORMANCE HYGIENE. (1) Dispose geometries/materials when enemies, decals and transient VFX despawn so renderer.info.memory.geometries returns to the camp baseline after every run (currently +115 per run). (2) Remove the two-stage rAF stall (115 + 212-236 ms) of the legendary draft card: replace the expensive rn-shimmer / backdrop-filter animation with a cheap transform/opacity or canvas effect. (3) Eliminate the in-wave single-frame hitches of 140-200 ms (first-use shader/material compilation or particle allocation): precompile materials (renderer.compile) or warm-up spawn at room load, pool particles, so that no frame gap > 100 ms occurs after the first 3 s of a room. Verify each with the D critic probes (captures/certD1-* action files are reusable) alone on a quiet server.',
+}
+function jobPrompt(j, round) {
+  const pfx = 'certfix' + j.key.replace(/[^A-Za-z0-9]/g, '') + round + '-'
+  return [
+    'You are the FIX BUILDER "' + j.key + '" (round ' + round + ') for the final certification of "Echoes" at ' + ROOT + ' (Bash path ' + POSIX + '; run every command from there). The vite dev server is ALREADY running on http://127.0.0.1:5199 - do not start another, do not kill node processes. Do not use mcp__Claude_Browser__* or mcp__claude-in-chrome__* tools.',
+    'YOUR THEME: ' + j.theme,
+    'FILE OWNERSHIP (hard rule): ' + j.ownership + (j.alone ? ' You run ALONE after the other builders finished.' : ' Other builders (' + j.others + ') are editing OTHER files in the SAME working tree right now: never edit outside your ownership; vite HMR reloads triggered by their edits can abort your captures (a navigation timeout or a [vite] reload mid-capture is not a defect - retry); src/version.js and the git log will move under you.'),
+    'Read docs/TESTING.md, docs/REFERENCE_BAR.md (and VIEW docs/reference/pass-the-fear.png with the Read tool), the relevant docs/BUILD_BRIEF.md sections (the art-bible palette is binding), the top of PROGRESS.md, and the critic reports: ' + j.reports + '.',
+    'MUST-FIX items with the pixel-anchored notes of three independent scorers per rubric cell (every cell in your theme must reach a clear 2, not a marginal 1, because each frame needs >= 16/20 under the MINIMUM of the three scorers):\n' + JSON.stringify(j.failures, null, 1),
+    j.shouldFix.length ? 'SHOULD-FIX items (non-blocking, but real defects - fix the ones in your theme in this pass):\n' + JSON.stringify(j.shouldFix, null, 1) : 'No should-fix items.',
+    'Harness: node tools/cert-capture.mjs shot|seq <name> [--url] [--settle] [--actions file.json] [--w --h --zoom] [--timeout 180000] (see docs/TESTING.md; prefix every capture, action file and generator with "' + pfx + '"; write action JSON programmatically; wrap evals in IIFEs; the technician generator tools/certA1-gen.mjs shows the exact certification frame conditions: seed 4242, camp boot / Act-1 mid-wave with >= 3 enemies and a live telegraph / skipToRoom 7 shop / skipToRoom 8 boss during quake 2+ with adds). Analyzer: node tools/analyze.mjs [--box x,y,w,h] [--ref] <png>. Self-score your frames against every listed cell with the analyzer numbers the scorers used (LUMA buckets, HUEMIX, FLAT, HUES bands, --box regions) AND by viewing the PNGs at 100% and with --zoom 0.5, side by side with docs/reference/pass-the-fear.png.',
+    'Procedure per item: (1) reproduce with the capture conditions and record BEFORE numbers; (2) root-cause inside your files; (3) fix properly - no edits to docs/REFERENCE_BAR.md, tools/analyze.mjs, tools/capture.mjs, tools/cert-capture.mjs, tools/cert-gen.mjs, tools/certA1-gen.mjs; no gate softening; never disable a feature to pass a count; if a brief number must be tuned add a dated tuning note in docs/BUILD_BRIEF.md section 11; (4) AFTER numbers + viewed frames; (5) node tools/cert-capture.mjs shot ' + pfx + 'smoke --timeout 180000 must exit 0 with zero [PAGEERROR]; (6) regression duty: the camp frame keeps or beats its round-1 numbers (analyzer gates, Ember band), a run still plays (startRun -> a room clears -> banner), the HUD fits 1024x576 and 2560x1440 (HUD builder), fps stays >= 55 on the headless harness (measure with a 10 s rAF sample).',
+    'COMMIT AS YOU GO: one git commit per coherent fix, each bumping the PATCH version in src/version.js (re-read it immediately before editing - other builders bump it too; if git reports index.lock, wait 5 s and retry). Message: fix(<area>): <what> (vX.Y.Z). RESUME: first run git log --oneline -40 and git status; if commits already address some of your items (a previous instance of you was killed) or uncommitted work exists in your files, verify with the probe and continue from there instead of redoing it.',
+    'Return done=true only when every item in your theme is addressed, with the commit hashes, the final version, and BEFORE/AFTER numbers per item in selfChecks. If an item needs a design decision, fix everything else, set done=false and explain in summary.',
+  ].join('\n\n')
+}
+
 function synthPrompt(history, certified) {
   return [
     'You are the CERTIFICATION SYNTHESIZER for "Echoes" at ' + ROOT + ' (Bash path ' + POSIX + '). Write docs/critiques/certification.md from the round data below (do not run the game; do not modify src/**; do not git commit).',
@@ -385,12 +419,30 @@ while (round <= MAX_ROUNDS) {
   log('Round ' + round + ': ' + (results.length - failed.length) + ' pass / ' + failed.length + ' fail')
   if (!failed.length) { certified = true; break }
   if (round === MAX_ROUNDS) break
-  for (const r of failed) {
-    if (!r.failures.length) continue
-    const b = await ag(builderPrompt(r, round), { label: 'fix:' + r.block + ' r' + round, phase: 'Fix', schema: BUILD })
-    entry.fixes.push({ block: r.block, result: b })
-    if (!b) { log('ABORT: fix builder for ' + r.block + ' died - resume this workflow to continue'); aborted = true; break }
-    log('Fix ' + r.block + ' r' + round + ': ' + (b.done ? 'done ' + b.commit + ' ' + b.version : 'INCOMPLETE: ' + b.summary))
+  const jobs = []
+  const late = []
+  for (const r of results) {
+    const nonBlocking = (r.detail && r.detail.verdict && r.detail.verdict.failures) ? r.detail.verdict.failures.filter((f) => !f.mustFix) : []
+    if (r.block === 'A' && !r.pass) {
+      for (const vj of VISUAL_JOBS) jobs.push({ key: vj.key, block: 'A', theme: vj.theme, ownership: vj.ownership, failures: r.failures, shouldFix: r.advisories.map((a) => ({ id: 'A-advisory', title: a.title, evidence: a.evidence })), reports: r.report, others: VISUAL_JOBS.filter((x) => x.key !== vj.key).map((x) => x.key).concat(['C']).join(', '), alone: false })
+    } else if (!r.pass && r.failures.length) {
+      jobs.push({ key: r.block, block: r.block, theme: 'Fix the confirmed must-fix failures of block ' + r.block + ' at their root cause.', ownership: JOB_OWNERSHIP[r.block] || OWNERSHIP[r.block], failures: r.failures, shouldFix: nonBlocking, reports: r.report, others: 'A-world, A-hud, A-vfx', alone: false })
+    } else if (r.pass && nonBlocking.length) {
+      late.push({ key: r.block + '-shouldfix', block: r.block, theme: SHOULDFIX_THEME[r.block] || ('Fix the non-blocking defects reported by block ' + r.block + '.'), ownership: OWNERSHIP[r.block] + ' - you run alone, so any file is open when the root cause lives there.', failures: [], shouldFix: nonBlocking.concat(r.advisories.map((a) => ({ id: r.block + '-advisory', title: a.title, evidence: a.evidence }))), reports: r.report, others: '', alone: true })
+    }
+  }
+  log('Fix phase r' + round + ': ' + jobs.map((j) => j.key).join(', ') + (late.length ? ' then alone: ' + late.map((j) => j.key).join(', ') : ''))
+  await parallel(jobs.map((j) => () => ag(jobPrompt(j, round), { label: 'fix:' + j.key + ' r' + round, phase: 'Fix', schema: BUILD }).then((b) => {
+    entry.fixes.push({ job: j.key, result: b })
+    if (!b) { log('ABORT: fix builder ' + j.key + ' died - resume this workflow to continue'); aborted = true }
+    else log('Fix ' + j.key + ' r' + round + ': ' + (b.done ? 'done ' + b.commit + ' ' + b.version : 'INCOMPLETE: ' + b.summary))
+    return b
+  })))
+  if (!aborted) for (const j of late) {
+    const b = await ag(jobPrompt(j, round), { label: 'fix:' + j.key + ' r' + round, phase: 'Fix', schema: BUILD })
+    entry.fixes.push({ job: j.key, result: b })
+    if (!b) { log('ABORT: fix builder ' + j.key + ' died - resume this workflow to continue'); aborted = true; break }
+    log('Fix ' + j.key + ' r' + round + ': ' + (b.done ? 'done ' + b.commit + ' ' + b.version : 'INCOMPLETE: ' + b.summary))
   }
   if (aborted) break
   pending = ORDER.slice()
