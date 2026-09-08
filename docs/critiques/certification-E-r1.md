@@ -1,5 +1,5 @@
 STATUS: COMPLETE
-VERDICT: PASS (0 failures, 4 advisories) — completed critic run, cached in workflow journal
+VERDICT: PASS (0 failures, 4 advisories) — audit gap (tent 1 / tent 2 continuous walks) CLOSED 2026-09-08 with certE1-b- evidence, see the last section
 
 # Certification block E — camp traversal (round 1, v0.4.16, prefix certE1-)
 
@@ -261,3 +261,76 @@ re-grep over captures/certE1-*.console.txt: 0 [PAGEERROR]/[error],
 "roadViolations":0 x28, "colliders":31 x30, 0 non-EVAL "road" lines,
 seatDrift {0,0,0} x8, inPortal:true+promptVisible:true x8; every
 certE1-*.run.log that records an exit code reads exit 0. Verdict unchanged: PASS.
+
+
+## Audit-gap closure (fourth instance, 2026-09-08, prefix certE1-b-)
+
+Completeness audit: tent 1 / tent 2 reachability was proven only from teleported
+starts. This section proves CONTINUOUS real-key walks from the boot seat (1.35, 1.0)
+with no teleport between keys. Generator: tools/certE1-b-gen.mjs -> 
+tools/actions/certE1-b-tents.json; captures/certE1-b-*. Probe log (appended as taken):
+Boot: plain URL, `--timeout 180000`, v0.4.16, scene camp, seed 2982129943, party at
+the boot seats, `{colliders: 31, roadViolations: 0}` at tick 1239 (b-start) and tick
+3287 (b-end). Console: 0 `[PAGEERROR]` / `[error]` / `[HARNESS-ERROR]`, 0 non-EVAL
+"road" lines, only the known `flatShading` (9x) + X3595 shader warnings. Sim speed
+2.39–2.54 u/s on free segments; **A+W / D+W diagonals are normalised** (3.25 u in 84
+ticks = 2.41 u/s along the diagonal, not 3.4). "first deflect" = first sampled step
+whose direction differs from the held-key direction (cos < 0.97), i.e. the first
+contact with anything; "tail" = the last moving samples before keyup.
+
+Every route starts at the boot seat (`startIsSeat: true`, (1.35, 1.00)) and holds real
+keys back-to-back with NO teleport between keys (the only `teleport` re-seats the
+Healer before routes 2–6 begin). One 16 ms poller per route.
+
+| Route (keys, hold) | seg | from → at keyup | moved | u/s moving | stall | first contact | tail direction / face | final | dist to tent centre | frame |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **T1a** seat → A 2600 → W 1600 | A | (1.35,1.00) → (−5.25,1.00) | 6.60 | 2.54 | 0 | none | on the camp road (min 0 from centreline) | | | |
+| | W | (−5.25,1.00) → (−4.98,−1.96) | 2.97 | 1.84 (slide) | 1 tick | (−5.25,−1.88) cos 0 | slide dx +0.18 dz −0.06 → tilt −18.4° = **tent 1 south face** (yaw +19.5°; bedroll 1 would be −28.6°) | (−4.98,−1.96) still sliding | **1.39** | `certE1-b-t1a.png` |
+| **T1b** seat → W 1900 → A 2400 | W | (1.35,1.00) → (1.35,−3.60) | 4.60 | 2.42 | 0 | none | beside the hearth ring, gate road | | | |
+| | A | (1.35,−3.60) → (−4.04,−3.76) | 5.39 | 2.23 | 0 | (−3.99,−3.61) | last 11 ticks (−0.05,−0.15) = (−0.32,−0.95) → **tent 1 east face** (local-z face of yaw 19.5° = −109.5°) | (−4.04,−3.76) still sliding | **1.00** | `certE1-b-t1b.png` |
+| **T1c** seat → W 1000 → A+W 1300 → A 1500 | W | → (1.35,−1.40) | 2.40 | 2.44 | 0 | none | | | | |
+| | A+W | → (−0.95,−3.70) | 3.25 | 2.41 | 0 | none | clean NW diagonal (dx −2.30, dz −2.30) | | | |
+| | A | → (−4.09,−3.88) | 3.15 | 2.14 | 0 | (−4.02,−3.71) | tail (−0.34,−0.94) → **tent 1 east face** | (−4.09,−3.88) still sliding | **1.01** | `certE1-b-t1c.png` |
+| **T2a** seat → D 1450 → W 1600 | D | (1.35,1.00) → (4.87,1.00) | 3.52 | 2.46 | 0 | none | camp road south verge | | | |
+| | W | (4.87,1.00) → (4.50,−1.90) | 2.92 | 1.83 (slide) | 0 | (4.87,−1.76) cos 0.32 | slide dx −0.18 dz −0.07 → tilt +21.3° = **tent 2 south face** (yaw −20.6°; bedroll 2 would be +31.5°); tangential ratio 0.39 vs 0.35 predicted for that face | (4.50,−1.90) still sliding | **1.25** | `certE1-b-t2a.png` |
+| **T2b** seat → W 1900 → D 2400 | W | → (1.35,−3.60) | 4.60 | 2.40 | 0 | none | | | | |
+| | D | (1.35,−3.60) → (5.01,−4.52) | 3.77 | 1.58 (slide+free) | 0 | (3.99,−3.60) cos 0.89 | slid NE along **tent 2 west face** to (4.45,−4.50), rounded the NW corner, then free east at 2.2 u/s along z −4.52 | (5.01,−4.52) free, north of the tent | contact at **0.99**, final 1.43 | `certE1-b-t2b.png` |
+| **T2c** seat → W 1000 → D+W 1300 → D 1500 | W | → (1.35,−1.44) | 2.44 | 2.44 | 0 | none | | | | |
+| | D+W | → (3.65,−3.74) | 3.25 | 2.41 | 0 | none | clean NE diagonal | | | |
+| | D | (3.65,−3.74) → (5.49,−4.52) | 2.00 | 1.38 | 1 tick (keyup) | (4.07,−3.75) cos 0 | pure slide north along **tent 2 west face**, rounded the NW corner, free east | (5.49,−4.52) free | contact at **1.01**, final 1.56 | `certE1-b-t2c.png` |
+
+Path lengths 6.68–10.10 u per route, 206–287 ticks; **no stall > 1 tick on any
+segment** and every segment was still moving at keyup — nothing between the seat and
+either tent (tripod, bench 1/2, archer seat, bedroll 1/2, lantern poles 1/2, hearth
+ring) touched the body: on all six routes the *first* contact sample is the tent
+itself. The tent contact is attributed by the slide geometry, not by proximity
+(bedroll 1 is actually the nearest prop centre to T1a's stop at 1.05 vs 1.39, but the
+observed −18.4° face tilt is tent 1's, and the old teleported stop (−4.76, −2.04) lies
+on that same tilted face line: moving 0.22 u west along it raises z by 0.078 →
+−1.96, exactly the new stop).
+
+The two old teleported starts are now on walked lines: T1a's north segment runs
+along x = −5.25 from z 1.00 to −1.88 (the body's footprint covers (−4.95, −1.5));
+T2a's runs along x = 4.87 from z 1.00 to −1.76 (covers (4.85, −1.3)).
+
+Frames (all six 1600x900, camera on the Healer, `v0.4.16` label at (10,870), 55–82
+fps): `certE1-b-t1a.png` — Healer at ~(800,470) inside the green identity ring
+with the dark ground ellipse under the bean, feet at tent 1's south canvas
+(~700–870, 280–450), bedroll 1 just east (~900,470), Archer on the bench end
+(~1050,420); `certE1-b-t1b.png` / `-t1c.png` — Healer at ~(800,450) against the
+tent's east flap (tent ~640–780, 400–600), pole 1 lit above-right; `certE1-b-t2a.png`
+— Healer at ~(800,470) directly south of tent 2 (~760–900, 300–470), bedroll 2 east,
+bench 2 west, cart at ~(1100–1280, 400–520) on the grass; `certE1-b-t2b.png` /
+`-t2c.png` — Healer at ~(800,400) behind (north of) tent 2 (tent ~720–870, 430–620),
+having rounded its NW corner. No prompt drew at any tent (`promptVisible:false`,
+box 0,0,0,0 — correct, only the portal is interactable).
+
+**Gap verdict: CLOSED.** Tent 1 and tent 2 are each reached by three independent
+continuous real-key walks from the boot seat (road → north, gate road → across,
+and a diagonal), final contact 1.00–1.39 u from the tent centre (touching the
+canvas), no early stop on any bench, bedroll, pole or the hearth. Block E verdict
+unchanged: **PASS**, 0 failures; advisories A1–A4 stand.
+
+Files: tools/certE1-b-gen.mjs, tools/actions/certE1-b-tents.json,
+captures/certE1-b-tents.png / .console.txt, captures/certE1-b-t1a / -t1b / -t1c /
+-t2a / -t2b / -t2c.png.

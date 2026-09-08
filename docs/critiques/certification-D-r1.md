@@ -1,5 +1,5 @@
 STATUS: COMPLETE
-VERDICT: PASS
+VERDICT: PASS (re-confirmed 2026-09-08 by the 5th instance: the borderline 236.2 ms room-clear stall was re-sampled ALONE 3x + wave2 2x + a draft-screen diagnostic, prefix certD1-b-; max 224.1 ms, gt250 = 0, no window with 3 gaps; legendary-card shimmer stall recorded as should-fix F2 — see "Audit gap re-run" at the end)
 
 # Certification D round 1 — Performance & Chrome (certD1)
 
@@ -41,6 +41,7 @@ usage-limit-killed on 09-04 19:56, 09-05 17:29 and 09-06 00:28; their captures a
 Hitches >100 ms after warm-up on the quiet machine (all single frames, none >250 ms, never 3 in one 15 s window): wave-start
 first draw 199.9 ms (defend 6, t1780), ally-downed moment 139.5 ms (boss, t1579), and the room-clear -> reward/path screen
 first frame 109-236 ms on 5 of 6 clears — recorded as advisories A1-A2 with timelines below.
+**UPDATE 2026-09-08 (audit gap):** the 236.2 ms sample was re-run alone (certD1-b-clear1/2/3, wave2a/b, draftdiag): 212.0 / 224.1 / 115.0 / 163.7 / 175.8 / 212.1 ms max, gt250 = 0 everywhere; the stall is the legendary card's `rn-shimmer` animation -> F2 should-fix. See the last section.
 
 ---
 
@@ -493,3 +494,257 @@ E6 VFX {"tick":3229,"scene":"camp","phase":"defeat","ents":4,"enemies":0,"eshots
 {"tag":"batch3-mantis-killed","tick":2547,"ents":4,"enemies":0,"geo":801,"tex":42,"prog":57,"sgObjs":1100,"sgMeshes":885,"sgSprites":61,"uniqGeo":687,"uniqMat":463,"decals":33,"particles":0,"numerals":0,"heap":53.9}
 {"tag":"+22s-decals-expired","tick":3867,"ents":4,"enemies":0,"geo":801,"tex":42,"prog":57,"sgObjs":1067,"sgMeshes":852,"sgSprites":61,"uniqGeo":686,"uniqMat":430,"decals":0,"particles":0,"numerals":0,"heap":64.8}
 {"phase":"reward","screen":"draft","spawns":33,"deaths":33,"despawns":0,"cleared":[2040]}
+
+
+---
+
+## Audit gap re-run (5th instance, 2026-09-08, prefix certD1-b-)
+
+Gap: the 236.2 ms room-clear -> reward-screen first frame in certD1-q-clear was sampled once and never re-run alone. Plan: re-run tools/actions/certD1-n-clear.json twice and certD1-n-wave2.json twice, each ALONE (contention check before each), apply the 250 ms gate to the reward/path first frame.
+
+### Machine state before re-run
+
+(see "Re-run conditions" below; the per-run digests follow, then the tables)
+
+#### digest certD1-b-clear1  levels={"debug":2,"warn":255,"GOTO":1,"EVAL":6,"DEBUG-API":1}
+[GOTO] 13878 ms, 107 requests, last request at 3823 ms
+warn kinds: {"THREE.WebGLProgram: Program Info Log: (#,#-#): warning X#: gradien":1,"THREE.Material: 'flatShading' is not a property of THREE.MeshToonMaterial":254}
+E0: "lib 0.4.16 t518 vw1600x900 poErr=none"
+E1: {"tick":518,"fps":55.6,"ents":4,"scene":"camp","hwConcurrency":16,"now":"2026-09-08T12:10:42.359Z","ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+E2: {"seed":999,"room":1,"tick":520}
+E3 SAMPLE tick 535->3867 (3332 sim ticks) tag=
+  ALL {"frames":4709,"spanMs":56813,"meanFps":82.9,"meanMs":12.07,"p50":12.1,"p95":24.1,"p99":30.4,"max":212,"gt50":12,"gt100":2,"gt250":0}
+  WARM {"frames":140,"spanMs":2794,"meanFps":49.8,"meanMs":20.1,"p50":18.1,"p95":42.3,"p99":72.8,"max":163.7,"gt50":5,"gt100":1,"gt250":0}
+  STEADY {"frames":4569,"spanMs":53994,"meanFps":84.6,"meanMs":11.82,"p50":12.1,"p95":18.5,"p99":30.3,"max":212,"gt50":7,"gt100":1,"gt250":0}
+  windows15s [{"from":3000,"to":18000,"gt100":1,"max":212,"meanFps":55.1},{"from":8000,"to":23000,"gt100":1,"max":212,"meanFps":70},{"from":13000,"to":28000,"gt100":1,"max":212,"meanFps":82.6},{"from":18000,"to":33000,"gt100":0,"max":24.4,"meanFps":96.5},{"from":23000,"to":38000,"gt100":0,"max":42.3,"meanFps":94},{"from":28000,"to":43000,"gt100":0,"max":42.3,"meanFps":95.7},{"from":33000,"to":48000,"gt100":0,"max":42.3,"meanFps":96},{"from":38000,"to":53000,"gt100":0,"max":30.3,"meanFps":97.6}]
+  peakEnt 19 peakAlive {"n":5,"tick":568} timer {"samples":4519,"maxGap":72.4,"gt50":5,"gt100":0} stateCostMs {"max":2.8,"mean":1.23} longTasks n=4 top=[{"at":16910,"dur":229},{"at":17156,"dur":127},{"at":17709,"dur":67},{"at":33845,"dur":57}]
+  GAP 163.7 ms @2340 ms tick 680 screen none phase combat timerMaxGap 25.8 ents 17 alive 4 heap 60->48.2 geo 720 ring[-3..] ["666:sound","666:hitstop","666:death/boar#8","666:sound"]
+  GAP 212 ms @16837 ms tick 1521 screen path phase path timerMaxGap 70.6 ents 4 alive 0 heap 45.3->45.9 geo 849 ring[-3..] ["1507:reward_offer#guardian_bond","1508:skill_equip","1508:draft_taken#guardian_bond","1508:path_offer"]
+  perSec s:fps/E.ents/enemies/alive/eshots/bolts/azones/bossHp/heap/screen: 0:55.6/5/0/0/0/0/0/-/46.1/none 1:55.2/11/5/5/0/0/0/-/49.8/none 2:55.2/18/5/5/0/5/2/-/55.7/none 3:55.2/13/4/4/0/1/2/-/60.2/none 4:54.9/14/3/3/0/2/3/-/51.9/none 5:54.9/10/1/1/0/1/2/-/53.3/none 6:54.9/10/3/3/0/0/1/-/57.8/none 7:54.9/14/3/3/0/4/1/-/57.8/none 8:55.2/10/2/2/0/1/1/-/58.8/none 9:55.2/11/1/1/0/3/1/-/57.6/none 10:55.2/10/0/0/1/2/1/-/62.8/none 11:55.2/12/5/5/0/0/1/-/53.3/none 12:54.9/13/5/5/0/1/1/-/53.8/none 13:54.9/11/4/4/0/1/0/-/54.1/none 14:54.9/11/4/4/0/1/0/-/44.2/none 15:55.2/14/4/4/1/2/1/-/45.5/none 16:81.3/11/1/1/0/2/2/-/49.3/none 17:55.2/4/0/0/0/0/0/-/46.7/path 18:54.9/6/0/0/0/0/0/-/53.8/none 19:82.6/15/4/4/0/5/0/-/56.7/none 20:84/10/3/3/0/1/0/-/47.5/none 21:82.6/11/3/3/0/2/0/-/50.1/none 22:83.3/11/2/2/0/3/0/-/55.9/none 23:83.3/11/2/2/1/1/1/-/45.8/none 24:83.3/15/1/1/1/5/2/-/70.4/none 25:83.3/9/0/0/0/1/2/-/69/none 26:82.6/14/4/4/0/2/2/-/62.2/none 27:82.6/10/3/3/0/1/0/-/54.1/none 28:82.6/10/2/2/0/1/1/-/73.1/none 29:82.6/14/2/2/0/5/1/-/61.5/none 30:82.6/9/1/1/0/1/1/-/48.3/none 31:82.6/10/3/3/0/0/1/-/66.7/none 32:82.6/13/3/3/0/2/2/-/55.7/none 33:85.5/9/2/2/0/0/1/-/51.8/none 34:161.3/13/2/2/0/4/1/-/74.1/none 35:82.6/12/1/1/0/3/2/-/66.4/none 36:82.6/5/0/0/0/0/0/-/54.3/none 37:82.6/10/4/4/0/0/0/-/72.9/none 38:82.6/11/3/3/0/2/0/-/66.7/none 39:83.3/10/1/1/0/3/0/-/61.5/none 40:83.3/10/1/1/0/2/1/-/56.9/none 41:83.3/9/0/0/1/1/1/-/52.4/none 42:83.3/13/3/3/1/2/1/-/76.3/none 43:83.3/9/2/2/0/1/0/-/71.4/none 44:83.3/12/1/1/0/4/1/-/69.7/none 45:82.6/10/1/1/0/2/1/-/63.2/none 46:82.6/8/0/0/0/1/1/-/60.8/none 47:83.3/11/4/4/0/0/1/-/59.1/none 48:82.6/15/3/3/0/5/1/-/56.1/none 49:82.6/11/3/3/0/1/1/-/79/none 50:83.3/12/2/2/1/1/2/-/77/none 51:83.3/13/2/2/1/3/1/-/47.6/none 52:83.3/11/1/1/1/2/1/-/71.5/none 53:82.6/4/0/0/0/0/0/-/47.8/draft 54:82.6/4/0/0/0/0/0/-/61.7/draft 55:82.6/4/0/0/0/0/0/-/50.2/draft 56:82.6/4/0/0/0/0/0/-/64.4/draft 57:82.6/4/0/0/0/0/0/-/53.2/draft
+  events {"waves":[[520,0,5],[842,1,3],[1125,2,5],[1560,0,4],[1965,1,4],[2293,2,3],[2631,0,4],[2899,1,3],[3183,2,4]],"spawns":35,"deaths":35,"despawns":0,"hitstops":34,"cleared":[1507,2589,3616],"downed":[],"revive":[],"quakeStart":[],"quakeResolve":[],"tramples":[],"adds":[],"bossDeath":[],"runEnd":[]}
+  party [[0,90,false],[1,150,false],[2,88,false],[3,76,false]]
+  phase "reward"
+  room 3
+  screen "draft"
+  driver ["draftTake t1508","pathChoose t1542","draftTake t2589","pathChoose t2613"]
+  clearsSeen 3
+  firstSpawn "{\"tick\":568,\"type\":\"enemy_spawn\",\"id\":6,\"etype\":\"boar\",\"x\":-9.89,\"z\":-4.06,\"wave\":0}"
+E4: {"screen":"draft","phase":"reward","n":2,"rs":[{"l":"canvas#0","tag":"CANVAS","id":"","cls":"","x":0,"y":0,"w":1600,"h":900,"filter":"none","backdrop":"none","blend":"normal","shadow":"none","opacity":"1","transition":"all","willChange":"auto"},{"l":"run-screen","tag":"DIV","id":"run-screen","cls":"rn-compact rn-open","x":0,"y":0,"w":1600,"h":900,"filter":"none","backdrop":"none","blend":"normal","shadow":"none","opacity":"1","transition":"opacity 0.22s","willChange":"auto"}]}
+E5 VFX {"tick":3869,"scene":"camp","phase":"reward","ents":4,"enemies":0,"eshots":0,"bolts":0,"zones":0,"azones":0,"vfxMode":"run","runs":0,"campEmitters":17,"campEmbers":130,"fireflies":150,"gateMotes":34,"campShadows":70,"arena":{"numerals":1,"decals":11,"particles":0,"dummies":0,"emitters":10,"embers":81,"propShadows":40,"smearGhosts":0},"bandGuardMaterials":258,"numeralNodes":5,"threatNodes":0,"fizzleNodes":0,"domNodes":296,"heapMB":61.4,"renderer":{"programs":58,"geometries":1150,"textures":45,"calls":1,"tris":1},"sceneGraph":{"objs":1094,"meshes":864,"pts":6,"sprites":76,"lights":6,"uniqGeo":688,"uniqMat":457},"tag":"after-clear"}
+
+#### digest certD1-b-clear2  levels={"debug":2,"warn":227,"GOTO":1,"EVAL":6,"DEBUG-API":1}
+[GOTO] 27617 ms, 107 requests, last request at 2635 ms
+warn kinds: {"THREE.WebGLProgram: Program Info Log: (#,#-#): warning X#: gradien":1,"THREE.Material: 'flatShading' is not a property of THREE.MeshToonMaterial":226}
+E0: "lib 0.4.16 t1535 vw1600x900 poErr=none"
+E1: {"tick":1536,"fps":83.3,"ents":4,"scene":"camp","hwConcurrency":16,"now":"2026-09-08T12:12:37.970Z","ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+E2: {"seed":999,"room":1,"tick":1537}
+E3 SAMPLE tick 1546->4120 (2574 sim ticks) tag=
+  ALL {"frames":4654,"spanMs":43898,"meanFps":106,"meanMs":9.43,"p50":6.3,"p95":12.3,"p99":18.3,"max":224.1,"gt50":5,"gt100":4,"gt250":0}
+  WARM {"frames":238,"spanMs":2885,"meanFps":82.1,"meanMs":12.17,"p50":12.1,"p95":18.3,"p99":48.5,"max":109,"gt50":2,"gt100":1,"gt250":0}
+  STEADY {"frames":4416,"spanMs":41000,"meanFps":107.7,"meanMs":9.29,"p50":6.3,"p95":12.3,"p99":18.3,"max":224.1,"gt50":3,"gt100":3,"gt250":0}
+  windows15s [{"from":3000,"to":18000,"gt100":1,"max":103.1,"meanFps":94.3},{"from":8000,"to":23000,"gt100":1,"max":103.1,"meanFps":101.9},{"from":13000,"to":28000,"gt100":1,"max":103.1,"meanFps":111.5},{"from":18000,"to":33000,"gt100":0,"max":30.4,"meanFps":118},{"from":23000,"to":38000,"gt100":0,"max":30.4,"meanFps":120.1},{"from":28000,"to":43000,"gt100":2,"max":224.1,"meanFps":116.4}]
+  peakEnt 19 peakAlive {"n":5,"tick":1585} timer {"samples":3227,"maxGap":60.6,"gt50":2,"gt100":0} stateCostMs {"max":2.1,"mean":1.04} longTasks n=3 top=[{"at":30656,"dur":140},{"at":30812,"dur":66},{"at":31440,"dur":50}]
+  GAP 109 ms @2341 ms tick 1689 screen none phase combat timerMaxGap 17.5 ents 17 alive 4 heap 52.2->54 geo 720 ring[-3..] ["1683:sound","1683:hitstop","1683:death/boar#8","1683:sound"]
+  GAP 103.1 ms @16432 ms tick 2508 screen path phase path timerMaxGap 16.2 ents 4 alive 0 heap 53.9->54.5 geo 847 ring[-3..] ["2503:reward_offer#sanctuary","2503:skill_equip","2503:draft_taken#sanctuary","2503:path_offer"]
+  GAP 115.1 ms @39711 ms tick 3862 screen draft phase reward timerMaxGap 16.1 ents 4 alive 0 heap 58.7->59.2 geo 1042 ring[-3..] ["3855:projectile_despawn#213","3855:heal_override","3855:glint_gain","3855:reward_offer#ascend"]
+  GAP 224.1 ms @40202 ms tick 3891 screen draft phase reward timerMaxGap 16.6 ents 4 alive 0 heap 62.6->63 geo 1042 ring[-3..] ["3855:projectile_despawn#213","3855:heal_override","3855:glint_gain","3855:reward_offer#ascend"]
+  perSec s:fps/E.ents/enemies/alive/eshots/bolts/azones/bossHp/heap/screen: 0:83.3/5/0/0/0/0/0/-/50.7/none 1:82.6/11/5/5/0/0/0/-/48.1/none 2:82.6/18/5/5/0/5/2/-/59.3/none 3:82.6/14/4/4/0/2/2/-/58.6/none 4:82.6/13/3/3/0/2/3/-/59.1/none 5:82.6/12/2/2/0/2/2/-/58.7/none 6:82.6/8/0/0/0/0/2/-/53.2/none 7:82.6/14/3/3/0/4/1/-/61.8/none 8:82.6/10/2/2/0/1/1/-/56.7/none 9:82.6/9/1/1/0/2/0/-/62/none 10:82.6/9/0/0/1/1/1/-/57.1/none 11:82.6/12/5/5/0/0/1/-/65.2/none 12:82.6/17/5/5/0/5/1/-/55.5/none 13:82.6/11/4/4/0/1/0/-/62.3/none 14:84/14/4/4/1/2/1/-/66.4/none 15:161.3/12/3/3/0/2/1/-/66/none 16:161.3/10/1/1/0/2/1/-/61/none 17:161.3/5/0/0/0/0/0/-/60.6/none 18:83.3/11/5/5/0/0/0/-/64.5/none 19:163.9/12/5/5/0/1/0/-/54.8/none 20:83.3/16/4/4/1/5/0/-/78.4/none 21:163.9/10/3/3/1/0/0/-/73.4/none 22:161.3/8/1/1/0/1/0/-/63.4/none 23:163.9/10/4/4/0/0/0/-/86.7/none 24:163.9/16/4/4/0/5/1/-/77.8/none 25:161.3/11/1/1/0/1/3/-/49.1/none 26:83.3/10/1/1/0/0/3/-/74.1/none 27:161.3/4/0/0/0/0/0/-/67.6/path 28:163.9/6/0/0/0/0/0/-/58.5/none 29:163.9/15/4/4/0/5/0/-/53.7/none 30:163.9/10/3/3/0/1/0/-/47.1/none 31:163.9/12/3/3/0/2/1/-/70.7/none 32:163.9/12/2/2/1/2/1/-/68.7/none 33:91.7/10/1/1/0/2/1/-/60.8/none 34:82.6/14/1/1/0/5/2/-/54.1/none 35:163.9/7/0/0/0/0/1/-/49.7/none 36:163.9/12/5/5/0/0/1/-/77.9/none 37:163.9/13/4/4/0/2/1/-/74.5/none 38:163.9/11/3/3/0/2/1/-/72.1/none 39:161.3/15/2/2/0/6/2/-/72.8/none 40:161.3/4/0/0/0/0/0/-/63/draft 41:158.7/4/0/0/0/0/0/-/73.7/draft 42:83.3/4/0/0/0/0/0/-/61.2/draft 43:156.2/4/0/0/0/0/0/-/74.3/draft 44:161.3/4/0/0/0/0/0/-/62.6/draft
+  events {"waves":[[1537,0,5],[1859,1,3],[2121,2,5],[2548,0,5],[2838,1,4],[3152,0,4],[3550,1,5]],"spawns":31,"deaths":31,"despawns":0,"hitstops":28,"cleared":[2503,3099,3855],"downed":[],"revive":[],"quakeStart":[],"quakeResolve":[],"tramples":[],"adds":[],"bossDeath":[],"runEnd":[]}
+  party [[0,100,false],[1,140,false],[2,85,false],[3,70,false]]
+  phase "reward"
+  room 3
+  screen "draft"
+  driver ["draftTake t2503","pathChoose t2530","draftTake t3110","pathChoose t3134"]
+  clearsSeen 3
+  firstSpawn "{\"tick\":1585,\"type\":\"enemy_spawn\",\"id\":6,\"etype\":\"boar\",\"x\":-9.89,\"z\":-4.06,\"wave\":0}"
+E4: {"screen":"draft","phase":"reward","n":2,"rs":[{"l":"canvas#0","tag":"CANVAS","id":"","cls":"","x":0,"y":0,"w":1600,"h":900,"filter":"none","backdrop":"none","blend":"normal","shadow":"none","opacity":"1","transition":"all","willChange":"auto"},{"l":"run-screen","tag":"DIV","id":"run-screen","cls":"rn-compact rn-open","x":0,"y":0,"w":1600,"h":900,"filter":"none","backdrop":"none","blend":"normal","shadow":"none","opacity":"1","transition":"opacity 0.22s","willChange":"auto"}]}
+E5 VFX {"tick":4122,"scene":"camp","phase":"reward","ents":4,"enemies":0,"eshots":0,"bolts":0,"zones":0,"azones":0,"vfxMode":"run","runs":0,"campEmitters":17,"campEmbers":130,"fireflies":150,"gateMotes":34,"campShadows":70,"arena":{"numerals":0,"decals":13,"particles":0,"dummies":0,"emitters":10,"embers":81,"propShadows":40,"smearGhosts":0},"bandGuardMaterials":258,"numeralNodes":6,"threatNodes":0,"fizzleNodes":0,"domNodes":295,"heapMB":69.6,"renderer":{"programs":58,"geometries":1042,"textures":44,"calls":1,"tris":1},"sceneGraph":{"objs":1080,"meshes":865,"pts":6,"sprites":61,"lights":6,"uniqGeo":687,"uniqMat":443},"tag":"after-clear"}
+
+#### digest certD1-b-wave2a  levels={"debug":2,"warn":73,"GOTO":1,"EVAL":7,"DEBUG-API":1}
+[GOTO] 20759 ms, 107 requests, last request at 2253 ms
+warn kinds: {"THREE.WebGLProgram: Program Info Log: (#,#-#): warning X#: gradien":1,"THREE.Material: 'flatShading' is not a property of THREE.MeshToonMaterial":72}
+E0: "lib 0.4.16 t1151 vw1600x900 poErr=none"
+E1: {"tick":1151,"fps":163.9,"ents":4,"scene":"camp","hwConcurrency":16,"now":"2026-09-08T12:14:41.748Z","ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+E2: {"seed":999,"modes":["kill_all","kill_all","kill_all","defend","kill_all","defend","shop","boss"],"room":1}
+E3: {"skip":{"room":2,"phase":"combat","mode":"kill_all"},"roomState":{"mode":"kill_all","cleared":false,"softFailed":false,"waveIndex":0,"wavesTotal":2,"waveSizes":[4,5],"pendingSpawns":4,"aliveEnemies":0,"defendTicksLeft":null,"waystone":null},"tick":1171,"party":[[0,100,0,0],[1,150,-1.9,-1],[2,95,1.8,-1.3],[3,80,-0.3,-2.2]]}
+E4 SAMPLE tick 1174->2654 (1480 sim ticks) tag=
+  ALL {"frames":2980,"spanMs":25000,"meanFps":119.2,"meanMs":8.39,"p50":6.2,"p95":12.2,"p99":12.4,"max":163.7,"gt50":2,"gt100":1,"gt250":0}
+  WARM {"frames":343,"spanMs":2994,"meanFps":114.2,"meanMs":8.75,"p50":6.1,"p95":12.2,"p99":30.3,"max":97,"gt50":1,"gt100":0,"gt250":0}
+  STEADY {"frames":2637,"spanMs":22000,"meanFps":119.8,"meanMs":8.35,"p50":6.2,"p95":12.2,"p99":12.4,"max":163.7,"gt50":1,"gt100":1,"gt250":0}
+  windows15s [{"from":3000,"to":18000,"gt100":1,"max":163.7,"meanFps":118.7},{"from":8000,"to":23000,"gt100":1,"max":163.7,"meanFps":120.3}]
+  peakEnt 18 peakAlive {"n":5,"tick":1479} timer {"samples":2364,"maxGap":42.2,"gt50":0,"gt100":0} stateCostMs {"max":3.3,"mean":1.14} longTasks n=0 top=[]
+  GAP 163.7 ms @11453 ms tick 1841 screen draft phase reward timerMaxGap 16.1 ents 4 alive 0 heap 54->55 geo 813 ring[-3..] ["1829:projectile_despawn#68","1829:heal_override","1829:glint_gain","1829:reward_offer#restorative_wave"]
+  perSec s:fps/E.ents/enemies/alive/eshots/bolts/azones/bossHp/heap/screen: 0:161.3/5/0/0/0/0/0/-/52.5/none 1:161.3/11/4/4/0/1/0/-/54.4/none 2:161.3/14/3/3/0/4/1/-/48.4/none 3:163.9/10/2/2/1/1/1/-/52.2/none 4:163.9/11/1/1/1/2/1/-/49.1/none 5:163.9/9/0/0/0/2/1/-/52.8/none 6:83.3/12/5/5/0/0/1/-/51/none 7:161.3/18/5/5/0/5/2/-/49.5/none 8:161.3/13/2/2/1/2/2/-/52.4/none 9:163.9/9/2/2/0/0/1/-/48.2/none 10:163.9/11/2/2/0/1/2/-/47/none 11:163.9/11/0/0/1/2/2/-/61.5/none 12:163.9/4/0/0/0/0/0/-/50.9/draft 13:161.3/4/0/0/0/0/0/-/52.9/draft 14:84/4/0/0/0/0/0/-/53.4/draft 15:163.9/4/0/0/0/0/0/-/56/draft 16:161.3/4/0/0/0/0/0/-/59.4/draft 17:163.9/4/0/0/0/0/0/-/48.7/draft 18:158.7/4/0/0/0/0/0/-/50/draft 19:163.9/4/0/0/0/0/0/-/52/draft 20:163.9/4/0/0/0/0/0/-/48.9/draft 21:161.3/4/0/0/0/0/0/-/50.6/draft 22:84/4/0/0/0/0/0/-/50.2/draft 23:163.9/4/0/0/0/0/0/-/53.2/draft 24:161.3/4/0/0/0/0/0/-/55.4/draft 25:161.3/4/0/0/0/0/0/-/45.3/draft
+  events {"waves":[[1152,0,5],[1171,0,4],[1431,1,5]],"spawns":9,"deaths":9,"despawns":0,"hitstops":9,"cleared":[1171,1829],"downed":[],"revive":[],"quakeStart":[],"quakeResolve":[],"tramples":[],"adds":[],"bossDeath":[],"runEnd":[]}
+  party [[0,100,false],[1,140,false],[2,95,false],[3,70,false]]
+  phase "reward"
+  roomState {"mode":"kill_all","cleared":true,"softFailed":false,"waveIndex":1,"wavesTotal":2,"waveSizes":[4,5],"pendingSpawns":0,"aliveEnemies":0,"defendTicksLeft":null,"waystone":null}
+  firstSpawn "{\"tick\":1219,\"type\":\"enemy_spawn\",\"id\":6,\"etype\":\"mantis\",\"x\":5.66,\"z\":-6.1,\"wave\":0}"
+E5: {"version":"0.4.16","text":"v0.4.16","x":10,"y":870,"w":52.8,"h":22,"right":62.8,"bottom":892,"fs":"12px","color":"rgb(244, 239, 230)","opacity":"0.85","display":"block","vis":"visible","vw":1600,"vh":900,"fpsMeter":{"text":"161 fps","x":1532.1875,"y":8,"w":57.8125,"h":23},"apiVersion":"0.4.16"}
+E6 VFX {"tick":2656,"scene":"camp","phase":"reward","ents":4,"enemies":0,"eshots":0,"bolts":0,"zones":0,"azones":0,"vfxMode":"run","runs":0,"campEmitters":17,"campEmbers":130,"fireflies":150,"gateMotes":34,"campShadows":70,"arena":{"numerals":0,"decals":5,"particles":0,"dummies":0,"emitters":10,"embers":81,"propShadows":40,"smearGhosts":0},"bandGuardMaterials":258,"numeralNodes":3,"threatNodes":0,"fizzleNodes":0,"domNodes":296,"heapMB":45.3,"renderer":{"programs":58,"geometries":813,"textures":44,"calls":1,"tris":1},"sceneGraph":{"objs":1072,"meshes":857,"pts":6,"sprites":61,"lights":6,"uniqGeo":687,"uniqMat":435},"tag":"after-certD1-n-wave2"}
+
+#### digest certD1-b-clear3  levels={"debug":2,"warn":255,"GOTO":1,"EVAL":6,"DEBUG-API":1}
+[GOTO] 33965 ms, 107 requests, last request at 2561 ms
+warn kinds: {"THREE.WebGLProgram: Program Info Log: (#,#-#): warning X#: gradien":1,"THREE.Material: 'flatShading' is not a property of THREE.MeshToonMaterial":254}
+E0: "lib 0.4.16 t1910 vw1600x900 poErr=none"
+E1: {"tick":1910,"fps":161.3,"ents":4,"scene":"camp","hwConcurrency":16,"now":"2026-09-08T12:16:35.699Z","ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+E2: {"seed":999,"room":1,"tick":1910}
+E3 SAMPLE tick 1920->5249 (3329 sim ticks) tag=
+  ALL {"frames":6137,"spanMs":56898,"meanFps":107.8,"meanMs":9.27,"p50":6.3,"p95":12.5,"p99":18.5,"max":115,"gt50":3,"gt100":2,"gt250":0}
+  WARM {"frames":275,"spanMs":2885,"meanFps":95,"meanMs":10.53,"p50":11.9,"p95":18.3,"p99":42.7,"max":103.5,"gt50":2,"gt100":1,"gt250":0}
+  STEADY {"frames":5862,"spanMs":54001,"meanFps":108.5,"meanMs":9.21,"p50":6.3,"p95":12.5,"p99":18.5,"max":115,"gt50":1,"gt100":1,"gt250":0}
+  windows15s [{"from":3000,"to":18000,"gt100":1,"max":115,"meanFps":108.2},{"from":8000,"to":23000,"gt100":1,"max":115,"meanFps":106.5},{"from":13000,"to":28000,"gt100":1,"max":115,"meanFps":100.5},{"from":18000,"to":33000,"gt100":0,"max":30.1,"meanFps":99.3},{"from":23000,"to":38000,"gt100":0,"max":42.5,"meanFps":101.1},{"from":28000,"to":43000,"gt100":0,"max":42.5,"meanFps":110.6},{"from":33000,"to":48000,"gt100":0,"max":42.5,"meanFps":114.7},{"from":38000,"to":53000,"gt100":0,"max":30.7,"meanFps":115.9}]
+  peakEnt 19 peakAlive {"n":5,"tick":1958} timer {"samples":3831,"maxGap":58.6,"gt50":2,"gt100":0} stateCostMs {"max":2.4,"mean":0.99} longTasks n=1 top=[{"at":37152,"dur":64}]
+  GAP 103.5 ms @2390 ms tick 2065 screen none phase combat timerMaxGap 19 ents 17 alive 4 heap 51.2->52.9 geo 720 ring[-3..] ["2056:sound","2056:hitstop","2056:death/boar#8","2056:sound"]
+  GAP 115 ms @16832 ms tick 2903 screen path phase path timerMaxGap 18.2 ents 4 alive 0 heap 66.9->54.7 geo 849 ring[-3..] ["2897:reward_offer#guardian_bond","2897:skill_equip","2897:draft_taken#guardian_bond","2897:path_offer"]
+  perSec s:fps/E.ents/enemies/alive/eshots/bolts/azones/bossHp/heap/screen: 0:161.3/5/0/0/0/0/0/-/45.9/none 1:84.7/11/5/5/0/0/0/-/57.8/none 2:84.7/18/5/5/0/5/2/-/55.7/none 3:83.3/14/4/4/0/2/2/-/56.5/none 4:83.3/13/3/3/0/2/3/-/58/none 5:161.3/12/2/2/0/2/2/-/60.7/none 6:161.3/8/0/0/0/0/2/-/59.9/none 7:161.3/14/3/3/0/4/1/-/55.1/none 8:161.3/10/2/2/0/1/1/-/64.3/none 9:163.9/9/1/1/0/2/0/-/56.9/none 10:161.3/11/1/1/1/2/1/-/53.8/none 11:161.3/12/5/5/0/0/1/-/64.9/none 12:83.3/12/5/5/0/0/1/-/53.1/none 13:85.5/15/4/4/0/5/0/-/61.3/none 14:163.9/12/4/4/0/2/0/-/54.8/none 15:161.3/14/4/4/1/2/1/-/63.7/none 16:85.5/12/1/1/0/3/2/-/61/none 17:161.3/4/0/0/0/0/0/-/55.8/path 18:156.2/6/0/0/0/0/0/-/56.4/none 19:86.2/15/4/4/0/5/0/-/60.9/none 20:83.3/10/3/3/0/1/0/-/66.2/none 21:84.7/11/3/3/0/2/0/-/67.7/none 22:84.7/11/2/2/0/3/0/-/56/none 23:87.7/11/2/2/1/1/1/-/61.8/none 24:84.7/15/1/1/1/5/2/-/70.2/none 25:83.3/9/0/0/0/1/2/-/48/none 26:83.3/14/4/4/0/2/2/-/47.5/none 27:82.6/10/3/3/0/1/0/-/65.1/none 28:82.6/9/2/2/0/1/1/-/53.7/none 29:161.3/13/2/2/0/5/1/-/47.9/none 30:84/9/1/1/0/1/1/-/71/none 31:83.3/7/0/0/0/0/1/-/60.8/none 32:83.3/13/3/3/0/2/2/-/56.9/none 33:161.3/10/2/2/0/1/1/-/56.8/none 34:163.9/13/2/2/0/4/1/-/78.9/none 35:161.3/13/1/1/0/3/3/-/76.6/none 36:83.3/4/0/0/0/0/0/-/62.6/none 37:163.9/5/0/0/0/0/0/-/55.6/none 38:158.7/12/4/4/0/3/0/-/55.2/none 39:163.9/11/2/2/0/3/0/-/52.5/none 40:163.9/9/1/1/0/1/1/-/51.8/none 41:163.9/8/0/0/0/1/1/-/54.9/none 42:163.9/12/3/3/0/2/1/-/55.4/none 43:161.3/9/2/2/0/1/0/-/52/none 44:158.7/12/1/1/0/4/1/-/75.1/none 45:163.9/9/1/1/0/1/1/-/69/none 46:161.3/8/0/0/0/1/1/-/65.2/none 47:161.3/11/4/4/0/0/1/-/61.8/none 48:163.9/16/4/4/0/5/1/-/63.2/none 49:161.3/11/3/3/0/1/1/-/60.3/none 50:163.9/12/2/2/1/1/2/-/60.9/none 51:163.9/11/2/2/1/1/1/-/57.6/none 52:83.3/8/0/0/1/1/1/-/51.2/none 53:161.3/4/0/0/0/0/0/-/68.5/draft 54:161.3/4/0/0/0/0/0/-/59.7/draft 55:142.9/4/0/0/0/0/0/-/50.4/draft 56:161.3/4/0/0/0/0/0/-/67.9/draft 57:161.3/4/0/0/0/0/0/-/58.9/draft
+  events {"waves":[[1910,0,5],[2232,1,3],[2515,2,5],[2943,0,4],[3355,1,4],[3683,2,3],[4038,0,4],[4296,1,3],[4576,2,4]],"spawns":35,"deaths":35,"despawns":0,"hitstops":34,"cleared":[2897,3978,4954],"downed":[],"revive":[],"quakeStart":[],"quakeResolve":[],"tramples":[],"adds":[],"bossDeath":[],"runEnd":[]}
+  party [[0,100,false],[1,150,false],[2,81,false],[3,76,false]]
+  phase "reward"
+  room 3
+  screen "draft"
+  driver ["draftTake t2897","pathChoose t2925","draftTake t3996","pathChoose t4020"]
+  clearsSeen 3
+  firstSpawn "{\"tick\":1958,\"type\":\"enemy_spawn\",\"id\":6,\"etype\":\"boar\",\"x\":-9.89,\"z\":-4.06,\"wave\":0}"
+E4: {"screen":"draft","phase":"reward","n":2,"rs":[{"l":"canvas#0","tag":"CANVAS","id":"","cls":"","x":0,"y":0,"w":1600,"h":900,"filter":"none","backdrop":"none","blend":"normal","shadow":"none","opacity":"1","transition":"all","willChange":"auto"},{"l":"run-screen","tag":"DIV","id":"run-screen","cls":"rn-compact rn-open","x":0,"y":0,"w":1600,"h":900,"filter":"none","backdrop":"none","blend":"normal","shadow":"none","opacity":"1","transition":"opacity 0.22s","willChange":"auto"}]}
+E5 VFX {"tick":5252,"scene":"camp","phase":"reward","ents":4,"enemies":0,"eshots":0,"bolts":0,"zones":0,"azones":0,"vfxMode":"run","runs":0,"campEmitters":17,"campEmbers":130,"fireflies":150,"gateMotes":34,"campShadows":70,"arena":{"numerals":0,"decals":11,"particles":0,"dummies":0,"emitters":10,"embers":81,"propShadows":40,"smearGhosts":0},"bandGuardMaterials":258,"numeralNodes":5,"threatNodes":0,"fizzleNodes":0,"domNodes":295,"heapMB":69.1,"renderer":{"programs":58,"geometries":1135,"textures":45,"calls":1,"tris":1},"sceneGraph":{"objs":1081,"meshes":863,"pts":6,"sprites":64,"lights":6,"uniqGeo":687,"uniqMat":444},"tag":"after-clear"}
+
+#### digest certD1-b-wave2b  levels={"debug":2,"warn":73,"GOTO":1,"EVAL":7,"DEBUG-API":1}
+[GOTO] 41132 ms, 107 requests, last request at 2422 ms
+warn kinds: {"THREE.WebGLProgram: Program Info Log: (#,#-#): warning X#: gradien":1,"THREE.Material: 'flatShading' is not a property of THREE.MeshToonMaterial":72}
+E0: "lib 0.4.16 t2343 vw1600x900 poErr=none"
+E1: {"tick":2343,"fps":161.3,"ents":4,"scene":"camp","hwConcurrency":16,"now":"2026-09-08T12:18:45.301Z","ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+E2: {"seed":999,"modes":["kill_all","kill_all","kill_all","defend","kill_all","defend","shop","boss"],"room":1}
+E3: {"skip":{"room":2,"phase":"combat","mode":"kill_all"},"roomState":{"mode":"kill_all","cleared":false,"softFailed":false,"waveIndex":0,"wavesTotal":2,"waveSizes":[4,5],"pendingSpawns":4,"aliveEnemies":0,"defendTicksLeft":null,"waystone":null},"tick":2363,"party":[[0,100,0,0],[1,150,-1.9,-1],[2,95,1.8,-1.3],[3,80,-0.3,-2.2]]}
+E4 SAMPLE tick 2365->3845 (1480 sim ticks) tag=
+  ALL {"frames":2679,"spanMs":25007,"meanFps":107.1,"meanMs":9.34,"p50":6.3,"p95":12.4,"p99":18.5,"max":175.8,"gt50":4,"gt100":2,"gt250":0}
+  WARM {"frames":294,"spanMs":2994,"meanFps":97.9,"meanMs":10.22,"p50":11.8,"p95":18.2,"p99":42.3,"max":109.1,"gt50":2,"gt100":1,"gt250":0}
+  STEADY {"frames":2385,"spanMs":22000,"meanFps":108.4,"meanMs":9.23,"p50":6.3,"p95":12.4,"p99":18.4,"max":175.8,"gt50":2,"gt100":1,"gt250":0}
+  windows15s [{"from":3000,"to":18000,"gt100":1,"max":175.8,"meanFps":108.2},{"from":8000,"to":23000,"gt100":1,"max":175.8,"meanFps":108.7}]
+  peakEnt 18 peakAlive {"n":5,"tick":2671} timer {"samples":1934,"maxGap":51.4,"gt50":1,"gt100":0} stateCostMs {"max":1.6,"mean":0.98} longTasks n=0 top=[]
+  GAP 109.1 ms @119 ms tick 2377 screen none phase combat timerMaxGap 16.4 ents 5 alive 0 heap 54.2->55.4 geo 682 ring[-3..] ["2363:spawn_telegraph","2365:projectile_spawn#4","2365:basic_fire","2365:sound"]
+  GAP 175.8 ms @11495 ms tick 3034 screen draft phase reward timerMaxGap 16 ents 4 alive 0 heap 54.6->55.1 geo 813 ring[-3..] ["3021:projectile_despawn#68","3021:heal_override","3021:glint_gain","3021:reward_offer#restorative_wave"]
+  perSec s:fps/E.ents/enemies/alive/eshots/bolts/azones/bossHp/heap/screen: 0:161.3/5/0/0/0/0/0/-/54.2/none 1:161.3/11/4/4/0/1/0/-/51.4/none 2:84/14/3/3/0/4/1/-/55.4/none 3:84/10/2/2/1/1/1/-/55.8/none 4:161.3/11/1/1/1/2/1/-/49.6/none 5:156.2/9/0/0/0/2/1/-/55.9/none 6:158.7/12/5/5/0/0/1/-/50.5/none 7:84/18/5/5/0/5/2/-/45.5/none 8:84/13/2/2/1/2/2/-/60/none 9:161.3/9/2/2/0/0/1/-/55.7/none 10:84.7/11/2/2/0/1/2/-/50/none 11:84/11/0/0/1/2/2/-/62.4/none 12:158.7/4/0/0/0/0/0/-/60.3/draft 13:158.7/4/0/0/0/0/0/-/48.6/draft 14:161.3/4/0/0/0/0/0/-/48.7/draft 15:158.7/4/0/0/0/0/0/-/49.5/draft 16:163.9/4/0/0/0/0/0/-/49.1/draft 17:158.7/4/0/0/0/0/0/-/50/draft 18:85.5/4/0/0/0/0/0/-/50.4/draft 19:84/4/0/0/0/0/0/-/50.3/draft 20:85.5/4/0/0/0/0/0/-/50/draft 21:158.7/4/0/0/0/0/0/-/50.2/draft 22:158.7/4/0/0/0/0/0/-/51.4/draft 23:158.7/4/0/0/0/0/0/-/52/draft 24:158.7/4/0/0/0/0/0/-/52.8/draft 25:158.7/4/0/0/0/0/0/-/51.5/draft
+  events {"waves":[[2344,0,5],[2363,0,4],[2623,1,5]],"spawns":9,"deaths":9,"despawns":0,"hitstops":9,"cleared":[2363,3021],"downed":[],"revive":[],"quakeStart":[],"quakeResolve":[],"tramples":[],"adds":[],"bossDeath":[],"runEnd":[]}
+  party [[0,100,false],[1,140,false],[2,95,false],[3,70,false]]
+  phase "reward"
+  roomState {"mode":"kill_all","cleared":true,"softFailed":false,"waveIndex":1,"wavesTotal":2,"waveSizes":[4,5],"pendingSpawns":0,"aliveEnemies":0,"defendTicksLeft":null,"waystone":null}
+  firstSpawn "{\"tick\":2411,\"type\":\"enemy_spawn\",\"id\":6,\"etype\":\"mantis\",\"x\":5.66,\"z\":-6.1,\"wave\":0}"
+E5: {"version":"0.4.16","text":"v0.4.16","x":10,"y":870,"w":52.8,"h":22,"right":62.8,"bottom":892,"fs":"12px","color":"rgb(244, 239, 230)","opacity":"0.85","display":"block","vis":"visible","vw":1600,"vh":900,"fpsMeter":{"text":"159 fps","x":1532.1875,"y":8,"w":57.8125,"h":23},"apiVersion":"0.4.16"}
+E6 VFX {"tick":3847,"scene":"camp","phase":"reward","ents":4,"enemies":0,"eshots":0,"bolts":0,"zones":0,"azones":0,"vfxMode":"run","runs":0,"campEmitters":17,"campEmbers":130,"fireflies":150,"gateMotes":34,"campShadows":70,"arena":{"numerals":0,"decals":5,"particles":0,"dummies":0,"emitters":10,"embers":81,"propShadows":40,"smearGhosts":0},"bandGuardMaterials":258,"numeralNodes":3,"threatNodes":0,"fizzleNodes":0,"domNodes":296,"heapMB":55.6,"renderer":{"programs":58,"geometries":813,"textures":44,"calls":1,"tris":1},"sceneGraph":{"objs":1072,"meshes":857,"pts":6,"sprites":61,"lights":6,"uniqGeo":687,"uniqMat":435},"tag":"after-certD1-n-wave2"}
+
+### Re-run conditions
+
+Build unchanged: `src/version.js` VERSION '0.4.16', newest `src/**` mtime 2026-09-03 20:57 (same as the certified build). Dev server
+127.0.0.1:5199 reused. Same renderer as before (ANGLE D3D11 on the AMD Radeon iGPU, 165 Hz quantised frames, `E.fps` 163.9 / 82.6 / 55.2).
+Every capture below ran ALONE, sequentially, with a contention probe taken between runs (Get-Counter 3 x 1 s):
+
+| taken | CPU avg | free RAM | chrome/msedge procs | node procs | preceded |
+|---|---|---|---|---|---|
+| 20:08 | 17.3 % | 6.08 GB | 0 | 2 (vite + shell) | certD1-b-clear1 |
+| 20:12:04 | 8.8 % | 5.60 GB | 0 | 2 | certD1-b-clear2 |
+| 20:14:15 | 11.5 % | 5.32 GB | 0 | 2 | certD1-b-wave2a, certD1-b-clear3 |
+| 20:17:58 | 13.8 % | 5.39 GB | 0 | 2 | certD1-b-wave2b, certD1-b-draftdiag |
+
+(The contended `certD1-n-*` series that read 310-424 ms was taken with 31 browser processes and 0.68 GB free; none of that applies here.)
+Action files: `tools/actions/certD1-n-clear.json` and `certD1-n-wave2.json` reused byte-for-byte (three and two runs respectively);
+`tools/certD1-b-gen.mjs` -> `tools/actions/certD1-b-draftdiag.json` reuses the same sampler library / startRun / RMB steps and swaps
+the driver for a draft-screen diagnostic. All six runs: exit 0, `errors: false`. Console digests are checkpointed above
+(`#### digest certD1-b-*`).
+
+### Table A — room-clear transition, quiet machine, alone (seed 999, RMB held, rooms 1 -> 3 natural clears, 1600x900)
+
+"+n" = sim ticks after the `room_cleared` event; tm = 4 ms-timer max gap inside the rAF gap (small = main thread free).
+
+| capture | when | GOTO | sample (steady = after 3 s) | STEADY mean fps / p50 / p95 / p99 / max ms | steady gaps >100 ms | 15 s windows: max gt100 | gt250 |
+|---|---|---|---|---|---|---|---|
+| `certD1-q-clear` (prior, 09-06 22:45) | CPU 5 %, 7.2 GB | 22.0 s | 43.9 s, t1258-3831 | 104.2 / 6.2 / 18.2 / 24.3 / **236.2** | 109 @t2221 path +5 tm27; 127.3 @t3574 draft(legendary Ascend) +8 tm24; **236.2 @t3604 draft +38 tm7.1** | 2 ([28-43]) | 0 |
+| `certD1-b-clear1` (09-08 20:10) | 17.3 %, 6.08 GB | 13.9 s | 56.8 s, t535-3867 | 84.6 / 12.1 / 18.5 / 30.3 / **212.0** | **212.0 @t1521 path +14 tm70.6** (branch B: guardian_bond taken t1508, path chosen +34; room 3 = Siphon/common -> no gap; 3rd clear t3616 window [38-53] max 30.3) | 1 | 0 |
+| `certD1-b-clear2` (20:12) | 8.8 %, 5.60 GB | 27.6 s | 43.9 s, t1546-4120 | 107.7 / 6.3 / 12.3 / 18.3 / **224.1** | 103.1 @t2508 path +5 tm16.2; 115.1 @t3862 draft(legendary Ascend) +7 tm16.1; **224.1 @t3891 draft +36 tm16.6** | 2 ([28-43]) | 0 |
+| `certD1-b-clear3` (20:16) | 11.5 %, 5.32 GB | 34.0 s | 56.9 s, t1920-5249 | 108.5 / 6.3 / 12.5 / 18.5 / **115.0** | 115.0 @t2903 path +6 tm18.2 (branch B; room 3 = Echo/rare -> no gap; 3rd clear t4954 window [38-53] max 30.7) | 1 | 0 |
+| `certD1-b-draftdiag` (20:21, per-frame recorder, 6 drafts) | 13.8 %, 5.39 GB | — | 58.8 s, t3102-6561, 6555 frames | (no D.sample) | 121.1 @t4066 draft r1 +6 (first draft of the page); 115.3 @t5624 draft r3 legendary +7; **212.1 @t5653 +36** | — | 0 |
+
+Warm-up gaps (first 3 s, excluded by the brief, all the first boar kill's hitstop/death VFX at 2.34-2.39 s): 109 (q, t1402), 163.7
+(b1, t680), 109 (b2, t1689), 103.5 (b3, t2065), 102.8 (diag, t3249). Long tasks aligned to sample start (`ltOffsetMs`): every
+long task >= 100 ms sits BEFORE the sample (room-1 build during `startRun`: 229+127 ms in b1, 140+66 in b2, 114+62 in q); inside
+the samples the largest is 67 ms (b1 @+0.4 s) / 64 ms (b3) / 57 ms (b1 @+16.6 s, the path-screen frame). Heap 45-70 MB sawtooth
+in all runs; `E.entityCount` peak 19, peak alive 5.
+
+Branching note: seed 999 offered `sanctuary` at room 1 in q/b2 (path chosen +25/+27 ticks, room 3 offers legendary `ascend`)
+and `guardian_bond` in b1/b3 (path chosen +34/+28, room 3 offers a common/rare node). The 09-06 stall therefore reproduces only
+on the `ascend` branch — and there it reproduced twice more today at 224.1 and 212.1 ms.
+
+### Table B — room-2 reward first frame (`certD1-n-wave2.json`: startRun -> skipToRoom 2 [4,5] -> first draft of the page)
+
+| capture | STEADY mean fps / p50 / p95 / p99 / max | steady gaps >100 | gt250 |
+|---|---|---|---|
+| `certD1-q-wave2` (prior 09-06) | 123.0 / 6.2 / 12.2 / 12.3 / 163.6 | 163.6 @t1810 draft +12 | 0 |
+| `certD1-b-wave2a` (09-08 20:14) | 119.8 / 6.2 / 12.2 / 12.4 / 163.7 | 163.7 @t1841 draft +12 tm16.1 (long tasks 0) | 0 |
+| `certD1-b-wave2b` (20:18) | 108.4 / 6.3 / 12.4 / 18.4 / 175.8 | 175.8 @t3034 draft +13 tm16.0 (warm-up: 109.1 @t2377, first sampled frame) | 0 |
+
+### Table C — draft-screen diagnostic (`certD1-b-draftdiag`, one page, six consecutive drafts, 1.5 s observed each)
+
+Per draft: per-frame dt tagged by screen, MutationObserver on `#run-screen` (class/style/childList/subtree), `document.getAnimations()`,
+and every visible run-screen element with an animation, filter, backdrop-filter, or shadow+gradient.
+
+| room | card | rarity | frames in 1.5 s | max dt | gaps >50 (ms after open) | DOM mutations | running animations |
+|---|---|---|---|---|---|---|---|
+| 1 | Sanctuary (skill) | — (first draft of page) | 159 | 121.1 | 121.1 @+119 | 0 | none |
+| 2 | Guardian Bond (skill) | — | 161 | 18.6 | — | 0 | none |
+| **3** | **Ascend (node)** | **legendary** | **134** | **212.1** | **115.3 @+97, 212.1 @+576** | 0 | **`rn-shimmer` on `.rn-card.rn-legendary` rect (630,336,340,154): duration 3200 ms, iterations infinite, currentTime 1527 @+1500** |
+| 4 | Quicken (node) | common | 180 | 18.4 | — | 0 | none |
+| 5 | Multiply (node) | rare | 164 | 23.9 | — | 0 | none |
+| 6 | Sharpen (node) | common | 181 | 18.5 | — | 0 | none |
+
+Path screens: r1 48.5, r2 35.5, r3 78.6 @+90 (the one after the legendary draft), r4 23.7, r5 30.3 ms max. Styled elements are the
+same on every draft — `.rn-page.rn-draft` (605,213,389,377) and `.rn-card` (630,333,340,160) with box-shadow + linear-gradient,
+zero-size hidden `.rn-door` x2 / `.rn-coin`; no filter or backdrop-filter anywhere (also confirmed by the E4 probe of every clear
+run: only `canvas#0` and `#run-screen`, `filter none`, `backdrop none`, `transition opacity 0.22s`). Final frame `certD1-b-draftdiag.png`
+= the SOCKETS bench in the room-7 shop (screen "shop", geometries 1122, heap 56.9 MB, ents 5).
+
+### Gate application (headless, quiet, alone)
+
+- "any single gap > 250 ms after warm-up -> FAIL": largest steady gap over 8 alone samples of the clear transition = **236.2 ms**
+  (09-06), then **224.1 / 212.1 / 212.0 / 175.8 / 163.7 / 115.0 / 163.6** today+prior. `gt250` = 0 in every sample. **Not tripped**
+  (margin 5.5 % on the worst sample, 10-15 % on today's).
+- ">= 3 gaps > 100 ms in any 15 s steady window -> FAIL": max is **2** (the [28-43 s] window that contains the legendary draft's
+  two-stage stall, q-clear and b-clear2); all other windows 0-1. **Not tripped.**
+- "mean fps >= 55": steady means 84.6 - 123.0. **PASS.**
+- The re-sampled number is not a fluke in either direction: it is a deterministic two-stage stall (first frame ~115-127 ms, then
+  ~212-236 ms about 0.5-0.6 s later) that appears only under the legendary card's `rn-shimmer` keyframe animation, with the main
+  thread free (tm 7-17 ms), zero DOM mutations, and the sim idle (0 enemies, reward phase). It is recorded as **F2 (should-fix)**
+  below; on a loaded machine the same frame read 310-424 ms (`certD1-n-clear`, `certD1-n-defend6`, `certD1-clear-diag`).
+
+### D4 / D5 refresh on today's captures
+
+- Console: 6 `certD1-b-*` logs, levels {debug 12, warn 1229, GOTO 6, EVAL 37, DEBUG-API 6}; **PAGEERROR 0, error 0, HARNESS-ERROR 0**;
+  warn = 1223 x MeshToonMaterial `flatShading` + 6 x X3595 gradient-in-loop (one per boot). Nothing new.
+- Version label: `E.version` "0.4.16" in every `lib` line; DOM `#version-label` "v0.4.16" rect (10,870,52.8,22), 12 px, opacity 0.85
+  (wave2a/b E5); pixels `--box 0,860,80,40` LUMA >160 **2.969 %** on `certD1-b-wave2b.png` and `certD1-b-clear2.png` vs **0.000 %** in
+  the control box (80,860,80,40); the label reads "v0.4.16" in all five viewed frames (`certD1-b-clear1/2/3`, `certD1-b-wave2a`,
+  `certD1-b-draftdiag`). Observation only: on the SOCKETS bench overlay (`certD1-b-draftdiag.png`) the modal scrim dims the whole
+  HUD — label box 0.000 % >160, fps meter "161 fps" and the command bar equally dimmed, still legible.
+
+### F2 (should-fix, not must-fix) — legendary draft card: two-stage rAF stall under `rn-shimmer`
+
+**Evidence:** `certD1-q-clear` 127.3 @t3574 + 236.2 @t3604 (+8/+38 ticks after `room_cleared` t3566, reward_offer#ascend);
+`certD1-b-clear2` 115.1 @t3862 + 224.1 @t3891 (+7/+36 after t3855); `certD1-b-draftdiag` 115.3 @+97 ms + 212.1 @+576 ms after the
+Ascend draft opened (t5617), the only draft of six with a running animation (`rn-shimmer`, 3200 ms, infinite, `.rn-card.rn-legendary`
+630,336,340,154) and the only one to lose frames (134 vs 159-181 in 1.5 s). Common/rare cards on the same page: max 18.4-23.9 ms.
+Main thread free during the stall (timer max gap 7.1-16.6 ms), 0 DOM mutations, no filters/backdrops, sim idle. **Why not must-fix:**
+alone it stays under the 250 ms gate in all three samples (85-94 % of it) and never produces 3 gaps in a 15 s window; the sim is
+paused on a reading screen so no gameplay input is lost. **Why should-fix:** it is deterministic, 4x the 55 ms budget, and on a
+contended machine the same frame measured 310-424 ms (over the gate); the orchestrator's GPU-Chrome run should look at this frame
+specifically. Repro: `node tools/cert-capture.mjs shot x --url "http://127.0.0.1:5199/?seed=999" --settle 3000 --actions
+tools/actions/certD1-b-draftdiag.json --timeout 180000`, read `drafts[]` in the EVAL (the `ascend` branch appears when room 1 offers
+`sanctuary`; otherwise re-run).
+
+Advisory A1 (room-clear -> reward/path first frame 103-176 ms) stands as an advisory: first draft of a page 121-176 ms
+(`certD1-b-wave2a/b`, diag r1), path first frame 103-115 ms (212 ms once, `certD1-b-clear1` t1521 with tm 70.6), later common/rare
+drafts 0 ms extra.
+
+### Audit-gap verdict
+
+The borderline 236.2 ms sample was re-run alone twice with the identical action file (plus a third run, two wave2 runs and one
+diagnostic): every sample is under 250 ms, none of the 15 s windows reaches 3 gaps, steady fps 84.6-123. **Block D stays PASS**;
+the legendary-draft stall is promoted from advisory to should-fix F2 with a repro and an anatomy.
