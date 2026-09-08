@@ -249,3 +249,15 @@ consoles all moved >= 4.5 u (min N3_sill 4.50, max W1 5.68). Spot-checked
 certE1-portalA.png (Begin Run plate at ~475-877,68-120; Healer on sill ~800,300;
 v0.4.16 at 10,870) and certE1-boot.png (cart ~1330-1450,200-290 on grass north of
 the east road; four critters with dark ground ellipses; v0.4.16 at 10,870).
+
+## Resume check (third instance, 2026-09-06)
+
+Report found with STATUS: COMPLETE; probes NOT re-run. Spot-checked
+`certE1-portalA.png` (Begin Run plate ~475-877,68-120; Healer on the sill
+~800,300 inside the lit violet ring; v0.4.16 at 10,870; 27 fps) and
+`certE1-boot.png` (cart ~1330-1450,200-290 on grass north of the east road;
+four critters with dark ground ellipses; v0.4.16 at 10,870; 41 fps). Console
+re-grep over captures/certE1-*.console.txt: 0 [PAGEERROR]/[error],
+"roadViolations":0 x28, "colliders":31 x30, 0 non-EVAL "road" lines,
+seatDrift {0,0,0} x8, inPortal:true+promptVisible:true x8; every
+certE1-*.run.log that records an exit code reads exit 0. Verdict unchanged: PASS.

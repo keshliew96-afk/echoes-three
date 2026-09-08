@@ -1,5 +1,5 @@
-STATUS: PARTIAL
-(verdict pending)
+STATUS: COMPLETE
+VERDICT: FAIL — 5 of 6 probes met (C1 movement latency, C2 dash i-frames, C3 telegraphs, C5 camera, C6 threat pointers); C4 hit feedback fails on ONE reproducible element: the kill that clears a kill_all room gets no damage numeral (4 of 4 same-tick room-clearing kills across 3 runs; the room-clear wipes the numeral pool on that tick). Every other C4 element (flash in pixels, numerals on 81 of 81 other kills and 15 of 15 non-kill hits, knockback, sound, hitstop, kill shake) is met.
 
 # Certification C round 1 - Responsiveness bar
 
@@ -76,3 +76,93 @@ Hit-seq (8 frames, ~100 ms apart, `certC1-hitseq_00..07.png`) and dummy sequence
 | KeyW 4 s (z 3.96 → -7.7) | 17 | **931–952** | **424 → 232** | 44.3 px (2.8%) | 0.51–0.68 u until the camera clamps at cz 3.388 (north bound, sample 12), then 0 | all 17 |
 
 Wall/corner shots: `w-end`/`w-wall` player (8.64,-7.7) at screen **(928,204)**; `a-wall` (-9.92,-7.7) → **(573,204)**; `s-4s` → (388,461); `s-wall` (-11.32,7.7) → **(332,654)** (camera clamped at cx -7 / cz 12.388). The player never leaves the central 60% — the tightest margin is the SW corner (x 332 vs bound 320; head at 309). Smoothing: per-tick camera step median 0.028 u, p99 0.145 u; the only large steps are the arena-entry snap at run start (1.68 u, tick 1297, before the legs) and the ease-in after the teleport at tick 1348 (0.87 / 0.50 / 0.41 / 0.36 u over ticks 1349–1354 — exponential catch-up, no cut). No inter-sample jump exceeded 25% of the width (max 2.8%).
+
+### C3 clean frames (no live telegraph, no enemies) — MET (2nd instance, 2026-09-06 22:40)
+Three frames, whole-frame `analyze.mjs` HUES danger band (gate < 500 px):
+
+| frame | state at shot | danger px | >160 / >200 / buckets / FLAT |
+|---|---|---|---|
+| `certC1-clean-between.png` | room 1 after `killAllEnemies` t1245: shot at t1253, post-shot eval t1290 still `enemies 0, pending 3 (next wave), liveTele 0, eshots 0, numerals 0, ui none` | **14** | 9.96% / 0.75% / 14 / 1.50% |
+| `certC1-clean-arena.png` | `?scene=arena&seed=555`, no run, enemies 0, telegraphs 0 | **14** | 8.60% / 0.64% / 14 / 1.66% |
+| `certC1-clean-prespawn.png` | run start, shot t1192 with enemies 0 / 4 pending (spawn telegraphs = violet shimmer, the 4 enemies land at t1225) | **39** | 8.38% / 0.65% / 14 / 1.44% |
+
+Ember is absent from every no-threat frame (14–39 px is noise, well under the ~485 px advisory the brief allows), while the mid-telegraph frames above carry 540 px in a 120×95 box and the boss-quake frame `certC1-boss-quake.png` (Antler Quake ring live, resolveTick 1175, shot t1151–1190) carries **32,733** danger px whole-frame — red-orange is reserved for telegraphs as REFERENCE_BAR check 6 demands. 0 PAGEERROR in all three consoles.
+
+### C4b boss stomps (captures/certC1-boss.console.txt, certC1-boss-quake.png)
+`skipToRoom 8` → Stag 1800 HP; two Antler Quakes `boss_quake_start` t1133 / t1415, both resolved at exactly **+42 ticks** (1175 / 1457); tramples t1176 / 1326 / 1476 (untelegraphed secondary per brief §11). Camera second-difference (baseline p95 0.015 u/tick², probe threshold 0.045): quake resolves **0.021 / 0.000**, tramples 0.021 / **0.127** / 0.025, boss-room kill (death t1521) **0.066** with `hitstop 3 kill`. Player was at screen (800,782), ~3 u outside both quake rings (centre (765,583), r 1.6 u = box 622–937 × 457–734), `hitsOnPlayer []`. Kill shake fires in the boss room; the quake resolve itself did not move the camera above baseline with the player outside the ring (see advisory A2).
+
+### C4d hitOnce on live enemies — probe note
+`certC1-lastkill`: `cmd('hitOnce', <boar 4>)` and `cmd('hitOnce', <mantis 42>)` both returned **null** and emitted no `hit` (numeral counter flat 0 for 30 ticks, `events []`), although `hitOnce` landed on the dummy (trial 1: `{amount:8}`) and on the player (C2). hitOnce evidently only targets dummies/party; the room-clearing-kill numeral is re-measured on NATURAL last kills in `certC1-lastkill2` (below).
+
+### C4 pixels — per-frame canvas sampler (2nd instance; captures/certC1-pxflash.console.txt, tools/certC1-pxgen.mjs, tools/certC1-pxtable.mjs)
+Why: a `shot` here costs ~0.9 s wall time and stalls rendering (frames 4 ticks apart around the shot), so a 3-tick flash cannot be caught by screenshots — `certC1-flash1-hit.png` (previous instance) shows the dummy body box (958,392,36,58) at >200 = 99.3% / buckets 12–13 vs the UNHIT dummy in `certC1-dummy-base.png` (932,412,36,58) at >200 = 97.5% / buckets 12–14: the dummy is cream-white by default and that shot holds no flash. Instead the new sampler copies, on every rendered frame (after the game's own rAF), a 64-px-wide box (head y=1.1 u → feet, +10 px margins) of the live WebGL canvas around every enemy into a 2D canvas and records mean luma L, mean saturation S, white fraction W (luma>230 & sat<0.18), >200 fraction B and max luma; baseline = frames with tick in [t-6, t-1], peak = frames with tick in [t, t+3]. Canvas 1600×900, 41 fps with the sampler on (2946 frames / 2515 ticks seen).
+
+Natural fight (rooms 1→3, seed 555, player i-framed, no command touched an enemy): **26 hits on enemies**
+
+| element | result |
+|---|---|
+| flash (pixels) | **9/9 non-kill hits** — W 0.000–0.024 → **0.179–0.992** and B 0.00–0.07 → 0.58–1.00, mean luma +53…+125 at tick **+0 or +1** (e.g. t1359 boar 33 `archer_basic 12`: W 0→0.789, L 143→241, peak +1; t2798 boar 66: W 0→0.992, L 147→250, peak +1; t3527 mantis 84: W 0.001→0.376, L 106→216, +1; t4155 mantis 109: W 0.024→0.409, +0). **15/15 on-screen kills** peak W 0.197–0.998 (death pop) on the kill tick; 2 kills (t1950 mantis 49, t3361 boar 85) were off-screen (box all zeros) — n/a, not misses |
+| numeral | **26/26**, DOM `.dmg-num` with the exact amount at +0 (23) or +1 (3) ticks |
+| knockback | **7/9** non-kill hits measured 0.18–0.304 u within 3–5 ticks (t1414 0.304, t2053 0.208, t2743 0.18, t2798 0.24, t3527 0.301, t3604 0.238, t4155 0.301); the other 2 (t1359, t3971) had no sampled frame at t-1/t (41 fps vs 60 Hz — 864 of 3099 ticks unrendered) so the sampler could not anchor a pre-position — a sampler gap, and the previous instance's per-tick run measured 10/10 (0.262–0.345 u) |
+| sound | **26/26** `sound slot hit` on the hit tick (+ `kill` on kills) |
+| hitstop | **17/17 kills** `hitstop 3 kill` |
+| screenshake | **17/17 kills** camera jerk 0.014–0.097 u/tick² vs baseline p95 **0.0001** |
+
+Dummy `hitOnce` trials: trial 2 (dummy 26, `hitOnce` 8 at t761, hp 20→12) — the only frames rendered around the hit were t761 (before the cmd ran) and t765 (after the 3-tick window) because the `shot` right after the cmd stalled rendering; the same dummy's ally kill at t783 rendered **W 1.000 / B 1.000 / L 251.6** on the kill tick and W 0.99 / 0.66 / 0.57 over the next 3 frames (crops on disk: `certC1-pxflash2-g00-t756-pre.png` … `-g07-t783-post.png`, sheet `certC1-pxflash2-sheet.png`: frames 0–6 cream capsule at ≈(937–1013, 374–460), frame 7 solid white). Trials 1 and 3: allies killed the dummy before `hitOnce` ran (lunge_strike 26 at t604 / heavy_slam 34 at t916; numerals "26" at (945,328,59,51) and "34" at (937,325,75,65) within +0). 0 PAGEERROR.
+
+### C4d room-clearing kills — NOT MET (captures/certC1-lastkill2.console.txt, tools/actions/certC1-lastkill2.json)
+Natural run, seed 555, rooms 1→3 (kill_all / defend / kill_all), player i-framed, no command touched an enemy; DOM observer on `#dmg-num-layer` + per-frame `state().vfx.numerals` counter + per-frame wall-clock. **34 kills, 32 with a same-amount numeral within 2 ticks; the 2 misses are exactly the kills whose tick equals `room_cleared`:**
+
+| room | clearing event | last kill | numeral | evidence |
+|---|---|---|---|---|
+| 1 (kill_all) | `room_cleared` **t1432** | `hit archer_basic 12` → `death` mantis 42 **t1432** | **NONE** | no `.dmg-num` in [t-2, t+8]; `vfx.numerals` 0 at 1431 and 1432; `hitstop 3 kill` + `sound hit,kill` present; frame on that tick took **232 ms** |
+| 2 (defend) | `room_cleared` t4167 (timer) | `hit archer_basic 12` → `death` 141 **t4077** (90 ticks before the clear) | **yes, +0** at (219,361) | `vfx.numerals` 1→2 on 4077; frame gap 14 ms — the last kill gets its number when it is NOT the clearing event |
+| 3 (kill_all) | `room_cleared` **t4868** | `hit piercing_shot 30` → `death` 191 **t4868** | **NONE** | only DOM numeral near is the earlier "12" at t4867 (554,171); `vfx.numerals` **1 → 0 on t4868** and stays 0 through t4874 — the clear wiped the pool (cutting the in-flight "12" short) and the "30" never spawned; frame gap only 22 ms, so not a stall artefact |
+
+Same pattern in the previous instance's natural run (`certC1-hits`: room-1 clearing kill t1899 `numDomHit false`, wall 195 ms on that tick). 3/3 same-tick room-clearing kills across two independent runs have no damage number; every other kill (49/49 across both runs) has one. Also observed: frame gaps > 100 ms at ticks 405/418/422/429 (238/146/121/134 ms — arena build during `startRun`, before any enemy), 1083 (101 ms, mid-wave, once) and 1432 (232 ms, the room-1 clear tick). 0 PAGEERROR, fps 83.3.
+
+### C4 pixels — natural hits with per-frame crops on disk (captures/certC1-pxgrab.console.txt, tools/certC1-grabgen.mjs → tools/actions/certC1-pxgrab.json, decoder tools/certC1-pxsheet.mjs)
+Same sampler, but a rolling 3-frame crop buffer is kept for EVERY live enemy and frozen on each natural `hit` (victim's 3 pre-frames + next 6 rendered frames, ghost box after a death). No screenshot was taken during the fight (a `shot` stalls rendering ~4 ticks). Seed 555, room 1 → room 2 (defend), 82.6 fps, 1430 frames / 1088 ticks, 0 PAGEERROR.
+
+**20 natural hits**: flash **6/6 non-kill** + **14/14 kills** (pixels), numerals **19/20** (the miss is t1407 — the last kill of room 1 before room 2's ids appear: the same-tick room-clear case again, 4th instance), `sound hit` **20/20**, `hitstop 3 kill` **14/14**, kill shake 13/14 (t472, the run's first kill, jerk 0.0046 — that frame span had 3–5-tick gaps while six crops were being encoded; kill shake across all three runs is **50/51**), knockback 5/6 non-kill (the 6th, t1775, is the hit the loop stopped on — 1 tick of data).
+
+Crop sets (4× nearest zoom, boxes in full-frame 1600×900 coordinates; white = luma>230 & sat<0.18 share of the box):
+
+| set | victim / hit | frames (tick: white %) | on disk | what the sheet shows |
+|---|---|---|---|---|
+| 3 | boar 5, `archer_basic 12`, **survived** (20→8) | pre 599 / 602 / 604: **0 / 0 / 0 %** (maxLuma 161–215) → **606: 73.2 %**, **607: 72.0 %**, **607: 72.6 %** → 609 / 609 / 610: **0 %** | `certC1-pxgrab3-sheet.png`, crops `certC1-pxgrab3-g00-t599-pre.png` … `-g08-t610-post.png`, box (421,322,64,87) | frames 0–2 blue-grey hide + violet spines; frames 3–5 the whole body bloomed to cream-white; frame 6 back to normal. Box x 424 → 421 → 416 → 406 → 401 over 604→610 = knockback 23 px west (0.235 u in sim) |
+| 5 | mantis 6, `archer_basic 12`, **survived** | pre 676 / 678 / 680: 0 / 0 / 0 % → **682: 44.7 %**, **684: 38.5 %** → 686–692: **0 %** | `certC1-pxgrab5-sheet.png`, box (1153,421,64,85) → (1166,423) → (1178,426) | frames 3–4 white body at ≈(1153–1230, 421–506); box drifts 25 px east across the hit = knockback 0.247 u |
+| 2 | boar 7, `whirling_guard 20`, **killed** | pre 548/552/555: 0 % (maxLuma 190) → **559: 97.6 %, 559: 93.6 %, 562: 77.1 %** → 565/568/571: 14–28 % | `certC1-pxgrab2-sheet.png`, box (577,590,64,78) | death flash then the burst/pop fading |
+| 4 | boar 5, `heavy_slam 34`, killed | 617–619: 0 % → **620: 76.7 / 77.6 %, 622: 81.7 %**, 624: 65 %, 627: 58 %, 630: 12.5 % | `certC1-pxgrab4-sheet.png`, box (418,327,64,87) | kill flash + pop |
+| 1 | boar 4, `piercing_shot 30`, killed (first kill of the run) | 461–468: 0 % → **472: 69.0 %**, 475: 41.6 %, 479–491: 10–23 % | `certC1-pxgrab1-sheet.png`, box (1081,119,64,89) | kill flash + burst |
+| 6 | mantis 6, `archer_basic 12`, killed | 698–702: ≤0.8 % → **703: 47.6 / 49.4 %**, 705: 42.3 %, 707: 23 %, 709: 10 %, 711: 0 % | `certC1-pxgrab6-sheet.png`, box (1177,419,64,85) | kill flash + pop |
+
+Flash duration on the two non-kill sets is exactly the 3-tick window the brief specifies (606–608, 682–684); the white share drops back to 0 % on the first frame after it. Numeral evidence in full-frame PNGs (previous instance + this one): `certC1-hitseq_00.png` "30" at (1310,701,52,45) beside the kill burst; `certC1-flash1-hit.png` "8" at ≈(978,355) over the dummy; `certC1-pxflash1-hit.png` "26" at (945,328,59,51); `certC1-boss-quake.png` "12 14 30 14 14" cluster at ≈(660–940, 300–345).
+
+## Summary — Responsiveness bar
+
+| probe | result | key numbers |
+|---|---|---|
+| C1 movement latency | **MET** | 20/20 keydowns (KeyD/A/W/S ×5) move the player on t0+1 (corrected latency 1, worst raw 2 = one render frame spanning two ticks); 20/20 A/D flips at 100 ms register on the next tick, velocity-sign trace shows no queued direction |
+| C2 dash / i-frames | **MET** | Space → `intent dodge` on t0+1 in 5/5 trials, 15 ticks / 1.8 u every time; `hitOnce` mid-dash → `hit_immune reason iframe`, HP 100→100 ×4; same call after `dash_end` → `hit 8`, HP 100→92 ×3; natural boar bite inside the dash (t1762) immune, next bites (t1810/1858) land |
+| C3 telegraphs | **MET** | 20 `telegraph_start` over 79.6 s, all planned 42 ticks; 10/10 resolved at exactly 42 with `enemy_fire` on the resolve tick, the other 10 casters died inside the wind-up; Ember ring + chevron visible mid-telegraph (540 danger px in the 120×95 box, `certC1-tele-mid2.png`); clean frames 14 / 14 / 39 danger px (< 500) |
+| C4 hit feedback | **NOT MET (one element)** | flash 6/6 + 9/9 non-kill and 29/29 on-screen kills in per-frame pixels (crops on disk); numerals 26/26 + 19/20 + 32/34 + 29/30 — every miss is the same-tick room-clearing kill; knockback 10/10 + 7/9 + 5/6 (rest = sampler gaps); sound 30/30 + 26/26 + 20/20; hitstop 3 ticks on 20/20 + 17/17 + 14/14 kills; kill shake 50/51 |
+| C5 camera | **MET** | player sx 799–848 / 931–952, sy 424→232 across 4 s holds; max inter-sample jump 44 px (2.8 % of width); corners (332,654) / (573,204) / (928,204) all inside the central 60 % (320–1280 × 180–720); per-tick camera step p99 0.145 u, only the arena-entry snap larger |
+| C6 threat pointers | **MET** | natural: `offFrame 2, markersDrawn 2, domMarkers 2`, chips at (1576,590) and (447,876); forced: 4/4/4, chips at ≈(1383,22), (1573,37) and a "×2" merge at ≈(1560,432) (`certC1-threat-forced-crop3x.png`) |
+
+Console: **0 PAGEERROR / 0 [error]** across all 20 certC1 consoles (13 previous-instance + clean-prespawn/between/arena, lastkill, lastkill2, boss, pxflash, pxgrab). v0.4.16 on every snapshot.
+
+## Failures
+
+### F1 (mustFix) — the kill that clears a kill_all room gets no damage numeral
+- Evidence: `certC1-lastkill2` room 1 `death` mantis 42 = `room_cleared` **t1432**: no `.dmg-num` in [1430,1440], `vfx.numerals` 0 → 0; room 3 `death` 191 = `room_cleared` **t4868** (`piercing_shot 30`): no "30" ever, and `vfx.numerals` **1 → 0 on t4868** (the in-flight "12" from t4867 at (554,171) was wiped too) with only a 22 ms frame gap, so not a stall artefact. Control: the defend room's last kill (t4077, cleared by timer 90 ticks later) got its "12" at +0 (219,361). Previous instance `certC1-hits` t1899 (room-1 clearing kill, `numDomHit false`); `certC1-pxgrab` t1407 (last room-1 kill, `NO []`). **4/4** same-tick room-clearing kills lack the numeral; **81/81** other kills and **15/15** non-kill hits have one. Every other feedback element (kill flash W 0.4–1.0, `hitstop 3 kill`, `sound hit+kill`, shake) fires on those same kills.
+- Bar: REFERENCE_BAR check 5 "damage numbers pop on every hit" and Responsiveness bar "Hits register with … damage number"; this block's gate "a hit missing any feedback element → FAIL".
+- Reproduce: `node tools/cert-capture.mjs shot certC1-lastkill2 --url "http://127.0.0.1:5199/?seed=555" --actions tools/actions/certC1-lastkill2.json --timeout 180000` then `node tools/certC1-pxtable.mjs captures/certC1-lastkill2.console.txt` → the `room clears` line lists `killsMissingNumeral` = the deaths whose tick equals `room_cleared`. Expected after the fix: `killsMissingNumeral []` and the clear-tick numeral count not dropping to 0.
+- Files that mention the numeral layer / room clear (located by identifier only, not read): `src/render/numbers.js` (`dmg-num`, `room_cleared`, `numerals`), `src/sim/run.js`, `src/sim/waves.js`, `src/main.js`.
+
+## Advisories (not blocking)
+- A1 Frame stall on the room-1 clear tick: **232 ms** at t1432 (`certC1-lastkill2`), **195 ms** at t1899 (`certC1-hits`) — the reward/draft build lands on the kill's hitstop tick; room 3's clear (→ path screen) had no stall (22 ms). Also 238/146/121/134 ms gaps at ticks 405–429 during `startRun` arena build (before any enemy) and one 101 ms gap at t1083 mid-wave. Perf-bar territory (block D); not a steady-state wave hitch.
+- A2 Antler Quake resolve did not shake the camera (jerk 0.021 / 0.000 vs baseline p95 0.015; kill shake 0.066) with the player ~3 u outside the ring — consistent with brief §9 "player-adjacent explosions and kills"; a quake landing on the player was not tested.
+- A3 `cmd('hitOnce', id)` returns null on live boars/mantises (lands only on dummies and party) — debug-API scope note for future critics; natural hits were used instead.
+- A4 Kill screenshake read 0.0046 on the first kill of `certC1-pxgrab` (t472) while six crops were being encoded per frame (3–5-tick frame gaps) — sampler dilution; 50/51 kills across three runs shook the camera 0.014–0.154 u/tick².
+- A5 Headless `page.screenshot` costs ~0.9 s and stalls rendering ~4 ticks, so `seq … 100` cannot deliver 100 ms spacing here (the previous `certC1-hitseq_00..07` frames are ~50 ticks apart); per-frame canvas sampling (`tools/certC1-pxgen.mjs`, `tools/certC1-grabgen.mjs`) is the reliable way to catch 3-tick effects.

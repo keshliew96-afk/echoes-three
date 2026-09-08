@@ -62,3 +62,5 @@ SHOP certA1-shop.png
 - HUD bar (500,805,600,80 @2x): 4 model portraits with class rims + HP bars, slots 1 MB / 2 SM / 3 / 4 / SPC, clean charcoal tiles; version chip 'v0.4.16' styled pill.
 - Camp seq (6 frames, viewed): flames flicker, fireflies drift, critters idle-sway (healer box 9-12 %/frame); nothing else moves.
 - Combat seq (8 frames, viewed): _00 4 LEFT telegraph under party; _01 3 LEFT; _02 2 LEFT boar dead on road at (1180,600), amber detonating-charge ring, numerals 12/26 (1220-1310,470), red chevron telegraph at (650,560), cooldown numerals 0.9/0.1; _03 1 LEFT numerals 30/12 (400,290); _04 WAVE 2/2 violet spawn rings (490,90)(1100,80)(1140,100), dark splat decal (400,420) persists through _07, decal on road (1180,620); _05 two boars spawned; _06 boar hit-flash white (960,190) + '30'; _07 chevron telegraph on swordsman (830,290), amber azone (950,215).
+
+### RESUME 2 (2026-09-06 23:02:54): new instance resumed at P3 complete; scoring phase pending. Re-viewing frames + reference before scoring.
