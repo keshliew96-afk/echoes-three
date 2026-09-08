@@ -31,7 +31,12 @@ function limiter(n) {
   return (fn) => new Promise((res, rej) => { q.push({ fn, res, rej }); next() })
 }
 const gate = limiter(CONCURRENCY)
-const ag = (p, o) => gate(() => agent(p, o))
+const ag = async (p, o) => {
+  const r = await gate(() => agent(p, o))
+  if (r) return r
+  log('retrying ' + ((o && o.label) || 'agent') + ': no structured result')
+  return gate(() => agent(p + '\n\nNOTE: a previous instance of you ended WITHOUT returning the structured output. Resume from your checkpoint report and existing captures and RETURN THE STRUCTURED RESULT via the StructuredOutput tool.', o))
+}
 const ORDER = ['E', 'A', 'B', 'C', 'D']
 
 // ---------------- schemas ----------------
@@ -406,12 +411,20 @@ let pending = ORDER.slice()
 let round = 1
 let certified = false
 let aborted = false
+const preset = (typeof args === 'object' && args && args.round1) ? args.round1 : null
 const summarize = (r) => ({ block: r.block, pass: r.pass, report: r.report, failures: r.failures, advisories: r.advisories, detail: r.detail })
 while (round <= MAX_ROUNDS) {
-  log('Round ' + round + ': certifying blocks ' + pending.join(', '))
-  const raw = await parallel(pending.map((b) => () => runBlock(b, round)))
-  const dead = pending.filter((b, i) => !raw[i])
-  const results = raw.filter(Boolean)
+  let results = []
+  let dead = []
+  if (preset && round === 1) {
+    results = Object.values(preset).map((r) => ({ block: r.block, pass: r.pass, report: r.report, failures: r.failures || [], advisories: r.advisories || [], detail: { verdict: { failures: r.nonBlocking || [] } } }))
+    log('Round 1 results loaded from args: ' + results.map((r) => r.block + ':' + (r.pass ? 'PASS' : 'FAIL')).join(', '))
+  } else {
+    log('Round ' + round + ': certifying blocks ' + pending.join(', '))
+    const raw = await parallel(pending.map((b) => () => runBlock(b, round)))
+    dead = pending.filter((b, i) => !raw[i])
+    results = raw.filter(Boolean)
+  }
   const failed = results.filter((r) => !r.pass)
   const entry = { round, blocks: pending.slice(), results: results.map(summarize), dead, fixes: [] }
   history.push(entry)
