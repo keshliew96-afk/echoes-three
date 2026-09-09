@@ -1,0 +1,5 @@
+[
+ { "type": "eval", "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {tag:'skip7',room:r&&r.room}})()" },
+ { "type": "wait", "ms": 1800 },
+ { "type": "eval", "code": "(async()=>{const smp=(ms)=>new Promise(res=>{const t0=performance.now();let n=0,worst=0,prev=t0;const f=(t)=>{n++;const d=t-prev;if(d>worst)worst=d;prev=t;if(t-t0<ms)requestAnimationFrame(f);else res(+(n/((performance.now()-t0)/1000)).toFixed(1));};requestAnimationFrame(f);});const st=document.createElement('style');document.head.appendChild(st);const set=(css)=>{st.textContent=css;};const out={};set('');out.all=await smp(4000);set('#run-screen .rn-dust,#run-screen .rn-lanternglow{display:none!important}');out.noMine=await smp(4000);set('#run-screen .rn-fx{display:none!important}');out.noFx=await smp(4000);set('');out.all2=await smp(4000);st.remove();return {tag:'ab2',...out}})()" }
+]

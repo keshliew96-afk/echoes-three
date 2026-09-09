@@ -59,7 +59,7 @@ const SHAKE_MS = 300; // §16 "one ~300 ms shake"
 const SHAKE_AMP = 8; // px at the first swing, decaying to 0
 const DENY_HOLD_MS = 700; // plaque emphasis lingers past the shake
 const MOTE_N = 12; // plaque glitter motes
-const DUST_N = 9; // hearth dust drifting through the lantern pool
+const DUST_N = 7; // hearth dust drifting through the lantern pool
 
 const clamp01 = (k) => Math.max(0, Math.min(1, k));
 const easeOut = (k) => 1 - (1 - k) * (1 - k);
@@ -513,14 +513,16 @@ export function createShopScreen({ run, build }) {
       lanternGlow.style.opacity = (0.64 + 0.36 * flame).toFixed(3);
       lanternGlow.style.transform = `translate(-50%,-50%) scale(${(0.82 + 0.3 * flame).toFixed(3)})`;
     }
-    if (lamp) lamp.style.opacity = (0.72 + 0.28 * flame).toFixed(3);
-    if (lantern) lantern.style.filter = `brightness(${(0.78 + 0.42 * flame).toFixed(3)})`;
+    // The pool the lantern throws on the shelf breathes with it. (An SVG
+    // `filter` write on the lantern itself is NOT in this loop: re-running a
+    // filter per frame was the expensive half of the flicker.)
+    if (lamp) lamp.style.opacity = (0.70 + 0.30 * flame).toFixed(3);
     // Dust rising through the pool, in panel-local coordinates.
     if (panelBox) {
       for (const d of dust) {
         const k = ((t * d.speed + d.phase) % 6.28) / 6.28;
-        const x = panelBox.w * (0.16 + 0.68 * d.ox) + 26 * Math.sin(t * 0.6 + d.phase * 2);
-        const y = panelBox.h * (0.94 - 0.82 * k);
+        const x = panelBox.w * (0.34 + 0.32 * d.ox) + 18 * Math.sin(t * 0.6 + d.phase * 2);
+        const y = panelBox.h * (0.52 - 0.50 * k);
         d.node.style.left = `${x.toFixed(1)}px`;
         d.node.style.top = `${y.toFixed(1)}px`;
         d.node.style.opacity = (0.5 * Math.sin(k * Math.PI) * (0.55 + 0.45 * flame)).toFixed(3);

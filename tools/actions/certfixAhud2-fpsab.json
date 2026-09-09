@@ -1,0 +1,5 @@
+[
+ { "type": "eval", "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {tag:'skip7',room:r&&r.room}})()" },
+ { "type": "wait", "ms": 1800 },
+ { "type": "eval", "code": "(async()=>{const smp=(ms)=>new Promise(res=>{const t0=performance.now();let n=0,worst=0,prev=t0;const f=(t)=>{n++;const d=t-prev;if(d>worst)worst=d;prev=t;if(t-t0<ms)requestAnimationFrame(f);else res({fps:+(n/((performance.now()-t0)/1000)).toFixed(1),worst:+worst.toFixed(1)});};requestAnimationFrame(f);});const rs=document.getElementById('run-screen'),rv=document.getElementById('run-veil');const a1=await smp(5000);const d1=rs.style.display,d2=rv.style.display;rs.style.display='none';rv.style.display='none';await new Promise(r=>setTimeout(r,300));const b=await smp(5000);rs.style.display=d1;rv.style.display=d2;await new Promise(r=>setTimeout(r,300));const a2=await smp(5000);return {tag:'ab',shopOpen1:a1,shopHidden:b,shopOpen2:a2}})()" }
+]

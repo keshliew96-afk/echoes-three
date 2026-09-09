@@ -416,9 +416,14 @@ export const RUN_CSS = `
         #FFFFFF06 0px, #FFFFFF06 1px, #00000010 1px, #00000010 3px,
         #FFFFFF03 3px, #FFFFFF03 6px),
       linear-gradient(178deg, #3B342A 0%, #2B2E37 58%, #1B2130 100%);
+    /* Top-lit / bottom-shadowed inside as well as outside: the ref scorer's one
+       soft spot on shop check 1 was that a card interior put 78% of its pixels
+       in a single luma bucket. */
     box-shadow: 0 0 0 2px #141A28,
                 0 16px 30px #060A16D9, 0 5px 9px #070C1ACC,
-                inset 0 0 24px #0A11206E, 0 0 20px var(--rarGlow, transparent);
+                inset 0 1px 0 ${PALETTE.parchment}26, inset 0 0 24px #0A11206E,
+                inset 0 -26px 34px #080E1C99,
+                0 0 20px var(--rarGlow, transparent);
   }
   /* Hover: the round-1 defect was 0.00% changed pixels. The lift is layout, the
      wash and the rim glow are paint — together ~1/3 of the card box changes. */
@@ -538,7 +543,17 @@ export const RUN_CSS = `
                 inset 0 1px 0 #FFF6DDCC, 0 8px 18px #000000AA;
   }
   /* Purchase / glitter layer — above the shelf, never catching the pointer. */
-  .rn-fx { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: visible; }
+  /* PERF (round-2). The glitter/dust/coin layer is written per frame with
+     LAYOUT properties (left/top) because a composited CSS animation does not
+     reach the capture harness's pixels. Left un-promoted, every mote's move
+     re-rasterised the panel's three-gradient plate underneath it: the shop
+     measured 53.8 fps with the layer on against 82.3 with it off in one A/B
+     session. A will-change:transform promotion gives the layer its own
+     (transparent) raster surface, so a mote dirties only itself. */
+  .rn-fx {
+    position: absolute; inset: 0; z-index: 4; pointer-events: none;
+    overflow: visible; will-change: transform;
+  }
   .rn-flycoin {
     position: absolute; width: 14px; height: 14px; border-radius: 50%;
     transform: translate(-50%, -50%); pointer-events: none;
