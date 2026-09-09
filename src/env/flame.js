@@ -83,10 +83,11 @@ export function getFlameTexture() {
   // however much of it lands on the party it can only brighten them, never
   // rotate them into a reserved band.
   ctx.filter = 'blur(5px)';
-  g = ctx.createRadialGradient(W / 2, H - 46, 0, W / 2, H - 46, 33);
-  g.addColorStop(0, 'rgba(248,244,236,1.0)');
-  g.addColorStop(0.45, 'rgba(250,237,203,0.74)');
-  g.addColorStop(0.78, 'rgba(246,214,140,0.26)');
+  g = ctx.createRadialGradient(W / 2, H - 46, 0, W / 2, H - 46, 38);
+  g.addColorStop(0, 'rgba(255,253,248,1.0)');
+  g.addColorStop(0.42, 'rgba(255,251,240,0.95)');
+  g.addColorStop(0.62, 'rgba(252,240,205,0.62)');
+  g.addColorStop(0.85, 'rgba(246,214,140,0.24)');
   g.addColorStop(1, 'rgba(240,180,90,0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);

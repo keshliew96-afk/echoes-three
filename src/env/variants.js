@@ -78,8 +78,15 @@ export const VARIANTS = {
       // band h110-150 only where the pixel is already under the analyzer's
       // L40 / s0.35 gates. Measured on the round-1 frame the old ramp put
       // 21-36% of every grass box inside the heal band.
-      h: 80, s: 0.56, l: 0.39, shadeH: 196, shadeS: 0.26, shadeL: 0.075, coolLift: 6,
-      dirtH: 46, dirtL: 0.255, mossN: 16, leafN: 200, crackN: 6, pebbleN: 90,
+      // FIX ROUND 2 (checks 2/6/7): the lit value drops 0.39 -> 0.30 and the
+      // shade end goes deeper, bluer and more saturated (196/0.26 -> 202/0.34).
+      // The floor is now painted night-first (env/ground.js pass 1), so `l` is
+      // the value of the LIT dapple openings rather than of the whole field —
+      // at 0.39 those openings read as noon and the torch pools had nothing to
+      // be brighter than.
+      nightBase: 1,
+      h: 82, s: 0.58, l: 0.30, shadeH: 202, shadeS: 0.38, shadeL: 0.068, coolLift: 22,
+      dirtH: 46, dirtL: 0.20, mossN: 16, leafN: 200, crackN: 6, pebbleN: 90,
       // Certification fix round 1 (A-world): foliage hue offsets pulled DOWN
       // and the cool-shade blades sent to the shade hue, so no grass, moss
       // or bush renders inside the reserved h110-150 heal band; the second
@@ -218,8 +225,9 @@ export const VARIANTS = {
       // shadeS 0.27 / coolLift 20 (were 0.32/24): measured warm 37.4% vs cool
       // 37.4% — a dead tie, and §19.3 keeps Act-1 warm-DOMINANT. This trims the
       // cool side back under warm while the pockets stay a visible >=8% share.
-      h: 78, s: 0.52, l: 0.42, shadeH: 196, shadeS: 0.26, shadeL: 0.08, coolLift: 6,
-      dirtH: 48, dirtL: 0.30, mossN: 8, leafN: 150, crackN: 12, pebbleN: 160,
+      nightBase: 1,
+      h: 80, s: 0.54, l: 0.325, shadeH: 202, shadeS: 0.38, shadeL: 0.072, coolLift: 22,
+      dirtH: 48, dirtL: 0.235, mossN: 8, leafN: 150, crackN: 12, pebbleN: 160,
       // Certification fix round 1 (A-world): foliage hue offsets pulled DOWN
       // and the cool-shade blades sent to the shade hue, so no grass, moss
       // or bush renders inside the reserved h110-150 heal band; the second
@@ -383,8 +391,9 @@ export const VARIANTS = {
       // h110-150 heal band against 2324 (v2) and ~1400 (v1, and those are the
       // Healer's own staff and ring). Authoring the hollow's green six degrees
       // lower puts it back level with them.
-      h: 76, s: 0.58, l: 0.355, shadeH: 197, shadeS: 0.26, shadeL: 0.075, coolLift: 6,
-      dirtH: 50, dirtL: 0.285, mossN: 30, leafN: 220, crackN: 4, pebbleN: 70,
+      nightBase: 1,
+      h: 78, s: 0.60, l: 0.275, shadeH: 203, shadeS: 0.38, shadeL: 0.065, coolLift: 22,
+      dirtH: 50, dirtL: 0.225, mossN: 30, leafN: 220, crackN: 4, pebbleN: 70,
       // Certification fix round 1 (A-world): foliage hue offsets pulled DOWN
       // and the cool-shade blades sent to the shade hue, so no grass, moss
       // or bush renders inside the reserved h110-150 heal band; the second

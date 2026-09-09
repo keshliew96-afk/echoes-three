@@ -51,7 +51,11 @@ import { createCamera, updateCameraAspect } from './camera.js';
 export const EXPOSURE = 1.04; // ACES input gain (renderer.toneMappingExposure)
 export const BLOOM = Object.freeze({
   threshold: 0.68, // linear; emitter cores are authored above 1.0
-  strength: 1.15,
+  // 1.22 (fix round 2, check 7): the frame's >200 share is the one number all
+  // three lenses scored this check down on. Only the near-neutral emitter
+  // cores clear the threshold (env/flame.js GAIN_MAX), so the extra strength
+  // grows a cream halo, not a saturated veil.
+  strength: 1.22,
   radius: 0.6,
 });
 // CERTIFICATION FIX ROUND 1 (A-world, check 7): 0.16 measured as NO vignette
@@ -103,7 +107,7 @@ const GradeShader = {
         // ground it is invisible (already indigo), over Act-1 shade it turns
         // raw dark green into the blue-green shade end §19.3 asks for.
         float lm = dot(c, vec3(0.2126, 0.7152, 0.0722));
-        c *= mix(vec3(0.84, 0.90, 1.10), vec3(1.0), smoothstep(0.03, 0.42, lm));
+        c *= mix(vec3(0.76, 0.88, 1.18), vec3(1.0), smoothstep(0.02, 0.55, lm));
         // Slight warm lift.
         c *= vec3(1.045, 1.010, 0.965);
         c += vec3(0.012, 0.006, 0.0);
@@ -132,7 +136,8 @@ const GradeShader = {
         // pockets - which carry the black point - their texture.
         float vlm = dot(c, vec3(0.2126, 0.7152, 0.0722));
         float ve = v * mix(0.30, 1.0, smoothstep(0.02, 0.40, vlm));
-        c = mix(c, c * vec3(0.78, 0.86, 1.06), min(1.0, ve * 1.2));
+        float tintW = min(1.0, v * 1.35) * (1.0 - smoothstep(0.10, 0.55, vlm));
+        c = mix(c, c * vec3(0.66, 0.85, 1.20), tintW);
         c *= 1.0 - ve;
       }
 

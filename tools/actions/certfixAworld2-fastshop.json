@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {tag:'skip7',room:r&&r.room,phase:r&&r.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();return {tag:'shop',version:E.version,screen:E.runUi().screen,vfx:s.vfx&&s.vfx.arena}})()"
+ }
+]

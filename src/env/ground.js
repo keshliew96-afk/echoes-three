@@ -36,6 +36,11 @@ const COOL_COLS = 10;
 const COOL_ROWS = 6;
 const COOL_R0 = 130;
 const COOL_R1 = 172;
+// FIX ROUND 2 (certification checks 2/6/7): the same counterweight, sized for
+// a NIGHT floor (`ground.nightBase`). On the flipped polarity the plateau stamps
+// are the field itself rather than pockets on a lawn, so they run wider.
+const NIGHT_COOL_R0 = 168;
+const NIGHT_COOL_R1 = 214;
 const APRON_LIFT = 'rgb(5,8,15)';
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
@@ -185,17 +190,35 @@ export function paintGroundCanvas(spec, cosmetic) {
   const COOL_STAMP_H = 16;
   const shS = g.shadeS ?? 0.26;
   const shL = g.shadeL ?? Math.max(0.05, g.l - 0.13);
+  // NIGHT FLIP (fix round 2, certification checks 2/6/7). Set by the three
+  // Act-1 VARIANTS only. The camp (env/camp/ground.js) drives this painter
+  // with a spec that is ALREADY a night spec and scored 20/20 on the round-2
+  // reference lens, so it keeps the authored polarity below.
+  const night = !!g.nightBase;
 
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
 
-  // 1 — base fill: a saturated §19.3 green (hue 70-110), a touch under the lit
-  // value. The COOL half of the ramp arrives as painted shade + the additive
-  // lift, so the field's SATURATED pixels stay in the brief's green band while
-  // its unlit ones go blue-dominant.
-  ctx.fillStyle = hsl(g.h + 4, g.s * 0.86, g.l * 0.62 + shL * 0.38 + 0.05);
+  // 1 — base fill. FIX ROUND 2 (certification checks 2/6/7): this used to be
+  // the §19.3 green, with the cool half arriving as pockets on top of it. All
+  // three round-1 scorers measured the result the same way — combat HUEMIX
+  // cool 8.0% against the reference's 76.4%, the darkest region reading warm
+  // 47 / cool 14 (brown-olive shade), bucket 0 at 7% against 27%. A field
+  // whose BASE is green cannot carry a warm-versus-cool funnel: every pocket
+  // painted on top of it is a puddle on a lawn.
+  //
+  // So the polarity is inverted, which is what every reference screenshot
+  // actually does: the base is the NIGHT — a deep, saturated indigo-teal at
+  // the shade end of the ramp — and the §19.3 green (hue 70-110, sat 0.55-
+  // 0.65) arrives as the lit dapple stamps in pass 3, where the canopy opens.
+  // The torch and brazier pools then read as pools because there is a real
+  // black point behind them, and the grass tufts (env/foliage.js) keep the
+  // brief's green band on top.
+  ctx.fillStyle = night
+    ? hsl(shH + COOL_STAMP_H, shS + 0.22, shL + 0.055)
+    : hsl(g.h + 4, g.s * 0.86, g.l * 0.62 + shL * 0.38 + 0.05);
   ctx.fillRect(0, 0, W, H);
 
   // 2 — hue-noise mottling: jittered rotated ellipses on a loose lattice (a
@@ -223,10 +246,13 @@ export function paintGroundCanvas(spec, cosmetic) {
       // screen pixels, and mip filtering averages neighbouring warm and cool
       // cells back into one green. Fine mottle is texture; the macro stamps
       // below are the temperature.
-      const cool = cosmetic.chance(0.24);
+      // FIX ROUND 2: the mottle follows the base. On a night floor the cool
+      // cells are the MAJORITY and the green cells are the openings — the
+      // same two tones, swapped shares.
+      const cool = cosmetic.chance(night ? 0.66 : 0.24);
       ctx.fillStyle = cool
         ? hsl(shH + COOL_STAMP_H + r(-12, 12), shS + r(0.06, 0.14), shL + r(0.04, 0.1), 0.36)
-        : hsl(g.h + r(-9, 9), g.s + r(0.0, 0.16), g.l + r(-0.05, 0.06), 0.5);
+        : hsl(g.h + r(-9, 7), g.s + r(-0.08, 0.06), g.l + r(-0.05, 0.05), 0.5);
       ctx.beginPath();
       ctx.ellipse(
         x + r(-8, 8),
@@ -259,8 +285,14 @@ export function paintGroundCanvas(spec, cosmetic) {
   // lottery still swung the same variant's measured cool share by 10+ points
   // between loads. Narrow spans keep the organic overlap and make the frame
   // reproducible for anyone re-measuring it.
+  // FIX ROUND 2: these ARE the §19.3 green now (the base below them is night),
+  // so they are painted opaque enough that their centres land squarely in the
+  // hue 70-110 / sat 0.55-0.65 band the art bible reserves for Act-1 turf,
+  // and they keep the lattice so every region of the floor gets one.
   latticeStamps(ctx, W, H, 10, 6, cosmetic, (x, y) =>
-    blob(ctx, x, y, r(190, 300), hsl(g.h - 8, g.s + 0.24, g.l + 0.07, 0.34))
+    night
+      ? blob(ctx, x, y, r(200, 310), hsl(g.h - 12, g.s + 0.04, g.l + 0.02, 0.82))
+      : blob(ctx, x, y, r(190, 300), hsl(g.h - 8, g.s + 0.24, g.l + 0.07, 0.34))
   );
   // 44 weaker stamps rather than 34 at 0.44: same expected shade coverage,
   // HALF the roll-to-roll variance — one unlucky mid-frame clump was flipping
@@ -291,20 +323,34 @@ export function paintGroundCanvas(spec, cosmetic) {
       ctx,
       x,
       y,
-      r(COOL_R0, COOL_R1),
+      night ? r(NIGHT_COOL_R0, NIGHT_COOL_R1) : r(COOL_R0, COOL_R1),
       // A DESATURATED blue-green one value step under the lit floor, which is
       // what §19.3's shade ramp asks for — the plateau SHAPE (not the chroma)
       // is what makes the counterweight measurable, so the tone can afford to
       // be the quiet one. At the earlier shS+0.08 / shL+0.02 the pockets read
       // as blue puddles on a lawn rather than as canopy shade.
-      hsl(shH + COOL_STAMP_H + r(-10, 12), shS + 0.02, shL + 0.075, 0.5),
+      night
+        ? hsl(shH + COOL_STAMP_H + r(-10, 12), shS + 0.10, shL + 0.05, 0.68)
+        : hsl(shH + COOL_STAMP_H + r(-10, 12), shS + 0.02, shL + 0.075, 0.5),
       0.5
     )
   );
   // Sun-bleached dry-grass patches: hue variety INSIDE the green band (a wider
   // offset here is what dragged variant 2 down to hue 50-60 last round).
+  // FIX ROUND 2: alpha 0.24 -> 0.14 and the value lift halved. On the night
+  // floor these were the frame's brightest sourceless patches — a pool of
+  // daylight with no emitter under it, which is exactly what check 2 calls a
+  // missing ambient pole.
   for (let i = 0; i < 10; i++) {
-    blob(ctx, r(0, W), r(0, H), r(70, 200), hsl(g.h - 14, 0.38, g.l + 0.09, 0.24));
+    blob(
+      ctx,
+      r(0, W),
+      r(0, H),
+      r(70, 200),
+      night
+        ? hsl(g.h - 14, 0.38, g.l + 0.045, 0.14)
+        : hsl(g.h - 14, 0.38, g.l + 0.09, 0.24)
+    );
   }
   // Deep canopy shadows. These are the frame's DARK end (target luma 45-60 on
   // the finished floor, against 130-150 in the open) and round 3 had them at a

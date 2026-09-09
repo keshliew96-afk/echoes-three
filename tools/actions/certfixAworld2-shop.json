@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__a2={ev:[]};for(const t of [\"telegraph_start\",\"telegraph_resolve\",\"hit\",\"death\",\"enemy_spawn\",\"flash\",\"knockback\",\"screenshake\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_adds\",\"boss_trample\",\"boss_spawn\",\"boss_death\",\"wave_start\",\"room_cleared\",\"spawn_telegraph\",\"skill_cast\",\"hitstop\",\"enemy_fire\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\"]){try{E.on(t,e=>window.__a2.ev.push(Object.assign({T:t},e)));}catch(err){}}return {armed:true,tick:E.tick,version:E.version,seed:E.seed,bootSeed:E.bootSeed,types:23}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {tag:'skip7',seed:E.seed,tick:E.tick,room:r&&r.room,phase:r&&r.phase,mode:r&&r.mode}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const s=E.state();return {tag:'shop-frame',version:E.version,tick:E.tick,fps:+E.fps.toFixed(1),seed:E.seed,screen:u.screen,text:u.text,subline:u.subline,wallet:u.wallet,cards:u.cards,plaques:u.plaques,buttons:u.buttons,doors:u.doors,owned:u.owned,phase:u.phase,room:u.room,vfx:(s=>Object.assign({__keys:Object.keys(s.vfx||{}),__stateKeys:Object.keys(s)},s.vfx,{numerals:s.vfx.numerals??null,decals:s.vfx.decals??null,particles:s.vfx.particles??null,emitters:s.vfx.emitters??null,propTypes:s.vfx.propTypes??null,propShadows:s.vfx.propShadows??null,grass:s.vfx.grass??null,variantName:s.vfx.variantName??null}))(s),enemies:s.enemies.length,banner:E.hud.banner().text}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {tag:'shop-dom',pagesVisible:[...document.querySelectorAll('#run-screen .rn-page')].filter(p=>getComputedStyle(p).display!=='none').map(p=>p.className),cardsDom:[...document.querySelectorAll('#run-screen .rn-card')].map(n=>({cls:n.className,text:(n.textContent||'').trim().slice(0,60),box:(b=>[Math.round(b.x),Math.round(b.y),Math.round(b.width),Math.round(b.height)])(n.getBoundingClientRect())})),plaquesDom:[...document.querySelectorAll('#run-screen .rn-plaque,#run-screen .rn-price')].map(n=>(n.textContent||'').trim().slice(0,40)),walletDom:(document.querySelector('#run-screen .rn-wallet')||{}).textContent}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m={};for(const e of window.__a2.ev)m[e.T]=(m[e.T]||0)+1;return {tick:E.tick,fps:+E.fps.toFixed(1),counts:m,total:window.__a2.ev.length}})()"
+ }
+]

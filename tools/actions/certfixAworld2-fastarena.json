@@ -1,0 +1,19 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd('startRun');return {tag:'startRun',seed:E.seed,room:r&&r.room,mode:r&&r.mode}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();return {tag:'arena',version:E.version,tick:E.tick,fps:+E.fps.toFixed(1),enemies:s.enemies.length,vfx:s.vfx&&s.vfx.arena}})()"
+ }
+]

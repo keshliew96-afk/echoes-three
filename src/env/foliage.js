@@ -104,7 +104,11 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
     // The "cool" blades sit HALFWAY to the shade hue, not on it: a tuft
     // authored at the full indigo-teal shade hue renders as a navy speck on a
     // green field rather than as grass in shadow.
-    const cool = cosmetic.chance(0.28);
+    // FIX ROUND 2: 0.38 on the night-floor arenas (0.28 elsewhere). With the
+    // floor painted night-first the shade blades are the ones that sit on the
+    // majority of the field, and a tuft lit like noon on an indigo floor reads
+    // as a decal.
+    const cool = cosmetic.chance(g.nightBase ? 0.38 : 0.28);
     if (cool && g.bladeCool === 'shade') {
       // Fix round 1: the halfway blend (g.h*0.45 + shH*0.55) lands at h~135
       // — the reserved heal band. Shade blades go to the shade hue itself,
