@@ -128,8 +128,28 @@ export const VARIANTS = {
       [-3.2, 5.8, 0.7, 'barricade stump'],
       [3.6, 5.9, 0.7, 'tower crate'],
       [-0.6, 6.1, 0.6, 'fence banner'],
+      // CERTIFICATION FIX ROUND 1 (A-world, check 4) — the FRAME's edges, not
+      // the arena's. Solved with the real 3/4 rig (fov 45, distance 12,
+      // elevation 52, focus = the player): at 1600x900 the spawn frame shows
+      // world z from -8 (top) down to only z ~= +4.6, and x narrows from +-12
+      // at the top wall to +-6 at the bottom, so the round-1 south ring at
+      // z 5.8-6.1 projects BELOW the frame and the scorers correctly measured
+      // "y>540 holds only one torch". These clusters are aimed at the left,
+      // bottom and right edges of the picture (screen 34-1596 x 184-867),
+      // clear of the beaten track and of each other.
+      [-9.4, -4.6, 0.6, 'tower banner'],
+      [-8.0, 0.8, 0.7, 'barricade stump'],
+      [-7.2, 2.9, 0.6, 'banner boulder'],
+      [-4.9, 4.2, 0.6, 'barricade crate'],
+      [-3.0, 4.5, 0.5, 'stump bush'],
+      [3.6, 4.4, 0.7, 'bush stump barricade'],
+      [7.8, 2.2, 0.6, 'tower slab'],
+      [9.6, -4.6, 0.6, 'tower barricade'],
     ],
-    braziers: [[-4.5, 1.8], [3.2, -2.4], [5.6, 5.2]],
+    // Fix round 1 (check 2): two more fire pools INSIDE the spawn frame's
+    // lower band (screen ~120,744 and ~1455,517). Round 1 showed only two
+    // warm pools on frame; the reference funnels the eye with more.
+    braziers: [[-4.5, 1.8], [3.2, -2.4], [5.6, 5.2], [-5.6, 2.6], [6.3, 0.6]],
     monolith: [7.9, -6.35, 0.45],
     // CERTIFICATION FIX ROUND 1 (A-world): per-room dressing, built hidden by
     // env/dressing.js and revealed by the run's `room_enter` events. Boss ring
@@ -152,15 +172,28 @@ export const VARIANTS = {
           [6.6, 6.5, 0.5, 'pillar urn'],
           [-6.4, -2.2, 0.4, 'urn'],
           [6.4, -2.2, 0.4, 'urn'],
+          // Fix round 1 (check 4): the boss camera focuses on the party at
+          // z ~= -2.5, so the ring above at z >= 4 projects below the frame.
+          // These four sit on the picture's left and right edges (screen
+          // ~96-183 and ~1417-1504) with the centre lane left open.
+          [-5.8, 0.4, 0.5, 'urn pillar'],
+          [5.8, 0.4, 0.5, 'pillar urn'],
+          [-6.1, 1.7, 0.45, 'urn'],
+          [6.1, 1.7, 0.45, 'urn'],
         ],
       },
       shop: {
-        stall: [-7.7, -0.9, 0.28],
+        // Fix round 1 (check 4): the stall moved in from x -7.7 to -6.4 —
+        // at the spawn camera its canopy was half off the picture's left
+        // edge. Its base now projects to screen ~(238,408) with the whole
+        // silhouette, the counter wares and the Shopkeep's Lantern on frame,
+        // still in the LEFT third so it stands beside the shelf page.
+        stall: [-6.4, -0.6, 0.28],
         clusters: [
-          [-8.3, 1.5, 0.6, 'crate sack sack'],
-          [-8.4, -2.4, 0.6, 'barrel crate'],
-          [-6.3, -2.5, 0.4, 'banner'],
-          [-9.0, -0.6, 0.4, 'sack'],
+          [-6.9, 1.3, 0.55, 'crate sack sack'],
+          [-7.2, -2.6, 0.6, 'barrel crate'],
+          [-5.2, -2.9, 0.4, 'banner'],
+          [-8.2, -0.4, 0.4, 'sack'],
         ],
       },
     },
@@ -231,8 +264,27 @@ export const VARIANTS = {
       [-3.4, 5.8, 0.7, 'barricade cairn'],
       [3.4, 5.9, 0.7, 'tower boulder'],
       [-6.6, 5.6, 0.6, 'banner slab'],
+      // CERTIFICATION FIX ROUND 1 (A-world, check 4) — the FRAME's edges, not
+      // the arena's. Solved with the real 3/4 rig (fov 45, distance 12,
+      // elevation 52, focus = the player): at 1600x900 the spawn frame shows
+      // world z from -8 (top) down to only z ~= +4.6, and x narrows from +-12
+      // at the top wall to +-6 at the bottom, so the round-1 south ring at
+      // z 5.8-6.1 projects BELOW the frame and the scorers correctly measured
+      // "y>540 holds only one torch". These clusters are aimed at the left,
+      // bottom and right edges of the picture (screen 34-1596 x 184-867),
+      // clear of the beaten track and of each other.
+      [-9.4, -4.6, 0.6, 'tower banner'],
+      [-8.0, -2.6, 0.7, 'barricade cairn'],
+      [-7.4, 2.8, 0.6, 'banner boulder'],
+      [-4.9, 4.2, 0.6, 'barricade crate'],
+      [-2.8, 4.5, 0.5, 'stump slab'],
+      [3.4, 4.4, 0.7, 'bush cairn barricade'],
+      [7.8, 2.2, 0.6, 'tower slab'],
+      [9.6, -4.6, 0.6, 'tower barricade'],
     ],
-    braziers: [[-3.8, -3.0], [4.4, 2.2], [-7.4, 3.0]],
+    // Fix round 1 (check 2): see variant 1 — fire pools inside the spawn
+    // frame's lower band, clear of both dirt tracks.
+    braziers: [[-3.8, -3.0], [4.4, 2.2], [-7.4, 3.0], [-5.6, 2.6], [6.3, 1.4]],
     monolith: [-8.4, -6.6, -0.4],
     // CERTIFICATION FIX ROUND 1 (A-world): per-room dressing, built hidden by
     // env/dressing.js and revealed by the run's `room_enter` events. Boss ring
@@ -255,15 +307,28 @@ export const VARIANTS = {
           [6.6, 6.5, 0.5, 'pillar urn'],
           [-6.4, -2.6, 0.4, 'urn'],
           [6.4, -2.6, 0.4, 'urn'],
+          // Fix round 1 (check 4): the boss camera focuses on the party at
+          // z ~= -2.5, so the ring above at z >= 4 projects below the frame.
+          // These four sit on the picture's left and right edges (screen
+          // ~96-183 and ~1417-1504) with the centre lane left open.
+          [-5.8, 0.4, 0.5, 'urn pillar'],
+          [5.8, 0.4, 0.5, 'pillar urn'],
+          [-6.1, 1.7, 0.45, 'urn'],
+          [6.1, 1.7, 0.45, 'urn'],
         ],
       },
       shop: {
-        stall: [-7.7, -2.8, 0.28],
+        // Fix round 1 (check 4): the stall moved in from x -7.7 to -6.4 —
+        // at the spawn camera its canopy was half off the picture's left
+        // edge. Its base now projects to screen ~(238,408) with the whole
+        // silhouette, the counter wares and the Shopkeep's Lantern on frame,
+        // still in the LEFT third so it stands beside the shelf page.
+        stall: [-6.4, -0.6, 0.28],
         clusters: [
-          [-8.4, -4.7, 0.6, 'crate sack sack'],
-          [-8.8, -1.6, 0.5, 'barrel crate'],
-          [-6.2, -4.3, 0.4, 'banner'],
-          [-9.2, -2.6, 0.4, 'sack'],
+          [-6.9, 1.3, 0.55, 'crate sack sack'],
+          [-7.2, -2.6, 0.6, 'barrel crate'],
+          [-5.2, -2.9, 0.4, 'banner'],
+          [-8.2, -0.4, 0.4, 'sack'],
         ],
       },
     },
@@ -343,6 +408,22 @@ export const VARIANTS = {
       [-3.0, 5.9, 0.7, 'barricade bush'],
       [3.6, 5.8, 0.7, 'tower log'],
       [0.2, 6.1, 0.6, 'banner bush'],
+      // CERTIFICATION FIX ROUND 1 (A-world, check 4) — the FRAME's edges, not
+      // the arena's. Solved with the real 3/4 rig (fov 45, distance 12,
+      // elevation 52, focus = the player): at 1600x900 the spawn frame shows
+      // world z from -8 (top) down to only z ~= +4.6, and x narrows from +-12
+      // at the top wall to +-6 at the bottom, so the round-1 south ring at
+      // z 5.8-6.1 projects BELOW the frame and the scorers correctly measured
+      // "y>540 holds only one torch". These clusters are aimed at the left,
+      // bottom and right edges of the picture, clear of the curved track.
+      [-9.4, -4.6, 0.6, 'tower banner'],
+      [-8.2, -1.6, 0.7, 'barricade stump'],
+      [-7.4, 2.6, 0.6, 'banner boulder'],
+      [-4.6, 4.2, 0.6, 'barricade crate'],
+      [-2.4, 4.6, 0.5, 'stump bush'],
+      [3.4, 4.4, 0.7, 'bush stump barricade'],
+      [7.8, 2.2, 0.6, 'tower slab'],
+      [9.6, -4.4, 0.6, 'tower barricade'],
     ],
     // Braziers pulled well clear of the curved track: an additive warm pool
     // over v3's dark dirt is what lit the path into the danger band. The third
@@ -354,7 +435,9 @@ export const VARIANTS = {
     // track. (A first try at [-5.2,-0.6] put the pool over the hollow's dark
     // mid-field ground and measured ~1.0k px of h18-25 murk — the bowl needs
     // to stay near the wall band where the shade stamps are thin.)
-    braziers: [[-3.4, 4.6], [5.8, -2.2], [-6.2, -1.2]],
+    // Fix round 1 (check 2): see variant 1 — two more fire pools inside the
+    // spawn frame's lower band, both >= 1.7 u clear of the curved track.
+    braziers: [[-3.4, 4.6], [5.8, -2.2], [-6.2, -1.2], [-5.8, 1.8], [6.4, 1.6]],
     // Monolith moved to the north-mid wall (was [-10.1,-2.4] — W-mid, and 95%
     // OUT of the spawn frame: the act's violet tell measured 0-53 px while the
     // sliver that did show sat in the vignette corner and painted a fixed
@@ -384,15 +467,28 @@ export const VARIANTS = {
           [6.6, 6.5, 0.5, 'pillar urn'],
           [-6.4, -2.6, 0.4, 'urn'],
           [6.8, -0.4, 0.4, 'urn'],
+          // Fix round 1 (check 4): the boss camera focuses on the party at
+          // z ~= -2.5, so the ring above at z >= 4 projects below the frame.
+          // These four sit on the picture's left and right edges (screen
+          // ~96-183 and ~1417-1504) with the centre lane left open.
+          [-5.8, 0.4, 0.5, 'urn pillar'],
+          [5.8, 0.4, 0.5, 'pillar urn'],
+          [-6.1, 1.7, 0.45, 'urn'],
+          [6.1, 1.7, 0.45, 'urn'],
         ],
       },
       shop: {
-        stall: [-7.7, -0.9, 0.28],
+        // Fix round 1 (check 4): the stall moved in from x -7.7 to -6.4 —
+        // at the spawn camera its canopy was half off the picture's left
+        // edge. Its base now projects to screen ~(238,408) with the whole
+        // silhouette, the counter wares and the Shopkeep's Lantern on frame,
+        // still in the LEFT third so it stands beside the shelf page.
+        stall: [-6.4, -0.6, 0.28],
         clusters: [
-          [-8.3, 1.4, 0.6, 'crate sack sack'],
-          [-8.5, -3.0, 0.6, 'barrel crate'],
-          [-6.3, -2.5, 0.4, 'banner'],
-          [-9.1, -0.6, 0.4, 'sack'],
+          [-6.9, 1.3, 0.55, 'crate sack sack'],
+          [-7.2, -2.6, 0.6, 'barrel crate'],
+          [-5.2, -2.9, 0.4, 'banner'],
+          [-8.2, -0.4, 0.4, 'sack'],
         ],
       },
     },

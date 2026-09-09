@@ -144,12 +144,16 @@ function mountStall(group, [x, z, yaw = 0], types, mats, mounted, cosmetic) {
   mounted.shadows.push({ x, z, rx: def.foot * 1.6, rz: (def.rz ?? def.foot) * 1.6, yaw, faint: true });
   mounted.footprints.push({ x, z, r: Math.max(def.foot, def.rz ?? 0) + 0.16 });
 
+  // Fix round 1 (check 2, "layered light"): the Shopkeep's Lantern is the
+  // shop room's ONE warm pool (§19.3), so it is sized like an arena brazier
+  // rather than like a hanging path lantern — the round-1 shop frame measured
+  // >160 at 1.26%, under the 1.5% gate, with no light pool anywhere.
   const em = def.emitter(t);
-  const wick = makeFlameSprite(0.26, 0.95, 1.5);
+  const wick = makeFlameSprite(0.34, 0.95, 1.5);
   wick.position.set(em.x, em.y + 0.01 + TOWARD_CAM.y * 0.1, em.z + TOWARD_CAM.z * 0.1);
   wick.renderOrder = 8;
   group.add(wick);
-  const glow = makeGlowSprite({ color: EMBER_GLOW.halo, size: 1.15, opacity: 0.42 });
+  const glow = makeGlowSprite({ color: EMBER_GLOW.halo, size: 1.5, opacity: 0.55 });
   glow.renderOrder = HALO_ORDER;
   glow.position.set(em.x, em.y, em.z);
   group.add(glow);
@@ -159,14 +163,14 @@ function mountStall(group, [x, z, yaw = 0], types, mats, mounted, cosmetic) {
       map: getPoolTexture(),
       color: new Color(EMBER_GLOW.pool),
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.68,
       blending: AdditiveBlending,
       depthWrite: false,
       toneMapped: false,
     })
   );
   pool.rotation.x = -Math.PI / 2;
-  pool.scale.set(2.6, 2.6, 1);
+  pool.scale.set(3.4, 3.4, 1);
   pool.position.set(em.x, 0.013, em.z);
   pool.renderOrder = POOL_ORDER;
   group.add(pool);
@@ -180,10 +184,10 @@ function mountStall(group, [x, z, yaw = 0], types, mats, mounted, cosmetic) {
       Math.sin(tSec * 12 + phase) * 0.5 +
       Math.sin(tSec * 27 + phase * 2.3) * 0.3 +
       Math.sin(tSec * 5.7) * 0.2;
-    glow.material.opacity = Math.max(0.2, 0.42 + 0.1 * n);
-    glow.scale.setScalar(1.15 * (1 + 0.1 * n));
-    pool.material.opacity = Math.max(0.3, 0.5 + 0.06 * n);
-    const w = 0.26 * (1 + 0.18 * n);
+    glow.material.opacity = Math.max(0.28, 0.55 + 0.12 * n);
+    glow.scale.setScalar(1.5 * (1 + 0.1 * n));
+    pool.material.opacity = Math.max(0.42, 0.68 + 0.07 * n);
+    const w = 0.34 * (1 + 0.18 * n);
     wick.scale.set(w * 0.66, w, 1);
   };
   void mats;

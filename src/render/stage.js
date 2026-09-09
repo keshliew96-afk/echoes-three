@@ -61,7 +61,7 @@ export const BLOOM = Object.freeze({
 // run frames' corners at ~0.45x of centre (reference: centre 71.5, corners
 // 18-42) without crushing an already-dark corner into dead flat blocks. The
 // camp keeps its own 0.26 (scenes/camp.js) and is unaffected.
-export const VIGNETTE = 0.55;
+export const VIGNETTE = 0.82;
 // Base (non-arena) light rig. Scenes may re-tune these; the arena does, in
 // src/scenes/arena.js.
 const KEY_INTENSITY = 3.6;
@@ -115,10 +115,12 @@ const GradeShader = {
       if (uVignette > 0.0) {
         vec2 p = vUv - 0.5;
         float d = length(p) * 1.4142; // 0 at center, ~1 at corners
-        // Wider falloff (starts at 0.28, was 0.40) and COOL: the darkened
+        // Falloff shaped so the CENTRE keeps its highlights (a wide, gentle ramp
+        // took the frame's >200 share down with it) and the true frame EDGE
+        // falls hard, and COOL: the darkened
         // corners lean indigo, so the frame's edges read as the night wood
         // rather than as a neutral dimmer.
-        float v = uVignette * smoothstep(0.28, 1.0, d);
+        float v = uVignette * smoothstep(0.40, 1.0, d);
         // SHADOW-PROTECTED (fix round 1, checks 1+7). A plain multiply is the
         // wrong operator at this strength: it scales an 8x8 block's channel
         // SPREAD by the same factor as its mean, so a corner already sitting
