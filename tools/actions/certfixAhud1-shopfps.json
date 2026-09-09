@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {room:r&&r.room,tick:E.tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;let n=0;const t0=performance.now();let worst=0;let last=t0;await new Promise(res=>{(function f(){const now=performance.now();worst=Math.max(worst,now-last);last=now;n++;if(now-t0<8000)requestAnimationFrame(f);else res()})()});const ms=performance.now()-t0;return {tag:'shopfps8s',frames:n,ms:Math.round(ms),fps:Math.round(n/(ms/1000)*10)/10,worstFrameMs:Math.round(worst),echoesFps:E.fps,screen:E.runUi().screen}})()"
+ }
+]

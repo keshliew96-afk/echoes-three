@@ -149,9 +149,21 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
       h: window.innerHeight - b1.y,
       edge: 'bottom',
     });
-    if (banner.isVisible() && b2.width > 1) {
+    const bnLive = banner.isVisible() && b2.width > 1;
+    if (bnLive) {
       zoneList.push({ x: b2.x, y: 0, w: b2.width, h: b2.y + b2.height, edge: 'top' });
     }
+    // NARROW-WINDOW COLLISION (§1 "no layout breakage at any aspect"). Zone 2
+    // is centred on the WINDOW while the corner plates are pinned to the
+    // window's sides, so below ~1200 px of width the boss plate — the widest
+    // banner — runs into the location plate (measured: 87 px of overlap at
+    // 1024x576). The location plate then DROPS one row, under the banner:
+    // nothing is clipped, nothing is truncated, and the two never overlap.
+    // Dropping changes only `top`, so this test cannot oscillate.
+    const lr0 = loc.getBoundingClientRect();
+    const clash = bnLive && lr0.width > 1 && lr0.x + lr0.width + 8 > b2.x;
+    if (clash) root.style.setProperty('--bnH', `${(b2.height / (scale || 1) + 10).toFixed(1)}px`);
+    loc.classList.toggle('hud-loc-drop', clash);
     // The corner plates are chrome too: a pointer must never hide under them.
     for (const n of [loc, glint]) {
       const r = n.getBoundingClientRect();

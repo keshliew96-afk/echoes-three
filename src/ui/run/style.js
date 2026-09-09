@@ -274,9 +274,12 @@ export const RUN_CSS = `
         #00000010 0px, #00000010 2px, #FFFFFF06 2px, #FFFFFF06 4px,
         #0000000A 4px, #0000000A 7px),
       radial-gradient(ellipse at 50% 12%, #4A3F31 0%, #332C24 46%, #241F1A 100%);
+    /* Two-stage cast shadow (check 8 "grounding"): a broad ambient pool plus a
+       tight contact shadow, so the plate sits ON the arena instead of floating
+       over it. */
     box-shadow:
       0 0 0 4px ${PALETTE.voidCharcoal}, 0 0 0 6px ${PALETTE.warmGrey}55,
-      0 26px 64px #000000CC, 0 10px 22px #00000099,
+      0 30px 74px #000000E6, 0 12px 26px #000000CC, 0 4px 8px #000000CC,
       inset 0 0 42px #00000077, inset 0 1px 0 ${PALETTE.parchment}22;
   }
   /* Ornamental corner caps (brass brackets + a rivet), REFERENCE_BAR 9. */
@@ -333,7 +336,10 @@ export const RUN_CSS = `
     background: linear-gradient(180deg, #3A3125 0%, ${PALETTE.voidCharcoal} 100%);
     box-shadow: 0 0 16px ${PALETTE.paleGold}22, inset 0 1px 0 ${PALETTE.paleGold}33;
   }
-  #run-screen .rn-shop .rn-shelf { position: relative; z-index: 1; }
+  /* Equal-height cards in BOTH reflows, so the three plaques sit on one line
+     (at 1440p the shorter Ascend card used to hang its plaque 20 px high). */
+  #run-screen .rn-shop .rn-shelf { position: relative; z-index: 1; align-items: stretch; }
+  #run-screen .rn-shop .rn-item .rn-card { flex: 1 1 auto; }
   /* 280 px so the widest header (Ascend + the LEGENDARY tag) never collides
      with the icon column — the round-1 defect was that header wrapping. */
   #run-screen .rn-shop .rn-item,
@@ -347,7 +353,8 @@ export const RUN_CSS = `
         #FFFFFF06 0px, #FFFFFF06 1px, #00000010 1px, #00000010 3px,
         #FFFFFF03 3px, #FFFFFF03 6px),
       linear-gradient(178deg, #35302A 0%, #262220 74%, ${PALETTE.voidCharcoal} 100%);
-    box-shadow: 0 0 0 2px ${PALETTE.voidCharcoal}, 0 14px 26px #000000BB,
+    box-shadow: 0 0 0 2px ${PALETTE.voidCharcoal},
+                0 16px 30px #000000D9, 0 5px 9px #000000CC,
                 inset 0 0 24px #00000066, 0 0 20px var(--rarGlow, transparent);
   }
   /* Hover: the round-1 defect was 0.00% changed pixels. The lift is layout, the
@@ -388,7 +395,7 @@ export const RUN_CSS = `
     position: relative;
     background: linear-gradient(180deg, #7A6234 0%, #4A3D26 46%, #2A241C 100%);
     border-color: ${PALETTE.paleGold};
-    box-shadow: 0 0 20px ${PALETTE.paleGold}55, 0 8px 18px #000000AA,
+    box-shadow: 0 0 20px ${PALETTE.paleGold}55, 0 10px 20px #000000BB, 0 4px 7px #000000CC,
                 inset 0 1px 0 #F0DCA877, inset 0 -6px 10px #00000066;
     transition: box-shadow 110ms ease, border-color 110ms ease;
   }

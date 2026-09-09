@@ -647,6 +647,9 @@ export function hudCss() {
   white-space: nowrap;
 }
 .hud-loc { left: var(--zx, 18px); gap: 10px; padding: 5px 16px 5px 9px; }
+/* Narrow windows: the plate drops one row so the centred boss plate never
+   lands on it (see the collision note in ui/hud/index.js). */
+.hud-loc.hud-loc-drop { top: calc(var(--zt, 18px) + var(--bnH, 76px)); }
 .hud-loc-ico { display: block; width: 30px; height: 30px; color: ${PALETTE.bone}; flex: 0 0 auto; }
 .hud-loc-text { display: flex; flex-direction: column; gap: 1px; }
 .hud-loc-name { font-size: ${FS_LAB}px; font-weight: 800; line-height: 1.05; letter-spacing: 0.08em; color: ${CHROME.ink}; }
