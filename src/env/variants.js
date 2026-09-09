@@ -180,6 +180,12 @@ export const VARIANTS = {
           [5.8, 0.4, 0.5, 'pillar urn'],
           [-6.1, 1.7, 0.45, 'urn'],
           [6.1, 1.7, 0.45, 'urn'],
+          // The camera follows the PLAYER (render/camera.js), and the Healer
+          // holds (0,0) through the fight, so the boss frame is framed on the
+          // same focus as the spawn frame. These balance the left edge, whose
+          // dirt track eats two of the ring spots above.
+          [-7.6, -0.6, 0.5, 'idol urn'],
+          [-7.0, 2.0, 0.45, 'pillar urn'],
         ],
       },
       shop: {
@@ -315,6 +321,12 @@ export const VARIANTS = {
           [5.8, 0.4, 0.5, 'pillar urn'],
           [-6.1, 1.7, 0.45, 'urn'],
           [6.1, 1.7, 0.45, 'urn'],
+          // The camera follows the PLAYER (render/camera.js), and the Healer
+          // holds (0,0) through the fight, so the boss frame is framed on the
+          // same focus as the spawn frame. These balance the left edge, whose
+          // dirt track eats two of the ring spots above.
+          [-7.6, -0.6, 0.5, 'idol urn'],
+          [-7.0, 2.0, 0.45, 'pillar urn'],
         ],
       },
       shop: {
@@ -475,6 +487,12 @@ export const VARIANTS = {
           [5.8, 0.4, 0.5, 'pillar urn'],
           [-6.1, 1.7, 0.45, 'urn'],
           [6.1, 1.7, 0.45, 'urn'],
+          // The camera follows the PLAYER (render/camera.js), and the Healer
+          // holds (0,0) through the fight, so the boss frame is framed on the
+          // same focus as the spawn frame. These balance the left edge, whose
+          // dirt track eats two of the ring spots above.
+          [-7.6, -0.6, 0.5, 'idol urn'],
+          [-7.0, 2.0, 0.45, 'pillar urn'],
         ],
       },
       shop: {
