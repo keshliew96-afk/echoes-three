@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',8);return {room:r&&r.room}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const b=E.state().enemies.find(e=>e.kind==='stag');return {tag:'stagpose',tick:E.tick,boss:b&&{x:+b.x.toFixed(2),z:+b.z.toFixed(2),hp:b.hp,faceX:b.faceX,faceZ:b.faceZ},party:E.state().party.map(p=>[p.classId,+p.x.toFixed(2),+p.z.toFixed(2)])}})()"
+ }
+]

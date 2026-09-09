@@ -76,7 +76,7 @@ const haloViolet = (k = 1) =>
 const CROWN_LINEAR = [1.16, 1.02, 1.5];
 // Hide: the boar's slate desaturated toward warm grey and pushed dark — the
 // boss body is a shadow the antlers hang in, and it must not read as blue.
-const HULK = HIDE.boarBody.clone().lerp(new Color(PALETTE.warmGrey), 0.45).multiplyScalar(0.72);
+const HULK = HIDE.boarBody.clone().lerp(new Color(PALETTE.warmGrey), 0.45).multiplyScalar(0.56);
 const HULK_DARK = HIDE.boarDark.clone().lerp(new Color(PALETTE.warmGrey), 0.4).multiplyScalar(0.55);
 // Certification fix round 1 (2026-09-09): all three scorers read the Stag as
 // "a featureless navy hexagonal slab / an obelisk" — identity carried ONLY by
@@ -87,7 +87,15 @@ const HULK_DARK = HIDE.boarDark.clone().lerp(new Color(PALETTE.warmGrey), 0.4).m
 // muzzle and shoulder hump take a light hide, the legs and hooves get their
 // own ink lines, and the rack sweeps further back so it stops covering the
 // head in plan view.
-const HULK_PALE = HIDE.boarBody.clone().lerp(new Color(PALETTE.warmGrey), 0.72).multiplyScalar(0.98);
+// Certification fix round 2 (2026-09-10): the pale hide goes all the way to
+// Bone and the barrel drops a further 22%. Round 2 still read the Stag as "a
+// slate-blue tapered slab ... no legs, no head, no neck": every mass on the rig
+// was inside half a stop of every other, so at a 52-degree camera — where a
+// quadruped presents nothing but its BACK — head, neck, withers and barrel
+// summed into one silhouette. A near-Bone skull/withers on a dark barrel is the
+// value structure that makes an animal read from above; Bone's saturation (0.11)
+// sits under the analyzer's 0.12 colour gate, so no hue band moves.
+const HULK_PALE = HIDE.boarBody.clone().lerp(new Color(PALETTE.bone), 0.86).multiplyScalar(1.0);
 
 // §11 makes the boss room "a stop darker" and §1 forbids a real boss light
 // (a PointLight costs a shader recompile on the frame it appears, or a
@@ -133,8 +141,8 @@ function geos() {
 function buildAntler(side, rackMat, veinMats, glows) {
   const G = geos();
   const half = new Group();
-  half.rotation.z = side * 0.86; // spread wide — the rack is the silhouette
-  half.rotation.x = -0.62; // swept back and UP off a lowered head: the V clears the muzzle
+  half.rotation.z = side * 1.16; // spread wide — the rack is the silhouette
+  half.rotation.x = -0.36; // r2: less sweep BACK — a rack laid over the spine is what made the plan view an obelisk; it fans across the frame instead
 
   const beam = new Mesh(G.beam, rackMat);
   beam.scale.set(1, 0.98, 1);
@@ -281,15 +289,16 @@ export function buildStag() {
 
   // --- Neck + head.
   const head = new Group();
-  head.position.set(0, 1.34, 1.06);
+  head.position.set(0, 1.22, 1.26); // r2: lower and further forward, so the skull clears the chest in plan view
   rig.add(head);
   const neck = new Mesh(G.neck, track(flashable(HULK_DARK)));
+  neck.scale.set(0.72, 1.14, 0.72); // a WAIST between shoulder and skull in plan view
   neck.position.set(0, -0.02, -0.34);
   neck.rotation.x = 0.8;
   addInk(neck);
   head.add(neck);
   const skull = new Mesh(G.skull, track(flashable(HULK_PALE)));
-  skull.scale.set(1.12, 1.22, 1.12);
+  skull.scale.set(1.02, 1.5, 1.3); // narrow across, long down the muzzle — a stag's head from above
   skull.rotation.x = Math.PI / 2 + 0.42;
   skull.position.set(0, 0.08, 0.34);
   addInk(skull);
@@ -305,9 +314,9 @@ export function buildStag() {
   const earMat = track(flashable(HULK_DARK));
   for (const side of [-1, 1]) {
     const ear = new Mesh(G.ear, earMat);
-    ear.scale.set(1.2, 1.25, 1.2);
-    ear.position.set(side * 0.24, 0.24, -0.02);
-    ear.rotation.set(-0.3, 0, side * -0.85);
+    ear.scale.set(1.75, 1.7, 1.75);
+    ear.position.set(side * 0.3, 0.24, -0.04);
+    ear.rotation.set(-0.3, 0, side * -1.06);
     addInk(ear);
     head.add(ear);
   }
@@ -393,14 +402,17 @@ export function buildStag() {
   antlers.add(crownCore);
 
   // --- Legs: long, thin, high-kneed — the height reads through the gap.
-  const legMat = track(flashable(HULK_DARK));
+  const legMat = track(flashable(HULK));
   const hoofMat = track(flashable(HIDE.bone));
   const legs = [];
+  // Splayed WIDE: the barrel is 0.93 u across, so legs pivoted at 0.42 u with a
+  // 0.16 rad splay stood entirely inside their own body in plan view, which is
+  // why round 2 reported "no legs". These clear the barrel by a hoof's width.
   for (const [sx, sz, splay] of [
-    [-0.42, 0.5, 0.16],
-    [0.42, 0.5, -0.16],
-    [-0.45, -0.6, 0.19],
-    [0.45, -0.6, -0.19],
+    [-0.5, 0.52, 0.3],
+    [0.5, 0.52, -0.3],
+    [-0.54, -0.62, 0.34],
+    [0.54, -0.62, -0.34],
   ]) {
     const pivot = new Group();
     pivot.position.set(sx, 0.99, sz);
