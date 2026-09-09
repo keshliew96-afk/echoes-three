@@ -28,6 +28,7 @@ import { buildWaystone } from './waystone.js';
 import { makeAttackTelegraph, makeSpawnShimmer } from './telegraphs.js';
 import { EMBER_EXACT, SHOT_CORE } from './style.js';
 import { impactFx } from '../vfx/hub.js';
+import { releaseTree } from '../geocache.js';
 
 const SHOT_Y = 0.5; // enemy shot flight height (render)
 const TRAIL_FADE = 0.15; // s, Ember trail sprite fade
@@ -111,11 +112,13 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
         dying.push({ group: r.build.group, mats: r.build.mats, age: 0, mode: 'retreat' });
       } else {
         root.remove(r.build.group); // silent reset
+        releaseTree(r.build.group);
       }
       return;
     }
     if (waystoneRec && ev.id === waystoneRec.id) {
       root.remove(waystoneRec.rig.group); // room reset, no crumble
+      releaseTree(waystoneRec.rig.group);
       waystoneRec = null;
     }
   });
@@ -124,6 +127,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     const d = decals.get(id);
     if (d) {
       root.remove(d.group);
+      releaseTree(d.group); // its quads are shared; its four materials are not
       decals.delete(id);
     }
   }
@@ -251,6 +255,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       if (!seen.has(id)) {
         // Despawned without an event reaching us (safety net).
         root.remove(r.build.group);
+        releaseTree(r.build.group);
         rigs.delete(id);
         removeDecal(id);
       }
@@ -259,6 +264,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     for (const [id, d] of decals) {
       if (!seen.has(id)) {
         root.remove(d.group);
+        releaseTree(d.group);
         decals.delete(id);
       }
     }
@@ -308,6 +314,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     for (const [key, s] of shimmers) {
       if (!liveKeys.has(key)) {
         root.remove(s.group);
+        releaseTree(s.group);
         shimmers.delete(key);
       }
     }
@@ -334,6 +341,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
         // "instant impacts hold >= 3-5 frames").
         impactFx.impact(g.position.x, g.position.z, { color: PALETTE.emberDanger, n: 5 });
         root.remove(g);
+        releaseTree(g); // the core sphere + shadow disc are shared; the three materials are not
         shots.delete(id);
       }
     }
@@ -358,6 +366,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       if (d.mode === 'kill') {
         if (d.age >= POP_TOTAL_SEC) {
           root.remove(g);
+          releaseTree(g); // the rig's parts are shared geometry; its materials are its own
           dying.splice(i, 1);
           continue;
         }
@@ -373,6 +382,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       } else if (d.mode === 'retreat') {
         if (d.age >= RETREAT_OUT_SEC) {
           root.remove(g);
+          releaseTree(g); // the rig's parts are shared geometry; its materials are its own
           dying.splice(i, 1);
           continue;
         }
@@ -383,6 +393,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
         const T = 0.5;
         if (d.age >= T) {
           root.remove(g);
+          releaseTree(g); // the rig's parts are shared geometry; its materials are its own
           dying.splice(i, 1);
           continue;
         }

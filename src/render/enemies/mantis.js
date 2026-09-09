@@ -35,6 +35,7 @@ import {
 } from 'three';
 import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow } from '../critters/common.js';
+import { markShared } from '../geocache.js';
 import { makeGlowSprite } from '../glow.js';
 import { HIDE, TELL_INDIGO, TELL_INDIGO_GLOW } from './style.js';
 
@@ -56,6 +57,7 @@ function geos() {
     tibia: new CylinderGeometry(0.026, 0.014, 0.42, 4),
     antenna: new CylinderGeometry(0.012, 0.006, 0.3, 3),
   };
+  for (const g of Object.values(geoCache)) markShared(g); // one buffer per mantis part, forever (F1)
   return geoCache;
 }
 

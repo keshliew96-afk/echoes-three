@@ -47,6 +47,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { PALETTE } from '../../data/palette.js';
 import { TICK_HZ } from '../../core/constants.js';
 import { makeGlowSprite } from '../glow.js';
+import { sharedGeo, releaseTree } from '../geocache.js';
 import { createCritter, FALL_ANGLE } from '../critters/index.js';
 import { exactColor, exactHex } from '../critters/common.js';
 import { ALLY_CLASSES, REVIVE } from '../../sim/allies.js';
@@ -564,16 +565,18 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   const zoneRigs = new Map(); // azone id -> { g, radius, pulseT, moteClock }
   function makeZoneRig(radius) {
     const g = new Group();
-    const fill = new Mesh(new CircleGeometry(radius, 36), flatMat(AMBER, 0.14, true));
+    // Shared per radius (F1): an ally AoE rig is built per sim zone and dropped
+    // when it expires, so these three discs used to leak on every kit cast.
+    const fill = new Mesh(sharedGeo(`ally-zone-fill:${radius}`, () => new CircleGeometry(radius, 36)), flatMat(AMBER, 0.14, true));
     fill.rotation.x = -Math.PI / 2;
     fill.renderOrder = -6;
     g.add(fill);
-    const inner = new Mesh(new CircleGeometry(radius * 0.5, 28), flatMat(PARCH, 0.16, true));
+    const inner = new Mesh(sharedGeo(`ally-zone-inner:${radius}`, () => new CircleGeometry(radius * 0.5, 28)), flatMat(PARCH, 0.16, true));
     inner.rotation.x = -Math.PI / 2;
     inner.position.y = 0.004;
     inner.renderOrder = -6;
     g.add(inner);
-    const rim = new Mesh(new RingGeometry(radius * 0.9, radius, 40), flatMat(AMBER, 0.6, true));
+    const rim = new Mesh(sharedGeo(`ally-zone-rim:${radius}`, () => new RingGeometry(radius * 0.9, radius, 40)), flatMat(AMBER, 0.6, true));
     rim.rotation.x = -Math.PI / 2;
     rim.position.y = 0.006;
     rim.renderOrder = -5;
@@ -838,6 +841,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     for (const [id, rig] of zoneRigs) {
       if (!seenZones.has(id)) {
         root.remove(rig.g);
+        releaseTree(rig.g); // discs are shared; the three materials are this zone's
         zoneRigs.delete(id);
       }
     }

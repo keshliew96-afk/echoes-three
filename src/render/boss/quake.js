@@ -22,6 +22,7 @@ import {
 } from 'three';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
+import { sharedGeo } from '../geocache.js';
 import { EMBER_EXACT } from '../enemies/style.js';
 import { exactColor } from '../critters/common.js';
 
@@ -150,7 +151,7 @@ export function makeQuakeRing(radiusU = 1.6) {
   group.name = 'antler-quake';
 
   const ring = new Mesh(
-    new PlaneGeometry(radiusU * 2, radiusU * 2),
+    sharedGeo(`quake-quad:${radiusU}`, () => new PlaneGeometry(radiusU * 2, radiusU * 2)),
     new MeshBasicMaterial({
       map: getRingTexture(),
       color: EMBER_EXACT.clone(),
@@ -171,7 +172,7 @@ export function makeQuakeRing(radiusU = 1.6) {
   // Burn sweep — a DARK scorch disc scaled from 0 to full over the warning
   // window (reference D's "dark scorched core"), drawn UNDER the Ember rim.
   const sweep = new Mesh(
-    new PlaneGeometry(radiusU * 2, radiusU * 2),
+    sharedGeo(`quake-quad:${radiusU}`, () => new PlaneGeometry(radiusU * 2, radiusU * 2)),
     new MeshBasicMaterial({
       map: getSweepTexture(),
       color: SCORCH_DARK,
@@ -191,7 +192,7 @@ export function makeQuakeRing(radiusU = 1.6) {
 
   // ...and the bright ember EDGE that travels with the burn front.
   const edge = new Mesh(
-    new PlaneGeometry(radiusU * 2, radiusU * 2),
+    sharedGeo(`quake-quad:${radiusU}`, () => new PlaneGeometry(radiusU * 2, radiusU * 2)),
     new MeshBasicMaterial({
       map: getEdgeTexture(),
       color: EMBER_EXACT.clone(),
@@ -241,7 +242,7 @@ export function makeQuakeRing(radiusU = 1.6) {
 export function makeQuakeBurst(radiusU = 1.6) {
   const group = new Group();
   const disc = new Mesh(
-    new PlaneGeometry(radiusU * 2, radiusU * 2),
+    sharedGeo(`quake-quad:${radiusU}`, () => new PlaneGeometry(radiusU * 2, radiusU * 2)),
     new MeshBasicMaterial({
       map: getRingTexture(),
       color: EMBER_EXACT.clone(),

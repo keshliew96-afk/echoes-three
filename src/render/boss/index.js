@@ -31,6 +31,7 @@ import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { buildStag } from './stag.js';
 import { makeQuakeRing, makeQuakeBurst } from './quake.js';
+import { releaseTree } from '../geocache.js';
 import { STAG } from '../../sim/boss.js';
 import { impactFx } from '../vfx/hub.js';
 
@@ -123,7 +124,9 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       /* compile is an optimisation, never a correctness dependency */
     }
     root.remove(r.group);
+    releaseTree(r.group);
     root.remove(b.group);
+    releaseTree(b.group);
     root.remove(rig.group);
     spareRigs.push(rig);
   }
@@ -183,6 +186,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   function dropRing() {
     if (ring) {
       root.remove(ring.group);
+      releaseTree(ring.group); // one ring per quake telegraph — its four materials are its own
       ring = null;
     }
   }
@@ -372,6 +376,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       const k = b.age / BURST_SEC;
       if (k >= 1) {
         root.remove(b.b.group);
+        releaseTree(b.b.group);
         bursts.splice(i, 1);
       } else b.b.update(k);
     }

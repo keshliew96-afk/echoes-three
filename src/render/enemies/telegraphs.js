@@ -18,6 +18,7 @@ import {
 } from 'three';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
+import { sharedGeo } from '../geocache.js';
 import { EMBER_EXACT, TELL_VIOLET } from './style.js';
 import { exactColor } from '../critters/common.js';
 
@@ -131,7 +132,10 @@ function getChevronTexture() {
 
 function flatDecal(tex, color, size, y, renderOrder) {
   const mesh = new Mesh(
-    new PlaneGeometry(size, size),
+    // One quad per authored size for the whole game (F1): a telegraph is built
+    // and thrown away on every enemy wind-up, so a fresh PlaneGeometry here was
+    // three leaked geometries per telegraph.
+    sharedGeo(`decal-quad:${size}`, () => new PlaneGeometry(size, size)),
     new MeshBasicMaterial({
       map: tex,
       color,

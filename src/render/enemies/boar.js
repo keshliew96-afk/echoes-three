@@ -22,6 +22,7 @@ import {
 } from 'three';
 import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow, exactColor } from '../critters/common.js';
+import { markShared } from '../geocache.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { HIDE, TELL_INDIGO, TELL_INDIGO_DIM, TELL_INDIGO_GLOW } from './style.js';
@@ -44,6 +45,7 @@ function geos() {
     eye: new BoxGeometry(0.09, 0.022, 0.022),
     spike: new ConeGeometry(0.062, 1, 4), // height set per-spike via scale
   };
+  for (const g of Object.values(geoCache)) markShared(g); // one buffer per boar part, forever (F1)
   return geoCache;
 }
 

@@ -16,6 +16,7 @@ import {
 } from 'three';
 import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
+import { sharedGeo } from '../geocache.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { AdditiveBlending, CircleGeometry } from 'three';
@@ -67,16 +68,18 @@ export function buildWaystone() {
   const flash = (color) => track(toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0 }));
 
   // Plinth + tapered 4-sided monolith.
-  const base = new Mesh(new BoxGeometry(0.72, 0.2, 0.6), flash(STONE_LIT));
+  // One buffer per part for the whole game (F1): a Waystone is rebuilt on every
+  // defend room, which is once a run.
+  const base = new Mesh(sharedGeo('waystone-base', () => new BoxGeometry(0.72, 0.2, 0.6)), flash(STONE_LIT));
   base.position.y = 0.1;
   addInk(base);
   group.add(base);
-  const column = new Mesh(new CylinderGeometry(0.17, 0.27, 1.35, 4), flash(STONE));
+  const column = new Mesh(sharedGeo('waystone-column', () => new CylinderGeometry(0.17, 0.27, 1.35, 4)), flash(STONE));
   column.rotation.y = Math.PI / 4;
   column.position.y = 0.86;
   addInk(column);
   group.add(column);
-  const cap = new Mesh(new CylinderGeometry(0.05, 0.15, 0.22, 4), flash(STONE_LIT));
+  const cap = new Mesh(sharedGeo('waystone-cap', () => new CylinderGeometry(0.05, 0.15, 0.22, 4)), flash(STONE_LIT));
   cap.rotation.y = Math.PI / 4;
   cap.position.y = 1.62;
   group.add(cap);
@@ -92,7 +95,7 @@ export function buildWaystone() {
   });
   const runes = [];
   for (const ry of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
-    const strip = new Mesh(new PlaneGeometry(0.16, 1.05), runeMat);
+    const strip = new Mesh(sharedGeo('waystone-rune', () => new PlaneGeometry(0.16, 1.05)), runeMat);
     const r = 0.235; // just proud of the tapered face at mid-height
     strip.position.set(Math.sin(ry) * r, 0.85, Math.cos(ry) * r);
     strip.rotation.y = ry;
@@ -105,7 +108,7 @@ export function buildWaystone() {
   halo.position.y = 1.0;
   group.add(halo);
   const pool = new Mesh(
-    new CircleGeometry(1.05, 26),
+    sharedGeo('waystone-pool', () => new CircleGeometry(1.05, 26)),
     new MeshBasicMaterial({
       map: getRadialTexture(),
       color: new Color(PALETTE.hearthAmber),

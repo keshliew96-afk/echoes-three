@@ -54,6 +54,7 @@ import { PALETTE } from '../../data/palette.js';
 import { POST } from '../../core/constants.js';
 import { BLOOM, EXPOSURE } from '../stage.js';
 import { toonMaterial } from '../toon.js';
+import { sharedGeo, markShared } from '../geocache.js';
 
 // ---------------------------------------------------------------------------
 // Color helpers
@@ -214,7 +215,7 @@ export function exactHex(targetHex) {
 // ---------------------------------------------------------------------------
 const cache = new Map();
 export function cachedSphere(key, r, w = 18, h = 14) {
-  if (!cache.has(key)) cache.set(key, new SphereGeometry(r, w, h));
+  if (!cache.has(key)) cache.set(key, markShared(new SphereGeometry(r, w, h)));
   return cache.get(key);
 }
 
@@ -335,6 +336,7 @@ function getInkMaterial() {
       void main() { gl_FragColor = vec4( uColor, 1.0 ); }
     `,
   });
+  inkMat.userData.shared = true; // one ink material for the whole game — never disposed
   return inkMat;
 }
 
@@ -347,11 +349,30 @@ export function setInkViewport(width, height) {
 // normals would tear the hull open on a box's hard edges) and expanded in the
 // shader, so the line is a constant INK_PX wide whatever the mesh size or
 // camera distance. Returns the hull so callers can toggle `.visible`.
+//
+// The hull is a PURE FUNCTION of the source geometry (clone, strip everything
+// but position, weld, re-normal), so every mesh built from the same cached
+// primitive gets the same hull buffer. Before the D-r1 fix each spawned boar
+// minted two fresh hulls and each mantis a dozen, none of which was ever
+// disposed — the bulk of the +115 geometries per run (F1). The WeakMap is
+// keyed by the SOURCE geometry, so a one-off shape (a lathe bell authored per
+// critter) still gets its own hull and dies with it.
+const inkHulls = new WeakMap();
+function inkHullGeometry(source) {
+  let geo = inkHulls.get(source);
+  if (geo === undefined) {
+    geo = source.clone();
+    for (const name of Object.keys(geo.attributes)) if (name !== 'position') geo.deleteAttribute(name);
+    geo = mergeVertices(geo);
+    geo.computeVertexNormals();
+    markShared(geo);
+    inkHulls.set(source, geo);
+  }
+  return geo;
+}
+
 export function addInk(mesh) {
-  let geo = mesh.geometry.clone();
-  for (const name of Object.keys(geo.attributes)) if (name !== 'position') geo.deleteAttribute(name);
-  geo = mergeVertices(geo);
-  geo.computeVertexNormals();
+  const geo = inkHullGeometry(mesh.geometry);
   const hull = new Mesh(geo, getInkMaterial());
   hull.name = `${mesh.name || 'mesh'}-ink`;
   mesh.add(hull);
@@ -965,7 +986,7 @@ export function groundRing(accentHex, radius) {
   });
   // Plane sized so the outermost band lands exactly on `radius`.
   const half = radius / RING.outer;
-  const band = new Mesh(new PlaneGeometry(half * 2, half * 2), mat);
+  const band = new Mesh(sharedGeo(`ring-plane:${half}`, () => new PlaneGeometry(half * 2, half * 2)), mat);
   band.rotation.x = -Math.PI / 2;
   band.position.y = 0.012;
   // renderOrder -1: AFTER the environment ground stack (pools ORDER.pool
@@ -1008,7 +1029,7 @@ export function groundRing(accentHex, radius) {
     polygonOffsetUnits: -3,
   });
   const glowHalf = half * 1.10; // peak under the band, a thin spill past the outer ink
-  const glow = new Mesh(new PlaneGeometry(glowHalf * 2, glowHalf * 2), glowMat);
+  const glow = new Mesh(sharedGeo(`ring-glow-plane:${glowHalf}`, () => new PlaneGeometry(glowHalf * 2, glowHalf * 2)), glowMat);
   glow.rotation.x = -Math.PI / 2;
   glow.position.y = 0.011;
   glow.renderOrder = -2;
@@ -1043,7 +1064,13 @@ export function groundShadow(radius, opacity = 0.34) {
     polygonOffsetFactor: -3,
     polygonOffsetUnits: -3,
   });
-  const mesh = new Mesh(new CircleGeometry(radius, 28), mat);
+  // One disc per radius for the whole game (F1): a contact shadow is the one
+  // mesh EVERY entity carries, so a fresh CircleGeometry per rig was a
+  // geometry per spawned enemy, per projectile and per bolt.
+  const mesh = new Mesh(
+    sharedGeo(`shadow-disc:${radius}`, () => new CircleGeometry(radius, 28)),
+    mat
+  );
   mesh.rotation.x = -Math.PI / 2;
   mesh.position.y = 0.008;
   mesh.renderOrder = -2;

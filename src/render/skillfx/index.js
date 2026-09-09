@@ -49,6 +49,7 @@ import {
 import { PALETTE } from '../../data/palette.js';
 import { SKILLS } from '../../sim/skills.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
+import { sharedGeo, markShared, releaseTree } from '../geocache.js';
 import { exactColor, underBloom, getShadowTexture } from '../critters/common.js';
 
 // Cosmetic scaffold tunables (render-only, not brief numbers).
@@ -105,7 +106,9 @@ function getGlyphTexture() {
 
 function blobShadow(radius, opacity = 0.25) {
   const m = new Mesh(
-    new CircleGeometry(radius, 20),
+    // Shared per radius (F1): a bolt rig is built per shot and dropped when
+    // the shot lands, so its shadow disc was one leaked geometry per cast.
+    sharedGeo(`skillfx-shadow:${radius}`, () => new CircleGeometry(radius, 20)),
     new MeshBasicMaterial({
       // Contact-shadow ramp, not the bloom-halo ramp — see common.js.
       map: getShadowTexture(),
@@ -733,7 +736,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   // ------------------------------------------------------------ skill bolts --
   // Sync render rigs to sim 'skillbolt' entities (§19.4 3-layer + shadow).
   const boltRigs = new Map(); // id -> group
-  const boltCoreGeo = new CapsuleGeometry(0.092, 0.20, 4, 10); // +22% radius: the old core was ~10 px in flight, thin enough that FXAA blended its whole width into the grass
+  const boltCoreGeo = markShared(new CapsuleGeometry(0.092, 0.20, 4, 10)); // +22% radius: the old core was ~10 px in flight, thin enough that FXAA blended its whole width into the grass
   function makeBoltRig(heal) {
     const g = new Group();
     const core = new Mesh(
@@ -837,16 +840,18 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   const ZONE_WALL = 1.25; // u — clears the ~1.05 u chibi standing height (§19.2)
   function makeZoneRig(radius) {
     const g = new Group();
-    const fill = new Mesh(new CircleGeometry(radius, 40), groundMat(HEAL, 0.13));
+    // Zone rigs are built per sim zone entity and dropped when it expires:
+    // every disc, rim and wall below is shared per radius (F1).
+    const fill = new Mesh(sharedGeo(`zone-fill:${radius}`, () => new CircleGeometry(radius, 40)), groundMat(HEAL, 0.13));
     fill.rotation.x = -Math.PI / 2;
     fill.renderOrder = -6;
     g.add(fill);
-    const inner = new Mesh(new CircleGeometry(radius * 0.55, 32), groundMat(HEAL, 0.18));
+    const inner = new Mesh(sharedGeo(`zone-inner:${radius}`, () => new CircleGeometry(radius * 0.55, 32)), groundMat(HEAL, 0.18));
     inner.rotation.x = -Math.PI / 2;
     inner.position.y = 0.004;
     inner.renderOrder = -6;
     g.add(inner);
-    const rim = new Mesh(new RingGeometry(radius * 0.93, radius, 44), groundMat(HEAL, 0.55));
+    const rim = new Mesh(sharedGeo(`zone-rim:${radius}`, () => new RingGeometry(radius * 0.93, radius, 44)), groundMat(HEAL, 0.55));
     rim.rotation.x = -Math.PI / 2;
     rim.position.y = 0.006;
     rim.renderOrder = -5;
@@ -867,7 +872,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     // veil in front and a clear standing rim behind, and the zone still reads
     // from above the bodies.
     const wall = new Mesh(
-      new CylinderGeometry(radius, radius, ZONE_WALL, 44, 1, true),
+      sharedGeo(`zone-wall:${radius}`, () => new CylinderGeometry(radius, radius, ZONE_WALL, 44, 1, true)),
       riseMat(HEAL, 0.20)
     );
     wall.position.y = ZONE_WALL / 2;
@@ -1021,6 +1026,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     for (const [id, g] of boltRigs) {
       if (!seen.has(id)) {
         root.remove(g);
+        releaseTree(g); // core capsule + shadow disc are shared; the materials are per-bolt
         boltRigs.delete(id);
       }
     }
@@ -1071,6 +1077,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     for (const [id, rig] of zoneRigs) {
       if (!seenZones.has(id)) {
         root.remove(rig.g);
+        releaseTree(rig.g);
         zoneRigs.delete(id);
       }
     }

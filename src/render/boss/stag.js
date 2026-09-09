@@ -34,6 +34,7 @@ import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
+import { sharedGeo, markShared } from '../geocache.js';
 import { HIDE, TELL_VIOLET } from '../enemies/style.js';
 import { VEIN_VIOLET } from '../../env/props.js';
 
@@ -123,6 +124,7 @@ function geos() {
     tine: new ConeGeometry(0.05, 1, 4), // antler tine, scaled per branch
     rib: new BoxGeometry(0.05, 0.34, 0.05),
   };
+  for (const g of Object.values(geoCache)) markShared(g); // one buffer per Stag part, forever (F1)
   return geoCache;
 }
 
@@ -244,7 +246,7 @@ export function buildStag() {
     rib.rotation.z = (i - 2) * 0.14;
     rig.add(rib);
   }
-  const cavity = new Mesh(new SphereGeometry(0.2, 8, 6), new MeshBasicMaterial({
+  const cavity = new Mesh(sharedGeo('stag-cavity', () => new SphereGeometry(0.2, 8, 6)), new MeshBasicMaterial({
     color: TELL_VIOLET,
     toneMapped: false,
   }));
@@ -320,7 +322,7 @@ export function buildStag() {
     eye.position.set(side * 0.17, 0.12, 0.3);
     eye.rotation.set(0, side * -0.3, side * 0.4);
     head.add(eye);
-    const glint = new Mesh(new BoxGeometry(0.07, 0.03, 0.03), glintMat);
+    const glint = new Mesh(sharedGeo('stag-eye-glint', () => new BoxGeometry(0.07, 0.03, 0.03)), glintMat);
     glint.position.set(side * 0.19, 0.13, 0.33);
     glint.rotation.copy(eye.rotation);
     head.add(glint);
@@ -368,7 +370,7 @@ export function buildStag() {
   const crownStar = new Group();
   crownStar.position.set(0, 0.98, -0.46);
   antlers.add(crownStar);
-  const bead = new Mesh(new SphereGeometry(0.085, 6, 5), new MeshBasicMaterial({
+  const bead = new Mesh(sharedGeo('stag-crown-bead', () => new SphereGeometry(0.085, 6, 5)), new MeshBasicMaterial({
     color: VEIN_CORE,
     toneMapped: false,
   }));
@@ -440,7 +442,7 @@ export function buildStag() {
   // the ground.
   const groundGlow = (radius, color, opacity) => {
     const m = new Mesh(
-      new CircleGeometry(radius, 28),
+      sharedGeo(`stag-glow-disc:${radius}`, () => new CircleGeometry(radius, 28)),
       new MeshBasicMaterial({
         map: getRadialTexture(),
         color,
@@ -495,7 +497,7 @@ export function buildStag() {
     return tex;
   })();
   const hardShadow = new Mesh(
-    new CircleGeometry(0.92, 30),
+    sharedGeo('stag-hard-shadow', () => new CircleGeometry(0.92, 30)),
     new MeshBasicMaterial({
       map: shadowTex,
       color: exactColor('#0B1018'),
@@ -519,7 +521,7 @@ export function buildStag() {
   hardShadow.renderOrder = 6;
   group.add(hardShadow);
   const softShadow = new Mesh(
-    new CircleGeometry(1.55, 30),
+    sharedGeo('stag-soft-shadow', () => new CircleGeometry(1.55, 30)),
     new MeshBasicMaterial({
       map: shadowTex,
       color: exactColor('#0B1018'),
