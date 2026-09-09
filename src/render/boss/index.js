@@ -23,16 +23,21 @@ import { HITFLASH, TICK_HZ, CAMERA } from '../../core/constants.js';
 // Boss-specific hit-flash envelope (see the 'hit' handler below). `peak` sits
 // under HITFLASH.intensity because the emissive area here is ~5x a chibi's;
 // `refractoryTicks` guarantees a real trough between flashes at any fire rate.
-const BOSS_FLASH = Object.freeze({ ticks: 5, peak: 0.5, refractoryTicks: 8 });
+// peak dropped 0.5 -> 0.28 in the certification fix round: the Stag's hide is
+// self-lit now (render/boss/stag.js), so the old peak lerped an already-lifted
+// body most of the way to white and the whole silhouette blew out again.
+const BOSS_FLASH = Object.freeze({ ticks: 5, peak: 0.28, refractoryTicks: 8 });
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { buildStag } from './stag.js';
 import { makeQuakeRing, makeQuakeBurst } from './quake.js';
 import { STAG } from '../../sim/boss.js';
+import { impactFx } from '../vfx/hub.js';
 
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;
 const BURST_SEC = 0.55;
+const QUAKE_EMBER_HZ = 26; // ember motes per second off a live quake ring
 const DEATH_SEC = 1.1;
 // §11 "room a stop darker than normal Act-1": one photographic stop is a
 // halving — the scene rig runs at 0.5x while the Stag is alive.
@@ -77,6 +82,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   const dying = [];
   let dimmed = null; // [{ light, intensity }] captured when the room darkens
   const camBias = { x: 0, z: 0 }; // live room-8 framing bias (see BOSS_CAM)
+  let emberDebt = 0; // fractional ember budget carried across frames
   let camBiasPrimed = false; // the entry frame snaps; everything after it eases
 
   // --- shader pre-warm --------------------------------------------------
@@ -129,14 +135,14 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     rig.group.position.set(0, 0, 0);
     rig.group.scale.set(1, 1, 1);
     rig.group.visible = true;
-    for (const m of rig.mats) m.emissiveIntensity = 0;
+    rig.setFlash(0);
     return rig;
   }
 
   function releaseRig(rig) {
     root.remove(rig.group);
     rig.group.scale.set(1, 1, 1);
-    for (const m of rig.mats) m.emissiveIntensity = 0;
+    rig.setFlash(0);
     if (spareRigs.length < 2) spareRigs.push(rig);
   }
 
@@ -160,7 +166,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   });
   bus.on('death', (ev) => {
     if (!rec || ev.id !== rec.id) return;
-    for (const m of rec.rig.mats) m.emissiveIntensity = BOSS_FLASH.peak;
+    rec.rig.setFlash(BOSS_FLASH.peak);
     dying.push({ rig: rec.rig, age: 0 });
     dropRing();
     restoreRoom();
@@ -326,7 +332,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
         flashAge >= 0 && flashAge < BOSS_FLASH.ticks
           ? BOSS_FLASH.peak * (1 - flashAge / BOSS_FLASH.ticks)
           : 0;
-      for (const m of rec.rig.mats) m.emissiveIntensity = lit;
+      rec.rig.setFlash(lit);
 
       // Quake ring, straight off sim entity state.
       if (ent.telegraph) {
@@ -338,8 +344,19 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
         const span = ent.telegraph.resolveTick - ent.telegraph.startTick;
         const k = span > 0 ? (tick - ent.telegraph.startTick) / span : 1;
         ring.update(tSec, k);
+        // Embers boil out of the ring as it winds in — the particle layer of
+        // the §19.4 3-layer rule on the telegraph itself, and a second
+        // non-colour channel for time-to-impact (they get denser).
+        emberDebt += QUAKE_EMBER_HZ * dt * (0.35 + 0.65 * k);
+        let n = Math.floor(emberDebt);
+        emberDebt -= n;
+        if (n > 8) n = 8;
+        const rr = ent.telegraph.radius ?? STAG.quake.radius;
+        for (let i = 0; i < n; i++)
+          impactFx.embers(ent.telegraph.x, ent.telegraph.z, { n: 1, radius: rr * 0.95 });
       } else {
         dropRing();
+        emberDebt = 0;
       }
     } else if (rec) {
       releaseRig(rec.rig);
@@ -374,7 +391,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       }
       const squash = 1 - k * 0.85;
       d.rig.group.scale.set(1 + k * 0.35, Math.max(0.02, squash), 1 + k * 0.35);
-      for (const m of d.rig.mats) m.emissiveIntensity = Math.max(0, 1 - k * 1.6);
+      d.rig.setFlash(Math.max(0, 1 - k * 1.6));
       d.rig.pose({ t: tSec, walkPhase: 0, moveK: 0, telegraphK: 0, lungeK: 0, hpFrac: 0 });
     }
 

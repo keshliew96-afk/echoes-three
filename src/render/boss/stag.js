@@ -65,14 +65,44 @@ const haloViolet = (k = 1) =>
 // Crown core: the Stag's own hottest emitter (§11 "the room's single
 // brightest light source"). HDR white-violet in linear, well over the 0.68
 // bloom threshold, so its centre blooms to the peak and the skirt stays violet.
-const CROWN_LINEAR = [1.75, 1.55, 2.2];
+// Round-1 certification: the crown box measured >200 on 47.7% of its pixels
+// with only 203 saturated px inside it — i.e. a white hole where the light
+// SOURCE should be. Cooled by a third, and the sprite now sits on top of an
+// opaque crown STAR (a small violet-white burr of geometry) so that whatever
+// the bloom does, a shape stays visible inside the glow.
+const CROWN_LINEAR = [1.16, 1.02, 1.5];
 // Hide: the boar's slate desaturated toward warm grey and pushed dark — the
 // boss body is a shadow the antlers hang in, and it must not read as blue.
-const HULK = HIDE.boarBody.clone().lerp(new Color(PALETTE.warmGrey), 0.45).multiplyScalar(0.5);
-const HULK_DARK = HIDE.boarDark.clone().lerp(new Color(PALETTE.warmGrey), 0.4).multiplyScalar(0.6);
+const HULK = HIDE.boarBody.clone().lerp(new Color(PALETTE.warmGrey), 0.45).multiplyScalar(0.72);
+const HULK_DARK = HIDE.boarDark.clone().lerp(new Color(PALETTE.warmGrey), 0.4).multiplyScalar(0.55);
+// Certification fix round 1 (2026-09-09): all three scorers read the Stag as
+// "a featureless navy hexagonal slab / an obelisk" — identity carried ONLY by
+// the antler V (REFERENCE_BAR check 3). The rig had a head, a muzzle and four
+// legs; none of them survived, because every one of them was the SAME dark
+// hide as the barrel they sit on, at a 52-degree camera where the head
+// projects on top of the body. The fix is value, not geometry: the skull,
+// muzzle and shoulder hump take a light hide, the legs and hooves get their
+// own ink lines, and the rack sweeps further back so it stops covering the
+// head in plan view.
+const HULK_PALE = HIDE.boarBody.clone().lerp(new Color(PALETTE.warmGrey), 0.72).multiplyScalar(0.98);
 
-const flashable = (color) =>
-  toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0, flatShading: true });
+// §11 makes the boss room "a stop darker" and §1 forbids a real boss light
+// (a PointLight costs a shader recompile on the frame it appears, or a
+// permanent fps tax if parked). With neither, every lit surface on a 2.2x body
+// rendered near-black and the round-1 scorers saw "a featureless navy slab".
+// So the Stag is SELF-LIT: each hide material carries its own colour as a base
+// emissive, which lifts the body out of black without flattening the toon
+// banding the key light still produces. The §9 #1 hit flash is not an
+// emissiveIntensity latch any more (that would fight the base) — it LERPS the
+// emissive colour toward white, so the flash is still white, still additive,
+// and still never a material swap.
+const flashable = (color) => {
+  const base = new Color(color).multiplyScalar(0.14);
+  const m = toonMaterial({ color, emissive: base.clone(), emissiveIntensity: 1, flatShading: true });
+  m.userData.baseEmissive = base;
+  return m;
+};
+const FLASH_WHITE = new Color('#FFFFFF');
 
 let geoCache = null;
 function geos() {
@@ -99,7 +129,7 @@ function buildAntler(side, rackMat, veinMats, glows) {
   const G = geos();
   const half = new Group();
   half.rotation.z = side * 0.86; // spread wide — the rack is the silhouette
-  half.rotation.x = -0.72; // swept BACK over the shoulders, readable top-down
+  half.rotation.x = -0.62; // swept back and UP off a lowered head: the V clears the muzzle
 
   const beam = new Mesh(G.beam, rackMat);
   beam.scale.set(1, 0.98, 1);
@@ -181,17 +211,26 @@ export function buildStag() {
 
   // --- Body: long faceted barrel, shoulders high.
   const body = new Mesh(G.body, track(flashable(HULK)));
-  body.scale.set(0.95, 0.86, 1.5);
+  body.scale.set(0.8, 0.82, 1.55);
   body.position.set(0, 1.26, -0.18);
   body.rotation.x = -0.07;
   addInk(body);
   rig.add(body);
 
   const chest = new Mesh(G.chest, track(flashable(HULK_DARK)));
-  chest.scale.set(1.02, 0.98, 0.86);
+  chest.scale.set(0.92, 0.94, 0.86);
   chest.position.set(0, 1.3, 0.4);
   addInk(chest);
   rig.add(chest);
+
+  // Shoulder hump: the light plane on top of the withers. From above this is
+  // the mass the eye lands on first, and having it a full value step off the
+  // barrel is what turns "slab" into "an animal seen from above".
+  const hump = new Mesh(G.chest, track(flashable(HULK_PALE)));
+  hump.scale.set(0.86, 0.6, 0.78);
+  hump.position.set(0, 1.62, 0.22);
+  addInk(hump);
+  rig.add(hump);
 
   // --- THE HOLLOW: a rib cage over a violet cavity light. The name is the
   // silhouette's one storytelling beat — and it is a real emitter (§19.3:
@@ -237,27 +276,34 @@ export function buildStag() {
 
   // --- Neck + head.
   const head = new Group();
-  head.position.set(0, 1.6, 0.74);
+  head.position.set(0, 1.34, 1.06);
   rig.add(head);
   const neck = new Mesh(G.neck, track(flashable(HULK_DARK)));
-  neck.position.set(0, -0.22, -0.14);
-  neck.rotation.x = 0.5;
+  neck.position.set(0, -0.02, -0.34);
+  neck.rotation.x = 0.8;
   addInk(neck);
   head.add(neck);
-  const skull = new Mesh(G.skull, track(flashable(HULK)));
-  skull.rotation.x = Math.PI / 2 + 0.35;
-  skull.position.set(0, 0.12, 0.3);
+  const skull = new Mesh(G.skull, track(flashable(HULK_PALE)));
+  skull.scale.set(1.12, 1.22, 1.12);
+  skull.rotation.x = Math.PI / 2 + 0.42;
+  skull.position.set(0, 0.08, 0.34);
   addInk(skull);
   head.add(skull);
+  // Muzzle: a real bone snout that projects past the skull, so the head has a
+  // FRONT. Inked, and the palest thing on the body below the rack.
   const jaw = new Mesh(G.jaw, track(flashable(HIDE.bone)));
-  jaw.rotation.x = Math.PI / 2 + 0.35;
-  jaw.position.set(0, -0.02, 0.62);
+  jaw.scale.set(1.35, 1.5, 1.35);
+  jaw.rotation.x = Math.PI / 2 + 0.42;
+  jaw.position.set(0, -0.08, 0.76);
+  addInk(jaw);
   head.add(jaw);
   const earMat = track(flashable(HULK_DARK));
   for (const side of [-1, 1]) {
     const ear = new Mesh(G.ear, earMat);
-    ear.position.set(side * 0.2, 0.26, -0.02);
-    ear.rotation.set(-0.3, 0, side * -0.8);
+    ear.scale.set(1.2, 1.25, 1.2);
+    ear.position.set(side * 0.24, 0.24, -0.02);
+    ear.rotation.set(-0.3, 0, side * -0.85);
+    addInk(ear);
     head.add(ear);
   }
   // Angular slit eyes with a violet glint (§11: never the party's round warm
@@ -293,7 +339,7 @@ export function buildStag() {
   const rackMat = new MeshBasicMaterial({ color: RACK, toneMapped: false });
   const veinMats = veinBasic;
   const antlers = new Group();
-  antlers.position.set(0, 0.2, -0.02);
+  antlers.position.set(0, 0.34, -0.12);
   head.add(antlers);
   for (const side of [-1, 1]) antlers.add(buildAntler(side, rackMat, veinMats, glows));
   // Halo pulled well back: at size 2.2 / opacity 0.72 this additive sprite sat
@@ -307,39 +353,80 @@ export function buildStag() {
   // CROWN CORE — the single hottest emitter in the room: a small HDR
   // white-violet sprite at the centre of the rack whose bloom is what makes
   // the Stag, not a torch, the brightest 24 px block in frame.
-  const rackHalo = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 2.1, opacity: 0.5 });
+  const rackHalo = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 1.7, opacity: 0.42 });
   rackHalo.material.toneMapped = false;
   rackHalo.material.color.copy(haloViolet(1));
-  rackHalo.position.set(0, 1.0, 0);
+  rackHalo.position.set(0, 0.94, -0.44);
   antlers.add(rackHalo);
   glows.push(rackHalo);
-  const crownCore = makeGlowSprite({ color: PALETTE.godstuffVioletPeak, size: 0.72, opacity: 0.9 });
+  // The crown's SOURCE: an opaque burr of six short violet spikes around a
+  // white-violet bead, inked so its outline survives the halo. This is the
+  // shape the bloom blooms FROM — REFERENCE_BAR check 5/7 want a source, not
+  // a blown disc.
+  const crownStar = new Group();
+  crownStar.position.set(0, 0.98, -0.46);
+  antlers.add(crownStar);
+  const bead = new Mesh(new SphereGeometry(0.085, 6, 5), new MeshBasicMaterial({
+    color: VEIN_CORE,
+    toneMapped: false,
+  }));
+  addInk(bead);
+  crownStar.add(bead);
+  const burrMat = new MeshBasicMaterial({ color: RACK, toneMapped: false });
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const burr = new Mesh(G.tine, burrMat);
+    burr.scale.set(0.42, 0.3, 0.42);
+    burr.position.set(Math.cos(a) * 0.13, Math.sin(a) * 0.13, 0);
+    burr.rotation.z = a - Math.PI / 2;
+    addInk(burr);
+    crownStar.add(burr);
+  }
+  const crownCore = makeGlowSprite({ color: PALETTE.godstuffVioletPeak, size: 0.36, opacity: 0.6 });
   crownCore.material.toneMapped = false;
   crownCore.material.color.setRGB(CROWN_LINEAR[0], CROWN_LINEAR[1], CROWN_LINEAR[2], LinearSRGBColorSpace);
-  crownCore.position.set(0, 1.02, 0.02);
+  crownCore.position.set(0, 0.98, -0.46);
   antlers.add(crownCore);
 
   // --- Legs: long, thin, high-kneed — the height reads through the gap.
   const legMat = track(flashable(HULK_DARK));
   const hoofMat = track(flashable(HIDE.bone));
   const legs = [];
-  for (const [sx, sz] of [
-    [-0.3, 0.42],
-    [0.3, 0.42],
-    [-0.32, -0.5],
-    [0.32, -0.5],
+  for (const [sx, sz, splay] of [
+    [-0.42, 0.5, 0.16],
+    [0.42, 0.5, -0.16],
+    [-0.45, -0.6, 0.19],
+    [0.45, -0.6, -0.19],
   ]) {
     const pivot = new Group();
     pivot.position.set(sx, 0.99, sz);
     const leg = new Mesh(G.leg, legMat);
     leg.position.y = -0.49;
+    leg.rotation.z = splay; // splayed out past the barrel: four legs in plan view
+    addInk(leg);
     pivot.add(leg);
     const hoof = new Mesh(G.hoof, hoofMat);
-    hoof.position.y = -0.97;
+    hoof.position.set(Math.sin(splay) * -0.97, -0.97, 0);
+    addInk(hoof);
     pivot.add(hoof);
     rig.add(pivot);
     legs.push(pivot);
   }
+
+  // --- Tail flag: a stag's rear identity feature. The boss faces its target,
+  // which is very often straight away from a 52-degree camera, so the rig
+  // needs something at the RUMP that says "deer" when the muzzle is hidden.
+  const tail = new Mesh(G.tine, track(flashable(HIDE.bone)));
+  tail.scale.set(0.62, 0.44, 0.34);
+  tail.position.set(0, 1.42, -1.06);
+  tail.rotation.x = 0.55;
+  addInk(tail);
+  rig.add(tail);
+  const rump = new Mesh(G.chest, track(flashable(HULK)));
+  rump.scale.set(0.74, 0.6, 0.62);
+  rump.position.set(0, 1.4, -0.78);
+  addInk(rump);
+  rig.add(rump);
 
   // --- Ground pool: the warm boss-light landing on the floor under the body
   // (the light itself is a PointLight the layer parents here).
@@ -367,16 +454,65 @@ export function buildStag() {
     m.rotation.x = -Math.PI / 2;
     return m;
   };
-  const pool = groundGlow(1.7, PALETTE.hearthAmber, 0.62);
+  const pool = groundGlow(1.9, PALETTE.hearthAmber, 0.44);
   pool.position.set(0, 0.03, -0.3);
   yaw.add(pool);
   // Wider, softer spill so the warm falloff reads as light on the floor and
   // not as a decal with an edge.
-  const spill = groundGlow(3.4, PALETTE.hearthAmber, 0.3);
+  const spill = groundGlow(3.4, PALETTE.hearthAmber, 0.22);
   spill.position.set(0, 0.02, -0.3);
   yaw.add(spill);
 
-  yaw.add(groundShadow(1.0, 0.5));
+  // Contact shadow (REFERENCE_BAR check 8). The round-1 scorers measured a
+  // 5-12% luma dip under a 2.2x body and called it absent — because the two
+  // ADDITIVE ground pools above sit at y 0.02/0.03 and are drawn after it, so
+  // every photon the shadow removed was added straight back. This one is a
+  // normal-blended disc parked ABOVE the pools in both y and renderOrder, so
+  // it darkens the summed result: a hard core disc under the barrel plus a
+  // soft feathered skirt.
+  const hardShadow = new Mesh(
+    new CircleGeometry(0.92, 30),
+    new MeshBasicMaterial({
+      map: getRadialTexture(),
+      color: exactColor('#0B1018'),
+      transparent: true,
+      opacity: 0.88,
+      depthWrite: false,
+      toneMapped: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -6,
+      polygonOffsetUnits: -6,
+    })
+  );
+  hardShadow.rotation.x = -Math.PI / 2;
+  // Parented to `group`, not `yaw`: a contact shadow belongs to the FLOOR, so
+  // it must not spin with the body. Pushed toward the camera (+z) because at a
+  // 52-degree elevation a 2.5 u body stands in front of its own footprint —
+  // centred, the shadow renders entirely behind the barrel and measures as
+  // absent, which is exactly what round 1 found.
+  hardShadow.position.set(0, 0.038, 0.62);
+  hardShadow.scale.set(1.28, 0.92, 1);
+  hardShadow.renderOrder = 6;
+  group.add(hardShadow);
+  const softShadow = new Mesh(
+    new CircleGeometry(1.55, 30),
+    new MeshBasicMaterial({
+      map: getRadialTexture(),
+      color: exactColor('#0B1018'),
+      transparent: true,
+      opacity: 0.4,
+      depthWrite: false,
+      toneMapped: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -5,
+      polygonOffsetUnits: -5,
+    })
+  );
+  softShadow.rotation.x = -Math.PI / 2;
+  softShadow.position.set(0, 0.036, 0.42);
+  softShadow.scale.set(1.1, 0.86, 1);
+  softShadow.renderOrder = 5;
+  group.add(softShadow);
 
   const lightMount = new Group();
   lightMount.position.set(0, 1.05, -0.55);
@@ -388,6 +524,17 @@ export function buildStag() {
     lightMount,
     setYaw: (r) => {
       yaw.rotation.y = r;
+    },
+    // §9 #1: k = 0..1 white hit flash. Each hide material rides from its own
+    // base emissive to white; everything unlit (rack, veins, glows) is
+    // untouched — the flash belongs to the BODY.
+    setFlash(k) {
+      const t = k < 0 ? 0 : k > 1 ? 1 : k;
+      for (const m of mats) {
+        const base = m.userData.baseEmissive;
+        if (base) m.emissive.copy(base).lerp(FLASH_WHITE, t);
+        else m.emissiveIntensity = t;
+      }
     },
     // pose: { t, walkPhase, moveK, telegraphK (0..1 quake wind-up),
     //         lungeK (0..1 trample), sealK (0..1 Hollow Seal), hpFrac }
@@ -420,15 +567,15 @@ export function buildStag() {
       // WITHOUT blowing the frame to white — capped so the >200 luma band
       // stays near the reference bar's ~1.4% while the boss box still reads
       // measurably hotter than the floor around it.
-      rackHalo.material.opacity = Math.min(0.78, 0.62 * fever);
-      crownCore.material.opacity = Math.min(1.0, 0.82 * fever);
+      rackHalo.material.opacity = Math.min(0.6, 0.48 * fever);
+      crownCore.material.opacity = Math.min(0.6, 0.46 * fever);
       cavityGlow.material.opacity = Math.min(0.85, 0.46 * fever + 0.12 * lungeK);
       for (const g of glows) {
         if (g === rackHalo || g === cavityGlow) continue;
         g.material.opacity = Math.min(0.75, 0.44 * fever);
       }
-      pool.material.opacity = Math.min(0.95, 0.62 + 0.09 * Math.sin(t * 1.9) + 0.16 * telegraphK);
-      spill.material.opacity = Math.min(0.46, 0.3 + 0.05 * Math.sin(t * 1.9) + 0.08 * telegraphK);
+      pool.material.opacity = Math.min(0.6, 0.44 + 0.06 * Math.sin(t * 1.9) + 0.1 * telegraphK);
+      spill.material.opacity = Math.min(0.34, 0.22 + 0.04 * Math.sin(t * 1.9) + 0.06 * telegraphK);
     },
   };
 }
