@@ -1,0 +1,67 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const NUMOF=()=>{const v=E.state().vfx||{};return v.numerals??(v.arena&&v.arena.numerals)??null;};\n  window.__c={ev:[],rows:[],dom:[],ticksSeen:0,frames:0,started:performance.now(),\n    clearFlag:false,clearInfo:null,boundary:[],lastPos:{}};\n  const C=window.__c;\n  for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"hit\",\"death\",\"hitstop\",\"sound\",\"heal\",\"reward_offer\",\"draft_taken\",\"path_chosen\",\"run_end\",\"return_to_camp\",\"enemy_despawn\"])E.on(t,e=>{\n    const r=Object.assign({T:t,ms:Math.round(performance.now()-C.started)},e);C.ev.push(r);\n    if(t==='room_cleared'){\n      const deaths=C.ev.filter(x=>x.T==='death');const d=deaths[deaths.length-1];\n      const same=!!d&&d.tick===e.tick;\n      C.boundary.push({T:'room_cleared',tick:e.tick,num:NUMOF()??null,sameTickKill:same});\n      if(same&&!C.clearFlag){const h=C.ev.filter(x=>x.T==='hit'&&x.target===d.id&&x.tick===d.tick).slice(-1)[0];\n        C.clearInfo={clearTick:e.tick,deathTick:d.tick,id:d.id,amount:h?h.amount:null,src:h?(h.source??h.src??h.skill??null):null};C.clearFlag=true;}\n    }\n    if(t==='room_enter'||t==='run_end'||t==='return_to_camp')\n      C.boundary.push({T:t,tick:e.tick,num:NUMOF()??null});\n  });\n  const L=document.querySelector('#dmg-num-layer');C.numLayer=!!L;\n  const lastKey=new WeakMap();const perEl=new WeakMap();\n  if(L){const mo=new MutationObserver(muts=>{const t=E.tick;const seen=new Set();\n    for(const m of muts){const n=m.target.nodeType===3?m.target.parentElement:m.target;\n      const el=n&&n.closest?n.closest('.dmg-num'):null;if(!el||seen.has(el))continue;seen.add(el);\n      const cs=getComputedStyle(el);\n      const vis=!(cs.display==='none'||cs.opacity==='0'||cs.visibility==='hidden'||!el.textContent);\n      if(!vis){lastKey.set(el,'hidden');perEl.set(el,0);continue;}\n      const r=el.getBoundingClientRect();\n      const k=el.textContent+'|'+Math.round(r.x/8)+'|'+Math.round(r.y/8);\n      if(lastKey.get(el)===k)continue;\n      const cnt=(perEl.get(el)||0)+1;perEl.set(el,cnt);lastKey.set(el,k);if(cnt>3)continue;\n      C.dom.push({t,txt:el.textContent,x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),op:cs.opacity});}});\n    mo.observe(L,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['style','class']});}\n  let last=-1;\n  const f=()=>{C.frames++;const t=E.tick;const s=E.state();const vfx=s.vfx||{};\n    const num=vfx.numerals??(vfx.arena&&vfx.arena.numerals)??null;\n    let visN=0,visTxt=[];const V=document.querySelector('#run-veil');const vop=V?+(parseFloat(getComputedStyle(V).opacity||'0')||0).toFixed(2):null;const vdisp=V?getComputedStyle(V).display:null;\n    if(L){for(const el of L.querySelectorAll('.dmg-num')){const cs=getComputedStyle(el);\n      if(cs.visibility==='hidden'||cs.display==='none')continue;const o=parseFloat(cs.opacity||'0');\n      if(!(o>0.05))continue;visN++;if(visTxt.length<8)visTxt.push(el.textContent+'@'+o.toFixed(2));}}\n    for(const e of s.enemies)C.lastPos[e.id]={x:e.x,z:e.z,fr:C.frames,kind:e.kind};\n    C.rows.push({t,fr:C.frames,nt:t!==last,ms:Math.round(performance.now()-C.started),num,visN,visTxt,vop:vdisp==='none'?0:vop});\n    if(t!==last){C.ticksSeen++;last=t;}\n    if(C.rows.length>40000)C.rows.splice(0,12000);\n    requestAnimationFrame(f);};\n  requestAnimationFrame(f);\n  return {armed:E.tick,numLayer:C.numLayer,version:E.version}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const NUMOF=()=>{const v=E.state().vfx||{};return v.numerals??(v.arena&&v.arena.numerals)??null;};const r=E.cmd('startRun');E.cmd('iframe',0,20000);return {seed:E.seed,room:r&&r.room}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const NUMOF=()=>{const v=E.state().vfx||{};return v.numerals??(v.arena&&v.arena.numerals)??null;};const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const k0=E.tick;while(performance.now()-t0<30000){if((()=>{const s=__echoes.state();return s.run.active&&s.run.combatActive&&s.enemies.length>0})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length,phase:E.state().run.phase};await sleep(4);}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,enemies:E.state().enemies.length,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const NUMOF=()=>{const v=E.state().vfx||{};return v.numerals??(v.arena&&v.arena.numerals)??null;};const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const C=window.__c;const t0=performance.now();\n    while(performance.now()-t0<20000){const u=E.runUi();if(u.screen==='draft')E.cmd('draftDecline');else if(u.screen==='path')E.cmd('pathChoose',0);await sleep(40);\n      if(C.ev.some(e=>e.T==='room_cleared'))break;}\n    return {cleared:C.ev.filter(e=>e.T==='room_cleared').length,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const NUMOF=()=>{const v=E.state().vfx||{};return v.numerals??(v.arena&&v.arena.numerals)??null;};const r=E.cmd('endRun','victory');return {won:E.tick,ui:E.runUi().screen,phase:r&&r.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const NUMOF=()=>{const v=E.state().vfx||{};return v.numerals??(v.arena&&v.arena.numerals)??null;};const C=window.__c;return {tag:'after-run-end',tick:E.tick,num:NUMOF(),visN:C.rows[C.rows.length-1].visN,ui:E.runUi().screen,scene:E.state().scene}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certfixC1-victory"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const NUMOF=()=>{const v=E.state().vfx||{};return v.numerals??(v.arena&&v.arena.numerals)??null;};E.cmd('returnToCamp');return {tag:'to-camp',tick:E.tick,ui:E.runUi().screen}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const NUMOF=()=>{const v=E.state().vfx||{};return v.numerals??(v.arena&&v.arena.numerals)??null;};const C=window.__c;const L=document.querySelector('#dmg-num-layer');let vis=0;\n    if(L)for(const el of L.querySelectorAll('.dmg-num')){const cs=getComputedStyle(el);\n      if(cs.visibility!=='hidden'&&cs.display!=='none'&&parseFloat(cs.opacity||'0')>0.05)vis++;}\n    return {tag:'in-camp',tick:E.tick,num:NUMOF(),domVisible:vis,ui:E.runUi().screen,run:E.state().run.active}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certfixC1-camp-after"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const NUMOF=()=>{const v=E.state().vfx||{};return v.numerals??(v.arena&&v.arena.numerals)??null;};const m={};for(const e of window.__c.ev)m[e.T]=(m[e.T]||0)+1;return {tag:'counts',tick:E.tick,version:E.version,counts:m}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const NUMOF=()=>{const v=E.state().vfx||{};return v.numerals??(v.arena&&v.arena.numerals)??null;};const r=window.__c.rows;let gaps=0,maxGap=0;\n  for(let i=1;i<r.length;i++){const g=r[i].t-r[i-1].t;if(g>1){gaps+=g-1;maxGap=Math.max(maxGap,g);}}\n  return {tag:'coverage',ticksSeen:window.__c.ticksSeen,frames:window.__c.frames,rows:r.length,fps:E.fps,missedTicks:gaps,maxTickGap:maxGap,span:r.length?r[r.length-1].t-r[0].t:0}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const NUMOF=()=>{const v=E.state().vfx||{};return v.numerals??(v.arena&&v.arena.numerals)??null;};const s=E.state();const r=s.run;return {tag:\"leak-end\",tick:E.tick,fps:E.fps,version:E.version,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,enemies:s.enemies.length,ui:E.runUi().screen,vfx:s.vfx}})()"
+ }
+]

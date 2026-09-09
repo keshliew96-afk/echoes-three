@@ -164,10 +164,22 @@ const activeScene = buildScene(stage, toggles, { world, cosmetic, bus, rng });
 //    covered too. setMode short-circuits on an unchanged mode, so the portal
 //    press (which swaps first, then starts) is unaffected.
 bus.on('run_start', () => activeScene.cmd?.('campMode', ['run']));
-// 2. The damage-numeral pool is swept at every run boundary — the cosmetic
-//    half of run.js's sweepPlayerTransients. Without it, numerals in flight at
-//    the kill tick froze on the Victory card and rode into Camp.
-for (const evt of ['run_start', 'room_cleared', 'run_end', 'return_to_camp'])
+// 2. The damage-numeral pool is swept when the WORLD A NUMERAL IS ANCHORED TO
+//    goes away: `run_start` (camp -> arena), `room_enter` (the party is
+//    re-seated in the next room, §13 step 7), `run_end` (camp.js swaps the
+//    scene back to the camp on that event) and `return_to_camp`. A numeral is
+//    a world-anchored div; leaving one alive across any of those would
+//    re-project it into a world it never belonged to — that is the leak that
+//    put stale numbers on the Victory card and rode them into Camp.
+//    NOT on `room_cleared` (certification fix C-r1, failure F1). The clear is
+//    a state transition INSIDE the room that stays on screen for the whole
+//    reward/path sequence, and it fires on the SAME TICK as the killing blow
+//    — so flushing there deleted that kill's own damage number (plus anything
+//    still in flight) before it had drawn a single frame. Measured: 4 of 4
+//    room-clearing kills landed with no number at all, against 81 of 81 for
+//    every other kill, breaking §9 juice contract #2 ("a damage number pops on
+//    EVERY hit"). Nothing rides into the next room: `room_enter` sweeps.
+for (const evt of ['run_start', 'room_enter', 'run_end', 'return_to_camp'])
   bus.on(evt, () => flushNumberPools());
 
 // Skill-delivery VFX layer (skills block): heal bursts/+HP glyphs, skill
