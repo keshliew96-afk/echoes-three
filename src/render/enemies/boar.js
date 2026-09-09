@@ -3,8 +3,12 @@
 // angular read is the anti-party language (§19.2: party = soft smooth bells,
 // enemies = angular corrupted beasts). Cool desaturated slate hide, ANGULAR
 // charcoal slit eyes (never the party's round warm bean eyes), and exactly
-// ONE corruption tell: the violet thorn ridge along the spine (§11 "angular
-// growth"). Ink on the two big masses only.
+// ONE corruption tell: the INDIGO thorn ridge along the spine (§11 "angular
+// growth"). Certification fix round 1 (2026-09-09): the ridge was God-stuff
+// Violet, which all three scorers marked as a §19.1 break — violet is
+// boss/corruption-exclusive, so a rank-and-file boar wearing it drains the
+// meaning out of the Stag's rack. The ridge is indigo now (enemies/style.js).
+// Ink on the two big masses only.
 //
 // Faces +Z. All animation is driven per-frame by the layer through `pose`.
 import {
@@ -20,7 +24,7 @@ import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow, exactColor } from '../critters/common.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
-import { HIDE, TELL_VIOLET, TELL_VIOLET_DIM } from './style.js';
+import { HIDE, TELL_INDIGO, TELL_INDIGO_DIM, TELL_INDIGO_GLOW } from './style.js';
 
 const flashable = (color) =>
   toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0, flatShading: true });
@@ -127,11 +131,11 @@ export function buildBoar() {
     legs.push(pivot);
   }
 
-  // THE corruption tell (§11, exactly one): violet thorn ridge along the
+  // THE corruption tell (§11, exactly one): indigo thorn ridge along the
   // spine — angular growths raked backward, bright/dim alternating, plus one
-  // faint violet halo (§19.3: every emitter carries a glow sprite).
-  const thornDark = new MeshBasicMaterial({ color: TELL_VIOLET_DIM, toneMapped: false });
-  const thornBright = new MeshBasicMaterial({ color: TELL_VIOLET, toneMapped: false });
+  // faint indigo halo (§19.3: every emitter carries a glow sprite).
+  const thornDark = new MeshBasicMaterial({ color: TELL_INDIGO_DIM, toneMapped: false });
+  const thornBright = new MeshBasicMaterial({ color: TELL_INDIGO, toneMapped: false });
   const thorns = [
     [0.68, 0.2, 0.24],
     [0.72, 0.02, 0.3],
@@ -147,15 +151,17 @@ export function buildBoar() {
     spike.rotation.x = -0.5 - i * 0.14; // raked backward
     rig.add(spike);
   }
-  const tellGlow = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 0.6, opacity: 0.3 });
+  const tellGlow = makeGlowSprite({ color: TELL_INDIGO_GLOW, size: 0.6, opacity: 0.26 });
   tellGlow.material.toneMapped = false;
-  tellGlow.material.color.copy(TELL_VIOLET);
+  tellGlow.material.color.copy(TELL_INDIGO_GLOW);
   tellGlow.position.set(0, 0.78, -0.04);
   rig.add(tellGlow);
 
-  // Grounding (§19.2): contact shadow; NO identity ring — rings are
-  // party-exclusive (§17), an enemy is identity-free.
-  yaw.add(groundShadow(0.42, 0.42));
+  // Grounding (§19.2 / REFERENCE_BAR check 8): contact shadow, widened and
+  // darkened in the certification fix round so the belly shadow survives a
+  // torch pool; NO identity ring — rings are party-exclusive (§17), an enemy
+  // is identity-free.
+  yaw.add(groundShadow(0.5, 0.6));
 
   return {
     group,
@@ -176,7 +182,7 @@ export function buildBoar() {
       legs[1].rotation.x = -trot * 0.6 * moveK;
       legs[2].rotation.x = -trot * 0.6 * moveK;
       head.rotation.x = 0.26 * lungeK - 0.035 * trot * moveK;
-      tellGlow.material.opacity = 0.24 + 0.1 * Math.sin(t * 2.6);
+      tellGlow.material.opacity = 0.2 + 0.08 * Math.sin(t * 2.6);
     },
   };
 }

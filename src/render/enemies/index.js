@@ -27,12 +27,14 @@ import { buildMantis } from './mantis.js';
 import { buildWaystone } from './waystone.js';
 import { makeAttackTelegraph, makeSpawnShimmer } from './telegraphs.js';
 import { EMBER_EXACT, SHOT_CORE } from './style.js';
+import { impactFx } from '../vfx/hub.js';
 
 const SHOT_Y = 0.5; // enemy shot flight height (render)
 const TRAIL_FADE = 0.15; // s, Ember trail sprite fade
 const POP_STRETCH_SEC = 0.09; // kill pop: anticipation stretch...
 const POP_TOTAL_SEC = 0.26; // ...then collapse (same feel as dummy kills)
 const RETREAT_OUT_SEC = 0.22; // shrink-out on retreat despawn
+const EMBER_HZ = 11; // ember motes per second over a live telegraph
 const YAW_RATE = 9; // 1/s exponential smoothing toward the sim facing
 const WALK_HZ = 2.6; // trot cycle per u of travel feel (phase per u below)
 
@@ -47,6 +49,8 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   const shots = new Map(); // eshot id -> group
   const decals = new Map(); // enemy id -> attack telegraph
   const shimmers = new Map(); // spawn key -> shimmer record
+  const lastTelegraph = new Map(); // enemy id -> { x, z } live telegraph impact
+  let emberDebt = 0; // fractional ember-mote budget carried across frames
   const dying = []; // { group, mats, age, mode: 'kill' | 'retreat' | 'crumble' }
   const trails = [];
   const trailPool = [];
@@ -68,6 +72,21 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   bus.on('enemy_fire', (ev) => {
     const r = rigs.get(ev.id);
     if (r) r.fireLeft = 0.2;
+    // Muzzle spit (§19.4 3-layer: the shot already carries core + glow +
+    // trail; this is the particle layer at its source).
+    if (ev.x !== undefined)
+      impactFx.impact(ev.x, ev.z, { color: PALETTE.emberDanger, dir: { x: ev.dx ?? 0, z: ev.dz ?? 0 }, n: 4 });
+  });
+  // A telegraph that MATURES burns the ground it warned about (REFERENCE_BAR
+  // check 5 / reference D: "lingering ground fire patches where shots land").
+  // The impact point is remembered per rig while the telegraph is live —
+  // telegraph_resolve carries only the shooter id.
+  bus.on('telegraph_resolve', (ev) => {
+    const at = lastTelegraph.get(ev.id);
+    if (!at) return;
+    lastTelegraph.delete(ev.id);
+    impactFx.scorch(at.x, at.z, 0.66);
+    impactFx.embers(at.x, at.z, { n: 6, radius: 0.42 });
   });
   bus.on('death', (ev) => {
     const r = rigs.get(ev.id);
@@ -150,6 +169,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
 
     // --- Enemy rigs: sync to sim entities.
     const seen = new Set();
+    const liveTelegraphs = [];
     let waystoneEnt = null;
     for (const e of world.entities()) {
       if (e.kind === 'waystone') {
@@ -220,8 +240,11 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
         }
         d.aimAt(e.telegraph.x, e.telegraph.z, e.x, e.z);
         d.setPulse(tSec);
+        lastTelegraph.set(e.id, { x: e.telegraph.x, z: e.telegraph.z });
+        liveTelegraphs.push(e.telegraph);
       } else {
         removeDecal(e.id);
+        lastTelegraph.delete(e.id);
       }
     }
     for (const [id, r] of rigs) {
@@ -239,6 +262,20 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
         decals.delete(id);
       }
     }
+    for (const id of lastTelegraph.keys()) if (!seen.has(id)) lastTelegraph.delete(id);
+
+    // Ember motes rising off every live telegraph — the particle layer of the
+    // §19.4 3-layer rule on the telegraph itself (round 1: "no embers").
+    if (liveTelegraphs.length > 0) {
+      emberDebt += EMBER_HZ * dt * liveTelegraphs.length;
+      let n = Math.floor(emberDebt);
+      emberDebt -= n;
+      if (n > 6) n = 6; // never let a frame-time spike dump a cloud
+      for (let i = 0; i < n; i++) {
+        const t = liveTelegraphs[i % liveTelegraphs.length];
+        impactFx.embers(t.x, t.z, { n: 1, radius: 0.5 });
+      }
+    } else emberDebt = 0;
 
     // --- Waystone.
     if (waystoneEnt) {
@@ -293,6 +330,9 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     }
     for (const [id, g] of shots) {
       if (!shotSeen.has(id)) {
+        // Where the shot stopped: a small Ember spit + a hot spark (§19.4 —
+        // "instant impacts hold >= 3-5 frames").
+        impactFx.impact(g.position.x, g.position.z, { color: PALETTE.emberDanger, n: 5 });
         root.remove(g);
         shots.delete(id);
       }

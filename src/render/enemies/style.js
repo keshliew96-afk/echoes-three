@@ -43,6 +43,27 @@ function tellViolet(l = 0.55, s = 0.65) {
 export const TELL_VIOLET = tellViolet();
 export const TELL_VIOLET_DIM = tellViolet(0.34, 0.5);
 
+// --- Regular-enemy corruption tell: INDIGO, not violet -----------------------
+// Certification fix round 1 (2026-09-09): all three scorers marked the boar's
+// violet thorn ridge and the mantis's violet eye-glint as a §19.1 colour-
+// discipline break — "God-stuff Violet: corruption/boss/Defeat ONLY, never
+// friendly" is read on the frame as "violet means GOD-STUFF", so a rank-and-
+// file boar wearing it makes the Stag's and the monolith's violet mean nothing.
+// The rank-and-file tell moves into the indigo-night family the enemy hides
+// already live in (hue ~228, one long step off Signal Blue's 200 deg so it can
+// never be mistaken for the Rare-frame / mark-reticle accent), lifted in
+// saturation and value so it still reads as a lit growth on a dark hide. Violet
+// stays exclusive to the Stag, the monolith and spawn corruption.
+// Logged as a §11 tuning note in docs/BUILD_BRIEF.md.
+function tellIndigo(l = 0.6, s = 0.72) {
+  return exactColor(new Color().setHSL(228 / 360, s, l, SRGBColorSpace).getHex());
+}
+export const TELL_INDIGO = tellIndigo();
+export const TELL_INDIGO_DIM = tellIndigo(0.36, 0.6);
+// Halo colour for the indigo tell (sprite tint; the additive falloff over dark
+// ground must stay in the blue band, never feather toward violet).
+export const TELL_INDIGO_GLOW = tellIndigo(0.52, 0.85);
+
 // Enemy attack colour: Ember Danger, post-chain-exact (§19.1 — telegraphs and
 // enemy attack VFX are the ONLY red-orange in a frame).
 export const EMBER_EXACT = exactColor(PALETTE.emberDanger);

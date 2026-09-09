@@ -19,6 +19,7 @@ import {
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { EMBER_EXACT, TELL_VIOLET } from './style.js';
+import { exactColor } from '../critters/common.js';
 
 // §11: opacity pulse 2 Hz (also under the §17 "<=3 Hz" Zone-3 ceiling).
 export const PULSE_HZ = 2;
@@ -37,30 +38,75 @@ function canvasTexture(draw, size = 256) {
   return tex;
 }
 
-// Impact-zone decal: hard outer ring + translucent fill + hot centre dot —
-// reads as "the shot lands HERE" at one glance (Pass-the-Fear telegraph
-// grammar: dark core, bright rim).
+// Impact-zone decal: hard outer ring + thin fill + hot centre dot. Round-1
+// certification read this as "one thin red-orange arc ... no scorched core and
+// no embers" against reference D's "dark scorched core + bright glowing red
+// rim ring" (REFERENCE_BAR check 5). The Ember layer's fill is thinner now so
+// the SCORCH layer below it (getScorchCoreTexture, a separate dark disc) is
+// what the eye reads inside the ring, and the rim is heavier so the ring
+// itself survives a body standing on top of it.
 let impactTex = null;
 function getImpactTexture() {
   if (impactTex) return impactTex;
   impactTex = canvasTexture((ctx, S) => {
     const c = S / 2;
     const A = (a) => `rgba(255,255,255,${a})`;
-    ctx.fillStyle = A(0.3); // translucent fill
+    ctx.fillStyle = A(0.13); // thin Ember wash over the scorched core
     ctx.beginPath();
     ctx.arc(c, c, S * 0.44, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = A(1); // bright rim ring
-    ctx.lineWidth = S * 0.055;
+    ctx.lineWidth = S * 0.075;
     ctx.beginPath();
-    ctx.arc(c, c, S * 0.44, 0, Math.PI * 2);
+    ctx.arc(c, c, S * 0.435, 0, Math.PI * 2);
     ctx.stroke();
+    // Hazard ticks around the rim (§19.1 fence: never colour alone).
+    ctx.strokeStyle = A(0.95);
+    ctx.lineWidth = S * 0.03;
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 6; i++) {
+      const a0 = (i / 6) * Math.PI * 2 + 0.26;
+      ctx.beginPath();
+      ctx.moveTo(c + Math.cos(a0) * S * 0.35, c + Math.sin(a0) * S * 0.35);
+      ctx.lineTo(c + Math.cos(a0) * S * 0.47, c + Math.sin(a0) * S * 0.47);
+      ctx.stroke();
+    }
     ctx.fillStyle = A(0.95); // hot centre dot
     ctx.beginPath();
-    ctx.arc(c, c, S * 0.09, 0, Math.PI * 2);
+    ctx.arc(c, c, S * 0.08, 0, Math.PI * 2);
     ctx.fill();
   });
   return impactTex;
+}
+
+// The SCORCHED CORE the reference telegraph is built on: a dark burnt disc
+// with radial cracks, drawn UNDER the Ember ring so the zone reads as ground
+// that is about to be hit rather than as a red sticker on grass.
+let coreTex = null;
+function getScorchCoreTexture() {
+  if (coreTex) return coreTex;
+  coreTex = canvasTexture((ctx, S) => {
+    const c = S / 2;
+    const g = ctx.createRadialGradient(c, c, S * 0.03, c, c, S * 0.44);
+    g.addColorStop(0, 'rgba(255,255,255,0.95)');
+    g.addColorStop(0.6, 'rgba(255,255,255,0.7)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(c, c, S * 0.44, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 9; i++) {
+      const a0 = (i / 9) * Math.PI * 2 + 0.4;
+      ctx.lineWidth = S * (0.012 + 0.01 * ((i % 2)));
+      ctx.beginPath();
+      ctx.moveTo(c + Math.cos(a0) * S * 0.04, c + Math.sin(a0) * S * 0.04);
+      ctx.lineTo(c + Math.cos(a0 + 0.16) * S * 0.38, c + Math.sin(a0 + 0.16) * S * 0.38);
+      ctx.stroke();
+    }
+  });
+  return coreTex;
 }
 
 // Hazard chevron: double arrow pointing +X (rotated onto the shot lane).
@@ -107,10 +153,29 @@ function flatDecal(tex, color, size, y, renderOrder) {
 export function makeAttackTelegraph() {
   const group = new Group();
   group.name = 'telegraph';
+  // Layer 1 (bottom): the scorched core — dark, normal-blended, so the zone
+  // darkens the ground it sits on instead of tinting it red.
+  const core = flatDecal(
+    getScorchCoreTexture(),
+    exactColor(PALETTE.voidCharcoal),
+    DECAL_RADIUS * 2 * 0.98,
+    0.019,
+    1
+  );
+  core.material.opacity = 0.5;
+  group.add(core);
+  // Layer 2: the bright Ember rim + wash.
   const impact = flatDecal(getImpactTexture(), EMBER_EXACT.clone(), DECAL_RADIUS * 2, 0.022, 2);
   group.add(impact);
   const chevron = flatDecal(getChevronTexture(), EMBER_EXACT.clone(), CHEVRON_SIZE, 0.021, 2);
   group.add(chevron);
+  // Layer 3: the rim is a LIGHT, not a sticker (§19.3 — every emitter carries
+  // an additive glow sprite).
+  const halo = makeGlowSprite({ color: PALETTE.emberDanger, size: DECAL_RADIUS * 2.6, opacity: 0.24 });
+  halo.material.color.copy(EMBER_EXACT);
+  halo.material.toneMapped = false;
+  halo.position.y = 0.1;
+  group.add(halo);
 
   return {
     group,
@@ -126,11 +191,15 @@ export function makeAttackTelegraph() {
       // Plane +X (texture arrow) -> world (dx, dz) after the flat rotation.
       chevron.rotation.z = Math.atan2(-dz, dx);
     },
-    // §11 2 Hz opacity pulse; the chevron pulses in the same phase.
+    // §11 2 Hz opacity pulse; the chevron pulses in the same phase. The
+    // scorched core does NOT pulse — burnt ground is not a warning light, and
+    // holding it steady is what lets the pulsing rim read as the alarm.
     setPulse(tSec) {
       const k = 0.62 + 0.38 * Math.sin(Math.PI * 2 * PULSE_HZ * tSec);
       impact.material.opacity = k;
       chevron.material.opacity = Math.min(1, k + 0.15);
+      halo.material.opacity = 0.14 + 0.16 * k;
+      core.material.opacity = 0.5;
     },
   };
 }
