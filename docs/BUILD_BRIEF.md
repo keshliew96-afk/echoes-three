@@ -314,6 +314,19 @@ roll is drawn. I-framed targets likewise produce no instance.
     clamps every event to amp <= 0.06 u and duration <= 200 ms.
   - Hits now also carry `dirX`/`dirZ` (the unit impact direction) so the
     render side can throw its debris spray ALONG the hit.
+- **Implementation note (certification fix round 2, 2026-09-10):** no §9 number
+  moved. #4 hitstop is now requested for BOTH halves of the contract — the
+  2-tick melee-arc pause was never wired, so only kill blows paused the sim.
+  Two rulings make the authored cap behave: (a) every damage instance carries
+  its `shape`, and a `melee_arc` instance that does NOT kill requests
+  `HITSTOP.meleeTicks`; a LETHAL arc connect takes the 3-tick kill pause
+  instead, never both; (b) requests landing on the SAME sim tick — a 6-target
+  Brutal Cleave, the Tank and the Swordsman connecting together, an arc whose
+  third victim dies — TOP UP to the strongest cause (kill 3 > arc 2) instead of
+  stacking 2+2+3, because the tick freezes as one impact moment either way.
+  Stacking would have emptied the 4-per-20 window budget on a single swing and
+  starved the next kill. `hit` events now carry `shape` and `hitstop` events
+  carry `cause: 'melee_arc' | 'kill'` plus the tick's running `total`.
 
 Player spawn/skill VFX must never use Ember Danger or God-stuff Violet (§19).
 

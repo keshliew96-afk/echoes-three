@@ -244,7 +244,7 @@ export function createAllySystem({
       const { power, skill, sourceId } = bolt;
       const t = registry.byId(targetId);
       if (!t) return;
-      combat.applyDamage(t, power, { delivery: 'skill', dirX, dirZ, attacker: sourceId, source: skill });
+      combat.applyDamage(t, power, { delivery: 'skill', shape: 'projectile', dirX, dirZ, attacker: sourceId, source: skill });
     },
   });
 
@@ -1100,6 +1100,7 @@ export function createAllySystem({
         const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
         combat.applyDamage(t, S.basicPower, {
           delivery: 'basic',
+          shape: 'melee_arc', // §9 #4: the swing pauses the sim for 2 ticks
           dirX: (t.x - a.x) / tl,
           dirZ: (t.z - a.z) / tl,
           attacker: a.id,
@@ -1158,6 +1159,7 @@ export function createAllySystem({
         const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
         combat.applyDamage(t, def.power, {
           delivery: 'skill',
+          shape: def.shape, // melee_arc casts carry the §9 #4 2-tick pause
           dirX: (t.x - a.x) / tl,
           dirZ: (t.z - a.z) / tl,
           attacker: a.id,
@@ -1176,6 +1178,7 @@ export function createAllySystem({
         const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
         combat.applyDamage(t, def.power, {
           delivery: 'skill',
+          shape: def.shape, // melee_arc casts carry the §9 #4 2-tick pause
           dirX: (t.x - a.x) / tl,
           dirZ: (t.z - a.z) / tl,
           attacker: a.id,
@@ -1255,6 +1258,7 @@ export function createAllySystem({
         const tl = Math.hypot(t.x - z.x, t.z - z.z) || 1;
         const r = combat.applyDamage(t, z.power, {
           delivery: 'skill',
+          shape: 'ground_aoe',
           dirX: (t.x - z.x) / tl,
           dirZ: (t.z - z.z) / tl,
           attacker: z.sourceId,

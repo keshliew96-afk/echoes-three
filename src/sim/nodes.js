@@ -530,6 +530,7 @@ export function createBuildSystem({
         });
         combat.applyDamage(best, power, {
           delivery: 'skill',
+          shape: 'bounce',
           dirX,
           dirZ,
           attacker: player.id,
@@ -682,6 +683,7 @@ export function createBuildSystem({
         const dirZ = len > 1e-6 ? (t.z - z) / len : 0;
         combat.applyDamage(t, power, {
           delivery: 'skill',
+          shape: 'detonate',
           dirX,
           dirZ,
           attacker: player.id,
@@ -745,6 +747,7 @@ export function createBuildSystem({
           const len = Math.hypot(bolt.vx, bolt.vz);
           combat.applyDamage(t, power, {
             delivery: 'skill',
+            shape: 'projectile',
             dirX: len > 1e-9 ? bolt.vx / len : 0,
             dirZ: len > 1e-9 ? bolt.vz / len : 0,
             attacker: sourceId,

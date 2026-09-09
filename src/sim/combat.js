@@ -15,9 +15,14 @@
 //   #3 knockback — positional impulse away from the hit on knockbackable
 //      (non-boss enemy) targets: 0.12 u basic / 0.30 u skill over ~80 ms,
 //      swept vs walls (world advances it); party members never knocked back.
-//   #4 hitstop — 3 ticks requested on kill blows (2 on melee-arc connects via
-//      HITSTOP.meleeTicks when arcs land); the clock enforces the 4-per-20
-//      window cap and reports the granted amount.
+//   #4 hitstop — a GLOBAL sim pause, requested here for both halves of the
+//      contract: HITSTOP.meleeTicks (2) whenever a `melee_arc` delivery
+//      connects without killing, HITSTOP.killTicks (3) on a kill blow. Every
+//      request goes through requestStop(), which coordinates the requests
+//      landing on ONE sim tick so a 3-target cleave (or two allies swinging
+//      together, or an arc that kills one of its targets) pauses the world
+//      ONCE for the strongest cause instead of stacking 2+2+2. The clock then
+//      enforces the §9 4-ticks-per-20 window cap and reports what it granted.
 // Render-side contract members (#1 flash, #2 numbers, #6 kill pop/decal,
 // #7 screenshake) and #5 sound slots subscribe to the events emitted here.
 import { CRIT, HITSTOP, KNOCKBACK, SCREENSHAKE } from '../core/constants.js';
@@ -33,15 +38,53 @@ export function createCombat({
   requestHitstop = null,
   isIframed = () => false,
 }) {
+  // --- §9 #4 hitstop coordinator -------------------------------------------
+  // The sim tick FREEZES while the clock pays out a pause, so every damage
+  // instance that lands on the same tick belongs to one impact moment: a
+  // 6-target Brutal Cleave, the Tank and the Swordsman connecting together, or
+  // an arc whose third target dies. Those must read as a single pause of the
+  // strongest cause (kill 3 > melee arc 2), never as a 2+2+3 stack that empties
+  // the 4-per-20 window budget on one swing and starves the next kill.
+  // requestStop() therefore TOPS UP to `want` within the current tick and
+  // emits at most the delta; the clock still has the final word on the cap.
+  let stopTick = -1;
+  let stopGranted = 0;
+  function requestStop(cause, want) {
+    if (!requestHitstop) return 0;
+    const tick = getTick();
+    if (tick !== stopTick) {
+      stopTick = tick;
+      stopGranted = 0;
+    }
+    const need = want - stopGranted;
+    if (need <= 0) return 0; // this tick is already paused at least this long
+    const granted = requestHitstop(need);
+    if (granted > 0) {
+      stopGranted += granted;
+      events.emit(tick, 'hitstop', { ticks: granted, cause, total: stopGranted });
+    }
+    return granted;
+  }
+
   // One damage instance. opts:
-  //   delivery: 'basic' | 'skill' (knockback magnitude + future melee hitstop)
+  //   delivery: 'basic' | 'skill' (knockback magnitude)
+  //   shape: the §6 delivery shape that carried the instance ('melee_arc',
+  //     'projectile', 'nova', 'ground_aoe', 'direct') or a truthful non-§6
+  //     label for contact/technique damage. Rides the `hit` event so the
+  //     render side and the certification probes can attribute a hit to its
+  //     delivery without reverse-engineering it from the cast event, and
+  //     drives the §9 #4 melee-arc pause.
   //   dirX/dirZ: hit direction (impact travel dir), drives knockback away
   //   attacker: source entity id (event payload only)
   // Returns { amount, crit } | { immune: true } | null (target outside the
   // pipeline — dead/Downed/missing).
   // source: optional skill-id label (skills block) — rides the event so tests
   // and the HUD can attribute an instance to the skill that produced it.
-  function applyDamage(target, base, { delivery = 'basic', dirX = 0, dirZ = 0, attacker = null, source = null } = {}) {
+  function applyDamage(
+    target,
+    base,
+    { delivery = 'basic', shape = null, dirX = 0, dirZ = 0, attacker = null, source = null } = {}
+  ) {
     const tick = getTick();
     if (!target || !(target.hp > 0)) return null; // outside the pipeline
     if (isIframed(target)) {
@@ -86,12 +129,19 @@ export function createCombat({
       amount,
       crit,
       delivery,
+      shape,
       kb,
       dirX: dl > 1e-6 ? r2(dirX / dl) : 0,
       dirZ: dl > 1e-6 ? r2(dirZ / dl) : 0,
       x: r2(target.x),
       z: r2(target.z),
     });
+
+    // §9 #4, melee half: a melee-arc connect that does NOT kill pauses the
+    // whole sim for 2 ticks — the weight the brief asks a swing to land with.
+    // A LETHAL arc connect skips this and takes the 3-tick kill pause below
+    // instead (one pause per impact, the stronger cause wins).
+    if (shape === 'melee_arc' && target.hp > 0) requestStop('melee_arc', HITSTOP.meleeTicks);
 
     if (target.hp <= 0) {
       if (target.partyIndex !== undefined) {
@@ -120,8 +170,7 @@ export function createCombat({
   function kill(target, { delivery = 'basic' } = {}) {
     const tick = getTick();
     stats.kills += 1;
-    const granted = requestHitstop ? requestHitstop(HITSTOP.killTicks) : 0;
-    if (granted > 0) events.emit(tick, 'hitstop', { ticks: granted, cause: 'kill' });
+    requestStop('kill', HITSTOP.killTicks);
     events.emit(tick, 'death', {
       id: target.id,
       kind: target.kind,

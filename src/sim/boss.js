@@ -215,6 +215,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
             events.emit(getTick(), 'boss_trample_hit', { id: b.id, target: p.id });
             combat.applyDamage(p, STAG.trample.damage, {
               delivery: 'contact',
+              shape: 'contact',
               dirX: (p.x - b.x) / l,
               dirZ: (p.z - b.z) / l,
               attacker: b.id,
@@ -279,6 +280,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
           const l = Math.hypot(p.x - x, p.z - z) || 1;
           combat.applyDamage(p, STAG.quake.damage, {
             delivery: 'skill',
+            shape: 'ground_aoe',
             dirX: (p.x - x) / l,
             dirZ: (p.z - z) / l,
             attacker: b.id,

@@ -136,7 +136,7 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
       const t = registry.byId(targetId);
       if (!t) return;
       if (heal) combat.applyHeal(t, power, { healer: sourceId, source: skill });
-      else combat.applyDamage(t, power, { delivery: 'skill', dirX, dirZ, attacker: sourceId, source: skill });
+      else combat.applyDamage(t, power, { delivery: 'skill', shape: 'projectile', dirX, dirZ, attacker: sourceId, source: skill });
     });
   }
 

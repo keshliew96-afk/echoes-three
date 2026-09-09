@@ -99,7 +99,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       resolve: () => {
         const t = registry.byId(targetId);
         if (!t) return; // died to an earlier same-tick maturation
-        combat.applyDamage(t, power, { delivery, dirX, dirZ });
+        combat.applyDamage(t, power, { delivery, shape: 'projectile', dirX, dirZ });
       },
     });
   }
@@ -927,7 +927,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         const len = Math.hypot(t.x - player.x, t.z - player.z);
         const dirX = len > 1e-6 ? (t.x - player.x) / len : 1;
         const dirZ = len > 1e-6 ? (t.z - player.z) / len : 0;
-        return combat.applyDamage(t, HEALER.basicPower, { delivery: 'basic', dirX, dirZ });
+        return combat.applyDamage(t, HEALER.basicPower, { delivery: 'basic', shape: 'debug', dirX, dirZ });
       }
       case 'critTest': {
         // N pipeline hits on one dummy (topped up before each hit so it never
@@ -939,7 +939,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         let crits = 0;
         for (let i = 0; i < n; i++) {
           t.hp = t.maxHp; // top-up outside the pipeline (no heal roll)
-          const r = combat.applyDamage(t, HEALER.basicPower, { delivery: 'basic', dirX: 1, dirZ: 0 });
+          const r = combat.applyDamage(t, HEALER.basicPower, { delivery: 'basic', shape: 'debug', dirX: 1, dirZ: 0 });
           if (!r || r.immune) continue;
           hits += 1;
           if (r.crit) crits += 1;

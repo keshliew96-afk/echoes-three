@@ -339,6 +339,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
             events.emit(tick, 'enemy_bite', { id: e.id, target: target.id });
             combat.applyDamage(target, S.contactDamage, {
               delivery: 'contact',
+              shape: 'contact', // a bite, not a §6 arc — no melee hitstop
               dirX: dx / l,
               dirZ: dz / l,
               attacker: e.id,
