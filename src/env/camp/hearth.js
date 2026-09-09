@@ -207,7 +207,14 @@ export function createCampEmitters(root, emitters, cosmetic) {
         const gl = halo(root, CAMP_GLOW.halo, 1.6 * s, 0.3, em.x, fy + 0.32 * s, fz);
         // The camp's principal light on the FLOOR: broad, hot at the centre.
         const pool = groundPool(root, CAMP_GLOW.pool, 3.8 * s, 0.46, em.x, em.z);
-        const core = groundPool(root, CAMP_GLOW.pool, 1.3 * s, 0.2, em.x, em.z);
+        // Fix round 1 (A-world, check 1 "value range"): the hot core is what
+        // puts the camp frame in the TOP luma bucket at all, and at 1.3/0.20
+        // it sat at 0.044-0.076% of the frame across captures — straddling the
+        // analyzer's 0.05% "bucket used" threshold, so the same scene scored
+        // 15/16 or 16/16 depending on where the flicker happened to be. 1.5 /
+        // 0.26 clears it with margin and is what the references do with a
+        // fire anyway (blown-out centre, not a hot needle).
+        const core = groundPool(root, CAMP_GLOW.pool, 1.5 * s, 0.26, em.x, em.z);
         flames.push({
           body: big,
           extra: [mid, small],
@@ -218,7 +225,7 @@ export function createCampEmitters(root, emitters, cosmetic) {
           pool,
           poolO: 0.46,
           core,
-          coreO: 0.2,
+          coreO: 0.26,
           hot,
           hotO: 0.9,
           hotS: 0.5 * s,
