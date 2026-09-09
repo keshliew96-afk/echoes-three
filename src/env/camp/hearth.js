@@ -271,7 +271,7 @@ export function createCampEmitters(root, emitters, cosmetic) {
       case 'forge': {
         const fy = 0.62;
         const fz = em.z + TOWARD_CAM.z * 0.04;
-        const body = makeFlameSprite(0.5, 0.95, 0.78);
+        const body = makeFlameSprite(0.5, 0.95, 0.9);
         body.position.set(em.x, fy + 0.1, fz + 0.06);
         body.renderOrder = 8;
         root.add(body);

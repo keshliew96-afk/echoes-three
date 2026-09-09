@@ -55,8 +55,8 @@ export function getFlameTexture() {
   g.addColorStop(0.45, 'rgba(232,162,61,0.80)');
   // Tip stops hold the green channel up: the old red-heavy tips put the
   // flame's edge pixels under hue 25 (the reserved Ember Danger band).
-  g.addColorStop(0.82, 'rgba(214,146,54,0.32)');
-  g.addColorStop(1, 'rgba(190,124,52,0)');
+  g.addColorStop(0.82, 'rgba(216,154,66,0.32)');
+  g.addColorStop(1, 'rgba(212,150,70,0)');
   ctx.fillStyle = g;
   flamePath(W / 2, H - 10, 46, 14, 4);
   ctx.fill();
