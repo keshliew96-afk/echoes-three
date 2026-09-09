@@ -42,6 +42,7 @@ import { createSiphonFizzleCue } from './ui/socket/fizzle.js';
 import { createBossLayer } from './render/boss/index.js';
 import { createRunUi } from './ui/run/index.js';
 import { updateNumberPools, flushNumberPools } from './render/numbers.js';
+import { warmupUpdate } from './render/warmup.js';
 
 const params = new URLSearchParams(window.location.search);
 const flag = (name, def = true) => {
@@ -315,6 +316,10 @@ stage.renderer.setAnimationLoop((now) => {
   // final camera of this frame). No scene swap can freeze the pool.
   updateNumberPools(Math.min(0.1, Math.max(0, frameMs / 1000)));
   stage.render();
+  // Boot warm-up: the render layers park one of every transient rig in the
+  // scene for a few frames so the driver pays for its first draw here, in
+  // camp, instead of on the frame a wave starts (see render/warmup.js).
+  warmupUpdate();
   overlay.update();
   runUi?.update();
   hud?.update(now);

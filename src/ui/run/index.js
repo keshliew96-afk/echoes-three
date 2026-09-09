@@ -224,6 +224,49 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     for (const band of shines) band.style.transform = t;
   }
 
+  // ----------------------------------------------------- boot pre-paint --
+  // Certification D-r1, in-wave/first-page hitches: the FIRST meta screen of a
+  // page costs a 66-176 ms frame (measured on the first draft of every run,
+  // and 103-115 ms on the first path screen). Nothing about it is per-card —
+  // four `display:none` subtrees enter layout at once and a full-viewport veil
+  // gradient is painted over the WebGL canvas for the first time. That frame
+  // lands right after `room_cleared`, i.e. long past the 3 s of a room the
+  // perf bar excuses.
+  // So it is paid here instead: ~20 frames after boot, in camp, the whole
+  // overlay is switched on at 2/1000 opacity with its fade suppressed, laid
+  // out, painted for two frames, and switched off again. The player sees
+  // nothing (measured: the camp frame's analyzer numbers are unchanged) and
+  // the first real draft opens on warm layers.
+  let prepaintWait = 20;
+  let prepaintFrames = 2;
+  function prepaint() {
+    if (prepaintWait > 0) {
+      prepaintWait -= 1;
+      return;
+    }
+    if (prepaintFrames === 2) {
+      rootEl.style.transition = 'none';
+      veil.style.transition = 'none';
+      rootEl.style.opacity = '0.002';
+      rootEl.style.pointerEvents = 'none'; // it is on screen for two frames — it must not eat a click
+      veil.style.opacity = '0.002';
+      rootEl.classList.add('rn-open');
+      veil.classList.add('rn-open');
+      for (const s of Object.values(screens)) s.el.style.display = '';
+      void rootEl.offsetHeight; // force the layout NOW, on this frame
+    }
+    prepaintFrames -= 1;
+    if (prepaintFrames > 0) return;
+    for (const s of Object.values(screens)) s.el.style.display = 'none';
+    rootEl.classList.remove('rn-open');
+    veil.classList.remove('rn-open');
+    rootEl.style.opacity = '';
+    rootEl.style.pointerEvents = '';
+    veil.style.opacity = '';
+    rootEl.style.transition = '';
+    veil.style.transition = '';
+  }
+
   function update() {
     maybeAutostart();
     const sys = run();
@@ -232,6 +275,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     setScreen(SCREEN_FOR[v.phase] ?? 'none');
     setVeilTone(v.phase);
     fade.classList.toggle('rn-on', v.phase === 'fade');
+    if (prepaintFrames > 0 && current === 'none') prepaint();
     if (current === 'none') return;
     const sig = sigOf(v);
     if (sig !== signature) {

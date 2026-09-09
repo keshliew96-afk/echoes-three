@@ -36,6 +36,7 @@ import {
   Vector3,
 } from 'three';
 import { makeGlowSprite } from '../glow.js';
+import { sharedGeo } from '../geocache.js';
 import { PALETTE } from '../../data/palette.js';
 
 const HEAL = PALETTE.brightHeal;
@@ -80,6 +81,54 @@ export function createTechFx({ stage, bus, cosmetic }) {
     return m;
   }
 
+  // POOLED (certification fix D-r1, in-wave hitches). A Bounce chain or a
+  // Siphon tether used to MINT two TubeGeometries per hop and dispose them
+  // 0.34 s later, i.e. four GL buffers created and destroyed per technique
+  // proc in the middle of a fight. The tube's segment counts are fixed, so a
+  // rig is built once per width and RESHAPED in place afterwards: the GL
+  // buffers are rewritten, never reallocated, and `renderer.info.memory
+  // .geometries` stops sawtoothing during combat.
+  const TUBULAR = 18;
+  const RADIAL = 6;
+  const arcPool = new Map(); // width key -> [{ core, glow }]
+  const arcKey = (w) => w.toFixed(4);
+  const flatCurve = new CatmullRomCurve3([
+    new Vector3(0, 0, 0),
+    new Vector3(0.25, 0, 0),
+    new Vector3(0.5, 0, 0),
+    new Vector3(0.75, 0, 0),
+    new Vector3(1, 0, 0),
+  ]);
+
+  function reshapeTube(mesh, curve, radius) {
+    // Build the shape off to the side and copy it into the live buffers. The
+    // scratch geometry is never drawn, so the renderer never registers it.
+    const tmp = new TubeGeometry(curve, TUBULAR, radius, RADIAL, false);
+    mesh.geometry.attributes.position.copyArray(tmp.attributes.position.array);
+    mesh.geometry.attributes.normal.copyArray(tmp.attributes.normal.array);
+    mesh.geometry.attributes.position.needsUpdate = true;
+    mesh.geometry.attributes.normal.needsUpdate = true;
+    mesh.geometry.computeBoundingSphere();
+    tmp.dispose();
+  }
+
+  function acquireArc(width) {
+    const key = arcKey(width);
+    const list = arcPool.get(key);
+    if (list && list.length > 0) return list.pop();
+    const core = new Mesh(
+      new TubeGeometry(flatCurve, TUBULAR, width, RADIAL, false),
+      tubeMat(CORE, 0.95, true)
+    );
+    const glow = new Mesh(
+      new TubeGeometry(flatCurve, TUBULAR, width * 3.4, RADIAL, false),
+      tubeMat(CORE, 0.34, true)
+    );
+    core.renderOrder = 8;
+    glow.renderOrder = 7;
+    return { core, glow, width };
+  }
+
   // Bowed ribbon between two ground points: a bright core tube wrapped in a
   // fatter additive glow tube (§19.4 layers 1 and 2).
   function spawnArc(x0, z0, x1, z1, { color, coreColor = CORE, lift = ARC_Y, width = 0.05 } = {}) {
@@ -91,16 +140,17 @@ export function createTechFx({ stage, bus, cosmetic }) {
     const q1 = a.clone().lerp(mid, 0.55);
     const q2 = b.clone().lerp(mid, 0.55);
     const curve = new CatmullRomCurve3([a, q1, mid, q2, b]);
-    const core = new Mesh(new TubeGeometry(curve, 18, width, 6, false), tubeMat(coreColor, 0.95, true));
-    const glow = new Mesh(
-      new TubeGeometry(curve, 18, width * 3.4, 6, false),
-      tubeMat(color, 0.34, true)
-    );
-    core.renderOrder = 8;
-    glow.renderOrder = 7;
-    root.add(glow);
-    root.add(core);
-    arcs.push({ core, glow, age: 0, life: ARC_LIFE });
+    const rec = acquireArc(width);
+    reshapeTube(rec.core, curve, width);
+    reshapeTube(rec.glow, curve, width * 3.4);
+    rec.core.material.color.set(coreColor);
+    rec.core.material.opacity = 0.95;
+    rec.glow.material.color.set(color);
+    rec.glow.material.opacity = 0.34;
+    rec.glow.scale.setScalar(1);
+    root.add(rec.glow);
+    root.add(rec.core);
+    arcs.push({ core: rec.core, glow: rec.glow, width, age: 0, life: ARC_LIFE });
   }
 
   function retireArc(i) {
@@ -108,35 +158,50 @@ export function createTechFx({ stage, bus, cosmetic }) {
     if (!rec) return;
     root.remove(rec.core);
     root.remove(rec.glow);
-    rec.core.geometry.dispose();
-    rec.glow.geometry.dispose();
-    rec.core.material.dispose();
-    rec.glow.material.dispose();
+    const key = arcKey(rec.width);
+    let list = arcPool.get(key);
+    if (!list) arcPool.set(key, (list = []));
+    if (list.length < ARC_CAP) list.push({ core: rec.core, glow: rec.glow, width: rec.width });
     arcs.splice(i, 1);
   }
 
   // Ground shock ring: expands r0 → r1 and fades. The 1.2 u Detonate radius
   // arrives on the event, so the ring is the real blast footprint.
+  // POOLED per rim thickness for the same reason as the arcs: the ring is a
+  // UNIT ring scaled per frame, so one buffer serves every Detonate and Echo
+  // of that thickness for the whole session.
+  const ringPool = new Map(); // thick key -> [mesh]
+  const ringKey = (t) => t.toFixed(3);
+
   function spawnRing(x, z, r1, color, { r0 = 0.12, life = RING_LIFE, opacity = 0.85, thick = 0.16 } = {}) {
     if (rings.length >= RING_CAP) retireRing(rings.length - 1);
-    const mesh = new Mesh(
-      new RingGeometry(1 - thick, 1, 48),
-      tubeMat(color, opacity, true)
-    );
-    mesh.rotation.x = -Math.PI / 2;
+    const key = ringKey(thick);
+    const list = ringPool.get(key);
+    let mesh = list && list.length > 0 ? list.pop() : null;
+    if (!mesh) {
+      mesh = new Mesh(
+        sharedGeo(`techfx-ring:${key}`, () => new RingGeometry(1 - thick, 1, 48)),
+        tubeMat(color, opacity, true)
+      );
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.renderOrder = 5;
+    }
+    mesh.material.color.set(color);
+    mesh.material.opacity = opacity;
     mesh.position.set(x, 0.045, z);
     mesh.scale.setScalar(r0);
-    mesh.renderOrder = 5;
     root.add(mesh);
-    rings.push({ mesh, age: 0, life, r0, r1, opacity });
+    rings.push({ mesh, thick, age: 0, life, r0, r1, opacity });
   }
 
   function retireRing(i) {
     const rec = rings[i];
     if (!rec) return;
     root.remove(rec.mesh);
-    rec.mesh.geometry.dispose();
-    rec.mesh.material.dispose();
+    const key = ringKey(rec.thick);
+    let list = ringPool.get(key);
+    if (!list) ringPool.set(key, (list = []));
+    if (list.length < RING_CAP) list.push(rec.mesh);
     rings.splice(i, 1);
   }
 

@@ -32,6 +32,7 @@ import { makeGlowSprite } from '../glow.js';
 import { buildStag } from './stag.js';
 import { makeQuakeRing, makeQuakeBurst } from './quake.js';
 import { releaseTree } from '../geocache.js';
+import { warmPark } from '../warmup.js';
 import { STAG } from '../../sim/boss.js';
 import { impactFx } from '../vfx/hub.js';
 
@@ -110,25 +111,21 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     if (warmed) return;
     warmed = true;
     const rig = buildStag(cosmetic);
-    rig.group.position.set(0, -60, 0);
-    root.add(rig.group);
     const r = makeQuakeRing(STAG.quake.radius);
-    r.group.position.set(0, -60, 0);
-    root.add(r.group);
     const b = makeQuakeBurst(STAG.quake.radius);
-    b.group.position.set(0, -60, 0);
-    root.add(b.group);
+    // PARKED, not removed on the spot (certification fix D-r1): `compile()`
+    // links the programs but never draws, so the geometry upload and the
+    // driver's first-draw cost still landed on the frame the boss room opened.
+    // warmPark keeps all three in the scene for a few RENDERED frames,
+    // sub-pixel and under the floor, then hands the rig back to the pool.
+    warmPark(root, rig.group, () => spareRigs.push(rig));
+    warmPark(root, r.group);
+    warmPark(root, b.group);
     try {
       stage.renderer.compile(stage.scene, stage.camera);
     } catch (e) {
       /* compile is an optimisation, never a correctness dependency */
     }
-    root.remove(r.group);
-    releaseTree(r.group);
-    root.remove(b.group);
-    releaseTree(b.group);
-    root.remove(rig.group);
-    spareRigs.push(rig);
   }
 
   // Take a rig from the pool (or build one) with every animated value back at

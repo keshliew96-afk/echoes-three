@@ -29,6 +29,7 @@ import { makeAttackTelegraph, makeSpawnShimmer } from './telegraphs.js';
 import { EMBER_EXACT, SHOT_CORE } from './style.js';
 import { impactFx } from '../vfx/hub.js';
 import { releaseTree } from '../geocache.js';
+import { warmPark } from '../warmup.js';
 
 const SHOT_Y = 0.5; // enemy shot flight height (render)
 const TRAIL_FADE = 0.15; // s, Ember trail sprite fade
@@ -164,12 +165,31 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     trails.push({ sprite: s, age: 0 });
   }
 
+  // --- first-draw warm-up (certification fix D-r1). Every rig this layer can
+  // raise mid-wave is built and DRAWN once at boot, parked sub-pixel under the
+  // floor, then released — so the driver's first-draw cost for a boar, a
+  // mantis, the Waystone, an attack telegraph, a spawn shimmer and an enemy
+  // shot is paid in camp instead of on a `wave_start` frame. See warmup.js.
+  let warmFrames = 0;
+  let warmed = false;
+  function prewarm() {
+    warmed = true;
+    warmPark(root, buildBoar(cosmetic).group);
+    warmPark(root, buildMantis(cosmetic).group);
+    warmPark(root, buildWaystone().group);
+    warmPark(root, makeAttackTelegraph().group);
+    warmPark(root, makeSpawnShimmer(cosmetic).group);
+    warmPark(root, makeShotRig());
+  }
+
   let lastElapsed = null;
 
   function update(tSec, alpha) {
     const dt = lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastElapsed));
     lastElapsed = tSec;
     const tick = world.tick;
+    // A dozen frames in: the boot burst is over, nothing is being fought yet.
+    if (!warmed && ++warmFrames > 12) prewarm();
 
     // --- Enemy rigs: sync to sim entities.
     const seen = new Set();

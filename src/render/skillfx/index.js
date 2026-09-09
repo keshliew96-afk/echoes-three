@@ -50,6 +50,7 @@ import { PALETTE } from '../../data/palette.js';
 import { SKILLS } from '../../sim/skills.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { sharedGeo, markShared, releaseTree } from '../geocache.js';
+import { warmPark } from '../warmup.js';
 import { exactColor, underBloom, getShadowTexture } from '../critters/common.js';
 
 // Cosmetic scaffold tunables (render-only, not brief numbers).
@@ -1002,10 +1003,23 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   });
 
   // ---------------------------------------------------------------- update --
+  // --- first-draw warm-up (certification fix D-r1, see render/warmup.js): the
+  // heal bolt, the damage bolt and a Sanctuary zone are drawn once at boot so
+  // the first cast of a room does not pay the driver's first-draw cost.
+  let warmFrames = 0;
+  let warmed = false;
+  function prewarm() {
+    warmed = true;
+    warmPark(root, makeBoltRig(true));
+    warmPark(root, makeBoltRig(false));
+    warmPark(root, makeZoneRig(SKILLS.sanctuary ? SKILLS.sanctuary.area : 1.5));
+  }
+
   let lastElapsed = null;
   function update(tSec, alpha = 1) {
     const dt = lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastElapsed));
     lastElapsed = tSec;
+    if (!warmed && ++warmFrames > 12) prewarm();
     // Skill bolts: sync to sim, orient along flight, leave a trail.
     const seen = new Set();
     for (const e of world.entities()) {

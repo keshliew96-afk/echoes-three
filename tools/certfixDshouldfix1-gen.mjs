@@ -63,3 +63,71 @@ return {open:a.all||a,steady:b.all||b,openGaps:(a.gaps||[]).map(g=>({dt:g.dt,tm:
   )
 );
 console.log('wrote tools/actions/certfixDshouldfix1-shine.json');
+
+// --- hitch anatomy --------------------------------------------------------
+// Same driver as certD1-n-clear (hold RMB, take every draft, walk every door,
+// three natural clears) but the recorder samples renderer.info EVERY frame, so
+// each gap can be attributed: a jump in `programs` across it means a first-use
+// shader compile, a jump in `geometries`/`textures` means a first upload, and
+// no jump at all means the work was raster/composite.
+const REC = `
+D.rec = async (ms, until) => {
+  const R = window.__arenaProbe.stage.renderer;
+  const fr = []; let last = null; const t0 = performance.now();
+  await new Promise((res) => {
+    const f = (now) => {
+      const i = R.info;
+      if (last !== null) {
+        const dt = now - last;
+        fr.push([+(now - t0).toFixed(1), +dt.toFixed(2),
+          i.programs.length, i.memory.geometries, i.memory.textures, E.tick,
+          i.render.calls, i.render.triangles]);
+        if (dt > 60) {
+          let s = null; try { s = E.state(); } catch (e) {}
+          D.hot = D.hot || [];
+          D.hot.push({ at: +(now - t0).toFixed(0), dt: +dt.toFixed(1), tick: E.tick,
+            prog: i.programs.length, geo: i.memory.geometries, tex: i.memory.textures,
+            calls: i.render.calls, tris: i.render.triangles,
+            enemies: s ? s.enemies.length : null, ents: E.entityCount,
+            vfx: s && s.vfx ? s.vfx : null, sk: s ? s.skillfx : null, al: s ? s.allyfx : null,
+            tf: s ? s.techfx : null, bo: s ? s.bossfx : null,
+            ring: (E.events || []).filter((e) => e.tick >= E.tick - 20).map((e) => e.tick + ':' + e.type + (e.kind ? '/' + e.kind : '')) });
+        }
+      }
+      last = now;
+      if (now - t0 < ms && !(until && until())) requestAnimationFrame(f); else res();
+    };
+    requestAnimationFrame(f);
+  });
+  return fr;
+};`;
+
+writeFileSync(
+  'tools/actions/certfixDshouldfix1-hitch.json',
+  JSON.stringify(
+    [
+      LIB,
+      LOAD,
+      ev(iife(`${REC}D.arm();const r=E.cmd('startRun');return {seed:E.seed,room:r&&r.room,tick:E.tick,rec:!!D.rec}`)),
+      { type: 'mousemove', x: 800, y: 380 },
+      { type: 'mousedown', button: 'right' },
+      ev(
+        aiife(`const log=[];const drv=setInterval(()=>{try{if(D.clears>=3)return;const u=E.runUi();
+if(u.screen==='draft'){E.cmd('draftTake');log.push('draftTake t'+E.tick);}
+else if(u.screen==='path'){E.cmd('pathChoose',0);log.push('pathChoose t'+E.tick);}}catch(e){log.push('drv-err '+String(e).slice(0,50));}},400);
+const fr=await D.rec(95000,()=>D.clears>=3&&performance.now()-D.lastClearAt>4000);clearInterval(drv);
+const out=[];for(let i=1;i<fr.length;i++){const f=fr[i];if(f[1]<60)continue;const a=fr[i-1];const c=fr[Math.min(fr.length-1,i+3)];
+out.push({at:f[0],dt:f[1],tick:f[5],dProg:c[2]-a[2],dGeo:c[3]-a[3],dTex:c[4]-a[4],dCalls:f[6]-a[6],dTris:f[7]-a[7],calls:f[6],tris:f[7]});}
+const dts=fr.map(f=>f[1]);const warm=fr.filter(f=>f[0]>3000).map(f=>f[1]);
+return {frames:fr.length,spanMs:Math.round(fr[fr.length-1][0]),max:Math.max(...dts),gt100:dts.filter(d=>d>100).length,
+gt100warm:warm.filter(d=>d>100).length,gt60warm:warm.filter(d=>d>60).length,
+prog0:fr[0][2],progEnd:fr[fr.length-1][2],geo0:fr[0][3],geoEnd:fr[fr.length-1][3],
+driver:log,clears:D.clears,gaps:out,hot:(D.hot||[])}`)
+      ),
+      { type: 'mouseup', button: 'right' },
+    ],
+    null,
+    1
+  )
+);
+console.log('wrote tools/actions/certfixDshouldfix1-hitch.json');
