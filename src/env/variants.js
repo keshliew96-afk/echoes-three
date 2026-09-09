@@ -376,7 +376,14 @@ export const VARIANTS = {
       // s0.35-0.43 — a hair inside the reserved Ember band. Painted gold-er
       // and a step lighter, the rendered track sits above h26 at every dim
       // stretch while still reading as the same beaten dirt.
-      h: 82, s: 0.58, l: 0.355, shadeH: 197, shadeS: 0.26, shadeL: 0.075, coolLift: 6,
+      // h 76 (was 82) and mossOff 4 (fix round 1, second pass): variant 3 is
+      // the one room whose key is BLEACHED toward white (mood.keyWhite 0.3),
+      // so the warm key does not rotate its green down the way it does in its
+      // siblings — measured, the spawn frame put 8524 px inside the reserved
+      // h110-150 heal band against 2324 (v2) and ~1400 (v1, and those are the
+      // Healer's own staff and ring). Authoring the hollow's green six degrees
+      // lower puts it back level with them.
+      h: 76, s: 0.58, l: 0.355, shadeH: 197, shadeS: 0.26, shadeL: 0.075, coolLift: 6,
       dirtH: 50, dirtL: 0.285, mossN: 30, leafN: 220, crackN: 4, pebbleN: 70,
       // Certification fix round 1 (A-world): foliage hue offsets pulled DOWN
       // and the cool-shade blades sent to the shade hue, so no grass, moss
@@ -384,7 +391,7 @@ export const VARIANTS = {
       // canvas lift trimmed so the olive base keeps red > blue (the blend
       // toward the indigo shade pockets then crosses h110-150 only where it
       // is already under the analyzer's L40 / s0.35 gates).
-      mossOff: 6, bushOff: 8, bushLitOff: 0, wallMossOff: 6, bladeCool: 'shade', lift2: 3,
+      mossOff: 4, bushOff: 6, bushLitOff: 0, wallMossOff: 6, bladeCool: 'shade', lift2: 3,
     },
     propsAvoidPaths: true,
     paths: [{ pts: [[-12.6, 5.8], [-7.4, 4.4], [-2.6, 1.2], [0.4, -2.6], [4.8, -5.6], [12.6, -6.2]], w: 1.6 }],
