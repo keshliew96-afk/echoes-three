@@ -299,7 +299,13 @@ export function brushTail(curve, { radius, colorA, colorB, split = 0.55, tubular
 // ---------------------------------------------------------------------------
 // Ink — inverted hull, constant screen-space width
 // ---------------------------------------------------------------------------
-export const INK_PX = 2.0; // storybook line, measured in PIXELS at any zoom
+// Certification fix round 2 (2026-09-10): 2.0 -> 2.7 px. Two scorers read the
+// party as "one beige mass" wherever the leash stacks three bodies inside one
+// unit, and reference A's chibi cast is defined by THICK dark outlines. A 2 px
+// line at 1600x900 is exactly the width FXAA blends away between two adjacent
+// critters; 2.7 survives it and is what separates a body in front from the body
+// behind it.
+export const INK_PX = 2.7; // storybook line, measured in PIXELS at any zoom
 
 const inkUniforms = {
   uPx: { value: INK_PX },
@@ -1052,7 +1058,15 @@ export function groundRing(accentHex, radius) {
 // Soft contact shadow (§19.2) — same decal rules, sorted below the ring.
 // Deep-indigo dark (the env prop-shadow family), not warm charcoal: a warm
 // dark feathering over warm-lit grass is another danger-band gradient.
-export function groundShadow(radius, opacity = 0.34) {
+// `opts.forward` pushes the disc toward the camera (+z) and `opts.wide` /
+// `opts.deep` shape it into an ellipse. Certification fix round 2: at the §1
+// 52-degree elevation a body stands IN FRONT OF its own footprint on screen, so
+// a disc centred under the feet renders almost entirely behind the body and
+// measures as absent — round 2 found the boar's belly only 8-16% darker than
+// open ground, and the Stag needed the same offset in round 1. A shadow that
+// peeks out past the near edge of the body is the one the camera can see.
+export function groundShadow(radius, opacity = 0.34, opts = {}) {
+  const { forward = 0, wide = 1, deep = 1 } = opts;
   const mat = new MeshBasicMaterial({
     map: getShadowTexture(),
     color: exactColor('#141B29'),
@@ -1072,7 +1086,8 @@ export function groundShadow(radius, opacity = 0.34) {
     mat
   );
   mesh.rotation.x = -Math.PI / 2;
-  mesh.position.y = 0.008;
+  mesh.position.set(0, 0.008, forward);
+  mesh.scale.set(wide, deep, 1); // local y maps to world z after the flat rotation
   mesh.renderOrder = -2;
   mesh.name = 'contact-shadow';
   return mesh;

@@ -16,15 +16,23 @@ import { exactColor, mix } from '../critters/common.js';
 const slate = (blue, grey) =>
   mix(PALETTE.voidCharcoal, PALETTE.signalBlue, blue).lerp(new Color(PALETTE.warmGrey), grey);
 
+// Certification fix round 2 (2026-09-10): every hide value is lifted (mantis
+// body x0.5 -> x0.84, mantis dark x0.28 -> x0.46, boar dark x0.55 -> x0.72,
+// mantis pale x0.7 -> x1.05 and half a step further toward Bone). All three
+// scorers read the enemies as "undifferentiated blue lumps" at 50% zoom, and
+// the cause was VALUE, not hue: since the arenas went to a night floor the
+// darkest hides sat within a few luma of the ground they stand on, so head /
+// thorax / abdomen / limbs had no internal contrast left to read by. The tilt
+// stays cool — only the multiplier moves — so nothing can drift warm.
 export const HIDE = Object.freeze({
   // Thorn Boar: cold slate hide, darker head/legs, pale cool belly.
   boarBody: slate(0.45, 0.15),
-  boarDark: slate(0.4, 0.1).multiplyScalar(0.55),
+  boarDark: slate(0.4, 0.1).multiplyScalar(0.72),
   boarBelly: slate(0.5, 0.3).multiplyScalar(1.25),
   // Spitting Mantis: teal-slate chitin (sage pulled hard toward cool blue).
-  mantisBody: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.55).multiplyScalar(0.5),
-  mantisDark: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.5).multiplyScalar(0.28),
-  mantisPale: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.6).lerp(new Color(PALETTE.bone), 0.3).multiplyScalar(0.7),
+  mantisBody: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.55).multiplyScalar(0.84),
+  mantisDark: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.5).multiplyScalar(0.46),
+  mantisPale: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.6).lerp(new Color(PALETTE.bone), 0.45).multiplyScalar(1.05),
   // Tusks/claws: bone (warm-NEUTRAL — its saturation sits under the analyzer's
   // 0.12 colour gate, so it never counts as party-warm).
   bone: new Color(PALETTE.bone).multiplyScalar(0.85),

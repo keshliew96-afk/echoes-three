@@ -169,7 +169,10 @@ export function buildBoar() {
   // darkened in the certification fix round so the belly shadow survives a
   // torch pool; NO identity ring — rings are party-exclusive (§17), an enemy
   // is identity-free.
-  yaw.add(groundShadow(0.5, 0.6));
+  // Parented to the GROUP, not the yaw: a footprint belongs to the floor and
+  // must not spin when the boar turns. Pushed 0.3 u toward the camera so it
+  // clears the wedge standing on it (see groundShadow in critters/common.js).
+  group.add(groundShadow(0.52, 0.86, { forward: 0.34, wide: 1.2, deep: 0.94 }));
 
   return {
     group,

@@ -104,7 +104,7 @@ export function buildMantis() {
   // this rig read as one featureless capsule. Pale head / dark thorax / mid
   // abdomen / bone blades = four separable values in one silhouette.
   const head = new Mesh(G.head, track(flashable(HIDE.mantisPale)));
-  head.scale.set(1.55, 0.8, 1.0);
+  head.scale.set(1.85, 0.95, 1.35); // r2: the head is the one mass that says INSECT from above — 40% wider and 35% deeper
   addInk(head);
   headPivot.add(head);
   const crest = new Mesh(G.crest, track(flashable(HIDE.mantisDark)));
@@ -112,6 +112,19 @@ export function buildMantis() {
   crest.rotation.x = -0.35;
   addInk(crest);
   headPivot.add(crest);
+  // MANDIBLES: two bone hooks off the front of the head. Round 2 still read
+  // this rig as "a blue lump" at 50%, and the missing cue was a FACE — from a
+  // top-down camera the head is a disc until something breaks its front edge.
+  // Bone, like the blades, so head and forelimbs share one bright family
+  // against the chitin.
+  for (const side of [-1, 1]) {
+    const jaw = new Mesh(G.eye, track(flashable(HIDE.bone)));
+    jaw.scale.set(0.85, 1.5, 0.85);
+    jaw.position.set(side * 0.075, -0.03, 0.135);
+    jaw.rotation.set(1.28, 0, side * 0.42);
+    addInk(jaw);
+    headPivot.add(jaw);
+  }
   // THE corruption tell (§11, exactly one): the eye-glint — angular gem eyes
   // + faint halos (§19.3 emitter rule). INDIGO, not violet: violet is
   // god-stuff only (see enemies/style.js).
@@ -195,7 +208,10 @@ export function buildMantis() {
   // Grounding (§19.2 / REFERENCE_BAR check 8): the round-1 scorers measured
   // the mantis's contact shadow as "faint at best" (a 5% luma dip). Wider and
   // twice as dark — a body this tall casts a real footprint.
-  yaw.add(groundShadow(0.42, 0.62));
+  // Parented to the GROUP, not the yaw, and pushed toward the camera: the
+  // mantis stands 1.1 u tall on stilts, so a disc centred on its feet renders
+  // entirely behind its own body (see groundShadow in critters/common.js).
+  group.add(groundShadow(0.44, 0.88, { forward: 0.3, wide: 1.15, deep: 0.92 }));
 
   return {
     group,
