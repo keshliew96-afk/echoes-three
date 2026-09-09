@@ -186,8 +186,8 @@ export function makeAttackTelegraph() {
       const dx = x - fromX;
       const dz = z - fromZ;
       const d = Math.hypot(dx, dz) || 1;
-      const back = Math.min(1.0, d * 0.45);
-      chevron.position.set((-dx / d) * (DECAL_RADIUS + back * 0.5), 0.021, (-dz / d) * (DECAL_RADIUS + back * 0.5));
+      const back = Math.min(1.5, d * 0.6);
+      chevron.position.set((-dx / d) * (DECAL_RADIUS + back * 0.75), 0.021, (-dz / d) * (DECAL_RADIUS + back * 0.75));
       // Plane +X (texture arrow) -> world (dx, dz) after the flat rotation.
       chevron.rotation.z = Math.atan2(-dz, dx);
     },

@@ -273,7 +273,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       if (n > 5) n = 5; // never let a frame-time spike dump a cloud
       for (let i = 0; i < n; i++) {
         const t = liveTelegraphs[i % liveTelegraphs.length];
-        impactFx.embers(t.x, t.z, { n: 1, radius: 0.5 });
+        impactFx.embers(t.x, t.z, { n: 1, radius: 0.45, tall: 2.1 });
       }
     } else emberDebt = 0;
 

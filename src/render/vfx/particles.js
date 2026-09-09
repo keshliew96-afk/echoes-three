@@ -248,17 +248,21 @@ export function createParticlePool(parent, cosmetic) {
 
   // Ember motes for a live enemy telegraph / a burning scorch decal: slow,
   // rising, Ember-coloured. `n` per call — callers rate-limit.
-  function embers(x, z, { color = PALETTE.emberDanger, n = 2, radius = 0.5 } = {}) {
+  // `tall` raises the column: an enemy telegraph often lands UNDER the party
+  // (round 1: "a thin red-orange arc mostly hidden behind the party"), and a
+  // 1 u ember column standing over the impact point is the part of the warning
+  // that survives a body parked on top of the decal.
+  function embers(x, z, { color = PALETTE.emberDanger, n = 2, radius = 0.5, tall = 1 } = {}) {
     for (let i = 0; i < n; i++) {
       const a = rnd(0, Math.PI * 2);
       const r = rnd(0.1, radius);
       emit('spark', x + Math.cos(a) * r, 0.06, z + Math.sin(a) * r, {
         color,
         speed: rnd(0.05, 0.25),
-        up: rnd(0.5, 1.1),
-        size: rnd(0.05, 0.12),
-        life: rnd(0.5, 0.9),
-        opacity: 0.8,
+        up: rnd(0.5, 1.1) * tall,
+        size: rnd(0.06, 0.14),
+        life: rnd(0.5, 0.9) * (tall > 1 ? 1.25 : 1),
+        opacity: 0.85,
         gravity: -0.5,
         drag: 1.4,
       });
