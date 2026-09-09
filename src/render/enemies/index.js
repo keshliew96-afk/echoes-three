@@ -143,7 +143,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     glow.material.toneMapped = false;
     glow.position.y = SHOT_Y;
     g.add(glow);
-    g.add(groundShadow(0.13, 0.3));
+    g.add(groundShadow(0.19, 0.6)); // §19.2: a projectile is grounded too
     return g;
   }
 

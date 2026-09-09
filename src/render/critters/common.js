@@ -801,7 +801,12 @@ function getRingGlowTexture() {
 }
 
 let shadowTex = null;
-function getShadowTexture() {
+// Exported (certification fix round 1): every contact shadow in the game must
+// use THIS ramp — solid to a third of the radius, feathered only at the edge.
+// The bloom-halo ramp from render/glow.js is already down to 0.16 alpha by 60%
+// of its radius, so a "0.7 opacity" shadow built on it is ~90% transparent over
+// most of its area, which is how projectile and boss shadows measured absent.
+export function getShadowTexture() {
   if (shadowTex) return shadowTex;
   const A = (a) => `rgba(255,255,255,${a})`;
   shadowTex = radialTexture([

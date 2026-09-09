@@ -49,7 +49,7 @@ import {
 import { PALETTE } from '../../data/palette.js';
 import { SKILLS } from '../../sim/skills.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
-import { exactColor, underBloom } from '../critters/common.js';
+import { exactColor, underBloom, getShadowTexture } from '../critters/common.js';
 
 // Cosmetic scaffold tunables (render-only, not brief numbers).
 const BOLT_Y = 0.55; // matches the basic bolt's flight height
@@ -107,7 +107,8 @@ function blobShadow(radius, opacity = 0.25) {
   const m = new Mesh(
     new CircleGeometry(radius, 20),
     new MeshBasicMaterial({
-      map: getRadialTexture(),
+      // Contact-shadow ramp, not the bloom-halo ramp — see common.js.
+      map: getShadowTexture(),
       color: new Color('#000000'),
       transparent: true,
       opacity,
@@ -800,7 +801,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     );
     ink.rotation.z = Math.PI / 2;
     ink.position.y = BOLT_Y;
-    ink.scale.setScalar(1.44);
+    ink.scale.setScalar(1.22);
     ink.renderOrder = 5;
     g.add(ink);
     // Glow pulled down with the core: the halo is what actually stacked
@@ -813,7 +814,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     // Contact shadow: wide + dark enough to survive the additive glow above it
     // (§19.2 / REFERENCE_BAR check 8: every flier is grounded). It has to beat
     // the glow it sits under, so it is wider than the glow's bright core.
-    g.add(blobShadow(0.26, 0.7));
+    g.add(blobShadow(0.2, 0.45));
     return g;
   }
 
