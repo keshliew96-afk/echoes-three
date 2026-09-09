@@ -101,7 +101,8 @@ const HULK_PALE = HIDE.boarBody.clone().lerp(new Color(PALETTE.warmGrey), 0.72).
 // and still never a material swap.
 const flashable = (color) => {
   const base = new Color(color).multiplyScalar(0.14);
-  const m = toonMaterial({ color, emissive: base.clone(), emissiveIntensity: 1, flatShading: true });
+  // no flatShading — MeshToonMaterial has no such property (see enemies/boar.js)
+  const m = toonMaterial({ color, emissive: base.clone(), emissiveIntensity: 1 });
   m.userData.baseEmissive = base;
   return m;
 };

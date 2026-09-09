@@ -27,8 +27,14 @@ import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { HIDE, TELL_INDIGO, TELL_INDIGO_DIM, TELL_INDIGO_GLOW } from './style.js';
 
+// NOTE (certification D-r1, advisory A4): `flatShading` is NOT a property of
+// MeshToonMaterial — three's `Material.setValues` warns and SKIPS it, so the
+// flag never did anything. It was firing ~70 warnings per room entered (1223
+// of 1229 warn lines across a six-capture set), which buried the real ones.
+// The faceted read these rigs want comes from their low-segment geometry, not
+// from a shading flag.
 const flashable = (color) =>
-  toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0, flatShading: true });
+  toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0 });
 
 // Low-seg geometry shared across every boar (facets ARE the design).
 let geoCache = null;

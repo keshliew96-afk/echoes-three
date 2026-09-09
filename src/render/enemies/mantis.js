@@ -40,7 +40,7 @@ import { makeGlowSprite } from '../glow.js';
 import { HIDE, TELL_INDIGO, TELL_INDIGO_GLOW } from './style.js';
 
 const flashable = (color) =>
-  toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0, flatShading: true });
+  toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0 }); // no flatShading: see boar.js
 
 let geoCache = null;
 function geos() {
