@@ -253,11 +253,29 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       rootEl.classList.add('rn-open');
       veil.classList.add('rn-open');
       for (const s of Object.values(screens)) s.el.style.display = '';
+      // ...with one page carrying REAL content, so the card frame, its icon
+      // and the legendary shine band are rasterised here too and not on the
+      // room-clear frame. Synthetic: the sim is idle at boot and has no reward
+      // to show. Guarded — a warm-up may never be able to break the game.
+      try {
+        const sys = run();
+        if (sys) {
+          screens.draft.render({
+            ...sys.view(),
+            room: 1,
+            freeSkillSlots: 0,
+            reward: { type: 'node', id: 'ascend', substituted: false, line: null },
+          });
+        }
+      } catch (e) {
+        /* warm-up only */
+      }
       void rootEl.offsetHeight; // force the layout NOW, on this frame
     }
     prepaintFrames -= 1;
     if (prepaintFrames > 0) return;
     for (const s of Object.values(screens)) s.el.style.display = 'none';
+    signature = ''; // the synthetic card above must never be mistaken for state
     rootEl.classList.remove('rn-open');
     veil.classList.remove('rn-open');
     rootEl.style.opacity = '';
