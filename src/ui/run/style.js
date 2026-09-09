@@ -593,14 +593,15 @@ export const RUN_CSS = `
      strip) so the whole plate is ~310 px tall and docks above the command bar
      without covering the party — the round-1 modal was 432 px and sat exactly
      on them. Nothing here drops below the §17 floors. */
-  #run-screen.rn-compact .rn-shop { padding: 11px 20px 13px; }
-  #run-screen.rn-compact .rn-shop .rn-head { margin: 0 0 7px; gap: 12px; }
+  #run-screen.rn-compact .rn-shop { padding: 9px 20px 11px; }
+  #run-screen.rn-compact .rn-shop .rn-head { margin: 0 0 5px; gap: 12px; }
+  #run-screen.rn-compact .rn-shop .rn-shelf { margin: 0; }
   #run-screen.rn-compact .rn-shop .rn-title { font-size: 23px; }
   /* §17 floor: HUD text is never below 16 px, tags included. */
   #run-screen.rn-compact .rn-shop .rn-cardhead .rn-cardkind { font-size: 16px; padding: 0 6px; letter-spacing: 0.06em; }
   #run-screen.rn-compact .rn-shop .rn-item,
   #run-screen.rn-compact .rn-shop .rn-item .rn-card { width: 280px; }
-  #run-screen.rn-compact .rn-shop .rn-buttons { margin-top: 8px; }
+  #run-screen.rn-compact .rn-shop .rn-buttons { margin-top: 6px; }
   #run-screen.rn-compact .rn-shop .rn-lamp { top: -6px; height: 120px; }
 
   #run-screen.rn-compact .rn-doors { gap: 34px; margin: 2px 0 0; }

@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {room:r&&r.room,phase:r&&r.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {screen:u.screen,wallet:u.wallet,buttons:u.buttons,text:u.text.slice(0,120)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const b=document.querySelector('.rn-shop .rn-advance');if(!b)return 'no button';b.click();return {clickedAdvance:true,tick:E.tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {tag:'after-advance',phase:s.run.phase,room:s.run.room,screen:E.runUi().screen,boss:!!(E.cmd('runState').boss),veil:document.getElementById('run-veil').className,dock:document.getElementById('run-screen').className}})()"
+ }
+]
