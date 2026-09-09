@@ -152,6 +152,10 @@ export const VARIANTS = {
       [3.6, 4.4, 0.7, 'bush stump barricade'],
       [7.8, 2.2, 0.6, 'tower slab'],
       [9.6, -4.6, 0.6, 'tower barricade'],
+      // Fix round 2 (checks 2 + 4): the picture's bottom edge gets a lit
+      // tower on each side, not just silhouettes.
+      [5.6, 4.1, 0.55, 'tower barricade'],
+      [-6.3, 3.8, 0.55, 'banner boulder'],
     ],
     // Fix round 1 (check 2): two more fire pools INSIDE the spawn frame's
     // lower band (screen ~120,744 and ~1455,517). Round 1 showed only two
@@ -295,6 +299,9 @@ export const VARIANTS = {
       [3.4, 4.4, 0.7, 'bush cairn barricade'],
       [7.8, 2.2, 0.6, 'tower slab'],
       [9.6, -4.6, 0.6, 'tower barricade'],
+      // Fix round 2 (checks 2 + 4): see variant 1.
+      [5.8, 4.2, 0.55, 'tower barricade'],
+      [-6.4, 3.9, 0.55, 'banner cairn'],
     ],
     // Fix round 1 (check 2): see variant 1 — fire pools inside the spawn
     // frame's lower band, clear of both dirt tracks.
@@ -452,6 +459,9 @@ export const VARIANTS = {
       [3.4, 4.4, 0.7, 'bush stump barricade'],
       [7.8, 2.2, 0.6, 'tower slab'],
       [9.6, -4.4, 0.6, 'tower barricade'],
+      // Fix round 2 (checks 2 + 4): see variant 1.
+      [5.6, 4.2, 0.55, 'tower barricade'],
+      [-6.4, 3.9, 0.55, 'banner boulder'],
     ],
     // Braziers pulled well clear of the curved track: an additive warm pool
     // over v3's dark dirt is what lit the path into the danger band. The third
