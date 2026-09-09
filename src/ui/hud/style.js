@@ -149,19 +149,54 @@ export function hudCss() {
   display: flex;
   align-items: flex-start;
   gap: 20px;
-  padding: ${BAR_PAD}px 14px;
+  padding: ${BAR_PAD}px 22px;
   border-radius: 14px;
-  background: linear-gradient(180deg, ${CHROME.plateHi} 0%, ${CHROME.plate} 42%, ${CHROME.plate} 100%);
+  /* Brushed charcoal, not a flat plate: a 6 px grain over the §17 plate
+     gradient (round-1 check 1/9 — a flat rounded rect read as browser chrome),
+     plus a lit top rail and a real cast shadow so the bar sits ON the world. */
+  background:
+    repeating-linear-gradient(94deg,
+      #FFFFFF06 0px, #FFFFFF06 1px, #00000012 1px, #00000012 3px,
+      #FFFFFF03 3px, #FFFFFF03 6px),
+    linear-gradient(180deg, ${CHROME.plateHi} 0%, ${CHROME.plate} 42%, ${CHROME.plate} 100%);
   border: 2px solid ${CHROME.rim};
-  box-shadow: inset 0 0 0 1px ${CHROME.plateSunk}, 0 3px 0 0 ${CHROME.plateSunk};
+  box-shadow: inset 0 0 0 1px ${CHROME.plateSunk}, inset 0 1px 0 ${PALETTE.parchment}1F,
+              0 3px 0 0 ${CHROME.plateSunk}, 0 10px 24px #000000AA;
 }
+/* Ornamental end caps — the same bracket-and-stud grammar as the boss plate's
+   medallion studs, so the two plates read as one instrument set. Absolutely
+   positioned: they add ornament without touching the bar's layout width. */
+.hud-cap {
+  position: absolute; top: 7px; bottom: 7px; width: 10px;
+  border-top: 2px solid ${CHROME.rimHot};
+  border-bottom: 2px solid ${CHROME.rimHot};
+  pointer-events: none;
+}
+.hud-cap-l { left: 6px; border-left: 2px solid ${CHROME.rimHot}; border-radius: 7px 0 0 7px; }
+.hud-cap-r { right: 6px; border-right: 2px solid ${CHROME.rimHot}; border-radius: 0 7px 7px 0; }
+.hud-cap::after {
+  content: ''; position: absolute; top: 50%; width: 9px; height: 9px; margin-top: -4.5px;
+  background: ${CHROME.rimHot}; border: 2px solid ${CHROME.plate};
+  transform: rotate(45deg);
+}
+.hud-cap-l::after { left: -6px; }
+.hud-cap-r::after { right: -6px; }
 .hud-group { display: flex; gap: 7px; align-items: flex-start; }
 .hud-sep {
+  position: relative;
   width: 2px;
   height: ${TILE}px;
   margin: 0 -5px;
   border-radius: 1px;
-  background: ${CHROME.rimDim};
+  background: linear-gradient(180deg, transparent, ${CHROME.rimHot} 22%, ${CHROME.rimHot} 78%, transparent);
+}
+/* A small diamond on the divider — the third beat of the bracket-and-stud
+   ornament grammar (boss plate studs / bar end caps / group dividers). */
+.hud-sep::after {
+  content: ''; position: absolute; left: 50%; top: 50%;
+  width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px;
+  background: ${CHROME.plate}; border: 2px solid ${CHROME.rimHot};
+  transform: rotate(45deg);
 }
 
 /* ---------------------------------------------------- portrait tile (§17) */

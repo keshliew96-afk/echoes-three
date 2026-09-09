@@ -126,6 +126,11 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   // Keeping the id (and the `proto-*` class aliases below) means the real HUD
   // answers every probe the proto bar answered.
   bar.id = 'proto-hud';
+  // Ornamental end caps (REFERENCE_BAR check 9 / Reference D's bracketed HUD
+  // cards). Absolutely positioned inside the bar's own padding, so they are
+  // pure ornament and change no layout box the size sweep measures.
+  el('i', 'hud-cap hud-cap-l', bar);
+  el('i', 'hud-cap hud-cap-r', bar);
 
   // ---------------------------------------------------------- portraits --
   const portGroup = el('div', 'hud-group hud-group-port', bar);
