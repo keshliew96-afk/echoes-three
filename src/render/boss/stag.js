@@ -18,6 +18,7 @@
 import {
   AdditiveBlending,
   BoxGeometry,
+  CanvasTexture,
   CircleGeometry,
   Color,
   ConeGeometry,
@@ -27,6 +28,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   SphereGeometry,
+  SRGBColorSpace,
 } from 'three';
 import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
@@ -468,13 +470,37 @@ export function buildStag() {
   // normal-blended disc parked ABOVE the pools in both y and renderOrder, so
   // it darkens the summed result: a hard core disc under the barrel plus a
   // soft feathered skirt.
+  // The shadow needs its OWN alpha ramp: getRadialTexture() is the bloom-halo
+  // falloff (alpha 0.16 by 60% of the radius), so a "0.95 opacity" disc built
+  // on it is 95% transparent over most of its area — which is exactly why the
+  // first cut of this shadow measured as a 5% dip. This ramp holds full alpha
+  // to half the radius and feathers only at the edge.
+  const shadowTex = (() => {
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const h = size / 2;
+    const g = ctx.createRadialGradient(h, h, 0, h, h, h);
+    g.addColorStop(0.0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.52, 'rgba(255,255,255,1)');
+    g.addColorStop(0.74, 'rgba(255,255,255,0.72)');
+    g.addColorStop(0.9, 'rgba(255,255,255,0.26)');
+    g.addColorStop(1.0, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+    const tex = new CanvasTexture(canvas);
+    tex.colorSpace = SRGBColorSpace;
+    return tex;
+  })();
   const hardShadow = new Mesh(
     new CircleGeometry(0.92, 30),
     new MeshBasicMaterial({
-      map: getRadialTexture(),
+      map: shadowTex,
       color: exactColor('#0B1018'),
       transparent: true,
-      opacity: 0.88,
+      opacity: 0.92,
       depthWrite: false,
       toneMapped: false,
       polygonOffset: true,
@@ -489,16 +515,16 @@ export function buildStag() {
   // centred, the shadow renders entirely behind the barrel and measures as
   // absent, which is exactly what round 1 found.
   hardShadow.position.set(0, 0.038, 0.62);
-  hardShadow.scale.set(1.28, 0.92, 1);
+  hardShadow.scale.set(1.45, 1.02, 1);
   hardShadow.renderOrder = 6;
   group.add(hardShadow);
   const softShadow = new Mesh(
     new CircleGeometry(1.55, 30),
     new MeshBasicMaterial({
-      map: getRadialTexture(),
+      map: shadowTex,
       color: exactColor('#0B1018'),
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.5,
       depthWrite: false,
       toneMapped: false,
       polygonOffset: true,
