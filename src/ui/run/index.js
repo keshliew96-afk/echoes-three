@@ -190,6 +190,40 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     ].join('/');
   }
 
+  // ---------------------------------------------- legendary shimmer (F2) --
+  // A legendary card carries one sweeping highlight band (§16 "shimmer, never
+  // a pulse"). The band used to be a CSS `background-position` keyframe, which
+  // repainted the whole card 60 times a second and cost the run loop a 115 ms
+  // frame when the card appeared and a 212-236 ms frame half a second later
+  // (certification D-r1, F2). It is now a real child element moved with a
+  // 2D `transform`, written HERE — once per frame, one style property per
+  // legendary card on screen — because a CSS keyframe Chrome runs on the
+  // compositor timeline never lands in the capture harness's pixels (same
+  // reason the shop's deny-shake is written per frame). See ui/run/style.js
+  // for why the band must NOT be promoted to its own layer.
+  const SHINE_MS = 3200; // the §16 shimmer period, unchanged
+  let shines = [];
+  function refreshShines() {
+    shines.length = 0;
+    if (current === 'none') return;
+    for (const card of screens[current].el.querySelectorAll('.rn-card.rn-legendary')) {
+      let band = card.querySelector(':scope > .rn-shine');
+      if (!band) {
+        band = document.createElement('i');
+        band.className = 'rn-shine';
+        card.appendChild(band);
+      }
+      shines.push(band);
+    }
+  }
+  function driveShines(nowMs) {
+    if (shines.length === 0) return;
+    // 130% -> -130% of the card's width, the travel the old keyframe ran.
+    const x = 130 - 260 * ((nowMs % SHINE_MS) / SHINE_MS);
+    const t = `translateX(${x.toFixed(2)}%)`;
+    for (const band of shines) band.style.transform = t;
+  }
+
   function update() {
     maybeAutostart();
     const sys = run();
@@ -200,10 +234,13 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     fade.classList.toggle('rn-on', v.phase === 'fade');
     if (current === 'none') return;
     const sig = sigOf(v);
-    if (sig === signature) return;
-    signature = sig;
-    screens[current].render(v);
-    fitScale(); // content changed => the page's layout height may have changed
+    if (sig !== signature) {
+      signature = sig;
+      screens[current].render(v);
+      refreshShines(); // the render replaced the card DOM
+      fitScale(); // content changed => the page's layout height may have changed
+    }
+    driveShines(performance.now());
   }
 
   // ----------------------------------------------------------- input --

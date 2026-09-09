@@ -170,14 +170,40 @@ export const RUN_CSS = `
     position: relative; overflow: hidden;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
   }
-  .rn-card.rn-legendary::after {
-    content: ''; position: absolute; inset: 0; pointer-events: none;
+  /* LEGENDARY SHIMMER (certification fix D-r1, failure F2). This used to be a
+     'background-position' keyframe over a 260%-wide gradient painted straight
+     onto the card. 'background-position' is not a composited property, so every
+     frame of the 3.2 s loop re-rasterised the whole 340x154 card — on a page
+     whose main job is a WebGL canvas that starved rAF for 115 ms on the card's
+     first frame and 212-236 ms half a second later (measured three times:
+     certD1-q-clear 127.3 + 236.2 ms, certD1-b-clear2 115.1 + 224.1 ms,
+     certD1-b-draftdiag 115.3 + 212.1 ms; common and rare cards, which have no
+     shimmer, never exceeded 24 ms on the same page).
+     The band is now its own element carrying a fixed-size gradient, swept with
+     a 2D 'transform' — Chrome repaints the band's own box, never the card's
+     whole 260%-wide background image. Measured on the seed-999 room-7 shelf
+     (ascend, legendary): the card's first 3 s went 70.5 -> 80.9 fps with the
+     218.3 ms stall gone (max frame 42.5 ms, zero gaps over 50 ms) and the
+     steady 3 s 84.5 -> 86.7 fps.
+     Two deliberate details:
+       - the offset is written per frame from ui/run/index.js, not by a CSS
+         keyframe, for the reason the shop's deny-shake gives below: an
+         animation Chrome runs on the compositor's own timeline does not reach
+         the capture harness's pixels, and a shimmer nobody can capture cannot
+         be reviewed;
+       - 'translateX', never 'translate3d', and no 'will-change'. Either one
+         promotes the band to its own compositor layer, which is faster still
+         (107 fps) but measured ZERO pixel difference between band-shown and
+         band-hidden captures — the shimmer would exist only on the player's
+         screen. The visible band measures mean |delta| 5.8 / peak column 17.6
+         over the card box (tools/certfixDshouldfix1-banddiff.mjs). */
+  .rn-card.rn-legendary > .rn-shine {
+    position: absolute; top: -8%; bottom: -8%; left: 0; width: 100%;
+    pointer-events: none;
     background: linear-gradient(115deg, transparent 30%, ${PALETTE.hearthAmber}30 46%,
       ${PALETTE.godstuffVioletPeak}22 50%, transparent 66%);
-    background-size: 260% 100%;
-    animation: rn-shimmer 3.2s linear infinite; /* shimmer, never a pulse */
+    transform: translateX(130%);
   }
-  @keyframes rn-shimmer { from { background-position: 130% 0; } to { background-position: -130% 0; } }
   .rn-cardkind {
     font-size: 16px; letter-spacing: 0.28em; color: ${PALETTE.warmGrey};
   }
