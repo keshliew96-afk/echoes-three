@@ -133,7 +133,6 @@ export function buildMantis() {
     const ant = new Mesh(G.antenna, antMat);
     ant.position.set(side * 0.06, 0.14, -0.06);
     ant.rotation.set(0.95, 0, side * 0.35);
-    addInk(ant);
     headPivot.add(ant);
   }
 
@@ -185,7 +184,6 @@ export function buildMantis() {
     const tibia = new Mesh(G.tibia, legMat);
     tibia.position.set(0, -0.19, 0);
     tibia.rotation.z = splay * -0.35;
-    addInk(tibia);
     knee.add(tibia);
     pivot.add(knee);
     rig.add(pivot);

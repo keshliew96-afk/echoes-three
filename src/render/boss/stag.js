@@ -379,7 +379,6 @@ export function buildStag() {
     burr.scale.set(0.42, 0.3, 0.42);
     burr.position.set(Math.cos(a) * 0.13, Math.sin(a) * 0.13, 0);
     burr.rotation.z = a - Math.PI / 2;
-    addInk(burr);
     crownStar.add(burr);
   }
   const crownCore = makeGlowSprite({ color: PALETTE.godstuffVioletPeak, size: 0.36, opacity: 0.6 });
@@ -407,7 +406,6 @@ export function buildStag() {
     pivot.add(leg);
     const hoof = new Mesh(G.hoof, hoofMat);
     hoof.position.set(Math.sin(splay) * -0.97, -0.97, 0);
-    addInk(hoof);
     pivot.add(hoof);
     rig.add(pivot);
     legs.push(pivot);

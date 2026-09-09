@@ -9,32 +9,50 @@
 // throws particles, and each burst mixes THREE material families so it reads
 // as matter, not as a light:
 //
-//   spark  — additive glow motes (the hot layer; colour per event family)
-//   chunk  — normal-blended DARK debris quads that arc, spin and land
+//   spark  — additive motes (the hot layer; colour per event family)
+//   chunk  — normal-blended DARK debris shards that arc and land
 //   smoke  — normal-blended dark soft puffs that rise, grow and fade
+//
+// DRAWN AS THREE `Points` CLOUDS, not as N sprites. The first cut of this
+// system gave every particle its own Sprite + SpriteMaterial, i.e. one draw
+// call and one material bind per particle: measured in the boss room with six
+// adds, ~40 live particles cost **7.3 ms a frame** (96.9 fps -> 56.9, against
+// the >= 55 fps bar). One Points object per material family is three draw
+// calls no matter how many particles are alive; per-particle colour AND alpha
+// ride a vec4 colour attribute (three's USE_COLOR_ALPHA path) and per-particle
+// size rides an `aSize` attribute patched into the points vertex shader.
 //
 // All randomness comes from the COSMETIC stream (never the gameplay stream).
 // Render-only: driven by events + render dt, touches no sim state.
 import {
+  AdditiveBlending,
+  BufferAttribute,
+  BufferGeometry,
   CanvasTexture,
   Color,
   NormalBlending,
-  Sprite,
-  SpriteMaterial,
+  Points,
+  PointsMaterial,
   SRGBColorSpace,
 } from 'three';
-import { makeGlowSprite, getRadialTexture } from '../glow.js';
+import { getRadialTexture } from '../glow.js';
 import { PALETTE } from '../../data/palette.js';
 
 // Render scaffold tunables (cosmetic, not brief numbers).
 const GRAVITY = 8.5; // u/s^2
 const START_Y = 0.45;
-// Hard live ceiling (§1 density): impacts are frequent, so the pool is capped
-// and the OLDEST particle is recycled rather than letting a big wave stack.
-const LIVE_CAP = 260;
+// Per-family live ceiling (§1 density): impacts are frequent, so each cloud is
+// capped and the OLDEST particle is dropped rather than letting a wave stack.
+const CAP = { spark: 110, chunk: 90, smoke: 40 };
+// The points shader takes gl_PointSize in pixels before size attenuation; this
+// converts the world-unit sizes the callers author into that scale so a
+// particle authored at 0.2 u covers about 0.2 u of ground.
+// 1 / tan(fov/2) at the §1 45-degree camera: makes an authored world-unit size
+// cover the same ground a sprite of that scale used to.
+const SIZE_SCALE = 2.41;
 
 // --- Debris chunk texture: a hard-edged irregular shard (a chunk of matter,
-// not a dot of light). Alpha-only; the material tints it.
+// not a dot of light). Alpha-only; the vertex colour tints it.
 let chunkTex = null;
 function getChunkTexture() {
   if (chunkTex) return chunkTex;
@@ -45,11 +63,11 @@ function getChunkTexture() {
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.moveTo(S * 0.16, S * 0.3);
-  ctx.lineTo(S * 0.74, S * 0.14);
-  ctx.lineTo(S * 0.88, S * 0.6);
-  ctx.lineTo(S * 0.46, S * 0.9);
-  ctx.lineTo(S * 0.12, S * 0.66);
+  ctx.moveTo(S * 0.18, S * 0.3);
+  ctx.lineTo(S * 0.76, S * 0.16);
+  ctx.lineTo(S * 0.88, S * 0.62);
+  ctx.lineTo(S * 0.44, S * 0.9);
+  ctx.lineTo(S * 0.12, S * 0.64);
   ctx.closePath();
   ctx.fill();
   const tex = new CanvasTexture(canvas);
@@ -58,41 +76,48 @@ function getChunkTexture() {
   return tex;
 }
 
-function makeFlatSprite(map, color, opacity) {
-  const material = new SpriteMaterial({
-    map,
-    color: new Color(color),
-    blending: NormalBlending,
-    transparent: true,
-    depthWrite: false,
-    opacity,
-  });
-  return new Sprite(material);
-}
-
 // Palette-anchored particle colours (§19.1 — no invented hexes).
 const DEBRIS_DARK = new Color(PALETTE.voidCharcoal);
 const SMOKE_DARK = new Color(PALETTE.voidCharcoal).lerp(new Color(PALETTE.warmGrey), 0.22);
+const _c = new Color();
+
+function makeCloud(map, blending, cap, renderOrder) {
+  const geo = new BufferGeometry();
+  const position = new Float32Array(cap * 3);
+  const color = new Float32Array(cap * 4); // vec4 => USE_COLOR_ALPHA
+  const aSize = new Float32Array(cap);
+  geo.setAttribute('position', new BufferAttribute(position, 3));
+  geo.setAttribute('color', new BufferAttribute(color, 4));
+  geo.setAttribute('aSize', new BufferAttribute(aSize, 1));
+  geo.setDrawRange(0, 0);
+  const material = new PointsMaterial({
+    map,
+    transparent: true,
+    depthWrite: false,
+    blending,
+    vertexColors: true,
+    sizeAttenuation: true,
+    size: 1,
+  });
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader =
+      'attribute float aSize;\n' +
+      shader.vertexShader.replace('gl_PointSize = size;', 'gl_PointSize = aSize;');
+  };
+  const points = new Points(geo, material);
+  points.frustumCulled = false;
+  points.renderOrder = renderOrder;
+  return { geo, points, position, color, aSize, list: [], cap };
+}
 
 export function createParticlePool(parent, cosmetic) {
-  const live = [];
-  const sparkPool = [];
-  const chunkPool = [];
-  const smokePool = [];
-
-  function poolFor(mode) {
-    return mode === 'spark' ? sparkPool : mode === 'chunk' ? chunkPool : smokePool;
-  }
-
-  function retire(p) {
-    parent.remove(p.s);
-    poolFor(p.mode).push(p.s);
-  }
-
-  function push(rec) {
-    if (live.length >= LIVE_CAP) retire(live.shift());
-    live.push(rec);
-  }
+  const clouds = {
+    // Smoke behind, then debris, then the hot sparks on top.
+    smoke: makeCloud(getRadialTexture(), NormalBlending, CAP.smoke, 7),
+    chunk: makeCloud(getChunkTexture(), NormalBlending, CAP.chunk, 8),
+    spark: makeCloud(getRadialTexture(), AdditiveBlending, CAP.spark, 9),
+  };
+  for (const key of Object.keys(clouds)) parent.add(clouds[key].points);
 
   // One particle. mode: 'spark' | 'chunk' | 'smoke'.
   function emit(mode, x, y, z, opts) {
@@ -109,20 +134,8 @@ export function createParticlePool(parent, cosmetic) {
       dir = null, // { x, z } biases the spray along an axis
       dirBias = 0,
     } = opts;
-    const pool = poolFor(mode);
-    let s = pool.pop();
-    if (!s) {
-      s =
-        mode === 'spark'
-          ? makeGlowSprite({ color, size: 1, opacity })
-          : makeFlatSprite(mode === 'chunk' ? getChunkTexture() : getRadialTexture(), color, opacity);
-    }
-    s.material.color.set(color);
-    s.material.opacity = opacity;
-    s.material.rotation = cosmetic.range(0, Math.PI * 2);
-    s.scale.set(size, size, 1);
-    s.position.set(x, y, z);
-    parent.add(s);
+    const cloud = clouds[mode];
+    if (cloud.list.length >= cloud.cap) cloud.list.shift(); // oldest out
     const ang = cosmetic.range(0, Math.PI * 2);
     let ax = Math.cos(ang);
     let az = Math.sin(ang);
@@ -133,16 +146,17 @@ export function createParticlePool(parent, cosmetic) {
       ax /= l;
       az /= l;
     }
-    push({
-      s,
-      mode,
+    _c.set(color);
+    cloud.list.push({
       x,
       y,
       z,
       vx: ax * speed,
       vz: az * speed,
       vy: up,
-      spin: cosmetic.range(-7, 7),
+      r: _c.r,
+      g: _c.g,
+      b: _c.b,
       age: 0,
       life,
       size,
@@ -150,6 +164,7 @@ export function createParticlePool(parent, cosmetic) {
       opacity,
       drag,
       gravity,
+      smoke: mode === 'smoke',
     });
   }
 
@@ -270,16 +285,15 @@ export function createParticlePool(parent, cosmetic) {
     kill(x, z, opts);
   }
 
-  function update(dt) {
-    for (let i = live.length - 1; i >= 0; i--) {
-      const p = live[i];
+  function updateCloud(cloud, dt) {
+    const { list, position, color, aSize } = cloud;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const p = list[i];
       p.age += dt;
       if (p.age >= p.life) {
-        retire(p);
-        live.splice(i, 1);
+        list.splice(i, 1);
         continue;
       }
-      const k = p.age / p.life;
       if (p.drag > 0) {
         const d = Math.exp(-p.drag * dt);
         p.vx *= d;
@@ -289,21 +303,42 @@ export function createParticlePool(parent, cosmetic) {
       p.x += p.vx * dt;
       p.z += p.vz * dt;
       p.y += p.vy * dt;
-      if (p.mode !== 'smoke' && p.y < 0.03) {
+      if (!p.smoke && p.y < 0.03) {
         p.y = 0.03; // debris and sparks rest on the floor while they fade
         p.vy = 0;
         p.vx *= 0.6;
         p.vz *= 0.6;
       }
-      p.s.position.set(p.x, p.y, p.z);
-      const size = p.size * (1 + p.grow * k);
-      p.s.scale.set(size, size, 1);
-      if (p.mode === 'chunk') p.s.material.rotation += p.spin * dt;
-      // Smoke fades in then out; everything else fades straight out.
-      p.s.material.opacity =
-        p.mode === 'smoke' ? p.opacity * Math.sin(Math.PI * k) : p.opacity * (1 - k);
+    }
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      const k = p.age / p.life;
+      const o = p.smoke ? p.opacity * Math.sin(Math.PI * k) : p.opacity * (1 - k);
+      position[i * 3] = p.x;
+      position[i * 3 + 1] = p.y;
+      position[i * 3 + 2] = p.z;
+      color[i * 4] = p.r;
+      color[i * 4 + 1] = p.g;
+      color[i * 4 + 2] = p.b;
+      color[i * 4 + 3] = o;
+      aSize[i] = p.size * (1 + p.grow * k) * SIZE_SCALE;
+    }
+    cloud.geo.setDrawRange(0, list.length);
+    if (list.length > 0) {
+      cloud.geo.attributes.position.needsUpdate = true;
+      cloud.geo.attributes.color.needsUpdate = true;
+      cloud.geo.attributes.aSize.needsUpdate = true;
     }
   }
 
-  return { burst, kill, hit, embers, impact, update, count: () => live.length };
+  function update(dt) {
+    updateCloud(clouds.smoke, dt);
+    updateCloud(clouds.chunk, dt);
+    updateCloud(clouds.spark, dt);
+  }
+
+  const count = () =>
+    clouds.spark.list.length + clouds.chunk.list.length + clouds.smoke.list.length;
+
+  return { burst, kill, hit, embers, impact, update, count };
 }

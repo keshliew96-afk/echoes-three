@@ -37,7 +37,7 @@ import { impactFx } from '../vfx/hub.js';
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;
 const BURST_SEC = 0.55;
-const QUAKE_EMBER_HZ = 26; // ember motes per second off a live quake ring
+const QUAKE_EMBER_HZ = 22; // ember motes per second off a live quake ring
 const DEATH_SEC = 1.1;
 // §11 "room a stop darker than normal Act-1": one photographic stop is a
 // halving — the scene rig runs at 0.5x while the Stag is alive.
@@ -350,7 +350,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
         emberDebt += QUAKE_EMBER_HZ * dt * (0.35 + 0.65 * k);
         let n = Math.floor(emberDebt);
         emberDebt -= n;
-        if (n > 8) n = 8;
+        if (n > 6) n = 6;
         const rr = ent.telegraph.radius ?? STAG.quake.radius;
         for (let i = 0; i < n; i++)
           impactFx.embers(ent.telegraph.x, ent.telegraph.z, { n: 1, radius: rr * 0.95 });

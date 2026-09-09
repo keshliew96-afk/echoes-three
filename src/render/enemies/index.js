@@ -34,7 +34,7 @@ const TRAIL_FADE = 0.15; // s, Ember trail sprite fade
 const POP_STRETCH_SEC = 0.09; // kill pop: anticipation stretch...
 const POP_TOTAL_SEC = 0.26; // ...then collapse (same feel as dummy kills)
 const RETREAT_OUT_SEC = 0.22; // shrink-out on retreat despawn
-const EMBER_HZ = 11; // ember motes per second over a live telegraph
+const EMBER_HZ = 16; // ember motes per second over a live telegraph
 const YAW_RATE = 9; // 1/s exponential smoothing toward the sim facing
 const WALK_HZ = 2.6; // trot cycle per u of travel feel (phase per u below)
 
@@ -270,7 +270,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       emberDebt += EMBER_HZ * dt * liveTelegraphs.length;
       let n = Math.floor(emberDebt);
       emberDebt -= n;
-      if (n > 6) n = 6; // never let a frame-time spike dump a cloud
+      if (n > 5) n = 5; // never let a frame-time spike dump a cloud
       for (let i = 0; i < n; i++) {
         const t = liveTelegraphs[i % liveTelegraphs.length];
         impactFx.embers(t.x, t.z, { n: 1, radius: 0.5 });

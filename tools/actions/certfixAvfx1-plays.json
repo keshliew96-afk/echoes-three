@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__p={cleared:0,banners:[]};E.on('room_cleared',e=>window.__p.cleared++);E.cmd('startRun');return {tick:E.tick,room:E.state().run.room}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<90000&&window.__p.cleared<1){const b=E.hud.banner();if(b&&b.text)window.__p.banners.push(b.text);await new Promise(r=>setTimeout(r,120));}return {cleared:window.__p.cleared,phase:E.state().run.phase,room:E.state().run.room,ui:E.runUi().screen,banner:E.hud.banner().text,banners:[...new Set(window.__p.banners)].slice(0,8),tick:E.tick}})()"
+ }
+]

@@ -56,6 +56,7 @@ const BOLT_MUZZLE_U = 1.1;
 // Kill-pop timing (render scaffold): anticipation stretch, then collapse pop.
 const POP_STRETCH_SEC = 0.09;
 const POP_TOTAL_SEC = 0.26;
+const BURN_EMBER_HZ = 7; // ember motes per second per still-hot scorch decal
 
 function blobShadow(radius, opacity = 0.35) {
   const mat = new MeshBasicMaterial({
@@ -232,6 +233,7 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
   let shakeDur = SCREENSHAKE.durationSec;
   let shakeCount = 0; // screenshake events consumed this session (capture proof)
   let lastShake = null;
+  let emberDebt = 0; // fractional ember budget over still-hot scorch decals
 
   bus.on('hit', (ev) => {
     const rig = dummies.get(ev.target);
@@ -475,6 +477,22 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
         d.rig.mat.emissiveIntensity = HITFLASH.intensity * (1 - t);
       }
     }
+
+    // Lingering ground fire: burns that are still hot keep breathing embers
+    // (REFERENCE_BAR check 5 / reference D, "lingering ground fire patches
+    // where shots land"). Rate-limited by a fractional debt so the cost is
+    // independent of render fps.
+    const hot = decals.hotBurns();
+    if (hot.length > 0) {
+      emberDebt += BURN_EMBER_HZ * dt * hot.length;
+      let n = Math.floor(emberDebt);
+      emberDebt -= n;
+      if (n > 4) n = 4;
+      for (let i = 0; i < n; i++) {
+        const b = hot[i % hot.length];
+        particles.embers(b.x, b.z, { n: 1, radius: b.radius * 0.8 });
+      }
+    } else emberDebt = 0;
 
     particles.update(dt);
     decals.update(dt);
