@@ -1,0 +1,62 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => { const E=window.__echoes; window.__P={ev:[]}; for(const t of ['death','hit','screenshake','knockback']) E.on(t,(e)=>window.__P.ev.push(Object.assign({type:t},e))); return {armed:true,tick:E.tick,version:E.version,seed:E.seed}; })()"
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const E=window.__echoes; E.cmd('startRun'); return {tag:'startRun',tick:E.tick,phase:E.state().run&&E.state().run.phase}; })()"
+  },
+  {
+    "type": "eval",
+    "code": "(async () => { const E=window.__echoes; E.cmd('killAllEnemies'); E.cmd('teleport',0,0);\n     await new Promise(r=>setTimeout(r,900));\n     E.cmd('spawn','boar',2.6,1.4); E.cmd('spawn','boar',3.6,2.2); E.cmd('spawn','mantis',1.8,2.4);\n     await new Promise(r=>setTimeout(r,900)); E.cmd('teleport',0,0);\n     const s=E.state(); return {tag:'setup',tick:E.tick,party:s.party.map(p=>({id:p.id,x:+p.x.toFixed(2),z:+p.z.toFixed(2)})),enemies:(s.enemies||[]).map(e=>({id:e.id,kind:e.kind,x:e.x,z:e.z})),vfx:{dec:s.vfx.arena.decals,sc:s.vfx.arena.scorch}}; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 600
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-dec-before"
+  },
+  {
+    "type": "eval",
+    "code": "(async () => { const E=window.__echoes; const n=()=>window.__P.ev.filter(e=>e.type==='death').length; const b=n(); const t0=Date.now();\n     E.cmd('killAllEnemies'); while(n()===b && Date.now()-t0<6000) await new Promise(r=>setTimeout(r,8));\n     return {tag:'killed',tick:E.tick,deaths:window.__P.ev.filter(e=>e.type==='death').slice(-4),vfx:E.state().vfx.arena&&{dec:E.state().vfx.arena.decals,sc:E.state().vfx.arena.scorch,pa:E.state().vfx.arena.particles}}; })()"
+  },
+  {
+    "type": "wait",
+    "ms": 160
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-dec-t0"
+  },
+  {
+    "type": "wait",
+    "ms": 1400
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-dec-t1"
+  },
+  {
+    "type": "wait",
+    "ms": 2500
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-dec-t2"
+  },
+  {
+    "type": "wait",
+    "ms": 6000
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-dec-t3"
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const E=window.__echoes; const s=E.state(); return {tag:'end',tick:E.tick,camPlayer:s.party&&s.party.map(p=>({id:p.id,x:+p.x.toFixed(2),z:+p.z.toFixed(2)})),vfx:{dec:s.vfx.arena.decals,sc:s.vfx.arena.scorch,pa:s.vfx.arena.particles,num:s.vfx.arena.numerals}}; })()"
+  }
+]

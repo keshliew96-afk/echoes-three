@@ -1,0 +1,37 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__a2={ev:[]};for(const t of [\"telegraph_start\",\"telegraph_resolve\",\"hit\",\"death\",\"enemy_spawn\",\"flash\",\"knockback\",\"screenshake\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_adds\",\"boss_trample\",\"boss_spawn\",\"boss_death\",\"wave_start\",\"room_cleared\",\"spawn_telegraph\",\"skill_cast\",\"hitstop\",\"enemy_fire\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\"]){try{E.on(t,e=>window.__a2.ev.push(Object.assign({T:t},e)));}catch(err){}}return {armed:true,tick:E.tick,version:E.version,seed:E.seed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd('startRun');return {tag:'startRun',seed:E.seed,room:r&&r.room,mode:r&&r.mode}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<90000){try{if(E.state().enemies.length>=3 && window.__a2.ev.some(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick&&(e.resolveTick-E.tick)>=28))return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.map(e=>({id:e.id,kind:e.kind,x:+e.x.toFixed(2),z:+e.z.toFixed(2),hp:e.hp})),liveTele:window.__a2.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick).map(e=>({startTick:e.tick,resolveTick:e.resolveTick,ticksLeft:e.resolveTick-E.tick,x:e.x,z:e.z})),phase:E.cmd('runState').phase,room:E.cmd('runState').room};}catch(err){}await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.map(e=>({id:e.id,kind:e.kind,x:+e.x.toFixed(2),z:+e.z.toFixed(2),hp:e.hp})),liveTele:window.__a2.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick).map(e=>({startTick:e.tick,resolveTick:e.resolveTick,ticksLeft:e.resolveTick-E.tick,x:e.x,z:e.z})),phase:E.cmd('runState').phase,room:E.cmd('runState').room}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ }
+]

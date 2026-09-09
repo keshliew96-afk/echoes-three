@@ -1,0 +1,110 @@
+[
+ {
+  "type": "eval",
+  "code": "(() => { const E = window.__echoes; window.__A2 = { ev: [] };\n    ['shop_buy','shop_denied','shop_advance','reward_offer','room_cleared'].forEach(t => { try { E.on(t, e => window.__A2.ev.push({ t, tick: E.tick, e })); } catch (_) {} });\n    return { armed: true, tick: E.tick, version: E.version, seed: E.seed, bootSeed: E.bootSeed }; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(() => { const E = window.__echoes; E.cmd('startRun'); return { started: true, tick: E.tick }; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(() => { const E = window.__echoes; E.cmd('skipToRoom', 7); const s = E.state(); return { room: s.room, phase: s.phase, tick: E.tick }; })()"
+ },
+ {
+  "type": "eval",
+  "code": "(async () => { const E = window.__echoes; const t0 = Date.now();\n    while (Date.now() - t0 < 20000) {\n      const u = E.runUi();\n      if (u && u.screen === 'shop') {\n        return { ok: true, tick: E.tick, ms: Date.now() - t0, screen: u.screen, wallet: u.wallet,\n                 cards: (u.cards || []).map(c => ({ name: c.name, rarity: c.rarity, price: c.price })) };\n      }\n      await new Promise(r => setTimeout(r, 8));\n    }\n    return { ok: false, screen: E.runUi() && E.runUi().screen }; })()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "shot",
+  "name": "certA2-ref-shop-idle"
+ },
+ {
+  "type": "mousemove",
+  "x": 500,
+  "y": 607
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "shot",
+  "name": "certA2-ref-shop-hover"
+ },
+ {
+  "type": "eval",
+  "code": "(() => { const E = window.__echoes; const u = E.runUi();\n    return { label: \"hover\", tick: E.tick, wallet: u.wallet, owned: u.owned,\n      cards: (u.cards || []).map(c => ({ name: c.name, owned: c.owned, opacity: c.opacity })),\n      plaques: (u.plaques || []).map(p => ({ price: p.price, shaking: p.shaking })),\n      ev: window.__A2.ev.slice(-6) }; })()"
+ },
+ {
+  "type": "click",
+  "x": 500,
+  "y": 607
+ },
+ {
+  "type": "wait",
+  "ms": 220
+ },
+ {
+  "type": "shot",
+  "name": "certA2-ref-shop-buy1a"
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "shot",
+  "name": "certA2-ref-shop-buy1b"
+ },
+ {
+  "type": "eval",
+  "code": "(() => { const E = window.__echoes; const u = E.runUi();\n    return { label: \"after-buy1\", tick: E.tick, wallet: u.wallet, owned: u.owned,\n      cards: (u.cards || []).map(c => ({ name: c.name, owned: c.owned, opacity: c.opacity })),\n      plaques: (u.plaques || []).map(p => ({ price: p.price, shaking: p.shaking })),\n      ev: window.__A2.ev.slice(-6) }; })()"
+ },
+ {
+  "type": "click",
+  "x": 800,
+  "y": 607
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "shot",
+  "name": "certA2-ref-shop-buy2"
+ },
+ {
+  "type": "eval",
+  "code": "(() => { const E = window.__echoes; const u = E.runUi();\n    return { label: \"after-buy2\", tick: E.tick, wallet: u.wallet, owned: u.owned,\n      cards: (u.cards || []).map(c => ({ name: c.name, owned: c.owned, opacity: c.opacity })),\n      plaques: (u.plaques || []).map(p => ({ price: p.price, shaking: p.shaking })),\n      ev: window.__A2.ev.slice(-6) }; })()"
+ },
+ {
+  "type": "click",
+  "x": 1100,
+  "y": 607
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "shot",
+  "name": "certA2-ref-shop-deny1"
+ },
+ {
+  "type": "wait",
+  "ms": 160
+ },
+ {
+  "type": "shot",
+  "name": "certA2-ref-shop-deny2"
+ },
+ {
+  "type": "eval",
+  "code": "(() => { const E = window.__echoes; const u = E.runUi();\n    return { label: \"after-deny\", tick: E.tick, wallet: u.wallet, owned: u.owned,\n      cards: (u.cards || []).map(c => ({ name: c.name, owned: c.owned, opacity: c.opacity })),\n      plaques: (u.plaques || []).map(p => ({ price: p.price, shaking: p.shaking })),\n      ev: window.__A2.ev.slice(-6) }; })()"
+ }
+]

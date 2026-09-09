@@ -1,0 +1,62 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const seen=[];for(const k of Object.keys(window)){try{const v=window[k];if(v&&v.info&&v.info.memory&&v.info.render)seen.push(k);}catch(e){}}\nconst E=__echoes;let via=null;try{if(E.renderer&&E.renderer.info)via='__echoes.renderer';}catch(e){}\nreturn {globals:seen,via,keys:Object.keys(E)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const v=s.vfx;const a=v.arena||v;\nlet R=null;for(const k of Object.keys(window)){try{const o=window[k];if(o&&o.info&&o.info.memory&&o.info.render){R=o;break;}}catch(e){}}\ntry{if(!R&&E.renderer&&E.renderer.info)R=E.renderer;}catch(e){}\nconst p=performance.memory||{};\nreturn {tag:\"baseline-camp\",tick:E.tick,scene:s.scene,ents:E.entityCount,\n sim:{enemies:s.enemies.length,eshots:s.eshots.length,bolts:s.skillBolts.length,zones:s.zones.length,azones:s.azones.length},\n campVfx:{fireflies:v.fireflies,embers:v.embers,gateMotes:v.gateMotes,grass:v.grass,emitters:v.emitters,propShadows:v.propShadows,propTypes:v.propTypes,flowers:v.flowers},\n arenaVfx:{numerals:a.numerals,decals:a.decals,scorch:a.scorch,particles:a.particles,dummies:a.dummies,shakes:a.shakes,grass:a.grass,emitters:a.emitters,embers:a.embers,propShadows:a.propShadows},\n dom:{nodes:document.getElementsByTagName('*').length,numerals:document.querySelectorAll('.dmg,.numeral,[class*=numeral]').length,threat:document.querySelectorAll('[class*=threat]').length},\n heapMB:p.usedJSHeapSize?+(p.usedJSHeapSize/1048576).toFixed(1):null,\n renderer:R?{programs:R.info.programs?R.info.programs.length:null,geometries:R.info.memory.geometries,textures:R.info.memory.textures,calls:R.info.render.calls,triangles:R.info.render.triangles}:null};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"death\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"downed\",\"revive\",\"run_end\",\"victory\",\"defeat\",\"return_to_camp\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed t'+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const log=[];const t0=performance.now();\nE.cmd('startRun');log.push(['startRun',E.tick]);\nconst sleep=(m)=>new Promise(r=>setTimeout(r,m));\nlet guard=0;\nwhile(performance.now()-t0<70000&&guard++<400){\n  const u=E.runUi();const rs=E.cmd('runState');\n  if(u.screen==='draft'||u.screen==='reward'){E.cmd('draftTake',0);log.push(['draftTake',E.tick]);await sleep(180);continue;}\n  if(u.screen==='path'){E.cmd('pathChoose',0);log.push(['pathChoose',E.tick]);await sleep(180);continue;}\n  if(u.screen==='shop'){E.cmd('shopAdvance');log.push(['shopAdvance',E.tick]);await sleep(250);continue;}\n  if(u.screen==='victory'||u.screen==='defeat'||u.screen==='summary'){log.push([u.screen,E.tick]);break;}\n  if(!rs||!rs.active){log.push(['inactive',E.tick]);break;}\n  if(rs.room>=8){const b=rs.boss;if(b){const k=E.cmd('killBoss');log.push(['killBoss',E.tick,JSON.stringify(k).slice(0,60)]);await sleep(400);}\n    else {await sleep(200);} \n    if(E.state().enemies.length)E.cmd('killAllEnemies');\n    await sleep(250);continue;}\n  if(rs.room===7){E.cmd('shopAdvance');await sleep(250);continue;}\n  if(E.state().enemies.length>0){E.cmd('killAllEnemies');await sleep(160);continue;}\n  const st=E.state().room;\n  if(st&&st.mode==='defend'&&!st.cleared){E.cmd('clearRoom');log.push(['clearRoom',E.tick]);await sleep(250);continue;}\n  if(st&&!st.cleared){E.cmd('clearRoom');log.push(['clearRoomKA',E.tick]);await sleep(250);continue;}\n  await sleep(150);}\nreturn {label:\"run1\",ms:Math.round(performance.now()-t0),tick:E.tick,screen:E.runUi().screen,room:(E.cmd('runState')||{}).room,steps:log.length,log:log.slice(0,60)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(m)=>new Promise(r=>setTimeout(r,m));\nfor(let i=0;i<40;i++){const s=E.state();if(s.scene==='camp')return {scene:'camp',tick:E.tick,i};\n try{E.cmd('returnToCamp');}catch(e){}\n await sleep(300);}\nreturn {scene:E.state().scene,tick:E.tick,failed:true};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const v=s.vfx;const a=v.arena||v;\nlet R=null;for(const k of Object.keys(window)){try{const o=window[k];if(o&&o.info&&o.info.memory&&o.info.render){R=o;break;}}catch(e){}}\ntry{if(!R&&E.renderer&&E.renderer.info)R=E.renderer;}catch(e){}\nconst p=performance.memory||{};\nreturn {tag:\"after-run1\",tick:E.tick,scene:s.scene,ents:E.entityCount,\n sim:{enemies:s.enemies.length,eshots:s.eshots.length,bolts:s.skillBolts.length,zones:s.zones.length,azones:s.azones.length},\n campVfx:{fireflies:v.fireflies,embers:v.embers,gateMotes:v.gateMotes,grass:v.grass,emitters:v.emitters,propShadows:v.propShadows,propTypes:v.propTypes,flowers:v.flowers},\n arenaVfx:{numerals:a.numerals,decals:a.decals,scorch:a.scorch,particles:a.particles,dummies:a.dummies,shakes:a.shakes,grass:a.grass,emitters:a.emitters,embers:a.embers,propShadows:a.propShadows},\n dom:{nodes:document.getElementsByTagName('*').length,numerals:document.querySelectorAll('.dmg,.numeral,[class*=numeral]').length,threat:document.querySelectorAll('[class*=threat]').length},\n heapMB:p.usedJSHeapSize?+(p.usedJSHeapSize/1048576).toFixed(1):null,\n renderer:R?{programs:R.info.programs?R.info.programs.length:null,geometries:R.info.memory.geometries,textures:R.info.memory.textures,calls:R.info.render.calls,triangles:R.info.render.triangles}:null};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const log=[];const t0=performance.now();\nE.cmd('startRun');log.push(['startRun',E.tick]);\nconst sleep=(m)=>new Promise(r=>setTimeout(r,m));\nlet guard=0;\nwhile(performance.now()-t0<70000&&guard++<400){\n  const u=E.runUi();const rs=E.cmd('runState');\n  if(u.screen==='draft'||u.screen==='reward'){E.cmd('draftTake',0);log.push(['draftTake',E.tick]);await sleep(180);continue;}\n  if(u.screen==='path'){E.cmd('pathChoose',0);log.push(['pathChoose',E.tick]);await sleep(180);continue;}\n  if(u.screen==='shop'){E.cmd('shopAdvance');log.push(['shopAdvance',E.tick]);await sleep(250);continue;}\n  if(u.screen==='victory'||u.screen==='defeat'||u.screen==='summary'){log.push([u.screen,E.tick]);break;}\n  if(!rs||!rs.active){log.push(['inactive',E.tick]);break;}\n  if(rs.room>=8){const b=rs.boss;if(b){const k=E.cmd('killBoss');log.push(['killBoss',E.tick,JSON.stringify(k).slice(0,60)]);await sleep(400);}\n    else {await sleep(200);} \n    if(E.state().enemies.length)E.cmd('killAllEnemies');\n    await sleep(250);continue;}\n  if(rs.room===7){E.cmd('shopAdvance');await sleep(250);continue;}\n  if(E.state().enemies.length>0){E.cmd('killAllEnemies');await sleep(160);continue;}\n  const st=E.state().room;\n  if(st&&st.mode==='defend'&&!st.cleared){E.cmd('clearRoom');log.push(['clearRoom',E.tick]);await sleep(250);continue;}\n  if(st&&!st.cleared){E.cmd('clearRoom');log.push(['clearRoomKA',E.tick]);await sleep(250);continue;}\n  await sleep(150);}\nreturn {label:\"run2\",ms:Math.round(performance.now()-t0),tick:E.tick,screen:E.runUi().screen,room:(E.cmd('runState')||{}).room,steps:log.length,log:log.slice(0,60)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(m)=>new Promise(r=>setTimeout(r,m));\nfor(let i=0;i<40;i++){const s=E.state();if(s.scene==='camp')return {scene:'camp',tick:E.tick,i};\n try{E.cmd('returnToCamp');}catch(e){}\n await sleep(300);}\nreturn {scene:E.state().scene,tick:E.tick,failed:true};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const v=s.vfx;const a=v.arena||v;\nlet R=null;for(const k of Object.keys(window)){try{const o=window[k];if(o&&o.info&&o.info.memory&&o.info.render){R=o;break;}}catch(e){}}\ntry{if(!R&&E.renderer&&E.renderer.info)R=E.renderer;}catch(e){}\nconst p=performance.memory||{};\nreturn {tag:\"after-run2\",tick:E.tick,scene:s.scene,ents:E.entityCount,\n sim:{enemies:s.enemies.length,eshots:s.eshots.length,bolts:s.skillBolts.length,zones:s.zones.length,azones:s.azones.length},\n campVfx:{fireflies:v.fireflies,embers:v.embers,gateMotes:v.gateMotes,grass:v.grass,emitters:v.emitters,propShadows:v.propShadows,propTypes:v.propTypes,flowers:v.flowers},\n arenaVfx:{numerals:a.numerals,decals:a.decals,scorch:a.scorch,particles:a.particles,dummies:a.dummies,shakes:a.shakes,grass:a.grass,emitters:a.emitters,embers:a.embers,propShadows:a.propShadows},\n dom:{nodes:document.getElementsByTagName('*').length,numerals:document.querySelectorAll('.dmg,.numeral,[class*=numeral]').length,threat:document.querySelectorAll('[class*=threat]').length},\n heapMB:p.usedJSHeapSize?+(p.usedJSHeapSize/1048576).toFixed(1):null,\n renderer:R?{programs:R.info.programs?R.info.programs.length:null,geometries:R.info.memory.geometries,textures:R.info.memory.textures,calls:R.info.render.calls,triangles:R.info.render.triangles}:null};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 8000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const v=s.vfx;const a=v.arena||v;\nlet R=null;for(const k of Object.keys(window)){try{const o=window[k];if(o&&o.info&&o.info.memory&&o.info.render){R=o;break;}}catch(e){}}\ntry{if(!R&&E.renderer&&E.renderer.info)R=E.renderer;}catch(e){}\nconst p=performance.memory||{};\nreturn {tag:\"after-run2-plus8s\",tick:E.tick,scene:s.scene,ents:E.entityCount,\n sim:{enemies:s.enemies.length,eshots:s.eshots.length,bolts:s.skillBolts.length,zones:s.zones.length,azones:s.azones.length},\n campVfx:{fireflies:v.fireflies,embers:v.embers,gateMotes:v.gateMotes,grass:v.grass,emitters:v.emitters,propShadows:v.propShadows,propTypes:v.propTypes,flowers:v.flowers},\n arenaVfx:{numerals:a.numerals,decals:a.decals,scorch:a.scorch,particles:a.particles,dummies:a.dummies,shakes:a.shakes,grass:a.grass,emitters:a.emitters,embers:a.embers,propShadows:a.propShadows},\n dom:{nodes:document.getElementsByTagName('*').length,numerals:document.querySelectorAll('.dmg,.numeral,[class*=numeral]').length,threat:document.querySelectorAll('[class*=threat]').length},\n heapMB:p.usedJSHeapSize?+(p.usedJSHeapSize/1048576).toFixed(1):null,\n renderer:R?{programs:R.info.programs?R.info.programs.length:null,geometries:R.info.memory.geometries,textures:R.info.memory.textures,calls:R.info.render.calls,triangles:R.info.render.triangles}:null};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return JSON.stringify(window.__c.ev.map(e=>[e.tick,e.T,e.pct!==undefined?e.pct:(e.wave!==undefined?e.wave:(e.count!==undefined?e.count:''))]))})()"
+ },
+ {
+  "type": "shot",
+  "name": "certD2-leak-camp"
+ }
+]

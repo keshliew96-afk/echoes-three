@@ -1,0 +1,224 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {version:E.version,tick:E.tick,seed:E.seed,bootSeed:E.bootSeed,scene:E.state().scene,href:location.href,cmds:Object.keys(E)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {campState:c}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=document.querySelector('#camp-prompt');return {promptNode:!!p,display:p&&getComputedStyle(p).display,text:p&&p.textContent.replace(/\\s+/g,' ').trim(),chips:p&&[...p.querySelectorAll('.cp-key')].map(k=>k.textContent.trim())}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB2-recon-boot"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('startRun');return {startRun:r,run:E.cmd('runState'),seed:E.seed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<12000){if(E.state().run.active && E.state().run.phase==='combat')return {ok:true,tick:E.tick,ms:Math.round(performance.now()-t0),run:E.cmd('runState')};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,run:E.cmd('runState')}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {room1:s.room,enemies:s.enemies.length,party:s.party.map(p=>[p.id,p.classId,p.hp,p.maxHp]),skills:s.skills.map(k=>k&&k.id),hud:E.hud.combat(),banner:E.hud.banner()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB2-recon-room1"
+ },
+ {
+  "type": "loop",
+  "label": "clear-r1",
+  "cond": "(()=>{const E=__echoes;return !!(E.runUi().screen!=='none')})()",
+  "maxMs": 30000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;E.cmd('killAllEnemies');return null})()"
+   },
+   {
+    "type": "wait",
+    "ms": 500
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {ui:u}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const rt=document.querySelector(\"#run-screen\");if(!rt)return {dump:\"draft\",missing:\"#run-screen\"};\nconst out=[];for(const n of rt.querySelectorAll('*')){if(!n.className||typeof n.className!=='string')continue;const r=n.getBoundingClientRect();if(r.width<6||r.height<6)continue;const st=getComputedStyle(n);if(st.display==='none'||st.opacity==='0'||st.visibility==='hidden')continue;\nout.push([n.className.slice(0,40),Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height),Math.round(r.x+r.width/2),Math.round(r.y+r.height/2),(n.textContent||'').replace(/\\s+/g,' ').trim().slice(0,34)]);}\nreturn {dump:\"draft\",screen:E.runUi().screen,n:out.length,els:out.slice(0,60)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB2-recon-draft"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {afterTake:E.runUi().screen,socketOpen:!!document.querySelector('#socket-screen.nd-open'),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(document.querySelector('#socket-screen'))})()",
+  "then": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const rt=document.querySelector(\"#socket-screen\");if(!rt)return {dump:\"socket\",missing:\"#socket-screen\"};\nconst out=[];for(const n of rt.querySelectorAll('*')){if(!n.className||typeof n.className!=='string')continue;const r=n.getBoundingClientRect();if(r.width<6||r.height<6)continue;const st=getComputedStyle(n);if(st.display==='none'||st.opacity==='0'||st.visibility==='hidden')continue;\nout.push([n.className.slice(0,40),Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height),Math.round(r.x+r.width/2),Math.round(r.y+r.height/2),(n.textContent||'').replace(/\\s+/g,' ').trim().slice(0,34)]);}\nreturn {dump:\"socket\",screen:E.runUi().screen,n:out.length,els:out.slice(0,60)}})()"
+   },
+   {
+    "type": "shot",
+    "name": "certB2-recon-socket"
+   },
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const cs=[...document.querySelectorAll('#socket-screen .nd-bench .nd-card')];const cells=[...document.querySelectorAll('#socket-screen .nd-cell')];const rr=n=>{const r=n.getBoundingClientRect();return [Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height),Math.round(r.x+r.width/2),Math.round(r.y+r.height/2)]};return {benchCards:cs.map(rr),cells:cells.map(c=>[c.className.slice(0,30),...rr(c)])}})()"
+   },
+   {
+    "type": "key",
+    "key": "Escape",
+    "ms": 80
+   },
+   {
+    "type": "wait",
+    "ms": 500
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {screenNow:E.runUi().screen}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const rt=document.querySelector(\"#run-screen\");if(!rt)return {dump:\"path\",missing:\"#run-screen\"};\nconst out=[];for(const n of rt.querySelectorAll('*')){if(!n.className||typeof n.className!=='string')continue;const r=n.getBoundingClientRect();if(r.width<6||r.height<6)continue;const st=getComputedStyle(n);if(st.display==='none'||st.opacity==='0'||st.visibility==='hidden')continue;\nout.push([n.className.slice(0,40),Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height),Math.round(r.x+r.width/2),Math.round(r.y+r.height/2),(n.textContent||'').replace(/\\s+/g,' ').trim().slice(0,34)]);}\nreturn {dump:\"path\",screen:E.runUi().screen,n:out.length,els:out.slice(0,60)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {doors:u.doors,options:E.state().run.path&&E.state().run.path.options}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB2-recon-path"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('skipToRoom',7);return {skip7:r,screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<12000){if(E.runUi().screen==='shop')return {ok:true,tick:E.tick,ms:Math.round(performance.now()-t0),screen:E.runUi().screen,phase:E.state().run.phase};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,screen:E.runUi().screen,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const rt=document.querySelector(\"#run-screen\");if(!rt)return {dump:\"shop\",missing:\"#run-screen\"};\nconst out=[];for(const n of rt.querySelectorAll('*')){if(!n.className||typeof n.className!=='string')continue;const r=n.getBoundingClientRect();if(r.width<6||r.height<6)continue;const st=getComputedStyle(n);if(st.display==='none'||st.opacity==='0'||st.visibility==='hidden')continue;\nout.push([n.className.slice(0,40),Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height),Math.round(r.x+r.width/2),Math.round(r.y+r.height/2),(n.textContent||'').replace(/\\s+/g,' ').trim().slice(0,34)]);}\nreturn {dump:\"shop\",screen:E.runUi().screen,n:out.length,els:out.slice(0,60)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {cards:u.cards,plaques:u.plaques,buttons:u.buttons,wallet:u.wallet,stock:E.state().run.shop&&E.state().run.shop.stock}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB2-recon-shop"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('skipToRoom',8);return {skip8:r}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<15000){if(E.state().run.boss&&E.state().run.boss.active)return {ok:true,tick:E.tick,ms:Math.round(performance.now()-t0),boss:E.state().run.boss};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,boss:E.state().run.boss}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "shot",
+  "name": "certB2-recon-boss"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {killBoss:E.cmd('killBoss'),boss:E.state().run.boss}})()"
+ },
+ {
+  "type": "loop",
+  "label": "mopup",
+  "cond": "(()=>{const E=__echoes;return !!(E.runUi().screen==='end')})()",
+  "maxMs": 30000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;E.cmd('killAllEnemies');return null})()"
+   },
+   {
+    "type": "wait",
+    "ms": 500
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const rt=document.querySelector(\"#run-screen\");if(!rt)return {dump:\"end\",missing:\"#run-screen\"};\nconst out=[];for(const n of rt.querySelectorAll('*')){if(!n.className||typeof n.className!=='string')continue;const r=n.getBoundingClientRect();if(r.width<6||r.height<6)continue;const st=getComputedStyle(n);if(st.display==='none'||st.opacity==='0'||st.visibility==='hidden')continue;\nout.push([n.className.slice(0,40),Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height),Math.round(r.x+r.width/2),Math.round(r.y+r.height/2),(n.textContent||'').replace(/\\s+/g,' ').trim().slice(0,34)]);}\nreturn {dump:\"end\",screen:E.runUi().screen,n:out.length,els:out.slice(0,60)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {screen:u.screen,text:u.text.slice(0,400),buttons:u.buttons,summary:E.state().run.summary}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB2-recon-end"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {scene:E.state().scene,camp:E.cmd('campState').mode,screen:E.runUi().screen}})()"
+ }
+]

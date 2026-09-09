@@ -1,0 +1,55 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {ver:E.version,scene:E.state().scene}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"death\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"downed\",\"revive\",\"run_end\",\"victory\",\"defeat\",\"return_to_camp\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed t'+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',2);return {room:r&&r.room,mode:r&&r.mode}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 320
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<40000){try{if(E.state().enemies.length>=3)return {ok:true,tick:E.tick,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length};}catch(e){}await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;\nconst D={f:[],sec:[],timerMax:0,lt:[]};window.__D=D;\nlet tlast=performance.now();\nconst ti=setInterval(()=>{const n=performance.now();const g=n-tlast;if(g>D.timerMax)D.timerMax=g;tlast=n;},4);\nlet po=null;try{po=new PerformanceObserver(l=>{for(const e of l.getEntries())D.lt.push([Math.round(e.startTime),Math.round(e.duration)]);});po.observe({entryTypes:['longtask']});}catch(e){}\nconst t0=performance.now();D.t0=t0;\nconst si=setInterval(()=>{try{const s=E.state();D.sec.push([Math.round(performance.now()-t0),E.fps,E.entityCount,s.enemies.length,E.tick,(s.run&&s.run.boss&&s.run.boss.hp)||0]);}catch(e){}},1000);\nlet prev=performance.now();\nconst loop=()=>{const n=performance.now();D.f.push([+(n-t0).toFixed(1),+(n-prev).toFixed(2),E.tick]);prev=n;if(n-t0<15000)requestAnimationFrame(loop);};\nrequestAnimationFrame(()=>{prev=performance.now();requestAnimationFrame(loop);});\nawait new Promise(r=>setTimeout(r,15500));\nclearInterval(ti);clearInterval(si);if(po)po.disconnect();\nconst f=D.f.slice(1);\nconst stat=(a)=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y);const m=a.reduce((x,y)=>x+y,0)/a.length;return {n:a.length,meanMs:+m.toFixed(2),fps:+(1000/m).toFixed(1),p50:+s[Math.floor(s.length*0.5)].toFixed(2),p95:+s[Math.floor(s.length*0.95)].toFixed(2),p99:+s[Math.floor(s.length*0.99)].toFixed(2),max:+s[s.length-1].toFixed(2)};};\nconst warm=f.filter(x=>x[0]<3000),steady=f.filter(x=>x[0]>=3000);\nconst gaps=steady.filter(x=>x[1]>100).map(x=>[Math.round(x[0]),+x[1].toFixed(1),x[2]]);\nconst wins=[];const endT=f.length?f[f.length-1][0]:0;\nfor(let w=3000;w+15000<=endT+300;w+=1000){const seg=f.filter(x=>x[0]>=w&&x[0]<w+15000);if(seg.length<10)continue;const g=seg.filter(x=>x[1]>100).length;const mx=Math.max(...seg.map(x=>x[1]));const mn=seg.reduce((a,b)=>a+b[1],0)/seg.length;wins.push([w/1000,g,+mx.toFixed(1),+(1000/mn).toFixed(1)]);}\nreturn {tag:\"B-room2-combat\",sampleMs:Math.round(endT),ALL:stat(f.map(x=>x[1])),WARM:stat(warm.map(x=>x[1])),STEADY:stat(steady.map(x=>x[1])),steadyGapsOver100:gaps,gapsOver250:gaps.filter(g=>g[1]>250).length,worstWindowGaps:wins.length?Math.max(...wins.map(w=>w[1])):0,windows15s:wins,perSec:D.sec,timerMaxGapMs:+D.timerMax.toFixed(1),longTasks:D.lt.slice(0,25)};\n})()"
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('endRun');E.cmd('returnToCamp');return {scene:E.state().scene,ui:E.runUi().screen}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {scene:E.state().scene,tick:E.tick,ents:E.entityCount}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;\nconst D={f:[],sec:[],timerMax:0,lt:[]};window.__D=D;\nlet tlast=performance.now();\nconst ti=setInterval(()=>{const n=performance.now();const g=n-tlast;if(g>D.timerMax)D.timerMax=g;tlast=n;},4);\nlet po=null;try{po=new PerformanceObserver(l=>{for(const e of l.getEntries())D.lt.push([Math.round(e.startTime),Math.round(e.duration)]);});po.observe({entryTypes:['longtask']});}catch(e){}\nconst t0=performance.now();D.t0=t0;\nconst si=setInterval(()=>{try{const s=E.state();D.sec.push([Math.round(performance.now()-t0),E.fps,E.entityCount,s.enemies.length,E.tick,(s.run&&s.run.boss&&s.run.boss.hp)||0]);}catch(e){}},1000);\nlet prev=performance.now();\nconst loop=()=>{const n=performance.now();D.f.push([+(n-t0).toFixed(1),+(n-prev).toFixed(2),E.tick]);prev=n;if(n-t0<8000)requestAnimationFrame(loop);};\nrequestAnimationFrame(()=>{prev=performance.now();requestAnimationFrame(loop);});\nawait new Promise(r=>setTimeout(r,8500));\nclearInterval(ti);clearInterval(si);if(po)po.disconnect();\nconst f=D.f.slice(1);\nconst stat=(a)=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y);const m=a.reduce((x,y)=>x+y,0)/a.length;return {n:a.length,meanMs:+m.toFixed(2),fps:+(1000/m).toFixed(1),p50:+s[Math.floor(s.length*0.5)].toFixed(2),p95:+s[Math.floor(s.length*0.95)].toFixed(2),p99:+s[Math.floor(s.length*0.99)].toFixed(2),max:+s[s.length-1].toFixed(2)};};\nconst warm=f.filter(x=>x[0]<3000),steady=f.filter(x=>x[0]>=3000);\nconst gaps=steady.filter(x=>x[1]>100).map(x=>[Math.round(x[0]),+x[1].toFixed(1),x[2]]);\nconst wins=[];const endT=f.length?f[f.length-1][0]:0;\nfor(let w=3000;w+15000<=endT+300;w+=1000){const seg=f.filter(x=>x[0]>=w&&x[0]<w+15000);if(seg.length<10)continue;const g=seg.filter(x=>x[1]>100).length;const mx=Math.max(...seg.map(x=>x[1]));const mn=seg.reduce((a,b)=>a+b[1],0)/seg.length;wins.push([w/1000,g,+mx.toFixed(1),+(1000/mn).toFixed(1)]);}\nreturn {tag:\"A2-camp-after\",sampleMs:Math.round(endT),ALL:stat(f.map(x=>x[1])),WARM:stat(warm.map(x=>x[1])),STEADY:stat(steady.map(x=>x[1])),steadyGapsOver100:gaps,gapsOver250:gaps.filter(g=>g[1]>250).length,worstWindowGaps:wins.length?Math.max(...wins.map(w=>w[1])):0,windows15s:wins,perSec:D.sec,timerMaxGapMs:+D.timerMax.toFixed(1),longTasks:D.lt.slice(0,25)};\n})()"
+ },
+ {
+  "type": "shot",
+  "name": "certD2-pair2-frame"
+ }
+]

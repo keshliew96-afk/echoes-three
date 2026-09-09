@@ -1,0 +1,43 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  window.__c={ev:[],started:performance.now()};\n  for(const t of [\"hit\",\"death\",\"hitstop\",\"sound\",\"ally_basic\",\"ally_cast\",\"enemy_spawn\",\"wave_start\",\"room_cleared\",\"screenshake\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));\n  return 'armed t'+E.tick+' ver '+E.version})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();while(performance.now()-t0<45000){const s=E.state();if(s.run.active&&s.run.combatActive&&s.enemies.length>0)return {ok:true,tick:E.tick,enemies:s.enemies.length,fps:E.fps};await sleep(8);}return {ok:false,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('iframe',0,20000);return 'iframe t'+E.tick})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const e=s.enemies[0];const before=e.hp;const r=E.cmd('setHp',e.id,1);const a=E.state().enemies.find(q=>q.id===e.id);\n    const r2=E.cmd('setHp',e.id,0.5);const b=E.state().enemies.find(q=>q.id===e.id);\n    return {id:e.id,kind:e.kind,before,ret1:r,afterPct1:a&&a.hp,ret2:r2,afterPct05:b&&b.hp}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c.pinStart=E.tick;window.__c.pinN=0;\n    window.__c.pin=setInterval(()=>{try{for(const e of E.state().enemies){E.cmd('setHp',e.id,1);}window.__c.pinN++;}catch(err){window.__c.pinErr=String(err)}},25);\n    return {pinStart:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));await sleep(20000);return {tick:E.tick,pinN:window.__c.pinN,pinErr:window.__c.pinErr||null,enemies:E.state().enemies.map(e=>[e.id,e.kind,e.hp]),\n    deathsSincePin:window.__c.ev.filter(e=>e.T==='death'&&e.tick>=window.__c.pinStart).length,\n    hitsSincePin:window.__c.ev.filter(e=>e.T==='hit'&&e.tick>=window.__c.pinStart).length,fps:E.fps}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const H=window.__c.ev.filter(e=>e.T==='hit'&&e.tick>=window.__c.pinStart);const src={};for(const h of H)src[h.source+'|atk'+h.attacker]=(src[h.source+'|atk'+h.attacker]||0)+1;\n    const ab={};for(const a of window.__c.ev.filter(e=>e.T==='ally_basic'&&e.tick>=window.__c.pinStart))ab[a.classId+'|'+a.shape]=(ab[a.classId+'|'+a.shape]||0)+1;\n    const ac={};for(const a of window.__c.ev.filter(e=>e.T==='ally_cast'&&e.tick>=window.__c.pinStart))ac[a.classId+'|'+a.skill+'|'+a.shape]=(ac[a.classId+'|'+a.skill+'|'+a.shape]||0)+1;\n    const hs=window.__c.ev.filter(e=>e.T==='hitstop'&&e.tick>=window.__c.pinStart);\n    return {hitSources:src,allyBasicFired:ab,allyCastFired:ac,hitstops:hs.map(s=>[s.tick,s.cause,s.ticks]),\n      party:E.state().party.map(p=>[p.id,p.kind,p.hp,+p.x.toFixed(2),+p.z.toFixed(2)]),enemyPos:E.state().enemies.map(e=>[e.id,e.kind,+e.x.toFixed(2),+e.z.toFixed(2),e.hp])}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__c.pin);return {done:E.tick,fps:E.fps,ver:E.version}})()"
+ }
+]

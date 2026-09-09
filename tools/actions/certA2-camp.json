@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const c=E.cmd('campState');const s=E.state();return {tag:'campState',version:E.version,tick:E.tick,fps:+E.fps.toFixed(1),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,entityCount:E.entityCount,propTypes:c.propTypes,campPropTypes:c.campPropTypes,emitters:c.emitters,emitterKinds:c.emitterKinds,propShadows:c.propShadows,fireflies:c.fireflies,embers:c.embers,vignette:c.vignette,colliders:c.colliders,roadViolations:c.roadViolations,seats:c.seats,seatDrift:c.seatDrift,campStateKeys:Object.keys(c)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();return {tag:'stateVfx',vfx:s.vfx,toggles:s.toggles,party:s.party.map(p=>[p.id,p.classId||'?',p.hp,p.maxHp,+p.x.toFixed(2),+p.z.toFixed(2)]),enemies:s.enemies.length,runUi:E.runUi().screen,banner:E.hud.banner().text}})()"
+ }
+]

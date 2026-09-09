@@ -1,5 +1,5 @@
-// Telegraph decals (BUILD_BRIEF §11): the Ember Danger ground decal + hazard
-// chevron under every telegraphed enemy attack (opacity pulse 2 Hz — §19.1
+// Telegraph decals (BUILD_BRIEF §11): the Ember Danger ground decal + the shot
+// lane under every telegraphed enemy attack (opacity pulse 2 Hz — §19.1
 // colourblind fence: telegraphs PULSE, never shimmer; danger is decal +
 // chevron, never colour alone), and the violet spawn shimmer (0.8 s, §11 —
 // violet because a spawn IS corruption arriving, never Ember).
@@ -9,11 +9,14 @@
 // is alpha-only and the material carries the post-chain-exact Ember so the
 // measured pixels land on #FF5A36.
 import {
+  BackSide,
   CanvasTexture,
+  ConeGeometry,
   Group,
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
+  ShaderMaterial,
   SRGBColorSpace,
 } from 'three';
 import { PALETTE } from '../../data/palette.js';
@@ -57,24 +60,24 @@ function getImpactTexture() {
     ctx.arc(c, c, S * 0.44, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = A(1); // bright rim ring
-    ctx.lineWidth = S * 0.075;
+    ctx.lineWidth = S * 0.1;
     ctx.beginPath();
-    ctx.arc(c, c, S * 0.435, 0, Math.PI * 2);
+    ctx.arc(c, c, S * 0.425, 0, Math.PI * 2);
     ctx.stroke();
     // Hazard ticks around the rim (§19.1 fence: never colour alone).
     ctx.strokeStyle = A(0.95);
-    ctx.lineWidth = S * 0.03;
+    ctx.lineWidth = S * 0.038;
     ctx.lineCap = 'round';
     for (let i = 0; i < 6; i++) {
       const a0 = (i / 6) * Math.PI * 2 + 0.26;
       ctx.beginPath();
-      ctx.moveTo(c + Math.cos(a0) * S * 0.35, c + Math.sin(a0) * S * 0.35);
+      ctx.moveTo(c + Math.cos(a0) * S * 0.32, c + Math.sin(a0) * S * 0.32);
       ctx.lineTo(c + Math.cos(a0) * S * 0.47, c + Math.sin(a0) * S * 0.47);
       ctx.stroke();
     }
     ctx.fillStyle = A(0.95); // hot centre dot
     ctx.beginPath();
-    ctx.arc(c, c, S * 0.08, 0, Math.PI * 2);
+    ctx.arc(c, c, S * 0.1, 0, Math.PI * 2);
     ctx.fill();
   });
   return impactTex;
@@ -110,7 +113,9 @@ function getScorchCoreTexture() {
   return coreTex;
 }
 
-// Hazard chevron: double arrow pointing +X (rotated onto the shot lane).
+// Hazard chevron: double arrow pointing +X. Still the spawn shimmer's sibling
+// art; the ATTACK telegraph draws its chevrons procedurally down the shot lane
+// now (see makeLaneMaterial below).
 let chevronTex = null;
 function getChevronTexture() {
   if (chevronTex) return chevronTex;
@@ -153,7 +158,114 @@ function flatDecal(tex, color, size, y, renderOrder) {
   return mesh;
 }
 
-// One attack telegraph: { group, impact, chevron, setPulse(t), aimAt(...) }.
+// --- The SHOT LANE ----------------------------------------------------------
+// Certification round 2 measured the WHOLE telegraph as 89-198 danger pixels in
+// a frame that held a live telegraph 21 ticks from resolve, against the
+// reference AoE's 13-14k: the impact zone is 1.1 u across (~89x67 screen px)
+// and the mantis had aimed it at the archer, so all three melee bodies and
+// their identity rings stood on top of it. A warning that exists only under the
+// thing being warned is not a warning.
+//
+// The mantis telegraph is a SHOT, not an AoE — the sim locks a direction and
+// fires along it (sim/enemies.js). So the honest big shape is the LANE: the
+// path the shot has already committed to, drawn from the shooter to the aim
+// point with hazard chevrons marching down it and a charge bead that reaches
+// the impact ring exactly as the shot leaves. It is 3-6 u long, so it is never
+// swallowed by the huddle, and it carries direction + source + time-to-impact
+// at a glance. Procedural (ShaderMaterial) rather than a stretched texture: one
+// shared quad, one uniform for the chevron cadence, and that cadence stays
+// square at any shooting distance.
+const LANE_W = 0.62; // u — lane width (shot radius + travel wobble)
+function makeLaneMaterial(color) {
+  return new ShaderMaterial({
+    uniforms: {
+      uColor: { value: color.clone() },
+      uOpacity: { value: 1 },
+      uRepeat: { value: 4 },
+      uBead: { value: 0 },
+    },
+    transparent: true,
+    depthWrite: false,
+    toneMapped: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -5,
+    polygonOffsetUnits: -5,
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uColor;
+      uniform float uOpacity;
+      uniform float uRepeat;
+      uniform float uBead;
+      varying vec2 vUv;
+      void main() {
+        float u = vUv.x;                     // 0 = shooter, 1 = impact
+        float v = abs( vUv.y - 0.5 ) * 2.0;  // 0 = centreline, 1 = lane edge
+        // Rails: two Ember lines that fence the lane.
+        float rail = smoothstep( 0.26, 0.05, abs( v - 0.78 ) );
+        // Chevrons pointing at the impact, marching down the lane.
+        float a = fract( u * uRepeat - uBead * uRepeat );
+        float chev = smoothstep( 0.14, 0.0, abs( a - v * 0.34 - 0.05 ) );
+        chev *= 1.0 - smoothstep( 0.84, 1.0, v );
+        // Charge bead: the head of the shot, arriving as the telegraph ends.
+        float bead = smoothstep( 0.09, 0.0, abs( u - uBead ) ) * ( 1.0 - v * 0.6 );
+        // Faint wash so the lane reads as ground, not as three floating marks.
+        float wash = ( 1.0 - smoothstep( 0.45, 1.0, v ) ) * 0.16;
+        // Fade the ends so the lane grows out of the shooter and dies into the
+        // impact ring instead of stopping on a hard edge.
+        float ends = smoothstep( 0.0, 0.08, u ) * ( 1.0 - smoothstep( 0.94, 1.0, u ) );
+        float o = clamp( rail * 0.8 + chev * 0.95 + bead * 0.95 + wash, 0.0, 1.0 ) * ends;
+        gl_FragColor = vec4( uColor, o * uOpacity );
+      }
+    `,
+  });
+}
+
+// The warning COLUMN. Depth-tested ground art cannot be seen through a body
+// standing on it, so the telegraph also stands UP: a slim Ember cone over the
+// impact point, drawn depth-independently above the actors (renderOrder 12,
+// depthTest off) and NORMAL-blended so it keeps hue #FF5A36 over a pale critter
+// instead of washing to amber the way an additive column would.
+function makeColumn(color) {
+  const mat = new ShaderMaterial({
+    uniforms: { uColor: { value: color.clone() }, uOpacity: { value: 0.7 } },
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+    side: BackSide,
+    toneMapped: false,
+    vertexShader: /* glsl */ `
+      varying float vY;
+      void main() {
+        vY = uv.y;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uColor;
+      uniform float uOpacity;
+      varying float vY;
+      void main() {
+        float a = pow( clamp( 1.0 - vY, 0.0, 1.0 ), 1.5 );
+        gl_FragColor = vec4( uColor, a * uOpacity );
+      }
+    `,
+  });
+  const mesh = new Mesh(
+    sharedGeo('tele-column', () => new ConeGeometry(0.27, 1.4, 10, 1, true)),
+    mat
+  );
+  mesh.position.y = 0.7;
+  mesh.renderOrder = 12;
+  return mesh;
+}
+
+// One attack telegraph: { group, setPulse(t, progress), aimAt(...) }.
 export function makeAttackTelegraph() {
   const group = new Group();
   group.name = 'telegraph';
@@ -171,39 +283,77 @@ export function makeAttackTelegraph() {
   // Layer 2: the bright Ember rim + wash.
   const impact = flatDecal(getImpactTexture(), EMBER_EXACT.clone(), DECAL_RADIUS * 2, 0.022, 2);
   group.add(impact);
-  const chevron = flatDecal(getChevronTexture(), EMBER_EXACT.clone(), CHEVRON_SIZE, 0.021, 2);
-  group.add(chevron);
+  // Layer 2b: the shot lane, on a spinner so `aimAt` sets one rotation + one
+  // scale.
+  const laneSpin = new Group();
+  laneSpin.position.y = 0.0205;
+  group.add(laneSpin);
+  const laneMat = makeLaneMaterial(EMBER_EXACT);
+  const lane = new Mesh(sharedGeo('tele-lane-quad', () => new PlaneGeometry(1, 1)), laneMat);
+  lane.rotation.x = -Math.PI / 2;
+  lane.renderOrder = 3;
+  laneSpin.add(lane);
   // Layer 3: the rim is a LIGHT, not a sticker (§19.3 — every emitter carries
   // an additive glow sprite).
-  const halo = makeGlowSprite({ color: PALETTE.emberDanger, size: DECAL_RADIUS * 2.6, opacity: 0.24 });
+  const halo = makeGlowSprite({ color: PALETTE.emberDanger, size: DECAL_RADIUS * 3.1, opacity: 0.24 });
   halo.material.color.copy(EMBER_EXACT);
   halo.material.toneMapped = false;
   halo.position.y = 0.1;
   group.add(halo);
+  // Layer 4: the standing warning column (see makeColumn).
+  const column = makeColumn(EMBER_EXACT);
+  group.add(column);
 
   return {
     group,
-    // impact zone at (x, z); chevron sits on the lane toward the shooter,
-    // pointing INTO the impact (the incoming direction reads at a glance).
+    // Impact zone at (x, z); the lane runs from the shooter (fromX, fromZ) to
+    // the rim of that zone.
     aimAt(x, z, fromX, fromZ) {
       group.position.set(x, 0, z);
       const dx = x - fromX;
       const dz = z - fromZ;
-      const d = Math.hypot(dx, dz) || 1;
-      const back = Math.min(1.5, d * 0.6);
-      chevron.position.set((-dx / d) * (DECAL_RADIUS + back * 0.75), 0.021, (-dz / d) * (DECAL_RADIUS + back * 0.75));
-      // Plane +X (texture arrow) -> world (dx, dz) after the flat rotation.
-      chevron.rotation.z = Math.atan2(-dz, dx);
+      const d = Math.max(0.6, Math.hypot(dx, dz));
+      const near = Math.min(0.55, d * 0.18); // clear of the shooter's own body
+      const len = Math.max(0.5, d - near - DECAL_RADIUS * 0.55);
+      // The quad is centred: park it half a length back along the incoming ray.
+      const mid = DECAL_RADIUS * 0.55 + len * 0.5;
+      laneSpin.position.set((-dx / d) * mid, 0.0205, (-dz / d) * mid);
+      laneSpin.rotation.y = Math.atan2(dx, dz) - Math.PI / 2;
+      lane.scale.set(len, LANE_W, 1);
+      laneMat.uniforms.uRepeat.value = Math.max(2, Math.round(len / 0.85));
     },
-    // §11 2 Hz opacity pulse; the chevron pulses in the same phase. The
-    // scorched core does NOT pulse — burnt ground is not a warning light, and
-    // holding it steady is what lets the pulsing rim read as the alarm.
-    setPulse(tSec) {
-      const k = 0.62 + 0.38 * Math.sin(Math.PI * 2 * PULSE_HZ * tSec);
-      impact.material.opacity = k;
-      chevron.material.opacity = Math.min(1, k + 0.15);
-      halo.material.opacity = 0.14 + 0.16 * k;
+    // §11 2 Hz opacity pulse. `progress` (0 -> 1 across the wind-up) drives the
+    // charge bead down the lane, so time-to-impact reads without a number.
+    //
+    // Tuning note (certification fix round 2, 2026-09-10): the Ember DECAL
+    // layers pulse between 0.78 and 1.0 instead of 0.24 and 1.0. Normal-blended
+    // Ember at 0.24 alpha over lit ground composites to hue ~35 — the
+    // analyzer's AMBER band, the same hue as the torches and the road, which is
+    // exactly what round 2 measured on the ring ("danger 0 / amber 15944"). The
+    // pulse is carried by the halo and the column instead; those are lights, not
+    // the hue-bearing decal, so they are free to swing hard. Logged in
+    // BUILD_BRIEF §11.
+    setPulse(tSec, progress = 0) {
+      const k = 0.5 + 0.5 * Math.sin(Math.PI * 2 * PULSE_HZ * tSec);
+      const emberA = 0.78 + 0.22 * k;
+      impact.material.opacity = emberA;
+      laneMat.uniforms.uOpacity.value = emberA;
+      laneMat.uniforms.uBead.value = Math.min(1, Math.max(0, progress));
+      halo.material.opacity = 0.12 + 0.24 * k;
+      column.material.uniforms.uOpacity.value = (0.4 + 0.28 * k) * (0.6 + 0.4 * progress);
       core.material.opacity = 0.5;
+    },
+    // Dissolve (k: 1 -> 0) after the wind-up ends — the warning drawing back
+    // into the impact point rather than blinking out. Multiplies whatever
+    // `setPulse` last wrote, so the 2 Hz cadence keeps running as it goes.
+    setFadeOut(k) {
+      const e = Math.max(0, Math.min(1, k));
+      impact.material.opacity *= e;
+      laneMat.uniforms.uOpacity.value *= e * e; // the lane leaves first
+      halo.material.opacity *= e;
+      column.material.uniforms.uOpacity.value *= e;
+      core.material.opacity *= e;
+      group.scale.setScalar(0.86 + 0.14 * e);
     },
   };
 }
@@ -215,6 +365,9 @@ export function makeSpawnShimmer(cosmetic) {
   group.name = 'spawn-shimmer';
   const sigil = flatDecal(getImpactTexture(), TELL_VIOLET.clone(), 1.1, 0.02, 2);
   group.add(sigil);
+  const chevron = flatDecal(getChevronTexture(), TELL_VIOLET.clone(), CHEVRON_SIZE, 0.021, 2);
+  chevron.visible = false; // built so the shared quad + texture stay warm
+  group.add(chevron);
   const halo = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 1.4, opacity: 0.45 });
   halo.material.toneMapped = false;
   halo.material.color.copy(TELL_VIOLET);

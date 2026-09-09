@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"death\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"downed\",\"revive\",\"run_end\",\"victory\",\"defeat\",\"return_to_camp\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed t'+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',1);return {room:r&&r.room,vp:[innerWidth,innerHeight]}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<60000){const u=E.runUi();if(u.screen!=='none')return {screen:u.screen,tick:E.tick};if(E.state().enemies.length>0)E.cmd('killAllEnemies');await new Promise(r=>setTimeout(r,250));}return {screen:'timeout'}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return JSON.stringify(E.runUi()).slice(0,1500)})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\nconst vw=innerWidth,vh=innerHeight;\nconst all=[...document.body.querySelectorAll('*')].filter(n=>{\n  if(n.tagName==='CANVAS'||n.tagName==='SCRIPT'||n.tagName==='STYLE')return false;\n  const cs=getComputedStyle(n);\n  if(cs.display==='none'||cs.visibility==='hidden'||parseFloat(cs.opacity)<0.02)return false;\n  const r=n.getBoundingClientRect();\n  return r.width>0.5&&r.height>0.5;});\nconst nm=n=>(n.id?'#'+n.id:'')+(n.className&&typeof n.className==='string'?'.'+n.className.trim().split(/s+/).join('.'):'')||n.tagName.toLowerCase();\nconst rec=all.map(n=>{const r=n.getBoundingClientRect();const cs=getComputedStyle(n);\n  return {n:nm(n),x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),\n    fs:+parseFloat(cs.fontSize).toFixed(1),txt:(n.childElementCount===0?(n.textContent||'').trim().slice(0,28):'')};});\nconst outside=rec.filter(r=>r.x<-0.5||r.y<-0.5||r.x+r.w>vw+0.5||r.y+r.h>vh+0.5);\nconst ov=[];\nfor(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++){\n  const a=all[i],b=all[j];\n  if(a.contains(b)||b.contains(a))continue;\n  const ra=rec[i],rb=rec[j];\n  const ix=Math.min(ra.x+ra.w,rb.x+rb.w)-Math.max(ra.x,rb.x);\n  const iy=Math.min(ra.y+ra.h,rb.y+rb.h)-Math.max(ra.y,rb.y);\n  if(ix>1&&iy>1)ov.push([ra.n,rb.n,+ix.toFixed(1),+iy.toFixed(1)]);}\nreturn {tag:\"draft\",vw,vh,n:rec.length,outside,overlaps:ov,rects:rec};})()"
+ },
+ {
+  "type": "shot",
+  "name": "_draft"
+ }
+]

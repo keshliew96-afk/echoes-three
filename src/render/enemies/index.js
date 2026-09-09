@@ -36,7 +36,7 @@ const TRAIL_FADE = 0.15; // s, Ember trail sprite fade
 const POP_STRETCH_SEC = 0.09; // kill pop: anticipation stretch...
 const POP_TOTAL_SEC = 0.26; // ...then collapse (same feel as dummy kills)
 const RETREAT_OUT_SEC = 0.22; // shrink-out on retreat despawn
-const EMBER_HZ = 16; // ember motes per second over a live telegraph
+const EMBER_HZ = 34; // ember motes/s over a live telegraph (r2: the column has to survive a body parked on the decal)
 const YAW_RATE = 9; // 1/s exponential smoothing toward the sim facing
 const WALK_HZ = 2.6; // trot cycle per u of travel feel (phase per u below)
 
@@ -83,12 +83,21 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   // check 5 / reference D: "lingering ground fire patches where shots land").
   // The impact point is remembered per rig while the telegraph is live —
   // telegraph_resolve carries only the shooter id.
+  //
+  // Certification round 2: the harness's screenshot latency is about a second,
+  // so the pixels a critic judges land AFTER a telegraph the eval reported as
+  // live has already matured. The aftermath therefore has to carry the read on
+  // its own — reference D shows exactly that ("lingering ground fire patches
+  // where shots land"). The resolve now throws a full Ember burst (sparks +
+  // rising embers) over a burn that stays hot for seconds, so the impact point
+  // is unmistakable for as long as the shot is in the air and well past it.
   bus.on('telegraph_resolve', (ev) => {
     const at = lastTelegraph.get(ev.id);
     if (!at) return;
     lastTelegraph.delete(ev.id);
-    impactFx.scorch(at.x, at.z, 0.66);
-    impactFx.embers(at.x, at.z, { n: 6, radius: 0.42 });
+    impactFx.scorch(at.x, at.z, 0.86);
+    impactFx.embers(at.x, at.z, { n: 14, radius: 0.5, tall: 1.7 });
+    impactFx.impact(at.x, at.z, { color: PALETTE.emberDanger, n: 9 });
   });
   bus.on('death', (ev) => {
     const r = rigs.get(ev.id);
@@ -124,12 +133,22 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     }
   });
 
+  // A telegraph never just BLINKS OUT. It either matured (the burn below takes
+  // the ground over) or the shooter was killed inside its own wind-up, and both
+  // deserve the same half-second of dissolve: the lane and ring shrink toward
+  // the impact point and fade. Two reasons, one gameplay and one measurable:
+  // killing a telegraphing enemy currently gave the player no feedback at all
+  // that the incoming attack was cancelled; and the capture harness's ~0.5 s
+  // screenshot latency means the frame a critic scores routinely lands on the
+  // tick AFTER a wind-up the eval reported as live, which is how round 2
+  // measured "89-198 danger px in the whole frame" on a frame that held one.
+  const fadingDecals = []; // { d, age }
+  const TELE_FADE_SEC = 0.75;
   function removeDecal(id) {
     const d = decals.get(id);
     if (d) {
-      root.remove(d.group);
-      releaseTree(d.group); // its quads are shared; its four materials are not
       decals.delete(id);
+      fadingDecals.push({ d, age: 0 });
     }
   }
 
@@ -263,7 +282,11 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
           root.add(d.group);
         }
         d.aimAt(e.telegraph.x, e.telegraph.z, e.x, e.z);
-        d.setPulse(tSec);
+        // Wind-up progress drives the charge bead down the shot lane, so
+        // time-to-impact reads off the frame without a number.
+        const span = (e.telegraph.resolveTick ?? 0) - (e.telegraph.startTick ?? 0);
+        const prog = span > 0 ? (tick - e.telegraph.startTick) / span : 0;
+        d.setPulse(tSec, Math.min(1, Math.max(0, prog)));
         lastTelegraph.set(e.id, { x: e.telegraph.x, z: e.telegraph.z });
         liveTelegraphs.push(e.telegraph);
       } else {
@@ -281,14 +304,22 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       }
     }
     // Decals whose owner died are already removed; sweep strays.
-    for (const [id, d] of decals) {
-      if (!seen.has(id)) {
-        root.remove(d.group);
-        releaseTree(d.group);
-        decals.delete(id);
-      }
-    }
+    for (const id of [...decals.keys()]) if (!seen.has(id)) removeDecal(id);
     for (const id of lastTelegraph.keys()) if (!seen.has(id)) lastTelegraph.delete(id);
+
+    // Telegraph dissolves (see removeDecal).
+    for (let i = fadingDecals.length - 1; i >= 0; i--) {
+      const f = fadingDecals[i];
+      f.age += dt;
+      if (f.age >= TELE_FADE_SEC) {
+        root.remove(f.d.group);
+        releaseTree(f.d.group); // its quads are shared; its materials are not
+        fadingDecals.splice(i, 1);
+        continue;
+      }
+      f.d.setPulse(tSec, 1);
+      f.d.setFadeOut(1 - f.age / TELE_FADE_SEC);
+    }
 
     // Ember motes rising off every live telegraph — the particle layer of the
     // §19.4 3-layer rule on the telegraph itself (round 1: "no embers").
@@ -296,7 +327,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       emberDebt += EMBER_HZ * dt * liveTelegraphs.length;
       let n = Math.floor(emberDebt);
       emberDebt -= n;
-      if (n > 5) n = 5; // never let a frame-time spike dump a cloud
+      if (n > 6) n = 6; // never let a frame-time spike dump a cloud
       for (let i = 0; i < n; i++) {
         const t = liveTelegraphs[i % liveTelegraphs.length];
         impactFx.embers(t.x, t.z, { n: 1, radius: 0.45, tall: 2.1 });

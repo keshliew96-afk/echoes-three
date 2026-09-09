@@ -1,0 +1,9 @@
+[
+ { "type": "eval", "code": "(()=>{const E=window.__echoes;window.__p={ev:[]};for(const t of ['room_cleared','wave_start','shop_purchase','currency_denied','run_end']){try{E.on(t,e=>window.__p.ev.push({T:t,tick:E.tick}));}catch(x){}}E.cmd('startRun');return {tag:'start',room:E.state().room,banner:E.hud.banner().text}})()" },
+ { "type": "mousemove", "x": 800, "y": 450 },
+ { "type": "mousedown", "button": "right" },
+ { "type": "eval", "code": "(async()=>{const E=window.__echoes;const t0=Date.now();for(;;){if(window.__p.ev.some(e=>e.T==='room_cleared'))break;if(Date.now()-t0>50000)break;E.cmd('killAllEnemies');await new Promise(r=>setTimeout(r,400));}return {tag:'cleared',ev:window.__p.ev,room:E.state().room,banner:E.hud.banner().text,phase:E.runUi().screen}})()" },
+ { "type": "mouseup", "button": "right" },
+ { "type": "wait", "ms": 600 },
+ { "type": "eval", "code": "(()=>{const E=window.__echoes;return {tag:'after',screen:E.runUi().screen,text:E.runUi().text,banner:E.hud.banner().text,fps:+E.fps.toFixed(1),version:E.version}})()" }
+]

@@ -1,0 +1,58 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const hits=[];\nfor(const k of Object.getOwnPropertyNames(window)){try{const o=window[k];\n if(o&&typeof o==='object'){if(o.info&&o.info.memory&&o.info.render)hits.push(['global.'+k,'renderer']);\n  else if(o.domElement&&o.getContext)hits.push(['global.'+k,'hasDomElement']);\n  else if(o.scene&&o.camera&&o.renderer)hits.push(['global.'+k,'appish']);}}catch(e){}}\nfor(const k of Object.keys(E)){try{const o=E[k];if(o&&typeof o==='object'&&o.info&&o.info.memory)hits.push(['__echoes.'+k,'renderer']);}catch(e){}}\nlet dev=null;try{dev=window.__THREE_DEVTOOLS__?'present':null;}catch(e){}\nlet st=null;try{st=JSON.stringify(E.stats).slice(0,600);}catch(e){st='ERR '+e.message}\nreturn {hits,devtools:dev,echoesKeys:Object.keys(E),stats:st};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const v=s.vfx;const a=v.arena||v;const p=performance.memory||{};\nlet st=null;try{st=E.stats;}catch(e){}\nreturn {tag:\"baseline-camp\",tick:E.tick,scene:s.scene,ents:E.entityCount,\n sim:{enemies:s.enemies.length,eshots:s.eshots.length,bolts:s.skillBolts.length,zones:s.zones.length,azones:s.azones.length},\n campVfx:{fireflies:v.fireflies,embers:v.embers,gateMotes:v.gateMotes,grass:v.grass,emitters:v.emitters,propShadows:v.propShadows,propTypes:v.propTypes,flowers:v.flowers,colliders:v.colliders},\n arenaVfx:{numerals:a.numerals,decals:a.decals,scorch:a.scorch,particles:a.particles,dummies:a.dummies,shakes:a.shakes,grass:a.grass,emitters:a.emitters,embers:a.embers,propShadows:a.propShadows,propTypes:a.propTypes},\n dom:{nodes:document.getElementsByTagName('*').length,svg:document.getElementsByTagName('svg').length,hudChildren:(document.querySelector('#hud')||{children:[]}).children.length,threatSvg:document.querySelectorAll('#hud-threat > svg').length,numLayer:(document.querySelector('#dmg-num-layer')||{children:[]}).children.length},\n stats:st?JSON.parse(JSON.stringify(st)):null,\n heapMB:p.usedJSHeapSize?+(p.usedJSHeapSize/1048576).toFixed(1):null,\n heapTotalMB:p.totalJSHeapSize?+(p.totalJSHeapSize/1048576).toFixed(1):null};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"death\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"downed\",\"revive\",\"run_end\",\"victory\",\"defeat\",\"return_to_camp\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed t'+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const log=[];const t0=performance.now();\nconst sleep=m=>new Promise(r=>setTimeout(r,m));\nE.cmd('startRun');log.push(['startRun',E.tick]);\nlet guard=0,kills=0,spawnSeen=0;\nwhile(performance.now()-t0<110000&&guard++<600){\n const u=E.runUi();const rs=E.cmd('runState');\n if(u.screen==='draft'||u.screen==='reward'){E.cmd('draftTake',0);await sleep(200);continue;}\n if(u.screen==='path'){E.cmd('pathChoose',0);await sleep(200);continue;}\n if(u.screen==='shop'){E.cmd('shopAdvance');await sleep(300);continue;}\n if(u.screen==='victory'||u.screen==='defeat'||u.screen==='summary'){log.push([u.screen,E.tick]);break;}\n if(!rs||!rs.active){log.push(['inactive',E.tick]);break;}\n if(rs.room>=8){if(rs.boss){ // let the adds spawn first\n   const t1=performance.now();while(performance.now()-t1<9000&&E.state().enemies.length<3)await sleep(120);\n   log.push(['bossAdds',E.tick,E.state().enemies.length]);spawnSeen+=E.state().enemies.length;\n   E.cmd('killAllEnemies');await sleep(300);E.cmd('killBoss');log.push(['killBoss',E.tick]);await sleep(600);}\n  else await sleep(200);\n  if(E.state().enemies.length)E.cmd('killAllEnemies');await sleep(250);continue;}\n // combat room: wait for a wave to actually spawn, then kill it\n const t1=performance.now();while(performance.now()-t1<7000&&E.state().enemies.length===0){const uu=E.runUi();if(uu.screen!=='none')break;await sleep(100);}\n const n=E.state().enemies.length;\n if(n>0){spawnSeen+=n;E.cmd('killAllEnemies');kills++;log.push(['killWave',E.tick,n]);await sleep(220);continue;}\n const st=E.state().room;\n if(st&&!st.cleared){E.cmd('clearRoom');log.push(['clearRoom',E.tick,st.mode]);await sleep(300);continue;}\n await sleep(150);}\nreturn {label:\"run1\",ms:Math.round(performance.now()-t0),tick:E.tick,screen:E.runUi().screen,waves:kills,rigsSpawned:spawnSeen,steps:log.length,log:log.slice(0,50)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=m=>new Promise(r=>setTimeout(r,m));\nfor(let i=0;i<40;i++){if(E.state().scene==='camp')return {scene:'camp',tick:E.tick,i};try{E.cmd('returnToCamp');}catch(e){}await sleep(300);}\nreturn {scene:E.state().scene,tick:E.tick,failed:true};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const v=s.vfx;const a=v.arena||v;const p=performance.memory||{};\nlet st=null;try{st=E.stats;}catch(e){}\nreturn {tag:\"after-run1\",tick:E.tick,scene:s.scene,ents:E.entityCount,\n sim:{enemies:s.enemies.length,eshots:s.eshots.length,bolts:s.skillBolts.length,zones:s.zones.length,azones:s.azones.length},\n campVfx:{fireflies:v.fireflies,embers:v.embers,gateMotes:v.gateMotes,grass:v.grass,emitters:v.emitters,propShadows:v.propShadows,propTypes:v.propTypes,flowers:v.flowers,colliders:v.colliders},\n arenaVfx:{numerals:a.numerals,decals:a.decals,scorch:a.scorch,particles:a.particles,dummies:a.dummies,shakes:a.shakes,grass:a.grass,emitters:a.emitters,embers:a.embers,propShadows:a.propShadows,propTypes:a.propTypes},\n dom:{nodes:document.getElementsByTagName('*').length,svg:document.getElementsByTagName('svg').length,hudChildren:(document.querySelector('#hud')||{children:[]}).children.length,threatSvg:document.querySelectorAll('#hud-threat > svg').length,numLayer:(document.querySelector('#dmg-num-layer')||{children:[]}).children.length},\n stats:st?JSON.parse(JSON.stringify(st)):null,\n heapMB:p.usedJSHeapSize?+(p.usedJSHeapSize/1048576).toFixed(1):null,\n heapTotalMB:p.totalJSHeapSize?+(p.totalJSHeapSize/1048576).toFixed(1):null};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const log=[];const t0=performance.now();\nconst sleep=m=>new Promise(r=>setTimeout(r,m));\nE.cmd('startRun');log.push(['startRun',E.tick]);\nlet guard=0,kills=0,spawnSeen=0;\nwhile(performance.now()-t0<110000&&guard++<600){\n const u=E.runUi();const rs=E.cmd('runState');\n if(u.screen==='draft'||u.screen==='reward'){E.cmd('draftTake',0);await sleep(200);continue;}\n if(u.screen==='path'){E.cmd('pathChoose',0);await sleep(200);continue;}\n if(u.screen==='shop'){E.cmd('shopAdvance');await sleep(300);continue;}\n if(u.screen==='victory'||u.screen==='defeat'||u.screen==='summary'){log.push([u.screen,E.tick]);break;}\n if(!rs||!rs.active){log.push(['inactive',E.tick]);break;}\n if(rs.room>=8){if(rs.boss){ // let the adds spawn first\n   const t1=performance.now();while(performance.now()-t1<9000&&E.state().enemies.length<3)await sleep(120);\n   log.push(['bossAdds',E.tick,E.state().enemies.length]);spawnSeen+=E.state().enemies.length;\n   E.cmd('killAllEnemies');await sleep(300);E.cmd('killBoss');log.push(['killBoss',E.tick]);await sleep(600);}\n  else await sleep(200);\n  if(E.state().enemies.length)E.cmd('killAllEnemies');await sleep(250);continue;}\n // combat room: wait for a wave to actually spawn, then kill it\n const t1=performance.now();while(performance.now()-t1<7000&&E.state().enemies.length===0){const uu=E.runUi();if(uu.screen!=='none')break;await sleep(100);}\n const n=E.state().enemies.length;\n if(n>0){spawnSeen+=n;E.cmd('killAllEnemies');kills++;log.push(['killWave',E.tick,n]);await sleep(220);continue;}\n const st=E.state().room;\n if(st&&!st.cleared){E.cmd('clearRoom');log.push(['clearRoom',E.tick,st.mode]);await sleep(300);continue;}\n await sleep(150);}\nreturn {label:\"run2\",ms:Math.round(performance.now()-t0),tick:E.tick,screen:E.runUi().screen,waves:kills,rigsSpawned:spawnSeen,steps:log.length,log:log.slice(0,50)};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=m=>new Promise(r=>setTimeout(r,m));\nfor(let i=0;i<40;i++){if(E.state().scene==='camp')return {scene:'camp',tick:E.tick,i};try{E.cmd('returnToCamp');}catch(e){}await sleep(300);}\nreturn {scene:E.state().scene,tick:E.tick,failed:true};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const v=s.vfx;const a=v.arena||v;const p=performance.memory||{};\nlet st=null;try{st=E.stats;}catch(e){}\nreturn {tag:\"after-run2\",tick:E.tick,scene:s.scene,ents:E.entityCount,\n sim:{enemies:s.enemies.length,eshots:s.eshots.length,bolts:s.skillBolts.length,zones:s.zones.length,azones:s.azones.length},\n campVfx:{fireflies:v.fireflies,embers:v.embers,gateMotes:v.gateMotes,grass:v.grass,emitters:v.emitters,propShadows:v.propShadows,propTypes:v.propTypes,flowers:v.flowers,colliders:v.colliders},\n arenaVfx:{numerals:a.numerals,decals:a.decals,scorch:a.scorch,particles:a.particles,dummies:a.dummies,shakes:a.shakes,grass:a.grass,emitters:a.emitters,embers:a.embers,propShadows:a.propShadows,propTypes:a.propTypes},\n dom:{nodes:document.getElementsByTagName('*').length,svg:document.getElementsByTagName('svg').length,hudChildren:(document.querySelector('#hud')||{children:[]}).children.length,threatSvg:document.querySelectorAll('#hud-threat > svg').length,numLayer:(document.querySelector('#dmg-num-layer')||{children:[]}).children.length},\n stats:st?JSON.parse(JSON.stringify(st)):null,\n heapMB:p.usedJSHeapSize?+(p.usedJSHeapSize/1048576).toFixed(1):null,\n heapTotalMB:p.totalJSHeapSize?+(p.totalJSHeapSize/1048576).toFixed(1):null};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 10000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const v=s.vfx;const a=v.arena||v;const p=performance.memory||{};\nlet st=null;try{st=E.stats;}catch(e){}\nreturn {tag:\"after-run2-plus10s\",tick:E.tick,scene:s.scene,ents:E.entityCount,\n sim:{enemies:s.enemies.length,eshots:s.eshots.length,bolts:s.skillBolts.length,zones:s.zones.length,azones:s.azones.length},\n campVfx:{fireflies:v.fireflies,embers:v.embers,gateMotes:v.gateMotes,grass:v.grass,emitters:v.emitters,propShadows:v.propShadows,propTypes:v.propTypes,flowers:v.flowers,colliders:v.colliders},\n arenaVfx:{numerals:a.numerals,decals:a.decals,scorch:a.scorch,particles:a.particles,dummies:a.dummies,shakes:a.shakes,grass:a.grass,emitters:a.emitters,embers:a.embers,propShadows:a.propShadows,propTypes:a.propTypes},\n dom:{nodes:document.getElementsByTagName('*').length,svg:document.getElementsByTagName('svg').length,hudChildren:(document.querySelector('#hud')||{children:[]}).children.length,threatSvg:document.querySelectorAll('#hud-threat > svg').length,numLayer:(document.querySelector('#dmg-num-layer')||{children:[]}).children.length},\n stats:st?JSON.parse(JSON.stringify(st)):null,\n heapMB:p.usedJSHeapSize?+(p.usedJSHeapSize/1048576).toFixed(1):null,\n heapTotalMB:p.totalJSHeapSize?+(p.totalJSHeapSize/1048576).toFixed(1):null};})()"
+ },
+ {
+  "type": "shot",
+  "name": "certD2-leak2-camp"
+ }
+]

@@ -1,0 +1,49 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__a2={ev:[]};for(const t of [\"telegraph_start\",\"telegraph_resolve\",\"hit\",\"death\",\"enemy_spawn\",\"flash\",\"knockback\",\"screenshake\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_adds\",\"boss_trample\",\"boss_spawn\",\"boss_death\",\"wave_start\",\"room_cleared\",\"spawn_telegraph\",\"skill_cast\",\"hitstop\",\"enemy_fire\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\"]){try{E.on(t,e=>window.__a2.ev.push(Object.assign({T:t},e)));}catch(err){}}return {armed:true,tick:E.tick,version:E.version,seed:E.seed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd('startRun');return {tag:'startRun',seed:E.seed,room:r&&r.room,mode:r&&r.mode}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<90000){try{if(E.state().enemies.length>=3 && window.__a2.ev.some(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick&&(e.resolveTick-E.tick)>=28))return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.map(e=>({id:e.id,kind:e.kind,x:+e.x.toFixed(2),z:+e.z.toFixed(2),hp:e.hp})),liveTele:window.__a2.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick).map(e=>({startTick:e.tick,resolveTick:e.resolveTick,ticksLeft:e.resolveTick-E.tick,x:e.x,z:e.z})),phase:E.cmd('runState').phase,room:E.cmd('runState').room};}catch(err){}await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.map(e=>({id:e.id,kind:e.kind,x:+e.x.toFixed(2),z:+e.z.toFixed(2),hp:e.hp})),liveTele:window.__a2.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick).map(e=>({startTick:e.tick,resolveTick:e.resolveTick,ticksLeft:e.resolveTick-E.tick,x:e.x,z:e.z})),phase:E.cmd('runState').phase,room:E.cmd('runState').room}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const rs=E.cmd('runState');return {tag:'combat-frame',version:E.version,tick:E.tick,fps:+E.fps.toFixed(1),room:rs.room,mode:rs.mode,enemies:s.enemies.map(e=>({id:e.id,kind:e.kind,x:+e.x.toFixed(2),z:+e.z.toFixed(2),hp:e.hp})),telegraphs:window.__a2.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick-10).map(e=>({startTick:e.tick,resolveTick:e.resolveTick,ticksLeft:e.resolveTick-E.tick,x:e.x,z:e.z})),simTele:s.enemies.map(e=>e.telegraph?{id:e.id,tx:e.telegraph.x,tz:e.telegraph.z}:null).filter(Boolean),skillBolts:s.skillBolts.map(b=>({skill:b.skill,heal:b.heal,x:+b.x.toFixed(2),z:+b.z.toFixed(2)})),vfx:(s=>Object.assign({},s.vfx,{numerals:s.vfx.numerals??null,decals:s.vfx.decals??null,scorch:s.vfx.scorch??null,particles:s.vfx.particles??null}))(s),banner:E.hud.banner().text,party:s.party.map(p=>[p.classId||'healer',p.hp,+p.x.toFixed(2),+p.z.toFixed(2)])}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return {tag:\"teleDbg2\",dbg:window.__teleDbg||null}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m={};for(const e of window.__a2.ev)m[e.T]=(m[e.T]||0)+1;return {tick:E.tick,fps:+E.fps.toFixed(1),counts:m,total:window.__a2.ev.length}})()"
+ }
+]

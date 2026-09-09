@@ -1,0 +1,142 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => {\n  const E = window.__echoes; if (!E) return { armed:false };\n  window.__P = { ev: [], t0: E.tick };\n  for (const t of [\"shop_buy\",\"currency_denied\",\"skill_socket\",\"node_grant\"]) E.on(t, (e) => { window.__P.ev.push(Object.assign({ type: t }, e)); });\n  return { armed:true, tick:E.tick, version:E.version, seed:E.seed, bootSeed:E.bootSeed, types:4 };\n})()"
+  },
+  {
+    "type": "eval",
+    "code": "(() => {\n  const E = window.__echoes; E.cmd(\"startRun\");\n  const s = E.state();\n  return { tag: \"startRun\", tick: E.tick, room: s.room, phase: s.run && s.run.phase, screen: E.runUi && E.runUi().screen };\n})()"
+  },
+  {
+    "type": "eval",
+    "code": "(() => {\n  const E = window.__echoes; E.cmd(\"skipToRoom\", 7);\n  const s = E.state();\n  return { tag: \"skip7\", tick: E.tick, room: s.room, phase: s.run && s.run.phase, screen: E.runUi && E.runUi().screen };\n})()"
+  },
+  {
+    "type": "wait",
+    "ms": 1800
+  },
+  {
+    "type": "eval",
+    "code": "(() => {\n    const E = window.__echoes, u = E.runUi();\n    const boxes = [...document.querySelectorAll('.rn-card')].map((n,i) => { const r = n.getBoundingClientRect();\n      return { i, cls: n.className, x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height), op: getComputedStyle(n).opacity, tf: getComputedStyle(n).transform, tr: getComputedStyle(n).transition }; });\n    const pl = [...document.querySelectorAll('[class*=plaque]')].map((n) => { const r = n.getBoundingClientRect();\n      return { cls: n.className, x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height), txt: (n.textContent||'').trim() }; });\n    return { screen: u.screen, wallet: E.cmd('wallet'), tick: E.tick, cards: boxes, plaques: pl };\n  })()"
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shop-g0"
+  },
+  {
+    "type": "wait",
+    "ms": 220
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shop-g1"
+  },
+  {
+    "type": "wait",
+    "ms": 220
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shop-g2"
+  },
+  {
+    "type": "mousemove",
+    "x": 500,
+    "y": 600
+  },
+  {
+    "type": "wait",
+    "ms": 260
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shop-hover"
+  },
+  {
+    "type": "click",
+    "x": 500,
+    "y": 600
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shop-buy0"
+  },
+  {
+    "type": "wait",
+    "ms": 90
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shop-buy1"
+  },
+  {
+    "type": "wait",
+    "ms": 220
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shop-buy2"
+  },
+  {
+    "type": "wait",
+    "ms": 400
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shop-buy3"
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const E = window.__echoes; return { tag:'afterBuy1', tick:E.tick, wallet:E.cmd('wallet'),\n    cards: [...document.querySelectorAll('.rn-card')].map((n,i)=>({ i, cls:n.className, op:getComputedStyle(n).opacity, filter:getComputedStyle(n).filter, tf:getComputedStyle(n).transform })),\n    ev: window.__P.ev.slice(-4) }; })()"
+  },
+  {
+    "type": "click",
+    "x": 800,
+    "y": 600
+  },
+  {
+    "type": "wait",
+    "ms": 700
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const E = window.__echoes; return { tag:'afterBuy2', tick:E.tick, wallet:E.cmd('wallet'), ev: window.__P.ev.slice(-3) }; })()"
+  },
+  {
+    "type": "click",
+    "x": 1100,
+    "y": 600
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shop-deny0"
+  },
+  {
+    "type": "wait",
+    "ms": 110
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shop-deny1"
+  },
+  {
+    "type": "wait",
+    "ms": 200
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shop-deny2"
+  },
+  {
+    "type": "wait",
+    "ms": 500
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shop-deny3"
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const E = window.__echoes;\n    const pl = [...document.querySelectorAll('[class*=plaque]')].map((n)=>{ const r=n.getBoundingClientRect();\n      return { cls:n.className, x:+r.x.toFixed(2), y:+r.y.toFixed(2), txt:(n.textContent||'').trim(), anim:getComputedStyle(n).animationName }; });\n    return { tag:'afterDeny', tick:E.tick, wallet:E.cmd('wallet'), plaques:pl, ev: window.__P.ev.slice(-4) }; })()"
+  }
+]

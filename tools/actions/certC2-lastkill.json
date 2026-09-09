@@ -1,0 +1,43 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  window.__c={ev:[],rows:[],dom:[],keys:[],ticksSeen:0,frames:0,started:performance.now(),sampleOn:true,grabOn:false,grabs:[],buf:{}};\n  for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"spawn_blocked\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"hit\",\"hit_immune\",\"death\",\"hitstop\",\"sound\",\"heal\",\"intent\",\"intent_denied\",\"dash_end\",\"dash\",\"dodge\",\"downed\",\"revive\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"run_end\",\"defeat\",\"victory\",\"reward\",\"draft_taken\",\"path_chosen\",\"eshot_despawn\",\"zone_spawn\",\"enemy_despawn\",\"basic_fire\",\"skill_cast\",\"ally_cast\",\"ally_basic\",\"screenshake\",\"flash\",\"knockback\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t,ms:Math.round(performance.now()-window.__c.started)},e)));\n  window.addEventListener('keydown',e=>{if(e.repeat)return;const s=E.state();const p=s.party[0];window.__c.keys.push({key:e.code,t:E.tick,ms:Math.round(performance.now()-window.__c.started),x:p.x,z:p.z,dash:p.dashTicksLeft});},true);\n  window.addEventListener('keyup',e=>{const s=E.state();const p=s.party[0];window.__c.keys.push({key:e.code,upT:E.tick,t:E.tick,up:true,ms:Math.round(performance.now()-window.__c.started),x:p.x,z:p.z});},true);\n  const L=document.querySelector('#dmg-num-layer');window.__c.numLayer=!!L;\n  const lastKey=new WeakMap();\n  if(L){const mo=new MutationObserver(muts=>{const t=E.tick;const seen=new Set();for(const m of muts){const n=m.target.nodeType===3?m.target.parentElement:m.target;const el=n&&n.closest?n.closest('.dmg-num'):null;if(!el||seen.has(el))continue;seen.add(el);const cs=getComputedStyle(el);const vis=!(cs.display==='none'||cs.opacity==='0'||cs.visibility==='hidden'||!el.textContent);const k=el.textContent+'|'+vis;if(lastKey.get(el)===k)continue;lastKey.set(el,k);if(!vis)continue;const r=el.getBoundingClientRect();window.__c.dom.push({t,txt:el.textContent,x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),col:cs.color});}});mo.observe(L,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['style','class']});}\n  let last=-1;const f=()=>{window.__c.frames++;if(window.__c.sampleOn){const t=E.tick;if(t!==last){last=t;const s=E.state();const p=s.party[0];const cam=(window.__arenaProbe&&window.__arenaProbe.stage)?window.__arenaProbe.stage.camera.position:null;const en={};for(const e of s.enemies)en[e.id]=[+e.x.toFixed(3),+e.z.toFixed(3),e.hp,e.kbTicks];const vfx=s.vfx||{};const num=vfx.numerals??(vfx.arena&&vfx.arena.numerals)??null;window.__c.rows.push({t,ms:Math.round(performance.now()-window.__c.started),px:+p.x.toFixed(4),pz:+p.z.toFixed(4),dash:p.dashTicksLeft,hp:p.hp,cam:cam?[+cam.x.toFixed(4),+cam.y.toFixed(4),+cam.z.toFixed(4)]:null,num,en});window.__c.ticksSeen++;if(window.__c.rows.length>16000)window.__c.rows.splice(0,6000);}}requestAnimationFrame(f);};requestAnimationFrame(f);\n  return 'armed t'+E.tick+' ver '+E.version+' numLayer '+window.__c.numLayer+' probe '+!!window.__arenaProbe})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('startRun');return {seed:E.seed,ver:E.version,modes:r&&r.frame&&r.frame.modes,room:r&&r.room,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const k0=E.tick;while(performance.now()-t0<40000){if((()=>{const s=E.state();return s.run.active&&s.run.combatActive&&s.enemies.length>0})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length,phase:E.state().run.phase};await sleep(4);}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,enemies:E.state().enemies.length,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('iframe',0,3600);return 'iframe t'+E.tick})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const marks=[];while(performance.now()-t0<170000){const u=E.runUi();if(u.screen==='draft')E.cmd('draftDecline');else if(u.screen==='path')E.cmd('pathChoose',0);else if(u.screen==='shop')E.cmd('shopAdvance');const p=E.state().party[0];if(p.hp<40)E.cmd('setHp',0,1);const cl=window.__c.ev.filter(e=>e.T==='room_cleared').length;if(cl>=3)return {ok:true,tick:E.tick,cleared:cl,room:E.state().run.room};await sleep(60);}return {ok:false,tick:E.tick,cleared:window.__c.ev.filter(e=>e.T==='room_cleared').length,room:E.state().run.room}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n    const ev=window.__c.ev;const deaths=ev.filter(e=>e.T==='death'&&e.id>=4);const clears=ev.filter(e=>e.T==='room_cleared').map(e=>e.tick);\n    const rows=window.__c.rows;const byT=new Map();for(const r of rows)byT.set(r.t,r);\n    const out=deaths.map(d=>{const h=ev.filter(e=>e.T==='hit'&&e.target===d.id&&e.tick>=d.tick-2&&e.tick<=d.tick).slice(-1)[0];\n      const amt=h?String(Math.round(h.amount)):null;\n      const dom=window.__c.dom.filter(x=>x.t>=d.tick-1&&x.t<=d.tick+3);\n      const exact=amt?dom.filter(x=>x.txt===amt):[];\n      const nums=rows.filter(r=>r.t>=d.tick-2&&r.t<=d.tick+4).map(r=>r.t+':'+r.num).join(' ');\n      let gapMs=null;for(let i=1;i<rows.length;i++){if(rows[i].t===d.tick){gapMs=rows[i].ms-rows[i-1].ms;break;}}\n      return {death:d.tick,id:d.id,hitAmt:amt,hitTick:h&&h.tick,clearsRoom:clears.includes(d.tick),numeralExact:exact.length,numeralAny:dom.map(x=>x.txt),numeralPos:exact.slice(0,1).map(x=>[x.x,x.y,x.w,x.h]),numTrace:nums,frameGapMs:gapMs};});\n    const clearing=out.filter(o=>o.clearsRoom);const others=out.filter(o=>!o.clearsRoom);\n    return {clears,deaths:out.length,clearingKills:clearing,clearingWithNumeral:clearing.filter(o=>o.numeralExact>0).length,otherKills:others.length,otherWithNumeral:others.filter(o=>o.numeralExact>0).length,killsMissingNumeral:out.filter(o=>o.numeralExact===0).map(o=>[o.death,o.hitAmt,o.clearsRoom,o.numeralAny])}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const m={};for(const e of window.__c.ev)m[e.T]=(m[e.T]||0)+1;return {tick:E.tick,counts:m}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=window.__c.rows;let gaps=0,maxGap=0;for(let i=1;i<r.length;i++){const g=r[i].t-r[i-1].t;if(g>1){gaps+=g-1;maxGap=Math.max(maxGap,g);}}return {ticksSeen:window.__c.ticksSeen,frames:window.__c.frames,fps:E.fps,missedTicks:gaps,maxTickGap:maxGap,span:r.length?r[r.length-1].t-r[0].t:0}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;return {tag:\"lastkill-end\",tick:E.tick,fps:E.fps,version:E.version,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,enemies:s.enemies.length,party:s.party.map(p=>[p.id,p.classId||'healer',p.hp,p.downed]),ui:E.runUi().screen,threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat())}})()"
+ }
+]

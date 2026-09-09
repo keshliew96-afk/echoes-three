@@ -143,7 +143,35 @@ const arena = [
   ...report,
 ];
 
+// ------------------------------------ non-boss room, victims pinned alive --
+// The critic's calibration scenario (certC2-ref0-cal): a room-5 defend fight on
+// seed 909 with every enemy topped up to full HP every 20 ms, so the melee
+// allies' arcs connect on ORDINARY boars/mantises without killing them. Round 2
+// measured 75 such connects with 0 hitstop here.
+const pinned = [
+  arm,
+  ev(iife(`E.cmd('startRun');return {seed:E.seed,tick:E.tick}`)),
+  ev(aiife(`const t0=performance.now();while(performance.now()-t0<30000){const s=E.state();if(s.run.active)break;await sleep(8);}
+    const r=E.cmd('skipToRoom',5);return {skip:{room:r.room,mode:r.frame&&r.frame.modes[4]},tick:E.tick}`)),
+  ev(aiife(`const t0=performance.now();while(performance.now()-t0<40000){const s=E.state();if(s.enemies.length>=2)return {ok:true,tick:E.tick,enemies:s.enemies.map(e=>[e.id,e.kind,e.hp])};await sleep(20);}
+    return {ok:false,tick:E.tick}`)),
+  ev(iife(`E.cmd('iframe',0,90000);
+    window.__c.pin=setInterval(()=>{try{for(const e of E.state().enemies)E.cmd('setHp',e.id,1);}catch(err){window.__c.perr=String(err)}},20);
+    window.__c.start=E.tick;return {start:E.tick}`)),
+  mv(800, 450),
+  ev(aiife(`const t0=performance.now();let n=0;while(performance.now()-t0<50000){
+      const s=E.state();
+      if(s.enemies.length>0&&(n%6===0)){const e=s.enemies[0];E.cmd('teleport',e.x+1.0,e.z);E.cmd('rally');}
+      for(const p of s.party)if(p.hp<70)E.cmd('setHp',p.id,1);
+      n++;await sleep(250);}
+    return {end:E.tick,fps:E.fps,hits:window.__c.ev.filter(e=>e.T==='hit').length,pinErr:window.__c.perr||null}`)),
+  { type: 'shot', name: 'certfixC2-pinned-grind' },
+  ev(iife(`clearInterval(window.__c.pin);return {pinOff:E.tick}`)),
+  ...report,
+];
+
 mkdirSync('tools/actions', { recursive: true });
 writeFileSync('tools/actions/certfixC2-boss.json', JSON.stringify(boss, null, 1));
 writeFileSync('tools/actions/certfixC2-arena.json', JSON.stringify(arena, null, 1));
+writeFileSync('tools/actions/certfixC2-pinned.json', JSON.stringify(pinned, null, 1));
 console.log('wrote certfixC2-boss.json', boss.length, '/ certfixC2-arena.json', arena.length);

@@ -1,0 +1,195 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  window.__c={ev:[],rows:[],dom:[],frames:[],started:performance.now(),grabOn:false,hits:[],saved:[]};\n  for(const t of [\"hit\",\"death\",\"hitstop\",\"sound\",\"ally_basic\",\"ally_cast\",\"enemy_spawn\",\"screenshake\",\"room_cleared\",\"wave_start\",\"hit_immune\",\"knockback\",\"flash\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));\n  const L=document.querySelector('#dmg-num-layer');window.__c.numLayer=!!L;const lastKey=new WeakMap();\n  if(L){const mo=new MutationObserver(muts=>{const t=E.tick;const seen=new Set();for(const m of muts){const n=m.target.nodeType===3?m.target.parentElement:m.target;const el=n&&n.closest?n.closest('.dmg-num'):null;if(!el||seen.has(el))continue;seen.add(el);const cs=getComputedStyle(el);const vis=!(cs.display==='none'||cs.opacity==='0'||cs.visibility==='hidden'||!el.textContent);const k=el.textContent+'|'+vis;if(lastKey.get(el)===k)continue;lastKey.set(el,k);if(!vis)continue;const r=el.getBoundingClientRect();window.__c.dom.push({t,txt:el.textContent,x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),col:cs.color});}});mo.observe(L,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['style','class']});}\n  // canvas flash sampler\n  const cv=document.querySelector('canvas');window.__c.cv=cv;\n  const CW=64,CH=88;const off=document.createElement('canvas');off.width=CW;off.height=CH;const ctx=off.getContext('2d',{willReadFrequently:true});\n  const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;\n  window.__c.proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [(v.x*0.5+0.5)*window.innerWidth,(-v.y*0.5+0.5)*window.innerHeight];};\n  const stats=(d)=>{let w=0,sum=0,mx=0;const n=d.length/4;for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2];const Lm=0.299*r+0.587*g+0.114*b;const mxc=Math.max(r,g,b),mnc=Math.min(r,g,b);const S=mxc?(mxc-mnc)/mxc:0;sum+=Lm;if(Lm>mx)mx=Lm;if(Lm>230&&S<0.18)w++;}return {W:+(w/n).toFixed(3),L:+(sum/n).toFixed(1),mx:Math.round(mx)};};\n  window.__c.series={};   // enemyId -> [{t,W,L,mx,box}] rolling\n  window.__c.grabFrame=()=>{if(!window.__c.grabOn)return;const s=E.state();const t=E.tick;\n    for(const e of s.enemies){const c=window.__c.proj(e.x,0.55,e.z);const x=Math.round(c[0]-CW/2),y=Math.round(c[1]-CH/2);\n      if(x<0||y<0||x+CW>cv.width||y+CH>cv.height)continue;\n      ctx.clearRect(0,0,CW,CH);ctx.drawImage(cv,x,y,CW,CH,0,0,CW,CH);\n      const st=stats(ctx.getImageData(0,0,CW,CH).data);\n      const a=window.__c.series[e.id]||(window.__c.series[e.id]=[]);\n      a.push({t,W:st.W,L:st.L,mx:st.mx,box:[x,y,CW,CH],url:(window.__c.saveNext&&window.__c.saveNext[e.id])?off.toDataURL('image/png'):null});\n      if(a.length>26)a.shift();}};\n  let last=-1;\n  const f=()=>{const now=performance.now()-window.__c.started;const t=E.tick;\n    window.__c.frames.push([Math.round(now*10)/10,t]);if(window.__c.frames.length>90000)window.__c.frames.splice(0,30000);\n    window.__c.grabFrame();\n    if(t!==last){last=t;const s=E.state();const en={};for(const e of s.enemies)en[e.id]=[+e.x.toFixed(4),+e.z.toFixed(4),e.hp,e.kbTicks];\n      window.__c.rows.push({t,en,num:(s.vfx&&(s.vfx.numerals??(s.vfx.arena&&s.vfx.arena.numerals)))??null});\n      if(window.__c.rows.length>26000)window.__c.rows.splice(0,9000);}\n    requestAnimationFrame(f);};\n  requestAnimationFrame(f);\n  window.__c.dwell=(T)=>{const F=window.__c.frames;let i0=-1;for(let i=0;i<F.length;i++){if(F[i][1]===T){i0=i;break;}if(F[i][1]>T)return null;}\n    if(i0<0)return null;let j=i0;while(j<F.length&&F[j][1]<=T)j++;if(j>=F.length)return null;return +(F[j][0]-F[i0][0]).toFixed(1);};\n  // freeze a flash window per hit: keep 3 pre-frames and collect 6 post-frames\n  E.on('hit',(h)=>{if(!window.__c.grabOn)return;if(h.target<4)return;\n    const a=window.__c.series[h.target]||[];const pre=a.filter(r=>r.t<h.tick).slice(-3).map(r=>[r.t,r.W,r.L,r.mx]);\n    window.__c.hits.push({t:h.tick,tgt:h.target,src:h.source,atk:h.attacker,amt:h.amount,crit:h.crit,kb:h.kb,dirX:h.dirX,dirZ:h.dirZ,pre,post:[],need:7,box:a.length?a[a.length-1].box:null});});\n  // post-frame collector\n  const g=()=>{if(window.__c.grabOn){for(const hh of window.__c.hits){if(hh.need>0){const a=window.__c.series[hh.tgt]||[];const r=a[a.length-1];\n    if(r&&(!hh.post.length||hh.post[hh.post.length-1][0]!==r.t)){hh.post.push([r.t,r.W,r.L,r.mx]);hh.need--;if(r.url&&hh.urls===undefined)hh.urls=[];if(r.url&&hh.urls)hh.urls.push([r.t,r.url]);}}}}\n    requestAnimationFrame(g);};requestAnimationFrame(g);\n  return 'armed t'+E.tick+' ver '+E.version+' numLayer '+window.__c.numLayer+' canvas '+cv.width+'x'+cv.height})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed,tick:E.tick,ver:E.version}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();while(performance.now()-t0<45000){const s=E.state();if(s.run.active&&s.run.combatActive&&s.enemies.length>0)return {ok:true,tick:E.tick,enemies:s.enemies.length,fps:E.fps};await sleep(8);}return {ok:false,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('iframe',0,30000);window.__c.grabOn=true;window.__c.start=E.tick;\n    window.__c.pin=setInterval(()=>{try{for(const e of E.state().enemies)E.cmd('setHp',e.id,1);}catch(err){}},20);\n    return {start:E.tick,grabOn:true}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();let n=0;\n    while(performance.now()-t0<80000){\n      const u=E.runUi();if(u.screen==='draft')E.cmd('draftDecline');else if(u.screen==='path')E.cmd('pathChoose',0);else if(u.screen==='shop')E.cmd('shopAdvance');\n      const s=E.state();const tk=s.party[1],sw=s.party[2];\n      for(let i=0;i<4;i++){const q=s.party[i];if(q&&q.maxHp&&q.hp<q.maxHp)E.cmd('setHp',i,1);}\n      if(s.enemies.length<5){const a=(n%2===0?tk:sw)||tk;if(a)E.cmd('spawn','boar',a.x+0.45,a.z+0.25);}\n      const e=s.enemies[0];\n      if(e&&n%3===0){E.cmd('mark',e.id);E.cmd('teleport',e.x+0.9,e.z+0.4);E.cmd('rally');}\n      n++;await sleep(200);}\n    return {end:E.tick,fps:E.fps,hits:window.__c.hits.length,enemies:E.state().enemies.length,deaths:window.__c.ev.filter(e=>e.T==='death').length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const arcSkills=['heavy_slam','brutal_cleave','flurry','lunge_strike'];\n  const isArc=(h)=>arcSkills.includes(h.src||h.source)||(/_basic$/.test(h.src||h.source||'')&&((h.atk!==undefined?h.atk:h.attacker)===1||(h.atk!==undefined?h.atk:h.attacker)===2));const H=window.__c.hits;const D=window.__c.ev.filter(e=>e.T==='death');\n    const dead=(h)=>D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);\n    const src={};for(const h of H)src[h.src+'|atk'+h.atk+(isArc(h)?'|ARC':'|ranged')+(dead(h)?'|KILL':'|nonkill')]=(src[h.src+'|atk'+h.atk+(isArc(h)?'|ARC':'|ranged')+(dead(h)?'|KILL':'|nonkill')]||0)+1;\n    return {totalHits:H.length,nonKill:H.filter(h=>!dead(h)).length,arcNonKill:H.filter(h=>isArc(h)&&!dead(h)).length,bySrc:src,deaths:D.length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const arcSkills=['heavy_slam','brutal_cleave','flurry','lunge_strike'];\n  const isArc=(h)=>arcSkills.includes(h.src||h.source)||(/_basic$/.test(h.src||h.source||'')&&((h.atk!==undefined?h.atk:h.attacker)===1||(h.atk!==undefined?h.atk:h.attacker)===2));\n  const D=window.__c.ev.filter(e=>e.T==='death');const S=window.__c.ev.filter(e=>e.T==='sound');const HS=window.__c.ev.filter(e=>e.T==='hitstop');\n  const rows=window.__c.rows;\n  const out=window.__c.hits.slice(0,10).map(h=>{\n    const dead=D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);\n    const num=window.__c.dom.filter(d=>d.t>=h.t-1&&d.t<=h.t+3&&d.txt===String(h.amt))[0]||null;\n    const snd=S.filter(s=>s.tick>=h.t&&s.tick<=h.t+2).map(s=>s.slot);\n    const r0=rows.find(r=>r.t===h.t&&r.en[h.tgt]);\n    let disp=null,along=null,kbT=null;\n    if(r0){const p0=r0.en[h.tgt];let best=0,bestAlong=0,mkb=0;\n      for(const r of rows){if(r.t<=h.t||r.t>h.t+10)continue;const p=r.en[h.tgt];if(!p)continue;\n        const dx=p[0]-p0[0],dz=p[1]-p0[1];const d=Math.hypot(dx,dz);if(d>best)best=d;\n        const al=dx*(h.dirX||0)+dz*(h.dirZ||0);if(al>bestAlong)bestAlong=al;if(p[3]>mkb)mkb=p[3];}\n      disp=+best.toFixed(3);along=+bestAlong.toFixed(3);kbT=mkb;}\n    const wpre=h.pre.map(p=>p[1]);const wpost=h.post.map(p=>p[1]);\n    const flashW=Math.max(0,...wpost.slice(0,4));\n    return {t:h.t,src:h.src,arc:isArc(h),atk:h.atk,tgt:h.tgt,amt:h.amt,dead,\n      num:num?num.txt+'@'+num.x+','+num.y+' dt'+(num.t-h.t):null,snd:snd.join('+')||null,\n      kb:disp,along,kbTicks:kbT,Wpre:Math.max(0,...wpre).toFixed(3),Wflash:flashW.toFixed(3),\n      pre:h.pre.map(p=>p[0]+':'+p[1]).join(' '),post:h.post.map(p=>p[0]+':'+p[1]).join(' '),\n      stop:(HS.find(s=>s.tick>=h.t&&s.tick<=h.t+2)||{}).cause||null,dwell:window.__c.dwell(h.t)};});\n  return out})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const arcSkills=['heavy_slam','brutal_cleave','flurry','lunge_strike'];\n  const isArc=(h)=>arcSkills.includes(h.src||h.source)||(/_basic$/.test(h.src||h.source||'')&&((h.atk!==undefined?h.atk:h.attacker)===1||(h.atk!==undefined?h.atk:h.attacker)===2));\n  const D=window.__c.ev.filter(e=>e.T==='death');const S=window.__c.ev.filter(e=>e.T==='sound');const HS=window.__c.ev.filter(e=>e.T==='hitstop');\n  const rows=window.__c.rows;\n  const out=window.__c.hits.slice(10,20).map(h=>{\n    const dead=D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);\n    const num=window.__c.dom.filter(d=>d.t>=h.t-1&&d.t<=h.t+3&&d.txt===String(h.amt))[0]||null;\n    const snd=S.filter(s=>s.tick>=h.t&&s.tick<=h.t+2).map(s=>s.slot);\n    const r0=rows.find(r=>r.t===h.t&&r.en[h.tgt]);\n    let disp=null,along=null,kbT=null;\n    if(r0){const p0=r0.en[h.tgt];let best=0,bestAlong=0,mkb=0;\n      for(const r of rows){if(r.t<=h.t||r.t>h.t+10)continue;const p=r.en[h.tgt];if(!p)continue;\n        const dx=p[0]-p0[0],dz=p[1]-p0[1];const d=Math.hypot(dx,dz);if(d>best)best=d;\n        const al=dx*(h.dirX||0)+dz*(h.dirZ||0);if(al>bestAlong)bestAlong=al;if(p[3]>mkb)mkb=p[3];}\n      disp=+best.toFixed(3);along=+bestAlong.toFixed(3);kbT=mkb;}\n    const wpre=h.pre.map(p=>p[1]);const wpost=h.post.map(p=>p[1]);\n    const flashW=Math.max(0,...wpost.slice(0,4));\n    return {t:h.t,src:h.src,arc:isArc(h),atk:h.atk,tgt:h.tgt,amt:h.amt,dead,\n      num:num?num.txt+'@'+num.x+','+num.y+' dt'+(num.t-h.t):null,snd:snd.join('+')||null,\n      kb:disp,along,kbTicks:kbT,Wpre:Math.max(0,...wpre).toFixed(3),Wflash:flashW.toFixed(3),\n      pre:h.pre.map(p=>p[0]+':'+p[1]).join(' '),post:h.post.map(p=>p[0]+':'+p[1]).join(' '),\n      stop:(HS.find(s=>s.tick>=h.t&&s.tick<=h.t+2)||{}).cause||null,dwell:window.__c.dwell(h.t)};});\n  return out})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const arcSkills=['heavy_slam','brutal_cleave','flurry','lunge_strike'];\n  const isArc=(h)=>arcSkills.includes(h.src||h.source)||(/_basic$/.test(h.src||h.source||'')&&((h.atk!==undefined?h.atk:h.attacker)===1||(h.atk!==undefined?h.atk:h.attacker)===2));\n  const D=window.__c.ev.filter(e=>e.T==='death');const S=window.__c.ev.filter(e=>e.T==='sound');const HS=window.__c.ev.filter(e=>e.T==='hitstop');\n  const rows=window.__c.rows;\n  const out=window.__c.hits.slice(20,30).map(h=>{\n    const dead=D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);\n    const num=window.__c.dom.filter(d=>d.t>=h.t-1&&d.t<=h.t+3&&d.txt===String(h.amt))[0]||null;\n    const snd=S.filter(s=>s.tick>=h.t&&s.tick<=h.t+2).map(s=>s.slot);\n    const r0=rows.find(r=>r.t===h.t&&r.en[h.tgt]);\n    let disp=null,along=null,kbT=null;\n    if(r0){const p0=r0.en[h.tgt];let best=0,bestAlong=0,mkb=0;\n      for(const r of rows){if(r.t<=h.t||r.t>h.t+10)continue;const p=r.en[h.tgt];if(!p)continue;\n        const dx=p[0]-p0[0],dz=p[1]-p0[1];const d=Math.hypot(dx,dz);if(d>best)best=d;\n        const al=dx*(h.dirX||0)+dz*(h.dirZ||0);if(al>bestAlong)bestAlong=al;if(p[3]>mkb)mkb=p[3];}\n      disp=+best.toFixed(3);along=+bestAlong.toFixed(3);kbT=mkb;}\n    const wpre=h.pre.map(p=>p[1]);const wpost=h.post.map(p=>p[1]);\n    const flashW=Math.max(0,...wpost.slice(0,4));\n    return {t:h.t,src:h.src,arc:isArc(h),atk:h.atk,tgt:h.tgt,amt:h.amt,dead,\n      num:num?num.txt+'@'+num.x+','+num.y+' dt'+(num.t-h.t):null,snd:snd.join('+')||null,\n      kb:disp,along,kbTicks:kbT,Wpre:Math.max(0,...wpre).toFixed(3),Wflash:flashW.toFixed(3),\n      pre:h.pre.map(p=>p[0]+':'+p[1]).join(' '),post:h.post.map(p=>p[0]+':'+p[1]).join(' '),\n      stop:(HS.find(s=>s.tick>=h.t&&s.tick<=h.t+2)||{}).cause||null,dwell:window.__c.dwell(h.t)};});\n  return out})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const arcSkills=['heavy_slam','brutal_cleave','flurry','lunge_strike'];\n  const isArc=(h)=>arcSkills.includes(h.src||h.source)||(/_basic$/.test(h.src||h.source||'')&&((h.atk!==undefined?h.atk:h.attacker)===1||(h.atk!==undefined?h.atk:h.attacker)===2));\n  const D=window.__c.ev.filter(e=>e.T==='death');const S=window.__c.ev.filter(e=>e.T==='sound');const HS=window.__c.ev.filter(e=>e.T==='hitstop');\n  const rows=window.__c.rows;\n  const out=window.__c.hits.slice(30,40).map(h=>{\n    const dead=D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);\n    const num=window.__c.dom.filter(d=>d.t>=h.t-1&&d.t<=h.t+3&&d.txt===String(h.amt))[0]||null;\n    const snd=S.filter(s=>s.tick>=h.t&&s.tick<=h.t+2).map(s=>s.slot);\n    const r0=rows.find(r=>r.t===h.t&&r.en[h.tgt]);\n    let disp=null,along=null,kbT=null;\n    if(r0){const p0=r0.en[h.tgt];let best=0,bestAlong=0,mkb=0;\n      for(const r of rows){if(r.t<=h.t||r.t>h.t+10)continue;const p=r.en[h.tgt];if(!p)continue;\n        const dx=p[0]-p0[0],dz=p[1]-p0[1];const d=Math.hypot(dx,dz);if(d>best)best=d;\n        const al=dx*(h.dirX||0)+dz*(h.dirZ||0);if(al>bestAlong)bestAlong=al;if(p[3]>mkb)mkb=p[3];}\n      disp=+best.toFixed(3);along=+bestAlong.toFixed(3);kbT=mkb;}\n    const wpre=h.pre.map(p=>p[1]);const wpost=h.post.map(p=>p[1]);\n    const flashW=Math.max(0,...wpost.slice(0,4));\n    return {t:h.t,src:h.src,arc:isArc(h),atk:h.atk,tgt:h.tgt,amt:h.amt,dead,\n      num:num?num.txt+'@'+num.x+','+num.y+' dt'+(num.t-h.t):null,snd:snd.join('+')||null,\n      kb:disp,along,kbTicks:kbT,Wpre:Math.max(0,...wpre).toFixed(3),Wflash:flashW.toFixed(3),\n      pre:h.pre.map(p=>p[0]+':'+p[1]).join(' '),post:h.post.map(p=>p[0]+':'+p[1]).join(' '),\n      stop:(HS.find(s=>s.tick>=h.t&&s.tick<=h.t+2)||{}).cause||null,dwell:window.__c.dwell(h.t)};});\n  return out})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const arcSkills=['heavy_slam','brutal_cleave','flurry','lunge_strike'];\n  const isArc=(h)=>arcSkills.includes(h.src||h.source)||(/_basic$/.test(h.src||h.source||'')&&((h.atk!==undefined?h.atk:h.attacker)===1||(h.atk!==undefined?h.atk:h.attacker)===2));\n  const D=window.__c.ev.filter(e=>e.T==='death');const S=window.__c.ev.filter(e=>e.T==='sound');const HS=window.__c.ev.filter(e=>e.T==='hitstop');\n  const rows=window.__c.rows;\n  const out=window.__c.hits.slice(40,52).map(h=>{\n    const dead=D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);\n    const num=window.__c.dom.filter(d=>d.t>=h.t-1&&d.t<=h.t+3&&d.txt===String(h.amt))[0]||null;\n    const snd=S.filter(s=>s.tick>=h.t&&s.tick<=h.t+2).map(s=>s.slot);\n    const r0=rows.find(r=>r.t===h.t&&r.en[h.tgt]);\n    let disp=null,along=null,kbT=null;\n    if(r0){const p0=r0.en[h.tgt];let best=0,bestAlong=0,mkb=0;\n      for(const r of rows){if(r.t<=h.t||r.t>h.t+10)continue;const p=r.en[h.tgt];if(!p)continue;\n        const dx=p[0]-p0[0],dz=p[1]-p0[1];const d=Math.hypot(dx,dz);if(d>best)best=d;\n        const al=dx*(h.dirX||0)+dz*(h.dirZ||0);if(al>bestAlong)bestAlong=al;if(p[3]>mkb)mkb=p[3];}\n      disp=+best.toFixed(3);along=+bestAlong.toFixed(3);kbT=mkb;}\n    const wpre=h.pre.map(p=>p[1]);const wpost=h.post.map(p=>p[1]);\n    const flashW=Math.max(0,...wpost.slice(0,4));\n    return {t:h.t,src:h.src,arc:isArc(h),atk:h.atk,tgt:h.tgt,amt:h.amt,dead,\n      num:num?num.txt+'@'+num.x+','+num.y+' dt'+(num.t-h.t):null,snd:snd.join('+')||null,\n      kb:disp,along,kbTicks:kbT,Wpre:Math.max(0,...wpre).toFixed(3),Wflash:flashW.toFixed(3),\n      pre:h.pre.map(p=>p[0]+':'+p[1]).join(' '),post:h.post.map(p=>p[0]+':'+p[1]).join(' '),\n      stop:(HS.find(s=>s.tick>=h.t&&s.tick<=h.t+2)||{}).cause||null,dwell:window.__c.dwell(h.t)};});\n  return out})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const arcSkills=['heavy_slam','brutal_cleave','flurry','lunge_strike'];\n  const isArc=(h)=>arcSkills.includes(h.src||h.source)||(/_basic$/.test(h.src||h.source||'')&&((h.atk!==undefined?h.atk:h.attacker)===1||(h.atk!==undefined?h.atk:h.attacker)===2));\n  const D=window.__c.ev.filter(e=>e.T==='death');const S=window.__c.ev.filter(e=>e.T==='sound');const HS=window.__c.ev.filter(e=>e.T==='hitstop');\n  const rows=window.__c.rows;\n  const out=window.__c.hits.slice(52,64).map(h=>{\n    const dead=D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);\n    const num=window.__c.dom.filter(d=>d.t>=h.t-1&&d.t<=h.t+3&&d.txt===String(h.amt))[0]||null;\n    const snd=S.filter(s=>s.tick>=h.t&&s.tick<=h.t+2).map(s=>s.slot);\n    const r0=rows.find(r=>r.t===h.t&&r.en[h.tgt]);\n    let disp=null,along=null,kbT=null;\n    if(r0){const p0=r0.en[h.tgt];let best=0,bestAlong=0,mkb=0;\n      for(const r of rows){if(r.t<=h.t||r.t>h.t+10)continue;const p=r.en[h.tgt];if(!p)continue;\n        const dx=p[0]-p0[0],dz=p[1]-p0[1];const d=Math.hypot(dx,dz);if(d>best)best=d;\n        const al=dx*(h.dirX||0)+dz*(h.dirZ||0);if(al>bestAlong)bestAlong=al;if(p[3]>mkb)mkb=p[3];}\n      disp=+best.toFixed(3);along=+bestAlong.toFixed(3);kbT=mkb;}\n    const wpre=h.pre.map(p=>p[1]);const wpost=h.post.map(p=>p[1]);\n    const flashW=Math.max(0,...wpost.slice(0,4));\n    return {t:h.t,src:h.src,arc:isArc(h),atk:h.atk,tgt:h.tgt,amt:h.amt,dead,\n      num:num?num.txt+'@'+num.x+','+num.y+' dt'+(num.t-h.t):null,snd:snd.join('+')||null,\n      kb:disp,along,kbTicks:kbT,Wpre:Math.max(0,...wpre).toFixed(3),Wflash:flashW.toFixed(3),\n      pre:h.pre.map(p=>p[0]+':'+p[1]).join(' '),post:h.post.map(p=>p[0]+':'+p[1]).join(' '),\n      stop:(HS.find(s=>s.tick>=h.t&&s.tick<=h.t+2)||{}).cause||null,dwell:window.__c.dwell(h.t)};});\n  return out})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const arcSkills=['heavy_slam','brutal_cleave','flurry','lunge_strike'];\n  const isArc=(h)=>arcSkills.includes(h.src||h.source)||(/_basic$/.test(h.src||h.source||'')&&((h.atk!==undefined?h.atk:h.attacker)===1||(h.atk!==undefined?h.atk:h.attacker)===2));const D=window.__c.ev.filter(e=>e.T==='death');const S=window.__c.ev.filter(e=>e.T==='sound');\n    const rows=window.__c.rows;let all=0,nk=0,arcnk=0;const fails=[];const per={num:0,snd:0,kb:0,flash:0};\n    const res=[];\n    for(const h of window.__c.hits){const dead=D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);\n      const num=window.__c.dom.some(d=>d.t>=h.t-1&&d.t<=h.t+3&&d.txt===String(h.amt));\n      const snd=S.some(s=>s.tick>=h.t&&s.tick<=h.t+2);\n      const r0=rows.find(r=>r.t===h.t&&r.en[h.tgt]);let disp=0,mkb=0;\n      if(r0){const p0=r0.en[h.tgt];for(const r of rows){if(r.t<=h.t||r.t>h.t+10)continue;const p=r.en[h.tgt];if(!p)continue;const d=Math.hypot(p[0]-p0[0],p[1]-p0[1]);if(d>disp)disp=d;if(p[3]>mkb)mkb=p[3];}}\n      const flash=Math.max(0,...h.post.slice(0,4).map(p=>p[1]))>0.05;\n      const ok={num,snd,kb:disp>0.05||mkb>0,flash};\n      res.push({t:h.t,src:h.src,arc:isArc(h),dead,ok});\n      if(!dead){nk++;if(isArc(h))arcnk++;if(num)per.num++;if(snd)per.snd++;if(ok.kb)per.kb++;if(ok.flash)per.flash++;\n        if(!(num&&snd&&ok.kb&&ok.flash))fails.push({t:h.t,src:h.src,arc:isArc(h),ok,disp:+disp.toFixed(3),kbTicks:mkb,W:Math.max(0,...h.post.slice(0,4).map(p=>p[1]))});}\n      all++;}\n    return {allHits:all,nonKillHits:nk,arcNonKill:arcnk,nonKillWith:per,nonKillAllFour:nk-fails.length,fails:fails.slice(0,12)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const arcSkills=['heavy_slam','brutal_cleave','flurry','lunge_strike'];\n  const isArc=(h)=>arcSkills.includes(h.src||h.source)||(/_basic$/.test(h.src||h.source||'')&&((h.atk!==undefined?h.atk:h.attacker)===1||(h.atk!==undefined?h.atk:h.attacker)===2));const D=window.__c.ev.filter(e=>e.T==='death');const rows=window.__c.rows;\n    const out=[];for(const h of window.__c.hits){const dead=D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);if(dead||!isArc(h))continue;\n      const r0=rows.find(r=>r.t===h.t&&r.en[h.tgt]);if(!r0)continue;const p0=r0.en[h.tgt];let disp=0,along=0,mkb=0,atT=null;\n      for(const r of rows){if(r.t<=h.t||r.t>h.t+10)continue;const p=r.en[h.tgt];if(!p)continue;const dx=p[0]-p0[0],dz=p[1]-p0[1];const d=Math.hypot(dx,dz);if(d>disp){disp=d;if(atT===null&&d>0.05)atT=r.t;}const al=dx*(h.dirX||0)+dz*(h.dirZ||0);if(al>along)along=al;if(p[3]>mkb)mkb=p[3];}\n      out.push([h.t,h.src,h.amt,+disp.toFixed(3),+along.toFixed(3),mkb,atT,h.kb]);}\n    return {meleeNonKillKnockback:out}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c.saveNext={};const s=E.state();for(const e of s.enemies)window.__c.saveNext[e.id]=true;return {saving:Object.keys(window.__c.saveNext)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));window.__c.hits.length=0;await sleep(6000);return {captured:window.__c.hits.length,withUrls:window.__c.hits.filter(h=>h.urls&&h.urls.length).length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const h=window.__c.hits.filter(q=>q.urls&&q.urls.length>=3)[0];if(!h)return {set:0,none:true};\n    const D=window.__c.ev.filter(e=>e.T==='death');const dead=D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);\n    return JSON.stringify({set:0,t:h.t,src:h.src,amt:h.amt,tgt:h.tgt,dead,box:h.box,pre:h.pre,post:h.post,frames:h.urls.slice(0,5).map(u=>({t:u[0],url:u[1]}))})})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const h=window.__c.hits.filter(q=>q.urls&&q.urls.length>=3)[1];if(!h)return {set:1,none:true};\n    const D=window.__c.ev.filter(e=>e.T==='death');const dead=D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);\n    return JSON.stringify({set:1,t:h.t,src:h.src,amt:h.amt,tgt:h.tgt,dead,box:h.box,pre:h.pre,post:h.post,frames:h.urls.slice(0,5).map(u=>({t:u[0],url:u[1]}))})})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const h=window.__c.hits.filter(q=>q.urls&&q.urls.length>=3)[2];if(!h)return {set:2,none:true};\n    const D=window.__c.ev.filter(e=>e.T==='death');const dead=D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);\n    return JSON.stringify({set:2,t:h.t,src:h.src,amt:h.amt,tgt:h.tgt,dead,box:h.box,pre:h.pre,post:h.post,frames:h.urls.slice(0,5).map(u=>({t:u[0],url:u[1]}))})})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const h=window.__c.hits.filter(q=>q.urls&&q.urls.length>=3)[3];if(!h)return {set:3,none:true};\n    const D=window.__c.ev.filter(e=>e.T==='death');const dead=D.some(d=>d.id===h.tgt&&Math.abs(d.tick-h.t)<=1);\n    return JSON.stringify({set:3,t:h.t,src:h.src,amt:h.amt,tgt:h.tgt,dead,box:h.box,pre:h.pre,post:h.post,frames:h.urls.slice(0,5).map(u=>({t:u[0],url:u[1]}))})})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c.saveNext={};return 'saving off'})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c.seq=[];return 'seq start t'+E.tick})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC2-b3-seq0"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const t=E.tick;\n      const ens=s.enemies.map(e=>{const c=window.__c.proj(e.x,0.55,e.z);const a=window.__c.series[e.id]||[];const last=a.slice(-3).map(r=>r.t+':'+r.W);\n        return {id:e.id,kind:e.kind,hp:e.hp,w:[+e.x.toFixed(2),+e.z.toFixed(2)],box:[Math.round(c[0]-32),Math.round(c[1]-44),64,88],recentW:last.join(' ')};});\n      const rec=window.__c.ev.filter(e=>e.T==='hit'&&e.tick>=t-12).map(h=>[h.tick,h.target,h.source,h.amount]);\n      const nums=window.__c.dom.filter(d=>d.t>=t-40).slice(-4).map(d=>d.txt+'@'+d.x+','+d.y+' t'+d.t);\n      return {seq:0,tick:t,enemies:ens,hitsLast12:rec,numerals:nums};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "shot",
+  "name": "certC2-b3-seq1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const t=E.tick;\n      const ens=s.enemies.map(e=>{const c=window.__c.proj(e.x,0.55,e.z);const a=window.__c.series[e.id]||[];const last=a.slice(-3).map(r=>r.t+':'+r.W);\n        return {id:e.id,kind:e.kind,hp:e.hp,w:[+e.x.toFixed(2),+e.z.toFixed(2)],box:[Math.round(c[0]-32),Math.round(c[1]-44),64,88],recentW:last.join(' ')};});\n      const rec=window.__c.ev.filter(e=>e.T==='hit'&&e.tick>=t-12).map(h=>[h.tick,h.target,h.source,h.amount]);\n      const nums=window.__c.dom.filter(d=>d.t>=t-40).slice(-4).map(d=>d.txt+'@'+d.x+','+d.y+' t'+d.t);\n      return {seq:1,tick:t,enemies:ens,hitsLast12:rec,numerals:nums};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "shot",
+  "name": "certC2-b3-seq2"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const t=E.tick;\n      const ens=s.enemies.map(e=>{const c=window.__c.proj(e.x,0.55,e.z);const a=window.__c.series[e.id]||[];const last=a.slice(-3).map(r=>r.t+':'+r.W);\n        return {id:e.id,kind:e.kind,hp:e.hp,w:[+e.x.toFixed(2),+e.z.toFixed(2)],box:[Math.round(c[0]-32),Math.round(c[1]-44),64,88],recentW:last.join(' ')};});\n      const rec=window.__c.ev.filter(e=>e.T==='hit'&&e.tick>=t-12).map(h=>[h.tick,h.target,h.source,h.amount]);\n      const nums=window.__c.dom.filter(d=>d.t>=t-40).slice(-4).map(d=>d.txt+'@'+d.x+','+d.y+' t'+d.t);\n      return {seq:2,tick:t,enemies:ens,hitsLast12:rec,numerals:nums};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "shot",
+  "name": "certC2-b3-seq3"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const t=E.tick;\n      const ens=s.enemies.map(e=>{const c=window.__c.proj(e.x,0.55,e.z);const a=window.__c.series[e.id]||[];const last=a.slice(-3).map(r=>r.t+':'+r.W);\n        return {id:e.id,kind:e.kind,hp:e.hp,w:[+e.x.toFixed(2),+e.z.toFixed(2)],box:[Math.round(c[0]-32),Math.round(c[1]-44),64,88],recentW:last.join(' ')};});\n      const rec=window.__c.ev.filter(e=>e.T==='hit'&&e.tick>=t-12).map(h=>[h.tick,h.target,h.source,h.amount]);\n      const nums=window.__c.dom.filter(d=>d.t>=t-40).slice(-4).map(d=>d.txt+'@'+d.x+','+d.y+' t'+d.t);\n      return {seq:3,tick:t,enemies:ens,hitsLast12:rec,numerals:nums};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "shot",
+  "name": "certC2-b3-seq4"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const t=E.tick;\n      const ens=s.enemies.map(e=>{const c=window.__c.proj(e.x,0.55,e.z);const a=window.__c.series[e.id]||[];const last=a.slice(-3).map(r=>r.t+':'+r.W);\n        return {id:e.id,kind:e.kind,hp:e.hp,w:[+e.x.toFixed(2),+e.z.toFixed(2)],box:[Math.round(c[0]-32),Math.round(c[1]-44),64,88],recentW:last.join(' ')};});\n      const rec=window.__c.ev.filter(e=>e.T==='hit'&&e.tick>=t-12).map(h=>[h.tick,h.target,h.source,h.amount]);\n      const nums=window.__c.dom.filter(d=>d.t>=t-40).slice(-4).map(d=>d.txt+'@'+d.x+','+d.y+' t'+d.t);\n      return {seq:4,tick:t,enemies:ens,hitsLast12:rec,numerals:nums};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "shot",
+  "name": "certC2-b3-seq5"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const t=E.tick;\n      const ens=s.enemies.map(e=>{const c=window.__c.proj(e.x,0.55,e.z);const a=window.__c.series[e.id]||[];const last=a.slice(-3).map(r=>r.t+':'+r.W);\n        return {id:e.id,kind:e.kind,hp:e.hp,w:[+e.x.toFixed(2),+e.z.toFixed(2)],box:[Math.round(c[0]-32),Math.round(c[1]-44),64,88],recentW:last.join(' ')};});\n      const rec=window.__c.ev.filter(e=>e.T==='hit'&&e.tick>=t-12).map(h=>[h.tick,h.target,h.source,h.amount]);\n      const nums=window.__c.dom.filter(d=>d.t>=t-40).slice(-4).map(d=>d.txt+'@'+d.x+','+d.y+' t'+d.t);\n      return {seq:5,tick:t,enemies:ens,hitsLast12:rec,numerals:nums};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "shot",
+  "name": "certC2-b3-seq6"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const t=E.tick;\n      const ens=s.enemies.map(e=>{const c=window.__c.proj(e.x,0.55,e.z);const a=window.__c.series[e.id]||[];const last=a.slice(-3).map(r=>r.t+':'+r.W);\n        return {id:e.id,kind:e.kind,hp:e.hp,w:[+e.x.toFixed(2),+e.z.toFixed(2)],box:[Math.round(c[0]-32),Math.round(c[1]-44),64,88],recentW:last.join(' ')};});\n      const rec=window.__c.ev.filter(e=>e.T==='hit'&&e.tick>=t-12).map(h=>[h.tick,h.target,h.source,h.amount]);\n      const nums=window.__c.dom.filter(d=>d.t>=t-40).slice(-4).map(d=>d.txt+'@'+d.x+','+d.y+' t'+d.t);\n      return {seq:6,tick:t,enemies:ens,hitsLast12:rec,numerals:nums};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "shot",
+  "name": "certC2-b3-seq7"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const t=E.tick;\n      const ens=s.enemies.map(e=>{const c=window.__c.proj(e.x,0.55,e.z);const a=window.__c.series[e.id]||[];const last=a.slice(-3).map(r=>r.t+':'+r.W);\n        return {id:e.id,kind:e.kind,hp:e.hp,w:[+e.x.toFixed(2),+e.z.toFixed(2)],box:[Math.round(c[0]-32),Math.round(c[1]-44),64,88],recentW:last.join(' ')};});\n      const rec=window.__c.ev.filter(e=>e.T==='hit'&&e.tick>=t-12).map(h=>[h.tick,h.target,h.source,h.amount]);\n      const nums=window.__c.dom.filter(d=>d.t>=t-40).slice(-4).map(d=>d.txt+'@'+d.x+','+d.y+' t'+d.t);\n      return {seq:7,tick:t,enemies:ens,hitsLast12:rec,numerals:nums};})()"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__c.pin);window.__c.grabOn=false;const m={};for(const e of window.__c.ev)m[e.T]=(m[e.T]||0)+1;\n    return {totals:m,tick:E.tick,fps:E.fps,ver:E.version}})()"
+ }
+]

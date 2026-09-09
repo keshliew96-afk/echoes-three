@@ -1,0 +1,28 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__a2={ev:[]};for(const t of [\"telegraph_start\",\"telegraph_resolve\",\"hit\",\"death\",\"enemy_spawn\",\"flash\",\"knockback\",\"screenshake\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_adds\",\"boss_trample\",\"boss_spawn\",\"boss_death\",\"wave_start\",\"room_cleared\",\"spawn_telegraph\",\"skill_cast\",\"hitstop\",\"enemy_fire\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\"]){try{E.on(t,e=>window.__a2.ev.push(Object.assign({T:t},e)));}catch(err){}}return {armed:true,tick:E.tick,version:E.version,seed:E.seed,bootSeed:E.bootSeed,types:23}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',8);return {tag:'skip8',seed:E.seed,tick:E.tick,room:r&&r.room,boss:r&&r.boss}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 380
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<120000){try{if((()=>{const q=window.__a2.ev.filter(e=>e.T==='boss_quake_start');const a=window.__a2.ev.filter(e=>e.T==='boss_adds');return q.length>=2&&a.length>=1&&(E.tick-q[q.length-1].tick)<=2;})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),quakes:window.__a2.ev.filter(e=>e.T==='boss_quake_start').map(e=>({tick:e.tick,resolveTick:e.resolveTick,ticksSince:E.tick-e.tick})),addsEv:window.__a2.ev.filter(e=>e.T==='boss_adds').map(e=>({tick:e.tick,pct:e.pct,spawned:e.spawned})),boss:E.cmd('runState').boss};}catch(err){}await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),quakes:window.__a2.ev.filter(e=>e.T==='boss_quake_start').map(e=>({tick:e.tick,resolveTick:e.resolveTick,ticksSince:E.tick-e.tick})),addsEv:window.__a2.ev.filter(e=>e.T==='boss_adds').map(e=>({tick:e.tick,pct:e.pct,spawned:e.spawned})),boss:E.cmd('runState').boss}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ }
+]

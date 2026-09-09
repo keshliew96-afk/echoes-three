@@ -1,0 +1,35 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  window.__r={ev:[],frames:[],types:{},errs:[],started:performance.now()};\n  for(const t of [\"hit\",\"death\",\"hitstop\",\"sound\",\"ally_basic\",\"ally_cast\",\"enemy_spawn\",\"boss_spawn\",\"boss_adds\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"screenshake\",\"room_cleared\",\"hit_immune\",\"knockback\",\"heal\",\"full_heal\",\"skill_cast\",\"player_basic\",\"crit\"]){ try{E.on(t,e=>window.__r.ev.push(Object.assign({T:t},e)));}catch(err){window.__r.errs.push(t+':'+err.message);} }\n  const f=()=>{const F=window.__r.frames;F.push([Math.round((performance.now()-window.__r.started)*10)/10,E.tick]);\n    if(F.length>150000)F.splice(0,50000);requestAnimationFrame(f);};requestAnimationFrame(f);\n  window.__r.poll=setInterval(()=>{try{for(const e of E.events)window.__r.types[e.type]=e.tick;}catch(err){}},300);\n  window.__r.dwell=(T)=>{const F=window.__r.frames;let i0=-1;\n    for(let i=0;i<F.length;i++){if(F[i][1]===T){i0=i;break;}if(F[i][1]>T)return null;}\n    if(i0<0)return null;let j=i0;while(j<F.length&&F[j][1]<=T)j++;if(j>=F.length)return null;\n    return +(F[j][0]-F[i0][0]).toFixed(1);};\n  window.__r.rate=(T,W)=>{const F=window.__r.frames;let i0=-1;\n    for(let i=0;i<F.length;i++){if(F[i][1]===T){i0=i;break;}if(F[i][1]>T)return null;}\n    if(i0<0)return null;const t0=F[i0][0];\n    for(let i=i0;i<F.length;i++){if(F[i][0]-t0>W)return F[i-1][1]-T;}return null;};\n  window.__r.dwellStats=(lo,hi)=>{const F=window.__r.frames;const d=[];let i=0;\n    while(i<F.length){const T=F[i][1];let j=i;while(j<F.length&&F[j][1]===T)j++;\n      if(j<F.length&&T>=lo&&T<=hi&&F[j][1]===T+1)d.push(F[j][0]-F[i][0]);i=j;}\n    d.sort((a,b)=>a-b);const q=(p)=>d.length?+d[Math.min(d.length-1,Math.floor(p*d.length))].toFixed(1):null;\n    return {n:d.length,min:q(0),median:q(0.5),p90:q(0.9),p99:q(0.99),max:q(0.9999),over40:d.filter(x=>x>40).length,over30:d.filter(x=>x>30).length};};\n  window.__r.rateStats=(lo,hi,W)=>{const v=[];for(let T=lo;T<=hi;T+=7){const r=window.__r.rate(T,W);if(r!=null)v.push(r);}\n    v.sort((a,b)=>a-b);return {n:v.length,min:v[0],median:v[Math.floor(v.length/2)],max:v[v.length-1]};};\n  return 'armed t'+E.tick+' ver '+E.version+' onErrs '+JSON.stringify(window.__r.errs)})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();while(performance.now()-t0<30000){if(E.state().run.active)break;await sleep(8);}\n    E.cmd('skipToRoom',3);await sleep(1200);const s=E.state();\n    return {tick:E.tick,skills:s.skills,build:s.build}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const ids=['heavy_slam','brutal_cleave','flurry','lunge_strike','restorative_wave','cleave',\n      'blade_storm','caltrops','whirling_guard','ground_crack','sundering_nova','volley','piercing_shot',\n      'detonating_charge','mending_arc','sweeping_light','radiant_arc'];\n    const out={};for(const id of ids){try{out[id]=JSON.stringify(E.cmd('giveSkill',id)).slice(0,80);}catch(err){out[id]='THREW '+err.message}}\n    return {giveSkill:out,skillsAfter:E.state().skills}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__r.phaseStart=E.tick;const s=E.state();\n    for(const p of s.party)if(p.id!==0)E.cmd('setHp',p.id,0.35);\n    return {phaseStart:E.tick,party:s.party.map(p=>[p.id,p.kind,p.hp])}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const keys=['Digit1','Digit2','Digit3','Digit4','KeyQ','KeyE','KeyR','KeyF'];\n    const t0=performance.now();let n=0;\n    while(performance.now()-t0<30000){const s=E.state();\n      if(s.enemies.length<3){for(let i=s.enemies.length;i<4;i++)E.cmd('spawn','boar',s.party[0].x-1.5+i*1.0,s.party[0].z+1.6);}\n      for(const p of s.party)if(p.id!==0&&p.hp>30)E.cmd('setHp',p.id,0.3);\n      for(const p of s.party)if(p.hp<=0)E.cmd('setHp',p.id,1);\n      if(s.party[0].hp<70)E.cmd('setHp',0,1);\n      const k=keys[n%keys.length];\n      window.dispatchEvent(new KeyboardEvent('keydown',{code:k,key:k.slice(-1).toLowerCase(),bubbles:true}));\n      document.dispatchEvent(new KeyboardEvent('keydown',{code:k,key:k.slice(-1).toLowerCase(),bubbles:true}));\n      await sleep(60);\n      window.dispatchEvent(new KeyboardEvent('keyup',{code:k,key:k.slice(-1).toLowerCase(),bubbles:true}));\n      document.dispatchEvent(new KeyboardEvent('keyup',{code:k,key:k.slice(-1).toLowerCase(),bubbles:true}));\n      n++;await sleep(140);}\n    return {end:E.tick,casts:window.__r.ev.filter(e=>e.T==='skill_cast'||e.T==='ally_cast').length,\n      heals:window.__r.ev.filter(e=>e.T==='heal').length,hits:window.__r.ev.filter(e=>e.T==='hit').length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const shapes={};for(const e of window.__r.ev){if(e.shape){const k=e.T+'|'+(e.skill||e.source||e.classId||'?')+'|'+e.shape;shapes[k]=(shapes[k]||0)+1;}}\n    const HS=window.__r.ev.filter(e=>e.T==='hitstop');\n    return {shapesSeen:shapes,hitstops:HS.map(s=>[s.tick,s.cause,s.ticks]).slice(0,30),hitstopCount:HS.length,\n      deaths:window.__r.ev.filter(e=>e.T==='death').length,\n      healEvents:window.__r.ev.filter(e=>e.T==='heal').slice(0,3),\n      totals:window.__r.ev.reduce((m,e)=>((m[e.T]=(m[e.T]||0)+1),m),{}),ver:E.version}})()"
+ }
+]

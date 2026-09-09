@@ -1,0 +1,67 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  window.__r={ev:[],frames:[],types:{},errs:[],started:performance.now()};\n  for(const t of [\"hit\",\"death\",\"hitstop\",\"sound\",\"ally_basic\",\"ally_cast\",\"enemy_spawn\",\"boss_spawn\",\"boss_adds\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"screenshake\",\"room_cleared\",\"hit_immune\",\"knockback\",\"heal\",\"full_heal\",\"skill_cast\",\"player_basic\",\"crit\"]){ try{E.on(t,e=>window.__r.ev.push(Object.assign({T:t},e)));}catch(err){window.__r.errs.push(t+':'+err.message);} }\n  const f=()=>{const F=window.__r.frames;F.push([Math.round((performance.now()-window.__r.started)*10)/10,E.tick]);\n    if(F.length>150000)F.splice(0,50000);requestAnimationFrame(f);};requestAnimationFrame(f);\n  window.__r.poll=setInterval(()=>{try{for(const e of E.events)window.__r.types[e.type]=e.tick;}catch(err){}},300);\n  window.__r.dwell=(T)=>{const F=window.__r.frames;let i0=-1;\n    for(let i=0;i<F.length;i++){if(F[i][1]===T){i0=i;break;}if(F[i][1]>T)return null;}\n    if(i0<0)return null;let j=i0;while(j<F.length&&F[j][1]<=T)j++;if(j>=F.length)return null;\n    return +(F[j][0]-F[i0][0]).toFixed(1);};\n  window.__r.rate=(T,W)=>{const F=window.__r.frames;let i0=-1;\n    for(let i=0;i<F.length;i++){if(F[i][1]===T){i0=i;break;}if(F[i][1]>T)return null;}\n    if(i0<0)return null;const t0=F[i0][0];\n    for(let i=i0;i<F.length;i++){if(F[i][0]-t0>W)return F[i-1][1]-T;}return null;};\n  window.__r.dwellStats=(lo,hi)=>{const F=window.__r.frames;const d=[];let i=0;\n    while(i<F.length){const T=F[i][1];let j=i;while(j<F.length&&F[j][1]===T)j++;\n      if(j<F.length&&T>=lo&&T<=hi&&F[j][1]===T+1)d.push(F[j][0]-F[i][0]);i=j;}\n    d.sort((a,b)=>a-b);const q=(p)=>d.length?+d[Math.min(d.length-1,Math.floor(p*d.length))].toFixed(1):null;\n    return {n:d.length,min:q(0),median:q(0.5),p90:q(0.9),p99:q(0.99),max:q(0.9999),over40:d.filter(x=>x>40).length,over30:d.filter(x=>x>30).length};};\n  window.__r.rateStats=(lo,hi,W)=>{const v=[];for(let T=lo;T<=hi;T+=7){const r=window.__r.rate(T,W);if(r!=null)v.push(r);}\n    v.sort((a,b)=>a-b);return {n:v.length,min:v[0],median:v[Math.floor(v.length/2)],max:v[v.length-1]};};\n  return 'armed t'+E.tick+' ver '+E.version+' onErrs '+JSON.stringify(window.__r.errs)})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed,boot:E.bootSeed,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();while(performance.now()-t0<30000){if(E.state().run.active)break;await sleep(8);}\n    return {skip:!!E.cmd('skipToRoom',8),tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();while(performance.now()-t0<60000){const b=E.state().run.boss;\n      if(b&&b.active)return {ok:true,tick:E.tick,boss:[b.id,b.name,b.hp],fps:E.fps};await sleep(20);}\n    return {ok:false,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('iframe',0,300000);const b=E.state().run.boss;window.__r.bossId=b&&b.id;\n    E.cmd('teleport',b.x+1.4,b.z);E.cmd('mark',b.id);\n    window.__r.pin=setInterval(()=>{try{E.cmd('bossHp',1);for(const e of E.state().enemies){if(e.id!==window.__r.bossId)E.cmd('setHp',e.id,1);}}catch(err){window.__r.perr=String(err)}},150);\n    window.__r.phaseStart=E.tick;return {phaseStart:E.tick,boss:[b.id,b.hp]}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();let n=0;while(performance.now()-t0<58000){const s=E.state();const b=s.run.boss;\n      if(b&&n%8===0){E.cmd('teleport',b.x+1.2,b.z);E.cmd('rally');}\n      if(s.party[0].hp<70)E.cmd('setHp',0,1);\n      for(const p of s.party)if(p.hp<=0)E.cmd('setHp',p.id,1);\n      n++;await sleep(250);}\n    return {end:E.tick,fps:E.fps,bossPct:E.state().run.boss.pct,hits:window.__r.ev.filter(e=>e.T==='hit').length,pinErr:window.__r.perr||null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC2-ref1-boss-grind"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  const casts={};for(const a of window.__r.ev){ if(a.T==='ally_cast')casts[a.skill]=a.shape; }\n  const basicArc=(s)=>/^(swordsman|tank)_basic$/.test(s||'');\n  const isArc=(h)=>h.shape==='melee_arc'||casts[h.source]==='melee_arc'||basicArc(h.source);\n    const H=window.__r.ev.filter(e=>e.T==='hit');\n    const D=window.__r.ev.filter(e=>e.T==='death');\n    const HS=window.__r.ev.filter(e=>e.T==='hitstop');\n    const dead=(h)=>D.some(d=>d.id===h.target&&Math.abs(d.tick-h.tick)<=1);\n    const W=[window.__r.phaseStart||0,E.tick];\n    const inW=(e)=>e.tick>=W[0]&&e.tick<=W[1];\n    const arcNK=H.filter(h=>inW(h)&&isArc(h)&&!dead(h));\n    const ranNK=H.filter(h=>inW(h)&&!isArc(h)&&!dead(h));\n    const kills=D.filter(inW);\n    const stop=(t)=>HS.find(s=>s.tick>=t&&s.tick<=t+2)||null;\n    const dw=(a)=>{const v=a.map(h=>window.__r.dwell(h.tick)).filter(x=>x!=null).sort((x,y)=>x-y);\n      return {n:v.length,min:v[0],median:v[Math.floor(v.length/2)],p90:v[Math.floor(v.length*0.9)],max:v[v.length-1],over40:v.filter(x=>x>40).length,over30:v.filter(x=>x>30).length};};\n    const rt=(a)=>{const v=a.map(h=>window.__r.rate(h.tick,150)).filter(x=>x!=null).sort((x,y)=>x-y);\n      return {n:v.length,min:v[0],median:v[Math.floor(v.length/2)],max:v[v.length-1]};};\n    const causes={};for(const s of HS.filter(inW))causes[s.cause+':'+s.ticks]=(causes[s.cause+':'+s.ticks]||0)+1;\n    return {phase:'A-killfree-arc',window:W,fps:E.fps,ver:E.version,\n      arcNonKill:arcNK.length,arcWithHitstop:arcNK.filter(h=>stop(h.tick)).length,\n      rangedNonKill:ranNK.length,rangedWithHitstop:ranNK.filter(h=>stop(h.tick)).length,\n      kills:kills.length,killWithHitstop:kills.filter(d=>stop(d.tick)).length,\n      hitstopTotal:HS.filter(inW).length,causes,\n      arcDwell:dw(arcNK),rangedDwell:dw(ranNK),killDwell:dw(kills),\n      arcRate150:rt(arcNK),killRate150:rt(kills),\n      baselineDwell:window.__r.dwellStats(W[0],W[1]),baselineRate150:window.__r.rateStats(W[0],W[1],150)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  const casts={};for(const a of window.__r.ev){ if(a.T==='ally_cast')casts[a.skill]=a.shape; }\n  const basicArc=(s)=>/^(swordsman|tank)_basic$/.test(s||'');\n  const isArc=(h)=>h.shape==='melee_arc'||casts[h.source]==='melee_arc'||basicArc(h.source);\n    const H=window.__r.ev.filter(e=>e.T==='hit');const D=window.__r.ev.filter(e=>e.T==='death');\n    const HS=window.__r.ev.filter(e=>e.T==='hitstop');\n    const dead=(h)=>D.some(d=>d.id===h.target&&Math.abs(d.tick-h.tick)<=1);\n    const arcNK=H.filter(h=>h.tick>=(window.__r.phaseStart||0)&&isArc(h)&&!dead(h));\n    return {phase:'A-killfree-arc',arcRows:arcNK.slice(0,24).map(h=>[h.tick,h.source,h.shape||'?',h.amount,window.__r.dwell(h.tick),window.__r.rate(h.tick,150),(HS.find(s=>s.tick>=h.tick&&s.tick<=h.tick+2)||{}).cause||'none']),\n      killRows:D.filter(d=>d.tick>=(window.__r.phaseStart||0)).slice(0,12).map(d=>[d.tick,d.kind||d.id,window.__r.dwell(d.tick),window.__r.rate(d.tick,150),(HS.find(s=>s.tick>=d.tick&&s.tick<=d.tick+2)||{}).cause||'none'])}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const H=window.__r.ev.filter(e=>e.T==='hit');\n    return {sampleHitObjects:H.slice(0,3),eventTypesSeenInRing:window.__r.types,\n      stateKeys:Object.keys(E.state()),toggles:E.state().toggles||null}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__r.pin);\n    window.__r.pin=setInterval(()=>{try{E.cmd('bossHp',1);}catch(err){}},150);\n    const b=E.state().run.boss;for(let i=0;i<4;i++)E.cmd('spawn','boar',b.x-1.5+i*1.0,b.z+1.6);\n    window.__r.phaseStart=E.tick;return {controlStart:E.tick,enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();let n=0;\n    while(performance.now()-t0<26000){const s=E.state();const b=s.run.boss;\n      if(n%10===0&&s.enemies.filter(e=>e.id!==window.__r.bossId).length<2){for(let i=0;i<3;i++)E.cmd('spawn','boar',b.x-1.2+i*1.1,b.z+1.7);}\n      for(const p of s.party)if(p.hp<=0)E.cmd('setHp',p.id,1);\n      if(s.party[0].hp<70)E.cmd('setHp',0,1);\n      n++;await sleep(250);}\n    return {end:E.tick,deaths:window.__r.ev.filter(e=>e.T==='death').length,fps:E.fps}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  const casts={};for(const a of window.__r.ev){ if(a.T==='ally_cast')casts[a.skill]=a.shape; }\n  const basicArc=(s)=>/^(swordsman|tank)_basic$/.test(s||'');\n  const isArc=(h)=>h.shape==='melee_arc'||casts[h.source]==='melee_arc'||basicArc(h.source);\n    const H=window.__r.ev.filter(e=>e.T==='hit');\n    const D=window.__r.ev.filter(e=>e.T==='death');\n    const HS=window.__r.ev.filter(e=>e.T==='hitstop');\n    const dead=(h)=>D.some(d=>d.id===h.target&&Math.abs(d.tick-h.tick)<=1);\n    const W=[window.__r.phaseStart||0,E.tick];\n    const inW=(e)=>e.tick>=W[0]&&e.tick<=W[1];\n    const arcNK=H.filter(h=>inW(h)&&isArc(h)&&!dead(h));\n    const ranNK=H.filter(h=>inW(h)&&!isArc(h)&&!dead(h));\n    const kills=D.filter(inW);\n    const stop=(t)=>HS.find(s=>s.tick>=t&&s.tick<=t+2)||null;\n    const dw=(a)=>{const v=a.map(h=>window.__r.dwell(h.tick)).filter(x=>x!=null).sort((x,y)=>x-y);\n      return {n:v.length,min:v[0],median:v[Math.floor(v.length/2)],p90:v[Math.floor(v.length*0.9)],max:v[v.length-1],over40:v.filter(x=>x>40).length,over30:v.filter(x=>x>30).length};};\n    const rt=(a)=>{const v=a.map(h=>window.__r.rate(h.tick,150)).filter(x=>x!=null).sort((x,y)=>x-y);\n      return {n:v.length,min:v[0],median:v[Math.floor(v.length/2)],max:v[v.length-1]};};\n    const causes={};for(const s of HS.filter(inW))causes[s.cause+':'+s.ticks]=(causes[s.cause+':'+s.ticks]||0)+1;\n    return {phase:'B-kill-control',window:W,fps:E.fps,ver:E.version,\n      arcNonKill:arcNK.length,arcWithHitstop:arcNK.filter(h=>stop(h.tick)).length,\n      rangedNonKill:ranNK.length,rangedWithHitstop:ranNK.filter(h=>stop(h.tick)).length,\n      kills:kills.length,killWithHitstop:kills.filter(d=>stop(d.tick)).length,\n      hitstopTotal:HS.filter(inW).length,causes,\n      arcDwell:dw(arcNK),rangedDwell:dw(ranNK),killDwell:dw(kills),\n      arcRate150:rt(arcNK),killRate150:rt(kills),\n      baselineDwell:window.__r.dwellStats(W[0],W[1]),baselineRate150:window.__r.rateStats(W[0],W[1],150)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  const casts={};for(const a of window.__r.ev){ if(a.T==='ally_cast')casts[a.skill]=a.shape; }\n  const basicArc=(s)=>/^(swordsman|tank)_basic$/.test(s||'');\n  const isArc=(h)=>h.shape==='melee_arc'||casts[h.source]==='melee_arc'||basicArc(h.source);\n    const H=window.__r.ev.filter(e=>e.T==='hit');const D=window.__r.ev.filter(e=>e.T==='death');\n    const HS=window.__r.ev.filter(e=>e.T==='hitstop');\n    const dead=(h)=>D.some(d=>d.id===h.target&&Math.abs(d.tick-h.tick)<=1);\n    const arcNK=H.filter(h=>h.tick>=(window.__r.phaseStart||0)&&isArc(h)&&!dead(h));\n    return {phase:'B-kill-control',arcRows:arcNK.slice(0,24).map(h=>[h.tick,h.source,h.shape||'?',h.amount,window.__r.dwell(h.tick),window.__r.rate(h.tick,150),(HS.find(s=>s.tick>=h.tick&&s.tick<=h.tick+2)||{}).cause||'none']),\n      killRows:D.filter(d=>d.tick>=(window.__r.phaseStart||0)).slice(0,12).map(d=>[d.tick,d.kind||d.id,window.__r.dwell(d.tick),window.__r.rate(d.tick,150),(HS.find(s=>s.tick>=d.tick&&s.tick<=d.tick+2)||{}).cause||'none'])}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__r.pin);const HS=window.__r.ev.filter(e=>e.T==='hitstop');\n    return {allHitstops:HS.map(s=>[s.tick,s.cause,s.ticks]).slice(0,40),hitstopCount:HS.length,\n      totals:window.__r.ev.reduce((m,e)=>((m[e.T]=(m[e.T]||0)+1),m),{}),tick:E.tick,ver:E.version}})()"
+ }
+]

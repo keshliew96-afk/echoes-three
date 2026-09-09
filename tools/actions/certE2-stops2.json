@@ -1,0 +1,290 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{\n  window.__P=[{\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]],\"w\":1.55},{\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]],\"w\":1.6}];\n  window.__d2seg=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L=vx*vx+vz*vz;\n    const t=L?Math.max(0,Math.min(1,((px-a[0])*vx+(pz-a[1])*vz)/L)):0;\n    return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\n  window.__dPath=(px,pz,i)=>{const P=window.__P[i].pts;let m=1e9;\n    for(let k=0;k<P.length-1;k++)m=Math.min(m,window.__d2seg(px,pz,P[k],P[k+1]));return m;};\n  window.__pl=()=>{const c=__echoes.cmd('campState');return c.player;};\n  return 'helpers installed';\n})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');\n  const rv=c.roadViolations;\n  return {tag:\"stops2-start\",tick:E.tick,fps:E.fps,version:E.version,scene:E.state().scene,seed:E.seed,\n    colliders:c.colliders,roadViolationsType:Array.isArray(rv)?'array':typeof rv,\n    roadViolationsLen:Array.isArray(rv)?rv.length:rv,roadViolations:JSON.stringify(rv),\n    propTypes:c.propTypes,campPropTypes:c.campPropTypes,emitters:c.emitters,propShadows:c.propShadows,\n    seats:c.seats,seatDrift:c.seatDrift,player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible,\n    promptBox:c.prompt&&c.prompt.box}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();window.__wk={name:\"anvil_from_seat\",p0:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},t0:E.tick,segs:[],len:0,last:{x:p.x,z:p.z}};\n      window.__wi=setInterval(()=>{const q=window.__pl();window.__wk.len+=Math.hypot(q.x-window.__wk.last.x,q.z-window.__wk.last.z);window.__wk.last={x:q.x,z:q.z};},16);\n      return 'walk armed '+window.__wk.name})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();window.__wk.segs.push([\"KeyA\",2000,+p.x.toFixed(3),+p.z.toFixed(3)]);return 'seg '+\"KeyA\"})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 1100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();window.__wk.segs.push([\"KeyA+KeyS\",1100,+p.x.toFixed(3),+p.z.toFixed(3)]);return 'seg '+\"KeyA+KeyS\"})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();window.__wk.segs.push([\"KeyS\",700,+p.x.toFixed(3),+p.z.toFixed(3)]);return 'seg '+\"KeyS\"})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__wi);const w=window.__wk;const p=window.__pl();\n    return {walk:w.name,startedAt:w.p0,segs:w.segs,end:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},\n      pathLen:+w.len.toFixed(2),ticks:E.tick-w.t0}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const T={\"hearth\":[0,-0.2],\"tent1\":[-4.95,-3.35],\"tent2\":[4.85,-3.1],\"tent3\":[-7.5,-0.3],\"stall\":[6.35,2.5],\"cart\":[8.35,-1.95],\"anvil\":[-5.5,3.7],\"forge\":[-6.75,3.95],\"portal\":[0,-6.9],\"rack\":[-4.15,4.35]};const c=E.cmd('campState');const p=c.player;\n    const t=T[\"anvil\"];\n    const dists={};for(const k of Object.keys(T))dists[k]=+Math.hypot(p.x-T[k][0],p.z-T[k][1]).toFixed(3);\n    return {stop:\"anvil\",player:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},\n      distToTarget:+Math.hypot(p.x-t[0],p.z-t[1]).toFixed(3),target:t,\n      inPortal:c.inPortal,promptVisible:c.promptVisible,prompt:c.prompt,\n      portalRadius:c.portal.radius,distToPortal:+Math.hypot(p.x-c.portal.x,p.z-c.portal.z).toFixed(3),\n      allDists:dists};})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE2-stop-anvil"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();window.__wk={name:\"forge_from_anvil\",p0:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},t0:E.tick,segs:[],len:0,last:{x:p.x,z:p.z}};\n      window.__wi=setInterval(()=>{const q=window.__pl();window.__wk.len+=Math.hypot(q.x-window.__wk.last.x,q.z-window.__wk.last.z);window.__wk.last={x:q.x,z:q.z};},16);\n      return 'walk armed '+window.__wk.name})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();window.__wk.segs.push([\"KeyA\",900,+p.x.toFixed(3),+p.z.toFixed(3)]);return 'seg '+\"KeyA\"})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();window.__wk.segs.push([\"KeyS\",500,+p.x.toFixed(3),+p.z.toFixed(3)]);return 'seg '+\"KeyS\"})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__wi);const w=window.__wk;const p=window.__pl();\n    return {walk:w.name,startedAt:w.p0,segs:w.segs,end:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},\n      pathLen:+w.len.toFixed(2),ticks:E.tick-w.t0}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const T={\"hearth\":[0,-0.2],\"tent1\":[-4.95,-3.35],\"tent2\":[4.85,-3.1],\"tent3\":[-7.5,-0.3],\"stall\":[6.35,2.5],\"cart\":[8.35,-1.95],\"anvil\":[-5.5,3.7],\"forge\":[-6.75,3.95],\"portal\":[0,-6.9],\"rack\":[-4.15,4.35]};const c=E.cmd('campState');const p=c.player;\n    const t=T[\"forge\"];\n    const dists={};for(const k of Object.keys(T))dists[k]=+Math.hypot(p.x-T[k][0],p.z-T[k][1]).toFixed(3);\n    return {stop:\"forge\",player:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},\n      distToTarget:+Math.hypot(p.x-t[0],p.z-t[1]).toFixed(3),target:t,\n      inPortal:c.inPortal,promptVisible:c.promptVisible,prompt:c.prompt,\n      portalRadius:c.portal.radius,distToPortal:+Math.hypot(p.x-c.portal.x,p.z-c.portal.z).toFixed(3),\n      allDists:dists};})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE2-stop-forge"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',-4.15,2.6);return 'tp rack'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',-4.15,2.6);return 'tp stop_rack -> '+JSON.stringify(E.cmd('campState').player)})()"
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();\n    window.__s={name:\"stop_rack\",key:\"KeyS\",holdMs:1200,pathIdx:null,\n      t0:E.tick,p0:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},S:[[E.tick,+p.x.toFixed(3),+p.z.toFixed(3)]]};\n    window.__si=setInterval(()=>{const q=window.__pl();\n      window.__s.S.push([__echoes.tick,+q.x.toFixed(3),+q.z.toFixed(3)]);},16);\n    return 'armed '+window.__s.name;})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__si);const p=window.__pl();\n    window.__s.t1=E.tick;window.__s.p1={x:+p.x.toFixed(3),z:+p.z.toFixed(3)};\n    window.__s.S.push([E.tick,+p.x.toFixed(3),+p.z.toFixed(3)]);return 'keyup '+window.__s.name;})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=window.__s;const S=s.S;\n    // dedupe by tick (poller may sample the same tick twice)\n    const byTick=[];for(const r of S){if(!byTick.length||byTick[byTick.length-1][0]!==r[0])byTick.push(r);}\n    const p=window.__pl();\n    const moved=Math.hypot(s.p1.x-s.p0.x,s.p1.z-s.p0.z);\n    const heldTicks=s.t1-s.t0;\n    let firstMove=null,lastMove=null,stall=0,maxStall=0;\n    for(let i=1;i<byTick.length;i++){\n      const d=Math.hypot(byTick[i][1]-byTick[i-1][1],byTick[i][2]-byTick[i-1][2]);\n      const dt=byTick[i][0]-byTick[i-1][0];\n      if(d>0.004){if(firstMove===null)firstMove=byTick[i-1][0];lastMove=byTick[i][0];stall=0;}\n      else {stall+=dt;if(stall>maxStall)maxStall=stall;}\n    }\n    const movingTicks=(firstMove!==null&&lastMove!==null)?(lastMove-firstMove):0;\n    let pathLen=0;for(let i=1;i<byTick.length;i++)pathLen+=Math.hypot(byTick[i][1]-byTick[i-1][1],byTick[i][2]-byTick[i-1][2]);\n    // still moving at keyup: any motion in the last 3 sampled steps before t1\n    const tail=byTick.filter(r=>r[0]>=s.t1-6);\n    let tailMove=0;for(let i=1;i<tail.length;i++)tailMove+=Math.hypot(tail[i][1]-tail[i-1][1],tail[i][2]-tail[i-1][2]);\n    let offMin=1e9,offMax=-1,inBand=0;\n    if(s.pathIdx!==null){const hw=window.__P[s.pathIdx].w/2;\n      for(const r of byTick){const d=window.__dPath(r[1],r[2],s.pathIdx);\n        if(d<offMin)offMin=d;if(d>offMax)offMax=d;if(d<=hw)inBand++;}}\n    return {leg:s.name,key:s.key,holdMs:s.holdMs,p0:s.p0,p1:s.p1,pSettle:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},\n      heldTicks,moved:+moved.toFixed(3),pathLen:+pathLen.toFixed(3),\n      uPerSecPath:+(pathLen/(heldTicks/60)).toFixed(3),\n      uPerSecHeld:+(moved/(heldTicks/60)).toFixed(3),\n      uPerSecMoving:movingTicks?+(moved/(movingTicks/60)).toFixed(3):0,\n      movingTicks,maxStallTicks:maxStall,stillMovingAtKeyup:+tailMove.toFixed(3)>0.01,\n      samples:byTick.length,\n      offCentreMin:offMin<1e9?+offMin.toFixed(2):null,offCentreMax:offMax>=0?+offMax.toFixed(2):null,\n      inBandSamples:s.pathIdx!==null?inBand+'/'+byTick.length:null};\n  })()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const T={\"hearth\":[0,-0.2],\"tent1\":[-4.95,-3.35],\"tent2\":[4.85,-3.1],\"tent3\":[-7.5,-0.3],\"stall\":[6.35,2.5],\"cart\":[8.35,-1.95],\"anvil\":[-5.5,3.7],\"forge\":[-6.75,3.95],\"portal\":[0,-6.9],\"rack\":[-4.15,4.35]};const c=E.cmd('campState');const p=c.player;\n    const t=T[\"rack\"];\n    const dists={};for(const k of Object.keys(T))dists[k]=+Math.hypot(p.x-T[k][0],p.z-T[k][1]).toFixed(3);\n    return {stop:\"rack\",player:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},\n      distToTarget:+Math.hypot(p.x-t[0],p.z-t[1]).toFixed(3),target:t,\n      inPortal:c.inPortal,promptVisible:c.promptVisible,prompt:c.prompt,\n      portalRadius:c.portal.radius,distToPortal:+Math.hypot(p.x-c.portal.x,p.z-c.portal.z).toFixed(3),\n      allDists:dists};})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE2-stop-rack"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',1.35,1.0);return 'reseat'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {before:'portal-walk',player:c.player,promptVisible:c.promptVisible,inPortal:c.inPortal}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();window.__wk={name:\"portal_from_seat\",p0:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},t0:E.tick,segs:[],len:0,last:{x:p.x,z:p.z}};\n      window.__wi=setInterval(()=>{const q=window.__pl();window.__wk.len+=Math.hypot(q.x-window.__wk.last.x,q.z-window.__wk.last.z);window.__wk.last={x:q.x,z:q.z};},16);\n      return 'walk armed '+window.__wk.name})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 2700
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();window.__wk.segs.push([\"KeyW\",2700,+p.x.toFixed(3),+p.z.toFixed(3)]);return 'seg '+\"KeyW\"})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__wi);const w=window.__wk;const p=window.__pl();\n    return {walk:w.name,startedAt:w.p0,segs:w.segs,end:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},\n      pathLen:+w.len.toFixed(2),ticks:E.tick-w.t0}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const T={\"hearth\":[0,-0.2],\"tent1\":[-4.95,-3.35],\"tent2\":[4.85,-3.1],\"tent3\":[-7.5,-0.3],\"stall\":[6.35,2.5],\"cart\":[8.35,-1.95],\"anvil\":[-5.5,3.7],\"forge\":[-6.75,3.95],\"portal\":[0,-6.9],\"rack\":[-4.15,4.35]};const c=E.cmd('campState');const p=c.player;\n    const t=T[\"portal\"];\n    const dists={};for(const k of Object.keys(T))dists[k]=+Math.hypot(p.x-T[k][0],p.z-T[k][1]).toFixed(3);\n    return {stop:\"portal\",player:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},\n      distToTarget:+Math.hypot(p.x-t[0],p.z-t[1]).toFixed(3),target:t,\n      inPortal:c.inPortal,promptVisible:c.promptVisible,prompt:c.prompt,\n      portalRadius:c.portal.radius,distToPortal:+Math.hypot(p.x-c.portal.x,p.z-c.portal.z).toFixed(3),\n      allDists:dists};})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE2-stop-portal"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const el=[...document.querySelectorAll('*')].filter(n=>/Begin Run/i.test(n.textContent||'')&&n.children.length===0);\n    return el.map(n=>{const r=n.getBoundingClientRect();const s=getComputedStyle(n);\n      return {t:(n.textContent||'').trim().slice(0,50),box:[+r.x.toFixed(1),+r.y.toFixed(1),+r.width.toFixed(1),+r.height.toFixed(1)],op:s.opacity,vis:s.visibility}})})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');\n  const rv=c.roadViolations;\n  return {tag:\"stops2-end\",tick:E.tick,fps:E.fps,version:E.version,scene:E.state().scene,seed:E.seed,\n    colliders:c.colliders,roadViolationsType:Array.isArray(rv)?'array':typeof rv,\n    roadViolationsLen:Array.isArray(rv)?rv.length:rv,roadViolations:JSON.stringify(rv),\n    propTypes:c.propTypes,campPropTypes:c.campPropTypes,emitters:c.emitters,propShadows:c.propShadows,\n    seats:c.seats,seatDrift:c.seatDrift,player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible,\n    promptBox:c.prompt&&c.prompt.box}})()"
+ }
+]

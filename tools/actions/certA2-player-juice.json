@@ -1,0 +1,75 @@
+[
+  {
+    "type": "eval",
+    "code": "(() => {\n  const E = window.__echoes; if (!E) return { armed:false };\n  window.__P = { ev: [], t0: E.tick };\n  for (const t of [\"hit\",\"death\",\"knockback\",\"screenshake\",\"boss_quake_start\",\"boss_quake_resolve\",\"enemy_spawn\",\"boss_adds\",\"hitstop\"]) E.on(t, (e) => { window.__P.ev.push(Object.assign({ type: t }, e)); });\n  return { armed:true, tick:E.tick, version:E.version, seed:E.seed, bootSeed:E.bootSeed, types:9 };\n})()"
+  },
+  {
+    "type": "eval",
+    "code": "(() => {\n  const E = window.__echoes; E.cmd(\"startRun\");\n  const s = E.state();\n  return { tag: \"startRun\", tick: E.tick, room: s.room, phase: s.run && s.run.phase, screen: E.runUi && E.runUi().screen };\n})()"
+  },
+  {
+    "type": "eval",
+    "code": "(() => {\n  const E = window.__echoes; E.cmd(\"skipToRoom\", 8);\n  const s = E.state();\n  return { tag: \"skip8\", tick: E.tick, room: s.room, phase: s.run && s.run.phase, screen: E.runUi && E.runUi().screen };\n})()"
+  },
+  {
+    "type": "mousemove",
+    "x": 800,
+    "y": 380
+  },
+  {
+    "type": "mousedown",
+    "button": "right"
+  },
+  {
+    "type": "eval",
+    "code": "(async () => {\n    const E = window.__echoes, P = window.__P, t0 = Date.now();\n    const nShake = () => P.ev.filter((e) => e.type === 'screenshake').length;\n    const base = nShake();\n    while (nShake() === base && Date.now() - t0 < 40000) await new Promise((r) => setTimeout(r, 8));\n    const fired = P.ev.filter((e) => e.type === 'screenshake').slice(-1)[0] || null;\n    const trace = []; const tr0 = Date.now();\n    while (Date.now() - tr0 < 800) {\n      const v = E.state().vfx.arena;\n      trace.push({ t: E.tick, cam: v.cam, shake: v.shake, shakes: v.shakes, num: v.numerals, dec: v.decals, sc: v.scorch, pa: v.particles });\n      await new Promise((r) => setTimeout(r, 8));\n    }\n    const mags = trace.map((s) => Array.isArray(s.cam) ? Math.hypot(s.cam[0], s.cam[1]) : null).filter((v) => v != null);\n    const cx = trace.map((s) => s.cam && s.cam[0]).filter((v) => typeof v === 'number');\n    const cy = trace.map((s) => s.cam && s.cam[1]).filter((v) => typeof v === 'number');\n    return { ok: true, waitedMs: tr0 - t0, shakeEvent: fired, shakeCount: nShake(), samples: trace.length,\n      camX: { min: Math.min(...cx), max: Math.max(...cx), span: +(Math.max(...cx) - Math.min(...cx)).toFixed(4) },\n      camY: { min: Math.min(...cy), max: Math.max(...cy), span: +(Math.max(...cy) - Math.min(...cy)).toFixed(4) },\n      shakeMax: Math.max(...trace.map((s) => typeof s.shake === 'number' ? s.shake : 0)),\n      first24: trace.slice(0, 24) };\n  })()"
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shake0"
+  },
+  {
+    "type": "wait",
+    "ms": 60
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shake1"
+  },
+  {
+    "type": "wait",
+    "ms": 60
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-shake2"
+  },
+  {
+    "type": "eval",
+    "code": "(async () => {\n    const E = window.__echoes, P = window.__P, t0 = Date.now();\n    const pick = () => (E.state().enemies || []).filter((e) => e.kind !== 'boss')[0] || null;\n    let tgt = pick();\n    while (!tgt && Date.now() - t0 < 20000) { await new Promise((r) => setTimeout(r, 8)); tgt = pick(); }\n    if (!tgt) return { ok: false, why: 'no add' };\n    const id = tgt.id;\n    const hitsOn = () => P.ev.filter((e) => e.type === 'hit' && (e.id === id || e.target === id || e.targetId === id));\n    const base = hitsOn().length;\n    const trace = [];\n    const t1 = Date.now();\n    while (Date.now() - t1 < 6000) {\n      const e = (E.state().enemies || []).find((q) => q.id === id);\n      if (!e) break;\n      const last = trace[trace.length - 1];\n      if (!last || last.t !== E.tick) trace.push({ t: E.tick, x: +e.x.toFixed(3), z: +e.z.toFixed(3), hp: e.hp });\n      if (hitsOn().length > base && trace.length > 40 && Date.now() - t1 > 1200) break;\n      await new Promise((r) => setTimeout(r, 6));\n    }\n    const hits = hitsOn().slice(base);\n    let maxStep = 0, maxAt = null;\n    for (let i = 1; i < trace.length; i++) {\n      const d = Math.hypot(trace[i].x - trace[i - 1].x, trace[i].z - trace[i - 1].z) / Math.max(1, trace[i].t - trace[i - 1].t);\n      if (d > maxStep) { maxStep = d; maxAt = trace[i].t; }\n    }\n    return { ok: true, id, ticks: trace.length, hitsSeen: hits.length, hitEvents: hits.slice(0, 4),\n      maxStepPerTick: +maxStep.toFixed(4), maxStepAtTick: maxAt, trace: trace.slice(0, 60) };\n  })()"
+  },
+  {
+    "type": "eval",
+    "code": "(async () => {\n    const E = window.__echoes, P = window.__P;\n    const nDeath = () => P.ev.filter((e) => e.type === 'death').length;\n    const base = nDeath();\n    const t0 = Date.now();\n    E.cmd('killAllEnemies');\n    while (nDeath() === base && Date.now() - t0 < 8000) await new Promise((r) => setTimeout(r, 8));\n    const deathTick = E.tick;\n    const trace = [];\n    const t1 = Date.now();\n    while (Date.now() - t1 < 4000) {\n      const v = E.state().vfx.arena;\n      trace.push({ t: E.tick, dec: v.decals, sc: v.scorch, num: v.numerals, pa: v.particles });\n      await new Promise((r) => setTimeout(r, 120));\n    }\n    return { ok: true, deathTick, deaths: nDeath() - base,\n      deathEvents: P.ev.filter((e) => e.type === 'death').slice(-4),\n      decalPeak: Math.max(...trace.map((s) => s.dec)), scorchPeak: Math.max(...trace.map((s) => s.sc)),\n      numPeak: Math.max(...trace.map((s) => s.num)), paPeak: Math.max(...trace.map((s) => s.pa)),\n      decalAtEnd: trace[trace.length - 1], trace: trace.filter((_, i) => i % 3 === 0) };\n  })()"
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-decal0"
+  },
+  {
+    "type": "wait",
+    "ms": 900
+  },
+  {
+    "type": "shot",
+    "name": "certA2-player-decal1"
+  },
+  {
+    "type": "mouseup",
+    "button": "right"
+  },
+  {
+    "type": "eval",
+    "code": "(() => { const E = window.__echoes, P = window.__P;\n    const c = {}; for (const e of P.ev) c[e.type] = (c[e.type] || 0) + 1;\n    return { tag:'final', tick:E.tick, fps:E.fps, counts:c, vfx:E.state().vfx.arena && { dec:E.state().vfx.arena.decals, sc:E.state().vfx.arena.scorch, sh:E.state().vfx.arena.shakes, pa:E.state().vfx.arena.particles } }; })()"
+  }
+]

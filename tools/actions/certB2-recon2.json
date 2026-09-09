@@ -1,0 +1,88 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__sock=null;const r=E.cmd('startRun');return {v:E.version,run:r.room,rewardFor:r.rewardFor}})()"
+ },
+ {
+  "type": "loop",
+  "label": "to-socket",
+  "cond": "(()=>{const E=__echoes;return !!(window.__sock)})()",
+  "maxMs": 120000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const u=E.runUi();const so=document.querySelector('#socket-screen');const open=so&&(so.classList.contains('nd-open')||getComputedStyle(so).display!=='none');window.__st={screen:u.screen,open:!!open,room:E.state().run.room};return null})()"
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__st.open)})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=__echoes;const R=(n)=>{const r=n.getBoundingClientRect();return [Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height),Math.round(r.x+r.width/2),Math.round(r.y+r.height/2)]};const cs=[...document.querySelectorAll('#socket-screen .nd-bench .nd-card')];const cells=[...document.querySelectorAll('#socket-screen .nd-cell')];\nconst all=[...document.querySelectorAll('#socket-screen *')].filter(n=>typeof n.className==='string'&&n.className&&n.getBoundingClientRect().width>8).slice(0,50).map(n=>[n.className.slice(0,34),...R(n)]);\nwindow.__sock={benchSel:cs.length,cellSel:cells.length,bench:cs.map(n=>[n.className.slice(0,24),...R(n),(n.textContent||'').replace(/\\s+/g,' ').trim().slice(0,24)]),cells:cells.map(n=>[n.className.slice(0,30),...R(n)]),all};return window.__sock})()"
+     },
+     {
+      "type": "shot",
+      "name": "certB2-recon2-socket"
+     },
+     {
+      "type": "key",
+      "key": "Escape",
+      "ms": 80
+     },
+     {
+      "type": "wait",
+      "ms": 500
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(!window.__st.open && window.__st.screen==='none')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=__echoes;E.cmd('killAllEnemies');return null})()"
+     },
+     {
+      "type": "wait",
+      "ms": 400
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(!window.__st.open && window.__st.screen!=='none' && window.__st.screen!=='end')})()",
+    "then": [
+     {
+      "type": "key",
+      "key": "Enter",
+      "ms": 70
+     },
+     {
+      "type": "wait",
+      "ms": 700
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(!window.__st.open && window.__st.screen==='end')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=__echoes;window.__sock={none:'reached end with no socket screen'};return null})()"
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 150
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {socket:window.__sock,screen:E.runUi().screen,room:E.state().run.room,bench:E.state().build.bench,sockets:E.state().build.skills.map(k=>[k.id,k.sockets&&k.sockets.map(s=>s&&s.node)])}})()"
+ }
+]

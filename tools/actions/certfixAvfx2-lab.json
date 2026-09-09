@@ -1,0 +1,23 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__lab={ev:[]};for(const t of ['telegraph_start','telegraph_resolve']){E.on(t,e=>window.__lab.ev.push(Object.assign({T:t},e)));}return {armed:true,v:E.version}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd('startRun');return {tag:'startRun',room:r&&r.room}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();while(performance.now()-t0<40000){if(E.state().enemies.length>=1)break;await new Promise(r=>setTimeout(r,10));}\n    E.cmd('killAllEnemies');const id=E.cmd('spawn','mantis',4.2,-3.2);\n    const t1=performance.now();while(performance.now()-t1<40000){const e=E.state().enemies.find(q=>q.id===id);if(e&&e.telegraph)return {ok:true,id,tick:E.tick,tele:e.telegraph,pos:[e.x,e.z]};await new Promise(r=>setTimeout(r,8));}\n    return {ok:false,id,enemies:E.state().enemies}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const e=E.state().enemies[0];return {tag:'lab-frame',tick:E.tick,fps:+E.fps.toFixed(1),enemy:e&&{id:e.id,x:+e.x.toFixed(2),z:+e.z.toFixed(2),tele:e.telegraph},party:E.state().party.map(p=>[p.classId,+p.x.toFixed(2),+p.z.toFixed(2)])}})()"
+ }
+]

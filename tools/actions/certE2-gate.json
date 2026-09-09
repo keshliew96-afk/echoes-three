@@ -1,0 +1,162 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{\n  window.__P=[{\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]],\"w\":1.55},{\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]],\"w\":1.6}];\n  window.__d2seg=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L=vx*vx+vz*vz;\n    const t=L?Math.max(0,Math.min(1,((px-a[0])*vx+(pz-a[1])*vz)/L)):0;\n    return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\n  window.__dPath=(px,pz,i)=>{const P=window.__P[i].pts;let m=1e9;\n    for(let k=0;k<P.length-1;k++)m=Math.min(m,window.__d2seg(px,pz,P[k],P[k+1]));return m;};\n  window.__pl=()=>{const c=__echoes.cmd('campState');return c.player;};\n  return 'helpers installed';\n})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');\n  const rv=c.roadViolations;\n  return {tag:\"gate-start\",tick:E.tick,fps:E.fps,version:E.version,scene:E.state().scene,seed:E.seed,\n    colliders:c.colliders,roadViolationsType:Array.isArray(rv)?'array':typeof rv,\n    roadViolationsLen:Array.isArray(rv)?rv.length:rv,roadViolations:JSON.stringify(rv),\n    propTypes:c.propTypes,campPropTypes:c.campPropTypes,emitters:c.emitters,propShadows:c.propShadows,\n    seats:c.seats,seatDrift:c.seatDrift,player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible,\n    promptBox:c.prompt&&c.prompt.box}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',0.2,8);return 'tp gateroad_southEnd_to_north'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();\n    window.__sw={name:\"gateroad_southEnd_to_north\",t0:E.tick,p0:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},S:[[E.tick,+p.x.toFixed(3),+p.z.toFixed(3)]]};\n    window.__swi=setInterval(()=>{const q=window.__pl();window.__sw.S.push([__echoes.tick,+q.x.toFixed(3),+q.z.toFixed(3)]);},16);\n    return 'sweep armed '+window.__sw.name;})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 8000
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__swi);const c=E.cmd('campState');const p=c.player;\n    const s=window.__sw;const B=[];for(const r of s.S){if(!B.length||B[B.length-1][0]!==r[0])B.push(r);}\n    let len=0,stall=0,maxStall=0,stallAt=null;\n    for(let i=1;i<B.length;i++){const d=Math.hypot(B[i][1]-B[i-1][1],B[i][2]-B[i-1][2]);\n      len+=d;const dt=B[i][0]-B[i-1][0];\n      if(d>0.004)stall=0;else{stall+=dt;if(stall>maxStall){maxStall=stall;stallAt=[B[i][1],B[i][2]];}}}\n    let offMax=0;for(const r of B)offMax=Math.max(offMax,window.__dPath(r[1],r[2],0));\n    return {sweep:s.name,p0:s.p0,p1:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},ticks:E.tick-s.t0,\n      pathLen:+len.toFixed(2),uPerSec:+(len/((E.tick-s.t0)/60)).toFixed(3),\n      maxStallTicks:maxStall,stallAt,offCentreMax:+offMax.toFixed(2),samples:B.length,\n      inPortal:c.inPortal,promptVisible:c.promptVisible,\n      track:B.filter((_,i)=>i%8===0).map(r=>[r[1],r[2]])};})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE2-gate-north-end"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',0.1,-8.2);return 'tp gateroad_northEnd_to_south'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();\n    window.__sw={name:\"gateroad_northEnd_to_south\",t0:E.tick,p0:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},S:[[E.tick,+p.x.toFixed(3),+p.z.toFixed(3)]]};\n    window.__swi=setInterval(()=>{const q=window.__pl();window.__sw.S.push([__echoes.tick,+q.x.toFixed(3),+q.z.toFixed(3)]);},16);\n    return 'sweep armed '+window.__sw.name;})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 8000
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__swi);const c=E.cmd('campState');const p=c.player;\n    const s=window.__sw;const B=[];for(const r of s.S){if(!B.length||B[B.length-1][0]!==r[0])B.push(r);}\n    let len=0,stall=0,maxStall=0,stallAt=null;\n    for(let i=1;i<B.length;i++){const d=Math.hypot(B[i][1]-B[i-1][1],B[i][2]-B[i-1][2]);\n      len+=d;const dt=B[i][0]-B[i-1][0];\n      if(d>0.004)stall=0;else{stall+=dt;if(stall>maxStall){maxStall=stall;stallAt=[B[i][1],B[i][2]];}}}\n    let offMax=0;for(const r of B)offMax=Math.max(offMax,window.__dPath(r[1],r[2],0));\n    return {sweep:s.name,p0:s.p0,p1:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},ticks:E.tick-s.t0,\n      pathLen:+len.toFixed(2),uPerSec:+(len/((E.tick-s.t0)/60)).toFixed(3),\n      maxStallTicks:maxStall,stallAt,offCentreMax:+offMax.toFixed(2),samples:B.length,\n      inPortal:c.inPortal,promptVisible:c.promptVisible,\n      track:B.filter((_,i)=>i%8===0).map(r=>[r[1],r[2]])};})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE2-gate-south-end"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',-12.2,3.35);return 'tp camproad_westEnd_to_east'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();\n    window.__sw={name:\"camproad_westEnd_to_east\",t0:E.tick,p0:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},S:[[E.tick,+p.x.toFixed(3),+p.z.toFixed(3)]]};\n    window.__swi=setInterval(()=>{const q=window.__pl();window.__sw.S.push([__echoes.tick,+q.x.toFixed(3),+q.z.toFixed(3)]);},16);\n    return 'sweep armed '+window.__sw.name;})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 12000
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__swi);const c=E.cmd('campState');const p=c.player;\n    const s=window.__sw;const B=[];for(const r of s.S){if(!B.length||B[B.length-1][0]!==r[0])B.push(r);}\n    let len=0,stall=0,maxStall=0,stallAt=null;\n    for(let i=1;i<B.length;i++){const d=Math.hypot(B[i][1]-B[i-1][1],B[i][2]-B[i-1][2]);\n      len+=d;const dt=B[i][0]-B[i-1][0];\n      if(d>0.004)stall=0;else{stall+=dt;if(stall>maxStall){maxStall=stall;stallAt=[B[i][1],B[i][2]];}}}\n    let offMax=0;for(const r of B)offMax=Math.max(offMax,window.__dPath(r[1],r[2],1));\n    return {sweep:s.name,p0:s.p0,p1:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},ticks:E.tick-s.t0,\n      pathLen:+len.toFixed(2),uPerSec:+(len/((E.tick-s.t0)/60)).toFixed(3),\n      maxStallTicks:maxStall,stallAt,offCentreMax:+offMax.toFixed(2),samples:B.length,\n      inPortal:c.inPortal,promptVisible:c.promptVisible,\n      track:B.filter((_,i)=>i%8===0).map(r=>[r[1],r[2]])};})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE2-gate-east-end"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',12.2,-1.35);return 'tp camproad_eastEnd_to_west'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=window.__pl();\n    window.__sw={name:\"camproad_eastEnd_to_west\",t0:E.tick,p0:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},S:[[E.tick,+p.x.toFixed(3),+p.z.toFixed(3)]]};\n    window.__swi=setInterval(()=>{const q=window.__pl();window.__sw.S.push([__echoes.tick,+q.x.toFixed(3),+q.z.toFixed(3)]);},16);\n    return 'sweep armed '+window.__sw.name;})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 12000
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__swi);const c=E.cmd('campState');const p=c.player;\n    const s=window.__sw;const B=[];for(const r of s.S){if(!B.length||B[B.length-1][0]!==r[0])B.push(r);}\n    let len=0,stall=0,maxStall=0,stallAt=null;\n    for(let i=1;i<B.length;i++){const d=Math.hypot(B[i][1]-B[i-1][1],B[i][2]-B[i-1][2]);\n      len+=d;const dt=B[i][0]-B[i-1][0];\n      if(d>0.004)stall=0;else{stall+=dt;if(stall>maxStall){maxStall=stall;stallAt=[B[i][1],B[i][2]];}}}\n    let offMax=0;for(const r of B)offMax=Math.max(offMax,window.__dPath(r[1],r[2],1));\n    return {sweep:s.name,p0:s.p0,p1:{x:+p.x.toFixed(3),z:+p.z.toFixed(3)},ticks:E.tick-s.t0,\n      pathLen:+len.toFixed(2),uPerSec:+(len/((E.tick-s.t0)/60)).toFixed(3),\n      maxStallTicks:maxStall,stallAt,offCentreMax:+offMax.toFixed(2),samples:B.length,\n      inPortal:c.inPortal,promptVisible:c.promptVisible,\n      track:B.filter((_,i)=>i%8===0).map(r=>[r[1],r[2]])};})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE2-gate-west-end"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');\n  const rv=c.roadViolations;\n  return {tag:\"gate-end\",tick:E.tick,fps:E.fps,version:E.version,scene:E.state().scene,seed:E.seed,\n    colliders:c.colliders,roadViolationsType:Array.isArray(rv)?'array':typeof rv,\n    roadViolationsLen:Array.isArray(rv)?rv.length:rv,roadViolations:JSON.stringify(rv),\n    propTypes:c.propTypes,campPropTypes:c.campPropTypes,emitters:c.emitters,propShadows:c.propShadows,\n    seats:c.seats,seatDrift:c.seatDrift,player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible,\n    promptBox:c.prompt&&c.prompt.box}})()"
+ }
+]

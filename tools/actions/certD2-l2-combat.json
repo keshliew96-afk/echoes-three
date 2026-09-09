@@ -1,0 +1,43 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"death\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"downed\",\"revive\",\"run_end\",\"victory\",\"defeat\",\"return_to_camp\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed t'+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',1);return {room:r&&r.room,vp:[innerWidth,innerHeight]}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 400,
+  "y": 300
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<40000){try{if(E.state().enemies.length>=3)return {ok:true,tick:E.tick,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length};}catch(e){}await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {banner:E.hud.banner().text,threat:JSON.stringify(E.hud.threat()).slice(0,300)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const vw=innerWidth,vh=innerHeight;\nconst vis=n=>{const cs=getComputedStyle(n);if(cs.display==='none'||cs.visibility==='hidden'||parseFloat(cs.opacity)<0.02)return false;const r=n.getBoundingClientRect();return r.width>0.5&&r.height>0.5;};\nconst nm=n=>{let s=n.id?'#'+n.id:'';if(n.classList&&n.classList.length)s+='.'+[...n.classList].join('.');return s||n.tagName.toLowerCase();};\nconst box=n=>{const r=n.getBoundingClientRect();const cs=getComputedStyle(n);\n return {n:nm(n),x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),\n  fs:+parseFloat(cs.fontSize).toFixed(1),txt:(n.textContent||'').trim().replace(/s+/g,' ').slice(0,34)};};\nconst comps=[];for(const s of [\"#hud-banner\",\".hud-loc\",\".hud-glint\",\"#proto-hud\",\".hud-port\",\".hud-port-hp\",\".hud-slot\",\"#version-label\",\"#fps-meter\",\"#camp-prompt\",\"#hud-threat > svg\",\".hud-boss\",\".hud-objective\",\".hud-way\",\"#run-screen .rn-page\",\"#run-screen .rn-card\",\"#run-screen .rn-door\",\"#run-screen button\",\"#run-screen .rn-title\",\"#run-screen .rn-hint\",\"#run-screen .rn-wallet\",\"#run-screen .rn-plaque\",\"#run-screen .rn-sub\",\"#run-screen .rn-coin\"]){for(const n of document.querySelectorAll(s)){if(vis(n)&&!comps.includes(n))comps.push(n);}}\nconst cr=comps.map(box);\nconst outside=cr.filter(r=>r.x<-0.5||r.y<-0.5||r.x+r.w>vw+0.5||r.y+r.h>vh+0.5);\nconst ov=[];for(let i=0;i<comps.length;i++)for(let j=i+1;j<comps.length;j++){\n if(comps[i].contains(comps[j])||comps[j].contains(comps[i]))continue;\n const a=cr[i],b=cr[j];const ix=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x),iy=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);\n if(ix>1&&iy>1)ov.push([a.n,b.n,+ix.toFixed(1),+iy.toFixed(1)]);}\nconst conts=[];for(const s of [\"#app\",\"#hud\",\"#hud-threat\",\"#dmg-num-layer\",\"#nd-fizzle-layer\",\"#run-screen\"]){const n=document.querySelector(s);if(!n)continue;const r=n.getBoundingClientRect();const cs=getComputedStyle(n);\n conts.push({n:s,x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),bg:cs.backgroundColor,border:cs.borderTopWidth,pe:cs.pointerEvents,tf:cs.transform.slice(0,44),vis:cs.display!=='none'&&cs.visibility!=='hidden'});}\nconst leaves=[...document.body.querySelectorAll('*')].filter(n=>n.childElementCount===0&&n.tagName!=='CANVAS'&&n.tagName!=='SCRIPT'&&n.tagName!=='STYLE'&&vis(n)).map(box);\nconst lOut=leaves.filter(r=>r.x<-0.5||r.y<-0.5||r.x+r.w>vw+0.5||r.y+r.h>vh+0.5);\nconst xs=cr.map(r=>r.x),ys=cr.map(r=>r.y),rs=cr.map(r=>r.x+r.w),bs=cr.map(r=>r.y+r.h);\nconst texts=cr.filter(r=>r.txt);\nreturn {tag:\"combat\",vw,vh,nComp:cr.length,nLeaf:leaves.length,\n outside,leavesOutside:lOut,overlaps:ov,\n extremes:{minX:Math.min(...xs),minY:Math.min(...ys),maxRight:Math.max(...rs),maxBottom:Math.max(...bs)},\n minFontPx:Math.min(...leaves.filter(r=>r.txt).map(r=>r.fs)),\n comps:cr,containers:conts};})()"
+ },
+ {
+  "type": "shot",
+  "name": "_combat"
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ }
+]

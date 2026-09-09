@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__r={ev:[]};for(const t of ['room_cleared','hitstop','death','hit'])E.on(t,e=>window.__r.ev.push(Object.assign({T:t},e)));\n    return {ver:E.version,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();while(performance.now()-t0<30000){if(E.state().run.active)break;await sleep(8);}\n    return {active:E.state().run.active,room:E.state().run.room,mode:E.state().run.frame&&E.state().run.frame.modes[0],tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const F=[];let stop=false;const f=()=>{F.push([performance.now(),E.tick]);if(!stop)requestAnimationFrame(f);};requestAnimationFrame(f);\n    await sleep(10000);stop=true;\n    const dur=(F[F.length-1][0]-F[0][0])/1000;const ticks=F[F.length-1][1]-F[0][1];\n    return {sampleSec:+dur.toFixed(2),frames:F.length,fpsSampled:+(F.length/dur).toFixed(1),fpsReported:E.fps,\n      ticksPerSec:+(ticks/dur).toFixed(1),\n      hitstops:window.__r.ev.filter(e=>e.T==='hitstop').length,\n      hits:window.__r.ev.filter(e=>e.T==='hit').length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();let cleared=null;\n    while(performance.now()-t0<90000){\n      const c=window.__r.ev.find(e=>e.T==='room_cleared');\n      if(c){cleared=c;break;}\n      const s=E.state();for(const p of s.party)if(p.hp<35)E.cmd('setHp',p.id,1);\n      await sleep(120);}\n    const b=document.getElementById('hud-banner');\n    const st=E.state();\n    return {cleared:cleared?{tick:cleared.tick,room:cleared.room}:null,phase:st.run.phase,room:st.run.room,\n      bannerText:b?b.innerText.replace(/\\s+/g,' ').trim().slice(0,80):null,\n      bannerVisible:b?getComputedStyle(b).opacity:null,\n      deaths:window.__r.ev.filter(e=>e.T==='death').length,\n      hitstopCauses:(()=>{const c={};for(const s of window.__r.ev.filter(e=>e.T==='hitstop'))c[s.cause+':'+s.ticks]=(c[s.cause+':'+s.ticks]||0)+1;return c;})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certfixC2-reg-cleared"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {tick:E.tick,fps:E.fps,ver:E.version,phase:E.state().run.phase}})()"
+ }
+]

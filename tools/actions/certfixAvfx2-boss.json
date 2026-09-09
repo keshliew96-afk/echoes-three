@@ -1,0 +1,35 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__a2={ev:[]};for(const t of [\"telegraph_start\",\"telegraph_resolve\",\"hit\",\"death\",\"enemy_spawn\",\"flash\",\"knockback\",\"screenshake\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_adds\",\"boss_trample\",\"boss_spawn\",\"boss_death\",\"wave_start\",\"room_cleared\",\"spawn_telegraph\",\"skill_cast\",\"hitstop\",\"enemy_fire\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\"]){try{E.on(t,e=>window.__a2.ev.push(Object.assign({T:t},e)));}catch(err){}}return {armed:true,tick:E.tick,version:E.version,seed:E.seed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',8);return {tag:'skip8',room:r&&r.room,mode:r&&r.mode}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<90000){try{if((()=>{const q=window.__a2.ev.filter(e=>e.T==='boss_quake_start');const a=window.__a2.ev.filter(e=>e.T==='boss_adds');return q.length>=2&&a.length>=1&&(E.tick-q[q.length-1].tick)<=6})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),quakes:window.__a2.ev.filter(e=>e.T==='boss_quake_start').length,adds:window.__a2.ev.filter(e=>e.T==='boss_adds').length,boss:(b=>b?{hp:b.hp,x:+b.x.toFixed(2),z:+b.z.toFixed(2)}:null)(E.state().enemies.find(e=>e.kind==='stag')),enemies:E.state().enemies.length};}catch(err){}await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),quakes:window.__a2.ev.filter(e=>e.T==='boss_quake_start').length,adds:window.__a2.ev.filter(e=>e.T==='boss_adds').length,boss:(b=>b?{hp:b.hp,x:+b.x.toFixed(2),z:+b.z.toFixed(2)}:null)(E.state().enemies.find(e=>e.kind==='stag')),enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();return {tag:'boss-frame',version:E.version,tick:E.tick,fps:+E.fps.toFixed(1),enemies:s.enemies.map(e=>({id:e.id,kind:e.kind,x:+e.x.toFixed(2),z:+e.z.toFixed(2),hp:e.hp})),vfx:(s=>Object.assign({},s.vfx,{numerals:s.vfx.numerals??null,decals:s.vfx.decals??null,scorch:s.vfx.scorch??null,particles:s.vfx.particles??null}))(s),party:s.party.map(p=>[p.classId||'healer',p.hp,+p.x.toFixed(2),+p.z.toFixed(2)])}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const m={};for(const e of window.__a2.ev)m[e.T]=(m[e.T]||0)+1;return {tick:E.tick,fps:+E.fps.toFixed(1),counts:m,total:window.__a2.ev.length}})()"
+ }
+]
