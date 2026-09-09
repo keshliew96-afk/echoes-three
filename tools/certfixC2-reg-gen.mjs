@@ -42,6 +42,22 @@ const acts = [
       deaths:window.__r.ev.filter(e=>e.T==='death').length,
       hitstopCauses:(()=>{const c={};for(const s of window.__r.ev.filter(e=>e.T==='hitstop'))c[s.cause+':'+s.ticks]=(c[s.cause+':'+s.ticks]||0)+1;return c;})()}`)),
   { type: 'shot', name: 'certfixC2-reg-cleared' },
+  // --- heaviest scene: the boss room, 10 s rAF sample with arcs connecting ---
+  ev(aiife(`E.cmd('skipToRoom',8);const t0=performance.now();
+    while(performance.now()-t0<60000){const b=E.state().run.boss;if(b&&b.active)break;await sleep(20);}
+    E.cmd('iframe',0,40000);const b=E.state().run.boss;if(b)E.cmd('teleport',b.x+1.3,b.z);E.cmd('rally');
+    return {room:E.state().run.room,boss:b?[b.name,b.hp]:null,tick:E.tick}`)),
+  ev(aiife(`const n0=window.__r.ev.length;const F=[];let stop=false;
+    const f=()=>{F.push([performance.now(),E.tick]);if(!stop)requestAnimationFrame(f);};requestAnimationFrame(f);
+    const t0=performance.now();let k=0;while(performance.now()-t0<10000){const b=E.state().run.boss;
+      if(b&&k%4===0){E.cmd('teleport',b.x+1.2,b.z);E.cmd('rally');}
+      for(const p of E.state().party)if(p.hp<70)E.cmd('setHp',p.id,1);k++;await sleep(250);}
+    stop=true;const dur=(F[F.length-1][0]-F[0][0])/1000;const ticks=F[F.length-1][1]-F[0][1];
+    const gaps=[];for(let i=1;i<F.length;i++)gaps.push(F[i][0]-F[i-1][0]);gaps.sort((a,b)=>a-b);
+    return {scene:'boss',sampleSec:+dur.toFixed(2),fpsSampled:+(F.length/dur).toFixed(1),fpsReported:E.fps,
+      ticksPerSec:+(ticks/dur).toFixed(1),frameGapMax:+gaps[gaps.length-1].toFixed(1),frameGapP99:+gaps[Math.floor(gaps.length*0.99)].toFixed(1),
+      newHitstops:window.__r.ev.slice(n0).filter(e=>e.T==='hitstop').length}`)),
+  { type: 'shot', name: 'certfixC2-reg-boss' },
   ev(iife(`return {tick:E.tick,fps:E.fps,ver:E.version,phase:E.state().run.phase}`)),
 ];
 
