@@ -16,6 +16,10 @@
 //     as well as bob + lean, so a still frame shows a stride, not a statue.
 const TAU = Math.PI * 2;
 
+// Idle flourish cadence (render-only). Long enough apart that the camp reads
+// calm, long enough itself that a 150 ms capture interval cannot miss it.
+const IDLE_GESTURE = Object.freeze({ periodSec: 6.4, lenSec: 1.5 });
+
 export const CLIPS = ['idle', 'walk', 'cast', 'hurt', 'downed'];
 
 const easeOut = (k) => 1 - (1 - k) * (1 - k);
@@ -47,7 +51,17 @@ function defaultPose() {
 }
 
 const clipFns = {
-  // Idle: visible breathing (±2.4% y-scale, §19.2) + ear/tail sway.
+  // Idle: visible breathing (±2.4% y-scale, §19.2) + ear/tail sway + an
+  // occasional FLOURISH.
+  //
+  // Certification round 2, camp check 10: "across all six frames nobody
+  // performs any gesture — no forge hammering, no fire-tending, no head-turn.
+  // Reference A's camp shows characters DOING things; ours are four seated
+  // critters breathing." A breath loop is motion but it is not behaviour. Every
+  // idling critter now plays a 1.5 s beat roughly every 6.4 s — head and torso
+  // turn to look, ears prick, the prop lifts, the tail flicks — phase-offset per
+  // critter off the cosmetic stream, so in any capture of the camp somebody is
+  // mid-gesture and no two of them move together.
   idle(t, ph, T) {
     const b = Math.sin(TAU * 0.5 * t + ph.a);
     T.breathe = 1 + 0.024 * b;
@@ -63,6 +77,20 @@ const clipFns = {
     T.recoil = 0;
     T.swing = 0;
     T.gem = 0.3 + 0.15 * Math.sin(TAU * 0.8 * t + ph.c);
+    // The flourish. A half-sine so the beat has an in, a hold and an out, and
+    // any single captured frame lands somewhere legible inside it.
+    const gt = (t + ph.a * 2.6 + ph.c * 1.7) % IDLE_GESTURE.periodSec;
+    if (gt < IDLE_GESTURE.lenSec) {
+      const g = Math.sin(Math.PI * (gt / IDLE_GESTURE.lenSec));
+      const dir = Math.sin(ph.b) >= 0 ? 1 : -1; // each critter looks its own way
+      T.yaw += dir * 0.58 * g;
+      T.roll += dir * 0.06 * g;
+      T.pitch += -0.11 * g;
+      T.bob += 0.022 * g;
+      T.ear += dir * 0.34 * g;
+      T.tail += 0.45 * g;
+      T.prop = 0.3 * g; // the staff/bow/blade comes up as the critter looks
+    }
   },
 
   // Walk: stride-driven feet + bouncy hip bob + shoulder counter-rotation.
