@@ -39,7 +39,9 @@ export const hslColor = (h, s, l) => new Color().setHSL(h / 360, s, l, SRGBColor
 // the exterior, the mist and the canopy stay one family.
 export const COOL = Object.freeze({
   ambient: '#1B2438', // indigo-teal cool fill target for shade
-  sky: '#7E9AD2', // hemisphere sky tint (desaturated Signal Blue direction)
+  // Fix round 1: a touch deeper — the run rig now leans on this fill for its
+  // cool ambient (variants.js mood), so it carries a little more indigo.
+  sky: '#7290CE', // hemisphere sky tint (desaturated Signal Blue direction)
   apron: '#181d25', // exterior forest floor base — cool blue-grey, never green
   apronLift: '#242c37', // its lit mottle
   mist: '#78889E', // fog band just beyond the wall

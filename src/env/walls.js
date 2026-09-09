@@ -231,7 +231,9 @@ export function buildWalls(root, spec, cosmetic) {
   // --- Moss / weed tufts breaking the top line, in the variant's own foliage
   // hue so the wall belongs to the woodland.
   const mossGeo = new IcosahedronGeometry(0.14, 0);
-  const mossMat = toonMaterial({ color: hslColor(g.h + 14, 0.42, 0.19) });
+  // Moss hue offset is spec-tunable (fix round 1: Act-1 variants pull it
+  // down so wall moss never renders in the reserved heal band).
+  const mossMat = toonMaterial({ color: hslColor(g.h + (g.wallMossOff ?? 14), 0.42, 0.19) });
   const mossN = 46;
   const mossMesh = new InstancedMesh(mossGeo, mossMat, mossN);
   mossMesh.frustumCulled = false;

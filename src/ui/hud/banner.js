@@ -28,6 +28,11 @@
 import { PALETTE } from '../../data/palette.js';
 import { CHROME, mix } from './style.js';
 import { TICK_HZ } from '../../core/constants.js';
+import { iconEl } from './icons.js';
+
+// §11 add-phase thresholds, drawn as pips on the boss bar (75 / 50 / 25 %).
+// Mirrors sim/boss.js STAG.addPhases; the sim's `phasesFired` fills them.
+const BOSS_PHASES = [0.75, 0.5, 0.25];
 
 const el = (tag, cls, parent) => {
   const n = document.createElement(tag);
@@ -45,15 +50,33 @@ export function createBanner() {
   const root = el('div', 'hud-banner');
   root.id = 'hud-banner';
 
+  // Boss medallion (Reference D: icon medallion at the plate's left end): a
+  // violet-rimmed disc carrying the drawn Stag, with four ornamental studs.
+  const medal = el('div', 'hud-bn-medal', root);
+  const medalRing = el('div', 'hud-bn-medal-ring', medal);
+  for (let i = 0; i < 4; i++) el('i', `hud-bn-stud s${i}`, medalRing);
+  medal.appendChild(iconEl('stag', { size: 34, cls: 'hud-bn-medal-ico' }));
+
   const label = el('span', 'hud-bn-label', root);
   const pips = el('span', 'hud-bn-pips', root);
-  const bar = el('div', 'hud-bn-bar', root);
+  // The bar rides in a row with its two ornamental caps (boss mode only).
+  const barRow = el('div', 'hud-bn-barrow', root);
+  const capL = el('span', 'hud-bn-cap hud-bn-cap-l', barRow);
+  const bar = el('div', 'hud-bn-bar', barRow);
   const barFill = el('i', null, bar);
+  const phases = el('span', 'hud-bn-phases', barRow);
+  const phaseEls = BOSS_PHASES.map((f) => {
+    const p = el('i', 'hud-bn-phase', phases);
+    p.style.left = `${f * 100}%`;
+    return p;
+  });
+  const capR = el('span', 'hud-bn-cap hud-bn-cap-r', barRow);
   const num = el('span', 'hud-bn-num', root);
   const timer = el('span', 'hud-bn-num', root);
 
   bar.style.display = 'none';
   timer.style.display = 'none';
+  let phasesShown = -1;
 
   let bossOverride = null; // { name, hp, maxHp }
   let mode = 'none';
@@ -106,6 +129,8 @@ export function createBanner() {
       void root.offsetWidth;
       pips.style.display = mode === 'kill_all' ? 'flex' : 'none';
       bar.style.display = mode === 'kill_all' ? 'none' : 'block';
+      barRow.style.display = mode === 'kill_all' ? 'none' : 'flex';
+      phasesShown = -1;
       timer.style.display = mode === 'defend' ? 'inline' : 'none';
       num.style.display = mode === 'kill_all' ? 'inline' : 'inline';
       lastKey = '';
@@ -127,6 +152,11 @@ export function createBanner() {
       label.textContent = felled ? `${name} · FELLED` : name;
       label.className = 'hud-bn-label';
       showBar(PALETTE.godstuffViolet, mix(PALETTE.godstuffViolet, PALETTE.godstuffVioletPeak, 0.6), frac);
+      const fired = felled ? BOSS_PHASES.length : Math.max(0, Math.min(BOSS_PHASES.length, boss.phasesFired ?? 0));
+      if (fired !== phasesShown) {
+        phasesShown = fired;
+        phaseEls.forEach((p, i) => p.classList.toggle('fired', i < fired));
+      }
       num.textContent = felled
         ? adds != null && adds > 0
           ? `${adds} ADD${adds === 1 ? '' : 'S'} REMAIN`
@@ -178,6 +208,7 @@ export function createBanner() {
     timer.textContent = '';
     pips.replaceChildren();
     pipCount = -1;
+    phasesShown = -1;
     lastKey = '';
     return changed;
   }
@@ -191,6 +222,22 @@ export function createBanner() {
       boss: (d) => {
         bossOverride = d ? { name: d.name ?? 'THE HOLLOW STAG', hp: d.hp ?? 200, maxHp: d.maxHp ?? 200 } : null;
         return bossOverride;
+      },
+      // Boss plate anatomy (check 9): medallion, caps, phase pips, in real px.
+      plate: () => {
+        const box = (n) => {
+          const r = n.getBoundingClientRect();
+          return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) };
+        };
+        return {
+          mode,
+          medal: { visible: getComputedStyle(medal).display !== 'none', box: box(medal), icon: !!medal.querySelector('svg[data-icon="stag"]') },
+          caps: { visible: getComputedStyle(capL).display !== 'none', l: box(capL), r: box(capR) },
+          phases: phaseEls.map((p, i) => ({ at: BOSS_PHASES[i], fired: p.classList.contains('fired'), box: box(p) })),
+          label: label.textContent,
+          num: num.textContent,
+          fillPct: Math.round(parseFloat(barFill.style.width || '0') * 10) / 10,
+        };
       },
       state: () => ({
         mode,

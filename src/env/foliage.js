@@ -105,7 +105,17 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
     // authored at the full indigo-teal shade hue renders as a navy speck on a
     // green field rather than as grass in shadow.
     const cool = cosmetic.chance(0.28);
-    if (cool) {
+    if (cool && g.bladeCool === 'shade') {
+      // Fix round 1: the halfway blend (g.h*0.45 + shH*0.55) lands at h~135
+      // — the reserved heal band. Shade blades go to the shade hue itself,
+      // dark and blue-green, so they read as grass in shadow and count cool.
+      c.setHSL(
+        (shH + 8 + r(-8, 8)) / 360,
+        Math.min(1, shS + r(0.08, 0.16)),
+        Math.max(0.03, shL + r(0.05, 0.1)),
+        SRGBColorSpace
+      );
+    } else if (cool) {
       c.setHSL(
         (g.h * 0.45 + shH * 0.55 + r(-10, 10)) / 360,
         Math.min(1, shS + r(0.1, 0.2)),

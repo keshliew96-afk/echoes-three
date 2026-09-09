@@ -18,10 +18,29 @@ import { renderClassPortraits } from './portraits.js';
 import { createCommandBar } from './commandbar.js';
 import { createBanner } from './banner.js';
 import { createThreatLayer } from './threat.js';
+import { iconEl } from './icons.js';
 
 const BAR_EDGE_PX = 16; // real px from the window bottom to the command bar
 const BANNER_EDGE_PX = 14; // real px from the window top to the banner
+const CORNER_EDGE_PX = 12; // real px from the window side to the corner plates
 const ROOM_POLL_MS = 100;
+
+// Location label copy (Reference D: "Gate Bridge" top-left). Derived from the
+// scene + the run's room index; nothing here invents a room the sim does not
+// have. Room 7 is the §16 shop, room 8 the §11 Hollow Stag.
+const MODE_WORD = { kill_all: 'CLEAR THE CLEARING', defend: 'HOLD THE WAYSTONE', shop: 'THE PEDDLER', boss: 'THE HOLLOW STAG' };
+function locationCopy(scene, rv) {
+  if (rv && rv.active && rv.room >= 1) {
+    const room = rv.room;
+    const total = rv.rooms ?? 8;
+    if (room >= total) return { name: 'THE HOLLOW', sub: `ROOM ${room} OF ${total} · ${MODE_WORD.boss}` };
+    if (rv.phase === 'shop' || rv.mode === 'shop') return { name: "THE PEDDLER'S CLEARING", sub: `ROOM ${room} OF ${total} · ${MODE_WORD.shop}` };
+    const mode = MODE_WORD[rv.mode] ?? 'ON THE ROAD';
+    return { name: 'UNEASY WOODLAND', sub: `ROOM ${room} OF ${total} · ${mode}` };
+  }
+  if (scene === 'camp') return { name: 'THE HEARTH CAMP', sub: 'NIGHT · BEFORE THE ROAD' };
+  return { name: 'THE PROVING CLEARING', sub: 'ARENA · NO RUN' };
+}
 
 export function createHud({ bus, world, stage, cosmetic = null, scene = null }) {
   const style = document.createElement('style');
@@ -37,6 +56,38 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
 
   const banner = createBanner();
   root.appendChild(banner.el);
+
+  // Corner plates (Reference D): location label top-left, Glint counter
+  // top-right. Same §17 grammar as every other plate — charcoal, warm-grey
+  // chrome, parchment ink, Pale Gold reserved for the currency (§14).
+  const loc = document.createElement('div');
+  loc.className = 'hud-loc';
+  loc.appendChild(iconEl('marker', { size: 30, cls: 'hud-loc-ico' }));
+  const locText = document.createElement('div');
+  locText.className = 'hud-loc-text';
+  const locName = document.createElement('div');
+  locName.className = 'hud-loc-name';
+  const locSub = document.createElement('div');
+  locSub.className = 'hud-loc-sub';
+  locText.append(locName, locSub);
+  loc.appendChild(locText);
+  root.appendChild(loc);
+
+  const glint = document.createElement('div');
+  glint.className = 'hud-glint';
+  const coin = document.createElement('span');
+  coin.className = 'hud-glint-coin';
+  coin.appendChild(iconEl('coin', { size: 26 }));
+  const glintNum = document.createElement('span');
+  glintNum.className = 'hud-glint-num';
+  glintNum.textContent = '0';
+  const glintLab = document.createElement('span');
+  glintLab.className = 'hud-glint-lab';
+  glintLab.textContent = 'GLINT';
+  glint.append(coin, glintNum, glintLab);
+  root.appendChild(glint);
+  let locKey = '';
+  let glintShown = -1;
 
   const bar = createCommandBar({
     bus,
@@ -68,6 +119,11 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     // canvas is letterboxed by height, i.e. whenever s == H/1080).
     root.style.setProperty('--zb', `${((540 * s - H / 2 + BAR_EDGE_PX) / s).toFixed(2)}px`);
     root.style.setProperty('--zt', `${((540 * s - H / 2 + BANNER_EDGE_PX) / s).toFixed(2)}px`);
+    // Same solve horizontally for the corner plates: when the scale is
+    // clamped the canvas is wider than the window, so a plate at virtual x=0
+    // would sit off-screen. --zx puts it CORNER_EDGE_PX real px in from the
+    // window side instead.
+    root.style.setProperty('--zx', `${((960 * s - W / 2 + CORNER_EDGE_PX) / s).toFixed(2)}px`);
     publishZones();
   }
 
@@ -95,6 +151,11 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     });
     if (banner.isVisible() && b2.width > 1) {
       zoneList.push({ x: b2.x, y: 0, w: b2.width, h: b2.y + b2.height, edge: 'top' });
+    }
+    // The corner plates are chrome too: a pointer must never hide under them.
+    for (const n of [loc, glint]) {
+      const r = n.getBoundingClientRect();
+      if (r.width > 1) zoneList.push({ x: r.x, y: 0, w: r.width, h: r.y + r.height, edge: 'top' });
     }
     threat.setZones(zoneList);
   }
@@ -163,7 +224,25 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     // Room 8 (run block): the run system's own boss view carries the name
     // plate and the live/cleared flags, so it wins over the raw entity scan.
     const b = snap.run && snap.run.boss;
-    runBoss = b && b.active && !b.cleared ? { name: b.name, hp: b.hp, maxHp: b.maxHp, adds: b.adds } : null;
+    runBoss =
+      b && b.active && !b.cleared
+        ? { name: b.name, hp: b.hp, maxHp: b.maxHp, adds: b.adds, phasesFired: b.phasesFired ?? 0 }
+        : null;
+    // Corner plates read the same run view the meta pages draw from.
+    const rv = snap.run ?? null;
+    const copy = locationCopy(scene, rv);
+    const k = `${copy.name}|${copy.sub}`;
+    if (k !== locKey) {
+      locKey = k;
+      locName.textContent = copy.name;
+      locSub.textContent = copy.sub;
+      publishZones();
+    }
+    const wallet = rv && typeof rv.wallet === 'number' ? Math.max(0, Math.round(rv.wallet)) : 0;
+    if (wallet !== glintShown) {
+      glintShown = wallet;
+      glintNum.textContent = String(wallet);
+    }
     greySkills.clear();
     for (const sk of snap.build?.skills ?? []) {
       if (sk.sockets?.some((r) => r && r.verdict === 'grey')) greySkills.add(sk.id);
@@ -247,6 +326,23 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     }),
     banner: banner.debug.state,
     boss: banner.debug.boss,
+    bossPlate: banner.debug.plate,
+    project: threat.debug.project,
+    // Corner plates: what they say + real-px boxes.
+    loc: () => {
+      const r = loc.getBoundingClientRect();
+      const g = glint.getBoundingClientRect();
+      return {
+        name: locName.textContent,
+        sub: locSub.textContent,
+        glint: glintNum.textContent,
+        locBox: { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) },
+        glintBox: { x: Math.round(g.x), y: Math.round(g.y), w: Math.round(g.width), h: Math.round(g.height) },
+        realLocPx: measuredPx('.hud-loc-sub', FS_KEY),
+        realGlintPx: measuredPx('.hud-glint-num', FS_NUM),
+        coinRealPx: Math.round(coin.getBoundingClientRect().width * 10) / 10,
+      };
+    },
     threat: threat.debug.audit,
     markers: threat.debug.markers,
     threatHits: threat.debug.hits,

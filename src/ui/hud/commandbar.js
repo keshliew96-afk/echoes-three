@@ -36,6 +36,12 @@
 import { PALETTE } from '../../data/palette.js';
 import { DODGE, TICK_HZ } from '../../core/constants.js';
 import { ACCENTS, CHROME } from './style.js';
+import { iconEl, hasIcon } from './icons.js';
+
+// Cooldown ring geometry (40-box viewBox over the medallion): r 16.5 -> the
+// Parchment arc that grows clockwise from 12 as the skill recharges.
+const CD_RING_R = 16.5;
+const CD_RING_LEN = 2 * Math.PI * CD_RING_R;
 
 const CLASS_BY_INDEX = ['healer', 'tank', 'swordsman', 'archer'];
 const PORTRAIT_LETTER = { healer: 'H', tank: 'T', swordsman: 'S', archer: 'A' };
@@ -223,15 +229,33 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   el('div', 'hud-sep', bar);
 
   // ------------------------------------------------------- skill slots --
+  // SLOT ANATOMY (check 9: "cooldown radials, boon/skill icons"). The glyph
+  // band holds a circular MEDALLION (.hud-slot-abbrev keeps its class so the
+  // block probes still find it; its text became data-abbrev): a sunk charcoal
+  // disc, the conic cooldown veil INSIDE the disc (so the wipe reads as a
+  // clock face, not a corner wedge), the drawn skill icon above the veil, and
+  // a Parchment progress arc on the disc's rim that fills clockwise from 12
+  // as the skill recharges. Ready = full icon, no veil, dim chrome rim.
   function makeSlot(keyLabel, cls = '') {
     const slot = el('div', `hud-slot proto-slot ${cls}`.trim());
     const k = el('span', 'hud-slot-key proto-key', slot);
     k.textContent = keyLabel;
     const abbrev = el('span', 'hud-slot-abbrev proto-glyph', slot);
-    abbrev.textContent = '·';
+    abbrev.dataset.abbrev = '·';
+    const wipe = el('div', 'hud-slot-wipe proto-wipe', abbrev);
+    const iconHost = el('span', 'hud-slot-ico', abbrev);
+    const ring = svgEl('svg', 'hud-slot-ring', slot);
+    ring.setAttribute('viewBox', '0 0 40 40');
+    const ringRim = svgEl('circle', 'rr', ring);
+    const ringFill = svgEl('circle', 'rf', ring);
+    for (const c of [ringRim, ringFill]) {
+      c.setAttribute('cx', '20');
+      c.setAttribute('cy', '20');
+      c.setAttribute('r', String(CD_RING_R));
+    }
+    ringFill.setAttribute('stroke-dasharray', `0 ${CD_RING_LEN}`);
     const passive = el('span', 'hud-slot-passive', slot);
     passive.textContent = '◈';
-    const wipe = el('div', 'hud-slot-wipe proto-wipe', slot);
     const flash = el('div', 'hud-slot-flash', slot);
     // Dedicated layer for the empty_slot frame blink — its own element and its
     // own property, so it can never share a node with the skip-pulse.
@@ -253,6 +277,10 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     return {
       slot,
       abbrev,
+      iconHost,
+      iconId: null,
+      ringFill,
+      lastRing: -1,
       wipe,
       flash,
       frame,
@@ -262,6 +290,15 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       counting: false,
       cooling: false,
     };
+  }
+
+  // Swap the drawn icon only when the slot's skill changes (never per frame).
+  function setIcon(s, id, abbrev) {
+    if (s.iconId === id) return;
+    s.iconId = id;
+    s.abbrev.dataset.abbrev = abbrev ?? '·';
+    s.iconHost.replaceChildren();
+    if (id && hasIcon(id)) s.iconHost.appendChild(iconEl(id, { size: 26 }));
   }
 
   const skillGroup = el('div', 'hud-group hud-group-skill', bar);
@@ -277,7 +314,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   // The dodge glyph is an ICON, not text: "DASH" is four 24 px letters in a
   // 60 px band and would have to be shrunk under the >=16 px text floor. A
   // double chevron reads as "dash" at 20 px and carries no floor.
-  dodge.abbrev.replaceChildren(dashGlyph());
+  setIcon(dodge, 'dodge', 'DASH');
   dodgeGroup.appendChild(dodge.slot);
 
   // ----------------------------------------------------------- events ---
@@ -352,6 +389,13 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       deg > 0
         ? `conic-gradient(transparent 0deg ${elapsed}deg, ${WIPE_RGBA} ${elapsed}deg 360deg)`
         : 'none';
+    // The rim arc is the same clock read from outside: it covers the ELAPSED
+    // span, so it grows clockwise from 12 while the veil shrinks toward 12.
+    const len = Math.round(((elapsed / 360) * CD_RING_LEN) * 10) / 10;
+    if (len !== s.lastRing) {
+      s.lastRing = len;
+      s.ringFill.setAttribute('stroke-dasharray', `${len} ${CD_RING_LEN}`);
+    }
   }
 
   function paintCooldown(s, remainingTicks, totalTicks) {
@@ -478,7 +522,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       if (!d) {
         s.slot.classList.add('is-empty');
         s.slot.classList.remove('is-passive');
-        s.abbrev.textContent = '·';
+        setIcon(s, null, '·');
         paintCooldown(s, 0, 0);
         continue;
       }
@@ -486,7 +530,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       s.slot.classList.toggle('is-passive', !!d.passive);
       // §17 grey-socket marker: sim verdict, or the debug force for captures.
       s.slot.classList.toggle('is-grey', forcedGrey.has(i) || !!ctx.greySkills?.has(d.id));
-      if (s.abbrev.textContent !== d.abbrev) s.abbrev.textContent = d.abbrev;
+      setIcon(s, d.id, d.abbrev);
       if (d.passive) {
         // §7/§17: a passive slot is a static glyph, never a cooldown wipe.
         paintWipe(s, 0);
@@ -588,7 +632,10 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       slots: () =>
         [...skillEls, dodge].map((s) => ({
           key: s.slot.querySelector('.hud-slot-key').textContent,
-          abbrev: s.abbrev.querySelector('svg') ? '<glyph>' : s.abbrev.textContent,
+          abbrev: s.abbrev.dataset.abbrev,
+          icon: s.iconId,
+          iconDrawn: !!s.iconHost.querySelector('svg'),
+          ringLen: s.lastRing,
           abbrevVisible: s.abbrev.getBoundingClientRect().height > 1,
           counting: s.counting,
           numeral: s.counting ? s.num.textContent : null,
@@ -695,20 +742,6 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       },
     },
   };
-}
-
-// Double-chevron dodge glyph (Void-Charcoal-inked Parchment, no colour
-// semantics — the dodge slot is chrome, not a state).
-function dashGlyph() {
-  const svg = svgEl('svg');
-  svg.setAttribute('viewBox', '0 0 30 26');
-  const p = svgEl('path', null, svg);
-  p.setAttribute(
-    'd',
-    'M3 4 L13 13 L3 22 L7.5 22 L17.5 13 L7.5 4 Z M13 4 L23 13 L13 22 L17.5 22 L27.5 13 L17.5 4 Z'
-  );
-  p.setAttribute('fill', CHROME.ink);
-  return svg;
 }
 
 function rect(node) {

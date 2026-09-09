@@ -40,7 +40,14 @@ export const VARIANTS = {
     id: 1,
     name: 'clearing',
     // Mid-morning clearing: balanced key, fires carrying the mid-field warmth.
-    mood: { key: 1.0, fill: 1.0, warmth: 0.0 },
+    // CERTIFICATION FIX ROUND 1 (A-world, checks 2/7): the run arenas move
+    // from flat daylight to the deep-shadow-versus-fire funnel of the
+    // reference (docs/BUILD_BRIEF.md §11 tuning note, 2026-09-09). Key at
+    // 0.5x and fill at 0.65x of the ACT1_LIGHT rig lands the open floor near
+    // display 70 with the torch/brazier pools 2-3x brighter than the ground
+    // beside them; the painted shade pockets and the vignette supply the
+    // black point. The boss layer's own 0.5x stop-down composes on top.
+    mood: { key: 0.5, fill: 0.65, warmth: 0.0 },
     ground: {
       // shadeS 0.25/shadeH 196 (were 0.3/200): a heavy shade roll was landing
       // the spawn frame at cool > warm; the pockets stay measurably cool
@@ -64,9 +71,24 @@ export const VARIANTS = {
       // against the >=8% counterweight the advisory asks for. Deeper, more
       // saturated blue-green shade pockets are the fix that does not touch
       // the lit story (its siblings already measure 12-17%).
-      h: 90, s: 0.56, l: 0.39, shadeH: 180, shadeS: 0.31, shadeL: 0.115, coolLift: 15,
+      // h 80 (was 90) / shadeH 196 / shadeS 0.26 / shadeL 0.075 / coolLift 6
+      // (fix round 1): the lit green is authored OLIVE (red decisively over
+      // blue) and the shade end DARK and only moderately saturated, so the
+      // painted blend from grass to shade pocket crosses the reserved heal
+      // band h110-150 only where the pixel is already under the analyzer's
+      // L40 / s0.35 gates. Measured on the round-1 frame the old ramp put
+      // 21-36% of every grass box inside the heal band.
+      h: 80, s: 0.56, l: 0.39, shadeH: 196, shadeS: 0.26, shadeL: 0.075, coolLift: 6,
       dirtH: 46, dirtL: 0.255, mossN: 16, leafN: 200, crackN: 6, pebbleN: 90,
+      // Certification fix round 1 (A-world): foliage hue offsets pulled DOWN
+      // and the cool-shade blades sent to the shade hue, so no grass, moss
+      // or bush renders inside the reserved h110-150 heal band; the second
+      // canvas lift trimmed so the olive base keeps red > blue (the blend
+      // toward the indigo shade pockets then crosses h110-150 only where it
+      // is already under the analyzer's L40 / s0.35 gates).
+      mossOff: 6, bushOff: 8, bushLitOff: 0, wallMossOff: 6, bladeCool: 'shade', lift2: 3,
     },
+    propsAvoidPaths: true,
     // Track widened 1.5 -> 1.8: variant 1 has ONE path (its siblings have two
     // or three warm braziers nearer the spawn camera) and needed the extra
     // warm floor area to hold the 70:30 warm:cool story in the spawn frame.
@@ -97,9 +119,51 @@ export const VARIANTS = {
       [11.2, -6.2, 0.7, 'slab boulder'],
       [11.3, 1.9, 0.85, 'crate crate crate barrel'],
       [11.2, 6.2, 0.7, 'stump slab bush'],
+      // Fix round 1 — inner ring so EVERY frame edge is dressed (reference D:
+      // towers, banners, barricades), clear of the spawn ring and the track.
+      [-8.6, -2.6, 0.7, 'tower barricade'],
+      [-8.4, 2.4, 0.8, 'stump fence banner'],
+      [8.6, -2.2, 0.7, 'banner crate barricade'],
+      [8.6, 1.2, 0.75, 'tower stump'],
+      [-3.2, 5.8, 0.7, 'barricade stump'],
+      [3.6, 5.9, 0.7, 'tower crate'],
+      [-0.6, 6.1, 0.6, 'fence banner'],
     ],
     braziers: [[-4.5, 1.8], [3.2, -2.4], [5.6, 5.2]],
     monolith: [7.9, -6.35, 0.45],
+    // CERTIFICATION FIX ROUND 1 (A-world): per-room dressing, built hidden by
+    // env/dressing.js and revealed by the run's `room_enter` events. Boss ring
+    // per REFERENCE_BAR reference B (pillars / idols / urns on every edge,
+    // centre open); shop room per §19.3 (the Peddler's stall + wares under the
+    // Shopkeep's Lantern, in the LEFT third of the spawn frame so it stands
+    // beside the shelf page rather than under it).
+    rooms: {
+      boss: {
+        clusters: [
+          [-9.0, -4.9, 0.6, 'pillar urn'],
+          [9.0, -4.9, 0.6, 'pillar urn'],
+          [-9.3, 0.4, 0.6, 'idol urn'],
+          [9.3, 0.4, 0.6, 'idol urn'],
+          [-8.8, 5.2, 0.6, 'pillar urn urn'],
+          [8.8, 5.2, 0.6, 'pillar urn'],
+          [-3.2, -6.7, 0.5, 'pillar'],
+          [3.2, -6.7, 0.5, 'pillar'],
+          [-6.6, 6.5, 0.5, 'urn pillar'],
+          [6.6, 6.5, 0.5, 'pillar urn'],
+          [-6.4, -2.2, 0.4, 'urn'],
+          [6.4, -2.2, 0.4, 'urn'],
+        ],
+      },
+      shop: {
+        stall: [-7.7, -0.9, 0.28],
+        clusters: [
+          [-8.3, 1.5, 0.6, 'crate sack sack'],
+          [-8.4, -2.4, 0.6, 'barrel crate'],
+          [-6.3, -2.5, 0.4, 'banner'],
+          [-9.0, -0.6, 0.4, 'sack'],
+        ],
+      },
+    },
   },
 
   // ---- 2 · "Old Crossroads"
@@ -110,14 +174,22 @@ export const VARIANTS = {
     // and fill raised 0.78 -> 1.02: the amber-heavy, fill-starved rig was
     // pushing lit timber/stone into the reserved h5-25 band AND starving the
     // frame of its cool counterweight (baseline-v030 F1/F2).
-    mood: { key: 1.1, fill: 1.02, warmth: 0.05 },
+    mood: { key: 0.55, fill: 0.66, warmth: 0.05 },
     ground: {
       // shadeS 0.27 / coolLift 20 (were 0.32/24): measured warm 37.4% vs cool
       // 37.4% — a dead tie, and §19.3 keeps Act-1 warm-DOMINANT. This trims the
       // cool side back under warm while the pockets stay a visible >=8% share.
-      h: 86, s: 0.52, l: 0.42, shadeH: 182, shadeS: 0.30, shadeL: 0.125, coolLift: 14,
+      h: 78, s: 0.52, l: 0.42, shadeH: 196, shadeS: 0.26, shadeL: 0.08, coolLift: 6,
       dirtH: 48, dirtL: 0.30, mossN: 8, leafN: 150, crackN: 12, pebbleN: 160,
+      // Certification fix round 1 (A-world): foliage hue offsets pulled DOWN
+      // and the cool-shade blades sent to the shade hue, so no grass, moss
+      // or bush renders inside the reserved h110-150 heal band; the second
+      // canvas lift trimmed so the olive base keeps red > blue (the blend
+      // toward the indigo shade pockets then crosses h110-150 only where it
+      // is already under the analyzer's L40 / s0.35 gates).
+      mossOff: 6, bushOff: 8, bushLitOff: 0, wallMossOff: 6, bladeCool: 'shade', lift2: 3,
     },
+    propsAvoidPaths: true,
     paths: [
       { pts: [[-12.6, 0.6], [-4, 0.1], [3, -0.3], [12.6, -0.7]], w: 2.1 },
       { pts: [[0.5, -8.6], [0.1, -2], [-0.4, 3], [-0.2, 8.6]], w: 1.55 },
@@ -151,9 +223,50 @@ export const VARIANTS = {
       [11.2, 4.4, 0.8, 'fence fence boulder'],
       [11.3, 7.0, 0.6, 'cairn slab'],
       [-11.2, 0.4, 0.6, 'stump boulder'],
+      // Fix round 1 — inner ring (see variant 1).
+      [-8.6, -2.8, 0.7, 'tower cairn barricade'],
+      [-8.4, 2.6, 0.75, 'slab banner boulder'],
+      [8.6, -2.6, 0.7, 'banner boulder barricade'],
+      [8.5, 2.8, 0.7, 'tower slab'],
+      [-3.4, 5.8, 0.7, 'barricade cairn'],
+      [3.4, 5.9, 0.7, 'tower boulder'],
+      [-6.6, 5.6, 0.6, 'banner slab'],
     ],
     braziers: [[-3.8, -3.0], [4.4, 2.2], [-7.4, 3.0]],
     monolith: [-8.4, -6.6, -0.4],
+    // CERTIFICATION FIX ROUND 1 (A-world): per-room dressing, built hidden by
+    // env/dressing.js and revealed by the run's `room_enter` events. Boss ring
+    // per REFERENCE_BAR reference B (pillars / idols / urns on every edge,
+    // centre open); shop room per §19.3 (the Peddler's stall + wares under the
+    // Shopkeep's Lantern, in the LEFT third of the spawn frame so it stands
+    // beside the shelf page rather than under it).
+    rooms: {
+      boss: {
+        clusters: [
+          [-9.0, -4.9, 0.6, 'pillar urn'],
+          [9.0, -4.9, 0.6, 'pillar urn'],
+          [-8.6, 2.2, 0.6, 'idol urn'],
+          [8.6, 2.2, 0.6, 'idol urn'],
+          [-8.8, 5.4, 0.6, 'pillar urn urn'],
+          [8.8, 5.4, 0.6, 'pillar urn'],
+          [-3.2, -6.7, 0.5, 'pillar'],
+          [3.2, -6.7, 0.5, 'pillar'],
+          [-6.6, 6.5, 0.5, 'urn pillar'],
+          [6.6, 6.5, 0.5, 'pillar urn'],
+          [-6.4, -2.6, 0.4, 'urn'],
+          [6.4, -2.6, 0.4, 'urn'],
+        ],
+      },
+      shop: {
+        stall: [-7.7, -2.8, 0.28],
+        clusters: [
+          [-8.4, -4.7, 0.6, 'crate sack sack'],
+          [-8.8, -1.6, 0.5, 'barrel crate'],
+          [-6.2, -4.3, 0.4, 'banner'],
+          [-9.2, -2.6, 0.4, 'sack'],
+        ],
+      },
+    },
   },
 
   // ---- 3 · "Mossy Hollow"
@@ -176,7 +289,7 @@ export const VARIANTS = {
     // the one variant whose warm share ran close to its cool counterweight
     // (21.4% vs 15.6%). Wider fire pools + a touch less indigo fill widen the
     // §19.3 warm-dominant margin without touching the pockets themselves.
-    mood: { key: 0.96, fill: 1.06, warmth: 0.0, poolR: 1.1, keyWhite: 0.3 },
+    mood: { key: 0.48, fill: 0.68, warmth: 0.0, poolR: 1.1, keyWhite: 0.3 },
     ground: {
       // shadeS 0.26 / shadeH 200 (were 0.34/204): the hollow is the coolest
       // room by design, but a heavy shade roll flipped whole frames
@@ -186,9 +299,17 @@ export const VARIANTS = {
       // s0.35-0.43 — a hair inside the reserved Ember band. Painted gold-er
       // and a step lighter, the rendered track sits above h26 at every dim
       // stretch while still reading as the same beaten dirt.
-      h: 88, s: 0.58, l: 0.355, shadeH: 181, shadeS: 0.30, shadeL: 0.125, coolLift: 14,
+      h: 82, s: 0.58, l: 0.355, shadeH: 197, shadeS: 0.26, shadeL: 0.075, coolLift: 6,
       dirtH: 50, dirtL: 0.285, mossN: 30, leafN: 220, crackN: 4, pebbleN: 70,
+      // Certification fix round 1 (A-world): foliage hue offsets pulled DOWN
+      // and the cool-shade blades sent to the shade hue, so no grass, moss
+      // or bush renders inside the reserved h110-150 heal band; the second
+      // canvas lift trimmed so the olive base keeps red > blue (the blend
+      // toward the indigo shade pockets then crosses h110-150 only where it
+      // is already under the analyzer's L40 / s0.35 gates).
+      mossOff: 6, bushOff: 8, bushLitOff: 0, wallMossOff: 6, bladeCool: 'shade', lift2: 3,
     },
+    propsAvoidPaths: true,
     paths: [{ pts: [[-12.6, 5.8], [-7.4, 4.4], [-2.6, 1.2], [0.4, -2.6], [4.8, -5.6], [12.6, -6.2]], w: 1.6 }],
     grass: 720,
     flowers: 46,
@@ -214,6 +335,14 @@ export const VARIANTS = {
       [11.2, -1.8, 0.9, 'barrel barrel barrel crate'],
       [11.3, 2.6, 0.7, 'bush boulder'],
       [11.2, 6.6, 0.75, 'log bush stump'],
+      // Fix round 1 — inner ring (see variant 1).
+      [-8.6, -2.4, 0.75, 'tower stump barricade'],
+      [-8.2, 1.0, 0.7, 'bush banner log'],
+      [8.6, -2.0, 0.7, 'banner bush barricade'],
+      [8.5, 3.2, 0.7, 'tower stump'],
+      [-3.0, 5.9, 0.7, 'barricade bush'],
+      [3.6, 5.8, 0.7, 'tower log'],
+      [0.2, 6.1, 0.6, 'banner bush'],
     ],
     // Braziers pulled well clear of the curved track: an additive warm pool
     // over v3's dark dirt is what lit the path into the danger band. The third
@@ -234,6 +363,39 @@ export const VARIANTS = {
     // N-mid"), clear of the lantern pool at [1.2,-7.3] (2.7 u) and the stump
     // cluster at [6.2,-7.3] (2.3 u).
     monolith: [3.9, -6.8, 1.15],
+    // CERTIFICATION FIX ROUND 1 (A-world): per-room dressing, built hidden by
+    // env/dressing.js and revealed by the run's `room_enter` events. Boss ring
+    // per REFERENCE_BAR reference B (pillars / idols / urns on every edge,
+    // centre open); shop room per §19.3 (the Peddler's stall + wares under the
+    // Shopkeep's Lantern, in the LEFT third of the spawn frame so it stands
+    // beside the shelf page rather than under it).
+    rooms: {
+      boss: {
+        clusters: [
+          [-9.0, -4.9, 0.6, 'pillar urn'],
+          [9.0, -3.9, 0.6, 'pillar urn'],
+          [-9.3, 0.4, 0.6, 'idol urn'],
+          [9.3, 0.4, 0.6, 'idol urn'],
+          [-8.8, 5.2, 0.6, 'pillar urn urn'],
+          [8.8, 5.2, 0.6, 'pillar urn'],
+          [-3.2, -6.7, 0.5, 'pillar'],
+          [2.4, -7.0, 0.5, 'pillar'],
+          [-6.6, 6.5, 0.5, 'urn pillar'],
+          [6.6, 6.5, 0.5, 'pillar urn'],
+          [-6.4, -2.6, 0.4, 'urn'],
+          [6.8, -0.4, 0.4, 'urn'],
+        ],
+      },
+      shop: {
+        stall: [-7.7, -0.9, 0.28],
+        clusters: [
+          [-8.3, 1.4, 0.6, 'crate sack sack'],
+          [-8.5, -3.0, 0.6, 'barrel crate'],
+          [-6.3, -2.5, 0.4, 'banner'],
+          [-9.1, -0.6, 0.4, 'sack'],
+        ],
+      },
+    },
   },
 };
 

@@ -510,6 +510,19 @@ export function createThreatLayer({ stage, world, bus = null }) {
     setBarHeight,
     setZones,
     debug: {
+      // World -> window px through the live stage camera (the same projection
+      // the pointers use). Lets a capture ask where the party actually stands
+      // on screen — e.g. to prove a meta page is not parked over it.
+      project: (x, y, z) => {
+        const p = project(x, y, z, window.innerWidth, window.innerHeight);
+        return {
+          x: Math.round(p.sx),
+          y: Math.round(p.sy),
+          behind: p.behind,
+          onScreen:
+            !p.behind && p.sx >= 0 && p.sy >= 0 && p.sx <= window.innerWidth && p.sy <= window.innerHeight,
+        };
+      },
       // Criterion 6 evidence: for EVERY live threat, is it in frame, and if not
       // does a pointer that was ACTUALLY RENDERED cover it? Re-runs the scan on
       // demand, so the render path never pays for the audit objects.

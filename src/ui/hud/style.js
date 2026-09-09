@@ -72,6 +72,10 @@ export const MIN_SCALE = Math.max(TEXT_FLOOR / FS_KEY, NUM_FLOOR / FS_NUM);
 
 const TILE = 64; // §17 "Portrait 64x64" — skill/dodge slots match it
 const KEY_H = 26; // key-chip band height (top of the tile)
+const MED = 34; // skill medallion diameter (the icon disc in the glyph band)
+const MED_CX = 33; // medallion centre inside the 60x60 inner box
+const MED_CY = 42;
+const RINGBOX = 40; // ring SVG box (r 16.5 + 3 px stroke)
 const NUM_H = 33; // skill-slot numeral-strip height (bottom of the slot tile)
 const HP_H = 10; // portrait HP bar
 const HP_GAP = 2;
@@ -452,33 +456,56 @@ export function hudCss() {
 }
 .hud-slot.is-empty { border-style: dashed; border-color: ${CHROME.rimDim}; }
 .hud-slot.is-empty { background: ${CHROME.plate}; }
-.hud-slot.is-empty .hud-slot-abbrev { color: ${CHROME.rimHot}; }
+.hud-slot.is-empty .hud-slot-abbrev { color: ${CHROME.rimHot}; background: ${CHROME.plate}; box-shadow: none; }
+.hud-slot.is-empty .hud-slot-ring .rr { stroke: ${CHROME.rimDim}; stroke-dasharray: 3 4; }
 .hud-slot-key { background: ${CHROME.plateHi}; z-index: 4; }
-/* GLYPH BAND. The abbrev owns it while the slot is ready; .is-counting
-   hides the abbrev and the numeral strip owns it instead. The two are
-   mutually exclusive, so they can never overlap. */
+/* GLYPH BAND = the MEDALLION (check 9: icons + cooldown radials). A ${MED}px
+   sunk charcoal disc centred in the band below the key chip; the conic veil is
+   clipped INSIDE it (a clock face, not a corner wedge), the drawn icon sits
+   above the veil, and .hud-slot-ring paints the Parchment progress arc on the
+   rim. .is-counting still hides the medallion and hands the band to the
+   numeral strip — the two stay mutually exclusive, so they never overlap. */
 .hud-slot-abbrev {
   position: absolute;
-  left: 2px; right: 2px;
-  top: ${KEY_H + 1}px; bottom: 0;
+  left: ${MED_CX - MED / 2}px; top: ${MED_CY - MED / 2}px;
+  width: ${MED}px; height: ${MED}px;
+  border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
-  font-size: ${FS_KEY}px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.01em;
+  background: radial-gradient(circle at 50% 38%, ${mix(C, PALETTE.warmGrey, 0.16)} 0%, ${CHROME.plateSunk} 78%);
+  box-shadow: inset 0 1px 2px ${CHROME.plateSunk};
   color: ${CHROME.ink};
   z-index: 2;
 }
-.hud-slot.is-counting .hud-slot-abbrev { display: none; }
-.hud-slot-abbrev svg { width: 30px; height: 26px; display: block; }
-.hud-slot-abbrev svg path { fill: ${CHROME.ink}; }
-/* Cooling: the glyph dims UNIFORMLY (5.1:1 on the field) — the veil never
-   half-lights a letter. */
+.hud-slot.is-counting .hud-slot-abbrev,
+.hud-slot.is-counting .hud-slot-ring { display: none; }
+.hud-slot-ico { position: relative; display: block; width: 26px; height: 26px; z-index: 2; }
+.hud-slot-ico svg { display: block; width: 26px; height: 26px; }
+/* Ring: chrome rim always (a dim circle framing the icon); the Parchment arc
+   carries the elapsed cooldown, clockwise from 12. */
+.hud-slot-ring {
+  position: absolute;
+  left: ${MED_CX - RINGBOX / 2}px; top: ${MED_CY - RINGBOX / 2}px;
+  width: ${RINGBOX}px; height: ${RINGBOX}px;
+  z-index: 3;
+  pointer-events: none;
+  overflow: visible;
+}
+.hud-slot-ring .rr { fill: none; stroke: ${CHROME.rimDim}; stroke-width: 2; }
+.hud-slot-ring .rf {
+  fill: none; stroke: ${PALETTE.parchment}; stroke-width: 3;
+  stroke-linecap: butt;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  opacity: 0;
+}
+.hud-slot.is-cooling .hud-slot-ring .rf { opacity: 1; }
+.hud-slot.is-cooling .hud-slot-ring .rr { stroke: ${CHROME.plateSunk}; }
+/* Cooling: the icon dims UNIFORMLY (5.1:1 on the field) — the veil never
+   half-lights a glyph. */
 .hud-slot.is-cooling .hud-slot-abbrev { color: ${mix(PALETTE.parchment, C, 0.3)}; }
-.hud-slot.is-cooling .hud-slot-abbrev svg path { fill: ${mix(PALETTE.parchment, C, 0.3)}; }
-/* z-index 1: UNDER the key chip (4), the abbrev (2) and the numeral (5). */
-.hud-slot-wipe { position: absolute; inset: 0; z-index: 1; }
+/* The veil lives INSIDE the medallion: z 1, under the icon (2). */
+.hud-slot-wipe { position: absolute; inset: 0; border-radius: 50%; z-index: 1; }
 /* The on_cooldown nudge paints HERE, not on the wipe itself: the wipe's own
    background-image is the conic charcoal veil, so a background-colour flash on
    it would only show through the wedge that is already spent — the opposite of
@@ -571,6 +598,41 @@ export function hudCss() {
 #hud .hud-peak-skip  { transform: scale(1.14); }
 #hud .hud-peak-ready { transform: scale(1.15); box-shadow: inset 0 0 0 40px ${PALETTE.warmGrey}; }
 
+/* ------------------------------------ corner plates (Reference D chrome) -- */
+/* Location label top-left ("Gate Bridge") and the Glint counter top-right.
+   Both are §17 plates; the counter is the ONE place Pale Gold appears (§14). */
+.hud-loc, .hud-glint {
+  position: absolute;
+  top: var(--zt, 18px);
+  display: flex; align-items: center;
+  border-radius: 12px;
+  background: linear-gradient(180deg, ${CHROME.plateHi} 0%, ${CHROME.plate} 55%);
+  border: 2px solid ${CHROME.rim};
+  box-shadow: inset 0 0 0 1px ${CHROME.plateSunk}, 0 2px 0 0 ${CHROME.plateSunk};
+  white-space: nowrap;
+}
+.hud-loc { left: var(--zx, 18px); gap: 10px; padding: 5px 16px 5px 9px; }
+.hud-loc-ico { display: block; width: 30px; height: 30px; color: ${PALETTE.bone}; flex: 0 0 auto; }
+.hud-loc-text { display: flex; flex-direction: column; gap: 1px; }
+.hud-loc-name { font-size: ${FS_LAB}px; font-weight: 800; line-height: 1.05; letter-spacing: 0.08em; color: ${CHROME.ink}; }
+.hud-loc-sub { font-size: ${FS_KEY}px; font-weight: 700; line-height: 1.05; letter-spacing: 0.1em; color: ${CHROME.inkDim}; }
+.hud-glint { right: var(--zx, 18px); gap: 9px; padding: 6px 16px 6px 10px; }
+.hud-glint-coin {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  color: ${mix(PALETTE.paleGold, C, 0.55)};
+  background: radial-gradient(circle at 36% 30%, ${mix(PALETTE.paleGold, PALETTE.parchment, 0.55)} 0%, ${PALETTE.paleGold} 52%, ${mix(PALETTE.paleGold, C, 0.5)} 100%);
+  border: 2px solid ${CHROME.plateSunk};
+  box-shadow: 0 0 12px ${PALETTE.paleGold}88;
+}
+.hud-glint-coin svg { display: block; width: 24px; height: 24px; }
+.hud-glint-num {
+  font-size: ${FS_NUM}px; font-weight: 800; line-height: 1;
+  color: ${PALETTE.paleGold};
+  text-shadow: 0 0 10px ${PALETTE.paleGold}66;
+}
+.hud-glint-lab { font-size: ${FS_KEY}px; font-weight: 700; letter-spacing: 0.14em; color: ${CHROME.inkDim}; line-height: 1; }
+
 /* ------------------------------------------- ZONE 2 — room banner (§17) -- */
 #hud-banner {
   position: absolute;
@@ -593,12 +655,71 @@ export function hudCss() {
 }
 #hud-banner.show { opacity: 1; }
 #hud-banner.boss {
-  gap: 12px;
-  padding: ${BN_PAD}px 26px;
+  /* Ornate plate: medallion | name row (name + numeral) / bar row (caps + bar + pips). */
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 12px; row-gap: 3px;
+  align-items: center;
+  padding: ${BN_PAD}px 22px ${BN_PAD + 2}px 8px;
   border-color: ${PALETTE.godstuffViolet};
   box-shadow: inset 0 0 0 1px ${CHROME.plateSunk}, 0 0 0 3px ${CHROME.plate},
-              0 0 0 4px ${mix(C, PALETTE.godstuffViolet, 0.55)};
+              0 0 0 4px ${mix(C, PALETTE.godstuffViolet, 0.55)}, 0 0 22px ${PALETTE.godstuffViolet}55;
 }
+#hud-banner.boss .hud-bn-label { grid-row: 1; grid-column: 2; letter-spacing: 0.14em; }
+#hud-banner.boss .hud-bn-num { grid-row: 1; grid-column: 3; justify-self: end; }
+#hud-banner.boss .hud-bn-barrow { grid-row: 2; grid-column: 2 / span 2; }
+/* Medallion: violet double ring, four studs, the drawn Stag in violet-white. */
+.hud-bn-medal {
+  display: none;
+  position: relative;
+  width: 58px; height: 58px;
+  border-radius: 50%;
+  align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 40%, ${mix(C, PALETTE.godstuffViolet, 0.32)} 0%, ${CHROME.plateSunk} 72%);
+  border: 2px solid ${PALETTE.godstuffViolet};
+  box-shadow: 0 0 0 2px ${CHROME.plate}, 0 0 0 3px ${mix(C, PALETTE.godstuffViolet, 0.6)}, 0 0 16px ${PALETTE.godstuffViolet}77;
+  color: ${PALETTE.godstuffVioletPeak};
+  margin: -8px 0;
+}
+#hud-banner.boss .hud-bn-medal { display: flex; grid-row: 1 / span 2; grid-column: 1; }
+.hud-bn-medal-ico { position: relative; display: block; width: 34px; height: 34px; z-index: 1;
+  filter: drop-shadow(0 0 4px ${PALETTE.godstuffViolet}); }
+.hud-bn-medal-ring { position: absolute; inset: -7px; border-radius: 50%; pointer-events: none; }
+.hud-bn-stud {
+  position: absolute; width: 9px; height: 9px;
+  background: ${PALETTE.godstuffViolet};
+  border: 2px solid ${CHROME.plate};
+  transform: rotate(45deg);
+}
+.hud-bn-stud.s0 { left: 50%; top: -2px; margin-left: -4.5px; }
+.hud-bn-stud.s1 { right: -2px; top: 50%; margin-top: -4.5px; }
+.hud-bn-stud.s2 { left: 50%; bottom: -2px; margin-left: -4.5px; }
+.hud-bn-stud.s3 { left: -2px; top: 50%; margin-top: -4.5px; }
+/* Bar row: caps + bar + phase pips */
+.hud-bn-barrow { display: flex; align-items: center; gap: 0; position: relative; }
+.hud-bn-cap { display: none; width: 0; height: 0; flex: 0 0 auto; }
+#hud-banner.boss .hud-bn-cap { display: block; }
+.hud-bn-cap-l {
+  border-top: 11px solid transparent; border-bottom: 11px solid transparent;
+  border-right: 13px solid ${PALETTE.godstuffViolet};
+  margin-right: -2px;
+}
+.hud-bn-cap-r {
+  border-top: 11px solid transparent; border-bottom: 11px solid transparent;
+  border-left: 13px solid ${PALETTE.godstuffViolet};
+  margin-left: -2px;
+}
+.hud-bn-phases { display: none; position: absolute; left: 13px; right: 13px; top: 0; bottom: 0; pointer-events: none; }
+#hud-banner.boss .hud-bn-phases { display: block; }
+.hud-bn-phase {
+  position: absolute; top: -6px;
+  width: 10px; height: 10px; margin-left: -7px;
+  background: ${CHROME.plate};
+  border: 2px solid ${PALETTE.godstuffViolet};
+  transform: rotate(45deg);
+}
+.hud-bn-phase.fired { background: ${PALETTE.godstuffVioletPeak}; border-color: ${PALETTE.godstuffVioletPeak}; box-shadow: 0 0 6px ${PALETTE.godstuffVioletPeak}; }
 .hud-bn-label {
   font-size: ${FS_LAB}px;
   font-weight: 800;
@@ -631,7 +752,11 @@ export function hudCss() {
   border: 1px solid ${CHROME.rimDim};
   overflow: hidden;
 }
-#hud-banner.boss .hud-bn-bar { width: 460px; height: 22px; }
+#hud-banner.boss .hud-bn-bar {
+  width: 520px; height: 20px; border-radius: 2px;
+  border-color: ${mix(C, PALETTE.godstuffViolet, 0.6)};
+  box-shadow: inset 0 0 0 1px ${CHROME.plate}, 0 0 10px ${PALETTE.godstuffViolet}44;
+}
 .hud-bn-bar i {
   display: block; height: 100%; width: 100%;
   background: linear-gradient(180deg, var(--barLift) 0%, var(--barBase) 62%);

@@ -45,6 +45,7 @@ import {
   CylinderGeometry,
   IcosahedronGeometry,
   InstancedMesh,
+  LatheGeometry,
   LinearSRGBColorSpace,
   Matrix4,
   Mesh,
@@ -61,7 +62,9 @@ import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometr
 import { ARENA } from '../core/constants.js';
 import { toonMaterial, getGradientMap } from '../render/toon.js';
 import { PALETTE } from '../data/palette.js';
-import { ENV, hslColor, mix } from './colors.js';
+import { COOL, ENV, hslColor, mix, shade } from './colors.js';
+import { pathClearance } from './variants.js';
+import { buildRoomDressing } from './dressing.js';
 
 // Ground-plane render order band. The additive warm light pools draw FIRST, the
 // contact shadows draw on top of them: a black blob under an additive pool that
@@ -640,6 +643,302 @@ function propTypes(mats, spec) {
     };
   }
 
+  // ---------------------------------------------------------------------
+  // CERTIFICATION FIX ROUND 1 (A-world, check 4 "prop density"). The round-1
+  // scorers measured every arena frame dressed along its TOP wall only —
+  // "y>540 holds only one torch" — while REFERENCE_BAR reference D rings every
+  // edge of its frame with torch towers, banners and spike barricades, and
+  // reference B rings a boss arena with pillars, statues and vases. These are
+  // those silhouettes, built from the same primitive-layer grammar (ink hull,
+  // centred contact blob, footprint rejection) so they read as one prop set.
+  // Every one stays under the ~1.05 u Tank height (§19.3).
+  // ---------------------------------------------------------------------
+
+  // --- Torch tower (reference D's lantern towers): stone footing, timber
+  // post with two braces, an iron cage lantern under a peaked cap. Emits a
+  // `lantern` so the arena mounts wick + halo + pool on it.
+  {
+    const base = new CylinderGeometry(0.2, 0.27, 0.14, 8).translate(0, 0.07, 0);
+    const post = new CylinderGeometry(0.048, 0.068, 0.72, 7).translate(0, 0.14 + 0.36, 0);
+    const braces = mergeGeometries([
+      new BoxGeometry(0.035, 0.34, 0.035).rotateZ(0.62).translate(0.11, 0.3, 0),
+      new BoxGeometry(0.035, 0.34, 0.035).rotateZ(-0.62).translate(-0.11, 0.3, 0),
+    ]);
+    const cage = mergeGeometries([
+      new BoxGeometry(0.24, 0.03, 0.24).translate(0, 0.74, 0),
+      new BoxGeometry(0.24, 0.03, 0.24).translate(0, 0.96, 0),
+      ...[-1, 1].flatMap((sx) =>
+        [-1, 1].map((sz) => new BoxGeometry(0.022, 0.24, 0.022).translate(sx * 0.105, 0.85, sz * 0.105))
+      ),
+    ]);
+    const glass = new BoxGeometry(0.16, 0.19, 0.16).translate(0, 0.85, 0);
+    const cap = new ConeGeometry(0.18, 0.09, 4).rotateY(Math.PI / 4).translate(0, 1.0, 0);
+    T.tower = {
+      layers: [
+        { geo: base, mat: mats.stoneCool, ink: DETAIL_INK_PX },
+        { geo: post, mat: mats.bark, ink: PROP_INK_PX },
+        { geo: braces, mat: mats.barkDark, ink: DETAIL_INK_PX },
+        { geo: cage, mat: mats.ironDark, ink: 1.15 },
+        { geo: glass, mat: mats.glass, ink: 1.15 },
+        { geo: cap, mat: mats.iron, ink: DETAIL_INK_PX },
+      ],
+      foot: 0.3,
+      faint: true,
+      emitter: (t) => ({ kind: 'lantern', x: t.x, y: 0.85 * (t.sy ?? t.s ?? 1), z: t.z }),
+    };
+  }
+
+  // --- Banner: pole on a stone foot, cross-arm, hanging swallow-tail cloth
+  // with a trim bar top and bottom. The cloth is the COOL family (sage pulled
+  // toward the indigo ambient) so a banner never borrows a reserved accent.
+  {
+    const pole = new CylinderGeometry(0.034, 0.05, 1.0, 7).translate(0, 0.5, 0);
+    const foot = new CylinderGeometry(0.13, 0.17, 0.1, 7).translate(0, 0.05, 0);
+    const arm = new BoxGeometry(0.42, 0.04, 0.04).translate(0.18, 0.95, 0);
+    const flag = mergeGeometries([
+      new BoxGeometry(0.34, 0.5, 0.02).translate(0.19, 0.67, 0),
+      new BoxGeometry(0.12, 0.14, 0.02).translate(0.08, 0.36, 0),
+      new BoxGeometry(0.12, 0.14, 0.02).translate(0.3, 0.36, 0),
+    ]);
+    const trim = mergeGeometries([
+      new BoxGeometry(0.36, 0.05, 0.03).translate(0.19, 0.9, 0),
+      new BoxGeometry(0.36, 0.035, 0.03).translate(0.19, 0.44, 0),
+    ]);
+    const finial = new ConeGeometry(0.045, 0.1, 6).translate(0, 1.0, 0);
+    T.banner = {
+      layers: [
+        { geo: pole, mat: mats.bark, ink: PROP_INK_PX },
+        { geo: foot, mat: mats.stone, ink: DETAIL_INK_PX },
+        { geo: arm, mat: mats.bark, ink: DETAIL_INK_PX },
+        { geo: flag, mat: mats.cloth, ink: PROP_INK_PX },
+        { geo: trim, mat: mats.trim, ink: DETAIL_INK_PX },
+        { geo: finial, mat: mats.iron, ink: DETAIL_INK_PX },
+      ],
+      foot: 0.26,
+    };
+  }
+
+  // --- Spike barricade (cheval de frise): a log beam carrying three crossed
+  // pairs of sharpened stakes with pale cut tips.
+  {
+    const beam = new CylinderGeometry(0.06, 0.06, 1.12, 7).rotateZ(Math.PI / 2).translate(0, 0.2, 0);
+    const stakes = [];
+    const tips = [];
+    for (const x of [-0.4, 0, 0.4]) {
+      for (const sgn of [-1, 1]) {
+        stakes.push(new CylinderGeometry(0.03, 0.02, 0.8, 6).rotateX(sgn * 0.8).translate(x, 0.2, 0));
+        const ty = 0.2 + 0.4 * Math.cos(0.8);
+        const tz = -sgn * 0.4 * Math.sin(0.8);
+        tips.push(new ConeGeometry(0.03, 0.1, 6).rotateX(sgn * 0.8).translate(x, ty + 0.03, tz - sgn * 0.01));
+      }
+    }
+    const lash = mergeGeometries(
+      [-0.4, 0, 0.4].map((x) => new TorusGeometry(0.075, 0.014, 5, 10).rotateY(Math.PI / 2).translate(x, 0.2, 0))
+    );
+    T.barricade = {
+      layers: [
+        { geo: beam, mat: mats.bark, ink: PROP_INK_PX },
+        { geo: mergeGeometries(stakes), mat: mats.barkDark, ink: 1.5 },
+        { geo: mergeGeometries(tips), mat: mats.stumpTop },
+        { geo: lash, mat: mats.iron },
+      ],
+      foot: 0.64,
+      rz: 0.36,
+    };
+  }
+
+  // --- Stone pillar (reference B): stepped base, fluted drum, cap block and a
+  // broken chunk on top. Boss-room dressing.
+  {
+    const base = mergeGeometries([
+      new BoxGeometry(0.54, 0.08, 0.54).translate(0, 0.04, 0),
+      new BoxGeometry(0.42, 0.08, 0.42).translate(0, 0.12, 0),
+    ]);
+    const drum = new CylinderGeometry(0.15, 0.19, 0.72, 9).translate(0, 0.52, 0);
+    const flutes = mergeGeometries(
+      [0, 1, 2, 3, 4].map((k) => {
+        const a = (k / 5) * Math.PI * 2;
+        return new BoxGeometry(0.03, 0.6, 0.025).translate(0.165, 0.5, 0).rotateY(a);
+      })
+    );
+    const cap = new BoxGeometry(0.44, 0.1, 0.44).translate(0, 0.93, 0);
+    const chunk = new IcosahedronGeometry(0.13, 0).scale(1, 0.55, 1).rotateY(0.6).translate(0.06, 1.0, 0.04);
+    const crack = new BoxGeometry(0.02, 0.36, 0.03).rotateZ(0.12).translate(0.12, 0.42, 0.14);
+    T.pillar = {
+      layers: [
+        { geo: base, mat: mats.stone, ink: PROP_INK_PX },
+        { geo: drum, mat: mats.stoneLit, ink: PROP_INK_PX },
+        { geo: flutes, mat: mats.stoneDark },
+        { geo: cap, mat: mats.stone, ink: DETAIL_INK_PX },
+        { geo: chunk, mat: mats.stoneCool, ink: 1.5 },
+        { geo: crack, mat: mats.stoneDark },
+      ],
+      foot: 0.38,
+    };
+  }
+
+  // --- Urn (reference B's vases): lathed stone vessel with a dark mouth, a
+  // shoulder band and two ear handles.
+  {
+    const profile = [
+      [0.001, 0], [0.13, 0.015], [0.18, 0.12], [0.2, 0.28], [0.16, 0.42], [0.13, 0.48], [0.16, 0.53], [0.001, 0.53],
+    ].map(([x, y]) => new Vector2(x, y));
+    const body = new LatheGeometry(profile, 12);
+    const band = new TorusGeometry(0.175, 0.02, 5, 14).rotateX(Math.PI / 2).translate(0, 0.34, 0);
+    const mouth = new CylinderGeometry(0.1, 0.1, 0.03, 10).translate(0, 0.54, 0);
+    const handles = mergeGeometries([
+      new TorusGeometry(0.06, 0.016, 5, 10, Math.PI).rotateZ(Math.PI / 2).translate(0.19, 0.36, 0),
+      new TorusGeometry(0.06, 0.016, 5, 10, Math.PI).rotateZ(-Math.PI / 2).translate(-0.19, 0.36, 0),
+    ]);
+    T.urn = {
+      layers: [
+        { geo: body, mat: mats.stone, ink: PROP_INK_PX },
+        { geo: band, mat: mats.stoneDark },
+        { geo: mouth, mat: mats.stoneDark },
+        { geo: handles, mat: mats.stoneLit, ink: 1.15 },
+      ],
+      foot: 0.26,
+    };
+  }
+
+  // --- Idol (reference B's statues): a hooded stone figure on a plinth with
+  // two short stone antler prongs — the Stag cult's marker, in stone only (the
+  // violet stays on the Stag and the monolith).
+  {
+    const plinth = mergeGeometries([
+      new BoxGeometry(0.6, 0.1, 0.48).translate(0, 0.05, 0),
+      new BoxGeometry(0.44, 0.1, 0.36).translate(0, 0.15, 0),
+    ]);
+    const body = new ConeGeometry(0.23, 0.6, 8).translate(0, 0.5, 0);
+    const arms = mergeGeometries([
+      new BoxGeometry(0.2, 0.05, 0.06).rotateZ(0.5).translate(-0.05, 0.56, 0.16),
+      new BoxGeometry(0.2, 0.05, 0.06).rotateZ(-0.5).translate(0.05, 0.56, 0.17),
+    ]);
+    const head = new IcosahedronGeometry(0.12, 1).translate(0, 0.82, 0.02);
+    const hood = new ConeGeometry(0.17, 0.26, 8).translate(0, 0.9, -0.02);
+    const prongs = mergeGeometries([
+      new BoxGeometry(0.03, 0.2, 0.03).rotateZ(0.55).translate(-0.13, 0.96, 0),
+      new BoxGeometry(0.03, 0.2, 0.03).rotateZ(-0.55).translate(0.13, 0.96, 0),
+      new BoxGeometry(0.025, 0.09, 0.025).rotateZ(1.2).translate(-0.19, 1.0, 0),
+      new BoxGeometry(0.025, 0.09, 0.025).rotateZ(-1.2).translate(0.19, 1.0, 0),
+    ]);
+    T.idol = {
+      layers: [
+        { geo: plinth, mat: mats.stone, ink: PROP_INK_PX },
+        { geo: body, mat: mats.stoneCool, ink: PROP_INK_PX },
+        { geo: arms, mat: mats.stoneDark, ink: DETAIL_INK_PX },
+        { geo: head, mat: mats.stoneLit, ink: DETAIL_INK_PX },
+        { geo: hood, mat: mats.stoneCool, ink: DETAIL_INK_PX },
+        { geo: prongs, mat: mats.stoneDark, ink: 1.15 },
+      ],
+      foot: 0.36,
+      rz: 0.3,
+    };
+  }
+
+  // --- Sack: a tied grain sack for the shop's wares.
+  {
+    const bag = new IcosahedronGeometry(0.19, 1).scale(1, 0.78, 0.92).translate(0, 0.15, 0);
+    const neck = new CylinderGeometry(0.06, 0.09, 0.09, 7).translate(0, 0.32, 0);
+    const tie = new TorusGeometry(0.065, 0.014, 5, 10).rotateX(Math.PI / 2).translate(0, 0.31, 0);
+    T.sack = {
+      layers: [
+        { geo: bag, mat: mats.canvas, ink: PROP_INK_PX },
+        { geo: neck, mat: mats.canvasShade, ink: DETAIL_INK_PX },
+        { geo: tie, mat: mats.iron },
+      ],
+      foot: 0.22,
+    };
+  }
+
+  // --- The Peddler's stall (§19.3 shop room: "one dense stall cluster under a
+  // single warm pooled lantern"): four posts, a plank counter with a lip,
+  // tilted canvas canopy with cloth stripes and a valance, wares on the
+  // counter, the peddler behind it (hat, cloak, hands) and the Shopkeep's
+  // Lantern hanging off the front corner. Only the room-7 dressing places it;
+  // env/dressing.js mounts the lantern FX inside the room group.
+  {
+    const posts = mergeGeometries(
+      [-0.6, 0.6].flatMap((x) =>
+        [-0.42, 0.44].map((z) => new CylinderGeometry(0.04, 0.052, 0.94, 6).translate(x, 0.47, z))
+      )
+    );
+    const counter = new BoxGeometry(1.3, 0.42, 0.5).translate(0, 0.21, 0.22);
+    const lip = new BoxGeometry(1.38, 0.05, 0.58).translate(0, 0.44, 0.22);
+    const canopy = new BoxGeometry(1.52, 0.045, 1.14).rotateX(0.13).translate(0, 0.96, -0.01);
+    const stripes = mergeGeometries(
+      [-0.5, -0.17, 0.17, 0.5].map((x) => new BoxGeometry(0.16, 0.05, 1.12).rotateX(0.13).translate(x, 0.965, -0.01))
+    );
+    const valance = mergeGeometries(
+      [-0.55, -0.33, -0.11, 0.11, 0.33, 0.55].map(
+        (x) => new BoxGeometry(0.2, 0.13, 0.03).translate(x, 0.84, 0.55)
+      )
+    );
+    const wares = mergeGeometries([
+      new BoxGeometry(0.24, 0.18, 0.2).rotateY(0.15).translate(-0.42, 0.55, 0.22),
+      new BoxGeometry(0.16, 0.12, 0.16).rotateY(-0.3).translate(-0.4, 0.7, 0.22),
+      new CylinderGeometry(0.05, 0.05, 0.22, 7).translate(-0.05, 0.57, 0.14),
+      new CylinderGeometry(0.045, 0.045, 0.18, 7).translate(0.06, 0.55, 0.26),
+    ]);
+    const jars = mergeGeometries([
+      new IcosahedronGeometry(0.085, 1).translate(0.3, 0.54, 0.24),
+      new IcosahedronGeometry(0.07, 1).translate(0.46, 0.53, 0.12),
+      new IcosahedronGeometry(0.065, 1).translate(0.18, 0.52, 0.34),
+    ]);
+    const cloak = new ConeGeometry(0.21, 0.58, 8).translate(0, 0.29, -0.2);
+    const head = new IcosahedronGeometry(0.105, 1).translate(0, 0.66, -0.2);
+    const hat = mergeGeometries([
+      new CylinderGeometry(0.25, 0.25, 0.025, 10).translate(0, 0.71, -0.2),
+      new ConeGeometry(0.15, 0.16, 8).translate(0, 0.79, -0.2),
+    ]);
+    const hands = mergeGeometries([
+      new IcosahedronGeometry(0.045, 0).translate(-0.16, 0.48, 0.02),
+      new IcosahedronGeometry(0.045, 0).translate(0.16, 0.48, 0.04),
+    ]);
+    const hook = mergeGeometries([
+      new BoxGeometry(0.03, 0.03, 0.2).translate(-0.62, 0.93, 0.5),
+      new CylinderGeometry(0.008, 0.008, 0.08, 5).translate(-0.62, 0.89, 0.58),
+    ]);
+    const glass = new BoxGeometry(0.12, 0.15, 0.12).translate(-0.62, 0.78, 0.58);
+    const lanternCap = mergeGeometries([
+      new ConeGeometry(0.1, 0.07, 4).rotateY(Math.PI / 4).translate(-0.62, 0.885, 0.58),
+      new BoxGeometry(0.13, 0.025, 0.13).translate(-0.62, 0.7, 0.58),
+    ]);
+    T.stall = {
+      layers: [
+        { geo: posts, mat: mats.bark, ink: PROP_INK_PX },
+        { geo: counter, mat: mats.plank, ink: PROP_INK_PX },
+        { geo: lip, mat: mats.plankLit, ink: DETAIL_INK_PX },
+        { geo: canopy, mat: mats.canvas, ink: PROP_INK_PX },
+        { geo: stripes, mat: mats.cloth, ink: DETAIL_INK_PX },
+        { geo: valance, mat: mats.cloth, ink: DETAIL_INK_PX },
+        { geo: wares, mat: mats.plankLit, ink: DETAIL_INK_PX },
+        { geo: jars, mat: mats.stoneLit, ink: 1.15 },
+        { geo: cloak, mat: mats.cloth, ink: PROP_INK_PX },
+        { geo: head, mat: mats.stumpTop, ink: DETAIL_INK_PX },
+        { geo: hat, mat: mats.barkDark, ink: DETAIL_INK_PX },
+        { geo: hands, mat: mats.stumpTop },
+        { geo: hook, mat: mats.iron },
+        { geo: lanternCap, mat: mats.iron, ink: 1.15 },
+        { geo: glass, mat: mats.glass, ink: 1.15 },
+      ],
+      foot: 0.88,
+      rz: 0.68,
+      faint: true,
+      emitter: (t) => {
+        const yaw = t.yaw ?? 0;
+        const lx = -0.62;
+        const lz = 0.58;
+        return {
+          kind: 'lantern',
+          x: t.x + Math.cos(yaw) * lx + Math.sin(yaw) * lz,
+          y: 0.78,
+          z: t.z - Math.sin(yaw) * lx + Math.cos(yaw) * lz,
+        };
+      },
+    };
+  }
+
   void spec;
   return T;
 }
@@ -813,9 +1112,15 @@ function buildMonolith(root, [x, z, yaw], shadows, emitters, cosmetic, footprint
 // ---------------------------------------------------------------------------
 // Cluster expansion: authored anchors -> 2-4 scattered props with scale jitter.
 // ---------------------------------------------------------------------------
-function expandClusters(spec, cosmetic, types, seedDiscs = []) {
+function expandClusters(spec, cosmetic, types, seedDiscs = [], clusters = spec.clusters) {
   const byType = new Map();
   const r = (a, b) => cosmetic.range(a, b);
+  // Certification fix round 1: the run arenas now carry clusters INSIDE the
+  // frame (every frame edge, not just the top wall), some of them near the
+  // beaten track, so a prop is also rejected when its footprint would sit on
+  // the dirt. Opt-in per spec (`propsAvoidPaths`) so the camp's authored
+  // scatter -- verified by its own road sweep -- keeps its exact draw order.
+  const avoidPaths = !!spec.propsAvoidPaths && Array.isArray(spec.paths);
   // The wall's inner face is exactly the playfield rect (walls.js builds
   // outward from it), so a prop must keep its whole footprint inside it or it
   // clips through the wall base — critique F5's "jagged seam where crate, grass
@@ -824,6 +1129,7 @@ function expandClusters(spec, cosmetic, types, seedDiscs = []) {
   const fits = (x, z, rad) => {
     if (Math.abs(x) + rad > ARENA.halfW - 0.06) return false;
     if (Math.abs(z) + rad > ARENA.halfD - 0.06) return false;
+    if (avoidPaths && pathClearance(spec, x, z) < rad + 0.12) return false;
     for (const d of placedDiscs) {
       // Silhouettes may TOUCH (0.86 of the summed radii) but never interpenetrate.
       if (Math.hypot(x - d.x, z - d.z) < (rad + d.r) * 0.86) return false;
@@ -831,7 +1137,7 @@ function expandClusters(spec, cosmetic, types, seedDiscs = []) {
     return true;
   };
 
-  for (const [ax, az, spread, recipe] of spec.clusters ?? []) {
+  for (const [ax, az, spread, recipe] of clusters ?? []) {
     const tokens = recipe.split(/\s+/).filter(Boolean);
     const base = r(0, Math.PI * 2);
     tokens.forEach((tk, i) => {
@@ -886,9 +1192,19 @@ export function buildProps(root, spec, cosmetic) {
     // the pool (baseline-v030 F1).
     ironDark: toonMaterial({ color: mix(ENV.iron, new Color(PALETTE.voidCharcoal), 0.6) }),
     glass: new MeshBasicMaterial({ color: new Color(ENV.glassLit), toneMapped: false }),
-    moss: toonMaterial({ color: hslColor(spec.ground.h + 18, 0.4, 0.215) }),
-    bush: toonMaterial({ color: hslColor(spec.ground.h + 26, 0.34, 0.19) }),
-    bushLit: toonMaterial({ color: hslColor(spec.ground.h + 6, 0.42, 0.245) }),
+    // Moss / bush hue offsets are spec-tunable (certification fix round 1):
+    // the Act-1 variants pull them DOWN so no foliage renders inside the
+    // reserved h110-150 heal band; the camp keeps the original offsets.
+    moss: toonMaterial({ color: hslColor(spec.ground.h + (spec.ground.mossOff ?? 18), 0.4, 0.215) }),
+    bush: toonMaterial({ color: hslColor(spec.ground.h + (spec.ground.bushOff ?? 26), 0.34, 0.19) }),
+    bushLit: toonMaterial({ color: hslColor(spec.ground.h + (spec.ground.bushLitOff ?? 6), 0.42, 0.245) }),
+    // Cloth for banners / the stall canopy: the COOL family (sage pulled
+    // toward the indigo ambient) and a warm off-white canvas one value step
+    // apart, so no cloth ever borrows a reserved accent.
+    cloth: toonMaterial({ color: shade(mix(PALETTE.sageCloak, COOL.ambient, 0.45), 0.9) }),
+    trim: toonMaterial({ color: shade(mix(PALETTE.bone, COOL.mist, 0.35), 0.5) }),
+    canvas: toonMaterial({ color: shade(mix(mix(PALETTE.bone, PALETTE.warmGrey, 0.42), COOL.mist, 0.2), 0.62) }),
+    canvasShade: toonMaterial({ color: shade(mix(mix(PALETTE.bone, PALETTE.warmGrey, 0.42), COOL.ambient, 0.42), 0.5) }),
   };
 
   const types = propTypes(mats, spec);
@@ -931,7 +1247,7 @@ export function buildProps(root, spec, cosmetic) {
     seedDiscs.push({ x: spec.monolith[0], z: spec.monolith[1], r: 0.86 });
   }
 
-  const { byType: placed } = expandClusters(spec, cosmetic, types, seedDiscs);
+  const { byType: placed, placedDiscs } = expandClusters(spec, cosmetic, types, seedDiscs);
   placed.set('torch', torchT);
   placed.set('lantern', lanternT);
   if (brazierT.length > 0) placed.set('brazier', brazierT);
@@ -966,8 +1282,43 @@ export function buildProps(root, spec, cosmetic) {
     typeCount += 1;
   }
 
+  // Per-room dressing (boss ring, shop stall) -- hidden groups the run's
+  // `room_enter` events reveal; see env/dressing.js. Placement continues the
+  // base pass's rejection table so nothing overlaps a base prop.
+  const dressing = buildRoomDressing(root, spec, cosmetic, {
+    types,
+    mats,
+    place: (clusters, seedDiscs) => expandClusters(spec, cosmetic, types, seedDiscs, clusters),
+    mount: (group, byType) => {
+      const gShadows = [];
+      const gFoot = [];
+      for (const [name, transforms] of byType) {
+        const def = types[name];
+        if (!def || transforms.length === 0) continue;
+        addInstancedProp(group, def.layers, transforms);
+        for (const t of transforms) {
+          const sc = t.s ?? 1;
+          gShadows.push({
+            x: t.x,
+            z: t.z,
+            rx: def.foot * sc * SHADOW_SPREAD,
+            rz: (def.rz ?? def.foot) * sc * SHADOW_SPREAD,
+            yaw: t.yaw,
+            faint: !!def.faint,
+          });
+          gFoot.push({ x: t.x, z: t.z, r: Math.max(def.foot, def.rz ?? 0) * sc + 0.16 });
+        }
+      }
+      return { shadows: gShadows, footprints: gFoot, addInstanced: addInstancedProp };
+    },
+    buildShadows: buildShadowInstances,
+    placedSeed: placedDiscs,
+  });
+  footprints.push(...dressing.footprints);
+
   // Distinct prop silhouettes placed: slab, stump, fence, crate, barrel, log,
-  // bush, boulder, cairn, torch post, lantern, monolith (reference bar check 4
-  // needs >=8 in a combat arena; typeCount reports the live number per variant).
-  return { emitters, shadows, footprints, mats, typeCount, monolithMat };
+  // bush, boulder, cairn, torch post, lantern, monolith, and (fix round 1)
+  // tower, banner, barricade (reference bar check 4 needs >=8 in a combat
+  // arena; typeCount reports the live number per variant).
+  return { emitters, shadows, footprints, mats, typeCount, monolithMat, dressing: dressing.info };
 }

@@ -27,7 +27,9 @@ export function createDebugOverlay(version, { debug = false, providers = null } 
 
   const fpsEl = document.createElement('div');
   fpsEl.id = 'fps-meter';
-  fpsEl.style.cssText = `${baseStyle} right: 10px; top: 8px; font-size: 13px;`;
+  // Bottom-right, mirroring the version label: the top-right corner belongs
+  // to the HUD's Glint counter (Reference D currency chrome).
+  fpsEl.style.cssText = `${baseStyle} right: 10px; bottom: 8px; font-size: 13px;`;
   fpsEl.textContent = '-- fps';
   document.body.appendChild(fpsEl);
 

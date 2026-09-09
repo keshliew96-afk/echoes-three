@@ -54,7 +54,12 @@ export const BLOOM = Object.freeze({
   strength: 1.15,
   radius: 0.6,
 });
-export const VIGNETTE = 0.16; // was 0.35 — F2: corners were crushed to luma 15-25
+// CERTIFICATION FIX ROUND 1 (A-world, check 7): 0.16 measured as NO vignette
+// on the combat frame (edge->interior rings 100.6 -> 115.5, +15%; bottom
+// corners brighter than the centre) against the reference's 2x. 0.42 with
+// the wider, cool-tinted falloff below lands the run frames at ~1.7-2x. The
+// camp keeps its own 0.26 (scenes/camp.js) and is unaffected.
+export const VIGNETTE = 0.42;
 // Base (non-arena) light rig. Scenes may re-tune these; the arena does, in
 // src/scenes/arena.js.
 const KEY_INTENSITY = 3.6;
@@ -90,6 +95,13 @@ const GradeShader = {
         // Gentle contrast S-curve.
         vec3 s = c * c * (3.0 - 2.0 * c);
         c = mix(c, s, ${POST.gradeMix.toFixed(3)});
+        // Split-tone (fix round 1, check 7 "visible grade"): shadows lean
+        // indigo, the lit range is left alone. This is the cool wash the
+        // reference carries in every unlit region; over the camp's night
+        // ground it is invisible (already indigo), over Act-1 shade it turns
+        // raw dark green into the blue-green shade end §19.3 asks for.
+        float lm = dot(c, vec3(0.2126, 0.7152, 0.0722));
+        c *= mix(vec3(0.84, 0.90, 1.10), vec3(1.0), smoothstep(0.03, 0.42, lm));
         // Slight warm lift.
         c *= vec3(1.045, 1.010, 0.965);
         c += vec3(0.012, 0.006, 0.0);
@@ -101,7 +113,12 @@ const GradeShader = {
       if (uVignette > 0.0) {
         vec2 p = vUv - 0.5;
         float d = length(p) * 1.4142; // 0 at center, ~1 at corners
-        c *= 1.0 - uVignette * smoothstep(0.4, 1.0, d);
+        // Wider falloff (starts at 0.30, was 0.40) and COOL: the darkened
+        // corners lean indigo, so the frame's edges read as the night wood
+        // rather than as a neutral dimmer.
+        float v = uVignette * smoothstep(0.30, 1.0, d);
+        c = mix(c, c * vec3(0.78, 0.86, 1.06), min(1.0, v * 1.2));
+        c *= 1.0 - v;
       }
 
       gl_FragColor = vec4(clamp(c, 0.0, 1.0), tex.a);

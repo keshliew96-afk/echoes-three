@@ -4,12 +4,21 @@ import { SKILLS } from '../../sim/skills.js';
 import { NODES } from '../../sim/nodes.js';
 import { PALETTE } from '../../data/palette.js';
 import { esc } from './style.js';
+import { iconHtml, hasIcon } from '../hud/icons.js';
 
 export const RARITY_COLOR = {
   common: PALETTE.bone, // §19.1 Bone = common
   rare: PALETTE.signalBlue, // Signal Blue = rare
   legendary: PALETTE.hearthAmber, // Hearth Amber = legendary
 };
+
+// DRAWN card icons (REFERENCE_BAR check 9 / round-1 shop defect: the unicode
+// glyphs made Detonate and Ascend both "a star"). The command bar draws the
+// same silhouettes for skills, so a card and its slot agree. The old glyph
+// table stays exported for the socket screen's cell chips.
+export function cardIconHtml(id, size = 30) {
+  return hasIcon(id) ? iconHtml(id, { size }) : `<span class="rn-cardicon-txt">${esc(id ? id[0].toUpperCase() : '·')}</span>`;
+}
 
 // Same glyph set the socket screen uses, so a node reads the same everywhere.
 export const NODE_GLYPH = {
@@ -84,7 +93,7 @@ export function skillCardHtml(id) {
         : 'A damaging shape of your own.';
   return `
     <div class="rn-cardkind">SKILL · ${esc(def.archetype)}</div>
-    <div class="rn-cardicon">${esc(def.abbrev)}</div>
+    <div class="rn-cardicon">${cardIconHtml(id, 40)}</div>
     <div class="rn-cardname">${esc(def.name)}</div>
     <div class="rn-cardsub">${ARCH_GLYPH[def.archetype] ?? ''} ${esc(
       SHAPE_LABEL[def.shape] ?? def.shape
@@ -95,18 +104,27 @@ export function skillCardHtml(id) {
 
 // A node candidate card body. `verdict` is the §15.5 kit line, `extra` any
 // binding card copy (Siphon's line).
+// `row` = the shop's shelf layout (icon medallion beside a name row that
+// carries the rarity tag; the kind moves into the sub line). Same words as
+// the column card, arranged so a 300 px card never wraps its header — the
+// round-1 "Ascend" defect was "NODE · legendary" breaking onto two lines.
 export function nodeCardHtml(
   id,
-  { verdict = null, extra = null, owned = 0, compact = false, bench = false } = {}
+  { verdict = null, extra = null, owned = 0, compact = false, bench = false, row = false } = {}
 ) {
   const n = NODES[id];
   if (!n) return '';
   const effect = (compact ? NODE_EFFECT_SHORT[id] : NODE_EFFECT[id]) ?? NODE_EFFECT[id] ?? '';
-  return `
-    <div class="rn-cardkind">NODE · ${esc(n.rarity)}</div>
-    <div class="rn-cardicon">${NODE_GLYPH[id] ?? '?'}</div>
+  const head = row
+    ? `<div class="rn-cardicon">${cardIconHtml(id, 30)}</div>
+    <div class="rn-cardhead"><span class="rn-cardname">${esc(n.name)}</span><span class="rn-cardkind">${esc(n.rarity)}</span></div>
+    <div class="rn-cardsub">node · ${esc(n.kind)} · limit ${n.limit}/skill</div>`
+    : `<div class="rn-cardkind">NODE · ${esc(n.rarity)}</div>
+    <div class="rn-cardicon">${cardIconHtml(id, 40)}</div>
     <div class="rn-cardname">${esc(n.name)}</div>
-    <div class="rn-cardsub">${esc(n.kind)} · limit ${n.limit}/skill</div>
+    <div class="rn-cardsub">${esc(n.kind)} · limit ${n.limit}/skill</div>`;
+  return `
+    ${head}
     <div class="rn-body">${esc(effect)}</div>
     ${extra ? `<div class="rn-body">“${esc(extra)}”</div>` : ''}
     ${

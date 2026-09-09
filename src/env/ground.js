@@ -420,7 +420,9 @@ export function paintGroundCanvas(spec, cosmetic) {
         bx + r(-55, 55),
         bz + r(-55, 55),
         r(28, 85),
-        hsl(g.h + 22 + r(-6, 6), 0.5, g.l + 0.03 + r(0, 0.04), 0.3)
+        // Moss hue offset is spec-tunable (fix round 1): +22 over an h90 base
+        // painted the moss at h112 — inside the reserved heal band.
+        hsl(g.h + (g.mossOff ?? 22) + r(-6, 6), 0.5, g.l + 0.03 + r(0, 0.04), 0.3)
       );
     }
     for (let b = 0; b < 5; b++) {
@@ -467,8 +469,10 @@ export function paintGroundCanvas(spec, cosmetic) {
   // centre (b already ~70+) barely moves. Kept SMALL (+6, was +12): stacked on
   // the 3b lift it was half the reason the whole floor went blue-grey and the
   // Act-1 grass measured 0.32 mean saturation against the 0.55-0.65 bar.
+  // `lift2` is spec-tunable (fix round 1): the Act-1 variants run it at 3 so
+  // the olive lit ramp keeps red over blue; the camp keeps 6.
   ctx.globalCompositeOperation = 'lighter';
-  ctx.fillStyle = 'rgb(2,3,6)';
+  ctx.fillStyle = `rgb(2,3,${g.lift2 ?? 6})`;
   ctx.fillRect(0, 0, W, H);
   ctx.globalCompositeOperation = 'source-over';
 
