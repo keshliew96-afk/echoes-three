@@ -1,0 +1,19 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',8);return {tag:'skip8',room:r&&r.room,phase:r&&r.phase}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t=[];let last=performance.now();const t0=last;await new Promise(res=>{const step=()=>{const n=performance.now();t.push(n-last);last=n;if(n-t0<10000)requestAnimationFrame(step);else res();};requestAnimationFrame(step);});const s=t.slice(1);const mean=s.reduce((a,b)=>a+b,0)/s.length;const sorted=[...s].sort((a,b)=>a-b);return {tag:'fps10s',frames:s.length,meanMs:+mean.toFixed(2),fps:+(1000/mean).toFixed(1),p95Ms:+sorted[Math.floor(sorted.length*0.95)].toFixed(1),maxMs:+Math.max(...s).toFixed(1),over100:s.filter(x=>x>100).length,enemies:E.state().enemies.length,room:E.cmd('runState').room}})()"
+ }
+]

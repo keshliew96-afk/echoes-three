@@ -241,8 +241,8 @@ export const FLOWER_TINTS = Object.freeze([
 // clear of the h25 Ember ceiling, chromatic enough to read as fire and to
 // count toward the §19.3 warm-dominant split.
 export const EMBER_GLOW = Object.freeze({
-  pool: mix(PALETTE.paleGold, PALETTE.parchment, 0.34),
-  halo: mix(mix(PALETTE.hearthAmber, PALETTE.paleGold, 0.7), PALETTE.parchment, 0.26),
+  pool: mix(PALETTE.paleGold, PALETTE.parchment, 0.26).multiplyScalar(1.25),
+  halo: mix(mix(PALETTE.hearthAmber, PALETTE.paleGold, 0.7), PALETTE.parchment, 0.2).multiplyScalar(1.18),
 });
 
 export { mix, shade };

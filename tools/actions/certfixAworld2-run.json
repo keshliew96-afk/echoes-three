@@ -1,0 +1,15 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__w2={ev:[]};for(const t of ['room_cleared','wave_start','death','reward_offer','run_end']){try{E.on(t,e=>window.__w2.ev.push(Object.assign({T:t},e)));}catch(err){}}const r=E.cmd('startRun');return {tag:'startRun',room:r&&r.room,mode:r&&r.mode}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();while(performance.now()-t0<110000){if(window.__w2.ev.some(e=>e.T==='room_cleared'))break;try{E.cmd('killAllEnemies');}catch(e){}await new Promise(r=>setTimeout(r,220));}return {tag:'cleared',ms:Math.round(performance.now()-t0),events:window.__w2.ev.map(e=>e.T),room:E.cmd('runState').room,phase:E.cmd('runState').phase,banner:E.hud.banner().text,screen:E.runUi().screen}})()"
+ }
+]

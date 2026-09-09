@@ -55,7 +55,7 @@ export const BLOOM = Object.freeze({
   // three lenses scored this check down on. Only the near-neutral emitter
   // cores clear the threshold (env/flame.js GAIN_MAX), so the extra strength
   // grows a cream halo, not a saturated veil.
-  strength: 1.22,
+  strength: 1.35,
   radius: 0.6,
 });
 // CERTIFICATION FIX ROUND 1 (A-world, check 7): 0.16 measured as NO vignette
