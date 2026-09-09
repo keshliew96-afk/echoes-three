@@ -23,7 +23,7 @@
 // Sim discipline: no DOM, no render imports, no wall clock — integer ticks and
 // the seeded stream only (the only draws are the crit rolls inside
 // combat.applyDamage plus the add-spawn point picks).
-import { TICK_HZ } from '../core/constants.js';
+import { SCREENSHAKE, TICK_HZ } from '../core/constants.js';
 import { walkStep, innerBounds } from './movement.js';
 import { SPAWN_POINTS } from './waves.js';
 import { GOVERNOR } from './enemies.js';
@@ -267,6 +267,14 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
           telegraphTicks: tick - b.telegraph.startTick,
         });
         events.emit(tick, 'telegraph_resolve', { id: b.id, playerTargeted: true });
+        // §9 #7: the quake LANDING shakes the frame (the wind-up never does).
+        events.emit(tick, 'screenshake', {
+          cause: 'boss_quake',
+          amp: SCREENSHAKE.maxAmp,
+          durationSec: SCREENSHAKE.bossSec,
+          x: r2(x),
+          z: r2(z),
+        });
         for (const p of victims) {
           const l = Math.hypot(p.x - x, p.z - z) || 1;
           combat.applyDamage(p, STAG.quake.damage, {
@@ -328,6 +336,14 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       b.lungeHit = false;
       b.nextTrampleTick = tick + STAG.trample.cdTicks;
       events.emit(tick, 'boss_trample', { id: b.id, target: target.id, x: r2(b.x), z: r2(b.z) });
+      // §9 #7: a 2.2x body throwing itself at the party is a stomp, not a hit.
+      events.emit(tick, 'screenshake', {
+        cause: 'boss_trample',
+        amp: SCREENSHAKE.maxAmp,
+        durationSec: SCREENSHAKE.bossSec,
+        x: r2(b.x),
+        z: r2(b.z),
+      });
     }
   }
 

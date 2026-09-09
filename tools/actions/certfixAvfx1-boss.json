@@ -1,0 +1,36 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"hit\",\"hit_immune\",\"death\",\"hitstop\",\"sound\",\"heal\",\"skill_cast\",\"ally_cast\",\"ally_basic\",\"dodge\",\"dash\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"downed\",\"revive\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"enemy_despawn\",\"reward\",\"draft\",\"draft_taken\",\"path_chosen\",\"shop_buy\",\"currency_denied\",\"skill_equip\",\"node_granted\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\",\"projectile_spawn\",\"flash\",\"knockback\",\"screenshake\",\"flinch\",\"director_stop\",\"mark\",\"defeat\",\"victory\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed tick '+E.tick+' seed '+E.seed+' v'+E.version})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',8);return {seed:E.seed,room:r&&r.room,tick:E.tick}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 300
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<40000){if((()=>{const q=window.__c.ev.filter(e=>e.T==='boss_quake_start');const a=window.__c.ev.filter(e=>e.T==='boss_adds');return q.length>=2&&a.length>=1&&E.tick-q[q.length-1].tick<=6})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),quakes:window.__c.ev.filter(e=>e.T==='boss_quake_start').length,adds:window.__c.ev.filter(e=>e.T==='boss_adds').length};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),quakes:window.__c.ev.filter(e=>e.T==='boss_quake_start').length,adds:window.__c.ev.filter(e=>e.T==='boss_adds').length}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const b=E.cmd('runState').boss;return {tag:\"boss-frame\",tick:E.tick,fps:E.fps,version:E.version,seed:E.seed,scene:s.scene,boss:b&&{hp:b.hp,maxHp:b.maxHp,pct:b.pct,adds:b.adds,phasesFired:b.phasesFired,quake:b.quake,x:b.x,z:b.z},quakes:window.__c.ev.filter(e=>e.T==='boss_quake_start').map(e=>({tick:e.tick,resolveTick:e.resolveTick,ticksLeft:e.resolveTick-E.tick})),enemies:s.enemies.map(e=>[e.id,e.kind,+e.x.toFixed(2),+e.z.toFixed(2),e.hp]),vfx:(v=>{const a=v.arena||{};return {mode:v.mode,emitters:v.emitters,propTypes:v.propTypes,propShadows:v.propShadows,arena:{numerals:a.numerals,decals:a.decals,particles:a.particles,scorch:a.scorch,trails:a.trails,shake:a.shake,propTypes:a.propTypes,propShadows:a.propShadows,emitters:a.emitters}}})(s.vfx||{}),party:s.party.map(p=>[p.id,p.classId||'healer',p.hp,+p.x.toFixed(2),+p.z.toFixed(2)]),eventCounts:(()=>{const m={};for(const e of (window.__c?window.__c.ev:[]))m[e.T]=(m[e.T]||0)+1;return m})(),recent:window.__c.ev.filter(e=>['hit','flash','knockback','screenshake','hitstop','death','boss_trample'].includes(e.T)).slice(-24).map(e=>[e.tick,e.T,e.id!==undefined?e.id:'',e.amount!==undefined?e.amount:''])}})()"
+ }
+]

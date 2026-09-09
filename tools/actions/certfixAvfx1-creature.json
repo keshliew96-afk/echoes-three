@@ -1,0 +1,42 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"hit\",\"hit_immune\",\"death\",\"hitstop\",\"sound\",\"heal\",\"skill_cast\",\"ally_cast\",\"ally_basic\",\"dodge\",\"dash\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"downed\",\"revive\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"enemy_despawn\",\"reward\",\"draft\",\"draft_taken\",\"path_chosen\",\"shop_buy\",\"currency_denied\",\"skill_equip\",\"node_granted\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\",\"projectile_spawn\",\"flash\",\"knockback\",\"screenshake\",\"flinch\",\"director_stop\",\"mark\",\"defeat\",\"victory\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed tick '+E.tick+' seed '+E.seed+' v'+E.version})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {tick:E.tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('killAllEnemies');E.cmd('teleport',0,0);return {tick:E.tick,enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('killAllEnemies');E.cmd('teleport',6.5,4.6);return {tick:E.tick,player:E.state().party[0]}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',6.5,4.6);E.cmd('spawn','mantis',7.9,4.3);E.cmd('spawn','boar',5.0,4.3);return {tick:E.tick,enemies:E.state().enemies.map(e=>[e.kind,+e.x.toFixed(2),+e.z.toFixed(2)]),party:E.state().party.map(p=>[p.id,+p.x.toFixed(2),+p.z.toFixed(2)])}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 320
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {tag:'creature',tick:E.tick,enemies:s.enemies.map(e=>[e.id,e.kind,+e.x.toFixed(2),+e.z.toFixed(2),e.hp]),party:s.party.map(p=>[p.id,+p.x.toFixed(2),+p.z.toFixed(2)]),vfx:(v=>{const a=v.arena||{};return {mode:v.mode,emitters:v.emitters,propTypes:v.propTypes,propShadows:v.propShadows,arena:{numerals:a.numerals,decals:a.decals,particles:a.particles,scorch:a.scorch,trails:a.trails,shake:a.shake,propTypes:a.propTypes,propShadows:a.propShadows,emitters:a.emitters}}})(s.vfx||{})}})()"
+ }
+]

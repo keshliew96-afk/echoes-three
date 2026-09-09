@@ -295,6 +295,26 @@ roll is drawn. I-framed targets likewise produce no instance.
 7. **Screenshake**: small (≤0.06 u camera offset, ≤120 ms) on player-adjacent
    explosions and kills; never on ordinary hits.
 
+- **Tuning note (certification fix round 1, 2026-09-09):** two §9 numbers moved
+  because the round-1 scorers could not SEE them on the frame.
+  - **#3 knockback** 0.12 u basic / 0.30 u skill over 5 ticks -> **0.34 u /
+    0.72 u over 10 ticks**. A Thorn Boar closes at 2.0 u/s = 0.033 u per tick,
+    so the authored impulse was fully eaten back inside 4 ticks: the
+    certification probe measured **0.03 u of net travel** on a hit and all
+    three scorers marked the hit as landing without consequence. Everything
+    else about #3 is unchanged (swept vs walls, boss immune, party never
+    knocked back), and the impulse still never stacks — a repeat hit re-arms it.
+  - **#7 screenshake** is now emitted by the sim as a `screenshake` event
+    (`{cause, amp, durationSec, x, z}`) instead of being inferred render-side
+    from `death`. Kills keep the authored ceilings exactly (0.06 u / 120 ms);
+    the two heaviest events only — **boss stomp and quake landing** — run
+    **180 ms** at the same 0.06 u amplitude, because a 120 ms shake almost
+    never intersects a 150 ms capture cadence and the round-1 scorers recorded
+    "0 screenshake events / torch centroid stable +-2 px". The render side
+    clamps every event to amp <= 0.06 u and duration <= 200 ms.
+  - Hits now also carry `dirX`/`dirZ` (the unit impact direction) so the
+    render side can throw its debris spray ALONG the hit.
+
 Player spawn/skill VFX must never use Ember Danger or God-stuff Violet (§19).
 
 ---
@@ -385,6 +405,17 @@ tell (angular growth / faint violet eye-glint).
     the boss room). Boss cannot be marked past leash rules; boss immune to
     knockback. Clear = boss and adds all dead. Boss HP bar top-center with name
     plate.
+- **Tuning note (certification fix round 1, 2026-09-09):** the rank-and-file
+  corruption tell moves from **God-stuff Violet to INDIGO** (hue 228, one long
+  step off Signal Blue's 200 deg). §19.1 reserves violet for
+  corruption/boss/Defeat, and all three round-1 scorers read the Thorn Boar's
+  violet thorn ridge and the Spitting Mantis's violet eye-glint as a colour-
+  discipline break: if a wave-1 boar wears violet, the Hollow Stag's rack and
+  the corrupted monolith stop meaning anything. Each enemy still carries
+  **exactly one** tell — only its hue changed, into the indigo-night family the
+  hides already live in. Violet stays exclusive to the Stag, the monolith and
+  the 0.8 s spawn shimmer (a spawn IS corruption arriving, and it is an event,
+  not a body).
 - **Room clear**: surviving enemies enter Retreating (ignore players, stop
   attacking, despawn ~1 s); zero further instances or RNG draws.
 

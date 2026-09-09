@@ -20,7 +20,7 @@
 //      window cap and reports the granted amount.
 // Render-side contract members (#1 flash, #2 numbers, #6 kill pop/decal,
 // #7 screenshake) and #5 sound slots subscribe to the events emitted here.
-import { CRIT, HITSTOP, KNOCKBACK } from '../core/constants.js';
+import { CRIT, HITSTOP, KNOCKBACK, SCREENSHAKE } from '../core/constants.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -74,6 +74,10 @@ export function createCombat({
       }
     }
 
+    // dirX/dirZ ride the event so the render side can throw its debris/spark
+    // spray ALONG the impact instead of as an omnidirectional puff
+    // (REFERENCE_BAR check 5 — a hit has to read as an event with a direction).
+    const dl = Math.hypot(dirX, dirZ);
     events.emit(tick, 'hit', {
       target: target.id,
       kind: target.kind,
@@ -83,6 +87,8 @@ export function createCombat({
       crit,
       delivery,
       kb,
+      dirX: dl > 1e-6 ? r2(dirX / dl) : 0,
+      dirZ: dl > 1e-6 ? r2(dirZ / dl) : 0,
       x: r2(target.x),
       z: r2(target.z),
     });
@@ -120,6 +126,16 @@ export function createCombat({
       id: target.id,
       kind: target.kind,
       delivery,
+      x: r2(target.x),
+      z: r2(target.z),
+    });
+    // §9 #7 screenshake, now an EVENT rather than a render-side inference: a
+    // kill shakes the frame, an ordinary hit never does. amp/duration ride at
+    // the brief's ceilings; the render side clamps them again.
+    events.emit(tick, 'screenshake', {
+      cause: 'kill',
+      amp: SCREENSHAKE.amp,
+      durationSec: SCREENSHAKE.durationSec,
       x: r2(target.x),
       z: r2(target.z),
     });

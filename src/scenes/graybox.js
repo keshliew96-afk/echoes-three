@@ -35,6 +35,7 @@ import { createFollowRig } from '../render/camera.js';
 import { createNumberPool } from '../render/numbers.js';
 import { createParticlePool } from '../render/vfx/particles.js';
 import { createDecalPool } from '../render/vfx/decals.js';
+import { setImpactFx } from '../render/vfx/hub.js';
 
 // Graybox scaffold numbers (render-only): wall height 0.75 u sits inside the
 // §13 band (70-80% of the 1.05 u standing height — never fully occludes);
@@ -226,7 +227,11 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
   const numbers = createNumberPool({ camera: stage.camera, cosmetic });
   const particles = createParticlePool(root, cosmetic);
   const decals = createDecalPool(root, cosmetic);
-  let shakeLeft = 0; // s of screenshake remaining (kills only, §9 #7)
+  let shakeLeft = 0; // s of screenshake remaining (§9 #7, driven by `screenshake` events)
+  let shakeAmp = SCREENSHAKE.amp;
+  let shakeDur = SCREENSHAKE.durationSec;
+  let shakeCount = 0; // screenshake events consumed this session (capture proof)
+  let lastShake = null;
 
   bus.on('hit', (ev) => {
     const rig = dummies.get(ev.target);
@@ -243,6 +248,17 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
       kind: partyVictim ? 'incoming' : 'damage',
       crit: ev.crit,
     });
+    // REFERENCE_BAR check 5 ("a single hit reads as an event"): every hit
+    // throws debris + a spark + a smoke puff along the impact direction, so a
+    // mid-combat frame always carries particles. Hot colour follows the
+    // §19.1 reservation — party-incoming hits spark Ember (the enemy's
+    // attack), our outgoing hits spark Parchment.
+    const hd = Math.hypot(ev.dirX || 0, ev.dirZ || 0);
+    particles.hit(ev.x, ev.z, {
+      color: partyVictim ? PALETTE.emberDanger : PALETTE.parchment,
+      dir: hd > 1e-4 ? { x: ev.dirX / hd, z: ev.dirZ / hd } : null,
+      scale: ev.crit ? 1.35 : 1,
+    });
   });
   bus.on('heal', (ev) => {
     numbers.spawn({ x: ev.x, z: ev.z, amount: ev.amount, kind: 'heal', crit: ev.crit });
@@ -254,10 +270,35 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
       rig.mat.emissiveIntensity = HITFLASH.intensity; // white-hot through the pop
       dying.push({ rig, age: 0 });
     }
-    particles.burst(ev.x, ev.z); // §9 #6 burst
+    particles.kill(ev.x, ev.z); // §9 #6 burst: sparks + debris + smoke
     decals.spawn(ev.x, ev.z); // §9 #6 persistent decal
-    shakeLeft = SCREENSHAKE.durationSec; // §9 #7 — kills only, never plain hits
   });
+  // §9 #7 screenshake is now an EVENT the sim emits (kills, boss stomps and
+  // quake landings) rather than a render-side guess, so a capture can prove
+  // the camera moved and why. amp/duration ride the event, clamped to the
+  // brief ceilings.
+  bus.on('screenshake', (ev) => {
+    const amp = Math.min(SCREENSHAKE.maxAmp, ev.amp ?? SCREENSHAKE.amp);
+    const dur = Math.min(SCREENSHAKE.maxDurationSec, ev.durationSec ?? SCREENSHAKE.durationSec);
+    // A bigger shake always wins; a smaller one never cuts one already running.
+    shakeCount += 1;
+    if (amp * dur >= shakeAmp * shakeLeft) {
+      shakeAmp = amp;
+      shakeDur = dur;
+      shakeLeft = dur;
+    }
+  });
+  // Boss quake landings burn the ground (REFERENCE_BAR check 5: "lingering
+  // ground fire patches where shots land") and throw an ember ring.
+  bus.on('boss_quake_resolve', (ev) => {
+    const r = ev.radius ?? 1.6;
+    decals.scorch(ev.x, ev.z, r);
+    particles.embers(ev.x, ev.z, { n: 14, radius: r * 0.9 });
+    particles.hit(ev.x, ev.z, { color: PALETTE.emberDanger, scale: 1.6 });
+  });
+  // Every other render layer (enemies, boss, skill FX) reaches these two pools
+  // through the impact-FX hub instead of allocating its own.
+  setImpactFx({ particles, decals });
 
   // --- Fading sprite pools: dash smear ghosts + bolt trails. Ghosts are
   // translucent capsule after-images; the smear is hard-cleared the frame the
@@ -444,10 +485,15 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     // §9 #7 screenshake: small decaying camera offset, kills only.
     if (shakeLeft > 0) {
       shakeLeft = Math.max(0, shakeLeft - dt);
-      const f = shakeLeft / SCREENSHAKE.durationSec;
-      stage.camera.position.x += cosmetic.range(-1, 1) * SCREENSHAKE.amp * f;
-      stage.camera.position.z += cosmetic.range(-1, 1) * SCREENSHAKE.amp * f;
-    }
+      const f = shakeLeft / shakeDur;
+      // Decaying alternating offset (not white noise): a 33 Hz sign flip moves
+      // the frame by a MEASURABLE amount between consecutive captures instead
+      // of averaging itself out, which is what the round-1 scorers looked for.
+      const osc = Math.sin(shakeLeft * Math.PI * 2 * 33);
+      stage.camera.position.x += osc * shakeAmp * f;
+      stage.camera.position.z += Math.cos(shakeLeft * Math.PI * 2 * 27) * shakeAmp * f * 0.7;
+      lastShake = { amp: shakeAmp, left: shakeLeft };
+    } else if (lastShake) lastShake = null;
 
     // Numbers project AFTER the camera settles this frame.
     numbers.update(dt);
@@ -459,8 +505,17 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     return {
       numerals: numbers.count(),
       decals: decals.count(),
+      scorch: decals.scorchCount(),
       particles: particles.count(),
       dummies: dummies.size,
+      shake: lastShake ? Math.round(lastShake.amp * 1000) / 1000 : 0,
+      shakes: shakeCount,
+      // Live camera position: the only way a capture can PROVE that a
+      // `screenshake` event actually moved the frame (REFERENCE_BAR check 10).
+      cam: [
+        Math.round(stage.camera.position.x * 10000) / 10000,
+        Math.round(stage.camera.position.z * 10000) / 10000,
+      ],
     };
   }
 

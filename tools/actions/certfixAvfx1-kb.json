@@ -1,0 +1,18 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"hit\",\"hit_immune\",\"death\",\"hitstop\",\"sound\",\"heal\",\"skill_cast\",\"ally_cast\",\"ally_basic\",\"dodge\",\"dash\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"downed\",\"revive\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"enemy_despawn\",\"reward\",\"draft\",\"draft_taken\",\"path_chosen\",\"shop_buy\",\"currency_denied\",\"skill_equip\",\"node_granted\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\",\"projectile_spawn\",\"flash\",\"knockback\",\"screenshake\",\"flinch\",\"director_stop\",\"mark\",\"defeat\",\"victory\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed tick '+E.tick+' seed '+E.seed+' v'+E.version})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {tick:E.tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();\n    while(performance.now()-t0<30000&&E.state().enemies.length<1)await new Promise(r=>setTimeout(r,10));\n    const tgt=E.state().enemies[0];if(!tgt)return {ok:false};\n    const rows=[];const shakes=[];E.on('screenshake',e=>shakes.push({tick:e.tick,cause:e.cause,amp:e.amp}));\n    const kbs=[];E.on('hit',e=>{if(e.target===tgt.id)kbs.push({tick:e.tick,kb:e.kb,dirX:e.dirX,dirZ:e.dirZ})});\n    for(let i=0;i<260;i++){const e=E.state().enemies.find(x=>x.id===tgt.id);if(!e)break;rows.push([E.tick,+e.x.toFixed(3),+e.z.toFixed(3)]);await new Promise(r=>setTimeout(r,16));}\n    let best=0,bestWin=null;\n    for(let i=0;i<rows.length;i++){for(let j=i+1;j<rows.length&&rows[j][0]-rows[i][0]<=14;j++){const d=Math.hypot(rows[j][1]-rows[i][1],rows[j][2]-rows[i][2]);if(d>best){best=d;bestWin=[rows[i],rows[j]]}}}\n    return {ok:true,id:tgt.id,samples:rows.length,hits:kbs.length,kbEvents:kbs.slice(0,8),maxTravel14t:+best.toFixed(3),window:bestWin,shakes:shakes.length,shakeKinds:shakes.slice(0,8),vfx:E.state().vfx}})()"
+ }
+]

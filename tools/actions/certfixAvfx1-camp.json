@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {tag:'camp',tick:E.tick,fps:E.fps,version:E.version,scene:s.scene,vfx:s.vfx}})()"
+ }
+]

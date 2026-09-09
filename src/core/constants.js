@@ -28,10 +28,18 @@ export const HITSTOP = Object.freeze({
 // away from the hit — 0.12 u over 80 ms on basic hits, 0.30 u on skill hits;
 // swept vs walls; boss immune; party members never knocked back (ruling A5).
 // 80 ms ≈ 5 ticks at 60 Hz (integer tick counts only).
+// Tuning note (certification fix round 1, 2026-09-09 — docs/BUILD_BRIEF.md §9):
+// the authored 0.12 u / 0.30 u over 5 ticks is invisible in play. A rushing
+// Boar walks at 2.0 u/s = 0.033 u per tick, so it eats a whole basic knockback
+// back in under 4 ticks and the certification probes measured 0.03 u of NET
+// travel — no reader can see a hit land. The impulse is scaled up and stretched
+// so the body visibly loses ground: >= 0.3 u of travel over the window on a
+// basic, ~0.7 u on a skill hit. Everything else about #3 is unchanged (swept vs
+// walls, boss immune, party never knocked back).
 export const KNOCKBACK = Object.freeze({
-  basicDist: 0.12, // u
-  skillDist: 0.3, // u
-  durationTicks: 5, // ≈80 ms
+  basicDist: 0.34, // u (was 0.12)
+  skillDist: 0.72, // u (was 0.30)
+  durationTicks: 10, // ≈167 ms (was 5) — travel spread over enough frames to read
 });
 
 // §9 juice contract #1: victim mesh flashes white ~3 frames (emissive
@@ -72,6 +80,13 @@ export const DECALS = Object.freeze({
 export const SCREENSHAKE = Object.freeze({
   amp: 0.06, // u camera offset (ceiling used as the authored default)
   durationSec: 0.12,
+  // Ceilings the render side clamps every `screenshake` event to. amp holds
+  // the brief's 0.06 u exactly; duration is allowed out to 0.20 s for the two
+  // heaviest events only (boss stomp / quake landing) — see the §9 tuning
+  // note in docs/BUILD_BRIEF.md (certification fix round 1, 2026-09-09).
+  maxAmp: 0.06,
+  maxDurationSec: 0.2,
+  bossSec: 0.18, // boss stomp / quake landing
 });
 
 // Training-dummy scaffold (combat juice block; not a brief entity). Combat
