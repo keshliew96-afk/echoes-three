@@ -51,11 +51,13 @@ import { SKILLS } from '../../sim/skills.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { sharedGeo, markShared, releaseTree } from '../geocache.js';
 import { warmPark } from '../warmup.js';
+import { impactFx } from '../vfx/hub.js';
 import { exactColor, underBloom, getShadowTexture } from '../critters/common.js';
 
 // Cosmetic scaffold tunables (render-only, not brief numbers).
 const BOLT_Y = 0.55; // matches the basic bolt's flight height
-const TRAIL_FADE = 0.15;
+const BOLT_SPARK_HZ = 13; // sparks/s shed by a bolt in flight (particle layer)
+const TRAIL_FADE = 0.34; // s, bolt trail life (r2: 0.15 s was a smear the bolt's own body covered)
 const MOTE_CAP = 240;
 const HEAL = PALETTE.brightHeal;
 const AMBER = PALETTE.hearthAmber;
@@ -805,15 +807,42 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     );
     ink.rotation.z = Math.PI / 2;
     ink.position.y = BOLT_Y;
-    ink.scale.setScalar(1.22);
-    ink.renderOrder = 5;
+    ink.scale.setScalar(1.46);
+    ink.renderOrder = 4;
     g.add(ink);
+    // COLOURED SHELL between the white core and the ink line. Round 2 measured
+    // a bolt box as ">200 11.033% but amber 1 / danger 0 — a white pill plus
+    // white bloom": the additive halo's bright middle sits BEHIND the pill and
+    // its dark hull, so the only colour that escaped was a one-pixel fringe.
+    // Colour now lives on the projectile itself — white-hot core, Hearth Amber
+    // (or Bright Heal) shell, ink line, glow — which is reference D's
+    // "white-hot core + orange glow" read at any zoom and does not add a single
+    // photon to the bloom pass.
+    const shell = new Mesh(
+      boltCoreGeo,
+      new MeshBasicMaterial({
+        color: underBloom(exactColor(heal ? HEAL : AMBER)),
+        side: BackSide,
+        transparent: true,
+        opacity: 0.95,
+        depthWrite: false,
+        depthTest: false,
+      })
+    );
+    shell.rotation.z = Math.PI / 2;
+    shell.position.y = BOLT_Y;
+    shell.scale.set(1.3, 1.24, 1.3);
+    shell.renderOrder = 5;
+    g.add(shell);
     // Glow pulled down with the core: the halo is what actually stacked
     // between neighbouring bolts (additive), so it loses a third of its
     // strength and a fifth of its radius. Three bolts now read as three.
-    const glow = makeGlowSprite({ color: heal ? HEAL : AMBER, size: 0.5, opacity: 0.62 });
+    // Wider but no brighter: the halo spreads past the ink line so it reads as
+    // a light around the bolt, while its peak stays where round 1 put it (three
+    // Volley bolts must not sum back into one blown white mass).
+    const glow = makeGlowSprite({ color: heal ? HEAL : AMBER, size: 0.86, opacity: 0.5 });
     glow.position.y = BOLT_Y;
-    glow.renderOrder = 4;
+    glow.renderOrder = 3;
     g.add(glow);
     // Contact shadow: wide + dark enough to survive the additive glow above it
     // (§19.2 / REFERENCE_BAR check 8: every flier is grounded). It has to beat
@@ -822,14 +851,20 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     return g;
   }
 
+  // TRAIL. Round 2: "bolts are core + glow + shadow but have no trail". They
+  // did have one — 0.15 s long at 0.4 opacity, i.e. a 0.8 u smear the bolt's
+  // own body covered. It is twice as long and half again as strong now, and it
+  // TAPERS: each dot shrinks as it fades, so the trail reads as a wake behind
+  // the projectile instead of a row of equal blobs.
+  let boltSparkDebt = 0;
   const trails = [];
   const trailPool = [];
   function spawnTrailDot(x, z, color) {
     let s = trailPool.pop();
-    if (!s) s = makeGlowSprite({ color, size: 0.3, opacity: 0.5 });
+    if (!s) s = makeGlowSprite({ color, size: 0.34, opacity: 0.62 });
     s.material.color.set(color);
-    s.material.opacity = 0.5;
-    s.scale.set(0.3, 0.3, 1);
+    s.material.opacity = 0.62;
+    s.scale.set(0.34, 0.34, 1);
     s.position.set(x, BOLT_Y, z);
     root.add(s);
     trails.push({ s, age: 0 });
@@ -1022,6 +1057,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     if (!warmed && ++warmFrames > 12) prewarm();
     // Skill bolts: sync to sim, orient along flight, leave a trail.
     const seen = new Set();
+    const sparkAt = []; // bolt positions eligible for a spark this frame
     for (const e of world.entities()) {
       if (e.kind !== 'skillbolt') continue;
       seen.add(e.id);
@@ -1036,6 +1072,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       g.position.set(bx, 0, bz);
       g.getObjectByName('core').rotation.y = Math.atan2(e.vz, -e.vx);
       spawnTrailDot(bx, bz, e.heal ? HEAL : AMBER);
+      sparkAt.push({ x: bx, z: bz, heal: !!e.heal });
     }
     for (const [id, g] of boltRigs) {
       if (!seen.has(id)) {
@@ -1044,16 +1081,31 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
         boltRigs.delete(id);
       }
     }
+    // The bolt's PARTICLE layer (REFERENCE_BAR check 5 wants core + glow +
+    // particles on every attack effect, and round 2 read state().vfx.particles as
+    // 3-6 through a whole fight). Rate-limited across all live bolts so a
+    // Volley costs the same as a basic shot.
+    if (sparkAt.length > 0) {
+      boltSparkDebt += BOLT_SPARK_HZ * dt * sparkAt.length;
+      let n = Math.min(4, Math.floor(boltSparkDebt));
+      boltSparkDebt -= n;
+      for (let i = 0; i < n; i++) {
+        const b = sparkAt[i % sparkAt.length];
+        impactFx.impact(b.x, b.z, { color: b.heal ? HEAL : AMBER, n: 1 });
+      }
+    } else boltSparkDebt = 0;
     for (let i = trails.length - 1; i >= 0; i--) {
       const tr = trails[i];
       tr.age += dt;
-      const o = 0.4 * (1 - tr.age / TRAIL_FADE);
-      if (o <= 0) {
+      const k = 1 - tr.age / TRAIL_FADE;
+      if (k <= 0) {
         root.remove(tr.s);
         trailPool.push(tr.s);
         trails.splice(i, 1);
       } else {
-        tr.s.material.opacity = o;
+        tr.s.material.opacity = 0.62 * k * k;
+        const w = 0.34 * (0.34 + 0.66 * k); // taper: a wake, not a bead chain
+        tr.s.scale.set(w, w, 1);
       }
     }
 
