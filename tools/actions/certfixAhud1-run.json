@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"hit\",\"hit_immune\",\"death\",\"hitstop\",\"sound\",\"heal\",\"skill_cast\",\"ally_cast\",\"ally_basic\",\"dodge\",\"dash\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"downed\",\"revive\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"enemy_despawn\",\"reward\",\"draft\",\"draft_taken\",\"path_chosen\",\"shop_buy\",\"currency_denied\",\"skill_equip\",\"node_granted\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\",\"projectile_spawn\",\"flash\",\"knockback\",\"screenshake\",\"flinch\",\"director_stop\",\"mark\",\"defeat\",\"victory\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed tick '+E.tick+' seed '+E.seed+' v'+E.version})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {tick:E.tick,room:E.state().run.room}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<30000){if(E.state().enemies.length>=1)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0)};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('killAllEnemies');return {tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<30000){if(window.__c.ev.some(e=>e.T==='room_cleared')||E.state().run.phase!=='combat')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),phase:E.state().run.phase,counts:(()=>{const m={};for(const e of (window.__c?window.__c.ev:[]))m[e.T]=(m[e.T]||0)+1;return m})()};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),phase:E.state().run.phase,counts:(()=>{const m={};for(const e of (window.__c?window.__c.ev:[]))m[e.T]=(m[e.T]||0)+1;return m})()}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.state().run;return {tag:'after-clear',phase:r.phase,room:r.room,screen:E.runUi().screen,banner:E.hud.banner(),counts:(()=>{const m={};for(const e of (window.__c?window.__c.ev:[]))m[e.T]=(m[e.T]||0)+1;return m})()}})()"
+ }
+]

@@ -1,0 +1,40 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"hit\",\"hit_immune\",\"death\",\"hitstop\",\"sound\",\"heal\",\"skill_cast\",\"ally_cast\",\"ally_basic\",\"dodge\",\"dash\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"downed\",\"revive\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"enemy_despawn\",\"reward\",\"draft\",\"draft_taken\",\"path_chosen\",\"shop_buy\",\"currency_denied\",\"skill_equip\",\"node_granted\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\",\"projectile_spawn\",\"flash\",\"knockback\",\"screenshake\",\"flinch\",\"director_stop\",\"mark\",\"defeat\",\"victory\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed tick '+E.tick+' seed '+E.seed+' v'+E.version})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',8);return {seed:E.seed,room:r&&r.room,boss:r&&r.boss,tick:E.tick}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 300
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<40000){if((()=>{const q=window.__c.ev.filter(e=>e.T==='boss_quake_start');const a=window.__c.ev.filter(e=>e.T==='boss_adds');return q.length>=2&&a.length>=1&&E.tick-q[q.length-1].tick<=6})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),quakes:window.__c.ev.filter(e=>e.T==='boss_quake_start').map(e=>({tick:e.tick,resolveTick:e.resolveTick})),adds:window.__c.ev.filter(e=>e.T==='boss_adds').map(e=>({tick:e.tick,pct:e.pct})),boss:E.cmd('runState').boss,enemies:E.state().enemies.length};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),quakes:window.__c.ev.filter(e=>e.T==='boss_quake_start').map(e=>({tick:e.tick,resolveTick:e.resolveTick})),adds:window.__c.ev.filter(e=>e.T==='boss_adds').map(e=>({tick:e.tick,pct:e.pct})),boss:E.cmd('runState').boss,enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;return {tag:\"boss-frame\",tick:E.tick,fps:E.fps,version:E.version,seed:E.seed,entityCount:E.entityCount,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,roomState:s.room,enemies:s.enemies.length,party:s.party.map(p=>[p.id,p.classId||'healer',p.hp,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),boss:r.boss,ui:E.runUi().screen,hud:E.hud.combat(),banner:E.hud.banner().text,threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),vfx:(v=>{const a=v.arena||{};return {mode:v.mode,emitters:v.emitters,propTypes:v.propTypes,propShadows:v.propShadows,grass:v.grass,fireflies:v.fireflies,embers:v.embers,vignette:v.vignette,exposure:v.exposure,arena:{numerals:a.numerals,decals:a.decals,particles:a.particles,variant:a.variant,propTypes:a.propTypes,emitters:a.emitters,party:a.party}}})(s.vfx||{})}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const q=(sel)=>{const n=document.querySelector(sel);if(!n)return null;const r=n.getBoundingClientRect();const cs=getComputedStyle(n);if(r.width<1||r.height<1||cs.opacity==='0'||cs.display==='none')return null;return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}};const boxes={bar:q('.hud-bar'),banner:q('#hud-banner'),loc:q('.hud-loc'),glint:q('.hud-glint'),fps:q('#fps-meter'),version:q('#version-label'),shopPanel:q('.rn-shop'),shopShelf:q('.rn-shelf')};const keys=Object.keys(boxes).filter(k=>boxes[k]);const overlaps=[];for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++){const a=boxes[keys[i]],b=boxes[keys[j]];const ox=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x);const oy=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);if(ox>0&&oy>0)overlaps.push([keys[i],keys[j],ox,oy]);}const m=E.hud.metrics?E.hud.metrics():null;const win={w:innerWidth,h:innerHeight};const inWin=Object.fromEntries(keys.map(k=>{const b=boxes[k];return [k,b.x>=0&&b.y>=0&&b.x+b.w<=win.w&&b.y+b.h<=win.h]}));return {tag:\"boss-hud\",win,boxes,overlaps,inWin,metrics:m,slots:E.hud.slots?E.hud.slots().map(s=>({key:s.key,abbrev:s.abbrev,icon:s.icon,empty:s.empty,wipeDeg:s.wipeDeg,counting:s.counting,numeral:s.numeral})):null,loc:E.hud.loc?E.hud.loc():null,bossPlate:E.hud.bossPlate?E.hud.bossPlate():null}})()"
+ }
+]

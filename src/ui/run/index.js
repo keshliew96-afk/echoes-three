@@ -150,6 +150,12 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const on = name !== 'none';
     rootEl.classList.toggle('rn-open', on);
     veil.classList.toggle('rn-open', on);
+    // ROUND-1 CERTIFICATION FIX — the shop is a diegetic SHELF, not a modal:
+    // it docks above the command bar (`rn-dock`) and its veil is a ~12% dim
+    // (`rn-light`) so the lit arena and the party stay in frame behind it.
+    // Every other meta screen keeps the §16 full veil.
+    rootEl.classList.toggle('rn-dock', name === 'shop');
+    veil.classList.toggle('rn-light', name === 'shop');
     if (on) screens[name].el.style.display = '';
     fitScale();
     // Every key that was already down when this page appeared is stale: it
@@ -236,6 +242,15 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // sim's own denial event so a scripted buy shakes exactly like a click.
   bus.on('currency_denied', (ev) => {
     if (current === 'shop') screens.shop.denyShake(ev.index ?? 0);
+  });
+  // §16 purchase: "price-stamp flash -> card departs to the bench". The sim
+  // emits `shop_purchase` BEFORE the shelf re-renders, so the screen only
+  // records which index was bought and starts its choreography (card flip ->
+  // SOLD ribbon slam -> coin-fly into the Glint strip) on the freshly built
+  // card. Without this wire the purchase was an instant swap, which is exactly
+  // what round-1 critics scored 1/2 on motion juice.
+  bus.on('shop_purchase', (ev) => {
+    if (current === 'shop') screens.shop.onPurchase(ev);
   });
   // §16: "Taking a node chains straight into the Socket screen with the
   // candidate pre-focused." The socket screen owns that focus; we only open it.
@@ -357,6 +372,16 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
         owned: [...rootEl.querySelectorAll('.rn-owned')].map((n) => n.textContent.trim()),
         fade: fade.classList.contains('rn-on'),
         veil: { open: veil.classList.contains('rn-open'), tone: veil.className },
+        // --------------------------------------------- shop probe surface --
+        // The purchase choreography is ~620 ms and one harness screenshot
+        // costs several hundred ms of page time, so a scripted capture can
+        // miss the whole thing (round-1 critics saw only the finished SOLD
+        // card and scored motion 1/2). shopPin(ms) freezes the animation
+        // clock at a chosen offset — the same step function, told what time
+        // it is — so a capture can photograph any phase; shopPin(null) hands
+        // the clock back and the choreography finishes normally.
+        shopAnim: () => screens.shop.animState(),
+        shopPin: (ms) => screens.shop.pin(ms),
       };
     },
   };

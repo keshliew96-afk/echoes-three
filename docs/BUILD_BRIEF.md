@@ -568,6 +568,19 @@ realized **+0** (saturation-inert).
   price-stamp flash → card departs to bench; no backfill/sell-back/reroll.
   Insufficient funds: plaque emphasis + one ~300 ms shake, item stays. Empty
   shelf: "nothing left to sell you". Advance → boss (one-way). Esc inert.
+  - **Tuning note (certification fix round 1, 2026-09-09):** the shop is the ONE
+    meta screen that is not a full-veil "flat storybook card page". Round-1
+    certification scored the shop frame 10–12/20 with three independent scorers
+    agreeing on the cause: a full-screen charcoal modal over a 65–90% veil,
+    parked exactly on the party (FLAT 52.9%, LUMA >160 1.26%, zero entities in
+    frame, no shop light of its own). The shelf is therefore now a COMPACT
+    ORNATE PANEL (wood grain + brass, ~920×355 design px) docked above the
+    command bar, over a ~12% dim (`#run-veil.rn-light`), so the lit arena, its
+    torches and the party stay in frame. Everything §16 actually specifies is
+    unchanged: 3 cards, plaques BELOW the card at 25/30/35, Glint strip, "you
+    own N", whole-card click → stamp → bench, one ~300 ms denial shake with the
+    item never greyed or hidden for price, Advance one-way, Esc inert. Every
+    other meta screen (draft, path, victory, defeat) keeps the §16 full veil.
 - **Path choice** (after rooms 1–5): two door panels (160×220 design-px), each
   showing ONLY a win-condition glyph + reward-type glyph; `free_skill_slots`
   displayed at screen level. A/D or arrows focus, Enter commits under the

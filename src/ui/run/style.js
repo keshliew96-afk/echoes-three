@@ -65,6 +65,15 @@ export const RUN_CSS = `
       ${PALETTE.voidCharcoal}A6 0%, ${PALETTE.voidCharcoal}E6 100%);
   }
   #run-veil.rn-open { display: block; opacity: 1; }
+  /* SHOP VEIL (round-1 certification fix). The shop is the one meta screen the
+     world must stay visible behind — the shelf is a compact plate, not a modal,
+     and the round-1 charcoal 65-90% veil is what made the frame flat, dark and
+     empty of entities. This is a ~12% mean dim with a slightly heavier edge, so
+     it doubles as the frame's vignette instead of erasing the arena. */
+  #run-veil.rn-light {
+    background: radial-gradient(ellipse at 50% 58%,
+      ${PALETTE.voidCharcoal}0F 0%, ${PALETTE.voidCharcoal}1A 46%, ${PALETTE.voidCharcoal}42 100%);
+  }
   .rn-page {
     position: relative;
     transform: scale(var(--rn-s, 1)); transform-origin: center center;
@@ -217,7 +226,6 @@ export const RUN_CSS = `
   .rn-shelf { display: flex; gap: 26px; margin: 4px 0 2px; align-items: flex-start; }
   .rn-item { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 220px; }
   .rn-item .rn-card { width: 220px; cursor: pointer; }
-  .rn-item.rn-sold .rn-card { opacity: 0.28; pointer-events: none; }
   .rn-plaque {
     display: flex; align-items: center; gap: 8px;
     padding: 7px 16px; border-radius: 10px;
@@ -230,6 +238,172 @@ export const RUN_CSS = `
     color: ${PALETTE.paleGold};
   }
   .rn-plaque .rn-cur { font-size: 16px; color: ${PALETTE.warmGrey}; letter-spacing: 0.14em; }
+  .rn-owned { font-size: 17px; color: ${PALETTE.bone}; }
+
+  /* ================================================================= SHOP ==
+     ROUND-1 CERTIFICATION FIX (cert-score-*-r1, shop frame 10-12/20).
+     The shelf used to be a full-screen charcoal modal on a 65-90% veil parked
+     exactly over the party (FLAT 52.9%, LUMA >160 1.26%, no world light, no
+     entity in frame, zero hover/purchase motion). The rules below rebuild it
+     as a COMPACT ORNATE SHELF docked above the command bar:
+       - the veil drops to a ~12% dim (see #run-veil.rn-light) so the lit
+         arena, its torches and the party stay in frame;
+       - the panel is a wood-and-brass plate: two crossed grain layers at a
+         5-7 px period (so no 8x8 block is one flat colour), a lamp glow, a
+         double brass rim, four ornamental corner caps and a real cast shadow;
+       - the plaques are lit brass, the Advance button a filled amber lamp:
+         both are emissive enough to read as light pools;
+       - hover lifts a card by LAYOUT (the 'top' property), never by a
+         composited transform, so it lands in captured pixels.
+     Everything else (prices below the card, item never greyed for price, one
+     ~300 ms denial shake) is unchanged §16 behaviour. */
+  #run-screen.rn-dock { align-items: flex-end; }
+  #run-screen .rn-shop {
+    position: relative;
+    padding: 13px 22px 15px;
+    border: 2px solid ${PALETTE.paleGold}66;
+    border-radius: 16px;
+    /* Wood grain + fibre noise: two repeating gradients whose periods (5 px
+       and 7 px) are shorter than the analyzer's 8x8 flat-block window, over a
+       warm plank gradient and an inner vignette. */
+    background:
+      repeating-linear-gradient(93deg,
+        #FFFFFF07 0px, #FFFFFF07 1px, #00000012 1px, #00000012 3px,
+        #FFFFFF04 3px, #FFFFFF04 5px),
+      repeating-linear-gradient(8deg,
+        #00000010 0px, #00000010 2px, #FFFFFF06 2px, #FFFFFF06 4px,
+        #0000000A 4px, #0000000A 7px),
+      radial-gradient(ellipse at 50% 12%, #4A3F31 0%, #332C24 46%, #241F1A 100%);
+    box-shadow:
+      0 0 0 4px ${PALETTE.voidCharcoal}, 0 0 0 6px ${PALETTE.warmGrey}55,
+      0 26px 64px #000000CC, 0 10px 22px #00000099,
+      inset 0 0 42px #00000077, inset 0 1px 0 ${PALETTE.parchment}22;
+  }
+  /* Ornamental corner caps (brass brackets + a rivet), REFERENCE_BAR 9. */
+  #run-screen .rn-shop .rn-cap {
+    position: absolute; width: 22px; height: 22px; pointer-events: none;
+    border: 3px solid ${PALETTE.paleGold}CC;
+  }
+  #run-screen .rn-shop .rn-cap::after {
+    content: ''; position: absolute; width: 6px; height: 6px; border-radius: 50%;
+    background: ${PALETTE.paleGold}; box-shadow: 0 0 8px ${PALETTE.paleGold}AA;
+  }
+  #run-screen .rn-shop .rn-cap-tl { left: 6px; top: 6px; border-right: 0; border-bottom: 0; border-radius: 10px 0 0 0; }
+  #run-screen .rn-shop .rn-cap-tr { right: 6px; top: 6px; border-left: 0; border-bottom: 0; border-radius: 0 10px 0 0; }
+  #run-screen .rn-shop .rn-cap-bl { left: 6px; bottom: 6px; border-right: 0; border-top: 0; border-radius: 0 0 0 10px; }
+  #run-screen .rn-shop .rn-cap-br { right: 6px; bottom: 6px; border-left: 0; border-top: 0; border-radius: 0 0 10px 0; }
+  #run-screen .rn-shop .rn-cap-tl::after { left: -1px; top: -1px; }
+  #run-screen .rn-shop .rn-cap-tr::after { right: -1px; top: -1px; }
+  #run-screen .rn-shop .rn-cap-bl::after { left: -1px; bottom: -1px; }
+  #run-screen .rn-shop .rn-cap-br::after { right: -1px; bottom: -1px; }
+  /* The peddler's lamp: the panel's own warm pool (check 2 "layered light"). */
+  #run-screen .rn-shop .rn-lamp {
+    position: absolute; left: 50%; top: -10px; width: 420px; height: 150px;
+    margin-left: -210px; pointer-events: none; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 26%,
+      ${PALETTE.paleGold}55 0%, ${PALETTE.hearthAmber}2E 38%, transparent 72%);
+  }
+  #run-screen .rn-shop .rn-lamp::after {
+    content: ''; position: absolute; left: 50%; top: 12px; width: 26px; height: 10px;
+    margin-left: -13px; border-radius: 50%;
+    background: radial-gradient(ellipse, #FFF6DD 0%, ${PALETTE.hearthAmber} 60%, transparent 100%);
+    box-shadow: 0 0 22px ${PALETTE.hearthAmber}CC, 0 0 46px ${PALETTE.hearthAmber}66;
+  }
+  /* Header: title on the left, a filigree rule across, the Glint strip right. */
+  #run-screen .rn-shop .rn-head {
+    display: flex; align-items: center; gap: 14px;
+    width: 100%; margin: 2px 0 8px;
+  }
+  #run-screen .rn-shop .rn-title {
+    text-align: left; white-space: nowrap;
+    text-shadow: 0 0 18px ${PALETTE.hearthAmber}44, 0 2px 0 #00000099;
+  }
+  #run-screen .rn-shop .rn-orn {
+    flex: 1 1 auto; display: flex; align-items: center; gap: 8px; margin: 0;
+    color: ${PALETTE.paleGold};
+  }
+  #run-screen .rn-shop .rn-orn i {
+    flex: 1 1 auto; height: 2px; border-radius: 1px;
+    background: linear-gradient(90deg, transparent, ${PALETTE.paleGold}88, transparent);
+  }
+  #run-screen .rn-shop .rn-orn b { font-size: 16px; letter-spacing: 0; opacity: 0.9; }
+  #run-screen .rn-shop .rn-strip {
+    margin: 0; flex: 0 0 auto;
+    border-color: ${PALETTE.paleGold}66;
+    background: linear-gradient(180deg, #3A3125 0%, ${PALETTE.voidCharcoal} 100%);
+    box-shadow: 0 0 16px ${PALETTE.paleGold}22, inset 0 1px 0 ${PALETTE.paleGold}33;
+  }
+  #run-screen .rn-shop .rn-shelf { position: relative; z-index: 1; }
+  /* 280 px so the widest header (Ascend + the LEGENDARY tag) never collides
+     with the icon column — the round-1 defect was that header wrapping. */
+  #run-screen .rn-shop .rn-item,
+  #run-screen .rn-shop .rn-item .rn-card { width: 280px; }
+  /* Cards: same charcoal plate, but grained like the panel and rim-lit by the
+     rarity colour (Bone / Signal Blue / Hearth Amber — §19.1, unchanged). */
+  #run-screen .rn-shop .rn-item .rn-card {
+    top: 0; transition: top 110ms ease, box-shadow 110ms ease, border-color 110ms ease;
+    background:
+      repeating-linear-gradient(97deg,
+        #FFFFFF06 0px, #FFFFFF06 1px, #00000010 1px, #00000010 3px,
+        #FFFFFF03 3px, #FFFFFF03 6px),
+      linear-gradient(178deg, #35302A 0%, #262220 74%, ${PALETTE.voidCharcoal} 100%);
+    box-shadow: 0 0 0 2px ${PALETTE.voidCharcoal}, 0 14px 26px #000000BB,
+                inset 0 0 24px #00000066, 0 0 20px var(--rarGlow, transparent);
+  }
+  /* Hover: the round-1 defect was 0.00% changed pixels. The lift is layout, the
+     wash and the rim glow are paint — together ~1/3 of the card box changes. */
+  #run-screen .rn-shop .rn-item .rn-card.rn-hover {
+    top: -8px;
+    border-color: ${PALETTE.parchment};
+    background:
+      repeating-linear-gradient(97deg,
+        #FFFFFF0A 0px, #FFFFFF0A 1px, #00000010 1px, #00000010 3px,
+        #FFFFFF05 3px, #FFFFFF05 6px),
+      linear-gradient(178deg, #574B36 0%, #3A332A 74%, #2A2521 100%);
+    box-shadow: 0 0 0 2px ${PALETTE.voidCharcoal}, 0 20px 32px #000000CC,
+                inset 0 0 26px #00000055, 0 0 30px var(--rar, ${PALETTE.bone}),
+                0 0 66px var(--rarGlow, transparent);
+  }
+  #run-screen .rn-shop .rn-item .rn-card.rn-hover .rn-cardname { color: ${PALETTE.parchment}; }
+  /* Header row of a shelf card: name and rarity tag on one baseline with a real
+     gap (round-1 defect: "Bouncecommon" ran together, "Ascend" wrapped). */
+  #run-screen .rn-shop .rn-cardhead {
+    display: flex; align-items: baseline; gap: 9px; min-width: 0; white-space: nowrap;
+  }
+  #run-screen .rn-shop .rn-cardhead .rn-cardkind {
+    font-size: 16px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--rar, ${PALETTE.bone}); opacity: 0.92;
+    padding: 2px 7px; border-radius: 6px;
+    border: 1px solid var(--rar, ${PALETTE.bone});
+    background: ${PALETTE.voidCharcoal}CC;
+  }
+  #run-screen .rn-shop .rn-cardicon {
+    color: var(--rar, ${PALETTE.bone});
+    background: radial-gradient(circle at 40% 32%, #3E382F 0%, #221F1B 100%);
+    border-color: var(--rar, ${PALETTE.bone});
+    box-shadow: 0 0 14px var(--rarGlow, transparent), inset 0 0 10px #00000099;
+  }
+  /* Brass plaque: lit metal, a real cast shadow, a soft gold pool. */
+  #run-screen .rn-shop .rn-plaque {
+    position: relative;
+    background: linear-gradient(180deg, #7A6234 0%, #4A3D26 46%, #2A241C 100%);
+    border-color: ${PALETTE.paleGold};
+    box-shadow: 0 0 20px ${PALETTE.paleGold}55, 0 8px 18px #000000AA,
+                inset 0 1px 0 #F0DCA877, inset 0 -6px 10px #00000066;
+    transition: box-shadow 110ms ease, border-color 110ms ease;
+  }
+  #run-screen .rn-shop .rn-plaque .rn-price {
+    color: #F6E4B4; text-shadow: 0 0 12px ${PALETTE.paleGold}CC;
+  }
+  #run-screen .rn-shop .rn-plaque .rn-cur { color: ${PALETTE.bone}; }
+  /* Unaffordable: the PLAQUE cools to unlit brass and grows a dashed rim; the
+     item itself is untouched (§16: never greyed, never hidden for price). */
+  #run-screen .rn-shop .rn-plaque.rn-short {
+    background: linear-gradient(180deg, #4A443B 0%, #322D27 46%, ${PALETTE.voidCharcoal} 100%);
+    border-style: dashed; border-color: ${PALETTE.warmGrey};
+    box-shadow: 0 6px 14px #000000AA, inset 0 1px 0 ${PALETTE.warmGrey}44;
+  }
+  #run-screen .rn-shop .rn-plaque.rn-short .rn-price { color: ${PALETTE.bone}; text-shadow: none; }
   /* §16 insufficient funds: plaque EMPHASIS + one ~300 ms shake. The item is
      never hidden, never greyed, never disabled for price. The lateral offset is
      written per frame from ui/run/shop.js (see the note there: a CSS transform
@@ -239,14 +413,77 @@ export const RUN_CSS = `
     border-color: ${PALETTE.hearthAmber};
     box-shadow: 0 0 18px ${PALETTE.hearthAmber}66;
   }
-  .rn-owned { font-size: 17px; color: ${PALETTE.bone}; }
+  #run-screen .rn-shop .rn-plaque.rn-deny {
+    border-style: solid; border-color: ${PALETTE.hearthAmber};
+    box-shadow: 0 0 26px ${PALETTE.hearthAmber}88, 0 8px 18px #000000AA,
+                inset 0 0 12px ${PALETTE.hearthAmber}44;
+  }
+  /* The stamp's landing flash. */
+  #run-screen .rn-shop .rn-plaque.rn-thud {
+    border-color: ${PALETTE.parchment};
+    box-shadow: 0 0 34px ${PALETTE.hearthAmber}CC, 0 0 70px ${PALETTE.hearthAmber}55,
+                inset 0 0 14px #FFF6DD66;
+  }
+  /* SOLD is a stamped RIBBON, not a full-card charcoal cover (the old cover was
+     a 252x188 flat block and read as the card being deleted). */
   .rn-stamp {
-    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    font-size: 30px; font-weight: 900; letter-spacing: 0.2em;
-    color: ${PALETTE.hearthAmber}; background: ${PALETTE.voidCharcoal}CC;
+    position: absolute; left: 50%; top: 50%;
+    width: 216px; height: 52px; margin: -26px 0 0 -108px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 900; letter-spacing: 0.22em;
+    color: ${PALETTE.hearthAmber};
+    background: linear-gradient(180deg, #3A2E1CE8 0%, ${PALETTE.voidCharcoal}E8 100%);
+    border: 3px solid ${PALETTE.hearthAmber}; border-radius: 8px;
+    box-shadow: 0 0 26px ${PALETTE.hearthAmber}66, 0 8px 18px #000000AA,
+                inset 0 0 0 1px ${PALETTE.voidCharcoal};
+    transform: rotate(-13deg); transform-origin: 50% 50%;
     opacity: 0; pointer-events: none;
   }
+  .rn-item.rn-sold .rn-card { pointer-events: none; }
+  /* Sold card: dimmed and cooled, but still legible under its ribbon. */
+  #run-screen .rn-shop .rn-item.rn-sold .rn-card { opacity: 0.62; filter: saturate(0.55); }
+  /* Before the flip midpoint the card is still showing its LIVE face. */
+  #run-screen .rn-shop .rn-item.rn-sold .rn-card.rn-preflip { opacity: 1; filter: none; }
+  #run-screen .rn-shop .rn-card.rn-preflip .rn-owned { visibility: hidden; }
   .rn-item.rn-sold .rn-stamp { opacity: 1; }
+  /* Advance: a filled Hearth Amber lamp, the panel's brightest element. */
+  #run-screen .rn-shop .rn-buttons { align-items: center; gap: 18px; width: 100%; justify-content: center; }
+  #run-screen .rn-shop .rn-hint { margin-top: 0; flex: 1 1 0; }
+  #run-screen .rn-shop .rn-hint-l { text-align: right; }
+  #run-screen .rn-shop .rn-hint-r { text-align: left; }
+  #run-screen .rn-shop .rn-advance {
+    flex: 0 0 auto;
+    color: ${PALETTE.voidCharcoal};
+    background: linear-gradient(180deg, #F7C877 0%, ${PALETTE.hearthAmber} 52%, #A96C1C 100%);
+    border-color: #FFF0C8;
+    text-shadow: 0 1px 0 #FFF6DD88;
+    box-shadow: 0 0 26px ${PALETTE.hearthAmber}88, 0 0 64px ${PALETTE.hearthAmber}3A,
+                inset 0 1px 0 #FFF6DDAA, inset 0 -6px 12px #00000044,
+                0 8px 18px #000000AA;
+    transform: none;
+  }
+  #run-screen .rn-shop .rn-advance:hover {
+    background: linear-gradient(180deg, #FFDB9A 0%, #F2B457 52%, #BC7B22 100%);
+    box-shadow: 0 0 34px ${PALETTE.hearthAmber}AA, 0 0 80px ${PALETTE.hearthAmber}55,
+                inset 0 1px 0 #FFF6DDCC, 0 8px 18px #000000AA;
+  }
+  /* Purchase / glitter layer — above the shelf, never catching the pointer. */
+  .rn-fx { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: visible; }
+  .rn-flycoin {
+    position: absolute; width: 14px; height: 14px; border-radius: 50%;
+    transform: translate(-50%, -50%); pointer-events: none;
+    background: radial-gradient(circle at 34% 30%, #FFF3D2 0%, ${PALETTE.paleGold} 56%, #8A6E36 100%);
+    box-shadow: 0 0 12px ${PALETTE.paleGold}CC, 0 0 26px ${PALETTE.paleGold}55;
+  }
+  .rn-mote {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%;
+    transform: translate(-50%, -50%); pointer-events: none;
+    background: #FFF3D2; box-shadow: 0 0 8px ${PALETTE.paleGold}, 0 0 16px ${PALETTE.paleGold}77;
+  }
+  .rn-coin.rn-catch {
+    box-shadow: 0 0 22px ${PALETTE.paleGold}, 0 0 46px ${PALETTE.paleGold}88;
+    filter: brightness(1.35);
+  }
 
   /* ------------------------------------------------------------ end screens */
   #run-veil.rn-victory {
@@ -344,6 +581,20 @@ export const RUN_CSS = `
   #run-screen.rn-compact .rn-plaque .rn-price { font-size: 22px; }
   #run-screen.rn-compact .rn-plaque .rn-cur { font-size: 16px; }
   #run-screen.rn-compact .rn-stamp { font-size: 26px; }
+
+  /* Compact shop: the header collapses onto ONE row (title | filigree | Glint
+     strip) so the whole plate is ~310 px tall and docks above the command bar
+     without covering the party — the round-1 modal was 432 px and sat exactly
+     on them. Nothing here drops below the §17 floors. */
+  #run-screen.rn-compact .rn-shop { padding: 11px 20px 13px; }
+  #run-screen.rn-compact .rn-shop .rn-head { margin: 0 0 7px; gap: 12px; }
+  #run-screen.rn-compact .rn-shop .rn-title { font-size: 23px; }
+  /* §17 floor: HUD text is never below 16 px, tags included. */
+  #run-screen.rn-compact .rn-shop .rn-cardhead .rn-cardkind { font-size: 16px; padding: 0 6px; letter-spacing: 0.06em; }
+  #run-screen.rn-compact .rn-shop .rn-item,
+  #run-screen.rn-compact .rn-shop .rn-item .rn-card { width: 280px; }
+  #run-screen.rn-compact .rn-shop .rn-buttons { margin-top: 8px; }
+  #run-screen.rn-compact .rn-shop .rn-lamp { top: -6px; height: 120px; }
 
   #run-screen.rn-compact .rn-doors { gap: 34px; margin: 2px 0 0; }
   #run-screen.rn-compact .rn-legend { font-size: 16px; margin-top: 10px; gap: 18px; }

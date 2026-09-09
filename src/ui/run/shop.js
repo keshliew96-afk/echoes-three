@@ -60,13 +60,17 @@ export function createShopScreen({ run, build }) {
   const el = document.createElement('div');
   el.className = 'rn-page rn-shop';
   el.innerHTML = `
+    <i class="rn-cap rn-cap-tl"></i><i class="rn-cap rn-cap-tr"></i>
+    <i class="rn-cap rn-cap-bl"></i><i class="rn-cap rn-cap-br"></i>
     <div class="rn-lamp"></div>
-    <div class="rn-title">THE PEDDLER'S SHELF</div>
-    <div class="rn-orn"><i></i><b>◆</b><i></i></div>
-    <div class="rn-strip">
-      <span class="rn-glint"><span class="rn-coin">${iconHtml('coin', { size: 18 })}</span><span class="rn-amt">0</span></span>
-      <span class="rn-lab">GLINT · ROOM</span><span class="rn-num">7</span>
-      <span class="rn-lab">OF 8</span>
+    <div class="rn-head">
+      <div class="rn-title">THE PEDDLER'S SHELF</div>
+      <div class="rn-orn"><i></i><b>◆</b><i></i></div>
+      <div class="rn-strip">
+        <span class="rn-glint"><span class="rn-coin">${iconHtml('coin', { size: 18 })}</span><span class="rn-amt">0</span></span>
+        <span class="rn-lab">GLINT · ROOM</span><span class="rn-num">7</span>
+        <span class="rn-lab">OF 8</span>
+      </div>
     </div>
     <div class="rn-shelf"></div>
     <div class="rn-note rn-empty" style="display:none"></div>
@@ -168,6 +172,13 @@ export function createShopScreen({ run, build }) {
   let pendingBuy = null;
   let buyAnim = null; // { index, t0, walletFrom, walletTo, coins: [...] }
   let buyRaf = 0;
+  // CAPTURE PIN (round-1 fix). A harness screenshot costs several hundred ms
+  // of page time, so a scripted capture cannot land inside a 620 ms
+  // choreography by waiting. `pin(ms)` freezes the animation clock at a
+  // chosen offset and paints that one frame through the SAME step function;
+  // `pin(null)` resumes from there. Nothing else reads it.
+  let pinT = null;
+  let buyFrames = 0; // rendered frames the current/last choreography spans
   function onPurchase(ev) {
     pendingBuy = ev.index ?? 0;
     // Wallet before the spend, for the countdown (the view already spent it).
@@ -200,7 +211,11 @@ export function createShopScreen({ run, build }) {
       // A fan of arcs: each coin bulges a different amount so they never stack.
       coins.push({ node: c, start: i * COIN_STAGGER, bulge: -70 - 26 * i, dx: (i - 3) * 9 });
     }
-    // Start on the LIVE face: full opacity, stamp hidden, until the flip midpoint.
+    // Start on the LIVE face: full opacity, no sold wash, the bench receipt and
+    // the stamp both withheld until the flip midpoint — the shelf HTML is
+    // already the sold face by the time the choreography starts, so the flip is
+    // what hides the swap.
+    card.classList.add('rn-preflip');
     card.style.opacity = '1';
     card.style.transform = 'scaleX(1)';
     stamp.style.opacity = '0';
@@ -218,19 +233,22 @@ export function createShopScreen({ run, build }) {
       flipped: false,
     };
     pendingWalletFrom = null;
+    buyFrames = 0;
     buyRaf = requestAnimationFrame(stepBuy);
   }
 
   function stepBuy(now) {
     const a = buyAnim;
     if (!a) return;
-    const t = now - a.t0;
+    const t = pinT !== null ? pinT : now - a.t0;
+    buyFrames++;
     // 1. card flip (scaleX), SOLD face from the midpoint
     const fk = clamp01(t / FLIP_MS);
     const sx = Math.abs(Math.cos(fk * Math.PI));
     a.card.style.transform = `scaleX(${Math.max(0.04, sx).toFixed(3)})`;
     if (fk >= 0.5 && !a.flipped) {
       a.flipped = true;
+      a.card.classList.remove('rn-preflip'); // the SOLD face turns into view
       a.card.style.opacity = '';
     }
     if (fk >= 1) a.card.style.transform = '';
@@ -238,7 +256,7 @@ export function createShopScreen({ run, build }) {
     const st = t - FLIP_MS / 2;
     if (st >= 0) {
       const sk = clamp01(st / STAMP_MS);
-      const sc = 2.6 - 1.6 * slam(sk);
+      const sc = 2.15 - 1.15 * slam(sk);
       const rot = -14 + 6 * easeOut(sk);
       a.stamp.style.opacity = String(Math.min(1, sk * 3));
       a.stamp.style.transform = `scale(${sc.toFixed(3)}) rotate(${rot.toFixed(1)}deg)`;
@@ -270,6 +288,7 @@ export function createShopScreen({ run, build }) {
     const wk = clamp01((t - 60) / (COIN_MS + COIN_STAGGER * COIN_N));
     amtEl.textContent = String(Math.round(a.walletFrom + (a.walletTo - a.walletFrom) * easeOut(wk)));
     coinEl.classList.toggle('rn-catch', t > COIN_MS * 0.8 && t < BUY_MS);
+    if (pinT !== null) return; // frozen: this frame stands until pin() moves it
     if (t >= BUY_MS && alive === 0) {
       finishBuy();
       return;
@@ -277,11 +296,43 @@ export function createShopScreen({ run, build }) {
     buyRaf = requestAnimationFrame(stepBuy);
   }
 
+  // Freeze / resume the choreography clock (capture surface only).
+  function pin(ms) {
+    if (ms === null || ms === undefined) {
+      const was = pinT;
+      pinT = null;
+      if (was !== null) {
+        if (buyAnim) {
+          buyAnim.t0 = performance.now() - was; // resume where the pin left off
+          cancelAnimationFrame(buyRaf);
+          buyRaf = requestAnimationFrame(stepBuy);
+        }
+        for (const rec of shakeState.values()) {
+          rec.t0 = performance.now() - was;
+          cancelAnimationFrame(rec.raf);
+          rec.raf = requestAnimationFrame(rec.step);
+        }
+      }
+      return { pinned: null, buying: !!buyAnim, shaking: shakeState.size, frames: buyFrames };
+    }
+    pinT = Number(ms);
+    if (buyAnim) {
+      cancelAnimationFrame(buyRaf);
+      stepBuy(performance.now());
+    }
+    for (const rec of shakeState.values()) {
+      cancelAnimationFrame(rec.raf);
+      rec.step(performance.now());
+    }
+    return { pinned: pinT, buying: !!buyAnim, shaking: shakeState.size, frames: buyFrames };
+  }
+
   function finishBuy() {
     const a = buyAnim;
     if (!a) return;
     cancelAnimationFrame(buyRaf);
     for (const c of a.coins) c.node.remove();
+    a.card.classList.remove('rn-preflip');
     a.card.style.transform = '';
     a.card.style.opacity = '';
     a.stamp.style.opacity = '';
@@ -308,11 +359,13 @@ export function createShopScreen({ run, build }) {
       clearTimeout(prev.hold);
     }
     p.classList.add('rn-deny');
-    const t0 = performance.now();
-    const rec = { raf: 0, hold: 0 };
+    const rec = { raf: 0, hold: 0, step: null, t0: performance.now() };
     const step = (now) => {
-      const k = Math.min(1, (now - t0) / SHAKE_MS);
-      if (k >= 1) {
+      // The capture pin owns this clock too, so a screenshot can photograph the
+      // plaque at a chosen point of the swing instead of racing it.
+      const el2 = pinT !== null ? pinT : now - rec.t0;
+      const k = Math.min(1, el2 / SHAKE_MS);
+      if (k >= 1 && pinT === null) {
         p.style.transform = '';
         rec.hold = setTimeout(() => {
           p.classList.remove('rn-deny');
@@ -324,8 +377,9 @@ export function createShopScreen({ run, build }) {
       const dx = SHAKE_AMP * (1 - k) * Math.sin(k * Math.PI * 4);
       const rot = 2.5 * (1 - k) * Math.sin(k * Math.PI * 4);
       p.style.transform = `translateX(${dx.toFixed(2)}px) rotate(${rot.toFixed(2)}deg)`;
-      rec.raf = requestAnimationFrame(step);
+      if (pinT === null) rec.raf = requestAnimationFrame(step);
     };
+    rec.step = step;
     rec.raf = requestAnimationFrame(step);
     shakeState.set(p, rec);
   }
@@ -336,7 +390,12 @@ export function createShopScreen({ run, build }) {
   // properties while the page is visible.
   const motes = [];
   let moteRaf = 0;
+  let moteRects = null; // plaque -> box relative to the panel, invalidated on rebuild/resize
+  window.addEventListener('resize', () => {
+    moteRects = null;
+  });
   function buildMotes() {
+    moteRects = null;
     for (const m of motes) m.node.remove();
     motes.length = 0;
     plaques.forEach((p, pi) => {
@@ -353,12 +412,23 @@ export function createShopScreen({ run, build }) {
     moteRaf = 0;
     if (el.style.display === 'none' || !el.isConnected) return;
     const t = now / 1000;
-    const pr = el.getBoundingClientRect();
+    // The plaque boxes are static between rebuilds/resizes; measuring them per
+    // frame AFTER writing mote styles forced a synchronous layout every frame
+    // (round-1 fix probe: the shop rendered at 42 fps against 83 in combat).
+    if (!moteRects) {
+      const pr = el.getBoundingClientRect();
+      moteRects = new Map();
+      for (const p of plaques) {
+        const r = p.getBoundingClientRect();
+        moteRects.set(p, { x: r.x - pr.x, y: r.y - pr.y, width: r.width, height: r.height });
+      }
+    }
     for (const m of motes) {
-      const r = m.plaque.getBoundingClientRect();
+      const r = moteRects.get(m.plaque);
+      if (!r) continue;
       const tw = 0.5 + 0.5 * Math.sin(t * m.speed + m.phase);
-      const x = r.x - pr.x + 6 + (r.width - 12) * ((m.ox + 0.13 * Math.sin(t * 0.7 + m.phase)) % 1);
-      const y = r.y - pr.y - 4 + (r.height + 8) * (0.5 + 0.45 * Math.sin(t * 1.1 + m.phase * 2));
+      const x = r.x + 6 + (r.width - 12) * ((m.ox + 0.13 * Math.sin(t * 0.7 + m.phase)) % 1);
+      const y = r.y - 4 + (r.height + 8) * (0.5 + 0.45 * Math.sin(t * 1.1 + m.phase * 2));
       m.node.style.left = `${x.toFixed(1)}px`;
       m.node.style.top = `${y.toFixed(1)}px`;
       m.node.style.opacity = (0.15 + 0.85 * tw * tw).toFixed(2);
@@ -400,6 +470,8 @@ export function createShopScreen({ run, build }) {
       wallet: amtEl.textContent,
       denying: plaques.map((p) => p.classList.contains('rn-deny')),
       plaqueTransform: plaques.map((p) => p.style.transform),
+      frames: buyFrames,
+      pinned: pinT,
       motes: motes.length,
       hover: cards.map((c) => c.classList.contains('rn-hover')),
       shakeMs: SHAKE_MS,
@@ -407,7 +479,7 @@ export function createShopScreen({ run, build }) {
     };
   }
 
-  return { el, render, key, denyShake, onPurchase, animState, name: 'shop' };
+  return { el, render, key, denyShake, onPurchase, animState, pin, name: 'shop' };
 }
 
 export { PALETTE as _shopPalette };
