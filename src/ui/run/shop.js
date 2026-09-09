@@ -62,6 +62,11 @@ const MOTE_N = 12; // plaque glitter motes
 const DUST_N = 7; // hearth dust drifting through the lantern pool
 
 const clamp01 = (k) => Math.max(0, Math.min(1, k));
+// Hearth Amber #E8A23D warmed toward its lit tone by k, per channel — the
+// resting SOLD ribbon breathes with this instead of stepping between two
+// colours, so consecutive captures differ smoothly.
+const emberMix = (k, dr, dg, db) =>
+  `rgb(${Math.round(0xe8 + dr * k)},${Math.round(0xa2 + dg * k)},${Math.round(0x3d + db * k)})`;
 const easeOut = (k) => 1 - (1 - k) * (1 - k);
 // Overshooting ease for the stamp slam (lands at 1 with a short bounce).
 const slam = (k) => {
@@ -402,6 +407,8 @@ export function createShopScreen({ run, build }) {
     a.stamp.style.opacity = '';
     a.stamp.style.transform = '';
     a.stamp.style.boxShadow = '';
+    a.stamp.style.borderColor = '';
+    a.stamp.style.color = '';
     a.plaque.classList.remove('rn-thud');
     coinEl.classList.remove('rn-catch');
     amtEl.textContent = String(a.walletTo);
@@ -535,6 +542,10 @@ export function createShopScreen({ run, build }) {
         const s = stamps[i];
         if (!s || !cards[i] || !cards[i].closest('.rn-sold')) continue;
         const p = 0.5 + 0.5 * Math.sin(t * 1.35 + i * 1.9);
+        // Border + ink ride the same breath, so the ribbon is measurably alive
+        // in a still frame, not only in its halo.
+        s.style.borderColor = emberMix(p, 0x2f, 0x25, 0x3a);
+        s.style.color = emberMix(p, 0x37, 0x3d, 0x67);
         s.style.boxShadow =
           `0 0 ${(18 + 16 * p).toFixed(0)}px rgba(232,162,61,${(0.30 + 0.24 * p).toFixed(2)}),` +
           ` 0 0 ${(46 + 30 * p).toFixed(0)}px rgba(232,162,61,${(0.08 + 0.12 * p).toFixed(2)}),` +
