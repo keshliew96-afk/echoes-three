@@ -131,3 +131,15 @@ driver:log,clears:D.clears,gaps:out,hot:(D.hot||[])}`)
   )
 );
 console.log('wrote tools/actions/certfixDshouldfix1-hitch.json');
+
+// --- HUD-fit regression ---------------------------------------------------
+// The D critic's own end-to-end layout walks (camp -> combat -> draft -> path
+// -> shop -> boss -> victory with a RECTS census at every screen), reused
+// byte-for-byte except for the shot names, so this pass cannot overwrite the
+// round-1 captures.
+for (const w of ['1024', '2560']) {
+  const src = JSON.parse(readFileSync(`tools/actions/certD1-layout-${w}.json`, 'utf8'));
+  for (const a of src) if (a.type === 'shot') a.name = a.name.replace('certD1-', 'certfixDshouldfix1-');
+  writeFileSync(`tools/actions/certfixDshouldfix1-layout-${w}.json`, JSON.stringify(src, null, 1));
+  console.log(`wrote tools/actions/certfixDshouldfix1-layout-${w}.json`);
+}
