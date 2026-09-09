@@ -1,0 +1,100 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {seed:E.seed,room:r&&r.room,phase:r&&r.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();const pl=[...document.querySelectorAll('#run-screen .rn-plaque, #run-screen [class*=plaque]')].map(p=>{const r=p.getBoundingClientRect();const st=getComputedStyle(p);return [p.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.animationName]});const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const r=c.getBoundingClientRect();const st=getComputedStyle(c);return [c.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.boxShadow.slice(0,60),st.borderColor,st.filter]});return {tag:\"rest\",tick:E.tick,wallet:u.wallet,plaques:u.plaques,pl,cards:cs,hoverEl:(document.querySelectorAll(':hover').length?[...document.querySelectorAll(':hover')].pop().className:null)}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 528,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();const pl=[...document.querySelectorAll('#run-screen .rn-plaque, #run-screen [class*=plaque]')].map(p=>{const r=p.getBoundingClientRect();const st=getComputedStyle(p);return [p.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.animationName]});const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const r=c.getBoundingClientRect();const st=getComputedStyle(c);return [c.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.boxShadow.slice(0,60),st.borderColor,st.filter]});return {tag:\"hover-bounce\",tick:E.tick,wallet:u.wallet,plaques:u.plaques,pl,cards:cs,hoverEl:(document.querySelectorAll(':hover').length?[...document.querySelectorAll(':hover')].pop().className:null)}})()"
+ },
+ {
+  "type": "click",
+  "x": 528,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "click",
+  "x": 800,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();const pl=[...document.querySelectorAll('#run-screen .rn-plaque, #run-screen [class*=plaque]')].map(p=>{const r=p.getBoundingClientRect();const st=getComputedStyle(p);return [p.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.animationName]});const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const r=c.getBoundingClientRect();const st=getComputedStyle(c);return [c.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.boxShadow.slice(0,60),st.borderColor,st.filter]});return {tag:\"after-two-buys\",tick:E.tick,wallet:u.wallet,plaques:u.plaques,pl,cards:cs,hoverEl:(document.querySelectorAll(':hover').length?[...document.querySelectorAll(':hover')].pop().className:null)}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 1072,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "click",
+  "x": 1072,
+  "y": 390
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();const pl=[...document.querySelectorAll('#run-screen .rn-plaque, #run-screen [class*=plaque]')].map(p=>{const r=p.getBoundingClientRect();const st=getComputedStyle(p);return [p.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.animationName]});const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const r=c.getBoundingClientRect();const st=getComputedStyle(c);return [c.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.boxShadow.slice(0,60),st.borderColor,st.filter]});return {tag:\"deny+0\",tick:E.tick,wallet:u.wallet,plaques:u.plaques,pl,cards:cs,hoverEl:(document.querySelectorAll(':hover').length?[...document.querySelectorAll(':hover')].pop().className:null)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certA1-player-deny-b0"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();const pl=[...document.querySelectorAll('#run-screen .rn-plaque, #run-screen [class*=plaque]')].map(p=>{const r=p.getBoundingClientRect();const st=getComputedStyle(p);return [p.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.animationName]});const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const r=c.getBoundingClientRect();const st=getComputedStyle(c);return [c.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.boxShadow.slice(0,60),st.borderColor,st.filter]});return {tag:\"deny+shot1\",tick:E.tick,wallet:u.wallet,plaques:u.plaques,pl,cards:cs,hoverEl:(document.querySelectorAll(':hover').length?[...document.querySelectorAll(':hover')].pop().className:null)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certA1-player-deny-b1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();const pl=[...document.querySelectorAll('#run-screen .rn-plaque, #run-screen [class*=plaque]')].map(p=>{const r=p.getBoundingClientRect();const st=getComputedStyle(p);return [p.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.animationName]});const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const r=c.getBoundingClientRect();const st=getComputedStyle(c);return [c.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.boxShadow.slice(0,60),st.borderColor,st.filter]});return {tag:\"deny+shot2\",tick:E.tick,wallet:u.wallet,plaques:u.plaques,pl,cards:cs,hoverEl:(document.querySelectorAll(':hover').length?[...document.querySelectorAll(':hover')].pop().className:null)}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();const pl=[...document.querySelectorAll('#run-screen .rn-plaque, #run-screen [class*=plaque]')].map(p=>{const r=p.getBoundingClientRect();const st=getComputedStyle(p);return [p.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.animationName]});const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const r=c.getBoundingClientRect();const st=getComputedStyle(c);return [c.className,+r.x.toFixed(2),+r.y.toFixed(2),st.transform,st.boxShadow.slice(0,60),st.borderColor,st.filter]});return {tag:\"deny+600ms\",tick:E.tick,wallet:u.wallet,plaques:u.plaques,pl,cards:cs,hoverEl:(document.querySelectorAll(':hover').length?[...document.querySelectorAll(':hover')].pop().className:null)}})()"
+ }
+]

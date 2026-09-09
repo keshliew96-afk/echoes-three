@@ -1,0 +1,38 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {keys:Object.keys(s),run:Object.keys(s.run),runVals:JSON.stringify(s.run).slice(0,1500),room:s.room,vfx:Object.keys(s.vfx||{}),toggles:s.toggles}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {p0:s.party[0],p1keys:Object.keys(s.party[1]),p1:s.party[1]}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {n:s.enemies.length,e0:s.enemies[0],e1:s.enemies[1],eshots:s.eshots.slice(0,2),zones:s.zones.slice(0,2)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {skills:s.skills,build:s.build}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {ui:E.runUi(),combat:E.hud.combat(),banner:E.hud.banner(),threatKeys:Object.keys(E.hud.threat())}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {rs:E.cmd(\"runState\"),seed:E.seed,bootSeed:E.bootSeed,ver:E.version}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {ev:E.events.slice(-12)}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {tele:s.enemies.filter(e=>e.telegraph).map(e=>[e.id,e.kind,e.state,e.telegraph]),states:s.enemies.map(e=>[e.id,e.kind,e.state,e.hp])}})()"
+ }
+]

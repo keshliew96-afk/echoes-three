@@ -1,0 +1,43 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__D=window.__D||{};const D=window.__D;D.ev=D.ev||[];D.lt=D.lt||[];\nif(!D.po){try{D.po=new PerformanceObserver((l)=>{for(const e of l.getEntries())D.lt.push({start:+e.startTime.toFixed(0),dur:+e.duration.toFixed(1)});});D.po.observe({entryTypes:['longtask']});}catch(e){D.poErr=String(e);}}\nD.arm=()=>{if(D.armed)return 'already';D.armed=true;for(const t of ['boss_spawn','boss_adds','boss_quake_start','boss_quake_resolve','boss_trample','boss_death','death','wave_start','enemy_spawn','room_cleared','run_end','run_start','return_to_camp','hitstop','room_enter','downed','revive','reward','draft_taken','path_chosen'])E.on(t,e=>D.ev.push(Object.assign({T:t},e)));return 'armed '+E.tick;};\nD.pct=(arr,p)=>{if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b);return +s[Math.min(s.length-1,Math.floor(p*s.length))].toFixed(2)};\nD.stats=(fr)=>{if(fr.length<2)return null;const dts=fr.map(f=>f[1]);const tot=fr[fr.length-1][0]-fr[0][0];return {frames:fr.length,spanMs:Math.round(tot),meanFps:+(1000*(fr.length-1)/Math.max(1,tot)).toFixed(1),meanMs:+(tot/(fr.length-1)).toFixed(2),p50:D.pct(dts,0.5),p95:D.pct(dts,0.95),p99:D.pct(dts,0.99),max:+Math.max(...dts).toFixed(2),gt50:dts.filter(d=>d>50).length,gt100:dts.filter(d=>d>100).length,gt250:dts.filter(d=>d>250).length}};\nD.heap=()=>performance.memory?+(performance.memory.usedJSHeapSize/1048576).toFixed(1):null;\nD.ring=(n)=>(E.events||[]).filter(e=>e.tick>=E.tick-n).map(e=>e.tick+':'+e.type+(e.kind?'/'+e.kind:'')+(e.id!==undefined?'#'+e.id:''));\nD.sample=async(ms)=>{const fr=[];const per=[];const gaps=[];let last=null;const t0=performance.now();let nextSec=t0;const sampleCost=[];const tick0=E.tick;const lt0=D.lt.length;let prevHeap=D.heap();await new Promise(res=>{const f=(now)=>{if(last!==null){const dt=now-last;fr.push([+(now-t0).toFixed(1),+dt.toFixed(2)]);if(dt>100){const h=D.heap();gaps.push({ms:+(now-t0).toFixed(0),dt:+dt.toFixed(1),tick:E.tick,fps:+E.fps.toFixed(1),ents:E.entityCount,heapBefore:prevHeap,heapAfter:h,ring:D.ring(40)});}}last=now;if(now>=nextSec){const c0=performance.now();let s=null;try{s=E.state();}catch(e){}const c1=performance.now();per.push({s:per.length,ms:Math.round(now-t0),tick:E.tick,fps:+E.fps.toFixed(1),ents:E.entityCount,enemies:s?s.enemies.length:null,eshots:s?s.eshots.length:null,bolts:s?s.skillBolts.length:null,zones:s?s.zones.length:null,azones:s?s.azones.length:null,numerals:s&&s.vfx?s.vfx.numerals:null,particles:s&&s.vfx?s.vfx.particles:null,bossHp:s&&s.run&&s.run.boss?Math.round(s.run.boss.hp):null,phase:s&&s.run?s.run.phase:null,heap:D.heap()});sampleCost.push(+(c1-c0).toFixed(1));nextSec+=1000;}prevHeap=D.heap();if(now-t0>=ms)res();else requestAnimationFrame(f);};requestAnimationFrame(f);});const warm=fr.filter(f=>f[0]<3000);const steady=fr.filter(f=>f[0]>=3000);const win=[];for(let w=3000;w+15000<=fr[fr.length-1][0]+1;w+=5000){const seg=fr.filter(f=>f[0]>=w&&f[0]<w+15000);if(seg.length>2)win.push({from:w,to:w+15000,gt100:seg.filter(f=>f[1]>100).length,max:+Math.max(...seg.map(f=>f[1])).toFixed(1),meanFps:D.stats(seg).meanFps});}return {tick0,tick1:E.tick,simTicks:E.tick-tick0,all:D.stats(fr),warm:D.stats(warm),steady:D.stats(steady),gaps,windows15s:win,perSec:per,longTasks:D.lt.slice(lt0).map(t=>({at:+(t.start-t0).toFixed(0),dur:t.dur})),stateCostMs:{max:Math.max(...sampleCost),mean:+(sampleCost.reduce((a,b)=>a+b,0)/sampleCost.length).toFixed(2)},heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};};\nD.verEl=()=>{const el=document.getElementById('version-label');if(!el)return {missing:true,version:E.version};const r=el.getBoundingClientRect();const cs=getComputedStyle(el);return {version:E.version,text:el.textContent,x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),right:+r.right.toFixed(1),bottom:+r.bottom.toFixed(1),fs:cs.fontSize,color:cs.color,opacity:cs.opacity,display:cs.display,vis:cs.visibility,vw:innerWidth,vh:innerHeight};};\nD.vfx=()=>{const s=E.state();const v=s.vfx||{};const a=v.arena||{};return {tick:E.tick,scene:s.scene,phase:s.run&&s.run.phase,ents:E.entityCount,enemies:s.enemies.length,eshots:s.eshots.length,bolts:s.skillBolts.length,zones:s.zones.length,azones:s.azones.length,vfxMode:v.mode,runs:v.runs,campEmitters:v.emitters,campEmbers:v.embers,fireflies:v.fireflies,gateMotes:v.gateMotes,campShadows:v.propShadows,arena:{numerals:a.numerals,decals:a.decals,particles:a.particles,dummies:a.dummies,emitters:a.emitters,embers:a.embers,propShadows:a.propShadows,smearGhosts:a.party&&a.party.smearGhosts},bandGuardMaterials:v.bandGuard&&v.bandGuard.materials,numeralNodes:document.querySelectorAll('#dmg-num-layer *').length,threatNodes:document.querySelectorAll('#hud-threat *').length,fizzleNodes:document.querySelectorAll('#nd-fizzle-layer *').length,domNodes:document.getElementsByTagName('*').length,heapMB:D.heap(),renderer:(()=>{const r=window.__arenaProbe&&window.__arenaProbe.stage&&window.__arenaProbe.stage.renderer;if(!r||!r.info)return null;return {programs:r.info.programs?r.info.programs.length:null,geometries:r.info.memory.geometries,textures:r.info.memory.textures};})()};};\nreturn 'lib '+E.version+' t'+E.tick+' vw'+innerWidth+'x'+innerHeight+' poErr='+(D.poErr||'none');})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {tick:E.tick,fps:E.fps,ents:E.entityCount,scene:E.state().scene,hwConcurrency:navigator.hardwareConcurrency,now:new Date().toISOString()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__D.arm();E.cmd('startRun');const r=E.cmd('skipToRoom',8);return {seed:E.seed,room:r&&r.room,boss:r&&r.boss&&{hp:r.boss.hp,max:r.boss.maxHp},tick:E.tick}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 300
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const sl=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const k0=E.tick;while(performance.now()-t0<40000){if(window.__D.ev.some(e=>e.T==='boss_adds'))return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),adds:window.__D.ev.filter(e=>e.T==='boss_adds').map(e=>[e.tick,e.pct,e.spawned]),quakes:window.__D.ev.filter(e=>e.T==='boss_quake_start').map(e=>e.tick),bossHp:E.cmd('runState').boss&&E.cmd('runState').boss.hp,enemies:E.state().enemies.length};await sl(8);}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,adds:window.__D.ev.filter(e=>e.T==='boss_adds').map(e=>[e.tick,e.pct,e.spawned]),quakes:window.__D.ev.filter(e=>e.T==='boss_quake_start').map(e=>e.tick),bossHp:E.cmd('runState').boss&&E.cmd('runState').boss.hp,enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const sl=(ms)=>new Promise(r=>setTimeout(r,ms));const r=await window.__D.sample(20000);const ev=window.__D.ev;r.events={waves:ev.filter(e=>e.T==='wave_start').map(e=>[e.tick,e.index,e.size]),spawns:ev.filter(e=>e.T==='enemy_spawn').length,deaths:ev.filter(e=>e.T==='death').length,hitstops:ev.filter(e=>e.T==='hitstop').length,cleared:ev.filter(e=>e.T==='room_cleared').map(e=>e.tick),downed:ev.filter(e=>e.T==='downed').map(e=>[e.tick,e.id]),revive:ev.filter(e=>e.T==='revive').map(e=>[e.tick,e.id]),quakeStart:ev.filter(e=>e.T==='boss_quake_start').map(e=>e.tick),quakeResolve:ev.filter(e=>e.T==='boss_quake_resolve').map(e=>e.tick),adds:ev.filter(e=>e.T==='boss_adds').map(e=>[e.tick,e.pct,e.spawned]),bossDeath:ev.filter(e=>e.T==='boss_death'||(e.T==='death'&&e.kind==='stag')).map(e=>e.tick),runEnd:ev.filter(e=>e.T==='run_end').map(e=>e.tick)};r.boss=E.cmd('runState').boss;r.phase=E.cmd('runState').phase;r.party=E.state().party.map(p=>[p.id,p.hp,p.downed]);return r})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const v=window.__D.verEl();v.fpsMeter=(()=>{const f=document.getElementById('fps-meter');if(!f)return null;const q=f.getBoundingClientRect();return {text:f.textContent,x:q.x,y:q.y,w:q.width,h:q.height}})();v.apiVersion=E.version;return v})()"
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const v=window.__D.vfx();v.tag=\"after-boss\";return v})()"
+ }
+]

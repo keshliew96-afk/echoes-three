@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');E.cmd('skipToRoom',5);return 1})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const a=(s.vfx&&s.vfx.arena)||{};return {tag:'room5',room:s.run.room,mode:s.run.mode,variant:a.variant,variantName:a.variantName,propTypes:a.propTypes,propShadows:a.propShadows,emitters:a.emitters,grass:a.grass,fps:E.fps}})()"
+ }
+]

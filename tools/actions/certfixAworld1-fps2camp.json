@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const s=[];for(let i=0;i<10;i++){await new Promise(r=>setTimeout(r,1000));s.push(E.fps)}const srt=[...s].sort((a,b)=>a-b);return {tag:'fps10camp',samples:s,min:srt[0],median:srt[5],scene:E.state().scene}})()"
+ }
+]

@@ -1,0 +1,83 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\nconst C=window.__r2={ev:[],seen:new Set(),rows:[],frames:0,started:performance.now(),marks:[],clears:0,deaths:0,firstDeathTick:null,lastDeathTick:null,driverErr:null,pollErr:null};\nconst L=document.querySelector('#dmg-num-layer');C.numLayer=!!L;\nconst RS=document.querySelector('#run-screen');\nconst P=window.__arenaProbe;const V=P&&P.root&&P.root.position&&P.root.position.constructor;\nconst proj=(x,y,z)=>{try{const v=new V(x,y,z);v.project(P.stage.camera);return [Math.round((v.x*0.5+0.5)*innerWidth),Math.round((-v.y*0.5+0.5)*innerHeight)];}catch(e){return null;}};\nC.proj=proj;\nconst numOf=()=>{try{const v=E.state().vfx||{};return v.numerals??(v.arena&&v.arena.numerals)??null;}catch(e){return 'err';}};\nC.numOf=numOf;\nconst kids=()=>{if(!L)return null;const out=[];for(const c of L.children){const cs=getComputedStyle(c);const r=c.getBoundingClientRect();out.push([(c.textContent||'').trim(),cs.display==='none'?-1:+(+cs.opacity).toFixed(2),Math.round(r.x),Math.round(r.y)]);}return out;};\nC.kids=kids;\nconst drain=()=>{let evs=null;try{evs=E.events;}catch(e){C.pollErr=String(e);return;}if(!evs)return;for(const e of evs){if(!e)continue;const k=e.tick+'|'+e.type+'|'+(e.target??e.id??'')+'|'+(e.amount??'')+'|'+(e.slot??e.cause??e.source??'');if(C.seen.has(k))continue;C.seen.add(k);const o=Object.assign({fr:C.frames,ms:Math.round(performance.now()-C.started)},e);\n  if(e.type==='death'){const lp=C.lastPos&&C.lastPos[e.id];const x=e.x??(lp&&lp.x),z=e.z??(lp&&lp.z);if(x!=null)o.scr=proj(x,1.1,z);}\n  C.ev.push(o);if(e.type==='room_cleared')C.clears++;if(e.type==='death'){C.deaths++;C.lastDeathTick=e.tick;if(C.firstDeathTick==null)C.firstDeathTick=e.tick;}}\n  if(C.seen.size>30000){C.seen=new Set([...C.seen].slice(-8000));}};\nC.drain=drain;C.lastPos={};\nlet last=-1;const f=()=>{C.frames++;const t=E.tick;drain();let ui='?';try{ui=E.runUi().screen;}catch(e){}const rcs=RS?getComputedStyle(RS):null;let s=null;try{s=E.state();}catch(e){}\n  if(s)for(const en of s.enemies)C.lastPos[en.id]={x:en.x,z:en.z};\n  C.rows.push({t,fr:C.frames,nt:t!==last,ms:Math.round(performance.now()-C.started),num:s?((s.vfx||{}).numerals??((s.vfx||{}).arena&&(s.vfx||{}).arena.numerals)??null):'err',ui,ph:s?s.run.phase:null,en:s?s.enemies.length:null,rs:rcs?(rcs.display+'/'+(+rcs.opacity).toFixed(2)):null,kids:kids()});\n  last=t;if(C.rows.length>40000)C.rows.splice(0,10000);requestAnimationFrame(f);};requestAnimationFrame(f);\nreturn {armed:E.tick,numLayer:C.numLayer,runScreen:!!RS,version:E.version,seed:E.seed,bootSeed:E.bootSeed,evRingLen:(()=>{try{return E.events.length}catch(e){return String(e)}})(),inner:[innerWidth,innerHeight],layerCs:L?[getComputedStyle(L).display,getComputedStyle(L).opacity,getComputedStyle(L).zIndex,getComputedStyle(L).visibility]:null,rsCs:RS?[getComputedStyle(RS).display,getComputedStyle(RS).opacity,getComputedStyle(RS).zIndex]:null,probe:!!P}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<40000){const s=E.state();if(s.enemies.length>0)return {ok:true,tag:'waitArena',tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:s.enemies.length,phase:s.run.phase,scene:s.scene,room:s.room};await new Promise(r=>setTimeout(r,8));}return {ok:false,tag:'waitArena',tick:E.tick,phase:E.state().run.phase,scene:E.state().scene,room:E.state().room}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('iframe',0,9000);return 'iframe '+E.tick})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "loop",
+  "cond": "window.__r2.deaths>=1",
+  "maxMs": 60000,
+  "label": "death1",
+  "body": [
+   {
+    "type": "wait",
+    "ms": 5
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const C=window.__r2;const m={tag:\"kill1-shot\",tick:E.tick,ms:Math.round(performance.now()-C.started),ui:E.runUi().screen,num:C.numOf(),vis:(C.kids()||[]).filter(k=>k[1]>0)};C.marks.push(m);return m})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-ref0-r2-arena-kill1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const C=window.__r2;const m={tag:\"kill1-shot-done\",tick:E.tick,ms:Math.round(performance.now()-C.started),ui:E.runUi().screen,num:C.numOf(),vis:(C.kids()||[]).filter(k=>k[1]>0)};C.marks.push(m);return m})()"
+ },
+ {
+  "type": "loop",
+  "cond": "(()=>{const C=window.__r2;if(C.clears>=1)return true;const s=__echoes.state();return !!(s.room&&s.room.cleared)})()",
+  "maxMs": 150000,
+  "label": "arena-clear",
+  "body": [
+   {
+    "type": "wait",
+    "ms": 5
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const C=window.__r2;const m={tag:\"clear-shot\",tick:E.tick,ms:Math.round(performance.now()-C.started),ui:E.runUi().screen,num:C.numOf(),vis:(C.kids()||[]).filter(k=>k[1]>0)};C.marks.push(m);return m})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-ref0-r2-arena-clear"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const C=window.__r2;const m={tag:\"clear-shot-done\",tick:E.tick,ms:Math.round(performance.now()-C.started),ui:E.runUi().screen,num:C.numOf(),vis:(C.kids()||[]).filter(k=>k[1]>0)};C.marks.push(m);return m})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const C=window.__r2;const ev=C.ev,rows=C.rows;\nconst rc=0>0?ev.filter(e=>e.type==='room_cleared')[0-1]:null;\nconst deaths=ev.filter(e=>e.type==='death'&&(!rc||e.tick<=rc.tick));const d=deaths[deaths.length-1];\nif(!d)return {tag:'clear0',missing:true,rc:rc&&rc.tick,ev:ev.length};\nconst T=rc?rc.tick:d.tick;const h=ev.find(e=>e.type==='hit'&&e.target===d.id&&e.tick===d.tick)||null;const amt=h?String(h.amount):null;\nconst visCount=(r,txt)=>(r.kids||[]).filter(x=>x[0]===txt&&x[1]>0).length;\nconst before=Math.max(0,...rows.filter(r=>r.t>=d.tick-3&&r.t<d.tick).map(r=>visCount(r,amt)));\nconst afterRows=rows.filter(r=>r.t>=d.tick&&r.t<=d.tick+8);\nconst firstNew=afterRows.find(r=>visCount(r,amt)>before)||null;\nconst near=(r)=>(r.kids||[]).filter(x=>x[0]===amt&&x[1]>0&&d.scr&&Math.hypot(x[2]-d.scr[0],x[3]-d.scr[1])<160);\nconst nearAny=afterRows.some(r=>near(r).length>0);\nconst seg=rows.filter(r=>r.t>=T-4&&r.t<=T+30).map(r=>[r.t,r.ms,r.num,r.ui,r.ph,r.en,r.rs,JSON.stringify((r.kids||[]).filter(x=>x[1]>=0))]);\nlet gaps=[];const seg2=rows.filter(r=>r.t>=T-10&&r.t<=T+40);for(let i=1;i<seg2.length;i++){const g=seg2[i].ms-seg2[i-1].ms;if(g>40)gaps.push([seg2[i].t,g]);}\nconst evs=ev.filter(e=>e.tick>=T-3&&e.tick<=T+30&&!/^(sound|ally_basic|ally_cast|basic_fire|skill_cast)$/.test(e.type)).map(e=>{const o=Object.assign({},e);return JSON.stringify(o).slice(0,220);});\nconst ring=(()=>{try{return E.events.filter(e=>e.tick===d.tick).map(e=>e.type+(e.amount!=null?'('+e.amount+')':'')+(e.target!=null?'#'+e.target:'')+(e.id!=null&&e.type==='death'?'#'+e.id:''));}catch(e){return String(e)}})();\nreturn {tag:'clear0',clearTick:rc?rc.tick:null,clearFr:rc?rc.fr:null,deathTick:d.tick,deathFr:d.fr,sameTick:!!(rc&&rc.tick===d.tick),death:{id:d.id,kind:d.kind,scr:d.scr,x:d.x,z:d.z},hit:h?{amt:h.amount,src:h.source??h.src??h.skill??null,attacker:h.attacker}:null,visBefore:before,numeral:!!firstNew,numeralAt:firstNew?firstNew.t-d.tick:null,numeralNearDeath:nearAny,hitstop:ev.filter(e=>e.type==='hitstop'&&e.tick>=d.tick&&e.tick<=d.tick+2).map(e=>e.ticks+':'+e.cause),sound:ev.filter(e=>e.type==='sound'&&e.tick>=d.tick&&e.tick<=d.tick+2).map(e=>e.slot),ringAtDeathTick:ring,events:evs,gaps,rows:seg,marks:C.marks.slice(-8)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const C=window.__r2;const ev=C.ev,rows=C.rows;const out=[];\nconst visCount=(r,txt)=>(r.kids||[]).filter(x=>x[0]===txt&&x[1]>0).length;\nfor(const d of ev.filter(e=>e.type==='death')){const h=ev.find(e=>e.type==='hit'&&e.target===d.id&&e.tick===d.tick);const amt=h?String(h.amount):null;\n  const before=Math.max(0,...rows.filter(r=>r.t>=d.tick-3&&r.t<d.tick).map(r=>visCount(r,amt)));const after=rows.filter(r=>r.t>=d.tick&&r.t<=d.tick+8);const first=after.find(r=>visCount(r,amt)>before)||null;\n  const rc=ev.find(e=>e.type==='room_cleared'&&e.tick===d.tick);const framesAt=rows.filter(r=>r.t===d.tick).length;\n  out.push({t:d.tick,id:d.id,amt,clearing:!!rc,num:!!first,at:first?first.t-d.tick:null,framesRenderedOnTick:framesAt,visBefore:before});}\nconst hits=ev.filter(e=>e.type==='hit'&&e.target>=4);let hitsNum=0;for(const h of hits){const amt=String(h.amount);const before=Math.max(0,...rows.filter(r=>r.t>=h.tick-3&&r.t<h.tick).map(r=>visCount(r,amt)));if(rows.some(r=>r.t>=h.tick&&r.t<=h.tick+8&&visCount(r,amt)>before))hitsNum++;}\nlet big=[];for(let i=1;i<rows.length;i++){const g=rows[i].ms-rows[i-1].ms;if(g>100)big.push([rows[i].t,g]);}\nconst m={};for(const e of ev)m[e.type]=(m[e.type]||0)+1;\nreturn {tag:\"arena-kills\",kills:out.length,killsWithNumeral:out.filter(k=>k.num).length,missing:out.filter(k=>!k.num),clearingKills:out.filter(k=>k.clearing),hits:hits.length,hitsWithNumeral:hitsNum,frameGapsOver100:big,frames:C.frames,rowsN:rows.length,fps:E.fps,version:E.version,seed:E.seed,driverErr:C.driverErr,pollErr:C.pollErr,counts:m,rows:out}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;return {tag:\"arena-end\",tick:E.tick,fps:E.fps,version:E.version,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,ui:E.runUi().screen,roomState:s.room,enemies:s.enemies.length}})()"
+ }
+]

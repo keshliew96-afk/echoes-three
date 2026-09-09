@@ -1,0 +1,18 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {version:E.version,scene:s.scene,phase:s.run&&s.run.phase,party:s.party.map(p=>[p.id,p.classId||'healer',+p.x.toFixed(2),+p.z.toFixed(2),p.hp,p.maxHp]),toggles:s.toggles,entities:E.entityCount,fps:E.fps,tick:E.tick,seed:E.seed,bootSeed:E.bootSeed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return JSON.stringify({tag:\"boot\",tick:E.tick,version:E.version,keys:Object.keys(c),c}).slice(0,12000)})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const rv=c.roadViolations;return {tag:\"boot\",tick:E.tick,colliders:c.colliders,roadViolations:rv,rvType:Array.isArray(rv)?'array':typeof rv,rvLen:Array.isArray(rv)?rv.length:null,scene:E.state().scene,player:c.player}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const n=[...document.querySelectorAll('body *')].filter(x=>x.children.length===0&&/v?0\\.4\\.\\d+/.test(x.textContent||''));return {version:E.version,labels:n.map(x=>{const r=x.getBoundingClientRect();return [x.tagName,x.id,x.className,(x.textContent||'').trim(),Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height),getComputedStyle(x).opacity,getComputedStyle(x).visibility,getComputedStyle(x).color,getComputedStyle(x).fontSize]})}})()"
+ }
+]

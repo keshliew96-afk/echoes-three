@@ -1,0 +1,338 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"roadsE-start\",tick:E.tick,colliders:c.colliders,roadViolations:c.roadViolations,roadViolationsType:Array.isArray(c.roadViolations)?'array':typeof c.roadViolations,scene:E.state().scene}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',2.6,0.3);return 'tp E1_hearthEnd_from(2.6,0.3)_D'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;if(window.__pi)clearInterval(window.__pi);const p=E.cmd('campState').player;window.__s=[[E.tick,p.x,p.z]];window.__w={name:\"E1_hearthEnd_from(2.6,0.3)_D\",t0:E.tick,p0:{x:p.x,z:p.z},tUp:null};window.__pi=setInterval(()=>{const q=E.cmd('campState').player;window.__s.push([E.tick,q.x,q.z]);},33);return {leg:__w.name,t0:__w.t0,p0:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__w.tUp=E.tick;const p=E.cmd('campState').player;window.__w.pUp={x:p.x,z:p.z};return {leg:__w.name,tUp:__w.tUp,pUp:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__pi);window.__pi=null;const dp=(x,z,pts)=>{let best=1e9;for(let i=0;i+1<pts.length;i++){const [ax,az]=pts[i],[bx,bz]=pts[i+1];const vx=bx-ax,vz=bz-az;const L=vx*vx+vz*vz;let t=((x-ax)*vx+(z-az)*vz)/L;t=Math.max(0,Math.min(1,t));const d=Math.hypot(x-(ax+vx*t),z-(az+vz*t));if(d<best)best=d;}return best;};const S=window.__s;const w=window.__w;const p1=E.cmd('campState').player;const pts=[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]];\n      let firstMove=null,lastMove=null,maxStall=0,stallStart=null,stallEnd=null;let prev=S[0];\n      for(let i=1;i<S.length;i++){const s=S[i];const d=Math.hypot(s[1]-prev[1],s[2]-prev[2]);if(d>0.004){if(firstMove===null)firstMove=s[0];lastMove=s[0];}prev=s;}\n      let runStart=null;for(let i=1;i<S.length;i++){const s=S[i],q=S[i-1];if(s[0]>w.tUp)break;if(firstMove===null||s[0]<firstMove)continue;const d=Math.hypot(s[1]-q[1],s[2]-q[2]);if(d<=0.004){if(runStart===null)runStart=q[0];const len=s[0]-runStart;if(len>maxStall){maxStall=len;stallStart=runStart;stallEnd=s[0];}}else runStart=null;}\n      const held=w.tUp-w.t0;const moved=Math.hypot(w.pUp.x-w.p0.x,w.pUp.z-w.p0.z);const movedFinal=Math.hypot(p1.x-w.p0.x,p1.z-w.p0.z);\n      const uPerSecHeld=moved/(held/60);const uPerSecMoving=(firstMove!==null&&lastMove>firstMove)?moved/((Math.min(lastMove,w.tUp)-firstMove)/60):0;\n      const stillMovingAtKeyup=lastMove!==null&&(w.tUp-lastMove)<=4;\n      let maxOff=0,inBand=0;const offAtEnd=dp(p1.x,p1.z,pts);for(const s of S){const d=dp(s[1],s[2],pts);if(d>maxOff)maxOff=d;if(d<=0.8)inBand++;}\n      const hx=0,hz=-0.2;const dh=Math.hypot(w.pUp.x-hx,w.pUp.z-hz);\n      let stopReason='none';if(!stillMovingAtKeyup){if(Math.abs(w.pUp.x)>=11.649999999999999||Math.abs(w.pUp.z)>=7.65)stopReason='arenaWall';else if(dh<=1.25)stopReason='hearthRing';else stopReason='COLLIDER';}\n      const lateral=(w.pUp.z-w.p0.z);\n      return {leg:w.name,note:\"template: hearth side -> east\",key:\"KeyD\",holdMs:2200,p0:[+w.p0.x.toFixed(2),+w.p0.z.toFixed(2)],pUp:[+w.pUp.x.toFixed(2),+w.pUp.z.toFixed(2)],p1:[+p1.x.toFixed(2),+p1.z.toFixed(2)],heldTicks:held,firstMoveTick:firstMove,lastMoveTick:lastMove,moved:+moved.toFixed(2),movedFinal:+movedFinal.toFixed(2),uPerSecHeld:+uPerSecHeld.toFixed(2),uPerSecMoving:+uPerSecMoving.toFixed(2),stillMovingAtKeyup,stopReason,distHearthAtKeyup:+dh.toFixed(2),lateralSlide:+lateral.toFixed(2),maxStallTicks:maxStall,stall:[stallStart,stallEnd],samples:S.length,inBandPct:+(100*inBand/S.length).toFixed(0),maxOffCentre:+maxOff.toFixed(2),offCentreAtEnd:+offAtEnd.toFixed(2),halfW:0.8}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',6,-0.4);return 'tp E2_far_from(6.0,-0.4)_D'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;if(window.__pi)clearInterval(window.__pi);const p=E.cmd('campState').player;window.__s=[[E.tick,p.x,p.z]];window.__w={name:\"E2_far_from(6.0,-0.4)_D\",t0:E.tick,p0:{x:p.x,z:p.z},tUp:null};window.__pi=setInterval(()=>{const q=E.cmd('campState').player;window.__s.push([E.tick,q.x,q.z]);},33);return {leg:__w.name,t0:__w.t0,p0:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__w.tUp=E.tick;const p=E.cmd('campState').player;window.__w.pUp={x:p.x,z:p.z};return {leg:__w.name,tUp:__w.tUp,pUp:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__pi);window.__pi=null;const dp=(x,z,pts)=>{let best=1e9;for(let i=0;i+1<pts.length;i++){const [ax,az]=pts[i],[bx,bz]=pts[i+1];const vx=bx-ax,vz=bz-az;const L=vx*vx+vz*vz;let t=((x-ax)*vx+(z-az)*vz)/L;t=Math.max(0,Math.min(1,t));const d=Math.hypot(x-(ax+vx*t),z-(az+vz*t));if(d<best)best=d;}return best;};const S=window.__s;const w=window.__w;const p1=E.cmd('campState').player;const pts=[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]];\n      let firstMove=null,lastMove=null,maxStall=0,stallStart=null,stallEnd=null;let prev=S[0];\n      for(let i=1;i<S.length;i++){const s=S[i];const d=Math.hypot(s[1]-prev[1],s[2]-prev[2]);if(d>0.004){if(firstMove===null)firstMove=s[0];lastMove=s[0];}prev=s;}\n      let runStart=null;for(let i=1;i<S.length;i++){const s=S[i],q=S[i-1];if(s[0]>w.tUp)break;if(firstMove===null||s[0]<firstMove)continue;const d=Math.hypot(s[1]-q[1],s[2]-q[2]);if(d<=0.004){if(runStart===null)runStart=q[0];const len=s[0]-runStart;if(len>maxStall){maxStall=len;stallStart=runStart;stallEnd=s[0];}}else runStart=null;}\n      const held=w.tUp-w.t0;const moved=Math.hypot(w.pUp.x-w.p0.x,w.pUp.z-w.p0.z);const movedFinal=Math.hypot(p1.x-w.p0.x,p1.z-w.p0.z);\n      const uPerSecHeld=moved/(held/60);const uPerSecMoving=(firstMove!==null&&lastMove>firstMove)?moved/((Math.min(lastMove,w.tUp)-firstMove)/60):0;\n      const stillMovingAtKeyup=lastMove!==null&&(w.tUp-lastMove)<=4;\n      let maxOff=0,inBand=0;const offAtEnd=dp(p1.x,p1.z,pts);for(const s of S){const d=dp(s[1],s[2],pts);if(d>maxOff)maxOff=d;if(d<=0.8)inBand++;}\n      const hx=0,hz=-0.2;const dh=Math.hypot(w.pUp.x-hx,w.pUp.z-hz);\n      let stopReason='none';if(!stillMovingAtKeyup){if(Math.abs(w.pUp.x)>=11.649999999999999||Math.abs(w.pUp.z)>=7.65)stopReason='arenaWall';else if(dh<=1.25)stopReason='hearthRing';else stopReason='COLLIDER';}\n      const lateral=(w.pUp.z-w.p0.z);\n      return {leg:w.name,note:\"template far leg, passes the cart at z -0.4\",key:\"KeyD\",holdMs:2200,p0:[+w.p0.x.toFixed(2),+w.p0.z.toFixed(2)],pUp:[+w.pUp.x.toFixed(2),+w.pUp.z.toFixed(2)],p1:[+p1.x.toFixed(2),+p1.z.toFixed(2)],heldTicks:held,firstMoveTick:firstMove,lastMoveTick:lastMove,moved:+moved.toFixed(2),movedFinal:+movedFinal.toFixed(2),uPerSecHeld:+uPerSecHeld.toFixed(2),uPerSecMoving:+uPerSecMoving.toFixed(2),stillMovingAtKeyup,stopReason,distHearthAtKeyup:+dh.toFixed(2),lateralSlide:+lateral.toFixed(2),maxStallTicks:maxStall,stall:[stallStart,stallEnd],samples:S.length,inBandPct:+(100*inBand/S.length).toFixed(0),maxOffCentre:+maxOff.toFixed(2),offCentreAtEnd:+offAtEnd.toFixed(2),halfW:0.8}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',6.6,-0.7);return 'tp E3_centre_from(6.6,-0.7)_D'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;if(window.__pi)clearInterval(window.__pi);const p=E.cmd('campState').player;window.__s=[[E.tick,p.x,p.z]];window.__w={name:\"E3_centre_from(6.6,-0.7)_D\",t0:E.tick,p0:{x:p.x,z:p.z},tUp:null};window.__pi=setInterval(()=>{const q=E.cmd('campState').player;window.__s.push([E.tick,q.x,q.z]);},33);return {leg:__w.name,t0:__w.t0,p0:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__w.tUp=E.tick;const p=E.cmd('campState').player;window.__w.pUp={x:p.x,z:p.z};return {leg:__w.name,tUp:__w.tUp,pUp:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__pi);window.__pi=null;const dp=(x,z,pts)=>{let best=1e9;for(let i=0;i+1<pts.length;i++){const [ax,az]=pts[i],[bx,bz]=pts[i+1];const vx=bx-ax,vz=bz-az;const L=vx*vx+vz*vz;let t=((x-ax)*vx+(z-az)*vz)/L;t=Math.max(0,Math.min(1,t));const d=Math.hypot(x-(ax+vx*t),z-(az+vz*t));if(d<best)best=d;}return best;};const S=window.__s;const w=window.__w;const p1=E.cmd('campState').player;const pts=[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]];\n      let firstMove=null,lastMove=null,maxStall=0,stallStart=null,stallEnd=null;let prev=S[0];\n      for(let i=1;i<S.length;i++){const s=S[i];const d=Math.hypot(s[1]-prev[1],s[2]-prev[2]);if(d>0.004){if(firstMove===null)firstMove=s[0];lastMove=s[0];}prev=s;}\n      let runStart=null;for(let i=1;i<S.length;i++){const s=S[i],q=S[i-1];if(s[0]>w.tUp)break;if(firstMove===null||s[0]<firstMove)continue;const d=Math.hypot(s[1]-q[1],s[2]-q[2]);if(d<=0.004){if(runStart===null)runStart=q[0];const len=s[0]-runStart;if(len>maxStall){maxStall=len;stallStart=runStart;stallEnd=s[0];}}else runStart=null;}\n      const held=w.tUp-w.t0;const moved=Math.hypot(w.pUp.x-w.p0.x,w.pUp.z-w.p0.z);const movedFinal=Math.hypot(p1.x-w.p0.x,p1.z-w.p0.z);\n      const uPerSecHeld=moved/(held/60);const uPerSecMoving=(firstMove!==null&&lastMove>firstMove)?moved/((Math.min(lastMove,w.tUp)-firstMove)/60):0;\n      const stillMovingAtKeyup=lastMove!==null&&(w.tUp-lastMove)<=4;\n      let maxOff=0,inBand=0;const offAtEnd=dp(p1.x,p1.z,pts);for(const s of S){const d=dp(s[1],s[2],pts);if(d>maxOff)maxOff=d;if(d<=0.8)inBand++;}\n      const hx=0,hz=-0.2;const dh=Math.hypot(w.pUp.x-hx,w.pUp.z-hz);\n      let stopReason='none';if(!stillMovingAtKeyup){if(Math.abs(w.pUp.x)>=11.649999999999999||Math.abs(w.pUp.z)>=7.65)stopReason='arenaWall';else if(dh<=1.25)stopReason='hearthRing';else stopReason='COLLIDER';}\n      const lateral=(w.pUp.z-w.p0.z);\n      return {leg:w.name,note:\"ON the centreline at the cart (z_c(8.35) = -0.72); wall x=11.7 at 5.1u\",key:\"KeyD\",holdMs:2200,p0:[+w.p0.x.toFixed(2),+w.p0.z.toFixed(2)],pUp:[+w.pUp.x.toFixed(2),+w.pUp.z.toFixed(2)],p1:[+p1.x.toFixed(2),+p1.z.toFixed(2)],heldTicks:held,firstMoveTick:firstMove,lastMoveTick:lastMove,moved:+moved.toFixed(2),movedFinal:+movedFinal.toFixed(2),uPerSecHeld:+uPerSecHeld.toFixed(2),uPerSecMoving:+uPerSecMoving.toFixed(2),stillMovingAtKeyup,stopReason,distHearthAtKeyup:+dh.toFixed(2),lateralSlide:+lateral.toFixed(2),maxStallTicks:maxStall,stall:[stallStart,stallEnd],samples:S.length,inBandPct:+(100*inBand/S.length).toFixed(0),maxOffCentre:+maxOff.toFixed(2),offCentreAtEnd:+offAtEnd.toFixed(2),halfW:0.8}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',11.5,-1.2);return 'tp E4_wallEnd_north_from(11.5,-1.2)_A'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;if(window.__pi)clearInterval(window.__pi);const p=E.cmd('campState').player;window.__s=[[E.tick,p.x,p.z]];window.__w={name:\"E4_wallEnd_north_from(11.5,-1.2)_A\",t0:E.tick,p0:{x:p.x,z:p.z},tUp:null};window.__pi=setInterval(()=>{const q=E.cmd('campState').player;window.__s.push([E.tick,q.x,q.z]);},33);return {leg:__w.name,t0:__w.t0,p0:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__w.tUp=E.tick;const p=E.cmd('campState').player;window.__w.pUp={x:p.x,z:p.z};return {leg:__w.name,tUp:__w.tUp,pUp:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__pi);window.__pi=null;const dp=(x,z,pts)=>{let best=1e9;for(let i=0;i+1<pts.length;i++){const [ax,az]=pts[i],[bx,bz]=pts[i+1];const vx=bx-ax,vz=bz-az;const L=vx*vx+vz*vz;let t=((x-ax)*vx+(z-az)*vz)/L;t=Math.max(0,Math.min(1,t));const d=Math.hypot(x-(ax+vx*t),z-(az+vz*t));if(d<best)best=d;}return best;};const S=window.__s;const w=window.__w;const p1=E.cmd('campState').player;const pts=[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]];\n      let firstMove=null,lastMove=null,maxStall=0,stallStart=null,stallEnd=null;let prev=S[0];\n      for(let i=1;i<S.length;i++){const s=S[i];const d=Math.hypot(s[1]-prev[1],s[2]-prev[2]);if(d>0.004){if(firstMove===null)firstMove=s[0];lastMove=s[0];}prev=s;}\n      let runStart=null;for(let i=1;i<S.length;i++){const s=S[i],q=S[i-1];if(s[0]>w.tUp)break;if(firstMove===null||s[0]<firstMove)continue;const d=Math.hypot(s[1]-q[1],s[2]-q[2]);if(d<=0.004){if(runStart===null)runStart=q[0];const len=s[0]-runStart;if(len>maxStall){maxStall=len;stallStart=runStart;stallEnd=s[0];}}else runStart=null;}\n      const held=w.tUp-w.t0;const moved=Math.hypot(w.pUp.x-w.p0.x,w.pUp.z-w.p0.z);const movedFinal=Math.hypot(p1.x-w.p0.x,p1.z-w.p0.z);\n      const uPerSecHeld=moved/(held/60);const uPerSecMoving=(firstMove!==null&&lastMove>firstMove)?moved/((Math.min(lastMove,w.tUp)-firstMove)/60):0;\n      const stillMovingAtKeyup=lastMove!==null&&(w.tUp-lastMove)<=4;\n      let maxOff=0,inBand=0;const offAtEnd=dp(p1.x,p1.z,pts);for(const s of S){const d=dp(s[1],s[2],pts);if(d>maxOff)maxOff=d;if(d<=0.8)inBand++;}\n      const hx=0,hz=-0.2;const dh=Math.hypot(w.pUp.x-hx,w.pUp.z-hz);\n      let stopReason='none';if(!stillMovingAtKeyup){if(Math.abs(w.pUp.x)>=11.649999999999999||Math.abs(w.pUp.z)>=7.65)stopReason='arenaWall';else if(dh<=1.25)stopReason='hearthRing';else stopReason='COLLIDER';}\n      const lateral=(w.pUp.z-w.p0.z);\n      return {leg:w.name,note:\"east wall end -> west in the north half of the band (cart intrusion check)\",key:\"KeyA\",holdMs:2200,p0:[+w.p0.x.toFixed(2),+w.p0.z.toFixed(2)],pUp:[+w.pUp.x.toFixed(2),+w.pUp.z.toFixed(2)],p1:[+p1.x.toFixed(2),+p1.z.toFixed(2)],heldTicks:held,firstMoveTick:firstMove,lastMoveTick:lastMove,moved:+moved.toFixed(2),movedFinal:+movedFinal.toFixed(2),uPerSecHeld:+uPerSecHeld.toFixed(2),uPerSecMoving:+uPerSecMoving.toFixed(2),stillMovingAtKeyup,stopReason,distHearthAtKeyup:+dh.toFixed(2),lateralSlide:+lateral.toFixed(2),maxStallTicks:maxStall,stall:[stallStart,stallEnd],samples:S.length,inBandPct:+(100*inBand/S.length).toFixed(0),maxOffCentre:+maxOff.toFixed(2),offCentreAtEnd:+offAtEnd.toFixed(2),halfW:0.8}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',10,-1);return 'tp E5_mid_from(10.0,-1.0)_A'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;if(window.__pi)clearInterval(window.__pi);const p=E.cmd('campState').player;window.__s=[[E.tick,p.x,p.z]];window.__w={name:\"E5_mid_from(10.0,-1.0)_A\",t0:E.tick,p0:{x:p.x,z:p.z},tUp:null};window.__pi=setInterval(()=>{const q=E.cmd('campState').player;window.__s.push([E.tick,q.x,q.z]);},33);return {leg:__w.name,t0:__w.t0,p0:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__w.tUp=E.tick;const p=E.cmd('campState').player;window.__w.pUp={x:p.x,z:p.z};return {leg:__w.name,tUp:__w.tUp,pUp:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__pi);window.__pi=null;const dp=(x,z,pts)=>{let best=1e9;for(let i=0;i+1<pts.length;i++){const [ax,az]=pts[i],[bx,bz]=pts[i+1];const vx=bx-ax,vz=bz-az;const L=vx*vx+vz*vz;let t=((x-ax)*vx+(z-az)*vz)/L;t=Math.max(0,Math.min(1,t));const d=Math.hypot(x-(ax+vx*t),z-(az+vz*t));if(d<best)best=d;}return best;};const S=window.__s;const w=window.__w;const p1=E.cmd('campState').player;const pts=[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]];\n      let firstMove=null,lastMove=null,maxStall=0,stallStart=null,stallEnd=null;let prev=S[0];\n      for(let i=1;i<S.length;i++){const s=S[i];const d=Math.hypot(s[1]-prev[1],s[2]-prev[2]);if(d>0.004){if(firstMove===null)firstMove=s[0];lastMove=s[0];}prev=s;}\n      let runStart=null;for(let i=1;i<S.length;i++){const s=S[i],q=S[i-1];if(s[0]>w.tUp)break;if(firstMove===null||s[0]<firstMove)continue;const d=Math.hypot(s[1]-q[1],s[2]-q[2]);if(d<=0.004){if(runStart===null)runStart=q[0];const len=s[0]-runStart;if(len>maxStall){maxStall=len;stallStart=runStart;stallEnd=s[0];}}else runStart=null;}\n      const held=w.tUp-w.t0;const moved=Math.hypot(w.pUp.x-w.p0.x,w.pUp.z-w.p0.z);const movedFinal=Math.hypot(p1.x-w.p0.x,p1.z-w.p0.z);\n      const uPerSecHeld=moved/(held/60);const uPerSecMoving=(firstMove!==null&&lastMove>firstMove)?moved/((Math.min(lastMove,w.tUp)-firstMove)/60):0;\n      const stillMovingAtKeyup=lastMove!==null&&(w.tUp-lastMove)<=4;\n      let maxOff=0,inBand=0;const offAtEnd=dp(p1.x,p1.z,pts);for(const s of S){const d=dp(s[1],s[2],pts);if(d>maxOff)maxOff=d;if(d<=0.8)inBand++;}\n      const hx=0,hz=-0.2;const dh=Math.hypot(w.pUp.x-hx,w.pUp.z-hz);\n      let stopReason='none';if(!stillMovingAtKeyup){if(Math.abs(w.pUp.x)>=11.649999999999999||Math.abs(w.pUp.z)>=7.65)stopReason='arenaWall';else if(dh<=1.25)stopReason='hearthRing';else stopReason='COLLIDER';}\n      const lateral=(w.pUp.z-w.p0.z);\n      return {leg:w.name,note:\"east -> west past the cart at z -1.0\",key:\"KeyA\",holdMs:2200,p0:[+w.p0.x.toFixed(2),+w.p0.z.toFixed(2)],pUp:[+w.pUp.x.toFixed(2),+w.pUp.z.toFixed(2)],p1:[+p1.x.toFixed(2),+p1.z.toFixed(2)],heldTicks:held,firstMoveTick:firstMove,lastMoveTick:lastMove,moved:+moved.toFixed(2),movedFinal:+movedFinal.toFixed(2),uPerSecHeld:+uPerSecHeld.toFixed(2),uPerSecMoving:+uPerSecMoving.toFixed(2),stillMovingAtKeyup,stopReason,distHearthAtKeyup:+dh.toFixed(2),lateralSlide:+lateral.toFixed(2),maxStallTicks:maxStall,stall:[stallStart,stallEnd],samples:S.length,inBandPct:+(100*inBand/S.length).toFixed(0),maxOffCentre:+maxOff.toFixed(2),offCentreAtEnd:+offAtEnd.toFixed(2),halfW:0.8}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',7.4,-0.3);return 'tp E6_toHearth_from(7.4,-0.3)_A'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;if(window.__pi)clearInterval(window.__pi);const p=E.cmd('campState').player;window.__s=[[E.tick,p.x,p.z]];window.__w={name:\"E6_toHearth_from(7.4,-0.3)_A\",t0:E.tick,p0:{x:p.x,z:p.z},tUp:null};window.__pi=setInterval(()=>{const q=E.cmd('campState').player;window.__s.push([E.tick,q.x,q.z]);},33);return {leg:__w.name,t0:__w.t0,p0:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__w.tUp=E.tick;const p=E.cmd('campState').player;window.__w.pUp={x:p.x,z:p.z};return {leg:__w.name,tUp:__w.tUp,pUp:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__pi);window.__pi=null;const dp=(x,z,pts)=>{let best=1e9;for(let i=0;i+1<pts.length;i++){const [ax,az]=pts[i],[bx,bz]=pts[i+1];const vx=bx-ax,vz=bz-az;const L=vx*vx+vz*vz;let t=((x-ax)*vx+(z-az)*vz)/L;t=Math.max(0,Math.min(1,t));const d=Math.hypot(x-(ax+vx*t),z-(az+vz*t));if(d<best)best=d;}return best;};const S=window.__s;const w=window.__w;const p1=E.cmd('campState').player;const pts=[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]];\n      let firstMove=null,lastMove=null,maxStall=0,stallStart=null,stallEnd=null;let prev=S[0];\n      for(let i=1;i<S.length;i++){const s=S[i];const d=Math.hypot(s[1]-prev[1],s[2]-prev[2]);if(d>0.004){if(firstMove===null)firstMove=s[0];lastMove=s[0];}prev=s;}\n      let runStart=null;for(let i=1;i<S.length;i++){const s=S[i],q=S[i-1];if(s[0]>w.tUp)break;if(firstMove===null||s[0]<firstMove)continue;const d=Math.hypot(s[1]-q[1],s[2]-q[2]);if(d<=0.004){if(runStart===null)runStart=q[0];const len=s[0]-runStart;if(len>maxStall){maxStall=len;stallStart=runStart;stallEnd=s[0];}}else runStart=null;}\n      const held=w.tUp-w.t0;const moved=Math.hypot(w.pUp.x-w.p0.x,w.pUp.z-w.p0.z);const movedFinal=Math.hypot(p1.x-w.p0.x,p1.z-w.p0.z);\n      const uPerSecHeld=moved/(held/60);const uPerSecMoving=(firstMove!==null&&lastMove>firstMove)?moved/((Math.min(lastMove,w.tUp)-firstMove)/60):0;\n      const stillMovingAtKeyup=lastMove!==null&&(w.tUp-lastMove)<=4;\n      let maxOff=0,inBand=0;const offAtEnd=dp(p1.x,p1.z,pts);for(const s of S){const d=dp(s[1],s[2],pts);if(d>maxOff)maxOff=d;if(d<=0.8)inBand++;}\n      const hx=0,hz=-0.2;const dh=Math.hypot(w.pUp.x-hx,w.pUp.z-hz);\n      let stopReason='none';if(!stillMovingAtKeyup){if(Math.abs(w.pUp.x)>=11.649999999999999||Math.abs(w.pUp.z)>=7.65)stopReason='arenaWall';else if(dh<=1.25)stopReason='hearthRing';else stopReason='COLLIDER';}\n      const lateral=(w.pUp.z-w.p0.z);\n      return {leg:w.name,note:\"east -> hearth side\",key:\"KeyA\",holdMs:2200,p0:[+w.p0.x.toFixed(2),+w.p0.z.toFixed(2)],pUp:[+w.pUp.x.toFixed(2),+w.pUp.z.toFixed(2)],p1:[+p1.x.toFixed(2),+p1.z.toFixed(2)],heldTicks:held,firstMoveTick:firstMove,lastMoveTick:lastMove,moved:+moved.toFixed(2),movedFinal:+movedFinal.toFixed(2),uPerSecHeld:+uPerSecHeld.toFixed(2),uPerSecMoving:+uPerSecMoving.toFixed(2),stillMovingAtKeyup,stopReason,distHearthAtKeyup:+dh.toFixed(2),lateralSlide:+lateral.toFixed(2),maxStallTicks:maxStall,stall:[stallStart,stallEnd],samples:S.length,inBandPct:+(100*inBand/S.length).toFixed(0),maxOffCentre:+maxOff.toFixed(2),offCentreAtEnd:+offAtEnd.toFixed(2),halfW:0.8}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',1.6,0.4);return 'tp E7_seatSide_from(1.6,0.4)_D'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;if(window.__pi)clearInterval(window.__pi);const p=E.cmd('campState').player;window.__s=[[E.tick,p.x,p.z]];window.__w={name:\"E7_seatSide_from(1.6,0.4)_D\",t0:E.tick,p0:{x:p.x,z:p.z},tUp:null};window.__pi=setInterval(()=>{const q=E.cmd('campState').player;window.__s.push([E.tick,q.x,q.z]);},33);return {leg:__w.name,t0:__w.t0,p0:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__w.tUp=E.tick;const p=E.cmd('campState').player;window.__w.pUp={x:p.x,z:p.z};return {leg:__w.name,tUp:__w.tUp,pUp:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__pi);window.__pi=null;const dp=(x,z,pts)=>{let best=1e9;for(let i=0;i+1<pts.length;i++){const [ax,az]=pts[i],[bx,bz]=pts[i+1];const vx=bx-ax,vz=bz-az;const L=vx*vx+vz*vz;let t=((x-ax)*vx+(z-az)*vz)/L;t=Math.max(0,Math.min(1,t));const d=Math.hypot(x-(ax+vx*t),z-(az+vz*t));if(d<best)best=d;}return best;};const S=window.__s;const w=window.__w;const p1=E.cmd('campState').player;const pts=[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]];\n      let firstMove=null,lastMove=null,maxStall=0,stallStart=null,stallEnd=null;let prev=S[0];\n      for(let i=1;i<S.length;i++){const s=S[i];const d=Math.hypot(s[1]-prev[1],s[2]-prev[2]);if(d>0.004){if(firstMove===null)firstMove=s[0];lastMove=s[0];}prev=s;}\n      let runStart=null;for(let i=1;i<S.length;i++){const s=S[i],q=S[i-1];if(s[0]>w.tUp)break;if(firstMove===null||s[0]<firstMove)continue;const d=Math.hypot(s[1]-q[1],s[2]-q[2]);if(d<=0.004){if(runStart===null)runStart=q[0];const len=s[0]-runStart;if(len>maxStall){maxStall=len;stallStart=runStart;stallEnd=s[0];}}else runStart=null;}\n      const held=w.tUp-w.t0;const moved=Math.hypot(w.pUp.x-w.p0.x,w.pUp.z-w.p0.z);const movedFinal=Math.hypot(p1.x-w.p0.x,p1.z-w.p0.z);\n      const uPerSecHeld=moved/(held/60);const uPerSecMoving=(firstMove!==null&&lastMove>firstMove)?moved/((Math.min(lastMove,w.tUp)-firstMove)/60):0;\n      const stillMovingAtKeyup=lastMove!==null&&(w.tUp-lastMove)<=4;\n      let maxOff=0,inBand=0;const offAtEnd=dp(p1.x,p1.z,pts);for(const s of S){const d=dp(s[1],s[2],pts);if(d>maxOff)maxOff=d;if(d<=0.8)inBand++;}\n      const hx=0,hz=-0.2;const dh=Math.hypot(w.pUp.x-hx,w.pUp.z-hz);\n      let stopReason='none';if(!stillMovingAtKeyup){if(Math.abs(w.pUp.x)>=11.649999999999999||Math.abs(w.pUp.z)>=7.65)stopReason='arenaWall';else if(dh<=1.25)stopReason='hearthRing';else stopReason='COLLIDER';}\n      const lateral=(w.pUp.z-w.p0.z);\n      return {leg:w.name,note:\"hearth end -> east THROUGH the Swordsman seat (2.3,0.2) and past the lanternpole (7.35,1.1)\",key:\"KeyD\",holdMs:2200,p0:[+w.p0.x.toFixed(2),+w.p0.z.toFixed(2)],pUp:[+w.pUp.x.toFixed(2),+w.pUp.z.toFixed(2)],p1:[+p1.x.toFixed(2),+p1.z.toFixed(2)],heldTicks:held,firstMoveTick:firstMove,lastMoveTick:lastMove,moved:+moved.toFixed(2),movedFinal:+movedFinal.toFixed(2),uPerSecHeld:+uPerSecHeld.toFixed(2),uPerSecMoving:+uPerSecMoving.toFixed(2),stillMovingAtKeyup,stopReason,distHearthAtKeyup:+dh.toFixed(2),lateralSlide:+lateral.toFixed(2),maxStallTicks:maxStall,stall:[stallStart,stallEnd],samples:S.length,inBandPct:+(100*inBand/S.length).toFixed(0),maxOffCentre:+maxOff.toFixed(2),offCentreAtEnd:+offAtEnd.toFixed(2),halfW:0.8}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',11.5,-0.6);return 'tp E8_wallEnd_south_from(11.5,-0.6)_A'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;if(window.__pi)clearInterval(window.__pi);const p=E.cmd('campState').player;window.__s=[[E.tick,p.x,p.z]];window.__w={name:\"E8_wallEnd_south_from(11.5,-0.6)_A\",t0:E.tick,p0:{x:p.x,z:p.z},tUp:null};window.__pi=setInterval(()=>{const q=E.cmd('campState').player;window.__s.push([E.tick,q.x,q.z]);},33);return {leg:__w.name,t0:__w.t0,p0:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__w.tUp=E.tick;const p=E.cmd('campState').player;window.__w.pUp={x:p.x,z:p.z};return {leg:__w.name,tUp:__w.tUp,pUp:[+p.x.toFixed(2),+p.z.toFixed(2)]}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__pi);window.__pi=null;const dp=(x,z,pts)=>{let best=1e9;for(let i=0;i+1<pts.length;i++){const [ax,az]=pts[i],[bx,bz]=pts[i+1];const vx=bx-ax,vz=bz-az;const L=vx*vx+vz*vz;let t=((x-ax)*vx+(z-az)*vz)/L;t=Math.max(0,Math.min(1,t));const d=Math.hypot(x-(ax+vx*t),z-(az+vz*t));if(d<best)best=d;}return best;};const S=window.__s;const w=window.__w;const p1=E.cmd('campState').player;const pts=[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]];\n      let firstMove=null,lastMove=null,maxStall=0,stallStart=null,stallEnd=null;let prev=S[0];\n      for(let i=1;i<S.length;i++){const s=S[i];const d=Math.hypot(s[1]-prev[1],s[2]-prev[2]);if(d>0.004){if(firstMove===null)firstMove=s[0];lastMove=s[0];}prev=s;}\n      let runStart=null;for(let i=1;i<S.length;i++){const s=S[i],q=S[i-1];if(s[0]>w.tUp)break;if(firstMove===null||s[0]<firstMove)continue;const d=Math.hypot(s[1]-q[1],s[2]-q[2]);if(d<=0.004){if(runStart===null)runStart=q[0];const len=s[0]-runStart;if(len>maxStall){maxStall=len;stallStart=runStart;stallEnd=s[0];}}else runStart=null;}\n      const held=w.tUp-w.t0;const moved=Math.hypot(w.pUp.x-w.p0.x,w.pUp.z-w.p0.z);const movedFinal=Math.hypot(p1.x-w.p0.x,p1.z-w.p0.z);\n      const uPerSecHeld=moved/(held/60);const uPerSecMoving=(firstMove!==null&&lastMove>firstMove)?moved/((Math.min(lastMove,w.tUp)-firstMove)/60):0;\n      const stillMovingAtKeyup=lastMove!==null&&(w.tUp-lastMove)<=4;\n      let maxOff=0,inBand=0;const offAtEnd=dp(p1.x,p1.z,pts);for(const s of S){const d=dp(s[1],s[2],pts);if(d>maxOff)maxOff=d;if(d<=0.8)inBand++;}\n      const hx=0,hz=-0.2;const dh=Math.hypot(w.pUp.x-hx,w.pUp.z-hz);\n      let stopReason='none';if(!stillMovingAtKeyup){if(Math.abs(w.pUp.x)>=11.649999999999999||Math.abs(w.pUp.z)>=7.65)stopReason='arenaWall';else if(dh<=1.25)stopReason='hearthRing';else stopReason='COLLIDER';}\n      const lateral=(w.pUp.z-w.p0.z);\n      return {leg:w.name,note:\"east wall end -> west in the south half of the band\",key:\"KeyA\",holdMs:2200,p0:[+w.p0.x.toFixed(2),+w.p0.z.toFixed(2)],pUp:[+w.pUp.x.toFixed(2),+w.pUp.z.toFixed(2)],p1:[+p1.x.toFixed(2),+p1.z.toFixed(2)],heldTicks:held,firstMoveTick:firstMove,lastMoveTick:lastMove,moved:+moved.toFixed(2),movedFinal:+movedFinal.toFixed(2),uPerSecHeld:+uPerSecHeld.toFixed(2),uPerSecMoving:+uPerSecMoving.toFixed(2),stillMovingAtKeyup,stopReason,distHearthAtKeyup:+dh.toFixed(2),lateralSlide:+lateral.toFixed(2),maxStallTicks:maxStall,stall:[stallStart,stallEnd],samples:S.length,inBandPct:+(100*inBand/S.length).toFixed(0),maxOffCentre:+maxOff.toFixed(2),offCentreAtEnd:+offAtEnd.toFixed(2),halfW:0.8}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"roadsE-end\",tick:E.tick,colliders:c.colliders,roadViolations:c.roadViolations,roadViolationsType:Array.isArray(c.roadViolations)?'array':typeof c.roadViolations,scene:E.state().scene}})()"
+ }
+]

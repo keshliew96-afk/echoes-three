@@ -1,0 +1,55 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tick:E.tick,propTypes:c.propTypes,propShadows:c.propShadows,emitters:c.emitters,colliders:c.colliders,critters:c.prompt.critters,player:c.player}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE1-portal-pre"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 2700
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "shot",
+  "name": "certE1-portalA"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "shot",
+  "name": "certE1-portalB"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tick:E.tick,inPortal:c.inPortal,promptVisible:c.promptVisible,prompt:c.prompt,player:c.player,propTypes:c.propTypes,propShadows:c.propShadows,emitters:c.emitters,colliders:c.colliders,rigs:c.party.rigs,fps:E.fps}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"portal-frame\",inPortal:c.inPortal,promptVisible:c.promptVisible,prompt:c.prompt,player:c.player,promptDom:[...document.querySelectorAll('body *')].filter(n=>n.children.length===0&&/begin|press|enter|portal|\\bE\\b/i.test(n.textContent||'')).map(n=>{const r=n.getBoundingClientRect();return [n.id,n.className,(n.textContent||'').trim().slice(0,60),Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height),getComputedStyle(n).opacity,getComputedStyle(n).visibility,getComputedStyle(n).display]})}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const n=[...document.querySelectorAll('body *')].filter(x=>x.children.length===0&&/v?0\\.4\\.\\d+/.test(x.textContent||''));return {version:E.version,labels:n.map(x=>{const r=x.getBoundingClientRect();return [x.tagName,x.id,x.className,(x.textContent||'').trim(),Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height),getComputedStyle(x).opacity,getComputedStyle(x).visibility,getComputedStyle(x).color,getComputedStyle(x).fontSize]})}})()"
+ }
+]

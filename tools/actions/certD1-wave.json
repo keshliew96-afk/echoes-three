@@ -1,0 +1,43 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__D=window.__D||{};const D=window.__D;D.ev=D.ev||[];\nD.arm=()=>{if(D.armed)return 'already';D.armed=true;for(const t of ['boss_spawn','boss_adds','boss_quake_start','boss_quake_resolve','boss_death','death','wave_start','enemy_spawn','room_cleared','run_end','run_start','return_to_camp','hitstop','room_enter','downed'])E.on(t,e=>D.ev.push(Object.assign({T:t},e)));return 'armed '+E.tick;};\nD.pct=(arr,p)=>{if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b);return +s[Math.min(s.length-1,Math.floor(p*s.length))].toFixed(2)};\nD.stats=(fr)=>{if(fr.length<2)return null;const dts=fr.map(f=>f[1]);const tot=fr[fr.length-1][0]-fr[0][0];return {frames:fr.length,spanMs:Math.round(tot),meanFps:+(1000*(fr.length-1)/Math.max(1,tot)).toFixed(1),meanMs:+(tot/(fr.length-1)).toFixed(2),p50:D.pct(dts,0.5),p95:D.pct(dts,0.95),p99:D.pct(dts,0.99),max:+Math.max(...dts).toFixed(2),gt50:dts.filter(d=>d>50).length,gt100:dts.filter(d=>d>100).length,gt250:dts.filter(d=>d>250).length}};\nD.sample=async(ms,opts)=>{opts=opts||{};const fr=[];const per=[];const gaps=[];let last=null;const t0=performance.now();let nextSec=t0;const sampleCost=[];const tick0=E.tick;await new Promise(res=>{const f=(now)=>{if(last!==null){const dt=now-last;fr.push([+(now-t0).toFixed(1),+dt.toFixed(2)]);if(dt>100)gaps.push({ms:+(now-t0).toFixed(0),dt:+dt.toFixed(1),tick:E.tick,fps:+E.fps.toFixed(1),ents:E.entityCount});}last=now;if(now>=nextSec){const c0=performance.now();let s=null;try{s=E.state();}catch(e){}const en=s?s.enemies.length:null;const c1=performance.now();per.push({s:per.length,ms:Math.round(now-t0),tick:E.tick,fps:+E.fps.toFixed(1),ents:E.entityCount,enemies:en,eshots:s?s.eshots.length:null,bolts:s?s.skillBolts.length:null,zones:s?s.zones.length:null,azones:s?s.azones.length:null,numerals:s&&s.vfx?s.vfx.numerals:null,particles:s&&s.vfx?s.vfx.particles:null,bossHp:s&&s.run&&s.run.boss?Math.round(s.run.boss.hp):null,phase:s&&s.run?s.run.phase:null});sampleCost.push(+(c1-c0).toFixed(1));nextSec+=1000;}if(now-t0>=ms)res();else requestAnimationFrame(f);};requestAnimationFrame(f);});const warm=fr.filter(f=>f[0]<3000);const steady=fr.filter(f=>f[0]>=3000);const win=[];for(let w=3000;w+15000<=fr[fr.length-1][0]+1;w+=5000){const seg=fr.filter(f=>f[0]>=w&&f[0]<w+15000);if(seg.length>2)win.push({from:w,to:w+15000,gt100:seg.filter(f=>f[1]>100).length,max:+Math.max(...seg.map(f=>f[1])).toFixed(1),meanFps:D.stats(seg).meanFps});}return {tick0,tick1:E.tick,simTicks:E.tick-tick0,all:D.stats(fr),warm:D.stats(warm),steady:D.stats(steady),gaps,windows15s:win,perSec:per,stateCostMs:{max:Math.max(...sampleCost),mean:+(sampleCost.reduce((a,b)=>a+b,0)/sampleCost.length).toFixed(2)},heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};};\nD.verEl=()=>{const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;const hits=[];while(n=w.nextNode()){if(/0\\.4\\.\\d+/.test(n.textContent)){const el=n.parentElement;const r=el.getBoundingClientRect();const cs=getComputedStyle(el);hits.push({tag:el.tagName,id:el.id,text:n.textContent.trim(),x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),fs:cs.fontSize,opacity:cs.opacity});}}return {vw:innerWidth,vh:innerHeight,version:E.version,hits};};\nD.vfx=()=>{const s=E.state();const v=s.vfx||{};return {tick:E.tick,scene:s.scene,phase:s.run&&s.run.phase,ents:E.entityCount,enemies:s.enemies.length,eshots:s.eshots.length,bolts:s.skillBolts.length,zones:s.zones.length,azones:s.azones.length,vfx:v,numeralNodes:document.querySelectorAll('#dmg-num-layer *').length,threatNodes:document.querySelectorAll('#hud-threat .tm').length,domNodes:document.getElementsByTagName('*').length,heap:performance.memory?performance.memory.usedJSHeapSize:null};};\nreturn 'lib '+E.version+' t'+E.tick+' vw'+innerWidth+'x'+innerHeight;})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {tick:E.tick,fps:E.fps,ents:E.entityCount,scene:E.state().scene,hwConcurrency:navigator.hardwareConcurrency,now:new Date().toISOString()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__D.arm();const r=E.cmd('startRun');return {seed:E.seed,modes:r&&r.frame&&r.frame.modes,room:r&&r.room}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd('skipToRoom',4);const s=E.state();return {skip:{room:r&&r.room,phase:r&&r.phase,mode:r&&r.mode},roomState:s.room,tick:E.tick,party:s.party.map(p=>[p.id,+p.x.toFixed(1),+p.z.toFixed(1)])}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 380
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const sl=(ms)=>new Promise(r=>setTimeout(r,ms));const r=await window.__D.sample(47000,{});const ev=window.__D.ev;r.events={waves:ev.filter(e=>e.T==='wave_start').map(e=>[e.tick,e.index,e.size]),spawns:ev.filter(e=>e.T==='enemy_spawn').length,deaths:ev.filter(e=>e.T==='death').length,hitstops:ev.filter(e=>e.T==='hitstop').length,cleared:ev.filter(e=>e.T==='room_cleared').map(e=>e.tick),downed:ev.filter(e=>e.T==='downed').map(e=>[e.tick,e.id])};r.roomState=E.state().room;r.phase=E.cmd('runState').phase;return r})()"
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return window.__D.vfx()})()"
+ }
+]

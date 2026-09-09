@@ -1,0 +1,144 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"hit\",\"hit_immune\",\"death\",\"hitstop\",\"sound\",\"heal\",\"skill_cast\",\"ally_cast\",\"ally_basic\",\"dodge\",\"dash\",\"downed\",\"revive\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"enemy_despawn\",\"shop_buy\",\"currency_denied\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\",\"projectile_spawn\",\"flash\",\"knockback\",\"screenshake\",\"flinch\",\"decal\",\"squash\",\"spawn_pop\",\"death_pop\",\"shake\",\"camera_shake\",\"hurt\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t,at:E.tick},e)));return 'armed '+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {seed:E.seed,room:r&&r.room,phase:r&&r.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const st=getComputedStyle(c);const r=c.getBoundingClientRect();return {cls:c.className,box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],transform:st.transform,shadow:st.boxShadow.slice(0,80),border:st.borderColor,filter:st.filter,opacity:st.opacity}});const u=E.runUi();return {tag:\"rest\",tick:E.tick,wallet:u.wallet,owned:u.owned,plaques:u.plaques,cards:cs}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 528,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "shot",
+  "name": "certA1-player-shop-hover"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const st=getComputedStyle(c);const r=c.getBoundingClientRect();return {cls:c.className,box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],transform:st.transform,shadow:st.boxShadow.slice(0,80),border:st.borderColor,filter:st.filter,opacity:st.opacity}});const u=E.runUi();return {tag:\"hover-bounce\",tick:E.tick,wallet:u.wallet,owned:u.owned,plaques:u.plaques,cards:cs}})()"
+ },
+ {
+  "type": "click",
+  "x": 528,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "shot",
+  "name": "certA1-player-shop-buy0"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const st=getComputedStyle(c);const r=c.getBoundingClientRect();return {cls:c.className,box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],transform:st.transform,shadow:st.boxShadow.slice(0,80),border:st.borderColor,filter:st.filter,opacity:st.opacity}});const u=E.runUi();return {tag:\"buy0\",tick:E.tick,wallet:u.wallet,owned:u.owned,plaques:u.plaques,cards:cs}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "shot",
+  "name": "certA1-player-shop-buy1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const st=getComputedStyle(c);const r=c.getBoundingClientRect();return {cls:c.className,box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],transform:st.transform,shadow:st.boxShadow.slice(0,80),border:st.borderColor,filter:st.filter,opacity:st.opacity}});const u=E.runUi();return {tag:\"buy1\",tick:E.tick,wallet:u.wallet,owned:u.owned,plaques:u.plaques,cards:cs}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "click",
+  "x": 800,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const st=getComputedStyle(c);const r=c.getBoundingClientRect();return {cls:c.className,box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],transform:st.transform,shadow:st.boxShadow.slice(0,80),border:st.borderColor,filter:st.filter,opacity:st.opacity}});const u=E.runUi();return {tag:\"buy2\",tick:E.tick,wallet:u.wallet,owned:u.owned,plaques:u.plaques,cards:cs}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 1072,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "click",
+  "x": 1072,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 40
+ },
+ {
+  "type": "shot",
+  "name": "certA1-player-shop-deny0"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const st=getComputedStyle(c);const r=c.getBoundingClientRect();return {cls:c.className,box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],transform:st.transform,shadow:st.boxShadow.slice(0,80),border:st.borderColor,filter:st.filter,opacity:st.opacity}});const u=E.runUi();return {tag:\"deny0\",tick:E.tick,wallet:u.wallet,owned:u.owned,plaques:u.plaques,cards:cs}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "shot",
+  "name": "certA1-player-shop-deny1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const st=getComputedStyle(c);const r=c.getBoundingClientRect();return {cls:c.className,box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],transform:st.transform,shadow:st.boxShadow.slice(0,80),border:st.borderColor,filter:st.filter,opacity:st.opacity}});const u=E.runUi();return {tag:\"deny1\",tick:E.tick,wallet:u.wallet,owned:u.owned,plaques:u.plaques,cards:cs}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "shot",
+  "name": "certA1-player-shop-deny2"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const cs=[...document.querySelectorAll('#run-screen .rn-card')].map(c=>{const st=getComputedStyle(c);const r=c.getBoundingClientRect();return {cls:c.className,box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],transform:st.transform,shadow:st.boxShadow.slice(0,80),border:st.borderColor,filter:st.filter,opacity:st.opacity}});const u=E.runUi();return {tag:\"deny2\",tick:E.tick,wallet:u.wallet,owned:u.owned,plaques:u.plaques,cards:cs}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const m={};for(const e of window.__c.ev)m[e.T]=(m[e.T]||0)+1;const s=E.state();return {tag:\"shop-end\",tick:E.tick,fps:E.fps,counts:m,vfx:{numerals:s.vfx.numerals,decals:s.vfx.decals,particles:s.vfx.particles,arena:s.vfx.arena?{numerals:s.vfx.arena.numerals,decals:s.vfx.arena.decals,particles:s.vfx.arena.particles}:null}}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return JSON.stringify(window.__c.ev.filter(e=>['shop_buy','currency_denied','sound'].includes(e.T)).slice(0,20))})()"
+ }
+]

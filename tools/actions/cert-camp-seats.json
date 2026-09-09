@@ -1,0 +1,39 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {t:E.tick,seatDrift:c.seatDrift,rigs:c.party.rigs}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 5000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {t:E.tick,seatDrift:c.seatDrift,rigs:c.party.rigs}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 2700
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {t:E.tick,seatDrift:c.seatDrift,rigs:c.party.rigs,inPortal:c.inPortal,promptVisible:c.promptVisible,player:c.player}})()"
+ }
+]

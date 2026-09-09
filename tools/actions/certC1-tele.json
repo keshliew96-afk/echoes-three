@@ -1,0 +1,67 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  window.__c={ev:[],rows:[],dom:[],keys:[],ticksSeen:0,frames:0,started:performance.now(),flashOn:false,sampleOn:true};\n  for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"spawn_blocked\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"hit\",\"hit_immune\",\"death\",\"hitstop\",\"sound\",\"heal\",\"intent\",\"intent_denied\",\"dash_end\",\"downed\",\"revive\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"run_end\",\"defeat\",\"victory\",\"reward\",\"draft_taken\",\"path_chosen\",\"eshot_despawn\",\"zone_spawn\",\"zone_tick\",\"enemy_despawn\",\"basic_fire\",\"skill_cast\",\"ally_cast\",\"ally_basic\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t,ms:Math.round(performance.now()-window.__c.started)},e)));\n  window.addEventListener('keydown',e=>{if(e.repeat)return;const s=E.state();const p=s.party[0];window.__c.keys.push({key:e.code,t:E.tick,ms:Math.round(performance.now()-window.__c.started),x:p.x,z:p.z,dash:p.dashTicksLeft});},true);\n  window.addEventListener('keyup',e=>{const s=E.state();const p=s.party[0];window.__c.keys.push({key:e.code,upT:E.tick,t:E.tick,up:true,ms:Math.round(performance.now()-window.__c.started),x:p.x,z:p.z});},true);\n  const L=document.querySelector('#dmg-num-layer');window.__c.numLayer=!!L;\n  const lastKey=new WeakMap();\n  if(L){const mo=new MutationObserver(muts=>{const t=E.tick;const seen=new Set();for(const m of muts){const n=m.target.nodeType===3?m.target.parentElement:m.target;const el=n&&n.closest?n.closest('.dmg-num'):null;if(!el||seen.has(el))continue;seen.add(el);const cs=getComputedStyle(el);const vis=!(cs.display==='none'||cs.opacity==='0'||cs.visibility==='hidden'||!el.textContent);const k=el.textContent+'|'+vis;if(lastKey.get(el)===k)continue;lastKey.set(el,k);if(!vis)continue;const r=el.getBoundingClientRect();window.__c.dom.push({t,txt:el.textContent,x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),col:cs.color});}});mo.observe(L,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['style','class']});}\n  let meshes=[];let meshAt=0;const V=window.__arenaProbe&&window.__arenaProbe.root.position.constructor;const tmp=V?new V():null;\n  const refresh=()=>{meshes=[];if(!window.__arenaProbe)return;window.__arenaProbe.root.traverse(o=>{if(o.isMesh&&!o.isInstancedMesh&&o.material&&o.material.emissive&&o.visible)meshes.push(o);});meshAt=performance.now();};\n  const flashOf=(en)=>{const out={};if(!tmp)return out;for(const o of meshes){o.getWorldPosition(tmp);for(const id in en){const e=en[id];const dx=tmp.x-e[0],dz=tmp.z-e[1];if(dx*dx+dz*dz<0.81){const it=o.material.emissiveIntensity??1;const c=o.material.emissive;const l=(0.299*c.r+0.587*c.g+0.114*c.b)*it;if(!(id in out)||it>out[id].i)out[id]={i:+it.toFixed(3),l:+l.toFixed(3)};}}}return out;};\n  window.__c.refreshMeshes=refresh;\n  let last=-1;const f=()=>{window.__c.frames++;if(window.__c.sampleOn){const t=E.tick;if(t!==last){last=t;const s=E.state();const p=s.party[0];const cam=(window.__arenaProbe&&window.__arenaProbe.stage)?window.__arenaProbe.stage.camera.position:null;const en={};for(const e of s.enemies)en[e.id]=[+e.x.toFixed(3),+e.z.toFixed(3),e.hp,e.kbTicks];let fl=null;if(window.__c.flashOn){if(performance.now()-meshAt>1000)refresh();fl=flashOf(en);}const vfx=s.vfx||{};const num=vfx.numerals??(vfx.arena&&vfx.arena.numerals)??null;window.__c.rows.push({t,ms:Math.round(performance.now()-window.__c.started),px:+p.x.toFixed(4),pz:+p.z.toFixed(4),dash:p.dashTicksLeft,hp:p.hp,cam:cam?[+cam.x.toFixed(4),+cam.y.toFixed(4),+cam.z.toFixed(4)]:null,num,en,fl});window.__c.ticksSeen++;if(window.__c.rows.length>16000)window.__c.rows.splice(0,6000);}}requestAnimationFrame(f);};requestAnimationFrame(f);\n  return 'armed '+E.tick+' numLayer '+window.__c.numLayer+' probe '+!!window.__arenaProbe})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('startRun');return {seed:E.seed,modes:r&&r.frame&&r.frame.modes,room:r&&r.room,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const k0=E.tick;while(performance.now()-t0<30000){if((()=>{const s=E.state();return s.run.active&&s.run.combatActive&&s.enemies.length>0})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length,phase:E.state().run.phase};await sleep(4);}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,enemies:E.state().enemies.length,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const mark=E.tick;while(performance.now()-t0<60000){const u=E.runUi();if(u.screen==='draft')E.cmd('draftDecline');else if(u.screen==='path')E.cmd('pathChoose',0);else if(u.screen==='shop')E.cmd('shopAdvance');const p=E.state().party[0];if(p.hp<30)E.cmd('setHp',0,1);const live=window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.tick>mark+-1&&e.resolveTick-E.tick>=30&&e.resolveTick>E.tick);if(live.length){const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=live[live.length-1];return {ok:true,tick:E.tick,tele:{id:s.id,target:s.target,x:s.x,z:s.z,start:s.tick,resolveTick:s.resolveTick,ticksLeft:s.resolveTick-E.tick,screen:proj(s.x,0.02,s.z),box:[proj(s.x-0.6,0.02,s.z-0.6),proj(s.x+0.6,0.02,s.z+0.6),proj(s.x-0.6,0.02,s.z+0.6),proj(s.x+0.6,0.02,s.z-0.6)]},enemies:E.state().enemies.length};}await sleep(4);}return {ok:false,tick:E.tick}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-tele-mid"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=E.state();const live=window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick).map(e=>({id:e.id,x:e.x,z:e.z,start:e.tick,resolveTick:e.resolveTick,left:e.resolveTick-E.tick,screen:proj(e.x,0.02,e.z),box:[proj(e.x-0.6,0.02,e.z-0.6),proj(e.x+0.6,0.02,e.z+0.6),proj(e.x-0.6,0.02,e.z+0.6),proj(e.x+0.6,0.02,e.z-0.6)]}));return {afterShotTick:E.tick,live,enemies:s.enemies.map(e=>[e.id,e.kind,+e.x.toFixed(2),+e.z.toFixed(2),proj(e.x,0.4,e.z)]),player:proj(s.party[0].x,0.4,s.party[0].z),eshots:s.eshots.length,zones:s.zones.length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const mark=E.tick;while(performance.now()-t0<60000){const u=E.runUi();if(u.screen==='draft')E.cmd('draftDecline');else if(u.screen==='path')E.cmd('pathChoose',0);else if(u.screen==='shop')E.cmd('shopAdvance');const p=E.state().party[0];if(p.hp<30)E.cmd('setHp',0,1);const live=window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.tick>mark+120&&e.resolveTick-E.tick>=30&&e.resolveTick>E.tick);if(live.length){const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=live[live.length-1];return {ok:true,tick:E.tick,tele:{id:s.id,target:s.target,x:s.x,z:s.z,start:s.tick,resolveTick:s.resolveTick,ticksLeft:s.resolveTick-E.tick,screen:proj(s.x,0.02,s.z),box:[proj(s.x-0.6,0.02,s.z-0.6),proj(s.x+0.6,0.02,s.z+0.6),proj(s.x-0.6,0.02,s.z+0.6),proj(s.x+0.6,0.02,s.z-0.6)]},enemies:E.state().enemies.length};}await sleep(4);}return {ok:false,tick:E.tick}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-tele-mid2"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=E.state();const live=window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick).map(e=>({id:e.id,x:e.x,z:e.z,start:e.tick,resolveTick:e.resolveTick,left:e.resolveTick-E.tick,screen:proj(e.x,0.02,e.z),box:[proj(e.x-0.6,0.02,e.z-0.6),proj(e.x+0.6,0.02,e.z+0.6),proj(e.x-0.6,0.02,e.z+0.6),proj(e.x+0.6,0.02,e.z-0.6)]}));return {afterShotTick:E.tick,live,enemies:s.enemies.map(e=>[e.id,e.kind,+e.x.toFixed(2),+e.z.toFixed(2),proj(e.x,0.4,e.z)]),player:proj(s.party[0].x,0.4,s.party[0].z),eshots:s.eshots.length,zones:s.zones.length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();let screens=[];let heals=0;while(performance.now()-t0<70000){const u=E.runUi();if(u.screen==='draft'){E.cmd('draftDecline');screens.push('draft@'+E.tick);}else if(u.screen==='path'){E.cmd('pathChoose',0);screens.push('path@'+E.tick);}else if(u.screen==='shop'){E.cmd('shopAdvance');screens.push('shop@'+E.tick);}else if(u.screen==='defeat'||u.screen==='victory'){screens.push(u.screen+'@'+E.tick);break;}const p=E.state().party[0];if(p.hp<30){E.cmd('setHp',0,1);heals++;}await sleep(100);}return {tick:E.tick,fps:E.fps,screens,heals,room:E.state().run.room,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  const ev=window.__c.ev;const starts=ev.filter(e=>e.T==='telegraph_start');const res=ev.filter(e=>e.T==='telegraph_resolve');\n  const used=new Set();const pairs=starts.map(s=>{let ri=-1;for(let i=0;i<res.length;i++){if(!used.has(i)&&res[i].id===s.id&&res[i].tick>=s.tick){ri=i;break;}}const r=ri>=0?res[ri]:null;if(r)used.add(ri);return {id:s.id,tgt:s.target,pt:s.playerTargeted,t:s.tick,rt:s.resolveTick,plan:s.resolveTick-s.tick,obs:r?r.tick:null,gap:r?r.tick-s.tick:null};});\n  const gaps=pairs.filter(p=>p.gap!=null).map(p=>p.gap);const plans=pairs.map(p=>p.plan);\n  const unresolved=pairs.filter(p=>p.gap==null).map(p=>{const d=ev.find(e=>e.T==='death'&&e.id===p.id&&e.tick>=p.t);const dd=ev.find(e=>e.T==='enemy_despawn'&&e.id===p.id&&e.tick>=p.t);return Object.assign({},p,{deathTick:d&&d.tick,despawnTick:dd&&dd.tick});});\n  const fires=ev.filter(e=>e.T==='enemy_fire');const fireAfterResolve=fires.filter(f=>res.some(r=>r.id===f.id&&r.tick===f.tick)).length;\n  const partyHits=ev.filter(e=>e.T==='hit'&&e.target<=3).map(h=>({t:h.tick,tgt:h.target,src:h.source,del:h.delivery,amt:h.amount,att:h.attacker}));\n  const bySrc={};for(const h of partyHits){const s=h.del||h.src;bySrc[s]=(bySrc[s]||0)+1;}\n  const bites=ev.filter(e=>e.T==='enemy_bite').length;\n  const spanTicks=ev.length?E.tick-ev[0].tick:0;\n  return {spanTicks,spanSec:+(spanTicks/60).toFixed(1),telegraphs:pairs.length,resolved:gaps.length,minGap:gaps.length?Math.min(...gaps):null,maxGap:gaps.length?Math.max(...gaps):null,minPlanned:plans.length?Math.min(...plans):null,maxPlanned:plans.length?Math.max(...plans):null,playerTargeted:pairs.filter(p=>p.pt).length,fires:fires.length,fireAtResolveTick:fireAfterResolve,partyHits:partyHits.length,partyHitsByDelivery:bySrc,bites,unresolved,pairs}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return JSON.stringify(window.__c.ev.filter(e=>['telegraph_start','telegraph_resolve','enemy_fire','enemy_bite'].includes(e.T)).slice(0,50).map(e=>{const o=Object.assign({},e);delete o.ms;delete o.type;return o}))})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const m={};for(const e of window.__c.ev)m[e.T]=(m[e.T]||0)+1;return {tick:E.tick,counts:m}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=window.__c.rows;let gaps=0,maxGap=0;for(let i=1;i<r.length;i++){const g=r[i].t-r[i-1].t;if(g>1){gaps+=g-1;maxGap=Math.max(maxGap,g);}}return {ticksSeen:window.__c.ticksSeen,frames:window.__c.frames,fps:E.fps,missedTicks:gaps,maxTickGap:maxGap,span:r.length?r[r.length-1].t-r[0].t:0}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;return {tag:\"tele-end\",tick:E.tick,fps:E.fps,version:E.version,scene:s.scene,vfxMode:s.vfx&&s.vfx.mode,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,roomState:s.room,enemies:s.enemies.map(e=>[e.id,e.kind,+e.x.toFixed(2),+e.z.toFixed(2),e.hp]),party:s.party.map(p=>[p.id,p.classId||'healer',p.hp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),ui:E.runUi().screen,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat())}})()"
+ }
+]

@@ -1,0 +1,714 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[],t0:performance.now()};window.__roomT={};window.__shots={};window.__bossId=null;window.__it=0;window.__dodgeTest={};window.__fpsMin={};\nfor(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"room_soft_fail\",\"reward_offer\",\"reward\",\"draft\",\"draft_taken\",\"draft_declined\",\"path_offer\",\"path_chosen\",\"shop_open\",\"shop_purchase\",\"shop_buy\",\"shop_close\",\"currency_denied\",\"room_transition\",\"boss_spawn\",\"boss_death\",\"boss_adds\",\"boss_despawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"victory\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"waystone_spawn\",\"downed\",\"revive\",\"heal\",\"death\",\"skill_equip\",\"node_granted\",\"dodge\",\"dash\",\"skill_cast\",\"glint_set\",\"glint_gain\",\"ally_rescue\",\"reward_forfeited\",\"director_stop\",\"hit\",\"intent_denied\"])E.on(t,e=>{const w=Math.round(performance.now()-window.__c.t0);const rec=Object.assign({T:t,w,tk:E.tick},e);if(t==='death'){rec.isBoss=(e.id===window.__bossId);}\n if(t==='hit'||t==='heal'||t==='intent_denied'){const m=window.__c.hm=window.__c.hm||{};m[t]=(m[t]||0)+1;return;}\n window.__c.ev.push(rec);\n if(t==='boss_spawn')window.__bossId=e.id;\n if(t==='room_enter')window.__roomT[e.index]={enterW:w,enterTick:E.tick,mode:e.mode,reward:e.reward,wallet:e.wallet};\n if(t==='room_cleared'){const ri=E.state().run.room;if(window.__roomT[ri]){window.__roomT[ri].clearW=w;window.__roomT[ri].clearTick=E.tick;}}\n if(t==='run_start'){window.__runSeed=E.seed;}});\nwindow.__proj=(x,z)=>{try{const c=__arenaProbe.stage.camera;const v=c.position.clone().set(x,0.5,z).project(c);return {x:Math.round((v.x+1)/2*innerWidth),y:Math.round((1-v.y)/2*innerHeight)}}catch(e){return null}};\nwindow.__dumpRun=(label)=>{const ev=window.__c.ev;const list=ev.filter(e=>[\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"room_soft_fail\",\"reward_offer\",\"draft_taken\",\"draft_declined\",\"path_offer\",\"path_chosen\",\"shop_open\",\"shop_purchase\",\"currency_denied\",\"shop_close\",\"room_transition\",\"boss_spawn\",\"boss_adds\",\"boss_despawn\",\"boss_death\",\"victory\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"reward_forfeited\",\"director_stop\"].includes(e.T)||(e.T==='death'&&e.isBoss)).map(e=>(e.T==='death'?'boss_death':e.T)+(e.T==='run_end'?'('+e.result+')':'')+(e.T==='room_enter'?'(r'+e.index+':'+e.mode+')':'')+(e.T==='boss_adds'?'('+e.pct+')':'')+'@'+e.tk);const m={};for(const e of ev)m[e.T]=(m[e.T]||0)+1;return {label,seed:window.__runSeed,order:list,counts:m,hm:window.__c.hm,rooms:window.__roomT,fpsMin:window.__fpsMin};};\nwindow.__resetRun=()=>{window.__c.ev=[];window.__c.hm={};window.__roomT={};window.__bossId=null;window.__fpsMin={};return 'reset '+E.tick};\nreturn 'armed '+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed,room:E.state().run.room}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();let kills=0;while(performance.now()-t0<60000){const u=E.runUi();if(u.screen!=='none')return {ok:true,screen:u.screen,tick:E.tick,kills};if(E.state().enemies.length>0){E.cmd('killAllEnemies');kills++;}await new Promise(r=>setTimeout(r,250));}return {ok:false}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();window.__n=window.__c.ev.length;const r=(()=>{const n=document.querySelector(\"#run-screen .rn-take\");if(!n)return null;const r=n.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),cx:Math.round(r.x+r.width/2),cy:Math.round(r.y+r.height/2),vis:n.offsetParent!==null,txt:(n.textContent||'').trim().slice(0,40)}})();window.__takeRow=-1;if(r&&r.vis&&Math.abs(r.cx-728)<=40){let best=-1,bd=1e9;[496,504,512,520,528,536,544,552,560,568,576,584,592,600,608].forEach((y,k)=>{const dd=Math.abs(y-r.cy);if(dd<bd){bd=dd;best=k;}});if(bd<=6)window.__takeRow=best;}return {screen:u.screen,take:r,takeRow:window.__takeRow,clickY:window.__takeRow>=0?[496,504,512,520,528,536,544,552,560,568,576,584,592,600,608][window.__takeRow]:null,doors:u.doors}})()"
+ },
+ {
+  "type": "eval",
+  "code": "\"probe A: double-click on Take (second click 60 ms later, same point)\""
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===0)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 496
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 496
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===1)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 504
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 504
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===2)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 512
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 512
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===3)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 520
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 520
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===4)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 528
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 528
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===5)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 536
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 536
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===6)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 544
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 544
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===7)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 552
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 552
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===8)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 560
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 560
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===9)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 568
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 568
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===10)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 576
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 576
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===11)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 584
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 584
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===12)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 592
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 592
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===13)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 600
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 600
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===14)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 608
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 608
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {probe:'A-doubleclick',afterScreen:u.screen,phase:E.state().run.phase,room:E.state().run.room,events:window.__c.ev.slice(window.__n).filter(e=>['draft_taken','path_offer','path_chosen','room_transition','room_enter'].includes(e.T)).map(e=>e.T+'@'+e.tk+(e.side!=null?':side'+e.side:'')),doors:u.doors}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-clickthru-A"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('endRun','defeat');return 'endRun'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {scene:E.state().scene,phase:E.state().run.phase,screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed,room:E.state().run.room}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();let kills=0;while(performance.now()-t0<60000){const u=E.runUi();if(u.screen!=='none')return {ok:true,screen:u.screen,tick:E.tick,kills};if(E.state().enemies.length>0){E.cmd('killAllEnemies');kills++;}await new Promise(r=>setTimeout(r,250));}return {ok:false}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();window.__n=window.__c.ev.length;const r=(()=>{const n=document.querySelector(\"#run-screen .rn-take\");if(!n)return null;const r=n.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),cx:Math.round(r.x+r.width/2),cy:Math.round(r.y+r.height/2),vis:n.offsetParent!==null,txt:(n.textContent||'').trim().slice(0,40)}})();window.__takeRow=-1;if(r&&r.vis&&Math.abs(r.cx-728)<=40){let best=-1,bd=1e9;[496,504,512,520,528,536,544,552,560,568,576,584,592,600,608].forEach((y,k)=>{const dd=Math.abs(y-r.cy);if(dd<bd){bd=dd;best=k;}});if(bd<=6)window.__takeRow=best;}return {screen:u.screen,take:r,takeRow:window.__takeRow,clickY:window.__takeRow>=0?[496,504,512,520,528,536,544,552,560,568,576,584,592,600,608][window.__takeRow]:null,doors:u.doors}})()"
+ },
+ {
+  "type": "eval",
+  "code": "\"probe B: Take click, then 1.2 s later a click at the same (non-door) point on the path screen\""
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===0)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 496
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 496
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===1)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 504
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 504
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===2)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 512
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 512
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===3)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 520
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 520
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===4)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 528
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 528
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===5)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 536
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 536
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===6)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 544
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 544
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===7)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 552
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 552
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===8)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 560
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 560
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===9)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 568
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 568
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===10)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 576
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 576
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===11)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 584
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 584
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===12)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 592
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 592
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===13)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 600
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 600
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(window.__takeRow===14)})()",
+  "then": [
+   {
+    "type": "click",
+    "x": 728,
+    "y": 608
+   },
+   {
+    "type": "wait",
+    "ms": 1200
+   },
+   {
+    "type": "click",
+    "x": 728,
+    "y": 608
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {probe:'B-lateclick',afterScreen:u.screen,phase:E.state().run.phase,room:E.state().run.room,events:window.__c.ev.slice(window.__n).filter(e=>['draft_taken','path_offer','path_chosen','room_transition','room_enter'].includes(e.T)).map(e=>e.T+'@'+e.tk+(e.side!=null?':side'+e.side:'')),doors:u.doors,pathHit:(()=>{const els=document.elementsFromPoint(728,window.__takeRow>=0?[496,504,512,520,528,536,544,552,560,568,576,584,592,600,608][window.__takeRow]:533);return els.slice(0,4).map(n=>n.tagName+'.'+n.className)})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-clickthru-B"
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(E.runUi().screen==='path')})()",
+  "then": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;window.__n=window.__c.ev.length;return 'probe C: click at (200,800) on the path screen'})()"
+   },
+   {
+    "type": "click",
+    "x": 200,
+    "y": 800
+   },
+   {
+    "type": "wait",
+    "ms": 700
+   },
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const u=E.runUi();return {probe:'C-farclick',afterScreen:u.screen,events:window.__c.ev.slice(window.__n).filter(e=>['path_chosen','room_transition','room_enter'].includes(e.T)).map(e=>e.T+'@'+e.tk+(e.side!=null?':side'+e.side:'')),hit:document.elementsFromPoint(200,800).slice(0,4).map(n=>n.tagName+'.'+n.className)}})()"
+   }
+  ]
+ }
+]

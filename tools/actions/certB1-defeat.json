@@ -1,0 +1,652 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[],t0:performance.now()};window.__roomT={};window.__shots={};window.__bossId=null;window.__it=0;\nfor(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"room_soft_fail\",\"reward_offer\",\"reward\",\"draft\",\"draft_taken\",\"draft_declined\",\"path_offer\",\"path_chosen\",\"shop_open\",\"shop_purchase\",\"shop_buy\",\"shop_close\",\"currency_denied\",\"room_transition\",\"boss_spawn\",\"boss_death\",\"boss_adds\",\"boss_despawn\",\"victory\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"waystone_spawn\",\"downed\",\"revive\",\"heal\",\"death\",\"skill_equip\",\"node_granted\",\"dodge\",\"skill_cast\",\"glint_set\",\"glint_gain\",\"ally_rescue\",\"reward_forfeited\"])E.on(t,e=>{const w=Math.round(performance.now()-window.__c.t0);const rec=Object.assign({T:t,w,tk:E.tick},e);if(t==='death'){rec.isBoss=(e.id===window.__bossId);}window.__c.ev.push(rec);\n if(t==='boss_spawn')window.__bossId=e.id;\n if(t==='room_enter')window.__roomT[e.index]={enterW:w,enterTick:E.tick,mode:e.mode,reward:e.reward,wallet:e.wallet};\n if(t==='room_cleared'){const ri=E.state().run.room;if(window.__roomT[ri]){window.__roomT[ri].clearW=w;window.__roomT[ri].clearTick=E.tick;}}\n if(t==='run_start'){window.__runSeed=E.seed;}});\nwindow.__proj=(x,z)=>{try{const c=__arenaProbe.stage.camera;const v=c.position.clone().set(x,0.5,z).project(c);return {x:Math.round((v.x+1)/2*innerWidth),y:Math.round((1-v.y)/2*innerHeight)}}catch(e){return null}};\nwindow.__dumpRun=(label)=>{const ev=window.__c.ev;const list=ev.filter(e=>[\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"room_soft_fail\",\"reward_offer\",\"draft_taken\",\"draft_declined\",\"path_offer\",\"path_chosen\",\"shop_open\",\"shop_purchase\",\"currency_denied\",\"shop_close\",\"room_transition\",\"boss_spawn\",\"boss_adds\",\"boss_despawn\",\"bossdeath\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"reward_forfeited\"].includes(e.T)||(e.T==='death'&&e.isBoss)).map(e=>(e.T==='death'?'boss_death':e.T)+(e.T==='run_end'?'('+e.result+')':'')+(e.T==='room_enter'?'(r'+e.index+':'+e.mode+')':'')+(e.T==='boss_adds'?'('+e.pct+')':'')+'@'+e.tk);const m={};for(const e of ev)m[e.T]=(m[e.T]||0)+1;return {label,seed:window.__runSeed,order:list,counts:m,rooms:window.__roomT};};\nwindow.__resetRun=()=>{window.__c.ev=[];window.__roomT={};window.__bossId=null;return 'reset '+E.tick};\nreturn 'armed '+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;const u=E.runUi();const b=E.hud.banner();return {tag:\"boot\",tick:E.tick,w:Math.round(performance.now()-window.__c.t0),fps:E.fps,seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,active:r.active,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,cleared:r.clearedRooms,roomState:s.room,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,projectiles:s.projectiles.length,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp*10)/10,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&[k.id,k.remainingTicks]),bench:s.build&&s.build.bench,sockets:s.build&&s.build.sockets,boss:r.boss&&{active:r.boss.active,hp:r.boss.hp,adds:r.boss.adds,phases:r.boss.phasesFired},ui:u.screen,uiPhase:u.phase,banner:b.text,bannerMode:b.mode,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__walk=[];return {tag:\"d1\",tick:E.tick,scene:E.state().scene,mode:c.mode,player:c.player,portal:c.portal,inPortal:c.inPortal,promptVisible:c.promptVisible,runPhase:E.state().run.phase}})()"
+ },
+ {
+  "type": "loop",
+  "label": "walk-d1",
+  "cond": "(()=>{const E=__echoes;return !!(E.cmd('campState').inPortal)})()",
+  "maxMs": 40000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const p=c.player;const tx=c.portal.x,tz=c.portal.z+0.55;const dx=tx-p.x,dz=tz-p.z;window.__mv={W:dz<-0.2,S:dz>0.2,A:dx<-0.4&&p.z<-2.5,D:dx>0.4&&p.z<-2.5};if(window.__walk.length<400)window.__walk.push([E.tick,+p.x.toFixed(2),+p.z.toFixed(2)]);return null})()"
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__mv.W)})()",
+    "then": [
+     {
+      "type": "keydown",
+      "key": "KeyW"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__mv.S)})()",
+    "then": [
+     {
+      "type": "keydown",
+      "key": "KeyS"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__mv.A)})()",
+    "then": [
+     {
+      "type": "keydown",
+      "key": "KeyA"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__mv.D)})()",
+    "then": [
+     {
+      "type": "keydown",
+      "key": "KeyD"
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 110
+   },
+   {
+    "type": "keyup",
+    "key": "KeyW"
+   },
+   {
+    "type": "keyup",
+    "key": "KeyS"
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const w=window.__walk;return {walkSamples:w.length,first:w[0],mid:w[Math.floor(w.length/2)],last:w[w.length-1]}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<3000){if(E.cmd('campState').promptVisible)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),camp:(({inPortal,promptVisible,player,prompt})=>({inPortal,promptVisible,player,promptBox:prompt.box,overlaps:prompt.overlaps}))(E.cmd('campState'))};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,camp:(({inPortal,promptVisible,player,prompt})=>({inPortal,promptVisible,player,promptBox:prompt.box,overlaps:prompt.overlaps}))(E.cmd('campState'))}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=document.querySelector('#camp-prompt');return {promptText:p&&p.textContent.replace(/\\s+/g,' ').trim(),keyChip:p&&[...p.querySelectorAll('.cp-key')].map(k=>k.textContent.trim()),display:p&&getComputedStyle(p).display,opacity:p&&getComputedStyle(p).opacity,cls:p&&p.className}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-d1-prompt"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__runsBefore=window.__c.ev.filter(e=>e.T==='run_start').length;window.__seedBefore=E.seed;return {runsBefore:window.__runsBefore,seedBefore:E.seed}})()"
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!((document.querySelector('#camp-prompt .cp-key')||{}).textContent.trim()==='E')})()",
+  "then": [
+   {
+    "type": "key",
+    "key": "KeyE",
+    "ms": 80
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<6000){if(window.__c.ev.filter(e=>e.T==='run_start').length>window.__runsBefore && E.state().run.active && E.state().run.room===1)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),seed:E.seed,seedBefore:window.__seedBefore,bootSeed:E.bootSeed,runState:(({active,phase,room,mode,wallet,freeSkillSlots})=>({active,phase,room,mode,wallet,freeSkillSlots}))(E.cmd('runState')),lastBegin:E.cmd('campState').lastBegin,scene:E.state().scene};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,seed:E.seed,seedBefore:window.__seedBefore,bootSeed:E.bootSeed,runState:(({active,phase,room,mode,wallet,freeSkillSlots})=>({active,phase,room,mode,wallet,freeSkillSlots}))(E.cmd('runState')),lastBegin:E.cmd('campState').lastBegin,scene:E.state().scene}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;const u=E.runUi();const b=E.hud.banner();return {tag:\"d1-room1-enter\",tick:E.tick,w:Math.round(performance.now()-window.__c.t0),fps:E.fps,seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,active:r.active,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,cleared:r.clearedRooms,roomState:s.room,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,projectiles:s.projectiles.length,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp*10)/10,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&[k.id,k.remainingTicks]),bench:s.build&&s.build.bench,sockets:s.build&&s.build.sockets,boss:r.boss&&{active:r.boss.active,hp:r.boss.hp,adds:r.boss.adds,phases:r.boss.phasesFired},ui:u.screen,uiPhase:u.phase,banner:b.text,bannerMode:b.mode,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-d1-room1"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<15000){if(E.state().enemies.length>0)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 50
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;const u=E.runUi();const b=E.hud.banner();return {tag:\"d1-prewipe\",tick:E.tick,w:Math.round(performance.now()-window.__c.t0),fps:E.fps,seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,active:r.active,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,cleared:r.clearedRooms,roomState:s.room,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,projectiles:s.projectiles.length,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp*10)/10,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&[k.id,k.remainingTicks]),bench:s.build&&s.build.bench,sockets:s.build&&s.build.sockets,boss:r.boss&&{active:r.boss.active,hp:r.boss.hp,adds:r.boss.adds,phases:r.boss.phasesFired},ui:u.screen,uiPhase:u.phase,banner:b.text,bannerMode:b.mode,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__n=window.__c.ev.length;const r=E.cmd('downAll');return {downAll:r,tick:E.tick,enemies:E.state().enemies.length,pending:E.state().room&&E.state().room.pendingSpawns}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<8000){if(E.state().run.phase==='defeat' && E.runUi().screen==='end')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),phase:E.state().run.phase,screen:E.runUi().screen,ev:window.__c.ev.slice(window.__n).filter(e=>['defeat','run_end','run_wiped'].includes(e.T)).map(e=>e.T+'@'+e.tk+(e.result?'('+e.result+')':''))};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,phase:E.state().run.phase,screen:E.runUi().screen,ev:window.__c.ev.slice(window.__n).filter(e=>['defeat','run_end','run_wiped'].includes(e.T)).map(e=>e.T+'@'+e.tk+(e.result?'('+e.result+')':''))}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<12000){if(E.runUi().screen==='end')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen,phase:E.state().run.phase};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,screen:E.runUi().screen,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {screen:u.screen,phase:u.phase,text:u.text.slice(0,400),buttons:u.buttons,camp:(()=>{const n=document.querySelector(\"#run-screen .rn-camp\");if(!n)return null;const r=n.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),cx:Math.round(r.x+r.width/2),cy:Math.round(r.y+r.height/2),vis:n.offsetParent!==null,txt:(n.textContent||'').trim().slice(0,40)}})(),summary:E.state().run.summary,held:u.held,stale:u.stale}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;const u=E.runUi();const b=E.hud.banner();return {tag:\"d1-end-screen\",tick:E.tick,w:Math.round(performance.now()-window.__c.t0),fps:E.fps,seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,active:r.active,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,cleared:r.clearedRooms,roomState:s.room,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,projectiles:s.projectiles.length,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp*10)/10,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&[k.id,k.remainingTicks]),bench:s.build&&s.build.bench,sockets:s.build&&s.build.sockets,boss:r.boss&&{active:r.boss.active,hp:r.boss.hp,adds:r.boss.adds,phases:r.boss.phasesFired},ui:u.screen,uiPhase:u.phase,banner:b.text,bannerMode:b.mode,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-d1-end"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__n=window.__c.ev.length;window.__retTick=E.tick;return window.__dumpRun(\"d1\")})()"
+ },
+ {
+  "type": "click",
+  "x": 800,
+  "y": 532
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(E.runUi().screen==='end')})()",
+  "then": [
+   {
+    "type": "eval",
+    "code": "\"end: Return-to-Camp click did not commit -> Enter fallback\""
+   },
+   {
+    "type": "key",
+    "key": "Enter",
+    "ms": 80
+   },
+   {
+    "type": "wait",
+    "ms": 600
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<8000){if(E.state().scene==='camp' && E.cmd('campState').mode==='camp' && E.state().run.phase==='idle' && E.runUi().screen==='none')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),scene:E.state().scene,mode:E.cmd('campState').mode,phase:E.state().run.phase,screen:E.runUi().screen,retEvents:window.__c.ev.slice(window.__n).filter(e=>['return_to_camp','run_end','run_wiped'].includes(e.T)).map(e=>e.T+'@'+e.tk+JSON.stringify({enemies:e.enemies}))};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,scene:E.state().scene,mode:E.cmd('campState').mode,phase:E.state().run.phase,screen:E.runUi().screen,retEvents:window.__c.ev.slice(window.__n).filter(e=>['return_to_camp','run_end','run_wiped'].includes(e.T)).map(e=>e.T+'@'+e.tk+JSON.stringify({enemies:e.enemies}))}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;const u=E.runUi();const b=E.hud.banner();return {tag:\"d1-camp-after\",tick:E.tick,w:Math.round(performance.now()-window.__c.t0),fps:E.fps,seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,active:r.active,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,cleared:r.clearedRooms,roomState:s.room,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,projectiles:s.projectiles.length,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp*10)/10,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&[k.id,k.remainingTicks]),bench:s.build&&s.build.bench,sockets:s.build&&s.build.sockets,boss:r.boss&&{active:r.boss.active,hp:r.boss.hp,adds:r.boss.adds,phases:r.boss.phasesFired},ui:u.screen,uiPhase:u.phase,banner:b.text,bannerMode:b.mode,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const s=E.state();const after=E.events.filter(e=>e.tick>window.__retTick&&e.type!=='intent');const m={};for(const e of after)m[e.type]=(m[e.type]||0)+1;return {campMode:c.mode,inPortal:c.inPortal,promptVisible:c.promptVisible,player:c.player,seatDrift:c.seatDrift,rigs:c.party.rigs,healerAnim:c.party.healerAnim,runs:c.runs,leaks:{enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,skillBolts:s.skillBolts.length,projectiles:s.projectiles.length,numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount,room:s.room},party:s.party.map(p=>[p.id,p.classId||'healer',p.hp,p.maxHp,p.downed]),banner:E.hud.banner(),threat:E.hud.threat(),hud:E.hud.combat(),busEventsSinceReturn:m}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-d1-camp-after"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return window.__resetRun()})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__walk=[];return {tag:\"d2\",tick:E.tick,scene:E.state().scene,mode:c.mode,player:c.player,portal:c.portal,inPortal:c.inPortal,promptVisible:c.promptVisible,runPhase:E.state().run.phase}})()"
+ },
+ {
+  "type": "loop",
+  "label": "walk-d2",
+  "cond": "(()=>{const E=__echoes;return !!(E.cmd('campState').inPortal)})()",
+  "maxMs": 40000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const p=c.player;const tx=c.portal.x,tz=c.portal.z+0.55;const dx=tx-p.x,dz=tz-p.z;window.__mv={W:dz<-0.2,S:dz>0.2,A:dx<-0.4&&p.z<-2.5,D:dx>0.4&&p.z<-2.5};if(window.__walk.length<400)window.__walk.push([E.tick,+p.x.toFixed(2),+p.z.toFixed(2)]);return null})()"
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__mv.W)})()",
+    "then": [
+     {
+      "type": "keydown",
+      "key": "KeyW"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__mv.S)})()",
+    "then": [
+     {
+      "type": "keydown",
+      "key": "KeyS"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__mv.A)})()",
+    "then": [
+     {
+      "type": "keydown",
+      "key": "KeyA"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__mv.D)})()",
+    "then": [
+     {
+      "type": "keydown",
+      "key": "KeyD"
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 110
+   },
+   {
+    "type": "keyup",
+    "key": "KeyW"
+   },
+   {
+    "type": "keyup",
+    "key": "KeyS"
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const w=window.__walk;return {walkSamples:w.length,first:w[0],mid:w[Math.floor(w.length/2)],last:w[w.length-1]}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<3000){if(E.cmd('campState').promptVisible)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),camp:(({inPortal,promptVisible,player,prompt})=>({inPortal,promptVisible,player,promptBox:prompt.box,overlaps:prompt.overlaps}))(E.cmd('campState'))};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,camp:(({inPortal,promptVisible,player,prompt})=>({inPortal,promptVisible,player,promptBox:prompt.box,overlaps:prompt.overlaps}))(E.cmd('campState'))}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=document.querySelector('#camp-prompt');return {promptText:p&&p.textContent.replace(/\\s+/g,' ').trim(),keyChip:p&&[...p.querySelectorAll('.cp-key')].map(k=>k.textContent.trim()),display:p&&getComputedStyle(p).display,opacity:p&&getComputedStyle(p).opacity,cls:p&&p.className}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-d2-prompt"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__runsBefore=window.__c.ev.filter(e=>e.T==='run_start').length;window.__seedBefore=E.seed;return {runsBefore:window.__runsBefore,seedBefore:E.seed}})()"
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!((document.querySelector('#camp-prompt .cp-key')||{}).textContent.trim()==='E')})()",
+  "then": [
+   {
+    "type": "key",
+    "key": "KeyE",
+    "ms": 80
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<6000){if(window.__c.ev.filter(e=>e.T==='run_start').length>window.__runsBefore && E.state().run.active && E.state().run.room===1)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),seed:E.seed,seedBefore:window.__seedBefore,bootSeed:E.bootSeed,runState:(({active,phase,room,mode,wallet,freeSkillSlots})=>({active,phase,room,mode,wallet,freeSkillSlots}))(E.cmd('runState')),lastBegin:E.cmd('campState').lastBegin,scene:E.state().scene};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,seed:E.seed,seedBefore:window.__seedBefore,bootSeed:E.bootSeed,runState:(({active,phase,room,mode,wallet,freeSkillSlots})=>({active,phase,room,mode,wallet,freeSkillSlots}))(E.cmd('runState')),lastBegin:E.cmd('campState').lastBegin,scene:E.state().scene}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;const u=E.runUi();const b=E.hud.banner();return {tag:\"d2-room1-enter\",tick:E.tick,w:Math.round(performance.now()-window.__c.t0),fps:E.fps,seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,active:r.active,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,cleared:r.clearedRooms,roomState:s.room,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,projectiles:s.projectiles.length,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp*10)/10,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&[k.id,k.remainingTicks]),bench:s.build&&s.build.bench,sockets:s.build&&s.build.sockets,boss:r.boss&&{active:r.boss.active,hp:r.boss.hp,adds:r.boss.adds,phases:r.boss.phasesFired},ui:u.screen,uiPhase:u.phase,banner:b.text,bannerMode:b.mode,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-d2-room1"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<15000){if(E.state().enemies.length>0)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 50
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;const u=E.runUi();const b=E.hud.banner();return {tag:\"d2-prewipe\",tick:E.tick,w:Math.round(performance.now()-window.__c.t0),fps:E.fps,seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,active:r.active,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,cleared:r.clearedRooms,roomState:s.room,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,projectiles:s.projectiles.length,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp*10)/10,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&[k.id,k.remainingTicks]),bench:s.build&&s.build.bench,sockets:s.build&&s.build.sockets,boss:r.boss&&{active:r.boss.active,hp:r.boss.hp,adds:r.boss.adds,phases:r.boss.phasesFired},ui:u.screen,uiPhase:u.phase,banner:b.text,bannerMode:b.mode,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__n=window.__c.ev.length;const r=E.cmd('downAll');return {downAll:r,tick:E.tick,enemies:E.state().enemies.length,pending:E.state().room&&E.state().room.pendingSpawns}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<8000){if(E.state().run.phase==='defeat' && E.runUi().screen==='end')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),phase:E.state().run.phase,screen:E.runUi().screen,ev:window.__c.ev.slice(window.__n).filter(e=>['defeat','run_end','run_wiped'].includes(e.T)).map(e=>e.T+'@'+e.tk+(e.result?'('+e.result+')':''))};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,phase:E.state().run.phase,screen:E.runUi().screen,ev:window.__c.ev.slice(window.__n).filter(e=>['defeat','run_end','run_wiped'].includes(e.T)).map(e=>e.T+'@'+e.tk+(e.result?'('+e.result+')':''))}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<12000){if(E.runUi().screen==='end')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen,phase:E.state().run.phase};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,screen:E.runUi().screen,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {screen:u.screen,phase:u.phase,text:u.text.slice(0,400),buttons:u.buttons,camp:(()=>{const n=document.querySelector(\"#run-screen .rn-camp\");if(!n)return null;const r=n.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),cx:Math.round(r.x+r.width/2),cy:Math.round(r.y+r.height/2),vis:n.offsetParent!==null,txt:(n.textContent||'').trim().slice(0,40)}})(),summary:E.state().run.summary,held:u.held,stale:u.stale}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;const u=E.runUi();const b=E.hud.banner();return {tag:\"d2-end-screen\",tick:E.tick,w:Math.round(performance.now()-window.__c.t0),fps:E.fps,seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,active:r.active,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,cleared:r.clearedRooms,roomState:s.room,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,projectiles:s.projectiles.length,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp*10)/10,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&[k.id,k.remainingTicks]),bench:s.build&&s.build.bench,sockets:s.build&&s.build.sockets,boss:r.boss&&{active:r.boss.active,hp:r.boss.hp,adds:r.boss.adds,phases:r.boss.phasesFired},ui:u.screen,uiPhase:u.phase,banner:b.text,bannerMode:b.mode,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-d2-end"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__n=window.__c.ev.length;window.__retTick=E.tick;return window.__dumpRun(\"d2\")})()"
+ },
+ {
+  "type": "click",
+  "x": 800,
+  "y": 532
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!(E.runUi().screen==='end')})()",
+  "then": [
+   {
+    "type": "eval",
+    "code": "\"end: Return-to-Camp click did not commit -> Enter fallback\""
+   },
+   {
+    "type": "key",
+    "key": "Enter",
+    "ms": 80
+   },
+   {
+    "type": "wait",
+    "ms": 600
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<8000){if(E.state().scene==='camp' && E.cmd('campState').mode==='camp' && E.state().run.phase==='idle' && E.runUi().screen==='none')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),scene:E.state().scene,mode:E.cmd('campState').mode,phase:E.state().run.phase,screen:E.runUi().screen,retEvents:window.__c.ev.slice(window.__n).filter(e=>['return_to_camp','run_end','run_wiped'].includes(e.T)).map(e=>e.T+'@'+e.tk+JSON.stringify({enemies:e.enemies}))};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,scene:E.state().scene,mode:E.cmd('campState').mode,phase:E.state().run.phase,screen:E.runUi().screen,retEvents:window.__c.ev.slice(window.__n).filter(e=>['return_to_camp','run_end','run_wiped'].includes(e.T)).map(e=>e.T+'@'+e.tk+JSON.stringify({enemies:e.enemies}))}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;const u=E.runUi();const b=E.hud.banner();return {tag:\"d2-camp-after\",tick:E.tick,w:Math.round(performance.now()-window.__c.t0),fps:E.fps,seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,active:r.active,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,cleared:r.clearedRooms,roomState:s.room,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,projectiles:s.projectiles.length,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp*10)/10,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&[k.id,k.remainingTicks]),bench:s.build&&s.build.bench,sockets:s.build&&s.build.sockets,boss:r.boss&&{active:r.boss.active,hp:r.boss.hp,adds:r.boss.adds,phases:r.boss.phasesFired},ui:u.screen,uiPhase:u.phase,banner:b.text,bannerMode:b.mode,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const s=E.state();const after=E.events.filter(e=>e.tick>window.__retTick&&e.type!=='intent');const m={};for(const e of after)m[e.type]=(m[e.type]||0)+1;return {campMode:c.mode,inPortal:c.inPortal,promptVisible:c.promptVisible,player:c.player,seatDrift:c.seatDrift,rigs:c.party.rigs,healerAnim:c.party.healerAnim,runs:c.runs,leaks:{enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,skillBolts:s.skillBolts.length,projectiles:s.projectiles.length,numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount,room:s.room},party:s.party.map(p=>[p.id,p.classId||'healer',p.hp,p.maxHp,p.downed]),banner:E.hud.banner(),threat:E.hud.threat(),hud:E.hud.combat(),busEventsSinceReturn:m}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-d2-camp-after"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return window.__resetRun()})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__walk=[];return {tag:\"d3\",tick:E.tick,scene:E.state().scene,mode:c.mode,player:c.player,portal:c.portal,inPortal:c.inPortal,promptVisible:c.promptVisible,runPhase:E.state().run.phase}})()"
+ },
+ {
+  "type": "loop",
+  "label": "walk-d3",
+  "cond": "(()=>{const E=__echoes;return !!(E.cmd('campState').inPortal)})()",
+  "maxMs": 40000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const p=c.player;const tx=c.portal.x,tz=c.portal.z+0.55;const dx=tx-p.x,dz=tz-p.z;window.__mv={W:dz<-0.2,S:dz>0.2,A:dx<-0.4&&p.z<-2.5,D:dx>0.4&&p.z<-2.5};if(window.__walk.length<400)window.__walk.push([E.tick,+p.x.toFixed(2),+p.z.toFixed(2)]);return null})()"
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__mv.W)})()",
+    "then": [
+     {
+      "type": "keydown",
+      "key": "KeyW"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__mv.S)})()",
+    "then": [
+     {
+      "type": "keydown",
+      "key": "KeyS"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__mv.A)})()",
+    "then": [
+     {
+      "type": "keydown",
+      "key": "KeyA"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "(()=>{const E=__echoes;return !!(window.__mv.D)})()",
+    "then": [
+     {
+      "type": "keydown",
+      "key": "KeyD"
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 110
+   },
+   {
+    "type": "keyup",
+    "key": "KeyW"
+   },
+   {
+    "type": "keyup",
+    "key": "KeyS"
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const w=window.__walk;return {walkSamples:w.length,first:w[0],mid:w[Math.floor(w.length/2)],last:w[w.length-1]}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<3000){if(E.cmd('campState').promptVisible)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),camp:(({inPortal,promptVisible,player,prompt})=>({inPortal,promptVisible,player,promptBox:prompt.box,overlaps:prompt.overlaps}))(E.cmd('campState'))};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,camp:(({inPortal,promptVisible,player,prompt})=>({inPortal,promptVisible,player,promptBox:prompt.box,overlaps:prompt.overlaps}))(E.cmd('campState'))}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=document.querySelector('#camp-prompt');return {promptText:p&&p.textContent.replace(/\\s+/g,' ').trim(),keyChip:p&&[...p.querySelectorAll('.cp-key')].map(k=>k.textContent.trim()),display:p&&getComputedStyle(p).display,opacity:p&&getComputedStyle(p).opacity,cls:p&&p.className}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-d3-prompt"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__runsBefore=window.__c.ev.filter(e=>e.T==='run_start').length;window.__seedBefore=E.seed;return {runsBefore:window.__runsBefore,seedBefore:E.seed}})()"
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const E=__echoes;return !!((document.querySelector('#camp-prompt .cp-key')||{}).textContent.trim()==='E')})()",
+  "then": [
+   {
+    "type": "key",
+    "key": "KeyE",
+    "ms": 80
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<6000){if(window.__c.ev.filter(e=>e.T==='run_start').length>window.__runsBefore && E.state().run.active && E.state().run.room===1)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),seed:E.seed,seedBefore:window.__seedBefore,bootSeed:E.bootSeed,runState:(({active,phase,room,mode,wallet,freeSkillSlots})=>({active,phase,room,mode,wallet,freeSkillSlots}))(E.cmd('runState')),lastBegin:E.cmd('campState').lastBegin,scene:E.state().scene};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,seed:E.seed,seedBefore:window.__seedBefore,bootSeed:E.bootSeed,runState:(({active,phase,room,mode,wallet,freeSkillSlots})=>({active,phase,room,mode,wallet,freeSkillSlots}))(E.cmd('runState')),lastBegin:E.cmd('campState').lastBegin,scene:E.state().scene}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;const u=E.runUi();const b=E.hud.banner();return {tag:\"d3-room1-enter\",tick:E.tick,w:Math.round(performance.now()-window.__c.t0),fps:E.fps,seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,active:r.active,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,cleared:r.clearedRooms,roomState:s.room,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,projectiles:s.projectiles.length,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp*10)/10,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&[k.id,k.remainingTicks]),bench:s.build&&s.build.bench,sockets:s.build&&s.build.sockets,boss:r.boss&&{active:r.boss.active,hp:r.boss.hp,adds:r.boss.adds,phases:r.boss.phasesFired},ui:u.screen,uiPhase:u.phase,banner:b.text,bannerMode:b.mode,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-d3-room1"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<15000){if(E.state().enemies.length>0)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length,room:E.state().room};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,enemies:E.state().enemies.length,room:E.state().room}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;const u=E.runUi();const b=E.hud.banner();return {tag:\"d3-room1-live\",tick:E.tick,w:Math.round(performance.now()-window.__c.t0),fps:E.fps,seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,active:r.active,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,cleared:r.clearedRooms,roomState:s.room,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,projectiles:s.projectiles.length,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp*10)/10,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&[k.id,k.remainingTicks]),bench:s.build&&s.build.bench,sockets:s.build&&s.build.sockets,boss:r.boss&&{active:r.boss.active,hp:r.boss.hp,adds:r.boss.adds,phases:r.boss.phasesFired},ui:u.screen,uiPhase:u.phase,banner:b.text,bannerMode:b.mode,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),numerals:s.vfx&&s.vfx.numerals,entities:E.entityCount}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-d3-room1-live"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return window.__dumpRun('d3-start')})()"
+ }
+]

@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};const seen=new Set();E.on=E.on;const types=[\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"hit\",\"hit_immune\",\"death\",\"hitstop\",\"knockback\",\"hit_flash\",\"sound\",\"sfx\",\"audio\",\"damage\",\"heal\",\"skill_cast\",\"ally_cast\",\"ally_basic\",\"dodge\",\"dash\",\"run_start\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"reward\",\"draft\",\"path\",\"shop\",\"shop_buy\",\"currency\",\"downed\",\"revive\",\"projectile_spawn\",\"zone_spawn\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"enemy_despawn\",\"screenshake\",\"shake\",\"flash\",\"flinch\",\"squash\",\"eshot_despawn\",\"spawn\"];for(const t of types)E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));window.__keys0=Object.keys(window).filter(k=>k.startsWith(\"__\"));const r=E.cmd(\"startRun\");return {startRun:r,seed:E.seed,keys:window.__keys0,scene:E.state().scene}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 6000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const allTypes={};for(const e of E.events)allTypes[e.type]=(allTypes[e.type]||0)+1;const mine={};for(const e of window.__c.ev)mine[e.T]=(mine[e.T]||0)+1;return {tick:E.tick,fps:E.fps,allTypes,mine,room:s.room,run:{phase:s.run.phase,room:s.run.room,mode:s.run.mode,combat:s.run.combatActive},enemies:s.enemies.slice(0,6),party:s.party.map(p=>[p.id,p.hp,+p.x.toFixed(2),+p.z.toFixed(2)]),keys:Object.keys(window).filter(k=>k.startsWith(\"__\")),runUi:(()=>{try{return JSON.stringify(E.runUi()).slice(0,1200)}catch(x){return String(x)}})(),arenaProbe:window.__arenaProbe?Object.keys(window.__arenaProbe):null}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return JSON.stringify(window.__c.ev.slice(0,40))})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return JSON.stringify({eshots:s.eshots.slice(0,3),proj:s.projectiles.slice(0,3),bolts:s.skillBolts.slice(0,3),zones:s.zones.slice(0,3),azones:s.azones.slice(0,2),roomFull:s.room,vfx:s.vfx&&Object.keys(s.vfx),vfxArena:s.vfx&&s.vfx.arena}).slice(0,4000)})()"
+ }
+]

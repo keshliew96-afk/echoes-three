@@ -1,0 +1,67 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  window.__c={ev:[],rows:[],dom:[],keys:[],ticksSeen:0,frames:0,started:performance.now(),flashOn:false,sampleOn:true};\n  for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"spawn_blocked\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"hit\",\"hit_immune\",\"death\",\"hitstop\",\"sound\",\"heal\",\"intent\",\"intent_denied\",\"dash_end\",\"downed\",\"revive\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"run_end\",\"defeat\",\"victory\",\"reward\",\"draft_taken\",\"path_chosen\",\"eshot_despawn\",\"zone_spawn\",\"zone_tick\",\"enemy_despawn\",\"basic_fire\",\"skill_cast\",\"ally_cast\",\"ally_basic\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t,ms:Math.round(performance.now()-window.__c.started)},e)));\n  window.addEventListener('keydown',e=>{if(e.repeat)return;const s=E.state();const p=s.party[0];window.__c.keys.push({key:e.code,t:E.tick,ms:Math.round(performance.now()-window.__c.started),x:p.x,z:p.z,dash:p.dashTicksLeft});},true);\n  window.addEventListener('keyup',e=>{const s=E.state();const p=s.party[0];window.__c.keys.push({key:e.code,upT:E.tick,t:E.tick,up:true,ms:Math.round(performance.now()-window.__c.started),x:p.x,z:p.z});},true);\n  const L=document.querySelector('#dmg-num-layer');window.__c.numLayer=!!L;\n  const lastKey=new WeakMap();\n  if(L){const mo=new MutationObserver(muts=>{const t=E.tick;const seen=new Set();for(const m of muts){const n=m.target.nodeType===3?m.target.parentElement:m.target;const el=n&&n.closest?n.closest('.dmg-num'):null;if(!el||seen.has(el))continue;seen.add(el);const cs=getComputedStyle(el);const vis=!(cs.display==='none'||cs.opacity==='0'||cs.visibility==='hidden'||!el.textContent);const k=el.textContent+'|'+vis;if(lastKey.get(el)===k)continue;lastKey.set(el,k);if(!vis)continue;const r=el.getBoundingClientRect();window.__c.dom.push({t,txt:el.textContent,x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),col:cs.color});}});mo.observe(L,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['style','class']});}\n  let meshes=[];let meshAt=0;const V=window.__arenaProbe&&window.__arenaProbe.root.position.constructor;const tmp=V?new V():null;\n  const refresh=()=>{meshes=[];if(!window.__arenaProbe)return;window.__arenaProbe.root.traverse(o=>{if(o.isMesh&&!o.isInstancedMesh&&o.material&&o.material.emissive&&o.visible)meshes.push(o);});meshAt=performance.now();};\n  const flashOf=(en)=>{const out={};if(!tmp)return out;for(const o of meshes){o.getWorldPosition(tmp);for(const id in en){const e=en[id];const dx=tmp.x-e[0],dz=tmp.z-e[1];if(dx*dx+dz*dz<0.81){const it=o.material.emissiveIntensity??1;const c=o.material.emissive;const l=(0.299*c.r+0.587*c.g+0.114*c.b)*it;if(!(id in out)||it>out[id].i)out[id]={i:+it.toFixed(3),l:+l.toFixed(3)};}}}return out;};\n  window.__c.refreshMeshes=refresh;\n  let last=-1;const f=()=>{window.__c.frames++;if(window.__c.sampleOn){const t=E.tick;if(t!==last){last=t;const s=E.state();const p=s.party[0];const cam=(window.__arenaProbe&&window.__arenaProbe.stage)?window.__arenaProbe.stage.camera.position:null;const en={};for(const e of s.enemies)en[e.id]=[+e.x.toFixed(3),+e.z.toFixed(3),e.hp,e.kbTicks];let fl=null;if(window.__c.flashOn){if(performance.now()-meshAt>1000)refresh();fl=flashOf(en);}const vfx=s.vfx||{};const num=vfx.numerals??(vfx.arena&&vfx.arena.numerals)??null;window.__c.rows.push({t,ms:Math.round(performance.now()-window.__c.started),px:+p.x.toFixed(4),pz:+p.z.toFixed(4),dash:p.dashTicksLeft,hp:p.hp,cam:cam?[+cam.x.toFixed(4),+cam.y.toFixed(4),+cam.z.toFixed(4)]:null,num,en,fl});window.__c.ticksSeen++;if(window.__c.rows.length>16000)window.__c.rows.splice(0,6000);}}requestAnimationFrame(f);};requestAnimationFrame(f);\n  return 'armed '+E.tick+' numLayer '+window.__c.numLayer+' probe '+!!window.__arenaProbe})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('startRun');return {seed:E.seed,modes:r&&r.frame&&r.frame.modes,room:r&&r.room,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const k0=E.tick;while(performance.now()-t0<30000){if((()=>{const s=E.state();return s.run.active&&s.run.combatActive&&s.enemies.length>0})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length,phase:E.state().run.phase};await sleep(4);}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,enemies:E.state().enemies.length,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('iframe',0,3600);return 'iframe '+E.tick})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const k0=E.tick;while(performance.now()-t0<60000){if((()=>{const s=E.state();return s.run.combatActive&&s.enemies.length>=2})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),room:E.state().room,enemies:E.state().enemies.map(e=>[e.id,e.kind,e.hp])};await sleep(4);}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,room:E.state().room,enemies:E.state().enemies.map(e=>[e.id,e.kind,e.hp])}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const e=s.enemies[0];E.cmd('setHp',e.id,0.05);const e2=E.state().enemies.find(x=>x.id===e.id);window.__c.kMark=E.tick;window.__c.kDom=window.__c.dom.length;window.__c.kEv=window.__c.ev.length;window.__c.kRow=window.__c.rows.length;const r=E.cmd('hitOnce',e.id);return {tag:\"control-midwave\",id:e.id,kind:e.kind,hpBefore:e.hp,hpSet:e2&&e2.hp,hitTick:E.tick,r,room:s.room}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const rows=window.__c.rows.slice(window.__c.kRow-3);const t0=window.__c.kMark;const ev=window.__c.ev.slice(window.__c.kEv).filter(e=>['hit','death','room_cleared','wave_start','sound','hitstop','reward','enemy_despawn'].includes(e.T)).map(e=>[e.T,e.tick,e.target??e.id,e.amount??e.slot??e.ticks??e.cause]);const dom=window.__c.dom.slice(window.__c.kDom).map(x=>[x.t,x.txt,x.x,x.y]);let maxGap=0,maxAt=null;for(let i=1;i<rows.length;i++){const g=rows[i].ms-rows[i-1].ms;if(g>maxGap){maxGap=g;maxAt=rows[i].t;}}return {tag:\"control-midwave\",hitTick:t0,numRows:rows.filter(r=>r.t>=t0-2&&r.t<=t0+30).map(r=>r.t+':'+r.num),events:ev.slice(0,20),dom,maxFrameGapMs:maxGap,maxGapAtTick:maxAt,ui:E.runUi().screen,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const k0=E.tick;while(performance.now()-t0<60000){if((()=>{const s=E.state();return s.run.combatActive&&s.room&&s.room.waveIndex===s.room.wavesTotal-1&&s.room.pendingSpawns===0&&s.enemies.length===1})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),room:E.state().room,enemies:E.state().enemies.map(e=>[e.id,e.kind,e.hp])};await sleep(4);}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,room:E.state().room,enemies:E.state().enemies.map(e=>[e.id,e.kind,e.hp])}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const e=s.enemies[0];E.cmd('setHp',e.id,0.05);const e2=E.state().enemies.find(x=>x.id===e.id);window.__c.kMark=E.tick;window.__c.kDom=window.__c.dom.length;window.__c.kEv=window.__c.ev.length;window.__c.kRow=window.__c.rows.length;const r=E.cmd('hitOnce',e.id);return {tag:\"room-clearing-kill\",id:e.id,kind:e.kind,hpBefore:e.hp,hpSet:e2&&e2.hp,hitTick:E.tick,r,room:s.room}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const rows=window.__c.rows.slice(window.__c.kRow-3);const t0=window.__c.kMark;const ev=window.__c.ev.slice(window.__c.kEv).filter(e=>['hit','death','room_cleared','wave_start','sound','hitstop','reward','enemy_despawn'].includes(e.T)).map(e=>[e.T,e.tick,e.target??e.id,e.amount??e.slot??e.ticks??e.cause]);const dom=window.__c.dom.slice(window.__c.kDom).map(x=>[x.t,x.txt,x.x,x.y]);let maxGap=0,maxAt=null;for(let i=1;i<rows.length;i++){const g=rows[i].ms-rows[i-1].ms;if(g>maxGap){maxGap=g;maxAt=rows[i].t;}}return {tag:\"room-clearing-kill\",hitTick:t0,numRows:rows.filter(r=>r.t>=t0-2&&r.t<=t0+30).map(r=>r.t+':'+r.num),events:ev.slice(0,20),dom,maxFrameGapMs:maxGap,maxGapAtTick:maxAt,ui:E.runUi().screen,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const m={};for(const e of window.__c.ev)m[e.T]=(m[e.T]||0)+1;return {tick:E.tick,counts:m}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=window.__c.rows;let gaps=0,maxGap=0;for(let i=1;i<r.length;i++){const g=r[i].t-r[i-1].t;if(g>1){gaps+=g-1;maxGap=Math.max(maxGap,g);}}return {ticksSeen:window.__c.ticksSeen,frames:window.__c.frames,fps:E.fps,missedTicks:gaps,maxTickGap:maxGap,span:r.length?r[r.length-1].t-r[0].t:0}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;return {tag:\"lastkill-end\",tick:E.tick,fps:E.fps,version:E.version,scene:s.scene,vfxMode:s.vfx&&s.vfx.mode,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,roomState:s.room,enemies:s.enemies.map(e=>[e.id,e.kind,+e.x.toFixed(2),+e.z.toFixed(2),e.hp]),party:s.party.map(p=>[p.id,p.classId||'healer',p.hp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),ui:E.runUi().screen,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat())}})()"
+ }
+]

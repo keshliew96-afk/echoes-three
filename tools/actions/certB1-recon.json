@@ -1,0 +1,111 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[],t0:performance.now()};window.__roomT={};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"reward\",\"draft\",\"draft_taken\",\"path_chosen\",\"shop_buy\",\"currency_denied\",\"boss_spawn\",\"boss_death\",\"boss_adds\",\"victory\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"downed\",\"revive\",\"heal\",\"death\",\"skill_equip\",\"node_granted\",\"dodge\",\"skill_cast\",\"glint_set\"])E.on(t,e=>{const w=Math.round(performance.now()-window.__c.t0);window.__c.ev.push(Object.assign({T:t,w},e));if(t==='room_enter')window.__roomT[e.index]={enterW:w,enterTick:E.tick};if(t==='room_cleared'&&window.__roomT[E.state().run.room])window.__roomT[E.state().run.room].clearW=w;});\nwindow.__proj=(x,z)=>{try{const c=__arenaProbe.stage.camera;const v=c.position.clone().set(x,0.5,z).project(c);return {x:Math.round((v.x+1)/2*innerWidth),y:Math.round((1-v.y)/2*innerHeight)}}catch(e){return null}};\nreturn 'armed '+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {player:c.player,portal:c.portal,hearth:c.hearth,inPortal:c.inPortal,promptVisible:c.promptVisible,prompt:c.prompt,mode:c.mode}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=document.querySelector('#camp-prompt');return {promptText:p&&p.textContent.replace(/\\s+/g,' ').trim(),keyChip:p&&[...p.querySelectorAll('.cp-key')].map(k=>k.textContent.trim()),display:p&&getComputedStyle(p).display,cls:p&&p.className}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {projPlayer:window.__proj(c.player.x,c.player.z),projPortal:window.__proj(c.portal.x,c.portal.z+0.55),inner:[innerWidth,innerHeight]}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();let kills=0;while(performance.now()-t0<60000){const u=E.runUi();if(u.screen!=='none')return {ok:true,screen:u.screen,tick:E.tick,kills};if(E.state().enemies.length>0){E.cmd('killAllEnemies');kills++;}await new Promise(r=>setTimeout(r,250));}return {ok:false}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {screen:u.screen,cards:u.cards,buttons:u.buttons,take:(()=>{const n=document.querySelector(\"#run-screen .rn-take\");if(!n)return null;const r=n.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),cx:Math.round(r.x+r.width/2),cy:Math.round(r.y+r.height/2),vis:n.offsetParent!==null,txt:(n.textContent||'').trim().slice(0,40)}})(),decline:(()=>{const n=document.querySelector(\"#run-screen .rn-decline\");if(!n)return null;const r=n.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),cx:Math.round(r.x+r.width/2),cy:Math.round(r.y+r.height/2),vis:n.offsetParent!==null,txt:(n.textContent||'').trim().slice(0,40)}})(),reward:E.state().run.reward}})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 70
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {screen:u.screen,doors:u.doors,socketOpen:!!document.querySelector('#socket-screen.nd-open'),skills:E.state().skills.map(k=>k&&k.id)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return E.cmd('pathChoose',0)})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('skipToRoom',7);return {room:r.room,phase:r.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {screen:u.screen,wallet:u.wallet,cards:u.cards,plaques:u.plaques,buttons:u.buttons,advance:(()=>{const n=document.querySelector(\"#run-screen .rn-advance\");if(!n)return null;const r=n.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),cx:Math.round(r.x+r.width/2),cy:Math.round(r.y+r.height/2),vis:n.offsetParent!==null,txt:(n.textContent||'').trim().slice(0,40)}})(),stock:E.state().run.shop}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-recon-shop"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('skipToRoom',8);return {room:r.room,phase:r.phase,boss:r.boss}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {r:E.cmd('endRun','victory')}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const u=E.runUi();return {screen:u.screen,phase:u.phase,buttons:u.buttons,camp:(()=>{const n=document.querySelector(\"#run-screen .rn-camp\");if(!n)return null;const r=n.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),cx:Math.round(r.x+r.width/2),cy:Math.round(r.y+r.height/2),vis:n.offsetParent!==null,txt:(n.textContent||'').trim().slice(0,40)}})(),text:u.text.slice(0,300)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB1-recon-end"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {r:E.cmd('returnToCamp')}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {scene:E.state().scene,mode:c.mode,player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible,runPhase:E.state().run.phase}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return window.__c.ev.filter(e=>['run_start','room_enter','room_start','room_cleared','reward','draft_taken','path_chosen','victory','defeat','run_end','run_wiped','return_to_camp'].includes(e.T)).map(e=>e.T+'@'+e.tick)})()"
+ }
+]

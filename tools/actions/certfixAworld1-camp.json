@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;return {tag:\"camp\",tick:E.tick,fps:E.fps,version:E.version,seed:E.seed,bootSeed:E.bootSeed,entityCount:E.entityCount,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,roomState:s.room,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,party:s.party.map(p=>[p.id,p.classId||'healer',p.hp,p.maxHp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),boss:r.boss,ui:E.runUi().screen,hud:E.hud.combat(),banner:E.hud.banner().text,threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat()),toggles:s.toggles,vfx:(v=>{const a=v.arena||{};return {mode:v.mode,emitters:v.emitters,propTypes:v.propTypes,propShadows:v.propShadows,grass:v.grass,fireflies:v.fireflies,embers:v.embers,vignette:v.vignette,exposure:v.exposure,arena:{numerals:a.numerals,decals:a.decals,particles:a.particles,dummies:a.dummies,variant:a.variant,variantName:a.variantName,grass:a.grass,flowers:a.flowers,propTypes:a.propTypes,propShadows:a.propShadows,emitters:a.emitters,embers:a.embers,party:a.party}}})(s.vfx||{})}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:'campState',tick:E.tick,mode:c.mode,propTypes:c.propTypes,campPropTypesCount:(c.campPropTypes||[]).length,campPropTypes:c.campPropTypes,emitters:c.emitters,emitterKinds:c.emitterKinds,lights:c.lights,propShadows:c.propShadows,fireflies:c.fireflies,embers:c.embers,gateMotes:c.gateMotes,vignette:c.vignette,exposure:c.exposure,grass:c.grass,flowers:c.flowers,treeline:c.treeline,colliders:c.colliders,roadViolations:c.roadViolations,seats:c.seats,seatDrift:c.seatDrift,player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible,critters:c.prompt&&c.prompt.critters,overlaps:c.prompt&&c.prompt.overlaps,rigs:c.party&&c.party.rigs,bookends:c.bookends}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {tag:'vfx',tick:E.tick,fps:E.fps,vfx:s.vfx,toggles:s.toggles}})()"
+ }
+]

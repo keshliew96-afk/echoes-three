@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return 1})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {tag:'lay2560',w:innerWidth,h:innerHeight,room:s.run.room,vfx:{vignette:s.vfx.vignette,emitters:s.vfx.emitters,propTypes:s.vfx.propTypes},hudFits:E.hud.debug?1:1}})()"
+ }
+]

@@ -1,0 +1,60 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"hit\",\"death\",\"hitstop\",\"enemy_spawn\",\"spawn_telegraph\",\"boss_quake_resolve\",\"boss_quake_start\",\"wave_start\",\"room_cleared\",\"flash\",\"knockback\",\"screenshake\",\"shake\",\"camera_shake\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t,at:E.tick},e)));window.__rec={};window.__recTimer=setInterval(()=>{const s=E.state();const m={};for(const e of s.enemies)m[e.id]=[+e.x.toFixed(3),+e.z.toFixed(3),e.hp,e.kbTicks];window.__rec[E.tick]=m;},4);return 'armed '+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 500,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<40000){if(E.state().enemies.length>=3)return {ok:true,tick:E.tick};await new Promise(r=>setTimeout(r,8));}return {ok:false}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<40000){const h=window.__c.ev.find(e=>e.T==='hit'&&e.kind!=='ally'&&!window.__c.ev.some(d=>d.T==='death'&&d.id===e.target&&d.at===e.at));if(h){const tk=h.at;while(E.tick<tk+12)await new Promise(r=>setTimeout(r,4));const out=[];for(let t=tk-4;t<=tk+10;t++){const m=window.__rec[t];out.push([t,m&&m[h.target]?m[h.target]:null]);}return {hit:h,samples:out}}await new Promise(r=>setTimeout(r,4));}return {ok:false}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certA1-player-kb0"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__mark=window.__c.ev.length;return {mark:window.__mark,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<60000){const s=window.__c.ev.slice(window.__mark).find(e=>e.T==='enemy_spawn');if(s)return {spawn:s,tick:E.tick,enemies:E.state().enemies.map(e=>[e.id,e.kind,+e.x.toFixed(2),+e.z.toFixed(2)])};await new Promise(r=>setTimeout(r,4));}return {ok:false}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certA1-player-spawn0"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "shot",
+  "name": "certA1-player-spawn1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__recTimer);const m={};for(const e of window.__c.ev)m[e.T]=(m[e.T]||0)+1;return {tick:E.tick,fps:E.fps,counts:m,enemies:E.state().enemies.map(e=>[e.id,e.kind,+e.x.toFixed(2),+e.z.toFixed(2),e.hp])}})()"
+ }
+]

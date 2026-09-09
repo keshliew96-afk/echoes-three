@@ -1,0 +1,383 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  window.__c={ev:[],rows:[],dom:[],keys:[],ticksSeen:0,frames:0,started:performance.now(),flashOn:false,sampleOn:true};\n  for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"spawn_blocked\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"hit\",\"hit_immune\",\"death\",\"hitstop\",\"sound\",\"heal\",\"intent\",\"intent_denied\",\"dash_end\",\"downed\",\"revive\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"run_end\",\"defeat\",\"victory\",\"reward\",\"draft_taken\",\"path_chosen\",\"eshot_despawn\",\"zone_spawn\",\"zone_tick\",\"enemy_despawn\",\"basic_fire\",\"skill_cast\",\"ally_cast\",\"ally_basic\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t,ms:Math.round(performance.now()-window.__c.started)},e)));\n  window.addEventListener('keydown',e=>{if(e.repeat)return;const s=E.state();const p=s.party[0];window.__c.keys.push({key:e.code,t:E.tick,ms:Math.round(performance.now()-window.__c.started),x:p.x,z:p.z,dash:p.dashTicksLeft});},true);\n  window.addEventListener('keyup',e=>{const s=E.state();const p=s.party[0];window.__c.keys.push({key:e.code,upT:E.tick,t:E.tick,up:true,ms:Math.round(performance.now()-window.__c.started),x:p.x,z:p.z});},true);\n  const L=document.querySelector('#dmg-num-layer');window.__c.numLayer=!!L;\n  const lastKey=new WeakMap();\n  if(L){const mo=new MutationObserver(muts=>{const t=E.tick;const seen=new Set();for(const m of muts){const n=m.target.nodeType===3?m.target.parentElement:m.target;const el=n&&n.closest?n.closest('.dmg-num'):null;if(!el||seen.has(el))continue;seen.add(el);const cs=getComputedStyle(el);const vis=!(cs.display==='none'||cs.opacity==='0'||cs.visibility==='hidden'||!el.textContent);const k=el.textContent+'|'+vis;if(lastKey.get(el)===k)continue;lastKey.set(el,k);if(!vis)continue;const r=el.getBoundingClientRect();window.__c.dom.push({t,txt:el.textContent,x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),col:cs.color});}});mo.observe(L,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['style','class']});}\n  let meshes=[];let meshAt=0;const V=window.__arenaProbe&&window.__arenaProbe.root.position.constructor;const tmp=V?new V():null;\n  const refresh=()=>{meshes=[];if(!window.__arenaProbe)return;window.__arenaProbe.root.traverse(o=>{if(o.isMesh&&!o.isInstancedMesh&&o.material&&o.material.emissive&&o.visible)meshes.push(o);});meshAt=performance.now();};\n  const flashOf=(en)=>{const out={};if(!tmp)return out;for(const o of meshes){o.getWorldPosition(tmp);for(const id in en){const e=en[id];const dx=tmp.x-e[0],dz=tmp.z-e[1];if(dx*dx+dz*dz<0.81){const it=o.material.emissiveIntensity??1;const c=o.material.emissive;const l=(0.299*c.r+0.587*c.g+0.114*c.b)*it;if(!(id in out)||it>out[id].i)out[id]={i:+it.toFixed(3),l:+l.toFixed(3)};}}}return out;};\n  window.__c.refreshMeshes=refresh;\n  let last=-1;const f=()=>{window.__c.frames++;if(window.__c.sampleOn){const t=E.tick;if(t!==last){last=t;const s=E.state();const p=s.party[0];const cam=(window.__arenaProbe&&window.__arenaProbe.stage)?window.__arenaProbe.stage.camera.position:null;const en={};for(const e of s.enemies)en[e.id]=[+e.x.toFixed(3),+e.z.toFixed(3),e.hp,e.kbTicks];let fl=null;if(window.__c.flashOn){if(performance.now()-meshAt>1000)refresh();fl=flashOf(en);}const vfx=s.vfx||{};const num=vfx.numerals??(vfx.arena&&vfx.arena.numerals)??null;window.__c.rows.push({t,ms:Math.round(performance.now()-window.__c.started),px:+p.x.toFixed(4),pz:+p.z.toFixed(4),dash:p.dashTicksLeft,hp:p.hp,cam:cam?[+cam.x.toFixed(4),+cam.y.toFixed(4),+cam.z.toFixed(4)]:null,num,en,fl});window.__c.ticksSeen++;if(window.__c.rows.length>16000)window.__c.rows.splice(0,6000);}}requestAnimationFrame(f);};requestAnimationFrame(f);\n  return 'armed '+E.tick+' numLayer '+window.__c.numLayer+' probe '+!!window.__arenaProbe})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('startRun');return {seed:E.seed,modes:r&&r.frame&&r.frame.modes,room:r&&r.room,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const k0=E.tick;while(performance.now()-t0<30000){if((()=>{const s=E.state();return s.run.active&&s.run.combatActive&&s.enemies.length>0})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length,phase:E.state().run.phase};await sleep(4);}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,enemies:E.state().enemies.length,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c.flashOn=true;window.__c.refreshMeshes();E.cmd('iframe',0,3600);return 'flash tracer on '+E.tick})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();while(performance.now()-t0<70000){const u=E.runUi();if(u.screen==='draft')E.cmd('draftDecline');else if(u.screen==='path')E.cmd('pathChoose',0);const n=window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).length;if(n>=30&&E.state().enemies.length>0)return {ok:true,tick:E.tick,hits:n,fps:E.fps};await sleep(50);}return {ok:false,tick:E.tick,hits:window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  const rows=window.__c.rows;const ev=window.__c.ev;const byT=new Map();for(const r of rows)byT.set(r.t,r);\n  const rowAtOrBefore=(t)=>{for(let k=t;k>=t-6;k--){if(byT.has(k))return byT.get(k);}return null;};\n  const rowsBetween=(a,b)=>rows.filter(r=>r.t>=a&&r.t<=b);\n  const hits=ev.filter(e=>e.T==='hit'&&e.target>=4&&e.kind!=='dummy');const out=[];\n  for(const h of hits.slice(0,80)){const t=h.tick;const pre=rowAtOrBefore(t-1);const dead=ev.some(d=>d.T==='death'&&d.id===h.target&&d.tick<=t+1&&d.tick>=t-1);\n    let kbMax=0;let kbFirst=null;let kbTicksSeen=null;if(pre&&pre.en[h.target]){const p0=pre.en[h.target];for(const r of rowsBetween(t,t+8)){const p=r.en[h.target];if(!p)continue;const d=Math.hypot(p[0]-p0[0],p[1]-p0[1]);if(d>kbMax)kbMax=d;if(kbFirst==null&&d>0.03)kbFirst=r.t-t;if(p[3]>0&&(kbTicksSeen==null||p[3]>kbTicksSeen))kbTicksSeen=p[3];}}\n    const numDom=window.__c.dom.filter(d=>d.t>=t&&d.t<=t+2&&d.txt===String(Math.round(h.amount)));\n    const numAny=window.__c.dom.filter(d=>d.t>=t&&d.t<=t+2).map(d=>d.txt);\n    const n0=pre?pre.num:null;const nPost=rowsBetween(t,t+2).map(r=>r.num);\n    const snd=ev.filter(e=>e.T==='sound'&&e.tick>=t&&e.tick<=t+2).map(e=>e.slot);\n    const hs=ev.filter(e=>e.T==='hitstop'&&e.tick>=t&&e.tick<=t+2).map(e=>e.ticks+':'+e.cause);\n    let fl0=null,flMax=null,flTick=null;if(pre&&pre.fl&&h.target in pre.fl)fl0=pre.fl[h.target].i;for(const r of rowsBetween(t,t+3)){if(r.fl&&h.target in r.fl){const v=r.fl[h.target].i;if(flMax==null||v>flMax){flMax=v;flTick=r.t-t;}}}\n    out.push({t,tgt:h.target,kind:h.kind,src:h.source,amt:h.amount,del:h.delivery,kbSpec:h.kb,dead,kbObs:+kbMax.toFixed(3),kbAtTick:kbFirst,kbTicksSeen,numDomHit:numDom.length,numDomAny:numAny.slice(0,4),numCount:[n0,...nPost],sound:snd,hitstop:hs,flashBase:fl0,flashMax:flMax,flashAtTick:flTick,rowsIn2:rowsBetween(t,t+2).map(r=>r.t)});}\n  const ok=(o)=>({num:o.numDomHit>0||(o.numCount[0]!=null&&Math.max(...o.numCount.slice(1).map(v=>v??-1))>o.numCount[0]),kb:o.dead||o.kbObs>=0.06||o.kbTicksSeen>0,snd:o.sound.length>0,flash:(o.flashMax!=null&&o.flashMax>=0.9)||o.dead});\n  const verdicts=out.map(o=>Object.assign({t:o.t,src:o.src,dead:o.dead},ok(o)));\n  const fails=verdicts.filter(v=>!(v.num&&v.kb&&v.snd&&v.flash));\n  const tally={num:0,kb:0,snd:0,flash:0,all:0};for(const v of verdicts){if(v.num)tally.num++;if(v.kb)tally.kb++;if(v.snd)tally.snd++;if(v.flash)tally.flash++;if(v.num&&v.kb&&v.snd&&v.flash)tally.all++;}\n  return {hits:hits.length,analyzed:out.length,tally,failsCount:fails.length,fails:fails.slice(0,20),rows:out}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  const rows=window.__c.rows;const ev=window.__c.ev;const gaps=[];for(let i=1;i<rows.length;i++)gaps.push(rows[i].ms-rows[i-1].ms);const sorted=[...gaps].sort((a,b)=>a-b);const med=sorted[Math.floor(sorted.length/2)];\n  const hs=ev.filter(e=>e.T==='hitstop').slice(0,40).map(h=>{const i=rows.findIndex(r=>r.t>=h.tick);let freeze=null,frames=null;if(i>=0){const r0=rows[i];const j=rows.findIndex((r,k)=>k>i&&r.t>r0.t);if(j>0){freeze=rows[j].ms-r0.ms;frames=j-i;}}return {t:h.tick,ticks:h.ticks,cause:h.cause,wallMsOnTick:freeze,framesOnTick:frames};});\n  const causes={};for(const h of ev.filter(e=>e.T==='hitstop'))causes[h.cause+':'+h.ticks]=(causes[h.cause+':'+h.ticks]||0)+1;\n  const cam=rows.filter(r=>r.cam);const jerk=[];for(let i=2;i<cam.length;i++){const a=cam[i-2].cam,b=cam[i-1].cam,c=cam[i].cam;const jx=c[0]-2*b[0]+a[0],jz=c[2]-2*b[2]+a[2];jerk.push({t:cam[i].t,j:Math.hypot(jx,jz)});}\n  const deaths=ev.filter(e=>e.T==='death').map(e=>e.tick);const near=new Set();for(const d of deaths)for(let k=d-2;k<=d+12;k++)near.add(k);\n  const base=jerk.filter(j=>!near.has(j.t)).map(j=>j.j).sort((a,b)=>a-b);const baseMed=base[Math.floor(base.length/2)]||0,baseP95=base[Math.floor(base.length*0.95)]||0,baseMax=base.length?base[base.length-1]:0;\n  const thr=Math.max(0.012,baseP95*3);\n  const perKill=deaths.slice(0,40).map(d=>{const w=jerk.filter(j=>j.t>=d&&j.t<=d+12);const m=w.length?Math.max(...w.map(j=>j.j)):null;return {death:d,maxJerk:m!=null?+m.toFixed(4):null,ticksOver:w.filter(j=>j.j>thr).length};});\n  return {tickGapMedianMs:med,hitstops:hs,causes,shake:{thr:+thr.toFixed(4),baseMed:+baseMed.toFixed(5),baseP95:+baseP95.toFixed(5),baseMax:+baseMax.toFixed(5),perKill,killsWithShake:perKill.filter(k=>k.maxJerk!=null&&k.maxJerk>thr).length,kills:perKill.length}}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const hits=window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(0,6);return hits.map(h=>({t:h.tick,tgt:h.target,rows:window.__c.rows.filter(r=>r.t>=h.tick-2&&r.t<=h.tick+5).map(r=>r.t+':'+JSON.stringify(r.fl&&r.fl[h.target]))}))})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=E.state();const last=window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-3).map(h=>[h.tick,h.target,h.amount,h.source]);const rows=window.__c.rows;const r=rows[rows.length-1];return {frame:0,tick:E.tick,lastHits:last,enemies:s.enemies.map(e=>[e.id,e.kind,e.hp,...proj(e.x,0.35,e.z)]),flash:r&&r.fl,numerals:window.__c.dom.filter(d=>d.t>=E.tick-8).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h])}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-hitseq_00"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {frame:0,tickAfterShot:E.tick,lastHitTick:(window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-1)[0]||{}).tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=E.state();const last=window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-3).map(h=>[h.tick,h.target,h.amount,h.source]);const rows=window.__c.rows;const r=rows[rows.length-1];return {frame:1,tick:E.tick,lastHits:last,enemies:s.enemies.map(e=>[e.id,e.kind,e.hp,...proj(e.x,0.35,e.z)]),flash:r&&r.fl,numerals:window.__c.dom.filter(d=>d.t>=E.tick-8).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h])}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-hitseq_01"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {frame:1,tickAfterShot:E.tick,lastHitTick:(window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-1)[0]||{}).tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=E.state();const last=window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-3).map(h=>[h.tick,h.target,h.amount,h.source]);const rows=window.__c.rows;const r=rows[rows.length-1];return {frame:2,tick:E.tick,lastHits:last,enemies:s.enemies.map(e=>[e.id,e.kind,e.hp,...proj(e.x,0.35,e.z)]),flash:r&&r.fl,numerals:window.__c.dom.filter(d=>d.t>=E.tick-8).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h])}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-hitseq_02"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {frame:2,tickAfterShot:E.tick,lastHitTick:(window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-1)[0]||{}).tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=E.state();const last=window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-3).map(h=>[h.tick,h.target,h.amount,h.source]);const rows=window.__c.rows;const r=rows[rows.length-1];return {frame:3,tick:E.tick,lastHits:last,enemies:s.enemies.map(e=>[e.id,e.kind,e.hp,...proj(e.x,0.35,e.z)]),flash:r&&r.fl,numerals:window.__c.dom.filter(d=>d.t>=E.tick-8).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h])}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-hitseq_03"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {frame:3,tickAfterShot:E.tick,lastHitTick:(window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-1)[0]||{}).tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=E.state();const last=window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-3).map(h=>[h.tick,h.target,h.amount,h.source]);const rows=window.__c.rows;const r=rows[rows.length-1];return {frame:4,tick:E.tick,lastHits:last,enemies:s.enemies.map(e=>[e.id,e.kind,e.hp,...proj(e.x,0.35,e.z)]),flash:r&&r.fl,numerals:window.__c.dom.filter(d=>d.t>=E.tick-8).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h])}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-hitseq_04"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {frame:4,tickAfterShot:E.tick,lastHitTick:(window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-1)[0]||{}).tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=E.state();const last=window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-3).map(h=>[h.tick,h.target,h.amount,h.source]);const rows=window.__c.rows;const r=rows[rows.length-1];return {frame:5,tick:E.tick,lastHits:last,enemies:s.enemies.map(e=>[e.id,e.kind,e.hp,...proj(e.x,0.35,e.z)]),flash:r&&r.fl,numerals:window.__c.dom.filter(d=>d.t>=E.tick-8).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h])}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-hitseq_05"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {frame:5,tickAfterShot:E.tick,lastHitTick:(window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-1)[0]||{}).tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=E.state();const last=window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-3).map(h=>[h.tick,h.target,h.amount,h.source]);const rows=window.__c.rows;const r=rows[rows.length-1];return {frame:6,tick:E.tick,lastHits:last,enemies:s.enemies.map(e=>[e.id,e.kind,e.hp,...proj(e.x,0.35,e.z)]),flash:r&&r.fl,numerals:window.__c.dom.filter(d=>d.t>=E.tick-8).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h])}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-hitseq_06"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {frame:6,tickAfterShot:E.tick,lastHitTick:(window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-1)[0]||{}).tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=E.state();const last=window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-3).map(h=>[h.tick,h.target,h.amount,h.source]);const rows=window.__c.rows;const r=rows[rows.length-1];return {frame:7,tick:E.tick,lastHits:last,enemies:s.enemies.map(e=>[e.id,e.kind,e.hp,...proj(e.x,0.35,e.z)]),flash:r&&r.fl,numerals:window.__c.dom.filter(d=>d.t>=E.tick-8).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h])}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-hitseq_07"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {frame:7,tickAfterShot:E.tick,lastHitTick:(window.__c.ev.filter(e=>e.T==='hit'&&e.target>=4).slice(-1)[0]||{}).tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('killAllEnemies');E.cmd('teleport',-3,2);return 'tp '+E.tick})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const p=E.state().party[0];const r=E.cmd('spawn','dummy',p.x+1.6,p.z);return {dummy:r,player:[p.x,p.z]}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const s=E.state();const d=s.enemies.find(e=>e.kind==='dummy');window.__c.refreshMeshes();return {tick:E.tick,dummy:d&&[d.id,+d.x.toFixed(2),+d.z.toFixed(2),...proj(d.x,0.35,d.z),...proj(d.x,0.9,d.z)],enemies:s.enemies.length}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-dummy-base"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const r=E.cmd('hitOnce');const s=E.state();const d=s.enemies.find(e=>e.kind==='dummy');return {i:0,hitTick:E.tick,r,dummy:d&&[d.id,+d.x.toFixed(2),+d.z.toFixed(2),...proj(d.x,0.35,d.z)]}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-dummyhit_0"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const rows=window.__c.rows;const last=rows.slice(-8).map(r=>r.t+':'+JSON.stringify(r.fl));return {i:0,tickAfterShot:E.tick,fl:last.join(' '),numerals:window.__c.dom.slice(-3).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h]),dummies:E.state().enemies.filter(e=>e.kind==='dummy').map(e=>[e.id,e.hp,+e.x.toFixed(3)])}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "if",
+  "cond": "(()=>!__echoes.state().enemies.some(e=>e.kind==='dummy'))()",
+  "then": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const p=E.state().party[0];const r=E.cmd('spawn','dummy',p.x+1.6,p.z);window.__c.refreshMeshes();return {respawn:r}})()"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const r=E.cmd('hitOnce');const s=E.state();const d=s.enemies.find(e=>e.kind==='dummy');return {i:1,hitTick:E.tick,r,dummy:d&&[d.id,+d.x.toFixed(2),+d.z.toFixed(2),...proj(d.x,0.35,d.z)]}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-dummyhit_1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const rows=window.__c.rows;const last=rows.slice(-8).map(r=>r.t+':'+JSON.stringify(r.fl));return {i:1,tickAfterShot:E.tick,fl:last.join(' '),numerals:window.__c.dom.slice(-3).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h]),dummies:E.state().enemies.filter(e=>e.kind==='dummy').map(e=>[e.id,e.hp,+e.x.toFixed(3)])}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "if",
+  "cond": "(()=>!__echoes.state().enemies.some(e=>e.kind==='dummy'))()",
+  "then": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const p=E.state().party[0];const r=E.cmd('spawn','dummy',p.x+1.6,p.z);window.__c.refreshMeshes();return {respawn:r}})()"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const r=E.cmd('hitOnce');const s=E.state();const d=s.enemies.find(e=>e.kind==='dummy');return {i:2,hitTick:E.tick,r,dummy:d&&[d.id,+d.x.toFixed(2),+d.z.toFixed(2),...proj(d.x,0.35,d.z)]}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-dummyhit_2"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const rows=window.__c.rows;const last=rows.slice(-8).map(r=>r.t+':'+JSON.stringify(r.fl));return {i:2,tickAfterShot:E.tick,fl:last.join(' '),numerals:window.__c.dom.slice(-3).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h]),dummies:E.state().enemies.filter(e=>e.kind==='dummy').map(e=>[e.id,e.hp,+e.x.toFixed(3)])}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "if",
+  "cond": "(()=>!__echoes.state().enemies.some(e=>e.kind==='dummy'))()",
+  "then": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const p=E.state().party[0];const r=E.cmd('spawn','dummy',p.x+1.6,p.z);window.__c.refreshMeshes();return {respawn:r}})()"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const r=E.cmd('hitOnce');const s=E.state();const d=s.enemies.find(e=>e.kind==='dummy');return {i:3,hitTick:E.tick,r,dummy:d&&[d.id,+d.x.toFixed(2),+d.z.toFixed(2),...proj(d.x,0.35,d.z)]}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-dummyhit_3"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const rows=window.__c.rows;const last=rows.slice(-8).map(r=>r.t+':'+JSON.stringify(r.fl));return {i:3,tickAfterShot:E.tick,fl:last.join(' '),numerals:window.__c.dom.slice(-3).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h]),dummies:E.state().enemies.filter(e=>e.kind==='dummy').map(e=>[e.id,e.hp,+e.x.toFixed(3)])}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "if",
+  "cond": "(()=>!__echoes.state().enemies.some(e=>e.kind==='dummy'))()",
+  "then": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const p=E.state().party[0];const r=E.cmd('spawn','dummy',p.x+1.6,p.z);window.__c.refreshMeshes();return {respawn:r}})()"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const r=E.cmd('hitOnce');const s=E.state();const d=s.enemies.find(e=>e.kind==='dummy');return {i:4,hitTick:E.tick,r,dummy:d&&[d.id,+d.x.toFixed(2),+d.z.toFixed(2),...proj(d.x,0.35,d.z)]}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-dummyhit_4"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const rows=window.__c.rows;const last=rows.slice(-8).map(r=>r.t+':'+JSON.stringify(r.fl));return {i:4,tickAfterShot:E.tick,fl:last.join(' '),numerals:window.__c.dom.slice(-3).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h]),dummies:E.state().enemies.filter(e=>e.kind==='dummy').map(e=>[e.id,e.hp,+e.x.toFixed(3)])}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "if",
+  "cond": "(()=>!__echoes.state().enemies.some(e=>e.kind==='dummy'))()",
+  "then": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const p=E.state().party[0];const r=E.cmd('spawn','dummy',p.x+1.6,p.z);window.__c.refreshMeshes();return {respawn:r}})()"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const P=window.__arenaProbe;const cam=P.stage.camera;const V=P.root.position.constructor;const W=window.innerWidth,H=window.innerHeight;const proj=(x,y,z)=>{const v=new V(x,y,z);v.project(cam);return [Math.round((v.x*0.5+0.5)*W),Math.round((-v.y*0.5+0.5)*H)];};const r=E.cmd('hitOnce');const s=E.state();const d=s.enemies.find(e=>e.kind==='dummy');return {i:5,hitTick:E.tick,r,dummy:d&&[d.id,+d.x.toFixed(2),+d.z.toFixed(2),...proj(d.x,0.35,d.z)]}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC1-dummyhit_5"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const rows=window.__c.rows;const last=rows.slice(-8).map(r=>r.t+':'+JSON.stringify(r.fl));return {i:5,tickAfterShot:E.tick,fl:last.join(' '),numerals:window.__c.dom.slice(-3).map(d=>[d.t,d.txt,d.x,d.y,d.w,d.h]),dummies:E.state().enemies.filter(e=>e.kind==='dummy').map(e=>[e.id,e.hp,+e.x.toFixed(3)])}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "if",
+  "cond": "(()=>!__echoes.state().enemies.some(e=>e.kind==='dummy'))()",
+  "then": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const p=E.state().party[0];const r=E.cmd('spawn','dummy',p.x+1.6,p.z);window.__c.refreshMeshes();return {respawn:r}})()"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const m={};for(const e of window.__c.ev)m[e.T]=(m[e.T]||0)+1;return {tick:E.tick,counts:m}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=window.__c.rows;let gaps=0,maxGap=0;for(let i=1;i<r.length;i++){const g=r[i].t-r[i-1].t;if(g>1){gaps+=g-1;maxGap=Math.max(maxGap,g);}}return {ticksSeen:window.__c.ticksSeen,frames:window.__c.frames,fps:E.fps,missedTicks:gaps,maxTickGap:maxGap,span:r.length?r[r.length-1].t-r[0].t:0}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;return {tag:\"hits-end\",tick:E.tick,fps:E.fps,version:E.version,scene:s.scene,vfxMode:s.vfx&&s.vfx.mode,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,roomState:s.room,enemies:s.enemies.map(e=>[e.id,e.kind,+e.x.toFixed(2),+e.z.toFixed(2),e.hp]),party:s.party.map(p=>[p.id,p.classId||'healer',p.hp,p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),ui:E.runUi().screen,hud:E.hud.combat(),threat:(({gated,offFrame,markersDrawn,domMarkers,uncued})=>({gated,offFrame,markersDrawn,domMarkers,uncued}))(E.hud.threat())}})()"
+ }
+]

@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of ['run_start','room_enter','room_cleared','wave_start','death','banner','run_end'])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed v'+E.version})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {room:E.state().run.room}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<25000){if(window.__c.ev.some(e=>e.T==='room_cleared'))break;E.cmd('killAllEnemies');await new Promise(r=>setTimeout(r,250));}return {cleared:window.__c.ev.filter(e=>e.T==='room_cleared').length,tick:E.tick}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {tag:'runplays',room:s.run.room,phase:s.run.phase,mode:s.run.mode,banner:E.hud.banner(),cleared:window.__c.ev.filter(e=>e.T==='room_cleared').length,fps:E.fps,version:E.version}})()"
+ }
+]

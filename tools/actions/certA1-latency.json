@@ -1,0 +1,30 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const d=document.createElement('div');d.id='certA1-tick';d.style.cssText='position:fixed;left:40px;top:120px;font:bold 72px monospace;color:#fff;background:#000;padding:10px;z-index:99999;pointer-events:none';document.body.appendChild(d);(function f(){d.textContent='T'+E.tick;requestAnimationFrame(f)})();return 'overlay at tick '+E.tick})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {beforeA:E.tick,ms:Math.round(performance.now())}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certA1-latency-a"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {afterA:E.tick,ms:Math.round(performance.now())}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certA1-latency-b"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {afterB:E.tick,ms:Math.round(performance.now())}})()"
+ }
+]

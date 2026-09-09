@@ -1,0 +1,85 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return 'armed '+E.tick+' seed '+E.seed+' v'+E.version})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {tick:E.tick,room:r&&r.room,phase:r&&r.phase,mode:r&&r.mode}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {tag:'s0',tick:E.tick,fps:E.fps,ui:E.runUi().screen,cards:E.runUi().cards.map(c=>[c.name,c.opacity,c.box.x,c.box.y])}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certA1-bible-shop-s0"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {tag:'s1',tick:E.tick}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certA1-bible-shop-s1"
+ },
+ {
+  "type": "mousemove",
+  "x": 528,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 350
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const el=document.elementFromPoint(528,390);const card=el&&(el.closest('.rn-card')||el.closest('button')||el);if(!card)return {tag:\"hoverBounce\",none:true};const cs=getComputedStyle(card);const r=card.getBoundingClientRect();return {tag:\"hoverBounce\",tick:E.tick,cls:card.className,box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],transform:cs.transform,boxShadow:cs.boxShadow,border:cs.borderColor,filter:cs.filter,bg:cs.backgroundColor,outline:cs.outlineColor,hover:card.matches(':hover')}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certA1-bible-shop-hover"
+ },
+ {
+  "type": "mousemove",
+  "x": 1072,
+  "y": 390
+ },
+ {
+  "type": "wait",
+  "ms": 350
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const el=document.elementFromPoint(1072,390);const card=el&&(el.closest('.rn-card')||el.closest('button')||el);if(!card)return {tag:\"hoverAscend\",none:true};const cs=getComputedStyle(card);const r=card.getBoundingClientRect();return {tag:\"hoverAscend\",tick:E.tick,cls:card.className,box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],transform:cs.transform,boxShadow:cs.boxShadow,border:cs.borderColor,filter:cs.filter,bg:cs.backgroundColor,outline:cs.outlineColor,hover:card.matches(':hover')}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certA1-bible-shop-hoverAscend"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 569
+ },
+ {
+  "type": "wait",
+  "ms": 350
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const el=document.elementFromPoint(800,569);const card=el&&(el.closest('.rn-card')||el.closest('button')||el);if(!card)return {tag:\"hoverAdvance\",none:true};const cs=getComputedStyle(card);const r=card.getBoundingClientRect();return {tag:\"hoverAdvance\",tick:E.tick,cls:card.className,box:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],transform:cs.transform,boxShadow:cs.boxShadow,border:cs.borderColor,filter:cs.filter,bg:cs.backgroundColor,outline:cs.outlineColor,hover:card.matches(':hover')}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {tag:'end',tick:E.tick,fps:E.fps,ui:E.runUi().screen,wallet:E.runUi().wallet}})()"
+ }
+]

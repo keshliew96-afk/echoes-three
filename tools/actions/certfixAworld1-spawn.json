@@ -1,0 +1,14 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {tick:E.tick,seed:E.seed}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {tag:'spawn',tick:E.tick,fps:E.fps,version:E.version,room:s.run.room,mode:s.run.mode,vfx:s.vfx&&s.vfx.arena&&{propTypes:s.vfx.arena.propTypes,propShadows:s.vfx.arena.propShadows,emitters:s.vfx.arena.emitters,grass:s.vfx.arena.grass,dressing:s.vfx.arena.dressing}}})()"
+ }
+]

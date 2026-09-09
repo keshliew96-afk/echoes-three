@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const e=window.__echoes;return {keys:Object.keys(e),version:e.version,tick:e.tick,fps:e.fps,ent:e.entityCount,seed:e.seed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const e=window.__echoes;const s=e.state();return JSON.stringify(s).slice(0,3000)})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const e=window.__echoes;try{return JSON.stringify(e.cmd('campState')).slice(0,3000)}catch(x){return String(x)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const e=window.__echoes;try{return JSON.stringify(e.cmd('help'))}catch(x){return String(x)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const e=window.__echoes;return JSON.stringify((e.events||[]).slice(-30))})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const e=window.__echoes;return Object.keys(e.hud||{}).join(',')+\" | \"+String(e.cmd).slice(0,400)})()"
+ }
+]
