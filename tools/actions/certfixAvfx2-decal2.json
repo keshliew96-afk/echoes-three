@@ -1,0 +1,32 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__d={deaths:[]};E.on('death',e=>window.__d.deaths.push({tick:e.tick,x:e.x,z:e.z,kind:e.kind}));E.cmd('startRun');return {ok:1}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();while(performance.now()-t0<60000){if(window.__d.deaths.length>=2)break;await new Promise(r=>setTimeout(r,20));}return {tag:'deaths',deaths:window.__d.deaths,tick:E.tick}})()"
+ },
+ {
+  "type": "mouseup",
+  "button": "right",
+  "ms": 4200
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();return {tag:'decalframe',tick:E.tick,decals:s.vfx.arena.decals,scorch:s.vfx.arena.scorch,party:s.party.map(p=>[p.classId,+p.x.toFixed(2),+p.z.toFixed(2)]),enemies:s.enemies.length}})()"
+ }
+]

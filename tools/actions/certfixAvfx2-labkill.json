@@ -1,0 +1,15 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__d={deaths:[]};E.on('death',e=>window.__d.deaths.push({x:e.x,z:e.z}));E.cmd('startRun');return {ok:1}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();while(performance.now()-t0<40000){if(E.state().enemies.length>=1)break;await new Promise(r=>setTimeout(r,20));}E.cmd('killAllEnemies');const ids=[E.cmd('spawn','boar',3.0,-2.0),E.cmd('spawn','boar',-3.0,-2.0)];await new Promise(r=>setTimeout(r,300));E.cmd('killAllEnemies');await new Promise(r=>setTimeout(r,1500));return {tag:'labkill',deaths:window.__d.deaths.slice(-4),decals:E.state().vfx.arena.decals,party:E.state().party.map(p=>[p.classId,+p.x.toFixed(2),+p.z.toFixed(2)])}})()"
+ }
+]

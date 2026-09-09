@@ -1,0 +1,19 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__k={n:0};E.on('screenshake',()=>window.__k.n++);E.cmd('startRun');return {ok:1}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();while(performance.now()-t0<45000){if(window.__k.n>=2)break;await new Promise(r=>setTimeout(r,20));}const s=E.state();return {tag:'shakeprobe',myEvents:window.__k.n,arenaKeys:Object.keys(s.vfx.arena||{}),shakes:s.vfx.arena&&s.vfx.arena.shakes,shake:s.vfx.arena&&s.vfx.arena.shake,cam:s.vfx.arena&&s.vfx.arena.cam,decals:s.vfx.arena&&s.vfx.arena.decals,particles:s.vfx.arena&&s.vfx.arena.particles,numerals:s.vfx.arena&&s.vfx.arena.numerals,scene:s.scene}})()"
+ }
+]

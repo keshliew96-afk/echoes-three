@@ -1,0 +1,19 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');return {room:1}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const out={kb:[],cam:[],shakeSeen:0};let pending=null;E.on('hit',e=>{if(e.kb>0&&!pending)pending={id:e.target,kb:e.kb,t0:E.tick};});E.on('screenshake',e=>{out.shakeSeen++;});const t0=performance.now();while(performance.now()-t0<45000){  const s=E.state();const a=s.vfx&&s.vfx.arena;if(a&&a.cam)out.cam.push([E.tick,+a.cam[0].toFixed(4),+a.cam[1].toFixed(4),a.shake!==undefined?+a.shake.toFixed(4):null]);  if(pending){const e=s.enemies.find(q=>q.id===pending.id);if(e){if(!pending.p0)pending.p0=[e.x,e.z];pending.p1=[e.x,e.z];pending.dt=E.tick-pending.t0;if(pending.dt>=14){const d=Math.hypot(pending.p1[0]-pending.p0[0],pending.p1[1]-pending.p0[1]);out.kb.push({kb:pending.kb,ticks:pending.dt,travel:+d.toFixed(3)});pending=null;}}else pending=null;}  if(out.kb.length>=3&&out.shakeSeen>=1)break;  await new Promise(r=>setTimeout(r,10));}out.cam=out.cam.slice(-260);const xs=out.cam.map(c=>c[1]);const zs=out.cam.map(c=>c[2]);return {kb:out.kb,shakes:out.shakeSeen,camSamples:out.cam.length,camXrange:+(Math.max(...xs)-Math.min(...xs)).toFixed(4),camZrange:+(Math.max(...zs)-Math.min(...zs)).toFixed(4),maxShake:Math.max(...out.cam.map(c=>c[3]||0))};})()"
+ }
+]

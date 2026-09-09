@@ -130,12 +130,19 @@ function getSplatTexture() {
   canvas.height = size;
   const ctx = canvas.getContext('2d');
   const cx = size / 2;
+  // The mask rides the COLOUR channels at full alpha, never the alpha channel:
+  // a canvas is premultiplied, so a gradient drawn as "green at alpha 0.3" comes
+  // back out of the un-premultiply as FULL green, and every falloff in the mask
+  // flattens into a hard-edged disc. (Measured: the first cut of this decal read
+  // as a cream puddle with a hard rim.)
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, size, size);
   const blob = (x, y, r, a, channel) => {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    const rgb = channel === 'ash' ? '0,255,0' : '255,0,0';
-    g.addColorStop(0, `rgba(${rgb},${a})`);
-    g.addColorStop(0.65, `rgba(${rgb},${a * 0.75})`);
-    g.addColorStop(1, `rgba(${rgb},0)`);
+    const c = (v) => (channel === 'ash' ? `rgb(0,${Math.round(v * 255)},0)` : `rgb(${Math.round(v * 255)},0,0)`);
+    g.addColorStop(0, c(a));
+    g.addColorStop(0.65, c(a * 0.6));
+    g.addColorStop(1, 'rgb(0,0,0)');
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -192,7 +199,7 @@ function makeSplatMaterial(darkColor, ashColor, opacity) {
       void main() {
         vec2 m = texture2D( uMask, vUv ).rg;
         float ash = max( 0.0, m.g - m.r );          // ash only where the blot is not
-        float a = clamp( m.r + ash * 0.42, 0.0, 1.0 ) * uOpacity;
+        float a = clamp( m.r + ash * 0.3, 0.0, 1.0 ) * uOpacity;
         vec3 col = mix( uAsh, uDark, m.r / max( m.r + ash, 0.0001 ) );
         gl_FragColor = vec4( col, a );
       }
@@ -207,7 +214,7 @@ export function createDecalPool(parent, cosmetic) {
   // Ash: Warm Grey pulled toward Bone, i.e. a neutral — well under the
   // analyzer's 0.35 saturation gate, so a kill mark can never contaminate a
   // reserved hue band the way a red splat would.
-  const ash = new Color(PALETTE.warmGrey).lerp(new Color(PALETTE.bone), 0.5);
+  const ash = new Color(PALETTE.warmGrey).multiplyScalar(0.5);
   let seq = 0; // y-stagger sequence so overlapping decals never z-fight
 
   function spawn(x, z) {
