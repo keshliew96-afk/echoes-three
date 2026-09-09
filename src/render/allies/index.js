@@ -334,8 +334,8 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     if (ev.shape === 'melee_arc') spawnWedge(ev, ev.reach, ev.halfAngle, 0.4);
     else if (ev.shape === 'nova') {
       spawnRing(ev.x, ev.z, { from: 0.25, to: ev.radius, life: 0.4, opacity: 0.85 });
-      spawnFlash(ev.x, 0.5, ev.z, { color: PARCH, size: 0.4, opacity: 0.95, life: 0.2, grow: 0.4 });
-      spawnFlash(ev.x, 0.5, ev.z, { color: AMBER, size: 0.85, opacity: 0.6, life: 0.32, grow: 0.7 });
+      spawnFlash(ev.x, 0.5, ev.z, { color: PARCH, size: 0.34, opacity: 0.7, life: 0.2, grow: 0.4 });
+      spawnFlash(ev.x, 0.5, ev.z, { color: AMBER, size: 0.7, opacity: 0.42, life: 0.32, grow: 0.7 });
       spawnMotes(ev.x, ev.z, { count: 9, spread: ev.radius * 0.8 });
     }
   });

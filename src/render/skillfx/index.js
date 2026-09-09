@@ -740,7 +740,17 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       new MeshBasicMaterial({
         // Authored through the post-chain inverse so the pixel that lands on
         // screen IS the palette hex (§19.1), not what ACES makes of it.
-        color: heal ? exactColor(HEAL_CORE) : exactColor(PARCH),
+        // Certification fix round 1 (2026-09-09): a Volley fires three of these
+        // at once and the party stands in the lane. At full Parchment the core
+        // sits ABOVE the composer's 0.85 bloom threshold, so three overlapping
+        // bolts summed into one blown white mass that swallowed the tank, the
+        // swordsman and the archer (REFERENCE_BAR check 3, scored 1 by all
+        // three scorers: "one bloom-blown white mass at 50%"). The damage core
+        // is pushed just under the threshold — it is still the brightest thing
+        // on the bolt and still reads Parchment, it just stops being its own
+        // light source. The heal core keeps its solved value (its hue is the
+        // thing being protected there, see the note above).
+        color: heal ? exactColor(HEAL_CORE) : underBloom(exactColor(PARCH)),
         toneMapped: false,
         // The core joins the TRANSPARENT pass (opacity 1, no depth write) only
         // so renderOrder can put it ON TOP of its own additive glow. Drawn
@@ -790,10 +800,13 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     );
     ink.rotation.z = Math.PI / 2;
     ink.position.y = BOLT_Y;
-    ink.scale.setScalar(1.34);
+    ink.scale.setScalar(1.44);
     ink.renderOrder = 5;
     g.add(ink);
-    const glow = makeGlowSprite({ color: heal ? HEAL : AMBER, size: 0.55, opacity: 0.85 });
+    // Glow pulled down with the core: the halo is what actually stacked
+    // between neighbouring bolts (additive), so it loses a third of its
+    // strength and a fifth of its radius. Three bolts now read as three.
+    const glow = makeGlowSprite({ color: heal ? HEAL : AMBER, size: 0.5, opacity: 0.62 });
     glow.position.y = BOLT_Y;
     glow.renderOrder = 4;
     g.add(glow);
@@ -808,10 +821,10 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   const trailPool = [];
   function spawnTrailDot(x, z, color) {
     let s = trailPool.pop();
-    if (!s) s = makeGlowSprite({ color, size: 0.24, opacity: 0.4 });
+    if (!s) s = makeGlowSprite({ color, size: 0.3, opacity: 0.5 });
     s.material.color.set(color);
-    s.material.opacity = 0.4;
-    s.scale.set(0.24, 0.24, 1);
+    s.material.opacity = 0.5;
+    s.scale.set(0.3, 0.3, 1);
     s.position.set(x, BOLT_Y, z);
     root.add(s);
     trails.push({ s, age: 0 });
