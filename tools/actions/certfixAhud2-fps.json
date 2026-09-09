@@ -1,0 +1,18 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__a2={ev:[]};for(const t of [\"telegraph_start\",\"telegraph_resolve\",\"hit\",\"death\",\"enemy_spawn\",\"flash\",\"knockback\",\"screenshake\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_adds\",\"boss_trample\",\"boss_spawn\",\"boss_death\",\"wave_start\",\"room_cleared\",\"spawn_telegraph\",\"skill_cast\",\"hitstop\",\"enemy_fire\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\",\"shop_purchase\",\"currency_denied\"]){try{E.on(t,e=>window.__a2.ev.push(Object.assign({T:t},e)));}catch(err){}}return {armed:true,tick:E.tick,version:E.version,seed:E.seed,bootSeed:E.bootSeed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {tag:'skip7',seed:E.seed,tick:E.tick,room:r&&r.room,phase:r&&r.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const t0=performance.now();let n=0,worst=0,prev=t0;await new Promise(res=>{const f=(t)=>{n++;const d=t-prev;if(d>worst)worst=d;prev=t;if(t-t0<10000)requestAnimationFrame(f);else res();};requestAnimationFrame(f);});const ms=performance.now()-t0;return {tag:'fps10s',frames:n,ms:Math.round(ms),fps:+(n/(ms/1000)).toFixed(1),worstFrameMs:+worst.toFixed(1)}})()"
+ }
+]

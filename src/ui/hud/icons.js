@@ -144,6 +144,17 @@ const ICONS = {
     ['circle', { cx: 16, cy: 16, r: 7.5, 'stroke-width': 1.8 }],
     ['path', { d: 'M9.5 11.5 L12 9', 'stroke-width': 1.8 }],
   ],
+  // The Peddler's lantern: a hanging brass lamp — ring, cap, glazed body with
+  // a flame inside, and a base. Stands ON the shelf's title rail so the panel
+  // has a real light SOURCE instead of an abstract bead (REFERENCE_BAR check 2
+  // "every emitter has a glow halo" — the halo is the .rn-lamp pool behind it).
+  lantern: [
+    ['path', { d: 'M16 2 A2.6 2.6 0 0 1 16 7.2', 'stroke-width': 1.8 }],
+    ['path', { d: 'M11 9 H21 L19.5 11.5 H12.5 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M12.5 11.5 H19.5 L21 24 H11 Z' }],
+    ['path', { d: 'M9 26 H23 L21.5 29 H10.5 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M16 14 C18.6 17 18.6 20.4 16 22.6 C13.4 20.4 13.4 17 16 14 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
   // Location marker: a compass diamond on a pin.
   marker: [
     ['path', { d: 'M16 3 L22 14 L16 25 L10 14 Z' }],

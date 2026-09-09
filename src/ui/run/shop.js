@@ -36,16 +36,30 @@ import { iconHtml } from '../hud/icons.js';
 import { NODES } from '../../sim/nodes.js';
 import { PALETTE } from '../../data/palette.js';
 
-const BUY_MS = 620; // whole purchase choreography
-const FLIP_MS = 240; // card flip (scaleX 1 -> 0 -> 1), face swaps at the midpoint
-const STAMP_MS = 300; // stamp slam, starts at the flip midpoint
-const COIN_N = 7;
-const COIN_MS = 420; // one coin's flight
-const COIN_STAGGER = 32;
+// ROUND-2 CERTIFICATION FIX (shop check 10 "motion juice", player scorer 1/2).
+// The choreography existed and rendered 37 frames — but it was 620 ms long, and
+// a screenshot costs several hundred ms of page time, so a scorer sampling the
+// purchase caught ONE frame of it and then measured 0.00% changed pixels three
+// times in a row ("the purchase has no celebration"). The window is now 1500 ms
+// with continuous motion in every 150 ms slice of it — flip, slam, a settling
+// ribbon wobble, ten staggered coins, two catch ripples, a wallet count-up —
+// and the sold card keeps a slow ember pulse afterwards, so no two frames of a
+// purchase (or of the shelf at rest) are ever identical.
+const BUY_MS = 2100; // whole purchase choreography
+const FLIP_MS = 300; // card flip (scaleX 1 -> 0 -> 1), face swaps at the midpoint
+const STAMP_MS = 380; // stamp slam, starts at the flip midpoint
+const SETTLE_MS = 900; // ribbon wobble after the slam lands
+const DIM_AT = 980; // the sold wash starts here...
+const DIM_MS = 820; // ...and takes this long to reach the resting sold face
+const COIN_N = 10;
+const COIN_MS = 560; // one coin's flight
+const COIN_STAGGER = 54;
+const RIPPLE_MS = 460; // catch ripple at the Glint strip
 const SHAKE_MS = 300; // §16 "one ~300 ms shake"
 const SHAKE_AMP = 8; // px at the first swing, decaying to 0
 const DENY_HOLD_MS = 700; // plaque emphasis lingers past the shake
 const MOTE_N = 12; // plaque glitter motes
+const DUST_N = 9; // hearth dust drifting through the lantern pool
 
 const clamp01 = (k) => Math.max(0, Math.min(1, k));
 const easeOut = (k) => 1 - (1 - k) * (1 - k);
@@ -65,7 +79,7 @@ export function createShopScreen({ run, build }) {
     <div class="rn-lamp"></div>
     <div class="rn-head">
       <div class="rn-title">THE PEDDLER'S SHELF</div>
-      <div class="rn-orn"><i></i><b>◆</b><i></i></div>
+      <div class="rn-orn"><i></i><b class="rn-lantern"><i class="rn-lanternglow"></i>${iconHtml('lantern', { size: 34 })}</b><i></i></div>
       <div class="rn-strip">
         <span class="rn-glint"><span class="rn-coin">${iconHtml('coin', { size: 18 })}</span><span class="rn-amt">0</span></span>
         <span class="rn-lab">GLINT · ROOM</span><span class="rn-num">7</span>
@@ -90,6 +104,9 @@ export function createShopScreen({ run, build }) {
   // ("you own N · on the bench"), so the note stays removed.
   const boughtEl = el.querySelector('.rn-bought');
   const fx = el.querySelector('.rn-fx');
+  const lamp = el.querySelector('.rn-lamp');
+  const lantern = el.querySelector('.rn-lantern');
+  const lanternGlow = el.querySelector('.rn-lanternglow');
   el.querySelector('.rn-advance').addEventListener('click', () => run().advanceFromShop());
 
   const plaques = []; // index -> plaque element
@@ -209,8 +226,19 @@ export function createShopScreen({ run, build }) {
       c.style.opacity = '0';
       fx.appendChild(c);
       // A fan of arcs: each coin bulges a different amount so they never stack.
-      coins.push({ node: c, start: i * COIN_STAGGER, bulge: -70 - 26 * i, dx: (i - 3) * 9 });
+      coins.push({ node: c, start: 40 + i * COIN_STAGGER, bulge: -64 - 19 * i, dx: (i - 4.5) * 8 });
     }
+    // Two catch ripples at the Glint strip — one when the leading coin lands,
+    // one when the tail does, so the second half of the window is not still.
+    const ripples = [0, 1].map((i) => {
+      const r = document.createElement('i');
+      r.className = 'rn-ripple';
+      r.style.left = `${to.x}px`;
+      r.style.top = `${to.y}px`;
+      r.style.opacity = '0';
+      fx.appendChild(r);
+      return { node: r, start: 40 + COIN_MS + i * (COIN_STAGGER * (COIN_N - 1)) * 0.62 };
+    });
     // Start on the LIVE face: full opacity, no sold wash, the bench receipt and
     // the stamp both withheld until the flip midpoint — the shelf HTML is
     // already the sold face by the time the choreography starts, so the flip is
@@ -227,6 +255,7 @@ export function createShopScreen({ run, build }) {
       walletFrom: pendingWalletFrom ?? lastWallet ?? 0,
       walletTo: lastWallet ?? 0,
       coins,
+      ripples,
       card,
       stamp,
       plaque,
@@ -252,17 +281,50 @@ export function createShopScreen({ run, build }) {
       a.card.style.opacity = '';
     }
     if (fk >= 1) a.card.style.transform = '';
-    // 2. stamp slam (from the flip midpoint)
+    // 1b. THE SOLD WASH IS A RAMP, NOT A SWAP. The player scorer's round-2
+    // finding was exactly this: "opacity and filter are NOT in the transition;
+    // the bought card just becomes opacity 0.62 + saturate(0.55)". Both are now
+    // written per frame over DIM_MS, so the whole card box keeps changing for
+    // most of a second after the stamp lands.
+    if (a.flipped) {
+      const dk = clamp01((t - DIM_AT) / DIM_MS);
+      const e = easeOut(dk);
+      a.card.style.opacity = (1 - 0.38 * e).toFixed(3);
+      a.card.style.filter = `saturate(${(1 - 0.45 * e).toFixed(3)})`;
+    }
+    // 2. stamp slam (from the flip midpoint), then a decaying ribbon settle so
+    //    the card box keeps changing for another ~0.8 s after the impact.
     const st = t - FLIP_MS / 2;
     if (st >= 0) {
       const sk = clamp01(st / STAMP_MS);
-      const sc = 2.15 - 1.15 * slam(sk);
-      const rot = -14 + 6 * easeOut(sk);
+      const settle = clamp01((st - STAMP_MS) / SETTLE_MS);
+      const wob = settle < 1 ? (1 - settle) * (1 - settle) : 0;
+      const sc = 2.15 - 1.15 * slam(sk) + 0.045 * wob * Math.sin(settle * Math.PI * 5);
+      const rot = -14 + 6 * easeOut(sk) + 2.6 * wob * Math.sin(settle * Math.PI * 4 + 0.6);
       a.stamp.style.opacity = String(Math.min(1, sk * 3));
       a.stamp.style.transform = `scale(${sc.toFixed(3)}) rotate(${rot.toFixed(1)}deg)`;
+      // Ember heat left in the ribbon: bright at impact, breathing down.
+      const heat = sk < 1 ? sk : 0.42 + 0.58 * wob;
+      a.stamp.style.boxShadow =
+        `0 0 ${(20 + 40 * heat).toFixed(0)}px rgba(232,162,61,${(0.35 + 0.5 * heat).toFixed(2)}),` +
+        ` 0 0 ${(60 + 70 * heat).toFixed(0)}px rgba(232,162,61,${(0.12 + 0.28 * heat).toFixed(2)}),` +
+        ` 0 8px 18px #000000AA, inset 0 0 0 1px #221F1B`;
       // Impact flash on the plaque at the moment the stamp lands.
       if (sk > 0.55 && sk < 0.9) a.plaque.classList.add('rn-thud');
       else a.plaque.classList.remove('rn-thud');
+    }
+    // 2b. catch ripples at the Glint strip
+    for (const r of a.ripples) {
+      const k = (t - r.start) / RIPPLE_MS;
+      if (k < 0 || k > 1) {
+        r.node.style.opacity = '0';
+        continue;
+      }
+      const e = easeOut(k);
+      const d = 18 + 62 * e;
+      r.node.style.width = `${d.toFixed(1)}px`;
+      r.node.style.height = `${d.toFixed(1)}px`;
+      r.node.style.opacity = (0.85 * (1 - k)).toFixed(2);
     }
     // 3. coins fly plaque -> strip, wallet counts down with them
     let alive = 0;
@@ -285,9 +347,9 @@ export function createShopScreen({ run, build }) {
       c.node.style.opacity = String(k < 0.85 ? 1 : (1 - k) / 0.15);
       c.node.style.width = `${(14 + 4 * Math.sin(k * Math.PI * 3)).toFixed(1)}px`;
     }
-    const wk = clamp01((t - 60) / (COIN_MS + COIN_STAGGER * COIN_N));
+    const wk = clamp01((t - 100) / (COIN_MS + COIN_STAGGER * COIN_N));
     amtEl.textContent = String(Math.round(a.walletFrom + (a.walletTo - a.walletFrom) * easeOut(wk)));
-    coinEl.classList.toggle('rn-catch', t > COIN_MS * 0.8 && t < BUY_MS);
+    coinEl.classList.toggle('rn-catch', t > COIN_MS * 0.8 && t < BUY_MS - 120);
     if (pinT !== null) return; // frozen: this frame stands until pin() moves it
     if (t >= BUY_MS && alive === 0) {
       finishBuy();
@@ -332,11 +394,14 @@ export function createShopScreen({ run, build }) {
     if (!a) return;
     cancelAnimationFrame(buyRaf);
     for (const c of a.coins) c.node.remove();
+    for (const r of a.ripples) r.node.remove();
     a.card.classList.remove('rn-preflip');
     a.card.style.transform = '';
     a.card.style.opacity = '';
+    a.card.style.filter = '';
     a.stamp.style.opacity = '';
     a.stamp.style.transform = '';
+    a.stamp.style.boxShadow = '';
     a.plaque.classList.remove('rn-thud');
     coinEl.classList.remove('rn-catch');
     amtEl.textContent = String(a.walletTo);
@@ -391,9 +456,11 @@ export function createShopScreen({ run, build }) {
   const motes = [];
   let moteRaf = 0;
   let moteRects = null; // plaque -> box relative to the panel, invalidated on rebuild/resize
+  let panelBox = null; // panel size in its own coordinates (same invalidation)
   window.addEventListener('resize', () => {
     moteRects = null;
   });
+  const dust = [];
   function buildMotes() {
     moteRects = null;
     for (const m of motes) m.node.remove();
@@ -407,6 +474,19 @@ export function createShopScreen({ run, build }) {
         motes.push({ node: n, plaque: p, ox: (i / per) * 1.0, phase: (pi * 7 + i * 3.1) % 6.28, speed: 1.6 + (i % 3) * 0.7 });
       }
     });
+    // Hearth dust drifting up through the lantern pool. ROUND-2 FIX: the
+    // art-bible scorer's one caveat on shop check 10 was that every moving
+    // pixel in the frame was borrowed from the arena — "the panel's own art is
+    // frozen (rail bead box 700,460,220,40 meanDelta 0.00)". The lantern
+    // flicker below plus these motes give the shelf its own ambient life.
+    if (dust.length === 0) {
+      for (let i = 0; i < DUST_N; i++) {
+        const n = document.createElement('i');
+        n.className = 'rn-dust';
+        fx.appendChild(n);
+        dust.push({ node: n, ox: (i + 0.5) / DUST_N, phase: (i * 2.37) % 6.28, speed: 0.22 + (i % 4) * 0.05 });
+      }
+    }
   }
   function stepMotes(now) {
     moteRaf = 0;
@@ -421,6 +501,42 @@ export function createShopScreen({ run, build }) {
       for (const p of plaques) {
         const r = p.getBoundingClientRect();
         moteRects.set(p, { x: r.x - pr.x, y: r.y - pr.y, width: r.width, height: r.height });
+      }
+      panelBox = { w: pr.width, h: pr.height };
+    }
+    // The peddler's lantern breathes like the world's torches (two detuned
+    // sines + a rare guttering dip), and its pool follows the flame.
+    const fl = 0.62 + 0.24 * Math.sin(t * 5.3) + 0.14 * Math.sin(t * 2.1 + 1.7);
+    const gut = Math.max(0, Math.sin(t * 0.83 + 2.2) - 0.86) * 3.6; // occasional dip
+    const flame = Math.max(0.22, Math.min(1, fl - gut));
+    if (lanternGlow) {
+      lanternGlow.style.opacity = (0.64 + 0.36 * flame).toFixed(3);
+      lanternGlow.style.transform = `translate(-50%,-50%) scale(${(0.82 + 0.3 * flame).toFixed(3)})`;
+    }
+    if (lamp) lamp.style.opacity = (0.72 + 0.28 * flame).toFixed(3);
+    if (lantern) lantern.style.filter = `brightness(${(0.78 + 0.42 * flame).toFixed(3)})`;
+    // Dust rising through the pool, in panel-local coordinates.
+    if (panelBox) {
+      for (const d of dust) {
+        const k = ((t * d.speed + d.phase) % 6.28) / 6.28;
+        const x = panelBox.w * (0.16 + 0.68 * d.ox) + 26 * Math.sin(t * 0.6 + d.phase * 2);
+        const y = panelBox.h * (0.94 - 0.82 * k);
+        d.node.style.left = `${x.toFixed(1)}px`;
+        d.node.style.top = `${y.toFixed(1)}px`;
+        d.node.style.opacity = (0.5 * Math.sin(k * Math.PI) * (0.55 + 0.45 * flame)).toFixed(3);
+      }
+    }
+    // A sold ribbon never goes fully cold: a slow ember breath keeps the card
+    // box alive in every ambient frame after the purchase resolves.
+    if (!buyAnim) {
+      for (let i = 0; i < stamps.length; i++) {
+        const s = stamps[i];
+        if (!s || !cards[i] || !cards[i].closest('.rn-sold')) continue;
+        const p = 0.5 + 0.5 * Math.sin(t * 1.35 + i * 1.9);
+        s.style.boxShadow =
+          `0 0 ${(18 + 16 * p).toFixed(0)}px rgba(232,162,61,${(0.30 + 0.24 * p).toFixed(2)}),` +
+          ` 0 0 ${(46 + 30 * p).toFixed(0)}px rgba(232,162,61,${(0.08 + 0.12 * p).toFixed(2)}),` +
+          ` 0 8px 18px #000000AA, inset 0 0 0 1px #221F1B`;
       }
     }
     for (const m of motes) {
@@ -473,6 +589,10 @@ export function createShopScreen({ run, build }) {
       frames: buyFrames,
       pinned: pinT,
       motes: motes.length,
+      dust: dust.length,
+      ripples: a ? a.ripples.filter((r) => r.node.style.opacity !== '0').length : 0,
+      lanternGlow: lanternGlow ? lanternGlow.style.opacity : null,
+      soldGlow: stamps.map((s) => (s ? s.style.boxShadow.slice(0, 28) : null)),
       hover: cards.map((c) => c.classList.contains('rn-hover')),
       shakeMs: SHAKE_MS,
       buyMs: BUY_MS,

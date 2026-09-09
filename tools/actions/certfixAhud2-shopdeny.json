@@ -1,0 +1,41 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__a2={ev:[]};for(const t of [\"telegraph_start\",\"telegraph_resolve\",\"hit\",\"death\",\"enemy_spawn\",\"flash\",\"knockback\",\"screenshake\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_adds\",\"boss_trample\",\"boss_spawn\",\"boss_death\",\"wave_start\",\"room_cleared\",\"spawn_telegraph\",\"skill_cast\",\"hitstop\",\"enemy_fire\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\",\"shop_purchase\",\"currency_denied\"]){try{E.on(t,e=>window.__a2.ev.push(Object.assign({T:t},e)));}catch(err){}}return {armed:true,tick:E.tick,version:E.version,seed:E.seed,bootSeed:E.bootSeed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {tag:'skip7',seed:E.seed,tick:E.tick,room:r&&r.room,phase:r&&r.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1800
+ },
+ {
+  "type": "click",
+  "x": 500,
+  "y": 600
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "click",
+  "x": 800,
+  "y": 600
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({tag:'wallet',w:window.__echoes.runUi().wallet}))()"
+ },
+ {
+  "type": "click",
+  "x": 1100,
+  "y": 600
+ }
+]

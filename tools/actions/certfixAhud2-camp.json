@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {tag:'camp',version:E.version,tick:E.tick,fps:+E.fps.toFixed(1),screen:E.runUi().screen}})()"
+ }
+]

@@ -1,0 +1,41 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__a2={ev:[]};for(const t of [\"telegraph_start\",\"telegraph_resolve\",\"hit\",\"death\",\"enemy_spawn\",\"flash\",\"knockback\",\"screenshake\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_adds\",\"boss_trample\",\"boss_spawn\",\"boss_death\",\"wave_start\",\"room_cleared\",\"spawn_telegraph\",\"skill_cast\",\"hitstop\",\"enemy_fire\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\",\"shop_purchase\",\"currency_denied\"]){try{E.on(t,e=>window.__a2.ev.push(Object.assign({T:t},e)));}catch(err){}}return {armed:true,tick:E.tick,version:E.version,seed:E.seed,bootSeed:E.bootSeed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');return {tag:'run',room:E.state().room}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=Date.now();for(;;){const s=E.state();const en=s.enemies.length;if(en>=3)break;if(Date.now()-t0>25000)break;await new Promise(r=>setTimeout(r,8));}return {ok:true,tick:E.tick,enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "key",
+  "key": "Digit2",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {tag:'hudcd',cd:E.hud&&E.hud.cooldowns?E.hud.cooldowns():null}})()"
+ }
+]

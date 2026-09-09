@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__a2={ev:[]};for(const t of [\"telegraph_start\",\"telegraph_resolve\",\"hit\",\"death\",\"enemy_spawn\",\"flash\",\"knockback\",\"screenshake\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_adds\",\"boss_trample\",\"boss_spawn\",\"boss_death\",\"wave_start\",\"room_cleared\",\"spawn_telegraph\",\"skill_cast\",\"hitstop\",\"enemy_fire\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\",\"shop_purchase\",\"currency_denied\"]){try{E.on(t,e=>window.__a2.ev.push(Object.assign({T:t},e)));}catch(err){}}return {armed:true,tick:E.tick,version:E.version,seed:E.seed,bootSeed:E.bootSeed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {tag:'skip7',seed:E.seed,tick:E.tick,room:r&&r.room,phase:r&&r.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const s=E.state();return {tag:'shop-frame',version:E.version,tick:E.tick,fps:+E.fps.toFixed(1),screen:u.screen,wallet:u.wallet,cards:u.cards,plaques:u.plaques,enemies:s.enemies.length,cool:'see analyzer'}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const q=(s)=>[...document.querySelectorAll(s)].map(n=>{const b=n.getBoundingClientRect();return {t:(n.textContent||'').trim().slice(0,26),b:[Math.round(b.x),Math.round(b.y),Math.round(b.width),Math.round(b.height)]}});return {tag:'boxes',cards:q('#run-screen .rn-card'),plaques:q('#run-screen .rn-plaque'),panel:q('#run-screen .rn-shop'),lamp:q('#run-screen .rn-lamp'),strip:q('#run-screen .rn-strip')}})()"
+ }
+]

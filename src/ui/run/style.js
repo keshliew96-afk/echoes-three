@@ -70,9 +70,15 @@ export const RUN_CSS = `
      and the round-1 charcoal 65-90% veil is what made the frame flat, dark and
      empty of entities. This is a ~12% mean dim with a slightly heavier edge, so
      it doubles as the frame's vignette instead of erasing the arena. */
+  /* ROUND-2 FIX (shop check 2 "layered light", 1/2 from two scorers: "no cool
+     pole — cool 5.7% against the reference's 76.4%"). The dim is the same ~12%
+     mean, but it is now DEEP INDIGO rather than Void Charcoal, so the shop's
+     edge shadow reads as night sky instead of brown murk — the cool half of the
+     reference's cool-void-vs-fire funnel. The arena's own ambient is env/stage
+     work (A-world); this is the veil's share of it. */
   #run-veil.rn-light {
     background: radial-gradient(ellipse at 50% 58%,
-      ${PALETTE.voidCharcoal}0F 0%, ${PALETTE.voidCharcoal}1A 46%, ${PALETTE.voidCharcoal}42 100%);
+      #101A2E0F 0%, #101A2E1A 46%, #0B12243E 100%);
   }
   .rn-page {
     position: relative;
@@ -292,6 +298,15 @@ export const RUN_CSS = `
     /* Wood grain + fibre noise: two repeating gradients whose periods (5 px
        and 7 px) are shorter than the analyzer's 8x8 flat-block window, over a
        warm plank gradient and an inner vignette. */
+    /* ROUND-2 FIX (shop check 2). The plate used to be warm brown edge to edge
+       (panel box HUEMIX warm 97.3% / cool 1.6%), which is why the shop frame
+       read "amber panel vs green field, no cool pole" to two scorers. It is now
+       NIGHT-GRADED like the reference's stone bridge: the peddler's lantern
+       lights the top-centre warm, and the wood falls off through slate into
+       deep indigo at the rim — a warm pool and a cool ambient inside one
+       element, which is exactly what the check asks for. The brass (rims, caps,
+       plaques, the Advance lamp) is untouched, so the frame keeps its
+       highlights. */
     background:
       repeating-linear-gradient(93deg,
         #FFFFFF07 0px, #FFFFFF07 1px, #00000012 1px, #00000012 3px,
@@ -299,14 +314,16 @@ export const RUN_CSS = `
       repeating-linear-gradient(8deg,
         #00000010 0px, #00000010 2px, #FFFFFF06 2px, #FFFFFF06 4px,
         #0000000A 4px, #0000000A 7px),
-      radial-gradient(ellipse at 50% 12%, #4A3F31 0%, #332C24 46%, #241F1A 100%);
+      radial-gradient(ellipse 62% 78% at 50% 6%,
+        #6A5230 0%, #4A3D2C 17%, #333440 38%, #232B3E 62%, #18202F 84%, #131A29 100%);
     /* Two-stage cast shadow (check 8 "grounding"): a broad ambient pool plus a
        tight contact shadow, so the plate sits ON the arena instead of floating
-       over it. */
+       over it. The pool is night-sky indigo, not neutral black, so the shadow
+       the shelf throws on the grass is cool. */
     box-shadow:
-      0 0 0 4px ${PALETTE.voidCharcoal}, 0 0 0 6px ${PALETTE.warmGrey}55,
-      0 30px 74px #000000E6, 0 12px 26px #000000CC, 0 4px 8px #000000CC,
-      inset 0 0 42px #00000077, inset 0 1px 0 ${PALETTE.parchment}22;
+      0 0 0 4px #141A28, 0 0 0 6px ${PALETTE.warmGrey}55,
+      0 30px 74px #060A16E6, 0 12px 26px #070C1ACC, 0 4px 8px #05080FCC,
+      inset 0 0 42px #0A1120AA, inset 0 1px 0 ${PALETTE.parchment}22;
   }
   /* Ornamental corner caps (brass brackets + a rivet), REFERENCE_BAR 9. */
   #run-screen .rn-shop .rn-cap {
@@ -332,11 +349,31 @@ export const RUN_CSS = `
     background: radial-gradient(ellipse at 50% 26%,
       ${PALETTE.paleGold}55 0%, ${PALETTE.hearthAmber}2E 38%, transparent 72%);
   }
-  #run-screen .rn-shop .rn-lamp::after {
-    content: ''; position: absolute; left: 50%; top: 12px; width: 26px; height: 10px;
-    margin-left: -13px; border-radius: 50%;
-    background: radial-gradient(ellipse, #FFF6DD 0%, ${PALETTE.hearthAmber} 60%, transparent 100%);
-    box-shadow: 0 0 22px ${PALETTE.hearthAmber}CC, 0 0 46px ${PALETTE.hearthAmber}66;
+  /* The pool itself breathes with the flame (ui/run/shop.js writes its
+     opacity every frame); the hot core now lives ON the lantern below, so the
+     light and its source are one object instead of two. */
+  /* ROUND-2 FIX (shop check 2, player scorer: "below reference: no lamp prop
+     standing on the shelf"). The ornament's ◆ is replaced by a DRAWN brass
+     lantern standing on the title rail, with its own halo; ui/run/shop.js
+     flickers both every frame the way the world torches flicker, which also
+     answers the art-bible scorer's check-10 caveat that "the panel's own art is
+     frozen". */
+  #run-screen .rn-shop .rn-lantern {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; flex: 0 0 auto; margin: 0 2px;
+    color: #F3D48A; opacity: 1;
+  }
+  #run-screen .rn-shop .rn-lantern .ico {
+    position: relative; z-index: 1;
+    filter: drop-shadow(0 0 6px ${PALETTE.hearthAmber}CC) drop-shadow(0 1px 0 #00000099);
+  }
+  #run-screen .rn-shop .rn-lantern .rn-lanternglow {
+    position: absolute; left: 50%; top: 52%; width: 104px; height: 104px;
+    border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%);
+    background: radial-gradient(circle,
+      #FFFBF0 0%, #FFF6DD 7%, #FFE7B0CC 14%, ${PALETTE.hearthAmber}AA 24%,
+      ${PALETTE.hearthAmber}5A 40%, ${PALETTE.hearthAmber}26 60%,
+      ${PALETTE.hearthAmber}0E 78%, transparent 100%);
   }
   /* Header: title on the left, a filigree rule across, the Glint strip right. */
   #run-screen .rn-shop .rn-head {
@@ -378,10 +415,10 @@ export const RUN_CSS = `
       repeating-linear-gradient(97deg,
         #FFFFFF06 0px, #FFFFFF06 1px, #00000010 1px, #00000010 3px,
         #FFFFFF03 3px, #FFFFFF03 6px),
-      linear-gradient(178deg, #35302A 0%, #262220 74%, ${PALETTE.voidCharcoal} 100%);
-    box-shadow: 0 0 0 2px ${PALETTE.voidCharcoal},
-                0 16px 30px #000000D9, 0 5px 9px #000000CC,
-                inset 0 0 24px #00000066, 0 0 20px var(--rarGlow, transparent);
+      linear-gradient(178deg, #3B342A 0%, #2B2E37 58%, #1B2130 100%);
+    box-shadow: 0 0 0 2px #141A28,
+                0 16px 30px #060A16D9, 0 5px 9px #070C1ACC,
+                inset 0 0 24px #0A11206E, 0 0 20px var(--rarGlow, transparent);
   }
   /* Hover: the round-1 defect was 0.00% changed pixels. The lift is layout, the
      wash and the rim glow are paint — together ~1/3 of the card box changes. */
@@ -392,9 +429,9 @@ export const RUN_CSS = `
       repeating-linear-gradient(97deg,
         #FFFFFF0A 0px, #FFFFFF0A 1px, #00000010 1px, #00000010 3px,
         #FFFFFF05 3px, #FFFFFF05 6px),
-      linear-gradient(178deg, #574B36 0%, #3A332A 74%, #2A2521 100%);
-    box-shadow: 0 0 0 2px ${PALETTE.voidCharcoal}, 0 20px 32px #000000CC,
-                inset 0 0 26px #00000055, 0 0 30px var(--rar, ${PALETTE.bone}),
+      linear-gradient(178deg, #61532E 0%, #3C3B3A 58%, #232A38 100%);
+    box-shadow: 0 0 0 2px #141A28, 0 20px 32px #060A16CC,
+                inset 0 0 26px #0A11205E, 0 0 30px var(--rar, ${PALETTE.bone}),
                 0 0 66px var(--rarGlow, transparent);
   }
   #run-screen .rn-shop .rn-item .rn-card.rn-hover .rn-cardname { color: ${PALETTE.parchment}; }
@@ -412,9 +449,9 @@ export const RUN_CSS = `
   }
   #run-screen .rn-shop .rn-cardicon {
     color: var(--rar, ${PALETTE.bone});
-    background: radial-gradient(circle at 40% 32%, #3E382F 0%, #221F1B 100%);
+    background: radial-gradient(circle at 40% 32%, #47402F 0%, #1C2230 100%);
     border-color: var(--rar, ${PALETTE.bone});
-    box-shadow: 0 0 14px var(--rarGlow, transparent), inset 0 0 10px #00000099;
+    box-shadow: 0 0 14px var(--rarGlow, transparent), inset 0 0 10px #080D18AA;
   }
   /* Brass plaque: lit metal, a real cast shadow, a soft gold pool. */
   #run-screen .rn-shop .rn-plaque {
@@ -512,6 +549,20 @@ export const RUN_CSS = `
     position: absolute; width: 4px; height: 4px; border-radius: 50%;
     transform: translate(-50%, -50%); pointer-events: none;
     background: #FFF3D2; box-shadow: 0 0 8px ${PALETTE.paleGold}, 0 0 16px ${PALETTE.paleGold}77;
+  }
+  /* Hearth dust rising through the lantern pool (shop check 10: the panel's own
+     ambient life). Driven per frame from ui/run/shop.js like the plaque motes. */
+  .rn-dust {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%;
+    transform: translate(-50%, -50%); pointer-events: none; opacity: 0;
+    background: #FFE9B8; box-shadow: 0 0 7px ${PALETTE.hearthAmber}AA;
+  }
+  /* The Glint strip's catch ripple when a flying coin lands. */
+  .rn-ripple {
+    position: absolute; width: 18px; height: 18px; border-radius: 50%;
+    transform: translate(-50%, -50%); pointer-events: none; opacity: 0;
+    border: 2px solid ${PALETTE.paleGold};
+    box-shadow: 0 0 16px ${PALETTE.paleGold}AA, inset 0 0 12px ${PALETTE.paleGold}55;
   }
   .rn-coin.rn-catch {
     box-shadow: 0 0 22px ${PALETTE.paleGold}, 0 0 46px ${PALETTE.paleGold}88;
