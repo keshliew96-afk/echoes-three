@@ -1,0 +1,19 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const x=E.cmd('skipToRoom',5);return {tag:'skip',room:x&&x.room,mode:x&&x.mode}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();return {tag:'room',variant:s.vfx.arena.variant,variantName:s.vfx.arena.variantName,grass:s.vfx.arena.grass,propTypes:s.vfx.arena.propTypes,emitters:s.vfx.arena.emitters}})()"
+ }
+]

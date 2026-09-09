@@ -85,7 +85,7 @@ export const VARIANTS = {
       // at 0.39 those openings read as noon and the torch pools had nothing to
       // be brighter than.
       nightBase: 1,
-      h: 82, s: 0.58, l: 0.30, shadeH: 202, shadeS: 0.38, shadeL: 0.068, coolLift: 22,
+      h: 82, s: 0.58, l: 0.285, shadeH: 202, shadeS: 0.38, shadeL: 0.052, coolLift: 22,
       dirtH: 46, dirtL: 0.20, mossN: 16, leafN: 200, crackN: 6, pebbleN: 90,
       // Certification fix round 1 (A-world): foliage hue offsets pulled DOWN
       // and the cool-shade blades sent to the shade hue, so no grass, moss
@@ -230,7 +230,7 @@ export const VARIANTS = {
       // 37.4% — a dead tie, and §19.3 keeps Act-1 warm-DOMINANT. This trims the
       // cool side back under warm while the pockets stay a visible >=8% share.
       nightBase: 1,
-      h: 80, s: 0.54, l: 0.325, shadeH: 202, shadeS: 0.38, shadeL: 0.072, coolLift: 22,
+      h: 80, s: 0.54, l: 0.31, shadeH: 202, shadeS: 0.38, shadeL: 0.056, coolLift: 22,
       dirtH: 48, dirtL: 0.235, mossN: 8, leafN: 150, crackN: 12, pebbleN: 160,
       // Certification fix round 1 (A-world): foliage hue offsets pulled DOWN
       // and the cool-shade blades sent to the shade hue, so no grass, moss
@@ -399,7 +399,7 @@ export const VARIANTS = {
       // Healer's own staff and ring). Authoring the hollow's green six degrees
       // lower puts it back level with them.
       nightBase: 1,
-      h: 78, s: 0.60, l: 0.275, shadeH: 203, shadeS: 0.38, shadeL: 0.065, coolLift: 22,
+      h: 78, s: 0.60, l: 0.26, shadeH: 203, shadeS: 0.38, shadeL: 0.05, coolLift: 22,
       dirtH: 50, dirtL: 0.225, mossN: 30, leafN: 220, crackN: 4, pebbleN: 70,
       // Certification fix round 1 (A-world): foliage hue offsets pulled DOWN
       // and the cool-shade blades sent to the shade hue, so no grass, moss
