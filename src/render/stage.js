@@ -151,7 +151,11 @@ const GradeShader = {
         // range is untouched.
         float dl = dot(c, vec3(0.2126, 0.7152, 0.0722));
         float damp = mix(0.030, 0.003, smoothstep(0.06, 0.45, dl));
-        float dn = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+        // sin-free hash (Jimenez-style): the capture harness rasterises in
+        // software, where a per-pixel sin() over 1.44M pixels measured as a
+        // real frame-time cost. Two fracts and a dot give the same white
+        // noise for free.
+        float dn = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
         c += (dn - 0.5) * damp;
       }
 

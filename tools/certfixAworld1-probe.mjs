@@ -29,7 +29,7 @@ for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 console.log(`${file} ${W}x${H}`);
 console.log('RINGS  centre->corner ' + ring.map((s, i) => (s / (ringN[i] || 1)).toFixed(1)).join(' | '));
 const meanBox = (x, y, w, h) => {
-  let s = 0, n = 0, a160 = 0, a200 = 0;
+  let s = 0, n = 0, a160 = 0, a200 = 0, satSum = 0, satN = 0;
   const hb = { danger: 0, heal: 0, violet: 0, amber: 0, foliage: 0 };
   for (let yy = y; yy < Math.min(H, y + h); yy++) for (let xx = x; xx < Math.min(W, x + w); xx++) {
     const i = (yy * W + xx) * C, l = L(i); s += l; n++;
@@ -39,9 +39,10 @@ const meanBox = (x, y, w, h) => {
       if (hh >= 5 && hh < 25) hb.danger++; else if (hh >= 110 && hh < 150) hb.heal++;
       else if (hh >= 245 && hh < 285) hb.violet++; else if (hh >= 30 && hh < 50) hb.amber++;
     }
+    if (ss > 0.12) { satSum += ss; satN++; }
     if (ss > 0.12 && hh >= 60 && hh < 160) hb.foliage++;
   }
-  return { mean: s / n, p160: (a160 / n) * 100, p200: (a200 / n) * 100, ...hb, n };
+  return { mean: s / n, p160: (a160 / n) * 100, p200: (a200 / n) * 100, sat: satSum / (satN || 1), ...hb, n };
 };
 const q = Math.round(W * 0.14), qh = Math.round(H * 0.14);
 const named = { TL: [0, 0], TR: [W - q, 0], BL: [0, H - qh], BR: [W - q, H - qh], C: [Math.round(W / 2 - q / 2), Math.round(H / 2 - qh / 2)] };
@@ -52,5 +53,5 @@ for (const [k, [x, y]] of Object.entries(named)) {
 for (const b of boxes) {
   const [x, y, w, h] = b.split(',').map(Number);
   const m = meanBox(x, y, w, h);
-  console.log(`BOX ${b}  mean ${m.mean.toFixed(1)}  >160 ${m.p160.toFixed(2)}%  >200 ${m.p200.toFixed(2)}%  danger ${m.danger} heal ${m.heal} violet ${m.violet} amber ${m.amber} foliage ${m.foliage}`);
+  console.log(`BOX ${b}  mean ${m.mean.toFixed(1)}  >160 ${m.p160.toFixed(2)}%  >200 ${m.p200.toFixed(2)}%  SAT ${m.sat.toFixed(3)}  danger ${m.danger} heal ${m.heal} violet ${m.violet} amber ${m.amber} foliage ${m.foliage}`);
 }
