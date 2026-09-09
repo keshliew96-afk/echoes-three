@@ -759,6 +759,18 @@ Shared family treatment (all four party members):
   large light falloff. No micro-texture.
 - Every light emitter (torch, gem, portal, projectile) carries an additive
   radial glow sprite. Fireflies/motes drift (cosmetic stream).
+- **Tuning note (certification fix round 1, 2026-09-09):** the run arenas run
+  their key at ~0.5x and their cool fill at ~0.65x of the shared Act-1 rig
+  (`mood` in `env/variants.js`). At 1.0x the rooms read as flat daylight —
+  round 1 measured LUMA buckets 0-2 at 7% of the combat frame against the
+  reference's 48%, with bucket 0 empty, i.e. no black point for the fire pools
+  to read against. At the stopped-down rig the same frame measures buckets 0-2
+  at 44% with a torch pool at display 103 over ground at 36 (2.9x), and the
+  warm:cool split stays on this section's 70:30 (warm 37.5% : cool 14.7% of the
+  frame's non-foliage coloured pixels). Prop clusters are also aimed at the
+  FRAME's edges rather than the arena's: the 3/4 rig (fov 45, distance 12,
+  elevation 52) only shows world z from -8 to about +4.6, so a ring authored at
+  the arena's south wall never appears on screen.
 - Shop room: one dense stall cluster under a single warm pooled lantern
   (Shopkeep's Lantern), act palette visible at room edges. Boss room: a stop
   darker/desaturated; boss = brightest emitter.
@@ -782,6 +794,28 @@ curve, ~5% saturation boost on the party layer left untouched — grade the
 whole frame subtly; party saturation is authored in materials, not the grade).
 `renderer.outputColorSpace = SRGBColorSpace`, ACES filmic tone mapping.
 Resize-safe: composer + passes resized with the renderer.
+
+- **Tuning note (certification fix round 1, 2026-09-09):** the vignette runs at
+  **0.82** with the falloff opening at normalised radius 0.40, not the ~0.35
+  written above, and it is **shadow-protected** (weighted from 0.30x of the
+  darkening at black to full strength above display ~100) with a cool tint into
+  the darkened corners. Reason, measured: at 0.35-and-below the combat frame's
+  BOTTOM CORNERS came out BRIGHTER than its centre (BL 120.6 / BR 119.2 against
+  centre 103.8) — no vignette at all — against the reference's centre 71.5 with
+  corners 18.1-42.1. All three round-1 scorers scored check 7 down for it. At
+  0.82/0.40 the same frame measures corners 45.9/37.1/30.4/32.6 against centre
+  66.6 (1.8x, reference 2.3x) while >160 5.84% / >200 1.63% stay at or above
+  the reference benchmark. A plain multiply at that strength scales an 8x8
+  block's channel SPREAD by the same factor as its mean and collapsed the dark
+  half of every night frame into flat dead ground (check 1: boss FLAT 5.6% ->
+  22.4%), which is why the darkening is shadow-weighted and why the grade also
+  carries a **static screen-locked dither** (+-3.7/255 in the shadows, tapering
+  to +-0.4/255 above display ~120) — the standard fix for a dim gradient
+  quantising into 8-bit bands. With it, FLAT reads 1.3-1.9% on all four
+  certification frames. The grade additionally carries a shadow SPLIT-TONE
+  (shadows multiplied toward indigo, the lit range untouched): that is the
+  "cool wash" §19.3 asks the unlit half of an Act-1 room to carry, and it is
+  what makes the grade visible in frame at all.
 
 ---
 
