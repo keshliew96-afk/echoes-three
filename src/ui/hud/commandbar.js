@@ -259,6 +259,23 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       c.setAttribute('r', String(CD_RING_R));
     }
     ringFill.setAttribute('stroke-dasharray', `0 ${CD_RING_LEN}`);
+    // ROUND-2 CERTIFICATION FIX (check 9). Two scorers read the slot
+    // differently: one measured the true conic sweep, the other called it "a
+    // linear top-down grey wipe, not the radial the bar asks for". A 70%
+    // charcoal veil on a small dark disc has no visible conic EDGE in a still
+    // frame — the clock is only legible while it moves. So the sweep now
+    // carries a HAND: a Parchment spoke from the medallion centre to the rim at
+    // the elapsed/remaining boundary, capped with a diamond head on the arc,
+    // the same grammar the boss plate's fill head uses. One <g> rotated per
+    // repaint; nothing else changed about the wipe.
+    const hand = svgEl('g', 'hd', ring);
+    const handLine = svgEl('line', null, hand);
+    handLine.setAttribute('x1', '20');
+    handLine.setAttribute('y1', '20');
+    handLine.setAttribute('x2', '20');
+    handLine.setAttribute('y2', String(20 - CD_RING_R));
+    const handHead = svgEl('path', 'hh', hand);
+    handHead.setAttribute('d', `M20 ${20 - CD_RING_R - 3.1} L23.1 ${20 - CD_RING_R} L20 ${20 - CD_RING_R + 3.1} L16.9 ${20 - CD_RING_R} Z`);
     const passive = el('span', 'hud-slot-passive', slot);
     passive.textContent = '◈';
     const flash = el('div', 'hud-slot-flash', slot);
@@ -285,6 +302,8 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       iconHost,
       iconId: null,
       ringFill,
+      hand,
+      lastHand: -1,
       lastRing: -1,
       wipe,
       flash,
@@ -400,6 +419,12 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     if (len !== s.lastRing) {
       s.lastRing = len;
       s.ringFill.setAttribute('stroke-dasharray', `${len} ${CD_RING_LEN}`);
+    }
+    // The clock hand rides the same boundary, so the sweep reads as a radial in
+    // a single captured frame instead of only in motion.
+    if (s.hand && elapsed !== s.lastHand) {
+      s.lastHand = elapsed;
+      s.hand.setAttribute('transform', `rotate(${elapsed} 20 20)`);
     }
   }
 

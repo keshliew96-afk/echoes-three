@@ -5,11 +5,11 @@
  },
  {
   "type": "eval",
-  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {tag:'skip7',seed:E.seed,tick:E.tick,room:r&&r.room,phase:r&&r.phase}})()"
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');return {tag:'run',room:E.state().room}})()"
  },
  {
   "type": "wait",
-  "ms": 1800
+  "ms": 2600
  },
  {
   "type": "eval",

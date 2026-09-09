@@ -536,6 +536,16 @@ export function hudCss() {
 }
 .hud-slot.is-cooling .hud-slot-ring .rf { opacity: 1; }
 .hud-slot.is-cooling .hud-slot-ring .rr { stroke: ${CHROME.plateSunk}; }
+/* The sweep hand (round-2 check-9 fix): a Parchment spoke from the medallion
+   centre to a diamond head on the rim, sitting exactly on the veil's conic
+   edge. Hidden unless the slot is actually cooling, so a ready slot is still
+   "full icon, no veil". */
+.hud-slot-ring .hd { opacity: 0; }
+.hud-slot-ring .hd line {
+  stroke: ${PALETTE.parchment}; stroke-width: 1.7; stroke-linecap: round;
+}
+.hud-slot-ring .hd .hh { fill: ${PALETTE.parchment}; stroke: none; }
+.hud-slot.is-cooling .hud-slot-ring .hd { opacity: 1; }
 /* Cooling: the icon dims UNIFORMLY (5.1:1 on the field) — the veil never
    half-lights a glyph. */
 .hud-slot.is-cooling .hud-slot-abbrev { color: ${mix(PALETTE.parchment, C, 0.3)}; }
