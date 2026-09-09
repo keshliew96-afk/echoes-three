@@ -211,6 +211,28 @@ files['certfixC1-leak'] = [
   counts, coverage, snap('leak-end'),
 ];
 
+
+// E. layout regression (HUD builder's gate, re-checked here): the two HUD
+// zones must not overlap each other or the corner plates at 1024x576 or
+// 2560x1440, with a live combat room behind them.
+const layoutReport = ev(iife(`
+  const m=E.hud.metrics();const l=E.hud.loc();const c=E.hud.combat();
+  const b1=m.zone1Box,b2=m.zone2Box;
+  const ov=(a,b)=>Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x))*Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y));
+  return {tag:'layout',win:m.window,scale:m.scale,fitScale:m.fitScale,clamped:m.clamped,
+    zonePctOfHeight:m.zonePctOfHeight,zone1Box:b1,zone2Box:b2,locBox:l.locBox,glintBox:l.glintBox,
+    overlapZ1Z2:ov(b1,b2),overlapZ2Loc:ov(b2,l.locBox),overlapZ2Glint:ov(b2,l.glintBox),
+    bannerMode:c.bannerMode,threatNodes:c.threatNodes,realLocPx:l.realLocPx,realGlintPx:l.realGlintPx,
+    enemies:E.state().enemies.length,fps:E.fps}`));
+
+files['certfixC1-layout'] = [
+  arm, startRun, waitLive,
+  ev(iife(`E.cmd('iframe',0,7200);return 'iframe '+E.tick`)),
+  wait(900),
+  layoutReport,
+  counts, snap('layout-end'),
+];
+
 for (const [name, acts] of Object.entries(files)) {
   writeFileSync(`tools/actions/${name}.json`, JSON.stringify(acts, null, 1));
   console.log('wrote', name, acts.length);
