@@ -612,6 +612,28 @@ realized **+0** (saturation-inert).
     own N", whole-card click → stamp → bench, one ~300 ms denial shake with the
     item never greyed or hidden for price, Advance one-way, Esc inert. Every
     other meta screen (draft, path, victory, defeat) keeps the §16 full veil.
+  - **Tuning note (certification fix round 2, 2026-09-10):** the shelf is
+    NIGHT-GRADED and the shop dim is COOL. Round-2 certification scored the
+    shop frame's check 2 ("layered light") 1/2 on two of three scorecards with
+    the same cause: "no cool pole — cool 5.7% against the reference's 76.4%;
+    the frame is amber panel vs green field". The round-1 shelf was warm brown
+    edge to edge (panel box HUEMIX warm 97.3 / cool 1.6). It now runs a warm
+    pool under the peddler's lantern falling off through slate to deep indigo
+    at the rim (panel box warm 40.1 / cool 59.5), casts an indigo rather than a
+    neutral-black shadow, and the `#run-veil.rn-light` dim keeps its round-1
+    alphas (6% centre, 10% mid, 24% edge) but is tinted deep indigo instead of
+    Void Charcoal. The §19.1 palette is untouched — brass, Pale Gold plaques,
+    the Hearth Amber Advance lamp and the Bone / Signal Blue / Hearth Amber
+    rarity rims all keep their authored colours, and no HUD (Zone-1) plate is
+    re-tinted; this note covers the shop PAGE's own wood only. The §16
+    ornament diamond on the title rail is now a drawn brass lantern (a light
+    SOURCE for the pool that was already there), and the purchase
+    choreography's window moved from 620 ms to 2100 ms: a harness screenshot
+    costs several hundred ms of page time, so the shorter window was
+    photographable only once and a scorer measured "0.00% changed" three
+    frames running. Everything §16 specifies about the transaction (whole-card
+    click, stamp, departure to bench, one ~300 ms denial shake, item never
+    greyed for price) is unchanged.
 - **Path choice** (after rooms 1–5): two door panels (160×220 design-px), each
   showing ONLY a win-condition glyph + reward-type glyph; `free_skill_slots`
   displayed at screen level. A/D or arrows focus, Enter commits under the
