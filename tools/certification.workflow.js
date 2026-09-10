@@ -243,7 +243,7 @@ function completenessPrompt(block, v, brief, pfx) {
 
 const OWNERSHIP = {
   A: 'src/render/**, src/env/**, src/vfx/** (or wherever particles/decals live), src/ui/hud/** for check 9, src/scenes/** for scene composition',
-  B: 'src/sim/run.js, src/sim/world.js, src/scenes/**, src/ui/run/**, src/env/camp/** for the portal',
+  B: 'src/sim/run.js, src/sim/world.js, src/scenes/**, src/ui/run/**, src/core/input.js, src/env/camp/** for the portal',
   C: 'src/sim/** (movement, combat, telegraphs, dash), src/render/** (flash/knockback visuals), src/ui/hud/** (threat pointers)',
   D: 'profiling-driven: src/render/**, src/sim/**, src/ui/** (layout), src/version.js',
   E: 'src/env/camp/**, src/scenes/camp.js, src/sim/movement.js (static colliders)',
@@ -412,17 +412,19 @@ function runBlock(block, round) {
 // ---------------- main loop ----------------
 const history = []
 let pending = ORDER.slice()
-let round = 1
+let round = (typeof args === 'object' && args && args.roundBase) ? args.roundBase : 1
+const FIRST_ROUND = round
+const LAST_ROUND = round + MAX_ROUNDS - 1
 let certified = false
 let aborted = false
 const preset = (typeof args === 'object' && args && args.round1) ? args.round1 : ((typeof args === 'object' && args && args.useRound1Preset) ? ROUND1_PRESET : null)
 const summarize = (r) => ({ block: r.block, pass: r.pass, report: r.report, failures: r.failures, advisories: r.advisories, detail: r.detail })
-while (round <= MAX_ROUNDS) {
+while (round <= LAST_ROUND) {
   let results = []
   let dead = []
-  if (preset && round === 1) {
+  if (preset && round === FIRST_ROUND) {
     results = Object.values(preset).map((r) => ({ block: r.block, pass: r.pass, report: r.report, failures: r.failures || [], advisories: r.advisories || [], detail: { verdict: { failures: r.nonBlocking || [] } } }))
-    log('Round 1 results loaded from args: ' + results.map((r) => r.block + ':' + (r.pass ? 'PASS' : 'FAIL')).join(', '))
+    log('Round ' + round + ' results loaded from args: ' + results.map((r) => r.block + ':' + (r.pass ? 'PASS' : 'FAIL')).join(', '))
   } else {
     log('Round ' + round + ': certifying blocks ' + pending.join(', '))
     const raw = await parallel(pending.map((b) => () => runBlock(b, round)))
@@ -435,7 +437,7 @@ while (round <= MAX_ROUNDS) {
   if (dead.length) { log('ABORT round ' + round + ': ag(s) died for block(s) ' + dead.join(', ') + ' (usage limit?) - resume this workflow to continue'); aborted = true; break }
   log('Round ' + round + ': ' + (results.length - failed.length) + ' pass / ' + failed.length + ' fail')
   if (!failed.length) { certified = true; break }
-  if (round === MAX_ROUNDS) break
+  if (round === LAST_ROUND) break
   const jobs = []
   const late = []
   for (const r of results) {
