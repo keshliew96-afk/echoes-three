@@ -654,6 +654,28 @@ realized **+0** (saturation-inert).
   Irreversible; Esc inert.
 - All meta screens: flat storybook card pages, non-diegetic, Zone 1 HUD persists
   beneath; enter/exit ≤300 ms fades; interactive within 350 ms.
+  - **Tuning note (certification fix round 4, 2026-09-10) — the settle
+    window.** A/D are WASD in combat and choose-left/right on every page, and
+    a page is on screen ~10 ms after the clearing kill. Certification B-r3
+    (F1) measured a strafing tap landing in that instant retargeting the draft
+    to Decline, and the next Enter — the key the page advertises — destroying
+    the reward with no confirmation (12 of 12 rewards lost across two
+    real-input runs); the draft's focus also never re-initialised, so one D
+    armed Decline on every later reward. Binding now: (1) every page opens
+    with its focus on its primary (draft: Take; path: door 0) and never
+    inherits a focus from the page before it; (2) for **300 ms** after a page
+    opens, navigation (A/D/←/→) and commit (Enter/Space) keys are dropped,
+    and any key already down at open — or pressed before the page settled —
+    must be released and pressed again before it counts; a **carry-over key**
+    (a key with a combat meaning and no page meaning: 1–4, W/S, R, E, Tab,
+    F1–F4) restarts the 300 ms, capped at 1 s after open, because it is
+    evidence the hands are still running the fight pattern (measured: the
+    certB3-b2b strafe lands "A@146 · 2@271 · 3@334 · D@396" on a fresh page);
+    (3) Esc is honoured at once (it has no combat meaning) and stays the
+    decline path. After the window the documented bindings apply unchanged.
+    "Interactive within 350 ms" holds for still hands; a lone choose key after
+    a quiet 300 ms counts exactly as documented. Probe surface:
+    `runUi().sinceOpenMs / settled / settleInMs / carryMs / graceMs`.
 
 ---
 

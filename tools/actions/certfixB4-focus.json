@@ -1,0 +1,549 @@
+[
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f={ev:[],n:{},keys:[],scr:[],mk:E.tick,lastScr:'none',lastScrAt:performance.now()};\nconst F=window.__f;\nfor(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"reward_offer\",\"draft_taken\",\"draft_declined\",\"path_offer\",\"path_chosen\",\"currency_denied\",\"shop_purchase\",\"boss_spawn\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"downed\",\"revive\",\"director_stop\",\"node_granted\",\"skill_equip\"])E.on(t,e=>F.ev.push({T:t,tick:(e&&e.tick!=null)?e.tick:E.tick,d:(()=>{const o={};for(const k of Object.keys(e||{}))if(['room','index','id','reward','result','wallet','side','seed','mode','slot','bench','nextRoom'].includes(k))o[k]=e[k];return o})()}));\nfor(const t of [\"dash\",\"skill_cast\",\"hit\",\"heal\",\"ally_basic\",\"ally_cast\",\"death\",\"enemy_spawn\",\"boss_adds\",\"boss_quake_start\",\"mark\"])E.on(t,()=>{F.n[t]=(F.n[t]||0)+1});\nF.iv=setInterval(()=>{try{const s=E.runUi().screen;if(s!==F.lastScr){const now=performance.now();F.scr.push({s,tick:E.tick,t:Math.round(now)});F.lastScr=s;F.lastScrAt=now;}}catch(_){}},8);\nwindow.addEventListener('keydown',e=>{F.keys.push({c:e.code,r:e.repeat,scr:F.lastScr,ms:Math.round(performance.now()-F.lastScrAt),tick:E.tick})},true);\nreturn 'armed tick '+E.tick+' v'+E.version})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');return {seed:E.seed,ver:E.version}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.mk=E.tick;return 'mark '+E.tick})()"
+ },
+ {
+  "type": "loop",
+  "label": "clearA",
+  "maxMs": 60000,
+  "cond": "window.__f.ev.some(e=>e.T==='room_cleared'&&e.tick>=window.__f.mk)",
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;if(E.state().enemies.length>0)E.cmd('killAllEnemies');return E.state().enemies.length})()"
+   },
+   {
+    "type": "wait",
+    "ms": 200
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<5000){try{if(window.__echoes.runUi().screen==='draft')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"A-no-key\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certfixB4-focus-A"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"A-afterEnter\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+  "then": [
+   {
+    "type": "key",
+    "key": "Escape",
+    "ms": 80
+   },
+   {
+    "type": "wait",
+    "ms": 700
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "window.__echoes.runUi().screen==='path'",
+  "then": [
+   {
+    "type": "wait",
+    "ms": 400
+   },
+   {
+    "type": "click",
+    "x": 703,
+    "y": 399,
+    "button": "left"
+   },
+   {
+    "type": "wait",
+    "ms": 1400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.mk=E.tick;return 'mark '+E.tick})()"
+ },
+ {
+  "type": "loop",
+  "label": "clearB",
+  "maxMs": 60000,
+  "cond": "window.__f.ev.some(e=>e.T==='room_cleared'&&e.tick>=window.__f.mk)",
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;if(E.state().enemies.length>0)E.cmd('killAllEnemies');return E.state().enemies.length})()"
+   },
+   {
+    "type": "wait",
+    "ms": 200
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<5000){try{if(window.__echoes.runUi().screen==='draft')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "key",
+  "key": "KeyD",
+  "ms": 60
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"B-just-after-tap\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"B-settled\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certfixB4-focus-B"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"B-afterEnter\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+  "then": [
+   {
+    "type": "key",
+    "key": "Escape",
+    "ms": 80
+   },
+   {
+    "type": "wait",
+    "ms": 700
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "window.__echoes.runUi().screen==='path'",
+  "then": [
+   {
+    "type": "wait",
+    "ms": 400
+   },
+   {
+    "type": "click",
+    "x": 703,
+    "y": 399,
+    "button": "left"
+   },
+   {
+    "type": "wait",
+    "ms": 1400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.mk=E.tick;return 'mark '+E.tick})()"
+ },
+ {
+  "type": "loop",
+  "label": "clearC",
+  "maxMs": 60000,
+  "cond": "window.__f.ev.some(e=>e.T==='room_cleared'&&e.tick>=window.__f.mk)",
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;if(E.state().enemies.length>0)E.cmd('killAllEnemies');return E.state().enemies.length})()"
+   },
+   {
+    "type": "wait",
+    "ms": 200
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<5000){try{if(window.__echoes.runUi().screen==='draft')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "key",
+  "key": "KeyA",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"C-settled\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"C-afterEnter\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+  "then": [
+   {
+    "type": "key",
+    "key": "Escape",
+    "ms": 80
+   },
+   {
+    "type": "wait",
+    "ms": 700
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "window.__echoes.runUi().screen==='path'",
+  "then": [
+   {
+    "type": "wait",
+    "ms": 400
+   },
+   {
+    "type": "click",
+    "x": 703,
+    "y": 399,
+    "button": "left"
+   },
+   {
+    "type": "wait",
+    "ms": 1400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.mk=E.tick;return 'mark '+E.tick})()"
+ },
+ {
+  "type": "loop",
+  "label": "clearD",
+  "maxMs": 60000,
+  "cond": "window.__f.ev.some(e=>e.T==='room_cleared'&&e.tick>=window.__f.mk)",
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;if(E.state().enemies.length>0)E.cmd('killAllEnemies');return E.state().enemies.length})()"
+   },
+   {
+    "type": "wait",
+    "ms": 200
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<5000){try{if(window.__echoes.runUi().screen==='draft')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "key",
+  "key": "KeyD",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"D-lateKeyD\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "key",
+  "key": "ArrowLeft",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"D-afterArrowLeft\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "key",
+  "key": "ArrowRight",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"D-afterArrowRight\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certfixB4-focus-D-decline"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"D-afterEsc\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "if",
+  "cond": "window.__echoes.runUi().screen==='path'",
+  "then": [
+   {
+    "type": "wait",
+    "ms": 400
+   },
+   {
+    "type": "click",
+    "x": 703,
+    "y": 399,
+    "button": "left"
+   },
+   {
+    "type": "wait",
+    "ms": 1400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.mk=E.tick;return 'mark '+E.tick})()"
+ },
+ {
+  "type": "loop",
+  "label": "clearE",
+  "maxMs": 60000,
+  "cond": "window.__f.ev.some(e=>e.T==='room_cleared'&&e.tick>=window.__f.mk)",
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;if(E.state().enemies.length>0)E.cmd('killAllEnemies');return E.state().enemies.length})()"
+   },
+   {
+    "type": "wait",
+    "ms": 200
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<5000){try{if(window.__echoes.runUi().screen==='draft')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"E-inherit-check\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certfixB4-focus-E"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"E-afterEnter\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+  "then": [
+   {
+    "type": "key",
+    "key": "Escape",
+    "ms": 80
+   },
+   {
+    "type": "wait",
+    "ms": 700
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "window.__echoes.runUi().screen==='path'",
+  "then": [
+   {
+    "type": "wait",
+    "ms": 400
+   },
+   {
+    "type": "click",
+    "x": 703,
+    "y": 399,
+    "button": "left"
+   },
+   {
+    "type": "wait",
+    "ms": 1400
+   }
+  ]
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.mk=E.tick;return 'mark '+E.tick})()"
+ },
+ {
+  "type": "loop",
+  "label": "clearF",
+  "maxMs": 60000,
+  "cond": "window.__f.ev.some(e=>e.T==='room_cleared'&&e.tick>=window.__f.mk)",
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;if(E.state().enemies.length>0)E.cmd('killAllEnemies');return E.state().enemies.length})()"
+   },
+   {
+    "type": "wait",
+    "ms": 200
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<5000){try{if(window.__echoes.runUi().screen==='draft')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"F-held-at-open\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"F-after-release\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const u=E.runUi();\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null).map(b=>[b.className.replace('rn-btn ','').trim(),(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,10)]);\nconst doors=[...document.querySelectorAll('#run-screen .rn-doorwrap')].filter(w=>w.offsetParent!==null).map(w=>w.querySelector('.rn-door').classList.contains('rn-focus'));\nconst so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();\nreturn {tag:\"F-afterEnter\",tick:E.tick,screen:u.screen,socketOpen:so,msSinceScreen:Math.round(performance.now()-F.lastScrAt),uiSinceOpen:u.sinceOpenMs,settled:u.settled,settleIn:u.settleInMs,carryMs:u.carryMs,graceMs:u.graceMs,\n focused:btns.filter(a=>/rn-focus/.test(a[0])).map(a=>a[1]),buttons:btns,doorFocus:doors,held:u.held,stale:u.stale,\n skills:E.state().skills.map(k=>k&&k.id),freeSlots:u.freeSkillSlots,takes:F.ev.filter(e=>e.T==='draft_taken').length,declines:F.ev.filter(e=>e.T==='draft_declined').length,paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),\n keysOnThisScreen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=F.mk).map(k=>k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+  "then": [
+   {
+    "type": "key",
+    "key": "Escape",
+    "ms": 80
+   },
+   {
+    "type": "wait",
+    "ms": 700
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {tag:\"focus-events\",ev:window.__f.ev.map(e=>e.T+'@'+e.tick+(Object.keys(e.d).length?JSON.stringify(e.d):'')),keys:window.__f.keys.length,screens:window.__f.scr.length}})()"
+ }
+]

@@ -1,0 +1,2446 @@
+[
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f={ev:[],n:{},keys:[],scr:[],mk:E.tick,lastScr:'none',lastScrAt:performance.now()};\nconst F=window.__f;\nfor(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"reward_offer\",\"draft_taken\",\"draft_declined\",\"path_offer\",\"path_chosen\",\"currency_denied\",\"shop_purchase\",\"boss_spawn\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"downed\",\"revive\",\"director_stop\",\"node_granted\",\"skill_equip\"])E.on(t,e=>F.ev.push({T:t,tick:(e&&e.tick!=null)?e.tick:E.tick,d:(()=>{const o={};for(const k of Object.keys(e||{}))if(['room','index','id','reward','result','wallet','side','seed','mode','slot','bench','nextRoom'].includes(k))o[k]=e[k];return o})()}));\nfor(const t of [\"dash\",\"skill_cast\",\"hit\",\"heal\",\"ally_basic\",\"ally_cast\",\"death\",\"enemy_spawn\",\"boss_adds\",\"boss_quake_start\",\"mark\"])E.on(t,()=>{F.n[t]=(F.n[t]||0)+1});\nF.iv=setInterval(()=>{try{const s=E.runUi().screen;if(s!==F.lastScr){const now=performance.now();F.scr.push({s,tick:E.tick,t:Math.round(now)});F.lastScr=s;F.lastScrAt=now;}}catch(_){}},8);\nwindow.addEventListener('keydown',e=>{F.keys.push({c:e.code,r:e.repeat,scr:F.lastScr,ms:Math.round(performance.now()-F.lastScrAt),tick:E.tick})},true);\nreturn 'armed tick '+E.tick+' v'+E.version})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "loop",
+  "label": "walk-b2b",
+  "maxMs": 30000,
+  "cond": "(()=>{try{return !!window.__echoes.cmd('campState').promptVisible}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "keydown",
+    "key": "KeyW"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   },
+   {
+    "type": "keyup",
+    "key": "KeyW"
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{try{return !window.__echoes.cmd('campState').promptVisible}catch(e){return true}})()",
+  "then": [
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 100
+   },
+   {
+    "type": "loop",
+    "label": "walk2-b2b",
+    "maxMs": 15000,
+    "cond": "(()=>{try{return !!window.__echoes.cmd('campState').promptVisible}catch(e){return false}})()",
+    "body": [
+     {
+      "type": "keydown",
+      "key": "KeyW"
+     },
+     {
+      "type": "wait",
+      "ms": 400
+     },
+     {
+      "type": "keyup",
+      "key": "KeyW"
+     },
+     {
+      "type": "wait",
+      "ms": 60
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const c=E.cmd('campState');return {tag:\"b2b\"+'-atPortal',tick:E.tick,player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible}})()"
+ },
+ {
+  "type": "key",
+  "key": "KeyE",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<30000){try{if((()=>{const r=window.__echoes.state().run;return r.active&&r.room>=1})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),room:E.state().run.room,seedAfter:E.seed,phase:E.state().run.phase};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),room:E.state().run.room,seedAfter:E.seed,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "shot",
+  "name": "certfixB4-b2b-r1-enter"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.rt=window.__f.rt||{};window.__f.rt[1]={t0:performance.now(),tick0:E.tick};return {markRoom:1,startTick:E.tick,uiRoom:E.state().run.room,mode:E.state().run.mode}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room1",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>1||(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 100
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__f.rt[1];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {endRoom:1,wallS:+(r.ms/1000).toFixed(1),ticks:r.ticks,screen:u.screen,socketOpen:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),phase:u.phase,uiRoom:u.room,wallet:u.wallet,takes:window.__f.ev.filter(e=>e.T==='draft_taken').length,declines:window.__f.ev.filter(e=>e.T==='draft_declined').length}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2b-r1",
+  "maxMs": 120000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();return (s==='end'&&!so)||(s==='none'&&!so)}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r1-socket\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Escape",
+      "ms": 100
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;return {tag:'b2b-r1-socketClosed',open:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),screen:E.runUi().screen}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certfixB4-b2b-r1-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r1-draft\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 400,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r1-draft-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r1-shop\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25&&!window.__f.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__f.bought=true;const u=E.runUi();return {tag:'b2b-r1-shopBuy',wallet:u.wallet,owned:u.owned,bench:E.state().build.bench}})()"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1200
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r1-shop-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r1-path\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "ArrowRight",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 300
+       },
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r1-path-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.rt=window.__f.rt||{};window.__f.rt[2]={t0:performance.now(),tick0:E.tick};return {markRoom:2,startTick:E.tick,uiRoom:E.state().run.room,mode:E.state().run.mode}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room2",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>2||(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 100
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__f.rt[2];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {endRoom:2,wallS:+(r.ms/1000).toFixed(1),ticks:r.ticks,screen:u.screen,socketOpen:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),phase:u.phase,uiRoom:u.room,wallet:u.wallet,takes:window.__f.ev.filter(e=>e.T==='draft_taken').length,declines:window.__f.ev.filter(e=>e.T==='draft_declined').length}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2b-r2",
+  "maxMs": 120000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();return (s==='end'&&!so)||(s==='none'&&!so)}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r2-socket\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Escape",
+      "ms": 100
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;return {tag:'b2b-r2-socketClosed',open:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),screen:E.runUi().screen}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certfixB4-b2b-r2-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r2-draft\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 400,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r2-draft-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r2-shop\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25&&!window.__f.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__f.bought=true;const u=E.runUi();return {tag:'b2b-r2-shopBuy',wallet:u.wallet,owned:u.owned,bench:E.state().build.bench}})()"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1200
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r2-shop-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r2-path\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "ArrowRight",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 300
+       },
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r2-path-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.rt=window.__f.rt||{};window.__f.rt[3]={t0:performance.now(),tick0:E.tick};return {markRoom:3,startTick:E.tick,uiRoom:E.state().run.room,mode:E.state().run.mode}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room3",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>3||(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 100
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__f.rt[3];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {endRoom:3,wallS:+(r.ms/1000).toFixed(1),ticks:r.ticks,screen:u.screen,socketOpen:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),phase:u.phase,uiRoom:u.room,wallet:u.wallet,takes:window.__f.ev.filter(e=>e.T==='draft_taken').length,declines:window.__f.ev.filter(e=>e.T==='draft_declined').length}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2b-r3",
+  "maxMs": 120000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();return (s==='end'&&!so)||(s==='none'&&!so)}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r3-socket\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Escape",
+      "ms": 100
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;return {tag:'b2b-r3-socketClosed',open:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),screen:E.runUi().screen}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certfixB4-b2b-r3-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r3-draft\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 400,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r3-draft-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r3-shop\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25&&!window.__f.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__f.bought=true;const u=E.runUi();return {tag:'b2b-r3-shopBuy',wallet:u.wallet,owned:u.owned,bench:E.state().build.bench}})()"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1200
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r3-shop-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r3-path\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "ArrowRight",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 300
+       },
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r3-path-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.rt=window.__f.rt||{};window.__f.rt[4]={t0:performance.now(),tick0:E.tick};return {markRoom:4,startTick:E.tick,uiRoom:E.state().run.room,mode:E.state().run.mode}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room4",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>4||(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 100
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__f.rt[4];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {endRoom:4,wallS:+(r.ms/1000).toFixed(1),ticks:r.ticks,screen:u.screen,socketOpen:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),phase:u.phase,uiRoom:u.room,wallet:u.wallet,takes:window.__f.ev.filter(e=>e.T==='draft_taken').length,declines:window.__f.ev.filter(e=>e.T==='draft_declined').length}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2b-r4",
+  "maxMs": 120000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();return (s==='end'&&!so)||(s==='none'&&!so)}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r4-socket\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Escape",
+      "ms": 100
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;return {tag:'b2b-r4-socketClosed',open:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),screen:E.runUi().screen}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certfixB4-b2b-r4-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r4-draft\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 400,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r4-draft-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r4-shop\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25&&!window.__f.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__f.bought=true;const u=E.runUi();return {tag:'b2b-r4-shopBuy',wallet:u.wallet,owned:u.owned,bench:E.state().build.bench}})()"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1200
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r4-shop-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r4-path\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "ArrowRight",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 300
+       },
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r4-path-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.rt=window.__f.rt||{};window.__f.rt[5]={t0:performance.now(),tick0:E.tick};return {markRoom:5,startTick:E.tick,uiRoom:E.state().run.room,mode:E.state().run.mode}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room5",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>5||(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 100
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__f.rt[5];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {endRoom:5,wallS:+(r.ms/1000).toFixed(1),ticks:r.ticks,screen:u.screen,socketOpen:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),phase:u.phase,uiRoom:u.room,wallet:u.wallet,takes:window.__f.ev.filter(e=>e.T==='draft_taken').length,declines:window.__f.ev.filter(e=>e.T==='draft_declined').length}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2b-r5",
+  "maxMs": 120000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();return (s==='end'&&!so)||(s==='none'&&!so)}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r5-socket\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Escape",
+      "ms": 100
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;return {tag:'b2b-r5-socketClosed',open:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),screen:E.runUi().screen}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certfixB4-b2b-r5-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r5-draft\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 400,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r5-draft-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r5-shop\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25&&!window.__f.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__f.bought=true;const u=E.runUi();return {tag:'b2b-r5-shopBuy',wallet:u.wallet,owned:u.owned,bench:E.state().build.bench}})()"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1200
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r5-shop-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r5-path\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "ArrowRight",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 300
+       },
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r5-path-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.rt=window.__f.rt||{};window.__f.rt[6]={t0:performance.now(),tick0:E.tick};return {markRoom:6,startTick:E.tick,uiRoom:E.state().run.room,mode:E.state().run.mode}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room6",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>6||(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 100
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__f.rt[6];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {endRoom:6,wallS:+(r.ms/1000).toFixed(1),ticks:r.ticks,screen:u.screen,socketOpen:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),phase:u.phase,uiRoom:u.room,wallet:u.wallet,takes:window.__f.ev.filter(e=>e.T==='draft_taken').length,declines:window.__f.ev.filter(e=>e.T==='draft_declined').length}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2b-r6",
+  "maxMs": 120000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();return (s==='end'&&!so)||(s==='none'&&!so)}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r6-socket\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Escape",
+      "ms": 100
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;return {tag:'b2b-r6-socketClosed',open:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),screen:E.runUi().screen}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certfixB4-b2b-r6-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r6-draft\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 400,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r6-draft-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r6-shop\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25&&!window.__f.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__f.bought=true;const u=E.runUi();return {tag:'b2b-r6-shopBuy',wallet:u.wallet,owned:u.owned,bench:E.state().build.bench}})()"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1200
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r6-shop-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r6-path\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "ArrowRight",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 300
+       },
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r6-path-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.rt=window.__f.rt||{};window.__f.rt[7]={t0:performance.now(),tick0:E.tick};return {markRoom:7,startTick:E.tick,uiRoom:E.state().run.room,mode:E.state().run.mode}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room7",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>7||(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 100
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__f.rt[7];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {endRoom:7,wallS:+(r.ms/1000).toFixed(1),ticks:r.ticks,screen:u.screen,socketOpen:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),phase:u.phase,uiRoom:u.room,wallet:u.wallet,takes:window.__f.ev.filter(e=>e.T==='draft_taken').length,declines:window.__f.ev.filter(e=>e.T==='draft_declined').length}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2b-r7",
+  "maxMs": 120000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();return (s==='end'&&!so)||(s==='none'&&!so)}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r7-socket\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Escape",
+      "ms": 100
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;return {tag:'b2b-r7-socketClosed',open:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),screen:E.runUi().screen}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certfixB4-b2b-r7-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r7-draft\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 400,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r7-draft-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r7-shop\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25&&!window.__f.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__f.bought=true;const u=E.runUi();return {tag:'b2b-r7-shopBuy',wallet:u.wallet,owned:u.owned,bench:E.state().build.bench}})()"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1200
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1200
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r7-shop-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+    "then": [
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r7-path\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1000
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'&&!(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+      "then": [
+       {
+        "type": "key",
+        "key": "ArrowRight",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 300
+       },
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1000
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-r7-path-after\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.rt=window.__f.rt||{};window.__f.rt[8]={t0:performance.now(),tick0:E.tick};return {markRoom:8,startTick:E.tick,uiRoom:E.state().run.room,mode:E.state().run.mode}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room8",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>8||(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 100
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__f.rt[8];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {endRoom:8,wallS:+(r.ms/1000).toFixed(1),ticks:r.ticks,screen:u.screen,socketOpen:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),phase:u.phase,uiRoom:u.room,wallet:u.wallet,takes:window.__f.ev.filter(e=>e.T==='draft_taken').length,declines:window.__f.ev.filter(e=>e.T==='draft_declined').length}})()"
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+  "then": [
+   {
+    "type": "key",
+    "key": "Escape",
+    "ms": 100
+   },
+   {
+    "type": "wait",
+    "ms": 1000
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<60000){try{if(window.__echoes.runUi().screen==='end')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen,phase:E.runUi().phase};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen,phase:E.runUi().phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "shot",
+  "name": "certfixB4-b2b-victory"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const so=(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})();const F=window.__f;\nconst btns=[...document.querySelectorAll('#run-screen .rn-btn')].filter(b=>b.offsetParent!==null);\nreturn {tag:\"b2b-victory\",tick:E.tick,screen:u.screen,socketOpen:so,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,open:u.open,held:u.held,stale:u.stale,uiSinceOpen:u.sinceOpenMs,settled:u.settled,\n focused:btns.filter(b=>b.classList.contains('rn-focus')).map(b=>(b.textContent||'').trim().slice(0,10)),\n keysSinceOpen:F.keys.filter(k=>k.scr===u.screen&&k.tick>=(F.scr.length?F.scr[F.scr.length-1].tick:0)).map(k=>k.c+'@'+k.ms),\n text:(u.text||'').replace(/\\s+/g,' ').slice(0,120),doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {summary:JSON.stringify(E.cmd('runState').summary)}})()"
+ },
+ {
+  "type": "click",
+  "x": 800,
+  "y": 532,
+  "button": "left"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "if",
+  "cond": "window.__echoes.runUi().screen==='end'",
+  "then": [
+   {
+    "type": "key",
+    "key": "Enter",
+    "ms": 100
+   },
+   {
+    "type": "wait",
+    "ms": 1800
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<30000){try{if((()=>{try{return window.__echoes.cmd('campState').mode==='camp'&&!window.__echoes.state().run.active}catch(e){return false}})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),scene:E.state().scene};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),scene:E.state().scene}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "shot",
+  "name": "certfixB4-b2b-backcamp"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const c=E.cmd('campState');const s=E.state();const b=E.hud.banner();return {tag:\"b2b\"+'-camp',tick:E.tick,campMode:c.mode,party:s.party.map(p=>[p.id,Math.round(p.hp),p.maxHp,!!p.downed]),enemies:s.enemies.length,bannerText:b.text,skills:s.skills.map(k=>k&&k.id),bench:s.build.bench,wallet:s.run.wallet,runActive:s.run.active,socketOpen:(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})(),runScreenOpen:E.runUi().screen}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;return {tag:'b2b-final',takes:F.ev.filter(e=>e.T==='draft_taken').map(e=>e.d.id+'@'+e.tick),declines:F.ev.filter(e=>e.T==='draft_declined').map(e=>e.tick),paths:F.ev.filter(e=>e.T==='path_chosen').map(e=>e.d.side),roomTimes:Object.fromEntries(Object.entries(F.rt).map(([k,v])=>[k,+(v.ms/1000).toFixed(1)])),counts:F.n}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const F=window.__f;const on=F.keys.filter(k=>k.scr!=='none');return {tag:'b2b-keys-on-pages',n:on.length,byPage:on.reduce((m,k)=>{(m[k.scr]=m[k.scr]||[]).push(k.c+'@'+k.ms);return m},{}),navInGrace:on.filter(k=>['KeyA','KeyD','ArrowLeft','ArrowRight'].includes(k.c)&&k.ms<300).map(k=>k.scr+':'+k.c+'@'+k.ms),navAfterGrace:on.filter(k=>['KeyA','KeyD','ArrowLeft','ArrowRight'].includes(k.c)&&k.ms>=300).map(k=>k.scr+':'+k.c+'@'+k.ms)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {tag:\"b2b-events\",ev:window.__f.ev.map(e=>e.T+'@'+e.tick+(Object.keys(e.d).length?JSON.stringify(e.d):'')),keys:window.__f.keys.length,screens:window.__f.scr.length}})()"
+ }
+]

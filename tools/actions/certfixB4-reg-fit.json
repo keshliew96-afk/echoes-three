@@ -1,0 +1,87 @@
+[
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f={ev:[],n:{},keys:[],scr:[],mk:E.tick,lastScr:'none',lastScrAt:performance.now()};\nconst F=window.__f;\nfor(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"reward_offer\",\"draft_taken\",\"draft_declined\",\"path_offer\",\"path_chosen\",\"currency_denied\",\"shop_purchase\",\"boss_spawn\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"downed\",\"revive\",\"director_stop\",\"node_granted\",\"skill_equip\"])E.on(t,e=>F.ev.push({T:t,tick:(e&&e.tick!=null)?e.tick:E.tick,d:(()=>{const o={};for(const k of Object.keys(e||{}))if(['room','index','id','reward','result','wallet','side','seed','mode','slot','bench','nextRoom'].includes(k))o[k]=e[k];return o})()}));\nfor(const t of [\"dash\",\"skill_cast\",\"hit\",\"heal\",\"ally_basic\",\"ally_cast\",\"death\",\"enemy_spawn\",\"boss_adds\",\"boss_quake_start\",\"mark\"])E.on(t,()=>{F.n[t]=(F.n[t]||0)+1});\nF.iv=setInterval(()=>{try{const s=E.runUi().screen;if(s!==F.lastScr){const now=performance.now();F.scr.push({s,tick:E.tick,t:Math.round(now)});F.lastScr=s;F.lastScrAt=now;}}catch(_){}},8);\nwindow.addEventListener('keydown',e=>{F.keys.push({c:e.code,r:e.repeat,scr:F.lastScr,ms:Math.round(performance.now()-F.lastScrAt),tick:E.tick})},true);\nreturn 'armed tick '+E.tick+' v'+E.version})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 500,
+  "y": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');return {seed:E.seed,ver:E.version,vw:innerWidth,vh:innerHeight}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__f.mk=E.tick;return 'mark '+E.tick})()"
+ },
+ {
+  "type": "loop",
+  "label": "fit-clear1",
+  "maxMs": 60000,
+  "cond": "window.__f.ev.some(e=>e.T==='room_cleared'&&e.tick>=window.__f.mk)",
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const E=window.__echoes;if(E.state().enemies.length>0)E.cmd('killAllEnemies');return E.state().enemies.length})()"
+   },
+   {
+    "type": "wait",
+    "ms": 200
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<5000){try{if(window.__echoes.runUi().screen==='draft')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const pg=document.querySelector('#run-screen .rn-page:not([style*=\"display: none\"])');const r=pg?pg.getBoundingClientRect():null;\nconst bar=document.querySelector('.hud-bar');const br=bar?bar.getBoundingClientRect():null;\nreturn {tag:\"fit-draft\",screen:u.screen,vw:innerWidth,vh:innerHeight,fit:u.fit,floors:u.floors,\n page:r?{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),bottom:Math.round(r.bottom),right:Math.round(r.right)}:null,\n bar:br?{top:Math.round(br.top),h:Math.round(br.height)}:null,\n pageInsideViewport:r?(r.x>=0&&r.y>=0&&r.right<=innerWidth&&r.bottom<=innerHeight):null,\n pageAboveBar:r&&br?r.bottom<=br.top+1:null,buttons:u.buttons,doors:u.doors.map(d=>d.box)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certfixB4-reg-fit-draft"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{const n=document.getElementById('socket-screen');return !!n&&n.classList.contains('nd-open')})()",
+  "then": [
+   {
+    "type": "key",
+    "key": "Escape",
+    "ms": 80
+   },
+   {
+    "type": "wait",
+    "ms": 700
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const pg=document.querySelector('#run-screen .rn-page:not([style*=\"display: none\"])');const r=pg?pg.getBoundingClientRect():null;\nconst bar=document.querySelector('.hud-bar');const br=bar?bar.getBoundingClientRect():null;\nreturn {tag:\"fit-path\",screen:u.screen,vw:innerWidth,vh:innerHeight,fit:u.fit,floors:u.floors,\n page:r?{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),bottom:Math.round(r.bottom),right:Math.round(r.right)}:null,\n bar:br?{top:Math.round(br.top),h:Math.round(br.height)}:null,\n pageInsideViewport:r?(r.x>=0&&r.y>=0&&r.right<=innerWidth&&r.bottom<=innerHeight):null,\n pageAboveBar:r&&br?r.bottom<=br.top+1:null,buttons:u.buttons,doors:u.doors.map(d=>d.box)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certfixB4-reg-fit-path"
+ }
+]

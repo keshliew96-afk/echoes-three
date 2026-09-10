@@ -26,6 +26,20 @@
 // A commit needs `!e.repeat && !stale.has(code) && !held.has(code)`. Walking
 // draft -> path with Enter pinned down therefore stops dead at the doors, and
 // only a genuine release-and-press walks through.
+//
+// THE SETTLE WINDOW (certification B-r3 F1, binding): A and D are WASD in
+// combat and choose-left/right on every page, and a page is on screen ~10 ms
+// after the clearing kill. A strafing tap that landed in that instant used to
+// retarget the draft to Decline, and the next Enter — the key the page itself
+// advertises — destroyed the reward with no confirmation (12 of 12 rewards
+// lost across two real-input runs). So for GRACE_MS after a page opens, every
+// navigation and commit key is dropped, and a key pressed before the page
+// settled (or already down when it opened) must be RELEASED and pressed again
+// before it counts. Esc alone is honoured at once: it has no combat meaning,
+// so it can only be deliberate. After the window the documented bindings
+// apply unchanged. Each page also re-initialises its own focus to its
+// rn-primary when it opens (draft: Take; path: the sim's door 0), so no page
+// ever inherits a focus from the page before it.
 import { RUN_CSS, isCompact } from './style.js';
 import { createDraftScreen } from './draft.js';
 import { createPathScreen } from './path.js';
@@ -142,12 +156,45 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     for (const c of held) stale.add(c);
   }
 
+  // ----------------------------------------------------- settle window --
+  // See the header note. 300 ms sits inside §16's "interactive within 350 ms"
+  // and past the 220 ms entrance fade, so a page never takes a navigation or
+  // commit key before it has finished arriving.
+  //
+  // CARRY-OVER: the hazard is not "a tap in the first 300 ms", it is "the
+  // hands are still running the fight pattern". A key that has a combat
+  // meaning and NO meaning on any page (skill 1-4, W/S, R, E, Tab, F1-F4) is
+  // unambiguous evidence of that, so each one restarts the 300 ms settle —
+  // measured: the strafing pattern of certB3-b2b lands "A@146 2@271 3@334
+  // D@396" on a fresh reward page, and that D is a carried-over strafe, not
+  // a choice. The restart is capped at SETTLE_MAX_MS after open so a page is
+  // never held hostage; A/D/arrows/Enter/Space themselves never extend it,
+  // so a lone choose key after a quiet 300 ms counts exactly as documented.
+  const GRACE_MS = 300;
+  const SETTLE_MAX_MS = 1000;
+  const NAV_KEYS = new Set(['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight']);
+  const COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space']);
+  const CARRY_KEYS = new Set([
+    'Digit1', 'Digit2', 'Digit3', 'Digit4', 'KeyW', 'KeyS', 'KeyR', 'KeyE', 'Tab', 'F1', 'F2', 'F3', 'F4',
+  ]);
+  let openedAt = -Infinity; // performance.now() when the current page appeared
+  let carryAt = -Infinity; // last carry-over key pressed on the current page
+  const sinceOpen = () => performance.now() - openedAt;
+  const settleAt = () => Math.min(Math.max(openedAt, carryAt) + GRACE_MS, openedAt + SETTLE_MAX_MS);
+  const settled = () => performance.now() >= settleAt();
+
   function setScreen(name) {
     if (name === current) return;
     if (current !== 'none' && screens[current]) screens[current].el.style.display = 'none';
     current = name;
     signature = '';
+    openedAt = performance.now();
+    carryAt = -Infinity;
     const on = name !== 'none';
+    // A page re-initialises its own focus the moment it opens — it never
+    // inherits where the previous page left off (F1: one D two pages earlier
+    // used to arm Decline on every later reward until the player pressed left).
+    if (on && typeof screens[name].open === 'function') screens[name].open();
     rootEl.classList.toggle('rn-open', on);
     veil.classList.toggle('rn-open', on);
     // ROUND-1 CERTIFICATION FIX — the shop is a diegetic SHELF, not a modal:
@@ -316,6 +363,27 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       // The socket screen is the topmost modal (§16 chains a taken node
       // straight into it); while it is open it owns the keyboard.
       if (socket && socket.isOpen()) return;
+      // A combat-only key on a page = the fight pattern is still running:
+      // restart the settle (see the settle-window note; capped there).
+      if (CARRY_KEYS.has(code) && !e.repeat) carryAt = performance.now();
+      const nav = NAV_KEYS.has(code);
+      if ((nav || COMMIT_KEYS.has(code)) && !settled()) {
+        // Settle window: the press belongs to the fight that just ended, not
+        // to this page. It is also marked stale so that HOLDING it past the
+        // window can never make it count — release, then press again.
+        stale.add(code);
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      if (nav && !fresh) {
+        // A choose key that was down when the page opened (or is auto-
+        // repeating) never moves the focus: a page's focus only ever moves on
+        // a deliberate press made while the page was already up.
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       if (screens[current].key(code, fresh)) {
         e.preventDefault();
         e.stopPropagation();
@@ -462,6 +530,14 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
         open: current !== 'none',
         held: [...held],
         stale: [...stale],
+        // Settle-window probe surface (F1): how long the current page has been
+        // up, whether it is taking navigation/commit keys yet, and the window.
+        sinceOpenMs: current === 'none' ? null : Math.round(sinceOpen()),
+        settled: current !== 'none' && settled(),
+        settleInMs: current === 'none' ? null : Math.max(0, Math.round(settleAt() - performance.now())),
+        carryMs: current !== 'none' && carryAt > openedAt ? Math.round(performance.now() - carryAt) : null,
+        graceMs: GRACE_MS,
+        settleMaxMs: SETTLE_MAX_MS,
         text: current === 'none' ? '' : screens[current].el.textContent.replace(/\s+/g, ' ').trim(),
         subline: rootEl.querySelector('.rn-subline')?.textContent ?? '',
         doors,

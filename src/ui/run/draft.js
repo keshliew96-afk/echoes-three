@@ -34,7 +34,14 @@ export function createDraftScreen({ run, build }) {
   const btnDecline = el.querySelector('.rn-decline');
   const freeEl = el.querySelector('.rn-free');
   const roomEl = el.querySelector('.rn-room');
-  let focus = 0; // 0 = take, 1 = decline
+  // 0 = Take (the rn-primary), 1 = Decline. This is PER PAGE state: it is
+  // re-initialised to Take every time the page opens (`open()`, called by the
+  // manager) and again whenever the candidate on the card changes, so a
+  // Decline the player moved to on one reward can never be the focus a later
+  // reward opens on (certification B-r3 F1). Decline is only ever focused by
+  // a deliberate choose-right made on THIS page after it settled.
+  let focus = 0;
+  let shown = ''; // room:type:id of the candidate currently on the card
 
   btnTake.addEventListener('click', () => run().takeReward());
   btnDecline.addEventListener('click', () => run().declineReward());
@@ -44,11 +51,21 @@ export function createDraftScreen({ run, build }) {
     btnDecline.classList.toggle('rn-focus', focus === 1);
   }
 
+  function open() {
+    focus = 0;
+    paintFocus();
+  }
+
   function render(view) {
     const r = view.reward;
     freeEl.textContent = String(view.freeSkillSlots);
     roomEl.textContent = String(view.room);
     if (!r) return;
+    const candidate = `${view.room}:${r.type}:${r.id}`;
+    if (candidate !== shown) {
+      shown = candidate;
+      focus = 0; // a new candidate is a new page: it opens on Take
+    }
     const sys = build();
     if (r.type === 'skill') {
       host.innerHTML = `<div class="rn-card" style="--rar:${RARITY_COLOR.common}">${skillCardHtml(
@@ -116,5 +133,5 @@ export function createDraftScreen({ run, build }) {
     return false;
   }
 
-  return { el, render, key, name: 'draft' };
+  return { el, render, key, open, name: 'draft' };
 }
