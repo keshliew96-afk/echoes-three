@@ -301,6 +301,11 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
   // Every other render layer (enemies, boss, skill FX) reaches these two pools
   // through the impact-FX hub instead of allocating its own.
   setImpactFx({ particles, decals });
+  // Both pools live under the arena root, which the camp keeps hidden until a
+  // run starts — so their first draw is parked in the scene itself
+  // (certification fix D-r3 S1, see render/warmup.js).
+  particles.prewarm(stage.scene);
+  decals.prewarm(stage.scene);
 
   // --- Fading sprite pools: dash smear ghosts + bolt trails. Ghosts are
   // translucent capsule after-images; the smear is hard-cleared the frame the

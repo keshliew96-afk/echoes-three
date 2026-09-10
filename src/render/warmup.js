@@ -1,33 +1,53 @@
-// First-draw warm-up parking bay (certification fix D-r1, in-wave hitches).
+// First-draw warm-up parking bay + program anchors (certification fixes
+// D-r1 and D-r3/S1, in-wave hitches).
 //
 // WHY. Round 1 measured single 140-200 ms frames inside waves — at a
 // `wave_start` that raised three spawn telegraphs, at the first kill VFX, at
-// the first bolt of a room — with the main thread FREE for the whole gap (a
-// 4 ms timer beside the rAF sampler never missed a beat) and no new shader
-// programs. That signature is GPU/compositor work, not JS: the first time a
-// buffer or a pipeline state is actually DRAWN, the driver pays for it, and
-// three only uploads a geometry on its first render.
+// the first bolt of a room — with the main thread FREE for the whole gap and
+// no new shader programs. Round 3 (S1) measured the same signature 145-291 ms
+// at the first ally ground zone / melee swing / Stag hit / downed of a page
+// session, and a Chrome trace of that fight (tools/certfixDshouldfix4-trace.mjs)
+// finally put names on the two costs behind it:
 //
-// `renderer.compile()` (which the boss layer already uses for the Stag's
-// materials) covers the shader side but never touches geometry, because it
-// does not draw. So this module parks one instance of every transient rig in
-// the scene for a few frames at boot, sub-pixel and under the floor, with
-// frustum culling off so the draw call really is submitted — then removes and
-// releases it. Everything the first wave will build has, by then, been drawn
-// once.
+//   1. The GPU process compiles shaders LAZILY. ANGLE/D3D11 runs D3DCompile
+//      for a program's vertex and pixel executables on the first DRAW that
+//      uses them (GetVertexExecutableTask / GetPixelExecutableTask in the
+//      trace), not at link time — so `renderer.compile()` alone never pays it,
+//      and a material whose mesh is `visible = false` until its first use
+//      (the swordsman's swing smear) pays it in the middle of a fight.
+//   2. three.js DESTROYS a program when the last material using it is
+//      disposed (`WebGLPrograms.releaseProgram`), and forgets a custom shader's
+//      source id with it. Every telegraph, quake ring and kill splat mints its
+//      own ShaderMaterial and disposes it when it fades, so the trace shows the
+//      lane + column programs re-linked at EVERY telegraph_start — each link
+//      is a full command-buffer drain on the main thread (`GetProgramiv ->
+//      CommandBufferHelper::Finish`, 33-45 ms measured) plus the compile.
+//
+// The cure for both is the same object: an ANCHOR. One instance of every
+// transient rig is built at boot, DRAWN for a few frames (sub-pixel, under
+// the floor, frustum culling off so the draw call really is submitted — this
+// is what compiles the executables), then taken out of the scene and KEPT.
+// Its materials are never disposed, so their programs and shader-source ids
+// stay alive for the whole session; every later instance of the same rig
+// builds a material with the same cache key and finds the program already
+// there. Nothing is ever re-linked, nothing is ever compiled mid-wave.
 //
 // Parked objects are 1/1000 scale at y = -60: outside the camera's cone at the
 // §1 elevation, and behind the ground plane in depth if it ever were inside.
-import { releaseTree } from './geocache.js';
-
-const HOLD_FRAMES = 3; // rendered frames a parked rig is kept
+const HOLD_FRAMES = 3; // rendered frames a parked rig is kept in the scene
 const PARK_Y = -60;
 const PARK_SCALE = 0.001;
 
 const parked = [];
+// Anchors: every rig that has been parked and dropped WITHOUT a custom drop
+// handler. They are out of the scene graph and never drawn again; they exist
+// so that their materials (and through them their programs) are never
+// released. A few dozen small objects for the session.
+const retained = [];
 
-// `onDrop` replaces the default release — the boss's Stag rig goes back to its
-// own pool instead of being disposed.
+// `onDrop` replaces the default retention — the boss's Stag rig and the
+// revive instrument go back to their own pools instead (a pooled object is
+// its own anchor: pools never dispose).
 export function warmPark(root, obj, onDrop = null) {
   if (!obj) return;
   obj.position.set(0, PARK_Y, 0);
@@ -52,9 +72,10 @@ export function warmupUpdate() {
       o.frustumCulled = true; // back to the default for anything that gets reused
     });
     if (p.onDrop) p.onDrop(p.obj);
-    else releaseTree(p.obj);
+    else retained.push(p.obj); // anchor: never disposed, never drawn again
     parked.splice(i, 1);
   }
 }
 
 export const warmupPending = () => parked.length;
+export const warmupRetained = () => retained.length;

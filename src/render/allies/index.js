@@ -48,9 +48,10 @@ import { PALETTE } from '../../data/palette.js';
 import { TICK_HZ } from '../../core/constants.js';
 import { makeGlowSprite } from '../glow.js';
 import { sharedGeo, releaseTree } from '../geocache.js';
+import { warmPark } from '../warmup.js';
 import { createCritter, FALL_ANGLE } from '../critters/index.js';
-import { exactColor, exactHex } from '../critters/common.js';
-import { ALLY_CLASSES, REVIVE } from '../../sim/allies.js';
+import { exactColor, exactHex, makeSwingSmear } from '../critters/common.js';
+import { ALLY_CLASSES, ALLY_KITS, REVIVE } from '../../sim/allies.js';
 
 const PARCH = PALETTE.parchment;
 const AMBER = PALETTE.hearthAmber;
@@ -703,11 +704,55 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     }
   }
 
+  // --- first-draw warm-up + program anchors (certification fix D-r3 S1, see
+  // render/warmup.js). The first ally ground zone (Caltrops / Detonating
+  // Charge), the first melee swing (the swordsman's smear is `visible = false`
+  // until its release frame, so nothing had ever compiled its shader) and the
+  // first downed body (the whole revive instrument lives in the ink scene,
+  // whose light count of zero keys DIFFERENT programs from the main scene's
+  // for the same MeshBasicMaterial / SpriteMaterial) each cost a mid-fight
+  // shader compile. One of each is drawn at boot and kept as an anchor.
+  let warmFrames = 0;
+  let warmed = false;
+  let inkWarmFrames = 0;
+  function prewarm() {
+    warmed = true;
+    // One zone per kit ground_aoe radius: the discs are shared per radius, so
+    // this also uploads each radius' geometry once.
+    const zoneRadii = new Set();
+    for (const kit of Object.values(ALLY_KITS))
+      for (const s of kit) if (s.shape === 'ground_aoe' && s.area) zoneRadii.add(s.area);
+    if (zoneRadii.size === 0) zoneRadii.add(0.7);
+    for (const r of zoneRadii) warmPark(root, makeZoneRig(r));
+    const smear = makeSwingSmear();
+    smear.visible = true; // uOpacity stays 0: drawn, never seen
+    warmPark(root, smear);
+    // The §7 melee-arc wedge (a swing's fill + rim): its geometry per arc row
+    // is built lazily on the first swing, so every class's basic arc is drawn
+    // once here at zero opacity; the wedges go back to their pool by the
+    // normal fade path.
+    for (const c of Object.values(ALLY_CLASSES)) {
+      if (c.basicShape === 'melee_arc' && c.basicRange && c.basicHalfAngle)
+        spawnWedge({ x: 0, z: 0, dx: 1, dz: 0 }, c.basicRange, c.basicHalfAngle, 0);
+    }
+    // The revive instrument, drawn by InkOverlayPass in ITS scene, then
+    // returned to the pool (a pooled rig is its own anchor).
+    if (inkPass) {
+      inkWarmFrames = 6;
+      warmPark(inkRoot, acquireReviveRig(), (g) => {
+        g.getObjectByName('fill').geometry.setDrawRange(0, 0);
+        revivePool.push(g);
+      });
+    }
+  }
   // ----------------------------------------------------------------- update --
   let lastElapsed = null;
   function update(tSec, alpha = 1) {
     const dt = lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastElapsed));
     lastElapsed = tSec;
+    // A dozen frames in: the boot burst is over, nothing is being fought yet.
+    if (!warmed && ++warmFrames > 12) prewarm();
+    if (inkWarmFrames > 0) inkWarmFrames--;
 
     // --- ally rigs ride their sim bodies.
     for (const a of allyEntities()) {
@@ -814,7 +859,10 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
         reviveRigs.delete(id);
       }
     }
-    if (inkPass) inkPass.enabled = reviveRigs.size > 0;
+    // The pass also runs for the warm-up frames that park the revive
+    // instrument in its scene (see prewarm) — that is what compiles the
+    // ink-scene programs at boot instead of on the first downed body.
+    if (inkPass) inkPass.enabled = reviveRigs.size > 0 || inkWarmFrames > 0;
 
     // --- ally kit zones synced to sim `azone` entities.
     const seenZones = new Set();

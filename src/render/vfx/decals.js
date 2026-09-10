@@ -14,6 +14,8 @@ import {
 import { DECALS } from '../../core/constants.js';
 import { PALETTE } from '../../data/palette.js';
 import { EMBER_EXACT } from '../enemies/style.js';
+import { markShared } from '../geocache.js';
+import { warmPark } from '../warmup.js';
 
 let splatTexture = null;
 let scorchTexture = null;
@@ -209,7 +211,7 @@ function makeSplatMaterial(darkColor, ashColor, opacity) {
 
 export function createDecalPool(parent, cosmetic) {
   const live = []; // FIFO — index 0 is the oldest
-  const geo = new CircleGeometry(1, 24);
+  const geo = markShared(new CircleGeometry(1, 24)); // one disc for every decal of the session
   const tint = new Color(PALETTE.voidCharcoal);
   // Ash: Warm Grey pulled toward Bone, i.e. a neutral — well under the
   // analyzer's 0.35 saturation gate, so a kill mark can never contaminate a
@@ -347,11 +349,56 @@ export function createDecalPool(parent, cosmetic) {
     }
   }
 
+  // First-draw warm-up + program anchors (certification fix D-r3 S1, see
+  // render/warmup.js). Every kill splat mints its own ShaderMaterial and
+  // disposes it when it fades, so the FIRST kill of a page session compiled
+  // the splat shader mid-fight and the last splat's fade destroyed the program
+  // again (three releases a program with its last material). One splat and
+  // one burn are drawn once at boot in a root that is visible in camp — the
+  // pool's own parent is the arena, hidden until a run starts — and kept.
+  function prewarm(visibleRoot) {
+    const splat = new Mesh(geo, makeSplatMaterial(tint, ash, DECALS.opacity));
+    splat.rotation.x = -Math.PI / 2;
+    warmPark(visibleRoot, splat);
+    const core = new Mesh(
+      geo,
+      new MeshBasicMaterial({
+        map: getScorchTexture(),
+        color: scorchTint,
+        transparent: true,
+        opacity: 0.62,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -3,
+        polygonOffsetUnits: -3,
+      })
+    );
+    core.rotation.x = -Math.PI / 2;
+    warmPark(visibleRoot, core);
+    const rim = new Mesh(
+      geo,
+      new MeshBasicMaterial({
+        map: getBurnRimTexture(),
+        color: EMBER_EXACT.clone(),
+        transparent: true,
+        opacity: SCORCH.rimPeak,
+        depthWrite: false,
+        toneMapped: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -4,
+        polygonOffsetUnits: -4,
+      })
+    );
+    rim.rotation.x = -Math.PI / 2;
+    warmPark(visibleRoot, rim);
+  }
+
   return {
     spawn,
     scorch,
     hotBurns,
     update,
+    prewarm,
     count: () => live.length,
     scorchCount: () => burns.length,
   };

@@ -717,8 +717,15 @@ export function createCampScene(stage, toggles, ctx) {
           })),
         ],
       },
-      // The arena's own probe surface stays reachable while a run is live.
+      // The arena's own probe surface stays reachable while a run is live —
+      // nested under `arena`, and ALSO spread at the top level while a run is
+      // live (certification D-r3 advisory A2: critics read
+      // state().vfx.numerals / decals / particles / propTypes / variantName
+      // during a fight, and the camp block was hiding them), so a run frame
+      // reports the arena's counters and a camp frame the camp's.
       arena: mode === 'run' && arena.debugState ? arena.debugState() : null,
+      ...(mode === 'run' && arena.debugState ? arena.debugState() : {}),
+      mode,
     };
   }
 

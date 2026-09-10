@@ -42,7 +42,7 @@ import { createSiphonFizzleCue } from './ui/socket/fizzle.js';
 import { createBossLayer } from './render/boss/index.js';
 import { createRunUi } from './ui/run/index.js';
 import { updateNumberPools, flushNumberPools } from './render/numbers.js';
-import { warmupUpdate } from './render/warmup.js';
+import { warmupUpdate, warmupPending, warmupRetained } from './render/warmup.js';
 
 const params = new URLSearchParams(window.location.search);
 const flag = (name, def = true) => {
@@ -373,6 +373,18 @@ window.__echoes = {
   state: () => ({
     scene: activeScene.name,
     toggles,
+    // GL residency (certification block D): three's program / geometry /
+    // texture counters plus the warm-up bay, so a leak or a mid-wave compile
+    // is a number a probe can read instead of a guess.
+    gl: {
+      programs: stage.renderer.info.programs ? stage.renderer.info.programs.length : null,
+      geometries: stage.renderer.info.memory.geometries,
+      textures: stage.renderer.info.memory.textures,
+      calls: stage.renderer.info.render.calls,
+      triangles: stage.renderer.info.render.triangles,
+      warmupPending: warmupPending(),
+      warmupRetained: warmupRetained(),
+    },
     ...world.snapshotState(),
     ...(activeScene.debugState ? { vfx: activeScene.debugState() } : {}),
     ...(skillfx ? { skillfx: skillfx.debugCounts() } : {}),

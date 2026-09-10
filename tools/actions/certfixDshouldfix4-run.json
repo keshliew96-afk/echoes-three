@@ -1,0 +1,51 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__D=window.__D||{};const D=window.__D;D.ev=[];D.lt=[];\ntry{D.po=new PerformanceObserver(l=>{for(const e of l.getEntries())D.lt.push([+e.startTime.toFixed(0),+e.duration.toFixed(1)]);});D.po.observe({entryTypes:['longtask']});}catch(e){D.poErr=String(e);}\nfor(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"hit\",\"hit_immune\",\"death\",\"hitstop\",\"heal\",\"skill_cast\",\"ally_cast\",\"ally_basic\",\"dodge\",\"dash\",\"downed\",\"revive\",\"reward\",\"draft\",\"zone_spawn\",\"azone_spawn\",\"azone_tick\",\"skill_bolt_spawn\",\"projectile_spawn\",\"flash\",\"knockback\",\"screenshake\",\"flinch\",\"mark\",\"enemy_despawn\",\"boss_spawn\",\"boss_adds\",\"boss_quake_start\",\"boss_quake_resolve\",\"bounce_hop\",\"siphon_drain\",\"detonate\",\"echo_recast\"])E.on(t,e=>D.ev.push({T:t,tick:e.tick,ms:+performance.now().toFixed(1),k:e.kind||e.skill||e.id||e.source||e.type||''}));\n// Program census helpers.\nD.R=()=>window.__arenaProbe&&window.__arenaProbe.stage&&window.__arenaProbe.stage.renderer;\nD.owners=(prog)=>{const out=[];try{const st=window.__arenaProbe.stage;const R=st.renderer;const walk=(root)=>root.traverse(o=>{const m=o.material;if(!m)return;const ms=Array.isArray(m)?m:[m];for(const x of ms){const p=R.properties.get(x);if(p&&p.currentProgram===prog){let chain=o.name||o.type;let q=o.parent;let n=0;while(q&&n<4){chain+='<'+(q.name||q.type);q=q.parent;n++;}out.push(x.type+(x.name?'('+x.name+')':'')+'@'+chain);}}});walk(st.scene);for(const p of (st.composer&&st.composer.passes)||[]){if(p.scene&&p.scene.isScene&&p.scene!==st.scene)walk(p.scene);}}catch(e){out.push('err:'+String(e).slice(0,60));}return out.slice(0,8);};\nD.progList=()=>{const R=D.R();return R?R.info.programs.map(p=>p.name+'#'+p.id):[];};\n// Wrap the stage's render so the JS cost of composer.render is measured per frame.\ntry{const st=window.__arenaProbe.stage;if(!st.__wrapped){const orig=st.render;D.jsRender=0;st.render=function(){const a=performance.now();const r=orig.apply(this,arguments);D.jsRender=performance.now()-a;return r;};st.__wrapped=true;}}catch(e){D.wrapErr=String(e);}\nreturn 'armed t'+E.tick+' programs '+D.progList().length;})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const D=window.__D;const r=E.cmd('startRun');return {started:!!r,room:(E.cmd('runState')||{}).room,active:!!(E.cmd('runState')||{}).active}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const D=window.__D;const sl=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const k0=E.tick;while(performance.now()-t0<30000){try{if(E.state().enemies.length>=1)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length};}catch(e){}await sl(8);}return {ok:false,tick:E.tick,enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const D=window.__D;return {banner:E.hud&&E.hud.banner?E.hud.banner():null,room:(E.cmd('runState')||{}).room}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 380
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "shot",
+  "name": "certfixDshouldfix4-run-fight"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const D=window.__D;E.cmd('killAllEnemies');return 'killed t'+E.tick})()"
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const D=window.__D;const sl=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();while(performance.now()-t0<20000){if(D.ev.some(e=>e.T==='room_cleared'))break;await sl(16);}await sl(400);\nreturn {cleared:D.ev.filter(e=>e.T==='room_cleared').map(e=>e.tick),screen:E.runUi().screen,text:(E.runUi().text||'').slice(0,80),banner:E.hud&&E.hud.banner?E.hud.banner():null,pageErrors:0}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certfixDshouldfix4-run-cleared"
+ }
+]

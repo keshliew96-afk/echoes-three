@@ -37,6 +37,7 @@ import {
 } from 'three';
 import { getRadialTexture } from '../glow.js';
 import { PALETTE } from '../../data/palette.js';
+import { warmPark } from '../warmup.js';
 
 // Render scaffold tunables (cosmetic, not brief numbers).
 const GRAVITY = 8.5; // u/s^2
@@ -344,5 +345,35 @@ export function createParticlePool(parent, cosmetic) {
   const count = () =>
     clouds.spark.list.length + clouds.chunk.list.length + clouds.smoke.list.length;
 
-  return { burst, kill, hit, embers, impact, update, count };
+  // First-draw warm-up (certification fix D-r3 S1, see render/warmup.js).
+  // A cloud with a draw range of 0 is submitted every frame, which links its
+  // program at boot — but ANGLE skips a zero-count draw, so the D3D vertex
+  // and pixel executables were still compiled on the FIRST real burst of a
+  // session. Each cloud is parked in a root that is visible in camp (its own
+  // parent is the hidden arena) with one invisible particle written straight
+  // into its buffers, so that first burst has already been drawn.
+  function prewarm(visibleRoot) {
+    for (const key of Object.keys(clouds)) {
+      const cloud = clouds[key];
+      cloud.position[0] = 0;
+      cloud.position[1] = 0;
+      cloud.position[2] = 0;
+      cloud.color[0] = 0;
+      cloud.color[1] = 0;
+      cloud.color[2] = 0;
+      cloud.color[3] = 0;
+      cloud.aSize[0] = 1;
+      cloud.geo.attributes.position.needsUpdate = true;
+      cloud.geo.attributes.color.needsUpdate = true;
+      cloud.geo.attributes.aSize.needsUpdate = true;
+      cloud.geo.setDrawRange(0, 1);
+      parent.remove(cloud.points);
+      warmPark(visibleRoot, cloud.points, (pts) => {
+        cloud.geo.setDrawRange(0, cloud.list.length);
+        parent.add(pts);
+      });
+    }
+  }
+
+  return { burst, kill, hit, embers, impact, update, count, prewarm };
 }
