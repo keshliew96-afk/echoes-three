@@ -287,10 +287,63 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
   // capture can measure what the HUD actually costs per frame.
   let enabled = true;
 
+  // --- boot warm-up (certification fix D-r3 S1, see commandbar.prewarmFrame,
+  // the banner modes below, threat.prewarm and render/numbers.prewarm). The
+  // compositor compiles a raster pipeline the first time a session draws a
+  // new CSS effect; measured on the shop shelf at 300-600 ms of GPU time with
+  // the main thread free, and the same signature landed 145-380 ms into the
+  // first fight at the first off-screen telegraph pointer. For three frames
+  // ~18 frames after boot, the whole HUD is switched to 2/1000 opacity and
+  // every combat state is painted at once: boss / defend / kill_all banners,
+  // critical + downed + shaken + rallied portraits, cooling + counting +
+  // ready + denied slots, six threat pointers, five numerals.
+  const WARM_WAIT = 18;
+  const WARM_FRAMES = 3;
+  let warmWait = WARM_WAIT;
+  let warmLeft = 0;
+  let warmStarted = false;
+  let warmEndPending = false;
+  let warmRestore = false;
+  const WARM_ROOMS = [
+    null, // frame 0: the boss plate (WARM_BOSS)
+    { cleared: false, mode: 'defend', waystone: { hp: 96, maxHp: 150 }, defendTicksLeft: 9 * 60, softFailed: false },
+    { cleared: false, mode: 'kill_all', wavesTotal: 3, waveIndex: 1, aliveEnemies: 4, pendingSpawns: 1 },
+  ];
+  const WARM_BOSS = { name: 'The Hollow Stag', hp: 913, maxHp: 1800, phasesFired: 2, adds: 2 };
+  function warmTick() {
+    if (warmEndPending) {
+      // The frame after the last warm frame: the real update below repaints
+      // truth, and the opacity comes back once that is done.
+      warmEndPending = false;
+      warmRestore = true;
+      bar.prewarmEnd();
+      banner.reset();
+      return false;
+    }
+    if (!warmStarted) {
+      if (--warmWait > 0) return false;
+      warmStarted = true;
+      warmLeft = WARM_FRAMES;
+      threat.prewarm(WARM_FRAMES);
+    }
+    return warmLeft > 0;
+  }
+  function warmPaint() {
+    const k = WARM_FRAMES - warmLeft;
+    root.style.opacity = '0.002';
+    root.style.transition = 'none';
+    bar.prewarmFrame(k);
+    const r = WARM_ROOMS[k % WARM_ROOMS.length];
+    banner.update(r, r ? null : WARM_BOSS, true);
+    warmLeft -= 1;
+    if (warmLeft === 0) warmEndPending = true;
+  }
+
   function update(nowMs) {
     if (!enabled) return;
     const now = nowMs / 1000;
     const entities = world.entities();
+    const warming = warmTick();
 
     members[0] = members[1] = members[2] = members[3] = null;
     bossEntity = null;
@@ -315,6 +368,12 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     if (banner.update(room, combat ? runBoss ?? bossEntity : null, combat)) publishZones();
 
     threat.update(now, entities, combat);
+    if (warming) warmPaint();
+    else if (warmRestore) {
+      warmRestore = false;
+      root.style.opacity = '';
+      root.style.transition = '';
+    }
   }
 
   // ------------------------------------------------------------- debug ---

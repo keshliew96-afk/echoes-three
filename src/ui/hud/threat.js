@@ -428,8 +428,64 @@ export function createThreatLayer({ stage, world, bus = null }) {
     live = false;
   }
 
+  // --- boot warm-up (certification fix D-r3 S1). The compositor rasterises
+  // every marker STATE for the first time in a session on the frame it first
+  // appears — a telegraph pointer (Ember head, pulsing opacity over the
+  // drop-shadow filter), a spawn pointer, a marked one, a merged badge, the
+  // damage tick — and the shop test bed measured that first rasterisation of
+  // a new effect at 300-600 ms of GPU time, once per session. Six pointers in
+  // every state are drawn here at 2/1000 opacity for a few boot frames, so the
+  // fight's first off-screen telegraph lands on warm pipelines.
+  let warmLeft = 0;
+  function prewarm(frames = 3) {
+    warmLeft = frames;
+  }
+  const WARM_STATES = ['tm', 'tm telegraph', 'tm spawn', 'tm marked', 'tm merged', 'tm telegraph merged'];
+  function paintWarm() {
+    root.style.opacity = '0.002';
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    for (let i = 0; i < WARM_STATES.length; i++) {
+      const m = acquire(i);
+      const cls = WARM_STATES[i];
+      m.wrap.style.display = 'block';
+      m.wrap.style.transform = 'translate(' + ((w * (i + 1)) / (WARM_STATES.length + 1)).toFixed(1) + 'px, ' + (h * 0.5).toFixed(1) + 'px)';
+      m.svg.style.transform = 'rotate(' + (i * 47).toFixed(1) + 'deg)';
+      m.cls = cls;
+      m.wrap.className = cls;
+      m.dot.style.display = /spawn/.test(cls) ? 'block' : 'none';
+      if (/merged/.test(cls)) {
+        m.badgeText = '×3';
+        m.badge.textContent = '×3';
+        m.badge.style.transform = 'translate(-18px, 18px)';
+      }
+      m.wrap.style.opacity = /telegraph/.test(cls) ? '0.7' : '1';
+      m.lastHit = 0.6 - i * 0.1;
+      m.hit.style.opacity = String(m.lastHit);
+    }
+    live = true;
+  }
+  function endWarm() {
+    for (const m of pool) {
+      m.wrap.style.display = 'none';
+      m.cls = '';
+      m.badgeText = '';
+      m.badge.textContent = '';
+      m.lastHit = -1;
+      m.hit.style.opacity = '0';
+    }
+    root.style.opacity = '';
+    clear();
+  }
+
   function update(now, entities, combat = true) {
     lastNow = now;
+    if (warmLeft > 0) {
+      paintWarm();
+      warmLeft -= 1;
+      if (warmLeft === 0) endWarm();
+      return;
+    }
     if (!combat) {
       if (live || pool.length) clear();
       return;
@@ -506,6 +562,7 @@ export function createThreatLayer({ stage, world, bus = null }) {
   return {
     el: root,
     update,
+    prewarm,
     clear,
     setBarHeight,
     setZones,

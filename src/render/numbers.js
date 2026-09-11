@@ -24,6 +24,11 @@ const OUTLINE_W = 2; // px (§17: 2 px contrast outline)
 // (`flushNumberPools`), so no scene can ever freeze a numeral again.
 const POOLS = new Set();
 
+// Boot warm-up entry (see prewarm inside createNumberPool).
+export function prewarmNumberPools(frames = 3) {
+  for (const p of POOLS) if (p.prewarm) p.prewarm(frames);
+}
+
 export function updateNumberPools(dt) {
   for (const p of POOLS) p.tick(dt);
 }
@@ -119,6 +124,47 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
 
   const active = []; // oldest first: { el, x, z, age, jx, kind, crit }
   const pool = [];
+  // --- boot warm-up (certification fix D-r3 S1): one numeral of every kind at
+  // the smallest and the largest size the sim produces, drawn at 2/1000
+  // opacity for a few frames, so the first crit / heal / incoming number of a
+  // fight is rasterised on warm text pipelines and glyph atlases.
+  let warm = null; // { els, left }
+  function prewarm(frames = 3) {
+    if (warm) return;
+    const els = [];
+    const cx = window.innerWidth * 0.5;
+    const cy = window.innerHeight * 0.45;
+    const specs = [
+      ['damage', 3, false],
+      ['damage', 40, false],
+      ['damage', 34, true],
+      ['heal', 18, false],
+      ['incoming', 26, false],
+    ];
+    specs.forEach(([kind, amount, crit], i) => {
+      const k = KINDS[kind] ?? KINDS.damage;
+      const el = document.createElement('div');
+      el.className = 'dmg-num';
+      let px = DAMAGE_NUMBERS.minPx + amount * DAMAGE_NUMBERS.pxPerPoint;
+      if (crit) px *= DAMAGE_NUMBERS.critScale;
+      el.textContent = `${k.prefix}${amount}`;
+      el.style.fontSize = `${Math.round(px)}px`;
+      el.style.color = k.color;
+      el.style.textShadow = outlineShadow(k.outline);
+      el.style.visibility = 'visible';
+      el.style.opacity = '0.002';
+      el.style.transform = `translate(${(cx + (i - 2) * 90).toFixed(1)}px, ${cy.toFixed(1)}px) translate(-50%, -100%) scale(${crit ? 1.25 : 1})`;
+      layer.appendChild(el);
+      els.push(el);
+    });
+    warm = { els, left: frames };
+  }
+  function tickWarm() {
+    if (!warm) return;
+    if (--warm.left > 0) return;
+    for (const el of warm.els) el.remove();
+    warm = null;
+  }
   const v = new Vector3();
 
   function acquire() {
@@ -210,6 +256,7 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
   }
 
   function update(dt) {
+    tickWarm();
     if (active.length === 0) return;
     camera.updateMatrixWorld(); // camera moved this frame; project fresh
     const w = window.innerWidth;
@@ -265,6 +312,6 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
     releaseAll,
     count: () => active.length,
   };
-  POOLS.add({ tick: update, releaseAll, count: () => active.length });
+  POOLS.add({ tick: update, releaseAll, count: () => active.length, prewarm });
   return api;
 }

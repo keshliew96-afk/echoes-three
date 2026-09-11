@@ -218,6 +218,16 @@ export function createBanner() {
     update,
     hide,
     isVisible: () => mode !== 'none',
+    // Boot warm-up tail (hud/index.js): the warm frames painted synthetic
+    // boss / defend / kill_all plates; the hidden plate must not keep their
+    // text for a probe to read in camp.
+    reset() {
+      label.textContent = '';
+      num.textContent = '';
+      timer.textContent = '';
+      lastKey = '';
+      phasesShown = -1;
+    },
     debug: {
       boss: (d) => {
         bossOverride = d ? { name: d.name ?? 'THE HOLLOW STAG', hp: d.hp ?? 200, maxHp: d.maxHp ?? 200 } : null;

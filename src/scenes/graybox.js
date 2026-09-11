@@ -36,6 +36,7 @@ import { createNumberPool } from '../render/numbers.js';
 import { createParticlePool } from '../render/vfx/particles.js';
 import { createDecalPool } from '../render/vfx/decals.js';
 import { setImpactFx } from '../render/vfx/hub.js';
+import { sharedGeo } from '../render/geocache.js';
 
 // Graybox scaffold numbers (render-only): wall height 0.75 u sits inside the
 // §13 band (70-80% of the 1.05 u standing height — never fully occludes);
@@ -109,7 +110,10 @@ function boltContactShadow(radius, opacity) {
     depthWrite: false,
     toneMapped: false,
   });
-  const blob = new Mesh(new CircleGeometry(radius, 20), mat);
+  // Shared per radius (certification fix D-r3): this disc used to be minted per
+  // bolt and never disposed — renderer.info.memory.geometries climbed by one
+  // for every shot fired in a session (+27 over a 20 s fight).
+  const blob = new Mesh(sharedGeo(`bolt-shadow:${radius}`, () => new CircleGeometry(radius, 20)), mat);
   blob.rotation.x = -Math.PI / 2;
   blob.position.y = 0.008;
   return blob;
@@ -169,6 +173,10 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
   // --- Bolt visuals (§19.4 player bolt: parchment-white core + amber glow +
   // trail), grounded by a small blob shadow like every entity.
   const bolts = new Map(); // entity id -> Group
+  // POOLED (certification fix D-r3): a rig is a group, a sprite and two
+  // materials; the player fires two a second, so a fresh rig per shot was a
+  // steady allocation + first-draw cost for the whole fight.
+  const boltPool = [];
   const boltCoreGeo = new CapsuleGeometry(0.07, 0.16, 4, 10);
   const boltCoreMat = new MeshBasicMaterial({
     color: new Color(PALETTE.parchment),
@@ -398,7 +406,7 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
       seen.add(e.id);
       let g = bolts.get(e.id);
       if (!g) {
-        g = makeBolt();
+        g = boltPool.pop() ?? makeBolt();
         // Muzzle sample happens ONCE, at birth (the gem keeps moving with the
         // cast pose; the blend needs a fixed origin to converge from).
         g.userData.muzzle = boltOrigin ? boltOrigin() : null;
@@ -423,6 +431,10 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     for (const [id, g] of bolts) {
       if (!seen.has(id)) {
         root.remove(g);
+        g.userData.muzzle = null;
+        g.position.set(0, 0, 0);
+        g.userData.shadowMesh.position.y = 0.008;
+        if (boltPool.length < 24) boltPool.push(g);
         bolts.delete(id);
       }
     }

@@ -597,10 +597,90 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     }
   }
 
+  // --- boot warm-up (certification fix D-r3 S1). Every portrait and slot
+  // state the fight can reach is painted once at boot (the bar sits at 2/1000
+  // opacity for those frames, see hud/index.js), so the first Critical pulse,
+  // the first downed portrait, the first cooldown wipe and the first denial
+  // nudge of a session are rasterised on warm compositor pipelines instead of
+  // mid-wave. `prewarmEnd` puts every class and inline style back and resets
+  // the paint caches so the next real update repaints from truth.
+  function prewarmFrame(k) {
+    const P = ports;
+    if (P[0]) {
+      P[0].cell.classList.add('is-critical');
+      P[0].inner.style.borderWidth = `${(1 + 2 * ((k + 1) / 3)).toFixed(2)}px`;
+      P[0].inner.style.borderColor = 'rgb(201,194,179)';
+      P[0].hp.style.outlineColor = 'rgb(201,194,179)';
+      P[0].num.textContent = '12';
+      P[0].fill.style.width = '18%';
+    }
+    if (P[1]) P[1].cell.classList.add('is-downed');
+    if (P[2] && k === 0) nudge(P[2].cell, 'shake');
+    if (P[3] && k === 0) nudge(P[3].rally, 'go');
+    if (P[2]) P[2].cell.classList.add('is-hover');
+    const S = skillEls;
+    const cool = (s, deg) => {
+      if (!s) return;
+      s.slot.classList.add('is-cooling');
+      s.lastDeg = -1;
+      paintWipe(s, deg / 360);
+    };
+    cool(S[0], 120 + k * 40);
+    cool(dodge, 300);
+    if (S[1]) {
+      S[1].slot.classList.add('is-counting');
+      S[1].num.textContent = '0.4';
+    }
+    if (k === 0) {
+      if (S[2]) nudge(S[2].slot, 'hud-ready');
+      if (S[3]) {
+        nudge(S[3].flash, 'hud-nudge-wipe');
+        nudge(S[3].frame, 'hud-nudge-blink');
+        nudge(S[3].slot, 'hud-nudge-skip');
+      }
+    }
+    if (S[3]) S[3].slot.classList.add('is-grey');
+  }
+  function prewarmEnd() {
+    for (const p of ports) {
+      p.cell.classList.remove('is-critical', 'is-downed', 'is-hover', 'shake');
+      clearNudges(p.cell);
+      clearNudges(p.rally);
+      p.rally.classList.remove('go');
+      p.inner.style.borderWidth = '0px';
+      p.inner.style.borderColor = 'transparent';
+      p.hp.style.outlineColor = '';
+      p.fill.style.background = '';
+      p.num.textContent = '';
+      p.lastState = null;
+      p.lastFill = -1;
+      p.lastPct = -1;
+    }
+    for (const s of [...skillEls, dodge]) {
+      if (!s) continue;
+      s.slot.classList.remove('is-cooling', 'is-counting', 'is-grey');
+      clearNudges(s.slot);
+      clearNudges(s.flash);
+      clearNudges(s.frame);
+      s.wipe.style.background = 'none';
+      s.ringFill.setAttribute('stroke-dasharray', `0 ${CD_RING_LEN}`);
+      if (s.hand) s.hand.setAttribute('transform', 'rotate(0 20 20)');
+      s.num.textContent = '';
+      s.lastDeg = -1;
+      s.lastRing = -1;
+      s.lastHand = -1;
+      s.counting = false;
+      s.cooling = false;
+      s.wasReady = true;
+    }
+  }
+
   return {
     el: bar,
     update,
     endRun,
+    prewarmFrame,
+    prewarmEnd,
     // Debug surface (docs/TESTING.md): every state a capture needs to pin.
     debug: {
       freeze: (t) => {

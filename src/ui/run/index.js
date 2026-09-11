@@ -307,11 +307,57 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       try {
         const sys = run();
         if (sys) {
+          const base = sys.view();
           screens.draft.render({
-            ...sys.view(),
+            ...base,
             room: 1,
             freeSkillSlots: 0,
             reward: { type: 'node', id: 'ascend', substituted: false, line: null },
+          });
+          // Certification fix D-r3 S1: the compositor compiles a raster
+          // pipeline the first time a session draws a new CSS effect, and the
+          // shop shelf's first open measured 300-600 ms of GPU time with the
+          // main thread free (captures/certfixDshouldfix4-shop2-*: every
+          // effect family disabled -> no stall; the WebGL scene hidden -> the
+          // stall stays; a second open -> clean). So every page is painted
+          // here with synthetic content that exercises its states: a
+          // legendary card, a sold card with its ember-breath ribbon, a plaque
+          // the player cannot afford, two path doors with the focus glow, and
+          // the victory card.
+          screens.shop.render({
+            ...base,
+            shop: {
+              wallet: 42,
+              stock: [
+                { node: 'ascend', price: 35, sold: false, owned: false, affordable: true, rarity: 'legendary' },
+                { node: 'bounce', price: 25, sold: true, owned: true, affordable: true, rarity: 'common' },
+                { node: 'echo', price: 30, sold: false, owned: false, affordable: false, rarity: 'rare' },
+              ],
+            },
+          });
+          screens.path.render({
+            ...base,
+            path: {
+              freeSkillSlots: 1,
+              nextRoom: 4,
+              options: [
+                { win: 'kill_all', reward: 'skill' },
+                { win: 'defend', reward: 'node' },
+              ],
+              focus: 0,
+            },
+          });
+          screens.end.render({
+            ...base,
+            phase: 'victory',
+            summary: {
+              rooms: 8,
+              glint: 120,
+              skills: ['sanctuary'],
+              nodes: { bench: ['ascend'], socketed: [] },
+              seed: 4242,
+              ticks: 3600,
+            },
           });
         }
       } catch (e) {

@@ -41,7 +41,7 @@ import { createTechFx } from './render/techfx/index.js';
 import { createSiphonFizzleCue } from './ui/socket/fizzle.js';
 import { createBossLayer } from './render/boss/index.js';
 import { createRunUi } from './ui/run/index.js';
-import { updateNumberPools, flushNumberPools } from './render/numbers.js';
+import { updateNumberPools, flushNumberPools, prewarmNumberPools } from './render/numbers.js';
 import { warmupUpdate, warmupPending, warmupRetained } from './render/warmup.js';
 
 const params = new URLSearchParams(window.location.search);
@@ -261,6 +261,11 @@ window.addEventListener('resize', () => stage.resize());
 // samples intents once), returns the interpolation alpha for rendering.
 let last = performance.now();
 let fpsMeterClock = 0;
+// Boot warm-up of the damage-numeral layer (certification fix D-r3 S1): one
+// numeral of every kind is drawn at 2/1000 opacity for a few frames alongside
+// the HUD's own warm-up (ui/hud/index.js), so the first number of a fight is
+// rasterised on warm text pipelines.
+let numeralWarmWait = 18;
 
 // Robust fps: median frame time over the last ~1.5 s. A median ignores the
 // occasional scheduler/GC hiccup that would drag an instantaneous or EMA
@@ -314,6 +319,7 @@ stage.renderer.setAnimationLoop((now) => {
   // Damage numerals age HERE, in the one loop that never stops, after the
   // scenes have settled their cameras (world->screen projection needs the
   // final camera of this frame). No scene swap can freeze the pool.
+  if (numeralWarmWait > 0 && --numeralWarmWait === 0) prewarmNumberPools(3);
   updateNumberPools(Math.min(0.1, Math.max(0, frameMs / 1000)));
   stage.render();
   // Boot warm-up: the render layers park one of every transient rig in the
