@@ -9,6 +9,10 @@
  },
  {
   "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const D=window.__D;D.dom=[];D.anim=[];\nD.mo=new MutationObserver((recs)=>{const t=+performance.now().toFixed(1);for(const r of recs){const el=r.target;const tag=(el.nodeType===1?el.tagName.toLowerCase()+(el.id?'#'+el.id:'')+(el.className&&typeof el.className==='string'?'.'+el.className.trim().split(/s+/).slice(0,3).join('.'):''):'#text<'+(el.parentNode&&el.parentNode.className||'')+'>');\n D.dom.push([t,r.type,tag,r.attributeName||'',r.type==='attributes'&&r.attributeName?String(el.getAttribute(r.attributeName)||'').slice(0,60):(r.type==='childList'?('+'+r.addedNodes.length+'/-'+r.removedNodes.length):String(el.textContent||'').slice(0,30))]);}\n if(D.dom.length>20000)D.dom.splice(0,10000);});\nD.mo.observe(document.documentElement,{subtree:true,childList:true,attributes:true,characterData:true,attributeOldValue:false});\nD.animPoll=setInterval(()=>{try{const a=document.getAnimations();D.anim.push([+performance.now().toFixed(0),a.length,a.filter(x=>x.playState==='running').map(x=>(x.animationName||'css')+'@'+((x.effect&&x.effect.target&&(x.effect.target.className||x.effect.target.tagName))||'?')).slice(0,6).join(',')]);if(D.anim.length>4000)D.anim.splice(0,2000);}catch(e){}},50);\nreturn 'dom armed'})()"
+ },
+ {
+  "type": "eval",
   "code": "(async()=>{const E=window.__echoes;const D=window.__D;const sl=(ms)=>new Promise(r=>setTimeout(r,ms));const t0=performance.now();const k0=E.tick;while(performance.now()-t0<45000){try{if(E.state().enemies.length>=2)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length};}catch(e){}await sl(8);}return {ok:false,tick:E.tick,enemies:E.state().enemies.length}})()"
  },
  {
@@ -30,7 +34,7 @@
  },
  {
   "type": "eval",
-  "code": "(async()=>{const E=window.__echoes;const D=window.__D;const sl=(ms)=>new Promise(r=>setTimeout(r,ms));const out=await D.rec(20000);out.tag='hitch2';out.tickEnd=E.tick;out.progsEnd=D.progList();return out})()"
+  "code": "(async()=>{const E=window.__echoes;const D=window.__D;const sl=(ms)=>new Promise(r=>setTimeout(r,ms));const out=await D.rec(20000);clearInterval(D.animPoll);D.mo.disconnect();out.tag='hitch2-dom';\nfor(const g of out.gaps){const a=g.absStart-450,b=g.absStart+g.gap+30;g.dom=D.dom.filter(x=>x[0]>=a&&x[0]<=b).map(x=>[+(x[0]-g.absStart).toFixed(0),x[1],x[2],x[3],x[4]]).slice(0,80);g.anims=D.anim.filter(x=>x[0]>=a&&x[0]<=b).map(x=>[+(x[0]-g.absStart).toFixed(0),x[1],x[2]]);}\n// Per-second DOM write rate for the whole sample, and the class of writes.\nconst t0=out.t0;const perSec={};for(const x of D.dom){const s=Math.floor((x[0]-t0)/1000);perSec[s]=(perSec[s]||0)+1;}\nconst kinds={};for(const x of D.dom){const k=x[1]+':'+x[2].split('.')[0]+':'+x[3];kinds[k]=(kinds[k]||0)+1;}\nout.domPerSec=perSec;out.domKinds=Object.entries(kinds).sort((p,q)=>q[1]-p[1]).slice(0,25);out.domTotal=D.dom.length;return out})()"
  },
  {
   "type": "eval",

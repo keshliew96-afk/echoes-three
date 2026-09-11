@@ -37,8 +37,12 @@ for(const t of ["run_start","room_enter","room_start","room_cleared","wave_start
 D.R=()=>window.__arenaProbe&&window.__arenaProbe.stage&&window.__arenaProbe.stage.renderer;
 D.owners=(prog)=>{const out=[];try{const st=window.__arenaProbe.stage;const R=st.renderer;const walk=(root)=>root.traverse(o=>{const m=o.material;if(!m)return;const ms=Array.isArray(m)?m:[m];for(const x of ms){const p=R.properties.get(x);if(p&&p.currentProgram===prog){let chain=o.name||o.type;let q=o.parent;let n=0;while(q&&n<4){chain+='<'+(q.name||q.type);q=q.parent;n++;}out.push(x.type+(x.name?'('+x.name+')':'')+'@'+chain);}}});walk(st.scene);for(const p of (st.composer&&st.composer.passes)||[]){if(p.scene&&p.scene.isScene&&p.scene!==st.scene)walk(p.scene);}}catch(e){out.push('err:'+String(e).slice(0,60));}return out.slice(0,8);};
 D.progList=()=>{const R=D.R();return R?R.info.programs.map(p=>p.name+'#'+p.id):[];};
-// Wrap the stage's render so the JS cost of composer.render is measured per frame.
-try{const st=window.__arenaProbe.stage;if(!st.__wrapped){const orig=st.render;D.jsRender=0;st.render=function(){const a=performance.now();const r=orig.apply(this,arguments);D.jsRender=performance.now()-a;return r;};st.__wrapped=true;}}catch(e){D.wrapErr=String(e);}
+// Wrap the stage's render so the JS cost of composer.render AND its GPU time (EXT_disjoint_timer_query_webgl2, read back
+// asynchronously a few frames later) are measured per frame.
+try{const st=window.__arenaProbe.stage;const gl=st.renderer.getContext();const ext=gl.getExtension('EXT_disjoint_timer_query_webgl2');D.gpuExt=!!ext;D.gpuQ=[];D.gpuMs=[];D.frameIdx=-1;
+ if(!st.__wrapped){const orig=st.render;D.jsRender=0;st.render=function(){let q=null;if(ext){try{q=gl.createQuery();gl.beginQuery(ext.TIME_ELAPSED_EXT,q);}catch(e){q=null;}}const a=performance.now();const r=orig.apply(this,arguments);D.jsRender=performance.now()-a;if(q){try{gl.endQuery(ext.TIME_ELAPSED_EXT);D.gpuQ.push({q,frame:D.frameIdx,at:+performance.now().toFixed(0)});}catch(e){}}return r;};st.__wrapped=true;}
+ D.gpuPoll=()=>{if(!ext)return;while(D.gpuQ.length){const e=D.gpuQ[0];let avail=false;try{avail=gl.getQueryParameter(e.q,gl.QUERY_RESULT_AVAILABLE);}catch(x){avail=true;}if(!avail)break;let ms=null;try{ms=+(gl.getQueryParameter(e.q,gl.QUERY_RESULT)/1e6).toFixed(2);}catch(x){}const dis=gl.getParameter(ext.GPU_DISJOINT_EXT);D.gpuMs.push([e.frame,ms,dis?1:0,e.at]);try{gl.deleteQuery(e.q);}catch(x){}D.gpuQ.shift();if(D.gpuMs.length>6000)D.gpuMs.splice(0,3000);}};
+}catch(e){D.wrapErr=String(e);}
 return 'armed t'+E.tick+' programs '+D.progList().length;})()`;
 
 // Per-frame recorder. fr rows: [t, dt, programs, geometries, textures, tick,
@@ -49,9 +53,18 @@ const REC = `
 D.rec=async(ms,until)=>{const R=D.R();const fr=[];const adds=[];let last=null;const t0=performance.now();let lastProg=R.info.programs.length;let lastGeo=R.info.memory.geometries;let lastTex=R.info.memory.textures;
 const tm=[];let tmLast=performance.now();const tiv=setInterval(()=>{const n=performance.now();tm.push([+(n-t0).toFixed(1),+(n-tmLast).toFixed(1)]);tmLast=n;},4);
 let known=new Set(R.info.programs.map(p=>p.id));const rem=[];
+// Geometry census: every mesh / points / sprite gets an onBeforeRender hook (wrapping any hook it already has) that
+// records the FIRST frame each geometry is actually drawn — three's own upload bookkeeping is not reachable from a page.
+const geoSeen=new Set();const geoAdds=[];const hooked=new WeakSet();let curFrame=-1,curAt=0;const stg=window.__arenaProbe.stage;
+const chainOf=(o)=>{let chain=o.name||o.type;let q=o.parent;let n=0;while(q&&n<4){chain+='<'+(q.name||q.type);q=q.parent;n++;}return chain;};
+const hook=(o)=>{if(hooked.has(o)||!(o.isMesh||o.isPoints||o.isSprite||o.isLine))return;hooked.add(o);const prev=o.onBeforeRender;
+ o.onBeforeRender=function(r,sc,c,g,m,gr){if(g&&!geoSeen.has(g.id)){geoSeen.add(g.id);if(curFrame>=0)geoAdds.push({frame:curFrame,at:curAt,tick:E.tick,gid:g.id,verts:g.attributes&&g.attributes.position?g.attributes.position.count:0,shared:!!(g.userData&&g.userData.shared),owner:chainOf(o),mat:m&&m.type});}if(typeof prev==='function')prev.apply(this,arguments);};};
+const geoScan=(frame,at)=>{curFrame=frame;curAt=at;const roots=[stg.scene];for(const p of (stg.composer&&stg.composer.passes)||[]){if(p.scene&&p.scene.isScene&&p.scene!==stg.scene)roots.push(p.scene);}for(const root of roots)root.traverse(hook);};
+geoScan(-1,0);
 await new Promise(res=>{const f=(now)=>{const i=R.info;const np=i.programs.length;
  {const cur=new Set();for(const p of i.programs){cur.add(p.id);if(!known.has(p.id))adds.push({frame:fr.length,at:+(now-t0).toFixed(0),tick:E.tick,name:p.name,id:p.id,key:(p.cacheKey||'').slice(0,60),owners:D.owners(p)});}
   for(const id of known)if(!cur.has(id))rem.push({frame:fr.length,at:+(now-t0).toFixed(0),tick:E.tick,id});known=cur;lastProg=np;}
+ geoScan(fr.length,+(now-t0).toFixed(0));D.frameIdx=fr.length;if(D.gpuPoll)D.gpuPoll();
  if(last!==null){const dt=now-last;if(dt>60)performance.mark('GAP'+dt.toFixed(0));fr.push([+(now-t0).toFixed(1),+dt.toFixed(2),np,i.memory.geometries,i.memory.textures,E.tick,i.render.calls,i.render.triangles,+(D.jsRender||0).toFixed(1)]);}
  last=now;if(now-t0<ms&&!(until&&until()))requestAnimationFrame(f);else res();};requestAnimationFrame(f);});
 clearInterval(tiv);
@@ -59,10 +72,12 @@ const gaps=[];for(let i=1;i<fr.length;i++){const f=fr[i];if(f[1]<=60)continue;co
  const near=D.ev.filter(e=>e.ms>=startAbs-400&&e.ms<=endAbs+120).map(e=>[+(e.ms-startAbs).toFixed(0),e.T,e.tick,String(e.k).slice(0,14)]);
  const tg=tm.filter(x=>x[0]>=f[0]-f[1]-2&&x[0]<=f[0]+2).map(x=>x[1]);
  const lt=D.lt.filter(l=>l[0]>=startAbs-50&&l[0]<=endAbs+50);
- gaps.push({at:f[0],absStart:+startAbs.toFixed(0),gap:f[1],tick:f[5],jsRenderPrev:fr[i-1][8],jsRender:f[8],dProg:c[2]-a[2],dGeo:c[3]-a[3],dTex:c[4]-a[4],progWin:[a[2],fr[i-1][2],f[2],c[2]],geoWin:[a[3],fr[i-1][3],f[3],c[3]],timerMaxGap:tg.length?+Math.max(...tg).toFixed(1):null,longTasks:lt,events:near.slice(0,26)});}
+ const W=(k)=>fr.slice(Math.max(0,i-4),Math.min(fr.length,i+2)).map(r=>r[k]);const gpuWin=(D.gpuMs||[]).filter(g=>g[0]>=i-5&&g[0]<=i+1).map(g=>[g[0],g[1],g[2]]);
+ gaps.push({at:f[0],absStart:+startAbs.toFixed(0),gap:f[1],tick:f[5],frame:i,jsRenderPrev:fr[i-1][8],jsRender:f[8],dProg:c[2]-a[2],dGeo:c[3]-a[3],dTex:c[4]-a[4],progWin:[a[2],fr[i-1][2],f[2],c[2]],geoWin:[a[3],fr[i-1][3],f[3],c[3]],callsWin:W(6),trisWin:W(7),jsWin:W(8),tickWin:W(5),gpuWin,geoAddsNear:geoAdds.filter(g=>g.frame>=i-4&&g.frame<=i+2),timerMaxGap:tg.length?+Math.max(...tg).toFixed(1):null,longTasks:lt,events:near.slice(0,26)});}
 const dts=fr.map(f=>f[1]);const W=fr.filter(f=>f[0]<3000).map(f=>f[1]);const S=fr.filter(f=>f[0]>=3000).map(f=>f[1]);
 const st=(v)=>{if(!v.length)return null;const s=[...v].sort((a,b)=>a-b);const n=s.length;const sum=s.reduce((p,q)=>p+q,0);const Q=(p)=>+s[Math.min(n-1,Math.floor(p*n))].toFixed(2);return {frames:n,meanMs:+(sum/n).toFixed(2),meanFps:+(1000/(sum/n)).toFixed(1),p50:Q(0.5),p95:Q(0.95),p99:Q(0.99),max:+s[n-1].toFixed(2),gt60:v.filter(d=>d>60).length,gt100:v.filter(d=>d>100).length};};
-return {t0:+t0.toFixed(0),all:st(dts),warm:st(W),steady:st(S),prog0:fr[0]?fr[0][2]:null,progEnd:fr.length?fr[fr.length-1][2]:null,geo0:fr[0]?fr[0][3]:null,geoEnd:fr.length?fr[fr.length-1][3]:null,tex0:fr[0]?fr[0][4]:null,texEnd:fr.length?fr[fr.length-1][4]:null,adds,removes:rem,gaps,longTaskCount:D.lt.length};};`;
+if(D.gpuPoll)D.gpuPoll();const gpuAll=(D.gpuMs||[]).filter(g=>g[1]!==null&&g[0]>=0).map(g=>g[1]);const gpuTop=[...(D.gpuMs||[])].filter(g=>g[1]!==null&&g[0]>=0).sort((a,b)=>b[1]-a[1]).slice(0,8);
+return {t0:+t0.toFixed(0),gpuExt:D.gpuExt,gpuSamples:gpuAll.length,gpuStats:st(gpuAll.map((v,k)=>v)),gpuTop,all:st(dts),warm:st(W),steady:st(S),prog0:fr[0]?fr[0][2]:null,progEnd:fr.length?fr[fr.length-1][2]:null,geo0:fr[0]?fr[0][3]:null,geoEnd:fr.length?fr[fr.length-1][3]:null,tex0:fr[0]?fr[0][4]:null,texEnd:fr.length?fr[fr.length-1][4]:null,adds,removes:rem,geoAdds,gaps,longTaskCount:D.lt.length};};`;
 
 const WAIT_ENEMIES = (n, ms) =>
   ev(
@@ -268,4 +283,234 @@ return {tag:'census',all:out.all,marks,adds:out.adds,removes:out.removes,gapsTot
   ];
   writeFileSync('tools/actions/certfixDshouldfix4-census.json', JSON.stringify(acts, null, 1));
   console.log('wrote tools/actions/certfixDshouldfix4-census.json');
+}
+
+// --- dom: the room-2 driver with a MutationObserver over the whole document
+// and a Web Animations census, so a gap can be laid beside every DOM write
+// (class / attribute / text / child) in the 400 ms before it. For the stall
+// that survives the program anchors: GL counters flat, main thread free —
+// if it is the compositor, the DOM is where its cause will show.
+{
+  const DOMARM = iife(`D.dom=[];D.anim=[];
+D.mo=new MutationObserver((recs)=>{const t=+performance.now().toFixed(1);for(const r of recs){const el=r.target;const tag=(el.nodeType===1?el.tagName.toLowerCase()+(el.id?'#'+el.id:'')+(el.className&&typeof el.className==='string'?'.'+el.className.trim().split(/\s+/).slice(0,3).join('.'):''):'#text<'+(el.parentNode&&el.parentNode.className||'')+'>');
+ D.dom.push([t,r.type,tag,r.attributeName||'',r.type==='attributes'&&r.attributeName?String(el.getAttribute(r.attributeName)||'').slice(0,60):(r.type==='childList'?('+'+r.addedNodes.length+'/-'+r.removedNodes.length):String(el.textContent||'').slice(0,30))]);}
+ if(D.dom.length>20000)D.dom.splice(0,10000);});
+D.mo.observe(document.documentElement,{subtree:true,childList:true,attributes:true,characterData:true,attributeOldValue:false});
+D.animPoll=setInterval(()=>{try{const a=document.getAnimations();D.anim.push([+performance.now().toFixed(0),a.length,a.filter(x=>x.playState==='running').map(x=>(x.animationName||'css')+'@'+((x.effect&&x.effect.target&&(x.effect.target.className||x.effect.target.tagName))||'?')).slice(0,6).join(',')]);if(D.anim.length>4000)D.anim.splice(0,2000);}catch(e){}},50);
+return 'dom armed'`);
+  const src = JSON.parse(readFileSync('tools/actions/certfixDshouldfix4-hitch2.json', 'utf8'));
+  const out = [];
+  for (const a of src) {
+    out.push(a);
+    if (a.type === 'eval' && /D\.rec=async/.test(a.code)) out.push(ev(DOMARM));
+  }
+  // Replace the sample eval so the gap dump carries the DOM ring.
+  for (const a of out) {
+    if (a.type === 'eval' && /await D\.rec\(20000\)/.test(a.code)) {
+      a.code = aiife(`const out=await D.rec(20000);clearInterval(D.animPoll);D.mo.disconnect();out.tag='hitch2-dom';
+for(const g of out.gaps){const a=g.absStart-450,b=g.absStart+g.gap+30;g.dom=D.dom.filter(x=>x[0]>=a&&x[0]<=b).map(x=>[+(x[0]-g.absStart).toFixed(0),x[1],x[2],x[3],x[4]]).slice(0,80);g.anims=D.anim.filter(x=>x[0]>=a&&x[0]<=b).map(x=>[+(x[0]-g.absStart).toFixed(0),x[1],x[2]]);}
+// Per-second DOM write rate for the whole sample, and the class of writes.
+const t0=out.t0;const perSec={};for(const x of D.dom){const s=Math.floor((x[0]-t0)/1000);perSec[s]=(perSec[s]||0)+1;}
+const kinds={};for(const x of D.dom){const k=x[1]+':'+x[2].split('.')[0]+':'+x[3];kinds[k]=(kinds[k]||0)+1;}
+out.domPerSec=perSec;out.domKinds=Object.entries(kinds).sort((p,q)=>q[1]-p[1]).slice(0,25);out.domTotal=D.dom.length;return out`);
+    }
+  }
+  writeFileSync('tools/actions/certfixDshouldfix4-dom.json', JSON.stringify(out, null, 1));
+  console.log('wrote tools/actions/certfixDshouldfix4-dom.json');
+}
+
+// --- A/B for the surviving stall: the room-2 driver with every DOM layer the
+// fight touches hidden (HUD, damage numerals, threat pointers, run screen),
+// so a stall that vanishes is compositor/raster work and one that stays is
+// the WebGL frame.
+{
+  const src = JSON.parse(readFileSync('tools/actions/certfixDshouldfix4-hitch2.json', 'utf8'));
+  const out = [];
+  for (const a of src) {
+    if (a.type === 'eval' && /tag:'sample-start'/.test(a.code)) {
+      out.push(ev(iife(`const ids=['hud','dmg-num-layer','hud-threat','nd-fizzle-layer','run-screen','fps-meter','version-label'];const hid=[];for(const id of ids){const el=document.getElementById(id);if(el){el.style.display='none';hid.push(id);}}return {hidden:hid}`)));
+    }
+    out.push(a);
+  }
+  for (const a of out) if (a.type === 'eval' && /out\.tag='hitch2'/.test(a.code)) a.code = a.code.replace("out.tag='hitch2'", "out.tag='hitch2-nohud'");
+  writeFileSync('tools/actions/certfixDshouldfix4-hitch2-nohud.json', JSON.stringify(out, null, 1));
+  console.log('wrote tools/actions/certfixDshouldfix4-hitch2-nohud.json');
+}
+
+// --- render-layer bisection for the surviving stall: the room-2 driver with
+// one render layer hidden before the sample (the sim is untouched, so the
+// fight — and the moment the stall lands — is the same).
+{
+  const src = JSON.parse(readFileSync('tools/actions/certfixDshouldfix4-hitch2.json', 'utf8'));
+  const variants = {
+    noally: `const r=st.scene.getObjectByName('allyfx');if(r)r.visible=false;const k=st.scene.getObjectByName('allyfx-ink');if(k)k.visible=false;return {hidden:['allyfx']}`,
+    noenemy: `const r=st.scene.getObjectByName('enemyfx');if(r)r.visible=false;return {hidden:['enemyfx']}`,
+    nofx: `const out=[];for(const n of ['skillfx','techfx','bossfx']){const r=st.scene.getObjectByName(n);if(r){r.visible=false;out.push(n);}}st.scene.traverse(o=>{if(o.isPoints){o.visible=false;out.push('points');}});return {hidden:out}`,
+    nopost: `const c=st.composer;const out=[];for(const p of c.passes){if(/Bloom|FXAA|ShaderPass/.test(p.constructor.name)){p.enabled=false;out.push(p.constructor.name);}}return {disabled:out}`,
+  };
+  for (const [key, body] of Object.entries(variants)) {
+    const out = [];
+    for (const a of src) {
+      if (a.type === 'eval' && /tag:'sample-start'/.test(a.code)) out.push(ev(iife(`const st=window.__arenaProbe.stage;${body}`)));
+      out.push(a);
+    }
+    for (const a of out) if (a.type === 'eval' && /out\.tag='hitch2'/.test(a.code)) a.code = a.code.replace("out.tag='hitch2'", `out.tag='hitch2-${key}'`);
+    writeFileSync(`tools/actions/certfixDshouldfix4-hitch2-${key}.json`, JSON.stringify(out, null, 1));
+    console.log(`wrote tools/actions/certfixDshouldfix4-hitch2-${key}.json`);
+  }
+}
+
+// --- shop-open test bed. The shine probe measured a 347.6 ms frame with the
+// main thread FREE inside the first 3 s of the shop shelf, and the GPU timer
+// queries then showed the WebGL render itself taking 395-877 ms of GPU time
+// on single frames around the open. The recorder now runs from BEFORE the
+// skipToRoom(7) so those frames carry their program / geometry / texture
+// census. Variants: rec, a second open in the same session (twice), the shelf
+// with one family of CSS raster effects disabled (nobox / notext / nofilter /
+// nobackdrop / noeffects), and the WebGL scene hidden for the open (noscene).
+{
+  const OPEN = (tag, extraBefore) => [
+    ...(extraBefore ? [ev(iife(extraBefore))] : []),
+    ev(iife(`D.openAt=+performance.now().toFixed(1);D.openP=D.rec(7000);const r=E.cmd('skipToRoom',7);return {open:${JSON.stringify(tag)},room:r&&r.room,tick:E.tick,gl:E.state().gl}`)),
+    ev(aiife(`const t0=performance.now();while(performance.now()-t0<20000){let s=null;try{s=E.runUi().screen}catch(e){}if(s==='shop')break;await sl(16);}D.shopAt=+performance.now().toFixed(1);
+const out=await D.openP;out.tag=${JSON.stringify(tag)};out.screen=E.runUi().screen;out.shopAfterMs=Math.round(D.shopAt-D.openAt);out.glEnd=E.state().gl;return out`)),
+  ];
+  const CSS = (css) => `const st=document.createElement('style');st.id='dfix-ab';st.textContent=${JSON.stringify(css)};document.head.appendChild(st);return {css:st.textContent.slice(0,80)}`;
+  const variants = {
+    rec: [...OPEN('shop-open-1')],
+    twice: [
+      ...OPEN('shop-open-1'),
+      ev(iife(`E.cmd('skipToRoom',6);return {left:E.runUi().screen}`)),
+      { type: 'wait', ms: 2500 },
+      ...OPEN('shop-open-2'),
+    ],
+    nobox: [...OPEN('shop-nobox', CSS('#run-screen *{box-shadow:none!important}'))],
+    notext: [...OPEN('shop-notext', CSS('#run-screen *{text-shadow:none!important}'))],
+    nofilter: [...OPEN('shop-nofilter', CSS('#run-screen *{filter:none!important}'))],
+    nobackdrop: [...OPEN('shop-nobackdrop', CSS('#run-screen *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}'))],
+    noeffects: [...OPEN('shop-noeffects', CSS('#run-screen *{box-shadow:none!important;text-shadow:none!important;filter:none!important;backdrop-filter:none!important;background-image:none!important}'))],
+    noscene: [...OPEN('shop-noscene', `const st=window.__arenaProbe.stage;st.scene.visible=false;return {sceneHidden:true}`)],
+    nopost: [...OPEN('shop-nopost', `const st=window.__arenaProbe.stage;const out=[];for(const p of st.composer.passes){if(/Bloom|FXAA|ShaderPass/.test(p.constructor.name)){p.enabled=false;out.push(p.constructor.name);}}return {disabled:out}`)],
+  };
+  for (const [key, body] of Object.entries(variants)) {
+    const acts = [
+      ev(ARM),
+      ev(iife(`${REC}E.cmd('startRun');return {run:1,tick:E.tick,gl:E.state().gl}`)),
+      { type: 'wait', ms: 1500 },
+      ...body,
+    ];
+    writeFileSync(`tools/actions/certfixDshouldfix4-shop-${key}.json`, JSON.stringify(acts, null, 1));
+    console.log(`wrote tools/actions/certfixDshouldfix4-shop-${key}.json`);
+  }
+}
+
+// --- more discriminators for the fight stall (GPU time normal around it):
+// noaudio stubs AudioContext before the RMB unlock; nonum / nothreat /
+// nohudonly hide one DOM layer each.
+{
+  const src = JSON.parse(readFileSync('tools/actions/certfixDshouldfix4-hitch2.json', 'utf8'));
+  const variants = {
+    noaudio: { where: 'arm', code: `window.AudioContext=undefined;window.webkitAudioContext=undefined;return {audioStubbed:true}` },
+    nonum: { where: 'sample', code: `const el=document.getElementById('dmg-num-layer');if(el)el.style.display='none';return {hidden:['dmg-num-layer']}` },
+    nothreat: { where: 'sample', code: `const el=document.getElementById('hud-threat');if(el)el.style.display='none';return {hidden:['hud-threat']}` },
+    nohudonly: { where: 'sample', code: `const el=document.getElementById('hud');if(el)el.style.display='none';return {hidden:['hud']}` },
+  };
+  for (const [key, v] of Object.entries(variants)) {
+    const out = [];
+    for (let i = 0; i < src.length; i++) {
+      const a = src[i];
+      if (v.where === 'arm' && i === 1) out.push(ev(iife(v.code)));
+      if (v.where === 'sample' && a.type === 'eval' && /tag:'sample-start'/.test(a.code)) out.push(ev(iife(v.code)));
+      out.push(a);
+    }
+    for (const a of out) if (a.type === 'eval' && /out\.tag='hitch2'/.test(a.code)) a.code = a.code.replace("out.tag='hitch2'", `out.tag='hitch2-${key}'`);
+    writeFileSync(`tools/actions/certfixDshouldfix4-hitch2-${key}.json`, JSON.stringify(out, null, 1));
+    console.log(`wrote tools/actions/certfixDshouldfix4-hitch2-${key}.json`);
+  }
+}
+
+// --- shop3: CSS-family bisection of the shop-open stall on a QUIET server
+// (round-4 resume). Each variant injects one stylesheet before the open; the
+// stall that survives tells which effect family still compiles a raster
+// pipeline at the real open even though the boot pre-paint drew the shelf.
+{
+  const CSS = (css) =>
+    `const st=document.createElement('style');st.id='dfix-ab';st.textContent=${JSON.stringify(css)};document.head.appendChild(st);return {css:st.textContent.slice(0,90)}`;
+  const variants = {
+    nobox: CSS('#run-screen *{box-shadow:none!important}'),
+    notext: CSS('#run-screen *{text-shadow:none!important}'),
+    nofilter: CSS('#run-screen *{filter:none!important}'),
+    nograd: CSS('#run-screen *{background-image:none!important}'),
+    noveil: CSS('#run-veil{display:none!important}'),
+    notrans: CSS('#run-screen,#run-veil{transition:none!important}'),
+    noshine: CSS('.rn-shine{display:none!important}'),
+    nofx: CSS('.rn-fx{display:none!important}'),
+    nolamp: CSS('.rn-lamp,.rn-lanternglow{display:none!important}'),
+    noallfx: CSS('#run-screen *{box-shadow:none!important;text-shadow:none!important;filter:none!important} #run-veil{display:none!important} .rn-shine,.rn-fx{display:none!important}'),
+  };
+  for (const [key, body] of Object.entries(variants)) {
+    const acts = [
+      ev(ARM),
+      ev(iife(`${REC}E.cmd('startRun');return {run:1,tick:E.tick,gl:E.state().gl}`)),
+      { type: 'wait', ms: 1500 },
+      ev(iife(body)),
+      ev(iife(`D.openAt=+performance.now().toFixed(1);D.openP=D.rec(6000);const r=E.cmd('skipToRoom',7);return {open:'shop3-${key}',room:r&&r.room,tick:E.tick}`)),
+      ev(aiife(`const t0=performance.now();while(performance.now()-t0<20000){let s=null;try{s=E.runUi().screen}catch(e){}if(s==='shop')break;await sl(16);}D.shopAt=+performance.now().toFixed(1);
+const out=await D.openP;out.tag='shop3-${key}';out.screen=E.runUi().screen;out.shopAfterMs=Math.round(D.shopAt-D.openAt);out.glEnd=E.state().gl;return out`)),
+    ];
+    writeFileSync(`tools/actions/certfixDshouldfix4-shop3-${key}.json`, JSON.stringify(acts, null, 1));
+    console.log(`wrote tools/actions/certfixDshouldfix4-shop3-${key}.json`);
+  }
+}
+
+// --- boss-dom: the boss driver with the DOM MutationObserver ring, so the
+// 341 ms frame seen ~15 s into the boss room (after7-boss) can be laid beside
+// every DOM write in the 450 ms before it.
+{
+  const DOMARM = iife(`D.dom=[];D.anim=[];
+D.mo=new MutationObserver((recs)=>{const t=+performance.now().toFixed(1);for(const r of recs){const el=r.target;const tag=(el.nodeType===1?el.tagName.toLowerCase()+(el.id?'#'+el.id:'')+(el.className&&typeof el.className==='string'?'.'+el.className.trim().split(/\s+/).slice(0,3).join('.'):''):'#text<'+(el.parentNode&&el.parentNode.className||'')+'>');
+ D.dom.push([t,r.type,tag,r.attributeName||'',r.type==='attributes'&&r.attributeName?String(el.getAttribute(r.attributeName)||'').slice(0,70):(r.type==='childList'?('+'+r.addedNodes.length+'/-'+r.removedNodes.length):String(el.textContent||'').slice(0,30))]);}
+ if(D.dom.length>30000)D.dom.splice(0,15000);});
+D.mo.observe(document.documentElement,{subtree:true,childList:true,attributes:true,characterData:true,attributeOldValue:false});
+return 'dom armed'`);
+  const src = JSON.parse(readFileSync('tools/actions/certfixDshouldfix4-boss.json', 'utf8'));
+  const out = [];
+  for (const a of src) {
+    if (a.type === 'shot') continue;
+    out.push(a);
+    if (a.type === 'eval' && /D\.rec=async/.test(a.code)) out.push(ev(DOMARM));
+  }
+  for (const a of out) {
+    if (a.type === 'eval' && /await D\.rec\(15000\)/.test(a.code)) {
+      a.code = a.code.replace(
+        "out.tag='boss';",
+        "out.tag='boss-dom';for(const g of out.gaps){const a=g.absStart-450,b=g.absStart+g.gap+30;g.dom=D.dom.filter(x=>x[0]>=a&&x[0]<=b).map(x=>[+(x[0]-g.absStart).toFixed(0),x[1],x[2],x[3],x[4]]).slice(0,120);}"
+      );
+    }
+    if (a.type === 'eval' && /out\.tag='downed'/.test(a.code)) {
+      a.code = a.code.replace(
+        "out.tag='downed';",
+        "out.tag='downed-dom';for(const g of out.gaps){const a=g.absStart-450,b=g.absStart+g.gap+30;g.dom=D.dom.filter(x=>x[0]>=a&&x[0]<=b).map(x=>[+(x[0]-g.absStart).toFixed(0),x[1],x[2],x[3],x[4]]).slice(0,120);}"
+      );
+    }
+  }
+  writeFileSync('tools/actions/certfixDshouldfix4-boss-dom.json', JSON.stringify(out, null, 1));
+  console.log('wrote tools/actions/certfixDshouldfix4-boss-dom.json');
+}
+
+// --- shop4-rec: the plain shop open with the boot pre-paint state read at arm
+// time (E.runUi().prepaint: started/done ms, frames painted).
+{
+  const acts = [
+    ev(ARM),
+    ev(iife(`${REC}return {prepaint:E.runUi().prepaint,tick:E.tick,gl:E.state().gl}`)),
+    ev(iife(`E.cmd('startRun');return {run:1,tick:E.tick}`)),
+    { type: 'wait', ms: 1500 },
+    ev(iife(`D.openAt=+performance.now().toFixed(1);D.openP=D.rec(6000);const r=E.cmd('skipToRoom',7);return {open:'shop4',room:r&&r.room,tick:E.tick}`)),
+    ev(aiife(`const t0=performance.now();while(performance.now()-t0<20000){let s=null;try{s=E.runUi().screen}catch(e){}if(s==='shop')break;await sl(16);}D.shopAt=+performance.now().toFixed(1);
+const out=await D.openP;out.tag='shop4-rec';out.screen=E.runUi().screen;out.shopAfterMs=Math.round(D.shopAt-D.openAt);out.prepaint=E.runUi().prepaint;return out`)),
+    { type: 'shot', name: 'certfixDshouldfix4-shop4-open' },
+  ];
+  writeFileSync('tools/actions/certfixDshouldfix4-shop4-rec.json', JSON.stringify(acts, null, 1));
+  console.log('wrote tools/actions/certfixDshouldfix4-shop4-rec.json');
 }

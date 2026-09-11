@@ -441,16 +441,29 @@ export function createThreatLayer({ stage, world, bus = null }) {
     warmLeft = frames;
   }
   const WARM_STATES = ['tm', 'tm telegraph', 'tm spawn', 'tm marked', 'tm merged', 'tm telegraph merged'];
+  // Round 4: the pointers are spread over the TOP, MIDDLE and BOTTOM of the
+  // frame, not lined up at mid-height. Chrome rasterises the page in
+  // viewport-wide strips and a strip is only drawn with MSAA once an SVG path
+  // — a pointer — lands in it; every HUD element in that strip then needs a
+  // second (MSAA) GPU pipeline, compiled on the spot for 60-150 ms. A pointer
+  // drifting into the top strip in the boss room was that stall (its plate,
+  // location and Glint chrome had only ever been drawn without MSAA). Warming
+  // every strip with a pointer in it, while the bar and banner repaint
+  // underneath, builds those variants at boot instead.
+  const WARM_ROWS = [0.12, 0.5, 0.88];
+  let warmFrame = 0;
   function paintWarm() {
     root.style.opacity = '0.002';
     const w = window.innerWidth;
     const h = window.innerHeight;
+    warmFrame += 1;
     for (let i = 0; i < WARM_STATES.length; i++) {
       const m = acquire(i);
       const cls = WARM_STATES[i];
       m.wrap.style.display = 'block';
-      m.wrap.style.transform = 'translate(' + ((w * (i + 1)) / (WARM_STATES.length + 1)).toFixed(1) + 'px, ' + (h * 0.5).toFixed(1) + 'px)';
-      m.svg.style.transform = 'rotate(' + (i * 47).toFixed(1) + 'deg)';
+      const row = WARM_ROWS[(i + warmFrame) % WARM_ROWS.length];
+      m.wrap.style.transform = 'translate(' + ((w * (i + 1)) / (WARM_STATES.length + 1) + warmFrame * 3).toFixed(1) + 'px, ' + (h * row).toFixed(1) + 'px)';
+      m.svg.style.transform = 'rotate(' + (i * 47 + warmFrame * 5).toFixed(1) + 'deg)';
       m.cls = cls;
       m.wrap.className = cls;
       m.dot.style.display = /spawn/.test(cls) ? 'block' : 'none';

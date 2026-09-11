@@ -298,7 +298,7 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
   // critical + downed + shaken + rallied portraits, cooling + counting +
   // ready + denied slots, six threat pointers, five numerals.
   const WARM_WAIT = 18;
-  const WARM_FRAMES = 3;
+  const WARM_FRAMES = 6; // round 4: long enough for the partial-repaint (msaa-load) variants too
   let warmWait = WARM_WAIT;
   let warmLeft = 0;
   let warmStarted = false;
@@ -318,6 +318,7 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
       warmRestore = true;
       bar.prewarmEnd();
       banner.reset();
+      try { performance.mark('hudwarm-end'); } catch (e) { /* trace marker only */ }
       return false;
     }
     if (!warmStarted) {
@@ -325,6 +326,7 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
       warmStarted = true;
       warmLeft = WARM_FRAMES;
       threat.prewarm(WARM_FRAMES);
+      try { performance.mark('hudwarm-start'); } catch (e) { /* trace marker only */ }
     }
     return warmLeft > 0;
   }

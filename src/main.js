@@ -319,7 +319,7 @@ stage.renderer.setAnimationLoop((now) => {
   // Damage numerals age HERE, in the one loop that never stops, after the
   // scenes have settled their cameras (world->screen projection needs the
   // final camera of this frame). No scene swap can freeze the pool.
-  if (numeralWarmWait > 0 && --numeralWarmWait === 0) prewarmNumberPools(3);
+  if (numeralWarmWait > 0 && --numeralWarmWait === 0) prewarmNumberPools(6);
   updateNumberPools(Math.min(0.1, Math.max(0, frameMs / 1000)));
   stage.render();
   // Boot warm-up: the render layers park one of every transient rig in the

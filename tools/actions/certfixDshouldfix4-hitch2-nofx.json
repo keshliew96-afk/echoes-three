@@ -26,11 +26,15 @@
  },
  {
   "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const D=window.__D;const st=window.__arenaProbe.stage;const out=[];for(const n of ['skillfx','techfx','bossfx']){const r=st.scene.getObjectByName(n);if(r){r.visible=false;out.push(n);}}st.scene.traverse(o=>{if(o.isPoints){o.visible=false;out.push('points');}});return {hidden:out}})()"
+ },
+ {
+  "type": "eval",
   "code": "(()=>{const E=window.__echoes;const D=window.__D;return {tag:'sample-start',tick:E.tick,ms:+performance.now().toFixed(1),programs:D.progList().length}})()"
  },
  {
   "type": "eval",
-  "code": "(async()=>{const E=window.__echoes;const D=window.__D;const sl=(ms)=>new Promise(r=>setTimeout(r,ms));const out=await D.rec(20000);out.tag='hitch2';out.tickEnd=E.tick;out.progsEnd=D.progList();return out})()"
+  "code": "(async()=>{const E=window.__echoes;const D=window.__D;const sl=(ms)=>new Promise(r=>setTimeout(r,ms));const out=await D.rec(20000);out.tag='hitch2-noally';out.tickEnd=E.tick;out.progsEnd=D.progList();return out})()"
  },
  {
   "type": "eval",

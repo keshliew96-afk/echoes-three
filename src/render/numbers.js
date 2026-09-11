@@ -133,7 +133,11 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
     if (warm) return;
     const els = [];
     const cx = window.innerWidth * 0.5;
-    const cy = window.innerHeight * 0.45;
+    const h = window.innerHeight;
+    // Round 4: one numeral per raster strip (top / middle / bottom of the
+    // frame), because the compositor draws each viewport-wide strip with its
+    // own pipeline variant — see the note in ui/hud/threat.js paintWarm.
+    const rows = [0.14, 0.5, 0.86, 0.3, 0.7];
     const specs = [
       ['damage', 3, false],
       ['damage', 40, false],
@@ -153,7 +157,7 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
       el.style.textShadow = outlineShadow(k.outline);
       el.style.visibility = 'visible';
       el.style.opacity = '0.002';
-      el.style.transform = `translate(${(cx + (i - 2) * 90).toFixed(1)}px, ${cy.toFixed(1)}px) translate(-50%, -100%) scale(${crit ? 1.25 : 1})`;
+      el.style.transform = `translate(${(cx + (i - 2) * 90).toFixed(1)}px, ${(h * rows[i % rows.length]).toFixed(1)}px) translate(-50%, -100%) scale(${crit ? 1.25 : 1})`;
       layer.appendChild(el);
       els.push(el);
     });

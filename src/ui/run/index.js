@@ -119,7 +119,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     return RESERVE_FALLBACK;
   }
 
-  function fitScale() {
+  function fitScale(pageEl = null) {
     // Compact is decided by the WINDOW, never by the measured page, so the
     // screens can pick their copy variant before they render (a page that
     // reflowed only after measuring would need two renders to settle).
@@ -127,7 +127,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     rootEl.classList.toggle('rn-compact', compact);
     const reserve = reservePx();
     rootEl.style.setProperty('--rn-reserve', `${reserve}px`);
-    const pg = current !== 'none' ? screens[current].el : null;
+    const pg = pageEl ?? (current !== 'none' ? screens[current].el : null);
     const w = pg && pg.offsetWidth ? pg.offsetWidth : DESIGN.w;
     const h = pg && pg.offsetHeight ? pg.offsetHeight : DESIGN.h;
     const fit = Math.min(
@@ -263,119 +263,259 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       shines.push(band);
     }
   }
-  function driveShines(nowMs) {
-    if (shines.length === 0) return;
+  function driveShines(nowMs, list = shines) {
+    if (list.length === 0) return;
     // 130% -> -130% of the card's width, the travel the old keyframe ran.
     const x = 130 - 260 * ((nowMs % SHINE_MS) / SHINE_MS);
     const t = `translateX(${x.toFixed(2)}%)`;
-    for (const band of shines) band.style.transform = t;
+    for (const band of list) band.style.transform = t;
   }
 
   // ----------------------------------------------------- boot pre-paint --
-  // Certification D-r1, in-wave/first-page hitches: the FIRST meta screen of a
-  // page costs a 66-176 ms frame (measured on the first draft of every run,
-  // and 103-115 ms on the first path screen). Nothing about it is per-card —
-  // four `display:none` subtrees enter layout at once and a full-viewport veil
-  // gradient is painted over the WebGL canvas for the first time. That frame
-  // lands right after `room_cleared`, i.e. long past the 3 s of a room the
-  // perf bar excuses.
-  // So it is paid here instead: ~20 frames after boot, in camp, the whole
-  // overlay is switched on at 2/1000 opacity with its fade suppressed, laid
-  // out, painted for two frames, and switched off again. The player sees
-  // nothing (measured: the camp frame's analyzer numbers are unchanged) and
-  // the first real draft opens on warm layers.
-  let prepaintWait = 20;
-  let prepaintFrames = 2;
-  function prepaint() {
-    if (prepaintWait > 0) {
-      prepaintWait -= 1;
-      return;
+  // Certification D-r1 (first-page hitches) and D-r3 S1 / round 4 (the shop
+  // shelf's first open still cost a 300-1400 ms frame with the main thread
+  // free). The mechanism, from a Chrome trace of the open with the Skia
+  // shader categories on (tools/certfixDshouldfix4-trace.mjs --cats shaders
+  // --traceBoot 1, reduced by tools/certfixDshouldfix4-pipes.mjs): the page is
+  // rasterised by Skia GRAPHITE, which builds one GPU pipeline per distinct
+  // (render pass config x render step x shader tree x clip) and blocks the
+  // raster flush on the driver's compile the first time a combination is
+  // drawn — 60-150 ms per new pipeline on this ANGLE/D3D stack. The pass
+  // config is decided PER RASTER TILE (viewport-wide strips): a strip becomes
+  // MSAA when an SVG path (icon, threat pointer) lands in it, and a strip that
+  // is partially repainted gets a "w/ msaa load" pass. So the same CSS
+  // gradient compiles up to three different pipelines depending on WHERE it
+  // lands and whether it moves, and the old pre-paint — all four pages side by
+  // side at boot — warmed the wrong variants: 12 pipelines were still created
+  // at the real open, 10 of them MSAA / msaa-load variants of the shelf's
+  // gradients (captures/certfixDshouldfix4-tboot-shop4.trace.json).
+  //
+  // So the pre-paint now OPENS each page the way the game does: the shop
+  // docked above the command bar with its light veil, a legendary card with
+  // its shine band, a sold card with its ember-breath ribbon and the glitter
+  // motes animating for ten frames (partial repaints => the msaa-load
+  // variants); then the draft, the path doors, the victory and the defeat
+  // cards with the full veil. One page at a time, ~25 frames in total, at
+  // 2/1000 opacity with the fades suppressed, ~20 frames after boot in camp.
+  // The player sees nothing (the camp frame's analyzer numbers are unchanged)
+  // and the first real open of every page finds its pipelines built.
+  const PREPAINT_WAIT = 20;
+  const PREPAINT_SEQ = [
+    { screen: 'shop', view: 'shop', frames: 16, dock: true, light: true },
+    { screen: 'draft', view: 'draft', frames: 4 },
+    { screen: 'path', view: 'path', frames: 4 },
+    { screen: 'end', view: 'victory', frames: 4, tone: 'victory' },
+    { screen: 'end', view: 'defeat', frames: 3, tone: 'defeat' },
+  ];
+  const prepaintLog = { started: null, done: null, frames: 0, step: null }; // probe surface
+  let prepaintWait = PREPAINT_WAIT;
+  let prepaintStep = -1; // index into PREPAINT_SEQ; >= length => finished
+  let prepaintHold = 0;
+  let prepaintPage = null;
+  const prepaintShines = [];
+  const prepaintDone = () => prepaintStep >= PREPAINT_SEQ.length;
+  // MSAA seeds: three 6 px SVG paths, one per raster strip (top / middle /
+  // bottom of the frame). A strip is rasterised with MSAA only while a path
+  // sits in it, so each page is held with the seeds ON for the first half of
+  // its frames (the MSAA and msaa-load pipeline variants) and OFF for the
+  // second half (the plain variants) — the two configurations a page meets in
+  // a real run, depending on where the threat pointers happen to be.
+  const PREPAINT_SEED_ROWS = [0.12, 0.5, 0.88];
+  const prepaintSeeds = [];
+  function prepaintSeedsEnsure() {
+    if (prepaintSeeds.length) return;
+    for (const row of PREPAINT_SEED_ROWS) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', '6');
+      svg.setAttribute('height', '6');
+      svg.setAttribute('viewBox', '0 0 6 6');
+      svg.style.cssText = `position:fixed;left:3px;top:${(row * 100).toFixed(0)}%;width:6px;height:6px;pointer-events:none;opacity:0.002`;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M0 0 L6 3 L0 6 Z');
+      path.setAttribute('fill', '#F4EFE6');
+      svg.appendChild(path);
+      rootEl.appendChild(svg);
+      prepaintSeeds.push(svg);
     }
-    if (prepaintFrames === 2) {
-      rootEl.style.transition = 'none';
-      veil.style.transition = 'none';
-      rootEl.style.opacity = '0.002';
-      rootEl.style.pointerEvents = 'none'; // it is on screen for two frames — it must not eat a click
-      veil.style.opacity = '0.002';
-      rootEl.classList.add('rn-open');
-      veil.classList.add('rn-open');
-      for (const s of Object.values(screens)) s.el.style.display = '';
-      // ...with one page carrying REAL content, so the card frame, its icon
-      // and the legendary shine band are rasterised here too and not on the
-      // room-clear frame. Synthetic: the sim is idle at boot and has no reward
-      // to show. Guarded — a warm-up may never be able to break the game.
-      try {
-        const sys = run();
-        if (sys) {
-          const base = sys.view();
-          screens.draft.render({
-            ...base,
-            room: 1,
-            freeSkillSlots: 0,
-            reward: { type: 'node', id: 'ascend', substituted: false, line: null },
-          });
-          // Certification fix D-r3 S1: the compositor compiles a raster
-          // pipeline the first time a session draws a new CSS effect, and the
-          // shop shelf's first open measured 300-600 ms of GPU time with the
-          // main thread free (captures/certfixDshouldfix4-shop2-*: every
-          // effect family disabled -> no stall; the WebGL scene hidden -> the
-          // stall stays; a second open -> clean). So every page is painted
-          // here with synthetic content that exercises its states: a
-          // legendary card, a sold card with its ember-breath ribbon, a plaque
-          // the player cannot afford, two path doors with the focus glow, and
-          // the victory card.
-          screens.shop.render({
-            ...base,
-            shop: {
-              wallet: 42,
-              stock: [
-                { node: 'ascend', price: 35, sold: false, owned: false, affordable: true, rarity: 'legendary' },
-                { node: 'bounce', price: 25, sold: true, owned: true, affordable: true, rarity: 'common' },
-                { node: 'echo', price: 30, sold: false, owned: false, affordable: false, rarity: 'rare' },
-              ],
-            },
-          });
-          screens.path.render({
-            ...base,
-            path: {
-              freeSkillSlots: 1,
-              nextRoom: 4,
-              options: [
-                { win: 'kill_all', reward: 'skill' },
-                { win: 'defend', reward: 'node' },
-              ],
-              focus: 0,
-            },
-          });
-          screens.end.render({
-            ...base,
-            phase: 'victory',
-            summary: {
-              rooms: 8,
-              glint: 120,
-              skills: ['sanctuary'],
-              nodes: { bench: ['ascend'], socketed: [] },
-              seed: 4242,
-              ticks: 3600,
-            },
-          });
-        }
-      } catch (e) {
-        /* warm-up only */
-      }
-      void rootEl.offsetHeight; // force the layout NOW, on this frame
+  }
+  function prepaintSeedsShow(on) {
+    for (const s of prepaintSeeds) s.style.display = on ? 'block' : 'none';
+  }
+  function prepaintSeedsRemove() {
+    for (const s of prepaintSeeds) s.remove();
+    prepaintSeeds.length = 0;
+  }
+
+  // Synthetic content that exercises every state the pages can show. The sim
+  // is idle at boot and has nothing to offer; every render is guarded — a
+  // warm-up may never be able to break the game.
+  function prepaintViews(base) {
+    const summary = {
+      rooms: 8,
+      glint: 120,
+      skills: ['sanctuary'],
+      nodes: { bench: ['ascend'], socketed: [] },
+      seed: 4242,
+      ticks: 3600,
+    };
+    return {
+      shop: {
+        ...base,
+        shop: {
+          wallet: 42,
+          stock: [
+            { node: 'ascend', price: 35, sold: false, owned: false, affordable: true, rarity: 'legendary' },
+            { node: 'bounce', price: 25, sold: true, owned: true, affordable: true, rarity: 'common' },
+            { node: 'echo', price: 30, sold: false, owned: false, affordable: false, rarity: 'rare' },
+          ],
+        },
+      },
+      draft: {
+        ...base,
+        room: 1,
+        freeSkillSlots: 0,
+        reward: { type: 'node', id: 'ascend', substituted: false, line: null },
+      },
+      path: {
+        ...base,
+        path: {
+          freeSkillSlots: 1,
+          nextRoom: 4,
+          options: [
+            { win: 'kill_all', reward: 'skill' },
+            { win: 'defend', reward: 'node' },
+          ],
+          focus: 0,
+        },
+      },
+      victory: { ...base, phase: 'victory', summary },
+      defeat: { ...base, phase: 'defeat', summary: { ...summary, rooms: 5, glint: 60 } },
+    };
+  }
+
+  function prepaintHidePage() {
+    for (const band of prepaintShines) band.remove();
+    prepaintShines.length = 0;
+    // Never hide the page a real setScreen() has just put up (the abort path).
+    const live = current !== 'none' ? screens[current].el : null;
+    if (prepaintPage && prepaintPage !== live) prepaintPage.style.display = 'none';
+    prepaintPage = null;
+  }
+
+  function prepaintBegin(step) {
+    prepaintHidePage();
+    prepaintLog.step = step.view;
+    // Exactly the classes setScreen() gives the real page, so the layout, the
+    // veil and the tone — and with them the raster strips — are the real ones.
+    rootEl.classList.add('rn-open');
+    veil.classList.add('rn-open');
+    rootEl.classList.toggle('rn-dock', !!step.dock);
+    veil.classList.toggle('rn-light', !!step.light);
+    rootEl.classList.toggle('rn-victory', step.tone === 'victory');
+    rootEl.classList.toggle('rn-defeat', step.tone === 'defeat');
+    veil.classList.toggle('rn-victory', step.tone === 'victory');
+    veil.classList.toggle('rn-defeat', step.tone === 'defeat');
+    const page = screens[step.screen];
+    prepaintPage = page.el;
+    page.el.style.display = '';
+    try {
+      const sys = run();
+      if (sys) page.render(prepaintViews(sys.view())[step.view]);
+    } catch (e) {
+      /* warm-up only */
     }
-    prepaintFrames -= 1;
-    if (prepaintFrames > 0) return;
-    for (const s of Object.values(screens)) s.el.style.display = 'none';
-    signature = ''; // the synthetic card above must never be mistaken for state
-    rootEl.classList.remove('rn-open');
-    veil.classList.remove('rn-open');
+    for (const card of page.el.querySelectorAll('.rn-card.rn-legendary')) {
+      const band = document.createElement('i');
+      band.className = 'rn-shine';
+      card.appendChild(band);
+      prepaintShines.push(band);
+    }
+    // The shop's veil is a ~12% dim: drawn at its real opacity here (a
+    // quarter-second of dim in camp, ~0.4 s after boot) because a veil inside
+    // an opacity group is drawn through an offscreen layer with a different
+    // pipeline than the one the real open uses. The full storybook veil of
+    // the other pages stays at 2/1000 — it would be a black flash.
+    veil.style.opacity = step.light ? '1' : '0.002';
+    prepaintSeedsEnsure();
+    prepaintSeedsShow(true);
+    fitScale(page.el);
+    void rootEl.offsetHeight; // force the layout NOW, on this frame
+    prepaintHold = step.frames;
+  }
+
+  // Per-frame state changes inside a step, so the strips get PARTIAL repaints
+  // (the msaa-load variants): a hover lift, a denial shake, the shine band.
+  function prepaintMutate(step, left) {
+    if (step.screen !== 'shop') return;
+    const cards = prepaintPage ? prepaintPage.querySelectorAll('.rn-card') : [];
+    if (left === step.frames - 3 && cards[0]) cards[0].classList.add('rn-hover');
+    if (left === step.frames - 9 && cards[0]) cards[0].classList.remove('rn-hover');
+    if (left === step.frames - 6) {
+      try { screens.shop.denyShake(2); } catch (e) { /* warm-up only */ }
+    }
+  }
+
+  function prepaintEnd() {
+    prepaintHidePage();
+    prepaintSeedsRemove();
+    prepaintStep = PREPAINT_SEQ.length;
+    prepaintLog.step = null;
+    prepaintLog.done = Math.round(performance.now());
+    try { performance.mark('prepaint-end'); } catch (e) { /* trace marker only */ }
+    signature = ''; // the synthetic content above must never be mistaken for state
+    rootEl.classList.remove('rn-open', 'rn-dock', 'rn-victory', 'rn-defeat');
+    veil.classList.remove('rn-open', 'rn-light', 'rn-victory', 'rn-defeat');
     rootEl.style.opacity = '';
     rootEl.style.pointerEvents = '';
     veil.style.opacity = '';
     rootEl.style.transition = '';
     veil.style.transition = '';
+  }
+
+  // A real page opened while the warm-up was still running (only possible
+  // with `?run=1` and a very fast first room): drop the synthetic page and the
+  // overrides, keep the classes setScreen() has just set.
+  function prepaintAbort() {
+    prepaintHidePage();
+    prepaintSeedsRemove();
+    prepaintStep = PREPAINT_SEQ.length;
+    prepaintLog.step = null;
+    prepaintLog.done = Math.round(performance.now());
+    rootEl.style.opacity = '';
+    rootEl.style.pointerEvents = '';
+    veil.style.opacity = '';
+    rootEl.style.transition = '';
+    veil.style.transition = '';
+  }
+
+  function prepaint() {
+    if (prepaintWait > 0) {
+      prepaintWait -= 1;
+      return;
+    }
+    if (prepaintStep < 0) {
+      prepaintLog.started = Math.round(performance.now());
+      try { performance.mark('prepaint-start'); } catch (e) { /* trace marker only */ }
+      rootEl.style.transition = 'none';
+      veil.style.transition = 'none';
+      rootEl.style.opacity = '0.002';
+      rootEl.style.pointerEvents = 'none'; // on screen for a few frames — it must not eat a click
+      veil.style.opacity = '0.002';
+      prepaintStep = 0;
+      prepaintBegin(PREPAINT_SEQ[0]);
+    } else if (--prepaintHold <= 0) {
+      prepaintStep += 1;
+      if (prepaintDone()) {
+        prepaintEnd();
+        return;
+      }
+      prepaintBegin(PREPAINT_SEQ[prepaintStep]);
+    }
+    const step = PREPAINT_SEQ[prepaintStep];
+    prepaintSeedsShow(prepaintHold > step.frames / 2);
+    prepaintMutate(step, prepaintHold);
+    prepaintLog.frames += 1;
+    driveShines(performance.now(), prepaintShines);
   }
 
   function update() {
@@ -386,7 +526,10 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     setScreen(SCREEN_FOR[v.phase] ?? 'none');
     setVeilTone(v.phase);
     fade.classList.toggle('rn-on', v.phase === 'fade');
-    if (prepaintFrames > 0 && current === 'none') prepaint();
+    if (!prepaintDone()) {
+      if (current === 'none') prepaint();
+      else if (prepaintStep >= 0) prepaintAbort();
+    }
     if (current === 'none') return;
     const sig = sigOf(v);
     if (sig !== signature) {
@@ -568,6 +711,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
         screen: current,
         phase: v.phase,
         room: v.room,
+        prepaint: { ...prepaintLog },
         fit: lastFit,
         floors,
         typeAudit,

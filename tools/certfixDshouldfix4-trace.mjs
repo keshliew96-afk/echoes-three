@@ -22,17 +22,17 @@ import puppeteer from 'puppeteer';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const name = argv[0];
-const opt = { url: 'http://127.0.0.1:5199', settle: 2500, actions: null, w: 1600, h: 900, timeout: 90000 };
+const opt = { url: 'http://127.0.0.1:5199', settle: 2500, actions: null, w: 1600, h: 900, timeout: 90000, cats: 'full', traceBoot: 0 };
 for (let i = 1; i < argv.length; i += 2) {
   const k = argv[i].replace(/^--/, '');
-  opt[k] = k === 'url' || k === 'actions' ? argv[i + 1] : parseFloat(argv[i + 1]);
+  opt[k] = k === 'url' || k === 'actions' || k === 'cats' ? argv[i + 1] : parseFloat(argv[i + 1]);
 }
 const outDir = join(root, 'captures');
 mkdirSync(outDir, { recursive: true });
 const logLines = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const CATS = [
+const CATS_FULL = [
   '-*',
   'devtools.timeline',
   'disabled-by-default-devtools.timeline',
@@ -54,6 +54,10 @@ const CATS = [
   'disabled-by-default-skia.gpu',
   'disabled-by-default-skia.shaders',
 ];
+// `--cats shaders`: only the Graphite pipeline-use / creation events plus the
+// user-timing marks — small enough to trace a whole boot + a 15 s fight.
+const CATS_SHADERS = ['-*', 'blink.user_timing', 'disabled-by-default-skia.shaders', 'skia.shaders'];
+const CATS = opt.cats === 'shaders' ? CATS_SHADERS : CATS_FULL;
 
 const browser = await puppeteer.launch({
   headless: true,
@@ -67,6 +71,13 @@ try {
   await page.setViewport({ width: opt.w, height: opt.h, deviceScaleFactor: 1 });
   page.on('console', (m) => logLines.push(`[${m.type()}] ${m.text()}`));
   page.on('pageerror', (e) => { hadError = true; logLines.push(`[PAGEERROR] ${e.message}`); });
+  if (opt.traceBoot) {
+    // `--traceBoot 1`: tracing runs from BEFORE navigation, so the boot
+    // warm-ups are inside the trace; the action list's traceStop ends it.
+    tracePath = join(outDir, `${name}.trace.json`);
+    await page.tracing.start({ path: tracePath, categories: CATS });
+    logLines.push('[TRACE] start (boot)');
+  }
   await page.goto(opt.url, { waitUntil: 'networkidle2', timeout: opt.timeout });
   await sleep(opt.settle);
   const run = async (acts) => {
@@ -79,6 +90,7 @@ try {
       else if (a.type === 'wait') await sleep(a.ms);
       else if (a.type === 'eval') logLines.push(`[EVAL] ${JSON.stringify(await page.evaluate(a.code))}`);
       else if (a.type === 'traceStart') {
+        if (opt.traceBoot) continue; // already tracing since before the boot
         tracePath = join(outDir, `${name}.trace.json`);
         await page.tracing.start({ path: tracePath, categories: CATS });
         logLines.push('[TRACE] start');
