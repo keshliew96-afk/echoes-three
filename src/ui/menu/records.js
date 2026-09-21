@@ -32,7 +32,7 @@ const CSS = `
 .sv-rside dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: ${px(4)} ${px(14)}; margin: 0; font-size: ${px(22)}; }
 .sv-rside dt { color: ${P.warmGrey}; }
 .sv-rside dd { margin: 0; color: ${P.parchment}; text-align: right; font-variant-numeric: tabular-nums; }
-.sv-formula { font-size: ${px(20)}; color: ${P.warmGrey}; line-height: 1.4; }
+.sv-formula { font-size: ${px(22)}; color: ${P.warmGrey}; line-height: 1.4; }
 .sv-rempty { margin: auto; text-align: center; font-size: ${px(24)}; color: ${P.bone}; line-height: 1.5; }
 .sv-rfoot { display: flex; align-items: center; gap: ${px(16)}; padding-top: ${px(12)}; border-top: 1px solid ${P.warmGrey}44; margin-top: ${px(10)}; }
 .sv-rfoot .ap-hints { flex: 1 1 auto; }

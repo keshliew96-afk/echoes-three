@@ -54,6 +54,23 @@ const nextIdle = () =>
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => setTimeout(res, 0));
     else setTimeout(res, 0);
   });
+// Calm frames: wait until `n` consecutive rendered frames each took < 25 ms
+// (a room swap's own hitch — dressing build, scene change — has passed), at
+// most maxMs; the autosave's heavy pieces then never stack onto it.
+const calmFrames = (n = 3, maxMs = 1500) =>
+  new Promise((res) => {
+    if (typeof requestAnimationFrame !== 'function') return res(0);
+    const t0 = performance.now();
+    let last = t0;
+    let calm = 0;
+    const f = (t) => {
+      calm = t - last < 25 ? calm + 1 : 0;
+      last = t;
+      if (calm >= n || t - t0 > maxMs) res(Math.round(t - t0));
+      else requestAnimationFrame(f);
+    };
+    requestAnimationFrame(f);
+  });
 
 export const SAVE_ERRORS = Object.freeze({
   quota: 'Not enough browser storage — delete a slot or export saves to files',
@@ -173,17 +190,30 @@ export function createSaveSystem({
   });
   // requestCapture(reason) -> Promise<{ ok, tree, rec }> — captured at the
   // next tick end (immediately when no step is in progress).
+  // Between frames (no step running) the capture waits one microtask, so a
+  // request made from a listener of an event a UI / debug command emitted
+  // sees the command's finished state — still the same tick.
   function requestCapture(reason = 'api', eventTick = null) {
     if (!stepping) {
-      try {
-        const tree = io.capture();
-        const rec = { reason, eventTick, captureTick: clock.tick, pending: world.pendingQueues(), ok: true, immediate: true };
-        captureLog.push(rec);
-        if (captureLog.length > 20) captureLog.shift();
-        return Promise.resolve({ ok: true, tree, rec });
-      } catch (err) {
-        if (!(err && err.name === 'CapturePointError')) return Promise.resolve({ ok: false, error: 'busy', detail: String(err && err.message) });
-      }
+      return new Promise((resolve) => {
+        queueMicrotask(() => {
+          if (stepping) {
+            tickEndQueue.push({ reason, eventTick, resolve });
+            return;
+          }
+          try {
+            const pending = world.pendingQueues();
+            const tree = io.capture();
+            const rec = { reason, eventTick, captureTick: clock.tick, pending, ok: true, between: true };
+            captureLog.push(rec);
+            if (captureLog.length > 20) captureLog.shift();
+            resolve({ ok: true, tree, rec });
+          } catch (err) {
+            if (err && err.name === 'CapturePointError') tickEndQueue.push({ reason, eventTick, resolve });
+            else resolve({ ok: false, error: 'busy', detail: String(err && err.message) });
+          }
+        });
+      });
     }
     return new Promise((resolve) => tickEndQueue.push({ reason, eventTick, resolve }));
   }
@@ -303,8 +333,9 @@ export function createSaveSystem({
 
   // ------------------------------------------------------------ write --
   let writing = false;
-  async function writeSlot(id, tree, { name, kind, reason = 'manual', thumb = true } = {}) {
+  async function writeSlot(id, tree, { name, kind, reason = 'manual', thumb = true, calm = false } = {}) {
     const t0 = performance.now();
+    const calmMs = calm ? await calmFrames() : 0;
     const key = slotKey(id);
     const prevText = store.read(key);
     const prev = prevText !== null ? parseFile(prevText) : null;
@@ -328,7 +359,12 @@ export function createSaveSystem({
     let built = buildFile({ slot, meta, state: tree, game: VERSION, createdAt: (prevFile && prevFile.createdAt) || nowIso, savedAt: nowIso });
     meta.bytes = built.text.length;
     built = buildFile({ slot, meta, state: tree, game: VERSION, createdAt: (prevFile && prevFile.createdAt) || nowIso, savedAt: nowIso });
+    const buildMs = performance.now() - t1;
     // Verify before writing: the bytes must decode to the same tree hash.
+    // Verification (parse + re-hash) in its own post-frame task, apart from
+    // the encode (G2.7: each piece in its own frame gap).
+    await nextIdle();
+    const t2 = performance.now();
     const check = parseFile(built.text);
     if (!check.ok || check.file.hash !== built.hash) {
       return { ok: false, error: 'corrupt', detail: `self-check failed (${check.ok ? 'hash' : check.detail})` };
@@ -339,12 +375,20 @@ export function createSaveSystem({
     const m = metaOf(built.file, { id, bytes: built.text.length, thumb: !!(shot && shot.dataUrl) || store.read(`${key}.thumb`) !== null });
     slots[id] = m;
     writeIndex(store, slots);
-    const writeMs = r1(performance.now() - t1);
     // Lifetime playtime rides every successful write.
     profileStore.addPlaytime(profileTicks / TICK_HZ);
     profileTicks = 0;
     profileStore.flush();
-    return { ok: true, meta: m, bytes: built.text.length, ms: r1(performance.now() - t0), writeMs, thumbMs, hash: built.hash, reason };
+    const verifyWriteMs = performance.now() - t2;
+    const writeMs = r1(buildMs + verifyWriteMs);
+    // Main-thread cost of each piece (each runs in its own task / frame gap).
+    const pieces = {
+      snap: shot ? shot.snapMs : null,
+      encodeJpeg: shot ? shot.drawMs : null,
+      build: r1(buildMs),
+      verifyWrite: r1(verifyWriteMs),
+    };
+    return { ok: true, meta: m, bytes: built.text.length, ms: r1(performance.now() - t0), writeMs, thumbMs, calmMs, pieces, hash: built.hash, reason };
   }
 
   async function save(id, { name, kind } = {}) {
@@ -438,7 +482,7 @@ export function createSaveSystem({
     if (text === null) return { ok: false, error: 'missing' };
     const pf = parseFile(text);
     if (!pf.ok) return { ok: false, error: pf.error, detail: pf.detail };
-    const clean = String(name ?? '').replace(/[ -]/g, '').trim().slice(0, 32) || defaultSlotName(id);
+    const clean = String(name ?? '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, 32) || defaultSlotName(id);
     const f = { ...pf.file, slot: { ...pf.file.slot, name: clean } };
     const w = store.writeAtomic(key, encodeOrdered(f));
     if (!w.ok) return { ok: false, error: w.error };
@@ -516,6 +560,7 @@ export function createSaveSystem({
   const autosaver = createAutosave({
     bus,
     clock,
+    isStepping: () => stepping,
     allowed: (reason) => {
       if (!app || app.state !== 'playing') return 'not playing';
       if (probing) return 'probe';
@@ -534,7 +579,7 @@ export function createSaveSystem({
       if (!b) return 'auto-2';
       return String(a.savedAt || '') <= String(b.savedAt || '') ? 'auto-1' : 'auto-2';
     },
-    write: (slot, tree, { reason }) => writeSlot(slot, tree, { kind: 'auto', name: 'Autosave', reason }),
+    write: (slot, tree, { reason, calm }) => writeSlot(slot, tree, { kind: 'auto', name: 'Autosave', reason, calm }),
   });
   async function autosave(reason = 'manual') {
     if (reason === 'quit') {
@@ -922,6 +967,7 @@ export function createSaveSystem({
     thumb: thumbOf,
     lastThumb: () => thumbs.last(),
     keys: () => ({ index: INDEX_KEY, profile: PROFILE_KEY, slot: (id) => slotKey(id) }),
+    errors: SAVE_ERRORS,
     stepping: () => stepping,
     get probing() {
       return probing;

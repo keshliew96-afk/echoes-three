@@ -27,7 +27,7 @@ const name = basename(scenarioPath).replace(/\.mjs$/, '');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const mod = await import(pathToFileURL(resolve(root, scenarioPath)).href);
 
-const TRANSIENT = /Execution context was destroyed|Target closed|Navigation timeout|detached Frame|Cannot find context|Session closed|net::ERR/i;
+const TRANSIENT = /Execution context was destroyed|Target closed|Navigation timeout|detached Frame|Cannot find context|Session closed|net::ERR|Waiting failed/i;
 
 let final = null;
 for (let attempt = 1; attempt <= opt.tries; attempt++) {

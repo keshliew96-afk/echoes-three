@@ -4,22 +4,61 @@
 // THUMBNAIL runs the queued hooks there), so no preserveDrawingBuffer is
 // needed and the menus (DOM) never appear in it.
 //
-// Frame cost (G2.7, no frame > 50 ms during a save): a synchronous
-// toDataURL() on a canvas fed by the WebGL buffer stalls the main thread on
-// the GPU (measured 30-50 ms at 1600 x 900), and the async toBlob() takes
-// ~1 s of wall time on a continuously rendering page. So the hook only takes
-// a cropped, downscaled ImageBitmap snapshot (< 1 ms; the resize runs off
-// the main thread), and the 256 x 144 JPEG is encoded on a CPU-backed
-// canvas in its own task right after a frame (measured 10-27 ms).
+// Frame cost (G2.7, no frame > 50 ms during a save): reading the WebGL
+// buffer back and encoding a JPEG on the main thread stalls it on the GPU
+// (a synchronous toDataURL measured 26-133 ms; the async toBlob ~1 s of wall
+// time on a continuously rendering page). So the render hook only takes a
+// cropped, downscaled ImageBitmap snapshot (< 1 ms; the resize runs off the
+// main thread) and TRANSFERS it to a worker (src/save/thumb-worker.js) that
+// draws it into an OffscreenCanvas and encodes the JPEG there. Without
+// Worker / OffscreenCanvas support the encode falls back to a CPU-backed
+// canvas in a post-frame task.
 export const THUMB_W = 256;
 export const THUMB_H = 144;
 const MAX_BYTES = 20 * 1024;
+
+function bufToDataUrl(buf) {
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  const CH = 0x8000;
+  for (let i = 0; i < bytes.length; i += CH) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+  return `data:image/jpeg;base64,${btoa(bin)}`;
+}
 
 export function createThumbnailer({ stage }) {
   const renderer = stage && stage.renderer;
   let canvas = null;
   let ctx2d = null;
-  let last = null; // { dataUrl, at, snapMs, encodeMs, bytes, quality }
+  let last = null; // { dataUrl, at, snapMs, drawMs, ms, bytes, quality, via }
+  let worker = null;
+  let workerFailed = false;
+  let seq = 0;
+  const waiting = new Map(); // id -> resolve
+
+  function getWorker() {
+    if (worker || workerFailed) return worker;
+    try {
+      if (typeof Worker !== 'function' || typeof OffscreenCanvas !== 'function') throw new Error('no OffscreenCanvas');
+      worker = new Worker(new URL('./thumb-worker.js', import.meta.url), { type: 'module' });
+      worker.onmessage = (e) => {
+        const d = e.data || {};
+        const res = waiting.get(d.id);
+        if (!res) return;
+        waiting.delete(d.id);
+        res(d);
+      };
+      worker.onerror = () => {
+        workerFailed = true;
+        for (const res of waiting.values()) res({ ok: false, error: 'worker error' });
+        waiting.clear();
+        worker = null;
+      };
+    } catch {
+      workerFailed = true;
+      worker = null;
+    }
+    return worker;
+  }
 
   function crop(src) {
     const sw = src.width;
@@ -34,14 +73,42 @@ export function createThumbnailer({ stage }) {
     return { sx: Math.round((sw - cw) / 2), sy: Math.round((sh - ch) / 2), cw, ch };
   }
 
-  // One task right after the next rendered frame (the frame's own work is
-  // done, the next one is ~a refresh away).
+  // One task right after the next rendered frame.
   const afterFrame = () =>
     new Promise((res) => {
       requestAnimationFrame(() => setTimeout(res, 0));
     });
 
-  async function encode(bitmap) {
+  // Worker path: -> { url, drawMs (main-thread ms), quality, via }
+  function encodeInWorker(bitmap) {
+    const w = getWorker();
+    if (!w) return null;
+    const id = ++seq;
+    return new Promise((resolve) => {
+      const t0 = performance.now();
+      const timer = setTimeout(() => {
+        waiting.delete(id);
+        resolve(null);
+      }, 3000);
+      waiting.set(id, (d) => {
+        clearTimeout(timer);
+        if (!d.ok) return resolve(null);
+        const t1 = performance.now();
+        const url = bufToDataUrl(d.buf);
+        resolve({ url, drawMs: performance.now() - t1, quality: d.quality, via: 'worker', workerMs: Math.round(t1 - t0) });
+      });
+      try {
+        w.postMessage({ id, bitmap, w: THUMB_W, h: THUMB_H, quality: 0.7, maxBytes: MAX_BYTES }, [bitmap]);
+      } catch {
+        waiting.delete(id);
+        clearTimeout(timer);
+        resolve(null);
+      }
+    });
+  }
+
+  // Fallback: a CPU-backed canvas in a post-frame task.
+  async function encodeOnMain(bitmap) {
     await afterFrame();
     const t0 = performance.now();
     if (!canvas) {
@@ -58,7 +125,17 @@ export function createThumbnailer({ stage }) {
       q -= 0.1;
       url = canvas.toDataURL('image/jpeg', q);
     }
-    return { url, drawMs: performance.now() - t0, quality: Math.round(q * 10) / 10 };
+    return { url, drawMs: performance.now() - t0, quality: Math.round(q * 10) / 10, via: 'main' };
+  }
+
+  async function encode(bitmap) {
+    const viaWorker = encodeInWorker(bitmap);
+    if (viaWorker) {
+      const r = await viaWorker;
+      if (r) return r;
+      return null; // the bitmap was transferred: no main-thread retry
+    }
+    return encodeOnMain(bitmap);
   }
 
   // next() -> Promise<{ dataUrl, ... } | null> — snapshots the next rendered
@@ -91,7 +168,9 @@ export function createThumbnailer({ stage }) {
               at: Date.now(),
               snapMs: Math.round(snapMs * 10) / 10,
               drawMs: Math.round(r.drawMs * 10) / 10,
-              ms: Math.round((snapMs + r.drawMs) * 10) / 10, // main-thread work (snapshot + encode task)
+              ms: Math.round((snapMs + r.drawMs) * 10) / 10, // main-thread work
+              workerMs: r.workerMs ?? null,
+              via: r.via,
               bytes: Math.round((r.url.length - 23) * 0.75),
               quality: r.quality,
             };

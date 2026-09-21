@@ -46,6 +46,19 @@ const PHASE_LABEL = {
 };
 const CLASS_NAME = { healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer' };
 
+// A player-facing reason for a damaged file (the raw detail stays in the
+// debug API: __echoes.save.list()[i].detail).
+export function friendlyDetail(m) {
+  const d = String((m && m.detail) || '');
+  if (m && m.error === 'hash') return "Its contents changed after it was saved (the checksum doesn't match).";
+  if (/not valid JSON|empty file/.test(d)) return 'The file is cut short or garbled — the write may have been interrupted.';
+  if (/schema missing/.test(d)) return "The file's version stamp is missing.";
+  if (/required keys missing/.test(d)) return 'Parts of the game state are missing from the file.';
+  if (/not an Echoes save/.test(d)) return "This isn't an Echoes save file.";
+  if (/not plain data/.test(d)) return 'The file holds data Echoes cannot read.';
+  return 'The file could not be read.';
+}
+
 // --------------------------------------------------------------- format --
 export function fmtPlaytime(sec) {
   const s = Math.max(0, Math.round(sec || 0));
@@ -91,6 +104,7 @@ const CSS = `
   display: flex; flex-direction: column; padding: ${px(22)} ${px(30)} ${px(18)};
 }
 .sv-head { display: flex; align-items: center; gap: ${px(26)}; padding-bottom: ${px(12)}; border-bottom: 1px solid ${P.warmGrey}44; }
+.sv-head .ap-h2 { white-space: nowrap; flex: 0 0 auto; }
 .sv-head .sv-sub { font-size: ${px(22)}; color: ${P.warmGrey}; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sv-body { flex: 1 1 auto; min-height: 0; display: flex; gap: ${px(24)}; padding-top: ${px(14)}; }
 .sv-list {
@@ -98,10 +112,10 @@ const CSS = `
   display: flex; flex-direction: column; gap: ${px(10)}; padding: ${px(6)} ${px(14)} ${px(6)} ${px(6)};
   scrollbar-color: ${P.warmGrey}88 transparent;
 }
-.sv-sect { margin: ${px(8)} 0 ${px(2)}; font-size: ${px(22)}; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: ${P.warmGrey}; }
+.sv-sect { flex: 0 0 auto; margin: ${px(8)} 0 ${px(2)}; font-size: ${px(22)}; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: ${P.warmGrey}; }
 .sv-row {
   display: grid; grid-template-columns: ${px(160)} minmax(0, 1fr) auto; align-items: center; gap: ${px(18)};
-  width: 100%; min-height: ${px(106)}; padding: ${px(8)} ${px(16)} ${px(8)} ${px(8)}; text-align: left;
+  flex: 0 0 auto; width: 100%; min-height: ${px(106)}; padding: ${px(8)} ${px(16)} ${px(8)} ${px(8)}; text-align: left;
   background: ${P.voidCharcoal}B3; border: max(2px, ${px(2)}) solid ${P.warmGrey}44; border-radius: ${px(14)};
   color: ${P.parchment}; font-family: inherit; cursor: pointer; position: relative;
   transition: transform 90ms ease, box-shadow 90ms ease, border-color 90ms ease, background 90ms ease;
@@ -124,7 +138,7 @@ const CSS = `
 .sv-dim { color: ${P.warmGrey}; }
 .sv-tag {
   display: inline-block; margin-left: ${px(10)}; padding: 0 ${px(10)}; border-radius: 999px;
-  font-size: ${px(20)}; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: middle;
+  font-size: ${px(22)}; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: middle;
   border: 1px solid ${P.warmGrey}88; color: ${P.bone};
 }
 .sv-tag.sv-bad { border-color: ${P.parchment}; color: ${P.parchment}; background: ${P.bruiseUmber}; }
@@ -138,13 +152,14 @@ const CSS = `
   flex: 0 0 38%; min-width: 0; display: flex; flex-direction: column; gap: ${px(10)};
   padding: ${px(18)} ${px(22)}; border-radius: ${px(14)}; background: ${P.voidCharcoal}; border: 1px solid ${P.warmGrey}44; overflow: hidden;
 }
-.sv-big { width: 100%; aspect-ratio: 16 / 9; max-height: 34vh; border-radius: ${px(10)}; overflow: hidden; background: #161411;
+.sv-big { width: 100%; aspect-ratio: 16 / 9; max-height: 26vh; border-radius: ${px(10)}; overflow: hidden; background: #161411;
   border: 1px solid ${P.warmGrey}55; display: flex; align-items: center; justify-content: center; color: ${P.warmGrey}; font-size: ${px(24)}; flex: 0 0 auto; }
 .sv-big img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .sv-dname { font-size: ${px(30)}; line-height: 1.3; padding-bottom: ${px(2)}; font-weight: 800; letter-spacing: 0.04em; color: ${P.parchment}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 0 auto; }
 .sv-dl { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; gap: ${px(2)} ${px(14)}; margin: 0; font-size: ${px(22)}; line-height: 1.35; overflow-y: auto; overflow-x: hidden; min-height: 0; flex: 1 1 auto; scrollbar-color: ${P.warmGrey}88 transparent; }
 .sv-dl dt { color: ${P.warmGrey}; margin: 0; white-space: nowrap; }
 .sv-dl dd { color: ${P.bone}; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-dl dd.sv-wrap { white-space: normal; }
 .sv-msg { font-size: ${px(22)}; color: ${P.parchment}; line-height: 1.4; white-space: pre-line; overflow-y: auto; min-height: 0; flex: 0 1 auto; }
 .sv-acts { display: flex; flex-wrap: wrap; gap: ${px(8)}; margin-top: auto; flex: 0 0 auto; padding-top: ${px(4)}; }
 .sv-acts .ap-btn { min-width: ${px(96)}; padding: 0 ${px(14)}; font-size: ${px(22)}; letter-spacing: 0.04em; }
@@ -158,16 +173,20 @@ const CSS = `
   color: ${P.parchment}; background: #161411; border: max(2px, ${px(2)}) solid ${P.warmGrey}88; border-radius: ${px(10)};
 }
 .sv-rename .ap-dlg input.ap-focus { outline: max(2px, ${px(2)}) solid ${P.hearthAmber}; outline-offset: ${px(2)}; border-color: ${P.hearthAmber}AA; }
-.sv-rename .sv-count { font-size: ${px(20)}; color: ${P.warmGrey}; text-align: right; }
+.sv-rename .sv-count { font-size: ${px(22)}; color: ${P.warmGrey}; text-align: right; }
 @media (max-width: 1180px) {
   .sv-detail { flex-basis: 40%; padding: ${px(14)} ${px(16)}; }
   .sv-row { grid-template-columns: ${px(128)} minmax(0, 1fr) auto; min-height: ${px(92)}; }
   .sv-thumb { width: ${px(128)}; height: ${px(72)}; }
   .sv-side .sv-pips { display: none; }
+  .sv-head .sv-sub { display: none; }
+}
+@media (max-height: 640px) {
+  .sv-big { display: none; }
 }
 @media (max-height: 700px) {
   .sv-dl { font-size: ${px(22)}; line-height: 1.25; }
-  .sv-big { max-height: 26vh; }
+  .sv-big { max-height: 22vh; }
 }
 `;
 let styled = false;
@@ -257,7 +276,9 @@ export function createSavesScreen(ctx) {
     const all = s.list();
     const byId = new Map(all.map((m) => [m.id, m]));
     if (mode === 'save') return s.manualSlots().map((id) => byId.get(id) ?? { id, empty: true, name: defaultName(id) });
-    return all;
+    // Load: the automatic saves (autosaves + the quicksave) first, then the
+    // player's own slots — each group newest first (list() is newest first).
+    return [...all.filter((m) => m.kind !== 'manual'), ...all.filter((m) => m.kind === 'manual')];
   }
   function defaultName(id) {
     const n = Number(String(id).split('-')[1]);
@@ -379,7 +400,7 @@ export function createSavesScreen(ctx) {
     } else if (m.status !== 'ok') {
       const t = document.createElement('div');
       t.className = 'sv-msg';
-      const why = m.status === 'newer' ? SAVE_ERRORS.version : `${SAVE_ERRORS[m.error] || SAVE_ERRORS.corrupt}\n${m.detail || ''}`;
+      const why = m.status === 'newer' ? SAVE_ERRORS.version : `${SAVE_ERRORS[m.error] || SAVE_ERRORS.corrupt}\n${friendlyDetail(m)}`;
       t.textContent = m.backup
         ? `${why}\n\nA backup from ${fmtDate(m.backup.savedAt)} (${whereLine(m.backup)}) is intact.`
         : `${why}\n\nExport the raw file to keep it, or delete the slot.`;
@@ -388,24 +409,22 @@ export function createSavesScreen(ctx) {
       const meta = m.meta || {};
       const dl = document.createElement('dl');
       dl.className = 'sv-dl';
-      const add = (k, v) => {
+      const add = (k, v, wrap = false) => {
         const dt = document.createElement('dt');
         dt.textContent = k;
         const dd = document.createElement('dd');
         dd.textContent = v;
+        if (wrap) dd.className = 'sv-wrap';
         dl.append(dt, dd);
       };
-      add('Where', whereLine(m));
-      add('Saved', `${fmtDate(m.savedAt)} (${fmtAgo(m.savedAt)})`);
-      add('Playtime', fmtPlaytime(meta.playtimeSec));
-      add(
-        'Party',
-        (meta.party || []).map((p) => `${CLASS_NAME[p.classId] || p.classId} ${Math.round(p.hp)}/${p.maxHp}`).join(' · ') || '—'
-      );
-      if (meta.mode === 'run') add('Glint', String(meta.wallet ?? 0));
+      add('Where', whereLine(m), true);
+      add('Saved', `${fmtDate(m.savedAt)} · ${fmtAgo(m.savedAt)}`);
+      add('Played', fmtPlaytime(meta.playtimeSec));
+      add('Party', (meta.party || []).map((p) => `${CLASS_NAME[p.classId] || p.classId} ${Math.round(p.hp)}/${p.maxHp}`).join(' · ') || '—', true);
       const skills = (meta.skills || []).filter(Boolean);
-      add('Skills', skills.length ? `${skills.length} — ${skills.map((s) => s.replace(/_/g, ' ')).join(', ')}` : '—');
-      add('Challenge', meta.challenge ? meta.challenge[0].toUpperCase() + meta.challenge.slice(1) : 'Standard');
+      add('Skills', skills.length ? `${skills.length} — ${skills.map((s) => s.replace(/_/g, ' ')).join(', ')}` : '—', true);
+      const ch = meta.challenge ? meta.challenge[0].toUpperCase() + meta.challenge.slice(1) : 'Standard';
+      add('Run', meta.mode === 'run' ? `${meta.wallet ?? 0} Glint · ${ch} challenge` : `${ch} challenge`);
       add('File', `${Math.max(1, Math.round((m.bytes || 0) / 1024))} KB · v${m.game || '?'}${meta.network ? ' · online (host)' : ''}`);
       detailEl.appendChild(dl);
     }
@@ -490,7 +509,7 @@ export function createSavesScreen(ctx) {
     } else {
       let lastSect = null;
       for (const m of list) {
-        const sect = mode === 'load' ? (m.kind === 'manual' ? 'Saves' : 'Autosaves & quicksave') : null;
+        const sect = mode === 'load' ? (m.kind === 'manual' ? 'Your saves' : 'Autosaves & quicksave') : null;
         if (sect && sect !== lastSect && list.some((x) => x.kind !== 'manual') && list.some((x) => x.kind === 'manual')) {
           const h = document.createElement('div');
           h.className = 'sv-sect';
@@ -713,7 +732,10 @@ export function createSavesScreen(ctx) {
         mode = 'load';
         selectedId = r.slotId;
         render({ keepFocus: false });
-      } else toast(`Couldn't import: ${SAVE_ERRORS[r.error] || r.error}${r.detail ? ` (${r.detail})` : ''}`, 'error');
+      } else {
+        const why = r.error === 'full' || r.error === 'quota' || r.error === 'version' ? SAVE_ERRORS[r.error] : friendlyDetail(r);
+        toast(`Couldn't import that file — ${why}`, 'error');
+      }
     });
   });
 
