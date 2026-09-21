@@ -919,6 +919,8 @@ export function createSaveSystem({
     remove,
     rename,
     capture: () => capture(),
+    apply: (tree) => applyTree(tree, 'api'),
+    order: () => registry.all().map((e) => e.id),
     hash: () => hashState(capture()),
     roundTrip,
     continuation: continuationProbe,
@@ -959,6 +961,8 @@ export function createSaveSystem({
     lastLoad: () => lastLoad,
     lastRecord: () => lastRecord,
     bootHash: () => (bootTree ? hashState(bootTree) : null),
+    bootTree: () => (bootTree ? clonePlain(bootTree) : null),
+    freshTree: (seed) => freshTree(seed),
     freshHash: (seed) => {
       const t = freshTree(seed);
       return t ? hashState(t) : null;

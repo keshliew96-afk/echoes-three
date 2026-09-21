@@ -52,6 +52,14 @@ export function auditTop({ floor = 14, minHit = 40 } = {}) {
       const oy = Math.min(a.b, b.b) - Math.max(a.y, b.y);
       if (ox > 0.5 && oy > 0.5) issues.push({ kind: 'overlap', a: rects[i].id, b: rects[j].id, ox: Math.round(ox), oy: Math.round(oy) });
     }
+  // Horizontal overflow of any box (a table wider than its panel hides columns).
+  for (const el of top.querySelectorAll('*')) {
+    if (!shown(el)) continue;
+    const cs = getComputedStyle(el);
+    if (/(auto|scroll|hidden)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 2 && el.clientWidth > 0 && cs.textOverflow !== 'ellipsis') {
+      issues.push({ kind: 'h-overflow', el: String(el.className || el.tagName).slice(0, 40), box: el.clientWidth, content: el.scrollWidth });
+    }
+  }
   let minFont = Infinity;
   let minFontEl = null;
   const walker = document.createTreeWalker(top, NodeFilter.SHOW_TEXT);

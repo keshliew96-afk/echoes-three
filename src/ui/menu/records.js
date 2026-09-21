@@ -21,13 +21,14 @@ const CSS = `
 .sv-rbody { flex: 1 1 auto; min-height: 0; display: flex; gap: ${px(24)}; padding-top: ${px(14)}; }
 .sv-scores { flex: 1 1 60%; min-width: 0; overflow: auto; }
 .sv-scores table { width: 100%; border-collapse: collapse; font-size: ${px(22)}; font-variant-numeric: tabular-nums; }
-.sv-scores th { text-align: left; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: ${P.warmGrey}; padding: ${px(6)} ${px(10)}; border-bottom: 1px solid ${P.warmGrey}55; white-space: nowrap; }
-.sv-scores td { padding: ${px(8)} ${px(10)}; color: ${P.bone}; border-bottom: 1px solid ${P.warmGrey}22; white-space: nowrap; }
+.sv-scores th { text-align: left; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: ${P.warmGrey}; padding: ${px(6)} ${px(8)}; border-bottom: 1px solid ${P.warmGrey}55; white-space: nowrap; }
+.sv-scores td { padding: ${px(8)} ${px(8)}; color: ${P.bone}; border-bottom: 1px solid ${P.warmGrey}22; white-space: nowrap; }
 .sv-scores td.sv-num { text-align: right; }
+.sv-scores td.sv-wrapc { white-space: normal; min-width: ${px(150)}; }
 .sv-scores th.sv-num { text-align: right; }
 .sv-scores tr.sv-top td { color: ${P.parchment}; font-weight: 700; }
 .sv-scores tr.sv-fresh td { color: ${P.hearthAmber}; }
-.sv-rside { flex: 0 0 36%; min-width: 0; display: flex; flex-direction: column; gap: ${px(12)}; padding: ${px(18)} ${px(22)}; border-radius: ${px(14)}; background: ${P.voidCharcoal}; border: 1px solid ${P.warmGrey}44; overflow: auto; }
+.sv-rside { flex: 0 0 31%; min-width: 0; display: flex; flex-direction: column; gap: ${px(12)}; padding: ${px(18)} ${px(22)}; border-radius: ${px(14)}; background: ${P.voidCharcoal}; border: 1px solid ${P.warmGrey}44; overflow: auto; }
 .sv-rside h3 { margin: 0; font-size: ${px(24)}; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: ${P.parchment}; }
 .sv-rside dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: ${px(4)} ${px(14)}; margin: 0; font-size: ${px(22)}; }
 .sv-rside dt { color: ${P.warmGrey}; }
@@ -61,7 +62,10 @@ const hours = (sec) => {
 };
 const day = (iso) => {
   const t = Date.parse(iso);
-  return Number.isFinite(t) ? new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+  if (!Number.isFinite(t)) return '—';
+  const d = new Date(t);
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString(undefined, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: '2-digit' });
 };
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : '');
 
@@ -118,7 +122,7 @@ export function createRecordsScreen(ctx) {
       scoresEl.appendChild(e);
     } else {
       const t = document.createElement('table');
-      t.innerHTML = `<thead><tr><th class="sv-num">#</th><th class="sv-num">Score</th><th>Expedition</th><th>Result</th><th class="sv-num">Rooms</th><th class="sv-num">Kills</th><th class="sv-num sv-opt">Time</th><th class="sv-opt">Challenge</th><th class="sv-opt">Date</th></tr></thead>`;
+      t.innerHTML = `<thead><tr><th class="sv-num">#</th><th class="sv-num">Score</th><th>Expedition</th><th>Result</th><th class="sv-num">Rooms</th><th class="sv-num">Kills</th><th class="sv-num sv-opt">Time</th><th class="sv-opt">Date</th></tr></thead>`;
       const tb = document.createElement('tbody');
       p.highScores.forEach((h, i) => {
         const tr = document.createElement('tr');
@@ -127,12 +131,11 @@ export function createRecordsScreen(ctx) {
         const cells = [
           [String(i + 1), 'sv-num'],
           [h.score.toLocaleString(), 'sv-num'],
-          [`${['I', 'II', 'III'][h.act - 1] || h.act} · ${ACT_NAME[h.act] || ''}`, ''],
-          [h.victory ? 'Victory' : 'Defeat', ''],
+          [`${['I', 'II', 'III'][h.act - 1] || h.act} · ${ACT_NAME[h.act] || ''}`, 'sv-wrapc'],
+          [`${h.victory ? 'Victory' : 'Defeat'}${h.challenge && h.challenge !== 'standard' ? ` · ${cap(h.challenge)}` : ''}`, 'sv-wrapc'],
           [`${h.roomsCleared}/8`, 'sv-num'],
           [String(h.kills), 'sv-num'],
           [mmss(h.timeSec), 'sv-num sv-opt'],
-          [cap(h.challenge), 'sv-opt'],
           [day(h.date), 'sv-opt'],
         ];
         for (const [v, c] of cells) {

@@ -1351,10 +1351,17 @@ export function createBuildSystem({
   // counter, the heal/hit correlation memory, pending Echo recasts (plain
   // `{ due, skill, cast }` data, never closures) and the passive Reapply
   // clocks. The resolved-def cache is derived and simply invalidated.
+  // `assignments` is filled LAZILY by reads (socketsOf() creates an all-empty
+  // row the first time a view asks — the HUD and probes do), and it is only
+  // ever accessed by key. So the saved form is canonical: all-empty rows are
+  // omitted (socketsOf() recreates the identical row on demand) and rows are
+  // sorted by skill id — a render-side read can never change a state hash.
   function saveState() {
     return {
       bench,
-      assignments: [...assignments.entries()],
+      assignments: [...assignments.entries()]
+        .filter(([, v]) => Array.isArray(v) && v.some((r) => r))
+        .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)),
       resonance: [...resonance.entries()],
       suppress,
       lastHeal,

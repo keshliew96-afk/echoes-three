@@ -426,7 +426,9 @@ export function createApp({ params }) {
     // later (after Quit to Title) save.resetToFresh() rebuilds it in place, or
     // — before the save system exists — a fresh boot straight into camp.
     newGame({ seed } = {}) {
-      if (!freshWorld) {
+      // M2: an explicit seed (PLAN §3.1 newGame({ seed? })) always rebuilds
+      // the camp with it — also when Quit to Title already left a fresh camp.
+      if (!freshWorld || (seed !== undefined && seed !== null && service('save'))) {
         const save = service('save');
         if (save && typeof save.resetToFresh === 'function') {
           const r = save.resetToFresh({ seed: seed ?? randomSeed() });
