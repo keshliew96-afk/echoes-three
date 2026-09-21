@@ -12,9 +12,9 @@ export async function openAudio(url, { autoplay = true, width = 1600, height = 9
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const o = await openEchoes(browser, url, { width, height });
-      // Menu-skip boots tick the sim; title boots hold it at tick 0.
+      // Menu-skip boots tick the sim; title boots and ?freeze=1 hold it at tick 0.
       await o.page.waitForFunction(
-        () => window.__echoes && window.__echoes.audio && (window.__echoes.tick > 30 || (window.__echoes.app && window.__echoes.app.state === 'title')),
+        () => window.__echoes && window.__echoes.audio && (window.__echoes.tick > 30 || (window.__echoes.app && window.__echoes.app.state === 'title') || (window.__echoes.sim && window.__echoes.sim.frozen)),
         { timeout: 120000 }
       );
       return { browser, ...o };
