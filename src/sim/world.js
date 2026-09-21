@@ -786,10 +786,55 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   // replica flag (world.setReplica: a guest's world is never stepped and
   // refuses mutating cmd()s, PLAN §3.7). Single-player never passes either
   // and must stay bit-identical (PLAN gate G5b.8).
-  function step(tick, snapshot) {
+  //
+  // seatInputs (host of a network session only, sim/netseats.js):
+  //   { seats: { [1..3]: SeatInput }, reasons, player: 'human'|'ai', rewind }
+  // allySys.setSeatInputs() runs FIRST (controller changes emit
+  // `seat_control` on this tick), then the usual two phases: the human seats
+  // move in the ally continuous pass and resolve in their party_index slot;
+  // their E presses join the Healer's in ONE interactables pass (ascending
+  // party index — a same-tick double use activates once).
+  let replicaMode = false; // world.setReplica (M5b REPLICA): a guest never steps
+  let seatsActive = false;
+  const refusals = { steps: 0, cmds: 0, byName: {} };
+  // Commands a replica still answers: pure reads of the replicated state.
+  const REPLICA_READ_CMDS = new Set([
+    'skillState', 'buildView', 'buildPreview', 'kitVerdict', 'buildVerdict', 'buildState',
+    'allyState', 'reviveState', 'runState', 'wallet', 'draftPools', 'roomPlan',
+    'difficultyTable', 'statusOf', 'contentState', 'netSeats',
+  ]);
+  function step(tick, snapshot, seatInputs) {
+    if (replicaMode) {
+      refusals.steps += 1;
+      return;
+    }
     currentTick = tick;
+    if (seatInputs) {
+      seatsActive = true;
+      allySys.setSeatInputs(seatInputs, tick);
+    } else if (seatsActive) {
+      // The session ended: every seat returns to the §12 AI on this tick.
+      seatsActive = false;
+      allySys.setSeatInputs(null, tick);
+    }
     continuousPhase(snapshot);
     discretePhase(snapshot);
+  }
+  // Human seats' E presses resolve inside the interactables pass, together
+  // with the Healer's, sorted by party index (sim/interactables.js
+  // resolvePresses). With no human press this is the untouched original.
+  {
+    const rawInteractDiscrete = interactSys.discrete;
+    interactSys.discrete = (snap) => {
+      const extra = seatsActive ? allySys.humanInteracts() : null;
+      if (!extra || extra.length === 0) return rawInteractDiscrete(snap);
+      const own = snap && Array.isArray(snap.presses) ? snap.presses.find((p) => p.kind === 'interact') : null;
+      rawInteractDiscrete(own ? { ...snap, presses: snap.presses.filter((p) => p.kind !== 'interact') } : snap);
+      const list = own ? [{ actor: player, press: own }] : [];
+      for (const x of extra) list.push(x);
+      interactSys.resolvePresses(list);
+      return undefined;
+    };
   }
   // @gnt:M5b SEAT-INPUTS end
 
@@ -1120,6 +1165,12 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         }
         // @gnt:M4b CMD end
         // @gnt:M5b CMD begin (replica-mode refusal of mutating commands, seat control)
+        // Read-only network-seat probe (replica refusal itself wraps cmd in
+        // setReplica below, so it also covers the explicit cases above).
+        if (name === 'netSeats') {
+          return { controllers: allySys.controllers(), lag: allySys.lagStats(), replica: replicaMode, refusals: { ...refusals, byName: { ...refusals.byName } } };
+        }
+        if (name === 'lagCompensation') return allySys.setLagCompensation(args[0] !== false);
         // @gnt:M5b CMD end
         const ran = runSys.cmd(name, args);
         if (ran !== undefined) return ran;
@@ -1223,6 +1274,29 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     },
     // @gnt:M2 WORLD-STATE end
     // @gnt:M5b REPLICA begin (setReplica / replica flag, PLAN §3.7)
+    // A network guest's world is a REPLICA: never stepped (step() refuses),
+    // written only by snapshot application (registry.restore + loadState),
+    // and cmd() refuses every mutating command (returns null, counted) — so
+    // the camp scene's run_end -> seatParty -> cmd('teleport') is inert on a
+    // guest while its scene swap still happens. Read-only probes pass.
+    setReplica(on) {
+      replicaMode = !!on;
+      if (replicaMode) {
+        this.cmd = (name, ...args) => {
+          if (REPLICA_READ_CMDS.has(name)) return cmd(name, ...args);
+          refusals.cmds += 1;
+          refusals.byName[name] = (refusals.byName[name] || 0) + 1;
+          return null;
+        };
+      } else this.cmd = cmd;
+      return replicaMode;
+    },
+    get replica() {
+      return replicaMode;
+    },
+    replicaRefusals: () => ({ ...refusals, byName: { ...refusals.byName } }),
+    // Seat control surface for the net session driver (host).
+    seatControllers: () => allySys.controllers(),
     // @gnt:M5b REPLICA end
   };
 }

@@ -47,6 +47,9 @@ import { TICK_HZ } from '../core/constants.js';
 import { DENIAL } from '../core/intents.js';
 import { walkStep } from './movement.js';
 import { clampPlacement, countFinal, clampHalfAngle, createSkillBolts, fanDirections } from './shapes.js';
+// Network play (M5b, docs/gauntlet/PLAN.md §3.7): human-controlled ally seats
+// share one movement / dodge model with the guest's own-seat predictor.
+import { stepHumanMove, dodgeVelocity, aimDir, DOWNED_CRAWL_SPEED, HUMAN_DODGE } from './remote.js';
 
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -345,6 +348,7 @@ export function createAllySystem({
     rallyPoint = { x: player.x, z: player.z }; // captured THIS tick
     const ids = [];
     for (const a of allyList()) {
+      if (isHuman(a)) continue; // M5b: a human seat is not ordered around
       const ch = a.reviveTargetId != null ? channels.get(a.reviveTargetId) : null;
       if (ch) breakChannel(ch, 'rally', tick); // §12: rally interrupts an AI channel (reset)
       a.aiState = 'rally';
@@ -747,6 +751,7 @@ export function createAllySystem({
     for (let i = 0; i < list.length; i++) {
       const a = list[i];
       if (isChannelling(a)) continue; // a stationary reviver is never pushed (§10)
+      if (isHuman(a)) continue; // a human seat is placed by its player only (M5b)
       for (let j = 0; j < list.length; j++) {
         if (i === j) continue;
         const b = list[j];
@@ -809,6 +814,7 @@ export function createAllySystem({
       let bestD2 = Infinity;
       for (const a of allies) {
         if (a.hp <= 0 || a.aiState === 'rally') continue;
+        if (isHuman(a)) continue; // M5b: a human seat rescues by its own hold-E
         if (a.hp < a.maxHp * REVIVE.aiMinHpFrac) continue;
         const d2 = dist2(a.x, a.z, body.x, body.z);
         if (d2 < bestD2) {
@@ -845,6 +851,11 @@ export function createAllySystem({
   function holdSeats() {
     for (const a of allyList()) {
       ensureAllyFields(a);
+      if (isHuman(a)) {
+        // A human seat walks its own camp (M5b): no seat hold.
+        humanContinuous(a, getTick());
+        continue;
+      }
       a.moving = false;
       a.targetId = null;
       a.leashOut = false;
@@ -854,6 +865,435 @@ export function createAllySystem({
       if (distTo(a, seat.x, seat.z) > SEAT_EPS)
         a.moving = moveToward(a, seat.x, seat.z, ALLY_CLASSES[a.classId].moveSpeed * TICK_DT);
     }
+  }
+
+  // ------------------------------------------ human seats (network play) --
+  // M5b (docs/gauntlet/PLAN.md §3.7): in a network session the host's
+  // world.step(tick, snapshot, seatInputs) hands this system one input per
+  // HUMAN ally seat (sim/netseats.js). A human seat is steered and fired by
+  // that input instead of the §12 AI: 8-dir movement at the class speed, the
+  // Healer's dodge rules (swept dash, i-frames, 1.2 s cooldown), the four kit
+  // skills and the basic on the seat's AIM, the §10 hold-E revive channel and
+  // E interact presses (resolved with the Healer's, ascending party index).
+  // Every event it produces carries { seat, inputSeq } so the guest can
+  // reconcile its predicted presentation. Instant shapes (melee arc, nova)
+  // and projectile spawn aim resolve against hostile positions rewound to the
+  // input's viewTick (host lag compensation, net/lagcomp.js via
+  // seatInputs.rewind); damage applies to the live bodies.
+  // Single-player never calls setSeatInputs: every seat stays AI and every
+  // code path below is skipped (golden traces unchanged, gate G5b.8).
+  const DEFAULT_CONTROLLERS = Object.freeze(['human', 'ai', 'ai', 'ai']);
+  const controllers = [...DEFAULT_CONTROLLERS];
+  let seatFrames = [null, null, null, null];
+  let seatCtx = null;
+  const prevHumanBasic = [false, false, false, false];
+  const humanInteractList = [];
+  // Host-side lag-compensation counters (debug / net stats only, never sim state).
+  const lagStats = { selections: 0, rewound: 0, rewindTicks: 0, hits: 0, compHits: 0, aimAssists: 0, enabled: true };
+  const isHuman = (a) => !!a && a.partyIndex > 0 && seatFrames[a.partyIndex] !== null;
+  const allyByIndex = (i) => registry.all().find((e) => e.kind === 'ally' && e.partyIndex === i) || null;
+
+  function enterHuman(a, tick) {
+    ensureAllyFields(a);
+    if (a.reviveTargetId != null) {
+      const ch = channels.get(a.reviveTargetId);
+      if (ch && !ch.draining && ch.reviverId === a.id) breakChannel(ch, 'control', tick);
+      a.reviveTargetId = null;
+    }
+    a.controller = 'human';
+    a.aiState = 'engage';
+    a.targetId = null;
+    a.leashOut = false;
+    a.graceUntilTick = -1;
+    if (!(a.dashTicksLeft > 0)) a.dashTicksLeft = 0;
+    a.dashVel = a.dashVel && Number.isFinite(a.dashVel.x) ? a.dashVel : { x: 0, z: 0 };
+    if (!Number.isFinite(a.dodgeReadyTick)) a.dodgeReadyTick = 0;
+    if (!a.aim) a.aim = { x: a.x + (a.faceX ?? 0), z: a.z + (a.faceZ ?? 1) };
+    a.dashing = a.dashTicksLeft > 0;
+  }
+  function leaveHuman(a, tick) {
+    if (a.reviveTargetId != null) {
+      const ch = channels.get(a.reviveTargetId);
+      if (ch && !ch.draining && ch.reviverId === a.id) breakChannel(ch, 'control', tick);
+      a.reviveTargetId = null;
+    }
+    delete a.controller;
+    delete a.dashVel;
+    delete a.dashing;
+    delete a.aim;
+    delete a.dashTicksLeft;
+    delete a.dodgeReadyTick;
+    a.aiState = 'engage';
+    a.targetId = null;
+    a.moving = false;
+  }
+
+  // setSeatInputs(si, tick) — once per host tick BEFORE the phases (world.js
+  // M5b SEAT-INPUTS). `si` null ends network control (every seat AI again).
+  // A controller change emits `seat_control { partyIndex, controller,
+  // reason }` on that tick (PLAN §2.3).
+  function setSeatInputs(si, tick) {
+    seatCtx = si || null;
+    const next = [null, null, null, null];
+    if (si && si.seats) {
+      for (const k of Object.keys(si.seats)) {
+        const i = Number(k);
+        if (i >= 1 && i <= 3 && si.seats[k]) next[i] = si.seats[k];
+      }
+    }
+    const target = [...DEFAULT_CONTROLLERS];
+    if (si) {
+      target[0] = si.player === 'ai' ? 'ai' : 'human';
+      for (let i = 1; i <= 3; i++) target[i] = next[i] ? 'human' : 'ai';
+    }
+    for (let i = 0; i < 4; i++) {
+      if (controllers[i] === target[i]) continue;
+      controllers[i] = target[i];
+      const reason = (si && si.reasons && si.reasons[i]) || (target[i] === 'human' ? 'join' : 'drop');
+      const body = i === 0 ? player : allyByIndex(i);
+      if (body && i > 0) {
+        if (target[i] === 'human') enterHuman(body, tick);
+        else leaveHuman(body, tick);
+      }
+      prevHumanBasic[i] = false;
+      events.emit(tick, 'seat_control', { partyIndex: i, controller: target[i], reason, id: body ? body.id : null });
+    }
+    seatFrames = next;
+    humanInteractList.length = 0;
+  }
+
+  // Lag compensation (host): run `select` with every hostile the rewind map
+  // names moved to its position at the input's viewTick, then put them back.
+  // Selection only — damage lands on the live bodies afterwards.
+  function rewindFor(f) {
+    if (!lagStats.enabled || !seatCtx || typeof seatCtx.rewind !== 'function') return null;
+    const rw = seatCtx.rewind(f.viewTick);
+    return rw && rw.map && rw.map.size > 0 ? rw : null;
+  }
+  function rewound(f, select) {
+    lagStats.selections += 1;
+    const rw = rewindFor(f);
+    if (!rw) {
+      const out = select();
+      lagStats.hits += out.length;
+      return out;
+    }
+    lagStats.rewound += 1;
+    lagStats.rewindTicks += rw.ticks || 0;
+    const saved = [];
+    for (const [id, p] of rw.map) {
+      const e = registry.byId(id);
+      if (!e || e.faction !== 'hostile') continue;
+      saved.push([e, e.x, e.z]);
+      e.x = p.x;
+      e.z = p.z;
+    }
+    let out;
+    try {
+      out = select();
+    } finally {
+      for (const [e, x, z] of saved) {
+        e.x = x;
+        e.z = z;
+      }
+    }
+    // What the live positions alone would have hit (the rewind's share).
+    const liveIds = new Set(select().map((t) => t.id));
+    lagStats.hits += out.length;
+    for (const t of out) if (!liveIds.has(t.id)) lagStats.compHits += 1;
+    return out;
+  }
+  // Projectile spawn aim: a shot aimed within 0.75 u of where the guest SAW a
+  // hostile (rewound position) is re-aimed at that hostile's live body, with
+  // the same offset — what the guest aimed at is what the bolt flies to.
+  function compensatedAim(f, a, dir) {
+    const rw = rewindFor(f);
+    if (!rw || !f.aim) return dir;
+    let best = null;
+    let bestD2 = 0.75 * 0.75;
+    for (const [id, p] of rw.map) {
+      const e = registry.byId(id);
+      if (!e || e.faction !== 'hostile' || !e.hittable || !(e.hp > 0)) continue;
+      const d2 = dist2(p.x, p.z, f.aim.x, f.aim.z);
+      if (d2 < bestD2) {
+        bestD2 = d2;
+        best = [e, p];
+      }
+    }
+    if (!best) return dir;
+    const [e, p] = best;
+    const dx = e.x + (f.aim.x - p.x) - a.x;
+    const dz = e.z + (f.aim.z - p.z) - a.z;
+    const l = Math.hypot(dx, dz);
+    if (l < 1e-4) return dir;
+    lagStats.aimAssists += 1;
+    return { x: dx / l, z: dz / l };
+  }
+
+  function seatDeny(a, kind, reason, tag, tick) {
+    events.emit(tick, 'seat_denied', { id: a.id, partyIndex: a.partyIndex, kind, reason, ...tag });
+  }
+
+  // Continuous phase for one human body: one movement step per consumed
+  // input frame (sim/remote.js), dash i-frames, facing = aim.
+  function humanContinuous(a, tick) {
+    const f = seatFrames[a.partyIndex];
+    const S = ALLY_CLASSES[a.classId];
+    if (f.aim) a.aim = { x: f.aim.x, z: f.aim.z };
+    let moved = false;
+    let ended = false;
+    for (const mv of f.moves) {
+      const spd = a.hp > 0 ? S.moveSpeed * (combat.status ? combat.status.speedMul(a, tick) : 1) : DOWNED_CRAWL_SPEED;
+      const r = stepHumanMove(a, mv, spd);
+      if (r.moved) moved = true;
+      if (r.ended) ended = true;
+    }
+    a.dashing = a.dashTicksLeft > 0;
+    if (a.dashing) a.iframeUntilTick = tick + 1;
+    a.moving = moved;
+    if (a.hp > 0) {
+      const d = aimDir(a, a.aim, { x: a.faceX ?? 0, z: a.faceZ ?? 1 });
+      face(a, d.x, d.z);
+    }
+    // §5: after the dash, a still-held basic restarts its FULL interval.
+    if (ended && f.basic) a.nextBasicTick = tick + S.attackIntervalTicks;
+  }
+
+  function humanChannelling(a) {
+    const ch = a.reviveTargetId != null ? channels.get(a.reviveTargetId) : null;
+    return !!(ch && !ch.draining && ch.reviverId === a.id);
+  }
+
+  // Discrete resolution for one human seat, in its party_index slot of the
+  // §4 order: dodge -> kit skills ascending slot -> basic -> revive channel
+  // arbitration (a same-tick dodge beats a revive start, as for the Healer);
+  // an E press joins the interactables pass after the ally pass.
+  function resolveHuman(a, tick) {
+    const f = seatFrames[a.partyIndex];
+    const i = a.partyIndex;
+    const tag = { seat: i, inputSeq: f.seq };
+    const kinds = new Set(f.presses.map((p) => p.kind));
+    const S = ALLY_CLASSES[a.classId];
+    const kit = ALLY_KITS[a.classId];
+    const moving = f.moves.some((m) => m.x !== 0 || m.z !== 0);
+    const skillPressed = [...kinds].some((k) => k.startsWith('skill_'));
+    const freshBasic = f.basic && !prevHumanBasic[i];
+    if (a.hp > 0) {
+      const stunned = !!(combat.status && combat.status.isStunned(a, tick));
+      if (kinds.has('dodge')) {
+        if (stunned) seatDeny(a, 'dodge', DENIAL.prioritySuppressed, tag, tick);
+        else if (tick < (a.dodgeReadyTick ?? 0) || a.dashTicksLeft > 0) seatDeny(a, 'dodge', DENIAL.onCooldown, tag, tick);
+        else {
+          const mv = f.moves[f.moves.length - 1];
+          a.dashVel = dodgeVelocity(a, mv, a.aim, { x: a.faceX ?? 0, z: a.faceZ ?? 1 });
+          a.dashTicksLeft = HUMAN_DODGE.durationTicks;
+          a.dodgeReadyTick = tick + HUMAN_DODGE.cooldownTicks;
+          a.dashing = true;
+          a.iframeUntilTick = tick + 1;
+          const l = Math.hypot(a.dashVel.x, a.dashVel.z) || 1;
+          events.emit(tick, 'ally_dodge', { id: a.id, partyIndex: i, classId: a.classId, dx: r2(a.dashVel.x / l), dz: r2(a.dashVel.z / l), ...tag });
+        }
+      }
+      for (let slot = 0; slot < kit.length; slot++) {
+        const kind = `skill_${slot + 1}`;
+        if (!kinds.has(kind)) continue;
+        if (a.dashTicksLeft > 0 || stunned) {
+          seatDeny(a, kind, DENIAL.prioritySuppressed, tag, tick);
+          continue;
+        }
+        if (tick < a.cds[slot]) {
+          seatDeny(a, kind, DENIAL.onCooldown, tag, tick);
+          continue;
+        }
+        fireHumanSkill(a, kit[slot], slot, f, tick, tag);
+        a.cds[slot] = tick + Math.max(CD_FLOOR_TICKS, secTicks(kit[slot].cd));
+      }
+      for (const k of kinds) {
+        if (!k.startsWith('skill_')) continue;
+        if (Number(k.slice(6)) > kit.length) seatDeny(a, k, DENIAL.emptySlot, tag, tick);
+      }
+      if (f.basic && tick >= a.nextBasicTick && !stunned && (!humanChannelling(a) || freshBasic)) {
+        if (a.dashTicksLeft > 0) {
+          seatDeny(a, 'basic_attack', DENIAL.prioritySuppressed, tag, tick);
+          a.nextBasicTick = tick + S.attackIntervalTicks;
+        } else {
+          fireHumanBasic(a, S, f, tick, tag);
+          a.nextBasicTick = tick + S.attackIntervalTicks;
+        }
+      }
+    }
+    // §10 revive channel — the Healer's rules for a human reviver.
+    if (!f.revive) denialEdge.delete(a.id);
+    const dodging = a.dashTicksLeft > 0;
+    const ch = a.reviveTargetId != null ? channels.get(a.reviveTargetId) : null;
+    if (ch && !ch.draining && ch.reviverId === a.id) {
+      let reason = null;
+      if (a.hp <= 0) reason = 'reviver_downed';
+      else if (moving) reason = 'move';
+      else if (dodging) reason = 'dodge';
+      else if (skillPressed) reason = 'skill';
+      else if (freshBasic) reason = 'attack';
+      else if (!f.revive) reason = 'released';
+      if (reason) breakChannel(ch, reason, tick);
+    }
+    if (a.reviveTargetId == null && f.revive && a.hp > 0 && !moving && !dodging && !skillPressed) {
+      const body = nearestDownedNear(a, REVIVE.range);
+      if (body) startChannel(a, body, tick);
+    }
+    if (kinds.has('interact')) humanInteractList.push({ actor: a, press: { kind: 'interact' } });
+    prevHumanBasic[i] = f.basic;
+  }
+
+  function fireHumanBasic(a, S, f, tick, tag) {
+    const d = aimDir(a, f.aim, { x: a.faceX ?? 0, z: a.faceZ ?? 1 });
+    face(a, d.x, d.z);
+    a.castLeftTicks = Math.max(a.castLeftTicks, 12);
+    const ev = { id: a.id, partyIndex: a.partyIndex, classId: a.classId, shape: S.basicShape, dx: r2(d.x), dz: r2(d.z), ...tag };
+    if (S.basicShape === 'melee_arc') {
+      const targets = rewound(f, () => enemiesInArc(a, d.x, d.z, S.basicRange, S.basicHalfAngle, Infinity));
+      ev.reach = S.basicRange;
+      ev.halfAngle = S.basicHalfAngle;
+      ev.targets = targets.map((t) => t.id);
+      events.emit(tick, 'ally_basic', ev);
+      for (const t of targets) {
+        if (!registry.byId(t.id) || !(t.hp > 0)) continue;
+        const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
+        combat.applyDamage(t, S.basicPower, {
+          delivery: 'basic',
+          shape: 'melee_arc',
+          dirX: (t.x - a.x) / tl,
+          dirZ: (t.z - a.z) / tl,
+          attacker: a.id,
+          source: `${a.classId}_basic`,
+        });
+      }
+      return;
+    }
+    const dir = compensatedAim(f, a, d);
+    ev.dx = r2(dir.x);
+    ev.dz = r2(dir.z);
+    events.emit(tick, 'ally_basic', ev);
+    bolts.spawn(tick, {
+      x: a.x,
+      z: a.z,
+      dirX: dir.x,
+      dirZ: dir.z,
+      speed: S.basicSpeed,
+      range: S.basicRange,
+      radius: BOLT_RADIUS,
+      power: S.basicPower,
+      skill: `${a.classId}_basic`,
+      heal: false,
+      sourceId: a.id,
+    });
+  }
+
+  function fireHumanSkill(a, def, slot, f, tick, tag) {
+    const d = aimDir(a, f.aim, { x: a.faceX ?? 0, z: a.faceZ ?? 1 });
+    face(a, d.x, d.z);
+    a.castLeftTicks = Math.max(a.castLeftTicks, 24);
+    const cast = {
+      id: a.id,
+      partyIndex: a.partyIndex,
+      classId: a.classId,
+      skill: def.id,
+      slot,
+      shape: def.shape,
+      power: def.power,
+      cd: def.cd,
+      target: null,
+      x: r2(a.x),
+      z: r2(a.z),
+      dx: r2(d.x),
+      dz: r2(d.z),
+      ...tag,
+    };
+    const hitAll = (targets) => {
+      for (const t of targets) {
+        if (!registry.byId(t.id) || !(t.hp > 0)) continue;
+        const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
+        combat.applyDamage(t, def.power, {
+          delivery: 'skill',
+          shape: def.shape,
+          dirX: (t.x - a.x) / tl,
+          dirZ: (t.z - a.z) / tl,
+          attacker: a.id,
+          source: def.id,
+        });
+      }
+    };
+    if (def.shape === 'melee_arc') {
+      const targets = rewound(f, () => enemiesInArc(a, d.x, d.z, def.range, def.area, def.count));
+      cast.reach = def.range;
+      cast.halfAngle = def.area;
+      cast.targets = targets.map((t) => t.id);
+      events.emit(tick, 'ally_cast', cast);
+      hitAll(targets);
+      return;
+    }
+    if (def.shape === 'nova') {
+      const targets = rewound(f, () => enemiesInNova(a, def.area, def.count));
+      cast.radius = def.area;
+      cast.targets = targets.map((t) => t.id);
+      events.emit(tick, 'ally_cast', cast);
+      hitAll(targets);
+      return;
+    }
+    if (def.shape === 'projectile') {
+      const dir = compensatedAim(f, a, d);
+      cast.count = countFinal(def.count);
+      cast.dx = r2(dir.x);
+      cast.dz = r2(dir.z);
+      events.emit(tick, 'ally_cast', cast);
+      for (const fd of fanDirections(dir.x, dir.z, def.count)) {
+        bolts.spawn(tick, {
+          x: a.x,
+          z: a.z,
+          dirX: fd.x,
+          dirZ: fd.z,
+          speed: def.speed,
+          range: def.range,
+          radius: BOLT_RADIUS,
+          power: def.power,
+          skill: def.id,
+          heal: false,
+          sourceId: a.id,
+        });
+      }
+      return;
+    }
+    // ground_aoe at the aim point, clamped to the skill's placement range.
+    const pos = clampPlacement(a, f.aim ? { x: f.aim.x, z: f.aim.z } : { x: a.x + d.x, z: a.z + d.z }, def.range);
+    const zone = registry.spawn({
+      kind: 'azone',
+      skill: def.id,
+      classId: a.classId,
+      x: pos.x,
+      z: pos.z,
+      px: pos.x,
+      pz: pos.z,
+      radius: def.area,
+      power: def.power,
+      sourceId: a.id,
+      ticksDone: 0,
+      totalTicks: Math.round(secTicks(def.durationSec) / ZONE_CADENCE_TICKS),
+      nextTickTick: tick + ZONE_CADENCE_TICKS,
+    });
+    cast.zone = zone.id;
+    cast.zx = r2(pos.x);
+    cast.zz = r2(pos.z);
+    cast.radius = def.area;
+    events.emit(tick, 'ally_cast', cast);
+    events.emit(tick, 'azone_spawn', {
+      id: zone.id,
+      skill: def.id,
+      classId: a.classId,
+      x: r2(pos.x),
+      z: r2(pos.z),
+      radius: def.area,
+      totalTicks: zone.totalTicks,
+      ...tag,
+    });
   }
 
   // ---------------------------------------------------- continuous phase --
@@ -879,6 +1319,10 @@ export function createAllySystem({
     assignRescuer(tick);
 
     for (const a of allies) {
+      if (isHuman(a)) {
+        humanContinuous(a, tick); // M5b: the seat's input steers it (Downed: crawl)
+        continue;
+      }
       if (a.hp <= 0) {
         a.moving = false;
         continue; // §10: Downed characters cannot act
@@ -889,8 +1333,9 @@ export function createAllySystem({
     for (const a of allies) {
       // Rally and revive are explicit override verbs (§8/§12: "every ally
       // breaks engagement", "eagerness unconditional") — the leash governs
-      // combat pursuit, so those two states are exempt.
-      if (a.hp <= 0 || a.aiState === 'rally' || a.aiState === 'revive') continue;
+      // combat pursuit, so those two states are exempt. A human seat goes
+      // where its player walks it (M5b).
+      if (a.hp <= 0 || a.aiState === 'rally' || a.aiState === 'revive' || isHuman(a)) continue;
       clampLeash(a, anchor);
     }
 
@@ -925,7 +1370,8 @@ export function createAllySystem({
         breakChannel(ch, 'out_of_range', tick);
         continue;
       }
-      if (rev.kind === 'ally' && (rev.moving || rev.aiState !== 'revive')) {
+      // (A human reviver's breaks are its input's, resolved in resolveHuman.)
+      if (rev.kind === 'ally' && !isHuman(rev) && (rev.moving || rev.aiState !== 'revive')) {
         breakChannel(ch, rev.aiState === 'rally' ? 'rally' : 'move', tick);
         continue;
       }
@@ -978,6 +1424,10 @@ export function createAllySystem({
     // --- ally channel starts + kit resolutions, ascending party_index.
     const allies = allyList().sort((a, b) => a.partyIndex - b.partyIndex);
     for (const a of allies) {
+      if (isHuman(a)) {
+        resolveHuman(a, tick); // M5b: its input, in its party_index slot
+        continue;
+      }
       if (a.hp <= 0) continue;
       if (a.aiState === 'revive') {
         const body = a.reviveTargetId != null ? registry.byId(a.reviveTargetId) : null;
@@ -1413,7 +1863,7 @@ export function createAllySystem({
   // Save system (docs/gauntlet/PLAN.md §3.4, M2): every piece of private
   // party-command / revive / camp-seat state (the bodies are registry data).
   function saveState() {
-    return {
+    const out = {
       mark,
       rallyPoint,
       defeated,
@@ -1425,6 +1875,12 @@ export function createAllySystem({
       prevBasicHeld,
       campSeats,
     };
+    // M5b: network seat control rides along ONLY while some seat is not at
+    // its single-player default (a saved single-player tree is unchanged).
+    if (controllers.some((c, i) => c !== DEFAULT_CONTROLLERS[i]) || prevHumanBasic.some(Boolean)) {
+      out.seats = { controllers: [...controllers], prevBasic: [...prevHumanBasic] };
+    }
+    return out;
   }
   function loadState(d) {
     if (!d || !Array.isArray(d.repeats)) throw new TypeError('allies.loadState: missing repeats');
@@ -1440,6 +1896,17 @@ export function createAllySystem({
     carriedBasic = !!d.carriedBasic;
     prevBasicHeld = !!d.prevBasicHeld;
     campSeats = d.campSeats ?? null;
+    // M5b: seat controllers (absent = the single-player defaults). Per-tick
+    // seat inputs are external and never saved: after a load every seat is
+    // driven by whatever the next world.step hands in (a network save loads
+    // as single-player with AI in every ally seat, PLAN §3.4).
+    const sc = d.seats && Array.isArray(d.seats.controllers) ? d.seats : null;
+    for (let i = 0; i < 4; i++) {
+      controllers[i] = sc && (sc.controllers[i] === 'human' || sc.controllers[i] === 'ai') ? sc.controllers[i] : DEFAULT_CONTROLLERS[i];
+      prevHumanBasic[i] = !!(sc && sc.prevBasic && sc.prevBasic[i]);
+    }
+    seatFrames = [null, null, null, null];
+    humanInteractList.length = 0;
   }
 
   return {
@@ -1460,5 +1927,17 @@ export function createAllySystem({
     basicSuppressed,
     ALLY_CLASSES,
     ALLY_KITS,
+    // M5b network seats (host): per-tick seat inputs, the E presses they
+    // made this tick (resolved with the Healer's in the interactables pass),
+    // the seat controllers and the lag-compensation counters.
+    setSeatInputs,
+    humanInteracts: () => humanInteractList,
+    controllers: () => [...controllers],
+    isHumanSeat: (i) => seatFrames[i] != null,
+    lagStats: () => ({ ...lagStats }),
+    setLagCompensation(on) {
+      lagStats.enabled = !!on;
+      return lagStats.enabled;
+    },
   };
 }
