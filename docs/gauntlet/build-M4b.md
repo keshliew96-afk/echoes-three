@@ -1,4 +1,5 @@
-STATUS: PARTIAL
+STATUS: COMPLETE
+VERDICT: M4b world content complete — G4b.1–G4b.8 self-verified on the running game (simprobe 85/85, goldens + legacy traces unchanged, 0 frames > 100 ms in waves of all 3 acts, biome frames pass the analyzer bars, cues calibrated); core loop -> reward, smoke 0 PAGEERROR at v0.5.22.
 M4b builder checkpoint (world half of content extension). Steps appended below as completed.
 
 ## Decisions (PLAN silent -> best-in-class choice)
@@ -40,3 +41,8 @@ M4b builder checkpoint (world half of content extension). Steps appended below a
 ### Step 4 — content cue calibration (committed v0.5.21)
 - tools/gntM4b-cuecal.mjs: every m4b_ cue's design peak measured with M3's `measureCue` (max of 3 takes, as gntM3-calibrate does) and written as its calDb (`@cal` block in src/render/hazards/cues.js); m4b_blast levelDb -6 -> -7 so take-to-take variance can never cross the PLAN §3.5 -6 dBFS SFX ceiling.
 - Evidence: `--verify` PASS — 17/17 cues within 2 dB of their levelDb (max of 3; roll -0.2, thud 0.3, lob 0.1, splash -1.2, swoop 0.1, tink 0, dig -1.5, erupt 1.6, spore -1.0, surge -0.9, rock 0.1, vent 0.7, fuse -0.8, blast -0.1, bell 0.1, lever 0.1, drink 0), loudest peak -7.11 dBFS.
+### Step 5 — docs + final regression (committed v0.5.22)
+- docs/TESTING.md M4b subsection (setup commands, probes, URLs, dressing builder, tool list); PROGRESS.md row G7.
+- G4b.7 self-score on docs/REFERENCE_BAR.md (critic to confirm): Sunken Mill frame captures/gntM4b-run-a2.png (real Act II run, Drowned Granary, a wave of 4 — quillback x2, boar x2 — 3 of them in frame, millrace mid-telegraph + quillback lane, party + heal numbers) — 1 dead ground 2 (FLAT 1.27%), 2 layered light 2 (teal ambient + 5 gold fire pools + halos, violet tell), 3 silhouettes 2, 4 props 2 (11 types at the edges), 5 VFX 2 (lane chevrons, bolt trails, numbers), 6 colour 2 (danger only on telegraphs, idle frame 7 px), 7 post 2, 8 grounding 2, 9 UI 2, 10 motion 2 (charge wind-up, cast) = 20. Ashen Barrow frame captures/gntM4b-run-a3-s3.png (Act III seed 3, Moonwell: a wave of 5 — moth x2, mole x2, mantis — gravefire vents mid-telegraph + moth lane) — 2/2/2/2/1 (no kill decal in frame)/2/2/2/2/1 (moles read as mounds while burrowed) = 18. No zero.
+- Legacy traces: `node tools/gntM4a-legacytrace.mjs --slots 4` kill_all d1eff38b03f581aa, defend 554cd9c41db19975 (the v0.5.0 goldens). M4a act runner seeds 1-2 all acts: 0 page errors, 0 stuck (balance bands are M4a's, judged over 5 seeds).
+- Final: smoke exit 0 / 0 PAGEERROR; core loop -> reward room 1, 0 PAGEERROR.

@@ -388,3 +388,53 @@ table, rolled plans). `node tools/gntM4a-drive.mjs <scenario> [--url U] [--w W
 (denial + cooldown grammar on tiles 3–8), `grey` (§15.5 display for the new
 nodes), `acts` (G4a.4: layouts / hazards / interactables / music theme / boss
 adds per act), `picker` (G4a.11), `challenge`, `pages` (G4a.12).
+
+### M4b — enemies, hazards, interactables, layouts, biomes (Gauntlet W2, owner M4b)
+
+**Deterministic setups (PLAN §6.4).** `cmd('spawn', etype, x, z, { elite,
+hpMul })` for every archetype (boar, mantis, quillback, toad, moth, ram, mole);
+`cmd('burrow', id, bool)`; `cmd('spawnHazard', htype, params)` /
+`cmd('spawnInteractable', itype, params)`; `cmd('hazardPhase', id,
+'idle' | 'telegraph' | 'active' | 'cooldown')`; `cmd('armKeg', id)`;
+`cmd('interactPress', partyIndex)`; `cmd('setLayout', n)` / `cmd('clearLayout')`
+(placements of data/layouts.js layout n); `cmd('contentState')`. Probes on
+`__echoes.content`: `hazards()`, `interactables()`, `layout()`, `render()`
+(hazard / asset layer counts + prompt + cue count), `prompt()`, `enemyfx()`
+(archetype telegraphs, globs, slicks, wake). In the camp scene
+`cmd('arenaLayout')` → the dressing builder (`layoutId, biome, built, queued,
+building, syncBuilds, slices, maxSliceMs, worker, failed`) and
+`cmd('applyLayout', n)`; in `?scene=arena` the same via
+`__arenaProbe.layoutState()` / `applyLayout(n)`.
+
+**URLs.** `?layout=N` (1–9) = layout N's dressing AND its placements in the
+`?room=` harness / `?scene=arena`; `?variant=N` = dressing only (no
+placements, legacy goldens unchanged). `?act=2|3` with `?menu=0` also makes
+the camp pre-build that act's dressings first.
+
+**Dressings.** One per layout (env/biomes/{wood,mill,barrow}.js), swapped on
+the run's `layout_enter` under the room fade. Floors paint off-thread in
+env/biomes/paint-worker.js (byte-identical to a main-thread paint:
+`node tools/gntM4b-groundhash.mjs 1,2,3 [--worker]` must print the Act-I
+hashes `2fe56349e8ca1052/9a63967c8cf4e1eb`, `fc901236d5b9c5ea/57c079ffdd7eb997`,
+`5cdb746f53462607/19cb00393d941294`, `streamInSync: true`). Outside a run the
+builder pre-builds every layout; inside a run only the run's act; never in
+live combat.
+
+**M4b probes.** `node tools/gntM4b-simprobe.mjs` (Node; every §23.5–23.7
+number, governor, spacing, assets, blockers, canonicalJSON mid-wave in
+layouts 1/4/7; 85 checks). `node tools/gntM4b-layoutcheck.mjs` (placement
+rules vs spawns / Waystone / party spots / dressing anchors).
+`node tools/gntM4b-drive.mjs <scenario>` (GPU harness, captures/gntM4b-*):
+`zoo`, `sheet` (silhouettes + elites), `tele` / `shapedbg` (Ember shapes),
+`layout --layout N` (placements idle + forced telegraphs), `biome --variant N
+[--at x,z] [--hide pools|glows|lights]` (dressing frame + draw calls),
+`run --act N [--seed S] [--at x,z] [--top kinds] [--cold]` (real run: camp
+pre-build, startRun, wave with a new archetype, a hazard forced into its
+telegraph during a live enemy telegraph, RMB + 1 + 2, shot — the G4b.7 frame).
+`node tools/gntM4b-perf.mjs --acts 1,2,3 --secs 64` (G4b.5: autopilot real
+time; combat fps, frames > 100 ms after warm-up, worst frame per room swap,
+Long-Animation-Frame list); `node tools/gntM4b-prof.mjs --act N --from s --to s`
+(CPU profile attributed per long frame). `node tools/gntM4b-cuecal.mjs
+[--write] [--verify]` (content cue calDb; verify = 17 cues within 2 dB of
+levelDb, none above −6 dBFS). Helpers: `gntM4b-buildcost.mjs`,
+`gntM4b-slices.mjs`, `gntM4b-groundpng.mjs`, `gntM4b-crop.mjs`.
