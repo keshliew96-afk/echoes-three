@@ -31,6 +31,8 @@ const HEAL_BELOW = 0.7; // cast heals when the neediest member is below 70%
 const BASIC_RANGE = 5.0; // §7 Healer basic range
 const DODGE_LEAD_TICKS = 30; // dodge a covering telegraph this close to resolving
 const REVIVE_SAFE_U = 2.0; // no hostile this close to the body before we channel
+const DESPERATE_START = 0.6; // with <= 1 ally up: start a channel under threat at >= 60% HP
+const DESPERATE_HOLD = 0.3; //   ...and hold it (no dodge) while HP stays above 30%
 const DEFAULT_CFG = Object.freeze({ seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto' });
 
 const d2 = (ax, az, bx, bz) => (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
@@ -125,6 +127,20 @@ export function createAutopilot({ registry, player, run, skills, build }) {
     if (Math.abs(perp) > zn.w) return null;
     const s = perp >= 0 ? 1 : -1;
     return { x: -dz * s, z: dx * s };
+  }
+
+  // A foe whose projectile guard covers (x, z) — the Barrow Ram's horn
+  // guard (PLAN §3.6 (c)): bolts fired from there are blocked, so the bot
+  // targets someone else and circles to the flank (+8° margin).
+  function guardedAgainst(e, x, z) {
+    const g = e.guard;
+    if (!g || !g.active) return false;
+    const dx = x - e.x;
+    const dz = z - e.z;
+    const l = Math.hypot(dx, dz) || 1;
+    const gl = Math.hypot(g.dirX ?? 0, g.dirZ ?? 0) || 1;
+    const dot = (dx / l) * ((g.dirX ?? 0) / gl) + (dz / l) * ((g.dirZ ?? 0) / gl);
+    return dot >= Math.cos((((g.halfArcDeg ?? 55) + 8) * Math.PI) / 180);
   }
 
   function norm(x, z) {
@@ -223,20 +239,40 @@ export function createAutopilot({ registry, player, run, skills, build }) {
         if (!inside || zn.left < inside.zn.left) inside = { zn, esc };
       }
     }
-    if (inside && inside.zn.left <= DODGE_LEAD_TICKS && tick >= player.dodgeReadyTick && !(player.dashTicksLeft > 0)) {
+    // A desperate revive (most of the party down) holds through a hit it can
+    // afford: dodging breaks the channel, and a revive is worth one slam.
+    const upNow = partyAll().filter((m) => m.id !== player.id && m.hp > 0).length;
+    const holdChannel = player.reviveTargetId != null && upNow <= 1 && player.hp > player.maxHp * DESPERATE_HOLD;
+    if (inside && !holdChannel && inside.zn.left <= DODGE_LEAD_TICKS && tick >= player.dodgeReadyTick && !(player.dashTicksLeft > 0)) {
       s.move = inside.esc;
       s.presses.push({ kind: 'dodge' });
       stats.dodges += 1;
       return s;
     }
 
-    // 2. Revive a Downed ally when nothing hostile is on it.
+    // 2. Revive a Downed ally when nothing hostile is on it — or, once most
+    // of the party is down, whenever the Healer can afford to take a hit or
+    // two (a channel is NOT broken by damage, §10): a lone Healer cannot win
+    // a room of guard-horned Rams with bolts, the revived party can.
     const downed = party.filter((m) => m.id !== player.id && !(m.hp > 0));
-    const body = nearest(downed, player.x, player.z);
-    if (body && !inside) {
+    // Stay on the body already being channelled (the nearest one can change
+    // as the Downed crawl — switching would break a half-done channel).
+    const chan = player.reviveTargetId != null ? downed.find((m) => m.id === player.reviveTargetId) : null;
+    const body = chan ? { e: chan, d: Math.hypot(chan.x - player.x, chan.z - player.z) } : nearest(downed, player.x, player.z);
+    const upAllies = party.filter((m) => m.id !== player.id && m.hp > 0).length;
+    // Start a desperate channel only with HP to spare (heal first below it);
+    // keep one going down to a lower floor (hysteresis — a started channel is
+    // worth finishing, a restarted one costs 5 s again).
+    const channelingNow = player.reviveTargetId != null;
+    const desperate = upAllies <= 1 && player.hp >= player.maxHp * (channelingNow ? DESPERATE_HOLD : DESPERATE_START);
+    if (body && (!inside || desperate)) {
       const threat = nearest(foes, body.e.x, body.e.z);
-      if (!threat || threat.d > REVIVE_SAFE_U) {
-        if (body.d > 0.45) s.move = norm(body.e.x - player.x, body.e.z - player.z);
+      if (!threat || threat.d > REVIVE_SAFE_U || desperate) {
+        // Hysteresis: approach to 0.45 u, then hold the channel while the
+        // body stays inside the 0.6 u revive reach (§10) — any step would
+        // break it (a crawling body drifts a hair between ticks).
+        const channeling = player.reviveTargetId === body.e.id;
+        if (body.d > (channeling ? 0.58 : 0.45)) s.move = norm(body.e.x - player.x, body.e.z - player.z);
         else s.reviveHeld = true;
         return s;
       }
@@ -251,13 +287,38 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       cx = allies.reduce((a, m) => a + m.x, 0) / allies.length;
       cz = allies.reduce((a, m) => a + m.z, 0) / allies.length;
     }
+    // Target: the nearest foe our bolts can actually hit; a guard-horned foe
+    // facing us only when nothing else is in reach.
+    let target = null;
+    for (const f of foes.map((e) => ({ e, d: Math.hypot(e.x - player.x, e.z - player.z) })).sort((a, b) => a.d - b.d || a.e.id - b.e.id)) {
+      if (f.d > BASIC_RANGE + 1) break;
+      if (!guardedAgainst(f.e, player.x, player.z)) {
+        target = f;
+        break;
+      }
+    }
+    const flank = !target && nearFoe && guardedAgainst(nearFoe.e, player.x, player.z) ? nearFoe : null;
+    if (!target) target = nearFoe;
     if (inside) s.move = inside.esc;
-    else if (Math.hypot(cx - player.x, cz - player.z) > FOLLOW_U) s.move = norm(cx - player.x, cz - player.z);
+    else if (flank) {
+      // Circle the guarded foe at ~1.6 u: tangential speed 2.4 u/s at that
+      // radius (~86°/s) plus the slam's lock is enough to slip off its horns.
+      const rx = player.x - flank.e.x;
+      const rz = player.z - flank.e.z;
+      const r = Math.hypot(rx, rz) || 1;
+      const side = flank.e.id % 2 === 0 ? 1 : -1;
+      const tx = (-rz / r) * side;
+      const tz = (rx / r) * side;
+      const pull = Math.max(-1, Math.min(1, (1.6 - r) * 1.2));
+      s.move = norm(tx + (rx / r) * pull, tz + (rz / r) * pull);
+    } else if (Math.hypot(cx - player.x, cz - player.z) > FOLLOW_U) s.move = norm(cx - player.x, cz - player.z);
     else if (nearFoe && nearFoe.d < 1.4) s.move = norm(player.x - nearFoe.e.x, player.z - nearFoe.e.z);
 
-    // 4. Casts. The neediest member (self included) below 70% gets the heals;
-    // otherwise the nearest enemy gets the damage. One aim per tick, so only
-    // the skills consistent with that aim are pressed.
+    // 4. Casts. The neediest member (self included) below 70% gets the heals.
+    // Direct and nova heals need no aim, so they go out whatever we aim at;
+    // aimed heals (bolt, arc, zone) take the aim only when the neediest is an
+    // ally (a heal bolt cannot land on its own caster). Whenever the aim is
+    // free it goes to the target: damage skills + the basic attack.
     let needy = null;
     for (const m of party) {
       if (!(m.hp > 0)) continue;
@@ -265,32 +326,42 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       if (!needy || f < needy.f || (f === needy.f && m.partyIndex < needy.m.partyIndex)) needy = { m, f };
     }
     const view = skills.slotsView();
-    const healing = needy && needy.f < HEAL_BELOW;
+    const healing = !!(needy && needy.f < HEAL_BELOW);
+    const aimHeals = healing && needy.m.id !== player.id;
+    const pressed = new Set();
+    const press = (i) => {
+      if (pressed.has(i)) return;
+      pressed.add(i);
+      s.presses.push({ kind: `skill_${i + 1}`, slot: i });
+      stats.casts += 1;
+    };
+    const nSlots = Math.min(SKILL_SLOTS, view.length);
     if (healing) {
-      s.aim = { x: needy.m.x, z: needy.m.z };
-      for (let i = 0; i < Math.min(SKILL_SLOTS, view.length); i++) {
+      for (let i = 0; i < nSlots; i++) {
         const sl = view[i];
         if (!sl || sl.passive || sl.remainingTicks > 0) continue;
         const def = SKILLS[sl.id];
         if (def.archetype !== 'heal') continue;
-        s.presses.push({ kind: `skill_${i + 1}`, slot: i });
-        stats.casts += 1;
+        const aimFree = def.shape === 'direct' || def.shape === 'nova';
+        if (aimFree || aimHeals) press(i);
       }
-    } else if (nearFoe) {
-      s.aim = { x: nearFoe.e.x, z: nearFoe.e.z };
-      for (let i = 0; i < Math.min(SKILL_SLOTS, view.length); i++) {
+      if (aimHeals) s.aim = { x: needy.m.x, z: needy.m.z };
+    }
+    if (!aimHeals && target) {
+      s.aim = { x: target.e.x, z: target.e.z };
+      for (let i = 0; i < nSlots; i++) {
         const sl = view[i];
         if (!sl || sl.passive || sl.remainingTicks > 0) continue;
         const def = SKILLS[sl.id];
         if (def.archetype !== 'damage') continue;
+        // Novas measure from us to the NEAREST foe; aimed shapes to the target.
         const reach = def.shape === 'nova' ? def.area + 0.3 : (def.range ?? BASIC_RANGE);
-        if (nearFoe.d > reach) continue;
-        s.presses.push({ kind: `skill_${i + 1}`, slot: i });
-        stats.casts += 1;
+        if ((def.shape === 'nova' ? nearFoe.d : target.d) > reach) continue;
+        press(i);
       }
+      // 5. Basic attack the target in range (only while aimed at it).
+      if (target.d <= BASIC_RANGE) s.basicAttackHeld = true;
     }
-    // 5. Basic attack the nearest enemy in range (only while aimed at one).
-    if (!healing && nearFoe && nearFoe.d <= BASIC_RANGE) s.basicAttackHeld = true;
     return s;
   }
 

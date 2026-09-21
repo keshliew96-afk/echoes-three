@@ -45,7 +45,7 @@
 //     `layout_enter { room, act, layoutId, biome }` event right before
 //     `room_enter` for presentation (contract (a)).
 //   - wave rooms are planned with the act's roster and the §4.2 numbers; the
-//     boss room scales the Stag (HP 1800·T, damage) and uses the act's adds.
+//     boss room scales the Stag (HP 2400·T, damage) and its act-tier adds.
 //   - the status tracker (sim/status.js) announces status_apply / expire at
 //     the end of every tick; the autopilot (sim/autopilot.js) is created here.
 import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
@@ -256,6 +256,8 @@ export function createRunSystem({
       waystoneHp: mode === 'defend' ? diff.waystoneHp : null,
       bossHp: mode === 'boss' ? diff.bossHp : null,
       bossDmgMul: mode === 'boss' ? diff.bossDmgMul : null,
+      addHpMul: mode === 'boss' ? diff.addHpMul : null,
+      addDmgMul: mode === 'boss' ? diff.addDmgMul : null,
     };
     if (typeof roomHooks.enter === 'function') roomHooks.enter({ ...layout }, tick);
     events.emit(tick, 'layout_enter', { room: n, act, layoutId, biome: level.biome, mode });
@@ -276,16 +278,15 @@ export function createRunSystem({
     } else if (mode === 'boss') {
       phase = 'combat';
       enemies.reset();
-      // §23.1/§23.2: the Stag scales with the act (HP 1800·T, damage
-      // × 1 + 0.5(T − 1)) and calls the act's own add phases, spawned at
-      // room 6's ramp.
-      const addDiff = difficulty(act, 6, challenge);
+      // §23.1/§23.2: the Stag scales with the act (HP 2400·T after the
+      // M4a tuning note, damage × 1 + 0.5(T − 1)) and calls the act's own
+      // add phases, which scale with the act tier alone (data/difficulty.js).
       boss.start(0, -4.2, {
         hp: diff.bossHp,
         dmgMul: diff.bossDmgMul,
         adds: level.bossAdds.map(([et, k]) => [et, k]),
-        addHpMul: addDiff.hpMul,
-        addDmgMul: addDiff.dmgMul,
+        addHpMul: diff.addHpMul,
+        addDmgMul: diff.addDmgMul,
       });
       // The ally block hangs its room-start hygiene off this event (channels,
       // mark, rally, AI state) exactly as it does for wave rooms.

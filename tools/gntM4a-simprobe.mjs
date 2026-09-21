@@ -686,14 +686,16 @@ run('nodes', () => {
 
 // ============================================================== G4a.5 ===
 run('curve', () => {
-  const T = [null, 1.0, 1.35, 1.75];
+  // The retuned §4.2 table (BUILD_BRIEF §23.2 tuning note 2026-09-22):
+  // T 1.00 / 1.15 / 1.60, R = 1 + 0.12 (room − 1).
+  const T = [null, 1.0, 1.15, 1.6];
   let worst = 0;
   const rows = [];
   for (let act = 1; act <= 3; act++) {
     let prev = null;
     for (let room = 1; room <= 6; room++) {
       const d = difficulty(act, room, 'standard');
-      const R = 1 + 0.08 * (room - 1);
+      const R = 1 + 0.12 * (room - 1);
       const want = { hpMul: T[act] * R, dmgMul: 1 + 0.5 * (T[act] * R - 1), budget: 4 * T[act] * R };
       for (const k of Object.keys(want)) worst = Math.max(worst, Math.abs(d[k] - want[k]) / want[k]);
       if (prev) {

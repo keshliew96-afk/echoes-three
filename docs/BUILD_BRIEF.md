@@ -1161,6 +1161,43 @@ Resulting table (hpMul / dmgMul / budget):
 | 5 | 1.32 / 1.16 / 5.28 | 1.782 / 1.391 / 7.13 | 2.31 / 1.655 / 9.24 |
 | 6 | 1.40 / 1.20 / 5.60 | 1.890 / 1.445 / 7.56 | 2.45 / 1.725 / 9.80 |
 
+**Tuning note (M4a, 2026-09-22) — the constants above were retuned; this
+table is now binding.** Measured on the deterministic default-build autopilot
+(`tools/gnt-M4a-actrun.mjs`, seeds 1–5 per act, in page and headless alike),
+the v0.5.1 constants failed the felt-escalation band below: an 8-slot build
+outgrew a 1.4× room ramp, so Act I party damage did not rise across rooms
+(Spearman ρ 0.14), and Act III (T 1.75, adds at room 6's ramp) won 0–1 of 5
+runs, several ending in boss-room stalemates. Only constants moved — the
+formula's shape is unchanged:
+
+| constant | v0.5.1 | retuned |
+|---|---|---|
+| act tier T (I / II / III) | 1.00 / 1.35 / 1.75 | **1.00 / 1.15 / 1.60** |
+| room slope (R = 1 + slope·(room − 1)) | 0.08 | **0.12** |
+| defend budget scale | × 0.8 | **× 1.25** |
+| Stag HP | 1800·T | **2400·T** (2400 / 2760 / 3840) |
+| Stag adds | room 6's ramp | **the act tier alone** (hp × T, dmg × 1 + 0.5(T − 1)) — the Stag and its adds scale together |
+
+Everything else holds (elite chances, wave interval, Waystone 150·√T = 150 /
+161 / 190, challenge multipliers, threat costs, the wave fill). Retuned table
+(hpMul / dmgMul / kill_all budget):
+
+| room | Act I | Act II | Act III |
+|---|---|---|---|
+| 1 | 1 / 1 / 4 | 1.15 / 1.075 / 4.6 | 1.6 / 1.3 / 6.4 |
+| 2 | 1.12 / 1.06 / 4.48 | 1.288 / 1.144 / 5.152 | 1.792 / 1.396 / 7.168 |
+| 3 | 1.24 / 1.12 / 4.96 | 1.426 / 1.213 / 5.704 | 1.984 / 1.492 / 7.936 |
+| 4 | 1.36 / 1.18 / 5.44 | 1.564 / 1.282 / 6.256 | 2.176 / 1.588 / 8.704 |
+| 5 | 1.48 / 1.24 / 5.92 | 1.702 / 1.351 / 6.808 | 2.368 / 1.684 / 9.472 |
+| 6 | 1.6 / 1.3 / 6.4 | 1.84 / 1.42 / 7.36 | 2.56 / 1.78 / 10.24 |
+
+Measured band after the retune (in page, seeds 1–5): victories 5/5 · 5/5 ·
+3/5; no room stuck past 180 s; ρ (time / damage) 0.89/0.89 · 0.81/0.83 ·
+0.94/0.94; defend rooms above their kill_all neighbours on time and damage,
+the Stag room above the late kill_all rooms on damage; per-room damage
+medians I < II < III at every room; no combat-room median above 120 s
+(evidence: docs/gauntlet/build-M4a.md).
+
 **Felt escalation (v0.5.1).** The table is necessary, not sufficient: in play,
 time-to-clear and party damage taken per room must rise across rooms 1–6 of
 each act (defend rooms and the Stag above their neighbours) and from act to
