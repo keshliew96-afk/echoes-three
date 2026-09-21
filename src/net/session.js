@@ -42,6 +42,7 @@ import { seatLabel, seatControlText } from './seats.js';
 import { createCosmetics } from '../ui/net/cosmetics.js';
 import { createNetHud } from '../ui/net/hud.js';
 import { validateServerUrl } from './lobbyClient.js';
+import { sanitizeName } from './protocol/messages.js';
 
 const now = () => performance.now();
 const GUEST_PRESSES = new Set(['dodge', 'skill_1', 'skill_2', 'skill_3', 'skill_4', 'skill_5', 'skill_6', 'skill_7', 'skill_8', 'interact']);
@@ -82,9 +83,8 @@ export function createNetSession(ctx) {
   settings.register('net.playerName', {
     default: `Mouse${String(Math.floor(Math.random() * 900) + 100)}`,
     validate: (v) => {
-      if (typeof v !== 'string') return undefined;
-      const s = v.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 16);
-      return s.length ? s : undefined;
+      const n = typeof v === 'string' ? sanitizeName(v, '') : '';
+      return n ? n : undefined;
     },
   });
   settings.register('net.serverUrl', {

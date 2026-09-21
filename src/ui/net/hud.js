@@ -1,7 +1,8 @@
 // In-game network HUD (docs/gauntlet/PLAN.md §3.7 UI states; z band 60–79,
 // CSS prefix nt-). Owner: M5b.
 //
-//   - a connection chip (top-left, under nothing else): role, room code,
+//   - a connection chip (bottom-left, clear of the command bar and the room
+//     banner): role, room code,
 //     players, ping — amber dot online, grey reconnecting;
 //   - a centre banner for the states a player must understand at once:
 //     "Joining ABCDE…" until the first snapshot, "Reconnecting… (attempt n)",
@@ -16,15 +17,15 @@ import { seatLabel } from '../../net/seats.js';
 const CSS = `
 #nt-hud { position: fixed; inset: 0; pointer-events: none; z-index: 64; font-family: "Nunito", "Trebuchet MS", system-ui, sans-serif; }
 #nt-hud.nt-off { display: none; }
-.nt-chip { position: absolute; left: 14px; top: 12px; display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 10px;
+.nt-chip { position: absolute; left: 14px; bottom: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 10px;
   background: ${P.voidCharcoal}E6; color: ${P.parchment}; border: 1px solid ${P.warmGrey}66; border-radius: 10px;
   font-size: 15px; font-weight: 700; letter-spacing: 0.02em; box-shadow: 0 2px 10px #0006; }
 .nt-dot { width: 9px; height: 9px; border-radius: 50%; background: ${P.hearthAmber}; box-shadow: 0 0 6px ${P.hearthAmber}AA; }
 .nt-chip.nt-warn .nt-dot { background: ${P.bone}; box-shadow: none; animation: nt-blink 0.9s steps(2) infinite; }
 .nt-chip .nt-sub { color: ${P.bone}; font-weight: 600; }
-.nt-detail { position: absolute; left: 14px; top: 46px; padding: 3px 10px; font-size: 13px; color: ${P.bone};
+.nt-detail { position: absolute; left: 14px; bottom: 14px; padding: 3px 10px; font-size: 13px; color: ${P.bone};
   background: ${P.voidCharcoal}CC; border-radius: 8px; font-variant-numeric: tabular-nums; }
-.nt-notes { position: absolute; left: 14px; top: 76px; display: flex; flex-direction: column; gap: 6px; max-width: min(460px, 60vw); }
+.nt-notes { position: absolute; left: 14px; bottom: 92px; display: flex; flex-direction: column-reverse; gap: 6px; max-width: min(420px, 28vw); }
 .nt-note { padding: 6px 12px; font-size: 15px; color: ${P.parchment}; background: ${P.voidCharcoal}E0; border-left: 3px solid ${P.hearthAmber};
   border-radius: 6px; transition: opacity 0.4s; }
 .nt-note.nt-fade { opacity: 0; }

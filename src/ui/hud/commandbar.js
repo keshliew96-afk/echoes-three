@@ -714,7 +714,9 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   if (typeof document !== 'undefined' && !document.getElementById('nt-bar-style')) {
     const st = document.createElement('style');
     st.id = 'nt-bar-style';
-    st.textContent = `.hud-port.nt-self { outline: 2px solid ${PALETTE.hearthAmber}; outline-offset: 2px; border-radius: 10px; }`;
+    st.textContent =
+      `.hud-port.nt-self { outline: 2px solid ${PALETTE.hearthAmber}; outline-offset: 2px; border-radius: 10px; }` +
+      `.hud-slot .nt-abbr { position: relative; z-index: 2; font: 800 18px/1 "Nunito", "Trebuchet MS", system-ui, sans-serif; color: ${PALETTE.parchment}; letter-spacing: 0.02em; }`;
     document.head.appendChild(st);
   }
   // eslint-disable-next-line no-func-assign
@@ -737,6 +739,14 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       s.slot.style.display = '';
       s.slot.classList.remove('is-empty', 'is-passive', 'is-grey');
       setIcon(s, d.id, d.abbrev);
+      // Ally kit skills have no drawn icon: their two-letter abbrev fills
+      // the medallion instead (Parchment, >= 16 real px).
+      if (!hasIcon(d.id) && s.iconHost.childElementCount === 0) {
+        const t = document.createElement('span');
+        t.className = 'nt-abbr';
+        t.textContent = d.abbrev;
+        s.iconHost.appendChild(t);
+      }
       paintCooldown(s, d.remainingTicks, d.totalTicks);
     }
     return undefined;
