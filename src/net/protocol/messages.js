@@ -96,7 +96,9 @@ const C2S = {
   [MSG.SET_READY]: (m) => (typeof m.ready === 'boolean' ? null : 'bad_request'),
   [MSG.START_GAME]: (m) => (optional(m.seed, (x) => isInt(x, 0, 0xffffffff)) ? null : 'bad_request'),
   [MSG.RECONNECT]: (m) => (typeof m.token === 'string' && TOKEN_RE.test(m.token) && normalizeCode(m.code) !== null ? null : 'bad_request'),
-  [MSG.PING]: (m) => (Number.isFinite(m.t) && optional(m.rttMs, (x) => Number.isFinite(x) && x >= 0 && x < 600000) ? null : 'bad_request'),
+  // ping { ts, rttMs? } -> pong { ts, serverTime }. The timestamp is `ts`
+  // (PLAN's table writes `t`, which is already the message-type field).
+  [MSG.PING]: (m) => (Number.isFinite(m.ts) && optional(m.rttMs, (x) => Number.isFinite(x) && x >= 0 && x < 600000) ? null : 'bad_request'),
 };
 
 export const CLIENT_TYPES = Object.freeze(Object.keys(C2S));

@@ -154,15 +154,26 @@ function makeRng(seed) {
 
 const defaultNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
+// Timer precision. Node on Windows wakes timers on the 15.6 ms system tick
+// (measured here: setTimeout(50) fires after 62.9 ms, Atomics.wait likewise),
+// which would add up to +15.6 ms to every shaped hop. With `precise: true`
+// (the Node server and bots) the pump sleeps with setTimeout until one tick
+// before the deadline and then yields with setImmediate (I/O keeps flowing)
+// until the deadline — ~0.1 ms accuracy, and only while packets are queued:
+// an inactive conditioner is a synchronous pass-through and never spins.
+const hasImmediate = typeof setImmediate === 'function';
+const COARSE_TICK_MS = typeof process !== 'undefined' && process.platform === 'win32' ? 17 : 2;
+
 // createConditioner(spec, opts) -> one DIRECTION of one link.
 //   send(packet, { reliable, bytes }, deliver)  schedules deliver(packet) 0..2 times
 //   plan(now, { reliable, bytes })              pure planning: { times: [ms…], dropped, reason }
-// opts: { now, setTimer(fn, ms), clearTimer(h), rttMs: () => number }
+// opts: { now, setTimer(fn, ms), clearTimer(h), precise }
 export function createConditioner(spec = null, opts = {}) {
   const nowFn = opts.now || defaultNow;
+  const precise = !!opts.precise && hasImmediate && !opts.setTimer;
   const setTimer = opts.setTimer || ((fn, ms) => setTimeout(fn, ms));
   const clearTimer = opts.clearTimer || ((h) => clearTimeout(h));
-  const rttFn = opts.rttMs || null;
+  let spinning = false;
   let cfg = parseCond(spec);
   let rand = makeRng(cfg.seed);
   let epoch = nowFn();
@@ -206,9 +217,13 @@ export function createConditioner(spec = null, opts = {}) {
     const d = cfg.latencyMs + (cfg.jitterMs ? gauss() * cfg.jitterMs : 0);
     return d > 0 ? d : 0;
   }
+  // Retransmit timeout: max(200 ms, 2 x RTT) with RTT = the link's BASE
+  // round trip (this direction's latency doubled — a symmetric link). Never
+  // the measured RTT: measured samples include earlier retransmits, and
+  // feeding them back would inflate the RTO without bound (Karn's rule —
+  // real reliable layers exclude retransmitted samples for the same reason).
   function rto() {
-    const rtt = rttFn ? rttFn() : 2 * cfg.latencyMs + 2 * cfg.jitterMs;
-    return Math.max(RTO_MIN_MS, 2 * (Number.isFinite(rtt) ? rtt : 0));
+    return Math.max(RTO_MIN_MS, 2 * (2 * cfg.latencyMs));
   }
   function lossProb() {
     if (cfg.burstLoss) {
@@ -300,16 +315,34 @@ export function createConditioner(spec = null, opts = {}) {
   function arm() {
     if (queue.length === 0) return;
     const at = queue[0].at;
+    const wait = at - nowFn();
+    if (precise && wait <= COARSE_TICK_MS) {
+      if (timer !== null) {
+        clearTimer(timer);
+        timer = null;
+        timerAt = Infinity;
+      }
+      if (!spinning) {
+        spinning = true;
+        setImmediate(spin);
+      }
+      return;
+    }
     if (timer !== null && at >= timerAt) return;
     if (timer !== null) clearTimer(timer);
     timerAt = at;
-    timer = setTimer(pump, Math.max(0, at - nowFn()));
+    timer = setTimer(pump, Math.max(0, precise ? wait - COARSE_TICK_MS : wait));
+  }
+  function spin() {
+    spinning = false;
+    pump();
   }
   function pump() {
+    if (timer !== null) clearTimer(timer);
     timer = null;
     timerAt = Infinity;
     const t = nowFn();
-    while (queue.length && queue[0].at <= t + 0.5) {
+    while (queue.length && queue[0].at <= t + (precise ? 0.05 : 0.5)) {
       const job = queue.shift();
       stats.delivered += 1;
       try {
@@ -375,6 +408,7 @@ export function createConditioner(spec = null, opts = {}) {
     // Drop everything queued (the link closed).
     flush() {
       queue.length = 0;
+      spinning = false;
       if (timer !== null) clearTimer(timer);
       timer = null;
       timerAt = Infinity;

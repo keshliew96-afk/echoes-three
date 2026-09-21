@@ -26,7 +26,12 @@
 // the server refuses mismatched builds); unknown keys / strings still work,
 // they are just written inline. Order = measured frequency in the sim (the
 // first 128 entries cost one byte).
-import { utf8, fromUtf8 } from './codec.js';
+// Self-contained (no import from codec.js, which imports THIS module): the
+// writer / reader are codec.js ByteWriter / ByteReader instances passed in.
+const te = new TextEncoder();
+const td = new TextDecoder('utf-8', { fatal: true });
+const utf8 = (s) => te.encode(s);
+const fromUtf8 = (b) => td.decode(b);
 
 export const KEY_DICT = Object.freeze([
   'id', 'x', 'z', 'kind', 'hp', 'maxHp', 'radius', 'partyIndex', 'downed', 'classId', 'faction',

@@ -294,7 +294,13 @@ check('treediff-fuzz', `${FUZZ} random pairs satisfy the law (JSON and binary wi
   const pkt = codec.encodeInputPacket(2, 777, frames);
   const dec = codec.decodeInputPacket(pkt);
   const same = dec.ackSnapSeq === 777 && dec.frames.length === 6 && dec.frames.every((f, i) => f.seq === frames[i].seq && f.tick === frames[i].tick && f.viewTick === frames[i].viewTick && f.move === frames[i].move && f.basic === frames[i].basic && f.revive === frames[i].revive && f.away === frames[i].away && f.aimX === frames[i].aimX && f.aimZ === frames[i].aimZ && f.press === frames[i].press);
-  check('codec', `INPUT packet (6 redundant frames) round trip exact, ${pkt.length} bytes`, same, { bytes: pkt.length });
+  check('codec', `INPUT packet (6 redundant frames, every field varying) round trip exact, ${pkt.length} bytes`, same, { bytes: pkt.length });
+  // The common case: a held direction, steady aim, one frame per tick.
+  const steady = [];
+  for (let i = 0; i < 6; i++) steady.push({ seq: 5000 + i, tick: 90000 + i, viewTick: 89990 + i, move: 3, aimX: 4.5, aimZ: -2.25, press: 0 });
+  const sp = codec.encodeInputPacket(1, null, steady);
+  const sd = codec.decodeInputPacket(sp);
+  check('codec', `INPUT steady-state packet (6 frames) = ${sp.length} bytes (${(sp.length * 60 / 1024).toFixed(2)} KB/s at 60 Hz, budget 4); ack none round-trips as null`, sp.length <= 30 && sd.ackSnapSeq === null && sd.frames[5].seq === 5005 && sd.frames[5].viewTick === 89995 && sd.frames[5].aimZ === -2.25);
   const evs = [{ tick: 5, type: 'hit', target: 3, amount: 12.5, crit: false }, { tick: 5, type: 'death', id: 3, cause: null, t: -0 }];
   const e2 = codec.decodeEvents(codec.encodeEvents(1, 9, 3, 6, evs));
   check('codec', 'EVENTS batch round trip canonical-exact (incl. -0, null)', canonicalJSON(e2.events) === canonicalJSON(evs) && e2.batchSeq === 9 && e2.fromTick === 3 && e2.toTick === 6);

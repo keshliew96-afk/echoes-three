@@ -404,6 +404,42 @@ if (bootParams.slot && bootParams.menuSkip) {
 // seatInputs); guest: no world step — replica apply + own-seat prediction).
 // Single-player keeps exactly this function (PLAN §3.7, gate G5b.8).
 let simStep = (tick) => world.step(tick, sampleIntents());
+// M5a (W3): the network client service (src/net/lobbyClient.js) — server
+// probe, lobby, matchmaking, transport, reconnect, conditioner. Idle until
+// something calls connect()/host()/join()/quickMatch() (or a ?nethost /
+// ?netjoin / ?netquick harness param): no socket, no timer, no tick hook, so
+// single-player is untouched. The state tree it streams is the save system's
+// complete capture (a private copy, taken at clock.onTickEnd only).
+import { createNetClient } from './net/lobbyClient.js';
+provide(
+  'net',
+  createNetClient({
+    params: bootParams,
+    version: VERSION,
+    storage: (() => {
+      try {
+        return window.localStorage;
+      } catch {
+        return null;
+      }
+    })(),
+    clock,
+    bus,
+    settings: app.settings,
+    captureIsPrivate: true,
+    capture: () => {
+      const s = service('save');
+      if (s && typeof s.capture === 'function') return s.capture();
+      return structuredClone({
+        v: 0,
+        clock: { tick: clock.tick },
+        rng: { seed: rng.seed, draws: rng.drawIndex },
+        registry: { nextOrdinal: registry.nextOrdinal, entities: registry.all() },
+        world: world.snapshotState(),
+      });
+    },
+  })
+);
 // @gnt:NET end
 
 const overlay = createDebugOverlay(VERSION, {

@@ -19,7 +19,7 @@
 // varu. Readers throw a RangeError('truncated …') on short input so a corrupt
 // or hostile frame can never read past its end.
 import { BIN, INPUT_REDUNDANCY } from './constants.js';
-import { canonicalJSON, parseCanonical } from '../../core/canonical.js';
+import { encodeValue, decodeValue } from './bvalue.js';
 
 export const SEAT_ALL = 0xff;
 export const NO_SEQ = 0xffffffff;
@@ -224,50 +224,68 @@ export function readHash(r) {
 // -------------------------------------------------------------- INPUT --
 // Guest -> host, unreliable, one packet per guest tick carrying the newest
 // <= INPUT_REDUNDANCY unacked frames (oldest first), so a lost packet costs
-// nothing as long as one of the next five arrives.
+// nothing as long as one of the next five arrives. Redundant frames are
+// delta-coded against the previous frame in the packet — an unchanged frame
+// (the common case: same move / aim / held, seq and tick +1) costs 1-2 bytes,
+// so six-fold redundancy at 60 Hz stays ~1.6 KB/s (PLAN upstream <= 4 KB/s).
 //
-//   envelope · u32 ackSnapSeq (newest snapshot seq decoded; NO_SEQ = none)
-//   · u8 count · frames…
-//   frame: varu seq (first absolute, then +delta) · varu tick (first absolute,
-//          then +delta) · varu viewTick8 (interpolated host tick on screen ×8)
-//          · u8 moveHeld (bits 0-3 move 0 none / 1..8 = E,NE,N,NW,W,SW,S,SE;
-//            bit 4 basic held, bit 5 revive held, bit 6 away)
-//          · i16 aimX · i16 aimZ (1/64 u) · u16 press bits
-//
-// press bits: 0 dodge, 1..8 skill_1..skill_8, 9 interact (PLAN: skill_1..4
-// of the class kit today; 8 slots reserved for the 8-slot kit).
+//   envelope · varu ack+1 (newest snapshot seq decoded; 0 = none / "send me
+//   a full snapshot") · u8 count · frames…
+//   first frame: varu seq · varu tick · varu viewTick8 (interpolated host tick
+//     on screen × 8) · u8 moveHeld · vari aimX · vari aimZ (1/64 u) · varu press
+//   later frames: u8 mask · fields whose bit is set, as deltas:
+//     bit0 seq/tick not +1 (varu dseq · varu dtick) · bit1 vari dViewTick8
+//     bit2 u8 moveHeld · bit3 vari dAimX · bit4 vari dAimZ · bit5 varu press
+//   moveHeld: bits 0-3 move 0 none / 1..8 = E,NE,N,NW,W,SW,S,SE; bit 4 basic
+//     held, bit 5 revive held, bit 6 away
+//   press bits: 0 dodge, 1..8 skill_1..skill_8, 9 interact (PLAN: skill_1..4
+//     of the class kit today; 8 slots reserved for the 8-slot kit)
 export const PRESS = Object.freeze({ dodge: 0, skill_1: 1, skill_2: 2, skill_3: 3, skill_4: 4, skill_5: 5, skill_6: 6, skill_7: 7, skill_8: 8, interact: 9 });
 export const AIM_Q = 64;
+const AIM_LIM = 0x7fffffff;
 
-function clampI16(v) {
-  return v < -32768 ? -32768 : v > 32767 ? 32767 : v;
+function qFrame(f) {
+  const aimX = Math.round((f.aimX ?? 0) * AIM_Q);
+  const aimZ = Math.round((f.aimZ ?? 0) * AIM_Q);
+  return {
+    seq: f.seq,
+    tick: f.tick >>> 0,
+    vt8: Math.max(0, Math.round((f.viewTick ?? 0) * 8)),
+    mh: ((f.move ?? 0) & 0x0f) | (f.basic ? 0x10 : 0) | (f.revive ? 0x20 : 0) | (f.away ? 0x40 : 0),
+    ax: Math.max(-AIM_LIM, Math.min(AIM_LIM, aimX)) + 0,
+    az: Math.max(-AIM_LIM, Math.min(AIM_LIM, aimZ)) + 0,
+    press: (f.press ?? 0) & 0xffff,
+  };
 }
 
 export function encodeInputPacket(seat, ackSnapSeq, frames) {
-  const list = frames.slice(-INPUT_REDUNDANCY);
-  const w = frameWriter(BIN.INPUT, seat, 16 + list.length * 12);
-  w.u32(ackSnapSeq === null || ackSnapSeq === undefined ? NO_SEQ : ackSnapSeq);
+  const list = frames.slice(-INPUT_REDUNDANCY).map(qFrame);
+  const w = frameWriter(BIN.INPUT, seat, 16 + list.length * 6);
+  w.varu(ackSnapSeq === null || ackSnapSeq === undefined ? 0 : ackSnapSeq + 1);
   w.u8(list.length);
-  let prevSeq = 0;
-  let prevTick = 0;
-  list.forEach((f, i) => {
-    if (i === 0) {
-      w.varu(f.seq);
-      w.varu(f.tick >>> 0);
+  let prev = null;
+  for (const f of list) {
+    if (!prev) {
+      w.varu(f.seq).varu(f.tick).varu(f.vt8).u8(f.mh).vari(f.ax).vari(f.az).varu(f.press);
     } else {
-      if (f.seq <= prevSeq || f.tick < prevTick) throw new RangeError('input frames must be in ascending seq/tick order');
-      w.varu(f.seq - prevSeq);
-      w.varu(f.tick - prevTick);
+      if (f.seq <= prev.seq || f.tick < prev.tick) throw new RangeError('input frames must be in ascending seq/tick order');
+      let mask = 0;
+      if (f.seq !== prev.seq + 1 || f.tick !== prev.tick + 1) mask |= 1;
+      if (f.vt8 !== prev.vt8) mask |= 2;
+      if (f.mh !== prev.mh) mask |= 4;
+      if (f.ax !== prev.ax) mask |= 8;
+      if (f.az !== prev.az) mask |= 16;
+      if (f.press !== 0) mask |= 32;
+      w.u8(mask);
+      if (mask & 1) w.varu(f.seq - prev.seq).varu(f.tick - prev.tick);
+      if (mask & 2) w.vari(f.vt8 - prev.vt8);
+      if (mask & 4) w.u8(f.mh);
+      if (mask & 8) w.vari(f.ax - prev.ax);
+      if (mask & 16) w.vari(f.az - prev.az);
+      if (mask & 32) w.varu(f.press);
     }
-    prevSeq = f.seq;
-    prevTick = f.tick;
-    w.varu(Math.max(0, Math.round((f.viewTick ?? 0) * 8)));
-    const move = (f.move ?? 0) & 0x0f;
-    w.u8(move | (f.basic ? 0x10 : 0) | (f.revive ? 0x20 : 0) | (f.away ? 0x40 : 0));
-    w.i16(clampI16(Math.round((f.aimX ?? 0) * AIM_Q)));
-    w.i16(clampI16(Math.round((f.aimZ ?? 0) * AIM_Q)));
-    w.u16(f.press ?? 0);
-  });
+    prev = f;
+  }
   return w.finish();
 }
 
@@ -276,38 +294,44 @@ export function decodeInputPacket(u8) {
   const channel = r.u8();
   if (channel !== BIN.INPUT) throw new RangeError(`not an INPUT frame (${channel})`);
   const seat = r.u8();
-  const ack = r.u32();
+  const ack1 = r.varu();
   const n = r.u8();
   if (n > INPUT_REDUNDANCY) throw new RangeError(`too many input frames (${n})`);
   const frames = [];
-  let seq = 0;
-  let tick = 0;
+  let p = null;
   for (let i = 0; i < n; i++) {
-    if (i === 0) {
-      seq = r.varu();
-      tick = r.varu();
+    let f;
+    if (!p) {
+      f = { seq: r.varu(), tick: r.varu(), vt8: r.varu(), mh: r.u8(), ax: r.vari(), az: r.vari(), press: r.varu() };
     } else {
-      seq += r.varu();
-      tick += r.varu();
+      const mask = r.u8();
+      f = { seq: p.seq + 1, tick: p.tick + 1, vt8: p.vt8, mh: p.mh, ax: p.ax, az: p.az, press: 0 };
+      if (mask & 1) {
+        f.seq = p.seq + r.varu();
+        f.tick = p.tick + r.varu();
+      }
+      if (mask & 2) f.vt8 = p.vt8 + r.vari();
+      if (mask & 4) f.mh = r.u8();
+      if (mask & 8) f.ax = p.ax + r.vari();
+      if (mask & 16) f.az = p.az + r.vari();
+      if (mask & 32) f.press = r.varu();
     }
-    const viewTick = r.varu() / 8;
-    const mh = r.u8();
-    const aimX = r.i16() / AIM_Q;
-    const aimZ = r.i16() / AIM_Q;
-    const press = r.u16();
-    frames.push({ seq, tick, viewTick, move: mh & 0x0f, basic: !!(mh & 0x10), revive: !!(mh & 0x20), away: !!(mh & 0x40), aimX, aimZ, press });
+    p = f;
+    frames.push({ seq: f.seq, tick: f.tick, viewTick: f.vt8 / 8, move: f.mh & 0x0f, basic: !!(f.mh & 0x10), revive: !!(f.mh & 0x20), away: !!(f.mh & 0x40), aimX: f.ax / AIM_Q, aimZ: f.az / AIM_Q, press: f.press });
   }
-  return { seat, ackSnapSeq: ack === NO_SEQ ? null : ack, frames };
+  if (r.remaining !== 0) throw new RangeError('INPUT trailing bytes');
+  return { seat, ackSnapSeq: ack1 === 0 ? null : ack1 - 1, frames };
 }
 
 // ------------------------------------------------------------- EVENTS --
 // Host -> guest, reliable, one batch per snapshot: every sim event since the
 // previous batch except `sound` (each client derives its own sounds).
-//   envelope · u32 batchSeq · u32 fromTick · u32 toTick · canonical JSON array
+//   envelope · u32 batchSeq · u32 fromTick · u32 toTick · bvalue array of events
+// (bvalue.js: canonical-exact binary; -0 / NaN / ±Infinity / null survive).
 export function encodeEvents(seat, batchSeq, fromTick, toTick, events) {
-  const body = te.encode(canonicalJSON(events));
-  const w = frameWriter(BIN.EVENTS, seat, 16 + body.length);
-  w.u32(batchSeq).u32(fromTick >>> 0).u32(toTick >>> 0).bytes(body);
+  const w = frameWriter(BIN.EVENTS, seat, 64 + events.length * 24);
+  w.u32(batchSeq).u32(fromTick >>> 0).u32(toTick >>> 0);
+  encodeValue(w, events);
   return w.finish();
 }
 export function decodeEvents(u8) {
@@ -317,43 +341,49 @@ export function decodeEvents(u8) {
   const batchSeq = r.u32();
   const fromTick = r.u32();
   const toTick = r.u32();
-  const events = parseCanonical(td.decode(r.rest()));
+  const events = decodeValue(r);
   if (!Array.isArray(events)) throw new RangeError('EVENTS body is not an array');
+  if (r.remaining !== 0) throw new RangeError('EVENTS trailing bytes');
   return { seat, batchSeq, fromTick, toTick, events };
 }
 
 // ---------------------------------------------------------------- CMD --
 // Guest -> host, reliable: meta commands (draft/path picks that the host
-// rejects or applies, door pings, ready). envelope · u32 cmdSeq · JSON object
+// rejects or applies, door pings, "send me a full snapshot").
+//   envelope · u32 cmdSeq · bvalue object
 export function encodeCmd(seat, cmdSeq, cmd) {
-  const body = te.encode(canonicalJSON(cmd));
-  return frameWriter(BIN.CMD, seat, 8 + body.length).u32(cmdSeq).bytes(body).finish();
+  const w = frameWriter(BIN.CMD, seat, 64);
+  w.u32(cmdSeq);
+  encodeValue(w, cmd);
+  return w.finish();
 }
 export function decodeCmd(u8) {
   const r = new ByteReader(u8);
   if (r.u8() !== BIN.CMD) throw new RangeError('not a CMD frame');
   const seat = r.u8();
   const cmdSeq = r.u32();
-  const cmd = parseCanonical(td.decode(r.rest()));
+  const cmd = decodeValue(r);
   if (!cmd || typeof cmd !== 'object' || Array.isArray(cmd)) throw new RangeError('CMD body is not an object');
   return { seat, cmdSeq, cmd };
 }
 
 // ----------------------------------------------------------- KEYFRAME --
 // Host -> server only (cached for reconnect / host migration, never
-// forwarded): envelope(seat 0) · u32 tick · canonical JSON of the complete
-// state tree (save.capture()). Exact — no quantisation, so a migrated host
-// continues from bit-identical state.
+// forwarded): envelope(seat 0) · u32 tick · bvalue of the complete state tree
+// (save.capture()). Exact — no quantisation, so a migrated host continues
+// from canonically identical state.
 export function encodeKeyframe(tick, tree) {
-  const body = te.encode(canonicalJSON(tree));
-  return frameWriter(BIN.KEYFRAME, 0, 8 + body.length).u32(tick >>> 0).bytes(body).finish();
+  const w = frameWriter(BIN.KEYFRAME, 0, 4096);
+  w.u32(tick >>> 0);
+  encodeValue(w, tree);
+  return w.finish();
 }
 export function decodeKeyframe(u8) {
   const r = new ByteReader(u8);
   if (r.u8() !== BIN.KEYFRAME) throw new RangeError('not a KEYFRAME frame');
   r.u8();
   const tick = r.u32();
-  const tree = parseCanonical(td.decode(r.rest()));
+  const tree = decodeValue(r);
   return { tick, tree };
 }
 export function keyframeTick(u8) {
