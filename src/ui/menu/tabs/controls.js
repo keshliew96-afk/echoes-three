@@ -92,6 +92,9 @@ export function buildControlsTab(ctx) {
     if (targets.length) left.appendChild(row('Select an ally for a heal', [`${targets[0]}–${targets[targets.length - 1]}`]));
     left.appendChild(row('Build workbench (between rooms)', ['B']));
     left.appendChild(row('Fullscreen', ['Alt', 'Enter']));
+    // M2: the quick-slot keys (single-player, in play) — shown with the save service.
+    const svc = ctx.services && typeof ctx.services.service === 'function' ? ctx.services.service('save') : null;
+    if (svc) left.appendChild(row('Quicksave · Quickload', ['F5', 'F9']));
 
     const right = document.createElement('div');
     right.className = 'ap-ref-col';

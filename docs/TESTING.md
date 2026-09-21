@@ -438,3 +438,90 @@ Long-Animation-Frame list); `node tools/gntM4b-prof.mjs --act N --from s --to s`
 [--write] [--verify]` (content cue calDb; verify = 17 cues within 2 dB of
 levelDb, none above −6 dBFS). Helpers: `gntM4b-buildcost.mjs`,
 `gntM4b-slices.mjs`, `gntM4b-groundpng.mjs`, `gntM4b-crop.mjs`.
+
+### M2 — save / load, slots, autosave, records (Gauntlet W3, owner M2)
+
+**What a save is.** `__echoes.save.capture()` = the complete StateTree v1
+(src/save/capture.js): `clock` (tick, hitstop, grants), `rng` (the LIVE
+stream: seed, mulberry32 word, draws), `registry` (every entity, ascending
+id, `nextOrdinal`), `world` (tick, stats, harness flags), `systems` (combat,
+skills, build, enemies, waves, allies, boss, run incl. autopilot, layout incl.
+hazards + interactables, movement colliders, shapes counter — each system's
+`saveState()` / `loadState()`; skills / nodes keep their older
+`serialize()/restore()` for the run block's relative persistence), `scene`
+(camp|run + the room layout), `app` (playtime ticks, the run's kill base).
+`apply(tree)` validates, snapshots a rollback, re-enters the scene mode
+(colliders + camp seat hold, dressing via `restoreScene`; never seatParty),
+then clock → rng → registry (patched IN PLACE, rebuilt ascending) → every
+system → module state, and emits one `state_restored` (every render / UI /
+audio layer resyncs on it). Capture points: `clock.onTickEnd` or between
+frames only — a capture from inside a sim step throws `CapturePointError`;
+`requestCapture()` defers it (tick end for in-step events, a microtask for
+events a command emitted between frames — either way captureTick ===
+eventTick). The file is `{ format:'echoes-save', schema:1, game, slot,
+createdAt, savedAt, meta, state, hash }`, hash = hashState(state) (FNV-1a 64
+over canonical JSON), body written in insertion key order (so a loaded object
+iterates like the saved one); `MIGRATIONS` chain runs after the hash check of
+the stored tree; a newer schema is refused and never modified.
+
+**Storage.** `echoes.save.v1.<slot>` (+ `.bak` = the previous good file,
+`.tmp` only mid-write, `.thumb` 256×144 JPEG data URL), `echoes.save.v1.index`
+(a cache — rebuilt by scanning), `echoes.profile.v1` (+ `.bak`). Slots:
+`manual-1…8`, `auto-1/auto-2` (alternating), `quick` (F5 / F9 in play). Atomic
+write: tmp → bak → main → drop tmp; a newer valid tmp is promoted at boot, an
+invalid one dropped (`__echoes.save.recovery()`). Blocked site data (the
+`localStorage` getter throws) → the game still boots and saves live in memory
+("Saves last for this visit only"). A camp save is ~4 KB, a mid-combat Act III
+save ~13 KB.
+
+**`__echoes.save`** (the debug surface): `list() save(slot,{name}) load(slot)`
+(through app.loadSlot: enters play) `loadRaw(slot) remove rename capture()
+apply(tree) order() hash() roundTrip({ticks=600, scriptSeed=1, every=60,
+restore=true})` → `{hashBefore, hashAfterApply, equal, continuationEqual,
+firstDivergence, events, eventsHash, hashes[]}` (freezes the realtime loop,
+restores the moment afterwards) · `continuation({ticks, scriptSeed, every,
+restore})` (the reload leg: save → continuation → reload → loadRaw →
+continuation, compare) · `corrupt(slot, 'truncate'|'schema'|'keys'|'hash'|'newer')
+simulateQuota(on) simulateTornWrite(slot,{valid}) usage() profile()
+profileReport() recovery() autosaveLog() autosave(reason)
+autosaveEnabled(on) resetAutosaveThrottle() captureLog() requestCapture(r)
+captureOnEvent(type)` (G2.12 probe) `lastLoad() lastRecord() bootHash()
+bootTree() freshHash(seed) freshTree(seed) tracker() thumb(slot) lastThumb()
+exportText(slot) importText(text, slot?) restoreBackup(slot) resetToFresh({seed})
+canSave() errors`. `__echoes.sim.hash()` is now the complete-capture hash
+(the in-page `sim.trace` stateHash therefore differs from the v0.5.0
+reference; its eventsHash does not).
+
+**Menus.** Title: Continue (newest valid save, focused), Load Game (enabled
+when any slot exists), Records. `app.open('saves', { mode: 'load'|'save' })`
+— INT's pause menu opens the Save tab in W5; until then saving in play is F5
++ autosave. Stable ids: `sv-slot-<id>`, `sv-act-{load,save,rename,export,
+delete,restore}`, `sv-import` (+ hidden `sv-import-file`), `sv-back`,
+`sv-mode-{save,load}`, `sv-rename-{input,ok,cancel}`, `sv-records-back`.
+Keys: Enter/A = the primary action, Delete/X = delete (confirm, Cancel
+focused), F2/Y = rename, Q/E LB/RB = Save⇄Load (in play), Esc/B back; ←/→
+hop between a row and its action buttons. Autosave safe points:
+`room_enter`, `shop_open`, `run_end` (unthrottled), `return_to_camp`, quit
+(`autosave('quit')`, unthrottled); ≥ 20 s between the others; never while a
+probe drives the sim, never outside `playing`, never as a net guest. Score
+(profile, end card "SCORE … · New best!", Records) = PLAN §3.4 formula; kills
+= `world.stats.kills` since `run_start`.
+
+**M2 probes** (`node tools/gntM2-drive.mjs tools/gntM2-sc-<name>.mjs [--w --h]`,
+GPU harness, retries HMR reloads; JSON in `captures/gntM2-sc-<name>.json`):
+`roundtrip` (G2.1/G2.2: 8 moments, in page + after reload;
+`GNTM2_MOMENTS=camp,combat,…` picks some; moment builders in
+tools/gntM2-moments.mjs), `slots` (G2.3, real keyboard + mouse, layout audit
+— run at 1024x576 / 1600x900 / 2560x1440), `integrity` (G2.4 corruption +
+quota, G2.5 torn writes across a reload, G2.6 export → real download → real
+file-chooser import), `autosave` (G2.7 safe points, captureTick, throttle,
+per-piece main-thread cost, autosave-OFF control) + `autosave-steady` (G2.7
+frames: 8 autosaves in live combat vs 8 idle windows), `gates` (G2.8 scores +
+end cards + Records, G2.9 New Game == fresh boot, G2.11 interleaved-id
+registry, G2.12 capture point), `records` (Records layout, 3 sizes), `misc`
+(?slot= boots, Continue, gamepad-only slots/records), `private` (blocked
+storage). Node: `node tools/gntM2-nodetrip.mjs` (9 headless round trips incl.
+a FRESH world through the file codec), `node tools/gntM2-goldens.mjs` (G2.10:
+the 9 W2-end goldens `captures/gnt-M2-golden-{kill_all,defend,run}-{1,2,3}.json`,
+recorded from `git archive 9246562` before M2's first edit — M5b re-checks
+them). Layout audit helper: tools/gntM2-audit.mjs.
