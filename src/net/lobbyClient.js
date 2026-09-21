@@ -429,7 +429,8 @@ export function createNetClient(opts = {}) {
   transport.on('binary', onBinary);
 
   function startReconnect(code, suppressMs = 0) {
-    reconnect = { code, startedAt: now(), attempt: 0, timer: null, suppressUntil: now() + suppressMs };
+    const inGame = !!room && (room.state === 'in_game' || room.state === 'migrating' || room.state === 'starting');
+    reconnect = { code, startedAt: now(), attempt: 0, timer: null, suppressUntil: now() + suppressMs, inGame };
     recompute();
     emit('reconnecting', { code, holdMs: SEAT_HOLD_MS });
     scheduleAttempt();
@@ -1136,6 +1137,12 @@ export function createNetClient(opts = {}) {
     },
     get connected() {
       return transport.state === 'open' && !!peerId;
+    },
+    // True while a network SESSION runs (a started room, incl. reconnecting /
+    // migrating): the app never pauses the shared sim (M1 netActive) and a
+    // guest never saves (M2 canSave). Being in a lobby room is not a session.
+    inSession() {
+      return state === 'host' || state === 'guest' || state === 'migrating' || (state === 'reconnecting' && !!reconnect && reconnect.inGame);
     },
     get snapshotEveryTicks() {
       return snapEvery;

@@ -10,9 +10,11 @@
 //
 // Clients: `--pages` Chrome pages (MULTI-PAGE launch profile, tools/gnt-arch-
 // browser.mjs: background:true, each page in its OWN window — tabs of one
-// window are hidden and stop rAF; see gntM5a-botlib.mjs openEchoesWindow) —
-// page 0 hosts (?nethost=1), the others join
-// (?netjoin=CODE) — plus `--bots` Node WebSocket bots (tools/gntM5a-botlib.mjs,
+// window are hidden and stop rAF; see gntM5a-botlib.mjs openEchoesWindow).
+// All pages boot and finish their warm-up first; then page 0 hosts and the
+// others join through `__echoes.net` (host / join — the calls the multiplayer
+// menu makes; ?nethost / ?netjoin do the same at boot for manual runs) — plus
+// `--bots` Node WebSocket bots (tools/gntM5a-botlib.mjs,
 // the same src/net client). Bots fill the free seats of the page room; bots
 // beyond it form extra rooms hosted by a Node bot that runs the REAL sim
 // headless. Every client uses src/net/lobbyClient.js unchanged.
@@ -42,7 +44,7 @@
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { launchEchoes, FLAGS } from './gnt-arch-browser.mjs';
+import { launchEchoes, waitReady, FLAGS } from './gnt-arch-browser.mjs';
 import { createGuestBot, createSimHostBot, openEchoesWindow } from './gntM5a-botlib.mjs';
 
 const here = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -173,24 +175,28 @@ for (let attempt = 1; attempt <= 3; attempt++) {
     let hostKind = null;
     if (opt.pages > 0) {
       browser = await launchEchoes({ gpu: opt.gpu, headful: opt.headful, background: true, width: opt.w, height: opt.h });
-      const hp = await openEchoesWindow(browser, netQ({ seed: String(opt.seed), nethost: '1', netname: 'Host' }), { width: opt.w, height: opt.h });
-      pages.push({ ...hp, role: 'host', name: 'Host' });
-      code = await hp.page.evaluate(async () => {
-        const t0 = performance.now();
-        while (performance.now() - t0 < 20000) {
-          const n = window.__echoes && window.__echoes.net;
-          if (n && n.code) return n.code;
-          await new Promise((r) => setTimeout(r, 100));
-        }
-        return null;
-      });
-      if (!code) {
-        // A build whose net service ignores ?nethost: host through the API.
-        code = await hp.page.evaluate(async () => {
-          const r = await window.__echoes.net.host({ visibility: 'private' });
-          return r && r.ok ? r.code : null;
-        });
+      // Open EVERY page and let each finish its boot warm-up (shader
+      // compiles block a page's main thread for seconds when several WebGL
+      // pages share one GPU) BEFORE any of them touches the network — a page
+      // frozen mid-session would be dropped for silence. Then host / join
+      // through the net API (the same calls the multiplayer menu makes).
+      const specs = [{ role: 'host', name: 'Host', seed: opt.seed }];
+      for (let i = 1; i < opt.pages; i++) specs.push({ role: 'guest', name: `Guest${i}`, seed: opt.seed + i });
+      for (const sp of specs) {
+        const extra = { seed: String(sp.seed), netname: sp.name };
+        if (sp.role === 'guest' && clientCond) extra.netcond = clientCond;
+        const pg = await openEchoesWindow(browser, netQ(extra), { width: opt.w, height: opt.h });
+        pages.push({ ...pg, role: sp.role, name: sp.name });
       }
+      for (const p of pages) {
+        const ready = await waitReady(p.page, { minTick: 120, timeout: 120000 });
+        if (!ready.ok) report.verdict.notes.push(`${p.name}: boot warm-up not finished after 120 s`);
+      }
+      const hp = pages[0];
+      code = await hp.page.evaluate(async () => {
+        const r = await window.__echoes.net.host({ visibility: 'private' });
+        return r && r.ok ? r.code : null;
+      });
       hostKind = 'page';
     } else if (opt.bots > 0) {
       const hb = await createSimHostBot({ server: opt.server, name: 'BotHost', act: 1, room: opt.mode === 'boss' ? 8 : 1, seed: opt.seed, version: await freshVersion() });
@@ -208,19 +214,9 @@ for (let attempt = 1; attempt <= 3; attempt++) {
     logLine(`room ${code} hosted by a ${hostKind}`);
 
     // ---------------------------------------------------------- guests --
-    for (let i = 1; i < opt.pages; i++) {
-      const gp = await openEchoesWindow(browser, netQ({ seed: String(opt.seed + i), netjoin: code, netname: `Guest${i}`, ...(clientCond ? { netcond: clientCond } : {}) }), { width: opt.w, height: opt.h });
-      pages.push({ ...gp, role: 'guest', name: `Guest${i}` });
-      const seat = await gp.page.evaluate(async () => {
-        const t0 = performance.now();
-        while (performance.now() - t0 < 20000) {
-          const n = window.__echoes && window.__echoes.net;
-          if (n && n.room && n.seat !== null) return n.seat;
-          await new Promise((r) => setTimeout(r, 100));
-        }
-        return null;
-      });
-      if (seat === null) throw new Error(`guest page ${i} could not join ${code}`);
+    for (const gp of pages.slice(1)) {
+      const r = await gp.page.evaluate((c) => window.__echoes.net.join(c), code);
+      if (!r || !r.ok) throw new Error(`guest page ${gp.name} could not join ${code}: ${JSON.stringify(r)}`);
     }
     let seatsLeft = 4 - Math.max(1, opt.pages) - (hostKind === 'bot' ? 0 : 0);
     let botRoom = null;

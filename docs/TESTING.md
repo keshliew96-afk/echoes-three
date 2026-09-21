@@ -525,3 +525,79 @@ a FRESH world through the file codec), `node tools/gntM2-goldens.mjs` (G2.10:
 the 9 W2-end goldens `captures/gnt-M2-golden-{kill_all,defend,run}-{1,2,3}.json`,
 recorded from `git archive 9246562` before M2's first edit — M5b re-checks
 them). Layout audit helper: tools/gntM2-audit.mjs.
+
+### M5a — network core: server, lobby, protocol, conditioner, netbench (Gauntlet W3, owner M5a)
+
+**Session server** (zero npm dependencies — node:http / crypto / os only):
+`npm run net -- --port P [--host 0.0.0.0] [--admin] [--log]` prints the
+URLs and a machine-readable `[echoes-net] ready {…}` line (~150 ms). Default
+bind 127.0.0.1; `--host 0.0.0.0` prints every LAN `ws://…/echoes` URL (also in
+`welcome.lanUrls`). Conditioner on EVERY link: `--latency ms --jitter ms
+--loss f --dup f --reorder f --burst pGB,pBG,lossInBad --bw kbit/s --seed n`
+(fractions 0–1 or `10%`) or `--cond lat75,jit10,loss10,dup1,reo2,burst0.05:0.3:0.8,bw256,out5000:3000,seed7`
+(compact form: loss/dup/reo in PERCENT, one-way ms — lat75 on both
+directions = 150 ms RTT). Admin API (only with `--admin`, loopback callers
+only): `GET /stats` · `POST /admin/conditioner {target:'all'|peerId|roomCode, up, down}`
+(`"off"` clears) · `POST /admin/drop {peerId, mode:'close'|'blackhole', forMs}`
+(close: socket closed and the identity refused for forMs; blackhole: the link
+goes silent — > 5 s silence drops a guest, > 3 s an in-game host) ·
+`POST /admin/kill-host {code}` (host closed + barred → 10 s grace → migration).
+`GET /health` is always on. **Restart your server after editing server/** or
+src/net/protocol/** — a running Node process keeps the old code.**
+
+**Link model** (src/net/protocol/conditioner.js, same on server links, the
+browser `?netcond=` and Node bots): unreliable = SNAP, INPUT and the ping/pong
+heartbeat (loss / burst / dup / reorder +20–60 ms / latency + normal jitter /
+bandwidth tail-drop past a 300 ms queue); reliable = every other control
+message, EVENTS, CMD, KEYFRAME — in order PER STREAM, never dropped, each
+simulated loss = +max(200 ms, 2 × base RTT). Node timers on Windows wake on a
+15.6 ms tick; server links and Node bots use a precise pump (~0.1 ms; costs up
+to one CPU core only while shaped traffic is queued; unshaped = synchronous
+pass-through).
+
+**Protocol** (src/net/protocol/*): relay envelope `u8 channel · u8 seat` on
+every binary frame; SNAP = baseline/ack delta (Quake 3) — HOT entity table
+quantised (pos 1/256 u, hp 0.01, yaw 256 steps via a 1/4096-rounded table,
+aim 1/64 u, 16 flag bits, linear movers dead-reckoned from an anchor) + COLD
+null-safe tagged tree diff, both carried by a binary canonical-value codec
+(bvalue.js); a u64 quantised-tree hash every ≥ 30 ticks. INPUT = up to 6
+unacked frames delta-coded (steady state 28 B/packet). `__echoes.net` (the
+`net` service, idle in single-player): `state role room code seat peerId
+serverState serverUrl lanUrls inSession() connect(url) probe(url) host({visibility})
+join(code, seat?) quickMatch() cancelMatch() leave() setReady(b) selectSeat(s)
+start(seed?) rejoin() rejoinInfo() drop(ms) disconnect() stats() peers() log(n)
+conditioner.{set,get,clear,stats} on(type, fn) setSessionDriver(d) extendStats(fn)`.
+`?nethost=1 / ?netjoin=CODE / ?netquick=1 / ?netname= / ?netseat= / ?netcond= /
+?netrate=` act at lobby level. Until M5b registers a session driver, a started
+room runs the **probe stream** (host: save.capture() at every 3rd tick end →
+per-guest delta snapshots + EVENTS + a KEYFRAME every 120 ticks; guests decode,
+hash-check, ack at 60 Hz) — transport measurement only, nothing is written
+into the guest's world.
+
+**Probes.** `node tools/gntM5a-protocol.mjs` (tree-diff law corpus + 10 000
+fuzz pairs on the JSON and binary forms, codec round trips, conditioner
+accuracy — 72 checks) · `node tools/gntM5a-corpus.mjs` (G5a.3: the REAL sim
+headless, acts 1–3 + boss, M2's StateTree v1, 3 guests at 20 % snapshot +
+20 % ack loss + reorder + dup; exactness, hashes, delta ratio, bytes) ·
+`node tools/gntM5a-lobby.mjs [--trials 50] [--quick]` (G5a.1/2/4: in-process
+server on 7811 + a child server on 7812; RFC 6455 conformance, every lobby
+path and rejection reason, last-seat race, relay, reconnect, blackhole,
+admin drop, host grace, kill-host migration, 8 Node clients, server kill,
+unreachable probe — 28 checks) · **`node tools/gnt-M5a-netbench.mjs --server
+ws://127.0.0.1:<port>/echoes`** (PLAN §6.7 CLI + `echoes-netbench/1`; start the
+server with `--admin` for per-guest-link shaping and drops; `--pages N --bots M
+--seconds S --mode lobby|combat|boss --cond … --drop guest:MS@Ts|host:close@Ts
+--out f`, plus `--w/--h` (default 1600×900), `--seed`, `--rate`, `--settle`).
+**Every page opens in its own browser window**: tabs of one window are
+`hidden` and stop requestAnimationFrame even with the multi-page flags (use
+`openEchoesWindow` from tools/gntM5a-botlib.mjs in any multi-client harness).
+All pages boot and finish their warm-up before any of them connects (then host /
+join through `__echoes.net`). The netbench retries a run (≤ 3) when a dev-server
+reload hits a page, and its bots speak the pages' build — but while other
+builders commit, long multi-page runs are only stable against a production
+preview: `npx vite build --outDir dist-<key>` + `npx vite preview --outDir
+dist-<key> --port <your preview port> --strictPort` and `--url
+http://127.0.0.1:<port>/`. Baseline for fps comparisons:
+`node tools/gntM5a-fpsbase.mjs --pages 2 --w 960 --h 540` (N single-player
+windows, no network: 2 windows ≈ 51 fps here). Dev aid:
+`node tools/gntM5a-pagedebug.mjs ws://…` (host + guest windows, dumps net logs).
