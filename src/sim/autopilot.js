@@ -392,9 +392,24 @@ export function createAutopilot({ registry, player, run, skills, build }) {
     return { active: !!cfg, cfg: cfg ? { ...cfg } : null, stats: { ...stats }, dodgeCdTicks: DODGE.cooldownTicks };
   }
 
+  // What the bot would do this tick in combat, WITHOUT acting on it or
+  // touching the run pages — the real-input harness (tools/gntM4a-realrun.mjs)
+  // turns this into actual keys and mouse moves, so a human-speed player can
+  // be scripted without any sim call.
+  function advise(tick) {
+    const r = run();
+    const v = r ? r.view() : null;
+    if (!v || !v.active || v.phase !== 'combat') return null;
+    const saved = { ...stats };
+    const snap = combatIntents(tick, null);
+    Object.assign(stats, saved);
+    return snap;
+  }
+
   return {
     configure,
     intents,
+    advise,
     active: () => !!cfg,
     view,
     serialize: () => ({ cfg: cfg ? { ...cfg } : null, lastShopRoom, stats: { ...stats } }),

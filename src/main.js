@@ -319,6 +319,18 @@ registerContentCues(service('audio'), world);
 const contentfx = PLAYABLE ? createContentFx({ stage, world, bus, cosmetic }) : null;
 // Probe surface: __echoes.content.fx() -> the layer's live element counts.
 if (contentfx) service('content').fx = () => contentfx.debugCounts();
+// Real-input harness surface (tools/gntM4a-realrun.mjs): the autopilot's
+// advice for this tick (never applied by the game) and a world -> screen
+// projection, so a script can play with real keys and a real mouse.
+{
+  const c = service('content');
+  const pv = new Vector3();
+  c.advise = () => world.runSystem().autopilot.advise(world.tick);
+  c.project = (x, z, y = 0.45) => {
+    pv.set(x, y, z).project(stage.camera);
+    return { x: Math.round((pv.x + 1) * 0.5 * window.innerWidth), y: Math.round((1 - pv.y) * 0.5 * window.innerHeight), behind: pv.z > 1 };
+  };
+}
 // @gnt:M4a WORLD-LAYERS end
 // @gnt:M4b WORLD-LAYERS begin — hazard / interactable / biome layers, prompts.
 // The world-content presentation bundle (src/render/hazards/layers.js): hazard
