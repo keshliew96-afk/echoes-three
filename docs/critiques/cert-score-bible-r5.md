@@ -84,3 +84,6 @@ Crops written: certA5-bible-boss-{stag,torchBR,torchBL}.png
 - COMBAT ROAD --box 950,470,220,70 = 6/16 hist 22|60|18 (three buckets carry 100%), 300,230,250,70 hist 5|52|28|14; crop certA5-bible-cbt-road.png: soft gradient + ~12 pebbles + faint moss blotches, no ruts/cracks/tiles.
 - STAG GROUNDING: strip under the Stag 790,545,80,10 = 99% bucket 1 vs lit ground 1000,545 = buckets 5-6 (39/46%) — the Stag is grounded. Healer (boss) is not: under-strip 690,700 buckets 1-3 + 18% b12 (disc rim) vs clear 560,700 77% b0.
 - CAMP LEFT TENT re-check: --box 280,180,120,90 >160 0.000% 10/16 warm 19.6% — crop certA5-bible-camp-tentL.png shows a faint warm spill at its door (~(330,230)) but no halo; the right tent --box 990,190,120,90 >160 1.250% >200 0.111% warm 36.8%.
+
+### P6 — resumed instance (fresh context) visual pass
+Re-read docs/REFERENCE_BAR.md in full; viewed docs/reference/pass-the-fear.png, the four main frames, camp/combat/boss -z50, and every sequence frame via the contact sheets certA5-bible-sheet-{campseqA,campseqB,combatseqA,combatseqB,bossseqA,bossseqB,shopseqA}.png. Prior-round calibration read: cert-score-bible-r3.md (19/18/19/18) and cert-score-ref-r5.md (19/16/18/18). Remaining work: decal/grounding cross-checks from console logs, then scoring.

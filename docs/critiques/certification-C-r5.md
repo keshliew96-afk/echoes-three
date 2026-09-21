@@ -1,5 +1,5 @@
 STATUS: COMPLETE
-VERDICT: PASS — all six responsiveness probes met on v0.4.63 (seed 555). C1 corrected latency 1 tick on 39/39 keydowns + 20/20 A/D flips; C2 dodge fires at t0+1 on 17/17, i-frames hold (0 of 20 natural bites land inside a dash, 8 read hit_immune, cmd hits 3/3 immune mid-dash and 3/3 land after); C3 58/58 telegraph pairs at exactly 42 ticks plus 3 boss quakes at 42, Ember 6732-9739 danger px mid-telegraph vs 11 px clean; C4 49/49 hits carry flash + numeral + knockback + sound (233/280 in the crowded run, residuals accounted), arc hitstop 15/15, 64/64 kill shakes, 3/3 quake + 6/6 trample shakes, flash and numeral proven in harness pixels; C5 player inside the central 60 % on 33/33 samples, worst jump 42 px; C6 markersDrawn 2/3/1/4 with uncued 0 and chips located in pixels. 0 PAGEERROR on every cited capture. No mustFix; 6 advisories.
+VERDICT: PASS — all six responsiveness probes met on v0.4.63 (seed 555). C1 corrected latency 1 tick on 39/39 keydowns + 20/20 A/D flips; C2 dodge fires at t0+1 on 17/17, i-frames hold (0 of 20 natural bites land inside a dash, 8 read hit_immune, cmd hits 3/3 immune mid-dash and 3/3 land after); C3 58/58 telegraph pairs at exactly 42 ticks plus 3 boss quakes at 42, Ember 6732-9739 danger px mid-telegraph vs 11 px clean; C4 49/49 hits carry flash + numeral + knockback + sound (233/280 in the crowded run, residuals accounted), arc hitstop 15/15, 64/64 kill shakes, 3/3 quake + 6/6 trample shakes, flash and numeral proven in harness pixels; audit re-run (certC5-b-) proves the shake on the render camera and in rendered pixels: kills 4/4, quake resolves 5/5 and tramples 9/9 shift the image 5-10.6 px vs 0-1 px at rest and 0 px on 4/4 quake-start controls; render-camera jerk above the baseline max on 4/4 resolves, 7/7 tramples and 9/9 kills in the natural fight; boss room on screen on the camp-boot skipToRoom(8) path; C5 player inside the central 60 % on 33/33 samples, worst jump 42 px; C6 markersDrawn 2/3/1/4 with uncued 0 and chips located in pixels. 0 PAGEERROR on every cited capture. No mustFix; 7 advisories.
 
 # Certification C round 5 - Responsiveness bar
 
@@ -372,3 +372,130 @@ c0-c7, s1-flash, s2-off, s5-num, s4-blob), cam (+ cam-end), threat (+ threat-nat
 nat-m2-8, forced-top, forced-tr, forced-tr8, forced-r), threat2 (+ threat2-one / -four + crops), threat3 (+ threat3-* crops),
 boss. Generators `tools/certC5-gen.mjs`, `-gen2.mjs`, `-gen3.mjs`, `-gen4.mjs`; crop helper `tools/certC5-crop.mjs`; action
 files `tools/actions/certC5-*.json`. Nothing under `src/**` touched.
+
+## Audit re-run (prefix certC5-b-) — C4 screenshake seen in the CAMERA, boss room seen on SCREEN
+Completeness audit gap (mustRerun): the r5 C4d boss/kill shake verdict rested on sim `screenshake` events only; the camera
+cross-check had `camSamples 0` because `E.state()` was blind in the boss room (A4), and no frame of the boss fight was
+captured. Re-run plan: sample `window.__arenaProbe.stage.camera` on EVERY rendered frame (rAF + a chained
+`scene.onBeforeRender` hook, i.e. the pose the renderer actually drew with), never through `E.state()`, across
+`boss_quake_start` (control: no shake event), `boss_quake_resolve`, `boss_trample` and kill `screenshake` ticks, on both
+boot paths (camp boot -> `startRun` -> `skipToRoom(8)`, and `?seed=555&room=8`), plus mid-fight shots.
+Progress (checkpoint): started; results appended below as each capture lands.
+
+### B1 boot-path recon — `captures/certC5-b-recon8.console.txt`, `certC5-b-reconskip.console.txt` (v0.4.63, 0 PAGEERROR, exit 0 both)
+- `?seed=555&room=8` does NOT reach the boss room: t0 and t214 read `stScene camp`, `runState.phase idle`, room 0, and
+  `certC5-b-recon8-a.png` is the Hearth Camp ("THE HEARTH CAMP / NIGHT · BEFORE THE ROAD", 0 GLINT). A third try,
+  `?scene=arena&room=boss&seed=555` (`certC5-b-shake3`), boots `arena-v1` with no run: room null, 0 enemies, 0 boss events
+  over 1500 ticks. The harness-only `?room` boot therefore cannot be used for the boss (advisory A7); every boss number
+  below uses the camp boot -> `startRun` -> `skipToRoom(8)` path the audit questioned.
+- Camp-boot path: `skipToRoom(8)` at t157 -> `room_enter` 157, `boss_spawn` 157, `boss_quake_start` 158 -> `resolve` 200,
+  `screenshake boss_quake` 200, `boss_trample` + `screenshake boss_trample` 201, `boss_adds` 375. `__arenaProbe` exists with
+  `stage = {renderer, scene, camera, composer, bloomPass, gradePass, resize, render}`; camera (0.297, 9.456, 4.296) at t240
+  vs (0.537, 9.456, 4.944) at t435 (it follows). **The boss room is on screen:** `certC5-b-reconskip-a.png` (t~240) shows the
+  room plate "ROOM 8 OF 8 · THE HOLLOW STAG" at (12,14)-(455,70), the boss bar "THE HOLLOW STAG 1558/1800" at (530,12)-(1070,72),
+  the Stag with violet antlers at ~(760,280)-(990,540) and a red Ember ring at (595,410)-(880,645). Analyzer: >160 2.962 %,
+  >200 1.186 %, 16/16 buckets, FLAT 1.33 %.
+
+### B2 render-camera shake, NATURAL fight — `captures/certC5-b-shake.console.txt` (v0.4.63, seed 555, fps 33-41, 0 PAGEERROR, exit 0)
+Sampler: one row per rAF from `__arenaProbe.stage.camera.position` AND one row per render from a chained
+`stage.scene.onBeforeRender` hook reading `camera.matrixWorld` (the pose the renderer draws with). Same camera object
+throughout (`scenes 1`); hook rows 238 (room 1) + 1857 (boss); the two series are identical frame for frame, so the shake is
+on the camera through the whole frame, not added and removed around the draw. Metric: jerk = |second difference| of
+consecutive rendered frames; window [t, t+12] ticks for stomps, [t, t+8] for kills; baseline = every frame >= 24 ticks from
+any `screenshake` and > 90 ticks after a `room_enter`. Player i-framed + healed by cmd; nobody touched the Stag.
+Room 1 (`startRun` t65, 5 natural kills): baseline 90 frames, jerk **0 / 0 / 0** (p50/p99/max; the camera is perfectly still).
+
+| event (room 1) | 188 | 275 | 344 | 431 | 551 |
+|---|---|---|---|---|---|
+| kill `screenshake` max jerk (pre-window) | **0.0793** (0) | **0.0592** (0) | **0.0910** (0) | **0.0432** (0) | **0.0420** (0) |
+
+Raw render-time trace, kill t188: camera (x, z) = (0, 7.38794) at t184/185/186 -> **(-0.04170, 7.38761)** t188 ->
+**(-0.00414, 7.38985)** t189 -> (0, 7.38794) t191/194/198 — a 0.042 u kick that returns exactly to rest in 3 ticks.
+
+Boss room (`skipToRoom(8)` t585, fight ran t585-1590; baseline 1274 frames: jerk p50 **0**, p95 **0.0011**, p99 **0.0087**,
+max **0.0206**):
+
+| event | ticks | max jerk in window |
+|---|---|---|
+| `boss_quake_start` (control, emits no shake) | 868 / 1150 / 1432 (586 = the room-enter camera snap z 7.388 -> 3.988, excluded) | **0 / 0.0003 / 0.0008** |
+| `boss_quake_resolve` | 628 / 910 / 1192 / 1474 | **0.0706 / 0.0620 / 0.0666 / 0.1278** |
+| `boss_trample` | 629 / 779 / 929 / 1079 / 1229 / 1379 / 1529 | **0.0706 / 0.0505 / 0.0470 / 0.0984 / 0.0791 / 0.0886 / 0.1148** |
+| kill `screenshake` (adds) | 1006 / 1265 / 1355 (x2) / 1590 | **0.0768 / 0.0316 / 0.0484 / 0.2397** |
+
+Every stomp and every kill shake is above the room's baseline MAX (0.0206); every control is below its p99. Raw trace,
+first resolve t628: (x, z) = (-0.00321, 3.98794) at t622/623/626 -> (-0.00892, 3.99794) t630 -> (0.01896, 3.98048) t631 ->
+(0.00580, 3.98179) t632 -> smooth follow drift from t635. Trample t779: rest (0.31107, 4.31451) t773-778 -> (0.34940, 4.32368)
+t780 -> (0.34355, 4.30833) t781 -> (0.34123, 4.33041) t782 -> (0.32152, 4.36827) t783 -> smooth drift. Sim `screenshake` 21
+(5 room-1 kills; boss room `boss_quake` 4, `boss_trample` 7, `kill` 5, amp 0.06, 0.18 s / 0.12 s). Mid-fight shot
+`certC5-b-shake-mid.png` (taken t785, 6 ticks after trample #2): boss bar "1391/1800", room plate "ROOM 8 OF 8", Stag at
+~(750,300)-(1080,540), Ember trample ring (585,395)-(790,610), numerals 9/11/12/16; >160 2.567 %, >200 0.971 %, 16/16, FLAT
+1.06 %. Scenario note: only the player was i-framed, so the three allies went down; the Stag was felled at ~t1590 and the
+final frame `certC5-b-shake.png` reads "THE HOLLOW STAG · FELLED 5 ADDS REMAIN" with three revive "E" rings — a healer alone
+with downed allies cannot finish the adds, which is the scenario, not a defect.
+
+### B3 render-camera shake, Stag pinned at full HP — `captures/certC5-b-shake2.console.txt` (v0.4.63, fps 33, 0 PAGEERROR, exit 0)
+`startRun` -> `skipToRoom(8)` t39, `bossHp(1)` every 16 ms, player i-framed. 12 quakes (all 42 ticks), 21 tramples,
+33 `screenshake` (12 `boss_quake` + 21 `boss_trample`). Baseline 985 frames: jerk p50 **0.0001**, p95 **0.0082**, p99
+**0.0208**, max **0.0378**. Hook and rAF series again identical.
+
+| event | n | max jerk in window, in tick order |
+|---|---|---|
+| `boss_quake_start` control | 12 | 40: no frames (boot) / 322: **0** / 604: 0.0002 / 886: 0.0012 / 1168: 0.0109 / 1450: 0.0196 / 1732: 0 / 2014: 0.0001 / 2296: 0.0052 / 2578: 0.0226 / 2868: 0.0416 (12 ticks after trample 2856, pre-window 0.1546) / 3150: 0 |
+| `boss_quake_resolve` | 12 | 82: 0.0448 / 364: **0.0925** / 646: **0.1248** / 928: 0.0658 / 1210: **0.0291** / 1492: 0.1049 / 1774: 0.0545 / 2056: 0.0876 / 2338: 0.0532 / 2620: 0.0616 / 2910: 0.0869 / 3192: 0.0498 |
+| `boss_trample` | 21 | 83: 0.0448 / 233: **0.1551** / 383: 0.0437 / 533: 0.0576 / 683: 0.1435 / 833: 0.0788 / 983: 0.0621 / 1133: 0.0884 / 1283: 0.1111 / 1433: 0.0520 / 1583: 0.0885 / 1775: 0.0545 / 1925: 0.0766 / 2106: 0.0819 / 2256: 0.1336 / 2406: 0.1074 / 2556: 0.0856 / 2706: 0.0678 / 2856: 0.1546 / 3006: 0.1393 / 3193: 0.0498 |
+
+Resolves: 12/12 above the baseline p99, 11/12 above the baseline max (t1210 0.0291 is the one below max). Tramples 21/21
+above max. Controls: median 0.0002; the three highest (1450, 2578, 2868) all have a pre-window 0.05-0.15, i.e. the tail of
+a preceding trample. Raw trace, resolve t646: rest (0.74598, 4.92312) t641/644 -> (0.70327, 4.94430) t646 -> (0.77596,
+4.91783) t648 -> (0.76464, 4.93481) t650 -> (0.74157, 4.92161) t653 -> (0.74546, 4.92132) t654 -> rest 0.7455-0.7458 t656-662:
++-0.04 u jitter for 8 ticks, then back to the pre-event pose. Mid-telegraph shot `certC5-b-shake2-tele.png` (t326, 4 ticks
+into quake 322 -> 364): Stag at ~(700,200)-(980,520) with violet antlers, Ember quake ring ~(580,330)-(970,560), boss bar
+"1800/1800", room plate "ROOM 8 OF 8"; analyzer danger **25265 px** full frame / **17261 px** in box 560,280,460,280;
+>160 2.658 %, >200 1.015 %, 16/16, FLAT 1.36 %. The screenshot did not starve the resolve window (6 frames, 0.0925).
+Progress (checkpoint): B1-B3 done; B4 pixel-shift proof next.
+
+### B4 screenshake in RENDERED PIXELS — `captures/certC5-b-shakepx.console.txt` (+ `.analysis.json`), v0.4.63, 0 PAGEERROR, exit 0
+Method: after the game's own rAF has drawn, my rAF copies six peripheral 96x80 patches of the WebGL canvas
+(`stage.renderer.domElement`, 1600x900 = CSS size) at (60,110) (1440,110) (60,420) (1440,420) (250,690) (1250,690) and stores
+their luma — 1829 frames, **0 blank**. Offline, a +-8 px SAD search per textured patch (luma std >= 10) gives the integer image
+shift of each frame vs the previous frame; the median over patches is the frame's pixel shift. Camp boot -> `startRun`
+(room 1, natural kills) -> `skipToRoom(8)` t963 with the Stag pinned at full HP. Frames: `certC5-b-shakepx-room1.png`
+("ROOM 1 OF 8 · CLEAR THE CLEARING", WAVE 2/3) and `certC5-b-shakepx-boss.png` (t2213, "ROOM 8 OF 8", Stag at ~(690,140)-(900,330),
+boss bar 1800/1800).
+
+| event | ticks | max frame-to-frame image shift (px) | frames with >= 3 px shift |
+|---|---|---|---|
+| baseline, 120 rest frames | — | 0 on **117**, 1 px on 3 | 0 |
+| `boss_quake_start` control | 1246 / 1528 / 1810 / 2092 | **0 / 0 / 0 / 0** | 0 / 0 / 0 / 0 (of 13-21 frames) |
+| kill `screenshake` (room 1) | 658 / 745 / 814 / 901 | **7.07 / 6.40 / 7.07 / 5.00** | 3 / 5 / 5 / 4 |
+| `boss_quake_resolve` | 1006 / 1288 / 1570 / 1852 / 2134 | **8.06 / 8.00 / 9.43 / 9.43 / 7.07** | 8 / 4 / 8 / 7 / 7 |
+| `boss_trample` | 1007 / 1157 / 1307 / 1457 / 1607 / 1757 / 1907 / 2057 / 2207 | **8.06 / 6.08 / 8.94 / 8.60 / 9.43 / 9.43 / 9.43 / 8.25 / 10.63** | 7-14 each |
+
+The image jitter tracks the camera: on the 100 frames whose camera x-step exceeds 0.02 u, the pixel x-shift has the same
+sign on **97/100**, median **96 px per world unit** (p10 71, p90 137). Kill t814, frame by frame (camera dx -> image dx):
++0.0387 -> +4, -0.0804 -> -7, +0.0699 -> +6, -0.0548 -> -5, +0.0418 -> +4, -0.0184 -> -1, then 0 px on every frame from t817.
+Resolve t1852: -5/+8/-6/+5/-4/+4 px in x on consecutive frames, back to 0 from t1857. Kill shakes run on wall time through the
+kill hitstop: kill t658 has four rendered frames at the same sim tick 658 with shifts +3, -7, +6, -1 px. The renderer applies
+the shake; the Act-1 kills and every boss stomp move the picture, and the telegraph start does not.
+
+### Audit re-run verdict
+Gap closed at v0.4.63. Kill shakes and boss stomps are measured three ways: on the render-time camera (natural fight 4/4
+resolves, 7/7 tramples, 9/9 kills above the room's baseline max; pinned fight 12/12 resolves above p99 and 11/12 above max,
+21/21 tramples above max), in rendered pixels (4/4 kills, 5/5 resolves, 9/9 tramples shift the image 5-10.6 px against a
+0-1 px baseline), and against the built-in control (`boss_quake_start`: median camera jerk 0.0002, 0 px image shift on 4/4).
+The boss room renders on the camp-boot `skipToRoom(8)` path (`certC5-b-reconskip-a`, `-shake-mid`, `-shake2-tele`,
+`-shakepx-boss`). C4 stays **MET**.
+
+### Advisories added by the re-run
+- **A7 The harness `?room` boot does not reach the boss room.** `?seed=555&room=8` boots the camp with no run
+  (`certC5-b-recon8`: t0/t214 `phase idle`, room 0, camp frame), and `?scene=arena&room=boss&seed=555` boots an empty
+  `arena-v1` with room null, 0 enemies and 0 boss events over 1500 ticks (`certC5-b-shake3`). Harness-only, but the critic
+  brief says `?room=N boots straight into a room`, so the brief or the parameter needs to change.
+- **A4 (updated)** On this run `E.state()` in the boss room is not null but **stale**: 124 + 116 polls (`certC5-b-shake`,
+  `-shake2`) read `room.mode "kill_all"` in room 8 and the Stag is never listed in `enemies` (`stagSeen 0`), while
+  `runState().boss` and the HUD hold the real values. Debug-API only; the render camera read through `__arenaProbe` is
+  unaffected.
+
+Re-run captures (all under `captures/`, prefix `certC5-b-`): recon8 (+ -a/-b), reconskip (+ -a/-b), shake (+ shake-mid), shake2 (+ shake2-tele),
+shake3 (+ shake3-a), shakepx (+ shakepx-room1 / shakepx-boss, shakepx.analysis.json). Generators `tools/certC5-b-gen.mjs`, `-gen2.mjs`,
+`-gen3.mjs`; action files `tools/actions/certC5-b-*.json`. 0 PAGEERROR, exit 0 on all seven. Nothing under `src/**` touched.
