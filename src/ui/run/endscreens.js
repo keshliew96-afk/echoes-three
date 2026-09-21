@@ -45,6 +45,8 @@ export function createEndScreen({ run }) {
       kitEl.style.display = 'none';
       return;
     }
+    // @gnt:M2 NEW-BEST begin — "New best" line + score rank (profile, §3.4).
+    // @gnt:M2 NEW-BEST end
     summaryEl.innerHTML = [
       row('ROOMS CLEARED', `${s.rooms} / 8`),
       row('GLINT EARNED', String(s.glint)),

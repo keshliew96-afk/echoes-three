@@ -18,11 +18,15 @@
 //   Gauntlet params (?menu= ?act= ?fresh= ?slot= ?audio= ?net* ...): see
 //   src/app/params.js and docs/gauntlet/PLAN.md §6.
 //
-// GAUNTLET OWNERSHIP ANCHORS (docs/gauntlet/PLAN.md §2): each `@gnt:<NAME>`
-// comment marks the one region a module key may edit in this shared file —
-// APP-BOOT / APP-ATTACH / LOOP (M1), AUDIO (M3), WORLD-LAYERS (M4a/M4b),
-// SAVE (M2), NET (M5a/M5b), DEBUG-API (one line per namespace, its owner).
-// Re-read immediately before editing; keep edits inside the region.
+// GAUNTLET OWNERSHIP ANCHORS (docs/gauntlet/PLAN.md §2.2): every region is a
+// `@gnt:<NAME> begin` ... `@gnt:<NAME> end` comment pair; a key edits ONLY
+// between its own markers — APP-BOOT / APP-ATTACH / LOOP (M1), AUDIO (M3),
+// RNG-WRAPPER / SAVE (M2), M4a WORLD-LAYERS + M4a RENDER-TICK (M4a),
+// M4b WORLD-LAYERS + M4b RENDER-TICK (M4b), NET (M5a W3, M5b W4),
+// INT-WIRING (INT), DEBUG-API (service-backed; normally untouched). Regions
+// nested inside another key's region (RENDER-TICK inside LOOP) belong to the
+// inner key; the outer owner keeps them verbatim. Re-read immediately before
+// editing; never reformat outside your region.
 import { Plane, Raycaster, Vector2, Vector3 } from 'three';
 import { VERSION } from './version.js';
 import { createStage } from './render/stage.js';
@@ -53,7 +57,8 @@ import { updateNumberPools, flushNumberPools, prewarmNumberPools } from './rende
 import { warmupUpdate, warmupPending, warmupRetained } from './render/warmup.js';
 import { parseBootParams, wipeEchoesStorage } from './app/params.js';
 import { createApp } from './app/app.js';
-import { service } from './app/registry.js';
+import { service, provide } from './app/registry.js';
+import { createContentService } from './data/content.js';
 import { createFrameScheduler } from './app/loop.js';
 import { SKILL_SLOTS } from './core/constants.js';
 import { emptySnapshot } from './core/intents.js';
@@ -100,6 +105,9 @@ const seed =
 // consumer while `reseed` swaps the stream underneath. `?seed=` still forces
 // the FIRST stream, and every later run seed is a draw off the previous one,
 // so a seeded session stays deterministic end to end.
+// @gnt:M2 RNG-WRAPPER begin — M2 adds getState()/setState() here (delegating
+// to rng.js's mulberry32 getState/setState, incl. seed + draw count) so a
+// save captures and restores the LIVE stream (PLAN §3.4).
 let rngImpl = createGameplayRng(seed);
 const rng = {
   stream: 'gameplay',
@@ -119,6 +127,7 @@ const rng = {
     return rngImpl.seed;
   },
 };
+// @gnt:M2 RNG-WRAPPER end
 const cosmetic = createCosmeticRng();
 
 const registry = createRegistry();
@@ -273,15 +282,28 @@ const runUi =
     ? createRunUi({ bus, world, socket: socketScreen, autostart: params.get('run') === '1' })
     : null;
 
-// @gnt:WORLD-LAYERS (M4a/M4b) — new render layers for content (hazards,
-// interactables, new skill/technique VFX) are created here, PLAYABLE only,
-// and ticked in the LOOP's render block.
+// New render layers for content are created in the two WORLD-LAYERS blocks
+// (PLAYABLE only) and ticked in the matching RENDER-TICK blocks of frame().
+// @gnt:M4a WORLD-LAYERS begin — skill/technique VFX, expedition picker, the
+// `content` service (src/data/content.js; M4b adds probes with
+// registerContentProbe from its own files, never here).
+provide('content', createContentService({ world }));
+// @gnt:M4a WORLD-LAYERS end
+// @gnt:M4b WORLD-LAYERS begin — hazard / interactable / biome layers, prompts.
+// @gnt:M4b WORLD-LAYERS end
 
-// @gnt:SAVE (M2) — createSaveSystem({ clock, rng, registry, world, bus,
-// scene: activeScene, stage, app }) + provide('save', ...) (PLAN §3.4).
+// @gnt:SAVE begin (M2) — createSaveSystem({ clock, rng, registry, world, bus,
+// scene: activeScene, stage, app }) + provide('save', ...) (PLAN §3.4);
+// captures/applies only at clock.onTickEnd or between frames (§3.4).
+// @gnt:SAVE end
 
-// @gnt:NET (M5a/M5b) — createNetSession(...) + provide('net', ...) and the
-// sim driver swap for host/guest roles (PLAN §3.7).
+// @gnt:NET begin (M5a W3: provide('net', client) only; M5b W4: the session
+// driver) — `simStep` is THE seam the frame loop calls once per sim tick.
+// M5b swaps it for the host/guest driver (host: world.step(tick, snap,
+// seatInputs); guest: no world step — replica apply + own-seat prediction).
+// Single-player keeps exactly this function (PLAN §3.7, gate G5b.8).
+let simStep = (tick) => world.step(tick, sampleIntents());
+// @gnt:NET end
 
 const overlay = createDebugOverlay(VERSION, {
   debug: flag('debug', false),
@@ -297,9 +319,12 @@ window.addEventListener('resize', () => stage.resize());
 
 // --- Frame loop: clock.advance steps the sim 0..N whole ticks (each tick
 // samples intents once), returns the interpolation alpha for rendering.
-// @gnt:LOOP (M1) — the scheduler (src/app/loop.js) owns frame pacing
+// @gnt:LOOP begin (M1) — the scheduler (src/app/loop.js) owns frame pacing
 // (V-Sync / frame limit); the sim gate is app.simPaused() (title, pause,
-// farewell) + the debug freeze (__echoes.sim). Render never stops.
+// farewell) + the debug freeze (__echoes.sim). Render never stops. The sim
+// step is `simStep` (NET seam) — M1 never inlines world.step here. Per-frame
+// work of other keys runs through app.update(now) (audio listener: M3 via
+// service('audio').update) or their own RENDER-TICK block below.
 let simFrozen = bootParams.freeze; // ?freeze=1: tick 0 until __echoes.sim.thaw()
 let lastAlpha = 0;
 let last = performance.now();
@@ -349,9 +374,7 @@ function frame(now) {
 
   let alpha = lastAlpha;
   if (!simFrozen && !app.simPaused()) {
-    alpha = clock.advance(frameMs, (tick) => {
-      world.step(tick, sampleIntents());
-    });
+    alpha = clock.advance(frameMs, (tick) => simStep(tick));
     lastAlpha = alpha;
   }
 
@@ -363,6 +386,10 @@ function frame(now) {
   techfx?.update(now / 1000);
   bossfx?.update(now / 1000, alpha);
   fizzleCue?.update(now / 1000);
+  // @gnt:M4a RENDER-TICK begin
+  // @gnt:M4a RENDER-TICK end
+  // @gnt:M4b RENDER-TICK begin
+  // @gnt:M4b RENDER-TICK end
   // Damage numerals age HERE, in the one loop that never stops, after the
   // scenes have settled their cameras (world->screen projection needs the
   // final camera of this frame). No scene swap can freeze the pool.
@@ -390,6 +417,7 @@ function frame(now) {
 }
 
 const scheduler = createFrameScheduler({ renderer: stage.renderer, frame });
+// @gnt:LOOP end
 
 // @gnt:APP-ATTACH begin (M1) — hand the app shell every layer it drives,
 // then decide title vs menu-skip (PLAN §1). ARCH stub: always 'playing'.
@@ -410,6 +438,9 @@ app.attach({
 });
 app.boot();
 // @gnt:APP-ATTACH end
+// @gnt:INT-WIRING begin (INT, W5) — pause menu registration, cross-module
+// wiring; Esc-to-pause listener registered LAST, bubble phase (PLAN §1.5).
+// @gnt:INT-WIRING end
 scheduler.start();
 
 // --- __echoes.sim (ARCH, PLAN §6.4): deterministic stepping for probes. The
@@ -497,10 +528,19 @@ const simDebug = {
 // --- Debug API (docs/TESTING.md). cmd surface grows as systems land.
 window.__echoes = {
   version: VERSION,
-  // @gnt:DEBUG-API — Gauntlet namespaces (PLAN §6.4). Each resolves its
+  // @gnt:DEBUG-API begin — Gauntlet namespaces (PLAN §6.4). Each resolves its
   // module's service lazily, so owners never edit this file for their probes:
   // provide('<name>', impl) with impl.debug = { ... }.
   app: app.debug,
+  get content() {
+    const c = service('content');
+    return c ? c.debug ?? c : null;
+  },
+  // Bus counters (PLAN §3.7 replica bus): simCalls must not grow on a guest,
+  // refusedEmits must stay 0.
+  get busCounters() {
+    return { ...bus.counters, replica: bus.replica };
+  },
   get settings() {
     const s = service('settings');
     return s
@@ -529,6 +569,7 @@ window.__echoes = {
     return n ? n.debug ?? n : null;
   },
   sim: simDebug,
+  // @gnt:DEBUG-API end
   // HUD probe surface (§17 block): portrait states, cooldown boxes, zone
   // metrics, banner mode and the off-screen threat audit.
   hud: hud ? hud.debug : null,

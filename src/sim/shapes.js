@@ -1,3 +1,7 @@
+// GAUNTLET OWNERSHIP: M4a only (docs/gauntlet/PLAN.md §2). M4b never edits
+// this file — barricades/rubble reach the skill-bolt sweep through
+// movement.sweptContact() (M4b's export), which M4a calls here.
+//
 // Delivery shapes (§6) — the closed set of 6, as pure sim primitives shared by
 // every skill (and later by ally kits): target selection for `direct`, `nova`,
 // `melee_arc`, aim fans + a swept skill-bolt subsystem for `projectile`,

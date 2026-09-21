@@ -186,8 +186,12 @@ export function createStage({ container, toggles = {} } = {}) {
   // tonemap actually runs in OutputPass; the renderer property is what that
   // pass reads.
   renderer.toneMappingExposure = EXPOSURE;
+  // @gnt:M1 RENDER-SCALE begin — initial pixel ratio x display.renderScale
+  // (PLAN §5); M1 also owns resize() and adds setRenderScale() /
+  // renderScale / drawingBufferSize() to the returned object.
   const pixelRatio = Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO);
   renderer.setPixelRatio(pixelRatio);
+  // @gnt:M1 RENDER-SCALE end
   renderer.setSize(width, height);
   (container ?? document.body).appendChild(renderer.domElement);
 
@@ -246,6 +250,7 @@ export function createStage({ container, toggles = {} } = {}) {
   // msaa=0 falls back to FXAA (last, in display space) so edges are never raw.
   if (msaa === 0) composer.addPass(new FXAAPass());
 
+  // @gnt:M1 RESIZE begin
   function resize(w = window.innerWidth, h = window.innerHeight) {
     const pr = Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO);
     renderer.setPixelRatio(pr);
@@ -255,10 +260,16 @@ export function createStage({ container, toggles = {} } = {}) {
     sizeBloom(w, h); // re-apply half-res bloom after composer's full-res setSize
     updateCameraAspect(camera, w, h);
   }
+  // @gnt:M1 RESIZE end
 
   function render() {
     composer.render();
+    // @gnt:M2 THUMBNAIL begin — one onNextRender hook line (save thumbnail
+    // read right after composer.render(), no preserveDrawingBuffer, §3.4).
+    // @gnt:M2 THUMBNAIL end
   }
 
+  // @gnt:M1 STAGE-API begin (setRenderScale / renderScale / drawingBufferSize)
+  // @gnt:M1 STAGE-API end
   return { renderer, scene, camera, composer, bloomPass, gradePass, resize, render };
 }

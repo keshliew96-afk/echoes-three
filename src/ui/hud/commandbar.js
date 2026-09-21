@@ -675,6 +675,9 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     }
   }
 
+  // @gnt:M5b VIEW-SEAT begin — setViewSeat(partyIndex): a guest's bar shows
+  // its own seat's kit (4 tiles, ally kits stay 4) and portrait focus.
+  // @gnt:M5b VIEW-SEAT end
   return {
     el: bar,
     update,

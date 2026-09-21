@@ -498,6 +498,12 @@ export function createCampScene(stage, toggles, ctx) {
     return out;
   }
 
+  // @gnt:M4a BEGIN-RUN begin — portal -> expedition rule (PLAN §4.1):
+  // menu-skip boots and single-unlock profiles start the act directly; the
+  // picker opens only in title sessions with >= 2 acts unlocked. startRun
+  // receives { act, challenge } (challenge read from settings HERE, at the
+  // press, and stored in run state — the sim never reads app state).
+  // M5b (W4) adds the host-only portal rule inside this block.
   function canBegin() {
     if (mode !== 'camp' || begin) return false;
     const run = world.runSystem();
@@ -539,6 +545,7 @@ export function createCampScene(stage, toggles, ctx) {
     if (mode !== 'camp') return;
     beginRun();
   });
+  // @gnt:M4a BEGIN-RUN end
 
   // ------------------------------------------------------------ update --
   function update(elapsedSec, alpha = 1) {
@@ -652,7 +659,9 @@ export function createCampScene(stage, toggles, ctx) {
     marker.scale.setScalar(inRange ? 1.04 : 1.0);
 
     // §22 camera: smoothed follow + aim lookahead, then the camp focus clamp.
+    // @gnt:M5b FOLLOW-SEAT begin — a guest follows its own seat's body.
     followRig.update(dt, ix, iz, p.aim);
+    // @gnt:M5b FOLLOW-SEAT end
     const fxp = stage.camera.position.x;
     const fzp = stage.camera.position.z - CAM_OFF_Z;
     const cxp = clamp(fxp, -CAM_CLAMP.x, CAM_CLAMP.x);
@@ -745,6 +754,15 @@ export function createCampScene(stage, toggles, ctx) {
       case 'campMode':
         if (args[0] === 'camp' || args[0] === 'run') setMode(args[0]);
         return mode;
+      // Gauntlet scene commands — each key's cases inside its own block.
+      // @gnt:M1 CAMP-CMD begin (titleCam)
+      // @gnt:M1 CAMP-CMD end
+      // @gnt:M2 CAMP-CMD begin (restoreScene: mode + layout, no seatParty)
+      // @gnt:M2 CAMP-CMD end
+      // @gnt:M4b CAMP-CMD begin (applyLayout passthrough to the arena)
+      // @gnt:M4b CAMP-CMD end
+      // @gnt:M5b CAMP-CMD begin (followSeat)
+      // @gnt:M5b CAMP-CMD end
       default:
         return undefined;
     }

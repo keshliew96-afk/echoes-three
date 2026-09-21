@@ -40,8 +40,27 @@ export function createClock() {
       }
       tick += 1;
       stepFn(tick);
+      tickEnd(tick);
     }
     return accumulator / TICK_MS;
+  }
+
+  // TICK BOUNDARY hooks (docs/gauntlet/PLAN.md §3.4 "capture point"): run
+  // after a world step has fully returned, before the next one starts — the
+  // ONLY place where save.capture()/apply(), autosave and net snapshots or
+  // keyframes may touch the sim (a bus listener runs MID-step, while the
+  // world's deferred/continuation queues still hold closures). A listener
+  // sets a flag; the capture happens here. fn(tick) must not step the clock.
+  const tickEndFns = [];
+  function tickEnd(t) {
+    for (let i = 0; i < tickEndFns.length; i++) tickEndFns[i](t);
+  }
+  function onTickEnd(fn) {
+    tickEndFns.push(fn);
+    return () => {
+      const i = tickEndFns.indexOf(fn);
+      if (i >= 0) tickEndFns.splice(i, 1);
+    };
   }
 
   // Step exactly ONE 60 Hz tick outside wall time (docs/gauntlet/PLAN.md
@@ -56,15 +75,18 @@ export function createClock() {
     }
     tick += 1;
     stepFn(tick);
+    tickEnd(tick);
     return true;
   }
 
-  // @gnt:M2 CLOCK-STATE — serialize()/restore() of { tick, hitstopRemaining,
-  // grants } land here with the save system (PLAN §3.4).
+  // @gnt:M2 CLOCK-STATE begin — serialize()/restore() of { tick,
+  // hitstopRemaining, grants } land here with the save system (PLAN §3.4).
+  // @gnt:M2 CLOCK-STATE end
 
   return {
     advance,
     stepOnce,
+    onTickEnd,
     requestHitstop,
     get tick() {
       return tick;

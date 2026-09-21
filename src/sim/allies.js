@@ -577,7 +577,11 @@ export function createAllySystem({
     const dz = z - a.z;
     const d = Math.hypot(dx, dz);
     if (d < 1e-6) return false;
+    // @gnt:M4a ALLY-SPEED begin — M4a scales `step` by
+    // status.speedMul(a, tick) (haste/slow, BUILD_BRIEF §23.8). Separation
+    // pushes below are NOT scaled.
     const adv = Math.min(step, d);
+    // @gnt:M4a ALLY-SPEED end
     walkStep(a, (dx / d) * adv, (dz / d) * adv, a.radius);
     face(a, dx, dz);
     return adv > 1e-6;

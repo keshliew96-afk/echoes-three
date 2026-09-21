@@ -288,7 +288,9 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
   // the camera moved and why. amp/duration ride the event, clamped to the
   // brief ceilings.
   bus.on('screenshake', (ev) => {
+    // @gnt:M1 SHAKE-SCALE begin — amp x settings gameplay.screenshake (0/0.5/1).
     const amp = Math.min(SCREENSHAKE.maxAmp, ev.amp ?? SCREENSHAKE.amp);
+    // @gnt:M1 SHAKE-SCALE end
     const dur = Math.min(SCREENSHAKE.maxDurationSec, ev.durationSec ?? SCREENSHAKE.durationSec);
     // A bigger shake always wins; a smaller one never cuts one already running.
     shakeCount += 1;
@@ -515,7 +517,9 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     decals.update(dt);
 
     // §22 camera: smoothed follow + aim lookahead, driven by render dt.
+    // @gnt:M5b FOLLOW-SEAT begin — a guest follows its own seat's body.
     followRig.update(dt, ix, iz, player.aim);
+    // @gnt:M5b FOLLOW-SEAT end
 
     // §9 #7 screenshake: small decaying camera offset, kills only.
     if (shakeLeft > 0) {

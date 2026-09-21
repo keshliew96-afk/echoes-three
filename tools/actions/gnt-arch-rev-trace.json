@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const t=E.sim.trace(600,3);return {v:E.version,trace:t.stateHash+\"/\"+t.eventsHash,content:E.content&&{levels:E.content.levels().length,probes:E.content.probes(),dt:E.content.difficultyTable().length},bus:E.busCounters,app:E.app.state}})()"
+ }
+]

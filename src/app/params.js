@@ -10,7 +10,8 @@
 //   neither -> title iff NO legacy harness param is present (a player's plain URL)
 // Other params are documented in PLAN.md §6 and docs/TESTING.md.
 
-export const LEGACY_HARNESS_PARAMS = Object.freeze(['scene', 'room', 'run', 'seed', 'variant']);
+// ('layout' is the Gauntlet content-harness param; it skips the title like the rest.)
+export const LEGACY_HARNESS_PARAMS = Object.freeze(['scene', 'room', 'run', 'seed', 'variant', 'layout']);
 
 function flagOf(params, name, def) {
   const v = params.get(name);
@@ -38,6 +39,12 @@ export function parseBootParams(search = typeof window !== 'undefined' ? window.
     seed: p.has('seed') ? Number(p.get('seed')) >>> 0 : null,
     variant: int('variant'),
     act: int('act'), // M4a: expedition 1..3 for ?run=1 / cmd('startRun')
+    // M4b: ?layout=1..9 = that layout's dressing AND its hazards/interactables
+    // spawned in the ?room= harness (content probes). ?variant=N stays
+    // dressing-only (v0.4.63 sim content, goldens unchanged); for N >= 4 the
+    // biome/palette/music follow the layout's act. Roster: ?act= if given,
+    // else the legacy §11 roll in ?room=, the act's roster inside a run.
+    layout: int('layout'),
     debug: flagOf(p, 'debug', false),
     fps: flagOf(p, 'fps', false), // INT: fps meter in player builds
     fresh: flagOf(p, 'fresh', false), // wipe echoes.* storage at boot (clean-profile tests)
@@ -51,6 +58,7 @@ export function parseBootParams(search = typeof window !== 'undefined' ? window.
     netName: p.get('netname'),
     netSeat: int('netseat'),
     netCond: p.get('netcond'), // client-side conditioner spec, e.g. lat75,jit10,loss10
+    netRate: int('netrate'), // M5a: snapshot rate override 10..60 Hz (tests)
   });
 }
 

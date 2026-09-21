@@ -13,9 +13,11 @@ import { SKILL_SLOTS } from './constants.js';
 
 // §3 control map -> discrete intent presses. Skill keys Digit1..DigitN are
 // derived from SKILL_SLOTS (4 at v0.4.63, 8 after the content extension).
-// @gnt:INPUT-KEYS — M4a (skill keys) / M4b (interact) anchored region.
+// @gnt:M4a INPUT-KEYS begin — skill keys derive from SKILL_SLOTS; KeyE
+// `interact` is already bound below (M4b needs no edit in this file).
 const SKILL_KEYS = {};
 for (let i = 0; i < SKILL_SLOTS; i++) SKILL_KEYS[`Digit${i + 1}`] = { kind: `skill_${i + 1}`, slot: i };
+// @gnt:M4a INPUT-KEYS end
 const KEY_TO_PRESS = Object.freeze({
   Space: { kind: 'dodge' },
   ...SKILL_KEYS,
@@ -124,6 +126,10 @@ export function createInputController({ target = window, screenToWorld = null } 
   function detach() {
     for (const [type, fn] of bindings) target.removeEventListener(type, fn);
   }
+
+  // @gnt:M1 INPUT-GATE begin — releaseAll() (clear held keys, basicHeld,
+  // pending presses) and setEnabled(on) for the app input gate (PLAN §1.5).
+  // @gnt:M1 INPUT-GATE end
 
   return { sample, detach };
 }

@@ -623,6 +623,12 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // run is its own block). It is DEFERRED to the first update with a ticked
   // sim: starting a run before tick 1 would run the room-boundary sweep over
   // ally bodies the AI has not spun up yet.
+  // @gnt:M2 RESTORE-RESYNC begin — one `state_restored` handler: close the
+  // page or re-open the one run.view() implies (PLAN §3.4 rule 5).
+  // @gnt:M2 RESTORE-RESYNC end
+  // @gnt:M5b GUEST-GUARD begin — guests see pages read-only ("The Healer is
+  // choosing…"); their presses become CMD pings, never sim calls.
+  // @gnt:M5b GUEST-GUARD end
   let pendingAutostart = !!autostart;
   function maybeAutostart() {
     if (!pendingAutostart || world.tick < 1) return;

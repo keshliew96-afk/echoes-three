@@ -71,14 +71,18 @@ It measures **>160 3.418%, >200 1.427%, 16/16 buckets** — that is the benchmar
 A frame whose whole histogram sits below bucket 8 is murk, no matter how much
 content it contains: fix lighting/exposure, not content.
 
-## Gauntlet Loop harness rules (v0.5.0+, binding — details in docs/gauntlet/PLAN.md §6)
+## Gauntlet Loop harness rules (v0.5.0+, revised v0.5.1, binding — details in docs/gauntlet/PLAN.md §6)
 
 **Boot params.** A plain URL (tools/cert-capture.mjs's default) now shows the
 TITLE SCREEN once M1 lands, with the sim paused. Regression captures that must
 boot straight into camp use **`?menu=0`** — or any legacy harness param
 (`?scene=`, `?room=`, `?run=1`, `?seed=`, `?variant=`), which all keep their
-v0.4.63 behaviour and skip the title. `?menu=1` forces the title even with
-legacy params (e.g. a seeded journey: `?seed=5&menu=1`). Other params:
+v0.4.63 behaviour and skip the title — including the portal: a menu-skip boot
+never opens the expedition picker, so E at the portal starts Act I as before
+(PLAN §4.1). `?layout=N` (M4b) also skips the title: layout N's dressing PLUS
+its hazards/interactables in the `?room=` harness, while `?variant=N` stays
+dressing-only (legacy golden traces unchanged). `?menu=1` forces the title
+even with legacy params (e.g. a seeded journey: `?seed=5&menu=1`). Other params:
 `?freeze=1` (sim frozen at tick 0 until `__echoes.sim.thaw()`), `?fresh=1`
 (wipe all `echoes.*` localStorage first — a clean profile), `?act=1..3`,
 `?slot=<id>`, `?audio=0`, `?fps=1`, `?net=…`, `?nethost=1`, `?netjoin=CODE`,
@@ -90,7 +94,40 @@ room param) — use `?netjoin=`.
 `node tools/cert-capture.mjs shot <pfx>smoke --settle 4000 --timeout 180000`
 must exit 0 with zero `[PAGEERROR]`. Core loop:
 `node tools/cert-capture.mjs shot <pfx>core --url "http://127.0.0.1:5199/?seed=7&menu=0" --actions tools/actions/gnt-arch-coreloop.json --timeout 180000`
-(hold W to the portal → E → room 1 → killAllEnemies → phase `reward`).
+(hold W to the portal → E → room 1 → killAllEnemies → phase `reward`;
+re-verified at v0.5.1). A key that must change this recipe writes
+`tools/actions/gnt-<KEY>-coreloop.json` and updates this pointer in the same
+commit; ARCH files are never edited by builders.
+
+**Esc = pause everywhere (v0.5.1).** Once INT lands, Esc opens the pause menu
+from combat and from every run page (draft, path, shop, end cards); an open
+socket screen closes on the first Esc. Esc never declines a draft — decline is
+**X** or the Decline button. Action files that used Esc to decline must press
+X instead.
+
+**Named harnesses (v0.5.1, PLAN §6.7).** Import `tools/gnt-arch-browser.mjs`
+(read-only): `launchEchoes({ gpu, headful, background, autoplay })`,
+`openEchoes`, `waitReady`, `measureRaf`. *GPU harness* = headless + ANGLE/D3D11
+(every fps gate). *Display harness* = the same headful (V-Sync / frame-limit
+cadence; run `node tools/gnt-arch-browser.mjs rafhz --headful` first — this
+machine measured ~161 Hz rAF headful AND headless at v0.5.1, a ~165 Hz panel).
+*Multi-page* = `background: true` (default: `--disable-renderer-backgrounding
+--disable-background-timer-throttling --disable-backgrounding-occluded-windows`)
+— mandatory for any harness with more than one page or an unfocused page.
+*Audio* = `autoplay: true`. The network multi-client harness is
+`tools/gnt-M5a-netbench.mjs` (fixed CLI + `echoes-netbench/1` schema, PLAN §6.7)
+and the act runner is `tools/gnt-M4a-actrun.mjs` once those keys land.
+
+**Capture point (v0.5.1).** Save captures/applies and net snapshots run only
+at `clock.onTickEnd` (after a world step returns) or between frames — never
+inside a bus listener. Probes that save from an event must set a flag and
+capture at the tick end.
+
+**Deterministic content setups.** Build scenarios with the PLAN §6.4 commands
+(`spawn(etype, x, z, { elite })`, `spawnHazard`, `spawnInteractable`,
+`hazardPhase`, `armKeg`, `setLayout`, `burrow`, `setStatus`, `clearStatus`,
+`startRun({ act, challenge })`, `autopilot`, `echoArm`, `resonance`) as their
+owners land them — never by waiting for RNG.
 
 **File prefixes.** Every tool / action / capture an agent creates starts with
 its prefix (`gnt<KEY>-`, fix builders `gntfix<KEY><round>-`, critics
@@ -112,9 +149,11 @@ meter, meterReset, testTone, cueLog, music, voices — M3), `save` (list / save 
 load / remove / capture / hash / roundTrip / corrupt / simulateQuota /
 simulateTornWrite / profile / usage — M2), `net` (state, role, room, seat,
 peers, stats, conditioner, connect / host / join / quickMatch / leave /
-setReady / start / drop / log — M5a/M5b), `content` (levels, difficultyTable,
-roomPlan, hazards, interactables — M4a/M4b). A namespace is `null` until its
-module provides the service.
+setReady / start / drop / log — M5a/M5b), `content` (levels, unlockedActs,
+difficultyTable, roomPlan, probes + M4b's hazards / interactables / layout —
+committed service, M4a/M4b fill it), `busCounters` (emitted / replayed /
+simCalls / presentationCalls / refusedEmits / replica — the replica-bus gate).
+A namespace is `null` until its module provides the service.
 
 **Determinism.** `node tools/gnt-arch-simtrace.mjs --mode kill_all|defend|run
 --ticks 3600 [--seed 7 --script 3] [--root <checkout>] [--record f | --golden f]`
@@ -122,18 +161,30 @@ runs the sim headless in Node exactly as main.js builds it. In page:
 `?seed=7&scene=arena&room=kill_all&freeze=1` then `__echoes.sim.trace(600, 3)`.
 Both exclude `sound` events (audio is not sim state). v0.5.0 references:
 Node kill_all 3600 ticks `d1eff38b03f581aa` / `bca6aa1051309b21` (identical to
-v0.4.63); in-page trace `8e8d6fd519dca899` / `817f1e9940c91d76`.
+v0.4.63); in-page trace `8e8d6fd519dca899` / `817f1e9940c91d76`. v0.5.1
+re-verified all nine Node traces (kill_all / defend / run × seeds 1, 2, 7) and
+the in-page trace identical. Goldens for W3/W4 are recorded from the W2-end
+build by M2 before its first edit and re-checked by M5b (PLAN §6.5).
 
 **Audio probes.** Launch your own puppeteer with
-`--autoplay-policy=no-user-gesture-required`; measure only through
-`__echoes.audio.meter()` / `testTone()` (headless Chrome renders Web Audio to a
-null sink; analyser taps work).
+`--autoplay-policy=no-user-gesture-required` (`launchEchoes({ autoplay: true })`);
+measure only through `__echoes.audio.meter()` / `testTone()` (headless Chrome
+renders Web Audio to a null sink; analyser taps work). Clipping is measured at
+the `prelimit` tap (clipper input), never after the tanh ceiling. The
+locked-state probe runs WITHOUT the flag: no AudioContext may exist before the
+first trusted key/click, which reaches `audio.unlock` through the app gesture
+hook even while a blocking menu swallows the key.
 
 **Network probes.** Start your own server instance; drive 2–4 clients with your
 own harness (puppeteer pages and/or Node WebSocket bots using
 src/net/protocol/*); shape links with the server's `--latency --jitter --loss
---dup --reorder` flags or `POST /admin/conditioner` (server started with
-`--admin`), and drop links with `POST /admin/drop`.
+--dup --reorder --burst` flags or `POST /admin/conditioner` (server started with
+`--admin`), and drop links with `POST /admin/drop`. Report every net gate at
+the four PLAN §7 conditions N1 (150 ms ± 20, 10% loss), N2 (250 ms ± 40, 20%),
+N3 (burst loss) and N4 (dup + reorder). Multi-page runs use the multi-page
+launch profile. `npm run net -- --host 0.0.0.0` exposes the server on the LAN
+(default bind 127.0.0.1). A guest must show `busCounters.simCalls` frozen and
+`refusedEmits === 0` for the whole session (replica bus).
 
 **Gamepad probes.** The menu polls `navigator.getGamepads()` every frame and
 does not require `gamepadconnected`, so a mock installed by an `eval`

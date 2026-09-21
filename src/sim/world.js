@@ -49,6 +49,10 @@ const TICK_DT = 1 / TICK_HZ; // seconds per tick, for u/s -> u/tick
 const r2 = (v) => Math.round(v * 100) / 100;
 
 export function createWorld({ rng, registry, events, harness = true, requestHitstop = null, room = null }) {
+  // Every listener a sim module registers is tagged SIM (core/events.js):
+  // same listener list and order as before, but a network guest's replay()
+  // skips them (docs/gauntlet/PLAN.md §3.7 "replica bus").
+  if (events && typeof events.sim === 'function') events = events.sim();
   let currentTick = 0;
 
   // ① deferred maturations: { carrierOrdinal, resolve() } — sorted by carrier
@@ -270,9 +274,12 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   events.on('room_cleared', (ev) => runSys.onRoomCleared(ev));
   events.on('defeat', () => runSys.onDefeat());
 
-  // @gnt:M4b CONTENT-SYSTEMS — the hazards (sim/hazards.js) and interactables
-  // (sim/interactables.js) systems are created here and hook the phases at
-  // the three CONTENT-* anchors below (docs/gauntlet/PLAN.md §2 / §4).
+  // @gnt:M4b CONTENT-SYSTEMS begin — the hazards (sim/hazards.js) and
+  // interactables (sim/interactables.js) systems are created here, hook the
+  // phases at the CONTENT-* anchors below and receive the rolled room layout
+  // through runSys.setRoomHooks({ enter(layout, tick), exit(tick) }) (M4a
+  // implements setRoomHooks in run.js — docs/gauntlet/PLAN.md §2 / §3.6).
+  // @gnt:M4b CONTENT-SYSTEMS end
 
   // --- Harness wisps (sim-core proving population; ?scene=simtest only).
   function spawnWisp(x, z) {
@@ -372,7 +379,10 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         // §5: velocity = dir * move_speed, instant (no ramp). Walking slides
         // along walls; only the dash hard-stops. §10: a Downed player keeps
         // movement only, at the 0.8 u/s crawl.
+        // @gnt:M4a PLAYER-SPEED begin — M4a multiplies spd by
+        // status.speedMul(player, currentTick) (haste/slow, BUILD_BRIEF §23.8).
         const spd = player.hp > 0 ? HEALER.moveSpeed : DOWNED_CRAWL_SPEED;
+        // @gnt:M4a PLAYER-SPEED end
         walkStep(player, x * spd * TICK_DT, z * spd * TICK_DT, player.radius);
         player.facing = { x, z };
       }
@@ -391,7 +401,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // Run block (§11 boss): the Hollow Stag steers/lunges with the enemy pass,
     // so its body settles before knockback and projectile sweeps.
     runSys.continuous();
-    // @gnt:M4b CONTENT-CONTINUOUS — hazard pushes/slows, interactable timers.
+    // @gnt:M4b CONTENT-CONTINUOUS begin — hazard pushes/slows, interactable timers.
+    // @gnt:M4b CONTENT-CONTINUOUS end
 
     // §9 #3 knockback displacement: impulse away from the hit over kbTicks,
     // swept vs walls (no slide — wall contact ends the impulse). Runs before
@@ -474,9 +485,10 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // ② continued: the boss (run block) resolves with the enemy pass.
     runSys.discrete();
     drainContinuations();
-    // @gnt:M4b CONTENT-DISCRETE — hazard resolutions and `interact` presses
-    // (after the ally pass, so revive arbitration has already claimed KeyE
-    // next to a Downed body), ascending spawn ordinal.
+    // @gnt:M4b CONTENT-DISCRETE begin — hazard resolutions and `interact`
+    // presses (after the ally pass, so revive arbitration has already claimed
+    // KeyE next to a Downed body), ascending spawn ordinal.
+    // @gnt:M4b CONTENT-DISCRETE end
 
     // ④ persistent-zone scheduled ticks, ascending zone spawn ordinal, then
     // the Warding Aura cadence (skills block). Zone/aura heals can carry
@@ -559,7 +571,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // suppressed (§5) — the world owns that rule; the skill system owns
     // empty/passive/cooldown denials and the actual §6 instant-cast fire.
     // Same-frame multi-skill presses all fire here, ascending slot.
-    // @gnt:M4a SKILL-SLOTS — slot loop runs 0..SKILL_SLOTS-1 (4 -> 8, PLAN §4.3).
+    // @gnt:M4a SKILL-SLOTS begin — slot loop runs 0..SKILL_SLOTS-1 (4 -> 8,
+    // PLAN §4.3); M4a adds the stun gate (status.canAct) here.
     for (let slot = 0; slot < SKILL_SLOTS; slot++) {
       const kind = `skill_${slot + 1}`;
       if (!accepted.has(kind)) continue;
@@ -569,6 +582,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         skillSys.tryFire(slot);
       }
     }
+    // @gnt:M4a SKILL-SLOTS end
 
     // Basic-attack fire (slot 4).
     resolveBasic(snapshot);
@@ -713,15 +727,18 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
 
   // ------------------------------------------------------------------ step --
 
-  // @gnt:M5b SEAT-INPUTS — network play extends this to
+  // @gnt:M5b SEAT-INPUTS begin — network play extends this to
   // step(tick, snapshot, seatInputs) where seatInputs[partyIndex] is a human
-  // guest's snapshot for that ally seat (absent -> the §12 AI). Single-player
-  // never passes it and must stay bit-identical (PLAN gate G5b.8).
+  // guest's snapshot for that ally seat (absent -> the §12 AI), plus the
+  // replica flag (world.setReplica: a guest's world is never stepped and
+  // refuses mutating cmd()s, PLAN §3.7). Single-player never passes either
+  // and must stay bit-identical (PLAN gate G5b.8).
   function step(tick, snapshot) {
     currentTick = tick;
     continuousPhase(snapshot);
     discretePhase(snapshot);
   }
+  // @gnt:M5b SEAT-INPUTS end
 
   // ------------------------------------------- debug API (docs/TESTING.md) --
 
@@ -818,13 +835,14 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         .all()
         .filter((e) => e.kind === 'bolt')
         .map((e) => ({ id: e.id, x: r2(e.x), z: r2(e.z), traveled: r2(e.traveled) })),
-      // @gnt:M4b HOSTILE-KINDS — new enemy kinds must appear here (prefer a
-      // faction === 'hostile' test over a kind list).
+      // @gnt:M4b HOSTILE-KINDS begin — new enemy kinds must appear here
+      // (faction === 'hostile' test replacing the kind list, PLAN §2.2).
       enemies: registry
         .all()
         .filter(
           (e) => e.kind === 'wisp' || e.kind === 'dummy' || e.kind === 'boar' || e.kind === 'mantis'
         )
+      // @gnt:M4b HOSTILE-KINDS end
         .map((e) => ({
           id: e.id,
           kind: e.kind,
@@ -898,7 +916,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         return e.hp;
       }
       case 'killAllEnemies': {
-        // @gnt:M4b HOSTILE-KINDS (same rule as snapshotState).
+        // @gnt:M4b HOSTILE-KINDS2 begin (same rule as snapshotState).
         maintainPopulation = false;
         const hostiles = registry
           .all()
@@ -906,6 +924,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
             (e) =>
               e.kind === 'wisp' || e.kind === 'dummy' || e.kind === 'boar' || e.kind === 'mantis'
           );
+        // @gnt:M4b HOSTILE-KINDS2 end
         for (const h of hostiles) {
           if (h.kind === 'wisp') killWisp(h);
           else combat.kill(h);
@@ -1034,6 +1053,15 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         // draftDecline / pathFocus / pathChoose / shopBuy / shopAdvance /
         // skipToRoom / bossHp / killBoss / wallet / draftPools / endRun /
         // returnToCamp), then the ally-block ones.
+        // Gauntlet debug commands (PLAN §6.4): each key routes ITS commands
+        // from its own block — `const r = mySys.cmd(name, args); if (r !==
+        // undefined) return r;` — never by editing another key's block.
+        // @gnt:M4a CMD begin (setStatus / clearStatus / autopilot / startRun{act,challenge} ...)
+        // @gnt:M4a CMD end
+        // @gnt:M4b CMD begin (spawnHazard / spawnInteractable / hazardPhase / armKeg / setLayout ...)
+        // @gnt:M4b CMD end
+        // @gnt:M5b CMD begin (replica-mode refusal of mutating commands, seat control)
+        // @gnt:M5b CMD end
         const ran = runSys.cmd(name, args);
         if (ran !== undefined) return ran;
         const handled = allySys.cmd(name, args);
@@ -1045,7 +1073,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   }
 
   // @gnt:M2 WORLD-STATE — serialize()/restore() of the world's own state and
-  // every system's (PLAN §3.4) are exposed from this object.
+  // every system's (PLAN §3.4) are exposed from this object; M2 adds its
+  // members inside the WORLD-STATE begin/end block at the end of it.
   return {
     step,
     cmd,
@@ -1073,5 +1102,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     get tick() {
       return currentTick;
     },
+    // @gnt:M2 WORLD-STATE begin
+    // @gnt:M2 WORLD-STATE end
+    // @gnt:M5b REPLICA begin (setReplica / replica flag, PLAN §3.7)
+    // @gnt:M5b REPLICA end
   };
 }

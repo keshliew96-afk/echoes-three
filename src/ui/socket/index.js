@@ -621,5 +621,9 @@ export function createSocketScreen({ bus, world }) {
     return null;
   }
 
+  // @gnt:M2 RESTORE-RESYNC begin
+  // @gnt:M2 RESTORE-RESYNC end
+  // @gnt:M5b GUEST-GUARD begin
+  // @gnt:M5b GUEST-GUARD end
   return { cmd, isOpen: () => open };
 }

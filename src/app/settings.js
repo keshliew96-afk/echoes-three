@@ -50,7 +50,10 @@ export const V = Object.freeze({
 // with store.register(path, spec) during boot.
 export const CORE_SETTINGS = Object.freeze({
   'display.renderScale': { default: 1.0, validate: V.num(0.5, 1.5, 0.05) },
-  'display.fullscreen': { default: false, validate: V.bool() },
+  // NOT persisted (PLAN §5): browsers exit fullscreen on every navigation and
+  // requestFullscreen needs a user gesture, so a stored 'true' could never be
+  // honoured at boot. The key mirrors document.fullscreenElement live.
+  'display.fullscreen': { default: false, validate: V.bool(), persist: false },
   'display.vsync': { default: true, validate: V.bool() },
   'display.frameLimit': { default: 0, validate: V.oneOf([0, 30, 60, 120, 144]) }, // 0 = unlimited
   'display.showFps': { default: false, validate: V.bool() },
@@ -130,6 +133,7 @@ export function createSettingsStore({
     const s = { persist: true, ...spec };
     registry.set(path, s);
     let v = s.default;
+    if (!s.persist) delete pending[path]; // session-only keys never load a stored value
     if (Object.prototype.hasOwnProperty.call(pending, path)) {
       const norm = s.validate ? s.validate(pending[path]) : pending[path];
       if (norm !== undefined) v = norm;

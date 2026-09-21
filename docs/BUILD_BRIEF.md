@@ -1072,6 +1072,8 @@ Every juice-contract event fires its sound slot. Master volume constant, no UI.
 | A10 | Hitstop/knockback/screenshake numbers in §9 are authored web-build defaults (absent from the source corpus) — tunable in `constants.js`, not removable. |
 | A11 | (Gauntlet, 2026-09-21) A8's "acts 2–3 environments: OUT of scope" is superseded by §23: three expeditions (Hollow Wood, Sunken Mill, Ashen Barrow), each a full 8-room run. Relics, Echoes/Seals, talent trees, camp facilities and extra classes stay out of scope; the Hollow Stag remains the only boss (tier-scaled per act). |
 | A12 | (Gauntlet, 2026-09-21) Skill slots are 8 (§6 "4 slots" superseded, §23.9). Ally kits stay 4. Basic-attack fire resolves after the last skill slot. |
+| A13 | (Gauntlet v0.5.1) **Esc opens the pause menu on every page** — combat, draft, path, shop, victory/defeat (docs/gauntlet/PLAN.md §1.5). This supersedes §16 "draft Esc = decline" and §16 settle rule (3) "Esc … stays the decline path": the draft declines with **X** or the Decline button, and X is settle-guarded like Enter (rule (2)). The socket screen is a sub-overlay: its Esc still banks the candidate and closes it, consuming that Esc. A reflexive pause press can never forfeit a reward. |
+| A14 | (Gauntlet v0.5.1) **Portal rule**: the expedition picker (§23.1) opens only in a title-booted session with ≥ 2 acts unlocked; menu-skip / harness boots and single-unlock profiles start the act directly on E (v0.4.63 behaviour). In the picker E, Enter or Space confirms the preselected (last-played) card. |
 
 ---
 
@@ -1091,7 +1093,8 @@ concurrent, starts ≥ 1.2 s apart).
 
 ### 23.1 Expeditions (level configurations)
 
-The camp portal opens an **expedition picker** (three cards: name, blurb,
+When two or more acts are unlocked (ruling A14), the camp portal opens an
+**expedition picker** (three cards: name, blurb,
 "Danger I/II/III", lock state; Hearth Amber selection; locked cards Bone with a
 lock glyph and "Win <previous act> to unlock"). Each expedition is a full run
 on the unchanged §2 skeleton (rooms 1–6 combat, exactly 2 defend, room 1
@@ -1157,6 +1160,13 @@ Resulting table (hpMul / dmgMul / budget):
 | 4 | 1.24 / 1.12 / 4.96 | 1.674 / 1.337 / 6.70 | 2.17 / 1.585 / 8.68 |
 | 5 | 1.32 / 1.16 / 5.28 | 1.782 / 1.391 / 7.13 | 2.31 / 1.655 / 9.24 |
 | 6 | 1.40 / 1.20 / 5.60 | 1.890 / 1.445 / 7.56 | 2.45 / 1.725 / 9.80 |
+
+**Felt escalation (v0.5.1).** The table is necessary, not sufficient: in play,
+time-to-clear and party damage taken per room must rise across rooms 1–6 of
+each act (defend rooms and the Stag above their neighbours) and from act to
+act, while a default build (the deterministic autopilot) still clears every act
+— the measured band and gate are docs/gauntlet/PLAN.md §4.2 / G4a.10. When the
+band fails, the constants above are retuned here; the formula's shape stays.
 
 ### 23.3 New Healer skills (9) — draftable pool grows 6 → 15
 

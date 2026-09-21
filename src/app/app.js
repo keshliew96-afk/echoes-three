@@ -31,7 +31,42 @@ import { widgets } from './widgets.js';
 export const APP_STATES = Object.freeze(['boot', 'title', 'playing', 'farewell']);
 export const APP_UI_ROOT_ID = 'app-ui';
 
+// GESTURE HOOK (binding, PLAN §1.5 / §3.5 — M1 must keep it FIRST): the very
+// first window capture-phase listener of the page. It hands every user
+// activation gesture to the audio engine synchronously (AudioContext
+// creation/resume is only allowed inside the gesture's own task) BEFORE the
+// app input gate swallows the event. M1's gate runs after it and may stop
+// propagation freely; M3 never adds window gesture listeners of its own.
+// Escape does not grant user activation in browsers, so the loading screen's
+// prompt reads "Press any key or click" and every other key works.
+const GESTURE_EVENTS = ['pointerdown', 'mousedown', 'keydown', 'touchend'];
+const gestureFns = new Set();
+function onGesture(e) {
+  const audio = service('audio');
+  if (audio && typeof audio.unlock === 'function') {
+    try {
+      audio.unlock(e);
+    } catch (err) {
+      console.warn('[app] audio.unlock threw', err);
+    }
+  }
+  for (const fn of gestureFns) {
+    try {
+      fn(e);
+    } catch (err) {
+      console.warn('[app] gesture hook threw', err);
+    }
+  }
+}
+let gestureHookInstalled = false;
+function installGestureHook() {
+  if (gestureHookInstalled || typeof window === 'undefined') return;
+  gestureHookInstalled = true;
+  for (const type of GESTURE_EVENTS) window.addEventListener(type, onGesture, { capture: true, passive: true });
+}
+
 export function createApp({ params }) {
+  installGestureHook();
   let state = 'boot';
   let ctx = null;
 
@@ -96,7 +131,20 @@ export function createApp({ params }) {
     inputBlocked() {
       return screens.isBlocking();
     },
-    update() {},
+    // Per rendered frame (called from main.js frame() after stage.render()).
+    // Binding: the audio engine's per-frame work (listener = camera ground
+    // focus, music intensity, meters) runs HERE via service('audio').update,
+    // so M3 never edits main.js's LOOP region. M1 keeps this call first.
+    update(now) {
+      const audio = service('audio');
+      if (audio && typeof audio.update === 'function') audio.update(now);
+    },
+    // onGesture(fn) -> unsubscribe: other modules that need a user-activation
+    // gesture (e.g. fullscreen retry prompts) subscribe here, never to window.
+    onGesture(fn) {
+      gestureFns.add(fn);
+      return () => gestureFns.delete(fn);
+    },
     // confirm({ title, body, confirmLabel = 'Confirm', cancelLabel = 'Cancel',
     //           danger = false, defaultFocus = 'cancel', timeoutMs = 0,
     //           timeoutResult = false }) -> Promise<boolean>

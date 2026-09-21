@@ -12,7 +12,9 @@ export const MAX_FRAME_MS = 250; // accumulator clamp so a hitch never spirals
 // world's slot loop, HUD command bar, draft free-slot count, socket rows.
 // Basic-attack fire keeps resolving AFTER every skill slot (§4 "slot 4" =
 // "after the last skill slot").
+// @gnt:M4a SKILL-SLOTS begin
 export const SKILL_SLOTS = 4;
+// @gnt:M4a SKILL-SLOTS end
 
 // §5 Dodge roll — integer tick counts (no gameplay logic reads wall-clock).
 // distance 1.8 u over 0.25 s = 7.2 u/s (3x run); own cooldown timer, outside
@@ -195,3 +197,10 @@ export const CAMERA = Object.freeze({
 
 // §1 Performance: canvas fully responsive; devicePixelRatio capped at 2.
 export const MAX_PIXEL_RATIO = 2;
+
+// Gauntlet content constants (docs/gauntlet/PLAN.md §2.2): each key appends
+// ONLY inside its own block, frozen tables, no edits above this line.
+// @gnt:M4a CONSTANTS begin (skills / nodes / statuses / slots)
+// @gnt:M4a CONSTANTS end
+// @gnt:M4b CONSTANTS begin (enemies / hazards / interactables / biomes)
+// @gnt:M4b CONSTANTS end
