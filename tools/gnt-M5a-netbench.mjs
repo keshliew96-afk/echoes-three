@@ -103,6 +103,13 @@ async function getJSON(path, init) {
     return { status: 0, body: null, error: String(err.message || err) };
   }
 }
+// src/version.js read fresh (bypassing the ESM cache) — builds move mid-run.
+async function freshVersion() {
+  const { readFileSync } = await import('node:fs');
+  const m = /VERSION\s*=\s*'([^']+)'/.exec(readFileSync(resolve(here, 'src/version.js'), 'utf8'));
+  return m ? m[1] : '0';
+}
+let build = null;
 const post = (path, body) => getJSON(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
 
 const startedAt = new Date().toISOString();
@@ -186,13 +193,17 @@ for (let attempt = 1; attempt <= 3; attempt++) {
       }
       hostKind = 'page';
     } else if (opt.bots > 0) {
-      const hb = await createSimHostBot({ server: opt.server, name: 'BotHost', act: opt.mode === 'boss' ? 1 : 1, room: opt.mode === 'boss' ? 8 : 1, seed: opt.seed });
+      const hb = await createSimHostBot({ server: opt.server, name: 'BotHost', act: 1, room: opt.mode === 'boss' ? 8 : 1, seed: opt.seed, version: await freshVersion() });
       const r = await hb.net.host({ visibility: 'private' });
       code = r.ok ? r.code : null;
       bots.push(hb);
       hostKind = 'bot';
     }
     if (!code) throw new Error('the host could not create a room');
+
+    // Bots must speak the pages' build (the server refuses mismatched builds;
+    // other agents bump src/version.js while this runs).
+    build = pages.length ? await pages[0].page.evaluate(() => window.__echoes.version) : await freshVersion();
     report.room = code;
     logLine(`room ${code} hosted by a ${hostKind}`);
 
@@ -216,7 +227,7 @@ for (let attempt = 1; attempt <= 3; attempt++) {
     let botsInRoom = 0;
     for (let i = 0; i < opt.bots - (hostKind === 'bot' ? 1 : 0); i++) {
       if (seatsLeft > 0) {
-        const b = createGuestBot({ server: opt.server, name: `Bot${i + 1}`, cond: clientCond });
+        const b = createGuestBot({ server: opt.server, name: `Bot${i + 1}`, cond: clientCond, version: build });
         const r = await b.net.join(code);
         if (!r.ok) throw new Error(`bot ${i + 1} could not join ${code}: ${r.reason}`);
         bots.push(b);
@@ -225,7 +236,7 @@ for (let attempt = 1; attempt <= 3; attempt++) {
       }
       // Extra bots: a second room hosted by a Node sim bot.
       if (!botRoom || botsInRoom >= 4) {
-        const hb = await createSimHostBot({ server: opt.server, name: `BotHost${bots.length}`, room: opt.mode === 'boss' ? 8 : 1, seed: opt.seed + 100 + i });
+        const hb = await createSimHostBot({ server: opt.server, name: `BotHost${bots.length}`, room: opt.mode === 'boss' ? 8 : 1, seed: opt.seed + 100 + i, version: build });
         const r = await hb.net.host({ visibility: 'private' });
         if (!r.ok) throw new Error(`bot host could not create a room: ${r.reason}`);
         bots.push(hb);
@@ -233,12 +244,31 @@ for (let attempt = 1; attempt <= 3; attempt++) {
         botsInRoom = 1;
         continue;
       }
-      const b = createGuestBot({ server: opt.server, name: `Bot${i + 1}`, cond: clientCond });
+      const b = createGuestBot({ server: opt.server, name: `Bot${i + 1}`, cond: clientCond, version: build });
       const r = await b.net.join(botRoom);
       if (!r.ok) throw new Error(`bot ${i + 1} could not join ${botRoom}: ${r.reason}`);
       bots.push(b);
       botsInRoom += 1;
     }
+
+    // Mark every page: a dev-server HMR full reload (another agent committing
+
+    // src/** mid-run) wipes the mark, and the run is retried as a navigation.
+
+    for (const p of pages) await p.page.evaluate(() => (window.__nbMark = true));
+
+    const assertNoReload = async (where) => {
+
+      for (const p of pages) {
+
+        const ok = await p.page.evaluate(() => window.__nbMark === true).catch(() => false);
+
+        if (!ok) throw new Error(`navigation: ${p.name} page reloaded (${where})`);
+
+      }
+
+    };
+
 
     // Client list in a stable order.
     const clients = [
@@ -264,7 +294,10 @@ for (let attempt = 1; attempt <= 3; attempt++) {
       for (const c of clients) {
         if (c.role !== 'host') continue;
         const st = await netEval(c, 'return n.start();');
-        if (!st || !st.ok) throw new Error(`${c.name} could not start: ${JSON.stringify(st)}`);
+        if (!st || !st.ok) {
+        await assertNoReload('start');
+        throw new Error(`${c.name} could not start: ${JSON.stringify(st)}`);
+      }
       }
       await sleep(2000);
       // Put the page host into combat (bot hosts run their own sim).
@@ -355,6 +388,7 @@ for (let attempt = 1; attempt <= 3; attempt++) {
       await sleep(1000);
     }
     report.dropResult = drop ? dropInfo : null;
+    await assertNoReload('measurement');
 
     // ---------------------------------------------------------- collect --
     for (const c of clients) {
@@ -390,7 +424,9 @@ for (let attempt = 1; attempt <= 3; attempt++) {
       report.perClient.push({
         kind: c.kind,
         name: c.name,
-        role: c.role,
+        // Final role (a migration turns a guest into the host; a killed host ends 'none').
+        role: last.role === 'host' || last.role === 'guest' ? last.role : 'none',
+        initialRole: c.role,
         seat: await netEval(c, 'return n.seat;').catch(() => null),
         state: last.state ?? null,
         stream: last.stream ?? null,

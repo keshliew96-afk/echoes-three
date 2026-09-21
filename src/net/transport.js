@@ -17,6 +17,11 @@ import { isUnreliableChannel } from './protocol/codec.js';
 
 const defaultNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
+// Heartbeat frames (ping / pong) travel in the UNRELIABLE class (see below).
+export function isHeartbeat(text) {
+  return text.length < 200 && (text.includes('"t":"pong"') || text.includes('"t":"ping"'));
+}
+
 // Bytes per 1 s window (last 60 windows) — mean / p95 for stats().
 export class RateMeter {
   constructor(now = defaultNow) {
@@ -168,12 +173,16 @@ export function createTransport({ WebSocketImpl = null, cond = null, now = defau
         const data = ev.data;
         if (typeof data === 'string') {
           inMeter.add(data.length);
-          inc.send(data, { reliable: true, bytes: data.length }, (d) => deliverText(my, d));
+          // The heartbeat (pong) is UNRELIABLE, like a game's latency probe:
+          // a lost one is simply lost, so RTT samples never include retransmit
+          // delays. Every other text frame is reliable control.
+          const hb = isHeartbeat(data);
+          inc.send(data, { reliable: !hb, bytes: data.length, stream: hb ? 'hb' : 'ctl' }, (d) => deliverText(my, d));
         } else {
           const u8 = data instanceof ArrayBuffer ? new Uint8Array(data) : ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
           if (!u8) return; // Blob (binaryType not honoured) — never used by this protocol
           inMeter.add(u8.length);
-          inc.send(u8, { reliable: !isUnreliableChannel(u8[0]), bytes: u8.length }, (d) => deliverBinary(my, d));
+          inc.send(u8, { reliable: !isUnreliableChannel(u8[0]), bytes: u8.length, stream: u8[0] }, (d) => deliverBinary(my, d));
         }
       };
       sock.onerror = () => {
@@ -234,19 +243,19 @@ export function createTransport({ WebSocketImpl = null, cond = null, now = defau
       return false;
     }
   }
-  function sendControl(msg) {
+  function sendControl(msg, { unreliable = false } = {}) {
     if (!ws || state !== 'open') return false;
     const text = typeof msg === 'string' ? msg : JSON.stringify(msg);
     counts.controlOut += 1;
     const my = gen;
-    out.send(text, { reliable: true, bytes: text.length }, (d) => my === gen && rawSend(d, d.length));
+    out.send(text, { reliable: !unreliable, bytes: text.length, stream: unreliable ? 'hb' : 'ctl' }, (d) => my === gen && rawSend(d, d.length));
     return true;
   }
   function sendBinary(u8) {
     if (!ws || state !== 'open') return false;
     counts.binaryOut += 1;
     const my = gen;
-    out.send(u8, { reliable: !isUnreliableChannel(u8[0]), bytes: u8.length }, (d) => my === gen && rawSend(d, d.length));
+    out.send(u8, { reliable: !isUnreliableChannel(u8[0]), bytes: u8.length, stream: u8[0] }, (d) => my === gen && rawSend(d, d.length));
     return true;
   }
 

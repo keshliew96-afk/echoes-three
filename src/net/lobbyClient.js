@@ -362,7 +362,9 @@ export function createNetClient(opts = {}) {
   let lastSessionSave = 0;
   function sendPing() {
     if (transport.state !== 'open') return;
-    transport.sendControl({ t: MSG.PING, ts: now(), rttMs: rtt.samples.length ? Math.round(median(rtt.samples.slice(-5)) * 10) / 10 : undefined });
+    // Unreliable heartbeat: a lost ping/pong yields no sample (never a
+    // retransmit-inflated one); silence detection still sees every frame.
+    transport.sendControl({ t: MSG.PING, ts: now(), rttMs: rtt.samples.length ? Math.round(median(rtt.samples.slice(-5)) * 10) / 10 : undefined }, { unreliable: true });
     if (room && wallNow() - lastSessionSave > 5000) {
       lastSessionSave = wallNow();
       saveSession();
@@ -393,6 +395,12 @@ export function createNetClient(opts = {}) {
   function linkLost(code, reason, { suppressMs = 0 } = {}) {
     stopTimers();
     failWaiters('disconnected');
+    if (reconnect) {
+      // A reconnect attempt's socket died (link still down): the attempt loop
+      // owns the retry — never restart it (that would reset the drop clock).
+      log('reconnect_attempt_failed', { code, reason });
+      return;
+    }
     const wasRoom = room ? room.code : null;
     if (transport.state === 'open' || transport.state === 'connecting') {
       closingOnPurpose = true;

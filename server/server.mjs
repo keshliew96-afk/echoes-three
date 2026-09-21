@@ -28,6 +28,7 @@ import {
 import { decodeClientMessage, encodeMessage, sanitizeName, ERR } from '../src/net/protocol/messages.js';
 import { parseCond, formatCond } from '../src/net/protocol/conditioner.js';
 import { isUnreliableChannel } from '../src/net/protocol/codec.js';
+import { isHeartbeat } from '../src/net/transport.js';
 import { acceptUpgrade, CLOSE } from './ws.mjs';
 import { Lobby } from './lobby.mjs';
 import { quickMatch, cancelMatch } from './matchmaking.mjs';
@@ -115,9 +116,9 @@ export function createEchoesServer(options = {}) {
   }
 
   // ---------------------------------------------------------- sending --
-  function sendRec(rec, text) {
+  function sendRec(rec, text, { unreliable = false } = {}) {
     if (!rec || rec.closedHandled || !rec.conn.open) return false;
-    rec.link.down.send(text, { reliable: true, bytes: text.length }, (m) => {
+    rec.link.down.send(text, { reliable: !unreliable, bytes: text.length, stream: unreliable ? 'hb' : 'ctl' }, (m) => {
       if (rec.closedHandled || !rec.conn.open) return;
       rec.conn.send(m);
       rec.link.outMeter.add(Buffer.byteLength(m));
@@ -131,7 +132,7 @@ export function createEchoesServer(options = {}) {
   function sendBinary(peer, u8) {
     const rec = peer && peer.rec;
     if (!rec || rec.closedHandled || !rec.conn.open) return false;
-    rec.link.down.send(u8, { reliable: !isUnreliableChannel(u8[0]), bytes: u8.length }, (m) => {
+    rec.link.down.send(u8, { reliable: !isUnreliableChannel(u8[0]), bytes: u8.length, stream: u8[0] }, (m) => {
       if (rec.closedHandled || !rec.conn.open) return;
       rec.conn.send(m);
       rec.link.outMeter.add(m.length);
@@ -161,8 +162,9 @@ export function createEchoesServer(options = {}) {
     conn.on('message', (data, isBinary) => {
       const bytes = isBinary ? data.length : Buffer.byteLength(data);
       rec.link.inMeter.add(bytes);
-      const reliable = !isBinary || !isUnreliableChannel(data[0]);
-      rec.link.up.send(data, { reliable, bytes }, (d) => handleIncoming(rec, d, isBinary));
+      const hb = !isBinary && isHeartbeat(data);
+      const reliable = isBinary ? !isUnreliableChannel(data[0]) : !hb;
+      rec.link.up.send(data, { reliable, bytes, stream: isBinary ? data[0] : hb ? 'hb' : 'ctl' }, (d) => handleIncoming(rec, d, isBinary));
     });
     conn.on('close', (code) => handleClose(rec, `close_${code}`));
     conn.on('protocolError', (e) => {
@@ -287,7 +289,9 @@ export function createEchoesServer(options = {}) {
           const seat = room && lobby.seatOf(room, peer.id);
           if (seat) seat.rttMs = Math.round(m.rttMs);
         }
-        sendControl(peer, MSG.PONG, { ts: m.ts, serverTime: now() });
+        // Heartbeat reply travels unreliable (a game's latency probe is never
+        // retransmitted — RTT samples stay pure).
+        sendRec(peer.rec, encodeMessage(MSG.PONG, { ts: m.ts, serverTime: now() }), { unreliable: true });
         break;
       }
       default:

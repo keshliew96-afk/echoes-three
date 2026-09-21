@@ -9,10 +9,13 @@
 //                              reorder (+20–60 ms), latency + jitter (each
 //                              packet independent, so jitter reorders too),
 //                              bandwidth tail-drop (queue > 300 ms)
-//   reliable (control, EVENTS, CMD, KEYFRAME)  in order, never dropped: a
-//                              simulated loss becomes a retransmit delay of
-//                              max(200 ms, 2 × RTT) per lost attempt — exactly
-//                              what a reliable-over-UDP layer would do
+//   reliable (control, EVENTS, CMD, KEYFRAME)  in order PER STREAM (meta.stream:
+//                              one ordered channel per kind, like ENet / GNS
+//                              reliable channels — a retransmitted EVENTS batch
+//                              never stalls a pong), never dropped: a simulated
+//                              loss becomes a retransmit delay of max(200 ms,
+//                              2 × RTT) per lost attempt — exactly what a
+//                              reliable-over-UDP layer would do
 // outage { atMs, forMs } / blackhole(forMs): the link is dead for the window —
 // unreliable packets are dropped, reliable ones wait for the link to return
 // (plus one retransmit timeout). Silence longer than a peer timeout is then
@@ -179,7 +182,7 @@ export function createConditioner(spec = null, opts = {}) {
   let epoch = nowFn();
   let bad = false; // Gilbert–Elliott state
   let tat = 0; // bandwidth GCRA theoretical arrival time
-  let lastReliable = 0;
+  const lastReliable = new Map(); // stream -> last scheduled delivery time
   let blackholeUntil = -Infinity;
   let nextSeq = 0;
   const queue = []; // { at, seq, packet, deliver }
@@ -234,6 +237,13 @@ export function createConditioner(spec = null, opts = {}) {
     }
     return cfg.loss;
   }
+  function stationaryLoss() {
+    const b = cfg.burstLoss;
+    if (!b) return cfg.loss;
+    const denom = b.pGB + b.pBG;
+    const piBad = denom > 0 ? b.pGB / denom : 0;
+    return piBad * b.lossInBad + (1 - piBad) * cfg.loss;
+  }
   function deadWindow(t) {
     if (t < blackholeUntil) return blackholeUntil;
     const o = cfg.outage;
@@ -245,7 +255,7 @@ export function createConditioner(spec = null, opts = {}) {
   }
 
   // plan(): the pure scheduling decision for one packet sent at `t`.
-  function plan(t, { reliable = false, bytes = 0 } = {}) {
+  function plan(t, { reliable = false, bytes = 0, stream = 'ctl' } = {}) {
     stats.sent += 1;
     stats.bytes += bytes;
     if (reliable) stats.sentReliable += 1;
@@ -277,13 +287,21 @@ export function createConditioner(spec = null, opts = {}) {
     if (reliable) {
       let at = depart + baseDelay();
       let tries = 0;
-      while (pLoss > 0 && tries < MAX_RETRANSMITS && rand() < pLoss) {
+      // First attempt: the link's CURRENT state (a burst hits it). Each
+      // retransmit goes out one RTO (>= 200 ms) later, long after a
+      // Gilbert–Elliott burst (mean 1/pBG packets ≈ 50 ms at 60 Hz) has
+      // mixed, so retries see the stationary average loss — a bad state
+      // never chains 0.8-probability losses for seconds.
+      let p = pLoss;
+      while (p > 0 && tries < MAX_RETRANSMITS && rand() < p) {
         at += rto();
         tries += 1;
         stats.retransmits += 1;
+        p = stationaryLoss();
       }
-      if (at < lastReliable) at = lastReliable; // in order (head-of-line)
-      lastReliable = at;
+      const prev = lastReliable.get(stream) ?? -Infinity;
+      if (at < prev) at = prev; // in order within the stream (head-of-line)
+      lastReliable.set(stream, at);
       record(at - t);
       return { times: [at], dropped: false, retransmits: tries };
     }
