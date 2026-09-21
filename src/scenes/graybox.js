@@ -37,6 +37,7 @@ import { createParticlePool } from '../render/vfx/particles.js';
 import { createDecalPool } from '../render/vfx/decals.js';
 import { setImpactFx } from '../render/vfx/hub.js';
 import { sharedGeo } from '../render/geocache.js';
+import { service } from '../app/registry.js'; // M1: gameplay.screenshake (SHAKE-SCALE)
 
 // Graybox scaffold numbers (render-only): wall height 0.75 u sits inside the
 // §13 band (70-80% of the 1.05 u standing height — never fully occludes);
@@ -289,7 +290,10 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
   // brief ceilings.
   bus.on('screenshake', (ev) => {
     // @gnt:M1 SHAKE-SCALE begin — amp x settings gameplay.screenshake (0/0.5/1).
-    const amp = Math.min(SCREENSHAKE.maxAmp, ev.amp ?? SCREENSHAKE.amp);
+    // Read live per shake, so a change in Settings applies to the next one.
+    const shakeSetting = service('settings')?.get('gameplay.screenshake');
+    const shakeMul = typeof shakeSetting === 'number' ? shakeSetting : 1;
+    const amp = Math.min(SCREENSHAKE.maxAmp, ev.amp ?? SCREENSHAKE.amp) * shakeMul;
     // @gnt:M1 SHAKE-SCALE end
     const dur = Math.min(SCREENSHAKE.maxDurationSec, ev.durationSec ?? SCREENSHAKE.durationSec);
     // A bigger shake always wins; a smaller one never cuts one already running.

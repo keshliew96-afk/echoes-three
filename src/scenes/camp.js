@@ -756,6 +756,16 @@ export function createCampScene(stage, toggles, ctx) {
         return mode;
       // Gauntlet scene commands — each key's cases inside its own block.
       // @gnt:M1 CAMP-CMD begin (titleCam)
+      // The title backdrop's framing inputs (src/app/titlecam.js): where the
+      // hearth is and how far the gameplay camera may roam, so the title
+      // composes the fire beside the menu without leaving the dressing.
+      case 'titleCam':
+        return {
+          mode,
+          hearth: { x: HEARTH.x, z: HEARTH.z },
+          clampX: CAM_CLAMP.x,
+          clampZ: [CAM_CLAMP.zMin, CAM_CLAMP.zMax],
+        };
       // @gnt:M1 CAMP-CMD end
       // @gnt:M2 CAMP-CMD begin (restoreScene: mode + layout, no seatParty)
       // @gnt:M2 CAMP-CMD end

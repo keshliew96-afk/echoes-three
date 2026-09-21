@@ -1,27 +1,32 @@
 // Screen / menu manager (docs/gauntlet/PLAN.md §3.3). Owner: M1.
-// ARCH stub: the API every module codes against, with a minimal working
-// stack + linear focus model. M1 replaces the internals (focus rings, grid
-// navigation, gamepad polling, latency probes, transitions) WITHOUT changing
-// these signatures.
 //
 // SCREEN CONTRACT — registerScreen(id, factory) (src/app/registry.js):
 //   factory(ctx) -> {
 //     el: HTMLElement,              // mounted under #app-ui while on the stack
 //     blocking?: true,              // true: gates game input; single-player sim pauses
+//     layer?: 'screen'|'overlay'|'dialog'|'loading'|'farewell'   // z-band (PLAN §2.3)
+//     reusable?: true,              // false: rebuilt on every push, removed on pop (dialogs)
+//     root?: false,                 // true: Esc/B on it is a no-op (the title root)
 //     onOpen?(params), onClose?(),  // pushed / popped
 //     onFocus?(), onBlur?(),        // became top again / covered by another screen
-//     onNav?(action, source) -> bool,   // screen-specific handling first; true = consumed
-//     back?() -> bool,              // Esc / B / Backspace; return true when handled
-//                                   //   (default when absent: pop this screen)
+//     onNav?(action, source, meta) -> bool,   // screen-specific handling first; true = consumed
+//     back?(source) -> bool,        // Esc / B / Backspace / right-click; true = handled
+//                                   //   (default when absent or false: pop this screen)
+//     onFocusChange?(el, source),   // the focused item changed (info panels)
 //     defaultFocus?: string,        // CSS selector of the primary item
 //   }
-//   ctx: { manager, app, settings, services: { service }, params }
+//   ctx: { manager, app, settings, widgets, services: { service }, params }
 //
 // NAV ACTIONS (one vocabulary for keyboard, mouse and gamepad):
 //   'up' 'down' 'left' 'right' 'confirm' 'back' 'tabPrev' 'tabNext' 'secondary' 'tertiary'
-// Focusable items carry [data-nav]; optional [data-nav-default] marks the
+// FOCUS MODEL: focusable items carry [data-nav]; [data-nav-default] marks the
 // primary; [disabled] / [aria-disabled="true"] items are skipped by movement
-// but stay visible with their reason text.
+// but stay visible with their reason text. Movement is SPATIAL (nearest item
+// in the pressed direction by DOM rect), so lists, rows of buttons, tab bars
+// and grids all navigate without per-screen code; up/down wrap at the ends,
+// left/right adjust the focused control when it exposes __navAdjust. Exactly
+// one element carries the ring class `ap-focus` — the focused item of the top
+// screen — and every screen remembers its last focus for when it is uncovered.
 import { EventEmitterLite } from './emitter.js';
 import { screenFactory } from './registry.js';
 
@@ -38,60 +43,162 @@ export const NAV_ACTIONS = Object.freeze([
   'tertiary',
 ]);
 
+const FADE_OUT_MS = 160;
+const LAYERS = new Set(['screen', 'overlay', 'dialog', 'loading', 'farewell']);
+
+function isShown(el) {
+  if (!el || !el.isConnected) return false;
+  if (el.getClientRects().length === 0) return false;
+  return getComputedStyle(el).visibility !== 'hidden';
+}
+
+function isEnabled(el) {
+  return !!el && !el.disabled && el.getAttribute('aria-disabled') !== 'true';
+}
+
+function rectOf(el) {
+  const r = el.getBoundingClientRect();
+  return { x: Math.round(r.left * 10) / 10, y: Math.round(r.top * 10) / 10, w: Math.round(r.width * 10) / 10, h: Math.round(r.height * 10) / 10 };
+}
+
 export function createScreenManager({ root, ctx = {} } = {}) {
   const emitter = new EventEmitterLite();
-  const stack = []; // [{ id, screen, params, focusIndex }]
-  const cache = new Map(); // id -> screen instance (built once)
+  const stack = []; // [{ id, screen, params, focusEl }]
+  const cache = new Map(); // id -> screen instance (reusable screens)
+  const hideTimers = new Map(); // el -> timeout id
+  let ringEl = null;
 
   function build(id) {
     if (cache.has(id)) return cache.get(id);
     const factory = screenFactory(id);
     if (!factory) return null;
     const screen = factory({ ...ctx, manager: api });
-    cache.set(id, screen);
+    if (!screen || !screen.el) return null;
+    const layer = LAYERS.has(screen.layer) ? screen.layer : 'screen';
+    screen.el.classList.add('ap-screen', `ap-layer-${layer}`);
+    if (screen.blocking === false) screen.el.classList.add('ap-nonblocking');
+    screen.el.dataset.screen = id;
+    if (screen.reusable !== false) cache.set(id, screen);
     return screen;
   }
 
-  function focusables(entry) {
+  function topEntry() {
+    return stack[stack.length - 1] ?? null;
+  }
+
+  function focusables(entry, { includeDisabled = false } = {}) {
     if (!entry) return [];
     return [...entry.screen.el.querySelectorAll('[data-nav]')].filter(
-      (n) => !n.disabled && n.getAttribute('aria-disabled') !== 'true' && n.offsetParent !== null
+      (n) => isShown(n) && (includeDisabled || isEnabled(n))
     );
   }
 
-  function applyFocus(entry, index) {
-    const items = focusables(entry);
-    if (items.length === 0) return;
-    const i = Math.max(0, Math.min(items.length - 1, index));
-    entry.focusIndex = i;
-    for (const n of items) n.classList.toggle('ap-focus', n === items[i]);
-    if (typeof items[i].focus === 'function') items[i].focus({ preventScroll: false });
+  function validFocus(entry) {
+    const el = entry && entry.focusEl;
+    return !!el && entry.screen.el.contains(el) && isShown(el) && isEnabled(el);
   }
 
-  function initialFocus(entry) {
+  function setRing(el) {
+    if (ringEl && ringEl !== el) ringEl.classList.remove('ap-focus');
+    ringEl = el || null;
+    if (ringEl) ringEl.classList.add('ap-focus');
+  }
+
+  function focusEl(entry, el, { source = 'api', scroll = true } = {}) {
+    if (!entry || !el) return false;
+    const changedEl = entry.focusEl !== el;
+    entry.focusEl = el;
+    if (entry !== topEntry()) return true;
+    setRing(el);
+    try {
+      if (document.activeElement !== el) el.focus({ preventScroll: true });
+    } catch {
+      /* detached */
+    }
+    if (scroll && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (changedEl) {
+      if (entry.screen.onFocusChange) entry.screen.onFocusChange(el, source);
+      emitter.emit('focus', { screen: entry.id, id: el.id || null, source });
+    }
+    return true;
+  }
+
+  function initialFocus(entry, source = 'api') {
+    if (!entry) return false;
+    if (validFocus(entry)) return focusEl(entry, entry.focusEl, { source, scroll: false });
     const items = focusables(entry);
+    if (items.length === 0) {
+      if (entry === topEntry()) setRing(null);
+      entry.focusEl = null;
+      return false;
+    }
     const sel = entry.screen.defaultFocus;
-    const def = (sel && entry.screen.el.querySelector(sel)) || entry.screen.el.querySelector('[data-nav-default]');
-    const idx = def ? items.indexOf(def) : 0;
-    applyFocus(entry, idx >= 0 ? idx : 0);
+    let def = null;
+    try {
+      def = (sel && entry.screen.el.querySelector(sel)) || entry.screen.el.querySelector('[data-nav-default]');
+    } catch {
+      def = null;
+    }
+    const pick = def && items.includes(def) ? def : items[0];
+    return focusEl(entry, pick, { source, scroll: false });
+  }
+
+  function mount(el) {
+    const t = hideTimers.get(el);
+    if (t) {
+      clearTimeout(t);
+      hideTimers.delete(el);
+    }
+    if (root) root.appendChild(el); // (re-)append: DOM order follows the stack
+    el.classList.remove('ap-out');
+    el.classList.add('ap-open');
+    void el.offsetWidth; // commit display before the fade starts
+    el.classList.add('ap-in');
+  }
+
+  function unmount(screen) {
+    const el = screen.el;
+    el.classList.remove('ap-in');
+    el.classList.add('ap-out');
+    const t = setTimeout(() => {
+      hideTimers.delete(el);
+      if (stack.some((e) => e.screen === screen)) return; // re-opened meanwhile
+      el.classList.remove('ap-open', 'ap-out');
+      if (screen.reusable === false) {
+        if (screen.destroy) screen.destroy();
+        el.remove();
+      }
+    }, FADE_OUT_MS);
+    hideTimers.set(el, t);
   }
 
   function changed() {
-    const t = top();
+    const t = topEntry();
     emitter.emit('change', { top: t ? t.id : null, stack: stack.map((e) => e.id), blocking: isBlocking() });
   }
 
   function push(id, params = {}) {
     const screen = build(id);
     if (!screen) return false;
-    const prev = stack[stack.length - 1];
+    const existing = stack.findIndex((e) => e.screen === screen);
+    if (existing >= 0) {
+      if (existing === stack.length - 1) {
+        stack[existing].params = params;
+        if (screen.onOpen) screen.onOpen(params);
+        initialFocus(stack[existing], 'open');
+        return true;
+      }
+      console.warn(`[screens] '${id}' is already open under another screen`);
+      return false;
+    }
+    const prev = topEntry();
     if (prev && prev.screen.onBlur) prev.screen.onBlur();
-    const entry = { id, screen, params, focusIndex: 0 };
+    const entry = { id, screen, params, focusEl: null };
     stack.push(entry);
-    if (root && screen.el.parentNode !== root) root.appendChild(screen.el);
-    screen.el.style.display = '';
+    mount(screen.el);
     if (screen.onOpen) screen.onOpen(params);
-    initialFocus(entry);
+    initialFocus(entry, 'open');
+    if (!entry.focusEl) setRing(null);
     changed();
     return true;
   }
@@ -99,12 +206,13 @@ export function createScreenManager({ root, ctx = {} } = {}) {
   function pop() {
     const entry = stack.pop();
     if (!entry) return null;
+    if (ringEl && entry.screen.el.contains(ringEl)) setRing(null);
     if (entry.screen.onClose) entry.screen.onClose();
-    entry.screen.el.style.display = 'none';
-    const t = stack[stack.length - 1];
+    unmount(entry.screen);
+    const t = topEntry();
     if (t) {
       if (t.screen.onFocus) t.screen.onFocus();
-      applyFocus(t, t.focusIndex); // focus memory per screen
+      initialFocus(t, 'restore'); // focus memory per screen
     }
     changed();
     return entry.id;
@@ -116,7 +224,7 @@ export function createScreenManager({ root, ctx = {} } = {}) {
   }
 
   function popTo(id) {
-    while (stack.length && stack[stack.length - 1].id !== id) pop();
+    while (stack.length && topEntry().id !== id) pop();
     return stack.length > 0;
   }
 
@@ -124,49 +232,155 @@ export function createScreenManager({ root, ctx = {} } = {}) {
     while (stack.length) pop();
   }
 
-  function top() {
-    return stack[stack.length - 1] ?? null;
-  }
-
   function isBlocking() {
     return stack.some((e) => e.screen.blocking !== false);
   }
 
-  // nav(action, source = 'keyboard'|'mouse'|'gamepad'|'api') -> bool consumed
-  function nav(action, source = 'api') {
-    const t = top();
-    if (!t) return false;
-    emitter.emit('nav', { action, source, screen: t.id });
-    if (t.screen.onNav && t.screen.onNav(action, source)) return true;
-    const items = focusables(t);
-    const cur = items[t.focusIndex];
-    // Adjustable controls (sliders, selects, toggles — src/app/widgets.js)
-    // take left/right while focused; up/down always move between rows.
-    if ((action === 'left' || action === 'right') && cur && typeof cur.__navAdjust === 'function') {
-      cur.__navAdjust(action === 'left' ? -1 : 1);
-      return true;
-    }
-    switch (action) {
-      case 'up':
-      case 'left':
-        applyFocus(t, (t.focusIndex - 1 + items.length) % Math.max(1, items.length));
-        return true;
-      case 'down':
-      case 'right':
-        applyFocus(t, (t.focusIndex + 1) % Math.max(1, items.length));
-        return true;
-      case 'confirm': {
-        const el = items[t.focusIndex];
-        if (el) el.click();
-        return true;
+  // Spatial move: the nearest enabled item whose centre lies in `dir`, scored
+  // by distance along the axis plus twice the cross-axis offset. up/down wrap
+  // to the far end when nothing lies that way; left/right never wrap.
+  function move(entry, dir, source) {
+    const items = focusables(entry);
+    if (items.length === 0) return false;
+    const cur = validFocus(entry) ? entry.focusEl : null;
+    if (!cur) return initialFocus(entry, source);
+    const cr = cur.getBoundingClientRect();
+    const cx = cr.left + cr.width / 2;
+    const cy = cr.top + cr.height / 2;
+    const vertical = dir === 'up' || dir === 'down';
+    const sign = dir === 'down' || dir === 'right' ? 1 : -1;
+    let best = null;
+    let bestScore = Infinity;
+    for (const el of items) {
+      if (el === cur) continue;
+      const r = el.getBoundingClientRect();
+      const x = r.left + r.width / 2;
+      const y = r.top + r.height / 2;
+      let along;
+      let across;
+      if (vertical) {
+        along = (y - cy) * sign;
+        // Must start beyond the current item's edge in that direction (rows of
+        // side-by-side buttons share a centre line and are not "below").
+        const edgeOk = sign > 0 ? r.top >= cr.top + cr.height * 0.5 : r.bottom <= cr.bottom - cr.height * 0.5;
+        if (along <= 1 || !edgeOk) continue;
+        across = Math.max(0, Math.abs(x - cx) - (r.width + cr.width) / 4);
+      } else {
+        along = (x - cx) * sign;
+        const edgeOk = sign > 0 ? r.left >= cr.left + cr.width * 0.5 : r.right <= cr.right - cr.width * 0.5;
+        if (along <= 1 || !edgeOk) continue;
+        // Horizontal moves stay on the same row band.
+        if (Math.abs(y - cy) > Math.max(r.height, cr.height) * 0.75) continue;
+        across = Math.abs(y - cy);
       }
+      const score = along + across * 2;
+      if (score < bestScore) {
+        bestScore = score;
+        best = el;
+      }
+    }
+    if (!best && vertical) {
+      // Wrap: the item at the opposite extreme, closest in x.
+      let extreme = sign > 0 ? Infinity : -Infinity;
+      for (const el of items) {
+        const r = el.getBoundingClientRect();
+        const y = r.top + r.height / 2;
+        if (sign > 0 ? y < extreme - 1 : y > extreme + 1) extreme = y;
+      }
+      let bx = Infinity;
+      for (const el of items) {
+        if (el === cur) continue;
+        const r = el.getBoundingClientRect();
+        const y = r.top + r.height / 2;
+        if (Math.abs(y - extreme) > r.height * 0.5 + 1) continue;
+        const d = Math.abs(r.left + r.width / 2 - cx);
+        if (d < bx) {
+          bx = d;
+          best = el;
+        }
+      }
+    }
+    if (!best) return false;
+    return focusEl(entry, best, { source, scroll: true });
+  }
+
+  // nav(action, source = 'keyboard'|'mouse'|'gamepad'|'api', meta = { repeat }) -> bool consumed
+  function nav(action, source = 'api', meta = {}) {
+    const t = topEntry();
+    if (!t) return false;
+    emitter.emit('nav', { action, source, screen: t.id, repeat: !!meta.repeat });
+    if (t.screen.onNav && t.screen.onNav(action, source, meta)) return true;
+    if (!validFocus(t) && (action === 'up' || action === 'down' || action === 'left' || action === 'right')) {
+      return initialFocus(t, source) || true;
+    }
+    const cur = validFocus(t) ? t.focusEl : null;
+    switch (action) {
+      case 'left':
+      case 'right':
+        if (cur && typeof cur.__navAdjust === 'function') {
+          cur.__navAdjust(action === 'left' ? -1 : 1, meta);
+          return true;
+        }
+        move(t, action, source);
+        return true;
+      case 'up':
+      case 'down':
+        move(t, action, source);
+        return true;
+      case 'confirm':
+        if (!cur) {
+          initialFocus(t, source);
+          return true;
+        }
+        if (meta.repeat) return true;
+        cur.click();
+        return true;
       case 'back':
-        if (t.screen.back && t.screen.back()) return true;
+        if (meta.repeat) return true;
+        if (t.screen.back && t.screen.back(source)) return true;
+        if (t.screen.root) return true;
         pop();
         return true;
       default:
         return false;
     }
+  }
+
+  // Mouse hover / click focus: focus `el` if it is an enabled item of the top
+  // screen (no scroll-jump for pointer focus).
+  function focusElement(el, source = 'mouse') {
+    const t = topEntry();
+    if (!t || !el || !t.screen.el.contains(el)) return false;
+    if (!el.matches('[data-nav]') || !isEnabled(el) || !isShown(el)) return false;
+    return focusEl(t, el, { source, scroll: false });
+  }
+
+  // Per-frame audit (app.update): the top screen always shows exactly one ring
+  // on a live item — content that re-rendered, disabled or hid the focused
+  // item gets the nearest valid focus back instead of a ring-less screen.
+  // Cheap every frame (no layout reads: the HUD dirties the DOM each frame, so
+  // a rect / computed-style query here would force a full synchronous layout
+  // per frame); the visibility check that needs layout runs every 15th frame.
+  let auditN = 0;
+  function audit() {
+    const t = topEntry();
+    if (!t) {
+      if (ringEl) setRing(null);
+      return;
+    }
+    auditN = (auditN + 1) % 15;
+    const el = t.focusEl;
+    if (!el) {
+      // Nothing focusable yet (a splash): look again every 15th frame only.
+      if (auditN === 0) initialFocus(t, 'audit');
+      return;
+    }
+    const cheapOk = !!el && el.isConnected && t.screen.el.contains(el) && isEnabled(el);
+    if (!cheapOk || (auditN === 0 && !isShown(el))) {
+      initialFocus(t, 'audit');
+      return;
+    }
+    if (ringEl !== el) setRing(el);
   }
 
   const api = {
@@ -176,18 +390,34 @@ export function createScreenManager({ root, ctx = {} } = {}) {
     popTo,
     clear,
     top: () => {
-      const t = top();
+      const t = topEntry();
       return t ? t.id : null;
+    },
+    topScreen: () => {
+      const t = topEntry();
+      return t ? t.screen : null;
+    },
+    params: (id) => {
+      const e = stack.find((x) => x.id === id);
+      return e ? e.params : null;
     },
     stack: () => stack.map((e) => e.id),
     isOpen: () => stack.length > 0,
+    has: (id) => stack.some((e) => e.id === id),
     isBlocking,
     nav,
+    focusElement,
+    refocus: () => initialFocus(topEntry(), 'api'),
+    audit,
+    focusables: () => focusables(topEntry()).map((el) => ({ id: el.id || null, label: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 80), rect: rectOf(el) })),
     focused: () => {
-      const t = top();
-      const el = t ? focusables(t)[t.focusIndex] : null;
-      return el ? { screen: t.id, id: el.id || null, label: (el.textContent || '').trim().slice(0, 80) } : null;
+      const t = topEntry();
+      const el = t && validFocus(t) ? t.focusEl : null;
+      if (!el) return null;
+      const label = (el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+      return { screen: t.id, id: el.id || null, label, rect: rectOf(el), ring: el.classList.contains('ap-focus') };
     },
+    ringCount: () => document.querySelectorAll('.ap-focus').length,
     on: (type, fn) => emitter.on(type, fn),
   };
   return api;

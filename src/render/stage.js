@@ -189,7 +189,23 @@ export function createStage({ container, toggles = {} } = {}) {
   // @gnt:M1 RENDER-SCALE begin — initial pixel ratio x display.renderScale
   // (PLAN §5); M1 also owns resize() and adds setRenderScale() /
   // renderScale / drawingBufferSize() to the returned object.
-  const pixelRatio = Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO);
+  // Resolution scale: the renderer draws at min(dpr, MAX_PIXEL_RATIO) x
+  // renderScale device px per CSS px (the canvas CSS size never changes, so
+  // the DOM HUD and menus stay crisp and in place). The drawing buffer is
+  // clamped to 3840x2160 (a 150% scale on a 4K-class window would otherwise
+  // allocate 5760x3240 half-float MSAA targets). The app's display service
+  // applies the persisted display.renderScale before the first frame.
+  let renderScale = 1;
+  let bufferClamped = false;
+  const MAX_BUFFER_W = 3840;
+  const MAX_BUFFER_H = 2160;
+  function effectivePixelRatio(w, h) {
+    const base = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO) * renderScale;
+    const cap = Math.min(MAX_BUFFER_W / Math.max(1, w), MAX_BUFFER_H / Math.max(1, h));
+    bufferClamped = base > cap + 1e-9;
+    return Math.min(base, cap);
+  }
+  const pixelRatio = effectivePixelRatio(width, height);
   renderer.setPixelRatio(pixelRatio);
   // @gnt:M1 RENDER-SCALE end
   renderer.setSize(width, height);
@@ -250,9 +266,9 @@ export function createStage({ container, toggles = {} } = {}) {
   // msaa=0 falls back to FXAA (last, in display space) so edges are never raw.
   if (msaa === 0) composer.addPass(new FXAAPass());
 
-  // @gnt:M1 RESIZE begin
+  // @gnt:M1 RESIZE begin — keeps the render scale (and the buffer clamp).
   function resize(w = window.innerWidth, h = window.innerHeight) {
-    const pr = Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO);
+    const pr = effectivePixelRatio(w, h);
     renderer.setPixelRatio(pr);
     renderer.setSize(w, h);
     composer.setPixelRatio(pr);
@@ -270,6 +286,38 @@ export function createStage({ container, toggles = {} } = {}) {
   }
 
   // @gnt:M1 STAGE-API begin (setRenderScale / renderScale / drawingBufferSize)
+  // setRenderScale(s) -> the applied scale (0.5..1.5); resizes every buffer at
+  // once, so the next rendered frame already uses it.
+  function setRenderScale(s) {
+    const v = Math.min(1.5, Math.max(0.5, Number(s) || 1));
+    if (v === renderScale) return renderScale;
+    renderScale = v;
+    resize();
+    return renderScale;
+  }
+  // drawingBufferSize() -> { w, h } device px of the canvas drawing buffer,
+  // plus the pixel ratio, scale, clamp flag and the canvas CSS box.
+  function drawingBufferSize() {
+    const c = renderer.domElement;
+    return {
+      w: c.width,
+      h: c.height,
+      pixelRatio: renderer.getPixelRatio(),
+      scale: renderScale,
+      clamped: bufferClamped,
+      css: { w: c.clientWidth, h: c.clientHeight },
+    };
+  }
+  const stageApi = {
+    setRenderScale,
+    drawingBufferSize,
+    get renderScale() {
+      return renderScale;
+    },
+  };
   // @gnt:M1 STAGE-API end
-  return { renderer, scene, camera, composer, bloomPass, gradePass, resize, render };
+  return Object.defineProperties(
+    { renderer, scene, camera, composer, bloomPass, gradePass, resize, render },
+    Object.getOwnPropertyDescriptors(stageApi)
+  );
 }

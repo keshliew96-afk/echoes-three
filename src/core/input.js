@@ -129,7 +129,47 @@ export function createInputController({ target = window, screenToWorld = null } 
 
   // @gnt:M1 INPUT-GATE begin — releaseAll() (clear held keys, basicHeld,
   // pending presses) and setEnabled(on) for the app input gate (PLAN §1.5).
+  // The app calls releaseAll() on every transition to a blocking screen (a key
+  // held when the menu opened must not stay "down" behind it — its keyup may
+  // be one the menu consumed) and setEnabled(false) while one is open, so a
+  // tick sampled under a menu (network sessions never pause the sim) carries
+  // neutral intents; aim rides through (it mutates nothing). controlMap()
+  // lists the live control map for the Controls reference tab.
+  let enabled = true;
+  function releaseAll() {
+    held.clear();
+    basicHeld = false;
+    pressQueue = [];
+  }
+  function setEnabled(on) {
+    enabled = !!on;
+    if (!enabled) releaseAll();
+  }
+  function gatedSample() {
+    if (enabled) return sample();
+    releaseAll();
+    const snap = emptySnapshot();
+    if (mouseScreen && screenToWorld) snap.aim = screenToWorld(mouseScreen.x, mouseScreen.y);
+    return snap;
+  }
+  function controlMap() {
+    return {
+      presses: Object.entries(KEY_TO_PRESS).map(([code, press]) => ({ code, ...press })),
+      move: Object.keys(MOVE_KEYS),
+      basicAttack: 'MouseRight',
+      reviveHeld: 'KeyE',
+    };
+  }
   // @gnt:M1 INPUT-GATE end
 
-  return { sample, detach };
+  return {
+    sample: gatedSample,
+    detach,
+    releaseAll,
+    setEnabled,
+    bindings: controlMap,
+    get enabled() {
+      return enabled;
+    },
+  };
 }

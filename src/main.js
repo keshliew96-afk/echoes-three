@@ -395,6 +395,9 @@ function frame(now) {
   // final camera of this frame). No scene swap can freeze the pool.
   if (numeralWarmWait > 0 && --numeralWarmWait === 0) prewarmNumberPools(6);
   updateNumberPools(Math.min(0.1, Math.max(0, frameMs / 1000)));
+  // Title backdrop framing (src/app/titlecam.js): after every layer placed
+  // the camera, before it draws.
+  app.beforeRender(now);
   stage.render();
   // Boot warm-up: the render layers park one of every transient rig in the
   // scene for a few frames so the driver pays for its first draw here, in
@@ -420,7 +423,9 @@ const scheduler = createFrameScheduler({ renderer: stage.renderer, frame });
 // @gnt:LOOP end
 
 // @gnt:APP-ATTACH begin (M1) — hand the app shell every layer it drives,
-// then decide title vs menu-skip (PLAN §1). ARCH stub: always 'playing'.
+// then decide title vs menu-skip (PLAN §1.2 / §6.1): a plain URL boots the
+// loading splash -> title with the sim paused at tick 0; ?menu=0 and every
+// legacy harness param boot straight into camp exactly like v0.4.63.
 app.attach({
   stage,
   world,
@@ -435,6 +440,7 @@ app.attach({
   hud,
   overlay,
   scheduler,
+  warmupPending,
 });
 app.boot();
 // @gnt:APP-ATTACH end
