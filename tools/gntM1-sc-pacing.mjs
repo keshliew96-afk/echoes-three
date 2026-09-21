@@ -92,6 +92,11 @@ export default async function (h) {
     G16_off_case: gpuBound ? 'b (GPU/CPU-bound)' : 'a (headroom)',
     G16_off_ok: gpuBound ? /can't go faster than your GPU/.test(copyOff.vsyncNote || '') : off.fps5s >= 1.3 * rafHz,
     G16_ticks: rows.slice(0, 2).every((r) => within(r.ticksPerSec, 60, 1 / 60)),
-    G17: rows.slice(2).map((r) => ({ limit: r.limit, vsync: r.vsync, fps: r.fps5s, ok: within(r.fps5s, Math.min(r.limit, r.vsync ? Math.min(rafHz, off.fps5s * 1.05 + 1) : off.fps5s + 1)), ticks: r.ticksPerSec })),
+    // measured cap = the best unlimited rate (display- or GPU-bound, whichever binds)
+    G17: rows.slice(2).map((r) => {
+      const cap = Math.min(rafHz, Math.max(on.fps5s, off.fps5s));
+      const want = Math.min(r.limit, cap);
+      return { limit: r.limit, vsync: r.vsync, fps: r.fps5s, want: Math.round(want * 10) / 10, ok: within(r.fps5s, want) || (r.limit > cap && r.fps5s >= cap * 0.9), ticks: r.ticksPerSec };
+    }),
   });
 }

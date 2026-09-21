@@ -267,6 +267,12 @@ export function createSettingsScreen(ctx) {
     const noteEl = holder.querySelector && holder.querySelector('.ap-note');
     const inline = noteEl ? noteEl.textContent.trim() : '';
     if (!body) body = inline;
+    if (!body) {
+      // A contributed row without help text: say how to operate it.
+      if (node.type === 'range') body = 'Adjust with ← / → (the D-pad on a gamepad), or drag with the mouse.';
+      else if (node.getAttribute('role') === 'switch') body = 'Switch with Enter, ← / → or a click (A on a gamepad).';
+      else if (node.classList.contains('ap-choice')) body = 'Choose with ← / → (the D-pad on a gamepad), or click the arrows.';
+    }
     return { title, body };
   }
 
