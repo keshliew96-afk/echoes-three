@@ -10,6 +10,8 @@ import { createInteractPrompts } from '../../ui/interact/index.js';
 import { registerContentCues } from './cues.js';
 import { registerContentProbe } from '../../data/content.js';
 import { service, whenService } from '../../app/registry.js';
+import { pumpDressings } from '../../env/biomes/builder.js';
+import { biomeInfo } from '../../env/biomes/index.js';
 
 export function createWorldContentLayers({ stage, world, bus, cosmetic, runUi = null, scene = null, params = null, sceneKey = 'camp' }) {
   const hazards = createHazardLayer({ stage, world, bus, cosmetic });
@@ -36,6 +38,30 @@ export function createWorldContentLayers({ stage, world, bus, cosmetic, runUi = 
   // PLAN puts them — the ?room= harness or a camp-less scene (never the camp
   // hub, which is not a combat room).
   const layoutParam = params && Number.isFinite(params.layout) ? params.layout : null;
+  // ?variant=N / ?layout=N >= 4 outside a run: the biome's music theme and
+  // ambient bed follow the layout's act (PLAN §6.1). In a run the engine
+  // derives both from the run's act itself.
+  const dressParam = layoutParam ?? (params && Number.isFinite(params.variant) ? params.variant : null);
+  if (dressParam && dressParam >= 4) {
+    const b = biomeInfo(dressParam);
+    const setAudio = (engine) => {
+      try {
+        if (engine && engine.music && b) engine.music.setTheme(b.music);
+        if (engine && engine.ambient && b) engine.ambient.setBed(b.bed);
+      } catch {
+        /* audio optional */
+      }
+    };
+    if (eng) setAudio(eng);
+    else if (typeof whenService === 'function') {
+      try {
+        const p2 = whenService('audio');
+        if (p2 && typeof p2.then === 'function') p2.then(setAudio);
+      } catch {
+        /* no audio */
+      }
+    }
+  }
   let harnessLayout = null;
   if (layoutParam) {
     if (scene && typeof scene.cmd === 'function') scene.cmd('applyLayout', [{ layoutId: layoutParam }]);
@@ -59,6 +85,11 @@ export function createWorldContentLayers({ stage, world, bus, cosmetic, runUi = 
       hazards.update(tSec);
       assets.update(tSec);
       prompts.update();
+      // Background dressing builds: ~8 ms a frame outside live combat, none in it
+      // (the paint worker keeps going off-thread either way).
+      const run = world.runSystem ? world.runSystem() : null;
+      const busy = run && typeof run.combatActive === 'function' && run.combatActive();
+      pumpDressings(busy ? 0 : 8);
     },
     debugState: () => ({ ...hazards.debugState(), ...assets.debugState(), prompt: prompts.debug(), cues }),
   };

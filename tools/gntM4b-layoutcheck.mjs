@@ -53,6 +53,8 @@ for (const [lid, L] of Object.entries(LAYOUTS)) {
     for (const t of dress.torches ?? []) anchors.push({ x: t[0], z: t[1], r: 0.4, what: 'torch' });
     for (const t of dress.lanterns ?? []) anchors.push({ x: t[0], z: t[1], r: 0.45, what: 'lantern' });
     if (dress.monolith) anchors.push({ x: dress.monolith[0], z: dress.monolith[1], r: 0.95, what: 'monolith' });
+    if (dress.millwheel) anchors.push({ x: dress.millwheel[0], z: dress.millwheel[1], r: 1.2, what: 'millwheel' });
+    if (dress.veinStones) anchors.push({ x: dress.veinStones[0], z: dress.veinStones[1], r: 1.3, what: 'veinStones' });
     for (const t of dress.landmarks ?? []) anchors.push({ x: t[0], z: t[1], r: t[2] ?? 1.0, what: `landmark ${t[3] ?? ''}` });
   }
   for (const p of all) {

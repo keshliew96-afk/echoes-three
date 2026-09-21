@@ -33,10 +33,12 @@ function locationCopy(scene, rv) {
   if (rv && rv.active && rv.room >= 1) {
     const room = rv.room;
     const total = rv.rooms ?? 8;
-    if (room >= total) return { name: 'THE HOLLOW', sub: `ROOM ${room} OF ${total} · ${MODE_WORD.boss}` };
+    // Gauntlet M4b: Acts II / III name their own biome (the Act I copy stays).
+    const place = rv.act > 1 && rv.actName ? String(rv.actName).toUpperCase() : null;
+    if (room >= total) return { name: place ?? 'THE HOLLOW', sub: `ROOM ${room} OF ${total} · ${MODE_WORD.boss}` };
     if (rv.phase === 'shop' || rv.mode === 'shop') return { name: "THE PEDDLER'S CLEARING", sub: `ROOM ${room} OF ${total} · ${MODE_WORD.shop}` };
-    const mode = MODE_WORD[rv.mode] ?? 'ON THE ROAD';
-    return { name: 'UNEASY WOODLAND', sub: `ROOM ${room} OF ${total} · ${mode}` };
+    const mode = rv.mode === 'kill_all' && place ? 'CLEAR THE ROOM' : MODE_WORD[rv.mode] ?? 'ON THE ROAD';
+    return { name: place ?? 'UNEASY WOODLAND', sub: `ROOM ${room} OF ${total} · ${mode}` };
   }
   if (scene === 'camp') return { name: 'THE HEARTH CAMP', sub: 'NIGHT · BEFORE THE ROAD' };
   return { name: 'THE PROVING CLEARING', sub: 'ARENA · NO RUN' };

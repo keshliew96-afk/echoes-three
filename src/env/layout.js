@@ -35,6 +35,11 @@ export function createLayoutRng(seed) {
     int: (n) => Math.floor(next() * n),
     chance: (p) => next() < p,
     pick: (arr) => arr[Math.floor(next() * arr.length)],
+    // Advance n draws in O(1) (mulberry32's state is a Weyl sequence): the
+    // dressing paint worker reports how many draws a room's floor consumed.
+    skip: (n) => {
+      s = (s + Math.imul(n | 0, 0x6d2b79f5)) | 0;
+    },
   };
 }
 

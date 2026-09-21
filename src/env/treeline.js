@@ -98,6 +98,12 @@ function place(root, layers, transforms) {
 
 export function buildTreeline(root, spec, cosmetic) {
   const r = (a, b) => cosmetic.range(a, b);
+  // GAUNTLET biome surround (M4b): `spec.treeline = { style, crown, crownLit,
+  // trunk, scrub, rock }`. Act I passes nothing and keeps the certified
+  // woodland band exactly; 'mill' = dark willows over reed beds, 'barrow' =
+  // bare dead trees over burial mounds.
+  const TL = spec.treeline ?? {};
+  const style = TL.style ?? 'wood';
 
   // --- Canopy masses. Base unit is 1 u tall so the per-instance scale reads
   // directly as a height.
@@ -113,10 +119,31 @@ export function buildTreeline(root, spec, cosmetic) {
     new IcosahedronGeometry(0.13, 0).translate(0.17, 0.72, 0.12),
   ]);
   const trunkGeo = new CylinderGeometry(0.05, 0.085, 0.5, 5).translate(0, 0.25, 0);
+  if (style === 'barrow') {
+    // Bare dead trees: the crown and cap layers become forked branches.
+    crownGeo.dispose();
+    capGeo.dispose();
+  }
+  const deadCrown =
+    style === 'barrow'
+      ? mergeGeometries([
+          new CylinderGeometry(0.02, 0.04, 0.42, 4).rotateZ(0.7).translate(0.13, 0.62, 0),
+          new CylinderGeometry(0.02, 0.035, 0.38, 4).rotateZ(-0.8).translate(-0.12, 0.66, 0.02),
+          new CylinderGeometry(0.015, 0.03, 0.3, 4).rotateX(0.7).translate(0, 0.74, 0.1),
+          new CylinderGeometry(0.018, 0.028, 0.26, 4).rotateX(-0.9).translate(0.02, 0.56, -0.1),
+        ])
+      : null;
+  const deadTwigs =
+    style === 'barrow'
+      ? mergeGeometries([
+          new CylinderGeometry(0.01, 0.018, 0.2, 3).rotateZ(1.2).translate(0.27, 0.8, 0),
+          new CylinderGeometry(0.01, 0.018, 0.18, 3).rotateZ(-1.1).translate(-0.26, 0.84, 0.02),
+        ])
+      : null;
 
-  const mCrown = toonMaterial({ color: COOL.canopy });
-  const mCap = toonMaterial({ color: COOL.canopyLit });
-  const mTrunk = toonMaterial({ color: COOL.trunk });
+  const mCrown = toonMaterial({ color: TL.crown ?? COOL.canopy });
+  const mCap = toonMaterial({ color: TL.crownLit ?? COOL.canopyLit });
+  const mTrunk = toonMaterial({ color: TL.trunk ?? COOL.trunk });
 
   const trees = [];
   for (let i = 0; i < TREE_COUNT; i++) {
@@ -137,23 +164,45 @@ export function buildTreeline(root, spec, cosmetic) {
   }
   place(
     root,
-    [
-      { geo: trunkGeo, mat: mTrunk },
-      { geo: crownGeo, mat: mCrown },
-      { geo: capGeo, mat: mCap },
-    ],
+    style === 'barrow'
+      ? [
+          { geo: trunkGeo, mat: mTrunk },
+          { geo: deadCrown, mat: mTrunk },
+          { geo: deadTwigs, mat: mCap },
+        ]
+      : [
+          { geo: trunkGeo, mat: mTrunk },
+          { geo: crownGeo, mat: mCrown },
+          { geo: capGeo, mat: mCap },
+        ],
     trees
   );
 
   // --- Undergrowth scrub right at the wall foot: kills the hard seam where
   // the wall stops and the exterior starts.
-  const scrubGeo = mergeGeometries([
-    new IcosahedronGeometry(0.3, 0).translate(0, 0.14, 0),
-    new IcosahedronGeometry(0.22, 0).translate(0.26, 0.1, 0.12),
-    new IcosahedronGeometry(0.18, 0).translate(-0.23, 0.09, -0.1),
-    new IcosahedronGeometry(0.15, 0).translate(0.06, 0.08, -0.24),
-  ]);
-  const mScrub = toonMaterial({ color: COOL.canopyLit });
+  const scrubGeo =
+    style === 'mill'
+      ? mergeGeometries(
+          // Reed beds: clumps of thin upright blades.
+          [0, 1, 2, 3, 4, 5, 6].map((k) =>
+            new CylinderGeometry(0.008, 0.026, 0.62 + (k % 3) * 0.16, 3)
+              .rotateZ(((k % 5) - 2) * 0.12)
+              .translate(Math.cos(k * 2.4) * 0.16, 0.32, Math.sin(k * 2.4) * 0.16)
+          )
+        )
+      : style === 'barrow'
+        ? mergeGeometries([
+            // Burial mounds: long low grassed humps.
+            new IcosahedronGeometry(0.5, 1).scale(1.4, 0.34, 0.9).translate(0, 0.08, 0),
+            new IcosahedronGeometry(0.22, 0).scale(1, 0.5, 1).translate(0.5, 0.12, 0.2),
+          ])
+        : mergeGeometries([
+            new IcosahedronGeometry(0.3, 0).translate(0, 0.14, 0),
+            new IcosahedronGeometry(0.22, 0).translate(0.26, 0.1, 0.12),
+            new IcosahedronGeometry(0.18, 0).translate(-0.23, 0.09, -0.1),
+            new IcosahedronGeometry(0.15, 0).translate(0.06, 0.08, -0.24),
+          ]);
+  const mScrub = toonMaterial({ color: TL.scrub ?? COOL.canopyLit });
   const scrub = [];
   for (let i = 0; i < SCRUB_COUNT; i++) {
     const side = Math.floor(r(0, 4));
@@ -175,7 +224,7 @@ export function buildTreeline(root, spec, cosmetic) {
     new IcosahedronGeometry(0.42, 0).scale(1, 0.62, 0.9).translate(0, 0.24, 0),
     new IcosahedronGeometry(0.2, 0).scale(1, 0.6, 0.9).translate(0.42, 0.11, -0.16),
   ]);
-  const mRock = toonMaterial({ color: COOL.trunk });
+  const mRock = toonMaterial({ color: TL.rock ?? COOL.trunk });
   const rocks = [];
   for (let i = 0; i < ROCK_COUNT; i++) {
     const spot = sampleBand(cosmetic, 7);

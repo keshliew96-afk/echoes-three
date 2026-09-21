@@ -23,6 +23,16 @@
 //   - drifting firefly motes (one Points draw, cosmetic stream)
 //   - filled, hue-neutral contact shadows under the player and every entity
 // Render-only: everything here reads the cosmetic stream, never sim state.
+//
+// GAUNTLET (M4b, BUILD_BRIEF §23.1): the arena now holds one DRESSING per room
+// layout (1-3 Hollow Wood = the certified variants, 4-6 Sunken Mill, 7-9 Ashen
+// Barrow). Each dressing is a hidden group (ground, apron, surround, props,
+// foliage, walls, fire/lantern FX, 2 torch PointLights, its own boss/shop room
+// sets) built once — the boot layout synchronously, the rest in ~8 ms slices by
+// a background builder (env/biomes/builder.js, pumped from main.js's M4b
+// RENDER-TICK) — and swapped by `applyLayout(layoutId)` on the run's
+// `layout_enter` (under the §13 transition fade), by M2's restoreScene and by
+// the ?variant= / ?layout= harness. Each swap applies that biome's light rig.
 import {
   AdditiveBlending,
   BufferAttribute,
@@ -48,8 +58,10 @@ import { createCritter, setInkViewport } from '../render/critters/index.js';
 import { PALETTE } from '../data/palette.js';
 import { makeGlowSprite, getRadialTexture } from '../render/glow.js';
 import { createGrayboxScene } from './graybox.js';
-import { VARIANTS } from '../env/variants.js';
-import { buildGroundMesh, buildApronMesh } from '../env/ground.js';
+import { layoutSpec, biomeInfo, biomeOfLayout, LAYOUT_SPEC_IDS } from '../env/biomes/index.js';
+import { registerDressingPump } from '../env/biomes/builder.js';
+import { requestPaint, stats as paintStats } from '../env/biomes/paint-client.js';
+import { paintGroundSteps, groundMeshFromCanvas, paintApronSteps, apronMeshFromCanvas, drain } from '../env/ground.js';
 import { buildTreeline } from '../env/treeline.js';
 import { buildWalls } from '../env/walls.js';
 import { buildFoliage } from '../env/foliage.js';
@@ -66,6 +78,10 @@ import { COOL, EMBER_GLOW, mix } from '../env/colors.js';
 import { variantLayoutRng } from '../env/layout.js';
 import { createAfterimages } from '../render/critters/afterimage.js';
 import { installBandGuard, bandGuardInfo } from '../env/bandguard.js';
+
+// Yielded by a dressing build that is waiting on the paint worker: the
+// background pump stops for the frame instead of spinning on it.
+const WAIT = Symbol('dressing-wait');
 
 // Render-cosmetic scaffold numbers (grouped; not brief-bound gameplay values).
 const FIREFLY_COUNT = 120;
@@ -210,7 +226,7 @@ const ACT1_LIGHT = {
 // `mood` is the per-variant light multiplier (env/variants.js): a clearing at
 // noon, a dry crossroads under a hard sun and a shaded hollow are three
 // different rooms even before the props differ (critique F8).
-function tuneActOneLighting(scene, mood = {}) {
+function tuneActOneLighting(scene, mood = {}, biomeLight = null) {
   let key = null;
   let fill = null;
   for (const obj of scene.children) {
@@ -229,11 +245,14 @@ function tuneActOneLighting(scene, mood = {}) {
     // cosmetic roll. A whiter key cuts the multiplier's chroma so those
     // surfaces land under s0.35; the fires and pools still carry the warmth.
     if (mood.keyWhite) key.color.lerp(new Color('#FFFFFF'), mood.keyWhite);
+    // Biome rig (M4b): a colder moon over the barrow, a whiter key over the mill.
+    if (biomeLight && biomeLight.keyTint) key.color.lerp(new Color(biomeLight.keyTint), 0.55);
+    if (biomeLight && biomeLight.keyWhite) key.color.lerp(new Color('#FFFFFF'), biomeLight.keyWhite * 0.5);
     key.intensity = ACT1_LIGHT.keyIntensity * kMul;
   }
   if (fill) {
-    fill.color.copy(ACT1_LIGHT.skyColor);
-    fill.groundColor.copy(ACT1_LIGHT.groundColor);
+    fill.color.copy(biomeLight && biomeLight.sky ? new Color(biomeLight.sky) : ACT1_LIGHT.skyColor);
+    fill.groundColor.copy(biomeLight && biomeLight.ground ? new Color(biomeLight.ground) : ACT1_LIGHT.groundColor);
     fill.intensity = ACT1_LIGHT.fillIntensity * fMul;
   }
   return { key: !!key, fill: !!fill, keyIntensity: key ? key.intensity : 0 };
@@ -343,10 +362,12 @@ function contactBlob(radius, opacity) {
 export function createArenaScene(stage, toggles, ctx) {
   const { cosmetic, world, bus } = ctx;
   const params = new URLSearchParams(window.location.search);
-  const vParam = parseInt(params.get('variant') ?? '1', 10);
-  const spec = VARIANTS[vParam] ?? VARIANTS[1];
+  // ?layout=N (M4b content harness) wins over ?variant=N; both pick the boot
+  // dressing (1-9). Default: layout 1, the certified clearing.
+  const vParam = parseInt(params.get('layout') ?? params.get('variant') ?? '1', 10);
+  const spec = layoutSpec(vParam) ?? layoutSpec(1);
 
-  const lightsTuned = tuneActOneLighting(stage.scene, spec.mood);
+  let lightsTuned = tuneActOneLighting(stage.scene, spec.mood, biomeInfo(spec.id)?.light ?? null);
 
   // --- The playable inside: same world/player/juice as ?scene=graybox. Its
   // placeholder floor + walls are the only top-level Plane/Box meshes in the
@@ -384,26 +405,76 @@ export function createArenaScene(stage, toggles, ctx) {
   // is a property of the room; only things that must be alive frame to frame
   // (flame flicker, embers, motes, particle spread, idle sway) keep the
   // cosmetic stream below.
-  const layout = variantLayoutRng(spec.id);
-
-  // --- Ground + dressed exterior.
-  root.add(buildGroundMesh(spec, layout));
-  root.add(buildApronMesh(spec, layout));
-  const treeline = buildTreeline(root, spec, layout);
-
-  // --- Props first: their footprints mask the foliage scatter, so a blade of
-  // grass can never grow through a crate face.
-  const { emitters, shadows, footprints, mats, typeCount, monolithMat } = buildProps(
-    root,
-    spec,
-    layout
-  );
-  buildShadowInstances(root, shadows);
-  const foliage = buildFoliage(root, spec, layout, footprints);
-  const glassBase = mats?.glass ? mats.glass.color.clone() : null;
-
-  // --- The built boundary (walls + coping + capstone run).
-  const wallInfo = buildWalls(root, spec, layout);
+  // --- DRESSINGS (M4b): one per layout, built by `buildDressingSteps` (a
+  // generator — yields between the heavy canvas passes so the background
+  // builder can slice it). Same build ORDER as the certified single-variant
+  // arena (ground -> apron -> surround -> props -> shadows -> foliage -> walls
+  // on the per-layout LAYOUT stream), so layouts 1-3 are unchanged.
+  const dressings = new Map(); // layoutId -> dressing
+  let active = null;
+  let mountEmitters = null; // bound below (needs the emitter FX helpers)
+  // `offThread`: the background builder paints the two canvases in the paint
+  // worker (env/biomes/paint-worker.js) and yields WAIT until they land; the
+  // synchronous path (boot, a room entered before its build finished) paints
+  // here. Either way the layout stream ends in the same state before the
+  // treeline / props / foliage draw from it.
+  function* buildDressingSteps(dspec, offThread = false) {
+    const group = new Group();
+    group.name = `dressing-L${dspec.id}`;
+    group.visible = false;
+    const layout = variantLayoutRng(dspec.id);
+    // --- Ground + dressed exterior.
+    let groundCanvas = null;
+    let apronCanvas = null;
+    if (offThread) {
+      const req = requestPaint(dspec.id);
+      while (!req.done) yield WAIT;
+      if (req.ok) {
+        groundCanvas = req.ground;
+        apronCanvas = req.apron;
+        layout.skip(req.draws);
+      }
+    }
+    if (!groundCanvas) groundCanvas = yield* paintGroundSteps(dspec, layout);
+    const ground = groundMeshFromCanvas(groundCanvas);
+    group.add(ground);
+    yield;
+    if (!apronCanvas) apronCanvas = yield* paintApronSteps(dspec, layout);
+    const apron = apronMeshFromCanvas(apronCanvas);
+    group.add(apron);
+    yield;
+    const treeline = buildTreeline(group, dspec, layout);
+    // --- Props first: their footprints mask the foliage scatter, so a blade
+    // of grass can never grow through a crate face.
+    const { emitters, shadows, footprints, mats, typeCount, monolithMat, dressing } = buildProps(group, dspec, layout);
+    buildShadowInstances(group, shadows);
+    yield;
+    const foliage = buildFoliage(group, dspec, layout, footprints);
+    const glassBase = mats?.glass ? mats.glass.color.clone() : null;
+    // --- The built boundary (walls + coping + capstone run).
+    const wallInfo = buildWalls(group, dspec, layout);
+    const fx = mountEmitters(group, emitters, dspec);
+    root.add(group);
+    return {
+      id: dspec.id,
+      spec: dspec,
+      group,
+      groundCanvas,
+      textures: [ground.material.map, apron.material.map].filter(Boolean),
+      treeline,
+      emitters,
+      shadows,
+      mats,
+      typeCount,
+      monolithMat,
+      roomDressing: dressing,
+      foliage,
+      glassBase,
+      wallInfo,
+      ...fx,
+      gpuReady: false,
+    };
+  }
 
   // --- The playable Healer: chibi mouse from the critter factory, riding the
   // graybox sim (position/aim/dash/hp are read-only; clips are render state).
@@ -489,12 +560,20 @@ export function createArenaScene(stage, toggles, ctx) {
 
   // --- Emitter FX layer (§19.3: every light emitter carries a glow sprite;
   // §19.4: every effect is >=3 layers — core + glow + particles).
+  mountEmitters = function mountEmittersImpl(dRoot, emitters, spec) {
   const flames = []; // { body, glow, pool, phase }
   const pulses = []; // lantern/monolith halos
   const fireSources = []; // ember spawn points
-  let torchDim = 1; // room-8 torch stop-down, eased (see BOSS_TORCH_DIM)
   let poolSeq = 0;
   const poolY = () => 0.011 + poolSeq++ * 0.0008; // stagger, never z-fight
+  // GAUNTLET biome floors (wet slate, grave paving) are two value steps
+  // lighter than the Act-I night field, and an ADDITIVE pool on a light floor
+  // reads as cream haze, not firelight: `mood.poolGain` scales every fire
+  // pool's opacity for such a biome. Act I: unset = 1.
+  const poolGain = spec.mood?.poolGain ?? 1;
+  // ...and a biome may tint its pools deeper amber (`mood.poolTint`): the
+  // Act-I pale-gold pool summed over blue-grey paving is cream, not fire.
+  const poolColor = spec.mood?.poolTint ? new Color(spec.mood.poolTint) : EMBER_GLOW.pool;
 
   for (const em of emitters) {
     if (em.kind === 'flame') {
@@ -516,7 +595,7 @@ export function createArenaScene(stage, toggles, ctx) {
       const body = makeFlameSprite(0.7, 1, 1.55);
       body.position.set(em.x, fy, fz);
       body.renderOrder = 8;
-      root.add(body);
+      dRoot.add(body);
       // Halo 0.85 / 0.30 (was 1.05 / 0.45), i.e. the brazier bowl's proportions
       // (0.8 / 0.42) rather than a third again as wide. Fix-round-2 C1 quality
       // advisory: the wall torches read as near-white COLUMNS instead of fire —
@@ -531,7 +610,7 @@ export function createArenaScene(stage, toggles, ctx) {
       const glow = makeGlowSprite({ color: EMBER_GLOW.halo, size: 0.85, opacity: 0.3 });
       glow.renderOrder = HALO_ORDER;
       glow.position.set(em.x, em.y + 0.08 + TOWARD_CAM.y * FLAME_LIFT, fz);
-      root.add(glow);
+      dRoot.add(glow);
       // Pool footprint kept TIGHT (radius 2.0): the broad shaft texture's
       // mid-alpha feather over cool shade ground is exactly the mauve murk
       // that lands in the h5-25 danger band, and it also washes the painted
@@ -570,11 +649,11 @@ export function createArenaScene(stage, toggles, ctx) {
       // an unlit decal, which is exactly the §17 exemption criterion 2 asks
       // for. The frame can afford it: the >200 gate is 0.4% and the three
       // variants were measuring 2.96-3.58%.
-      const pool = groundPool(EMBER_GLOW.pool, 2.4, 0.44, poolY(), true);
+      const pool = groundPool(poolColor, 2.4, 0.44 * poolGain, poolY(), true);
       pool.position.x = em.x;
       pool.position.z = em.z;
-      root.add(pool);
-      flames.push({ body, glow, pool, poolO: 0.44, glowS: 0.85, glowO: 0.3, x: em.x, y: fy, z: fz, torch: true, phase: cosmetic.range(0, Math.PI * 2) });
+      dRoot.add(pool);
+      flames.push({ body, glow, pool, poolO: 0.44 * poolGain, poolGain, glowS: 0.85, glowO: 0.3, x: em.x, y: fy, z: fz, torch: true, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.2, z: fz });
     } else if (em.kind === 'brazier') {
       // Mid-field fire bowl (baseline-v030 F1): the emitter that OWNS the
@@ -633,7 +712,7 @@ export function createArenaScene(stage, toggles, ctx) {
       const body = makeFlameSprite(0.8, 1, 1.6);
       body.position.set(em.x, fy, fz);
       body.renderOrder = 8;
-      root.add(body);
+      dRoot.add(body);
       // Halo 0.8 / 0.42: measured on a 4x crop, the wider halo's bloom skirt
       // ate the right half of the bowl, leaving a bright blob with a dark
       // smudge in it. A tighter halo keeps the whole pedestal-column-bowl
@@ -641,7 +720,7 @@ export function createArenaScene(stage, toggles, ctx) {
       const glow = makeGlowSprite({ color: EMBER_GLOW.halo, size: 0.8, opacity: 0.42 });
       glow.renderOrder = HALO_ORDER;
       glow.position.set(em.x, em.y + 0.1 + TOWARD_CAM.y * BRAZIER_LIFT, fz);
-      root.add(glow);
+      dRoot.add(glow);
       // The bowl pool is the broadest in the frame — it replaces the old
       // sourceless canopy dapple as the mid-field warmth. Radius 2.5 is safe
       // now that EMBER_GLOW carries a heavy parchment share (the addition sits
@@ -659,10 +738,10 @@ export function createArenaScene(stage, toggles, ctx) {
       // which is the §19.3 warm-dominant story on a coin flip. The warmth
       // moves from the bloom skirt (which hid the emitter) into the POOL
       // (which is what a fire on a floor actually does).
-      const pool = groundPool(EMBER_GLOW.pool, 3.0 * poolR, 0.46, poolY(), true);
+      const pool = groundPool(poolColor, 3.0 * poolR, 0.46 * poolGain, poolY(), true);
       pool.position.x = em.x;
       pool.position.z = em.z;
-      root.add(pool);
+      dRoot.add(pool);
       // Core 0.30 at radius 1.05 (a first cut ran 0.50 at 1.20): stacked on
       // the pool below it, the fat bright core clipped to featureless white —
       // measured rgb(255,242,208) at saturation 0.18 dead centre — which is
@@ -672,7 +751,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // the ground around the pedestal to featureless white, which is exactly
       // what turned the emitter into a backlit smudge — the F1 defect this
       // whole prop exists to fix. The FLAME is the hot centre now.)
-      flames.push({ body, glow, pool, poolO: 0.46, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.8, torch: true, phase: cosmetic.range(0, Math.PI * 2) });
+      flames.push({ body, glow, pool, poolO: 0.46 * poolGain, poolGain, glowS: 0.8, glowO: 0.42, x: em.x, y: fy, z: fz, scale: 0.8, torch: true, phase: cosmetic.range(0, Math.PI * 2) });
       fireSources.push({ x: em.x, y: em.y + 0.12, z: fz });
     } else if (em.kind === 'lantern') {
       // A lantern is a FIRE, not a cold lamp: a small flame inside the glass
@@ -681,7 +760,7 @@ export function createArenaScene(stage, toggles, ctx) {
       const wick = makeFlameSprite(0.24, 0.95, 1.5);
       wick.position.set(em.x, em.y + 0.01 + TOWARD_CAM.y * 0.1, em.z + TOWARD_CAM.z * 0.1);
       wick.renderOrder = 8;
-      root.add(wick);
+      dRoot.add(wick);
       // Halo trimmed 1.15/0.80 -> 0.82/0.34 (and the pulse base 0.70 -> 0.32,
       // amp 0.16 -> 0.07, below). A lantern hangs at chest height, so its halo
       // sprite is a camera-facing disc that covers the FLOOR around it, and at
@@ -696,11 +775,11 @@ export function createArenaScene(stage, toggles, ctx) {
       glow.renderOrder = HALO_ORDER;
       glow.material.color.copy(EMBER_GLOW.halo);
       glow.position.set(em.x, em.y, em.z);
-      root.add(glow);
+      dRoot.add(glow);
       const pool = groundPool(EMBER_GLOW.pool, 1.9, 0.34, poolY());
       pool.position.x = em.x;
       pool.position.z = em.z;
-      root.add(pool);
+      dRoot.add(pool);
       pulses.push({ glow, base: 0.32, rate: 3.1, amp: 0.07, jitter: 0.05, phase: cosmetic.range(0, Math.PI * 2), wick });
       fireSources.push({ x: em.x, y: em.y + 0.08, z: em.z });
     } else if (em.kind === 'monolith') {
@@ -731,13 +810,13 @@ export function createArenaScene(stage, toggles, ctx) {
       // dark teal).
       glow.material.color.setRGB(HALO_VIOLET[0], HALO_VIOLET[1], HALO_VIOLET[2], LinearSRGBColorSpace);
       glow.position.set(em.x, em.y, em.z);
-      root.add(glow);
+      dRoot.add(glow);
       const spark = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 0.6, opacity: 0.55 });
       spark.renderOrder = HALO_ORDER;
       spark.material.toneMapped = false;
       spark.material.color.setRGB(HALO_VIOLET[0], HALO_VIOLET[1], HALO_VIOLET[2], LinearSRGBColorSpace);
       spark.position.set(em.x, em.y + 0.18, em.z);
-      root.add(spark);
+      dRoot.add(spark);
       // Radius 1.2 keeps the violet wash off the neighbouring warm-lit stone:
       // violet + amber additive overlap lands rose-brown INSIDE h5-25.
       // The GROUND pool goes bluer and softer still (red x0.62, opacity 0.34):
@@ -748,12 +827,12 @@ export function createArenaScene(stage, toggles, ctx) {
       pool.material.color.setRGB(HALO_VIOLET[0] * 0.62, HALO_VIOLET[1], HALO_VIOLET[2], LinearSRGBColorSpace);
       pool.position.x = em.x;
       pool.position.z = em.z;
-      root.add(pool);
+      dRoot.add(pool);
       pulses.push({ glow, base: 0.6, rate: 0.9, amp: 0.12, jitter: 0, phase: cosmetic.range(0, Math.PI * 2), spark });
     }
   }
 
-  const embers = createEmberField(root, fireSources, cosmetic, 9);
+  const embers = createEmberField(dRoot, fireSources, cosmetic, 9);
 
   // (The old mid-field "canopy dapple" pools are gone: baseline-v030 F1 ruled
   // every warm pool needs a visible emitter, so the mid-field warmth now comes
@@ -782,8 +861,205 @@ export function createArenaScene(stage, toggles, ctx) {
       TORCH_LIGHT.decay
     );
     light.position.set(em.x, em.y + 0.3, em.z);
-    root.add(light);
+    dRoot.add(light);
     torchLights.push({ light, phase: cosmetic.range(0, Math.PI * 2) });
+  }
+  return { flames, pulses, fireSources, torchLights, embers };
+  };
+  let torchDim = 1; // room-8 torch stop-down, eased (see BOSS_TORCH_DIM)
+
+  // --- Layout activation (M4b). Swaps the visible dressing and its light rig;
+  // dressing only — no sim writes, no seating (PLAN §3.6 (a)).
+  let lightExpect = null;
+  function applyLight(d) {
+    lightsTuned = tuneActOneLighting(stage.scene, d.spec.mood, biomeInfo(d.spec.id)?.light ?? null);
+    let key = null;
+    let fill = null;
+    for (const obj of stage.scene.children) {
+      if (obj.isDirectionalLight && !key) key = obj;
+      else if (obj.isHemisphereLight && !fill) fill = obj;
+    }
+    lightExpect = key && fill ? { key, fill, ki: key.intensity, fi: fill.intensity, kc: key.color.getHex(), fc: fill.color.getHex() } : null;
+  }
+  function activate(d) {
+    if (active !== d) {
+      if (active) active.group.visible = false;
+      active = d;
+      d.group.visible = true;
+      root.name = `arena-v${d.id}`;
+      if (typeof window !== 'undefined') window.__groundCanvas = d.groundCanvas;
+    }
+    applyLight(d);
+    return d;
+  }
+  // Background builder: every other layout, ~8 ms of generator steps per
+  // frame (the title / camp have that to spare), then the GPU upload of its
+  // two canvases and a 3-frame parked draw that links its programs.
+  const queue = [];
+  let job = null;
+  let warmDraw = null; // { d, frames, culled: Map }
+  const buildStats = { built: [], syncBuilds: [], slices: 0, maxSliceMs: 0, failed: {} };
+  // A dressing whose build throws is never retried and never breaks the frame
+  // loop: the room keeps the dressing it has (reported in debugState().layout).
+  const fail = (id, err) => {
+    buildStats.failed[id] = String((err && err.message) || err);
+    console.error(`[arena] dressing ${id} failed to build:`, err);
+  };
+  function enqueueAll(firstAct = null) {
+    const order = LAYOUT_SPEC_IDS.slice().sort((x, y) => {
+      const ax = firstAct && biomeInfo(x)?.act === firstAct ? 0 : 1;
+      const ay = firstAct && biomeInfo(y)?.act === firstAct ? 0 : 1;
+      return ax - ay || x - y;
+    });
+    queue.length = 0;
+    for (const id of order) if (!dressings.has(id) && !buildStats.failed[id] && (!job || job.id !== id)) queue.push(id);
+  }
+  function finishGpu(d) {
+    for (const t of d.textures) {
+      try {
+        stage.renderer.initTexture(t);
+      } catch {
+        /* initTexture is best effort */
+      }
+    }
+    d.gpuReady = true;
+  }
+  function beginWarmDraw(d) {
+    if (d === active) return;
+    const culled = new Map();
+    const lights = [];
+    d.group.traverse((o) => {
+      if (o.isMesh || o.isPoints || o.isSprite) {
+        culled.set(o, o.frustumCulled);
+        o.frustumCulled = false;
+      }
+      // Its torch lights stay OFF while parked: two extra PointLights change
+      // NUM_POINT_LIGHTS, and three.js then relinks EVERY lit program in the
+      // scene (measured: a 626 ms frame at a room clear, all of it
+      // getProgramInfoLog) — and relinks them again when the park ends. With
+      // the lights off the parked meshes link against the live light count,
+      // which is exactly the variant they will draw with once active.
+      if (o.isLight && o.visible) {
+        lights.push(o);
+        o.visible = false;
+      }
+    });
+    d.group.scale.setScalar(0.001);
+    d.group.position.set(0, -60, 0);
+    d.group.visible = true;
+    warmDraw = { d, frames: 3, culled, lights };
+  }
+  function endWarmDraw() {
+    const { d, culled, lights } = warmDraw;
+    for (const [o, v] of culled) o.frustumCulled = v;
+    for (const l of lights) l.visible = true;
+    d.group.scale.setScalar(1);
+    d.group.position.set(0, 0, 0);
+    d.group.visible = d === active;
+    warmDraw = null;
+  }
+  // budgetMs 0 (live combat): nothing runs on this thread — a paint already
+  // in the worker keeps going there, and its continuation waits for a calm
+  // frame (the next room's dressing is always ready long before it is needed:
+  // reward / path / camp frames run the full budget).
+  function pump(budgetMs = 8) {
+    if (warmDraw) {
+      if (--warmDraw.frames <= 0) endWarmDraw();
+      return;
+    }
+    if (!(budgetMs > 0)) return;
+    const t0 = performance.now();
+    if (!job) {
+      while (queue.length && dressings.has(queue[0])) queue.shift();
+      if (!queue.length) return;
+      const id = queue.shift();
+      job = { id, gen: buildDressingSteps(layoutSpec(id), true), t0, waiting: false };
+    }
+    try {
+      while (performance.now() - t0 < budgetMs) {
+        const r = job.gen.next();
+        if (r.value === WAIT) {
+          job.waiting = true;
+          break;
+        }
+        job.waiting = false;
+        if (r.done) {
+          dressings.set(job.id, r.value);
+          buildStats.built.push(job.id);
+          const d = r.value;
+          job = null;
+          finishGpu(d);
+          beginWarmDraw(d);
+          break;
+        }
+      }
+    } catch (err) {
+      fail(job.id, err);
+      job = null;
+    }
+    const ms = performance.now() - t0;
+    buildStats.slices += 1;
+    if (ms > buildStats.maxSliceMs) buildStats.maxSliceMs = Math.round(ms * 10) / 10;
+  }
+  function ensureDressing(id) {
+    let d = dressings.get(id);
+    if (d) return d;
+    if (buildStats.failed[id]) return null;
+    const t0 = performance.now();
+    try {
+      // A job past its paint wait can be finished here; one still waiting on
+      // the worker is dropped and the room painted on this thread (a drain can
+      // never wait for a message).
+      if (job && job.id === id && !job.waiting) {
+        const gen = job.gen;
+        job = null;
+        d = drain(gen);
+      } else {
+        if (job && job.id === id) job = null;
+        d = drain(buildDressingSteps(layoutSpec(id)));
+      }
+    } catch (err) {
+      fail(id, err);
+      return null;
+    }
+    dressings.set(id, d);
+    finishGpu(d);
+    buildStats.syncBuilds.push({ id, ms: Math.round(performance.now() - t0) });
+    return d;
+  }
+  function applyLayout(arg) {
+    const id = typeof arg === 'number' ? arg : arg && (arg.layoutId ?? arg.id);
+    if (!layoutSpec(id)) return null;
+    if (warmDraw && warmDraw.d.id === id) endWarmDraw();
+    const built = ensureDressing(id);
+    if (!built) return null;
+    const d = activate(built);
+    return { layoutId: d.id, biome: biomeOfLayout(d.id), name: d.spec.name };
+  }
+  // The run swaps dressing at each room's `layout_enter` (M4a's run.js emits it
+  // right before `room_enter`, under the transition fade); run_start re-queues
+  // the act's layouts first.
+  bus.on('layout_enter', (ev) => {
+    if (ev && ev.layoutId !== undefined) applyLayout(ev.layoutId);
+  });
+  bus.on('run_start', (ev) => {
+    if (ev && Number.isFinite(ev.act)) enqueueAll(ev.act);
+  });
+  registerDressingPump((budgetMs) => pump(budgetMs));
+  // The boot dressing, synchronously (it is the first frame).
+  activate(ensureDressing(spec.id) ?? ensureDressing(1));
+  buildStats.syncBuilds.length = 0;
+  // Pre-build order: a menu-skip boot's ?act=N first (its portal starts that
+  // act), else the boot dressing's own act; run_start re-sorts for the act.
+  {
+    let bootAct = null;
+    try {
+      const a = Number(new URLSearchParams(window.location.search).get('act'));
+      if (a >= 1 && a <= 3) bootAct = a;
+    } catch {
+      /* no location (tests) */
+    }
+    enqueueAll(bootAct ?? biomeInfo(spec.id)?.act ?? 1);
   }
 
   // --- Firefly motes. Per-mote colour drives a slow fade in/out (additive
@@ -978,6 +1254,12 @@ export function createArenaScene(stage, toggles, ctx) {
       }
     }
 
+    // The camp restores its own snapshot of the arena's light rig on every
+    // camp -> run swap; re-assert this dressing's biome rig if anything moved it.
+    if (lightExpect && (lightExpect.key.intensity !== lightExpect.ki || lightExpect.fill.intensity !== lightExpect.fi || lightExpect.key.color.getHex() !== lightExpect.kc || lightExpect.fill.color.getHex() !== lightExpect.fc)) {
+      applyLight(active);
+    }
+    const { flames, pulses, torchLights, monolithMat, glassBase, mats, embers } = active;
     // Room-8 torch stop-down (BOSS_TORCH_DIM): keyed off the live Stag body,
     // eased over ~0.25 s so the step hides inside the §13 transition fade and
     // the death collapse. Braziers, lanterns and the monolith are untouched.
@@ -1015,7 +1297,7 @@ export function createArenaScene(stage, toggles, ctx) {
       // their full amplitude — only the two big soft AREAS are damped.
       f.glow.material.opacity = Math.max(0.16, (f.glowO ?? 0.45) + 0.09 * n + jit) * dim;
       f.glow.scale.setScalar((f.glowS ?? 1.05) * (1 + 0.1 * n)); // braziers ride a tighter halo
-      f.pool.material.opacity = Math.max(0.24, (f.poolO ?? 0.6) + 0.05 * n) * dim;
+      f.pool.material.opacity = Math.max(0.24 * (f.poolGain ?? 1), (f.poolO ?? 0.6) + 0.05 * n) * dim;
       f.body.material.opacity = dim;
       if (f.core) f.core.material.opacity = Math.max(0.08, (f.coreO ?? 0.16) + 0.05 * n);
     }
@@ -1098,7 +1380,11 @@ export function createArenaScene(stage, toggles, ctx) {
   window.__arenaProbe = {
     stage,
     root,
-    emitters,
+    get emitters() {
+      return active.emitters;
+    },
+    applyLayout,
+    layoutState: () => layoutState(),
     // §19.1 band-guard knob: lets a capture sweep the guard edges inside ONE
     // page session instead of one build per candidate value.
     setGuard: bandGuard.setGuard,
@@ -1119,11 +1405,29 @@ export function createArenaScene(stage, toggles, ctx) {
     },
   };
 
+  function layoutState() {
+    return {
+      layoutId: active.id,
+      biome: biomeOfLayout(active.id),
+      name: active.spec.name,
+      built: [...dressings.keys()].sort((a, b) => a - b),
+      queued: [...queue],
+      building: job ? job.id : null,
+      syncBuilds: buildStats.syncBuilds.slice(-6),
+      slices: buildStats.slices,
+      maxSliceMs: buildStats.maxSliceMs,
+      failed: { ...buildStats.failed },
+      worker: { ...paintStats },
+    };
+  }
+
   function debugState() {
+    const { foliage, typeCount, shadows, emitters, embers, treeline, wallInfo } = active;
     return {
       ...(inner.debugState ? inner.debugState() : {}),
-      variant: spec.id,
-      variantName: spec.name,
+      variant: active.id,
+      variantName: active.spec.name,
+      layout: layoutState(),
       // §19.1 reserved-band guard (lit non-threat materials).
       bandGuard: bandGuardInfo(),
       // v0.3.0 party integration — lets captures assert clip state + presence.
@@ -1156,5 +1460,15 @@ export function createArenaScene(stage, toggles, ctx) {
     };
   }
 
-  return { name: `arena-v${spec.id}`, root, update, debugState, allies };
+  return {
+    get name() {
+      return `arena-v${active.id}`;
+    },
+    root,
+    update,
+    debugState,
+    allies,
+    applyLayout,
+    layoutState,
+  };
 }

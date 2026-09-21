@@ -167,8 +167,9 @@ function makeWaterMaterial() {
         col = mix( col, uFoam, streak * ( 0.22 - glassy * 0.18 ) );
         // Bank foam line + surge whitewater.
         float foam = smoothstep( 0.78, 0.97, across ) * ( 0.25 + 0.2 * noise( vec2( s * 3.0, 4.0 ) ) );
-        float white = uSurge * smoothstep( 0.45, 0.8, noise( vec2( s * 2.2, vUv.y * 6.0 + uT ) ) );
-        col = mix( col, uFoam, clamp( foam * ( 1.0 - uStill ) + white * 0.45, 0.0, 0.6 ) );
+        // Surge whitewater: streaks stretched along the flow (not blobs), <= 30%.
+        float white = uSurge * smoothstep( 0.5, 0.85, noise( vec2( s * 1.1, vUv.y * 11.0 + uT ) ) );
+        col = mix( col, uFoam, clamp( foam * ( 1.0 - uStill ) + white * 0.3, 0.0, 0.5 ) );
         float a = 1.0 - smoothstep( 0.96, 1.0, across );
         gl_FragColor = vec4( col, a * 0.96 );
       }

@@ -10,6 +10,14 @@
 // COOL.ambient, and a final additive indigo lift guarantees the blue channel
 // sits at or above the red in every unlit region. Warm arrives only from the
 // torch/lantern/dapple pools — that contrast is the warm:cool 70:30 read.
+//
+// GAUNTLET (M4b): the painter is a GENERATOR (`paintGroundSteps`) that yields
+// between passes and inside its long loops, so the background dressing builder
+// (env/biomes/builder.js) can paint a room's floor in ~8 ms slices across idle
+// frames; `paintGroundCanvas` drains it synchronously with the identical draw
+// and RNG order (the certified Act-I floors are byte-for-byte unchanged). The
+// biome passes (flagstone mosaic, water channels with specular streaks, ash
+// drifts, moss saturation) run only when a spec asks for them.
 import { CanvasTexture, Mesh, PlaneGeometry, SRGBColorSpace } from 'three';
 import { ARENA } from '../core/constants.js';
 import { toonMaterial } from '../render/toon.js';
@@ -122,9 +130,13 @@ function plateauBlob(ctx, x, y, radius, color, plateau = 0.5) {
 // still resolve to a flat block wherever two soft gradients overlap, so the
 // floor and the apron both get a final grain pass that makes a truly flat block
 // impossible. Granularity 2 texels keeps the grain alive through mip level 1.
-function grain(ctx, W, H, amp, cosmetic, step = 4) {
+function* grainSteps(ctx, W, H, amp, cosmetic, step = 4, bandRows = 96) {
+  // ONE readback and ONE write (Chrome warns on repeated readbacks), with the
+  // cell loop yielding every `bandRows` rows: exactly the full-canvas pass's
+  // pixel and RNG order.
   const img = ctx.getImageData(0, 0, W, H);
   const d = img.data;
+  const band = Math.max(step, Math.floor(bandRows / step) * step);
   for (let y = 0; y < H; y += step) {
     for (let x = 0; x < W; x += step) {
       const n = (cosmetic.range(-1, 1) * amp) | 0;
@@ -138,8 +150,28 @@ function grain(ctx, W, H, amp, cosmetic, step = 4) {
         }
       }
     }
+    if ((y + step) % band === 0) yield;
   }
   ctx.putImageData(img, 0, 0);
+}
+function grain(ctx, W, H, amp, cosmetic, step = 4) {
+  for (const _ of grainSteps(ctx, W, H, amp, cosmetic, step, H + step)) void _;
+}
+// Drain a generator synchronously.
+// A 2D canvas on the main thread, an OffscreenCanvas inside the dressing
+// paint worker (env/biomes/paint-worker.js) — same painter, same draw order.
+function makeCanvas(W, H) {
+  if (typeof document === 'undefined') return new OffscreenCanvas(W, H);
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  return canvas;
+}
+
+export function drain(gen) {
+  let r = gen.next();
+  while (!r.done) r = gen.next();
+  return r.value;
 }
 
 // `cosmetic` here is the per-variant LAYOUT stream (env/layout.js), passed in
@@ -149,6 +181,10 @@ function grain(ctx, W, H, amp, cosmetic, step = 4) {
 // variant between loads (fix-round-2 critique). A room's floor is now identical
 // on every load and its numbers are reproducible.
 export function paintGroundCanvas(spec, cosmetic) {
+  return drain(paintGroundSteps(spec, cosmetic));
+}
+
+export function* paintGroundSteps(spec, cosmetic) {
   const fw = ARENA.halfW * 2;
   const fd = ARENA.halfD * 2;
   const W = TEX_W;
@@ -196,9 +232,7 @@ export function paintGroundCanvas(spec, cosmetic) {
   // reference lens, so it keeps the authored polarity below.
   const night = !!g.nightBase;
 
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
+  const canvas = makeCanvas(W, H);
   const ctx = canvas.getContext('2d');
 
   // 1 — base fill. FIX ROUND 2 (certification checks 2/6/7): this used to be
@@ -220,6 +254,7 @@ export function paintGroundCanvas(spec, cosmetic) {
     ? hsl(shH + COOL_STAMP_H, shS + 0.22, shL + 0.055)
     : hsl(g.h + 4, g.s * 0.86, g.l * 0.62 + shL * 0.38 + 0.05);
   ctx.fillRect(0, 0, W, H);
+  yield;
 
   // 2 — hue-noise mottling: jittered rotated ellipses on a loose lattice (a
   // hard rect grid reads as a checkerboard at gameplay zoom — verified in
@@ -265,7 +300,9 @@ export function paintGroundCanvas(spec, cosmetic) {
       );
       ctx.fill();
     }
+    if ((y / cell) % 8 === 7) yield;
   }
+  yield;
 
   // 3 — macro dapple: large soft pools of LIT warm green vs COOL blue-green
   // shade (§19.3 dappled low-moderate value contrast). This is where the
@@ -380,6 +417,7 @@ export function paintGroundCanvas(spec, cosmetic) {
     }
   });
 
+  yield;
   // 3b — cool ambient lift, applied HERE rather than at the end: the dirt path,
   // the leaf litter and the moss are warm surfaces painted on top of it, and a
   // +24 blue over the track turned the beaten dirt mauve last iteration.
@@ -387,6 +425,16 @@ export function paintGroundCanvas(spec, cosmetic) {
   ctx.fillStyle = `rgb(3,7,${g.coolLift ?? COOL_LIFT_B})`;
   ctx.fillRect(0, 0, W, H);
   ctx.globalCompositeOperation = 'source-over';
+
+  // GAUNTLET biome passes (M4b) — only when the spec asks: a flagstone
+  // mosaic (wet slate / grave paving), then the water channels (painted under
+  // the paths, so a causeway can cross them).
+  if (g.flagstones) {
+    yield* flagstoneSteps(ctx, W, H, ppu, g, cosmetic);
+  }
+  if (spec.water) {
+    yield* waterSteps(ctx, spec.water, ppu, cx, cz, cosmetic);
+  }
 
   // 4 — dirt path(s): cool dark under-stroke, jittered warm dirt body, dry
   // highlights, wheel ruts, pebbles.
@@ -452,6 +500,7 @@ export function paintGroundCanvas(spec, cosmetic) {
       ctx.arc(px, pz, r(1.5, 3.6), 0, Math.PI * 2);
       ctx.fill();
     }
+    yield;
   }
 
   // 5 — moss patches: clustered blobs + pale lichen speckles, biased toward
@@ -468,7 +517,7 @@ export function paintGroundCanvas(spec, cosmetic) {
         r(28, 85),
         // Moss hue offset is spec-tunable (fix round 1): +22 over an h90 base
         // painted the moss at h112 — inside the reserved heal band.
-        hsl(g.h + (g.mossOff ?? 22) + r(-6, 6), 0.5, g.l + 0.03 + r(0, 0.04), 0.3)
+        hsl(g.h + (g.mossOff ?? 22) + r(-6, 6), g.mossS ?? 0.5, (g.mossL ?? g.l) + 0.03 + r(0, 0.04), 0.3)
       );
     }
     for (let b = 0; b < 5; b++) {
@@ -476,6 +525,7 @@ export function paintGroundCanvas(spec, cosmetic) {
     }
   }
 
+  yield;
   // 6 — leaf litter: small rotated ellipses, denser at the tree line (edges).
   for (let i = 0; i < g.leafN; i++) {
     let lx = r(0, W);
@@ -499,7 +549,7 @@ export function paintGroundCanvas(spec, cosmetic) {
     // warm addition plus the grade's red-lift landed the browner leaves at
     // h20-25 / s0.35-0.37. Golder, slightly greyer litter keeps the read and
     // clears the gate even pool-washed.
-    ctx.fillStyle = hsl(62 + r(-2, 12), 0.22, 0.23 + r(-0.05, 0.08), 0.6);
+    ctx.fillStyle = hsl((g.litterH ?? 62) + r(-2, 12), g.litterS ?? 0.22, (g.litterL ?? 0.23) + r(-0.05, 0.08), 0.6);
     ctx.beginPath();
     ctx.ellipse(0, 0, r(3.5, 7), r(1.6, 3), 0, 0, Math.PI * 2);
     ctx.fill();
@@ -522,6 +572,18 @@ export function paintGroundCanvas(spec, cosmetic) {
   ctx.fillRect(0, 0, W, H);
   ctx.globalCompositeOperation = 'source-over';
 
+  // GAUNTLET: ash drifts (Ashen Barrow) — pale soft windrows over the paving.
+  if (g.ashDrifts) {
+    for (let i = 0; i < g.ashDrifts; i++) {
+      const ax = r(0, W);
+      const az = r(0, H);
+      const n = 3 + Math.floor(r(0, 4));
+      for (let b = 0; b < n; b++) {
+        blob(ctx, ax + r(-70, 70), az + r(-40, 40), r(40, 110), hsl(g.ashH ?? 30, g.ashS ?? 0.08, g.ashL ?? 0.42, g.ashA ?? 0.22));
+      }
+    }
+    yield;
+  }
   // 7 — cracks in the dry earth (critique F6). Round 3 drew these as constant
   // ~2px near-black random walks with no taper and no rim, which read as
   // scratches on the lens. A real crack is a groove: a dark channel that TAPERS
@@ -600,18 +662,107 @@ export function paintGroundCanvas(spec, cosmetic) {
   ctx.fillStyle = mkGrad(W, 0, W - band, 0);
   ctx.fillRect(W - band, 0, band, H);
 
+  yield;
   // 10 — grain. BUILD_BRIEF §19.3 forbids micro-texture, and round 3's amp-9
   // per-2-texel grain read as chunky blue-green pepper noise at gameplay zoom
   // (critique F8). Dropped to a barely-there amp-3 tint jitter on a 4-texel
   // lattice: enough that no 8x8 screen block is ever mathematically flat (FLAT
   // measures ~1%, bar is 20%), invisible as texture.
-  grain(ctx, W, H, 3, cosmetic, 4);
+  yield* grainSteps(ctx, W, H, 3, cosmetic, 4);
 
   return canvas;
 }
 
+// --- GAUNTLET biome passes -------------------------------------------------
+// Flagstone mosaic: irregular slabs on a jittered course grid, each a subtly
+// different value of the lit stone, split by dark grout — the "tile variation"
+// of reference B, drawn only where it reads (the lit field; the painter's
+// night base shows through the grout).
+function* flagstoneSteps(ctx, W, H, ppu, g, cosmetic) {
+  const r = (a, b) => cosmetic.range(a, b);
+  const F = g.flagstones;
+  const size = (F.size ?? 0.9) * ppu;
+  let row = 0;
+  for (let y = -size * 0.5; y < H + size; y += size * 0.62) {
+    const off = (row % 2) * size * 0.5;
+    for (let x = -size + off; x < W + size; x += size * r(0.8, 1.15)) {
+      const w = size * r(0.72, 1.05);
+      const h = size * r(0.5, 0.64);
+      const cxp = x + r(-4, 4);
+      const cyp = y + r(-4, 4);
+      const a = r(-0.08, 0.08);
+      const lit = r(0, 1);
+      ctx.save();
+      ctx.translate(cxp, cyp);
+      ctx.rotate(a);
+      ctx.fillStyle = hsl((F.h ?? g.h) + r(-6, 6), (F.s ?? 0.12) + r(-0.03, 0.03), (F.l ?? g.l) * (0.82 + lit * 0.3), F.alpha ?? 0.34);
+      ctx.fillRect(-w / 2, -h / 2, w, h);
+      ctx.strokeStyle = hsl(F.groutH ?? 210, F.groutS ?? 0.2, F.groutL ?? 0.06, F.groutA ?? 0.42);
+      ctx.lineWidth = F.grout ?? 3;
+      ctx.strokeRect(-w / 2, -h / 2, w, h);
+      // a chipped corner / crack on a third of the slabs
+      if (lit < 0.33) {
+        ctx.beginPath();
+        ctx.moveTo(-w * 0.2, -h / 2);
+        ctx.lineTo(w * 0.05, h * 0.1);
+        ctx.lineTo(w * 0.3, h / 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    row += 1;
+    if (row % 3 === 0) yield;
+  }
+}
+
+// Water channels: black-teal bodies with lighter banks and Parchment specular
+// streaks (<= 25% alpha, BUILD_BRIEF §23.1 Sunken Mill signature surface).
+function* waterSteps(ctx, channels, ppu, cx, cz, cosmetic) {
+  const r = (a, b) => cosmetic.range(a, b);
+  for (const ch of channels) {
+    const wPx = ch.w * ppu;
+    // bank lip (wet stone, slightly lighter than the floor)
+    stampAlong(ch.pts, 0.08, (wx, wz) => {
+      blob(ctx, cx(wx), cz(wz), wPx * 0.72, hsl(196, 0.22, 0.14, 0.32));
+    });
+    // body
+    stampAlong(ch.pts, 0.05, (wx, wz) => {
+      blob(ctx, cx(wx) + r(-2, 2), cz(wz) + r(-2, 2), wPx * 0.5, hsl(r(190, 200), 0.45, r(0.06, 0.1), 0.9));
+    });
+    yield;
+    // specular streaks along the flow
+    for (let i = 0; i < ch.pts.length - 1; i++) {
+      const [ax, az] = ch.pts[i];
+      const [bx, bz] = ch.pts[i + 1];
+      const L = Math.hypot(bx - ax, bz - az);
+      const n = Math.round(L * 2.2);
+      const dx = (bx - ax) / (L || 1);
+      const dz = (bz - az) / (L || 1);
+      for (let k = 0; k < n; k++) {
+        const t = r(0, 1);
+        const side = r(-0.32, 0.32) * ch.w;
+        const px = cx(ax + (bx - ax) * t - dz * side);
+        const pz = cz(az + (bz - az) * t + dx * side);
+        const len = r(0.3, 0.8) * ppu;
+        ctx.strokeStyle = `rgba(244,239,230,${r(0.08, 0.24).toFixed(3)})`;
+        ctx.lineWidth = r(1.5, 3.2);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(px, pz);
+        ctx.lineTo(px + dx * len, pz + dz * len);
+        ctx.stroke();
+      }
+    }
+    yield;
+  }
+}
+
 export function buildGroundMesh(spec, cosmetic) {
   const canvas = paintGroundCanvas(spec, cosmetic);
+  return groundMeshFromCanvas(canvas);
+}
+
+export function groundMeshFromCanvas(canvas) {
   // Debug hook for the capture harness: the painted floor is the single
   // largest colour surface in the frame, so "which painted feature is putting
   // texels in a reserved hue band" has to be answerable without guessing.
@@ -634,14 +785,17 @@ export function buildGroundMesh(spec, cosmetic) {
 // attention funnel from reference C and the cool-void-vs-warm-action funnel of
 // reference D. The 3D treeline (env/treeline.js) stands on top of this.
 export function buildApronMesh(spec, cosmetic) {
+  return apronMeshFromCanvas(drain(paintApronSteps(spec, cosmetic)));
+}
+
+export function* paintApronSteps(spec, cosmetic) {
+  const A = spec.apron ?? null; // GAUNTLET biome tint: { base, mottleH, crownH, clear } (Act I: null = the certified apron)
   const worldW = ARENA.halfW * 2 + APRON_MARGIN * 2;
   const worldD = ARENA.halfD * 2 + APRON_MARGIN * 2;
   const W = 1600;
   const H = Math.round(W * (worldD / worldW));
   const ppu = W / worldW;
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
+  const canvas = makeCanvas(W, H);
   const ctx = canvas.getContext('2d');
   const r = (a, b) => cosmetic.range(a, b);
 
@@ -654,7 +808,7 @@ export function buildApronMesh(spec, cosmetic) {
     z0: cz(-ARENA.halfD), z1: cz(ARENA.halfD),
   };
 
-  ctx.fillStyle = 'hsl(212,14%,11%)'; // COOL.apron — deep, so the island reads brighter
+  ctx.fillStyle = A && A.base ? A.base : 'hsl(212,14%,11%)'; // COOL.apron — deep, so the island reads brighter
   ctx.fillRect(0, 0, W, H);
 
   // Fine organic mottle — cool indigo/teal undergrowth, never dark green.
@@ -662,11 +816,12 @@ export function buildApronMesh(spec, cosmetic) {
     ctx.save();
     ctx.translate(r(0, W), r(0, H));
     ctx.rotate(r(0, Math.PI));
-    ctx.fillStyle = hsl(210 + r(-20, 26), 0.12 + r(-0.05, 0.08), 0.09 + r(0, 0.09), 0.55);
+    ctx.fillStyle = hsl((A && A.mottleH !== undefined ? A.mottleH : 210) + r(-20, 26), (A && A.mottleS !== undefined ? A.mottleS : 0.12) + r(-0.05, 0.08), 0.09 + r(0, 0.09), 0.55);
     ctx.beginPath();
     ctx.ellipse(0, 0, r(4, 14), r(3, 9), 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+    if (i % 1400 === 1399) yield;
   }
 
   // Canopy crowns seen from above: dark rounded masses with a cool lit lobe.
@@ -675,7 +830,8 @@ export function buildApronMesh(spec, cosmetic) {
     const pz = r(0, H);
     const R = r(8, 28);
     blob(ctx, px, pz, R * 1.4, 'rgba(4,7,12,0.55)');
-    blob(ctx, px - R * 0.22, pz - R * 0.28, R, hsl(202 + r(-14, 18), 0.24, 0.055 + r(0, 0.045), 0.75));
+    blob(ctx, px - R * 0.22, pz - R * 0.28, R, hsl((A && A.crownH !== undefined ? A.crownH : 202) + r(-14, 18), A && A.crownS !== undefined ? A.crownS : 0.24, 0.055 + r(0, 0.045), 0.75));
+    if (i % 350 === 349) yield;
   }
   // A few large dark shapes (boulder fields / deep hollows) for macro contrast.
   for (let i = 0; i < 46; i++) {
@@ -729,8 +885,13 @@ export function buildApronMesh(spec, cosmetic) {
   ctx.fillRect(0, 0, W, H);
   ctx.globalCompositeOperation = 'source-over';
 
-  grain(ctx, W, H, 3, cosmetic, 4);
+  yield* grainSteps(ctx, W, H, 3, cosmetic, 4);
+  return canvas;
+}
 
+export function apronMeshFromCanvas(canvas) {
+  const worldW = ARENA.halfW * 2 + APRON_MARGIN * 2;
+  const worldD = ARENA.halfD * 2 + APRON_MARGIN * 2;
   const tex = new CanvasTexture(canvas);
   tex.colorSpace = SRGBColorSpace;
   tex.anisotropy = 4;

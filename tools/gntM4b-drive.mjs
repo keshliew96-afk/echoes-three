@@ -137,6 +137,80 @@ const SCEN = {
     await c.ev(`(()=>{const out=[];__arenaProbe.stage.scene.traverse(o=>{if(o.name&&o.name.startsWith('m4b-tele')){const p=o.getWorldPosition(new o.position.constructor());out.push({n:o.name,vis:o.visible,parentVis:o.parent&&o.parent.visible,x:+p.x.toFixed(2),y:+p.y.toFixed(2),z:+p.z.toFixed(2),kids:o.children.length});}});return {out,tel:__echoes.state().enemies.map(e=>e.telegraph)}})()`, 'shapes');
     await c.shot('a');
   },
+  // A biome's dressing alone (?variant=N): frame + layout/builder state.
+  async biome(c) {
+    const v = opt('variant', '4');
+    await c.open(`?scene=arena&seed=3&variant=${v}`);
+    const at = opt('at', null);
+    if (at) await c.ev(`__echoes.cmd('teleport',${at})`, 'teleport');
+    await c.sleep(Number(opt('settle', '1500')));
+    await c.ev(`(()=>({layout:__echoes.state().vfx.layout, propTypes:__echoes.state().vfx.propTypes, gl:__echoes.state().gl}))()`, 'layout');
+    await c.shot('v' + v + (at ? '-at' : ''));
+    await c.ev(`(async()=>{const R=__arenaProbe.stage.renderer;R.info.autoReset=false;R.info.reset();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      const o={calls:R.info.render.calls,triangles:R.info.render.triangles,frames:R.info.render.frame};R.info.autoReset=true;
+      const t0=performance.now();let n=0;await new Promise(r=>{function f(){n++;if(performance.now()-t0<3000)requestAnimationFrame(f);else r();}requestAnimationFrame(f)});o.fps=Math.round(n/3);return o})()`, 'glinfo');
+    // --hide <what>: A/B the frame with a layer class hidden (pools | glows | lights).
+    const hide = opt('hide', '');
+    if (hide) {
+      await c.ev(`(()=>{let n=0;const S=__arenaProbe.stage.scene;S.traverse(o=>{const m=o.material;
+        if(${JSON.stringify(hide)}==='pools'&&o.isMesh&&m&&m.blending===2&&o.rotation&&Math.abs(o.rotation.x+Math.PI/2)<1e-3&&o.geometry&&o.geometry.type==='CircleGeometry'){o.visible=false;n++;}
+        if(${JSON.stringify(hide)}==='glows'&&o.isSprite){o.visible=false;n++;}
+        if(${JSON.stringify(hide)}==='lights'&&o.isPointLight){o.visible=false;n++;}});return n})()`, 'hide');
+      await c.sleep(300);
+      await c.shot('v' + v + '-no' + hide);
+    }
+  },
+  // A REAL run of act N (the G4b.7 combat frame): startRun({act}) from the
+  // menu-skip camp, the run's own layout_enter swaps the dressing; wait for a
+  // wave with >= 4 enemies incl. a new archetype (top up with spawns only if
+  // the wave is short), push one of the room's hazards into its telegraph,
+  // cast (RMB + 1 + 2) and shoot while an enemy telegraph is live.
+  async run(c) {
+    const act = Number(opt('act', '2'));
+    await c.open(`?seed=${opt('seed', '7')}&menu=0&act=${act}`);
+    // The realistic path: the camp idles while the act's dressings pre-build
+    // (a player walks to the portal); --cold skips the wait (sync fallback).
+    if (!argv.includes('--cold'))
+      await c.ev(`(async()=>{const E=__echoes;const want=${JSON.stringify({ 1: [1, 2, 3], 2: [4, 5, 6], 3: [7, 8, 9] })}[${act}];const t0=performance.now();
+        while(performance.now()-t0<20000){const L=E.cmd('arenaLayout');if(L&&want.every(i=>L.built.includes(i)))return {ms:Math.round(performance.now()-t0),built:L.built,maxSliceMs:L.maxSliceMs,worker:L.worker};await new Promise(r=>setTimeout(r,100));}
+        return {timeout:true,L:E.cmd('arenaLayout')}})()`, 'prebuild');
+    await c.ev(`(()=>{const E=__echoes;window.__c={ev:[]};for(const t of ['telegraph_start','layout_enter','room_enter','hazard_telegraph','hit','death'])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));
+      const r=E.cmd('startRun',{act:${act}});return {room:r&&r.room,phase:r&&r.phase}})()`, 'startRun');
+    await c.page.mouse.move(W / 2, H / 2);
+    const NEW = ['quillback', 'toad', 'moth', 'ram', 'mole'];
+    const wait = await c.ev(`(async()=>{const E=__echoes;const NEW=${JSON.stringify(NEW)};const t0=performance.now();
+      while(performance.now()-t0<45000){const s=E.state();const r=s.run;
+        if(r&&r.phase==='combat'&&s.enemies.length>=${Number(opt('min', '4'))}&&s.enemies.some(e=>NEW.includes(e.kind)))return {ok:true,ms:Math.round(performance.now()-t0),room:r.room,enemies:s.enemies.map(e=>e.kind)};
+        await new Promise(r=>setTimeout(r,50));}
+      const s=E.state();return {ok:false,phase:s.run&&s.run.phase,enemies:s.enemies.map(e=>e.kind)}})()`, 'wave');
+    const at = opt('at', null);
+    if (at) await c.ev(`(()=>{const E=__echoes;E.cmd('teleport',${at});const p=E.state().party;p.filter(q=>q.kind==='ally').forEach((q,i)=>E.cmd('placeAlly',q.partyIndex,${at.split(',')[0]}+(i-1)*1.1,${at.split(',')[1]}+0.9));return true})()`, 'teleport');
+    const top = opt('top', '');
+    await c.ev(`(()=>{const E=__echoes;const s=E.state();const out=[];const want=${JSON.stringify(top)}.split(',').filter(Boolean);
+      const p=s.party.find(q=>q.kind!=='ally')||s.party[0];
+      want.forEach((k,i)=>{const a=i*2.1+0.4;out.push(E.cmd('spawn',k,p.x+Math.cos(a)*4.2,p.z-Math.abs(Math.sin(a))*3.4-0.8));});
+      return {spawned:out,layout:E.cmd('arenaLayout'),content:E.content.layout&&E.content.layout()}})()`, 'topup');
+    await c.sleep(Number(opt('fight', '1800')));
+    // An enemy telegraph with >= 30 ticks to run, THEN a hazard telegraph (60
+    // ticks), so both are live in the frame.
+    await c.ev(`(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<8000){
+        const live=window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick-E.tick>=30);
+        if(live.length)return {tele:true,ms:Math.round(performance.now()-t0),live:live.map(e=>[e.kind,e.resolveTick-E.tick])};
+        await new Promise(r=>setTimeout(r,16));}return {tele:false}})()`, 'tele');
+    await c.ev(`(()=>{const E=__echoes;const hz=(E.content.hazards&&E.content.hazards())||[];const pick=hz.find(h=>h.kind==='hazard'&&h.htype===${JSON.stringify(opt('hz', ''))})||hz.find(h=>h.kind==='hazard'&&!['bramble','rockfall'].includes(h.htype));
+      return pick?{forced:pick.htype,r:E.cmd('hazardPhase',pick.id,'telegraph')}:{forced:null,hz:hz.map(h=>h.htype)}})()`, 'hazard');
+    await c.page.mouse.down({ button: 'right' });
+    await c.key('Digit1', 60);
+    await c.key('Digit2', 60);
+    await c.sleep(Number(opt('delay', '200')));
+    await c.shot('a' + act);
+    const picks = opt('pick', '');
+    if (picks) await c.ev(`(()=>{const out={};for(const xy of ${JSON.stringify(picks)}.split(';')){const [x,y]=xy.split(',').map(Number);out[xy]=__arenaProbe.pick(x,y,4);}
+      const s=__echoes.state();out.azones=(s.azones||[]).map(z=>[z.skill,z.radius,+(z.x||0).toFixed(1),+(z.z||0).toFixed(1)]);out.zones=(s.zones||[]).map(z=>JSON.stringify(z).slice(0,120));
+      out.hz=(__echoes.content.hazards()||[]).map(h=>[h.htype,h.phase,+h.x.toFixed(1),+h.z.toFixed(1)]);out.party=s.party.map(p=>[p.kind,+p.x.toFixed(1),+p.z.toFixed(1)]);return out;})()`, 'pick');
+    await c.page.mouse.up({ button: 'right' });
+    await c.ev(`(()=>{const E=__echoes;const s=E.state();return {fps:+E.fps.toFixed(1),room:s.run.room,layout:E.cmd('arenaLayout'),enemies:s.enemies.map(e=>[e.kind,+e.x.toFixed(1),+e.z.toFixed(1),e.telegraph?1:0]),hazards:(E.content.hazards()||[]).map(h=>h.htype+':'+h.phase),assets:(E.content.interactables()||[]).map(i=>i.itype),propTypes:s.vfx.propTypes,events:window.__c.ev.filter(e=>e.T==='layout_enter').map(e=>[e.room,e.layoutId,e.biome])}})()`, 'state');
+  },
   // Layout placements (hazards + assets) in a layout.
   async layout(c) {
     const L = opt('layout', '1');
