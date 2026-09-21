@@ -214,17 +214,22 @@ body.ap-hide-game #dmg-num-layer, body.ap-hide-game #nd-fizzle-layer { visibilit
 
 /* ----------------------------------------------------------- widgets -- */
 .ap-section { margin: ${px(6)} 0 0; font-size: ${px(22)}; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: ${INK_DIM}; }
+/* A row = label over its one-line status note (left) + the control (right,
+   vertically centred): two text lines and one 56-authored-px control share
+   the same height, so five Display rows fit a 1024x576 window unscrolled. */
 .ap-row {
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: center;
-  column-gap: ${px(18)}; row-gap: ${px(2)};
-  min-height: ${px(62)}; padding: ${px(6)} ${px(18)};
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  grid-template-areas: "label ctl" "note ctl"; align-items: center;
+  column-gap: ${px(18)}; row-gap: 0;
+  min-height: ${px(64)}; padding: ${px(4)} ${px(16)};
   border-radius: ${px(12)}; border: max(2px, ${px(2)}) solid transparent;
   background: ${P.voidCharcoal}99;
   transition: transform 90ms ease, background 90ms ease, border-color 90ms ease;
 }
-.ap-row .ap-label { font-size: ${px(24)}; font-weight: 600; color: ${P.parchment}; }
-.ap-row .ap-ctl { display: flex; align-items: center; gap: ${px(12)}; min-width: 0; justify-content: flex-end; }
-.ap-row .ap-note { grid-column: 1 / -1; font-size: ${px(22)}; color: ${INK_DIM}; line-height: 1.3; }
+.ap-row .ap-label { grid-area: label; align-self: end; font-size: ${px(24)}; font-weight: 600; color: ${P.parchment}; line-height: 1.25; }
+.ap-row .ap-ctl { grid-area: ctl; display: flex; align-items: center; gap: ${px(10)}; min-width: 0; justify-content: flex-end; }
+.ap-row .ap-note { grid-area: note; align-self: start; font-size: ${px(22)}; color: ${INK_DIM}; line-height: 1.3; }
+.ap-row:has(.ap-note:empty) .ap-label { grid-row: 1 / 3; align-self: center; }
 .ap-row .ap-note:empty { display: none; }
 .ap-row:has(.ap-focus) {
   outline: max(2px, ${px(2)}) solid ${P.hearthAmber}; outline-offset: 0;
@@ -236,7 +241,7 @@ body.ap-hide-game #dmg-num-layer, body.ap-hide-game #nd-fizzle-layer { visibilit
 .ap-value { min-width: ${px(92)}; text-align: right; font-size: ${px(24)}; font-weight: 700; color: ${P.parchment}; font-variant-numeric: tabular-nums; }
 .ap-range {
   -webkit-appearance: none; appearance: none; flex: 1 1 auto; min-width: ${px(160)};
-  height: ${px(44)}; background: transparent; cursor: pointer; margin: 0;
+  height: ${px(56)}; background: transparent; cursor: pointer; margin: 0;
 }
 .ap-range::-webkit-slider-runnable-track {
   height: ${px(10)}; border-radius: 999px;
@@ -254,7 +259,7 @@ body.ap-hide-game #dmg-num-layer, body.ap-hide-game #nd-fizzle-layer { visibilit
 .ap-row:has(.ap-range.ap-focus) .ap-range::-webkit-slider-thumb { box-shadow: 0 0 0 max(2px, ${px(3)}) ${P.hearthAmber}; }
 .ap-switch {
   display: inline-flex; align-items: center; gap: ${px(12)};
-  min-height: ${px(48)}; min-width: ${px(150)}; padding: 0 ${px(16)} 0 ${px(8)};
+  min-height: ${px(56)}; min-width: ${px(150)}; padding: 0 ${px(16)} 0 ${px(10)};
   border-radius: 999px; border: max(2px, ${px(2)}) solid ${P.warmGrey}88;
   background: ${P.voidCharcoal}; color: ${P.parchment}; cursor: pointer;
   font-size: ${px(24)}; font-weight: 700;
@@ -271,13 +276,13 @@ body.ap-hide-game #dmg-num-layer, body.ap-hide-game #nd-fizzle-layer { visibilit
 .ap-switch[aria-checked="true"] .ap-knob::after { transform: translateX(${px(26)}); background: ${P.parchment}; }
 .ap-switch[disabled] { opacity: 0.6; cursor: default; }
 .ap-choice {
-  flex: 1 1 auto; min-width: ${px(190)}; min-height: ${px(48)}; padding: 0 ${px(12)};
+  flex: 1 1 auto; min-width: ${px(150)}; min-height: ${px(56)}; padding: 0 ${px(10)};
   border-radius: ${px(10)}; border: max(2px, ${px(2)}) solid ${P.warmGrey}66;
   background: ${P.voidCharcoal}; color: ${P.parchment}; cursor: pointer;
   font-size: ${px(24)}; font-weight: 700; text-align: center; white-space: nowrap;
 }
 .ap-step {
-  flex: 0 0 auto; width: ${px(48)}; height: ${px(48)}; border-radius: ${px(10)};
+  flex: 0 0 auto; width: ${px(56)}; height: ${px(56)}; border-radius: ${px(10)};
   border: max(2px, ${px(2)}) solid ${P.warmGrey}55; background: ${PLATE_TOP}; color: ${P.bone};
   font-size: ${px(30)}; font-weight: 800; line-height: 1; cursor: pointer; padding: 0;
 }
@@ -353,6 +358,13 @@ p.ap-note.ap-warn { color: ${P.bone}; }
 .ap-ref-row { display: flex; align-items: center; justify-content: space-between; gap: ${px(12)}; min-height: ${px(38)}; padding: 0 ${px(8)}; border-bottom: 1px solid ${P.warmGrey}22; }
 .ap-ref-row .ap-ref-act { font-size: ${px(22)}; color: ${P.parchment}; }
 .ap-ref-row .ap-ref-keys { display: inline-flex; gap: ${px(6)}; flex-wrap: wrap; justify-content: flex-end; }
+
+/* Narrow windows: the info panel steps aside so every row keeps a one-line
+   status note at the type floor (the notes carry the honest copy). */
+@media (max-width: 1180px) {
+  .ap-info { display: none; }
+  .ap-tabwrap { flex-basis: 100%; }
+}
 
 /* Short windows: the title stack tightens (type floors unchanged). */
 @media (max-height: 700px) {

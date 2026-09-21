@@ -42,8 +42,21 @@ export function createDisplay({ settings, stage, scheduler, toast, lastSource })
     stage.setRenderScale(s);
     note({ ev: 'renderScale', s, buffer: stage.drawingBufferSize ? stage.drawingBufferSize() : null });
   }
-  // Coalesced to one resize per frame while a slider is dragged.
+  // Applied synchronously, so the very next rendered frame uses the new
+  // buffer. A dragged slider cannot flood this: Chrome delivers continuous
+  // pointer input (and so the range's input events) at most once per frame;
+  // anything faster (a probe setting it in a loop) is coalesced per frame.
+  let lastApplyFrame = -1;
   function applyScale(s) {
+    const f = scheduler && typeof scheduler.frames === 'number' ? scheduler.frames : -2;
+    if (f !== lastApplyFrame || f < 0) {
+      lastApplyFrame = f;
+      if (scaleRaf) cancelAnimationFrame(scaleRaf);
+      scaleRaf = 0;
+      pendingScale = null;
+      applyScaleNow(s);
+      return;
+    }
     pendingScale = s;
     if (scaleRaf) return;
     scaleRaf = requestAnimationFrame(() => {

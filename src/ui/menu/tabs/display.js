@@ -80,7 +80,10 @@ export function buildDisplayTab(ctx) {
       // Inside the keydown / click that changed it: the Fullscreen API's user
       // gesture requirement is met synchronously by display.js.
       settings.set('display.fullscreen', !!v, { source: 'ui' });
-      if (!v) armed.fullscreen = false; // leaving applies at once, no dialog
+      // Entering arms Keep/Revert (it only counts while fullscreen actually
+      // took: hasPendingChanges() checks document.fullscreenElement, so a
+      // refused request never prompts); leaving applies at once, no dialog.
+      armed.fullscreen = !!v && !baseline.fullscreen;
       paint();
     },
   });
@@ -155,18 +158,24 @@ export function buildDisplayTab(ctx) {
     return parts.join(' · ');
   }
 
+  // The display's own refresh (the scheduler's vsync-period estimate; rafHz
+  // itself falls to the render rate when frames are slower than a refresh).
+  const hz = (st) => st.displayHz || st.rafHz;
+  // GPU/CPU-bound (PLAN §5): a frame costs >= 80% of a refresh, so uncapped
+  // cannot render meaningfully faster than the display.
   function gpuBound(st) {
-    if (!st || st.vsync || !(st.rafHz > 0)) return false;
-    return st.workMsP50 >= 0.8 * (1000 / st.rafHz);
+    if (!st || st.vsync || !(hz(st) > 0)) return false;
+    return st.workMsP50 >= 0.8 * (1000 / hz(st));
   }
 
   function vsyncNote() {
     const st = stats();
     if (!st) return '';
-    if (st.vsync) return `Frames paced to your display (~${fmtHz(st.rafHz)} Hz)`;
+    if (st.vsync) return `Frames paced to your display (~${fmtHz(hz(st))} Hz)`;
     if (st.samples < 20) return 'Renders uncapped — measuring…';
     if (gpuBound(st)) return `Your device renders about ${Math.round(st.renderedFps)} fps here — uncapped can't go faster than your GPU`;
-    return `Renders uncapped · ${Math.round(st.renderedFps)} fps — extra frames aren't displayed (details →)`;
+    // PLAN §5 binding copy, always on the row (not only in the info panel).
+    return "Renders uncapped. Browsers always show frames at your display's refresh and never tear, so extra frames are not displayed; this can lower input latency slightly and raises power use.";
   }
 
   function limitNote() {
@@ -175,8 +184,9 @@ export function buildDisplayTab(ctx) {
     if (st.samples < 20) return 'Rendering … fps (measuring)';
     const lim = st.limit;
     let t = `Rendering ${Math.round(st.renderedFps)} fps`;
-    const cap = st.rafHz;
+    const cap = hz(st);
     if (st.vsync && cap > 0 && (lim === 0 || lim > cap * 1.02)) t += ` · Your display caps this at ~${Math.round(cap)} fps`;
+    else if (lim > 0 && st.renderedFps < lim * 0.93) t += ` · your device renders about ${Math.round(st.renderedFps)} fps here, below the limit`;
     return t;
   }
 
@@ -188,7 +198,7 @@ export function buildDisplayTab(ctx) {
   function measuredText() {
     const st = stats();
     if (!st) return '';
-    return `Display ~${fmtHz(st.rafHz)} Hz · rendering ${st.samples < 20 ? '…' : Math.round(st.renderedFps)} fps · frame work ${st.workMsP50.toFixed(1)} ms`;
+    return `Display ~${fmtHz(hz(st))} Hz · rendering ${st.samples < 20 ? '…' : Math.round(st.renderedFps)} fps · frame work ${st.workMsP50.toFixed(1)} ms`;
   }
 
   function paint() {

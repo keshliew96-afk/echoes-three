@@ -383,8 +383,24 @@ export function createScreenManager({ root, ctx = {} } = {}) {
     if (ringEl !== el) setRing(el);
   }
 
+  // Build (and let the screen pre-build its content) ahead of the first open,
+  // in idle time — the first open then costs no DOM construction.
+  function prebuild(id) {
+    const screen = build(id);
+    if (!screen) return false;
+    if (typeof screen.prebuild === 'function') {
+      try {
+        screen.prebuild();
+      } catch (err) {
+        console.warn(`[screens] prebuild '${id}' failed`, err);
+      }
+    }
+    return true;
+  }
+
   const api = {
     push,
+    prebuild,
     pop,
     replace,
     popTo,

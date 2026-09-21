@@ -4,15 +4,15 @@
 //                            requestAnimationFrame, skipping rAF ticks so the
 //                            long-run rate is L when L is below the display rate
 //                            (phase-stable accumulator: next due += 1000/L).
-//   vsync:false + limit L -> uncapped MessageChannel loop (a task per frame, so
-//                            input and timers interleave between frames), paced
-//                            to L by performance.now() (a coarse timeout, then a
-//                            short message spin); L = 0 renders back to back.
-//                            Browsers still PRESENT at the display refresh and
-//                            never tear — the Display tab says so (PLAN §5).
-//                            It stops while the page is hidden.
-// A light rAF probe keeps sampling the display cadence (rafHz) while V-Sync is
-// off, so the "your display caps this" and GPU-bound notes stay measured.
+//   vsync:false + limit L -> uncapped: one frame on each rAF plus EXTRA frames
+//                            rendered back to back by a MessageChannel loop
+//                            between refreshes (a task per frame, so input and
+//                            timers interleave), paced to L by performance.now()
+//                            when L > 0. Browsers still PRESENT at the display
+//                            refresh and never tear — the Display tab says so
+//                            (PLAN §5). It stops while the page is hidden (rAF
+//                            stops; nothing re-arms the loop until it resumes).
+// rafHz is sampled from the rAF callbacks in both modes.
 // The sim is independent of this: main.js advances the 60 Hz clock by the wall
 // time between rendered frames, so every limit keeps 60 ticks/s.
 //
@@ -83,20 +83,42 @@ export function createFrameScheduler({ renderer, frame }) {
   let nextDue = null; // limiter accumulator
   let rafIv = 1000 / 60; // smoothed rAF interval (display cadence)
   let lastRafTs = null;
-  let probeId = 0; // rAF probe while V-Sync is off
   let uncapped = false; // MessageChannel loop active
   let timer = 0;
   const channel = typeof MessageChannel !== 'undefined' ? new MessageChannel() : null;
   let lastUncapped = { fps: 0, workMsP50: 0, at: 0 };
   let frames = 0;
 
+  // DISPLAY CADENCE. rafHz (the rate rAF actually ran) drops below the
+  // panel's refresh whenever frames are slower than a refresh (Chrome then
+  // skips vsyncs), so the display's own rate is estimated from the SHORTEST
+  // common rAF interval — the 10th percentile of the last 2 s of intervals is
+  // one vsync period even when most frames take two — and the highest such
+  // estimate of the last 30 s is reported as displayHz.
+  const rafDeltas = makeWindow();
+  const hzSamples = [];
+  let lastHzSampleAt = 0;
   function noteRaf(ts) {
     if (lastRafTs !== null) {
       const d = ts - lastRafTs;
-      if (d > 0 && d < 100) rafIv += (d - rafIv) * 0.1;
+      if (d > 0 && d < 100) {
+        rafIv += (d - rafIv) * 0.1;
+        if (d > 2) rafDeltas.add(ts, d);
+      }
     }
     lastRafTs = ts;
     rafTicks.add(ts, 0);
+    if (ts - lastHzSampleAt >= 1000 && rafDeltas.count(ts) >= 20) {
+      lastHzSampleAt = ts;
+      const p10 = rafDeltas.pct(0.1, ts);
+      if (p10 > 0) hzSamples.push({ t: ts, hz: 1000 / p10 });
+      while (hzSamples.length && ts - hzSamples[0].t > 30000) hzSamples.shift();
+    }
+  }
+  function displayHz() {
+    let m = 0;
+    for (const x of hzSamples) if (x.hz > m) m = x.hz;
+    return m;
   }
 
   function render(now) {
@@ -133,47 +155,81 @@ export function createFrameScheduler({ renderer, frame }) {
   }
 
   // ---------------------------------------------- V-Sync off (uncapped loop) --
-  function probe(ts) {
+  // rAF-ANCHORED: each display refresh still runs one rAF (so the browser's
+  // own rendering update — the DOM HUD, the canvas commit, the page's paint —
+  // keeps the display cadence), and between two refreshes a MessageChannel
+  // loop renders EXTRA frames back to back until the next refresh is due;
+  // then it yields, so the browser's rendering update (and the rAF after it)
+  // runs at most one frame late and commits the freshest frame. A plain
+  // postMessage flood measured rAF starved to 8 Hz on this machine (the page
+  // would have SHOWN 8 fps); anchoring keeps the display fed and still renders
+  // as fast as the GPU allows. The extra frames are never displayed — the
+  // honest copy in the Display tab says exactly that.
+  let rafStart = 0; // performance-timeline start of the current refresh
+  let workEma = 4; // ms, smoothed frame() cost
+  let vsyncPeriod = 1000 / 60;
+  // Extra frames start until the next refresh is due.
+  function budgetEnd() {
+    return rafStart + vsyncPeriod;
+  }
+
+  // When refreshes are already being missed (the last rAF came > 1.6 vsync
+  // periods after the one before — the GPU / CPU is the bottleneck), extra
+  // frames would only delay the display further: that refresh renders one
+  // frame, exactly like V-Sync on, and the Display tab says the device is
+  // GPU-bound.
+  let extraOk = true;
+  let prevRafTs = null;
+  function onRafUncapped(ts) {
+    const gap = prevRafTs === null ? 0 : ts - prevRafTs;
+    prevRafTs = ts;
     noteRaf(ts);
-    if (uncapped) probeId = requestAnimationFrame(probe);
+    rafStart = ts;
+    vsyncPeriod = 1000 / (displayHz() || 1000 / rafIv || 60);
+    extraOk = !(gap > vsyncPeriod * 1.6);
+    const now = performance.now();
+    const tol = cfg.limit ? Math.min((1000 / cfg.limit) * 0.25, rafIv * 0.5) : 0;
+    if (!cfg.limit || due(now, tol)) renderUncapped(now);
+    if (channel) channel.port2.postMessage(0);
+  }
+
+  function renderUncapped(now) {
+    const w0 = performance.now();
+    render(now);
+    const w = performance.now() - w0;
+    workEma += (w - workEma) * 0.2;
   }
 
   function pump() {
-    timer = 0;
-    if (!running || cfg.vsync || !uncapped) return;
-    if (typeof document !== 'undefined' && document.hidden) {
-      uncapped = false; // resumes on visibilitychange
-      return;
-    }
+    if (!running || cfg.vsync || !uncapped || !extraOk) return;
     const now = performance.now();
-    if (!cfg.limit) {
-      render(now);
-      channel.port2.postMessage(0);
-      return;
-    }
-    const iv = 1000 / cfg.limit;
-    if (nextDue === null || now - nextDue > iv) nextDue = now;
-    const wait = nextDue - now;
-    if (wait <= 0.25) {
+    // Another frame only until the next refresh is due; then yield — the next
+    // rAF (a rendering update) takes over.
+    if (now > budgetEnd()) return;
+    if (cfg.limit) {
+      const iv = 1000 / cfg.limit;
+      if (nextDue === null || now - nextDue > iv) nextDue = now;
+      if (nextDue - now > 0.25) {
+        // Timer-paced: wait for the due time if it falls inside this refresh.
+        if (nextDue <= budgetEnd()) {
+          if (nextDue - now > 2) timer = setTimeout(pump, Math.floor(nextDue - now - 1));
+          else channel.port2.postMessage(0);
+        }
+        return;
+      }
       nextDue += iv;
-      render(now);
-      channel.port2.postMessage(0);
-    } else if (wait > 2.5) {
-      timer = setTimeout(pump, Math.floor(wait - 1.5));
-    } else {
-      channel.port2.postMessage(0); // short spin for sub-ms accuracy
     }
+    renderUncapped(now);
+    channel.port2.postMessage(0);
   }
   if (channel) channel.port1.onmessage = pump;
 
   function startUncapped() {
     if (!channel) return false;
-    if (uncapped) return true;
     uncapped = true;
     nextDue = null;
-    cancelAnimationFrame(probeId);
-    probeId = requestAnimationFrame(probe);
-    channel.port2.postMessage(0);
+    prevRafTs = null;
+    renderer.setAnimationLoop(onRafUncapped);
     return true;
   }
 
@@ -182,7 +238,6 @@ export function createFrameScheduler({ renderer, frame }) {
     const now = performance.now();
     if (rendered.count(now) > 30) lastUncapped = { fps: r1(rendered.rate(now)), workMsP50: r2(work.pct(0.5, now)), at: Math.round(now) };
     uncapped = false;
-    cancelAnimationFrame(probeId);
     if (timer) clearTimeout(timer);
     timer = 0;
   }
@@ -193,17 +248,13 @@ export function createFrameScheduler({ renderer, frame }) {
       stopUncapped();
       renderer.setAnimationLoop(onRaf);
     } else {
-      renderer.setAnimationLoop(null);
       startUncapped();
     }
   }
 
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && running && !cfg.vsync) {
-        lastRender = null; // a hidden gap is not a frame time
-        startUncapped();
-      }
+      if (!document.hidden && running) lastRender = null; // a hidden gap is not a frame time
     });
   }
 
@@ -248,6 +299,7 @@ export function createFrameScheduler({ renderer, frame }) {
     return {
       renderedFps,
       rafHz: r1(rafTicks.rate(now)),
+      displayHz: r1(displayHz() || rafTicks.rate(now)),
       source: cfg.vsync ? 'raf' : 'uncapped',
       vsync: cfg.vsync,
       limit: cfg.limit,
@@ -271,6 +323,9 @@ export function createFrameScheduler({ renderer, frame }) {
     stats,
     get running() {
       return running;
+    },
+    get frames() {
+      return frames;
     },
     get config() {
       return { ...cfg };

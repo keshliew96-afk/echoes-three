@@ -70,7 +70,9 @@ export function buildControlsTab(ctx) {
     const left = document.createElement('div');
     left.className = 'ap-ref-col';
     left.appendChild(head('Play — keyboard & mouse'));
-    left.appendChild(row('Move', map ? map.move.map(keyName) : ['W', 'A', 'S', 'D']));
+    const ORDER = ['KeyW', 'KeyA', 'KeyS', 'KeyD'];
+    const move = map ? [...map.move].sort((x, y) => (ORDER.indexOf(x) + 99) % 99 - (ORDER.indexOf(y) + 99) % 99) : ORDER;
+    left.appendChild(row('Move', move.map(keyName)));
     left.appendChild(row('Aim', ['Mouse']));
     left.appendChild(row('Basic attack (hold)', ['Right mouse']));
     if (skills.length) {

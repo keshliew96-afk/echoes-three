@@ -232,6 +232,18 @@ export function createApp({ params }) {
     screens.push('title');
     setState('title');
     announceLoadReport();
+    prebuildMenus();
+  }
+
+  // Warm the menus the player opens next in idle time (first open = no DOM build).
+  let prebuilt = false;
+  function prebuildMenus() {
+    if (prebuilt) return;
+    prebuilt = true;
+    const idle = typeof window.requestIdleCallback === 'function' ? (f) => window.requestIdleCallback(f, { timeout: 2500 }) : (f) => setTimeout(f, 400);
+    idle(() => {
+      for (const id of ['settings', 'farewell']) screens.prebuild(id);
+    });
   }
 
   function enterPlaying() {
@@ -311,6 +323,7 @@ export function createApp({ params }) {
         setState('playing'); // == the v0.4.63 boot: sim ticking from tick 1
         freshWorld = false;
         announceLoadReport();
+        prebuildMenus();
         return state;
       }
       updateBodyClass();
@@ -554,6 +567,10 @@ export function createApp({ params }) {
     gamepad: () => gamepad.debug(),
     toasts: () => toaster.log(),
     titleCam: () => (titleCam ? titleCam.debug() : null),
+    confirm: (o) => app.confirm(o),
+    keepDisplay: (o) => app.keepDisplay(o),
+    toast: (t, o) => app.toast(t, o),
+    requestPause: (src) => app.requestPause(src),
     newGame: (o) => app.newGame(o),
     exit: () => app.exit(),
     quitToTitle: (o) => app.quitToTitle(o),

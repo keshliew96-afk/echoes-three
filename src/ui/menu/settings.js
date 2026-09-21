@@ -350,6 +350,12 @@ export function createSettingsScreen(ctx) {
       requestClose();
       return true;
     },
+    // Idle-time warm-up (app.js): every registered tab is built now, so the
+    // first switch to it is a class toggle, not a DOM build.
+    prebuild() {
+      if (!tabBtns.size) renderTabs();
+      for (const def of settingsTabs()) ensureBuilt(def.id);
+    },
     debug: () => ({ activeId, tabs: [...tabBtns.keys()], busy, pending: !!(activeId && built.get(activeId)?.inst.hasPendingChanges?.()) }),
   };
   return screen;
