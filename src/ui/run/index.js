@@ -41,6 +41,9 @@
 // rn-primary when it opens (draft: Take; path: the sim's door 0), so no page
 // ever inherits a focus from the page before it.
 import { RUN_CSS, isCompact } from './style.js';
+import { SKILL_SLOTS } from '../../core/constants.js';
+import { parseBootParams } from '../../app/params.js';
+import { service } from '../../app/registry.js';
 import { createDraftScreen } from './draft.js';
 import { createPathScreen } from './path.js';
 import { createShopScreen } from './shop.js';
@@ -173,9 +176,13 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   const GRACE_MS = 300;
   const SETTLE_MAX_MS = 1000;
   const NAV_KEYS = new Set(['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight']);
-  const COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space']);
+  // X (the draft's decline, ruling A13) is a commit key: settle-guarded and
+  // fresh-press only, exactly like Enter.
+  const COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'KeyX']);
+  // §23.9: the carry-over set follows the skill keys (Digit1..Digit8).
   const CARRY_KEYS = new Set([
-    'Digit1', 'Digit2', 'Digit3', 'Digit4', 'KeyW', 'KeyS', 'KeyR', 'KeyE', 'Tab', 'F1', 'F2', 'F3', 'F4',
+    ...Array.from({ length: SKILL_SLOTS }, (_, i) => `Digit${i + 1}`),
+    'KeyW', 'KeyS', 'KeyR', 'KeyE', 'Tab', 'F1', 'F2', 'F3', 'F4',
   ]);
   let openedAt = -Infinity; // performance.now() when the current page appeared
   let carryAt = -Infinity; // last carry-over key pressed on the current page
@@ -633,7 +640,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   function maybeAutostart() {
     if (!pendingAutostart || world.tick < 1) return;
     pendingAutostart = false;
-    run().startRun();
+    // `?run=1&act=N` (PLAN §6.1): the expedition and the Gameplay-tab
+    // challenge ride startRun, exactly like the portal press.
+    const p = parseBootParams();
+    const challenge = service('settings')?.get?.('gameplay.challenge') ?? 'standard';
+    run().startRun({ act: p.act ?? 1, challenge });
   }
 
   return {

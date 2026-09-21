@@ -580,7 +580,8 @@ export function createAllySystem({
     // @gnt:M4a ALLY-SPEED begin — M4a scales `step` by
     // status.speedMul(a, tick) (haste/slow, BUILD_BRIEF §23.8). Separation
     // pushes below are NOT scaled.
-    const adv = Math.min(step, d);
+    const k = a.hp > 0 && combat.status ? combat.status.speedMul(a, getTick()) : 1;
+    const adv = Math.min(step * k, d);
     // @gnt:M4a ALLY-SPEED end
     walkStep(a, (dx / d) * adv, (dz / d) * adv, a.radius);
     face(a, dx, dz);

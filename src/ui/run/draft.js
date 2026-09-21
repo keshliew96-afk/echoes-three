@@ -26,7 +26,7 @@ export function createDraftScreen({ run, build }) {
       <div class="rn-btn rn-take rn-primary">Take</div>
       <div class="rn-btn rn-decline">Decline</div>
     </div>
-    <div class="rn-hint"><b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> commit · <b>Esc</b> decline</div>`;
+    <div class="rn-hint"><b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> commit · <b>X</b> decline · <b>Esc</b> pause</div>`;
 
   const host = el.querySelector('.rn-cardhost');
   const subline = el.querySelector('.rn-subline');
@@ -117,7 +117,12 @@ export function createDraftScreen({ run, build }) {
       paintFocus();
       return true;
     }
-    if (code === 'Escape') {
+    // Ruling A13 (PLAN §1.5): Esc opens the pause menu on every page and is
+    // never consumed here — a reflexive pause press can never forfeit a
+    // reward. Decline is X (settle-guarded + fresh-press, exactly like Enter)
+    // or the Decline button.
+    if (code === 'KeyX') {
+      if (!fresh) return true;
       run().declineReward();
       return true;
     }

@@ -294,7 +294,31 @@ const runUi =
 // @gnt:M4a WORLD-LAYERS begin — skill/technique VFX, expedition picker, the
 // `content` service (src/data/content.js; M4b adds probes with
 // registerContentProbe from its own files, never here).
-provide('content', createContentService({ world }));
+import { registerScreen } from './app/registry.js';
+import { createExpeditionScreen } from './ui/run/expedition.js';
+import { registerChallengeSetting } from './ui/run/challenge.js';
+import { createContentFx } from './render/skillfx/content.js';
+import { registerContentCues } from './render/skillfx/cues.js';
+provide('content', createContentService({ world, bus, service }));
+// The camp portal's expedition picker (PLAN §4.1) and the Gameplay tab's
+// Challenge row (gameplay.challenge, read at the portal press).
+registerScreen('expedition', createExpeditionScreen);
+registerChallengeSetting(app.settings);
+registerContentCues(service('audio'), world);
+// The deterministic default-build autopilot (src/sim/autopilot.js, PLAN §6.7)
+// replaces the tick's intent snapshot while it is on — for BOTH the realtime
+// loop and __echoes.sim.stepN, which each call world.step through this one
+// property. Off (the default) it is a pass-through.
+{
+  const autopilot = world.runSystem().autopilot;
+  const rawStep = world.step;
+  world.step = (tick, snap, ...rest) =>
+    rawStep(tick, autopilot && autopilot.active() ? autopilot.intents(tick, snap) : snap, ...rest);
+}
+// Gauntlet skill / status / technique VFX (render/skillfx/content.js).
+const contentfx = PLAYABLE ? createContentFx({ stage, world, bus, cosmetic }) : null;
+// Probe surface: __echoes.content.fx() -> the layer's live element counts.
+if (contentfx) service('content').fx = () => contentfx.debugCounts();
 // @gnt:M4a WORLD-LAYERS end
 // @gnt:M4b WORLD-LAYERS begin — hazard / interactable / biome layers, prompts.
 // @gnt:M4b WORLD-LAYERS end
@@ -394,6 +418,7 @@ function frame(now) {
   bossfx?.update(now / 1000, alpha);
   fizzleCue?.update(now / 1000);
   // @gnt:M4a RENDER-TICK begin
+  contentfx?.update(now / 1000, alpha);
   // @gnt:M4a RENDER-TICK end
   // @gnt:M4b RENDER-TICK begin
   // @gnt:M4b RENDER-TICK end

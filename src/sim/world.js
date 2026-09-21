@@ -423,7 +423,11 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         // movement only, at the 0.8 u/s crawl.
         // @gnt:M4a PLAYER-SPEED begin — M4a multiplies spd by
         // status.speedMul(player, currentTick) (haste/slow, BUILD_BRIEF §23.8).
-        const spd = player.hp > 0 ? HEALER.moveSpeed : DOWNED_CRAWL_SPEED;
+        // The Downed crawl is never scaled; with no status the factor is 1.
+        const spd =
+          player.hp > 0
+            ? HEALER.moveSpeed * (combat.status ? combat.status.speedMul(player, currentTick) : 1)
+            : DOWNED_CRAWL_SPEED;
         // @gnt:M4a PLAYER-SPEED end
         walkStep(player, x * spd * TICK_DT, z * spd * TICK_DT, player.radius);
         player.facing = { x, z };
@@ -618,10 +622,14 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // Same-frame multi-skill presses all fire here, ascending slot.
     // @gnt:M4a SKILL-SLOTS begin — slot loop runs 0..SKILL_SLOTS-1 (4 -> 8,
     // PLAN §4.3); M4a adds the stun gate (status.canAct) here.
+    // A stunned caster starts nothing (BUILD_BRIEF §23.8). status.apply
+    // refuses stun on party bodies by rule, so this gate is the contract's
+    // belt-and-braces half: it can never fire in a v0.4.63 trace.
+    const stunned = !!(combat.status && combat.status.isStunned(player, currentTick));
     for (let slot = 0; slot < SKILL_SLOTS; slot++) {
       const kind = `skill_${slot + 1}`;
       if (!accepted.has(kind)) continue;
-      if (player.dashTicksLeft > 0) {
+      if (player.dashTicksLeft > 0 || stunned) {
         deny(kind, DENIAL.prioritySuppressed);
       } else {
         skillSys.tryFire(slot);

@@ -504,6 +504,29 @@ export function createCampScene(stage, toggles, ctx) {
   // receives { act, challenge } (challenge read from settings HERE, at the
   // press, and stored in run state — the sim never reads app state).
   // M5b (W4) adds the host-only portal rule inside this block.
+  //
+  // The app shell's services are reached through the registry module, loaded
+  // once (it is already in the graph — main.js imports it first); the sim
+  // never sees any of this: the act and the challenge enter run state as
+  // startRun() arguments.
+  let appReg = null;
+  import('../app/registry.js')
+    .then((m) => {
+      appReg = m;
+    })
+    .catch(() => {});
+  const svc = (name) => (appReg && typeof appReg.service === 'function' ? appReg.service(name) : null);
+  const bootAct = () => {
+    const n = parseInt(new URLSearchParams(window.location.search).get('act') ?? '', 10);
+    return n >= 1 && n <= 3 ? n : 1;
+  };
+  // Menu-skip = ?menu=0 or any legacy harness param (PLAN §6.1). Without the
+  // app shell (never in the shipped boot) the session counts as menu-skip.
+  const menuSkip = () => {
+    const app = svc('app');
+    return app && app.params ? !!app.params.menuSkip : true;
+  };
+  let picking = false; // the expedition picker is up for this portal press
   function canBegin() {
     if (mode !== 'camp' || begin) return false;
     const run = world.runSystem();
@@ -512,9 +535,39 @@ export function createCampScene(stage, toggles, ctx) {
     return phase === 'idle';
   }
 
+  // Portal rule (PLAN §4.1, ruling A14):
+  //   1. menu-skip boots: E starts ?act=N (default 1) directly — v0.4.63;
+  //   2. title sessions with only Act I unlocked: E starts Act I directly;
+  //   3. title sessions with >= 2 acts unlocked: E opens the picker with the
+  //      last-played act preselected; E/Enter/Space confirm, Esc backs out.
   function beginRun() {
-    if (!canBegin() || !withinPortal()) return false;
-    begin = { pressedAt: performance.now(), started: false };
+    if (!canBegin() || !withinPortal() || picking) return false;
+    if (menuSkip()) return beginAct(bootAct());
+    const content = svc('content');
+    const unlocked = content && typeof content.unlockedActs === 'function' ? content.unlockedActs() : [1];
+    const app = svc('app');
+    if (unlocked.length < 2 || !app || !app.screens || !appReg.screenFactory?.('expedition')) return beginAct(1);
+    picking = true;
+    prompt.classList.remove('cp-on');
+    app.screens.push('expedition', {
+      levels: content.levels().map((l) => ({ act: l.act, name: l.name, blurb: l.blurb, tier: l.tier, biome: l.biome })),
+      unlocked,
+      preselect: content.lastActInfo ? content.lastActInfo().act : unlocked[unlocked.length - 1],
+      preselectReason: content.lastActInfo ? content.lastActInfo().reason : 'newest',
+      onChoose: (act) => {
+        picking = false;
+        beginAct(act);
+      },
+      onCancel: () => {
+        picking = false;
+      },
+    });
+    return 'picker';
+  }
+
+  function beginAct(act) {
+    if (!canBegin()) return false;
+    begin = { pressedAt: performance.now(), started: false, act };
     fade.classList.add('cp-on');
     prompt.classList.remove('cp-on');
     return true;
@@ -528,11 +581,16 @@ export function createCampScene(stage, toggles, ctx) {
       seed = rng.reseed(Math.floor(rng.float() * 0x100000000) >>> 0);
     }
     setMode('run');
-    world.runSystem().startRun();
+    // PLAN §3.6 (f): the challenge is read HERE, at the press, from settings.
+    const settings = svc('settings');
+    const challenge = (settings && typeof settings.get === 'function' && settings.get('gameplay.challenge')) || 'standard';
+    world.runSystem().startRun({ act: begin.act ?? 1, challenge });
     begin.started = true;
     begin.startedAt = performance.now();
     lastBegin = {
       seed,
+      act: begin.act ?? 1,
+      challenge,
       pressedAt: Math.round(begin.pressedAt),
       startedAt: Math.round(begin.startedAt),
       deltaMs: Math.round(begin.startedAt - begin.pressedAt),
@@ -770,6 +828,12 @@ export function createCampScene(stage, toggles, ctx) {
       // @gnt:M2 CAMP-CMD begin (restoreScene: mode + layout, no seatParty)
       // @gnt:M2 CAMP-CMD end
       // @gnt:M4b CAMP-CMD begin (applyLayout passthrough to the arena)
+      // Dressing only (PLAN §3.6 (a)): the arena swaps its biome/layout
+      // dressing; no sim writes, no seatParty. args[0] = { layoutId } | id.
+      case 'applyLayout':
+        return arena.applyLayout ? arena.applyLayout(args[0]) : null;
+      case 'arenaLayout':
+        return arena.layoutState ? arena.layoutState() : null;
       // @gnt:M4b CAMP-CMD end
       // @gnt:M5b CAMP-CMD begin (followSeat)
       // @gnt:M5b CAMP-CMD end

@@ -1,24 +1,36 @@
-// Healer skill kit (§7) + slot/cooldown machinery (§6) + heal targeting (§8).
+// Healer skill kit (§7 + §23.3) + slot/cooldown machinery (§6, §23.9) + heal
+// targeting (§8).
 //
 // Every number in SKILLS and PARTY_ALLIES is VERBATIM from BUILD_BRIEF §7
-// (the healer skill table and the class stat table) — no invented stats.
-// power is per-instance (nova/sanctuary/aura/bond rows are per-target /
-// per-tick / each, exactly as the table annotates them).
+// (the healer skill table and the class stat table) and §23.3 (the nine
+// Gauntlet skills) — no invented stats. power is per-instance (nova / zone /
+// aura / bond rows are per-target / per-tick / each, exactly as the tables
+// annotate them).
 //
 // §6 binding rules owned here:
-//   - 4 slots, cooldown-gated, no mana, INSTANT cast (press → fire → cooldown
-//     starts). No cast bars; firing never touches movement. No global
-//     cooldown; no input buffering. Cooldown floor max(0.5 s, cd).
+//   - SKILL_SLOTS (8, §23.9) slots, cooldown-gated, no mana, INSTANT cast
+//     (press → fire → cooldown starts). No cast bars; firing never touches
+//     movement. No global cooldown; no input buffering. Cooldown floor
+//     max(0.5 s, cd).
 //   - Cooldowns tick in sim time (integer readyTick), persist across rooms and
 //     scene/state reloads (serialize/restore below carry REMAINING ticks for
 //     the run block's persistence ledger), never reset by any path.
-//   - Warding Aura is a passive: it occupies a slot when drafted but has no
-//     activation — a press on its slot is denied with the closed-vocabulary
-//     reason `empty_slot` (nothing activatable in that slot; §4's denial list
-//     has no passive-specific code) and its HUD slot renders a static glyph.
+//   - Passives (Warding Aura, Quiet Hearth) occupy a slot when drafted but
+//     have no activation — a press on their slot is denied with the closed-
+//     vocabulary reason `empty_slot` (nothing activatable in that slot; §4's
+//     denial list has no passive-specific code) and their HUD slot renders a
+//     static glyph. Every owned passive pulses on its own 1.0 s cadence, in
+//     ascending slot order.
 //   - Same-tick multi-skill presses all fire (world resolves ascending slot).
 //   - During a dash the WORLD denies skill fires `priority_suppressed` before
 //     this module is consulted (§5 contract, preserved).
+//
+// §23.3 additions: damage novas (Bell Toll) and damage zones (Rootsnare) hit
+// hostiles plus breakable world objects (shapes.selectAreaDamage); a skill
+// row may carry `status: { kind, mag, ticks }` that its delivery applies to
+// every body it reaches (stun / slow on enemies, shield / haste / ward on the
+// party — sim/status.js owns the immunity rules); `pierce` is the number of
+// bodies a bolt resolves on before it is spent (Pale Lance).
 //
 // §8 heal-override state (F1–F4 / portrait click) is caster-local and lives
 // here: durable toggle, press = set / same = clear / other = replace; an
@@ -27,13 +39,15 @@
 //
 // Sim discipline: no DOM, no render imports, no wall clock, gameplay RNG only
 // via the combat pipeline's own crit rolls.
-import { TICK_HZ } from '../core/constants.js';
+import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
 import { DENIAL } from '../core/intents.js';
 import {
   fanDirections,
   selectDirect,
   selectNova,
   selectArc,
+  selectAreaDamage,
+  isAreaDamageable,
   clampPlacement,
   createSkillBolts,
 } from './shapes.js';
@@ -42,10 +56,11 @@ const r2 = (v) => Math.round(v * 100) / 100;
 const secTicks = (s) => Math.round(s * TICK_HZ);
 const CD_FLOOR_TICKS = secTicks(0.5); // §6: cd_final = max(0.5 s, cd)
 const ZONE_CADENCE_TICKS = secTicks(1.0); // §6: zone tick cadence 1.0 s, first at 1.0 s
-const AURA_CADENCE_TICKS = secTicks(1.0); // §7: Warding Aura 1.0 s cadence
+const AURA_CADENCE_TICKS = secTicks(1.0); // §7 / §23.3: passive auras pulse every 1.0 s
 const BOLT_RADIUS = 0.05; // same swept-vs-wall scaffold radius as the basic bolt
 
-// §7 Healer skills — 2 starting + 6 draftable, table rows verbatim.
+// §7 Healer skills — 2 starting + 6 draftable, table rows verbatim; §23.3
+// adds nine more (the draftable pool grows 6 → 15).
 // shape ∈ the closed §6 set; power/cd/range/area/count as authored.
 export const SKILLS = Object.freeze({
   mending_bolt: Object.freeze({
@@ -89,6 +104,59 @@ export const SKILLS = Object.freeze({
     archetype: 'heal', shape: 'melee_arc',
     power: 15, cd: 5, range: 1.1, area: 55, count: 4, // reach 1.1, half-angle 55°
   }),
+
+  // ---------------------------------------------- §23.3 Gauntlet skills --
+  lantern_flurry: Object.freeze({
+    id: 'lantern_flurry', name: 'Lantern Flurry', abbrev: 'LF',
+    archetype: 'damage', shape: 'projectile',
+    power: 9, cd: 5.0, range: 4.6, area: 0, count: 3, speed: 5.6, // 9 per bolt, 3 bolts (12° fan)
+  }),
+  pale_lance: Object.freeze({
+    id: 'pale_lance', name: 'Pale Lance', abbrev: 'PL',
+    archetype: 'damage', shape: 'projectile',
+    power: 30, cd: 6.0, range: 6.0, area: 0, count: 1, speed: 6.5,
+    pierce: 3, // resolves on up to 3 different enemies along its line, full power each
+  }),
+  bell_toll: Object.freeze({
+    id: 'bell_toll', name: 'Bell Toll', abbrev: 'BT',
+    archetype: 'damage', shape: 'nova',
+    power: 20, cd: 8.0, area: 1.6, count: 5, // 20 per target
+    status: Object.freeze({ kind: 'stun', mag: 1, ticks: 30 }), // non-boss
+  }),
+  rootsnare: Object.freeze({
+    id: 'rootsnare', name: 'Rootsnare', abbrev: 'RS',
+    archetype: 'damage', shape: 'ground_aoe',
+    power: 6, cd: 10.0, range: 4.2, area: 1.3, durationSec: 5, // 6 per zone tick, 5 ticks
+    status: Object.freeze({ kind: 'slow', mag: 0.45, ticks: 72 }), // refreshed each zone tick
+  }),
+  dewfall: Object.freeze({
+    id: 'dewfall', name: 'Dewfall', abbrev: 'DF',
+    archetype: 'heal', shape: 'ground_aoe',
+    power: 7, cd: 11.0, range: 4.0, area: 1.5, durationSec: 5, // 7 per zone tick, 5 s
+  }),
+  kindred_shield: Object.freeze({
+    id: 'kindred_shield', name: 'Kindred Shield', abbrev: 'KS',
+    archetype: 'heal', shape: 'direct',
+    power: 16, cd: 8.0, range: 3.6, count: 1,
+    status: Object.freeze({ kind: 'shield', mag: 20, ticks: 240 }), // + shield 20 for 240 ticks
+  }),
+  mending_tide: Object.freeze({
+    id: 'mending_tide', name: 'Mending Tide', abbrev: 'MT',
+    archetype: 'heal', shape: 'melee_arc',
+    power: 12, cd: 4.0, range: 1.8, area: 70, count: 4, // wide sweep: reach 1.8, half-angle 70°
+  }),
+  hearthsong: Object.freeze({
+    id: 'hearthsong', name: 'Hearthsong', abbrev: 'HS',
+    archetype: 'heal', shape: 'nova',
+    power: 10, cd: 9.0, area: 2.0, count: 4, // 10 per target
+    status: Object.freeze({ kind: 'haste', mag: 0.25, ticks: 120 }), // + haste 25% for 120 ticks
+  }),
+  quiet_hearth: Object.freeze({
+    id: 'quiet_hearth', name: 'Quiet Hearth', abbrev: 'QH',
+    archetype: 'passive', shape: 'aura',
+    power: 2, area: 1.2, cadenceSec: 1.0, // 2 per pulse, 1.0 s cadence
+    status: Object.freeze({ kind: 'ward', mag: 0.15, ticks: 72 }), // allies inside: ward 15%, pulse-refreshed
+  }),
 });
 
 // §7 starting kit: Mending Bolt slot 1, Swift Mend slot 2 (the draft block
@@ -106,6 +174,7 @@ export const PARTY_ALLIES = Object.freeze([
   Object.freeze({ classId: 'archer', partyIndex: 3, maxHp: 80, x: -0.35, z: -2.2, radius: 0.3 }),
 ]);
 
+export const isPassiveSkill = (id) => !!SKILLS[id] && SKILLS[id].shape === 'aura';
 const cdTicks = (def) => Math.max(CD_FLOOR_TICKS, secTicks(def.cd ?? 0));
 
 // resolve(def) -> def is the build-system stat hook (§15.4): the node block
@@ -114,15 +183,28 @@ const cdTicks = (def) => Math.max(CD_FLOOR_TICKS, secTicks(def.cd ?? 0));
 export function createSkillSystem({ player, registry, events, combat, getTick, isIframed, queueDeferred, resolve = (def) => def }) {
   // slots[i] = { id, readyTick } | null. player.skills mirrors the ids so any
   // module reading the entity sees the same truth.
-  const slots = [null, null, null, null];
+  const slots = new Array(SKILL_SLOTS).fill(null);
+  if (Array.isArray(player.skills)) while (player.skills.length < SKILL_SLOTS) player.skills.push(null);
   let override = null; // §8 durable heal-target override: party_index 0–3 | null
-  const aura = { on: false, nextPulseTick: 0 };
+  // Passive auras: skillId -> next pulse tick (ascending slot order at pulse
+  // time). Plain data, serialised as remaining ticks.
+  const auraNext = new Map();
+  // Build-system hook (nodes block): castMods(skillId) -> { powerMul } for the
+  // Resonance technique; attached by the run block after both systems exist.
+  let build = null;
 
   const party = () =>
     registry
       .all()
       .filter((e) => e.partyIndex !== undefined)
       .sort((a, b) => a.partyIndex - b.partyIndex);
+
+  const statusOf = () => combat.status ?? null;
+  function applyStatus(t, st, tick) {
+    const S = statusOf();
+    if (!st || !S || !t || !(t.hp > 0)) return null;
+    return S.apply(t, st.kind, st.mag, st.ticks, tick, player.id);
+  }
 
   // Impact resolution for skill bolts rides the §4 ① deferred-maturation
   // queue (ascending carrier ordinal), exactly like basic bolts.
@@ -132,11 +214,13 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
     const dirZ = len > 1e-9 ? bolt.vz / len : 0;
     const targetId = target.id;
     const { power, skill, heal, sourceId } = bolt;
+    const critBonus = bolt.critBonus ?? 0;
+    const source = bolt.tech ? `${skill}:${bolt.tech}` : skill;
     queueDeferred(bolt.id, () => {
       const t = registry.byId(targetId);
       if (!t) return;
-      if (heal) combat.applyHeal(t, power, { healer: sourceId, source: skill });
-      else combat.applyDamage(t, power, { delivery: 'skill', shape: 'projectile', dirX, dirZ, attacker: sourceId, source: skill });
+      if (heal) combat.applyHeal(t, power, { healer: sourceId, source, critBonus });
+      else combat.applyDamage(t, power, { delivery: 'skill', shape: 'projectile', dirX, dirZ, attacker: sourceId, source, critBonus });
     });
   }
 
@@ -175,10 +259,7 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
     if (slot < 0) return { error: 'no_free_slot' };
     slots[slot] = { id, readyTick: 0 };
     player.skills[slot] = id;
-    if (def.shape === 'aura') {
-      aura.on = true;
-      aura.nextPulseTick = getTick() + AURA_CADENCE_TICKS;
-    }
+    if (def.shape === 'aura') auraNext.set(id, getTick() + AURA_CADENCE_TICKS);
     events.emit(getTick(), 'skill_equip', { slot, skill: id, passive: def.shape === 'aura' });
     return { slot };
   }
@@ -205,17 +286,35 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
       return false;
     }
     const rdef = resolve(def); // §15.4: socketed stat nodes shape the live cast
-    fire(rdef, slot, tick);
+    // Resonance (§23.4): every 3rd cast of this skill resolves at ×2 power.
+    // The build system owns the counter; this call advances it.
+    const mods = build && typeof build.castMods === 'function' ? build.castMods(s.id) : null;
+    fire(rdef, slot, tick, mods);
     s.readyTick = tick + cdTicks(rdef); // instant cast: fire → cooldown starts
     return true;
   }
 
-  function fire(def, slot, tick) {
+  function fire(def, slot, tick, mods = null) {
     const cast = { slot, skill: def.id, shape: def.shape };
+    const powerMul = mods && mods.powerMul ? mods.powerMul : 1;
+    deliver(def, def.power * powerMul, cast, { tick });
+    if (mods && mods.resonance) cast.resonance = true;
+    events.emit(tick, 'skill_cast', cast);
+  }
+
+  // One delivery of a skill (a primary cast, or an Echo recast when `echo`
+  // carries the original cast record: same aim / targets / placement). Fills
+  // `out` with the §6 cast payload in the v0.4.63 key order.
+  //   boltSys: the bolt subsystem the projectiles ride (echo recasts use the
+  //            build block's own instance, see nodes.js).
+  function deliver(def, power, out, { tick = getTick(), boltSys = bolts, echo = null } = {}) {
+    const heal = def.archetype === 'heal';
+    const critBonus = def.critBonus ?? 0;
+    const st = def.status ?? null;
     if (def.shape === 'projectile') {
-      const dir = aimDir();
+      const dir = echo ? { x: echo.dx, z: echo.dz } : aimDir();
       for (const d of fanDirections(dir.x, dir.z, def.count)) {
-        bolts.spawn(tick, {
+        boltSys.spawn(tick, {
           x: player.x,
           z: player.z,
           dirX: d.x,
@@ -223,41 +322,79 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
           speed: def.speed,
           range: def.range,
           radius: BOLT_RADIUS,
-          power: def.power,
+          power,
           skill: def.id,
-          heal: def.archetype === 'heal',
+          heal,
           sourceId: player.id,
+          critBonus,
+          hits: def.pierce ?? 1,
         });
       }
-      cast.dx = r2(dir.x);
-      cast.dz = r2(dir.z);
+      out.dx = r2(dir.x);
+      out.dz = r2(dir.z);
     } else if (def.shape === 'direct') {
-      const { targets, overrideMode } = selectDirect({
-        caster: player,
-        party: party(),
-        range: def.range,
-        count: def.count,
-        override,
-        isIframed,
-      });
-      for (const t of targets) combat.applyHeal(t, def.power, { healer: player.id, source: def.id });
-      cast.targets = targets.map((t) => t.id);
-      cast.override = overrideMode;
+      let targets;
+      let overrideMode = null;
+      if (echo) {
+        targets = (echo.targets ?? []).map((id) => registry.byId(id)).filter((t) => t && t.hp > 0);
+      } else {
+        const r = selectDirect({
+          caster: player,
+          party: party(),
+          range: def.range,
+          count: def.count,
+          override,
+          isIframed,
+        });
+        targets = r.targets;
+        overrideMode = r.overrideMode;
+      }
+      for (const t of targets) combat.applyHeal(t, power, { healer: player.id, source: def.id, critBonus });
+      if (st) for (const t of targets) applyStatus(t, st, tick);
+      out.targets = targets.map((t) => t.id);
+      if (!echo) out.override = overrideMode;
     } else if (def.shape === 'nova') {
-      const targets = selectNova({
-        caster: player,
-        party: party(),
-        radius: def.area,
-        count: def.count,
-        isIframed,
-      });
-      for (const t of targets) combat.applyHeal(t, def.power, { healer: player.id, source: def.id });
-      cast.targets = targets.map((t) => t.id);
+      if (heal) {
+        const targets = selectNova({
+          caster: player,
+          party: party(),
+          radius: def.area,
+          count: def.count,
+          isIframed,
+        });
+        for (const t of targets) combat.applyHeal(t, power, { healer: player.id, source: def.id, critBonus });
+        if (st) for (const t of targets) applyStatus(t, st, tick);
+        out.targets = targets.map((t) => t.id);
+      } else {
+        const targets = selectAreaDamage({
+          entities: registry.all(),
+          x: player.x,
+          z: player.z,
+          radius: def.area,
+          count: def.count,
+          isIframed,
+        });
+        for (const t of targets) {
+          const len = Math.hypot(t.x - player.x, t.z - player.z);
+          combat.applyDamage(t, power, {
+            delivery: 'skill',
+            shape: 'nova',
+            dirX: len > 1e-6 ? (t.x - player.x) / len : 0,
+            dirZ: len > 1e-6 ? (t.z - player.z) / len : 0,
+            attacker: player.id,
+            source: def.id,
+            critBonus,
+          });
+        }
+        if (st) for (const t of targets) if (t.faction === 'hostile') applyStatus(t, st, tick);
+        out.targets = targets.map((t) => t.id);
+        out.area = def.area;
+      }
     } else if (def.shape === 'melee_arc') {
-      const dir = aimDir();
+      const dir = echo ? { x: echo.dx, z: echo.dz } : aimDir();
       const targets = selectArc({
         caster: player,
-        party: party(),
+        party: heal ? party() : registry.all().filter(isAreaDamageable),
         aimX: dir.x,
         aimZ: dir.z,
         reach: def.range,
@@ -265,13 +402,17 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
         count: def.count,
         isIframed,
       });
-      for (const t of targets) combat.applyHeal(t, def.power, { healer: player.id, source: def.id });
-      cast.targets = targets.map((t) => t.id);
-      cast.dx = r2(dir.x);
-      cast.dz = r2(dir.z);
+      if (heal) for (const t of targets) combat.applyHeal(t, power, { healer: player.id, source: def.id, critBonus });
+      else
+        for (const t of targets)
+          combat.applyDamage(t, power, { delivery: 'skill', shape: 'melee_arc', dirX: dir.x, dirZ: dir.z, attacker: player.id, source: def.id, critBonus });
+      if (st) for (const t of targets) applyStatus(t, st, tick);
+      out.targets = targets.map((t) => t.id);
+      out.dx = r2(dir.x);
+      out.dz = r2(dir.z);
     } else if (def.shape === 'ground_aoe') {
-      const pos = clampPlacement(player, player.aim, def.range);
-      const zone = registry.spawn({
+      const pos = echo ? { x: echo.x, z: echo.z } : clampPlacement(player, player.aim, def.range);
+      const spec = {
         kind: 'zone',
         skill: def.id,
         x: pos.x,
@@ -279,24 +420,31 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
         px: pos.x,
         pz: pos.z,
         radius: def.area,
-        power: def.power,
+        power,
         sourceId: player.id,
         ticksDone: 0,
         totalTicks: Math.round(secTicks(def.durationSec) / ZONE_CADENCE_TICKS), // 4 s / 1 s = 4
         nextTickTick: tick + ZONE_CADENCE_TICKS, // first tick 1.0 s after placement (§6)
-      });
-      events.emit(tick, 'zone_spawn', {
+      };
+      if (!heal) spec.damage = true;
+      if (st) spec.applies = { kind: st.kind, mag: st.mag, ticks: st.ticks }; // (not `status`: that key is a body's own status map)
+      if (critBonus > 0) spec.critBonus = critBonus;
+      const zone = registry.spawn(spec);
+      const ev = {
         id: zone.id,
         skill: def.id,
         x: r2(pos.x),
         z: r2(pos.z),
         radius: def.area,
-      });
-      cast.zone = zone.id;
-      cast.x = r2(pos.x);
-      cast.z = r2(pos.z);
+      };
+      if (!heal) ev.damage = true;
+      if (echo) ev.echo = true;
+      events.emit(tick, 'zone_spawn', ev);
+      out.zone = zone.id;
+      out.x = r2(pos.x);
+      out.z = r2(pos.z);
     }
-    events.emit(tick, 'skill_cast', cast);
+    return out;
   }
 
   // ----------------------------------------------------- continuous phase --
@@ -305,57 +453,98 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
   }
 
   // --- §4 ④: persistent-zone scheduled ticks, ascending zone spawn ordinal
-  // (registry iteration order), then the aura's own cadence. Each tick creates
-  // normal instances: own crit roll, i-frame / Downed suppression (§6).
-  // Occupants resolve near→far from the zone center, ties ascending id (§4 ①).
+  // (registry iteration order), then the passive auras' own cadences. Each
+  // tick creates normal instances: own crit roll, i-frame / Downed
+  // suppression (§6). Occupants resolve near→far from the zone center, ties
+  // ascending id (§4 ①).
   function zonePhase() {
     const tick = getTick();
     for (const z of registry.all()) {
       if (z.kind !== 'zone' || tick < z.nextTickTick) continue;
       z.ticksDone += 1;
       z.nextTickTick += ZONE_CADENCE_TICKS;
-      const occupants = party().filter(
-        (m) => m.hp > 0 && !isIframed(m) && (m.x - z.x) ** 2 + (m.z - z.z) ** 2 <= z.radius * z.radius
-      );
-      occupants.sort((a, b) => {
-        const da = (a.x - z.x) ** 2 + (a.z - z.z) ** 2;
-        const db = (b.x - z.x) ** 2 + (b.z - z.z) ** 2;
-        return da !== db ? da - db : a.id - b.id;
-      });
-      const healed = [];
-      for (const m of occupants) {
-        const r = combat.applyHeal(m, z.power, { healer: z.sourceId, source: z.skill });
-        if (r) healed.push(m.id);
+      if (z.damage) {
+        // Damage zone (Rootsnare): every damageable body inside takes one
+        // instance, then the zone's status refreshes on the survivors.
+        const victims = selectAreaDamage({ entities: registry.all(), x: z.x, z: z.z, radius: z.radius, isIframed });
+        const hit = [];
+        for (const v of victims) {
+          const len = Math.hypot(v.x - z.x, v.z - z.z);
+          const r = combat.applyDamage(v, z.power, {
+            delivery: 'skill',
+            shape: 'ground_aoe',
+            dirX: len > 1e-6 ? (v.x - z.x) / len : 0,
+            dirZ: len > 1e-6 ? (v.z - z.z) / len : 0,
+            attacker: z.sourceId,
+            source: z.skill,
+            critBonus: z.critBonus ?? 0,
+          });
+          if (r) hit.push(v.id);
+          if (z.applies && v.faction === 'hostile') applyStatus(v, z.applies, tick);
+        }
+        events.emit(tick, 'zone_tick', { id: z.id, skill: z.skill, n: z.ticksDone, hit, damage: true });
+      } else {
+        const occupants = party().filter(
+          (m) => m.hp > 0 && !isIframed(m) && (m.x - z.x) ** 2 + (m.z - z.z) ** 2 <= z.radius * z.radius
+        );
+        occupants.sort((a, b) => {
+          const da = (a.x - z.x) ** 2 + (a.z - z.z) ** 2;
+          const db = (b.x - z.x) ** 2 + (b.z - z.z) ** 2;
+          return da !== db ? da - db : a.id - b.id;
+        });
+        const healed = [];
+        for (const m of occupants) {
+          const r = combat.applyHeal(m, z.power, { healer: z.sourceId, source: z.skill, critBonus: z.critBonus ?? 0 });
+          if (r) healed.push(m.id);
+          if (z.applies) applyStatus(m, z.applies, tick);
+        }
+        events.emit(tick, 'zone_tick', { id: z.id, skill: z.skill, n: z.ticksDone, healed });
       }
-      events.emit(tick, 'zone_tick', { id: z.id, skill: z.skill, n: z.ticksDone, healed });
       if (z.ticksDone >= z.totalTicks) {
         events.emit(tick, 'zone_expire', { id: z.id, skill: z.skill });
         registry.despawn(z.id);
       }
     }
 
-    if (aura.on && tick >= aura.nextPulseTick) {
-      aura.nextPulseTick += AURA_CADENCE_TICKS;
-      const def = resolve(SKILLS.warding_aura); // §15.4 hook (Sharpen/Ascend live on the aura)
-      const inField = party().filter(
-        (m) =>
-          m.id !== player.id && // "heals allies inside" — the field's own caster is not her own ally
-          m.hp > 0 &&
-          !isIframed(m) &&
-          (m.x - player.x) ** 2 + (m.z - player.z) ** 2 <= def.area * def.area
-      );
-      inField.sort((a, b) => {
-        const da = (a.x - player.x) ** 2 + (a.z - player.z) ** 2;
-        const db = (b.x - player.x) ** 2 + (b.z - player.z) ** 2;
-        return da !== db ? da - db : a.id - b.id;
-      });
-      const healed = [];
-      for (const m of inField) {
-        const r = combat.applyHeal(m, def.power, { healer: player.id, source: def.id });
-        if (r) healed.push(m.id);
-      }
-      events.emit(tick, 'aura_pulse', { healed });
+    // Passive auras, ascending slot order, each on its own cadence.
+    for (const s of slots) {
+      if (!s || SKILLS[s.id].shape !== 'aura') continue;
+      const next = auraNext.get(s.id);
+      if (next === undefined || tick < next) continue;
+      auraNext.set(s.id, next + AURA_CADENCE_TICKS);
+      pulseAura(s.id);
     }
+  }
+
+  // One pulse of a passive aura: heals every OTHER living party member inside
+  // the field ("heals allies inside" — the field's own caster is not her own
+  // ally), then its status (Quiet Hearth: ward) refreshes on them. `echo`
+  // marks the Echo node's bonus Reapply pulse (nodes.js).
+  function pulseAura(skillId, { echo = false, powerMul = 1 } = {}) {
+    const tick = getTick();
+    const def = resolve(SKILLS[skillId]); // §15.4 hook (Sharpen/Ascend/Widen live on auras)
+    const inField = party().filter(
+      (m) =>
+        m.id !== player.id &&
+        m.hp > 0 &&
+        !isIframed(m) &&
+        (m.x - player.x) ** 2 + (m.z - player.z) ** 2 <= def.area * def.area
+    );
+    inField.sort((a, b) => {
+      const da = (a.x - player.x) ** 2 + (a.z - player.z) ** 2;
+      const db = (b.x - player.x) ** 2 + (b.z - player.z) ** 2;
+      return da !== db ? da - db : a.id - b.id;
+    });
+    const healed = [];
+    for (const m of inField) {
+      const r = combat.applyHeal(m, def.power * powerMul, { healer: player.id, source: def.id, critBonus: def.critBonus ?? 0 });
+      if (r) healed.push(m.id);
+    }
+    if (def.status) for (const m of inField) applyStatus(m, def.status, tick);
+    const ev = { healed, skill: skillId, area: r2(def.area), x: r2(player.x), z: r2(player.z) };
+    if (echo) ev.echo = true;
+    events.emit(tick, 'aura_pulse', ev);
+    return healed;
   }
 
   // ------------------------------------------------------------- override --
@@ -393,29 +582,32 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
   // restore into a fresh world/tick-base re-arms the same remaining time.
   function serialize() {
     const tick = getTick();
+    const auras = {};
+    for (const [id, next] of auraNext) auras[id] = Math.max(0, next - tick);
     return {
       slots: slots.map((s) =>
         s ? { id: s.id, remaining: Math.max(0, s.readyTick - tick) } : null
       ),
       override,
+      auras,
     };
   }
 
   function restore(data) {
     if (!data || !Array.isArray(data.slots)) return false;
     const tick = getTick();
-    for (let i = 0; i < 4; i++) {
-      const d = data.slots[i];
+    auraNext.clear();
+    for (let i = 0; i < SKILL_SLOTS; i++) {
+      const d = data.slots[i] ?? null;
       slots[i] = d ? { id: d.id, readyTick: tick + (d.remaining ?? 0) } : null;
       player.skills[i] = d ? d.id : null;
       if (d && SKILLS[d.id]?.shape === 'aura') {
-        aura.on = true;
-        aura.nextPulseTick = tick + AURA_CADENCE_TICKS;
+        const rem = data.auras && Number.isFinite(data.auras[d.id]) ? data.auras[d.id] : AURA_CADENCE_TICKS;
+        auraNext.set(d.id, tick + rem);
       }
     }
-    aura.on = slots.some((s) => s && SKILLS[s.id].shape === 'aura');
     override = data.override ?? null;
-    events.emit(tick, 'skills_restored', { slots: data.slots.map((d) => (d ? d.id : null)) });
+    events.emit(tick, 'skills_restored', { slots: slots.map((s) => (s ? s.id : null)) });
     events.emit(tick, 'heal_override', { index: override }); // keep HUD/reticle in sync
     return true;
   }
@@ -425,11 +617,19 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
     tryFire,
     step,
     zonePhase,
+    pulseAura,
+    deliver,
     toggleOverride,
     clearOverride,
     getOverride: () => override,
     slotsView,
     serialize,
     restore,
+    // Late-bound build hook (run.js attaches the build system once both exist).
+    attachBuild: (b) => {
+      build = b;
+    },
+    ownedIds: () => slots.filter(Boolean).map((s) => s.id),
+    slotCount: () => SKILL_SLOTS,
   };
 }

@@ -53,6 +53,9 @@ import { sharedGeo, markShared, releaseTree } from '../geocache.js';
 import { warmPark } from '../warmup.js';
 import { impactFx } from '../vfx/hub.js';
 import { exactColor, underBloom, getShadowTexture } from '../critters/common.js';
+// Gauntlet skills whose cast / zone reads live in ./content.js (a damage nova
+// or a damage zone must never draw this layer's green heal grammar).
+import { CONTENT_CAST_SKILLS } from './content.js';
 
 // Cosmetic scaffold tunables (render-only, not brief numbers).
 const BOLT_Y = 0.55; // matches the basic bolt's flight height
@@ -993,7 +996,8 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   bus.on('skills_restored', (ev) => {
     auraOn = ev.slots.includes('warding_aura');
   });
-  bus.on('aura_pulse', () => {
+  bus.on('aura_pulse', (ev) => {
+    if (ev && ev.skill && ev.skill !== 'warding_aura') return; // Quiet Hearth: ./content.js
     auraPulseT = 0.45;
     spawnRing(world.player.x, world.player.z, { color: HEAL, from: 0.25, to: AURA.area, life: 0.4, opacity: 0.55 });
   });
@@ -1006,6 +1010,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   });
   bus.on('skill_cast', (ev) => {
     const p = world.player;
+    if (CONTENT_CAST_SKILLS.has(ev.skill)) return;
     if (ev.shape === 'nova') {
       const def = SKILLS[ev.skill];
       spawnFlash(p.x, 0.45, p.z, { color: HEAL, size: 0.5, opacity: 0.9, life: 0.25, grow: 0.5 });
@@ -1112,7 +1117,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     // Zones: sync rigs to sim zone entities; breathe; drip motes.
     const seenZones = new Set();
     for (const e of world.entities()) {
-      if (e.kind !== 'zone') continue;
+      if (e.kind !== 'zone' || e.damage) continue; // damage zones: ./content.js
       seenZones.add(e.id);
       let rig = zoneRigs.get(e.id);
       if (!rig) {

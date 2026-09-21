@@ -26,7 +26,17 @@
 //
 // Sim discipline: no DOM, no render imports, no wall clock.
 import { TICK_HZ } from '../core/constants.js';
-import { sweptContactT, sweptStep } from './movement.js';
+import * as MOVE from './movement.js';
+
+const { sweptContactT, sweptStep } = MOVE;
+// Projectile blockers (docs/gauntlet/PLAN.md §3.6 (g)): movement.js (M4b)
+// exports the swept first contact against ENTITY-OWNED dynamic colliders
+// (barricades, rockfall rubble). Read through the namespace so this module
+// degrades to the v0.4.63 wall-only sweep on a build without it.
+const blockerContact = (x, z, dx, dz, radius) =>
+  typeof MOVE.sweptDynamicContact === 'function'
+    ? MOVE.sweptDynamicContact(x, z, dx, dz, radius)
+    : { t: Infinity, entityId: null };
 
 const r2 = (v) => Math.round(v * 100) / 100;
 const FAN_STEP_RAD = (12 * Math.PI) / 180; // §6: 12° spacing
@@ -160,6 +170,36 @@ export function selectArc({ caster, party, aimX, aimZ, reach, halfAngleDeg, coun
   return sortNearFar(eligible, caster.x, caster.z).slice(0, countFinal(count));
 }
 
+// --- Area DAMAGE candidates (Gauntlet: Bell Toll nova, Rootsnare zones,
+// Detonate bursts). Living hittable hostiles plus the breakable world objects
+// the §23.7 contract says area damage reaches (barricades, powder kegs — any
+// neutral entity with `lifecycle: 'break'`). A blocker with a box collider is
+// treated as a circle of radius max(hx, hz) (PLAN §3.6 (g)); every other body
+// is tested by its centre, exactly like the §6 heal selectors.
+export function isAreaDamageable(e) {
+  if (!e || !(e.hp > 0)) return false;
+  if (e.faction === 'hostile') return !!e.hittable;
+  return e.faction === 'neutral' && e.lifecycle === 'break' && e.hittable !== false;
+}
+const reachOf = (e) => {
+  const c = e.collider;
+  if (!c) return 0;
+  if (Number.isFinite(c.r)) return c.r;
+  return Math.max(c.hx ?? 0, c.hz ?? 0);
+};
+// Near->far (ties ascending id) living damageable bodies within `radius` of
+// (x, z); `count` caps the list (omit for "every body inside").
+export function selectAreaDamage({ entities, x, z, radius, count = Infinity, isIframed = () => false }) {
+  const out = [];
+  for (const e of entities) {
+    if (!isAreaDamageable(e) || isIframed(e)) continue;
+    const r = radius + reachOf(e);
+    if (dist2(e.x, e.z, x, z) <= r * r) out.push(e);
+  }
+  sortNearFar(out, x, z);
+  return Number.isFinite(count) ? out.slice(0, countFinal(count)) : out;
+}
+
 // --- `ground_aoe` placement (§6): at cursor, clamped to range from caster.
 // Degenerate/absent cursor places at the caster (§6: ground_aoe uses the
 // cursor as-is; no cursor yet = the caster's own tile).
@@ -178,6 +218,20 @@ export function clampPlacement(caster, aim, range) {
 // difference: heal bolts contact PARTY members other than the caster and pass
 // enemies; damage bolts contact hittable hostiles (i-framed bodies are still
 // contacted — the §9 pipeline resolves the contact to hit_immune).
+//
+// Gauntlet additions (BUILD_BRIEF §23.3 / PLAN §3.6 (g)):
+//   - `hits` > 1 = a piercing bolt (Pale Lance, pierce 3): it resolves a full
+//     instance on each of up to `hits` DIFFERENT bodies along its line, in
+//     flight order, and despawns on the last one. Within one tick the sweep
+//     continues from each contact point, so a pierce never slows the bolt.
+//   - blockers: an entity-owned dynamic collider (barricade, rubble) stops
+//     every bolt ON its face (`cause: 'blocked'`); a damage bolt hands the
+//     blocker to onImpact (it takes the hit through the §9 pipeline), a heal
+//     bolt is simply absorbed. An entity with a `collider` is never a
+//     circle-contact victim.
+//   - `critBonus` (Keen) and `tech` (a technique-produced bolt, e.g. a Split
+//     shard: its impact is labelled `<skill>:<tech>` so it never re-triggers
+//     techniques, §15.3 depth-1) ride the bolt entity as plain data.
 export function createSkillBolts({ registry, events, onImpact, owner = null }) {
   // Owner tag: more than one subsystem instance can share the registry (the
   // healer kit + the build block's Echo recasts). Each instance advances ONLY
@@ -188,7 +242,7 @@ export function createSkillBolts({ registry, events, onImpact, owner = null }) {
   // opts: { x, z, dirX, dirZ, speed, range, radius, power, skill, heal, sourceId }
   function spawn(tick, opts) {
     const perTick = opts.speed / TICK_HZ;
-    const b = registry.spawn({
+    const spec = {
       kind: 'skillbolt',
       boltOwner: me,
       x: opts.x,
@@ -204,7 +258,21 @@ export function createSkillBolts({ registry, events, onImpact, owner = null }) {
       skill: opts.skill,
       heal: !!opts.heal,
       sourceId: opts.sourceId,
-    });
+    };
+    // Optional fields only when they carry something, so a v0.4.63 bolt is
+    // the same plain object it always was.
+    if (opts.hits > 1) {
+      spec.hitsLeft = Math.floor(opts.hits);
+      spec.hitIds = [];
+    }
+    // Bodies this bolt may never contact (a Split shard leaves the body the
+    // parent bolt just struck).
+    if (Array.isArray(opts.exclude) && opts.exclude.length > 0) {
+      spec.hitIds = [...(spec.hitIds ?? []), ...opts.exclude];
+    }
+    if (opts.critBonus > 0) spec.critBonus = opts.critBonus;
+    if (opts.tech) spec.tech = opts.tech;
+    const b = registry.spawn(spec);
     events.emit(tick, 'skill_bolt_spawn', {
       id: b.id,
       skill: opts.skill,
@@ -219,6 +287,8 @@ export function createSkillBolts({ registry, events, onImpact, owner = null }) {
 
   function contactable(bolt, e) {
     if (e.id === bolt.sourceId || !(e.hp > 0)) return false;
+    if (e.collider) return false; // blockers are swept as colliders, never as circles
+    if (bolt.hitIds && bolt.hitIds.includes(e.id)) return false; // a pierce hits each body once
     if (bolt.heal) return e.partyIndex !== undefined; // first ally in path; passes enemies
     return !!e.hittable && e.faction !== 'party'; // first hostile in path
   }
@@ -238,28 +308,62 @@ export function createSkillBolts({ registry, events, onImpact, owner = null }) {
         dz *= s;
         expires = true;
       }
-      let tHit = Infinity;
-      let victim = null;
-      for (const e of registry.all()) {
-        if (!contactable(b, e)) continue;
-        const t = circleContactT(b.x, b.z, dx, dz, e.x, e.z, b.radius + e.radius);
-        if (t < tHit) {
-          tHit = t;
-          victim = e;
+      // One sweep per contact: a normal bolt ends at its first body; a
+      // piercing bolt resolves the body and sweeps on from the contact point
+      // with what is left of this tick's travel.
+      for (let guard = 0; guard < 16; guard++) {
+        let tHit = Infinity;
+        let victim = null;
+        for (const e of registry.all()) {
+          if (!contactable(b, e)) continue;
+          const t = circleContactT(b.x, b.z, dx, dz, e.x, e.z, b.radius + e.radius);
+          if (t < tHit) {
+            tHit = t;
+            victim = e;
+          }
         }
-      }
-      const tWall = sweptContactT(b.x, b.z, dx, dz, b.radius);
-      if (victim && tHit <= tWall) {
-        b.x += dx * tHit;
-        b.z += dz * tHit;
-        b.traveled += Math.hypot(dx, dz) * tHit;
-        despawn(tick, b, 'impact');
-        onImpact(tick, b, victim);
-      } else {
+        const tWall = sweptContactT(b.x, b.z, dx, dz, b.radius);
+        const blk = blockerContact(b.x, b.z, dx, dz, b.radius);
+        if (blk.entityId !== null && blk.t < Infinity && blk.t < tHit && blk.t <= tWall) {
+          b.x += dx * blk.t;
+          b.z += dz * blk.t;
+          b.traveled += Math.hypot(dx, dz) * blk.t;
+          despawn(tick, b, 'blocked');
+          const blocker = registry.byId(blk.entityId);
+          if (blocker && !b.heal) onImpact(tick, b, blocker); // the barricade takes the hit
+          break;
+        }
+        if (victim && tHit <= tWall) {
+          b.x += dx * tHit;
+          b.z += dz * tHit;
+          b.traveled += Math.hypot(dx, dz) * tHit;
+          if (b.hitsLeft !== undefined) {
+            b.hitsLeft -= 1;
+            b.hitIds.push(victim.id);
+          }
+          if (b.hitsLeft === undefined || b.hitsLeft <= 0) {
+            despawn(tick, b, 'impact');
+            onImpact(tick, b, victim);
+            break;
+          }
+          events.emit(tick, 'skill_bolt_pierce', {
+            id: b.id,
+            skill: b.skill,
+            target: victim.id,
+            left: b.hitsLeft,
+            x: r2(b.x),
+            z: r2(b.z),
+          });
+          onImpact(tick, b, victim);
+          dx *= 1 - tHit;
+          dz *= 1 - tHit;
+          continue;
+        }
         const { hit, t } = sweptStep(b, dx, dz, b.radius);
         b.traveled += Math.hypot(dx, dz) * t;
         if (hit) despawn(tick, b, 'wall');
         else if (expires) despawn(tick, b, 'expired');
+        break;
       }
     }
   }

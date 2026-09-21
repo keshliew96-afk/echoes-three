@@ -581,7 +581,8 @@ export function createShopScreen({ run, build }) {
       run().advanceFromShop();
       return true;
     }
-    if (code === 'Escape') return true; // §16: Esc inert in the shop
+    // Esc passes through unconsumed to the pause menu (PLAN §1.5, ruling
+    // A13); the shelf itself stays inert to it.
     return false;
   }
 

@@ -26,6 +26,7 @@
 // Render-side contract members (#1 flash, #2 numbers, #6 kill pop/decal,
 // #7 screenshake) and #5 sound slots subscribe to the events emitted here.
 import { CRIT, HITSTOP, KNOCKBACK, SCREENSHAKE } from '../core/constants.js';
+import * as STATUS from './status.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -80,10 +81,25 @@ export function createCombat({
   // pipeline — dead/Downed/missing).
   // source: optional skill-id label (skills block) — rides the event so tests
   // and the HUD can attribute an instance to the skill that produced it.
+  //   critBonus: additive crit-chance bonus for this instance (Keen node,
+  //     BUILD_BRIEF §23.4) — still ONE strict `roll < chance` draw.
+  //
+  // Gauntlet pipeline order (BUILD_BRIEF §23.8, binding): base -> attacker
+  // `inspired` -> crit roll -> target `exposed` x `ward` -> shield absorb ->
+  // HP. With no statuses on either body every factor is exactly 1, so the
+  // v0.4.63 numbers (and the legacy golden traces) are untouched.
+  //
+  // Guard (docs/gauntlet/PLAN.md §3.6 contract (c), the Barrow Ram's horn
+  // guard): a target carrying `guard = { active, dirX, dirZ, halfArcDeg,
+  // shapes }` blocks an instance whose `shape` is listed and whose hit
+  // direction arrives inside the guard arc — BEFORE the crit roll, so a block
+  // draws no RNG. It deals 0, emits `hit_blocked` and returns
+  // { blocked: true, amount: 0 }. A caller that passes no direction is never
+  // blocked.
   function applyDamage(
     target,
     base,
-    { delivery = 'basic', shape = null, dirX = 0, dirZ = 0, attacker = null, source = null } = {}
+    { delivery = 'basic', shape = null, dirX = 0, dirZ = 0, attacker = null, source = null, critBonus = 0 } = {}
   ) {
     const tick = getTick();
     if (!target || !(target.hp > 0)) return null; // outside the pipeline
@@ -98,9 +114,45 @@ export function createCombat({
       return { immune: true }; // no instance, no RNG draw
     }
 
-    const crit = rng.chance(CRIT.chance); // strict roll < chance (§7)
-    const amount = crit ? base * CRIT.mult : base;
+    const g = target.guard;
+    if (g && g.active && Array.isArray(g.shapes) && g.shapes.includes(shape)) {
+      const gdl = Math.hypot(dirX, dirZ);
+      const gl = Math.hypot(g.dirX ?? 0, g.dirZ ?? 0);
+      if (gdl > 1e-6 && gl > 1e-6) {
+        // The hit TRAVELS along (dirX, dirZ), so it arrives from -dir; it is
+        // blocked when that arrival direction sits inside the guard arc.
+        const dot = (-dirX / gdl) * (g.dirX / gl) + (-dirZ / gdl) * (g.dirZ / gl);
+        if (dot >= Math.cos(((g.halfArcDeg ?? 55) * Math.PI) / 180)) {
+          stats.blocked = (stats.blocked ?? 0) + 1;
+          target.lastBlockedTick = tick;
+          events.emit(tick, 'hit_blocked', {
+            targetId: target.id,
+            attackerId: attacker ?? null,
+            shape,
+            delivery,
+            source,
+            x: r2(target.x),
+            z: r2(target.z),
+          });
+          return { blocked: true, amount: 0 };
+        }
+      }
+    }
+
+    const atk = attacker !== null && attacker !== undefined ? registry.byId(attacker) : null;
+    const dealt = atk ? STATUS.damageDealtMul(atk, tick) : 1;
+    const crit = rng.chance(CRIT.chance + critBonus); // strict roll < chance (§7)
+    let amount = base * dealt;
+    if (crit) amount *= CRIT.mult;
+    amount *= STATUS.damageTakenMul(target, tick);
+    let absorbed = 0;
+    if (target.status && target.status.shield) {
+      const r = STATUS.absorb(target, amount, tick);
+      absorbed = r.absorbed;
+      amount = r.remaining;
+    }
     target.hp -= amount;
+    target.lastHitTick = tick; // PLAN §3.6: archetypes react to damage the next tick
     stats.hits += 1;
     if (crit) stats.crits += 1;
 
@@ -121,7 +173,7 @@ export function createCombat({
     // spray ALONG the impact instead of as an omnidirectional puff
     // (REFERENCE_BAR check 5 — a hit has to read as an event with a direction).
     const dl = Math.hypot(dirX, dirZ);
-    events.emit(tick, 'hit', {
+    const hitEv = {
       target: target.id,
       kind: target.kind,
       attacker,
@@ -135,7 +187,21 @@ export function createCombat({
       dirZ: dl > 1e-6 ? r2(dirZ / dl) : 0,
       x: r2(target.x),
       z: r2(target.z),
-    });
+    };
+    // §23.8: numerals equal HP deltas; the shield's share rides separately
+    // (a small Bone "(n)" beside the numeral) and on its own event.
+    if (absorbed > 0) hitEv.absorbed = r2(absorbed);
+    events.emit(tick, 'hit', hitEv);
+    if (absorbed > 0) {
+      events.emit(tick, 'shield_absorb', {
+        target: target.id,
+        kind: target.kind,
+        absorbed: r2(absorbed),
+        left: r2(STATUS.magnitude(target, 'shield', tick)),
+        x: r2(target.x),
+        z: r2(target.z),
+      });
+    }
 
     // §9 #4, melee half: a melee-arc connect that does NOT kill pauses the
     // whole sim for 2 ticks — the weight the brief asks a swing to land with.
@@ -207,10 +273,10 @@ export function createCombat({
   }
 
   // One heal instance: same crit roll, clamped at max_hp, full_heal per §9.
-  function applyHeal(target, base, { healer = null, source = null } = {}) {
+  function applyHeal(target, base, { healer = null, source = null, critBonus = 0 } = {}) {
     const tick = getTick();
     if (!target || !(target.hp > 0)) return null; // Downed/dead: outside the pipeline
-    const crit = rng.chance(CRIT.chance);
+    const crit = rng.chance(CRIT.chance + critBonus);
     const preClamp = crit ? base * CRIT.mult : base;
     const room = target.maxHp - target.hp;
     const applied = Math.min(preClamp, room);
@@ -231,5 +297,8 @@ export function createCombat({
     return { amount: preClamp, applied, crit };
   }
 
-  return { applyDamage, applyHeal, kill };
+  // `status` = the committed status contract (sim/status.js), handed to every
+  // system that already holds the combat pipeline (world walk, ally steering,
+  // enemies / hazards through their ctx) — one implementation, no re-imports.
+  return { applyDamage, applyHeal, kill, status: STATUS };
 }

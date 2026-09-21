@@ -68,7 +68,22 @@ import { Vector3 } from 'three';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const MAX_MARKERS = 32; // pointer budget; surplus MERGES, it is never dropped
 const CELL_PX = 54; // perimeter cell: one pointer chip plus breathing room
-const ENEMY_KINDS = new Set(['boar', 'mantis', 'wisp', 'dummy', 'stag']);
+// Threat rule (docs/gauntlet/PLAN.md §3.6 (d)): every living hostile body the
+// party can hit — by FACTION, so every new enemy kind gets a pointer with no
+// list to maintain — plus the legacy harness kinds (wisp, dummy). A burrowed
+// Grave Mole (`hittable: false`, `burrowed: true`) still gets a pointer, drawn
+// as the dirt-ripple variant; enemy shots (no HP) and retreating bodies
+// (hittable false) never do.
+const LEGACY_KINDS = new Set(['wisp', 'dummy']);
+function isThreat(e) {
+  if (!e || !(e.hp > 0)) return false;
+  if (LEGACY_KINDS.has(e.kind)) return true;
+  if (e.faction !== 'hostile') return false;
+  return e.hittable !== false || !!e.burrowed;
+}
+// `hit` events carry the target's kind only: anything that is not a party
+// body can carry a pointer's damage tick (the key lookup filters the rest).
+const PARTY_KINDS = new Set(['player', 'ally', 'waystone']);
 const EDGE_INSET = 24; // px from the window edge to the marker centre
 const ZONE_PAD = 18; // px of clearance kept around a HUD zone rectangle
 const HYSTERESIS = 16; // px a marker must travel back inside before it clears
@@ -129,7 +144,7 @@ export function createThreatLayer({ stage, world, bus = null }) {
   // the chip that says WHERE the threat is also says that damage is landing.
   const hitAt = new Map(); // threat key -> time (s) of its last hit
   bus?.on?.('hit', (ev) => {
-    if (ev && ev.target !== undefined && ENEMY_KINDS.has(ev.kind)) {
+    if (ev && ev.target !== undefined && !PARTY_KINDS.has(ev.kind)) {
       hitAt.set('e' + ev.target, lastNow);
     }
   });
@@ -263,7 +278,7 @@ export function createThreatLayer({ stage, world, bus = null }) {
     threatCount = 0;
     shownNext.clear();
 
-    const push = (key, x, z, kind, telegraph, spawn, marked) => {
+    const push = (key, x, z, kind, telegraph, spawn, marked, burrow = false) => {
       const p = project(x, 0.45, z, w, h);
       // Hysteresis: a marker appears once the threat leaves the safe frame and
       // only clears once it is HYSTERESIS px back inside, so a threat hovering
@@ -313,15 +328,15 @@ export function createThreatLayer({ stage, world, bus = null }) {
       rec.telegraph = telegraph;
       rec.spawn = spawn;
       rec.marked = marked;
+      rec.burrow = burrow;
       rec.hitT = hitAt.get(key) ?? 0;
       rec.auditIndex = audit ? audit.length - 1 : -1;
     };
 
     for (const e of entities ?? world.entities()) {
-      if (!ENEMY_KINDS.has(e.kind)) continue;
-      if (!(e.hp > 0)) continue;
-      if (e.state === 'retreat' || e.state === 'dead') continue;
-      push('e' + e.id, e.x, e.z, e.kind, !!e.telegraph, false, markId === e.id);
+      if (!isThreat(e)) continue;
+      if (e.state === 'retreat' || e.state === 'retreating' || e.state === 'dead') continue;
+      push('e' + e.id, e.x, e.z, e.kind, !!e.telegraph, false, markId === e.id, !!e.burrowed && e.hittable === false);
     }
     for (const sp of spawnCache) {
       push('s' + sp.wave + ':' + sp.x + ',' + sp.z, sp.x, sp.z, sp.etype, false, true, false);
@@ -368,6 +383,7 @@ export function createThreatLayer({ stage, world, bus = null }) {
             g.telegraph = t.telegraph;
             g.spawn = t.spawn;
             g.marked = t.marked;
+            g.burrow = !!t.burrow;
             g.hitT = t.hitT;
             g.key = t.key;
             g.count = 0;
@@ -384,6 +400,7 @@ export function createThreatLayer({ stage, world, bus = null }) {
         g.telegraph = g.telegraph || t.telegraph;
         g.marked = g.marked || t.marked;
         g.spawn = g.spawn && t.spawn;
+        g.burrow = g.burrow && !!t.burrow;
         // A merged pointer ticks for the freshest hit anywhere in its cell.
         if (t.hitT > g.hitT) g.hitT = t.hitT;
       }
@@ -539,6 +556,7 @@ export function createThreatLayer({ stage, world, bus = null }) {
         (d.telegraph ? ' telegraph' : '') +
         (d.spawn ? ' spawn' : '') +
         (d.marked ? ' marked' : '') +
+        (d.burrow && !d.telegraph ? ' burrow' : '') +
         (d.count > 1 ? ' merged' : '');
       if (m.cls !== cls) {
         m.cls = cls;
@@ -641,6 +659,7 @@ export function createThreatLayer({ stage, world, bus = null }) {
           angle: Math.round(d.angle),
           count: d.count,
           telegraph: d.telegraph,
+          burrow: !!d.burrow,
           spawn: d.spawn,
           marked: d.marked,
           // Off-frame hit feedback: the tick's live opacity on this pointer.

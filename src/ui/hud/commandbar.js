@@ -34,7 +34,7 @@
 // own opaque plate in the tile's bottom strip (a box that is DISJOINT from the
 // abbrev box at every scale — see style.js); ready-pop 120 ms.
 import { PALETTE } from '../../data/palette.js';
-import { DODGE, TICK_HZ } from '../../core/constants.js';
+import { DODGE, TICK_HZ, SKILL_SLOTS } from '../../core/constants.js';
 import { ACCENTS, CHROME } from './style.js';
 import { iconEl, hasIcon } from './icons.js';
 
@@ -192,6 +192,14 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     el('div', 'hud-port-sel', cell);
     el('div', 'hud-port-tab', cell);
     const rally = el('div', 'hud-port-rally', cell);
+    // §23.3 shield read on the portrait: a Parchment HEX RIM around the tile
+    // (shape channel, never colour alone) while the member carries a live
+    // shield, plus the shield's points on a small plate.
+    const shieldRim = svgEl('svg', 'hud-port-shield', cell);
+    shieldRim.setAttribute('viewBox', '0 0 72 72');
+    const hexPath = svgEl('path', null, shieldRim);
+    hexPath.setAttribute('d', 'M36 2 L65 18.5 L65 53.5 L36 70 L7 53.5 L7 18.5 Z');
+    const shieldNum = el('span', 'hud-port-shieldnum', cell);
 
     const hp = el('div', 'hud-port-hp proto-port-hp', cell);
     const fill = el('i', null, hp);
@@ -223,6 +231,8 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       rf,
       rally,
       img,
+      shieldNum,
+      shieldShown: -1,
       state: 'healthy',
       lastPct: -1,
       lastState: '',
@@ -325,9 +335,10 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     if (id && hasIcon(id)) s.iconHost.appendChild(iconEl(id, { size: 26 }));
   }
 
+  // §23.9: SKILL_SLOTS (8) tiles in slot order = execution order, keys 1-8.
   const skillGroup = el('div', 'hud-group hud-group-skill', bar);
   const skillEls = [];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < SKILL_SLOTS; i++) {
     const s = makeSlot(String(i + 1));
     skillGroup.appendChild(s.slot);
     skillEls.push(s);
@@ -360,7 +371,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       denyNudge(dodge, ev.reason);
       return;
     }
-    const m = /^skill_([1-4])$/.exec(kind);
+    const m = /^skill_([1-9])$/.exec(kind);
     if (!m) return;
     const s = skillEls[Number(m[1]) - 1];
     if (s) denyNudge(s, ev.reason);
@@ -530,13 +541,24 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       }
 
       p.cell.classList.toggle('is-selected', overrideIndex === p.i);
+
+      // Shield rim (§23.3 / §23.8): shown while a live shield has points left.
+      const sh = m && m.status && m.status.shield;
+      const pts = sh && sh.untilTick > tickNow && sh.mag > 1e-6 && m.hp > 0 ? Math.max(1, Math.round(sh.mag)) : 0;
+      if (pts !== p.shieldShown) {
+        p.shieldShown = pts;
+        p.cell.classList.toggle('has-shield', pts > 0);
+        p.shieldNum.textContent = pts > 0 ? String(pts) : '';
+      }
     }
   }
+  let tickNow = 0;
 
   // ------------------------------------------------------------ update --
   function update(now, ctx) {
     const members = ctx.members;
     const channels = ctx.channels;
+    tickNow = ctx.tick ?? 0;
     updatePortraits(now, members, channels);
 
     paintCooldown(
@@ -546,7 +568,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     );
 
     const view = world.skillSlots();
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < skillEls.length; i++) {
       const s = skillEls[i];
       const d = view[i];
       if (!d) {
@@ -740,6 +762,8 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
             keyColor: getComputedStyle(p.key).color,
             imgFilter: p.img ? getComputedStyle(p.img).filter : null,
             hasImage: !!p.img,
+            shield: p.shieldShown > 0 ? p.shieldShown : 0,
+            shieldBox: rect(p.cell.querySelector('.hud-port-shield')),
           };
         }),
       slots: () =>

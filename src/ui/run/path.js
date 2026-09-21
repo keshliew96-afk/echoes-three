@@ -106,7 +106,8 @@ export function createPathScreen({ run }) {
       sys.choosePath(focus);
       return true;
     }
-    if (code === 'Escape') return true; // §16: Esc inert on the path screen
+    // Esc is NOT this page's key (PLAN §1.5, ruling A13): it passes through,
+    // unconsumed, to the pause menu. The page itself stays inert to it.
     return false;
   }
 

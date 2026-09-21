@@ -43,6 +43,16 @@ const NODE_GLYPH = {
   siphon: '⇓',
   echo: '◎',
   detonate: '✶',
+  // §23.4 Gauntlet nodes (same glyph set as ui/run/cards.js).
+  widen: '⇔',
+  reach: '↠',
+  linger: '≋',
+  keen: '✧',
+  snare: '※',
+  galvanize: '↯',
+  bulwark: '▣',
+  split: '⋔',
+  resonance: '⁂',
 };
 
 const SHAPE_LABEL = {
@@ -274,7 +284,7 @@ export function createSocketScreen({ bus, world }) {
         <span class="nd-orn">◆ ◇</span>
         <span class="nd-title">SOCKETS</span>
         <span class="nd-orn">◇ ◆</span>
-        <span class="nd-hint"><b>click</b> a bench node, then a slot · <b>B</b>/<b>Esc</b> close</span>
+        <span class="nd-hint"><b>click</b> a bench node, then a slot · <b>↑</b>/<b>↓</b> scroll · <b>B</b>/<b>Esc</b> close</span>
       </div>
       <div class="nd-lock"></div>
       <div class="nd-body">
@@ -387,6 +397,14 @@ export function createSocketScreen({ bus, world }) {
       stats.push(fmtStat('power', sk.base.power, sk.resolved.power));
       if (sk.base.cd !== null) stats.push(fmtStat('cd', sk.base.cd, sk.resolved.cd, ' s'));
       if (sk.base.count !== null) stats.push(fmtStat('count', sk.base.count, sk.resolved.count));
+      // §23.4 stat nodes: area / range / crit / duration show only once a
+      // node has moved them (the base row stays the §7 card line).
+      if (sk.base.area !== null && sk.resolved.area !== null && sk.resolved.area !== sk.base.area)
+        stats.push(fmtStat('area', sk.base.area, sk.resolved.area, sk.shape === 'melee_arc' ? '°' : ' u'));
+      if (sk.base.range !== null && sk.resolved.range !== null && sk.resolved.range !== sk.base.range)
+        stats.push(fmtStat('range', sk.base.range, sk.resolved.range, ' u'));
+      if (sk.resolved.critBonus > 0) stats.push(fmtStat('crit', '5%', `${Math.round((0.05 + sk.resolved.critBonus) * 100)}%`));
+      if (sk.resonance > 0) stats.push(`resonance ${sk.resonance % 3}/3`);
 
       // §16 live preview: focused candidate × this skill — computed
       // contribution and reason, straight from the sim's preview(). A
@@ -583,12 +601,25 @@ export function createSocketScreen({ bus, world }) {
     return { open };
   }
 
+  // Eight skill rows (§23.9) outgrow a short window: the body scrolls — mouse
+  // wheel, or ↑/↓ and PgUp/PgDn while the screen is open.
+  const bodyEl = rootEl.querySelector('.nd-body');
   window.addEventListener('keydown', (e) => {
+    if (open && (e.code === 'ArrowDown' || e.code === 'ArrowUp' || e.code === 'PageDown' || e.code === 'PageUp')) {
+      const page = e.code.startsWith('Page') ? bodyEl.clientHeight * 0.85 : 84;
+      bodyEl.scrollBy({ top: e.code === 'ArrowDown' || e.code === 'PageDown' ? page : -page, behavior: 'auto' });
+      e.preventDefault();
+      return;
+    }
     if (e.repeat) return;
     if (e.code === 'KeyB') {
       const r = setOpen(!open);
       if (r.denied) toast('⊘ sockets are for between rooms');
     } else if (e.code === 'Escape' && open) {
+      // The socket screen is a sub-overlay (PLAN §1.5): its Esc closes it
+      // (banking the candidate) and is CONSUMED — the pause menu listener,
+      // registered last in the bubble phase, sees defaultPrevented.
+      e.preventDefault();
       setOpen(false);
     }
   });
@@ -625,5 +656,14 @@ export function createSocketScreen({ bus, world }) {
   // @gnt:M2 RESTORE-RESYNC end
   // @gnt:M5b GUEST-GUARD begin
   // @gnt:M5b GUEST-GUARD end
-  return { cmd, isOpen: () => open };
+  return {
+    cmd,
+    isOpen: () => open,
+    // Probe surface (G4a.1): every owned skill has a row; the body scrolls.
+    debug: () => ({
+      open,
+      rows: [...rowsEl.querySelectorAll('.nd-row .nd-skill-name')].map((n) => n.textContent),
+      scroll: { top: Math.round(bodyEl.scrollTop), height: Math.round(bodyEl.scrollHeight), view: Math.round(bodyEl.clientHeight) },
+    }),
+  };
 }

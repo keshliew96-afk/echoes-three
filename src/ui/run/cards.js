@@ -30,6 +30,15 @@ export const NODE_GLYPH = {
   siphon: '⇓',
   echo: '◎',
   detonate: '✶',
+  widen: '⇔',
+  reach: '↠',
+  linger: '≋',
+  keen: '✧',
+  snare: '※',
+  galvanize: '↯',
+  bulwark: '▣',
+  split: '⋔',
+  resonance: '⁂',
 };
 
 // §15.1 "Effect" column + the §15.3 matrix summarised per node.
@@ -45,6 +54,16 @@ export const NODE_EFFECT = {
   echo: 'the whole cast repeats 1.0 s later — 50% power on damage, 100% on a heal.',
   detonate:
     'kills by this skill explode · full heals burst-heal — 50% power in 1.2 u.',
+  // §23.4 Gauntlet nodes.
+  widen: '+25% area — bigger bursts and zones; a wider arc (to 90°).',
+  reach: '+25% range — farther bolts, placements and heal reach.',
+  linger: '+50% duration — zones last longer, statuses hold longer.',
+  keen: '+15% crit chance on every instance of this skill.',
+  snare: 'damage slows the enemies hit 40% · heals haste allies 20% · a field slows enemies inside.',
+  galvanize: 'damage exposes (+20% taken) · heals inspire (+15% dealt) · a field inspires allies inside.',
+  bulwark: 'damage shields you (20% of it, up to 30) · overheal becomes a shield · a field adds shield.',
+  split: 'on impact two shards fly on at ±35° (40%) · heals splash the 2 nearest allies (40%).',
+  resonance: 'every 3rd cast of this skill resolves at ×2 power. Legendary: slot B only.',
 };
 
 // The same effects in one breath. Used by the compact reflow (short windows),
@@ -61,6 +80,15 @@ export const NODE_EFFECT_SHORT = {
   siphon: 'damage self-heals · heals scorch the nearest enemy.',
   echo: 'the cast repeats 1.0 s later — 50% damage, 100% heal.',
   detonate: 'kills explode · full heals burst — 50% within 1.2 u.',
+  widen: '+25% area on this skill.',
+  reach: '+25% range on this skill.',
+  linger: '+50% duration on this skill.',
+  keen: '+15% crit chance on this skill.',
+  snare: 'hits slow · heals haste · fields slow.',
+  galvanize: 'hits expose · heals inspire allies.',
+  bulwark: 'hits and overheals become shields.',
+  split: 'impacts split into 2 shards at 40%.',
+  resonance: 'every 3rd cast ×2. Slot B only.',
 };
 
 const SHAPE_LABEL = {
@@ -74,6 +102,21 @@ const SHAPE_LABEL = {
 
 const ARCH_GLYPH = { heal: '✚', damage: '✦', passive: '◍' };
 
+// §23.3: what each Gauntlet skill does beyond its stat row (the status it
+// carries, the pierce, the field) — the card states it in words, with the
+// authored numbers.
+const SKILL_BODY = {
+  lantern_flurry: 'Three lantern bolts in a 12° fan, 9 each.',
+  pale_lance: 'A lance that pierces: it strikes up to 3 enemies in a line, full power each.',
+  bell_toll: 'A tolling burst around you: 20 to up to 5 enemies, and a 0.5 s stun (not the Stag).',
+  rootsnare: 'Roots at the cursor for 5 s: 6 per second to enemies inside, and they are slowed 45%.',
+  dewfall: 'A falling dew at the cursor for 5 s: 7 per second to allies inside.',
+  kindred_shield: 'Heals the neediest ally 16 and shields them for 20 (4 s).',
+  mending_tide: 'A wide healing sweep: 70° either side, 1.8 u, up to 4 allies.',
+  hearthsong: 'A warm burst: heals up to 4 allies 10 and hastes them 25% for 2 s.',
+  quiet_hearth: 'A passive field: 2 per second to allies inside, who take 15% less damage.',
+};
+
 // A skill candidate card body (no frame — the caller owns .rn-card).
 export function skillCardHtml(id) {
   const def = SKILLS[id];
@@ -85,12 +128,12 @@ export function skillCardHtml(id) {
   if (def.area !== undefined && def.area > 0)
     stats.push(`<span><i>${def.shape === 'melee_arc' ? 'ARC' : 'AREA'}</i> ${def.area}${def.shape === 'melee_arc' ? '°' : ''}</span>`);
   if (def.count !== undefined) stats.push(`<span><i>CNT</i> ${def.count}</span>`);
-  const body =
+  const body = SKILL_BODY[id] ?? (
     def.shape === 'aura'
       ? 'A passive field: it holds a slot and never needs a press.'
       : def.archetype === 'heal'
         ? 'A healing shape for the party.'
-        : 'A damaging shape of your own.';
+        : 'A damaging shape of your own.');
   return `
     <div class="rn-cardkind">SKILL · ${esc(def.archetype)}</div>
     <div class="rn-cardicon">${cardIconHtml(id, 40)}</div>

@@ -80,6 +80,10 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
   let phasesFired = 0;
   let lastAddsTick = -Infinity; // tick of the last add phase (cadence gate)
   let addIds = [];
+  // Act scaling (docs/gauntlet/PLAN.md §4.2, set by run.js at room 8 through
+  // start()'s opts — minimal M4a hook): Stag HP / damage multiplier and the
+  // act's add composition + ramp. Defaults = v0.4.63 exactly.
+  let scale = { dmgMul: 1, adds: null, addHpMul: 1, addDmgMul: 1 };
   // Cross-block telegraph cadence: the last START tick of ANY player-targeted
   // telegraph, observed on the bus (mantis starts included).
   let lastPlayerTelegraphStart = -100000;
@@ -128,9 +132,17 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
   }
 
   // --------------------------------------------------------------- spawn --
-  function start(x = 0, z = -4.2) {
+  function start(x = 0, z = -4.2, opts = {}) {
     const tick = getTick();
     despawn();
+    const o = opts && typeof opts === 'object' ? opts : {};
+    const hpMax = Number.isFinite(o.hp) && o.hp > 0 ? o.hp : STAG.hp;
+    scale = {
+      dmgMul: Number.isFinite(o.dmgMul) && o.dmgMul > 0 ? o.dmgMul : 1,
+      adds: Array.isArray(o.adds) && o.adds.length > 0 ? o.adds.flatMap(([et, n]) => new Array(Math.max(0, n | 0)).fill(et)) : null,
+      addHpMul: Number.isFinite(o.addHpMul) && o.addHpMul > 0 ? o.addHpMul : 1,
+      addDmgMul: Number.isFinite(o.addDmgMul) && o.addDmgMul > 0 ? o.addDmgMul : 1,
+    };
     const { mx, mz } = innerBounds(STAG.radius);
     const sx = Math.min(mx, Math.max(-mx, x));
     const sz = Math.min(mz, Math.max(-mz, z));
@@ -139,8 +151,8 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       faction: 'hostile',
       hittable: true,
       knockbackable: false, // §11: boss immune to knockback
-      hp: STAG.hp,
-      maxHp: STAG.hp,
+      hp: hpMax,
+      maxHp: hpMax,
       radius: STAG.radius,
       x: sx,
       z: sz,
@@ -171,7 +183,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     events.emit(tick, 'boss_spawn', {
       id: e.id,
       name: 'THE HOLLOW STAG',
-      hp: STAG.hp,
+      hp: hpMax,
       x: r2(sx),
       z: r2(sz),
     });
@@ -213,7 +225,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
             b.lungeHit = true;
             const l = d > 1e-6 ? d : 1;
             events.emit(getTick(), 'boss_trample_hit', { id: b.id, target: p.id });
-            combat.applyDamage(p, STAG.trample.damage, {
+            combat.applyDamage(p, STAG.trample.damage * scale.dmgMul, {
               delivery: 'contact',
               shape: 'contact',
               dirX: (p.x - b.x) / l,
@@ -278,7 +290,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
         });
         for (const p of victims) {
           const l = Math.hypot(p.x - x, p.z - z) || 1;
-          combat.applyDamage(p, STAG.quake.damage, {
+          combat.applyDamage(p, STAG.quake.damage * scale.dmgMul, {
             delivery: 'skill',
             shape: 'ground_aoe',
             dirX: (p.x - x) / l,
@@ -390,10 +402,13 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
 
   function spawnAdds(tick, pct) {
     const spawned = [];
-    for (const etype of STAG.addComposition) {
+    for (const etype of scale.adds ?? STAG.addComposition) {
       if (liveAdds() >= STAG.addCap) break; // §11 concurrent cap
       const [sx, sz] = SPAWN_POINTS[rng.int(SPAWN_POINTS.length)];
-      const e = enemies.spawn(etype, sx, sz, 100 + phasesFired);
+      const scaled = scale.adds && typeof enemies.spawnScaled === 'function';
+      const e = scaled
+        ? enemies.spawnScaled(etype, sx, sz, { hpMul: scale.addHpMul, dmgMul: scale.addDmgMul, wave: 100 + phasesFired })
+        : enemies.spawn(etype, sx, sz, 100 + phasesFired);
       if (e) {
         addIds.push(e.id);
         spawned.push({ id: e.id, etype, x: r2(sx), z: r2(sz) });
@@ -417,7 +432,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       name: 'THE HOLLOW STAG',
       id: bossId,
       hp: b ? r2(b.hp) : 0,
-      maxHp: STAG.hp,
+      maxHp: b ? b.maxHp : STAG.hp,
       pct: b ? r2(Math.max(0, b.hp / b.maxHp)) : 0,
       x: b ? r2(b.x) : 0,
       z: b ? r2(b.z) : 0,
@@ -457,7 +472,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
         while (phasesFired < STAG.addPhases.length && pct <= STAG.addPhases[phasesFired])
           phasesFired += 1;
       }
-      b.hp = Math.max(0, STAG.hp * pct);
+      b.hp = Math.max(0, (b.maxHp ?? STAG.hp) * pct);
       if (b.hp <= 0) combat.kill(b);
       return r2(b.hp);
     },

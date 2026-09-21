@@ -13,7 +13,7 @@ export const MAX_FRAME_MS = 250; // accumulator clamp so a hitch never spirals
 // Basic-attack fire keeps resolving AFTER every skill slot (§4 "slot 4" =
 // "after the last skill slot").
 // @gnt:M4a SKILL-SLOTS begin
-export const SKILL_SLOTS = 4;
+export const SKILL_SLOTS = 8;
 // @gnt:M4a SKILL-SLOTS end
 
 // §5 Dodge roll — integer tick counts (no gameplay logic reads wall-clock).

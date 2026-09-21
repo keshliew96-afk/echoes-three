@@ -32,9 +32,29 @@
 // Sim discipline: no DOM, no render imports, no wall clock. The UI in
 // src/ui/run/** is a pure view over `view()` and drives the same entry points
 // __echoes.cmd does.
-import { TICK_HZ } from '../core/constants.js';
-import { PARTY_ALLIES, STARTING_SKILLS } from './skills.js';
+//
+// GAUNTLET (docs/gauntlet/PLAN.md §3.6 / §4.1 / §4.2, BUILD_BRIEF §23.1–23.2):
+//   - startRun({ act = 1, challenge = 'standard' }) — the expedition and the
+//     difficulty challenge ride run state (serialised); the curve reads run
+//     state, never settings (contract (f)).
+//   - every room rolls its LAYOUT from the act's room table (never the same
+//     layout twice in a row; room 8 = the act's boss layout; the shop keeps
+//     the last combat layout's biome) with the run RNG, right after the wave
+//     schedule, and delivers it two ways: runSys.setRoomHooks({ enter(layout,
+//     tick), exit(tick) }) for the sim content systems (M4b), and the
+//     `layout_enter { room, act, layoutId, biome }` event right before
+//     `room_enter` for presentation (contract (a)).
+//   - wave rooms are planned with the act's roster and the §4.2 numbers; the
+//     boss room scales the Stag (HP 1800·T, damage) and uses the act's adds.
+//   - the status tracker (sim/status.js) announces status_apply / expire at
+//     the end of every tick; the autopilot (sim/autopilot.js) is created here.
+import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
+import { PARTY_ALLIES, STARTING_SKILLS, SKILLS } from './skills.js';
 import { createDraftSystem } from './draft.js';
+import { levelFor, ACT_IDS } from '../data/levels.js';
+import { difficulty, CHALLENGE } from '../data/difficulty.js';
+import { createStatusTracker, STATUS_KINDS } from './status.js';
+import { createAutopilot } from './autopilot.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -74,6 +94,19 @@ export function createRunSystem({
     build: () => buildSys,
     slots: () => skillSys.slotsView(),
   });
+  // Late-bound cross links between the skill kit and the build system (both
+  // exist before the run system): Resonance's per-cast hook, and Echo's
+  // recasts / passive Reapply pulses through the kit's own delivery.
+  if (typeof skillSys.attachBuild === 'function') skillSys.attachBuild(buildSys);
+  if (typeof buildSys.attachSkills === 'function') buildSys.attachSkills(skillSys);
+  const statusTracker = createStatusTracker({ registry, events, getTick });
+  const autopilot = createAutopilot({
+    registry,
+    player,
+    run: () => api,
+    skills: skillSys,
+    build: () => buildSys,
+  });
 
   // §2 "all run state wiped at run end" / §18 "Corruption never touches
   // Camp": after the first run has been played, an enemy may spawn ONLY while
@@ -101,6 +134,13 @@ export function createRunSystem({
   let roomsDone = 0; // every room left behind (combat + the shop) — the §18 summary row
   let startTick = 0;
   let everStarted = false; // once true, enemies exist only inside live combat
+  // Expedition state (serialised with the run).
+  let act = 1;
+  let challenge = 'standard';
+  let layout = null; // { act, layoutId, biome, room, mode } of the live room
+  let lastCombatLayout = null; // the "never the same layout twice in a row" memory
+  let roomPlanView = null; // difficulty numbers of the live room (probe)
+  let roomHooks = { enter: null, exit: null }; // M4b's content systems (contract (a))
 
   // ------------------------------------------------------------ run frame --
   // ONE fixed roll sequence (defend positions, then the 5 path side bits) so a
@@ -126,8 +166,11 @@ export function createRunSystem({
   }
 
   // -------------------------------------------------------------- lifecycle --
-  function startRun() {
+  function startRun(opts = {}) {
+    const o = opts && typeof opts === 'object' ? opts : {};
     wipeState({ silent: true });
+    act = ACT_IDS.includes(Number(o.act)) ? Number(o.act) : 1;
+    challenge = CHALLENGE[o.challenge] ? o.challenge : 'standard';
     frame = rollFrame();
     active = true;
     everStarted = true;
@@ -142,9 +185,30 @@ export function createRunSystem({
       modes: [...frame.modes],
       defendAt: [...frame.defendAt],
       sides: [...frame.sides],
+      act,
+      actName: levelFor(act).name,
+      challenge,
     });
     enterRoom(1);
     return view();
+  }
+
+  // §4.1 room table roll: one layout per combat room from the act's pool,
+  // never the one the previous combat room used. Drawn with the run RNG after
+  // the wave schedule (PLAN §3.6 (a)).
+  function rollLayout(n, mode) {
+    const level = levelFor(act);
+    if (mode === 'boss') return level.bossLayout;
+    if (mode === 'shop') return lastCombatLayout ?? level.layouts[0];
+    const pool = level.layouts.filter((id) => id !== lastCombatLayout);
+    const pick = pool.length > 0 ? pool[rng.int(pool.length)] : level.layouts[0];
+    lastCombatLayout = pick;
+    return pick;
+  }
+
+  function exitRoom(tick) {
+    if (layout && typeof roomHooks.exit === 'function') roomHooks.exit(tick);
+    layout = null;
   }
 
   function positionParty() {
@@ -165,27 +229,64 @@ export function createRunSystem({
 
   function enterRoom(n) {
     const tick = getTick();
+    exitRoom(tick);
     roomIndex = n;
     const mode = frame.modes[n - 1];
+    const level = levelFor(act);
     reward = null;
     path = null;
     positionParty();
+    const combatRoom = mode === 'kill_all' || mode === 'defend';
+    const diff = difficulty(act, Math.min(6, n), challenge);
+    if (combatRoom) waves.planRoom(mode, { act, room: n, challenge, level, diff });
+    // Layout AFTER the schedule (one fixed roll order per room).
+    const layoutId = rollLayout(n, mode);
+    layout = { act, layoutId, biome: level.biome, room: n, mode };
+    roomPlanView = {
+      act,
+      room: n,
+      mode,
+      challenge,
+      layoutId,
+      hpMul: combatRoom ? diff.hpMul : null,
+      dmgMul: combatRoom ? diff.dmgMul : null,
+      budget: mode === 'kill_all' ? diff.budget : mode === 'defend' ? diff.defendBudget : null,
+      eliteChance: combatRoom ? diff.eliteChance : null,
+      waveIntervalTicks: mode === 'kill_all' ? diff.waveIntervalTicks : null,
+      waystoneHp: mode === 'defend' ? diff.waystoneHp : null,
+      bossHp: mode === 'boss' ? diff.bossHp : null,
+      bossDmgMul: mode === 'boss' ? diff.bossDmgMul : null,
+    };
+    if (typeof roomHooks.enter === 'function') roomHooks.enter({ ...layout }, tick);
+    events.emit(tick, 'layout_enter', { room: n, act, layoutId, biome: level.biome, mode });
     events.emit(tick, 'room_enter', {
       index: n,
       mode,
       reward: rewardFor[n] ?? null,
       wallet,
+      act,
+      layoutId,
     });
-    if (mode === 'kill_all' || mode === 'defend') {
+    if (combatRoom) {
       phase = 'combat'; // §13 step 7: next room's first tick, combat_active := true
-      waves.startRoom(mode);
+      waves.beginRoom();
     } else if (mode === 'shop') {
       phase = 'shop';
       openShop();
     } else if (mode === 'boss') {
       phase = 'combat';
       enemies.reset();
-      boss.start();
+      // §23.1/§23.2: the Stag scales with the act (HP 1800·T, damage
+      // × 1 + 0.5(T − 1)) and calls the act's own add phases, spawned at
+      // room 6's ramp.
+      const addDiff = difficulty(act, 6, challenge);
+      boss.start(0, -4.2, {
+        hp: diff.bossHp,
+        dmgMul: diff.bossDmgMul,
+        adds: level.bossAdds.map(([et, k]) => [et, k]),
+        addHpMul: addDiff.hpMul,
+        addDmgMul: addDiff.dmgMul,
+      });
       // The ally block hangs its room-start hygiene off this event (channels,
       // mark, rally, AI state) exactly as it does for wave rooms.
       events.emit(tick, 'room_start', { mode: 'boss', waves: [] });
@@ -436,6 +537,10 @@ export function createRunSystem({
     const b = buildSys.view();
     return {
       result,
+      victory: result === 'victory',
+      act,
+      actName: levelFor(act).name,
+      challenge,
       rooms: roomsDone, // §18 "ROOMS CLEARED n / 8" — every room left behind
       combatRooms: clearedRooms, // the §14 stipend counter (max 7)
       lastRoom: roomIndex,
@@ -470,6 +575,8 @@ export function createRunSystem({
       skills: [...summary.skills],
       nodes: summary.nodes.bench.length + summary.nodes.socketed.length,
       ticks: summary.ticks,
+      act,
+      challenge,
     });
     // §2/§13: ALL run state is wiped at run end (the end screen renders from
     // the frozen summary above, never from live state).
@@ -484,6 +591,9 @@ export function createRunSystem({
   // clear, arena emptied of enemies and of the boss.
   function wipeState({ silent }) {
     const tick = getTick();
+    exitRoom(tick);
+    lastCombatLayout = null;
+    roomPlanView = null;
     active = false;
     roomIndex = 0;
     reward = null;
@@ -507,16 +617,18 @@ export function createRunSystem({
     sweepPlayerTransients(tick, 'run_end');
     allySys.cmd('mark', [null]);
     allySys.cmd('roomBoundary');
-    skillSys.restore({
-      slots: STARTING_SKILLS.map((id) => ({ id, remaining: 0 })).concat([null, null]).slice(0, 4),
-      override: null,
+    const kit = new Array(SKILL_SLOTS).fill(null);
+    STARTING_SKILLS.forEach((id, i) => {
+      kit[i] = { id, remaining: 0 };
     });
+    skillSys.restore({ slots: kit, override: null });
     buildSys.restore({ bench: [], assignments: [] });
     for (const e of registry.all()) {
       if (e.partyIndex === undefined) continue;
       e.hp = e.maxHp;
       e.downed = false;
       e.downedTick = -1;
+      if (e.status) e.status = {}; // §13 "wiped at run end: everything" — statuses too
     }
     player.dodgeReadyTick = tick;
     player.nextBasicTick = tick;
@@ -551,6 +663,9 @@ export function createRunSystem({
 
   function endOfTick() {
     if (active && roomIndex === RUN.bossRoom && phase === 'combat') boss.endOfTick();
+    // Status bookkeeping for the tick that just resolved (announce + prune),
+    // before a fade can walk into the next room.
+    statusTracker.endOfTick();
     if (phase === 'fade' && getTick() >= fadeUntilTick) enterRoom(pendingRoom);
   }
 
@@ -571,6 +686,10 @@ export function createRunSystem({
       combatActive: combatActive(),
       room: roomIndex,
       rooms: RUN.rooms,
+      act,
+      actName: levelFor(act).name,
+      challenge,
+      layout: layout ? { ...layout } : null,
       mode: frame && roomIndex ? frame.modes[roomIndex - 1] : null,
       wallet,
       clearedRooms,
@@ -621,7 +740,49 @@ export function createRunSystem({
   function cmd(name, args) {
     switch (name) {
       case 'startRun':
-        return startRun();
+        // ('startRun', { act, challenge }) — PLAN §6.4; bypasses act locks.
+        return startRun(args[0] && typeof args[0] === 'object' ? args[0] : { act: args[0], challenge: args[1] });
+      // ------------------------------------------ Gauntlet M4a probe cmds --
+      case 'setStatus': {
+        // ('setStatus', id, kind, mag, ticks) -> the stored record | refusal
+        const [id, kind, mag = 0.5, ticks = 120] = args;
+        const e = registry.byId(id);
+        if (!e) return { error: 'no_entity' };
+        const why = combat.status.refusal(e, kind, getTick());
+        if (why) return { refused: why };
+        const rec = combat.status.apply(e, kind, mag, ticks, getTick(), player.id);
+        return rec ? { ...rec } : { refused: 'non_positive' };
+      }
+      case 'clearStatus': {
+        const [id, kind] = args;
+        const e = registry.byId(id);
+        if (!e) return { error: 'no_entity' };
+        return combat.status.clear(e, kind ?? null);
+      }
+      case 'statusOf': {
+        const [id] = args;
+        const e = registry.byId(id);
+        return e ? combat.status.view(e, getTick()) : null;
+      }
+      case 'autopilot':
+        return autopilot.configure(args[0] === undefined ? true : args[0]);
+      case 'echoArm':
+        return buildSys.echoArm(args[0]);
+      case 'resonance':
+        return buildSys.setResonance(args[0], args[1]);
+      case 'roomPlan':
+        return roomPlanFull();
+      case 'difficultyTable':
+        return null; // served by the content service (data/difficulty.js)
+      case 'keenProbe': {
+        // ('keenProbe', id, critBonus) — one real damage instance (power 1,
+        // no knockback) through the §9 pipeline with a crit bonus: the probe
+        // that measures Keen's roll (G4a.3). Draws exactly one crit roll.
+        const [id, bonus = 0] = args;
+        const t = registry.byId(id);
+        if (!t) return null;
+        return combat.applyDamage(t, 1, { delivery: 'skill', shape: 'debug', attacker: null, source: 'keen_probe', critBonus: bonus });
+      }
       case 'runState':
         return view();
       case 'draftTake':
@@ -645,8 +806,10 @@ export function createRunSystem({
         // and walks straight into room n (rewards/paths for the skipped rooms
         // are not presented; the stipends they would have paid ARE, so the
         // §14 wallet arithmetic still holds at the shop).
+        // ('skipToRoom', n[, { act, challenge }]) — a live run keeps its act;
+        // with no run live, the options start one in that act.
         const n = Math.max(1, Math.min(RUN.rooms, args[0] ?? 1));
-        if (!active) startRun();
+        if (!active) startRun(args[1] && typeof args[1] === 'object' ? args[1] : {});
         phase = 'skip'; // suppresses the boundary sequence on the forced clear
         waves.forceClear();
         boss.despawn();
@@ -690,7 +853,45 @@ export function createRunSystem({
     }
   }
 
-  return {
+  // The live room's plan: difficulty numbers + the rolled waves (wave rooms).
+  function roomPlanFull() {
+    if (!roomPlanView) return null;
+    const w = typeof waves.planView === 'function' ? waves.planView() : null;
+    return { ...roomPlanView, waves: w ? w.waves : [], roster: w ? w.roster : [], legacy: w ? w.legacy : null };
+  }
+
+  // PLAN §3.6 (a): M4b's content systems register here; enter() is called
+  // synchronously at the room-enter point (same tick, before room_enter),
+  // exit() when the room is left and at run end.
+  function setRoomHooks(h = {}) {
+    roomHooks = {
+      enter: typeof h.enter === 'function' ? h.enter : null,
+      exit: typeof h.exit === 'function' ? h.exit : null,
+    };
+    return true;
+  }
+
+  // Persistence (PLAN §3.4) for the Gauntlet additions (the v0.4.63 run frame
+  // members are captured by M2's world-level capture).
+  const expeditionState = () => ({
+    act,
+    challenge,
+    layout: layout ? { ...layout } : null,
+    lastCombatLayout,
+    roomPlan: roomPlanView ? { ...roomPlanView } : null,
+    autopilot: autopilot.serialize(),
+  });
+  function restoreExpedition(d) {
+    if (!d) return;
+    act = ACT_IDS.includes(d.act) ? d.act : 1;
+    challenge = CHALLENGE[d.challenge] ? d.challenge : 'standard';
+    layout = d.layout ? { ...d.layout } : null;
+    lastCombatLayout = d.lastCombatLayout ?? null;
+    roomPlanView = d.roomPlan ? { ...d.roomPlan } : null;
+    autopilot.restore(d.autopilot);
+  }
+
+  const api = {
     startRun,
     endRun,
     onRoomCleared,
@@ -700,6 +901,16 @@ export function createRunSystem({
     endOfTick,
     view,
     cmd,
+    setRoomHooks,
+    autopilot,
+    roomPlan: roomPlanFull,
+    layout: () => (layout ? { ...layout } : null),
+    act: () => act,
+    challenge: () => challenge,
+    expeditionState,
+    restoreExpedition,
+    statusKinds: () => [...STATUS_KINDS],
+    skillIds: () => Object.keys(SKILLS),
     isActive: () => active,
     // The spawn-gate predicate the HUD mirrors for the ?room= harness boot.
     combatAllowed,
@@ -715,4 +926,5 @@ export function createRunSystem({
     returnToCamp,
     wallet: () => wallet,
   };
+  return api;
 }
