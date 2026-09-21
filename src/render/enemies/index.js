@@ -16,6 +16,12 @@
 //   - the defend-room Waystone rig with its warm rune glow + crumble on death
 //   - retreat-and-despawn: retreating rigs keep walking (sim moves them), the
 //     despawn lands a quick shrink-out, never the kill pop
+//   - GAUNTLET (M4b, BUILD_BRIEF §23.5): the five archetype rigs
+//     (render/enemies/archetypes.js), the Elite crown + outer ring, the
+//     lane / ring / cone Ember telegraph shapes (render/enemies/shapes.js,
+//     pooled), toad globs in flight + their slicks, the Grave Mole's dirt wake,
+//     and the Barrow Ram's "BLOCKED" beat (Bone label + tink sparks + horn
+//     flare) on every `hit_blocked`. Boar / mantis paths are untouched.
 import { Group } from 'three';
 import { HITFLASH, TICK_HZ } from '../../core/constants.js';
 import { PALETTE } from '../../data/palette.js';
@@ -26,7 +32,11 @@ import { buildBoar } from './boar.js';
 import { buildMantis } from './mantis.js';
 import { buildWaystone } from './waystone.js';
 import { makeAttackTelegraph, makeSpawnShimmer } from './telegraphs.js';
-import { EMBER_EXACT, SHOT_CORE } from './style.js';
+import { EMBER_EXACT, SHOT_CORE, HIDE } from './style.js';
+import { ARCH_BUILDERS, CROWN_Y, makeEliteMark } from './archetypes.js';
+import { createTelegraphShapes } from './shapes.js';
+import { createContentExtras } from './extras.js';
+import { registerContentProbe } from '../../data/content.js';
 import { impactFx } from '../vfx/hub.js';
 import { releaseTree } from '../geocache.js';
 import { warmPark } from '../warmup.js';
@@ -40,7 +50,8 @@ const EMBER_HZ = 34; // ember motes/s over a live telegraph (r2: the column has 
 const YAW_RATE = 9; // 1/s exponential smoothing toward the sim facing
 const WALK_HZ = 2.6; // trot cycle per u of travel feel (phase per u below)
 
-const BUILDERS = { boar: buildBoar, mantis: buildMantis };
+const BUILDERS = { boar: buildBoar, mantis: buildMantis, ...ARCH_BUILDERS };
+const RIG_KINDS = new Set(Object.keys(BUILDERS));
 
 export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   const root = new Group();
@@ -57,6 +68,17 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   const trails = [];
   const trailPool = [];
   let waystoneRec = null; // { id, rig, flashUntilTick }
+  // Gauntlet (M4b): pooled Ember shapes for archetype telegraphs + extras.
+  const shapes = createTelegraphShapes(root);
+  const shapeTele = new Map(); // enemy id -> { shape, last }
+  const fadingShapes = []; // { shape, age }
+  const extras = createContentExtras({ root, stage, world, bus, cosmetic, shapes });
+  function releaseShape(id) {
+    const rec = shapeTele.get(id);
+    if (!rec) return;
+    shapeTele.delete(id);
+    fadingShapes.push({ shape: rec.shape, age: 0 });
+  }
 
   // --- Bus wiring (§9 contract members owned here: #1 flash on enemy bodies,
   // #6 kill pop; numbers/particles/decals/shake/sounds ride the handlers the
@@ -106,6 +128,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       for (const m of r.build.mats) m.emissiveIntensity = HITFLASH.intensity; // white-hot pop
       dying.push({ group: r.build.group, mats: r.build.mats, age: 0, mode: 'kill' });
       removeDecal(ev.id);
+      releaseShape(ev.id);
       return;
     }
     if (waystoneRec && ev.id === waystoneRec.id) {
@@ -118,6 +141,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     if (r) {
       rigs.delete(ev.id);
       removeDecal(ev.id);
+      releaseShape(ev.id);
       if (ev.cause === 'retreat') {
         dying.push({ group: r.build.group, mats: r.build.mats, age: 0, mode: 'retreat' });
       } else {
@@ -199,6 +223,11 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     warmPark(root, makeAttackTelegraph().group);
     warmPark(root, makeSpawnShimmer(cosmetic).group);
     warmPark(root, makeShotRig());
+    for (const k of Object.keys(ARCH_BUILDERS)) warmPark(root, BUILDERS[k](cosmetic).group);
+    warmPark(root, makeEliteMark(1, 0.6).group);
+    const back = shapes.prewarm();
+    setTimeout(back, 250);
+    extras.prewarm();
   }
 
   let lastElapsed = null;
@@ -219,7 +248,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
         waystoneEnt = e;
         continue;
       }
-      if (e.kind !== 'boar' && e.kind !== 'mantis') continue;
+      if (!RIG_KINDS.has(e.kind)) continue;
       seen.add(e.id);
       let r = rigs.get(e.id);
       if (!r) {
@@ -233,7 +262,15 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
           yaw: Math.atan2(e.faceX ?? 0, e.faceZ ?? 1),
           walkPhase: cosmetic.range(0, Math.PI * 2),
           moveK: 0,
+          elite: null,
         };
+        // §23.5 Elite: x1.2 body + indigo crown glyph + outer indigo ring.
+        if (e.elite) {
+          const sc = e.scale ?? 1.2;
+          r.build.group.scale.setScalar(sc);
+          r.elite = makeEliteMark(CROWN_Y[e.kind] ?? 1.0, (e.radius ?? 0.4) / sc + 0.24);
+          r.build.group.add(r.elite.group);
+        }
         rigs.set(e.id, r);
         root.add(r.build.group);
       }
@@ -266,13 +303,35 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
         lungeK: r.lungeLeft > 0 ? Math.sin((r.lungeLeft / 0.18) * Math.PI) : 0,
         telegraphK: r.telegraphK,
         fireK: r.fireLeft > 0 ? Math.sin((r.fireLeft / 0.2) * Math.PI) : 0,
+        e,
       });
+      if (r.elite) r.elite.update(tSec);
 
       // §9 #1 hit flash: emissive modulation, tick-denominated (holds frozen
       // through kill hitstop exactly like the dummies).
       const lit = tick < r.flashUntilTick ? HITFLASH.intensity : 0;
       for (const m of r.build.mats) m.emissiveIntensity = lit;
 
+      // --- Archetype telegraphs (M4b): lane / ring / cone Ember shapes.
+      if (ARCH_BUILDERS[e.kind]) {
+        if (e.telegraph) {
+          let rec = shapeTele.get(e.id);
+          if (!rec || rec.shape.kind !== e.telegraph.kind) {
+            if (rec) releaseShape(e.id);
+            rec = { shape: shapes.acquire(e.telegraph.kind) };
+            shapeTele.set(e.id, rec);
+          }
+          const span = (e.telegraph.resolveTick ?? 0) - (e.telegraph.startTick ?? 0);
+          const prog = span > 0 ? (tick - e.telegraph.startTick) / span : 0;
+          rec.shape.set(e.telegraph, tSec, Math.min(1, Math.max(0, prog)));
+          rec.last = { ...e.telegraph };
+          liveTelegraphs.push(e.telegraph);
+        } else if (shapeTele.has(e.id)) {
+          extras.onTelegraphEnd(e, shapeTele.get(e.id).last);
+          releaseShape(e.id);
+        }
+        continue;
+      }
       // --- Attack telegraph decal (Ember, §11): driven by sim entity state.
       if (e.telegraph) {
         let d = decals.get(e.id);
@@ -305,6 +364,19 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     }
     // Decals whose owner died are already removed; sweep strays.
     for (const id of [...decals.keys()]) if (!seen.has(id)) removeDecal(id);
+    for (const id of [...shapeTele.keys()]) if (!seen.has(id)) releaseShape(id);
+    for (let i = fadingShapes.length - 1; i >= 0; i--) {
+      const f = fadingShapes[i];
+      f.age += dt;
+      if (f.age >= TELE_FADE_SEC) {
+        shapes.release(f.shape);
+        fadingShapes.splice(i, 1);
+        continue;
+      }
+      f.shape.fade(1 - f.age / TELE_FADE_SEC);
+    }
+    // Globs, slicks, the mole wake, BLOCKED beats (render/enemies/extras.js).
+    extras.update(tSec, dt, alpha, rigs, liveTelegraphs);
     for (const id of lastTelegraph.keys()) if (!seen.has(id)) lastTelegraph.delete(id);
 
     // Telegraph dissolves (see removeDecal).
@@ -463,8 +535,15 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       spawnShimmers: shimmers.size,
       enemyShots: shots.size,
       waystone: waystoneRec ? waystoneRec.id : null,
+      archetypeTelegraphs: shapeTele.size,
+      rigKinds: [...new Set([...rigs.values()].map((r) => r.kind))].sort(),
+      elites: [...rigs.values()].filter((r) => r.elite).length,
+      shapes: shapes.stats(),
+      ...extras.debugState(),
     };
   }
 
+  // __echoes.content.enemyfx() — the layer's live counters (M4b probe).
+  registerContentProbe('enemyfx', debugState);
   return { update, debugState };
 }

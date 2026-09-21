@@ -675,6 +675,26 @@ const scenarios = {
     void k2;
   },
 
+  retreatAll() {
+    // Room clear with every archetype alive: all retreat and despawn cleanly
+    // (M4a caught a crash here: retreatMove read ENEMY_STATS for archetypes).
+    const W = makeWorld({ room: 'kill_all' });
+    W.parkAllies();
+    W.world.cmd('killAllEnemies');
+    const ids = ['quillback', 'toad', 'moth', 'ram', 'mole'].map((k, i) => W.world.cmd('spawn', k, -6 + i * 3, 3));
+    W.step(30);
+    W.world.cmd('clearRoom');
+    let crash = null;
+    try {
+      W.step(90);
+    } catch (e) {
+      crash = String(e.message || e);
+    }
+    const left = ids.filter((id) => W.ent(id));
+    const retreats = ev(W, 'enemy_retreat').length;
+    check('retreat.allArchetypes', !crash && left.length === 0 && retreats >= 5, { crash, left, retreats });
+  },
+
   // ---------------------------------------------------------- setups / data
   commands() {
     const W = makeWorld();

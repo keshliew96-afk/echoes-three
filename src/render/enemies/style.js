@@ -36,6 +36,30 @@ export const HIDE = Object.freeze({
   // Tusks/claws: bone (warm-NEUTRAL — its saturation sits under the analyzer's
   // 0.12 colour gate, so it never counts as party-warm).
   bone: new Color(PALETTE.bone).multiplyScalar(0.85),
+  // --- Gauntlet archetypes (M4b, BUILD_BRIEF §23.5): same cool-slate family,
+  // each with its own VALUE structure so the five read apart at 50% zoom.
+  // Quillback: grey-blue dome under pale cool quills.
+  quillBody: slate(0.36, 0.3).multiplyScalar(0.95),
+  quillDark: slate(0.42, 0.12).multiplyScalar(0.62),
+  quillSpine: mix(PALETTE.bone, PALETTE.signalBlue, 0.22).multiplyScalar(0.92),
+  // Mire Toad: murky teal-slate back, a pale cool throat sac.
+  toadBody: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.36).lerp(new Color(PALETTE.warmGrey), 0.3).multiplyScalar(0.82),
+  toadDark: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.42).lerp(new Color(PALETTE.warmGrey), 0.2).multiplyScalar(0.46),
+  toadSac: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.55).lerp(new Color(PALETTE.bone), 0.55).multiplyScalar(1.02),
+  // Gloam Moth: a dark thin body under pale dusty-blue wings.
+  mothBody: slate(0.5, 0.12).multiplyScalar(0.55),
+  mothWing: mix(PALETTE.warmGrey, PALETTE.signalBlue, 0.42).multiplyScalar(0.98),
+  mothWingDark: slate(0.46, 0.22).multiplyScalar(0.72),
+  // Barrow Ram: a grey block with a dark face and legs; bone horns.
+  ramBody: slate(0.28, 0.38).multiplyScalar(0.9),
+  ramDark: slate(0.4, 0.1).multiplyScalar(0.55),
+  ramHorn: new Color(PALETTE.bone).lerp(new Color(PALETTE.warmGrey), 0.25).multiplyScalar(0.92),
+  // Grave Mole: near-black cool fur, a pale snout, bone claws; earth mound.
+  moleBody: slate(0.3, 0.12).multiplyScalar(0.5),
+  moleSnout: mix(PALETTE.warmGrey, PALETTE.signalBlue, 0.3).multiplyScalar(1.0),
+  moleClaw: new Color(PALETTE.bone).multiplyScalar(0.88),
+  earth: mix(PALETTE.bruiseUmber, PALETTE.warmGrey, 0.55).multiplyScalar(0.92),
+  earthDark: mix(PALETTE.voidCharcoal, PALETTE.bruiseUmber, 0.6),
 });
 
 // The single violet corruption tell (§11): God-stuff Violet with its own hue,

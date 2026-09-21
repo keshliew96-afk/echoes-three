@@ -321,6 +321,13 @@ const contentfx = PLAYABLE ? createContentFx({ stage, world, bus, cosmetic }) : 
 if (contentfx) service('content').fx = () => contentfx.debugCounts();
 // @gnt:M4a WORLD-LAYERS end
 // @gnt:M4b WORLD-LAYERS begin — hazard / interactable / biome layers, prompts.
+// The world-content presentation bundle (src/render/hazards/layers.js): hazard
+// + interactable layers, `ix-` prompts, content audio cues, the render probe
+// (__echoes.content.render()) and the ?layout=N harness setup (PLAN §6.1).
+import { createWorldContentLayers } from './render/hazards/layers.js';
+const m4bLayers = PLAYABLE
+  ? createWorldContentLayers({ stage, world, bus, cosmetic, runUi, scene: activeScene, params: bootParams, sceneKey })
+  : null;
 // @gnt:M4b WORLD-LAYERS end
 
 // @gnt:SAVE begin (M2) — createSaveSystem({ clock, rng, registry, world, bus,
@@ -421,6 +428,7 @@ function frame(now) {
   contentfx?.update(now / 1000, alpha);
   // @gnt:M4a RENDER-TICK end
   // @gnt:M4b RENDER-TICK begin
+  m4bLayers?.update(now / 1000, alpha);
   // @gnt:M4b RENDER-TICK end
   // Damage numerals age HERE, in the one loop that never stops, after the
   // scenes have settled their cameras (world->screen projection needs the

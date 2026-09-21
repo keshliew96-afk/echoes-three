@@ -415,7 +415,9 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       registry.despawn(e.id);
       return;
     }
-    const S = ENEMY_STATS[e.kind];
+    // (M4a minimal fix: an archetype's stats live on its module, not in
+    // ENEMY_STATS — a retreating Ram / Mole crashed the tick.)
+    const S = enemyStats(e.kind) ?? ENEMY_STATS.boar;
     const step = S.moveSpeed * RETREAT_SPEED_MULT * TICK_DT;
     walkStep(e, e.retreatDx * step, e.retreatDz * step, e.radius);
     face(e, e.retreatDx, e.retreatDz);
