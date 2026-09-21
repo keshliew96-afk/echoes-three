@@ -545,5 +545,49 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
 
   // __echoes.content.enemyfx() — the layer's live counters (M4b probe).
   registerContentProbe('enemyfx', debugState);
+  // @gnt:M2 RESTORE-RESYNC begin — a loaded save replaces the registry: ids
+  // may now name different enemies, so every id-keyed rig, decal, shape,
+  // shot and shimmer is dropped silently (no death pops) and the next
+  // update() rebuilds exactly what the restored sim holds (PLAN §3.4 rule 5).
+  bus.on('state_restored', () => {
+    for (const r of rigs.values()) {
+      root.remove(r.build.group);
+      releaseTree(r.build.group);
+    }
+    rigs.clear();
+    for (const d of decals.values()) {
+      root.remove(d.group);
+      releaseTree(d.group);
+    }
+    decals.clear();
+    for (const f of fadingDecals.splice(0)) {
+      root.remove(f.d.group);
+      releaseTree(f.d.group);
+    }
+    for (const rec of shapeTele.values()) shapes.release(rec.shape);
+    shapeTele.clear();
+    for (const f of fadingShapes.splice(0)) shapes.release(f.shape);
+    for (const g of shots.values()) {
+      root.remove(g);
+      releaseTree(g);
+    }
+    shots.clear();
+    for (const s of shimmers.values()) {
+      root.remove(s.group);
+      releaseTree(s.group);
+    }
+    shimmers.clear();
+    lastTelegraph.clear();
+    for (const d of dying.splice(0)) {
+      root.remove(d.group);
+      releaseTree(d.group);
+    }
+    if (waystoneRec) {
+      root.remove(waystoneRec.rig.group);
+      releaseTree(waystoneRec.rig.group);
+      waystoneRec = null;
+    }
+  });
+  // @gnt:M2 RESTORE-RESYNC end
   return { update, debugState };
 }

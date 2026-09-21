@@ -1320,5 +1320,24 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     };
   }
 
+  // @gnt:M2 RESTORE-RESYNC begin — after a load the bolt / zone ids may name
+  // other entities: drop those rigs silently (update() rebuilds them) and
+  // re-read the two event-fed flags (aura owned, heal override) from the sim.
+  bus.on('state_restored', () => {
+    for (const g of boltRigs.values()) {
+      root.remove(g);
+      releaseTree(g);
+    }
+    boltRigs.clear();
+    for (const rig of zoneRigs.values()) {
+      root.remove(rig.g);
+      releaseTree(rig.g);
+    }
+    zoneRigs.clear();
+    const snap = world.snapshotState();
+    auraOn = (snap.skills || []).some((s) => s && s.id === 'warding_aura');
+    overrideIndex = snap.healOverride ?? null;
+  });
+  // @gnt:M2 RESTORE-RESYNC end
   return { update, debugCounts };
 }

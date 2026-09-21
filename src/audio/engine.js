@@ -663,6 +663,19 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     bus.on(type, onSimEvent);
   }
 
+  // @gnt:M2 RESTORE-RESYNC begin — a loaded save never replays run_start /
+  // layout_enter, so the act theme is re-read from the restored run, a
+  // stinger of the moment that left is dropped, and the music re-derives now.
+  if (bus) {
+    bus.on('state_restored', () => {
+      const run = world && world.runSystem ? world.runSystem() : null;
+      runAct = run && run.isActive() && typeof run.act === 'function' ? run.act() : null;
+      stinger = null;
+      if (music) driveMusic(true);
+    });
+  }
+  // @gnt:M2 RESTORE-RESYNC end
+
   // registerEventCue(type, fn): fn(ev, helpers) -> [{ cue, x?, z?, gainDb?, pitch? }] | null.
   // Registered handlers run before the built-in map for that event; a
   // non-null result replaces the built-in cues for that event instance (a

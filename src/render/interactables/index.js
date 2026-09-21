@@ -556,6 +556,20 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
     return { interactRigs: rigs.size, byKind, fuses: fuseTele.size };
   }
 
+  // @gnt:M2 RESTORE-RESYNC begin — a load replaces the registry: every
+  // asset rig (keyed by entity id, built per kind — a used font, a broken
+  // barricade) and keg-fuse ring is released as the reconcile releases an
+  // unseen id; update() rebuilds them in their restored state.
+  bus.on('state_restored', () => {
+    for (const rec of rigs.values()) {
+      root.remove(rec.r.group);
+      releaseTree(rec.r.group);
+    }
+    rigs.clear();
+    for (const sh of fuseTele.values()) shapes.release(sh);
+    fuseTele.clear();
+  });
+  // @gnt:M2 RESTORE-RESYNC end
   return {
     update(tSec) {
       if (!warmed && ++frames > 16) prewarm();

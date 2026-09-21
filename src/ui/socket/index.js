@@ -652,7 +652,12 @@ export function createSocketScreen({ bus, world }) {
     return null;
   }
 
-  // @gnt:M2 RESTORE-RESYNC begin
+  // @gnt:M2 RESTORE-RESYNC begin — a loaded save is another moment: the
+  // workbench closes (presentation only — the candidate was never off the
+  // bench) so it never shows a build the restored sim does not hold.
+  bus.on('state_restored', () => {
+    if (open) setOpen(false);
+  });
   // @gnt:M2 RESTORE-RESYNC end
   // @gnt:M5b GUEST-GUARD begin
   // @gnt:M5b GUEST-GUARD end

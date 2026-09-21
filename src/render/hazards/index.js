@@ -652,5 +652,21 @@ export function createHazardLayer({ stage, world, bus, cosmetic }) {
   }
 
   void bus;
+  // @gnt:M2 RESTORE-RESYNC begin — a load replaces the registry: hazard and
+  // rubble rigs are keyed by entity id (and built per htype), so every rig
+  // is released exactly as the reconcile releases an unseen id; update()
+  // rebuilds what the restored sim holds on the next frame.
+  if (bus && typeof bus.on === 'function') {
+    bus.on('state_restored', () => {
+      const ctx = { tick: world.tick, shapes, live: [], dust: spawnDust, bodiesInside, cosmetic };
+      for (const r of rigs.values()) {
+        if (r.dispose) r.dispose(ctx);
+        root.remove(r.group);
+        releaseTree(r.group);
+      }
+      rigs.clear();
+    });
+  }
+  // @gnt:M2 RESTORE-RESYNC end
   return { update: tick, debugState, root };
 }

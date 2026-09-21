@@ -382,6 +382,22 @@ export function createTechFx({ stage, bus, cosmetic }) {
     }
   }
 
+  // @gnt:M2 RESTORE-RESYNC begin — a load cuts away every in-flight
+  // technique flourish (they belonged to the moment that left): arcs and
+  // rings go back to their pools, flashes and motes too.
+  bus.on('state_restored', () => {
+    for (let i = arcs.length - 1; i >= 0; i--) retireArc(i);
+    for (let i = rings.length - 1; i >= 0; i--) retireRing(i);
+    for (const f of flashes.splice(0)) {
+      root.remove(f.s);
+      flashPool.push(f.s);
+    }
+    for (const m of motes.splice(0)) {
+      root.remove(m.s);
+      motePool.push(m.s);
+    }
+  });
+  // @gnt:M2 RESTORE-RESYNC end
   return {
     update,
     debugCounts: () => ({

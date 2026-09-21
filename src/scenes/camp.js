@@ -826,6 +826,32 @@ export function createCampScene(stage, toggles, ctx) {
         };
       // @gnt:M1 CAMP-CMD end
       // @gnt:M2 CAMP-CMD begin (restoreScene: mode + layout, no seatParty)
+      // Save/load (PLAN §3.4 rule 4): re-enter the saved scene mode (static
+      // colliders + the camp seat hold come with it — geometry is never
+      // stored), swap the arena dressing to the saved layout, cancel a
+      // pending portal fade, and snap the rigs + camera onto the restored
+      // bodies. Presentation only: no seatParty, no sim writes beyond the
+      // mode's own collider/seat install (the save then overwrites the seat
+      // hold with its saved value).
+      case 'restoreScene': {
+        const o = args[0] || {};
+        const want = o.mode === 'run' || o.mode === 'camp' ? o.mode : mode;
+        if (want !== mode) setMode(want);
+        else if (want === 'camp') applyCampSim();
+        else applyRunSim();
+        let layout = null;
+        if (o.layout && o.layout.layoutId != null && arena.applyLayout) layout = arena.applyLayout(o.layout.layoutId);
+        begin = null;
+        picking = false;
+        fade.classList.remove('cp-on');
+        const p = world.player;
+        healerRig.group.position.set(p.x, 0, p.z);
+        followRig.update(5, p.x, p.z, null);
+        return { mode, layout };
+      }
+      // A portal transition in flight (the save menu refuses to save mid-fade).
+      case 'sceneBusy':
+        return !!begin;
       // @gnt:M2 CAMP-CMD end
       // @gnt:M4b CAMP-CMD begin (applyLayout passthrough to the arena)
       // Dressing only (PLAN §3.6 (a)): the arena swaps its biome/layout

@@ -282,6 +282,7 @@ export function createStage({ container, toggles = {} } = {}) {
     composer.render();
     // @gnt:M2 THUMBNAIL begin — one onNextRender hook line (save thumbnail
     // read right after composer.render(), no preserveDrawingBuffer, §3.4).
+    if (renderer.__echoesNextRender && renderer.__echoesNextRender.length) for (const fn of renderer.__echoesNextRender.splice(0)) fn(renderer.domElement);
     // @gnt:M2 THUMBNAIL end
   }
 

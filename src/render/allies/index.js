@@ -1095,5 +1095,23 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     };
   }
 
+  // @gnt:M2 RESTORE-RESYNC begin — a load replaces the sim: kit zones are
+  // keyed by entity id (drop them silently, update() rebuilds), the revive
+  // rings and their reverse-drain memory belong to the moment that left.
+  // The four critters are keyed by class and simply follow the new bodies.
+  bus.on('state_restored', () => {
+    for (const rig of zoneRigs.values()) {
+      root.remove(rig.g);
+      releaseTree(rig.g);
+    }
+    zoneRigs.clear();
+    drains.clear();
+    for (const g of reviveRigs.values()) {
+      inkRoot.remove(g);
+      revivePool.push(g);
+    }
+    reviveRigs.clear();
+  });
+  // @gnt:M2 RESTORE-RESYNC end
   return { root, update, debugCounts };
 }

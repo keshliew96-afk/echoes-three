@@ -631,7 +631,14 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // sim: starting a run before tick 1 would run the room-boundary sweep over
   // ally bodies the AI has not spun up yet.
   // @gnt:M2 RESTORE-RESYNC begin — one `state_restored` handler: close the
-  // page or re-open the one run.view() implies (PLAN §3.4 rule 5).
+  // page or re-open the one run.view() implies (PLAN §3.4 rule 5). Closing
+  // is enough: the next update() opens SCREEN_FOR[phase] FRESH — its own
+  // focus, a new settle window, every held key (the Enter that confirmed the
+  // load) marked stale — so a load can never commit a pick by itself.
+  bus.on('state_restored', () => {
+    setScreen('none');
+    signature = '';
+  });
   // @gnt:M2 RESTORE-RESYNC end
   // @gnt:M5b GUEST-GUARD begin — guests see pages read-only ("The Healer is
   // choosing…"); their presses become CMD pings, never sim calls.

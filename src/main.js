@@ -351,6 +351,51 @@ const m4bLayers = PLAYABLE
 // @gnt:SAVE begin (M2) — createSaveSystem({ clock, rng, registry, world, bus,
 // scene: activeScene, stage, app }) + provide('save', ...) (PLAN §3.4);
 // captures/applies only at clock.onTickEnd or between frames (§3.4).
+// The service snapshots the boot state here (tick 0, before app.boot()) —
+// New Game / Quit to Title rebuild the camp from it with a fresh seed.
+import { createSaveSystem } from './save/index.js';
+import { registerSaveScreens } from './ui/menu/saves.js';
+const saveSystem = createSaveSystem({
+  clock,
+  rng,
+  registry,
+  world,
+  bus,
+  scene: activeScene,
+  stage,
+  app,
+  params: bootParams,
+  service,
+  // The round-trip probe freezes the realtime loop (simFrozen: LOOP region).
+  sim: {
+    freeze: () => {
+      const was = simFrozen;
+      simFrozen = true;
+      return was;
+    },
+    restore: (was) => {
+      simFrozen = !!was;
+    },
+  },
+  // Presentation resync after every apply (layers handle `state_restored`
+  // themselves): world-anchored numerals belong to the world that left, and
+  // a key held through the load belongs to the menu that did it.
+  onRestored: () => {
+    flushNumberPools();
+    if (typeof input.releaseAll === 'function') input.releaseAll();
+  },
+});
+provide('save', saveSystem);
+registerSaveScreens();
+// ?slot=<id> on a menu-skip boot loads between frames once the page is up
+// (a title boot loads it at the end of the loading screen — app.finishBoot).
+if (bootParams.slot && bootParams.menuSkip) {
+  setTimeout(() => {
+    saveSystem.load(bootParams.slot).then((r) => {
+      if (!r.ok) app.toast(`Couldn't load save "${bootParams.slot}"`, { tone: 'warn' });
+    });
+  }, 0);
+}
 // @gnt:SAVE end
 
 // @gnt:NET begin (M5a W3: provide('net', client) only; M5b W4: the session

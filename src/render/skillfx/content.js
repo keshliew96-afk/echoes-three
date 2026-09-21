@@ -863,5 +863,18 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
     };
   }
 
+  // @gnt:M2 RESTORE-RESYNC begin — a load replaces the registry: the status
+  // shells, damage-zone rigs and lance streaks are keyed by entity id, so
+  // they are dropped (exactly as the reconcile drops an unseen id) and
+  // update() rebuilds what the restored sim holds.
+  bus.on('state_restored', () => {
+    for (const rig of statusRigs.values()) root.remove(rig.g);
+    statusRigs.clear();
+    for (const rig of zoneRigs.values()) root.remove(rig.g);
+    zoneRigs.clear();
+    for (const rig of lances.values()) root.remove(rig.g);
+    lances.clear();
+  });
+  // @gnt:M2 RESTORE-RESYNC end
   return { update, debugCounts };
 }

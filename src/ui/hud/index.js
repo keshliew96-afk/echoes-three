@@ -488,5 +488,17 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     },
   };
 
+  // @gnt:M2 RESTORE-RESYNC begin — a load is a room / run boundary the HUD
+  // never saw: drop the combat chrome of the moment that left (banner,
+  // threat pointers, the bar's combat residue, the revive-channel mirror),
+  // then re-read the restored room in the same JS turn (as ROOM_EVENTS do).
+  bus.on('state_restored', () => {
+    endCombatChrome();
+    channels.clear();
+    pollRoom(performance.now());
+    combat = readCombat();
+    if (banner.update(room, combat ? runBoss ?? bossEntity : null, combat)) publishZones();
+  });
+  // @gnt:M2 RESTORE-RESYNC end
   return { update, debug, el: root, scale: () => scale };
 }

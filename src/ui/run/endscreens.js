@@ -8,6 +8,7 @@
 import { esc } from './style.js';
 import { SKILLS } from '../../sim/skills.js';
 import { NODES } from '../../sim/nodes.js';
+import { service } from '../../app/registry.js'; // M2 NEW-BEST: the save service's run record
 
 export function createEndScreen({ run }) {
   const el = document.createElement('div');
@@ -46,8 +47,21 @@ export function createEndScreen({ run }) {
       return;
     }
     // @gnt:M2 NEW-BEST begin — "New best" line + score rank (profile, §3.4).
+    // The save service recorded this run at run_end (score formula §3.4);
+    // the card shows the score, its high-score rank and a New best flag.
+    let scoreRow = '';
+    {
+      const sv = service('save');
+      const rec = sv && typeof sv.lastRecord === 'function' ? sv.lastRecord() : null;
+      const same = rec && rec.summary && rec.summary.act === s.act && rec.summary.roomsCleared === s.rooms && Math.round(rec.summary.timeSec * 60) === s.ticks;
+      if (same) {
+        const tail = rec.newBest ? ' · New best!' : rec.rank ? ` · #${rec.rank} on your records` : '';
+        scoreRow = row('SCORE', `${rec.score.toLocaleString()}${tail}`);
+      }
+    }
     // @gnt:M2 NEW-BEST end
     summaryEl.innerHTML = [
+      scoreRow,
       row('ROOMS CLEARED', `${s.rooms} / 8`),
       row('GLINT EARNED', String(s.glint)),
       row('SKILLS CARRIED', String(s.skills.length)),
