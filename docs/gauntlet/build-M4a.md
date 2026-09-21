@@ -1,4 +1,5 @@
-STATUS: PARTIAL
+STATUS: COMPLETE
+VERDICT: every M4a item is committed and verified in the running game — G4a.1–G4a.12 pass: 8 slots end to end (hud 12/12, socket 4/4, nudges 4/4), 9 skills + 9 nodes with VFX (simprobe 100/100, skills 11/11, grey 7/7), 3 expeditions (acts 12/12, picker 11/11, challenge 3/3, pages 6/6), the retuned curve inside the §4.2 band (act runner wins 5/5 · 5/5 · 3/5, 0 stuck), Acts I–III won by real input, fps within 2% of v0.5.0, legacy goldens unchanged.
 M4a builder checkpoint (content extension, systems half). Steps appended below as completed.
 
 ## Decisions (PLAN silent -> best-in-class choice, recorded here)
@@ -48,3 +49,8 @@ M4a builder checkpoint (content extension, systems half). Steps appended below a
 - VFX review of the fresh skill frames: the white bloom blob seen in earlier frames is the pre-existing spawn / kill / hit juice from the probe's own debug spawns (it is in the frame BEFORE any cast); every M4a layer reads at its palette role (Bell Toll Bone ring + amber band + bell glyph, Rootsnare Signal Blue, Mending Tide heal wedge, Hearthsong amber, status rigs per kind).
 - docs/TESTING.md M4a subsection (slots, statuses, expeditions + curve, autopilot + act runner, real input, the probe list); PROGRESS.md row G6.
 - The dev tree smoke passes again on 5199 (M4b's props.js WIP no longer throws): exit 0 / 0 PAGEERROR.
+### Final regression (after the last feature commit ff80a82, v0.5.17, dev server 5199)
+- Smoke exit 0 / 0 PAGEERROR; ARCH core loop (`?seed=7&menu=0`, tools/actions/gnt-arch-coreloop.json) v0.5.17: portal tick 521 → combat room 1 at 544 → reward at 742, exit 0.
+- Node: simprobe 100/100; legacy 4-slot traces kill_all d1eff38b03f581aa / defend 554cd9c41db19975 (= the v0.5.0 goldens).
+- In page: drive hud 12/12, socket 4/4, pages 6/6, picker 11/11, nudges 4/4, skills 11/11, grey 7/7, challenge 3/3, acts 12/12; act runner Act III seed 1 VICTORY 15 927 ticks, 0 page errors.
+- My vite preview on 4304 (PID 71404) stopped; no M4a node process left running.
