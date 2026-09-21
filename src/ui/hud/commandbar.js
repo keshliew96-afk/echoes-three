@@ -699,6 +699,62 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
 
   // @gnt:M5b VIEW-SEAT begin — setViewSeat(partyIndex): a guest's bar shows
   // its own seat's kit (4 tiles, ally kits stay 4) and portrait focus.
+  // The net session publishes the local seat on `world.netView` ({ seat,
+  // skillSlots(), dodge() } — the guest's action shadow, so a predicted cast
+  // starts its tile on the press frame). Seat 0 / single-player: the bar is
+  // exactly the Healer's (the wrapped update below is a pass-through).
+  let viewSeat = 0;
+  const healerUpdate = update;
+  function setViewSeat(partyIndex) {
+    viewSeat = partyIndex | 0;
+    for (const p of ports) p.cell.classList.toggle('nt-self', viewSeat > 0 && p.i === viewSeat);
+    if (viewSeat === 0) for (const s of skillEls) s.slot.style.display = '';
+    return viewSeat;
+  }
+  if (typeof document !== 'undefined' && !document.getElementById('nt-bar-style')) {
+    const st = document.createElement('style');
+    st.id = 'nt-bar-style';
+    st.textContent = `.hud-port.nt-self { outline: 2px solid ${PALETTE.hearthAmber}; outline-offset: 2px; border-radius: 10px; }`;
+    document.head.appendChild(st);
+  }
+  // eslint-disable-next-line no-func-assign
+  update = function seatAwareUpdate(now, ctx) {
+    const nv = world.netView;
+    const slots = nv && nv.seat > 0 && typeof nv.skillSlots === 'function' ? nv.skillSlots() : null;
+    if ((nv ? nv.seat : 0) !== viewSeat) setViewSeat(slots ? nv.seat : 0);
+    if (!slots) return healerUpdate(now, ctx);
+    tickNow = ctx.tick ?? 0;
+    updatePortraits(now, ctx.members, ctx.channels);
+    const dg = typeof nv.dodge === 'function' ? nv.dodge() : null;
+    paintCooldown(dodge, dg ? dg.remaining : 0, dg ? dg.total : DODGE.cooldownTicks);
+    for (let i = 0; i < skillEls.length; i++) {
+      const s = skillEls[i];
+      const d = slots[i];
+      if (!d) {
+        s.slot.style.display = 'none';
+        continue;
+      }
+      s.slot.style.display = '';
+      s.slot.classList.remove('is-empty', 'is-passive', 'is-grey');
+      setIcon(s, d.id, d.abbrev);
+      paintCooldown(s, d.remainingTicks, d.totalTicks);
+    }
+    return undefined;
+  };
+  // The local seat's own denials (sim `seat_denied`, tagged by seat) nudge
+  // its tiles like the Healer's intent_denied does.
+  bus.on('seat_denied', (ev) => {
+    if (!viewSeat || ev.seat !== viewSeat) return;
+    const kind = ev.kind ?? '';
+    if (kind === 'dodge') {
+      denyNudge(dodge, ev.reason);
+      return;
+    }
+    const m = /^skill_([1-9])$/.exec(kind);
+    if (!m) return;
+    const s = skillEls[Number(m[1]) - 1];
+    if (s && s.slot.style.display !== 'none') denyNudge(s, ev.reason);
+  });
   // @gnt:M5b VIEW-SEAT end
   return {
     el: bar,

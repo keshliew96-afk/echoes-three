@@ -529,6 +529,10 @@ export function createCampScene(stage, toggles, ctx) {
   let picking = false; // the expedition picker is up for this portal press
   function canBegin() {
     if (mode !== 'camp' || begin) return false;
+    // M5b (W4): the portal is the HOST's — a network guest never starts a run
+    // (its camp prompt stays hidden; the net HUD says who leads).
+    const netSvc = svc('net');
+    if (netSvc && typeof netSvc.isGuest === 'function' && netSvc.isGuest()) return false;
     const run = world.runSystem();
     if (run.isActive()) return false;
     const phase = run.view().phase;
@@ -718,7 +722,11 @@ export function createCampScene(stage, toggles, ctx) {
 
     // §22 camera: smoothed follow + aim lookahead, then the camp focus clamp.
     // @gnt:M5b FOLLOW-SEAT begin — a guest follows its own seat's body.
-    followRig.update(dt, ix, iz, p.aim);
+    // world.followSeat (net session, installed through cmd('followSeat')):
+    // the local seat's interpolated body + aim; null = the Healer as ever.
+    const seatFollow = world.followSeat ? world.followSeat(alpha) : null;
+    if (seatFollow) followRig.update(dt, seatFollow.x, seatFollow.z, seatFollow.aim);
+    else followRig.update(dt, ix, iz, p.aim);
     // @gnt:M5b FOLLOW-SEAT end
     const fxp = stage.camera.position.x;
     const fzp = stage.camera.position.z - CAM_OFF_Z;
@@ -862,6 +870,12 @@ export function createCampScene(stage, toggles, ctx) {
         return arena.layoutState ? arena.layoutState() : null;
       // @gnt:M4b CAMP-CMD end
       // @gnt:M5b CAMP-CMD begin (followSeat)
+      // Network play: install (fn(alpha) -> { x, z, aim } | null) or clear
+      // (null) the local seat's camera target — read by the FOLLOW-SEAT
+      // blocks here and in the arena's inner graybox scene.
+      case 'followSeat':
+        world.followSeat = typeof args[0] === 'function' ? args[0] : null;
+        return !!world.followSeat;
       // @gnt:M5b CAMP-CMD end
       default:
         return undefined;

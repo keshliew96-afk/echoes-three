@@ -522,7 +522,11 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
 
     // §22 camera: smoothed follow + aim lookahead, driven by render dt.
     // @gnt:M5b FOLLOW-SEAT begin — a guest follows its own seat's body.
-    followRig.update(dt, ix, iz, player.aim);
+    // world.followSeat (net session): the local seat's interpolated body +
+    // aim; absent (single-player, the Healer's seat) = the Healer as ever.
+    const seatFollow = world.followSeat ? world.followSeat(alpha) : null;
+    if (seatFollow) followRig.update(dt, seatFollow.x, seatFollow.z, seatFollow.aim);
+    else followRig.update(dt, ix, iz, player.aim);
     // @gnt:M5b FOLLOW-SEAT end
 
     // §9 #7 screenshake: small decaying camera offset, kills only.

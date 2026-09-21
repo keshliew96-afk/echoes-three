@@ -642,6 +642,54 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // @gnt:M2 RESTORE-RESYNC end
   // @gnt:M5b GUEST-GUARD begin — guests see pages read-only ("The Healer is
   // choosing…"); their presses become CMD pings, never sim calls.
+  // The guard itself is the net session's run-system proxy (every mutating
+  // call on a guest becomes a CMD the host answers command_rejected + a
+  // party-wide ping); this block adds what the guest SEES: a banner that
+  // says who decides, and the ping highlight on the card / door / item a
+  // party member pointed at (`net_ping`, a view-only replayed event).
+  const guestNote = document.createElement('div');
+  guestNote.className = 'nt-guest-note';
+  guestNote.style.cssText =
+    'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:70;padding:8px 18px;border-radius:12px;' +
+    `background:${'#221F1B'}EE;color:#F4EFE6;font:700 18px/1.2 "Nunito","Trebuchet MS",system-ui,sans-serif;` +
+    'border:1px solid #9C918688;pointer-events:none;display:none;';
+  document.body.appendChild(guestNote);
+  const pingCss = document.createElement('style');
+  pingCss.textContent = '.nt-pinged { outline: 3px solid #E8A23D !important; outline-offset: 4px; transition: outline-color 0.2s; }';
+  document.head.appendChild(pingCss);
+  const netGuest = () => {
+    const n = service('net');
+    return !!(n && typeof n.isGuest === 'function' && n.isGuest());
+  };
+  const GUEST_LINES = {
+    draft: 'The Healer is choosing the reward…',
+    path: 'The Healer picks the door — point with ←/→ and Enter',
+    shop: 'The Healer is shopping…',
+    end: 'Waiting for the Healer…',
+  };
+  function syncGuestNote() {
+    const on = current !== 'none' && netGuest();
+    const text = on ? GUEST_LINES[current] || 'The Healer is choosing…' : '';
+    if (guestNote.textContent !== text) guestNote.textContent = text;
+    const disp = on ? '' : 'none';
+    if (guestNote.style.display !== disp) guestNote.style.display = disp;
+  }
+  bus.on('net_ping', (ev) => {
+    if (current === 'none' || !Number.isInteger(ev.index)) return;
+    const page = screens[current] && screens[current].el;
+    if (!page) return;
+    const items = [...page.querySelectorAll(current === 'path' ? '.rn-door' : '.rn-card')];
+    const el = items[ev.index];
+    if (!el) return;
+    el.classList.add('nt-pinged');
+    setTimeout(() => el.classList.remove('nt-pinged'), 1400);
+  });
+  const pageUpdate = update;
+  // eslint-disable-next-line no-func-assign
+  update = function guestAwareUpdate() {
+    pageUpdate();
+    syncGuestNote();
+  };
   // @gnt:M5b GUEST-GUARD end
   let pendingAutostart = !!autostart;
   function maybeAutostart() {

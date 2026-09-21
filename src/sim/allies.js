@@ -1148,7 +1148,7 @@ export function createAllySystem({
     const d = aimDir(a, f.aim, { x: a.faceX ?? 0, z: a.faceZ ?? 1 });
     face(a, d.x, d.z);
     a.castLeftTicks = Math.max(a.castLeftTicks, 12);
-    const ev = { id: a.id, partyIndex: a.partyIndex, classId: a.classId, shape: S.basicShape, dx: r2(d.x), dz: r2(d.z), ...tag };
+    const ev = { id: a.id, partyIndex: a.partyIndex, classId: a.classId, shape: S.basicShape, x: r2(a.x), z: r2(a.z), dx: r2(d.x), dz: r2(d.z), ...tag };
     if (S.basicShape === 'melee_arc') {
       const targets = rewound(f, () => enemiesInArc(a, d.x, d.z, S.basicRange, S.basicHalfAngle, Infinity));
       ev.reach = S.basicRange;

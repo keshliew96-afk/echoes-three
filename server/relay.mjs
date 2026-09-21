@@ -125,6 +125,23 @@ export function routeBinary(ctx, peer, u8) {
     }
     case BIN.INPUT:
     case BIN.CMD: {
+      // M5b (W4): the HOST answers guests on CMD too (command_rejected,
+      // party pings) — routed like EVENTS: seat = destination, 0xFF = all.
+      if (isHost && ch === BIN.CMD) {
+        const dest = u8[1];
+        let n = 0;
+        for (const s of room.seats) {
+          if (!s.peerId || !s.connected || s.peerId === peer.id) continue;
+          if (dest !== SEAT_ALL && s.index !== dest) continue;
+          const target = room.peerRef.get(s.peerId);
+          if (target) {
+            ctx.sendBinary(target, dest === SEAT_ALL ? withSeat(u8, s.index) : u8);
+            n += 1;
+          }
+        }
+        counters.relayed += n;
+        return n;
+      }
       if (isHost) return bad(counters, 'host_sent_guest_channel');
       const host = room.peerRef.get(room.hostPeerId);
       const hs = host ? lobby.seatOf(room, host.id) : null;

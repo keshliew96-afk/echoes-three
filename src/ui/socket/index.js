@@ -660,6 +660,31 @@ export function createSocketScreen({ bus, world }) {
   });
   // @gnt:M2 RESTORE-RESYNC end
   // @gnt:M5b GUEST-GUARD begin
+  // A network guest may browse the workbench (the replicated build), but the
+  // Healer's sockets are the host's to set: the net session's build-system
+  // proxy turns socket()/unsocket() into a refused CMD, and the workbench
+  // says so while it is open on a guest.
+  {
+    const guestNote = document.createElement('div');
+    guestNote.className = 'nt-socket-note';
+    guestNote.style.cssText =
+      'position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:5;padding:6px 16px;border-radius:10px;' +
+      'background:#221F1BEE;color:#F4EFE6;font:700 16px/1.2 "Nunito","Trebuchet MS",system-ui,sans-serif;border:1px solid #9C918688;display:none;';
+    guestNote.textContent = 'Read-only — the Healer sets the sockets';
+    rootEl.appendChild(guestNote);
+    const syncNote = () => {
+      let guest = false;
+      try {
+        const n = (window.__echoes && window.__echoes.net) || null;
+        guest = !!(n && typeof n.isGuest === 'function' && n.isGuest());
+      } catch {
+        guest = false;
+      }
+      guestNote.style.display = open && guest ? '' : 'none';
+    };
+    const obs = new MutationObserver(syncNote);
+    obs.observe(rootEl, { attributes: true, attributeFilter: ['class'] });
+  }
   // @gnt:M5b GUEST-GUARD end
   return {
     cmd,

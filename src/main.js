@@ -440,6 +440,38 @@ provide(
     },
   })
 );
+// M5b (W4): the network PLAY session (src/net/session.js) — idle until a
+// room goes in_game. Then the host swaps `simStep` for its authoritative
+// driver (world.step(tick, snapshot, seatInputs)) and a guest for its
+// replica driver (no world step: input frames + own-seat prediction; the
+// replica is written by snapshots). Leaving the session restores exactly
+// the single-player step above. The multiplayer screens + Network tab
+// register here (the title shows Multiplayer once 'mp-menu' exists).
+import { createNetSession } from './net/session.js';
+import { registerMultiplayerScreens } from './ui/menu/mpmenu.js';
+import { registerNetworkTab } from './ui/menu/tabs/network.js';
+{
+  const spStep = simStep;
+  createNetSession({
+    net: service('net'),
+    world,
+    clock,
+    bus,
+    registry,
+    rng,
+    scene: activeScene,
+    stage,
+    app,
+    input,
+    sampleIntents: () => sampleIntents(),
+    setSimStep: (fn) => {
+      simStep = typeof fn === 'function' ? fn : spStep;
+    },
+    service,
+  });
+  registerMultiplayerScreens();
+  registerNetworkTab();
+}
 // @gnt:NET end
 
 const overlay = createDebugOverlay(VERSION, {
