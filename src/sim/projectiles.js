@@ -11,8 +11,16 @@
 // a dodging body instead of sailing through it. On impact the system despawns
 // the bolt at the contact point and hands (tick, bolt, target) to `onImpact`;
 // the world queues the actual damage instance as a §4 deferred maturation.
+//
+// BLOCKERS (Gauntlet M4b, docs/gauntlet/PLAN.md §3.6 (g)): entity-owned
+// dynamic colliders (barricades, rubble) stop a bolt at the contact point —
+// `projectile_despawn { cause: 'blocked', blocker }` — and a damage bolt hands
+// the blocker to `onImpact` so it takes the hit through the normal §9
+// pipeline. An entity that carries a `collider` is never a circle-contact
+// victim (its collider is what the bolt meets). With no dynamic colliders
+// installed (every legacy path) this is exactly the v0.4.63 flight.
 import { TICK_HZ } from '../core/constants.js';
-import { sweptContactT, sweptStep } from './movement.js';
+import { sweptContactT, sweptStep, sweptDynamicContact, dynamicColliders } from './movement.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -87,7 +95,7 @@ export function createProjectileSystem({ registry, events, onImpact = null }) {
       let victim = null;
       if (onImpact) {
         for (const e of registry.all()) {
-          if (!e.hittable || !(e.hp > 0) || e.faction === p.faction) continue;
+          if (!e.hittable || !(e.hp > 0) || e.faction === p.faction || e.collider) continue;
           const t = circleContactT(p.x, p.z, dx, dz, e.x, e.z, p.radius + e.radius);
           if (t < tHit) {
             tHit = t;
@@ -97,6 +105,23 @@ export function createProjectileSystem({ registry, events, onImpact = null }) {
       }
 
       const tWall = sweptContactT(p.x, p.z, dx, dz, p.radius);
+      // Entity-owned blockers (M4b): the earliest dynamic-collider contact.
+      const block = dynamicColliders().length > 0 ? sweptDynamicContact(p.x, p.z, dx, dz, p.radius) : null;
+      if (block && block.t <= 1 && block.t < tWall && !(victim && tHit <= block.t)) {
+        p.x += dx * block.t;
+        p.z += dz * block.t;
+        p.traveled += Math.hypot(dx, dz) * block.t;
+        const blocker = block.entityId != null ? registry.byId(block.entityId) : null;
+        events.emit(tick, 'projectile_despawn', {
+          id: p.id,
+          cause: 'blocked',
+          blocker: block.entityId,
+          traveled: r2(p.traveled),
+        });
+        registry.despawn(p.id);
+        if (onImpact && blocker && blocker.hp > 0) onImpact(tick, p, blocker);
+        continue;
+      }
       if (victim && tHit <= tWall) {
         p.x += dx * tHit;
         p.z += dz * tHit;

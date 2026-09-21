@@ -41,6 +41,10 @@ import { createBuildSystem } from './nodes.js';
 import { createAllySystem } from './allies.js';
 import { createBossSystem } from './boss.js';
 import { createRunSystem } from './run.js';
+// @gnt:M4b IMPORTS begin — hazards / interactables / layout director (PLAN §3.6)
+import { createHazardSystem, createLayoutSystem } from './hazards.js';
+import { createInteractableSystem } from './interactables.js';
+// @gnt:M4b IMPORTS end
 
 // §10: a Downed character crawls at 0.8 u/s (movement only, cannot act).
 const DOWNED_CRAWL_SPEED = 0.8;
@@ -279,6 +283,44 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   // phases at the CONTENT-* anchors below and receive the rolled room layout
   // through runSys.setRoomHooks({ enter(layout, tick), exit(tick) }) (M4a
   // implements setRoomHooks in run.js — docs/gauntlet/PLAN.md §2 / §3.6).
+  const hazardSys = createHazardSystem({
+    registry,
+    events,
+    combat,
+    getTick: () => currentTick,
+    getSeed: () => rng.seed,
+    governor: enemies.governor,
+  });
+  const interactSys = createInteractableSystem({
+    registry,
+    events,
+    combat,
+    getTick: () => currentTick,
+    player,
+    hazards: hazardSys,
+  });
+  const layoutSys = createLayoutSystem({
+    registry,
+    events,
+    getTick: () => currentTick,
+    hazards: hazardSys,
+    interactables: interactSys,
+    getRunView: () => (runSys && runSys.isActive() ? runSys.view() : null),
+    getRoomMode: () => (waves.roomState() ? waves.roomState().mode : null),
+    getSeed: () => rng.seed,
+  });
+  if (typeof runSys.setRoomHooks === 'function') {
+    runSys.setRoomHooks({
+      enter: (layout, tick) => layoutSys.enter(layout, tick),
+      exit: (tick) => layoutSys.exit(tick),
+    });
+  }
+  // §13: a cleared room's hazards and assets stop acting (the reward pages
+  // run on a live sim); run end clears them through the exit hook, and as a
+  // belt-and-braces sweep here for a run.js without room hooks.
+  events.on('room_cleared', () => layoutSys.onRoomCleared());
+  events.on('run_end', (ev) => layoutSys.exit(ev.tick));
+  events.on('return_to_camp', (ev) => layoutSys.exit(ev.tick));
   // @gnt:M4b CONTENT-SYSTEMS end
 
   // --- Harness wisps (sim-core proving population; ?scene=simtest only).
@@ -402,6 +444,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // so its body settles before knockback and projectile sweeps.
     runSys.continuous();
     // @gnt:M4b CONTENT-CONTINUOUS begin — hazard pushes/slows, interactable timers.
+    layoutSys.continuous();
     // @gnt:M4b CONTENT-CONTINUOUS end
 
     // §9 #3 knockback displacement: impulse away from the hit over kbTicks,
@@ -488,6 +531,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // @gnt:M4b CONTENT-DISCRETE begin — hazard resolutions and `interact`
     // presses (after the ally pass, so revive arbitration has already claimed
     // KeyE next to a Downed body), ascending spawn ordinal.
+    layoutSys.discrete(snapshot);
+    drainContinuations();
     // @gnt:M4b CONTENT-DISCRETE end
 
     // ④ persistent-zone scheduled ticks, ascending zone spawn ordinal, then
@@ -840,7 +885,10 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       enemies: registry
         .all()
         .filter(
-          (e) => e.kind === 'wisp' || e.kind === 'dummy' || e.kind === 'boar' || e.kind === 'mantis'
+          // Faction rule (PLAN §3.6 (d)): every living hostile body except the
+          // boss (its own view) — burrowed moles and retreating enemies stay
+          // listed; shots/globs carry no HP. Plus the simtest wisps.
+          (e) => e.kind === 'wisp' || (e.faction === 'hostile' && e.hp > 0 && e.kind !== 'stag')
         )
       // @gnt:M4b HOSTILE-KINDS end
         .map((e) => ({
@@ -871,7 +919,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       case 'spawn': {
         const [type, x, z] = args; // ('dummy'|'wisp'|'boar'|'mantis', x, z)
         // Real §11 enemies (enemies block) — full AI/telegraph/juice pipeline.
-        if (type === 'boar' || type === 'mantis') return enemies.debugSpawn(type, x, z);
+        // M4b: every enemy archetype, with { elite, hpMul, dmgMul } (PLAN §6.4).
+        if (enemies.hasType(type)) return enemies.debugSpawn(type, x, z, args[3] ?? null);
         // Wisps exist only in the simtest harness (they have no game-scene
         // visuals); game scenes get combat-juice training dummies.
         if (type === 'wisp' && harness) return spawnWisp(x, z).id;
@@ -920,10 +969,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         maintainPopulation = false;
         const hostiles = registry
           .all()
-          .filter(
-            (e) =>
-              e.kind === 'wisp' || e.kind === 'dummy' || e.kind === 'boar' || e.kind === 'mantis'
-          );
+          .filter((e) => e.kind === 'wisp' || (e.faction === 'hostile' && e.hp > 0 && e.kind !== 'stag'));
         // @gnt:M4b HOSTILE-KINDS2 end
         for (const h of hostiles) {
           if (h.kind === 'wisp') killWisp(h);
@@ -1059,6 +1105,11 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         // @gnt:M4a CMD begin (setStatus / clearStatus / autopilot / startRun{act,challenge} ...)
         // @gnt:M4a CMD end
         // @gnt:M4b CMD begin (spawnHazard / spawnInteractable / hazardPhase / armKeg / setLayout ...)
+        if (name === 'burrow') return enemies.setBurrow(args[0], args[1] !== false);
+        {
+          const rc = layoutSys.cmd(name, args);
+          if (rc !== undefined) return rc;
+        }
         // @gnt:M4b CMD end
         // @gnt:M5b CMD begin (replica-mode refusal of mutating commands, seat control)
         // @gnt:M5b CMD end
