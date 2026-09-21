@@ -18,23 +18,23 @@ const P = (p, f) => f * (p && p.pitch ? p.pitch : 1);
 // Measured design peaks (dBFS at unity gain) — tools/gntM4b-cuecal.mjs.
 export const M4B_CUE_CAL = {
   // @cal begin
-  m4b_roll: 0,
-  m4b_thud: 0,
-  m4b_lob: 0,
-  m4b_splash: 0,
-  m4b_swoop: 0,
-  m4b_tink: 0,
-  m4b_dig: 0,
-  m4b_erupt: 0,
-  m4b_spore: 0,
-  m4b_surge: 0,
-  m4b_rock: 0,
-  m4b_vent: 0,
-  m4b_fuse: 0,
-  m4b_blast: 0,
-  m4b_bell: 0,
-  m4b_lever: 0,
-  m4b_drink: 0,
+  m4b_roll: -1.2,
+  m4b_thud: 0.4,
+  m4b_lob: -2.9,
+  m4b_splash: -2.5,
+  m4b_swoop: -11,
+  m4b_tink: 0.3,
+  m4b_dig: -2.1,
+  m4b_erupt: -1.6,
+  m4b_spore: 3.8,
+  m4b_surge: -0.1,
+  m4b_rock: 1.7,
+  m4b_vent: -6.1,
+  m4b_fuse: -0.1,
+  m4b_blast: 2.4,
+  m4b_bell: 3,
+  m4b_lever: -8.3,
+  m4b_drink: -2.2,
   // @cal end
 };
 
@@ -99,7 +99,7 @@ const CUES = {
       k.noise(d, t, { src: 'crackle', type: 'highpass', f0: P(p, 3200), q: 0.7, a: 0.02, hold: 0.8, d: 0.2, gain: 0.8 }),
       k.noise(d, t, { type: 'bandpass', f0: P(p, 5200), q: 2, a: 0.02, hold: 0.8, d: 0.2, gain: 0.35 })
     ) },
-  m4b_blast: { levelDb: -6, priority: 4, maxVoices: 2, cooldownMs: 80, fn: (k, t, d, p) =>
+  m4b_blast: { levelDb: -7, priority: 4, maxVoices: 2, cooldownMs: 80, fn: (k, t, d, p) =>
     Math.max(
       k.tone(d, t, { f0: P(p, 90), f1: P(p, 30), d: 0.6, gain: 1 }),
       k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 1400), f1: P(p, 200), q: 0.7, d: 0.6, gain: 0.9 }),
