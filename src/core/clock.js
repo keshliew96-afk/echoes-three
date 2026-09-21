@@ -44,8 +44,27 @@ export function createClock() {
     return accumulator / TICK_MS;
   }
 
+  // Step exactly ONE 60 Hz tick outside wall time (docs/gauntlet/PLAN.md
+  // §3.4: __echoes.sim.stepN, save round-trip probe, net host catch-up). A
+  // pending hitstop tick is consumed instead of stepping the world, exactly
+  // as advance() would. Returns true when the world stepped. The render-side
+  // accumulator is untouched.
+  function stepOnce(stepFn) {
+    if (hitstopRemaining > 0) {
+      hitstopRemaining -= 1;
+      return false;
+    }
+    tick += 1;
+    stepFn(tick);
+    return true;
+  }
+
+  // @gnt:M2 CLOCK-STATE — serialize()/restore() of { tick, hitstopRemaining,
+  // grants } land here with the save system (PLAN §3.4).
+
   return {
     advance,
+    stepOnce,
     requestHitstop,
     get tick() {
       return tick;

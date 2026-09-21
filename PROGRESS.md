@@ -57,6 +57,7 @@ Checkpoints: docs/gauntlet/build-<key>.md, critic-<key>-r<N>.md, fix-<key>-r<N>.
 | # | Time | Event |
 |---|------|-------|
 | G1 | 2026-09-21 | **Gauntlet Loop launched** from v0.4.63 on branch `gauntlet`. Certification workflow paused first (its captures would be invalidated by builder HMR reloads). |
+| G2 | 2026-09-21 | **Architect: PLAN committed at v0.5.0.** docs/gauntlet/PLAN.md (state machine, ownership map + `@gnt:` anchors, contracts for app/settings/screens/loop/save/audio/content/net, platform-honest display rules, harness contract + port scheme + debug namespaces, gates G1.1–GI.6, benchmarks), BUILD_BRIEF §23 (three expeditions, difficulty curve, 9 skills, 9 nodes + full grey matrix, 5 enemies, 5 hazards, 5 interactables, statuses, 8 slots), TESTING.md Gauntlet rules. Behaviour-neutral stubs (src/app/*, core hash/canonical, sim script/status, audio mixmath, data levels/difficulty, net protocol constants, server skeleton, `__echoes.sim`); Node golden trace identical to v0.4.63 (kill_all `d1eff38b03f581aa`). Title shows on the plain URL once M1 lands; regression captures use `?menu=0`. |
 
 ## Round A all-PASS; Round B complete (integration landed)
 

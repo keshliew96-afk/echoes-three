@@ -169,6 +169,21 @@ export function createCombat({
   // (render side hangs the pop/burst/decal/shake off this), despawn.
   function kill(target, { delivery = 'basic' } = {}) {
     const tick = getTick();
+    // Breakable world objects (docs/gauntlet/PLAN.md §4.6 — barricades, kegs,
+    // puffcaps; entity field `lifecycle: 'break'`, M4b) leave the pipeline
+    // as a `broken` event: no kill stat, no kill hitstop, no screenshake, no
+    // kill decal. The owning sim system reacts to the event (a keg ignites).
+    if (target.lifecycle === 'break') {
+      events.emit(tick, 'broken', {
+        id: target.id,
+        kind: target.kind,
+        delivery,
+        x: r2(target.x),
+        z: r2(target.z),
+      });
+      registry.despawn(target.id);
+      return;
+    }
     stats.kills += 1;
     requestStop('kill', HITSTOP.killTicks);
     events.emit(tick, 'death', {

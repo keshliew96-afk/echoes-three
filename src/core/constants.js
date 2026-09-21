@@ -6,6 +6,14 @@ export const TICK_HZ = 60;
 export const TICK_MS = 1000 / TICK_HZ;
 export const MAX_FRAME_MS = 250; // accumulator clamp so a hitch never spirals
 
+// §6 skill slots. 4 at v0.4.63; the Gauntlet content extension (M4a,
+// docs/gauntlet/PLAN.md §4.3) raises it to 8 end to end — sim slot arrays,
+// keys Digit1..Digit8 (core/input.js derives its bindings from this), the
+// world's slot loop, HUD command bar, draft free-slot count, socket rows.
+// Basic-attack fire keeps resolving AFTER every skill slot (§4 "slot 4" =
+// "after the last skill slot").
+export const SKILL_SLOTS = 4;
+
 // §5 Dodge roll — integer tick counts (no gameplay logic reads wall-clock).
 // distance 1.8 u over 0.25 s = 7.2 u/s (3x run); own cooldown timer, outside
 // the skill pipeline.

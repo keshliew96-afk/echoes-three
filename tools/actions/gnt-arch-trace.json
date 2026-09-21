@@ -1,0 +1,1 @@
+[{"type":"eval","code":"(()=>__echoes.sim.trace(600,3))()"},{"type":"eval","code":"(()=>({app:__echoes.app.state,frame:__echoes.app.frameStats(),stack:__echoes.app.stack()}))()"}]

@@ -541,7 +541,11 @@ export function createAllySystem({
   // The world spawns the three ally bodies (skills block); this block gives
   // them their AI fields the first time it sees them.
   function ensureAllyFields(a) {
-    if (a.aiState !== undefined) return;
+    // `cds` too (ARCH, docs/gauntlet/PLAN.md §6.5): a room boundary can set
+    // aiState before the first continuous pass ever ran (a run started with
+    // no camp seating, e.g. the Node headless sim), which used to leave the
+    // kit cooldown array undefined and throw in resolveAllyAttack.
+    if (a.aiState !== undefined && a.cds !== undefined) return;
     const S = ALLY_CLASSES[a.classId];
     a.aiState = 'engage';
     a.targetId = null;

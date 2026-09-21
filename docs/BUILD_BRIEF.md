@@ -1070,3 +1070,235 @@ Every juice-contract event fires its sound slot. Master volume constant, no UI.
 | A8 | Relics, Echoes/Seals currencies, talent trees, camp facilities, classes beyond the four, acts 2–3 environments: OUT of scope. Defeat/victory washes reference the act-3 violet language without building act-3 content. |
 | A9 | Audio is procedural WebAudio synthesis (sound slots must exist per the juice contract). |
 | A10 | Hitstop/knockback/screenshake numbers in §9 are authored web-build defaults (absent from the source corpus) — tunable in `constants.js`, not removable. |
+| A11 | (Gauntlet, 2026-09-21) A8's "acts 2–3 environments: OUT of scope" is superseded by §23: three expeditions (Hollow Wood, Sunken Mill, Ashen Barrow), each a full 8-room run. Relics, Echoes/Seals, talent trees, camp facilities and extra classes stay out of scope; the Hollow Stag remains the only boss (tier-scaled per act). |
+| A12 | (Gauntlet, 2026-09-21) Skill slots are 8 (§6 "4 slots" superseded, §23.9). Ally kits stay 4. Basic-attack fire resolves after the last skill slot. |
+
+---
+
+## 23. Gauntlet content extension (2026-09-21) — binding design truth
+
+Added by the Gauntlet Loop lead architect (docs/gauntlet/PLAN.md §4). Owners:
+M4a = systems (skills, nodes, statuses, slots, expeditions, difficulty,
+draft/shop pools); M4b = world (enemies, hazards, interactables, biomes).
+Everything in §1–§22 still holds unless a line below says otherwise. Colour
+discipline is unchanged: **Ember `#FF5A36` = enemy/hazard threats and their
+telegraphs only; Bright Heal `#5FE873` = heal output only (incl. the Dewfont's
+water); God-stuff Violet `#B79CF0` = corruption (one act tell per biome), the
+Stag, spawn shimmer, Defeat only.** Every enemy keeps exactly one INDIGO (hue
+228) corruption tell (§11 tuning note). Every avoidable damage is telegraphed
+≥ 0.7 s in Ember; player-targeted telegraphs obey the §11 governor (≤ 2
+concurrent, starts ≥ 1.2 s apart).
+
+### 23.1 Expeditions (level configurations)
+
+The camp portal opens an **expedition picker** (three cards: name, blurb,
+"Danger I/II/III", lock state; Hearth Amber selection; locked cards Bone with a
+lock glyph and "Win <previous act> to unlock"). Each expedition is a full run
+on the unchanged §2 skeleton (rooms 1–6 combat, exactly 2 defend, room 1
+kill_all, 7 shop, 8 boss) and §14 economy (+12 per combat clear, 72 at the
+shop, 25/30/35 prices). The run frame additionally rolls one layout per combat
+room from the act's room table (never the same layout twice in a row).
+
+| | Act I — The Hollow Wood | Act II — The Sunken Mill | Act III — The Ashen Barrow |
+|---|---|---|---|
+| Blurb | Night-dark woodland where the beasts first turned. | Flooded millrace and rotting weirs; the water runs wrong. | Burial mounds under a cold moon, where the corruption is oldest. |
+| Tier T | 1.00 | 1.35 | 1.75 |
+| Layouts (room table) | 1 Beaten Clearing · 2 Dry Crossroads · 3 Mossy Hollow (v0.4.63) | 4 Millpond · 5 Weir · 6 Drowned Granary | 7 Barrow Gate · 8 Ossuary Row · 9 Moonwell |
+| Boss room dressing | layout 3 | layout 6 | layout 9 |
+| Roster (weights; earliest room) | boar .45 · mantis .30 · quillback .25 (r ≥ 2) | boar .15 · mantis .20 · quillback .15 · toad .25 · moth .25 (r ≥ 2) | mantis .15 · quillback .15 · moth .20 · ram .20 (r ≥ 2) · mole .30 |
+| Hazards | Bramble Snare, Puffcap | Millrace, Puffcap | Rockfall, Gravefire Vents |
+| Interactables | Dewfont, Barricade, Powder Keg | Dewfont, Barricade, Powder Keg, Sluice Lever | Dewfont, Barricade, Powder Keg, Warding Bell |
+| Stag add phases (×3) | 2 boar + 1 mantis (§11, unchanged) | 1 toad + 2 moth | 1 ram + 2 mole |
+| Music theme | `wood` — D dorian, camp 72 / combat 104 bpm, plucked lute + hand drum | `mill` — A aeolian, 96 bpm, water-drip plucks, low reeds, frame drum | `barrow` — E phrygian, 88 bpm, bell tolls, low choir pad, taiko pulse |
+| Unlock | always | win Act I | win Act II |
+
+**Biome palettes** (display-space HSL, same analyzer bars as §19.3: LUMA >160 ≥
+1.5%, >200 ≥ 0.4%, ≥ 13/16 buckets, FLAT < 20%; the night-first floor
+polarity of the §19.3 fix-round-2 note applies to all three):
+
+| | Hollow Wood | Sunken Mill | Ashen Barrow |
+|---|---|---|---|
+| Shade base | indigo-teal (existing `ground.nightBase`) | deep teal-slate H 196–204, S 0.30–0.40, L 0.10–0.16 | cold blue-grey H 212–224, S 0.16–0.24, L 0.09–0.15 |
+| Lit ground | §19.3 green dapple | wet flagstone H 185–200, S 0.10–0.18, L 0.28–0.34 + moss H 80–100, S 0.35–0.45 | ash H 28–40, S 0.06–0.12, L 0.30–0.38 + dead ochre grass H 38–50, S 0.30–0.40 |
+| Signature surface | beaten dirt track | black-teal water channels (H 190–200, S 0.45, L 0.06–0.10) with Parchment specular streaks ≤ 25% alpha | bone-stone cairns (Bone `#C9C2B3` ± 6% L) |
+| Warm pools | torches, braziers, lanterns | lantern posts on the weirs, amber windows of the mill | braziers between the stones |
+| Act corruption tell (violet) | the monolith | the mill wheel's veins | the standing stones' veins |
+| Hue families per frame | green-woodland / warm-party / ember | teal-slate / amber / ember | ash-blue / amber / violet-arcane (tell only) + ember |
+| Unique prop types (≥ 3 of ≥ 6) | (existing 12) | mill-wheel ruin, sluice-gate frame, reed beds, footbridge (+ flagstones, timber piles, rope crates, lantern posts) | standing stones, barrow entrance, bone cairns, broken urns (+ braziers, ash drifts, dead grass, grave slabs) |
+
+### 23.2 Difficulty curve (src/data/difficulty.js is the implementation)
+
+`R = 1 + 0.08 × (room − 1)` (combat rooms 1–6); `hpMul = T·R`; `dmgMul = 1 +
+0.5·(T·R − 1)`; **wave budget** `4.0·T·R` threat points (defend waves × 0.8);
+elite chance Act I 0 (rooms 1–3) then 0.08, Act II `0.12 + 0.02(r − 1)`, Act III
+`0.20 + 0.03(r − 1)`; kill_all wave interval `480 × (1 − 0.04(r − 1)) × [1.0,
+0.95, 0.9]` ticks; Waystone HP `150·√T` (150 / 174 / 198); Stag HP `1800·T`
+(1800 / 2430 / 3150) and Stag damage × `1 + 0.5(T − 1)`. Challenge setting
+(Gameplay tab, captured at run start): relaxed HP ×0.75 / dmg ×0.7, standard
+×1, harrowing ×1.25 / ×1.3.
+
+Threat costs: boar 1.0 · mantis 1.2 · quillback 1.5 · toad 1.6 · moth 1.3 ·
+ram 3.0 · mole 1.5; an elite costs ×1.8. **Wave fill** (rolled once at room
+start, §11 discipline): repeat seeded weighted draws from the act roster
+(only types whose `introduce` room ≤ current room) while `cost ≤ remaining +
+0.5`; stop at 8 enemies per wave; elite roll per enemy; spawn point per enemy
+from the §11 ring (placements keep ≥ 1.5 u from hazards/interactables).
+kill_all rooms: `2 + int(2)` waves, +1 wave from room 4; defend rooms: 4 waves
+at 0/12/24/36 s. Live hostiles ≤ 20 per room (§1 ceiling 40). The legacy
+`?room=` harness (no run) keeps the §11 roll exactly.
+
+Resulting table (hpMul / dmgMul / budget):
+
+| room | Act I | Act II | Act III |
+|---|---|---|---|
+| 1 | 1.00 / 1.00 / 4.00 | 1.35 / 1.175 / 5.40 | 1.75 / 1.375 / 7.00 |
+| 2 | 1.08 / 1.04 / 4.32 | 1.458 / 1.229 / 5.83 | 1.89 / 1.445 / 7.56 |
+| 3 | 1.16 / 1.08 / 4.64 | 1.566 / 1.283 / 6.26 | 2.03 / 1.515 / 8.12 |
+| 4 | 1.24 / 1.12 / 4.96 | 1.674 / 1.337 / 6.70 | 2.17 / 1.585 / 8.68 |
+| 5 | 1.32 / 1.16 / 5.28 | 1.782 / 1.391 / 7.13 | 2.31 / 1.655 / 9.24 |
+| 6 | 1.40 / 1.20 / 5.60 | 1.890 / 1.445 / 7.56 | 2.45 / 1.725 / 9.80 |
+
+### 23.3 New Healer skills (9) — draftable pool grows 6 → 15
+
+Numbers follow the §7 table grammar (power per instance; cd floors per §6).
+
+| Skill (id) | Archetype / shape | power | cd s | range | area | count | extra |
+|---|---|---|---|---|---|---|---|
+| **Lantern Flurry** (`lantern_flurry`) | damage / projectile | 9 per bolt | 5.0 | 4.6 | 0 | 3 (12° fan) | speed 5.6 u/s |
+| **Pale Lance** (`pale_lance`) | damage / projectile | 30 | 6.0 | 6.0 | 0 | 1 | speed 6.5 u/s; **pierce 3** (passes through up to 3 enemies, full power each) |
+| **Bell Toll** (`bell_toll`) | damage / nova | 20 per target | 8.0 | — | 1.6 | 5 | **stun** 30 ticks (non-boss) |
+| **Rootsnare** (`rootsnare`) | damage / ground_aoe | 6 per zone tick | 10.0 | 4.2 | 1.3 | — | duration 5 s (5 zone ticks); enemies inside **slowed 45%** (refreshed 72 ticks each zone tick) |
+| **Dewfall** (`dewfall`) | heal / ground_aoe | 7 per zone tick | 11.0 | 4.0 | 1.5 | — | duration 5 s |
+| **Kindred Shield** (`kindred_shield`) | heal / direct | 16 | 8.0 | 3.6 | — | 1 | + **shield 20** for 240 ticks |
+| **Mending Tide** (`mending_tide`) | heal / melee_arc | 12 | 4.0 | 1.8 | 70° | 4 | wide sweep |
+| **Hearthsong** (`hearthsong`) | heal / nova | 10 per target | 9.0 | — | 2.0 | 4 | + **haste 25%** for 120 ticks |
+| **Quiet Hearth** (`quiet_hearth`) | **passive** / aura | 2 per pulse | — | — | 1.2 | — | 1.0 s cadence; allies inside get **ward 15%** (72 ticks, pulse-refreshed) |
+
+VFX: damage skills use the §19.4 player-damage grammar (parchment-white core +
+amber glow + trail; stun = Bone ring glyph, slow = Signal Blue ink ring — glyph,
+never a fill); heal skills Bright Heal core + green glow + rising motes; shields
+a Parchment hex rim on the portrait and a pale shell on the body; haste = amber
+speed streaks; ward = a soft Bone dome. Never Ember, never violet.
+
+### 23.4 New nodes (9) — node pool grows 8 → 17
+
+| Node | Kind | Rarity | Limit | Effect |
+|---|---|---|---|---|
+| **Widen** | stat | common | 2 | +25% area (additive_pct; on melee_arc = half-angle, clamp 90°) |
+| **Reach** | stat | common | 2 | +25% range (additive_pct; melee_arc reach, ground_aoe placement, direct eligibility) |
+| **Linger** | stat | rare | 1 | +50% duration (zone duration rounded to whole zone ticks; status ticks) |
+| **Keen** | stat | rare | 1 | +0.15 crit chance on this skill's instances (additive_flat; still one strict `roll < chance`) |
+| **Snare** | technique | common | 1 | damage → hit enemies slowed 40% for 90 ticks · heal → healed allies haste 20% for 90 ticks · passive → enemies inside the aura slowed 25% (pulse-refreshed) |
+| **Galvanize** | technique | common | 1 | damage → hit enemies **exposed** +20% damage taken for 180 ticks · heal → healed allies **inspired** +15% damage dealt for 180 ticks · passive → allies inside inspired +10% (pulse-refreshed) |
+| **Bulwark** | technique | rare | 1 | damage → caster gains a shield of 20% of each instance's final damage (shield cap 30) · heal → overheal (pre-clamp − applied) becomes a shield up to 50% of the instance power for 240 ticks · passive → each pulse +2 shield to allies inside (cap 10) |
+| **Split** | technique | rare | 1 | damage (projectile/direct) → on impact 2 shards at ±35°, 40% resolved power, 2.0 u range · heal (projectile/direct) → the 2 nearest OTHER allies within 2.5 u of the recipient receive 40% · passive GREY · other shapes GREY |
+| **Resonance** | technique | legendary | 1 | every 3rd cast of this skill resolves at ×2 power (counter per skill, persists across rooms, resets at run end; Echo recasts don't advance it) · passive → every 3rd pulse ×2 — but a legendary never fits the passive socket (cap), so on passives it is unsocketable |
+
+Technique rules of §15.3 hold: fire ascending slot (A then B), depth-1 (shards,
+shields, statuses and their pulses never trigger techniques; an echo never
+re-arms its echo), Siphon keeps its flat-stage rule. Statuses refresh (max
+magnitude, max expiry), never stack (§23.8).
+
+**Grey / live matrix** — every skill × every non-universal node. Sharpen,
+Ascend and Keen are live on every skill. `live` = contributes; `GREY` = legal,
+contributes nothing (§15.5 strike treatment); `inert` = saturation-inert (+0
+because the party has only 4 members); `cap` = unsocketable by rarity cap.
+
+| Skill | Bounce | Siphon | Echo | Detonate | Quicken | Multiply | Widen | Reach | Linger | Snare | Galvanize | Bulwark | Split | Resonance |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Mending Bolt (heal proj) | live | live | live | live | live | live | GREY | live | GREY | live | live | live | live | live |
+| Swift Mend (heal direct) | live | live | live | live | live | live | GREY | live | GREY | live | live | live | live | live |
+| Nova Bloom (heal nova) | GREY | live | live | live | live | live (3→4) | live | GREY | GREY | live | live | live | GREY | live |
+| Sanctuary (heal zone) | GREY | live | live | live | live | GREY | live | live | live | live | live | live | GREY | live |
+| Spirit Bolt (dmg proj) | live | live | live | live | live | live | GREY | live | GREY | live | live | live | live | live |
+| Warding Aura (passive) | GREY | GREY | live (reapply) | GREY | GREY | GREY | live | GREY | GREY | live | live | live | GREY | cap |
+| Guardian Bond (heal direct) | live | live | live | live | live | live (2→3) | GREY | live | GREY | live | live | live | live | live |
+| Restorative Wave (heal arc) | GREY | live | live | live | live | inert | live | live | GREY | live | live | live | GREY | live |
+| Lantern Flurry (dmg proj ×3) | live | live | live | live | live | live (3→4) | GREY | live | GREY | live | live | live | live | live |
+| Pale Lance (dmg pierce) | live | live | live | live | live | live (1→2) | GREY | live | GREY | live | live | live | live | live |
+| Bell Toll (dmg nova) | GREY | live | live | live | live | live (5→6) | live | GREY | live (stun) | live | live | live | GREY | live |
+| Rootsnare (dmg zone) | GREY | live | live | live | live | GREY | live | live | live | live | live | live | GREY | live |
+| Dewfall (heal zone) | GREY | live | live | live | live | GREY | live | live | live | live | live | live | GREY | live |
+| Kindred Shield (heal direct) | live | live | live | live | live | live (1→2) | GREY | live | live (shield) | live | live | live | live | live |
+| Mending Tide (heal arc) | GREY | live | live | live | live | inert | live | live | GREY | live | live | live | GREY | live |
+| Hearthsong (heal nova) | GREY | live | live | live | live | inert | live | GREY | live (haste) | live | live | live | GREY | live |
+| Quiet Hearth (passive) | GREY | GREY | live (reapply) | GREY | GREY | GREY | live | GREY | GREY | live | live | live | GREY | cap |
+
+Draft/shop pools keep the §15.5 `usable_by_party` filter; shop prices and the
+§14 invariants are unchanged (3 cheapest = 75 > 72; any 2 ≤ 65 ≤ 72).
+
+### 23.5 New enemies (5) + the elite modifier
+
+All numbers at hpMul = dmgMul = 1 (Act I room 1); §23.2 scales them. Every
+enemy: full §9 juice (flash, numeral, knockback unless stated, sound, kill
+pop + decal), nearest-target rule of §11, one indigo tell, cool desaturated
+body vs the warm party.
+
+| Enemy (kind) | HP | Move u/s | Radius | Attack | Telegraph (Ember) | Silhouette + tell | Threat |
+|---|---|---|---|---|---|---|---|
+| **Quillback** (`quillback`) | 26 | 1.5 | 0.38 | engages ≤ 5.0 u: rolling charge along a lane locked at telegraph start, 6.0 u/s for ≤ 60 ticks, 12 contact dmg once per target per charge, ends at a wall (30-tick stagger after a wall hit); cd 240 ticks | lane 0.7 u wide × min(6 u, to wall), 48 ticks | round dome wrapped in radial quill cones (a spiky ball) with a small snout; indigo quill tips | 1.5 |
+| **Mire Toad** (`toad`) | 34 | 1.0 (keeps 3.0–5.5 u) | 0.42 | lobs a glob at the target's position (locked at telegraph start): 12 dmg in r 0.9, leaves a slick r 0.9 for 180 ticks (party inside slowed 30%); cd 204 ticks | ground ring r 0.9 at the landing point, 60 ticks | wide squat low mass with a big throat sac; indigo eye-glint | 1.6 |
+| **Gloam Moth** (`moth`) | 16 | 2.4 hover (orbits at 3.5 u) | 0.30 | swoop: dives 8.0 u/s along a 5.5 u lane through the target, 9 dmg to each party member crossed (once each); **flier**: ignores Bramble, Millrace, slicks; cd 180 ticks | lane 0.8 u × 5.5 u, 45 ticks | tall V wings over a thin body — the only vertical/flying silhouette; indigo wing eyespots | 1.3 |
+| **Barrow Ram** (`ram`) | 90 | 1.1, turns 90°/s | 0.55 | **horn guard**: party PROJECTILES arriving within ±55° of its facing are blocked (0 dmg, `hit_blocked` event, Bone "blocked" numeral, a tink) — arcs/novas/zones/direct are not; horn slam: cone 1.8 u / half-angle 50°, 18 dmg; cd 270 ticks; knockback ×0.3 | cone, 60 ticks | blocky bighorn whose huge curled horns form a shield disc in front; indigo horn rims | 3.0 |
+| **Grave Mole** (`mole`) | 24 | 2.2 burrowed | 0.35 | burrows (untargetable, `hittable: false`, visible dirt-ripple trail) under the target; emerges when within 0.3 u or after 180 ticks: bite 11 dmg in r 0.8; stays surfaced and hittable 120 ticks, then re-burrows | ground ring r 0.8 at the emerge point, 60 ticks | low wedge snout with oversized digging claws; indigo claw tips | 1.5 |
+| **Elite** (any non-boss) | ×1.8 | ×1 | ×1.2 scale | damage ×1.25 | same | indigo crown glyph above the head + a second (outer) indigo ring — never violet | cost ×1.8 |
+
+### 23.6 Hazards (5) — world objects, faction `neutral`
+
+Hazards hurt EVERY faction unless stated (a tool as much as a threat).
+Telegraphs are Ember, ≥ 42 ticks, NOT player-targeted (no governor slot),
+phase-offset per layout so no two hazard resolutions land within 0.6 s.
+Idle states are drawn in the biome palette, never in the Ember band.
+
+| Hazard | Where | Idle look | Cycle / effect | Telegraph |
+|---|---|---|---|---|
+| **Bramble Snare** | Act I | dark thorn tangle patches r 0.9–1.3 (indigo-green) | static: ground bodies inside move ×0.65 (fliers and the Stag immune); no damage | none (no damage) |
+| **Puffcap** | Acts I, II | pale fungus cluster, body r 0.35 | idle 300 ticks → swell → burst 10 dmg r 1.3 → cooldown 120 → idle; any damage while idle starts the swell at once (pop it next to enemies) | Ember ring r 1.3 + chevrons, 60 ticks |
+| **Millrace** | Act II | black-teal water lane, width 1.4 u, flow streaks | bodies inside (not fliers) pushed along the lane at 1.3 u/s (swept vs walls — environmental push, not §9 knockback, so the party is affected); surge every 540 ticks: 12 dmg + push 3.0 u/s for 30 ticks; the Sluice Lever stops both | lane glow + chevrons along the flow, 60 ticks |
+| **Rockfall** | Act III | dust sifting from the barrow roof | schedule rolled at room start (every 240–360 ticks) at a party member's position at telegraph start; 15 dmg r 0.9; leaves rubble (collider r 0.6, blocks movement and projectiles) for 480 ticks, ≤ 2 rubble at once; **player-targeted → uses the §11 governor** | Ember ring r 0.9, 72 ticks |
+| **Gravefire Vents** | Act III | cracked grave slabs with a faint warm glow (amber, not Ember) | lines of 3 vents erupt in sequence 18 ticks apart, 12 dmg column r 0.7 for 12 ticks each; cycle 420 ticks | Ember glyph ring r 0.7, 54 ticks per vent |
+
+### 23.7 Interactive environmental assets (5)
+
+`interact` = KeyE press within 1.1 u (resolved after revive arbitration; a
+press next to a Downed ally is a revive). Prompt: `ix-` plate "E · <verb>" over
+the object, charcoal plate + Parchment ink; used/cooldown states have their own
+glyph (never colour alone).
+
+| Asset | Where | Behaviour | Feedback |
+|---|---|---|---|
+| **Dewfont** | all acts | E → every living party member heals 25% max HP (heal pipeline, crits allowed, full_heal events); once per room | Bright Heal water glow + rising motes; basin visibly dries; "E · Drink" → "Dry" |
+| **Barricade** | all acts (timber / crates / bone cairn skins) | box collider 1.4 × 0.45 u, 60 HP, `lifecycle: 'break'`; blocks movement and every straight projectile (party bolts, skill bolts, enemy shots; lobbed globs pass over); damaged by projectiles and area damage (nova, zones, keg, hazards) | hit flash + splinters; breaks into debris (`broken`) |
+| **Powder Keg** | all acts | 1 HP, `lifecycle: 'break'`; any damage → 60-tick fuse → blast 30 dmg r 1.6 to ALL factions (knockback on enemies), chains other kegs in range | Ember fuse ring + sparks during the fuse; blast ring, shake (§9 #7 ceilings) |
+| **Sluice Lever + Gate** | Act II | E → the gate drops and the millrace (current + surges) stops for 720 ticks, then a 1200-tick cooldown | gate animates; water stills; lever glyph shows the cooldown clock |
+| **Warding Bell** | Act III | E → stun all non-boss hostiles within 3.0 u for 60 ticks; once per room | bronze ring shockwave (amber/Parchment), stun glyphs |
+
+Placements per layout live in src/data/layouts.js (M4b): Act I layouts get
+Bramble ×2, Puffcap ×2 (from room 2), Barricade ×2, Keg ×1–2, Dewfont in one of
+the three layouts; Act II: one or two Millrace lanes + one Sluice per millrace
+layout, Puffcap ×2–3, Barricade ×2–3, Keg ×1–2, Dewfont ×1; Act III: Rockfall
+always on, Gravefire lines ×1–2, Bell ×1 (layouts 7, 9), Barricade ×2–3, Keg
+×1–2, Dewfont ×1. Every placement stays ≥ 1.5 u from the §11 spawn ring, ≥ 2.5
+u from the Waystone (0, 1.6) and outside the party's room-entry arc; boss rooms
+carry no hazards.
+
+### 23.8 Statuses (src/sim/status.js)
+
+Plain data on the entity (`e.status[kind] = { mag, untilTick, src }`). Refresh
+= max(mag), max(expiry); never stack. slow: move ×(1 − mag), cap 0.6, boss
+immune · stun: no movement and no attack starts, non-boss only, ≤ 60 ticks,
+then 120 ticks of stun immunity · haste: party move ×(1 + mag) · shield:
+absorbs damage before HP, cap 50% max HP, the absorbed part shows as a small
+Bone "(n)" numeral next to the HP-delta numeral (§17 numerals still equal HP
+deltas) · ward: damage taken ×(1 − mag) · exposed: damage taken ×(1 + mag) ·
+inspired: damage dealt ×(1 + mag). Order in the §9 pipeline: base → attacker
+inspired → crit roll → target exposed × ward → shield absorb → HP.
+
+### 23.9 Eight skill slots
+
+Keys 1–8 (Digit1–Digit8). §4 resolution order: skills ascending slot 0–7, then
+basic fire. HUD command bar: 4 portraits · 8 skill tiles · dodge, one cooldown
+grammar, fitting 1024×576 → 2560×1440 without overlap (§17 floors hold). Draft
+`free_skill_slots = 8 − owned`; a full run can fill all 8 (2 starting + up to 6
+skill rewards). The socket screen lists every owned skill (2 sockets each; the
+passive 1). The run UI carry-key set grows to 1–8.

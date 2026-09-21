@@ -18,6 +18,18 @@ export const DISCRETE_INTENTS = Object.freeze([
   'skill_2',
   'skill_3',
   'skill_4',
+  // Gauntlet content extension (docs/gauntlet/PLAN.md §4.3): slots 5-8 go
+  // live when core/constants.js SKILL_SLOTS = 8 (M4a); until then no key
+  // produces them.
+  'skill_5',
+  'skill_6',
+  'skill_7',
+  'skill_8',
+  // Interactable use (PLAN §4.6, M4b): a discrete press on KeyE, alongside the
+  // held `revive_hold` the same key already drives. The world ignores it
+  // until the interactables system resolves it (after revive arbitration: a
+  // press next to a Downed ally is a revive, never an interaction).
+  'interact',
   'rally', // player-only
   'target_cycle', // player-only
   'target_select', // player-only, carries index 0-3

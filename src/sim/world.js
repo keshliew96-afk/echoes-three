@@ -28,6 +28,7 @@ import {
   HEALER,
   ARENA,
   HARNESS,
+  SKILL_SLOTS,
 } from '../core/constants.js';
 import { DENIAL } from '../core/intents.js';
 import { innerBounds, walkStep, sweptStep } from './movement.js';
@@ -269,6 +270,10 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   events.on('room_cleared', (ev) => runSys.onRoomCleared(ev));
   events.on('defeat', () => runSys.onDefeat());
 
+  // @gnt:M4b CONTENT-SYSTEMS — the hazards (sim/hazards.js) and interactables
+  // (sim/interactables.js) systems are created here and hook the phases at
+  // the three CONTENT-* anchors below (docs/gauntlet/PLAN.md §2 / §4).
+
   // --- Harness wisps (sim-core proving population; ?scene=simtest only).
   function spawnWisp(x, z) {
     // Draw order is fixed: (position x, position z if not given), angle,
@@ -386,6 +391,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // Run block (§11 boss): the Hollow Stag steers/lunges with the enemy pass,
     // so its body settles before knockback and projectile sweeps.
     runSys.continuous();
+    // @gnt:M4b CONTENT-CONTINUOUS — hazard pushes/slows, interactable timers.
 
     // §9 #3 knockback displacement: impulse away from the hit over kbTicks,
     // swept vs walls (no slide — wall contact ends the impulse). Runs before
@@ -468,6 +474,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // ② continued: the boss (run block) resolves with the enemy pass.
     runSys.discrete();
     drainContinuations();
+    // @gnt:M4b CONTENT-DISCRETE — hazard resolutions and `interact` presses
+    // (after the ally pass, so revive arbitration has already claimed KeyE
+    // next to a Downed body), ascending spawn ordinal.
 
     // ④ persistent-zone scheduled ticks, ascending zone spawn ordinal, then
     // the Warding Aura cadence (skills block). Zone/aura heals can carry
@@ -550,7 +559,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // suppressed (§5) — the world owns that rule; the skill system owns
     // empty/passive/cooldown denials and the actual §6 instant-cast fire.
     // Same-frame multi-skill presses all fire here, ascending slot.
-    for (let slot = 0; slot < 4; slot++) {
+    // @gnt:M4a SKILL-SLOTS — slot loop runs 0..SKILL_SLOTS-1 (4 -> 8, PLAN §4.3).
+    for (let slot = 0; slot < SKILL_SLOTS; slot++) {
       const kind = `skill_${slot + 1}`;
       if (!accepted.has(kind)) continue;
       if (player.dashTicksLeft > 0) {
@@ -703,6 +713,10 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
 
   // ------------------------------------------------------------------ step --
 
+  // @gnt:M5b SEAT-INPUTS — network play extends this to
+  // step(tick, snapshot, seatInputs) where seatInputs[partyIndex] is a human
+  // guest's snapshot for that ally seat (absent -> the §12 AI). Single-player
+  // never passes it and must stay bit-identical (PLAN gate G5b.8).
   function step(tick, snapshot) {
     currentTick = tick;
     continuousPhase(snapshot);
@@ -804,6 +818,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         .all()
         .filter((e) => e.kind === 'bolt')
         .map((e) => ({ id: e.id, x: r2(e.x), z: r2(e.z), traveled: r2(e.traveled) })),
+      // @gnt:M4b HOSTILE-KINDS — new enemy kinds must appear here (prefer a
+      // faction === 'hostile' test over a kind list).
       enemies: registry
         .all()
         .filter(
@@ -882,6 +898,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         return e.hp;
       }
       case 'killAllEnemies': {
+        // @gnt:M4b HOSTILE-KINDS (same rule as snapshotState).
         maintainPopulation = false;
         const hostiles = registry
           .all()
@@ -1027,6 +1044,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     }
   }
 
+  // @gnt:M2 WORLD-STATE — serialize()/restore() of the world's own state and
+  // every system's (PLAN §3.4) are exposed from this object.
   return {
     step,
     cmd,

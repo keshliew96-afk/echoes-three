@@ -9,14 +9,19 @@
 // queue between ticks; sample() drains it (so a press always lands on exactly
 // one tick, the first tick sampled after the keydown).
 import { emptySnapshot } from './intents.js';
+import { SKILL_SLOTS } from './constants.js';
 
-// §3 control map -> discrete intent presses.
+// §3 control map -> discrete intent presses. Skill keys Digit1..DigitN are
+// derived from SKILL_SLOTS (4 at v0.4.63, 8 after the content extension).
+// @gnt:INPUT-KEYS — M4a (skill keys) / M4b (interact) anchored region.
+const SKILL_KEYS = {};
+for (let i = 0; i < SKILL_SLOTS; i++) SKILL_KEYS[`Digit${i + 1}`] = { kind: `skill_${i + 1}`, slot: i };
 const KEY_TO_PRESS = Object.freeze({
   Space: { kind: 'dodge' },
-  Digit1: { kind: 'skill_1', slot: 0 },
-  Digit2: { kind: 'skill_2', slot: 1 },
-  Digit3: { kind: 'skill_3', slot: 2 },
-  Digit4: { kind: 'skill_4', slot: 3 },
+  ...SKILL_KEYS,
+  // KeyE is ALSO the held revive channel (sample() reads it as reviveHeld);
+  // the discrete press feeds interactables (PLAN §4.6).
+  KeyE: { kind: 'interact' },
   KeyR: { kind: 'rally' },
   Tab: { kind: 'target_cycle' },
   F1: { kind: 'target_select', index: 0 },

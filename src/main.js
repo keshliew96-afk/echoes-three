@@ -15,6 +15,14 @@
 //   ?seed=123                  force the gameplay RNG seed (determinism tests)
 //   ?debug=1                   sim debug overlay (tick / entities / RNG draws)
 //   ?bloom=0 ?vignette=0 ?grade=0 ?outline=0   post/outline toggles (default on)
+//   Gauntlet params (?menu= ?act= ?fresh= ?slot= ?audio= ?net* ...): see
+//   src/app/params.js and docs/gauntlet/PLAN.md §6.
+//
+// GAUNTLET OWNERSHIP ANCHORS (docs/gauntlet/PLAN.md §2): each `@gnt:<NAME>`
+// comment marks the one region a module key may edit in this shared file —
+// APP-BOOT / APP-ATTACH / LOOP (M1), AUDIO (M3), WORLD-LAYERS (M4a/M4b),
+// SAVE (M2), NET (M5a/M5b), DEBUG-API (one line per namespace, its owner).
+// Re-read immediately before editing; keep edits inside the region.
 import { Plane, Raycaster, Vector2, Vector3 } from 'three';
 import { VERSION } from './version.js';
 import { createStage } from './render/stage.js';
@@ -43,6 +51,15 @@ import { createBossLayer } from './render/boss/index.js';
 import { createRunUi } from './ui/run/index.js';
 import { updateNumberPools, flushNumberPools, prewarmNumberPools } from './render/numbers.js';
 import { warmupUpdate, warmupPending, warmupRetained } from './render/warmup.js';
+import { parseBootParams, wipeEchoesStorage } from './app/params.js';
+import { createApp } from './app/app.js';
+import { service } from './app/registry.js';
+import { createFrameScheduler } from './app/loop.js';
+import { SKILL_SLOTS } from './core/constants.js';
+import { emptySnapshot } from './core/intents.js';
+import { scriptedInput } from './sim/script.js';
+import { hashState, fnv1a64Hex } from './core/hash.js';
+import { canonicalJSON } from './core/canonical.js';
 
 const params = new URLSearchParams(window.location.search);
 const flag = (name, def = true) => {
@@ -59,6 +76,14 @@ const toggles = {
   // quality knobs on real GPUs.
   msaa: params.has('msaa') ? parseInt(params.get('msaa'), 10) || 0 : 0,
 };
+
+// @gnt:APP-BOOT begin (M1) — the app shell exists BEFORE any game listener:
+// M1's window capture-phase input gate must run ahead of core/input.js and
+// ui/run/index.js (which also listens in the capture phase).
+const bootParams = parseBootParams();
+if (bootParams.fresh) wipeEchoesStorage();
+const app = createApp({ params: bootParams });
+// @gnt:APP-BOOT end
 
 const stage = createStage({ container: document.getElementById('app'), toggles });
 
@@ -148,9 +173,12 @@ const world = createWorld({
   room: params.get('room'),
 });
 
-// §21/§9 sound slots: synth subscribes to sim events, emits `sound` events
-// back into the ring (the observable contract in headless captures).
+// @gnt:AUDIO begin (M3) — §21/§9 sound slots: synth subscribes to sim events,
+// emits `sound` events back into the ring (the observable contract in
+// headless captures). M3 replaces this with the audio engine (PLAN §3.5)
+// and keeps the `sound` event contract.
 createSynth(bus);
+// @gnt:AUDIO end
 
 const buildScene = SCENES[sceneKey];
 const activeScene = buildScene(stage, toggles, { world, cosmetic, bus, rng });
@@ -245,6 +273,16 @@ const runUi =
     ? createRunUi({ bus, world, socket: socketScreen, autostart: params.get('run') === '1' })
     : null;
 
+// @gnt:WORLD-LAYERS (M4a/M4b) — new render layers for content (hazards,
+// interactables, new skill/technique VFX) are created here, PLAYABLE only,
+// and ticked in the LOOP's render block.
+
+// @gnt:SAVE (M2) — createSaveSystem({ clock, rng, registry, world, bus,
+// scene: activeScene, stage, app }) + provide('save', ...) (PLAN §3.4).
+
+// @gnt:NET (M5a/M5b) — createNetSession(...) + provide('net', ...) and the
+// sim driver swap for host/guest roles (PLAN §3.7).
+
 const overlay = createDebugOverlay(VERSION, {
   debug: flag('debug', false),
   providers: {
@@ -259,6 +297,11 @@ window.addEventListener('resize', () => stage.resize());
 
 // --- Frame loop: clock.advance steps the sim 0..N whole ticks (each tick
 // samples intents once), returns the interpolation alpha for rendering.
+// @gnt:LOOP (M1) — the scheduler (src/app/loop.js) owns frame pacing
+// (V-Sync / frame limit); the sim gate is app.simPaused() (title, pause,
+// farewell) + the debug freeze (__echoes.sim). Render never stops.
+let simFrozen = bootParams.freeze; // ?freeze=1: tick 0 until __echoes.sim.thaw()
+let lastAlpha = 0;
 let last = performance.now();
 let fpsMeterClock = 0;
 // Boot warm-up of the damage-numeral layer (certification fix D-r3 S1): one
@@ -300,13 +343,17 @@ function sampleIntents() {
   return snap;
 }
 
-stage.renderer.setAnimationLoop((now) => {
+function frame(now) {
   const frameMs = now - last;
   last = now;
 
-  const alpha = clock.advance(frameMs, (tick) => {
-    world.step(tick, sampleIntents());
-  });
+  let alpha = lastAlpha;
+  if (!simFrozen && !app.simPaused()) {
+    alpha = clock.advance(frameMs, (tick) => {
+      world.step(tick, sampleIntents());
+    });
+    lastAlpha = alpha;
+  }
 
   // Render side: read-only over sim state, interpolated by alpha.
   activeScene.update?.(now / 1000, alpha);
@@ -330,6 +377,8 @@ stage.renderer.setAnimationLoop((now) => {
   runUi?.update();
   hud?.update(now);
 
+  app.update(now);
+
   frameTimes.push(frameMs);
   if (frameTimes.length > FRAME_WINDOW) frameTimes.shift();
   fpsMeterClock += frameMs;
@@ -338,11 +387,148 @@ stage.renderer.setAnimationLoop((now) => {
     fps = computeFps();
     overlay.setFps(fps);
   }
+}
+
+const scheduler = createFrameScheduler({ renderer: stage.renderer, frame });
+
+// @gnt:APP-ATTACH begin (M1) — hand the app shell every layer it drives,
+// then decide title vs menu-skip (PLAN §1). ARCH stub: always 'playing'.
+app.attach({
+  stage,
+  world,
+  clock,
+  bus,
+  rng,
+  registry,
+  input,
+  scene: activeScene,
+  runUi,
+  socket: socketScreen,
+  hud,
+  overlay,
+  scheduler,
 });
+app.boot();
+// @gnt:APP-ATTACH end
+scheduler.start();
+
+// --- __echoes.sim (ARCH, PLAN §6.4): deterministic stepping for probes. The
+// realtime loop is frozen while a probe steps; stepping uses the scripted
+// input generator (src/sim/script.js) or idle input, never the keyboard.
+const simInput = (scriptSeed, t) =>
+  scriptSeed === null || scriptSeed === undefined
+    ? emptySnapshot()
+    : scriptedInput(scriptSeed, t, { skillSlots: SKILL_SLOTS });
+const safeHash = (v) => {
+  try {
+    return hashState(v);
+  } catch {
+    return fnv1a64Hex(JSON.stringify(v));
+  }
+};
+function stepN(n, scriptSeed = null) {
+  const was = simFrozen;
+  simFrozen = true;
+  let stepped = 0;
+  let guard = 0;
+  while (stepped < n && guard < n * 8 + 64) {
+    guard += 1;
+    if (clock.stepOnce((t) => world.step(t, simInput(scriptSeed, t)))) stepped += 1;
+  }
+  simFrozen = was;
+  return { stepped, tick: clock.tick };
+}
+const simDebug = {
+  get frozen() {
+    return simFrozen;
+  },
+  freeze() {
+    simFrozen = true;
+    return clock.tick;
+  },
+  thaw() {
+    simFrozen = false;
+    return clock.tick;
+  },
+  script: (seed, t) => simInput(seed, t),
+  stepN,
+  // State hash over the observable snapshot. M2 swaps in the COMPLETE state
+  // capture (save schema v1) via service('save').hash when it lands.
+  hash: () => {
+    const save = service('save');
+    return save && typeof save.hash === 'function' ? save.hash() : safeHash(world.snapshotState());
+  },
+  // trace(n, scriptSeed): step n ticks with scripted input and digest every
+  // sim event except `sound` (audio is not sim state). DESTRUCTIVE to the
+  // session (the party moves) — a probe, not gameplay.
+  trace(n = 600, scriptSeed = 1) {
+    const fromTick = clock.tick;
+    const evs = [];
+    const byType = {};
+    const off = bus.on('*', (ev) => {
+      if (ev.type === 'sound') return;
+      evs.push(ev);
+      byType[ev.type] = (byType[ev.type] || 0) + 1;
+    });
+    let r;
+    try {
+      r = stepN(n, scriptSeed);
+    } finally {
+      off();
+    }
+    let eventsHash;
+    try {
+      eventsHash = fnv1a64Hex(canonicalJSON(evs));
+    } catch {
+      eventsHash = fnv1a64Hex(JSON.stringify(evs));
+    }
+    return {
+      fromTick,
+      toTick: r.tick,
+      stepped: r.stepped,
+      stateHash: simDebug.hash(),
+      eventsHash,
+      eventCount: evs.length,
+      byType,
+    };
+  },
+};
 
 // --- Debug API (docs/TESTING.md). cmd surface grows as systems land.
 window.__echoes = {
   version: VERSION,
+  // @gnt:DEBUG-API — Gauntlet namespaces (PLAN §6.4). Each resolves its
+  // module's service lazily, so owners never edit this file for their probes:
+  // provide('<name>', impl) with impl.debug = { ... }.
+  app: app.debug,
+  get settings() {
+    const s = service('settings');
+    return s
+      ? {
+          get: (k) => s.get(k),
+          set: (k, v) => s.set(k, v, { source: 'api' }),
+          reset: (prefix) => s.reset(prefix),
+          dump: () => s.snapshot(),
+          keys: () => s.keys(),
+          persist: () => s.persist(),
+          storageKey: s.storageKey,
+          loadReport: s.loadReport,
+        }
+      : null;
+  },
+  get audio() {
+    const a = service('audio');
+    return a ? a.debug ?? a : null;
+  },
+  get save() {
+    const v = service('save');
+    return v ? v.debug ?? v : null;
+  },
+  get net() {
+    const n = service('net');
+    return n ? n.debug ?? n : null;
+  },
+  sim: simDebug,
   // HUD probe surface (§17 block): portrait states, cooldown boxes, zone
   // metrics, banner mode and the off-screen threat audit.
   hud: hud ? hud.debug : null,
