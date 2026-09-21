@@ -65,7 +65,15 @@ export function parseBootParams(search = typeof window !== 'undefined' ? window.
 // Wipe every key this game owns (settings, saves, profile, net session) —
 // used by ?fresh=1 so a critic starts from a clean profile without touching
 // other origins' storage. Returns the number of keys removed.
-export function wipeEchoesStorage(storage = typeof localStorage !== 'undefined' ? localStorage : null) {
+export function wipeEchoesStorage(
+  storage = (() => {
+    try {
+      return typeof window !== 'undefined' ? window.localStorage : null; // M2: the getter throws when site data is blocked
+    } catch {
+      return null;
+    }
+  })()
+) {
   if (!storage) return 0;
   let n = 0;
   try {

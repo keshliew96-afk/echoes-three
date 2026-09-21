@@ -74,7 +74,13 @@ function safeStorage(storage) {
 }
 
 export function createSettingsStore({
-  storage = typeof localStorage !== 'undefined' ? localStorage : null,
+  storage = (() => {
+    try {
+      return typeof window !== 'undefined' ? window.localStorage : null; // M2: the getter throws when site data is blocked
+    } catch {
+      return null;
+    }
+  })(),
   key = SETTINGS_STORAGE_KEY,
   specs = CORE_SETTINGS,
 } = {}) {

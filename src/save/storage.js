@@ -42,7 +42,17 @@ export function isQuotaError(err) {
   );
 }
 
-export function createSaveStorage({ storage = typeof localStorage !== 'undefined' ? localStorage : null } = {}) {
+// A browser that blocks site data throws on the `localStorage` GETTER itself
+// (and `typeof localStorage` runs that getter), so the lookup is guarded.
+function defaultStorage() {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null;
+  } catch {
+    return null;
+  }
+}
+
+export function createSaveStorage({ storage = defaultStorage() } = {}) {
   let quotaSim = false;
   let available = false;
   try {
