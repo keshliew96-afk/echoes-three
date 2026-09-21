@@ -44,7 +44,6 @@ import { createRegistry } from './core/registry.js';
 import { createEventBus } from './core/events.js';
 import { createInputController } from './core/input.js';
 import { createWorld } from './sim/world.js';
-import { createSynth } from './audio/synth.js';
 import { createSkillFx } from './render/skillfx/index.js';
 import { createEnemyLayer } from './render/enemies/index.js';
 import { createAllyLayer } from './render/allies/index.js';
@@ -182,11 +181,19 @@ const world = createWorld({
   room: params.get('room'),
 });
 
-// @gnt:AUDIO begin (M3) — §21/§9 sound slots: synth subscribes to sim events,
-// emits `sound` events back into the ring (the observable contract in
-// headless captures). M3 replaces this with the audio engine (PLAN §3.5)
-// and keeps the `sound` event contract.
-createSynth(bus);
+// @gnt:AUDIO begin (M3) — the audio engine (src/audio/engine.js, PLAN §3.5):
+// bus graph + limiter, procedural music / ambient beds, spatial SFX for every
+// sim event (it still emits `sound` events into the ring — the observable
+// contract in headless captures), the Settings ▸ Audio tab. No AudioContext
+// exists until the app gesture hook calls engine.unlock(e); per-frame work
+// runs from app.update(now) -> service('audio').update(now).
+import { createAudioEngine } from './audio/engine.js';
+import { registerAudioTab } from './ui/menu/tabs/audio.js';
+provide(
+  'audio',
+  createAudioEngine({ bus, settings: app.settings, stage, app, world, registry, params: bootParams })
+);
+registerAudioTab();
 // @gnt:AUDIO end
 
 const buildScene = SCENES[sceneKey];
