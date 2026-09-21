@@ -241,7 +241,7 @@ async function gClip() {
   // the Stag through its three add phases, topping up with extra adds so at
   // least 6 hostiles fight at once.
   await page.mouse.move(800, 380);
-  await page.mouse.down();
+  await page.mouse.down({ button: 'right' });
   const samples = [];
   for (const [frac, extra] of [[0.72, 2], [0.45, 2], [0.2, 2]]) {
     await ev(page, (f) => window.__echoes.cmd('bossHp', f), frac);
@@ -263,12 +263,12 @@ async function gClip() {
           const hostiles = (s.entities ? 0 : 0) + window.__echoes.state().party.length;
           void hostiles;
           const E = window.__echoes;
-          return { t: E.tick, hostiles: E.state().room ? E.state().room.alive ?? null : null, voices: E.audio.voices().active, red: E.audio.limiter().reductionDb };
+          return { t: E.tick, hostiles: E.audio.music().fight.hostiles, bossHp: E.audio.music().fight.bossHpPct, music: E.audio.music().state, voices: E.audio.voices().active, red: E.audio.limiter().reductionDb };
         })
       );
     }
   }
-  await page.mouse.up();
+  await page.mouse.up({ button: 'right' });
   const hostileCount = await ev(page, () => {
     const all = window.__echoes.state();
     return all.run && all.run.boss ? all.run.boss : null;
@@ -321,7 +321,7 @@ async function gBalance() {
   await ev(page, () => window.__echoes.audio.meterReset());
   // Real combat: hold the basic attack toward the enemies, strafe a little.
   await page.mouse.move(800, 300);
-  await page.mouse.down();
+  await page.mouse.down({ button: 'right' });
   const t0 = Date.now();
   while (Date.now() - t0 < 16000) {
     await page.keyboard.down('KeyA');
@@ -333,7 +333,7 @@ async function gBalance() {
     const ph = await ev(page, () => window.__echoes.state().run.phase);
     if (ph !== 'combat') break;
   }
-  await page.mouse.up();
+  await page.mouse.up({ button: 'right' });
   const m = await ev(page, () => {
     const A = window.__echoes.audio;
     const hist = (t) => A.history(t, 400);
@@ -383,7 +383,7 @@ async function gMusic() {
   // Title boot (menu) -> New Game (camp) -> portal (combat) -> boss ->
   // victory stinger -> camp -> run -> defeat stinger -> camp, by the real
   // game flow; the music tap is metered across the whole sequence.
-  const { browser, page, errors, consoleLines } = await openAudio(`${BASE}?seed=7`, { gpu: true });
+  const { browser, page, errors, consoleLines } = await openAudio(`${BASE}?seed=7&menu=1`, { gpu: true });
   const states = [];
   const snap = async (label) => {
     const s = await ev(page, () => {
@@ -391,6 +391,8 @@ async function gMusic() {
       return { music: A.music(), meter: A.meter('music'), app: window.__echoes.app ? window.__echoes.app.state : null };
     });
     states.push({ label, state: s.music.state, bpm: s.music.bpm, lastTransitionMs: s.music.lastTransitionMs, app: s.app, low: s.meter ? s.meter.longestBelowMinus50Ms : null, rms: s.meter ? s.meter.shortRmsDb : null });
+    process.stderr.write(`music gate: ${label} ${s.music.state} ${s.music.bpm}
+`);
     return s;
   };
   await page.waitForFunction(() => window.__echoes.audio && window.__echoes.audio.state === 'running', { timeout: 60000 });
@@ -533,7 +535,7 @@ async function gAutoplay() {
     else if (how === 'click') await page.mouse.click(800, 450);
     else await page.touchscreen.tap(800, 450);
     await sleep(600);
-    const after = await q(`(() => { const E = window.__echoes; const p = document.querySelector('.ap-press'); return { state: E.audio.state, app: E.app && E.app.state, stack: E.app && E.app.stack ? E.app.stack() : null, prompt: !!(p && p.classList.contains('ap-on') && p.offsetParent), unlockedVia: E.audio.autoplay().unlockedVia, ms: window.__m3.running !== null && window.__m3.press !== null ? Math.round(window.__m3.running - window.__m3.press) : null, music: E.audio.music().state }; })()`);
+    const after = await q(`(() => { const E = window.__echoes; const p = document.querySelector('.ap-press'); return { state: E.audio.state, app: E.app && E.app.state, stack: E.app && E.app.stack ? E.app.stack() : null, prompt: !!(p && p.classList.contains('ap-on') && p.offsetParent), unlockedVia: E.audio.autoplay().unlockedVia, timing: (({ gestureAtMs, unlockedAtMs, runningAtMs, buildMs, buildParts, stateLog }) => ({ gestureAtMs, unlockedAtMs, runningAtMs, buildMs, buildParts, stateLog }))(E.audio.autoplay()), ms: (() => { const a = E.audio.autoplay(); return a.runningAtMs !== null && a.unlockedAtMs !== null ? Math.round((a.runningAtMs - a.unlockedAtMs) * 10) / 10 : null; })(), dispatchMs: (() => { const a = E.audio.autoplay(); return a.unlockedAtMs !== null && a.gestureAtMs !== null ? Math.round(a.unlockedAtMs - a.gestureAtMs) : null; })(), music: E.audio.music().state }; })()`);
     await sleep(2500);
     const heard = await q(`(() => { const m = window.__echoes.audio.meter('music'); return { music: window.__echoes.audio.music().state, rms: m ? m.shortRmsDb : null, app: window.__echoes.app.state }; })()`);
     results.push({ how, before, beforeWarnErr: beforeLines, autoplayWarning: autoplayWarn, after, heard, pageErrors: errors.length });
@@ -631,7 +633,10 @@ async function gPersist() {
     gains,
     muteOnBlur: { before: pre, blurred: blurred.param, refocused: refocus.param, hidden, shown },
   };
-  res.pass = persistOk && pre > 0.5 && blurred.param < 0.001 && refocus.param > 0.5 && (hidden.vis !== 'hidden' || hidden.g.param < 0.001) && shown.g.param > 0.5 && errors.length === 0;
+  const expectMaster = Math.pow(0.65, Math.log2(10) / 2); // log curve at 0.65
+  const near = (v) => Math.abs(v - expectMaster) < 0.005;
+  res.expectMasterParam = expectMaster;
+  res.pass = persistOk && near(pre) && blurred.param < 0.001 && near(refocus.param) && (hidden.vis !== 'hidden' || hidden.g.param < 0.001) && near(shown.g.param) && errors.length === 0;
   res.pageErrors = errors.length;
   return save('persist', res);
 }
@@ -804,11 +809,11 @@ async function gCost() {
   await page.waitForFunction(() => window.__echoes.state().run.phase === 'combat', { timeout: 30000 });
   await ev(page, () => window.__echoes.audio.costReset());
   await page.mouse.move(800, 300);
-  await page.mouse.down();
+  await page.mouse.down({ button: 'right' });
   let peak = 0;
   // Every room of a run: fight a few seconds, clear, advance through reward / path / shop.
   const rooms = [];
-  for (let n = 0; n < 12; n++) {
+  for (let n = 0; n < 30; n++) {
     await sleep(3500);
     const v = await ev(page, () => window.__echoes.audio.voices());
     peak = Math.max(peak, v.peak);
@@ -818,7 +823,10 @@ async function gCost() {
       if (!r.active) return { done: true, phase: r.phase };
       if (r.phase === 'combat') {
         if (r.room === 8) E.cmd('killBoss');
-        else E.cmd('killAllEnemies');
+        else {
+          E.cmd('killAllEnemies');
+          E.cmd('clearRoom'); // defend rooms end on the objective, not on kills
+        }
       }
       await new Promise((res) => setTimeout(res, 900));
       const r2 = E.state().run;
@@ -832,8 +840,14 @@ async function gCost() {
     rooms.push(s);
     if (s.done) break;
   }
-  await page.mouse.up();
+  await page.mouse.up({ button: 'right' });
   const cost = await ev(page, () => window.__echoes.audio.cost());
+  // Back to camp, then 3 s of no gameplay sound.
+  await ev(page, () => {
+    const E = window.__echoes;
+    if (E.state().run.phase === 'victory' || E.state().run.phase === 'defeat') E.cmd('returnToCamp');
+    return true;
+  });
   await sleep(3000);
   const idle = await ev(page, () => ({ voices: window.__echoes.audio.voices(), music: window.__echoes.audio.music().state }));
   const res = { gate: 'G3.10', cost, peakVoices: peak, idleAfter3s: idle.voices.active, idle, rooms };
@@ -860,6 +874,7 @@ const ROWS = [
 async function gCoverage() {
   const { browser, page, errors, consoleLines } = await openAudio(`${BASE}?seed=7&menu=1`, { gpu: true });
   await page.waitForFunction(() => window.__echoes.app && window.__echoes.app.state === 'title', { timeout: 60000 });
+  const note = (s) => process.stderr.write(`coverage: ${s}\n`);
   await ev(page, () => {
     const E = window.__echoes;
     window.__m3cov = { events: {}, sounds: {} };
@@ -869,52 +884,81 @@ async function gCoverage() {
     });
     return true;
   });
-  // nav on the title
-  await page.keyboard.press('ArrowDown');
-  await sleep(200);
-  await page.keyboard.press('ArrowUp');
-  await sleep(200);
-  await ev(page, () => window.__echoes.app.newGame && window.__echoes.app.newGame());
+  // App nav on the title (UI bus).
+  for (const k of ['ArrowDown', 'ArrowUp']) {
+    await page.keyboard.press(k);
+    await sleep(200);
+  }
+  await ev(page, () => {
+    window.__echoes.app.newGame();
+    return true;
+  });
   await page.waitForFunction(() => window.__echoes.app.state === 'playing', { timeout: 30000 });
   await sleep(800);
-  // Build: every Healer skill + techniques socketed so casts hit every family.
   await ev(page, () => {
-    const E = window.__echoes;
-    E.cmd('startRun');
+    window.__echoes.cmd('startRun');
     return true;
   });
   await page.waitForFunction(() => window.__echoes.state().run.phase === 'combat', { timeout: 30000 });
+  note('room 1 combat');
+  // Build: all four techniques + extra skills, socketed on skills the party casts.
+  const build = await ev(page, () => {
+    const E = window.__echoes;
+    for (const s of ['sanctuary', 'warding_aura', 'nova_bloom', 'spirit_bolt']) E.cmd('giveSkill', s);
+    for (const n of ['bounce', 'siphon', 'detonate', 'echo', 'bounce']) E.cmd('grantNode', n);
+    const sk = E.state().skills.filter(Boolean).map((s) => s.id);
+    return { sk };
+  });
+  note(`build ${JSON.stringify(build)}`);
+  // Wound the party so heals land (bounce / siphon need a heal to fire).
   await ev(page, () => {
     const E = window.__echoes;
-    for (const s of ['sanctuary', 'warding_aura']) E.cmd('giveSkill', s);
-    for (const n of ['bounce', 'siphon', 'detonate', 'echo']) E.cmd('grantNode', n);
-    const sk = E.state().skills.filter(Boolean).map((s) => s.id);
-    E.cmd('socket', sk[0], 'bounce');
-    E.cmd('socket', sk[0], 'echo');
-    E.cmd('socket', sk[1], 'siphon');
-    E.cmd('socket', sk[1], 'detonate');
-    E.cmd('socket', sk[0], 'no_such_node');
-    return sk;
+    for (const p of E.state().party) E.cmd('setHp', p.id, 0.45);
+    return true;
   });
-  await page.mouse.move(800, 300);
-  await page.mouse.down();
-  const keys = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Space', 'Tab', 'KeyR'];
-  for (let i = 0; i < 40; i++) {
+  // Real input: hold the basic attack (right mouse), cast every slot, dodge,
+  // mark (Tab), rally (R).
+  await page.mouse.move(800, 330);
+  await page.mouse.down({ button: 'right' });
+  const keys = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Space', 'Tab', 'KeyR', 'Digit1', 'Digit2'];
+  for (let i = 0; i < 45; i++) {
     await page.keyboard.press(keys[i % keys.length]);
-    await sleep(230);
+    await sleep(210);
+    if (i % 9 === 8)
+      await ev(page, () => {
+        const E = window.__echoes;
+        for (const p of E.state().party) if (!p.downed) E.cmd('setHp', p.id, 0.5);
+        return true;
+      });
   }
-  // Downed + revive: drop an ally, let the party revive, break one channel.
-  await ev(page, () => {
+  await page.mouse.up({ button: 'right' });
+  // Downed -> revive channel (hold E) -> break one channel -> full revive.
+  const allyId = await ev(page, () => {
     const E = window.__echoes;
     const a = E.state().party.find((p) => p.kind === 'ally');
     E.cmd('setHp', a.id, 0);
     return a.id;
   });
-  await page.keyboard.down('KeyF');
-  await sleep(2600);
-  await page.keyboard.up('KeyF');
-  await sleep(2000);
-  // hit_immune: an i-frame window on the player while hits land.
+  await ev(
+    page,
+    (id) => {
+      const E = window.__echoes;
+      const a = E.state().party.find((p) => p.id === id);
+      E.cmd('teleport', a.x + 0.6, a.z);
+      return true;
+    },
+    allyId
+  );
+  await page.keyboard.down('KeyE');
+  await sleep(700);
+  await ev(page, () => window.__echoes.cmd('breakRevive', 'probe'));
+  await sleep(400);
+  await page.keyboard.up('KeyE');
+  await sleep(300);
+  await page.keyboard.down('KeyE');
+  await sleep(3200);
+  await page.keyboard.up('KeyE');
+  // hit_immune: an i-frame window on the player while a hit lands.
   await ev(page, () => {
     const E = window.__echoes;
     const p = E.state().party[0];
@@ -922,54 +966,143 @@ async function gCoverage() {
     E.cmd('hitOnce', p.id);
     return true;
   });
-  // Clear, take and decline drafts, path, shop, boss.
-  const flow = await ev(page, async () => {
+  await page.mouse.down({ button: 'right' });
+  await sleep(1500);
+  await page.mouse.up({ button: 'right' });
+  const waitPhase = (ph) => page.waitForFunction((ph) => window.__echoes.state().run.phase === ph, { timeout: 20000 }, ph);
+  // Room 1 -> reward (take) -> path; room 2 -> reward (decline) -> path.
+  await ev(page, () => window.__echoes.cmd('killAllEnemies'));
+  await ev(page, () => window.__echoes.cmd('clearRoom'));
+  await waitPhase('reward');
+  note('reward 1');
+  await sleep(600);
+  const sockets = await ev(page, () => {
     const E = window.__echoes;
-    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-    const log = [];
-    for (let n = 0; n < 14; n++) {
-      const r = E.state().run;
-      if (!r.active) break;
-      if (r.phase === 'combat') {
-        if (r.room === 8) {
-          E.cmd('bossHp', 0.2);
-          await wait(4000);
-          E.cmd('killBoss');
-        } else E.cmd('killAllEnemies');
-      } else if (r.phase === 'reward') {
-        if (n % 2) E.cmd('draftDecline');
-        else E.cmd('draftTake');
-      } else if (r.phase === 'path') E.cmd('pathChoose', 0);
-      else if (r.phase === 'shop') {
-        E.cmd('shopBuy', 0);
-        E.cmd('shopBuy', 1);
-        E.cmd('shopBuy', 2);
-        E.cmd('shopBuy', 2);
-        E.cmd('shopAdvance');
-      }
-      log.push(`${r.room}:${r.phase}`);
-      await wait(1200);
-    }
-    await wait(1500);
-    if (E.state().run.phase === 'victory' || E.state().run.phase === 'defeat') E.cmd('returnToCamp');
-    await wait(800);
-    return log;
+    const res = [
+      E.cmd('socket', 'swift_mend', 'siphon'),
+      E.cmd('socket', 'swift_mend', 'detonate'),
+      E.cmd('socket', 'mending_bolt', 'bounce'),
+      E.cmd('socket', 'mending_bolt', 'echo'),
+      E.cmd('socket', 'sanctuary', 'no_such_node'),
+    ];
+    return res.map((r) => (r && r.denied ? `denied:${r.denied}` : r ? 'ok' : String(r)));
   });
-  await page.mouse.up();
-  const cov = await ev(page, () => ({ ...window.__m3cov, log: window.__echoes.audio.cueLog(600).filter((e) => e.event || e.source === 'nav') }));
-  // Which events produced a cue (cueLog entries carry the event type).
+  note(`sockets ${JSON.stringify(sockets)}`);
+  build.sockets = sockets;
+  await ev(page, () => window.__echoes.cmd('draftTake'));
+  await waitPhase('path');
+  await sleep(500);
+  await ev(page, () => window.__echoes.cmd('pathChoose', 0));
+  await waitPhase('combat');
+  note('room 2');
+  // Swift Mend lands on the lowest ally: make one ally lowest but nearly full
+  // (the heal tops it off -> full_heal -> Detonate) with a boar beside it
+  // (-> Siphon drains the boar).
+  const techSetup = () =>
+    ev(page, () => {
+      const E = window.__echoes;
+      const party = E.state().party;
+      const a = party.find((p) => p.kind === 'ally' && !p.downed);
+      for (const p of party) if (!p.downed) E.cmd('setHp', p.id, p === a ? 0.93 : 1);
+      // A boar beside every party member: whoever the heal lands on has one
+      // within Siphon's 2 u.
+      for (const p of party) if (!p.downed) E.cmd('spawn', 'boar', p.x + 0.9, p.z + 0.3);
+      return a ? a.id : null;
+    });
+  await techSetup();
+  await page.mouse.move(800, 330);
+  await page.mouse.down({ button: 'right' });
+  for (let i = 0; i < 30; i++) {
+    await page.keyboard.press(['Digit2', 'Digit1', 'Digit3', 'Digit2', 'Digit1'][i % 5]);
+    await sleep(260);
+    if (i % 5 === 4) await techSetup();
+  }
+  await page.mouse.up({ button: 'right' });
+  await ev(page, () => window.__echoes.cmd('clearRoom'));
+  await page.waitForFunction(() => ['reward', 'path'].includes(window.__echoes.state().run.phase), { timeout: 20000 });
+  await sleep(600);
+  await ev(page, () => {
+    const E = window.__echoes;
+    if (E.state().run.phase === 'reward') E.cmd('draftDecline');
+    return true;
+  });
+  // Shop (room 7): one affordable purchase, one refused.
+  await ev(page, () => window.__echoes.cmd('skipToRoom', 7));
+  await waitPhase('shop');
+  note('shop');
+  await sleep(600);
+  const shop = await ev(page, () => {
+    const E = window.__echoes;
+    const a = E.cmd('shopBuy', 0);
+    E.cmd('wallet', 0);
+    const b = E.cmd('shopBuy', 1);
+    return { a, b };
+  });
+  note(`shop ${JSON.stringify(shop)}`);
+  await sleep(500);
+  await ev(page, () => window.__echoes.cmd('shopAdvance'));
+  // Boss room: let the Stag telegraph / quake / trample, push it through its
+  // add phases, then fell it.
+  await page.waitForFunction(
+    () => {
+      const r = window.__echoes.state().run;
+      return r.room === 8 && r.phase === 'combat';
+    },
+    { timeout: 30000 }
+  );
+  note('boss');
+  await page.mouse.move(800, 330);
+  await page.mouse.down({ button: 'right' });
+  const topUp = () =>
+    ev(page, () => {
+      const E = window.__echoes;
+      for (const p of E.state().party) if (!p.downed) E.cmd('setHp', p.id, 1);
+      return true;
+    });
+  for (const f of [0.72, 0.45, 0.2]) {
+    for (let k = 0; k < 3; k++) {
+      await sleep(1500);
+      await topUp();
+    }
+    await ev(page, (f) => window.__echoes.cmd('bossHp', f), f);
+  }
+  for (let k = 0; k < 3; k++) {
+    await sleep(1500);
+    await topUp();
+  }
+  await page.mouse.up({ button: 'right' });
+  await ev(page, () => window.__echoes.cmd('killBoss'));
+  await page.waitForFunction(() => ['victory', 'defeat'].includes(window.__echoes.state().run.phase), { timeout: 20000 });
+  note(`end ${await ev(page, () => window.__echoes.state().run.phase)}`);
+  await sleep(2500);
+  await ev(page, () => window.__echoes.cmd('returnToCamp'));
+  await sleep(1500);
+  const all = await ev(page, () => window.__m3cov);
+  const log = await ev(page, () => window.__echoes.audio.cueLog(600).filter((e) => e.event || e.source === 'nav'));
   const cueEvents = {};
-  for (const e of cov.log) {
+  for (const e of log) {
     const k = e.source === 'nav' ? 'nav' : e.event;
     cueEvents[k] = (cueEvents[k] || 0) + 1;
   }
+  // A row is covered when every one of its events fired AND has a cue
+  // mapping; the per-event sound events of the whole run back it (the
+  // cueLog window keeps only the last 600 requests).
+  const mapped = await ev(page, () => window.__echoes.audio.eventTypes());
   const rows = ROWS.map((row) => {
-    const fired = row.filter((t) => (t === 'nav' ? cueEvents.nav : cov.events[t]));
-    const cued = row.filter((t) => cueEvents[t]);
-    return { row: row.join(' · '), fired, cued, missingEvent: row.filter((t) => t !== 'nav' && !cov.events[t]), eventWithoutCue: fired.filter((t) => !cueEvents[t] && t !== 'nav'), covered: cued.length > 0 };
+    const fired = row.filter((t) => (t === 'nav' ? all.sounds.ui_move || all.sounds.ui_confirm : all.events[t]));
+    const cued = row.filter((t) => (t === 'nav' ? all.sounds.ui_move : all.events[t] && mapped.includes(t)));
+    return {
+      row: row.join(' · '),
+      fired,
+      cued,
+      inLastCueLog: row.filter((t) => cueEvents[t]),
+      missingEvent: row.filter((t) => t !== 'nav' && !all.events[t]),
+      unmapped: row.filter((t) => t !== 'nav' && !mapped.includes(t)),
+      covered: cued.length === row.length,
+    };
   });
-  const res = { gate: 'G3.7', flow, rows, soundCues: Object.keys(cov.sounds).length, soundEvents: Object.values(cov.sounds).reduce((a, b) => a + b, 0) };
-  res.pass = rows.every((r) => r.covered && r.eventWithoutCue.length === 0);
+  const res = { gate: 'G3.7', build, shop, rows, soundCues: Object.keys(all.sounds).length, soundEvents: Object.values(all.sounds).reduce((a, b) => a + b, 0), sounds: all.sounds };
+  res.pass = rows.every((r) => r.covered && r.unmapped.length === 0);
   const r = save('coverage', { ...res, ...summarizeErrors(errors, consoleLines) });
   await browser.close();
   return r;

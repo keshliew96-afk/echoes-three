@@ -30,12 +30,14 @@ function normalise(d, peak = 0.98) {
 }
 
 export function createVoiceKit(ctx) {
-  const buffers = {
-    white: makeBuffer(ctx, 2, (d) => {
+  // Noise tables are generated lazily (first use) or by prewarm() in idle
+  // slices after the unlock, so the unlock gesture never pays for them.
+  const GEN = {
+    white: () => makeBuffer(ctx, 1.5, (d) => {
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }),
     // Brown (integrated) noise: the body of wind, fire roar, rumbles.
-    brown: makeBuffer(ctx, 4, (d) => {
+    brown: () => makeBuffer(ctx, 3, (d) => {
       let last = 0;
       for (let i = 0; i < d.length; i++) {
         last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
@@ -44,7 +46,7 @@ export function createVoiceKit(ctx) {
       normalise(d);
     }),
     // Sparse crackle: short decaying clicks at random intervals (camp fire).
-    crackle: makeBuffer(ctx, 5, (d, sr) => {
+    crackle: () => makeBuffer(ctx, 4, (d, sr) => {
       let i = 0;
       while (i < d.length) {
         i += Math.floor(sr * (0.02 + Math.random() * Math.random() * 0.35));
@@ -55,6 +57,24 @@ export function createVoiceKit(ctx) {
       normalise(d);
     }),
   };
+  const made = {};
+  const buffers = {};
+  for (const k of Object.keys(GEN)) {
+    Object.defineProperty(buffers, k, {
+      enumerable: true,
+      get: () => made[k] || (made[k] = GEN[k]()),
+    });
+  }
+  // prewarm(): generate one missing table per call; returns true when all exist.
+  function prewarm() {
+    for (const k of Object.keys(GEN)) {
+      if (!made[k]) {
+        made[k] = GEN[k]();
+        return false;
+      }
+    }
+    return true;
+  }
 
   // Gain envelope: 0 -> peak over `a`, (optional hold), exponential decay
   // over `d`. Returns { node, end }.
@@ -199,7 +219,7 @@ export function createVoiceKit(ctx) {
     return end + 0.01;
   }
 
-  return { ctx, buffers, env, tone, noise, bell, pluck, pad };
+  return { ctx, buffers, prewarm, env, tone, noise, bell, pluck, pad };
 }
 
 export const midiHz = (m) => 440 * Math.pow(2, (m - 69) / 12);

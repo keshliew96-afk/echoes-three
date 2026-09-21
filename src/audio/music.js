@@ -40,18 +40,33 @@ const THEMES = {
 // pre-bus (PLAN §3.5 gain staging), measured with tools/gntM3-probe.mjs.
 export const MUSIC_TRIM = {
   // @trim begin
-  'boss:barrow': -7.5,
-  'boss:mill': -6.9,
-  'boss:wood': -7.4,
-  'camp': -5.6,
-  'combat:barrow': -7.1,
-  'combat:mill': -5.8,
-  'combat:wood': -5.9,
-  'defeat': -5.2,
-  'lobby': -4.4,
-  'menu': -4.7,
-  'victory': -3.1,
+  'boss:barrow': -9.6,
+  'boss:mill': -8.9,
+  'boss:wood': -9.5,
+  'camp': -7.6,
+  'combat:barrow': -9.1,
+  'combat:mill': -7.8,
+  'combat:wood': -7.9,
+  'defeat': -7,
+  'lobby': -6.3,
+  'menu': -6.8,
+  'victory': -5.1,
   // @trim end
+};
+
+// Music content path (engine.js): per-state trims (MUSIC_TRIM) bring every
+// state to -20 dBFS RMS at the glue compressor's input, the compressor
+// narrows the crest factor, and postDb lands the score at the bus input at
+// MUSIC_TARGET_DB (decision D18 in docs/gauntlet/build-M3.md: PLAN §3.5's
+// -18 dBFS figure cannot meet gate G3.4's -24..-14 dBFS combat master window
+// at the default sliders, so the score sits at -13.5 dBFS RMS pre-bus).
+export const MUSIC_IN_DB = -20;
+export const MUSIC_TARGET_DB = -13.5;
+export const MUSIC_BUS = {
+  compressor: { threshold: -24, knee: 10, ratio: 3, attack: 0.012, release: 0.25 },
+  // @post begin
+  postDb: 2.7,
+  // @post end
 };
 
 // Crossfade lengths (s). PLAN §3.5 names 2.0 default / 1.0 into combat / 2.5

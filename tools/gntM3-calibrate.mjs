@@ -5,8 +5,9 @@
 // and writes CUE_CAL (src/audio/cues.js), MUSIC_TRIM (src/audio/music.js) and
 // BED_TRIM (src/audio/ambient.js) between their "@cal/@trim begin/end"
 // markers so the engine lands each at its PLAN §3.5 gain-staging target:
-// cue peak = levelDb, music -18 dBFS RMS, beds -24 dBFS RMS.
-//   node tools/gntM3-calibrate.mjs [--only cues|music|beds] [--dry]
+// cue peak = levelDb, music -20 dBFS RMS into the glue compressor then
+// -13.5 dBFS RMS pre-bus (--only post), beds -18 dBFS RMS (decision D18).
+//   node tools/gntM3-calibrate.mjs [--only cues|music|post|beds] [--dry]
 import fs from 'node:fs';
 import { openAudio, ev, sleep, out, BASE } from './gntM3-lib.mjs';
 
@@ -83,6 +84,11 @@ function parseTable(src, tag) {
 const curCal = parseTable(read('cues.js'), 'cal');
 const curMusic = parseTable(read('music.js'), 'trim');
 const curBed = parseTable(read('ambient.js'), 'trim');
+const curPost = parseTable(read('music.js'), 'post').postDb ?? 0;
+const MUSIC_IN_DB = -20;
+const MUSIC_TARGET_DB = -13.5;
+const BED_TARGET_DB = -18;
+const postOut = {};
 
 await setup();
 const report = { cues: [], music: [], beds: [] };
@@ -100,12 +106,13 @@ if (!only || only === 'cues') {
   }
 }
 
-async function measureMusic(state, theme, intensity, secs) {
+async function measureMusic(state, theme, intensity, secs, comp = false) {
   await setup();
   return ev(
     page,
-    async (state, theme, intensity, secs) => {
+    async (state, theme, intensity, secs, comp) => {
       const A = window.__echoes.audio;
+      A.musicComp(comp);
       A.setMusic(state, { theme, bed: null, crossfadeSec: 0.1, intensity });
       await new Promise((r) => setTimeout(r, 1200));
       A.meterReset();
@@ -117,7 +124,8 @@ async function measureMusic(state, theme, intensity, secs) {
     state,
     theme,
     intensity,
-    secs
+    secs,
+    comp
   );
 }
 
@@ -139,14 +147,30 @@ if (!only || only === 'music') {
     const secs = st === 'victory' || st === 'defeat' ? 3 : 7;
     process.stderr.write(`music ${st}:${th}
 `);
-    let r = await measureMusic(st, th, inten, secs);
-    if (r.rmsDb === null) r = await measureMusic(st, th, inten, secs);
+    let r = await measureMusic(st, th, inten, secs, false);
+    if (r.rmsDb === null) r = await measureMusic(st, th, inten, secs, false);
     if (r.rmsDb === null) continue;
     const key = st === 'combat' || st === 'boss' ? `${st}:${th}` : st;
     const cur = curMusic[key] ?? 0;
-    musicTrim[key] = Math.round((cur + (-18 - r.rmsDb)) * 10) / 10;
-    report.music.push({ key, ...r, trim: musicTrim[key] });
+    musicTrim[key] = Math.round((cur + (MUSIC_IN_DB - r.rmsDb)) * 10) / 10;
+    report.music.push({ key, stage: 'raw', ...r, trim: musicTrim[key] });
   }
+}
+// Stage B (run after the stage-A trims are loaded): --only post measures
+// every state through the glue compressor and sets the shared post gain.
+if (only === 'post') {
+  const outs = [];
+  for (const [st, th, inten] of [['menu', 'wood', 0], ['camp', 'wood', 0], ['combat', 'wood', 0.6], ['combat', 'mill', 0.6], ['combat', 'barrow', 0.6], ['boss', 'wood', 0.7], ['boss', 'barrow', 0.7], ['victory', 'wood', 0], ['defeat', 'wood', 0]]) {
+    process.stderr.write(`post ${st}:${th}
+`);
+    const r = await measureMusic(st, th, inten, st === 'victory' || st === 'defeat' ? 3 : 7, true);
+    if (r.rmsDb === null) continue;
+    outs.push(r.rmsDb);
+    report.music.push({ key: `${st}:${th}`, stage: 'compressed', ...r });
+  }
+  const mean = 10 * Math.log10(outs.reduce((a, v) => a + Math.pow(10, v / 10), 0) / outs.length);
+  postOut.postDb = Math.round((curPost + (MUSIC_TARGET_DB - mean)) * 10) / 10;
+  report.post = { meanRmsDb: Math.round(mean * 100) / 100, postDb: postOut.postDb };
 }
 
 if (!only || only === 'beds') {
@@ -168,7 +192,7 @@ if (!only || only === 'beds') {
     );
     if (r.rmsDb === null) continue;
     const cur = curBed[bed] ?? 0;
-    bedTrim[bed] = Math.round((cur + (-24 - r.rmsDb)) * 10) / 10;
+    bedTrim[bed] = Math.round((cur + (BED_TARGET_DB - r.rmsDb)) * 10) / 10;
     report.beds.push({ bed, ...r, trim: bedTrim[bed] });
   }
 }
@@ -188,6 +212,7 @@ function writeTable(file, tag, table, quote) {
 if (Object.keys(cal).length) writeTable('cues.js', 'cal', cal);
 if (Object.keys(musicTrim).length) writeTable('music.js', 'trim', musicTrim, true);
 if (Object.keys(bedTrim).length) writeTable('ambient.js', 'trim', bedTrim);
+if (Object.keys(postOut).length) writeTable('music.js', 'post', postOut);
 
 fs.writeFileSync(new URL('../captures/gntM3-calibrate.json', import.meta.url), JSON.stringify({ dry, pageErrors: errors.length, ...report }, null, 1));
 out({ dry, pageErrors: errors.length, cues: report.cues.length, music: report.music.length, beds: report.beds.length });

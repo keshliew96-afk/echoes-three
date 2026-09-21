@@ -248,3 +248,62 @@ Keep/Revert opens when the Display tab is left or Settings closes.
 `node tools/gntM1-palette-check.mjs` (G1.12), `gesture` (G1.13), `shake`
 (screen-shake scaling, `?menu=0`), `misc` (FPS meter toggle, auto-pause,
 overlay pause).
+
+### M3 — audio engine and mixer (Gauntlet W1, owner M3)
+
+**Locked until a gesture.** No AudioContext exists before the first
+user-activation gesture: `__echoes.audio.state === 'locked'` and
+`gestureNeeded === true` on a normal boot; the app gesture hook's first
+trusted key (not Esc) / click / touch creates it synchronously
+(`autoplay().unlockedVia`, `unlockedAtMs`, `runningAtMs`). Puppeteer's
+`page.evaluate` counts as a user gesture — a locked-state probe must read the
+page through a CDP session with `Runtime.evaluate({ userGesture: false })`
+(see `tools/gntM3-gates.mjs autoplay`). With
+`--autoplay-policy=no-user-gesture-required` (`launchEchoes({ autoplay: true
+})`) a silent media-element trial unlocks the engine right after main.js
+finishes evaluating (~4 s into a headless boot) — wait for `state ===
+'running'` before measuring. `?audio=0` builds the engine with Master
+force-muted for the visit (unmuting Master in the Audio tab ends it).
+
+**Measuring (never by ear).** `__echoes.audio.meter(tap)` for taps
+`master | prelimit | music | sfx | ambient | ui` (AudioWorklet accumulators on
+the audio thread: integrated `rmsDb / lRmsDb / rRmsDb / peakDb`, `peakHoldDb`,
+`shortRmsDb`, `overMinus1Pct`, `clipCount`, 400 ms window median / p10 / p90,
+`longestBelowMinus50Ms`, `centroidHz` once any meter call armed it);
+`meterReset()`; `history(tap, n)` (100 ms windows). Bus taps sit AFTER the
+Master send, so every tap moves with Master; `prelimit` is the limiter output
+= the ceiling clipper's input. `testTone(bus, { freq, dbfs, ms, x, z })`
+plays a sine whose RMS is `dbfs` pre-fader and returns `expectedTapRmsDb`
+(x/z = spatial through a panner). Silence the score first with `quiet()`
+(pins music `silence` + no bed) and note that an HMR reload restarts it.
+`busGain(name)` = the live AudioParam values (a −180 dBFS keep-alive keeps
+every chain rendering, so values are live even in silence); `buses()` = the
+settings view with `gainDb / effectiveDb`; `limiter()` = reduction now / max,
+`pctWindowsUnder6dB`, `excursionsOver10dB`, `makeupCompDb`; `voices()`,
+`cueLog(n)`, `cost()` / `costReset()` (engine main-thread ms per frame),
+`music()` (state, theme, bpm, intensity, `fight`, transitions with
+`crossfadeMs`), `setMusic(state, { theme, bed, crossfadeSec, intensity })` /
+`releaseMusic()`, `play(cue, opts)`, `cues()`, `eventTypes()`,
+`listener()`, `spatialModel()`, `predictPan(x, z)`, `autoplay()`.
+
+**Sound events.** Every cue request is still a `sound` event on the sim bus
+(`{ slot, cue, voice?, dropped? }`; legacy slots `shoot / hit / kill / heal`),
+including requests merged by the 30 ms same-cue cooldown (`dropped:
+'cooldown'`) and requests while locked (`dropped: 'locked'`). Traces exclude
+`sound`.
+
+**Mixer facts.** Slider curves are src/audio/mixmath.js (log: −20 / −10 /
+−4.15 dB at 25 / 50 / 75 %; linear: −12.04 / −6.02 / −2.50). Switching a
+channel's curve moves its level to the same dB (not on reset). Basic attack in
+probes = RIGHT mouse button. Default mix (combat): music ≈ −24 dBFS RMS at the
+master tap, beds ≈ −28, SFX peaks ≈ −8, UI peaks ≈ −20.
+
+**M3 probes** (`node tools/gntM3-gates.mjs <gate>` → `captures/gntM3-gate-
+<gate>.json`): `curves` (G3.1), `decouple` (G3.2), `clip` (G3.3, boss fight
+at 100 %), `balance` (G3.4), `music` (G3.5, title → camp → combat → boss →
+victory → camp → combat → defeat → camp by the real flow), `spatial` (G3.6),
+`coverage` (G3.7), `autoplay` (G3.8, no flag, key / click / touch + with-flag
+check), `persist` + `tab` (G3.9: reload, mute on blur / hidden, the Audio tab
+by keyboard, mouse and a mocked pad), `cost` (G3.10, a whole run).
+`node tools/gntM3-calibrate.mjs [--only cues|music|post|beds]` re-measures
+the cue peaks / music trims / bed trims after a sound-design change.

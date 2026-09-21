@@ -123,41 +123,41 @@ function cue(id, def, fn) {
 
 // ------------------------------------------------------------------ SFX --
 // Healer basic bolt (legacy slot `shoot`).
-cue('shoot', { slot: 'shoot', levelDb: -14, maxVoices: 4 }, (k, t, d, p) =>
+cue('shoot', { slot: 'shoot', levelDb: -11, maxVoices: 4 }, (k, t, d, p) =>
   Math.max(
     k.tone(d, t, { type: 'triangle', f0: P(p, 880), f1: P(p, 420), d: 0.09, gain: 0.6 }),
     k.noise(d, t, { f0: 2600, q: 1.4, d: 0.05, gain: 0.5 })
   )
 );
 // Melee arc (swordsman / tank basic): an airy whoosh with a low thump.
-cue('swing', { slot: 'swing', levelDb: -13, maxVoices: 4 }, (k, t, d, p) =>
+cue('swing', { slot: 'swing', levelDb: -10, maxVoices: 4 }, (k, t, d, p) =>
   Math.max(
     k.noise(d, t, { f0: P(p, 700), f1: P(p, 2600), q: 1.2, a: 0.02, d: 0.13, gain: 1 }),
     k.tone(d, t + 0.03, { f0: P(p, 150), f1: P(p, 70), d: 0.07, gain: 0.45 })
   )
 );
 // Bow (archer basic): string twang + fletching hiss.
-cue('bow', { slot: 'bow', levelDb: -14, maxVoices: 4 }, (k, t, d, p) =>
+cue('bow', { slot: 'bow', levelDb: -11, maxVoices: 4 }, (k, t, d, p) =>
   Math.max(
     k.tone(d, t, { type: 'triangle', f0: P(p, 420), f1: P(p, 180), d: 0.12, gain: 0.55 }),
     k.noise(d, t, { type: 'highpass', f0: 3000, q: 0.7, d: 0.05, gain: 0.35 })
   )
 );
 // Enemy shot (mantis spit): a wet burst.
-cue('spit', { slot: 'spit', levelDb: -11, maxVoices: 4 }, (k, t, d, p) =>
+cue('spit', { slot: 'spit', levelDb: -9, maxVoices: 4 }, (k, t, d, p) =>
   Math.max(
     k.noise(d, t, { f0: P(p, 1100), f1: P(p, 500), q: 2, d: 0.12, gain: 1 }),
     k.tone(d, t, { type: 'square', f0: P(p, 330), f1: P(p, 160), d: 0.08, gain: 0.22 })
   )
 );
-cue('bite', { slot: 'bite', levelDb: -12, maxVoices: 3 }, (k, t, d, p) =>
+cue('bite', { slot: 'bite', levelDb: -10, maxVoices: 3 }, (k, t, d, p) =>
   Math.max(
     k.noise(d, t, { f0: P(p, 650), q: 1.5, d: 0.05, gain: 1 }),
     k.noise(d, t + 0.07, { f0: P(p, 520), q: 1.5, d: 0.06, gain: 0.9 })
   )
 );
 // Impact on a hostile (legacy slot `hit`).
-cue('impact', { slot: 'hit', levelDb: -10 }, (k, t, d, p) =>
+cue('impact', { slot: 'hit', levelDb: -8 }, (k, t, d, p) =>
   Math.max(
     k.noise(d, t, { f0: P(p, 1700), q: 1, d: 0.07, gain: 1 }),
     k.tone(d, t, { type: 'square', f0: P(p, 240), f1: P(p, 150), d: 0.05, gain: 0.35 })
@@ -171,7 +171,7 @@ cue('crit', { slot: 'hit', levelDb: -13, maxVoices: 3 }, (k, t, d, p) =>
   )
 );
 // A party member takes damage: a body thud — the most important feedback.
-cue('hurt', { slot: 'hit', levelDb: -8, priority: 3, maxVoices: 3, cooldownMs: 60 }, (k, t, d, p) =>
+cue('hurt', { slot: 'hit', levelDb: -6, priority: 3, maxVoices: 3, cooldownMs: 60 }, (k, t, d, p) =>
   Math.max(
     k.tone(d, t, { f0: P(p, 190), f1: P(p, 85), d: 0.13, gain: 0.85 }),
     k.noise(d, t, { type: 'lowpass', f0: 900, q: 0.8, d: 0.09, gain: 0.6 })
@@ -181,7 +181,7 @@ cue('whiff', { slot: 'whiff', levelDb: -17, maxVoices: 3 }, (k, t, d) =>
   k.noise(d, t, { f0: 3500, f1: 1700, q: 3, a: 0.01, d: 0.11, gain: 1 })
 );
 // Kill pop (legacy slot `kill`).
-cue('kill', { slot: 'kill', levelDb: -9, priority: 3, maxVoices: 4 }, (k, t, d, p) =>
+cue('kill', { slot: 'kill', levelDb: -7, priority: 3, maxVoices: 4 }, (k, t, d, p) =>
   Math.max(
     k.tone(d, t, { type: 'square', f0: P(p, 210), f1: P(p, 58), d: 0.17, gain: 0.55, filter: { f0: 2400, q: 0.7 } }),
     k.noise(d, t, { f0: 900, q: 0.8, d: 0.14, gain: 0.5 })
@@ -196,7 +196,7 @@ cue('boss_death', { slot: 'kill', levelDb: -6, priority: 5, maxVoices: 1, cooldo
   )
 );
 // Heal chime, soft major (legacy slot `heal`); crit adds the fifth + octave.
-cue('heal', { slot: 'heal', levelDb: -12, maxVoices: 4 }, (k, t, d, p) =>
+cue('heal', { slot: 'heal', levelDb: -10, maxVoices: 4 }, (k, t, d, p) =>
   Math.max(
     k.tone(d, t, { f0: P(p, 523.25), a: 0.004, d: 0.22, gain: 0.5 }),
     k.tone(d, t + 0.04, { f0: P(p, 659.25), a: 0.004, d: 0.22, gain: 0.42 })
@@ -232,14 +232,14 @@ cue('azone_pulse', { slot: 'pulse', levelDb: -16, priority: 1, maxVoices: 3, coo
   )
 );
 // Healer skill casts, one family each (PLAN §3.5 "per skill family").
-cue('cast_heal', { slot: 'cast', levelDb: -12, maxVoices: 3 }, (k, t, d, p) =>
+cue('cast_heal', { slot: 'cast', levelDb: -10, maxVoices: 3 }, (k, t, d, p) =>
   Math.max(
     k.pluck(d, t, { f: P(p, 587.3), d: 0.35, gain: 0.55, bright: 4200 }),
     k.pluck(d, t + 0.055, { f: P(p, 880), d: 0.4, gain: 0.5, bright: 4200 }),
     k.noise(d, t, { f0: 5000, q: 2, a: 0.02, d: 0.15, gain: 0.12 })
   )
 );
-cue('cast_damage', { slot: 'cast', levelDb: -12, maxVoices: 3 }, (k, t, d, p) =>
+cue('cast_damage', { slot: 'cast', levelDb: -10, maxVoices: 3 }, (k, t, d, p) =>
   Math.max(
     k.tone(d, t, { type: 'sawtooth', f0: P(p, 660), f1: P(p, 1320), d: 0.12, gain: 0.45, filter: { f0: 3000, q: 1 } }),
     k.noise(d, t, { f0: 2200, q: 1.5, d: 0.06, gain: 0.4 })
@@ -265,20 +265,20 @@ cue('cast_aura', { slot: 'cast', levelDb: -14, maxVoices: 2, cooldownMs: 200 }, 
   )
 );
 // Ally kit casts (by class).
-cue('ally_cast_tank', { slot: 'cast', levelDb: -10, maxVoices: 2 }, (k, t, d, p) =>
+cue('ally_cast_tank', { slot: 'cast', levelDb: -8, maxVoices: 2 }, (k, t, d, p) =>
   Math.max(
     k.tone(d, t, { f0: P(p, 130), f1: P(p, 55), d: 0.18, gain: 0.9 }),
     k.noise(d, t, { type: 'lowpass', f0: 800, q: 0.8, d: 0.11, gain: 0.6 })
   )
 );
-cue('ally_cast_sword', { slot: 'cast', levelDb: -11, maxVoices: 2 }, (k, t, d, p) =>
+cue('ally_cast_sword', { slot: 'cast', levelDb: -9, maxVoices: 2 }, (k, t, d, p) =>
   Math.max(
     k.noise(d, t, { f0: P(p, 900), f1: P(p, 3000), q: 1.3, a: 0.015, d: 0.1, gain: 0.9 }),
     k.noise(d, t + 0.09, { f0: P(p, 1100), f1: P(p, 3400), q: 1.3, a: 0.015, d: 0.1, gain: 0.8 }),
     k.tone(d, t + 0.1, { type: 'triangle', f0: P(p, 1800), f1: P(p, 1500), d: 0.12, gain: 0.2 })
   )
 );
-cue('ally_cast_archer', { slot: 'cast', levelDb: -12, maxVoices: 2 }, (k, t, d, p) =>
+cue('ally_cast_archer', { slot: 'cast', levelDb: -10, maxVoices: 2 }, (k, t, d, p) =>
   Math.max(
     ...[0, 0.05, 0.1].map((o, i) =>
       k.tone(d, t + o, { type: 'triangle', f0: P(p, 440 + i * 30), f1: P(p, 190), d: 0.1, gain: 0.45 })
@@ -351,7 +351,7 @@ cue('deny_cd', { slot: 'blip', levelDb: -20, maxVoices: 2, cooldownMs: 80 }, (k,
   k.tone(d, t, { f0: P(p, 240), d: 0.05, gain: 0.8 })
 );
 // Telegraphs and the boss.
-cue('telegraph', { slot: 'warning', levelDb: -9, priority: 4, maxVoices: 4, cooldownMs: 40 }, (k, t, d, p) =>
+cue('telegraph', { slot: 'warning', levelDb: -7, priority: 4, maxVoices: 4, cooldownMs: 40 }, (k, t, d, p) =>
   Math.max(
     k.tone(d, t, { f0: P(p, 1500), d: 0.025, gain: 0.6 }),
     k.noise(d, t, { f0: 2500, q: 3, d: 0.025, gain: 0.5 }),
@@ -577,6 +577,9 @@ const at = (ev, h, id) => {
 };
 const one = (cue, where, extra) => [{ cue, ...where, ...extra }];
 const PARTY_KINDS = new Set(['player', 'ally']);
+// Boss bodies: the Hollow Stag's entity kind is 'stag'; later bosses may set
+// `boss: true` on their events (or register their own death cue).
+const isBoss = (ev) => ev.kind === 'stag' || ev.kind === 'boss' || ev.boss === true;
 
 const HEAL_SKILLS = new Set(['mending_bolt', 'swift_mend', 'restorative_wave', 'guardian_bond']);
 function skillFamily(ev) {
@@ -602,13 +605,13 @@ export const DEFAULT_EVENT_CUES = {
   hit: (ev, h) => {
     const where = at(ev, h, ev.target);
     const party = PARTY_KINDS.has(ev.kind);
-    const heavy = ev.kind === 'boss' ? 0.7 : ev.shape === 'melee_arc' ? 0.85 : 1;
+    const heavy = isBoss(ev) ? 0.7 : ev.shape === 'melee_arc' ? 0.85 : 1;
     const out = [{ cue: party ? 'hurt' : 'impact', ...where, pitch: party ? 1 : heavy }];
     if (ev.crit) out.push({ cue: 'crit', ...where });
     return out;
   },
   hit_immune: (ev, h) => one('whiff', at(ev, h, ev.target)),
-  death: (ev, h) => one(ev.kind === 'boss' ? 'boss_death' : 'kill', at(ev, h, ev.id)),
+  death: (ev, h) => one(isBoss(ev) ? 'boss_death' : 'kill', at(ev, h, ev.id)),
   heal: (ev, h) => one(ev.crit ? 'heal_crit' : 'heal', at(ev, h, ev.target)),
   full_heal: (ev, h) => one('sparkle', at(ev, h, ev.target)),
   aura_pulse: (ev, h) => one('aura', at({}, h)),

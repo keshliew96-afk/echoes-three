@@ -46,7 +46,7 @@ import { createVoiceKit } from './voices.js';
 import { DEFAULT_CUES, DEFAULT_EVENT_CUES, NAV_CUES, CUE_CAL } from './cues.js';
 import { createSpatial, cameraFocus, SPATIAL } from './spatial.js';
 import { createMeterTap, createReductionMonitor, loadMeterWorklet } from './meter.js';
-import { createMusic, MUSIC_STATES, registerMusicTheme, STINGER_SEC } from './music.js';
+import { createMusic, MUSIC_STATES, registerMusicTheme, STINGER_SEC, MUSIC_BUS } from './music.js';
 import { createAmbient, registerAmbientBed } from './ambient.js';
 
 export const AUDIO_BUSES = Object.freeze(['music', 'sfx', 'ambient', 'ui']);
@@ -60,6 +60,10 @@ const CLIP_KNEE = 0.85;
 const LEGACY_SLOT = { shoot: 'shoot', impact: 'hit', hurt: 'hit', kill: 'kill', boss_death: 'kill', heal: 'heal', heal_crit: 'heal' };
 const LOBBY_SCREENS = new Set(['mp-menu', 'lobby', 'mp-join']);
 const THEME_BY_ACT = { 1: 'wood', 2: 'mill', 3: 'barrow' };
+// A live hostile body (enemy / boss / add) — not its shots, not neutral
+// hazards or breakables. Enemy kinds are their etype ('boar', 'mantis', …).
+const isHostileBody = (e) => e.faction === 'hostile' && e.hp > 0 && e.kind !== 'eshot' && e.hittable !== false;
+const isBossBody = (e) => e.kind === 'stag' || e.kind === 'boss' || e.boss === true;
 
 // Registers the audio.* settings keys (PLAN §3.2 table). Idempotent.
 export function registerAudioSettings(settings) {
@@ -238,6 +242,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
   let lastIntensity = -1e9;
   let stinger = null; // { state, until }
   let themeOverride = null;
+  let fight = { hostiles: 0, bossHpPct: null, partyHpPct: null }; // last intensity inputs (debug)
   let intensityOverride = null; // null = derived from the fight (hostiles, boss HP, party HP)
   let runAct = null;
 
@@ -253,10 +258,13 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     if (!ctx) return 'locked';
     return ctx.state === 'running' ? 'running' : 'suspended';
   }
+  const stateLog = [];
   function notifyState() {
     const s = stateNow();
     if (s === lastState) return;
     lastState = s;
+    stateLog.push({ state: s, atMs: Math.round((performance.now() - bootT0) * 10) / 10 });
+    if (stateLog.length > 20) stateLog.shift();
     for (const fn of stateFns) {
       try {
         fn(s);
@@ -326,6 +334,21 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     g.duckGain.connect(g.duckFilter);
     g.duckFilter.connect(g.buses.music.input);
     g.ducked = false;
+    // Music content path (pre-fader insert, like a Wwise/FMOD music-bus
+    // effect): players -> glue compressor -> fixed post gain -> duck -> bus.
+    // The compressor trims the score's 13-14 dB crest factor so it can sit
+    // loud enough for the combat mix (G3.4) without hammering the master
+    // limiter at 100 % sliders (G3.3). Test tones enter the bus input
+    // directly, so slider / tap maths (G3.1 / G3.2) never see it.
+    g.musicIn = ctx.createGain();
+    g.musicComp = ctx.createDynamicsCompressor();
+    for (const [k, v] of Object.entries(MUSIC_BUS.compressor)) g.musicComp[k].value = v;
+    g.musicPost = ctx.createGain();
+    g.musicPost.gain.value = dbToGain(MUSIC_BUS.postDb);
+    g.musicIn.connect(g.musicComp);
+    g.musicComp.connect(g.musicPost);
+    g.musicPost.connect(g.duckGain);
+    g.musicCompOn = true;
     // Meter taps: AudioWorklet accumulators (audio thread) once the module
     // loads (a few ms), analyser fallback otherwise. Their silent outputs
     // feed a zero-gain sink so every browser keeps them rendered.
@@ -710,8 +733,8 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     // ?room= / ?scene=arena harness wave rooms run without a run frame.
     if (run && typeof run.combatAllowed === 'function' && run.combatAllowed() && !(view && view.active)) {
       const reg = registry && registry.all ? registry.all() : [];
-      if (reg.some((e) => e.faction === 'hostile' && e.kind === 'boss')) return 'boss';
-      if (reg.some((e) => e.faction === 'hostile' && e.hp > 0 && (e.kind === 'enemy' || e.kind === 'boss'))) return 'combat';
+      if (reg.some((e) => isHostileBody(e) && isBossBody(e))) return 'boss';
+      if (reg.some((e) => isHostileBody(e))) return 'combat';
     }
     return 'camp';
   }
@@ -742,9 +765,9 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     let hp = 0;
     let max = 0;
     for (const e of all) {
-      if (e.faction === 'hostile' && e.hp > 0 && (e.kind === 'enemy' || e.kind === 'boss')) {
+      if (isHostileBody(e)) {
         hostiles += 1;
-        if (e.kind === 'boss') boss = e;
+        if (isBossBody(e)) boss = e;
       }
       if (e.partyIndex !== undefined && e.maxHp > 0) {
         hp += Math.max(0, e.hp);
@@ -752,6 +775,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       }
     }
     const partyLow = max > 0 ? 1 - hp / max : 0;
+    fight = { hostiles, bossHpPct: boss && boss.maxHp ? Math.round((boss.hp / boss.maxHp) * 100) : null, partyHpPct: max > 0 ? Math.round((hp / max) * 100) : null };
     if (musicState === 'boss') {
       const bf = boss && boss.maxHp ? 1 - boss.hp / boss.maxHp : 0;
       return Math.min(1, 0.45 + 0.4 * bf + 0.03 * hostiles + 0.3 * partyLow);
@@ -803,7 +827,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
   }
 
   // ------------------------------------------------------- lifecycle --
-  function createContext(via) {
+  function createContext(via, eventTs = null) {
     if (ctx || !AC) return;
     try {
       ctx = new AC({ latencyHint: 'interactive' });
@@ -812,20 +836,44 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       ctx = null;
       return;
     }
-    unlockInfo = { via, atMs: Math.round(performance.now() - bootT0) };
+    unlockInfo = { via, atMs: Math.round(performance.now() - bootT0), eventAtMs: Number.isFinite(eventTs) ? Math.round((eventTs - bootT0) * 10) / 10 : null, buildMs: null };
+    ctx.onstatechange = () => notifyState();
+    // Only the context itself must be created inside the gesture; the graph,
+    // noise tables, music and beds are built in the next task so the gesture
+    // handler returns at once and the context reaches 'running' fast (G3.8).
+    setTimeout(buildAll, 0);
+    notifyState();
+  }
+
+  function buildAll() {
+    if (graph || !ctx) return;
+    const t0 = performance.now();
     kit = createVoiceKit(ctx);
+    const t1 = performance.now();
     spatial = createSpatial(ctx);
     graph = buildGraph();
     lastSend = null;
     applyGains();
-    // Start silent-to-level for the first frame (no pop): params begin at
-    // their targets because applyGains ramps from 0-initialised defaults.
-    music = createMusic({ ctx, kit, dest: graph.duckGain });
+    const t2 = performance.now();
+    music = createMusic({ ctx, kit, dest: graph.musicIn });
     ambient = createAmbient({ ctx, kit, dest: graph.buses.ambient.input });
-    ctx.onstatechange = () => notifyState();
     const f = stage && stage.camera ? cameraFocus(stage.camera) : { x: 0, z: 0 };
     spatial.setListener(f.x, f.z);
-    driveMusic(true);
+    const t3 = performance.now();
+    // Music + bed start in their own task (a third slice of the unlock work).
+    setTimeout(() => {
+      const t4 = performance.now();
+      driveMusic(true);
+      if (unlockInfo) unlockInfo.buildParts.start = Math.round((performance.now() - t4) * 10) / 10;
+    }, 0);
+    const r1 = (v) => Math.round(v * 10) / 10;
+    unlockInfo.buildMs = r1(t3 - t0);
+    unlockInfo.buildParts = { kit: r1(t1 - t0), graph: r1(t2 - t1), music: r1(t3 - t2) };
+    // Remaining noise tables in idle slices (one per task).
+    const warm = () => {
+      if (kit && !kit.prewarm()) setTimeout(warm, 30);
+    };
+    setTimeout(warm, 30);
     notifyState();
   }
 
@@ -838,7 +886,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       if (e.type === 'keydown' && e.key === 'Escape' && !ctx) return stateNow();
       windowBlurred = false; // a gesture means the window has focus
     }
-    if (!ctx) createContext(e && e.type ? e.type : 'api');
+    if (!ctx) createContext(e && e.type ? e.type : 'api', e && Number.isFinite(e.timeStamp) ? e.timeStamp : null);
     else if (ctx.state === 'suspended') {
       ctx.resume().then(notifyState, () => {});
     }
@@ -1095,7 +1143,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       return engine.gestureNeeded;
     },
     unlock: () => unlock(null),
-    autoplay: () => ({ ...autoplay, unlockedVia: unlockInfo ? unlockInfo.via : null, unlockedAtMs: unlockInfo ? unlockInfo.atMs : null, contextState: ctx ? ctx.state : null, sampleRate: ctx ? ctx.sampleRate : null, baseLatency: ctx && ctx.baseLatency ? Math.round(ctx.baseLatency * 10000) / 10 : null }),
+    autoplay: () => ({ ...autoplay, unlockedVia: unlockInfo ? unlockInfo.via : null, unlockedAtMs: unlockInfo ? unlockInfo.atMs : null, gestureAtMs: unlockInfo ? unlockInfo.eventAtMs : null, buildMs: unlockInfo ? unlockInfo.buildMs : null, buildParts: unlockInfo ? unlockInfo.buildParts : null, runningAtMs: (stateLog.find((x) => x.state === 'running') || {}).atMs ?? null, stateLog: stateLog.slice(), contextState: ctx ? ctx.state : null, sampleRate: ctx ? ctx.sampleRate : null, baseLatency: ctx && ctx.baseLatency ? Math.round(ctx.baseLatency * 10000) / 10 : null }),
     buses: () => Object.fromEntries(AUDIO_CHANNELS.map((c) => [c, channelInfo(c)])),
     busGain,
     meter: (tap = 'master') => {
@@ -1121,7 +1169,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       cueLog.length = 0;
       return true;
     },
-    music: () => (music ? { ...music.debug(), derived, pinned: pin ? pin.state : null, stinger: stinger ? stinger.state : null } : { state: null, locked: true }),
+    music: () => (music ? { ...music.debug(), derived, pinned: pin ? pin.state : null, stinger: stinger ? stinger.state : null, intensityOverride, fight: { ...fight }, ducked: !!(graph && graph.ducked), musicCompReductionDb: graph ? Math.round(graph.musicComp.reduction * 100) / 100 : null } : { state: null, locked: true }),
     setMusic: (st, opts = {}) => {
       if (!MUSIC_STATES.includes(st)) return null;
       pin = { state: st, derivedAtPin: derived ?? deriveMusic(), bed: opts.bed };
@@ -1141,6 +1189,28 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       return true;
     },
     setIntensity: (v) => setIntensityOverride(v),
+    // Calibration only: route the score around the glue compressor (post
+    // gain 0 dB) to measure the raw per-state level.
+    musicComp: (on) => {
+      if (!graph) return null;
+      const want = on !== false;
+      if (want === graph.musicCompOn) return want;
+      try {
+        graph.musicIn.disconnect();
+      } catch {
+        /* ignore */
+      }
+      if (want) {
+        graph.musicIn.connect(graph.musicComp);
+        graph.musicPost.gain.setValueAtTime(dbToGain(MUSIC_BUS.postDb), ctx.currentTime);
+      } else {
+        graph.musicIn.connect(graph.musicPost);
+        graph.musicPost.gain.setValueAtTime(1, ctx.currentTime);
+      }
+      graph.musicCompOn = want;
+      return want;
+    },
+    musicCompReduction: () => (graph ? Math.round(graph.musicComp.reduction * 100) / 100 : null),
     setBed: (id) => (ambient ? ambient.setBed(id) : null),
     ambient: () => (ambient ? ambient.debug() : null),
     voices: voicesInfo,

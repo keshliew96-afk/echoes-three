@@ -9,14 +9,16 @@
 //   mill   — Act II: running water, babble, drips from the weir
 //   barrow — Act III: cold low wind, a thin whistle, a distant tolling bell
 // Crossfades between beds are equal-power over 2.5 s. BED_TRIM levels each
-// bed to about -24 dBFS RMS pre-bus (PLAN §3.5 gain staging).
+// bed to about -18 dBFS RMS pre-bus (decision D18, docs/gauntlet/build-M3.md:
+// PLAN §3.5 says -24; the beds carry part of the combat master level G3.4
+// asks for, 5 dB under the score).
 
 export const BED_TRIM = {
   // @trim begin
-  barrow: -8.7,
-  camp: -6.6,
-  mill: -5.1,
-  wood: -2.3,
+  barrow: -3.2,
+  camp: -0.3,
+  mill: 0.5,
+  wood: 3.1,
   // @trim end
 };
 
