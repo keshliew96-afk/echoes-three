@@ -887,14 +887,27 @@ export function createAllySystem({
   let seatFrames = [null, null, null, null];
   let seatCtx = null;
   const prevHumanBasic = [false, false, false, false];
+  // A human seat's own timers run on its INPUT-FRAME clock (the seq of the
+  // frame being resolved), not on host ticks: a guest predicts them frame
+  // for frame, and a host that drains two buffered frames in one tick or
+  // repeats a starved seat's held state never shifts them. The tick-based
+  // entity fields (cds / nextBasicTick / dodgeReadyTick) are kept in step for
+  // the AI hand-back and the HUD. Replicated (saved) with the seat block.
+  const humanTimers = [null, null, null, null]; // { cds: [seq x4], basic: seq, dodge: seq }
   const humanInteractList = [];
   // Host-side lag-compensation counters (debug / net stats only, never sim state).
   const lagStats = { selections: 0, rewound: 0, rewindTicks: 0, hits: 0, compHits: 0, aimAssists: 0, enabled: true };
   const isHuman = (a) => !!a && a.partyIndex > 0 && seatFrames[a.partyIndex] !== null;
   const allyByIndex = (i) => registry.all().find((e) => e.kind === 'ally' && e.partyIndex === i) || null;
 
-  function enterHuman(a, tick) {
+  function enterHuman(a, tick, seq = 0) {
     ensureAllyFields(a);
+    // Carry the AI's running cooldowns over onto the seat's frame clock.
+    humanTimers[a.partyIndex] = {
+      cds: (a.cds || [0, 0, 0, 0]).map((c) => seq + Math.max(0, c - tick)),
+      basic: seq + Math.max(0, (a.nextBasicTick || 0) - tick),
+      dodge: seq + Math.max(0, (a.dodgeReadyTick || 0) - tick),
+    };
     if (a.reviveTargetId != null) {
       const ch = channels.get(a.reviveTargetId);
       if (ch && !ch.draining && ch.reviverId === a.id) breakChannel(ch, 'control', tick);
@@ -926,6 +939,7 @@ export function createAllySystem({
     a.aiState = 'engage';
     a.targetId = null;
     a.moving = false;
+    humanTimers[a.partyIndex] = null;
   }
 
   // setSeatInputs(si, tick) — once per host tick BEFORE the phases (world.js
@@ -952,7 +966,7 @@ export function createAllySystem({
       const reason = (si && si.reasons && si.reasons[i]) || (target[i] === 'human' ? 'join' : 'drop');
       const body = i === 0 ? player : allyByIndex(i);
       if (body && i > 0) {
-        if (target[i] === 'human') enterHuman(body, tick);
+        if (target[i] === 'human') enterHuman(body, tick, next[i] ? next[i].seq : 0);
         else leaveHuman(body, tick);
       }
       prevHumanBasic[i] = false;
@@ -1056,7 +1070,11 @@ export function createAllySystem({
       face(a, d.x, d.z);
     }
     // §5: after the dash, a still-held basic restarts its FULL interval.
-    if (ended && f.basic) a.nextBasicTick = tick + S.attackIntervalTicks;
+    if (ended && f.basic) {
+      a.nextBasicTick = tick + S.attackIntervalTicks;
+      const T = humanTimers[a.partyIndex];
+      if (T) T.basic = f.seq + S.attackIntervalTicks;
+    }
   }
 
   function humanChannelling(a) {
@@ -1078,16 +1096,19 @@ export function createAllySystem({
     const moving = f.moves.some((m) => m.x !== 0 || m.z !== 0);
     const skillPressed = [...kinds].some((k) => k.startsWith('skill_'));
     const freshBasic = f.basic && !prevHumanBasic[i];
+    const T = humanTimers[i] || (humanTimers[i] = { cds: [0, 0, 0, 0], basic: 0, dodge: 0 });
+    const seq = f.seq;
     if (a.hp > 0) {
       const stunned = !!(combat.status && combat.status.isStunned(a, tick));
       if (kinds.has('dodge')) {
         if (stunned) seatDeny(a, 'dodge', DENIAL.prioritySuppressed, tag, tick);
-        else if (tick < (a.dodgeReadyTick ?? 0) || a.dashTicksLeft > 0) seatDeny(a, 'dodge', DENIAL.onCooldown, tag, tick);
+        else if (seq < T.dodge || a.dashTicksLeft > 0) seatDeny(a, 'dodge', DENIAL.onCooldown, tag, tick);
         else {
           const mv = f.moves[f.moves.length - 1];
           a.dashVel = dodgeVelocity(a, mv, a.aim, { x: a.faceX ?? 0, z: a.faceZ ?? 1 });
           a.dashTicksLeft = HUMAN_DODGE.durationTicks;
           a.dodgeReadyTick = tick + HUMAN_DODGE.cooldownTicks;
+          T.dodge = seq + HUMAN_DODGE.cooldownTicks;
           a.dashing = true;
           a.iframeUntilTick = tick + 1;
           const l = Math.hypot(a.dashVel.x, a.dashVel.z) || 1;
@@ -1101,25 +1122,27 @@ export function createAllySystem({
           seatDeny(a, kind, DENIAL.prioritySuppressed, tag, tick);
           continue;
         }
-        if (tick < a.cds[slot]) {
+        if (seq < T.cds[slot]) {
           seatDeny(a, kind, DENIAL.onCooldown, tag, tick);
           continue;
         }
         fireHumanSkill(a, kit[slot], slot, f, tick, tag);
-        a.cds[slot] = tick + Math.max(CD_FLOOR_TICKS, secTicks(kit[slot].cd));
+        const cdT = Math.max(CD_FLOOR_TICKS, secTicks(kit[slot].cd));
+        a.cds[slot] = tick + cdT;
+        T.cds[slot] = seq + cdT;
       }
       for (const k of kinds) {
         if (!k.startsWith('skill_')) continue;
         if (Number(k.slice(6)) > kit.length) seatDeny(a, k, DENIAL.emptySlot, tag, tick);
       }
-      if (f.basic && tick >= a.nextBasicTick && !stunned && (!humanChannelling(a) || freshBasic)) {
+      if (f.basic && seq >= T.basic && !stunned && (!humanChannelling(a) || freshBasic)) {
         if (a.dashTicksLeft > 0) {
           seatDeny(a, 'basic_attack', DENIAL.prioritySuppressed, tag, tick);
-          a.nextBasicTick = tick + S.attackIntervalTicks;
         } else {
           fireHumanBasic(a, S, f, tick, tag);
-          a.nextBasicTick = tick + S.attackIntervalTicks;
         }
+        a.nextBasicTick = tick + S.attackIntervalTicks;
+        T.basic = seq + S.attackIntervalTicks;
       }
     }
     // §10 revive channel — the Healer's rules for a human reviver.
@@ -1878,7 +1901,7 @@ export function createAllySystem({
     // M5b: network seat control rides along ONLY while some seat is not at
     // its single-player default (a saved single-player tree is unchanged).
     if (controllers.some((c, i) => c !== DEFAULT_CONTROLLERS[i]) || prevHumanBasic.some(Boolean)) {
-      out.seats = { controllers: [...controllers], prevBasic: [...prevHumanBasic] };
+      out.seats = { controllers: [...controllers], prevBasic: [...prevHumanBasic], timers: humanTimers.map((t) => (t ? { cds: [...t.cds], basic: t.basic, dodge: t.dodge } : null)) };
     }
     return out;
   }
@@ -1904,6 +1927,8 @@ export function createAllySystem({
     for (let i = 0; i < 4; i++) {
       controllers[i] = sc && (sc.controllers[i] === 'human' || sc.controllers[i] === 'ai') ? sc.controllers[i] : DEFAULT_CONTROLLERS[i];
       prevHumanBasic[i] = !!(sc && sc.prevBasic && sc.prevBasic[i]);
+      const t = sc && Array.isArray(sc.timers) ? sc.timers[i] : null;
+      humanTimers[i] = t && Array.isArray(t.cds) ? { cds: [...t.cds], basic: t.basic, dodge: t.dodge } : null;
     }
     seatFrames = [null, null, null, null];
     humanInteractList.length = 0;

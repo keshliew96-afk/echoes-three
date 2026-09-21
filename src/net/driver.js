@@ -24,7 +24,7 @@
 // Net work is timed per rendered frame (hostNetMs, frameOver50Net).
 import { BIN, SNAPSHOT_EVERY_TICKS, KEYFRAME_EVERY_TICKS, SIM_HZ } from './protocol/constants.js';
 import { createSnapshotHost, pct } from './protocol/snapshot.js';
-import { decodeInputPacket, decodeCmd, encodeCmd, encodeEvents, encodeKeyframe, SEAT_ALL } from './protocol/codec.js';
+import { decodeInputPacket, decodeCmd, encodeCmd, encodeEvents, encodeKeyframe, encodeEventsBundle, eventsBody, SEAT_ALL } from './protocol/codec.js';
 import { seatInputOf, repeatFrame, neutralFrame, frameFromSnapshot, playerSnapshotOf, STALE_REPEAT_TICKS } from '../sim/netseats.js';
 import { emptySnapshot } from '../core/intents.js';
 import { createRewindRing } from './lagcomp.js';
@@ -69,6 +69,9 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     pings: 0,
   };
   let frameNet = 0; // net ms accumulated in the current rendered frame
+  const ledger = [];
+  const ledgerOrd = new Map();
+  const recentBodies = []; // the newest 3 EVENTS batch bodies (EVENTS_U resend)
   const push = (arr, v, cap = 600) => {
     arr.push(v);
     if (arr.length > cap) arr.shift();
@@ -283,17 +286,19 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       net.transport.sendBinary(snap.encodeFor(f.link, rec, { seat: g.index, lastInputSeqConsumed: f.lastConsumed, inputBufferDepth: f.depthReport }));
     }
     stats.snapshots += 1;
-    if (pending.length) {
-      net.transport.sendBinary(encodeEvents(SEAT_ALL, ++batchSeq, evFrom, tick, pending));
-      stats.eventBatches += 1;
-      stats.eventsSent += pending.length;
-      pending = [];
-    } else {
-      // An empty batch keeps the guests' "events delivered through tick"
-      // clock moving (prediction retractions wait on it).
-      net.transport.sendBinary(encodeEvents(SEAT_ALL, ++batchSeq, evFrom, tick, []));
-      stats.eventBatches += 1;
-    }
+    // One EVENTS batch per snapshot (an empty one too: it keeps the guests'
+    // "events delivered through tick" clock moving — prediction retractions
+    // wait on it), reliable; then the newest 3 batches again, unreliable
+    // (EVENTS_U) — a batch whose reliable copy sits in a retransmit still
+    // reaches the guest ahead of its render clock.
+    const evFrame = encodeEvents(SEAT_ALL, ++batchSeq, evFrom, tick, pending);
+    net.transport.sendBinary(evFrame);
+    stats.eventBatches += 1;
+    stats.eventsSent += pending.length;
+    pending = [];
+    recentBodies.push(eventsBody(evFrame).slice());
+    while (recentBodies.length > 3) recentBodies.shift();
+    net.transport.sendBinary(encodeEventsBundle(SEAT_ALL, recentBodies));
     evFrom = tick;
     if (tick - lastKeyframeTick >= KEYFRAME_EVERY_TICKS) {
       lastKeyframeTick = tick;
@@ -393,6 +398,13 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       if (ev.type === 'sound' || ev.predicted || ev.view) return;
       pending.push(ev);
       if (pending.length > 4000) pending.shift();
+      // Exactly-once audit (G5b.14): every sent event by (tick, type,
+      // ordinal-in-tick) — guests key their replays the same way.
+      const ord = ledgerOrd.get(ev.tick) || 0;
+      ledgerOrd.set(ev.tick, ord + 1);
+      if (ledgerOrd.size > 600) ledgerOrd.delete(ledgerOrd.keys().next().value);
+      ledger.push(`${ev.tick}|${ev.type}|${ord}`);
+      if (ledger.length > 60000) ledger.splice(0, 10000);
     });
     if (migrated) migrateReasons = true;
     log('host_driver_started', { seat: mySeat, migrated });
@@ -475,6 +487,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     feeds,
     ring,
     sendCmd,
+    ledger: () => ledger.slice(),
     get mySeat() {
       return mySeat;
     },

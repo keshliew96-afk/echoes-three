@@ -38,10 +38,20 @@ export function createOwnSeat({ seat }) {
   let cur = { x: 0, z: 0 };
   const off = { x: 0, z: 0 };
   let lastMove = { x: 0, z: 0 };
-  const stats = { predErr: [], predErrMax: 0, corrections: 0, snaps: 0, maxCorrectionPerFrame: 0, reconciles: 0, replayed: 0 };
+  const stats = { predErr: [], predErrMax: 0, corrections: 0, snaps: 0, maxCorrectionPerFrame: 0, reconciles: 0, replayed: 0, teleports: 0 };
+  // Authoritative TELEPORTS (the host re-seats the party at a room / camp
+  // boundary): a body that moved farther between two snapshots than any
+  // walk, dash or push can carry it is re-based at once — not a prediction
+  // error, not a correction to smooth.
+  let lastAuth = null;
+  const TELEPORT_PER_TICK = 0.2;
+  const TELEPORT_SLACK = 0.6;
 
-  function fromAuth(e) {
+  // timers: the seat's input-frame timers replicated from the host
+  // (allies seats block; null for seat 0, whose dodge runs on host ticks).
+  function fromAuth(e, timers = null) {
     return {
+      dodgeSeq: timers && Number.isFinite(timers.dodge) ? timers.dodge : 0,
       x: e.x,
       z: e.z,
       radius: e.radius ?? 0.3,
@@ -69,11 +79,13 @@ export function createOwnSeat({ seat }) {
       b.faceX = d.x;
       b.faceZ = d.z;
     }
-    if (si.presses.some((p) => p.kind === 'dodge') && b.hp > 0 && !isStunned(b, t) && t >= b.dodgeReadyTick && !(b.dashTicksLeft > 0)) {
+    const ready = seat === 0 ? t >= b.dodgeReadyTick : si.seq >= b.dodgeSeq;
+    if (si.presses.some((p) => p.kind === 'dodge') && b.hp > 0 && !isStunned(b, t) && ready && !(b.dashTicksLeft > 0)) {
       const mv = si.moves[si.moves.length - 1];
       b.dashVel = dodgeVelocity(b, mv, si.aim, { x: b.faceX, z: b.faceZ });
       b.dashTicksLeft = HUMAN_DODGE.durationTicks;
       b.dodgeReadyTick = t + HUMAN_DODGE.cooldownTicks;
+      b.dodgeSeq = si.seq + HUMAN_DODGE.cooldownTicks;
       return true;
     }
     return false;
@@ -92,13 +104,14 @@ export function createOwnSeat({ seat }) {
     return dodged;
   }
 
-  // reconcile(authEntity, snapTick, k) — newest decoded snapshot.
-  function reconcile(e, snapTick, k) {
+  // reconcile(authEntity, snapTick, k, timers) — newest decoded snapshot.
+  function reconcile(e, snapTick, k, timers = null) {
     if (!e) return;
     stats.reconciles += 1;
     const kk = Number.isInteger(k) ? k : 0;
     if (!body) {
-      body = fromAuth(e);
+      lastAuth = { x: e.x, z: e.z, tick: snapTick };
+      body = fromAuth(e, timers);
       authTick = snapTick;
       authSeq = kk;
       cur = { x: body.x, z: body.z };
@@ -107,6 +120,26 @@ export function createOwnSeat({ seat }) {
       return;
     }
     if (kk < authSeq) return; // an older ack (reordered snapshot): nothing new
+    const tele = !!lastAuth && Math.hypot(e.x - lastAuth.x, e.z - lastAuth.z) > TELEPORT_PER_TICK * Math.max(1, snapTick - lastAuth.tick) + TELEPORT_SLACK;
+    lastAuth = { x: e.x, z: e.z, tick: snapTick };
+    if (tele) {
+      stats.teleports += 1;
+      authTick = snapTick;
+      authSeq = kk;
+      while (hist.length && hist[0].seq <= kk) hist.shift();
+      const b = fromAuth(e, timers);
+      for (const x of hist) {
+        applyFrame(b, x.si, authTick + (x.seq - kk));
+        x.x = b.x;
+        x.z = b.z;
+      }
+      body = b;
+      cur = { x: b.x, z: b.z };
+      prev = { x: b.x, z: b.z };
+      off.x = 0;
+      off.z = 0;
+      return;
+    }
     const h = hist.find((x) => x.seq === kk);
     if (h) {
       const err = Math.hypot(h.x - e.x, h.z - e.z);
@@ -117,7 +150,7 @@ export function createOwnSeat({ seat }) {
     authTick = snapTick;
     authSeq = kk;
     while (hist.length && hist[0].seq <= kk) hist.shift();
-    const b = fromAuth(e);
+    const b = fromAuth(e, timers);
     for (const x of hist) {
       applyFrame(b, x.si, authTick + (x.seq - kk));
       x.x = b.x;
@@ -128,7 +161,7 @@ export function createOwnSeat({ seat }) {
     const dz = cur.z - b.z;
     body = b;
     if (Math.abs(dx) > 1e-9 || Math.abs(dz) > 1e-9) {
-      stats.corrections += 1;
+      if (Math.hypot(dx, dz) > 0.01) stats.corrections += 1;
       off.x += dx;
       off.z += dz;
       prev = { x: prev.x - dx, z: prev.z - dz };
@@ -205,6 +238,7 @@ export function createOwnSeat({ seat }) {
     },
     reset() {
       body = null;
+      lastAuth = null;
       hist.length = 0;
       off.x = 0;
       off.z = 0;
@@ -216,6 +250,7 @@ export function createOwnSeat({ seat }) {
       predErrSamples: stats.predErr.length,
       corrections: stats.corrections,
       snaps: stats.snaps,
+      teleports: stats.teleports,
       maxCorrectionPerFrame: Math.round(stats.maxCorrectionPerFrame * 1000) / 1000,
       reconciles: stats.reconciles,
       pendingFrames: hist.length,

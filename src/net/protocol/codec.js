@@ -209,7 +209,7 @@ export function frameWriter(channel, seat, capacity = 256) {
 // Delivery class (PLAN §3.7): SNAP + INPUT are unreliable (latest-wins; the
 // conditioner may drop / duplicate / reorder them), everything else reliable.
 export function isUnreliableChannel(channel) {
-  return channel === BIN.SNAP || channel === BIN.INPUT;
+  return channel === BIN.SNAP || channel === BIN.INPUT || channel === BIN.EVENTS_U;
 }
 
 // hex16 <-> two u32 lanes (the §3.4 state hash on the wire as a u64).
@@ -345,6 +345,44 @@ export function decodeEvents(u8) {
   if (!Array.isArray(events)) throw new RangeError('EVENTS body is not an array');
   if (r.remaining !== 0) throw new RangeError('EVENTS trailing bytes');
   return { seat, batchSeq, fromTick, toTick, events };
+}
+
+// ----------------------------------------------------------- EVENTS_U --
+// Host -> guest, UNRELIABLE (M5b): the newest <= 3 EVENTS batches, each the
+// exact body of its reliable EVENTS frame (after the envelope), so a guest
+// dedupes by batchSeq and decodes both copies with one decoder.
+//   envelope · u8 count · (varu length · EVENTS body)…
+export function eventsBody(frame) {
+  return frame.subarray(2);
+}
+export function encodeEventsBundle(seat, bodies) {
+  let n = 3;
+  for (const b of bodies) n += b.length + 5;
+  const w = frameWriter(BIN.EVENTS_U, seat, n);
+  w.u8(bodies.length);
+  for (const b of bodies) w.blob(b);
+  return w.finish();
+}
+export function decodeEventsBundle(u8) {
+  const r = new ByteReader(u8);
+  if (r.u8() !== BIN.EVENTS_U) throw new RangeError('not an EVENTS_U frame');
+  const seat = r.u8();
+  const n = r.u8();
+  if (n > 8) throw new RangeError(`too many batches (${n})`);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const body = r.blob();
+    const br = new ByteReader(body);
+    const batchSeq = br.u32();
+    const fromTick = br.u32();
+    const toTick = br.u32();
+    const events = decodeValue(br);
+    if (!Array.isArray(events)) throw new RangeError('EVENTS_U batch is not an array');
+    if (br.remaining !== 0) throw new RangeError('EVENTS_U batch trailing bytes');
+    out.push({ seat, batchSeq, fromTick, toTick, events });
+  }
+  if (r.remaining !== 0) throw new RangeError('EVENTS_U trailing bytes');
+  return out;
 }
 
 // ---------------------------------------------------------------- CMD --

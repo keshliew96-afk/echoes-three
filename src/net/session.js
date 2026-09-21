@@ -26,9 +26,10 @@
 // replica mode.
 import { BIN, SNAPSHOT_EVERY_TICKS, SIM_HZ, DEFAULT_URL } from './protocol/constants.js';
 import { createSnapshotClient } from './protocol/snapshot.js';
-import { encodeInputPacket, decodeEvents, decodeCmd, encodeCmd, decodeKeyframe, fromBase64 } from './protocol/codec.js';
+import { encodeInputPacket, decodeEvents, decodeEventsBundle, decodeCmd, encodeCmd, decodeKeyframe, fromBase64 } from './protocol/codec.js';
 import { frameFromSnapshot, seatInputOf, quantAim } from '../sim/netseats.js';
 import { moveIndex } from '../sim/remote.js';
+import { scriptedInput } from '../sim/script.js';
 import { isStunned } from '../sim/status.js';
 import { restoreShapes } from '../sim/shapes.js';
 import { restoreMovement } from '../sim/movement.js';
@@ -382,6 +383,7 @@ export function createNetSession(ctx) {
       snapsIn: [],
       suppressed: new WeakSet(),
       rejected: 0,
+      batches: { seen: new Set(), toTick: new Map(), contig: 0, throughTick: 0, dupCopies: 0, viaReliable: 0, viaUnreliable: 0 },
     };
     g.shadow = createActionShadow({ bus, seat, cosmetics });
     g.replica.setSuppress((ev) => g.suppressed.has(ev));
@@ -394,6 +396,10 @@ export function createNetSession(ctx) {
     addKeyTimers();
     startRaf();
     requestFull('join');
+    // ?netbot=<seed> (multi-client harnesses, e.g. the netbench's --url):
+    // this guest plays with scripted input.
+    const nb = new URLSearchParams(location.search).get('netbot');
+    if (nb !== null && !bot) api.setBotInput({ seed: Number(nb) || 3 });
     log('guest_start', { seat });
     changed();
   }
@@ -447,9 +453,49 @@ export function createNetSession(ctx) {
   }
 
   // Per rendered frame: sample input (presses predicted on THIS frame).
+  // Scripted guest input for multi-client probes (the netbench's guest
+  // pages via ?netbot=<seed>, or session.setBotInput()): the pure scripted
+  // input generator (sim/script.js) keyed by this guest's input seq, aimed
+  // at the nearest hostile half the time so fights actually happen. Presses
+  // are taken once per new seq. Never on unless a probe asks for it.
+  let bot = null;
+  let botSeq = -1;
+  function botSample() {
+    const g = guest;
+    const seq = g.seq + 1;
+    const body = ownBody();
+    const cx = body ? body.x : 0;
+    const cz = body ? body.z : 0;
+    const s = scriptedInput(bot.seed, seq, { skillSlots: 4, cx, cz, aimRadius: 2.4 });
+    if (bot.aim !== false && body && Math.floor(seq / 90) % 2 === 0) {
+      let best = null;
+      let bd = Infinity;
+      for (const e of registry.all()) {
+        if (e.faction !== 'hostile' || !(e.hp > 0) || !e.hittable) continue;
+        const d = (e.x - cx) * (e.x - cx) + (e.z - cz) * (e.z - cz);
+        if (d < bd) {
+          bd = d;
+          best = e;
+        }
+      }
+      if (best) {
+        s.aim = { x: best.px + (best.x - best.px) * 0.5, z: best.pz + (best.z - best.pz) * 0.5 };
+        // Close in on it: walk toward the target when farther than 1.2 u.
+        if (bd > 1.44 && bot.chase !== false) {
+          const l = Math.sqrt(bd);
+          s.move = { x: (best.x - cx) / l, z: (best.z - cz) / l };
+        }
+      }
+    }
+    if (seq === botSeq) s.presses = [];
+    else botSeq = seq;
+    s.presses = s.presses.filter((p) => p.kind === 'dodge' || /^skill_[1-4]$/.test(p.kind));
+    return s;
+  }
+
   function sampleFrame() {
     const g = guest;
-    const s = sampleIntents();
+    const s = bot ? botSample() : sampleIntents();
     g.held.move = s.move ? moveIndex(s.move.x, s.move.z) : 0;
     if (s.aim) g.held.aim = { x: quantAim(s.aim.x), z: quantAim(s.aim.z) };
     const wasBasic = g.held.basic;
@@ -617,7 +663,8 @@ export function createNetSession(ctx) {
     try {
       const ch = u8[0];
       if (ch === BIN.SNAP) guestSnap(u8);
-      else if (ch === BIN.EVENTS) guestEvents(u8);
+      else if (ch === BIN.EVENTS) guestBatch(decodeEvents(u8), 'reliable');
+      else if (ch === BIN.EVENTS_U) for (const b of decodeEventsBundle(u8)) guestBatch(b, 'unreliable');
       else if (ch === BIN.CMD) guestCmd(decodeCmd(u8));
     } catch (err) {
       g.decodeErrors += 1;
@@ -692,24 +739,44 @@ export function createNetSession(ctx) {
         if (g.entityId === null) g.entityId = me.id;
         const k = r.lastInputSeqConsumed;
         const human = me.controller === 'human' || g.seat === 0;
-        if (human || !g.own.ready) g.own.reconcile(me, r.tick, human ? k : g.seq);
+        const al = view.systems && view.systems.allies && view.systems.allies.seats;
+        const timers = al && Array.isArray(al.timers) ? al.timers[g.seat] : null;
+        if (human || !g.own.ready) g.own.reconcile(me, r.tick, human ? k : g.seq, timers);
         if (human) {
-          g.shadow.reseed(me, r.tick, k);
+          g.shadow.reseed(timers, k);
           g.shadow.onConsumed(k, r.tick);
         }
       }
     }
   }
 
-  function guestEvents(u8) {
+  // One EVENTS batch, from either copy (reliable EVENTS or the unreliable
+  // EVENTS_U resend): the first copy to arrive is used, later copies are
+  // dropped here (batch level), so the replica sees every batch exactly once.
+  function guestBatch(b, via) {
     const g = guest;
-    const b = decodeEvents(u8);
+    if (g.batches.seen.has(b.batchSeq)) {
+      g.batches.dupCopies += 1;
+      return;
+    }
+    g.batches.seen.add(b.batchSeq);
+    if (g.batches.seen.size > 4000) g.batches.seen.delete(g.batches.seen.values().next().value);
+    if (via === 'unreliable') g.batches.viaUnreliable += 1;
+    else g.batches.viaReliable += 1;
     for (const ev of b.events) {
       if (ev.seat === g.seat && Number.isInteger(ev.inputSeq) && g.shadow.onAuthEvent(ev)) g.suppressed.add(ev);
     }
+    // Contiguous delivery clock: every batch <= contig has been received.
+    g.batches.toTick.set(b.batchSeq, b.toTick);
+    if (g.batches.contig === 0) g.batches.contig = b.batchSeq - 1;
+    while (g.batches.toTick.has(g.batches.contig + 1)) {
+      g.batches.contig += 1;
+      g.batches.throughTick = g.batches.toTick.get(g.batches.contig);
+      g.batches.toTick.delete(g.batches.contig);
+    }
     if (g.frozen) return;
     g.replica.pushEvents(b);
-    g.shadow.onEventsThrough(b.toTick);
+    g.shadow.onEventsThrough(g.batches.throughTick);
   }
 
   function guestCmd(c) {
@@ -797,6 +864,8 @@ export function createNetSession(ctx) {
           guest.newestTick = -1;
           guest.lastConsumed = null;
           guest.frozen = false;
+          // The new host numbers its event batches from 1.
+          guest.batches = { seen: new Set(), toTick: new Map(), contig: 0, throughTick: 0, dupCopies: 0, viaReliable: 0, viaUnreliable: 0 };
           hostLost = null;
           if (hud) hud.hostBack(nameOfSeat(m.seat) || 'a new host');
           requestFull('host_changed');
@@ -1008,7 +1077,10 @@ export function createNetSession(ctx) {
       decodeErrors: g.decodeErrors + ds.corrupt,
       decodeMsP95: ds.decodeMsP95,
       eventBatches: rs.batchesIn,
-      eventGaps: rs.batchGaps,
+      eventGaps: g.batches.toTick.size,
+      eventBatchesViaUnreliable: g.batches.viaUnreliable,
+      eventBatchesViaReliable: g.batches.viaReliable,
+      eventBatchCopiesDropped: g.batches.dupCopies,
       interpDelayMs: g.interp.stats().delayMs,
       interpJitterMs: g.interp.stats().jitterMs,
       renderState: g.renderState ? g.renderState.state : null,
@@ -1094,6 +1166,12 @@ export function createNetSession(ctx) {
       return host ? host.setLagCompensation(on) : null;
     },
     requestFull: () => requestFull('api'),
+    // Probe input: { seed, aim?: bool, chase?: bool } | null (see botSample).
+    setBotInput(cfg) {
+      bot = cfg ? { seed: (cfg.seed ?? 3) >>> 0, aim: cfg.aim !== false, chase: cfg.chase !== false } : null;
+      botSeq = -1;
+      return bot;
+    },
     debugGuest: () => guest,
     debugHost: () => host,
     resetStats() {

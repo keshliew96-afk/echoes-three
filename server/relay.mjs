@@ -22,6 +22,7 @@ export const MAX_FRAME = Object.freeze({
   [BIN.SNAP]: 256 * 1024,
   [BIN.INPUT]: 1024,
   [BIN.EVENTS]: 256 * 1024,
+  [BIN.EVENTS_U]: 256 * 1024,
   [BIN.CMD]: 4096,
   [BIN.KEYFRAME]: 1 << 20,
 });
@@ -107,7 +108,8 @@ export function routeBinary(ctx, peer, u8) {
   if (isHost) touchHost(room, ctx.now());
   switch (ch) {
     case BIN.SNAP:
-    case BIN.EVENTS: {
+    case BIN.EVENTS:
+    case BIN.EVENTS_U: {
       if (!isHost) return bad(counters, 'guest_sent_host_channel');
       const dest = u8[1];
       let n = 0;

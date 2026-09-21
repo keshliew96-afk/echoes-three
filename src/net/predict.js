@@ -208,18 +208,20 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
     while (pending.length && (pending[0].matched || pending[0].retracted) && now() - pending[0].t > 3000) pending.shift();
   }
 
-  // Re-seed the timers from the authoritative entity (host tick T consumed k).
-  function reseed(e, T, k) {
-    if (!enabled || !e || !Number.isInteger(k)) return;
+  // Re-seed the timers from the host's replicated seat timers (allies seats
+  // block: absolute INPUT-FRAME seqs — exact, no tick mapping). Timers of a
+  // kind with a prediction the host has not consumed yet keep the local value.
+  function reseed(timers, k) {
+    if (!enabled || !timers || !Number.isInteger(k)) return;
     const open = (kind) => pending.some((p) => p.kind === kind && !p.matched && !p.retracted && p.seq > k);
-    if (Array.isArray(e.cds)) {
+    if (Array.isArray(timers.cds)) {
       for (let i = 0; i < 4; i++) {
         if (open(`skill_${i + 1}`)) continue;
-        readyAt[i] = k + Math.max(0, (e.cds[i] ?? 0) - T);
+        readyAt[i] = timers.cds[i] ?? 0;
       }
     }
-    if (Number.isFinite(e.nextBasicTick) && !open('basic')) basicAt = k + Math.max(0, e.nextBasicTick - T);
-    if (Number.isFinite(e.dodgeReadyTick) && !open('dodge')) dodgeAt = k + Math.max(0, e.dodgeReadyTick - T);
+    if (Number.isFinite(timers.basic) && !open('basic')) basicAt = timers.basic;
+    if (Number.isFinite(timers.dodge) && !open('dodge')) dodgeAt = timers.dodge;
   }
 
   // HUD provider (commandbar VIEW-SEAT): the four kit tiles + dodge, in

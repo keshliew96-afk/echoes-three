@@ -30,7 +30,11 @@
 const DEATH_CLASS = (t) => t === 'death' || t === 'broken' || t === 'downed' || t.endsWith('_despawn');
 const HOST_LOCAL = new Set(['intent_denied']);
 const EXTRAPOLATE_MAX_TICKS = 6; // 100 ms
-const TELEPORT_U = 3; // a jump this big between two snapshots is not lerped
+// A jump this big between two snapshots is a teleport (never lerped): party
+// bodies are re-seated at room / camp boundaries (a snapshot interval moves
+// them at most ~0.4 u by walk or dash); enemies may charge, so theirs is wider.
+const TELEPORT_PARTY_U = 1.0;
+const TELEPORT_U = 3;
 
 export function createReplica({ world, registry, bus, scene, restoreShapes, restoreMovement, log = () => {} }) {
   const snaps = []; // ascending tick: { seq, tick, view, ents: Map(id -> ent), arrival }
@@ -65,6 +69,7 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
     remoteJumps06: 0,
     remoteFrames: 0,
     teleports: 0,
+    teleportFrames: 0,
     orderViolations: 0,
     batchesIn: 0,
     batchGaps: 0,
@@ -108,7 +113,6 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
   // pushEvents(batch) — a decoded EVENTS batch (reliable, in order).
   function pushEvents(b) {
     stats.batchesIn += 1;
-    if (lastBatch && b.batchSeq !== lastBatch + 1) stats.batchGaps += 1;
     lastBatch = b.batchSeq;
     for (let i = 0; i < b.events.length; i++) {
       const ev = b.events[i];
@@ -191,6 +195,9 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
     const due = [];
     const keep = [];
     for (const q of eventQ) (q.ev.tick <= rec.tick ? due : keep).push(q);
+    // Batches may arrive out of order (the unreliable resend overtakes a
+    // retransmitted reliable copy): host order = (tick, ordinal-in-tick).
+    due.sort((x, y) => x.ev.tick - y.ev.tick || x.ord - y.ord);
     eventQ.length = 0;
     for (const q of keep) eventQ.push(q);
     const ids = rec.ids;
@@ -295,9 +302,10 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
       let vx = 0;
       let vz = 0;
       const b = B ? B.ents.get(e.id) : null;
+      const tpU = a.party ? TELEPORT_PARTY_U : TELEPORT_U;
       if (b) {
         const span = B.tick - A.tick;
-        if (Math.hypot(b.x - a.x, b.z - a.z) > TELEPORT_U) {
+        if (Math.hypot(b.x - a.x, b.z - a.z) > tpU) {
           stats.teleports += 1;
         } else {
           vx = (b.x - a.x) / span;
@@ -314,7 +322,7 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
         z = a.z + a.vz * Math.min(dt, 30);
       } else if (!B && extra > 0 && P) {
         const p = P.ents.get(e.id);
-        if (p && Math.hypot(a.x - p.x, a.z - p.z) < TELEPORT_U) {
+        if (p && Math.hypot(a.x - p.x, a.z - p.z) < tpU) {
           const span = A.tick - P.tick;
           vx = (a.x - p.x) / span;
           vz = (a.z - p.z) / span;
@@ -339,9 +347,16 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
         const lr = lastRender.get(e.id);
         if (lr) {
           const jump = Math.hypot(x - lr.x, z - lr.z);
-          if (jump > stats.remoteJumpMax) stats.remoteJumpMax = jump;
-          if (jump > 0.3) stats.remoteJumps03 += 1;
-          if (jump > 0.6) stats.remoteJumps06 += 1;
+          // A frame that crosses an authoritative teleport (re-seat) is not a
+          // smoothness failure: counted apart.
+          const pp = P ? P.ents.get(e.id) : null;
+          const tele = (b && Math.hypot(b.x - a.x, b.z - a.z) > tpU) || (pp && Math.hypot(a.x - pp.x, a.z - pp.z) > tpU);
+          if (tele && jump > 0.3) stats.teleportFrames += 1;
+          else {
+            if (jump > stats.remoteJumpMax) stats.remoteJumpMax = jump;
+            if (jump > 0.3) stats.remoteJumps03 += 1;
+            if (jump > 0.6) stats.remoteJumps06 += 1;
+          }
           stats.remoteFrames += 1;
         }
         lastRender.set(e.id, { x, z });

@@ -2,7 +2,8 @@
 // ISOMORPHIC: imported by the browser client (src/net/**) AND the Node
 // session server (server/**). No DOM, no Node built-ins here.
 
-export const PROTOCOL_VERSION = 1;
+// v2 (M5b, W4): + EVENTS_U (0x07) redundant unreliable event batches.
+export const PROTOCOL_VERSION = 2;
 export const WS_PATH = '/echoes';
 export const DEFAULT_PORT = 7800; // player default; agents use their own ports (PLAN §6.3)
 export const DEFAULT_URL = `ws://127.0.0.1:${DEFAULT_PORT}${WS_PATH}`;
@@ -51,6 +52,11 @@ export const BIN = Object.freeze({
   CMD: 0x04, // guest -> host, reliable class (meta commands: interact, ready, ping a door)
   KEYFRAME: 0x05, // host -> server, reliable class (full state, reconnect/migration)
   RELIABLE_ACK: 0x06,
+  // M5b (W4): the last few EVENTS batches again on the UNRELIABLE class, sent
+  // with every snapshot — Quake 3's "resend until acked" for presentation
+  // events: a batch whose reliable copy is held back by a retransmit
+  // (>= 200 ms) still reaches the guest before its render clock gets there.
+  EVENTS_U: 0x07,
 });
 
 // ------------------------------------------------ JSON control messages --
