@@ -307,3 +307,17 @@ check), `persist` + `tab` (G3.9: reload, mute on blur / hidden, the Audio tab
 by keyboard, mouse and a mocked pad), `cost` (G3.10, a whole run).
 `node tools/gntM3-calibrate.mjs [--only cues|music|post|beds]` re-measures
 the cue peaks / music trims / bed trims after a sound-design change.
+
+**Adding sounds for new content (W2+).** From your own module (never
+src/audio/**): `service('audio').registerCue(id, { bus: 'sfx', levelDb,
+priority, maxVoices, cooldownMs, voice(ctx, t, dest, p) { … return endTime } })`
+(`p.kit` = the src/audio/voices.js primitives: tone / noise / bell / pluck /
+pad) and `service('audio').registerEventCue(eventType, (ev, h) => [{ cue, x,
+z, gainDb, pitch }] | null)` — handlers run before the built-in map, a non-null
+result replaces the built-in cues for that event instance; `h.pos(id)` /
+`h.player()` give world positions. Themes / beds: `registerMusicTheme(id,
+params)` / `registerAmbientBed(id, builder)`; the run's act (from `run_start`
+/ `layout_enter` `act`) picks theme wood / mill / barrow. New cues are
+measured in page with `await __echoes.audio.measureCue(id)` →
+`designPeakDb`; pass it as `calDb` to registerCue so the cue peaks exactly at
+its `levelDb` (built-in cues: `node tools/gntM3-calibrate.mjs --only cues`).

@@ -509,7 +509,9 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     }
     const t = ctx.currentTime + 0.003;
     const out = ctx.createGain();
-    const lvlDb = (def.levelDb ?? -12) - (CUE_CAL[cueId] ?? 0) + (Number(opts.gainDb) || 0);
+    // calDb: the recipe's measured design peak (CUE_CAL for built-ins; a
+    // registerCue caller may pass its own) so the cue peaks at levelDb.
+    const lvlDb = (def.levelDb ?? -12) - (def.calDb ?? CUE_CAL[cueId] ?? 0) + (Number(opts.gainDb) || 0);
     out.gain.value = dbToGain(lvlDb) * (spatialOn ? SPATIAL.trim : 1);
     let pan = null;
     const dest = graph.buses[b].input;
@@ -684,7 +686,8 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     ensureSubscribed(type);
   }
 
-  // registerCue(id, { bus, voice(ctx, t, dest, params), maxVoices=6, cooldownMs=30, priority=1, levelDb?, slot? })
+  // registerCue(id, { bus, voice(ctx, t, dest, params), maxVoices=6, cooldownMs=30, priority=1, levelDb?, calDb?, slot? })
+  // calDb = the recipe's own peak at unity (dBFS); debug.measureCue(id) measures it.
   function registerCue(id, def) {
     if (!id || !def || typeof def.voice !== 'function') throw new TypeError('registerCue(id, { bus, voice }) required');
     cues.set(id, { bus: 'sfx', slot: id, maxVoices: 6, cooldownMs: 30, priority: 1, levelDb: -12, ...def });
@@ -1223,6 +1226,33 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     play: (cue, opts = {}) => trigger(cue, opts, 'debug'),
     stop: (id) => stop(id),
     cues: () => [...cues.keys()],
+    // measureCue(id) -> the cue's design peak at unity gain (pass it to
+    // registerCue as calDb). Silences the score for ~1.5 s; probe use only.
+    measureCue: async (id) => {
+      const def = cues.get(id);
+      if (!def || !graph) return null;
+      const b = def.bus || 'sfx';
+      const S = settings;
+      const keep = { lvl: lvl(b), mode: mode(b), m: lvl('master'), mm: mode('master') };
+      debug.quiet();
+      await new Promise((r) => setTimeout(r, 400));
+      S.set(`audio.${b}.mode`, 'log', { persist: false, source: 'system' });
+      S.set(`audio.${b}.level`, 1, { persist: false, source: 'system' });
+      S.set('audio.master.mode', 'log', { persist: false, source: 'system' });
+      S.set('audio.master.level', 1, { persist: false, source: 'system' });
+      await new Promise((r) => setTimeout(r, 300));
+      graph.taps[b].reset();
+      trigger(id, { exactPitch: true, emit: false }, 'measure');
+      await new Promise((r) => setTimeout(r, 1200));
+      const peak = graph.taps[b].stats().peakDb;
+      S.set(`audio.${b}.mode`, keep.mode, { source: 'revert' });
+      S.set(`audio.${b}.level`, keep.lvl, { source: 'revert' });
+      S.set('audio.master.mode', keep.mm, { source: 'revert' });
+      S.set('audio.master.level', keep.m, { source: 'revert' });
+      debug.releaseMusic();
+      const applied = (def.levelDb ?? -12) - (def.calDb ?? CUE_CAL[id] ?? 0);
+      return { cue: id, bus: b, measuredPeakDb: peak, designPeakDb: Math.round((peak - applied) * 10) / 10 };
+    },
     eventTypes: () => [...eventCues.keys()],
     listener: () => (spatial ? spatial.listener : null),
     setListener: (x, z) => (spatial ? spatial.setListener(x, z) : null),
@@ -1267,6 +1297,14 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     },
     get forceMuted() {
       return forceMuted;
+    },
+    // Ends the ?audio=0 visit mute (the Audio tab's Master Mute button).
+    clearForceMute() {
+      if (!forceMuted) return false;
+      forceMuted = false;
+      applyGains();
+      appEvents.emit('audio_state', { state: stateNow(), gestureNeeded: engine.gestureNeeded, forceMuted });
+      return true;
     },
     unlock,
     update,

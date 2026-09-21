@@ -129,7 +129,17 @@ function build(ctx) {
       label: 'Mute',
       id: `au-${ch.id}-mute`,
       help: ch.id === 'master' ? 'Silences everything without moving any slider.' : `Silences ${ch.label} without moving its slider.`,
-      onPress: () => set(`audio.${ch.id}.muted`, !muted() ? true : false),
+      onPress: () => {
+        const a = audio();
+        // ?audio=0 mutes Master for the visit without touching the setting:
+        // the button ends that mute rather than flipping the stored value.
+        if (ch.id === 'master' && a && a.forceMuted && !settings.get('audio.master.muted')) {
+          a.clearForceMute();
+          refresh();
+          return;
+        }
+        set(`audio.${ch.id}.muted`, !muted());
+      },
     });
     const test = W.button({
       label: 'Test',
