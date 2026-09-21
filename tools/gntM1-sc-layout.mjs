@@ -46,6 +46,8 @@ export default async function (h) {
               const scrollable = /(auto|scroll)/.test(cs.overflowY) && p.scrollHeight > p.clientHeight + 1;
               if (!inside && !scrollable) issues.push({ kind: 'clipped-by-container', id: a.id, container: p.className });
               if (!inside && scrollable) a.needsScroll = true;
+              // What the player can see of it: the part inside the scroll box.
+              a.vis = { x: Math.max(a.x, pr.left), y: Math.max(a.y, pr.top), r: Math.min(a.r, pr.right), b: Math.min(a.b, pr.bottom) };
               break;
             }
             p = p.parentElement;
@@ -54,8 +56,10 @@ export default async function (h) {
         for (const a of rects) if (a.outside && !a.needsScroll) issues.push({ kind: 'outside-viewport', id: a.id, rect: [a.x, a.y, a.w, a.h].map(Math.round) });
         for (let i = 0; i < rects.length; i++)
           for (let j = i + 1; j < rects.length; j++) {
-            const a = rects[i];
-            const b = rects[j];
+            const a = rects[i].vis || rects[i];
+            const b = rects[j].vis || rects[j];
+            a.id = rects[i].id;
+            b.id = rects[j].id;
             const ox = Math.min(a.r, b.r) - Math.max(a.x, b.x);
             const oy = Math.min(a.b, b.b) - Math.max(a.y, b.y);
             if (ox > 0.5 && oy > 0.5) issues.push({ kind: 'overlap', a: a.id, b: b.id, ox: Math.round(ox), oy: Math.round(oy) });

@@ -310,7 +310,38 @@ export function createApp({ params }) {
       });
       provide('display', display);
       display.init();
-      if (c.stage && c.stage.camera) titleCam = createTitleCam({ camera: c.stage.camera });
+      if (c.stage && c.stage.camera) {
+        let hearth;
+        let colAt = -Infinity;
+        let colFrac = null;
+        titleCam = createTitleCam({
+          camera: c.stage.camera,
+          // The camp scene's framing inputs (camp.js CAMP-CMD 'titleCam'); other scenes: none.
+          getHearth: () => {
+            if (hearth === undefined) {
+              let r = null;
+              try {
+                r = c.scene && typeof c.scene.cmd === 'function' ? c.scene.cmd('titleCam', []) : null;
+              } catch {
+                r = null;
+              }
+              hearth = r && r.hearth ? r.hearth : null;
+            }
+            return hearth;
+          },
+          // Right edge of the title's menu column as a fraction of the width.
+          getColumnFraction: () => {
+            const now = performance.now();
+            if (now - colAt > 500) {
+              colAt = now;
+              const col = document.querySelector('.ap-title.ap-open .ap-title-col');
+              const r = col ? col.getBoundingClientRect() : null;
+              colFrac = r && r.width > 0 ? r.right / window.innerWidth : colFrac;
+            }
+            return colFrac;
+          },
+        });
+      }
       // FPS meter (display.showFps; forced on by ?fps=1 / ?debug=1 / harness boots — D4).
       const forced = !!(params.fps || params.debug || params.menuSkip);
       const applyFps = () => {
