@@ -237,12 +237,15 @@ export function createApp({ params }) {
 
   // Warm the menus the player opens next in idle time (first open = no DOM build).
   let prebuilt = false;
+  let prebuildMs = null;
   function prebuildMenus() {
     if (prebuilt) return;
     prebuilt = true;
     const idle = typeof window.requestIdleCallback === 'function' ? (f) => window.requestIdleCallback(f, { timeout: 2500 }) : (f) => setTimeout(f, 400);
     idle(() => {
+      const t0 = performance.now();
       for (const id of ['settings', 'farewell']) screens.prebuild(id);
+      prebuildMs = Math.round((performance.now() - t0) * 10) / 10;
     });
   }
 
@@ -567,6 +570,10 @@ export function createApp({ params }) {
     gamepad: () => gamepad.debug(),
     toasts: () => toaster.log(),
     titleCam: () => (titleCam ? titleCam.debug() : null),
+    // Probe seam (G1.13): swap a service (e.g. a recording audio stub) in the
+    // app's own registry instance.
+    provide: (name, impl) => provide(name, impl),
+    service: (name) => service(name),
     confirm: (o) => app.confirm(o),
     keepDisplay: (o) => app.keepDisplay(o),
     toast: (t, o) => app.toast(t, o),
@@ -576,6 +583,9 @@ export function createApp({ params }) {
     quitToTitle: (o) => app.quitToTitle(o),
     get freshWorld() {
       return freshWorld;
+    },
+    get prebuildMs() {
+      return prebuildMs;
     },
     get frameCount() {
       return frameCount;

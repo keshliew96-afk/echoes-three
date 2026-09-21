@@ -45,6 +45,11 @@ const CSS = `
   font-family: ${AP_FONT}; color: ${P.parchment};
   -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums;
   font-size: ${px(24)}; line-height: 1.3;
+  /* Its own compositor layer: text renders with grayscale antialiasing. LCD
+     subpixel AA (Windows) paints red / blue colour fringes on glyph edges —
+     measured as Ember- and violet-band pixels inside the farewell plate
+     (G1.12) — and the fade needs the layer anyway. */
+  will-change: opacity;
 }
 .ap-screen.ap-open { display: block; }
 .ap-screen.ap-in { opacity: 1; }
@@ -304,7 +309,10 @@ p.ap-note.ap-warn { color: ${P.bone}; }
 .ap-dlg-btns { display: flex; gap: ${px(16)}; justify-content: flex-end; flex-wrap: wrap; margin-top: ${px(6)}; }
 
 /* ------------------------------------------------------------ loading -- */
-.ap-loading { background: ${P.voidCharcoal}; }
+/* 99% (not 100%) opaque on purpose: Chrome keeps LCD subpixel text on an
+   OPAQUE composited layer, and its red/green glyph fringes land in the Ember
+   and Heal bands (G1.12); a translucent layer renders grayscale AA. */
+.ap-loading { background: ${P.voidCharcoal}FC; }
 .ap-loading .ap-load-col {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   display: flex; flex-direction: column; align-items: center; gap: ${px(26)};
@@ -325,7 +333,7 @@ p.ap-note.ap-warn { color: ${P.bone}; }
 @keyframes ap-breathe { 0%, 100% { opacity: 0.72; } 50% { opacity: 1; } }
 
 /* ----------------------------------------------------------- farewell -- */
-.ap-farewell { background: ${P.voidCharcoal}; }
+.ap-farewell { background: ${P.voidCharcoal}FC; } /* translucent: grayscale text AA (see .ap-loading) */
 .ap-farewell .ap-dlg {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: min(${px(900)}, calc(100vw - 32px)); padding: ${px(40)} ${px(46)} ${px(34)};
@@ -339,6 +347,7 @@ p.ap-note.ap-warn { color: ${P.bone}; }
   position: fixed; left: 50%; bottom: ${px(160)}; transform: translateX(-50%);
   z-index: 1300; display: flex; flex-direction: column-reverse; align-items: center; gap: ${px(10)};
   pointer-events: none; width: min(${px(900)}, calc(100vw - 32px));
+  will-change: opacity; /* grayscale text AA, as .ap-screen */
 }
 .ap-toast {
   font-family: ${AP_FONT}; font-size: ${px(24)}; color: ${P.parchment}; text-align: center;

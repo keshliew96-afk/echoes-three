@@ -190,3 +190,61 @@ launch profile. `npm run net -- --host 0.0.0.0` exposes the server on the LAN
 does not require `gamepadconnected`, so a mock installed by an `eval`
 (override `navigator.getGamepads` to return a standard-mapping pad whose
 `buttons[i].pressed` you toggle) drives the menus.
+
+### M1 — app shell, title, settings, display (Gauntlet W1, owner M1)
+
+**Boot.** Plain URL → `loading` splash (sim frozen at tick 0 while the boot
+warm-up drains; then "Press any key or click" only while the audio engine is
+`locked`) → `title` over the live camp (sim paused, `__echoes.app.titleCam()`
+reports the backdrop framing). `?menu=0` / any legacy harness param =
+`app.state === 'playing'` from the first frame, exactly v0.4.63 (no splash,
+no title, no auto-pause on blur, FPS meter shown). A title boot never ticks
+until New Game (so `gnt-arch-browser.mjs waitReady()` — which waits for
+tick ≥ 240 — needs `?menu=0` or a New Game press first).
+
+**Driving menus.** Real input works everywhere (the window capture-phase gate
+turns keys into nav actions while a blocking screen is open — no game listener
+sees them). Scripted: `__echoes.app.press('down'|'up'|'left'|'right'|'confirm'|
+'back'|'tabPrev'|'tabNext')`, `open(id, params)` (e.g. `open('settings', { tab:
+'display' })`), `back()`. Wrap calls that return a promise (`confirm`,
+`keepDisplay`, `newGame`) in an eval that returns `true`, or the capture waits
+for the dialog to resolve. Element ids are stable: `ap-title-{new,load,
+settings,exit,continue,multiplayer,records}`, `ap-tab-<id>`, `ap-display-
+{renderScale,mode,vsync,frameLimit,showFps}`, `ap-gameplay-{screenshake,
+autoPause}`, `ap-settings-{reset,back}`, `ap-confirm-{ok,cancel}`,
+`ap-keep-{keep,revert}`, `ap-farewell-return`. `window.close` really closes a
+puppeteer tab with one history entry — `history.pushState` first (or stub it)
+to reach the farewell card.
+
+**`__echoes.app` (M1).** `state`, `overlay`, `mode`, `stack()`, `screens()`,
+`focus()` → `{ screen, id, label, rect, ring }`, `focusables()`,
+`ringCount()` (must be 1 while a screen is open), `responses()` /
+`clearResponses()` (last 50 `{ action, source, screen, inputTs, paintTs, ms }`),
+`frameStats()` (`renderedFps, rafHz, displayHz, source, vsync, limit,
+frameMsP50/P95, workMsP50/P95, frames, uncappedFps`), `display()` (render scale,
+drawing buffer, css, dpr, clamp, fullscreen / browser-F11 / keyboard-lock,
+vsync, limit), `displayLog()`, `simPaused()`, `pauseReason()`, `lastSource()`,
+`gamepad()`, `toasts()`, `titleCam()`, `confirm(o)`, `keepDisplay(o)`,
+`toast(t,o)`, `requestPause(src)`, `newGame()`, `exit()`, `quitToTitle(o)`,
+`provide(name, impl)` / `service(name)` (probe seam — e.g. a recording audio
+stub for the gesture-hook gate), `freshWorld`, `frameCount`, `prebuildMs`.
+
+**Display facts a probe can rely on.** Render scale = `renderer` pixel ratio
+`min(dpr, 2) × s`, drawing buffer ≤ 3840×2160 (`display().clamped`), applied
+synchronously (the next rendered frame). V-Sync off = rAF-anchored uncapped
+loop (extra frames between refreshes, none once refreshes are being missed);
+`displayHz` is the vsync-period estimate (10th-percentile rAF interval) — use it,
+not `rafHz`, as the display rate when the page is GPU-bound. Frame limits pace
+rendered frames only; the sim stays 60 ticks/s. Fullscreen is session-only and
+must be entered from a trusted key/click (puppeteer `keyboard.press` counts);
+Keep/Revert opens when the Display tab is left or Settings closes.
+
+**M1 probes** (`node tools/gntM1-drive.mjs tools/gntM1-sc-<name>.mjs [--url U]
+[--w W --h H] [--gpu 1] [--headful 1]`, GPU harness by default; output
+`captures/gntM1-sc-<name>.json`): `layout` (G1.1, run at 1024×576 / 1600×900 /
+2560×1440), `nav` (G1.2), `response` (G1.3), `scale` (G1.4, `?menu=0`),
+`keeprevert` (G1.5 + G1.9), `pacing` / `pacing-half` (G1.6 + G1.7, `?menu=0`),
+`persist` (G1.8, `?menu=0`), `exit` (G1.10), `journey` (G1.11), `palette` then
+`node tools/gntM1-palette-check.mjs` (G1.12), `gesture` (G1.13), `shake`
+(screen-shake scaling, `?menu=0`), `misc` (FPS meter toggle, auto-pause,
+overlay pause).
