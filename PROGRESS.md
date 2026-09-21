@@ -5,7 +5,7 @@ GameStudio) in Three.js, judged against commercial reference screenshots
 (docs/REFERENCE_BAR.md). Builder/critic loops per block; critics review rendered
 pixels and running gameplay only.
 
-## Status: ▶ ROUND 5 resumed at v0.4.63 (workflow wf_2d8f09bf-f71, args docs/critiques/round4-args.json). B/C/D/E PASS, ref scorer passes all frames (combat at the 16/20 floor). Remaining: bible + player scorers, C and D audit re-runs, adjudication, synthesizer.
+## Status: ▶ GAUNTLET LOOP iteration running on branch `gauntlet` (workflow tools/gauntlet.workflow.js). Goal: prototype -> production-ready title with five new modules (main menu + display settings, persistent save/load with slots, audio engine + mixer, content extension incl. 8 skill slots, multiplayer with lobby / delta compression / prediction / lag compensation), each built by specialised builders and judged by fresh harsh critics with blind benchmark checklists, looped until all pass without breaking the core loop. The v0.4.63 certification (master, 86dc051) is PAUSED with all checkpoints intact: B/C/D/E probe critics PASS, ref scorer passes all four frames; owed = bible + player scorers, C/D audit re-runs, synthesizer (resume with tools/certification.workflow.js + docs/critiques/round4-args.json).
 
 ### Resume point — do this first
 1. Start the dev server with preview_start "echoes-dev" (port 5199). If a stray
@@ -45,6 +45,18 @@ pixels and running gameplay only.
 The game BOOTS INTO CAMP: night camp with the Hearth-Fire, all four critters
 idling around it, tents, benches, lanterns, market stall, cart, violet portal,
 fireflies. The D2 camp critic scored the static frame 20/20.
+
+
+## Gauntlet Loop iteration (branch `gauntlet`, started 2026-09-21)
+
+Orchestration: tools/gauntlet.workflow.js — (1) Plan: lead architect writes docs/gauntlet/PLAN.md (state machine, file-ownership map per builder key, contracts, save schema, audio bus math, content design, network protocol, platform-honest display settings, harness contract + port scheme, measurable gates, benchmark systems), commits contract stubs, v0.5.0; an adversarial plan reviewer; one revision pass on must-fix gaps.
+(2) Build in dependency waves, two agents at a time: W1 M1 menu/shell/display || M3 audio; W2 M4a systems content (8 slots, skills, nodes, levels, difficulty) || M4b world content (enemies, hazards, interactables, biome dressing); W3 M2 save/load || M5a net core (server, lobby, delta snapshots, conditioner, harness; no sim edits); W4 M5b net play (remote party members, prediction + reconciliation, interpolation, lag-compensated rewind, lobby UI, reconnect); W5 INT integration (pause menu, full journey, production build).
+(3) Gauntlet rounds (max 4): six fresh critics — menu, audio, save, content, net (packet loss, races, drop-offs), journey + core-loop regression — each writes a blind benchmark checklist from real shipped systems before inspecting; completeness audit on every PASS; two refuters per must-fix; module-owned fix builders; repeat until all pass; then docs/gauntlet/REPORT.md.
+Checkpoints: docs/gauntlet/build-<key>.md, critic-<key>-r<N>.md, fix-<key>-r<N>.md (STATUS: PARTIAL/COMPLETE) — a relaunch fast-forwards past finished agents. Builders commit per step with a patch bump.
+
+| # | Time | Event |
+|---|------|-------|
+| G1 | 2026-09-21 | **Gauntlet Loop launched** from v0.4.63 on branch `gauntlet`. Certification workflow paused first (its captures would be invalidated by builder HMR reloads). |
 
 ## Round A all-PASS; Round B complete (integration landed)
 
