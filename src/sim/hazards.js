@@ -748,6 +748,13 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
       dormant = !!(data && data.dormant);
       reservations = data && Array.isArray(data.reservations) ? data.reservations.map((r) => ({ a: r.a, b: r.b })) : [];
     },
+    // Save system (PLAN §3.4, M2): serialize() + the blocker-refresh flag.
+    saveState: () => ({ dormant, reservations, blockersDirty }),
+    loadState(data) {
+      dormant = !!(data && data.dormant);
+      reservations = data && Array.isArray(data.reservations) ? data.reservations : [];
+      blockersDirty = !!(data && data.blockersDirty);
+    },
     resolveOverlaps(x, z, radius) {
       // A new blocker landing on bodies pushes them out at once.
       for (const e of registry.all()) {
@@ -934,6 +941,20 @@ export function createLayoutSystem({ registry, events, getTick, hazards, interac
       hazards.restore(data ? data.hazards : null);
       interactables.restore(data ? data.interactables : null);
       interactables.refreshBlockers();
+    },
+    // Save system (PLAN §3.4, M2): the complete director + hazard + asset
+    // state. No blocker refresh here — the save layer restores the movement
+    // module's collider list verbatim afterwards (it is tick-end exact).
+    saveState: () => ({
+      active,
+      hazards: hazards.saveState(),
+      interactables: interactables.serialize(),
+    }),
+    loadState(data) {
+      if (!data) throw new TypeError('layout.loadState: missing data');
+      active = data.active ?? null;
+      hazards.loadState(data.hazards ?? null);
+      interactables.restore(data.interactables ?? null);
     },
     getSeed,
   };

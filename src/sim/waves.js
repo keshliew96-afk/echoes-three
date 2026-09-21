@@ -512,5 +512,8 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     planView,
     serialize,
     restore,
+    // Save system (PLAN §3.4, M2): serialize() is already the complete state.
+    saveState: serialize,
+    loadState: restore,
   };
 }

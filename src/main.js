@@ -125,6 +125,12 @@ const rng = {
     rngImpl = createGameplayRng(s >>> 0);
     return rngImpl.seed;
   },
+  // The LIVE stream (camp.js reseeds per run, so only this handle reaches it).
+  getState: () => rngImpl.getState(),
+  setState: (st) => {
+    rngImpl = createGameplayRng(st.seed >>> 0);
+    return rngImpl.setState(st);
+  },
 };
 // @gnt:M2 RNG-WRAPPER end
 const cosmetic = createCosmeticRng();

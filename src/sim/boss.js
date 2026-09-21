@@ -451,7 +451,27 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     };
   }
 
+  // Save system (docs/gauntlet/PLAN.md §3.4, M2): the Stag fight's private
+  // state (the body and its adds are registry data; addIds are ids).
+  // lastAddsTick starts at -Infinity (canonical JSON tags it).
+  function saveState() {
+    return { bossId, active, cleared, phasesFired, lastAddsTick, addIds, scale, lastPlayerTelegraphStart };
+  }
+  function loadState(d) {
+    if (!d) throw new TypeError('boss.loadState: missing data');
+    bossId = d.bossId ?? null;
+    active = !!d.active;
+    cleared = !!d.cleared;
+    phasesFired = d.phasesFired ?? 0;
+    lastAddsTick = typeof d.lastAddsTick === 'number' ? d.lastAddsTick : -Infinity;
+    addIds = Array.isArray(d.addIds) ? d.addIds : [];
+    scale = d.scale ?? { dmgMul: 1, adds: null, addHpMul: 1, addDmgMul: 1 };
+    lastPlayerTelegraphStart = Number.isFinite(d.lastPlayerTelegraphStart) ? d.lastPlayerTelegraphStart : -100000;
+  }
+
   return {
+    saveState,
+    loadState,
     start,
     despawn,
     continuous,

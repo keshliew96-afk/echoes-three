@@ -381,5 +381,15 @@ export function createSkillBolts({ registry, events, onImpact, owner = null }) {
     registry.despawn(b.id);
   }
 
-  return { spawn, step };
+  // `owner`: this instance's tag (read-only; the save system re-tags restored
+  // bolts when a page numbered its unnamed subsystems differently).
+  return { spawn, step, owner: me };
+}
+
+// Save system (docs/gauntlet/PLAN.md §3.4 rule 4, M2): module-level state.
+export function serializeShapes() {
+  return { nextBoltOwnerSeq };
+}
+export function restoreShapes(data) {
+  if (data && Number.isFinite(data.nextBoltOwnerSeq)) nextBoltOwnerSeq = data.nextBoltOwnerSeq;
 }

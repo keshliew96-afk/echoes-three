@@ -1162,6 +1162,65 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       return currentTick;
     },
     // @gnt:M2 WORLD-STATE begin
+    // Complete-state capture for the save system (docs/gauntlet/PLAN.md §3.4).
+    // saveState() hands out LIVE state (the save layer deep-clones the whole
+    // tree once); loadState() receives a private clone and adopts it. Both
+    // run ONLY at a tick boundary (clock.onTickEnd or between frames): the ①
+    // deferred and ③ continuation queues hold closures mid-tick, so a capture
+    // that finds either non-empty throws a named CapturePointError listing
+    // what is pending (the save layer then retries at the next tick end).
+    pendingQueues: () => ({
+      deferred: deferred.length,
+      continuations: continuations.length,
+      carriers: deferred.map((d) => d.carrierOrdinal),
+    }),
+    saveState() {
+      if (deferred.length > 0 || continuations.length > 0) {
+        const err = new Error(
+          `world.saveState outside a tick boundary: ${deferred.length} deferred maturation(s)` +
+            ` (carriers ${deferred.map((d) => d.carrierOrdinal).join(', ') || '-'}) and ${continuations.length} continuation(s) pending`
+        );
+        err.name = 'CapturePointError';
+        err.pending = { deferred: deferred.length, continuations: continuations.length };
+        throw err;
+      }
+      return {
+        world: { tick: currentTick, stats, maintainPopulation, harness },
+        systems: {
+          combat: combat.saveState(),
+          skills: skillSys.saveState(),
+          build: buildSys.saveState(),
+          enemies: enemies.saveState(),
+          waves: waves.saveState(),
+          allies: allySys.saveState(),
+          boss: bossSys.saveState(),
+          run: runSys.saveState(),
+          layout: layoutSys.saveState(),
+        },
+      };
+    },
+    loadState(data) {
+      const w = data && data.world;
+      const s = data && data.systems;
+      if (!w || !s || !Number.isFinite(w.tick)) throw new TypeError('world.loadState: expected { world, systems }');
+      currentTick = w.tick;
+      // `stats` is shared by reference with the combat pipeline: patch in place.
+      for (const k of Object.keys(stats)) if (!(k in (w.stats ?? {}))) delete stats[k];
+      Object.assign(stats, w.stats ?? {});
+      maintainPopulation = !!w.maintainPopulation;
+      deferred = [];
+      continuations.length = 0;
+      combat.loadState(s.combat);
+      skillSys.loadState(s.skills);
+      buildSys.loadState(s.build);
+      enemies.loadState(s.enemies);
+      waves.loadState(s.waves);
+      allySys.loadState(s.allies);
+      bossSys.loadState(s.boss);
+      runSys.loadState(s.run);
+      layoutSys.loadState(s.layout);
+      return true;
+    },
     // @gnt:M2 WORLD-STATE end
     // @gnt:M5b REPLICA begin (setReplica / replica flag, PLAN §3.7)
     // @gnt:M5b REPLICA end

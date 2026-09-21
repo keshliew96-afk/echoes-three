@@ -612,7 +612,31 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
     return true;
   }
 
+  // Save system (docs/gauntlet/PLAN.md §3.4, M2) — the COMPLETE private state
+  // with absolute ticks, no events, no clamping (serialize()/restore() above
+  // are the run block's relative-cooldown persistence and stay as they are).
+  // player.skills (the id mirror) lives on the player entity (registry).
+  function saveState() {
+    return {
+      slots: slots.map((s) => (s ? { id: s.id, readyTick: s.readyTick } : null)),
+      override,
+      auraNext: [...auraNext.entries()],
+    };
+  }
+  function loadState(d) {
+    if (!d || !Array.isArray(d.slots)) throw new TypeError('skills.loadState: missing slots');
+    for (let i = 0; i < SKILL_SLOTS; i++) {
+      const s = d.slots[i] ?? null;
+      slots[i] = s ? { id: s.id, readyTick: s.readyTick } : null;
+    }
+    override = d.override ?? null;
+    auraNext.clear();
+    for (const [k, v] of d.auraNext ?? []) auraNext.set(k, v);
+  }
+
   return {
+    saveState,
+    loadState,
     giveSkill,
     tryFire,
     step,

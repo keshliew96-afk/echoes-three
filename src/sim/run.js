@@ -892,7 +892,64 @@ export function createRunSystem({
     autopilot.restore(d.autopilot);
   }
 
+  // Save system (docs/gauntlet/PLAN.md §3.4, M2): the COMPLETE run frame —
+  // the v0.4.63 members plus the expedition state and the autopilot (the
+  // draft and status tracker are stateless; roomHooks are wiring, not state).
+  function saveState() {
+    return {
+      active,
+      roomIndex,
+      phase,
+      wallet,
+      frame,
+      reward,
+      path,
+      shop,
+      summary,
+      pendingRoom,
+      fadeUntilTick,
+      rewardFor,
+      clearedRooms,
+      roomsDone,
+      startTick,
+      everStarted,
+      act,
+      challenge,
+      layout,
+      lastCombatLayout,
+      roomPlan: roomPlanView,
+      autopilot: autopilot.serialize(),
+    };
+  }
+  function loadState(d) {
+    if (!d || typeof d.phase !== 'string') throw new TypeError('run.loadState: missing phase');
+    active = !!d.active;
+    roomIndex = d.roomIndex ?? 0;
+    phase = d.phase;
+    wallet = d.wallet ?? RUN.startingGlint;
+    frame = d.frame ?? null;
+    reward = d.reward ?? null;
+    path = d.path ?? null;
+    shop = d.shop ?? null;
+    summary = d.summary ?? null;
+    pendingRoom = d.pendingRoom ?? 0;
+    fadeUntilTick = d.fadeUntilTick ?? 0;
+    rewardFor = d.rewardFor ?? {};
+    clearedRooms = d.clearedRooms ?? 0;
+    roomsDone = d.roomsDone ?? 0;
+    startTick = d.startTick ?? 0;
+    everStarted = !!d.everStarted;
+    act = ACT_IDS.includes(d.act) ? d.act : 1;
+    challenge = CHALLENGE[d.challenge] ? d.challenge : 'standard';
+    layout = d.layout ?? null;
+    lastCombatLayout = d.lastCombatLayout ?? null;
+    roomPlanView = d.roomPlan ?? null;
+    autopilot.restore(d.autopilot ?? null);
+  }
+
   const api = {
+    saveState,
+    loadState,
     startRun,
     endRun,
     onRoomCleared,

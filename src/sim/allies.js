@@ -1410,7 +1410,41 @@ export function createAllySystem({
     if (ch) breakChannel(ch, 'flinch', ev.tick);
   }
 
+  // Save system (docs/gauntlet/PLAN.md §3.4, M2): every piece of private
+  // party-command / revive / camp-seat state (the bodies are registry data).
+  function saveState() {
+    return {
+      mark,
+      rallyPoint,
+      defeated,
+      flinchBreaks,
+      repeats,
+      channels: [...channels.entries()],
+      denialEdge: [...denialEdge.entries()],
+      carriedBasic,
+      prevBasicHeld,
+      campSeats,
+    };
+  }
+  function loadState(d) {
+    if (!d || !Array.isArray(d.repeats)) throw new TypeError('allies.loadState: missing repeats');
+    mark = d.mark ?? null;
+    rallyPoint = d.rallyPoint ?? null;
+    defeated = !!d.defeated;
+    flinchBreaks = !!d.flinchBreaks;
+    for (let i = 0; i < repeats.length; i++) repeats[i] = d.repeats[i] ?? 0;
+    channels.clear();
+    for (const [k, v] of d.channels ?? []) channels.set(k, v);
+    denialEdge.clear();
+    for (const [k, v] of d.denialEdge ?? []) denialEdge.set(k, v);
+    carriedBasic = !!d.carriedBasic;
+    prevBasicHeld = !!d.prevBasicHeld;
+    campSeats = d.campSeats ?? null;
+  }
+
   return {
+    saveState,
+    loadState,
     continuous,
     resolveAll,
     endOfTick,

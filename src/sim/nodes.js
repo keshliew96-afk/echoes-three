@@ -1054,6 +1054,9 @@ export function createBuildSystem({
   const echoBolts = createSkillBolts({
     registry,
     events,
+    // A stable owner tag (M2, PLAN §3.4): an unnamed instance is numbered per
+    // page (`bolts#N`), which would make a saved echo bolt page-dependent.
+    owner: 'echo_bolts',
     onImpact: (tick, bolt, target) => {
       const targetId = target.id;
       const { power, skill, heal, sourceId } = bolt;
@@ -1342,7 +1345,45 @@ export function createBuildSystem({
     return { skill: skillId, dueTick: due };
   }
 
+  // Save system (docs/gauntlet/PLAN.md §3.4, M2) — the COMPLETE private state
+  // (serialize()/restore() above are the run block's persistence and stay as
+  // they are): bench, sockets, Resonance counters, the depth-1 suppression
+  // counter, the heal/hit correlation memory, pending Echo recasts (plain
+  // `{ due, skill, cast }` data, never closures) and the passive Reapply
+  // clocks. The resolved-def cache is derived and simply invalidated.
+  function saveState() {
+    return {
+      bench,
+      assignments: [...assignments.entries()],
+      resonance: [...resonance.entries()],
+      suppress,
+      lastHeal,
+      lastHit,
+      echoQueue,
+      auraEchoNext: [...auraEchoNext.entries()],
+    };
+  }
+  function loadState(d) {
+    if (!d || !Array.isArray(d.bench)) throw new TypeError('build.loadState: missing bench');
+    bench.length = 0;
+    for (const b of d.bench) bench.push(b);
+    assignments.clear();
+    for (const [k, v] of d.assignments ?? []) assignments.set(k, v);
+    resonance.clear();
+    for (const [k, v] of d.resonance ?? []) resonance.set(k, v);
+    suppress = Number.isFinite(d.suppress) ? d.suppress : 0;
+    lastHeal = d.lastHeal ?? null;
+    lastHit = d.lastHit ?? null;
+    echoQueue.length = 0;
+    for (const r of d.echoQueue ?? []) echoQueue.push(r);
+    auraEchoNext.clear();
+    for (const [k, v] of d.auraEchoNext ?? []) auraEchoNext.set(k, v);
+    invalidate();
+  }
+
   return {
+    saveState,
+    loadState,
     resolveDef,
     castMods,
     grantNode,

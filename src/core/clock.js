@@ -81,6 +81,19 @@ export function createClock() {
 
   // @gnt:M2 CLOCK-STATE begin — serialize()/restore() of { tick,
   // hitstopRemaining, grants } land here with the save system (PLAN §3.4).
+  // The accumulator is wall time (render pacing), not sim state: a restore
+  // empties it so the first frame after a load never replays banked time.
+  function serialize() {
+    return { tick, hitstopRemaining, grants: grants.map((g) => ({ atTick: g.atTick, amount: g.amount })) };
+  }
+  function restore(data) {
+    if (!data || !Number.isFinite(data.tick)) throw new TypeError('clock.restore: missing tick');
+    tick = data.tick;
+    hitstopRemaining = Number.isFinite(data.hitstopRemaining) ? data.hitstopRemaining : 0;
+    grants.length = 0;
+    for (const g of data.grants ?? []) grants.push({ atTick: g.atTick, amount: g.amount });
+    accumulator = 0;
+  }
   // @gnt:M2 CLOCK-STATE end
 
   return {
@@ -88,6 +101,8 @@ export function createClock() {
     stepOnce,
     onTickEnd,
     requestHitstop,
+    serialize,
+    restore,
     get tick() {
       return tick;
     },

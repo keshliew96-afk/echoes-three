@@ -300,5 +300,12 @@ export function createCombat({
   // `status` = the committed status contract (sim/status.js), handed to every
   // system that already holds the combat pipeline (world walk, ally steering,
   // enemies / hazards through their ctx) — one implementation, no re-imports.
-  return { applyDamage, applyHeal, kill, status: STATUS };
+  // Save system (docs/gauntlet/PLAN.md §3.4, M2): the hitstop coordinator's
+  // per-tick memory — the only private state of the pipeline.
+  const saveState = () => ({ stopTick, stopGranted });
+  function loadState(d) {
+    stopTick = d && Number.isFinite(d.stopTick) ? d.stopTick : -1;
+    stopGranted = d && Number.isFinite(d.stopGranted) ? d.stopGranted : 0;
+  }
+  return { applyDamage, applyHeal, kill, status: STATUS, saveState, loadState };
 }

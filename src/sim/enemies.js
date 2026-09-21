@@ -819,6 +819,9 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     setBurrow,
     serialize,
     restore,
+    // Save system (PLAN §3.4, M2): serialize() is already the complete state.
+    saveState: serialize,
+    loadState: restore,
     continuous,
     resolveAll,
     startRetreat,

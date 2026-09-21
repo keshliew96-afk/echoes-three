@@ -37,6 +37,20 @@ export function createGameplayRng(seed) {
       return draws;
     },
     ...makeApi(next),
+    // Save system (docs/gauntlet/PLAN.md §3.4, owner M2): the complete stream
+    // state as plain data — the creating seed, the mulberry32 state word and
+    // the draw count. setState() replaces the stream position exactly, so a
+    // restored stream draws the same sequence the saved one would have.
+    getState() {
+      return { seed: this.seed >>> 0, s: s | 0, draws };
+    },
+    setState(st) {
+      if (!st || !Number.isFinite(st.s)) throw new TypeError('rng.setState: missing state word');
+      s = st.s | 0;
+      draws = Number.isFinite(st.draws) ? st.draws : 0;
+      if (Number.isFinite(st.seed)) this.seed = st.seed >>> 0;
+      return true;
+    },
   };
 }
 
