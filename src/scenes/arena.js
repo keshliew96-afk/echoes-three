@@ -962,17 +962,60 @@ export function createArenaScene(stage, toggles, ctx) {
   // in the worker keeps going there, and its continuation waits for a calm
   // frame (the next room's dressing is always ready long before it is needed:
   // reward / path / camp frames run the full budget).
+  // A finished background dressing first LINKS its programs off the main
+  // thread (compileAsync over KHR_parallel_shader_compile, against the live
+  // lights and the composer's render target so the variants match what will
+  // draw), and only then takes its parked warm draw — which is left with the
+  // GPU-side executable compile alone. Measured before: a 154 ms frame at a
+  // room clear, 73% of it getProgramInfoLog waiting on links.
+  let compiling = null; // { d, ready }
+  function precompile(d) {
+    const R = stage.renderer;
+    if (typeof R.compileAsync !== 'function' || !stage.composer) return beginWarmDraw(d);
+    const job2 = { d, ready: false };
+    compiling = job2;
+    const prevRT = R.getRenderTarget();
+    try {
+      R.setRenderTarget(stage.composer.readBuffer);
+      R.compileAsync(d.group, stage.camera, stage.scene).then(
+        () => {
+          job2.ready = true;
+        },
+        () => {
+          job2.ready = true;
+        }
+      );
+    } catch {
+      job2.ready = true;
+    } finally {
+      R.setRenderTarget(prevRT);
+    }
+    return null;
+  }
   function pump(budgetMs = 8) {
     if (warmDraw) {
       if (--warmDraw.frames <= 0) endWarmDraw();
       return;
     }
     if (!(budgetMs > 0)) return;
+    if (compiling) {
+      if (!compiling.ready) return;
+      const d = compiling.d;
+      compiling = null;
+      beginWarmDraw(d);
+      return;
+    }
     const t0 = performance.now();
     if (!job) {
       while (queue.length && dressings.has(queue[0])) queue.shift();
-      if (!queue.length) return;
-      const id = queue.shift();
+      // Inside a run only the run's own act is built: another act's floor
+      // upload + parked draw costs a GPU-side 150-180 ms frame (measured on
+      // the reward / path screens with the builder on; none with it paused
+      // during the run), and nothing in this run can need it. The camp picks
+      // the rest up after the run.
+      const pick = runAct ? queue.findIndex((i) => !dressings.has(i) && biomeInfo(i)?.act === runAct) : 0;
+      if (!queue.length || pick < 0) return;
+      const id = queue.splice(pick, 1)[0];
       job = { id, gen: buildDressingSteps(layoutSpec(id), true), t0, waiting: false };
     }
     try {
@@ -989,7 +1032,7 @@ export function createArenaScene(stage, toggles, ctx) {
           const d = r.value;
           job = null;
           finishGpu(d);
-          beginWarmDraw(d);
+          precompile(d);
           break;
         }
       }
@@ -1031,6 +1074,7 @@ export function createArenaScene(stage, toggles, ctx) {
     const id = typeof arg === 'number' ? arg : arg && (arg.layoutId ?? arg.id);
     if (!layoutSpec(id)) return null;
     if (warmDraw && warmDraw.d.id === id) endWarmDraw();
+    if (compiling && compiling.d.id === id) compiling = null; // it draws for real now
     const built = ensureDressing(id);
     if (!built) return null;
     const d = activate(built);
@@ -1042,9 +1086,17 @@ export function createArenaScene(stage, toggles, ctx) {
   bus.on('layout_enter', (ev) => {
     if (ev && ev.layoutId !== undefined) applyLayout(ev.layoutId);
   });
+  let runAct = null;
   bus.on('run_start', (ev) => {
-    if (ev && Number.isFinite(ev.act)) enqueueAll(ev.act);
+    runAct = ev && Number.isFinite(ev.act) ? ev.act : null;
+    if (runAct) enqueueAll(runAct);
   });
+  const endRun = () => {
+    runAct = null;
+    enqueueAll(null);
+  };
+  bus.on('run_end', endRun);
+  bus.on('return_to_camp', endRun);
   registerDressingPump((budgetMs) => pump(budgetMs));
   // The boot dressing, synchronously (it is the first frame).
   activate(ensureDressing(spec.id) ?? ensureDressing(1));
