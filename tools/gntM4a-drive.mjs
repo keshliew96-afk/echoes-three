@@ -5,7 +5,7 @@
 //   node tools/gntM4a-drive.mjs <scenario> [--url U] [--w 1600] [--h 900] [--gpu 1]
 //        [--out captures/gntM4a-drive-<scenario>.json]
 //
-// Scenarios: skills · picker · hud · socket · pages · realrun (see below).
+// Scenarios: skills · picker · hud · socket · pages · nudges · acts · grey · challenge (see below).
 // Output: one JSON with every measured value + page errors; screenshots under
 // captures/gntM4a-<scenario>-*.png. Exit 1 on a harness crash or page errors.
 import { launchEchoes, openEchoes } from './gnt-arch-browser.mjs';
@@ -97,7 +97,7 @@ const SCEN = {
       return true;
     });
     const groups = [
-      ['lantern_flurry', 'pale_lance', 'bell_toll', 'rootsnare', 'dewfall', 'kindred_shield'],
+      ['bell_toll', 'lantern_flurry', 'pale_lance', 'rootsnare', 'dewfall', 'kindred_shield'],
       ['mending_tide', 'hearthsong', 'quiet_hearth'],
     ];
     await page.mouse.move(W * 0.72, H * 0.5);
@@ -106,12 +106,13 @@ const SCEN = {
         const kit = [{ id: 'mending_bolt', remaining: 0 }, { id: 'swift_mend', remaining: 0 }, ...ids.map((id) => ({ id, remaining: 0 }))];
         while (kit.length < 8) kit.push(null);
         __echoes.cmd('restoreSkillState', { slots: kit, override: null });
-        // targets for the damage shapes + hurt allies for the heals
-        for (const [x, z] of [[1.4, 0.2], [2.4, 0.1], [3.4, 0.3], [1.0, -0.9]]) {
-          const id = __echoes.cmd('spawn', 'dummy', x, z);
-          const e = __echoes.state().enemies.find((q) => q.id === id);
-          void e;
-        }
+        // targets for the damage shapes (around the player: Bell Toll is a
+        // 1.6 u nova on the healer) + hurt allies for the heals
+        // Dummies have 20 HP (one Bell Toll kills them, and a corpse is never
+        // stunned), so the nova's stun is proven on two sturdy real boars.
+        const me = __echoes.state().party.find((q) => q.kind === 'player') || { x: 0, z: 0 };
+        for (const [dx, dz] of [[1.1, 0.2], [2.3, 0.1], [3.3, 0.3]]) __echoes.cmd('spawn', 'dummy', me.x + dx, me.z + dz);
+        for (const [dx, dz] of [[0.9, -0.8], [0.8, 0.9]]) __echoes.cmd('spawn', 'boar', me.x + dx, me.z + dz, { hpMul: 6 });
         for (const p of __echoes.state().party) if (p.kind === 'ally') __echoes.cmd('setHp', p.id, 0.45);
         return true;
       }, groups[g]);
@@ -395,6 +396,201 @@ const SCEN = {
     report.pageErrors = errors;
     check('0 page errors', errors.length === 0, errors);
   },
+};
+
+// G4a.1 denial nudges on all 8 tiles + the cooldown grammar on tiles 5-8.
+SCEN.nudges = async (browser) => {
+  const { page, errors } = await boot(browser, '?seed=21&menu=0');
+  const { ev, key, until, shot } = mk(page);
+  await ev(() => __echoes.cmd('startRun', { act: 1 }) && true);
+  await until(() => __echoes.state().run.phase === 'combat');
+  const empties = [];
+  for (let k = 3; k <= 8; k++) {
+    const before = await ev(() => __echoes.events.filter((e) => e.type === 'intent_denied').length);
+    await page.keyboard.down(`Digit${k}`);
+    // Poll the tile (the blink lives ~180 ms) and the sim's denial event.
+    let n = null;
+    for (let t = 0; t < 12; t++) {
+      n = await ev((i) => {
+        const s = __echoes.hud.slots()[i];
+        return { key: s.key, frame: s.nudge.frame, slot: s.nudge.slot };
+      }, k - 1);
+      if (/blink/.test(n.frame) || /blink/.test(n.slot)) break;
+      await sleep(15);
+    }
+    await page.keyboard.up(`Digit${k}`);
+    const denied = await ev((b, kk) => __echoes.events.filter((e) => e.type === 'intent_denied').slice(-4).map((e) => e.kind + ':' + e.reason), before, k);
+    empties.push({ k, blink: /blink/.test(n.frame) || /blink/.test(n.slot), key: n.key, denied });
+    await sleep(250);
+  }
+  check('empty_slot frame blink on tiles 3-8 (keys 3-8)', empties.every((x) => x.blink && x.key === String(x.k)), empties);
+  await ev(() => {
+    const kit = ['mending_bolt', 'swift_mend', 'bell_toll', 'rootsnare', 'kindred_shield', 'hearthsong', 'dewfall', 'pale_lance'].map((id) => ({ id, remaining: 0 }));
+    __echoes.cmd('restoreSkillState', { slots: kit, override: null });
+    return true;
+  });
+  await page.mouse.move(W * 0.7, H * 0.5);
+  for (let k = 3; k <= 8; k++) await key(`Digit${k}`, 40);
+  await sleep(200);
+  const cooling = await ev(() => __echoes.hud.slots().slice(2, 8).map((s) => ({ key: s.key, cooling: s.cooling, wipeDeg: s.wipeDeg, icon: s.iconDrawn })));
+  check('cooldown radial on tiles 3-8 after a cast (wipe > 0, icon drawn)', cooling.every((c) => c.cooling && c.wipeDeg > 0 && c.icon), cooling);
+  const cds = [];
+  for (let k = 3; k <= 8; k++) {
+    await key(`Digit${k}`, 40);
+    await sleep(40);
+    const n = await ev((i) => __echoes.hud.slots()[i].nudge.flash, k - 1);
+    cds.push({ k, wipe: /wipe/.test(n) });
+  }
+  check('on_cooldown wipe nudge on tiles 3-8', cds.every((x) => x.wipe), cds);
+  await shot('bar-cooling');
+  report.pageErrors = errors;
+  check('0 page errors', errors.length === 0, errors);
+};
+
+// G4a.4 each act's own layouts / roster / hazards / interactables / music / boss adds.
+SCEN.acts = async () => {
+  const b2 = await launchEchoes({ gpu: GPU, width: W, height: H, autoplay: true });
+  try {
+    for (const act of [1, 2, 3]) {
+      const { page, errors } = await openEchoes(b2, `${BASE}?seed=${30 + act}&menu=0`, { width: W, height: H });
+      await page.waitForFunction(() => window.__echoes && window.__echoes.tick > 60, { timeout: 120000 });
+      const { ev, until, shot } = mk(page);
+      await page.keyboard.press('KeyZ');
+      await ev((a) => __echoes.cmd('startRun', { act: a }) && true, act);
+      await until(() => __echoes.state().run.phase === 'combat');
+      const rooms = [];
+      for (let room = 1; room <= 8; room++) {
+        if (room > 1) await ev((r) => __echoes.cmd('skipToRoom', r) && true, room);
+        await sleep(room === 8 ? 900 : 500);
+        const r = await ev(() => {
+          const s = __echoes.state();
+          const plan = __echoes.content.roomPlan();
+          const hz = __echoes.content.hazards ? __echoes.content.hazards() : null;
+          const ix = __echoes.content.interactables ? __echoes.content.interactables() : null;
+          const au = __echoes.audio && __echoes.audio.music ? __echoes.audio.music() : null;
+          const list = (v, k1, k2) => (Array.isArray(v) ? [...new Set(v.map((h) => h[k1] ?? h[k2] ?? h.kind))] : v && Array.isArray(v.list) ? [...new Set(v.list.map((h) => h[k1] ?? h[k2] ?? h.kind))] : v);
+          return {
+            room: s.run.room,
+            mode: s.run.mode,
+            layout: s.run.layout && s.run.layout.layoutId,
+            biome: s.run.layout && s.run.layout.biome,
+            roster: plan && plan.roster ? plan.roster.map((x) => x.etype) : [],
+            hazards: list(hz, 'htype', 'type'),
+            interactables: list(ix, 'itype', 'type'),
+            theme: au ? au.theme ?? null : null,
+            musicState: au ? au.state ?? null : null,
+          };
+        });
+        rooms.push(r);
+        if (room === 2 || room === 8) await shot(`act${act}-room${room}`);
+      }
+      const adds = await ev(async () => {
+        const seen = [];
+        const off = __echoes.on('boss_adds', (e) => seen.push(...(e.adds || []).map((a) => a.etype)));
+        for (const pct of [0.74, 0.49, 0.24]) {
+          __echoes.cmd('bossHp', pct);
+          await new Promise((r) => setTimeout(r, 4600));
+        }
+        if (typeof off === 'function') off();
+        return seen;
+      });
+      const cfgAdds = { 1: ['boar', 'mantis'], 2: ['toad', 'moth'], 3: ['ram', 'mole'] }[act];
+      report.steps.push({ act, rooms, adds });
+      const layouts = { 1: [1, 2, 3], 2: [4, 5, 6], 3: [7, 8, 9] }[act];
+      check(`act ${act}: every room's layout from its own table`, rooms.every((r) => r.layout === null || layouts.includes(r.layout)), rooms.map((r) => r.layout));
+      check(`act ${act}: boss adds are the act's own (${cfgAdds.join('+')})`, adds.length > 0 && adds.every((x) => cfgAdds.includes(x)), adds);
+      check(`act ${act}: music theme follows the act`, rooms.some((r) => r.theme === { 1: 'wood', 2: 'mill', 3: 'barrow' }[act]), rooms.map((r) => r.theme));
+      check(`act ${act}: 0 page errors`, errors.length === 0, errors);
+      await page.close();
+    }
+  } finally {
+    await b2.close();
+  }
+};
+
+// G4a.3 §15.5 display for the new nodes: grey strike (Split on Bell Toll),
+// saturation-inert "+0" (Multiply on Mending Tide), live fit and the cap block.
+SCEN.grey = async (browser) => {
+  const { page, errors } = await boot(browser, '?seed=23&menu=0');
+  const { ev, key, until, shot } = mk(page);
+  await ev(() => {
+    __echoes.cmd('startRun', { act: 1 });
+    const kit = ['mending_bolt', 'swift_mend', 'bell_toll', 'mending_tide', 'quiet_hearth', 'pale_lance', null, null].map((id) => (id ? { id, remaining: 0 } : null));
+    __echoes.cmd('restoreSkillState', { slots: kit, override: null });
+    for (const n of ['split', 'multiply', 'resonance', 'snare']) __echoes.cmd('grantNode', n);
+    return true;
+  });
+  for (let i = 0; i < 40 && (await ev(() => __echoes.state().run.phase)) === 'combat'; i++) {
+    await ev(() => __echoes.cmd('killAllEnemies') >= 0);
+    await sleep(250);
+  }
+  await until(() => __echoes.state().run.phase === 'reward', 8000);
+  await sleep(700);
+  await key('KeyB');
+  await sleep(300);
+  const verdicts = await ev(() => ({
+    split_bell: __echoes.cmd('buildVerdict', 'bell_toll', 'split'),
+    mult_tide: __echoes.cmd('buildVerdict', 'mending_tide', 'multiply'),
+    res_qh: __echoes.cmd('buildVerdict', 'quiet_hearth', 'resonance'),
+    snare_qh: __echoes.cmd('buildVerdict', 'quiet_hearth', 'snare'),
+    kit: { split: __echoes.cmd('kitVerdict', 'split'), multiply: __echoes.cmd('kitVerdict', 'multiply') },
+  }));
+  const pickBench = async (name) => {
+    await ev((n) => {
+      const cards = [...document.querySelectorAll('#socket-screen .nd-bench .nd-card')];
+      const c = cards.find((x) => x.textContent.includes(n));
+      if (c) c.click();
+      return !!c;
+    }, name);
+    await sleep(250);
+  };
+  const rowOf = (name) =>
+    ev((n) => {
+      const rows = [...document.querySelectorAll('#socket-screen .nd-row')];
+      const r = rows.find((x) => x.querySelector('.nd-skill-name').textContent === n);
+      return r ? { cells: [...r.querySelectorAll('.nd-cell')].map((c) => c.className), prev: r.querySelector('.nd-prev') ? r.querySelector('.nd-prev').textContent : '' } : null;
+    }, name);
+  await pickBench('Split');
+  const bell = await rowOf('Bell Toll');
+  const lance = await rowOf('Pale Lance');
+  const qh = await rowOf('Quiet Hearth');
+  await shot('socket-split');
+  check('Split on Bell Toll: grey cell (hollow + strike) and the grey reason', bell && bell.cells.some((c) => /nd-grey/.test(c)) && /retargetable/.test(bell.prev), bell);
+  check('Split on Pale Lance: live fit', lance && lance.cells.some((c) => /nd-fits/.test(c)), lance);
+  check('Split on Quiet Hearth: grey on the passive', qh && qh.cells.some((c) => /nd-grey/.test(c)), qh);
+  await pickBench('Multiply');
+  const tide = await rowOf('Mending Tide');
+  await shot('socket-multiply');
+  check('Multiply on Mending Tide: saturation-inert (+0, no strike)', tide && tide.cells.some((c) => /nd-inert/.test(c) && !/nd-grey/.test(c)) && tide.prev.includes('currently +0'), tide);
+  await pickBench('Resonance');
+  const res = await rowOf('Quiet Hearth');
+  check('Resonance on Quiet Hearth: cap hard-block with its reason', res && res.cells.some((c) => /nd-capped/.test(c)) && /caps at rare/.test(res.prev), res);
+  report.verdicts = verdicts;
+  check('verdicts: split x bell grey, multiply x tide inert, snare x QH live, kit lines', verdicts.split_bell.state === 'grey' && verdicts.mult_tide.state === 'inert' && verdicts.snare_qh.state === 'live' && verdicts.kit.split === 'fits your kit', verdicts);
+  await key('Escape');
+  report.pageErrors = errors;
+  check('0 page errors', errors.length === 0, errors);
+};
+
+// The Challenge setting changes the NEXT run's multipliers.
+SCEN.challenge = async (browser) => {
+  const { page, errors } = await boot(browser, '?seed=25&menu=0');
+  const { ev, key, until } = mk(page);
+  const r = await ev(() => {
+    __echoes.settings.set('gameplay.challenge', 'harrowing');
+    return __echoes.settings.get('gameplay.challenge');
+  });
+  await page.keyboard.down('KeyW');
+  await until(() => __echoes.cmd('campState').inPortal, 9000);
+  await page.keyboard.up('KeyW');
+  await key('KeyE', 120);
+  await until(() => __echoes.state().run.phase === 'combat', 8000);
+  const plan = await ev(() => ({ ch: __echoes.state().run.challenge, plan: __echoes.content.roomPlan() }));
+  check('Challenge setting read at the portal press -> run challenge', plan.ch === 'harrowing' && r === 'harrowing', { set: r, run: plan.ch });
+  check('harrowing room 1: hpMul 1.25, dmgMul 1.3', Math.abs(plan.plan.hpMul - 1.25) < 1e-6 && Math.abs(plan.plan.dmgMul - 1.3) < 1e-6, { hpMul: plan.plan.hpMul, dmgMul: plan.plan.dmgMul });
+  await ev(() => __echoes.settings.set('gameplay.challenge', 'standard') && true);
+  report.pageErrors = errors;
+  check('0 page errors', errors.length === 0, errors);
 };
 
 // ------------------------------------------------------------------ main --

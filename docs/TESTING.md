@@ -321,3 +321,70 @@ params)` / `registerAmbientBed(id, builder)`; the run's act (from `run_start`
 measured in page with `await __echoes.audio.measureCue(id)` →
 `designPeakDb`; pass it as `calDb` to registerCue so the cue peaks exactly at
 its `levelDb` (built-in cues: `node tools/gntM3-calibrate.mjs --only cues`).
+
+### M4a — eight slots, skills, nodes, expeditions, difficulty curve (Gauntlet W2, owner M4a)
+
+**Eight slots.** `SKILL_SLOTS = 8` (src/core/constants.js) drives every slot
+array: `state().skills` has 8 entries (`null` = empty), keys Digit1–8,
+`cmd('restoreSkillState', { slots: [8 × { id, remaining } | null], override:
+null })` loads a kit, `cmd('grantNode', id)` benches a node,
+`cmd('buildVerdict', skillId, nodeId)` / `cmd('kitVerdict', nodeId)` = the
+§23.4 cell state (`live | grey | inert | capped`) and its copy.
+`__echoes.hud.slots()` → per tile `{ key, cooling, wipeDeg, iconDrawn, nudge:
+{ frame, slot, flash } }`. Legacy 4-slot traces:
+`node tools/gntM4a-legacytrace.mjs --slots 4` (eventsHash must stay the v0.5.0
+goldens `d1eff38b03f581aa` kill_all / `554cd9c41db19975` defend).
+
+**Statuses.** `cmd('setStatus', id, kind, mag, ticks)` → the stored record or
+`{ refused }` (party-only haste/shield/ward/inspired, hostile-only
+stun/exposed, the Stag immune to slow/stun, 120-tick stun immunity);
+`cmd('clearStatus', id, kind?)`, `cmd('statusOf', id)`. Events:
+`status_apply` (announced at the end of the tick the record landed),
+`status_expire`, `shield_absorb`, `hit_blocked` (a Ram's guard). Training
+dummies have 20 HP — one Bell Toll kills them and a corpse is never stunned,
+so prove stun on `cmd('spawn', 'boar', x, z, { hpMul: 6 })`. Number probes
+park the allies and make targets non-knockbackable (their lunges otherwise
+move the targets out of an area mid-measure).
+
+**Expeditions + curve.** `cmd('startRun', { act, challenge })` (bypasses act
+locks), `cmd('skipToRoom', n[, { act, challenge }])`, `cmd('roomPlan')`;
+`__echoes.content`: `levels()`, `level(act)`, `unlockedActs()`,
+`lastActInfo()` → `{ act, reason: 'last' | 'newest' }`, `curve(act,
+challenge)`, `difficultyTable(challenge)`, `roomPlan()`, `sessionWins()`,
+`unlock([1, 2])` (probe override for the ≥ 2-acts portal branch; `null`
+restores the truthful rule), `fx()` (live skill/status VFX element counts),
+plus M4b's probes (`hazards()`, `interactables()`, …). URL `?act=2|3` starts
+that act from the portal / `?run=1`. The Challenge setting is
+`gameplay.challenge` (relaxed / standard / harrowing), read at the portal
+press — it changes the NEXT run only. Portal rule: `?menu=0` → Act I
+directly (the ARCH core-loop check is unchanged); a title session with only
+Act I unlocked → Act I directly; ≥ 2 unlocked → the `expedition` picker (sim
+paused, E confirms, Esc backs out).
+
+**Autopilot + act runner.** `cmd('autopilot', cfg | false)` plays the run
+inside the sim (drafts, door 0, cheapest shop card, auto-socket).
+`node tools/gnt-M4a-actrun.mjs --act all --seeds 1-5` (in page by default:
+`?menu=0`, sim frozen, `__echoes.sim.stepN` chunks; `--node 1` = the
+identical headless sim; `--url` for another server) → per room ticksToClear,
+party damage, downs, enemies by type, elites, boss adds, plus the §4.2 band
+verdict (Spearman ρ ≥ 0.6, wins ≥ 3/3/2 of 5, no room live 180 s, defend and
+boss spikes, per-room damage medians I < II < III). Constants retuned
+2026-09-22 (BUILD_BRIEF §23.2 note): act tier 1.00 / 1.15 / 1.60, slope 0.12,
+defend × 1.25, Stag 2400·T.
+
+**Real input.** `__echoes.content.advise()` = what the autopilot would press
+this tick (never applied); `__echoes.content.project(x, z)` = world → CSS
+pixels. `node tools/gntM4a-realrun.mjs --act 1|2|3 --seed S [--url U]` plays a
+whole act with puppeteer keys and mouse only (retries an HMR reload up to 3
+times); `node tools/gntM4a-fpscmp.mjs --url U --tag T` = the fixed scripted
+fight for build-to-build fps comparison (production builds on 4304).
+
+**M4a probes.** `node tools/gntM4a-simprobe.mjs` (Node; every §23.3 number,
+statuses, the 238-cell §23.4 matrix, node behaviours, Keen crit rate, curve
+table, rolled plans). `node tools/gntM4a-drive.mjs <scenario> [--url U] [--w W
+--h H]` (GPU harness; `captures/gntM4a-drive-<scenario>.json`): `skills`
+(G4a.2, all 9 cast by keys 3–8 + VFX frames), `hud` (G4a.1, 1024×576 /
+1600×900 / 2560×1440), `socket` (8 rows, scroll, Esc consumed), `nudges`
+(denial + cooldown grammar on tiles 3–8), `grey` (§15.5 display for the new
+nodes), `acts` (G4a.4: layouts / hazards / interactables / music theme / boss
+adds per act), `picker` (G4a.11), `challenge`, `pages` (G4a.12).
