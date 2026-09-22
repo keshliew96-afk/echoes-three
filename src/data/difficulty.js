@@ -3,16 +3,16 @@
 // the wave director (sim/run.js, sim/waves.js) and may add fields, never
 // change the numbers without a dated BUILD_BRIEF tuning note.
 //
-//   T(act)    = ACT_TIER[act]                    1.00 / 1.15 / 1.60
-//   R(room)   = 1 + ROOM_SLOPE × (room − 1)       rooms 1..6 (combat), slope 0.12
+//   T(act)    = ACT_TIER[act]                    1.00 / 1.15 / 1.75
+//   R(room)   = 1 + ROOM_SLOPE × (room − 1)       rooms 1..6 (combat), slope 0.16
 //   hpMul     = T × R × CHALLENGE[c].hp
 //   dmgMul    = (1 + 0.5 × (T × R − 1)) × CHALLENGE[c].dmg
 //   budget    = 4.0 × T × R   threat points per kill_all wave (defend: × 1.25)
 //   elite     = ELITE[act](room)
 //   interval  = 480 ticks × (1 − 0.04 × (room − 1)) × INTERVAL_ACT[act]
-//   bossHp    = 2400 × T ; bossDmgMul = 1 + 0.5 × (T − 1)
-//   boss adds = the act tier alone (hpMul T, dmgMul 1 + 0.5(T − 1)) — the
-//               Stag and its adds scale together (sim/run.js)
+//   bossHp    = 2400 × T ; bossDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1), slope 0.7
+//   boss adds = the act tier alone (hpMul T, dmgMul 1 + BOSS_DMG_SLOPE(T − 1))
+//               — the Stag and its adds scale together (sim/run.js)
 //
 // TUNING NOTE (M4a, 2026-09-22 — BUILD_BRIEF §23.2 dated note, PLAN §4.2
 // "if the band fails, M4a retunes the constants, never the formula's shape"):
@@ -26,14 +26,32 @@
 // docs/gauntlet/build-M4a.md (all acts ρ ≥ 0.6 on time AND damage, victories
 // 5/5 · 4/5 · 3/5, no stuck room, act medians I < II < III).
 //
+// TUNING NOTE (M4c, 2026-09-22 — the user's skill/socket correction; dated
+// note in BUILD_BRIEF §23.2): M4a tuned the constants above against an
+// 8-skill, 2-socket build that reached the Stag with ~5 nodes socketed. The
+// corrected build (at most 4 skills, 8 sockets each, 2 clear spoils per room,
+// a 4-card shop at 15/20/25) reaches it with ~19. Re-measured on the same
+// default-build autopilot (seeds 1–20, headless = in page): Act III victories
+// went 13/20 (v0.5.39) -> 20/20 and its rooms 4–6 lost their teeth (party
+// downs in Act III rooms 4–6 over 20 runs: 106 -> 16). Only constants moved, never the
+// formula's shape: slope 0.12 -> 0.16 (the room ramp outpaces ~3 new nodes a
+// room), Act III tier 1.60 -> 1.75 (the v0.5.1 value), and the Stag's damage
+// slope — the 0.5 in 1 + 0.5(T − 1), now the named BOSS_DMG_SLOPE — 0.5 ->
+// 0.7 so the Stag room keeps its damage spike above the steeper late rooms.
+// Measured after the retune: seeds 1–5 (gate G4a.10) wins 5/5 · 4/5 · 3/5,
+// every band check passes, 0 stuck; seeds 1–20 wins 20/20 · 19/20 · 13/20
+// (Act III = the v0.5.39 rate), 0 stuck, kill_all-only ρ time/damage ≥ 0.886
+// in every act (docs/gauntlet/build-M4c.md, tools/gntM4c-band.mjs).
+//
 // Pure module. The ?room= harness (no run, no act) never calls this: it keeps
 // the legacy §11 composition exactly (PLAN gate G4a.6).
 
-export const ACT_TIER = Object.freeze([null, 1.0, 1.15, 1.6]);
-export const ROOM_SLOPE = 0.12;
+export const ACT_TIER = Object.freeze([null, 1.0, 1.15, 1.75]);
+export const ROOM_SLOPE = 0.16;
 export const BASE_BUDGET = 4.0;
 export const DEFEND_BUDGET_SCALE = 1.25;
 export const STAG_BASE_HP = 2400; // bossHp = STAG_BASE_HP × T
+export const BOSS_DMG_SLOPE = 0.7; // bossDmgMul = addDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1)
 export const WAVE_INTERVAL_TICKS = 480; // §11 8 s
 export const INTERVAL_ACT = Object.freeze([null, 1.0, 0.95, 0.9]);
 export const WAVE_SIZE_CAP = 8; // enemies per wave
@@ -93,8 +111,8 @@ export function difficulty(act = 1, room = 1, challenge = 'standard') {
     bossHp: Math.round(STAG_BASE_HP * T * c.hp),
     // Boss adds scale with the act tier alone, like the Stag they serve.
     addHpMul: r4(T * c.hp),
-    addDmgMul: r4((1 + 0.5 * (T - 1)) * c.dmg),
-    bossDmgMul: r4((1 + 0.5 * (T - 1)) * c.dmg),
+    addDmgMul: r4((1 + BOSS_DMG_SLOPE * (T - 1)) * c.dmg),
+    bossDmgMul: r4((1 + BOSS_DMG_SLOPE * (T - 1)) * c.dmg),
   });
 }
 

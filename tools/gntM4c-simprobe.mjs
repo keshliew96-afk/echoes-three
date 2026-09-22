@@ -43,6 +43,7 @@ const { hashState } = await import(u('src/core/hash.js'));
 const { canonicalJSON } = await import(u('src/core/canonical.js'));
 const { createStateIO } = await import(u('src/save/capture.js'));
 const { buildFile, parseFile, SCHEMA } = await import(u('src/save/codec.js'));
+const DIFF = await import(u('src/data/difficulty.js'));
 
 const results = [];
 let failed = 0;
@@ -534,6 +535,42 @@ run('supply', () => {
   }
   const ok = fills.every((f) => f.bossFill && f.bossFill.filled >= 0.5 * f.bossFill.sockets);
   check('supply', 'autopilot Act I runs reach the boss with ≥ 50% of the owned sockets filled', ok, { got: fills });
+});
+
+// ============================================= G4a.5 curve (M4c retune) ===
+run('curve', () => {
+  // BUILD_BRIEF §23.2 M4c table (hpMul / dmgMul / kill_all budget), T 1.00 /
+  // 1.15 / 1.75, slope 0.16; Stag 2400·T, Stag dmg 1 + 0.7(T − 1).
+  const TABLE = {
+    1: [[1, 1, 4], [1.16, 1.08, 4.64], [1.32, 1.16, 5.28], [1.48, 1.24, 5.92], [1.64, 1.32, 6.56], [1.8, 1.4, 7.2]],
+    2: [[1.15, 1.075, 4.6], [1.334, 1.167, 5.336], [1.518, 1.259, 6.072], [1.702, 1.351, 6.808], [1.886, 1.443, 7.544], [2.07, 1.535, 8.28]],
+    3: [[1.75, 1.375, 7], [2.03, 1.515, 8.12], [2.31, 1.655, 9.24], [2.59, 1.795, 10.36], [2.87, 1.935, 11.48], [3.15, 2.075, 12.6]],
+  };
+  const BOSS = { 1: [2400, 1], 2: [2760, 1.105], 3: [4200, 1.525] };
+  {
+    const m = DIFF;
+    const bad = [];
+    for (const act of [1, 2, 3])
+      for (let room = 1; room <= 6; room++) {
+        const d = m.difficulty(act, room);
+        const [h, dm, b] = TABLE[act][room - 1];
+        for (const [got, want, k] of [[d.hpMul, h, 'hp'], [d.dmgMul, dm, 'dmg'], [d.budget, b, 'budget']])
+          if (Math.abs(got - want) > want * 0.01) bad.push(`${act}/${room}/${k}:${got}≠${want}`);
+      }
+    for (const act of [1, 2, 3]) {
+      const d = m.difficulty(act, 8);
+      if (d.bossHp !== BOSS[act][0] || Math.abs(d.bossDmgMul - BOSS[act][1]) > 1e-9) bad.push(`boss${act}:${d.bossHp}/${d.bossDmgMul}`);
+    }
+    check('curve', 'difficulty() = the M4c §23.2 table ±1% (18 rooms × hp/dmg/budget + 3 Stags)', bad.length === 0, { got: bad });
+    let mono = true;
+    for (const act of [1, 2, 3]) for (let r = 2; r <= 6; r++) if (!(m.difficulty(act, r).hpMul > m.difficulty(act, r - 1).hpMul)) mono = false;
+    for (let r = 1; r <= 6; r++) if (!(m.difficulty(1, r).hpMul < m.difficulty(2, r).hpMul && m.difficulty(2, r).hpMul < m.difficulty(3, r).hpMul)) mono = false;
+    check('curve', 'strictly increasing across rooms within an act and across acts at equal room', mono, {});
+    const r3 = mk(4);
+    r3.w.runSystem().startRun({ act: 3 });
+    const plan = r3.w.cmd('roomPlan');
+    check('curve', 'a live Act III room 1 runs on the table (roomPlan hpMul 1.75, dmgMul 1.375)', plan && Math.abs(plan.hpMul - 1.75) < 1e-9 && Math.abs(plan.dmgMul - 1.375) < 1e-9, { got: plan && { hpMul: plan.hpMul, dmgMul: plan.dmgMul, budget: plan.budget } });
+  }
 });
 
 // ======================================================= G4c.7 migration ===
