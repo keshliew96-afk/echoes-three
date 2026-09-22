@@ -30,7 +30,8 @@
 // displacement the path's own velocity cannot explain becomes a per-entity
 // offset (rendered = path + offset) that decays with τ = 100 ms and moves the
 // body at most 0.1 u per rendered frame, so a remote body never pops; an
-// offset above the teleport threshold (a re-seat) snaps instead.
+// authoritative teleport is drawn as the cut it is, and an offset past the
+// snap threshold below (4 u for a party body) snaps instead of smoothing.
 //
 // The guest's OWN seat body is skipped here (net/reconcile.js predicts it).
 // Events a guest must not present twice (its own confirmed predictions) are
@@ -39,14 +40,37 @@
 const DEATH_CLASS = (t) => t === 'death' || t === 'broken' || t === 'downed' || t.endsWith('_despawn');
 const HOST_LOCAL = new Set(['intent_denied']);
 const EXTRAPOLATE_MAX_TICKS = 6; // 100 ms
-// A jump this big between two snapshots is a teleport (never lerped): party
-// bodies are re-seated at room / camp boundaries (a snapshot interval moves
-// them at most ~0.4 u by walk or dash); enemies may charge, so theirs is wider.
-const TELEPORT_PARTY_U = 1.0;
+// A move this big between two snapshots is a TELEPORT: an authoritative cut,
+// never lerped and never smoothed (party bodies are re-seated at room / camp
+// boundaries, moles burrow). The bound GROWS with the gap between the two
+// snapshots — a lost run of snapshots legitimately covers more ground (walk
+// 0.045 u/tick, dash 0.12 u/tick, a charge more).
+const TELEPORT_PARTY_U = 1.0; // + the per-tick allowance below
 const TELEPORT_U = 3;
+const TELEPORT_PER_TICK_U = 0.2;
+const TELEPORT_SPAN_CAP_U = 1.0; // the gap allowance never grows past this
+const teleportBound = (party, spanTicks) => (party ? TELEPORT_PARTY_U : TELEPORT_U) + Math.min(TELEPORT_SPAN_CAP_U, TELEPORT_PER_TICK_U * Math.max(0, spanTicks));
+// Events that RE-SEAT the party (a room / run boundary, a restored save):
+// the bodies cut to new places, so the smoothing and smoothness history is
+// dropped on them instead of being smoothed or counted as a pop.
+const SEAT_CUT_EVENTS = new Set(['room_start', 'room_enter', 'run_start', 'run_wiped', 'state_restored', 'return_to_camp', 'layout_enter']);
 const SMOOTH_TAU_TICKS = 6; // 100 ms (CORRECTION_TAU_MS) in host ticks
-const SMOOTH_MAX_STEP_U = 0.1; // per rendered frame
+const SMOOTH_MAX_STEP_U = 0.1; // per rendered frame (small errors)
+// A big error (a lost run of snapshots) is caught up faster, but always
+// under the 0.3 u "visible pop" bar the gates use.
+const SMOOTH_MAX_STEP_BIG_U = 0.2;
+const SMOOTH_BIG_U = 1.0;
 const SMOOTH_EPS_U = 0.02; // path discontinuities below this are drawn as they are
+// A visual error bigger than this snaps instead of smoothing. It sits far
+// above the own-seat threshold (CORRECTION_SNAP_U 1.0): a remote body that
+// stood still through a lost run of snapshots and then reappears 1-3 u along
+// its path reads as fast walking while the offset decays (<= 0.2 u/frame,
+// always under the 0.3 u pop bar) — a snap would not.
+const SMOOTH_SNAP_PARTY_U = 4;
+const SMOOTH_SNAP_U = 6;
+// Render-clock ticks without new data past which a frame is a STALL frame
+// (extrapolate 6 + hold): 12 ticks = 200 ms, i.e. four lost snapshots in a row.
+const STALL_TICKS = 12;
 
 export function createReplica({ world, registry, bus, scene, restoreShapes, restoreMovement, log = () => {} }) {
   const snaps = []; // ascending tick: { seq, tick, view, ents: Map(id -> ent), arrival }
@@ -89,6 +113,8 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
     smoothSnaps: 0,
     teleports: 0,
     teleportFrames: 0,
+    stallFrames: 0,
+    clockFrames: 0,
     orderViolations: 0,
     batchesIn: 0,
     batchGaps: 0,
@@ -179,6 +205,7 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
       return;
     }
     stats.eventsReplayed += 1;
+    if (SEAT_CUT_EVENTS.has(ev.type)) lastRender.clear();
     push(replayedKeys, k, 200);
     try {
       bus.replay(ev);
@@ -321,10 +348,10 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
       let vx = 0;
       let vz = 0;
       const b = B ? B.ents.get(e.id) : null;
-      const tpU = a.party ? TELEPORT_PARTY_U : TELEPORT_U;
+      const snapU = a.party ? SMOOTH_SNAP_PARTY_U : SMOOTH_SNAP_U;
       if (b) {
         const span = B.tick - A.tick;
-        if (Math.hypot(b.x - a.x, b.z - a.z) > tpU) {
+        if (Math.hypot(b.x - a.x, b.z - a.z) > teleportBound(a.party, span)) {
           stats.teleports += 1;
         } else {
           vx = (b.x - a.x) / span;
@@ -341,8 +368,9 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
         z = a.z + a.vz * Math.min(dt, 30);
       } else if (!B && extra > 0 && P) {
         const p = P.ents.get(e.id);
-        if (p && Math.hypot(a.x - p.x, a.z - p.z) < tpU) {
-          const span = A.tick - P.tick;
+        const pspan = A.tick - P.tick;
+        if (p && Math.hypot(a.x - p.x, a.z - p.z) < teleportBound(a.party, pspan)) {
+          const span = pspan;
           vx = (a.x - p.x) / span;
           vz = (a.z - p.z) / span;
           x = a.x + vx * extra;
@@ -364,11 +392,19 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
       // A frame that crosses an authoritative teleport (re-seat, burrow) is
       // drawn as the cut it is — never smoothed, never a smoothness failure.
       const pp = P ? P.ents.get(e.id) : null;
-      const tele = (b && Math.hypot(b.x - a.x, b.z - a.z) > tpU) || (pp && Math.hypot(a.x - pp.x, a.z - pp.z) > tpU);
+      const tele = (b && Math.hypot(b.x - a.x, b.z - a.z) > teleportBound(a.party, B.tick - A.tick)) || (pp && Math.hypot(a.x - pp.x, a.z - pp.z) > teleportBound(a.party, A.tick - P.tick));
       // ---- visual error smoothing (header): path discontinuity -> offset
       let ox = 0;
       let oz = 0;
-      if (lr && !a.mover && !tele && drt >= 0 && drt < 24) {
+      // A frame that crosses a DATA STALL (the render clock advanced further
+      // than the extrapolate-then-hold window while no snapshot arrived) is
+      // counted apart: the smoothing still hides it, but a pop there is a
+      // link stall, not a smoothness failure.
+      const stalled = drt > STALL_TICKS;
+      // The render clock re-anchored (join, host migration, a long stall):
+      // the whole scene cuts to a new time, which is not a smoothness fault.
+      const reanchored = drt < 0 || drt > 24;
+      if (lr && !a.mover && !tele && drt >= 0 && drt < 60) {
         ox = lr.ox;
         oz = lr.oz;
         const allow = Math.max(speed, lr.speed) * drt;
@@ -380,14 +416,15 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
           stats.smoothed += 1;
         }
         const mag = Math.hypot(ox, oz);
-        if (mag > tpU) {
+        if (mag > snapU) {
           ox = 0;
           oz = 0;
           stats.smoothSnaps += 1;
         } else if (mag > 0) {
           if (mag > stats.smoothedMaxU) stats.smoothedMaxU = mag;
           let step = mag * (1 - Math.exp(-drt / SMOOTH_TAU_TICKS));
-          if (step > SMOOTH_MAX_STEP_U) step = SMOOTH_MAX_STEP_U;
+          const cap = mag > SMOOTH_BIG_U ? SMOOTH_MAX_STEP_BIG_U : SMOOTH_MAX_STEP_U;
+          if (step > cap) step = cap;
           const k = mag - step < 1e-4 ? 0 : (mag - step) / mag;
           ox *= k;
           oz *= k;
@@ -409,6 +446,8 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
         // anything beyond that is a visible pop. The raw step is kept too.
         const jump = Math.max(0, step - Math.max(speed, lr.speed) * Math.max(0, drt));
         if (tele && step > 0.3) stats.teleportFrames += 1;
+        else if (reanchored && step > 0.3) stats.clockFrames += 1;
+        else if (stalled && step > 0.3) stats.stallFrames += 1;
         else if (a.party) {
           if (step > stats.remoteStepMax) stats.remoteStepMax = step;
           if (jump > stats.remoteJumpMax) stats.remoteJumpMax = jump;
@@ -487,7 +526,7 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
     // Measurement window restart (probes): the smoothness / extrapolation
     // counters only — the ledgers and the timeline are untouched.
     resetStats() {
-      for (const k of ['extrapolatedFrames', 'heldFrames', 'remoteJumpMax', 'remoteJumps03', 'remoteJumps06', 'remoteFrames', 'remoteStepMax', 'hostileJumpMax', 'hostileJumps03', 'hostileFrames', 'smoothed', 'smoothedMaxU', 'smoothSnaps', 'teleports', 'teleportFrames']) stats[k] = 0;
+      for (const k of ['extrapolatedFrames', 'heldFrames', 'remoteJumpMax', 'remoteJumps03', 'remoteJumps06', 'remoteFrames', 'remoteStepMax', 'hostileJumpMax', 'hostileJumps03', 'hostileFrames', 'smoothed', 'smoothedMaxU', 'smoothSnaps', 'teleports', 'teleportFrames', 'stallFrames', 'clockFrames']) stats[k] = 0;
     },
     stats: () => {
       const a = [...stats.applyMs].sort((x, y) => x - y);

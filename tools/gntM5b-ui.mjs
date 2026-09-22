@@ -222,6 +222,17 @@ try {
     return e ? { on: !e.classList.contains('nt-off'), chip: e.querySelector('.nt-chip').innerText } : null;
   });
   check('guest net HUD chip shows role + room + players', hudG && hudG.on && /Online/.test(hudG.chip) && hudG.chip.includes(code), hudG || {});
+  const hudLay = await guest.page.evaluate(() => {
+    const rect = (e) => {
+      const b = e.getBoundingClientRect();
+      return { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height), right: Math.round(b.right), bottom: Math.round(b.bottom) };
+    };
+    const over = (a, b) => a.x < b.right - 0.5 && a.right > b.x + 0.5 && a.y < b.bottom - 0.5 && a.bottom > b.y + 0.5;
+    const chip = rect(document.querySelector('#nt-hud .nt-chip'));
+    const bar = rect(document.querySelector('.hud-bar'));
+    return { chip, bar, overlapsBar: over(chip, bar), inside: chip.x >= 0 && chip.y >= 0 && chip.right <= innerWidth && chip.bottom <= innerHeight, font: parseFloat(getComputedStyle(document.querySelector('#nt-hud .nt-chip')).fontSize) };
+  });
+  check('in-game net chip clears the command bar and stays in the viewport', !hudLay.overlapsBar && hudLay.inside && hudLay.font >= 14, hudLay);
   out.errors = { host: host.errors, guest: guest.errors, alone: a.errors };
   check('0 page errors throughout', !host.errors.length && !guest.errors.length && !a.errors.length, out.errors);
 } catch (err) {

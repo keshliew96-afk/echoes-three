@@ -71,7 +71,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
   let frameNet = 0; // net ms accumulated in the current rendered frame
   const ledger = [];
   const ledgerOrd = new Map();
-  const recentBodies = []; // the newest 3 EVENTS batch bodies (EVENTS_U resend)
+  const recentBodies = []; // the newest 2 EVENTS batch bodies (EVENTS_U resend)
   const push = (arr, v, cap = 600) => {
     arr.push(v);
     if (arr.length > cap) arr.shift();
@@ -273,11 +273,34 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
   // ---------------------------------------------------------- tick end --
   let offTickEnd = null;
   let offBus = null;
+  // Snapshot encodes are SPREAD across the ticks between snapshots: the state
+  // is captured once (§3.7 "capture once per snapshot tick, shared by all
+  // guests"), the first guest's delta is encoded and sent on that tick, and
+  // the remaining guests get theirs on the following ticks from the SAME
+  // capture (16-33 ms staler, far inside the interpolation delay). So a host
+  // with three guests never does three encodes in one frame — the per-frame
+  // net budget (hostNetMsP95 <= 2 ms, G5b.9) holds as guests are added.
+  let encodeQueue = []; // [{ rec, seat }]
+  function sendSnapshotTo(rec, seat) {
+    const f = feedFor(seat);
+    net.transport.sendBinary(snap.encodeFor(f.link, rec, { seat, lastInputSeqConsumed: f.lastConsumed, inputBufferDepth: f.depthReport }));
+  }
   function tickEnd(tick) {
     const t0 = now();
     ring.record(tick);
     if (tick % snapEvery !== 0) {
+      let encoded = false;
+      if (encodeQueue.length && net.transport.state === 'open') {
+        const q = encodeQueue.shift();
+        encoded = true;
+        try {
+          sendSnapshotTo(q.rec, q.seat);
+        } catch (err) {
+          log('host_encode_error', { error: String(err && err.message) });
+        }
+      }
       const dt = now() - t0;
+      if (encoded) push(stats.tickEndMs, dt); // tickEndMs = ticks that did net work
       frameNet += dt;
       return;
     }
@@ -298,23 +321,26 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       return;
     }
     const rec = snap.capture(tick, tree, { clone: false });
-    for (const g of guests) {
-      const f = feedFor(g.index);
-      net.transport.sendBinary(snap.encodeFor(f.link, rec, { seat: g.index, lastInputSeqConsumed: f.lastConsumed, inputBufferDepth: f.depthReport }));
-    }
+    // A guest still queued from the previous snapshot is served from the
+    // newer capture instead (never two snapshots behind).
+    encodeQueue = [];
+    sendSnapshotTo(rec, guests[0].index);
+    for (let i = 1; i < guests.length; i++) encodeQueue.push({ rec, seat: guests[i].index });
     stats.snapshots += 1;
     // One EVENTS batch per snapshot (an empty one too: it keeps the guests'
     // "events delivered through tick" clock moving — prediction retractions
-    // wait on it), reliable; then the newest 3 batches again, unreliable
+    // wait on it), reliable; then the newest TWO batches again, unreliable
     // (EVENTS_U) — a batch whose reliable copy sits in a retransmit still
-    // reaches the guest ahead of its render clock.
+    // reaches the guest ahead of its render clock. Two copies cover a single
+    // loss of either copy; a third cost ~1 KB/s per guest of the §3.7
+    // downstream budget for no measurable gain (measured at N1/N2).
     const evFrame = encodeEvents(SEAT_ALL, ++batchSeq, evFrom, tick, pending);
     net.transport.sendBinary(evFrame);
     stats.eventBatches += 1;
     stats.eventsSent += pending.length;
     pending = [];
     recentBodies.push(eventsBody(evFrame).slice());
-    while (recentBodies.length > 3) recentBodies.shift();
+    while (recentBodies.length > 2) recentBodies.shift();
     net.transport.sendBinary(encodeEventsBundle(SEAT_ALL, recentBodies));
     evFrom = tick;
     if (tick - lastKeyframeTick >= KEYFRAME_EVERY_TICKS) {
@@ -387,8 +413,10 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
   }
 
   function onControl(m) {
-    if (m.t === 'peer_dropped' || m.t === 'peer_left') resetFeed(m.seat, 'drop');
-    else if (m.t === 'peer_joined' || m.t === 'peer_restored') {
+    if (m.t === 'peer_dropped' || m.t === 'peer_left') {
+      encodeQueue = encodeQueue.filter((q) => q.seat !== m.seat);
+      resetFeed(m.seat, 'drop');
+    } else if (m.t === 'peer_joined' || m.t === 'peer_restored') {
       const f = feeds.get(m.seat);
       if (f) {
         f.buffer.clear();
@@ -429,6 +457,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
   function stop() {
     if (!running) return;
     running = false;
+    encodeQueue = [];
     if (offTickEnd) offTickEnd();
     if (offBus) offBus();
     offTickEnd = null;

@@ -68,6 +68,23 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
   const bt = root.querySelector('.nt-bt');
   const bs = root.querySelector('.nt-bs');
   const pingEl = root.querySelector('.nt-ping');
+  // The chip sits just ABOVE the command bar (whose height grows with the
+  // viewport): at 1024x576 a fixed bottom offset put it on top of the
+  // portraits. Re-measured on resize and while the HUD is visible.
+  function placeChip() {
+    const bar = document.querySelector('.hud-bar');
+    let bottom = 44;
+    if (bar) {
+      const r = bar.getBoundingClientRect();
+      if (r.height > 0) bottom = Math.max(14, Math.round(window.innerHeight - r.top + 10));
+    }
+    // Bottom-left column, stacked upward from the bar: chip, the optional
+    // detail line, then the notes.
+    chip.style.bottom = `${bottom}px`;
+    detail.style.bottom = `${bottom + 34}px`;
+    notes.style.bottom = `${bottom + 66}px`;
+  }
+  window.addEventListener('resize', () => placeChip());
   let synced = false;
   let lostUntil = 0;
   let reconnectUntil = 0;
@@ -87,6 +104,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
 
   function update(st) {
     last = st;
+    placeChip();
     const role = st.role === 'host' ? 'Hosting' : st.role === 'guest' ? `Online · ${seatLabel(st.seat ?? 0)}` : 'Online';
     main.textContent = role;
     const humans = st.seats.filter((s) => s.name && s.connected).length;
@@ -143,6 +161,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     note,
     show(on) {
       root.classList.toggle('nt-off', !on);
+      if (on) placeChip();
       if (!on) {
         synced = false;
         lostUntil = 0;

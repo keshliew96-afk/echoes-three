@@ -178,6 +178,47 @@ try {
     log(`R3 ${JSON.stringify(report.races.R3_last_seat)}`);
   }
 
+  // ---- R5 the guest's socket screen is read-only ---------------------------
+  {
+    const t0 = Date.now();
+    let phase = await host.page.evaluate(() => window.__echoes.state().run.phase);
+    while (Date.now() - t0 < 20000 && phase === 'combat') {
+      await host.page.evaluate(() => window.__echoes.cmd('killAllEnemies'));
+      await sleep(600);
+      phase = await host.page.evaluate(() => window.__echoes.state().run.phase);
+    }
+    await sleep(1200);
+    const before = await host.page.evaluate(() => JSON.stringify(window.__echoes.cmd('buildView')));
+    await guest.page.bringToFront();
+    await guest.page.keyboard.press('KeyB');
+    await sleep(700);
+    const ui = await guest.page.evaluate(() => {
+      const s = window.__echoes.content.socketUi();
+      const note = document.querySelector('.nt-socket-note');
+      return { open: !!(s && s.open), rows: s ? s.rows : null, cells: s && s.cells ? s.cells.length : null, noteShown: note ? getComputedStyle(note).display !== 'none' : null, noteText: note ? note.textContent : null, bench: s ? s.bench.length : null };
+    });
+    const r0 = await netEval(guest, 'return n.stats().rejectedPicks;');
+    await guest.page.keyboard.press('KeyF'); // auto-fill
+    await sleep(500);
+    await guest.page.keyboard.press('Tab'); // to the bench
+    await sleep(200);
+    await guest.page.keyboard.press('Enter'); // pick
+    await sleep(200);
+    await guest.page.keyboard.press('Tab');
+    await sleep(200);
+    await guest.page.keyboard.press('Enter'); // place
+    await sleep(900);
+    const r1 = await netEval(guest, 'return n.stats().rejectedPicks;');
+    const after = await host.page.evaluate(() => JSON.stringify(window.__echoes.cmd('buildView')));
+    await guest.page.keyboard.press('Escape');
+    await sleep(400);
+    const closed = await guest.page.evaluate(() => !window.__echoes.content.socketUi().open);
+    const res = { phase, ui, rejectedBefore: r0, rejectedAfter: r1, hostBuildUnchanged: before === after, closed };
+    res.pass = ui.open && ui.noteShown === true && /Read-only/.test(ui.noteText || '') && res.hostBuildUnchanged && r1 > r0 && closed;
+    report.races.R5_guest_socket = res;
+    log(`R5 ${JSON.stringify(res).slice(0, 700)}`);
+  }
+
   // ---- R4 simultaneous pause --------------------------------------------------
   {
     const t0 = await host.page.evaluate(() => window.__echoes.tick);

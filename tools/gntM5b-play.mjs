@@ -334,7 +334,7 @@ try {
   G.remoteJumpRate06 = gs.map((c) => c.stats.remoteJumpRate06);
   G.remoteFrames = gs.map((c) => c.stats.remoteFrames);
   G.hostileJumpMax = gs.map((c) => c.stats.hostileJumpMax);
-  G.smoothing = gs.map((c) => ({ smoothed: c.stats.smoothed, maxU: c.stats.smoothedMaxU, snaps: c.stats.smoothSnaps, teleportFrames: c.stats.teleportFrames }));
+  G.smoothing = gs.map((c) => ({ smoothed: c.stats.smoothed, maxU: c.stats.smoothedMaxU, snaps: c.stats.smoothSnaps, teleportFrames: c.stats.teleportFrames, stallFrames: c.stats.stallFrames, clockFrames: c.stats.clockFrames, interpSnaps: c.stats.interpSnaps }));
   G.predErrOk = passLevel ? gs.every((c) => c.stats.predErrP95 !== null && c.stats.predErrP95 <= 0.15) : gs.every((c) => c.stats.predErrP95 !== null && c.stats.predErrP95 <= 0.35 && c.stats.predErrMax <= 1.0);
   G.remoteJumpsOk = passLevel ? gs.every((c) => c.stats.remoteJumps03 === 0) : gs.every((c) => c.stats.remoteJumpRate06 <= 0.01);
   G.reconnects0 = gs.every((c) => (c.stats.reconnects ?? 0) === 0);

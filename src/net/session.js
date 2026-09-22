@@ -398,6 +398,7 @@ export function createNetSession(ctx) {
       suppressed: new WeakSet(),
       rejected: 0,
       batches: { seen: new Set(), toTick: new Map(), contig: 0, throughTick: 0, dupCopies: 0, viaReliable: 0, viaUnreliable: 0 },
+      bytesCh: {},
     };
     g.shadow = createActionShadow({ bus, seat, cosmetics });
     g.replica.setSuppress((ev) => g.suppressed.has(ev));
@@ -752,6 +753,8 @@ export function createNetSession(ctx) {
     const t0 = now();
     try {
       const ch = u8[0];
+      // Downstream bytes per channel (bandwidth budget diagnostics).
+      g.bytesCh[ch] = (g.bytesCh[ch] || 0) + u8.length;
       if (ch === BIN.SNAP) guestSnap(u8);
       else if (ch === BIN.EVENTS) guestBatch(decodeEvents(u8), 'reliable');
       else if (ch === BIN.EVENTS_U) for (const b of decodeEventsBundle(u8)) guestBatch(b, 'unreliable');
@@ -1222,6 +1225,7 @@ export function createNetSession(ctx) {
       eventBatchesViaUnreliable: g.batches.viaUnreliable,
       eventBatchesViaReliable: g.batches.viaReliable,
       eventBatchCopiesDropped: g.batches.dupCopies,
+      bytesByChannel: { snap: g.bytesCh[BIN.SNAP] || 0, events: g.bytesCh[BIN.EVENTS] || 0, eventsU: g.bytesCh[BIN.EVENTS_U] || 0, cmd: g.bytesCh[BIN.CMD] || 0 },
       interpDelayMs: g.interp.stats().delayMs,
       interpJitterMs: g.interp.stats().jitterMs,
       renderState: g.renderState ? g.renderState.state : null,
@@ -1247,6 +1251,9 @@ export function createNetSession(ctx) {
       smoothedMaxU: rs.smoothedMaxU,
       smoothSnaps: rs.smoothSnaps,
       teleportFrames: rs.teleportFrames,
+      stallFrames: rs.stallFrames,
+      clockFrames: rs.clockFrames,
+      interpSnaps: g.interp.stats().snaps,
       ownActionFeedbackMs: ss.ownActionFeedbackMs,
       retractions: ss.retractions,
       mispredictRetractMs: ss.mispredictRetractMs,

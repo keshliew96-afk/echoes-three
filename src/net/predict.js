@@ -258,6 +258,23 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   function reseed(timers, k) {
     if (!enabled || !timers || !Number.isInteger(k)) return;
     lastAuth = { cds: Array.isArray(timers.cds) ? timers.cds.slice() : null, basic: timers.basic, dodge: timers.dodge };
+    // STATE-BASED disproof (loss-robust): the host consumed the frame this
+    // prediction rode, and the seat timer it replicates is NOT on the
+    // cooldown the action would have started -> the action did not happen.
+    // Without this the retraction waits for the reliable event stream to be
+    // delivered through that tick, which a retransmit can delay far past one
+    // snapshot at 20 % loss (measured 188 ms at N2).
+    for (const p of pending) {
+      if (p.matched || p.retracted || p.kind === 'interact') continue;
+      if (p.seq + MATCH_WINDOW > k) continue;
+      const cd = p.kind === 'dodge' ? DODGE.cooldownTicks : p.kind === 'basic' ? S.attackIntervalTicks : p.slot >= 0 && kit[p.slot] ? cdTicks(kit[p.slot]) : null;
+      const auth = p.kind === 'dodge' ? timers.dodge : p.kind === 'basic' ? timers.basic : Array.isArray(timers.cds) && p.slot >= 0 ? timers.cds[p.slot] : null;
+      if (!Number.isFinite(cd) || !Number.isFinite(auth)) continue;
+      if (auth < p.seq + cd - MATCH_WINDOW) {
+        p.provenAt = now();
+        retract(p, 'absent');
+      }
+    }
     const open = (kind) => pending.some((p) => p.kind === kind && !p.matched && !p.retracted && p.seq > k);
     if (Array.isArray(timers.cds)) {
       for (let i = 0; i < 4; i++) {
