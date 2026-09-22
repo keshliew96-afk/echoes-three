@@ -90,6 +90,17 @@ even with legacy params (e.g. a seeded journey: `?seed=5&menu=1`). Other params:
 `?netrate=`. Never use `?room=` for a network room code (it is the legacy wave
 room param) — use `?netjoin=`.
 
+**Loopback workaround (2026-09-22 ~22:30, this machine).** Headless Chrome for
+Testing 152 stopped reaching loopback ports (`net::ERR_CONNECTION_TIMED_OUT`
+to 127.0.0.1 after 21 s, while curl / node fetch reach the same server): its
+Windows AppContainer network-service sandbox refuses loopback.
+`--disable-features=NetworkServiceSandbox` restores it with no system
+change. When a harness shows that error, use the flag: tools/gntM4c-certcapture.mjs
+is tools/cert-capture.mjs + that flag (same CLI, same output),
+tools/gntM4c-actrun.mjs is the act runner + the flag, and
+`launchEchoes({ extraArgs: ['--disable-features=NetworkServiceSandbox'] })`
+fixes any harness built on tools/gnt-arch-browser.mjs.
+
 **Smoke + core loop (every builder commit).**
 `node tools/cert-capture.mjs shot <pfx>smoke --settle 4000 --timeout 180000`
 must exit 0 with zero `[PAGEERROR]`. Core loop:
@@ -324,8 +335,16 @@ its `levelDb` (built-in cues: `node tools/gntM3-calibrate.mjs --only cues`).
 
 ### M4a — eight slots, skills, nodes, expeditions, difficulty curve (Gauntlet W2, owner M4a)
 
-**Eight slots.** `SKILL_SLOTS = 8` (src/core/constants.js) drives every slot
-array: `state().skills` has 8 entries (`null` = empty), keys Digit1–8,
+> **Superseded in part by the M4c user correction (next section):** the
+> player has at most **4** skill slots (keys 1–4) and **8 node sockets per
+> skill** with no rarity caps. The 8-slot / 2-socket / `capped` lines below
+> describe the W2 build; M4a's probes that assert them (gntM4a-simprobe
+> `slots` + the Resonance cap checks, gntM4a-drive `hud` / `socket` /
+> `nudges` on tiles 5–8, gntM4a-realrun's two-click socketing) are
+> superseded by the gntM4c-* probes. Everything else in this section stands.
+
+**Eight slots (W2 — superseded).** `SKILL_SLOTS = 8` (src/core/constants.js) drove every slot
+array: `state().skills` had 8 entries (`null` = empty), keys Digit1–8,
 `cmd('restoreSkillState', { slots: [8 × { id, remaining } | null], override:
 null })` loads a kit, `cmd('grantNode', id)` benches a node,
 `cmd('buildVerdict', skillId, nodeId)` / `cmd('kitVerdict', nodeId)` = the
@@ -370,7 +389,8 @@ party damage, downs, enemies by type, elites, boss adds, plus the §4.2 band
 verdict (Spearman ρ ≥ 0.6, wins ≥ 3/3/2 of 5, no room live 180 s, defend and
 boss spikes, per-room damage medians I < II < III). Constants retuned
 2026-09-22 (BUILD_BRIEF §23.2 note): act tier 1.00 / 1.15 / 1.60, slope 0.12,
-defend × 1.25, Stag 2400·T.
+defend × 1.25, Stag 2400·T — and retuned again by M4c for the corrected build:
+act tier 1.00 / 1.15 / 1.75, slope 0.16, Stag damage slope 0.7.
 
 **Real input.** `__echoes.content.advise()` = what the autopilot would press
 this tick (never applied); `__echoes.content.project(x, z)` = world → CSS
@@ -388,6 +408,65 @@ table, rolled plans). `node tools/gntM4a-drive.mjs <scenario> [--url U] [--w W
 (denial + cooldown grammar on tiles 3–8), `grey` (§15.5 display for the new
 nodes), `acts` (G4a.4: layouts / hazards / interactables / music theme / boss
 adds per act), `picker` (G4a.11), `challenge`, `pages` (G4a.12).
+
+### M4c — content correction: 4 skills, 8 sockets per skill, no rarity caps (Gauntlet W3.5, owner M4c)
+
+**The truth (user correction 2026-09-22).** `SKILL_SLOTS = 4` (keys Digit1–4;
+5–8 unbound; `state().skills` has 4 entries), `SOCKETS_PER_SKILL = 8` on every
+skill, the passives included, and any node of any rarity fits any socket.
+`cmd('buildView')` → `{ combatActive, socketCount: 8, bench[], skills: [{ id,
+sockets: [8 × { node, verdict } | null], filled, live, resolved, resonance,
+… }] }`; `cmd('socket', skillId, nodeId, slot?)` (slot 0–7; omitted = first
+vacant) → `{ skill, node, slot, verdict }` or `{ denied: 'limit' | 'full' |
+'no_such_slot' | 'combat_active' | 'not_on_bench' | 'skill_not_owned' }` (no
+`cap` reason exists); `cmd('unsocket', skillId, slot)`; `cmd('autoFill')` =
+the one auto-socket policy (live placements only, within limits, spread to
+the skill with the fewest filled sockets; the autopilot and the socket
+screen's F call it). `cmd('buildVerdict', …)` states are `live | grey |
+inert` (Resonance on a passive = `live`, reason `pulse`). Legendaries on
+passives: Ascend ×2 pulse power, Resonance every 3rd pulse ×2
+(`resonance_proc { pulse: true }`).
+
+**Node supply.** Every combat-room clear drops 2 spoils on the bench
+(`spoils_drop { room, nodes, total }`, provenance `spoils`; forfeited on a
+defend soft-fail; `state().run.spoils`); the shop shelf is 4 cards (2
+common + 1 rare + 1 legendary) at 15 / 20 / 25 — 72 Glint buys any three,
+never four; the autopilot buys cheapest-first while the wallet lasts.
+
+**Screens.** Socket screen: `__echoes.content.socketUi()` → `{ open, scale,
+rows, cells[4][8] { state: vacant|ghost|filled, grey, inert, fits, limited,
+focus }, bench [{ node, count }], focus { zone: cells|bench, r, c, i }, held,
+detail, rects { page, rows, cells, chips, detail, auto }, pad }`. Keys while
+open: arrows/WASD, Enter/Space pick · place · move, X/Delete remove, F
+auto-fill, 1–4 rows, Tab bench ⇄ sockets, Esc/B close (consumed). Pad
+(standard mapping, polled per frame; a mock `navigator.getGamepads` works):
+View (8) opens between rooms, D-pad/stick, A, B (drop hand / close), X, Y,
+LB/RB. HUD: `hud.slots()[i].sockets` = `{ filled, live, grey, of: 8 }` and an
+8-segment `.hud-slot-pips` strip under each of the 4 skill tiles. Draft page:
+`.rn-spoils` line. Shop: 4 `.rn-item` cards.
+
+**Saves.** Schema 2 / StateTree `v: 2`; a schema-1 file migrates on load
+(first 4 skills kept, dropped skills' nodes to the bench, rows padded to 8, a
+stale skill reward → the empty offer). Goldens: the 9 references
+`captures/gnt-M2-golden-*.json` were re-recorded at the M4c-end build (W2-end
+originals: `captures/gntM4c-w2end-golden-*.json`; copies
+`captures/gntM4c-golden-*.json`); `node tools/gntM2-goldens.mjs` is 9/9 on
+the M4c build.
+
+**M4c probes.** `node tools/gntM4c-simprobe.mjs` (Node, 72 checks: slots,
+sockets incl. the 2312-operation any-rarity sweep, passive legendaries, the
+corrected matrix on sockets 1/4/8, auto-fill, supply, the curve table, a
+GENUINE v1 save from `git archive ebd0609` migrated and applied, determinism;
+it exports that v1 build to `captures/gntM4c-v1root` on first use).
+`node tools/gntM4c-drive.mjs socket|sizes|hud|pages` (GPU harness, loopback
+flag built in; JSON `captures/gntM4c-drive-<scenario>.json`).
+`node tools/gnt-M4a-actrun.mjs --act all --seeds 1-5 --node 1` (Node) /
+`node tools/gntM4c-actrun.mjs --act all --seeds 1-5` (in page) → the §4.2
+band; `node tools/gntM4c-band.mjs <actrun.json>` → kill_all-only per-room
+medians + ρ (the gate's per-room medians mix the randomly placed 45 s defend
+rooms). `node tools/gntM4c-realrun.mjs --act 1|2|3 --seed 1` = a whole act by
+real keyboard + mouse (the socket screen by its own keys: Enter places a
+drafted node, B·F·Esc auto-fills the spoils on every page).
 
 ### M4b — enemies, hazards, interactables, layouts, biomes (Gauntlet W2, owner M4b)
 
@@ -458,7 +537,7 @@ audio layer resyncs on it). Capture points: `clock.onTickEnd` or between
 frames only — a capture from inside a sim step throws `CapturePointError`;
 `requestCapture()` defers it (tick end for in-step events, a microtask for
 events a command emitted between frames — either way captureTick ===
-eventTick). The file is `{ format:'echoes-save', schema:1, game, slot,
+eventTick). The file is `{ format:'echoes-save', schema:2 (M4c; schema-1 files migrate on load), game, slot,
 createdAt, savedAt, meta, state, hash }`, hash = hashState(state) (FNV-1a 64
 over canonical JSON), body written in insertion key order (so a loaded object
 iterates like the saved one); `MIGRATIONS` chain runs after the hash check of
@@ -522,8 +601,9 @@ registry, G2.12 capture point), `records` (Records layout, 3 sizes), `misc`
 (?slot= boots, Continue, gamepad-only slots/records), `private` (blocked
 storage). Node: `node tools/gntM2-nodetrip.mjs` (9 headless round trips incl.
 a FRESH world through the file codec), `node tools/gntM2-goldens.mjs` (G2.10:
-the 9 W2-end goldens `captures/gnt-M2-golden-{kill_all,defend,run}-{1,2,3}.json`,
-recorded from `git archive 9246562` before M2's first edit — M5b re-checks
+the 9 goldens `captures/gnt-M2-golden-{kill_all,defend,run}-{1,2,3}.json`,
+recorded from `git archive 9246562` before M2's first edit and re-recorded at
+the M4c-end build by the user's skill/socket correction — M5b re-checks
 them). Layout audit helper: tools/gntM2-audit.mjs.
 
 ### M5a — network core: server, lobby, protocol, conditioner, netbench (Gauntlet W3, owner M5a)

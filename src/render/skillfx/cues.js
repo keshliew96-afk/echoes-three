@@ -23,7 +23,13 @@ export function registerContentCues(audio, world = null) {
     return null;
   });
   audio.registerEventCue('skill_bolt_pierce', (ev) => [{ cue: 'impact', ...at(ev), pitch: 1.2, gainDb: -2 }]);
-  audio.registerEventCue('resonance_proc', (ev) => [{ cue: 'echo', ...at(ev), pitch: 0.75, gainDb: 1 }]);
+  // A resonant CAST is an event; a resonant passive PULSE (M4c: Resonance now
+  // fits a passive — every 3rd pulse, i.e. every 3 s for as long as the aura
+  // is owned) is ambience: the same soft field sparkle as the other passive
+  // techniques, so a 3-second metronome never rides the mix.
+  audio.registerEventCue('resonance_proc', (ev) =>
+    ev.pulse ? [{ cue: 'sparkle', ...at(ev), pitch: 0.85, gainDb: -9 }] : [{ cue: 'echo', ...at(ev), pitch: 0.75, gainDb: 1 }]
+  );
   audio.registerEventCue('split_shard', (ev) => [{ cue: 'bounce', ...at(ev), pitch: ev.mode === 'heal' ? 1.1 : 1.35, gainDb: -3 }]);
   audio.registerEventCue('shield_absorb', (ev) => [{ cue: 'bounce', ...at(ev), pitch: 1.7, gainDb: -4 }]);
   audio.registerEventCue('technique_pulse', (ev) => [{ cue: 'sparkle', ...player(), pitch: ev.node === 'snare' ? 0.8 : 1.2, gainDb: -10 }]);

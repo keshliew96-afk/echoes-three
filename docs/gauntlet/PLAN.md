@@ -29,6 +29,14 @@ Contents: §0 scope · §1 architecture + state machine · §2 file ownership ·
 4. CONTENT EXTENSION: distinct level configurations, escalating difficulty,
    varied enemy/obstacle types, skill slots 4 → 8, more skills and nodes,
    interactive environmental assets.
+   **USER CORRECTION (2026-09-22, binding — supersedes every "skill slots
+   4 → 8" / "8 skill slots" / "keys 1–8" line in this PLAN, BUILD_BRIEF §23,
+   TESTING.md and the W2 builds):** "skill remain maximum 4, but the node for
+   each skill increase to 8" and "for the 8 sockets, no more split between
+   rare and legendary control, any rarity of the node can insert into any
+   socket". The player equips **at most 4 skills**; **every skill has 8 node
+   sockets**; **no socket has a rarity cap**. Implemented by the M4c
+   correction builder (§2.1, §4.3, §7 "M4c").
 5. MULTIPLAYER: real-time network play with socket connections, matchmaking /
    lobby rooms, delta-compressed player state sync (position, orientation,
    actions), predictive lag compensation; must survive packet loss, races and
@@ -218,6 +226,7 @@ chosen so that routing lands on the right owner.
 | **M1** (W1) | src/app/** (keeping the committed gesture hook first and `app.update → service('audio').update`) · src/ui/menu/** except the files other keys own below · src/ui/debug.js | src/app/{nav,gamepad,display,style,toast}.js · src/ui/menu/{title,settings,confirm,farewell,loading,keepdisplay}.js · src/ui/menu/tabs/{display,gameplay,controls}.js · tools/gnt-M1-* |
 | **M3** (W1) | src/audio/** (incl. replacing synth.js) · src/ui/menu/tabs/audio.js | src/audio/{engine,voices,cues,music,ambient,spatial,meter}.js · tools/gnt-M3-* |
 | **M4a** (W2) | src/sim/{skills,nodes,draft,run,waves,status,combat,shapes,autopilot}.js · src/data/{levels,difficulty,content}.js · src/core/intents.js · src/ui/hud/** (incl. the threat.js faction rule, §3.6) · src/ui/run/** (incl. the draft X-decline, §1.5) · src/ui/socket/** (incl. Esc `preventDefault`) · src/render/skillfx/** · src/render/techfx/** | src/ui/run/expedition.js · src/render/skillfx/<skill>.js · src/sim/autopilot.js (deterministic default-build bot, §6.7) · tools/gnt-M4a-* (incl. tools/gnt-M4a-actrun.mjs, §6.7) |
+| **M4c** (W3.5, alone — the user's correction, before M5b) | every M4a file and anchored region above (it inherits the M4a row) · minimal edits in src/save/codec.js + src/save/capture.js (schema 2 migration, M2's files) · docs: BUILD_BRIEF §14/§15/§16/§23, this PLAN (§0 note, §2.1, §4.3, §6.5, §7 M4c, §10), TESTING.md M4c section | tools/gntM4c-* (incl. tools/gntM4c-certcapture.mjs / gntM4c-actrun.mjs — flag-only copies of the ARCH / M4a harnesses, see TESTING.md) — preview port 4304 (M4a's) |
 | **M4b** (W2) | src/sim/{enemies,hazards,interactables,movement,boss,projectiles}.js · src/sim/enemies/** · src/data/layouts.js · src/render/enemies/** · src/render/hazards/** · src/render/interactables/** · src/render/boss/** · src/env/** · src/scenes/arena.js · src/ui/interact/** | src/sim/enemies/{quillback,toad,moth,ram,mole}.js · src/sim/hazards.js · src/sim/interactables.js · src/env/biomes/{wood,mill,barrow}.js · tools/gnt-M4b-* — **never edits shapes.js, combat.js, status.js, run.js, content.js** (it calls their contracts, §3.6) |
 | **M2** (W3) | src/save/** · src/core/rng.js · src/core/clock.js · src/core/registry.js · main.js `@gnt:M2 RNG-WRAPPER` + `@gnt:SAVE` · src/ui/menu/{saves,records}.js | src/save/{index,capture,codec,storage,slots,profile,autosave,thumbnail}.js · tools/gnt-M2-* |
 | **M5a** (W3) | server/** · src/net/protocol/** · src/net/{transport,lobbyClient}.js | server/{ws,lobby,matchmaking,relay,admin,keyframes}.mjs · src/net/protocol/{messages,codec,quantize,treediff,delta,snapshot,conditioner}.js · tools/gnt-M5a-netbench.mjs (fixed CLI + schema, §6.7) · tools/gnt-M5a-* — **no src/sim edits in W3** |
@@ -249,9 +258,9 @@ M4b exports and M4a calls inside shapes.js — plan-review fix).
 | src/main.js | `DEBUG-API` | normally none | namespaces are service-backed (`content`, `busCounters` committed) |
 | src/render/stage.js | `M1 RENDER-SCALE` · `M1 RESIZE` · `M1 STAGE-API` | M1 | render scale, resize keeping the scale, `setRenderScale / renderScale / drawingBufferSize` |
 | src/render/stage.js | `M2 THUMBNAIL` (inside `render()`) | M2 | one `onNextRender` hook line after `composer.render()` |
-| src/core/input.js | `M4a INPUT-KEYS` | M4a | skill keys (derived from SKILL_SLOTS; KeyE `interact` is already bound — M4b needs no edit) |
+| src/core/input.js | `M4a INPUT-KEYS` | M4a (M4c) | skill keys (derived from SKILL_SLOTS = 4: Digit1–4; KeyE `interact` is already bound — M4b needs no edit) |
 | src/core/input.js | `M1 INPUT-GATE` | M1 | `releaseAll()`, `setEnabled()` |
-| src/core/constants.js | `M4a SKILL-SLOTS` · `M4a CONSTANTS` | M4a | 4 → 8; M4a's frozen tables |
+| src/core/constants.js | `M4a SKILL-SLOTS` · `M4a CONSTANTS` | M4a (M4c) | `SKILL_SLOTS = 4` (M4c correction; was 4 → 8 at W2) · `SOCKETS_PER_SKILL = 8`; M4a's frozen tables |
 | src/core/constants.js | `M4b CONSTANTS` | M4b | M4b's frozen tables |
 | src/core/clock.js | `M2 CLOCK-STATE` | M2 | serialize/restore (M2 owns the file in W3; `onTickEnd` is committed) |
 | src/sim/world.js | `M4a SKILL-SLOTS` · `M4a PLAYER-SPEED` · `M4a CMD` | M4a | slot loop + stun gate; player walk × `status.speedMul`; M4a debug commands |
@@ -585,6 +594,16 @@ export saves to files". Nothing on this path may throw to the page.
 **Migration**: `MIGRATIONS = { 1: s => s /* v1 -> v2 */ }` chain applied
 before hash verification of the migrated tree; a save with `schema` newer than
 the build is refused ("made by a newer version of Echoes") and never modified.
+**Schema 2 (M4c, the user's skill/socket correction; StateTree `v: 2`):**
+`MIGRATIONS[1]` (src/save/codec.js, pure, deterministic, draws no RNG) keeps
+the first 4 owned skills in ascending slot order, returns a dropped skill's
+socketed nodes to the bench (provenance kept) and drops its passive clock,
+Resonance counter, pending Echo recasts and Reapply clock, pads every build
+row to 8 sockets, turns a pending SKILL reward with no free slot left into the
+§16 empty offer, recomputes `freeSkillSlots` (4 − owned) and trims
+`meta.skills`. The stored tree's hash is verified BEFORE migrating; the
+migrated body gets its own hash so rename / import / restore write a
+self-consistent schema-2 file. Storage keys stay `echoes.save.v1.*`.
 
 **Thumbnail**: 256×144 JPEG (quality 0.7, ≤ 20 KB) captured by an
 `onNextRender` hook in stage.js immediately after `composer.render()` (no
@@ -1218,6 +1237,9 @@ baseline (ARCH files are never edited by builders).
 
 ### 4.2 Difficulty curve (src/data/difficulty.js)
 
+(v0.5.1 numbers below; the BINDING constants are the latest dated note in
+BUILD_BRIEF §23.2 — at M4c: T 1.00 / 1.15 / 1.75, slope 0.16, defend × 1.25,
+Stag 2400·T with damage 1 + 0.7(T − 1).)
 `T = 1.00 / 1.35 / 1.75` per act · `R = 1 + 0.08 × (room − 1)` · `hpMul = T·R`
 · `dmgMul = 1 + 0.5·(T·R − 1)` · `budget = 4.0·T·R` threat points per wave
 (defend × 0.8) · elite chance I: 0 (rooms 1–3) / 0.08, II: 0.12 + 0.02(r−1),
@@ -1255,14 +1277,35 @@ constants (documented in BUILD_BRIEF §23.2), never the formula's shape. The who
 (§11 discipline). The `?room=` harness (no run) keeps the legacy §11 roll
 exactly (60/40 boar/mantis, 2–3 × 3–5).
 
-### 4.3 Skill slots 4 → 8
+### 4.3 Skill slots and node sockets (USER CORRECTION 2026-09-22 — M4c)
 
-`SKILL_SLOTS = 8` end to end: sim slot arrays + serialize/restore, keys
-Digit1–Digit8 (input.js derives them), world slot loop, the §4 order (skills
-ascending slot 0–7, then basic fire), HUD command bar (4 portraits · 8 skill
-tiles · dodge; fits 1024×576 → 2560×1440), cooldown grammar/nudges on all 8,
-draft `free_skill_slots = 8 − owned`, socket screen (8 rows × 2 sockets,
-scrollable), run-UI carry keys 1–8, Controls tab. Ally kits stay 4.
+*Superseded at M4c: the W2 text read "`SKILL_SLOTS = 8` end to end … keys
+Digit1–Digit8 … 8 skill tiles … socket screen (8 rows × 2 sockets)". The user
+meant the opposite axis:*
+
+- **At most 4 equipped skills** — `SKILL_SLOTS = 4` end to end: sim slot
+  arrays + serialize/restore, keys Digit1–Digit4 (input.js derives them;
+  Digit5–8 unbound; intents skill_5..8 stay reserved so the net press-bit
+  tables keep their wire layout), world slot loop, the §4 order (skills
+  ascending slot 0–3, then basic fire), HUD command bar (4 portraits · 4 skill
+  tiles · dodge), cooldown grammar/nudges on all 4, draft `free_skill_slots =
+  4 − owned` (a 5th skill is never offered — the §16 substitution line offers
+  a node), run-UI carry keys 1–4, Controls tab. Ally kits stay 4.
+- **8 node sockets on every skill** (`SOCKETS_PER_SKILL = 8`, the passives
+  included) and **no rarity caps**: any node of any rarity fits any socket;
+  hard blocks are only the per-skill repetition limit (kept), a full row,
+  a bad socket index and live combat. Legendaries on passives: Ascend = ×2
+  pulse power, Resonance = every 3rd pulse ×2 (BUILD_BRIEF §15.2). Grey /
+  saturation-inert verdicts (§15.5), denial feedback and the Siphon card line
+  work on all 8 sockets.
+- **Socket screen** for 4 rows × 8 sockets on one page (no scrolling,
+  1024×576 → 2560×1440), fast by keyboard, mouse and gamepad; one sim-side
+  **auto-fill** policy shared with the autopilot; each command-bar skill tile
+  shows its socket fill (8-segment strip).
+- **Node supply for 32 sockets**: 2 clear spoils per combat room, the 4-card
+  shelf at 15/20/25 (BUILD_BRIEF §14 M4c note); **difficulty retuned** for the
+  corrected build (§4.2 constants, BUILD_BRIEF §23.2 M4c note); **saves**
+  migrate schema 1 → 2 (§3.4).
 
 ### 4.4 New skills (9) and nodes (9) — full tables in BUILD_BRIEF §23.3–23.4
 
@@ -1272,7 +1315,9 @@ projectile), Bell Toll (dmg nova + stun), Rootsnare (dmg zone + slow), Dewfall
 arc), Hearthsong (heal nova + haste), Quiet Hearth (passive aura: heal + ward).
 Nodes: Widen, Reach, Linger, Keen (stat) · Snare, Bulwark, Split, Resonance,
 Galvanize (technique, each with damage/heal/passive reinterpretations). Pools:
-15 draftable skills, 17 nodes; §14 prices and invariants unchanged.
+15 draftable skills, 17 nodes; §14 prices and invariants as restated at M4c
+(4-card shelf 15/15/20/25, 72 buys any three, never four; 2 clear spoils per
+combat room).
 
 ### 4.5 New enemies (5) and hazards (5)
 
@@ -1387,7 +1432,7 @@ re-verified at v0.5.1: portal tick 459 → combat room 1 tick 480 → reward tic
 | shared dev server | — | **5199** (never start another, never kill) |
 | player default | 7800 | — |
 | ARCH / plan reviewer | 7801 / 7802 | 4300 |
-| M1 · M2 · M3 · M4a · M4b | — | 4301 · 4302 · 4303 · 4304 · 4305 |
+| M1 · M2 · M3 · M4a (and M4c) · M4b | — | 4301 · 4302 · 4303 · 4304 · 4305 |
 | M5a | 7810–7819 | 4306 |
 | M5b | 7820–7829 | 4307 |
 | INT | 7830–7839 | 4310–4312 |
@@ -1478,6 +1523,15 @@ their own files through `impl.debug`):
   leave them identical (gate G2.10). M5b re-records at the start of W4, must
   find them identical to M2's (else it stops and reports the W3 drift), and
   reproduces them at the end of W4 (G5b.8).
+- **M4c re-record (the user's correction changes the sim legitimately).**
+  4 skill slots (the scripted input presses keys 1–4 only), 8-socket rows,
+  clear spoils, the 4-card shop and the retuned curve change all 9 traces.
+  M4c preserved the W2-end files as `captures/gntM4c-w2end-golden-*.json`,
+  recorded the M4c-end build as `captures/gntM4c-golden-*.json` and wrote the
+  same bytes over `captures/gnt-M2-golden-*.json` — **the reference build for
+  G2.10 and G5b.8 is now the M4c-end build**; M5b's start-of-W4 check compares
+  against these. The legacy seed-7 `?room=` traces are back on the v0.5.0
+  goldens (`d1eff38b03f581aa` kill_all / `554cd9c41db19975` defend).
 
 ### 6.6 Audio probing
 
@@ -1633,15 +1687,17 @@ A module passes only when every gate holds on the RUNNING game with numbers.
   voices ≤ 4 within 3 s of silence (no leak over a full run).
 
 ### M4a — systems content
-- **G4a.1 Eight slots**: keys 1–8 fire slots 0–7 within 1 tick; the command bar
-  shows 8 tiles + dodge + 4 portraits without overlap at all three sizes; the
-  cooldown grammar and denial nudges work on all 8; draft `free_skill_slots = 8
-  − owned`; socket screen lists all owned skills.
+- **G4a.1 Eight slots** — *superseded by the user's correction: see G4c.1
+  (4 slots) and G4c.2 (8 sockets per skill).* (W2 text: keys 1–8 fire slots
+  0–7 within 1 tick; the command bar shows 8 tiles + dodge + 4 portraits
+  without overlap at all three sizes; the cooldown grammar and denial nudges
+  work on all 8; draft `free_skill_slots = 8 − owned`; socket screen lists all
+  owned skills.)
 - **G4a.2 Skills**: each of the 9 new skills can be drafted, cast, and produces
   its authored numbers (BUILD_BRIEF §23.3) and a ≥ 3-layer VFX in its palette.
-- **G4a.3 Nodes**: each of the 9 new nodes sockets, obeys caps/limits, and every
-  live matrix cell is verified by a sim probe; grey / saturation-inert /
-  verdict display per §15.5.
+- **G4a.3 Nodes**: each of the 9 new nodes sockets, obeys its limit (M4c: no
+  caps any more — G4c.2), and every live matrix cell is verified by a sim
+  probe; grey / saturation-inert / verdict display per §15.5.
 - **G4a.4 Expeditions**: the picker opens at the portal; locks honoured (bypass
   params work); each act uses its own layouts, roster, hazards, interactables,
   music theme and boss adds.
@@ -1671,6 +1727,62 @@ A module passes only when every gate holds on the RUNNING game with numbers.
   by the run UI (`defaultPrevented === false`) and never declines; X and the
   Decline button decline; socket Esc closes the socket with
   `defaultPrevented === true`.
+
+### M4c — content correction (the user's 2026-09-22 correction; W3.5, alone)
+Probes: tools/gntM4c-simprobe.mjs (Node), tools/gntM4c-drive.mjs
+`socket|sizes|hud|pages` (GPU harness), tools/gnt-M4a-actrun.mjs /
+tools/gntM4c-actrun.mjs (act runner), tools/gntM4c-realrun.mjs (real input),
+tools/gntM4c-band.mjs (band analysis).
+- **G4c.1 Four skill slots**: `SKILL_SLOTS = 4`; keys 1–4 fire slots 0–3 on
+  the press tick, keys 5–8 produce nothing (no cast, no denial); the command
+  bar shows 4 skill tiles + dodge + 4 portraits inside the window with 0
+  overlaps at all three sizes; draft `free_skill_slots = 4 − owned`; with 4
+  owned a skill reward substitutes a node with the §16 line; a 5th `giveSkill`
+  is refused.
+- **G4c.2 Eight sockets, no caps**: every skill (all 17, the passives
+  included) exposes 8 sockets; every node of every rarity sockets into every
+  socket of every skill (17 × 17 × 8 = 2312 operations, 0 denials); no
+  `socket_denied` ever carries a rarity reason; the per-skill repetition
+  limit holds for all 17 nodes (limit + 1 → `limit`); a 9th node on a full
+  row → `full`; index 8 → `no_such_slot`; live combat → `combat_active`.
+- **G4c.3 Legendaries on passives**: Ascend on Warding Aura heals 6 per pulse
+  (3 × 2; crit 9); Resonance on a passive makes every 3rd pulse ×2 with
+  `resonance_proc { pulse: true }`, the Echo Reapply pulse never advances the
+  counter; previews name both effects (no cap copy anywhere).
+- **G4c.4 Verdicts on all 8 sockets**: the corrected §23.4 matrix holds on
+  sockets 1, 4 and 8 for all 17 skills; a technique fires from socket 8; the
+  Siphon card line rides every Siphon preview; saturation-inert `+0` (never
+  the strike) and grey strike display on any socket in the socket screen.
+- **G4c.5 Socket screen**: 4 rows × 8 sockets + bench + detail on one page at
+  1024×576 / 1600×900 / 2560×1440 — inside the window, 0 overlaps, no scroll,
+  text ≥ 12 real px, cells ≥ 48 real px; by keyboard (pick → place, move a
+  socketed node, remove, auto-fill, 1–4, Esc consumed), mouse (click,
+  right-click remove) and gamepad (View opens, D-pad, A, B, X, Y); a limit
+  denial shakes the cell; a node draft opens it with the node in hand.
+- **G4c.6 Command-bar socket fill**: each skill tile's 8-segment strip equals
+  the sim's filled / live / grey counts (`hud.slots()[i].sockets`).
+- **G4c.7 Node supply**: 2 clear spoils per combat clear (commons + rares,
+  forfeited on a soft-fail, drawn stipend → spoils → reward); the shelf is 4
+  cards 15/15/20/25 inside the window at all three sizes, 72 buys any three
+  and never four; the default-build autopilot reaches the Stag with ≥ 50% of
+  its owned sockets filled (Act I seeds 1–3); auto-fill places only live
+  nodes within limits, spreads, is deterministic, refuses in combat.
+- **G4c.8 Difficulty on the corrected build**: the §4.2 band (G4a.10) holds by
+  the act runner over seeds 1–5 in Node AND in page with the M4c constants,
+  and G4a.8 / G4a.9's real-input legs (Acts I, II, III seed 1, keyboard +
+  mouse, socket screen by its own keys) complete with 0 page errors.
+- **G4c.9 Save migration**: a GENUINE schema-1 file written by the v0.5.39
+  build (8 slots, 2-socket rows, 6 skills owned) parses, migrates to schema 2
+  and applies: first 4 skills kept in slot order, the dropped skills' nodes on
+  the bench, kept rows padded to 8 with nodes in place, a stale skill reward
+  → the empty offer, 600 ticks after the load clean and bit-identical after a
+  re-apply; malformed v1 trees never throw; the M2 probes stay green.
+- **G4c.10 Determinism**: the 9 goldens re-recorded at the M4c-end build are
+  reproduced by a second process (9/9); legacy seed-7 `?room=` traces = the
+  v0.5.0 goldens; M2's Node round trips 9/9 and in-page round trips hold.
+- **G4c.11 Net unaffected**: the M5a probes stay green (protocol, corpus,
+  lobby, netbench); guest presses map to the 4-skill ally kits; single-player
+  isolation unchanged.
 
 ### M4b — world content
 - **G4b.1 Enemies**: 5 new archetypes with distinct silhouettes (identifiable at
@@ -1737,6 +1849,9 @@ A module passes only when every gate holds on the RUNNING game with numbers.
   × seeds 1–3 (3600 ticks) recorded from the W2-end build before M2's first
   edit are bit-identical at M2's last commit (M2's rng.js / clock.js /
   registry.js / serialize-restore edits change nothing about simulation).
+  *M4c re-recorded the references at the M4c-end build (the user's correction
+  changes the sim legitimately, §6.5); from then on G2.10 compares against
+  those files — `node tools/gntM2-goldens.mjs` 9/9 at M4c's last commit.*
 - **G2.11 Registry order**: after `apply()` of a tree whose ids interleave
   with the live registry's (e.g. saved [3, 5, 9], live [3, 9, 12]),
   `registry.all()` is in strictly ascending id order and a 600-tick
@@ -1800,9 +1915,10 @@ N2–N4 (playable, bounded, never broken).
 - **G5b.7 Races**: same-tick interaction → one activation; guest draft/path
   picks rejected cleanly while the host's apply; two joins for the last seat →
   one; simultaneous pause → the session never halts.
-- **G5b.8 Isolation**: single-player golden traces bit-identical to the W2-end
-  build (seeds 1–3 × 3 modes; the same recordings as G2.10), and the SP
-  core loop (§6.2) unchanged.
+- **G5b.8 Isolation**: single-player golden traces bit-identical to the
+  M4c-end build (seeds 1–3 × 3 modes; the same recordings as G2.10 — W2-end
+  until the M4c correction re-recorded them, §6.5), and the SP core loop
+  (§6.2) unchanged.
 - **G5b.9 Host local loop** (GPU harness; host page + 3 guests, boss fight
   with adds, N1): host rendered fps ≥ 60 (same bar as SP GI.6), 0 frames > 50
   ms attributable to net work (`frameOver50Net === 0`), `hostNetMsP95 ≤ 2 ms`
@@ -1982,3 +2098,14 @@ LAN/localhost, new bosses per act (the Hollow Stag scales per act), WebRTC.
 | 17 | G1.12 palette gate failed on the camp backdrop | measured inside plate DOM rects + backdrop allowance; G1.12 |
 | 18 | Multiplayer with no server unspecified | §3.7 no-server / unreachable / LAN / https states + title visibility rule; G5b.13 |
 | 19 | Harness support missing | §6.7 named profiles (GPU / display / multi-page / audio) · tools/gnt-arch-browser.mjs; fixed netbench CLI + schema; act runner; §6.4 deterministic content commands; §6.1 `?variant` vs `?layout` · params.js `layout` |
+
+## 11. Revision log — M4c (user correction, 2026-09-22)
+
+| # | What changed | Where |
+|---|---|---|
+| 1 | At most 4 skills (keys 1–4, 4 tiles, free = 4 − owned); 8 node sockets on every skill; no rarity caps; legendary passive reinterpretations | §0 note, §2.1 M4c row, §2.2 constants/input rows, §4.3, BUILD_BRIEF §15.2 / §23.9 |
+| 2 | Node supply for 32 sockets: 2 clear spoils per combat room, 4-card shelf at 15/20/25, one auto-fill policy | §4.3, §4.4, BUILD_BRIEF §14 note / §16 |
+| 3 | Difficulty retuned for the corrected build: slope 0.16, Act III tier 1.75, Stag damage slope 0.7 | §4.2 pointer, BUILD_BRIEF §23.2 M4c note |
+| 4 | Save schema 2 + deterministic migration of schema-1 saves | §3.4 |
+| 5 | Goldens re-recorded at the M4c-end build (G2.10 / G5b.8 reference) | §6.5 |
+| 6 | New gates G4c.1–G4c.11; G4a.1 superseded, G4a.3 caps clause removed | §7 |

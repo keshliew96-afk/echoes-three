@@ -494,12 +494,24 @@ visible).
 | starting_glint | 0 |
 | clear stipend | +12 per combat-room clear (incl. boss, incl. after defend soft-fail) |
 | wallet at shop (deterministic) | 0 + 12×6 = **72** |
-| shop prices | common **25** · rare **30** · legendary **35** |
-| invariants | 3 cheapest = 75 > 72 (never all 3) · any 2 ≤ 65 ≤ 72 (any 2 affordable) |
+| shop prices | common **15** · rare **20** · legendary **25** (M4c; were 25 / 30 / 35) |
+| shelf | **4 cards**: 2 common + 1 rare + 1 legendary (M4c; was 3, one per rarity) |
+| invariants | all 4 = 15+15+20+25 = 75 > 72 (never the whole shelf) · any 3 ≤ 60 ≤ 72 (any 3 affordable) |
+| clear spoils | **+2 nodes** to the bench per combat-room clear, rooms 1–6 (M4c; commons + rares from the usable pool; forfeited with the reward on a defend soft-fail) |
 
 Wallet: integer ≥ 0, atomic spend; insufficient funds → `currency_denied` no-op
 (item never hidden or greyed for price). Wiped at run end. Glint UI color Pale
 Gold `#D9B872` with a ≥24 px coin icon.
+
+**Tuning note (M4c, 2026-09-22 — the user's skill/socket correction).** With
+at most 4 skills and **8 sockets on every skill** (§15.2) the build has 32
+sockets to feed instead of 16, and the v0.5.x supply (≤ 5 node drafts + 2 of 3
+shop cards ≈ 7 nodes a run) left three quarters of them empty. Node supply is
+therefore: clear spoils (2 per combat clear, 12 a run), node drafts
+(unchanged, §16), and a 4-card shelf priced 15/20/25 so the deterministic 72
+Glint buys three. Measured on the default-build autopilot (Act I, seeds 1–3):
+spoils 12 + drafted 4 + purchased 3 per run; the party reaches the Stag with
+19 of 32 sockets filled (≥ 50%, the M4c supply gate).
 
 ---
 
@@ -519,14 +531,32 @@ Gold `#D9B872` with a ≥24 px coin icon.
 | **Detonate** | technique | rare | 1 | see matrix |
 
 ### 15.2 Sockets
-- Active skill (damage/heal): **2 slots — slot A cap `rare`, slot B cap
-  `legendary`**. Passive (Warding Aura): **1 slot, cap `rare`**.
-- Cap = ceiling on rarity rank (common 0 < rare 1 < legendary 2). One node per
-  socket. Unsocketed nodes live on an **uncapped bench** (provenance
-  `drafted`/`purchased`). Socket/unsocket free and unlimited — but ONLY while
-  `combat_active == false`. Repetition: copies of a node on one skill (incl.
-  candidate) ≤ its limit.
-- Ascend fits only slot B (legendary cap) and never the passive.
+**USER CORRECTION (2026-09-22, binding — supersedes the v1.0 cap system and
+every "8 skill slots" line of §23 / PLAN):** the player equips **at most 4
+skills**, and **every skill — actives and passives alike — has 8 sockets**.
+**No socket has a rarity cap: any node of any rarity fits any socket.**
+- 8 sockets per skill (`SOCKETS_PER_SKILL`, src/core/constants.js), numbered
+  1–8, one node per socket. The old slot-A-`rare` / slot-B-`legendary` /
+  passive-`rare` caps, their `cap` denial reason and the A/B cap chips are
+  gone.
+- Unsocketed nodes live on an **uncapped bench** (provenance `drafted` /
+  `purchased` / `spoils`). Socket/unsocket free and unlimited — but ONLY while
+  `combat_active == false`. **Repetition** (kept): copies of a node on one
+  skill (incl. the candidate) ≤ its limit (§15.1, §23.4).
+- Hard blocks (§16 rejection shake + `socket_denied`): `limit`, `full` (all 8
+  taken, slot omitted), `no_such_slot`, `combat_active`, `not_on_bench`,
+  `skill_not_owned`. Grey stays advisory (§15.5).
+- **Legendaries on a passive** (now legal, so each has a defined
+  reinterpretation instead of a cap verdict): **Ascend** = ×2 pulse power (the
+  §15.4 stat pipeline — Warding Aura 3 → 6 per pulse); **Resonance** = every
+  3rd pulse of that aura resolves at ×2 (per-skill counter shared with casts,
+  persists across rooms, resets at run end; the Echo Reapply bonus pulse never
+  advances it; `resonance_proc { pulse: true }`).
+- **Auto-fill** (one policy, sim-side `autoFill()`; the socket screen's F / pad
+  Y / button and the default-build autopilot both call it): bench order, each
+  node to the owned skill where it is LIVE (never grey, never saturation-
+  inert), within its limit, with a vacant socket, preferring the skill with
+  the fewest filled sockets (ties: the lower skill slot).
 
 ### 15.3 Technique reinterpretation matrix (authored numbers)
 
@@ -537,7 +567,7 @@ Gold `#D9B872` with a ≥24 px coin icon.
 | **Echo** | full recast at the same aim/target 1.0 s later at **50%** resolved power | full recast 1.0 s later at **100%** power | *Reapply*: one bonus full-strength aura pulse every 3.0 s while the aura persists |
 | **Detonate** | kills by this skill explode: 50% resolved power damage burst, radius 1.2 u | `full_heal` events from this skill burst-heal allies within 1.2 u for 50% resolved power | **GREY** |
 
-Technique rules: fire ascending slot index (A then B; duplicate Bounce = 2
+Technique rules: fire ascending socket index (1 → 8; duplicate Bounce = 2
 hops). **Depth-1 rule**: technique-produced output never triggers techniques
 (a Bounce hop doesn't re-bounce; a Detonate burst never re-detonates or feeds
 Siphon); Echo recasts are new resolutions producing primary events but an echo
@@ -584,30 +614,39 @@ realized **+0** (saturation-inert).
   it's non-grey and non-inert) vs. "nothing in your kit uses this yet"; a
   per-skill breakdown is behind an explicit toggle (Space), never hover-only.
 - **Never encode state by color alone** — every state has a shape/glyph channel.
-- Draft/shop pools filter by `usable_by_party` (∃ owned skill + vacant slot
-  where the node is non-grey, fits the cap, within its limit).
+- Draft/shop pools filter by `usable_by_party` (∃ owned skill + vacant socket
+  where the node is non-grey and within its limit — M4c: no cap clause).
 
 ---
 
 ## 16. Draft, shop, path flow
 
 - **Draft** = ONE candidate card, take-or-decline, no reroll, no confirm dialog,
-  no reopen. Skill pool = 6 draftable healer skills − owned
-  (`free_skill_slots = 4 − owned`); node pool = the 8 nodes filtered by
-  `usable_by_party`. Uniform seeded draw from the pool sorted ascending id.
+  no reopen. Skill pool = the draftable healer skills (15 after §23.3) − owned
+  (`free_skill_slots = 4 − owned`: at most 4 skills, M4c — a 5th skill is
+  never offered, the §16 substitution line offers a node); node pool = the 17
+  nodes filtered by `usable_by_party`. Uniform seeded draw from the pool sorted ascending id.
   Empty promised pool → substitute the other type with an explicit line
   ("no slot free — offering a Node instead"); both empty → "the run moves on" +
   Continue. Declines have no memory. Taken skill → first empty slot; taken node
   → bench (never auto-socketed). Taking a node chains straight into the Socket
-  screen with the candidate pre-focused.
-- **Socket screen** (B key between rooms, or chained): skills as rows, slots in
-  ascending slot order; live preview on focused candidate×slot with computed
-  contribution and reason; slot chips show rarity cap; hard-blocks (cap/limit)
-  = rejection shake + block glyph; grey = advisory, proceeds. Esc banks the
-  candidate to bench.
-- **Shop (room 7, one visit)**: 3 node cards drawn without replacement from the
-  live filtered pool at room activation (<3 eligible → show fewer). Prices by
-  rarity 25/30/35 on plaques below the card; Glint balance in the top context
+  screen with the candidate pre-focused (M4c: IN HAND, the cursor on the socket
+  the auto-fill policy picks, so Enter places it). The page names the room's
+  clear spoils ("Spoils → bench: …") — already on the bench either way.
+- **Socket screen** (B key / pad View between rooms, or chained): the 4 skills
+  as rows of 8 sockets in socket order (M4c layout: one page, no scrolling
+  from 1024×576 to 2560×1440), the bench as grouped chips, a detail line; live
+  preview on the node in hand × the focused socket with computed contribution
+  and reason, plus a per-row verdict (◆ live / ⊘ grey / +0 inert / ⊘ limit /
+  ⊘ full); hard blocks (limit / full) = rejection shake + block glyph; grey =
+  advisory, proceeds. One cursor for keyboard (arrows/WASD, Enter pick /
+  place / move, X remove, F auto-fill, 1–4 rows, Tab bench), mouse (hover,
+  click, right-click remove) and gamepad (D-pad, A, B, X, Y, LB/RB). Esc
+  banks the candidate to bench.
+- **Shop (room 7, one visit)**: 4 node cards (M4c; 2 common + 1 rare + 1
+  legendary) drawn without replacement from the live filtered pool at room
+  activation (fewer eligible → show fewer). Prices by rarity 15/20/25 (M4c)
+  on plaques below the card; Glint balance in the top context
   strip; "you own N" line when applicable. Purchase = whole-card click →
   price-stamp flash → card departs to bench; no backfill/sell-back/reroll.
   Insufficient funds: plaque emphasis + one ~300 ms shake, item stays. Empty
@@ -621,7 +660,7 @@ realized **+0** (saturation-inert).
     ORNATE PANEL (wood grain + brass, ~920×355 design px) docked above the
     command bar, over a ~12% dim (`#run-veil.rn-light`), so the lit arena, its
     torches and the party stay in frame. Everything §16 actually specifies is
-    unchanged: 3 cards, plaques BELOW the card at 25/30/35, Glint strip, "you
+    unchanged: 3 cards (4 at 15/20/25 since M4c), plaques BELOW the card at 25/30/35, Glint strip, "you
     own N", whole-card click → stamp → bench, one ~300 ms denial shake with the
     item never greyed or hidden for price, Advance one-way, Esc inert. Every
     other meta screen (draft, path, victory, defeat) keeps the §16 full veil.
@@ -1081,8 +1120,20 @@ Every juice-contract event fires its sound slot. Master volume constant, no UI.
 
 Added by the Gauntlet Loop lead architect (docs/gauntlet/PLAN.md §4). Owners:
 M4a = systems (skills, nodes, statuses, slots, expeditions, difficulty,
-draft/shop pools); M4b = world (enemies, hazards, interactables, biomes).
-Everything in §1–§22 still holds unless a line below says otherwise. Colour
+draft/shop pools); M4b = world (enemies, hazards, interactables, biomes);
+M4c = the user's 2026-09-22 correction (below). Everything in §1–§22 still
+holds unless a line below says otherwise.
+
+**USER CORRECTION (2026-09-22, binding — M4c; supersedes every "8 skill
+slots" / "keys 1–8" / "slot A / slot B cap" statement below and in PLAN):**
+the user wrote "skill remain maximum 4, but the node for each skill increase
+to 8" and "for the 8 sockets, no more split between rare and legendary
+control, any rarity of the node can insert into any socket". So: **at most 4
+equipped skills** (keys 1–4, 4 command-bar tiles, `free_skill_slots = 4 −
+owned`), **8 node sockets on every skill** (the passive included), **no
+rarity caps** (§15.2), legendaries reinterpreted on passives (§15.2), node
+supply raised for 32 sockets (§14 note), the difficulty constants retuned
+(§23.2 M4c note). The 9 new skills and 9 new nodes below stand unchanged. Colour
 discipline is unchanged: **Ember `#FF5A36` = enemy/hazard threats and their
 telegraphs only; Bright Heal `#5FE873` = heal output only (incl. the Dewfont's
 water); God-stuff Violet `#B79CF0` = corruption (one act tell per biome), the
@@ -1099,7 +1150,8 @@ When two or more acts are unlocked (ruling A14), the camp portal opens an
 lock glyph and "Win <previous act> to unlock"). Each expedition is a full run
 on the unchanged §2 skeleton (rooms 1–6 combat, exactly 2 defend, room 1
 kill_all, 7 shop, 8 boss) and §14 economy (+12 per combat clear, 72 at the
-shop, 25/30/35 prices). The run frame additionally rolls one layout per combat
+shop, 15/20/25 prices on a 4-card shelf and 2 clear spoils per combat room
+since M4c). The run frame additionally rolls one layout per combat
 room from the act's room table (never the same layout twice in a row).
 
 | | Act I — The Hollow Wood | Act II — The Sunken Mill | Act III — The Ashen Barrow |
@@ -1198,6 +1250,42 @@ the Stag room above the late kill_all rooms on damage; per-room damage
 medians I < II < III at every room; no combat-room median above 120 s
 (evidence: docs/gauntlet/build-M4a.md).
 
+**Tuning note (M4c, 2026-09-22) — retuned for the corrected build; this
+table is now binding.** M4a tuned against an 8-skill, 2-socket build that met
+the Stag with ~5 nodes socketed; the corrected build (4 skills × 8 sockets,
+§14 supply note) meets it with ~19. Re-measured on the same default-build
+autopilot, seeds 1–20: Act III victories 13/20 on the v0.5.39 8-skill build →
+20/20 on the corrected build at the M4a constants, party downs in Act III rooms
+4–6 106 → 16 — the late rooms had lost their teeth. Only constants moved, the
+formula's shape did not:
+
+| constant | M4a | M4c |
+|---|---|---|
+| room slope (R = 1 + slope·(room − 1)) | 0.12 | **0.16** (the ramp outpaces ~3 new nodes a room) |
+| act tier T (I / II / III) | 1.00 / 1.15 / 1.60 | **1.00 / 1.15 / 1.75** (III back to the v0.5.1 value) |
+| Stag + adds damage slope (1 + k·(T − 1)) | k = 0.5 | **k = 0.7** (`BOSS_DMG_SLOPE`; keeps the Stag room's damage spike above the steeper late rooms) |
+
+Everything else holds (defend × 1.25, Stag HP 2400·T = 2400 / 2760 / 4200,
+elite chances, wave interval, Waystone 150·√T, challenge multipliers, threat
+costs, the wave fill). Retuned table (hpMul / dmgMul / kill_all budget):
+
+| room | Act I | Act II | Act III |
+|---|---|---|---|
+| 1 | 1 / 1 / 4 | 1.15 / 1.075 / 4.6 | 1.75 / 1.375 / 7 |
+| 2 | 1.16 / 1.08 / 4.64 | 1.334 / 1.167 / 5.336 | 2.03 / 1.515 / 8.12 |
+| 3 | 1.32 / 1.16 / 5.28 | 1.518 / 1.259 / 6.072 | 2.31 / 1.655 / 9.24 |
+| 4 | 1.48 / 1.24 / 5.92 | 1.702 / 1.351 / 6.808 | 2.59 / 1.795 / 10.36 |
+| 5 | 1.64 / 1.32 / 6.56 | 1.886 / 1.443 / 7.544 | 2.87 / 1.935 / 11.48 |
+| 6 | 1.8 / 1.4 / 7.2 | 2.07 / 1.535 / 8.28 | 3.15 / 2.075 / 12.6 |
+
+Stag damage ×1 / 1.105 / 1.525; adds hp × T, dmg × 1 + 0.7(T − 1).
+Measured band after the retune (seeds 1–5, headless and in page alike):
+victories 5/5 · 4/5 · 3/5, no room stuck, ρ time/damage 0.943/0.943 · 1/1 ·
+0.886/0.943, defend and Stag spikes above their neighbours, per-room damage
+medians I < II < III, max combat-room median 53 s. Seeds 1–20: 20/20 · 19/20 ·
+13/20 (Act III at the v0.5.39 rate), 0 stuck. Relaxed 10/10/10, harrowing
+10/9/1 (seeds 1–10), 0 stuck (evidence: docs/gauntlet/build-M4c.md).
+
 **Felt escalation (v0.5.1).** The table is necessary, not sufficient: in play,
 time-to-clear and party damage taken per room must rise across rooms 1–6 of
 each act (defend rooms and the Stag above their neighbours) and from act to
@@ -1239,9 +1327,9 @@ speed streaks; ward = a soft Bone dome. Never Ember, never violet.
 | **Galvanize** | technique | common | 1 | damage → hit enemies **exposed** +20% damage taken for 180 ticks · heal → healed allies **inspired** +15% damage dealt for 180 ticks · passive → allies inside inspired +10% (pulse-refreshed) |
 | **Bulwark** | technique | rare | 1 | damage → caster gains a shield of 20% of each instance's final damage (shield cap 30) · heal → overheal (pre-clamp − applied) becomes a shield up to 50% of the instance power for 240 ticks · passive → each pulse +2 shield to allies inside (cap 10) |
 | **Split** | technique | rare | 1 | damage (projectile/direct) → on impact 2 shards at ±35°, 40% resolved power, 2.0 u range · heal (projectile/direct) → the 2 nearest OTHER allies within 2.5 u of the recipient receive 40% · passive GREY · other shapes GREY |
-| **Resonance** | technique | legendary | 1 | every 3rd cast of this skill resolves at ×2 power (counter per skill, persists across rooms, resets at run end; Echo recasts don't advance it) · passive → every 3rd pulse ×2 — but a legendary never fits the passive socket (cap), so on passives it is unsocketable |
+| **Resonance** | technique | legendary | 1 | every 3rd cast of this skill resolves at ×2 power (counter per skill, persists across rooms, resets at run end; Echo recasts don't advance it) · passive → every 3rd pulse ×2 (M4c: no cap keeps a legendary off a passive any more; the Echo Reapply pulse never advances it) |
 
-Technique rules of §15.3 hold: fire ascending slot (A then B), depth-1 (shards,
+Technique rules of §15.3 hold: fire ascending socket (1 → 8), depth-1 (shards,
 shields, statuses and their pulses never trigger techniques; an echo never
 re-arms its echo), Siphon keeps its flat-stage rule. Statuses refresh (max
 magnitude, max expiry), never stack (§23.8).
@@ -1249,7 +1337,9 @@ magnitude, max expiry), never stack (§23.8).
 **Grey / live matrix** — every skill × every non-universal node. Sharpen,
 Ascend and Keen are live on every skill. `live` = contributes; `GREY` = legal,
 contributes nothing (§15.5 strike treatment); `inert` = saturation-inert (+0
-because the party has only 4 members); `cap` = unsocketable by rarity cap.
+because the party has only 4 members). (M4c: the former `cap` cells — Resonance
+on the passives — are `live`; no socket caps anything. Every cell holds on all
+8 sockets.)
 
 | Skill | Bounce | Siphon | Echo | Detonate | Quicken | Multiply | Widen | Reach | Linger | Snare | Galvanize | Bulwark | Split | Resonance |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1258,7 +1348,7 @@ because the party has only 4 members); `cap` = unsocketable by rarity cap.
 | Nova Bloom (heal nova) | GREY | live | live | live | live | live (3→4) | live | GREY | GREY | live | live | live | GREY | live |
 | Sanctuary (heal zone) | GREY | live | live | live | live | GREY | live | live | live | live | live | live | GREY | live |
 | Spirit Bolt (dmg proj) | live | live | live | live | live | live | GREY | live | GREY | live | live | live | live | live |
-| Warding Aura (passive) | GREY | GREY | live (reapply) | GREY | GREY | GREY | live | GREY | GREY | live | live | live | GREY | cap |
+| Warding Aura (passive) | GREY | GREY | live (reapply) | GREY | GREY | GREY | live | GREY | GREY | live | live | live | GREY | live (pulse ×2) |
 | Guardian Bond (heal direct) | live | live | live | live | live | live (2→3) | GREY | live | GREY | live | live | live | live | live |
 | Restorative Wave (heal arc) | GREY | live | live | live | live | inert | live | live | GREY | live | live | live | GREY | live |
 | Lantern Flurry (dmg proj ×3) | live | live | live | live | live | live (3→4) | GREY | live | GREY | live | live | live | live | live |
@@ -1269,10 +1359,11 @@ because the party has only 4 members); `cap` = unsocketable by rarity cap.
 | Kindred Shield (heal direct) | live | live | live | live | live | live (1→2) | GREY | live | live (shield) | live | live | live | live | live |
 | Mending Tide (heal arc) | GREY | live | live | live | live | inert | live | live | GREY | live | live | live | GREY | live |
 | Hearthsong (heal nova) | GREY | live | live | live | live | inert | live | GREY | live (haste) | live | live | live | GREY | live |
-| Quiet Hearth (passive) | GREY | GREY | live (reapply) | GREY | GREY | GREY | live | GREY | GREY | live | live | live | GREY | cap |
+| Quiet Hearth (passive) | GREY | GREY | live (reapply) | GREY | GREY | GREY | live | GREY | GREY | live | live | live | GREY | live (pulse ×2) |
 
-Draft/shop pools keep the §15.5 `usable_by_party` filter; shop prices and the
-§14 invariants are unchanged (3 cheapest = 75 > 72; any 2 ≤ 65 ≤ 72).
+Draft/shop pools keep the §15.5 `usable_by_party` filter (M4c: without the cap
+clause); shop prices and invariants per the §14 M4c note (4 cards at
+15/15/20/25: all four 75 > 72, any three ≤ 60 ≤ 72).
 
 ### 23.5 New enemies (5) + the elite modifier
 
@@ -1341,11 +1432,19 @@ deltas) · ward: damage taken ×(1 − mag) · exposed: damage taken ×(1 + mag)
 inspired: damage dealt ×(1 + mag). Order in the §9 pipeline: base → attacker
 inspired → crit roll → target exposed × ward → shield absorb → HP.
 
-### 23.9 Eight skill slots
+### 23.9 Four skill slots, eight sockets per skill (M4c user correction)
 
-Keys 1–8 (Digit1–Digit8). §4 resolution order: skills ascending slot 0–7, then
-basic fire. HUD command bar: 4 portraits · 8 skill tiles · dodge, one cooldown
-grammar, fitting 1024×576 → 2560×1440 without overlap (§17 floors hold). Draft
-`free_skill_slots = 8 − owned`; a full run can fill all 8 (2 starting + up to 6
-skill rewards). The socket screen lists every owned skill (2 sockets each; the
-passive 1). The run UI carry-key set grows to 1–8.
+*Superseded at M4c: the W2 build had 8 skill slots (keys 1–8, 8 tiles, 2
+sockets per active and 1 per passive). The user's correction:* at most **4**
+skills — keys 1–4 (Digit1–Digit4; Digit5–8 unbound; the intents skill_5..8
+stay reserved in the closed vocabulary so the net press-bit tables keep their
+layout), §4 resolution order skills ascending slot 0–3 then basic fire, the
+HUD command bar 4 portraits · 4 skill tiles · dodge (one cooldown grammar,
+1024×576 → 2560×1440 without overlap, §17 floors), draft `free_skill_slots =
+4 − owned` (a full run owns 4: 2 starting + up to 2 skill rewards), the run
+UI carry keys 1–4. **Every skill has 8 sockets** (§15.2) — the socket screen
+shows 4 rows × 8 sockets on one page, and each command-bar tile carries an
+8-segment socket-fill strip under it (filled = live node, hollow = grey /
+inert node, dark = vacant). Saves: schema 2 (a schema-1 save keeps its first 4
+skills in slot order; a dropped skill's nodes return to the bench; every row
+pads to 8 sockets — PLAN §3.4).
