@@ -620,6 +620,36 @@ app.boot();
 // @gnt:APP-ATTACH end
 // @gnt:INT-WIRING begin (INT, W5) — pause menu registration, cross-module
 // wiring; Esc-to-pause listener registered LAST, bubble phase (PLAN §1.5).
+import { registerPauseScreen } from './ui/menu/pause.js';
+registerPauseScreen({
+  getRun: () => {
+    const rs = world.runSystem();
+    return rs ? rs.view() : null;
+  },
+  getPage: () => (runUi && typeof runUi.screen === 'function' ? runUi.screen() : null),
+});
+// Esc / P open the pause menu from EVERY page (PLAN §1.2 / §1.5, gate GI.2).
+// This is the LAST window keydown listener on the page and it listens in the
+// BUBBLE phase, so:
+//   • a blocking app screen is already open -> M1's capture gate swallowed the
+//     key (stopImmediatePropagation) and this never runs;
+//   • the socket screen is open -> it closes itself and calls preventDefault()
+//     on that Esc, so `defaultPrevented` keeps the pause menu shut;
+//   • a run page (draft / path / shop / end card) is up -> it never consumes
+//     Escape (its decline is X), so the pause opens OVER the page, which keeps
+//     its DOM, its focus and its settle window.
+// An Esc that ended element fullscreen must not also open a menu (PLAN §1.5).
+const PAUSE_KEYS = new Set(['Escape', 'KeyP']);
+window.addEventListener('keydown', (e) => {
+  if (e.defaultPrevented || e.repeat) return;
+  if (!PAUSE_KEYS.has(e.code)) return;
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+  if (app.state !== 'playing' || app.screens.isOpen()) return;
+  const disp = app.display;
+  if (e.code === 'Escape' && disp && typeof disp.recentFullscreenChange === 'function' && disp.recentFullscreenChange(150)) return;
+  e.preventDefault();
+  app.requestPause('keyboard');
+});
 // @gnt:INT-WIRING end
 scheduler.start();
 
