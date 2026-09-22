@@ -5,7 +5,8 @@
 //     banner): role, room code,
 //     players, ping — amber dot online, grey reconnecting;
 //   - a centre banner for the states a player must understand at once:
-//     "Joining ABCDE…" until the first snapshot, "Reconnecting… (attempt n)",
+//     "Joining ABCDE…" until the first snapshot, "Connection lost —
+//     reconnecting (15 s)" with a live countdown (then the title + Rejoin),
 //     "Host connection lost — waiting (10 s)" with a live countdown;
 //   - short notes (seat changes, pings, rejections) stacked under the chip;
 //   - optional detail line (net.showStats): rtt / loss / snapshot rate.
@@ -69,6 +70,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
   const pingEl = root.querySelector('.nt-ping');
   let synced = false;
   let lostUntil = 0;
+  let reconnectUntil = 0;
   let timer = 0;
   let last = null;
   let pingTimer = 0;
@@ -91,15 +93,28 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     const rtt = Number.isFinite(st.rttMs) ? ` · ${Math.round(st.rttMs)} ms` : '';
     sub.textContent = `${st.code ? `Room ${st.code} · ` : ''}${humans} player${humans === 1 ? '' : 's'}${rtt}`;
     chip.classList.toggle('nt-warn', !!(st.reconnecting || st.hostLost));
-    if (st.reconnecting) setBanner('Reconnecting…', 'Your seat is held — the AI plays it until you are back.');
-    else if (st.hostLost) {
+    if (st.reconnecting) {
+      // A live countdown (the ticker below redraws it every 250 ms).
+      reconnectUntil = Number.isFinite(st.reconnectLeftMs) ? performance.now() + st.reconnectLeftMs : 0;
+      drawReconnect();
+      if (!timer) timer = setTimeout(tick, 250);
+      return;
+    }
+    reconnectUntil = 0;
+    if (st.hostLost) {
       // Countdown drawn by the ticker below.
     } else if (st.role === 'guest' && !synced) setBanner(`Joining ${st.code || ''}…`, 'Receiving the world from the host');
     else setBanner(null);
   }
 
+  function drawReconnect() {
+    const left = reconnectUntil ? Math.max(0, Math.ceil((reconnectUntil - performance.now()) / 1000)) : null;
+    setBanner(left !== null ? `Connection lost — reconnecting (${left} s)` : 'Connection lost — reconnecting…', last && last.role === 'host' ? 'The game keeps running here; your party sees you as reconnecting.' : 'Your seat is held — the AI plays it until you are back.');
+  }
+
   function tick() {
     timer = 0;
+    if (reconnectUntil) drawReconnect();
     if (lostUntil) {
       const left = Math.max(0, Math.ceil((lostUntil - performance.now()) / 1000));
       if (left > 0) setBanner(`Host connection lost — waiting (${left} s)`, 'If the host does not come back, another player takes over and the run continues.');
@@ -109,7 +124,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
       detail.style.display = '';
       detail.textContent = api.statsLine();
     } else detail.style.display = 'none';
-    if (lostUntil || (settings.get('net.showStats') && !root.classList.contains('nt-off'))) timer = setTimeout(tick, 250);
+    if (lostUntil || reconnectUntil || (settings.get('net.showStats') && !root.classList.contains('nt-off'))) timer = setTimeout(tick, 250);
   }
 
   function note(text, ms = 3600) {
@@ -131,6 +146,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
       if (!on) {
         synced = false;
         lostUntil = 0;
+        reconnectUntil = 0;
         setBanner(null);
       } else if (!timer) timer = setTimeout(tick, 250);
     },

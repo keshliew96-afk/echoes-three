@@ -38,6 +38,20 @@ export function createOwnSeat({ seat }) {
   let cur = { x: 0, z: 0 };
   const off = { x: 0, z: 0 };
   let lastMove = { x: 0, z: 0 };
+  // Motion-start lead: when a move key goes down between two 60 Hz ticks, the
+  // first rendered frames draw the body START_LEAD of a tick along the held
+  // direction (never less than the frame alpha) until the next input frame
+  // carries the step itself — so a keydown moves the body on the very next
+  // rendered frame even when that frame runs no tick. Monotonic: the next
+  // tick lands a full step ahead of the lead.
+  const START_LEAD = 0.5;
+  let startLead = 0;
+  let wasMoving = false;
+  // A dodge press the action shadow accepted between two ticks: drawn at once
+  // (dash pose + START_LEAD of the dash step) until the input frame carrying
+  // it is stepped (onLocalFrame applies the real dodge — or refuses it and
+  // the preview is dropped).
+  let dodgePreview = null; // { x, z } per tick
   const stats = { predErr: [], predErrMax: 0, corrections: 0, snaps: 0, maxCorrectionPerFrame: 0, reconciles: 0, replayed: 0, teleports: 0 };
   // Authoritative TELEPORTS (the host re-seats the party at a room / camp
   // boundary): a body that moved farther between two snapshots than any
@@ -95,6 +109,8 @@ export function createOwnSeat({ seat }) {
   function onLocalFrame(si) {
     if (!body) return false;
     prev = { x: cur.x, z: cur.z };
+    startLead = 0;
+    dodgePreview = null;
     const t = authTick + (si.seq - authSeq);
     const dodged = applyFrame(body, si, t);
     cur = { x: body.x, z: body.z };
@@ -178,7 +194,7 @@ export function createOwnSeat({ seat }) {
   // Per rendered frame: decay the correction offset and return the pose to
   // write into the replica's own-seat entity. `heldMove` = the freshest
   // sampled move (0..8 index or {x,z}) for the render-ahead step.
-  function render(dtMs, heldMove) {
+  function render(dtMs, heldMove, alpha = null) {
     if (!body) return null;
     const mag = Math.hypot(off.x, off.z);
     if (mag > 0) {
@@ -198,32 +214,63 @@ export function createOwnSeat({ seat }) {
     }
     let vx = 0;
     let vz = 0;
+    let moving = false;
+    let previewing = false;
     if (body.dashTicksLeft > 0) {
       vx = body.dashVel.x;
       vz = body.dashVel.z;
+    } else if (dodgePreview) {
+      vx = dodgePreview.x;
+      vz = dodgePreview.z;
+      previewing = true;
+      if (startLead < START_LEAD) startLead = START_LEAD;
+      wasMoving = true;
     } else {
       const mv = typeof heldMove === 'number' ? moveOf(heldMove) : heldMove || { x: 0, z: 0 };
       const s = speedAt(body, authTick) * TICK_DT;
       vx = mv.x * s;
       vz = mv.z * s;
+      moving = mv.x !== 0 || mv.z !== 0;
+    }
+    if (!previewing) {
+      if (moving && !wasMoving) startLead = START_LEAD;
+      else if (!moving) startLead = 0;
+      wasMoving = moving;
+    }
+    let px = cur.x + off.x;
+    let pz = cur.z + off.z;
+    if (alpha !== null && startLead > alpha) {
+      // px/x written so the layers' lerp (px + (x - px) * alpha) lands on
+      // the lead point with the same velocity.
+      px = cur.x + off.x + vx * (startLead - alpha);
+      pz = cur.z + off.z + vz * (startLead - alpha);
     }
     return {
-      px: cur.x + off.x,
-      pz: cur.z + off.z,
-      x: cur.x + vx + off.x,
-      z: cur.z + vz + off.z,
+      px,
+      pz,
+      x: px + vx,
+      z: pz + vz,
       faceX: body.faceX,
       faceZ: body.faceZ,
-      dashing: body.dashTicksLeft > 0,
+      dashing: body.dashTicksLeft > 0 || previewing,
       dashTicksLeft: body.dashTicksLeft,
       offset: Math.hypot(off.x, off.z),
     };
+  }
+
+  // previewDodge(moveIndex, aim) — the shadow accepted a dodge press this
+  // frame: the dash direction by the §5 rule (move, else aim, else facing).
+  function previewDodge(moveIndex, aim) {
+    if (!body || !(body.hp > 0) || body.dashTicksLeft > 0) return;
+    const mv = typeof moveIndex === 'number' ? moveOf(moveIndex) : moveIndex || { x: 0, z: 0 };
+    dodgePreview = dodgeVelocity(body, mv, aim, { x: body.faceX, z: body.faceZ });
   }
 
   return {
     onLocalFrame,
     reconcile,
     render,
+    previewDodge,
     get ready() {
       return !!body;
     },

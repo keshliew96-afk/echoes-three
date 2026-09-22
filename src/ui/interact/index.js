@@ -66,7 +66,12 @@ export function createInteractPrompts({ stage, world, runUi = null }) {
   }
 
   function pick() {
-    const p = world.player;
+    // @gnt:M5b LOCAL-SEAT begin — in network play the prompt belongs to THIS
+    // page's seat (a guest's Tank / Swordsman / Archer), whose E presses the
+    // host resolves with the same reach rule; single-player: the Healer.
+    const nv = world.netView;
+    const p = (nv && typeof nv.followTarget === 'function' && nv.followTarget()) || world.player;
+    // @gnt:M5b LOCAL-SEAT end
     if (!p || !(p.hp > 0) || p.reviveTargetId != null) return null;
     const run = world.runSystem ? world.runSystem() : null;
     if (run && run.isActive() && run.view().phase !== 'combat') return null;

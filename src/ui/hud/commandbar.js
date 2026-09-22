@@ -763,7 +763,10 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   function setViewSeat(partyIndex) {
     viewSeat = partyIndex | 0;
     for (const p of ports) p.cell.classList.toggle('nt-self', viewSeat > 0 && p.i === viewSeat);
-    if (viewSeat === 0) for (const s of skillEls) s.slot.style.display = '';
+    if (viewSeat === 0) {
+      for (const s of skillEls) s.slot.style.display = '';
+      markSockets(); // the Healer's socket strips repaint on the next update
+    }
     return viewSeat;
   }
   if (typeof document !== 'undefined' && !document.getElementById('nt-bar-style')) {
@@ -793,6 +796,13 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       }
       s.slot.style.display = '';
       s.slot.classList.remove('is-empty', 'is-passive', 'is-grey');
+      // Class-kit skills have no node sockets: the Healer's 8-socket strip
+      // never shows on a guest's tiles.
+      if (s.pips && s.pipSig !== 'guest') {
+        s.pips.style.visibility = 'hidden';
+        s.pipSig = 'guest';
+        s.sockets = null;
+      }
       setIcon(s, d.id, d.abbrev);
       // Ally kit skills have no drawn icon: their two-letter abbrev fills
       // the medallion instead (Parchment, >= 16 real px).

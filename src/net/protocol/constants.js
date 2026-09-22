@@ -20,12 +20,14 @@ export const PEER_TIMEOUT_MS = 5000; // no traffic -> peer considered dropped
 export const HOST_TIMEOUT_MS = 3000; // host silence -> host_lost
 export const HOST_GRACE_MS = 10000; // wait for the host before migrating
 export const SEAT_HOLD_MS = 60000; // a dropped guest's seat is held (AI plays it)
-// Reconnect backoff, capped at 2.5 s (PLAN text: 0.25/0.5/1/2/4/5 s). With
+// Reconnect backoff, capped at 1.5 s (PLAN text: 0.25/0.5/1/2/4/5 s). With
 // 4 s / 5 s steps a link restored right after a failed attempt waits up to
 // 5 s, which breaks gate G5b.6 ("full state and control within 3 s of link
-// restoration") for any outage longer than ~7.75 s; the cap keeps every
-// restoration inside 2.5 s + one connect, at <= 0.4 attempts/s per client.
-export const RECONNECT_BACKOFF_MS = Object.freeze([250, 500, 1000, 2000, 2500]);
+// restoration") for any outage longer than ~7.75 s. M5a capped it at 2.5 s
+// (measured 2.5 s restore -> full state at M5b's drop probe: no margin); M5b
+// caps it at 1.5 s so every restoration lands inside 1.5 s + one connect +
+// the full snapshot (< 2 s), at <= 0.67 attempts/s per reconnecting client.
+export const RECONNECT_BACKOFF_MS = Object.freeze([250, 500, 1000, 1500]);
 
 // --------------------------------------------------- client-side timing --
 export const INTERP_DELAY_MIN_MS = 100;

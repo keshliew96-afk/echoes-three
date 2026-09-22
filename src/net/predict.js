@@ -13,8 +13,10 @@
 //       its cue at once; projectiles get a render-only COSMETIC bolt (no
 //       registry spawn, ui/net/cosmetics.js);
 //   (2) the HUD cooldown tile starts (the VIEW-SEAT provider reads the shadow).
+// E (interact) presents the asset's use flourish + a press cue on the press
+// frame; its outcome (heal, stun, lever) stays authoritative.
 // Reconciliation: the host tags every event of a human seat's input with
-// { seat, inputSeq }. The authoritative copy of a predicted action (same
+// { seat, inputSeq } (an interact is matched by `by` = this seat's body). The authoritative copy of a predicted action (same
 // seat, same kind, inputSeq within ±3 frames — a drained buffer or a
 // starved tick can shift a hold-repeat by a frame) is SUPPRESSED (no second
 // sound or swing). A `seat_denied` for it, or proof that the host consumed
@@ -125,6 +127,23 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
     return p.predId;
   }
 
+  // interact(ctx) — E on the predicted body. ctx.target = the interactable the
+  // sim's own reach rule picks on the guest's predicted position ({ id,
+  // itype, x, z }; the caller already skipped E-as-revive and spent / closed
+  // assets). Presented at once: the asset's use flourish (a predicted
+  // `interact` on the view bus -> the rig's onUse) and a short press cue; the
+  // OUTCOME (heal, stun, lever) stays authoritative. The host's `interact` /
+  // `interact_denied` by this seat's body confirms / retracts it.
+  let ownEntity = null;
+  function interact(ctx) {
+    if (!enabled || !ctx.body || !(ctx.body.hp > 0) || !ctx.target) return null;
+    ownEntity = ctx.entityId;
+    const p = record('interact', -1, ctx.seq, ctx.keyAt, 0);
+    p.targetId = ctx.target.id;
+    replay({ tick: ctx.tick, type: 'interact', id: ctx.target.id, itype: ctx.target.itype, by: ctx.entityId, x: r2(ctx.target.x), z: r2(ctx.target.z), predicted: true, predId: p.predId, seat });
+    return p.predId;
+  }
+
   function replay(ev) {
     try {
       bus.replay(ev);
@@ -138,8 +157,14 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
     if (ev.type === 'ally_dodge') return 'dodge';
     if (ev.type === 'ally_cast') return `skill_${(ev.slot ?? -1) + 1}`;
     if (ev.type === 'seat_denied') return ev.kind === 'basic_attack' ? 'basic' : ev.kind;
+    if (ev.type === 'interact' || ev.type === 'interact_denied') return 'interact';
     return null;
   };
+  // Events of this seat's own actions: tagged { seat, inputSeq } by the
+  // host's human-seat resolution, or (interactables resolve in their own
+  // pass) an interact / interact_denied BY this seat's body.
+  const isOwnInteract = (ev) => (ev.type === 'interact' || ev.type === 'interact_denied') && ownEntity !== null && ev.by === ownEntity && !ev.predicted;
+  const isOwn = (ev) => (ev.seat === seat && Number.isInteger(ev.inputSeq)) || isOwnInteract(ev);
 
   function retract(p, why) {
     if (p.retracted || p.matched) return;
@@ -160,16 +185,27 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   // An authoritative event arrived (EVENTS batch). true = it confirms a
   // prediction: suppress its replay.
   function onAuthEvent(ev) {
-    if (!enabled || ev.seat !== seat || !Number.isInteger(ev.inputSeq)) return false;
+    if (!enabled || !isOwn(ev)) return false;
     const kind = kindOf(ev);
     if (!kind) return false;
     let best = null;
-    for (const p of pending) {
-      if (p.kind !== kind || p.matched || p.retracted) continue;
-      const dd = Math.abs(p.seq - ev.inputSeq);
-      if (dd <= MATCH_WINDOW && (!best || dd < Math.abs(best.seq - ev.inputSeq))) best = p;
+    if (kind === 'interact') {
+      // No input seq on the interactables pass: the OLDEST open interact
+      // prediction (the host resolves presses in input order).
+      for (const p of pending) {
+        if (p.kind === 'interact' && !p.matched && !p.retracted) {
+          best = p;
+          break;
+        }
+      }
+    } else {
+      for (const p of pending) {
+        if (p.kind !== kind || p.matched || p.retracted) continue;
+        const dd = Math.abs(p.seq - ev.inputSeq);
+        if (dd <= MATCH_WINDOW && (!best || dd < Math.abs(best.seq - ev.inputSeq))) best = p;
+      }
     }
-    if (ev.type === 'seat_denied') {
+    if (ev.type === 'seat_denied' || ev.type === 'interact_denied') {
       if (best) {
         best.provenAt = now();
         retract(best, 'denied');
@@ -235,6 +271,8 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   return {
     press,
     basic,
+    interact,
+    isOwn,
     onAuthEvent,
     onConsumed,
     onEventsThrough,

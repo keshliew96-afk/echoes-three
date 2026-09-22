@@ -56,6 +56,7 @@ const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'focusPath', 'choos
 // press becomes the same refused CMD as a socket() (build decisions are the host's).
 const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);
 const INPUT_REDUNDANCY = 6;
+const RECONNECT_GIVEUP_MS = 15000;
 
 // First differing path between two plain trees (desync diagnostics).
 function firstDiff(a, b, path = '') {
@@ -285,6 +286,11 @@ export function createNetSession(ctx) {
       return [{ cue: 'dodge', ...(p || {}) }];
     });
     audio.registerEventCue('seat_denied', (ev) => (role !== 'none' && ev.seat === localSeat() ? [{ cue: ev.reason === 'empty_slot' ? 'deny_empty' : 'deny_cd' }] : []));
+    // A guest's predicted E press: a short lever-click at the asset on the
+    // press frame (the outcome's own cue — drink, bell, sluice — follows
+    // from the host). Never for an authoritative interact (single-player and
+    // host interacts keep their built-in cues).
+    audio.registerEventCue('interact', (ev) => (ev.predicted ? [{ cue: 'm4b_lever', x: ev.x, z: ev.z, pitch: 1.35, gainDb: -4 }] : null));
   }
 
   // ------------------------------------------------------ clock wrapper --
@@ -423,13 +429,33 @@ export function createNetSession(ctx) {
   const onMouseTime = (e) => {
     if (guest && e.button === 2) guest.keyAt.Mouse2 = e.timeStamp;
   };
+  // Input-triggered prediction: a trusted keydown / right-button press is
+  // sampled the moment it is dispatched (bubble phase — after core/input.js
+  // queued it), not at the next rendered frame's start: the predicted swing /
+  // cast / cue / cooldown tile start NOW (the cue sounds at once) and are
+  // drawn by the very next frame. The press still rides the next 60 Hz input
+  // frame (seq g.seq + 1); the frame-start sample then finds the queue empty.
+  const onInputNow = (e) => {
+    const g = guest;
+    if (!g || g.frozen || g.away || !g.own.ready || e.repeat) return;
+    if (e.type === 'mousedown' && e.button !== 2) return;
+    try {
+      sampleFrame();
+    } catch (err) {
+      log('input_now_error', { error: String(err && err.message) });
+    }
+  };
   function addKeyTimers() {
     window.addEventListener('keydown', onKeyTime, { capture: true, passive: true });
     window.addEventListener('mousedown', onMouseTime, { capture: true, passive: true });
+    window.addEventListener('keydown', onInputNow, { passive: true });
+    window.addEventListener('mousedown', onInputNow, { passive: true });
   }
   function removeKeyTimers() {
     window.removeEventListener('keydown', onKeyTime, { capture: true });
     window.removeEventListener('mousedown', onMouseTime, { capture: true });
+    window.removeEventListener('keydown', onInputNow);
+    window.removeEventListener('mousedown', onInputNow);
   }
 
   function requestFull(why) {
@@ -520,7 +546,11 @@ export function createNetSession(ctx) {
     for (const p of s.presses) {
       if (!GUEST_PRESSES.has(p.kind)) continue;
       g.pendingPresses.push(p);
-      if (p.kind !== 'interact' && g.own.ready) g.shadow.press(p.kind, ctxFor(p.kind));
+      if (!g.own.ready) continue;
+      if (p.kind === 'interact') {
+        const target = localInteractTarget(body);
+        if (target) g.shadow.interact({ ...ctxFor('interact'), target });
+      } else if (g.shadow.press(p.kind, ctxFor(p.kind)) && p.kind === 'dodge') g.own.previewDodge(g.held.move, g.held.aim);
     }
     if (g.held.basic && g.own.ready) {
       const c = ctxFor('basic');
@@ -528,6 +558,37 @@ export function createNetSession(ctx) {
       else c.keyAt = undefined;
       g.shadow.basic(c);
     }
+  }
+
+  // The interactable an E press on the predicted body would use — the sim's
+  // rule (sim/interactables.js resolvePresses): nothing while this seat
+  // channels a revive or a Downed ally is within revive reach (E is the
+  // revive), else the nearest asset whose surface is within its reach; a
+  // spent / closed asset is predicted as nothing (its denial stays the
+  // host's; a dormant one is denied there and retracted). Combat only (the
+  // ix- prompt's rule).
+  function localInteractTarget(body) {
+    if (!body || !(body.hp > 0)) return null;
+    const run = rawRunSystem();
+    if (run && run.isActive && run.isActive() && run.view().phase !== 'combat') return null;
+    const me = guest && guest.entityId !== null ? registry.byId(guest.entityId) : null;
+    if (me && me.reviveTargetId != null) return null;
+    let best = null;
+    let bd = Infinity;
+    for (const e of registry.all()) {
+      if (e.partyIndex !== undefined && e.id !== (me ? me.id : null) && !(e.hp > 0) && Math.hypot(e.x - body.x, e.z - body.z) <= 0.6) return null;
+      if (e.interactable !== true) continue;
+      const d = Math.hypot(e.x - body.x, e.z - body.z) - (e.radius ?? 0);
+      if (d <= (e.interactRadius ?? 1.1) && d < bd) {
+        bd = d;
+        best = e;
+      }
+    }
+    if (!best) return null;
+    const t = world.tick;
+    if ((best.uses !== null && best.uses !== undefined && best.uses <= 0) || t < (best.cooldownUntilTick ?? 0)) return null;
+    if (best.itype === 'sluice' && (!best.laneIds || best.laneIds.length === 0)) return null;
+    return { id: best.id, itype: best.itype, x: best.x, z: best.z };
   }
 
   // One local 60 Hz tick: build + send this frame, predict own movement.
@@ -603,7 +664,7 @@ export function createNetSession(ctx) {
     const rt = g.interp.renderTick(now());
     if (!g.frozen) g.renderState = g.replica.frame(rt, alpha);
     if (!g.synced && g.replica.applied) onFirstSync();
-    writeOwn(frameMs);
+    writeOwn(frameMs, alpha);
     if (cosmetics) {
       cosmetics.update(Math.min(0.1, frameMs / 1000), {
         ownMovers: () => ownMovers(alpha),
@@ -625,13 +686,15 @@ export function createNetSession(ctx) {
     return out;
   }
 
-  function writeOwn(frameMs) {
+  let lastPose = null; // probes: the own-seat pose this frame drew (rendered = px + (x - px) * alpha)
+  function writeOwn(frameMs, alpha = 1) {
     const g = guest;
     if (!g || g.entityId === null) return;
     const e = registry.byId(g.entityId);
     if (!e) return;
-    const pose = g.own.render(frameMs, g.away || g.frozen ? 0 : g.held.move);
+    const pose = g.own.render(frameMs, g.away || g.frozen ? 0 : g.held.move, alpha);
     if (!pose) return;
+    lastPose = { rx: pose.px + (pose.x - pose.px) * alpha, rz: pose.pz + (pose.z - pose.pz) * alpha, dashing: pose.dashing, offset: pose.offset, at: now() };
     e.px = pose.px;
     e.pz = pose.pz;
     e.x = pose.x;
@@ -764,7 +827,7 @@ export function createNetSession(ctx) {
     if (via === 'unreliable') g.batches.viaUnreliable += 1;
     else g.batches.viaReliable += 1;
     for (const ev of b.events) {
-      if (ev.seat === g.seat && Number.isInteger(ev.inputSeq) && g.shadow.onAuthEvent(ev)) g.suppressed.add(ev);
+      if (g.shadow.isOwn(ev) && g.shadow.onAuthEvent(ev)) g.suppressed.add(ev);
     }
     // Contiguous delivery clock: every batch <= contig has been received.
     g.batches.toTick.set(b.batchSeq, b.toTick);
@@ -935,7 +998,13 @@ export function createNetSession(ctx) {
       if (!hostLost) hostLost = { at: now(), graceMs: 10000 };
       if (hud) hud.hostLost(10000);
     } else if ((st === 'lobby' || st === 'offline') && role !== 'none' && !net.inSession()) {
-      endSession('left', null);
+      // Deferred one microtask: the lobby client changes state BEFORE it
+      // emits the reason (session_lost / room_closed, same call stack), and
+      // that handler ends the session WITH its message; a plain leave ends
+      // here without one.
+      queueMicrotask(() => {
+        if (role !== 'none' && !net.inSession() && (net.state === 'lobby' || net.state === 'offline')) endSession('left', null);
+      });
     }
     if (hud) hud.update(api.status());
   }
@@ -951,6 +1020,7 @@ export function createNetSession(ctx) {
   }
 
   function endSession(reason, text) {
+    clearGiveUp();
     if (role === 'none' && !host && !guest) return;
     sessionEnding = true;
     log('session_end', { reason, text });
@@ -983,11 +1053,45 @@ export function createNetSession(ctx) {
   net.on('become_host', (m) => becomeHost(m));
   net.on('session_lost', (m) => endSession('session_lost', m && m.text ? m.text : 'Connection to the server was lost.'));
   net.on('room_closed', (m) => endSession('room_closed', m && m.detail === 'no_guests' ? 'The session ended — everyone else left.' : 'The session ended.'));
+  // Reconnect give-up (PLAN §3.7 "Reconnect + host drop", best-in-class
+  // choice where the PLAN is silent on how long the game waits in-session):
+  // the client retries with backoff 0.25/0.5/1/2/2.5 s; after
+  // RECONNECT_GIVEUP_MS in-session (past the host's 10 s grace, so a host
+  // that could still resume always gets the chance) the session ends and the
+  // page returns to the title with "Connection to the server was lost" — the
+  // server still holds a guest's seat for 60 s, so the title offers
+  // "Rejoin ABCDE?" (the stored session is kept). A dead server lands here
+  // too (every client reaches the title; single-player intact).
+  let giveUp = null;
+  function clearGiveUp() {
+    if (giveUp) clearTimeout(giveUp.timer);
+    giveUp = null;
+  }
   net.on('reconnecting', () => {
+    if (role !== 'none' && !giveUp) {
+      const at = now();
+      giveUp = {
+        at,
+        timer: setTimeout(() => {
+          giveUp = null;
+          if (net.state !== 'reconnecting' || role === 'none') return;
+          log('reconnect_give_up', { afterMs: Math.round(now() - at) });
+          // The session ends FIRST (with its message), then the retry loop
+          // stops (its 'offline' state change then finds no session).
+          endSession('session_lost', 'Connection to the server was lost.');
+          try {
+            net.disconnect(); // the stored session stays for "Rejoin ABCDE?"
+          } catch {
+            /* already closed */
+          }
+        }, RECONNECT_GIVEUP_MS),
+      };
+    }
     if (hud) hud.update(api.status());
     changed();
   });
   net.on('reconnected', () => {
+    clearGiveUp();
     if (role === 'guest') requestFull('reconnected');
     if (hud) hud.update(api.status());
     changed();
@@ -1046,6 +1150,7 @@ export function createNetSession(ctx) {
       frozen: guest ? guest.frozen : false,
       hostLost: hostLost ? { remainingMs: Math.max(0, hostLost.graceMs - (now() - hostLost.at)) } : null,
       reconnecting: net.state === 'reconnecting',
+      reconnectLeftMs: giveUp ? Math.max(0, RECONNECT_GIVEUP_MS - (now() - giveUp.at)) : null,
       inSession: role !== 'none',
       serverUrl: net.serverUrl,
     };
@@ -1185,6 +1290,8 @@ export function createNetSession(ctx) {
       return bot;
     },
     debugGuest: () => guest,
+    // The own-seat pose the last rendered frame drew (guest probes).
+    ownPose: () => (guest ? lastPose : null),
     debugHost: () => host,
     resetStats() {
       if (guest) {
