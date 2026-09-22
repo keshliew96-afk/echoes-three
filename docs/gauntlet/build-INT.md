@@ -102,3 +102,17 @@ wiring, dev-chrome gating, production build, core-loop regression.
   (captures/gntINT-prod-npm: run_start 678, room_cleared/reward 776).
 - Final regression at v0.5.59: smoke exit 0 / 0 PAGEERROR; core loop on the
   dev server run_start 574 -> room_cleared 672 -> reward 672.
+
+### Step 7 — page shell (commit 7911235, v0.5.61)
+- index.html: `<noscript>` Echoes card ("needs JavaScript and WebGL" instead of
+  a black page), description + theme-color + color-scheme meta. Present in the
+  built bundle (dist index.html 1.63 kB). Smoke 0 PAGEERROR; final core loop
+  at v0.5.61: run_start 609 -> room_cleared / reward 712.
+
+### Files owned / touched by INT
+- NEW src/ui/menu/pause.js · tools/gntINT-{journey,regress,cueaudit,deadends}.mjs
+  · tools/actions/gntINT-*.json
+- EDITED src/main.js (`@gnt:INT-WIRING` only) · vite.config.js · index.html ·
+  docs/TESTING.md (INT section) · PROGRESS.md (row G12) · src/version.js
+- package.json scripts left as they are on purpose: dev / build / preview / net
+  are exactly what the player build and the session server need.
