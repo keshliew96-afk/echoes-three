@@ -50,7 +50,9 @@ const GUEST_PRESSES = new Set(['dodge', 'skill_1', 'skill_2', 'skill_3', 'skill_
 const KEY_OF = { dodge: 'Space', interact: 'KeyE', basic: 'Mouse2' };
 for (let i = 1; i <= 8; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
 const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'focusPath', 'choosePath', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun']);
-const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);
+// M4c: autoFill (the socket screen's F / pad Y) mutates the build too — a guest's
+// press becomes the same refused CMD as a socket() (build decisions are the host's).
+const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);
 const INPUT_REDUNDANCY = 6;
 
 // First differing path between two plain trees (desync diagnostics).

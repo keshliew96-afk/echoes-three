@@ -471,6 +471,167 @@ const scenarios = {
     }
   },
 
+  // Denial + cooldown grammar on the 4 tiles (keys 1-4): empty_slot blink on
+  // tiles 3-4 with the 2-skill starting kit, then the cooldown radial and the
+  // on_cooldown wipe nudge on all 4 with a full kit; the Controls tab lists
+  // skills 1-4.
+  async nudges(browser) {
+    const { page, errors } = await boot(browser, '?seed=21&menu=0');
+    const { ev, key, until, shot } = mk(page);
+    await ev(() => __echoes.cmd('startRun', { act: 1 }) && true);
+    await until(() => __echoes.state().run.phase === 'combat');
+    const empties = [];
+    for (let k = 3; k <= 4; k++) {
+      await page.keyboard.down(`Digit${k}`);
+      let n = null;
+      for (let t = 0; t < 12; t++) {
+        n = await ev((i) => {
+          const s = __echoes.hud.slots()[i];
+          return { key: s.key, frame: s.nudge.frame, slot: s.nudge.slot };
+        }, k - 1);
+        if (/blink/.test(n.frame) || /blink/.test(n.slot)) break;
+        await sleep(15);
+      }
+      await page.keyboard.up(`Digit${k}`);
+      empties.push({ k, blink: /blink/.test(n.frame) || /blink/.test(n.slot), key: n.key });
+      await sleep(250);
+    }
+    check('empty_slot frame blink on tiles 3-4 (keys 3-4) with the 2-skill kit', empties.every((x) => x.blink && x.key === String(x.k)), empties);
+    await ev(() => {
+      const kit = ['mending_bolt', 'swift_mend', 'bell_toll', 'pale_lance'].map((id) => ({ id, remaining: 0 }));
+      __echoes.cmd('restoreSkillState', { slots: kit, override: null });
+      return true;
+    });
+    await page.mouse.move(W * 0.7, H * 0.5);
+    await ev(() => {
+      window.__m4cCasts = [];
+      window.__m4cCastOff = __echoes.on('*', (e) => {
+        if (e.type === 'skill_cast' || e.type === 'intent_denied') window.__m4cCasts.push(`${e.type}:${e.kind ?? e.slot}:${e.reason ?? e.skill}@${e.tick}`);
+      });
+      return true;
+    });
+    // A press that lands inside a hitstop / room-start freeze is still one
+    // press; re-press a tile only if it is not cooling after 300 ms.
+    for (let k = 1; k <= 4; k++) {
+      for (let a = 0; a < 3; a++) {
+        await key(`Digit${k}`, 40);
+        await sleep(300);
+        if (await ev((i) => __echoes.hud.slots()[i].cooling, k - 1)) break;
+      }
+    }
+    const cooling = await ev(() => __echoes.hud.slots().slice(0, 4).map((s) => ({ key: s.key, cooling: s.cooling, wipeDeg: s.wipeDeg, icon: s.iconDrawn })));
+    const casts = await ev(() => window.__m4cCasts.slice(0, 12));
+    check('cooldown radial on tiles 1-4 after a cast (wipe > 0, icon drawn)', cooling.every((c) => c.cooling && c.wipeDeg > 0 && c.icon), { cooling, casts });
+    const cds = [];
+    for (let k = 1; k <= 4; k++) {
+      await page.keyboard.down(`Digit${k}`);
+      let wipe = false;
+      for (let t = 0; t < 14 && !wipe; t++) {
+        wipe = /wipe/.test(await ev((i) => __echoes.hud.slots()[i].nudge.flash, k - 1));
+        if (!wipe) await sleep(15);
+      }
+      await page.keyboard.up(`Digit${k}`);
+      cds.push({ k, wipe });
+      await sleep(120);
+    }
+    await ev(() => (typeof window.__m4cCastOff === 'function' ? window.__m4cCastOff() : true));
+    check('on_cooldown wipe nudge on tiles 1-4', cds.every((x) => x.wipe), cds);
+    const tiles = await ev(() => __echoes.hud.slots().length);
+    check('hud.slots() = 4 skill tiles + dodge', tiles === 5, tiles);
+    await shot('bar-cooling');
+    // Controls tab reads the live bindings
+    const controls = await ev(() => {
+      const b = __echoes.app && typeof __echoes.app.open === 'function';
+      if (!b) return null;
+      __echoes.app.open('settings', { tab: 'controls' });
+      return true;
+    });
+    await sleep(600);
+    const ctext = await ev(() => {
+      const el = document.querySelector('#app-ui');
+      return el ? el.innerText : '';
+    });
+    const m = /Skills \((\d+) slots\)\s*([^\n]*)/.exec(ctext);
+    check('Controls tab lists "Skills (4 slots)" on keys 1–4', controls && m && m[1] === '4' && /1\s*–\s*4|1-4/.test(m[2] + (ctext.split(m[0])[1] || '').slice(0, 12)), { found: m ? m[0] : ctext.slice(0, 200) });
+    await shot('controls');
+    report.pageErrors = errors;
+    check('0 page errors', errors.length === 0, errors);
+    await page.close();
+  },
+
+  // G4a.2 under the 4-slot truth: all 9 Gauntlet skills cast by keys 3-4
+  // (two per kit beside the 2 starters), statuses announced.
+  async skills(browser) {
+    const { page, errors } = await boot(browser, '?seed=11&menu=0');
+    const { ev, shot, key, until } = mk(page);
+    await ev(() => __echoes.cmd('startRun', { act: 1 }) && true);
+    await until(() => __echoes.state().run.phase === 'combat');
+    await ev(() => {
+      __echoes.cmd('killAllEnemies');
+      window.__m4cFx = [];
+      __echoes.on('*', (e) => {
+        if (['skill_cast', 'status_apply', 'aura_pulse'].includes(e.type)) window.__m4cFx.push({ type: e.type, skill: e.skill, status: e.status, tick: e.tick });
+      });
+      return true;
+    });
+    const groups = [['bell_toll', 'lantern_flurry'], ['pale_lance', 'rootsnare'], ['dewfall', 'kindred_shield'], ['mending_tide', 'hearthsong'], ['quiet_hearth', 'bell_toll']];
+    await page.mouse.move(W * 0.72, H * 0.5);
+    for (const g of groups) {
+      await ev((ids) => {
+        const kit = [{ id: 'mending_bolt', remaining: 0 }, { id: 'swift_mend', remaining: 0 }, ...ids.map((id) => ({ id, remaining: 0 }))];
+        __echoes.cmd('restoreSkillState', { slots: kit, override: null });
+        const me = __echoes.state().party.find((q) => q.kind === 'player') || { x: 0, z: 0 };
+        for (const [dx, dz] of [[1.1, 0.2], [2.3, 0.1], [3.3, 0.3]]) __echoes.cmd('spawn', 'dummy', me.x + dx, me.z + dz);
+        for (const [dx, dz] of [[0.9, -0.8], [0.8, 0.9]]) __echoes.cmd('spawn', 'boar', me.x + dx, me.z + dz, { hpMul: 6 });
+        for (const p of __echoes.state().party) if (p.kind === 'ally') __echoes.cmd('setHp', p.id, 0.45);
+        return true;
+      }, g);
+      for (let i = 0; i < g.length; i++) {
+        const id = g[i];
+        if (id === 'bell_toll' && g[0] === 'quiet_hearth') continue; // second pass only re-arms the stun targets
+        await key(`Digit${i + 3}`, 40);
+        await sleep(id === 'rootsnare' || id === 'dewfall' ? 1250 : id === 'quiet_hearth' ? 1100 : 160);
+        const casts = await ev((sid) => window.__m4cFx.filter((e) => e.skill === sid && (e.type === 'skill_cast' || e.type === 'aura_pulse')).length, id);
+        await shot(id);
+        check(`${id}: key ${i + 3} ${id === 'quiet_hearth' ? 'passive pulses' : 'casts'}`, casts > 0, { casts, key: i + 3 });
+      }
+    }
+    const summary = await ev(() => {
+      const by = {};
+      for (const e of window.__m4cFx) by[`${e.type}:${e.skill ?? e.status ?? ''}`] = (by[`${e.type}:${e.skill ?? e.status ?? ''}`] || 0) + 1;
+      return by;
+    });
+    check('statuses announced (stun / slow / shield / haste / ward)', ['status_apply:stun', 'status_apply:slow', 'status_apply:shield', 'status_apply:haste', 'status_apply:ward'].every((k) => summary[k] > 0), summary);
+    report.pageErrors = errors;
+    check('0 page errors', errors.length === 0, errors);
+    await page.close();
+  },
+
+  // Single-player determinism in page: the ARCH harness trace twice (two
+  // loads) + M2's in-page save round trip at a mid-run moment.
+  async determinism(browser) {
+    const traces = [];
+    for (let i = 0; i < 2; i++) {
+      const { page, errors } = await openEchoes(browser, `${BASE}?seed=7&scene=arena&room=kill_all&freeze=1`, { width: W, height: H });
+      await page.waitForFunction(() => window.__echoes && window.__echoes.sim, { timeout: 120000 });
+      await sleep(1500);
+      const t = await page.evaluate(() => __echoes.sim.trace(600, 3));
+      traces.push({ eventsHash: t.eventsHash, stateHash: t.stateHash, eventCount: t.eventCount, errors: errors.length });
+      await page.close();
+    }
+    check('in-page ARCH trace (?seed=7&scene=arena&room=kill_all&freeze=1, 600 ticks, script 3) identical across two loads', traces[0].eventsHash === traces[1].eventsHash && traces[0].stateHash === traces[1].stateHash && traces.every((t) => t.errors === 0), { traces, v050events: '817f1e9940c91d76', sameAsV050: traces[0].eventsHash === '817f1e9940c91d76' });
+    const { page, errors } = await boot(browser, '?seed=9&menu=0');
+    await setupBuild(page, { kit: ['mending_bolt', 'spirit_bolt', 'warding_aura', 'bell_toll'] });
+    const rt = await page.evaluate(async () => {
+      __echoes.cmd('autoFill');
+      const r = await __echoes.save.roundTrip({ ticks: 600, scriptSeed: 1, every: 60 });
+      return { equal: r.equal, continuationEqual: r.continuationEqual, firstDivergence: r.firstDivergence, hashBefore: r.hashBefore, events: r.events ? r.events.length ?? r.events : null, filled: __echoes.cmd('buildView').skills.map((s) => s.filled) };
+    });
+    check('in-page save round trip (4 skills, sockets filled past 2, reward page): hash equal + 600-tick continuation equal', rt.equal && rt.continuationEqual, rt);
+    report.pageErrors = (report.pageErrors ?? []).concat(errors);
+    await page.close();
+  },
+
   async hud(browser, w = W, h = H) {
     const { page, errors } = await boot(browser, '?seed=9&menu=0', w, h);
     const { ev, shot, key } = mk(page, `${w}x${h}`);

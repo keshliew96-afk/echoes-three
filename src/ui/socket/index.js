@@ -827,6 +827,12 @@ export function createSocketScreen({ bus, world }) {
     const sys = sysOk();
     if (!sys || typeof sys.autoFill !== 'function') return null;
     const r = sys.autoFill();
+    if (r === false) {
+      // A network guest: the session's build proxy turned it into a refused
+      // CMD (build decisions are the host's).
+      toast('read-only — the Healer sets the sockets');
+      return r;
+    }
     if (r && r.denied) {
       toast(`⊘ ${DENY_COPY[r.denied] ?? r.denied}`);
       return r;
