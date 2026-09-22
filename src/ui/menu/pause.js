@@ -53,7 +53,7 @@ const CSS = `
   text-align: left;
 }
 .pz-pause .pz-lab { font-size: ${px(26)}; font-weight: 700; letter-spacing: 0.06em; }
-.pz-pause .pz-cap { font-size: ${px(21)}; font-weight: 500; letter-spacing: 0.02em; color: ${P.warmGrey}; }
+.pz-pause .pz-cap { font-size: ${px(22)}; font-weight: 500; letter-spacing: 0.02em; color: ${P.warmGrey}; }
 .pz-pause .pz-item.ap-focus .pz-cap { color: ${P.bone}; }
 .pz-pause .pz-foot { display: flex; align-items: center; justify-content: center; gap: ${px(18)}; padding-top: ${px(4)}; }
 `;
