@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const out=[];for(const sel of ['.ix-blocked','.ix-prompt','.nt-guest-note']){for(const n of document.querySelectorAll(sel)){const c=getComputedStyle(n);const b=n.getBoundingClientRect();out.push({sel,display:c.display,visibility:c.visibility,opacity:c.opacity,transform:c.transform,rect:{x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)},txt:(n.textContent||'').trim().slice(0,30)})}}return out})()"
+ }
+]
