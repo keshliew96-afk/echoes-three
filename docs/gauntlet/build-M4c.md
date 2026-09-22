@@ -65,3 +65,4 @@ VERDICT: every M4c item is committed and verified in the running game — max 4 
 - G4c.10 determinism: 9 goldens re-recorded + reproduced 9/9 (gntM2-goldens 9/9); legacy Node traces = v0.5.0 (d1eff38b03f581aa / 554cd9c41db19975); in-page ARCH trace identical across loads, eventsHash 817f1e9940c91d76 = v0.5.0; in-page save round trip equal.
 - G4c.11 net: gntM5a-protocol 72/72, corpus 5/5 gates, lobby 28/28, netbench N1 combat 6/6 gates (delta 0.16, 0 desyncs, 0 page errors); guest autoFill guarded.
 - Processes: my vite preview 4304 (PIDs 83280, 72948, 86724) and net server 7813 (PID 86644) stopped; no M4c process left running.
+- Final regression after the last feature commit (v0.5.45): the ORIGINAL tools/cert-capture.mjs works again (the loopback block cleared by itself): smoke exit 0 / 0 PAGEERROR; ARCH core loop `?seed=7&menu=0` run_start 499 → room_cleared 613 → reward 613 (copy: 500 → 615 → 615); drive sizes 16/16; simprobe 72/72.
