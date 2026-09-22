@@ -12,7 +12,8 @@ import { emptySnapshot } from './intents.js';
 import { SKILL_SLOTS } from './constants.js';
 
 // §3 control map -> discrete intent presses. Skill keys Digit1..DigitN are
-// derived from SKILL_SLOTS (4 at v0.4.63, 8 after the content extension).
+// derived from SKILL_SLOTS (4: the player equips at most 4 skills — the content
+// extension's 8 are NODE SOCKETS per skill, M4c; Digit5-8 stay unbound).
 // @gnt:M4a INPUT-KEYS begin — skill keys derive from SKILL_SLOTS; KeyE
 // `interact` is already bound below (M4b needs no edit in this file).
 const SKILL_KEYS = {};

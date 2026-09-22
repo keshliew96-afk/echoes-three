@@ -18,9 +18,11 @@ export const DISCRETE_INTENTS = Object.freeze([
   'skill_2',
   'skill_3',
   'skill_4',
-  // Gauntlet content extension (docs/gauntlet/PLAN.md §4.3): slots 5-8 go
-  // live when core/constants.js SKILL_SLOTS = 8 (M4a); until then no key
-  // produces them.
+  // Reserved (docs/gauntlet/PLAN.md §4.3): SKILL_SLOTS is 4 — the player
+  // equips at most 4 skills (M4c user correction; the content extension's 8
+  // are node sockets per skill). No key and no sim path produces skill_5..8;
+  // the names stay in the closed vocabulary so the net press-bit tables keep
+  // their wire layout.
   'skill_5',
   'skill_6',
   'skill_7',

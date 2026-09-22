@@ -4,8 +4,11 @@
 // combat, it only produces the per-tick intent snapshot. Between rooms it
 // drives the run pages through the run system's public entry points (the
 // same calls the UI and __echoes.cmd make): drafts always taken, the first
-// door, the cheapest affordable shop item, every bench node socketed into the
-// first owned skill where it is live.
+// door, the cheapest affordable shop items (cheapest first, while the wallet
+// lasts — M4c: the 4-card shelf at 15/20/25 affords three), and every bench
+// node socketed by the build system's own autoFill() — the SAME policy the
+// socket screen's Auto-fill button runs (live placements only, spread to the
+// skill with the fewest filled sockets; M4c decision D7).
 //
 // Uses (both binding):
 //   - the act runner tools/gnt-M4a-actrun.mjs (G4a.9 / G4a.10 curve data);
@@ -22,7 +25,6 @@
 // the nearest enemy in range; revive a Downed ally when nothing is on top of
 // it.
 import { SKILLS } from './skills.js';
-import { NODES, RARITY_RANK } from './nodes.js';
 import { emptySnapshot } from '../core/intents.js';
 import { SKILL_SLOTS, DODGE } from '../core/constants.js';
 
@@ -151,31 +153,11 @@ export function createAutopilot({ registry, player, run, skills, build }) {
   // --------------------------------------------------------- between rooms --
   function autoSocket() {
     const b = build();
-    if (!b || cfg.socket === 'off') return;
-    for (let guard = 0; guard < 24; guard++) {
-      const v = b.view();
-      if (v.combatActive || v.bench.length === 0) return;
-      let done = false;
-      for (const rec of v.bench) {
-        const n = NODES[rec.node];
-        if (!n) continue;
-        for (const sk of v.skills) {
-          if (b.verdictFor(sk.id, rec.node).state !== 'live') continue;
-          const copies = sk.sockets.filter((s) => s && s.node === rec.node).length;
-          if (copies >= n.limit) continue;
-          const slot = sk.sockets.findIndex((s, i) => s === null && RARITY_RANK[n.rarity] <= RARITY_RANK[sk.caps[i]]);
-          if (slot < 0) continue;
-          const r = b.socket(sk.id, rec.node, slot);
-          if (r && !r.denied) {
-            stats.sockets += 1;
-            done = true;
-            break;
-          }
-        }
-        if (done) break;
-      }
-      if (!done) return;
-    }
+    if (!b || cfg.socket === 'off' || typeof b.autoFill !== 'function') return;
+    const v = b.view();
+    if (v.combatActive || v.bench.length === 0) return;
+    const r = b.autoFill();
+    if (r && Array.isArray(r.socketed)) stats.sockets += r.socketed.length;
   }
 
   function pages() {
@@ -198,15 +180,23 @@ export function createAutopilot({ registry, player, run, skills, build }) {
     if (v.phase === 'shop' && v.shop) {
       if (cfg.shop === 'cheapest' && lastShopRoom !== v.room) {
         lastShopRoom = v.room;
-        let best = -1;
-        let bestPrice = Infinity;
-        v.shop.stock.forEach((s, i) => {
-          if (!s.sold && s.price <= v.wallet && s.price < bestPrice) {
-            bestPrice = s.price;
-            best = i;
-          }
-        });
-        if (best >= 0 && r.buy(best)) stats.buys += 1;
+        // Cheapest first (ties: shelf order) while the wallet lasts.
+        for (let guard = 0; guard < 8; guard++) {
+          const sv = r.view();
+          if (!sv.shop) break;
+          let best = -1;
+          let bestPrice = Infinity;
+          sv.shop.stock.forEach((s, i) => {
+            if (!s.sold && s.price <= sv.wallet && s.price < bestPrice) {
+              bestPrice = s.price;
+              best = i;
+            }
+          });
+          if (best < 0) break;
+          const bought = r.buy(best);
+          if (!bought || bought.denied) break;
+          stats.buys += 1;
+        }
         autoSocket();
       }
       r.advanceFromShop();

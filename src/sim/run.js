@@ -50,7 +50,7 @@
 //     the end of every tick; the autopilot (sim/autopilot.js) is created here.
 import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
 import { PARTY_ALLIES, STARTING_SKILLS, SKILLS } from './skills.js';
-import { createDraftSystem } from './draft.js';
+import { createDraftSystem, SPOILS_PER_CLEAR } from './draft.js';
 import { levelFor, ACT_IDS } from '../data/levels.js';
 import { difficulty, CHALLENGE } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
@@ -67,6 +67,7 @@ export const RUN = Object.freeze({
   stipend: 12, // §14 clear stipend, per combat-room clear (incl. boss)
   startingGlint: 0, // §14
   shopWallet: 72, // §14 deterministic wallet at the shop = 0 + 12x6
+  spoilsPerClear: SPOILS_PER_CLEAR, // M4c: nodes dropped on the bench per combat-room clear (rooms 1-6)
   pathRooms: 5, // §2: rooms 1-5 clear -> path choice
   fadeTicks: Math.round(0.3 * TICK_HZ), // §16 enter/exit <= 300 ms fades
 });
@@ -134,6 +135,10 @@ export function createRunSystem({
   let roomsDone = 0; // every room left behind (combat + the shop) — the §18 summary row
   let startTick = 0;
   let everStarted = false; // once true, enemies exist only inside live combat
+  // M4c clear spoils: the last drop `{ room, nodes: [id...] }` (the reward page
+  // names it) and the run's running total (the end card / probes).
+  let spoils = null;
+  let spoilsTotal = 0;
   // Expedition state (serialised with the run).
   let act = 1;
   let challenge = 'standard';
@@ -179,6 +184,8 @@ export function createRunSystem({
     roomsDone = 0;
     rewardFor = { 1: 'skill' }; // §2: room 1's reward is always a Skill draft
     summary = null;
+    spoils = null;
+    spoilsTotal = 0;
     startTick = getTick();
     events.emit(getTick(), 'run_start', {
       seed: frame.seed,
@@ -325,10 +332,12 @@ export function createRunSystem({
     //    defend objective died: §11 soft-fail forfeits the room reward.
     const forfeited = !!ev.softFailed;
     if (forfeited) {
+      spoils = null; // the soft-fail forfeits the spoils with the reward
       events.emit(tick, 'reward_forfeited', { room: roomIndex });
       afterReward();
       return;
     }
+    dropSpoils(tick);
     presentReward();
   }
 
@@ -359,6 +368,20 @@ export function createRunSystem({
     wallet += amount;
     events.emit(getTick(), 'glint_gain', { amount, wallet, reason, room: roomIndex });
     return wallet;
+  }
+
+  // --------------------------------------------------------- clear spoils --
+  // M4c node supply (8 sockets per skill): every combat-room clear drops
+  // SPOILS_PER_CLEAR nodes straight onto the bench (provenance 'spoils'),
+  // drawn from the live usable pool's commons and rares BEFORE the reward
+  // candidate (a fixed draw order: stipend -> spoils -> reward). They are
+  // never auto-socketed; the reward page and the socket screen name them.
+  function dropSpoils(tick) {
+    const ids = draft.spoils(RUN.spoilsPerClear);
+    for (const id of ids) buildSys.grantNode(id, 'spoils');
+    spoils = { room: roomIndex, nodes: ids };
+    spoilsTotal += ids.length;
+    events.emit(tick, 'spoils_drop', { room: roomIndex, nodes: [...ids], total: spoilsTotal });
   }
 
   // ----------------------------------------------------------------- draft --
@@ -605,6 +628,8 @@ export function createRunSystem({
     pendingRoom = 0;
     roomsDone = 0;
     clearedRooms = 0;
+    spoils = null;
+    spoilsTotal = 0;
     wallet = RUN.startingGlint;
     phase = 'idle';
     // The encounter director stops dead (schedule + spawn telegraphs +
@@ -700,6 +725,8 @@ export function createRunSystem({
         ? { seed: frame.seed, modes: [...frame.modes], defendAt: [...frame.defendAt], sides: [...frame.sides] }
         : null,
       rewardFor: { ...rewardFor },
+      spoils: spoils ? { room: spoils.room, nodes: [...spoils.nodes] } : null,
+      spoilsTotal,
       reward: reward
         ? {
             type: reward.type,
@@ -849,6 +876,10 @@ export function createRunSystem({
       }
       case 'draftPools':
         return { skill: draft.skillPool(), node: draft.nodePool(), free: draft.freeSkillSlots() };
+      case 'autoFill':
+        // The socket screen's Auto-fill (M4c D7) — the same policy the
+        // autopilot uses; refused while combat is live.
+        return buildSys.autoFill();
       default:
         return undefined;
     }
@@ -919,6 +950,8 @@ export function createRunSystem({
       lastCombatLayout,
       roomPlan: roomPlanView,
       autopilot: autopilot.serialize(),
+      spoils,
+      spoilsTotal,
     };
   }
   function loadState(d) {
@@ -945,6 +978,9 @@ export function createRunSystem({
     lastCombatLayout = d.lastCombatLayout ?? null;
     roomPlanView = d.roomPlan ?? null;
     autopilot.restore(d.autopilot ?? null);
+    // M4c additions — absent in a tree migrated from schema 1.
+    spoils = d.spoils ?? null;
+    spoilsTotal = Number.isFinite(d.spoilsTotal) ? d.spoilsTotal : 0;
   }
 
   const api = {

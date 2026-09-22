@@ -17,7 +17,12 @@ import { parseCanonical } from '../core/canonical.js';
 import { hashState } from '../core/hash.js';
 
 export const SAVE_FORMAT = 'echoes-save';
-export const SCHEMA = 1;
+// Schema 2 (M4c, 2026-09-22 user correction): at most 4 skill slots and 8 node
+// sockets on every skill. Schema-1 files (8 skill slots, 2-socket active rows,
+// 1-socket passive rows) load through MIGRATIONS[1] below.
+export const SCHEMA = 2;
+// StateTree `v` written by capture.js (STATE_VERSION there must equal this).
+export const TREE_VERSION = 2;
 const MAX_DEPTH = 64;
 
 // --------------------------------------------------------------- clone --
@@ -120,10 +125,92 @@ export function encodeOrdered(value) {
 export const decode = parseCanonical;
 
 // ---------------------------------------------------------- migrations --
-// MIGRATIONS[n] upgrades a schema-n file body to schema n+1 (v1 is current,
-// so the chain is empty; the slot exists so v2 lands as one function).
+// MIGRATIONS[n] upgrades a schema-n file body to schema n+1.
+//
+// 1 -> 2 (M4c, the user's skill/socket correction). Deterministic, pure, never
+// throws on a structurally valid v1 tree, draws no RNG:
+//   - skills: the owned skills are compacted in ascending slot order and the
+//     FIRST 4 are kept (the two starters always survive); a skill beyond the
+//     4th is dropped — its socketed nodes go back to the bench (provenance
+//     kept, bench order: existing bench, then the dropped rows in slot order),
+//     its passive clock, Resonance counter, pending Echo recasts and Reapply
+//     clock go with it. The player entity's `skills` mirror follows.
+//   - build rows: every kept row pads to 8 sockets (was 2 on actives, 1 on
+//     passives); no node moves.
+//   - run: a pending SKILL reward with no free slot left becomes the §16
+//     empty offer ("the run moves on"); the free-slot counts of a pending
+//     reward / path offer are recomputed as 4 − owned.
+//   - meta.skills: trimmed to the kept skills.
+// The numbers are the schema-2 constants frozen here (4 slots, 8 sockets) —
+// a later change to either lands as its own migration.
+const V2_SKILL_SLOTS = 4;
+const V2_SOCKETS = 8;
+function migrateTree1to2(tree) {
+  const t = clonePlain(tree);
+  t.v = 2;
+  const sys = t.systems && typeof t.systems === 'object' ? t.systems : {};
+  const sk = sys.skills;
+  const kept = [];
+  const dropped = [];
+  if (sk && Array.isArray(sk.slots)) {
+    for (const s of sk.slots) {
+      if (!s || typeof s !== 'object' || typeof s.id !== 'string') continue;
+      if (kept.length < V2_SKILL_SLOTS) kept.push(s);
+      else dropped.push(s.id);
+    }
+    sk.slots = kept.slice();
+    while (sk.slots.length < V2_SKILL_SLOTS) sk.slots.push(null);
+    if (Array.isArray(sk.auraNext)) sk.auraNext = sk.auraNext.filter((p) => Array.isArray(p) && !dropped.includes(p[0]));
+  }
+  const keptIds = kept.map((s) => s.id);
+  const ents = t.registry && Array.isArray(t.registry.entities) ? t.registry.entities : [];
+  const player = ents.find((e) => e && e.kind === 'player');
+  if (player && Array.isArray(player.skills)) {
+    player.skills = keptIds.slice();
+    while (player.skills.length < V2_SKILL_SLOTS) player.skills.push(null);
+  }
+  const b = sys.build;
+  if (b && typeof b === 'object') {
+    if (!Array.isArray(b.bench)) b.bench = [];
+    const rows = [];
+    for (const pair of Array.isArray(b.assignments) ? b.assignments : []) {
+      if (!Array.isArray(pair)) continue;
+      const [id, row] = pair;
+      const list = Array.isArray(row) ? row : [];
+      if (dropped.includes(id)) {
+        for (const r of list) if (r) b.bench.push(r);
+        continue;
+      }
+      const out = list.map((r) => (r ? r : null));
+      while (out.length < V2_SOCKETS) out.push(null);
+      rows.push([id, out]);
+    }
+    b.assignments = rows;
+    if (Array.isArray(b.resonance)) b.resonance = b.resonance.filter((p) => Array.isArray(p) && !dropped.includes(p[0]));
+    if (Array.isArray(b.echoQueue)) b.echoQueue = b.echoQueue.filter((r) => !(r && dropped.includes(r.skill)));
+    if (Array.isArray(b.auraEchoNext)) b.auraEchoNext = b.auraEchoNext.filter((p) => Array.isArray(p) && !dropped.includes(p[0]));
+  }
+  const free = Math.max(0, V2_SKILL_SLOTS - kept.length);
+  const run = sys.run;
+  if (run && typeof run === 'object') {
+    if (run.reward && typeof run.reward === 'object') {
+      if (run.reward.type === 'skill' && (free === 0 || keptIds.includes(run.reward.id))) {
+        run.reward = { ...run.reward, type: null, id: null, substituted: false, line: 'the run moves on', poolSize: 0 };
+      }
+      run.reward.freeSkillSlots = free;
+    }
+    if (run.path && typeof run.path === 'object') run.path.freeSkillSlots = free;
+  }
+  return { tree: t, dropped, kept: keptIds };
+}
+export function migrateFile1to2(file) {
+  const { tree, kept } = migrateTree1to2(file.state);
+  const meta = file.meta && typeof file.meta === 'object' ? { ...file.meta } : file.meta;
+  if (meta && Array.isArray(meta.skills)) meta.skills = kept.slice();
+  return { ...file, schema: 2, meta, state: tree };
+}
 export const MIGRATIONS = Object.freeze({
-  // 1: (file) => ({ ...file, schema: 2, state: upgradeTree(file.state) }),
+  1: migrateFile1to2,
 });
 
 // ------------------------------------------------------------ envelope --
@@ -135,7 +222,7 @@ const SYSTEM_KEYS = ['combat', 'skills', 'build', 'enemies', 'waves', 'allies', 
 export function checkTree(tree) {
   if (!tree || typeof tree !== 'object') return 'state is not an object';
   for (const k of TREE_KEYS) if (!(k in tree)) return `state.${k} missing`;
-  if (tree.v !== 1) return `state.v ${tree.v} unsupported`;
+  if (tree.v !== TREE_VERSION) return `state.v ${tree.v} unsupported`;
   if (!tree.clock || !Number.isFinite(tree.clock.tick)) return 'state.clock.tick missing';
   if (!tree.rng || !Number.isFinite(tree.rng.s) || !Number.isFinite(tree.rng.seed)) return 'state.rng incomplete';
   const reg = tree.registry;
@@ -217,6 +304,14 @@ export function parseFile(text, { maxSchema = SCHEMA } = {}) {
   if (migrated) {
     const bad2 = checkTree(file.state);
     if (bad2) return { ok: false, error: 'corrupt', detail: `migration produced an invalid tree (${bad2})`, file };
+    // The stored tree was verified above; the migrated body gets its own
+    // hash so a caller that re-writes it (rename, import, restore) writes a
+    // self-consistent schema-2 file (M4c).
+    try {
+      file = { ...file, hash: hashState(file.state) };
+    } catch (err) {
+      return { ok: false, error: 'corrupt', detail: `migration produced non-plain data (${String(err && err.message).slice(0, 80)})`, file };
+    }
   }
   return { ok: true, file, migrated };
 }

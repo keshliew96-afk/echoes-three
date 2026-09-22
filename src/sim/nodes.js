@@ -4,10 +4,13 @@
 //   - the 17-node pool: 8 stat (Sharpen, Quicken, Multiply, Ascend, Widen,
 //     Reach, Linger, Keen) + 9 technique (Bounce, Siphon, Echo, Detonate,
 //     Snare, Galvanize, Bulwark, Split, Resonance), rarities, per-skill limits
-//   - sockets: active skills 2 slots (A cap rare, B cap legendary), passives
-//     1 slot cap rare; the uncapped bench with provenance; socket/unsocket
+//   - sockets (M4c user correction 2026-09-22): EVERY skill — actives and
+//     passives — has SOCKETS_PER_SKILL (8) sockets and ANY node of ANY rarity
+//     fits ANY socket (the old §15.2 rarity caps are gone); the bench with
+//     provenance ('drafted' | 'purchased' | 'spoils' | ...); socket/unsocket
 //     free + unlimited but ONLY while combat_active == false; repetition ≤
-//     limit incl. the candidate
+//     limit incl. the candidate; autoFill() = the one auto-socket policy the
+//     socket screen and the autopilot share
 //   - the stat resolution pipeline per stat key:
 //       base → +flat → ×max(0, 1 + Σ additive_pct) → ×Π multiplicative
 //       → techniques → clamps (cd ≥ 0.5 s, arc half-angle ≤ 90°)
@@ -42,7 +45,7 @@
 // Sim discipline: no DOM, no render imports, no wall clock; the only RNG this
 // module touches is indirect (combat's own crit rolls). Siphon draws NO roll
 // at all — its amount is flat-stage only, immune to %/× nodes, crit, clamps.
-import { TICK_HZ, KNOCKBACK } from '../core/constants.js';
+import { TICK_HZ, KNOCKBACK, SOCKETS_PER_SKILL } from '../core/constants.js';
 import { SKILLS } from './skills.js';
 import { fanDirections, createSkillBolts, selectAreaDamage } from './shapes.js';
 import * as STATUS from './status.js';
@@ -152,15 +155,25 @@ export const TECH = Object.freeze({
 export const SIPHON_CARD_LINE =
   'converts 25% of base healing — unmodified by any other socket, crit, or buff.';
 
-// §15.2 socket caps: active skills slot A cap rare / slot B cap legendary;
-// passives have one slot, cap rare. Legendaries (Ascend, Resonance) therefore
-// fit only slot B and never a passive — no special case needed.
-const ACTIVE_CAPS = Object.freeze(['rare', 'legendary']);
-const PASSIVE_CAPS = Object.freeze(['rare']);
+// §15.2 sockets (M4c user correction, 2026-09-22 — binding): 8 sockets on
+// EVERY skill, passives included, and no socket has a rarity cap. A legendary
+// therefore fits a passive too, so each legendary has a defined passive
+// reinterpretation instead of a cap verdict: Ascend is a stat node (×2 pulse
+// power through the §15.4 pipeline), Resonance makes every 3rd pulse ×2
+// (pulseMods() below).
+export const SOCKET_COUNT = SOCKETS_PER_SKILL;
 
 const isPassiveDef = (def) => def.shape === 'aura';
-const capsFor = (def) => (isPassiveDef(def) ? PASSIVE_CAPS : ACTIVE_CAPS);
-const slotCountFor = (def) => (isPassiveDef(def) ? 1 : 2);
+const slotCountFor = () => SOCKET_COUNT;
+// A build row is always exactly SOCKET_COUNT long in memory: rows restored
+// from an older save (2 / 1 sockets) or a run-block payload are padded, never
+// truncated below a socketed node (the schema-2 migration moved any overflow
+// to the bench first; a longer row keeps its nodes).
+function normRow(row) {
+  const out = Array.isArray(row) ? row.map((r) => (r ? r : null)) : [];
+  while (out.length < SOCKET_COUNT) out.push(null);
+  return out;
+}
 const retargetable = (def) => def.shape === 'projectile' || def.shape === 'direct';
 
 // Stat keys the resolver walks, and whether a skill "has" each one (§15.5:
@@ -260,12 +273,13 @@ export function createBuildSystem({
     }
     // Techniques: retargetable-impact = {projectile, direct} (Bounce, Split);
     // Siphon/Detonate/Echo-active = any active skill; Echo-passive = aura
-    // Reapply; Snare / Galvanize / Bulwark have a passive reinterpretation;
-    // Resonance's passive cell is the legendary cap (unsocketable, §23.4).
+    // Reapply; Snare / Galvanize / Bulwark / Resonance have a passive
+    // reinterpretation (Resonance: every 3rd pulse ×2 — M4c, now that no
+    // socket caps a legendary out of a passive).
     if (isPassiveDef(def)) {
       if (n.id === 'echo') return { state: 'live', reason: 'reapply' };
-      if (n.id === 'snare' || n.id === 'galvanize' || n.id === 'bulwark') return { state: 'live', reason: 'pulse' };
-      if (n.id === 'resonance') return { state: 'live', reason: 'legendary_cap' };
+      if (n.id === 'snare' || n.id === 'galvanize' || n.id === 'bulwark' || n.id === 'resonance')
+        return { state: 'live', reason: 'pulse' };
       return { state: 'grey', reason: 'passive_field' };
     }
     if ((n.id === 'bounce' || n.id === 'split') && !retargetable(def))
@@ -389,34 +403,31 @@ export function createBuildSystem({
     return { denied: reason, skill: skillId, node: nodeId, slot };
   }
 
-  // socket(skillId, nodeId, slot?) — slot omitted picks the first vacant slot
-  // whose cap admits the node. Hard-blocks (cap / limit — §16 rejection shake)
-  // refuse with a socket_denied event; grey is advisory and proceeds.
-  function socket(skillId, nodeId, slot = null) {
+  // socket(skillId, nodeId, slot?, benchIndex?) — slot omitted picks the
+  // first vacant socket. Any rarity fits any socket (M4c). Hard blocks — the
+  // repetition limit, a full row, a bad slot, combat — refuse with a
+  // socket_denied event (§16 rejection shake); grey is advisory and proceeds.
+  // `benchIndex` names WHICH bench copy to take (the socket screen's focused
+  // card); by default the first copy of that node.
+  function socket(skillId, nodeId, slot = null, benchIndex = null) {
     const node = NODES[nodeId];
     if (!node) return deny(skillId, nodeId, slot, 'unknown_node');
     if (isCombatActive()) return deny(skillId, nodeId, slot, 'combat_active');
     if (!ownedIds().includes(skillId)) return deny(skillId, nodeId, slot, 'skill_not_owned');
-    const benchIdx = bench.findIndex((b) => b.node === nodeId);
+    const benchIdx =
+      Number.isInteger(benchIndex) && bench[benchIndex] && bench[benchIndex].node === nodeId
+        ? benchIndex
+        : bench.findIndex((b) => b.node === nodeId);
     if (benchIdx < 0) return deny(skillId, nodeId, slot, 'not_on_bench');
     const def = SKILLS[skillId];
-    const caps = capsFor(def);
     const slots = socketsOf(skillId);
 
     let target = slot;
     if (target === null || target === undefined) {
-      target = slots.findIndex(
-        (s, i) => s === null && RARITY_RANK[node.rarity] <= RARITY_RANK[caps[i]]
-      );
-      if (target < 0) {
-        const anyCapFits = caps.some((c) => RARITY_RANK[node.rarity] <= RARITY_RANK[c]);
-        return deny(skillId, nodeId, null, anyCapFits ? 'occupied' : 'cap');
-      }
-    } else {
-      if (!(target >= 0 && target < slots.length)) return deny(skillId, nodeId, target, 'no_such_slot');
-      // §15.2 cap = ceiling on rarity rank — HARD block.
-      if (RARITY_RANK[node.rarity] > RARITY_RANK[caps[target]])
-        return deny(skillId, nodeId, target, 'cap');
+      target = slots.findIndex((s) => s === null);
+      if (target < 0) return deny(skillId, nodeId, null, 'full');
+    } else if (!(Number.isInteger(target) && target >= 0 && target < slots.length)) {
+      return deny(skillId, nodeId, target, 'no_such_slot');
     }
     // §15.2 repetition: copies on one skill INCLUDING the candidate ≤ limit
     // (the displaced occupant of an explicit target slot doesn't count).
@@ -444,7 +455,7 @@ export function createBuildSystem({
   function unsocket(skillId, slot) {
     if (isCombatActive()) return deny(skillId, null, slot, 'combat_active');
     const slots = assignments.get(skillId);
-    const rec = slots && slots[slot];
+    const rec = slots && Number.isInteger(slot) ? slots[slot] : null;
     if (!rec) return { error: 'empty_socket' };
     slots[slot] = null;
     bench.push(rec);
@@ -1043,6 +1054,20 @@ export function createBuildSystem({
     return { powerMul: TECH.resonanceMul, resonance: true, count: n };
   }
 
+  // Resonance on a PASSIVE (M4c — a legendary now fits a passive's sockets):
+  // every 3rd regular pulse of the aura resolves at ×2 power. Same per-skill
+  // counter as casts (persists across rooms, resets at run end); the Echo
+  // Reapply bonus pulse never passes through here, exactly as Echo recasts
+  // never advance an active's count.
+  function pulseMods(skillId) {
+    if (!isPassiveDef(SKILLS[skillId]) || !liveTechs(skillId).includes('resonance')) return null;
+    const n = (resonance.get(skillId) ?? 0) + 1;
+    resonance.set(skillId, n);
+    if (n % TECH.resonanceEvery !== 0) return { powerMul: 1, resonance: false, count: n };
+    events.emit(getTick(), 'resonance_proc', { skill: skillId, n, mul: TECH.resonanceMul, pulse: true, x: r2(player.x), z: r2(player.z) });
+    return { powerMul: TECH.resonanceMul, resonance: true, count: n };
+  }
+
   // --------------------------------------------------------------- echo -----
   const echoQueue = []; // { due, skill, cast } in arm order
   const auraEchoNext = new Map(); // passive skillId -> next Reapply tick
@@ -1243,7 +1268,7 @@ export function createBuildSystem({
       else if (n.id === 'resonance')
         lines.push(
           passive
-            ? 'legendary — a passive’s single socket caps at rare'
+            ? `every 3rd pulse resolves at ×2 power (${fmt(r2(pw * TECH.resonanceMul))} per ally)`
             : `every 3rd cast resolves at ×2 power (${fmt(r2(pw * TECH.resonanceMul))})`
         );
     }
@@ -1257,23 +1282,29 @@ export function createBuildSystem({
     return fits ? 'fits your kit' : 'nothing in your kit uses this yet';
   }
 
+  // Pure read of one row: never creates the lazy all-empty row (so a
+  // render-side read can never change what saveState() returns).
+  const rowOf = (id) => assignments.get(id) ?? new Array(SOCKET_COUNT).fill(null);
+
   function view() {
     return {
       combatActive: isCombatActive(),
+      socketCount: SOCKET_COUNT,
       bench: bench.map((b) => ({ ...b })),
       skills: ownedIds().map((id) => {
         const def = SKILLS[id];
         const res = resolveDef(def);
-        const caps = capsFor(def);
+        const sockets = rowOf(id).map((rec, slot) =>
+          rec ? { node: rec.node, verdict: verdictFor(def, rec.node, slot).state } : null
+        );
         return {
           id,
           name: def.name,
           archetype: def.archetype,
           shape: def.shape,
-          caps: [...caps],
-          sockets: socketsOf(id).map((rec, slot) =>
-            rec ? { node: rec.node, verdict: verdictFor(def, rec.node, slot).state } : null
-          ),
+          sockets,
+          filled: sockets.filter(Boolean).length,
+          live: sockets.filter((s) => s && s.verdict === 'live').length,
           base: {
             power: def.power,
             cd: def.cd ?? null,
@@ -1297,6 +1328,58 @@ export function createBuildSystem({
     };
   }
 
+  // ------------------------------------------------------------ auto-fill --
+  // The ONE auto-socket policy (M4c decision D7) — the socket screen's
+  // Auto-fill and the autopilot both call it. Bench order; each node goes to
+  // the owned skill where it is LIVE (never grey, never saturation-inert),
+  // within its repetition limit, with a vacant socket, preferring the skill
+  // with the FEWEST filled sockets (ties: the lower skill slot) — so a big
+  // bench spreads over the kit instead of piling onto slot 1. Each placement
+  // is an ordinary socket() (same events, same denials). Deterministic: state
+  // only, ascending orders, no RNG.
+  function planFill() {
+    const plan = [];
+    const owned = ownedIds();
+    const rows = new Map(owned.map((id) => [id, rowOf(id).slice()]));
+    for (let bi = 0; bi < bench.length; bi++) {
+      const nodeId = bench[bi].node;
+      const n = NODES[nodeId];
+      if (!n) continue;
+      let best = null;
+      for (const id of owned) {
+        const row = rows.get(id);
+        const vacant = row.indexOf(null);
+        if (vacant < 0) continue;
+        const copies = row.filter((r) => r && r.node === nodeId).length;
+        if (copies + 1 > n.limit) continue;
+        if (verdictFor(SKILLS[id], nodeId).state !== 'live') continue;
+        const filled = row.filter(Boolean).length;
+        if (!best || filled < best.filled) best = { id, vacant, filled };
+      }
+      if (!best) continue;
+      rows.get(best.id)[best.vacant] = { node: nodeId, provenance: 'plan' };
+      plan.push({ skill: best.id, node: nodeId, slot: best.vacant, benchIndex: bi });
+    }
+    return plan;
+  }
+
+  function autoFill() {
+    if (isCombatActive()) return { denied: 'combat_active', socketed: [] };
+    const socketed = [];
+    // Re-plan after every placement: a Multiply that just landed can make a
+    // later node's verdict inert, and bench indices shift as cards leave.
+    for (let guard = 0; guard < 64; guard++) {
+      const plan = planFill();
+      if (plan.length === 0) break;
+      const p = plan[0];
+      const r = socket(p.skill, p.node, p.slot, p.benchIndex);
+      if (!r || r.denied) break;
+      socketed.push({ skill: p.skill, node: p.node, slot: r.slot });
+    }
+    events.emit(getTick(), 'build_autofill', { socketed: socketed.length, bench: bench.length });
+    return { socketed, bench: bench.length };
+  }
+
   // Persistence plumbing for the run block (§13: bench + assignments persist
   // across rooms, wiped at run end). Resonance counters ride along ("persist
   // across rooms, reset at run end" — the run wipe restores an empty build).
@@ -1316,7 +1399,7 @@ export function createBuildSystem({
     bench.length = 0;
     for (const b of data.bench ?? []) bench.push({ ...b });
     assignments.clear();
-    for (const [k, v] of data.assignments ?? []) assignments.set(k, v.map((r) => (r ? { ...r } : null)));
+    for (const [k, v] of data.assignments ?? []) assignments.set(k, normRow(v).map((r) => (r ? { ...r } : null)));
     resonance.clear();
     for (const [k, v] of data.resonance ?? []) resonance.set(k, v);
     auraEchoNext.clear();
@@ -1375,7 +1458,9 @@ export function createBuildSystem({
     bench.length = 0;
     for (const b of d.bench) bench.push(b);
     assignments.clear();
-    for (const [k, v] of d.assignments ?? []) assignments.set(k, v);
+    // Rows are padded to SOCKET_COUNT (a tree migrated from schema 1 already
+    // is; this keeps any older in-memory payload loadable too).
+    for (const [k, v] of d.assignments ?? []) assignments.set(k, Array.isArray(v) && v.length >= SOCKET_COUNT ? v : normRow(v));
     resonance.clear();
     for (const [k, v] of d.resonance ?? []) resonance.set(k, v);
     suppress = Number.isFinite(d.suppress) ? d.suppress : 0;
@@ -1393,6 +1478,9 @@ export function createBuildSystem({
     loadState,
     resolveDef,
     castMods,
+    pulseMods,
+    autoFill,
+    planFill,
     grantNode,
     socket,
     unsocket,
@@ -1422,6 +1510,7 @@ export function createBuildSystem({
         : null;
     },
     rarityRank: (r) => RARITY_RANK[r] ?? 0,
+    socketCount: () => SOCKET_COUNT,
     siphonCardLine: () => SIPHON_CARD_LINE,
   };
 }

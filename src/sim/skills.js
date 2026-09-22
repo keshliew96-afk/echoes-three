@@ -8,7 +8,9 @@
 // annotate them).
 //
 // §6 binding rules owned here:
-//   - SKILL_SLOTS (8, §23.9) slots, cooldown-gated, no mana, INSTANT cast
+//   - SKILL_SLOTS (4 — at most 4 equipped skills; M4c user correction, the
+//     content extension's 8 are node sockets per skill) slots, cooldown-gated,
+//     no mana, INSTANT cast
 //     (press → fire → cooldown starts). No cast bars; firing never touches
 //     movement. No global cooldown; no input buffering. Cooldown floor
 //     max(0.5 s, cd).
@@ -523,6 +525,12 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
   function pulseAura(skillId, { echo = false, powerMul = 1 } = {}) {
     const tick = getTick();
     const def = resolve(SKILLS[skillId]); // §15.4 hook (Sharpen/Ascend/Widen live on auras)
+    // Resonance on a passive (M4c): every 3rd REGULAR pulse ×2 — the build
+    // system owns the counter; the Echo Reapply bonus pulse never advances it.
+    if (!echo && build && typeof build.pulseMods === 'function') {
+      const mods = build.pulseMods(skillId);
+      if (mods && mods.powerMul) powerMul *= mods.powerMul;
+    }
     const inField = party().filter(
       (m) =>
         m.id !== player.id &&

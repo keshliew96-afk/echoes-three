@@ -76,18 +76,12 @@ const esc = (s) =>
 function hardBlockReason(sys, sk, nodeId) {
   const info = sys.nodeInfo(nodeId);
   if (!info) return null;
-  let capFits = false;
-  for (let i = 0; i < sk.caps.length; i++) {
-    if (info.rarityRank > sys.rarityRank(sk.caps[i])) continue;
-    capFits = true;
+  // M4c: no socket has a rarity cap — only the repetition limit can refuse.
+  for (let i = 0; i < sk.sockets.length; i++) {
     const copies = sk.sockets.filter((s, j) => j !== i && s && s.node === nodeId).length;
     if (copies + 1 <= info.limit) return null;
   }
-  if (capFits) return `repeat limit — ${info.limit} per skill already socketed here`;
-  const caps = [...new Set(sk.caps)].join('/');
-  return `${info.rarity} node — ${
-    sk.caps.length === 1 ? 'this skill’s only slot caps' : 'every slot here caps'
-  } at ${caps}`;
+  return `repeat limit — ${info.limit} per skill already socketed here`;
 }
 
 export function createSocketScreen({ bus, world }) {
@@ -453,7 +447,7 @@ export function createSocketScreen({ bus, world }) {
       const cells = row.querySelector('.nd-cells');
 
       sk.sockets.forEach((rec, slot) => {
-        const cap = sk.caps[slot];
+        const cap = 'common'; // M4c: sockets carry no rarity cap
         const wrap = document.createElement('div');
         wrap.className = 'nd-cellwrap';
         const cell = document.createElement('div');
@@ -484,7 +478,7 @@ export function createSocketScreen({ bus, world }) {
             // §15.2 hard blocks for THIS cell: rarity cap, or the repetition
             // limit counting the copies the other slots already hold. A cell
             // that would refuse never advertises a fit.
-            const capBlocked = cinfo.rarityRank > sys.rarityRank(cap);
+            const capBlocked = false;
             const copiesElsewhere = sk.sockets.filter(
               (s, j) => j !== slot && s && s.node === candidate
             ).length;
@@ -517,7 +511,7 @@ export function createSocketScreen({ bus, world }) {
         const capLabel = document.createElement('div');
         capLabel.className = 'nd-cap-label';
         capLabel.style.setProperty('--cap', RARITY_COLOR[cap]);
-        capLabel.textContent = `${String.fromCharCode(65 + slot)} · ${cap} cap`;
+        capLabel.textContent = String(slot + 1);
         wrap.appendChild(capLabel);
         cells.appendChild(wrap);
         cellEls.set(`${sk.id}:${slot}`, cell);

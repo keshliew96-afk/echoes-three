@@ -46,7 +46,7 @@ export const NODE_EFFECT = {
   sharpen: '+25% power on the skill it sits in.',
   quicken: '−15% cooldown on the skill it sits in.',
   multiply: '+1 count — one more bolt, target or recipient.',
-  ascend: '×2 power. Legendary: fits slot B only.',
+  ascend: '×2 power on the skill it sits in — on a passive, every pulse ×2.',
   bounce:
     'the impact hops once more per copy, within 2.2 u — a ricochet on damage, a chain-heal on a heal.',
   siphon:
@@ -63,7 +63,7 @@ export const NODE_EFFECT = {
   galvanize: 'damage exposes (+20% taken) · heals inspire (+15% dealt) · a field inspires allies inside.',
   bulwark: 'damage shields you (20% of it, up to 30) · overheal becomes a shield · a field adds shield.',
   split: 'on impact two shards fly on at ±35° (40%) · heals splash the 2 nearest allies (40%).',
-  resonance: 'every 3rd cast of this skill resolves at ×2 power. Legendary: slot B only.',
+  resonance: 'every 3rd cast of this skill resolves at ×2 power — on a passive, every 3rd pulse.',
 };
 
 // The same effects in one breath. Used by the compact reflow (short windows),
@@ -75,7 +75,7 @@ export const NODE_EFFECT_SHORT = {
   sharpen: '+25% power on this skill.',
   quicken: '−15% cooldown on this skill.',
   multiply: '+1 count — one more bolt or target.',
-  ascend: '×2 power. Legendary: slot B only.',
+  ascend: '×2 power (a passive: every pulse).',
   bounce: 'one extra hop within 2.2 u — ricochet, or chain-heal.',
   siphon: 'damage self-heals · heals scorch the nearest enemy.',
   echo: 'the cast repeats 1.0 s later — 50% damage, 100% heal.',
@@ -88,7 +88,7 @@ export const NODE_EFFECT_SHORT = {
   galvanize: 'hits expose · heals inspire allies.',
   bulwark: 'hits and overheals become shields.',
   split: 'impacts split into 2 shards at 40%.',
-  resonance: 'every 3rd cast ×2. Slot B only.',
+  resonance: 'every 3rd cast ×2 (a passive: pulse).',
 };
 
 const SHAPE_LABEL = {
