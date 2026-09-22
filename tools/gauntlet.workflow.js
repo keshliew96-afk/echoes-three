@@ -47,6 +47,14 @@ const SPEC = {
   overall: 'Take our existing core game code and transform this from a prototype into a fully featured, production-ready title, benchmarked against current UX standards. Loop and refine until the interface navigation, persistent state transitions, and audio balancing are completely seamless and robust. Every module must function perfectly without breaking the existing core gameplay loops.',
 }
 
+// ---------------- user correction (2026-09-22) ----------------
+const CORRECTION_SHORT = 'USER CORRECTION (binding): skills stay at a MAXIMUM OF 4 equipped skills; what increases to 8 is the number of NODE SOCKETS on each skill.'
+const CORRECTION = [
+  'USER CORRECTION (2026-09-22, binding — supersedes every "skill slots 4 -> 8" / "8 skill slots" / "keys 1-8" statement in docs/gauntlet/PLAN.md, docs/BUILD_BRIEF.md §23, TESTING.md, earlier prompts and the W2 builds). The user wrote: "in the plan the content extension part i state need increase skill slot to 8, what i mean is skill remain maximum 4, but the node for each skill increase to 8".',
+  'Meaning: the player equips AT MOST 4 skills (keys 1-4, the command bar shows 4 skill tiles, drafts never offer a 5th skill once 4 are owned); EVERY skill gets 8 NODE SOCKETS (was: active skills 2 sockets — slot A cap rare, slot B cap legendary — and the passive Warding Aura 1 socket cap rare). The 9 new skills and 9 new nodes remain as draftable content. Keep the §15.2 rarity-cap system and per-node repetition limits; legendaries still never fit a passive.',
+].join(' ')
+const CORRECTED_KEYS = ['M4c', 'M5b', 'INT']
+
 // ---------------- schemas ----------------
 const FAILURE = {
   type: 'object', required: ['id', 'title', 'evidence', 'mustFix', 'reproduce', 'suspectFiles'],
@@ -134,15 +142,16 @@ const BUILDERS = {
   M2: { spec: SPEC.save, focus: 'Complete-state serialize()/restore() for every sim system (world, run, rooms, party, enemies, projectiles, zones, skills, nodes, build, RNG streams, content added in W2), schema v1 with versioning + migration, atomic localStorage writes with backup + corruption detection, JSON file export/import, the save-slot management menu (slots with metadata/thumbnail, save/overwrite/delete with confirmation, Load Game from the title), autosave at safe points, persistent high scores/records, and the round-trip determinism probe in the debug API.' },
   M5a: { spec: SPEC.net, focus: 'Network CORE with no src/sim edits: Node WebSocket server (server/**) with lobby rooms, matchmaking (quick match + room codes), the protocol and transport, snapshot delta compression against acked baselines with quantization, a configurable network conditioner (latency, jitter, loss, duplication, reordering, disconnects) usable by critics, and a multi-client headless harness. Client-side transport module in src/net/**.' },
   M5b: { spec: SPEC.net, focus: 'Network PLAY: remote humans control party members (AI fills empty seats) through the sim input layer, host-authoritative simulation, client-side prediction with input-sequence reconciliation, entity interpolation, server-side lag-compensated hit rewind, desync detection via state hashes, lobby/matchmaking UI in the menu, reconnect and host-drop UX — single-player must stay bit-identical to before.' },
+  M4c: { spec: SPEC.content + ' ' + CORRECTION_SHORT, focus: 'CONTENT CORRECTION (runs alone, before M5b finishes network play): revert SKILL_SLOTS 8 -> 4 end to end (sim slot arrays, input keys 1-4 with 5-8 unbound, HUD command bar back to 4 skill tiles, draft free = 4 - owned, socket screen, shop, autopilot, audio/UI cues, save capture, net build/seat replication); raise node sockets per skill to 8 — design the per-socket rarity caps inside the §15.2 system (e.g. a limited number of legendary-capable sockets on active skills; the passive keeps its no-legendary rule), keep per-node repetition limits, and make grey/reinterpretation verdicts, denial feedback and the Siphon card line work on all 8 sockets; redesign the socket screen for 4 skills x 8 sockets so it is readable and fast at 1024x576 and 2560x1440 by keyboard, mouse and gamepad, and show each skill tile\'s socket fill on the command bar; rebalance node supply (node drafts, shop stock, prices) so 8 sockets per skill are meaningfully fillable across a run, and RETUNE the difficulty curve — M4a tuned it against an 8-skill build — so every act and level configuration still lands inside its playability band (re-run the act/expedition probes by real input); migrate older saves (schema version bump: skills beyond 4 and 2-socket build rows convert deterministically, never a crash) and re-record the goldens whose traces legitimately change, proving single-player determinism holds; update BUILD_BRIEF §15.2/§23, PLAN.md (§4.3 and every affected gate) and TESTING.md so builders and critics share the corrected design truth; keep the M2 save probes and the M5a net probes green.' },
   INT: { spec: SPEC.overall, focus: 'INTEGRATION: in-game pause menu (resume, settings, save, quit to title), the full player journey across all modules without dead ends, cross-module wiring (audio for new enemies/skills/interactables, save disabled or host-only in network play, settings applied on boot), removal of dev-only chrome from player builds (fps meter etc. behind a debug flag), `npm run build` production bundle that boots and plays under `vite preview`, and a regression pass on the original core loop.' },
 }
-const WAVES = [['M1', 'M3'], ['M4a', 'M4b'], ['M2', 'M5a'], ['M5b'], ['INT']]
+const WAVES = [['M1', 'M3'], ['M4a', 'M4b'], ['M2', 'M5a'], ['M4c'], ['M5b'], ['INT']]
 
 function builderPrompt(key, fixItems, round) {
   const b = BUILDERS[key]
   const pfx = fixItems ? 'gntfix' + key + round + '-' : 'gnt' + key + '-'
   const ck = fixItems ? 'docs/gauntlet/fix-' + key + '-r' + round + '.md' : 'docs/gauntlet/build-' + key + '.md'
-  return [
+  const parts = [
     (fixItems ? 'You are the FIX BUILDER for module ' + key + ' (gauntlet round ' + round + ').' : 'You are BUILDER ' + key + ' of the Gauntlet Loop.') + ' Module specification (user, verbatim): ' + b.spec,
     'YOUR SCOPE: ' + b.focus,
     context(pfx, BUILDER_ROLE),
@@ -151,7 +160,9 @@ function builderPrompt(key, fixItems, round) {
     'REGRESSION DUTY: after your last commit, re-run a core-loop check (boot with the documented params -> camp -> portal -> room 1 clears -> reward screen) and any other module\'s probe your files could affect.',
     checkpoint(ck, pfx),
     'Return the BUILD structured result (done=true only when every item in scope is committed and verified; if something needs a user decision, finish everything else and explain).',
-  ].join('\n\n')
+  ]
+  if (fixItems || CORRECTED_KEYS.indexOf(key) >= 0) parts.splice(2, 0, CORRECTION)
+  return parts.join('\n\n')
 }
 
 // ---------------- critique phase ----------------
@@ -167,9 +178,9 @@ const CRITICS = {
     probes: 'Launch your own puppeteer with --autoplay-policy=no-user-gesture-required; measure bus RMS/peak through the debug taps (and an OfflineAudioContext or analyser where possible): each slider in linear AND logarithmic mode at 0/25/50/75/100% with the measured gain curve vs the PLAN.md math; channel decoupling (moving Music never changes SFX level and vice versa); master mute; no clipping above 0 dBFS during a boss fight; music exists in menu, camp, combat, boss with crossfades (no hard cuts, no silence gaps > 1 s at transitions); SFX coverage of sim events (hit, kill, heal, skill casts, telegraph, boss quake, UI) and spatial panning measured left vs right of the listener; balance: dialogue-free mix where SFX peaks sit above music by a sane margin; settings persist; the audio tab is usable with keyboard and mouse.',
   },
   content: {
-    owners: ['M4a', 'M4b'], spec: SPEC.content,
+    owners: ['M4a', 'M4b'], spec: SPEC.content + ' ' + CORRECTION,
     bench: 'Hades (biome identity, escalating encounters, boon/slot build variety), Dead Cells (biome variety, hazard design), Enter the Gungeon (enemy readability and telegraphs), Slay the Spire (difficulty curve across acts).',
-    probes: 'Play through each level configuration (cmd use allowed to reach them) and capture a representative frame of each: distinct biome identity in pixels (analyzer HUEMIX / palette per biome, prop sets) within the art bible; measure the difficulty curve (enemy counts, HP, damage, spawn cadence per room and act) and plot the numbers — it must escalate monotonically with sensible spikes at boss/defend rooms; every new enemy and hazard: silhouette read at 50% zoom, telegraph >= 0.7 s in Ember, behaviour distinct from existing enemies; all 8 skill slots bindable and usable with keys 1-8, the HUD command bar fits at 1024x576 and 2560x1440 without overlap; every new skill and node functions (cast it, verify its sim effect and VFX) and its reinterpretation works; every interactable responds to interaction with feedback; the original 8-room loop still plays by real input.',
+    probes: 'Play through each level configuration (cmd use allowed to reach them) and capture a representative frame of each: distinct biome identity in pixels (analyzer HUEMIX / palette per biome, prop sets) within the art bible; measure the difficulty curve (enemy counts, HP, damage, spawn cadence per room and act) and plot the numbers — it must escalate monotonically with sensible spikes at boss/defend rooms; every new enemy and hazard: silhouette read at 50% zoom, telegraph >= 0.7 s in Ember, behaviour distinct from existing enemies; equipped skills are capped at 4 (keys 1-4 cast, keys 5-8 do nothing, drafts never offer a 5th skill once 4 are owned) and EVERY skill has 8 node sockets whose rarity caps, repetition limits, grey verdicts and reinterpretations all work (socket a node into each of the 8 sockets and verify the sim effect); the socket screen (4 skills x 8 sockets) and the command bar fit at 1024x576 and 2560x1440 without overlap and are navigable by keyboard, mouse and gamepad; node supply across a run lets a player fill a meaningful share of the 32 sockets; a save written before the correction loads without a crash; every new skill and node functions (cast it, verify its sim effect and VFX) and its reinterpretation works; every interactable responds to interaction with feedback; the original 8-room loop still plays by real input.',
   },
   save: {
     owners: ['M2'], spec: SPEC.save,
