@@ -3,7 +3,7 @@
 // Chrome is launched with --disable-features=NetworkServiceSandbox (the Windows
 // AppContainer network sandbox refuses loopback on this machine since 2026-09-22
 // ~22:30 — see tools/gntM4c-certcapture.mjs). Same CLI, same scenario modules
-// (tools/gntM2-sc-*.mjs), same output captures/gntM2-sc-<name>.json.
+// (tools/gntM2-sc-*.mjs); output captures/gntM4c-m2-gntM2-sc-<name>.json (M4c-owned names).
 // M2 driver: open Echoes in puppeteer (GPU harness, PLAN §6.7), run a scenario
 // module, print + write JSON. Scenario files export
 //   default async function (h) { ... }   with h = { page, browser, ev, sleep, shot, key,
@@ -62,7 +62,7 @@ for (let attempt = 1; attempt <= opt.tries; attempt++) {
       },
       ev: (fn, ...args) => page.evaluate(fn, ...args),
       shot: async (n, clip) => {
-        const p = join(outDir, `gntM2-${n}.png`);
+        const p = join(outDir, `gntM4c-m2-${n}.png`);
         await page.screenshot({ path: p, ...(clip ? { clip } : {}) });
         return p;
       },
@@ -100,6 +100,6 @@ for (let attempt = 1; attempt <= opt.tries; attempt++) {
   if (!transient) break;
   await sleep(1500);
 }
-writeFileSync(join(outDir, `${name}.json`), JSON.stringify(final, null, 1));
+writeFileSync(join(outDir, `gntM4c-m2-${name}.json`), JSON.stringify(final, null, 1));
 console.log(`${name}: ${final.ok ? 'OK' : 'FAIL'} (${final.failures ? final.failures.length : '?'} failures, ${final.pageErrors ? final.pageErrors.length : '?'} page errors)`);
 process.exit(final.ok ? 0 : 1);
