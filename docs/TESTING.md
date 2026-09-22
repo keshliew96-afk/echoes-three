@@ -778,3 +778,61 @@ dist-M5b --port 4307 --strictPort`, then `--base http://127.0.0.1:4307/`):
   then neutral), hidden guest tab (seat to AI / back), hidden host tab 20 s.
 Conditions (per direction on each guest link, via `POST /admin/conditioner`):
 N1 `lat75,jit10,loss10` · N2 `lat125,jit20,loss20` · N3 `lat75,burst0.05:0.3:0.8` · N4 `lat50,dup1,reo2`.
+
+### INT — integration: pause, journey, player build (Gauntlet W5, owner INT)
+
+Owns src/ui/menu/pause.js, vite.config.js, package.json scripts, index.html and
+main.js `@gnt:INT-WIRING`. Everything below is re-runnable by any critic.
+
+**Pause menu (`pause`, PLAN §1.3, gate GI.2).** Esc — or P, or the gamepad
+Start button — opens it from combat, draft, path, shop and the end card. The
+listener lives in main.js `@gnt:INT-WIRING`, registered LAST in the BUBBLE
+phase, and opens the menu only when `!e.defaultPrevented`, so:
+- a blocking app screen is open → M1's capture gate already swallowed the key;
+- the socket screen is open → it closes itself and consumes that Esc (a second
+  Esc then opens the pause menu);
+- a run page is up → it never consumes Escape, so the menu opens OVER the page,
+  which keeps its DOM, focus and settle window; the draft candidate is still
+  offered on Resume.
+An Esc within 150 ms of a `fullscreenchange` is ignored (leaving fullscreen
+must not also open a menu). Single player: 0 ticks elapse while the menu is up.
+Network session: the sim keeps running, the menu says "Online — the game keeps
+running", Save/Load are disabled with the save service's own reason and
+"Leave Session" replaces the two quit items.
+Probe surface: `__echoes.app.stack()` / `.focus()` / `.simPaused()` and the
+screen's own `debug()` (where, online, items with their disabled reason);
+in the DOM `.pz-pause.ap-open [data-nav]`.
+
+**Harnesses (all prefixed `gntINT-`, none of them edit another key's tool):**
+- `node tools/gntINT-journey.mjs [--url U] [--port 7830] [--shots]` — GI.1, the
+  whole journey by real input: title → Settings (a display and an audio change,
+  with the Keep/Revert answer) → New Game → camp → portal on foot → room 1 →
+  draft → pause → Save → Quit to Title → Continue (same room, phase, wallet,
+  build and run seed) → victory → high score → Multiplayer (host through the
+  menus + a headless guest by code, each in its OWN browser context so a
+  `?fresh=1` cannot wipe the other's storage) → both leave to the title →
+  reload with the settings, saves and profile applied on boot. 38 checks,
+  exit 1 on any failure. Run it against a `vite preview` URL to certify the
+  player build.
+- `node tools/gntINT-regress.mjs [--seed 7]` — GI.6 on the GPU harness: the
+  8-room loop by real input (WASD into the portal ring, right-mouse basics,
+  keys 1-4, Enter on every page, Escape to close a chained socket screen),
+  keydown-to-move, dodge i-frames, telegraph spans, frame budget, and the
+  camp / combat / boss frames for the REFERENCE_BAR pass
+  (`captures/gntINT-rb-*.png`). The frame sampler mutes itself around its own
+  screenshots — a puppeteer capture stalls the page for up to 1.6 s and is not
+  a game frame.
+- `node tools/gntINT-cueaudit.mjs` — GI.3: triggers every new W2 event with the
+  deterministic content commands under the audio harness profile and pairs it
+  with the `sound` the engine answered within 2 ticks. Its `SILENT` table lists
+  every event type that is cue-less BY DESIGN, with the reason.
+- `tools/actions/gntINT-pauselayout.json` with `cert-capture --w --h` — the
+  pause menu at 1024x576 / 1600x900 / 2560x1440 (type floor, overlaps, hit
+  targets, plate inside the viewport).
+
+**Player build (GI.4 / GI.5).** `npm run build` → `dist/` (base `./`, es2022,
+no sourcemaps, `three` in its own cached chunk); `npx vite preview --port 4311`
+serves it. On the plain player URL there is NO dev chrome: the fps meter is
+`display:none` (setting `display.showFps`, forced on by `?fps=1`, `?debug=1` or
+a menu-skip harness boot) and `#debug-overlay` only exists with `?debug=1`; the
+version label stays, 12 px, bottom-left.
