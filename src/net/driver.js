@@ -494,6 +494,16 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     setMySeat(s) {
       mySeat = s;
     },
+    // Measurement window restart (probes): per-frame net timing and the
+    // stale-input counters.
+    resetStats() {
+      stats.frameNetMs.length = 0;
+      stats.tickEndMs.length = 0;
+      stats.frameOver50Net = 0;
+      stats.staleRepeatTicksMax = 0;
+      stats.staleRepeats = 0;
+      stats.neutralTicks = 0;
+    },
     setLagCompensation(on) {
       ring.setEnabled(on);
       world.cmd('lagCompensation', !!on);

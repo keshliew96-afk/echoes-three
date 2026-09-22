@@ -62,10 +62,12 @@ export async function admin(srv, path, body = null) {
   return res.json().catch(() => null);
 }
 
-export async function openClient(browser, { base = 'http://127.0.0.1:5199/', server, name, seed = 7, extra = {}, w = 1280, h = 720 } = {}) {
+// tab: true opens the page as a TAB of the default window (openTab); a later
+// cover tab (openCover) hides it, c.page.bringToFront() shows it again.
+export async function openClient(browser, { base = 'http://127.0.0.1:5199/', server, name, seed = 7, extra = {}, w = 1280, h = 720, tab = false } = {}) {
   const q = new URLSearchParams({ menu: '0', seed: String(seed), net: server, netname: name, ...extra });
   const url = `${base}${base.includes('?') ? '&' : '?'}${q.toString()}`;
-  const c = await openEchoesWindow(browser, url, { width: w, height: h });
+  const c = tab ? await openTab(browser, url, { width: w, height: h }) : await openEchoesWindow(browser, url, { width: w, height: h });
   c.name = name;
   c.url = url;
   await waitReady(c.page, { minTick: 120, timeout: 150000 });
@@ -120,3 +122,25 @@ export function pct(arr, p) {
   const s = [...arr].sort((a, b) => a - b);
   return s[Math.min(s.length - 1, Math.floor(s.length * p))];
 }
+
+// A game page as a tab of the browser's default window.
+export async function openTab(browser, url, { width = 1280, height = 720, timeout = 180000 } = {}) {
+  const page = await browser.newPage();
+  const errors = [];
+  const consoleLines = [];
+  page.on('pageerror', (e) => errors.push(String(e && e.message ? e.message : e)));
+  page.on('console', (m) => consoleLines.push(`[${m.type()}] ${m.text()}`));
+  await page.setViewport({ width, height, deviceScaleFactor: 1 });
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
+  await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick >= 0, { timeout });
+  return { page, errors, consoleLines };
+}
+// A blank tab in front of the tabs opened with openTab: they become hidden
+// (document.visibilityState === 'hidden'); c.page.bringToFront() shows one
+// again, cover.bringToFront() hides it.
+export async function openCover(browser) {
+  const page = await browser.newPage();
+  await page.goto('about:blank');
+  return page;
+}
+export const visibility = (c) => c.page.evaluate(() => document.visibilityState);

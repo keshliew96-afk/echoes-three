@@ -46,9 +46,11 @@ import { validateServerUrl } from './lobbyClient.js';
 import { sanitizeName } from './protocol/messages.js';
 
 const now = () => performance.now();
-const GUEST_PRESSES = new Set(['dodge', 'skill_1', 'skill_2', 'skill_3', 'skill_4', 'skill_5', 'skill_6', 'skill_7', 'skill_8', 'interact']);
+// A seat plays at most 4 skills (keys 1-4; the user's correction — the
+// guest seats' class kits are 4 skills too). Keys 5-8 are unbound.
+const GUEST_PRESSES = new Set(['dodge', 'skill_1', 'skill_2', 'skill_3', 'skill_4', 'interact']);
 const KEY_OF = { dodge: 'Space', interact: 'KeyE', basic: 'Mouse2' };
-for (let i = 1; i <= 8; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
+for (let i = 1; i <= 4; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
 const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'focusPath', 'choosePath', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun']);
 // M4c: autoFill (the socket screen's F / pad Y) mutates the build too — a guest's
 // press becomes the same refused CMD as a socket() (build decisions are the host's).
@@ -517,10 +519,6 @@ export function createNetSession(ctx) {
     });
     for (const p of s.presses) {
       if (!GUEST_PRESSES.has(p.kind)) continue;
-      if (g.seat !== 0 && /^skill_[5-8]$/.test(p.kind)) {
-        g.pendingPresses.push(p); // the host answers empty_slot
-        continue;
-      }
       g.pendingPresses.push(p);
       if (p.kind !== 'interact' && g.own.ready) g.shadow.press(p.kind, ctxFor(p.kind));
     }
@@ -1103,6 +1101,14 @@ export function createNetSession(ctx) {
       remoteJumps03: rs.remoteJumps03,
       remoteJumps06: rs.remoteJumps06,
       remoteJumpRate06: rs.remoteJumpRate06,
+      remoteFrames: rs.remoteFrames,
+      hostileJumpMax: rs.hostileJumpMax,
+      hostileJumps03: rs.hostileJumps03,
+      hostileFrames: rs.hostileFrames,
+      smoothed: rs.smoothed,
+      smoothedMaxU: rs.smoothedMaxU,
+      smoothSnaps: rs.smoothSnaps,
+      teleportFrames: rs.teleportFrames,
       ownActionFeedbackMs: ss.ownActionFeedbackMs,
       retractions: ss.retractions,
       mispredictRetractMs: ss.mispredictRetractMs,
@@ -1184,7 +1190,9 @@ export function createNetSession(ctx) {
       if (guest) {
         guest.own.resetStats();
         guest.shadow.resetStats();
+        guest.replica.resetStats();
       }
+      if (host && host.resetStats) host.resetStats();
       frameStats.guestNetMs.length = 0;
       frameStats.frameOver50Net = 0;
     },
