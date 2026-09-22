@@ -825,6 +825,9 @@ export function createNetSession(ctx) {
           const ms = Math.max(0, Math.min(250, t - last));
           last = t;
           rawAdvance(ms, (tick) => host && host.step(tick));
+          // No rendered frames while hidden: each metronome period is the
+          // unit of the host's net-work accounting (hostNetMs).
+          if (host) host.frameEnd(ms);
         });
         log('host_hidden_metronome', {});
       } else {
@@ -1094,6 +1097,7 @@ export function createNetSession(ctx) {
       correctionSnaps: os.snaps,
       maxCorrectionPerFrame: os.maxCorrectionPerFrame,
       remoteJumpMax: rs.remoteJumpMax,
+      remoteStepMax: rs.remoteStepMax,
       remoteJumps03: rs.remoteJumps03,
       remoteJumps06: rs.remoteJumps06,
       remoteJumpRate06: rs.remoteJumpRate06,

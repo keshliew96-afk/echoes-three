@@ -345,21 +345,30 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
       e.z = z + vz * (1 - alpha);
       if (a.party) {
         const lr = lastRender.get(e.id);
+        const speed = Math.hypot(vx, vz); // u per host tick along the path
         if (lr) {
-          const jump = Math.hypot(x - lr.x, z - lr.z);
+          const step = Math.hypot(x - lr.x, z - lr.z);
+          // A JUMP is the part of a frame's displacement the replicated path
+          // does not explain: the body may legitimately cover speed × Δrt
+          // (a dash through a long frame moves 0.5 u in 50 ms); anything
+          // beyond that is a discontinuity (a hold released, an
+          // extrapolation corrected). The raw per-frame step is kept too.
+          const drt = Math.max(0, rt - lr.rt);
+          const jump = Math.max(0, step - Math.max(speed, lr.speed) * drt);
           // A frame that crosses an authoritative teleport (re-seat) is not a
           // smoothness failure: counted apart.
           const pp = P ? P.ents.get(e.id) : null;
           const tele = (b && Math.hypot(b.x - a.x, b.z - a.z) > tpU) || (pp && Math.hypot(a.x - pp.x, a.z - pp.z) > tpU);
-          if (tele && jump > 0.3) stats.teleportFrames += 1;
+          if (tele && step > 0.3) stats.teleportFrames += 1;
           else {
+            if (step > stats.remoteStepMax) stats.remoteStepMax = step;
             if (jump > stats.remoteJumpMax) stats.remoteJumpMax = jump;
             if (jump > 0.3) stats.remoteJumps03 += 1;
             if (jump > 0.6) stats.remoteJumps06 += 1;
           }
           stats.remoteFrames += 1;
         }
-        lastRender.set(e.id, { x, z });
+        lastRender.set(e.id, { x, z, rt, speed });
       }
     }
     return { state, f, extra, A: A.tick, B: B ? B.tick : null };
@@ -428,6 +437,7 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
         applyMsP95: a.length ? Math.round(a[Math.min(a.length - 1, Math.floor(a.length * 0.95))] * 100) / 100 : null,
         remoteJumpRate06: stats.remoteFrames ? Math.round((stats.remoteJumps06 / stats.remoteFrames) * 10000) / 10000 : 0,
         remoteJumpMax: Math.round(stats.remoteJumpMax * 1000) / 1000,
+        remoteStepMax: Math.round(stats.remoteStepMax * 1000) / 1000,
         buffered: snaps.length,
         queuedEvents: eventQ.length,
         resyncs,
