@@ -1,6 +1,11 @@
 // ZONE 1 — Command Bar (BUILD_BRIEF §17). The only permanent UI: four party
 // portraits (player + 3 allies), four skill slots in slot order (= execution
-// order), and the dodge slot on the right.
+// order), and the dodge slot on the right. Under each skill tile (where a
+// portrait carries its HP bar) an 8-segment SOCKET-FILL strip shows how many
+// of that skill's 8 node sockets hold a node (M4c): a filled Parchment
+// segment = a live node, a hollow Bone segment = a grey / saturation-inert
+// node (socketed, contributes nothing now), a dark segment = a vacant socket
+// — shape and value channels, never colour alone.
 //
 // PORTRAIT STATE MACHINE (§17, all seven states reproducible on camera):
 //   Healthy   (>50%)   static
@@ -34,7 +39,7 @@
 // own opaque plate in the tile's bottom strip (a box that is DISJOINT from the
 // abbrev box at every scale — see style.js); ready-pop 120 ms.
 import { PALETTE } from '../../data/palette.js';
-import { DODGE, TICK_HZ, SKILL_SLOTS } from '../../core/constants.js';
+import { DODGE, TICK_HZ, SKILL_SLOTS, SOCKETS_PER_SKILL } from '../../core/constants.js';
 import { ACCENTS, CHROME } from './style.js';
 import { iconEl, hasIcon } from './icons.js';
 
@@ -335,13 +340,62 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     if (id && hasIcon(id)) s.iconHost.appendChild(iconEl(id, { size: 26 }));
   }
 
-  // §23.9: SKILL_SLOTS (8) tiles in slot order = execution order, keys 1-8.
+  // SKILL_SLOTS (4) tiles in slot order = execution order, keys 1-4 (M4c:
+  // at most 4 equipped skills). Each tile sits in a column with its socket-
+  // fill strip beneath it (the portraits' HP-bar row).
   const skillGroup = el('div', 'hud-group hud-group-skill', bar);
   const skillEls = [];
   for (let i = 0; i < SKILL_SLOTS; i++) {
     const s = makeSlot(String(i + 1));
-    skillGroup.appendChild(s.slot);
+    const col = el('div', 'hud-skillcol', skillGroup);
+    col.appendChild(s.slot);
+    s.col = col;
+    s.pips = el('div', 'hud-slot-pips', col);
+    s.pipEls = [];
+    for (let k = 0; k < SOCKETS_PER_SKILL; k++) s.pipEls.push(el('i', null, s.pips));
+    s.pipSig = '';
+    s.sockets = null;
     skillEls.push(s);
+  }
+  // Socket fill, repainted from the build system only when the build or the
+  // kit changes (never per frame): filled / live / grey counts per tile.
+  let socketsDirty = true;
+  const markSockets = () => {
+    socketsDirty = true;
+  };
+  for (const t of ['node_socketed', 'node_unsocketed', 'build_restored', 'build_autofill', 'skill_equip', 'skills_restored', 'run_wiped', 'run_start', 'state_restored', 'room_start', 'room_cleared'])
+    bus.on(t, markSockets);
+  function paintSockets() {
+    socketsDirty = false;
+    const guestSeat = !!(world.netView && world.netView.seat > 0);
+    const b = typeof world.buildSystem === 'function' ? world.buildSystem() : null;
+    const v = b && typeof b.view === 'function' ? b.view() : null;
+    const slotsNow = world.skillSlots();
+    for (let i = 0; i < skillEls.length; i++) {
+      const s = skillEls[i];
+      const d = slotsNow[i];
+      const sk = d && v ? v.skills.find((x) => x.id === d.id) : null;
+      const row = sk ? sk.sockets : null;
+      const sig = guestSeat ? 'guest' : !d ? 'none' : row ? row.map((c) => (c ? (c.verdict === 'live' ? 'L' : 'G') : '.')).join('') : '........';
+      if (sig === s.pipSig) continue;
+      s.pipSig = sig;
+      s.pips.style.visibility = guestSeat || !d ? 'hidden' : '';
+      const cells = row ?? [];
+      let filled = 0;
+      let live = 0;
+      let grey = 0;
+      for (let k = 0; k < s.pipEls.length; k++) {
+        const c = cells[k] ?? null;
+        const on = !!c && c.verdict === 'live';
+        const g = !!c && c.verdict !== 'live';
+        s.pipEls[k].className = on ? 'is-on' : g ? 'is-grey' : '';
+        if (c) filled += 1;
+        if (on) live += 1;
+        if (g) grey += 1;
+      }
+      s.sockets = d ? { filled, live, grey, of: SOCKETS_PER_SKILL } : null;
+      s.col.title = d ? `${filled} / ${SOCKETS_PER_SKILL} sockets filled${grey ? ` (${grey} contribute nothing here)` : ''}` : '';
+    }
   }
   el('div', 'hud-sep', bar);
   const dodgeGroup = el('div', 'hud-group hud-group-dodge', bar);
@@ -568,6 +622,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     );
 
     const view = world.skillSlots();
+    if (socketsDirty || skillEls.some((s, i) => (view[i] ? view[i].id : null) !== s.iconId)) paintSockets();
     for (let i = 0; i < skillEls.length; i++) {
       const s = skillEls[i];
       const d = view[i];
@@ -847,6 +902,8 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
           passive: s.slot.classList.contains('is-passive'),
           cooling: s.cooling,
           keyBox: rect(s.slot.querySelector('.hud-slot-key')),
+          sockets: s.sockets ?? null,
+          pipsBox: s.pips ? rect(s.pips) : null,
           abbrevBox: rect(s.abbrev),
           numBox: rect(s.num),
           tileBox: rect(s.slot),

@@ -445,7 +445,10 @@ export const RUN_CSS = `
   #run-screen .rn-shop .rn-cardhead {
     display: flex; align-items: baseline; gap: 9px; min-width: 0; white-space: nowrap;
   }
+  #run-screen .rn-shop .rn-cardsub .rn-sublimit { display: block; }
+  #run-screen .rn-shop .rn-cardsub .rn-cardkind,
   #run-screen .rn-shop .rn-cardhead .rn-cardkind {
+    display: inline-block; margin-right: 4px;
     font-size: 16px; letter-spacing: 0.06em; text-transform: uppercase;
     color: var(--rar, ${PALETTE.bone}); opacity: 0.92;
     padding: 2px 7px; border-radius: 6px;
@@ -690,9 +693,14 @@ export const RUN_CSS = `
   #run-screen.rn-compact .rn-shop .rn-shelf { margin: 0; }
   #run-screen.rn-compact .rn-shop .rn-title { font-size: 23px; }
   /* §17 floor: HUD text is never below 16 px, tags included. */
+  #run-screen.rn-compact .rn-shop .rn-cardsub .rn-cardkind,
   #run-screen.rn-compact .rn-shop .rn-cardhead .rn-cardkind { font-size: 16px; padding: 0 6px; letter-spacing: 0.06em; }
+  /* M4c: FOUR cards on the shelf. 216 px in the compact reflow keeps the
+     whole plate inside a 1024 px window (4 x 216 + 3 x 14 + 40 = 946) at the
+     same §17 type sizes; the rarity tag rides the sub line (cards.js row). */
+  #run-screen.rn-compact .rn-shop .rn-shelf { gap: 14px; }
   #run-screen.rn-compact .rn-shop .rn-item,
-  #run-screen.rn-compact .rn-shop .rn-item .rn-card { width: 280px; }
+  #run-screen.rn-compact .rn-shop .rn-item .rn-card { width: 216px; }
   #run-screen.rn-compact .rn-shop .rn-buttons { margin-top: 6px; }
   #run-screen.rn-compact .rn-shop .rn-lamp { top: -6px; height: 120px; }
 

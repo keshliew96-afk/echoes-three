@@ -332,6 +332,9 @@ if (contentfx) service('content').fx = () => contentfx.debugCounts();
   const c = service('content');
   const pv = new Vector3();
   c.advise = () => world.runSystem().autopilot.advise(world.tick);
+  // M4c probe surface: the socket screen's rows / cells / bench / cursor /
+  // hand / on-screen rects (4 skills × 8 sockets).
+  c.socketUi = () => (socketScreen ? socketScreen.debug() : null);
   c.project = (x, z, y = 0.45) => {
     pv.set(x, y, z).project(stage.camera);
     return { x: Math.round((pv.x + 1) * 0.5 * window.innerWidth), y: Math.round((1 - pv.y) * 0.5 * window.innerHeight), behind: pv.z > 1 };

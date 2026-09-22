@@ -75,7 +75,7 @@ export const NODE_EFFECT_SHORT = {
   sharpen: '+25% power on this skill.',
   quicken: '−15% cooldown on this skill.',
   multiply: '+1 count — one more bolt or target.',
-  ascend: '×2 power (a passive: every pulse).',
+  ascend: '×2 power — a passive: every pulse.',
   bounce: 'one extra hop within 2.2 u — ricochet, or chain-heal.',
   siphon: 'damage self-heals · heals scorch the nearest enemy.',
   echo: 'the cast repeats 1.0 s later — 50% damage, 100% heal.',
@@ -88,7 +88,7 @@ export const NODE_EFFECT_SHORT = {
   galvanize: 'hits expose · heals inspire allies.',
   bulwark: 'hits and overheals become shields.',
   split: 'impacts split into 2 shards at 40%.',
-  resonance: 'every 3rd cast ×2 (a passive: pulse).',
+  resonance: 'every 3rd cast — or pulse — at ×2.',
 };
 
 const SHAPE_LABEL = {
@@ -147,10 +147,11 @@ export function skillCardHtml(id) {
 
 // A node candidate card body. `verdict` is the §15.5 kit line, `extra` any
 // binding card copy (Siphon's line).
-// `row` = the shop's shelf layout (icon medallion beside a name row that
-// carries the rarity tag; the kind moves into the sub line). Same words as
-// the column card, arranged so a 300 px card never wraps its header — the
-// round-1 "Ascend" defect was "NODE · legendary" breaking onto two lines.
+// `row` = the shop's shelf layout (icon medallion beside the name; the
+// rarity tag leads the sub line). Same words as the column card, arranged so
+// a narrow shelf card never wraps its header — the round-1 "Ascend" defect was
+// "NODE · legendary" breaking onto two lines, and the M4c 4-card shelf (216 px
+// cards in the compact reflow) has no room for a tag beside "Resonance".
 export function nodeCardHtml(
   id,
   { verdict = null, extra = null, owned = 0, compact = false, bench = false, row = false } = {}
@@ -160,8 +161,8 @@ export function nodeCardHtml(
   const effect = (compact ? NODE_EFFECT_SHORT[id] : NODE_EFFECT[id]) ?? NODE_EFFECT[id] ?? '';
   const head = row
     ? `<div class="rn-cardicon">${cardIconHtml(id, 30)}</div>
-    <div class="rn-cardhead"><span class="rn-cardname">${esc(n.name)}</span><span class="rn-cardkind">${esc(n.rarity)}</span></div>
-    <div class="rn-cardsub">node · ${esc(n.kind)} · limit ${n.limit}/skill</div>`
+    <div class="rn-cardhead"><span class="rn-cardname">${esc(n.name)}</span></div>
+    <div class="rn-cardsub"><span class="rn-cardkind">${esc(n.rarity)}</span> ${esc(n.kind)}<span class="rn-sublimit">limit ${n.limit}/skill</span></div>`
     : `<div class="rn-cardkind">NODE · ${esc(n.rarity)}</div>
     <div class="rn-cardicon">${cardIconHtml(id, 40)}</div>
     <div class="rn-cardname">${esc(n.name)}</div>

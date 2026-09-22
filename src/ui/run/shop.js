@@ -1,6 +1,8 @@
 // Shop (BUILD_BRIEF §16 "Shop (room 7, one visit)" + §14 economy):
-//   - 3 node cards drawn at room activation, price plaques BELOW the card at
-//     the §14 rarity prices 25 / 30 / 35
+//   - 4 node cards drawn at room activation (M4c node-supply rebalance for 8
+//     sockets per skill: 2 common + 1 rare + 1 legendary), price plaques BELOW
+//     the card at the §14 rarity prices 15 / 20 / 25 — 72 Glint buys any
+//     three, never all four
 //   - Glint balance in the top context strip (Pale Gold + a >=24 px coin)
 //   - "you own N" line when applicable
 //   - purchase = whole-card click -> price-stamp flash -> the card departs to

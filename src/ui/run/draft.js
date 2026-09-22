@@ -4,10 +4,13 @@
 // instead"); when both pools are empty the page says "the run moves on" and
 // offers a single Continue.
 //
-// `free_skill_slots` rides the screen strip so the player can see WHY a skill
-// reward turned into a node.
+// `free_skill_slots` (4 − owned: at most 4 skills, M4c) rides the screen strip
+// so the player can see WHY a skill reward turned into a node. The room's
+// CLEAR SPOILS (M4c node supply: 2 nodes straight to the bench per combat
+// clear) are named on their own line under the card — they are already on
+// the bench, whatever the player does with this candidate.
 import { esc, isCompact } from './style.js';
-import { skillCardHtml, nodeCardHtml, RARITY_COLOR } from './cards.js';
+import { skillCardHtml, nodeCardHtml, RARITY_COLOR, NODE_GLYPH } from './cards.js';
 import { NODES } from '../../sim/nodes.js';
 
 export function createDraftScreen({ run, build }) {
@@ -22,6 +25,7 @@ export function createDraftScreen({ run, build }) {
     </div>
     <div class="rn-cardhost"></div>
     <div class="rn-note rn-subline" style="display:none"></div>
+    <div class="rn-note rn-spoils" style="display:none"></div>
     <div class="rn-buttons">
       <div class="rn-btn rn-take rn-primary">Take</div>
       <div class="rn-btn rn-decline">Decline</div>
@@ -30,6 +34,7 @@ export function createDraftScreen({ run, build }) {
 
   const host = el.querySelector('.rn-cardhost');
   const subline = el.querySelector('.rn-subline');
+  const spoilsEl = el.querySelector('.rn-spoils');
   const btnTake = el.querySelector('.rn-take');
   const btnDecline = el.querySelector('.rn-decline');
   const freeEl = el.querySelector('.rn-free');
@@ -88,6 +93,20 @@ export function createDraftScreen({ run, build }) {
         <div class="rn-cardicon">·</div>
         <div class="rn-cardname">Empty-handed</div>
         <div class="rn-body">Both pools are spent.</div></div>`;
+    }
+    // Clear spoils of THIS room (already on the bench).
+    const sp = view.spoils && view.spoils.room === view.room ? view.spoils.nodes : [];
+    if (sp.length) {
+      spoilsEl.style.display = '';
+      spoilsEl.innerHTML = `<b>Spoils</b> → bench: ${sp
+        .map((id) => {
+          const n = NODES[id];
+          return `<span style="color:${RARITY_COLOR[n ? n.rarity : 'common']}">${esc(NODE_GLYPH[id] ?? '')} ${esc(n ? n.name : id)}</span>`;
+        })
+        .join(' · ')}`;
+    } else {
+      spoilsEl.style.display = 'none';
+      spoilsEl.textContent = '';
     }
     // Substitution / empty line (§16).
     if (r.line) {

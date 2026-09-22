@@ -508,6 +508,22 @@ export function hudCss() {
   border: 2px solid ${CHROME.rim};
   overflow: hidden;
 }
+/* SOCKET-FILL strip (M4c): 8 segments under each skill tile, in the row
+   where a portrait carries its HP bar (same gap, same height), so the bar's
+   silhouette is unchanged. Live node = filled Parchment; grey / inert node =
+   a hollow Bone segment; vacant = the dark plate. */
+.hud-skillcol { position: relative; width: ${TILE}px; }
+.hud-slot-pips {
+  display: flex; gap: 2px;
+  margin-top: ${HP_GAP}px; height: ${HP_H}px;
+}
+.hud-slot-pips i {
+  flex: 1 1 0; border-radius: 2px;
+  background: ${CHROME.plateSunk};
+  border: 1px solid ${CHROME.rimDim};
+}
+.hud-slot-pips i.is-on { background: ${PALETTE.parchment}; border-color: ${PALETTE.parchment}; }
+.hud-slot-pips i.is-grey { background: transparent; border: 2px solid ${PALETTE.bone}; }
 .hud-slot.is-empty { border-style: dashed; border-color: ${CHROME.rimDim}; }
 .hud-slot.is-empty { background: ${CHROME.plate}; }
 .hud-slot.is-empty .hud-slot-abbrev { color: ${CHROME.rimHot}; background: ${CHROME.plate}; box-shadow: none; }
