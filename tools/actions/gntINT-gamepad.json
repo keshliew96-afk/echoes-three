@@ -1,0 +1,98 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const mk=(p)=>({index:0,id:'mock pad (STANDARD GAMEPAD)',connected:true,mapping:'standard',timestamp:performance.now(),axes:[0,0,0,0],buttons:Array.from({length:17},(_,i)=>({pressed:i===p,touched:i===p,value:i===p?1:0}))});window.__pad={btn:-1};navigator.getGamepads=()=>[mk(window.__pad.btn)];return true})()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({TAG:'before',stack:__echoes.app.stack(),focus:(__echoes.app.focus()||{}).id||null,rings:__echoes.app.ringCount(),pad:__echoes.app.gamepad&&__echoes.app.gamepad()}))()"
+ },
+ {
+  "type": "eval",
+  "code": "window.__pad.btn=9"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__pad.btn=-1"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({TAG:'after-start',stack:__echoes.app.stack(),focus:(__echoes.app.focus()||{}).id||null,rings:__echoes.app.ringCount(),pad:__echoes.app.gamepad&&__echoes.app.gamepad()}))()"
+ },
+ {
+  "type": "shot",
+  "name": "gntINT-gamepad-pause"
+ },
+ {
+  "type": "eval",
+  "code": "window.__pad.btn=0"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "window.__pad.btn=-1"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({TAG:'after-A-on-resume',stack:__echoes.app.stack(),focus:(__echoes.app.focus()||{}).id||null,rings:__echoes.app.ringCount(),pad:__echoes.app.gamepad&&__echoes.app.gamepad()}))()"
+ },
+ {
+  "type": "eval",
+  "code": "window.__pad.btn=9"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "window.__pad.btn=-1"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({TAG:'start-again',stack:__echoes.app.stack(),focus:(__echoes.app.focus()||{}).id||null,rings:__echoes.app.ringCount(),pad:__echoes.app.gamepad&&__echoes.app.gamepad()}))()"
+ },
+ {
+  "type": "eval",
+  "code": "window.__pad.btn=1"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "window.__pad.btn=-1"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({TAG:'after-B',stack:__echoes.app.stack(),focus:(__echoes.app.focus()||{}).id||null,rings:__echoes.app.ringCount(),pad:__echoes.app.gamepad&&__echoes.app.gamepad()}))()"
+ }
+]

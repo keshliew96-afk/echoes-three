@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.audio;return {state:a.state,types:a.eventTypes().sort(),cues:a.cues().length}})()"
+ }
+]

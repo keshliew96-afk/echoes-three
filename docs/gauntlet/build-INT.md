@@ -1,4 +1,5 @@
-STATUS: PARTIAL
+STATUS: COMPLETE
+VERDICT: every INT item is committed and verified on the running game — pause menu on every page (Esc / P / Start, socket screen first, 0 ticks while paused, MP-honest), the whole journey by real input 38/38 on the dev server AND on the built bundle, no dead end in 19/19 screen round trips, audio cues for all new W2 content (12/12 live + 12 registered, 40 documented silent), no dev chrome in the player build, `npm run build` + vite preview boots and plays, and the original core loop regression green (8 rooms by real keys, 1-tick move, i-frames, telegraphs >= 42 ticks, max frame 97 ms, 9/9 Node goldens).
 INT (integration, W5) — in progress. Scope: pause menu, full journey, cross-module
 wiring, dev-chrome gating, production build, core-loop regression.
 
@@ -78,3 +79,26 @@ wiring, dev-chrome gating, production build, core-loop regression.
 - Decision D3: the harness mutes its frame-time sampler around its own
   screenshots — a puppeteer capture stalls the page up to 1.6 s and is not a
   game hitch (the first run's "1667 ms frame" was exactly that).
+
+### Step 6 — no-dead-end sweep, gamepad, determinism (commit 19aa4cd + this one)
+- tools/gntINT-deadends.mjs 19/19 (captures/gntINT-deadends.json): pause >
+  Settings / Save / Load round trips with the focus restored on the item they
+  were opened from; a Keep/Revert answered on the pause > Settings path leaves
+  the stack at ["pause"] and puts renderScale back to 1.00; Resume gives the
+  ticks back (242 -> 286); title > Settings / Load / Records / Multiplayer;
+  all five settings tabs (Controls is the read-only reference tab: 0 rows, 560
+  chars, ring on the tab); Exit > Cancel and Exit > Confirm > farewell >
+  Return to Title. 0 page errors.
+- Gamepad (mocked standard pad, tools/actions/gntINT-gamepad.json): Start
+  opens the pause menu (focus pz-resume, 1 ring), A confirms Resume (stack
+  []), Start opens it again, B closes it.
+- Determinism after the INT commits: tools/gntM2-goldens.mjs G2.10 ok, 9/9
+  matched; in-page `__echoes.sim.trace(600,3)` eventsHash 817f1e9940c91d76 =
+  the v0.5.0 reference. (A "GOLDEN MISMATCH" seen first was the audit's own
+  `--script 1`; the goldens are script 3.)
+- Player build: `npm run build` -> dist/, `npx vite preview --port 4311` ->
+  the FULL journey harness 38/38 against the built bundle
+  (captures/gntINT-journey-prod.json) and the ARCH core loop
+  (captures/gntINT-prod-npm: run_start 678, room_cleared/reward 776).
+- Final regression at v0.5.59: smoke exit 0 / 0 PAGEERROR; core loop on the
+  dev server run_start 574 -> room_cleared 672 -> reward 672.

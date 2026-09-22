@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>({v:__echoes.version,frozen:__echoes.sim.frozen,tick:__echoes.tick}))()"
+ },
+ {
+  "type": "eval",
+  "code": "JSON.stringify(__echoes.sim.trace(600,3))"
+ }
+]
