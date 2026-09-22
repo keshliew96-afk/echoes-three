@@ -89,6 +89,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
         lastFrame: null,
         missingRun: 0,
         carryBits: 0,
+        carrySeqs: [],
         synthetic: new Set(),
         state: 'none', // none | human | away
         pendingReason: null,
@@ -111,6 +112,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     f.lastFrame = null;
     f.missingRun = 0;
     f.carryBits = 0;
+    f.carrySeqs = [];
     f.synthetic.clear();
     f.link.acked = 0;
     if (f.state === 'human') f.pendingReason = reason;
@@ -132,6 +134,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
         // presses land on the next tick, exactly once.
         if (fr.press && f.synthetic.has(fr.seq)) {
           f.carryBits |= fr.press;
+          f.carrySeqs.push({ bits: fr.press, seq: fr.seq });
           f.synthetic.delete(fr.seq);
           stats.latePresses += 1;
         }
@@ -150,7 +153,8 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
   }
 
   // consume(feed) -> SeatInput | 'away' | null (no input yet)
-  function consume(f) {
+  const staleLog = []; // { seat, startTick, neutralTick, endTick } (probes, last 40)
+  function consume(f, tick = 0) {
     if (f.lastConsumed === null) {
       if (f.buffer.size === 0) return null;
       f.lastConsumed = Math.min(...f.buffer.keys()) - 1;
@@ -169,6 +173,10 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
         frames.push(fr);
       }
       f.lastFrame = frames[frames.length - 1];
+      if (f.missingRun > 0) {
+        const e = staleLog.findLast((x) => x.seat === f.seat);
+        if (e && e.endTick === null) e.endTick = tick;
+      }
       f.missingRun = 0;
     } else if (depth > 0) {
       // A gap: `next` was lost beyond the input redundancy. Consume it as a
@@ -185,6 +193,13 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       // neutral; no seq is consumed — the real frames still land in order.
       if (!f.lastFrame) return null;
       f.missingRun += 1;
+      if (f.missingRun === 1) {
+        staleLog.push({ seat: f.seat, startTick: tick, neutralTick: null, endTick: null });
+        if (staleLog.length > 40) staleLog.shift();
+      } else if (f.missingRun === STALE_REPEAT_TICKS + 1) {
+        const e = staleLog.findLast((x) => x.seat === f.seat);
+        if (e && e.neutralTick === null) e.neutralTick = tick;
+      }
       if (f.missingRun > stats.staleRepeatTicksMax && f.missingRun <= STALE_REPEAT_TICKS) stats.staleRepeatTicksMax = f.missingRun;
       if (f.lastFrame.away) return 'away';
       const fr = f.missingRun <= STALE_REPEAT_TICKS ? repeatFrame(f.lastFrame, f.lastConsumed) : neutralFrame(f.lastFrame, f.lastConsumed);
@@ -196,8 +211,10 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     const last = frames[frames.length - 1];
     if (last.away) return 'away';
     const bits = f.carryBits;
+    const cs = f.carrySeqs;
     f.carryBits = 0;
-    return seatInputOf(frames, bits);
+    f.carrySeqs = [];
+    return seatInputOf(frames, bits, cs);
   }
 
   // ------------------------------------------------------------- step --
@@ -219,7 +236,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     const live = new Set(connectedGuestSeats().map((s) => s.index));
     for (const [seat, f] of feeds) {
       if (seat === mySeat) continue;
-      let inp = live.has(seat) ? consume(f) : null;
+      let inp = live.has(seat) ? consume(f, tick) : null;
       if (inp === 'away') {
         if (f.state === 'human') si.reasons[seat] = 'away';
         f.state = 'away';
@@ -452,6 +469,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       eventsSent: stats.eventsSent,
       inputBufferDepth: depths.length ? Math.round((depths.reduce((a, b) => a + b, 0) / depths.length) * 100) / 100 : null,
       staleRepeatTicksMax: stats.staleRepeatTicksMax,
+      staleLog: staleLog.slice(-40),
       staleRepeats: stats.staleRepeats,
       neutralTicks: stats.neutralTicks,
       gapsFilled: stats.gapsFilled,
@@ -462,6 +480,9 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       rewindTicksAvg: rs.avgTicks,
       rewinds: rs.rewound,
       rewindClamped: rs.clamped,
+      rewindWantedP50: rs.wantedP50,
+      rewindWantedP95: rs.wantedP95,
+      rewindMaxTicks: rs.maxRewind,
       lagCompHits: lag.lag ? lag.lag.compHits : null,
       lagCompSelections: lag.lag ? lag.lag.selections : null,
       lagCompOn: ring.enabled,

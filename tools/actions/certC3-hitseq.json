@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"hit\",\"hit_immune\",\"sound\",\"hitstop\",\"death\",\"screenshake\",\"ally_basic\",\"ally_cast\",\"skill_cast\",\"room_cleared\",\"enemy_spawn\",\"wave_start\",\"room_enter\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"telegraph_start\",\"telegraph_resolve\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed '+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<40000){if(E.state().enemies.length>=3)return {ok:true,tick:E.tick,ms:Math.round(performance.now()-t0)};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('iframe',0,60000);const st=E.state();\n    for(let i=1;i<st.party.length;i++){const p=st.party[i];E.cmd('spawn','boar',+(p.x+0.6).toFixed(2),+(p.z+0.6).toFixed(2));}\n    (async()=>{while(true){try{E.cmd('iframe',0,600);for(const e of E.state().enemies)E.cmd('setHp',e.id,1);\n      const u=E.runUi();if(u.screen==='draft')E.cmd('draftDecline');}catch(e){}await new Promise(r=>setTimeout(r,16));}})();\n    return {enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__hs=[];E.on('hit',h=>{if(h.kind!=='player')window.__hs.push([h.tick,h.source,h.amount,h.target]);});\n    (function poll(){const L=document.querySelector('#dmg-num-layer');window.__hn=window.__hn||[];\n      const f=()=>{if(L){for(const n of L.querySelectorAll('.dmg-num')){const s=getComputedStyle(n);\n        if(s.display!=='none'&&parseFloat(s.opacity||'1')>0.05){const r=n.getBoundingClientRect();\n          window.__hn.push([E.tick,(n.textContent||'').trim(),Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]);}}}\n        requestAnimationFrame(f);};requestAnimationFrame(f);})();\n    return 'seq trackers armed at '+E.tick})()"
+ }
+]

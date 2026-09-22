@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;let st=null,err=null;try{st=E.state();}catch(e){err=String(e);}\n  const P=window.__arenaProbe;const cam=P&&P.stage&&P.stage.camera;\n  const evs=(E.events||[]).filter(e=>/boss|screenshake|room_enter|wave_start|death/.test(e.type)).map(e=>[e.tick,e.type,e.cause||'']);\n  let ru=null;try{ru=E.runUi();}catch(e){ru=String(e);}\n  return {tag:\"boot\",tick:E.tick,fps:E.fps,version:E.version,seed:E.seed,url:location.search,\n    probe:!!P,stageKeys:P&&P.stage?Object.keys(P.stage):null,\n    cam:cam?[cam.position.x,cam.position.y,cam.position.z].map(v=>+v.toFixed(3)):null,\n    sceneHook:P&&P.stage&&P.stage.scene?typeof P.stage.scene.onBeforeRender:null,\n    stErr:err,stRoom:st?JSON.stringify(st.room).slice(0,200):null,stScene:st?st.scene:null,enemies:st&&st.enemies?st.enemies.map(e=>[e.id,e.kind,e.hp]):null,\n    vfxArena:st&&st.vfx?!!st.vfx.arena:null,screen:ru&&ru.screen,runState:JSON.stringify(E.cmd('runState')).slice(0,300),evs:evs.slice(-40)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC5-b-recon8-a"
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;let st=null,err=null;try{st=E.state();}catch(e){err=String(e);}\n  const P=window.__arenaProbe;const cam=P&&P.stage&&P.stage.camera;\n  const evs=(E.events||[]).filter(e=>/boss|screenshake|room_enter|wave_start|death/.test(e.type)).map(e=>[e.tick,e.type,e.cause||'']);\n  let ru=null;try{ru=E.runUi();}catch(e){ru=String(e);}\n  return {tag:\"boot+3s\",tick:E.tick,fps:E.fps,version:E.version,seed:E.seed,url:location.search,\n    probe:!!P,stageKeys:P&&P.stage?Object.keys(P.stage):null,\n    cam:cam?[cam.position.x,cam.position.y,cam.position.z].map(v=>+v.toFixed(3)):null,\n    sceneHook:P&&P.stage&&P.stage.scene?typeof P.stage.scene.onBeforeRender:null,\n    stErr:err,stRoom:st?JSON.stringify(st.room).slice(0,200):null,stScene:st?st.scene:null,enemies:st&&st.enemies?st.enemies.map(e=>[e.id,e.kind,e.hp]):null,\n    vfxArena:st&&st.vfx?!!st.vfx.arena:null,screen:ru&&ru.screen,runState:JSON.stringify(E.cmd('runState')).slice(0,300),evs:evs.slice(-40)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC5-b-recon8-b"
+ }
+]

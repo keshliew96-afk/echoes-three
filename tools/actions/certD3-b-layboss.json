@@ -1,0 +1,47 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"death\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"downed\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"enemy_despawn\",\"director_stop\",\"victory\",\"defeat\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed '+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',8);return {vp:[innerWidth,innerHeight],room:r&&r.room,mode:r&&r.mode,boss:r&&r.boss}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<60000){try{if((()=>{const r=E.cmd('runState');return r&&r.boss&&r.boss.active;})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),boss:E.cmd('runState').boss};}catch(e){}await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,boss:E.cmd('runState').boss}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__ka=setInterval(()=>{try{const s=E.state();for(const p of s.party){if(p.downed){try{E.cmd('rally');}catch(e){}}if(p.downed||p.hp<p.maxHp*0.6){try{E.cmd('setHp',p.id,1);}catch(e){}}}}catch(e){}},400);return 'partyAlive armed t'+E.tick})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 380
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const TAG=\"boss-layout\";\nconst vis=(el)=>{const cs=getComputedStyle(el);if(cs.display==='none'||cs.visibility==='hidden'||+cs.opacity<0.02)return false;const r=el.getBoundingClientRect();return r.width>0.5&&r.height>0.5;};\nconst R=(el)=>{const r=el.getBoundingClientRect();return [Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)];};\nconst nm=(el)=>((el.id?'#'+el.id:'')+(el.className&&typeof el.className==='string'?'.'+el.className.trim().split(/\\s+/).join('.'):''))||el.tagName;\nconst grab=()=>{const vw=innerWidth,vh=innerHeight;const comps=[];\n const push=(el,extra)=>{if(!vis(el))return;const r=R(el);if(r[2]>=vw-1&&r[3]>=vh-1)return;comps.push([nm(el)+(extra||''),r,(el.textContent||'').trim().replace(/\\s+/g,' ').slice(0,34)]);};\n const hud=document.getElementById('hud');\n if(hud){for(const el of hud.children)push(el);\n   for(const el of hud.querySelectorAll('*'))if(/boss/i.test(el.id||'')||/boss/i.test(typeof el.className==='string'?el.className:''))push(el,'|BOSS');}\n for(const el of document.querySelectorAll('body *')){const id=el.id||'';const cl=typeof el.className==='string'?el.className:'';\n   if(/boss/i.test(id)||/boss/i.test(cl)){if(!comps.some(c=>c[0].split('|')[0]===nm(el)))push(el,'|BOSS');}}\n const rs=document.getElementById('run-screen');\n if(rs&&vis(rs)){for(const el of rs.querySelectorAll('.rn-page,.rn-card,.rn-door,button'))push(el);}\n for(const el of document.querySelectorAll('body > *'))if(el.tagName!=='CANVAS'&&el.id!=='hud'&&el.id!=='run-screen')push(el);\n const over=[];\n for(const el of document.querySelectorAll('body *')){if(el.tagName==='CANVAS'||el.ownerSVGElement)continue;if(!vis(el))continue;const r=el.getBoundingClientRect();\n  if(r.left<-0.5||r.top<-0.5||r.right>vw+0.5||r.bottom>vh+0.5){if(Math.round(r.width)>=vw&&Math.round(r.height)>=vh)continue;over.push([nm(el),R(el)]);}}\n const outv=comps.filter(c=>c[1][0]<-0.5||c[1][1]<-0.5||c[1][0]+c[1][2]>vw+0.5||c[1][1]+c[1][3]>vh+0.5).map(c=>[c[0],c[1]]);\n const ix=(a,b)=>{const x=Math.min(a[0]+a[2],b[0]+b[2])-Math.max(a[0],b[0]);const y=Math.min(a[1]+a[3],b[1]+b[3])-Math.max(a[1],b[1]);return x>0.5&&y>0.5?[Math.round(x),Math.round(y)]:null;};\n const contains=(a,b)=>a[0]<=b[0]+0.5&&a[1]<=b[1]+0.5&&a[0]+a[2]>=b[0]+b[2]-0.5&&a[1]+a[3]>=b[1]+b[3]-0.5;\n const hits=[];\n for(let i=0;i<comps.length;i++)for(let j=i+1;j<comps.length;j++){const A=comps[i],B=comps[j];\n   if(A[0].split('|')[0]===B[0].split('|')[0])continue;\n   const o=ix(A[1],B[1]);if(!o)continue;\n   const rel=contains(A[1],B[1])?'A_contains_B':(contains(B[1],A[1])?'B_contains_A':'CROSS');\n   hits.push([A[0],A[1],B[0],B[1],o,rel]);}\n let bn=null;try{bn=E.hud.banner();}catch(e){}\n let bp=null;try{const r=E.cmd(\"runState\");bp=r&&r.boss?{pct:r.boss.pct,hp:r.boss.hp,adds:r.boss.adds,phases:r.boss.phasesFired,quake:!!r.boss.quake}:null;}catch(e){}\n let sc='?',us='?';try{sc=E.state().scene;}catch(e){}try{us=E.runUi().screen;}catch(e){}\n return {t:+performance.now().toFixed(0),tick:E.tick,vp:[vw,vh],scene:sc,uiScreen:us,banner:bn,boss:bp,enemies:(()=>{try{return E.state().enemies.length}catch(e){return -1}})(),comps,overflow:over,outOfViewport:outv,overlaps:hits};};\nconst t0=performance.now();const seen=new Map();const incidents=[];const all=[];\nwhile(performance.now()-t0<14000){const g=grab();all.push(g);\n const sig=JSON.stringify(g.comps.map(c=>[c[0],c[1]]));\n if(!seen.has(sig))seen.set(sig,g);\n if(g.overlaps.some(h=>h[5]==='CROSS')||g.outOfViewport.length||g.overflow.length)incidents.push(g);\n await new Promise(r=>setTimeout(r,250));}\nconst isBoss=(c)=>/\\|BOSS$/.test(c[0]);\nconst isBanner=(c)=>/hud-banner/.test(c[0])&&/show/.test(c[0]);\nconst bossFrames=all.filter(g=>g.comps.some(isBoss));\nconst bannerFrames=all.filter(g=>g.comps.some(isBanner));\nconst both=all.filter(g=>g.comps.some(isBoss)&&g.comps.some(isBanner));\nreturn {tag:TAG,samples:all.length,distinctLayouts:seen.size,\n bossPlateFrames:bossFrames.length,bannerFrames:bannerFrames.length,bossPlateAndBannerFrames:both.length,\n crossOverlapIncidents:incidents.filter(g=>g.overlaps.some(h=>h[5]==='CROSS')).length,\n outOfViewportIncidents:incidents.filter(g=>g.outOfViewport.length).length,\n overflowIncidents:incidents.filter(g=>g.overflow.length).length,\n firstBossFrame:bossFrames[0]||null,lastBossFrame:bossFrames[bossFrames.length-1]||null,\n bothFrame:both[0]||null,bothFrameLast:both[both.length-1]||null,\n incidentSample:incidents.slice(0,4),\n layouts:[...seen.values()].slice(0,10)};})()"
+ },
+ {
+  "type": "shot",
+  "name": "certD3-b-layboss-mid"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('runState');const s=E.state();return {tag:'layboss-post',vp:[innerWidth,innerHeight],tick:E.tick,boss:r&&r.boss,enemies:s.enemies.length,ents:E.entityCount,banner:E.hud.banner(),screen:E.runUi().screen,quakes:window.__c.ev.filter(e=>e.T==='boss_quake_start').map(e=>e.tick),adds:window.__c.ev.filter(e=>e.T==='boss_adds').map(e=>[e.tick,e.pct,e.spawned])}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__ka);return {stopped:true,lg:window.__lg||null,tick:E.tick}})()"
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ }
+]

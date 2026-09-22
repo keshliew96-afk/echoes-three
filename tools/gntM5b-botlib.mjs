@@ -122,7 +122,9 @@ export function createPlayingGuest({ server, name = 'Player', seed = 5, version 
     },
   });
 
+  let forced = null; // a fixed input (stale-input probe): { move: {x, z}, aim? }
   function sample() {
+    if (forced) return { move: forced.move || { x: 0, z: 0 }, aim: forced.aim || (me ? { x: me.x + 1, z: me.z } : null), basicAttackHeld: false, reviveHeld: false, presses: [] };
     const s = scriptedInput(seed, seq, { skillSlots: 4, cx: me ? me.x : 0, cz: me ? me.z : 0, aimRadius: 2.4 });
     if (target && me) {
       s.aim = { x: target.x, z: target.z };
@@ -161,6 +163,9 @@ export function createPlayingGuest({ server, name = 'Player', seed = 5, version 
     },
     setCut(v) {
       cut = !!v;
+    },
+    setForced(v) {
+      forced = v || null;
     },
     requestFull() {
       needFull = true;

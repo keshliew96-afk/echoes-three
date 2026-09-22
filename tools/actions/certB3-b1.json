@@ -1,0 +1,254 @@
+[
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3={ev:[],t0:E.tick};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"reward\",\"draft\",\"draft_taken\",\"path_chosen\",\"shop_buy\",\"currency_denied\",\"boss_spawn\",\"boss_death\",\"victory\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"downed\",\"revive\",\"director_stop\"])E.on(t,e=>window.__b3.ev.push({T:t,tick:e&&e.tick!=null?e.tick:E.tick,d:(()=>{const o={};for(const k of Object.keys(e||{}))if(['room','pct','spawned','id','kind','reason','result','wallet','item','skill','door','index','seed','mode'].includes(k))o[k]=e[k];return o;})()}));return 'armed t'+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B1-camp\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const c=E.cmd('campState');return {player:c.player,portal:c.portal,promptVisible:c.promptVisible,inPortal:c.inPortal,promptTxt:(document.querySelector('#camp-prompt,.camp-prompt,[data-prompt]')||{}).textContent}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const c=E.cmd('campState');return {afterA:c.player}})()"
+ },
+ {
+  "type": "loop",
+  "label": "walkToPortal",
+  "maxMs": 30000,
+  "cond": "(()=>{try{return !!window.__echoes.cmd('campState').promptVisible}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "keydown",
+    "key": "KeyW"
+   },
+   {
+    "type": "wait",
+    "ms": 500
+   },
+   {
+    "type": "keyup",
+    "key": "KeyW"
+   },
+   {
+    "type": "wait",
+    "ms": 80
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const c=E.cmd('campState');const p=document.querySelector('#camp-prompt,.camp-prompt,[data-prompt]');const cs=p?getComputedStyle(p):null;const r=p?p.getBoundingClientRect():null;return {player:c.player,portal:c.portal,inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,dom:cs?{display:cs.display,opacity:cs.opacity,visibility:cs.visibility,text:(p.textContent||'').trim(),rect:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]}:null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b1-prompt"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3.tStart=performance.now();return 'markT'})()"
+ },
+ {
+  "type": "key",
+  "key": "KeyE",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<30000){try{if((()=>{const s=E.state();return s.scene!=='camp'||(s.run&&s.run.room>=1)})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),scene:E.state().scene,room:E.state().run&&E.state().run.room};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),scene:E.state().scene,room:E.state().run&&E.state().run.room}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B1-room1\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd('runState');return {runState:JSON.stringify(r).slice(0,1200),events:window.__b3.ev.map(e=>e.T+'@'+e.tick)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b1-room1"
+ },
+ {
+  "type": "loop",
+  "label": "fightRoom1",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;return E.runUi().screen!=='none'||(E.state().run&&E.state().run.room>1)}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "mousemove",
+    "x": 820,
+    "y": 330
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 50
+   },
+   {
+    "type": "wait",
+    "ms": 80
+   },
+   {
+    "type": "mousemove",
+    "x": 1020,
+    "y": 500
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 50
+   },
+   {
+    "type": "wait",
+    "ms": 80
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 160
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 600,
+    "y": 520
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 50
+   },
+   {
+    "type": "wait",
+    "ms": 80
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 160
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 620
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 50
+   },
+   {
+    "type": "wait",
+    "ms": 80
+   },
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 50
+   },
+   {
+    "type": "wait",
+    "ms": 150
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 420
+   },
+   {
+    "type": "wait",
+    "ms": 120
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B1-afterRoom1\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {msRoom1:Math.round(performance.now()-window.__b3.tStart),tick:E.tick,ui:JSON.stringify(E.runUi()).slice(0,2500)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {nodes:[...document.querySelectorAll('#run-screen button, #run-screen .rn-card, #run-screen .rn-door, #run-screen [tabindex], #run-screen .rn-key')].map(n=>{const r=n.getBoundingClientRect();return [n.className,(n.textContent||'').trim().slice(0,50),Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]}).slice(0,24)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b1-reward"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {tag:\"B1-events\",ev:window.__b3.ev.map(e=>[e.T,e.tick,JSON.stringify(e.d)])}})()"
+ }
+]

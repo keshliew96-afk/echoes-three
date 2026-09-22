@@ -1,0 +1,75 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"vis-head\",tick:E.tick,ver:E.version,colliders:c.colliders,roadViolations:c.roadViolations,rvType:typeof c.roadViolations,seatDrift:c.seatDrift,propTypes:c.propTypes,propShadows:c.propShadows,emitters:c.emitters,player:c.player}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "shot",
+  "name": "certE3-vis-boot"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "shot",
+  "name": "certE3-vis-boot2"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const vl=document.querySelector('#version-label');const b=vl.getBoundingClientRect();return {phase:'boot',propTypes:c.propTypes,campPropTypes:c.campPropTypes,propShadows:c.propShadows,emitters:c.emitters,emitterKinds:c.emitterKinds,lights:c.lights,embers:c.embers,fireflies:c.fireflies,grass:c.grass,flowers:c.flowers,colliders:c.colliders,roadViolations:c.roadViolations,verText:vl.textContent,verBox:[+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1)],verOpacity:getComputedStyle(vl).opacity,critters:c.prompt.critters}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"visual portal walk W3200 from boot seat\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]]};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {walk:\"visual portal walk W3200 from boot seat\",from:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 3200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s;\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][0];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,offMax=-1,offMin=1e9;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0)cur=0;}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;}\nconst c=E.cmd('campState');const p=c.player;\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst vis=[...document.querySelectorAll('body *')].filter(e=>e.children.length===0&&/Begin Run|wood is waiting/i.test(e.textContent||'')).map(e=>{const b=e.getBoundingClientRect();return [(e.textContent||'').trim().slice(0,40),+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1),getComputedStyle(e).opacity,getComputedStyle(e).visibility]});\nreturn {walk:L.n,target:\"portal\",tgt:[0,-6.9],end:[+p.x.toFixed(3),+p.z.toFixed(3)],dist:+Math.hypot(p.x-(0),p.z-(-6.9)).toFixed(3),ticks:E.tick-L.t0,pathLen:+pathLen.toFixed(3),maxStallTicks:maxStall,stillMoving:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,promptOverlaps:c.prompt.overlaps,distPortal:+Math.hypot(p.x-0,p.z+6.9).toFixed(3),portalR:c.portal.radius,promptDOM:vis,rv:c.roadViolations,seatDrift:c.seatDrift}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE3-vis-portal"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "shot",
+  "name": "certE3-vis-portal2"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const vl=document.querySelector('#version-label');const b=vl.getBoundingClientRect();return {phase:'portal',propTypes:c.propTypes,campPropTypes:c.campPropTypes,propShadows:c.propShadows,emitters:c.emitters,emitterKinds:c.emitterKinds,lights:c.lights,colliders:c.colliders,roadViolations:c.roadViolations,verText:vl.textContent,verBox:[+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1)],verOpacity:getComputedStyle(vl).opacity,inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,critters:c.prompt.critters,seatDrift:c.seatDrift}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"vis-tail\",tick:E.tick,ver:E.version,colliders:c.colliders,roadViolations:c.roadViolations,rvType:typeof c.roadViolations,seatDrift:c.seatDrift,propTypes:c.propTypes,propShadows:c.propShadows,emitters:c.emitters,player:c.player}})()"
+ }
+]

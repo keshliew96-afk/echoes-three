@@ -1,0 +1,106 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"intent\",\"dash_end\",\"hit\",\"hit_immune\",\"sound\",\"hitstop\",\"death\",\"screenshake\",\"room_cleared\",\"enemy_spawn\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"wave_start\",\"room_enter\",\"downed\",\"revive\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"knockback\",\"flash\",\"run_end\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return {armed:E.tick,version:E.version}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');(async()=>{while(true){try{const u=E.runUi();\n  if(u.screen==='draft')E.cmd('draftDecline');else if(u.screen==='path')E.cmd('pathChoose',0);\n  else if(u.screen==='shop')E.cmd('shopAdvance');else if(u.screen==='reward'||u.screen==='reward_offer')E.cmd('draftDecline');\n  E.cmd('iframe',0,600);if(E.state().party[0].hp<100)E.cmd('heal',0,100);}catch(err){window.__drverr=String(err);}\n  await new Promise(r=>setTimeout(r,250));}})();return {seed:E.seed,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<40000){if(E.state().enemies.length>=2)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0)};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__proj=(x,y,z)=>{const cam=window.__arenaProbe.stage.camera;cam.updateMatrixWorld();\n  const mv=cam.matrixWorldInverse.elements,pm=cam.projectionMatrix.elements;\n  const mul=(m,v)=>[m[0]*v[0]+m[4]*v[1]+m[8]*v[2]+m[12]*v[3],m[1]*v[0]+m[5]*v[1]+m[9]*v[2]+m[13]*v[3],m[2]*v[0]+m[6]*v[1]+m[10]*v[2]+m[14]*v[3],m[3]*v[0]+m[7]*v[1]+m[11]*v[2]+m[15]*v[3]];\n  let v=mul(mv,[x,y,z,1]);v=mul(pm,v);const w=v[3]||1;\n  return [Math.round((v[0]/w*0.5+0.5)*innerWidth),Math.round((-v[1]/w*0.5+0.5)*innerHeight)];};return 'proj armed'})()"
+ },
+ {
+  "type": "loop",
+  "label": "waitTele1",
+  "cond": "(()=>{const E=__echoes;return window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick&&!window.__c.ev.some(r=>r.T==='telegraph_resolve'&&r.id===e.id&&r.tick>=e.tick)).some(e=>e.resolveTick-E.tick>=32);})()",
+  "maxMs": 40000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 15
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const live=window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick&&!window.__c.ev.some(r=>r.T==='telegraph_resolve'&&r.id===e.id&&r.tick>=e.tick));return {pre:1,tick:E.tick,live:live.map(t=>[t.id,t.tick,t.resolveTick,t.resolveTick-E.tick,t.x,t.z,window.__proj(t.x,0.02,t.z),t.target,t.playerTargeted]),enemies:E.state().enemies.map(e=>[e.id,e.kind,window.__proj(e.x,0.55,e.z)])}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC5-teleshot1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const live=window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick&&!window.__c.ev.some(r=>r.T==='telegraph_resolve'&&r.id===e.id&&r.tick>=e.tick));return {post:1,tick:E.tick,live:live.map(t=>[t.id,t.tick,t.resolveTick,t.resolveTick-E.tick,window.__proj(t.x,0.02,t.z)])}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "loop",
+  "label": "waitTele2",
+  "cond": "(()=>{const E=__echoes;return window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick&&!window.__c.ev.some(r=>r.T==='telegraph_resolve'&&r.id===e.id&&r.tick>=e.tick)).some(e=>e.resolveTick-E.tick>=32);})()",
+  "maxMs": 40000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 15
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const live=window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick&&!window.__c.ev.some(r=>r.T==='telegraph_resolve'&&r.id===e.id&&r.tick>=e.tick));return {pre:2,tick:E.tick,live:live.map(t=>[t.id,t.tick,t.resolveTick,t.resolveTick-E.tick,t.x,t.z,window.__proj(t.x,0.02,t.z),t.target,t.playerTargeted]),enemies:E.state().enemies.map(e=>[e.id,e.kind,window.__proj(e.x,0.55,e.z)])}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC5-teleshot2"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const live=window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick&&!window.__c.ev.some(r=>r.T==='telegraph_resolve'&&r.id===e.id&&r.tick>=e.tick));return {post:2,tick:E.tick,live:live.map(t=>[t.id,t.tick,t.resolveTick,t.resolveTick-E.tick,window.__proj(t.x,0.02,t.z)])}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "loop",
+  "label": "waitTele3",
+  "cond": "(()=>{const E=__echoes;return window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick&&!window.__c.ev.some(r=>r.T==='telegraph_resolve'&&r.id===e.id&&r.tick>=e.tick)).some(e=>e.resolveTick-E.tick>=34);})()",
+  "maxMs": 40000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 15
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const live=window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick&&!window.__c.ev.some(r=>r.T==='telegraph_resolve'&&r.id===e.id&&r.tick>=e.tick));return {pre:3,tick:E.tick,live:live.map(t=>[t.id,t.tick,t.resolveTick,t.resolveTick-E.tick,t.x,t.z,window.__proj(t.x,0.02,t.z),t.target,t.playerTargeted]),enemies:E.state().enemies.map(e=>[e.id,e.kind,window.__proj(e.x,0.55,e.z)])}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC5-teleshot3"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const live=window.__c.ev.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick&&!window.__c.ev.some(r=>r.T==='telegraph_resolve'&&r.id===e.id&&r.tick>=e.tick));return {post:3,tick:E.tick,live:live.map(t=>[t.id,t.tick,t.resolveTick,t.resolveTick-E.tick,window.__proj(t.x,0.02,t.z)])}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {version:E.version,tick:E.tick,fps:E.fps,seed:E.seed,bootSeed:E.bootSeed}})()"
+ }
+]

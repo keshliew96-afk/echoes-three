@@ -1,0 +1,50 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',0,4.5);return 'tp A'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "shot",
+  "name": "certE3-attach-a"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const h=c.prompt.critters.find(k=>k.classId==='healer');return {tag:\"A\",world:[c.player.x,c.player.z],healerBox:h,base:[+(h.x+h.w/2).toFixed(1),+(h.y+h.h).toFixed(1)]}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',0.9,4.5);return 'tp B'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "shot",
+  "name": "certE3-attach-b"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const h=c.prompt.critters.find(k=>k.classId==='healer');return {tag:\"B\",world:[c.player.x,c.player.z],healerBox:h,base:[+(h.x+h.w/2).toFixed(1),+(h.y+h.h).toFixed(1)]}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',0,4.5);return 'tp A2'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "shot",
+  "name": "certE3-attach-a2"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const h=c.prompt.critters.find(k=>k.classId==='healer');return {tag:\"A2\",world:[c.player.x,c.player.z],healerBox:h,base:[+(h.x+h.w/2).toFixed(1),+(h.y+h.h).toFixed(1)]}})()"
+ }
+]

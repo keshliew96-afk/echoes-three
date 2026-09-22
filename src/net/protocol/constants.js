@@ -32,8 +32,16 @@ export const RECONNECT_BACKOFF_MS = Object.freeze([250, 500, 1000, 1500]);
 // --------------------------------------------------- client-side timing --
 export const INTERP_DELAY_MIN_MS = 100;
 export const INTERP_DELAY_MAX_MS = 250;
-export const REWIND_MAX_TICKS = 15; // lag compensation window: 250 ms
-export const REWIND_HISTORY_TICKS = 20;
+// Lag compensation window. PLAN §3.7 text: 15 ticks (250 ms). M5b raises it
+// to 24 ticks (400 ms): at the PLAN's own interp delay (2 × 50 ms + 2σ jitter
+// = 130-140 ms at N1) and the depth-2 input buffer, a guest's view at N1
+// (150 ms RTT) is 18-20 ticks old when its input is consumed (measured
+// rewind wanted p50 18.4 / p95 20.4 ticks) — a 15-tick cap clamped EVERY N1
+// rewind and left each N1 hit ~80 ms off what the guest saw (G5b.3's N1
+// bar). 24 covers N1; N2 (250 ms RTT, ~27 ticks) still clamps, as G5b.3
+// anticipates. History keeps 30 ticks (positions only).
+export const REWIND_MAX_TICKS = 24;
+export const REWIND_HISTORY_TICKS = 30;
 export const CORRECTION_TAU_MS = 100; // visual error decay time constant
 export const CORRECTION_SNAP_U = 1.0; // errors above this snap instead of smoothing
 

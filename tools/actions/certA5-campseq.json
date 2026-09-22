@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {version:E.version,tick:E.tick,fps:+E.fps.toFixed(1),scene:E.state().scene,entityCount:E.entityCount,seed:E.seed,bootSeed:E.bootSeed,mode:c.mode,propTypes:c.propTypes,campPropTypesCount:(c.campPropTypes||[]).length,campPropTypes:c.campPropTypes,emitters:c.emitters,emitterKinds:c.emitterKinds,propShadows:c.propShadows,fireflies:c.fireflies,embers:c.embers,vignette:c.vignette,exposure:c.exposure,colliders:c.colliders,roadViolations:c.roadViolations,seats:c.seats,seatDrift:c.seatDrift,grass:c.grass,flowers:c.flowers}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {vfx:(s=>{const v=s.vfx||{};const a=v.arena;const pick=(o)=>o?{numerals:o.numerals,decals:o.decals,scorch:o.scorch,particles:o.particles,emitters:o.emitters,embers:o.embers,propTypes:o.propTypes,propShadows:o.propShadows,grass:o.grass,flowers:o.flowers,variantName:o.variantName,shake:o.shake,shakes:o.shakes,fireflies:o.fireflies,vignette:o.vignette,exposure:o.exposure}:null;return {mode:v.mode,top:pick(v),arena:pick(a)}})(s),toggles:s.toggles,party:s.party.map(p=>[p.id,p.classId||'healer',p.hp,p.maxHp]),critters:(E.cmd('campState').prompt||{}).critters,rigs:E.cmd('campState').party,banner:E.hud.banner().text,hud:E.hud.combat()}})()"
+ }
+]

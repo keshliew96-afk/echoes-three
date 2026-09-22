@@ -1,0 +1,110 @@
+[
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3={ev:[],t0:E.tick};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"reward\",\"draft\",\"draft_taken\",\"path_chosen\",\"shop_buy\",\"currency_denied\",\"boss_spawn\",\"boss_death\",\"victory\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"downed\",\"revive\",\"director_stop\"])E.on(t,e=>window.__b3.ev.push({T:t,tick:e&&e.tick!=null?e.tick:E.tick,d:(()=>{const o={};for(const k of Object.keys(e||{}))if(['room','pct','spawned','id','kind','reason','result','wallet','item','skill','door','index','seed','mode'].includes(k))o[k]=e[k];return o;})()}));return 'armed t'+E.tick})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('startRun');return {seed:E.seed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<90000){try{if(window.__echoes.runUi().screen==='draft')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd('grantNode','sharpen');return {grant:JSON.stringify(r).slice(0,200),bench:E.state().build.bench,screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const vis=n=>{const c=getComputedStyle(n);const r=n.getBoundingClientRect();return c.display!=='none'&&c.visibility!=='hidden'&&+c.opacity>0.05&&r.width>0&&r.height>0};\nconst roots=[...document.body.children].map(n=>[n.tagName+'#'+(n.id||'')+'.'+(n.className||''),vis(n),getComputedStyle(n).zIndex,JSON.stringify(n.getBoundingClientRect().toJSON())]);\nconst sock=document.querySelector('#socket-screen,.socket-screen,[id*=socket],[class*=socket]');\nconst items=sock?[...sock.querySelectorAll('*')].filter(n=>vis(n)&&n.children.length===0||/(bench|slot|cell|node|row)/i.test(n.className)).map(n=>{const r=n.getBoundingClientRect();return [n.className||n.tagName,(n.textContent||'').replace(/s+/g,' ').trim().slice(0,30),Math.round(r.x),Math.round(r.y),Math.round(r.w||r.width),Math.round(r.height)]}).filter(a=>a[4]>0).slice(0,40):null;\nconst u=E.runUi();\nreturn {tag:\"before-B\",tick:E.tick,uiScreen:u.screen,uiKeys:Object.keys(u),open:u.open,sockId:sock?sock.id+'.'+sock.className:null,sockVis:sock?vis(sock):null,roots,items}})()"
+ },
+ {
+  "type": "key",
+  "key": "KeyB",
+  "ms": 100
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "shot",
+  "name": "certB3-sock-open"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const vis=n=>{const c=getComputedStyle(n);const r=n.getBoundingClientRect();return c.display!=='none'&&c.visibility!=='hidden'&&+c.opacity>0.05&&r.width>0&&r.height>0};\nconst roots=[...document.body.children].map(n=>[n.tagName+'#'+(n.id||'')+'.'+(n.className||''),vis(n),getComputedStyle(n).zIndex,JSON.stringify(n.getBoundingClientRect().toJSON())]);\nconst sock=document.querySelector('#socket-screen,.socket-screen,[id*=socket],[class*=socket]');\nconst items=sock?[...sock.querySelectorAll('*')].filter(n=>vis(n)&&n.children.length===0||/(bench|slot|cell|node|row)/i.test(n.className)).map(n=>{const r=n.getBoundingClientRect();return [n.className||n.tagName,(n.textContent||'').replace(/s+/g,' ').trim().slice(0,30),Math.round(r.x),Math.round(r.y),Math.round(r.w||r.width),Math.round(r.height)]}).filter(a=>a[4]>0).slice(0,40):null;\nconst u=E.runUi();\nreturn {tag:\"after-B\",tick:E.tick,uiScreen:u.screen,uiKeys:Object.keys(u),open:u.open,sockId:sock?sock.id+'.'+sock.className:null,sockVis:sock?vis(sock):null,roots,items}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {full:JSON.stringify(u).slice(0,1200)}})()"
+ },
+ {
+  "type": "click",
+  "x": 360,
+  "y": 247,
+  "button": "left"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const vis=n=>{const c=getComputedStyle(n);const r=n.getBoundingClientRect();return c.display!=='none'&&c.visibility!=='hidden'&&+c.opacity>0.05&&r.width>0&&r.height>0};\nconst roots=[...document.body.children].map(n=>[n.tagName+'#'+(n.id||'')+'.'+(n.className||''),vis(n),getComputedStyle(n).zIndex,JSON.stringify(n.getBoundingClientRect().toJSON())]);\nconst sock=document.querySelector('#socket-screen,.socket-screen,[id*=socket],[class*=socket]');\nconst items=sock?[...sock.querySelectorAll('*')].filter(n=>vis(n)&&n.children.length===0||/(bench|slot|cell|node|row)/i.test(n.className)).map(n=>{const r=n.getBoundingClientRect();return [n.className||n.tagName,(n.textContent||'').replace(/s+/g,' ').trim().slice(0,30),Math.round(r.x),Math.round(r.y),Math.round(r.w||r.width),Math.round(r.height)]}).filter(a=>a[4]>0).slice(0,40):null;\nconst u=E.runUi();\nreturn {tag:\"after-clickBench\",tick:E.tick,uiScreen:u.screen,uiKeys:Object.keys(u),open:u.open,sockId:sock?sock.id+'.'+sock.className:null,sockVis:sock?vis(sock):null,roots,items}})()"
+ },
+ {
+  "type": "click",
+  "x": 1126,
+  "y": 348,
+  "button": "left"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "shot",
+  "name": "certB3-sock-socketed"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {bench:E.state().build.bench,socketed:JSON.stringify(E.state().build).slice(0,400),ev:window.__b3.ev.map(e=>e.T+'@'+e.tick).slice(-8)}})()"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 100
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "shot",
+  "name": "certB3-sock-closed"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const vis=n=>{const c=getComputedStyle(n);const r=n.getBoundingClientRect();return c.display!=='none'&&c.visibility!=='hidden'&&+c.opacity>0.05&&r.width>0&&r.height>0};\nconst roots=[...document.body.children].map(n=>[n.tagName+'#'+(n.id||'')+'.'+(n.className||''),vis(n),getComputedStyle(n).zIndex,JSON.stringify(n.getBoundingClientRect().toJSON())]);\nconst sock=document.querySelector('#socket-screen,.socket-screen,[id*=socket],[class*=socket]');\nconst items=sock?[...sock.querySelectorAll('*')].filter(n=>vis(n)&&n.children.length===0||/(bench|slot|cell|node|row)/i.test(n.className)).map(n=>{const r=n.getBoundingClientRect();return [n.className||n.tagName,(n.textContent||'').replace(/s+/g,' ').trim().slice(0,30),Math.round(r.x),Math.round(r.y),Math.round(r.w||r.width),Math.round(r.height)]}).filter(a=>a[4]>0).slice(0,40):null;\nconst u=E.runUi();\nreturn {tag:\"after-escape\",tick:E.tick,uiScreen:u.screen,uiKeys:Object.keys(u),open:u.open,sockId:sock?sock.id+'.'+sock.className:null,sockVis:sock?vis(sock):null,roots,items}})()"
+ }
+]

@@ -1,0 +1,270 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const vl=document.querySelector('#version-label')||document.querySelector('[id*=version]');const b=vl?vl.getBoundingClientRect():null;return {tag:\"stops-head\",tick:E.tick,fps:+(E.fps||0).toFixed(1),ver:E.version,scene:E.state().scene,colliders:c.colliders,roadViolations:c.roadViolations,rvType:typeof c.roadViolations,rvIsArray:Array.isArray(c.roadViolations),rvJSON:JSON.stringify(c.roadViolations),seats:c.seats,seatDrift:c.seatDrift,player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt&&c.prompt.box,propTypes:c.propTypes,propShadows:c.propShadows,emitters:c.emitters,verText:vl&&vl.textContent,verBox:b&&[+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1)],verOpacity:vl&&getComputedStyle(vl).opacity,verVis:vl&&getComputedStyle(vl).visibility}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',0,1.9);return 'tp hearth-approach 0,1.9'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"hearth (0,1.9) W1500\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]]};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {walk:\"hearth (0,1.9) W1500\",from:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s;\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][0];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,offMax=-1,offMin=1e9;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0)cur=0;}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;}\nconst c=E.cmd('campState');const p=c.player;\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst vis=[...document.querySelectorAll('body *')].filter(e=>e.children.length===0&&/Begin Run|wood is waiting/i.test(e.textContent||'')).map(e=>{const b=e.getBoundingClientRect();return [(e.textContent||'').trim().slice(0,40),+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1),getComputedStyle(e).opacity,getComputedStyle(e).visibility]});\nreturn {walk:L.n,target:\"hearth\",tgt:[0,-0.2],end:[+p.x.toFixed(3),+p.z.toFixed(3)],dist:+Math.hypot(p.x-(0),p.z-(-0.2)).toFixed(3),ticks:E.tick-L.t0,pathLen:+pathLen.toFixed(3),maxStallTicks:maxStall,stillMoving:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,promptOverlaps:c.prompt.overlaps,distPortal:+Math.hypot(p.x-0,p.z+6.9).toFixed(3),portalR:c.portal&&c.portal.radius,promptDOM:vis,rv:c.roadViolations,seatDrift:c.seatDrift}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE5-stop-hearth"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',1.35,1.0);return 'back to boot seat'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"tent1 CONTINUOUS from seat A2600 -> W1600\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]]};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {walk:\"tent1 CONTINUOUS from seat A2600 -> W1600\",from:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 2600
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s;\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][1];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,offMax=-1,offMin=1e9;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0)cur=0;}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;}\nconst c=E.cmd('campState');const p=c.player;\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst vis=[...document.querySelectorAll('body *')].filter(e=>e.children.length===0&&/Begin Run|wood is waiting/i.test(e.textContent||'')).map(e=>{const b=e.getBoundingClientRect();return [(e.textContent||'').trim().slice(0,40),+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1),getComputedStyle(e).opacity,getComputedStyle(e).visibility]});\nreturn {walk:L.n,target:\"tent1\",tgt:[-4.95,-3.35],end:[+p.x.toFixed(3),+p.z.toFixed(3)],dist:+Math.hypot(p.x-(-4.95),p.z-(-3.35)).toFixed(3),ticks:E.tick-L.t0,pathLen:+pathLen.toFixed(3),maxStallTicks:maxStall,stillMoving:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,promptOverlaps:c.prompt.overlaps,distPortal:+Math.hypot(p.x-0,p.z+6.9).toFixed(3),portalR:c.portal&&c.portal.radius,promptDOM:vis,rv:c.roadViolations,seatDrift:c.seatDrift}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE5-stop-tent1"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',1.35,1.0);return 'back to boot seat'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"tent2 CONTINUOUS from seat D1450 -> W1600\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]]};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {walk:\"tent2 CONTINUOUS from seat D1450 -> W1600\",from:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 1450
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 1600
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s;\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][1];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,offMax=-1,offMin=1e9;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0)cur=0;}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;}\nconst c=E.cmd('campState');const p=c.player;\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst vis=[...document.querySelectorAll('body *')].filter(e=>e.children.length===0&&/Begin Run|wood is waiting/i.test(e.textContent||'')).map(e=>{const b=e.getBoundingClientRect();return [(e.textContent||'').trim().slice(0,40),+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1),getComputedStyle(e).opacity,getComputedStyle(e).visibility]});\nreturn {walk:L.n,target:\"tent2\",tgt:[4.85,-3.1],end:[+p.x.toFixed(3),+p.z.toFixed(3)],dist:+Math.hypot(p.x-(4.85),p.z-(-3.1)).toFixed(3),ticks:E.tick-L.t0,pathLen:+pathLen.toFixed(3),maxStallTicks:maxStall,stillMoving:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,promptOverlaps:c.prompt.overlaps,distPortal:+Math.hypot(p.x-0,p.z+6.9).toFixed(3),portalR:c.portal&&c.portal.radius,promptDOM:vis,rv:c.roadViolations,seatDrift:c.seatDrift}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE5-stop-tent2"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',-7.5,1.6);return 'tp tent3-approach -7.5,1.6'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"tent3 (-7.5,1.6) W1200\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]]};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {walk:\"tent3 (-7.5,1.6) W1200\",from:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s;\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][1];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,offMax=-1,offMin=1e9;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0)cur=0;}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;}\nconst c=E.cmd('campState');const p=c.player;\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst vis=[...document.querySelectorAll('body *')].filter(e=>e.children.length===0&&/Begin Run|wood is waiting/i.test(e.textContent||'')).map(e=>{const b=e.getBoundingClientRect();return [(e.textContent||'').trim().slice(0,40),+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1),getComputedStyle(e).opacity,getComputedStyle(e).visibility]});\nreturn {walk:L.n,target:\"tent3\",tgt:[-7.5,-0.3],end:[+p.x.toFixed(3),+p.z.toFixed(3)],dist:+Math.hypot(p.x-(-7.5),p.z-(-0.3)).toFixed(3),ticks:E.tick-L.t0,pathLen:+pathLen.toFixed(3),maxStallTicks:maxStall,stillMoving:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,promptOverlaps:c.prompt.overlaps,distPortal:+Math.hypot(p.x-0,p.z+6.9).toFixed(3),portalR:c.portal&&c.portal.radius,promptDOM:vis,rv:c.roadViolations,seatDrift:c.seatDrift}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE5-stop-tent3"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',6.35,0.5);return 'tp stall-approach 6.35,0.5'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"stall (6.35,0.5) S1500\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]]};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {walk:\"stall (6.35,0.5) S1500\",from:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s;\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][1];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,offMax=-1,offMin=1e9;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0)cur=0;}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;}\nconst c=E.cmd('campState');const p=c.player;\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst vis=[...document.querySelectorAll('body *')].filter(e=>e.children.length===0&&/Begin Run|wood is waiting/i.test(e.textContent||'')).map(e=>{const b=e.getBoundingClientRect();return [(e.textContent||'').trim().slice(0,40),+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1),getComputedStyle(e).opacity,getComputedStyle(e).visibility]});\nreturn {walk:L.n,target:\"stall\",tgt:[6.35,2.5],end:[+p.x.toFixed(3),+p.z.toFixed(3)],dist:+Math.hypot(p.x-(6.35),p.z-(2.5)).toFixed(3),ticks:E.tick-L.t0,pathLen:+pathLen.toFixed(3),maxStallTicks:maxStall,stillMoving:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,promptOverlaps:c.prompt.overlaps,distPortal:+Math.hypot(p.x-0,p.z+6.9).toFixed(3),portalR:c.portal&&c.portal.radius,promptDOM:vis,rv:c.roadViolations,seatDrift:c.seatDrift}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE5-stop-stall"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',8.35,0.3);return 'tp cart-approach 8.35,0.3'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"cart (8.35,0.3) W1500\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]]};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {walk:\"cart (8.35,0.3) W1500\",from:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s;\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][1];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,offMax=-1,offMin=1e9;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0)cur=0;}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;}\nconst c=E.cmd('campState');const p=c.player;\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst vis=[...document.querySelectorAll('body *')].filter(e=>e.children.length===0&&/Begin Run|wood is waiting/i.test(e.textContent||'')).map(e=>{const b=e.getBoundingClientRect();return [(e.textContent||'').trim().slice(0,40),+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1),getComputedStyle(e).opacity,getComputedStyle(e).visibility]});\nreturn {walk:L.n,target:\"cart\",tgt:[8.35,-1.95],end:[+p.x.toFixed(3),+p.z.toFixed(3)],dist:+Math.hypot(p.x-(8.35),p.z-(-1.95)).toFixed(3),ticks:E.tick-L.t0,pathLen:+pathLen.toFixed(3),maxStallTicks:maxStall,stillMoving:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,promptOverlaps:c.prompt.overlaps,distPortal:+Math.hypot(p.x-0,p.z+6.9).toFixed(3),portalR:c.portal&&c.portal.radius,promptDOM:vis,rv:c.roadViolations,seatDrift:c.seatDrift}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE5-stop-cart"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const vl=document.querySelector('#version-label')||document.querySelector('[id*=version]');const b=vl?vl.getBoundingClientRect():null;return {tag:\"stops-tail\",tick:E.tick,fps:+(E.fps||0).toFixed(1),ver:E.version,scene:E.state().scene,colliders:c.colliders,roadViolations:c.roadViolations,rvType:typeof c.roadViolations,rvIsArray:Array.isArray(c.roadViolations),rvJSON:JSON.stringify(c.roadViolations),seats:c.seats,seatDrift:c.seatDrift,player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt&&c.prompt.box,propTypes:c.propTypes,propShadows:c.propShadows,emitters:c.emitters,verText:vl&&vl.textContent,verBox:b&&[+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1)],verOpacity:vl&&getComputedStyle(vl).opacity,verVis:vl&&getComputedStyle(vl).visibility}})()"
+ }
+]

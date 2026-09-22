@@ -1,0 +1,63 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"hit\",\"death\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"downed\",\"revive\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"enemy_despawn\",\"director_stop\",\"victory\",\"defeat\",\"skill_cast\",\"ally_cast\",\"azone_spawn\",\"zone_spawn\",\"skill_bolt_spawn\",\"projectile_spawn\",\"hitstop\",\"screenshake\",\"draft\",\"draft_taken\",\"path_chosen\",\"shop_buy\",\"reward\"])E.on(t,e=>{if(window.__c.ev.length<20000)window.__c.ev.push(Object.assign({T:t,pn:+performance.now().toFixed(1)},e));});return 'armed '+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',8);return {room:r&&r.room,mode:r&&r.mode,boss:r&&r.boss}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<60000){try{if(window.__c.ev.some(e=>e.T==='boss_spawn') && window.__c.ev.some(e=>e.T==='boss_adds') && E.state().enemies.length>=3)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),boss:E.cmd('runState').boss,enemies:E.state().enemies.map(e=>[e.id,e.kind]),evs:window.__c.ev.filter(e=>/boss|wave|downed/.test(e.T)).map(e=>[e.T,e.tick])};}catch(e){}await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,boss:E.cmd('runState').boss,enemies:E.state().enemies.map(e=>[e.id,e.kind]),evs:window.__c.ev.filter(e=>/boss|wave|downed/.test(e.T)).map(e=>[e.T,e.tick])}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 380
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__ka=setInterval(()=>{try{const s=E.state();for(const p of s.party){if(p.downed){try{E.cmd('rally');}catch(e){}}if(p.downed||p.hp<p.maxHp*0.6){try{E.cmd('setHp',p.id,1);}catch(e){}}}}catch(e){}},400);return 'partyAlive armed t'+E.tick})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=E.cmd('runState');return {tag:'pre-D2-boss-partyalive',tick:E.tick,fps:E.fps,ents:E.entityCount,enemies:s.enemies.length,kinds:s.enemies.map(e=>e.kind),boss:r&&r.boss,party:s.party.map(p=>[p.classId||p.id,Math.round(p.hp),p.downed])}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__pk={max:0,at:0,maxEnts:0,n:0};window.__pkiv=setInterval(()=>{try{const s=E.state();window.__pk.n++;if(s.enemies.length>window.__pk.max){window.__pk.max=s.enemies.length;window.__pk.at=E.tick;}if(E.entityCount>window.__pk.maxEnts)window.__pk.maxEnts=E.entityCount;}catch(e){}},100);return 'peak armed t'+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const TAG=\"D2-boss-partyalive\";const DUR=20000;\nconst D=[];const S=[];const LT=[];let po=null;\ntry{po=new PerformanceObserver(l=>{for(const e of l.getEntries())LT.push([+e.startTime.toFixed(0),+e.duration.toFixed(1)]);});po.observe({entryTypes:['longtask']});}catch(e){}\nlet t0=0,last=0,stop=false;\nconst step=(now)=>{const d=now-last;last=now;D.push([+(now-t0).toFixed(1),+d.toFixed(2)]);if(now-t0<DUR)requestAnimationFrame(step);else stop=true;};\nrequestAnimationFrame((n)=>{t0=n;last=n;requestAnimationFrame(step);});\nconst iv=setInterval(()=>{try{const s=E.state();let b=null;try{const r=E.cmd('runState');b=r&&r.boss&&r.boss.active?+r.boss.pct.toFixed(2):-1;}catch(e){}S.push([+((performance.now()-t0)/1000).toFixed(2),+(E.fps||0).toFixed(1),E.entityCount,s.enemies.length,s.eshots.length,s.zones.length,s.azones.length,s.skillBolts.length,E.tick,b]);}catch(e){}},1000);\nconst guard=performance.now();\nwhile(!stop&&performance.now()-guard<DUR+15000){await new Promise(r=>setTimeout(r,40));}\nclearInterval(iv);if(po)try{po.disconnect();}catch(e){}\nconst stat=(a)=>{if(!a.length)return null;const v=a.map(x=>x[1]).sort((p,q)=>p-q);const n=v.length;const sum=v.reduce((p,q)=>p+q,0);const Q=(p)=>+v[Math.min(n-1,Math.floor(p*n))].toFixed(2);\nreturn {frames:n,meanMs:+(sum/n).toFixed(2),meanFps:+(1000/(sum/n)).toFixed(1),p50:Q(0.5),p95:Q(0.95),p99:Q(0.99),max:+v[n-1].toFixed(2),g100:a.filter(x=>x[1]>100).length};};\nconst W=D.filter(x=>x[0]<3000),ST=D.filter(x=>x[0]>=3000);\nconst buckets=[];for(let s=0;s<DUR;s+=2000){const w=D.filter(x=>x[0]>=s&&x[0]<s+2000);if(w.length)buckets.push([s/1000,stat(w).meanFps,stat(w).max,stat(w).g100]);}\nconst gS=ST.filter(x=>x[1]>100).map(x=>[x[0],x[1]]);const gA=D.filter(x=>x[1]>100).map(x=>[x[0],x[1]]);\nlet worst=null;\nif(ST.length>2){const te=ST[ST.length-1][0];for(let s=ST[0][0];s+15000<=te+500;s+=1000){const w=ST.filter(x=>x[0]>=s&&x[0]<s+15000);if(w.length<10)continue;const g=w.filter(x=>x[1]>100).length;const st=stat(w);if(!worst||g>worst.gaps||(g===worst.gaps&&st.meanFps<worst.meanFps))worst={start:Math.round(s),gaps:g,meanFps:st.meanFps,max:st.max};}}\nconst evl=(window.__c?window.__c.ev:[]);\nconst forensic=D.filter(x=>x[1]>60).slice(0,12).map(x=>{const end=t0+x[0];const start=end-x[1];const near=evl.filter(e=>e.pn>=start-400&&e.pn<=end+120).map(e=>[+(e.pn-start).toFixed(0),e.T,e.tick,e.skill||e.kind||e.id||'']).slice(0,40);return {rel:x[0],ms:x[1],events:near};});\nconst evs=evl.filter(e=>/quake|adds|downed|room_cleared|boss_death|wave_start|run_end/.test(e.T)).map(e=>[e.T,e.tick]);\nconst deaths=evl.filter(e=>e.T==='death').length;\nreturn {tag:TAG,durMs:Math.round(performance.now()-guard),all:stat(D),warm:stat(W),steady:stat(ST),buckets,steadyGaps100:gS,allGaps100:gA,longTasks:LT.length,longTasksTop:LT.sort((a,b)=>b[1]-a[1]).slice(0,5),worst15s:worst,perSec:S,forensic,evs,deaths};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__pkiv);const s=E.state();return {peak:window.__pk,now:{enemies:s.enemies.length,ents:E.entityCount,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length}}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=E.cmd('runState');return {tag:'post-D2-boss-partyalive',tick:E.tick,fps:E.fps,ents:E.entityCount,enemies:s.enemies.length,boss:r&&r.boss,party:s.party.map(p=>[p.classId||p.id,Math.round(p.hp),p.downed]),quakes:window.__c.ev.filter(e=>e.T==='boss_quake_start').map(e=>e.tick),adds:window.__c.ev.filter(e=>e.T==='boss_adds').map(e=>[e.tick,e.pct,e.spawned]),downed:window.__c.ev.filter(e=>e.T==='downed').length,deaths:window.__c.ev.filter(e=>e.T==='death').length,screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const vw=innerWidth,vh=innerHeight;const T=\"boss-1600\";\nconst vis=(el)=>{const cs=getComputedStyle(el);if(cs.display==='none'||cs.visibility==='hidden'||+cs.opacity<0.02)return false;const r=el.getBoundingClientRect();return r.width>0.5&&r.height>0.5;};\nconst R=(el)=>{const r=el.getBoundingClientRect();return [Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)];};\nconst nm=(el)=>((el.id?'#'+el.id:'')+(el.className&&typeof el.className==='string'?'.'+el.className.trim().split(/\\s+/).join('.'):''))||el.tagName;\nconst comps=[];\nconst push=(el,extra)=>{if(!vis(el))return;const r=R(el);if(r[2]>=vw-1&&r[3]>=vh-1)return;comps.push([nm(el)+(extra||''),r,(el.textContent||'').trim().replace(/\\s+/g,' ').slice(0,34)]);};\nconst hud=document.getElementById('hud');\nif(hud)for(const el of hud.children)push(el);\nconst rs=document.getElementById('run-screen');\nif(rs&&vis(rs)){for(const el of rs.querySelectorAll('.rn-page,.rn-card,.rn-door,button'))push(el);}\nfor(const el of document.querySelectorAll('body > *'))if(el.tagName!=='CANVAS'&&el.id!=='hud'&&el.id!=='run-screen')push(el);\nconst vers=[...document.querySelectorAll('body *')].filter(el=>!el.children.length&&/^v?\\s*\\d+\\.\\d+\\.\\d+$/.test((el.textContent||'').trim()));\nfor(const el of vers)if(vis(el)&&!comps.some(c=>c[0]===nm(el)))push(el,'|VERSION');\nconst subs=[];\nfor(const sel of ['.hud-port','.hud-slot','.hud-port-hp','.hud-bn-label','.hud-bn-num','.hud-loc-name','.hud-glint-num','.rn-card','.rn-door'])\n  for(const el of document.querySelectorAll(sel))if(vis(el))subs.push([sel,R(el),(el.textContent||'').trim().slice(0,16)]);\nconst over=[];\nfor(const el of document.querySelectorAll('body *')){if(el.tagName==='CANVAS'||el.ownerSVGElement)continue;if(!vis(el))continue;const r=el.getBoundingClientRect();\n  if(r.left<-0.5||r.top<-0.5||r.right>vw+0.5||r.bottom>vh+0.5){if(Math.round(r.width)>=vw&&Math.round(r.height)>=vh)continue;over.push([nm(el),R(el)]);}}\nconst outv=comps.filter(c=>c[1][0]<-0.5||c[1][1]<-0.5||c[1][0]+c[1][2]>vw+0.5||c[1][1]+c[1][3]>vh+0.5).map(c=>[c[0],c[1]]);\nconst ix=(a,b)=>{const x=Math.min(a[0]+a[2],b[0]+b[2])-Math.max(a[0],b[0]);const y=Math.min(a[1]+a[3],b[1]+b[3])-Math.max(a[1],b[1]);return x>0.5&&y>0.5?[Math.round(x),Math.round(y)]:null;};\nconst contains=(a,b)=>a[0]<=b[0]+0.5&&a[1]<=b[1]+0.5&&a[0]+a[2]>=b[0]+b[2]-0.5&&a[1]+a[3]>=b[1]+b[3]-0.5;\nconst hits=[];\nfor(let i=0;i<comps.length;i++)for(let j=i+1;j<comps.length;j++){const A=comps[i],B=comps[j];if(A[0].split('|')[0]===B[0].split('|')[0])continue;const o=ix(A[1],B[1]);if(!o)continue;const rel=contains(A[1],B[1])?'A_contains_B':(contains(B[1],A[1])?'B_contains_A':'CROSS');hits.push([A[0],A[1],B[0],B[1],o,rel]);}\nconst subHits=[];\nfor(let i=0;i<subs.length;i++)for(let j=i+1;j<subs.length;j++){if(subs[i][0]!==subs[j][0])continue;const o=ix(subs[i][1],subs[j][1]);if(o)subHits.push([subs[i][0],subs[i][1],subs[j][1],o]);}\nlet bn=null,hc=null,us='?',sc='?';try{bn=E.hud.banner();}catch(e){}try{hc=E.hud.combat();}catch(e){}try{us=E.runUi().screen;}catch(e){}try{sc=E.state().scene;}catch(e){}\nreturn {tag:T,vp:[vw,vh],scene:sc,uiScreen:us,version:E.version,comps,subs,overflow:over,outOfViewport:outv,overlaps:hits,cross:hits.filter(h=>h[5]==='CROSS'),subOverlaps:subHits,banner:bn,hudcombat:hc,enemies:(()=>{try{return E.state().enemies.length}catch(e){return -1}})()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__ka);return {stopped:true,tick:E.tick}})()"
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ }
+]

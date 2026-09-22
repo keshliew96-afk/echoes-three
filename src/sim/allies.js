@@ -1090,6 +1090,10 @@ export function createAllySystem({
     const f = seatFrames[a.partyIndex];
     const i = a.partyIndex;
     const tag = { seat: i, inputSeq: f.seq };
+    // A press is tagged with — and its timer runs from — the input frame it
+    // rode (sim/netseats.js pressSeq; a late carried press keeps its seq).
+    const pseq = (kind) => (f.pressSeq && Number.isInteger(f.pressSeq[kind]) ? f.pressSeq[kind] : f.seq);
+    const tagOf = (kind) => ({ seat: i, inputSeq: pseq(kind) });
     const kinds = new Set(f.presses.map((p) => p.kind));
     const S = ALLY_CLASSES[a.classId];
     const kit = ALLY_KITS[a.classId];
@@ -1101,39 +1105,41 @@ export function createAllySystem({
     if (a.hp > 0) {
       const stunned = !!(combat.status && combat.status.isStunned(a, tick));
       if (kinds.has('dodge')) {
-        if (stunned) seatDeny(a, 'dodge', DENIAL.prioritySuppressed, tag, tick);
-        else if (seq < T.dodge || a.dashTicksLeft > 0) seatDeny(a, 'dodge', DENIAL.onCooldown, tag, tick);
+        const dtag = tagOf('dodge');
+        if (stunned) seatDeny(a, 'dodge', DENIAL.prioritySuppressed, dtag, tick);
+        else if (dtag.inputSeq < T.dodge || a.dashTicksLeft > 0) seatDeny(a, 'dodge', DENIAL.onCooldown, dtag, tick);
         else {
           const mv = f.moves[f.moves.length - 1];
           a.dashVel = dodgeVelocity(a, mv, a.aim, { x: a.faceX ?? 0, z: a.faceZ ?? 1 });
           a.dashTicksLeft = HUMAN_DODGE.durationTicks;
           a.dodgeReadyTick = tick + HUMAN_DODGE.cooldownTicks;
-          T.dodge = seq + HUMAN_DODGE.cooldownTicks;
+          T.dodge = dtag.inputSeq + HUMAN_DODGE.cooldownTicks;
           a.dashing = true;
           a.iframeUntilTick = tick + 1;
           const l = Math.hypot(a.dashVel.x, a.dashVel.z) || 1;
-          events.emit(tick, 'ally_dodge', { id: a.id, partyIndex: i, classId: a.classId, dx: r2(a.dashVel.x / l), dz: r2(a.dashVel.z / l), ...tag });
+          events.emit(tick, 'ally_dodge', { id: a.id, partyIndex: i, classId: a.classId, dx: r2(a.dashVel.x / l), dz: r2(a.dashVel.z / l), ...dtag });
         }
       }
       for (let slot = 0; slot < kit.length; slot++) {
         const kind = `skill_${slot + 1}`;
         if (!kinds.has(kind)) continue;
+        const ktag = tagOf(kind);
         if (a.dashTicksLeft > 0 || stunned) {
-          seatDeny(a, kind, DENIAL.prioritySuppressed, tag, tick);
+          seatDeny(a, kind, DENIAL.prioritySuppressed, ktag, tick);
           continue;
         }
-        if (seq < T.cds[slot]) {
-          seatDeny(a, kind, DENIAL.onCooldown, tag, tick);
+        if (ktag.inputSeq < T.cds[slot]) {
+          seatDeny(a, kind, DENIAL.onCooldown, ktag, tick);
           continue;
         }
-        fireHumanSkill(a, kit[slot], slot, f, tick, tag);
+        fireHumanSkill(a, kit[slot], slot, f, tick, ktag);
         const cdT = Math.max(CD_FLOOR_TICKS, secTicks(kit[slot].cd));
         a.cds[slot] = tick + cdT;
-        T.cds[slot] = seq + cdT;
+        T.cds[slot] = ktag.inputSeq + cdT;
       }
       for (const k of kinds) {
         if (!k.startsWith('skill_')) continue;
-        if (Number(k.slice(6)) > kit.length) seatDeny(a, k, DENIAL.emptySlot, tag, tick);
+        if (Number(k.slice(6)) > kit.length) seatDeny(a, k, DENIAL.emptySlot, tagOf(k), tick);
       }
       if (f.basic && seq >= T.basic && !stunned && (!humanChannelling(a) || freshBasic)) {
         if (a.dashTicksLeft > 0) {

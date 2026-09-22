@@ -1,0 +1,256 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const vl=document.querySelector('#version-label')||document.querySelector('[id*=version]');const b=vl?vl.getBoundingClientRect():null;return {tag:\"gate-head\",tick:E.tick,fps:+(E.fps||0).toFixed(1),ver:E.version,scene:E.state().scene,colliders:c.colliders,roadViolations:c.roadViolations,rvType:typeof c.roadViolations,rvIsArray:Array.isArray(c.roadViolations),rvJSON:JSON.stringify(c.roadViolations),seats:c.seats,seatDrift:c.seatDrift,player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt&&c.prompt.box,propTypes:c.propTypes,propShadows:c.propShadows,emitters:c.emitters,verText:vl&&vl.textContent,verBox:b&&[+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1)],verOpacity:vl&&getComputedStyle(vl).opacity,verVis:vl&&getComputedStyle(vl).visibility}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',0.1,-7.6);return 'tp G1 north-end (0.1,-7.60) S'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"G1 north-end (0.1,-7.60) S\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]],upIdx:-1,upTick:-1};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {leg:window.__L.n,start:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)],asked:[0.1,-7.6]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__L.upIdx=window.__L.s.length;window.__L.upTick=E.tick;return 'up@'+E.tick})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s.slice(0,L.upIdx);\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][0];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,inBand=0;let offMin=1e9,offMax=-1;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0){cur=0;}}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;if(o<=P.w/2)inBand++;}\nconst last=s[s.length-1];const chord=Math.hypot(last[1]-L.p0.x,last[2]-L.p0.z);\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst ticks=L.upTick-L.t0;\nconst hearth=Math.hypot(last[1]-0,last[2]+0.2);\nreturn {leg:L.n,path:P.id,samples:s.length,ticks:ticks,p0:[+L.p0.x.toFixed(3),+L.p0.z.toFixed(3)],p1:[+last[1].toFixed(3),+last[2].toFixed(3)],moved:+chord.toFixed(3),pathLen:+pathLen.toFixed(3),uPerSecPath:+(pathLen/(ticks/60)).toFixed(3),uPerSecChord:+(chord/(ticks/60)).toFixed(3),maxStallTicks:maxStall,stillMovingAtKeyup:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inBandPct:+(100*inBand/s.length).toFixed(1),distHearth:+hearth.toFixed(3),rv:E.cmd('campState').roadViolations}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',0.2,7.6);return 'tp G2 south-end (0.2,7.60) W'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"G2 south-end (0.2,7.60) W\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]],upIdx:-1,upTick:-1};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {leg:window.__L.n,start:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)],asked:[0.2,7.6]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__L.upIdx=window.__L.s.length;window.__L.upTick=E.tick;return 'up@'+E.tick})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s.slice(0,L.upIdx);\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][0];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,inBand=0;let offMin=1e9,offMax=-1;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0){cur=0;}}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;if(o<=P.w/2)inBand++;}\nconst last=s[s.length-1];const chord=Math.hypot(last[1]-L.p0.x,last[2]-L.p0.z);\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst ticks=L.upTick-L.t0;\nconst hearth=Math.hypot(last[1]-0,last[2]+0.2);\nreturn {leg:L.n,path:P.id,samples:s.length,ticks:ticks,p0:[+L.p0.x.toFixed(3),+L.p0.z.toFixed(3)],p1:[+last[1].toFixed(3),+last[2].toFixed(3)],moved:+chord.toFixed(3),pathLen:+pathLen.toFixed(3),uPerSecPath:+(pathLen/(ticks/60)).toFixed(3),uPerSecChord:+(chord/(ticks/60)).toFixed(3),maxStallTicks:maxStall,stillMovingAtKeyup:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inBandPct:+(100*inBand/s.length).toFixed(1),distHearth:+hearth.toFixed(3),rv:E.cmd('campState').roadViolations}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',0.35,4.2);return 'tp G3 (0.35,4.2) W toward hearth'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"G3 (0.35,4.2) W toward hearth\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]],upIdx:-1,upTick:-1};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {leg:window.__L.n,start:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)],asked:[0.35,4.2]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__L.upIdx=window.__L.s.length;window.__L.upTick=E.tick;return 'up@'+E.tick})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s.slice(0,L.upIdx);\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][0];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,inBand=0;let offMin=1e9,offMax=-1;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0){cur=0;}}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;if(o<=P.w/2)inBand++;}\nconst last=s[s.length-1];const chord=Math.hypot(last[1]-L.p0.x,last[2]-L.p0.z);\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst ticks=L.upTick-L.t0;\nconst hearth=Math.hypot(last[1]-0,last[2]+0.2);\nreturn {leg:L.n,path:P.id,samples:s.length,ticks:ticks,p0:[+L.p0.x.toFixed(3),+L.p0.z.toFixed(3)],p1:[+last[1].toFixed(3),+last[2].toFixed(3)],moved:+chord.toFixed(3),pathLen:+pathLen.toFixed(3),uPerSecPath:+(pathLen/(ticks/60)).toFixed(3),uPerSecChord:+(chord/(ticks/60)).toFixed(3),maxStallTicks:maxStall,stillMovingAtKeyup:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inBandPct:+(100*inBand/s.length).toFixed(1),distHearth:+hearth.toFixed(3),rv:E.cmd('campState').roadViolations}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',0,-5.9);return 'tp G4 (0.0,-5.9) S toward hearth'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"G4 (0.0,-5.9) S toward hearth\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]],upIdx:-1,upTick:-1};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {leg:window.__L.n,start:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)],asked:[0,-5.9]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__L.upIdx=window.__L.s.length;window.__L.upTick=E.tick;return 'up@'+E.tick})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s.slice(0,L.upIdx);\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][0];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,inBand=0;let offMin=1e9,offMax=-1;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0){cur=0;}}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;if(o<=P.w/2)inBand++;}\nconst last=s[s.length-1];const chord=Math.hypot(last[1]-L.p0.x,last[2]-L.p0.z);\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst ticks=L.upTick-L.t0;\nconst hearth=Math.hypot(last[1]-0,last[2]+0.2);\nreturn {leg:L.n,path:P.id,samples:s.length,ticks:ticks,p0:[+L.p0.x.toFixed(3),+L.p0.z.toFixed(3)],p1:[+last[1].toFixed(3),+last[2].toFixed(3)],moved:+chord.toFixed(3),pathLen:+pathLen.toFixed(3),uPerSecPath:+(pathLen/(ticks/60)).toFixed(3),uPerSecChord:+(chord/(ticks/60)).toFixed(3),maxStallTicks:maxStall,stillMovingAtKeyup:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inBandPct:+(100*inBand/s.length).toFixed(1),distHearth:+hearth.toFixed(3),rv:E.cmd('campState').roadViolations}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',0.3,1.6);return 'tp G5 (0.3,1.6) S'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"G5 (0.3,1.6) S\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]],upIdx:-1,upTick:-1};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {leg:window.__L.n,start:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)],asked:[0.3,1.6]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__L.upIdx=window.__L.s.length;window.__L.upTick=E.tick;return 'up@'+E.tick})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s.slice(0,L.upIdx);\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][0];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,inBand=0;let offMin=1e9,offMax=-1;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0){cur=0;}}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;if(o<=P.w/2)inBand++;}\nconst last=s[s.length-1];const chord=Math.hypot(last[1]-L.p0.x,last[2]-L.p0.z);\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst ticks=L.upTick-L.t0;\nconst hearth=Math.hypot(last[1]-0,last[2]+0.2);\nreturn {leg:L.n,path:P.id,samples:s.length,ticks:ticks,p0:[+L.p0.x.toFixed(3),+L.p0.z.toFixed(3)],p1:[+last[1].toFixed(3),+last[2].toFixed(3)],moved:+chord.toFixed(3),pathLen:+pathLen.toFixed(3),uPerSecPath:+(pathLen/(ticks/60)).toFixed(3),uPerSecChord:+(chord/(ticks/60)).toFixed(3),maxStallTicks:maxStall,stillMovingAtKeyup:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inBandPct:+(100*inBand/s.length).toFixed(1),distHearth:+hearth.toFixed(3),rv:E.cmd('campState').roadViolations}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',-0.1,-1.5);return 'tp G6 (-0.1,-1.5) W through gate'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"G6 (-0.1,-1.5) W through gate\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]],upIdx:-1,upTick:-1};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {leg:window.__L.n,start:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)],asked:[-0.1,-1.5]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 2200
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__L.upIdx=window.__L.s.length;window.__L.upTick=E.tick;return 'up@'+E.tick})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s.slice(0,L.upIdx);\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][0];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,inBand=0;let offMin=1e9,offMax=-1;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0){cur=0;}}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;if(o<=P.w/2)inBand++;}\nconst last=s[s.length-1];const chord=Math.hypot(last[1]-L.p0.x,last[2]-L.p0.z);\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst ticks=L.upTick-L.t0;\nconst hearth=Math.hypot(last[1]-0,last[2]+0.2);\nreturn {leg:L.n,path:P.id,samples:s.length,ticks:ticks,p0:[+L.p0.x.toFixed(3),+L.p0.z.toFixed(3)],p1:[+last[1].toFixed(3),+last[2].toFixed(3)],moved:+chord.toFixed(3),pathLen:+pathLen.toFixed(3),uPerSecPath:+(pathLen/(ticks/60)).toFixed(3),uPerSecChord:+(chord/(ticks/60)).toFixed(3),maxStallTicks:maxStall,stillMovingAtKeyup:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inBandPct:+(100*inBand/s.length).toFixed(1),distHearth:+hearth.toFixed(3),rv:E.cmd('campState').roadViolations}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');const vl=document.querySelector('#version-label')||document.querySelector('[id*=version]');const b=vl?vl.getBoundingClientRect():null;return {tag:\"gate-tail\",tick:E.tick,fps:+(E.fps||0).toFixed(1),ver:E.version,scene:E.state().scene,colliders:c.colliders,roadViolations:c.roadViolations,rvType:typeof c.roadViolations,rvIsArray:Array.isArray(c.roadViolations),rvJSON:JSON.stringify(c.roadViolations),seats:c.seats,seatDrift:c.seatDrift,player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt&&c.prompt.box,propTypes:c.propTypes,propShadows:c.propShadows,emitters:c.emitters,verText:vl&&vl.textContent,verBox:b&&[+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1)],verOpacity:vl&&getComputedStyle(vl).opacity,verVis:vl&&getComputedStyle(vl).visibility}})()"
+ }
+]

@@ -1,0 +1,18 @@
+[
+  {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const r=E.cmd(\"startRun\");const s=E.cmd(\"skipToRoom\",7);return {seed:E.seed,room:s&&s.room,phase:s&&s.phase,mode:s&&s.mode}})()"
+  },
+  {
+    "type": "wait",
+    "ms": 1800
+  },
+  {
+    "type": "eval",
+    "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<20000){if(E.runUi().screen===\"shop\")return {ok:true,tick:E.tick,screen:E.runUi().screen,wallet:E.runUi().wallet,cards:E.runUi().cards.length,ms:Math.round(performance.now()-t0)};await new Promise(r=>setTimeout(r,8));}return {ok:false,screen:E.runUi().screen}})()"
+  },
+  {
+    "type": "eval",
+    "code": "(()=>{const E=__echoes;const s=E.state();const a=s.vfx.arena||{};return {tag:\"SHOP\",tick:E.tick,fps:E.fps,room:s.run.room,phase:s.run.phase,wallet:s.run.wallet,enemies:s.enemies.length,arena:{emitters:a.emitters,embers:a.embers,particles:a.particles,decals:a.decals,propTypes:a.propTypes,propShadows:a.propShadows,grass:a.grass,flowers:a.flowers,variantName:a.variantName}}})()"
+  }
+]

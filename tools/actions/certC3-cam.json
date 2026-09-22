@@ -1,0 +1,74 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"hit\",\"hit_immune\",\"sound\",\"hitstop\",\"death\",\"screenshake\",\"ally_basic\",\"ally_cast\",\"skill_cast\",\"room_cleared\",\"enemy_spawn\",\"wave_start\",\"room_enter\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"telegraph_start\",\"telegraph_resolve\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed '+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<40000){if(E.state().enemies.length>=1)return {ok:true,tick:E.tick,ms:Math.round(performance.now()-t0)};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__proj=(x,y,z)=>{const cam=window.__arenaProbe.stage.camera;cam.updateMatrixWorld();\n  const mv=cam.matrixWorldInverse.elements,pm=cam.projectionMatrix.elements;\n  const mul=(m,v)=>[m[0]*v[0]+m[4]*v[1]+m[8]*v[2]+m[12]*v[3],m[1]*v[0]+m[5]*v[1]+m[9]*v[2]+m[13]*v[3],m[2]*v[0]+m[6]*v[1]+m[10]*v[2]+m[14]*v[3],m[3]*v[0]+m[7]*v[1]+m[11]*v[2]+m[15]*v[3]];\n  let v=mul(mv,[x,y,z,1]);v=mul(pm,v);const w=v[3]||1;\n  return [Math.round((v[0]/w*0.5+0.5)*innerWidth),Math.round((-v[1]/w*0.5+0.5)*innerHeight)];};E.cmd('iframe',0,60000);E.cmd('teleport',-5,4);\n    window.__cam={legs:{},cur:null};\n    (async()=>{while(true){const c=window.__cam;if(c.cur){const p=E.state().party[0];\n      const sp=window.__proj(p.x,0.55,p.z);const cm=E.state().vfx.arena.cam;\n      c.legs[c.cur].push([E.tick,+p.x.toFixed(2),+p.z.toFixed(2),sp[0],sp[1],+cm[0].toFixed(3),+cm[1].toFixed(3)]);}\n      await new Promise(r=>setTimeout(r,250));}})();\n    (async()=>{let last=null;window.__step=[];while(true){const cm=E.state().vfx.arena.cam;\n      if(last)window.__step.push(+Math.hypot(cm[0]-last[0],cm[1]-last[1]).toFixed(4));last=[cm[0],cm[1]];\n      await new Promise(r=>setTimeout(r,16));}})();\n    return {player:[E.state().party[0].x,E.state().party[0].z],cam:E.state().vfx.arena.cam}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__cam.legs.D=[];window.__cam.cur='D';return 'leg D at '+E.tick})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 4000
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__cam.cur=null;return {n:window.__cam.legs.D.length}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__cam.legs.W=[];window.__cam.cur='W';return 'leg W at '+E.tick})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 4000
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__cam.cur=null;return {n:window.__cam.legs.W.length}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC3-cam-end"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const L=window.__cam.legs;const out={};\n    for(const k of ['D','W']){const r=L[k]||[];let maxJump=0,mj=null;\n      for(let i=1;i<r.length;i++){const d=Math.hypot(r[i][3]-r[i-1][3],r[i][4]-r[i-1][4]);if(d>maxJump){maxJump=d;mj=[r[i-1][0],r[i][0],Math.round(d)];}}\n      const inside=r.filter(x=>x[3]>=320&&x[3]<=1280&&x[4]>=180&&x[4]<=720).length;\n      out[k]={samples:r.length,sxMin:Math.min.apply(null,r.map(x=>x[3])),sxMax:Math.max.apply(null,r.map(x=>x[3])),\n        syMin:Math.min.apply(null,r.map(x=>x[4])),syMax:Math.max.apply(null,r.map(x=>x[4])),\n        maxJumpPx:Math.round(maxJump),maxJumpPctW:+(maxJump/innerWidth*100).toFixed(2),maxJumpAt:mj,\n        inside60:inside,outside:r.filter(x=>!(x[3]>=320&&x[3]<=1280&&x[4]>=180&&x[4]<=720)).map(x=>[x[0],x[3],x[4]]),\n        worldFrom:[r[0][1],r[0][2]],worldTo:[r[r.length-1][1],r[r.length-1][2]],rows:r};}\n    const st=window.__step.slice().sort((a,b)=>a-b);\n    out.camStep={n:st.length,median:st[Math.floor(st.length/2)],p99:st[Math.floor(st.length*0.99)],max:st[st.length-1]};\n    out.fps=E.fps;out.window=[innerWidth,innerHeight];return out})()"
+ }
+]

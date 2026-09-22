@@ -1,0 +1,62 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {version:E.version,keys:Object.keys(E),tick:E.tick,fps:E.fps,seed:E.seed,bootSeed:E.bootSeed}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed,run:JSON.stringify(E.cmd('runState')).slice(0,600)}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 4000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {stateKeys:Object.keys(s),party0:s.party[0]?Object.keys(s.party[0]):null,enemy0:s.enemies[0]?Object.keys(s.enemies[0]):null,vfx:s.vfx,toggles:s.toggles}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {probe:window.__arenaProbe?Object.keys(window.__arenaProbe):null,stage:window.__arenaProbe&&window.__arenaProbe.stage?Object.keys(window.__arenaProbe.stage):null}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {threat:E.hud.threat(),combat:JSON.stringify(E.hud.combat()).slice(0,400),banner:E.hud.banner()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {hitOnce:JSON.stringify(E.cmd('hitOnce',0)),hp:E.state().party[0].hp}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "Space"
+ },
+ {
+  "type": "wait",
+  "ms": 120
+ },
+ {
+  "type": "keyup",
+  "key": "Space"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const seen={};for(const e of E.events){seen[e.type]=seen[e.type]||JSON.stringify(e).slice(0,190)}return seen})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {events:E.events.slice(-14).map(e=>JSON.stringify(e).slice(0,150))}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {giveHeavy:JSON.stringify(E.cmd('giveSkill','heavy_slam')),skills:E.state().skills.map(k=>k&&k.id)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=document.querySelector('canvas');return {canvas:c?[c.width,c.height,c.clientWidth,c.clientHeight]:null,ctxAttrs:c&&c.getContext?'ok':'no',numLayer:!!document.querySelector('#dmg-num-layer')}})()"
+ }
+]

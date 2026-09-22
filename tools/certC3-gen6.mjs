@@ -1,0 +1,157 @@
+// C4 hit feedback: per-hit flash / numeral / knockback / sound / hitstop / shake.
+import { writeFileSync, mkdirSync } from 'fs';
+mkdirSync('tools/actions', { recursive: true });
+const ev = (code) => ({ type: 'eval', code });
+const wait = (ms) => ({ type: 'wait', ms });
+const iife = (b) => `(()=>{const E=__echoes;${b}})()`;
+const waitFor = (cond, timeout = 30000, extra = '') =>
+  ev(`(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<${timeout}){if(${cond})return {ok:true,tick:E.tick,ms:Math.round(performance.now()-t0)${extra}};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick${extra}}})()`);
+const files = {};
+
+const EVTYPES = ['hit', 'hit_immune', 'sound', 'hitstop', 'death', 'screenshake', 'knockback', 'flash',
+  'ally_basic', 'ally_cast', 'skill_cast', 'room_cleared', 'enemy_spawn', 'wave_start', 'room_enter',
+  'boss_quake_start', 'boss_quake_resolve', 'boss_trample', 'boss_adds', 'boss_death', 'telegraph_start', 'telegraph_resolve'];
+const ARM = ev(iife(`window.__c={ev:[]};for(const t of ${JSON.stringify(EVTYPES)})E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed '+E.tick`));
+
+// per-rendered-frame sampler: enemy flash crops, numeral-layer transitions, tick dwell,
+// per-tick entity positions + kbTicks + vfx numeral pool count + camera position.
+const SAMPLER = ev(iife(`
+  window.__proj=(x,y,z)=>{const cam=window.__arenaProbe.stage.camera;cam.updateMatrixWorld();
+    const mv=cam.matrixWorldInverse.elements,pm=cam.projectionMatrix.elements;
+    const mul=(m,v)=>[m[0]*v[0]+m[4]*v[1]+m[8]*v[2]+m[12]*v[3],m[1]*v[0]+m[5]*v[1]+m[9]*v[2]+m[13]*v[3],m[2]*v[0]+m[6]*v[1]+m[10]*v[2]+m[14]*v[3],m[3]*v[0]+m[7]*v[1]+m[11]*v[2]+m[15]*v[3]];
+    let v=mul(mv,[x,y,z,1]);v=mul(pm,v);const w=v[3]||1;
+    return [Math.round((v[0]/w*0.5+0.5)*innerWidth),Math.round((-v[1]/w*0.5+0.5)*innerHeight)];};
+  const FW=64,FH=88;const src=document.querySelector('canvas');
+  const tmp=document.createElement('canvas');tmp.width=FW;tmp.height=FH;const g=tmp.getContext('2d',{willReadFrequently:true});
+  const layer=document.querySelector('#dmg-num-layer');
+  window.__f={flash:{},num:[],tick:[],ent:[],cam:[],frames:0,last:-1,lastWall:0,numState:new Map()};
+  const F=window.__f;
+  const vis=(n)=>{const s=getComputedStyle(n);return s.display!=='none'&&s.visibility!=='hidden'&&parseFloat(s.opacity||'1')>0.05;};
+  const step=()=>{F.frames++;const t=E.tick;const now=performance.now();
+    if(t!==F.last){if(F.last>=0)F.tick.push([F.last,+(now-F.lastWall).toFixed(1),t-F.last]);F.last=t;F.lastWall=now;
+      const st=E.state();const p=st.party[0];
+      F.ent.push([t,st.enemies.map(e=>[e.id,+e.x.toFixed(3),+e.z.toFixed(3),e.hp,e.kbTicks|0]),
+        (st.vfx.arena?st.vfx.arena.numerals:st.vfx.numerals)|0,+p.x.toFixed(3),+p.z.toFixed(3),p.hp]);
+      const cm=st.vfx.arena?st.vfx.arena.cam:null;if(cm)F.cam.push([t,+cm[0].toFixed(4),+cm[1].toFixed(4)]);
+      if(F.ent.length>9000)F.ent.shift();}
+    // numeral layer transitions
+    if(layer){const nodes=layer.querySelectorAll('.dmg-num');
+      nodes.forEach((n,i)=>{const v=vis(n);const txt=(n.textContent||'').trim();const key=i;
+        const prev=F.numState.get(key)||{v:false,txt:''};
+        if(v&&(!prev.v||prev.txt!==txt)){const r=n.getBoundingClientRect();
+          F.num.push([t,txt,Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]);}
+        F.numState.set(key,{v,txt});});}
+    // flash crops per enemy
+    try{const st=E.state();
+      for(const e of st.enemies){const pr=window.__proj(e.x,0.55,e.z);
+        let sx=pr[0]-FW/2,sy=pr[1]-FH/2;
+        if(sx<0||sy<0||sx+FW>innerWidth||sy+FH>innerHeight){continue;}
+        g.clearRect(0,0,FW,FH);g.drawImage(src,sx,sy,FW,FH,0,0,FW,FH);
+        const d=g.getImageData(0,0,FW,FH).data;let w=0;
+        for(let i=0;i<d.length;i+=4){const r=d[i],gg=d[i+1],b=d[i+2];
+          const L=0.2126*r+0.7152*gg+0.0722*b;const mx=Math.max(r,gg,b),mn=Math.min(r,gg,b);
+          const s=mx?(mx-mn)/mx:0;if(L>230&&s<0.18)w++;}
+        (F.flash[e.id]=F.flash[e.id]||[]).push([t,+(w/(FW*FH)).toFixed(3),Math.round(sx),Math.round(sy)]);}
+    }catch(err){F.err=String(err);}
+    requestAnimationFrame(step);};
+  requestAnimationFrame(step);return 'sampler armed at '+E.tick`));
+
+// pin enemy HP so victims survive their hits (melee arcs need a live target)
+const PIN = ev(iife(`(async()=>{while(true){try{
+    E.cmd('iframe',0,600);const st=E.state();
+    for(const e of st.enemies)if(e.kind!=='stag')E.cmd('setHp',e.id,1);
+    const u=E.runUi();if(u.screen==='draft')E.cmd('draftDecline');else if(u.screen==='path')E.cmd('pathChoose',0);
+  }catch(err){window.__pinerr=String(err);}await new Promise(r=>setTimeout(r,20));}})();return 'pin armed'`));
+
+const REPORT = ev(iife(`
+  const F=window.__f,evs=window.__c.ev;
+  const hits=evs.filter(e=>e.T==='hit'&&e.kind!=='player');
+  const dwell={};for(const r of F.tick)dwell[r[0]]=r[1];
+  const entAt=(t)=>{let best=null;for(const r of F.ent){if(r[0]<=t)best=r;else break;}return best;};
+  const entAtOrAfter=(t)=>F.ent.find(r=>r[0]>=t);
+  const numUsed=new Set();
+  const rows=[];const fails=[];
+  for(const h of hits){
+    const T=h.tick,V=h.target;
+    // numeral: a fresh visible numeral carrying the exact amount at T-1..T+3
+    let num=null;
+    for(let i=0;i<F.num.length;i++){const n=F.num[i];
+      if(numUsed.has(i))continue;
+      if(n[0]>=T-1&&n[0]<=T+3&&n[1]===String(h.amount)){num=n;numUsed.add(i);break;}}
+    // vfx numeral pool count step within 2 ticks
+    const a=entAt(T-1),b=entAtOrAfter(T+2);
+    const poolStep=a&&b?b[5]-a[5]:null;
+    // sound within t..t+2
+    const snd=evs.some(e=>e.T==='sound'&&e.tick>=T&&e.tick<=T+2);
+    // knockback: displacement of the victim over T..T+10 projected on the hit dir
+    let kb=null,kbT=null;
+    const r0=entAt(T),r1=F.ent.find(r=>r[0]>=T+10);
+    if(r0&&r1){const p0=r0[1].find(x=>x[0]===V),p1=r1[1].find(x=>x[0]===V);
+      if(p0&&p1){const dx=p1[1]-p0[1],dz=p1[2]-p0[2];
+        kb=+(dx*(h.dirX||0)+dz*(h.dirZ||0)).toFixed(3);kbT=p0[4];}}
+    // flash: victim crop W jumps at T..T+3 from a quiet baseline
+    let fl=null,flPre=null;const fr=F.flash[V]||[];
+    const pre=fr.filter(r=>r[0]>=T-8&&r[0]<T).map(r=>r[1]);
+    const post=fr.filter(r=>r[0]>=T&&r[0]<=T+4).map(r=>r[1]);
+    if(post.length){fl=Math.max.apply(null,post);flPre=pre.length?Math.max.apply(null,pre):null;}
+    const stop=evs.filter(e=>e.T==='hitstop'&&e.tick>=T&&e.tick<=T+2).map(e=>e.ticks+':'+e.cause);
+    const kill=evs.some(e=>e.T==='death'&&e.id===V&&e.tick>=T&&e.tick<=T+1);
+    rows.push({t:T,v:V,src:h.source,shape:h.shape,amt:h.amount,kill,
+      num:num?num[1]+'@'+num[2]+','+num[3]:null,poolStep,snd,kb,kbT,fl,flPre,dwell:dwell[T]||null,stop});
+  }
+  const nonKill=rows.filter(r=>!r.kill);
+  const has=(r)=>({num:!!r.num,snd:r.snd,kb:r.kb!=null&&Math.abs(r.kb)>=0.05,fl:r.fl!=null&&r.fl>=0.15});
+  const all=nonKill.filter(r=>{const h=has(r);return h.num&&h.snd&&h.kb&&h.fl;});
+  return {tick:E.tick,fps:E.fps,frames:F.frames,err:F.err||null,pinerr:window.__pinerr||null,
+    hits:rows.length,nonKill:nonKill.length,kills:rows.filter(r=>r.kill).length,
+    numeralOk:rows.filter(r=>r.num).length,poolStepOk:rows.filter(r=>r.poolStep>0).length,
+    soundOk:rows.filter(r=>r.snd).length,
+    kbOk:nonKill.filter(r=>r.kb!=null&&Math.abs(r.kb)>=0.05).length,
+    flashOk:nonKill.filter(r=>r.fl!=null&&r.fl>=0.15).length,
+    allFour:all.length,
+    arcHits:rows.filter(r=>r.shape==='melee_arc').length,
+    arcNonKill:nonKill.filter(r=>r.shape==='melee_arc').length,
+    arcWithStop:nonKill.filter(r=>r.shape==='melee_arc'&&r.stop.length).length,
+    killsWithStop:rows.filter(r=>r.kill&&r.stop.length).length,
+    stopCauses:evs.filter(e=>e.T==='hitstop').reduce((m,e)=>{const k=e.ticks+':'+e.cause;m[k]=(m[k]||0)+1;return m;},{}),
+    deaths:evs.filter(e=>e.T==='death').length,
+    shakes:evs.filter(e=>e.T==='screenshake').length,
+    shakeCauses:evs.filter(e=>e.T==='screenshake').reduce((m,e)=>{m[e.cause]=(m[e.cause]||0)+1;return m;},{}),
+    dwellStats:(()=>{const v=F.tick.filter(r=>r[2]===1).map(r=>r[1]).sort((a,b)=>a-b);
+      return {n:v.length,median:v[Math.floor(v.length/2)],p99:v[Math.floor(v.length*0.99)],max:v[v.length-1]};})()}`));
+
+files['certC3-hits'] = [
+  ARM,
+  ev(iife(`E.cmd('startRun');return {seed:E.seed,tick:E.tick}`)),
+  waitFor(`E.state().enemies.length>=3`, 40000, `,enemies:E.state().enemies.length`),
+  ev(iife(`const st=E.state();E.cmd('iframe',0,20000);
+    const a=st.party.map(p=>[p.id,p.kind,+p.x.toFixed(2),+p.z.toFixed(2)]);
+    const ids=[];for(let i=1;i<st.party.length;i++){const p=st.party[i];
+      ids.push(E.cmd('spawn','boar',+(p.x+0.5).toFixed(2),+(p.z+0.5).toFixed(2)));}
+    return {party:a,spawned:ids.map(String),enemies:E.state().enemies.length}`)),
+  PIN,
+  wait(800),
+  SAMPLER,
+  wait(40000),
+  ev(iife(`const st=E.state();return {enemies:st.enemies.map(e=>[e.id,e.kind,e.hp]),hits:window.__c.ev.filter(e=>e.T==='hit').length,
+    shapes:window.__c.ev.filter(e=>e.T==='hit').reduce((m,e)=>{m[(e.source||'?')+'|'+(e.shape||'?')]=(m[(e.source||'?')+'|'+(e.shape||'?')]||0)+1;return m;},{}),
+    frames:window.__f.frames,numRows:window.__f.num.length,entRows:window.__f.ent.length}`)),
+  REPORT,
+  ev(iife(`const F=window.__f,evs=window.__c.ev;
+    const hits=evs.filter(e=>e.T==='hit'&&e.kind!=='player');
+    const dwell={};for(const r of F.tick)dwell[r[0]]=r[1];
+    return hits.slice(0,34).map(h=>[h.tick,h.source,h.shape,h.amount,dwell[h.tick]||null,
+      evs.filter(e=>e.T==='hitstop'&&e.tick>=h.tick&&e.tick<=h.tick+2).map(e=>e.ticks+':'+e.cause).join(',')||'none'])`)),
+  ev(iife(`const F=window.__f,evs=window.__c.ev;
+    const hits=evs.filter(e=>e.T==='hit'&&e.kind!=='player'&&e.shape==='melee_arc');
+    const dwell={};for(const r of F.tick)dwell[r[0]]=r[1];
+    const d=hits.map(h=>dwell[h.tick]).filter(v=>v!=null).sort((a,b)=>a-b);
+    return {arcN:hits.length,arcDwellMedian:d[Math.floor(d.length/2)],arcDwellMax:d[d.length-1],over40:d.filter(v=>v>40).length,
+      arcRows:hits.slice(0,40).map(h=>[h.tick,h.source,h.amount,dwell[h.tick]||null,
+        evs.filter(e=>e.T==='hitstop'&&e.tick>=h.tick&&e.tick<=h.tick+2).map(e=>e.ticks+':'+e.cause).join(',')||'none'])}`)),
+];
+
+for (const [name, acts] of Object.entries(files)) {
+  writeFileSync(`tools/actions/${name}.json`, JSON.stringify(acts, null, 1));
+  console.log('wrote', name, acts.length);
+}

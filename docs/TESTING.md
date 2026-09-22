@@ -681,3 +681,86 @@ http://127.0.0.1:<port>/`. Baseline for fps comparisons:
 `node tools/gntM5a-fpsbase.mjs --pages 2 --w 960 --h 540` (N single-player
 windows, no network: 2 windows ≈ 51 fps here). Dev aid:
 `node tools/gntM5a-pagedebug.mjs ws://…` (host + guest windows, dumps net logs).
+
+### M5b — network play (Gauntlet W4, owner M5b)
+
+**Playing.** `npm run net` (LAN: `npm run net -- --host 0.0.0.0`), then title
+▸ Multiplayer ▸ Host a Game / Host a Public Game / Join by Code / Quick Match
+▸ lobby (seats, Ready, Start). The host plays the Healer (seat 0, its full
+4-skill build with the 8-socket rows); guests play Tank / Swordsman / Archer
+(seats 1–3, their 4-skill class kits, keys 1–4, Space dodge, right mouse
+basic, E interact / hold-E revive); empty seats and dropped guests are the
+§12 ally AI, a host-less seat 0 after a migration is M4a's leader bot. Build
+decisions (draft, path, shop, sockets, expedition) are the host's: guest
+pages are read-only ("The Healer is choosing…"), a guest's pick becomes a
+refused CMD shown to everyone as a ping. The socket screen on a guest says
+"Read-only — the Healer sets the sockets". Single-player never touches any
+of this (goldens: `node tools/gntM2-goldens.mjs` 9/9).
+
+**Session surface** (`__echoes.net.session`, the `net` service's session):
+`status()` (role, seats, synced, frozen, hostLost, reconnecting,
+reconnectLeftMs), `role`, `localSeat()`, `leaveSession()`, `pings()`,
+`log(n)`, `statsLine()`, probes `setLagCompensation(on)` (host),
+`requestFull()`, `setBotInput({ seed, aim, aimAll, chase } | null)` (scripted
+guest input; also `?netbot=<seed>`), `ownPose()` (the own seat as the last
+frame drew it), `renderedHostiles()` (every hostile where the last frame drew
+it + that frame's host tick), `debugGuest()` / `debugHost()`, `resetStats()`.
+`__echoes.net.stats()` adds, on a guest: predErrP50/P95/Max, corrections,
+maxCorrectionPerFrame, remoteJumpMax / remoteJumps03 / remoteJumpRate06 /
+remoteFrames (party), hostileJumpMax, smoothed / smoothedMaxU / smoothSnaps /
+teleportFrames, extrapolatedFrames / heldFrames, interpDelayMs,
+ownActionFeedbackMs, mispredictRetractMs, retractions, predicted/confirmed
+actions, eventsReplayed / Suppressed / Late, replayedOnce, desyncs /
+hashChecks / desyncPaths, decodeErrors, snapshotBytesAvg / fullBytesAvg /
+deltaRatio, inputRate, guestNetMsP95, frameOver50Net; on a host:
+hostNetMsP50/P95/Max, frameOver50Net, captureMsP95, encodeMsP95,
+inputBufferDepth, staleRepeatTicksMax / staleLog, humanSeats / awaySeats,
+playerController, rewindTicksAvg / rewindClamped / rewindWantedP50/P95 /
+rewindMaxTicks, lagCompHits, hostHiddenFedMs, migration.
+
+**Numbers that differ from the PLAN text (decisions in docs/gauntlet/build-M5b.md).**
+Rewind window 24 ticks / 400 ms (PLAN 15 / 250 ms: an N1 guest's view is
+18–20 ticks old at the PLAN's own interp + depth-2 buffer); reconnect backoff
+capped 1.5 s; in-session reconnect gives up after 15 s → title "Connection to
+the server was lost." with "Rejoin ABCDE?" while the server's 60 s seat hold
+lasts; party bodies cannot be stunned (status rule), so the G5b.12 forced
+mispredict is a host-side Downed (`setHp(seat, 0)`).
+
+**Probes** (all start their own session server on the M5b ports 7820–7829;
+the long browser runs use a production preview so HMR never reloads a page:
+`npx vite build --outDir dist-M5b --emptyOutDir` + `npx vite preview --outDir
+dist-M5b --port 4307 --strictPort`, then `--base http://127.0.0.1:4307/`):
+- `node tools/gntM5b-simseats.mjs` — Node, 23 checks: seat_control, human
+  walk / dodge / kit / basic / aim shapes, lag-comp hit vs miss, same-tick E,
+  human revive, host-vs-predictor parity (maxErr 0 over 400 frames), replica refusal.
+- `node tools/gntM5b-smoke2.mjs [--port 7821]` — host + guest windows, a guest walk by real keys.
+- `node tools/gntM5b-ui.mjs --w W --h H` (1024×576 / 1600×900 / 2560×1440) and
+  `node tools/gntM5b-ui2.mjs` — G5b.13 by real keys: unreachable panel from the
+  menu AND from Host / Join / Quick Match after the server dies (≤ 5 s; Windows
+  needs ~2 s per refused loopback connect), Retry, Change server (ws:// / wss://),
+  Back, LAN URLs, lobby flow, and an **https** leg (`tools/gntM5b-https.mjs`
+  serves dist-M5b over a self-signed loopback cert on 7829; the browser runs
+  with `--ignore-certificate-errors`): the https line, ws:// refused, wss:// saved.
+- `node tools/gntM5b-play.mjs --cond N1|N2|N3|N4 [--pages 2] [--mbots 2] [--seconds 180] [--mode combat|boss] [--hostHidden] [--hostKeys]`
+  — G5b.1/2/4/5/9/14: prediction error, remote jumps (rendered positions),
+  bandwidth (1 s windows), delta ratio, desyncs / hash checks, the exactly-once
+  replay audit (host sent-ledger vs guest replay ledger by tick|type|ordinal),
+  simCalls / refusedEmits, fps, host net ms, host keydown-to-move.
+  `--mbots N` adds PLAYING Node guests (tools/gntM5b-botlib.mjs).
+- `node tools/gntM5b-feel.mjs [--conds N1,N2] [--seat 3]` — G5b.10/12 by
+  trusted keys + mouse on a guest window (host = hidden tab on its Worker
+  metronome): frames from dispatch to a moved body / dash pose / cooldown
+  tile, ownActionFeedbackMs, Downed-seat mispredict retraction, doubled
+  presentations, guest fps. `node tools/gntM5b-spfeel.mjs` = the SP reference.
+- `node tools/gntM5b-lagcomp.mjs [--conds N1,N2] [--seconds 90] [--lag both|on|off]`
+  — G5b.3: instant shapes valid on the guest's SCREEN (0.05 u margin; strict
+  reported too) that register on the host, with rewind on and off.
+- `node tools/gntM5b-drops.mjs` — G5b.6: guest close / blackhole reconnect,
+  host blackhole resume, kill-host migration, server kill → title + SP.
+- `node tools/gntM5b-races.mjs` — G5b.7: same-moment E on one Dewfont, a
+  guest's Take / door click while the host applies, last-seat join race ×5,
+  simultaneous Esc.
+- `node tools/gntM5b-stale.mjs` — G5b.11: 1 s input cut (≤ 8 repeat ticks
+  then neutral), hidden guest tab (seat to AI / back), hidden host tab 20 s.
+Conditions (per direction on each guest link, via `POST /admin/conditioner`):
+N1 `lat75,jit10,loss10` · N2 `lat125,jit20,loss20` · N3 `lat75,burst0.05:0.3:0.8` · N4 `lat50,dup1,reo2`.

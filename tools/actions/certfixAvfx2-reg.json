@@ -1,0 +1,23 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__r={cleared:0};E.on('room_cleared',()=>window.__r.cleared++);const r=E.cmd('startRun');return {tag:'startRun',room:r&&r.room,mode:r&&r.mode}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();let n=0;let worst=0;let last=performance.now();await new Promise(res=>{function f(){const now=performance.now();const d=now-last;last=now;if(n>2&&d>worst)worst=d;n++;if(now-t0<10000)requestAnimationFrame(f);else res();}requestAnimationFrame(f);});const ms=performance.now()-t0;return {tag:'fps10s',frames:n,seconds:+(ms/1000).toFixed(2),fps:+(n/(ms/1000)).toFixed(1),worstFrameMs:+worst.toFixed(1),reported:E.fps};})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();while(performance.now()-t0<90000){if(window.__r.cleared>=1)break;await new Promise(r=>setTimeout(r,25));}const rs=E.cmd('runState');return {tag:'playable',cleared:window.__r.cleared,room:rs.room,phase:rs.phase,banner:E.hud.banner().text,runUi:E.runUi().screen,tick:E.tick}})()"
+ }
+]

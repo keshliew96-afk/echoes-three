@@ -1,0 +1,34 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"hit\",\"hit_immune\",\"sound\",\"hitstop\",\"death\",\"screenshake\",\"ally_basic\",\"ally_cast\",\"skill_cast\",\"room_cleared\",\"enemy_spawn\",\"wave_start\",\"room_enter\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"telegraph_start\",\"telegraph_resolve\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed '+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<40000){if(E.state().enemies.length>=2)return {ok:true,tick:E.tick,ms:Math.round(performance.now()-t0)};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('iframe',0,60000);E.cmd('killAllEnemies');E.cmd('clearRoom');\n    return {tick:E.tick,enemies:E.state().enemies.length,ui:E.runUi().screen}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const evs=window.__c.ev;\n    return {beforeShot:{tick:E.tick,enemies:s.enemies.length,eshots:s.eshots.length,\n      liveTele:evs.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick).length,ui:E.runUi().screen}}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certC3-clean-cleared"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const evs=window.__c.ev;\n    return {afterShot:{tick:E.tick,enemies:s.enemies.length,eshots:s.eshots.length,\n      liveTele:evs.filter(e=>e.T==='telegraph_start'&&e.resolveTick>E.tick).length,ui:E.runUi().screen}}})()"
+ }
+]

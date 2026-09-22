@@ -1,0 +1,54 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=document.querySelector('canvas');let info=null;try{const gl=c.getContext('webgl2')||c.getContext('webgl');const d=gl.getExtension('WEBGL_debug_renderer_info');info={renderer:gl.getParameter(d.UNMASKED_RENDERER_WEBGL),vendor:gl.getParameter(d.UNMASKED_VENDOR_WEBGL),ver:gl.getParameter(gl.VERSION)};}catch(e){info={err:String(e)}}\n  return {version:E.version,seed:E.seed,bootSeed:E.bootSeed,tick:E.tick,fps:E.fps,ents:E.entityCount,canvas:[c.width,c.height],css:[c.clientWidth,c.clientHeight],dpr:devicePixelRatio,vp:[innerWidth,innerHeight],cores:navigator.hardwareConcurrency,ua:navigator.userAgent.slice(0,80),info}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {scene:s.scene,vfx:s.vfx,ents:E.entityCount,toggles:s.toggles,stateKeys:Object.keys(s)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const out=[...document.querySelectorAll('body *')].filter(el=>!el.children.length&&/^v?\\s*\\d+\\.\\d+\\.\\d+$/.test((el.textContent||'').trim())).map(el=>{const r=el.getBoundingClientRect();const cs=getComputedStyle(el);return {tag:el.tagName,id:el.id,cls:String(el.className),text:(el.textContent||'').trim(),rect:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],color:cs.color,font:cs.fontSize+' '+cs.fontFamily.slice(0,24),op:cs.opacity,z:cs.zIndex};});return {vp:[innerWidth,innerHeight],version:E.version,found:out}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('startRun');const rs=E.cmd('runState');return {seed:E.seed,frame:r&&r.frame,room:rs&&rs.room,mode:rs&&rs.mode,rsKeys:rs&&Object.keys(rs),rs:JSON.stringify(rs).slice(0,1500)}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {roomState:s.room,scene:s.scene,vfxKeys:s.vfx&&Object.keys(s.vfx)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('skipToRoom',2);const s=E.state();const rs=E.cmd('runState');return {room:2,mode:r&&r.mode,roomState:s.room,boss:rs&&rs.boss}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('skipToRoom',3);const s=E.state();const rs=E.cmd('runState');return {room:3,mode:r&&r.mode,roomState:s.room,boss:rs&&rs.boss}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('skipToRoom',4);const s=E.state();const rs=E.cmd('runState');return {room:4,mode:r&&r.mode,roomState:s.room,boss:rs&&rs.boss}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('skipToRoom',5);const s=E.state();const rs=E.cmd('runState');return {room:5,mode:r&&r.mode,roomState:s.room,boss:rs&&rs.boss}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('skipToRoom',6);const s=E.state();const rs=E.cmd('runState');return {room:6,mode:r&&r.mode,roomState:s.room,boss:rs&&rs.boss}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('skipToRoom',7);const s=E.state();const rs=E.cmd('runState');return {room:7,mode:r&&r.mode,roomState:s.room,boss:rs&&rs.boss}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('skipToRoom',8);const s=E.state();const rs=E.cmd('runState');return {room:8,mode:r&&r.mode,roomState:s.room,boss:rs&&rs.boss}})()"
+ }
+]

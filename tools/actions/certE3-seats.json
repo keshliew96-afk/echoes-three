@@ -1,0 +1,438 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"seats-head\",tick:E.tick,ver:E.version,colliders:c.colliders,roadViolations:c.roadViolations,rvType:typeof c.roadViolations,seatDrift:c.seatDrift,propTypes:c.propTypes,propShadows:c.propShadows,emitters:c.emitters,player:c.player}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle-t0\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#0\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#1\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#2\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#3\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#4\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#5\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#6\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#7\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#8\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#9\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#10\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#11\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#12\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#13\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#14\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#15\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#16\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#17\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#18\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#19\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle#20\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"idle-t5s\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',-3.6,0.5);return 'tp through-tank -3.6,0.5'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"through TANK seat D1000\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]]};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {walk:\"through TANK seat D1000\",from:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 1000
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s;\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][1];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,offMax=-1,offMin=1e9;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0)cur=0;}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;}\nconst c=E.cmd('campState');const p=c.player;\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst vis=[...document.querySelectorAll('body *')].filter(e=>e.children.length===0&&/Begin Run|wood is waiting/i.test(e.textContent||'')).map(e=>{const b=e.getBoundingClientRect();return [(e.textContent||'').trim().slice(0,40),+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1),getComputedStyle(e).opacity,getComputedStyle(e).visibility]});\nreturn {walk:L.n,target:\"tank seat\",tgt:[-1.95,0.5],end:[+p.x.toFixed(3),+p.z.toFixed(3)],dist:+Math.hypot(p.x-(-1.95),p.z-(0.5)).toFixed(3),ticks:E.tick-L.t0,pathLen:+pathLen.toFixed(3),maxStallTicks:maxStall,stillMoving:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,promptOverlaps:c.prompt.overlaps,distPortal:+Math.hypot(p.x-0,p.z+6.9).toFixed(3),portalR:c.portal.radius,promptDOM:vis,rv:c.roadViolations,seatDrift:c.seatDrift}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"after-tank\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE3-seat-tank"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',3.9,0.2);return 'tp through-sword 3.9,0.2'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"through SWORDSMAN seat A1000\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]]};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {walk:\"through SWORDSMAN seat A1000\",from:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 1000
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s;\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][1];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,offMax=-1,offMin=1e9;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0)cur=0;}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;}\nconst c=E.cmd('campState');const p=c.player;\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst vis=[...document.querySelectorAll('body *')].filter(e=>e.children.length===0&&/Begin Run|wood is waiting/i.test(e.textContent||'')).map(e=>{const b=e.getBoundingClientRect();return [(e.textContent||'').trim().slice(0,40),+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1),getComputedStyle(e).opacity,getComputedStyle(e).visibility]});\nreturn {walk:L.n,target:\"swordsman seat\",tgt:[2.3,0.2],end:[+p.x.toFixed(3),+p.z.toFixed(3)],dist:+Math.hypot(p.x-(2.3),p.z-(0.2)).toFixed(3),ticks:E.tick-L.t0,pathLen:+pathLen.toFixed(3),maxStallTicks:maxStall,stillMoving:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,promptOverlaps:c.prompt.overlaps,distPortal:+Math.hypot(p.x-0,p.z+6.9).toFixed(3),portalR:c.portal.radius,promptDOM:vis,rv:c.roadViolations,seatDrift:c.seatDrift}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"after-sword\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE3-seat-swordsman"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',-1,-2.6);return 'tp through-archer -1,-2.6'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"through ARCHER seat A700\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]]};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {walk:\"through ARCHER seat A700\",from:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s;\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][0];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,offMax=-1,offMin=1e9;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0)cur=0;}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;}\nconst c=E.cmd('campState');const p=c.player;\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst vis=[...document.querySelectorAll('body *')].filter(e=>e.children.length===0&&/Begin Run|wood is waiting/i.test(e.textContent||'')).map(e=>{const b=e.getBoundingClientRect();return [(e.textContent||'').trim().slice(0,40),+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1),getComputedStyle(e).opacity,getComputedStyle(e).visibility]});\nreturn {walk:L.n,target:\"archer seat\",tgt:[-2.3,-2.5],end:[+p.x.toFixed(3),+p.z.toFixed(3)],dist:+Math.hypot(p.x-(-2.3),p.z-(-2.5)).toFixed(3),ticks:E.tick-L.t0,pathLen:+pathLen.toFixed(3),maxStallTicks:maxStall,stillMoving:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,promptOverlaps:c.prompt.overlaps,distPortal:+Math.hypot(p.x-0,p.z+6.9).toFixed(3),portalR:c.portal.radius,promptDOM:vis,rv:c.roadViolations,seatDrift:c.seatDrift}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"after-archer\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certE3-seat-archer"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',-2.3,-4.3);return 'tp through-archer-n -2.3,-4.3'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');window.__L={n:\"through ARCHER seat from north S900\",t0:E.tick,p0:{x:c.player.x,z:c.player.z},s:[[E.tick,c.player.x,c.player.z]]};window.__L.iv=setInterval(()=>{const p=E.cmd('campState').player;window.__L.s.push([E.tick,p.x,p.z]);},16);return {walk:\"through ARCHER seat from north S900\",from:[+c.player.x.toFixed(3),+c.player.z.toFixed(3)]}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;clearInterval(window.__L.iv);const L=window.__L;const s=L.s;\nconst P=[{\"id\":\"gate\",\"w\":1.55,\"pts\":[[0.1,-8.4],[0,-5.4],[-0.2,-2.6],[0.1,0.6],[0.4,3.4],[0.2,8.4]]},{\"id\":\"camp\",\"w\":1.6,\"pts\":[[-12.6,3.4],[-7.4,2.4],[-2.6,0.9],[2.4,0.4],[7.6,-0.6],[12.6,-1.4]]}][0];\nconst segd=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1];const L2=vx*vx+vz*vz;let t=L2?((px-a[0])*vx+(pz-a[1])*vz)/L2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a[0]+t*vx),pz-(a[1]+t*vz));};\nconst offc=(px,pz)=>{let m=1e9;for(let i=0;i<P.pts.length-1;i++)m=Math.min(m,segd(px,pz,P.pts[i],P.pts[i+1]));return m;};\nlet pathLen=0,maxStall=0,cur=0,offMax=-1,offMin=1e9;\nfor(let i=1;i<s.length;i++){const dd=Math.hypot(s[i][1]-s[i-1][1],s[i][2]-s[i-1][2]);const dt=s[i][0]-s[i-1][0];pathLen+=dd;if(dt>0&&dd/dt<0.004){cur+=dt;if(cur>maxStall)maxStall=cur;}else if(dt>0)cur=0;}\nfor(const q of s){const o=offc(q[1],q[2]);if(o<offMin)offMin=o;if(o>offMax)offMax=o;}\nconst c=E.cmd('campState');const p=c.player;\nconst tail=s.slice(-5);const tailMove=tail.length>1?Math.hypot(tail[tail.length-1][1]-tail[0][1],tail[tail.length-1][2]-tail[0][2]):0;\nconst vis=[...document.querySelectorAll('body *')].filter(e=>e.children.length===0&&/Begin Run|wood is waiting/i.test(e.textContent||'')).map(e=>{const b=e.getBoundingClientRect();return [(e.textContent||'').trim().slice(0,40),+b.x.toFixed(1),+b.y.toFixed(1),+b.width.toFixed(1),+b.height.toFixed(1),getComputedStyle(e).opacity,getComputedStyle(e).visibility]});\nreturn {walk:L.n,target:\"archer seat\",tgt:[-2.3,-2.5],end:[+p.x.toFixed(3),+p.z.toFixed(3)],dist:+Math.hypot(p.x-(-2.3),p.z-(-2.5)).toFixed(3),ticks:E.tick-L.t0,pathLen:+pathLen.toFixed(3),maxStallTicks:maxStall,stillMoving:+tailMove.toFixed(3),offCentreMin:+offMin.toFixed(3),offCentreMax:+offMax.toFixed(3),inPortal:c.inPortal,promptVisible:c.promptVisible,promptBox:c.prompt.box,promptOverlaps:c.prompt.overlaps,distPortal:+Math.hypot(p.x-0,p.z+6.9).toFixed(3),portalR:c.portal.radius,promptDOM:vis,rv:c.roadViolations,seatDrift:c.seatDrift}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"after-archer-n\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"post-walk#0\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"post-walk#1\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"post-walk#2\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"post-walk#3\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"post-walk#4\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"post-walk#5\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"post-walk#6\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"post-walk#7\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"post-walk#8\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"final\",t:E.tick,seatDrift:c.seatDrift,rigs:(c.party.rigs||c.party).map(p=>[p.classId,+p.x.toFixed(3),+p.z.toFixed(3),p.anim||null]),seats:c.seats}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const c=E.cmd('campState');return {tag:\"seats-tail\",tick:E.tick,ver:E.version,colliders:c.colliders,roadViolations:c.roadViolations,rvType:typeof c.roadViolations,seatDrift:c.seatDrift,propTypes:c.propTypes,propShadows:c.propShadows,emitters:c.emitters,player:c.player}})()"
+ }
+]

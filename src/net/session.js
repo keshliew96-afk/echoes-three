@@ -138,6 +138,7 @@ export function createNetSession(ctx) {
   let frameNetGuest = 0;
   const frameStats = { guestNetMs: [], frameOver50Net: 0 };
   let sessionStartedAt = 0;
+  let hostHiddenFedMs = 0;
   let sessionEnding = false;
 
   // ---------------------------------------------------------- frame clock --
@@ -388,6 +389,9 @@ export function createNetSession(ctx) {
       lastSnapAt: 0,
       synced: false,
       renderState: null,
+      shownTick: null,
+      shownAlpha: 1,
+      dodgeSeq: -1,
       frozen: false,
       bytes: 0,
       snapsIn: [],
@@ -497,7 +501,7 @@ export function createNetSession(ctx) {
     const cx = body ? body.x : 0;
     const cz = body ? body.z : 0;
     const s = scriptedInput(bot.seed, seq, { skillSlots: 4, cx, cz, aimRadius: 2.4 });
-    if (bot.aim !== false && body && Math.floor(seq / 90) % 2 === 0) {
+    if (bot.aim !== false && body && (bot.aimAll || Math.floor(seq / 90) % 2 === 0)) {
       let best = null;
       let bd = Infinity;
       for (const e of registry.all()) {
@@ -533,29 +537,41 @@ export function createNetSession(ctx) {
     g.held.revive = !!s.reviveHeld;
     const body = ownBody();
     const auth = g.replica.applied ? seatEntity(g.seat) : null;
+    const seq = g.seq + 1;
     const ctxFor = (kind) => ({
-      seq: g.seq + 1,
+      seq,
       body,
       aim: g.held.aim,
       entityId: g.entityId,
       tick: hostTickNow(),
       stunned: auth ? isStunned(auth, hostTickNow()) : false,
-      dashing: body ? body.dashTicksLeft > 0 : false,
+      // The host resolves a seat's frame in §4 order — dodge, then the kit
+      // skills ascending, then the basic — so a dodge accepted for THIS frame
+      // suppresses the frame's skills and basic exactly as it does there.
+      dashing: body ? body.dashTicksLeft > 0 || g.dodgeSeq === seq : false,
       keyAt: g.keyAt[KEY_OF[kind]],
     });
-    for (const p of s.presses) {
-      if (!GUEST_PRESSES.has(p.kind)) continue;
+    const order = (k) => (k === 'dodge' ? 0 : k === 'interact' ? 9 : Number(k.slice(6)) || 5);
+    const presses = s.presses.filter((p) => GUEST_PRESSES.has(p.kind)).sort((a, b) => order(a.kind) - order(b.kind));
+    for (const p of presses) {
       g.pendingPresses.push(p);
       if (!g.own.ready) continue;
       if (p.kind === 'interact') {
         const target = localInteractTarget(body);
         if (target) g.shadow.interact({ ...ctxFor('interact'), target });
-      } else if (g.shadow.press(p.kind, ctxFor(p.kind)) && p.kind === 'dodge') g.own.previewDodge(g.held.move, g.held.aim);
+      } else if (g.shadow.press(p.kind, ctxFor(p.kind)) && p.kind === 'dodge') {
+        g.dodgeSeq = seq;
+        g.own.previewDodge(g.held.move, g.held.aim);
+      }
     }
     if (g.held.basic && g.own.ready) {
       const c = ctxFor('basic');
       if (!wasBasic) c.keyAt = g.keyAt.Mouse2;
       else c.keyAt = undefined;
+      // §10: a seat channelling a revive swings only on a FRESH press (the
+      // press breaks the channel); a held basic waits (host resolveHuman).
+      c.fresh = !wasBasic;
+      c.channelling = !!(auth && auth.reviveTargetId != null);
       g.shadow.basic(c);
     }
   }
@@ -606,7 +622,10 @@ export function createNetSession(ctx) {
       reviveHeld: frozen ? false : g.held.revive,
       presses: frozen ? [] : g.pendingPresses.splice(0),
     };
-    const rt = g.interp.renderTick(now());
+    // viewTick = the host tick ON SCREEN when this frame's input was sampled:
+    // the render tick of the last drawn frame (the presses and the held aim
+    // were judged against that picture), else the clock's current estimate.
+    const rt = g.shownTick !== null ? g.shownTick : g.interp.renderTick(now());
     const frame = frameFromSnapshot(
       { move: moveOfIndex(snap.move), aim: snap.aim, basicAttackHeld: snap.basicAttackHeld, reviveHeld: snap.reviveHeld, presses: snap.presses },
       { seq: g.seq, tick: g.seq, viewTick: rt === null ? 0 : Math.max(0, rt), away: g.away }
@@ -615,7 +634,11 @@ export function createNetSession(ctx) {
     sendInputs();
     g.shadow.setSeq(g.seq);
     if (!g.away) {
+      const wasDashing = g.own.ready && g.own.body.dashTicksLeft > 0;
       const dodged = g.own.onLocalFrame(seatInputOf([frame]));
+      // §5 (host humanContinuous): a dash that ends with the basic held
+      // restarts its FULL interval on that frame.
+      if (wasDashing && g.own.body.dashTicksLeft === 0 && frame.basic) g.shadow.dashEnded(g.seq);
       if (dodged && cosmetics) {
         const b = g.own.body;
         cosmetics.ghost(b.x, b.z);
@@ -662,7 +685,11 @@ export function createNetSession(ctx) {
     const alpha = rawAdvance(frameMs * g.rate, stepFn);
     tInside = now() - tInside;
     const rt = g.interp.renderTick(now());
-    if (!g.frozen) g.renderState = g.replica.frame(rt, alpha);
+    if (!g.frozen) {
+      g.renderState = g.replica.frame(rt, alpha);
+      g.shownTick = rt;
+      g.shownAlpha = alpha;
+    }
     if (!g.synced && g.replica.applied) onFirstSync();
     writeOwn(frameMs, alpha);
     if (cosmetics) {
@@ -782,15 +809,18 @@ export function createNetSession(ctx) {
     if (g.newestTick >= 0 && (r.tick < g.newestTick - 30 || r.tick > g.newestTick + 600)) {
       g.replica.resync();
       g.interp.reset();
+      g.shownTick = null;
       g.own.reset();
       g.newestTick = -1;
       g.lastConsumed = null;
     }
     g.interp.onSnapshot(r.tick, now());
     if (r.lastInputSeqConsumed !== null && (g.lastConsumed === null || r.lastInputSeqConsumed > g.lastConsumed)) g.lastConsumed = r.lastInputSeqConsumed;
-    // Input clock nudge: depth < 1 -> run 2% fast, > 3 -> 2% slow.
+    // Input clock nudge (PLAN: hold the host's buffer depth at 2): below 2
+    // -> run 2% fast, above 2 -> 2% slow. (A [1, 3] dead band let the depth
+    // settle at 3 — one extra frame, 17 ms, on every input and every rewind.)
     const depth = r.inputBufferDepth;
-    g.rate = depth < 1 ? 1.02 : depth > 3 ? 0.98 : 1;
+    g.rate = depth < 2 ? 1.02 : depth > 2 ? 0.98 : 1;
     const view = r.view();
     g.replica.pushSnapshot(r.tick, r.seq, view);
     if (r.tick > g.newestTick) {
@@ -876,6 +906,7 @@ export function createNetSession(ctx) {
         guest.away = false;
         guest.replica.resync();
         guest.interp.reset();
+        guest.shownTick = null;
         guest.own.reset();
         guest.newestTick = -1;
         requestFull('return');
@@ -887,6 +918,7 @@ export function createNetSession(ctx) {
         metronome.start(SIM_HZ, (t) => {
           const ms = Math.max(0, Math.min(250, t - last));
           last = t;
+          hostHiddenFedMs += ms; // wall time handed to the clock (hitstop included)
           rawAdvance(ms, (tick) => host && host.step(tick));
           // No rendered frames while hidden: each metronome period is the
           // unit of the host's net-work accounting (hostNetMs).
@@ -926,6 +958,7 @@ export function createNetSession(ctx) {
           guest.dec.reset();
           guest.replica.resync();
           guest.interp.reset();
+          guest.shownTick = null;
           guest.own.reset();
           guest.newestTick = -1;
           guest.lastConsumed = null;
@@ -1241,7 +1274,7 @@ export function createNetSession(ctx) {
 
   // Everything the session knows, merged into __echoes.net.stats().
   net.extendStats(() => {
-    const base = { session: role, sessionMs: role !== 'none' ? Math.round(now() - sessionStartedAt) : null, migration: migration.last, metronome: metronome.stats() };
+    const base = { session: role, sessionMs: role !== 'none' ? Math.round(now() - sessionStartedAt) : null, migration: migration.last, metronome: metronome.stats(), hostHiddenFedMs: Math.round(hostHiddenFedMs) };
     if (host) return { ...base, ...host.stats(), stream: 'driver-host' };
     if (guest) return { ...base, ...guestStats(), stream: 'driver-guest' };
     return base;
@@ -1283,15 +1316,29 @@ export function createNetSession(ctx) {
       return host ? host.setLagCompensation(on) : null;
     },
     requestFull: () => requestFull('api'),
-    // Probe input: { seed, aim?: bool, chase?: bool } | null (see botSample).
+    // Probe input: { seed, aim?: bool, aimAll?: bool, chase?: bool } | null (see botSample).
     setBotInput(cfg) {
-      bot = cfg ? { seed: (cfg.seed ?? 3) >>> 0, aim: cfg.aim !== false, chase: cfg.chase !== false } : null;
+      bot = cfg ? { seed: (cfg.seed ?? 3) >>> 0, aim: cfg.aim !== false, aimAll: !!cfg.aimAll, chase: cfg.chase !== false } : null;
       botSeq = -1;
       return bot;
     },
     debugGuest: () => guest,
     // The own-seat pose the last rendered frame drew (guest probes).
     ownPose: () => (guest ? lastPose : null),
+    // Every live hostile where the last rendered frame drew it (lag-
+    // compensation probes: "valid on the guest's screen") + that frame's
+    // host render tick.
+    renderedHostiles() {
+      const g = guest;
+      if (!g) return null;
+      const a = g.shownAlpha;
+      const out = [];
+      for (const e of registry.all()) {
+        if (e.faction !== 'hostile' || !(e.hp > 0) || !Number.isFinite(e.x)) continue;
+        out.push({ id: e.id, x: e.px + (e.x - e.px) * a, z: e.pz + (e.z - e.pz) * a, hittable: e.hittable !== false });
+      }
+      return { tick: g.shownTick, hostiles: out };
+    },
     debugHost: () => host,
     resetStats() {
       if (guest) {

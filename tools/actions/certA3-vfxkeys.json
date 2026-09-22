@@ -1,0 +1,18 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {where:'camp-boot',version:E.version,stateKeys:Object.keys(s),vfxKeys:Object.keys(s.vfx||{}),vfx:s.vfx,scene:s.scene}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return 'startRun tick='+E.tick})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();return {where:'room1-combat',scene:s.scene,vfxKeys:Object.keys(s.vfx||{}),vfx:s.vfx,enemies:s.enemies.length,hasNumeralLayer:!!document.querySelector('#dmg-num-layer'),numeralNodes:document.querySelectorAll('#dmg-num-layer .dmg-num').length}})()"
+ }
+]

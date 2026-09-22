@@ -56,6 +56,7 @@ const opt = {
   bot: !has('noBot'),
   mbots: Number(arg('mbots', 0)),
   hostHidden: has('hostHidden'),
+  hostKeys: has('hostKeys'),
   hw: Number(arg('hw', arg('w', 1280))),
   hh: Number(arg('hh', arg('h', 720))),
 };
@@ -175,6 +176,57 @@ try {
   }
   await assertNoReload(pages);
   const hostT1 = await host.page.evaluate(() => window.__echoes.tick);
+  // Host keydown-to-move (§22 bar, G5b.9): the autopilot steps aside, the
+  // host's own trusted D / A presses from rest; ticks from the keydown to the
+  // Healer's sim position changing, while the guests keep playing.
+  if (opt.hostKeys && !opt.hostHidden) {
+    await host.page.bringToFront();
+    await host.page.evaluate(() => {
+      const E = window.__echoes;
+      E.cmd('autopilot', false);
+      const P = (window.__gntKeys = { keys: [], trace: [] });
+      addEventListener('keydown', (e) => { if (!e.repeat) P.keys.push({ code: e.code, td: performance.now(), tick: E.tick }); }, { capture: true });
+      let last = -1;
+      const loop = () => {
+        if (P.done) return;
+        requestAnimationFrame(loop);
+        if (E.tick === last) return;
+        last = E.tick;
+        const p = E.state().party[0];
+        P.trace.push({ tick: E.tick, x: p.x, z: p.z });
+      };
+      requestAnimationFrame(loop);
+    });
+    for (let i = 0; i < 10; i++) {
+      await sleep(500);
+      const k = i % 2 ? 'KeyA' : 'KeyD';
+      await host.page.keyboard.down(k);
+      await sleep(250);
+      await host.page.keyboard.up(k);
+    }
+    await sleep(300);
+    const P = await host.page.evaluate(() => {
+      const E = window.__echoes;
+      window.__gntKeys.done = true;
+      E.cmd('autopilot', true);
+      return window.__gntKeys;
+    });
+    const ticks = [];
+    for (const k of P.keys) {
+      const i = P.trace.findIndex((t) => t.tick > k.tick);
+      if (i < 1) continue;
+      const b = P.trace[i - 1];
+      let n = null;
+      for (let j = i; j < Math.min(P.trace.length, i + 20); j++) {
+        if (Math.hypot(P.trace[j].x - b.x, P.trace[j].z - b.z) > 1e-6) {
+          n = P.trace[j].tick - k.tick;
+          break;
+        }
+      }
+      ticks.push(n);
+    }
+    report.hostKeydownToMoveTicks = ticks;
+  }
   // ---------------------------------------------------------- collect --
   const hostLedger = await host.page.evaluate(() => window.__echoes.net.session.debugHost().ledger());
   const tickOf = (k) => Number(k.split('|')[0]);
@@ -302,6 +354,13 @@ try {
   G.botDesyncs0 = report.bots.every((b) => b.desyncs === undefined || (b.desyncs === 0 && b.decodeErrors === 0 && b.hashChecks > 0));
   G.hostTicksPerSec = report.hostTicks.perSec;
   G.hostSeats = report.hostSeats;
+  if (report.hostKeydownToMoveTicks) {
+    G.hostKeydownToMoveTicks = report.hostKeydownToMoveTicks;
+    G.hostKeydownToMoveOk = report.hostKeydownToMoveTicks.length > 0 && report.hostKeydownToMoveTicks.every((t) => t !== null && t <= 2);
+  }
+  G.hostFps60 = !!hs.fps && hs.fps.avg >= 60;
+  G.hostNetMsP95Ok = hs.stats.hostNetMsP95 !== null && hs.stats.hostNetMsP95 <= 2;
+  G.hostFrameOver50Net0 = hs.stats.frameOver50Net === 0;
 } catch (err) {
   report.crash = String(err && err.stack ? err.stack : err);
   console.error(report.crash);

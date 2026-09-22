@@ -1,0 +1,26 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"wave_start\",\"enemy_spawn\",\"spawn_telegraph\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"death\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"downed\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"boss_death\",\"enemy_despawn\",\"director_stop\",\"victory\",\"defeat\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed '+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',7);return {room:r&&r.room,mode:r&&r.mode}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const out=[...document.querySelectorAll('body *')].filter(el=>!el.children.length&&/^v?\\s*\\d+\\.\\d+\\.\\d+$/.test((el.textContent||'').trim())).map(el=>{const r=el.getBoundingClientRect();const cs=getComputedStyle(el);return {tag:el.tagName,id:el.id,cls:String(el.className),text:(el.textContent||'').trim(),rect:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],color:cs.color,font:cs.fontSize+' '+cs.fontFamily.slice(0,24),op:cs.opacity,z:cs.zIndex};});return {vp:[innerWidth,innerHeight],version:E.version,found:out}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const vw=innerWidth,vh=innerHeight;const T=\"shop\";\nconst vis=(el)=>{const cs=getComputedStyle(el);if(cs.display==='none'||cs.visibility==='hidden'||+cs.opacity<0.02)return false;const r=el.getBoundingClientRect();return r.width>0.5&&r.height>0.5;};\nconst R=(el)=>{const r=el.getBoundingClientRect();return [Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)];};\nconst nm=(el)=>((el.id?'#'+el.id:'')+(el.className?'.'+String(el.className).trim().split(/\\s+/).join('.'):''))||el.tagName;\nconst comps=[];\nconst hud=document.getElementById('hud');\nif(hud)for(const el of hud.children)if(vis(el))comps.push([nm(el),R(el),(el.textContent||'').trim().slice(0,28)]);\nconst rs=document.getElementById('run-screen');\nif(rs&&vis(rs)){comps.push([nm(rs),R(rs),'']);for(const el of rs.querySelectorAll('.rn-page,.rn-card,.rn-door,button'))if(vis(el))comps.push([nm(el),R(el),(el.textContent||'').trim().slice(0,24)]);}\nfor(const el of document.querySelectorAll('body > *'))if(el.tagName!=='CANVAS'&&el.id!=='hud'&&el.id!=='run-screen'&&vis(el))comps.push([nm(el),R(el),el.childElementCount?'':(el.textContent||'').trim().slice(0,28)]);\nconst vers=[...document.querySelectorAll('body *')].filter(el=>!el.children.length&&/^v?\\s*\\d+\\.\\d+\\.\\d+$/.test((el.textContent||'').trim()));\nfor(const el of vers)if(vis(el))comps.push(['VERSION'+nm(el),R(el),(el.textContent||'').trim()]);\nconst subs=[];\nfor(const sel of ['.hud-port','.hud-slot','.hud-port-hp','.hud-bn-label','.hud-bn-num','.hud-loc-name','.hud-glint-num'])\n  for(const el of document.querySelectorAll(sel))if(vis(el))subs.push([sel,R(el),(el.textContent||'').trim().slice(0,16)]);\nconst over=[];\nfor(const el of document.querySelectorAll('body *')){if(el.tagName==='CANVAS'||el.ownerSVGElement)continue;if(!vis(el))continue;const r=el.getBoundingClientRect();\n  if(r.left<-0.5||r.top<-0.5||r.right>vw+0.5||r.bottom>vh+0.5){if(Math.round(r.width)>=vw&&Math.round(r.height)>=vh)continue;over.push([nm(el),R(el)]);}}\nconst ix=(a,b)=>{const x=Math.min(a[0]+a[2],b[0]+b[2])-Math.max(a[0],b[0]);const y=Math.min(a[1]+a[3],b[1]+b[3])-Math.max(a[1],b[1]);return x>0.5&&y>0.5?[Math.round(x),Math.round(y)]:null;};\nconst hits=[];const list=comps.filter(c=>!/^#run-screen/.test(c[0]));\nfor(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){const o=ix(list[i][1],list[j][1]);if(o)hits.push([list[i][0],list[j][0],o]);}\nconst subHits=[];\nfor(let i=0;i<subs.length;i++)for(let j=i+1;j<subs.length;j++){if(subs[i][0]!==subs[j][0])continue;const o=ix(subs[i][1],subs[j][1]);if(o)subHits.push([subs[i][0],subs[i][1],subs[j][1],o]);}\nreturn {tag:T,vp:[vw,vh],scene:E.state().scene,uiScreen:E.runUi().screen,comps,subs,overflow:over,compOverlaps:hits,subOverlaps:subHits,banner:E.hud.banner(),hudcombat:E.hud.combat()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return JSON.stringify(E.runUi()).slice(0,1600)})()"
+ }
+]

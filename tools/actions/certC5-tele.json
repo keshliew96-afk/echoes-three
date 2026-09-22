@@ -1,0 +1,22 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"intent\",\"dash_end\",\"hit\",\"hit_immune\",\"sound\",\"hitstop\",\"death\",\"screenshake\",\"room_cleared\",\"enemy_spawn\",\"telegraph_start\",\"telegraph_resolve\",\"enemy_fire\",\"enemy_bite\",\"wave_start\",\"room_enter\",\"downed\",\"revive\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"knockback\",\"flash\",\"run_end\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return {armed:E.tick,version:E.version}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');(async()=>{while(true){try{const u=E.runUi();\n  if(u.screen==='draft')E.cmd('draftDecline');else if(u.screen==='path')E.cmd('pathChoose',0);\n  else if(u.screen==='shop')E.cmd('shopAdvance');else if(u.screen==='reward'||u.screen==='reward_offer')E.cmd('draftDecline');\n  E.cmd('iframe',0,600);if(E.state().party[0].hp<100)E.cmd('heal',0,100);}catch(err){window.__drverr=String(err);}\n  await new Promise(r=>setTimeout(r,250));}})();return {seed:E.seed,tick:E.tick,modes:E.cmd('runState').frame.modes}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 70000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const evs=window.__c.ev;return {tick:E.tick,fps:E.fps,starts:evs.filter(e=>e.T==='telegraph_start').length,resolves:evs.filter(e=>e.T==='telegraph_resolve').length,fires:evs.filter(e=>e.T==='enemy_fire').length,deaths:evs.filter(e=>e.T==='death').length,rooms:evs.filter(e=>e.T==='room_enter').map(e=>[e.tick,e.index,e.mode]),waves:evs.filter(e=>e.T==='wave_start').length,drverr:window.__drverr||null,sampleStart:JSON.stringify(evs.find(e=>e.T==='telegraph_start')||null),sampleResolve:JSON.stringify(evs.find(e=>e.T==='telegraph_resolve')||null)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const evs=window.__c.ev;const rows=[];\n  for(const s of evs.filter(e=>e.T==='telegraph_start')){\n    const r=evs.find(e=>e.T==='telegraph_resolve'&&e.id===s.id&&e.tick>=s.tick);\n    const f=evs.find(e=>e.T==='enemy_fire'&&e.id===s.id&&e.tick>=s.tick&&e.tick<=s.tick+60);\n    const d=evs.find(e=>e.T==='death'&&e.id===s.id&&e.tick>=s.tick);\n    rows.push([s.id,s.tick,s.resolveTick,s.resolveTick-s.tick,r?r.tick:null,r?r.tick-s.tick:null,f?f.tick:null,d?d.tick:null]);}\n  const gaps=rows.filter(r=>r[5]!=null).map(r=>r[5]);\n  const starts=rows.map(r=>r[1]);const inter=[];for(let i=1;i<starts.length;i++)inter.push(starts[i]-starts[i-1]);\n  return {tick:E.tick,fps:E.fps,version:E.version,n:rows.length,resolved:gaps.length,\n    minPlanned:rows.length?Math.min.apply(null,rows.map(r=>r[3])):null,maxPlanned:rows.length?Math.max.apply(null,rows.map(r=>r[3])):null,\n    minGap:gaps.length?Math.min.apply(null,gaps):null,maxGap:gaps.length?Math.max.apply(null,gaps):null,\n    belowGate:gaps.filter(g=>g<42).length,fireAtResolve:rows.filter(r=>r[4]!=null&&r[6]===r[4]).length,\n    unresolvedWithoutDeath:rows.filter(r=>r[4]==null&&r[7]==null&&r[2]<E.tick).length,\n    minInterStart:inter.length?Math.min.apply(null,inter):null,rows}})()"
+ }
+]

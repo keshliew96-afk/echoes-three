@@ -119,9 +119,9 @@ try {
       else if (s.run.phase !== 'combat') {
         // A cleared room: take nothing, go on (the next room is combat again).
         try {
-          E.cmd('declineReward');
-          E.cmd('choosePath', 0);
-          E.cmd('advanceFromShop');
+          E.cmd('draftDecline');
+          E.cmd('pathChoose', 0);
+          E.cmd('shopAdvance');
         } catch {
           /* page-specific */
         }

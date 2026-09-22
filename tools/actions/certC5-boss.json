@@ -1,0 +1,34 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"hit\",\"hitstop\",\"death\",\"screenshake\",\"room_cleared\",\"enemy_spawn\",\"telegraph_start\",\"telegraph_resolve\",\"boss_spawn\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_trample\",\"boss_adds\",\"downed\",\"run_end\",\"room_enter\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return {armed:E.tick,version:E.version}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');return {seed:E.seed,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<40000){if(E.state().enemies.length>=2)return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0)};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r=E.cmd('skipToRoom',8);window.__ui=[];\n    (async()=>{while(true){try{const u=E.runUi();if(u.screen&&u.screen!=='none'&&(window.__ui.length===0||window.__ui[window.__ui.length-1][1]!==u.screen))window.__ui.push([E.tick,u.screen]);\n      if(u.screen==='draft'||u.screen==='reward'||u.screen==='reward_offer')E.cmd('draftDecline');else if(u.screen==='path')E.cmd('pathChoose',0);else if(u.screen==='shop')E.cmd('shopAdvance');}catch(e){window.__drverr=String(e);}await new Promise(r=>setTimeout(r,250));}})();\n    return {tick:E.tick,skip:JSON.stringify(r).slice(0,200),ui:E.runUi().screen,run:JSON.stringify(E.cmd('runState')).slice(0,160)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<60000){if(E.state().enemies.some(e=>e.kind==='stag'))return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.map(e=>e.kind).join('/'),ui:E.runUi().screen,uiLog:JSON.stringify(window.__ui),room:JSON.stringify(E.state().room).slice(0,120)};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,enemies:E.state().enemies.map(e=>e.kind).join('/'),ui:E.runUi().screen,uiLog:JSON.stringify(window.__ui),room:JSON.stringify(E.state().room).slice(0,120)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__b={cam:[]};\n    setInterval(()=>{const a=E.state().vfx.arena;if(!a||!a.cam)return;const c=a.cam;window.__b.cam.push([E.tick,+c[0].toFixed(4),+c[1].toFixed(4)]);},16);\n    (async()=>{while(true){try{E.cmd('iframe',0,600);const st=E.state();for(const p of st.party)if(p.hp<p.maxHp*0.5)E.cmd('heal',p.id,100);\n      if(st.enemies.some(e=>e.kind==='stag'))E.cmd('bossHp',1);}catch(e){window.__berr=String(e);}await new Promise(r=>setTimeout(r,200));}})();\n    return 'boss sampler armed '+E.tick})()"
+ },
+ {
+  "type": "wait",
+  "ms": 32000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const evs=window.__c.ev;const cam=window.__b.cam;\n    const jerk=(t)=>{let m=0;for(let i=2;i<cam.length;i++){if(cam[i][0]<t)continue;if(cam[i][0]>t+12)break;const j=Math.hypot(cam[i][1]-2*cam[i-1][1]+cam[i-2][1],cam[i][2]-2*cam[i-1][2]+cam[i-2][2]);if(j>m)m=j;}return +m.toFixed(4);};\n    const qs=evs.filter(e=>e.T==='boss_quake_start').map(e=>e.tick),qr=evs.filter(e=>e.T==='boss_quake_resolve').map(e=>e.tick),tr=evs.filter(e=>e.T==='boss_trample').map(e=>e.tick);\n    const sh=evs.filter(e=>e.T==='screenshake');\n    return {tick:E.tick,fps:E.fps,version:E.version,berr:window.__berr||null,quakeStarts:qs,quakeResolves:qr,quakeGaps:qs.map((s,i)=>qr[i]!=null?qr[i]-s:null),tramples:tr,\n      shakes:sh.length,shakeCauses:sh.reduce((m,e)=>{m[e.cause]=(m[e.cause]||0)+1;return m;},{}),shakeTicks:sh.map(e=>[e.tick,e.cause,e.amp,e.durationSec]),\n      shakeWithin2OfResolve:qr.filter(t=>sh.some(s=>s.tick>=t&&s.tick<=t+2)).length,shakeWithin2OfTrample:tr.filter(t=>sh.some(s=>s.tick>=t&&s.tick<=t+2)).length,\n      jerkAtStart:qs.map(jerk),jerkAtResolve:qr.map(jerk),jerkAtTrample:tr.map(jerk),camSamples:cam.length,\n      bossHp:(E.state().enemies.find(e=>e.kind==='stag')||{}).hp,deaths:evs.filter(e=>e.T==='death').length,adds:evs.filter(e=>e.T==='boss_adds').length}})()"
+ }
+]

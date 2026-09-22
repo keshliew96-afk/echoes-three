@@ -1,0 +1,2703 @@
+[
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3={ev:[],t0:E.tick};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"reward\",\"draft\",\"draft_taken\",\"path_chosen\",\"shop_buy\",\"currency_denied\",\"boss_spawn\",\"boss_death\",\"victory\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"downed\",\"revive\",\"director_stop\"])E.on(t,e=>window.__b3.ev.push({T:t,tick:e&&e.tick!=null?e.tick:E.tick,d:(()=>{const o={};for(const k of Object.keys(e||{}))if(['room','pct','spawned','id','kind','reason','result','wallet','item','skill','door','index','seed','mode'].includes(k))o[k]=e[k];return o;})()}));return 'armed t'+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-camp\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const c=E.cmd('campState');return {tag:\"b2\",player:c.player,portal:c.portal,promptVisible:c.promptVisible,inPortal:c.inPortal,seedBefore:E.seed}})()"
+ },
+ {
+  "type": "loop",
+  "label": "walk-b2",
+  "maxMs": 30000,
+  "cond": "(()=>{try{return !!window.__echoes.cmd('campState').promptVisible}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "keydown",
+    "key": "KeyW"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   },
+   {
+    "type": "keyup",
+    "key": "KeyW"
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{try{return !window.__echoes.cmd('campState').promptVisible}catch(e){return true}})()",
+  "then": [
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 100
+   },
+   {
+    "type": "loop",
+    "label": "walk2-b2",
+    "maxMs": 15000,
+    "cond": "(()=>{try{return !!window.__echoes.cmd('campState').promptVisible}catch(e){return false}})()",
+    "body": [
+     {
+      "type": "keydown",
+      "key": "KeyW"
+     },
+     {
+      "type": "wait",
+      "ms": 400
+     },
+     {
+      "type": "keyup",
+      "key": "KeyW"
+     },
+     {
+      "type": "wait",
+      "ms": 60
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const c=E.cmd('campState');const p=document.querySelector('#camp-prompt,.camp-prompt,[data-prompt]');const cs=p?getComputedStyle(p):null;const r=p?p.getBoundingClientRect():null;return {tag:\"b2\"+'-atPortal',player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible,dom:cs?{display:cs.display,text:(p.textContent||'').trim(),rect:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]}:null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-prompt"
+ },
+ {
+  "type": "key",
+  "key": "KeyE",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<30000){try{if((()=>{const r=window.__echoes.state().run;return r.active&&r.room>=1})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),room:E.state().run.room,seedAfter:E.seed,phase:E.state().run.phase};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),room:E.state().run.room,seedAfter:E.seed,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-room1-enter\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-room1-enter"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3.rt=window.__b3.rt||{};window.__b3.rt[1]={t0:performance.now(),tick0:E.tick};return {room:1,startTick:E.tick}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room1",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>1}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 90
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__b3.rt[1];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {room:1,wallMs:r.ms,ticks:r.ticks,screen:u.screen,phase:u.phase,uiRoom:u.room,wallet:u.wallet}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r1-cleared\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r1-cleared"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {room:1,ev:window.__b3.ev.map(e=>e.T+'@'+e.tick).slice(-14)}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2-r1",
+  "maxMs": 90000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;return s==='none'||s==='end'}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r1-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r1-draft\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 413,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r1-draft-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r1-shop"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r1-shop\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25 && !window.__b3.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__b3.bought=true;const u=E.runUi();return {tag:'shop-after-buy',wallet:u.wallet,owned:u.owned,plaques:u.plaques,bench:E.state().build.bench,ev:window.__b3.ev.filter(e=>e.T==='shop_buy'||e.T==='currency_denied').map(e=>[e.T,e.tick,JSON.stringify(e.d)])}})()"
+       },
+       {
+        "type": "shot",
+        "name": "certB3-b2-r1-shop-bought"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1100
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r1-shop-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r1-path"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r1-path\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r1-path-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "!['draft','shop','path','none','end'].includes(window.__echoes.runUi().screen)",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r1-other"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r1-other\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Enter",
+      "ms": 90
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-after-r1-screens\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3.rt=window.__b3.rt||{};window.__b3.rt[2]={t0:performance.now(),tick0:E.tick};return {room:2,startTick:E.tick}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r2-enter"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r2-enter\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room2",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>2}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 90
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__b3.rt[2];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {room:2,wallMs:r.ms,ticks:r.ticks,screen:u.screen,phase:u.phase,uiRoom:u.room,wallet:u.wallet}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r2-cleared\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r2-cleared"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {room:2,ev:window.__b3.ev.map(e=>e.T+'@'+e.tick).slice(-14)}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2-r2",
+  "maxMs": 90000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;return s==='none'||s==='end'}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r2-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r2-draft\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 413,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r2-draft-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r2-shop"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r2-shop\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25 && !window.__b3.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__b3.bought=true;const u=E.runUi();return {tag:'shop-after-buy',wallet:u.wallet,owned:u.owned,plaques:u.plaques,bench:E.state().build.bench,ev:window.__b3.ev.filter(e=>e.T==='shop_buy'||e.T==='currency_denied').map(e=>[e.T,e.tick,JSON.stringify(e.d)])}})()"
+       },
+       {
+        "type": "shot",
+        "name": "certB3-b2-r2-shop-bought"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1100
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r2-shop-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r2-path"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r2-path\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r2-path-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "!['draft','shop','path','none','end'].includes(window.__echoes.runUi().screen)",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r2-other"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r2-other\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Enter",
+      "ms": 90
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-after-r2-screens\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3.rt=window.__b3.rt||{};window.__b3.rt[3]={t0:performance.now(),tick0:E.tick};return {room:3,startTick:E.tick}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r3-enter"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r3-enter\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room3",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>3}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 90
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__b3.rt[3];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {room:3,wallMs:r.ms,ticks:r.ticks,screen:u.screen,phase:u.phase,uiRoom:u.room,wallet:u.wallet}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r3-cleared\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r3-cleared"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {room:3,ev:window.__b3.ev.map(e=>e.T+'@'+e.tick).slice(-14)}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2-r3",
+  "maxMs": 90000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;return s==='none'||s==='end'}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r3-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r3-draft\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 413,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r3-draft-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r3-shop"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r3-shop\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25 && !window.__b3.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__b3.bought=true;const u=E.runUi();return {tag:'shop-after-buy',wallet:u.wallet,owned:u.owned,plaques:u.plaques,bench:E.state().build.bench,ev:window.__b3.ev.filter(e=>e.T==='shop_buy'||e.T==='currency_denied').map(e=>[e.T,e.tick,JSON.stringify(e.d)])}})()"
+       },
+       {
+        "type": "shot",
+        "name": "certB3-b2-r3-shop-bought"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1100
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r3-shop-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r3-path"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r3-path\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r3-path-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "!['draft','shop','path','none','end'].includes(window.__echoes.runUi().screen)",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r3-other"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r3-other\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Enter",
+      "ms": 90
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-after-r3-screens\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3.rt=window.__b3.rt||{};window.__b3.rt[4]={t0:performance.now(),tick0:E.tick};return {room:4,startTick:E.tick}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r4-enter"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r4-enter\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room4",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>4}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 90
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__b3.rt[4];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {room:4,wallMs:r.ms,ticks:r.ticks,screen:u.screen,phase:u.phase,uiRoom:u.room,wallet:u.wallet}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r4-cleared\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r4-cleared"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {room:4,ev:window.__b3.ev.map(e=>e.T+'@'+e.tick).slice(-14)}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2-r4",
+  "maxMs": 90000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;return s==='none'||s==='end'}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r4-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r4-draft\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 413,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r4-draft-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r4-shop"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r4-shop\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25 && !window.__b3.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__b3.bought=true;const u=E.runUi();return {tag:'shop-after-buy',wallet:u.wallet,owned:u.owned,plaques:u.plaques,bench:E.state().build.bench,ev:window.__b3.ev.filter(e=>e.T==='shop_buy'||e.T==='currency_denied').map(e=>[e.T,e.tick,JSON.stringify(e.d)])}})()"
+       },
+       {
+        "type": "shot",
+        "name": "certB3-b2-r4-shop-bought"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1100
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r4-shop-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r4-path"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r4-path\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r4-path-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "!['draft','shop','path','none','end'].includes(window.__echoes.runUi().screen)",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r4-other"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r4-other\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Enter",
+      "ms": 90
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-after-r4-screens\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3.rt=window.__b3.rt||{};window.__b3.rt[5]={t0:performance.now(),tick0:E.tick};return {room:5,startTick:E.tick}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r5-enter"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r5-enter\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room5",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>5}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 90
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__b3.rt[5];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {room:5,wallMs:r.ms,ticks:r.ticks,screen:u.screen,phase:u.phase,uiRoom:u.room,wallet:u.wallet}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r5-cleared\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r5-cleared"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {room:5,ev:window.__b3.ev.map(e=>e.T+'@'+e.tick).slice(-14)}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2-r5",
+  "maxMs": 90000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;return s==='none'||s==='end'}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r5-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r5-draft\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 413,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r5-draft-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r5-shop"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r5-shop\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25 && !window.__b3.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__b3.bought=true;const u=E.runUi();return {tag:'shop-after-buy',wallet:u.wallet,owned:u.owned,plaques:u.plaques,bench:E.state().build.bench,ev:window.__b3.ev.filter(e=>e.T==='shop_buy'||e.T==='currency_denied').map(e=>[e.T,e.tick,JSON.stringify(e.d)])}})()"
+       },
+       {
+        "type": "shot",
+        "name": "certB3-b2-r5-shop-bought"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1100
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r5-shop-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r5-path"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r5-path\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r5-path-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "!['draft','shop','path','none','end'].includes(window.__echoes.runUi().screen)",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r5-other"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r5-other\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Enter",
+      "ms": 90
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-after-r5-screens\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3.rt=window.__b3.rt||{};window.__b3.rt[6]={t0:performance.now(),tick0:E.tick};return {room:6,startTick:E.tick}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r6-enter"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r6-enter\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room6",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>6}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 90
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__b3.rt[6];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {room:6,wallMs:r.ms,ticks:r.ticks,screen:u.screen,phase:u.phase,uiRoom:u.room,wallet:u.wallet}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r6-cleared\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r6-cleared"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {room:6,ev:window.__b3.ev.map(e=>e.T+'@'+e.tick).slice(-14)}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2-r6",
+  "maxMs": 90000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;return s==='none'||s==='end'}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r6-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r6-draft\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 413,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r6-draft-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r6-shop"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r6-shop\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25 && !window.__b3.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__b3.bought=true;const u=E.runUi();return {tag:'shop-after-buy',wallet:u.wallet,owned:u.owned,plaques:u.plaques,bench:E.state().build.bench,ev:window.__b3.ev.filter(e=>e.T==='shop_buy'||e.T==='currency_denied').map(e=>[e.T,e.tick,JSON.stringify(e.d)])}})()"
+       },
+       {
+        "type": "shot",
+        "name": "certB3-b2-r6-shop-bought"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1100
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r6-shop-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r6-path"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r6-path\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r6-path-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "!['draft','shop','path','none','end'].includes(window.__echoes.runUi().screen)",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r6-other"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r6-other\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Enter",
+      "ms": 90
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-after-r6-screens\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3.rt=window.__b3.rt||{};window.__b3.rt[7]={t0:performance.now(),tick0:E.tick};return {room:7,startTick:E.tick}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r7-enter"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r7-enter\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room7",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>7}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 90
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__b3.rt[7];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {room:7,wallMs:r.ms,ticks:r.ticks,screen:u.screen,phase:u.phase,uiRoom:u.room,wallet:u.wallet}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r7-cleared\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r7-cleared"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {room:7,ev:window.__b3.ev.map(e=>e.T+'@'+e.tick).slice(-14)}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-b2-r7",
+  "maxMs": 90000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;return s==='none'||s==='end'}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r7-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r7-draft\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 413,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r7-draft-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r7-shop"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r7-shop\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25 && !window.__b3.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__b3.bought=true;const u=E.runUi();return {tag:'shop-after-buy',wallet:u.wallet,owned:u.owned,plaques:u.plaques,bench:E.state().build.bench,ev:window.__b3.ev.filter(e=>e.T==='shop_buy'||e.T==='currency_denied').map(e=>[e.T,e.tick,JSON.stringify(e.d)])}})()"
+       },
+       {
+        "type": "shot",
+        "name": "certB3-b2-r7-shop-bought"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1100
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r7-shop-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r7-path"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r7-path\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r7-path-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "!['draft','shop','path','none','end'].includes(window.__echoes.runUi().screen)",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-b2-r7-other"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-r7-other\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Enter",
+      "ms": 90
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-after-r7-screens\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3.rt=window.__b3.rt||{};window.__b3.rt[8]={t0:performance.now(),tick0:E.tick};return {room:8,startTick:E.tick}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r8-enter"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r8-enter\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room8",
+  "maxMs": 240000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>8}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 90
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=window.__b3.rt[8];r.ms=Math.round(performance.now()-r.t0);r.ticks=E.tick-r.tick0;const u=E.runUi();return {room:8,wallMs:r.ms,ticks:r.ticks,screen:u.screen,phase:u.phase,uiRoom:u.room,wallet:u.wallet}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-r8-cleared\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-r8-cleared"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {room:8,ev:window.__b3.ev.map(e=>e.T+'@'+e.tick).slice(-14)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const b=E.cmd('runState').boss;const s=E.state();return {tag:'r8-final',boss:b,enemies:s.enemies.length,banner:E.hud.banner(),ui:E.runUi().screen}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-victory"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"b2-victory\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-victory\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {summary:JSON.stringify(E.cmd('runState').summary)}})()"
+ },
+ {
+  "type": "click",
+  "x": 800,
+  "y": 532,
+  "button": "left"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "if",
+  "cond": "window.__echoes.runUi().screen==='end'",
+  "then": [
+   {
+    "type": "key",
+    "key": "Enter",
+    "ms": 100
+   },
+   {
+    "type": "wait",
+    "ms": 1800
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<25000){try{if((()=>{try{return E.cmd('campState').mode==='camp'&&!E.state().run.active})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),campRuns:E.cmd('campState').runs};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),campRuns:E.cmd('campState').runs}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();const r=s.run||{};const u=(()=>{try{return E.runUi()}catch(e){return {screen:'ERR'}}})();return {tag:\"B2-back-in-camp\",tick:E.tick,fps:Math.round(E.fps),seed:E.seed,bootSeed:E.bootSeed,scene:s.scene,phase:r.phase,room:r.room,mode:r.mode,combat:r.combatActive,wallet:r.wallet,freeSlots:r.freeSkillSlots,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,party:s.party.map(p=>[p.id,p.classId||'healer',Math.round(p.hp),p.maxHp,!!p.downed,+p.x.toFixed(2),+p.z.toFixed(2)]),skills:s.skills.map(k=>k&&k.id),bench:s.build&&s.build.bench,boss:r.boss,ui:u.screen,uiText:u.text,banner:(()=>{try{const b=E.hud.banner();return {vis:b.visible,text:b.text,sub:b.sub}}catch(e){return 'ERR'}})(),threat:(()=>{try{const t=E.hud.threat();return {markersDrawn:t.markersDrawn,domMarkers:t.domMarkers,gated:t.gated}}catch(e){return 'ERR'}})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-b2-backcamp"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const c=E.cmd('campState');const s=E.state();return {campMode:c.mode,runs:c.runs,player:c.player,seats:c.seats,rigs:c.party.rigs,enemies:s.enemies.length,eshots:s.eshots.length,zones:s.zones.length,azones:s.azones.length,bolts:s.skillBolts.length,numerals:s.vfx&&s.vfx.numerals,banner:E.hud.banner(),threat:E.hud.threat().markersDrawn,skills:s.skills.map(k=>k&&k.id),wallet:s.run.wallet}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {roomTimes:window.__b3.rt}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {tag:\"B2-events\",ev:window.__b3.ev.map(e=>[e.T,e.tick,JSON.stringify(e.d)])}})()"
+ }
+]

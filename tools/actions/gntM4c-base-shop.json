@@ -1,0 +1,7 @@
+[
+ {"type":"wait","ms":1500},
+ {"type":"eval","code":"(()=>{const E=window.__echoes;E.cmd('startRun',{act:1});E.cmd('skipToRoom',7);return 1})()"},
+ {"type":"loop","cond":"(()=>{const r=window.__echoes.state().run;return r&&r.phase==='shop'})()","maxMs":20000,"body":[{"type":"wait","ms":300}]},
+ {"type":"wait","ms":1200},
+ {"type":"eval","code":"(()=>{const E=window.__echoes;return E.state().run})()"}
+]

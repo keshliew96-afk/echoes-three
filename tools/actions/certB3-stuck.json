@@ -1,0 +1,1032 @@
+[
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3={ev:[],t0:E.tick};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"reward\",\"draft\",\"draft_taken\",\"path_chosen\",\"shop_buy\",\"currency_denied\",\"boss_spawn\",\"boss_death\",\"victory\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"downed\",\"revive\",\"director_stop\"])E.on(t,e=>window.__b3.ev.push({T:t,tick:e&&e.tick!=null?e.tick:E.tick,d:(()=>{const o={};for(const k of Object.keys(e||{}))if(['room','pct','spawned','id','kind','reason','result','wallet','item','skill','door','index','seed','mode'].includes(k))o[k]=e[k];return o;})()}));return 'armed t'+E.tick})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const c=E.cmd('campState');return {tag:\"stuck\",player:c.player,portal:c.portal,promptVisible:c.promptVisible,inPortal:c.inPortal,seedBefore:E.seed}})()"
+ },
+ {
+  "type": "loop",
+  "label": "walk-stuck",
+  "maxMs": 30000,
+  "cond": "(()=>{try{return !!window.__echoes.cmd('campState').promptVisible}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "keydown",
+    "key": "KeyW"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   },
+   {
+    "type": "keyup",
+    "key": "KeyW"
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   }
+  ]
+ },
+ {
+  "type": "if",
+  "cond": "(()=>{try{return !window.__echoes.cmd('campState').promptVisible}catch(e){return true}})()",
+  "then": [
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 100
+   },
+   {
+    "type": "loop",
+    "label": "walk2-stuck",
+    "maxMs": 15000,
+    "cond": "(()=>{try{return !!window.__echoes.cmd('campState').promptVisible}catch(e){return false}})()",
+    "body": [
+     {
+      "type": "keydown",
+      "key": "KeyW"
+     },
+     {
+      "type": "wait",
+      "ms": 400
+     },
+     {
+      "type": "keyup",
+      "key": "KeyW"
+     },
+     {
+      "type": "wait",
+      "ms": 60
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const c=E.cmd('campState');const p=document.querySelector('#camp-prompt,.camp-prompt,[data-prompt]');const cs=p?getComputedStyle(p):null;const r=p?p.getBoundingClientRect():null;return {tag:\"stuck\"+'-atPortal',player:c.player,inPortal:c.inPortal,promptVisible:c.promptVisible,dom:cs?{display:cs.display,text:(p.textContent||'').trim(),rect:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]}:null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-stuck-prompt"
+ },
+ {
+  "type": "key",
+  "key": "KeyE",
+  "ms": 120
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<30000){try{if((()=>{const r=window.__echoes.state().run;return r.active&&r.room>=1})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),room:E.state().run.room,seedAfter:E.seed,phase:E.state().run.phase};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),room:E.state().run.room,seedAfter:E.seed,phase:E.state().run.phase}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1000
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room1",
+  "maxMs": 200000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>1}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 90
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {room:1,screen:E.runUi().screen,tick:E.tick}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-stuck-r1",
+  "maxMs": 40000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;return s==='none'||s==='end'}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-stuck-r1-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r1-draft\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 413,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r1-draft-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-stuck-r1-shop"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r1-shop\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25 && !window.__b3.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__b3.bought=true;const u=E.runUi();return {tag:'shop-after-buy',wallet:u.wallet,owned:u.owned,plaques:u.plaques,bench:E.state().build.bench,ev:window.__b3.ev.filter(e=>e.T==='shop_buy'||e.T==='currency_denied').map(e=>[e.T,e.tick,JSON.stringify(e.d)])}})()"
+       },
+       {
+        "type": "shot",
+        "name": "certB3-stuck-r1-shop-bought"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1100
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r1-shop-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-stuck-r1-path"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r1-path\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r1-path-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "!['draft','shop','path','none','end'].includes(window.__echoes.runUi().screen)",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-stuck-r1-other"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r1-other\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Enter",
+      "ms": 90
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room2",
+  "maxMs": 200000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>2}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 90
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {room:2,screen:E.runUi().screen,tick:E.tick}})()"
+ },
+ {
+  "type": "loop",
+  "label": "screens-stuck-r2",
+  "maxMs": 40000,
+  "cond": "(()=>{try{const s=window.__echoes.runUi().screen;return s==='none'||s==='end'}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='draft'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-stuck-r2-draft"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r2-draft\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 413,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='draft'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r2-draft-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='shop'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-stuck-r2-shop"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r2-shop\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "if",
+      "cond": "(()=>{const E=window.__echoes;return E.runUi().wallet>=25 && !window.__b3.bought})()",
+      "then": [
+       {
+        "type": "click",
+        "x": 500,
+        "y": 607,
+        "button": "left"
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       },
+       {
+        "type": "eval",
+        "code": "(()=>{const E=window.__echoes;window.__b3.bought=true;const u=E.runUi();return {tag:'shop-after-buy',wallet:u.wallet,owned:u.owned,plaques:u.plaques,bench:E.state().build.bench,ev:window.__b3.ev.filter(e=>e.T==='shop_buy'||e.T==='currency_denied').map(e=>[e.T,e.tick,JSON.stringify(e.d)])}})()"
+       },
+       {
+        "type": "shot",
+        "name": "certB3-stuck-r2-shop-bought"
+       }
+      ]
+     },
+     {
+      "type": "click",
+      "x": 800,
+      "y": 769,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 1100
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='shop'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 1100
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r2-shop-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "window.__echoes.runUi().screen==='path'",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-stuck-r2-path"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r2-path\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "click",
+      "x": 703,
+      "y": 399,
+      "button": "left"
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     },
+     {
+      "type": "if",
+      "cond": "window.__echoes.runUi().screen==='path'",
+      "then": [
+       {
+        "type": "key",
+        "key": "Enter",
+        "ms": 90
+       },
+       {
+        "type": "wait",
+        "ms": 900
+       }
+      ]
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r2-path-after\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     }
+    ]
+   },
+   {
+    "type": "if",
+    "cond": "!['draft','shop','path','none','end'].includes(window.__echoes.runUi().screen)",
+    "then": [
+     {
+      "type": "shot",
+      "name": "certB3-stuck-r2-other"
+     },
+     {
+      "type": "eval",
+      "code": "(()=>{const E=window.__echoes;const u=E.runUi();return {tag:\"stuck-r2-other\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,wallet:u.wallet,freeSlots:u.freeSkillSlots,text:(u.text||'').replace(/s+/g,' ').slice(0,200),buttons:u.buttons,cards:u.cards,doors:u.doors.map(d=>[d.glyphs.join(''),d.box.x,d.box.y,d.box.w,d.box.h]),plaques:u.plaques,skills:E.state().skills.map(k=>k&&k.id),bench:E.state().build.bench}})()"
+     },
+     {
+      "type": "key",
+      "key": "Enter",
+      "ms": 90
+     },
+     {
+      "type": "wait",
+      "ms": 900
+     }
+    ]
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "loop",
+  "label": "fight-room3",
+  "maxMs": 200000,
+  "cond": "(()=>{try{const E=window.__echoes;const r=E.state().run;return E.runUi().screen!=='none'||!r.active||r.room>3}catch(e){return false}})()",
+  "body": [
+   {
+    "type": "mousemove",
+    "x": 830,
+    "y": 340
+   },
+   {
+    "type": "key",
+    "key": "Digit1",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyA"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyA"
+   },
+   {
+    "type": "mousemove",
+    "x": 1010,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit2",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "key",
+    "key": "Space",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 90
+   },
+   {
+    "type": "mousemove",
+    "x": 620,
+    "y": 500
+   },
+   {
+    "type": "key",
+    "key": "Digit3",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "keydown",
+    "key": "KeyD"
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   },
+   {
+    "type": "keyup",
+    "key": "KeyD"
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 600
+   },
+   {
+    "type": "key",
+    "key": "Digit4",
+    "ms": 45
+   },
+   {
+    "type": "wait",
+    "ms": 60
+   },
+   {
+    "type": "mousemove",
+    "x": 800,
+    "y": 430
+   },
+   {
+    "type": "wait",
+    "ms": 140
+   }
+  ]
+ },
+ {
+  "type": "mouseup",
+  "button": "right"
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {room:3,screen:E.runUi().screen,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<20000){try{if(window.__echoes.runUi().screen!=='none')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "shot",
+  "name": "certB3-stuck-screen"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const rs=document.querySelector('#run-screen');const cs=rs?getComputedStyle(rs):null;const el=document.elementFromPoint(703,399);const path=[];let n=el;while(n&&path.length<6){const c=getComputedStyle(n);path.push([n.tagName+'.'+(n.className||''),c.pointerEvents,c.opacity,c.display,c.zIndex]);n=n.parentElement;}\nconst pages=[...document.querySelectorAll('#run-screen .rn-page')].map(p=>[p.className,getComputedStyle(p).display,getComputedStyle(p).opacity,getComputedStyle(p).pointerEvents]);\nreturn {tag:\"at-stuck\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,open:u.open,held:u.held,stale:u.stale,fade:u.fade,veil:u.veil,doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),reward:JSON.stringify(E.cmd('runState').reward),path:JSON.stringify(E.cmd('runState').path),rewardFor:JSON.stringify(E.cmd('runState').rewardFor),freeSlots:u.freeSkillSlots,bench:E.state().build.bench,active:document.activeElement?document.activeElement.tagName+'.'+document.activeElement.className:null,runScreen:cs?{display:cs.display,opacity:cs.opacity,pointerEvents:cs.pointerEvents,zIndex:cs.zIndex,visibility:cs.visibility}:null,hitStack:path,pages}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {tag:\"stuck-events\",ev:window.__b3.ev.map(e=>[e.T,e.tick,JSON.stringify(e.d)])}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 703,
+  "y": 399
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "click",
+  "x": 703,
+  "y": 399,
+  "button": "left"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const rs=document.querySelector('#run-screen');const cs=rs?getComputedStyle(rs):null;const el=document.elementFromPoint(703,399);const path=[];let n=el;while(n&&path.length<6){const c=getComputedStyle(n);path.push([n.tagName+'.'+(n.className||''),c.pointerEvents,c.opacity,c.display,c.zIndex]);n=n.parentElement;}\nconst pages=[...document.querySelectorAll('#run-screen .rn-page')].map(p=>[p.className,getComputedStyle(p).display,getComputedStyle(p).opacity,getComputedStyle(p).pointerEvents]);\nreturn {tag:\"after-click-door1\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,open:u.open,held:u.held,stale:u.stale,fade:u.fade,veil:u.veil,doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),reward:JSON.stringify(E.cmd('runState').reward),path:JSON.stringify(E.cmd('runState').path),rewardFor:JSON.stringify(E.cmd('runState').rewardFor),freeSlots:u.freeSkillSlots,bench:E.state().build.bench,active:document.activeElement?document.activeElement.tagName+'.'+document.activeElement.className:null,runScreen:cs?{display:cs.display,opacity:cs.opacity,pointerEvents:cs.pointerEvents,zIndex:cs.zIndex,visibility:cs.visibility}:null,hitStack:path,pages}})()"
+ },
+ {
+  "type": "key",
+  "key": "ArrowRight",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const rs=document.querySelector('#run-screen');const cs=rs?getComputedStyle(rs):null;const el=document.elementFromPoint(703,399);const path=[];let n=el;while(n&&path.length<6){const c=getComputedStyle(n);path.push([n.tagName+'.'+(n.className||''),c.pointerEvents,c.opacity,c.display,c.zIndex]);n=n.parentElement;}\nconst pages=[...document.querySelectorAll('#run-screen .rn-page')].map(p=>[p.className,getComputedStyle(p).display,getComputedStyle(p).opacity,getComputedStyle(p).pointerEvents]);\nreturn {tag:\"after-arrowright\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,open:u.open,held:u.held,stale:u.stale,fade:u.fade,veil:u.veil,doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),reward:JSON.stringify(E.cmd('runState').reward),path:JSON.stringify(E.cmd('runState').path),rewardFor:JSON.stringify(E.cmd('runState').rewardFor),freeSlots:u.freeSkillSlots,bench:E.state().build.bench,active:document.activeElement?document.activeElement.tagName+'.'+document.activeElement.className:null,runScreen:cs?{display:cs.display,opacity:cs.opacity,pointerEvents:cs.pointerEvents,zIndex:cs.zIndex,visibility:cs.visibility}:null,hitStack:path,pages}})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const rs=document.querySelector('#run-screen');const cs=rs?getComputedStyle(rs):null;const el=document.elementFromPoint(703,399);const path=[];let n=el;while(n&&path.length<6){const c=getComputedStyle(n);path.push([n.tagName+'.'+(n.className||''),c.pointerEvents,c.opacity,c.display,c.zIndex]);n=n.parentElement;}\nconst pages=[...document.querySelectorAll('#run-screen .rn-page')].map(p=>[p.className,getComputedStyle(p).display,getComputedStyle(p).opacity,getComputedStyle(p).pointerEvents]);\nreturn {tag:\"after-enter\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,open:u.open,held:u.held,stale:u.stale,fade:u.fade,veil:u.veil,doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),reward:JSON.stringify(E.cmd('runState').reward),path:JSON.stringify(E.cmd('runState').path),rewardFor:JSON.stringify(E.cmd('runState').rewardFor),freeSlots:u.freeSkillSlots,bench:E.state().build.bench,active:document.activeElement?document.activeElement.tagName+'.'+document.activeElement.className:null,runScreen:cs?{display:cs.display,opacity:cs.opacity,pointerEvents:cs.pointerEvents,zIndex:cs.zIndex,visibility:cs.visibility}:null,hitStack:path,pages}})()"
+ },
+ {
+  "type": "click",
+  "x": 897,
+  "y": 405,
+  "button": "left"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const rs=document.querySelector('#run-screen');const cs=rs?getComputedStyle(rs):null;const el=document.elementFromPoint(703,399);const path=[];let n=el;while(n&&path.length<6){const c=getComputedStyle(n);path.push([n.tagName+'.'+(n.className||''),c.pointerEvents,c.opacity,c.display,c.zIndex]);n=n.parentElement;}\nconst pages=[...document.querySelectorAll('#run-screen .rn-page')].map(p=>[p.className,getComputedStyle(p).display,getComputedStyle(p).opacity,getComputedStyle(p).pointerEvents]);\nreturn {tag:\"after-click-door2\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,open:u.open,held:u.held,stale:u.stale,fade:u.fade,veil:u.veil,doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),reward:JSON.stringify(E.cmd('runState').reward),path:JSON.stringify(E.cmd('runState').path),rewardFor:JSON.stringify(E.cmd('runState').rewardFor),freeSlots:u.freeSkillSlots,bench:E.state().build.bench,active:document.activeElement?document.activeElement.tagName+'.'+document.activeElement.className:null,runScreen:cs?{display:cs.display,opacity:cs.opacity,pointerEvents:cs.pointerEvents,zIndex:cs.zIndex,visibility:cs.visibility}:null,hitStack:path,pages}})()"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const rs=document.querySelector('#run-screen');const cs=rs?getComputedStyle(rs):null;const el=document.elementFromPoint(703,399);const path=[];let n=el;while(n&&path.length<6){const c=getComputedStyle(n);path.push([n.tagName+'.'+(n.className||''),c.pointerEvents,c.opacity,c.display,c.zIndex]);n=n.parentElement;}\nconst pages=[...document.querySelectorAll('#run-screen .rn-page')].map(p=>[p.className,getComputedStyle(p).display,getComputedStyle(p).opacity,getComputedStyle(p).pointerEvents]);\nreturn {tag:\"after-escape\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,open:u.open,held:u.held,stale:u.stale,fade:u.fade,veil:u.veil,doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),reward:JSON.stringify(E.cmd('runState').reward),path:JSON.stringify(E.cmd('runState').path),rewardFor:JSON.stringify(E.cmd('runState').rewardFor),freeSlots:u.freeSkillSlots,bench:E.state().build.bench,active:document.activeElement?document.activeElement.tagName+'.'+document.activeElement.className:null,runScreen:cs?{display:cs.display,opacity:cs.opacity,pointerEvents:cs.pointerEvents,zIndex:cs.zIndex,visibility:cs.visibility}:null,hitStack:path,pages}})()"
+ },
+ {
+  "type": "key",
+  "key": "KeyB",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "shot",
+  "name": "certB3-stuck-afterB"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const rs=document.querySelector('#run-screen');const cs=rs?getComputedStyle(rs):null;const el=document.elementFromPoint(703,399);const path=[];let n=el;while(n&&path.length<6){const c=getComputedStyle(n);path.push([n.tagName+'.'+(n.className||''),c.pointerEvents,c.opacity,c.display,c.zIndex]);n=n.parentElement;}\nconst pages=[...document.querySelectorAll('#run-screen .rn-page')].map(p=>[p.className,getComputedStyle(p).display,getComputedStyle(p).opacity,getComputedStyle(p).pointerEvents]);\nreturn {tag:\"after-B\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,open:u.open,held:u.held,stale:u.stale,fade:u.fade,veil:u.veil,doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),reward:JSON.stringify(E.cmd('runState').reward),path:JSON.stringify(E.cmd('runState').path),rewardFor:JSON.stringify(E.cmd('runState').rewardFor),freeSlots:u.freeSkillSlots,bench:E.state().build.bench,active:document.activeElement?document.activeElement.tagName+'.'+document.activeElement.className:null,runScreen:cs?{display:cs.display,opacity:cs.opacity,pointerEvents:cs.pointerEvents,zIndex:cs.zIndex,visibility:cs.visibility}:null,hitStack:path,pages}})()"
+ },
+ {
+  "type": "key",
+  "key": "Space",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const rs=document.querySelector('#run-screen');const cs=rs?getComputedStyle(rs):null;const el=document.elementFromPoint(703,399);const path=[];let n=el;while(n&&path.length<6){const c=getComputedStyle(n);path.push([n.tagName+'.'+(n.className||''),c.pointerEvents,c.opacity,c.display,c.zIndex]);n=n.parentElement;}\nconst pages=[...document.querySelectorAll('#run-screen .rn-page')].map(p=>[p.className,getComputedStyle(p).display,getComputedStyle(p).opacity,getComputedStyle(p).pointerEvents]);\nreturn {tag:\"after-space\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,open:u.open,held:u.held,stale:u.stale,fade:u.fade,veil:u.veil,doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),reward:JSON.stringify(E.cmd('runState').reward),path:JSON.stringify(E.cmd('runState').path),rewardFor:JSON.stringify(E.cmd('runState').rewardFor),freeSlots:u.freeSkillSlots,bench:E.state().build.bench,active:document.activeElement?document.activeElement.tagName+'.'+document.activeElement.className:null,runScreen:cs?{display:cs.display,opacity:cs.opacity,pointerEvents:cs.pointerEvents,zIndex:cs.zIndex,visibility:cs.visibility}:null,hitStack:path,pages}})()"
+ },
+ {
+  "type": "key",
+  "key": "KeyD",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const rs=document.querySelector('#run-screen');const cs=rs?getComputedStyle(rs):null;const el=document.elementFromPoint(703,399);const path=[];let n=el;while(n&&path.length<6){const c=getComputedStyle(n);path.push([n.tagName+'.'+(n.className||''),c.pointerEvents,c.opacity,c.display,c.zIndex]);n=n.parentElement;}\nconst pages=[...document.querySelectorAll('#run-screen .rn-page')].map(p=>[p.className,getComputedStyle(p).display,getComputedStyle(p).opacity,getComputedStyle(p).pointerEvents]);\nreturn {tag:\"after-D-enter\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,open:u.open,held:u.held,stale:u.stale,fade:u.fade,veil:u.veil,doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),reward:JSON.stringify(E.cmd('runState').reward),path:JSON.stringify(E.cmd('runState').path),rewardFor:JSON.stringify(E.cmd('runState').rewardFor),freeSlots:u.freeSkillSlots,bench:E.state().build.bench,active:document.activeElement?document.activeElement.tagName+'.'+document.activeElement.className:null,runScreen:cs?{display:cs.display,opacity:cs.opacity,pointerEvents:cs.pointerEvents,zIndex:cs.zIndex,visibility:cs.visibility}:null,hitStack:path,pages}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-stuck-final"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;let r;try{r=E.cmd('pathChoose',0)}catch(e){r='ERR '+e}return {cmdPathChoose:JSON.stringify(r).slice(0,400)}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const rs=document.querySelector('#run-screen');const cs=rs?getComputedStyle(rs):null;const el=document.elementFromPoint(703,399);const path=[];let n=el;while(n&&path.length<6){const c=getComputedStyle(n);path.push([n.tagName+'.'+(n.className||''),c.pointerEvents,c.opacity,c.display,c.zIndex]);n=n.parentElement;}\nconst pages=[...document.querySelectorAll('#run-screen .rn-page')].map(p=>[p.className,getComputedStyle(p).display,getComputedStyle(p).opacity,getComputedStyle(p).pointerEvents]);\nreturn {tag:\"after-cmd-pathChoose\",tick:E.tick,screen:u.screen,phase:u.phase,room:u.room,open:u.open,held:u.held,stale:u.stale,fade:u.fade,veil:u.veil,doors:u.doors.map(d=>[d.glyphs.join(''),d.focused,d.box.x,d.box.y]),reward:JSON.stringify(E.cmd('runState').reward),path:JSON.stringify(E.cmd('runState').path),rewardFor:JSON.stringify(E.cmd('runState').rewardFor),freeSlots:u.freeSkillSlots,bench:E.state().build.bench,active:document.activeElement?document.activeElement.tagName+'.'+document.activeElement.className:null,runScreen:cs?{display:cs.display,opacity:cs.opacity,pointerEvents:cs.pointerEvents,zIndex:cs.zIndex,visibility:cs.visibility}:null,hitStack:path,pages}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-stuck-aftercmd"
+ }
+]

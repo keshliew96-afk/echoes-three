@@ -1,12 +1,13 @@
 // Host lag compensation (docs/gauntlet/PLAN.md §3.7 "Lag compensation").
 // Owner: M5b.
 //
-// The host keeps a ring of HOSTILE positions for the last 20 ticks, recorded
+// The host keeps a ring of HOSTILE positions for the last 30 ticks, recorded
 // at every tick end (the same moment snapshots are captured, so ring entry T
 // is exactly what a guest interpolating at host tick T sees). A guest's
 // instant shapes and projectile spawn aim resolve against hostile positions
 // rewound to the input's viewTick (fractional, 1/8 tick): the two bracketing
-// entries are lerped. Max rewind 15 ticks (250 ms) — further back is clamped.
+// entries are lerped. Max rewind 24 ticks (400 ms; PLAN text 250 ms — see
+// REWIND_MAX_TICKS in protocol/constants.js) — further back is clamped.
 // The host's own seat is never rewound; single-player never builds a ring.
 // Positions only (PLAN "the rewind ring stores positions only").
 import { REWIND_MAX_TICKS, REWIND_HISTORY_TICKS } from './protocol/constants.js';
@@ -15,6 +16,7 @@ export function createRewindRing({ registry, historyTicks = REWIND_HISTORY_TICKS
   const ring = []; // ascending { tick, pos: Map(id -> [x, z]) }
   let enabled = true;
   const stats = { queries: 0, rewound: 0, clamped: 0, ticksSum: 0 };
+  const wanted = []; // requested rewind (ticks, before the clamp), last 600
   let cacheKey = null;
   let cacheVal = null;
 
@@ -42,6 +44,8 @@ export function createRewindRing({ registry, historyTicks = REWIND_HISTORY_TICKS
     const now = ring[ring.length - 1].tick;
     let want = viewTick;
     if (want >= now) return null;
+    wanted.push(now - want);
+    if (wanted.length > 600) wanted.shift();
     if (now - want > maxRewind) {
       want = now - maxRewind;
       stats.clamped += 1;
@@ -81,6 +85,10 @@ export function createRewindRing({ registry, historyTicks = REWIND_HISTORY_TICKS
     get enabled() {
       return enabled;
     },
-    stats: () => ({ ...stats, avgTicks: stats.rewound ? Math.round((stats.ticksSum / stats.rewound) * 100) / 100 : 0, ring: ring.length }),
+    stats: () => {
+      const w = [...wanted].sort((a, b) => a - b);
+      const q = (p) => (w.length ? Math.round(w[Math.min(w.length - 1, Math.floor(w.length * p))] * 10) / 10 : null);
+      return { ...stats, avgTicks: stats.rewound ? Math.round((stats.ticksSum / stats.rewound) * 100) / 100 : 0, ring: ring.length, maxRewind, wantedP50: q(0.5), wantedP95: q(0.95) };
+    },
   };
 }

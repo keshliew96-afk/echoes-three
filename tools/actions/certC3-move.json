@@ -1,0 +1,614 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of ['intent','dash_end','hit','hit_immune','sound','hitstop','death','room_cleared','enemy_spawn'])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));E.cmd('startRun');return {seed:E.seed,tick:E.tick}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();while(performance.now()-t0<30000){if(E.state().enemies.length>=2)return {ok:true,tick:E.tick,ms:Math.round(performance.now()-t0),enemies:E.state().enemies.length};await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,enemies:E.state().enemies.length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('teleport',-3,2);E.cmd('iframe',0,7200);\n    const s1=E.cmd('spawn','boar',9,-6),s2=E.cmd('spawn','boar',-9,-6);\n    const st=E.state();for(const e of st.enemies)E.cmd('iframe',e.id,7200);\n    return {spawned:[JSON.stringify(s1),JSON.stringify(s2)],enemies:st.enemies.map(e=>[e.id,e.kind,e.iframed]),player:[st.party[0].x,st.party[0].z,st.party[0].hp]}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__s={rows:[],kd:[],ku:[],last:-1};\n    const f=()=>{const t=E.tick;if(t!==window.__s.last){const p=E.state().party[0];\n      window.__s.rows.push([t,+p.x.toFixed(4),+p.z.toFixed(4),p.dashTicksLeft|0,p.hp,+performance.now().toFixed(1)]);window.__s.last=t;}\n      requestAnimationFrame(f);};requestAnimationFrame(f);\n    addEventListener('keydown',e=>{if(!e.repeat)window.__s.kd.push([e.code,E.tick,+performance.now().toFixed(1)]);},true);\n    addEventListener('keyup',e=>window.__s.ku.push([e.code,E.tick,+performance.now().toFixed(1)]),true);\n    return 'sampler armed at '+E.tick})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__s.mark1=E.tick;return 'trials start '+E.tick})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyW"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keydown",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "keyup",
+  "key": "KeyS"
+ },
+ {
+  "type": "wait",
+  "ms": 260
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__s.mark2=E.tick;return 'alt start '+E.tick})()"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyD"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyD"
+ },
+ {
+  "type": "keydown",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "keyup",
+  "key": "KeyA"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;return {tick:E.tick,fps:E.fps,kd:window.__s.kd.length,rows:window.__s.rows.length,mark1:window.__s.mark1,mark2:window.__s.mark2,hitsOnPlayer:window.__c.ev.filter(e=>e.T==='hit'&&e.target===0).length,immune:window.__c.ev.filter(e=>e.T==='hit_immune').length,cleared:window.__c.ev.filter(e=>e.T==='room_cleared').length}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;\n  const S=window.__s,rows=S.rows,kd=S.kd;\n  const AX={KeyD:['x',1],KeyA:['x',-1],KeyW:['z',-1],KeyS:['z',1]};\n  const val=(r,a)=>a==='x'?r[1]:r[2];\n  const out=[];\n  for(const rec of kd){\n    const code=rec[0],t0=rec[1];\n    const A=AX[code];if(!A)continue;\n    let ref=null,refi=-1;\n    for(let i=0;i<rows.length;i++){if(rows[i][0]<=t0){ref=rows[i];refi=i;}else break;}\n    if(!ref){out.push({code,t0,err:'no-ref'});continue;}\n    let hit=null,hi=-1;\n    for(let i=refi+1;i<rows.length;i++){const d=(val(rows[i],A[0])-val(ref,A[0]))*A[1];if(d>=0.02){hit=rows[i];hi=i;break;}\n      if(rows[i][0]-t0>40)break;}\n    if(!hit){out.push({code,t0,err:'no-move'});continue;}\n    const span=hit[0]-rows[hi-1][0];\n    out.push({code,t0,refTick:ref[0],moveTick:hit[0],raw:hit[0]-t0,span,corrected:(hit[0]-t0)-(span-1),\n      d:+((val(hit,A[0])-val(ref,A[0]))*A[1]).toFixed(4)});\n  }\n  const lat=out.filter(o=>!o.err);\n  return {n:out.length,fps:E.fps,rowsN:rows.length,worstRaw:Math.max.apply(null,lat.map(o=>o.raw)),worstCorrected:Math.max.apply(null,lat.map(o=>o.corrected)),trials:out}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const S=window.__s,rows=S.rows.filter(r=>r[0]>=S.mark2),kd=S.kd.filter(k=>k[1]>=S.mark2);\n    const flips=[];\n    for(const rec of kd){const code=rec[0],t0=rec[1];const want=code==='KeyD'?1:-1;\n      let ref=null,refi=-1;for(let i=0;i<rows.length;i++){if(rows[i][0]<=t0){ref=rows[i];refi=i;}else break;}\n      if(!ref){flips.push({code,t0,err:'noref'});continue;}\n      let hit=null,hi=-1;for(let i=refi+1;i<rows.length;i++){if((rows[i][1]-ref[1])*want>=0.02){hit=rows[i];hi=i;break;}if(rows[i][0]-t0>40)break;}\n      if(!hit){flips.push({code,t0,err:'nomove'});continue;}\n      const span=hit[0]-rows[hi-1][0];\n      flips.push({code,t0,moveTick:hit[0],raw:hit[0]-t0,corrected:(hit[0]-t0)-(span-1),span});}\n    const ok=flips.filter(f=>!f.err);\n    return {flips:flips.length,worstRaw:Math.max.apply(null,ok.map(f=>f.raw)),worstCorrected:Math.max.apply(null,ok.map(f=>f.corrected)),detail:flips}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const S=window.__s,rows=S.rows.filter(r=>r[0]>=S.mark2);\n    let out='';for(let i=1;i<rows.length;i++){const dx=rows[i][1]-rows[i-1][1];out+=rows[i][0]+(dx>0.005?'+':dx<-0.005?'-':'0')+' ';}\n    return out.slice(0,1400)})()"
+ }
+]

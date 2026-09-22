@@ -73,10 +73,21 @@ export function frameFromSnapshot(snap, { seq, tick, viewTick = 0, away = false 
 // from the newest frame; presses are the union of every frame's bits plus
 // late presses carried over (PLAN: a late frame's presses are applied on the
 // next tick, never dropped).
-export function seatInputOf(frames, carryBits = 0) {
+//
+// pressSeq: { [kind]: seq } — the input frame each press RODE (a late,
+// carried press keeps its own older seq): the host tags that press's events
+// and runs its timers from it, so a guest's prediction (made on that frame)
+// matches exactly even when the host drained two frames or the press landed
+// a few ticks late.
+export function seatInputOf(frames, carryBits = 0, carrySeqs = null) {
   const last = frames[frames.length - 1];
   let bits = carryBits;
-  for (const f of frames) bits |= f.press | 0;
+  const pressSeq = {};
+  if (carrySeqs) for (const c of carrySeqs) for (const p of pressesOf(c.bits | 0)) if (!(p.kind in pressSeq)) pressSeq[p.kind] = c.seq;
+  for (const f of frames) {
+    bits |= f.press | 0;
+    for (const p of pressesOf(f.press | 0)) if (!(p.kind in pressSeq)) pressSeq[p.kind] = f.seq;
+  }
   return {
     seq: last.seq,
     moves: frames.map((f) => moveOf(f.move)),
@@ -84,6 +95,7 @@ export function seatInputOf(frames, carryBits = 0) {
     basic: !!last.basic,
     revive: !!last.revive,
     presses: pressesOf(bits),
+    pressSeq,
     viewTick: last.viewTick ?? 0,
   };
 }

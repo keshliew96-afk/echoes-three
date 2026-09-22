@@ -1,0 +1,130 @@
+[
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;window.__b3={ev:[],t0:E.tick};for(const t of [\"run_start\",\"room_enter\",\"room_start\",\"room_cleared\",\"reward\",\"draft\",\"draft_taken\",\"path_chosen\",\"shop_buy\",\"currency_denied\",\"boss_spawn\",\"boss_death\",\"victory\",\"defeat\",\"run_end\",\"run_wiped\",\"return_to_camp\",\"wave_start\",\"downed\",\"revive\",\"director_stop\"])E.on(t,e=>window.__b3.ev.push({T:t,tick:e&&e.tick!=null?e.tick:E.tick,d:(()=>{const o={};for(const k of Object.keys(e||{}))if(['room','pct','spawned','id','kind','reason','result','wallet','item','skill','door','index','seed','mode'].includes(k))o[k]=e[k];return o;})()}));return 'armed t'+E.tick})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd('startRun');return {seed:E.seed,room:r&&r.room}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<90000){try{if(E.runUi().screen==='draft')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen,room:E.runUi().room};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen,room:E.runUi().room}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const sel='#run-screen button, #run-screen .rn-card, #run-screen .rn-door, #run-screen .rn-plaque, #run-screen [tabindex], #run-screen .rn-take, #run-screen .rn-decline, #run-screen .rn-btn';const nodes=[...document.querySelectorAll(sel)].map(n=>{const r=n.getBoundingClientRect();return {c:n.className,t:(n.textContent||'').replace(/s+/g,' ').trim().slice(0,44),x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}}).filter(n=>n.w>0);return {tag:\"draft-r1\",screen:u.screen,room:u.room,phase:u.phase,wallet:u.wallet,text:(u.text||'').slice(0,220),doors:u.doors.map(d=>[d.glyphs.join(''),d.box]),plaques:u.plaques,cards:(u.cards||[]).map(c=>c&&(c.id||c.name||JSON.stringify(c).slice(0,60))),buttons:u.buttons,nodes}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-scout-draft"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 100
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const sel='#run-screen button, #run-screen .rn-card, #run-screen .rn-door, #run-screen .rn-plaque, #run-screen [tabindex], #run-screen .rn-take, #run-screen .rn-decline, #run-screen .rn-btn';const nodes=[...document.querySelectorAll(sel)].map(n=>{const r=n.getBoundingClientRect();return {c:n.className,t:(n.textContent||'').replace(/s+/g,' ').trim().slice(0,44),x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}}).filter(n=>n.w>0);return {tag:\"after-enter\",screen:u.screen,room:u.room,phase:u.phase,wallet:u.wallet,text:(u.text||'').slice(0,220),doors:u.doors.map(d=>[d.glyphs.join(''),d.box]),plaques:u.plaques,cards:(u.cards||[]).map(c=>c&&(c.id||c.name||JSON.stringify(c).slice(0,60))),buttons:u.buttons,nodes}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-scout-path"
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=window.__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<20000){try{if(E.runUi().screen!=='none')return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen};}catch(err){return {ok:false,err:String(err)};}await new Promise(r=>setTimeout(r,8));}return {ok:false,timeout:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),screen:E.runUi().screen}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const sel='#run-screen button, #run-screen .rn-card, #run-screen .rn-door, #run-screen .rn-plaque, #run-screen [tabindex], #run-screen .rn-take, #run-screen .rn-decline, #run-screen .rn-btn';const nodes=[...document.querySelectorAll(sel)].map(n=>{const r=n.getBoundingClientRect();return {c:n.className,t:(n.textContent||'').replace(/s+/g,' ').trim().slice(0,44),x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}}).filter(n=>n.w>0);return {tag:\"path-r1\",screen:u.screen,room:u.room,phase:u.phase,wallet:u.wallet,text:(u.text||'').slice(0,220),doors:u.doors.map(d=>[d.glyphs.join(''),d.box]),plaques:u.plaques,cards:(u.cards||[]).map(c=>c&&(c.id||c.name||JSON.stringify(c).slice(0,60))),buttons:u.buttons,nodes}})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 100
+ },
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const sel='#run-screen button, #run-screen .rn-card, #run-screen .rn-door, #run-screen .rn-plaque, #run-screen [tabindex], #run-screen .rn-take, #run-screen .rn-decline, #run-screen .rn-btn';const nodes=[...document.querySelectorAll(sel)].map(n=>{const r=n.getBoundingClientRect();return {c:n.className,t:(n.textContent||'').replace(/s+/g,' ').trim().slice(0,44),x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}}).filter(n=>n.w>0);return {tag:\"after-path\",screen:u.screen,room:u.room,phase:u.phase,wallet:u.wallet,text:(u.text||'').slice(0,220),doors:u.doors.map(d=>[d.glyphs.join(''),d.box]),plaques:u.plaques,cards:(u.cards||[]).map(c=>c&&(c.id||c.name||JSON.stringify(c).slice(0,60))),buttons:u.buttons,nodes}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const r=E.cmd('skipToRoom',7);return {room:r&&r.room,phase:r&&r.phase,mode:r&&r.mode,wallet:r&&r.wallet}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const sel='#run-screen button, #run-screen .rn-card, #run-screen .rn-door, #run-screen .rn-plaque, #run-screen [tabindex], #run-screen .rn-take, #run-screen .rn-decline, #run-screen .rn-btn';const nodes=[...document.querySelectorAll(sel)].map(n=>{const r=n.getBoundingClientRect();return {c:n.className,t:(n.textContent||'').replace(/s+/g,' ').trim().slice(0,44),x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}}).filter(n=>n.w>0);return {tag:\"shop-r7\",screen:u.screen,room:u.room,phase:u.phase,wallet:u.wallet,text:(u.text||'').slice(0,220),doors:u.doors.map(d=>[d.glyphs.join(''),d.box]),plaques:u.plaques,cards:(u.cards||[]).map(c=>c&&(c.id||c.name||JSON.stringify(c).slice(0,60))),buttons:u.buttons,nodes}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-scout-shop"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {shopUi:JSON.stringify(E.runUi()).slice(0,3000)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;E.cmd('endRun','victory');return 'endRun victory'})()"
+ },
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const u=E.runUi();const sel='#run-screen button, #run-screen .rn-card, #run-screen .rn-door, #run-screen .rn-plaque, #run-screen [tabindex], #run-screen .rn-take, #run-screen .rn-decline, #run-screen .rn-btn';const nodes=[...document.querySelectorAll(sel)].map(n=>{const r=n.getBoundingClientRect();return {c:n.className,t:(n.textContent||'').replace(/s+/g,' ').trim().slice(0,44),x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}}).filter(n=>n.w>0);return {tag:\"victory\",screen:u.screen,room:u.room,phase:u.phase,wallet:u.wallet,text:(u.text||'').slice(0,220),doors:u.doors.map(d=>[d.glyphs.join(''),d.box]),plaques:u.plaques,cards:(u.cards||[]).map(c=>c&&(c.id||c.name||JSON.stringify(c).slice(0,60))),buttons:u.buttons,nodes}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-scout-victory"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;return {ui:JSON.stringify(E.runUi()).slice(0,1600),campMode:(()=>{try{return E.cmd('campState').mode}catch(e){return String(e)}})()}})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 100
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=window.__echoes;const s=E.state();return {scene:s.scene,run:E.cmd('runState'),camp:(()=>{try{const c=E.cmd('campState');return {mode:c.mode,runs:c.runs,player:c.player,seats:c.seats}}catch(e){return String(e)}})()}})()"
+ },
+ {
+  "type": "shot",
+  "name": "certB3-scout-backcamp"
+ }
+]

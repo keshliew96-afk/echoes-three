@@ -112,6 +112,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   function basic(ctx) {
     if (!enabled || !ctx.body || !(ctx.body.hp > 0) || ctx.stunned) return null;
     if (ctx.seq < basicAt) return null;
+    if (ctx.channelling && !ctx.fresh) return null;
     const prev = basicAt;
     basicAt = ctx.seq + S.attackIntervalTicks;
     if (ctx.dashing) return null; // the host denies + re-arms (priority_suppressed)
@@ -166,7 +167,11 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   const isOwnInteract = (ev) => (ev.type === 'interact' || ev.type === 'interact_denied') && ownEntity !== null && ev.by === ownEntity && !ev.predicted;
   const isOwn = (ev) => (ev.seat === seat && Number.isInteger(ev.inputSeq)) || isOwnInteract(ev);
 
-  function retract(p, why) {
+  // The host's own timers as the newest snapshot replicated them (kept even
+  // while a prediction is open) — a retraction restores THESE, never an
+  // older local guess (else a retracted basic would re-fire at once).
+  let lastAuth = null; // { cds: [4], basic, dodge }
+  function retract(p, why, reason = null) {
     if (p.retracted || p.matched) return;
     p.retracted = true;
     stats.retracted += 1;
@@ -175,9 +180,12 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
     const from = p.provenAt ?? now();
     stats.retractMs.push(Math.max(0, now() - from));
     if (stats.retractMs.length > 600) stats.retractMs.shift();
-    if (p.kind === 'dodge') dodgeAt = Math.min(dodgeAt, p.prevReady);
-    else if (p.kind === 'basic') basicAt = Math.min(basicAt, p.prevReady);
-    else if (p.slot >= 0) readyAt[p.slot] = Math.min(readyAt[p.slot], p.prevReady);
+    const auth = (v) => (Number.isFinite(v) ? v : -Infinity);
+    if (p.kind === 'dodge') dodgeAt = Math.max(p.prevReady, auth(lastAuth && lastAuth.dodge));
+    else if (p.kind === 'basic') {
+      // A basic suppressed by a dash re-arms its full interval on the host.
+      basicAt = reason === 'priority_suppressed' ? p.seq + S.attackIntervalTicks : Math.max(p.prevReady, auth(lastAuth && lastAuth.basic));
+    } else if (p.slot >= 0) readyAt[p.slot] = Math.max(p.prevReady, auth(lastAuth && lastAuth.cds && lastAuth.cds[p.slot]));
     if (cosmetics) cosmetics.remove(p.predId);
     replay({ tick: 0, type: 'presentation_retract', predId: p.predId, kind: p.kind, reason: why, seat, view: true });
   }
@@ -208,7 +216,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
     if (ev.type === 'seat_denied' || ev.type === 'interact_denied') {
       if (best) {
         best.provenAt = now();
-        retract(best, 'denied');
+        retract(best, 'denied', ev.reason ?? null);
       }
       return false; // the denial itself replays (HUD nudge + deny cue)
     }
@@ -249,6 +257,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   // kind with a prediction the host has not consumed yet keep the local value.
   function reseed(timers, k) {
     if (!enabled || !timers || !Number.isInteger(k)) return;
+    lastAuth = { cds: Array.isArray(timers.cds) ? timers.cds.slice() : null, basic: timers.basic, dodge: timers.dodge };
     const open = (kind) => pending.some((p) => p.kind === kind && !p.matched && !p.retracted && p.seq > k);
     if (Array.isArray(timers.cds)) {
       for (let i = 0; i < 4; i++) {
@@ -268,10 +277,17 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   }
   const dodgeView = (seqNow = curSeq) => ({ remaining: Math.max(0, dodgeAt - seqNow), total: DODGE.cooldownTicks });
 
+  // dashEnded(seq) — the predicted dash ended on frame `seq` with the basic
+  // held: the host restarts the basic's full interval there (§5).
+  function dashEnded(seq) {
+    if (enabled) basicAt = seq + S.attackIntervalTicks;
+  }
+
   return {
     press,
     basic,
     interact,
+    dashEnded,
     isOwn,
     onAuthEvent,
     onConsumed,

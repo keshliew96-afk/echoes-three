@@ -1,0 +1,44 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;window.__c={ev:[]};for(const t of [\"telegraph_start\",\"telegraph_resolve\",\"hit\",\"death\",\"enemy_spawn\",\"flash\",\"knockback\",\"screenshake\",\"hitstop\",\"boss_quake_start\",\"boss_quake_resolve\",\"boss_adds\",\"boss_trample\",\"boss_spawn\",\"boss_death\",\"wave_start\",\"room_cleared\",\"run_end\",\"enemy_fire\",\"skill_cast\",\"zone_spawn\",\"azone_spawn\",\"skill_bolt_spawn\"])E.on(t,e=>window.__c.ev.push(Object.assign({T:t},e)));return 'armed tick='+E.tick+' types=23'})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;E.cmd('startRun');const r=E.cmd('skipToRoom',8);return {seed:E.seed,version:E.version,room:r&&r.room,phase:r&&r.phase,boss:r&&r.boss}})()"
+ },
+ {
+  "type": "mousemove",
+  "x": 800,
+  "y": 380
+ },
+ {
+  "type": "eval",
+  "code": "(async()=>{const E=__echoes;const t0=performance.now();const k0=E.tick;while(performance.now()-t0<90000){try{if((()=>{const q=window.__c.ev.filter(e=>e.T==='boss_quake_start');const a=window.__c.ev.filter(e=>e.T==='boss_adds');return q.length>=2&&a.length>=1&&E.tick-q[q.length-1].tick<=6})())return {ok:true,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),quakes:window.__c.ev.filter(e=>e.T==='boss_quake_start').map(e=>({tick:e.tick,resolveTick:e.resolveTick,ticksSince:E.tick-e.tick,x:e.x,z:e.z})),quakeResolves:window.__c.ev.filter(e=>e.T==='boss_quake_resolve').map(e=>e.tick),adds:window.__c.ev.filter(e=>e.T==='boss_adds').map(e=>({tick:e.tick,pct:e.pct,spawned:e.spawned})),boss:E.cmd('runState').boss,enemyCount:E.state().enemies.length};}catch(err){}await new Promise(r=>setTimeout(r,8));}return {ok:false,tick:E.tick,waitedTicks:E.tick-k0,ms:Math.round(performance.now()-t0),quakes:window.__c.ev.filter(e=>e.T==='boss_quake_start').map(e=>({tick:e.tick,resolveTick:e.resolveTick,ticksSince:E.tick-e.tick,x:e.x,z:e.z})),quakeResolves:window.__c.ev.filter(e=>e.T==='boss_quake_resolve').map(e=>e.tick),adds:window.__c.ev.filter(e=>e.T==='boss_adds').map(e=>({tick:e.tick,pct:e.pct,spawned:e.spawned})),boss:E.cmd('runState').boss,enemyCount:E.state().enemies.length}})()"
+ },
+ {
+  "type": "mousedown",
+  "button": "right"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 60
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const s=E.state();const r=s.run;return {tick:E.tick,fps:+E.fps.toFixed(1),version:E.version,room:r.room,phase:r.phase,combat:r.combatActive,boss:E.cmd('runState').boss,entityCount:E.entityCount,enemies:s.enemies.map(e=>[e.id,e.kind,+e.x.toFixed(2),+e.z.toFixed(2),e.hp,e.maxHp]),skillBolts:s.skillBolts.length,azones:s.azones.map(z=>[z.skill,z.radius]),zones:s.zones.length,eshots:s.eshots.length,party:s.party.map(p=>[p.id,p.hp,p.maxHp,p.downed]),vfx:(s=>{const a=s.vfx.arena;return {mode:s.vfx.mode,arena:a?{numerals:a.numerals,decals:a.decals,scorch:a.scorch,particles:a.particles,emitters:a.emitters,embers:a.embers,propTypes:a.propTypes,propShadows:a.propShadows,grass:a.grass,flowers:a.flowers,variantName:a.variantName,shake:a.shake,shakes:a.shakes,treeline:a.treeline}:null,camp:{emitters:s.vfx.emitters,propTypes:s.vfx.propTypes,propShadows:s.vfx.propShadows,grass:s.vfx.grass,fireflies:s.vfx.fireflies,embers:s.vfx.embers,vignette:s.vfx.vignette,exposure:s.vfx.exposure}}})(s),banner:E.hud.banner().text,hud:E.hud.combat()}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const now=E.tick;return {quakes:window.__c.ev.filter(e=>e.T==='boss_quake_start').map(e=>({tick:e.tick,resolveTick:e.resolveTick,ticksSinceStart:now-e.tick})),quakeResolves:window.__c.ev.filter(e=>e.T==='boss_quake_resolve').map(e=>e.tick),adds:window.__c.ev.filter(e=>e.T==='boss_adds').map(e=>({tick:e.tick,pct:e.pct,spawned:e.spawned})),tramples:window.__c.ev.filter(e=>e.T==='boss_trample').map(e=>e.tick)}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const m={};for(const e of (window.__c?window.__c.ev:[]))m[e.T]=(m[e.T]||0)+1;return {tick:E.tick,fps:+E.fps.toFixed(1),eventCounts:m}})()"
+ }
+]
