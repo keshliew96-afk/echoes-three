@@ -180,12 +180,21 @@ try {
 
   // ---- R5 the guest's socket screen is read-only ---------------------------
   {
+    // Between rooms: the workbench is locked while combat is active. A defend
+    // room only ends when its timer does, so allow up to 70 s of killing.
     const t0 = Date.now();
     let phase = await host.page.evaluate(() => window.__echoes.state().run.phase);
-    while (Date.now() - t0 < 20000 && phase === 'combat') {
-      await host.page.evaluate(() => window.__echoes.cmd('killAllEnemies'));
+    let mode = null;
+    while (Date.now() - t0 < 70000 && phase === 'combat') {
+      const st = await host.page.evaluate(() => {
+        const E = window.__echoes;
+        E.cmd('killAllEnemies');
+        const s = E.state();
+        return { phase: s.run.phase, mode: s.room ? s.room.mode : null };
+      });
+      phase = st.phase;
+      mode = st.mode;
       await sleep(600);
-      phase = await host.page.evaluate(() => window.__echoes.state().run.phase);
     }
     await sleep(1200);
     const before = await host.page.evaluate(() => JSON.stringify(window.__echoes.cmd('buildView')));
@@ -213,7 +222,7 @@ try {
     await guest.page.keyboard.press('Escape');
     await sleep(400);
     const closed = await guest.page.evaluate(() => !window.__echoes.content.socketUi().open);
-    const res = { phase, ui, rejectedBefore: r0, rejectedAfter: r1, hostBuildUnchanged: before === after, closed };
+    const res = { phase, mode, ui, rejectedBefore: r0, rejectedAfter: r1, hostBuildUnchanged: before === after, closed };
     res.pass = ui.open && ui.noteShown === true && /Read-only/.test(ui.noteText || '') && res.hostBuildUnchanged && r1 > r0 && closed;
     report.races.R5_guest_socket = res;
     log(`R5 ${JSON.stringify(res).slice(0, 700)}`);

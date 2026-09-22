@@ -723,8 +723,17 @@ Rewind window 24 ticks / 400 ms (PLAN 15 / 250 ms: an N1 guest's view is
 18–20 ticks old at the PLAN's own interp + depth-2 buffer); reconnect backoff
 capped 1.5 s; in-session reconnect gives up after 15 s → title "Connection to
 the server was lost." with "Rejoin ABCDE?" while the server's 60 s seat hold
-lasts; party bodies cannot be stunned (status rule), so the G5b.12 forced
-mispredict is a host-side Downed (`setHp(seat, 0)`).
+lasts; the unreliable EVENTS_U resend carries the newest TWO batches (three
+did not fit the downstream budget with three human seats); per-guest snapshot
+encodes are spread over the ticks between snapshots (one capture); party
+bodies cannot be stunned (status rule), so the G5b.12 forced mispredict is a
+host-side Downed (`setHp(seat, 0)`), which RACES the press — a trial ends
+either retracted (tile restored) or confirmed (the host resolved the cast
+first). Remote bodies never pop: a path discontinuity decays as an offset at
+≤ 0.2 u per rendered frame and only a > 4 u error snaps; frames that cross an
+authoritative teleport, a data stall (> 12 ticks without data) or a render-
+clock re-anchor are counted apart (`teleportFrames` / `stallFrames` /
+`clockFrames`), not as smoothness faults.
 
 **Probes** (all start their own session server on the M5b ports 7820–7829;
 the long browser runs use a production preview so HMR never reloads a page:
@@ -747,11 +756,16 @@ dist-M5b --port 4307 --strictPort`, then `--base http://127.0.0.1:4307/`):
   replay audit (host sent-ledger vs guest replay ledger by tick|type|ordinal),
   simCalls / refusedEmits, fps, host net ms, host keydown-to-move.
   `--mbots N` adds PLAYING Node guests (tools/gntM5b-botlib.mjs).
-- `node tools/gntM5b-feel.mjs [--conds N1,N2] [--seat 3]` — G5b.10/12 by
-  trusted keys + mouse on a guest window (host = hidden tab on its Worker
-  metronome): frames from dispatch to a moved body / dash pose / cooldown
-  tile, ownActionFeedbackMs, Downed-seat mispredict retraction, doubled
-  presentations, guest fps. `node tools/gntM5b-spfeel.mjs` = the SP reference.
+- `node tools/gntM5b-feel.mjs [--conds N1,N2] [--seat 3] [--hostpage]` —
+  G5b.10/12 by trusted keys + mouse on a guest window. The host is a NODE
+  process by default (`tools/gntM5b-hostbot.mjs`: the real sim + the real
+  src/net/driver.js, so the guest page is the only rendering page on the
+  machine — what G5b.10 asks for); `--hostpage` puts the host back in a
+  hidden browser tab on its Worker metronome. Reports frames from dispatch to
+  a moved body / dash pose / cooldown tile, ownActionFeedbackMs, the
+  Downed-seat mispredict race (retracted or confirmed), doubled
+  presentations, guest fps. `node tools/gntM5b-spfeel.mjs` = the SP reference
+  (same window size, no network).
 - `node tools/gntM5b-lagcomp.mjs [--conds N1,N2] [--seconds 90] [--lag both|on|off]`
   — G5b.3: instant shapes valid on the guest's SCREEN (0.05 u margin; strict
   reported too) that register on the host, with rewind on and off.
