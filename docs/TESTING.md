@@ -260,6 +260,17 @@ Keep/Revert opens when the Display tab is left or Settings closes.
 (screen-shake scaling, `?menu=0`), `misc` (FPS meter toggle, auto-pause,
 overlay pause).
 
+**G1.3 in the title's first seconds** (gauntlet fix MENU-R1-F1, v0.5.64):
+`node tools/gntfixM11-early.mjs [--src keyboard|gamepad|mouse]` = the critic's
+early window (20 presses 220 ms apart from +0.7 s after `app.state ===
+'title'`, `app.responses()` + keydown → first rAF after the DOM mutation) plus
+the rAF-gap / long-task timeline and a settled set; `tools/gntfixM11-builder.mjs`
+logs the background dressing builder around the title (built / worker / slice
+ms, texture uploads); `tools/gntfixM11-trace.mjs` records a Chrome trace with
+the GPU-process categories and digests CrGpuMain. `app.backgroundHold()` is
+true while an app screen is open and a menu input came within 1.5 s — the
+arena's dressing pre-builder runs no main-thread slice then.
+
 ### M3 — audio engine and mixer (Gauntlet W1, owner M3)
 
 **Locked until a gesture.** No AudioContext exists before the first
@@ -492,12 +503,18 @@ the camp pre-build that act's dressings first.
 
 **Dressings.** One per layout (env/biomes/{wood,mill,barrow}.js), swapped on
 the run's `layout_enter` under the room fade. Floors paint off-thread in
-env/biomes/paint-worker.js (byte-identical to a main-thread paint:
-`node tools/gntM4b-groundhash.mjs 1,2,3 [--worker]` must print the Act-I
-hashes `2fe56349e8ca1052/9a63967c8cf4e1eb`, `fc901236d5b9c5ea/57c079ffdd7eb997`,
-`5cdb746f53462607/19cb00393d941294`, `streamInSync: true`). Outside a run the
-builder pre-builds every layout; inside a run only the run's act; never in
-live combat.
+env/biomes/paint-worker.js (`node tools/gntM4b-groundhash.mjs 1,2,3` — the
+main-thread paint — must print the Act-I hashes
+`2fe56349e8ca1052/9a63967c8cf4e1eb`, `fc901236d5b9c5ea/57c079ffdd7eb997`,
+`5cdb746f53462607/19cb00393d941294`). Since v0.5.64 (gauntlet MENU-R1-F1) the
+worker rasterises in software (a GPU-accelerated worker canvas stalled the GPU
+process 35-113 ms per readback behind the title), so `--worker` prints
+`e1baf1a9d63742b7/19c8a6be6e4509af`, `16da75d4aed6cc75/261012868e591861`,
+`1cc78844b10901c2/6dbb1bf69097a68c` with `streamInSync: true` — the same draws
+and RNG stream, mean |Δ| 1.1–1.7/255 from the GPU raster
+(`tools/gntfixM11-rasterdiff.mjs`). Outside a run the builder pre-builds every
+layout (holding while `app.backgroundHold()` — a menu in use); inside a run
+only the run's act; never in live combat.
 
 **M4b probes.** `node tools/gntM4b-simprobe.mjs` (Node; every §23.5–23.7
 number, governor, spacing, assets, blockers, canonicalJSON mid-wave in

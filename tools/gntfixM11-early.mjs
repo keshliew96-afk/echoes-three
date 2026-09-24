@@ -78,7 +78,7 @@ try {
       /* */
     }
     addEventListener('keydown', (e) => (window.__pend = { t: e.timeStamp, src: 'keyboard' }), true);
-    addEventListener('mousedown', (e) => (window.__pend = { t: e.timeStamp, src: 'mouse' }), true);
+    addEventListener('mousemove', (e) => (window.__pend = { t: e.timeStamp, src: 'mouse' }), true); // each probe move lands on another item
     window.__armMO = () => {
       const mo = new MutationObserver(() => {
         const p = window.__pend;
@@ -131,7 +131,7 @@ try {
     if (src === 'mouse')
       rects = await page.evaluate(() =>
         [...document.querySelectorAll('.ap-title [data-nav]')]
-          .filter((e) => e.getBoundingClientRect().width > 0 && !e.disabled && !/new game|exit|settings|load|continue|multi/i.test(e.textContent || '') === false)
+          .filter((e) => e.getBoundingClientRect().width > 0 && !e.disabled) // hover: app.responses() records no hover, the independent measure does
           .slice(0, 3)
           .map((e) => {
             const r = e.getBoundingClientRect();

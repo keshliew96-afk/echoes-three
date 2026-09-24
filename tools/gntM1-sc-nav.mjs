@@ -60,8 +60,13 @@ export default async function (h) {
   await k('Escape');
   s = await expect('kb:settings-back', (s) => s.stack.join() === 'title' && s.focus.id === 'ap-title-settings');
   // Exit -> confirm -> Esc back -> Exit -> Enter on Cancel? default focus is Cancel.
-  await k('ArrowDown');
-  await sleep(150);
+  // (Walk to Exit by id: M2's Records item sits between Settings and Exit.)
+  for (let i = 0; i < 6; i++) {
+    const f = (await snap()).focus;
+    if (f && f.id === 'ap-title-exit') break;
+    await k('ArrowDown');
+    await sleep(150);
+  }
   await k('Enter');
   s = await expect('kb:confirm-open', (s) => s.stack.join() === 'title,confirm' && s.focus.id === 'ap-confirm-cancel');
   await k('Escape');
