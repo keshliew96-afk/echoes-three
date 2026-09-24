@@ -1,5 +1,5 @@
 STATUS: COMPLETE
-VERDICT: PASS — M3 audio engine + mixer at v0.5.62: PLAN gates G3.1–G3.10 10/10 met by independent re-measurement; benchmark 39 met / 5 partial / 1 not met of 45; 0 must-fix; 8 polish advisories (Home/End dead on sliders, title UI ticks under the menu bed, boss cue = combat ×1.22, thin G3.10 headroom, silent draft/path nav, no per-instance cue variation, dead camp_return mapping, log 50 % = −10 dB).
+VERDICT: FAIL — M3 audio engine + mixer at v0.5.62: PLAN gates 9/10 met by independent re-measurement (G3.1–G3.9); G3.10 fails its ≤ 1 ms/frame p95 clause (audit re-run, STEP 12: 0 of 16 fresh boss fights ≤ 1 ms — ≥ 6-add scenario median 2.4 ms, min 1.6, max 3.4; natural boss 1.3–1.8; quiet box 1.5; idle camp 0.3–0.5); benchmark 39 met / 5 partial / 1 not met of 45; 1 must-fix (G3.10 cost); 8 polish advisories.
 # Critic — AUDIO ENGINE & MIXER SETTINGS — gauntlet round 1
 
 Module spec (user, verbatim): "AUDIO ENGINE & MIXER SETTINGS: Build an audio manager handling
@@ -367,9 +367,9 @@ a cleared room falls to 0.08 / 123 Hz (benchmark A8 met, Hades-style layering ra
 | G3.7 Coverage | every row of the §3.5 cue table fires a cue (cueLog + sound events) in a scripted run | all 10 rows fire (STEP 8 table) incl. basic_fire → shoot 7/7, zone_spawn/zone_tick, downed/revive family, draft_take/path, run_start/run_end, UI nav (STEP 7/9) | **yes** |
 | G3.8 Autoplay | no flag: no context before the gesture, 0 errors/warnings, key (not Esc)/click/touch → running ≤ 100 ms, prompt clears, keyboard-only hears the menu; with the flag no prompt | `locked` for 4 s idle, 0 matching console lines, prompt visible; Space / click / touch → `running` at the first poll (engine 0 ms; 118–129 ms wall = CDP round trip), menu music −22.0 dB, prompt gone; Esc alone stays locked; with the flag no prompt, 0 errors (autoplay.json, STEP 3) | **yes** |
 | G3.9 Persistence | levels/modes/mutes persist across reload; mute-on-blur works; tab fully operable by keyboard, mouse and pad | reload: 16 audio.* keys identical, live params re-applied (ui2.json); real tab switch: −999 dB behind / −23.6 back, off-switch keeps −21.25 (blur.json); keyboard rows/buttons, mouse click/drag/hover, mocked pad D-pad + A all operate every control (keys.json, ui3/ui4.json) | **yes** |
-| G3.10 Cost | main-thread ≤ 1 ms/frame p95; ≤ 48 voices; active ≤ 4 within 3 s of silence | p95 **0.9 ms** (max 1.9) in the ≥ 6-add boss fight, combat p95 0.5; voice peak 16 of 48; active 0 at +3 s after victory (fight.json, fight2.json, cov2.json). The first instance's heavier uncapped add storm read p95 1.7 ms (boss.json) — over the gate at a load above the gate's scenario | **yes** (thin headroom) |
+| G3.10 Cost | main-thread ≤ 1 ms/frame p95; ≤ 48 voices; active ≤ 4 within 3 s of silence | p95 clause **NOT met**: 0 of 16 fresh boss-fight runs ≤ 1 ms (STEP 12): ≥ 6-add scenario 1.6 / 2.4 / 3.4 / 2.9 / 1.6 / 3.2 / 2.5 / 1.6 ms (median 2.4), natural boss 1.3–1.8 (one contended 9.3), quiet-box natural 1.5 / 1.5; idle camp 0.3 / 0.5 (fixed overhead passes, the fight event path does not). Voices peak ≤ 25 of 48 (met); active 0 at +3 s after victory (met) | **no** (p95 clause) |
 
-10/10 gates met by re-measurement.
+9/10 gates met by re-measurement; G3.10 fails on its p95 clause (STEP 12, 18 runs).
 
 ## STEP 11 — builder checkpoint claims (docs/gauntlet/build-M3.md) re-measured, never trusted
 
@@ -384,7 +384,7 @@ a cleared room falls to 0.08 / 123 Hz (benchmark A8 met, Hades-style layering ra
 | G3.7 every row in one scripted run (67 cues) | every row, across real-input fights + scripted skips | yes |
 | G3.8 unlock → running 0 ms, no prompt with the flag | 0 ms engine / first poll; no prompt with the flag | yes |
 | G3.9 persist + blur + hidden + tab (keyboard/mouse/pad) | all re-measured incl. a real tab switch and a mocked pad | yes |
-| G3.10 p95 0.4 ms, peak 7 voices | p95 0.9 ms with ≥ 6 adds (1.7 ms in a heavier storm), peak 16 voices | holds at the gate's load only; headroom is thinner than claimed |
+| G3.10 p95 0.4 ms, peak 7 voices | p95 1.3–3.4 ms across 16 fresh fights (median 2.2; ≥ 6-add median 2.4), peak 15–25 voices | **no** — the claim is 3–8× under the measured cost |
 | D7 mode switch keeps loudness | log 0.65 −6.215 dB → linear 0.49 −6.196 dB (Δ 0.02) | yes |
 | D13 pause duck −5 dB + 1.3 kHz LPF | −4.75 dB, centroid 165 → 134 Hz, `ducked: true`, sim frozen | yes |
 | D16 slider preview cue on settings changes | ui_slider on every arrow (−24.24 / −25.04 dBFS), audio sliders preview their own channel (Test rows land on their own bus only) | yes |
@@ -444,20 +444,26 @@ a cleared room falls to 0.08 / 123 Hz (benchmark A8 met, Hades-style layering ra
 **Score: 39 met / 5 partially / 1 not met of 45.** Real-world systems compared: Wwise/FMOD bus mixing as in Hades and Dead
 Cells, the dB-perceptual slider standard of shipped PC games, HTML5 autoplay-correct games.
 
-## VERDICT — PASS
+## VERDICT — FAIL (1 must-fix: G3.10 p95 clause; the mixer, curves, decoupling, clipping, balance, music, spatial, coverage, autoplay and persistence gates all still pass)
 
 Spec (audio manager with ambient/background music + spatial SFX triggers; configuration UI with decoupled linear/log sliders for
-Master, Music, SFX): met and measured. PLAN M3 gates: 10/10 met by independent re-measurement. No crash, no page error, no data
+Master, Music, SFX): met and measured. PLAN M3 gates: 9/10 met by independent re-measurement; G3.10's ≤ 1 ms p95 clause is not met (STEP 12). No crash, no page error, no data
 loss, no broken core loop (camp → portal → room 1 → boss → victory → camp ran with audio on in cov2/camp). No benchmark item
 missing whose absence a player would feel as broken.
 
-Must-fix failures: **none**.
+Must-fix failures:
+1. **G3.10 engine cost p95 > 1 ms in every boss fight** — 0 of 16 fresh runs ≤ 1 ms; ≥ 6-add scenario median 2.4 ms (min 1.6, max 3.4),
+   natural boss 1.3–1.8 ms, quiet box 1.5 ms; idle camp 0.3–0.5 ms so the fixed overhead is fine and the per-frame event/cue path is the
+   cost (events part avg 0.19–0.64 ms, p95 tail 1.3–3.4). Single-frame stalls inside the audio update of 53.6 ms (quiet box) and 10–28 ms
+   (≥ 6 adds). Evidence: captures/gntcaudio1-cost-{natural,adds,storm,adds-light,natural-light,camp,camp-light,adds-quiet,natural-quiet}.json,
+   runlog{,2,3}.txt; STEP 12a–d. Reproduce: `node tools/gntcaudio1-cost.mjs --mode adds --runs 3 --seed 17`.
 
 Advisories (polish, numbers cited):
 1. Home/End do nothing on a nav-focused slider (keys.json: 0.70 → 0.70 twice; ui2, ui3 agree) — a native range supports them; the app's key router swallows them.
 2. Title-screen navigation ticks sit under the menu score: ui_move −25.75 dBFS peak vs music RMS −22.40 (−3.35 dB), ui_slider −0.94 dB (fight2.json). The gate is combat-only (+7.0 dB there), but on the title the ticks are masked.
 3. Boss music is the combat theme at ×1.22 tempo with the same loudness (−24.5 dBFS) and spectrum (209 vs 202 Hz) (music3.json) — distinct by the gate, not a bigger cue.
-4. G3.10 headroom is thin: p95 0.9 ms with 9 live adds (fight.json); the first instance's uncapped add storm read 1.7 ms (boss.json).
+4. (the former "thin headroom" advisory is now must-fix 1, STEP 12) Boss-room frame rate on the GPU harness is 27–63 rendered fps against an 80–85 Hz display
+   even with 0 foreign Chrome (app workMsP50 12–24 ms, frameStats in the cost-*.json files); the audio engine's 1.5–3.4 ms p95 is 10–20 % of that frame — a G1 concern, cited for the fix builder.
 5. Run-UI pages (draft/path) navigate silently — ArrowLeft/Right produced no ui_move while the pause menu ticks (fight.json); confirms (draft_take, path) do cue.
 6. No observable per-instance gain/pitch variation (1,937 cueLog entries, constant gainDb per cue, no pitch field) — repeated hits/shots are identical.
 7. `return_to_camp → camp_return` never fires in any reachable flow (automatic return after stingers, no pause-menu entry) (cov2.json, camp.json) — a dead mapping.
@@ -466,3 +472,93 @@ Advisories (polish, numbers cited):
 Files: tools/gntcaudio1-*.mjs (probes), captures/gntcaudio1-*.json / .png (evidence). No src/**, server/** or PLAN.md edits; no
 commits. No processes left running (every probe closes its own browser; the crashed first cov2 run left no Chrome carrying the
 audio flag).
+
+
+## STEP 12 — completeness audit: G3.10 cost gate re-measured with repeated runs (hostiles + cost.p95 recorded together)
+
+Audit finding: boss.json read p95 1.7 ms (max 4.0) vs fight.json 0.9 ms; boss.json never recorded live hostiles, so the
+"heavier storm" explanation was unproven and the 1.7 ms could be run-to-run variance. Both earlier `cost()` readings are a
+900-frame ring (15 s at 60 fps) — only the LAST 15 s of each fight was ever measured. New tool tools/gntcaudio1-cost.mjs:
+fresh browser per run (--autoplay-policy=no-user-gesture-required, GPU harness 1600x900), 100 % log sliders, room 8, party
+kept alive, real input (mouse held + skill keys 1-4 + dodge) for 30 s; samples hostiles + fps every 100 ms and a cost()
+window every 5 s; modes: natural (boss + its own adds only), adds (topped up to >= 9 live hostiles every 400 ms = the
+G3.3 scenario), storm (the old uncapped 4-boars-per-3-s storm). Results below when done.
+
+### 12a — batch 1: natural x3, adds (>= 6 live hostiles) x3, storm x2 — full sampler (captures/gntcaudio1-cost-{natural,adds,storm}.json, runlog.txt)
+
+Box load during the batch: 12–24 foreign Chrome processes (other agents' captures) alive; the app's own frameStats read
+renderedFps 30.5–62.5 against displayHz 80.6–84.7 and workMsP50 12.9–22.7 ms, i.e. the whole main thread was contended.
+0 page errors in all 8 runs; v0.5.62 in every run; boss music reached in 0–476 ms after skipToRoom 8.
+
+| mode | run/seed | hostiles min/med/max (100 ms samples) | rendered fps med (min) | FINAL cost p95 / max (last 900 fr) | worst 15 s window p95 | events part avg | ≤ 1 ms? |
+|---|---|---|---|---|---|---|---|
+| natural | 1 / 7 | 0 / 1 / 6 | 33.1 (27.4) | **9.3 / 171.5 ms** | **24.6** (win 20 s, h 2–5, events avg 3.86 ms) | 2.17 ms | no |
+| natural | 2 / 8 | 0 / 2 / 6 | 80.6 (41.7) | **1.3 / 5.4** | 1.3 | 0.17 ms | no |
+| natural | 3 / 9 | 0 / 3 / 5 | 54.9 (40.3) | **1.8 / 8.9** | 1.7 | 0.24 ms | no |
+| adds | 1 / 7 | 5 / 9 / 12 | 55.2 (41.3) | **1.6 / 3.4** | 1.7 | 0.22 ms | no |
+| adds | 2 / 8 | 4 / 9 / 11 | 55.2 (27.5) | **2.4 / 10.1** | 2.1 | 0.32 ms | no |
+| adds | 3 / 9 | 6 / 9 / 12 | 41.0 (24.6) | **3.4 / 28.0** | 3.4 | 0.56 ms | no |
+| storm | 1 / 7 | 0 / 8 / 13 | 41.0 (32.8) | **2.3 / 4.8** | 3.6 | 0.49 ms | no |
+| storm | 2 / 8 | 0 / 6 / 11 | 47.6 (37.3) | **2.2 / 4.5** | 2.2 | 0.36 ms | no |
+
+Reading: 0 of 8 fresh runs meet the 1 ms p95 clause; the three ≥ 6-add runs read 1.6 / 2.4 / 3.4 ms (worst windows 1.7 / 2.1 /
+3.4). The earlier single 0.9 ms reading (fight.json) is now 1 of 10 measurements under 1 ms. Cost tracks frame time, not the
+hostile count: within each run the per-window p95 rises as fpsMin falls (adds 3: 2.1 → 3.4 ms as fpsMin 54.6 → 24.6 with the
+same 6–12 hostiles; adds 2: 1.4 → 2.1 as 55.2 → 27.6); natural run 2 at 80 fps still read 1.3. The `events` part is the growing
+term (0.14 → 0.58 ms avg; 3.86 ms in the pathological natural-1 window). Voices peaked 15–24 of 48, stolen ≤ 3, 0 cap drops
+(the 48-voice clause holds). The natural-1 outlier (p95 24.6 ms, one 171.5 ms frame inside the audio update, at 27–33 fps
+with 24 foreign Chromes) is recorded as observed but is confounded by box load; it is not the basis of the verdict.
+Batch 2 (light sampler: hostiles once per second, no windows; plus a camp idle baseline) follows in 12b.
+
+### 12b — batch 2: light sampler (hostiles once per second, no 5 s windows, cost() read once) + camp idle baseline
+(captures/gntcaudio1-cost-adds-light.json, -natural-light.json, -camp-light.json, -camp.json, runlog2.txt)
+
+| mode | seed | hostiles min/med/max | rendered fps med (min) | cost p95 / max (last 900 fr) | foreign Chrome | ≤ 1 ms? |
+|---|---|---|---|---|---|---|
+| adds (light) | 7 | 6 / 9 / 10 | 40.8 (31.6) | **2.9 / 8.4** | 12 | no |
+| adds (light) | 8 | 7 / 9 / 11 | 51.8 (44.2) | **1.6 / 3.6** | 12 | no |
+| natural (light) | 8 | 0 / 2 / 6 | 69.9 (48.1) | **1.3 / 3.0** | 12 | no |
+| camp idle (light) | 7 | 0 | 54.6 (41.0) | 0.5 / 3.7 | 12 | yes |
+| camp idle (full sampler) | 7 | 0 | 78.7 (41.2) | **0.3 / 1.1** (all six windows 0.3–0.4) | **0** | yes |
+
+Reading: the critic's own 100 ms sampler is not the cause (camp full-sampler 0.3 ms vs camp light 0.5 ms). The engine's
+fixed overhead in silence is 0.3–0.5 ms p95 (0 cues, 0 voices: listener/derive/schedule/meters only), so the ≥ 1 ms readings
+are the per-frame event/cue work of a fight. With ≥ 6 adds the light-sampler runs read 2.9 and 1.6 ms — same band as batch 1.
+The last camp run ran with 0 foreign Chrome processes (the box went quiet), which is the clean condition batch 3 uses.
+
+### 12c — batch 3: the quiet box (foreign Chrome 10 → 0 during the batch), adds x3 + natural x2 (captures/gntcaudio1-cost-adds-quiet.json, -natural-quiet.json, runlog3.txt)
+
+| mode | seed | hostiles min/med/max | rendered fps (app frameStats) | app workMsP50 | cost p50 / p95 / max | worst 15 s window p95 | events part avg | ≤ 1 ms? |
+|---|---|---|---|---|---|---|---|---|
+| adds | 17 | 6 / 9 / 12 | 26.7 | 23.5 ms | 0.7 / **3.2** / 8.9 | 3.1 | 0.64 ms | no |
+| adds | 18 | 5 / 9 / 12 | 48.2 | 16.5 ms | 0.3 / **2.5** / 6.4 | 2.9 | 0.49 ms | no |
+| adds | 19 | 7 / 9 / 12 | 52.8 | 15.3 ms | 0.2 / **1.6** / 3.9 | 1.7 | 0.26 ms | no |
+| natural (0 foreign Chrome) | 17 | 0 / 2 / 5 | 59.4 | 12.4 ms | 0.2 / **1.5** / 3.0 | 1.6 (one 53.6 ms frame in the 10 s window, h 2–5, fpsMin 44) | 0.25 ms | no |
+| natural (0 foreign Chrome) | 18 | 0 / 2 / 6 | 59.8 | 12.8 ms | 0.2 / **1.5** / 4.3 | 1.5 | 0.19 ms | no |
+
+### 12d — consolidated reading of all 18 fresh runs (16 fights + 2 idle), v0.5.62, 0 page errors
+
+- Fights (16 runs, 3 batches, seeds 7–9 / 17–19, sampler full and light, box loaded and quiet): cost p95 min **1.3**, median
+  **2.2**, max 9.3 ms — **0 of 16 ≤ 1 ms**. Adding the two earlier readings (fight.json 0.9, boss.json 1.7): 1 of 18 under the gate.
+- ≥ 6-add / storm fights (10 runs, hostiles median 6–9, min 4–7): p95 min **1.6**, median **2.4**, max 3.4 ms; worst 15 s windows 1.7–3.6.
+- Natural boss fights (6 runs, hostiles median 1–3): p95 1.3 / 1.3 / 1.5 / 1.5 / 1.8 / 9.3 (the 9.3 under 24 foreign Chromes).
+- Idle camp (2 runs, 0 cues, 0 voices): p95 **0.3 / 0.5** ms, max 1.1 / 3.7 — the fixed per-frame overhead (listener + derive +
+  schedule + meters, avg sum 0.09–0.16 ms) passes; every reading above 1 ms comes from the fight event/cue path (the events part
+  avg 0.19–0.64 ms per frame, 2.17 in the contended outlier), whose tail is what the p95 measures.
+- Cost tracks frame time more than hostile count: at the same 6–12 hostiles, adds p95 is 1.6 ms at 52–62 rendered fps and
+  2.5–3.4 ms at 27–48 fps (the sim keeps ~52.5 ticks/s, so a slow frame carries more ticks of events). The GPU harness
+  renders the boss room at 27–63 fps against an 80–85 Hz display even on the quiet box (app workMsP50 12–24 ms), so the
+  engine is measured at the frame rate the game actually achieves — and does not reach 1 ms there.
+- Single-frame stalls inside the audio update: 53.6 ms (natural-quiet seed 17, 0 foreign Chrome), 28.0 / 16.5 / 10.1 ms in
+  ≥ 6-add runs, 171.5 ms in the contended natural-1 run. No gate clause covers max, but a > 50 ms stall on a quiet box is a
+  hitch a player feels.
+- The other two G3.10 clauses hold: voice peak 15–25 of 48 in every run, 0 cap drops, stolen ≤ 3; active voices 0 at +3 s
+  after the last cue (fight.json / cov2.json, STEP 6/8, unchanged).
+
+**G3.10 verdict: the ≤ 1 ms/frame p95 clause is NOT met** (0/16 fresh fights; the ≥ 6-add scenario reads 1.6–3.4 ms, ~2–3×
+the gate). The previous instance's 0.9 ms was the single best of 18 readings, not the typical case; the "heavier storm"
+explanation for boss.json's 1.7 ms is withdrawn — the storm runs (hostiles median 6–8) read 2.2–2.3 ms, no worse than the
+capped ≥ 6-add runs. This is a PLAN gate not met → must-fix. Reproduce: `node tools/gntcaudio1-cost.mjs --mode adds --runs 3
+--seed 17` (SUMMARY.gateP95LE1 false; per-window p95 in captures/gntcaudio1-cost-adds-quiet.json). No src/**, server/** or
+PLAN.md edits; no commits; every probe closed its own browser (foreign Chrome count 0 at the end of batch 3).
+
