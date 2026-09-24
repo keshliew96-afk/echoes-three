@@ -36,3 +36,6 @@ Must-fix: SAVE-R1-F1 (pause overlay above saves screen), SAVE-R1-F2 (title after
 - src/app/screens.js (M1): liftAbove() + one call in push().
 - src/ui/menu/title.js (M1): onOpen clears focusedId / defaultFocus.
 - docs/TESTING.md: an M2-section paragraph (M2's own subsection).
+
+## Final regression (after e59d2d9, v0.5.69)
+- core loop gntfixM21-core2 (?seed=7&menu=0 + tools/actions/gnt-arch-coreloop.json) exit 0, 0 PAGEERROR: run_start tick 446 -> combat room 1 tick 456 -> room_cleared / reward_offer 580 -> phase reward (tick 651). Smoke gntfixM21-smoke3 (v0.5.69) exit 0, 0 PAGEERROR.
