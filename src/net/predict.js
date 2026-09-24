@@ -20,11 +20,22 @@
 // seat, same kind, inputSeq within ±3 frames — a drained buffer or a
 // starved tick can shift a hold-repeat by a frame) is SUPPRESSED (no second
 // sound or swing). A `seat_denied` for it, or proof that the host consumed
-// the frame without it (a snapshot with lastInputSeqConsumed ≥ seq AND the
-// reliable event stream delivered through that snapshot's tick), RETRACTS
-// it: `presentation_retract { predId }` is replayed, the cosmetic removed and
-// the cooldown tile restored. Damage numerals, hit reactions and kills are
-// never predicted (authoritative only).
+// the frame without it, RETRACTS it: `presentation_retract { predId }` is
+// replayed, the cosmetic removed and the cooldown tile restored. The proof
+// is read from the FIRST snapshot whose lastInputSeqConsumed >= seq (the
+// seat's replicated timers say whether the host acted in the match window
+// or can still act in it — PLAN §3.7 "within one snapshot"); only a timer
+// that sits ON the window (a suppression / dash-end re-arm the snapshot
+// cannot tell from a swing) waits for the reliable event stream.
+// Timers are rebuilt the way the movement predictor rebuilds position: the
+// host's timer at k (or a newer host swing / suppression event) plus every
+// LOCAL input frame after k run through the host's own §4/§5 rules — never
+// the host's stale value alone (fix-M5b-r1, NET-F1: a re-seed that dropped
+// the local dash re-arms made the guest swing ~40 frames early after every
+// dodge). The held basic is evaluated on EVERY input frame the guest sends
+// (session.js calls basic() for frames its rendered-frame sampling skipped),
+// so the predicted swing lands on the host's frame. Damage numerals, hit
+// reactions and kills are never predicted (authoritative only).
 import { ALLY_KITS, ALLY_CLASSES } from '../sim/allies.js';
 import { fanDirections, countFinal, clampPlacement } from '../sim/shapes.js';
 import { aimDir } from '../sim/remote.js';
@@ -47,7 +58,18 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   let dodgeAt = 0;
   let curSeq = 0;
   const pending = []; // { predId, kind, slot, seq, t, keyAt, prevReady, matched, retracted, provenAt, consumedTick }
-  const stats = { predicted: 0, confirmed: 0, retracted: 0, feedbackMs: [], retractMs: [], deniedRetracts: 0, lateRetracts: 0, byKind: {} };
+  const stats = { predicted: 0, confirmed: 0, retracted: 0, feedbackMs: [], retractMs: [], deniedRetracts: 0, lateRetracts: 0, byKind: {}, byPath: { snapshot: 0, denied: 0, events: 0 } };
+  // Local frame log: seq -> what the host's §4/§5 basic rule reads on that
+  // input frame (the frames this guest SENT): the held basic, the predicted
+  // body dashing after the frame's movement step, a dash that ended on it
+  // (§5 re-arm), alive, stunned, the revive channel as replicated, the fresh
+  // press edge. Kept back to the newest consumed seq.
+  const frameLog = new Map();
+  let logTop = -1; // the newest seq in frameLog
+  let lastK = null; // the newest snapshot's lastInputSeqConsumed
+  let basicAnchor = null; // { seq, T } a host swing / suppression newer than lastK (event stream)
+  let lastBasicPredSeq = -1; // at most one basic prediction per input frame
+  let lastBasicEvalSeq = -1;
 
   const cdTicks = (def) => Math.max(CD_FLOOR, secTicks(def.cd));
 
@@ -110,12 +132,18 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   // basic(ctx) — the held basic, evaluated every frame the button is down
   // (first shot on the press frame, then at the class interval).
   function basic(ctx) {
-    if (!enabled || !ctx.body || !(ctx.body.hp > 0) || ctx.stunned) return null;
-    if (ctx.seq < basicAt) return null;
+    if (!enabled || !ctx.body) return null;
+    // Provisional log entry for a frame not stepped yet (the rendered frame
+    // samples seq = next frame): a re-seed before its tick must not drop it.
+    if (!frameLog.has(ctx.seq)) logEntry(ctx.seq, { basic: true, dashing: !!ctx.dashing, dashEnd: false, alive: ctx.body.hp > 0, stunned: !!ctx.stunned, channelling: !!ctx.channelling, fresh: !!ctx.fresh });
+    lastBasicEvalSeq = Math.max(lastBasicEvalSeq, ctx.seq);
+    if (!(ctx.body.hp > 0) || ctx.stunned) return null;
+    if (ctx.seq < basicAt || ctx.seq <= lastBasicPredSeq) return null;
     if (ctx.channelling && !ctx.fresh) return null;
     const prev = basicAt;
     basicAt = ctx.seq + S.attackIntervalTicks;
     if (ctx.dashing) return null; // the host denies + re-arms (priority_suppressed)
+    lastBasicPredSeq = ctx.seq;
     const b = ctx.body;
     const d = aimDir(b, ctx.aim, { x: b.faceX ?? 0, z: b.faceZ ?? 1 });
     const p = record('basic', -1, ctx.seq, ctx.keyAt, prev);
