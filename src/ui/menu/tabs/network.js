@@ -10,6 +10,7 @@
 // plus the honest note on how multiplayer is hosted (a small server on the
 // host's computer: `npm run net`, `--host 0.0.0.0` for LAN play).
 import { registerSettingsTab, service } from '../../../app/registry.js';
+import { HIT } from '../../../app/style.js';
 import { installMpStyle, mkBtn, httpsPage } from '../mpmenu.js';
 import { validateServerUrl } from '../../../net/lobbyClient.js';
 import { sanitizeName } from '../../../net/protocol/messages.js';
@@ -37,7 +38,7 @@ function textRow({ id, label, help, value, maxLength, onCommit, placeholder = ''
   input.setAttribute('data-nav', '');
   input.value = value;
   input.style.maxWidth = 'calc(520px * var(--ap-s, 1))';
-  input.style.minHeight = 'calc(48px * var(--ap-s, 1))';
+  input.style.minHeight = HIT; // >= 40 CSS px at 1024x576 (G1.1; was 48 authored = 36 px)
   input.style.fontSize = 'calc(22px * var(--ap-s, 1))';
   ctl.appendChild(input);
   const note = document.createElement('div');
@@ -120,7 +121,7 @@ function buildNetworkTab(ctx) {
     },
   });
   check.style.minWidth = 'calc(110px * var(--ap-s, 1))';
-  check.style.minHeight = 'calc(48px * var(--ap-s, 1))';
+  check.style.minHeight = HIT;
   server.ctl.appendChild(check);
 
   const stats = widgets.toggle({

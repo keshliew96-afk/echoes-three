@@ -21,6 +21,10 @@ export const AP_FONT =
 
 // Authored px -> CSS length that follows --ap-s.
 export const px = (n) => `calc(${n}px * var(--ap-s, 1))`;
+// The menu hit-target size (PLAN §3.2 / G1.1: >= 40x40 CSS px at 1024x576):
+// 56 authored px, never under the 40 CSS px floor. Contributed tabs size their
+// own controls (text fields, inline buttons) with this instead of a bare px().
+export const HIT = `max(40px, ${px(56)})`;
 
 export function apScale(w = window.innerWidth, h = window.innerHeight) {
   const s = Math.min(w / 1920, h / 1080);
@@ -247,6 +251,7 @@ body.ap-hide-game #dmg-num-layer, body.ap-hide-game #nd-fizzle-layer { visibilit
 .ap-range {
   -webkit-appearance: none; appearance: none; flex: 1 1 auto; min-width: ${px(160)};
   height: ${px(56)}; background: transparent; cursor: pointer; margin: 0;
+  font-size: ${px(22)}; /* no text, but never the UA's 13.3 px (layout audits read it) */
 }
 .ap-range::-webkit-slider-runnable-track {
   height: ${px(10)}; border-radius: 999px;
