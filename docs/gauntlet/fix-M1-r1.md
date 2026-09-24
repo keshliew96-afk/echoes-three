@@ -1,5 +1,5 @@
-STATUS: PARTIAL
-Fix builder M1 round 1 (MENU-R1-F1 early-title hitches, MENU-R1-F2 Network tab 36 px hit targets).
+STATUS: COMPLETE
+VERDICT: done — MENU-R1-F1 fixed at the root (GPU-process readbacks from the background dressing painter; worker canvases now software-rasterised, CPU upload path, builder yields to menu input via app.backgroundHold, one texture upload per frame): critic probe keyboardEarly p95 77.2 / max 114.7 -> 39.9-40.2 / 40.4-45.2 ms; MENU-R1-F2 fixed (Network tab 36 -> 42 px at 1024x576 via style.js HIT floor). Commits 229a76e v0.5.63, f2ac0be v0.5.64, 683fd8d v0.5.65 (+ this checkpoint v0.5.66). Smoke 0 errors, core loop to reward, journey, nav, acts 2/3 room swaps all pass.
 
 ## Steps
 - [x] 0 resume check: no checkpoint existed; HEAD b485401, v0.5.62, no uncommitted tracked changes.
@@ -13,3 +13,18 @@ Fix builder M1 round 1 (MENU-R1-F1 early-title hitches, MENU-R1-F2 Network tab 3
 - [x] 7 commit F2 229a76e fix(settings) v0.5.63 (style.js HIT + network.js + range font).
 - [x] 8 commit F1 f2ac0be fix(menu) v0.5.64 (app.js backgroundHold, nav.js activity stamps, ground.js worker PAINT_CTX, paint-client.js CPU toCanvas, layers.js hold, arena.js split uploads + yields, gntfixM11 tools, this checkpoint).
 - [x] 9 regression after f2ac0be: M1 journey (tools/gntM1-drive.mjs gntM1-sc-journey) pass: controllable 609 ms after New Game, portal tick 157 -> combat 169 -> reward 452, 0 page errors. M1 nav (gntM1-sc-nav): keyboard / mouse / pad 0 fails, 50 random actions pass, rings 1 (the probe's Exit step walked by one ArrowDown from Settings and landed on M2's Records item — probe fixed to walk to #ap-title-exit by id; two runs lost to HMR reloads from the concurrent M3 fix builder, third clean). Acts 2/3 through the real portal (tools/actions/gntfixM11-act2.json, ?seed=7&menu=0&act=N): all 9 layouts pre-built in camp, 0 synchronous fallback builds, room 1 dressing = mill (4) / barrow (8), reward reached, 0 PAGEERROR. M4b ground hashes: main-thread 1,2,3 = the certified 2fe56349e8ca1052/9a63967c8cf4e1eb, fc901236d5b9c5ea/57c079ffdd7eb997, 5cdb746f53462607/19cb00393d941294; --worker = e1baf1a9d63742b7/19c8a6be6e4509af, 16da75d4aed6cc75/261012868e591861, 1cc78844b10901c2/6dbb1bf69097a68c, streamInSync true (TESTING.md M4b note updated). Early window by other sources (own probe): gamepad p95 35.6 / max 39.3; mouse hover from the critic's gntcmenu1-hover.mjs: title p95 20.7, settings p95 27.3, click-open p95 27.1 (my probe's mouse mode reads ~263 ms = the same instrument artifact the critic described: CDP moves with movementX 0 are not hovers, so it pairs a move with a later mutation — not used as evidence). Smoke gntfixM11-smoke2 exit 0, 0 PAGEERROR (v0.5.64).
+- [x] 10 final regression on v0.5.65 (683fd8d): core loop gntfixM11-core2 (?seed=7&menu=0 + gnt-arch-coreloop.json) exit 0, 0 PAGEERROR: portal tick 540 -> combat room 1 tick 563 -> reward tick 741. Critic probe tools/gntcmenu1-resp.mjs -> captures/gntfixM11-after-resp2.log (machine loaded, fps 52): keyboardEarly p50 28.1 / p95 40.2 / max 40.4; settled keyboard 31.9 / 46.8 / 47.0, gamepad 30.5 / 42.8 / 48.0; 0 errors. No servers / previews were started by this builder (nothing to kill).
+
+## Decisions (where PLAN is silent)
+- D-F1a Painter raster scope: software raster ONLY in the paint worker (+ the CPU canvas the landed bitmap goes into). Main-thread paints (camp floor = title backdrop, boot dressing, sync fallback) keep Chrome's GPU raster so the certified floors and boot time are untouched; they happen at boot / on a room entered before its build, never behind a menu in use. Worker floors differ from the GPU raster by mean |d| 1.1-1.7/255 (invisible) and are now deterministic across GPUs.
+- D-F1b app.backgroundHold(): background streaming yields to menu input like a shipped game's loading/streaming threads do — any key on a blocking screen (also unmapped keys such as the loading card's "press any key"), pad, click and hover stamp nav.lastInputAt; hold = a screen is open and the last stamp is < 1500 ms old. Idle menus (title left alone, paused game) keep the full 8 ms/frame budget, so the builder still finishes in the title's idle time; gameplay without a menu is unchanged (combat already runs it at 0).
+- D-F1c Worst-case task bound for the first press after idle: a built dressing uploads one texture per pump call (texSubImage2D 10-35 ms) and the treeline / props / foliage / walls steps are separate generator slices (maxSliceMs 139.6 -> 20-49 ms under load).
+- D-F2 HIT = max(40px, 56 authored px) exported from src/app/style.js as the framework's hit-target floor for contributed tabs; the Network tab's two inline overrides use it (not a global !important rule, which would also clamp larger authored sizes).
+
+## Files touched outside M1 (minimal, confirmed-failure fixes)
+- src/env/ground.js (M4b): CTX_OPTS / PAINT_CTX on the two painter getContext calls (worker only).
+- src/env/biomes/paint-client.js (M4b): toCanvas uses a CPU canvas.
+- src/render/hazards/layers.js (M4b): pumpDressings budget 0 while app.backgroundHold().
+- src/scenes/arena.js (M4b): per-texture upload in pump, 3 extra yields in buildDressingSteps, applyLayout clears a pending upload.
+- src/ui/menu/tabs/network.js (M5b): min-height = HIT on the text fields and Check.
+- docs/TESTING.md M4b paragraph: worker ground hashes.
