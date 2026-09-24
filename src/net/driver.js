@@ -285,28 +285,31 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
   // the newest frame seq per packet; null until 20 seqs are spanned) —
   // echoed to that guest in its snapshot header so its chip can show it
   // (NET-F2, fix-M5a-r1; snapshot.js flags bits 0-6). Cached 500 ms.
-  function feedLossPct(f) {
+  // -> { pct, got, expected } (cached per feed).
+  function feedLoss(f) {
     const t = now();
-    if (f.lossCache && t - f.lossCache.at < 500) return f.lossCache.pct;
-    let lo = Infinity;
-    let hi = -Infinity;
-    let n = 0;
-    for (let i = f.recv.length - 1; i >= 0 && t - f.recv[i].at <= 5000; i--) {
-      const s = f.recv[i].seq;
-      n += 1;
-      if (s < lo) lo = s;
-      if (s > hi) hi = s;
-    }
+    if (f.lossCache && t - f.lossCache.at < 500) return f.lossCache;
+    const win = [];
+    for (let i = f.recv.length - 1; i >= 0 && t - f.recv[i].at <= 5000; i--) win.push(f.recv[i].seq);
+    win.sort((a, b) => b - a);
+    // A jump of more than 1 s of frames between neighbouring seqs is a
+    // reconnect / a guest that was not sending, not loss in transit: the
+    // window starts after it.
+    let lo = win.length ? win[0] : Infinity;
+    const hi = lo;
+    for (let i = 1; i < win.length && win[i - 1] - win[i] <= LOSS_SEGMENT_GAP; i++) lo = win[i];
     // Received = any seq in [lo, hi] still in the 10 s ring: a packet that
     // arrived just before the window but belongs inside it (reordered by
     // jitter) is not counted as lost.
     const seen = new Set();
-    if (n >= 2) for (const x of f.recv) if (x.seq >= lo && x.seq <= hi) seen.add(x.seq);
-    const expected = hi - lo + 1;
+    if (win.length >= 2) for (const x of f.recv) if (x.seq >= lo && x.seq <= hi) seen.add(x.seq);
+    const expected = win.length ? hi - lo + 1 : 0;
     const pct = seen.size >= 2 && expected >= 20 ? Math.max(0, Math.round((1 - seen.size / expected) * 1000) / 10) : null;
-    f.lossCache = { at: t, pct };
-    return pct;
+    f.lossCache = { at: t, pct, got: pct === null ? 0 : seen.size, expected: pct === null ? 0 : expected };
+    return f.lossCache;
   }
+  const LOSS_SEGMENT_GAP = 60;
+  const feedLossPct = (f) => feedLoss(f).pct;
   function sendSnapshotTo(rec, seat) {
     const f = feedFor(seat);
     net.transport.sendBinary(snap.encodeFor(f.link, rec, { seat, lastInputSeqConsumed: f.lastConsumed, inputBufferDepth: f.depthReport, upLossPct: feedLossPct(f) }));
@@ -496,13 +499,15 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     const depths = [...feeds.values()].filter((f) => f.state === 'human').map((f) => f.depthReport);
     const lag = world.cmd('netSeats') || {};
     const rs = ring.stats();
+    // Input-packet loss over every guest (the same 5 s reconnect-aware window
+    // as the per-seat echo, NET-F2 fix-M5a-r1; was 10 s over the raw ring, so
+    // a guest's reconnect gap read as ~20 % loss for 10 s).
     let got = 0;
     let expected = 0;
     for (const f of feeds.values()) {
-      if (f.recv.length < 2) continue;
-      const seqs = f.recv.map((x) => x.seq);
-      got += new Set(seqs).size;
-      expected += Math.max(...seqs) - Math.min(...seqs) + 1;
+      const L = feedLoss(f);
+      got += L.got;
+      expected += L.expected;
     }
     return {
       hostNetMsP50: pct(stats.frameNetMs, 0.5),

@@ -62,6 +62,9 @@ const CONDS = {
   // Only the guest PAGE's link is lossy (the bots stay clean): the host's own
   // link is fine, one seat is not.
   SOLO20: { up: 'lat75,jit10,loss20', down: 'lat75,jit10,loss20', only: 'guest' },
+  // The guest page's socket is closed for 3 s (server admin drop): the
+  // reconnect gap must not read as packet loss afterwards.
+  DROP3: { up: 'off', down: 'off', drop: { mode: 'close', forMs: 3000 } },
 };
 
 async function admin(path, body = null) {
@@ -142,7 +145,7 @@ try {
   if (BOTS > 0) {
     const { createPlayingGuest } = await import('./gntM5b-botlib.mjs');
     for (let i = 0; i < BOTS; i++) {
-      const b = createPlayingGuest({ server: SERVER, name: `LBot${i + 1}`, seed: 11 + i });
+      const b = createPlayingGuest({ server: SERVER, name: `LBot${i + 1}`, seed: 11 + i, version: out.version });
       const r = await b.net.join(code);
       if (!r || !r.ok) throw new Error(`bot join failed ${JSON.stringify(r)}`);
       await b.net.setReady(true);
@@ -176,6 +179,7 @@ try {
       const mine = !spec.only || (spec.only === 'guest' && p.peerId === guestPeer.peerId);
       await admin('/admin/conditioner', { target: p.peerId, up: mine ? spec.up : 'off', down: mine ? spec.down : 'off' });
     }
+    if (spec.drop) await admin('/admin/drop', { peerId: guestPeer.peerId, mode: spec.drop.mode, forMs: spec.drop.forMs });
     const applyAt = Date.now();
     const sA = await admin('/stats');
     const react = { firstNotGoodS: null, firstGoodS: null, firstLossReportedS: null };
@@ -202,7 +206,7 @@ try {
       // Notes are short-lived (3.6 s): collect them from the first second.
       for (const x of g.notes || []) allNotes.guest.add(x);
       for (const x of h.notes || []) allNotes.host.add(x);
-      early.push({ t: tS, g: g.quality ? `${g.quality.level}:${g.quality.reasons.join('+')}` : null, h: h.quality ? `${h.quality.level}:${h.quality.reasons.join('+')}` : null, hj: h.jitterMs, hr: h.rttMs });
+      early.push({ t: tS, g: g.quality ? `${g.quality.level}:${g.quality.reasons.join('+')}` : null, h: h.quality ? `${h.quality.level}:${h.quality.reasons.join('+')}` : null, hj: h.jitterMs, hr: h.rttMs, gin: g.lossInPct, gout: g.lossOutPct, grtt: g.rttMs, glp: g.lossPct, gjit: g.jitterMs, gql: g.quality ? g.quality.lossPct : null, hloss: h.lossPct, hq: h.quality ? h.quality.lossPct : null, st: g.chip ? null : 'nochip' });
       if (s > SETTLE) {
         series.push({ t: tS, ...g });
         hostSeries.push({ t: tS, ...h });
