@@ -1181,10 +1181,11 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       baker.request(`c:${id}:${Math.round(pitch * 1000)}`, (k, tt, dd) => def.voice(k.ctx, tt, dd, { pitch, kit: k }), { hi: true });
     }
     // Then every other registered cue (UI / progression / M4b content) at
-    // pitch 1: rare, but a one-off live synthesis is still 0.1-0.3 ms.
+    // pitch 1, one variant each: rare, but a one-off live synthesis is still
+    // 0.1-0.3 ms. (The Audio tab's test phrases bake on their second play.)
     for (const [id, def] of cues) {
-      if (def.bake === false) continue;
-      baker.request(`c:${id}:1000`, (k, tt, dd) => def.voice(k.ctx, tt, dd, { pitch: 1, kit: k }));
+      if (def.bake === false || id.startsWith('test_')) continue;
+      baker.request(`c:${id}:1000`, (k, tt, dd) => def.voice(k.ctx, tt, dd, { pitch: 1, kit: k }), { variants: 1 });
     }
     frameCost += performance.now() - t0;
     if (music && music.state) prebakeMusic(music.state, deriveTheme());
