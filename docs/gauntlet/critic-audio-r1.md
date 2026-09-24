@@ -1,4 +1,5 @@
-STATUS: PARTIAL
+STATUS: COMPLETE
+VERDICT: PASS — M3 audio engine + mixer at v0.5.62: PLAN gates G3.1–G3.10 10/10 met by independent re-measurement; benchmark 39 met / 5 partial / 1 not met of 45; 0 must-fix; 8 polish advisories (Home/End dead on sliders, title UI ticks under the menu bed, boss cue = combat ×1.22, thin G3.10 headroom, silent draft/path nav, no per-instance cue variation, dead camp_return mapping, log 50 % = −10 dB).
 # Critic — AUDIO ENGINE & MIXER SETTINGS — gauntlet round 1
 
 Module spec (user, verbatim): "AUDIO ENGINE & MIXER SETTINGS: Build an audio manager handling
@@ -253,3 +254,215 @@ telegraph, quake_warn, bow each read R−L **+10.38 dB at +6 u, −10.37/−10.3
 (≤ 60 ms apart); 43 with |dx| ≥ 2 u → pan sign agrees with the side in **43/43** (D1, D3 met).
 Leak: 3.03 s after the last sim cue (boss killed → victory) `voices().active` = **0** (G3.10 leak clause met);
 voice peak 14 of 48. One AudioContext, 0 page errors.
+
+## STEP 8 — resume (second instance, 2026-09-24 10:2x): build unchanged, unrecorded probes folded in, keyboard/pad re-measured
+
+Build drift check: `git log --since="2026-09-24 04:00" -- src server` empty, `git status --short src server` empty, page reports
+`__echoes.version` v0.5.62 (captures/gntcaudio1-keys.json) → every capture below and above measures the same build.
+
+Unrecorded probes from the first instance (files existed, checkpoint did not mention them):
+- ui4 (captures/gntcaudio1-ui4.json, gntcaudio1-audiotab-reset.png): mouse click at 50 % of the Music track → nav focus AND DOM
+  focus "Music", value 0.5; two ArrowLefts then move Music 0.5 → 0.4 (keys follow the clicked slider). Hovering the SFX track
+  (no click) moves focus to "Sound Effects" and ArrowRight sets 0.80 → 0.85. Click on the SFX Mute button → `audio.sfx.muted`
+  true; Enter on the now-focused button → false. Reset to defaults by mouse: opens a confirm (stack title/settings/confirm,
+  Cancel focused by default — a safe destructive default); clicking "Reset" restores master .8 / music .6 / sfx .8, live params
+  master −3.219 / music −7.370 dB, toast "Audio settings reset to defaults" (PNG). 0 page errors.
+- ui3 (captures/gntcaudio1-ui3.json, gntcaudio1-audiotab-1024.png): per-channel Test buttons by mouse, score pinned to silence,
+  meters reset before each click — Master test: sfx tap −15.42 / ui −20.40 (cues test_ui@ui + test_sfx@sfx), Music test: music tap
+  −20.09 (test_music@music), SFX test: sfx −14.90, Ambience test: ambient −14.60 (test_ambient), Interface test: ui −20.47
+  (test_ui) — each test lands on its own bus only (other taps stay at the −186…−190 dB baseline). Mouse DRAG on Master with the
+  button held: 10 samples during the drag 0.76/−3.95 → 0.30/−17.36 dB, the live param follows every sample (live apply while
+  dragging, F5 met), readout "30 % · −17.4 dB". Esc after changes: `echoes.settings` in localStorage holds audio.master.level
+  0.2 (changed value kept, 716 bytes, v 1, 16 audio.* keys). Reset click → confirm; Enter on the confirm = Cancel (values
+  unchanged) — consistent with ui4. 1024×576: 23 visible controls, min hit 90×42 px, layout intact (PNG). The ui3 `keys`/`pad`
+  rows are INVALID as evidence: the script gave DOM focus with `el.focus()` to Music while the app's nav focus stayed on Master,
+  so the arrows moved Master (0.3 → 0.2 in storage) and the probe read Music — re-measured by real focus below.
+- blur (captures/gntcaudio1-blur.json), a REAL second tab brought to front (not a synthetic event): muteOnBlur on → hidden:
+  master param −999 dB, our destination analyser −999 dB, context still `running`, sim tick frozen 293 → 293; front again →
+  −3.219 dB, out −23.6 dB, tick advancing (421). muteOnBlur off → hidden: master −3.219, out −21.25 dB (keeps playing, as the
+  switch says). G3.9 mute-on-blur met with the real gesture; 0 page errors.
+
+Keyboard + pad by REAL nav focus (tools/gntcaudio1-keys.mjs → captures/gntcaudio1-keys.json), Settings > Audio opened by
+ArrowDown/Enter/E, focus lands on "Master" (DOM focus = the range input):
+
+| input | result |
+|---|---|
+| ArrowLeft ×2 | 0.80 → 0.70, live −5.146 dB (0.05 per press) |
+| **Home** | 0.70 → 0.70 (no change) — **not handled** |
+| **End** | 0.70 → 0.70 (no change) — **not handled** |
+| PageDown / PageUp | switches tab Audio → Gameplay (focus "Screen shake") and back to Audio/Master — tab keys, not slider keys |
+| Shift+ArrowLeft | 0.70 → 0.65 (same 0.05 step; no fine/coarse modifier) |
+| ArrowDown → ArrowRight → ArrowRight → ArrowRight → ArrowLeft | Curve: Log (perceptual) → Mute → Test Master → Test Master (row end) → Mute |
+| Enter on Test Master | cues ui_confirm@ui, test_ui@ui, test_sfx@sfx; peaks sfx −21.02 / ui −17.39 dBFS |
+| Enter on Mute | `audio.master.muted` true, param −999 dB, label "Muted", aria-pressed "true"; Space → unmuted, −6.215 dB |
+| Enter on Curve | log 0.65 (−6.215 dB) → linear 0.49 (−6.196 dB), label "Curve: Linear"; Enter again → log 0.65 (−6.215) |
+| pad D-pad left ×2 on Master | 0.65 → 0.55 (−8.625 dB); right → 0.60 |
+| pad D-pad down / right / right / A | Curve → Mute → Test Master → A fires test_ui + test_sfx |
+| Tab ×8 | Music → Curve → Sound Effects → Curve → Ambience → Curve → Interface → Curve (Tab = next row; Mute/Test are reached by Left/Right inside the row, never by Tab) |
+| Escape | stack back to title, values kept |
+
+0 page errors. The audio tab is fully operable by keyboard, mouse (ui2/ui3/ui4) and pad → G3.9 met; Home/End dead = F2
+partially met (advisory: a native `<input type=range>` supports them, the app's key router swallows them).
+
+Registry (same capture): `audio.eventTypes()` lists 95 sim event types incl. every §3.5 row; `audio.cues()` lists 112 cues
+incl. shoot / whiff / rally / mark / draft_take / draft_decline / path / shop_open / purchase / camp_return.
+
+Coverage table from ALL critic captures (cueLog entries carry `event` → `cue`; aggregated over combat/boss/fight/fight2/music3):
+row 1 ally_basic 289 played (bow 140 / swing 150), enemy_fire 13 (spit); row 2 hit 500 played (impact 425 / crit 26 / hurt 169),
+hit_immune not seen; row 3 death 67 (kill 76, boss_death 1); row 4 heal 25 (heal / heal_crit), full_heal 17 (sparkle), aura_pulse 16
+(aura), azone_tick 106 (azone_pulse), zone_tick not seen; row 5 skill_cast 12 (cast_heal), ally_cast 130 (ally_cast_archer/tank/sword),
+skill_bolt_spawn 180 (bolt), azone_spawn 29, zone_spawn/echo/bounce/siphon/detonate not seen; row 6 intent 3 (dodge), dash_end 3,
+intent_denied 12 (deny_empty); row 7 all eight events (telegraph 28, telegraph_hit 28, quake_warn 10, quake_hit 11, trample 20,
+horn 2, roar 1, shimmer 3 played / 15 cooldown-merged); row 8 downed 7 played (16 requested), revive_start 2 (revive_hum), revive 3
+(revive), revive_break 1 (revive_snap), rally / mark not seen; row 9 room_start, wave_start, room_cleared (room_clear), reward_offer
+(reward), glint_gain (glint), run_start, run_end, plus draft_taken → `draft_take` and path_chosen → `path` as `sound` events at
+ticks 1523 / 1616 (fight.json snd2); node_granted → node_grant; shop_* / socket_* / return_to_camp not seen; row 10 UI cues by real
+keys (STEP 7). Every §3.5 ROW fires a cue → G3.7 met per row. Not yet seen by this critic: basic_fire (the Healer's own basic
+attack — the previous fight probe held the LEFT button; TESTING.md says basic attack is the RIGHT button) and return_to_camp
+→ measured in STEP 9.
+
+## STEP 9 — coverage of the events no earlier capture saw + intensity layering (tools/gntcaudio1-cov2.mjs → captures/gntcaudio1-cov2.json; tools/gntcaudio1-camp.mjs → captures/gntcaudio1-camp.json)
+
+`?menu=0&seed=7&fresh=1`, audio flag, camp → held W into the portal (`inPortal` true) + E → combat room 1, every sim event type
+and every `sound` event recorded, cueLog read per phase.
+
+| scenario | sim events | cues (sound events, cueLog) | taps |
+|---|---|---|---|
+| **RIGHT mouse held 3 s** (basic attack per TESTING.md) | basic_fire **7**, hit 1, death 1 | `shoot` **7 requested / 7 played** (sfx bus, gainDb −11, pan −0.002…−0.005 at the listener), impact 1, kill 1 | sfx peak −12.91, master peak −9.30 dBFS |
+| LEFT mouse held 3 s (comparison) | basic_fire 0, hit 5, death 2 | shoot 0; impact 3 played + 1 cooldown-merged; kill 2 | sfx peak −11.03 |
+| giveSkill `sanctuary` (→ slot 2) then keys 1-4 ×8 | zone_spawn 1, zone_tick 2, skill_cast 3, azone_spawn 2, azone_tick 9, intent_denied 5 | `zone_spawn` 1/1, `zone_pulse` 2/2, `cast_zone` 1/1, `cast_heal` 2/2, `deny_cd` 3/3 (−20 dB), `deny_empty` 2/2 (−14 dB: on-cooldown 6 dB quieter than empty-slot, as §3.5 asks) | — |
+| skipToRoom 8 → bossHp .001 + killAll, 12 s | run_end 1, death 4, room_cleared 1, **return_to_camp 0** | `boss_death` 1/1 (−6 dB), kill 3/3, `run_end` 1/1 (ui, −12 dB), `room_clear` 1/1; `camp_return` 0 | boss → victory at +4.5 s → camp music at +8.0 s (scene camp); `voices().active` **0** 3 s later; 246 requested / 212 played / 34 cooldown-merged / 0 locked / 0 cap / 0 error, peak 14 voices |
+
+`return_to_camp` never fires: the run returns to camp automatically after the stinger (music3 + cov2) and the pause menu offers only
+Resume / Settings / Save Game / Load Game / Save & Quit to Title (camp.json `pause.labels`) — the `camp_return` cue is a dead
+mapping in this build (nothing a player can reach), advisory only. (My walker then pressed Enter on the quit-confirm's default
+"Keep Playing" — a probe artifact; the confirm defaulting to the safe button is correct UX.) Both runs: 0 page errors, 0 console
+lines matching error/autoplay/NotAllowed.
+
+Combat music intensity (camp.json, 3 s windows, `music().intensity` sampled every 100 ms + music-tap meter):
+
+| window | state · bpm | intensity min/med/max | live hostiles med/max · party HP | music RMS / peak | centroid |
+|---|---|---|---|---|---|
+| room 1 as rolled | combat · 104 | 0.26 / 0.33 / 0.33 | 2 / 2 · 98 % | −24.81 / −14.51 | 174 Hz |
+| +8 spawned boars | combat · 104 | 0.19 / 0.26 / 0.49 | 1 / 4 · 98 % | −24.36 / −14.04 | 143 Hz |
+| +8 boars, party forced to 15 % HP | combat · 104 | **0.60 / 0.67 / 0.82** | 2 / 3 · 15 % | −24.26 / **−11.90** | **352 Hz** |
+| room cleared (reward) | combat · 104 | 0.08 / 0.08 / 0.08 | 0 / 0 · 100 % | −24.56 / −15.38 | 123 Hz |
+| boss, 69 % HP, 4 hostiles | boss · 127 | 0.58 / 0.61 / 0.74 | 0 / 3 · 84 % | −24.51 / −12.64 | 180 Hz |
+| boss forced to 10 % HP (died → victory) | victory · 152 | 0 / 0.49 / 0.97 | 1 / 3 · 97 % | −23.60 / −10.49 | 220 Hz |
+
+The intensity layer is real and audible: party danger raises intensity ×2 (0.33 → 0.67), doubles the spectral centroid (174 →
+352 Hz) and lifts the peak 2.6 dB while the RMS stays glued at −24.3 ± 0.3 dBFS (the glue compressor holds the bed level);
+a cleared room falls to 0.08 / 123 Hz (benchmark A8 met, Hades-style layering rather than a flat bed).
+
+## STEP 10 — PLAN §7 M3 gates, literally, from this critic's own measurements only
+
+| gate | requirement | measured | met |
+|---|---|---|---|
+| G3.1 Curves | s ∈ {0,.25,.5,.75,1} equals the §3.5 table ± 0.1 dB (param) / ± 0.5 dB (tone RMS on the tap), both modes, Master/Music/SFX | 30/30 rows: param worst error 0.000 dB, tap worst 0.01 dB, independent destination analyser worst 0.02 dB (curves2.json, STEP 4) | **yes** |
+| G3.2 Decoupling | Music 100→0 moves the sfx tap ≤ 0.1 dB and vice versa; Master moves every tap by the same dB ± 0.2 | sfx tap Δ 0.00 dB across music 1/0/.33; music tap Δ 0.00 across sfx 1/0/.40; Master 1→.5 log: all five taps −10.00 (spread 0.00) (mix2.json) | **yes** |
+| G3.3 No clipping | boss fight ≥ 6 adds at 100 %: clipper-input samples > −1 dBFS ≤ 0.1 %; GR ≤ 6 dB in ≥ 95 % of 100 ms windows; never > 10 dB for > 50 ms | hostiles min 5 / p10 8 / med 9 over 33 s; prelimit peak −1.82 dBFS, **0.000 %** over −1; max GR 5.81 dB, **100 %** of 301 windows ≤ 6 dB, 0 excursions > 10 dB; master peak −1.81, clipCount 0 (fight.json, STEP 6) | **yes** |
+| G3.4 Balance | defaults, combat: median master RMS (400 ms) in −24…−14; SFX peaks ≥ 6 dB over music RMS; UI clicks ≥ 3 dB over music RMS | median **−22.10** dBFS; SFX peak −8.35 vs music RMS −24.38 = **+16.0 dB**; UI peak −17.34 = **+7.0 dB** (fight.json) | **yes** |
+| G3.5 Music | menu/camp/combat/boss/victory/defeat audible + distinct (tempo or centroid ≥ 15 %); crossfades 1.5–2.5 s; never < −50 dBFS for > 1 s | RMS −22.4…−24.8 in all six; closest pair boss/combat tempo +22 %; 8 transitions all 1.48–2.51 s; longest run below −50 dB 150 ms (music3.json, STEP 5) | **yes** |
+| G3.6 Spatial | +6 u: R−L ≥ 6; −6 u: L−R ≥ 6; 0: ≤ 1; 12 u ≥ 6 dB quieter than 3 u | **+10.41 / 10.34 / 0.04 dB; 8.05 dB** quieter (mix3.json); real sim cues +10.38 / −10.38 / 0.00 with the sim frozen, 43/43 live cues on the correct side (fight2.json) | **yes** |
+| G3.7 Coverage | every row of the §3.5 cue table fires a cue (cueLog + sound events) in a scripted run | all 10 rows fire (STEP 8 table) incl. basic_fire → shoot 7/7, zone_spawn/zone_tick, downed/revive family, draft_take/path, run_start/run_end, UI nav (STEP 7/9) | **yes** |
+| G3.8 Autoplay | no flag: no context before the gesture, 0 errors/warnings, key (not Esc)/click/touch → running ≤ 100 ms, prompt clears, keyboard-only hears the menu; with the flag no prompt | `locked` for 4 s idle, 0 matching console lines, prompt visible; Space / click / touch → `running` at the first poll (engine 0 ms; 118–129 ms wall = CDP round trip), menu music −22.0 dB, prompt gone; Esc alone stays locked; with the flag no prompt, 0 errors (autoplay.json, STEP 3) | **yes** |
+| G3.9 Persistence | levels/modes/mutes persist across reload; mute-on-blur works; tab fully operable by keyboard, mouse and pad | reload: 16 audio.* keys identical, live params re-applied (ui2.json); real tab switch: −999 dB behind / −23.6 back, off-switch keeps −21.25 (blur.json); keyboard rows/buttons, mouse click/drag/hover, mocked pad D-pad + A all operate every control (keys.json, ui3/ui4.json) | **yes** |
+| G3.10 Cost | main-thread ≤ 1 ms/frame p95; ≤ 48 voices; active ≤ 4 within 3 s of silence | p95 **0.9 ms** (max 1.9) in the ≥ 6-add boss fight, combat p95 0.5; voice peak 16 of 48; active 0 at +3 s after victory (fight.json, fight2.json, cov2.json). The first instance's heavier uncapped add storm read p95 1.7 ms (boss.json) — over the gate at a load above the gate's scenario | **yes** (thin headroom) |
+
+10/10 gates met by re-measurement.
+
+## STEP 11 — builder checkpoint claims (docs/gauntlet/build-M3.md) re-measured, never trusted
+
+| builder claim | this critic's number | holds |
+|---|---|---|
+| G3.1 30/30 rows (param ± 0.1, tap ± 0.5) | 30/30, worst 0.02 dB on an independent analyser | yes |
+| G3.2 0.00 / 0.00, master −10.00 on 5 taps | 0.00 / 0.00, −10.00 on 5 taps | yes |
+| G3.3 boss @100 %: 0 % over −1 dBFS, 99.5 % windows ≤ 6 dB, master peak −1.5 | 0.000 %, 100 %, −1.81 | yes |
+| G3.4 median −22.7, SFX +17 dB, UI +3.5…6.9 | −22.10, +16.0, +7.0 | yes |
+| G3.5 tempos 56/72/104/127/152/44, crossfades 1.5–2.5 s, 0 ms below −50 | 56/72/104/127/152/44 identical; 1.48–2.51 s; 150 ms (inside steady camp music, not a transition) | yes |
+| G3.6 10.4 / 0 / 8.1 dB | 10.41 / 0.04 / 8.05 | yes |
+| G3.7 every row in one scripted run (67 cues) | every row, across real-input fights + scripted skips | yes |
+| G3.8 unlock → running 0 ms, no prompt with the flag | 0 ms engine / first poll; no prompt with the flag | yes |
+| G3.9 persist + blur + hidden + tab (keyboard/mouse/pad) | all re-measured incl. a real tab switch and a mocked pad | yes |
+| G3.10 p95 0.4 ms, peak 7 voices | p95 0.9 ms with ≥ 6 adds (1.7 ms in a heavier storm), peak 16 voices | holds at the gate's load only; headroom is thinner than claimed |
+| D7 mode switch keeps loudness | log 0.65 −6.215 dB → linear 0.49 −6.196 dB (Δ 0.02) | yes |
+| D13 pause duck −5 dB + 1.3 kHz LPF | −4.75 dB, centroid 165 → 134 Hz, `ducked: true`, sim frozen | yes |
+| D16 slider preview cue on settings changes | ui_slider on every arrow (−24.24 / −25.04 dBFS), audio sliders preview their own channel (Test rows land on their own bus only) | yes |
+| D19 keep-alive: params live in silence | param reads exact in silence (curves2 with score pinned to silence) | yes |
+| 1024×576 audit: 0 issues, min hit 42 px | 23 controls, min hit 90×42 px, layout intact (gntcaudio1-audiotab-1024.png) | yes |
+
+## STEP 12 — blind benchmark scorecard (the STEP 1 checklist, scored only now)
+
+| item | score | evidence |
+|---|---|---|
+| A1 bus graph, nothing bypasses Master | met | Master mute → destination −999 dB with a −6 dBFS tone + ui_confirm live (curves2); Master moves all 5 taps identically (mix2) |
+| A2 decoupled buses | met | Δ 0.00 dB both directions (mix2) |
+| A3 ramped gain changes | met | one-pole ≈ 30 ms: 0.924 @0 ms → 0.126 @107 ms → 0.100 @242 ms (curves) |
+| A4 Master 0 % = digital silence | met | −999 dB at the destination analyser at level 0 and at mute (curves2) |
+| A5 buses compose multiplicatively | met | master log .5 × music log .5 = −20.00 dB (curves) |
+| A6 limiter/headroom policy | met | prelimit peak −1.82 dBFS, GR max 5.81 dB, 0 clipped samples in a 9-add boss fight (fight) |
+| A7 voice cap + retrigger cooldown | met | 247 of 1724 requests merged by the 30 ms cooldown, 16/48 voices, 2 stolen (fight) |
+| A8 intensity layering / ducking | met | intensity 0.08 → 0.33 → 0.67, centroid 123 → 352 Hz, peak +2.6 dB by danger (camp); pause duck −4.75 dB + LPF (music3) |
+| B1 default law is perceptual, not raw linear | met | all 5 channels default `log` (s^1.661), scout |
+| B2 50 % ≈ −12…−20 dB | partially | log 50 % = −10.00 dB: exactly the PLAN math, but at the gentle edge of shipped-game faders (curves2) |
+| B3 endpoints agree (0 = silence, 1 = unity) | met | −999 at 0 in both modes; −18.00 tap for a −18 dBFS tone at 1 (curves2) |
+| B4 monotonic, no plateaus | met | 0 < .25 < .5 < .75 < 1 in every row; 10 drag samples strictly falling (ui3) |
+| B5 linear vs log modes measurably differ and are labelled | met | 25 %: −12.04 vs −20.00 dB (Δ 7.96); "Curve: Linear" / "Curve: Log (perceptual)" (curves2, keys) |
+| B6 numeric readout + preview sound | met | "80 % · −3.2 dB" aria-valuetext; per-channel Test on its own bus; ui_slider tick per arrow (ui2/ui3/fight2) |
+| B7 sane non-max defaults | met | .8 / .6 / .8 / .6 / .7 (scout) |
+| C1 music in menu/camp/combat/boss | met | −24.76 / −23.91 / −24.48 / −24.52 dBFS (music3) |
+| C2 crossfades, never hard cuts | met | 8/8 transitions 1.48–2.51 s (music3) |
+| C3 no gap > 1 s | met | longest < −50 dB run 150 ms (music3) |
+| C4 seamless loops, no restart per room | met | procedural score; room 1 → 8 skip produced no combat restart (camp.json transitions list) |
+| C5 distinct, bigger boss cue + stingers | partially | boss = combat ×1.22 tempo, same RMS (−24.5) and centroid (209 vs 202 Hz); victory/defeat stingers exist (music3) |
+| C6 pause ducks, does not kill | met | −4.75 dB + centroid 165 → 134 Hz, resumes −24.44 (music3) |
+| C7 blur/focus handled cleanly | met | real tab switch: −999 behind, −23.6 back, context running, no double start (blur) |
+| D1 panned by source side | met | ±10.38 dB at ±6 u, 43/43 live cues on the correct side (mix3, fight2) |
+| D2 distance attenuation | met | 12 u is 8.05 dB quieter than 3 u (mix3) |
+| D3 listener tracks the camera | met | listener re-seated from the camera every frame (mix2 note), live cues tracked (fight2) |
+| D4 UI sounds are 2D | met | every UI cue L = R, pan null (fight2) |
+| D5 coverage of meaningful events | met | STEP 8 table + basic_fire 7/7, zone, downed/revive, draft/path, reward, glint, UI (cov2) |
+| D6 telegraph readable above the mix | partially | telegraph −7 dB / quake_warn −8 sit at the loudest cue tier with kill −7, impact −8 (cueLog gains); no dedicated headroom over hits |
+| D7 per-instance variation | not met | 1,937 cueLog entries: constant gainDb per cue, no pitch/rate field exposed — nothing observable varies |
+| E1 no autoplay error | met | 0 console lines matching autoplay/NotAllowed/error while locked (autoplay) |
+| E2 player is told to click | met | "Press any key or click" while `locked` (autoplay) |
+| E3 prompt start after the gesture | met | running at the first poll, menu music −22 dB (autoplay) |
+| E4 nothing stuck from the locked period | met | locked cues dropped and counted (`dropped.locked`), no burst at unlock (autoplay, cov2) |
+| E5 no page error, no blocking decode | met | 0 page errors across every run; synthesised assets |
+| E6 exactly one AudioContext | met | context counter 1 for whole journeys (curves2, music3, fight, fight2) |
+| F1 settings persist and re-apply to buses | met | 16 keys identical after reload, params −7.535 / −15.391 / −0.630 re-applied (ui2) |
+| F2 mouse drag/click + keyboard incl. Home/End | partially | drag, click, hover, arrows (0.05/step), pad OK; **Home/End do nothing** in 3 runs (ui2, ui3, keys) |
+| F3 visible focus, sane order, Esc keeps | met | orange focus ring (audiotab-1024.png); Q/E tabs, PgUp/PgDn tabs; Esc keeps master 0.2 (ui3) |
+| F4 accessible names/roles | met | aria-label + aria-valuetext on ranges, aria-pressed on Mute, role=tab aria-selected (ui2/keys) |
+| F5 live apply + reset | met | 10 samples live during the drag; Reset via confirm restores defaults (ui3, ui4) |
+| F6 mid-run change harmless | met | sliders set to 100 % mid-boss with the fight running 33 s (fight) |
+| G1 SFX peaks over music | met | +16.0 dB room 1, +19.9 dB boss (fight) |
+| G2 bed low enough | met | music RMS −24.4 dBFS in combat (fight) |
+| G3 no clipping | met | 0 clipped samples, prelimit −1.82 (fight) |
+| G4 no DC / runaway | partially | 72 s journey RMS stable −22.4…−24.8 by state (music3); DC offset not measured directly |
+
+**Score: 39 met / 5 partially / 1 not met of 45.** Real-world systems compared: Wwise/FMOD bus mixing as in Hades and Dead
+Cells, the dB-perceptual slider standard of shipped PC games, HTML5 autoplay-correct games.
+
+## VERDICT — PASS
+
+Spec (audio manager with ambient/background music + spatial SFX triggers; configuration UI with decoupled linear/log sliders for
+Master, Music, SFX): met and measured. PLAN M3 gates: 10/10 met by independent re-measurement. No crash, no page error, no data
+loss, no broken core loop (camp → portal → room 1 → boss → victory → camp ran with audio on in cov2/camp). No benchmark item
+missing whose absence a player would feel as broken.
+
+Must-fix failures: **none**.
+
+Advisories (polish, numbers cited):
+1. Home/End do nothing on a nav-focused slider (keys.json: 0.70 → 0.70 twice; ui2, ui3 agree) — a native range supports them; the app's key router swallows them.
+2. Title-screen navigation ticks sit under the menu score: ui_move −25.75 dBFS peak vs music RMS −22.40 (−3.35 dB), ui_slider −0.94 dB (fight2.json). The gate is combat-only (+7.0 dB there), but on the title the ticks are masked.
+3. Boss music is the combat theme at ×1.22 tempo with the same loudness (−24.5 dBFS) and spectrum (209 vs 202 Hz) (music3.json) — distinct by the gate, not a bigger cue.
+4. G3.10 headroom is thin: p95 0.9 ms with 9 live adds (fight.json); the first instance's uncapped add storm read 1.7 ms (boss.json).
+5. Run-UI pages (draft/path) navigate silently — ArrowLeft/Right produced no ui_move while the pause menu ticks (fight.json); confirms (draft_take, path) do cue.
+6. No observable per-instance gain/pitch variation (1,937 cueLog entries, constant gainDb per cue, no pitch field) — repeated hits/shots are identical.
+7. `return_to_camp → camp_return` never fires in any reachable flow (automatic return after stingers, no pause-menu entry) (cov2.json, camp.json) — a dead mapping.
+8. Log 50 % = −10 dB is exactly the PLAN math but the gentle edge of the shipped-game −12…−20 dB band (curves2.json).
+
+Files: tools/gntcaudio1-*.mjs (probes), captures/gntcaudio1-*.json / .png (evidence). No src/**, server/** or PLAN.md edits; no
+commits. No processes left running (every probe closes its own browser; the crashed first cov2 run left no Chrome carrying the
+audio flag).

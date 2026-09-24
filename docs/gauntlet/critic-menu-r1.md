@@ -1,5 +1,5 @@
-STATUS: PARTIAL
-(verdict pending)
+STATUS: COMPLETE
+VERDICT: FAIL - 2 must-fix (G1.3 early-window menu hitches p95 86-120 / max 131-206 ms in 4/4 runs; G1.1 Network tab hit targets 36 px at 1024x576), 11/13 M1 gates met, benchmark 31/37 met + 6 partial, 0 page errors, no core-loop regression.
 
 # Critic report — MENU & SCREEN SETTINGS, gauntlet round 1
 
@@ -246,3 +246,144 @@ tools/gntcmenu1-newgame-save.mjs (captures/gntcmenu1-newgame-save.log, gntcmenu1
   ?scene=arena&room=kill_all / defend -> wave room (waves [4,5,4] / defend waystone 150 HP);
   ?seed=7&scene=arena&room=kill_all&freeze=1 -> tick 0 frozen; ?seed=5&menu=1 -> title, tick 0. 0 page errors.
 - ?seed=7&menu=0 core loop by real input: portal 178 -> combat 190 -> reward 351. PASS.
+
+## STEP 4c — frame limit / V-Sync re-measure at render scale 0.5 (instance 2, display harness; recorded by instance 3)
+Tools tools/gntcmenu1-pace4.mjs (interleaved) + the pace3 run; logs captures/gntcmenu1-pace3-s05.log, gntcmenu1-pace4-s05.log.
+Display harness = headful Chrome, dpr 1.5, buffer 1189x604 at scale 0.5, panel rafHz 164-170 (frameStats displayHz 163.9-169.5).
+The machine was shared with other agents throughout: frame work p50 swung 3.1-11.7 ms between conditions, so the device cap moved.
+| vsync | limit | rendered fps (median of 3 x 5 s) | rafHz at sample | ticks/s | verdict vs G1.7 |
+|---|---|---|---|---|---|
+| on | 30 | 30.0 (30/30/30) | 158-162 | 59.96 | PASS |
+| off | 30 | 30.0 (30/30/30) | 158-165 | 59.99 | PASS |
+| on | 60 | 60.0 (60/60/52.3 load spike) | 165 | 59.97 | PASS |
+| off | 60 | 60.0 (60/60/60) | 165 | 59.98 | PASS |
+| on | 120 | 120.0 (120/120/120), work 5.4 ms, device could do 165 | 165 | 60.10 | PASS (cap honoured with headroom) |
+| off | 120 | 103.3 (106/103/94), work 9-10 ms = device-bound ~100 | 84-101 | 60.07 | PASS vs min(120, cap); copy "your device renders about 107 fps here, below the limit" (pace4 copy) |
+| on | 144 | 75.6 (pace3, work 10 ms) / 138.2 (pace4, rafHz 150.9) | 76 / 151 | 60.0 | PASS vs min(144, cap): 138.2 = 96% of 144 |
+| off | 144 | 77.3 / 136.9 (pace4, rafHz 139.8) | 72-78 / 140 | 60.14 | PASS vs cap |
+| on | 0 | 73.7 / 94.2 / 129 (= rafHz 73.6 / 89.6 / 139.4 within +-5%) | | 59.99 | source raf |
+| off | 0 | 73.1 / 98.4 / 90 (rafHz 75 / 99.9 / 116.1) | | 60.08 | source uncapped |
+G1.6 reading: On -> source raf, fps tracks rafHz (94.2 vs 89.6 is a 5% window mismatch under load, all other pairs <= 2%). Off -> source uncapped
+and the honest row "Your device renders about N fps here — uncapped can't go faster than your GPU" with N within 2% of frameStats().renderedFps read in
+the SAME evaluate (98.9 -> "about 100", 78.7 -> "about 80", 81.6 -> "about 81"; pace4 copy rows) — case (b) of the gate. Case (a) (>= 1.3 x rafHz) was
+never reachable: even at scale 0.5 frame work p50 stayed 6.5-11 ms >= 0.8 x (1000/167) = 4.8 ms on this shared machine, so Off never rendered faster
+than On; the copy says so instead of pretending. Sim 59.8-60.2 ticks/s in every row except two concurrent-load spikes (52.3, 41.4 in one 5 s sample each).
+Copy oddity kept as advisory: V-Sync On + Unlimited shows "Rendering 95 fps · Your display caps this at ~170 fps" while the GPU (not the display) is what binds.
+
+## STEP 8 — instance 3 sweep (2026-09-24, v0.5.62, src/server unchanged since instance 1: git diff HEAD -- src server is empty)
+- Fresh smoke: captures/gntcmenu1-title-now.png (cert-capture, plain URL, 1600x900): loading card "Ready · Press any key or click", tick 0, version 0.5.62, errors false.
+- Render-scale pixel detail (G1.4 "pixel detail"): tools/gntcmenu1-sharp.mjs, Laplacian variance of the camp backdrop box 500,250,700,450 in captures/gntcmenu1-scale-*.png:
+  0.5 = 68.0, 0.75 = 101.7, 1.0 = 276.3, 1.25 = 172.0, 1.5 = 201.2 (unique colours 45.3k / 47.5k / 47.6k / 46.5k / 46.1k). Detail rises monotonically to native; 1.25/1.5 are
+  smoother than 1.0 (supersampling removes aliasing), i.e. every step measurably changes the image, matching the "sharper UI, softer 3D" / "supersampled" copy.
+- Response re-run (G1.3), tools/gntcmenu1-resp.mjs -> captures/gntcmenu1-resp3.log: keyboard in the first ~5 s after the title: p50 36.9 / p95 86.0 / max 130.9 ms
+  (values 61.6, 130.9, 24.5, 51.2, 86.0, ...) = 4th consecutive run failing p95 <= 50 / max <= 100. Settled title: keyboard p50 33.8 / p95 40.2 / max 41.9, gamepad
+  25.2 / 27.9 / 28.7 (app.responses()), independent keyboard 21.0 / 25.8 / 27.4, gamepad 20.3 / 22.7 / 22.8; Enter -> settings screen 40-57.5 ms (5 opens).
+  (The resp.mjs "independent mouse" 270 ms figure is an instrument artifact — it pairs a mousemove with the NEXT hover's mutation; the direct hover measure in
+  captures/gntcmenu1-hover.log, p50 25.6 / p95 50.2 ms on the title, 23.7 / 56.9 in Settings, is the cited mouse number.)
+- Layout re-run (G1.1), tools/gntcmenu1-layout.mjs -> captures/gntcmenu1-layout2.log: title 0 issues at 1024/1600/2560 (minFont 22.5/25.0/40.0, minHit 352x43.5 /
+  391.6x53.3 / 626.6x85.3); Display/Gameplay/Controls/confirm 0 issues at all sizes; Audio "issues" = rows below the fold of its scroll box (verified scrolled-out in
+  STEP 3), Display's one "issue" = the empty-text input type=range at 13.33 px; **Network tab @1024x576: HIT 390x36, 305.8x36, "Check" 85x36 < 40** (1600: 91.7x40,
+  2560: 146.7x64 ok). Reproduced twice (04:33 and today).
+- Final sweep tools/gntcmenu1-final.mjs -> captures/gntcmenu1-final.log + gntcmenu1-final-{loading,title,settings-title,confirm,farewell,pause,settings-pause}.png,
+  gntcmenu1-final-rects.json (GPU harness, no autoplay flag):
+  - G1.13 gesture hook: service('audio').unlock patched to count. Key as the first gesture on the loading card -> 1 call, audio locked -> running; click on the title
+    -> +1, touch on the title -> +1; fresh pages with click / touch as the FIRST gesture -> unlock called (2 / 3 calls), audio running, title reached. 0 missed. PASS.
+  - Key held through a window blur (ArrowDown down, blur, focus, 1.6 s of samples): focus stayed on "Multiplayer" (1 distinct value), no runaway repeat. PASS (D5).
+  - Resize with Settings open 1600x900 -> 1024x576 -> 2560x1440 -> 1600x900: 18/18 nav items inside the viewport each time, rings 1, canvas css = buffer = window
+    (1024x576 / 2560x1440 / 1600x900 at scale 1), stack unchanged, focus kept on "Resolution scale"; captures/gntcmenu1-final-settings-resized-1024.png. PASS (E3).
+  - Exit via the real Exit row click: confirm default focus Cancel; Left + confirm -> farewell in 344 ms; Return -> stack [title], focus restored to the row held before. PASS.
+  - Settings from the pause menu in play (?menu=0&seed=7, Esc -> [pause] -> settings): sim paused (tick 275 -> 275), render scale 0.75 applied while paused
+    (buffer 1600x900 -> 1200x675); back to play -> stack [], 62 ticks in the next second, buffer still 1200x675. 0 page errors on every page. PASS (C12).
+- G1.12 palette, tools/gntcmenu1-palette.mjs (every .ap-plate / [data-nav] rect -> tools/analyze.mjs --box) -> captures/gntcmenu1-palette.log:
+  | screen | rects | Ember (5-25 deg) | heal | violet | whole frame Ember |
+  |---|---|---|---|---|---|
+  | loading | 1 | 0 | 0 | 0 | 0 |
+  | title | 6 | 0 | 0 | 0 | 23 (allowance <= 1047) |
+  | settings (from title) | 19 | 0 | 0 | 0 | 0 |
+  | confirm | 9 | 0 | 0 | 0 | 0 |
+  | farewell | 2 | 0 | 0 | 0 | 0 |
+  | pause (INT) | 7 | 0 | 0 | 0 | 10 |
+  | settings (from pause) | 20 | 0 | 0 | 0 | 0 |
+  PASS. Note: the harness-only path that opens Settings directly over UNPAUSED play (captures/gntcmenu1-pace4-copy-off-0.png) lets the monolith ring bleed
+  through the translucent panel: 34 violet px in the panel box. A player reaches Settings through Pause, which dims the backdrop (0 px). Advisory.
+- Menu audio feedback (benchmark B9), tools/gntcmenu1-cues.mjs -> captures/gntcmenu1-cues.log: __echoes.audio.cueLog after scripted and real presses on the title:
+  down/up -> ui_move (-16 dB, bus ui), confirm -> ui_confirm (-12), tab -> ui_tab (-14), back -> ui_back (-14); music state menu (theme wood, 3 layers, 1 player).
+  Esc at the title root (a no-op) still plays ui_back — advisory.
+- Reset to defaults (benchmark C10), tools/gntcmenu1-reset.mjs -> captures/gntcmenu1-reset.log + gntcmenu1-reset-confirm.png: scale 0.8 / limit 30 / FPS on ->
+  Reset opens a confirm (stack [title,settings,confirm], default focus Cancel); Cancel keeps 0.8/30/on and buffer 1280x720; OK -> 1.0 / Unlimited / off, buffer
+  1600x900, toast "Display settings reset to defaults". PASS.
+
+## BENCHMARK SCORECARD (checklist of STEP 1, scored after inspection)
+| item | result | evidence |
+|---|---|---|
+| A1 logo + grouped primary actions | met | gntcmenu1-layout-{1024,1600,2560}-title.png |
+| A2 short root list (4-6) | partially | 6 rows without a save, 7 with one (Continue · New Game · Load · Multiplayer · Settings · Records · Exit) |
+| A3 safe default focus with a save | partially | fresh boot with a save: Continue focused (newgame-save.log titleReloadWithSave); after Quit to Title: New Game focused (title-with-save.png) |
+| A4 unavailable entries greyed with reason | met | "Load Game — No saved games yet", aria-disabled, skipped by the cursor |
+| A5 version string visible | met | "v0.5.62" in the hint bar at all three sizes |
+| A6 16:9 low/high resolution layout | met | layout2.log: title 0 issues, minFont 22.5 px at 1024x576 |
+| A7 living presentation | met | live camp backdrop (fire, fireflies), music state menu with 3 layers (cues.log meta) |
+| B1 keyboard-only | met | nav.log; Esc/Backspace back, Esc at root no-op |
+| B2 mouse-only, hover = logical focus | met | nav2.log, hover.log (focus follows hover in 25.6 ms p50); right-click = back |
+| B3 gamepad-only, discrete stick | met | nav2.log: stick down = 1 step, d-pad, A/B, LB/RB tabs (mocked navigator.getGamepads) |
+| B4 exactly one focus indicator | met | rings = 1 on all 26 samples + 50 random actions; amber ring + diamond pointer + plate lift |
+| B5 no focus trap, Esc always one level | met | nav2.log (8 screens); lobby loop belongs to the MP module |
+| B6 consistent wrap | met | every settings tab cycle wraps (Display 7, Audio 12, Gameplay 5, Controls 3, Network 4) |
+| B7 focus restore on return | met | final.log afterSettingsBack / afterFarewell, state2.log Exit leg |
+| B8 <= 100 ms input-to-visual | partially | settled 30-42 ms; first ~4 s on the title 86-206 ms max, 4/4 runs (resp/resp2/hover/resp3) |
+| B9 move / confirm / back sounds | met | cues.log: ui_move, ui_confirm, ui_tab, ui_back distinct |
+| C1 render scale changes pixels | met | display.log buffers exact 0.5-1.5; sharp lapVar 68 -> 276; HUD rects delta 0 |
+| C2 fullscreen really changes the window | met | fs3-5.log: enter 20-241 ms, canvas = screen 2560x1440 |
+| C3 fullscreen stays truthful on external exit | met | fs3.log browser exit -> Windowed, no dialog |
+| C4 V-Sync measurably changes cadence / honest if not | partially | source raf -> uncapped, honest GPU-bound copy; presented cadence not different on this machine (browser never tears) |
+| C5 frame limit 30/60/120/unlimited within % | met | STEP 4c table; sim 60 ticks/s |
+| C6 instant preview + protected mode change | met | live preview; keep-display 10 s countdown, default Keep, fs4-dialog-keep.png |
+| C7 persistence, applied before first frame | met | state2.log: 27/27 keys, canvas 1280x720 on boot, limit 30 uncapped |
+| C8 corrupt/absent data -> defaults, no crash | met | corrupt JSON, hostile JSON, throwing storage: 0 errors, toast + footer + backup key |
+| C9 current value shown as text | met | 100%, "1600 x 900", Windowed, On, Unlimited, "Rendering 64 fps" |
+| C10 reset to defaults | met | reset.log (behind confirm, Cancel default) |
+| C11 platform-honest labels | met | "Fullscreen (browser)", "lasts for this visit", V-Sync GPU-bound copy, farewell card |
+| C12 in-run settings do not break the run | met | final.log settingsInPlay / afterBackToPlay |
+| D1 New Game = clean state | met | journey.log: wallet 0, runs 0, full HP, second core loop |
+| D2 Continue distinct, no silent overwrite | partially | Continue row with metadata; New Game over an autosave starts with no prompt (autosave still listed) |
+| D3 honest Exit | met | confirm -> window.close attempt -> farewell 323-344 ms with truthful copy |
+| D4 confirm before losing progress | partially | Quit to Title and Exit confirm (Cancel / Keep Playing default); New Game over an autosave does not |
+| D5 focus loss does not strand input | met | final.log blurHeldKey |
+| D6 title fully functional after a run | met | journey.log: one render loop (45.7 = rAF), 1 music player, menus work |
+| E1 no page errors | met | 0 in every probe (14 logs) |
+| E2 mash-safe | met | nav2.log 6x Enter -> one settings, 6x Esc -> title |
+| E3 resize with a menu open | met | final.log resizeOpen x3 |
+Score: 31 met / 6 partially / 0 not met of 37.
+
+## PLAN.md M1 GATES (literal)
+| gate | result | numbers |
+|---|---|---|
+| G1.1 layout | **NOT MET** | Network tab @1024x576 hit targets 390x36 / 305.8x36 / 85x36 < 40 px (layout2.log); everything else 0 issues at all three sizes |
+| G1.2 navigation | met | STEP 3 |
+| G1.3 response | **NOT MET** | first ~4-5 s on the title: keyboard p95 86-120 / max 131-206 ms in 4 runs (gate p95 <= 50, max <= 100); settled p95 40.2 / max 41.9 |
+| G1.4 render scale | met | buffers exact at 0.5/0.75/1/1.25/1.5, HUD delta 0, fps(0.5) 77.2 >= fps(1.0) 44.2, lapVar 68 -> 276 |
+| G1.5 fullscreen | met | 20-241 ms, browser exit -> Windowed, canvas = window each time |
+| G1.6 V-Sync | met (case b) | rafHz 164-170 headful; On raf fps <= rafHz x 1.05; Off uncapped + honest copy within 2% of renderedFps |
+| G1.7 frame limit | met | 30/60 exact, 120 exact with headroom, 144/unlimited at the cap with the "below the limit" note; 60 ticks/s |
+| G1.8 persistence | met | 27/27 keys, fullscreen session-only, corrupt -> recovered + toast, throwing storage -> memory |
+| G1.9 keep/revert | met | scale and fullscreen: timeout 10.0-10.1 s, Revert, Keep, Esc = Revert; leaving FS no dialog |
+| G1.10 exit | met | farewell 323 / 344 ms, Return -> title with settings intact, music -> silence |
+| G1.11 journey | met | controllable 188.5 ms; portal 222 -> combat 238 -> reward 400; 11 legacy boots |
+| G1.12 palette / errors | met | 0 reserved-band px in 64 plate rects over 7 screens; title backdrop Ember 23 px; 0 page errors |
+| G1.13 gesture hook | met | key / click / touch each reach unlock, 0 missed |
+
+## BUILDER CLAIM AUDIT (docs/gauntlet/build-M1.md)
+- "G1.1 0 issues at 1024x576 / 1600x900 / 2560x1440" — true for M1's own tabs; false for the Settings screen as shipped: the M5b Network tab has 36 px controls at 1024x576.
+- "G1.3 keyboard p50 25 / p95 48.5 / max 48.5" — holds only on a settled title; the first seconds a player actually presses keys fail the gate in 4/4 critic runs.
+- "G1.6 case (b) on this iGPU with honest copy", "G1.7 30/60 exact, 120/144 at GPU cap" — re-measured, hold (120 also exact when headroom existed).
+- G1.4/5/8/9/10/11/12/13 claims — re-measured, hold.
+
+## VERDICT: FAIL (2 must-fix, 8 advisories)
+Must-fix:
+1. G1.3 / benchmark B8 — 100-206 ms menu hitches in the first ~4 s after the title becomes interactive (long tasks 57 + 66 ms at +0.6 s / +2.6 s), reproduced
+   in 4 runs; steady state is 30-42 ms. Repro: tools/gntcmenu1-resp.mjs or gntcmenu1-hover.mjs (keyboardEarly / keyboardEarlyAged rows).
+2. G1.1 — Network tab controls 36 px tall at 1024x576 (player-name field 390x36, server field 305.8x36, Check 85x36) vs the 40 px floor. Repro:
+   tools/gntcmenu1-layout.mjs, 1024 section. Owner by PLAN section 2.1: M5b (src/ui/menu/tabs/network.js) inside the M1 settings frame.
+Advisories: A2/A3 root list and post-run New Game focus; D2/D4 New Game over an autosave without a prompt (save module); V-Sync On + Unlimited "display caps"
+copy when the GPU binds; vertical cycle enters the tab strip at the LAST tab and skips "Back" on 4/5 tabs; ui_back plays on a root-level Esc that does nothing;
+harness-only unpaused in-play Settings shows 34 violet px through the panel; app.responses() never records mouse hover (only clicks); lobby Esc <-> confirm loop (MP).
