@@ -148,7 +148,9 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     const parts = [];
     if (stalled) parts.push('no updates');
     else if (rtt !== null) parts.push(`${rtt} ms`);
-    if (!stalled && loss >= 1) parts.push(`${lossText(loss)} loss`);
+    // No quality = no live link (reconnecting): a stale loss figure would
+    // contradict the reconnect banner, so only the last ping stays.
+    if (!stalled && q && loss >= 1) parts.push(`${lossText(loss)} loss`);
     ltEl.textContent = parts.join(' · ');
     const level = q ? q.level : null;
     linkEl.classList.toggle('nt-off', !level && !parts.length);

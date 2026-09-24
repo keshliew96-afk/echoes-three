@@ -512,6 +512,9 @@ export function createNetClient(opts = {}) {
       counters.reconnects += 1;
       counters.lastReconnectMs = Math.round(now() - rc.startedAt);
       log('reconnected', { ms: counters.lastReconnectMs, attempts: rc.attempt });
+      // Before applyRoom: its state change redraws the HUD, which must not
+      // read the pre-drop snapshot age as "no updates from the host".
+      resetLinkMeters();
       applyRoom(r.m.room);
       resetStreamsAfterReconnect();
       emit('reconnected', { ms: counters.lastReconnectMs, attempts: rc.attempt, code: rc.code });

@@ -746,6 +746,30 @@ http://127.0.0.1:<port>/`. Baseline for fps comparisons:
 windows, no network: 2 windows ≈ 51 fps here). Dev aid:
 `node tools/gntM5a-pagedebug.mjs ws://…` (host + guest windows, dumps net logs).
 
+**Link quality (fix-M5a-r1, NET-F2, v0.5.72+).** `net.stats()` on a GUEST:
+`lossInPct` (downstream: snapshot-seq gaps over 5 s, counted on every SNAP
+frame before the session driver takes it; null until 20 seqs are spanned),
+`lossOutPct` (upstream: the host's measured loss of this guest's input packets,
+echoed in the snapshot header flags bits 0-6), `lossPct` = the worse of the
+two, `lossInWindow` / `lossInTotal` `{ pct, got, expected }` (the 5 s window /
+cumulative since the session began — compare `lossInTotal` differenced over a
+window with the server's `/stats` link counters differenced over the same
+window, not a single 5 s `lossPct` sample with a cumulative `appliedLossPct`),
+`snapshotAgeMs`, `quality { level good|fair|poor, reasons [stalled|loss|latency|jitter],
+raw, sinceMs, lossPct }` (thresholds `QUALITY_THRESHOLDS` in src/net/transport.js:
+poor loss ≥ 8 % | RTT ≥ 250 ms | jitter ≥ 80 ms | no snapshot ≥ 1.5 s; fair loss
+≥ 2 % | RTT ≥ 150 ms | jitter ≥ 40 ms; a better level shows after 2 s). On a
+HOST: `lossPct` = input-packet loss over every guest (5 s, a > 1 s seq jump —
+a reconnect — restarts the window), `lossBySeat`, and `quality.lossPct` = the
+loss every seat shares (its own link). The in-game chip shows the level as
+signal bars + ping + "N% loss" (≥ 1 %), refreshed at 1 Hz; `#nt-hud .nt-q
+[data-level]`, the chip's `title`. Probe: `node tools/gntfixM5a1-loss.mjs
+--server ws://127.0.0.1:<port>/echoes --base <preview url> --sweep
+N0,L5,L10,L20,DOWN20,UP20,SOLO20,BURST,N2,R250,DROP3,N0 [--seconds 20]
+[--showstats]` (host page + guest page + 2 playing bots; per-direction
+applied loss from the server's differenced counters; reaction times; chip
+frames). Unit: `node tools/gntfixM5a1-unit.mjs`.
+
 ### M5b — network play (Gauntlet W4, owner M5b)
 
 **Playing.** `npm run net` (LAN: `npm run net -- --host 0.0.0.0`), then title
