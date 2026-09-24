@@ -167,6 +167,16 @@ export function createTitleScreen(ctx) {
     root: true,
     defaultFocus: null,
     onOpen() {
+      // A fresh open (boot, Quit / Save & Quit to Title, farewell -> Return)
+      // lands on the primary item — Continue whenever a save exists, else New
+      // Game (PLAN §3.3 "opening a screen focuses its primary"). The focus
+      // memory of an earlier visit (this screen object is cached) only applies
+      // when the title is uncovered again (pop -> onFocus), never across a
+      // session: otherwise New Game, focused on a first visit with no save,
+      // stays the default after Save & Quit and Enter starts a fresh game
+      // (SAVE-R1-F2).
+      focusedId = null;
+      screen.defaultFocus = null;
       open = true;
       openedAt = performance.now();
       render();
