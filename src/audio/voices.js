@@ -29,9 +29,12 @@ function normalise(d, peak = 0.98) {
   }
 }
 
-export function createVoiceKit(ctx) {
+export function createVoiceKit(ctx, { shared = null } = {}) {
   // Noise tables are generated lazily (first use) or by prewarm() in idle
   // slices after the unlock, so the unlock gesture never pays for them.
+  // `shared` = another kit's `buffers` (AudioBuffers are context-independent):
+  // an OfflineAudioContext kit (tools/gntfixM31-fidelity.mjs) reuses the live
+  // kit's tables instead of generating its own.
   const GEN = {
     white: () => makeBuffer(ctx, 1.5, (d) => {
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -58,8 +61,8 @@ export function createVoiceKit(ctx) {
     }),
   };
   const made = {};
-  const buffers = {};
-  for (const k of Object.keys(GEN)) {
+  const buffers = shared || {};
+  if (!shared) for (const k of Object.keys(GEN)) {
     Object.defineProperty(buffers, k, {
       enumerable: true,
       get: () => made[k] || (made[k] = GEN[k]()),
@@ -67,6 +70,7 @@ export function createVoiceKit(ctx) {
   }
   // prewarm(): generate one missing table per call; returns true when all exist.
   function prewarm() {
+    if (shared) return true;
     for (const k of Object.keys(GEN)) {
       if (!made[k]) {
         made[k] = GEN[k]();
@@ -219,7 +223,50 @@ export function createVoiceKit(ctx) {
     return end + 0.01;
   }
 
-  return { ctx, buffers, prewarm, env, tone, noise, bell, pluck, pad };
+  return {
+    ctx,
+    buffers,
+    prewarm,
+    env,
+    tone,
+    noise,
+    bell,
+    pluck,
+    pad,
+  };
 }
 
 export const midiHz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+// Dry kit (G3.10): the same primitive API with NO nodes — every call only
+// returns the end time the real primitive would return (the same default
+// parameters and envelope arithmetic as above) and counts the noise bursts.
+// measure(build) -> { dur, noise } for a recipe `build(kit, t, dest) -> end`
+// started at t = 0. The engine hands its kit to the music sequencer's
+// state-note enumeration (music.js stateNotesJob), which only needs the calls
+// to be harmless. The bake itself records recipes with render.js's record kit
+// (same arithmetic) and renders them in the worker.
+export function createDryKit() {
+  let noiseCalls = 0;
+  const envEnd = (t, a, hold, d) => t + a + hold + d + 0.01;
+  const kit = {
+    ctx: null,
+    buffers: {},
+    prewarm: () => true,
+    env: (dest, t, { a = 0.002, hold = 0, d = 0.1 } = {}) => ({ node: null, end: envEnd(t, a, hold, d) }),
+    tone: (dest, t, { a = 0.002, hold = 0, d = 0.12 } = {}) => envEnd(t, a, hold, d),
+    noise: (dest, t, { a = 0.001, hold = 0, d = 0.08 } = {}) => {
+      noiseCalls += 1;
+      return envEnd(t, a, hold, d);
+    },
+    bell: (dest, t, { a = 0.003, d = 1.2 } = {}) => envEnd(t, a, 0, d),
+    pluck: (dest, t, { d = 0.9 } = {}) => envEnd(t, 0.003, 0, d),
+    pad: (dest, t, { dur = 2, a = 0.6, r = 1.4 } = {}) => t + Math.max(a, dur) + r + 0.01,
+  };
+  function measure(build) {
+    noiseCalls = 0;
+    const end = build(kit, 0, null);
+    return { dur: Number.isFinite(end) ? end : NaN, noise: noiseCalls };
+  }
+  return { kit, measure };
+}

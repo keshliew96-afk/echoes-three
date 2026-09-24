@@ -78,7 +78,10 @@ export function createSpatial(ctx) {
       orient();
       inited = true;
     }
-    if (inited && Math.abs(x - pos.x) < 1e-4 && Math.abs(z - pos.z) < 1e-4) return pos;
+    // 5 cm dead-band: the follow camera eases every frame; a 5 cm listener
+    // offset moves a source 6 u away by < 0.5 deg of azimuth — no pan or level
+    // change a player can hear (G3.10: 3 AudioParam writes saved per frame).
+    if (inited && Math.abs(x - pos.x) < 0.05 && Math.abs(z - pos.z) < 0.05) return pos;
     pos.x = x;
     pos.z = z;
     const t = ctx.currentTime;
@@ -110,6 +113,30 @@ export function createSpatial(ctx) {
     return p;
   }
 
+  // Re-seat a pooled voice panner (engine voice slots, G3.10) at world (x, z)
+  // from AudioContext time t (the voice's start).
+  // The slot is silent until the voice starts, so the position is written
+  // directly (no automation event): 2 param writes, y stays 0.
+  function place(p, x, z) {
+    if (p.positionX) {
+      p.positionX.value = x;
+      p.positionZ.value = z;
+    } else p.setPosition(x, 0, z);
+  }
+
+  // Linear left / right gains of the panner for a mono source at world
+  // (x, z) — the same equal-power + inverse-distance maths as predict()
+  // (without SPATIAL.trim): the sampler worklet's spatial voices (G3.10).
+  function gains(x, z) {
+    const dx = x - pos.x;
+    const dz = z - pos.z;
+    const h = SPATIAL.listenerHeight;
+    const d = Math.max(SPATIAL.refDistance, Math.min(SPATIAL.maxDistance, Math.sqrt(dx * dx + dz * dz + h * h)));
+    const g = SPATIAL.refDistance / (SPATIAL.refDistance + SPATIAL.rolloffFactor * (d - SPATIAL.refDistance));
+    const xNorm = (Math.atan2(dx, h) + Math.PI / 2) / Math.PI;
+    return { l: Math.cos((xNorm * Math.PI) / 2) * g, r: Math.sin((xNorm * Math.PI) / 2) * g };
+  }
+
   // Analytic prediction of the panner result (probe cross-check, cueLog pan):
   // returns { pan: -1..1, gainDb, lDb, rDb } for a source at world (x, z).
   function predict(x, z) {
@@ -126,7 +153,7 @@ export function createSpatial(ctx) {
     return { pan: Math.round((az / 90) * 1000) / 1000, gainDb: Math.round(db(g) * 100) / 100, lDb: Math.round(db(l) * 100) / 100, rDb: Math.round(db(r) * 100) / 100 };
   }
 
-  return { setListener, panner, predict, get listener() {
+  return { setListener, panner, place, gains, predict, get listener() {
     return { x: pos.x, z: pos.z, height: SPATIAL.listenerHeight };
   } };
 }

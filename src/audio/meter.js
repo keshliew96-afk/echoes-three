@@ -11,8 +11,13 @@
 // even while rAF is throttled.
 // Fallback (no AudioWorklet): ChannelSplitter + AnalyserNodes read once per
 // rendered frame, counting only the samples that arrived since the last read.
-// Spectral centroid: an AnalyserNode FFT on the music / sfx / master taps,
-// sampled at ~5 Hz from engine.update.
+// Spectral centroid (music / sfx / master taps): computed IN THE WORKLET
+// too (G3.10, docs/gauntlet/fix-M3-r1.md) — every 2048-sample block of the
+// left channel gets the AnalyserNode's own analysis (Blackman window, FFT,
+// power per bin |X_k/N|^2, bins > -140 dB), and the power-weighted mean
+// frequency rides the 100 ms window message. Zero main-thread cost and
+// every block counted (the old path sampled an AnalyserNode FFT on the main
+// thread a few times per second; it remains only as the no-worklet fallback).
 
 const DB = (v) => (v > 0 ? 20 * Math.log10(v) : -Infinity);
 const R2 = (v) => (Number.isFinite(v) ? Math.round(v * 100) / 100 : v === Infinity ? 999 : -999);
@@ -21,14 +26,64 @@ const HISTORY_MAX = 12000; // 100 ms windows = 20 minutes
 
 export const METER_WORKLET_SOURCE = `
 const OVER = ${OVER_M1};
+const FFT_N = 2048;
 class EchoesMeter extends AudioWorkletProcessor {
-  constructor() {
+  constructor(options) {
     super();
     this.win = Math.max(128, Math.round(sampleRate / 10));
+    this.cent = !!(options && options.processorOptions && options.processorOptions.centroid);
+    if (this.cent) {
+      const N = FFT_N;
+      this.blk = new Float32Array(N);
+      this.bi = 0;
+      this.re = new Float64Array(N);
+      this.im = new Float64Array(N);
+      this.wnd = new Float64Array(N);
+      for (let n = 0; n < N; n++) this.wnd[n] = 0.42 - 0.5 * Math.cos((2 * Math.PI * n) / N) + 0.08 * Math.cos((4 * Math.PI * n) / N);
+      this.rev = new Uint32Array(N);
+      const bits = Math.log2(N);
+      for (let i = 0; i < N; i++) {
+        let r = 0;
+        for (let k = 0; k < bits; k++) r |= ((i >> k) & 1) << (bits - 1 - k);
+        this.rev[i] = r;
+      }
+      this.cos = new Float64Array(N / 2);
+      this.sin = new Float64Array(N / 2);
+      for (let i = 0; i < N / 2; i++) {
+        this.cos[i] = Math.cos((2 * Math.PI * i) / N);
+        this.sin[i] = -Math.sin((2 * Math.PI * i) / N);
+      }
+    }
     this.clear();
     this.port.onmessage = (e) => { if (e.data === 'reset') this.clear(); };
   }
-  clear() { this.sl = 0; this.sr = 0; this.pk = 0; this.ov = 0; this.cl = 0; this.n = 0; }
+  clear() { this.sl = 0; this.sr = 0; this.pk = 0; this.ov = 0; this.cl = 0; this.n = 0; this.cs = 0; this.cw = 0; }
+  // Spectral centroid of one block, weighted by its power (AnalyserNode maths).
+  centroid() {
+    const N = FFT_N, re = this.re, im = this.im, rev = this.rev, blk = this.blk, wnd = this.wnd;
+    for (let i = 0; i < N; i++) { const j = rev[i]; re[j] = blk[i] * wnd[i]; im[j] = 0; }
+    for (let size = 2; size <= N; size <<= 1) {
+      const half = size >> 1, step = N / size;
+      for (let st = 0; st < N; st += size) {
+        for (let k = 0; k < half; k++) {
+          const c = this.cos[k * step], s = this.sin[k * step];
+          const a = st + k, b = a + half;
+          const tr = re[b] * c - im[b] * s, ti = re[b] * s + im[b] * c;
+          re[b] = re[a] - tr; im[b] = im[a] - ti;
+          re[a] += tr; im[a] += ti;
+        }
+      }
+    }
+    const binHz = sampleRate / N, inv = 1 / (N * N);
+    let pw = 0, pf = 0;
+    for (let k = 1; k < N / 2; k++) {
+      const p = (re[k] * re[k] + im[k] * im[k]) * inv;
+      if (!(p > 1e-14)) continue;
+      pw += p;
+      pf += p * k * binHz;
+    }
+    if (pw > 1e-12) { this.cs += pf; this.cw += pw; }
+  }
   process(inputs) {
     const inp = inputs[0];
     const L = inp && inp[0];
@@ -48,9 +103,15 @@ class EchoesMeter extends AudioWorkletProcessor {
       }
       this.sl = sl; this.sr = sr; this.pk = pk; this.ov = ov; this.cl = cl;
       this.n += L.length;
+      if (this.cent) {
+        for (let i = 0; i < L.length; i++) {
+          this.blk[this.bi++] = L[i];
+          if (this.bi === FFT_N) { this.bi = 0; this.centroid(); }
+        }
+      }
     } else this.n += 128;
     if (this.n >= this.win) {
-      this.port.postMessage([this.sl, this.sr, this.pk, this.ov, this.cl, this.n]);
+      this.port.postMessage([this.sl, this.sr, this.pk, this.ov, this.cl, this.n, this.cs, this.cw]);
       this.clear();
     }
     return true;
@@ -79,7 +140,9 @@ function fresh() {
 // createMeterTap(ctx, source, { name, worklet, centroid, sink })
 //   worklet: true when loadMeterWorklet resolved true
 //   sink: a node the worklet's silent output can feed (keeps it pulled)
-export function createMeterTap(ctx, source, { name, worklet = false, centroid = false, sink = null } = {}) {
+//   onCost: (ms) => void — main-thread time spent filing worklet windows is
+//   reported to the engine's per-frame cost accounting (G3.10)
+export function createMeterTap(ctx, source, { name, worklet = false, centroid = false, sink = null, onCost = null } = {}) {
   let acc = fresh();
   let uiPeak = 0;
   let node = null;
@@ -90,7 +153,9 @@ export function createMeterTap(ctx, source, { name, worklet = false, centroid = 
   let lastT = null;
   const fft = 2048;
 
-  function fileWindow(sl, sr, pk, ov, cl, n) {
+  function fileWindow(sl, sr, pk, ov, cl, n, cs = 0, cw = 0) {
+    acc.centSum += cs;
+    acc.centW += cw;
     acc.sumL += sl;
     acc.sumR += sr;
     acc.n += n;
@@ -111,10 +176,13 @@ export function createMeterTap(ctx, source, { name, worklet = false, centroid = 
         channelCount: 2,
         channelCountMode: 'explicit',
         channelInterpretation: 'speakers',
+        processorOptions: { centroid: !!centroid },
       });
       node.port.onmessage = (e) => {
+        const t0 = performance.now();
         const d = e.data;
-        fileWindow(d[0], d[1], d[2], d[3], d[4], d[5]);
+        fileWindow(d[0], d[1], d[2], d[3], d[4], d[5], d[6] || 0, d[7] || 0);
+        if (onCost) onCost(performance.now() - t0);
       };
       source.connect(node);
       // The processor writes nothing to its output (silence); connecting it
@@ -124,7 +192,7 @@ export function createMeterTap(ctx, source, { name, worklet = false, centroid = 
       node = null;
     }
   }
-  if (!node || centroid) {
+  if (!node) {
     const split = ctx.createChannelSplitter(2);
     source.connect(split);
     aL = ctx.createAnalyser();
@@ -178,8 +246,9 @@ export function createMeterTap(ctx, source, { name, worklet = false, centroid = 
     }
   }
 
+  // Fallback path only (no AudioWorklet); the worklet computes it itself.
   function sampleCentroid() {
-    if (!freq) return;
+    if (!freq || node) return;
     aL.getFloatFrequencyData(freq);
     const binHz = ctx.sampleRate / fft;
     let pw = 0;
@@ -245,6 +314,7 @@ export function createMeterTap(ctx, source, { name, worklet = false, centroid = 
     return {
       tap: name,
       source: node ? 'worklet' : 'analyser',
+      centroidSource: node ? 'worklet-fft' : 'analyser-fft',
       rmsDb: R2(DB(Math.sqrt((lr * lr + rr * rr) / 2))),
       lRmsDb: R2(DB(lr)),
       rRmsDb: R2(DB(rr)),

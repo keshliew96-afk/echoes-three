@@ -1,8 +1,11 @@
 // Procedural music (docs/gauntlet/PLAN.md §3.5 "Music state machine";
 // BUILD_BRIEF §23.1 act themes). Owner: M3. No audio files: every state is a
 // small step sequencer (16 steps per bar) playing kit instruments into
-// per-layer gains, scheduled ~0.2 s ahead of the audio clock (1.5 s while the
-// page is hidden, when timers are throttled).
+// per-layer gains, scheduled up to 0.5 s ahead of the audio clock inside the
+// engine's frame budget (notes due within 0.12 s always schedule; 1.5 s ahead
+// while the page is hidden, when timers are throttled). Notes play as baked
+// samples once src/audio/bake.js has rendered them (G3.10: percussion, and
+// every one-shot note of the combat / boss grooves).
 //
 // States: menu · camp · combat · boss · victory · defeat · lobby · silence.
 // Themes (act identity, run states only): wood (D dorian, combat 104 bpm,
@@ -166,7 +169,7 @@ function bassLayer(gain, steps, { lenSteps = 4 } = {}) {
     play(k, d, t, c) {
       if (!set.has(c.s)) return;
       const deg = c.spec.prog[c.bar % c.spec.prog.length];
-      INSTR.bass(k, d, t, midiHz(degMidi(c.spec, deg, -1)), 1, c.stepDur * lenSteps);
+      c.note('bass', k, d, t, midiHz(degMidi(c.spec, deg, -1)), 1, c.stepDur * lenSteps);
     },
   };
 }
@@ -184,7 +187,7 @@ function arpLayer(id, gain, instr, { every = 2, oct = 1, pattern = [0, 1, 2, 3, 
       let idx = pattern[i];
       if (vary && c.bar % 4 === 3 && i >= pattern.length - 2) idx = Math.min(tones.length - 1, idx + 1);
       const v = c.s % 8 === 0 ? 1 : 0.72;
-      INSTR[instr](k, d, t, midiHz(tones[idx]), v, c.stepDur * every);
+      c.note(instr, k, d, t, midiHz(tones[idx]), v, c.stepDur * every);
     },
   };
 }
@@ -197,7 +200,7 @@ function drumLayer(id, gain, instr, hits, { min, fill = true } = {}) {
       let v = hits[c.s];
       if (fill && c.bar % 4 === 3 && c.s >= 12) v = Math.max(v || 0, c.s % 2 === 0 ? 0.7 : 0.45);
       if (!v) return;
-      INSTR[instr](k, d, t, 0, v, c.stepDur);
+      c.note(instr, k, d, t, 0, v, c.stepDur);
     },
   };
 }
@@ -209,7 +212,7 @@ function shakerLayer(gain, { min, every = 1 } = {}) {
     play(k, d, t, c) {
       if (c.s % every !== 0) return;
       const v = c.s % 4 === 2 ? 1 : c.s % 2 === 0 ? 0.55 : 0.35;
-      INSTR.shaker(k, d, t, 0, v);
+      c.note('shaker', k, d, t, 0, v, 0);
     },
   };
 }
@@ -224,7 +227,7 @@ function leadLayer(gain, instr, motif, { min, oct = 1 } = {}) {
       for (const [st, deg, len] of motif) {
         if (st !== pos) continue;
         const chordDeg = c.spec.prog[c.bar % c.spec.prog.length];
-        INSTR[instr](k, d, t, midiHz(degMidi(c.spec, chordDeg + deg, oct)), 1, c.stepDur * len);
+        c.note(instr, k, d, t, midiHz(degMidi(c.spec, chordDeg + deg, oct)), 1, c.stepDur * len);
       }
     },
   };
@@ -238,7 +241,7 @@ function stabLayer(gain, steps, { min } = {}) {
     play(k, d, t, c) {
       if (!set.has(c.s)) return;
       const deg = c.spec.prog[c.bar % c.spec.prog.length];
-      INSTR.brass(k, d, t, midiHz(degMidi(c.spec, deg, 0)), 1);
+      c.note('brass', k, d, t, midiHz(degMidi(c.spec, deg, 0)), 1, 0);
     },
   };
 }
@@ -249,7 +252,7 @@ function phraseLayer(gain, notes) {
     gain,
     play(k, d, t, c) {
       for (const [st, off, instr, v, len] of notes) {
-        if (st === c.step) INSTR[instr](k, d, t, midiHz(c.spec.root + off), v, (len || 2) * c.stepDur);
+        if (st === c.step) c.note(instr, k, d, t, midiHz(c.spec.root + off), v, (len || 2) * c.stepDur);
       }
     },
   };
@@ -364,8 +367,71 @@ function eqCurve(n, from, to, kind) {
   return c;
 }
 
+// Note counters (debug: music().notes) — baked sample plays vs live synthesis.
+const noteStats = { baked: 0, live: 0 };
+export const musicNoteStats = () => ({ ...noteStats });
+
+// Instruments whose sound depends on the note length (the rest ignore it).
+const LEN_INSTR = new Set(['lute', 'flute', 'reed', 'choir', 'bass']);
+// Notes played as baked samples (G3.10): the percussion everywhere (a few
+// velocity keys per state), and EVERY one-shot note of the busy states —
+// combat and boss play 150-200 notes per 4-bar cycle from only 32-48 distinct
+// pitch x velocity x length keys (~2.5-3 MB of samples per state). The calm
+// states (menu, camp, lobby, stingers: 5-56 notes per cycle, long harp/bell
+// tails) stay live; pads and drones always do (long, rare).
+const BAKED_INSTR = new Set(['hand', 'frame', 'taiko', 'shaker']);
+const BAKED_STATES = new Set(['combat', 'boss']);
+const bakesNote = (state, instr) => BAKED_INSTR.has(instr) || BAKED_STATES.has(state);
+const noteKey = (instr, f, v, len) => `n:${instr}:${Math.round(f * 100)}:${Math.round(v * 100)}:${LEN_INSTR.has(instr) ? Math.round(len * 1000) : 0}`;
+const noteBuild = (instr, f, v, len) => (kk, tt, dd) => INSTR[instr](kk, dd, tt, f, v, len);
+
+// Every note a state plays in one 4-bar cycle (all layers, any intensity):
+// the layers are pure functions of the step, so a dry pass with a collecting
+// `note` enumerates them. Pads / drones call the kit directly (the dry kit
+// swallows them); they stay live-synthesised. Returns an incremental job
+// (deadline) -> done that hands each new note to `onNote(key, build)` — the
+// engine runs it inside its frame budget (src/audio/bake.js addJob).
+export function stateNotesJob(state, themeId, dryKit, onNote) {
+  const spec = stateSpec(state, themeId);
+  if (!spec) return null;
+  const seen = new Set();
+  const stepDur = 60 / spec.bpm / 4;
+  const note = (instr, k, d, t, f, v, len) => {
+    if (!bakesNote(state, instr)) return t;
+    const key = noteKey(instr, f, v, len);
+    if (!seen.has(key)) {
+      seen.add(key);
+      onNote(key, noteBuild(instr, f, v, len));
+    }
+    return t;
+  };
+  const steps = spec.stinger ? Math.ceil((spec.stinger + 1) / stepDur) : 64;
+  let step = 0;
+  return (deadline) => {
+    while (step < steps) {
+      if (performance.now() > deadline) return false;
+      const c = { spec, step, s: step % 16, bar: Math.floor(step / 16), stepDur, barDur: stepDur * 16, rnd: Math.random, note };
+      for (const l of spec.layers) {
+        try {
+          l.play(dryKit, null, step * stepDur, c);
+        } catch {
+          /* a layer the dry pass cannot run just stays live */
+        }
+      }
+      step += 1;
+    }
+    return true;
+  };
+}
+
 // One playing state instance.
-function createPlayer(ctx, kit, dest, spec, { trimDb = 0, intensity = 0 }) {
+// G3.10 (docs/gauntlet/fix-M3-r1.md): notes go through `note()`, which plays
+// a baked sample (src/audio/bake.js: ONE AudioBufferSourceNode into the layer
+// gain) once the instrument/pitch/velocity/length has been baked, and
+// synthesises live (and queues the bake) until then. Pads and drones stay
+// live (long, rare). schedule() is resumable per layer so the engine can
+// spread a step's notes over several frames inside its frame budget.
+function createPlayer(ctx, kit, dest, spec, { trimDb = 0, intensity = 0, baker = null }) {
   const out = ctx.createGain();
   out.gain.value = 0;
   out.connect(dest);
@@ -378,7 +444,27 @@ function createPlayer(ctx, kit, dest, spec, { trimDb = 0, intensity = 0 }) {
     g.connect(out);
     return { ...l, g, level: 0 };
   });
+  function note(instr, k, d, t, f, v, len) {
+    if (baker && bakesNote(spec.state, instr)) {
+      const key = noteKey(instr, f, v, len);
+      const r = baker.get(key);
+      if (r && r.buffer) {
+        const s = ctx.createBufferSource();
+        s.buffer = r.buffer;
+        s.connect(d);
+        s.start(t, r.o, r.d);
+        noteStats.baked += 1;
+        return t + r.d;
+      }
+      baker.request(key, noteBuild(instr, f, v, len), { hi: true, variants: 1 });
+    }
+    noteStats.live += 1;
+    return INSTR[instr](k, d, t, f, v, len);
+  }
+
   let step = 0;
+  let li = 0; // next layer of the current step (schedule() resumes here)
+  let cur = null; // the current step's context
   let nextTime = ctx.currentTime + 0.06;
   const startTime = nextTime;
   let stopAt = Infinity;
@@ -401,23 +487,31 @@ function createPlayer(ctx, kit, dest, spec, { trimDb = 0, intensity = 0 }) {
     l.g.gain.setValueAtTime(l.level, ctx.currentTime);
   }
 
-  function schedule(until) {
+  // schedule(until, deadline, hardUntil): play every layer note starting
+  // before `until`; once performance.now() passes `deadline` only notes
+  // starting before `hardUntil` (the must-lead window) are still scheduled
+  // and the rest wait for the next call (returns false when it stopped early).
+  function schedule(until, deadline = Infinity, hardUntil = until) {
     const barSteps = 16;
     while (nextTime < until && nextTime < stopAt) {
       if (spec.stinger && nextTime - startTime > spec.stinger + 6) break; // stingers hold, then the engine moves on
-      const c = { spec, step, s: step % barSteps, bar: Math.floor(step / barSteps), stepDur, barDur: stepDur * barSteps, rnd };
-      for (const l of layers) {
+      if (li === 0 || !cur) cur = { spec, step, s: step % barSteps, bar: Math.floor(step / barSteps), stepDur, barDur: stepDur * barSteps, rnd, note };
+      for (; li < layers.length; li++) {
+        if (nextTime >= hardUntil && performance.now() > deadline) return false;
+        const l = layers[li];
         if (l.level < 0.002 && l.id !== 'pad' && l.id !== 'drone') continue;
         try {
-          l.play(kit, l.g, nextTime, c);
+          l.play(kit, l.g, nextTime, cur);
           notes += 1;
         } catch {
           /* an instrument must never stop the sequencer */
         }
       }
+      li = 0;
       step += 1;
       nextTime += stepDur;
     }
+    return true;
   }
 
   function fade(kind, sec) {
@@ -466,7 +560,7 @@ function createPlayer(ctx, kit, dest, spec, { trimDb = 0, intensity = 0 }) {
 }
 
 // The music controller: owns the players and the crossfades.
-export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM }) {
+export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM, baker = null, dryKit = null }) {
   let theme = 'wood';
   let state = null;
   let intensity = 0;
@@ -495,15 +589,25 @@ export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM }) {
     const spec = stateSpec(next, theme);
     if (spec) {
       spec.themeKey = theme;
-      current = createPlayer(ctx, kit, dest, spec, { trimDb: trimFor(next, theme), intensity });
+      current = createPlayer(ctx, kit, dest, spec, { trimDb: trimFor(next, theme), intensity, baker });
       current.fade('in', sec);
-      current.schedule(ctx.currentTime + 0.25);
+      // Only the must-lead notes now; engine.update spreads the rest.
+      current.schedule(ctx.currentTime + 0.25, 0, ctx.currentTime + 0.12);
     }
     lastTransitionMs = Math.round(sec * 1000);
     lastTransitionAt = ctx.currentTime;
     transitions.push({ from: prev, to: next, theme, at: Math.round(ctx.currentTime * 1000) / 1000, crossfadeMs: lastTransitionMs });
     if (transitions.length > 40) transitions.shift();
     return state;
+  }
+
+  // Queue the bakes of a state's notes (engine: the current state and the one
+  // most likely next, so a fight's first bars are already samples).
+  function prebake(st, th = theme) {
+    if (!baker || !dryKit) return false;
+    const job = stateNotesJob(st, th, dryKit, (key, build) => baker.request(key, build, { variants: 1 }));
+    if (job) baker.addJob(job);
+    return !!job;
   }
 
   function setTheme(id) {
@@ -526,15 +630,18 @@ export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM }) {
     return intensity;
   }
 
-  function update(lookahead = 0.2) {
+  // update(lookahead, deadline, lead): see createPlayer().schedule — the
+  // engine passes its frame-budget deadline and a 0.12 s must-lead window;
+  // the hidden-tab timer passes neither (schedule everything).
+  function update(lookahead = 0.2, deadline = Infinity, lead = lookahead) {
     const now = ctx.currentTime;
-    if (current) current.schedule(now + lookahead);
+    if (current) current.schedule(now + lookahead, deadline, now + lead);
     for (let i = fading.length - 1; i >= 0; i--) {
       const p = fading[i];
       if (now >= p.stopAt + 0.5) {
         p.dispose();
         fading.splice(i, 1);
-      } else p.schedule(Math.min(now + lookahead, p.stopAt));
+      } else p.schedule(Math.min(now + lookahead, p.stopAt), deadline, Math.min(now + lead, p.stopAt));
     }
   }
 
@@ -556,6 +663,7 @@ export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM }) {
       scale: current ? current.spec.scale : null,
       layers: current ? current.spec.layers.map((l) => l.id) : [],
       players: (current ? 1 : 0) + fading.length,
+      notes: { ...noteStats },
       transitions: transitions.slice(-12),
     };
   }
@@ -565,6 +673,7 @@ export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM }) {
     setTheme,
     setIntensity,
     update,
+    prebake,
     stingerElapsed,
     debug,
     get state() {

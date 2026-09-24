@@ -675,6 +675,23 @@ export const DEFAULT_EVENT_CUES = {
   return_to_camp: () => [{ cue: 'camp_return' }],
 };
 
+// Baked at unlock, in this order (G3.10, src/audio/bake.js): every cue a
+// fight fires often or that a boss room adds, at the pitches this map (and
+// the M4a / M4b handlers) actually request — [cueId, pitch]. Anything else is
+// baked from its second live play.
+export const PREBAKE = [
+  ...['impact', 'hurt', 'shoot', 'swing', 'bow', 'spit', 'bite', 'kill', 'crit', 'heal', 'heal_crit', 'bolt', 'whiff', 'telegraph', 'telegraph_hit', 'shimmer'].map((c) => [c, 1]),
+  ['impact', 0.7], // hits on the boss
+  ['impact', 0.85], // melee-arc hits
+  ['swing', 0.8], // the tank's basic
+  ['bow', 0.8],
+  ...['zone_pulse', 'azone_pulse', 'aura', 'sparkle', 'dodge', 'dash_end', 'mark', 'downed', 'deny_empty', 'deny_cd'].map((c) => [c, 1]),
+  ...['cast_heal', 'cast_damage', 'cast_zone', 'cast_nova', 'cast_aura', 'ally_cast_tank', 'ally_cast_sword', 'ally_cast_archer', 'zone_spawn', 'azone_spawn'].map((c) => [c, 1]),
+  ...['quake_warn', 'quake_hit', 'trample', 'horn', 'roar', 'boss_death', 'revive_hum', 'revive', 'revive_snap', 'rally'].map((c) => [c, 1]),
+  ...[1.12, 1.24, 1.36, 1.48, 1.6, 1.72].map((p) => ['bounce', p]), // bounce_hop 1..6
+  ...['echo', 'echo_tick', 'siphon', 'siphon_heal', 'fizzle', 'detonate', 'detonate_heal', 'break', 'whoosh'].map((c) => [c, 1]),
+];
+
 // App navigation -> UI cue (PLAN §3.5 last row; the engine subscribes to the
 // app `nav` events, never the other way round).
 export const NAV_CUES = {

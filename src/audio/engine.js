@@ -39,21 +39,61 @@
 // in ~50 ms and the context is created at once, so no prompt ever shows.
 // While locked every cue is still logged (dropped: 'locked') and still
 // emitted as a `sound` event.
+//
+// MAIN-THREAD COST (gate G3.10, docs/gauntlet/fix-M3-r1.md): no voice is
+// synthesised on the hot path. Cue recipes and the fight grooves' notes are
+// baked into samples at runtime (bake.js, OfflineAudioContext, built one
+// recipe at a time in leftover frame budget); a baked cue plays in the
+// sampler worklet (sampler.js: one message per frame, no node), a baked note
+// is one AudioBufferSourceNode. Gameplay cues are queued by the sim listener
+// and started in update() under FRAME_BUDGET; the sequencer is sliced; meters
+// and the spectral centroid run on the audio thread. cost() files EVERY
+// engine interval per frame (update + handlers + API cues + meter messages +
+// bake slicing) and reports p50 / p95 / p99 / max and the tail's make-up.
 import { V } from '../app/settings.js';
 import { appEvents } from '../app/events.js';
 import { sliderToGain, sliderToDb, gainToDb, dbToGain, dbToSlider, MODES } from './mixmath.js';
-import { createVoiceKit } from './voices.js';
-import { DEFAULT_CUES, DEFAULT_EVENT_CUES, NAV_CUES, CUE_CAL } from './cues.js';
+import { createVoiceKit, createDryKit } from './voices.js';
+import { DEFAULT_CUES, DEFAULT_EVENT_CUES, NAV_CUES, CUE_CAL, PREBAKE } from './cues.js';
 import { createSpatial, cameraFocus, SPATIAL } from './spatial.js';
 import { createMeterTap, createReductionMonitor, loadMeterWorklet } from './meter.js';
 import { createMusic, MUSIC_STATES, registerMusicTheme, STINGER_SEC, MUSIC_BUS } from './music.js';
 import { createAmbient, registerAmbientBed } from './ambient.js';
+import { createBaker } from './bake.js';
+import { createSampler } from './sampler.js';
 
 export const AUDIO_BUSES = Object.freeze(['music', 'sfx', 'ambient', 'ui']);
 export const AUDIO_CHANNELS = Object.freeze(['master', ...AUDIO_BUSES]);
 export const AUDIO_DEFAULT_LEVELS = Object.freeze({ master: 0.8, music: 0.6, sfx: 0.8, ambient: 0.6, ui: 0.7 });
 export const LIMITER = Object.freeze({ threshold: -6, knee: 6, ratio: 12, attack: 0.003, release: 0.15 });
 export const VOICE_CAP = 48;
+// G3.10 frame budget (docs/gauntlet/fix-M3-r1.md, gate: engine main-thread
+// <= 1 ms/frame p95). Gameplay cue requests heard during the frame's sim
+// ticks are queued (their event handlers still run at once, so positions are
+// the event-time ones) and started in engine.update - priority first, then
+// arrival order - while the frame's engine time stays under `softMs`;
+// telegraph / boss cues (priority >= 4) always start the frame they are
+// heard, the first `minStartsPerFrame` starts of a frame ignore the budget,
+// and a request that cannot start within `maxDeferMs` (at least two frames)
+// is virtualised
+// (still logged + still a `sound` event, `dropped: 'budget'`) like any
+// voice-limited engine does. The sequencer gets a slice per frame (notes due
+// inside the 0.12 s must-lead window always schedule); probe FFTs, voice
+// reaping and sample baking only use what is left.
+export const FRAME_BUDGET = Object.freeze({
+  softMs: 0.6,
+  minUpdateMs: 0.2,
+  musicSliceMs: 0.1,
+  musicLookaheadSec: 0.5,
+  musicLeadSec: 0.12,
+  minStartsPerFrame: 4,
+  maxStartsPerFrame: 12,
+  maxDeferMs: 100,
+  mustPlayPriority: 4,
+  maxQueued: 256,
+});
+const COST_RING = 900;
+const CENTROID_EVERY_SEC = 0.066; // one probe FFT per ~66 ms (was every 4th frame)
 const RAMP_TAU = 0.03; // PLAN §3.5: setTargetAtTime(target, now, 0.03)
 const BLUR_TAU = 0.1;
 const CLIP_KNEE = 0.85;
@@ -225,9 +265,16 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
   const active = []; // one-shot voices
   const lastPlayed = new Map(); // cueId -> performance.now()
   const cueLog = [];
-  const counters = { requested: 0, played: 0, stolen: 0, dropped: { locked: 0, suspended: 0, cooldown: 0, cap: 0, unavailable: 0, error: 0 }, peakVoices: 0, soundEvents: 0 };
+  const counters = { requested: 0, played: 0, stolen: 0, dropped: { locked: 0, suspended: 0, cooldown: 0, cap: 0, budget: 0, unavailable: 0, error: 0 }, peakVoices: 0, soundEvents: 0 };
   let nextVoiceId = 1;
   const toneVoices = new Map();
+  let baker = null; // sample bake cache (src/audio/bake.js), built with the graph
+  let sampler = null; // baked-cue mixer worklet (src/audio/sampler.js), built with the graph
+  const cueQueue = []; // gameplay cue requests waiting for engine.update: { cue, opts, prio, at }
+  let liveCount = 0; // non-stopped voices (O(1) instead of scanning `active`)
+  const cueLive = new Map(); // cueId -> live voices of that cue
+  let inUpdate = false; // trigger() inside update() is timed by update itself
+  const qStats = { queued: 0, maxPending: 0, deferredFrames: 0, budgetDrops: 0, overflow: 0, bakedStarts: 0, samplerStarts: 0, liveStarts: 0 };
 
   // Focus-loss mute (audio.muteOnBlur): page hidden OR window blurred.
   let windowBlurred = false;
@@ -244,13 +291,23 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
   let themeOverride = null;
   let fight = { hostiles: 0, bossHpPct: null, partyHpPct: null }; // last intensity inputs (debug)
   let intensityOverride = null; // null = derived from the fight (hostiles, boss HP, party HP)
+  let bakeCalm = true; // no wave being fought (driveMusic)
   let runAct = null;
 
   // Cost accounting (G3.10): wall time spent inside engine code per frame.
+  // frameCost accumulates EVERY engine main-thread interval between two
+  // update() calls (event handlers, API/nav triggers, bake slicing, meter
+  // messages) plus update() itself; pushCost files it per frame.
   let frameCost = 0;
   let eventCost = 0;
-  const costRing = [];
-  const parts = { listener: 0, derive: 0, schedule: 0, meters: 0, events: 0, frames: 0 };
+  const costRing = new Float64Array(COST_RING);
+  const partRing = new Float32Array(COST_RING * 5); // [outside, fixed, schedule, dispatch, optional] per frame
+  let costN = 0;
+  let costPos = 0;
+  const parts = { listener: 0, derive: 0, schedule: 0, meters: 0, events: 0, dispatch: 0, outside: 0, reap: 0, probe: 0, bake: 0, frames: 0 };
+  const addCost = (ms) => {
+    frameCost += ms;
+  };
 
   // ------------------------------------------------------------ state --
   function stateNow() {
@@ -359,7 +416,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     g.meterSink.connect(ctx.destination);
     const makeTaps = (worklet) => {
       g.meterMode = worklet ? 'worklet' : 'analyser';
-      const opt = (name, centroid = false) => ({ name, worklet, centroid, sink: g.meterSink });
+      const opt = (name, centroid = false) => ({ name, worklet, centroid, sink: g.meterSink, onCost: addCost });
       g.taps.master = createMeterTap(ctx, g.out, opt('master', true));
       g.taps.prelimit = createMeterTap(ctx, g.makeup, opt('prelimit'));
       for (const b of AUDIO_BUSES) g.taps[b] = createMeterTap(ctx, g.buses[b].send, opt(b, b === 'music' || b === 'sfx'));
@@ -451,37 +508,59 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
 
   // ------------------------------------------------------------ voices --
   function liveVoices() {
-    let n = 0;
-    for (const v of active) if (!v.stopped) n += 1;
-    return n;
+    return liveCount;
+  }
+
+  function markDead(v) {
+    if (v.stopped) return;
+    v.stopped = true;
+    liveCount -= 1;
+    cueLive.set(v.cue, Math.max(0, (cueLive.get(v.cue) || 1) - 1));
   }
 
   function stopVoice(v, fade = 0.02) {
     if (!v || v.stopped || !ctx) return;
-    v.stopped = true;
+    markDead(v);
     const now = ctx.currentTime;
+    if (v.sv) {
+      sampler.stop(v.id, Math.max(1, Math.round(fade * ctx.sampleRate)));
+      if (!inUpdate) sampler.flush();
+      v.end = Math.min(v.end, now + fade + 0.03);
+      return;
+    }
+    const gp = v.slot.g.gain;
+    v.slot.fade = true;
     try {
-      v.out.gain.cancelScheduledValues(now);
-      v.out.gain.setValueAtTime(v.out.gain.value, now);
-      v.out.gain.linearRampToValueAtTime(0, now + fade);
+      gp.cancelScheduledValues(now);
+      gp.setValueAtTime(gp.value, now);
+      gp.linearRampToValueAtTime(0, now + fade);
+      if (v.src) v.src.stop(now + fade + 0.01);
     } catch {
       /* ignore */
     }
     v.end = Math.min(v.end, now + fade + 0.03);
   }
 
-  function reap() {
+  // Finished voices stop counting at once; their nodes are disconnected at
+  // most `maxDisconnects` per call (the rest next frame).
+  function reap(maxDisconnects = Infinity) {
     const now = ctx.currentTime;
-    for (let i = active.length - 1; i >= 0; i--) {
+    let n = 0;
+    for (let i = 0; i < active.length; i++) {
       const v = active[i];
       if (now > v.end + 0.05) {
+        markDead(v);
+        if (n >= maxDisconnects) continue;
         try {
-          v.out.disconnect();
-          if (v.pan) v.pan.disconnect();
+          if (v.src) v.src.disconnect();
+          if (v.out) v.out.disconnect();
         } catch {
           /* ignore */
         }
+        if (v.slot) releaseSlot(v.slot);
         active.splice(i, 1);
+        i -= 1;
+        n += 1;
       }
     }
   }
@@ -490,10 +569,14 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     const b = opts.bus && graph.buses[opts.bus] ? opts.bus : def.bus;
     const spatialOn = b === 'sfx' && Number.isFinite(opts.x) && Number.isFinite(opts.z);
     // Same-cue cap: steal this cue's oldest.
-    const same = active.filter((v) => v.cue === cueId && !v.stopped);
-    if (same.length >= (def.maxVoices || 6)) {
-      stopVoice(same[0]);
-      counters.stolen += 1;
+    if ((cueLive.get(cueId) || 0) >= (def.maxVoices || 6)) {
+      for (const v of active) {
+        if (v.cue === cueId && !v.stopped) {
+          stopVoice(v);
+          counters.stolen += 1;
+          break;
+        }
+      }
     }
     // Global cap: steal the lowest-priority, oldest voice — or drop the new
     // cue when everything playing outranks it.
@@ -508,37 +591,140 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       counters.stolen += 1;
     }
     const t = ctx.currentTime + 0.003;
-    const out = ctx.createGain();
     // calDb: the recipe's measured design peak (CUE_CAL for built-ins; a
     // registerCue caller may pass its own) so the cue peaks at levelDb.
     const lvlDb = (def.levelDb ?? -12) - (def.calDb ?? CUE_CAL[cueId] ?? 0) + (Number(opts.gainDb) || 0);
-    out.gain.value = dbToGain(lvlDb) * (spatialOn ? SPATIAL.trim : 1);
-    let pan = null;
-    const dest = graph.buses[b].input;
-    if (spatialOn) {
-      pan = spatial.panner(opts.x, opts.z, dest);
-      out.connect(pan);
-    } else out.connect(dest);
+    const level = dbToGain(lvlDb) * (spatialOn ? SPATIAL.trim : 1);
     // Cosmetic pitch jitter (±2.5 %) so repeats never machine-gun.
-    const pitch = (Number(opts.pitch) || 1) * (opts.exactPitch ? 1 : 1 + (Math.random() - 0.5) * 0.05);
+    const base = Number(opts.pitch) || 1;
+    const jitter = opts.exactPitch ? 1 : 1 + (Math.random() - 0.5) * 0.05;
+    const vid = nextVoiceId++;
     let end;
-    try {
-      const r = def.voice(ctx, t, out, { ...opts, pitch, kit });
-      end = typeof r === 'number' && Number.isFinite(r) ? r : r && Number.isFinite(r.dur) ? t + r.dur : r && Number.isFinite(r.end) ? r.end : t + 2;
-    } catch (err) {
+    let src = null;
+    let out = null;
+    let slot = null;
+    let sv = false;
+    // 1) Baked sample in the sampler worklet (src/audio/sampler.js): one op
+    //    in this frame's message, no node. 2) Baked sample held as an
+    //    AudioBuffer (the worklet is unavailable or not loaded yet): ONE
+    //    AudioBufferSourceNode into a pooled slot. 3) Not baked yet: the
+    //    recipe is synthesised live into a slot and the bake is queued.
+    const key = baker && def.bake !== false ? `c:${cueId}:${Math.round(base * 1000)}` : null;
+    const reg = key ? baker.get(key) : null;
+    if (reg && reg.sid != null && sampler && sampler.ok) {
+      const sr = ctx.sampleRate;
+      let gL = level;
+      let gR = level;
+      if (spatialOn) {
+        const pg = spatial.gains(opts.x, opts.z);
+        gL = level * pg.l;
+        gR = level * pg.r;
+      }
+      sampler.play(vid, reg.sid, Math.round(reg.o * sr), Math.round(reg.d * sr), jitter, gL, gR, b, Math.round(t * sr));
+      end = t + reg.d / jitter;
+      sv = true;
+      qStats.bakedStarts += 1;
+      qStats.samplerStarts += 1;
+    } else {
+      // A pooled voice slot (level gain [-> panner] -> bus, built once and
+      // reused) carries the level and the position, so a voice builds no
+      // gain / panner nodes of its own.
+      slot = takeSlot(b, spatialOn);
+      const gp = slot.g.gain;
+      // A free slot is silent, so its level is written directly; a stopped
+      // voice's fade left automation events to clear first.
+      if (slot.fade) {
+        gp.cancelScheduledValues(0);
+        slot.fade = false;
+      }
+      gp.value = level;
+      if (spatialOn) spatial.place(slot.p, opts.x, opts.z);
+      if (reg && reg.buffer) {
+        src = ctx.createBufferSource();
+        src.buffer = reg.buffer;
+        if (jitter !== 1) src.playbackRate.value = jitter;
+        src.connect(slot.g);
+        src.start(t, reg.o, reg.d);
+        end = t + reg.d / jitter;
+        qStats.bakedStarts += 1;
+      } else {
+        out = ctx.createGain();
+        out.connect(slot.g);
+        try {
+          const r = def.voice(ctx, t, out, { ...opts, pitch: base * jitter, kit });
+          end = typeof r === 'number' && Number.isFinite(r) ? r : r && Number.isFinite(r.dur) ? t + r.dur : r && Number.isFinite(r.end) ? r.end : t + 2;
+        } catch (err) {
+          try {
+            out.disconnect();
+          } catch {
+            /* ignore */
+          }
+          releaseSlot(slot);
+          warnOnce(`cue ${cueId}`, err);
+          return { dropped: 'error' };
+        }
+        qStats.liveStarts += 1;
+        liveByKey.set(key || cueId, (liveByKey.get(key || cueId) || 0) + 1);
+        // Bake what repeats: the hot gameplay cues at once, any other cue +
+        // pitch from its second live play (one-off progression / UI cues
+        // stay live — they never weigh on a frame).
+        if (key && !reg) {
+          const n = (livePlays.get(key) || 0) + 1;
+          livePlays.set(key, n);
+          if (n >= 2 || HOT_SET.has(cueId)) baker.request(key, (k, tt, dd) => def.voice(k.ctx, tt, dd, { pitch: base, kit: k }), { hi: true });
+        }
+      }
+    }
+    const v = { id: vid, cue: cueId, bus: b, slot, out, src, sv, end: Math.max(end, t + 0.02), prio: def.priority || 1, t0: t, stopped: false };
+    active.push(v);
+    liveCount += 1;
+    cueLive.set(cueId, (cueLive.get(cueId) || 0) + 1);
+    counters.played += 1;
+    if (liveCount > counters.peakVoices) counters.peakVoices = liveCount;
+    return { voice: v, spatial: spatialOn, levelDb: lvlDb };
+  }
+
+  // Voice slots: per route ('spatial' = gain -> panner -> SFX bus, or a bus
+  // name = gain -> that bus), grown on demand up to SLOT_POOL_MAX each (live
+  // voices are capped at VOICE_CAP, so the pools settle near it); beyond that
+  // a temporary slot is built and torn down with its voice.
+  const SLOT_POOL_MAX = 64;
+  const slotPools = new Map();
+  function takeSlot(b, spatialOn) {
+    const k = spatialOn ? 'spatial' : b;
+    let list = slotPools.get(k);
+    if (!list) {
+      list = [];
+      slotPools.set(k, list);
+    }
+    for (let i = 0; i < list.length; i++) {
+      const sl = list[i];
+      if (!sl.busy) {
+        sl.busy = true;
+        return sl;
+      }
+    }
+    const g = ctx.createGain();
+    let pn = null;
+    const dest = graph.buses[spatialOn ? 'sfx' : b].input;
+    if (spatialOn) {
+      pn = spatial.panner(0, 0, dest);
+      g.connect(pn);
+    } else g.connect(dest);
+    const sl = { g, p: pn, busy: true, temp: list.length >= SLOT_POOL_MAX };
+    if (!sl.temp) list.push(sl);
+    return sl;
+  }
+  function releaseSlot(sl) {
+    if (sl.temp) {
       try {
-        out.disconnect();
+        sl.g.disconnect();
+        if (sl.p) sl.p.disconnect();
       } catch {
         /* ignore */
       }
-      warnOnce(`cue ${cueId}`, err);
-      return { dropped: 'error' };
     }
-    const v = { id: nextVoiceId++, cue: cueId, bus: b, out, pan, end: Math.max(end, t + 0.02), prio: def.priority || 1, t0: t, stopped: false };
-    active.push(v);
-    counters.played += 1;
-    counters.peakVoices = Math.max(counters.peakVoices, liveVoices());
-    return { voice: v, spatial: spatialOn, levelDb: lvlDb };
+    sl.busy = false;
   }
 
   const warned = new Set();
@@ -557,7 +743,8 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     let dropped = null;
     let res = null;
     const now = performance.now();
-    if (!AC) dropped = 'unavailable';
+    if (opts.drop) dropped = opts.drop;
+    else if (!AC) dropped = 'unavailable';
     else if (!ctx || !graph) dropped = 'locked';
     else if (ctx.state !== 'running') dropped = 'suspended';
     else {
@@ -599,9 +786,12 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       counters.soundEvents += 1;
       bus.emit(tick, 'sound', payload);
     }
-    const dt = performance.now() - t0;
-    frameCost += dt;
-    eventCost += dt;
+    if (!inUpdate) {
+      if (sampler) sampler.flush();
+      const dt = performance.now() - t0;
+      frameCost += dt;
+      eventCost += dt;
+    }
     return res && res.voice ? res.voice.id : null;
   }
 
@@ -644,17 +834,67 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
         warnOnce(`event cue ${ev.type}`, err);
       }
     }
+    const live = !!(ctx && graph && ctx.state === 'running');
+    if (reqs && live) {
+      // Voices start in engine.update (the frame budget); the handler ran
+      // now, so every position is the event-time one.
+      for (const r of Array.isArray(reqs) ? reqs : [reqs]) {
+        if (!r || !r.cue) continue;
+        const def = cues.get(r.cue);
+        cueQueue.push({ cue: r.cue, opts: { ...r, tick: ev.tick, event: ev.type }, prio: def ? def.priority || 1 : 1, at: t0 });
+        qStats.queued += 1;
+      }
+      if (cueQueue.length > qStats.maxPending) qStats.maxPending = cueQueue.length;
+    }
     const dtE = performance.now() - t0;
     frameCost += dtE;
     eventCost += dtE;
-    if (!reqs) return;
-    for (const r of Array.isArray(reqs) ? reqs : [reqs]) {
-      if (r && r.cue) trigger(r.cue, { ...r, tick: ev.tick, event: ev.type }, 'sim');
+    // Locked / suspended: logged + emitted at once as before (dropped, no voice).
+    if (reqs && !live) {
+      for (const r of Array.isArray(reqs) ? reqs : [reqs]) {
+        if (r && r.cue) trigger(r.cue, { ...r, tick: ev.tick, event: ev.type }, 'sim');
+      }
+    }
+    // A flood without frames (synchronous stepN probes, a throttled hidden
+    // page): the oldest requests are virtualised so the queue stays bounded.
+    while (cueQueue.length > FRAME_BUDGET.maxQueued) {
+      const q = cueQueue.shift();
+      qStats.overflow += 1;
+      trigger(q.cue, { ...q.opts, drop: 'budget' }, 'sim');
     }
     if (ev.type === 'run_start' || ev.type === 'layout_enter') {
       if (Number.isFinite(ev.act)) runAct = ev.act;
     }
     if (ev.type === 'run_end') onRunEnd(ev);
+  }
+
+  // Start queued gameplay cues until `deadline` (performance.now() ms).
+  let frameMsEst = 16.7;
+  function dispatchQueue(deadline) {
+    if (!cueQueue.length) return 0;
+    if (cueQueue.length > 1) cueQueue.sort((a, b) => b.prio - a.prio || a.at - b.at);
+    const now = performance.now();
+    const maxDefer = Math.max(FRAME_BUDGET.maxDeferMs, 2.5 * frameMsEst);
+    let starts = 0;
+    let keep = 0;
+    for (let i = 0; i < cueQueue.length; i++) {
+      const q = cueQueue[i];
+      const def = cues.get(q.cue);
+      const last = lastPlayed.get(q.cue);
+      const cooling = def && last !== undefined && performance.now() - last < (def.cooldownMs ?? 30);
+      const must = q.prio >= FRAME_BUDGET.mustPlayPriority || starts < FRAME_BUDGET.minStartsPerFrame;
+      if (!cooling && !must && (starts >= FRAME_BUDGET.maxStartsPerFrame || performance.now() >= deadline)) {
+        if (now - q.at > maxDefer) {
+          qStats.budgetDrops += 1;
+          trigger(q.cue, { ...q.opts, drop: 'budget' }, 'sim');
+        } else cueQueue[keep++] = q;
+        continue;
+      }
+      if (trigger(q.cue, q.opts, 'sim') !== null) starts += 1;
+    }
+    cueQueue.length = keep;
+    if (keep) qStats.deferredFrames += 1;
+    return starts;
   }
 
   function ensureSubscribed(type) {
@@ -699,11 +939,16 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     ensureSubscribed(type);
   }
 
-  // registerCue(id, { bus, voice(ctx, t, dest, params), maxVoices=6, cooldownMs=30, priority=1, levelDb?, calDb?, slot? })
+  // registerCue(id, { bus, voice(ctx, t, dest, params), maxVoices=6, cooldownMs=30, priority=1, levelDb?, calDb?, slot?, bake? })
   // calDb = the recipe's own peak at unity (dBFS); debug.measureCue(id) measures it.
+  // Baking (G3.10): a cue that repeats is rendered once per pitch into a
+  // sample. A bakeable recipe reads only params.pitch and params.kit (kit
+  // primitives); pass bake: false for one that needs anything else (it then
+  // stays live-synthesised).
   function registerCue(id, def) {
     if (!id || !def || typeof def.voice !== 'function') throw new TypeError('registerCue(id, { bus, voice }) required');
     cues.set(id, { bus: 'sfx', slot: id, maxVoices: 6, cooldownMs: 30, priority: 1, levelDb: -12, ...def });
+    if (baker) baker.invalidate(`c:${id}:`);
     return () => cues.delete(id);
   }
 
@@ -727,7 +972,9 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
   if (app && app.screens && typeof app.screens.on === 'function') app.screens.on('nav', onNav);
 
   // ----------------------------------------------------- music driver --
+  let lastRunView = null; // the run view deriveMusic read (driveMusic reuses it)
   function deriveMusic() {
+    lastRunView = null;
     const st = app ? app.state : 'playing';
     if (st === 'farewell') return 'silence';
     if (st === 'boot' || st === 'title') return 'menu';
@@ -741,6 +988,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     if (stinger && ctx && ctx.currentTime < stinger.until) return stinger.state;
     const run = world && world.runSystem ? world.runSystem() : null;
     const view = run ? run.view() : null;
+    lastRunView = view;
     if (view && view.active) {
       if (view.room === (view.rooms || 8) && view.mode === 'boss' && view.phase === 'combat') return 'boss';
       if (view.room === (view.rooms || 8) && view.phase === 'combat') return 'boss';
@@ -822,7 +1070,10 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     const target = pin ? pin.state : d;
     const th = deriveTheme();
     if (target === 'combat' || target === 'boss') music.setTheme(th);
-    if (music.state !== target) music.setState(target);
+    if (music.state !== target) {
+      music.setState(target);
+      prebakeMusic(target, th);
+    }
     if (ambient) ambient.setBed(pin && pin.bed !== undefined ? pin.bed : deriveBed(target));
     // Pause duck (single-player blocking overlay while playing).
     let duck = false;
@@ -831,6 +1082,11 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     } catch {
       duck = false;
     }
+    // Calm = no wave being fought (hub states, reward / path / shop pages):
+    // the bake cache may prebake then (src/audio/bake.js pump calm).
+    let calm = target !== 'combat' && target !== 'boss';
+    if (!calm) calm = !!(lastRunView && lastRunView.active && lastRunView.phase !== 'combat');
+    bakeCalm = calm;
     if (duck !== graph.ducked) {
       graph.ducked = duck;
       ramp(graph.duckGain.gain, duck ? dbToGain(-5) : 1, 0.12);
@@ -868,10 +1124,12 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     const t1 = performance.now();
     spatial = createSpatial(ctx);
     graph = buildGraph();
+    sampler = createSampler(ctx, Object.fromEntries(AUDIO_BUSES.map((b) => [b, graph.buses[b].input])));
+    baker = createBaker({ ctx, onCost: addCost, sampler });
     lastSend = null;
     applyGains();
     const t2 = performance.now();
-    music = createMusic({ ctx, kit, dest: graph.musicIn });
+    music = createMusic({ ctx, kit, dest: graph.musicIn, baker, dryKit: createDryKit().kit });
     ambient = createAmbient({ ctx, kit, dest: graph.buses.ambient.input });
     const f = stage && stage.camera ? cameraFocus(stage.camera) : { x: 0, z: 0 };
     spatial.setListener(f.x, f.z);
@@ -885,12 +1143,45 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     const r1 = (v) => Math.round(v * 10) / 10;
     unlockInfo.buildMs = r1(t3 - t0);
     unlockInfo.buildParts = { kit: r1(t1 - t0), graph: r1(t2 - t1), music: r1(t3 - t2) };
-    // Remaining noise tables in idle slices (one per task).
+    // Remaining noise tables in idle slices (one per task), then queue the
+    // cue bakes (gameplay cues first); engine.update builds them only in the
+    // frame budget left over.
     const warm = () => {
       if (kit && !kit.prewarm()) setTimeout(warm, 30);
+      else prebake();
     };
     setTimeout(warm, 30);
     notifyState();
+  }
+
+  const livePlays = new Map(); // bake key -> live plays so far
+  const liveByKey = new Map(); // live-synthesised starts per key since costReset (debug: what is not baked yet)
+  const HOT_SET = new Set(PREBAKE.map((x) => x[0]));
+  // Music notes of the state now playing and of the one most likely next
+  // (queued behind the cues; built only in leftover frame budget).
+  // Only combat / boss notes are baked (music.js BAKED_STATES; the rest is
+  // percussion), so the hub states queue both fight grooves of the coming
+  // run's theme — a run can open straight into the boss room (?room=8).
+  const NEXT_STATE = { menu: ['camp', 'combat', 'boss'], lobby: ['camp', 'combat', 'boss'], camp: ['combat', 'boss'], combat: ['boss'], boss: ['victory', 'defeat'], victory: ['camp'], defeat: ['camp'] };
+  function prebakeMusic(st, th) {
+    if (!baker || !music) return;
+    const t0 = performance.now();
+    music.prebake(st, th);
+    for (const nx of NEXT_STATE[st] || []) music.prebake(nx, th);
+    frameCost += performance.now() - t0;
+  }
+
+  function prebake() {
+    if (!baker) return;
+    const t0 = performance.now();
+    for (const [id, pitch] of PREBAKE) {
+      const def = cues.get(id);
+      if (!def || def.bake === false) continue;
+      // hi: the gameplay cues are baked first (ahead of the music notes)
+      baker.request(`c:${id}:${Math.round(pitch * 1000)}`, (k, tt, dd) => def.voice(k.ctx, tt, dd, { pitch, kit: k }), { hi: true });
+    }
+    frameCost += performance.now() - t0;
+    if (music && music.state) prebakeMusic(music.state, deriveTheme());
   }
 
   function unlock(e) {
@@ -948,7 +1239,9 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
         if (!ctx) return;
         if (music) music.update(1.6);
         if (ambient) ambient.update();
-        reap();
+        if (graph) dispatchQueue(performance.now() + 1);
+        if (graph) reap();
+        if (sampler) sampler.flush();
       }, 250);
     } else if (!need && bgTimer) {
       clearInterval(bgTimer);
@@ -957,54 +1250,95 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
   }
 
   let lastUpdateAt = null;
-  let centroidTick = 0;
+  let bakeStarve = 0;
+  let lastCentroidAt = -1;
+  let centroidIdx = 0;
   let metersArmed = false;
   const CENTROID_TAPS = ['music', 'sfx', 'master'];
   function update(nowMs) {
     const t0 = performance.now();
+    const outside = frameCost; // engine work since the last frame (handlers, API cues, bake slicing)
     if (!ctx || !graph) {
-      pushCost(t0);
+      pushCost(t0, outside, 0, 0, 0, 0);
       return;
     }
-    if (stage && stage.camera) {
-      const f = cameraFocus(stage.camera);
-      spatial.setListener(f.x, f.z);
+    inUpdate = true;
+    try {
+      const budgetEnd = t0 + Math.max(FRAME_BUDGET.minUpdateMs, FRAME_BUDGET.softMs - outside);
+      if (stage && stage.camera) {
+        const f = cameraFocus(stage.camera);
+        spatial.setListener(f.x, f.z);
+      }
+      if (stinger && ctx.currentTime >= stinger.until) stinger = null;
+      if (Number.isFinite(nowMs) && Number.isFinite(lastUpdateAt) && nowMs > lastUpdateAt) frameMsEst = frameMsEst * 0.8 + Math.min(250, nowMs - lastUpdateAt) * 0.2;
+      const t1 = performance.now();
+      driveMusic(false);
+      const t2 = performance.now();
+      // Gameplay cues first (they are the dodge / hit feedback); the score is
+      // scheduled 0.5 s ahead, so a busy frame only defers its far notes.
+      dispatchQueue(budgetEnd);
+      const t3 = performance.now();
+      music.update(FRAME_BUDGET.musicLookaheadSec, Math.min(budgetEnd, t3 + FRAME_BUDGET.musicSliceMs), FRAME_BUDGET.musicLeadSec);
+      ambient.update();
+      const t4 = performance.now();
+      const now = ctx.currentTime;
+      for (const k in graph.taps) graph.taps[k].read(now);
+      graph.reduction.read(now);
+      for (const [id, tv] of toneVoices) if (now > tv.end + 0.1) toneVoices.delete(id);
+      const t5 = performance.now();
+      reap(t5 < budgetEnd ? Infinity : 4);
+      const t6 = performance.now();
+      // Spectral centroid is a probe metric: sampled only once a probe asked
+      // for meters, one tap per ~66 ms, and only in frame time left over.
+      if (metersArmed && t6 < budgetEnd && now - lastCentroidAt >= CENTROID_EVERY_SEC) {
+        lastCentroidAt = now;
+        const tap = graph.taps[CENTROID_TAPS[centroidIdx++ % CENTROID_TAPS.length]];
+        if (tap) tap.sampleCentroid();
+      }
+      const t7 = performance.now();
+      // Baking only in LIGHT frames (this frame's engine work so far <=
+      // 0.3 ms). Calm (hub, title, reward / path / shop pages): everything
+      // queued, and one calm frame in 30 regardless so the queue drains.
+      // Fighting: only what is playing live right now, gathered into rare
+      // full batches, one build per frame (src/audio/bake.js).
+      const light = t7 - t0 + outside <= 0.3;
+      if (baker && t7 < budgetEnd && (light || (bakeCalm && ++bakeStarve >= 30))) {
+        bakeStarve = 0;
+        baker.pump(budgetEnd, { calm: bakeCalm });
+      }
+      if (sampler) sampler.flush(); // this frame's cue starts / stops: one message
+      const t8 = performance.now();
+      parts.listener += t1 - t0;
+      parts.derive += t2 - t1;
+      parts.dispatch += t3 - t2;
+      parts.events += eventCost + (t3 - t2);
+      parts.schedule += t4 - t3;
+      parts.meters += t5 - t4 + (t7 - t6);
+      parts.probe += t7 - t6;
+      parts.reap += t6 - t5;
+      parts.bake += t8 - t7;
+      lastUpdateAt = nowMs;
+      pushCost(t0, outside, t2 - t0 + (t5 - t4), t4 - t3, t3 - t2, t8 - t5);
+    } finally {
+      inUpdate = false;
     }
-    if (stinger && ctx.currentTime >= stinger.until) stinger = null;
-    const t1 = performance.now();
-    driveMusic(false);
-    const t2 = performance.now();
-    music.update(0.2);
-    ambient.update();
-    reap();
-    const t3 = performance.now();
-    const now = ctx.currentTime;
-    for (const k in graph.taps) graph.taps[k].read(now);
-    // Spectral centroid is a probe metric: sampled only once a probe asked
-    // for meters, one tap every 4th frame (an FFT each), never in play.
-    if (metersArmed && ++centroidTick % 4 === 0) {
-      const keys = CENTROID_TAPS;
-      const tap = graph.taps[keys[(centroidTick >> 2) % keys.length]];
-      if (tap) tap.sampleCentroid();
-    }
-    graph.reduction.read(now);
-    for (const [id, tv] of toneVoices) if (now > tv.end + 0.1) toneVoices.delete(id);
-    const t4 = performance.now();
-    parts.listener += t1 - t0;
-    parts.derive += t2 - t1;
-    parts.schedule += t3 - t2;
-    parts.meters += t4 - t3;
-    parts.events += eventCost;
-    parts.frames += 1;
-    eventCost = 0;
-    lastUpdateAt = nowMs;
-    pushCost(t0);
   }
-  function pushCost(t0) {
-    frameCost += performance.now() - t0;
-    costRing.push(frameCost);
-    if (costRing.length > 900) costRing.shift();
+  // Files one frame: outside-update engine work + update() itself.
+  function pushCost(t0, outside, fixed, sched, dispatch, optional) {
+    const total = outside + (performance.now() - t0);
+    parts.outside += outside;
+    parts.frames += 1;
+    costRing[costPos] = total;
+    const o = costPos * 5;
+    partRing[o] = outside;
+    partRing[o + 1] = fixed;
+    partRing[o + 2] = sched;
+    partRing[o + 3] = dispatch;
+    partRing[o + 4] = optional;
+    costPos = (costPos + 1) % COST_RING;
+    if (costN < COST_RING) costN += 1;
     frameCost = 0;
+    eventCost = 0;
   }
 
   // --------------------------------------------------------- testTone --
@@ -1127,16 +1461,30 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
   }
 
   function costStats() {
-    const s = [...costRing].sort((a, b) => a - b);
+    const s = Array.from(costRing.subarray(0, costN)).sort((x, y) => x - y);
     const q = (p) => (s.length ? Math.round(s[Math.min(s.length - 1, Math.floor(p * s.length))] * 1000) / 1000 : 0);
     const f = Math.max(1, parts.frames);
     const avg = (v) => Math.round((v / f) * 10000) / 10000;
+    // What the tail is made of: mean parts over the frames at/above p95.
+    const p95 = s.length ? s[Math.min(s.length - 1, Math.floor(0.95 * s.length))] : 0;
+    const tail = [0, 0, 0, 0, 0];
+    let tn = 0;
+    for (let i = 0; i < costN; i++) {
+      if (costRing[i] < p95) continue;
+      tn += 1;
+      for (let k = 0; k < 5; k++) tail[k] += partRing[i * 5 + k];
+    }
+    const r3 = (v) => Math.round((v / Math.max(1, tn)) * 1000) / 1000;
     return {
       frames: s.length,
       p50Ms: q(0.5),
       p95Ms: q(0.95),
+      p99Ms: q(0.99),
       maxMs: s.length ? Math.round(s[s.length - 1] * 1000) / 1000 : 0,
-      avgPartsMs: { listener: avg(parts.listener), derive: avg(parts.derive), schedule: avg(parts.schedule), meters: avg(parts.meters), events: avg(parts.events) },
+      avgPartsMs: { listener: avg(parts.listener), derive: avg(parts.derive), schedule: avg(parts.schedule), meters: avg(parts.meters), events: avg(parts.events), dispatch: avg(parts.dispatch), outside: avg(parts.outside), reap: avg(parts.reap), probe: avg(parts.probe), bake: avg(parts.bake) },
+      tailPartsMs: { frames: tn, outside: r3(tail[0]), fixed: r3(tail[1]), schedule: r3(tail[2]), dispatch: r3(tail[3]), optional: r3(tail[4]) },
+      budget: { softMs: FRAME_BUDGET.softMs, ...qStats, pending: cueQueue.length, liveTop: [...liveByKey.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12) },
+      bake: baker ? baker.info() : null,
     };
   }
 
@@ -1232,10 +1580,19 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     voices: voicesInfo,
     cost: costStats,
     costReset: () => {
-      costRing.length = 0;
+      costN = 0;
+      costPos = 0;
       for (const k in parts) parts[k] = 0;
+      for (const k in qStats) qStats[k] = 0;
+      liveByKey.clear();
       return true;
     },
+    // Sample bake cache (G3.10): stats, and an A/B switch for probes (false =
+    // every cue and note is synthesised live, the pre-fix behaviour).
+    bake: () => (baker ? baker.info() : null),
+    sampler: () => (sampler ? sampler.info() : null),
+    bakeEnabled: (v) => (baker ? baker.setEnabled(v) : null),
+    budget: () => ({ ...FRAME_BUDGET, ...qStats, pending: cueQueue.length }),
     play: (cue, opts = {}) => trigger(cue, opts, 'debug'),
     stop: (id) => stop(id),
     cues: () => [...cues.keys()],
