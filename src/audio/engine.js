@@ -1062,7 +1062,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
   function driveMusic(force = false) {
     if (!music) return;
     const now = ctx.currentTime;
-    if (!force && now - lastDerive < 0.1) return;
+    if (!force && now - lastDerive < 0.15) return; // ~7 Hz: transitions crossfade over 1.5-2.5 s
     lastDerive = now;
     const d = deriveMusic();
     if (pin && d !== pin.derivedAtPin) pin = null; // gameplay moved on: auto resumes
@@ -1092,7 +1092,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       ramp(graph.duckGain.gain, duck ? dbToGain(-5) : 1, 0.12);
       ramp(graph.duckFilter.frequency, duck ? 1300 : 20000, 0.12);
     }
-    if (now - lastIntensity > 0.25) {
+    if (now - lastIntensity > 0.45) { // layer levels ramp with a 0.6 s time constant anyway
       lastIntensity = now;
       music.setIntensity(intensityOverride !== null ? intensityOverride : computeIntensity(target));
     }
@@ -1129,7 +1129,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     lastSend = null;
     applyGains();
     const t2 = performance.now();
-    music = createMusic({ ctx, kit, dest: graph.musicIn, baker, dryKit: createDryKit().kit });
+    music = createMusic({ ctx, kit, dest: graph.musicIn, baker, sampler, dryKit: createDryKit().kit });
     ambient = createAmbient({ ctx, kit, dest: graph.buses.ambient.input });
     const f = stage && stage.camera ? cameraFocus(stage.camera) : { x: 0, z: 0 };
     spatial.setListener(f.x, f.z);
@@ -1179,6 +1179,12 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       if (!def || def.bake === false) continue;
       // hi: the gameplay cues are baked first (ahead of the music notes)
       baker.request(`c:${id}:${Math.round(pitch * 1000)}`, (k, tt, dd) => def.voice(k.ctx, tt, dd, { pitch, kit: k }), { hi: true });
+    }
+    // Then every other registered cue (UI / progression / M4b content) at
+    // pitch 1: rare, but a one-off live synthesis is still 0.1-0.3 ms.
+    for (const [id, def] of cues) {
+      if (def.bake === false) continue;
+      baker.request(`c:${id}:1000`, (k, tt, dd) => def.voice(k.ctx, tt, dd, { pitch: 1, kit: k }));
     }
     frameCost += performance.now() - t0;
     if (music && music.state) prebakeMusic(music.state, deriveTheme());
@@ -1282,8 +1288,11 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       ambient.update();
       const t4 = performance.now();
       const now = ctx.currentTime;
-      for (const k in graph.taps) graph.taps[k].read(now);
-      graph.reduction.read(now);
+      // Worklet taps file their own windows (read() is the analyser fallback);
+      // the limiter's reduction is sampled per frame only once a probe armed
+      // the meters (G3.3 windows / excursions).
+      if (graph.meterMode !== 'worklet') for (const k in graph.taps) graph.taps[k].read(now);
+      if (metersArmed) graph.reduction.read(now);
       for (const [id, tv] of toneVoices) if (now > tv.end + 0.1) toneVoices.delete(id);
       const t5 = performance.now();
       reap(t5 < budgetEnd ? Infinity : 4);
@@ -1519,7 +1528,10 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       return graph ? Object.fromEntries(Object.entries(graph.taps).map(([k, v]) => [k, v.stats()])) : null;
     },
     history: (tap = 'master', n = 50) => (graph && graph.taps[tap] ? graph.taps[tap].history(n) : null),
-    limiter: () => (graph ? { ...graph.reduction.stats(), makeupCompDb: graph.makeupDb, settings: { ...LIMITER }, clipperKnee: CLIP_KNEE, meterMode: graph.meterMode } : null),
+    limiter: () => {
+      metersArmed = true;
+      return graph ? { ...graph.reduction.stats(), makeupCompDb: graph.makeupDb, settings: { ...LIMITER }, clipperKnee: CLIP_KNEE, meterMode: graph.meterMode } : null;
+    },
     meterReset: () => {
       metersArmed = true;
       if (!graph) return false;

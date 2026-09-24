@@ -690,7 +690,12 @@ export const PREBAKE = [
   ...['quake_warn', 'quake_hit', 'trample', 'horn', 'roar', 'boss_death', 'revive_hum', 'revive', 'revive_snap', 'rally'].map((c) => [c, 1]),
   ...[1.12, 1.24, 1.36, 1.48, 1.6, 1.72].map((p) => ['bounce', p]), // bounce_hop 1..6
   ...['echo', 'echo_tick', 'siphon', 'siphon_heal', 'fizzle', 'detonate', 'detonate_heal', 'break', 'whoosh'].map((c) => [c, 1]),
+  // pitches the M4a / M4b event handlers request of built-in cues
+  ['cast_damage', 1.12], ['cast_damage', 0.86], ['cast_nova', 0.7], ['cast_zone', 0.82], ['telegraph_hit', 1.3], ['impact', 1.2],
+  ['sparkle', 0.85], ['sparkle', 0.8], ['sparkle', 1.2], ['sparkle', 0.9], ['echo', 0.75], ['echo_tick', 1.3], ['mark', 0.8],
+  ['bounce', 1.1], ['bounce', 1.35], ['bounce', 1.7], ['roar', 1.7], ['node_grant', 0.84],
 ];
+// Every other registered cue is baked at pitch 1 after these (engine prebake).
 
 // App navigation -> UI cue (PLAN §3.5 last row; the engine subscribes to the
 // app `nav` events, never the other way round).

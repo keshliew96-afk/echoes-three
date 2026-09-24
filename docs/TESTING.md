@@ -314,6 +314,30 @@ including requests merged by the 30 ms same-cue cooldown (`dropped:
 'cooldown'`) and requests while locked (`dropped: 'locked'`). Traces exclude
 `sound`.
 
+**Engine cost (G3.10, fix-M3-r1).** Cue recipes and the combat / boss
+grooves' notes are baked into samples at runtime: the main thread only
+records a recipe's primitive calls (src/audio/render.js record kit) and a Web
+Worker renders them with a DSP twin of the voices.js primitives
+(src/audio/bake.js; fidelity vs Web Audio: `node tools/gntfixM31-fidelity.mjs`).
+Baked cues play in the sampler worklet and baked notes in a per-player layer
+sampler (src/audio/sampler.js, one message per frame, no nodes). Gameplay cue
+requests are queued by the sim listener and started in `update()` under
+`FRAME_BUDGET` (priority >= 4 always; a request that cannot start within
+max(100 ms, 2.5 frames) is virtualised: `dropped: 'budget'`, still a `sound`
+event). `cost()` files every engine interval per frame (update + handlers +
+API cues + meter messages + bake slicing): `p50Ms / p95Ms / p99Ms / maxMs`,
+`avgPartsMs`, `tailPartsMs` (mean make-up of the frames at/above p95),
+`budget` (queued, deferred, budget drops, baked / sampler / live starts,
+`liveTop` = keys still synthesised live) and `bake` (keys, MB, queues,
+worker state, record cost). `bake()`, `sampler()`, `bakeEnabled(false)`
+(A/B: every cue and note live, the pre-fix path), `music().notes` (baked vs
+live notes). The limiter's per-frame reduction sampling runs once a probe
+armed the meters (`meterReset()`, `meter()`, `limiter()`).
+The spectral centroid is computed in the meter worklet (`centroidSource:
+'worklet-fft'`). Probe: `node tools/gntfixM31-cost.mjs --mode adds|natural|camp
+[--runs n] [--seed s] [--fight sec] [--throttle x] [--profile] [--per-second]`
+(the critic scenario; closes its browser and retries after an HMR reload).
+
 **Mixer facts.** Slider curves are src/audio/mixmath.js (log: −20 / −10 /
 −4.15 dB at 25 / 50 / 75 %; linear: −12.04 / −6.02 / −2.50). Switching a
 channel's curve moves its level to the same dB (not on reset). Basic attack in

@@ -214,7 +214,9 @@ export function createBaker({ ctx, onCost = null, sampler = null }) { // eslint-
       const data = r.data;
       const n = data.length - 1; // last frame = interpolation guard
       const reg = { buffer: null, sid: null, o: 0, d: p.dur, bytes: data.length * 4, lastUse: ctx.currentTime, kind: kindOf(key) };
-      if (reg.kind === 'c' && sampler && sampler.ok) reg.sid = sampler.uploadOwned(data);
+      // Cues and notes both play in the sampler worklets when available (the
+      // music players' layer samplers share its sample memory).
+      if (sampler && sampler.ok) reg.sid = sampler.uploadOwned(data);
       if (reg.sid == null) {
         const buf = ctx.createBuffer(1, n, sr);
         buf.copyToChannel(data.subarray(0, n), 0);

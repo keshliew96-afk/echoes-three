@@ -431,7 +431,7 @@ export function stateNotesJob(state, themeId, dryKit, onNote) {
 // synthesises live (and queues the bake) until then. Pads and drones stay
 // live (long, rare). schedule() is resumable per layer so the engine can
 // spread a step's notes over several frames inside its frame budget.
-function createPlayer(ctx, kit, dest, spec, { trimDb = 0, intensity = 0, baker = null }) {
+function createPlayer(ctx, kit, dest, spec, { trimDb = 0, intensity = 0, baker = null, sampler = null }) {
   const out = ctx.createGain();
   out.gain.value = 0;
   out.connect(dest);
@@ -444,10 +444,24 @@ function createPlayer(ctx, kit, dest, spec, { trimDb = 0, intensity = 0, baker =
     g.connect(out);
     return { ...l, g, level: 0 };
   });
+  // Baked notes play in a layer sampler worklet (src/audio/sampler.js) when
+  // it is available — one op, no node — else as one AudioBufferSourceNode.
+  let vn = null;
+  const outIdx = new Map(layers.map((l, i) => [l.g, i]));
+  const layerSampler = () => {
+    if (!vn && sampler && sampler.ok) vn = sampler.voiceNode(layers.map((l) => l.g));
+    return vn;
+  };
   function note(instr, k, d, t, f, v, len) {
     if (baker && bakesNote(spec.state, instr)) {
       const key = noteKey(instr, f, v, len);
       const r = baker.get(key);
+      if (r && r.sid != null && outIdx.has(d) && layerSampler()) {
+        const sr = ctx.sampleRate;
+        vn.play(r.sid, 0, Math.round(r.d * sr), outIdx.get(d), Math.round(t * sr));
+        noteStats.baked += 1;
+        return t + r.d;
+      }
       if (r && r.buffer) {
         const s = ctx.createBufferSource();
         s.buffer = r.buffer;
@@ -533,11 +547,15 @@ function createPlayer(ctx, kit, dest, spec, { trimDb = 0, intensity = 0, baker =
   }
 
   function dispose() {
+    if (vn) vn.dispose();
     try {
       out.disconnect();
     } catch {
       /* already gone */
     }
+  }
+  function flush() {
+    if (vn) vn.flush();
   }
 
   return {
@@ -547,6 +565,7 @@ function createPlayer(ctx, kit, dest, spec, { trimDb = 0, intensity = 0, baker =
     setIntensity,
     fade,
     dispose,
+    flush,
     get stopAt() {
       return stopAt;
     },
@@ -560,7 +579,7 @@ function createPlayer(ctx, kit, dest, spec, { trimDb = 0, intensity = 0, baker =
 }
 
 // The music controller: owns the players and the crossfades.
-export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM, baker = null, dryKit = null }) {
+export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM, baker = null, dryKit = null, sampler = null }) {
   let theme = 'wood';
   let state = null;
   let intensity = 0;
@@ -589,10 +608,11 @@ export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM, baker = null, 
     const spec = stateSpec(next, theme);
     if (spec) {
       spec.themeKey = theme;
-      current = createPlayer(ctx, kit, dest, spec, { trimDb: trimFor(next, theme), intensity, baker });
+      current = createPlayer(ctx, kit, dest, spec, { trimDb: trimFor(next, theme), intensity, baker, sampler });
       current.fade('in', sec);
       // Only the must-lead notes now; engine.update spreads the rest.
       current.schedule(ctx.currentTime + 0.25, 0, ctx.currentTime + 0.12);
+      current.flush();
     }
     lastTransitionMs = Math.round(sec * 1000);
     lastTransitionAt = ctx.currentTime;
@@ -635,13 +655,19 @@ export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM, baker = null, 
   // the hidden-tab timer passes neither (schedule everything).
   function update(lookahead = 0.2, deadline = Infinity, lead = lookahead) {
     const now = ctx.currentTime;
-    if (current) current.schedule(now + lookahead, deadline, now + lead);
+    if (current) {
+      current.schedule(now + lookahead, deadline, now + lead);
+      current.flush();
+    }
     for (let i = fading.length - 1; i >= 0; i--) {
       const p = fading[i];
       if (now >= p.stopAt + 0.5) {
         p.dispose();
         fading.splice(i, 1);
-      } else p.schedule(Math.min(now + lookahead, p.stopAt), deadline, Math.min(now + lead, p.stopAt));
+      } else {
+        p.schedule(Math.min(now + lookahead, p.stopAt), deadline, Math.min(now + lead, p.stopAt));
+        p.flush();
+      }
     }
   }
 

@@ -19,40 +19,53 @@
 // when its op arrives plays at once, as AudioBufferSourceNode.start does.
 
 export const SAMPLER_WORKLET_SOURCE = `
+// Samples live in the worklet GLOBAL scope: every sampler node (the bus
+// sampler and each music player's layer sampler) plays from the same set.
+const BUFS = new Map();
 class EchoesSampler extends AudioWorkletProcessor {
   constructor() {
     super();
-    this.bufs = new Map();
     this.voices = [];
-    this.peak = 0;
+    this.waiting = []; // plays whose sample upload (another port) has not landed yet
+    this.alive = true;
     this.port.onmessage = (e) => this.onMsg(e.data);
+  }
+  voice(op) {
+    const data = BUFS.get(op[2]);
+    if (!data) return false;
+    this.voices.push({ id: op[1], data, pos: op[3], end: op[3] + op[4], rate: op[5], gL: op[6], gR: op[7], out: op[8], start: op[9], fade: 1, step: 0 });
+    return true;
   }
   onMsg(m) {
     if (!m) return;
-    if (m.t === 'buf') { this.bufs.set(m.id, m.data); return; }
+    if (m.t === 'buf') { BUFS.set(m.id, m.data); return; }
     if (m.t !== 'ops') return;
     for (const op of m.ops) {
       const k = op[0];
       if (k === 1) {
-        const data = this.bufs.get(op[2]);
-        if (!data) continue;
-        this.voices.push({ id: op[1], data, pos: op[3], end: op[3] + op[4], rate: op[5], gL: op[6], gR: op[7], out: op[8], start: op[9], fade: 1, step: 0 });
-        if (this.voices.length > this.peak) this.peak = this.voices.length;
+        if (!this.voice(op)) this.waiting.push([op, currentFrame]);
       } else if (k === 2) {
         for (const v of this.voices) if (v.id === op[1]) v.step = 1 / Math.max(1, op[2]);
       } else if (k === 3) {
-        this.bufs.delete(op[1]);
+        BUFS.delete(op[1]);
+      } else if (k === 4) {
+        this.alive = false;
       }
     }
   }
   process(inputs, outputs) {
     const f0 = currentFrame;
+    if (this.waiting.length) {
+      const still = [];
+      for (const w of this.waiting) if (!this.voice(w[0]) && f0 - w[1] < sampleRate / 10) still.push(w);
+      this.waiting = still;
+    }
     const vs = this.voices;
     for (let i = vs.length - 1; i >= 0; i--) {
       const v = vs[i];
       const o = outputs[v.out];
       if (!o || !o[0]) { vs.splice(i, 1); continue; }
-      const L = o[0], R = o[1] || o[0], N = L.length;
+      const L = o[0], R = o[1] || null, N = L.length; // mono outputs (music layers) take L only
       let k = 0;
       if (v.start > f0) {
         if (v.start >= f0 + N) continue;
@@ -66,14 +79,14 @@ class EchoesSampler extends AudioWorkletProcessor {
         const a = d[ip];
         const s = (a + (d[ip + 1] - a) * (pos - ip)) * fade;
         L[k] += s * gL;
-        R[k] += s * gR;
+        if (R) R[k] += s * gR;
         pos += rate;
         if (step) { fade -= step; if (fade <= 0) { done = true; break; } }
       }
       if (done) vs.splice(i, 1);
       else { v.pos = pos; v.fade = fade; }
     }
-    return true;
+    return this.alive || vs.length > 0;
   }
 }
 registerProcessor('echoes-sampler', EchoesSampler);
@@ -89,7 +102,7 @@ export function createSampler(ctx, dests) {
   let dead = false;
   let nextBuf = 1;
   let ops = [];
-  const stats = { plays: 0, stops: 0, uploads: 0, uploadMb: 0, drops: 0, posts: 0, failed: null };
+  const stats = { plays: 0, stops: 0, uploads: 0, uploadMb: 0, drops: 0, posts: 0, layerNodes: 0, notePlays: 0, failed: null };
   const ready = (async () => {
     if (!ctx.audioWorklet || typeof AudioWorkletNode === 'undefined' || typeof Blob === 'undefined') return false;
     const url = URL.createObjectURL(new Blob([SAMPLER_WORKLET_SOURCE], { type: 'application/javascript' }));
@@ -156,6 +169,41 @@ export function createSampler(ctx, dests) {
     ops = [];
     stats.posts += 1;
   }
+  // A layer sampler for one music player: mono outputs -> the given nodes
+  // (the player's layer gains, so intensity ramps and crossfades stay the
+  // Web Audio automations they were). play(sid, offsetFrames, lengthFrames,
+  // out, startFrame); flush() once per frame; dispose() when faded out.
+  function voiceNode(dests) {
+    if (!ok || dead) return null;
+    let n;
+    try {
+      n = new AudioWorkletNode(ctx, 'echoes-sampler', { numberOfInputs: 0, numberOfOutputs: dests.length, outputChannelCount: dests.map(() => 1) });
+      dests.forEach((d, i) => n.connect(d, i));
+    } catch {
+      return null;
+    }
+    let q = [];
+    stats.layerNodes += 1;
+    return {
+      play(sid, o, len, out, startFrame) {
+        q.push([1, 0, sid, o, len, 1, 1, 0, out, startFrame]);
+        stats.notePlays += 1;
+      },
+      flush() {
+        if (!q.length) return;
+        n.port.postMessage({ t: 'ops', ops: q });
+        q = [];
+      },
+      dispose() {
+        try {
+          n.port.postMessage({ t: 'ops', ops: [[4]] });
+          n.disconnect();
+        } catch {
+          /* gone */
+        }
+      },
+    };
+  }
   return {
     ready,
     upload,
@@ -164,6 +212,7 @@ export function createSampler(ctx, dests) {
     play,
     stop,
     flush,
+    voiceNode,
     get ok() {
       return ok && !dead;
     },
