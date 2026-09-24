@@ -180,8 +180,12 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
         lastReason = why;
         let text = 'Unstable connection — high jitter';
         if (why === 'stalled') text = 'No updates from the host — the world may freeze for a moment';
-        else if (why === 'loss') text = `Unstable connection — ${lossText(loss)} packet loss`;
-        else if (why === 'latency') text = `High latency — ${rtt} ms ping`;
+        // The figures that EARNED the level (a held level keeps them).
+        const c = q.cause || {};
+        const cLoss = Number.isFinite(c.lossPct) ? c.lossPct : loss;
+        const cRtt = Number.isFinite(c.rttMs) ? Math.round(c.rttMs) : rtt;
+        if (why === 'loss') text = `Unstable connection — ${lossText(cLoss)} packet loss`;
+        else if (why === 'latency') text = `High latency — ${cRtt} ms ping`;
         note(text);
       }
     }

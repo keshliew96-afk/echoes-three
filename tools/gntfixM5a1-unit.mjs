@@ -93,9 +93,10 @@ ok(linkQuality({ lossPct: 20, rttMs: 300 }).reasons.join() === 'loss,latency', '
   t += 500;
   r = q.update({ lossPct: 0, rttMs: 20 });
   ok(r.level === 'poor' && r.raw === 'good', 'better waits (hysteresis)', r);
+  ok(r.cause && r.cause.lossPct === 20, 'a held level keeps the figures that earned it (cause)', r.cause);
   t += 2100;
   r = q.update({ lossPct: 0, rttMs: 20 });
-  ok(r.level === 'good', 'better after 2 s', r);
+  ok(r.level === 'good' && r.cause.lossPct === 0, 'better after 2 s', r);
 }
 
 // ---- snapshot header echo

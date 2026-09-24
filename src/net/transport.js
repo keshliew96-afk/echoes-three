@@ -214,7 +214,9 @@ export function linkQuality({ lossPct = null, rttMs = null, jitterMs = null, sta
 }
 
 // Hysteresis so the chip never flickers: a WORSE level shows at once; a
-// better one only after it has held for `recoverMs`.
+// better one only after it has held for `recoverMs`. `cause` = the inputs
+// that produced the level on show (a held level keeps the figures that
+// earned it, so "Unstable connection — N% packet loss" never says 0 %).
 export function createQualityTracker({ recoverMs = 2000, now = defaultNow } = {}) {
   let shown = null;
   let better = null; // { level, since }
@@ -223,19 +225,20 @@ export function createQualityTracker({ recoverMs = 2000, now = defaultNow } = {}
     update(input) {
       const q = linkQuality(input);
       const t = now();
+      const cause = { lossPct: input.lossPct ?? null, rttMs: input.rttMs ?? null, jitterMs: input.jitterMs ?? null, stallMs: input.stallMs ?? null };
       if (!shown || LEVELS.indexOf(q.level) >= LEVELS.indexOf(shown.level)) {
         if (!shown || q.level !== shown.level) changedAt = t;
-        shown = q;
+        shown = { ...q, cause };
         better = null;
       } else {
         if (!better || better.level !== q.level) better = { level: q.level, since: t };
         if (t - better.since >= recoverMs) {
-          shown = q;
+          shown = { ...q, cause };
           better = null;
           changedAt = t;
-        } else shown = { level: shown.level, reasons: shown.reasons };
+        }
       }
-      return { level: shown.level, reasons: shown.reasons.slice(), raw: q.level, sinceMs: changedAt === null ? 0 : Math.round(t - changedAt) };
+      return { level: shown.level, reasons: shown.reasons.slice(), raw: q.level, sinceMs: changedAt === null ? 0 : Math.round(t - changedAt), cause: { ...shown.cause } };
     },
     reset() {
       shown = null;
