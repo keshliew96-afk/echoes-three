@@ -1200,11 +1200,10 @@ export function createNetSession(ctx) {
     const ss = g.shadow.stats();
     const ds = g.dec.stats();
     const fs = [...frameStats.guestNetMs].sort((a, b) => a - b);
-    const loss = (() => {
-      const w = g.snapsIn.length;
-      return w;
-    })();
-    void loss;
+    // Packet loss is not measured here: the net client counts snapshot-seq
+    // gaps on every SNAP frame (downstream) and reads the host's upstream
+    // echo from the header (NET-F2) — net.stats() lossPct / lossInPct /
+    // lossOutPct / quality.
     return {
       synced: g.synced,
       seatEntity: g.entityId,
@@ -1312,7 +1311,9 @@ export function createNetSession(ctx) {
     // One-line connection readout for the HUD detail row (net.showStats).
     statsLine() {
       const s = net.stats();
-      const parts = [`rtt ${s.rttMs ?? '—'} ms`, `jitter ${s.jitterMs ?? 0} ms`, `loss ${s.lossPct ?? 0}%`];
+      const lossOf = (v) => (Number.isFinite(v) ? `${v}%` : '—');
+      const loss = role === 'guest' ? `loss ↓${lossOf(s.lossInPct)} ↑${lossOf(s.lossOutPct)}` : `loss ${s.lossPct ?? 0}%`;
+      const parts = [`rtt ${s.rttMs ?? '—'} ms`, `jitter ${s.jitterMs ?? 0} ms`, loss];
       if (role === 'guest') parts.push(`snap ${s.snapshotsPerSec ?? 0}/s`, `interp ${s.interpDelayMs ?? '—'} ms`, `in ${Math.round((s.bytesInPerSec || 0) / 102.4) / 10} KB/s`);
       if (role === 'host') parts.push(`net ${s.hostNetMsP95 ?? '—'} ms`, `out ${Math.round((s.bytesOutPerSec || 0) / 102.4) / 10} KB/s`);
       return parts.join(' · ');

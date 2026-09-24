@@ -16,6 +16,12 @@
 //   HOT table (delta.js) · COLD (full: bvalue.js encodeValue of the cold
 //   tree; delta: encodePatch of the tree-diff patch; absent when unchanged)
 //
+// flags: bit 7 = hash present; bits 0-6 = UPSTREAM LOSS echo (NET-F2) — the
+// host's measured loss of THIS guest's input packets: 0 = not measured, else
+// 1 + whole percent (0-100). Decoders before it ignored bits 0-6, so the
+// header layout (and PROTOCOL_VERSION) is unchanged. The guest measures its
+// own DOWNSTREAM loss from gaps in `seq` (transport.js SeqLossMeter).
+//
 // The host keeps the last BASELINE_RING (32) snapshots; each guest link
 // remembers the newest seq that guest acknowledged (acks ride in every INPUT
 // packet) and the host deltas against it — no usable baseline -> full. Lost,
@@ -181,7 +187,7 @@ export function createSnapshotHost({ hotPath = HOT_PATH, ringSize = BASELINE_RIN
   }
 
   // encodeFor(link, rec, header) -> Uint8Array (a complete relay frame).
-  function encodeFor(l, rec, { seat = 0, lastInputSeqConsumed = null, flags = 0, inputBufferDepth = 0, forceFull = false } = {}) {
+  function encodeFor(l, rec, { seat = 0, lastInputSeqConsumed = null, flags = 0, inputBufferDepth = 0, upLossPct = null, forceFull = false } = {}) {
     const t0 = now();
     let base = null;
     if (!forceFull && l.acked) {
@@ -193,7 +199,7 @@ export function createSnapshotHost({ hotPath = HOT_PATH, ringSize = BASELINE_RIN
     w.u8(BIN.SNAP).u8(seat);
     w.u32(rec.tick).u32(rec.seq).u32(base ? base.seq : NO_SEQ);
     w.u32(lastInputSeqConsumed === null || lastInputSeqConsumed === undefined ? NO_SEQ : lastInputSeqConsumed);
-    w.u8((flags & 0x7f) | (rec.hash ? SNAP_FLAG_HASH : 0));
+    w.u8((upLossPct === null || upLossPct === undefined ? flags & 0x7f : upLossCode(upLossPct)) | (rec.hash ? SNAP_FLAG_HASH : 0));
     w.u16(Math.max(0, Math.min(0xffff, inputBufferDepth | 0)));
     if (rec.hash) {
       w.u32(parseInt(rec.hash.slice(0, 8), 16));
@@ -254,6 +260,16 @@ export function pct(arr, p) {
 }
 
 // ---------------------------------------------------------- header --
+// Upstream-loss echo in flags bits 0-6: 0 = not measured, else 1 + percent.
+export function upLossCode(pct) {
+  const v = Number(pct);
+  if (pct === null || pct === undefined || !Number.isFinite(v)) return 0;
+  return 1 + Math.max(0, Math.min(100, Math.round(v)));
+}
+export function upLossOf(flags) {
+  const c = flags & 0x7f;
+  return c ? Math.min(100, c - 1) : null;
+}
 export function readSnapHeader(u8) {
   const r = new ByteReader(u8);
   if (r.u8() !== BIN.SNAP) throw new RangeError('not a SNAP frame');
@@ -274,6 +290,7 @@ export function readSnapHeader(u8) {
     baselineSeq: bs === NO_SEQ ? null : bs,
     lastInputSeqConsumed: li === NO_SEQ ? null : li,
     flags: flags & 0x7f,
+    upLossPct: upLossOf(flags),
     inputBufferDepth,
     hash,
   };
@@ -363,6 +380,7 @@ export function createSnapshotClient({ hotPath = HOT_PATH, ringSize = BASELINE_R
       baselineSeq: h.baselineSeq,
       lastInputSeqConsumed: h.lastInputSeqConsumed,
       flags: h.flags,
+      upLossPct: h.upLossPct,
       inputBufferDepth: h.inputBufferDepth,
       hash: h.hash,
       hashOk,

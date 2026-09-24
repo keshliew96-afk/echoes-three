@@ -281,9 +281,30 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
   // with three guests never does three encodes in one frame — the per-frame
   // net budget (hostNetMsP95 <= 2 ms, G5b.9) holds as guests are added.
   let encodeQueue = []; // [{ rec, seat }]
+  // Upstream loss of one guest's input packets over the last 5 s (gaps in
+  // the newest frame seq per packet; null until 20 seqs are spanned) —
+  // echoed to that guest in its snapshot header so its chip can show it
+  // (NET-F2, fix-M5a-r1; snapshot.js flags bits 0-6). Cached 500 ms.
+  function feedLossPct(f) {
+    const t = now();
+    if (f.lossCache && t - f.lossCache.at < 500) return f.lossCache.pct;
+    const seen = new Set();
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (let i = f.recv.length - 1; i >= 0 && t - f.recv[i].at <= 5000; i--) {
+      const s = f.recv[i].seq;
+      seen.add(s);
+      if (s < lo) lo = s;
+      if (s > hi) hi = s;
+    }
+    const expected = hi - lo + 1;
+    const pct = seen.size >= 2 && expected >= 20 ? Math.max(0, Math.round((1 - seen.size / expected) * 1000) / 10) : null;
+    f.lossCache = { at: t, pct };
+    return pct;
+  }
   function sendSnapshotTo(rec, seat) {
     const f = feedFor(seat);
-    net.transport.sendBinary(snap.encodeFor(f.link, rec, { seat, lastInputSeqConsumed: f.lastConsumed, inputBufferDepth: f.depthReport }));
+    net.transport.sendBinary(snap.encodeFor(f.link, rec, { seat, lastInputSeqConsumed: f.lastConsumed, inputBufferDepth: f.depthReport, upLossPct: feedLossPct(f) }));
   }
   function tickEnd(tick) {
     const t0 = now();
@@ -517,6 +538,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       lagCompOn: ring.enabled,
       playerController,
       lossPct: expected ? Math.max(0, Math.round((1 - got / expected) * 1000) / 10) : 0,
+      lossBySeat: Object.fromEntries([...feeds.values()].map((f) => [f.seat, feedLossPct(f)])),
       cmds: stats.cmds,
       rejectedPicks: stats.rejected,
       pings: stats.pings,

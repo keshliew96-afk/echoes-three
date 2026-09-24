@@ -73,6 +73,147 @@ export class RateMeter {
   }
 }
 
+// ------------------------------------------------------ link quality --
+// Packet loss from sequence gaps (NET-F2, gauntlet round 1). The receiver of
+// an UNRELIABLE, sequence-numbered stream (a guest's snapshots, a host's
+// input packets) counts the distinct sequence numbers that arrived in the
+// last `windowMs` against the span they cover (hi - lo + 1). Duplicates and
+// reordering are harmless (distinct set; a late packet only fills its gap).
+// pct() is null until the window spans `minSpan` numbers (no guess from two
+// packets). A sequence that restarts (a new host after a migration: seqs
+// begin at 1 again) or jumps by more than `maxJump` (a stall or reconnect,
+// not loss) starts a fresh window instead of reporting a giant gap.
+export class SeqLossMeter {
+  constructor({ windowMs = 5000, minSpan = 20, maxJump = 200, reorderSlack = 64, now = defaultNow } = {}) {
+    this.windowMs = windowMs;
+    this.minSpan = minSpan;
+    this.maxJump = maxJump;
+    this.reorderSlack = reorderSlack;
+    this.now = now;
+    this.recv = []; // { at, seq } in arrival order
+    this.maxSeq = null;
+    this.lastAt = null;
+    this.resets = 0;
+  }
+  add(seq) {
+    if (!Number.isFinite(seq)) return;
+    const t = this.now();
+    if (this.maxSeq !== null && (seq < this.maxSeq - this.reorderSlack || seq > this.maxSeq + this.maxJump)) this.reset();
+    this.recv.push({ at: t, seq });
+    if (this.maxSeq === null || seq > this.maxSeq) this.maxSeq = seq;
+    this.lastAt = t;
+    this.prune(t);
+  }
+  // Entries live 1 s past the window: a seq that arrived just before the
+  // window's oldest entry (reordered) still counts as received.
+  prune(t = this.now()) {
+    while (this.recv.length && t - this.recv[0].at > this.windowMs + 1000) this.recv.shift();
+  }
+  reset() {
+    if (this.recv.length) this.resets += 1;
+    this.recv.length = 0;
+    this.maxSeq = null;
+    this.lastAt = null;
+  }
+  // -> { pct, got, expected } over the window; pct null while unmeasurable.
+  measure() {
+    const t = this.now();
+    this.prune(t);
+    let lo = Infinity;
+    let hi = -Infinity;
+    let n = 0;
+    for (const x of this.recv) {
+      if (t - x.at > this.windowMs) continue;
+      n += 1;
+      if (x.seq < lo) lo = x.seq;
+      if (x.seq > hi) hi = x.seq;
+    }
+    if (n < 2) return { pct: null, got: n, expected: n };
+    const seen = new Set();
+    for (const x of this.recv) if (x.seq >= lo && x.seq <= hi) seen.add(x.seq);
+    const expected = hi - lo + 1;
+    if (expected < this.minSpan) return { pct: null, got: seen.size, expected };
+    return { pct: Math.max(0, Math.round((1 - seen.size / expected) * 1000) / 10), got: seen.size, expected };
+  }
+  pct() {
+    return this.measure().pct;
+  }
+  // ms since the newest packet (null when none in this window's session).
+  ageMs() {
+    return this.lastAt === null ? null : this.now() - this.lastAt;
+  }
+}
+
+// Connection quality for the player (the in-game chip's signal bars and
+// warnings; PLAN §3.7 UI states, benchmark C8 / A10). Thresholds, chosen
+// against what the game tolerates — the guest's interpolation delay is
+// ~100-200 ms, input frames ride 6-deep so upstream loss is masked until
+// heavy, remote entities extrapolate across a lost snapshot or two:
+//   poor  loss >= 8 %, or RTT >= 250 ms, or jitter >= 60 ms, or no update for >= 1.5 s
+//   fair  loss >= 2 %, or RTT >= 150 ms, or jitter >= 30 ms
+//   good  otherwise
+// reasons (worst first): 'stalled' | 'loss' | 'latency' | 'jitter'.
+export const QUALITY_THRESHOLDS = Object.freeze({
+  poor: Object.freeze({ lossPct: 8, rttMs: 250, jitterMs: 60, stallMs: 1500 }),
+  fair: Object.freeze({ lossPct: 2, rttMs: 150, jitterMs: 30 }),
+});
+const LEVELS = ['good', 'fair', 'poor'];
+export function linkQuality({ lossPct = null, rttMs = null, jitterMs = null, stallMs = null } = {}) {
+  const T = QUALITY_THRESHOLDS;
+  const reasons = [];
+  let level = 0;
+  const at = (lvl, why) => {
+    if (lvl > level) level = lvl;
+    if (!reasons.includes(why)) reasons.push(why);
+  };
+  if (Number.isFinite(stallMs) && stallMs >= T.poor.stallMs) at(2, 'stalled');
+  if (Number.isFinite(lossPct)) {
+    if (lossPct >= T.poor.lossPct) at(2, 'loss');
+    else if (lossPct >= T.fair.lossPct) at(1, 'loss');
+  }
+  if (Number.isFinite(rttMs)) {
+    if (rttMs >= T.poor.rttMs) at(2, 'latency');
+    else if (rttMs >= T.fair.rttMs) at(1, 'latency');
+  }
+  if (Number.isFinite(jitterMs)) {
+    if (jitterMs >= T.poor.jitterMs) at(2, 'jitter');
+    else if (jitterMs >= T.fair.jitterMs) at(1, 'jitter');
+  }
+  return { level: LEVELS[level], reasons };
+}
+
+// Hysteresis so the chip never flickers: a WORSE level shows at once; a
+// better one only after it has held for `recoverMs`.
+export function createQualityTracker({ recoverMs = 2000, now = defaultNow } = {}) {
+  let shown = null;
+  let better = null; // { level, since }
+  let changedAt = null;
+  return {
+    update(input) {
+      const q = linkQuality(input);
+      const t = now();
+      if (!shown || LEVELS.indexOf(q.level) >= LEVELS.indexOf(shown.level)) {
+        if (!shown || q.level !== shown.level) changedAt = t;
+        shown = q;
+        better = null;
+      } else {
+        if (!better || better.level !== q.level) better = { level: q.level, since: t };
+        if (t - better.since >= recoverMs) {
+          shown = q;
+          better = null;
+          changedAt = t;
+        } else shown = { level: shown.level, reasons: shown.reasons };
+      }
+      return { level: shown.level, reasons: shown.reasons.slice(), raw: q.level, sinceMs: changedAt === null ? 0 : Math.round(t - changedAt) };
+    },
+    reset() {
+      shown = null;
+      better = null;
+      changedAt = null;
+    },
+  };
+}
+
 export function createTransport({ WebSocketImpl = null, cond = null, now = defaultNow, precise = typeof window === 'undefined' } = {}) {
   const listeners = new Map();
   let ws = null;

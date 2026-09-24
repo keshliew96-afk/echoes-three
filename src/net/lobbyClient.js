@@ -44,9 +44,9 @@ import {
   KEYFRAME_EVERY_TICKS,
   SIM_HZ,
 } from './protocol/constants.js';
-import { createTransport, RateMeter } from './transport.js';
+import { createTransport, RateMeter, SeqLossMeter, createQualityTracker } from './transport.js';
 import { normalizeCode, sanitizeName, reasonText } from './protocol/messages.js';
-import { createSnapshotHost, createSnapshotClient, pct } from './protocol/snapshot.js';
+import { createSnapshotHost, createSnapshotClient, pct, readSnapHeader } from './protocol/snapshot.js';
 import { encodeInputPacket, decodeInputPacket, encodeKeyframe, encodeEvents, decodeEvents, decodeCmd, encodeCmd, SEAT_ALL, channelOf } from './protocol/codec.js';
 
 export const SESSION_KEY = 'echoes.net.session';
@@ -114,6 +114,43 @@ export function createNetClient(opts = {}) {
 
   const transport = createTransport({ WebSocketImpl, cond: params.netCond || null, now });
   let url = resolveUrl();
+
+  // Link quality (NET-F2): what this client KNOWS about its packet loss, for
+  // stats() and the in-game chip. A guest measures DOWNSTREAM loss from gaps
+  // in the snapshot seq of every SNAP frame that reaches it (whoever decodes
+  // it — the session driver or the probe stream), and learns its UPSTREAM
+  // loss from the host, which echoes its measured loss of this guest's input
+  // packets in each snapshot header (snapshot.js flags bits 0-6). A host's
+  // incoming (input) loss comes from its session driver's stats.
+  const downLoss = new SeqLossMeter({ windowMs: 5000, now });
+  const upLoss = { pct: null, at: 0 };
+  const quality = createQualityTracker({ now });
+  const UPLOSS_STALE_MS = 3000;
+  function noteSnapHeader(u8) {
+    let h;
+    try {
+      h = readSnapHeader(u8);
+    } catch {
+      return; // a corrupt frame is the decoder's to count
+    }
+    downLoss.add(h.seq);
+    if (h.upLossPct !== null) {
+      upLoss.pct = h.upLossPct;
+      upLoss.at = now();
+    }
+  }
+  function resetLinkMeters() {
+    downLoss.reset();
+    upLoss.pct = null;
+    upLoss.at = 0;
+    quality.reset();
+  }
+  function lossIn() {
+    return downLoss.pct();
+  }
+  function lossOut() {
+    return upLoss.pct !== null && now() - upLoss.at < UPLOSS_STALE_MS ? upLoss.pct : null;
+  }
 
   // ------------------------------------------------------------ plumbing --
   function log(kind, data = {}) {
@@ -222,6 +259,8 @@ export function createNetClient(opts = {}) {
     if (next !== state) {
       const prev = state;
       state = next;
+      // Outside a running session the link figures describe nothing.
+      if (next === 'offline' || next === 'lobby' || next === 'connecting') resetLinkMeters();
       log('state', { from: prev, to: next });
       emit('state', { state: next, prev });
     }
@@ -582,10 +621,12 @@ export function createNetClient(opts = {}) {
   function onHostChanged(hostId) {
     // A new authority: sequence spaces restart.
     if (guestStream) guestStream.reset();
+    resetLinkMeters();
     if (hostId === peerId) log('now_host', {});
   }
 
   function onBinary(u8) {
+    if (u8.length > 2 && u8[0] === BIN.SNAP) noteSnapHeader(u8);
     if (driver && typeof driver.onBinary === 'function') {
       driver.onBinary(u8);
       return;
@@ -757,6 +798,9 @@ export function createNetClient(opts = {}) {
   function resetStreamsAfterReconnect() {
     if (hostStream) hostStream.resetAll();
     if (guestStream) guestStream.reset();
+    // The snapshots the host sent while this link was down were never
+    // "lost in transit" — the window restarts with the new socket.
+    resetLinkMeters();
   }
 
   function startHost() {
@@ -993,16 +1037,12 @@ export function createNetClient(opts = {}) {
   }
 
   // --------------------------------------------------------------- stats --
+  // A guest's loss = the worse direction (downstream measured here,
+  // upstream as the host reports it); 0 while unmeasurable. A host's comes
+  // from its probe stream here, or from the session driver's stats (which
+  // override this field).
   function lossPct() {
-    if (guestStream) {
-      const w = guestStream.lossWindow;
-      if (w.length < 2) return 0;
-      const seqs = w.map((x) => x.seq);
-      const lo = Math.min(...seqs);
-      const hi = Math.max(...seqs);
-      const expected = hi - lo + 1;
-      return Math.max(0, Math.round((1 - new Set(seqs).size / expected) * 1000) / 10);
-    }
+    if (role === 'guest' || guestStream) return Math.max(lossIn() ?? 0, lossOut() ?? 0);
     if (hostStream) {
       let got = 0;
       let expected = 0;
@@ -1087,6 +1127,32 @@ export function createNetClient(opts = {}) {
         /* a broken extension never breaks stats() */
       }
     }
+    // Link quality (NET-F2) — after the extensions, so a host's figures are
+    // its session driver's (incoming input loss). lossInPct / lossOutPct:
+    // per direction, null while unmeasured; snapshotAgeMs: since the newest
+    // snapshot (a guest in a session); quality: the chip's level + reasons +
+    // the loss figure it judged (transport.js linkQuality thresholds, 2 s
+    // recovery hysteresis).
+    //   guest: judged loss = lossPct = the worse direction.
+    //   host:  lossPct stays the driver's aggregate over every guest's input
+    //          packets; the chip judges THIS host's own link — the loss every
+    //          guest's inputs share (min of lossBySeat) — so one guest's bad
+    //          Wi-Fi shows on that guest's chip (and as a note on the host's),
+    //          not as the host's own problem.
+    const guestSide = role === 'guest' || (!!guestStream && !hostStream);
+    const inGame = state === 'host' || state === 'guest' || state === 'migrating';
+    out.lossInPct = guestSide ? lossIn() : role === 'host' && inGame ? out.lossPct : null;
+    out.lossOutPct = guestSide ? lossOut() : null;
+    out.lossInWindow = guestSide ? downLoss.measure() : null;
+    out.snapshotAgeMs = guestSide && downLoss.ageMs() !== null ? Math.round(downLoss.ageMs()) : null;
+    let judged = null;
+    if (guestSide) judged = lossIn() === null && lossOut() === null ? null : out.lossPct;
+    else if (role === 'host') {
+      const by = out.lossBySeat && typeof out.lossBySeat === 'object' ? Object.values(out.lossBySeat).filter((v) => Number.isFinite(v)) : [];
+      judged = by.length ? Math.min(...by) : Number.isFinite(out.lossPct) ? out.lossPct : null;
+    }
+    const q = inGame ? quality.update({ lossPct: judged, rttMs: out.rttMs, jitterMs: out.jitterMs, stallMs: guestSide && state === 'guest' ? out.snapshotAgeMs : null }) : null;
+    out.quality = q ? { ...q, lossPct: judged } : null;
     return out;
   }
 
