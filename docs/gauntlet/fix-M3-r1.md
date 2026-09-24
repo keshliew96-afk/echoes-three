@@ -1,5 +1,5 @@
-STATUS: PARTIAL
-Fix builder M3 round 1 (AUD-F1: G3.10 engine main-thread cost p95 > 1 ms in boss fights). In progress.
+STATUS: COMPLETE
+VERDICT: AUD-F1 FIXED — G3.10 engine main-thread cost now <= 1 ms/frame p95 in boss fights with the critic's own tool: adds seeds 17/18/19 final p95 0.5/0.5/0.3 ms, worst 15 s window 0.5/0.6/0.4, gateP95LE1 true at v0.5.78 (before: 0.9/1.1/1.0, worst 1.2/1.2/1.1 on a quiet box; critic 1.6-3.4); natural 0.4/0.2, storm 0.4, camp idle 0.3; all 11 M3 gates + GI.3 cue audit + smoke + core loop pass. Commits 713e244 (v0.5.71), cb0c6f3 (v0.5.74), f38f95a (v0.5.78).
 
 ## Steps
 - [start] 2026-09-25 checkpoint created; no prior fix-M3-r1 work found (git log head b485401).
@@ -32,3 +32,19 @@ Fix builder M3 round 1 (AUD-F1: G3.10 engine main-thread cost p95 > 1 ms in boss
 - D11 Budget virtualisation happens only in bursts on a slow frame (e.g. a room's spawn wave on a 26 fps box: 16 of 197 requests in the boot + room-8 entry of a diag run); the critic scenario's fights read 0 budget drops.
 - [step8] COMMIT cb0c6f3 (v0.5.74). AFTER numbers with the critic's own tool (tools/gntcaudio1-cost.mjs; box busy with other agents, 41 fps): adds seeds 17/18/19 final p95 0.5 / 0.6 / 0.3, worst 15 s window 0.6 / 0.8 / 0.7, max 1.3 / 1.2 / 0.8 -> SUMMARY.gateP95LE1 true (captures/gntfixM31-after2-cost-adds.json + .log.txt); natural seeds 17/18 0.4 / 0.2 (worst 0.5 / 0.5) true (-natural); camp idle 0.3 (worst 0.4) (-camp). BEFORE (step 1, same tool, quiet 82 fps): 0.9 / 1.1 / 1.0, worst 1.2 / 1.2 / 1.1 -> false; critic's own round-1 readings 1.6-3.4. Smoke captures/gntfixM31-smoke2 exit 0 / 0 PAGEERROR; core loop captures/gntfixM31-core2 idle -> combat -> reward.
 - [step9] Final checks on the code of the last commit: node tools/gntM3-gates.mjs all -> all 11 gates PASS (captures/gntM3-gate-*.json, log captures/gntfixM31-gates-all2.log.txt): clip prelimit peak -1.94 dBFS, limiter max reduction 5.55 dB, 100 % windows <= 6 dB; balance master median -22.19 dBFS, SFX above music 16.33 dB, UI above music 4.02 dB; cost (whole run) p95 0.5 / p99 0.7 ms, active voices 0 at +3 s; music crossfades in range, never below -50 dBFS; coverage 71 cues / 1314 sound events. GI.3 cue audit (tools/gntINT-cueaudit.mjs -> captures/gntfixM31-cueaudit.json): failures none, 0 page errors (attempt 1 lost to an HMR reload, retried). Sampler vs PannerNode spatial parity (tools/gntfixM31-pan.mjs -> captures/gntfixM31-pan.json): +6 u R-L 10.38 vs 10.37 dB, -6 u 10.38 vs 10.38, centre 0 vs 0, 3 u vs 12 u 8.06 vs 8.01 dB, centre RMS -33.31 vs -33.29 dBFS. Pause duck (tools/gntM3-duck.mjs) pass. Storm mode (critic tool) p95 0.4 / worst window 0.6 (captures/gntfixM31-after2-cost-storm.json; run 2 lost to an HMR reload). Production build (vite build -> dist-gntfixM31, vite preview :4303, both removed after): render worker ready, 218 keys baked, sampler starts, 0 page errors.
+- [step10] FINAL (v0.5.78, after the last code commit f38f95a): core loop captures/gntfixM31-final-core.png (idle -> combat -> reward, exit 0, 0 PAGEERROR); critic tool adds x3 (captures/gntfixM31-final-cost-adds.json): final p95 0.5 / 0.5 / 0.3 ms, worst 15 s window 0.5 / 0.6 / 0.4, max 1.8 / 1.0 / 0.7, hostiles median 9, fps 41-83 -> gateP95LE1 true. Voice clauses unchanged (peak <= 20 of 48, active 0 at +3 s in the cost gate).
+
+## BEFORE / AFTER (AUD-F1 reproduce command: node tools/gntcaudio1-cost.mjs --mode adds --runs 3 --seed 17)
+| build | box | seeds 17 / 18 / 19 final p95 | worst 15 s window | gate |
+|---|---|---|---|---|
+| v0.5.62 (critic r1) | contended, 27-53 fps | 3.2 / 2.5 / 1.6 | 3.1 / 2.9 / 1.7 | false |
+| v0.5.62 (this fix, step 1) | quiet, 82 fps | 0.9 / 1.1 / 1.0 | 1.2 / 1.2 / 1.1 | false |
+| v0.5.74 (after2) | busy, 41 fps | 0.5 / 0.6 / 0.3 | 0.6 / 0.8 / 0.7 | true |
+| v0.5.78 (final) | 41-83 fps | 0.5 / 0.5 / 0.3 | 0.5 / 0.6 / 0.4 | true |
+Other modes on v0.5.74+: natural 0.4 / 0.2 (worst 0.5 / 0.5), storm 0.4 (worst 0.6), camp idle 0.3 (worst 0.4). Engine main-thread total in the adds fight: 20.6 ms/s -> 9.9 ms/s at v0.5.71 (CPU profile), lower after the music layer samplers.
+
+## Cross-owner edits
+- None. All code changes are in src/audio/** (M3); docs/TESTING.md M3 section (small anchored paragraph); docs/gauntlet/build-M3.md (M3's own build doc: G3.10 claim marked superseded). Tools are new gntfixM31-* files. The critic's tools/gntcaudio1-cost.mjs was only run, never edited (note: it leaves node + Chrome alive when a run throws; those processes were killed by PID).
+
+## Files
+src/audio/render.js (new: record kit + DSP render worker), src/audio/bake.js (new: sample cache), src/audio/sampler.js (new: sampler + layer-sampler worklets), src/audio/engine.js, src/audio/music.js, src/audio/cues.js, src/audio/meter.js, src/audio/spatial.js, src/audio/voices.js; tools/gntfixM31-{cost,diag,oac,recipe,trig,fidelity,pausedump,peek,victory,pan}.mjs.
