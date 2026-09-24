@@ -623,6 +623,29 @@ recorded from `git archive 9246562` before M2's first edit and re-recorded at
 the M4c-end build by the user's skill/socket correction — M5b re-checks
 them). Layout audit helper: tools/gntM2-audit.mjs.
 
+**fix-M2-r1 (v0.5.67–0.5.68).** The saves screen is on the overlay band
+(z 1100, like Settings) and the screen manager keeps the top of the stack
+above everything under it (src/app/screens.js `liftAbove`: a pushed screen
+whose band is lower than the highest band beneath it gets that z-index
+inline) — so Save / Load opened from the pause menu is drawn over the pause
+card and takes the mouse. A FRESH title (boot, Quit / Save & Quit to Title,
+farewell Return) focuses its primary: Continue whenever a save exists, New
+Game otherwise; returning to the title from a sub-screen still restores the
+last focus. Probes (`node tools/gntfixM21-drive.mjs <scenario> [--tag t]` —
+a copy of the save critic's driver writing `captures/gntfixM21-*`):
+`tools/gntfixM21-sc-mouse.mjs` (the in-game Save / Load screens by mouse
+only: save, overwrite + confirm, rename, delete + confirm, Load tab, load +
+confirm, Import… file chooser, right-click back, Back, Resume; title Load),
+`tools/gntfixM21-sc-lift.mjs` (the stacking invariant), the critic's
+`tools/gntcsave1-sc-followup.mjs` / `-sc-final.mjs`; F2 variants with
+`node tools/gntfixM21-rtitle.mjs A|C|D`. **Probe note:** a poll for
+`app.state === 'playing' && save.hash() === savedHash` after a title Load
+races the first sim step (the load runs in the key task; the next frame
+steps the sim before a 16 ms poll usually runs, more so while that first
+frame compiles the run's shaders, ~90 ms) — wait on
+`save.lastLoad().hash === savedHash` instead (tools/gntfixM21-m2slots-robust.mjs
+is gntM2-sc-slots with only that wait changed); G2.1 covers the continuation.
+
 ### M5a — network core: server, lobby, protocol, conditioner, netbench (Gauntlet W3, owner M5a)
 
 **Session server** (zero npm dependencies — node:http / crypto / os only):
