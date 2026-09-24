@@ -5,17 +5,22 @@
 // capture harness's window.__groundCanvas — sees exactly what a main-thread
 // paint produces. No worker / OffscreenCanvas support, or a worker error, and
 // the request resolves `ok: false`: the caller paints on the main thread.
+import { PAINT_CTX } from '../ground.js';
+
 let worker = null;
 let broken = false;
 let seq = 0;
 const pending = new Map();
 export const stats = { requests: 0, ok: 0, failed: 0, lastMs: 0, maxMs: 0 };
 
+// A CPU-backed canvas (ground.js PAINT_CTX): the worker's bitmap is already in
+// CPU memory, so this is a memcpy and the CanvasTexture upload a plain CPU ->
+// GPU copy — no GPU-process readback stalling the game's frames.
 function toCanvas(bitmap) {
   const c = document.createElement('canvas');
   c.width = bitmap.width;
   c.height = bitmap.height;
-  c.getContext('2d').drawImage(bitmap, 0, 0);
+  c.getContext('2d', PAINT_CTX).drawImage(bitmap, 0, 0);
   bitmap.close?.();
   return c;
 }

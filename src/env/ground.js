@@ -160,6 +160,23 @@ function grain(ctx, W, H, amp, cosmetic, step = 4) {
 // Drain a generator synchronously.
 // A 2D canvas on the main thread, an OffscreenCanvas inside the dressing
 // paint worker (env/biomes/paint-worker.js) — same painter, same draw order.
+//
+// In the WORKER the canvas is CPU-backed (PAINT_CTX: willReadFrequently). The
+// painter ends in a getImageData / putImageData grain pass and the result is
+// uploaded as a CanvasTexture; on a GPU-accelerated OffscreenCanvas each of
+// those is a synchronous GPU-process readback / write (Chrome trace:
+// DoReadbackARGBImagePixels 35-113 ms per floor / apron) that stalls every
+// other GPU client, the game's WebGL frames included — the background
+// builder's pre-builds behind the title made the first ~3 s of menu input
+// 100-200 ms late (gauntlet MENU-R1-F1). Rasterised in software the painting
+// stays on the worker thread and the upload is a plain CPU -> GPU copy
+// (paint-client.js keeps the landed bitmap in a CPU canvas too). Main-thread
+// paints (the camp floor, the boot dressing, a room entered before its build
+// finished) keep Chrome's GPU raster, byte-identical to the certified floors;
+// a worker floor differs from it by mean |d| 1.1-1.7 / 255 per channel (AA and
+// gradient rounding; tools/gntfixM11-rasterdiff.mjs) — not visible.
+export const PAINT_CTX = Object.freeze({ willReadFrequently: true });
+const CTX_OPTS = typeof document === 'undefined' ? PAINT_CTX : undefined;
 function makeCanvas(W, H) {
   if (typeof document === 'undefined') return new OffscreenCanvas(W, H);
   const canvas = document.createElement('canvas');
@@ -233,7 +250,7 @@ export function* paintGroundSteps(spec, cosmetic) {
   const night = !!g.nightBase;
 
   const canvas = makeCanvas(W, H);
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', CTX_OPTS);
 
   // 1 — base fill. FIX ROUND 2 (certification checks 2/6/7): this used to be
   // the §19.3 green, with the cool half arriving as pockets on top of it. All
@@ -796,7 +813,7 @@ export function* paintApronSteps(spec, cosmetic) {
   const H = Math.round(W * (worldD / worldW));
   const ppu = W / worldW;
   const canvas = makeCanvas(W, H);
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', CTX_OPTS);
   const r = (a, b) => cosmetic.range(a, b);
 
   // World -> canvas.

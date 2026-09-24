@@ -144,6 +144,9 @@ export function createNav({ screens, root, onFullscreenToggle, isRecentFullscree
       return;
     }
     if (!screens.isBlocking()) return; // the game owns input
+    // Any key on a menu is menu activity (app.backgroundHold) — also the ones
+    // that map to no action, e.g. the "press any key" that opens the title.
+    lastInputAt = performance.now();
     const active = document.activeElement;
     const typing = isTextInput(active) && root.contains(active);
     const combo = e.ctrlKey || e.metaKey;
@@ -196,6 +199,7 @@ export function createNav({ screens, root, onFullscreenToggle, isRecentFullscree
       const target = item || (row ? row.querySelector('[data-nav]') : null);
       if (!target) return;
       setSource('mouse');
+      lastInputAt = performance.now(); // menu activity (app.backgroundHold)
       screens.focusElement(target, 'mouse');
     },
     { passive: true }

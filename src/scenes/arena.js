@@ -444,6 +444,7 @@ export function createArenaScene(stage, toggles, ctx) {
     group.add(apron);
     yield;
     const treeline = buildTreeline(group, dspec, layout);
+    yield; // (each big step its own slice: gauntlet MENU-R1-F1)
     // --- Props first: their footprints mask the foliage scatter, so a blade
     // of grass can never grow through a crate face.
     const { emitters, shadows, footprints, mats, typeCount, monolithMat, dressing } = buildProps(group, dspec, layout);
@@ -451,8 +452,10 @@ export function createArenaScene(stage, toggles, ctx) {
     yield;
     const foliage = buildFoliage(group, dspec, layout, footprints);
     const glassBase = mats?.glass ? mats.glass.color.clone() : null;
+    yield;
     // --- The built boundary (walls + coping + capstone run).
     const wallInfo = buildWalls(group, dspec, layout);
+    yield;
     const fx = mountEmitters(group, emitters, dspec);
     root.add(group);
     return {
@@ -897,6 +900,7 @@ export function createArenaScene(stage, toggles, ctx) {
   // two canvases and a 3-frame parked draw that links its programs.
   const queue = [];
   let job = null;
+  let uploading = null; // { d, i } — a built dressing's textures still to upload
   let warmDraw = null; // { d, frames, culled: Map }
   const buildStats = { built: [], syncBuilds: [], slices: 0, maxSliceMs: 0, failed: {} };
   // A dressing whose build throws is never retried and never breaks the frame
@@ -998,6 +1002,26 @@ export function createArenaScene(stage, toggles, ctx) {
       return;
     }
     if (!(budgetMs > 0)) return;
+    // A finished background dressing uploads ONE texture per pump call (floor
+    // 2048 px, apron 1600 px: 10-35 ms of texSubImage2D each on the main
+    // thread), so no single frame carries both (gauntlet MENU-R1-F1).
+    if (uploading) {
+      const u = uploading;
+      const t = u.d.textures[u.i++];
+      if (t) {
+        try {
+          stage.renderer.initTexture(t);
+        } catch {
+          /* initTexture is best effort */
+        }
+      }
+      if (u.i >= u.d.textures.length) {
+        uploading = null;
+        u.d.gpuReady = true;
+        precompile(u.d);
+      }
+      return;
+    }
     if (compiling) {
       if (!compiling.ready) return;
       const d = compiling.d;
@@ -1029,10 +1053,8 @@ export function createArenaScene(stage, toggles, ctx) {
         if (r.done) {
           dressings.set(job.id, r.value);
           buildStats.built.push(job.id);
-          const d = r.value;
           job = null;
-          finishGpu(d);
-          precompile(d);
+          uploading = { d: r.value, i: 0 }; // next pump calls: textures, then precompile
           break;
         }
       }
@@ -1075,6 +1097,7 @@ export function createArenaScene(stage, toggles, ctx) {
     if (!layoutSpec(id)) return null;
     if (warmDraw && warmDraw.d.id === id) endWarmDraw();
     if (compiling && compiling.d.id === id) compiling = null; // it draws for real now
+    if (uploading && uploading.d.id === id) uploading = null; // first draw uploads the rest
     const built = ensureDressing(id);
     if (!built) return null;
     const d = activate(built);

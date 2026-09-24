@@ -86,10 +86,15 @@ export function createWorldContentLayers({ stage, world, bus, cosmetic, runUi = 
       assets.update(tSec);
       prompts.update();
       // Background dressing builds: ~8 ms a frame outside live combat, none in it
-      // (the paint worker keeps going off-thread either way).
+      // (the paint worker keeps going off-thread either way) — and none while
+      // the player is working a menu (app.backgroundHold, M1: a build step
+      // between a press and its frame made the title's first seconds of input
+      // 100-200 ms late, gauntlet MENU-R1-F1).
       const run = world.runSystem ? world.runSystem() : null;
       const busy = run && typeof run.combatActive === 'function' && run.combatActive();
-      pumpDressings(busy ? 0 : 8);
+      const app = service('app');
+      const hold = !!(app && typeof app.backgroundHold === 'function' && app.backgroundHold());
+      pumpDressings(busy || hold ? 0 : 8);
     },
     debugState: () => ({ ...hazards.debugState(), ...assets.debugState(), prompt: prompts.debug(), cues }),
   };

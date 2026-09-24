@@ -36,6 +36,10 @@ import { registerCoreMenus } from '../ui/menu/index.js';
 export const APP_STATES = Object.freeze(['boot', 'title', 'playing', 'farewell']);
 export const APP_UI_ROOT_ID = 'app-ui';
 const NET_SESSION_STATES = new Set(['host', 'guest', 'reconnecting', 'migrating']);
+// Background work yields to menu input for this long after the last press /
+// hover (app.backgroundHold). Menu navigation comes in bursts (presses a few
+// hundred ms apart); 1.5 s covers a burst and the reading pause inside it.
+const BACKGROUND_HOLD_MS = 1500;
 
 // GESTURE HOOK (binding, PLAN §1.5 / §3.5 — M1 must keep it FIRST): the very
 // first window capture-phase listener of the page. It hands every user
@@ -394,6 +398,17 @@ export function createApp({ params }) {
     inputBlocked() {
       return screens.isBlocking();
     },
+    // backgroundHold() -> true while the player is working a menu: an app
+    // screen is open and a menu input (key, pad, click, hover) arrived within
+    // the last BACKGROUND_HOLD_MS. Background streaming (the arena's dressing
+    // pre-builder, render/hazards/layers.js) pauses its main-thread slices
+    // while it holds, so no build step (texture uploads, prop builds: 10-50 ms
+    // tasks) lands between a press and its visual response (G1.3; gauntlet
+    // MENU-R1-F1). Idle menus (the title left alone, a paused game) still
+    // build at full budget.
+    backgroundHold(now = performance.now()) {
+      return screens.isOpen() && now - nav.lastInputAt < BACKGROUND_HOLD_MS;
+    },
     // Per rendered frame (called from main.js frame() after stage.render()).
     // Binding: the audio engine's per-frame work (listener = camera ground
     // focus, music intensity, meters) runs HERE via service('audio').update,
@@ -598,6 +613,7 @@ export function createApp({ params }) {
     displayLog: () => (display ? display.debug.log() : []),
     screens: () => screenIds(),
     simPaused: () => app.simPaused(),
+    backgroundHold: () => app.backgroundHold(),
     pauseReason: () => pauseReason(),
     lastSource: () => nav.lastSource,
     gamepad: () => gamepad.debug(),
