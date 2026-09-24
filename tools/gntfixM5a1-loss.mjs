@@ -100,6 +100,7 @@ const SAMPLE = `
     detail: (() => { const d = document.querySelector('#nt-hud .nt-detail'); return d && d.style.display !== 'none' ? d.textContent : null; })(),
     notes: [...document.querySelectorAll('#nt-hud .nt-note')].map((x) => x.textContent),
     lossBySeat: s.lossBySeat ?? null,
+    lossInTotal: s.lossInTotal ?? null,
   };`;
 
 function linkOf(stats, peerId) {
@@ -185,6 +186,7 @@ try {
     const total = SETTLE + SECONDS;
     let sB = null;
     let sAfterSettle = null;
+    let totA = null;
     for (let s = 1; s <= total; s++) {
       await sleep(1000 - ((Date.now() - applyAt) % 1000));
       const [g, h] = await Promise.all([ev(guest, SAMPLE).catch((e) => ({ err: String(e.message || e) })), ev(host, SAMPLE).catch((e) => ({ err: String(e.message || e) }))]);
@@ -193,7 +195,10 @@ try {
       if (lvl && lvl !== 'good' && react.firstNotGoodS === null) react.firstNotGoodS = tS;
       if (lvl === 'good' && react.firstGoodS === null) react.firstGoodS = tS;
       if ((g.lossPct || 0) >= 1 && react.firstLossReportedS === null) react.firstLossReportedS = tS;
-      if (s === SETTLE) sAfterSettle = await admin('/stats');
+      if (s === SETTLE) {
+        sAfterSettle = await admin('/stats');
+        totA = g.lossInTotal || null;
+      }
       // Notes are short-lived (3.6 s): collect them from the first second.
       for (const x of g.notes || []) allNotes.guest.add(x);
       for (const x of h.notes || []) allNotes.host.add(x);
@@ -204,6 +209,10 @@ try {
       }
     }
     sB = await admin('/stats');
+    const totB = (await ev(guest, 'return n.stats().lossInTotal;').catch(() => null)) || null;
+    // The guest's own CUMULATIVE snapshot-gap count differenced over the same
+    // window as the server's applied-loss counters.
+    const cumIn = totA && totB && totB.expected > totA.expected ? r1((1 - (totB.got - totA.got) / (totB.expected - totA.expected)) * 100) : null;
     const gLinkA = linkOf(sAfterSettle || sA, guestPeer.peerId);
     const gLinkB = linkOf(sB, guestPeer.peerId);
     const applied = {
@@ -249,6 +258,7 @@ try {
         lastChipClass: last.chipClass || null,
         lastQLevel: last.qLevel || null,
         lastDetail: last.detail || null,
+        lossInCumWindowPct: cumIn,
       },
       notes: { guest: [...allNotes.guest], host: [...allNotes.host] },
       levelTrace: early,
@@ -267,7 +277,7 @@ try {
     out.conditions.push(row);
     prev = cname;
     console.log(
-      `${cname.padEnd(7)} applied down ${applied.down}% up ${applied.up}% | guest lossPct mean ${row.guest.lossPctMean} (in ${row.guest.lossInPctMean} / out ${row.guest.lossOutPctMean}) snaps/s ${row.guest.snapshotsPerSecMean} (implied ${row.guest.impliedSnapLossPct}%) rtt ${row.guest.rttMsMean} levels ${JSON.stringify(row.guest.levels)} | chip "${row.guest.lastChip}" | host lossPct ${row.host.lossPctMean} levels ${JSON.stringify(row.host.levels)} chip "${row.host.lastChip}" | notes ${JSON.stringify(row.notes)} | react ${JSON.stringify(react)}`
+      `${cname.padEnd(7)} applied down ${applied.down}% up ${applied.up}% | guest lossPct mean ${row.guest.lossPctMean} (in ${row.guest.lossInPctMean} / out ${row.guest.lossOutPctMean}; in cumulative ${row.guest.lossInCumWindowPct}) snaps/s ${row.guest.snapshotsPerSecMean} (implied ${row.guest.impliedSnapLossPct}%) rtt ${row.guest.rttMsMean} levels ${JSON.stringify(row.guest.levels)} | chip "${row.guest.lastChip}" | host lossPct ${row.host.lossPctMean} levels ${JSON.stringify(row.host.levels)} chip "${row.host.lastChip}" | notes ${JSON.stringify(row.notes)} | react ${JSON.stringify(react)}`
     );
   }
   for (const p of peers) await admin('/admin/conditioner', { target: p.peerId, up: 'off', down: 'off' });

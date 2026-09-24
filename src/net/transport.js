@@ -83,6 +83,9 @@ export class RateMeter {
 // packets). A sequence that restarts (a new host after a migration: seqs
 // begin at 1 again) or jumps by more than `maxJump` (a stall or reconnect,
 // not loss) starts a fresh window instead of reporting a giant gap.
+// total(): the same count CUMULATIVE since clear() (every segment summed;
+// comparable to a conditioner's cumulative appliedLossPct), so a probe can
+// compare minutes of traffic instead of one 5 s window.
 export class SeqLossMeter {
   constructor({ windowMs = 5000, minSpan = 20, maxJump = 200, reorderSlack = 64, now = defaultNow } = {}) {
     this.windowMs = windowMs;
@@ -94,26 +97,50 @@ export class SeqLossMeter {
     this.maxSeq = null;
     this.lastAt = null;
     this.resets = 0;
+    this.totGot = 0;
+    this.totExpected = 0;
+    this.recent = new Set(); // seqs counted in this segment (bounded)
   }
   add(seq) {
     if (!Number.isFinite(seq)) return;
     const t = this.now();
     if (this.maxSeq !== null && (seq < this.maxSeq - this.reorderSlack || seq > this.maxSeq + this.maxJump)) this.reset();
+    // Cumulative: a new high seq extends the expected span; any seq not yet
+    // counted (first arrival, or a late one filling its gap) is received.
+    if (this.maxSeq === null) this.totExpected += 1;
+    else if (seq > this.maxSeq) this.totExpected += seq - this.maxSeq;
+    if (!this.recent.has(seq)) {
+      this.recent.add(seq);
+      this.totGot += 1;
+      if (this.recent.size > 512) this.recent.delete(this.recent.values().next().value);
+    }
     this.recv.push({ at: t, seq });
     if (this.maxSeq === null || seq > this.maxSeq) this.maxSeq = seq;
     this.lastAt = t;
     this.prune(t);
+  }
+  // -> { pct, got, expected } since clear(); pct null below minSpan.
+  total() {
+    const e = this.totExpected;
+    return { pct: e >= this.minSpan ? Math.max(0, Math.round((1 - Math.min(this.totGot, e) / e) * 1000) / 10) : null, got: this.totGot, expected: e };
+  }
+  clear() {
+    this.reset();
+    this.totGot = 0;
+    this.totExpected = 0;
   }
   // Entries live 1 s past the window: a seq that arrived just before the
   // window's oldest entry (reordered) still counts as received.
   prune(t = this.now()) {
     while (this.recv.length && t - this.recv[0].at > this.windowMs + 1000) this.recv.shift();
   }
+  // A new sequence segment (the cumulative totals are kept; see clear()).
   reset() {
     if (this.recv.length) this.resets += 1;
     this.recv.length = 0;
     this.maxSeq = null;
     this.lastAt = null;
+    this.recent.clear();
   }
   // -> { pct, got, expected } over the window; pct null while unmeasurable.
   measure() {
@@ -148,14 +175,18 @@ export class SeqLossMeter {
 // warnings; PLAN §3.7 UI states, benchmark C8 / A10). Thresholds, chosen
 // against what the game tolerates — the guest's interpolation delay is
 // ~100-200 ms, input frames ride 6-deep so upstream loss is masked until
-// heavy, remote entities extrapolate across a lost snapshot or two:
-//   poor  loss >= 8 %, or RTT >= 250 ms, or jitter >= 60 ms, or no update for >= 1.5 s
-//   fair  loss >= 2 %, or RTT >= 150 ms, or jitter >= 30 ms
+// heavy, remote entities extrapolate across a lost snapshot or two, and the
+// adaptive interpolation delay absorbs RTT jitter well below ~half of it
+// (jitterMs is the RFC 3550 mean |ΔRTT| of the 1 Hz pings, which also
+// carries this page's own main-thread stalls — so its bar sits high enough
+// that a loaded machine on a clean LAN link is not called a bad connection):
+//   poor  loss >= 8 %, or RTT >= 250 ms, or jitter >= 80 ms, or no update for >= 1.5 s
+//   fair  loss >= 2 %, or RTT >= 150 ms, or jitter >= 40 ms
 //   good  otherwise
 // reasons (worst first): 'stalled' | 'loss' | 'latency' | 'jitter'.
 export const QUALITY_THRESHOLDS = Object.freeze({
-  poor: Object.freeze({ lossPct: 8, rttMs: 250, jitterMs: 60, stallMs: 1500 }),
-  fair: Object.freeze({ lossPct: 2, rttMs: 150, jitterMs: 30 }),
+  poor: Object.freeze({ lossPct: 8, rttMs: 250, jitterMs: 80, stallMs: 1500 }),
+  fair: Object.freeze({ lossPct: 2, rttMs: 150, jitterMs: 40 }),
 });
 const LEVELS = ['good', 'fair', 'poor'];
 export function linkQuality({ lossPct = null, rttMs = null, jitterMs = null, stallMs = null } = {}) {

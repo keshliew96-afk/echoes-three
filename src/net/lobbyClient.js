@@ -139,8 +139,11 @@ export function createNetClient(opts = {}) {
       upLoss.at = now();
     }
   }
-  function resetLinkMeters() {
-    downLoss.reset();
+  // A new sequence segment (reconnect, new host); { clear: true } also drops
+  // the session's cumulative totals (leaving the session).
+  function resetLinkMeters({ clear = false } = {}) {
+    if (clear) downLoss.clear();
+    else downLoss.reset();
     upLoss.pct = null;
     upLoss.at = 0;
     quality.reset();
@@ -260,7 +263,7 @@ export function createNetClient(opts = {}) {
       const prev = state;
       state = next;
       // Outside a running session the link figures describe nothing.
-      if (next === 'offline' || next === 'lobby' || next === 'connecting') resetLinkMeters();
+      if (next === 'offline' || next === 'lobby' || next === 'connecting') resetLinkMeters({ clear: true });
       log('state', { from: prev, to: next });
       emit('state', { state: next, prev });
     }
@@ -1144,6 +1147,7 @@ export function createNetClient(opts = {}) {
     out.lossInPct = guestSide ? lossIn() : role === 'host' && inGame ? out.lossPct : null;
     out.lossOutPct = guestSide ? lossOut() : null;
     out.lossInWindow = guestSide ? downLoss.measure() : null;
+    out.lossInTotal = guestSide ? downLoss.total() : null; // cumulative this session
     out.snapshotAgeMs = guestSide && downLoss.ageMs() !== null ? Math.round(downLoss.ageMs()) : null;
     let judged = null;
     if (guestSide) judged = lossIn() === null && lossOut() === null ? null : out.lossPct;

@@ -58,6 +58,20 @@ ok(run(0, 200, { reorder: true }).pct() === 0, 'reordering is not loss', run(0, 
   ok(m.pct() === 0, 'the 5 s window forgets old loss', m.pct());
 }
 
+// ---- cumulative totals (comparable to the conditioner's cumulative counters)
+{
+  const m = run(10, 400, { dupEvery: 5, reorder: true });
+  const tot = m.total();
+  ok(Math.abs(tot.pct - 10) <= 0.5, 'total(): 1 in 10 lost over 400, with dups + reordering -> ~10 %', tot);
+  t = 0;
+  const m2 = new SeqLossMeter({ now });
+  for (let s = 1; s <= 100; s++) (t += 50), s % 5 !== 0 && m2.add(s); // 20 % loss
+  for (let s = 1; s <= 100; s++) (t += 50), m2.add(s); // new host: clean
+  ok(Math.abs(m2.total().pct - 10) <= 0.6 && m2.pct() === 0, 'total() keeps summing across a seq restart; the window restarts', { total: m2.total(), window: m2.pct() });
+  m2.clear();
+  ok(m2.total().expected === 0 && m2.total().pct === null, 'clear() drops the totals', m2.total());
+}
+
 // ---- quality levels
 const L = (x) => linkQuality(x).level;
 ok(L({ lossPct: 0, rttMs: 40, jitterMs: 3 }) === 'good', 'clean link good');

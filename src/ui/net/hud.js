@@ -124,6 +124,8 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
   let linkTimer = 0;
   let linkLevel = null;
   let lastReasonNoteAt = -Infinity;
+  let lastReason = null;
+  const REASON_REPEAT_MS = 45000;
   let lastLink = null;
   const lossText = (v) => `${v >= 10 ? Math.round(v) : Math.round(v * 10) / 10}%`;
   function readLink() {
@@ -165,12 +167,15 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     }
     chip.setAttribute('title', label);
     chip.setAttribute('aria-label', `${main.textContent} ${sub.textContent} ${label}`.trim());
-    // Say WHY once when the link turns poor (not on every flap).
+    // Say WHY once when the link turns poor (not on every flap): at most one
+    // note per 15 s, and the SAME reason again only after 45 s (a link that
+    // sits on a threshold flips fair/poor without repeating itself).
     if (level === 'poor' && linkLevel !== 'poor' && !(last && (last.reconnecting || last.hostLost))) {
       const t = performance.now();
-      if (t - lastReasonNoteAt >= REASON_NOTE_MS) {
+      const why = q.reasons[0];
+      if (t - lastReasonNoteAt >= (why === lastReason ? REASON_REPEAT_MS : REASON_NOTE_MS)) {
         lastReasonNoteAt = t;
-        const why = q.reasons[0];
+        lastReason = why;
         let text = 'Unstable connection — high jitter';
         if (why === 'stalled') text = 'No updates from the host — the world may freeze for a moment';
         else if (why === 'loss') text = `Unstable connection — ${lossText(loss)} packet loss`;

@@ -288,15 +288,20 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
   function feedLossPct(f) {
     const t = now();
     if (f.lossCache && t - f.lossCache.at < 500) return f.lossCache.pct;
-    const seen = new Set();
     let lo = Infinity;
     let hi = -Infinity;
+    let n = 0;
     for (let i = f.recv.length - 1; i >= 0 && t - f.recv[i].at <= 5000; i--) {
       const s = f.recv[i].seq;
-      seen.add(s);
+      n += 1;
       if (s < lo) lo = s;
       if (s > hi) hi = s;
     }
+    // Received = any seq in [lo, hi] still in the 10 s ring: a packet that
+    // arrived just before the window but belongs inside it (reordered by
+    // jitter) is not counted as lost.
+    const seen = new Set();
+    if (n >= 2) for (const x of f.recv) if (x.seq >= lo && x.seq <= hi) seen.add(x.seq);
     const expected = hi - lo + 1;
     const pct = seen.size >= 2 && expected >= 20 ? Math.max(0, Math.round((1 - seen.size / expected) * 1000) / 10) : null;
     f.lossCache = { at: t, pct };
