@@ -742,7 +742,10 @@ export function createSavesScreen(ctx) {
   const screen = {
     el,
     blocking: true,
-    layer: 'screen',
+    // The overlay band (z 1100), like Settings: the saves screen opens from the
+    // title AND from the in-game pause menu (itself an overlay) and must draw
+    // above — and take the mouse over — whichever opened it (SAVE-R1-F1).
+    layer: 'overlay',
     onOpen(params = {}) {
       open = true;
       mode = params.mode === 'save' && inGame() ? 'save' : 'load';

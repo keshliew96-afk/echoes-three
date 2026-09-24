@@ -156,6 +156,24 @@ export function createScreenManager({ root, ctx = {} } = {}) {
     el.classList.add('ap-in');
   }
 
+  // STACKING INVARIANT: the top of the stack is drawn above — and takes the
+  // pointer over — every screen beneath it, whatever z-band each declared
+  // (a 'screen'-band menu opened from the 'overlay'-band pause menu must not
+  // render under it; fix-M2-r1 SAVE-R1-F1). A pushed screen whose band is
+  // lower than the highest band under it is lifted to that z-index; within
+  // one z-index the later DOM node wins, and mount() re-appends in stack order.
+  function zOf(el) {
+    const z = parseInt(getComputedStyle(el).zIndex, 10);
+    return Number.isFinite(z) ? z : 0;
+  }
+  function liftAbove(entry) {
+    const el = entry.screen.el;
+    el.style.zIndex = '';
+    let floor = -Infinity;
+    for (const e of stack) if (e !== entry) floor = Math.max(floor, zOf(e.screen.el));
+    if (Number.isFinite(floor) && zOf(el) < floor) el.style.zIndex = String(floor);
+  }
+
   function unmount(screen) {
     const el = screen.el;
     el.classList.remove('ap-in');
@@ -196,6 +214,7 @@ export function createScreenManager({ root, ctx = {} } = {}) {
     const entry = { id, screen, params, focusEl: null };
     stack.push(entry);
     mount(screen.el);
+    liftAbove(entry);
     if (screen.onOpen) screen.onOpen(params);
     initialFocus(entry, 'open');
     if (!entry.focusEl) setRing(null);
