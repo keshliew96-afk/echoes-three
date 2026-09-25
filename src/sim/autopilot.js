@@ -177,9 +177,19 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       stats.doors += 1;
       return true;
     }
+    // CAMPAIGN (PLAN §12.2): the level-transition card advances at its
+    // untilTick — the same moment a ready presentation advances it.
+    if (v.phase === 'transit') {
+      const c = typeof r.campaign === 'function' ? r.campaign() : null;
+      if (c && c.card && c.card.due) r.campaignAdvance('autopilot');
+      return true;
+    }
+    // One shopping trip per LEVEL's shop (a campaign visits room 7 once per
+    // level: the key is act × 100 + room, still a plain number).
+    const shopKey = (v.act ?? 1) * 100 + v.room;
     if (v.phase === 'shop' && v.shop) {
-      if (cfg.shop === 'cheapest' && lastShopRoom !== v.room) {
-        lastShopRoom = v.room;
+      if (cfg.shop === 'cheapest' && lastShopRoom !== shopKey) {
+        lastShopRoom = shopKey;
         // Cheapest first (ties: shelf order) while the wallet lasts.
         for (let guard = 0; guard < 8; guard++) {
           const sv = r.view();

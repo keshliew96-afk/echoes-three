@@ -48,13 +48,49 @@
 //     boss room scales the Stag (HP 2400·T, damage) and its act-tier adds.
 //   - the status tracker (sim/status.js) announces status_apply / expire at
 //     the end of every tick; the autopilot (sim/autopilot.js) is created here.
+//
+// LINEAR CAMPAIGN (CAMPAIGN, 2026-09-25 — docs/gauntlet/PLAN.md §12, the
+// user's CRITICAL REFACTOR). This module is also the LEVEL DIRECTOR:
+//   - startCampaign({ level }) opens a campaign AT a level; clearing a level
+//     (the boss room's room_cleared — the Stag AND its adds dead) fires
+//     `level_clear` exactly once (a per-level latch), resets the level
+//     (director, boss, every hostile and transient, hazards + interactables
+//     through the room hooks), restores the party per data/campaign.js
+//     CARRY_RULES and enters phase 'transit' (the level-clear card). The
+//     host presentation (src/campaign/manager.js) calls campaignAdvance()
+//     once the next level is ready; the sim advances by itself at the card's
+//     hardUntilTick, so the card can never hang. The next level rolls a fresh
+//     run frame from the CARRIED run RNG stream and enters its room 1.
+//   - only the FINAL level's clear ends the run (victory, CAMPAIGN COMPLETE
+//     card, automatic return to camp after TRANSIT.victoryReturnTicks).
+//   - abandonRun() is the pause menu's Quit to Lobby: run_end
+//     { result: 'abandoned' } then return_to_camp, no end card.
+//   - startRun({ act }) keeps its legacy contract — ONE level (a 'single'
+//     run: the Stag clear -> victory -> camp) for the act runner, simtrace,
+//     ?run=1 and every probe written against it.
+//   - view() keeps its exact shape (the Node golden traces hash it); the
+//     campaign is read through campaign(), and no new event fires before the
+//     first level clear, so the 9 goldens stay bit-identical.
 import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
 import { PARTY_ALLIES, STARTING_SKILLS, SKILLS } from './skills.js';
 import { createDraftSystem, SPOILS_PER_CLEAR } from './draft.js';
+import { NODES } from './nodes.js';
 import { levelFor, ACT_IDS } from '../data/levels.js';
 import { difficulty, CHALLENGE } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
+import {
+  CARRY_RULES,
+  TRANSIT,
+  FIRST_LEVEL,
+  nextLevel,
+  isLevel,
+  grantFor,
+  campaignRules,
+} from '../data/campaign.js';
+
+// Plain-data deep copy (sim state only — structuredClone keeps -Infinity/NaN).
+const cloneData = (v) => (v === null || v === undefined ? v : structuredClone(v));
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -146,6 +182,15 @@ export function createRunSystem({
   let lastCombatLayout = null; // the "never the same layout twice in a row" memory
   let roomPlanView = null; // difficulty numbers of the live room (probe)
   let roomHooks = { enter: null, exit: null }; // M4b's content systems (contract (a))
+  // Linear campaign (PLAN §12.2) — plain data, serialised with the run:
+  //   { mode: 'campaign'|'single', harness, startLevel, level, index,
+  //     levels: [{ level, index, startTick, rooms, cleared, ticks }],
+  //     startTick, levelStartTick, clearedAt, card, grant, transitions }
+  // card (phase 'transit') = { kind: 'clear'|'depart', from, to, startTick,
+  //   untilTick, minSkipTick, hardUntilTick, summary }.
+  let campaign = null;
+  // CAMPAIGN COMPLETE card -> camp at this tick (survives the run-end wipe).
+  let autoReturnTick = null;
 
   // ------------------------------------------------------------ run frame --
   // ONE fixed roll sequence (defend positions, then the 5 path side bits) so a
@@ -171,11 +216,38 @@ export function createRunSystem({
   }
 
   // -------------------------------------------------------------- lifecycle --
+  // startRun({ act, challenge }) — the legacy SINGLE-LEVEL run (harness /
+  // probes / act runner / ?run=1): one level, the Stag clear ends it with
+  // victory. A start past the first level still gets the starter grant (PLAN
+  // §12.4), so the act runner measures exactly "a Level-N start".
   function startRun(opts = {}) {
     const o = opts && typeof opts === 'object' ? opts : {};
+    openRun({ act: o.act, challenge: o.challenge, mode: 'single', harness: true });
+    enterRoom(1);
+    return view();
+  }
+
+  // startCampaign({ level, challenge, depart, harness }) — a CAMPAIGN from
+  // `level` through the final level (PLAN §12.2). `depart`: open on the
+  // setting-out card (phase 'transit', kind 'depart') so the presentation can
+  // load the level first — always used for a Level-N start from the Level
+  // Select, and for Begin Run when Level 1's assets are not resident yet.
+  // `harness`: started by a developer path that bypasses the unlock chain
+  // (?level=N, cmd('startCampaign')) — the save lock check honours it.
+  function startCampaign(opts = {}) {
+    const o = opts && typeof opts === 'object' ? opts : {};
+    const level = isLevel(o.level ?? o.act) ? Number(o.level ?? o.act) : FIRST_LEVEL;
+    openRun({ act: level, challenge: o.challenge, mode: 'campaign', harness: !!o.harness });
+    if (o.depart) beginTransit('depart', null, level, getTick());
+    else enterRoom(1);
+    return view();
+  }
+
+  function openRun({ act: a, challenge: c, mode, harness }) {
     wipeState({ silent: true });
-    act = ACT_IDS.includes(Number(o.act)) ? Number(o.act) : 1;
-    challenge = CHALLENGE[o.challenge] ? o.challenge : 'standard';
+    autoReturnTick = null;
+    act = ACT_IDS.includes(Number(a)) ? Number(a) : 1;
+    challenge = CHALLENGE[c] ? c : 'standard';
     frame = rollFrame();
     active = true;
     everStarted = true;
@@ -187,6 +259,21 @@ export function createRunSystem({
     spoils = null;
     spoilsTotal = 0;
     startTick = getTick();
+    campaign = {
+      mode,
+      harness: !!harness,
+      startLevel: act,
+      level: act,
+      index: 1,
+      levels: [{ level: act, index: 1, startTick, rooms: 0, cleared: false, ticks: 0 }],
+      startTick,
+      levelStartTick: startTick,
+      clearedAt: 0,
+      card: null,
+      grant: null,
+      transitions: 0,
+    };
+    // Payload unchanged since v0.5.x (the goldens hash every event).
     events.emit(getTick(), 'run_start', {
       seed: frame.seed,
       modes: [...frame.modes],
@@ -196,8 +283,50 @@ export function createRunSystem({
       actName: levelFor(act).name,
       challenge,
     });
-    enterRoom(1);
-    return view();
+    if (act !== FIRST_LEVEL) applyStarterGrant(act);
+  }
+
+  // PLAN §12.4 starter grant for a start AT level N > 1: skill draws, node
+  // draws in pairs (the clear-spoils rule) each followed by the shared
+  // auto-fill, legendary draws, then Glint. Fixed draw order off the run RNG
+  // (right after the run frame), no combat active (phase idle), so the same
+  // seed always grants the same kit.
+  function applyStarterGrant(level) {
+    const g = grantFor(level);
+    if (!g) return null;
+    const tick = getTick();
+    const skills = [];
+    for (let i = 0; i < (g.skills ?? 0); i++) {
+      const pool = draft.skillPool();
+      if (pool.length === 0) break;
+      const id = pool[rng.int(pool.length)];
+      const r = skillSys.giveSkill(id);
+      if (r && r.error) break;
+      skills.push(id);
+    }
+    const nodes = [];
+    for (let left = g.nodes ?? 0; left > 0; ) {
+      const ids = draft.spoils(Math.min(2, left));
+      if (ids.length === 0) break;
+      for (const id of ids) {
+        buildSys.grantNode(id, 'grant');
+        nodes.push(id);
+      }
+      left -= ids.length;
+      buildSys.autoFill();
+    }
+    for (let i = 0; i < (g.legendaries ?? 0); i++) {
+      const pool = draft.nodePool().filter((id) => NODES[id] && NODES[id].rarity === 'legendary');
+      if (pool.length === 0) break;
+      const id = pool[rng.int(pool.length)];
+      buildSys.grantNode(id, 'grant');
+      nodes.push(id);
+      buildSys.autoFill();
+    }
+    if (g.glint) gainGlint(g.glint, 'starter_grant');
+    campaign.grant = { level, skills, nodes, glint: g.glint ?? 0 };
+    events.emit(tick, 'starter_grant', { level, skills: [...skills], nodes: [...nodes], glint: g.glint ?? 0 });
+    return campaign.grant;
   }
 
   // §4.1 room table roll: one layout per combat room from the act's pool,
@@ -325,7 +454,7 @@ export function createRunSystem({
     gainGlint(RUN.stipend, 'clear_stipend');
 
     if (roomIndex === RUN.bossRoom) {
-      endRun('victory');
+      onLevelCleared(tick);
       return;
     }
     // 6. reward presentation — SKIPPED (silently, no reward event) when the
@@ -499,6 +628,295 @@ export function createRunSystem({
     events.emit(getTick(), 'room_transition', { from: roomIndex, to: next, ticks: RUN.fadeTicks });
   }
 
+  // ------------------------------------------------ level director (§12) --
+  // The level-clear trigger. Reached ONLY from onRoomCleared in the boss room,
+  // which itself acts only while phase === 'combat' and changes the phase in
+  // this same call; the per-level latch below makes a second call a no-op
+  // whatever path reaches it (a replayed clear, a cmd, a same-tick double).
+  function onLevelCleared(tick) {
+    const c = campaign;
+    if (c && c.clearedAt === c.index) return;
+    const level = act;
+    const next = c && c.mode === 'campaign' ? nextLevel(level) : null;
+    const levelTicks = c ? tick - c.levelStartTick : tick - startTick;
+    if (c) {
+      c.clearedAt = c.index;
+      const rec = c.levels[c.levels.length - 1];
+      if (rec) {
+        rec.rooms = roomsDone;
+        rec.cleared = true;
+        rec.ticks = levelTicks;
+      }
+    }
+    events.emit(tick, 'level_clear', {
+      level,
+      name: levelFor(level).name,
+      next,
+      final: next === null,
+      index: c ? c.index : 1,
+      campaign: !!(c && c.mode === 'campaign'),
+      ticks: levelTicks,
+      rooms: roomsDone,
+    });
+    if (next === null) {
+      endRun('victory');
+      // CAMPAIGN COMPLETE: the card returns to camp by itself (sim time, so a
+      // pause holds it and a network guest follows the host).
+      if (c && c.mode === 'campaign') autoReturnTick = tick + TRANSIT.victoryReturnTicks;
+      return;
+    }
+    beginTransit('clear', level, next, tick);
+  }
+
+  // RESET — every level-bound thing the sim owns goes (PLAN §12.3). The
+  // presentation half (decals, particles, numerals, telegraph rigs, voices,
+  // dressing) follows the `level_transit` event (src/campaign/manager.js).
+  function resetLevel(tick, cause) {
+    if (CARRY_RULES.resetShop) shop = null;
+    reward = null;
+    path = null;
+    pendingRoom = 0;
+    if (CARRY_RULES.resetDirector) {
+      waves.stop(cause);
+      boss.despawn();
+    }
+    if (CARRY_RULES.resetEntities) {
+      enemies.reset();
+      sweepPlayerTransients(tick, cause);
+      exitRoom(tick); // room hooks: hazards + interactables despawn
+      allySys.cmd('mark', [null]);
+      allySys.cmd('roomBoundary'); // ally zones + ally bolts, revive channels
+      // Pending Echo recasts are in-flight casts of the level that ended.
+      const bs = cloneData(buildSys.saveState());
+      if (bs && Array.isArray(bs.echoQueue) && bs.echoQueue.length) {
+        bs.echoQueue = [];
+        buildSys.loadState(bs);
+      }
+      // Anything level-owned a system missed (belt and braces): only the
+      // party may ride into the next level. Counted so a leak stays visible
+      // (campaign().card.leftovers — the GC.5 probe expects []).
+      const leftovers = [];
+      for (const e of registry.all()) {
+        if (e.partyIndex !== undefined || e.kind === 'player' || e.kind === 'ally') continue;
+        leftovers.push(e.kind);
+        registry.despawn(e.id);
+      }
+      return leftovers;
+    }
+    return [];
+  }
+
+  // RESTORE + the non-default CARRY switches (PLAN §12.3).
+  function restoreParty(tick) {
+    for (const e of registry.all()) {
+      if (e.partyIndex === undefined) continue;
+      if (CARRY_RULES.reviveDowned && (e.downed || e.hp <= 0)) {
+        e.downed = false;
+        e.downedTick = -1;
+        if (e.hp <= 0) e.hp = e.maxHp;
+      }
+      if (CARRY_RULES.restoreHp) e.hp = e.maxHp;
+      if (CARRY_RULES.clearStatuses && e.status) e.status = {};
+      if (CARRY_RULES.resetCooldowns) {
+        if (Array.isArray(e.cds)) e.cds = e.cds.map(() => tick);
+        if (e.kind === 'ally' && Number.isFinite(e.dodgeReadyTick)) e.dodgeReadyTick = tick;
+      }
+    }
+    if (CARRY_RULES.resetCooldowns) {
+      const s = skillSys.serialize();
+      s.slots = s.slots.map((x) => (x ? { ...x, remaining: 0 } : null));
+      skillSys.restore(s);
+      player.dodgeReadyTick = tick;
+      player.nextBasicTick = tick;
+      player.dashTicksLeft = 0;
+    }
+    applyCarrySwitches(tick);
+  }
+
+  function applyCarrySwitches(tick) {
+    const R = CARRY_RULES;
+    if (!R.carrySkills || !R.carrySockets || !R.carryBench) {
+      const bs = cloneData(buildSys.saveState());
+      const keep = R.carrySkills ? null : new Set(STARTING_SKILLS);
+      const freed = [];
+      const rows = [];
+      for (const [id, row] of bs.assignments ?? []) {
+        if ((keep && !keep.has(id)) || !R.carrySockets) {
+          for (const r of row) if (r) freed.push({ ...r });
+          continue;
+        }
+        rows.push([id, row]);
+      }
+      bs.assignments = rows;
+      bs.bench = R.carryBench ? [...(bs.bench ?? []), ...freed] : [];
+      buildSys.loadState(bs);
+      if (keep) {
+        const s = skillSys.serialize();
+        const kit = new Array(SKILL_SLOTS).fill(null);
+        STARTING_SKILLS.forEach((id, i) => {
+          kit[i] = { id, remaining: 0 };
+        });
+        skillSys.restore({ slots: kit, override: s.override, auras: s.auras });
+      }
+    }
+    if (!R.carryGlint) wallet = 0;
+    if (!R.carryHealOverride) {
+      skillSys.clearOverride();
+      events.emit(tick, 'heal_override', { index: null });
+    }
+    if (!R.carrySeedStream && typeof rng.reseed === 'function') rng.reseed(Math.floor(rng.float() * 0x100000000) >>> 0);
+    if (!R.carryRecords && campaign) campaign.levels = campaign.levels.slice(-1);
+  }
+
+  // What the card shows about the build that rides into the next level.
+  function carriedSummary() {
+    const b = buildSys.view();
+    const owned = skillSys.slotsView().filter(Boolean).map((s) => s.id);
+    return {
+      skills: owned,
+      socketed: b.skills.reduce((n, s) => n + s.filled, 0),
+      sockets: b.skills.length * (b.socketCount ?? 8),
+      bench: b.bench.length,
+      wallet,
+      grant: campaign && campaign.grant ? cloneData(campaign.grant) : null,
+    };
+  }
+
+  // Phase 'transit' — the level-clear card (kind 'clear') or the setting-out
+  // card of a Level-N start (kind 'depart'). The card is sim-timed.
+  function beginTransit(kind, from, to, tick) {
+    let leftovers = [];
+    if (kind === 'clear') {
+      leftovers = resetLevel(tick, 'level_clear');
+      restoreParty(tick);
+    }
+    const min = kind === 'clear' ? TRANSIT.clearTicks : to !== FIRST_LEVEL ? TRANSIT.departTicks : 0;
+    campaign.card = {
+      kind,
+      from,
+      to,
+      startTick: tick,
+      untilTick: tick + min,
+      minSkipTick: tick + Math.min(min, TRANSIT.minSkipTicks),
+      hardUntilTick: tick + TRANSIT.hardTicks,
+      summary: carriedSummary(),
+      leftovers,
+    };
+    campaign.transitions += 1;
+    phase = 'transit';
+    events.emit(tick, 'level_transit', {
+      kind,
+      from,
+      to,
+      name: levelFor(to).name,
+      index: campaign.index + (kind === 'clear' ? 1 : 0),
+      untilTick: campaign.card.untilTick,
+      minSkipTick: campaign.card.minSkipTick,
+      hardUntilTick: campaign.card.hardUntilTick,
+    });
+  }
+
+  // The card's Enter / the presentation's "ready" advance / the autopilot.
+  function campaignAdvance(reason = 'skip') {
+    if (!active || phase !== 'transit' || !campaign || !campaign.card) return null;
+    const tick = getTick();
+    if (tick < campaign.card.minSkipTick) return { refused: 'settle', inTicks: campaign.card.minSkipTick - tick };
+    return advanceLevel(typeof reason === 'string' ? reason : 'skip');
+  }
+
+  // Build the next level and walk into its room 1.
+  function advanceLevel(reason) {
+    const tick = getTick();
+    const card = campaign.card;
+    const to = card.to;
+    exitRoom(tick);
+    act = to;
+    frame = rollFrame(); // the CARRIED run stream (no reseed) rolls the new level's frame
+    roomIndex = 0;
+    clearedRooms = 0;
+    roomsDone = 0;
+    rewardFor = { 1: 'skill' };
+    reward = null;
+    path = null;
+    shop = null;
+    spoils = null;
+    pendingRoom = 0;
+    fadeUntilTick = 0;
+    lastCombatLayout = null;
+    roomPlanView = null;
+    if (card.kind === 'clear') {
+      campaign.index += 1;
+      campaign.levels.push({ level: to, index: campaign.index, startTick: tick, rooms: 0, cleared: false, ticks: 0 });
+    }
+    campaign.level = to;
+    campaign.levelStartTick = tick;
+    campaign.card = null;
+    events.emit(tick, 'level_start', {
+      level: to,
+      name: levelFor(to).name,
+      index: campaign.index,
+      from: card.kind === 'clear' ? card.from : null,
+      campaign: campaign.mode === 'campaign',
+      reason,
+      seed: frame.seed,
+      modes: [...frame.modes],
+    });
+    enterRoom(1);
+    return view();
+  }
+
+  // Quit to Lobby (pause menu, confirmed): the campaign is abandoned — the
+  // records count it — and the world returns to camp with no end card.
+  function abandonRun(reason = 'quit') {
+    if (!active) return null;
+    const tick = getTick();
+    const s = endRun('abandoned');
+    phase = 'idle';
+    autoReturnTick = null;
+    const leaked = registry.all().filter((e) => e.faction === 'hostile').length;
+    waves.stop('return_to_camp');
+    boss.despawn();
+    enemies.reset();
+    events.emit(tick, 'return_to_camp', { enemies: leaked, reason: typeof reason === 'string' ? reason : 'quit' });
+    return { abandoned: true, summary: s };
+  }
+
+  function campaignView() {
+    const c = campaign;
+    const tick = getTick();
+    if (!c) return { active: false, mode: null, autoReturnTick, autoReturnInTicks: autoReturnTick !== null ? Math.max(0, autoReturnTick - tick) : null };
+    const card = c.card
+      ? {
+          ...cloneData(c.card),
+          name: levelFor(c.card.to).name,
+          fromName: c.card.from !== null ? levelFor(c.card.from).name : null,
+          elapsedTicks: tick - c.card.startTick,
+          canSkip: tick >= c.card.minSkipTick,
+          due: tick >= c.card.untilTick,
+        }
+      : null;
+    return {
+      active,
+      mode: c.mode,
+      harness: c.harness,
+      startLevel: c.startLevel,
+      level: c.level,
+      name: levelFor(c.level).name,
+      index: c.index,
+      next: c.mode === 'campaign' ? nextLevel(c.level) : null,
+      levels: cloneData(c.levels),
+      levelsCleared: c.levels.filter((l) => l.cleared).length,
+      clearedAt: c.clearedAt,
+      card,
+      grant: cloneData(c.grant),
+      transitions: c.transitions,
+      startTick: c.startTick,
+      levelStartTick: c.levelStartTick,
+      autoReturnTick,
+      autoReturnInTicks: autoReturnTick !== null ? Math.max(0, autoReturnTick - tick) : null,
+    };
+  }
+
   // ------------------------------------------------------------------ shop --
   function openShop() {
     const stock = draft.shopStock().map((s) => ({ ...s, sold: false }));
@@ -585,6 +1003,20 @@ export function createRunSystem({
         .all()
         .filter((e) => e.partyIndex !== undefined)
         .map((e) => ({ index: e.partyIndex, hp: r2(e.hp), maxHp: e.maxHp })),
+      // PLAN §12.8: the campaign this run was (levels played, cleared, time).
+      campaign: campaign
+        ? {
+            mode: campaign.mode,
+            harness: campaign.harness,
+            startLevel: campaign.startLevel,
+            level: campaign.level,
+            index: campaign.index,
+            levels: cloneData(campaign.levels),
+            levelsCleared: campaign.levels.filter((l) => l.cleared).length,
+            complete: campaign.mode === 'campaign' && result === 'victory',
+            grant: cloneData(campaign.grant),
+          }
+        : null,
     };
   }
 
@@ -601,6 +1033,7 @@ export function createRunSystem({
       ticks: summary.ticks,
       act,
       challenge,
+      campaign: summary.campaign ? cloneData(summary.campaign) : null,
     });
     // §2/§13: ALL run state is wiped at run end (the end screen renders from
     // the frozen summary above, never from live state).
@@ -618,6 +1051,7 @@ export function createRunSystem({
     exitRoom(tick);
     lastCombatLayout = null;
     roomPlanView = null;
+    campaign = null; // (endRun froze it into the summary first)
     active = false;
     roomIndex = 0;
     reward = null;
@@ -667,6 +1101,7 @@ export function createRunSystem({
     // at run end, so this only dismisses the end screen.
     if (phase !== 'victory' && phase !== 'defeat') return null;
     phase = 'idle';
+    autoReturnTick = null;
     // Debug assertion for §18: nothing hostile may ride into the hub. The
     // count is taken BEFORE the belt-and-braces sweep so a leak is visible in
     // the event payload even though the sweep removes it.
@@ -693,6 +1128,11 @@ export function createRunSystem({
     // before a fade can walk into the next room.
     statusTracker.endOfTick();
     if (phase === 'fade' && getTick() >= fadeUntilTick) enterRoom(pendingRoom);
+    // PLAN §12.2: the card's own hard bound — the sim advances whatever the
+    // presentation does (hidden host tab, no UI, a stuck preload).
+    if (phase === 'transit' && campaign && campaign.card && getTick() >= campaign.card.hardUntilTick) advanceLevel('timeout');
+    // CAMPAIGN COMPLETE -> camp, in sim time (pause holds it; guests follow).
+    if (phase === 'victory' && autoReturnTick !== null && getTick() >= autoReturnTick) returnToCamp();
   }
 
   // §2: defeat = all 4 party members Downed simultaneously (the ONLY defeat
@@ -770,6 +1210,21 @@ export function createRunSystem({
       case 'startRun':
         // ('startRun', { act, challenge }) — PLAN §6.4; bypasses act locks.
         return startRun(args[0] && typeof args[0] === 'object' ? args[0] : { act: args[0], challenge: args[1] });
+      // ------------------------------------------ CAMPAIGN (PLAN §12.11) --
+      case 'startCampaign': {
+        // ('startCampaign', { level, challenge, depart }) — a developer path:
+        // bypasses the unlock chain and marks the run harness.
+        const o = args[0] && typeof args[0] === 'object' ? args[0] : { level: args[0], challenge: args[1] };
+        return startCampaign({ harness: true, ...o });
+      }
+      case 'campaignAdvance':
+        return campaignAdvance(args[0] ?? 'skip');
+      case 'abandonRun':
+        return abandonRun(args[0] ?? 'quit');
+      case 'campaignState':
+        return campaignView();
+      case 'campaignRules':
+        return campaignRules();
       // ------------------------------------------ Gauntlet M4a probe cmds --
       case 'setStatus': {
         // ('setStatus', id, kind, mag, ticks) -> the stored record | refusal
@@ -838,6 +1293,9 @@ export function createRunSystem({
         // with no run live, the options start one in that act.
         const n = Math.max(1, Math.min(RUN.rooms, args[0] ?? 1));
         if (!active) startRun(args[1] && typeof args[1] === 'object' ? args[1] : {});
+        // A level-transition card is between two levels: advance it first
+        // (the skip then lands in the NEW level), never skip inside the old one.
+        if (phase === 'transit' && campaign && campaign.card) advanceLevel('skip_room');
         phase = 'skip'; // suppresses the boundary sequence on the forced clear
         waves.forceClear();
         boss.despawn();
@@ -952,6 +1410,9 @@ export function createRunSystem({
       autopilot: autopilot.serialize(),
       spoils,
       spoilsTotal,
+      // CAMPAIGN (schema 3): the level director's whole state, the card included.
+      campaign: cloneData(campaign),
+      autoReturnTick,
     };
   }
   function loadState(d) {
@@ -981,12 +1442,39 @@ export function createRunSystem({
     // M4c additions — absent in a tree migrated from schema 1.
     spoils = d.spoils ?? null;
     spoilsTotal = Number.isFinite(d.spoilsTotal) ? d.spoilsTotal : 0;
+    // CAMPAIGN additions (schema 3; save/codec.js MIGRATIONS[2] fills them
+    // for an older act run). A live run with no campaign record is treated as
+    // a campaign from its act, so an in-memory older payload still advances.
+    campaign = d.campaign ? cloneData(d.campaign) : null;
+    if (!campaign && active) {
+      campaign = {
+        mode: 'campaign',
+        harness: false,
+        startLevel: act,
+        level: act,
+        index: 1,
+        levels: [{ level: act, index: 1, startTick, rooms: roomsDone, cleared: false, ticks: 0 }],
+        startTick,
+        levelStartTick: startTick,
+        clearedAt: 0,
+        card: null,
+        grant: null,
+        transitions: 0,
+      };
+    }
+    autoReturnTick = Number.isFinite(d.autoReturnTick) ? d.autoReturnTick : null;
   }
 
   const api = {
     saveState,
     loadState,
     startRun,
+    // Linear campaign (PLAN §12.2).
+    startCampaign,
+    campaignAdvance,
+    abandonRun,
+    campaign: campaignView,
+    campaignRules,
     endRun,
     onRoomCleared,
     onDefeat,

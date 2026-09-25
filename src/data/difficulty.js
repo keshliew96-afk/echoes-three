@@ -46,12 +46,15 @@
 // Pure module. The ?room= harness (no run, no act) never calls this: it keeps
 // the legacy §11 composition exactly (PLAN gate G4a.6).
 
-export const ACT_TIER = Object.freeze([null, 1.0, 1.15, 1.75]);
+export const ACT_TIER = Object.freeze([null, 1.0, 1.6, 2.8]);
 export const ROOM_SLOPE = 0.16;
 export const BASE_BUDGET = 4.0;
 export const DEFEND_BUDGET_SCALE = 1.25;
-export const STAG_BASE_HP = 2400; // bossHp = STAG_BASE_HP × T
-export const BOSS_DMG_SLOPE = 0.7; // bossDmgMul = addDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1)
+export const STAG_BASE_HP = 2400; // bossHp = STAG_BASE_HP × T × STAG_HP_LEVEL[act]
+// Per-level Stag HP factor (CAMPAIGN retune, 2026-09-25): the Stag meets a
+// CARRIED build from Level 2 on; 1.0 keeps a level on the plain formula.
+export const STAG_HP_LEVEL = Object.freeze([null, 1.0, 1.35, 1.0]);
+export const BOSS_DMG_SLOPE = 0.9; // bossDmgMul = addDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1)
 export const WAVE_INTERVAL_TICKS = 480; // §11 8 s
 export const INTERVAL_ACT = Object.freeze([null, 1.0, 0.95, 0.9]);
 export const WAVE_SIZE_CAP = 8; // enemies per wave
@@ -108,7 +111,7 @@ export function difficulty(act = 1, room = 1, challenge = 'standard') {
     eliteChance: r4(ELITE[a](r)),
     waveIntervalTicks: Math.round(WAVE_INTERVAL_TICKS * (1 - 0.04 * (r - 1)) * INTERVAL_ACT[a]),
     waystoneHp: Math.round(150 * Math.sqrt(T)),
-    bossHp: Math.round(STAG_BASE_HP * T * c.hp),
+    bossHp: Math.round(STAG_BASE_HP * T * (STAG_HP_LEVEL[a] ?? 1) * c.hp),
     // Boss adds scale with the act tier alone, like the Stag they serve.
     addHpMul: r4(T * c.hp),
     addDmgMul: r4((1 + BOSS_DMG_SLOPE * (T - 1)) * c.dmg),
