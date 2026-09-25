@@ -95,3 +95,77 @@ Tool tools/gntcmenu2-resp.mjs (captures/gntcmenu2-resp.log): 3 fresh pages, GPU 
 | mouse hover (real movement between two rows) | 20 | 45.6/56.3/57.1 | not recorded by app.responses (n 0) | p95 6 ms over on a 56 fps loaded run (max 57 < 100); re-measured in Step 4b |
 | mouse click (Settings open / Back) | 20 | 26.7/44.3/46.0 | 30.3/49.8/50.0 | PASS |
 Early-window long tasks are the boot's own (2.9 s / 1.2 s / 0.9 s at +8..+13 s of page life, before the first press); none > 100 ms during the press windows in runs 2-3. 0 page errors.
+
+## Step 5 — G1.4 / G1.5 / G1.8 / G1.9 / G1.10 state probe (DONE; follow-ups in Step 5b)
+Tool tools/gntcmenu2-state.mjs (captures/gntcmenu2-state.log), GPU harness 1600x900 dpr 1, real puppeteer keys.
+| gate | measured | result |
+|---|---|---|
+| G1.4 buffer = round(css x min(dpr,2) x s) | s 0.5 -> 800x450, 0.75 -> 1200x675, 1.0 -> 1600x900, 1.25 -> 2000x1125, 1.5 -> 2400x1350; each applied in 1 frame | PASS |
+| G1.4 HUD rects +-1 px | 40 HUD leaves, max delta 0 px at every scale | PASS |
+| G1.4 pixel detail | Laplacian variance 0.5: 20.8 < 0.75: 68.1 < 1.0: 307.4 (captures/gntcmenu2-scale-0p5.png .. -1p5.png) | PASS |
+| G1.4 fps(0.5) >= fps(1.0) | 129.7 vs 90.8 (1.5: 56.0) | PASS |
+| G1.5 enter | trusted ArrowRight on Display mode -> fullscreenElement in 13.1 ms, setting true, row "Fullscreen (browser)", canvas 1600x900 = inner | PASS |
+| G1.5 browser exit | exitFullscreen -> setting false + row "Windowed" after 1 fullscreenchange, no dialog | PASS |
+| G1.9 fullscreen | keep-display (default Keep, "Reverting in 10 s"); timeout closed after 9123 ms with fsEl null; Revert -> null; Keep -> stays; leaving via UI = no dialog; Alt+Enter toggles and mirrors | PASS |
+| gamepad fullscreen | pad right on Display mode -> stays Windowed + warn toast "Press Enter or click — browsers don't let a gamepad button switch to fullscreen" (captures/gntcmenu2-fs-padnote.png) | PASS (honest) |
+| G1.8 persist | 27 keys (22 non-default + display) -> reload -> 0 diffs; loadReport ok; effects re-applied at boot: buffer 1280x720 (0.8), source uncapped (V-Sync off), limit 30, fps meter visible "30 fps"; fullscreen reads false after reload | PASS |
+| G1.8 corrupt | corrupt-json / truncated / wrong-type -> defaults + toast "Settings were reset — the saved file was unreadable" + corrupt copy kept; hostile-values -> per-key defaults; newer-version (v99) -> defaults + toast, blob kept until a change; every case 0 page errors and next change writes clean v1 JSON | PASS |
+| G1.8 throwing storage | storage "memory", footer note present, live change 1520x855 works, 0 errors (captures/gntcmenu2-throwing-storage.png) | PASS |
+| G1.9 render scale | dialog names "Resolution scale 85% — render resolution 1360 × 765", countdown 9 -> 7; Revert -> 1.0 / 1600x900; Keep -> 0.85 / 1360x765; timeout (9598 ms) -> reverts to previous kept 0.85; tab switch also arms it; V-Sync/limit apply instantly without a dialog | PASS |
+| G1.10 exit | confirm default Cancel, copy "Exit Echoes? Your progress and settings are saved."; OK -> window.close called once -> farewell in 322 ms, honest copy, music state "silence", sim paused, ring 1 (captures/gntcmenu2-farewell.png) | PASS |
+| 0 page errors | every section | PASS |
+Probe FAILs that need a discriminating re-run (probe-side suspicion): S5/P6 (slider readout read "" — probe read the wrong element; buffer values themselves were right 0.9 -> 1440x810), R1/R2 (Reset pressed via keyboard landed on the Audio tab's au-muteonblur — probe navigation, not yet a verdict), X4 (Return from farewell focuses New Game, not Exit — farewell replaces the stack, so restore-focus is not strictly implied; judged in 5b), M2/M3 (auto-pause probe blurred while the pause overlay was already open — invalid; re-run from live play in 5b).
+
+## Step 5b — discriminating re-runs of the Step 5 probe FAILs (DONE)
+Tools tools/gntcmenu2-state2.mjs (captures/gntcmenu2-state2.log) and tools/gntcmenu2-state3.mjs (captures/gntcmenu2-state3.log). All Step-5 FAILs were probe defects; the game passes each leg:
+- S5/P6 readout: the slider row reads "Render resolution 1440 × 810 (90%) · sharper UI, softer 3D, faster" after two ArrowLeft steps, buffer 1440x810 (state2 S5r PASS). After a reload (no ?fresh — that param wipes storage, which caused the first P6r miss) the Display tab reads "100% · 1600 × 900 · native", "Windowed" + "Fullscreen lasts for this visit — browsers leave it when the page reloads.", V-Sync "On · Frames paced to your display (~170 Hz)", "60 fps · Rendering 58 fps", FPS "Off" with frameLimit 60 restored (state3; the FAIL line is my `\bOn\b` regex on concatenated text "V-SyncOnFrames"). captures/gntcmenu2-state3-limit60.png.
+- Mouse-only Display tab: V-Sync switch click -> Off + source uncapped; frame-limit ">" chevron (46.7x46.7 px buttons) steps Unlimited -> 30 -> 60 -> 120 -> 144 -> Unlimited -> 30, "<" steps back; limit 60 by mouse renders 58.4-59 fps with the row "Rendering 59 fps"; Display-mode ">" enters fullscreen, "<" leaves (state3 L1-L4 PASS).
+- Reset to defaults (mouse): confirm "Reset Display settings? Every setting on this tab goes back to its default." default focus Cancel; Cancel keeps 0.9 / V-Sync off (R1b's FAIL was only the limit that the probe never changed); OK -> 1.0 / V-Sync on / Unlimited, buffer 1600x900, source raf, toast "Display settings reset to defaults"; per-tab scope (audio.master 0.33 untouched). captures/gntcmenu2-reset-confirm.png, -reset-done.png.
+- Auto-pause (from live play, not from an open pause menu): blur -> pause menu opens, 0 ticks in 1 s, ring 1; focus back -> menu stays (explicit resume), Esc resumes 61 ticks/s; autoPause off -> blur keeps 60 ticks/s, nothing opens; ?menu=0 boot never auto-pauses (57 ticks in 1 s). captures/gntcmenu2-autopause.png.
+- X4: Return from farewell -> ["title"] with focus on New Game (the farewell replaces the stack; the plan does not require the Exit row) — advisory only (Hades returns the cursor to the row you left from).
+- Copy advisory: with V-Sync Off the info panel repeats the Off paragraph twice (white general text + orange current-state text) — captures/gntcmenu2-state2-changed.png.
+- 0 page errors in state2 and state3.
+
+## Step 6 — G1.6 V-Sync / G1.7 frame limit on the DISPLAY harness (in progress: runs 1-2 recorded)
+Tool tools/gntcmenu2-pace.mjs (headful, ANGLE D3D11 "AMD Radeon(TM) Graphics", window 1600x900 -> css 1586x806, dpr 1.5, screen 1707x960). Independent frame counter installed before game scripts (JS tasks that drew to the default framebuffer) = glFps; it matched the game's frameCount rate to 0.1 fps in all 42 samples. Panel refresh measured on a blank page in the same browser: 165.5 / 161.3 (run 1), 160.5 / 155.5 / 156.2 (run 2). `rafhz --headful` on the camp read 82.6 Hz (frame p50 12.1 ms: GPU-bound, so it reads half the panel). Machine heavily shared (other agents' Chrome instances): samples with sim < 59 ticks/s are marked contention.
+Logs: captures/gntcmenu2-pace-run1.log (scales 1.0 + 0.5), captures/gntcmenu2-pace2.log (scale 0.5 repeats + copy legs).
+| scale | vsync | limit | run 1 fps (glFps / ticks) | run 2 fps | note |
+|---|---|---|---|---|---|
+| 1.0 (buf 2379x1209) | on / off | 30 | 29.6 / 30.0 (60.15 / 59.93) | - | PASS |
+| 1.0 | on / off | 60 | 46.3 / 47.9 (work 12.7-14.7 ms) | - | device-bound below 60 at native buffer on this iGPU |
+| 0.5 (buf 1189x604) | on / off | 30 | 30.0 / 30.0 | 30.0 (on) | PASS |
+| 0.5 | on / off | 60 | 59.0 / 59.7 | 60.0 (on) | PASS (+-5%) |
+| 0.5 | on | 120 | 90.0 (ticks 48.3 = contention) | 42.8 / 77.1 / 63.4 (ticks 39.3) | needs a clean re-measure |
+| 0.5 | off | 120 | 115.1 (own uncapped cap 110) | 63.0 / 48.3 / 78.7 | run 1 PASS vs min(120, cap) |
+| 0.5 | on / off | 144 | 134.3 (93% of 144, Unlimited-on 145.8 next) / 138.6 | 92.1 / 67.8 | on: marginal, re-measure |
+| 0.5 | on / off | Unlimited | 145.8 (rafHz 153.9) / 147.1 | 93.6-76.6 / 58.6-81.7 | source raf / uncapped |
+- G1.6 On: source "raf" in every On sample; rendered <= panel Hz x 1.02 in every sample. Off: source "uncapped", honest row "Your device renders about N fps here — uncapped can't go faster than your GPU" with N vs renderedFps read in the same evaluate: 58/57.6, 64/66.7, 66/66.2, 17/16.8, 18/18.3, 11/10.8, 10/10.1 (all within 10%); work p50 5.7-16 ms >= 0.8 x 1000/panelHz (4.8-5.1 ms) -> case (b) applies; sim 59.9-60.4 ticks/s. The limit row adds "your device renders about N fps here, below the limit" when the GPU binds (144 at 35-38 fps, 120 at 17-19 fps).
+- Probe incident (not a game defect): run 1's copy leg hung the page because MY in-page loop `while (stack.length) back()` spins forever — back() is animated and does not shrink the stack synchronously. tools/gntcmenu2-hang.mjs re-ran Settings-over-play with V-Sync Off/On at scales 0.5/1.0: every evaluate returned in 1-14 ms, sim paused while Settings open (tick frozen), resumed after back; 0 page errors (captures/gntcmenu2-hang.log).
+- ADVISORY MENU-R2-A1 (honesty of the measured copy under GPU load): when frames take longer than one refresh, the "display" figure halves or worse: at scale 1.5 the Display tab says "Frames paced to your display (~84 Hz)", "Display ~83 Hz" and "Your display caps this at ~84 fps" while the blank-page panel measured 155-161 Hz and the game rendered 10-11 fps (pace2.log copy on-unl-s15; captures/gntcmenu2-pace-on-unl-s15.png); headless 2560x1440 read "Display ~33 Hz" (Step 2). The rendered-fps numbers are right; the display-Hz claim is wrong exactly when a player is looking at why the game is slow.
+- Run 3 (tools/gntcmenu2-pace3.mjs, captures/gntcmenu2-pace3-1600-0.5.log; 4 interleaved rounds, 4 s samples, panel 165.8 Hz at start): V-Sync On 60 = 60.2 / 60.0 / 60.0 / 60.0; V-Sync Off 120 = 118.0 / 119.5 / 119.4 (+1 contention sample at 50.7 ticks/s); V-Sync On 120 = 117.8 (98% of 120) in the quiet round where Unlimited-On reached 133.7, and >= the adjacent Unlimited-On cap in rounds 0 and 3 (96.2 vs 87.7, 79.9 vs 74.6); round 2 108.5 vs Unlimited-On 117 (93%, the cap itself drifted 74-134 between samples). V-Sync On 144 = 135.7 vs Unlimited-On 133.7 (cap-bound, PASS). Sim 59.8-60.7 ticks/s in all 23 valid samples. 0 page errors.
+- G1.6 verdict: MET (case b: work p50 6.0-12.4 ms >= 0.8 x 1000/165.8 = 4.8 ms; On = raf and never above the panel; Off = uncapped with the measured, honest copy). G1.7 verdict: MET (30/60 within 1%; 120/144 within 5% of min(limit, cap) whenever the machine was quiet; the gate cannot be separated from other agents' load on the noisy rounds).
+
+## Step 4b — G1.3 re-measure: every source in every run + steady-60 fps (DONE)
+Tools tools/gntcmenu2-resp2.mjs (captures/gntcmenu2-resp2.log; = resp.mjs with pad/hover/click in all 3 runs) and tools/gntcmenu2-resp60.mjs (captures/gntcmenu2-resp60-run1.log, gntcmenu2-resp60.log; frame limit 60 vs Unlimited interleaved x3, settled title).
+| window | independent p50/p95/max | app.responses p50/p95/max | fps |
+|---|---|---|---|
+| keyboard EARLY r1 / r2 / r3 | 19.3/29.0/31.7 · 19.8/40.2/43.0 · 19.1/26.3/29.3 | 30.5/42.5/42.8 · 33.9/**53.6**/62.1 · 31.5/41.2/41.2 | 91 / 68 / 88 |
+| keyboard settled r1 / r2 / r3 | 20.0/29.5/30.5 · 24.9/34.9/36.6 · 18.1/28.3/36.1 | 35.7/**56.3**/62.9 · 35.9/**53.2**/56.0 · 29.2/41.0/53.7 | 59 / 55 / 81 |
+| gamepad r1 / r2 / r3 | 33.2/41.8/44.0 · 31.1/48.2/48.2 · 19.7/26.0/31.1 | 29.3/42.4/43.8 · 29.2/44.6/44.6 · 22.4/33.6/35.9 | 58 / 60 / 99 |
+| mouse hover r1 / r2 / r3 | 37.6/50.2/59.5 · 37.5/48.1/54.7 · 30.6/35.3/40.4 | n 0 (hover not recorded by the game's instrument) | 60 / 54 / 102 |
+| mouse click r1 / r2 / r3 | 25.1/36.2/46.3 · 33.8/45.0/50.2 · 24.8/34.1/42.3 | 28.1/39.0/49.2 · 36.4/49.7/53.6 · 26.0/35.9/43.4 | 55 / 49 / 72 |
+| keyboard, limit 60 (steady 60.0 fps), 6 windows | p95 13.1-27.9, max 13.8-79 | p95 19.1-43.8, max 20.7-93.7 | 60 |
+| keyboard, Unlimited, 6 windows | p95 23-29.4 (+1 window 84.0/108.2) | p95 34.9-48.6 (+1 window **120.2/143**) | 76-103 |
+- Reading: every max <= 100 ms except ONE window (resp60 run 1, round 0 Unlimited: presses 1-5 at 143/120/120/88/94 ms, then 24-52 ms) that did not recur in the 5 other Unlimited windows nor in a full re-run; the app's own p95 lands 53-56 ms in 3 of 12 keyboard windows, all of them while the page ran at 55-68 fps because other agents' Chrome instances shared this iGPU (the same windows' independent p95 is 29-40 ms). Quiet windows pass with margin. G1.3 judged MET-with-noise (not a must-fix: r1's defect was a reproducible 4/4 boot-window hitch; today's excursions are 1-in-18 and load-correlated). A steady 60 fps cap (what a 60 Hz monitor gives) is the FASTEST case (p50 8-15 ms): the DOM menu is composited independently of the capped 3D canvas.
+- ADVISORY MENU-R2-A2 (instrument gap, carried from r1): app.responses() still records 0 mouse-hover samples, so the game cannot self-report the source whose independent p95 is the highest (48-50 ms at 54-60 fps).
+
+## Step 7 — G1.11 journey, core-loop regression, leak after a run, legacy boots (DONE)
+Tool tools/gntcmenu2-journey.mjs (captures/gntcmenu2-journey.log, -camp.png, -reward.png, -backtitle.png), GPU harness 1600x900, autoplay.
+- J1 fresh profile, title default focus New Game; Enter -> app 'playing' and the player moving under held W at **256.7 ms** (gate <= 1000 ms) — PASS; music 'camp', stack [].
+- J2 real input: hold W -> inPortal at tick 239, E -> combat room 1 act 1 at tick 252 (no picker on a fresh profile), then right-click held + 1-4 + A/D: **room 1 cleared by real input in 13.1 s** (phase 'reward' at tick 1017) — PASS without killAllEnemies.
+- Pause menu: Resume / Settings / Save Game / Load Game / Save & Quit to Title / Quit to Title "Without saving"; Quit -> confirm "Quit to the title? Anything since the last save is lost." default focus Keep Playing; Quit -> ["title"], tick 0, rows Continue ("Autosave · The Hollow Wood · Room 1 · just now") + New Game + Load Game + Multiplayer + Settings + Records + Exit, default focus **Continue** (StS convention). captures/gntcmenu2-journey-backtitle.png.
+- J4 leak check on the title after a run: frames/s 51.3 = rAF/s 51.3 (one render loop), 1 music player ("menu"), one ArrowDown = exactly one step (continue -> new) — PASS.
+- J5 New Game again: starts at once (24 ms to 'playing'); fresh world: run inactive, wallet 0, party 100/100/100/100 %; one Esc = ["pause"], next Esc = [] — PASS. Advisory (carried from r1, save domain): New Game with an autosave present starts without an "overwrite/abandon?" prompt.
+- J6 second core loop after returning to the title: portal 234 -> combat 251 -> reward 696 — PASS. J7 0 page errors.
+- J8 legacy boots (6 s after load, then +500 ms): ?menu=0&seed=7, ?seed=5, ?room=kill_all, ?room=defend, ?run=1, ?scene=arena, ?variant=2, ?layout=4&room=kill_all -> app 'playing', no title, +29..35 ticks in 500 ms (60/s); ?seed=5&menu=1 -> title, tick 0; 0 page errors each — PASS.
+- J9 ?seed=7&menu=0 core loop: portal 202 -> combat 217 -> reward 569, no picker, 0 errors — PASS.
