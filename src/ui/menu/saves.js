@@ -521,7 +521,14 @@ export function createSavesScreen(ctx) {
         rowEls.set(m.id, r);
         listEl.appendChild(r);
       }
-      if (!selectedId || !rowEls.has(selectedId)) selectedId = list[0].id;
+      if (!selectedId || !rowEls.has(selectedId)) {
+        // Load: the default is the NEWEST save — the one Continue resumes —
+        // even though the autosave group is pinned above the player's slots
+        // and may list an older entry first (gauntlet r1, J3 / I1b).
+        const s = save();
+        const newest = mode === 'load' && s && typeof s.latest === 'function' ? s.latest() : null;
+        selectedId = newest && rowEls.has(newest.id) ? newest.id : list[0].id;
+      }
       for (const [id, r] of rowEls) {
         r.classList.toggle('sv-selected', id === selectedId);
         if (id === selectedId) r.setAttribute('data-nav-default', '');

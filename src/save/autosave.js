@@ -19,6 +19,12 @@
 //   capture (~0.5 ms) -> wait for calm frames (a room swap's own hitch passes
 //   first) -> thumbnail snapshot on a rendered frame -> JPEG encode in a
 //   post-frame task -> encode + verify + atomic write in another.
+// The catalogue stamp (`savedAt`, what the slot list, Continue and the
+// auto-slot rotation sort by) is the CAPTURE time, taken here the moment the
+// tree is captured and handed to the writer as `capturedAt` — never the time
+// the deferred write lands. Under load the write can trail the capture by
+// seconds, and a room-enter autosave that landed after a later manual save
+// used to outrank it and become Continue's target (gauntlet r1, J3).
 // Throttle: >= 20 s of wall time between autosaves, except run end and quit.
 // Slots: auto-1 / auto-2 alternate (the older one is overwritten), so a
 // torn write can never cost the only autosave.
@@ -113,12 +119,13 @@ export function createAutosave({
     }
     pending = null;
     retries = 0;
+    const capturedAt = new Date().toISOString();
     const captureMs = Math.round((now() - t0) * 10) / 10;
     lastAt = now();
     busy = true;
     const slot = pickSlot();
     Promise.resolve()
-      .then(() => write(slot, tree, { reason, calm: true }))
+      .then(() => write(slot, tree, { reason, calm: true, capturedAt }))
       .then((r) => {
         push({
           reason,
@@ -131,6 +138,7 @@ export function createAutosave({
           thumbMs: r && r.thumbMs,
           writeMs: r && r.writeMs,
           calmMs: r && r.calmMs,
+          capturedAt,
           pieces: r && r.pieces,
           bytes: r && r.bytes,
           at: Math.round(now()),

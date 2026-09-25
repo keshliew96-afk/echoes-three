@@ -11,7 +11,10 @@
 // is looking for players and, after 15 s, offers "Start now — AI fills the
 // empty seats". Esc / B asks before leaving. The session (src/net/
 // session.js) takes over when the room starts: the game begins under a
-// 1.5 s countdown and this screen closes.
+// 1.5 s countdown and this screen closes. A room that is already playing
+// (drop-in, PLAN G5b.1) has nothing to wait for here — mpjoin.js never opens
+// the lobby for one, and should this screen still find itself over an
+// `in_game` room it closes itself (gauntlet r1, J4).
 import { service } from '../../app/registry.js';
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
@@ -255,6 +258,17 @@ export function createLobbyScreen(ctx) {
     if (manager.top() === 'lobby') manager.pop();
   }
 
+  // Drop-in guard (J4): over a room that is already playing this screen is a
+  // dead end (Ready / seats are refused by the server) — the session runs the
+  // game underneath. Close; the net HUD and the game take over.
+  function closeIfPlaying() {
+    const net = n();
+    if (!open || !net || !net.room || net.room.state !== 'in_game') return false;
+    if (manager.top() !== 'lobby') return false;
+    manager.pop();
+    return true;
+  }
+
   function tickCountdown() {
     cdTimer = 0;
     if (!open) return;
@@ -280,7 +294,8 @@ export function createLobbyScreen(ctx) {
       queuedSince = params.via === 'quick' ? performance.now() : null;
       if (net) {
         offs = [
-          net.on('room', () => open && render()),
+          net.on('room', () => open && !closeIfPlaying() && render()),
+          net.on('state', () => closeIfPlaying()),
           net.on('game_starting', (m) => {
             countdownUntil = performance.now() + (m.countdownMs || 1500);
             if (!cdTimer) tickCountdown();
@@ -305,6 +320,9 @@ export function createLobbyScreen(ctx) {
       }
       render();
       if (queuedSince !== null) cdTimer = setTimeout(tickCountdown, 1000);
+      // Opened over a room that is already playing: close once push() has
+      // finished (never pop from inside onOpen).
+      queueMicrotask(() => closeIfPlaying());
     },
     onClose() {
       open = false;

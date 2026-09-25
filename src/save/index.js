@@ -182,13 +182,13 @@ export function createSaveSystem({
       captureLog.push(rec);
       if (captureLog.length > 20) captureLog.shift();
       try {
-        job.resolve(error ? { ok: false, error: 'busy', detail: String(error.message), rec } : { ok: true, tree, rec });
+        job.resolve(error ? { ok: false, error: 'busy', detail: String(error.message), rec } : { ok: true, tree, rec, capturedAt: new Date().toISOString() });
       } catch (err) {
         console.warn('[save] tick-end job failed', err);
       }
     }
   });
-  // requestCapture(reason) -> Promise<{ ok, tree, rec }> — captured at the
+  // requestCapture(reason) -> Promise<{ ok, tree, rec, capturedAt }> — captured at the
   // next tick end (immediately when no step is in progress).
   // Between frames (no step running) the capture waits one microtask, so a
   // request made from a listener of an event a UI / debug command emitted
@@ -207,7 +207,7 @@ export function createSaveSystem({
             const rec = { reason, eventTick, captureTick: clock.tick, pending, ok: true, between: true };
             captureLog.push(rec);
             if (captureLog.length > 20) captureLog.shift();
-            resolve({ ok: true, tree, rec });
+            resolve({ ok: true, tree, rec, capturedAt: new Date().toISOString() });
           } catch (err) {
             if (err && err.name === 'CapturePointError') tickEndQueue.push({ reason, eventTick, resolve });
             else resolve({ ok: false, error: 'busy', detail: String(err && err.message) });
@@ -333,7 +333,11 @@ export function createSaveSystem({
 
   // ------------------------------------------------------------ write --
   let writing = false;
-  async function writeSlot(id, tree, { name, kind, reason = 'manual', thumb = true, calm = false } = {}) {
+  // `savedAt` (the catalogue's sort key: slot list, latest() = Continue, the
+  // auto-slot rotation) is the CAPTURE time when the caller passes
+  // `capturedAt`; the write itself may land seconds later (calm frames,
+  // thumbnail, idle tasks) and must never re-rank the file (J3).
+  async function writeSlot(id, tree, { name, kind, reason = 'manual', thumb = true, calm = false, capturedAt = null } = {}) {
     const t0 = performance.now();
     const calmMs = calm ? await calmFrames() : 0;
     const key = slotKey(id);
@@ -341,6 +345,7 @@ export function createSaveSystem({
     const prev = prevText !== null ? parseFile(prevText) : null;
     const prevFile = prev && prev.ok ? prev.file : null;
     const nowIso = new Date().toISOString();
+    const stampIso = typeof capturedAt === 'string' && capturedAt ? capturedAt : nowIso;
     const slot = {
       id,
       kind: kind ?? slotKind(id),
@@ -356,9 +361,9 @@ export function createSaveSystem({
     await nextIdle();
     const t1 = performance.now();
     const meta = metaFor(tree);
-    let built = buildFile({ slot, meta, state: tree, game: VERSION, createdAt: (prevFile && prevFile.createdAt) || nowIso, savedAt: nowIso });
+    let built = buildFile({ slot, meta, state: tree, game: VERSION, createdAt: (prevFile && prevFile.createdAt) || stampIso, savedAt: stampIso });
     meta.bytes = built.text.length;
-    built = buildFile({ slot, meta, state: tree, game: VERSION, createdAt: (prevFile && prevFile.createdAt) || nowIso, savedAt: nowIso });
+    built = buildFile({ slot, meta, state: tree, game: VERSION, createdAt: (prevFile && prevFile.createdAt) || stampIso, savedAt: stampIso });
     const buildMs = performance.now() - t1;
     // Verify before writing: the bytes must decode to the same tree hash.
     // Verification (parse + re-hash) in its own post-frame task, apart from
@@ -400,7 +405,7 @@ export function createSaveSystem({
     try {
       const c = await requestCapture(`save:${id}`);
       if (!c.ok) return { ok: false, error: 'busy', detail: c.detail };
-      return await writeSlot(id, c.tree, { name, kind });
+      return await writeSlot(id, c.tree, { name, kind, capturedAt: c.capturedAt });
     } catch (err) {
       console.warn('[save] save failed', err);
       return { ok: false, error: 'unavailable', detail: String(err && err.message) };
@@ -579,7 +584,7 @@ export function createSaveSystem({
       if (!b) return 'auto-2';
       return String(a.savedAt || '') <= String(b.savedAt || '') ? 'auto-1' : 'auto-2';
     },
-    write: (slot, tree, { reason, calm }) => writeSlot(slot, tree, { kind: 'auto', name: 'Autosave', reason, calm }),
+    write: (slot, tree, { reason, calm, capturedAt }) => writeSlot(slot, tree, { kind: 'auto', name: 'Autosave', reason, calm, capturedAt }),
   });
   async function autosave(reason = 'manual') {
     if (reason === 'quit') {
@@ -594,7 +599,7 @@ export function createSaveSystem({
         if (!b) return 'auto-2';
         return String(a.savedAt || '') <= String(b.savedAt || '') ? 'auto-1' : 'auto-2';
       })();
-      return writeSlot(slot, c.tree, { kind: 'auto', name: 'Autosave', reason: 'quit' });
+      return writeSlot(slot, c.tree, { kind: 'auto', name: 'Autosave', reason: 'quit', capturedAt: c.capturedAt });
     }
     return { ok: autosaver.request(reason, clock.tick) };
   }

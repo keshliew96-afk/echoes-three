@@ -3,11 +3,16 @@
 // digits 2–9 — typed case-insensitively, spaces and dashes ignored). Enter
 // joins; every rejection reason is spelled out (not found, full, started
 // without drop-in, version mismatch); success replaces this dialog with the
-// lobby. Esc / B / Back returns to the multiplayer menu.
+// lobby — unless the room is already playing (drop-in, PLAN G5b.1): then the
+// lobby client is a guest at once, the session has taken this player into
+// the game (src/net/session.js sync -> enterPlaying, which clears the screen
+// stack) and no lobby is opened. Esc / B / Back returns to the multiplayer
+// menu.
 import { service } from '../../app/registry.js';
 import { createHints } from './hints.js';
 import { installMpStyle, mkBtn } from './mpmenu.js';
 import { normalizeCode } from '../../net/protocol/messages.js';
+import { SEAT_LABELS } from '../../net/seats.js';
 
 export function createJoinScreen(ctx) {
   installMpStyle();
@@ -58,6 +63,18 @@ export function createJoinScreen(ctx) {
         return;
       }
       setErr('');
+      // Drop-in into a running room (gauntlet r1, J4): the server seated us
+      // in an `in_game` room and the lobby client went straight to 'guest';
+      // the session already entered play. A lobby pushed now would sit on top
+      // of the running game with a Ready the server refuses — a dead end.
+      const running = !!(r.room && r.room.state && r.room.state !== 'lobby') || (typeof n.inSession === 'function' && n.inSession());
+      if (running) {
+        if (app.state === 'playing') manager.clear();
+        else if (manager.top() === 'mp-join') manager.pop();
+        const seatName = SEAT_LABELS[r.seat] || 'ally';
+        app.toast(`Joined ${code} — the game is under way. You play the ${seatName}.`, { tone: 'good', ms: 4200 });
+        return;
+      }
       manager.replace('lobby', { via: 'join' });
     } finally {
       busy = false;

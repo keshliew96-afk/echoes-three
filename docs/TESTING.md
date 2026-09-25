@@ -939,3 +939,30 @@ serves it. On the plain player URL there is NO dev chrome: the fps meter is
 `display:none` (setting `display.showFps`, forced on by `?fps=1`, `?debug=1` or
 a menu-skip harness boot) and `#debug-overlay` only exists with `?debug=1`; the
 version label stays, 12 px, bottom-left.
+
+**Round-1 fixes (INT fix builder, `gntfixINT1-*`).** Two journey failures
+whose root causes lived in other keys' files (minimal edits, listed here):
+- *Save ordering is by capture time (J3).* `src/save/index.js` `writeSlot()`
+  stamps `savedAt` with the `capturedAt` the caller passes — the moment the
+  tree was captured (`requestCapture()` resolves `{ ok, tree, rec,
+  capturedAt }`; `src/save/autosave.js` records it right after `capture()`).
+  The deferred write (calm frames → thumbnail → idle tasks) may land seconds
+  later under load and no longer re-ranks the file: a room-enter autosave
+  written after a later quicksave / manual save stays BELOW it, so
+  `save.list()[0]`, `save.latest()` (the title's Continue) and the auto-slot
+  rotation follow the state's age. The Load screen's default selection is
+  `save.latest()` (the entry Continue would resume) even though the autosave
+  group is pinned above the player's slots (`src/ui/menu/saves.js`).
+  Probe: `node tools/gntfixINT1-j3order.mjs --tag t --cpu 4 --f5 1 --room2 0
+  --delay 300` → `captures/gntfixINT1-j3order-t.json` Q2 `flipped` must be
+  false and Q3's Continue caption must name the quicksave.
+- *Drop-in by code into a running room enters play (J4).* The server seats a
+  late joiner in an `in_game` room and the lobby client goes straight to
+  `guest`; the session's `sync()` enters play and clears the screen stack.
+  `src/ui/menu/mpjoin.js` therefore opens NO lobby when the joined room's
+  `state !== 'lobby'` (toast "Joined CODE — the game is under way. You play
+  the <seat>."), and `src/ui/menu/lobby.js` closes itself should it ever sit
+  over an `in_game` room (`closeIfPlaying()` on open, `room` and `state`).
+  Probe: `node tools/gntfixINT1-dropin.mjs --port 789x --tag t --mode both`
+  → 3/3 (R rejoin by code, F3 brand-new third client): stack `[]`, app
+  `playing`, net `guest`, the dropped-in seat moves on the host under WASD.
