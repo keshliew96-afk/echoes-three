@@ -49,6 +49,12 @@ export function createContentService({ world, bus = null, service = null } = {})
     bus.on('run_end', (ev) => {
       if (ev.result === 'victory' && Number.isFinite(ev.act)) wonThisSession.add(ev.act);
     });
+    // CAMPAIGN (PLAN §12.7): clearing a level unlocks the next the moment the
+    // Stag room clears — mid-campaign too (a Quit to Lobby after clearing
+    // Level 1 keeps Level 2 open). The profile persists it (save/profile.js).
+    bus.on('level_clear', (ev) => {
+      if (Number.isFinite(ev.level)) wonThisSession.add(ev.level);
+    });
   }
   const save = () => (typeof service === 'function' ? service('save') : null);
   function profile() {

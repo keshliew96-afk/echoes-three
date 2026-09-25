@@ -11,7 +11,8 @@
 // Other params are documented in PLAN.md §6 and docs/TESTING.md.
 
 // ('layout' is the Gauntlet content-harness param; it skips the title like the rest.)
-export const LEGACY_HARNESS_PARAMS = Object.freeze(['scene', 'room', 'run', 'seed', 'variant', 'layout']);
+// ('level' — CAMPAIGN: a campaign AT that level on the first ticked frame.)
+export const LEGACY_HARNESS_PARAMS = Object.freeze(['scene', 'room', 'run', 'seed', 'variant', 'layout', 'level']);
 
 function flagOf(params, name, def) {
   const v = params.get(name);
@@ -39,6 +40,7 @@ export function parseBootParams(search = typeof window !== 'undefined' ? window.
     seed: p.has('seed') ? Number(p.get('seed')) >>> 0 : null,
     variant: int('variant'),
     act: int('act'), // M4a: expedition 1..3 for ?run=1 / cmd('startRun')
+    level: int('level'), // CAMPAIGN (PLAN §12.11): ?level=N starts a campaign AT level N (harness)
     // M4b: ?layout=1..9 = that layout's dressing AND its hazards/interactables
     // spawned in the ?room= harness (content probes). ?variant=N stays
     // dressing-only (v0.4.63 sim content, goldens unchanged); for N >= 4 the

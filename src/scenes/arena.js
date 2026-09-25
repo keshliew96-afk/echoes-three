@@ -412,6 +412,16 @@ export function createArenaScene(stage, toggles, ctx) {
   // on the per-layout LAYOUT stream), so layouts 1-3 are unchanged.
   const dressings = new Map(); // layoutId -> dressing
   let active = null;
+  // @gnt:CAMPAIGN RESIDENCY-STATE begin — PLAN §12.5: exactly one level's
+  // dressings resident (null = the legacy keep-everything rule, until the
+  // campaign level manager sets a level). `preloadAct` = the next level being
+  // built under the level-transition card.
+  let residentAct = null;
+  let preloadAct = null;
+  const actOf = (id) => biomeInfo(id)?.act ?? null;
+  const wantedId = (id) => residentAct === null || actOf(id) === residentAct || actOf(id) === preloadAct;
+  const residencyLog = { disposals: 0, disposedIds: [], lastMs: 0, maxMs: 0, freed: { geometries: 0, materials: 0, textures: 0 } };
+  // @gnt:CAMPAIGN RESIDENCY-STATE end
   let mountEmitters = null; // bound below (needs the emitter FX helpers)
   // `offThread`: the background builder paints the two canvases in the paint
   // worker (env/biomes/paint-worker.js) and yields WAIT until they land; the
@@ -427,7 +437,9 @@ export function createArenaScene(stage, toggles, ctx) {
     let groundCanvas = null;
     let apronCanvas = null;
     if (offThread) {
-      const req = requestPaint(dspec.id);
+      // CAMPAIGN: a paint prefetched when the level was queued (the worker
+      // paints the next layouts while this thread builds the current one).
+      const req = takePrefetch(dspec.id) ?? requestPaint(dspec.id);
       while (!req.done) yield WAIT;
       if (req.ok) {
         groundCanvas = req.ground;
@@ -447,7 +459,7 @@ export function createArenaScene(stage, toggles, ctx) {
     yield; // (each big step its own slice: gauntlet MENU-R1-F1)
     // --- Props first: their footprints mask the foliage scatter, so a blade
     // of grass can never grow through a crate face.
-    const { emitters, shadows, footprints, mats, typeCount, monolithMat, dressing } = buildProps(group, dspec, layout);
+    const { emitters, shadows, footprints, mats, typeCount, monolithMat, dressing, roomDressingDispose } = buildProps(group, dspec, layout);
     buildShadowInstances(group, shadows);
     yield;
     const foliage = buildFoliage(group, dspec, layout, footprints);
@@ -471,6 +483,7 @@ export function createArenaScene(stage, toggles, ctx) {
       typeCount,
       monolithMat,
       roomDressing: dressing,
+      roomDressingDispose,
       foliage,
       glassBase,
       wallInfo,
@@ -886,11 +899,17 @@ export function createArenaScene(stage, toggles, ctx) {
   }
   function activate(d) {
     if (active !== d) {
+      const prev = active;
       if (active) active.group.visible = false;
       active = d;
       d.group.visible = true;
       root.name = `arena-v${d.id}`;
       if (typeof window !== 'undefined') window.__groundCanvas = d.groundCanvas;
+      // @gnt:CAMPAIGN ACTIVATE begin — the finished level's last dressing (the
+      // one still drawn under the level-clear card) goes the moment the next
+      // level's first room is on screen (PLAN §12.5 residency).
+      if (prev && residentAct !== null && !prev.disposed && actOf(prev.id) !== residentAct) disposeDressings([prev], 'replaced');
+      // @gnt:CAMPAIGN ACTIVATE end
     }
     applyLight(d);
     return d;
@@ -902,7 +921,30 @@ export function createArenaScene(stage, toggles, ctx) {
   let job = null;
   let uploading = null; // { d, i } — a built dressing's textures still to upload
   let warmDraw = null; // { d, frames, culled: Map }
-  const buildStats = { built: [], syncBuilds: [], slices: 0, maxSliceMs: 0, failed: {} };
+  const buildStats = { built: [], syncBuilds: [], slices: 0, maxSliceMs: 0, failed: {}, timeline: [] };
+  // CAMPAIGN (PLAN §12.5): paint prefetch for the queued layouts of the
+  // resident level + a per-layout timeline (probe: where preload time goes).
+  const prefetched = new Map(); // layoutId -> paint request
+  function prefetchPaints(ids) {
+    for (const id of ids) {
+      if (prefetched.has(id) || dressings.has(id) || (job && job.id === id)) continue;
+      prefetched.set(id, requestPaint(id));
+    }
+  }
+  function takePrefetch(id) {
+    const r = prefetched.get(id) ?? null;
+    prefetched.delete(id);
+    return r;
+  }
+  const tl = (id, key) => {
+    let rec = buildStats.timeline.find((x) => x.id === id && x.warm === undefined);
+    if (!rec) {
+      rec = { id, at: Math.round(performance.now()) };
+      buildStats.timeline.push(rec);
+      if (buildStats.timeline.length > 24) buildStats.timeline.shift();
+    }
+    rec[key] = Math.round(performance.now() - rec.at);
+  };
   // A dressing whose build throws is never retried and never breaks the frame
   // loop: the room keeps the dressing it has (reported in debugState().layout).
   const fail = (id, err) => {
@@ -916,7 +958,9 @@ export function createArenaScene(stage, toggles, ctx) {
       return ax - ay || x - y;
     });
     queue.length = 0;
-    for (const id of order) if (!dressings.has(id) && !buildStats.failed[id] && (!job || job.id !== id)) queue.push(id);
+    // CAMPAIGN residency (PLAN §12.5): only the resident level's layouts are
+    // ever built in the background.
+    for (const id of order) if (wantedId(id) && !dressings.has(id) && !buildStats.failed[id] && (!job || job.id !== id)) queue.push(id);
   }
   function finishGpu(d) {
     for (const t of d.textures) {
@@ -955,6 +999,7 @@ export function createArenaScene(stage, toggles, ctx) {
   }
   function endWarmDraw() {
     const { d, culled, lights } = warmDraw;
+    tl(d.id, 'warm');
     for (const [o, v] of culled) o.frustumCulled = v;
     for (const l of lights) l.visible = true;
     d.group.scale.setScalar(1);
@@ -1009,15 +1054,21 @@ export function createArenaScene(stage, toggles, ctx) {
       const u = uploading;
       const t = u.d.textures[u.i++];
       if (t) {
+        const tu = performance.now();
         try {
           stage.renderer.initTexture(t);
         } catch {
           /* initTexture is best effort */
         }
+        const um = Math.round((performance.now() - tu) * 10) / 10;
+        buildStats.maxUploadMs = Math.max(buildStats.maxUploadMs ?? 0, um);
+        (buildStats.uploads ||= []).push({ id: u.d.id, i: u.i - 1, ms: um, w: t.image ? t.image.width : null, at: Math.round(tu) });
+        if (buildStats.uploads.length > 24) buildStats.uploads.shift();
       }
       if (u.i >= u.d.textures.length) {
         uploading = null;
         u.d.gpuReady = true;
+        tl(u.d.id, 'uploaded');
         precompile(u.d);
       }
       return;
@@ -1037,10 +1088,16 @@ export function createArenaScene(stage, toggles, ctx) {
       // the reward / path screens with the builder on; none with it paused
       // during the run), and nothing in this run can need it. The camp picks
       // the rest up after the run.
-      const pick = runAct ? queue.findIndex((i) => !dressings.has(i) && biomeInfo(i)?.act === runAct) : 0;
+      const pick =
+        residentAct !== null
+          ? queue.findIndex((i) => !dressings.has(i) && wantedId(i))
+          : runAct
+            ? queue.findIndex((i) => !dressings.has(i) && biomeInfo(i)?.act === runAct)
+            : 0;
       if (!queue.length || pick < 0) return;
       const id = queue.splice(pick, 1)[0];
       job = { id, gen: buildDressingSteps(layoutSpec(id), true), t0, waiting: false };
+      tl(id, 'start');
     }
     try {
       while (performance.now() - t0 < budgetMs) {
@@ -1055,6 +1112,7 @@ export function createArenaScene(stage, toggles, ctx) {
           buildStats.built.push(job.id);
           job = null;
           uploading = { d: r.value, i: 0 }; // next pump calls: textures, then precompile
+          tl(r.value.id, 'built');
           break;
         }
       }
@@ -1098,11 +1156,181 @@ export function createArenaScene(stage, toggles, ctx) {
     if (warmDraw && warmDraw.d.id === id) endWarmDraw();
     if (compiling && compiling.d.id === id) compiling = null; // it draws for real now
     if (uploading && uploading.d.id === id) uploading = null; // first draw uploads the rest
+    const ta = performance.now();
     const built = ensureDressing(id);
     if (!built) return null;
     const d = activate(built);
+    buildStats.lastApplyMs = Math.round((performance.now() - ta) * 10) / 10;
+    buildStats.maxApplyMs = Math.max(buildStats.maxApplyMs ?? 0, buildStats.lastApplyMs);
     return { layoutId: d.id, biome: biomeOfLayout(d.id), name: d.spec.name };
   }
+  // @gnt:CAMPAIGN LEVEL-RESIDENCY begin — the level manager's arena half
+  // (docs/gauntlet/PLAN.md §12.5; driven by src/campaign/manager.js through
+  // the camp's `@gnt:CAMPAIGN CAMP-CMD`):
+  //   setResidentLevel(act, { keepActive })  exactly one level resident: every
+  //     built dressing of another level is removed from the scene and its
+  //     geometries / materials / textures disposed — only those no other
+  //     object in stage.scene still references (a scene-wide reference sweep,
+  //     so a shared cache is never freed under a live mesh); its paint
+  //     canvases are released, its build job / upload / link / parked draw
+  //     cancelled. `keepActive` keeps the dressing on screen (the one under
+  //     the level-clear card) until the next level's first room replaces it.
+  //   levelStatus(act) -> { ready, built, total, pending }  ready = every
+  //     layout of that level built, uploaded, linked and warm-drawn.
+  function collectResources(obj, into) {
+    const out = into ?? { geometries: new Set(), materials: new Set(), textures: new Set(), instanced: new Set() };
+    const addTex = (v) => {
+      if (v && v.isTexture) out.textures.add(v);
+    };
+    obj.traverse((o) => {
+      if (o.geometry) out.geometries.add(o.geometry);
+      if (o.isInstancedMesh) out.instanced.add(o);
+      const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+      for (const m of mats) {
+        out.materials.add(m);
+        for (const k of Object.keys(m)) addTex(m[k]);
+        if (m.uniforms) for (const u of Object.values(m.uniforms)) if (u) addTex(u.value);
+      }
+    });
+    return out;
+  }
+  const DISPOSED_STUB = (d) => ({
+    id: d.id,
+    spec: d.spec,
+    group: new Group(),
+    disposed: true,
+    emitters: [],
+    flames: [],
+    pulses: [],
+    torchLights: [],
+    fireSources: [],
+    embers: { count: 0, update() {} },
+    mats: null,
+    monolithMat: null,
+    glassBase: null,
+    shadows: [],
+    foliage: { grassCount: 0, flowerCount: 0 },
+    typeCount: 0,
+    treeline: null,
+    wallInfo: null,
+    textures: [],
+    groundCanvas: null,
+  });
+  function disposeDressings(list, why = 'residency') {
+    const doomed = list.filter((d) => d && !d.disposed);
+    if (doomed.length === 0) return 0;
+    const t0 = performance.now();
+    for (const d of doomed) {
+      if (warmDraw && warmDraw.d === d) endWarmDraw();
+      if (compiling && compiling.d === d) compiling = null;
+      if (uploading && uploading.d === d) uploading = null;
+      d.group.visible = false;
+      if (d.group.parent) d.group.parent.remove(d.group);
+    }
+    // Everything still in the scene keeps its resources.
+    const keep = collectResources(stage.scene);
+    let g = 0;
+    let m = 0;
+    let t = 0;
+    for (const d of doomed) {
+      const mine = collectResources(d.group);
+      for (const x of mine.instanced) if (typeof x.dispose === 'function') x.dispose();
+      for (const x of mine.geometries) if (!keep.geometries.has(x)) {
+        x.dispose();
+        g += 1;
+      }
+      for (const x of mine.materials) if (!keep.materials.has(x)) {
+        x.dispose();
+        m += 1;
+      }
+      for (const x of mine.textures) if (!keep.textures.has(x)) {
+        x.dispose();
+        t += 1;
+        // Release the paint canvas's backing store at once (the dressing owns it).
+        const img = x.image;
+        if (img && (img === d.groundCanvas || d.textures.includes(x)) && typeof img.width === 'number') {
+          try {
+            img.width = 0;
+            img.height = 0;
+          } catch {
+            /* ImageBitmap-like sources */
+          }
+        }
+      }
+      if (typeof window !== 'undefined' && window.__groundCanvas === d.groundCanvas) window.__groundCanvas = null;
+      // Its room-dressing groups stop watching the run (env/dressing.js).
+      if (typeof d.roomDressingDispose === 'function') d.roomDressingDispose();
+      dressings.delete(d.id);
+      d.disposed = true;
+      if (active === d) active = DISPOSED_STUB(d);
+      if (job && job.id === d.id) job = null;
+      residencyLog.disposedIds.push(d.id);
+      if (residencyLog.disposedIds.length > 32) residencyLog.disposedIds.shift();
+    }
+    residencyLog.disposals += doomed.length;
+    residencyLog.freed.geometries += g;
+    residencyLog.freed.materials += m;
+    residencyLog.freed.textures += t;
+    residencyLog.lastMs = Math.round((performance.now() - t0) * 10) / 10;
+    residencyLog.maxMs = Math.max(residencyLog.maxMs, residencyLog.lastMs);
+    residencyLog.lastWhy = why;
+    if (buildStats.built.length > 32) buildStats.built.splice(0, buildStats.built.length - 32);
+    return doomed.length;
+  }
+  function setResidentLevel(act, { keepActive = true } = {}) {
+    const a = Number(act);
+    residentAct = Number.isFinite(a) && a > 0 ? a : null;
+    preloadAct = null;
+    if (residentAct === null) return { resident: null, disposed: 0 };
+    const doomed = [...dressings.values()].filter((d) => actOf(d.id) !== residentAct && !(keepActive && d === active));
+    // A layout of another level still being built or waiting on the worker is dropped too.
+    if (job && actOf(job.id) !== residentAct) job = null;
+    const n = disposeDressings(doomed, 'residency');
+    if (!keepActive && active && !active.disposed && actOf(active.id) !== residentAct) disposeDressings([active], 'residency');
+    for (const id of [...prefetched.keys()]) if (actOf(id) !== residentAct) prefetched.delete(id);
+    enqueueAll(residentAct);
+    prefetchPaints(queue);
+    return { resident: residentAct, disposed: n, queued: [...queue] };
+  }
+  // Paint the next level's floors in the worker ahead of its card (called
+  // when a campaign enters a Stag room): off the main thread, so the card
+  // only has the sliced main-thread steps and uploads left to do.
+  function prefetchLevel(act) {
+    const a = Number(act);
+    const ids = LAYOUT_SPEC_IDS.filter((id) => actOf(id) === a && !dressings.has(id));
+    prefetchPaints(ids);
+    return { level: a, prefetched: ids };
+  }
+  function levelStatus(act) {
+    const a = Number(act);
+    const ids = LAYOUT_SPEC_IDS.filter((id) => actOf(id) === a);
+    let built = 0;
+    const pending = [];
+    for (const id of ids) {
+      const d = dressings.get(id);
+      const busy = !d || !d.gpuReady || (uploading && uploading.d.id === id) || (compiling && compiling.d.id === id) || (warmDraw && warmDraw.d.id === id);
+      if (busy) pending.push(id);
+      else built += 1;
+    }
+    return { level: a, ready: ids.length > 0 && built === ids.length, built, total: ids.length, pending, failed: ids.filter((id) => buildStats.failed[id]) };
+  }
+  function residencyState() {
+    return {
+      timeline: buildStats.timeline.slice(-6),
+      perf: { uploads: (buildStats.uploads || []).slice(-12), maxSliceMs: buildStats.maxSliceMs, maxUploadMs: buildStats.maxUploadMs ?? 0, lastApplyMs: buildStats.lastApplyMs ?? 0, maxApplyMs: buildStats.maxApplyMs ?? 0, syncBuilds: buildStats.syncBuilds.slice(-4) },
+      prefetched: [...prefetched.keys()],
+      resident: residentAct,
+      dressings: [...dressings.keys()].sort((x, y) => x - y),
+      active: active ? { id: active.id, disposed: !!active.disposed } : null,
+      queued: [...queue],
+      building: job ? job.id : null,
+      ...residencyLog,
+      disposedIds: [...residencyLog.disposedIds],
+      freed: { ...residencyLog.freed },
+    };
+  }
+  // @gnt:CAMPAIGN LEVEL-RESIDENCY end
+
   // The run swaps dressing at each room's `layout_enter` (M4a's run.js emits it
   // right before `room_enter`, under the transition fade); run_start re-queues
   // the act's layouts first.
@@ -1545,5 +1773,17 @@ export function createArenaScene(stage, toggles, ctx) {
     allies,
     applyLayout,
     layoutState,
+    // @gnt:CAMPAIGN ARENA-API begin (PLAN §12.5 level manager)
+    setResidentLevel,
+    prefetchLevel,
+    levelStatus,
+    residencyState,
+    bootResidency: () => setResidentLevel(active ? actOf(active.id) ?? 1 : 1, { keepActive: true }),
+    clearVfx: () => (inner.clearVfx ? inner.clearVfx() : null),
+    vfxCounts: () => {
+      const d = inner.debugState ? inner.debugState() : null;
+      return d ? { decals: d.decals, scorches: d.scorch, particles: d.particles, numerals: d.numerals } : null;
+    },
+    // @gnt:CAMPAIGN ARENA-API end
   };
 }

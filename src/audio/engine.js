@@ -1666,6 +1666,39 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     return true;
   }
 
+  // @gnt:CAMPAIGN LEVEL-AUDIO begin — docs/gauntlet/PLAN.md §12.5: a finished
+  // level's live gameplay voices end at the level transition (an 80 ms fade;
+  // music layers and ambient beds are not voices, UI clicks are kept), the
+  // level-clear stinger plays, and the next level's theme takes over — its
+  // fight grooves pre-baked while the card is up.
+  function stopLevelVoices() {
+    if (!ctx) return 0;
+    let n = 0;
+    for (const v of active) {
+      if (v.stopped || v.bus === 'ui') continue;
+      stopVoice(v, 0.08);
+      n += 1;
+    }
+    return n;
+  }
+  if (bus) {
+    bus.on('level_transit', (ev) => {
+      if (Number.isFinite(ev.to)) runAct = ev.to;
+      if (!ctx || !music) return;
+      if (ev.kind === 'clear') {
+        stinger = { state: 'victory', until: ctx.currentTime + STINGER_SEC.victory };
+        pin = null;
+        driveMusic(true);
+      }
+      try {
+        prebakeMusic('combat', deriveTheme());
+      } catch {
+        /* prebake is best effort */
+      }
+    });
+  }
+  // @gnt:CAMPAIGN LEVEL-AUDIO end
+
   const engine = {
     get state() {
       return stateNow();
@@ -1693,6 +1726,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     update,
     play: (cueId, opts = {}) => trigger(cueId, opts, 'play'),
     stop,
+    stopLevelVoices, // CAMPAIGN (PLAN §12.5)
     setListener: (x, z) => (spatial ? spatial.setListener(x, z) : null),
     music: {
       setState: (st, opts = {}) => debug.setMusic(st, opts),

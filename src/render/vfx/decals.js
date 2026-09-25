@@ -393,12 +393,28 @@ export function createDecalPool(parent, cosmetic) {
     warmPark(visibleRoot, rim);
   }
 
+  // CAMPAIGN (PLAN §12.3 resetPresentation): a level transition removes every
+  // kill splat and scorch (each owns its material) — ground history belongs to
+  // the level it happened in.
+  function clear() {
+    const n = live.length + burns.length;
+    for (const d of live) {
+      parent.remove(d.mesh);
+      d.mesh.material.dispose();
+    }
+    live.length = 0;
+    for (const b of burns) dropBurn(b);
+    burns.length = 0;
+    return n;
+  }
+
   return {
     spawn,
     scorch,
     hotBurns,
     update,
     prewarm,
+    clear,
     count: () => live.length,
     scorchCount: () => burns.length,
   };

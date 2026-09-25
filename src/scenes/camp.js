@@ -64,6 +64,11 @@ import { createFollowRig } from '../render/camera.js';
 import { createBookends } from '../ui/bookends/index.js';
 import { setStaticColliders } from '../sim/movement.js';
 import { buildCampColliders, campRoadsClear } from '../env/camp/colliders.js';
+// CAMPAIGN (docs/gauntlet/PLAN.md §12.1 / §12.7): Begin Run = Level 1; the
+// lobby's Level Select lives on a map table beside the portal.
+import { buildMapTable, createTablePrompt, withinTable, MAP_TABLE } from '../campaign/maptable.js';
+import { FIRST_LEVEL, isLevel, lockLine } from '../data/campaign.js';
+import { levelFor } from '../data/levels.js';
 
 // §18: "deep indigo/teal ambient". Two numbers carry the whole night read —
 // the key drops to a cold moon (a twelfth of the Act-1 sun) and the hemisphere
@@ -209,9 +214,16 @@ export function createCampScene(stage, toggles, ctx) {
   // Act-1 perimeter set, then the boundary, then the foliage.
   const camp = buildCampProps(root, CAMP_SPEC);
   const edge = buildProps(root, CAMP_SPEC, layout);
-  const shadows = camp.shadows.concat(edge.shadows);
+  // @gnt:CAMPAIGN MAP-TABLE begin — the Level Select's map table (PLAN §12.7)
+  // stands on the ground like every camp prop: contact shadow, grass clear of
+  // its legs, a collider (below), its interaction ring.
+  const mapTable = buildMapTable();
+  root.add(mapTable.group);
+  root.add(mapTable.ring);
+  // @gnt:CAMPAIGN MAP-TABLE end
+  const shadows = camp.shadows.concat(edge.shadows, [mapTable.shadow]);
   buildShadowInstances(root, shadows);
-  const footprints = camp.footprints.concat(edge.footprints, ground.footprints);
+  const footprints = camp.footprints.concat(edge.footprints, ground.footprints, [mapTable.footprint]);
   const foliage = buildFoliage(root, CAMP_SPEC, layout, footprints);
   const wallInfo = buildWalls(root, CAMP_SPEC, layout);
 
@@ -284,9 +296,32 @@ export function createCampScene(stage, toggles, ctx) {
 
   const prompt = document.createElement('div');
   prompt.id = 'camp-prompt';
+  // CAMPAIGN (PLAN §12.1 / §12.7): the portal prompt names what Begin Run
+  // starts — Level 1, always — and offers the Level Select beside it. Both
+  // halves are also clickable (the prompt itself ignores the mouse).
   prompt.innerHTML =
-    '<span class="cp-key">E</span><span class="cp-lab"><b>Begin Run</b> &nbsp;·&nbsp; the wood is waiting</span>';
+    `<span class="cp-chip cp-begin"><span class="cp-key">E</span><span class="cp-lab"><b>Begin Run</b> &nbsp;·&nbsp; Level 1 · ${levelFor(FIRST_LEVEL).name}</span></span>` +
+    '<span class="cp-sep"></span>' +
+    '<span class="cp-chip cp-levels"><span class="cp-key">L</span><span class="cp-lab">Levels</span></span>';
   document.body.appendChild(prompt);
+  {
+    const st = document.createElement('style');
+    st.id = 'camp-campaign-style';
+    st.textContent = `
+      #camp-prompt .cp-chip { display: inline-flex; align-items: center; gap: 12px; pointer-events: auto; cursor: pointer; }
+      #camp-prompt .cp-sep { width: 2px; align-self: stretch; margin: 2px 4px; background: ${PALETTE.warmGrey}66; }
+    `;
+    document.head.appendChild(st);
+  }
+  prompt.querySelector('.cp-begin').addEventListener('click', (e) => {
+    e.stopPropagation();
+    beginRun();
+  });
+  prompt.querySelector('.cp-levels').addEventListener('click', (e) => {
+    e.stopPropagation();
+    openLevels('prompt');
+  });
+  const tablePrompt = createTablePrompt(() => openLevels('table'));
   const fitPrompt = () => {
     const s = Math.min(1, Math.min(window.innerWidth / 1920, window.innerHeight / 1080) * 1.35);
     prompt.style.setProperty('--cp-s', s.toFixed(3));
@@ -303,7 +338,7 @@ export function createCampScene(stage, toggles, ctx) {
   // holds the three critters on their hearth seats (A2) — both only while the
   // camp is the live scene. Cleared the instant a run starts, so the combat
   // path never sees a collider or a seat.
-  const colliders = buildCampColliders(CAMP_SPEC);
+  const colliders = buildCampColliders(CAMP_SPEC).concat([mapTable.collider]); // CAMPAIGN: the map table is solid
   // Layout guard (Round D2 camp critic F1): every authored road must stay
   // walkable for a body — a prop on a path centreline is a bug, not dressing.
   const roadViolations = campRoadsClear(CAMP_SPEC);
@@ -335,6 +370,7 @@ export function createCampScene(stage, toggles, ctx) {
   let lastBegin = null; // probe record of the most recent Begin Run
   let runs = 0;
   let inRange = false;
+  let tableTick = 0; // CAMPAIGN: map-table waymark refresh cadence
 
   bus.on('basic_fire', () => {
     firedFlag = true;
@@ -498,17 +534,21 @@ export function createCampScene(stage, toggles, ctx) {
     return out;
   }
 
-  // @gnt:M4a BEGIN-RUN begin — portal -> expedition rule (PLAN §4.1):
-  // menu-skip boots and single-unlock profiles start the act directly; the
-  // picker opens only in title sessions with >= 2 acts unlocked. startRun
-  // receives { act, challenge } (challenge read from settings HERE, at the
-  // press, and stored in run state — the sim never reads app state).
+  // @gnt:M4a BEGIN-RUN begin — portal -> CAMPAIGN (rewritten by CAMPAIGN,
+  // 2026-09-25 — docs/gauntlet/PLAN.md §12.1 / §12.7, superseding the §4.1
+  // expedition picker): E at the portal ALWAYS starts a campaign at Level 1
+  // (menu-skip harness boots with ?act=N / ?level=N start at N — legacy rule
+  // 1); other unlocked levels start from the Level Select (the map table
+  // beside the portal, L, or the prompt's "Levels" chip). startCampaign
+  // receives { level, challenge, depart } (challenge read from settings HERE,
+  // at the press — the sim never reads app state). `depart` opens the
+  // setting-out card so the level manager can load the level first: always
+  // for a Level-N start, and for Level 1 only while its assets are not yet
+  // resident (right after a campaign returned to camp).
   // M5b (W4) adds the host-only portal rule inside this block.
   //
   // The app shell's services are reached through the registry module, loaded
-  // once (it is already in the graph — main.js imports it first); the sim
-  // never sees any of this: the act and the challenge enter run state as
-  // startRun() arguments.
+  // once (it is already in the graph — main.js imports it first).
   let appReg = null;
   import('../app/registry.js')
     .then((m) => {
@@ -516,9 +556,14 @@ export function createCampScene(stage, toggles, ctx) {
     })
     .catch(() => {});
   const svc = (name) => (appReg && typeof appReg.service === 'function' ? appReg.service(name) : null);
-  const bootAct = () => {
-    const n = parseInt(new URLSearchParams(window.location.search).get('act') ?? '', 10);
-    return n >= 1 && n <= 3 ? n : 1;
+  // The harness level of a menu-skip boot: ?level=N, else ?act=N, else null.
+  const bootLevel = () => {
+    const q = new URLSearchParams(window.location.search);
+    for (const k of ['level', 'act']) {
+      const n = parseInt(q.get(k) ?? '', 10);
+      if (isLevel(n)) return n;
+    }
+    return null;
   };
   // Menu-skip = ?menu=0 or any legacy harness param (PLAN §6.1). Without the
   // app shell (never in the shipped boot) the session counts as menu-skip.
@@ -526,55 +571,80 @@ export function createCampScene(stage, toggles, ctx) {
     const app = svc('app');
     return app && app.params ? !!app.params.menuSkip : true;
   };
-  let picking = false; // the expedition picker is up for this portal press
+  let picking = false; // the Level Select is open for this camp visit
+  function isGuest() {
+    const netSvc = svc('net');
+    return !!(netSvc && typeof netSvc.isGuest === 'function' && netSvc.isGuest());
+  }
   function canBegin() {
     if (mode !== 'camp' || begin) return false;
     // M5b (W4): the portal is the HOST's — a network guest never starts a run
     // (its camp prompt stays hidden; the net HUD says who leads).
-    const netSvc = svc('net');
-    if (netSvc && typeof netSvc.isGuest === 'function' && netSvc.isGuest()) return false;
+    if (isGuest()) return false;
     const run = world.runSystem();
     if (run.isActive()) return false;
     const phase = run.view().phase;
     return phase === 'idle';
   }
+  // Unlocked levels, from the one source every surface reads (the content
+  // service: profile unlocks + this session's clears + a probe override).
+  function unlockedLevels() {
+    const content = svc('content');
+    try {
+      return content && typeof content.unlockedActs === 'function' ? content.unlockedActs() : [FIRST_LEVEL];
+    } catch {
+      return [FIRST_LEVEL];
+    }
+  }
 
-  // Portal rule (PLAN §4.1, ruling A14):
-  //   1. menu-skip boots: E starts ?act=N (default 1) directly — v0.4.63;
-  //   2. title sessions with only Act I unlocked: E starts Act I directly;
-  //   3. title sessions with >= 2 acts unlocked: E opens the picker with the
-  //      last-played act preselected; E/Enter/Space confirm, Esc backs out.
+  // Begin Run (E at the portal / the prompt's Begin Run chip).
   function beginRun() {
     if (!canBegin() || !withinPortal() || picking) return false;
-    if (menuSkip()) return beginAct(bootAct());
-    const content = svc('content');
-    const unlocked = content && typeof content.unlockedActs === 'function' ? content.unlockedActs() : [1];
+    const harness = menuSkip() ? bootLevel() : null;
+    return beginLevel(harness ?? FIRST_LEVEL, { harness: harness !== null, via: 'portal' });
+  }
+
+  function beginLevel(level, { harness = false, via = 'portal' } = {}) {
+    if (!canBegin()) return false;
+    begin = { pressedAt: performance.now(), started: false, level, act: level, harness, via };
+    fade.classList.add('cp-on');
+    prompt.classList.remove('cp-on');
+    if (tablePrompt) tablePrompt.classList.remove('cg-on');
+    return true;
+  }
+
+  // The Level Select (app screen 'levels', src/ui/run/levels.js).
+  function openLevels(via = 'table') {
+    if (mode !== 'camp' || begin || picking || isGuest()) return false;
     const app = svc('app');
-    if (unlocked.length < 2 || !app || !app.screens || !appReg.screenFactory?.('expedition')) return beginAct(1);
+    if (!app || !app.screens || !appReg || !appReg.screenFactory?.('levels')) return false;
+    if (app.state !== 'playing' || app.screens.isOpen()) return false;
     picking = true;
     prompt.classList.remove('cp-on');
-    app.screens.push('expedition', {
-      levels: content.levels().map((l) => ({ act: l.act, name: l.name, blurb: l.blurb, tier: l.tier, biome: l.biome })),
-      unlocked,
-      preselect: content.lastActInfo ? content.lastActInfo().act : unlocked[unlocked.length - 1],
-      preselectReason: content.lastActInfo ? content.lastActInfo().reason : 'newest',
-      onChoose: (act) => {
+    if (tablePrompt) tablePrompt.classList.remove('cg-on');
+    app.screens.push('levels', {
+      via,
+      onChoose: (level) => {
         picking = false;
-        beginAct(act);
+        return chooseLevel(level, 'select');
       },
       onCancel: () => {
         picking = false;
       },
     });
-    return 'picker';
+    return true;
   }
 
-  function beginAct(act) {
-    if (!canBegin()) return false;
-    begin = { pressedAt: performance.now(), started: false, act };
-    fade.classList.add('cp-on');
-    prompt.classList.remove('cp-on');
-    return true;
+  // PLAYER-FACING start at a level (the Level Select, cmd('campChoose'),
+  // __echoes.campaign.choose): refuses a locked level (PLAN §12.7).
+  function chooseLevel(level, via = 'select') {
+    const n = Number(level);
+    if (!isLevel(n)) return { ok: false, reason: 'no_such_level', level: n };
+    if (!unlockedLevels().includes(n)) return { ok: false, reason: 'locked', level: n, line: lockLine(n) };
+    if (isGuest()) return { ok: false, reason: 'guest', level: n };
+    if (!canBegin()) return { ok: false, reason: 'busy', level: n };
+    beginLevel(n, { harness: false, via });
+    return { ok: true, level: n };
   }
 
   function startPending() {
@@ -588,12 +658,20 @@ export function createCampScene(stage, toggles, ctx) {
     // PLAN §3.6 (f): the challenge is read HERE, at the press, from settings.
     const settings = svc('settings');
     const challenge = (settings && typeof settings.get === 'function' && settings.get('gameplay.challenge')) || 'standard';
-    world.runSystem().startRun({ act: begin.act ?? 1, challenge });
+    const level = isLevel(begin.level) ? begin.level : FIRST_LEVEL;
+    const ready = arena.levelStatus ? arena.levelStatus(level).ready : true;
+    const depart = level !== FIRST_LEVEL || !ready;
+    world.runSystem().startCampaign({ level, challenge, depart, harness: !!begin.harness });
     begin.started = true;
     begin.startedAt = performance.now();
     lastBegin = {
       seed,
-      act: begin.act ?? 1,
+      act: level,
+      level,
+      via: begin.via,
+      depart,
+      ready,
+      harness: !!begin.harness,
       challenge,
       pressedAt: Math.round(begin.pressedAt),
       startedAt: Math.round(begin.startedAt),
@@ -603,9 +681,15 @@ export function createCampScene(stage, toggles, ctx) {
   }
 
   window.addEventListener('keydown', (e) => {
-    if (e.code !== 'KeyE' || e.repeat) return;
-    if (mode !== 'camp') return;
-    beginRun();
+    if (e.repeat || mode !== 'camp') return;
+    if (e.code === 'KeyE') {
+      if (withinPortal()) beginRun();
+      else if (withinTable(world.player.x, world.player.z)) openLevels('table');
+      return;
+    }
+    // L = the Levels entry of the camp prompt (anywhere in camp; the portal
+    // prompt shows the key).
+    if (e.code === 'KeyL' && !e.ctrlKey && !e.metaKey && !e.altKey) openLevels('key');
   });
   // @gnt:M4a BEGIN-RUN end
 
@@ -628,6 +712,7 @@ export function createCampScene(stage, toggles, ctx) {
     if (mode === 'run') {
       arena.update(elapsedSec, alpha);
       if (prompt.classList.contains('cp-on')) prompt.classList.remove('cp-on');
+      if (tablePrompt && tablePrompt.classList.contains('cg-on')) tablePrompt.classList.remove('cg-on');
       return;
     }
 
@@ -720,6 +805,27 @@ export function createCampScene(stage, toggles, ctx) {
     markerMat.opacity = (inRange ? 0.72 : 0.4) + pulse * 0.18;
     marker.scale.setScalar(inRange ? 1.04 : 1.0);
 
+    // @gnt:CAMPAIGN TABLE-UPDATE begin — the Level Select map table (PLAN §12.7).
+    {
+      const inTable = withinTable(p.x, p.z);
+      mapTable.update(elapsedSec, inTable);
+      if (++tableTick % 30 === 1) mapTable.setUnlocked(unlockedLevels());
+      if (tablePrompt) {
+        const appSvc = svc('app');
+        const menusOpen = !!(appSvc && appSvc.screens && appSvc.screens.isOpen());
+        const show = inTable && !begin && !picking && !menusOpen && !isGuest() && canBegin();
+        if (show !== tablePrompt.classList.contains('cg-on')) tablePrompt.classList.toggle('cg-on', show);
+        if (show) {
+          const a = toScreen(MAP_TABLE.x, 1.35, MAP_TABLE.z);
+          const s = Math.min(1, Math.min(window.innerWidth / 1920, window.innerHeight / 1080) * 1.35);
+          tablePrompt.style.setProperty('--cg-s', s.toFixed(3));
+          tablePrompt.style.left = `${Math.round(a.x)}px`;
+          tablePrompt.style.top = `${Math.round(Math.max(60, Math.min(window.innerHeight * 0.8, a.y)))}px`;
+        }
+      }
+    }
+    // @gnt:CAMPAIGN TABLE-UPDATE end
+
     // §22 camera: smoothed follow + aim lookahead, then the camp focus clamp.
     // @gnt:M5b FOLLOW-SEAT begin — a guest follows its own seat's body.
     // world.followSeat (net session, installed through cmd('followSeat')):
@@ -779,6 +885,21 @@ export function createCampScene(stage, toggles, ctx) {
       seats,
       seatDrift: seatDrift(),
       prompt: promptAudit(),
+      // CAMPAIGN (PLAN §12.7): the Level Select's map table + its prompt.
+      levelTable: {
+        x: MAP_TABLE.x,
+        z: MAP_TABLE.z,
+        radius: MAP_TABLE.radius,
+        inRange: withinTable(p.x, p.z),
+        promptVisible: !!(tablePrompt && tablePrompt.classList.contains('cg-on')),
+        promptBox: tablePrompt && tablePrompt.classList.contains('cg-on') ? (() => {
+          const r = tablePrompt.getBoundingClientRect();
+          return { x: r2(r.left), y: r2(r.top), w: r2(r.width), h: r2(r.height) };
+        })() : null,
+        picking,
+        unlocked: unlockedLevels(),
+      },
+      portalPromptText: prompt.textContent.replace(/\s+/g, ' ').trim(),
       party: {
         healerAnim: healerRig.getAnim(),
         healerYaw: Math.round(healerYaw * 100) / 100,
@@ -869,6 +990,41 @@ export function createCampScene(stage, toggles, ctx) {
       case 'arenaLayout':
         return arena.layoutState ? arena.layoutState() : null;
       // @gnt:M4b CAMP-CMD end
+      // @gnt:CAMPAIGN CAMP-CMD begin — the level manager's arena half
+      // (src/campaign/manager.js, PLAN §12.5): residency, readiness, VFX return.
+      // The developer start (__echoes.cmd('startCampaign', { level, depart })):
+      // `depart` defaults to "the level is not resident yet" here in the page,
+      // so a probe never pays a synchronous room build (pass depart: false to
+      // force an immediate room 1). Bypasses the unlock chain (harness).
+      case 'startCampaign': {
+        const o = args[0] && typeof args[0] === 'object' ? { ...args[0] } : { level: args[0], challenge: args[1] };
+        const level = isLevel(o.level ?? o.act) ? Number(o.level ?? o.act) : FIRST_LEVEL;
+        if (o.depart === undefined) o.depart = arena.levelStatus ? !arena.levelStatus(level).ready : false;
+        if (!o.challenge) {
+          const st = svc('settings');
+          o.challenge = (st && typeof st.get === 'function' && st.get('gameplay.challenge')) || 'standard';
+        }
+        return world.runSystem().startCampaign({ harness: true, ...o, level });
+      }
+      case 'levelResidency':
+        return arena.setResidentLevel ? arena.setResidentLevel(args[0], args[1] || {}) : null;
+      case 'levelPrefetch':
+        return arena.prefetchLevel ? arena.prefetchLevel(args[0]) : null;
+      case 'levelStatus':
+        return arena.levelStatus ? arena.levelStatus(args[0]) : { ready: true, built: 0, total: 0, pending: [] };
+      case 'levelResidencyState':
+        return arena.residencyState ? arena.residencyState() : null;
+      case 'levelBoot':
+        return arena.bootResidency ? arena.bootResidency() : null;
+      case 'levelVfxClear':
+        return arena.clearVfx ? arena.clearVfx() : null;
+      case 'levelVfxCounts':
+        return arena.vfxCounts ? arena.vfxCounts() : null;
+      case 'campLevels':
+        return openLevels('cmd');
+      case 'campChoose':
+        return chooseLevel(args[0], 'cmd');
+      // @gnt:CAMPAIGN CAMP-CMD end
       // @gnt:M5b CAMP-CMD begin (followSeat)
       // Network play: install (fn(alpha) -> { x, z, aim } | null) or clear
       // (null) the local seat's camera target — read by the FOLLOW-SEAT

@@ -9,9 +9,15 @@
 //
 // Items (Hades / Celeste / Slay the Spire grammar — one column, the safe item
 // first, the destructive one last and confirmed):
-//   Resume · Settings · Save Game · Load Game · Save & Quit to Title ·
-//   Quit to Title           (single player)
-//   Resume · Settings · Leave Session                       (network session)
+//   Resume · Settings · Save Game · Load Game · Quit to Lobby* · Save & Quit
+//   to Title · Quit to Title                                 (single player)
+//   Resume · Settings · Quit to Lobby* (host) · Leave Session (network session)
+//   *CAMPAIGN (docs/gauntlet/PLAN.md §12.6, the user's CRITICAL REFACTOR):
+//   "Returning to the lobby should only happen automatically AFTER the final
+//   level of the game is cleared, or if the player explicitly pauses and
+//   selects 'Quit to Lobby'" — shown while a run is live, confirmed; it
+//   abandons the campaign and the world returns to camp (a host's press takes
+//   the whole session there; guests keep Leave Session).
 // Unavailable items stay VISIBLE and disabled with the reason the owning
 // service gives (save.canSave().reason / canLoad().reason), never hidden —
 // a disabled row with a reason is navigation information; a missing row is a
@@ -77,6 +83,7 @@ const PAGE_WHERE = {
   path: 'Choosing a door',
   shop: 'At the pedlar',
   end: 'Run over',
+  transit: 'Between levels',
 };
 const PHASE_WHERE = {
   combat: 'In the fight',
@@ -84,13 +91,14 @@ const PHASE_WHERE = {
   path: 'Choosing a door',
   shop: 'At the pedlar',
   fade: 'Moving on',
+  transit: 'Between levels',
 };
 
 // Injected by main.js's INT-WIRING block (the app shell knows nothing about
 // the sim): getRun() -> runSystem().view() | null, getPage() -> the run UI's
 // live page id | null. Both are optional — without them the menu still works
 // and simply says less about where the player is.
-let sources = { getRun: () => null, getPage: () => null };
+let sources = { getRun: () => null, getPage: () => null, abandon: null };
 
 export function createPauseScreen(ctx) {
   const { app, manager } = ctx;
@@ -251,6 +259,32 @@ export function createPauseScreen(ctx) {
     }
   }
 
+  // CAMPAIGN: Quit to Lobby (confirmed) — abandons the campaign, back to camp.
+  async function quitToLobby() {
+    if (busy) return;
+    const host = netRole() === 'host';
+    const ok = await app.confirm({
+      title: 'Quit to the lobby?',
+      body: host
+        ? 'This abandons the campaign for the whole party — everyone returns to camp. Unlocks and records are kept.'
+        : 'This abandons the current campaign and returns you to camp. Unlocks and records are kept.',
+      confirmLabel: 'Quit to Lobby',
+      cancelLabel: 'Keep Playing',
+      danger: true,
+      defaultFocus: 'cancel',
+    });
+    if (!ok) return;
+    busy = true;
+    try {
+      if (typeof sources.abandon === 'function') sources.abandon('quit');
+    } catch (err) {
+      console.warn('[pause] quit to lobby failed', err);
+    } finally {
+      busy = false;
+    }
+    if (manager.top() === 'pause') manager.pop();
+  }
+
   async function leaveSession() {
     if (busy) return;
     const role = netRole();
@@ -306,6 +340,15 @@ export function createPauseScreen(ctx) {
       onPress: () => manager.push('saves', { mode: 'load' }),
     });
 
+    // CAMPAIGN: Quit to Lobby while a run is live (single player, or the
+    // network host — a guest follows the host and keeps Leave Session).
+    {
+      const v = readRun();
+      const role = netRole();
+      if (v && v.active && typeof sources.abandon === 'function' && (!inSession() || role === 'host')) {
+        list.push({ id: 'lobby', label: 'Quit to Lobby', caption: role === 'host' ? 'Abandon the campaign — the party returns to camp' : 'Abandon this campaign — back to camp', danger: true, onPress: quitToLobby });
+      }
+    }
     if (inSession()) {
       list.push({ id: 'leave', label: 'Leave Session', caption: 'Back to the title', danger: true, onPress: leaveSession });
       return list;
@@ -394,9 +437,10 @@ export function createPauseScreen(ctx) {
 let registered = false;
 // registerPauseScreen({ getRun, getPage }) — called once from main.js's
 // INT-WIRING block, after the world and the run UI exist.
-export function registerPauseScreen({ getRun, getPage } = {}) {
+export function registerPauseScreen({ getRun, getPage, abandon } = {}) {
   if (typeof getRun === 'function') sources.getRun = getRun;
   if (typeof getPage === 'function') sources.getPage = getPage;
+  if (typeof abandon === 'function') sources.abandon = abandon;
   if (registered) return;
   registered = true;
   registerScreen('pause', createPauseScreen);

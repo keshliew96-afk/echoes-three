@@ -9,6 +9,10 @@ import { esc } from './style.js';
 import { SKILLS } from '../../sim/skills.js';
 import { NODES } from '../../sim/nodes.js';
 import { service } from '../../app/registry.js'; // M2 NEW-BEST: the save service's run record
+import { levelFor } from '../../data/levels.js';
+import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
+
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 
 export function createEndScreen({ run }) {
   const el = document.createElement('div');
@@ -28,6 +32,7 @@ export function createEndScreen({ run }) {
   const flavour = el.querySelector('.rn-flavour');
   const summaryEl = el.querySelector('.rn-summary');
   const kitEl = el.querySelector('.rn-kit');
+  const hintEl = el.querySelector('.rn-hint');
   el.querySelector('.rn-camp').addEventListener('click', () => run().returnToCamp());
 
   function row(k, v) {
@@ -37,10 +42,21 @@ export function createEndScreen({ run }) {
   function render(view) {
     const s = view.summary;
     const win = view.phase === 'victory';
-    headline.textContent = win ? 'VICTORY' : 'THE RUN ENDS';
+    // CAMPAIGN (PLAN §12.6): a campaign's end card speaks for the whole
+    // campaign; CAMPAIGN COMPLETE returns to camp by itself (sim time).
+    const camp = s && s.campaign && s.campaign.mode === 'campaign' ? s.campaign : null;
+    const complete = !!(camp && camp.complete);
+    headline.textContent = win ? (complete ? 'CAMPAIGN COMPLETE' : 'VICTORY') : camp ? 'THE CAMPAIGN ENDS' : 'THE RUN ENDS';
     flavour.textContent = win
-      ? 'The Hollow Stag falls. The wood breathes out.'
+      ? complete
+        ? 'The last Stag falls. Every level is clear — the long night is over.'
+        : 'The Hollow Stag falls. The wood breathes out.'
       : 'The gods applaud.';
+    {
+      const c = run().campaign ? run().campaign() : null;
+      const secs = c && c.autoReturnInTicks !== null && c.autoReturnInTicks !== undefined ? Math.ceil(c.autoReturnInTicks / 60) : null;
+      hintEl.innerHTML = secs !== null && win ? `Returning to camp in ${secs} s &nbsp;·&nbsp; <b>Enter</b> return now` : '<b>Enter</b> return to camp';
+    }
     if (!s) {
       summaryEl.innerHTML = '';
       kitEl.style.display = 'none';
@@ -53,21 +69,32 @@ export function createEndScreen({ run }) {
     {
       const sv = service('save');
       const rec = sv && typeof sv.lastRecord === 'function' ? sv.lastRecord() : null;
-      const same = rec && rec.summary && rec.summary.act === s.act && rec.summary.roomsCleared === s.rooms && Math.round(rec.summary.timeSec * 60) === s.ticks;
+      // (CAMPAIGN: matched by seed + length — a campaign's rooms span levels.)
+      const same = rec && rec.summary && rec.summary.seed === s.seed && Math.round(rec.summary.timeSec * 60) === s.ticks;
       if (same) {
         const tail = rec.newBest ? ' · New best!' : rec.rank ? ` · #${rec.rank} on your records` : '';
         scoreRow = row('SCORE', `${rec.score.toLocaleString()}${tail}`);
       }
     }
     // @gnt:M2 NEW-BEST end
+    const campRows = [];
+    let roomsRow = row('ROOMS CLEARED', `${s.rooms} / 8`);
+    if (camp) {
+      const span = CAMPAIGN_LEVELS.filter((l) => l >= camp.startLevel);
+      const rooms = (camp.levels || []).reduce((n, l) => n + (l.rooms || 0), 0);
+      campRows.push(row('LEVELS CLEARED', `${camp.levelsCleared} / ${span.length}`));
+      campRows.push(row(complete ? 'FINAL LEVEL' : 'FURTHEST LEVEL', `${ROMAN[camp.level] ?? camp.level} · ${levelFor(camp.level).name}`));
+      roomsRow = row('ROOMS CLEARED', `${rooms} / ${8 * (camp.levels || []).length}`);
+    }
     summaryEl.innerHTML = [
       scoreRow,
-      row('ROOMS CLEARED', `${s.rooms} / 8`),
+      ...campRows,
+      roomsRow,
       row('GLINT EARNED', String(s.glint)),
       row('SKILLS CARRIED', String(s.skills.length)),
       row('NODES HELD', String(s.nodes.bench.length + s.nodes.socketed.length)),
       row('RUN SEED', String(s.seed ?? '—')),
-      row('RUN LENGTH', `${Math.round(s.ticks / 60)} s`),
+      row(camp ? 'CAMPAIGN LENGTH' : 'RUN LENGTH', `${Math.round(s.ticks / 60)} s`),
     ].join('');
     const names = s.skills.map((id) => (SKILLS[id] ? SKILLS[id].name : id));
     const nodes = s.nodes.bench

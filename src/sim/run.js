@@ -830,23 +830,29 @@ export function createRunSystem({
     const card = campaign.card;
     const to = card.to;
     exitRoom(tick);
-    act = to;
-    frame = rollFrame(); // the CARRIED run stream (no reseed) rolls the new level's frame
-    roomIndex = 0;
-    clearedRooms = 0;
-    roomsDone = 0;
-    rewardFor = { 1: 'skill' };
-    reward = null;
-    path = null;
-    shop = null;
-    spoils = null;
-    pendingRoom = 0;
-    fadeUntilTick = 0;
-    lastCombatLayout = null;
-    roomPlanView = null;
     if (card.kind === 'clear') {
+      // A NEW level: its own run frame, rolled from the CARRIED run stream (no
+      // reseed), and fresh per-level counters. (A 'depart' card's level was
+      // opened — frame rolled, grant applied — before the card.)
+      act = to;
+      frame = rollFrame();
+      roomIndex = 0;
+      clearedRooms = 0;
+      roomsDone = 0;
+      rewardFor = { 1: 'skill' };
+      reward = null;
+      path = null;
+      shop = null;
+      spoils = null;
+      pendingRoom = 0;
+      fadeUntilTick = 0;
+      lastCombatLayout = null;
+      roomPlanView = null;
       campaign.index += 1;
       campaign.levels.push({ level: to, index: campaign.index, startTick: tick, rooms: 0, cleared: false, ticks: 0 });
+    } else {
+      const rec = campaign.levels[campaign.levels.length - 1];
+      if (rec) rec.startTick = tick;
     }
     campaign.level = to;
     campaign.levelStartTick = tick;
@@ -976,6 +982,14 @@ export function createRunSystem({
 
   // ------------------------------------------------------------- run end --
   function buildSummary(result) {
+    // CAMPAIGN: the level being played when the run ended records its rooms.
+    if (campaign) {
+      const rec = campaign.levels[campaign.levels.length - 1];
+      if (rec && !rec.cleared) {
+        rec.rooms = roomsDone;
+        rec.ticks = getTick() - campaign.levelStartTick;
+      }
+    }
     const b = buildSys.view();
     return {
       result,

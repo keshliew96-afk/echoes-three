@@ -107,6 +107,18 @@ export function createEventBus() {
       return replica;
     },
     counters, // live object (debug / gates): simCalls must not grow on a guest
+    // CAMPAIGN (PLAN §12.5, gate GC.6): live subscriber count — a listener
+    // added per level and never removed shows up here as growth.
+    listenerCount() {
+      let n = 0;
+      for (const set of listeners.values()) n += set.size;
+      return n;
+    },
+    listenerCounts() {
+      const out = {};
+      for (const [k, set] of listeners) if (set.size) out[k] = set.size;
+      return out;
+    },
     buffer: () => ring.slice(), // copy — callers can't mutate history
   };
 }

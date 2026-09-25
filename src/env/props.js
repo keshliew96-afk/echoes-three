@@ -1715,5 +1715,7 @@ export function buildProps(root, spec, cosmetic) {
   // bush, boulder, cairn, torch post, lantern, monolith, and (fix round 1)
   // tower, banner, barricade (reference bar check 4 needs >=8 in a combat
   // arena; typeCount reports the live number per variant).
-  return { emitters, shadows, footprints, mats, typeCount, monolithMat, dressing: dressing.info };
+  // (roomDressingDispose — CAMPAIGN, PLAN §12.5: a torn-down dressing's room
+  // groups stop watching the run.)
+  return { emitters, shadows, footprints, mats, typeCount, monolithMat, dressing: dressing.info, roomDressingDispose: dressing.dispose };
 }

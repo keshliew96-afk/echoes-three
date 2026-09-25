@@ -414,9 +414,15 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     net.transport.sendBinary(encodeCmd(seat, cmdSeq, cmd));
   }
 
+  // CAMPAIGN (PLAN §12.9): each guest's "I can draw level N" report.
+  const levelReadyBySeat = new Map();
   function onGuestCmd(c) {
     stats.cmds += 1;
     const cmd = c.cmd || {};
+    if (cmd.kind === 'level_ready') {
+      levelReadyBySeat.set(c.seat, { level: Number(cmd.level) || 0, ready: !!cmd.ready, tick: clock.tick });
+      return;
+    }
     if (cmd.kind === 'full') {
       const f = feedFor(c.seat);
       f.link.acked = 0;
@@ -560,6 +566,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
   return {
     role: 'host',
     step,
+    levelReady: (seat) => levelReadyBySeat.get(seat) ?? null, // CAMPAIGN (PLAN §12.9)
     onBinary,
     onControl,
     start,

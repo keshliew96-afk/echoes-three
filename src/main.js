@@ -301,14 +301,13 @@ const runUi =
 // `content` service (src/data/content.js; M4b adds probes with
 // registerContentProbe from its own files, never here).
 import { registerScreen } from './app/registry.js';
-import { createExpeditionScreen } from './ui/run/expedition.js';
 import { registerChallengeSetting } from './ui/run/challenge.js';
 import { createContentFx } from './render/skillfx/content.js';
 import { registerContentCues } from './render/skillfx/cues.js';
 provide('content', createContentService({ world, bus, service }));
-// The camp portal's expedition picker (PLAN §4.1) and the Gameplay tab's
-// Challenge row (gameplay.challenge, read at the portal press).
-registerScreen('expedition', createExpeditionScreen);
+// The Gameplay tab's Challenge row (gameplay.challenge, read at the portal
+// press). (The §4.1 expedition picker is superseded by the CAMPAIGN block's
+// Level Select — PLAN §12.7.)
 registerChallengeSetting(app.settings);
 registerContentCues(service('audio'), world);
 // The deterministic default-build autopilot (src/sim/autopilot.js, PLAN §6.7)
@@ -350,6 +349,18 @@ const m4bLayers = PLAYABLE
   ? createWorldContentLayers({ stage, world, bus, cosmetic, runUi, scene: activeScene, params: bootParams, sceneKey })
   : null;
 // @gnt:M4b WORLD-LAYERS end
+// @gnt:CAMPAIGN WORLD-LAYERS begin — the linear campaign's presentation
+// (docs/gauntlet/PLAN.md §12): the lobby's Level Select screen and the LEVEL
+// MANAGER (teardown / preload / advance / probes, src/campaign/manager.js),
+// provided as the `campaign` service (the transition card asks it to skip).
+import { createLevelsScreen } from './ui/run/levels.js';
+import { createCampaignManager } from './campaign/manager.js';
+registerScreen('levels', createLevelsScreen);
+const campaignMgr = PLAYABLE
+  ? createCampaignManager({ world, bus, scene: activeScene, stage, app, registry, service, runUi, isFrozen: () => simFrozen, params: bootParams })
+  : null;
+if (campaignMgr) provide('campaign', campaignMgr);
+// @gnt:CAMPAIGN WORLD-LAYERS end
 
 // @gnt:SAVE begin (M2) — createSaveSystem({ clock, rng, registry, world, bus,
 // scene: activeScene, stage, app }) + provide('save', ...) (PLAN §3.4);
@@ -564,6 +575,10 @@ function frame(now) {
   // @gnt:M4b RENDER-TICK begin
   m4bLayers?.update(now / 1000, alpha);
   // @gnt:M4b RENDER-TICK end
+  // @gnt:CAMPAIGN RENDER-TICK begin — advance a due level-transition card
+  // BEFORE this frame renders (the new room is on screen the same frame).
+  campaignMgr?.update(now);
+  // @gnt:CAMPAIGN RENDER-TICK end
   // Damage numerals age HERE, in the one loop that never stops, after the
   // scenes have settled their cameras (world->screen projection needs the
   // final camera of this frame). No scene swap can freeze the pool.
@@ -627,6 +642,11 @@ registerPauseScreen({
     return rs ? rs.view() : null;
   },
   getPage: () => (runUi && typeof runUi.screen === 'function' ? runUi.screen() : null),
+  // CAMPAIGN (PLAN §12.6): the pause menu's Quit to Lobby.
+  abandon: (reason = 'quit') => {
+    const rs = world.runSystem();
+    return rs && typeof rs.abandonRun === 'function' ? rs.abandonRun(reason) : null;
+  },
 });
 // Esc / P open the pause menu from EVERY page (PLAN §1.2 / §1.5, gate GI.2).
 // This is the LAST window keydown listener on the page and it listens in the
@@ -749,7 +769,16 @@ window.__echoes = {
   // Bus counters (PLAN §3.7 replica bus): simCalls must not grow on a guest,
   // refusedEmits must stay 0.
   get busCounters() {
-    return { ...bus.counters, replica: bus.replica };
+    return { ...bus.counters, replica: bus.replica, listeners: bus.listenerCount() };
+  },
+  // CAMPAIGN (GC.6): live subscribers per event type (a leak names itself).
+  get busListeners() {
+    return bus.listenerCounts();
+  },
+  // CAMPAIGN (PLAN §12.11): the level manager's probe surface.
+  get campaign() {
+    const c = service('campaign');
+    return c ? c.debug ?? c : null;
   },
   get settings() {
     const s = service('settings');

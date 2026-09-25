@@ -48,6 +48,8 @@ import { createDraftScreen } from './draft.js';
 import { createPathScreen } from './path.js';
 import { createShopScreen } from './shop.js';
 import { createEndScreen } from './endscreens.js';
+// CAMPAIGN (docs/gauntlet/PLAN.md §12.6): the level-transition card.
+import { createTransitScreen, TRANSIT_CSS } from './transit.js';
 
 // phase -> screen name. Anything absent means "no meta screen".
 const SCREEN_FOR = {
@@ -56,12 +58,13 @@ const SCREEN_FOR = {
   shop: 'shop',
   victory: 'end',
   defeat: 'end',
+  transit: 'transit', // CAMPAIGN: level-clear / setting-out card
 };
 
 export function createRunUi({ bus, world, socket = null, autostart = false }) {
   const style = document.createElement('style');
   style.id = 'run-style';
-  style.textContent = RUN_CSS;
+  style.textContent = RUN_CSS + TRANSIT_CSS;
   document.head.appendChild(style);
 
   // Veil sits UNDER #hud (§16: Zone 1 persists beneath); the page and the
@@ -84,6 +87,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     path: createPathScreen({ run }),
     shop: createShopScreen({ run, build }),
     end: createEndScreen({ run }),
+    transit: createTransitScreen({ run }),
   };
   for (const s of Object.values(screens)) {
     s.el.style.display = 'none';
@@ -218,6 +222,12 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   }
 
   function setVeilTone(phase) {
+    // CAMPAIGN: the transition card's warm veil (never a black full-screen).
+    veil.classList.toggle('rn-transit', phase === 'transit');
+    if (phase === 'transit') {
+      const c = run().campaign ? run().campaign() : null;
+      veil.classList.toggle('rn-depart', !!(c && c.card && c.card.kind === 'depart'));
+    } else veil.classList.remove('rn-depart');
     veil.classList.toggle('rn-victory', phase === 'victory');
     veil.classList.toggle('rn-defeat', phase === 'defeat');
     rootEl.classList.toggle('rn-victory', phase === 'victory');
@@ -241,7 +251,18 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       p ? `${p.nextRoom}:${p.focus}:${p.options.map((o) => o.win + o.reward).join(',')}` : '-',
       s ? s.stock.map((i) => `${i.node}${i.price}${i.sold ? 'x' : ''}${i.owned}`).join('|') : '-',
       v.summary ? `${v.summary.result}:${v.summary.rooms}:${v.summary.glint}` : '-',
+      campaignSig(v),
     ].join('/');
+  }
+
+  // CAMPAIGN: the transition card and the CAMPAIGN COMPLETE countdown
+  // repaint when their numbers move (whole seconds only).
+  function campaignSig(v) {
+    if (v.phase !== 'transit' && v.phase !== 'victory') return '-';
+    const c = run().campaign ? run().campaign() : null;
+    if (!c) return '-';
+    if (v.phase === 'transit') return c.card ? `${c.card.kind}:${c.card.from}:${c.card.to}:${c.card.startTick}` : '-';
+    return c.autoReturnInTicks !== null && c.autoReturnInTicks !== undefined ? `r${Math.ceil(c.autoReturnInTicks / 60)}` : '-';
   }
 
   // ---------------------------------------------- legendary shimmer (F2) --
@@ -313,6 +334,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     { screen: 'path', view: 'path', frames: 4 },
     { screen: 'end', view: 'victory', frames: 4, tone: 'victory' },
     { screen: 'end', view: 'defeat', frames: 3, tone: 'defeat' },
+    { screen: 'transit', view: 'transit', frames: 4, tone: 'transit' }, // CAMPAIGN card
   ];
   const prepaintLog = { started: null, done: null, frames: 0, step: null }; // probe surface
   let prepaintWait = PREPAINT_WAIT;
@@ -397,6 +419,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       },
       victory: { ...base, phase: 'victory', summary },
       defeat: { ...base, phase: 'defeat', summary: { ...summary, rooms: 5, glint: 60 } },
+      transit: {
+        ...base,
+        phase: 'transit',
+        __card: { kind: 'clear', from: 1, to: 2, name: 'The Sunken Mill', fromName: 'The Hollow Wood', startTick: 0, untilTick: 180, elapsedTicks: 60, due: false, summary: { skills: ['mending_bolt'], socketed: 12, sockets: 32, bench: 1, wallet: 34 } },
+      },
     };
   }
 
@@ -422,6 +449,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     rootEl.classList.toggle('rn-defeat', step.tone === 'defeat');
     veil.classList.toggle('rn-victory', step.tone === 'victory');
     veil.classList.toggle('rn-defeat', step.tone === 'defeat');
+    veil.classList.toggle('rn-transit', step.tone === 'transit');
     const page = screens[step.screen];
     prepaintPage = page.el;
     page.el.style.display = '';
@@ -471,7 +499,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     try { performance.mark('prepaint-end'); } catch (e) { /* trace marker only */ }
     signature = ''; // the synthetic content above must never be mistaken for state
     rootEl.classList.remove('rn-open', 'rn-dock', 'rn-victory', 'rn-defeat');
-    veil.classList.remove('rn-open', 'rn-light', 'rn-victory', 'rn-defeat');
+    veil.classList.remove('rn-open', 'rn-light', 'rn-victory', 'rn-defeat', 'rn-transit');
     rootEl.style.opacity = '';
     rootEl.style.pointerEvents = '';
     veil.style.opacity = '';
@@ -545,6 +573,8 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       refreshShines(); // the render replaced the card DOM
       fitScale(); // content changed => the page's layout height may have changed
     }
+    // Per-frame page work (the transition card's progress bar / readiness).
+    if (typeof screens[current].tick === 'function') screens[current].tick(v);
     driveShines(performance.now());
   }
 
@@ -666,6 +696,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     path: 'The Healer picks the door — point with ←/→ and Enter',
     shop: 'The Healer is shopping…',
     end: 'Waiting for the Healer…',
+    transit: 'The Healer leads on to the next level…',
   };
   function syncGuestNote() {
     const on = current !== 'none' && netGuest();

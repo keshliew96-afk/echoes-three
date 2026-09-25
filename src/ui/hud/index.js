@@ -30,6 +30,9 @@ const ROOM_POLL_MS = 100;
 // have. Room 7 is the §16 shop, room 8 the §11 Hollow Stag.
 const MODE_WORD = { kill_all: 'CLEAR THE CLEARING', defend: 'HOLD THE WAYSTONE', shop: 'THE PEDDLER', boss: 'THE HOLLOW STAG' };
 function locationCopy(scene, rv) {
+  // CAMPAIGN (PLAN §12.6): between two levels the plate says so (the card
+  // names both levels).
+  if (rv && rv.active && rv.phase === 'transit') return { name: 'ON THE ROAD', sub: 'BETWEEN LEVELS' };
   if (rv && rv.active && rv.room >= 1) {
     const room = rv.room;
     const total = rv.rooms ?? 8;
@@ -186,6 +189,8 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     'room_soft_fail',
     'room_enter',
     'room_transition',
+    'level_transit', // CAMPAIGN: the level-clear card hides the combat chrome at once
+    'level_start',
   ];
   // Run-end edges (round D, camp critic F2 / run critic F6): the banner,
   // the threat pointers and the bar's own combat residue are cleared IN THE

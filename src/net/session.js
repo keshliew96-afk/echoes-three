@@ -51,7 +51,9 @@ const now = () => performance.now();
 const GUEST_PRESSES = new Set(['dodge', 'skill_1', 'skill_2', 'skill_3', 'skill_4', 'interact']);
 const KEY_OF = { dodge: 'Space', interact: 'KeyE', basic: 'Mouse2' };
 for (let i = 1; i <= 4; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
-const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'focusPath', 'choosePath', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun']);
+// (+ CAMPAIGN, PLAN §12.9: a guest can neither start, advance nor abandon a
+// campaign — the host drives every level transition.)
+const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'focusPath', 'choosePath', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
 // M4c: autoFill (the socket screen's F / pad Y) mutates the build too — a guest's
 // press becomes the same refused CMD as a socket() (build decisions are the host's).
 const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);
@@ -1373,6 +1375,26 @@ export function createNetSession(ctx) {
       return { tick: g.shownTick, hostiles: out };
     },
     debugHost: () => host,
+    // CAMPAIGN (PLAN §12.9): guests tell the host when they can draw the next
+    // level; the host's level manager waits for every connected guest (or its
+    // 6 s cap) before advancing the level-transition card.
+    reportLevelReady(level, ready) {
+      if (role !== 'guest' || !net.transport) return false;
+      cmdSeq += 1;
+      net.transport.sendBinary(encodeCmd(localSeat(), cmdSeq, { kind: 'level_ready', level: Number(level) || 0, ready: !!ready }));
+      return true;
+    },
+    levelReadyAll(level) {
+      if (role !== 'host' || !host || typeof host.levelReady !== 'function') return true;
+      const room = net.room;
+      const seats = room && Array.isArray(room.seats) ? room.seats : [];
+      for (const s of seats) {
+        if (!s || s.index === localSeat() || !s.peerId || s.connected === false) continue;
+        const r = host.levelReady(s.index);
+        if (!r || r.level !== Number(level) || !r.ready) return false;
+      }
+      return true;
+    },
     resetStats() {
       if (guest) {
         guest.own.resetStats();
@@ -1389,5 +1411,7 @@ export function createNetSession(ctx) {
   net.isGuest = api.isGuest;
   net.isHost = api.isHost;
   net.leaveSession = api.leaveSession;
+  net.reportLevelReady = api.reportLevelReady;
+  net.levelReadyAll = api.levelReadyAll;
   return api;
 }

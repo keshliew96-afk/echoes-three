@@ -14,6 +14,16 @@ export function registerDressingPump(fn) {
   };
 }
 
+// CAMPAIGN (docs/gauntlet/PLAN.md §12.5): under the level-transition card the
+// level manager raises the calm-frame budget so the next level's layouts are
+// built before the card is due; live combat (0) and a held menu (0) stay 0.
+let budgetOverride = null;
+export function setPumpBudgetOverride(ms) {
+  budgetOverride = Number.isFinite(ms) && ms > 0 ? ms : null;
+  return budgetOverride;
+}
+
 export function pumpDressings(budgetMs = 8) {
-  for (const p of pumps) p(budgetMs);
+  const b = budgetMs > 0 && budgetOverride !== null ? budgetOverride : budgetMs;
+  for (const p of pumps) p(b);
 }

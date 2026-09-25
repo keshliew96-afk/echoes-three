@@ -581,5 +581,8 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     setSmearEnabled: (v) => {
       smearEnabled = !!v;
     },
+    // CAMPAIGN (PLAN §12.5): the level manager returns the pooled VFX of a
+    // finished level (particles, kill splats, scorches, numerals).
+    clearVfx: () => ({ particles: particles.clear(), decals: decals.clear(), numerals: typeof numbers.releaseAll === 'function' ? numbers.releaseAll() : 0 }),
   };
 }
