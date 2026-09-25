@@ -630,10 +630,16 @@ async function legContinue(browser) {
   await E(page, () => __echoes.campaign.choose(1));
   await waitFor(page, controllable, { args: [1], timeout: 30000 });
   await sleep(1500);
-  await E(page, () => __echoes.cmd('killAllEnemies'));
+  // room 1 cleared by killing every wave as it lands (waves keep spawning)
+  for (let i = 0; i < 150; i++) {
+    const ph = await E(page, () => {
+      if (__echoes.state().run.phase === 'combat') __echoes.cmd('killAllEnemies');
+      return __echoes.state().run.phase;
+    });
+    if (ph === 'reward') break;
+    await sleep(100);
+  }
   await waitFor(page, () => __echoes.state().run.phase === 'reward', { timeout: 15000 });
-  await E(page, () => __echoes.state().run.phase === 'reward' && __echoes.runUi && true);
-  await E(page, () => __echoes.cmd('takeReward'));
   await sleep(500);
   const ph = await clearLevel(page);
   await sleep(1500);
