@@ -1,7 +1,8 @@
 // Autosave at safe points (docs/gauntlet/PLAN.md §3.4 "Autosave"). Owner: M2.
 //
 // Safe points: `room_enter` (the room's first tick), `shop_open`, `run_end`
-// (the end card, the camp already behind it), `return_to_camp`, and Save &
+// (the end card, the camp already behind it), `return_to_camp`,
+// `level_transit` (CAMPAIGN: the level-clear card), and Save &
 // Quit (the service calls autosave('quit') directly). Never during a
 // transition fade, never as a network guest, never while a probe drives the
 // sim, never outside app state `playing`.
@@ -28,8 +29,11 @@
 // Throttle: >= 20 s of wall time between autosaves, except run end and quit.
 // Slots: auto-1 / auto-2 alternate (the older one is overwritten), so a
 // torn write can never cost the only autosave.
-export const SAFE_POINTS = Object.freeze(['room_enter', 'shop_open', 'run_end', 'return_to_camp']);
-const UNTHROTTLED = new Set(['run_end', 'quit']);
+// CAMPAIGN (PLAN §12.8): `level_transit` — the level-clear card (the cleared
+// level torn down, the party restored, the carried build) is a safe point of
+// its own, unthrottled like run end: every level transition is autosaved.
+export const SAFE_POINTS = Object.freeze(['room_enter', 'shop_open', 'run_end', 'return_to_camp', 'level_transit']);
+const UNTHROTTLED = new Set(['run_end', 'quit', 'level_transit']);
 
 export function createAutosave({
   bus,

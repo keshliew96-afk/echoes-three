@@ -68,6 +68,20 @@ const day = (iso) => {
   return d.toLocaleDateString(undefined, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: '2-digit' });
 };
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : '');
+// CAMPAIGN (PLAN §12.8) record cells.
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+function levelCell(h) {
+  if (h.campaign) {
+    const from = h.startLevel ?? 1;
+    return from === h.act ? `${ROMAN[from] ?? from} · ${ACT_NAME[from] || ''}` : `${ROMAN[from] ?? from} → ${ROMAN[h.act] ?? h.act} · Campaign`;
+  }
+  return `${ROMAN[h.act] || h.act} · ${ACT_NAME[h.act] || ''}`;
+}
+function resultWord(h) {
+  if (h.result === 'abandoned') return 'Abandoned';
+  if (h.campaign && h.victory) return 'Campaign complete';
+  return h.victory ? 'Victory' : 'Defeat';
+}
 
 export function createRecordsScreen(ctx) {
   installStyle();
@@ -122,7 +136,7 @@ export function createRecordsScreen(ctx) {
       scoresEl.appendChild(e);
     } else {
       const t = document.createElement('table');
-      t.innerHTML = `<thead><tr><th class="sv-num">#</th><th class="sv-num">Score</th><th>Expedition</th><th>Result</th><th class="sv-num">Rooms</th><th class="sv-num">Kills</th><th class="sv-num sv-opt">Time</th><th class="sv-opt">Date</th></tr></thead>`;
+      t.innerHTML = `<thead><tr><th class="sv-num">#</th><th class="sv-num">Score</th><th>Level</th><th>Result</th><th class="sv-num">Rooms</th><th class="sv-num">Kills</th><th class="sv-num sv-opt">Time</th><th class="sv-opt">Date</th></tr></thead>`;
       const tb = document.createElement('tbody');
       p.highScores.forEach((h, i) => {
         const tr = document.createElement('tr');
@@ -131,9 +145,12 @@ export function createRecordsScreen(ctx) {
         const cells = [
           [String(i + 1), 'sv-num'],
           [h.score.toLocaleString(), 'sv-num'],
-          [`${['I', 'II', 'III'][h.act - 1] || h.act} · ${ACT_NAME[h.act] || ''}`, 'sv-wrapc'],
-          [`${h.victory ? 'Victory' : 'Defeat'}${h.challenge && h.challenge !== 'standard' ? ` · ${cap(h.challenge)}` : ''}`, 'sv-wrapc'],
-          [`${h.roomsCleared}/8`, 'sv-num'],
+          // CAMPAIGN (PLAN §12.8): a campaign entry names its span ("I → III");
+          // a single-level entry its level. Result: Campaign complete /
+          // Victory / Defeat / Abandoned (Quit to Lobby).
+          [levelCell(h), 'sv-wrapc'],
+          [`${resultWord(h)}${h.challenge && h.challenge !== 'standard' ? ` · ${cap(h.challenge)}` : ''}`, 'sv-wrapc'],
+          [h.campaign ? String(h.roomsCleared) : `${h.roomsCleared}/8`, 'sv-num'],
           [String(h.kills), 'sv-num'],
           [mmss(h.timeSec), 'sv-num sv-opt'],
           [day(h.date), 'sv-opt'],
@@ -162,18 +179,25 @@ export function createRecordsScreen(ctx) {
     };
     add('Runs', String(r.runs));
     add('Victories · defeats', `${r.victories} · ${r.defeats}`);
+    // CAMPAIGN (PLAN §12.8)
+    add('Campaigns completed', `${r.campaignsCompleted ?? 0} of ${r.campaigns ?? 0}`);
+    add('Abandoned (Quit to Lobby)', String(r.abandoned ?? 0));
+    add('Furthest level', r.furthestLevel ? `${ROMAN[r.furthestLevel] ?? r.furthestLevel} · ${ACT_NAME[r.furthestLevel] ?? ''}` : '—');
+    add('Fastest campaign', mmss(r.fastestCampaignSec));
     add('Best score', r.bestScore ? r.bestScore.toLocaleString() : '—');
     add('Most kills in a run', r.mostKills ? String(r.mostKills) : '—');
     for (const a of [1, 2, 3]) {
-      add(`Fastest win — Act ${['I', 'II', 'III'][a - 1]}`, mmss(r.fastestVictorySec[a]));
-      add(`Deepest room — Act ${['I', 'II', 'III'][a - 1]}`, r.deepestRoom[a] ? `${r.deepestRoom[a]} / 8` : '—');
+      const lc = r.levelClears ? r.levelClears[a] ?? 0 : 0;
+      add(`Level ${ROMAN[a]} — clears`, String(lc));
+      add(`Level ${ROMAN[a]} — fastest clear`, mmss(r.fastestVictorySec[a]));
+      add(`Level ${ROMAN[a]} — deepest room`, r.deepestRoom[a] ? `${r.deepestRoom[a]} / 8` : '—');
     }
-    add('Expeditions open', p.unlocks.acts.map((a) => ['I', 'II', 'III'][a - 1]).join(' · '));
+    add('Levels open', p.unlocks.acts.map((a) => ROMAN[a] ?? a).join(' · '));
     add('Time played', hours(p.playtimeSec));
     const f = document.createElement('div');
     f.className = 'sv-formula';
     f.textContent =
-      'Score = (100 × rooms + 5 × kills + 1000 if won) × act (I 1.0 · II 1.5 · III 2.0) × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a win (900 − seconds).';
+      'Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).';
     side.append(h3, dl, f);
   }
 

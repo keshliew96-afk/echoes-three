@@ -78,7 +78,10 @@ let dynamics = [];
 function solveCollider(c) {
   if (c.hx !== undefined) {
     const yaw = c.yaw ?? 0;
-    return { kind: 'box', id: c.id ?? null, x: c.x, z: c.z, hx: c.hx, hz: c.hz, c: Math.cos(yaw), s: Math.sin(yaw) };
+    // `yaw` is kept verbatim for serializeMovement (CAMPAIGN fix: atan2 of
+    // cos/sin is not idempotent in doubles — 0.2 saved as 0.19999999999999998
+    // restored as ...96 — so a save round trip changed the tree hash).
+    return { kind: 'box', id: c.id ?? null, x: c.x, z: c.z, hx: c.hx, hz: c.hz, c: Math.cos(yaw), s: Math.sin(yaw), yaw };
   }
   return { kind: 'circle', id: c.id ?? null, x: c.x, z: c.z, r: c.r };
 }
@@ -105,7 +108,7 @@ export function serializeMovement() {
   return {
     dynamics: dynamics.map((c) =>
       c.kind === 'box'
-        ? { id: c.id, x: c.x, z: c.z, hx: c.hx, hz: c.hz, yaw: Math.atan2(c.s, c.c) }
+        ? { id: c.id, x: c.x, z: c.z, hx: c.hx, hz: c.hz, yaw: Number.isFinite(c.yaw) ? c.yaw : Math.atan2(c.s, c.c) }
         : { id: c.id, x: c.x, z: c.z, r: c.r }
     ),
   };

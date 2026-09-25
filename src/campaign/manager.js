@@ -182,11 +182,21 @@ export function createCampaignManager({ world, bus, scene, stage, app, registry,
     const r = run();
     const v = r ? r.view() : null;
     let level = FIRST_LEVEL;
+    current = null;
+    skipRequested = null;
     if (v && v.active) {
       const c = r.campaign ? r.campaign() : null;
       level = v.phase === 'transit' && c && c.card ? c.card.to : v.act ?? FIRST_LEVEL;
-      if (v.phase === 'transit') setPumpBudgetOverride(24);
-    }
+      if (v.phase === 'transit') {
+        setPumpBudgetOverride(24);
+        // A load onto the card (GC.9): the card resumes with its remaining
+        // time; the probe log gets its own record from here.
+        const now = performance.now();
+        current = { level: c && c.card ? c.card.from : null, next: level, final: false, clearTick: world.tick, clearAt: now, killTick: null, killAt: null, cardAt: now, readyAt: null, advanceTick: null, advanceAt: null, advanceReason: null, controllableAt: null, killToControlMs: null, clearToControlMs: null, frames: 0, maxGapMs: 0, gapsOver250: 0, teardown: null, waitedMs: 0, kind: c && c.card ? c.card.kind : 'clear', to: level, restored: true };
+        transitions.push(current);
+        if (transitions.length > 20) transitions.shift();
+      } else setPumpBudgetOverride(null);
+    } else setPumpBudgetOverride(null);
     setResident(level, true);
     waitedMs = 0;
   });

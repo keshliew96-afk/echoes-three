@@ -35,7 +35,12 @@ function slotCaption(meta) {
   const parts = [];
   const name = (meta.slot && meta.slot.name) || meta.name;
   if (name) parts.push(name);
-  if (m.mode === 'run' && m.room) parts.push(`${m.actName || (m.act ? `Act ${m.act}` : 'Run')} · Room ${m.room}`);
+  // CAMPAIGN (PLAN §12.8): "Level II · The Sunken Mill · Room 3"; a save on
+  // the level-transition card reads "Level I cleared".
+  const lv = m.level ?? m.act;
+  const roman = ['', 'I', 'II', 'III', 'IV', 'V'][lv] ?? lv;
+  if (m.mode === 'run' && m.phase === 'transit') parts.push(`Level ${roman} cleared`);
+  else if (m.mode === 'run' && m.room) parts.push(`${lv ? `Level ${roman} · ` : ''}${m.levelName || m.actName || 'Run'} · Room ${m.room}`);
   else if (m.mode === 'camp') parts.push('Camp');
   const when = ago(meta.savedAt || (meta.meta && meta.meta.savedAt));
   if (when) parts.push(when);
@@ -120,7 +125,22 @@ export function createTitleScreen(ctx) {
       hasAny = false;
     }
     if (save && hasAny && latest) {
-      list.push({ id: 'continue', label: 'Continue', caption: slotCaption(latest), primary: true, onPress: () => app.continueGame() });
+      // (CAMPAIGN: a refused Continue — a save in a locked level, a damaged
+      // file — says why instead of doing nothing.)
+      list.push({
+        id: 'continue',
+        label: 'Continue',
+        caption: slotCaption(latest),
+        primary: true,
+        onPress: () =>
+          Promise.resolve(app.continueGame()).then((r) => {
+            if (r && r.ok === false && typeof app.toast === 'function') {
+              const errs = save && save.errors ? save.errors : {};
+              app.toast(r.reason || errs[r.error] || "Couldn't continue that save", { tone: 'warn' });
+            }
+            return r;
+          }),
+      });
     }
     list.push({ id: 'new', label: 'New Game', primary: list.length === 0, onPress: () => app.newGame() });
     const savesScreen = !!screenFactory('saves');

@@ -85,8 +85,12 @@ export function fmtDate(iso) {
 }
 export function whereLine(m) {
   const meta = (m && m.meta) || {};
+  // CAMPAIGN (schema 3, PLAN §12.8): levels, and the level-transition card.
+  const lv = meta.level ?? meta.act ?? null;
+  const roman = lv ? ['', 'I', 'II', 'III', 'IV', 'V'][lv] ?? String(lv) : null;
+  if (meta.mode === 'run' && meta.phase === 'transit') return `Level ${roman ?? 'I'} cleared — on the road to the next level`;
   if (meta.mode === 'run' && meta.room) {
-    const act = meta.actName || `Act ${meta.act || 1}`;
+    const act = roman ? `Level ${roman} · ${meta.levelName || meta.actName || ''}`.replace(/ · $/, '') : meta.actName || `Act ${meta.act || 1}`;
     const kind = ROOM_LABEL[meta.roomMode] || '';
     const phase = PHASE_LABEL[meta.phase] ? ` — ${PHASE_LABEL[meta.phase]}` : '';
     return `${act} · Room ${meta.room} of 8${kind ? ` · ${kind}` : ''}${phase}`;

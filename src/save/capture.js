@@ -3,8 +3,9 @@
 // (tools/gntM2-nodetrip.mjs) and — in W4 — the network snapshot/keyframe
 // path all build their StateTree here.
 //
-// StateTree v2 (schema 2 — v1 trees load through codec.js MIGRATIONS[1]) = {
-//   v: 2,
+// StateTree v3 (schema 3 — CAMPAIGN; v1/v2 trees load through codec.js
+// MIGRATIONS[1] / [2]; systems.run carries the campaign) = {
+//   v: 3,
 //   clock:    { tick, hitstopRemaining, grants[] }            core/clock.js
 //   rng:      { seed, s, draws }                              the LIVE gameplay stream (main.js handle)
 //   registry: { nextOrdinal, entities[] }                     ascending id, plain entity objects
@@ -30,8 +31,9 @@ import { serializeMovement, restoreMovement } from '../sim/movement.js';
 import { serializeShapes, restoreShapes } from '../sim/shapes.js';
 import { clonePlain, checkTree } from './codec.js';
 
-// Must equal codec.js TREE_VERSION (schema 2, M4c: 4 skill slots, 8 sockets per skill).
-export const STATE_VERSION = 2;
+// Must equal codec.js TREE_VERSION (schema 2, M4c: 4 skill slots, 8 sockets
+// per skill; schema 3, CAMPAIGN: systems.run.campaign + autoReturnTick).
+export const STATE_VERSION = 3;
 
 export function createStateIO({ clock, rng, registry, world, scene = null, appState = null }) {
   function sceneState() {

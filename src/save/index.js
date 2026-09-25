@@ -24,7 +24,8 @@ import { SKILL_SLOTS } from '../core/constants.js';
 import { scriptedInput } from '../sim/script.js';
 import { levelFor } from '../data/levels.js';
 import { createStateIO } from './capture.js';
-import { buildFile, parseFile, encodeOrdered, clonePlain, SCHEMA } from './codec.js';
+import { buildFile, parseFile, encodeOrdered, clonePlain, SCHEMA, campaignMeta } from './codec.js';
+import { lockLine, FIRST_LEVEL } from '../data/campaign.js';
 import { createSaveStorage, INDEX_KEY, PROFILE_KEY } from './storage.js';
 import {
   ALL_SLOTS,
@@ -95,6 +96,9 @@ export const SAVE_ERRORS = Object.freeze({
   hash: "That save file failed its integrity check — it was changed or damaged",
   full: 'Every save slot is in use — pick a slot to overwrite',
   guest: 'Only the host can save an online session',
+  // CAMPAIGN (PLAN §12.7): a save whose run sits in a level this profile has
+  // not unlocked (a copied / imported file) is refused, like every other path.
+  locked: "That save is in a level you haven't unlocked yet",
 });
 
 const CAN_SAVE_REASON = Object.freeze({
@@ -129,13 +133,17 @@ export function createSaveSystem({
   // ---------------------------------------------------- app trackers --
   // Saved with the state (tree.app): playtime = unpaused sim ticks, and the
   // kill counter base of the live run (score = kills since run_start).
-  const tracker = { playtimeTicks: 0, runKillBase: 0 };
+  // CAMPAIGN (PLAN §12.8): per-level kills for the campaign score — the kill
+  // counter at the live level's start and the kills of every level cleared.
+  const tracker = { playtimeTicks: 0, runKillBase: 0, levelKillBase: 0, levelKills: [] };
   let profileTicks = 0; // ticks not yet credited to the profile's lifetime playtime
   const appState = {
-    save: () => ({ playtimeTicks: tracker.playtimeTicks, runKillBase: tracker.runKillBase }),
+    save: () => ({ playtimeTicks: tracker.playtimeTicks, runKillBase: tracker.runKillBase, levelKillBase: tracker.levelKillBase, levelKills: tracker.levelKills.slice() }),
     load: (d) => {
       tracker.playtimeTicks = Number.isFinite(d.playtimeTicks) ? d.playtimeTicks : 0;
       tracker.runKillBase = Number.isFinite(d.runKillBase) ? d.runKillBase : 0;
+      tracker.levelKillBase = Number.isFinite(d.levelKillBase) ? d.levelKillBase : tracker.runKillBase;
+      tracker.levelKills = Array.isArray(d.levelKills) ? d.levelKills.filter((k) => Number.isFinite(k)) : [];
     },
   };
   const io = createStateIO({ clock, rng, registry, world, scene, appState });
@@ -339,8 +347,37 @@ export function createSaveSystem({
       tick: tree.clock.tick,
       challenge: run.challenge ?? 'standard',
       network: netRole() === 'host',
+      // CAMPAIGN (schema 3, PLAN §12.8): the level and the campaign it is part of.
+      level: run.act ?? 1,
+      levelName: actName,
+      campaign: campaignMeta(run),
       bytes: 0,
     };
+  }
+
+  // CAMPAIGN (PLAN §12.7): the load-side lock check. A run in (or a card
+  // heading to) a level this profile has not unlocked is refused — unless a
+  // developer path started it (`campaign.harness`: ?level=N, ?run=1,
+  // cmd('startCampaign' | 'startRun')).
+  function unlockedLevels() {
+    try {
+      const c = service('content');
+      return c && typeof c.unlockedActs === 'function' ? c.unlockedActs() : null;
+    } catch {
+      return null;
+    }
+  }
+  function lockCheck(tree) {
+    const run = tree && tree.systems ? tree.systems.run : null;
+    if (!run || !run.active) return null;
+    const c = run.campaign && typeof run.campaign === 'object' ? run.campaign : null;
+    if (c && c.harness) return null;
+    const open = unlockedLevels();
+    if (!open) return null; // no content service (Node tools): nothing to check against
+    const need = [Number(run.act) || FIRST_LEVEL];
+    if (c && c.card && Number.isFinite(c.card.to)) need.push(c.card.to);
+    const locked = need.find((l) => !open.includes(l));
+    return locked === undefined ? null : { level: locked, line: lockLine(locked) };
   }
 
   // ------------------------------------------------------------ write --
@@ -462,6 +499,8 @@ export function createSaveSystem({
       rescan();
       return { ok: false, error: pf.error, detail: pf.detail, backup: backupMeta(store, id) };
     }
+    const lock = lockCheck(pf.file.state);
+    if (lock) return { ok: false, error: 'locked', reason: `${SAVE_ERRORS.locked} — ${lock.line}`, detail: lock.line, level: lock.level };
     const r = applyTree(pf.file.state, 'load', { slot: id });
     if (!r.ok) return { ok: false, error: r.error, detail: r.detail, backup: backupMeta(store, id) };
     const meta = slots[id] ?? metaOf(pf.file, { id, bytes: text.length });
@@ -644,22 +683,52 @@ export function createSaveSystem({
   bus.on('run_start', (ev) => {
     if (probing) return;
     tracker.runKillBase = world.stats.kills;
-    if (Number.isFinite(ev.act)) profileStore.noteRunStart(ev.act);
+    tracker.levelKillBase = world.stats.kills;
+    tracker.levelKills = [];
+    if (Number.isFinite(ev.act)) {
+      profileStore.noteRunStart(ev.act);
+      profileStore.noteLevelReached(ev.act);
+    }
+  });
+  // CAMPAIGN (PLAN §12.7 / §12.8): a level clear unlocks the next level NOW
+  // (atomic profile write) and closes that level's kill count.
+  let lastLevelClear = null;
+  bus.on('level_clear', (ev) => {
+    tracker.levelKills.push(Math.max(0, world.stats.kills - tracker.levelKillBase));
+    tracker.levelKillBase = world.stats.kills;
+    if (probing) return;
+    lastLevelClear = { tick: ev.tick, level: ev.level, ...profileStore.noteLevelClear(ev.level) };
+  });
+  bus.on('level_start', (ev) => {
+    tracker.levelKillBase = world.stats.kills;
+    if (probing) return;
+    if (Number.isFinite(ev.level)) profileStore.noteLevelReached(ev.level);
   });
   bus.on('run_end', (ev) => {
     if (probing) return;
     const run = world.runSystem();
     const s = run.view().summary ?? null;
     const kills = Math.max(0, world.stats.kills - tracker.runKillBase);
+    const c = ev.campaign ?? (s && s.campaign) ?? null;
+    let campaign = null;
+    if (c && Array.isArray(c.levels)) {
+      const lk = tracker.levelKills.slice();
+      campaign = {
+        ...c,
+        levels: c.levels.map((l, i) => ({ ...l, kills: i < lk.length ? lk[i] : Math.max(0, world.stats.kills - tracker.levelKillBase) })),
+      };
+    }
     const summary = {
       act: ev.act ?? (s && s.act) ?? 1,
       victory: ev.result === 'victory',
-      roomsCleared: ev.rooms ?? (s && s.rooms) ?? 0,
+      result: ev.result ?? null,
+      roomsCleared: campaign ? campaign.levels.reduce((n, l) => n + (l.rooms || 0), 0) : ev.rooms ?? (s && s.rooms) ?? 0,
       kills,
       timeSec: (ev.ticks ?? (s && s.ticks) ?? 0) / TICK_HZ,
       seed: s ? s.seed : null,
       challenge: ev.challenge ?? (s && s.challenge) ?? 'standard',
       lastRoom: s ? s.lastRoom : 0,
+      campaign,
     };
     profileStore.addPlaytime(profileTicks / TICK_HZ);
     profileTicks = 0;
@@ -977,6 +1046,9 @@ export function createSaveSystem({
     },
     lastLoad: () => lastLoad,
     lastRecord: () => lastRecord,
+    // CAMPAIGN (PLAN §12.7 / §12.8)
+    lastLevelClear: () => lastLevelClear,
+    lockCheck: (tree) => lockCheck(tree ?? capture()),
     bootHash: () => (bootTree ? hashState(bootTree) : null),
     bootTree: () => (bootTree ? clonePlain(bootTree) : null),
     freshTree: (seed) => freshTree(seed),

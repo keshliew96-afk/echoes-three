@@ -20,9 +20,14 @@ export const SAVE_FORMAT = 'echoes-save';
 // Schema 2 (M4c, 2026-09-22 user correction): at most 4 skill slots and 8 node
 // sockets on every skill. Schema-1 files (8 skill slots, 2-socket active rows,
 // 1-socket passive rows) load through MIGRATIONS[1] below.
-export const SCHEMA = 2;
+// Schema 3 (CAMPAIGN, 2026-09-25 — PLAN §12.8, the linear campaign): the run
+// system's level director (`systems.run.campaign`, the level-transition card
+// included) and `meta.level / levelName / campaign`. Schema-2 files load
+// through MIGRATIONS[2] below (an active act run becomes a campaign from its
+// level).
+export const SCHEMA = 3;
 // StateTree `v` written by capture.js (STATE_VERSION there must equal this).
-export const TREE_VERSION = 2;
+export const TREE_VERSION = 3;
 const MAX_DEPTH = 64;
 
 // --------------------------------------------------------------- clone --
@@ -209,8 +214,67 @@ export function migrateFile1to2(file) {
   if (meta && Array.isArray(meta.skills)) meta.skills = kept.slice();
   return { ...file, schema: 2, meta, state: tree };
 }
+
+// 2 -> 3 (CAMPAIGN, the user's linear-campaign refactor — PLAN §12.8). Pure,
+// deterministic, draws no RNG, never throws on a structurally valid v2 tree:
+//   - an ACTIVE run at act N becomes a campaign from level N (mode
+//     'campaign', index 1, no starter grant — the build is already there,
+//     not harness-started: the load lock check applies); its level record
+//     keeps the rooms done so far;
+//   - a camp tree (no active run) gets `campaign: null`;
+//   - `autoReturnTick: null` (no CAMPAIGN COMPLETE card in a v2 tree);
+//   - a v2 tree written by a v0.5.89-90 build already carries `campaign`:
+//     it is kept as it is;
+//   - meta gains `level`, `levelName` and `campaign { mode, startLevel,
+//     level, index }` (the slot list reads them).
+function campaignOfRun(run) {
+  if (!run || typeof run !== 'object' || !run.active) return null;
+  const act = Number.isFinite(run.act) ? run.act : 1;
+  const startTick = Number.isFinite(run.startTick) ? run.startTick : 0;
+  return {
+    mode: 'campaign',
+    harness: false,
+    startLevel: act,
+    level: act,
+    index: 1,
+    levels: [{ level: act, index: 1, startTick, rooms: Number.isFinite(run.roomsDone) ? run.roomsDone : 0, cleared: false, ticks: 0 }],
+    startTick,
+    levelStartTick: startTick,
+    clearedAt: 0,
+    card: null,
+    grant: null,
+    transitions: 0,
+  };
+}
+export function campaignMeta(run) {
+  const c = run && run.campaign && typeof run.campaign === 'object' ? run.campaign : null;
+  return c ? { mode: c.mode ?? 'campaign', startLevel: c.startLevel ?? null, level: c.level ?? null, index: c.index ?? 1 } : null;
+}
+function migrateTree2to3(tree) {
+  const t = clonePlain(tree);
+  t.v = 3;
+  const run = t.systems && t.systems.run && typeof t.systems.run === 'object' ? t.systems.run : null;
+  if (run) {
+    if (!('campaign' in run) || run.campaign === undefined) run.campaign = campaignOfRun(run);
+    if (!Number.isFinite(run.autoReturnTick)) run.autoReturnTick = null;
+  }
+  return t;
+}
+export function migrateFile2to3(file) {
+  const tree = migrateTree2to3(file.state);
+  const run = tree.systems && tree.systems.run ? tree.systems.run : null;
+  const meta = file.meta && typeof file.meta === 'object' ? { ...file.meta } : file.meta;
+  if (meta && typeof meta === 'object') {
+    meta.level = Number.isFinite(meta.act) ? meta.act : run && Number.isFinite(run.act) ? run.act : 1;
+    if (!('levelName' in meta)) meta.levelName = meta.actName ?? null;
+    meta.campaign = campaignMeta(run);
+  }
+  return { ...file, schema: 3, meta, state: tree };
+}
+
 export const MIGRATIONS = Object.freeze({
   1: migrateFile1to2,
+  2: migrateFile2to3,
 });
 
 // ------------------------------------------------------------ envelope --
@@ -306,7 +370,7 @@ export function parseFile(text, { maxSchema = SCHEMA } = {}) {
     if (bad2) return { ok: false, error: 'corrupt', detail: `migration produced an invalid tree (${bad2})`, file };
     // The stored tree was verified above; the migrated body gets its own
     // hash so a caller that re-writes it (rename, import, restore) writes a
-    // self-consistent schema-2 file (M4c).
+    // self-consistent file of the current schema (M4c; CAMPAIGN schema 3).
     try {
       file = { ...file, hash: hashState(file.state) };
     } catch (err) {
