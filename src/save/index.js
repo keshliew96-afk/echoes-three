@@ -49,10 +49,22 @@ const r1 = (v) => Math.round(v * 10) / 10;
 // Work split across frames (G2.7): each heavy piece runs in its own task
 // right after a rendered frame. (requestIdleCallback never fires idle on a
 // continuously rendering page — it always hits its timeout.)
+// One task after the next frame gap (G2.7: each piece of a write in its own
+// frame gap) — bounded: an occluded or hidden window stops requestAnimationFrame
+// entirely, and a save whose pieces waited on it would stall for as long as the
+// player is away (a Save from the pause menu then read as "nothing happened"),
+// so the gap is at most NEXT_IDLE_MAX_MS of wall time.
+const NEXT_IDLE_MAX_MS = 40;
 const nextIdle = () =>
   new Promise((res) => {
-    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => setTimeout(res, 0));
-    else setTimeout(res, 0);
+    let done = false;
+    const fire = () => {
+      if (done) return;
+      done = true;
+      res();
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => setTimeout(fire, 0));
+    setTimeout(fire, typeof requestAnimationFrame === 'function' ? NEXT_IDLE_MAX_MS : 0);
   });
 // Calm frames: wait until `n` consecutive rendered frames each took < 25 ms
 // (a room swap's own hitch — dressing build, scene change — has passed), at

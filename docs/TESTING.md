@@ -966,3 +966,18 @@ whose root causes lived in other keys' files (minimal edits, listed here):
   Probe: `node tools/gntfixINT1-dropin.mjs --port 789x --tag t --mode both`
   → 3/3 (R rejoin by code, F3 brand-new third client): stack `[]`, app
   `playing`, net `guest`, the dropped-in seat moves on the host under WASD.
+- *A save write never stalls on an occluded window.* `src/save/index.js`
+  `nextIdle()` (the frame-gap between the encode, verify and write pieces,
+  G2.7) races `requestAnimationFrame` against a 40 ms timeout: Chrome stops
+  rAF for an occluded or hidden window, and a Save pressed just before the
+  player alt-tabbed (or under several harness windows) used to wait on it
+  indefinitely. `calmFrames` (1.5 s) and `thumbnail.next()` (500 ms) were
+  already bounded. Probe: `node tools/gntfixINT1-slotclick.mjs --run 1`
+  → 3/3 real clicks on Save-mode slots in room-1 combat write the save.
+- Harness note: `cert-capture seq` takes `<name> <count> <intervalMs>`
+  positionally BEFORE `--url` / `--actions` (`seq x 1 0 --url …`); written
+  as `seq x --url …` it silently captures the default URL. On menu-skip boots
+  puppeteer's `networkidle2` can wait the whole navigation timeout because
+  the biome paint module worker's script request stays pending in CDP
+  (`tools/gntfixINT1-loadevent.mjs`; the page's load event fires at ~3.6 s) —
+  pass `--timeout 180000`.

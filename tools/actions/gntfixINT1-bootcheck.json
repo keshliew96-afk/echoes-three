@@ -1,0 +1,3 @@
+[
+ {"type":"eval","code":"(()=>({href:location.href,search:location.search,state:__echoes.app&&__echoes.app.state,menuSkip:__echoes.app&&__echoes.app.params&&__echoes.app.params.menuSkip,params:__echoes.app&&__echoes.app.params?JSON.stringify(__echoes.app.params).slice(0,300):null,tick:__echoes.tick}))()"}
+]

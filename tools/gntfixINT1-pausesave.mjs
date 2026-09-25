@@ -99,8 +99,13 @@ try {
   const savesBefore = (await appState(page)).saves;
   await page.mouse.move(s1.x - 250, s1.y + 150); await sleep(120); await page.mouse.move(s1.x, s1.y, { steps: 14 }); await sleep(350);
   const hoverFocus = await focusOf(page);
+  const tClick = Date.now();
   await page.mouse.click(s1.x, s1.y); await sleep(900);
   const afterClick = await appState(page); const toast1 = await toastText(page);
+  // INT fix builder instrumentation: when does the click's save actually land, and what did the save service record?
+  let landedMs = -1; while (Date.now() - tClick < 6000) { if ((await appState(page)).saves > savesBefore) { landedMs = Date.now() - tClick; break; } await sleep(50); }
+  const svcLog = await page.evaluate(() => { const S = window.__echoes.save; const out = {}; try { out.captureLog = typeof S.captureLog === 'function' ? S.captureLog().slice(-4) : null; } catch { /* */ } try { out.autosaveLog = typeof S.autosaveLog === 'function' ? S.autosaveLog().slice(-3) : null; } catch { /* */ } try { out.canSave = S.canSave(); } catch { /* */ } out.list = S.list().map((m) => ({ id: m.id, savedAt: m.savedAt, tick: m.meta && m.meta.tick })); return out; });
+  console.log('B5-detail', JSON.stringify({ landedMs, sampledAtMs: 900, svcLog }).slice(0, 1500));
   check('B4 mouse hover over Slot 1 focuses it (§3.3 hover focuses)', hoverFocus === 'sv-slot-manual-1', { hoverFocus, slotCentre: [Math.round(s1.x), Math.round(s1.y)] });
   check('B5 mouse click on Slot 1 saves (list grows) or opens a confirm', afterClick.saves > savesBefore || afterClick.stack.includes('confirm') || !!toast1, { savesBefore, savesAfter: afterClick.saves, stack: afterClick.stack, focus: afterClick.focus, toast: toast1 });
   await shot(page, `gntfixINT1-${tag}-B-after-slot1-click`);
