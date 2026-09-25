@@ -593,8 +593,82 @@ async function legLocks(browser) {
   await o.ctx.close();
 }
 
+// ----------------------------------------------------------------- continue --
+// GC.9: the autosave taken at the level transition, a page reload (a title
+// session), Continue -> the same card with the carried build, then Level 2.
+// Also the lobby's other two entries to the Level Select: the map table (E in
+// its ring) and a real mouse click on the portal prompt's "Levels" chip.
+async function legContinue(browser) {
+  const L = 'continue';
+  const o = await boot(browser, '?seed=15&menu=0');
+  const { page } = o;
+  await waitFor(page, () => __echoes.campaign.ready(1).ready, { timeout: 90000 });
+  // map table
+  await E(page, () => __echoes.cmd('teleport', -3.3, -4.85));
+  await sleep(700);
+  const tp = await E(page, () => __echoes.cmd('campState').levelTable);
+  await page.keyboard.press('e');
+  await sleep(600);
+  const viaTable = await E(page, () => __echoes.app.overlay);
+  await page.keyboard.press('Escape');
+  await sleep(500);
+  check(L, `the map table: prompt shown in its ring (${tp.promptVisible}), E opens the Level Select (${viaTable})`, tp.inRange && tp.promptVisible && viaTable === 'levels', { tp, viaTable });
+  // portal prompt chip, real mouse
+  await E(page, () => __echoes.cmd('teleport', 0, -5.2));
+  await sleep(700);
+  const chip = await E(page, () => {
+    const r = document.querySelector('#camp-prompt .cp-levels').getBoundingClientRect();
+    return { x: r.x + r.width / 2, y: r.y + r.height / 2, visible: r.width > 0 };
+  });
+  await page.mouse.click(chip.x, chip.y);
+  await sleep(600);
+  const viaChip = await E(page, () => __echoes.app.overlay);
+  await page.keyboard.press('Escape');
+  await sleep(500);
+  check(L, `the portal prompt's "Levels" chip (mouse click at ${Math.round(chip.x)},${Math.round(chip.y)}) opens the Level Select (${viaChip})`, chip.visible && viaChip === 'levels', { chip, viaChip });
+  // a campaign to the Level 1 card; the level_transit autosave
+  await E(page, () => __echoes.campaign.choose(1));
+  await waitFor(page, controllable, { args: [1], timeout: 30000 });
+  await sleep(1500);
+  await E(page, () => __echoes.cmd('killAllEnemies'));
+  await waitFor(page, () => __echoes.state().run.phase === 'reward', { timeout: 15000 });
+  await E(page, () => __echoes.state().run.phase === 'reward' && __echoes.runUi && true);
+  await E(page, () => __echoes.cmd('takeReward'));
+  await sleep(500);
+  const ph = await clearLevel(page);
+  await sleep(1500);
+  const saved = await E(page, () => ({ log: __echoes.save.autosaveLog().filter((r) => /level_transit/.test(r.reason || '')), build: (() => { const s = __echoes.state(); return { skills: s.build.skills.map((k) => `${k.id}:${k.sockets.map((x) => (x ? x.node : '-')).join(',')}`), bench: s.build.bench.map((x) => x.node).sort(), wallet: s.wallet }; })(), card: __echoes.campaign.state().card }));
+  check(L, `the level transition autosaved (${JSON.stringify(saved.log.map((r) => ({ slot: r.slot, ok: r.ok, tick: r.captureTick })))})`, ph === 'transit' && saved.log.length === 1 && saved.log[0].ok, saved.log);
+  // reload as a TITLE session and Continue
+  await page.goto(URL0, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.__echoes && window.__echoes.app, { timeout: 180000 });
+  for (let i = 0; i < 120; i++) {
+    const st = await E(page, () => __echoes.app.state);
+    if (st === 'title') break;
+    if (st === 'loading') await page.keyboard.press('Space');
+    await sleep(500);
+  }
+  await sleep(800);
+  const cont = await E(page, () => {
+    const b = [...document.querySelectorAll('button')].find((x) => /^\s*Continue/.test(x.textContent) && x.offsetParent !== null);
+    return b ? b.textContent.replace(/\s+/g, ' ').trim() : null;
+  });
+  await shot(page, `continue-title-${TAG}`);
+  await E(page, () => [...document.querySelectorAll('button')].find((x) => /^\s*Continue/.test(x.textContent) && x.offsetParent !== null).click());
+  await waitFor(page, () => __echoes.app.state === 'playing' && __echoes.state().run.active, { timeout: 30000 });
+  await sleep(300);
+  const back = await E(page, () => ({ phase: __echoes.state().run.phase, card: __echoes.campaign.state().card, screen: __echoes.runUi().screen, build: (() => { const s = __echoes.state(); return { skills: s.build.skills.map((k) => `${k.id}:${k.sockets.map((x) => (x ? x.node : '-')).join(',')}`), bench: s.build.bench.map((x) => x.node).sort(), wallet: s.wallet }; })() }));
+  await shot(page, `continue-card-${TAG}`);
+  check(L, `reload -> title Continue ("${cont}") -> the same card (${back.card && `${back.card.kind} ${back.card.from}->${back.card.to}`}, page ${back.screen}) with the carried build`, /Level I cleared/.test(cont || '') && back.phase === 'transit' && back.card && back.card.to === 2 && back.screen === 'transit' && JSON.stringify(back.build) === JSON.stringify(saved.build), { cont, back, saved: saved.build });
+  await waitFor(page, controllable, { args: [2], timeout: 30000 });
+  const lv = await E(page, () => ({ c: __echoes.campaign.state(), build: (() => { const s = __echoes.state(); return { skills: s.build.skills.map((k) => k.id) }; })() }));
+  check(L, `...and the card advances into Level 2 of the same campaign (index ${lv.c.index}, start level ${lv.c.startLevel})`, lv.c.level === 2 && lv.c.index === 2 && lv.c.startLevel === 1 && lv.c.harness === false, lv.c);
+  check(L, 'no page errors', o.errors.length === 0, o.errors.slice(0, 3));
+  await o.ctx.close();
+}
+
 // --------------------------------------------------------------------- main --
-const legs = { flow: legFlow, quit: legQuit, edge: legEdge, locks: legLocks };
+const legs = { flow: legFlow, quit: legQuit, edge: legEdge, locks: legLocks, continue: legContinue };
 const which = LEG === 'all' ? Object.keys(legs) : LEG.split(',');
 mkdirSync(join(here, 'captures'), { recursive: true });
 const browser = await launchEchoes({ gpu: true, width: 1600, height: 900, extraArgs: ['--autoplay-policy=no-user-gesture-required'] });
