@@ -1112,7 +1112,8 @@ Every juice-contract event fires its sound slot. Master volume constant, no UI.
 | A11 | (Gauntlet, 2026-09-21) A8's "acts 2–3 environments: OUT of scope" is superseded by §23: three expeditions (Hollow Wood, Sunken Mill, Ashen Barrow), each a full 8-room run. Relics, Echoes/Seals, talent trees, camp facilities and extra classes stay out of scope; the Hollow Stag remains the only boss (tier-scaled per act). |
 | A12 | (Gauntlet, 2026-09-21) Skill slots are 8 (§6 "4 slots" superseded, §23.9). Ally kits stay 4. Basic-attack fire resolves after the last skill slot. |
 | A13 | (Gauntlet v0.5.1) **Esc opens the pause menu on every page** — combat, draft, path, shop, victory/defeat (docs/gauntlet/PLAN.md §1.5). This supersedes §16 "draft Esc = decline" and §16 settle rule (3) "Esc … stays the decline path": the draft declines with **X** or the Decline button, and X is settle-guarded like Enter (rule (2)). The socket screen is a sub-overlay: its Esc still banks the candidate and closes it, consuming that Esc. A reflexive pause press can never forfeit a reward. |
-| A14 | (Gauntlet v0.5.1) **Portal rule**: the expedition picker (§23.1) opens only in a title-booted session with ≥ 2 acts unlocked; menu-skip / harness boots and single-unlock profiles start the act directly on E (v0.4.63 behaviour). In the picker E, Enter or Space confirms the preselected (last-played) card. |
+| A14 | *(SUPERSEDED 2026-09-25 by A15.)* (Gauntlet v0.5.1) **Portal rule**: the expedition picker (§23.1) opens only in a title-booted session with ≥ 2 acts unlocked; menu-skip / harness boots and single-unlock profiles start the act directly on E (v0.4.63 behaviour). In the picker E, Enter or Space confirms the preselected (last-played) card. |
+| A15 | (CAMPAIGN, 2026-09-25 — the user's CRITICAL REFACTOR) **Linear campaign** (§24, docs/gauntlet/PLAN.md §12): the portal's Begin Run ALWAYS starts a campaign at Level 1 (no picker); clearing a level shows a ~3 s level-clear card while the next level loads, then the next level starts on its own (1 → 2 → 3); the camp returns only after the final level's CAMPAIGN COMPLETE card, a paused "Quit to Lobby", or a defeat card. Other unlocked levels start from the lobby's Level Select (map table beside the portal / L at the prompt); clearing Level N unlocks N+1 permanently. Skills, sockets, bench and Glint carry between levels; HP, downs, statuses and cooldowns are restored; everything level-bound resets. Menu-skip harness boots keep rule 1 of A14 (`?act=N` / `?level=N` start there). |
 
 ---
 
@@ -1143,6 +1144,13 @@ Stag, spawn shimmer, Defeat only.** Every enemy keeps exactly one INDIGO (hue
 concurrent, starts ≥ 1.2 s apart).
 
 ### 23.1 Expeditions (level configurations)
+
+**CAMPAIGN (2026-09-25, ruling A15): the portal picker described in the next
+paragraph is superseded.** The three expeditions are now LEVELS 1–3 of one
+linear campaign (§24); the portal always starts Level 1, and the lobby's
+Level Select (same card grammar: name, blurb, Danger pips, Bone lock glyph
+with "Clear <previous level> to unlock") starts a campaign at any unlocked
+level. The level table below stands. Historical text:
 
 When two or more acts are unlocked (ruling A14), the camp portal opens an
 **expedition picker** (three cards: name, blurb,
@@ -1448,3 +1456,40 @@ shows 4 rows × 8 sockets on one page, and each command-bar tile carries an
 inert node, dark = vacant). Saves: schema 2 (a schema-1 save keeps its first 4
 skills in slot order; a dropped skill's nodes return to the bench; every row
 pads to 8 sockets — PLAN §3.4).
+
+## 24. Linear campaign (CAMPAIGN, 2026-09-25 — the user's CRITICAL REFACTOR) — binding design truth
+
+Ruling A15; full contract, rules table and gates in docs/gauntlet/PLAN.md §12.
+The user: "Adjust the game progression flow from an open level-selection
+model to a linear campaign progression model."
+
+**Flow.** Camp → Begin Run (E at the portal) → **Level 1** → its Hollow Stag
+falls → the **level-clear card** (~3 s: "<LEVEL> — CLEARED", the next level's
+name, the carried build, "Enter — set out now") while the next level loads →
+**Level 2** starts on its own → … → the final Stag → **CAMPAIGN COMPLETE**
+(10 s, Enter sooner) → camp. A defeat ends the campaign on its defeat card;
+"Quit to Lobby" in the pause menu abandons it (confirmed) and returns to camp
+with no end card. The level order is data (`src/data/campaign.js`).
+
+**Between levels** (one data table, PLAN §12.3 `CARRY_RULES`): skills (≤ 4),
+every socketed node (8 sockets per skill, no rarity caps), the bench, Glint,
+heal-target overrides, the run seed stream and the campaign records counters
+CARRY; party HP, downed allies, statuses and cooldowns are RESTORED (the card
+is a respite); every enemy, add, projectile, zone, hazard, interactable,
+decal, particle, numeral, telegraph, threat marker, the wave director, the
+shop stock, the boss state and the level's VFX, audio voices and dressing
+RESET. Each level's rooms roll a fresh run frame from the carried seed stream;
+room 1 still promises a Skill draft (a node when 4 skills are owned, §16).
+
+**Lobby.** A map table beside the portal (and L / the "Levels" chip on the
+portal prompt) opens the **Level Select**: one card per level in the §23.1
+grammar; unlocked cards start a campaign AT that level; locked cards show the
+Bone lock glyph and "Clear <previous level> to unlock" and start nothing.
+Clearing Level N unlocks N+1 permanently (profile). A start at Level N > 1
+adds the **starter grant** (§23.2 CAMPAIGN note) so the run is fair: extra
+skill draws, node draws auto-socketed, Glint — shown on a ~2 s "Setting out"
+card.
+
+**Colour discipline** unchanged: cards are Void Charcoal plates with Parchment
+ink and Hearth Amber focus over the warm Victory-wash family veil — never a
+black full-screen; no Ember, violet or Heal green in any card chrome.

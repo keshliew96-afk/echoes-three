@@ -41,6 +41,14 @@ Contents: §0 scope · §1 architecture + state machine · §2 file ownership ·
    lobby rooms, delta-compressed player state sync (position, orientation,
    actions), predictive lag compensation; must survive packet loss, races and
    drop-offs without breaking local play.
+6. **LINEAR CAMPAIGN (user CRITICAL REFACTOR, 2026-09-25, binding)** — the
+   open level-selection model becomes a linear campaign: Begin Run launches
+   Level 1; clearing a level shows a brief victory transition card, loads the
+   next level and starts it (Level 1 → 2 → 3) without returning to the lobby;
+   the lobby returns only after the final level or a paused "Quit to Lobby";
+   the lobby's level select offers only sequentially unlocked levels. Design,
+   rules and gates: **§12** (owner CAMPAIGN). It supersedes BUILD_BRIEF A14,
+   the §23.1 picker and §4.1 portal rule 3.
 
 **Production-ready means, for every module:** zero uncaught page errors; no
 console errors other than the two known ANGLE shader warnings (X3595, X4000);
@@ -102,8 +110,19 @@ boot ─► title ──New Game──────────────► pl
   └─ menu-skip (?menu=0 or any legacy harness param) ─► playing(camp)   == v0.4.63 boot
 playing ─Esc/P/Start on ANY page (combat, draft, path, shop, end cards;
          an open socket screen closes first and consumes that Esc)─► pause overlay
-pause ─► Resume | Settings | Save | Load | Save & Quit to Title | Quit to Title (confirm) | Leave Session (MP)
+pause ─► Resume | Settings | Save | Load | Quit to Lobby (confirm, in a run; SP + MP host) | Save & Quit to Title | Quit to Title (confirm) | Leave Session (MP)
 playing(run) ─run_end─► playing(camp)   (existing camp.js behaviour, untouched)
+```
+
+**Campaign sub-states of `playing` (§12, CAMPAIGN 2026-09-25)** — driven by
+the sim's run phase, not by `app.state`:
+
+```
+camp ─E portal─► level 1 (combat · reward · path · shop · fade · boss)
+level N ─Stag + adds dead (level_clear, once)─► transit(clear) ─ready ∧ ≥ 3 s | Enter ≥ 0.5 s | 10 s sim cap─► level N+1
+level final ─level_clear─► victory (CAMPAIGN COMPLETE) ─10 s sim | Enter─► camp
+level N ─defeat─► defeat card ─Enter─► camp        any ─pause ▸ Quit to Lobby─► camp (abandoned)
+camp ─Level Select ▸ unlocked N─► transit(depart, ~2 s) ─► level N
 ```
 
 ### 1.3 Screen ids (registered with `registerScreen`, pushed by id)
@@ -118,7 +137,8 @@ playing(run) ─run_end─► playing(camp)   (existing camp.js behaviour, untou
 | `farewell` | M1 | yes | honest exit card |
 | `saves` | M2 | yes | slot list, params `{ mode: 'load' \| 'save' }` |
 | `records` | M2 | yes | high scores + records |
-| `expedition` | M4a | yes | act picker at the camp portal — opens ONLY in a title-booted session with ≥ 2 acts unlocked; otherwise E starts the act directly (§4.1 portal rule) |
+| `expedition` | M4a | yes | *superseded by `levels` (§12, 2026-09-25): the portal never opens a picker* |
+| `levels` | CAMPAIGN | yes | the lobby's Level Select (map table beside the portal / L at the portal prompt): unlocked levels startable, locked ones visible and unstartable (§12.7) |
 | `mp-menu`, `lobby`, `mp-join` | M5b | yes | host / join-by-code / quick match / lobby room |
 | `pause` | INT | yes (SP pauses sim; MP never) | pause menu |
 
@@ -232,6 +252,7 @@ chosen so that routing lands on the right owner.
 | **M5a** (W3) | server/** · src/net/protocol/** · src/net/{transport,lobbyClient}.js | server/{ws,lobby,matchmaking,relay,admin,keyframes}.mjs · src/net/protocol/{messages,codec,quantize,treediff,delta,snapshot,conditioner}.js · tools/gnt-M5a-netbench.mjs (fixed CLI + schema, §6.7) · tools/gnt-M5a-* — **no src/sim edits in W3** |
 | **M5b** (W4) | src/net/{session,driver,replica,predict,reconcile,interp,lagcomp,seats,metronome}.js · src/sim/{remote,netseats}.js · src/sim/allies.js · src/ui/menu/{mpmenu,lobby,mpjoin}.js · src/ui/menu/tabs/network.js · src/ui/net/** | tools/gnt-M5b-* (server/** and src/net/protocol/** transfer to M5b in W4 for fixes it needs; seat 0's leader bot = M4a's src/sim/autopilot.js, reused unchanged) |
 | **INT** (W5) | src/ui/menu/pause.js · vite.config.js · package.json scripts · index.html · main.js `@gnt:INT-WIRING` · everything else only via anchors | tools/gnt-INT-* |
+| **CAMPAIGN** (2026-09-25, alone — the user's linear-campaign refactor) | src/data/campaign.js · src/campaign/** · src/ui/run/{transit,levels}.js · the campaign state machine in src/sim/run.js · every other file where a campaign root cause lives (minimal anchored edits, listed in docs/gauntlet/build-CAMPAIGN.md): camp.js BEGIN-RUN, arena.js dressing lifecycle, save codec/profile/records, pause.js Quit to Lobby, autopilot transit, audio `stopLevelVoices`, net guards, docs §12 / BUILD_BRIEF A15 + §23.2 note / TESTING campaign section | tools/gntCAMPAIGN-* · tools/actions/gntCAMPAIGN-* — net 7900–7909, preview 4380 |
 
 ### 2.2 Shared files and anchored regions
 
@@ -1209,6 +1230,12 @@ Each is a full 8-room run on the unchanged §2 skeleton (rooms 1–6 combat with
 exactly 2 defend, 7 shop, 8 boss; §14 economy unchanged) with its own biome,
 room table, roster, hazards, interactables and tier.
 
+**SUPERSEDED 2026-09-25 by §12 (linear campaign):** E at the portal ALWAYS
+starts a campaign at Level 1 (menu-skip boots with `?act=N` / `?level=N`
+start at N, rule 1 below); rule 3's picker is gone — other unlocked levels
+start from the lobby's Level Select (§12.7). Rules 1–2 keep the §6.2
+core-loop check valid unchanged. Historical text:
+
 **Portal rule (binding — keeps the §6.2 core-loop check and every legacy
 portal action working; plan-review fix).** E at the portal:
 1. **Menu-skip boots** (`?menu=0` or any legacy/harness param, i.e.
@@ -1397,7 +1424,8 @@ immediately.
 | `?menu=1` | force the title even with legacy params (e.g. `?seed=5&menu=1`) | M1 |
 | `?freeze=1` | sim frozen at tick 0 until `__echoes.sim.thaw()` (golden traces) | ARCH |
 | `?fresh=1` | wipe all `echoes.*` localStorage before boot (clean profile) | ARCH |
-| `?act=1..3` | expedition for `?run=1` / the picker default | M4a |
+| `?act=1..3` | expedition for `?run=1` (single-level harness run) / the level a menu-skip portal press starts | M4a / CAMPAIGN |
+| `?level=1..3` | menu-skip boot, then a CAMPAIGN at that level starts on the first ticked frame (harness: bypasses locks, `campaign.harness`; §12.11) — skips the title | CAMPAIGN |
 | `?slot=<id>` | load that save slot at boot (skips the title) | M2 |
 | `?audio=0` | engine built muted | M3 |
 | `?debug=1` · `?fps=1` | sim panel · fps meter in player builds | existing / INT |
@@ -1439,6 +1467,7 @@ re-verified at v0.5.1: portal tick 459 → combat room 1 tick 480 → reward tic
 | critics: menu · audio · save · content · net · journey | net 7840–7849, journey 7850–7859 | 4320 · 4322 · 4324 · 4326 · 4328 · 4330 |
 | refuters | 7860–7889 | 4340–4359 |
 | fix builders | 7890–7899 | 4360–4379 |
+| CAMPAIGN builder · campaign critic | 7900–7909 · 7910–7919 | 4380 · 4332 |
 
 ### 6.4 Debug API namespaces (`window.__echoes`)
 
@@ -1484,7 +1513,11 @@ their own files through `impl.debug`):
   (the rolled waves/costs/layout of the live room), `probes()`, and M4b's
   `hazards()`, `interactables()`, `layout()`.
 - **`__echoes.busCounters`** (ARCH, committed): `{ emitted, replayed,
-  simCalls, presentationCalls, refusedEmits, replica }` (G5b.14).
+  simCalls, presentationCalls, refusedEmits, replica }` (G5b.14); CAMPAIGN
+  adds `listeners` (live subscriber count, the GC.6 leak probe).
+- **`__echoes.campaign`** (CAMPAIGN, §12.11): `state()`, `unlocked()`,
+  `choose(n)`, `rules()`, `memory()`, `snapshot(label)`, `snapshots()`,
+  `transitions()`, `ready(level)`, `unlock(list|null)`.
 - **Deterministic content setup commands** (`__echoes.cmd`, plan-review fix
   — every critic and refuter builds its scenario with these, never by
   waiting for RNG): M4b — `spawn(etype, x, z, { elite?, hpMul?, dmgMul? })`
@@ -1698,9 +1731,10 @@ A module passes only when every gate holds on the RUNNING game with numbers.
 - **G4a.3 Nodes**: each of the 9 new nodes sockets, obeys its limit (M4c: no
   caps any more — G4c.2), and every live matrix cell is verified by a sim
   probe; grey / saturation-inert / verdict display per §15.5.
-- **G4a.4 Expeditions**: the picker opens at the portal; locks honoured (bypass
-  params work); each act uses its own layouts, roster, hazards, interactables,
-  music theme and boss adds.
+- **G4a.4 Expeditions**: *(picker half superseded 2026-09-25 — the Level
+  Select of §12.7 / GC.8 replaces it)* locks honoured (bypass params work);
+  each act uses its own layouts, roster, hazards, interactables, music theme
+  and boss adds.
 - **G4a.5 Curve**: measured hpMul / dmgMul / budget / elite chance per room match
   the §4.2 table ± 1%; strictly increasing across combat rooms within an act and
   across acts at equal room; spikes only at defend rooms and the boss.
@@ -1720,9 +1754,9 @@ A module passes only when every gate holds on the RUNNING game with numbers.
   rooms, act medians I < II < III, default-build victory rates as listed.
 - **G4a.11 Portal rule**: `?menu=0` (and `?seed=7` alone) → E at the portal
   starts Act I with no picker (tools/actions/gnt-arch-coreloop.json passes
-  unchanged); title session with only Act I unlocked → no picker; with
-  Acts I–II unlocked → picker, E/Enter confirms the preselected card, Esc backs
-  out, the SP sim is paused while it is open.
+  unchanged); title session with only Act I unlocked → no picker. *(The "Acts
+  I–II unlocked → picker" half is superseded 2026-09-25: the portal always
+  starts Level 1 — GC.1; other levels start from the Level Select — GC.8.)*
 - **G4a.12 Run pages**: Esc on draft / path / shop / end cards is not consumed
   by the run UI (`defaultPrevented === false`) and never declines; X and the
   Decline button decline; socket Esc closes the socket with
@@ -2109,3 +2143,326 @@ LAN/localhost, new bosses per act (the Hollow Stag scales per act), WebRTC.
 | 4 | Save schema 2 + deterministic migration of schema-1 saves | §3.4 |
 | 5 | Goldens re-recorded at the M4c-end build (G2.10 / G5b.8 reference) | §6.5 |
 | 6 | New gates G4c.1–G4c.11; G4a.1 superseded, G4a.3 caps clause removed | §7 |
+
+---
+
+## 12. Linear campaign (CAMPAIGN, 2026-09-25 — the user's CRITICAL REFACTOR)
+
+**User (verbatim):** "Adjust the game progression flow from an open
+level-selection model to a linear campaign progression model. … 1. CAMPAIGN
+START: Clicking the main "Begin Run" button must automatically launch Level 1.
+2. AUTOMATIC TRANSITION: Upon clearing a level, the game must NOT return to the
+lobby. Instead, trigger a brief victory transition screen, automatically load
+the assets for the NEXT sequential level (e.g., Level 1 -> Level 2 -> Level 3),
+and immediately start it. 3. CAMPAIGN END: Returning to the lobby should only
+happen automatically AFTER the final level of the game is cleared, or if the
+player explicitly pauses and selects "Quit to Lobby." 4. LEVEL LOCKING: Update
+the Lobby UI so that players can only select or play levels they have already
+unlocked sequentially." Binding from 2026-09-25; it supersedes BUILD_BRIEF
+ruling A14, the §23.1 expedition picker, §4.1's portal rule 3 and the picker
+halves of gates G4a.4 / G4a.11. Owner: **CAMPAIGN** (runs alone; every file is
+open to it where the root cause lives — §2.1).
+
+### 12.1 Terms and the sequence
+
+A **LEVEL** is one expedition — Level 1 The Hollow Wood, Level 2 The Sunken
+Mill, Level 3 The Ashen Barrow — each still a full 8-room level (rooms 1–6
+combat, 7 shop, 8 Hollow Stag). The **LOBBY** is the camp hub. A **CAMPAIGN**
+is one continuous run from a starting level through the final level. The level
+order is data (`src/data/campaign.js` `CAMPAIGN_LEVELS`, derived from
+`data/levels.js` `ACT_IDS`), so a Level 4 is appended by adding a `LEVELS` row.
+
+```
+camp ─Begin Run (E at the portal)─► Level 1 ─clear─► [level-clear card ~3 s] ─► Level 2 ─clear─► [card] ─► Level 3
+  ▲                                                                                                        │ clear
+  │                                                              CAMPAIGN VICTORY card (10 s of sim time, Enter = now)
+  ├──────────────────────────── automatic return ◄────────────────────────────────────────────────────────┘
+  ├── Quit to Lobby (pause, confirmed) from any level, page or card — abandons the campaign, no end card
+  └── Defeat (party wipe) in any level — the defeat card (unchanged), Enter returns to camp
+camp ─Level Select (map table beside the portal, or L at the portal prompt)─► unlocked Level N ─► [setting-out card ~2 s] ─► Level N ─► … ─► final
+```
+
+### 12.2 Sim state machine (src/sim/run.js — the level director)
+
+The campaign lives in the SIM (deterministic, saved, replicated): run state
+gains `campaign = null | { mode: 'campaign'|'single', harness, startLevel,
+level, index, levels[], startTick, levelStartTick, clearedAt, card, grant,
+autoReturnTick }`. Phases (`runSys.view().phase`): `idle · combat · reward ·
+path · shop · fade ·` **`transit`** `· victory · defeat`. `transit` is the
+level-transition card: `campaign().card = { kind: 'clear'|'depart', from, to,
+startTick, untilTick, minSkipTick, hardUntilTick, summary }`.
+
+| API (run system — `world.cmd` name) | Effect |
+|---|---|
+| `startCampaign({ level = 1, challenge, depart = false, harness = false })` (`startCampaign`) | wipe → roll the run frame for `level` → `run_start` (act = level) → starter grant (§12.4) when level > 1 → `depart` ? phase `transit` (kind `depart`) : `enterRoom(1)` |
+| `campaignAdvance()` (`campaignAdvance`) | in `transit` once `tick ≥ minSkipTick`: build the next level (below) → `level_start` → `enterRoom(1)`; otherwise `null` |
+| `abandonRun(reason = 'quit')` (`abandonRun`) | an active run → `run_end { result: 'abandoned' }` → wipe → phase `idle` → `return_to_camp { reason }` (no end card) |
+| `campaign()` / `campaignRules()` | read-only views (the `view()` shape is UNCHANGED — the Node goldens stay bit-identical) |
+| `startRun({ act, challenge })` (`startRun`, `?run=1`, `skipToRoom` with no run) | UNCHANGED single-level harness run (`mode: 'single'`): the Stag clear → `run_end victory` → camp — the act runner, simtrace, M2 / M5 probes |
+
+**Level-clear trigger (exactly once).** The boss room's `room_cleared` (the Stag
+AND every add dead, no enemy shot in flight, a party member standing —
+sim/boss.js) reaches `onRoomCleared`, which acts only while `phase ===
+'combat'` and changes the phase in the same call; a per-level latch
+(`campaign.clearedAt === index`) makes any second call a no-op. Defeat outranks
+the clear on the same tick (the ally block's defeat rule runs before the boss
+predicate, §4 order; `endRun('defeat')` deactivates the run, so the clear
+predicate never evaluates). On the clear tick, in order:
+1. `level_clear { level, name, next, final, index, campaign, ticks, rooms }`
+   (every level clear, campaign or single — the unlock / records trigger);
+2. the final level or a single run → `endRun('victory')` (a campaign
+   victory's summary carries the campaign and `autoReturnTick = tick + 600`);
+3. otherwise the RESET half of §12.3 runs in the sim (director stopped, boss +
+   adds + every hostile despawned, party/ally transients swept, room hooks
+   exit → hazards + interactables despawned, mark / rally cleared), then
+   RESTORE, then phase `transit` (kind `clear`, `untilTick = tick + 180`,
+   `minSkipTick = tick + 30`, `hardUntilTick = tick + 600`) and
+   `level_transit { kind, from, to, untilTick, hardUntilTick }`.
+
+The card never advances by itself before `hardUntilTick`: the HOST
+presentation calls `campaignAdvance()` once `tick ≥ untilTick` and the next
+level is ready (§12.5) — or on Enter once `tick ≥ minSkipTick` and ready; the
+autopilot calls it at `untilTick`; at `hardUntilTick` the sim advances on its
+own (hidden host tab, no UI, stuck preload), so it can never hang. A pause
+freezes the card (0 ticks elapse). **Next level build**: act := next level; a
+fresh run frame is rolled from the CARRIED run RNG stream (no reseed); the
+per-level counters reset (room index, stipend counter, rooms done, reward
+promises, spoils, shop, layout memory); `level_start { level, name, index,
+from, campaign }`; `enterRoom(1)` (room 1's reward is a Skill draft as ever —
+with 4 skills owned the §16 substitution offers a node).
+
+### 12.3 Carry / restore / reset rules (one table — `src/data/campaign.js` `CARRY_RULES`)
+
+| Rule (named constant) | Default | At every level transition inside one campaign |
+|---|---|---|
+| `carrySkills` | true | equipped skills (≤ 4) keep their slots (false → the starting kit) |
+| `carrySockets` | true | every socketed node stays in its socket (false → unsocketed onto the bench when `carryBench`, else dropped) |
+| `carryBench` | true | bench nodes stay (false → bench emptied) |
+| `carryGlint` | true | the wallet carries (false → 0) |
+| `carryHealOverride` | true | the F1–F4 heal-target override is not touched by the transition (§8 "room clear = clear" already cleared it at the Stag's own room clear) |
+| `carrySeedStream` | true | the run RNG stream continues (false → reseeded from one draw) |
+| `carryRecords` | true | campaign counters (levels, rooms, kills, time, Glint earned) accumulate |
+| `restoreHp` | true | every party member to max HP |
+| `reviveDowned` | true | downed members stand up |
+| `clearStatuses` | true | every status on the party cleared |
+| `resetCooldowns` | true | skill cooldowns ready; dodge and basic ready |
+| `resetEntities` | true | enemies, adds, projectiles, skill bolts, zones, ally zones, hazards, interactables despawned |
+| `resetDirector` | true | wave director stopped, boss state reset, room layout exited |
+| `resetShop` | true | the level's shop stock dropped (the next level's shop rolls its own) |
+| `resetPresentation` | true | decals, scorches, particles, damage numerals, telegraphs, threat markers, per-level VFX, live gameplay audio voices, the level's dressing (§12.5) |
+
+Carry / restore flags are behaviour switches (tests flip them in Node);
+the `reset*` flags complete the table and must stay `true` in a shipping build
+(flipping one leaks by definition).
+
+### 12.4 Level-N starts and the starter grant
+
+Choosing unlocked Level N > 1 in the Level Select starts a campaign AT level N
+(then N → N+1 → … → final) with the fresh default build plus
+`STARTER_GRANT[N]` (src/data/campaign.js), applied at the start before any
+combat and shown on the setting-out card: `skills` extra skill draws (the draft
+system's live skill pool, run RNG, up to 4 owned), `nodes` node draws (the
+clear-spoils rule: commons + rares of the usable pool, provenance `grant`),
+`glint`, then the shared auto-fill policy (§4.3) sockets them — the player can
+re-socket between rooms. Every start at level N > 1 — campaign or single-level
+harness — gets the grant, so the act runner measures exactly "a Level-N start".
+Numbers: §12.10.
+
+### 12.5 Level manager (presentation — `src/campaign/manager.js` + the arena's dressing lifecycle)
+
+- **Residency** — at any moment exactly ONE level's dressings are resident:
+  the level being played or entered; Level 1's in the lobby (Begin Run). The
+  background builder only builds the resident level's layouts (it used to
+  build all nine and keep them).
+- **Teardown** (on `level_transit`, `run_end`, `return_to_camp`, a restore
+  into another level): every dressing of a non-resident level leaves the scene
+  and is disposed — geometries, materials and textures that no other object in
+  `stage.scene` references (a scene-wide reference sweep, so a shared cache is
+  never freed under a live mesh), its paint canvases released, its build job /
+  upload / compile / parked draw cancelled. Pooled VFX are returned (decals +
+  scorches, particles, damage numerals flushed), the audio engine stops every
+  live gameplay voice (`engine.stopLevelVoices()`, music and UI kept) and the
+  level-clear stinger plays. Presentation listeners are registered once at
+  boot, never per level; the probe shows the bus listener count unchanged
+  across levels.
+- **Preload** — under the card the builder runs at 12 ms/frame (8 in camp, 0
+  in live combat) on the next level's layouts (paint in the worker, sliced
+  main-thread steps, one texture upload per frame, `compileAsync` + a 3-frame
+  parked draw) and the audio engine pre-bakes the next theme. `ready(level)` =
+  every layout of that level built + uploaded + linked.
+- **Hard timeouts** — the host advances at `untilTick` only when ready, else
+  keeps the card ("Preparing The Sunken Mill… 2/3") until ready OR 6 s wall
+  since the card appeared; the sim advances at 600 ticks regardless. A layout
+  still missing at the advance is built synchronously under the card (a hitch,
+  never a black frame, never a hang).
+- **No black frames** — the card is a storybook plate over a warm veil (the
+  Victory wash family; never a Void Charcoal full-screen); the new room is
+  revealed by the veil's 220 ms fade-out. A *near-black frame* = mean display
+  luma < 24 / 255 over the whole frame; the target is 0 in every transition.
+- **Memory probe** — `__echoes.campaign.memory()` = `{ gl: { geometries,
+  textures, programs }, heapMB, entities, busListeners, pools: { decals,
+  scorches, particles, numerals }, dom, audio: { voices }, dressings }`.
+
+### 12.6 Cards and exits
+
+- **Level-clear card** (`src/ui/run/transit.js`, the run-UI page for phase
+  `transit`): "THE HOLLOW WOOD — CLEARED", "Next · Level 2 · The Sunken
+  Mill", the carried build (skills, sockets filled x / 32, bench, Glint,
+  "party restored"), a progress bar, "Enter — set out now" (0.5 s settle,
+  fresh-press rule), a readiness line. Network guests see "The Healer leads on…".
+- **Setting-out card** (kind `depart`, a Level-N start): "Setting out · Level N
+  · <name>", the starter grant, ~2 s.
+- **Campaign victory** — the end card reads "CAMPAIGN COMPLETE" (levels 3 / 3,
+  rooms, time, score); "Returning to camp in N s" counts down in sim time
+  (pause-aware, net-synced); Enter returns now. Defeat keeps its card (Enter).
+- **Quit to Lobby** — pause menu, single-player and network host, confirmed
+  ("Abandon this campaign and return to camp? Unlocks and records are kept.")
+  → `abandonRun` → camp with no end card; the level is torn down; records
+  count an abandoned run.
+
+### 12.7 Lobby level select and sequential locking
+
+- **Unlock rule** — clearing Level N (its `level_clear`) permanently unlocks
+  Level N+1 in the profile (`echoes.profile.v1` `unlocks.acts`, atomic write),
+  campaign or single run, mid-campaign included (a Quit to Lobby after
+  clearing Level 1 keeps Level 2 unlocked).
+- **Level Select** — the `levels` app screen (`src/ui/run/levels.js`; replaces
+  the `expedition` picker), opened by the **map table** beside the portal (E
+  within its ring, prompt "E · Choose a level") or by **L** / a click on the
+  "Levels" chip of the portal prompt. One card per level: unlocked cards
+  focusable and startable (E / Enter / Space / click / pad A → a campaign AT
+  that level); locked cards visible, `aria-disabled`, skipped by keyboard and
+  pad navigation, and a click only shakes the card with "Clear <previous
+  level> to unlock". Begin Run itself always starts Level 1.
+- **Every other path refuses a locked level** — `__echoes.campaign.choose(n)`
+  and `cmd('campChoose', n)` (player-facing mirrors) → `{ ok: false, reason:
+  'locked' }`; a save whose run sits in a locked level is refused on load with
+  that reason unless the run was started by a harness path (`campaign.harness`);
+  a network guest can start or choose nothing (the host rejects every guest
+  run mutator). Developer probes (`?level=N`, `cmd('startCampaign')`,
+  `cmd('startRun')`) bypass locks and mark the run `harness: true`.
+
+### 12.8 Save, autosave, records
+
+- **Schema 3** (StateTree `v: 3`): `systems.run.campaign`; `meta` gains
+  `level`, `levelName`, `campaign: { mode, startLevel, level, index }`.
+  `MIGRATIONS[2]` (pure): an active schema-2 act run at act N becomes a
+  campaign from level N (index 1, no grant — the build is already there);
+  camp saves get `campaign: null`.
+- **The card is state**: phase `transit` + its ticks are captured; a load
+  mid-card shows the card with the remaining time and preloads the next level.
+- **Autosave** safe point `level_transit` (unthrottled, like `run_end`).
+  `canSave()` allows the card.
+- **Records** (profile `v: 1` + new keys): `campaigns`, `campaignsCompleted`,
+  `abandoned`, `furthestLevel`, `fastestCampaignSec`, `levelClears {1,2,3}`;
+  high-score entries gain `levels`, `startLevel`, `campaign`. **Score**
+  (generalises §3.4; identical for one level): `round(Σ_levels (100·rooms_L +
+  5·kills_L + 1000·cleared_L)·actMul_L · challengeMul) + (complete ? max(0,
+  900·levelsPlayed − timeSec) : 0)`.
+
+### 12.9 Multiplayer
+
+The host drives the campaign; guests replicate `systems.run` (phase, card,
+campaign) and replay `level_clear` / `level_transit` / `level_start`, so every
+card and level swap follows the host (the replica's `restoreScene` swaps the
+dressing; the guest's level manager tears down and preloads on the same
+events). Guests report `ready` for the next level over CMD; the host waits for
+every connected guest's ready (or the same 6 s cap) before advancing. The host
+pause menu gains "Quit to Lobby" (everyone returns to camp, the session stays
+up); guests keep "Leave Session". `startCampaign`, `campaignAdvance` and
+`abandonRun` are run mutators: a guest's call becomes a CMD the host rejects.
+
+### 12.10 Difficulty with a carried build
+
+A carried build meets Levels 2 and 3 far stronger than the fresh build M4c
+tuned them for. The level tiers and the starter grant are retuned (constants
+only — the §4.2 formula keeps its shape) so that BOTH (a) a carried
+default-autopilot campaign from Level 1 and (b) a Level-N start with the
+starter grant land every level inside the §4.2 band over seeds 1–5
+(`tools/gntCAMPAIGN-camprun.mjs`). Binding numbers: the dated CAMPAIGN note in
+BUILD_BRIEF §23.2.
+
+### 12.11 Harness
+
+- `?level=N` — menu-skip boot, then a campaign AT level N starts on the first
+  ticked frame (bypasses locks, `campaign.harness = true`). `?menu=0&act=N`
+  also makes the portal start a campaign at N (legacy rule 1); otherwise Begin
+  Run is Level 1.
+- `cmd('startCampaign', { level, challenge, depart })`, `cmd('campaignAdvance')`,
+  `cmd('abandonRun')`, `cmd('campaignState')`, `cmd('campLevels')` (opens the
+  select), `cmd('campChoose', n)` (player-facing, lock-checked).
+- `__echoes.campaign`: `state()` (active, mode, level, startLevel, index,
+  unlocked, transitionState `none|card|waiting|advancing`, card, ready),
+  `unlocked()`, `choose(n)`, `rules()`, `memory()`, `snapshot(label)`,
+  `snapshots()`, `transitions()` (per transition: clear tick, card wall ms,
+  ready ms, advance tick, first-controllable wall ms, longest frame gap),
+  `ready(level)`, `unlock(list | null)` (probe override, like `content.unlock`).
+- Tools: `tools/gntCAMPAIGN-camprun.mjs` (campaign runner, Node or page, the
+  per-level band), `tools/gntCAMPAIGN-probe.mjs` (memory, transition frames,
+  locking, carry diff — GPU harness).
+
+### CAMPAIGN gates (GC.*)
+
+- **GC.1 Begin Run = Level 1**: E at the portal (title-booted session, any
+  unlock state) starts a campaign at Level 1 with no picker; the Level Select
+  is never pushed by the portal.
+- **GC.2 Automatic transition**: clearing Levels 1 and 2 shows the level-clear
+  card and starts the next level with no camp frame in between
+  (`vfx.mode === 'run'` on every sampled frame from the clear to the next
+  level's first controllable frame); the level index advances exactly once per
+  clear (`campaign().index` 1 → 2 → 3; `level_clear` and `level_start` exactly
+  once each per level).
+- **GC.3 Exactly-once edge cases**: Stag + last add dying on one tick → one
+  `level_clear`; the party wiping on the clear tick → defeat, no `level_clear`;
+  Esc (pause) / Enter / Quit to Lobby / a save request / a hidden tab during
+  the card → never a second transition, never a skipped level, never a hang.
+- **GC.4 Campaign end**: the final clear → CAMPAIGN COMPLETE card → camp
+  automatically within 600 ticks (Enter earlier); defeat → defeat card → camp;
+  Quit to Lobby from combat, a run page and the card → camp with no end card.
+- **GC.5 Carry / restore / reset**: a state diff at every transition matches
+  §12.3 (skills + sockets + bench + wallet identical; every party member at
+  max HP, standing, no statuses, cooldowns ready; 0 enemies, projectiles,
+  zones, hazards, interactables, telegraphs, decals, particles, numerals).
+- **GC.6 Memory flat**: at the first controllable frame of L1, L2, L3 in three
+  back-to-back campaigns (and in camp after each): the same level has the
+  same `gl.geometries` / `gl.textures` / `gl.programs` ± 2, `entities`,
+  `busListeners`, pool sizes and `dressings` in every campaign; the JS heap
+  after a forced GC within ± 8 MB of campaign 1; no object of level N resident
+  in level N+1 (`dressings` holds only the current level's layouts); live
+  audio voices ≤ the steady-state combat count.
+- **GC.7 No black screen, no loading loop**: over every transition, 0
+  near-black frames (§12.5), no frame gap > 250 ms after the teardown frame,
+  the card never shown longer than `untilTick` + 6 s wall; from the killing
+  blow to the first controllable frame of the next level ≤ 4.0 s (auto) and
+  ≤ 1.5 s with an Enter skip at 0.5 s, on the dev server AND the production
+  build.
+- **GC.8 Locking**: a fresh profile lists Level 1 unlocked, 2–3 locked; locked
+  cards cannot be started by keyboard, mouse, mocked gamepad,
+  `campaign.choose`, `cmd('campChoose')`, a save file or a guest request;
+  clearing Level N unlocks N+1 and it persists across a reload; a Level-N
+  start plays N → final.
+- **GC.9 Save**: save mid-level and on the card, reload, Continue → the same
+  level, room / card and carried build; a schema-2 act-run save migrates to a
+  campaign; autosave at every `level_transit`.
+- **GC.10 Records**: campaign completion, furthest level, abandoned count and
+  level clears recorded and shown on Records.
+- **GC.11 Multiplayer**: a 2-client session follows L1 → card → L2 in sync
+  (guest phase / level / layout equal to the host's within one snapshot of
+  the advance, 0 desyncs); a host Quit to Lobby returns both to camp.
+- **GC.12 Difficulty**: §12.10 band holds for the carried campaign and for
+  Level-2 / Level-3 starts (seeds 1–5).
+- **GC.13 Legacy flows**: the smoke, the §6.2 core loop, `?room=`, `?run=1`,
+  `cmd('startRun')`, the act runner and the 9 Node goldens unchanged.
+
+## 13. Revision log — CAMPAIGN (user CRITICAL REFACTOR, 2026-09-25)
+
+| # | What changed | Where |
+|---|---|---|
+| 1 | Linear campaign: Begin Run = Level 1, automatic level-clear transition card, next level auto-loaded and started, lobby only after the final level / Quit to Lobby / defeat | §0 item 6, §1.2 sub-states, §12.1–12.2, §12.6 |
+| 2 | One carry / restore / reset table (named constants) | §12.3, src/data/campaign.js |
+| 3 | Level manager: one resident level, teardown with a scene-wide reference sweep, preload under the card, hard timeouts, near-black definition, memory probe | §12.5 |
+| 4 | Lobby Level Select replaces the portal picker; sequential unlocks enforced on every path | §1.3 `levels`, §4.1 superseded note, §12.7 |
+| 5 | Save schema 3 + migration, autosave at `level_transit`, campaign records and score | §12.8 |
+| 6 | Multiplayer: host drives, guests follow + ready report, host Quit to Lobby | §12.9 |
+| 7 | Difficulty retuned for carried builds + starter grant | §12.10, BUILD_BRIEF §23.2 |
+| 8 | Harness: `?level=N`, campaign cmds, `__echoes.campaign`, ports; gates GC.1–GC.13; G4a.4 / G4a.11 picker halves superseded | §6.1, §6.3, §6.4, §7, §12.11 |

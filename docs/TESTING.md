@@ -981,3 +981,39 @@ whose root causes lived in other keys' files (minimal edits, listed here):
   the biome paint module worker's script request stays pending in CDP
   (`tools/gntfixINT1-loadevent.mjs`; the page's load event fires at ~3.6 s) —
   pass `--timeout 180000`.
+
+### CAMPAIGN — linear campaign (the user's CRITICAL REFACTOR, 2026-09-25, owner CAMPAIGN)
+
+Design + gates: docs/gauntlet/PLAN.md §12 (GC.1–GC.13). Evidence:
+docs/gauntlet/build-CAMPAIGN.md.
+
+- **What changed for every harness.** The portal's E starts a CAMPAIGN at
+  Level 1 (menu-skip boots with `?act=N` start at N). Clearing a level no
+  longer ends the run: the sim enters phase `transit` (the level-clear card)
+  and the next level's room 1 follows. Only the final level's clear reaches
+  `victory`. Single-level harness runs are unchanged: `cmd('startRun', { act,
+  challenge })`, `?run=1[&act=N]`, `skipToRoom(n, { act })` with no run live,
+  the act runner (`tools/gnt-M4a-actrun.mjs`) and the Node simtrace still end
+  at the Stag with `victory`. Every start at level N > 1 (campaign or single)
+  carries the starter grant (PLAN §12.4), so the act runner measures a
+  Level-N start. The expedition picker screen no longer exists — a probe that
+  pushed `expedition` opens `levels`.
+- **Boot param** `?level=N` — menu-skip boot + a campaign at level N on the
+  first ticked frame (harness, bypasses locks).
+- **Commands** `cmd('startCampaign', { level, challenge, depart })`,
+  `cmd('campaignAdvance')` (the card's Enter; refused before 30 ticks),
+  `cmd('abandonRun')` (Quit to Lobby), `cmd('campaignState')`,
+  `cmd('campLevels')` (opens the Level Select), `cmd('campChoose', n)`
+  (player-facing: refuses a locked level). The autopilot advances the card at
+  its `untilTick`, so `cmd('autopilot', true)` + `sim.stepN` plays whole
+  campaigns deterministically.
+- **Debug API** `__echoes.campaign` — `state()`, `unlocked()`, `choose(n)`,
+  `rules()`, `memory()`, `snapshot(label)`, `snapshots()`, `transitions()`,
+  `ready(level)`, `unlock(list | null)`; `__echoes.busCounters.listeners`.
+- **Reaching a level clear fast** (say so in a report): `cmd('startCampaign',
+  { level: 1 })`, `cmd('skipToRoom', 8)`, then `cmd('bossHp', 0.02, true)` and
+  finish the Stag by real input (or `cmd('killBoss')` + `killAllEnemies`).
+- **Tools** (read-only for everyone else): `tools/gntCAMPAIGN-camprun.mjs`
+  (campaign runner: `--from 1|2|3 --seeds 1-5 [--node 1]` → per-level rooms,
+  outcome and the §4.2 band per level), `tools/gntCAMPAIGN-probe.mjs`
+  (`memory | frames | locks | carry | edge | net` legs on the GPU harness).
