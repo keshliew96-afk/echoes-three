@@ -798,7 +798,9 @@ maxCorrectionPerFrame, remoteJumpMax / remoteJumps03 / remoteJumpRate06 /
 remoteFrames (party), hostileJumpMax, smoothed / smoothedMaxU / smoothSnaps /
 teleportFrames, extrapolatedFrames / heldFrames, interpDelayMs,
 ownActionFeedbackMs, mispredictRetractMs, retractions, predicted/confirmed
-actions, eventsReplayed / Suppressed / Late, replayedOnce, desyncs /
+actions (the shadow's own `debugGuest().shadow.stats()` adds
+`retractsByPath` {state, denied, events, local}, `stateConfirmed`,
+`pendingOpen`), eventsReplayed / Suppressed / Late, replayedOnce, desyncs /
 hashChecks / desyncPaths, decodeErrors, snapshotBytesAvg / fullBytesAvg /
 deltaRatio, inputRate, guestNetMsP95, frameOver50Net; on a host:
 hostNetMsP50/P95/Max, frameOver50Net, captureMsP95, encodeMsP95,
@@ -827,6 +829,19 @@ clock re-anchor are counted apart (`teleportFrames` / `stallFrames` /
 the long browser runs use a production preview so HMR never reloads a page:
 `npx vite build --outDir dist-M5b --emptyOutDir` + `npx vite preview --outDir
 dist-M5b --port 4307 --strictPort`, then `--base http://127.0.0.1:4307/`):
+- `node tools/gntfixM5b1-retract.mjs --server ws://127.0.0.1:P/echoes --base http://127.0.0.1:Q/ [--sweep N2] [--seconds 180] [--bots 2] [--force downed --forcePeriod 8 --forceDown 2.5] [--tag x]`
+  — fix-M5b-r1 (NET-F1): every retraction on the guest with its PATH
+  (state / denied / events / local), the in-game metric and the PLAN §3.7
+  clock (retract − arrival of the first snapshot with lastInputSeqConsumed
+  ≥ seq), the host's events for the seat; `--force downed` has the host
+  Down the guest's body every 8 s for 2.5 s (a stream of denied predictions
+  on demand). Retractions are proved from STATE: the snapshot's per-seat
+  timers carry `fire` (the input frame of the seat's last basic that fired;
+  `cds[slot] − cd` and `dodge − cooldown` are fire-only already), so a
+  prediction is confirmed or retracted at the first snapshot that covers its
+  ±3-frame window — never on the reliable event stream's retransmit. The
+  held basic is predicted with the host's §4/§5 rule over a log of the sent
+  frames, rebuilt from the host's timer at every snapshot.
 - `node tools/gntM5b-simseats.mjs` — Node, 23 checks: seat_control, human
   walk / dodge / kit / basic / aim shapes, lag-comp hit vs miss, same-tick E,
   human revive, host-vs-predictor parity (maxErr 0 over 400 frames), replica refusal.

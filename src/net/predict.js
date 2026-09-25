@@ -390,15 +390,14 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   }
 
   // Re-seed from the host's replicated seat timers (allies seats block:
-  // absolute INPUT-FRAME seqs — exact, no tick mapping) at snapshot k.
-  function reseed(timers, k) {
+  // absolute INPUT-FRAME seqs — exact, no tick mapping) at snapshot k;
+  // `alive` = the seat's body had hp > 0 in that snapshot.
+  function reseed(timers, k, alive = true) {
     if (!enabled || !timers || !Number.isInteger(k)) return;
     lastAuth = { cds: Array.isArray(timers.cds) ? timers.cds.slice() : null, basic: timers.basic, dodge: timers.dodge, fire: Number.isInteger(timers.fire) ? timers.fire : null, k };
-    // STATE-BASED proof for every prediction whose match window the host has
-    // consumed: the input frame the host last fired this kind on.
+    // STATE-BASED proof: the input frame the host last fired each kind on.
     for (const p of pending) {
       if (!isOpen(p) || p.stateConfirmed || p.kind === 'interact') continue;
-      if (p.seq + MATCH_WINDOW > k) continue;
       const cd = cdOf(p.kind, p.slot);
       if (!Number.isFinite(cd)) continue;
       let fired = null;
@@ -412,8 +411,19 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
       if (fired === null) continue;
       const dd = fired - p.seq;
       if (Math.abs(dd) <= MATCH_WINDOW) {
+        // A host fire inside the window (consumed or not): its event copy is
+        // on its way and will match.
         p.stateConfirmed = true;
         stats.stateConfirmed += 1;
+      } else if (p.seq + MATCH_WINDOW > k) {
+        // Window not consumed yet. A Downed body (hp <= 0 at k) cannot act on
+        // any later frame either (a revive takes seconds): every open
+        // prediction is a phantom — retracted on THIS snapshot, not the one
+        // that covers the window.
+        if (!alive) {
+          p.provenAt = now();
+          retract(p, 'absent', null, 'state');
+        }
       } else if (dd < 0 || dd < cd - MATCH_WINDOW) {
         // No fire in the window: the last one is older, or later but too
         // close to have followed one there.

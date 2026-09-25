@@ -79,13 +79,13 @@ const INSTALL = `
       return r;
     };
   }
-  sh.reseed = (timers, k) => {
+  sh.reseed = (timers, k, ...rest) => {
     M.snaps.push([performance.now(), k, timers ? timers.basic : null, timers && Number.isInteger(timers.fire) ? timers.fire : null]);
     if (M.snaps.length > 6000) M.snaps.splice(0, 2000);
     M.path = 'state';
     M.timers = timers;
     M.k = k;
-    try { return o.reseed(timers, k); } finally { M.path = null; }
+    try { return o.reseed(timers, k, ...rest); } finally { M.path = null; }
   };
   sh.onAuthEvent = (e) => {
     if (e && (e.type === 'seat_denied' || e.type === 'interact_denied')) M.denials.push({ t: performance.now(), type: e.type, kind: e.kind, reason: e.reason, inputSeq: e.inputSeq });

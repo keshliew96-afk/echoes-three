@@ -862,7 +862,7 @@ export function createNetSession(ctx) {
         const timers = al && Array.isArray(al.timers) ? al.timers[g.seat] : null;
         if (human || !g.own.ready) g.own.reconcile(me, r.tick, human ? k : g.seq, timers);
         if (human) {
-          g.shadow.reseed(timers, k);
+          g.shadow.reseed(timers, k, me.hp > 0);
           g.shadow.onConsumed(k, r.tick);
         }
       }
