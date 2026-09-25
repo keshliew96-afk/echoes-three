@@ -637,9 +637,31 @@ export function createNetSession(ctx) {
     if (!g.away) {
       const wasDashing = g.own.ready && g.own.body.dashTicksLeft > 0;
       const dodged = g.own.onLocalFrame(seatInputOf([frame]));
-      // §5 (host humanContinuous): a dash that ends with the basic held
-      // restarts its FULL interval on that frame.
-      if (wasDashing && g.own.body.dashTicksLeft === 0 && frame.basic) g.shadow.dashEnded(g.seq);
+      // The frame as SENT, after its movement step (the host's own order:
+      // the moves and the §5 dash-end re-arm, then the discrete basic): the
+      // action shadow logs it, evaluates the held basic on it when the
+      // rendered-frame sample skipped this frame, and finalises a prediction
+      // made on the pre-step sample (NET-F1: every input frame, never only
+      // the rendered ones).
+      if (g.own.ready) {
+        const body = g.own.body;
+        const auth = g.replica.applied ? seatEntity(g.seat) : null;
+        const t = hostTickNow();
+        g.shadow.frame({
+          seq: g.seq,
+          basic: frame.basic,
+          body,
+          aim: g.held.aim,
+          entityId: g.entityId,
+          tick: t,
+          stunned: auth ? isStunned(auth, t) : false,
+          channelling: !!(auth && auth.reviveTargetId != null),
+          fresh: frame.basic && !g.sentBasic,
+          dashing: body.dashTicksLeft > 0,
+          dashEnd: wasDashing && body.dashTicksLeft === 0,
+        });
+      }
+      g.sentBasic = frame.basic;
       if (dodged && cosmetics) {
         const b = g.own.body;
         cosmetics.ghost(b.x, b.z);
@@ -814,6 +836,7 @@ export function createNetSession(ctx) {
       g.interp.reset();
       g.shownTick = null;
       g.own.reset();
+      g.shadow.reset();
       g.newestTick = -1;
       g.lastConsumed = null;
     }
@@ -911,6 +934,7 @@ export function createNetSession(ctx) {
         guest.interp.reset();
         guest.shownTick = null;
         guest.own.reset();
+        guest.shadow.reset();
         guest.newestTick = -1;
         requestFull('return');
         log('guest_return', {});
@@ -963,6 +987,7 @@ export function createNetSession(ctx) {
           guest.interp.reset();
           guest.shownTick = null;
           guest.own.reset();
+          guest.shadow.reset();
           guest.newestTick = -1;
           guest.lastConsumed = null;
           guest.frozen = false;

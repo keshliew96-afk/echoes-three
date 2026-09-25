@@ -907,6 +907,11 @@ export function createAllySystem({
       cds: (a.cds || [0, 0, 0, 0]).map((c) => seq + Math.max(0, c - tick)),
       basic: seq + Math.max(0, (a.nextBasicTick || 0) - tick),
       dodge: seq + Math.max(0, (a.dodgeReadyTick || 0) - tick),
+      // The input frame of the seat's last basic that FIRED (-1: none yet).
+      // `basic` also moves on a dash suppression / §5 re-arm, so a guest's
+      // action shadow reads THIS to know whether its predicted swing on a
+      // consumed frame happened (net/predict.js, NET-F1).
+      fire: -1,
     };
     if (a.reviveTargetId != null) {
       const ch = channels.get(a.reviveTargetId);
@@ -1100,7 +1105,7 @@ export function createAllySystem({
     const moving = f.moves.some((m) => m.x !== 0 || m.z !== 0);
     const skillPressed = [...kinds].some((k) => k.startsWith('skill_'));
     const freshBasic = f.basic && !prevHumanBasic[i];
-    const T = humanTimers[i] || (humanTimers[i] = { cds: [0, 0, 0, 0], basic: 0, dodge: 0 });
+    const T = humanTimers[i] || (humanTimers[i] = { cds: [0, 0, 0, 0], basic: 0, dodge: 0, fire: -1 });
     const seq = f.seq;
     if (a.hp > 0) {
       const stunned = !!(combat.status && combat.status.isStunned(a, tick));
@@ -1146,6 +1151,7 @@ export function createAllySystem({
           seatDeny(a, 'basic_attack', DENIAL.prioritySuppressed, tag, tick);
         } else {
           fireHumanBasic(a, S, f, tick, tag);
+          T.fire = seq;
         }
         a.nextBasicTick = tick + S.attackIntervalTicks;
         T.basic = seq + S.attackIntervalTicks;
@@ -1907,7 +1913,7 @@ export function createAllySystem({
     // M5b: network seat control rides along ONLY while some seat is not at
     // its single-player default (a saved single-player tree is unchanged).
     if (controllers.some((c, i) => c !== DEFAULT_CONTROLLERS[i]) || prevHumanBasic.some(Boolean)) {
-      out.seats = { controllers: [...controllers], prevBasic: [...prevHumanBasic], timers: humanTimers.map((t) => (t ? { cds: [...t.cds], basic: t.basic, dodge: t.dodge } : null)) };
+      out.seats = { controllers: [...controllers], prevBasic: [...prevHumanBasic], timers: humanTimers.map((t) => (t ? { cds: [...t.cds], basic: t.basic, dodge: t.dodge, fire: Number.isInteger(t.fire) ? t.fire : -1 } : null)) };
     }
     return out;
   }
@@ -1934,7 +1940,7 @@ export function createAllySystem({
       controllers[i] = sc && (sc.controllers[i] === 'human' || sc.controllers[i] === 'ai') ? sc.controllers[i] : DEFAULT_CONTROLLERS[i];
       prevHumanBasic[i] = !!(sc && sc.prevBasic && sc.prevBasic[i]);
       const t = sc && Array.isArray(sc.timers) ? sc.timers[i] : null;
-      humanTimers[i] = t && Array.isArray(t.cds) ? { cds: [...t.cds], basic: t.basic, dodge: t.dodge } : null;
+      humanTimers[i] = t && Array.isArray(t.cds) ? { cds: [...t.cds], basic: t.basic, dodge: t.dodge, fire: Number.isInteger(t.fire) ? t.fire : -1 } : null;
     }
     seatFrames = [null, null, null, null];
     humanInteractList.length = 0;
