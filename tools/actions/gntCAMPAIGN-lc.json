@@ -1,0 +1,13 @@
+[
+ {"type":"wait","ms":2000},
+ {"type":"eval","code":"(()=>{window.__lc0=__echoes.busListeners;__echoes.cmd('startCampaign',{level:1});return Object.values(window.__lc0).reduce((a,b)=>a+b,0)})()"},
+ {"type":"wait","ms":1500},
+ {"type":"eval","code":"(()=>{const a=window.__lc0,b=__echoes.busListeners,d={};for(const k of new Set([...Object.keys(a),...Object.keys(b)]))if((a[k]||0)!==(b[k]||0))d[k]=[a[k]||0,b[k]||0];window.__lc1=b;__echoes.cmd('skipToRoom',8);return d})()"},
+ {"type":"wait","ms":800},
+ {"type":"eval","code":"(()=>{const a=window.__lc1,b=__echoes.busListeners,d={};for(const k of new Set([...Object.keys(a),...Object.keys(b)]))if((a[k]||0)!==(b[k]||0))d[k]=[a[k]||0,b[k]||0];window.__lc2=b;__echoes.cmd('killBoss');__echoes.cmd('killAllEnemies');return d})()"},
+ {"type":"loop","label":"to-L2","cond":"__echoes.state().run.act===2&&__echoes.state().run.phase==='combat'","maxMs":15000,"body":[{"type":"wait","ms":200},{"type":"eval","code":"(()=>{if(__echoes.state().run.room===8)__echoes.cmd('killAllEnemies');return 1})()"}]},
+ {"type":"wait","ms":500},
+ {"type":"eval","code":"(()=>{const a=window.__lc2,b=__echoes.busListeners,d={};for(const k of new Set([...Object.keys(a),...Object.keys(b)]))if((a[k]||0)!==(b[k]||0))d[k]=[a[k]||0,b[k]||0];window.__lc3=b;__echoes.cmd('skipToRoom',8);return d})()"},
+ {"type":"wait","ms":800},
+ {"type":"eval","code":"(()=>{const a=window.__lc3,b=__echoes.busListeners,d={};for(const k of new Set([...Object.keys(a),...Object.keys(b)]))if((a[k]||0)!==(b[k]||0))d[k]=[a[k]||0,b[k]||0];return d})()"}
+]

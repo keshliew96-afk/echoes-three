@@ -181,16 +181,17 @@ export function createRecordsScreen(ctx) {
     add('Victories · defeats', `${r.victories} · ${r.defeats}`);
     // CAMPAIGN (PLAN §12.8)
     add('Campaigns completed', `${r.campaignsCompleted ?? 0} of ${r.campaigns ?? 0}`);
-    add('Abandoned (Quit to Lobby)', String(r.abandoned ?? 0));
-    add('Furthest level', r.furthestLevel ? `${ROMAN[r.furthestLevel] ?? r.furthestLevel} · ${ACT_NAME[r.furthestLevel] ?? ''}` : '—');
+    add('Abandoned', String(r.abandoned ?? 0));
+    add('Furthest level', r.furthestLevel ? `Level ${ROMAN[r.furthestLevel] ?? r.furthestLevel}` : '—');
     add('Fastest campaign', mmss(r.fastestCampaignSec));
     add('Best score', r.bestScore ? r.bestScore.toLocaleString() : '—');
     add('Most kills in a run', r.mostKills ? String(r.mostKills) : '—');
+    // One row per level: clears · fastest clear · deepest room.
     for (const a of [1, 2, 3]) {
       const lc = r.levelClears ? r.levelClears[a] ?? 0 : 0;
-      add(`Level ${ROMAN[a]} — clears`, String(lc));
-      add(`Level ${ROMAN[a]} — fastest clear`, mmss(r.fastestVictorySec[a]));
-      add(`Level ${ROMAN[a]} — deepest room`, r.deepestRoom[a] ? `${r.deepestRoom[a]} / 8` : '—');
+      // Cleared: how often + the fastest clear; never cleared: the deepest room.
+      const v = lc > 0 ? `×${lc}${r.fastestVictorySec[a] ? ` · ${mmss(r.fastestVictorySec[a])}` : ''}` : r.deepestRoom[a] ? `room ${r.deepestRoom[a]}/8` : '—';
+      add(`Level ${ROMAN[a]} cleared`, v);
     }
     add('Levels open', p.unlocks.acts.map((a) => ROMAN[a] ?? a).join(' · '));
     add('Time played', hours(p.playtimeSec));

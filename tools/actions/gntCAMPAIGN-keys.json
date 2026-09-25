@@ -1,0 +1,6 @@
+[
+ {"type":"wait","ms":2000},
+ {"type":"eval","code":"(()=>{__echoes.cmd('startCampaign',{level:1,depart:false});return 1})()"},
+ {"type":"wait","ms":2500},
+ {"type":"eval","code":"(()=>{const s=__echoes.state();const pick=(o)=>o?Object.fromEntries(Object.entries(o).filter(([k,v])=>typeof v!=='object'||v===null||Array.isArray(v)).map(([k,v])=>[k,Array.isArray(v)?'arr'+v.length:v])):null;return {vfx:pick(s.vfx),bossfx:pick(s.bossfx),techfx:pick(s.techfx),skillfx:pick(s.skillfx),allyfx:pick(s.allyfx),hud:__echoes.hud?Object.keys(__echoes.hud):null,room:s.room&&Object.keys(s.room)}})()"}
+]

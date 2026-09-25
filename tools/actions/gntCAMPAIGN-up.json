@@ -1,0 +1,7 @@
+[
+ {"type":"wait","ms":9000},
+ {"type":"eval","code":"(()=>__echoes.campaign.residency().perf)()"},
+ {"type":"eval","code":"(()=>{__echoes.cmd('startCampaign',{level:2});return __echoes.state().run.phase})()"},
+ {"type":"wait","ms":6000},
+ {"type":"eval","code":"(()=>({perf:__echoes.campaign.residency().perf,t:__echoes.campaign.transitions().slice(-1)[0]}))()"}
+]

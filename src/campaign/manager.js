@@ -26,7 +26,7 @@
 //     choose(n), memory snapshots, the transition log (killing blow -> card
 //     -> ready -> advance -> first controllable frame, longest frame gap).
 import { TRANSIT, CAMPAIGN_LEVELS, FIRST_LEVEL, isLevel, campaignRules } from '../data/campaign.js';
-import { flushNumberPools, numberPoolCount } from '../render/numbers.js';
+import { flushNumberPools, numberPoolCount, numberPoolCapacity } from '../render/numbers.js';
 import { setPumpBudgetOverride } from '../env/biomes/builder.js';
 
 export function createCampaignManager({ world, bus, scene, stage, app, registry, service, runUi = null, isFrozen = () => false, params = null }) {
@@ -368,13 +368,101 @@ export function createCampaignManager({ world, bus, scene, stage, app, registry,
       heapMB: pm ? Math.round((pm.usedJSHeapSize / 1048576) * 10) / 10 : null,
       entities: registry ? registry.count : null,
       busListeners: typeof bus.listenerCount === 'function' ? bus.listenerCount() : null,
-      pools: { ...(vfx || {}), numerals: numberPoolCount() },
+      pools: { ...(vfx || {}), numerals: numberPoolCount(), numeralCapacity: numberPoolCapacity() },
       dom: typeof document !== 'undefined' ? document.getElementsByTagName('*').length : null,
       audio,
       dressings: residency ? residency.dressings : null,
       resident: residency ? residency.resident : resident,
       disposals: residency ? residency.disposals : null,
     };
+  }
+
+  // Scene census (GC.6 leak hunting): every unique geometry / material /
+  // texture reachable from stage.scene, grouped by the top-level object that
+  // owns it (the scene child's name, or its type), so a growth between two
+  // equal moments names its owner. Probe only (walks the whole scene).
+  function census() {
+    const sc = stage && stage.scene ? stage.scene : null;
+    if (!sc) return null;
+    const geos = new Set();
+    const mats = new Set();
+    const groups = {};
+    for (const top of sc.children) {
+      const key = top.name || top.type || 'unnamed';
+      const g = groups[key] || (groups[key] = { geometries: 0, objects: 0 });
+      top.traverse((o) => {
+        g.objects += 1;
+        if (o.geometry && !geos.has(o.geometry)) {
+          geos.add(o.geometry);
+          g.geometries += 1;
+        }
+        const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+        for (const m of ms) mats.add(m);
+      });
+    }
+    const info = stage.renderer ? stage.renderer.info.memory : null;
+    return { sceneGeometries: geos.size, sceneMaterials: mats.size, gl: info ? { geometries: info.geometries, textures: info.textures } : null, groups };
+  }
+
+  // GL geometry tracker (GC.6 leak hunting, probe only): from the moment it
+  // is armed, every geometry the renderer starts tracking (three adds a
+  // 'dispose' listener at its first upload) is remembered until disposed;
+  // offScene() lists the live ones no scene object references — a leak (or a
+  // detached pool) names itself by type, name and vertex count.
+  let glTracked = null;
+  function glTrack() {
+    if (glTracked) return { armed: true, size: glTracked.size };
+    let proto = null;
+    stage.scene.traverse((o) => {
+      if (!proto && o.geometry) proto = Object.getPrototypeOf(Object.getPrototypeOf(o.geometry));
+    });
+    // proto = BufferGeometry.prototype's parent (EventDispatcher.prototype)
+    if (!proto || typeof proto.addEventListener !== 'function') return { armed: false };
+    glTracked = new Set();
+    const add = proto.addEventListener;
+    const dispatch = proto.dispatchEvent;
+    proto.addEventListener = function (type, fn) {
+      if (type === 'dispose' && this && this.isBufferGeometry) glTracked.add(this);
+      return add.call(this, type, fn);
+    };
+    proto.dispatchEvent = function (ev) {
+      if (ev && ev.type === 'dispose' && this && this.isBufferGeometry) glTracked.delete(this);
+      return dispatch.call(this, ev);
+    };
+    return { armed: true, size: 0 };
+  }
+  // Every live tracked geometry keyed by type + parameters (+ scene flag).
+  function glAlive() {
+    if (!glTracked) return null;
+    const inScene = new Set();
+    stage.scene.traverse((o) => {
+      if (o.geometry) inScene.add(o.geometry);
+    });
+    const out = {};
+    for (const g of glTracked) {
+      const pos = g.attributes && g.attributes.position ? g.attributes.position.count : 0;
+      const par = g.parameters ? JSON.stringify(g.parameters).replace(/(\.\d{3})\d+/g, '$1') : '';
+      const key = `${inScene.has(g) ? 'S' : 'o'}|${g.type}|${g.name || '-'}|${pos}|${par}`;
+      out[key] = (out[key] || 0) + 1;
+    }
+    return out;
+  }
+  function glOffScene() {
+    if (!glTracked) return null;
+    const inScene = new Set();
+    stage.scene.traverse((o) => {
+      if (o.geometry) inScene.add(o.geometry);
+    });
+    const groups = {};
+    let n = 0;
+    for (const g of glTracked) {
+      if (inScene.has(g)) continue;
+      n += 1;
+      const pos = g.attributes && g.attributes.position ? g.attributes.position.count : 0;
+      const key = `${g.type}:${g.name || '-'}:${pos}`;
+      groups[key] = (groups[key] || 0) + 1;
+    }
+    return { tracked: glTracked.size, offScene: n, groups };
   }
 
   const snapshots = [];
@@ -428,6 +516,10 @@ export function createCampaignManager({ world, bus, scene, stage, app, registry,
       return true;
     },
     transitions: () => transitions.map((t) => ({ ...t })),
+    census,
+    glTrack,
+    glOffScene,
+    glAlive,
     ready: (level) => levelStatus(level),
     residency: () => sceneCmd('levelResidencyState'),
     // Probe override of the unlock chain (like content.unlock): null restores.
