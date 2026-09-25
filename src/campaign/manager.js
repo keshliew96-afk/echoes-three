@@ -370,6 +370,21 @@ export function createCampaignManager({ world, bus, scene, stage, app, registry,
       busListeners: typeof bus.listenerCount === 'function' ? bus.listenerCount() : null,
       pools: { ...(vfx || {}), numerals: numberPoolCount(), numeralCapacity: numberPoolCapacity() },
       dom: typeof document !== 'undefined' ? document.getElementsByTagName('*').length : null,
+      // transient UI the total includes (toasts come and go on wall time)
+      domToasts: typeof document !== 'undefined' ? document.querySelectorAll('.ap-toasts *').length : null,
+      // element count per top-level container (a growth names its owner)
+      domParts: typeof document !== 'undefined' ? (() => {
+        const out = {};
+        const walk = (root, depth) => {
+          for (const el of root.children) {
+            const key = el.id ? `#${el.id}` : el.className && typeof el.className === 'string' ? `.${el.className.split(' ')[0]}` : el.tagName.toLowerCase();
+            if (depth === 0 && (key === '#app' || key === 'div')) walk(el, 1);
+            out[key] = (out[key] || 0) + 1 + el.getElementsByTagName('*').length;
+          }
+        };
+        walk(document.body, 0);
+        return out;
+      })() : null,
       audio,
       dressings: residency ? residency.dressings : null,
       resident: residency ? residency.resident : resident,

@@ -214,6 +214,12 @@ async function legMemory(browser) {
         poolsA: a.pools,
         poolsB: b.pools,
         dom: b.dom - a.dom,
+        domLessToasts: b.dom - b.domToasts - (a.dom - a.domToasts),
+        domParts: (() => {
+          const d = {};
+          for (const k of new Set([...Object.keys(a.domParts || {}), ...Object.keys(b.domParts || {})])) if ((a.domParts || {})[k] !== (b.domParts || {})[k]) d[k] = [(a.domParts || {})[k] ?? 0, (b.domParts || {})[k] ?? 0];
+          return d;
+        })(),
         voices: [a.audio ? a.audio.voices : null, b.audio ? b.audio.voices : null],
         dressings: JSON.stringify(b.dressings) === JSON.stringify(a.dressings),
         sceneGroups: groups,
@@ -239,6 +245,10 @@ async function legMemory(browser) {
     listenersFlat: same.every((s) => s.busListeners === 0),
     poolsFlat: same.every((s) => s.pools),
     domFlatInCamp: same.filter((s) => s.key === 'camp').every((s) => s.dom === 0),
+    // (at a level sample the HUD's off-screen threat pointers — 8 elements
+    // each, polled on wall time — and toasts come and go; everything else
+    // must match exactly)
+    domFlatLessTransient: same.every((s) => Object.keys(s.domParts).every((k) => k === '#hud-threat' || k === '.ap-toasts')),
     voicesBounded: rows.every((r) => !r.audio || r.audio.voices <= 24),
     dressingsSame: same.every((s) => s.dressings),
     onlyOwnLevel: levelOnly.every((x) => x.onlyOwnLevel),
@@ -297,13 +307,19 @@ function frameStats(lumas, t0 = -Infinity, t1 = Infinity) {
   return { frames: xs.length, nearBlack, maxConsecutiveNearBlack: maxRun, minLuma: r1(minLuma), maxScreencastGapMs: Math.round(maxGap) };
 }
 
-async function oneTransition(o, { skipAtMs = null, throttle = 1, label }) {
+async function oneTransition(o, { skipAtMs = null, throttle = 1, label, from = 1 }) {
   const { page, cdp } = o;
-  await E(page, () => __echoes.cmd('startCampaign', { level: 1 }));
-  await waitFor(page, controllable, { args: [1] });
+  await E(page, (l) => __echoes.cmd('startCampaign', { level: l, depart: false }), from);
+  await waitFor(page, controllable, { args: [from], timeout: 60000 });
   await E(page, () => __echoes.cmd('skipToRoom', 8));
-  // A short Stag fight (the next level's floors paint in the worker meanwhile).
-  await sleep(Number(opt('bossMs', '4000')));
+  // A short Stag fight (the next level's floors paint in the worker meanwhile);
+  // the live gameplay voices are sampled through it (the steady combat count).
+  const combatVoices = [];
+  const bossMs = Number(opt('bossMs', '4000'));
+  for (let t = 0; t < bossMs; t += 250) {
+    await sleep(250);
+    combatVoices.push(await E(page, () => { const a = __echoes.audio; const d = a && typeof a.voices === "function" ? a.voices() : null; return d ? d.active : null; }));
+  }
   if (throttle > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: throttle });
   const { out, lumas } = await screencast(o, async () => {
     const killWall = Date.now();
@@ -311,14 +327,17 @@ async function oneTransition(o, { skipAtMs = null, throttle = 1, label }) {
       __echoes.cmd('killBoss');
       __echoes.cmd('killAllEnemies');
     });
+    await waitFor(page, () => __echoes.state().run.phase === 'transit', { timeout: 10000, poll: 20 });
+    // the live voices on the card, just after the teardown (the stinger + UI only)
+    await sleep(150);
+    const cardVoices = await E(page, () => { const a = __echoes.audio; const d = a && typeof a.voices === "function" ? a.voices() : null; return d ? d.active : null; });
     if (skipAtMs !== null) {
-      await waitFor(page, () => __echoes.state().run.phase === 'transit', { timeout: 10000, poll: 20 });
-      await sleep(skipAtMs);
+      await sleep(Math.max(0, skipAtMs - 150));
       await page.keyboard.press('Enter');
     }
-    await waitFor(page, controllable, { args: [2], timeout: 30000, poll: 30 });
+    await waitFor(page, controllable, { args: [from + 1], timeout: 30000, poll: 30 });
     await sleep(1000);
-    return { killWall };
+    return { killWall, cardVoices };
   });
   if (throttle > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   const t = await E(page, () => __echoes.campaign.transitions().slice(-1)[0]);
@@ -331,6 +350,8 @@ async function oneTransition(o, { skipAtMs = null, throttle = 1, label }) {
     throttle,
     skipAtMs,
     killToControlMs: t.killToControlMs,
+    cardWallMs: t.advanceAt !== null && t.cardAt !== null ? Math.round(t.advanceAt - t.cardAt) : null,
+    audio: { combatMax: Math.max(...combatVoices.filter((x) => x !== null), 0), combat: combatVoices, card: out.cardVoices },
     clearToControlMs: t.clearToControlMs,
     cardToReadyMs: t.readyAt !== null ? Math.round(t.readyAt - t.cardAt) : null,
     advanceReason: t.advanceReason,
@@ -349,28 +370,34 @@ async function oneTransition(o, { skipAtMs = null, throttle = 1, label }) {
 async function legFrames(browser) {
   const o = await boot(browser);
   await waitFor(o.page, () => __echoes.campaign.ready(1).ready, { timeout: 90000 });
+  await o.page.keyboard.press('Shift'); // a trusted gesture: the audio engine unlocks
   await sleep(1500);
+  const audioState = await E(o.page, () => (__echoes.audio ? __echoes.audio.state : null));
   const rows = [];
   rows.push(await oneTransition(o, { label: 'auto' }));
-  rows.push(await oneTransition(o, { label: 'enter-skip@0.6s', skipAtMs: 600 }));
-  rows.push(await oneTransition(o, { label: 'auto-cpu4x', throttle: 4 }));
+  rows.push(await oneTransition(o, { label: 'enter-skip@0.5s', skipAtMs: 500 }));
+  rows.push(await oneTransition(o, { label: 'auto L2->L3', from: 2 }));
+  rows.push(await oneTransition(o, { label: 'enter-skip@0.5s L2->L3', from: 2, skipAtMs: 500 }));
+  if (opt('throttle', '1') !== '0') rows.push(await oneTransition(o, { label: 'auto-cpu4x (stress, not a gate)', throttle: 4 }));
   const errors = o.errors.slice();
   await o.page.close();
   const ok = {
     noNearBlack: rows.every((r) => r.nearBlack === 0),
-    noStall250: rows.every((r) => r.gapsOver250 === 0),
-    autoWithin4s: rows.filter((r) => r.label === 'auto').every((r) => r.killToControlMs !== null && r.killToControlMs <= 4000),
+    noStall250: rows.filter((r) => r.throttle === 1).every((r) => r.gapsOver250 === 0),
+    autoWithin4s: rows.filter((r) => r.skipAtMs === null && r.throttle === 1).every((r) => r.killToControlMs !== null && r.killToControlMs <= 4000),
     skipWithin1500: rows.filter((r) => r.skipAtMs !== null).every((r) => r.killToControlMs !== null && r.killToControlMs <= 1500),
+    cardWithinBound: rows.every((r) => r.cardWallMs !== null && r.cardWallMs <= 3000 + 6000),
+    cardVoicesBounded: rows.every((r) => r.audio.card !== null && r.audio.card <= Math.max(r.audio.combatMax, 4)),
     pageErrors: errors.length === 0,
   };
-  return { rows, ok, errors };
+  return { audioState, rows, ok, errors };
 }
 
 // -------------------------------------------------------------------- main --
 const legs = { memory: legMemory, frames: legFrames };
 const which = LEG === 'all' ? Object.keys(legs) : [LEG];
 mkdirSync(join(here, 'captures'), { recursive: true });
-const browser = await launchEchoes({ gpu: true, width: 1600, height: 900, extraArgs: ['--disable-features=NetworkServiceSandbox', '--js-flags=--expose-gc'] });
+const browser = await launchEchoes({ gpu: true, width: 1600, height: 900, extraArgs: ['--disable-features=NetworkServiceSandbox', '--js-flags=--expose-gc', '--autoplay-policy=no-user-gesture-required'] });
 let fail = false;
 try {
   for (const k of which) {

@@ -1013,7 +1013,78 @@ docs/gauntlet/build-CAMPAIGN.md.
 - **Reaching a level clear fast** (say so in a report): `cmd('startCampaign',
   { level: 1 })`, `cmd('skipToRoom', 8)`, then `cmd('bossHp', 0.02, true)` and
   finish the Stag by real input (or `cmd('killBoss')` + `killAllEnemies`).
-- **Tools** (read-only for everyone else): `tools/gntCAMPAIGN-camprun.mjs`
-  (campaign runner: `--from 1|2|3 --seeds 1-5 [--node 1]` → per-level rooms,
-  outcome and the §4.2 band per level), `tools/gntCAMPAIGN-probe.mjs`
-  (`memory | frames | locks | carry | edge | net` legs on the GPU harness).
+- **Debug API additions** (v0.5.92) `__echoes.campaign.census()` (unique
+  geometries / materials reachable from the scene, per top-level group),
+  `glTrack()` + `glAlive()` / `glOffScene()` (arm a GL geometry tracker, then
+  list every live geometry by type + parameters — a leak names itself),
+  `memory()` also reports `pools.numeralCapacity` (numeral elements ever
+  allocated), `domToasts` and `domParts` (element count per top-level
+  container), `transitions()` rows carry `restored: true` for a load onto
+  the card.
+- **Save** (schema 3, v0.5.91): `systems.run.campaign` + `autoReturnTick`;
+  `MIGRATIONS[2]` turns an active schema-2 act run into a campaign from its
+  level (not harness, no grant). `level_transit` is an unthrottled autosave
+  safe point. `load()` refuses a run in (or a card heading to) a level the
+  profile has not unlocked: `{ ok: false, error: 'locked', reason }` —
+  harness-started runs (`campaign.harness`) are exempt. `__echoes.save`
+  adds `lastLevelClear()` and `lockCheck(tree?)`. The profile writes the
+  unlock at the `level_clear` itself (`records.levelClears`,
+  `furthestLevel`), and `recordRun` takes `result: 'abandoned'` (Quit to
+  Lobby) + the campaign's per-level rooms / kills for the campaign score.
+- **Tools** (read-only for everyone else):
+  - `tools/gntCAMPAIGN-camprun.mjs --from 1|2|3 --seeds 1-5 [--node 1]` —
+    campaign runner: per-level rooms, outcome, the §4.2 band per level and a
+    carry / restore / reset verdict at every transition (GC.5 sim half,
+    GC.12).
+  - `tools/gntCAMPAIGN-edge.mjs [--seeds 1-5]` — Node, the sim's
+    exactly-once cases (GC.3 sim half): Stag + adds on one tick, Stag first,
+    a replayed room clear, a wipe on the clear tick, 10 advances in one tick,
+    the settle refusal, the 600-tick hard bound, Quit to Lobby on the card,
+    the final clear's auto-return, a defeat in Level 2.
+  - `tools/gntCAMPAIGN-save.mjs` — Node save / records (GC.9 / GC.10 core):
+    card + mid-Level-2 round trips bit-identical over 900 / 600 ticks (same
+    world and a fresh world), schema 2 -> 3 and 1 -> 2 -> 3 migrations, the
+    one-level campaign score identity (324 inputs) and the profile rules.
+  - `tools/gntCAMPAIGN-probe.mjs memory|frames [--url U] [--tag t]` — GPU
+    harness. `memory`: New Game with seed 7 before every campaign, the sim
+    frozen and stepped (`sim.stepN`), so every campaign plays the same ticks;
+    one warm-up campaign (c0 — first-use shared caches such as elite rings
+    and the interactables' part boxes are created once and kept), then three
+    measured campaigns sampled at level start + 90 ticks and in camp:
+    GL geometries / textures / programs, heap after a forced GC, entities,
+    bus listeners, pool allocations, DOM (the HUD's off-screen threat
+    pointers and toasts are wall-clock transients), resident dressings, then
+    a Quit to Lobby from Level 2. `frames`: CDP screencast luma over L1->L2
+    and L2->L3 (auto and Enter at 0.5 s) + a 4x CPU stress row (reported, not
+    a gate): near-black frames, frame gaps, killing blow -> first
+    controllable frame, card wall time, live audio voices in combat vs on the
+    card (launch with `--autoplay-policy=no-user-gesture-required`; a Shift
+    press unlocks the engine). Run it on the dev server AND a production
+    preview (`npx vite build --outDir dist-CAMPAIGN` + `npx vite preview
+    --outDir dist-CAMPAIGN --port 4380 --strictPort`, `--url
+    http://127.0.0.1:4380/`).
+  - `tools/gntCAMPAIGN-gates.mjs flow|quit|edge|locks|all [--tag t]` — the
+    player paths, every leg in its own browser context (a fresh profile):
+    `flow` (title session -> New Game -> portal E = Level 1 with every level
+    unlocked; per-frame camp/run mode across both transitions; the card's
+    reset / restore / carry state; CAMPAIGN COMPLETE auto-return; exact event
+    counts), `quit` (pause menu -> Quit to Lobby -> confirm from combat, the
+    reward page and the card), `edge` (Esc holds the card, F5 on the card,
+    Enter x12, a hidden tab emulated in the page — rAF held + visibilitychange
+    — for 3 s, a load onto the card), `locks` (keyboard / mouse / mocked
+    gamepad with a positive control / `campaign.choose` / `cmd('campChoose')`
+    / a save file; the unlock surviving a reload; a Level-2 start through the
+    setting-out card to CAMPAIGN COMPLETE; the Records screen).
+  - `tools/gntCAMPAIGN-net.mjs [--port 7900] [--cond lat60,jit10,loss2]` —
+    own server + host + guest: guest mutators refused, every guest frame on
+    the card while the applied host tick is inside [clear, advance) and in
+    Level 2 after it, level / phase / layout equal, the guest's
+    `level_ready`, 0 desyncs, the guest pause menu (Leave Session only), the
+    host's Quit to Lobby taking both to camp with the session up.
+  - `tools/gntCAMPAIGN-legacy.mjs` — GC.13: `?scene=arena&room=kill_all`,
+    `?run=1` (single run -> victory card -> camp), `cmd('startRun', { act:
+    2 })`, `?level=3`, `?menu=0&act=2` + portal E, `skipToRoom(5)` with no
+    run.
+  - `tools/gntCAMPAIGN-leak.mjs` / `tools/gntCAMPAIGN-warm.mjs` — the leak
+    hunt's diagnostics (scene census diff; GL geometries alive in campaign 2
+    that were not in campaign 1).

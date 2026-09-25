@@ -112,7 +112,8 @@ export function createTransitScreen({ run }) {
         : row('KIT', 'the starting kit');
     }
     const names = (s.skills || []).map((id) => (SKILLS[id] ? SKILLS[id].name : id));
-    kitEl.textContent = names.join(' · ');
+    // (a network guest sees the party leader's build — it says whose it is)
+    kitEl.textContent = guest() && names.length ? `The Healer carries · ${names.join(' · ')}` : names.join(' · ');
     hintEl.innerHTML = guest() ? 'The Healer leads on…' : '<b>Enter</b> set out now';
   }
 

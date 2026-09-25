@@ -1493,3 +1493,13 @@ card.
 **Colour discipline** unchanged: cards are Void Charcoal plates with Parchment
 ink and Hearth Amber focus over the warm Victory-wash family veil — never a
 black full-screen; no Ember, violet or Heal green in any card chrome.
+
+**Records and saves** (PLAN §12.8). Records count campaigns started and
+completed, abandoned runs (Quit to Lobby), the furthest level reached, the
+fastest full campaign (a campaign from Level 1 only — a Level-N start is not a
+campaign speedrun) and, per level, its clears with the fastest clear (or the
+deepest room while never cleared). A campaign's score sums its levels
+(PLAN §12.8 formula — identical to the old score for one level). Every level
+transition autosaves; a save made on the level-clear card loads back onto the
+card with its remaining time; a save whose run sits in a level this profile
+has not unlocked is refused with the lock line.

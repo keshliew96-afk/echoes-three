@@ -2398,8 +2398,14 @@ BUILD_BRIEF §23.2.
   ready ms, advance tick, first-controllable wall ms, longest frame gap),
   `ready(level)`, `unlock(list | null)` (probe override, like `content.unlock`).
 - Tools: `tools/gntCAMPAIGN-camprun.mjs` (campaign runner, Node or page, the
-  per-level band), `tools/gntCAMPAIGN-probe.mjs` (memory, transition frames,
-  locking, carry diff — GPU harness).
+  per-level band), `tools/gntCAMPAIGN-probe.mjs` (`memory` — deterministic,
+  one warm-up campaign then three measured; `frames` — transition luma,
+  gaps, timing, voices; GPU harness), `tools/gntCAMPAIGN-gates.mjs` (the
+  player paths: flow, quit, edge, locks + Records), `tools/gntCAMPAIGN-edge.mjs`
+  (the sim's exactly-once cases, Node), `tools/gntCAMPAIGN-save.mjs` (schema
+  3, migrations, round trips on the card, score, profile — Node),
+  `tools/gntCAMPAIGN-net.mjs` (2-client sync), `tools/gntCAMPAIGN-legacy.mjs`
+  (GC.13). Commands and results: docs/TESTING.md, CAMPAIGN section.
 
 ### CAMPAIGN gates (GC.*)
 
@@ -2429,7 +2435,17 @@ BUILD_BRIEF §23.2.
   `busListeners`, pool sizes and `dressings` in every campaign; the JS heap
   after a forced GC within ± 8 MB of campaign 1; no object of level N resident
   in level N+1 (`dressings` holds only the current level's layouts); live
-  audio voices ≤ the steady-state combat count.
+  audio voices ≤ the steady-state combat count. *Measurement (v0.5.92):* the
+  campaigns are made comparable — New Game with one seed before each, the
+  sim stepped by the probe (level start + 90 ticks) — and ONE warm-up
+  campaign runs first: shared first-use caches (elite rings, interactable
+  part geometries, rigs first met in later rooms) are created once in the
+  first campaign and kept by design, so campaign 1's Level 1 sample would
+  otherwise precede them (+11 geometries at L1, +1 at L2, 0 at L3 / camp —
+  flat from then on). Pool sizes = allocations (numeral elements, splats,
+  scorches); particles (cosmetic, unseeded) must be 0 in camp; the DOM must
+  match exactly in camp and, at a level sample, outside the HUD's off-screen
+  threat pointers and toasts (wall-clock transients).
 - **GC.7 No black screen, no loading loop**: over every transition, 0
   near-black frames (§12.5), no frame gap > 250 ms after the teardown frame,
   the card never shown longer than `untilTick` + 6 s wall; from the killing
@@ -2466,3 +2482,4 @@ BUILD_BRIEF §23.2.
 | 6 | Multiplayer: host drives, guests follow + ready report, host Quit to Lobby | §12.9 |
 | 7 | Difficulty retuned for carried builds + starter grant | §12.10, BUILD_BRIEF §23.2 |
 | 8 | Harness: `?level=N`, campaign cmds, `__echoes.campaign`, ports; gates GC.1–GC.13; G4a.4 / G4a.11 picker halves superseded | §6.1, §6.3, §6.4, §7, §12.11 |
+| 9 | Build notes (v0.5.91–0.5.93): records Lifetime rows per level; save lock refusal (`error: 'locked'`); GC.6 measured deterministically after one warm-up campaign (first-use caches); a dynamic box collider keeps its yaw verbatim (save round-trip identity) | §12.8, GC.6, src/sim/movement.js |
