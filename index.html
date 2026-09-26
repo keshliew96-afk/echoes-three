@@ -133,7 +133,11 @@
         status.textContent = "Echoes couldn't start.";
         var d = document.createElement('div');
         d.className = 'bs-detail';
-        d.textContent = kind === 'network'
+        // DEPLOY (PLAN §14.1): opened as a file (double-clicked index.html),
+        // the browser refuses the game's module scripts — say how to run it.
+        d.textContent = window.location.protocol === 'file:'
+          ? 'This page was opened as a file, and browsers only run the game from a web address. In the game folder run “npm run serve”, then open the address it prints (http://localhost:7800/) — friends on your network open the same link.'
+          : kind === 'network'
           ? state.failed + ' — check the connection and reload.'
           : state.failed + ' — Echoes needs WebGL and a current browser. Reloading often helps.';
         status.parentNode.insertBefore(d, press);

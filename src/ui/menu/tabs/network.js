@@ -51,7 +51,11 @@ function textRow({ id, label, help, value, maxLength, onCommit, placeholder = ''
   row.append(lab, ctl, note);
   input.addEventListener('click', () => input.focus({ preventScroll: true }));
   input.addEventListener('change', () => onCommit(input.value));
-  input.addEventListener('keydown', (e) => {
+  // Enter commits. The app's nav layer (src/app/nav.js) takes every keydown
+  // in its capture phase while a menu is open, so a keydown listener here
+  // never ran and Enter did nothing until the field lost focus (DEPLOY
+  // fix): the keyup still reaches the field.
+  input.addEventListener('keyup', (e) => {
     if (e.code === 'Enter' || e.code === 'NumpadEnter') onCommit(input.value);
   });
   return { el: row, input, ctl, setNote: (t) => (note.textContent = t || ''), set: (v) => (input.value = v) };
@@ -96,6 +100,7 @@ function buildNetworkTab(ctx) {
   function autoNote() {
     const a = info();
     const saved = settings.get('net.serverUrl');
+    if (a.source === 'param') return `Set by the page link (?net=) — ${a.url}`;
     if (saved) return `Custom address — “Reset to automatic” goes back to this site’s server`;
     return `${sourceLabel(a.source)} — ${a.url}`;
   }
@@ -105,7 +110,7 @@ function buildNetworkTab(ctx) {
     help: 'Leave it on Automatic: the game connects to the Echoes server of the site you opened it from (wss:// on an https site) — players just open the host’s link. Enter ws://host:port/echoes only to use a different server, e.g. ws://192.168.1.20:7800/echoes for `npm run net -- --host 0.0.0.0` on another computer. An empty address is Automatic.',
     value: settings.get('net.serverUrl'),
     maxLength: 200,
-    placeholder: `Automatic — ${info().site || info().url}`,
+    placeholder: 'Automatic',
     onCommit: (v) => {
       if (!String(v || '').trim()) {
         resetAuto();
@@ -189,7 +194,7 @@ function buildNetworkTab(ctx) {
     autoNoteEl.textContent = custom
       ? `Uses ${site || 'this computer’s server'} instead of the custom address`
       : `In use — ${sourceLabel(a.source)}: ${a.url}`;
-    server.input.placeholder = `Automatic — ${site || a.url}`;
+    server.input.placeholder = 'Automatic';
   }
   syncAuto();
 
