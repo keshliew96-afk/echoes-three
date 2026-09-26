@@ -12,7 +12,9 @@ Contents: §0 scope · §1 architecture + state machine · §2 file ownership ·
 §3 contracts (app, settings, screens/nav/loop, save, audio, content, network) ·
 §4 content design · §5 platform-honest display settings · §6 harness contract ·
 §7 acceptance gates · §8 benchmark systems · §9 waves, dependencies, risks ·
-§10 revision log (v0.5.1: the 19 plan-review fixes and where each landed).
+§10 revision log (v0.5.1: the 19 plan-review fixes and where each landed) ·
+§12 linear campaign · §14 hosted multiplayer (DEPLOY: zero-config join,
+one-process deploy, hardening, redeploy, gates GD.1–GD.9).
 
 ---
 
@@ -252,6 +254,7 @@ chosen so that routing lands on the right owner.
 | **M5a** (W3) | server/** · src/net/protocol/** · src/net/{transport,lobbyClient}.js | server/{ws,lobby,matchmaking,relay,admin,keyframes}.mjs · src/net/protocol/{messages,codec,quantize,treediff,delta,snapshot,conditioner}.js · tools/gnt-M5a-netbench.mjs (fixed CLI + schema, §6.7) · tools/gnt-M5a-* — **no src/sim edits in W3** |
 | **M5b** (W4) | src/net/{session,driver,replica,predict,reconcile,interp,lagcomp,seats,metronome}.js · src/sim/{remote,netseats}.js · src/sim/allies.js · src/ui/menu/{mpmenu,lobby,mpjoin}.js · src/ui/menu/tabs/network.js · src/ui/net/** | tools/gnt-M5b-* (server/** and src/net/protocol/** transfer to M5b in W4 for fixes it needs; seat 0's leader bot = M4a's src/sim/autopilot.js, reused unchanged) |
 | **INT** (W5) | src/ui/menu/pause.js · vite.config.js · package.json scripts · index.html · main.js `@gnt:INT-WIRING` · everything else only via anchors | tools/gnt-INT-* |
+| **DEPLOY** (2026-09-26, alone — the user's hosted-multiplayer request, §14) | src/net/address.js · src/ui/net/update.js · server/static.mjs · every file where a hosting root cause lives (minimal anchored edits, listed in docs/gauntlet/build-DEPLOY.md): lobbyClient.js / session.js address + update wiring, mpmenu / mpjoin / lobby / tabs/network.js copy, server.mjs / index.mjs / admin.mjs / ws.mjs, vite.config.js, package.json scripts, index.html boot card, README Multiplayer + Host it on a server, docs §14 / TESTING DEPLOY section | tools/gntDEPLOY-* · tools/actions/gntDEPLOY-* — net 7920–7939, preview / TLS 4390–4399 |
 | **CAMPAIGN** (2026-09-25, alone — the user's linear-campaign refactor) | src/data/campaign.js · src/campaign/** · src/ui/run/{transit,levels}.js · the campaign state machine in src/sim/run.js · every other file where a campaign root cause lives (minimal anchored edits, listed in docs/gauntlet/build-CAMPAIGN.md): camp.js BEGIN-RUN, arena.js dressing lifecycle, save codec/profile/records, pause.js Quit to Lobby, autopilot transit, audio `stopLevelVoices`, net guards, docs §12 / BUILD_BRIEF A15 + §23.2 note / TESTING campaign section | tools/gntCAMPAIGN-* · tools/actions/gntCAMPAIGN-* — net 7900–7909, preview 4380 |
 
 ### 2.2 Shared files and anchored regions
@@ -421,7 +424,7 @@ overwritten until the user changes something. Storage unavailable → in-memory
 | audio.{master,music,sfx,ambient,ui}.muted | false | bool | M3 | bus gain 0 |
 | audio.muteOnBlur | true | bool | M3 | master ramps to 0 while hidden |
 | net.playerName | 'Mouse' + 3 digits | str ≤ 16 | M5b | lobby name plate |
-| net.serverUrl | `ws://127.0.0.1:7800/echoes` | str | M5b | connect target |
+| net.serverUrl | `''` = Automatic (DEPLOY §14.1; was `ws://127.0.0.1:7800/echoes`) | '' or ws(s):// str | M5b / DEPLOY | explicit connect target; '' = this site's /echoes |
 
 **Settings tabs** — `registerSettingsTab({ id, label, order, build(ctx) → { el,
 onShow?, onHide?, hasPendingChanges?, revert?, confirm?, destroy? }, available?
@@ -1157,6 +1160,9 @@ Server kill: every client returns to the title with "Connection to the server
 was lost" and single-player intact.
 
 **No server / unreachable / LAN (binding UI states — plan-review fix).**
+*DEPLOY (2026-09-26): the address is now automatic — the page's own origin's
+`/echoes` — and the unreachable copy is per case; §14 supersedes the default
+address and the copy below where they differ.*
 Multiplayer needs the zero-dependency session server; the UI never pretends
 otherwise and never spins forever.
 - The title shows **Multiplayer** only when the `mp-menu` screen is
@@ -1472,6 +1478,7 @@ re-verified at v0.5.1: portal tick 459 → combat room 1 tick 480 → reward tic
 | refuters | 7860–7889 | 4340–4359 |
 | fix builders | 7890–7899 | 4360–4379 |
 | CAMPAIGN builder · campaign critic | 7900–7909 · 7910–7919 | 4380 · 4332 |
+| DEPLOY builder · deploy critic | 7920–7939 · 7940–7949 | 4390–4399 (incl. the TLS proxy) · 4334–4339 |
 
 ### 6.4 Debug API namespaces (`window.__echoes`)
 
@@ -2511,3 +2518,214 @@ what GC.12 re-measures.
 | 8 | Harness: `?level=N`, campaign cmds, `__echoes.campaign`, ports; gates GC.1–GC.13; G4a.4 / G4a.11 picker halves superseded | §6.1, §6.3, §6.4, §7, §12.11 |
 | 9 | Build notes (v0.5.91–0.5.93): records Lifetime rows per level; save lock refusal (`error: 'locked'`); GC.6 measured deterministically after one warm-up campaign (first-use caches); a dynamic box collider keeps its yaw verbatim (save round-trip identity) | §12.8, GC.6, src/sim/movement.js |
 | 10 | Round-3 fix (M4a, 2026-09-26, CONTENT-R3-F2): the CAMPAIGN retune's numbers — tiers, Stag HP factor, boss damage slope, starter grant, the per-room / per-level tables and the measured band — written into BUILD_BRIEF §23.2 as the dated CAMPAIGN note that §4.2, §12.10 and BUILD_BRIEF §24 cite; §4.2 / §12.4 / §12.10 / G4a.5 quote it; G4a.5 probe `tools/gntfixM4a3-g4a5.mjs` | §4.2, §12.4, §12.10, G4a.5, BUILD_BRIEF §23.2 |
+
+## 14. Hosted multiplayer (DEPLOY, 2026-09-26 — zero-config join)
+
+**User, verbatim:** asked "if i host this game to a server, will current
+multiplayer method convenient for player" and approved the fix: "yes queue it,
+and make it part of the gauntlet loop". **Defect:** the client defaulted to
+`ws://127.0.0.1:7800/echoes` and never looked at the site it was loaded from,
+so every player on a hosted site had to type the server address; an https
+site needed `wss://` through a TLS proxy; the session server did not serve the
+game, so hosting needed two deployments. **Goal:** a player opens the host's
+link, clicks Multiplayer, and plays — zero settings. Owner: **DEPLOY** (runs
+alone; every file where a root cause lives is open to it, minimal anchored
+edits in other owners' files, listed in docs/gauntlet/build-DEPLOY.md). This
+section supersedes the §3.7 "No server / unreachable / LAN" default address and
+copy where they differ.
+
+### 14.1 Address resolution (client — src/net/address.js, lobbyClient.js)
+
+`resolveServerAddress()` — first valid wins; an https page skips any `ws://`
+candidate (mixed content) and records it in `skipped`:
+
+| # | Source | `source` | UI label |
+|---|---|---|---|
+| 1 | `?net=<ws url>` (page link / harness) | `param` | "Set by the page link (?net=)" |
+| 2 | the player's saved address, `net.serverUrl` ≠ `''` | `saved` | "Custom address" |
+| 3 | `VITE_NET_URL` baked in at build time (a game on a CDN, server elsewhere) | `build` | "Automatic (this build's server)" |
+| 4 | the page's own origin: https → `wss://<host>/echoes`, http → `ws://<host>/echoes` | `site` | "Automatic (this site)" |
+| 5 | no web origin (file://, Node bots) → `ws://127.0.0.1:7800/echoes` | `local` | "Automatic (this computer)" |
+
+- `net.serverUrl` default is now `''` = automatic (validation unchanged:
+  `ws://`/`wss://`, `wss://` only on an https page). Builds ≤ v0.5.117 stored
+  their default in every settings blob; it is read ONCE as automatic (marker
+  key `net.serverUrlV = 1`, in memory until something persists), so a player
+  who later types that exact address keeps it.
+- `net.serverUrl = ''` (setter) → automatic; a valid address → applied at once
+  (an explicit in-page choice also wins over `?net=` for the rest of that
+  page). `net.addressInfo()` → `{ url, source, auto, site, https, file,
+  skipped, saved, param }`.
+- Nothing connects until the player opens Multiplayer (single-player makes
+  zero `/echoes` sockets — GD.9).
+- **Settings ▸ Network**: the Server address row's note is
+  "`<label>` — `<resolved url>`" (e.g. "Automatic (this site) —
+  wss://echoes.example.com/echoes"); the input is empty with the placeholder
+  "Automatic" unless a custom address is saved; Enter commits (keyup — the nav
+  layer owns keydown); an empty commit = automatic. A second row "Automatic
+  server" holds **Reset to automatic** (disabled while automatic) and names
+  the address it would use.
+- **Unreachable panel** (§3.7 layout, Retry default focus, Change server,
+  Back) — copy per case: `site` on a loopback host → the dev / preview proxy
+  needs `npm run net`; `site` elsewhere → "this site isn't running one right
+  now. If you host it: `npm run serve` … If a friend hosts it, ask them";
+  `local` + file:// → "opened as a file … `npm run serve`"; `saved` → names
+  the saved custom address + a **Use this site's server** button; `param` →
+  "comes from the page link (?net=)" + the legacy `npm run net` copy; a
+  server on an older protocol → "runs an older version … update and restart
+  it". The https line stays. A page opened as a file never boots in Chromium
+  (module scripts need an origin): the boot failure card says the same
+  "opened as a file … `npm run serve` … http://localhost:7800/".
+- **Invite line** (mp-menu side panel + lobby `.nt-lanline`): `site` on a
+  real host → "Friends open `<page link>` — no settings needed · code X";
+  `site` on loopback with a `--static` LAN server → its LAN page link; other
+  sources keep the §3.7 "Friends on your network: server `<ws url>` · code X".
+
+### 14.2 Dev / preview parity (vite.config.js)
+
+`server.proxy` and `preview.proxy` forward `^/echoes(?:[?#]|$)` (ws: true,
+xfwd: true) to `http://127.0.0.1:${ECHOES_NET_PORT || 7800}`. With the
+session server down the proxy answers 502 and prints ONE line every 30 s
+("no session server there … run npm run net"); client aborts log nothing.
+`npm run dev -- --host` / `npm run preview -- --host`: a LAN friend opens the
+Network URL and joins with zero settings. The build writes `version.json`
+`{ name, version, entry, builtAt }` (read from src/version.js at build time —
+read, not imported, so a version bump never restarts the dev server).
+
+### 14.3 One-process deploy (server/static.mjs, server.mjs, index.mjs)
+
+`node server/index.mjs --static <dir>` serves the built game at `/` on the
+WebSocket's port: GET/HEAD only (405 + Allow), MIME for every Vite output
+(.js/.mjs `text/javascript`, .wasm `application/wasm`, fonts, audio, glTF,
+unknown → octet-stream, always `nosniff`), `/` and directories → index.html,
+an extension-less miss → index.html (client routes), a miss with an extension
+→ 404 (never HTML as a script); `Cache-Control`: index.html, the fallback,
+version.json and unhashed files `no-cache`, `assets/name-HASH.ext` `public,
+max-age=31536000, immutable`; weak ETag + Last-Modified → 304; gzip / brotli
+(q-values) computed off the event loop (async zlib, one pass per file version,
+64 MB bounded cache, warmed at start) with `Vary`; single byte ranges on
+uncompressed bodies (206 / 416); traversal-safe (normalised path; `..`, NUL,
+backslash, `:` and dot-files except .well-known refused; the realpath must
+stay inside root). `/health` keeps working and adds `build`, `static`,
+`siteUrls`, `origins`, `maxPerIp`; `welcome` adds `latestBuild`,
+`latestEntry`, `siteUrls`. Scripts: `npm run serve` = `vite build` + `node
+server/index.mjs --static dist --host 0.0.0.0 --origins self`; `npm start` =
+the same without the build. `--static` on a folder without index.html exits 2
+with "build it first".
+
+### 14.4 Public-hosting hardening (defaults are safe for `npm run net`)
+
+- `--origins <list>`: `*` (default for `npm run net`, every probe) | `self`
+  (the Origin's host equals the Host the request was sent to — the page came
+  from this server or its proxy; `npm run serve` / `npm start` / the README
+  unit) | exact origins. A foreign Origin gets HTTP 403 before the
+  handshake; a request without Origin (bots, CLI) is let through — the list
+  fences off other websites, it is not authentication.
+- `--max-per-ip <n>` (default 16; 0 = off): WebSocket connections per client
+  IP; the IP is the last `X-Forwarded-For` hop when the direct peer is a
+  loopback proxy (Caddy / nginx / the Vite proxy), else the socket address;
+  direct loopback clients are exempt (the host's own browser, the harness
+  bots). Over the cap → HTTP 429 + `Retry-After: 10`. A half-closed socket
+  (TCP FIN, no close frame) is ended at once so its slot frees (ws.mjs).
+- The admin API refuses any request carrying `X-Forwarded-For` / `Forwarded`
+  / `X-Real-IP` (behind a proxy even 127.0.0.1 is not "loopback").
+- Unchanged: control 40/s (burst 80, cut after 400 drops → 1008), binary
+  600/s, 1 MiB message cap (1009), 5 s hello timeout, 256 peers, 64 rooms.
+
+### 14.5 A redeploy never strands a player
+
+The client learns a newer build exists from (a) `welcome.latestBuild` of a
+`--static` server (or `--build`), (b) the site's `version.json` fetched with
+`cache: 'no-store'` on every Multiplayer check (a game on a CDN), (c) a
+`version_mismatch` join into a room whose build is newer, (d) a hello refused
+for a newer protocol. "Newer" = dotted version compare; the same version with
+a different hashed entry chunk also counts (a redeploy without a bump). A
+stale page never plays on: `connect()` / reconnect stop with
+`update_available`; the mp-menu shows its **update panel** ("A new version of
+Echoes is available" · "This page is vX; the server now runs vY. Reload to
+update — your settings, saves and records stay in this browser." · **Reload**
+default focus · Back) and switches to it the moment the event arrives while
+open; elsewhere (the title after a session ended) one dialog offers Reload /
+Not now, never over a single-player run. After a graceful shutdown (4007) or a
+lost server the client re-asks for 30 s (every 2 s) so the dialog arrives by
+itself. Reload clears the stored net session (its room belonged to the old
+build). A join into an OLDER room says so ("its host needs to reload").
+
+### 14.6 Harness and ports
+
+DEPLOY ports: net 7920–7939, preview / TLS proxy 4390–4399. Probes (all start
+and kill their own servers; `dist-DEPLOY` = `npx vite build --outDir
+dist-DEPLOY`):
+
+| Probe | Gate |
+|---|---|
+| `node tools/gntDEPLOY-zeroconf.mjs --url <page> [--guests 2] [--insecure] [--expect <ws url>] --tag <t>` — fresh browser contexts, real clicks, host + guests join with zero settings | GD.2 / GD.3 / GD.4 |
+| `node tools/gntDEPLOY-tls.mjs --port 4392 --to <server port>` — a self-signed https + wss reverse proxy (Caddy stand-in) | GD.3 |
+| `node tools/gntDEPLOY-settings.mjs --dist dist-DEPLOY --port 7928` | GD.1 |
+| `node tools/gntDEPLOY-hardening.mjs --dist dist-DEPLOY --port 7922` | GD.5 / GD.6 |
+| `node tools/gntDEPLOY-redeploy.mjs --dist dist-DEPLOY --port 7927 --mode graceful\|crash` | GD.7 |
+| `node tools/gntDEPLOY-sp.mjs --url http://127.0.0.1:5199/` | GD.9 |
+
+### DEPLOY gates (GD.*)
+
+- **GD.1 Address rules**: a fresh profile resolves the page's origin
+  (`source: 'site'`, `net.serverUrl === ''`); Settings ▸ Network shows
+  "Automatic (this site) — `<url>`" and a disabled Reset to automatic; a typed
+  address saves on Enter, is used at once, persists and wins after a reload;
+  Reset to automatic returns to the site at once and after a reload; `?net=`
+  wins over a saved address and Settings says so; a wrong saved address →
+  unreachable panel naming it + Use this site's server → online; http:// is
+  refused with the unchanged copy; a v0.5.117 blob holding the old default
+  boots automatic (loadReport `ok`, other settings kept), one holding another
+  address keeps it, and the migration runs once; a file:// page's boot card
+  says `npm run serve`.
+- **GD.2 One-process deploy**: the production build behind `node
+  server/index.mjs --static <dist>` (and `npm run serve`): a host + 2 guests
+  in fresh profiles open the plain URL, host / join by code / start with ZERO
+  settings; guests in game and synced; `net.serverUrl` still `''`
+  everywhere; 0 page errors.
+- **GD.3 HTTPS**: the same through a TLS reverse proxy — the page resolves
+  `wss://<host>/echoes` by itself (Origin `self` passes through the proxy).
+- **GD.4 Dev / preview parity**: `vite preview --host` with `ECHOES_NET_PORT`
+  and `npm run net`: a second profile joins via the LAN Network URL with zero
+  settings; with no session server the proxy answers 502 + one hint line and
+  the page shows the unreachable panel with the `npm run net` copy.
+- **GD.5 Static serving**: MIME table incl. .wasm/.mjs; fallback 200 vs asset
+  404; index no-cache, hashed assets immutable, version.json no-cache; 304;
+  HEAD; 405; gzip and br decompress to the exact file; a 20 MB file streams,
+  206 / 416; 13 traversal attempts never leak a file outside the root;
+  `/health` intact.
+- **GD.6 Hardening**: a foreign Origin 403, `self` / listed / no-Origin 101;
+  the (cap+1)-th socket from one client IP 429, another IP 101, a closed
+  socket frees its slot, direct loopback exempt; the admin API 403 through a
+  proxy; 2 MB frame → 1009; control flood → 1008.
+- **GD.7 Redeploy**: host + guest in game on build A; the server restarts
+  with build B (graceful 4007 and crash) → both pages back on the title and
+  "A new version of Echoes is available" appears by itself within 5 s of the
+  restart (Reload focused); Reload → build B (new version and entry chunk);
+  Not now + Multiplayer → the update panel (Reload focused, Esc leaves, no
+  "Can't reach", no bare version_mismatch); after Reload both play again on B.
+- **GD.8 README**: "Host it on a server" (Node install, build, `npm start`,
+  Caddyfile, nginx, systemd unit, firewall, how players join, updating,
+  options) — every command that can run on the build machine works as written
+  (`npm run serve`, `npm start -- --host 127.0.0.1`, `/health`); the
+  Multiplayer section never tells guests to type a server address for the
+  common case.
+- **GD.9 No regressions**: single-player on a page with NO session server
+  makes zero `/echoes` sockets through title → New Game → portal → room 1 →
+  reward; smoke exit 0; the §6.2 core loop; `?net=` harness probes
+  (gntM5b-ui, gntM5b-ui2, gnt-M5a-netbench, gntCAMPAIGN-net) pass on the new
+  build; the 9 Node goldens match.
+
+## 15. Revision log — DEPLOY (2026-09-26)
+
+| # | What changed | Where |
+|---|---|---|
+| 1 | Address resolution ?net= > saved > VITE_NET_URL > site > local; `net.serverUrl` default `''`; one-time legacy migration | §14.1, src/net/address.js, lobbyClient.js, session.js |
+| 2 | Settings ▸ Network Automatic row + Reset to automatic; Enter commits text rows | §14.1, src/ui/menu/tabs/network.js |
+| 3 | Unreachable copy per source, Use this site's server, invite line, file:// boot card | §14.1, mpmenu.js, lobby.js, index.html |
+| 4 | Vite dev + preview proxy /echoes, version.json | §14.2, vite.config.js |
+| 5 | `--static`, `npm run serve` / `npm start` | §14.3, server/static.mjs, server.mjs, index.mjs, package.json |
+| 6 | `--origins`, `--max-per-ip`, admin behind proxies, half-close fix | §14.4, server.mjs, admin.mjs, ws.mjs |
+| 7 | Update detection + prompt, redeploy watch | §14.5, lobbyClient.js, src/ui/net/update.js, mpmenu.js, mpjoin.js |
+| 8 | Probes, ports, gates GD.1–GD.9 | §14.6, §6.3, docs/TESTING.md DEPLOY |

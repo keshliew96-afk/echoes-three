@@ -1253,3 +1253,64 @@ docs/gauntlet/build-CAMPAIGN.md.
   - `tools/gntCAMPAIGN-leak.mjs` / `tools/gntCAMPAIGN-warm.mjs` — the leak
     hunt's diagnostics (scene census diff; GL geometries alive in campaign 2
     that were not in campaign 1).
+
+### DEPLOY — hosted multiplayer, zero-config join (2026-09-26, owner DEPLOY)
+
+Design + gates: docs/gauntlet/PLAN.md §14 (GD.1–GD.9). Evidence:
+docs/gauntlet/build-DEPLOY.md.
+
+- **What changed for every harness.** The multiplayer address is automatic:
+  `?net=` > a saved `net.serverUrl` > `VITE_NET_URL` > the page's own origin
+  (`ws(s)://<host>/echoes`) > `ws://127.0.0.1:7800/echoes` (file://, Node).
+  **Probes that pass `?net=` (every M5a / M5b / CAMPAIGN probe) behave exactly
+  as before.** A page WITHOUT `?net=` on the dev server (5199) now reaches
+  `ws://127.0.0.1:5199/echoes`, which Vite proxies to 127.0.0.1:7800 — so a
+  probe that wants "no server" on 5199 must not have a session server on
+  7800 (nobody may: 7800 is the player default), and a probe that wants a
+  server must pass `?net=` with its own port. Nothing connects until
+  Multiplayer is opened (single-player makes zero `/echoes` sockets).
+- **Debug API**: `__echoes.net.addressInfo()` → `{ url, source: 'param' |
+  'saved' | 'build' | 'site' | 'local', auto, site, https, file, skipped,
+  saved, param }`; `__echoes.net.updateInfo` (`{ latest, mine, via }` once a
+  newer build was seen, else null); `__echoes.net.siteUrls`;
+  `net.serverUrl = ''` returns to automatic. Settings: `net.serverUrl` default
+  `''` (automatic), marker `net.serverUrlV` (1 = the ≤ v0.5.117 default was
+  migrated). Net event `update_available`.
+- **Server**: `node server/index.mjs --static <dist>` serves the build on the
+  WebSocket's port; `--origins '*'|self|<origins>`, `--max-per-ip n`
+  (default 16, loopback exempt), `--build v`. `/health` adds `build`,
+  `static`, `siteUrls`, `origins`, `maxPerIp`; `welcome` adds `latestBuild`,
+  `latestEntry`, `siteUrls`. `createEchoesServer({ static, origins,
+  maxPerIp, build })` in-process for probes. `npm run serve` (build + serve on
+  0.0.0.0:7800, `--origins self`) and `npm start` are PLAYER commands — a
+  probe passes `--port` (`npm run serve -- --port <yours>`) and remembers that
+  `npm run serve` rebuilds `dist/`.
+- **Build**: every production build now contains `version.json` (`{ name,
+  version, entry, builtAt }`).
+- **Ports**: DEPLOY net 7920–7939, preview / TLS proxy 4390–4399; deploy
+  critic net 7940–7949, preview 4334–4339.
+- **Probes** (each starts and kills its own servers; build first with `npx vite
+  build --outDir dist-DEPLOY`):
+  - `tools/gntDEPLOY-zeroconf.mjs --url <page> [--guests 2] [--insecure]
+    [--expect <ws url>] --tag <t>` — fresh browser contexts (own storage),
+    real clicks: host → Host a Game, guests → Join by Code → Ready, host →
+    Start; asserts `source: 'site'`, `net.serverUrl === ''`, in game +
+    synced, 0 page errors (GD.2 / GD.3 / GD.4). Serve the page with `node
+    server/index.mjs --static dist-DEPLOY --port <p> [--origins self]`, or
+    `vite preview --outDir dist-DEPLOY --port <p> --host` with
+    `ECHOES_NET_PORT=<q>` + `node server/index.mjs --port <q>`.
+  - `tools/gntDEPLOY-tls.mjs --port <https port> --to <server port>` — the
+    https + wss reverse proxy (self-signed, Host preserved, X-Forwarded-*):
+    open `https://127.0.0.1:<https port>/` with `--insecure` (GD.3).
+  - `tools/gntDEPLOY-settings.mjs --dist dist-DEPLOY --port <p>` — Settings ▸
+    Network automatic view, custom address persists + wins, reset, wrong
+    saved address, `?net=` precedence, validation, legacy blobs, file://
+    (GD.1).
+  - `tools/gntDEPLOY-hardening.mjs --dist dist-DEPLOY --port <p>` — static
+    serving + origins + per-IP cap + admin behind proxy + size / flood limits
+    (GD.5 / GD.6).
+  - `tools/gntDEPLOY-redeploy.mjs --dist dist-DEPLOY --port <p> --mode
+    graceful|crash` — build B = A with a new entry name and version 0.5.999;
+    the stale pages' update dialog / panel and the reload onto B (GD.7).
+  - `tools/gntDEPLOY-sp.mjs --url http://127.0.0.1:5199/` — zero `/echoes`
+    sockets through a single-player room, then the unreachable copy (GD.9).
