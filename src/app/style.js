@@ -135,9 +135,12 @@ body.ap-hide-game #dmg-num-layer, body.ap-hide-game #nd-fizzle-layer { visibilit
     linear-gradient(90deg, ${P.voidCharcoal}F2 0%, ${P.voidCharcoal}D9 24%, ${P.voidCharcoal}66 44%, ${P.voidCharcoal}00 62%),
     linear-gradient(0deg, ${P.voidCharcoal}B3 0%, ${P.voidCharcoal}00 22%);
 }
+/* 'safe center': a column taller than the window starts at its top padding
+   instead of spilling above the viewport (the logo sat at y -0.1 at 1024x576
+   with a save — fix-M1-r3 MENU-R3-F3). */
 .ap-title .ap-title-col {
   position: absolute; left: ${px(120)}; top: 0; bottom: 0;
-  display: flex; flex-direction: column; justify-content: center;
+  display: flex; flex-direction: column; justify-content: safe center;
   gap: ${px(34)}; padding: ${px(40)} 0 ${px(110)};
 }
 .ap-logo { display: flex; flex-direction: column; align-items: flex-start; gap: ${px(6)}; }
@@ -162,8 +165,11 @@ body.ap-hide-game #dmg-num-layer, body.ap-hide-game #nd-fizzle-layer { visibilit
   border: max(2px, ${px(2)}) solid ${P.warmGrey}66; border-radius: ${px(14)};
   box-shadow: 0 ${px(6)} ${px(18)} #00000080;
 }
+/* At most two caption lines (the Continue save line; the slot name comes last,
+   so a long name is what an ellipsis trims — the full line is the aria-label). */
 .ap-mbtn .ap-mcap {
   font-size: ${px(22)}; font-weight: 500; letter-spacing: 0.02em; color: ${INK_DIM}; margin-top: ${px(2)};
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
 }
 .ap-mbtn.ap-focus .ap-mcap { color: ${P.bone}; }
 .ap-mbtn.ap-focus::before {
@@ -172,9 +178,12 @@ body.ap-hide-game #dmg-num-layer, body.ap-hide-game #nd-fizzle-layer { visibilit
   background: ${P.hearthAmber}; transform: rotate(45deg); border-radius: ${px(2)};
 }
 .ap-mbtn { position: relative; }
+/* Control hints + version in the bottom-RIGHT corner (the Hades / Celeste
+   prompt corner), clear of the menu column at every window size: under the
+   column they overlapped the Exit row at 1024x576 with a save (MENU-R3-F3). */
 .ap-title-foot {
-  position: absolute; left: ${px(120)}; right: ${px(40)}; bottom: ${px(34)};
-  display: flex; align-items: center; gap: ${px(26)}; flex-wrap: wrap;
+  position: absolute; right: ${px(48)}; bottom: ${px(34)}; max-width: calc(100vw - ${px(700)});
+  display: flex; align-items: center; justify-content: flex-end; gap: ${px(26)}; flex-wrap: wrap;
   font-size: ${px(22)}; color: ${INK_DIM};
 }
 
@@ -380,12 +389,24 @@ p.ap-note.ap-warn { color: ${P.bone}; }
   .ap-tabwrap { flex-basis: 100%; }
 }
 
-/* Short windows: the title stack tightens (type floors unchanged). */
+/* Short windows: the title stack tightens (type floors unchanged). The hints
+   live in the bottom-right corner, so the column may run close to the bottom. */
 @media (max-height: 700px) {
-  .ap-title .ap-title-col { gap: ${px(22)}; padding-bottom: ${px(90)}; }
+  .ap-title .ap-title-col { gap: ${px(22)}; padding-bottom: ${px(56)}; }
   .ap-logo-word { font-size: ${px(104)}; }
   .ap-menu { gap: ${px(9)}; }
   .ap-mbtn { min-height: ${px(58)}; padding-top: ${px(5)}; padding-bottom: ${px(5)}; }
+}
+/* 1024x576-class windows: seven title rows (Continue with its two-line save
+   line, Multiplayer, Records) fit between the top edge and the hint band — the
+   column ends above the hints' top even though they sit to the right; hit
+   targets stay >= 42 CSS px, type sizes unchanged. */
+@media (max-height: 620px) {
+  .ap-title .ap-title-col { gap: ${px(16)}; padding-top: ${px(28)}; padding-bottom: ${px(78)}; }
+  .ap-logo { gap: ${px(3)}; }
+  .ap-logo-word { font-size: ${px(80)}; }
+  .ap-menu { gap: ${px(6)}; }
+  .ap-mbtn { min-height: ${px(56)}; }
 }
 `;
 

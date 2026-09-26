@@ -29,12 +29,14 @@ function ago(iso) {
   return `${Math.round(s / 86400)} d ago`;
 }
 
+// "Level I · The Hollow Wood · Room 1 · just now · Autosave": where and when
+// first, the slot name last — the caption is clamped to two lines (a 32-char
+// slot name is what an ellipsis trims; the aria-label keeps the full line).
 function slotCaption(meta) {
   if (!meta) return '';
   const m = meta.meta || meta;
   const parts = [];
   const name = (meta.slot && meta.slot.name) || meta.name;
-  if (name) parts.push(name);
   // CAMPAIGN (PLAN §12.8): "Level II · The Sunken Mill · Room 3"; a save on
   // the level-transition card reads "Level I cleared".
   const lv = m.level ?? m.act;
@@ -44,6 +46,7 @@ function slotCaption(meta) {
   else if (m.mode === 'camp') parts.push('Camp');
   const when = ago(meta.savedAt || (meta.meta && meta.meta.savedAt));
   if (when) parts.push(when);
+  if (name) parts.push(name);
   return parts.join(' · ');
 }
 
