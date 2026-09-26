@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "net": "node server/index.mjs"
+    "net": "node server/index.mjs",
+    "serve": "vite build && node server/index.mjs --static dist --host 0.0.0.0 --origins self",
+    "start": "node server/index.mjs --static dist --host 0.0.0.0 --origins self"
   },
   "dependencies": {
     "three": "^0.185.1"
