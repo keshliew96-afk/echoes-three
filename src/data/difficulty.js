@@ -3,14 +3,15 @@
 // the wave director (sim/run.js, sim/waves.js) and may add fields, never
 // change the numbers without a dated BUILD_BRIEF tuning note.
 //
-//   T(act)    = ACT_TIER[act]                    1.00 / 1.15 / 1.75
+//   T(act)    = ACT_TIER[act]                    1.00 / 1.60 / 2.80 (CAMPAIGN)
 //   R(room)   = 1 + ROOM_SLOPE × (room − 1)       rooms 1..6 (combat), slope 0.16
 //   hpMul     = T × R × CHALLENGE[c].hp
 //   dmgMul    = (1 + 0.5 × (T × R − 1)) × CHALLENGE[c].dmg
 //   budget    = 4.0 × T × R   threat points per kill_all wave (defend: × 1.25)
 //   elite     = ELITE[act](room)
 //   interval  = 480 ticks × (1 − 0.04 × (room − 1)) × INTERVAL_ACT[act]
-//   bossHp    = 2400 × T ; bossDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1), slope 0.7
+//   bossHp    = 2400 × T × STAG_HP_LEVEL[act] (1 / 1.35 / 1)
+//   bossDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1), slope 0.9 (CAMPAIGN)
 //   boss adds = the act tier alone (hpMul T, dmgMul 1 + BOSS_DMG_SLOPE(T − 1))
 //               — the Stag and its adds scale together (sim/run.js)
 //
@@ -42,6 +43,17 @@
 // every band check passes, 0 stuck; seeds 1–20 wins 20/20 · 19/20 · 13/20
 // (Act III = the v0.5.39 rate), 0 stuck, kill_all-only ρ time/damage ≥ 0.886
 // in every act (docs/gauntlet/build-M4c.md, tools/gntM4c-band.mjs).
+//
+// TUNING NOTE (CAMPAIGN, 2026-09-25 — the binding dated note in BUILD_BRIEF
+// §23.2, PLAN §12.10): in the linear campaign Levels 2 and 3 meet the build
+// CARRIED out of the previous level (4 skills, 19/32 sockets at the Level 1
+// -> 2 card, 32/32 at 2 -> 3), not M4c's fresh build. Only constants moved:
+// ACT_TIER 1.00/1.15/1.75 -> 1.00/1.60/2.80, BOSS_DMG_SLOPE 0.7 -> 0.9,
+// STAG_HP_LEVEL [1, 1.35, 1] (new: the Level 2 Stag stays a spike), and the
+// starter grant for a Level-N start (src/data/campaign.js STARTER_GRANT).
+// Measured: carried campaign seeds 1-5 clears 5/5 · 5/5 · 4/5, L2 start 5/5 ·
+// 4/5, L3 start 3/5, every band check true (tools/gntCAMPAIGN-camprun.mjs).
+// Gate G4a.5 compares this module with the note: tools/gntfixM4a3-g4a5.mjs.
 //
 // Pure module. The ?room= harness (no run, no act) never calls this: it keeps
 // the legacy §11 composition exactly (PLAN gate G4a.6).

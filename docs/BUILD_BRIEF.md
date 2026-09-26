@@ -1191,6 +1191,10 @@ polarity of the §19.3 fix-round-2 note applies to all three):
 
 ### 23.2 Difficulty curve (src/data/difficulty.js is the implementation)
 
+Binding numbers: the LATEST dated tuning note below — since 2026-09-25 the
+CAMPAIGN note (level tiers, Stag, adds, elite, Waystone, starter grant and the
+measured band). The formulas and tables before it are the curve's history.
+
 `R = 1 + 0.08 × (room − 1)` (combat rooms 1–6); `hpMul = T·R`; `dmgMul = 1 +
 0.5·(T·R − 1)`; **wave budget** `4.0·T·R` threat points (defend waves × 0.8);
 elite chance Act I 0 (rooms 1–3) then 0.08, Act II `0.12 + 0.02(r − 1)`, Act III
@@ -1293,6 +1297,95 @@ victories 5/5 · 4/5 · 3/5, no room stuck, ρ time/damage 0.943/0.943 · 1/1 ·
 medians I < II < III, max combat-room median 53 s. Seeds 1–20: 20/20 · 19/20 ·
 13/20 (Act III at the v0.5.39 rate), 0 stuck. Relaxed 10/10/10, harrowing
 10/9/1 (seeds 1–10), 0 stuck (evidence: docs/gauntlet/build-M4c.md).
+
+**Tuning note (CAMPAIGN, 2026-09-25) — retuned for the linear campaign's
+carried build (PLAN §12.10, §24); this table is now binding.** M4c tuned
+Levels 2 and 3 for a FRESH build (one act per run). In the linear campaign
+every Begin Run meets Level 2 with the build it carried out of Level 1 — 4
+skills, 19 / 32 sockets filled, 34 Glint at the Level 1 → 2 card — and Level
+3 with 4 skills, 32 / 32 sockets (+ 2–3 on the bench) and ~118 Glint (default
+autopilot, seeds 1–5: skills and sockets alike on every seed, Glint the
+median). On M4c's tiers that carried build flattened the curve:
+re-measured with M4c's constants
+(`captures/gntfixM4a3-camprun-from1-M4cTiers-node.json`) the campaign won 15
+of 15 levels, Level 2's party damage
+no longer rose across its rooms (ρ 0.543 < 0.6, room medians
+157 / 63 / 291 / 398 / 359 / 266), Level 3 room 3 sat below Level 2 room 3 (256
+vs 291) and the Level 2 Stag fell in 24.6 s. Retuned on the same deterministic
+default-build autopilot, both ways a level is entered — carried from Level 1
+AND started at Level N with the starter grant (`tools/gntCAMPAIGN-camprun.mjs
+--from 1|2|3 --seeds 1-5`). Only constants moved, the formula's shape did not
+(`R = 1 + 0.16(room − 1)`, `hpMul = T·R`, `dmgMul = 1 + 0.5(T·R − 1)`,
+`budget = 4·T·R`); the names are the `src/data/difficulty.js` /
+`src/data/campaign.js` exports:
+
+| constant | M4c | CAMPAIGN |
+|---|---|---|
+| level tier T (Level 1 / 2 / 3) — `ACT_TIER` | 1.00 / 1.15 / 1.75 | **1.00 / 1.60 / 2.80** |
+| Stag HP — `STAG_BASE_HP · T · STAG_HP_LEVEL[level]` | 2400·T | **2400·T·S, S = 1 / 1.35 / 1** (the Level 2 Stag stays a spike over a carried build) |
+| Stag + adds damage slope k in 1 + k(T − 1) — `BOSS_DMG_SLOPE` | 0.7 | **0.9** (Level 1 unaffected: T = 1) |
+| starter grant for a start AT Level N > 1 — `STARTER_GRANT` | — (no Level-N start) | **the grant table below** |
+
+Everything else holds: room slope 0.16, defend budget × 1.25, the elite
+chances, the wave interval, Waystone 150·√T, the threat costs and the wave
+fill; Level 1 is exactly M4c's Act I. The challenge setting multiplies every
+HP and damage number below (relaxed × 0.75 HP / × 0.7 damage, harrowing ×
+1.25 / × 1.3). Binding table, standard challenge (hpMul / dmgMul / kill_all
+budget — a defend room's budget is × 1.25):
+
+| room | Level 1 | Level 2 | Level 3 |
+|---|---|---|---|
+| 1 | 1 / 1 / 4 | 1.6 / 1.3 / 6.4 | 2.8 / 1.9 / 11.2 |
+| 2 | 1.16 / 1.08 / 4.64 | 1.856 / 1.428 / 7.424 | 3.248 / 2.124 / 12.992 |
+| 3 | 1.32 / 1.16 / 5.28 | 2.112 / 1.556 / 8.448 | 3.696 / 2.348 / 14.784 |
+| 4 | 1.48 / 1.24 / 5.92 | 2.368 / 1.684 / 9.472 | 4.144 / 2.572 / 16.576 |
+| 5 | 1.64 / 1.32 / 6.56 | 2.624 / 1.812 / 10.496 | 4.592 / 2.796 / 18.368 |
+| 6 | 1.8 / 1.4 / 7.2 | 2.88 / 1.94 / 11.52 | 5.04 / 3.02 / 20.16 |
+
+| per level | Level 1 | Level 2 | Level 3 |
+|---|---|---|---|
+| tier T | 1 | 1.6 | 2.8 |
+| Stag HP | 2400 | 5184 | 6720 |
+| Stag damage × | 1 | 1.54 | 2.62 |
+| adds HP × | 1 | 1.6 | 2.8 |
+| adds damage × | 1 | 1.54 | 2.62 |
+| Waystone HP | 150 | 190 | 251 |
+| elite chance | 0 / 0 / 0 / 0.08 / 0.08 / 0.08 | 0.12 / 0.14 / 0.16 / 0.18 / 0.2 / 0.22 | 0.2 / 0.23 / 0.26 / 0.29 / 0.32 / 0.35 |
+| kill_all wave interval, ticks (room 1 → 6) | 480 → 384 | 456 → 365 | 432 → 346 |
+
+**Starter grant** (PLAN §12.4; `STARTER_GRANT` in `src/data/campaign.js`).
+Every start AT Level N > 1 — the Level Select's campaign start or a
+single-level harness run — begins from the fresh default build (Mending
+Bolt + Swift Mend, 0 nodes) and adds, before any combat and in this order
+from the run RNG: `skills` draws from the draft system's live skill pool (≤ 4
+owned), `nodes` draws in pairs by the clear-spoils rule (commons + rares of the
+usable pool, provenance `grant`, the shared auto-fill after every pair), then
+`legendaries` draws from the legendary band, then Glint. It is shown on the
+~2 s setting-out card and matches the build a carried campaign holds at that
+level's card:
+
+| start at | skills | nodes | legendaries | Glint | arrives with |
+|---|---|---|---|---|---|
+| Level 2 | 2 | 18 | 1 | 34 | 4 skills, 19 / 32 sockets filled, 34 Glint (= the carried Level 1 → 2 card) |
+| Level 3 | 2 | 30 | 2 | 60 | 4 skills, 32 / 32 sockets filled, 60 Glint (the carried card: 4 / 32 of 32 / ~118 Glint) |
+
+Measured band (re-measured at v0.5.103, headless Node sim, seeds 1–5,
+`captures/gntfixM4a3-camprun-from{1,2,3}-node.json`; the same numbers as the
+CAMPAIGN build at v0.5.93, docs/gauntlet/build-CAMPAIGN.md): **carried from
+Level 1** — clears 5/5 · 5/5 · 4/5; ρ time/damage 0.943/0.943 · 0.943/0.886 ·
+0.886/1; max combat-room median 45 / 55.7 / 80.6 s; 0 stuck; defend rooms above
+their neighbours; the Stag room above the late kill_all rooms on damage (its median vs the
+pooled kill_all rooms 5–6: 321 > 206 · 1273 > 724 · 2336 > 1922); per-room damage medians rise from level to level at equal room; every
+carry / restore / reset verdict true at every card. **Started at Level 2 with
+the grant** — 5/5 · 4/5, every band check true. **Started at Level 3 with the
+grant** — 3/5, every band check true. In page (the content critic, seeds 1–5,
+docs/gauntlet/critic-content-r3.md S12) the carried campaign won 5/5 · 5/5 ·
+5/5 with ρ ≥ 0.829; its per-room medians put the Level 2 Stag room's party
+damage level with room 6 on the carried path (1071 vs 1072 in the room-6
+kill_all rooms) while it passes the pooled rooms 5–6 check — the ceiling for a future retune of
+`STAG_HP_LEVEL[2]` / `BOSS_DMG_SLOPE`. Gate G4a.5 compares the running game
+with THIS table (`node tools/gntfixM4a3-g4a5.mjs`: difficultyTable, roomPlan per
+room, measured spawn hp / base hp, Stag and add hp, starter-grant events, ± 1 %).
 
 **Felt escalation (v0.5.1).** The table is necessary, not sufficient: in play,
 time-to-clear and party damage taken per room must rise across rooms 1–6 of

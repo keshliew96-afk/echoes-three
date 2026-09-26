@@ -1264,9 +1264,13 @@ baseline (ARCH files are never edited by builders).
 
 ### 4.2 Difficulty curve (src/data/difficulty.js)
 
-(v0.5.1 numbers below; the BINDING constants are the latest dated note in
-BUILD_BRIEF §23.2 — at M4c: T 1.00 / 1.15 / 1.75, slope 0.16, defend × 1.25,
-Stag 2400·T with damage 1 + 0.7(T − 1).)
+(v0.5.1 numbers below; the BINDING constants and table are the latest dated
+note in BUILD_BRIEF §23.2 — since 2026-09-25 the CAMPAIGN note: level tier T
+1.00 / 1.60 / 2.80, slope 0.16, defend × 1.25, Stag HP 2400·T·(1 / 1.35 / 1) =
+2400 / 5184 / 6720, Stag + adds damage 1 + 0.9(T − 1) = × 1 / 1.54 / 2.62, and
+the §12.4 starter grant; before it M4c: T 1.00 / 1.15 / 1.75, Stag 2400·T,
+damage 1 + 0.7(T − 1). G4a.5 compares the game with that note's tables:
+`node tools/gntfixM4a3-g4a5.mjs`.)
 `T = 1.00 / 1.35 / 1.75` per act · `R = 1 + 0.08 × (room − 1)` · `hpMul = T·R`
 · `dmgMul = 1 + 0.5·(T·R − 1)` · `budget = 4.0·T·R` threat points per wave
 (defend × 0.8) · elite chance I: 0 (rooms 1–3) / 0.08, II: 0.12 + 0.02(r−1),
@@ -1736,7 +1740,9 @@ A module passes only when every gate holds on the RUNNING game with numbers.
   each act uses its own layouts, roster, hazards, interactables, music theme
   and boss adds.
 - **G4a.5 Curve**: measured hpMul / dmgMul / budget / elite chance per room match
-  the §4.2 table ± 1%; strictly increasing across combat rooms within an act and
+  the binding table (§4.2: the latest dated note in BUILD_BRIEF §23.2 — the
+  CAMPAIGN note, incl. its Stag / adds / starter-grant rows) ± 1%
+  (`node tools/gntfixM4a3-g4a5.mjs`); strictly increasing across combat rooms within an act and
   across acts at equal room; spikes only at defend rooms and the boss.
 - **G4a.6 Legacy**: `?room=kill_all` keeps the legacy composition (golden trace
   unchanged).
@@ -2276,7 +2282,11 @@ clear-spoils rule: commons + rares of the usable pool, provenance `grant`),
 `glint`, then the shared auto-fill policy (§4.3) sockets them — the player can
 re-socket between rooms. Every start at level N > 1 — campaign or single-level
 harness — gets the grant, so the act runner measures exactly "a Level-N start".
-Numbers: §12.10.
+Numbers (binding: the CAMPAIGN note in BUILD_BRIEF §23.2, tuned per §12.10):
+Level 2 — 2 skills, 18 nodes, 1 legendary, 34 Glint (arrives with 4 skills and
+19 / 32 sockets filled, the build a carried campaign holds at the Level 1 → 2
+card); Level 3 — 2 skills, 30 nodes, 2 legendaries, 60 Glint (4 skills,
+32 / 32).
 
 ### 12.5 Level manager (presentation — `src/campaign/manager.js` + the arena's dressing lifecycle)
 
@@ -2390,7 +2400,11 @@ only — the §4.2 formula keeps its shape) so that BOTH (a) a carried
 default-autopilot campaign from Level 1 and (b) a Level-N start with the
 starter grant land every level inside the §4.2 band over seeds 1–5
 (`tools/gntCAMPAIGN-camprun.mjs`). Binding numbers: the dated CAMPAIGN note in
-BUILD_BRIEF §23.2.
+BUILD_BRIEF §23.2 — level tier T 1.00 / 1.60 / 2.80 (was 1.00 / 1.15 / 1.75),
+Stag HP 2400·T × `STAG_HP_LEVEL` 1 / 1.35 / 1, Stag + adds damage slope 0.9 (was
+0.7), the starter grant of §12.4; its per-room and per-level tables are what
+G4a.5 compares (`node tools/gntfixM4a3-g4a5.mjs`), its measured band is
+what GC.12 re-measures.
 
 ### 12.11 Harness
 
@@ -2496,3 +2510,4 @@ BUILD_BRIEF §23.2.
 | 7 | Difficulty retuned for carried builds + starter grant | §12.10, BUILD_BRIEF §23.2 |
 | 8 | Harness: `?level=N`, campaign cmds, `__echoes.campaign`, ports; gates GC.1–GC.13; G4a.4 / G4a.11 picker halves superseded | §6.1, §6.3, §6.4, §7, §12.11 |
 | 9 | Build notes (v0.5.91–0.5.93): records Lifetime rows per level; save lock refusal (`error: 'locked'`); GC.6 measured deterministically after one warm-up campaign (first-use caches); a dynamic box collider keeps its yaw verbatim (save round-trip identity) | §12.8, GC.6, src/sim/movement.js |
+| 10 | Round-3 fix (M4a, 2026-09-26, CONTENT-R3-F2): the CAMPAIGN retune's numbers — tiers, Stag HP factor, boss damage slope, starter grant, the per-room / per-level tables and the measured band — written into BUILD_BRIEF §23.2 as the dated CAMPAIGN note that §4.2, §12.10 and BUILD_BRIEF §24 cite; §4.2 / §12.4 / §12.10 / G4a.5 quote it; G4a.5 probe `tools/gntfixM4a3-g4a5.mjs` | §4.2, §12.4, §12.10, G4a.5, BUILD_BRIEF §23.2 |

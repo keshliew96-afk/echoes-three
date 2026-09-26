@@ -461,7 +461,17 @@ verdict (Spearman ρ ≥ 0.6, wins ≥ 3/3/2 of 5, no room live 180 s, defend an
 boss spikes, per-room damage medians I < II < III). Constants retuned
 2026-09-22 (BUILD_BRIEF §23.2 note): act tier 1.00 / 1.15 / 1.60, slope 0.12,
 defend × 1.25, Stag 2400·T — and retuned again by M4c for the corrected build:
-act tier 1.00 / 1.15 / 1.75, slope 0.16, Stag damage slope 0.7.
+act tier 1.00 / 1.15 / 1.75, slope 0.16, Stag damage slope 0.7 — and by the
+linear campaign for the carried build (BUILD_BRIEF §23.2 CAMPAIGN note, the
+binding table): level tier 1.00 / 1.60 / 2.80, Stag HP 2400·T × 1 / 1.35 / 1,
+Stag + adds damage slope 0.9, starter grant L2 {2 skills, 18 nodes, 1
+legendary, 34 Glint} / L3 {2, 30, 2, 60}. **G4a.5 probe**: `node
+tools/gntfixM4a3-g4a5.mjs [--url U] [--seed S] [--out f]` parses the latest
+dated note of §23.2 (per-room, per-level and starter-grant tables) and
+compares it ± 1 % with the running game — `content.difficultyTable`, a real
+`startCampaign` per level with `roomPlan` per room, measured spawn hp /
+base hp, the Stag's maxHp and its add phase, the `starter_grant` events;
+PASS = 0 mismatches, 0 page errors.
 
 **Real input.** `__echoes.content.advise()` = what the autopilot would press
 this tick (never applied); `__echoes.content.project(x, z)` = world → CSS
