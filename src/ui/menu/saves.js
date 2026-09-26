@@ -297,21 +297,29 @@ export function createSavesScreen(ctx) {
   // retargeting the panel; leaving the list hands the ring back to the
   // selected row, so ring and panel never disagree. A click on a row still
   // acts on exactly that row.
-  const HOVER_REST_MS = 120;
+  // Pointer events arrive frame-aligned and in bursts (gaps of 60-125 ms were
+  // measured on a steady path), so a rest must clearly outlast that; and a
+  // pointer whose last motion was heading INTO the detail panel (the ray of
+  // its motion meets the panel — "menu aim", as in cascading menus) is on its
+  // way to a panel button: a pause there must be longer still before the
+  // panel changes under it.
+  const HOVER_REST_MS = 180;
+  const HOVER_REST_AIM_MS = 450;
   const HOVER_REST_PX = 6;
   const trail = []; // pointer samples over the list: { t, x, y }
   let overSlot = null; // the row under the pointer (pointermove target)
-  let hoverCand = null; // { id, since } — hovered, not yet selected
+  let hoverCand = null; // { id, since, panel: DOMRect } — hovered, not yet selected
   let hoverRaf = 0;
   function cancelHover() {
     hoverCand = null;
     if (hoverRaf) cancelAnimationFrame(hoverRaf);
     hoverRaf = 0;
   }
-  function pointerRested(now) {
+  // Still (moved < HOVER_REST_PX) for the last `ms`?
+  function pointerRested(now, ms) {
     if (trail.length === 0) return true;
-    const from = now - HOVER_REST_MS;
-    let ref = null; // where the pointer was HOVER_REST_MS ago
+    const from = now - ms;
+    let ref = null; // where the pointer was `ms` ago
     for (let i = trail.length - 1; i >= 0; i--) {
       if (trail[i].t <= from) {
         ref = trail[i];
@@ -324,13 +332,30 @@ export function createSavesScreen(ctx) {
     }
     return true;
   }
+  // Was the pointer's last motion (its final ~150 ms of movement) aimed into
+  // the detail panel?
+  function aimedAtPanel(panel) {
+    if (!panel || trail.length < 2) return false;
+    const last = trail[trail.length - 1];
+    let prev = null;
+    for (let i = trail.length - 2; i >= 0; i--) {
+      prev = trail[i];
+      if (last.t - trail[i].t >= 150) break;
+    }
+    const dx = last.x - prev.x;
+    const dy = last.y - prev.y;
+    if (Math.hypot(dx, dy) < 8 || dx <= 0 || last.x >= panel.left) return false;
+    const y = last.y + (dy * (panel.left - last.x)) / dx; // where the ray crosses the panel's edge
+    return y >= panel.top - 24 && y <= panel.bottom + 24;
+  }
   function hoverTick() {
     hoverRaf = 0;
     if (!hoverCand || !open) return cancelHover();
     const row = rowEls.get(hoverCand.id);
     if (!row || !row.isConnected || document.activeElement !== row || overSlot !== hoverCand.id) return cancelHover();
     const now = performance.now();
-    if (now - hoverCand.since >= HOVER_REST_MS && pointerRested(now)) {
+    const need = aimedAtPanel(hoverCand.panel) ? HOVER_REST_AIM_MS : HOVER_REST_MS;
+    if (now - hoverCand.since >= need && pointerRested(now, need)) {
       const id = hoverCand.id;
       cancelHover();
       select(id);
@@ -341,7 +366,13 @@ export function createSavesScreen(ctx) {
   function armHover(id) {
     if (id === selectedId) return cancelHover();
     if (hoverCand && hoverCand.id === id) return;
-    hoverCand = { id, since: performance.now() };
+    let panel = null;
+    try {
+      panel = detailEl.getBoundingClientRect(); // once per candidate (a static layout while open)
+    } catch {
+      panel = null;
+    }
+    hoverCand = { id, since: performance.now(), panel };
     if (!hoverRaf) hoverRaf = requestAnimationFrame(hoverTick);
   }
   // Runs before the #app-ui root's hover-focus listener (bubble order), so a
@@ -352,7 +383,7 @@ export function createSavesScreen(ctx) {
       if (e.pointerType === 'touch') return;
       const t = performance.now();
       trail.push({ t, x: e.clientX, y: e.clientY });
-      while (trail.length > 2 && trail[1].t < t - 600) trail.shift();
+      while (trail.length > 2 && trail[1].t < t - 1000) trail.shift();
       const r = e.target && e.target.closest ? e.target.closest('[data-slot]') : null;
       overSlot = r ? r.dataset.slot : null;
     },

@@ -10,7 +10,9 @@
 //   Slot 3 -> Load crossing two rows, Export straight, Delete straight.
 // Pass = the slot acted on (lastLoad / download name / confirm title) is the
 // chosen row. Extra checks:
-//   preview   — resting on a non-selected row previews it in the panel (delay ms)
+//   preview   — resting on a non-selected row previews it in the panel (delay ms;
+//               approached moving right = aimed at the panel: the longer rest)
+//   previewBrowse — moving along the list onto a row and resting previews it
 //   ringBack  — crossing a row into the panel's blank area leaves the focus ring
 //               on the selected row (ring and panel agree)
 //   clickRow  — a click on a row loads exactly that row
@@ -39,6 +41,13 @@ try {
   page.on('pageerror', (e) => out.pageErrors.push(String((e && e.message) || e)));
   await page.evaluateOnNewDocument(() => {
     window.__gntDl = [];
+    window.__gntTrail = [];
+    document.addEventListener('pointermove', (e) => {
+      const r = e.target && e.target.closest ? e.target.closest('[data-slot]') : null;
+      const d = document.querySelector('.sv-detail .sv-dname');
+      window.__gntTrail.push({ t: Math.round(performance.now()), x: Math.round(e.clientX), y: Math.round(e.clientY), over: r ? r.dataset.slot : null, panel: d ? d.textContent : null });
+      if (window.__gntTrail.length > 600) window.__gntTrail.shift();
+    }, true);
     const ac = HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click = function () {
       if (this.download) {
@@ -124,6 +133,9 @@ try {
     { id: 'slot3-straight', row: 'manual-3', btn: 'sv-act-load', path: 'straight', n: 20, ms: 300 },
     { id: 'export-slot2-straight', row: 'manual-2', btn: 'sv-act-export', path: 'straight', n: 20, ms: 300 },
     { id: 'delete-slot2-straight', row: 'manual-2', btn: 'sv-act-delete', path: 'straight', n: 20, ms: 300 },
+    // a hesitant hand (or a stalled input stream): the 1 s path stops 300 ms
+    // ON another row (Slot 1) on its way to Load
+    { id: 'hesitate-300-on-slot1', row: 'manual-2', btn: 'sv-act-load', path: 'straight', n: 60, ms: 1000, pauseOn: 'manual-1', pauseMs: 300 },
   ];
   for (const tr of TRIALS) {
     let rec = null;
@@ -138,7 +150,15 @@ try {
         await sleep(700);
         const hovered = await panel();
         const b = await center(tr.btn);
-        await walk(PATHS[tr.path](r, b, tr.n), tr.ms);
+        await page.evaluate(() => { window.__gntTrail.length = 0; });
+        const pts = PATHS[tr.path](r, b, tr.n);
+        if (tr.pauseOn) {
+          const idx = await page.evaluate((pts, id) => pts.findIndex((p) => { const e = document.elementFromPoint(p.x, p.y); const row = e && e.closest && e.closest('[data-slot]'); return !!row && row.dataset.slot === id; }), pts, tr.pauseOn);
+          const k = idx >= 0 ? Math.min(pts.length - 1, idx + 2) : Math.floor(pts.length / 2);
+          await walk(pts.slice(0, k + 1), (tr.ms * (k + 1)) / pts.length);
+          await sleep(tr.pauseMs);
+          await walk(pts.slice(k + 1), (tr.ms * (pts.length - k - 1)) / pts.length);
+        } else await walk(pts, tr.ms);
         await sleep(60);
         const pre = { panel: await panel(), ring: await ring() };
         if (tr.id === 'critic-replica') await page.screenshot({ path: join(root, 'captures', `gntfixM23-mousepaths-${opt.tag}-${tr.id}-preclick.png`) });
@@ -156,6 +176,18 @@ try {
         let loadedPos = null;
         if (tr.btn === 'sv-act-load' && st.state === 'playing') { await sleep(150); loadedPos = await pos(); }
         rec = { ...tr, attempt, order, hovered, pre, confirm: c, acted, loadedPos, intendedPos: positions[tr.row], pass: acted === tr.row };
+        // pointer-event gaps the PAGE saw while over a row that is not the chosen one
+        rec.trailStats = await page.evaluate((row) => {
+          const T = window.__gntTrail;
+          let maxGapOther = 0;
+          let at = null;
+          for (let i = 1; i < T.length; i++) {
+            const g = T[i].t - T[i - 1].t;
+            if (T[i - 1].over && T[i - 1].over !== row && g > maxGapOther) { maxGapOther = g; at = { over: T[i - 1].over, x: T[i - 1].x, y: T[i - 1].y }; }
+          }
+          const panelFlip = T.find((p) => p.panel && !p.panel.startsWith(row === 'manual-2' ? 'Slot 2' : row === 'manual-3' ? 'Slot 3' : 'Slot 1'));
+          return { events: T.length, maxGapOverOtherRowMs: maxGapOther, at, firstPanelFlip: panelFlip || null };
+        }, tr.row);
         if (c) { await key('Escape'); await sleep(350); }
         if (tr.btn !== 'sv-act-load') { await key('Escape'); await sleep(300); }
       } catch (err) {
@@ -164,7 +196,7 @@ try {
       }
     }
     out.trials.push(rec);
-    log('trial', rec && { id: rec.id, hovered: rec.hovered, prePanel: rec.pre.panel, preRing: rec.pre.ring, acted: rec.acted, pass: rec.pass });
+    log('trial', rec && { id: rec.id, hovered: rec.hovered, prePanel: rec.pre.panel, preRing: rec.pre.ring, acted: rec.acted, pass: rec.pass, gapOverOtherRow: rec.trailStats && rec.trailStats.maxGapOverOtherRowMs });
   }
 
   // ---- preview: rest on a non-selected row -> the panel follows (delay)
@@ -177,8 +209,25 @@ try {
     const tA = Date.now();
     let seen = null;
     while (Date.now() - tA < 1500) { if ((await panel()) === 'Slot 1') { seen = Date.now() - tA; break; } await sleep(15); }
-    out.checks.preview = { before: sel0, after: await panel(), followedAfterMs: seen, pass: seen !== null && seen <= 400 };
+    // approached moving RIGHT (toward the panel: the longer, aimed rest applies)
+    out.checks.preview = { before: sel0, after: await panel(), followedAfterMs: seen, pass: seen !== null && seen <= 700 };
     log('preview', out.checks.preview);
+    // browsing DOWN the list: from Slot 1 onto Slot 2 vertically, then rest
+    {
+      const q1 = await center('sv-slot-manual-1');
+      const q2 = await center('sv-slot-manual-2');
+      const up = q2.y < q1.y;
+      await walk(PATHS.straight({ x: q1.x, y: q1.y }, { x: q2.x, y: q2.y }, 8), 120);
+      const tB = Date.now();
+      let seenB = null;
+      while (Date.now() - tB < 1500) { if ((await panel()) === 'Slot 2') { seenB = Date.now() - tB; break; } await sleep(15); }
+      out.checks.previewBrowse = { direction: up ? 'up' : 'down', after: await panel(), followedAfterMs: seenB, pass: seenB !== null && seenB <= 450 };
+      log('previewBrowse', out.checks.previewBrowse);
+      // back onto Slot 1 so the next checks start from it
+      await walk(PATHS.straight({ x: q2.x, y: q2.y }, { x: q1.x, y: q1.y }, 8), 120);
+      const tC = Date.now();
+      while (Date.now() - tC < 1500) { if ((await panel()) === 'Slot 1') break; await sleep(15); }
+    }
     // ringBack: from Slot 1 (now selected), cross Slot 2 fast into the panel's blank text area
     const r2 = await center('sv-slot-manual-2');
     const blank = await page.evaluate(() => { const d = document.querySelector('.sv-detail .sv-dl') || document.querySelector('.sv-detail'); const b = d.getBoundingClientRect(); return { x: b.x + b.width * 0.6, y: b.y + 6 }; });
