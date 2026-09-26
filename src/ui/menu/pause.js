@@ -52,16 +52,40 @@ const CSS = `
   border: 1px solid ${P.hearthAmber}66; border-radius: ${px(10)};
   padding: ${px(5)} ${px(12)}; background: ${P.voidCharcoal}AA;
 }
-.pz-pause .pz-items { display: flex; flex-direction: column; gap: ${px(10)}; overflow-y: auto; padding: ${px(4)}; }
+.pz-pause .pz-items {
+  display: flex; flex-direction: column; gap: ${px(10)}; overflow-y: auto; min-height: 0;
+  padding: ${px(6)} ${px(10)}; margin: 0 ${px(-10)};
+}
+/* A row is never squashed below its text (fix-M1-r3 MENU-R3-F1: seven rows in
+   a short window shrank to their min-height and the captions ran over the
+   plates). If the list still cannot fit, it scrolls and the focused row is
+   scrolled into view. */
 .pz-pause .pz-item {
   display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
-  gap: ${px(2)}; width: 100%; min-height: ${px(58)}; padding: ${px(8)} ${px(20)};
+  flex-shrink: 0; gap: ${px(2)}; width: 100%; min-height: ${px(58)}; padding: ${px(8)} ${px(20)};
   text-align: left;
 }
 .pz-pause .pz-lab { font-size: ${px(26)}; font-weight: 700; letter-spacing: 0.06em; }
-.pz-pause .pz-cap { font-size: ${px(22)}; font-weight: 500; letter-spacing: 0.02em; color: ${P.warmGrey}; }
+.pz-pause .pz-cap { font-size: ${px(22)}; font-weight: 500; letter-spacing: 0.02em; color: ${P.warmGrey}; white-space: normal; }
 .pz-pause .pz-item.ap-focus .pz-cap { color: ${P.bone}; }
 .pz-pause .pz-foot { display: flex; align-items: center; justify-content: center; gap: ${px(18)}; padding-top: ${px(4)}; }
+/* Short windows (1024x576 .. 1366x768): one line per row — the label on the
+   left, its caption right-aligned on the same line — on a wider plate, and no
+   ornament. Seven rows (Quit to Lobby in a campaign) fit a 576 px window with
+   every caption whole; type sizes and hit targets are unchanged. */
+@media (max-height: 760px) {
+  .pz-pause .pz-wrap { padding: ${px(24)}; }
+  .pz-pause .pz-plate { width: min(${px(820)}, 94vw); gap: ${px(12)}; padding: ${px(22)} ${px(30)} ${px(16)}; }
+  .pz-pause .pz-head { gap: ${px(4)}; }
+  .pz-pause .pz-head .ap-orn { display: none; }
+  .pz-pause .pz-items { gap: ${px(8)}; }
+  .pz-pause .pz-item {
+    flex-direction: row; align-items: center; justify-content: space-between; gap: ${px(24)};
+    min-height: ${px(56)}; padding: ${px(6)} ${px(20)};
+  }
+  .pz-pause .pz-lab { flex: 0 0 auto; }
+  .pz-pause .pz-cap { flex: 0 1 auto; min-width: 0; text-align: right; }
+}
 `;
 
 let styleInstalled = false;
