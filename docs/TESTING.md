@@ -1091,6 +1091,47 @@ whose root causes lived in other keys' files (minimal edits, listed here):
   (`tools/gntfixINT1-loadevent.mjs`; the page's load event fires at ~3.6 s) —
   pass `--timeout 180000`.
 
+**Round-3 fixes (INT fix builder, `gntfixINT3-*`, v0.5.114–0.5.116).**
+- *Boot splash on the first painted frame (J3-F2).* `index.html` holds a
+  static `#boot-splash` (ECHOES, ◆, a compositor-driven sweep bar, "Lighting
+  the hearth…") laid out rule-for-rule like the loading screen (`--ap-s` set
+  by an inline head script with `apScale`'s formula). main.js
+  `@gnt:INT-FIRST-PAINT` awaits one animation frame (+ a task; cap 1.5 s;
+  hidden tabs never wait) before the boot's long main-thread stretch, so a
+  cold browser paints the splash first; `@gnt:INT-WIRING` hands over — title
+  boots cut to the loading screen the rAF it is fully opaque (pixel-identical,
+  0 px rect deltas), menu-skip boots fade the splash after 2 rendered frames.
+  An uncaught error / failed script that leaves the splash unclaimed for 4 s
+  becomes "Echoes couldn't start." with the reason and a focused Reload.
+  Probe surface: `window.__echoesBootSplash.state` ({ released, releasedAt,
+  failed, errors }). **Harness note:** DOMContentLoaded / `load` now fire
+  BEFORE `window.__echoes` exists — poll for it (openEchoes does;
+  cert-capture's networkidle2 + settle is unaffected). Probe:
+  `node tools/gntfixINT3-boot.mjs <url> <tag> [--reps 3] [--legs static,frames,menuskip,fail]`
+  → first content frame, raw-world frames before the title (must be 0),
+  uncovered rAFs (0), hand-over rect deltas (0 px), the failure card.
+- *Setting-out saves described right (J3-F1)* — fixed by M2 (fix-M2-r3 F2,
+  `src/save/describe.js`); re-verified by `node tools/gntfixINT3-departsave.mjs
+  <url> <tag> --path real` (Level 1 cleared → Quit to Lobby → Level II → on the
+  card: autosave row, Load "Where", Slot 1 row, title Continue all read
+  "Setting out — Level II · The Sunken Mill"; Continue restores the card).
+- *A saved run is never silently replaced by a new game (J3-F3).* The two
+  autosave slots rotate PER GAME (`src/save/index.js pickAutoSlot`; game key =
+  the run seed, constant through a campaign): an autosave overwrites an empty
+  slot, else this game's older save, else a slot with no run in progress,
+  and only then another game's run in progress. Games that ended (victory,
+  defeat, Quit to Lobby) are remembered in `echoes.save.v1.endedRuns`; their
+  leftover autosaves are ordinary old saves again (loading one revives it).
+  The title's New Game over a run in progress asks first — "Start a new
+  game?" (the run stays in Load Game, named; default Start New Game) or, only
+  when both autosave slots hold other games' runs, "Replace a saved run?"
+  naming the older run (danger, default Keep My Run). `app.newGame()` (API /
+  harness) stays confirm-free; **tools that press the title's New Game with a
+  run in progress in the autosaves must answer that confirm.** Debug:
+  `__echoes.save.newGameImpact()`, `.autoSlotFor()`, `.endedRuns()`. Probe:
+  `node tools/gntfixINT3-newgame.mjs <url> <tag> [--legs critic,two,load,end,abandon,rotate,fresh] [--real 1]`
+  (`--real 1` waits the real 20 s autosave throttle instead of resetting it).
+
 ### CAMPAIGN — linear campaign (the user's CRITICAL REFACTOR, 2026-09-25, owner CAMPAIGN)
 
 Design + gates: docs/gauntlet/PLAN.md §12 (GC.1–GC.13). Evidence:
