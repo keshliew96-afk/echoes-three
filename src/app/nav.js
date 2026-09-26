@@ -208,6 +208,11 @@ export function createNav({ screens, root, onFullscreenToggle, isRecentFullscree
   root.addEventListener(
     'click',
     (e) => {
+      // The nav 'confirm' action presses the focused item with el.click() — an
+      // untrusted click. It is NOT mouse input: it must not flip the hint
+      // glyphs to keyboard/mouse after a gamepad A (or arm the title's
+      // mouse-only open guard after Enter), nor log a second response.
+      if (!e.isTrusted) return;
       const item = e.target && e.target.closest ? e.target.closest('[data-nav]') : null;
       if (!item) {
         const row = e.target && e.target.closest ? e.target.closest('.ap-row') : null;

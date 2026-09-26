@@ -271,6 +271,29 @@ the GPU-process categories and digests CrGpuMain. `app.backgroundHold()` is
 true while an app screen is open and a menu input came within 1.5 s — the
 arena's dressing pre-builder runs no main-thread slice then.
 
+**Menu order and short-window layouts** (gauntlet fix-M1-r3, v0.5.95+).
+Settings has ONE vertical ring in reading order: the SELECTED tab -> the tab's
+visual rows (rows = items whose centres share a band; Down/Up step one row and
+enter it at the item nearest in x; Left/Right move inside a row of buttons,
+e.g. an audio channel's Curve / Mute / Test) -> Reset (skipped while disabled)
+-> Back -> the selected tab; Up is the exact reverse, Tab / Shift+Tab and the
+D-pad walk the same ring, and the cursor never rests on an unselected tab.
+Probes: `node tools/gntfixM13-ring.mjs` (every tab x arrows / Tab / D-pad x
+1024x576 + 1600x900; `SIZES`, `TABS` env filters) and
+`tools/gntfixM13-tabland.mjs` (the critic's MENU-R3-F2 repro). The title's
+control hints + version sit in the bottom-RIGHT corner; `max-height: 620px`
+tightens the title column so seven rows (a save's Continue caption - slot name
+last, clamped to two lines - Multiplayer, Records) end above the hint band.
+The pause menu's rows never shrink below their text; windows <= 760 px tall
+lay each row out on one line (caption right-aligned).
+`node tools/gntfixM13-layout.mjs` audits the title (fresh / with a save),
+Settings > Display and the pause menu (camp, run, the boon draft reached by
+the player path) at 1024x576 ... 2560x1440: rects, text inside rows,
+scroll-box cuts, chrome vs items, lower-edge hit tests. `el.click()` from the
+nav `confirm` action is an untrusted click and is NOT mouse input (hint glyphs
+keep following the pad / keyboard; no second response is logged) -
+`tools/gntfixM13-padhints.mjs`.
+
 ### M3 — audio engine and mixer (Gauntlet W1, owner M3)
 
 **Locked until a gesture.** No AudioContext exists before the first
