@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // fix-M2-r3 (F2) probe — how saves taken on the two level cards are described.
-//   node tools/gntfixM23-cards.mjs [--url U] [--tag t]
+//   node tools/gntfixM23-cards.mjs [--url U] [--tag t] [--w 1600 --h 900]
 // 1. New Game, portal (E) -> Level I campaign, skip to the Stag, kill it ->
 //    the CLEAR card; pause > Save Game > Slot 1; title Continue caption.
 // 2. Load Slot 1 again (on the card), abandon -> camp, Level Select choose II
@@ -61,8 +61,27 @@ try {
     await page.evaluate(() => window.__echoes.app.quitToTitle());
     await page.waitForFunction(() => window.__echoes.app.state === 'title', { timeout: 20000 });
     await sleep(700);
-    return page.evaluate(() => { const e = document.getElementById('ap-title-continue'); return e ? e.innerText.replace(/\s+/g, ' ').trim() : null; });
+    return page.evaluate(() => {
+      const e = document.getElementById('ap-title-continue');
+      if (!e) return null;
+      // layout at this window size: caption lines, Exit reachable, logo on screen
+      const cap = [...e.querySelectorAll('*')].filter((n) => n.children.length === 0 && n.textContent.trim()).pop();
+      const cs = cap ? getComputedStyle(cap) : null;
+      const lh = cs ? parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2 : 1;
+      const ex = document.getElementById('ap-title-exit');
+      const eb = ex ? ex.getBoundingClientRect() : null;
+      const hit = eb ? document.elementFromPoint(eb.left + eb.width / 2, eb.bottom - 3) : null;
+      const logo = document.querySelector('.ap-logo');
+      return {
+        text: e.innerText.replace(/\s+/g, ' ').trim(),
+        captionLines: cap ? Math.round(cap.getBoundingClientRect().height / lh) : null,
+        exitBottomHit: hit ? (hit.closest('[id]') || hit).id : null,
+        exitInView: eb ? eb.bottom <= innerHeight : null,
+        logoTop: logo ? Math.round(logo.getBoundingClientRect().top * 10) / 10 : null,
+      };
+    });
   };
+  const titleOk = (c, re) => !!c && re.test(c.text) && c.exitBottomHit === 'ap-title-exit' && c.exitInView && c.logoTop >= 0 && c.captionLines <= 2;
 
   // 1. Level I clear card
   await key('Enter');
@@ -83,7 +102,7 @@ try {
   const s1 = await saveTo(1);
   log('clearCard', { card: card1, ...s1, pass: /^Level I cleared — next: Level II/.test(s1.row || '') && s1.row === s1.where });
   const cap1 = await titleCaption();
-  log('titleClear', { caption: cap1, pass: /Level I cleared/.test(cap1 || '') });
+  log('titleClear', { caption: cap1, pass: titleOk(cap1, /Level I cleared/) });
 
   // 2. back on the card, abandon, Level Select II -> setting-out card
   await page.evaluate(() => window.__echoes.save.load('manual-1'));
@@ -113,7 +132,8 @@ try {
   });
   log('legacyImport', legacy);
   const cap2 = await titleCaption();
-  log('titleDepart', { caption: cap2, pass: /Setting out · Level II · The Sunken Mill/.test(cap2 || '') && !/cleared/.test(cap2 || '') });
+  log('titleDepart', { caption: cap2, pass: titleOk(cap2, /Setting out · Level II · The Sunken Mill/) && !/cleared/.test(cap2.text) });
+  await page.screenshot({ path: join(root, 'captures', `gntfixM23-cards-${opt.tag}-title.png`) });
 
   // 4. title Load Game: every row + detail
   await navTo('ap-title-load');

@@ -716,6 +716,36 @@ frame compiles the run's shaders, ~90 ms) — wait on
 `save.lastLoad().hash === savedHash` instead (tools/gntfixM21-m2slots-robust.mjs
 is gntM2-sc-slots with only that wait changed); G2.1 covers the continuation.
 
+**fix-M2-r3 (v0.5.106–0.5.107).** *Mouse on the saves screen:* a hover moves
+the focus ring at once, but the detail panel (whose Load / Rename / Export /
+Delete act on the slot it shows) only follows a row the pointer RESTS on —
+< 6 px for 180 ms, or 450 ms when the pointer's last motion was aimed into
+the panel ("menu aim"); keyboard / gamepad focus selects at once, a row
+click acts on that row, and leaving the list from a merely-crossed row puts
+the ring back on the selected row. A probe that hovers a row and wants its
+details must REST there (≥ 0.5 s is safe) — a synthetic path that stops on
+a row for longer than that legitimately previews it. *Level cards:*
+`meta.campaign.card = { kind: 'clear'|'depart', from, to }`; the wording
+lives in src/save/describe.js ("Level I cleared — next: Level II · …" /
+"Setting out — Level II · …"; title "Level I cleared" / "Setting out ·
+Level II · …"; files without the card fall back on `meta.room`).
+*Thumbnails:* the encoder is an inline Blob worker (named `echoes-thumb`,
+no module fetch) prewarmed ~1.2 s after boot (`save.thumbWarm()`); a save
+waits ≤ 250 ms for its picture and a later one is attached when it lands
+(`save.thumbPending(slot)`, `save.thumbLog()`; a worker slower than 900 ms
+is bypassed by a main-thread encode, `lastThumb().via === 'main-fallback'`),
+so poll `save.thumb(slot)` rather than assuming the picture is there when
+`save()` resolves. The row shows "Saving…" the frame after the press and a
+press made while a save / confirm runs is replayed when it ends. Probes:
+`node tools/gntfixM23-mousepaths.mjs [--url U] [--tag t]` (13 mouse paths
+row → Load / Export / Delete incl. 3 s and a 300 ms stop on another row,
+preview, ring, row click, in-game Delete), `node tools/gntfixM23-cards.mjs`
+(clear / setting-out card saves, legacy files, title captions),
+`node tools/gntfixM23-savelat.mjs [--slow ms] [--reps n] [--midshot 1]`
+(press → "Saving…" → written → picture, 2nd press, F5; `--slow` delays the
+thumb worker), `node tools/gntfixM23-regress.mjs` (round trip, export/import,
+rename, autosave quit, overwrite, remove, run meta).
+
 ### M5a — network core: server, lobby, protocol, conditioner, netbench (Gauntlet W3, owner M5a)
 
 **Session server** (zero npm dependencies — node:http / crypto / os only):
