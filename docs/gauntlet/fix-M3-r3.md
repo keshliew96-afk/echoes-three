@@ -1,5 +1,5 @@
-STATUS: PARTIAL
-fix-M3-r3 (AUD3-F1 audio tab Up navigation) — checkpoint started 2026-09-26
+STATUS: COMPLETE
+VERDICT: AUD3-F1 fixed and verified (v0.5.102 fix, v0.5.103 checkpoint). The Up ORDER half was already fixed by M1 (8791f7d, v0.5.95, settings.js ring); the remaining clipping half (channel name + ring scrolled off on keyboard/pad focus) is fixed in src/ui/menu/tabs/audio.js: critic upwalk 1024 clipped stops 6 -> 0, upwalk 1600 4 -> 0, tab probe hidden 1024 7 -> 0 / 1600 0; gntfixM33-reveal production 222 fails -> 0, dev 0 fails at 800x450..1920x1080.
 
 ## Steps
 - [x] S0 resume: no checkpoint existed; HEAD 29955a4 (v0.5.97). M1 fixer commit 8791f7d (v0.5.95, settings.js walk() ring) already landed the row ORDER half of AUD3-F1.
@@ -12,3 +12,17 @@ fix-M3-r3 (AUD3-F1 audio tab Up navigation) — checkpoint started 2026-09-26
     production AFTER (dist-gntfixM33-after, :4303): 1024 + 1600 -> 0 / 0 / 0, TOTAL FAILS 0. dev AFTER: 800x450, 1024x576, 1280x720, 1366x768, 1600x900, 1920x1080 -> 0 fails each; hover keeps scrollTop (274 -> 274 etc.).
   Visual: captures/gntfixM33/shot-1024-au-sfx-level.png ("Sound Effects" name + full ring, was scrolled off in gntcaudio3-upwalk-1024-05.png), shot-1024-au-master-level.png (status + VOLUME shown), shot-1600-ap-tab-audio.png (help panel "Audio").
   Smoke gntfixM33-smoke exit 0 / 0 PAGEERROR; core loop tools/actions/gntfixM33-coreloop.json (?seed=7&menu=0): camp -> portal tick 516 -> combat room 1 tick 537 -> reward tick 701 (run_start, room_cleared, reward_offer), 0 PAGEERROR. Preview :4303 PIDs 82104/69892 and 75716/81144 killed.
+
+- [x] S3 REGRESSION after 7f3a6ca (v0.5.102): M1 probe tools/gntfixM13-ring.mjs (every Settings tab x arrows / Tab / d-pad x 1024 + 1600) 48 PASS, TOTAL FAILS 0 (log copy captures/gntfixM33/regress-m13ring.log; M1 evidence files backed up and restored). Smoke gntfixM33-smoke exit 0 / 0 PAGEERROR; core loop ?seed=7&menu=0: camp -> portal tick 900 -> combat room 1 tick 918 -> reward tick 1084 (run_start@912, room_cleared@1013, reward_offer@1013), version 0.5.102, 0 PAGEERROR. dist-gntfixM33-before/after removed; nothing listening on :4303.
+
+## Decisions
+- D1 Reveal runs on the screen manager focus event (emitted after its own scrollIntoView, carries the source) instead of scroll-margin set at focusin: focusin is not dispatched while the window is unfocused (background / headless pages), and precomputed margins go stale when the status line wraps or --ap-s changes. Pointer focus (source mouse) is excluded so hover never scroll-jumps (PLAN 3.3); keyboard, gamepad and api sources reveal.
+- D2 Reveal target = the whole channel group (what a shipped game keeps in view: the name of the thing you adjust, its value and its row of actions); first channel = list top (status + VOLUME), the toggle = its BEHAVIOUR heading to the list end. If the group cannot fit (tiny windows) the control row with its label, then the control alone, win.
+- D3 Entry into the Curve / Mute / Test row stays M1 walk() nearest-x (Mute sits under the slider centre; Curve and Test by left/right) - PLAN 3.3 focus model, consistent with every other tab.
+- D4 No edits to M1 files: the order defect root cause (screen-wide spatial wrap) was already fixed by M1 v0.5.95; the clipping is specific to this tab (the only one with the label ABOVE the control), so it is fixed in the tab.
+
+## Cross-owner edits
+- none (src/ui/menu/tabs/audio.js is M3; docs/TESTING.md M3 subsection only).
+
+## Files
+- src/ui/menu/tabs/audio.js, docs/TESTING.md (M3 subsection), tools/gntfixM33-reveal.mjs, tools/gntfixM33-shot.mjs, tools/gntfixM33-vite-before.mjs, tools/actions/gntfixM33-coreloop.json, captures/gntfixM33/*
