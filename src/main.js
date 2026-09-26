@@ -65,6 +65,30 @@ import { scriptedInput } from './sim/script.js';
 import { hashState, fnv1a64Hex } from './core/hash.js';
 import { canonicalJSON } from './core/canonical.js';
 
+// @gnt:INT-FIRST-PAINT begin (INT, gauntlet r3 J3-F2) — let the page paint
+// index.html's boot splash BEFORE the boot builds the world. Everything below
+// runs as one long main-thread stretch (stage, scenes, shader warm-up); on a
+// cold browser it used to start before the compositor had drawn anything, so
+// a player saw a blank page for 4-6 s. One animation frame (+ the task after
+// it, so the frame is committed) is all this costs; a hidden tab has nothing
+// to show and never waits, a compositor that is slow to start is waited on
+// for at most 1.5 s.
+await new Promise((resolve) => {
+  if (typeof document === 'undefined' || document.hidden || typeof requestAnimationFrame !== 'function') {
+    resolve();
+    return;
+  }
+  let done = false;
+  const go = () => {
+    if (done) return;
+    done = true;
+    resolve();
+  };
+  requestAnimationFrame(() => setTimeout(go, 0));
+  setTimeout(go, 1500);
+});
+// @gnt:INT-FIRST-PAINT end
+
 const params = new URLSearchParams(window.location.search);
 const flag = (name, def = true) => {
   const v = params.get(name);
@@ -670,6 +694,39 @@ window.addEventListener('keydown', (e) => {
   e.preventDefault();
   app.requestPause('keyboard');
 });
+// Boot splash hand-over (gauntlet r3 J3-F2). index.html paints a static
+// splash with the page's first frame; it stays on top until the app's own
+// loading screen is fully opaque beneath it (title boots: a pixel-identical
+// cut, only the bar turns from a sweep into the measured fill) or the first
+// world frames are drawn (menu-skip / harness boots: a short fade). The scene
+// is never shown raw before the loading screen covers it.
+(function releaseBootSplash() {
+  const bs = window.__echoesBootSplash;
+  if (!bs || typeof bs.release !== 'function') return;
+  const titleBoot = app.state === 'boot';
+  const loadingEl = titleBoot ? document.querySelector('[data-screen="loading"]') : null;
+  const t0 = performance.now();
+  let done = false;
+  let timer = 0;
+  const check = () => {
+    if (done) return;
+    let ready;
+    if (loadingEl) {
+      const cs = getComputedStyle(loadingEl);
+      ready = loadingEl.classList.contains('ap-in') && cs.display !== 'none' && parseFloat(cs.opacity) >= 0.99;
+    } else ready = app.frameCount >= 2;
+    // Never hold a working app behind the splash: 8 s is the loading screen's own cap.
+    if (ready || performance.now() - t0 > 8000) {
+      done = true;
+      clearInterval(timer);
+      bs.release({ fade: loadingEl ? 0 : 180 });
+      return;
+    }
+    requestAnimationFrame(check);
+  };
+  requestAnimationFrame(check);
+  timer = setInterval(check, 100); // rAF-less (hidden) tabs still hand over
+})();
 // @gnt:INT-WIRING end
 scheduler.start();
 

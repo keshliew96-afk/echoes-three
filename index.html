@@ -13,13 +13,186 @@
     html, body { width: 100%; height: 100%; overflow: hidden; background: #221F1B; }
     #app { width: 100%; height: 100%; position: relative; }
     canvas { display: block; }
+
+    /* BOOT SPLASH (gauntlet r3 J3-F2, owner INT). Painted with the page's
+       first frame — before the JS bundle has downloaded, parsed and built the
+       world — and kept on top until the app's own loading screen
+       (src/ui/menu/loading.js) is fully opaque underneath it (title boots) or
+       the first world frames are on screen (menu-skip boots), so a player never
+       sees a blank page or a raw scene frame. It mirrors the loading screen's
+       layout rule for rule (src/app/style.js .ap-loading, sizes in authored
+       1920x1080 px x --ap-s) so the hand-over is invisible; only the bar turns
+       from a sweep (the bundle is still arriving) into the measured fill. */
+    #boot-splash {
+      position: fixed; inset: 0; z-index: 2147483000; background: #221F1B;
+      font-family: system-ui, 'Segoe UI Variable Display', 'Segoe UI', ui-rounded, 'Nunito', 'Trebuchet MS', sans-serif;
+      color: #F4EFE6; -webkit-font-smoothing: antialiased;
+      font-size: calc(24px * var(--ap-s, 1)); line-height: 1.3;
+      user-select: none; -webkit-user-select: none; cursor: progress;
+      transition: opacity 160ms ease; will-change: opacity;
+    }
+    #boot-splash.bs-out { opacity: 0; pointer-events: none; }
+    #boot-splash .bs-col {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      display: flex; flex-direction: column; align-items: center; gap: calc(26px * var(--ap-s, 1));
+      width: min(calc(760px * var(--ap-s, 1)), calc(100vw - 32px));
+    }
+    #boot-splash .bs-logo { display: flex; flex-direction: column; align-items: center; gap: calc(6px * var(--ap-s, 1)); }
+    #boot-splash .bs-word {
+      font-size: calc(110px * var(--ap-s, 1)); font-weight: 800; letter-spacing: 0.2em; line-height: 1;
+      color: #F4EFE6; margin-left: 0.2em;
+      text-shadow: 0 calc(4px * var(--ap-s, 1)) 0 #221F1B, 0 0 calc(38px * var(--ap-s, 1)) #E8A23D44;
+    }
+    #boot-splash .bs-rule { display: flex; align-items: center; gap: calc(14px * var(--ap-s, 1)); color: #E8A23D; font-size: calc(22px * var(--ap-s, 1)); }
+    #boot-splash .bs-rule::before, #boot-splash .bs-rule::after {
+      content: ''; display: block; width: calc(120px * var(--ap-s, 1)); height: max(1px, calc(2px * var(--ap-s, 1)));
+      background: linear-gradient(90deg, #E8A23D00, #E8A23DAA, #E8A23D00);
+    }
+    #boot-splash .bs-bar {
+      position: relative; width: 100%; height: calc(12px * var(--ap-s, 1)); border-radius: 999px;
+      background: #4E463F; border: 1px solid #9C918655; overflow: hidden;
+    }
+    /* A compositor-driven sweep: it keeps moving while the main thread is busy
+       compiling the bundle (transform-only animation, own layer). */
+    #boot-splash .bs-bar > i {
+      position: absolute; top: 0; bottom: 0; left: 0; width: 34%; border-radius: 999px;
+      background: linear-gradient(90deg, #E8A23D00, #E8A23D 30%, #E8A23D 70%, #E8A23D00);
+      transform: translateX(-100%); will-change: transform;
+      animation: bs-sweep 1.25s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    }
+    @keyframes bs-sweep { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+    @media (prefers-reduced-motion: reduce) {
+      #boot-splash .bs-bar > i { animation: bs-breathe 2.4s ease-in-out infinite; transform: translateX(100%); }
+      @keyframes bs-breathe { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+    }
+    #boot-splash .bs-status { font-size: calc(24px * var(--ap-s, 1)); color: #C9C2B3; min-height: 1.3em; text-align: center; }
+    /* The loading screen's "Press any key" button is laid out (hidden) under
+       the status line; the same box keeps the column centred identically. */
+    #boot-splash .bs-press {
+      font: inherit; font-size: calc(30px * var(--ap-s, 1)); font-weight: 700; letter-spacing: 0.14em; line-height: normal;
+      padding: calc(12px * var(--ap-s, 1)) calc(28px * var(--ap-s, 1)); border-radius: 999px;
+      border: max(2px, calc(2px * var(--ap-s, 1))) solid #E8A23DAA; background: #2C2823; color: #F4EFE6;
+      visibility: hidden;
+    }
+    #boot-splash .bs-press.bs-on { visibility: visible; cursor: pointer; }
+    #boot-splash .bs-press:focus-visible { outline: none; border-color: #E8A23D; box-shadow: 0 0 0 max(2px, calc(3px * var(--ap-s, 1))) #E8A23D55; }
+    #boot-splash.bs-failed .bs-bar { visibility: hidden; }
+    #boot-splash .bs-detail { font-size: calc(22px * var(--ap-s, 1)); color: #9C9186; max-width: 100%; text-align: center; overflow-wrap: anywhere; }
+    @media (max-height: 620px) { #boot-splash .bs-logo { gap: calc(3px * var(--ap-s, 1)); } }
   </style>
+  <script>
+    // --ap-s (src/app/style.js apScale): the menu scale, needed by the boot
+    // splash before the app's stylesheet exists. Same formula, same property.
+    (function () {
+      function s() {
+        var v = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+        v = Math.min(1.5, Math.max(0.75, v));
+        document.documentElement.style.setProperty('--ap-s', String(Math.round(v * 10000) / 10000));
+      }
+      s();
+      window.addEventListener('resize', s);
+    })();
+  </script>
 </head>
 <body>
   <div id="app"></div>
+  <div id="boot-splash" role="status" aria-live="polite" aria-busy="true" aria-label="Echoes is loading">
+    <div class="bs-col">
+      <div class="bs-logo">
+        <div class="bs-word">ECHOES</div>
+        <div class="bs-rule">◆</div>
+      </div>
+      <div class="bs-bar"><i></i></div>
+      <div class="bs-status">Lighting the hearth…</div>
+      <button type="button" class="bs-press" tabindex="-1" aria-hidden="true">Press any key or click</button>
+    </div>
+  </div>
+  <script>
+    // Boot splash hand-over + honest failure state (gauntlet r3 J3-F2, INT).
+    // main.js (@gnt:INT-WIRING) calls __echoesBootSplash.release() once the
+    // app's loading screen is opaque (or the first frames of a menu-skip boot
+    // are drawn). Until then this page never pretends to work: an uncaught
+    // error or a failed script load that leaves the splash unclaimed turns it
+    // into "Echoes couldn't start" with a Reload button, and a very slow start
+    // says so instead of sitting silent.
+    (function () {
+      var el = document.getElementById('boot-splash');
+      if (!el) return;
+      var t0 = (window.performance && performance.now()) || 0;
+      var state = { released: false, releasedAt: null, failed: null, slowShown: false, errors: [] };
+      var status = el.querySelector('.bs-status');
+      var press = el.querySelector('.bs-press');
+      var failTimer = 0;
+      function now() { return ((window.performance && performance.now()) || 0) - t0; }
+      function fail(detail, kind) {
+        if (state.released || state.failed) return;
+        state.failed = String(detail || 'unknown error').slice(0, 240);
+        el.classList.add('bs-failed');
+        el.setAttribute('aria-busy', 'false');
+        el.style.cursor = 'default';
+        status.textContent = "Echoes couldn't start.";
+        var d = document.createElement('div');
+        d.className = 'bs-detail';
+        d.textContent = kind === 'network'
+          ? state.failed + ' — check the connection and reload.'
+          : state.failed + ' — Echoes needs WebGL and a current browser. Reloading often helps.';
+        status.parentNode.insertBefore(d, press);
+        press.textContent = 'Reload';
+        press.removeAttribute('aria-hidden');
+        press.removeAttribute('tabindex');
+        press.classList.add('bs-on');
+        press.addEventListener('click', function () { window.location.reload(); });
+        window.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') window.location.reload(); });
+        try { press.focus(); } catch (e) { /* ignore */ }
+      }
+      function onError(e) {
+        if (state.released) return;
+        var t = e && e.target;
+        var net = !!(t && t !== window && (t.tagName === 'SCRIPT' || t.tagName === 'LINK'));
+        var file = net ? String(t.src || t.href || t.tagName).split('?')[0].split('/').pop() : '';
+        var msg = net
+          ? "A game file didn't arrive (" + file + ')'
+          : (e && (e.message || (e.error && e.error.message))) || 'unknown error';
+        state.errors.push(String(msg).slice(0, 200));
+        // A boot that still hands over shortly after a stray error is fine —
+        // only a boot the error actually stopped becomes the failure card.
+        if (!failTimer) failTimer = setTimeout(function () { if (!state.released) fail(msg, net ? 'network' : 'script'); }, 4000);
+      }
+      window.addEventListener('error', onError, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        onError({ message: e && e.reason && (e.reason.message || String(e.reason)) });
+      });
+      var slowTimer = setTimeout(function () {
+        if (state.released || state.failed) return;
+        state.slowShown = true;
+        status.textContent = 'Still lighting the hearth — a first visit can take a moment…';
+      }, 15000);
+      window.__echoesBootSplash = {
+        get state() { return { released: state.released, releasedAt: state.releasedAt, failed: state.failed, slowShown: state.slowShown, errors: state.errors.slice(), shownFor: Math.round(now()) }; },
+        // release({ fade }) — remove the splash; `fade` ms cross-fade (0 = cut:
+        // the loading screen underneath is pixel-identical).
+        release: function (opts) {
+          if (state.released) return false;
+          state.released = true;
+          state.releasedAt = Math.round(now());
+          clearTimeout(slowTimer);
+          clearTimeout(failTimer);
+          var fade = opts && typeof opts.fade === 'number' ? opts.fade : 160;
+          el.setAttribute('aria-busy', 'false');
+          if (fade <= 0) { el.remove(); return true; }
+          el.style.transitionDuration = fade + 'ms';
+          el.classList.add('bs-out');
+          setTimeout(function () { el.remove(); }, fade + 40);
+          return true;
+        },
+        fail: fail,
+      };
+    })();
+  </script>
   <!-- The honest failure state: a browser with scripting off would otherwise
        show a black page with no explanation (PLAN "platform honesty"). -->
   <noscript>
+    <style>#boot-splash { display: none; }</style>
     <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:32px;
                 font-family:system-ui,'Segoe UI',sans-serif;color:#F2E8D5;background:#221F1B;text-align:center;line-height:1.5">
       <div>
