@@ -255,14 +255,14 @@ export function createScreenManager({ root, ctx = {} } = {}) {
     return stack.some((e) => e.screen.blocking !== false);
   }
 
-  // Spatial move: the nearest enabled item whose centre lies in `dir`, scored
-  // by distance along the axis plus twice the cross-axis offset. up/down wrap
-  // to the far end when nothing lies that way; left/right never wrap.
-  function move(entry, dir, source) {
-    const items = focusables(entry);
-    if (items.length === 0) return false;
-    const cur = validFocus(entry) ? entry.focusEl : null;
-    if (!cur) return initialFocus(entry, source);
+  // Spatial pick: the nearest of `items` whose centre lies in `dir` from
+  // `cur`, scored by distance along the axis plus twice the cross-axis offset.
+  // With `wrap`, up/down fall through to the far end when nothing lies that
+  // way; left/right never wrap. Returns the element or null. Screens with a
+  // structured order (Settings: tab bar -> rows -> footer) call it on a
+  // subset of their items through api.spatial().
+  function pickSpatial(cur, items, dir, { wrap = false } = {}) {
+    if (!cur || !items || items.length === 0) return null;
     const cr = cur.getBoundingClientRect();
     const cx = cr.left + cr.width / 2;
     const cy = cr.top + cr.height / 2;
@@ -298,27 +298,42 @@ export function createScreenManager({ root, ctx = {} } = {}) {
         best = el;
       }
     }
-    if (!best && vertical) {
-      // Wrap: the item at the opposite extreme, closest in x.
-      let extreme = sign > 0 ? Infinity : -Infinity;
-      for (const el of items) {
-        const r = el.getBoundingClientRect();
-        const y = r.top + r.height / 2;
-        if (sign > 0 ? y < extreme - 1 : y > extreme + 1) extreme = y;
-      }
-      let bx = Infinity;
-      for (const el of items) {
-        if (el === cur) continue;
-        const r = el.getBoundingClientRect();
-        const y = r.top + r.height / 2;
-        if (Math.abs(y - extreme) > r.height * 0.5 + 1) continue;
-        const d = Math.abs(r.left + r.width / 2 - cx);
-        if (d < bx) {
-          bx = d;
-          best = el;
-        }
+    if (!best && vertical && wrap) best = edgeItem(items, sign > 0 ? 'top' : 'bottom', cx, cur);
+    return best;
+  }
+
+  // The item on the top (or bottom) row of `items`, closest in x to `cx`.
+  function edgeItem(items, edge, cx = null, exclude = null) {
+    let extreme = edge === 'top' ? Infinity : -Infinity;
+    for (const el of items) {
+      const r = el.getBoundingClientRect();
+      const y = r.top + r.height / 2;
+      if (edge === 'top' ? y < extreme - 1 : y > extreme + 1) extreme = y;
+    }
+    let best = null;
+    let bx = Infinity;
+    for (const el of items) {
+      if (el === exclude) continue;
+      const r = el.getBoundingClientRect();
+      const y = r.top + r.height / 2;
+      if (Math.abs(y - extreme) > r.height * 0.5 + 1) continue;
+      const d = cx === null ? r.left : Math.abs(r.left + r.width / 2 - cx);
+      if (d < bx) {
+        bx = d;
+        best = el;
       }
     }
+    return best;
+  }
+
+  // Spatial move on the whole top screen (the default for every screen
+  // without a structured order): up/down wrap at the ends.
+  function move(entry, dir, source) {
+    const items = focusables(entry);
+    if (items.length === 0) return false;
+    const cur = validFocus(entry) ? entry.focusEl : null;
+    if (!cur) return initialFocus(entry, source);
+    const best = pickSpatial(cur, items, dir, { wrap: true });
     if (!best) return false;
     return focusEl(entry, best, { source, scroll: true });
   }
@@ -365,13 +380,14 @@ export function createScreenManager({ root, ctx = {} } = {}) {
     }
   }
 
-  // Mouse hover / click focus: focus `el` if it is an enabled item of the top
-  // screen (no scroll-jump for pointer focus).
-  function focusElement(el, source = 'mouse') {
+  // Focus `el` if it is an enabled item of the top screen. Pointer focus
+  // (hover / click) never scroll-jumps; a screen's own keyboard / gamepad
+  // move passes { scroll: true } so the new item is brought into view.
+  function focusElement(el, source = 'mouse', { scroll = false } = {}) {
     const t = topEntry();
     if (!t || !el || !t.screen.el.contains(el)) return false;
     if (!el.matches('[data-nav]') || !isEnabled(el) || !isShown(el)) return false;
-    return focusEl(t, el, { source, scroll: false });
+    return focusEl(t, el, { source, scroll });
   }
 
   // Per-frame audit (app.update): the top screen always shows exactly one ring
@@ -442,6 +458,14 @@ export function createScreenManager({ root, ctx = {} } = {}) {
     isBlocking,
     nav,
     focusElement,
+    // spatial(cur, items, dir, { wrap }) -> element | null — the default
+    // spatial pick, restricted to `items` (a screen's own zone order).
+    spatial: (cur, items, dir, opts) => pickSpatial(cur, items, dir, opts),
+    // edgeItem(items, 'top'|'bottom', cx?) -> the top/bottom-row item closest to cx.
+    edgeItem: (items, edge, cx) => edgeItem(items, edge, cx ?? null),
+    // navigable(container) -> the enabled, shown [data-nav] items inside it.
+    navigable: (container) =>
+      container ? [...container.querySelectorAll('[data-nav]')].filter((n) => isShown(n) && isEnabled(n)) : [],
     refocus: () => initialFocus(topEntry(), 'api'),
     audit,
     focusables: () => focusables(topEntry()).map((el) => ({ id: el.id || null, label: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 80), rect: rectOf(el) })),

@@ -11,8 +11,14 @@
 // fullscreen — is settled through the 10 s keep-display dialog when the player
 // leaves it (tab switch or closing Settings); Revert / timeout call its
 // revert(), Keep its confirm().
-// Navigation: ↑↓ rows (up from the first row reaches the tab bar), ←→ adjust,
-// Q/E · PageUp/PageDown · LB/RB switch tabs, Esc / B / right-click = Back.
+// Navigation: ←→ adjust, Q/E · PageUp/PageDown · LB/RB switch tabs,
+// Esc / B / right-click = Back. ↑↓ (and Tab / Shift+Tab, the D-pad) walk ONE
+// ring in reading order — the SELECTED tab -> the tab's rows (spatial inside
+// the tab, so a row with two controls still works) -> Reset -> Back -> the
+// selected tab again — and Up is exactly the reverse. The cursor never lands
+// on an unselected tab (whose content is not the one shown), and every stop
+// comes round again (fix-M1-r3 MENU-R3-F2: the screen-wide spatial wrap sent
+// Down from Reset to the Network tab and skipped the first rows forever).
 import { settingsTabs, settingsTab, service } from '../../app/registry.js';
 import { createHints } from './hints.js';
 
@@ -177,6 +183,9 @@ export function createSettingsScreen(ctx) {
     const changed = activeId !== id;
     activeId = id;
     lastTab = id;
+    // Exactly one tab body is shown (a re-open on another tab after a close
+    // left the previous body marked active — two tabs stacked).
+    for (const [tid, r] of built) if (tid !== id) r.body.classList.remove('ap-active');
     next.body.classList.add('ap-active');
     for (const [tid, b] of tabBtns) {
       b.classList.toggle('ap-active', tid === id);
@@ -257,6 +266,76 @@ export function createSettingsScreen(ctx) {
     if (typeof rec.inst.reset === 'function') rec.inst.reset();
     else settings.reset(rec.def.id);
     app.toast(`${label} settings reset to defaults`, { tone: 'good' });
+  }
+
+  // The vertical ring (see the header). Inside the tab the items are grouped
+  // into visual ROWS (items whose centres share a band: an audio channel's
+  // Curve · Mute · Test, the server field + Check); Down / Up step exactly one
+  // row, entering a row at the item nearest the cursor in x (←→ move inside
+  // a row of buttons). Row steps, not a free spatial search, so a narrow
+  // switch below a wide selector is never skipped (the V-Sync and Pause-on-
+  // focus-loss rows were at 1024x576).
+  function rowsOf(items) {
+    const recs = items
+      .map((n) => {
+        const r = n.getBoundingClientRect();
+        return { n, top: r.top, bottom: r.bottom, cy: r.top + r.height / 2, cx: r.left + r.width / 2, left: r.left };
+      })
+      .sort((a, b) => a.cy - b.cy || a.left - b.left);
+    const rows = [];
+    for (const it of recs) {
+      const row = rows[rows.length - 1];
+      if (row && it.cy >= row.top && it.cy <= row.bottom) row.items.push(it);
+      else rows.push({ top: it.top, bottom: it.bottom, items: [it] });
+    }
+    for (const row of rows) row.items.sort((a, b) => a.left - b.left);
+    return rows;
+  }
+  function nearestX(row, cx) {
+    let best = row.items[0];
+    for (const it of row.items) if (Math.abs(it.cx - cx) < Math.abs(best.cx - cx)) best = it;
+    return best.n;
+  }
+
+  function walk(dir, source) {
+    const cur = focusedEl;
+    if (!cur || !el.contains(cur) || !cur.isConnected) return false; // manager's initial focus
+    const rec = activeId && built.get(activeId);
+    const tab = activeId ? tabBtns.get(activeId) : null;
+    const rows = rowsOf(rec ? manager.navigable(rec.body) : []);
+    const footItems = manager.navigable(foot);
+    const zone = tabsEl.contains(cur) ? 'tabs' : foot.contains(cur) ? 'foot' : rec && rec.body.contains(cur) ? 'body' : null;
+    if (!zone) return false;
+    const cr = cur.getBoundingClientRect();
+    const cx = cr.left + cr.width / 2;
+    const down = dir === 'down';
+    const firstRow = () => (rows.length ? rows[0].items[0].n : null);
+    const lastRow = () => (rows.length ? nearestX(rows[rows.length - 1], cx) : null);
+    let target = null;
+    if (zone === 'body') {
+      const i = rows.findIndex((r) => r.items.some((it) => it.n === cur));
+      if (i < 0) {
+        // The focused item left the navigable set (disabled meanwhile): the
+        // first row wholly past it in the pressed direction.
+        const cy = cr.top + cr.height / 2;
+        const nextRow = down ? rows.find((r) => r.top > cy) : [...rows].reverse().find((r) => r.bottom < cy);
+        target = nextRow ? nearestX(nextRow, cx) : null;
+      } else {
+        const next = rows[i + (down ? 1 : -1)];
+        target = next ? nearestX(next, cx) : null;
+      }
+      if (!target) target = down ? footItems[0] || tab : tab || footItems[footItems.length - 1];
+    } else if (zone === 'foot') {
+      const i = footItems.indexOf(cur);
+      if (down) target = (i >= 0 && footItems[i + 1]) || tab || firstRow();
+      else target = (i > 0 && footItems[i - 1]) || lastRow() || tab;
+    } else {
+      // On the tab bar (the selected tab, or one the mouse hovered).
+      if (down) target = firstRow() || footItems[0] || null;
+      else target = footItems[footItems.length - 1] || lastRow() || null;
+    }
+    if (target && target !== cur) manager.focusElement(target, source, { scroll: true });
+    return true;
   }
 
   function helpFor(node) {
@@ -341,6 +420,7 @@ export function createSettingsScreen(ctx) {
     },
     onNav(action, source) {
       if (busy) return true;
+      if (action === 'up' || action === 'down') return walk(action, source);
       if (action === 'tabPrev' || action === 'tabNext') {
         cycle(action === 'tabPrev' ? -1 : 1, source);
         return true;
