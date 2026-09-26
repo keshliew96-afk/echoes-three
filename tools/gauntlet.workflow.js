@@ -352,6 +352,16 @@ for (const k of preBuild) {
   log('build ' + k + ': ' + (b.done ? 'done ' + b.version : 'INCOMPLETE: ' + b.summary.slice(0, 200)))
 }
 
+const preFix = (typeof args === 'object' && args && Array.isArray(args.preFix)) ? args.preFix : []
+for (const j of preFix) {
+  phase('Fix')
+  log('Carried-over fix job: ' + j.key + ' (round ' + j.round + ', ' + j.items.length + ' items)')
+  const b = await ag(builderPrompt(j.key, j.items, j.round), { label: 'fix:' + j.key + ' r' + j.round, phase: 'Fix', schema: BUILD })
+  history.builds.push({ key: 'fix:' + j.key + ' r' + j.round, result: b })
+  if (!b) return { aborted: true, stage: 'fix ' + j.key + ' r' + j.round, history }
+  log('fix ' + j.key + ' r' + j.round + ': ' + (b.done ? 'done ' + b.version : 'INCOMPLETE: ' + b.summary.slice(0, 200)))
+}
+
 let passed = false
 for (let round = startRound; round < startRound + MAX_ROUNDS; round++) {
   phase('Critique')
