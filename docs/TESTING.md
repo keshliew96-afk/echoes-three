@@ -911,7 +911,11 @@ sim/netseats.js) it waits; a longer silence runs it out (host
 stays visible (a GPU / raster stall) keeps sending 60 Hz frames: a render-stall
 watchdog steps the same fixed-tick advance headlessly after 50 ms without a
 frame (guest `stallSteps` / `stallStepMs` / `stallGapMaxMs`; it never fires at
-the 30 fps limit, hidden, paused or frozen). A seat handed from the AI to a
+the 30 fps limit, hidden, paused or frozen). It keys off the session's own rAF
+heartbeat: only a browser that has drawn NO frame for 50-1000 ms while the
+frame loop was advancing the guest is stepped — a page that keeps drawing
+without advancing (`__echoes.sim.freeze()`, the save round-trip freeze) never
+is. A seat handed from the AI to a
 human and a room / level re-seat re-base the prediction (`handoffs`, no predErr
 sample). After a migration the leader bot plays the Healer only while no human
 holds seat 0 (session log `leader_bot`); with a human Healer the run pages wait
@@ -923,7 +927,12 @@ preview + own server in the M5b band): `node tools/gntfixM5b3-rejoin.mjs --port 
 ally_dodge / seat_denied, starve counters), `node tools/gntfixM5b3-prederr.mjs`
 (every predErr > 0.3 u with its context over 3-4 rooms), `node
 tools/gntfixM5b3-spdodge.mjs` (single-player dodge frame timing — the HUD
-raster-stall reference).
+raster-stall reference), `node tools/gntfixM5b3-stall.mjs --port P --base U`
+(a deterministic 420 ms render stall — the guest page's requestAnimationFrame
+held with its main thread free — during a walk and right after a dodge: the
+watchdog fires, 0 snaps, guest == host), `node tools/gntfixM5b3-freeze.mjs
+--port P --base U` (a guest `sim.freeze()`: 0 ticks, 0 watchdog steps, the
+seat does not move; thaw walks).
 
 **Probes** (all start their own session server on the M5b ports 7820–7829;
 the long browser runs use a production preview so HMR never reloads a page:

@@ -148,8 +148,10 @@ export function createNetSession(ctx) {
   // while a session is live.
   let rafId = 0;
   let lastRaf = 0;
+  let lastRafAt = null; // now() of the last rAF callback: the browser is drawing (render-stall watchdog)
   function rafLoop(t) {
     rafId = requestAnimationFrame(rafLoop);
+    lastRafAt = now();
     const dt = lastRaf ? t - lastRaf : 16.7;
     lastRaf = t;
     if (host) host.frameEnd(dt);
@@ -163,6 +165,7 @@ export function createNetSession(ctx) {
   function startRaf() {
     if (!rafId && typeof requestAnimationFrame === 'function') {
       lastRaf = 0;
+      lastRafAt = null;
       rafId = requestAnimationFrame(rafLoop);
     }
   }
@@ -732,8 +735,14 @@ export function createNetSession(ctx) {
   // frame advances only the time the watchdog has not, and draws where the
   // sim is. It never fires at any frame-rate limit the game offers (>= 30
   // fps = 33 ms frames), never while hidden (away frames on the metronome),
-  // paused, frozen by the debug API or before the frame loop has run.
+  // paused, or before the frame loop has run. It steps only a RENDER stall
+  // (the session's own rAF heartbeat, rafLoop, silent for STALL_STEP_MS while
+  // the frame loop was advancing us up to the last drawn frame): a page that
+  // keeps drawing without advancing the sim — the debug API's sim.freeze(),
+  // the save round-trip freeze, a held loop — is never stepped behind its
+  // back, and a renderer silent for over a second is stopped, not stalled.
   const STALL_STEP_MS = 50;
+  const STALL_MAX_MS = 1000;
   let guestStepFn = null; // the frame loop's step function (main.js simStep)
   let guestLastStepAt = null; // now() of the last guest advance (frame or watchdog)
   let guestWatchMs = 0; // wall ms the watchdog advanced since the last rendered frame
@@ -741,15 +750,18 @@ export function createNetSession(ctx) {
   const stallStats = { steps: 0, ms: 0, maxGapMs: 0 };
   function stallWatch() {
     const g = guest;
-    if (!g || !guestStepFn || guestLastStepAt === null || g.away) return;
+    if (!g || !guestStepFn || guestLastStepAt === null || lastRafAt === null || g.away) return;
     if (typeof document !== 'undefined' && document.hidden) return;
     if (app.simPaused()) return;
     const t = now();
+    const sinceRaf = t - lastRafAt;
+    // The browser is still drawing (a freeze or a pause draws without
+    // advancing us), or has drawn nothing for over a second (stopped).
+    if (sinceRaf < STALL_STEP_MS || sinceRaf > STALL_MAX_MS) return;
+    // The frame loop was not advancing us when the drawing stopped (frozen).
+    if (lastRafAt - guestLastStepAt >= STALL_STEP_MS) return;
     const gap = t - guestLastStepAt;
     if (gap < STALL_STEP_MS) return;
-    // The frame loop has not advanced us for over a second: it is not
-    // stalled, it is stopped (debug freeze, a scene swap holding it) — leave it.
-    if (gap > 1000) return;
     guestLastStepAt = t;
     guestWatchMs += gap;
     stallStats.steps += 1;
