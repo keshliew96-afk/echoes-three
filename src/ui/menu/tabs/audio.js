@@ -16,6 +16,18 @@
 //          left -> centre -> right).
 // Then "Mute when the game loses focus" and an honest status line (waiting
 // for the first key / click, muted by ?audio=0, no Web Audio).
+//
+// Keyboard / D-pad focus reveals the WHOLE channel (fix-M3-r3 AUD3-F1): the
+// screen manager scrolls a newly focused control into view with 'nearest',
+// which on this tab (the label sits ABOVE the slider) left an Up-press
+// landing on "80 % · −3.2 dB" with its "Sound Effects" label and the top of
+// its focus ring scrolled off (1024x576: 5 of 13 Up stops clipped). After
+// every non-pointer focus change inside the tab, reveal() scrolls the list
+// the least amount that shows the channel group (label, slider, Curve · Mute
+// · Test, meter) plus the ring; the first channel brings in the status line
+// and the "Volume" heading, the last toggle its "Behaviour" heading and the
+// end of the list. If the group cannot fit, the control and its own row
+// (label included) win. Pointer focus (hover) never scrolls (PLAN §3.3).
 import { registerSettingsTab } from '../../../app/registry.js';
 import { sliderToDb, formatDb } from '../../../audio/mixmath.js';
 
@@ -178,7 +190,8 @@ function build(ctx) {
     rows[ch.id] = { group, slider, curve, mute, test, bar, muted };
   }
 
-  el.appendChild(W.section('Behaviour'));
+  const behaviourHead = W.section('Behaviour');
+  el.appendChild(behaviourHead);
   const blur = W.toggle({
     label: 'Mute when the game loses focus',
     id: 'au-muteonblur',
@@ -234,6 +247,62 @@ function build(ctx) {
   const unsub = settings.subscribe('audio', () => refresh());
   let raf = 0;
   let visible = false;
+
+  // --- reveal the focused control's channel (see the header) -------------
+  function scrollerOf(node) {
+    for (let p = node.parentElement; p && p !== document.body; p = p.parentElement) {
+      const oy = getComputedStyle(p).overflowY;
+      if (oy === 'auto' || oy === 'scroll') return p;
+    }
+    return null;
+  }
+  function reveal(node) {
+    const sc = scrollerOf(el);
+    if (!sc || sc.scrollHeight <= sc.clientHeight + 1) return null;
+    const sr = sc.getBoundingClientRect();
+    const viewTop = sr.top + sc.clientTop;
+    const viewH = sc.clientHeight;
+    const contentTop = viewTop - sc.scrollTop;
+    const contentBottom = contentTop + sc.scrollHeight;
+    // Room for the focus ring (outline + offset + lift + 3 % scale), which is
+    // still mid-transition when this runs: ~9 authored px at --ap-s.
+    const s = parseFloat(getComputedStyle(el).getPropertyValue('--ap-s')) || 1;
+    const pad = Math.ceil(12 * s);
+    const nr = node.getBoundingClientRect();
+    const row = node.closest('.ap-row') || node;
+    const rr = row.getBoundingClientRect();
+    const chan = node.closest('.au-chan');
+    let region;
+    if (chan) {
+      const cr = chan.getBoundingClientRect();
+      const first = chan === el.querySelector('.au-chan');
+      region = [first ? contentTop : cr.top - pad, cr.bottom + pad];
+    } else if (blur.el.contains(node)) {
+      region = [behaviourHead.getBoundingClientRect().top - pad, contentBottom];
+    } else {
+      region = [rr.top - pad, rr.bottom + pad];
+    }
+    // Nested spans, widest first; the widest that fits the viewport wins.
+    const spans = [
+      region,
+      [Math.min(rr.top, nr.top) - pad, Math.max(rr.bottom, nr.bottom) + pad],
+      [nr.top - pad, nr.bottom + pad],
+    ];
+    const span = spans.find(([a, b]) => b - a <= viewH) || [nr.top, nr.top + viewH];
+    let delta = 0;
+    if (span[0] < viewTop) delta = span[0] - viewTop;
+    else if (span[1] > viewTop + viewH) delta = span[1] - (viewTop + viewH);
+    if (Math.abs(delta) >= 0.5) sc.scrollTop += delta;
+    return Math.round(delta);
+  }
+  const offFocus =
+    ctx.app && ctx.app.screens && typeof ctx.app.screens.on === 'function'
+      ? ctx.app.screens.on('focus', (p) => {
+          if (!visible || !p || p.source === 'mouse') return;
+          const node = p.id ? document.getElementById(p.id) : null;
+          if (node && el.contains(node)) reveal(node);
+        })
+      : () => {};
   function meterLoop() {
     raf = 0;
     if (!visible) return;
@@ -287,8 +356,9 @@ function build(ctx) {
     destroy() {
       visible = false;
       unsub();
+      offFocus();
     },
-    debug: { rows: () => Object.keys(rows), refresh },
+    debug: { rows: () => Object.keys(rows), refresh, reveal: (id) => (document.getElementById(id) ? reveal(document.getElementById(id)) : null) },
   };
 }
 

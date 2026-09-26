@@ -377,6 +377,19 @@ by keyboard, mouse and a mocked pad), `cost` (G3.10, a whole run).
 `node tools/gntM3-calibrate.mjs [--only cues|music|post|beds]` re-measures
 the cue peaks / music trims / bed trims after a sound-design change.
 
+**Audio-tab focus visibility (fix-M3-r3 AUD3-F1).** The Settings ring order
+(tab -> rows -> Reset -> Back) is M1's `walk()`; on top of it every keyboard /
+D-pad / API focus inside the Audio tab scrolls the list so the whole channel
+group (its name, slider, Curve · Mute · Test, meter) and the focus ring are
+shown — the first channel also brings in the status line and "Volume", the
+toggle its "Behaviour" heading; hover never scrolls. Probe: `node
+tools/gntfixM33-reveal.mjs [WxH ...]` (arrows, W/S, mocked pad, `app.press`,
+hover; per stop: control + ring inside the list, channel name shown, group
+shown when it fits; Up = reverse of Down; `GNT_URL=` for a preview build;
+exit 1 on any FAIL). A pre-fix bundle for comparison: `GNT_AUDIO_TAB=<old
+audio.js> npx vite build --config tools/gntfixM33-vite-before.mjs --outDir
+dist-gntfixM33-before`.
+
 **Adding sounds for new content (W2+).** From your own module (never
 src/audio/**): `service('audio').registerCue(id, { bus: 'sfx', levelDb,
 priority, maxVoices, cooldownMs, voice(ctx, t, dest, p) { … return endTime } })`
