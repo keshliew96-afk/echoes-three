@@ -1062,6 +1062,12 @@ export function createAllySystem({
     let moved = false;
     let ended = false;
     for (const mv of f.moves) {
+      // A dash advances one step per consumed INPUT FRAME, never on a starved
+      // repeat (net/driver.js, bounded by the 8-tick repeat window): the
+      // guest predicts it frame for frame, so a stalled guest's dash resumes
+      // where its frames left it instead of finishing on host ticks it never
+      // saw (NET3-F2: 1.1-1.3 u snaps after a guest-page stall mid-dash).
+      if (f.starved && a.dashTicksLeft > 0) continue;
       const spd = a.hp > 0 ? S.moveSpeed * (combat.status ? combat.status.speedMul(a, tick) : 1) : DOWNED_CRAWL_SPEED;
       const r = stepHumanMove(a, mv, spd);
       if (r.moved) moved = true;

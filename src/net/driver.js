@@ -104,6 +104,9 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
         lastRecvAt: 0,
         recv: [],
         fullsRequested: 0,
+        // Bumped whenever the feed's seq line restarts (reset / rejoin): a
+        // snapshot queued before it never carries the old line's k.
+        gen: 0,
       };
       feeds.set(seat, f);
     }
@@ -114,6 +117,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     if (!f) return;
     f.buffer.clear();
     f.lastConsumed = null;
+    f.gen += 1;
     f.lastFrame = null;
     f.missingRun = 0;
     f.carryBits = 0;
@@ -208,6 +212,11 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       if (f.missingRun > stats.staleRepeatTicksMax && f.missingRun <= STALE_REPEAT_TICKS) stats.staleRepeatTicksMax = f.missingRun;
       if (f.lastFrame.away) return 'away';
       const fr = f.missingRun <= STALE_REPEAT_TICKS ? repeatFrame(f.lastFrame, f.lastConsumed) : neutralFrame(f.lastFrame, f.lastConsumed);
+      // A starved REPEAT consumes no input frame: the seat's dash waits for
+      // the frames that carry it (sim/allies.js humanContinuous), so the
+      // state a snapshot reports at k is the dash after exactly frames <= k
+      // (NET3-F2). Past the repeat window the neutral frames run it again.
+      if (f.missingRun <= STALE_REPEAT_TICKS) fr.starved = true;
       if (f.missingRun <= STALE_REPEAT_TICKS) stats.staleRepeats += 1;
       else stats.neutralTicks += 1;
       frames = [fr];
@@ -322,9 +331,15 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
   }
   const LOSS_SEGMENT_GAP = 60;
   const feedLossPct = (f) => feedLoss(f).pct;
-  function sendSnapshotTo(rec, seat) {
+  // lastInputSeqConsumed is the seat's k AT THE CAPTURE (NET3-F2): the
+  // state in `rec` is the world after consuming exactly the frames <= k. A
+  // snapshot served on a later tick (the encode queue below) must not carry
+  // the send tick's k — the guest would drop the 1-2 frames consumed in
+  // between from its replay (a dodge press among them rewound the body to
+  // the pre-dodge spot: 1.8 u snaps, the 2nd / 3rd guest far more often).
+  function sendSnapshotTo(rec, seat, k) {
     const f = feedFor(seat);
-    net.transport.sendBinary(snap.encodeFor(f.link, rec, { seat, lastInputSeqConsumed: f.lastConsumed, inputBufferDepth: f.depthReport, upLossPct: feedLossPct(f) }));
+    net.transport.sendBinary(snap.encodeFor(f.link, rec, { seat, lastInputSeqConsumed: k, inputBufferDepth: f.depthReport, upLossPct: feedLossPct(f) }));
   }
   function tickEnd(tick) {
     const t0 = now();
@@ -335,7 +350,9 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
         const q = encodeQueue.shift();
         encoded = true;
         try {
-          sendSnapshotTo(q.rec, q.seat);
+          // A feed restarted since the capture skips this one (the next
+          // capture serves it, <= 3 ticks later).
+          if (feedFor(q.seat).gen === q.gen) sendSnapshotTo(q.rec, q.seat, q.k);
         } catch (err) {
           log('host_encode_error', { error: String(err && err.message) });
         }
@@ -365,8 +382,11 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     // A guest still queued from the previous snapshot is served from the
     // newer capture instead (never two snapshots behind).
     encodeQueue = [];
-    sendSnapshotTo(rec, guests[0].index);
-    for (let i = 1; i < guests.length; i++) encodeQueue.push({ rec, seat: guests[i].index });
+    sendSnapshotTo(rec, guests[0].index, feedFor(guests[0].index).lastConsumed);
+    for (let i = 1; i < guests.length; i++) {
+      const f = feedFor(guests[i].index);
+      encodeQueue.push({ rec, seat: guests[i].index, k: f.lastConsumed, gen: f.gen });
+    }
     stats.snapshots += 1;
     // One EVENTS batch per snapshot (an empty one too: it keeps the guests'
     // "events delivered through tick" clock moving — prediction retractions
@@ -468,6 +488,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       if (f) {
         f.buffer.clear();
         f.lastConsumed = null;
+        f.gen += 1;
         f.link.acked = 0;
       }
     }

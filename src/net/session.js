@@ -880,7 +880,18 @@ export function createNetSession(ctx) {
         const human = me.controller === 'human' || g.seat === 0;
         const al = view.systems && view.systems.allies && view.systems.allies.seats;
         const timers = al && Array.isArray(al.timers) ? al.timers[g.seat] : null;
-        if (human || !g.own.ready) g.own.reconcile(me, r.tick, human ? k : g.seq, timers);
+        // Re-base (never a prediction error or a snap): the first snapshot
+        // that shows the body under this guest's frames after the host's AI
+        // played it (joining, back from away) — the AI's moves are an
+        // ownership change — and the snapshot of a room / level change, where
+        // the host re-seats the party at the entry arc (run.positionParty).
+        const run = view.systems && view.systems.run ? view.systems.run : null;
+        const roomKey = run ? `${run.act ?? ''}:${run.roomIndex ?? ''}` : null;
+        const reseat = g.roomKey !== undefined && roomKey !== g.roomKey;
+        g.roomKey = roomKey;
+        const handoff = (human && g.ownHuman === false) || reseat;
+        if (human || !g.own.ready) g.own.reconcile(me, r.tick, human ? k : g.seq, timers, { handoff });
+        g.ownHuman = human;
         if (human) {
           g.shadow.reseed(timers, k, me.hp > 0);
           g.shadow.onConsumed(k, r.tick);

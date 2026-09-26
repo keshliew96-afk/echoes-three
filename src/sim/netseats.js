@@ -97,6 +97,10 @@ export function seatInputOf(frames, carryBits = 0, carrySeqs = null) {
     presses: pressesOf(bits),
     pressSeq,
     viewTick: last.viewTick ?? 0,
+    // A starved tick's repeat of the held state (no input frame consumed,
+    // net/driver.js): the seat walks on it (the stale-input policy) but its
+    // dash does not advance — a dash runs on the seat's input frames.
+    starved: frames.length > 0 && frames.every((f) => f.starved === true),
   };
 }
 

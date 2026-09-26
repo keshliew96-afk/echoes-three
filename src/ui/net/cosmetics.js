@@ -15,6 +15,7 @@
 // Retracted predictions remove their cosmetics at once.
 import { Group, Mesh, MeshBasicMaterial, CapsuleGeometry, RingGeometry, CylinderGeometry, AdditiveBlending } from 'three';
 import { PALETTE } from '../../data/palette.js';
+import { warmPark } from '../../render/warmup.js';
 
 const BOLT_Y = 0.55;
 const HANDOFF_U = 0.3;
@@ -59,8 +60,11 @@ export function createCosmetics({ stage }) {
     stats.spawned += 1;
   }
 
+  const makeRing = () => new Mesh(ringGeo, new MeshBasicMaterial({ color: PALETTE.hearthAmber, transparent: true, opacity: 0.8, depthWrite: false }));
+  const makeGhost = () => new Mesh(ghostGeo, new MeshBasicMaterial({ color: PALETTE.parchment, transparent: true, opacity: 0.32, blending: AdditiveBlending, depthWrite: false }));
+
   function ring({ predId, x, z, radius }) {
-    const m = new Mesh(ringGeo, new MeshBasicMaterial({ color: PALETTE.hearthAmber, transparent: true, opacity: 0.8, depthWrite: false }));
+    const m = makeRing();
     m.rotation.x = -Math.PI / 2;
     m.position.set(x, 0.04, z);
     m.scale.setScalar(radius);
@@ -70,12 +74,23 @@ export function createCosmetics({ stage }) {
   }
 
   function ghost(x, z) {
-    const m = new Mesh(ghostGeo, new MeshBasicMaterial({ color: PALETTE.parchment, transparent: true, opacity: 0.32, blending: AdditiveBlending, depthWrite: false }));
+    const m = makeGhost();
     m.position.set(x, 0.45, z);
     root.add(m);
     ghosts.push({ m, age: 0 });
     stats.ghosts += 1;
   }
+
+  // First-draw warm-up (the render/warmup.js doctrine): one afterimage, one
+  // bolt and one placement ring are DRAWN parked for a few frames when the
+  // guest session starts and then kept as anchors. Their programs are
+  // compiled before the first own dodge / cast — a guest's FIRST dodge used
+  // to pay the afterimage program's compile on its press frame (NET3-F2's
+  // late first dodges) — and are never released when the last live ghost
+  // fades (every later dodge would re-link it).
+  warmPark(root, makeGhost());
+  warmPark(root, makeBolt());
+  warmPark(root, makeRing());
 
   function dispose(obj) {
     root.remove(obj);

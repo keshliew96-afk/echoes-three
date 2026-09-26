@@ -52,7 +52,7 @@ export function createOwnSeat({ seat }) {
   // it is stepped (onLocalFrame applies the real dodge — or refuses it and
   // the preview is dropped).
   let dodgePreview = null; // { x, z } per tick
-  const stats = { predErr: [], predErrMax: 0, corrections: 0, snaps: 0, maxCorrectionPerFrame: 0, reconciles: 0, replayed: 0, teleports: 0 };
+  const stats = { predErr: [], predErrMax: 0, corrections: 0, snaps: 0, maxCorrectionPerFrame: 0, reconciles: 0, replayed: 0, teleports: 0, handoffs: 0 };
   // Authoritative TELEPORTS (the host re-seats the party at a room / camp
   // boundary): a body that moved farther between two snapshots than any
   // walk, dash or push can carry it is re-based at once — not a prediction
@@ -120,8 +120,13 @@ export function createOwnSeat({ seat }) {
     return dodged;
   }
 
-  // reconcile(authEntity, snapTick, k, timers) — newest decoded snapshot.
-  function reconcile(e, snapTick, k, timers = null) {
+  // reconcile(authEntity, snapTick, k, timers, { handoff }) — newest decoded
+  // snapshot. `handoff`: the seat's controller just changed (the host's
+  // ally AI hands the body to this guest's frames — joining, returning from
+  // away): the AI moved it while the guest's frames were not yet consumed,
+  // so the body is re-based on the host's (like a teleport) — an ownership
+  // change, never a prediction error or a correction snap.
+  function reconcile(e, snapTick, k, timers = null, { handoff = false } = {}) {
     if (!e) return;
     stats.reconciles += 1;
     const kk = Number.isInteger(k) ? k : 0;
@@ -135,11 +140,15 @@ export function createOwnSeat({ seat }) {
       for (let i = hist.length - 1; i >= 0; i--) if (hist[i].seq <= kk) hist.splice(i, 1);
       return;
     }
-    if (kk < authSeq) return; // an older ack (reordered snapshot): nothing new
+    // An older ack (reordered snapshot): nothing new — except a handoff,
+    // whose k is the first frame the host consumed from this guest (the
+    // AI-phase re-base marked every sent frame as consumed).
+    if (kk < authSeq && !handoff) return;
     const tele = !!lastAuth && Math.hypot(e.x - lastAuth.x, e.z - lastAuth.z) > TELEPORT_PER_TICK * Math.max(1, snapTick - lastAuth.tick) + TELEPORT_SLACK;
     lastAuth = { x: e.x, z: e.z, tick: snapTick };
-    if (tele) {
-      stats.teleports += 1;
+    if (tele || handoff) {
+      if (handoff) stats.handoffs += 1;
+      else stats.teleports += 1;
       authTick = snapTick;
       authSeq = kk;
       while (hist.length && hist[0].seq <= kk) hist.shift();
@@ -298,6 +307,7 @@ export function createOwnSeat({ seat }) {
       corrections: stats.corrections,
       snaps: stats.snaps,
       teleports: stats.teleports,
+      handoffs: stats.handoffs,
       maxCorrectionPerFrame: Math.round(stats.maxCorrectionPerFrame * 1000) / 1000,
       reconciles: stats.reconciles,
       pendingFrames: hist.length,
