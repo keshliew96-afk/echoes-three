@@ -117,6 +117,57 @@ export function createTitleScreen(ctx) {
     return b;
   }
 
+  // New Game over a run in progress (gauntlet r3 J3-F3; Slay the Spire /
+  // Dead Cells ask before a new run touches a saved one). The autosave slots
+  // rotate per game (src/save/index.js pickAutoSlot), so the confirm says
+  // truthfully what happens to each run in progress: kept in Load Game, or —
+  // only when both autosave slots already hold other runs — the older one is
+  // replaced by the new game's autosaves (then Cancel is the default).
+  // app.newGame() itself stays confirm-free (harness / API path).
+  let asking = false;
+  async function newGameFlow(save) {
+    if (asking) return false;
+    let impact = null;
+    try {
+      impact = save && typeof save.newGameImpact === 'function' ? save.newGameImpact() : null;
+    } catch {
+      impact = null;
+    }
+    if (!impact || !impact.runs || !impact.runs.length) return app.newGame();
+    const where = (m) => slotCaption(m);
+    let body;
+    const lost = impact.replaced;
+    if (lost) {
+      const kept = impact.kept && impact.kept[0];
+      body =
+        `The new game's autosaves will replace your older run in progress:\n${where(lost)}` +
+        (kept ? `\n\nYour latest run stays in Load Game:\n${where(kept)}` : '') +
+        '\n\nTo keep both, load the older run from Load Game and save it to a numbered slot first.';
+    } else {
+      const n = impact.runs.length;
+      body =
+        `${n > 1 ? 'Your runs in progress stay' : 'Your run in progress stays'} in Load Game:\n` +
+        impact.runs.map(where).join('\n') +
+        '\n\nThe new game autosaves to its own slot.';
+    }
+    asking = true;
+    let ok = false;
+    try {
+      ok = await app.confirm({
+        title: lost ? 'Replace a saved run?' : 'Start a new game?',
+        body,
+        confirmLabel: 'Start New Game',
+        cancelLabel: lost ? 'Keep My Run' : 'Cancel',
+        danger: !!lost,
+        defaultFocus: lost ? 'cancel' : 'confirm',
+      });
+    } finally {
+      asking = false;
+    }
+    if (!ok) return false;
+    return app.newGame();
+  }
+
   function items() {
     const save = service('save');
     const list = [];
@@ -146,7 +197,7 @@ export function createTitleScreen(ctx) {
           }),
       });
     }
-    list.push({ id: 'new', label: 'New Game', primary: list.length === 0, onPress: () => app.newGame() });
+    list.push({ id: 'new', label: 'New Game', primary: list.length === 0, onPress: () => newGameFlow(save) });
     const savesScreen = !!screenFactory('saves');
     list.push({
       id: 'load',

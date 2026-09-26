@@ -28,7 +28,11 @@
 // used to outrank it and become Continue's target (gauntlet r1, J3).
 // Throttle: >= 20 s of wall time between autosaves, except run end and quit.
 // Slots: auto-1 / auto-2 alternate (the older one is overwritten), so a
-// torn write can never cost the only autosave.
+// torn write can never cost the only autosave — PER GAME since gauntlet r3
+// J3-F3: `pickSlot(tree)` spares another game's run in progress (a Save &
+// Quit the player walked away from) while a slot of this game or a slot with
+// no run in progress is available; that game then rotates in one slot, its
+// torn-write safety carried by the atomic write's `.bak`.
 // CAMPAIGN (PLAN §12.8): `level_transit` — the level-clear card (the cleared
 // level torn down, the party restored, the carried build) is a safe point of
 // its own, unthrottled like run end: every level transition is autosaved.
@@ -127,7 +131,7 @@ export function createAutosave({
     const captureMs = Math.round((now() - t0) * 10) / 10;
     lastAt = now();
     busy = true;
-    const slot = pickSlot();
+    const slot = pickSlot(tree); // per-game rotation (src/save/index.js pickAutoSlot, gauntlet r3 J3-F3)
     Promise.resolve()
       .then(() => write(slot, tree, { reason, calm: true, capturedAt }))
       .then((r) => {

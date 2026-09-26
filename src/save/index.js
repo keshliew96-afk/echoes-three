@@ -710,13 +710,7 @@ export function createSaveSystem({
       return true;
     },
     capture: () => io.capture(),
-    pickSlot: () => {
-      const a = slots['auto-1'];
-      const b = slots['auto-2'];
-      if (!a) return 'auto-1';
-      if (!b) return 'auto-2';
-      return String(a.savedAt || '') <= String(b.savedAt || '') ? 'auto-1' : 'auto-2';
-    },
+    pickSlot: (tree) => pickAutoSlot(tree),
     write: (slot, tree, { reason, calm, capturedAt }) => writeSlot(slot, tree, { kind: 'auto', name: 'Autosave', reason, calm, capturedAt }),
   });
   async function autosave(reason = 'manual') {
@@ -725,16 +719,83 @@ export function createSaveSystem({
       if (!g.ok && g.code !== 'transition') return { ok: false, error: 'not_allowed', reason: g.reason };
       const c = await requestCapture('autosave:quit');
       if (!c.ok) return { ok: false, error: 'busy' };
-      const slot = (() => {
-        const a = slots['auto-1'];
-        const b = slots['auto-2'];
-        if (!a) return 'auto-1';
-        if (!b) return 'auto-2';
-        return String(a.savedAt || '') <= String(b.savedAt || '') ? 'auto-1' : 'auto-2';
-      })();
+      const slot = pickAutoSlot(c.tree);
       return writeSlot(slot, c.tree, { kind: 'auto', name: 'Autosave', reason: 'quit', capturedAt: c.capturedAt });
     }
     return { ok: autosaver.request(reason, clock.tick) };
+  }
+
+  // ------------------------------------------ autosave rotation per game --
+  // Gauntlet r3 J3-F3 (INT): the two autosave slots rotate PER GAME. A run in
+  // progress is identified by its run seed (constant for a whole campaign —
+  // every level rolls its frame off the carried stream, no reseed — and new
+  // for every campaign). An autosave overwrites, in this order: an empty
+  // slot; the older save of the SAME run; a slot that holds no run in
+  // progress (camp, an end card, a damaged file); and only then the older
+  // run of ANOTHER game. So a Save & Quit the player walks away from (then
+  // New Game, or Load of another save) keeps its autosave while the new game
+  // rotates through the other slot — Skyrim / Fallout keep autosaves per
+  // character for the same reason. The title's New Game names what the new
+  // game's autosaves will replace (newGameImpact) before it starts.
+  const RUN_OVER = new Set(['victory', 'defeat', 'idle']);
+  // gameKey: which game a run save belongs to (any phase, its end card
+  // included); a run IN PROGRESS is a game key whose run has not ended.
+  function gameKeyOfMeta(m) {
+    if (!m || m.mode !== 'run' || m.phase === 'idle') return null;
+    return Number.isFinite(m.seed) ? `run:${m.seed >>> 0}` : null;
+  }
+  const inProgressMeta = (m) => gameKeyOfMeta(m) !== null && !RUN_OVER.has(m.phase);
+  function gameKeyOfTree(tree) {
+    try {
+      const run = tree && tree.systems ? tree.systems.run : null;
+      if (!run || !run.active) return null;
+      const mode = (tree.scene && tree.scene.mode) ?? 'run';
+      const seed = run.frame && Number.isFinite(run.frame.seed) ? run.frame.seed : tree.rng ? tree.rng.seed : null;
+      return gameKeyOfMeta({ mode, phase: run.phase, seed });
+    } catch {
+      return null;
+    }
+  }
+  const slotGameKey = (m) => (m && m.status === 'ok' ? gameKeyOfMeta(m.meta) : null);
+  // the game key of a slot holding a run IN PROGRESS (null otherwise)
+  const slotRunKey = (m) => (m && m.status === 'ok' && inProgressMeta(m.meta) ? gameKeyOfMeta(m.meta) : null);
+  // pickAutoSlot(tree | { runKey }) -> 'auto-1' | 'auto-2'
+  function pickAutoSlot(tree) {
+    const key = tree && typeof tree === 'object' && 'runKey' in tree ? tree.runKey : gameKeyOfTree(tree);
+    let best = null;
+    for (const id of AUTO_SLOTS) {
+      const m = slots[id];
+      if (!m) return id; // an empty slot first
+      // 0 this game's own save (any phase) · 1 no run in progress (camp, an
+      // end card, a damaged file) · 2 another game's run in progress
+      const rank = key !== null && slotGameKey(m) === key ? 0 : slotRunKey(m) === null ? 1 : 2;
+      const at = String(m.savedAt || '');
+      if (!best || rank < best.rank || (rank === best.rank && at < best.at)) best = { id, rank, at };
+    }
+    return best ? best.id : AUTO_SLOTS[0];
+  }
+  // newGameImpact() -> null | { runs: SlotMeta[], replaced: SlotMeta|null, kept: SlotMeta[] }
+  // The runs in progress the autosave slots hold — ONE entry per game, its
+  // newest autosave, newest game first — and the game whose ONLY autosave a
+  // NEW game's first autosave would overwrite (null: no run is lost; an
+  // older autosave of a game whose newer one stays is not a lost run).
+  function newGameImpact() {
+    const byGame = new Map();
+    for (const id of AUTO_SLOTS) {
+      const m = slots[id];
+      const k = slotRunKey(m);
+      if (k === null) continue;
+      const cur = byGame.get(k);
+      if (!cur || String(m.savedAt || '') > String(cur.savedAt || '')) byGame.set(k, m);
+    }
+    if (!byGame.size) return null;
+    const runs = [...byGame.values()].sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')));
+    const victim = slots[pickAutoSlot({ runKey: null })];
+    const vk = slotRunKey(victim);
+    const sameGameElsewhere = vk !== null && AUTO_SLOTS.some((id) => slots[id] && slots[id] !== victim && slotRunKey(slots[id]) === vk);
+    const replaced = vk !== null && !sameGameElsewhere ? victim : null;
+    const copy = (m) => ({ ...m, meta: { ...m.meta } });
+    return { runs: runs.map(copy), replaced: replaced ? copy(replaced) : null, kept: runs.filter((m) => m !== replaced).map(copy) };
   }
 
   // ----------------------------------------------------- new game --
@@ -1058,6 +1119,9 @@ export function createSaveSystem({
     importText,
     autosave,
     resetToFresh,
+    // Gauntlet r3 J3-F3: what a New Game does to the runs in progress the
+    // autosave slots hold (the title's New Game confirm reads it).
+    newGameImpact,
     profile: () => profileStore.get(),
     profileReport: () => profileStore.report,
     recordRun,
@@ -1108,6 +1172,16 @@ export function createSaveSystem({
     resetToFresh,
     recovery: () => recovery.map((r) => ({ ...r })),
     autosaveLog: () => autosaver.log(),
+    // Per-game rotation probes (J3-F3): the slot the next autosave of the
+    // live state would take, and the New Game impact.
+    autoSlotFor: () => {
+      try {
+        return pickAutoSlot(capture());
+      } catch {
+        return pickAutoSlot(null);
+      }
+    },
+    newGameImpact,
     autosave: (reason) => autosave(reason),
     autosaveEnabled: (on) => autosaver.setEnabled(on),
     resetAutosaveThrottle: () => autosaver.resetThrottle(),
