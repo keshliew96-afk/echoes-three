@@ -21,8 +21,10 @@ const NET_PORT = Number(process.env.ECHOES_NET_PORT) || 7800;
 const NET_TARGET = `http://127.0.0.1:${NET_PORT}`;
 
 // One quiet line instead of a stack trace per attempt while the session
-// server is not running (every Multiplayer check would print one).
+// server is not running (every Multiplayer check would print one), and no
+// log at all when a player simply closes the tab mid-connection.
 let lastHint = 0;
+const QUIET = new Set(['ECONNREFUSED', 'ECONNRESET', 'ECONNABORTED', 'EPIPE']);
 function netProxy() {
   return {
     '^/echoes(?:[?#]|$)': {
@@ -32,9 +34,9 @@ function netProxy() {
       configure(proxy) {
         const emit = proxy.emit.bind(proxy);
         proxy.emit = (event, err, req, res, ...rest) => {
-          if (event === 'error' && err && (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET')) {
+          if (event === 'error' && err && QUIET.has(err.code)) {
             const now = Date.now();
-            if (now - lastHint > 30000) {
+            if (err.code === 'ECONNREFUSED' && now - lastHint > 30000) {
               lastHint = now;
               console.log(`[echoes] /echoes -> ${NET_TARGET}: no session server there (${err.code}). Multiplayer needs it: run "npm run net" in another terminal.`);
             }

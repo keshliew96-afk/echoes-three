@@ -178,6 +178,7 @@ function createMpMenuScreen(ctx) {
   let busy = false;
   let probeGen = 0;
   let lastProbe = null;
+  let offUpdate = null;
 
   const rejoinBtn = mkBtn('Rejoin', 'nt-mp-rejoin', { cls: 'ap-primary', caption: ' ', onPress: () => doRejoin() });
   const hostBtn = mkBtn('Host a Game', 'nt-mp-host', { caption: 'A private room — friends join with its code', onPress: () => act('host') });
@@ -421,15 +422,33 @@ function createMpMenuScreen(ctx) {
       render();
       renderSide();
       check();
+      // DEPLOY: a newer build found while the menu is open (the server came
+      // back from a redeploy, a room of a newer version) -> the update panel.
+      const n = net();
+      if (offUpdate) offUpdate();
+      offUpdate =
+        n && typeof n.on === 'function'
+          ? n.on('update_available', () => {
+              if (manager.top() !== 'mp-menu') return;
+              probeGen += 1; // a check in flight must not overwrite it
+              state = 'update';
+              render();
+              renderSide();
+              focusDefault();
+            })
+          : null;
     },
     onFocus() {
       // Back from the lobby / join / server dialog: re-check and re-render.
       render();
       renderSide();
-      if (!net() || !net().connected) check();
+      if (state !== 'update' && (!net() || !net().connected)) check();
+      else focusDefault();
     },
     onClose() {
       probeGen += 1;
+      if (offUpdate) offUpdate();
+      offUpdate = null;
     },
   };
 }
