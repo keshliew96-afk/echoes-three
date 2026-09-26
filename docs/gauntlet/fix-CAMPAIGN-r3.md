@@ -1,5 +1,5 @@
-STATUS: PARTIAL
-fix-CAMPAIGN-r3 — GC7-inflight-4s (kill-to-control > 4.0 s with an enemy shot in flight)
+STATUS: COMPLETE
+VERDICT: GC7-inflight-4s FIXED (dbfff50, v0.5.96) — the boss-room clear fires on the killing blow's tick and enemy shots in flight dissolve with it; kill->control with a shot in flight 3024-3119 ms (prod) / 3049-3085 ms (dev), was 3811-4754 ms; Enter@0.5 s 569-1484 ms; 0 near-black; goldens 9/9; every regression probe passes.
 
 ## Steps
 - [1] BEFORE reproduced (critic probe tools/gntccampaign3-inflight.mjs, run from scratch cwd, prod build dist-gntfixCAMPAIGN3 @ :4380, v0.5.94): seeds 20-24 waitTicks 104/50/47/49/49, cardTicks 180, kill->control 4754/3872/3848/3857/3811 ms (1 of 5 > 4.0 s; all > 3.8 s).
@@ -8,3 +8,23 @@ fix-CAMPAIGN-r3 — GC7-inflight-4s (kill-to-control > 4.0 s with an enemy shot 
 - [4] critic flow probe (natural play: Stag + last add killed by real right-click fire) on prod :4380, run from scratch cwd: L1->L2 auto killTick 714 = clearTick 714, kill->control 2976 ms, 0 near-black (min luma 38.5); L2->L3 Enter 733 ms; CAMPAIGN COMPLETE -> camp, Quit to Lobby -> camp; 0 page errors.
 - [5] Node edge probe tools/gntfixCAMPAIGN3-edge.mjs seeds 1-10 (campaign / single / wipe / stagFirst, each with >= 1 Quillback shot in flight at the kill): AFTER 40/40 (clear on the next tick, shot dissolved on the clear tick with cause room_clear, 0 impacts after, wipe still -> defeat) captures/gntfixCAMPAIGN3-edge.json; BEFORE (same tool on a git-archive of HEAD 027850e src) 10/40 — no clear within 3 ticks in every in-flight case. Existing tools/gntCAMPAIGN-edge.mjs 60/60 (captures/gntfixCAMPAIGN3-edge-legacy.json).
 - [6] regression before commit: smoke gntfixCAMPAIGN3-smoke exit 0, 0 PAGEERROR; core loop (?seed=7&menu=0 + tools/actions/gntfixCAMPAIGN3-coreloop.json) exit 0, 0 PAGEERROR: camp tick 640 -> portal 793 -> combat room 1 (campaign L1) 812 -> reward 1007 (captures/gntfixCAMPAIGN3-core-reward.png). Docs: PLAN §12.2 trigger text + GC.7 in-flight clause, BUILD_BRIEF §24 flow, TESTING campaign tools, build-CAMPAIGN D15. Version 0.5.95 -> 0.5.96.
+- [7] post-commit regression (dbfff50): legacy harness tools/gntCAMPAIGN-legacy.mjs 7/7 on 5199 (?scene=arena&room=kill_all, ?run=1 single -> victory -> camp, startRun act 2, ?level=3, ?menu=0&act=2 + portal E, skipToRoom(5)); Node save/records tools/gntCAMPAIGN-save.mjs 31/31; M2 Node round trips tools/gntM2-nodetrip.mjs 9/9 (boss scenario equal); goldens 9/9; 2-client campaign sync tools/gntCAMPAIGN-net.mjs --port 7898 12/12 (guest on the card for the whole [clear, advance) window, 0 desyncs, host Quit to Lobby -> both in camp); prod rebuilt at HEAD (bundle 0.5.96) in-flight auto seeds 40-44: kill->control 3032-3064 ms, wait 1 tick, exactly once, 0 errors (captures/gntfixCAMPAIGN3-inflight-prod-final.json).
+- [8] processes: vite preview :4380 (PID 72100, started by this builder) stopped; the net probe's own server on 7898 stopped by the tool (0 listeners on 4380 / 7898); dist-gntfixCAMPAIGN3 removed. The shared dev server 5199 was never touched.
+
+## BEFORE / AFTER (GC7-inflight-4s)
+| probe | before (v0.5.94) | after (v0.5.96) |
+|---|---|---|
+| critic tools/gntccampaign3-inflight.mjs, prod, seeds 20-24 | wait 104/50/47/49/49 ticks; kill->control 4754/3872/3848/3857/3811 ms (1/5 > 4.0 s) | wait 1/1/1/1/1; 3079/3079/3045/3074/3084 ms |
+| tools/gntfixCAMPAIGN3-inflight.mjs auto, prod seeds 20-27 + 40-44 | — | 3024-3081 ms, max wait 1 tick, 0 over bound |
+| same, dev 5199 seeds 20-24 | — | 3049-3085 ms |
+| same --enter (Enter at 0.5 s), prod | (Enter during the shot wait did nothing: the card only started after it) | 569-836 ms (1007-1484 ms in a run under heavy machine load; all <= 1.5 s) |
+| same --luma, prod seeds 30-32 | — | 0 near-black / 566 frames, min luma 36.9 |
+| critic tools/gntccampaign3-flow.mjs, natural play, prod | prodV: last add t798, clear t852, 4012 ms | kill t714 = clear t714, 2976 ms; L2->L3 Enter 733 ms |
+| Node tools/gntfixCAMPAIGN3-edge.mjs seeds 1-10 | 10/40 (no clear within 3 ticks with a shot in flight) | 40/40 |
+
+## Decisions
+- D1 Root cause, not symptom: the sim's boss-room predicate (src/sim/boss.js endOfTick) waited for every enemy shot to land or expire (up to 7 u / 4 u/s = 105 ticks). BUILD_BRIEF §11 says "Clear = boss and adds all dead" and §13 step 2 "projectiles ... despawn (no instance may land after the clear tick)"; best-in-class action roguelikes (Enter the Gungeon, Hades) clear enemy bullets on the last kill. So the clear now fires at the end of the killing blow's tick and despawnShots() dissolves the shots (eshot_despawn cause room_clear — the presentation's existing despawn path). A wipe on the same tick still outranks it (partyUp check kept).
+- D2 Not done instead: shortening the card when the clear is late (would only mask the wait and leave the Enter skip dead during it) — unnecessary once the clear is on the blow.
+- D3 Scope: wave rooms (src/sim/waves.js kill_all / soft-failed defend) keep their shot-aware predicate — they are not level transitions, and the certified core loop + Node goldens stay bit-identical (the run goldens never reach room 8; 9/9 before and after).
+- D4 Cross-owner edit: src/sim/boss.js belongs to M4a/M4b (content); minimal anchored edit in endOfTick only, recorded as D15 in docs/gauntlet/build-CAMPAIGN.md.
+- D5 The critic's browser probes were run from a scratch working directory (their writeJson paths are cwd-relative) so no non-gntfixCAMPAIGN3 capture landed in the repo; tools/gntCAMPAIGN-net.mjs needs the repo cwd for its server, so it ran there with --tag gntfixCAMPAIGN3 (captures/ is git-ignored).
