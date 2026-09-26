@@ -1098,12 +1098,18 @@ export function createSocketScreen({ bus, world }) {
     rootEl.appendChild(guestNote);
     const syncNote = () => {
       let guest = false;
+      let who = 'Healer';
       try {
         const n = (window.__echoes && window.__echoes.net) || null;
         guest = !!(n && typeof n.isGuest === 'function' && n.isGuest());
+        // The host decides (net/seats.js chooserSeat: the Tank after a
+        // migration once a human is back on the Healer).
+        if (guest && n.session && typeof n.session.chooserLabel === 'function') who = n.session.chooserLabel() || 'Healer';
       } catch {
         guest = false;
       }
+      const text = `Read-only — the ${who} sets the sockets`;
+      if (guestNote.textContent !== text) guestNote.textContent = text;
       guestNote.style.display = open && guest ? '' : 'none';
     };
     const obs = new MutationObserver(syncNote);

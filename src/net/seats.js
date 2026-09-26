@@ -33,3 +33,17 @@ export function seatControlText(ev, nameOf = () => null) {
       return `${who} took the ${cls}`;
   }
 }
+
+// chooserSeat(room) — whose call the between-room choices (draft, door, shop,
+// sockets) are right now: the HOST's (PLAN §3.7) — except while the leader
+// bot plays the Healer for a host that is not seat 0 (after a migration with
+// nobody on seat 0: the bot makes the Healer's choices). A human back on
+// seat 0 (the old host accepting "Rejoin", a drop-in) hands the choices to
+// the host. Guests' read-only banners name this seat.
+export function chooserSeat(room) {
+  if (!room || !Array.isArray(room.seats)) return 0;
+  const hostSeat = room.seats.find((s) => s && s.peerId && s.peerId === room.hostPeerId);
+  if (!hostSeat || hostSeat.index === 0) return 0;
+  const s0 = room.seats.find((s) => s && s.index === 0);
+  return s0 && s0.peerId && s0.connected !== false ? hostSeat.index : 0;
+}

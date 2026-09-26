@@ -33,7 +33,12 @@ export const TARGET_INPUT_DEPTH = 2;
 const DRAIN_ABOVE = TARGET_INPUT_DEPTH + 2;
 const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
-export function createHostDriver({ net, world, clock, bus, registry, capture, sampleLocal, localSeat = 0, snapEvery = SNAPSHOT_EVERY_TICKS, log = () => {}, onCmd = null }) {
+// onPlayerController(controller, tick) — called BEFORE the tick's world.step
+// whenever who plays seat 0 changes on a host that is not seat 0 ('human' =
+// a remote human's frames drive the Healer, 'ai' = nobody does: the leader
+// bot). The session switches the leader bot with it, so the bot never
+// overrides a human Healer's input (NET3-F1).
+export function createHostDriver({ net, world, clock, bus, registry, capture, sampleLocal, localSeat = 0, snapEvery = SNAPSHOT_EVERY_TICKS, log = () => {}, onCmd = null, onPlayerController = null }) {
   const snap = createSnapshotHost();
   const ring = createRewindRing({ registry });
   const feeds = new Map(); // seat -> feed
@@ -261,6 +266,13 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       // (M4a's autopilot replaces this empty snapshot inside world.step).
       playerSnap = emptySnapshot();
       si.player = 'ai';
+    }
+    if (si.player !== playerController && mySeat !== 0 && typeof onPlayerController === 'function') {
+      try {
+        onPlayerController(si.player, tick);
+      } catch (err) {
+        log('player_controller_error', { error: String(err && err.message) });
+      }
     }
     playerController = si.player;
     if (migrateReasons) {

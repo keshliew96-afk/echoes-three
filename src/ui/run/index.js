@@ -691,16 +691,28 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const n = service('net');
     return !!(n && typeof n.isGuest === 'function' && n.isGuest());
   };
+  // Who decides: the host's seat — the Healer, unless a migration moved the
+  // host and a human is back on the Healer (then the host's class decides;
+  // net/seats.js chooserSeat).
   const GUEST_LINES = {
-    draft: 'The Healer is choosing the reward…',
-    path: 'The Healer picks the door — point with ←/→ and Enter',
-    shop: 'The Healer is shopping…',
-    end: 'Waiting for the Healer…',
-    transit: 'The Healer leads on to the next level…',
+    draft: (w) => `The ${w} is choosing the reward…`,
+    path: (w) => `The ${w} picks the door — point with ←/→ and Enter`,
+    shop: (w) => `The ${w} is shopping…`,
+    end: (w) => `Waiting for the ${w}…`,
+    transit: (w) => `The ${w} leads on to the next level…`,
+  };
+  const chooserLabel = () => {
+    const n = service('net');
+    try {
+      return (n && n.session && typeof n.session.chooserLabel === 'function' && n.session.chooserLabel()) || 'Healer';
+    } catch {
+      return 'Healer';
+    }
   };
   function syncGuestNote() {
     const on = current !== 'none' && netGuest();
-    const text = on ? GUEST_LINES[current] || 'The Healer is choosing…' : '';
+    const w = on ? chooserLabel() : 'Healer';
+    const text = on ? (GUEST_LINES[current] ? GUEST_LINES[current](w) : `The ${w} is choosing…`) : '';
     if (guestNote.textContent !== text) guestNote.textContent = text;
     const disp = on ? '' : 'none';
     if (guestNote.style.display !== disp) guestNote.style.display = disp;

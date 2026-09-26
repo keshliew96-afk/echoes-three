@@ -39,7 +39,7 @@ import { createInterpClock } from './interp.js';
 import { createOwnSeat } from './reconcile.js';
 import { createActionShadow } from './predict.js';
 import { createMetronome } from './metronome.js';
-import { seatLabel, seatControlText } from './seats.js';
+import { seatLabel, seatControlText, chooserSeat } from './seats.js';
 import { createCosmetics } from '../ui/net/cosmetics.js';
 import { createNetHud } from '../ui/net/hud.js';
 import { validateServerUrl } from './lobbyClient.js';
@@ -309,6 +309,26 @@ export function createNetSession(ctx) {
   }
 
   // =============================================================== HOST ==
+  // The seat-0 LEADER BOT (PLAN §3.7: M4a's autopilot plays the Healer while
+  // no human does — a host that is not seat 0, i.e. after a migration). It
+  // plays ONLY while nobody holds the seat: M4a's autopilot replaces the
+  // tick's whole seat-0 intent snapshot while it is on (main.js), so a human
+  // Healer — the old host accepting "Rejoin", a drop-in — would otherwise
+  // send frames the sim never reads (NET3-F1). The host driver reports every
+  // seat-0 controller change BEFORE that tick steps; the bot hands the seat
+  // over on that very tick and takes it back on a drop / away / leave. While
+  // a human plays the Healer the between-room choices are the host's pages
+  // (PLAN §3.7 "build decisions belong to the host").
+  const LEADER_BOT = Object.freeze({ seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto' });
+  function setLeaderBot(on, tick = clock.tick) {
+    const rs = rawRunSystem();
+    const ap = rs && rs.autopilot;
+    const active = ap && typeof ap.active === 'function' ? ap.active() : autopilotOurs;
+    if (on && !active) world.cmd('autopilot', { ...LEADER_BOT });
+    else if (!on && active) world.cmd('autopilot', false);
+    if (on !== autopilotOurs || on !== active) log('leader_bot', { on, tick });
+    autopilotOurs = on;
+  }
   function startHost({ migrated = false } = {}) {
     if (role === 'host') return;
     const save = service('save');
@@ -324,6 +344,7 @@ export function createNetSession(ctx) {
       snapEvery: net.snapshotEveryTicks || SNAPSHOT_EVERY_TICKS,
       log,
       onCmd: (ping) => showPing(ping),
+      onPlayerController: (ctrl, tick) => setLeaderBot(ctrl !== 'human', tick),
     });
     role = 'host';
     setSimStep((tick) => host.step(tick));
@@ -337,10 +358,7 @@ export function createNetSession(ctx) {
     net.setSessionDriver({ onBinary: (u8) => host && host.onBinary(u8), onControl: (m) => onControl(m) });
     host.start({ migrated });
     installPresentation(localSeat());
-    if (localSeat() !== 0) {
-      world.cmd('autopilot', { seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto' });
-      autopilotOurs = true;
-    }
+    if (localSeat() !== 0) setLeaderBot(true, clock.tick);
     startRaf();
     log('host_start', { seat: localSeat(), migrated });
     changed();
@@ -1357,6 +1375,9 @@ export function createNetSession(ctx) {
       botSeq = -1;
       return bot;
     },
+    // Who makes the between-room choices now (the guest pages' banner): the
+    // host's seat, or the Healer while the leader bot plays it (seats.js).
+    chooserLabel: () => seatLabel(chooserSeat(net.room)),
     debugGuest: () => guest,
     // The own-seat pose the last rendered frame drew (guest probes).
     ownPose: () => (guest ? lastPose : null),
