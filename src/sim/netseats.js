@@ -97,9 +97,10 @@ export function seatInputOf(frames, carryBits = 0, carrySeqs = null) {
     presses: pressesOf(bits),
     pressSeq,
     viewTick: last.viewTick ?? 0,
-    // A starved tick's repeat of the held state (no input frame consumed,
-    // net/driver.js): the seat walks on it (the stale-input policy) but its
-    // dash does not advance — a dash runs on the seat's input frames.
+    // A starved tick (no input frame consumed, net/driver.js — the held-state
+    // repeat or a neutral tick inside DASH_HOLD_TICKS): the seat walks on it
+    // (the stale-input policy) but its dash does not advance — a dash runs on
+    // the seat's input frames.
     starved: frames.length > 0 && frames.every((f) => f.starved === true),
   };
 }
@@ -108,6 +109,16 @@ export function seatInputOf(frames, carryBits = 0, carrySeqs = null) {
 // repeats the last HELD state (move, aim, basic/revive — never presses) for
 // at most STALE_REPEAT_TICKS ticks, then neutral input until a frame arrives.
 export const STALE_REPEAT_TICKS = 8;
+// A starved seat's DASH waits for the input frames that carry it (its guest
+// predicts the dash frame for frame): the host holds it through this many
+// starved ticks — the held-state repeat AND the neutral ticks after it — so a
+// guest stall of up to 0.5 s (a main-thread / GC / program-compile pause, a
+// burst of upstream loss) resumes the dash exactly where its frames left it
+// and the state a snapshot reports at k stays "after frames <= k" (NET3-F2:
+// the 8-tick window alone still snapped 1.1-1.8 u after 200-470 ms guest
+// stalls). A longer silence runs the dash out on neutral input, so a held
+// dash (and its i-frames) is bounded — never a lag-switch shield.
+export const DASH_HOLD_TICKS = 30;
 export function repeatFrame(last, seq) {
   return { ...last, seq, tick: (last.tick | 0) + 1, press: 0, synthetic: 'repeat' };
 }

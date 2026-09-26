@@ -430,6 +430,7 @@ export function createNetSession(ctx) {
     installPresentation(seat);
     addKeyTimers();
     startRaf();
+    startStallWatch();
     requestFull('join');
     // ?netbot=<seed> (multi-client harnesses, e.g. the netbench's --url):
     // this guest plays with scripted input.
@@ -441,6 +442,7 @@ export function createNetSession(ctx) {
   function stopGuest() {
     if (!guest) return;
     removeKeyTimers();
+    stopStallWatch();
     metronome.stop();
     if (cosmetics) cosmetics.clear();
     guest = null;
@@ -717,15 +719,74 @@ export function createNetSession(ctx) {
     }
   }
 
+  // Render-stall watchdog (NET3-F2). A guest's input frames and its own-seat
+  // prediction ride the rendered frame (clock.advance from the frame loop).
+  // When the browser stops producing frames while the page stays visible and
+  // its main thread stays free — a GPU / raster stall (200-470 ms measured
+  // with four clients on one machine; snapshots kept arriving every 50 ms
+  // through it) — the host starved on the seat mid-dash and the guest's dash
+  // came back as a 1.1-1.8 u correction. While a guest is visible and in
+  // play, a main-thread timer steps the SAME fixed-tick advance headlessly
+  // (sample, 60 Hz frames sent, prediction stepped; nothing drawn) whenever
+  // no frame has advanced the guest for STALL_STEP_MS; the next rendered
+  // frame advances only the time the watchdog has not, and draws where the
+  // sim is. It never fires at any frame-rate limit the game offers (>= 30
+  // fps = 33 ms frames), never while hidden (away frames on the metronome),
+  // paused, frozen by the debug API or before the frame loop has run.
+  const STALL_STEP_MS = 50;
+  let guestStepFn = null; // the frame loop's step function (main.js simStep)
+  let guestLastStepAt = null; // now() of the last guest advance (frame or watchdog)
+  let guestWatchMs = 0; // wall ms the watchdog advanced since the last rendered frame
+  let stallTimer = 0;
+  const stallStats = { steps: 0, ms: 0, maxGapMs: 0 };
+  function stallWatch() {
+    const g = guest;
+    if (!g || !guestStepFn || guestLastStepAt === null || g.away) return;
+    if (typeof document !== 'undefined' && document.hidden) return;
+    if (app.simPaused()) return;
+    const t = now();
+    const gap = t - guestLastStepAt;
+    if (gap < STALL_STEP_MS) return;
+    // The frame loop has not advanced us for over a second: it is not
+    // stalled, it is stopped (debug freeze, a scene swap holding it) — leave it.
+    if (gap > 1000) return;
+    guestLastStepAt = t;
+    guestWatchMs += gap;
+    stallStats.steps += 1;
+    stallStats.ms += gap;
+    if (gap > stallStats.maxGapMs) stallStats.maxGapMs = gap;
+    try {
+      if (!g.frozen) sampleFrame();
+      rawAdvance(gap * g.rate, guestStepFn);
+    } catch (err) {
+      log('stall_step_error', { error: String(err && err.message) });
+    }
+  }
+  function startStallWatch() {
+    if (!stallTimer && typeof setInterval === 'function') stallTimer = setInterval(stallWatch, 16);
+  }
+  function stopStallWatch() {
+    if (stallTimer) clearInterval(stallTimer);
+    stallTimer = 0;
+    guestStepFn = null;
+    guestLastStepAt = null;
+    guestWatchMs = 0;
+  }
+
   // Guest per-frame driver (installed as clock.advance while a guest).
   function guestAdvance(frameMs, stepFn) {
     const g = guest;
     if (!g) return rawAdvance(frameMs, stepFn);
     const t0 = now();
+    guestStepFn = stepFn;
+    // Time the stall watchdog already stepped inside this frame's interval.
+    const simMs = guestWatchMs > 0 ? Math.max(0, frameMs - guestWatchMs) : frameMs;
+    guestWatchMs = 0;
+    guestLastStepAt = t0;
     if (!g.frozen) sampleFrame();
     let tInside = now();
     // ±2% tick-rate nudge holds the host's reported input buffer depth at 2.
-    const alpha = rawAdvance(frameMs * g.rate, stepFn);
+    const alpha = rawAdvance(simMs * g.rate, stepFn);
     tInside = now() - tInside;
     const rt = g.interp.renderTick(now());
     if (!g.frozen) {
@@ -961,6 +1022,9 @@ export function createNetSession(ctx) {
       } else {
         metronome.stop();
         guest.away = false;
+        // The stall watchdog waits for the first rendered frame after the return.
+        guestLastStepAt = null;
+        guestWatchMs = 0;
         guest.replica.resync();
         guest.interp.reset();
         guest.shownTick = null;
@@ -1289,6 +1353,10 @@ export function createNetSession(ctx) {
       predErrP95: os.predErrP95,
       predErrP50: os.predErrP50,
       predErrMax: os.predErrMax,
+      // Render-stall watchdog: headless advances while no frame was drawn.
+      stallSteps: stallStats.steps,
+      stallStepMs: Math.round(stallStats.ms),
+      stallGapMaxMs: Math.round(stallStats.maxGapMs),
       predErrSamples: os.predErrSamples,
       corrections: os.corrections,
       correctionSnaps: os.snaps,
@@ -1436,6 +1504,9 @@ export function createNetSession(ctx) {
       if (host && host.resetStats) host.resetStats();
       frameStats.guestNetMs.length = 0;
       frameStats.frameOver50Net = 0;
+      stallStats.steps = 0;
+      stallStats.ms = 0;
+      stallStats.maxGapMs = 0;
     },
   };
   // The net service carries the session (PLAN: `net` = M5a client -> M5b session).

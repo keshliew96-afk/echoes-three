@@ -6,7 +6,8 @@
 //      (target depth 2; two frames when the buffer has grown past 4 — every
 //      frame keeps its own movement step, sim/remote.js), repeats the last
 //      HELD state for <= 8 ticks when a seat is starved (never presses), then
-//      feeds neutral input; a frame lost beyond the 6-frame input redundancy
+//      feeds neutral input (a starved seat's dash waits for its frames for
+//      <= DASH_HOLD_TICKS); a frame lost beyond the 6-frame input redundancy
 //      is consumed as a repeat and its presses, if it ever arrives, land on
 //      the next tick (never dropped);
 //   2. steps world.step(tick, playerSnapshot, seatInputs) — seat 0 is the
@@ -25,7 +26,7 @@
 import { BIN, SNAPSHOT_EVERY_TICKS, KEYFRAME_EVERY_TICKS, SIM_HZ } from './protocol/constants.js';
 import { createSnapshotHost, pct } from './protocol/snapshot.js';
 import { decodeInputPacket, decodeCmd, encodeCmd, encodeEvents, encodeKeyframe, encodeEventsBundle, eventsBody, SEAT_ALL } from './protocol/codec.js';
-import { seatInputOf, repeatFrame, neutralFrame, frameFromSnapshot, playerSnapshotOf, STALE_REPEAT_TICKS } from '../sim/netseats.js';
+import { seatInputOf, repeatFrame, neutralFrame, frameFromSnapshot, playerSnapshotOf, STALE_REPEAT_TICKS, DASH_HOLD_TICKS } from '../sim/netseats.js';
 import { emptySnapshot } from '../core/intents.js';
 import { createRewindRing } from './lagcomp.js';
 
@@ -66,6 +67,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     staleRepeatTicksMax: 0,
     staleRepeats: 0,
     neutralTicks: 0,
+    longStarves: 0, // starve runs that outlasted DASH_HOLD_TICKS (a held dash ran out)
     gapsFilled: 0,
     latePresses: 0,
     drains: 0,
@@ -212,11 +214,14 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       if (f.missingRun > stats.staleRepeatTicksMax && f.missingRun <= STALE_REPEAT_TICKS) stats.staleRepeatTicksMax = f.missingRun;
       if (f.lastFrame.away) return 'away';
       const fr = f.missingRun <= STALE_REPEAT_TICKS ? repeatFrame(f.lastFrame, f.lastConsumed) : neutralFrame(f.lastFrame, f.lastConsumed);
-      // A starved REPEAT consumes no input frame: the seat's dash waits for
-      // the frames that carry it (sim/allies.js humanContinuous), so the
-      // state a snapshot reports at k is the dash after exactly frames <= k
-      // (NET3-F2). Past the repeat window the neutral frames run it again.
-      if (f.missingRun <= STALE_REPEAT_TICKS) fr.starved = true;
+      // A starved tick consumes no input frame: the seat's dash waits for the
+      // frames that carry it (sim/allies.js humanContinuous) through the
+      // repeat window AND the neutral ticks after it, up to DASH_HOLD_TICKS,
+      // so the state a snapshot reports at k is the dash after exactly frames
+      // <= k across a guest stall of up to 0.5 s (NET3-F2). A longer silence
+      // runs the dash out on the neutral frames.
+      if (f.missingRun <= DASH_HOLD_TICKS) fr.starved = true;
+      if (f.missingRun === DASH_HOLD_TICKS + 1) stats.longStarves += 1;
       if (f.missingRun <= STALE_REPEAT_TICKS) stats.staleRepeats += 1;
       else stats.neutralTicks += 1;
       frames = [fr];
@@ -571,6 +576,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       staleLog: staleLog.slice(-40),
       staleRepeats: stats.staleRepeats,
       neutralTicks: stats.neutralTicks,
+      longStarves: stats.longStarves,
       gapsFilled: stats.gapsFilled,
       latePresses: stats.latePresses,
       drains: stats.drains,
@@ -625,6 +631,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       stats.staleRepeatTicksMax = 0;
       stats.staleRepeats = 0;
       stats.neutralTicks = 0;
+      stats.longStarves = 0;
     },
     setLagCompensation(on) {
       ring.setEnabled(on);

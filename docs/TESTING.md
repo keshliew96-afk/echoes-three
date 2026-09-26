@@ -901,6 +901,30 @@ authoritative teleport, a data stall (> 12 ticks without data) or a render-
 clock re-anchor are counted apart (`teleportFrames` / `stallFrames` /
 `clockFrames`), not as smoothness faults.
 
+**Own-seat consistency rules (fix-M5b-r3, NET3-F1 / NET3-F2).** A snapshot's
+k is the seat's last consumed input seq AT ITS CAPTURE (the 2nd / 3rd guest is
+served from the same capture 1-2 ticks later). A human seat's dash advances
+one step per consumed input frame: on a starved tick (the <= 8-tick held-state
+repeat AND the neutral ticks after it, up to `DASH_HOLD_TICKS` = 30 in
+sim/netseats.js) it waits; a longer silence runs it out (host
+`net.stats().longStarves`). A guest whose browser stops drawing while the page
+stays visible (a GPU / raster stall) keeps sending 60 Hz frames: a render-stall
+watchdog steps the same fixed-tick advance headlessly after 50 ms without a
+frame (guest `stallSteps` / `stallStepMs` / `stallGapMaxMs`; it never fires at
+the 30 fps limit, hidden, paused or frozen). A seat handed from the AI to a
+human and a room / level re-seat re-base the prediction (`handoffs`, no predErr
+sample). After a migration the leader bot plays the Healer only while no human
+holds seat 0 (session log `leader_bot`); with a human Healer the run pages wait
+for the host and the guest banner names the deciding seat. Probes (production
+preview + own server in the M5b band): `node tools/gntfixM5b3-rejoin.mjs --port P
+--base U` (old host Rejoin after a migration walks; re-drop hand-back; pages),
+`node tools/gntfixM5b3-dodgediag.mjs --port P --base U --cond lat75,jit10 --reps 12`
+(per-dodge timelines: press, every local frame, every reconcile, the host's
+ally_dodge / seat_denied, starve counters), `node tools/gntfixM5b3-prederr.mjs`
+(every predErr > 0.3 u with its context over 3-4 rooms), `node
+tools/gntfixM5b3-spdodge.mjs` (single-player dodge frame timing — the HUD
+raster-stall reference).
+
 **Probes** (all start their own session server on the M5b ports 7820–7829;
 the long browser runs use a production preview so HMR never reloads a page:
 `npx vite build --outDir dist-M5b --emptyOutDir` + `npx vite preview --outDir
