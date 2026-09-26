@@ -1085,6 +1085,21 @@ docs/gauntlet/build-CAMPAIGN.md.
     `?run=1` (single run -> victory card -> camp), `cmd('startRun', { act:
     2 })`, `?level=3`, `?menu=0&act=2` + portal E, `skipToRoom(5)` with no
     run.
+  - `tools/gntfixCAMPAIGN3-inflight.mjs <base> <tag> [trials] [--enter]
+    [--luma] [--seed0 20]` — GC.7 with enemy shots IN FLIGHT at the killing
+    blow (the round-3 critic's method: `?level=1&seed=S`, `skipToRoom(8)`,
+    Stag at 50 %, a Quillback beside the party, one cmd kill once
+    `state().eshots.length >= 1`): wait ticks kill -> `level_clear` (1),
+    card ticks, killing blow -> first controllable Level-2 frame (<= 4000 ms
+    auto, <= 1500 ms with `--enter` at 0.5 s), exactly-once counts, shots
+    left / Downed after the clear, near-black frames with `--luma`, and the
+    level manager's own transition record (readiness, advance reason, long
+    frames). Run it on 5199 AND a production preview.
+  - `tools/gntfixCAMPAIGN3-edge.mjs [--seeds 1-10]` — the same in Node: a
+    shot in flight at the kill -> the clear (campaign) / victory (legacy
+    `startRun`) on the next tick with the shot dissolved (`eshot_despawn`
+    cause `room_clear`) and no impact after it; a wipe on the kill step is
+    still a defeat; Stag first then the adds -> the clear on the adds' tick.
   - `tools/gntCAMPAIGN-leak.mjs` / `tools/gntCAMPAIGN-warm.mjs` — the leak
     hunt's diagnostics (scene census diff; GL geometries alive in campaign 2
     that were not in campaign 1).

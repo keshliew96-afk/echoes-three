@@ -385,15 +385,23 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       return;
     }
 
-    // Boss down: the room clears once the adds are gone too.
+    // Boss down: the room clears once the adds are gone too — on the killing
+    // blow's own tick (§11 "Clear = boss and adds all dead"). An enemy shot
+    // still in flight never holds the clear: it dissolves with it (§13 step 2,
+    // "no instance may land after the clear tick"; the Gungeon / Hades rule —
+    // the last kill clears the bullets). Waiting for it (a shot flies up to
+    // 7 u / 4 u/s = 105 ticks) delayed `level_clear` and pushed the campaign's
+    // killing blow -> next-level control past PLAN GC.7's 4.0 s bound
+    // (CAMPAIGN fix r3, GC7-inflight-4s). A party wipe still outranks it.
     if (liveAdds() > 0) return;
     let partyUp = false;
-    let shots = 0;
     for (const e of registry.all()) {
-      if (e.partyIndex !== undefined && e.hp > 0) partyUp = true;
-      else if (e.kind === 'eshot') shots += 1;
+      if (e.partyIndex !== undefined && e.hp > 0) {
+        partyUp = true;
+        break;
+      }
     }
-    if (!partyUp || shots > 0) return;
+    if (!partyUp) return;
     cleared = true;
     enemies.despawnShots();
     enemies.retreatAllSurvivors();

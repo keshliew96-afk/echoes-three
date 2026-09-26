@@ -2201,13 +2201,23 @@ startTick, untilTick, minSkipTick, hardUntilTick, summary }`.
 | `startRun({ act, challenge })` (`startRun`, `?run=1`, `skipToRoom` with no run) | UNCHANGED single-level harness run (`mode: 'single'`): the Stag clear → `run_end victory` → camp — the act runner, simtrace, M2 / M5 probes |
 
 **Level-clear trigger (exactly once).** The boss room's `room_cleared` (the Stag
-AND every add dead, no enemy shot in flight, a party member standing —
-sim/boss.js) reaches `onRoomCleared`, which acts only while `phase ===
+AND every add dead, a party member standing — sim/boss.js, evaluated at the end
+of the killing blow's own tick) reaches `onRoomCleared`, which acts only while `phase ===
 'combat'` and changes the phase in the same call; a per-level latch
 (`campaign.clearedAt === index`) makes any second call a no-op. Defeat outranks
 the clear on the same tick (the ally block's defeat rule runs before the boss
 predicate, §4 order; `endRun('defeat')` deactivates the run, so the clear
-predicate never evaluates). On the clear tick, in order:
+predicate never evaluates). **The clear never waits for an enemy shot in
+flight** (CAMPAIGN fix r3, GC7-inflight-4s): until then the boss predicate also
+required "no eshot alive", so a Quillback / Stag-add shot still flying at the
+killing blow (up to 7 u at 4 u/s = 105 ticks) held `level_clear` back and the
+full card still followed — 3.8–4.8 s from the blow to control. Now the shot
+dissolves with the clear (`enemies.despawnShots()` → `eshot_despawn { cause:
+'room_clear' }`, BUILD_BRIEF §13 step 2 "no instance may land after the clear
+tick"; the Gungeon / Hades rule — the last kill clears the bullets). Wave rooms
+(sim/waves.js) keep their shot-aware predicate — the certified core loop and the
+Node goldens are untouched (the run goldens never reach room 8). On the clear
+tick, in order:
 1. `level_clear { level, name, next, final, index, campaign, ticks, rooms }`
    (every level clear, campaign or single — the unlock / records trigger);
 2. the final level or a single run → `endRun('victory')` (a campaign
@@ -2451,7 +2461,10 @@ BUILD_BRIEF §23.2.
   the card never shown longer than `untilTick` + 6 s wall; from the killing
   blow to the first controllable frame of the next level ≤ 4.0 s (auto) and
   ≤ 1.5 s with an Enter skip at 0.5 s, on the dev server AND the production
-  build.
+  build — INCLUDING a killing blow with enemy shots in flight (the clock starts
+  at the blow, not at `level_clear`; probes `tools/gntccampaign3-inflight.mjs`
+  and `tools/gntfixCAMPAIGN3-inflight.mjs`, sim half
+  `tools/gntfixCAMPAIGN3-edge.mjs`: `level_clear` on the tick after a cmd kill).
 - **GC.8 Locking**: a fresh profile lists Level 1 unlocked, 2–3 locked; locked
   cards cannot be started by keyboard, mouse, mocked gamepad,
   `campaign.choose`, `cmd('campChoose')`, a save file or a guest request;

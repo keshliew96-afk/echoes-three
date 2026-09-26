@@ -1464,7 +1464,9 @@ The user: "Adjust the game progression flow from an open level-selection
 model to a linear campaign progression model."
 
 **Flow.** Camp → Begin Run (E at the portal) → **Level 1** → its Hollow Stag
-falls → the **level-clear card** (~3 s: "<LEVEL> — CLEARED", the next level's
+and the last add fall → on that very tick the level is won (enemy shots still in
+flight dissolve with the clear — §13 step 2; the clear never waits for them) →
+the **level-clear card** (~3 s: "<LEVEL> — CLEARED", the next level's
 name, the carried build, "Enter — set out now") while the next level loads →
 **Level 2** starts on its own → … → the final Stag → **CAMPAIGN COMPLETE**
 (10 s, Enter sooner) → camp. A defeat ends the campaign on its defeat card;
