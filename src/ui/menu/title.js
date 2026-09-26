@@ -16,6 +16,7 @@
 import { service, screenFactory } from '../../app/registry.js';
 import { createHints } from './hints.js';
 import { VERSION } from '../../version.js';
+import { transitShort, roman } from '../../save/describe.js';
 
 const OPEN_GUARD_MS = 350; // a touch/click that dismissed the splash never lands on an item
 
@@ -38,11 +39,11 @@ function slotCaption(meta) {
   const parts = [];
   const name = (meta.slot && meta.slot.name) || meta.name;
   // CAMPAIGN (PLAN §12.8): "Level II · The Sunken Mill · Room 3"; a save on
-  // the level-transition card reads "Level I cleared".
+  // a level card reads "Level I cleared" (clear card) or "Setting out ·
+  // Level II · The Sunken Mill" (a Level-N start) — src/save/describe.js (M2, r3 F2).
   const lv = m.level ?? m.act;
-  const roman = ['', 'I', 'II', 'III', 'IV', 'V'][lv] ?? lv;
-  if (m.mode === 'run' && m.phase === 'transit') parts.push(`Level ${roman} cleared`);
-  else if (m.mode === 'run' && m.room) parts.push(`${lv ? `Level ${roman} · ` : ''}${m.levelName || m.actName || 'Run'} · Room ${m.room}`);
+  if (m.mode === 'run' && m.phase === 'transit') parts.push(transitShort(m) || `Level ${roman(lv)}`);
+  else if (m.mode === 'run' && m.room) parts.push(`${lv ? `Level ${roman(lv)} · ` : ''}${m.levelName || m.actName || 'Run'} · Room ${m.room}`);
   else if (m.mode === 'camp') parts.push('Camp');
   const when = ago(meta.savedAt || (meta.meta && meta.meta.savedAt));
   if (when) parts.push(when);

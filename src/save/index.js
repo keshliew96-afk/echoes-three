@@ -47,6 +47,15 @@ import { createAutosave } from './autosave.js';
 
 const TICK_HZ = 60;
 const r1 = (v) => Math.round(v * 10) / 10;
+// A save waits for its thumbnail at most this long after the capture (the
+// picture is encoded while the file is built + verified; a warm worker takes
+// ~70-110 ms). A later picture is attached when it lands (gauntlet r3, F3):
+// the save itself — and its toast — never waits seconds on a slow worker.
+const THUMB_WAIT_MS = 250;
+const THUMB_LATE = Symbol('thumb-late');
+// The thumbnail worker is started this long after the service (boot idle),
+// so its module fetch + start never lands on the first save.
+const THUMB_PREWARM_MS = 1200;
 // Work split across frames (G2.7): each heavy piece runs in its own task
 // right after a rendered frame. (requestIdleCallback never fires idle on a
 // continuously rendering page — it always hits its timeout.)
@@ -129,6 +138,21 @@ export function createSaveSystem({
   const store = createSaveStorage(storage !== undefined ? { storage } : {});
   const profileStore = createProfileStore({ store });
   const thumbs = createThumbnailer({ stage });
+  // Boot idle: start the thumbnail worker (fetch, module, JPEG encoder) now,
+  // not at the first save (gauntlet r3, F3).
+  if (typeof window !== 'undefined' && stage) {
+    const warmUp = () => {
+      try {
+        thumbs.prewarm();
+      } catch (err) {
+        console.warn('[save] thumbnail prewarm failed', err);
+      }
+    };
+    setTimeout(() => {
+      if (typeof requestIdleCallback === 'function') requestIdleCallback(warmUp, { timeout: 1500 });
+      else warmUp();
+    }, THUMB_PREWARM_MS);
+  }
 
   // ---------------------------------------------------- app trackers --
   // Saved with the state (tree.app): playtime = unpaused sim ticks, and the
@@ -400,13 +424,16 @@ export function createSaveSystem({
       kind: kind ?? slotKind(id),
       name: (name && String(name).slice(0, 32)) || (prevFile && prevFile.slot && prevFile.slot.name) || defaultSlotName(id),
     };
-    // Thumbnail: the next rendered frame (render never stops, even behind a menu).
+    // Thumbnail: the next rendered frame (render never stops, even behind a
+    // menu). Requested FIRST and encoded (worker) while the file is built and
+    // verified below; the write waits for it at most THUMB_WAIT_MS in total —
+    // a picture that is later is attached to the slot when it lands
+    // (attachLateThumb), never on the save's critical path (gauntlet r3, F3).
     let thumbMs = null;
     let shot = null;
-    if (thumb) {
-      shot = await thumbs.next();
-      thumbMs = shot ? shot.ms : null;
-    }
+    let shotP = null;
+    const tThumb = performance.now();
+    if (thumb) shotP = thumbs.next();
     await nextIdle();
     const t1 = performance.now();
     const meta = metaFor(tree);
@@ -423,17 +450,35 @@ export function createSaveSystem({
     if (!check.ok || check.file.hash !== built.hash) {
       return { ok: false, error: 'corrupt', detail: `self-check failed (${check.ok ? 'hash' : check.detail})` };
     }
+    const verifyMs = performance.now() - t2;
+    let thumbLate = false;
+    if (shotP) {
+      const left = Math.max(0, THUMB_WAIT_MS - (performance.now() - tThumb));
+      const got = await Promise.race([shotP, new Promise((res) => setTimeout(() => res(THUMB_LATE), left))]);
+      if (got === THUMB_LATE) thumbLate = true;
+      else shot = got;
+      thumbMs = shot ? shot.ms : null;
+    }
+    const t3 = performance.now();
     const w = store.writeAtomic(key, built.text);
     if (!w.ok) return { ok: false, error: w.error, detail: w.detail };
+    // This save's own picture, or none: a previous save's picture never
+    // stands in for this one (a late one is attached below when it lands).
     if (shot && shot.dataUrl) store.writePlain(`${key}.thumb`, shot.dataUrl);
-    const m = metaOf(built.file, { id, bytes: built.text.length, thumb: !!(shot && shot.dataUrl) || store.read(`${key}.thumb`) !== null });
+    else if (thumb) store.remove(`${key}.thumb`);
+    const m = metaOf(built.file, { id, bytes: built.text.length, thumb: !!(shot && shot.dataUrl) || (!thumb && store.read(`${key}.thumb`) !== null) });
     slots[id] = m;
     writeIndex(store, slots);
+    if (thumbLate) {
+      pendingThumbs.set(id, { savedAt: stampIso, hash: built.hash, since: performance.now() });
+      shotP.then((s) => attachLateThumb(id, stampIso, built.hash, s)).catch(() => attachLateThumb(id, stampIso, built.hash, null));
+    } else pendingThumbs.delete(id);
     // Lifetime playtime rides every successful write.
     profileStore.addPlaytime(profileTicks / TICK_HZ);
     profileTicks = 0;
     profileStore.flush();
-    const verifyWriteMs = performance.now() - t2;
+    // (the wait for the picture is not main-thread work: excluded)
+    const verifyWriteMs = verifyMs + (performance.now() - t3);
     const writeMs = r1(buildMs + verifyWriteMs);
     // Main-thread cost of each piece (each runs in its own task / frame gap).
     const pieces = {
@@ -442,7 +487,43 @@ export function createSaveSystem({
       build: r1(buildMs),
       verifyWrite: r1(verifyWriteMs),
     };
-    return { ok: true, meta: m, bytes: built.text.length, ms: r1(performance.now() - t0), writeMs, thumbMs, calmMs, pieces, hash: built.hash, reason };
+    return { ok: true, meta: m, bytes: built.text.length, ms: r1(performance.now() - t0), writeMs, thumbMs, thumbLate, calmMs, pieces, hash: built.hash, reason };
+  }
+
+  // A picture that missed THUMB_WAIT_MS: written to the slot when it lands —
+  // only if the slot still holds THAT save (an overwrite or a delete drops
+  // it; a rename keeps savedAt + hash, so it still attaches). Listeners (the
+  // saves screen) swap the picture in place.
+  const pendingThumbs = new Map(); // slot id -> { savedAt, hash, since }
+  const thumbListeners = new Set();
+  const thumbLog = []; // the last 10 late pictures (debug: save.thumbLog())
+  function attachLateThumb(id, savedAt, hash, s) {
+    const p = pendingThumbs.get(id);
+    if (p && p.savedAt === savedAt) pendingThumbs.delete(id);
+    const cur = slots[id];
+    let result;
+    if (!s || !s.dataUrl) result = 'no picture';
+    else if (!cur || cur.savedAt !== savedAt || cur.hash !== hash) result = 'slot changed';
+    else {
+      const w = store.writePlain(`${slotKey(id)}.thumb`, s.dataUrl);
+      if (w.ok) {
+        slots[id] = { ...cur, thumb: true };
+        result = 'attached';
+      } else result = w.error || 'write failed';
+    }
+    thumbLog.push({ slot: id, savedAt, result, ms: p ? r1(performance.now() - p.since) : null, via: s ? s.via : null });
+    if (thumbLog.length > 10) thumbLog.shift();
+    for (const fn of thumbListeners) {
+      try {
+        fn(id, result);
+      } catch (err) {
+        console.warn('[save] thumb listener threw', err);
+      }
+    }
+  }
+  function onThumb(fn) {
+    thumbListeners.add(fn);
+    return () => thumbListeners.delete(fn);
   }
 
   async function save(id, { name, kind } = {}) {
@@ -526,6 +607,7 @@ export function createSaveSystem({
     if (!isSlotId(id)) return { ok: false, error: 'missing' };
     const key = slotKey(id);
     for (const k of [key, `${key}.bak`, `${key}.tmp`, `${key}.thumb`]) store.remove(k);
+    pendingThumbs.delete(id);
     delete slots[id];
     writeIndex(store, slots);
     return { ok: true };
@@ -981,6 +1063,9 @@ export function createSaveSystem({
     recordRun,
     lastRecord: () => lastRecord,
     thumb: thumbOf,
+    // A save whose picture is still being encoded (attached when it lands).
+    thumbPending: (id) => pendingThumbs.has(id),
+    onThumb,
     rescan,
     flush() {
       profileStore.addPlaytime(profileTicks / TICK_HZ);
@@ -1059,6 +1144,9 @@ export function createSaveSystem({
     tracker: () => ({ ...tracker, profileTicks }),
     thumb: thumbOf,
     lastThumb: () => thumbs.last(),
+    thumbWarm: () => thumbs.warm(),
+    thumbPending: (id) => pendingThumbs.has(id),
+    thumbLog: () => thumbLog.map((r) => ({ ...r })),
     keys: () => ({ index: INDEX_KEY, profile: PROFILE_KEY, slot: (id) => slotKey(id) }),
     errors: SAVE_ERRORS,
     stepping: () => stepping,

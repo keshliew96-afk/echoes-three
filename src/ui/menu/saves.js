@@ -22,6 +22,7 @@ import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { createHints } from './hints.js';
 import { createRecordsScreen } from './records.js';
+import { transitWhere } from '../../save/describe.js';
 
 const SAVE_ERRORS = {
   quota: 'Not enough browser storage — delete a slot or export saves to files.',
@@ -85,10 +86,12 @@ export function fmtDate(iso) {
 }
 export function whereLine(m) {
   const meta = (m && m.meta) || {};
-  // CAMPAIGN (schema 3, PLAN §12.8): levels, and the level-transition card.
+  // CAMPAIGN (schema 3, PLAN §12.8): levels, and the level cards — a clear
+  // card ("Level I cleared — next: Level II · …") or the setting-out card of a
+  // Level-N start ("Setting out — Level II · …"), src/save/describe.js (r3 F2).
   const lv = meta.level ?? meta.act ?? null;
   const roman = lv ? ['', 'I', 'II', 'III', 'IV', 'V'][lv] ?? String(lv) : null;
-  if (meta.mode === 'run' && meta.phase === 'transit') return `Level ${roman ?? 'I'} cleared — on the road to the next level`;
+  if (meta.mode === 'run' && meta.phase === 'transit') return transitWhere(meta) || `Level ${roman ?? 'I'} — between levels`;
   if (meta.mode === 'run' && meta.room) {
     const act = roman ? `Level ${roman} · ${meta.levelName || meta.actName || ''}`.replace(/ · $/, '') : meta.actName || `Act ${meta.act || 1}`;
     const kind = ROOM_LABEL[meta.roomMode] || '';
@@ -136,6 +139,12 @@ const CSS = `
   display: flex; align-items: center; justify-content: center; color: ${P.warmGrey}; font-size: ${px(30)};
 }
 .sv-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sv-thumb.sv-wait, .sv-big.sv-wait { font-size: ${px(22)}; letter-spacing: 0.06em; color: ${P.bone}; }
+.sv-row.sv-saving { border-color: ${P.hearthAmber}88; }
+.sv-row.sv-saving .sv-line:first-child { color: ${P.parchment}; }
+.sv-row.sv-saving .sv-thumb, .sv-thumb.sv-wait, .sv-big.sv-wait { animation: sv-pulse 0.8s ease-in-out infinite alternate; }
+@keyframes sv-pulse { from { opacity: 1; } to { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .sv-row.sv-saving .sv-thumb, .sv-thumb.sv-wait, .sv-big.sv-wait { animation: none; } }
 .sv-txt { min-width: 0; display: flex; flex-direction: column; gap: ${px(2)}; }
 .sv-name { font-size: ${px(26)}; font-weight: 800; letter-spacing: 0.03em; color: ${P.parchment}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sv-line { font-size: ${px(22)}; color: ${P.bone}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -163,7 +172,12 @@ const CSS = `
 .sv-dl { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; gap: ${px(2)} ${px(14)}; margin: 0; font-size: ${px(22)}; line-height: 1.35; overflow-y: auto; overflow-x: hidden; min-height: 0; flex: 1 1 auto; scrollbar-color: ${P.warmGrey}88 transparent; }
 .sv-dl dt { color: ${P.warmGrey}; margin: 0; white-space: nowrap; }
 .sv-dl dd { color: ${P.bone}; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sv-dl dd.sv-wrap { white-space: normal; }
+.sv-dl dd.sv-wrap { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+/* Rows size to their (wrapped) content: an overflow:hidden grid item has a
+   zero automatic minimum, so in a short panel the auto rows used to shrink to
+   one line and clip the second line of Where / Party / Skills (r3). The list
+   scrolls instead when it is taller than the panel. */
+.sv-dl { grid-auto-rows: max-content; }
 .sv-msg { font-size: ${px(22)}; color: ${P.parchment}; line-height: 1.4; white-space: pre-line; overflow-y: auto; min-height: 0; flex: 0 1 auto; }
 .sv-acts { display: flex; flex-wrap: wrap; gap: ${px(8)}; margin-top: auto; flex: 0 0 auto; padding-top: ${px(4)}; }
 .sv-acts .ap-btn { min-width: ${px(96)}; padding: 0 ${px(14)}; font-size: ${px(22)}; letter-spacing: 0.04em; }
@@ -265,10 +279,99 @@ export function createSavesScreen(ctx) {
   let open = false;
   let selectedId = null;
   let busy = false;
+  let queued = null; // the last press made while busy — replayed when it ends (r3 F3)
+  let savingId = null; // the slot a save is being written to (row shows "Saving…")
+  let offThumb = null;
   const rowEls = new Map(); // slot id -> row button
 
   const save = () => service('save');
   const inGame = () => app.state === 'playing';
+
+  // ---------------------------------------------------- mouse hover intent --
+  // (gauntlet r3, F1) Keyboard / gamepad focus selects a row at once (the
+  // detail panel follows). A mouse HOVER moves the focus ring at once (PLAN
+  // §3.3 "hover focuses"), but the detail panel — whose Load / Rename /
+  // Export / Delete act on the slot it shows — only follows a row the pointer
+  // RESTS on (moved < HOVER_REST_PX over HOVER_REST_MS). A pointer travelling
+  // from the row the player chose to a panel button crosses other rows without
+  // retargeting the panel; leaving the list hands the ring back to the
+  // selected row, so ring and panel never disagree. A click on a row still
+  // acts on exactly that row.
+  const HOVER_REST_MS = 120;
+  const HOVER_REST_PX = 6;
+  const trail = []; // pointer samples over the list: { t, x, y }
+  let overSlot = null; // the row under the pointer (pointermove target)
+  let hoverCand = null; // { id, since } — hovered, not yet selected
+  let hoverRaf = 0;
+  function cancelHover() {
+    hoverCand = null;
+    if (hoverRaf) cancelAnimationFrame(hoverRaf);
+    hoverRaf = 0;
+  }
+  function pointerRested(now) {
+    if (trail.length === 0) return true;
+    const from = now - HOVER_REST_MS;
+    let ref = null; // where the pointer was HOVER_REST_MS ago
+    for (let i = trail.length - 1; i >= 0; i--) {
+      if (trail[i].t <= from) {
+        ref = trail[i];
+        break;
+      }
+    }
+    if (!ref) return false; // not on the list long enough to judge
+    for (let i = trail.length - 1; i >= 0 && trail[i].t > from; i--) {
+      if (Math.hypot(trail[i].x - ref.x, trail[i].y - ref.y) >= HOVER_REST_PX) return false;
+    }
+    return true;
+  }
+  function hoverTick() {
+    hoverRaf = 0;
+    if (!hoverCand || !open) return cancelHover();
+    const row = rowEls.get(hoverCand.id);
+    if (!row || !row.isConnected || document.activeElement !== row || overSlot !== hoverCand.id) return cancelHover();
+    const now = performance.now();
+    if (now - hoverCand.since >= HOVER_REST_MS && pointerRested(now)) {
+      const id = hoverCand.id;
+      cancelHover();
+      select(id);
+      return;
+    }
+    hoverRaf = requestAnimationFrame(hoverTick);
+  }
+  function armHover(id) {
+    if (id === selectedId) return cancelHover();
+    if (hoverCand && hoverCand.id === id) return;
+    hoverCand = { id, since: performance.now() };
+    if (!hoverRaf) hoverRaf = requestAnimationFrame(hoverTick);
+  }
+  // Runs before the #app-ui root's hover-focus listener (bubble order), so a
+  // sample is recorded before the focus change that arms the candidate.
+  listEl.addEventListener(
+    'pointermove',
+    (e) => {
+      if (e.pointerType === 'touch') return;
+      const t = performance.now();
+      trail.push({ t, x: e.clientX, y: e.clientY });
+      while (trail.length > 2 && trail[1].t < t - 600) trail.shift();
+      const r = e.target && e.target.closest ? e.target.closest('[data-slot]') : null;
+      overSlot = r ? r.dataset.slot : null;
+    },
+    { passive: true }
+  );
+  listEl.addEventListener('pointerleave', () => {
+    overSlot = null;
+    trail.length = 0;
+    const pending = hoverCand;
+    cancelHover();
+    // The pointer left the list from a row it only crossed: the ring goes
+    // back to the selected row (the one the panel shows). If it is heading to
+    // a panel button, that button's own hover takes the ring right after.
+    const a = document.activeElement;
+    if (pending && a && a.dataset && a.dataset.slot === pending.id && selectedId && a.dataset.slot !== selectedId) {
+      const r = rowEls.get(selectedId);
+      if (r && open && manager.top() === 'saves') manager.focusElement(r, 'api');
+    }
+  });
 
   function close() {
     if (manager.top() === 'saves') manager.pop();
@@ -300,7 +403,13 @@ export function createSavesScreen(ctx) {
       img.decoding = 'async';
       img.src = url;
       box.appendChild(img);
+    } else if (s && id && typeof s.thumbPending === 'function' && s.thumbPending(id)) {
+      // The save is written; its picture is still being encoded (r3 F3) —
+      // swapped in by the onThumb listener when it lands.
+      box.classList.add('sv-wait');
+      box.textContent = big ? 'Picture on its way…' : '…';
     } else box.textContent = big ? 'No picture' : '◇';
+    box.dataset.thumbFor = id || '';
     return box;
   }
 
@@ -372,6 +481,11 @@ export function createSavesScreen(ctx) {
       side.appendChild(g);
     }
     b.appendChild(side);
+    if (savingId === m.id) {
+      b.classList.add('sv-saving');
+      b.setAttribute('aria-busy', 'true');
+      l1.textContent = 'Saving…';
+    }
     b.setAttribute('aria-label', `${name.textContent}. ${l1.textContent}. ${l2.textContent}`);
     b.addEventListener('click', () => primary(m.id));
     return b;
@@ -436,7 +550,7 @@ export function createSavesScreen(ctx) {
     acts.className = 'sv-acts';
     const can = save() ? save().canSave() : { ok: false };
     if (mode === 'save') {
-      const b = mkBtn(m.empty ? 'Save here' : 'Overwrite', 'sv-act-save', 'ap-primary', () => primary(m.id));
+      const b = mkBtn(savingId === m.id ? 'Saving…' : m.empty ? 'Save here' : 'Overwrite', 'sv-act-save', 'ap-primary', () => primary(m.id));
       if (!can.ok) {
         b.disabled = true;
         b.title = can.reason || '';
@@ -568,6 +682,10 @@ export function createSavesScreen(ctx) {
     app.toast(text, { tone, ms: tone === 'error' ? 4600 : 2600 });
   }
 
+  // One operation at a time (a save, a confirm, a load). A press that lands
+  // while one runs is not dropped: the LAST such press is replayed when it
+  // ends, re-resolved against the slots as they are then (a second Enter on
+  // a slot that was just saved opens the overwrite confirm) — r3 F3.
   async function guarded(fn) {
     if (busy) return;
     busy = true;
@@ -575,10 +693,47 @@ export function createSavesScreen(ctx) {
       await fn();
     } finally {
       busy = false;
+      const q = queued;
+      queued = null;
+      if (q && open && manager.top() === 'saves') q();
+    }
+  }
+  function whenFree(intent) {
+    if (!busy) return false;
+    queued = intent;
+    return true;
+  }
+
+  function refreshThumb(id) {
+    if (!open) return;
+    const r = rowEls.get(id);
+    const old = r && r.querySelector('.sv-thumb');
+    if (old) old.replaceWith(thumbEl(id));
+    if (id === selectedId) {
+      const big = detailEl.querySelector('.sv-big');
+      if (big) big.replaceWith(thumbEl(id, true));
+    }
+  }
+
+  // Immediate feedback for a save in flight (the next frame shows it).
+  function showSaving(id) {
+    savingId = id;
+    const r = rowEls.get(id);
+    if (r) {
+      r.classList.add('sv-saving');
+      r.setAttribute('aria-busy', 'true');
+      const l1 = r.querySelector('.sv-line');
+      if (l1) l1.textContent = 'Saving…';
+    }
+    const b = detailEl.querySelector('#sv-act-save');
+    if (b) {
+      b.textContent = 'Saving…';
+      b.setAttribute('aria-disabled', 'true');
     }
   }
 
   function primary(id) {
+    if (whenFree(() => primary(id))) return;
     select(id);
     const m = current();
     if (!m) return;
@@ -612,12 +767,21 @@ export function createSavesScreen(ctx) {
         });
         if (!ok) return;
       }
-      const r = await s.save(m.id, { name: m.empty ? undefined : m.name });
+      showSaving(m.id);
+      let r;
+      try {
+        r = await s.save(m.id, { name: m.empty ? undefined : m.name });
+      } finally {
+        savingId = null;
+      }
       if (r.ok) {
         toast(`Saved to “${r.meta.name}”`, 'good');
         selectedId = m.id;
         render();
-      } else toast(r.reason || SAVE_ERRORS[r.error] || "Couldn't save", r.error === 'quota' ? 'error' : 'warn');
+      } else {
+        render();
+        toast(r.reason || SAVE_ERRORS[r.error] || "Couldn't save", r.error === 'quota' ? 'error' : 'warn');
+      }
     });
   }
 
@@ -659,6 +823,7 @@ export function createSavesScreen(ctx) {
     render();
   }
   function restoreBackup(id) {
+    if (whenFree(() => restoreBackup(id))) return;
     return guarded(async () => {
       const m = entries().find((x) => x.id === id);
       const ok = await app.confirm({
@@ -673,6 +838,7 @@ export function createSavesScreen(ctx) {
   }
 
   function remove(id) {
+    if (whenFree(() => remove(id))) return;
     return guarded(async () => {
       const m = entries().find((x) => x.id === id);
       if (!m || m.empty) return;
@@ -693,6 +859,7 @@ export function createSavesScreen(ctx) {
   }
 
   function rename(id) {
+    if (whenFree(() => rename(id))) return;
     return guarded(async () => {
       const m = entries().find((x) => x.id === id);
       if (!m || m.empty || m.status !== 'ok') return;
@@ -762,6 +929,11 @@ export function createSavesScreen(ctx) {
       mode = params.mode === 'save' && inGame() ? 'save' : 'load';
       selectedId = null;
       busy = false;
+      queued = null;
+      savingId = null;
+      cancelHover();
+      const s = save();
+      if (!offThumb && s && typeof s.onThumb === 'function') offThumb = s.onThumb((id) => refreshThumb(id));
       render({ keepFocus: false });
     },
     onFocus() {
@@ -769,9 +941,23 @@ export function createSavesScreen(ctx) {
     },
     onClose() {
       open = false;
+      queued = null;
+      cancelHover();
+      if (offThumb) offThumb();
+      offThumb = null;
     },
-    onFocusChange(node) {
-      if (node && node.dataset && node.dataset.slot) select(node.dataset.slot);
+    onFocusChange(node, source) {
+      if (!node || !node.dataset || !node.dataset.slot) {
+        cancelHover();
+        return;
+      }
+      // A mouse hover only previews a row the pointer rests on (r3 F1);
+      // keyboard / gamepad / api focus selects at once.
+      if (source === 'mouse') armHover(node.dataset.slot);
+      else {
+        cancelHover();
+        select(node.dataset.slot);
+      }
     },
     onNav(action) {
       const a = document.activeElement;

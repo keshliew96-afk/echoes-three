@@ -246,9 +246,17 @@ function campaignOfRun(run) {
     transitions: 0,
   };
 }
+// meta.campaign — `card` names the level card a save was taken on (phase
+// 'transit'): kind 'clear' (Level `from` cleared, `to` next) or 'depart' (the
+// setting-out card of a campaign starting at `to`), so the slot menu and the
+// title never call a setting-out save "Level N cleared" (gauntlet r3, F2 —
+// src/save/describe.js reads it; older files fall back to the room number).
 export function campaignMeta(run) {
   const c = run && run.campaign && typeof run.campaign === 'object' ? run.campaign : null;
-  return c ? { mode: c.mode ?? 'campaign', startLevel: c.startLevel ?? null, level: c.level ?? null, index: c.index ?? 1 } : null;
+  if (!c) return null;
+  const k = c.card && typeof c.card === 'object' ? c.card : null;
+  const card = k && (k.kind === 'clear' || k.kind === 'depart') ? { kind: k.kind, from: k.from ?? null, to: k.to ?? null } : null;
+  return { mode: c.mode ?? 'campaign', startLevel: c.startLevel ?? null, level: c.level ?? null, index: c.index ?? 1, card };
 }
 function migrateTree2to3(tree) {
   const t = clonePlain(tree);
