@@ -48,6 +48,7 @@ import { createTransport, RateMeter, SeqLossMeter, createQualityTracker } from '
 import { normalizeCode, sanitizeName, reasonText } from './protocol/messages.js';
 import { createSnapshotHost, createSnapshotClient, pct, readSnapHeader } from './protocol/snapshot.js';
 import { encodeInputPacket, decodeInputPacket, encodeKeyframe, encodeEvents, decodeEvents, decodeCmd, encodeCmd, SEAT_ALL, channelOf } from './protocol/codec.js';
+import { validateServerUrl, resolveServerAddress, pageLocation, isNewerVersion, fetchSiteBuild, ownEntryChunk } from './address.js';
 
 export const SESSION_KEY = 'echoes.net.session';
 export const IDENTITY_KEY = 'echoes.net.identity';
@@ -59,18 +60,8 @@ const NO_RECONNECT_CODES = new Set([4001, 4002, 4003, 4006, 4007]);
 const defaultNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
 // validateServerUrl(u, { https }) -> { ok, url } | { ok:false, reason }
-export function validateServerUrl(u, { https = false } = {}) {
-  if (typeof u !== 'string' || !u.trim()) return { ok: false, reason: 'empty' };
-  let parsed;
-  try {
-    parsed = new URL(u.trim());
-  } catch {
-    return { ok: false, reason: 'not_a_url' };
-  }
-  if (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') return { ok: false, reason: 'not_ws' };
-  if (https && parsed.protocol === 'ws:') return { ok: false, reason: 'insecure_on_https' };
-  return { ok: true, url: parsed.href.replace(/\/$/, parsed.pathname === '/' ? '' : '/') };
-}
+// (lives in address.js since DEPLOY; re-exported for every existing import).
+export { validateServerUrl };
 
 export function createNetClient(opts = {}) {
   const {
@@ -96,6 +87,15 @@ export function createNetClient(opts = {}) {
   let peerId = null;
   let token = null;
   let lanUrls = [];
+  let siteUrls = []; // http(s) page links a `--static` server serves the game at (welcome.siteUrls)
+  // DEPLOY (PLAN §14): the address comes from resolveServerAddress() — ?net=
+  // > the player's saved address > VITE_NET_URL > this page's own site >
+  // this computer. `savedUrl` null = automatic.
+  let savedUrl = null;
+  let address = null;
+  // A newer build of Echoes seen on the server / the site / a room:
+  // { latest, mine, via } — the UI offers "A new version … — Reload".
+  let update = null;
   let room = null;
   let seat = null;
   let role = 'none';
@@ -113,6 +113,7 @@ export function createNetClient(opts = {}) {
   let snapEvery = params.netRate ? Math.max(1, Math.round(SIM_HZ / Math.max(10, Math.min(60, params.netRate)))) : SNAPSHOT_EVERY_TICKS;
 
   const transport = createTransport({ WebSocketImpl, cond: params.netCond || null, now });
+  savedUrl = initialSaved();
   let url = resolveUrl();
 
   // Link quality (NET-F2): what this client KNOWS about its packet loss, for
@@ -194,14 +195,43 @@ export function createNetClient(opts = {}) {
       /* storage unavailable (private mode / quota) — sessions just do not survive a reload */
     }
   }
+  function initialSaved() {
+    const s = opts.serverUrl != null ? opts.serverUrl : settings && typeof settings.get === 'function' ? safeGet('net.serverUrl') : null;
+    return typeof s === 'string' && s.trim() ? s.trim() : null;
+  }
+  // DEPLOY (PLAN §14.1): ?net= > saved > VITE_NET_URL > this site > this
+  // computer (DEFAULT_URL — also what Node bots without a URL get).
   function resolveUrl() {
-    const cand = [params.net, opts.serverUrl, settings && typeof settings.get === 'function' ? safeGet('net.serverUrl') : null, DEFAULT_URL];
-    for (const c of cand) {
-      if (!c) continue;
-      const v = validateServerUrl(String(c));
-      if (v.ok) return v.url;
+    address = resolveServerAddress({ param: params.net || null, saved: savedUrl, loc: pageLocation() });
+    return address.url || DEFAULT_URL;
+  }
+  // A newer build of Echoes exists (the server's `latestBuild`, the site's
+  // version.json, a room's build): remember it and tell the UI once per
+  // newer version. `entry` (the page's hashed entry chunk) catches a
+  // redeploy of the same version number.
+  function noteLatest(latest, via, { entry = null } = {}) {
+    if (!latest) return false;
+    const newer = isNewerVersion(latest, version);
+    const sameVersionRedeploy = !newer && String(latest) === String(version) && !!entry && !!ownEntry() && entry !== ownEntry();
+    if (!newer && !sameVersionRedeploy) return false;
+    if (!update || isNewerVersion(latest, update.latest) || (update.latest === latest && update.via !== via && via === 'server')) {
+      update = { latest: String(latest), mine: String(version), via };
+      log('update_available', update);
+      emit('update_available', { ...update });
     }
-    return DEFAULT_URL;
+    return true;
+  }
+  function ownEntry() {
+    return ownEntryChunk();
+  }
+  function noteProtocol(serverProtocol) {
+    if (!Number.isFinite(serverProtocol) || serverProtocol <= PROTOCOL_VERSION) return false;
+    if (!update) {
+      update = { latest: null, mine: String(version), via: 'protocol', serverProtocol };
+      log('update_available', update);
+      emit('update_available', { ...update });
+    }
+    return true;
   }
   function safeGet(k) {
     try {
@@ -246,7 +276,10 @@ export function createNetClient(opts = {}) {
       w.resolve({ ok: false, reason });
     }
   }
-  const rejected = (m, re) => (m.t === MSG.JOIN_REJECTED || m.t === MSG.ERROR) && m.re === re ? { ok: false, reason: m.reason, text: reasonText(m.reason), detail: m.detail ?? null } : undefined;
+  const rejected = (m, re) =>
+    (m.t === MSG.JOIN_REJECTED || m.t === MSG.ERROR) && m.re === re
+      ? { ok: false, reason: m.reason, text: reasonText(m.reason), detail: m.detail ?? null, roomBuild: m.roomBuild ?? null, serverProtocol: Number.isFinite(m.serverProtocol) ? m.serverProtocol : null }
+      : undefined;
 
   // --------------------------------------------------------------- state --
   function mySeat() {
@@ -293,7 +326,16 @@ export function createNetClient(opts = {}) {
     const w = await waitFor((m) => (m.t === MSG.WELCOME ? { ok: true, m } : rejected(m, MSG.HELLO)), timeoutMs, { ok: false, reason: 'timeout' });
     if (!w.ok) {
       transport.close(1000, 'hello failed');
-      throw Object.assign(new Error(w.reason), { reason: w.reason });
+      // DEPLOY: a server on a newer protocol means this page is stale.
+      const stale = w.reason === 'version_mismatch' && noteProtocol(w.serverProtocol);
+      throw Object.assign(new Error(stale ? 'update_available' : w.reason), { reason: stale ? 'update_available' : w.reason });
+    }
+    // DEPLOY (PLAN §14.5): the server serves a newer build than this page —
+    // never play on with a cached page (rooms would refuse it anyway); the
+    // UI offers "A new version of Echoes is available — Reload".
+    if (noteLatest(w.m.latestBuild, 'server', { entry: w.m.latestEntry })) {
+      transport.close(1000, 'update available');
+      throw Object.assign(new Error('update_available'), { reason: 'update_available' });
     }
     return w.m;
   }
@@ -302,6 +344,7 @@ export function createNetClient(opts = {}) {
     peerId = m.peerId;
     token = m.token;
     lanUrls = Array.isArray(m.lanUrls) ? m.lanUrls : [];
+    siteUrls = Array.isArray(m.siteUrls) ? m.siteUrls : [];
     serverState = 'online';
     startTimers();
   }
@@ -335,21 +378,35 @@ export function createNetClient(opts = {}) {
       state = 'offline';
       emit('state', { state, prev: 'connecting' });
       log('connect_failed', { url, error: String(err.reason || err.message) });
-      return { ok: false, error: String(err.reason || err.message), url };
+      return { ok: false, error: String(err.reason || err.message), url, update: update ? { ...update } : null };
     }
   }
 
-  // probe(url?) -> { state: 'online'|'unreachable', ms, url, lanUrls, error }
+  // probe(url?, { attempts }) -> { state: 'online'|'unreachable'|'update', ms,
+  // url, lanUrls, siteUrls, error, latest }
   // A throwaway socket (hello -> welcome, 3 s timeout, one retry after 0.5 s):
-  // the mp-menu's server check (PLAN "No server / unreachable / LAN").
-  async function probe(target = null) {
+  // the mp-menu's server check (PLAN "No server / unreachable / LAN"). DEPLOY:
+  // the same check reads the server's `latestBuild` and the site's
+  // version.json — a newer build answers 'update' (this page is stale).
+  async function probe(target = null, { attempts = 2 } = {}) {
     const t0 = now();
     const u = target ? validateServerUrl(target, { https: isHttps }) : { ok: true, url };
     if (!u.ok) return { state: 'unreachable', ms: 0, url: target, error: u.reason };
     serverState = 'checking';
     emit('server', { state: serverState, url: u.url });
+    const siteP = fetchSiteBuild().catch(() => null);
+    const updateRes = async (extra = {}) => {
+      serverState = 'online';
+      const res = { state: 'update', ms: Math.round(now() - t0), url: u.url, lanUrls, siteUrls, latest: update ? update.latest : null, mine: String(version), update: update ? { ...update } : null, ...extra };
+      emit('server', res);
+      return res;
+    };
+    const siteSaysUpdate = async () => {
+      const sb = await siteP;
+      return !!sb && noteLatest(sb.version, 'site', { entry: sb.entry });
+    };
     let lastErr = null;
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let attempt = 0; attempt < attempts; attempt++) {
       if (attempt) await new Promise((r) => setTimeout(r, 500));
       const t = createTransport({ WebSocketImpl, now });
       try {
@@ -368,7 +425,18 @@ export function createNetClient(opts = {}) {
         if (wm && wm.t === MSG.WELCOME) {
           serverState = 'online';
           lanUrls = wm.lanUrls || [];
-          const res = { state: 'online', ms: Math.round(now() - t0), url: u.url, lanUrls, attempts: attempt + 1 };
+          siteUrls = Array.isArray(wm.siteUrls) ? wm.siteUrls : [];
+          if (noteLatest(wm.latestBuild, 'server', { entry: wm.latestEntry }) || (await siteSaysUpdate())) return updateRes({ attempts: attempt + 1 });
+          const res = { state: 'online', ms: Math.round(now() - t0), url: u.url, lanUrls, siteUrls, attempts: attempt + 1 };
+          emit('server', res);
+          return res;
+        }
+        if (wm && wm.reason === 'version_mismatch') {
+          // A protocol mismatch is not "unreachable": a newer server means
+          // this page is stale; an older one needs its host to update it.
+          if (noteProtocol(wm.serverProtocol) || (await siteSaysUpdate())) return updateRes({ attempts: attempt + 1 });
+          serverState = 'unreachable';
+          const res = { state: 'unreachable', ms: Math.round(now() - t0), url: u.url, error: 'server_outdated', serverProtocol: wm.serverProtocol ?? null, attempts: attempt + 1 };
           emit('server', res);
           return res;
         }
@@ -378,10 +446,35 @@ export function createNetClient(opts = {}) {
         t.close();
       }
     }
+    // A stale page first reloads: the new build may point somewhere else.
+    if (await siteSaysUpdate()) return updateRes({ attempts });
     serverState = 'unreachable';
-    const res = { state: 'unreachable', ms: Math.round(now() - t0), url: u.url, error: lastErr, attempts: 2 };
+    const res = { state: 'unreachable', ms: Math.round(now() - t0), url: u.url, error: lastErr, attempts };
     emit('server', res);
     return res;
+  }
+
+  // After the server went away under a session (a redeploy restarts it),
+  // keep asking for up to 30 s whether it came back with a newer build, so
+  // the player on the title is told "A new version … — Reload" instead of
+  // finding out on the next Multiplayer press.
+  let updateWatch = null;
+  function watchForUpdate(ms = 30000) {
+    if (updateWatch || update) return;
+    const until = now() + ms;
+    const step = async () => {
+      if (update || now() > until || transport.state === 'open') {
+        updateWatch = null;
+        return;
+      }
+      const r = await probe(null, { attempts: 1 }).catch(() => null);
+      if (update || (r && r.state !== 'unreachable')) {
+        updateWatch = null;
+        return;
+      }
+      updateWatch = setTimeout(step, 2000);
+    };
+    updateWatch = setTimeout(step, 1000);
   }
 
   async function ensureConnected() {
@@ -518,8 +611,9 @@ export function createNetClient(opts = {}) {
       applyRoom(r.m.room);
       resetStreamsAfterReconnect();
       emit('reconnected', { ms: counters.lastReconnectMs, attempts: rc.attempt, code: rc.code });
-    } catch {
+    } catch (err) {
       if (rc !== reconnect) return undefined;
+      if (err && err.reason === 'update_available') return sessionLost('update_available');
       if (now() - rc.startedAt > SEAT_HOLD_MS) return sessionLost('server_unreachable');
       scheduleAttempt();
     }
@@ -537,7 +631,8 @@ export function createNetClient(opts = {}) {
     stopStreams();
     log('session_lost', { reason, code });
     recompute();
-    emit('session_lost', { reason, code: code0, text: sessionLostText(reason) });
+    emit('session_lost', { reason, code: code0, text: sessionLostText(reason), update: update ? { ...update } : null });
+    if (reason === 'server_shutdown' || reason === 'server_restarted' || reason === 'server_unreachable') watchForUpdate();
   }
   function sessionLostText(reason) {
     switch (reason) {
@@ -551,6 +646,8 @@ export function createNetClient(opts = {}) {
         return 'The server closed this session.';
       case 'superseded':
         return 'This session continued in another window.';
+      case 'update_available':
+        return 'The server was updated — a new version of Echoes is available.';
       default:
         return 'The session ended.';
     }
@@ -661,10 +758,16 @@ export function createNetClient(opts = {}) {
     if (room) return { ok: false, reason: 'already_in_room', text: reasonText('already_in_room') };
     intentional = false;
     transport.sendControl({ t: MSG.JOIN_ROOM, code: c0, seat: Number.isInteger(wantSeat) ? wantSeat : undefined });
-    return waitFor(
+    const r = await waitFor(
       (m) => (m.t === MSG.ROOM_STATE && m.room.code === c0 && m.room.seats.some((s) => s.peerId === peerId) ? { ok: true, code: c0, seat: m.room.seats.find((s) => s.peerId === peerId).index, room: m.room } : rejected(m, MSG.JOIN_ROOM)),
       4000
     );
+    // DEPLOY: a version mismatch says WHICH side is out of date.
+    if (!r.ok && r.reason === 'version_mismatch' && r.roomBuild) {
+      if (noteLatest(r.roomBuild, 'room')) return { ...r, update: { ...update }, text: `That room runs a newer version of Echoes (v${r.roomBuild}) — reload this page to update.` };
+      if (isNewerVersion(version, r.roomBuild)) return { ...r, text: `That room runs an older version of Echoes (v${r.roomBuild}) — its host needs to reload their page.` };
+    }
+    return r;
   }
   async function quickMatch() {
     const c = await ensureConnected();
@@ -1198,12 +1301,38 @@ export function createNetClient(opts = {}) {
     get serverUrl() {
       return url;
     },
+    // '' / null = automatic (PLAN §14.1); a valid ws(s):// address = the
+    // player's explicit choice, applied at once (it wins over ?net= from
+    // then on in this page — the player just chose it).
     set serverUrl(u) {
+      if (u === null || u === undefined || (typeof u === 'string' && !u.trim())) {
+        savedUrl = null;
+        url = resolveUrl();
+        return;
+      }
       const v = validateServerUrl(u, { https: isHttps });
-      if (v.ok) url = v.url;
+      if (v.ok) {
+        savedUrl = v.url;
+        url = v.url;
+        address = { ...resolveServerAddress({ saved: v.url, loc: pageLocation() }) };
+      }
+    },
+    // Where `serverUrl` came from: { url, source: 'param'|'saved'|'build'|
+    // 'site'|'local', auto, site, https, file, skipped, saved, param }.
+    addressInfo() {
+      return { ...(address || {}), url, saved: savedUrl, param: params.net || null };
+    },
+    // { latest, mine, via: 'server'|'site'|'room'|'protocol' } once a newer
+    // build of Echoes was seen, else null.
+    get updateInfo() {
+      return update ? { ...update } : null;
     },
     get lanUrls() {
       return lanUrls;
+    },
+    // http(s) links a `--static` session server serves the game at.
+    get siteUrls() {
+      return siteUrls;
     },
     get name() {
       return name;

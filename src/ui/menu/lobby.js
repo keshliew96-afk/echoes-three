@@ -19,7 +19,7 @@ import { service } from '../../app/registry.js';
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { createHints } from './hints.js';
-import { installMpStyle, mkBtn, setCaption } from './mpmenu.js';
+import { installMpStyle, mkBtn, setCaption, inviteLine } from './mpmenu.js';
 import { SEAT_LABELS, SEAT_CRITTERS } from '../../net/seats.js';
 import { QUICK_MATCH_ALONE_MS } from '../../net/protocol/constants.js';
 
@@ -164,9 +164,10 @@ export function createLobbyScreen(ctx) {
       const canTake = !s.peerId && !host && r.state === 'lobby' && s.index !== 0;
       b.setAttribute('aria-label', `${SEAT_LABELS[s.index]}: ${s.peerId ? s.name : 'AI'}${canTake ? ' — press to take this seat' : ''}`);
     }
-    const lans = Array.isArray(net.lanUrls) ? net.lanUrls : [];
     shareEl.textContent = `Friends open Multiplayer ▸ Join by Code and type ${r.code}.`;
-    lanEl.textContent = lans.length ? `Friends on your network: server ${lans[0]} · code ${r.code}` : `Server ${net.serverUrl}`;
+    // DEPLOY (PLAN §14): the invite is the page link when the game is served
+    // from a site (no address to type); the LAN server line otherwise.
+    lanEl.textContent = inviteLine(net, { code: r.code });
     // Actions.
     acts.textContent = '';
     const others = r.seats.filter((s) => s.peerId && s.peerId !== r.hostPeerId);

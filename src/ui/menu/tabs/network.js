@@ -2,19 +2,24 @@
 // net.serverUrl; tab order 50). Owner: M5b.
 //   Player name        net.playerName — the name plate in lobbies and the
 //                      in-game net HUD (≤ 16 characters)
-//   Server address     net.serverUrl — ws:// or wss:// (wss:// only when the
-//                      page itself is served over https: browsers block ws://
-//                      from an https page); Check probes it right here
+//   Server address     net.serverUrl — '' = Automatic (DEPLOY, PLAN §14.1:
+//                      the session server of the site the page came from,
+//                      shown with the address it resolves to), or a custom
+//                      ws:// / wss:// address (wss:// only when the page
+//                      itself is served over https: browsers block ws://
+//                      from an https page); Check probes it right here;
+//                      Reset to automatic drops a custom address
 //   Connection details net.showStats — the rtt / loss / snapshot line under
 //                      the in-game connection chip
-// plus the honest note on how multiplayer is hosted (a small server on the
-// host's computer: `npm run net`, `--host 0.0.0.0` for LAN play).
+// plus the honest note on how multiplayer is hosted (players open the host's
+// link; the host serves it with `npm run serve`, or `npm run net` beside the
+// dev / preview server).
 import { registerSettingsTab, service } from '../../../app/registry.js';
 import { HIT } from '../../../app/style.js';
 import { installMpStyle, mkBtn, httpsPage } from '../mpmenu.js';
 import { validateServerUrl } from '../../../net/lobbyClient.js';
 import { sanitizeName } from '../../../net/protocol/messages.js';
-import { DEFAULT_URL } from '../../../net/protocol/constants.js';
+import { sourceLabel } from '../../../net/address.js';
 
 function textRow({ id, label, help, value, maxLength, onCommit, placeholder = '' }) {
   const row = document.createElement('div');
@@ -81,14 +86,31 @@ function buildNetworkTab(ctx) {
   });
   name.setNote('Shown in lobbies and on the connection chip');
 
+  // DEPLOY (PLAN §14.1): '' = Automatic — the server of the site this page
+  // came from; the note always names the address it resolves to.
+  const netSvc = () => service('net');
+  const info = () => {
+    const n = netSvc();
+    return n && typeof n.addressInfo === 'function' ? n.addressInfo() : { url: n ? n.serverUrl : '', source: 'local' };
+  };
+  function autoNote() {
+    const a = info();
+    const saved = settings.get('net.serverUrl');
+    if (saved) return `Custom address — “Reset to automatic” goes back to this site’s server`;
+    return `${sourceLabel(a.source)} — ${a.url}`;
+  }
   const server = textRow({
     id: 'nt-set-server',
     label: 'Server address',
-    help: 'Where the Echoes session server runs — ws://host:port/echoes. The host starts it on their computer with `npm run net` (add `-- --host 0.0.0.0` so players on the same network can reach it; they then use ws://<host-ip>:7800/echoes).',
+    help: 'Leave it on Automatic: the game connects to the Echoes server of the site you opened it from (wss:// on an https site) — players just open the host’s link. Enter ws://host:port/echoes only to use a different server, e.g. ws://192.168.1.20:7800/echoes for `npm run net -- --host 0.0.0.0` on another computer. An empty address is Automatic.',
     value: settings.get('net.serverUrl'),
     maxLength: 200,
-    placeholder: DEFAULT_URL,
+    placeholder: `Automatic — ${info().site || info().url}`,
     onCommit: (v) => {
+      if (!String(v || '').trim()) {
+        resetAuto();
+        return;
+      }
       const r = validateServerUrl(v, { https: httpsPage() });
       if (!r.ok) {
         server.setNote(
@@ -101,20 +123,29 @@ function buildNetworkTab(ctx) {
         return;
       }
       settings.set('net.serverUrl', r.url, { source: 'ui' });
+      const n = netSvc();
+      if (n) n.serverUrl = r.url; // applies at once, also on a ?net= page
       server.set(r.url);
       server.setNote('Saved — press Check to test it');
+      syncAuto();
     },
   });
-  server.setNote(httpsPage() ? 'This page is https: only wss:// servers are allowed' : 'ws:// or wss:// — the default is this computer');
+  server.setNote(autoNote());
   const check = mkBtn('Check', 'nt-set-check', {
     onPress: async () => {
-      const n = service('net');
+      const n = netSvc();
       if (!n) return;
       server.setNote('Checking…');
       check.disabled = true;
       try {
-        const r = await n.probe(settings.get('net.serverUrl'));
-        server.setNote(r.state === 'online' ? `Online — answered in ${r.ms} ms${r.lanUrls && r.lanUrls.length ? ` · LAN ${r.lanUrls.join(', ')}` : ''}` : `Can’t reach it (${r.error || 'no answer'}) — is \`npm run net\` running there?`);
+        const r = await n.probe(settings.get('net.serverUrl') || null);
+        server.setNote(
+          r.state === 'online'
+            ? `Online — ${r.url} answered in ${r.ms} ms${r.lanUrls && r.lanUrls.length ? ` · LAN ${r.lanUrls.join(', ')}` : ''}`
+            : r.state === 'update'
+              ? 'A new version of Echoes is available — reload the page'
+              : `Can’t reach ${r.url || 'it'} (${r.error || 'no answer'}) — is the server running there?`
+        );
       } finally {
         check.disabled = false;
       }
@@ -123,6 +154,44 @@ function buildNetworkTab(ctx) {
   check.style.minWidth = 'calc(110px * var(--ap-s, 1))';
   check.style.minHeight = HIT;
   server.ctl.appendChild(check);
+
+  // "Reset to automatic" (its own row so the address row keeps its width).
+  const autoRow = document.createElement('div');
+  autoRow.className = 'ap-row nt-autorow';
+  autoRow.dataset.helpTitle = 'Reset to automatic';
+  autoRow.dataset.help = 'Forget the custom server address and connect to the Echoes server of the site you opened the game from — what every player gets without touching a setting.';
+  autoRow.dataset.rowId = 'nt-set-autorow';
+  const autoLab = document.createElement('span');
+  autoLab.className = 'ap-label';
+  autoLab.textContent = 'Automatic server';
+  const autoCtl = document.createElement('div');
+  autoCtl.className = 'ap-ctl';
+  const autoNoteEl = document.createElement('div');
+  autoNoteEl.className = 'ap-note';
+  const autoBtn = mkBtn('Reset to automatic', 'nt-set-auto', { onPress: () => resetAuto() });
+  autoBtn.style.minHeight = HIT;
+  autoCtl.appendChild(autoBtn);
+  autoRow.append(autoLab, autoCtl, autoNoteEl);
+  function resetAuto() {
+    settings.set('net.serverUrl', '', { source: 'ui' });
+    const n = netSvc();
+    if (n) n.serverUrl = '';
+    server.set('');
+    server.setNote(autoNote());
+    syncAuto();
+  }
+  function syncAuto() {
+    const custom = !!settings.get('net.serverUrl');
+    autoBtn.disabled = !custom;
+    autoBtn.setAttribute('aria-disabled', custom ? 'false' : 'true');
+    const a = info();
+    const site = a.site || null;
+    autoNoteEl.textContent = custom
+      ? `Uses ${site || 'this computer’s server'} instead of the custom address`
+      : `In use — ${sourceLabel(a.source)}: ${a.url}`;
+    server.input.placeholder = `Automatic — ${site || a.url}`;
+  }
+  syncAuto();
 
   const stats = widgets.toggle({
     id: 'nt-set-stats',
@@ -136,12 +205,15 @@ function buildNetworkTab(ctx) {
   const how = document.createElement('p');
   how.className = 'ap-note';
   how.textContent =
-    'Multiplayer runs through a small session server on the host’s computer: in the game folder run “npm run net” (friends on the same network: “npm run net -- --host 0.0.0.0”, then they enter ws://<host-ip>:7800/echoes here). Traffic travels over WebSocket; the game models packet loss and delay on top and never pauses for one player.';
+    'Players join by opening the host’s link — the game finds the Echoes server of the site it came from, so there is nothing to set here. Hosting: “npm run serve” serves the game and multiplayer from one port (README ▸ Host it on a server); with the dev or preview server, run “npm run net” beside it. Traffic travels over WebSocket; the game models packet loss and delay on top and never pauses for one player.';
 
-  el.append(name.el, server.el, stats.el, how);
+  el.append(name.el, server.el, autoRow, stats.el, how);
   const offs = [
     settings.subscribe('net.playerName', (v) => name.set(v)),
-    settings.subscribe('net.serverUrl', (v) => server.set(v)),
+    settings.subscribe('net.serverUrl', (v) => {
+      server.set(v);
+      syncAuto();
+    }),
     settings.subscribe('net.showStats', (v) => stats.set(!!v)),
   ];
   return {
@@ -149,10 +221,17 @@ function buildNetworkTab(ctx) {
     onShow() {
       name.set(settings.get('net.playerName'));
       server.set(settings.get('net.serverUrl'));
+      server.setNote(autoNote());
+      syncAuto();
       stats.set(!!settings.get('net.showStats'));
     },
     reset() {
       settings.reset('net');
+      // settings.reset() also returns the address to Automatic.
+      const n = netSvc();
+      if (n) n.serverUrl = '';
+      server.setNote(autoNote());
+      syncAuto();
     },
     destroy() {
       for (const off of offs) off();

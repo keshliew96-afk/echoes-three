@@ -53,6 +53,12 @@ export function createJoinScreen(ctx) {
     try {
       const r = await n.join(code);
       if (!r || !r.ok) {
+        // DEPLOY (PLAN §14.5): this page is older than the room / server —
+        // back to the Multiplayer menu, which offers Reload in place.
+        if (r && (r.update || r.reason === 'update_available') && manager.top() === 'mp-join') {
+          manager.pop();
+          return;
+        }
         const why =
           r && r.reason === 'unreachable'
             ? 'The server can’t be reached right now — go Back and Retry.'

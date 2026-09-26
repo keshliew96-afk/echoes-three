@@ -24,7 +24,7 @@
 // a room goes in_game. main.js's simStep stays `(tick) => world.step(tick,
 // sampleIntents())`, clock.advance is the clock's own, the bus is never in
 // replica mode.
-import { BIN, SNAPSHOT_EVERY_TICKS, SIM_HZ, DEFAULT_URL } from './protocol/constants.js';
+import { BIN, SNAPSHOT_EVERY_TICKS, SIM_HZ } from './protocol/constants.js';
 import { createSnapshotClient } from './protocol/snapshot.js';
 import { encodeInputPacket, decodeEvents, decodeEventsBundle, decodeCmd, encodeCmd, decodeKeyframe, fromBase64 } from './protocol/codec.js';
 import { frameFromSnapshot, seatInputOf, quantAim } from '../sim/netseats.js';
@@ -42,7 +42,9 @@ import { createMetronome } from './metronome.js';
 import { seatLabel, seatControlText, chooserSeat } from './seats.js';
 import { createCosmetics } from '../ui/net/cosmetics.js';
 import { createNetHud } from '../ui/net/hud.js';
+import { installUpdatePrompt } from '../ui/net/update.js';
 import { validateServerUrl } from './lobbyClient.js';
+import { LEGACY_DEFAULT_URL } from './address.js';
 import { sanitizeName } from './protocol/messages.js';
 
 const now = () => performance.now();
@@ -95,10 +97,30 @@ export function createNetSession(ctx) {
       return n ? n : undefined;
     },
   });
+  // DEPLOY (PLAN §14.1): '' = automatic — the session server of the site this
+  // page came from (?net= and VITE_NET_URL still take precedence as the
+  // net client resolves it); a valid ws(s):// address = the player's
+  // explicit server. Validation is unchanged (wss:// only on an https page).
   settings.register('net.serverUrl', {
-    default: DEFAULT_URL,
-    validate: (v) => (typeof v === 'string' && validateServerUrl(v, { https: location.protocol === 'https:' }).ok ? validateServerUrl(v).url : undefined),
+    default: '',
+    validate: (v) => {
+      if (v === '' || v === null) return '';
+      if (typeof v !== 'string') return undefined;
+      if (!v.trim()) return '';
+      const r = validateServerUrl(v, { https: location.protocol === 'https:' });
+      return r.ok ? r.url : undefined;
+    },
   });
+  // Builds up to v0.5.117 stored their default (ws://127.0.0.1:7800/echoes)
+  // in every settings blob, chosen or not. Read once as "automatic" — the
+  // site's /echoes reaches that same local server through the dev / preview
+  // proxy or `npm run serve` — then marked, so a player who types that exact
+  // address later keeps it. In memory only until something else persists.
+  settings.register('net.serverUrlV', { default: 0, validate: (v) => (v === 0 || v === 1 ? v : undefined) });
+  if (settings.get('net.serverUrlV') !== 1) {
+    if (settings.get('net.serverUrl') === LEGACY_DEFAULT_URL) settings.set('net.serverUrl', '', { persist: false, source: 'migrate' });
+    settings.set('net.serverUrlV', 1, { persist: false, source: 'migrate' });
+  }
   settings.register('net.showStats', { default: false, validate: (v) => (typeof v === 'boolean' ? v : undefined) });
   // The name / server address follow the settings (URL params win for harnesses).
   if (!app.params.netName) net.setName(settings.get('net.playerName'));
@@ -1303,6 +1325,12 @@ export function createNetSession(ctx) {
         });
     }, 400);
   });
+
+  // DEPLOY (PLAN §14.5): a redeploy never strands a player — when the net
+  // client learns a newer build exists, "A new version of Echoes is
+  // available — Reload" (in place in the Multiplayer menu, else a dialog
+  // once the title is up; never over a single-player run).
+  installUpdatePrompt({ app, net });
 
   // ---------------------------------------------------------------- API --
   function status() {

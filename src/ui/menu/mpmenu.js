@@ -10,6 +10,14 @@
 // host's computer, `npm run net`). The UI never claims UDP and never spins
 // forever. Single-player is untouched throughout.
 //
+// DEPLOY (PLAN §14): the address is automatic — the session server of the
+// site the page came from — unless ?net=, a saved address or VITE_NET_URL
+// says otherwise; the unreachable copy says which, and how to fix THAT case
+// (a site without a server, the dev/preview proxy with no `npm run net`, a
+// page opened as a file, a saved address, a server older than the page).
+// A newer build on the server / site / a room gives an `update` state:
+// "A new version of Echoes is available" · Reload (default) · Back.
+//
 // Registered screens: 'mp-menu' (this file), 'mp-join' (mpjoin.js), 'lobby'
 // (lobby.js), 'nt-server' (the change-server dialog, this file).
 import { registerScreen, service } from '../../app/registry.js';
@@ -20,6 +28,8 @@ import { createJoinScreen } from './mpjoin.js';
 import { createLobbyScreen } from './lobby.js';
 import { validateServerUrl } from '../../net/lobbyClient.js';
 import { seatLabel } from '../../net/seats.js';
+import { sourceLabel, isLoopbackHost, pageLocation } from '../../net/address.js';
+import { updateCopy, reloadForUpdate } from '../net/update.js';
 
 export const MP_CSS = `
 .nt-panel { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -43,6 +53,8 @@ export const MP_CSS = `
 .nt-status.nt-online .nt-sdot { background: ${P.hearthAmber}; box-shadow: 0 0 ${px(8)} ${P.hearthAmber}AA; }
 .nt-status.nt-checking .nt-sdot { background: ${P.bone}; animation: nt-pulse 0.9s ease-in-out infinite; }
 .nt-status.nt-unreachable .nt-sdot { background: ${P.bruiseUmber}; border: 2px solid ${P.bone}; }
+.nt-status.nt-update .nt-sdot { background: ${P.hearthAmber}; }
+.nt-addr .nt-src { color: ${P.bone}; }
 @keyframes nt-pulse { 50% { opacity: 0.3; } }
 .nt-code { font-family: ui-monospace, Consolas, monospace; letter-spacing: 0.08em; color: ${P.parchment}; }
 .nt-err { font-size: ${px(22)}; color: ${P.bone}; min-height: 1.3em; }
@@ -95,6 +107,32 @@ export function setCaption(b, text) {
 }
 export const net = () => service('net');
 export const httpsPage = () => typeof location !== 'undefined' && location.protocol === 'https:';
+// The link friends open to play this page's game (no query / hash).
+export function pageLink() {
+  const loc = pageLocation();
+  return loc && (loc.protocol === 'http:' || loc.protocol === 'https:') ? `${loc.origin}${loc.pathname}` : null;
+}
+export const addressOf = (n) => (n && typeof n.addressInfo === 'function' ? n.addressInfo() : { url: n ? n.serverUrl : '—', source: 'local' });
+// DEPLOY: who can join, in one line — the page link when the game is served
+// from a real site, the LAN page link a `--static` server serves, else the
+// LAN server address (the legacy `npm run net -- --host 0.0.0.0` setup).
+export function inviteLine(n, { code = null, online = true } = {}) {
+  const a = addressOf(n);
+  const sites = n && Array.isArray(n.siteUrls) ? n.siteUrls : [];
+  const lans = n && Array.isArray(n.lanUrls) ? n.lanUrls : [];
+  const link = pageLink();
+  const loc = pageLocation();
+  const tail = code ? ` · code ${code}` : '';
+  // The link this page was opened by is the invite, unless it only works on
+  // this computer (127.0.0.1 / localhost) — then the LAN link a `--static`
+  // server serves the game at.
+  if (a.source === 'site' && link && loc && !isLoopbackHost(loc.hostname)) return `Friends open ${link} — no settings needed${tail}`;
+  if (a.source === 'site' && sites.length) return `Friends on your network open ${sites[0]} — no settings needed${tail}`;
+  if (lans.length) return code ? `Friends on your network: server ${lans[0]}${tail}` : `On your network: ${lans.join('  ·  ')}`;
+  if (a.source === 'site' && link) return `Friends on your network open this game’s Network address (npm run dev -- --host or npm run serve prints it)${tail}`;
+  if (code) return `Server ${n ? n.serverUrl : '—'}`;
+  return online ? 'Local only — start the server with --host 0.0.0.0 to let friends on your network join.' : '';
+}
 
 // ------------------------------------------------------------- mp-menu --
 function createMpMenuScreen(ctx) {
@@ -161,17 +199,71 @@ function createMpMenuScreen(ctx) {
   ubtns.className = 'nt-btnrow';
   const retryBtn = mkBtn('Retry', 'nt-mp-retry', { cls: 'ap-primary', onPress: () => check() });
   const changeBtn = mkBtn('Change server', 'nt-mp-change', { onPress: () => changeServer() });
+  const autoBtn = mkBtn('Use this site’s server', 'nt-mp-auto', { onPress: () => useAutomatic() });
   const ubackBtn = mkBtn('Back', 'nt-mp-uback', { onPress: () => manager.pop() });
   ubtns.append(retryBtn, changeBtn, ubackBtn);
   unreach.append(umsg, uhow, uhttps, ubtns);
+  // Update panel (DEPLOY, PLAN §14.5): Reload (default focus) · Back.
+  const upd = document.createElement('div');
+  upd.className = 'nt-unreach nt-updpanel';
+  const updMsg = document.createElement('div');
+  updMsg.className = 'nt-msg';
+  const updHow = document.createElement('div');
+  updHow.className = 'nt-how';
+  const updBtns = document.createElement('div');
+  updBtns.className = 'nt-btnrow';
+  const reloadBtn = mkBtn('Reload', 'nt-mp-reload', { cls: 'ap-primary', onPress: () => reloadForUpdate() });
+  const updBackBtn = mkBtn('Back', 'nt-mp-updback', { onPress: () => manager.pop() });
+  updBtns.append(reloadBtn, updBackBtn);
+  upd.append(updMsg, updHow, updBtns);
+
+  // The honest "how to fix it" for THIS address (PLAN §14.1).
+  const KBD = (t) => `<span class="nt-kbdline">${t}</span>`;
+  const LEGACY_HOW = `Multiplayer runs through a small server on the host’s computer. On that computer, in the game folder, run ${KBD('npm run net')} (for players on your network: ${KBD('npm run net -- --host 0.0.0.0')}), then press Retry.`;
+  function unreachableHow(n) {
+    const a = addressOf(n);
+    const loc = pageLocation();
+    if (lastProbe && lastProbe.error === 'server_outdated') return `That server runs an older version of Echoes than this page. Whoever runs it: update the game folder and restart it (${KBD('npm run serve')}), then press Retry.`;
+    if (a.source === 'site') {
+      if (loc && isLoopbackHost(loc.hostname))
+        return `Multiplayer connects to this site’s ${KBD('/echoes')}, which the dev and preview servers forward to the session server on this computer — and it isn’t running. In the game folder run ${KBD('npm run net')}, then press Retry. (${KBD('npm run serve')} runs the game and the server together.)`;
+      return `Multiplayer connects to the session server of the site you opened the game from, and this site isn’t running one right now. If you host it: start it with ${KBD('npm run serve')}, or forward ${KBD('/echoes')} to ${KBD('npm run net')} (README ▸ Host it on a server), then press Retry. If a friend hosts it, ask them — or press Change server to use another address.`;
+    }
+    if (a.source === 'local' && a.file)
+      return `This page was opened as a file, so there is no site to find a server on. In the game folder run ${KBD('npm run serve')} and open the address it prints (friends on your network open the same link) — or run ${KBD('npm run net')} and press Retry.`;
+    if (a.source === 'build') return `This build was made to connect to that server. Whoever runs it: start it (${KBD('npm run net')}), then press Retry — or press Change server to use another address.`;
+    if (a.source === 'saved') return `That is the custom address saved in Settings ▸ Network. ${LEGACY_HOW} Or press “Use this site’s server” to go back to automatic.`;
+    if (a.source === 'param') return `That address comes from the page link (?net=). ${LEGACY_HOW}`;
+    return LEGACY_HOW;
+  }
+  function useAutomatic() {
+    app.settings.set('net.serverUrl', '', { source: 'ui' });
+    const n = net();
+    if (n) n.serverUrl = '';
+    check();
+  }
 
   function render() {
     const n = net();
     const info = n && n.rejoinInfo ? n.rejoinInfo() : null;
     actions.textContent = '';
+    if (state !== 'checking' && n && n.updateInfo) state = 'update';
+    if (state === 'update') {
+      const c = updateCopy(n ? n.updateInfo : null);
+      updMsg.textContent = c.title;
+      updHow.textContent = c.body;
+      actions.appendChild(upd);
+      retryBtn.removeAttribute('data-nav-default');
+      reloadBtn.setAttribute('data-nav-default', '');
+      return;
+    }
     if (state === 'unreachable') {
-      umsg.textContent = `Can’t reach the Echoes server at ${n ? n.serverUrl : '—'}.`;
+      const a = addressOf(n);
+      umsg.textContent = lastProbe && lastProbe.error === 'server_outdated' ? `The Echoes server at ${n ? n.serverUrl : '—'} runs an older version.` : `Can’t reach the Echoes server at ${n ? n.serverUrl : '—'}.`;
+      uhow.innerHTML = unreachableHow(n);
       uhttps.textContent = httpsPage() ? 'This page is served over https, so the browser only allows secure (wss://) servers.' : '';
+      if (a.source === 'saved') ubtns.insertBefore(autoBtn, ubackBtn);
+      else if (autoBtn.parentNode) autoBtn.remove();
       actions.appendChild(unreach);
       retryBtn.setAttribute('data-nav-default', '');
       return;
@@ -198,16 +290,19 @@ function createMpMenuScreen(ctx) {
   function renderSide() {
     const n = net();
     statusEl.className = `nt-status nt-${state}`;
-    stext.textContent = state === 'online' ? `Online${lastProbe && Number.isFinite(lastProbe.ms) ? ` · ${lastProbe.ms} ms` : ''}` : state === 'checking' ? 'Checking the server…' : 'Unreachable';
+    stext.textContent = state === 'online' ? `Online${lastProbe && Number.isFinite(lastProbe.ms) ? ` · ${lastProbe.ms} ms` : ''}` : state === 'checking' ? 'Checking the server…' : state === 'update' ? 'Update available' : 'Unreachable';
     addrEl.innerHTML = '';
     const a = document.createElement('span');
     a.textContent = 'Address ';
     const code = document.createElement('span');
     code.className = 'nt-code';
     code.textContent = n ? n.serverUrl : '—';
-    addrEl.append(a, code);
+    const src = document.createElement('span');
+    src.className = 'nt-src';
+    src.textContent = ` · ${sourceLabel(addressOf(n).source)}`;
+    addrEl.append(a, code, src);
     const lans = n && Array.isArray(n.lanUrls) ? n.lanUrls : [];
-    lanEl.textContent = lans.length ? `On your network: ${lans.join('  ·  ')}` : state === 'online' ? 'Local only — start the server with --host 0.0.0.0 to let friends on your network join.' : '';
+    lanEl.textContent = state === 'online' ? inviteLine(n) : lans.length ? `On your network: ${lans.join('  ·  ')}` : '';
     nameEl.textContent = `You play as ${n ? n.name : '—'} (change it in Settings ▸ Network)`;
   }
 
@@ -222,7 +317,7 @@ function createMpMenuScreen(ctx) {
     const r = await n.probe();
     if (gen !== probeGen || manager.top() === null) return;
     lastProbe = r;
-    state = r.state === 'online' ? 'online' : 'unreachable';
+    state = r.state === 'online' ? 'online' : r.state === 'update' ? 'update' : 'unreachable';
     render();
     renderSide();
     focusDefault();
@@ -253,7 +348,7 @@ function createMpMenuScreen(ctx) {
         const p = await n.probe();
         lastProbe = p;
         if (p.state !== 'online') {
-          state = 'unreachable';
+          state = p.state === 'update' ? 'update' : 'unreachable';
           render();
           renderSide();
           focusDefault();
@@ -270,6 +365,12 @@ function createMpMenuScreen(ctx) {
       if (kind === 'quick') r = await n.quickMatch();
       else r = await n.host({ visibility: kind === 'hostpub' ? 'public' : 'private' });
       if (!r || !r.ok) {
+        if (r && r.reason === 'update_available') {
+          state = 'update';
+          render();
+          renderSide();
+          return;
+        }
         setError(r && r.text ? r.text : `Couldn’t ${kind === 'quick' ? 'find a match' : 'open a room'} (${(r && r.reason) || 'no answer'}).`);
         if (r && (r.reason === 'unreachable' || r.reason === 'timeout')) {
           state = 'unreachable';
@@ -344,7 +445,7 @@ function createServerScreen(ctx) {
     <div class="ap-veil"></div>
     <div class="ap-dlg ap-plate">
       <div class="ap-dlg-title">Change server</div>
-      <div class="ap-dlg-body">The address of the Echoes server — ws://host:port/echoes (wss:// for a secure server).</div>
+      <div class="ap-dlg-body">The address of the Echoes server — ws://host:port/echoes (wss:// for a secure server). Automatic uses the server of the site you opened the game from.</div>
       <input type="text" id="nt-server-input" class="nt-input" maxlength="200" autocomplete="off" spellcheck="false" data-nav data-nav-default />
       <div class="nt-err"></div>
       <div class="ap-dlg-btns"></div>
@@ -360,7 +461,14 @@ function createServerScreen(ctx) {
     if (manager.top() === 'nt-server') manager.pop();
     if (p && typeof p.onDone === 'function') p.onDone(changed);
   }
+  function useAuto() {
+    app.settings.set('net.serverUrl', '', { source: 'ui' });
+    const n = net();
+    if (n) n.serverUrl = '';
+    finish(true);
+  }
   function save() {
+    if (!input.value.trim()) return useAuto(); // an empty address = automatic
     const v = validateServerUrl(input.value, { https: httpsPage() });
     if (!v.ok) {
       err.textContent =
@@ -378,7 +486,7 @@ function createServerScreen(ctx) {
     finish(true);
   }
   const ok = mkBtn('Save', 'nt-server-ok', { cls: 'ap-primary', onPress: save });
-  const def = mkBtn('Default', 'nt-server-default', { onPress: () => (input.value = 'ws://127.0.0.1:7800/echoes') });
+  const def = mkBtn('Automatic', 'nt-server-default', { onPress: () => useAuto() });
   const cancel = mkBtn('Cancel', 'nt-server-cancel', { onPress: () => finish(false) });
   btns.append(ok, def, cancel);
   input.addEventListener('click', () => input.focus({ preventScroll: true }));
@@ -395,7 +503,9 @@ function createServerScreen(ctx) {
       p = params;
       done = false;
       const n = net();
+      const a = addressOf(n);
       input.value = n ? n.serverUrl : '';
+      input.placeholder = a && a.site ? a.site : '';
       setTimeout(() => {
         try {
           input.focus({ preventScroll: true });
