@@ -128,6 +128,10 @@ export class WsConnection extends EventEmitter {
     });
     socket.on('end', () => {
       if (!this.closeReceived) this.closeCode = CLOSE.ABNORMAL;
+      // DEPLOY: the peer half-closed (TCP FIN, no close frame). The upgraded
+      // socket of an http server allows half-open, so without this it would
+      // linger until the silence sweep (5 s) — holding a per-IP slot.
+      if (!this.closed) this.socket.end();
     });
   }
 

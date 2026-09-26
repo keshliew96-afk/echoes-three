@@ -10,7 +10,12 @@
 // `up` / `down` are conditioner specs (object or compact string, e.g.
 // "lat75,jit10,loss10"; "off" clears). The admin API exists only when the
 // server was started with --admin, and even then answers loopback callers
-// only (a LAN-bound server never exposes it to the network).
+// only (a LAN-bound server never exposes it to the network). DEPLOY: a
+// request that arrived through a reverse proxy (it carries X-Forwarded-For /
+// Forwarded / X-Real-IP) is NOT a loopback caller even though the proxy
+// connects from 127.0.0.1 — behind Caddy / nginx the admin API stays closed.
+// Every other path goes to the static game server when one is configured
+// (`--static`, static.mjs), else 404.
 const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 const MAX_BODY = 64 * 1024;
 
@@ -57,11 +62,15 @@ export function createHttpHandler(server) {
       res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type' });
       return res.end();
     }
-    if (req.method === 'GET' && url.pathname === '/health') return json(res, 200, server.health());
+    if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname === '/health') return json(res, 200, server.health());
     const isAdminPath = url.pathname === '/stats' || url.pathname.startsWith('/admin/');
-    if (!isAdminPath) return json(res, 404, { ok: false, error: 'not_found' });
+    if (!isAdminPath) {
+      if (server.serveStatic) return server.serveStatic(req, res);
+      return json(res, 404, { ok: false, error: 'not_found' });
+    }
     if (!server.opt.admin) return json(res, 404, { ok: false, error: 'admin_disabled', hint: 'start the server with --admin' });
-    if (!LOOPBACK.has(req.socket.remoteAddress)) return json(res, 403, { ok: false, error: 'loopback_only' });
+    const forwarded = !!(req.headers['x-forwarded-for'] || req.headers.forwarded || req.headers['x-real-ip']);
+    if (!LOOPBACK.has(req.socket.remoteAddress) || forwarded) return json(res, 403, { ok: false, error: 'loopback_only' });
     try {
       if (req.method === 'GET' && url.pathname === '/stats') return json(res, 200, server.stats());
       if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'method' });

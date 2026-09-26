@@ -12,6 +12,15 @@
 // detection (guests 5 s, an in-game host 3 s), seat holds, host grace +
 // migration, and the admin HTTP API (admin.mjs). The server never runs game
 // logic: the authoritative sim is the host browser (listen-server model).
+//
+// DEPLOY (PLAN §14): `static` serves the built game on the same port as the
+// WebSocket (static.mjs) and reports its build in `welcome.latestBuild` /
+// `/health`, so a page older than the deployed game is told to reload;
+// public-hosting hardening: an optional Origin allow-list (`origins`: exact
+// origins, 'self' = the page came from this same host, '*' = any) and a
+// per-IP WebSocket cap (`maxPerIp`; the client IP is X-Forwarded-For's
+// last hop when the direct peer is a loopback reverse proxy; direct
+// loopback clients — the host's own browser, the harness bots — are exempt).
 import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { networkInterfaces } from 'node:os';
@@ -34,10 +43,65 @@ import { Lobby } from './lobby.mjs';
 import { quickMatch, cancelMatch } from './matchmaking.mjs';
 import { createLink, linkStats, routeBinary } from './relay.mjs';
 import { createHttpHandler } from './admin.mjs';
+import { createStaticHandler, createBuildInfoReader } from './static.mjs';
 
 export const HELLO_TIMEOUT_MS = 5000;
 export const IDENTITY_TTL_MS = 10 * 60 * 1000;
 export const MAX_PEERS = 256;
+// Per client IP: a household of 4 players + their menu probes + a reload
+// or two fits; a script opening sockets in a loop does not.
+export const MAX_PER_IP = 16;
+const LOOPBACK_IPS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+export const isLoopbackIp = (ip) => LOOPBACK_IPS.has(String(ip || '')) || /^(::ffff:)?127\./.test(String(ip || ''));
+
+// The client's IP: the direct peer, or — when the direct peer is a reverse
+// proxy on this machine (Caddy / nginx / the Vite dev proxy) — the last
+// X-Forwarded-For hop, which that proxy appended itself.
+export function clientIp(req) {
+  const direct = (req.socket && req.socket.remoteAddress) || '';
+  const xff = req.headers['x-forwarded-for'];
+  if (isLoopbackIp(direct) && xff) {
+    const hops = String(xff).split(',').map((h) => h.trim()).filter(Boolean);
+    if (hops.length) return { ip: hops[hops.length - 1], proxied: true };
+  }
+  return { ip: direct, proxied: false };
+}
+
+// origins: null / [] / ['*'] = any origin. Entries are exact origins
+// ('https://echoes.example.com') or 'self' (the Origin's host equals the
+// Host the request was sent to — the page came from this server or from a
+// proxy in front of it). A request without an Origin header is not a
+// browser page (bots, CLI tools) and is let through: the list fences off
+// OTHER websites, it is not authentication.
+export function originAllowed(req, origins) {
+  if (!origins || !origins.length || origins.includes('*')) return true;
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  let o;
+  try {
+    o = new URL(String(origin));
+  } catch {
+    return false;
+  }
+  const exact = `${o.protocol}//${o.host}`.toLowerCase();
+  for (const a of origins) {
+    const want = String(a).trim().toLowerCase().replace(/\/$/, '');
+    if (want === exact) return true;
+    if (want === 'self') {
+      const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim().toLowerCase();
+      if (host && host === o.host.toLowerCase()) return true;
+    }
+  }
+  return false;
+}
+
+// Page links a static server is reachable at (the invite players open).
+export function siteUrls(host, port, isStatic) {
+  if (!isStatic) return [];
+  if (host === '0.0.0.0' || host === '::') return lanUrls(host, port).map((u) => u.replace(/^ws:/, 'http:').replace(new RegExp(`${WS_PATH}$`), '/'));
+  if (host === '127.0.0.1' || host === 'localhost' || host === '::1') return [];
+  return [`http://${host.includes(':') ? `[${host}]` : host}:${port}/`];
+}
 const CONTROL_RATE = { perSec: 40, burst: 80, killAfter: 400 };
 const BINARY_RATE = { perSec: 600, burst: 1200, killAfter: 6000 };
 
@@ -80,8 +144,19 @@ export function createEchoesServer(options = {}) {
     maxRooms: MAX_ROOMS,
     log: false,
     cond: { up: null, down: null },
+    static: null, // DEPLOY: a built game directory to serve at /
+    origins: null, // DEPLOY: Origin allow-list (null = any)
+    maxPerIp: MAX_PER_IP, // DEPLOY: WebSocket connections per client IP (0 = no cap)
+    build: null, // DEPLOY: the deployed build when it is not served here ({ version, entry } or a version string)
     ...options,
   };
+  const serveStatic = opt.static ? createStaticHandler({ root: opt.static, log: (k, d) => log(k, d) }) : null;
+  const staticBuild = opt.static ? createBuildInfoReader(serveStatic.root) : null;
+  function servedBuild() {
+    if (opt.build) return typeof opt.build === 'string' ? { version: opt.build, entry: null } : opt.build;
+    return staticBuild ? staticBuild() : null;
+  }
+  const perIp = new Map(); // client ip -> live WebSocket connections
   const now = () => Date.now();
   const startedAt = now();
   const peers = new Map(); // peerId -> identity
@@ -106,6 +181,8 @@ export function createEchoesServer(options = {}) {
     adminDrops: 0,
     superseded: 0,
     rejectedHello: 0,
+    originRejected: 0,
+    ipRejected: 0,
   };
   const logRing = [];
   function log(kind, data = {}) {
@@ -145,10 +222,19 @@ export function createEchoesServer(options = {}) {
   const routeCtx = { lobby, sendBinary, now, counters };
 
   // ------------------------------------------------------ connections --
-  function onConnection(conn) {
+  function onConnection(conn, ip = null) {
     counters.connections += 1;
+    if (ip) {
+      perIp.set(ip, (perIp.get(ip) || 0) + 1);
+      conn.once('close', () => {
+        const n = (perIp.get(ip) || 1) - 1;
+        if (n > 0) perIp.set(ip, n);
+        else perIp.delete(ip);
+      });
+    }
     const rec = {
       conn,
+      ip,
       peer: null,
       openedAt: now(),
       lastRecvAt: now(),
@@ -373,6 +459,11 @@ export function createEchoesServer(options = {}) {
       room: peer.roomCode,
       seat: peer.seat,
       lanUrls: lanUrls(opt.host, boundPort),
+      // DEPLOY: the build this server deploys (null when it serves no game)
+      // — a page older than it offers "A new version … — Reload".
+      latestBuild: servedBuild() ? servedBuild().version : null,
+      latestEntry: servedBuild() ? servedBuild().entry : null,
+      siteUrls: siteUrls(opt.host, boundPort, !!serveStatic),
       conditioner: { up: rec.link.up.stats().spec, down: rec.link.down.stats().spec },
     });
   }
@@ -513,6 +604,12 @@ export function createEchoesServer(options = {}) {
       lanUrls: lanUrls(opt.host, boundPort),
       admin: !!opt.admin,
       conditioner: { up: formatCond(defaultCond.up), down: formatCond(defaultCond.down) },
+      // DEPLOY
+      build: servedBuild(),
+      static: !!serveStatic,
+      siteUrls: siteUrls(opt.host, boundPort, !!serveStatic),
+      origins: opt.origins && opt.origins.length ? opt.origins : ['*'],
+      maxPerIp: opt.maxPerIp || 0,
     };
   }
 
@@ -560,7 +657,7 @@ export function createEchoesServer(options = {}) {
 
   // ----------------------------------------------------------- listen --
   const http = createServer();
-  const server = { opt, lobby, peers, conns, counters, health, stats, setConditioner, dropPeer, killHost, log: logRing };
+  const server = { opt, lobby, peers, conns, counters, health, stats, setConditioner, dropPeer, killHost, log: logRing, serveStatic, servedBuild };
   const handler = createHttpHandler(server);
   http.on('request', (req, res) => {
     handler(req, res).catch(() => {
@@ -574,9 +671,37 @@ export function createEchoesServer(options = {}) {
   });
   http.on('upgrade', (req, socket, head) => {
     socket.on('error', () => socket.destroy());
+    // DEPLOY hardening, before the handshake: the Origin allow-list and the
+    // per-IP cap (only for the game path — anything else 404s below).
+    let pathname = '/';
+    try {
+      pathname = new URL(req.url, 'http://x').pathname;
+    } catch {
+      /* acceptUpgrade answers 404 */
+    }
+    const { ip } = clientIp(req);
+    if (pathname === WS_PATH) {
+      if (!originAllowed(req, opt.origins)) {
+        counters.originRejected += 1;
+        log('origin_rejected', { origin: String(req.headers.origin || ''), ip });
+        return refuseUpgrade(socket, 403, 'Forbidden', 'This site may not connect to this Echoes server.');
+      }
+      if (opt.maxPerIp > 0 && !isLoopbackIp(ip) && (perIp.get(ip) || 0) >= opt.maxPerIp) {
+        counters.ipRejected += 1;
+        log('ip_cap', { ip, live: perIp.get(ip) || 0, cap: opt.maxPerIp });
+        return refuseUpgrade(socket, 429, 'Too Many Requests', 'Too many connections from your address.', 'Retry-After: 10\r\n');
+      }
+    }
     const conn = acceptUpgrade(req, socket, head, { path: WS_PATH, maxPayload: 1 << 20 });
-    if (conn) onConnection(conn);
+    if (conn) onConnection(conn, ip || null);
   });
+  function refuseUpgrade(socket, status, statusText, body, extra = '') {
+    try {
+      socket.end(`HTTP/1.1 ${status} ${statusText}\r\nConnection: close\r\nContent-Type: text/plain; charset=utf-8\r\n${extra}Content-Length: ${Buffer.byteLength(body)}\r\n\r\n${body}`);
+    } catch {
+      socket.destroy();
+    }
+  }
   http.on('clientError', (err, socket) => {
     try {
       socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
@@ -594,7 +719,9 @@ export function createEchoesServer(options = {}) {
         boundPort = http.address().port;
         sweepTimer = setInterval(sweep, 100);
         const local = `ws://${opt.host === '0.0.0.0' || opt.host === '::' ? '127.0.0.1' : opt.host}:${boundPort}${WS_PATH}`;
-        resolve({ port: boundPort, host: opt.host, url: local, lanUrls: lanUrls(opt.host, boundPort), health: `http://${opt.host === '0.0.0.0' ? '127.0.0.1' : opt.host}:${boundPort}/health` });
+        const localHttp = `http://${opt.host === '0.0.0.0' || opt.host === '::' ? '127.0.0.1' : opt.host}:${boundPort}`;
+        if (serveStatic) serveStatic.warm().then((w) => log('static_warm', w)).catch(() => {});
+        resolve({ port: boundPort, host: opt.host, url: local, lanUrls: lanUrls(opt.host, boundPort), health: `${localHttp}/health`, site: serveStatic ? `${localHttp}/` : null, siteUrls: siteUrls(opt.host, boundPort, !!serveStatic), build: servedBuild() });
       });
     });
   server.close = () =>
