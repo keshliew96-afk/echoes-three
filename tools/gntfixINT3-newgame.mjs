@@ -13,7 +13,7 @@ const argv = process.argv.slice(2);
 const base = argv[0] || 'http://127.0.0.1:5199';
 const tag = argv[1] || 'dev';
 const opt = (k, d) => { const i = argv.indexOf(`--${k}`); return i >= 0 ? argv[i + 1] : d; };
-const legs = opt('legs', 'critic,two,load,end,rotate,fresh').split(',');
+const legs = opt('legs', 'critic,two,load,end,abandon,rotate,fresh').split(',');
 const real = opt('real', '0') === '1';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function waitFor(page, body, { timeout = 30000, every = 50 } = {}) { const t0 = Date.now(); while (Date.now() - t0 < timeout) { try { if (await page.evaluate(`(()=>{try{return !!(${body})}catch(e){return false}})()`)) return Date.now() - t0; } catch { /* */ } await sleep(every); } return -1; }
@@ -193,6 +193,32 @@ try {
     L.aSurvives = L.final.some((s) => s.id.startsWith('auto') && s.seed === seedA && s.phase !== 'defeat');
     L.seeds = { seedA, seedB }; L.dialog = ng.dialog && ng.dialog.title; L.errors = errors.length;
     console.log('END', JSON.stringify({ dialog: L.dialog, endCard: L.endCard, aSurvives: L.aSurvives, log: L.log, final: L.final.map((s) => `${s.id}:${s.mode}/${s.phase}/r${s.room}/${s.seed}`), seeds: L.seeds, errors: L.errors }));
+    await ctx.close(); flush();
+  }
+
+  // ---- abandon: a campaign abandoned by Quit to Lobby is over -> New Game asks nothing about it
+  if (legs.includes('abandon')) {
+    const L = (out.legs.abandon = {});
+    const { ctx, page, errors } = await boot(browser);
+    await titleNewGame(page); await waitFor(page, `window.__echoes.app.state==='playing'`); await sleep(1000);
+    await startCampaignAt(page, 1); const seedA = await runSeed(page);
+    await page.evaluate(() => window.__echoes.save.resetAutosaveThrottle());
+    await page.evaluate(() => window.__echoes.cmd('skipToRoom', 3)); await waitFor(page, `window.__echoes.state().run.room===3 && window.__echoes.state().run.phase==='combat'`); await sleep(1500);
+    L.before = await list(page);
+    await press(page, 'Escape'); await waitFor(page, `window.__echoes.app.stack().includes('pause')`);
+    await navTo(page, 'pz-lobby'); await press(page, 'Enter'); await sleep(450);
+    if (await page.evaluate(() => window.__echoes.app.stack().includes('confirm'))) { await navH(page, 'ap-confirm-ok'); await press(page, 'Enter'); }
+    await waitFor(page, `window.__echoes.app.stack().length===0 && !window.__echoes.state().run.active`, { timeout: 20000 }); await sleep(1500);
+    L.ended = await page.evaluate(() => window.__echoes.save.endedRuns());
+    await press(page, 'Escape'); await waitFor(page, `window.__echoes.app.stack().includes('pause')`);
+    await navTo(page, 'pz-quit'); await press(page, 'Enter'); await sleep(450);
+    if (await page.evaluate(() => window.__echoes.app.stack().includes('confirm'))) { await navH(page, 'ap-confirm-ok'); await press(page, 'Enter'); }
+    await waitFor(page, `window.__echoes.app.state==='title'`); await sleep(800);
+    L.saves = await list(page);
+    const ng = await titleNewGame(page, 'ok');
+    L.dialog = ng.dialog; L.state = ng.state; L.seedA = seedA; L.errors = errors.length;
+    L.pass = !ng.dialog && ng.state === 'playing' && L.ended.includes(`run:${seedA}`);
+    console.log('ABANDON', JSON.stringify({ ended: L.ended, seedA, dialog: L.dialog, state: L.state, saves: L.saves.map((s) => `${s.id}:${s.mode}/${s.phase}/r${s.room}/${s.seed}`), pass: L.pass, errors: L.errors }));
     await ctx.close(); flush();
   }
 

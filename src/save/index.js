@@ -585,6 +585,7 @@ export function createSaveSystem({
     const r = applyTree(pf.file.state, 'load', { slot: id });
     if (!r.ok) return { ok: false, error: r.error, detail: r.detail, backup: backupMeta(store, id) };
     const meta = slots[id] ?? metaOf(pf.file, { id, bytes: text.length });
+    markEnded(gameKeyOfTree(pf.file.state), false); // playing it on: in progress again (J3-F3)
     lastLoad = { slot: id, ms: r1(performance.now() - t0), tick: clock.tick, hash: pf.file.hash, at: Date.now() };
     return { ok: true, meta, ms: lastLoad.ms, migrated: pf.migrated };
   }
@@ -756,9 +757,47 @@ export function createSaveSystem({
       return null;
     }
   }
+  // Games whose run has ENDED since (victory, defeat, Quit to Lobby): an
+  // earlier autosave of theirs is an ordinary old save again — neither
+  // spared by the rotation nor announced by New Game as a run in progress.
+  // Loading such a save revives its game (the player chose to play it on).
+  const ENDED_KEY = INDEX_KEY.replace(/index$/, 'endedRuns');
+  const ENDED_MAX = 24;
+  let endedRuns = (() => {
+    try {
+      const t = store.read(ENDED_KEY);
+      const a = t ? JSON.parse(t) : [];
+      return Array.isArray(a) ? a.filter((k) => typeof k === 'string').slice(-ENDED_MAX) : [];
+    } catch {
+      return [];
+    }
+  })();
+  function markEnded(key, ended) {
+    if (!key || endedRuns.includes(key) === !!ended) return;
+    endedRuns = ended ? [...endedRuns, key].slice(-ENDED_MAX) : endedRuns.filter((k) => k !== key);
+    try {
+      store.writePlain(ENDED_KEY, JSON.stringify(endedRuns));
+    } catch {
+      /* best effort: the rotation then just keeps spare copies */
+    }
+  }
+  bus.on('run_end', () => {
+    if (probing) return;
+    try {
+      const run = world.runSystem();
+      const s = run ? run.view().summary : null;
+      if (s && Number.isFinite(s.seed)) markEnded(`run:${s.seed >>> 0}`, true);
+    } catch {
+      /* no summary: nothing to mark */
+    }
+  });
   const slotGameKey = (m) => (m && m.status === 'ok' ? gameKeyOfMeta(m.meta) : null);
   // the game key of a slot holding a run IN PROGRESS (null otherwise)
-  const slotRunKey = (m) => (m && m.status === 'ok' && inProgressMeta(m.meta) ? gameKeyOfMeta(m.meta) : null);
+  const slotRunKey = (m) => {
+    if (!m || m.status !== 'ok' || !inProgressMeta(m.meta)) return null;
+    const k = gameKeyOfMeta(m.meta);
+    return endedRuns.includes(k) ? null : k;
+  };
   // pickAutoSlot(tree | { runKey }) -> 'auto-1' | 'auto-2'
   function pickAutoSlot(tree) {
     const key = tree && typeof tree === 'object' && 'runKey' in tree ? tree.runKey : gameKeyOfTree(tree);
@@ -1182,6 +1221,7 @@ export function createSaveSystem({
       }
     },
     newGameImpact,
+    endedRuns: () => endedRuns.slice(),
     autosave: (reason) => autosave(reason),
     autosaveEnabled: (on) => autosaver.setEnabled(on),
     resetAutosaveThrottle: () => autosaver.resetThrottle(),
