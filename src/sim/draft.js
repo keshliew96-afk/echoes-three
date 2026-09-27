@@ -4,16 +4,18 @@
 // Binding rules implemented here:
 //   - Draft = ONE candidate, take-or-decline. No reroll, no confirm, no
 //     reopen — this module only ever hands back a single candidate.
-//   - Skill pool = the draftable healer skills (15 after §23.3) MINUS owned,
-//     and it is empty the moment `free_skill_slots == 0` (free = 4 − owned:
-//     the player equips at most 4 skills, M4c) — a skill with nowhere to go
-//     is never a candidate. Node pool = the 17 nodes filtered by
-//     `usable_by_party`.
+//   - Skill pool = the Healer's class skills MINUS owned (= the 15 draftable
+//     − owned while the starting skills are held). With `free_skill_slots
+//     == 0` (free = 4 − owned: at most 4 skills, M4c) a skill candidate is a
+//     SWAP offer (ruling A17, the user's rule of 2026-09-27: "the reward is
+//     still skill, but player can choose whether to replace one of the
+//     current 4 skill or not to replace") — never a 5th skill, never turned
+//     into a node. Node pool = the 17 nodes filtered by `usable_by_party`.
 //   - Uniform seeded draw from the pool SORTED ASCENDING BY ID (§16) — the
 //     sort is what makes one seed reproduce one candidate.
-//   - Empty promised pool => substitute the other type with an explicit line
-//     ("no slot free — offering a Node instead"); both empty => "the run moves
-//     on" + Continue.
+//   - Empty promised NODE pool => substitute a skill (a swap offer when full)
+//     with an explicit line; both empty => "the run moves on" + Continue (the
+//     skill pool no longer empties, so this is defensive).
 //   - Shop (M4c node-supply rebalance for 8 sockets per skill): 4 cards drawn
 //     without replacement from the same live filtered pool, stratified 2
 //     common + 1 rare + 1 legendary, priced 15 / 20 / 25 (§14 as restated:
@@ -36,16 +38,14 @@
 // Sim discipline: no DOM, no render imports, no wall clock. Every draw comes
 // from the seeded gameplay stream in a fixed order, so one seed replays one
 // run frame.
-import { SKILLS, STARTING_SKILLS } from './skills.js';
+import { SKILLS, STARTING_SKILLS, HEALER_SKILL_IDS } from './skills.js';
 import { NODES } from './nodes.js';
 
 // §16 "Skill pool = draftable healer skills − owned": every authored healer
 // skill (17 after §23.3) minus the 2 the Healer starts with = 15. Sorted ascending id (the §16
 // draw order).
 export const DRAFTABLE_SKILL_IDS = Object.freeze(
-  Object.keys(SKILLS)
-    .filter((id) => !STARTING_SKILLS.includes(id))
-    .sort()
+  HEALER_SKILL_IDS.filter((id) => !STARTING_SKILLS.includes(id))
 );
 
 export const NODE_IDS = Object.freeze(Object.keys(NODES).sort());
@@ -105,10 +105,16 @@ export function createDraftSystem({ rng, build, slots }) {
     return false;
   }
 
+  // Ruling A17 (the user's rule, 2026-09-27): a skill reward stays a SKILL
+  // reward when the Healer already holds 4 — a SWAP offer (offer() marks it).
+  // The pool is the Healer's class pool minus owned, so a swapped-out
+  // starting skill can be drawn again; while both starting skills are owned
+  // (always true with a free slot) it is DRAFTABLE_SKILL_IDS − owned exactly —
+  // the same ids in the same ascending order, so every non-swap draw is
+  // unchanged.
   function skillPool() {
-    if (freeSkillSlots() === 0) return []; // nowhere to put it => not a candidate
     const owned = new Set(ownedSkillIds());
-    return DRAFTABLE_SKILL_IDS.filter((id) => !owned.has(id));
+    return HEALER_SKILL_IDS.filter((id) => !owned.has(id));
   }
 
   function nodePool() {
@@ -160,15 +166,19 @@ export function createDraftSystem({ rng, build, slots }) {
     }
     const pool = pools[type]; // already ascending-id (both builders sort)
     const id = pool[rng.int(pool.length)];
+    const free = freeSkillSlots();
     const out = {
       type,
       id,
       promised,
       substituted,
       line: substituted ? SUBSTITUTE_LINE[type] : null,
-      freeSkillSlots: freeSkillSlots(),
+      freeSkillSlots: free,
       poolSize: pool.length,
     };
+    // Ruling A17: a skill with no free slot is a SWAP offer — the player picks
+    // which of the 4 it replaces (run.js), or Leaves. Key present only then.
+    if (type === 'skill' && free === 0) out.swap = true;
     if (type === 'node' && upgrading) {
       out.pool = 'upgrade';
       out.upgrade = upgradeInfo(id);

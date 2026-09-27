@@ -112,6 +112,7 @@ const COLS = 8;
 
 export function createSocketScreen({ bus, world }) {
   const build = () => world.buildSystem();
+  let swapNote = null; // ruling A17: the note a swap-chained open shows once
 
   // ------------------------------------------------------------------ style --
   const style = document.createElement('style');
@@ -943,6 +944,12 @@ export function createSocketScreen({ bus, world }) {
       if (pre && view && view.bench.some((b) => b.node === pre)) pickUp(pre);
       else if (chips.length) setFocus({ zone: 'bench', i: 0 });
       else setFocus({ zone: 'cells', r: 0, c: 0 });
+      // Ruling A17: opened by a taken SWAP — say where the replaced skill's
+      // nodes went and offer the auto-fill (F).
+      if (swapNote) {
+        toast(swapNote);
+        swapNote = null;
+      }
     } else {
       open = false;
       held = null; // Esc banks the candidate: it never left the bench
@@ -1107,6 +1114,12 @@ export function createSocketScreen({ bus, world }) {
     // §16 chain: the run UI opens us right after this; open with the drafted
     // node in hand and the cursor on the socket the auto-fill policy picks.
     if (ev.reward === 'node') prefocus = ev.id;
+    // Ruling A17: a taken swap releases the replaced skill's nodes.
+    if (ev.reward === 'skill' && ev.swap && Array.isArray(ev.released) && ev.released.length > 0) {
+      const n = ev.released.length;
+      const was = SKILLS[ev.replaced] ? SKILLS[ev.replaced].name : ev.replaced;
+      swapNote = `${n} node${n === 1 ? '' : 's'} from ${was} back on the bench — F auto-fills them`;
+    }
   });
   bus.on('socket_denied', (ev) => {
     if (!open) return;

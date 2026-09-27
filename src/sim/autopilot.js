@@ -165,7 +165,14 @@ export function createAutopilot({ registry, player, run, skills, build }) {
     if (!r) return false;
     const v = r.view();
     if (v.phase === 'reward' && cfg.drafts === 'take') {
-      if (v.reward && v.reward.type) r.takeReward();
+      // Ruling A17: a SWAP offer (4 skills owned) follows the §25.8 Healer
+      // priority — take it (replacing the suggested slot) only when the new
+      // skill outranks the lowest-priority owned one; else Leave. Every
+      // other card: take.
+      if (v.reward && v.reward.type && v.reward.swap) {
+        if (v.reward.suggest === 'take') r.takeReward(v.reward.replace);
+        else r.declineReward();
+      } else if (v.reward && v.reward.type) r.takeReward();
       else r.declineReward();
       stats.drafts += 1;
       autoSocket();

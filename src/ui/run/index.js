@@ -179,7 +179,9 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // so a lone choose key after a quiet 300 ms counts exactly as documented.
   const GRACE_MS = 300;
   const SETTLE_MAX_MS = 1000;
-  const NAV_KEYS = new Set(['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight']);
+  // Ruling A17: W / S, ↑ / ↓ move a swap offer's Replaces mark — navigation,
+  // so the settle window drops them too (a carried strafe never moves it).
+  const NAV_KEYS = new Set(['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyS', 'ArrowUp', 'ArrowDown']);
   // X (the draft's decline, ruling A13) is a commit key: settle-guarded and
   // fresh-press only, exactly like Enter.
   const COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'KeyX']);
@@ -237,6 +239,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // A cheap signature so a screen only re-renders when something it draws has
   // actually changed (the shop's shake animation must never be restarted by an
   // unrelated repaint).
+  function swapFill() {
+    const b = build();
+    return b ? b.view().skills.map((s) => s.filled).join(',') : '';
+  }
+
   function sigOf(v) {
     const r = v.reward;
     const p = v.path;
@@ -248,6 +255,9 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       v.wallet,
       v.freeSkillSlots,
       r ? `${r.type}:${r.id}:${r.substituted}` : '-',
+      // Ruling A17: a swap offer repaints when its Replaces mark moves or the
+      // socket screen changed how many nodes a skill holds.
+      r && r.swap ? `${r.replace}:${r.suggest}:${swapFill()}` : '-',
       p ? `${p.nextRoom}:${p.focus}:${p.options.map((o) => o.win + o.reward).join(',')}` : '-',
       s ? s.stock.map((i) => `${i.node}${i.price}${i.sold ? 'x' : ''}${i.owned}`).join('|') : '-',
       v.summary ? `${v.summary.result}:${v.summary.rooms}:${v.summary.glint}` : '-',
@@ -652,6 +662,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // without erasing the event's own name — see the note in sim/run.js.
   bus.on('draft_taken', (ev) => {
     if (ev.reward === 'node' && socket) socket.cmd('openSocket');
+    // Ruling A17: a taken SWAP whose replaced skill held nodes chains into the
+    // socket screen too — the released nodes wait on the bench with the
+    // auto-fill offered (F).
+    if (ev.reward === 'skill' && ev.swap && Array.isArray(ev.released) && ev.released.length > 0 && socket)
+      socket.cmd('openSocket', { released: ev.released.length });
   });
   // A run ending or a room starting must never leave a page hanging.
   bus.on('room_start', () => setScreen('none'));
@@ -860,6 +875,9 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
         // clock at a chosen offset — the same step function, told what time
         // it is — so a capture can photograph any phase; shopPin(null) hands
         // the clock back and the choreography finishes normally.
+        // Ruling A17: the draft page's swap state (focus 0 Take / 1 Leave,
+        // the Replaces mark, the 4 owned ids).
+        draft: typeof screens.draft.probe === 'function' ? screens.draft.probe() : null,
         shopAnim: () => screens.shop.animState(),
         shopPin: (ms) => screens.shop.pin(ms),
       };

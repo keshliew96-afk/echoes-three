@@ -9,10 +9,21 @@
 // CLEAR SPOILS (M4c node supply: 2 nodes straight to the bench per combat
 // clear) are named on their own line under the card — they are already on
 // the bench, whatever the player does with this candidate.
+//
+// Ruling A17 (the user's rule, 2026-09-27): with 4 skills owned a skill
+// reward is a SWAP offer — the card is titled NEW SKILL — SWAP, the
+// REPLACES selector under it shows the 4 owned skills (the one the new skill
+// would replace raised + ✕ "replace"), W / S or ↑ / ↓, the mouse wheel over
+// the strip or a click on a tile moves it; Take replaces it (its nodes go to
+// the bench), Leave keeps the loadout. The selector opens on the AI's
+// suggestion (the lowest-priority owned skill); when the AI would Leave, the
+// page opens with Leave focused so a reflexive Enter never costs a skill.
 import { esc, isCompact } from './style.js';
 import { skillCardHtml, nodeCardHtml, RARITY_COLOR, NODE_GLYPH } from './cards.js';
 import { NODES } from '../../sim/nodes.js';
 import { SPOILS_PER_CLEAR } from '../../sim/draft.js';
+import { SKILLS } from '../../sim/skills.js';
+import { cardIconHtml } from './cards.js';
 
 export function createDraftScreen({ run, build }) {
   const el = document.createElement('div');
@@ -21,17 +32,22 @@ export function createDraftScreen({ run, build }) {
     <div class="rn-title">A GIFT ON THE ROAD</div>
     <div class="rn-orn">◆ ◆ ◆</div>
     <div class="rn-strip">
-      <span class="rn-lab">SKILL SLOTS FREE</span><span class="rn-num rn-free">0</span>
+      <span class="rn-lab rn-freelab">SKILL SLOTS FREE</span><span class="rn-num rn-free">0</span>
       <span class="rn-lab">· ROOM</span><span class="rn-num rn-room">1</span>
     </div>
     <div class="rn-cardhost"></div>
+    <div class="rn-replace" style="display:none"></div>
+    <div class="rn-note rn-repline" style="display:none"></div>
     <div class="rn-note rn-subline" style="display:none"></div>
     <div class="rn-note rn-spoils" style="display:none"></div>
     <div class="rn-buttons">
       <div class="rn-btn rn-take rn-primary">Take</div>
       <div class="rn-btn rn-decline">Decline</div>
     </div>
-    <div class="rn-hint"><b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> commit · <b>X</b> decline · <b>Esc</b> pause</div>`;
+    <div class="rn-hint rn-drafthint"><b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> commit · <b>X</b> decline · <b>Esc</b> pause</div>`;
+  const HINT_PLAIN = el.querySelector('.rn-drafthint').innerHTML;
+  const HINT_SWAP =
+    '<b>W</b>/<b>S</b> or <b>↑</b>/<b>↓</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause';
 
   const host = el.querySelector('.rn-cardhost');
   const subline = el.querySelector('.rn-subline');
@@ -39,7 +55,12 @@ export function createDraftScreen({ run, build }) {
   const btnTake = el.querySelector('.rn-take');
   const btnDecline = el.querySelector('.rn-decline');
   const freeEl = el.querySelector('.rn-free');
+  const freeLab = el.querySelector('.rn-freelab');
   const roomEl = el.querySelector('.rn-room');
+  const repEl = el.querySelector('.rn-replace');
+  const repLine = el.querySelector('.rn-repline');
+  const hintEl = el.querySelector('.rn-drafthint');
+  let swapView = null; // { replace, ids } of the swap offer on the card, else null
   // 0 = Take (the rn-primary), 1 = Decline. This is PER PAGE state: it is
   // re-initialised to Take every time the page opens (`open()`, called by the
   // manager) and again whenever the candidate on the card changes, so a
@@ -51,6 +72,32 @@ export function createDraftScreen({ run, build }) {
 
   btnTake.addEventListener('click', () => run().takeReward());
   btnDecline.addEventListener('click', () => run().declineReward());
+  // Ruling A17: a click on a tile picks it; the wheel over the strip cycles.
+  repEl.addEventListener('click', (e) => {
+    const t = e.target.closest('.rn-rep');
+    if (!t || !swapView) return;
+    run().setRewardReplace(Number(t.dataset.slot));
+  });
+  repEl.addEventListener(
+    'wheel',
+    (e) => {
+      if (!swapView) return;
+      e.preventDefault();
+      cycleReplace(e.deltaY > 0 ? 1 : -1);
+    },
+    { passive: false }
+  );
+
+  function cycleReplace(dir) {
+    if (!swapView) return false;
+    const owned = swapView.ids.map((id, i) => (id ? i : -1)).filter((i) => i >= 0);
+    if (owned.length === 0) return false;
+    const at = owned.indexOf(swapView.replace);
+    const next = owned[(at + dir + owned.length) % owned.length];
+    const r = run().setRewardReplace(next);
+    if (Number.isInteger(r)) swapView.replace = r;
+    return true;
+  }
 
   function paintFocus() {
     btnTake.classList.toggle('rn-focus', focus === 0);
@@ -70,13 +117,22 @@ export function createDraftScreen({ run, build }) {
     const candidate = `${view.room}:${r.type}:${r.id}`;
     if (candidate !== shown) {
       shown = candidate;
-      focus = 0; // a new candidate is a new page: it opens on Take
+      // A new candidate is a new page: it opens on Take — except a swap the
+      // AI would Leave (ruling A17), which opens on Leave.
+      focus = r.swap && r.suggest === 'leave' ? 1 : 0;
     }
     const sys = build();
+    freeLab.textContent = r.swap ? 'SKILL SLOTS FULL · CHOOSE ONE TO REPLACE, OR LEAVE' : 'SKILL SLOTS FREE';
+    freeEl.style.display = r.swap ? 'none' : '';
+    hintEl.innerHTML = r.swap ? HINT_SWAP : HINT_PLAIN;
     if (r.type === 'skill') {
       host.innerHTML = `<div class="rn-card" style="--rar:${RARITY_COLOR.common}">${skillCardHtml(
         r.id
       )}</div>`;
+      if (r.swap) {
+        const kind = host.querySelector('.rn-cardkind');
+        if (kind) kind.innerHTML = `<span class="rn-swapkind">NEW SKILL — SWAP</span>`;
+      }
     } else if (r.type === 'node') {
       const n = NODES[r.id];
       const verdict = sys ? sys.kitVerdict(r.id) : null;
@@ -137,6 +193,7 @@ export function createDraftScreen({ run, build }) {
       spoilsEl.style.display = 'none';
       spoilsEl.textContent = '';
     }
+    renderSwap(r, sys);
     // Substitution / empty line (§16).
     if (r.line) {
       subline.style.display = '';
@@ -148,13 +205,57 @@ export function createDraftScreen({ run, build }) {
     // Both pools empty => a single "Continue" (nothing to take or decline).
     const empty = !r.type;
     btnTake.style.display = empty ? 'none' : '';
-    btnDecline.textContent = empty ? 'Continue' : 'Decline';
+    btnDecline.textContent = empty ? 'Continue' : r.swap ? 'Leave' : 'Decline';
+    btnTake.textContent = r.swap ? 'Take · Replace' : 'Take';
     if (empty) focus = 1;
     paintFocus();
   }
 
+  // Ruling A17: the Replaces selector of a swap offer.
+  function renderSwap(r, sys) {
+    if (!(r.type === 'skill' && r.swap)) {
+      swapView = null;
+      repEl.style.display = 'none';
+      repEl.innerHTML = '';
+      repLine.style.display = 'none';
+      repLine.textContent = '';
+      return;
+    }
+    const skills = sys ? sys.view().skills : [];
+    const ids = [0, 1, 2, 3].map((i) => (skills[i] ? skills[i].id : null));
+    swapView = { replace: r.replace, ids };
+    repEl.style.display = '';
+    repEl.innerHTML = skills
+      .slice(0, 4)
+      .map((sk, i) => {
+        const def = SKILLS[sk.id];
+        const sel = i === r.replace;
+        return `<div class="rn-rep${sel ? ' rn-sel' : ''}" data-slot="${i}" data-skill="${esc(sk.id)}">
+          <span class="rn-repkey">${i + 1}</span><span class="rn-repx">✕</span>
+          ${cardIconHtml(sk.id, 30)}
+          <div class="rn-repname">${esc(def ? def.name : sk.id)}</div>
+          <div class="rn-repmeta">${sel ? 'replace · ' : ''}◈ ${sk.filled}</div>
+        </div>`;
+      })
+      .join('');
+    const out = skills[r.replace];
+    const newName = SKILLS[r.id] ? SKILLS[r.id].name : r.id;
+    const oldName = out && SKILLS[out.id] ? SKILLS[out.id].name : out ? out.id : '';
+    const n = out ? out.filled : 0;
+    const nodes = n === 0 ? `${oldName} holds no nodes` : `${oldName}'s ${n} node${n === 1 ? '' : 's'} go to the bench`;
+    const advice = r.suggest === 'leave' ? ' · suggested: Leave — your four outrank it' : '';
+    repLine.style.display = '';
+    repLine.textContent = `${newName} replaces ${oldName} — ${nodes}${advice}`;
+  }
+
   // Returns true when the key was consumed.
   function key(code, fresh) {
+    // Ruling A17: W / S, ↑ / ↓ move the Replaces mark (fresh presses only —
+    // the page's settle window already dropped carried-over strafes).
+    if (swapView && (code === 'KeyW' || code === 'ArrowUp' || code === 'KeyS' || code === 'ArrowDown')) {
+      if (fresh) cycleReplace(code === 'KeyW' || code === 'ArrowUp' ? -1 : 1);
+      return true;
+    }
     if (code === 'KeyA' || code === 'ArrowLeft') {
       focus = 0;
       paintFocus();
@@ -186,5 +287,8 @@ export function createDraftScreen({ run, build }) {
     return false;
   }
 
-  return { el, render, key, open, name: 'draft' };
+  // Probe surface (runUi().draft): what the page shows.
+  const probe = () => ({ focus, swap: !!swapView, replace: swapView ? swapView.replace : null, ids: swapView ? [...swapView.ids] : null });
+
+  return { el, render, key, open, probe, name: 'draft' };
 }

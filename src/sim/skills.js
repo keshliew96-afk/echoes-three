@@ -165,6 +165,18 @@ export const SKILLS = Object.freeze({
 // re-owns loadout initialization when it lands).
 export const STARTING_SKILLS = Object.freeze(['mending_bolt', 'swift_mend']);
 
+// Ruling A17 (the user's rule, 2026-09-27): the Healer's CLASS pool — every
+// Healer skill, sorted ascending id. A swap offer (4 skills owned) draws from
+// this pool minus owned, so a replaced starting skill can come back; with
+// both starting skills owned it equals draft.js DRAFTABLE_SKILL_IDS − owned
+// exactly (same ids, same order), so the Healer's draws never change while
+// its starting skills are held.
+export const HEALER_SKILL_IDS = Object.freeze(
+  Object.keys(SKILLS)
+    .filter((id) => !SKILLS[id].cls || SKILLS[id].cls === 'healer')
+    .sort()
+);
+
 // Sim-side party allies (§7 class rows: max_hp Tank 150 / Swordsman 95 /
 // Archer 80). Positions mirror the arena scene's idle critter spots
 // (scenes/arena.js ALLY_SPOTS — the render side draws them there, so heal
@@ -264,6 +276,26 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
     if (def.shape === 'aura') auraNext.set(id, getTick() + AURA_CADENCE_TICKS);
     events.emit(getTick(), 'skill_equip', { slot, skill: id, passive: def.shape === 'aura' });
     return { slot };
+  }
+
+  // Ruling A17 (the user's rule): a SWAP — `id` takes `slot`, whose skill
+  // leaves the loadout (never a 5th skill). The new skill is ready at once
+  // (like a drafted one); the old skill's passive pulse clock ends with it.
+  // The build system releases the old skill's sockets (nodes.js
+  // releaseSkill) — the run system calls both.
+  function replaceSkill(slot, id) {
+    const def = SKILLS[id];
+    if (!def) return { error: `unknown skill '${id}'` };
+    if (!(Number.isInteger(slot) && slot >= 0 && slot < SKILL_SLOTS)) return { error: 'no_such_slot' };
+    if (slots.some((s) => s && s.id === id)) return { error: 'owned' };
+    const old = slots[slot];
+    if (!old) return giveSkill(id); // an empty slot is a plain equip
+    auraNext.delete(old.id);
+    slots[slot] = { id, readyTick: 0 };
+    player.skills[slot] = id;
+    if (def.shape === 'aura') auraNext.set(id, getTick() + AURA_CADENCE_TICKS);
+    events.emit(getTick(), 'skill_equip', { slot, skill: id, passive: def.shape === 'aura', replaced: old.id });
+    return { slot, replaced: old.id };
   }
 
   // ----------------------------------------------------------------- fire --
@@ -646,6 +678,7 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
     saveState,
     loadState,
     giveSkill,
+    replaceSkill,
     tryFire,
     step,
     zonePhase,

@@ -1477,6 +1477,29 @@ export function createBuildSystem({
     return true;
   }
 
+  // Ruling A17 (the user's rule): a skill SWAPPED out of the loadout takes
+  // nothing with it — every node on its row goes to the bench with its
+  // provenance (never lost), and its Resonance count, pending Echo recasts and
+  // passive Reapply clock end with it. Returns the released node ids in
+  // socket order. Called by the run system between rooms only.
+  function releaseSkill(skillId) {
+    const row = assignments.get(skillId);
+    const released = [];
+    if (row) {
+      for (const rec of row) {
+        if (!rec) continue;
+        bench.push(rec);
+        released.push(rec.node);
+      }
+    }
+    assignments.delete(skillId);
+    resonance.delete(skillId);
+    for (let i = echoQueue.length - 1; i >= 0; i--) if (echoQueue[i].skill === skillId) echoQueue.splice(i, 1);
+    auraEchoNext.delete(skillId);
+    invalidate();
+    return released;
+  }
+
   // Probe / harness hooks (PLAN §6.4): arm an Echo recast now (as if the
   // skill had just been cast on the current aim), and set a Resonance count.
   function echoArm(skillId) {
@@ -1563,6 +1586,7 @@ export function createBuildSystem({
     grantNode,
     socket,
     unsocket,
+    releaseSkill,
     preview,
     kitVerdict,
     verdictFor: (skillId, nodeId, slot = null) => verdictFor(SKILLS[skillId], nodeId, slot),

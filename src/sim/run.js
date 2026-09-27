@@ -79,6 +79,7 @@ import { levelFor, ACT_IDS } from '../data/levels.js';
 import { difficulty, CHALLENGE } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
+import { swapSuggestion } from '../data/classes.js';
 import {
   CARRY_RULES,
   TRANSIT,
@@ -522,9 +523,20 @@ export function createRunSystem({
   }
 
   // ----------------------------------------------------------------- draft --
+  // Ruling A17: the Healer's loadout in slot order (null = empty slot).
+  const healerSlots = () => skillSys.slotsView().map((s) => (s ? s.id : null));
+
   function presentReward() {
     const promised = rewardFor[roomIndex] ?? 'skill';
     reward = draft.offer(promised);
+    // Ruling A17 (the user's rule): a SWAP offer carries the §25.8 suggestion
+    // — `replace` = the slot the Replaces selector opens on (the lowest-
+    // priority owned skill), `suggest` = take|leave. No draw: state only.
+    if (reward.swap) {
+      const s = swapSuggestion('healer', healerSlots(), reward.id);
+      reward.replace = s.replace;
+      reward.suggest = s.choice;
+    }
     phase = 'reward';
     // NOTE (binding, whole module): the bus builds every event as
     // `{ tick, type, ...payload }` (core/events.js), so a payload key named
@@ -545,15 +557,44 @@ export function createRunSystem({
       // byte-identical to the pre-fix ones).
       ...(reward.pool ? { pool: reward.pool, upgrade: reward.upgrade ? { ...reward.upgrade } : null } : {}),
       ...(reward.reason ? { reason: reward.reason } : {}),
+      // Ruling A17: keys present only on a swap offer (fill-case traces keep
+      // their exact payload).
+      ...(reward.swap ? { swap: true, replace: reward.replace, suggest: reward.suggest } : {}),
     });
   }
 
+  // Ruling A17: move the pending Replaces choice of a swap offer (the UI's
+  // W/S / wheel / click, cmd('draftReplace')). Plain run state — saved,
+  // replicated, and what takeReward() uses when it is given no slot.
+  function setRewardReplace(slot) {
+    if (phase !== 'reward' || !reward || !reward.swap) return null;
+    const s = Number(slot);
+    if (!(Number.isInteger(s) && s >= 0 && s < SKILL_SLOTS) || !healerSlots()[s]) return null;
+    reward.replace = s;
+    return s;
+  }
+
   // §16: take-or-decline, no confirm, no reroll, no reopen.
-  function takeReward() {
+  // Ruling A17: on a SWAP offer `replace` names the slot the new skill takes
+  // (default: the pending choice, reward.replace); the old skill leaves the
+  // loadout and its nodes go to the bench.
+  function takeReward(replace) {
     if (phase !== 'reward' || !reward || !reward.type) return null;
     const tick = getTick();
     const taken = { type: reward.type, id: reward.id };
-    if (reward.type === 'skill') {
+    if (reward.type === 'skill' && reward.swap) {
+      const slot = Number.isInteger(replace) && healerSlots()[replace] ? replace : reward.replace;
+      const old = healerSlots()[slot];
+      if (!old) return null; // defensive: a swap always has 4 owned
+      const released = buildSys.releaseSkill(old);
+      const r = skillSys.replaceSkill(slot, reward.id);
+      if (!r || r.error) return null;
+      taken.slot = slot;
+      taken.replaced = old;
+      taken.released = released;
+      events.emit(tick, 'draft_taken', { reward: 'skill', id: reward.id, slot, swap: true, replaced: old, released: [...released] });
+      events.emit(tick, 'skill_swapped', { seat: 0, id: reward.id, slot, replaced: old, released: [...released] });
+    } else if (reward.type === 'skill') {
       const r = skillSys.giveSkill(reward.id); // -> first empty slot (§16)
       events.emit(tick, 'draft_taken', { reward: 'skill', id: reward.id, slot: r.slot ?? null });
     } else {
@@ -1226,6 +1267,9 @@ export function createRunSystem({
             ...(reward.pool ? { pool: reward.pool } : {}),
             ...upgradeKey(reward.type === 'node' ? reward.id : null),
             ...(reward.reason ? { reason: reward.reason } : {}),
+            // Ruling A17: a swap offer's pending Replaces slot + the AI's
+            // suggestion (present only on a swap — hash-stable view).
+            ...(reward.swap ? { swap: true, replace: reward.replace, suggest: reward.suggest } : {}),
           }
         : null,
       path: path
@@ -1323,7 +1367,10 @@ export function createRunSystem({
       case 'runState':
         return view();
       case 'draftTake':
-        return takeReward();
+        // ('draftTake'[, slot]) — ruling A17: the slot a swap replaces.
+        return takeReward(Number.isInteger(args[0]) ? args[0] : undefined);
+      case 'draftReplace':
+        return setRewardReplace(args[0]);
       case 'draftDecline':
         return declineReward();
       case 'pathFocus':
@@ -1560,6 +1607,7 @@ export function createRunSystem({
     // UI entry points (src/ui/run/**) — the same paths __echoes.cmd drives.
     takeReward,
     declineReward,
+    setRewardReplace,
     focusPath,
     choosePath,
     buy,

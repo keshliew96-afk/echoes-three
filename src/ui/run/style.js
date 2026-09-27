@@ -257,6 +257,31 @@ export const RUN_CSS = `
   }
   .rn-btn.rn-primary { border-color: ${PALETTE.hearthAmber}AA; }
 
+  /* ------------------------------ Replaces selector (ruling A17 swap offer) */
+  /* The 4 owned skills under a swap card; the one the new skill would replace
+     is raised, outlined in Hearth Amber (§19.1 selection) and carries a ✕
+     badge + the word "replace" — never colour alone. */
+  .rn-replace { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
+  .rn-rep {
+    position: relative; width: 132px; padding: 8px 8px 7px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    border: 2px solid ${PALETTE.warmGrey}66; border-radius: 10px;
+    background: ${PALETTE.voidCharcoal}; cursor: pointer;
+    transition: border-color 120ms ease, transform 120ms ease;
+  }
+  .rn-rep:hover { border-color: ${PALETTE.bone}; }
+  .rn-rep .rn-repname { font-size: 16px; font-weight: 700; color: ${PALETTE.parchment}; text-align: center; line-height: 1.1; white-space: nowrap; }
+  .rn-rep .rn-repmeta { font-size: 16px; color: ${PALETTE.warmGrey}; font-variant-numeric: tabular-nums; }
+  .rn-rep .rn-repkey { position: absolute; left: 6px; top: 4px; font-size: 16px; color: ${PALETTE.warmGrey}; font-weight: 700; }
+  .rn-rep.rn-sel { border-color: ${PALETTE.hearthAmber}; transform: translateY(-3px); box-shadow: 0 0 16px ${PALETTE.hearthAmber}44; }
+  .rn-rep.rn-sel .rn-repmeta { color: ${PALETTE.hearthAmber}; }
+  .rn-rep .rn-repx {
+    position: absolute; right: 5px; top: 3px; display: none;
+    font-size: 16px; font-weight: 900; color: ${PALETTE.parchment};
+  }
+  .rn-rep.rn-sel .rn-repx { display: block; }
+  .rn-swapkind { color: ${PALETTE.hearthAmber}; }
+
   /* ------------------------------------------------------------ shop shelf */
   .rn-shelf { display: flex; gap: 26px; margin: 4px 0 2px; align-items: flex-start; }
   .rn-item { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 220px; }
@@ -673,6 +698,8 @@ export const RUN_CSS = `
   #run-screen.rn-compact .rn-stats i { font-size: 16px; }
   #run-screen.rn-compact .rn-note { font-size: 16px; padding: 4px 12px; margin-top: 5px; line-height: 1.2; }
 
+  #run-screen.rn-compact .rn-replace { margin-top: 6px; gap: 8px; }
+  #run-screen.rn-compact .rn-rep { width: 124px; padding: 5px 6px 5px; }
   #run-screen.rn-compact .rn-buttons { margin-top: 10px; gap: 12px; }
   #run-screen.rn-compact .rn-btn { min-width: 132px; padding: 7px 16px; font-size: 18px; }
 
