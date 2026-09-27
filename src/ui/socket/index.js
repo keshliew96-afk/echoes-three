@@ -70,6 +70,7 @@ import { NODE_EFFECT, NODE_GLYPH as CARD_GLYPH } from '../run/cards.js';
 import { createPartyStrip } from '../run/partystrip.js';
 import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
 import { CLASS_ACCENTS } from '../../data/palette.js';
+import { service } from '../../app/registry.js';
 
 const RARITY_COLOR = {
   common: PALETTE.bone,
@@ -129,6 +130,28 @@ const COLS = 8;
 export function createSocketScreen({ bus, world }) {
   // PARTY: the viewed character's build (seat 0 = the Healer's, unchanged).
   let viewSeat = 0;
+  // The viewer's own seat (a network guest: its class seat) and whether a
+  // session is up (the socket hold is reported to the host only then).
+  const netSvc = () => {
+    try {
+      return service('net') || null;
+    } catch {
+      return null;
+    }
+  };
+  const isGuest = () => {
+    const n = netSvc();
+    return !!(n && typeof n.isGuest === 'function' && n.isGuest());
+  };
+  const inSession = () => {
+    const n = netSvc();
+    return !!(n && ((typeof n.isGuest === 'function' && n.isGuest()) || (typeof n.isHost === 'function' && n.isHost())));
+  };
+  const ownSeat = () => {
+    const n = netSvc();
+    return isGuest() && Number.isInteger(n.seat) ? n.seat : 0;
+  };
+  let noteSync = () => {};
   let headerInHand = null; // a skill row picked up to reorder (row index)
   const partySys = () => (typeof world.partySystem === 'function' ? world.partySystem() : null);
   const build = () => {
@@ -421,6 +444,7 @@ export function createSocketScreen({ bus, world }) {
     viewSeat = s;
     held = null;
     headerInHand = null;
+    noteSync();
     if (open) {
       renderAll();
       setFocus({ zone: chips.length ? 'bench' : 'cells', r: 0, c: 0, i: 0 });
@@ -988,9 +1012,8 @@ export function createSocketScreen({ bus, world }) {
     if (!sys || typeof sys.autoFill !== 'function') return null;
     const r = sys.autoFill();
     if (r === false) {
-      // A network guest: the session's build proxy turned it into a refused
-      // CMD (build decisions are the host's).
-      toast('read-only — the Healer sets the sockets');
+      // Another player's (or, on a guest, the Healer's) build: read-only.
+      toast(viewSeat === 0 ? 'read-only — the Healer sets the sockets' : 'read-only — only your own character');
       return r;
     }
     if (r && r.denied) {
@@ -999,6 +1022,11 @@ export function createSocketScreen({ bus, world }) {
     }
     held = null;
     renderAll();
+    if (r && r.pending) {
+      // PARTY: a guest's own tab — the host applies it (replicated back).
+      toast('auto-fill sent — your sockets update in a moment');
+      return r;
+    }
     const n = r && r.socketed ? r.socketed.length : 0;
     const u = r && r.upgraded ? r.upgraded : 0;
     toast(
@@ -1069,7 +1097,13 @@ export function createSocketScreen({ bus, world }) {
       const sys = sysOk();
       const active = sys ? sys.view().combatActive : false;
       if (active) return { denied: 'combat_active' }; // §3: B opens between rooms only
+      // PARTY: a network guest opens on its own character's tab.
+      if (isGuest() && !guestSeatShown) {
+        viewSeat = ownSeat();
+        guestSeatShown = true;
+      }
       open = true;
+      reportScreen(true);
       held = null;
       fitScale();
       rootEl.classList.add('nd-open');
@@ -1089,9 +1123,62 @@ export function createSocketScreen({ bus, world }) {
       open = false;
       held = null; // Esc banks the candidate: it never left the bench
       rootEl.classList.remove('nd-open');
+      reportScreen(false);
     }
     return { open };
   }
+  let guestSeatShown = false;
+  // PARTY (BUILD_BRIEF §25.7): in a session the host learns which socket
+  // screens are open — a committed door waits <= 8 s for them.
+  function reportScreen(on) {
+    if (!inSession()) return;
+    try {
+      const r = world.runSystem();
+      if (r && typeof r.partyScreen === 'function') r.partyScreen(ownSeat(), on);
+    } catch {
+      /* no run system */
+    }
+  }
+  // The party is leaving (the socket hold ran out): close, banking the node
+  // in hand (it never left the bench).
+  bus.on('party_socket_close', () => {
+    if (!open) return;
+    setOpen(false);
+    const a = service('app');
+    if (a && typeof a.toast === 'function') a.toast('The party moved on — your node in hand is back on the bench', { tone: 'info', ms: 4200 });
+  });
+  // The leave countdown every open socket screen shows (a door held for a
+  // socket screen, the shop leaving, a page deadline): its last 10 s.
+  const countEl = document.createElement('div');
+  countEl.className = 'nd-count';
+  countEl.style.cssText =
+    'position:absolute;right:18px;top:10px;z-index:6;padding:6px 14px;border-radius:10px;' +
+    'background:#3A2A12EE;color:#F4EFE6;font:800 16px/1.2 "Nunito","Trebuchet MS",system-ui,sans-serif;border:1px solid #E8A23D;display:none;';
+  rootEl.querySelector('.nd-page').appendChild(countEl);
+  function leaveIn() {
+    let v = null;
+    try {
+      const r = world.runSystem();
+      v = r && typeof r.view === 'function' ? r.view() : null;
+    } catch {
+      v = null;
+    }
+    if (!v) return null;
+    if (v.path && v.path.hold) return { ticks: v.path.hold.inTicks, what: 'door' };
+    if (v.partyShop) {
+      const c = [v.partyShop.leaveInTicks, v.partyShop.deadlineInTicks].filter((t) => Number.isFinite(t));
+      if (c.length && Math.min(...c) <= 600) return { ticks: Math.min(...c), what: 'shop' };
+    }
+    if (v.party && Number.isFinite(v.party.deadlineInTicks) && v.party.deadlineInTicks <= 600) return { ticks: v.party.deadlineInTicks, what: 'page' };
+    return null;
+  }
+  setInterval(() => {
+    const l = open ? leaveIn() : null;
+    const text = l ? `${l.what === 'page' ? 'Auto-pick' : 'The party leaves'} in ${Math.max(0, Math.ceil(l.ticks / 60))} s` : '';
+    if (countEl.textContent !== text) countEl.textContent = text;
+    const disp = l ? '' : 'none';
+    if (countEl.style.display !== disp) countEl.style.display = disp;
+  }, 200);
 
   rootEl.querySelector('[data-act="auto"]').addEventListener('click', () => autoFill());
   autoAllBtn.addEventListener('click', () => autoFillAll());
@@ -1316,6 +1403,8 @@ export function createSocketScreen({ bus, world }) {
       'background:#221F1BEE;color:#F4EFE6;font:700 16px/1.2 "Nunito","Trebuchet MS",system-ui,sans-serif;border:1px solid #9C918688;display:none;';
     guestNote.textContent = 'Read-only — the Healer sets the sockets';
     rootEl.appendChild(guestNote);
+    // PARTY: a guest's OWN tab is editable (its CMDs go to the host); every
+    // other tab is read-only and says whose build it is.
     const syncNote = () => {
       let guest = false;
       let who = 'Healer';
@@ -1328,10 +1417,13 @@ export function createSocketScreen({ bus, world }) {
       } catch {
         guest = false;
       }
-      const text = `Read-only — the ${who} sets the sockets`;
+      const own = guest && viewSeat === ownSeat();
+      const cls = CLASS_NAME[CLASS_OF_SEAT[viewSeat]] ?? 'Healer';
+      const text = viewSeat === 0 ? `Read-only — the ${who} sets the sockets` : `Read-only — the ${cls}'s build is its player's`;
       if (guestNote.textContent !== text) guestNote.textContent = text;
-      guestNote.style.display = open && guest ? '' : 'none';
+      guestNote.style.display = open && guest && !own ? '' : 'none';
     };
+    noteSync = syncNote;
     const obs = new MutationObserver(syncNote);
     obs.observe(rootEl, { attributes: true, attributeFilter: ['class'] });
   }

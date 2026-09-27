@@ -46,6 +46,8 @@ import { installUpdatePrompt } from '../ui/net/update.js';
 import { validateServerUrl } from './lobbyClient.js';
 import { LEGACY_DEFAULT_URL } from './address.js';
 import { sanitizeName } from './protocol/messages.js';
+import { SKILLS } from '../sim/skills.js';
+import { cdTicksOf } from '../sim/allycast.js';
 
 const now = () => performance.now();
 // A seat plays at most 4 skills (keys 1-4; the user's correction — the
@@ -59,6 +61,29 @@ const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace',
 // M4c: autoFill (the socket screen's F / pad Y) mutates the build too — a guest's
 // press becomes the same refused CMD as a socket() (build decisions are the host's).
 const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);
+// PARTY (PLAN §16.5, BUILD_BRIEF §25.7): a seat's build belongs to the human
+// playing it. A GUEST's call on its OWN seat becomes a `party` CMD (the host
+// validates and applies it through the same entry point); on any other seat
+// it is refused locally (false = read-only, nothing sent). Run-system calls
+// map to CMD bodies here; the seat builds' socket / unsocket / autoFill and
+// the party system's setAutoSocketOwn go through the party proxy below.
+const GUEST_PARTY_RUN = {
+  partyPick: (seat, choice, replace) => ({ op: 'pick', seat, choice: choice === 'take' ? 'take' : 'leave', replace: Number.isInteger(replace) ? replace : null }),
+  partyReplace: (seat, slot) => ({ op: 'replace', seat, slot }),
+  partyBuy: (seat, index) => ({ op: 'buy', seat, index }),
+  partyShopMark: (seat, index, on) => ({ op: 'mark', seat, index, on: on === undefined ? null : !!on }),
+  partyShopDone: (seat) => ({ op: 'done', seat }),
+  reorderLoadout: (seat, from, to) => ({ op: 'reorder', seat, from, to }),
+};
+const PARTY_SYS_MUTATORS = new Set(['swap', 'reorder', 'aiSort', 'grantNode', 'autoFill', 'gainPurse', 'setPurse', 'spend', 'pulse', 'applyGrant', 'stress', 'setMode', 'setAutoSocketOwn', 'resetForRun', 'resetLevelState']);
+const SEAT_BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'releaseSkill', 'echoArm', 'setResonance', 'attachSkills']);
+const PARTY_OPS = new Set(['pick', 'replace', 'buy', 'mark', 'done', 'reorder', 'socket', 'unsocket', 'autofill', 'pref', 'screen']);
+const PARTY_REJECT_COPY = {
+  not_owner: 'That is another player’s character — only your own tab is yours to change',
+  closed: 'Too late — that choice already closed',
+  combat_active: 'Not during combat',
+  insufficient_funds: 'Not enough Glint in your purse',
+};
 const INPUT_REDUNDANCY = 6;
 const RECONNECT_GIVEUP_MS = 15000;
 const RESUME_HOLD_MS = 1000; // a resumed host waits at most this long for its guests' first inputs
@@ -212,12 +237,22 @@ export function createNetSession(ctx) {
   // and shown to everyone as a ping). Presentation reads pass through.
   const rawRunSystem = world.runSystem;
   const rawBuildSystem = world.buildSystem;
+  const rawPartySystem = typeof world.partySystem === 'function' ? world.partySystem : null;
   let runProxy = null;
   let buildProxy = null;
+  let partyProxy = null;
   function guardProxy(target, mutators, area) {
     return new Proxy(target, {
       get(t, prop) {
         const v = t[prop];
+        // PARTY: the guest's own-seat build calls become `party` CMDs.
+        if (typeof v === 'function' && area === 'run') {
+          if (Object.prototype.hasOwnProperty.call(GUEST_PARTY_RUN, prop)) return (...args) => guestPartyCall(GUEST_PARTY_RUN[prop](...args));
+          if (prop === 'autoFillAll') return () => guestPartyCall({ op: 'autofill', seat: localSeat() });
+          // BUILD_BRIEF §25.7: a guest's Advance lamp reads "Done".
+          if (prop === 'advanceFromShop') return () => guestPartyCall({ op: 'done', seat: localSeat() });
+          if (prop === 'partyScreen') return (seat, open) => guestPartyCall({ op: 'screen', seat, open: !!open });
+        }
         if (typeof v === 'function' && mutators.has(prop)) {
           return (...args) => {
             guestPick(area, String(prop), args);
@@ -230,6 +265,7 @@ export function createNetSession(ctx) {
   }
   function installGuards() {
     if (guardsOn) return;
+    removeHostGuards();
     guardsOn = true;
     world.setReplica(true);
     bus.setReplica(true);
@@ -237,14 +273,229 @@ export function createNetSession(ctx) {
     buildProxy = guardProxy(rawBuildSystem(), BUILD_MUTATORS, 'build');
     world.runSystem = () => runProxy;
     world.buildSystem = () => buildProxy;
+    if (rawPartySystem) {
+      partyProxy = null;
+      world.partySystem = () => {
+        const P = rawPartySystem();
+        if (!P) return P;
+        if (!partyProxy || partyProxy.target !== P) partyProxy = { target: P, proxy: partyGuard(P, 'guest') };
+        return partyProxy.proxy;
+      };
+    }
   }
   function removeGuards() {
     if (!guardsOn) return;
     guardsOn = false;
     world.runSystem = rawRunSystem;
     world.buildSystem = rawBuildSystem;
+    if (rawPartySystem) world.partySystem = rawPartySystem;
+    partyProxy = null;
     world.setReplica(false);
     bus.setReplica(false);
+  }
+
+  // ------------------------------------------------ PARTY ownership --
+  // (PLAN §16.5 / BUILD_BRIEF §25.7) ownerOf(seat) = the human playing it,
+  // else the host. A guest acts on its own seat only (through CMDs); the
+  // host's own UI acts on seat 0, its own seat and every AI-held seat —
+  // never on a seat a guest plays.
+  const seatControllers = () => {
+    try {
+      const a = world.allySystem();
+      return a && typeof a.controllers === 'function' ? a.controllers() : ['human', 'ai', 'ai', 'ai'];
+    } catch {
+      return ['human', 'ai', 'ai', 'ai'];
+    }
+  };
+  const hostMayAct = (seat) => {
+    const s = Number(seat);
+    if (!(Number.isInteger(s) && s >= 0 && s <= 3)) return false;
+    return s === 0 || s === localSeat() || seatControllers()[s] !== 'human';
+  };
+  const partyStats = { sent: 0, applied: 0, rejected: 0, rejectedHere: 0, byReason: {} };
+  function guestPartyCall(body) {
+    if (role !== 'guest' || !body) return false;
+    // Another player's (or an AI-held) seat: read-only here, nothing sent.
+    if (Number(body.seat) !== localSeat()) return false;
+    cmdSeq += 1;
+    try {
+      net.transport.sendBinary(encodeCmd(localSeat(), cmdSeq, { kind: 'party', ...body, seat: localSeat() }));
+    } catch (err) {
+      log('party_cmd_send_error', { error: String(err && err.message) });
+      return false;
+    }
+    partyStats.sent += 1;
+    log('guest_party', { op: body.op, seat: body.seat });
+    return { ok: true, pending: true, seat: localSeat(), op: body.op };
+  }
+  // A seat build as the local UI may touch it.
+  function seatBuildGuard(b, seat, mode) {
+    return new Proxy(b, {
+      get(t, prop) {
+        const v = t[prop];
+        if (typeof v !== 'function' || !SEAT_BUILD_MUTATORS.has(prop)) return v;
+        if (mode === 'host') return hostMayAct(seat) ? v.bind(t) : () => false;
+        if (prop === 'socket') return (skill, node, col, bench = null) => guestPartyCall({ op: 'socket', seat, skill, node, col, bench: Number.isInteger(bench) ? bench : null });
+        if (prop === 'unsocket') return (skill, col) => guestPartyCall({ op: 'unsocket', seat, skill, col });
+        if (prop === 'autoFill') return () => guestPartyCall({ op: 'autofill', seat });
+        return () => false;
+      },
+    });
+  }
+  function partyGuard(P, mode) {
+    const builds = new Map();
+    const guardBuild = (i) => {
+      const b = P.build(i);
+      if (!b) return b;
+      let e = builds.get(i);
+      if (!e || e.b !== b) {
+        e = { b, p: seatBuildGuard(b, i, mode) };
+        builds.set(i, e);
+      }
+      return e.p;
+    };
+    return new Proxy(P, {
+      get(t, prop) {
+        const v = t[prop];
+        if (prop === 'build') return guardBuild;
+        if (prop === 'seat') {
+          return (i) => {
+            const s = t.seat(i);
+            return s ? { ...s, build: guardBuild(i) } : s;
+          };
+        }
+        if (typeof v !== 'function' || !PARTY_SYS_MUTATORS.has(prop)) return v;
+        if (mode === 'host') {
+          // The host's UI: its own + AI-held seats (seat-indexed calls).
+          if (prop === 'setMode' || prop === 'resetForRun' || prop === 'resetLevelState' || prop === 'applyGrant' || prop === 'stress') return v.bind(t);
+          if (prop === 'autoFill') return (which) => (which === 'all' ? [1, 2, 3].filter(hostMayAct).map((i) => ({ seat: i, ...t.autoFill(i) })) : hostMayAct(which) ? t.autoFill(which) : false);
+          return (i, ...rest) => (hostMayAct(i) ? v.call(t, i, ...rest) : false);
+        }
+        if (prop === 'setAutoSocketOwn') return (i, on) => guestPartyCall({ op: 'pref', seat: i, on: !!on });
+        if (prop === 'autoFill') return (which) => guestPartyCall({ op: 'autofill', seat: which === 'all' ? localSeat() : which });
+        return () => null;
+      },
+    });
+  }
+  // The host's own UI guard (installed while hosting a session): party
+  // run-system calls on a guest's seat are refused locally (false).
+  let hostGuardsOn = false;
+  let hostRunProxy = null;
+  function hostRunGuard(R) {
+    return new Proxy(R, {
+      get(t, prop) {
+        const v = t[prop];
+        if (typeof v !== 'function') return v;
+        if (Object.prototype.hasOwnProperty.call(GUEST_PARTY_RUN, prop)) {
+          return (seat, ...rest) => {
+            if (hostMayAct(seat)) return v.call(t, seat, ...rest);
+            partyStats.rejectedHere += 1;
+            return false;
+          };
+        }
+        if (prop === 'autoFillAll') return () => v.call(t, [0, 1, 2, 3].filter(hostMayAct));
+        if (prop === 'advanceFromShop') return (o = {}) => v.call(t, { ...(o || {}), by: localSeat() });
+        return v;
+      },
+    });
+  }
+  function installHostGuards() {
+    if (hostGuardsOn || guardsOn) return;
+    hostGuardsOn = true;
+    world.runSystem = () => {
+      const R = rawRunSystem();
+      if (!R) return R;
+      if (!hostRunProxy || hostRunProxy.target !== R) hostRunProxy = { target: R, proxy: hostRunGuard(R) };
+      return hostRunProxy.proxy;
+    };
+    if (rawPartySystem) {
+      partyProxy = null;
+      world.partySystem = () => {
+        const P = rawPartySystem();
+        if (!P) return P;
+        if (!partyProxy || partyProxy.target !== P) partyProxy = { target: P, proxy: partyGuard(P, 'host') };
+        return partyProxy.proxy;
+      };
+    }
+  }
+  function removeHostGuards() {
+    if (!hostGuardsOn) return;
+    hostGuardsOn = false;
+    world.runSystem = rawRunSystem;
+    if (rawPartySystem) world.partySystem = rawPartySystem;
+    partyProxy = null;
+    hostRunProxy = null;
+  }
+  // The host applies a guest's `party` CMD (net/driver.js) — ownership, then
+  // the SAME sim entry point single-player / the host UI uses. Returns null
+  // when applied, else { reason } (answered command_rejected).
+  function hostPartyCmd(c) {
+    const cmd = c.cmd || {};
+    const op = String(cmd.op);
+    const reject = (reason) => {
+      partyStats.rejected += 1;
+      partyStats.byReason[reason] = (partyStats.byReason[reason] || 0) + 1;
+      log('party_cmd_rejected', { seat: c.seat, op, target: cmd.seat, reason });
+      return { reason };
+    };
+    if (!PARTY_OPS.has(op)) return reject('unknown');
+    const seat = Number(cmd.seat);
+    if (!(Number.isInteger(seat) && seat === c.seat && seat >= 1 && seat <= 3)) return reject('not_owner');
+    if (seatControllers()[seat] !== 'human') return reject('not_owner');
+    const R = rawRunSystem();
+    const P = rawPartySystem ? rawPartySystem() : null;
+    if (!R || !P) return reject('closed');
+    let r;
+    switch (op) {
+      case 'pick':
+        r = R.partyPick(seat, cmd.choice === 'take' ? 'take' : 'leave', Number.isInteger(cmd.replace) ? cmd.replace : null, { by: 'human' });
+        break;
+      case 'replace':
+        r = R.partyReplace(seat, Number(cmd.slot));
+        if (Number.isInteger(r)) r = { ok: true };
+        break;
+      case 'buy':
+        r = R.partyBuy(seat, Number(cmd.index));
+        break;
+      case 'mark':
+        r = R.partyShopMark(seat, Number(cmd.index), cmd.on === null || cmd.on === undefined ? undefined : !!cmd.on);
+        if (typeof r === 'boolean') r = { ok: true };
+        break;
+      case 'done':
+        r = R.partyShopDone(seat);
+        break;
+      case 'reorder':
+        r = R.reorderLoadout(seat, Number(cmd.from), Number(cmd.to));
+        break;
+      case 'socket': {
+        const b = P.build(seat);
+        r = b ? b.socket(String(cmd.skill), String(cmd.node), Number(cmd.col) | 0, Number.isInteger(cmd.bench) ? cmd.bench : null) : null;
+        break;
+      }
+      case 'unsocket': {
+        const b = P.build(seat);
+        r = b ? b.unsocket(String(cmd.skill), Number(cmd.col) | 0) : null;
+        break;
+      }
+      case 'autofill':
+        r = R.autoFillAll([seat]);
+        break;
+      case 'pref':
+        r = P.setAutoSocketOwn(seat, !!cmd.on);
+        r = typeof r === 'boolean' ? { ok: true } : r;
+        break;
+      case 'screen':
+        r = typeof R.partyScreen === 'function' ? R.partyScreen(seat, !!cmd.open) : null;
+        r = typeof r === 'boolean' ? { ok: true } : r;
+        break;
+      default:
+        r = null;
+    }
+    if (r === null || r === undefined || r === false) return reject('closed');
+    if (r === true) r = { ok: true };
+    if (r.denied || r.error) return reject(String(r.denied || r.error));
+    partyStats.applied += 1;
+    return null;
   }
   let cmdSeq = 0;
   function guestPick(area, what, args) {
@@ -290,12 +541,43 @@ export function createNetSession(ctx) {
       /* ignore */
     }
   }
+  // PARTY (BUILD_BRIEF §25.7): a seat's CURRENT loadout as this world holds
+  // it (a guest's replica = the host's replicated build) — per slot { id,
+  // abbrev, def (resolved: Quicken counts), techs, cdTicks, passive } | null.
+  // The guest's action shadow (tiles, cooldowns, predicted casts) and its
+  // own-seat displacement prediction read it. Memoised per tick + loadout.
+  let kitMemo = { key: null, kit: null };
+  function seatKit(seat) {
+    if (!(seat > 0) || !rawPartySystem) return null;
+    const P = rawPartySystem();
+    const ids = P && typeof P.slots === 'function' ? P.slots(seat) : null;
+    const b = P && typeof P.build === 'function' ? P.build(seat) : null;
+    if (!ids || !b) return null;
+    const key = `${seat}|${world.tick}|${ids.join(',')}`;
+    if (kitMemo.key === key) return kitMemo.kit;
+    const kit = [0, 1, 2, 3].map((i) => {
+      const id = ids[i];
+      const base = id ? SKILLS[id] : null;
+      if (!base) return null;
+      let def = base;
+      let techs = [];
+      try {
+        def = typeof b.resolveDef === 'function' ? b.resolveDef(base) : base;
+        techs = b.tech && typeof b.tech.liveTechs === 'function' ? b.tech.liveTechs(id) : [];
+      } catch {
+        def = base;
+      }
+      return { id, abbrev: base.abbrev, def, techs, cdTicks: cdTicksOf(def), passive: base.shape === 'aura' };
+    });
+    kitMemo = { key, kit };
+    return kit;
+  }
   // A migrated host playing an ally seat: its tiles come from the live sim.
   function hostSeatSlots(seat) {
     const e = seatEntity(seat);
-    const kit = world.allySystem().ALLY_KITS[e ? e.classId : 'tank'];
+    const kit = seatKit(seat);
     if (!e || !kit) return null;
-    return kit.map((def, i) => ({ id: def.id, abbrev: def.abbrev, passive: false, remainingTicks: Math.max(0, ((e.cds && e.cds[i]) || 0) - world.tick), totalTicks: Math.max(30, Math.round(def.cd * 60)) }));
+    return kit.map((k, i) => (k ? { id: k.id, abbrev: k.abbrev, passive: k.passive, remainingTicks: k.passive ? 0 : Math.max(0, ((e.cds && e.cds[i]) || 0) - world.tick), totalTicks: k.cdTicks } : null));
   }
   function hostSeatDodge(seat) {
     const e = seatEntity(seat);
@@ -372,7 +654,9 @@ export function createNetSession(ctx) {
       log,
       onCmd: (ping) => showPing(ping),
       onPlayerController: (ctrl, tick) => setLeaderBot(ctrl !== 'human', tick),
+      onPartyCmd: (c) => hostPartyCmd(c),
     });
+    installHostGuards();
     role = 'host';
     setSimStep((tick) => host.step(tick));
     wrapAdvance((ms, fn) => {
@@ -414,6 +698,7 @@ export function createNetSession(ctx) {
   }
   function stopHost() {
     resumeHold = null;
+    removeHostGuards();
     if (!host) return;
     host.stop();
     host = null;
@@ -435,7 +720,7 @@ export function createNetSession(ctx) {
       dec: createSnapshotClient(),
       replica: createReplica({ world, registry, bus, scene, restoreShapes, restoreMovement, log }),
       interp: createInterpClock({ snapshotEveryTicks: net.snapshotEveryTicks || SNAPSHOT_EVERY_TICKS }),
-      own: createOwnSeat({ seat }),
+      own: createOwnSeat({ seat, kit: () => seatKit(seat) }),
       shadow: null,
       seq: 0,
       frames: [],
@@ -470,7 +755,7 @@ export function createNetSession(ctx) {
       batches: { seen: new Set(), toTick: new Map(), contig: 0, throughTick: 0, dupCopies: 0, viaReliable: 0, viaUnreliable: 0 },
       bytesCh: {},
     };
-    g.shadow = createActionShadow({ bus, seat, cosmetics });
+    g.shadow = createActionShadow({ bus, seat, cosmetics, kit: () => seatKit(seat) });
     g.replica.setSuppress((ev) => g.suppressed.has(ev));
     guest = g;
     installGuards();
@@ -625,6 +910,8 @@ export function createNetSession(ctx) {
       // skills ascending, then the basic — so a dodge accepted for THIS frame
       // suppresses the frame's skills and basic exactly as it does there.
       dashing: body ? body.dashTicksLeft > 0 || g.dodgeSeq === seq : false,
+      // PARTY: a displaced cast (dash / vault) still waiting to deliver.
+      pending: body ? !!body.pendingSkill : false,
       keyAt: g.keyAt[KEY_OF[kind]],
     });
     const order = (k) => (k === 'dodge' ? 0 : k === 'interact' ? 9 : Number(k.slice(6)) || 5);
@@ -907,6 +1194,9 @@ export function createNetSession(ctx) {
     g.entityId = e ? e.id : null;
     g.replica.setOwnId(g.entityId);
     log('guest_synced', { seat: g.seat, entityId: g.entityId, tick: g.replica.appliedTick });
+    // PARTY (PLAN §16.5): this player's "Socket my new nodes" rides to the
+    // host at join (and on every change, through the party proxy).
+    guestPartyCall({ op: 'pref', seat: g.seat, on: !!settings.get('gameplay.autoSocketOwn') });
     if (hud) hud.setSynced(true);
     changed();
   }
@@ -1057,7 +1347,12 @@ export function createNetSession(ctx) {
     if (cmd.kind === 'ping') showPing(cmd);
     else if (cmd.kind === 'command_rejected') {
       guest.rejected += 1;
-      if (hud) hud.note('The Healer makes the build choices — your pick was shown to the party');
+      if (PARTY_OPS.has(cmd.what) && Number.isInteger(cmd.seat)) {
+        // PARTY: an own-seat CMD the host refused (closed / combat / purse).
+        partyStats.rejected += 1;
+        partyStats.byReason[cmd.reason] = (partyStats.byReason[cmd.reason] || 0) + 1;
+        if (hud && cmd.what !== 'screen' && cmd.what !== 'pref') hud.note(PARTY_REJECT_COPY[cmd.reason] ?? `Not applied (${cmd.reason})`);
+      } else if (hud) hud.note('The Healer makes the build choices — your pick was shown to the party');
     }
   }
 
@@ -1582,6 +1877,10 @@ export function createNetSession(ctx) {
       away: g.away,
       fullRequests: g.fullRequests,
       rejectedPicks: g.rejected,
+      // PARTY: own-seat build CMDs + the predicted skill casts / displacements.
+      party: { ...partyStats, byReason: { ...partyStats.byReason } },
+      ownSkillCasts: os.skillCasts,
+      ownSkillDashes: os.skillDashes,
       busCounters: { ...bus.counters },
       worldRefusals: world.replicaRefusals ? world.replicaRefusals() : null,
       cosmetics: cosmetics ? cosmetics.stats() : null,
@@ -1661,6 +1960,16 @@ export function createNetSession(ctx) {
       return { tick: g.shownTick, hostiles: out };
     },
     debugHost: () => host,
+    // PARTY probes: the ownership counters (both roles), and a RAW party CMD
+    // (bypasses the guest's local own-seat check, so a probe can show the
+    // HOST refusing another seat: command_rejected not_owner).
+    partyStats: () => ({ role, ...partyStats, byReason: { ...partyStats.byReason } }),
+    debugPartyCmd(body) {
+      if (role !== 'guest' || !body) return false;
+      cmdSeq += 1;
+      net.transport.sendBinary(encodeCmd(localSeat(), cmdSeq, { kind: 'party', ...body }));
+      return true;
+    },
     // CAMPAIGN (PLAN §12.9): guests tell the host when they can draw the next
     // level; the host's level manager waits for every connected guest (or its
     // 6 s cap) before advancing the level-transition card.

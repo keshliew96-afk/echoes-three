@@ -49,6 +49,18 @@ import { NODES } from '../../sim/nodes.js';
 import { PALETTE, CLASS_ACCENTS } from '../../data/palette.js';
 import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
 import { createPartyStrip } from './partystrip.js';
+import { service } from '../../app/registry.js';
+
+// The viewer's seat in a network session (a guest: its class seat).
+function netSeat() {
+  try {
+    const n = service('net');
+    if (n && typeof n.isGuest === 'function' && n.isGuest()) return Number.isInteger(n.seat) ? n.seat : 0;
+  } catch {
+    /* no session */
+  }
+  return null;
+}
 
 // ROUND-2 CERTIFICATION FIX (shop check 10 "motion juice", player scorer 1/2).
 // The choreography existed and rendered 37 frames — but it was 620 ms long, and
@@ -218,10 +230,18 @@ export function createShopScreen({ run, build, party = () => null }) {
     }
   }
 
+  let guestRoom = -1;
   function render(view) {
     lastView = view;
     if (view.phase !== 'shop') return;
     if (viewSeat > 0 && !view.partyShop) viewSeat = 0;
+    // PARTY: a network guest's shop opens on its own tab.
+    const gSeat = netSeat();
+    if (gSeat !== null && view.partyShop && view.partyShop.room !== guestRoom) {
+      guestRoom = view.partyShop.room;
+      viewSeat = gSeat;
+      signature = '';
+    }
     const s = shelfOf(view, viewSeat);
     if (!s) return;
     // PARTY: the strip (chips = purses) + the lamp copy.
@@ -232,8 +252,18 @@ export function createShopScreen({ run, build, party = () => null }) {
       strip.update(rows, viewSeat);
       const buyers = [1, 2, 3].filter((k) => !ps.touched[k] && ps.shelves[k].stock.some((c) => c.marked && !c.sold)).map((k) => CLASS_NAME[CLASS_OF_SEAT[k]]);
       const base = 'Advance to the Hollow Stag';
-      const lamp = buyers.length ? `${base} · ${buyers.join(', ')} buy suggested` : base;
-      const cd = ps.leaveInTicks !== null && ps.leaveInTicks !== undefined ? ` · leaving in ${Math.ceil(ps.leaveInTicks / 60)} s` : '';
+      // BUILD_BRIEF §25.7: a guest's lamp reads "Done" (the host's Advance
+      // leaves at once when every human is Done, else a 15 s countdown).
+      const lamp =
+        gSeat !== null
+          ? ps.done && ps.done[gSeat]
+            ? 'Done ✓ — waiting for the party'
+            : 'Done — I’m finished shopping'
+          : buyers.length
+            ? `${base} · ${buyers.join(', ')} buy suggested`
+            : base;
+      const left = [ps.leaveInTicks, ps.deadlineInTicks !== null && ps.deadlineInTicks !== undefined && ps.deadlineInTicks <= 600 ? ps.deadlineInTicks : null].filter((t) => t !== null && t !== undefined);
+      const cd = left.length ? ` · leaving in ${Math.ceil(Math.min(...left) / 60)} s` : '';
       if (advanceBtn.textContent !== lamp + cd) advanceBtn.textContent = lamp + cd;
     }
     el.querySelector('.rn-shopstrip').style.display = ps ? '' : 'none';

@@ -45,6 +45,19 @@ export function createPartyPages(ctx) {
   };
   const humans = () => (ctx.humansInSession ? ctx.humansInSession() : 1);
   const ownerOf = (seat) => (aiHeld(seat) ? 'ai' : 'human');
+  // Socket screens open per seat (BUILD_BRIEF §25.7 socket hold; network
+  // only — the UI reports it only in a session): a committed door waits
+  // <= PARTY_DEADLINES.socketHoldTicks while a human's screen is open.
+  const screens = [false, false, false, false];
+  function setScreen(seat, open) {
+    const s = Number(seat);
+    if (!(Number.isInteger(s) && s >= 0 && s <= 3)) return null;
+    screens[s] = !!open;
+    return screens[s];
+  }
+  const humanScreenOpen = () => screens.some((o, s) => o && !aiHeld(s));
+  // The human seats (the host's own included) whose shop Done is missing.
+  const humansNotDone = (except = null) => [0, 1, 2, 3].filter((s) => s !== except && !aiHeld(s) && !(shop && shop.done[s]));
 
   // ------------------------------------------------------------ spoils --
   // Each ally's clear spoils (ALLY_SUPPLY.spoilsPerClear, party stream, seat
@@ -458,16 +471,25 @@ export function createPartyPages(ctx) {
     shopOpen: () => !!shop,
     card: (seat) => (page ? page.cards[seat] : null),
     doorDeadline: () => doorDeadlineTick,
+    setScreen,
+    humanScreenOpen,
+    screensAny: () => screens.some(Boolean),
+    screens: () => [...screens],
+    humansNotDone,
+    humans,
     reset() {
       page = null;
       shop = null;
       doorDeadlineTick = null;
+      screens.fill(false);
     },
-    saveState: () => ({ page: clone(page), shop: clone(shop), doorDeadlineTick }),
+    // `screens` only while one is open (a v0.5.159 tree is byte-identical).
+    saveState: () => ({ page: clone(page), shop: clone(shop), doorDeadlineTick, ...(screens.some(Boolean) ? { screens: [...screens] } : {}) }),
     loadState(d) {
       page = d && d.page ? clone(d.page) : null;
       shop = d && d.shop ? clone(d.shop) : null;
       doorDeadlineTick = d && Number.isFinite(d.doorDeadlineTick) ? d.doorDeadlineTick : null;
+      for (let s = 0; s < 4; s++) screens[s] = !!(d && Array.isArray(d.screens) && d.screens[s]);
     },
     aiHeld,
   };

@@ -23,11 +23,20 @@ import { TICK_HZ } from '../core/constants.js';
 import { CORRECTION_TAU_MS, CORRECTION_SNAP_U } from './protocol/constants.js';
 import { SEAT_CLASSES } from './seats.js';
 import { pct } from './protocol/snapshot.js';
+import { seatDisplacement } from '../sim/allycast.js';
 
 const TICK_DT = 1 / TICK_HZ;
 const MAX_CORRECTION_PER_FRAME = 0.1;
 
-export function createOwnSeat({ seat }) {
+// kit (PARTY, BUILD_BRIEF §25.7 / PLAN §16.5): () => the seat's current
+// loadout (net/session.js seatKit: per slot { id, def (resolved), techs,
+// cdTicks, passive } | null). With it the own-seat model also PREDICTS the
+// seat's skill displacements — Shoulder Charge / Fox Step / Pursuit dashes,
+// the Vault Shot vault, the Disengage hop — with the host's own pure rule
+// (sim/allycast.js seatDisplacement: own position, own aim at the press, the
+// resolved skill, the walls; never a hostile position), started on the
+// press frame and stepped per input frame exactly like the dodge.
+export function createOwnSeat({ seat, kit = null }) {
   const classId = SEAT_CLASSES[seat];
   const baseSpeed = seat === 0 ? HEALER_MOVE_SPEED : ALLY_CLASSES[classId] ? ALLY_CLASSES[classId].moveSpeed : 2.4;
   let body = null;
@@ -52,7 +61,7 @@ export function createOwnSeat({ seat }) {
   // it is stepped (onLocalFrame applies the real dodge — or refuses it and
   // the preview is dropped).
   let dodgePreview = null; // { x, z } per tick
-  const stats = { predErr: [], predErrMax: 0, corrections: 0, snaps: 0, maxCorrectionPerFrame: 0, reconciles: 0, replayed: 0, teleports: 0, handoffs: 0 };
+  const stats = { predErr: [], predErrMax: 0, corrections: 0, snaps: 0, maxCorrectionPerFrame: 0, reconciles: 0, replayed: 0, teleports: 0, handoffs: 0, skillCasts: 0, skillDashes: 0 };
   // Authoritative TELEPORTS (the host re-seats the party at a room / camp
   // boundary): a body that moved farther between two snapshots than any
   // walk, dash or push can carry it is re-based at once — not a prediction
@@ -76,7 +85,58 @@ export function createOwnSeat({ seat }) {
       faceX: e.faceX ?? (e.facing ? e.facing.x : 0),
       faceZ: e.faceZ ?? (e.facing ? e.facing.z : 1),
       status: e.status,
+      // PARTY: the seat's skill timers (input-frame clock) and a displaced
+      // cast still waiting for its dash to end (its Disengage hop follows).
+      cdSeq: timers && Array.isArray(timers.cds) ? timers.cds.slice(0, 4) : [0, 0, 0, 0],
+      pendingSkill: e.pendingCast && Number.isInteger(e.pendingCast.slot) ? { slot: e.pendingCast.slot, aim: e.pendingCast.aim ? { x: e.pendingCast.aim.x, z: e.pendingCast.aim.z } : null } : null,
     };
+  }
+
+  // PARTY: start a predicted displacement (the host's startDisplacement for a
+  // human seat: dashVel / dashTicksLeft, stepped by stepHumanMove).
+  function startDisp(b, d) {
+    if (!d) return false;
+    b.dashVel = { x: d.vx, z: d.vz };
+    b.dashTicksLeft = d.ticks;
+    return true;
+  }
+  // The delivery of a cast (immediately, or when its pre-dash ended): the
+  // Disengage hop the host's afterCast starts (not after a vault).
+  function afterDelivery(b, ent, aim) {
+    if (!ent || !ent.def || ent.def.parry) return false;
+    return startDisp(b, seatDisplacement(b, ent.def, ent.techs || [], aim, 'post'));
+  }
+  // The seat's skill presses of one input frame in the host's order
+  // (sim/allies.js resolveHuman: a pending delivery first, then slots 1-4
+  // ascending, each refused mid-dash / stunned / pending / on cooldown).
+  function applySkills(b, si, t) {
+    const k = kit ? kit() : null;
+    if (!k || !(b.hp > 0)) return;
+    if (b.pendingSkill && !(b.dashTicksLeft > 0)) {
+      const p = b.pendingSkill;
+      b.pendingSkill = null;
+      afterDelivery(b, k[p.slot], p.aim);
+    }
+    const stunned = isStunned(b, t);
+    for (let slot = 0; slot < 4; slot++) {
+      const kind = `skill_${slot + 1}`;
+      if (!si.presses.some((p) => p.kind === kind)) continue;
+      const ent = k[slot];
+      if (!ent || ent.passive || !ent.def) continue;
+      if (b.dashTicksLeft > 0 || stunned || b.pendingSkill) continue;
+      const pseq = si.pressSeq && Number.isInteger(si.pressSeq[kind]) ? si.pressSeq[kind] : si.seq;
+      if (pseq < (b.cdSeq[slot] ?? 0)) continue;
+      b.cdSeq[slot] = pseq + ent.cdTicks;
+      stats.skillCasts += 1;
+      if (ent.def.parry) continue; // Riposte: a guard window, no displacement
+      const aim = si.aim && Number.isFinite(si.aim.x) ? { x: si.aim.x, z: si.aim.z } : { x: b.x + (b.faceX ?? 0), z: b.z + (b.faceZ ?? 1) };
+      const pre = seatDisplacement(b, ent.def, ent.techs || [], aim, 'pre');
+      if (pre) {
+        startDisp(b, pre);
+        b.pendingSkill = { slot, aim };
+        stats.skillDashes += 1;
+      } else if (afterDelivery(b, ent, aim)) stats.skillDashes += 1;
+    }
   }
 
   function speedAt(b, t) {
@@ -94,15 +154,18 @@ export function createOwnSeat({ seat }) {
       b.faceZ = d.z;
     }
     const ready = seat === 0 ? t >= b.dodgeReadyTick : si.seq >= b.dodgeSeq;
+    let dodged = false;
     if (si.presses.some((p) => p.kind === 'dodge') && b.hp > 0 && !isStunned(b, t) && ready && !(b.dashTicksLeft > 0)) {
       const mv = si.moves[si.moves.length - 1];
       b.dashVel = dodgeVelocity(b, mv, si.aim, { x: b.faceX, z: b.faceZ });
       b.dashTicksLeft = HUMAN_DODGE.durationTicks;
       b.dodgeReadyTick = t + HUMAN_DODGE.cooldownTicks;
       b.dodgeSeq = si.seq + HUMAN_DODGE.cooldownTicks;
-      return true;
+      dodged = true;
     }
-    return false;
+    // PARTY: then the kit presses (a same-frame dodge suppresses them there).
+    if (seat > 0 && kit) applySkills(b, si, t);
+    return dodged;
   }
 
   // A local 60 Hz input frame (the one just sent to the host).
@@ -311,6 +374,8 @@ export function createOwnSeat({ seat }) {
       maxCorrectionPerFrame: Math.round(stats.maxCorrectionPerFrame * 1000) / 1000,
       reconciles: stats.reconciles,
       pendingFrames: hist.length,
+      skillCasts: stats.skillCasts,
+      skillDashes: stats.skillDashes,
     }),
     resetStats() {
       stats.predErr.length = 0;

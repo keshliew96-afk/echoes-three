@@ -796,8 +796,11 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       }
       s.slot.style.display = '';
       s.slot.classList.remove('is-empty', 'is-passive', 'is-grey');
-      // Class-kit skills have no node sockets: the Healer's 8-socket strip
-      // never shows on a guest's tiles.
+      // PARTY: a class passive (Iron Stance / Razor Wake / Kestrel Watch) in
+      // the seat's loadout reads as the Healer's passives do (no key press).
+      if (d.passive) s.slot.classList.add('is-passive');
+      // The guest's tiles keep the medallion only (its sockets live on the
+      // party socket screen); the Healer's 8-socket strip never shows here.
       if (s.pips && s.pipSig !== 'guest') {
         s.pips.style.visibility = 'hidden';
         s.pipSig = 'guest';

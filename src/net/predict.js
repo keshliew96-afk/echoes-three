@@ -70,11 +70,25 @@ const STATE_CONFIRM_GRACE_MS = 2000;
 const FLAG_KEYS = ['basic', 'dashing', 'dashEnd', 'alive', 'stunned', 'channelling', 'fresh'];
 const r2 = (v) => Math.round(v * 100) / 100;
 
-export function createActionShadow({ bus, seat, cosmetics = null, now = () => performance.now() }) {
+// kit (PARTY, BUILD_BRIEF §25.7): () => the seat's CURRENT loadout as the
+// replica holds it — per slot { id, abbrev, def (resolved: Quicken etc.),
+// cdTicks, passive } | null — so tiles, cooldowns and predicted casts follow
+// swaps, reorders and sockets. Without it (or before the first snapshot)
+// the §7 starting kit.
+export function createActionShadow({ bus, seat, cosmetics = null, now = () => performance.now(), kit: kitFn = null }) {
   const classId = SEAT_CLASSES[seat];
-  const kit = seat > 0 ? ALLY_KITS[classId] : null;
+  const staticKit = seat > 0 && ALLY_KITS[classId] ? ALLY_KITS[classId].map((d) => ({ id: d.id, abbrev: d.abbrev, def: d, cdTicks: Math.max(CD_FLOOR, secTicks(d.cd)), passive: false })) : null;
+  const kitNow = () => {
+    let k = null;
+    try {
+      k = kitFn ? kitFn() : null;
+    } catch {
+      k = null;
+    }
+    return k || staticKit;
+  };
   const S = seat > 0 ? ALLY_CLASSES[classId] : null;
-  const enabled = !!(kit && S);
+  const enabled = !!(staticKit && S);
   const INTERVAL = enabled ? S.attackIntervalTicks : 0;
   const readyAt = [0, 0, 0, 0];
   let basicAt = 0;
@@ -95,8 +109,12 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   // older local guess (else a retracted skill would re-fire at once).
   let lastAuth = null; // { cds: [4], basic, dodge, fire, k }
 
-  const cdTicks = (def) => Math.max(CD_FLOOR, secTicks(def.cd));
-  const cdOf = (kind, slot) => (kind === 'dodge' ? DODGE.cooldownTicks : kind === 'basic' ? INTERVAL : slot >= 0 && kit[slot] ? cdTicks(kit[slot]) : null);
+  const cdOf = (kind, slot) => {
+    if (kind === 'dodge') return DODGE.cooldownTicks;
+    if (kind === 'basic') return INTERVAL;
+    const k = slot >= 0 ? kitNow() : null;
+    return k && k[slot] ? k[slot].cdTicks : null;
+  };
   const isOpen = (p) => !p.matched && !p.retracted;
   const openNear = (kind, seq) => pending.some((p) => p.kind === kind && isOpen(p) && Math.abs(p.seq - seq) <= MATCH_WINDOW);
   // The newest timer an OPEN prediction of a kind implies (-Infinity: none).
@@ -138,19 +156,24 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
     const m = /^skill_(\d)$/.exec(kind);
     if (!m) return null;
     const slot = Number(m[1]) - 1;
-    const def = kit[slot];
-    if (!def || ctx.dashing || ctx.seq < readyAt[slot]) return null;
+    const kitE = kitNow();
+    const ent = kitE ? kitE[slot] : null;
+    const def = ent ? ent.def : null;
+    // An empty slot / a passive: the host denies it (nothing to predict);
+    // mid-dash or a displaced cast still pending: suppressed there.
+    if (!def || ent.passive || ctx.dashing || ctx.pending || ctx.seq < readyAt[slot]) return null;
     const prev = readyAt[slot];
-    readyAt[slot] = ctx.seq + cdTicks(def);
+    readyAt[slot] = ctx.seq + ent.cdTicks;
     const p = record(kind, slot, ctx.seq, ctx.keyAt, prev);
-    const cast = { tick: ctx.tick, type: 'ally_cast', id: ctx.entityId, partyIndex: seat, classId, skill: def.id, slot, shape: def.shape, power: def.power, cd: def.cd, target: null, x: r2(b.x), z: r2(b.z), dx: r2(d.x), dz: r2(d.z), targets: [], predicted: true, predId: p.predId, seat };
+    const cast = { tick: ctx.tick, type: 'ally_cast', id: ctx.entityId, partyIndex: seat, classId, skill: ent.id, slot, shape: def.shape, power: def.power, cd: def.cd, target: null, x: r2(b.x), z: r2(b.z), dx: r2(d.x), dz: r2(d.z), targets: [], predicted: true, predId: p.predId, seat };
+    if (def.parry) cast.parry = def.parry.windowTicks;
     if (def.shape === 'melee_arc') {
       cast.reach = def.range;
       cast.halfAngle = def.area;
     } else if (def.shape === 'nova') cast.radius = def.area;
     else if (def.shape === 'projectile') {
       cast.count = countFinal(def.count);
-      if (cosmetics) for (const fd of fanDirections(d.x, d.z, def.count)) cosmetics.spawnBolt({ predId: p.predId, skill: def.id, x: b.x, z: b.z, dirX: fd.x, dirZ: fd.z, speed: def.speed, range: def.range });
+      if (cosmetics) for (const fd of fanDirections(d.x, d.z, def.count)) cosmetics.spawnBolt({ predId: p.predId, skill: ent.id, x: b.x, z: b.z, dirX: fd.x, dirZ: fd.z, speed: def.speed, range: def.range });
     } else if (def.shape === 'ground_aoe') {
       const pos = clampPlacement(b, ctx.aim ? { x: ctx.aim.x, z: ctx.aim.z } : { x: b.x + d.x, z: b.z + d.z }, def.range);
       cast.zx = r2(pos.x);
@@ -466,7 +489,8 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   // ticks remaining from the current local frame.
   function slotsView(seqNow = curSeq) {
     if (!enabled) return null;
-    return kit.map((def, i) => ({ id: def.id, abbrev: def.abbrev, passive: false, remainingTicks: Math.max(0, readyAt[i] - seqNow), totalTicks: cdTicks(def) }));
+    const k = kitNow();
+    return k.map((e, i) => (e ? { id: e.id, abbrev: e.abbrev, passive: !!e.passive, remainingTicks: e.passive ? 0 : Math.max(0, readyAt[i] - seqNow), totalTicks: e.cdTicks } : null));
   }
   const dodgeView = (seqNow = curSeq) => ({ remaining: Math.max(0, dodgeAt - seqNow), total: DODGE.cooldownTicks });
 

@@ -855,6 +855,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     'skillState', 'buildView', 'buildPreview', 'kitVerdict', 'buildVerdict', 'buildState',
     'allyState', 'reviveState', 'runState', 'wallet', 'draftPools', 'roomPlan',
     'difficultyTable', 'statusOf', 'contentState', 'netSeats',
+    // PARTY: the replicated builds (a guest's probes / HUD reads).
+    'partyView', 'partyState', 'partyPools', 'partyVerdicts', 'partyAiLog',
   ]);
   function step(tick, snapshot, seatInputs) {
     if (replicaMode) {

@@ -774,12 +774,39 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       return 'Healer';
     }
   };
+  // PARTY (PLAN §16.5): per tab — the guest's OWN card / shelf is its to
+  // decide (no banner, or its own countdown); another tab says who decides.
+  const SEAT_NAME = ['Healer', 'Tank', 'Swordsman', 'Archer'];
+  function partyTabLine(w) {
+    if (current !== 'draft' && current !== 'shop') return null;
+    const sc = screens[current];
+    const pr = sc && typeof sc.probe === 'function' ? sc.probe() : null;
+    const v = world.runSystem() ? world.runSystem().view() : null;
+    const party = current === 'draft' ? v && v.party : v && v.partyShop;
+    if (!pr || !party) return null;
+    const seat = pr.viewSeat;
+    const me = ownSeat();
+    const left = current === 'draft' ? party.deadlineInTicks : [party.leaveInTicks, party.deadlineInTicks].filter((t) => t !== null && t !== undefined).reduce((a, b) => Math.min(a, b), Infinity);
+    const secs = Number.isFinite(left) && left !== null && left <= 600 ? ` — ${Math.max(0, Math.ceil(left / 60))} s` : '';
+    if (seat === me) {
+      if (current === 'draft') {
+        const c = party.cards && party.cards[seat];
+        return c && c.decided ? `Your pick is in — waiting for the party${secs}` : secs ? `Your card — auto-pick${secs}` : '';
+      }
+      return party.done && party.done[seat] ? `Done — waiting for the party${secs}` : secs ? `The shop closes${secs}` : '';
+    }
+    const owners = current === 'draft' ? party.owners : null;
+    const human = seat === 0 || (owners ? owners[seat] === 'human' : false);
+    const who = seat === 0 ? w : human ? `${SEAT_NAME[seat]}'s player` : `the ${w} (for the ${SEAT_NAME[seat]})`;
+    return current === 'draft' ? `${who.charAt(0).toUpperCase()}${who.slice(1)} is choosing…${secs}` : `${who.charAt(0).toUpperCase()}${who.slice(1)} is shopping…${secs}`;
+  }
   function syncGuestNote() {
     const on = current !== 'none' && netGuest();
     const w = on ? chooserLabel() : 'Healer';
-    const text = on ? (GUEST_LINES[current] ? GUEST_LINES[current](w) : `The ${w} is choosing…`) : '';
+    const tab = on ? partyTabLine(w) : null;
+    const text = on ? (tab !== null ? tab : GUEST_LINES[current] ? GUEST_LINES[current](w) : `The ${w} is choosing…`) : '';
     if (guestNote.textContent !== text) guestNote.textContent = text;
-    const disp = on ? '' : 'none';
+    const disp = on && text ? '' : 'none';
     if (guestNote.style.display !== disp) guestNote.style.display = disp;
   }
   bus.on('net_ping', (ev) => {

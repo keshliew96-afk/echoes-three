@@ -41,7 +41,7 @@ const now = () => (typeof performance !== 'undefined' ? performance.now() : Date
 // a remote human's frames drive the Healer, 'ai' = nobody does: the leader
 // bot). The session switches the leader bot with it, so the bot never
 // overrides a human Healer's input (NET3-F1).
-export function createHostDriver({ net, world, clock, bus, registry, capture, sampleLocal, localSeat = 0, snapEvery = SNAPSHOT_EVERY_TICKS, log = () => {}, onCmd = null, onPlayerController = null }) {
+export function createHostDriver({ net, world, clock, bus, registry, capture, sampleLocal, localSeat = 0, snapEvery = SNAPSHOT_EVERY_TICKS, log = () => {}, onCmd = null, onPlayerController = null, onPartyCmd = null }) {
   const snap = createSnapshotHost();
   const ring = createRewindRing({ registry });
   const feeds = new Map(); // seat -> feed
@@ -492,6 +492,27 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       const ping = { kind: 'ping', seat: c.seat, page: cmd.page ?? null, index: cmd.index ?? null, at: clock.tick };
       sendCmd(SEAT_ALL, ping);
       if (onCmd) onCmd(ping);
+      return;
+    }
+    if (cmd.kind === 'party') {
+      // PARTY (PLAN §16.5, BUILD_BRIEF §25.7): a guest's OWN-seat build
+      // decision (page card, shelf, Done, sockets, slot order, its "Socket my
+      // new nodes" setting). The session validates ownership (seat ===
+      // sender's seat, the seat human-held), the phase and combat_active,
+      // then calls the same sim entry point single-player uses; anything
+      // else is answered command_rejected and changes nothing.
+      stats.partyCmds = (stats.partyCmds || 0) + 1;
+      let r = null;
+      try {
+        r = onPartyCmd ? onPartyCmd(c) : { reason: 'unsupported' };
+      } catch (err) {
+        r = { reason: 'error' };
+        log('party_cmd_error', { error: String(err && err.message) });
+      }
+      if (r && r.reason) {
+        stats.rejected += 1;
+        sendCmd(c.seat, { kind: 'command_rejected', re: c.cmdSeq, what: cmd.op ?? null, seat: Number.isInteger(cmd.seat) ? cmd.seat : null, reason: r.reason });
+      }
       return;
     }
     if (cmd.kind === 'pick') {

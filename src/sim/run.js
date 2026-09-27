@@ -79,7 +79,7 @@ import { levelFor, ACT_IDS } from '../data/levels.js';
 import { difficulty, CHALLENGE } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
-import { swapSuggestion, CLASS_OF_SEAT } from '../data/classes.js';
+import { swapSuggestion, CLASS_OF_SEAT, PARTY_DEADLINES } from '../data/classes.js';
 // PARTY (PLAN §16.3): the party page + the party shelves.
 import { createPartyPages } from './partypage.js';
 import { fillStress } from './party.js';
@@ -423,6 +423,8 @@ export function createRunSystem({
   function enterRoom(n) {
     const tick = getTick();
     exitRoom(tick);
+    // PARTY: no socket hold outlives the room change.
+    if (pages && pages.screensAny()) for (let s = 0; s < 4; s++) pages.setScreen(s, false);
     roomIndex = n;
     const mode = frame.modes[n - 1];
     const level = levelFor(act);
@@ -777,8 +779,19 @@ export function createRunSystem({
     return path.focus;
   }
 
-  function choosePath(side) {
+  function choosePath(side, { hold = true } = {}) {
     if (phase !== 'path' || !path) return null;
+    if (path.hold) return { held: true, side: path.hold.side, untilTick: path.hold.untilTick };
+    // PARTY (BUILD_BRIEF §25.7): a committed door waits <= socketHoldTicks
+    // while a human's socket screen is open (network only: the screens are
+    // reported only in a session with >= 2 humans).
+    if (hold && pages && pages.humans() >= 2 && pages.humanScreenOpen()) {
+      const untilTick = getTick() + PARTY_DEADLINES.socketHoldTicks;
+      path.hold = { side: side === 1 ? 1 : 0, untilTick };
+      if (pages) pages.clearDoor();
+      events.emit(getTick(), 'party_deadline', { what: 'socket_hold', tick: untilTick, side: path.hold.side });
+      return { held: true, side: path.hold.side, untilTick };
+    }
     const opt = path.options[side === 1 ? 1 : 0];
     if (pages) pages.clearDoor();
     rewardFor[path.nextRoom] = opt.reward;
@@ -1169,7 +1182,19 @@ export function createRunSystem({
   function partyShopDone(seat) {
     if (phase !== 'shop' || !pages || !pages.shopOpen()) return null;
     pages.done(Number(seat));
+    // The host's Advance countdown is running and this was the last human
+    // it waited on: leave at once.
+    const v = pages.shopView();
+    if (v && v.leaveTick !== null && pages.humansNotDone(hostSeat()).length === 0) advanceFromShop({ force: true });
     return true;
+  }
+  // The seat whose Advance is the host's (the Healer; a migrated host's
+  // session passes its own seat as `by`).
+  const hostSeat = () => 0;
+  // PARTY: a socket screen opened / closed (network sessions only).
+  function partyScreen(seat, open) {
+    if (!pages) return null;
+    return pages.setScreen(seat, open);
   }
 
   // §14: integer wallet, atomic spend; insufficient funds => `currency_denied`
@@ -1203,8 +1228,19 @@ export function createRunSystem({
     return { node: card.node, price: card.price, wallet, owned };
   }
 
-  function advanceFromShop() {
+  function advanceFromShop({ force = false, by = null } = {}) {
     if (phase !== 'shop') return null;
+    // PARTY (BUILD_BRIEF §25.7): with >= 2 humans the Advance leaves at once
+    // only when every OTHER human pressed Done; else a 15 s countdown (shown
+    // to all) — the countdown or the shop's own 90 s deadline then force it.
+    if (!force && pages && pages.shopOpen() && pages.humans() >= 2) {
+      const waiting = pages.humansNotDone(by ?? hostSeat());
+      if (waiting.length > 0) {
+        const v = pages.shopView();
+        const leaveTick = v && v.leaveTick !== null ? v.leaveTick : pages.startAdvanceCountdown(getTick());
+        return { countdown: true, leaveTick, waiting };
+      }
+    }
     // PARTY: every AI-held shelf's still-marked buys (Suggested), benches
     // auto-filled, then the shelves close.
     if (pages && pages.shopOpen()) pages.closeShop();
@@ -1387,6 +1423,15 @@ export function createRunSystem({
     statusTracker.endOfTick();
     // PARTY: network deadlines (armed live; nothing in single-player).
     if (pages && (phase === 'reward' || phase === 'path' || phase === 'shop')) partyDeadlines();
+    // PARTY: a held door leaves when every human socket screen closed or the
+    // hold ran out (the screens close and bank a node in hand).
+    if (phase === 'path' && path && path.hold && (getTick() >= path.hold.untilTick || !pages || !pages.humanScreenOpen())) {
+      const side = path.hold.side;
+      const timedOut = getTick() >= path.hold.untilTick;
+      path.hold = null;
+      if (timedOut) events.emit(getTick(), 'party_socket_close', { reason: 'door' });
+      choosePath(side, { hold: false });
+    }
     if (phase === 'fade' && getTick() >= fadeUntilTick) enterRoom(pendingRoom);
     // PLAN §12.2: the card's own hard bound — the sim advances whatever the
     // presentation does (hidden host tab, no UI, a stuck preload).
@@ -1415,7 +1460,7 @@ export function createRunSystem({
       events.emit(tick, 'party_autopick', { seat: 0, reason: 'door_timeout', choice: 'left' });
       choosePath(0);
     } else if (due === 'shop' && phase === 'shop') {
-      advanceFromShop();
+      advanceFromShop({ force: true });
     }
   }
 
@@ -1485,6 +1530,8 @@ export function createRunSystem({
             focus: path.focus,
             freeSkillSlots: path.freeSkillSlots,
             options: path.options.map((o) => ({ ...o })),
+            // PARTY socket hold (present only while held — hash-stable).
+            ...(path.hold ? { hold: { side: path.hold.side, untilTick: path.hold.untilTick, inTicks: Math.max(0, path.hold.untilTick - getTick()) } } : {}),
           }
         : null,
       shop: shop
@@ -1508,6 +1555,8 @@ export function createRunSystem({
       // v0.5.150 view hashes exactly as before when none is up).
       ...(pages && pages.isOpen() ? { party: pages.pageView() } : {}),
       ...(pages && pages.shopOpen() ? { partyShop: pages.shopView() } : {}),
+      // PARTY: which socket screens are open (network only; present only then).
+      ...(pages && pages.screensAny() ? { socketScreens: pages.screens() } : {}),
       summary,
       fadeTicksLeft: phase === 'fade' ? Math.max(0, fadeUntilTick - getTick()) : 0,
     };
@@ -1601,6 +1650,10 @@ export function createRunSystem({
         return partyShopMark(args[0], args[1], args[2]);
       case 'partyShopDone':
         return partyShopDone(args[0]);
+      case 'partyScreen':
+        // ('partyScreen', seat, open) — a socket screen open / closed (the
+        // network socket hold, BUILD_BRIEF §25.7).
+        return partyScreen(args[0], args[1]);
       case 'partySupply':
         // Node determinism proof only (PLAN §16.9): the ally supply off.
         if (args[0] !== undefined) supplyOn = !!args[0] && !!pages;
@@ -1770,7 +1823,7 @@ export function createRunSystem({
       autoReturnTick,
       // PARTY (schema 4, PLAN §16.6): the party page, the shelves, the door
       // deadline — present only when something is open.
-      ...(pages && (pages.isOpen() || pages.shopOpen() || pages.doorDeadline() !== null) ? { partyPages: pages.saveState() } : {}),
+      ...(pages && (pages.isOpen() || pages.shopOpen() || pages.doorDeadline() !== null || pages.screensAny()) ? { partyPages: pages.saveState() } : {}),
     };
   }
   function loadState(d) {
@@ -1875,13 +1928,17 @@ export function createRunSystem({
       if (Number(seat) === 0) return skillSys.reorderSkills(from, to);
       return party ? party.reorder(Number(seat), from, to) : null;
     },
-    // The Auto-fill all button (socket screen, Shift+F / pad).
-    autoFillAll() {
+    // The Auto-fill all button (socket screen, Shift+F / pad). `seats`: the
+    // seats this caller owns (a network host: its own + AI-held; a guest's
+    // CMD: its own) — default all four.
+    autoFillAll(seats = null) {
       if (combatActive()) return { denied: 'combat_active' };
-      const out = [{ seat: 0, ...buildSys.autoFill() }];
-      if (party) out.push(...party.autoFill('all'));
+      const want = (s) => !Array.isArray(seats) || seats.includes(s);
+      const out = want(0) ? [{ seat: 0, ...buildSys.autoFill() }] : [];
+      if (party) for (const s of [1, 2, 3]) if (want(s)) out.push({ seat: s, ...party.autoFill(s) });
       return out;
     },
+    partyScreen,
     setHarnessGrant: (g) => {
       harnessGrant = g ?? null;
       return harnessGrant;
