@@ -153,6 +153,15 @@ export function createShopScreen({ run, build, party = () => null }) {
     if (buyAnim) finishBuy();
     if (lastView) render(lastView);
   }
+  // The boot pre-paint (run UI index.js) views an ally's shelf; this puts the
+  // shelf back on the Healer's tab WITHOUT a render (the next real render
+  // rebuilds it from the real view).
+  function resetView() {
+    viewSeat = 0;
+    padFocus = -1;
+    signature = '';
+    lastView = null;
+  }
   // The viewed shelf in the Healer's shape ({ wallet, stock }).
   function shelfOf(view, seat) {
     if (seat === 0 || !view.partyShop) return view.shop;
@@ -763,7 +772,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     if ((ev.seat ?? 0) === viewSeat) denyShake(ev.index ?? 0);
   };
 
-  return { el, render, key, pad, denyShake, denyShakeSeat, onPurchase, animState, pin, probe, name: 'shop' };
+  return { el, render, key, pad, denyShake, denyShakeSeat, onPurchase, animState, pin, probe, setView, resetView, name: 'shop' };
 }
 
 export { PALETTE as _shopPalette };

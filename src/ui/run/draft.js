@@ -43,18 +43,24 @@ export function createDraftScreen({ run, build, party = () => null }) {
     <div class="rn-title">A GIFT ON THE ROAD</div>
     <div class="rn-orn">◆ ◆ ◆</div>
     <div class="rn-striphost"></div>
-    <div class="rn-strip">
-      <span class="rn-lab rn-freelab">SKILL SLOTS FREE</span><span class="rn-num rn-free">0</span>
-      <span class="rn-lab">· ROOM</span><span class="rn-num rn-room">1</span>
+    <div class="rn-headrow">
+      <div class="rn-strip">
+        <span class="rn-lab rn-freelab">SKILL SLOTS FREE</span><span class="rn-num rn-free">0</span>
+        <span class="rn-lab">· ROOM</span><span class="rn-num rn-room">1</span>
+      </div>
+      <div class="rn-ownerhost"></div>
     </div>
-    <div class="rn-ownerhost"></div>
-    <div class="rn-cardhost"></div>
-    <div class="rn-replace" style="display:none"></div>
-    <div class="rn-note rn-repline" style="display:none"></div>
-    <div class="rn-note rn-subline" style="display:none"></div>
-    <div class="rn-note rn-spoils" style="display:none"></div>
-    <div class="rn-note rn-summary-line" style="display:none"></div>
-    <div class="rn-note rn-countdown" style="display:none"></div>
+    <div class="rn-cardrow">
+      <div class="rn-cardhost"></div>
+      <div class="rn-replace" style="display:none"></div>
+    </div>
+    <div class="rn-noterow">
+      <div class="rn-note rn-repline" style="display:none"></div>
+      <div class="rn-note rn-subline" style="display:none"></div>
+      <div class="rn-note rn-spoils" style="display:none"></div>
+      <div class="rn-note rn-summary-line" style="display:none"></div>
+      <div class="rn-note rn-countdown" style="display:none"></div>
+    </div>
     <div class="rn-buttons">
       <div class="rn-btn rn-take rn-primary">Take</div>
       <div class="rn-btn rn-decline">Decline</div>
@@ -262,6 +268,9 @@ export function createDraftScreen({ run, build, party = () => null }) {
     const seat = c.seat;
     // Strip (party page only).
     stripHost.style.display = page ? '' : 'none';
+    // The party page's strip is its header: a short window drops the title
+    // for it (style.js `rn-short`).
+    el.classList.toggle('rn-party', !!page);
     if (page) {
       const rows = [0, 1, 2, 3].map((s) => ({
         ...chipOf(view, s, page),

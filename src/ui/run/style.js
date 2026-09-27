@@ -39,6 +39,21 @@ export function isCompact() {
   return window.innerHeight < COMPACT_BELOW_H;
 }
 
+// PARTY (GP.6, PLAN §16.4 layouts): the party page carries the character
+// strip, the owner band and — on an ally's swap card — the Replaces row, the
+// replace line AND the ally's spoils; stacked, that page measured 659–696 px,
+// taller than the room above the command bar of any window under ~860 px
+// (1024x576 .. 1366x768). Below this height the party page REFLOWS again
+// (`.rn-short`): the strip becomes the page's header (the title and its
+// ornament are dropped), the slots line and the owner band share one row, the
+// Replaces slots sit in a 2x2 grid BESIDE the card, and short notes share a
+// row. Every type size stays at its §17 floor or above.
+export const SHORT_BELOW_H = 860; // px of window height
+
+export function isShort() {
+  return window.innerHeight < SHORT_BELOW_H;
+}
+
 export const RUN_CSS = `
   #run-screen {
     position: fixed; inset: 0; z-index: 28; display: none;
@@ -260,7 +275,9 @@ export const RUN_CSS = `
   .rn-shop .rn-shopstrip { width: 100%; }
   .rn-shop .rn-shopstrip .rn-pstrip { margin: 0 0 6px; }
   /* The owner band and the Suggested ribbon: a tab row above each card. */
-  .rn-itemtabs { display: flex; justify-content: space-between; width: 100%; gap: 6px; margin: 0 0 -4px; min-height: 22px; }
+  /* 2 px under the tabs + the item gap clear the 8 px hover lift, so a lifted
+     card never slides over its own owner tab / suggest ribbon (GP.6). */
+  .rn-itemtabs { display: flex; justify-content: space-between; width: 100%; gap: 6px; margin: 0 0 2px; min-height: 22px; }
   .rn-minowner {
     font-size: 16px; font-weight: 800; letter-spacing: 0.04em; color: ${PALETTE.parchment}; line-height: 20px;
     background: ${PALETTE.voidCharcoal}; border: 1px solid ${PALETTE.warmGrey}66;
@@ -720,6 +737,23 @@ export const RUN_CSS = `
 
   #run-screen.rn-compact .rn-replace { margin-top: 6px; gap: 8px; }
   #run-screen.rn-compact .rn-rep { width: 124px; padding: 5px 6px 5px; }
+
+  /* The party page's row groups stack like the page itself by default... */
+  .rn-headrow, .rn-cardrow, .rn-noterow { display: flex; flex-direction: column; align-items: center; }
+  /* ...and sit side by side in a short window (see isShort()). */
+  #run-screen.rn-short .rn-draft { padding: 10px 20px 10px; }
+  #run-screen.rn-short .rn-draft.rn-party .rn-title,
+  #run-screen.rn-short .rn-draft.rn-party .rn-orn { display: none; }
+  #run-screen.rn-short .rn-draft .rn-headrow { flex-direction: row; gap: 10px; margin-bottom: 8px; }
+  #run-screen.rn-short .rn-draft .rn-headrow .rn-strip { margin-bottom: 0; }
+  #run-screen.rn-short .rn-draft .rn-headrow .rn-owner { margin: 0; }
+  #run-screen.rn-short .rn-draft .rn-cardrow { flex-direction: row; align-items: center; gap: 14px; }
+  #run-screen.rn-short .rn-draft .rn-cardrow .rn-replace {
+    display: grid; grid-template-columns: repeat(2, auto); gap: 8px; margin-top: 0;
+  }
+  #run-screen.rn-short .rn-draft .rn-noterow {
+    flex-direction: row; flex-wrap: wrap; justify-content: center; column-gap: 10px; max-width: 920px;
+  }
   #run-screen.rn-compact .rn-buttons { margin-top: 10px; gap: 12px; }
   #run-screen.rn-compact .rn-btn { min-width: 132px; padding: 7px 16px; font-size: 18px; }
 

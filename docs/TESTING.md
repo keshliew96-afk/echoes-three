@@ -1803,6 +1803,12 @@ server (7950):
 - `node tools/gntPARTY-campaign.mjs [--seeds 1-3] [--base150 <archive>]` —
   GP.5 / GP.7 / GP.8 / GP.11 over whole carried campaigns (Node, the
   CAMPAIGN runner's recipe, Suggested), from the sim's own events.
+- `node tools/gntPARTY-ux.mjs [--sizes 1024x576,…]` — GP.6 by real keys,
+  mouse and a mocked pad at the four sizes (the whole page inside the
+  window, a shelf card hovered for the overlap audit);
+  `node tools/gntPARTY-modes.mjs` — GP.12; `node tools/gntPARTY-perf.mjs
+  --base150 <archive>` — GP.15 (the frame gate counts frames of room 6's
+  COMBAT only; the page timings from the page's own open).
 - Diagnostics: `tools/gntPARTY-coldprobe.mjs [--natural 1] [--age 4]
   [--dict 1]` (Node: which snapshot COLD paths / HOT rest fields / events
   cost bytes, the dictionary misses), `tools/gntPARTY-snapprobe.mjs`.
@@ -1820,4 +1826,11 @@ guest's scripted bot fighting, samples every 500 ms): 10.7–11.4 KB/s average
 at N1 at v0.5.163; re-entering room 6 every time it clears (`--reskip 1`, a
 spawn-heavy worst case the gate does not ask for) reads ~13 KB/s. **GP.13
 (d)** on the carried Levels 1–2 conflicts with (b): the v0.5.150 baseline
-itself has 0 of 5 seeds with a down there (BUILD_BRIEF §23.2 PARTY note).
+itself has 0 of 5 seeds with a down there (BUILD_BRIEF §23.2 PARTY note). **Short
+windows**: under 860 px of window height the party page reflows again
+(`.rn-short`, src/ui/run/style.js) so the four-character page fits 1024×576
+through 1366×768 at scale 1.0; under the §1 minimum (1024×640) a page that
+still does not fit shrinks (≥ 0.75) instead of clipping. **Pre-paint**: the
+boot pre-paint opens the PARTY shop (the Healer's and an ally's shelf) and the
+party page (a swap card) — a new page element that is not in it pays its
+GPU pipelines on its first real open.

@@ -40,7 +40,7 @@
 // apply unchanged. Each page also re-initialises its own focus to its
 // rn-primary when it opens (draft: Take; path: the sim's door 0), so no page
 // ever inherits a focus from the page before it.
-import { RUN_CSS, isCompact } from './style.js';
+import { RUN_CSS, isCompact, isShort } from './style.js';
 import { PARTY_STRIP_CSS } from './partystrip.js';
 import { SKILL_SLOTS } from '../../core/constants.js';
 import { parseBootParams } from '../../app/params.js';
@@ -118,6 +118,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   const DESIGN = { w: 980, h: 700 };
   const RESERVE_FALLBACK = 120; // px, until the HUD bar exists to be measured
   const MIN_SCALE = 1; // §17 floors are REAL px: never scale the pages down
+  const UNDER_MIN_SCALE = 0.75; // a window under 1024x640 only
   let lastFit = { s: 1, compact: false, reserve: RESERVE_FALLBACK, fit: 1 };
 
   function reservePx() {
@@ -135,6 +136,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     // reflowed only after measuring would need two renders to settle).
     const compact = isCompact();
     rootEl.classList.toggle('rn-compact', compact);
+    rootEl.classList.toggle('rn-short', isShort());
     const reserve = reservePx();
     rootEl.style.setProperty('--rn-reserve', `${reserve}px`);
     const pg = pageEl ?? (current !== 'none' ? screens[current].el : null);
@@ -145,7 +147,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       (window.innerWidth - 40) / w,
       (window.innerHeight - 28 - reserve) / h
     );
-    const s = Math.max(MIN_SCALE, fit);
+    // Below the §1 minimum window (1024x640) a page that still does not fit
+    // shrinks rather than clips (the note above); at 1024x640 and up the
+    // clamp holds and the §17 floors are real px.
+    const underMin = window.innerWidth < 1024 || window.innerHeight < 640;
+    const s = Math.max(underMin ? UNDER_MIN_SCALE : MIN_SCALE, fit);
     rootEl.style.setProperty('--rn-s', s.toFixed(4));
     lastFit = { s, compact, reserve, fit: Math.round(fit * 1e4) / 1e4, page: { w, h } };
     return s;
@@ -361,10 +367,20 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // 2/1000 opacity with the fades suppressed, ~20 frames after boot in camp.
   // The player sees nothing (the camp frame's analyzer numbers are unchanged)
   // and the first real open of every page finds its pipelines built.
+  //
+  // PARTY: the shop and the party page are opened the PARTY way too — the
+  // character strip with its portraits, the owner tabs, the Suggested
+  // ribbons (an ally's shelf, `seat: 1`), the owner band, the spoils line and
+  // a swap card's Replaces row (the Tank's card). Without them the first
+  // real shop open measured two 206 / 286 ms frames at v0.5.163 (GP.15) —
+  // the synthetic shop view also has to be IN the shop phase, or the PARTY
+  // shop's render (which ignores a view of another phase) paints nothing.
   const PREPAINT_WAIT = 20;
   const PREPAINT_SEQ = [
     { screen: 'shop', view: 'shop', frames: 16, dock: true, light: true },
+    { screen: 'shop', view: 'shop', frames: 8, dock: true, light: true, seat: 1 },
     { screen: 'draft', view: 'draft', frames: 4 },
+    { screen: 'draft', view: 'draft', frames: 4, seat: 1 },
     { screen: 'path', view: 'path', frames: 4 },
     { screen: 'end', view: 'victory', frames: 4, tone: 'victory' },
     { screen: 'end', view: 'defeat', frames: 3, tone: 'defeat' },
@@ -421,23 +437,64 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       seed: 4242,
       ticks: 3600,
     };
+    // PARTY: an ally shelf per seat (the class nodes, marked / unmarked /
+    // sold / short) and a party page with an ally swap card.
+    const it = (node, rarity, price, o = {}) => ({ node, rarity, price, sold: false, marked: false, owned: 0, affordable: true, ...o });
+    const partyShop = {
+      room: 7,
+      touched: [false, false, false, false],
+      done: [false, false, false, false],
+      deadlineTick: null,
+      leaveTick: null,
+      deadlineInTicks: null,
+      leaveInTicks: null,
+      shelves: [
+        null,
+        { seat: 1, purse: 72, stock: [it('galvanize', 'common', 15, { marked: true }), it('echo', 'rare', 20, { sold: true, owned: 1 }), it('aegis', 'legendary', 25), it('reach', 'common', 15, { marked: true, affordable: false })] },
+        { seat: 2, purse: 72, stock: [it('siphon', 'common', 15, { marked: true }), it('reach', 'common', 15), it('pursuit', 'rare', 20, { marked: true }), it('ascend', 'legendary', 25)] },
+        { seat: 3, purse: 72, stock: [it('skewer', 'common', 15, { marked: true }), it('concussive', 'common', 15), it('split', 'rare', 20, { owned: 1 }), it('heartseeker', 'legendary', 25)] },
+      ],
+    };
+    const card = (seat, type, id, o = {}) => ({ seat, type, id, swap: false, substituted: false, line: null, spoils: [], replace: null, suggest: { choice: 'take', replace: null }, decided: false, choice: null, by: null, ...o });
+    const party = {
+      room: 1,
+      promised: 'node',
+      openedTick: 0,
+      deadlineTick: null,
+      deadlineInTicks: null,
+      mode: 'suggest',
+      owners: ['human', 'ai', 'ai', 'ai'],
+      cards: [
+        card(0, 'node', 'ascend'),
+        card(1, 'skill', 'shield_wall', { swap: true, spoils: ['widen'], replace: 2, suggest: { choice: 'take', replace: 2 }, decided: true, choice: 'take', by: 'ai' }),
+        card(2, 'skill', 'riposte', { swap: true, spoils: ['multiply'], replace: 3, suggest: { choice: 'take', replace: 3 }, decided: true, choice: 'leave', by: 'ai' }),
+        card(3, 'node', 'split', { spoils: ['split'] }),
+      ],
+    };
     return {
       shop: {
         ...base,
+        phase: 'shop',
+        room: 7,
         shop: {
           wallet: 42,
           stock: [
             { node: 'ascend', price: 35, sold: false, owned: false, affordable: true, rarity: 'legendary' },
             { node: 'bounce', price: 25, sold: true, owned: true, affordable: true, rarity: 'common' },
             { node: 'echo', price: 30, sold: false, owned: false, affordable: false, rarity: 'rare' },
+            { node: 'reach', price: 15, sold: false, owned: false, affordable: true, rarity: 'common' },
           ],
         },
+        partyShop,
       },
       draft: {
         ...base,
+        phase: 'reward',
         room: 1,
         freeSkillSlots: 0,
         reward: { type: 'node', id: 'ascend', substituted: false, line: null },
+        spoils: { room: 1, nodes: ['snare', 'sharpen'] },
+        party,
       },
       path: {
         ...base,
@@ -487,6 +544,12 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const page = screens[step.screen];
     prepaintPage = page.el;
     page.el.style.display = '';
+    // PARTY: an ally's tab (the Suggested ribbons, a swap card's Replaces row).
+    try {
+      if (typeof page.setView === 'function') page.setView(step.seat ?? 0, false);
+    } catch (e) {
+      /* warm-up only */
+    }
     try {
       const sys = run();
       if (sys) page.render(prepaintViews(sys.view())[step.view]);
@@ -524,7 +587,19 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     }
   }
 
+  // The pages the pre-paint switched to an ally's tab open on their own tab
+  // again (the draft re-picks it in open(); the shop keeps its tab, so it is
+  // put back here without a render).
+  function prepaintResetViews() {
+    try {
+      if (typeof screens.shop.resetView === 'function') screens.shop.resetView();
+    } catch (e) {
+      /* warm-up only */
+    }
+  }
+
   function prepaintEnd() {
+    prepaintResetViews();
     prepaintHidePage();
     prepaintSeedsRemove();
     prepaintStep = PREPAINT_SEQ.length;
@@ -545,6 +620,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // with `?run=1` and a very fast first room): drop the synthetic page and the
   // overrides, keep the classes setScreen() has just set.
   function prepaintAbort() {
+    prepaintResetViews();
     prepaintHidePage();
     prepaintSeedsRemove();
     prepaintStep = PREPAINT_SEQ.length;
