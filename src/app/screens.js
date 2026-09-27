@@ -13,6 +13,9 @@
 //     back?(source) -> bool,        // Esc / B / Backspace / right-click; true = handled
 //                                   //   (default when absent or false: pop this screen)
 //     onFocusChange?(el, source),   // the focused item changed (info panels)
+//     onFocusLost?(el) -> el|null,  // the focused item got disabled / hidden:
+//                                   //   the item to re-home on (next to it);
+//                                   //   null = the screen's default item
 //     defaultFocus?: string,        // CSS selector of the primary item
 //   }
 //   ctx: { manager, app, settings, widgets, services: { service }, params }
@@ -24,7 +27,11 @@
 // but stay visible with their reason text. Movement is SPATIAL (nearest item
 // in the pressed direction by DOM rect), so lists, rows of buttons, tab bars
 // and grids all navigate without per-screen code; up/down wrap at the ends,
-// left/right adjust the focused control when it exposes __navAdjust. Exactly
+// left/right adjust the focused control when it exposes __navAdjust. A text
+// field that saves as it is edited exposes __navCancelEdit(source) -> bool:
+// 'back' (Esc / B / right-click) asks it FIRST — true = it had an uncommitted
+// edit and reverted it (the screen stays), false = nothing to cancel, back
+// proceeds as usual. Back never commits a typed value (MENU-R4-F1). Exactly
 // one element carries the ring class `ap-focus` — the focused item of the top
 // screen — and every screen remembers its last focus for when it is uncovered.
 import { EventEmitterLite } from './emitter.js';
@@ -338,11 +345,25 @@ export function createScreenManager({ root, ctx = {} } = {}) {
     return focusEl(entry, best, { source, scroll: true });
   }
 
+  // The focused text field of the top screen reverts an uncommitted edit.
+  function cancelEdit(t, source) {
+    const ae = typeof document !== 'undefined' ? document.activeElement : null;
+    if (!ae || typeof ae.__navCancelEdit !== 'function' || !t.screen.el.contains(ae)) return false;
+    try {
+      return ae.__navCancelEdit(source) === true;
+    } catch (err) {
+      console.warn('[screens] __navCancelEdit threw', err);
+      return false;
+    }
+  }
+
   // nav(action, source = 'keyboard'|'mouse'|'gamepad'|'api', meta = { repeat }) -> bool consumed
   function nav(action, source = 'api', meta = {}) {
     const t = topEntry();
     if (!t) return false;
     emitter.emit('nav', { action, source, screen: t.id, repeat: !!meta.repeat });
+    // An edit in a text field is the innermost level: back cancels it first.
+    if (action === 'back' && !meta.repeat && cancelEdit(t, source)) return true;
     if (t.screen.onNav && t.screen.onNav(action, source, meta)) return true;
     if (!validFocus(t) && (action === 'up' || action === 'down' || action === 'left' || action === 'right')) {
       return initialFocus(t, source) || true;
@@ -412,6 +433,21 @@ export function createScreenManager({ root, ctx = {} } = {}) {
     }
     const cheapOk = !!el && el.isConnected && t.screen.el.contains(el) && isEnabled(el);
     if (!cheapOk || (auditN === 0 && !isShown(el))) {
+      // The screen may re-home the ring next to where it was (a button that
+      // disabled itself when pressed, e.g. "Reset to automatic") instead of
+      // on its default item.
+      if (typeof t.screen.onFocusLost === 'function') {
+        let alt = null;
+        try {
+          alt = t.screen.onFocusLost(el);
+        } catch {
+          alt = null;
+        }
+        if (alt && alt !== el && t.screen.el.contains(alt) && isEnabled(alt) && isShown(alt)) {
+          focusEl(t, alt, { source: 'audit', scroll: true });
+          return;
+        }
+      }
       initialFocus(t, 'audit');
       return;
     }

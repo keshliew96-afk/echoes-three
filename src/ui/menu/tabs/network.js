@@ -21,7 +21,7 @@ import { validateServerUrl } from '../../../net/lobbyClient.js';
 import { sanitizeName } from '../../../net/protocol/messages.js';
 import { sourceLabel } from '../../../net/address.js';
 
-function textRow({ id, label, help, value, maxLength, onCommit, placeholder = '' }) {
+function textRow({ id, label, help, value, maxLength, onCommit, onCancel, placeholder = '' }) {
   const row = document.createElement('div');
   row.className = 'ap-row nt-textrow';
   row.dataset.help = help;
@@ -58,7 +58,30 @@ function textRow({ id, label, help, value, maxLength, onCommit, placeholder = ''
   input.addEventListener('keyup', (e) => {
     if (e.code === 'Enter' || e.code === 'NumpadEnter') onCommit(input.value);
   });
-  return { el: row, input, ctl, setNote: (t) => (note.textContent = t || ''), set: (v) => (input.value = v) };
+  // Esc / B / right-click is CANCEL, never commit (MENU-R4-F1): the menu's
+  // back action asks the field first (src/app/screens.js). An uncommitted
+  // edit reverts to the saved value with the caret kept in the field — so
+  // no blur-'change' can save it — and the note says so; with nothing to
+  // cancel, back leaves Settings as usual.
+  let committed = String(value == null ? '' : value);
+  const setNote = (t) => (note.textContent = t || '');
+  input.__navDirty = () => input.value !== committed; // Settings' footer: "Esc Cancel edit"
+  input.__navCancelEdit = () => {
+    if (input.value === committed) return false;
+    input.value = committed;
+    if (onCancel) onCancel(committed);
+    return true;
+  };
+  return {
+    el: row,
+    input,
+    ctl,
+    setNote,
+    set: (v) => {
+      committed = String(v == null ? '' : v);
+      input.value = committed;
+    },
+  };
 }
 
 function buildNetworkTab(ctx) {
@@ -87,6 +110,7 @@ function buildNetworkTab(ctx) {
       name.set(clean);
       name.setNote('Saved — shown in lobbies from now on');
     },
+    onCancel: (v) => name.setNote(`Change cancelled — your name is still “${v}”`),
   });
   name.setNote('Shown in lobbies and on the connection chip');
 
@@ -134,6 +158,7 @@ function buildNetworkTab(ctx) {
       server.setNote('Saved — press Check to test it');
       syncAuto();
     },
+    onCancel: () => server.setNote(`Change cancelled. ${autoNote()}`),
   });
   server.setNote(autoNote());
   const check = mkBtn('Check', 'nt-set-check', {

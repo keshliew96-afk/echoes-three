@@ -56,13 +56,32 @@ export function createSettingsScreen(ctx) {
   const infoLive = el.querySelector('.ap-info-live');
   const foot = el.querySelector('.ap-set-foot');
   const footNote = el.querySelector('.ap-foot-note');
-  const hints = createHints(app, [
+  const HINTS = [
     ['move', 'Select'],
     ['adjust', 'Change'],
     ['tabs', 'Tabs'],
     ['back', 'Back'],
-  ]);
+  ];
+  const hints = createHints(app, HINTS);
   foot.insertBefore(hints.el, footNote);
+  // With the caret in a text field (Settings ▸ Network) the footer tells the
+  // truth: Q / E and ← / → edit the text there, Enter saves, and Esc cancels
+  // an uncommitted edit before it ever backs out (MENU-R4-F1).
+  function syncHints() {
+    const n = focusedEl && el.contains(focusedEl) ? focusedEl : null;
+    const text = !!n && n.tagName === 'INPUT' && (n.type || 'text') === 'text' && document.activeElement === n;
+    if (!text) return hints.setItems(HINTS);
+    const dirty = typeof n.__navDirty === 'function' && n.__navDirty();
+    hints.setItems([
+      ['move', 'Select'],
+      ['confirm', 'Save'],
+      ['back', dirty ? 'Cancel edit' : 'Back'],
+    ]);
+  }
+  el.addEventListener('input', syncHints);
+  el.addEventListener('keyup', syncHints);
+  el.addEventListener('focusin', syncHints);
+  el.addEventListener('focusout', () => setTimeout(syncHints, 0));
   const resetBtn = widgets.button({
     label: 'Reset to defaults',
     id: 'ap-settings-reset',
@@ -199,6 +218,10 @@ export function createSettingsScreen(ctx) {
     const resettable = next.inst.resettable !== false && !next.inst.unavailable && !next.inst.failed;
     resetBtn.setDisabled(!resettable, 'Nothing to reset on this tab');
     const target = focus === 'tab' ? tabBtns.get(id) : firstRow(next) || tabBtns.get(id);
+    // The manager's fallback focus is this tab's first row, never another
+    // tab's button (it was the tab the screen opened on).
+    const fr = firstRow(next);
+    screen.defaultFocus = fr && fr.id ? `#${fr.id}` : null;
     if (target && open && manager.top() === 'settings') manager.focusElement(target, source);
     updateInfo();
     return true;
@@ -299,7 +322,14 @@ export function createSettingsScreen(ctx) {
 
   function walk(dir, source) {
     const cur = focusedEl;
-    if (!cur || !el.contains(cur) || !cur.isConnected) return false; // manager's initial focus
+    const target = walkTarget(cur, dir);
+    if (target === false) return false; // manager's initial focus
+    if (target && target !== cur) manager.focusElement(target, source, { scroll: true });
+    return true;
+  }
+
+  function walkTarget(cur, dir) {
+    if (!cur || !el.contains(cur) || !cur.isConnected) return false;
     const rec = activeId && built.get(activeId);
     const tab = activeId ? tabBtns.get(activeId) : null;
     const rows = rowsOf(rec ? manager.navigable(rec.body) : []);
@@ -334,8 +364,7 @@ export function createSettingsScreen(ctx) {
       if (down) target = firstRow() || footItems[0] || null;
       else target = footItems[footItems.length - 1] || lastRow() || null;
     }
-    if (target && target !== cur) manager.focusElement(target, source, { scroll: true });
-    return true;
+    return target;
   }
 
   function helpFor(node) {
@@ -404,7 +433,11 @@ export function createSettingsScreen(ctx) {
       const rec = want && built.get(want);
       screen.defaultFocus = rec && firstRow(rec) && firstRow(rec).id ? `#${firstRow(rec).id}` : null;
       clearInterval(liveTimer);
-      liveTimer = setInterval(updateInfo, LIVE_MS);
+      liveTimer = setInterval(() => {
+        updateInfo();
+        syncHints(); // a pad B / right-click cancel changes no text event
+      }, LIVE_MS);
+      syncHints();
     },
     onClose() {
       open = false;
@@ -417,6 +450,17 @@ export function createSettingsScreen(ctx) {
     onFocusChange(node) {
       focusedEl = node;
       updateInfo();
+      syncHints();
+    },
+    // The focused item disabled itself (Network's "Reset to automatic" once
+    // pressed): the ring moves on to the next row in reading order — never to
+    // an unselected tab button (the manager's first item).
+    onFocusLost(node) {
+      if (!node || !node.isConnected || !el.contains(node)) return null;
+      const body = activeId && built.get(activeId) && built.get(activeId).body;
+      if (!body || !body.contains(node)) return null;
+      const t = walkTarget(node, 'down');
+      return t && !(t.classList && t.classList.contains('ap-tab')) ? t : walkTarget(node, 'up') || null;
     },
     onNav(action, source) {
       if (busy) return true;

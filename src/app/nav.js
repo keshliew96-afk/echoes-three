@@ -124,6 +124,12 @@ export function createNav({ screens, root, onFullscreenToggle, isRecentFullscree
     }
   }
 
+  function inTopScreen(el) {
+    const top = screens.top();
+    const host = el && el.closest ? el.closest('[data-screen]') : null;
+    return !!top && !!host && host.dataset.screen === top && root.contains(host);
+  }
+
   // One entry point for every source. inputTs defaults to now.
   function act(action, source, { inputTs = performance.now(), repeat = false } = {}) {
     setSource(source);
@@ -151,8 +157,17 @@ export function createNav({ screens, root, onFullscreenToggle, isRecentFullscree
     const typing = isTextInput(active) && root.contains(active);
     const combo = e.ctrlKey || e.metaKey;
     if (typing) {
-      // Text fields take typing; Enter confirms, Esc backs, Tab / arrows up-down move.
+      // Text fields take typing; Enter confirms, Tab / arrows up-down move on
+      // (leaving a field keeps what was typed, like any form), and Esc is
+      // CANCEL: it never commits. A field with an uncommitted edit reverts to
+      // its saved value and keeps the caret (screens.nav 'back' asks the
+      // field's __navCancelEdit first); with nothing to cancel, Esc backs one
+      // level. The field is not blurred before 'back' — a blur fires the
+      // native 'change' a live-commit field saves on (MENU-R4-F1).
       e.stopImmediatePropagation();
+      // An IME composition owns its keys (Esc drops, Enter picks the
+      // candidate): never a menu action.
+      if (e.isComposing || e.keyCode === 229) return;
       let action = null;
       if (e.code === 'Enter' || e.code === 'NumpadEnter') action = 'confirm';
       else if (e.code === 'Escape') action = 'back';
@@ -161,8 +176,11 @@ export function createNav({ screens, root, onFullscreenToggle, isRecentFullscree
       else if (e.code === 'Tab') action = e.shiftKey ? 'up' : 'down';
       if (action) {
         e.preventDefault();
-        if (action === 'back' || action === 'up' || action === 'down') active.blur();
+        if (action === 'up' || action === 'down') active.blur();
         act(action, 'keyboard', { inputTs: e.timeStamp, repeat: e.repeat });
+        // Backed out of the field's screen: a caret must not stay in a
+        // hidden field (its screen closed with no other screen to focus).
+        if (action === 'back' && document.activeElement === active && !inTopScreen(active)) active.blur();
       }
       return;
     }
@@ -227,6 +245,20 @@ export function createNav({ screens, root, onFullscreenToggle, isRecentFullscree
       if (screen) markResponse('confirm', 'mouse', e.timeStamp, screen);
     },
     { capture: false }
+  );
+
+  // Right-click is 'back', and back from a field with an uncommitted edit is
+  // cancel — but the right button's mousedown would first move focus off the
+  // field, and that blur commits it. Keep the caret where it is; the
+  // contextmenu below then cancels the edit (or backs out).
+  root.addEventListener(
+    'mousedown',
+    (e) => {
+      if (e.button !== 2) return;
+      const ae = document.activeElement;
+      if (ae && typeof ae.__navCancelEdit === 'function' && root.contains(ae)) e.preventDefault();
+    },
+    { capture: true }
   );
 
   root.addEventListener('contextmenu', (e) => {

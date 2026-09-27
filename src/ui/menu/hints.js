@@ -13,11 +13,14 @@ function chip(text, pad) {
   return k;
 }
 
-// createHints(app, [['move', 'Select'], ['confirm', 'OK'], ...]) -> { el, render() }
+// createHints(app, [['move', 'Select'], ['confirm', 'OK'], ...]) -> { el, render(), setItems(items) }
+// setItems swaps the list in place (e.g. Settings while the caret is in a
+// text field, where Q / E type letters and Esc cancels the edit).
 export function createHints(app, items) {
   const el = document.createElement('div');
   el.className = 'ap-hints';
   let shown = null;
+  let itemsKey = JSON.stringify(items);
   function render(force = false) {
     const src = app.nav ? app.nav.lastSource : 'keyboard';
     const kind = src === 'gamepad' ? 'gamepad' : 'keyboard';
@@ -36,5 +39,12 @@ export function createHints(app, items) {
   }
   render(true);
   if (app.nav && typeof app.nav.onSource === 'function') app.nav.onSource(() => render());
-  return { el, render };
+  function setItems(next) {
+    const key = JSON.stringify(next);
+    if (key === itemsKey) return;
+    itemsKey = key;
+    items = next;
+    render(true);
+  }
+  return { el, render, setItems };
 }
