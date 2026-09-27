@@ -116,8 +116,12 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
   const JOIN_SLOW_MS = 8000;
   let joiningSince = 0;
   function joinBanner(code) {
-    if (!joiningSince) joiningSince = performance.now();
-    if (performance.now() - joiningSince >= JOIN_SLOW_MS) setBanner(`Still joining ${code || ''}…`, "The host's game hasn't sent the world yet. Keep waiting, or leave with Esc → Leave Session.");
+    // A hidden guest takes its seat back (and the world with it) only when
+    // shown: time spent hidden is not a slow host.
+    const hidden = typeof document !== 'undefined' && document.hidden;
+    if (hidden) joiningSince = 0;
+    else if (!joiningSince) joiningSince = performance.now();
+    if (!hidden && performance.now() - joiningSince >= JOIN_SLOW_MS) setBanner(`Still joining ${code || ''}…`, "The host's game hasn't sent the world yet. Keep waiting, or leave with Esc → Leave Session.");
     else setBanner(`Joining ${code || ''}…`, 'Receiving the world from the host');
   }
   let lostUntil = 0;
@@ -223,7 +227,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     } else detail.style.display = 'none';
     // A join still waiting for the host's world turns into the slow-join
     // banner on this 1 s read (update() is not called while nothing changes).
-    if (last && last.role === 'guest' && !synced && joiningSince && !last.reconnecting && !last.hostLost) joinBanner(last.code);
+    if (last && last.role === 'guest' && !synced && !last.reconnecting && !last.hostLost) joinBanner(last.code);
     linkLevel = level;
     lastLink = { level, reasons: q ? q.reasons.slice() : [], rttMs: rtt, lossPct: loss, lossInPct: inP, lossOutPct: outP, lossBySeat: s && s.lossBySeat ? s.lossBySeat : null, text: ltEl.textContent };
   }

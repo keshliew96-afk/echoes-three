@@ -24,7 +24,15 @@
 //
 // The host keeps the last BASELINE_RING (32) snapshots; each guest link
 // remembers the newest seq that guest acknowledged (acks ride in every INPUT
-// packet) and the host deltas against it — no usable baseline -> full. Lost,
+// packet) and the host deltas against it — no usable baseline -> full.
+// PACED FULLS (fix-M5a-r4, NET4-F3): while a link waits for the ack of a
+// full it was sent, the next snapshots are deltas against THAT full (a guest
+// holding it decodes them; one that lost it fails 'no_baseline' harmlessly)
+// and a new full goes out only after fullGapMs (the caller passes ~RTT + 50
+// ms). A guest whose acks stall — a page busy preloading the next level, a
+// burst of lost input packets — used to draw a 4-6 KB full on EVERY snapshot
+// until its ack came back (48 fulls in one second measured at a Level 2
+// clear, a 148 KB second on its link). Lost,
 // duplicated and reordered snapshots are harmless: a guest can decode any
 // snapshot whose baseline it still holds, and acks only what it decoded.
 //
@@ -109,6 +117,7 @@ export function createSnapshotHost({ hotPath = HOT_PATH, ringSize = BASELINE_RIN
     deltaHotBytes: 0,
     deltaColdBytes: 0,
     deltaChanged: 0,
+    pacedDeltas: 0, // deltas against a full whose ack was still pending
   };
   const pushSample = (arr, v) => {
     arr.push(v);
@@ -148,7 +157,7 @@ export function createSnapshotHost({ hotPath = HOT_PATH, ringSize = BASELINE_RIN
   }
 
   function link() {
-    return { acked: 0, sent: 0, fulls: 0, lastSeq: 0, lastFullSeq: 0 };
+    return { acked: 0, sent: 0, fulls: 0, lastSeq: 0, lastFullSeq: 0, pendingFull: null, pacedDeltas: 0 };
   }
 
   // ack(link, seq): the guest decoded `seq`. Unknown / stale / bogus seqs
@@ -157,6 +166,7 @@ export function createSnapshotHost({ hotPath = HOT_PATH, ringSize = BASELINE_RIN
     if (typeof s !== 'number' || s <= l.acked || s > seq) return false;
     if (!findRec(s)) return false;
     l.acked = s;
+    if (l.pendingFull && s >= l.pendingFull.seq) l.pendingFull = null;
     return true;
   }
 
@@ -191,12 +201,23 @@ export function createSnapshotHost({ hotPath = HOT_PATH, ringSize = BASELINE_RIN
   }
 
   // encodeFor(link, rec, header) -> Uint8Array (a complete relay frame).
-  function encodeFor(l, rec, { seat = 0, lastInputSeqConsumed = null, flags = 0, inputBufferDepth = 0, upLossPct = null, forceFull = false } = {}) {
+  // fullGapMs > 0 paces fulls on this link (see PACED FULLS above); nowMs =
+  // the caller's clock for it (defaults to performance.now()).
+  function encodeFor(l, rec, { seat = 0, lastInputSeqConsumed = null, flags = 0, inputBufferDepth = 0, upLossPct = null, forceFull = false, fullGapMs = 0, nowMs = null } = {}) {
     const t0 = now();
     let base = null;
     if (!forceFull && l.acked) {
       base = findRec(l.acked);
       if (base && base.seq >= rec.seq) base = null;
+    }
+    const tNow = nowMs === null ? t0 : nowMs;
+    let paced = false;
+    if (!base && !forceFull && fullGapMs > 0 && l.pendingFull && tNow - l.pendingFull.at < fullGapMs) {
+      const pf = findRec(l.pendingFull.seq);
+      if (pf && pf.seq < rec.seq) {
+        base = pf;
+        paced = true;
+      }
     }
     const body = encodeBody(rec, base);
     const w = new ByteWriter(HEADER_BYTES + 8 + body.length);
@@ -213,10 +234,15 @@ export function createSnapshotHost({ hotPath = HOT_PATH, ringSize = BASELINE_RIN
     const out = w.finish();
     l.sent += 1;
     l.lastSeq = rec.seq;
+    if (paced) {
+      l.pacedDeltas += 1;
+      stats.pacedDeltas += 1;
+    }
     if (base) {
       stats.deltaCount += 1;
       stats.deltaBytes += out.length;
     } else {
+      l.pendingFull = { seq: rec.seq, at: tNow };
       l.fulls += 1;
       l.lastFullSeq = rec.seq;
       stats.fullCount += 1;

@@ -183,6 +183,38 @@ check('EVENTS v3: 5 000 random batches (static / inline / repeated inline shapes
   check('HOT v3: NEW mover anchored at the snapshot tick round-trips; a moving actor delta = one-byte mask, castLeftTicks -dt as a value-free op', ok1 && C(back2) === C(q1) && dl.length <= 12, { fullBytes: full.length, deltaBytes: dl.length });
 }
 
+// ---------------------------------------------------------------- 5 --
+// Paced fulls: a link whose acks stall past the baseline ring gets a full, then deltas
+// against that full, and a new full only after fullGapMs; a guest that has the full decodes
+// the paced deltas, one that lost it waits for the next full.
+{
+  const { createSnapshotHost, createSnapshotClient } = await import(u('src/net/protocol/snapshot.js'));
+  const mk = (t) => ({ clock: { tick: t }, registry: { nextOrdinal: 10, entities: [{ id: 1, kind: 'ally', x: (t % 50) / 10, z: 1, hp: 50 }, { id: 2, kind: 'moth', x: 2, z: (t % 30) / 10, hp: 40 }] }, systems: { q: [t % 7] } });
+  const host = createSnapshotHost();
+  const L = host.link();
+  const good = createSnapshotClient();
+  const lossy = createSnapshotClient();
+  let fullsStall = 0; let n = 0; let goodFail = 0; let lossyFirstFullLost = true; let lossyDecodedAfter = false; let lossyNoBase = 0;
+  for (let i = 0; i < 90; i++) {
+    const tick = 3 * (i + 1);
+    const rec = host.capture(tick, mk(tick));
+    const u8 = host.encodeFor(L, rec, { seat: 1, fullGapMs: 300, nowMs: i * 50 });
+    const isFull = new DataView(u8.buffer, u8.byteOffset).getUint32(10, true) === 0xffffffff;
+    const g = good.decode(u8);
+    if (!g.ok) goodFail += 1;
+    if (i < 5 && g.ok) host.ack(L, g.seq); // acks flow, then stall for the rest of the run
+    if (i >= 5) { n += 1; if (isFull) fullsStall += 1; }
+    // lossy guest: drops the first full after the stall began, decodes the rest
+    if (i >= 5 && isFull && lossyFirstFullLost) { lossyFirstFullLost = false; continue; }
+    const l = lossy.decode(u8);
+    if (!l.ok && l.error === 'no_baseline') lossyNoBase += 1;
+    if (i >= 5 && !lossyFirstFullLost && l.ok && l.full) lossyDecodedAfter = true;
+  }
+  // 85 stalled snapshots at 50 ms: the ring (32) holds the last ack for 31 of them, then a full
+  // every 300 ms (~9 over the remaining ~54) instead of one per snapshot (~54)
+  check('paced fulls: an ack stall draws a full every fullGapMs (not every snapshot); the guest holding it decodes every paced delta; a guest that lost it recovers on the next full', fullsStall > 0 && fullsStall <= 12 && goodFail === 0 && lossyDecodedAfter, { stalledSnapshots: n, fullsStall, goodFail, lossyNoBase, pacedDeltas: L.pacedDeltas });
+}
+
 const pass = results.filter((r) => r.ok).length;
 console.log(`\n${pass}/${results.length} checks pass`);
 writeFileSync(resolve(here, 'captures/gntfixM5a4-unit.json'), JSON.stringify({ tool: 'gntfixM5a4-unit', results }, null, 1));

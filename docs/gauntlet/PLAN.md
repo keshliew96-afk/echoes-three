@@ -1121,6 +1121,13 @@ tick rate ±2% to hold the host's reported buffer depth at 2.
   game running while this tab is in the background. If the browser suspends
   the tab (memory saver, mobile), players see 'Host connection lost' and the
   session migrates." Single-player keeps `gameplay.autoPause`.
+  *fix-M5a-r4 (NET4-F1, 2026-09-27): the rule applies to a tab that is
+  ALREADY hidden when the role begins — hidden during the start countdown,
+  or a hidden guest becoming host by migration — not only to a
+  visibilitychange seen while hosting; a guest hidden at the start joins as
+  away. A guest without the world 8 s after the start (visible time) is told
+  so: "Still joining CODE… The host's game hasn't sent the world yet. Keep
+  waiting, or leave with Esc → Leave Session."*
 - Harnesses that run several pages in one browser MUST use the multi-page
   flags of §6.7 (otherwise background pages stop rAF and results are flaky).
 
@@ -1231,6 +1238,16 @@ forMs }`, `POST /admin/kill-host { code }`.
 **Bandwidth budget per guest**: downstream ≤ 12 KB/s average in combat and ≤
 24 KB/s p95 (1 s windows, boss + adds); upstream ≤ 4 KB/s; host upstream ≤ 12
 KB/s per guest + 6 KB/s keyframes.
+*fix-M5a-r4 (NET4-F3, 2026-09-27): the budget holds in EVERY campaign level,
+boss included (Levels 2-3 carry more actors and events than Level 1). Wire
+protocol v3 meets it: the HOT field mask is a varint (the usual moving-actor
+set in one byte) rather than a u16; patches use baseline-relative forms that
+decode to exactly the tree-diff ops above; mover velocities (1/65536 u per
+tick) and rest unit directions (the 256-step YAW table) are quantised in the
+replicated view; EVENTS bodies use static shapes and packed numbers; the
+EVENTS_U resend carries the previous batch only; in-game roster pings are
+pushed at most every 10 s. Layout and measurements: docs/TESTING.md M5a
+"Protocol v3", docs/gauntlet/fix-M5a-r4.md.*
 
 **Single-player isolation.** No server, no session → the net modules are not
 on the tick path at all: main.js's committed `simStep` stays `(tick) =>

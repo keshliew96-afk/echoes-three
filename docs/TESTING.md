@@ -907,6 +907,66 @@ N0,L5,L10,L20,DOWN20,UP20,SOLO20,BURST,N2,R250,DROP3,N0 [--seconds 20]
 applied loss from the server's differenced counters; reaction times; chip
 frames). Unit: `node tools/gntfixM5a1-unit.mjs`.
 
+**Protocol v3 — the §3.7 bandwidth budget in every level (fix-M5a-r4,
+NET4-F3, v0.5.134+).** `PROTOCOL_VERSION` 3 (restart your server: a v2 server
+refuses v3 pages with "A new version of Echoes is available"). Same model and
+the same SNAP header (tick / seq / baseline at bytes 2 / 6 / 10, so wire taps
+keep working); tighter bytes: (1) tree-diff patches are written against the
+baseline both sides hold — a number that moved by exactly the tick distance
+(`clock.tick`, `castLeftTicks`, `untilTick`-style timers) costs no value, a
+safe integer rides as its delta, a keyed array whose order is the base's (or
+the base's minus drops plus appends) sends no id list, and a queue (front
+consumed, back appended — `echoQueue`, `clock.grants`) is a shifted array op;
+the decoder rebuilds exactly the JSON op of §3.7, so the tree-diff law is
+unchanged; (2) the HOT field mask is a varint whose usual moving-actor bits
+sit below 128 (one byte); a NEW mover's anchor tick is relative to the
+snapshot; (3) mover velocities are replicated at 1/65536 u per tick and unit
+directions in an entity's rest (`lastAimDir`, a ram's `guard.dirX/dirZ`) on
+the YAW table — dyadic values with their own 3-5 byte tag; both sides
+extrapolate with the replicated velocity and the host re-anchors against it
+(the view stays within 1/64 u of truth); (4) EVENTS bodies are `varu
+batchSeq · varu toTick · vari span` + per event a tick delta, a static shape
+(`src/net/protocol/evshapes.js`: type + sorted member keys, measured from
+play) or an inline shape reused within the batch, and the values — members in
+`EV_NUM_KEYS` as packed numbers; (5) dictionaries re-measured over Levels 1-3
+and the Stag; (6) EVENTS_U carries the PREVIOUS batch only (two copies of
+every event, the second 50 ms later); (7) a room in play pushes roster pings
+(room_state) at most every 10 s; (8) paced fulls — a link waiting for the ack
+of a full gets deltas against that full, and a new full only after its round
+trip + 50 ms (100-600 ms), never one per snapshot (a guest busy preloading a
+level drew 48 fulls in one second before; host `net.stats().pacedDeltas`).
+Measured on a production build, 1 guest, N1:
+Level 3 downstream 7.1 KB/s avg / 10.5 p95 (v2: 16.4 / 28.5 — numbers per
+condition and level in docs/gauntlet/fix-M5a-r4.md). Probes:
+`node tools/gntfixM5a4-unit.mjs` (20 000 based patch pairs incl. queues, 5 000
+event batches, HOT masks — canonical round trips), `node tools/gntM5a-protocol.mjs`
+(72 checks) and `node tools/gntM5a-corpus.mjs` (real sim, 3 lossy guests: 0
+mismatches, hashes agree) must stay green after any protocol edit;
+`node tools/gntfixM5a4-bwscope.mjs --levels 1,2,3 [--room 8] [--seconds 45]`
+(dev server: one single-player autopilot page, the REAL encoders at 20 Hz
+against a baseline acked 4 snapshots back — bytes/s split into snapshot / events /
+EVENTS_U / keyframes, the costliest COLD paths, HOT kinds and rest keys, event
+types); `node tools/gntfixM5a4-dictscan.mjs` + `node tools/gntfixM5a4-gendict.mjs`
+regenerate the dictionaries and event shapes (a protocol change: bump
+`PROTOCOL_VERSION`). The critic's wire sweep (`tools/gntcnet4-sweep.mjs --guests
+1 --conds N1 --seconds 120 --level 3`) is the end-to-end check.
+
+**A host already in the background when the session starts (fix-M5a-r4,
+NET4-F1, v0.5.131+).** The hidden-tab loop follows visibility AND the session
+role: a host whose tab is hidden during the 1.5 s countdown (or a guest that
+becomes host while hidden) runs the shared sim on the 60 Hz Worker metronome
+from its first tick; a guest that starts hidden joins as away (the AI plays its
+seat) and keeps acking at 20 Hz until shown. A guest still without the world
+8 s after the session started (visible time only) reads "Still joining CODE…
+The host's game hasn't sent the world yet. Keep waiting, or leave with Esc →
+Leave Session." Probes: `node tools/gntfixM5a4-hiddenstart.mjs --port <server>
+--cases A,B,G [--hideAt 800] [--observe 40]` (GNTCNET4_BASE = a production
+preview; the critic's real-UI scenario with every click waiting for its button
+to be enabled — A: host hides 0.8 s after Start, B: 3 s after sync, G: guest
+hidden before the start) and `node tools/gntfixM5a4-slowjoin.mjs --port <server>`
+(the guest's down link drops every snapshot: the slow-join copy, Esc → Leave
+Session, synced once the link is lifted).
+
 ### M5b — network play (Gauntlet W4, owner M5b)
 
 **Playing.** `npm run net` (LAN: `npm run net -- --host 0.0.0.0`), then title
@@ -950,8 +1010,9 @@ Rewind window 24 ticks / 400 ms (PLAN 15 / 250 ms: an N1 guest's view is
 18–20 ticks old at the PLAN's own interp + depth-2 buffer); reconnect backoff
 capped 1.5 s; in-session reconnect gives up after 15 s → title "Connection to
 the server was lost." with "Rejoin ABCDE?" while the server's 60 s seat hold
-lasts; the unreliable EVENTS_U resend carries the newest TWO batches (three
-did not fit the downstream budget with three human seats); per-guest snapshot
+lasts; the unreliable EVENTS_U resend carries the PREVIOUS batch only (protocol
+v3, fix-M5a-r4 NET4-F3: the newest two — three copies of every event — broke
+the Level 2-3 downstream budget); per-guest snapshot
 encodes are spread over the ticks between snapshots (one capture); party
 bodies cannot be stunned (status rule), so the G5b.12 forced mispredict is a
 host-side Downed (`setHp(seat, 0)`), which RACES the press — a trial ends

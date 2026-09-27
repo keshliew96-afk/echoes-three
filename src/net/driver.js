@@ -32,6 +32,8 @@ import { createRewindRing } from './lagcomp.js';
 
 export const TARGET_INPUT_DEPTH = 2;
 const DRAIN_ABOVE = TARGET_INPUT_DEPTH + 2;
+const FULL_GAP_MIN_MS = 100;
+const FULL_GAP_MAX_MS = 600;
 const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
 // onPlayerController(controller, tick) — called BEFORE the tick's world.step
@@ -342,9 +344,22 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
   // the send tick's k — the guest would drop the 1-2 frames consumed in
   // between from its replay (a dodge press among them rewound the body to
   // the pre-dodge spot: 1.8 u snaps, the 2nd / 3rd guest far more often).
+  // Paced fulls (snapshot.js, fix-M5a-r4 NET4-F3): a link waiting for the ack
+  // of a full gets deltas against that full, and a new full only after the
+  // round trip host -> server -> guest -> server -> host (+ 50 ms), 100-600 ms.
+  function seatRttMs(seat) {
+    const room = net.room;
+    const s = room && room.seats ? room.seats.find((x) => x.index === seat) : null;
+    return s && Number.isFinite(s.rttMs) ? s.rttMs : null;
+  }
+  function fullGapMs(seat) {
+    const g = seatRttMs(seat);
+    const h = seatRttMs(mySeat);
+    return Math.max(FULL_GAP_MIN_MS, Math.min(FULL_GAP_MAX_MS, (g === null ? 150 : g) + (h === null ? 0 : h) + 50));
+  }
   function sendSnapshotTo(rec, seat, k) {
     const f = feedFor(seat);
-    net.transport.sendBinary(snap.encodeFor(f.link, rec, { seat, lastInputSeqConsumed: k, inputBufferDepth: f.depthReport, upLossPct: feedLossPct(f) }));
+    net.transport.sendBinary(snap.encodeFor(f.link, rec, { seat, lastInputSeqConsumed: k, inputBufferDepth: f.depthReport, upLossPct: feedLossPct(f), fullGapMs: fullGapMs(seat) }));
   }
   function tickEnd(tick) {
     const t0 = now();
@@ -574,6 +589,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       deltaBytesAvg: sh.deltaAvg ? Math.round(sh.deltaAvg * 10) / 10 : null,
       deltaRatio: sh.fullAvg && sh.deltaAvg ? Math.round((sh.deltaAvg / sh.fullAvg) * 1000) / 1000 : null,
       fullSnapshots: sh.fullCount,
+      pacedDeltas: sh.pacedDeltas,
       snapshotsSent: stats.snapshots,
       eventBatches: stats.eventBatches,
       eventsSent: stats.eventsSent,
