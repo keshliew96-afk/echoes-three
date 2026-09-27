@@ -3,7 +3,11 @@
 // session server (server/**). No DOM, no Node built-ins here.
 
 // v2 (M5b, W4): + EVENTS_U (0x07) redundant unreliable event batches.
-export const PROTOCOL_VERSION = 2;
+// v3 (fix-M5a-r4, NET4-F3 bandwidth): baseline-relative patch ops (bvalue.js
+// u / w / D / based k), a one-byte HOT field mask, NEW mover anchors relative
+// to the snapshot tick, EVENTS bodies with static shapes (evshapes.js),
+// re-measured dictionaries; EVENTS_U carries the previous batch only.
+export const PROTOCOL_VERSION = 3;
 export const WS_PATH = '/echoes';
 export const DEFAULT_PORT = 7800; // player default; agents use their own ports (PLAN §6.3)
 export const DEFAULT_URL = `ws://127.0.0.1:${DEFAULT_PORT}${WS_PATH}`;

@@ -470,7 +470,13 @@ export function createEchoesServer(options = {}) {
 
   // ------------------------------------------------------------ sweep --
   let lastRttPush = 0;
-  const rttPushed = new Map(); // code -> signature
+  const rttPushed = new Map(); // code -> { sig, at }
+  // A room in play refreshes its roster pings every 10 s at most (a lobby
+  // every 2 s): each push is the whole room_state (~0.9 KB) to every seat, and
+  // under N1 jitter the 15 ms buckets change on almost every check — 0.4 KB/s
+  // of a guest's §3.7 downstream budget for a number the in-game chip reads
+  // from its own pong (fix-M5a-r4, NET4-F3).
+  const RTT_PUSH_IN_GAME_MS = 10000;
   function sweep() {
     const t = now();
     lobby.sweep();
@@ -499,10 +505,11 @@ export function createEchoesServer(options = {}) {
       lastRttPush = t;
       for (const room of lobby.rooms.values()) {
         const sig = room.seats.map((s) => (s.rttMs === null ? '-' : Math.round(s.rttMs / 15))).join(',');
-        if (rttPushed.get(room.code) !== sig) {
-          rttPushed.set(room.code, sig);
-          lobby.pushState(room);
-        }
+        const last = rttPushed.get(room.code);
+        if (last && last.sig === sig) continue;
+        if (last && room.state === 'in_game' && t - last.at < RTT_PUSH_IN_GAME_MS) continue;
+        rttPushed.set(room.code, { sig, at: t });
+        lobby.pushState(room);
       }
     }
   }

@@ -19,7 +19,8 @@
 // varu. Readers throw a RangeError('truncated …') on short input so a corrupt
 // or hostile frame can never read past its end.
 import { BIN, INPUT_REDUNDANCY } from './constants.js';
-import { encodeValue, decodeValue } from './bvalue.js';
+import { encodeValue, decodeValue, encodeKey, decodeKey } from './bvalue.js';
+import { EVENT_SHAPES } from './evshapes.js';
 
 export const SEAT_ALL = 0xff;
 export const NO_SEQ = 0xffffffff;
@@ -326,31 +327,169 @@ export function decodeInputPacket(u8) {
 // ------------------------------------------------------------- EVENTS --
 // Host -> guest, reliable, one batch per snapshot: every sim event since the
 // previous batch except `sound` (each client derives its own sounds).
-//   envelope · u32 batchSeq · u32 fromTick · u32 toTick · bvalue array of events
-// (bvalue.js: canonical-exact binary; -0 / NaN / ±Infinity / null survive).
+//   envelope · EVENTS body
+// EVENTS body (protocol v3 — fix-M5a-r4 NET4-F3: v2 wrote u32 × 3 and a
+// plain bvalue array, i.e. every event's keys, its tick and its type in
+// full; the same events now cost ~45 % fewer bytes):
+//   varu batchSeq · varu toTick · vari (toTick - fromTick) · varu n · n × event
+//   event: varu tcode   0 = the tick is not written this way (no tick
+//                         member, or one below fromTick: it rides as a key)
+//                       t = tick - fromTick + 1
+//          varu scode   0 = an inline shape follows: varu nKeys · keys
+//                           (bvalue KEY_DICT codes, sorted) — registered as
+//                           batch shape #j for later events of this batch
+//                       1..S = static shape (evshapes.js: type + sorted keys;
+//                           the event's `type` is implied)
+//                       S+1+j = batch shape #j
+//          the values, in the shape's key order: a member whose key is in
+//          EV_NUM_KEYS (positions, directions, ids, amounts…) as a packed
+//          number — varu (zigzag(v) << 2) for a safe integer, varu
+//          (zigzag(v × 100) << 2 | 1) for an exact 2-decimal value, varu 3 +
+//          bvalue otherwise (null, -0, other floats, anything); every other
+//          member as bvalue.js encodeValue. Canonical-exact either way —
+//          -0 / NaN / ±Infinity / null survive.
+// Decoded events are canonically equal to the host's (members come back in
+// sorted order after tick / type; undefined members were never sent).
+const STATIC_SHAPES = EVENT_SHAPES.map((s) => {
+  const i = s.indexOf('|');
+  const rest = s.slice(i + 1);
+  return { type: s.slice(0, i), keys: rest ? rest.split(',') : [] };
+});
+const STATIC_INDEX = new Map(STATIC_SHAPES.map((sh, i) => [`${sh.type}|${sh.keys.join(',')}`, i]));
+const MAX_EVENT_KEYS = 64;
+// Event members that are (almost always) numbers: packed without a tag.
+export const EV_NUM_KEYS = new Set([
+  'absorbed', 'amount', 'amp', 'applied', 'area', 'attacker', 'attackerId', 'blastTick', 'cap', 'cd', 'count',
+  'dirX', 'dirZ', 'dueTick', 'durationSec', 'dx', 'dz', 'fromX', 'fromZ', 'halfAngle', 'healed', 'healer', 'hit',
+  'hop', 'hp', 'id', 'index', 'inputSeq', 'kb', 'landTick', 'left', 'length', 'level', 'mag', 'mul', 'n',
+  'partyIndex', 'pct', 'power', 'radius', 'reach', 'resolveTick', 'room', 'seat', 'shield', 'size', 'slot',
+  'spawnTick', 'src', 'target', 'targetId', 'telegraphTicks', 'ticks', 'to', 'total', 'totalTicks', 'traveled',
+  'tx', 'tz', 'untilTick', 'vent', 'wallet', 'wave', 'x', 'z', 'zone', 'zx', 'zz',
+]);
+const NUM_LIMIT = 2 ** 48; // zigzag << 2 stays a safe integer
+function writeEvValue(w, k, v) {
+  if (!EV_NUM_KEYS.has(k)) return void encodeValue(w, v);
+  if (typeof v === 'number' && !Object.is(v, -0)) {
+    if (Number.isSafeInteger(v) && Math.abs(v) < NUM_LIMIT) return void w.varu((v >= 0 ? v * 2 : -v * 2 - 1) * 4);
+    const c = Math.round(v * 100);
+    if (Number.isFinite(c) && Math.abs(c) < NUM_LIMIT && c / 100 === v) return void w.varu((c >= 0 ? c * 2 : -c * 2 - 1) * 4 + 1);
+  }
+  w.varu(3);
+  encodeValue(w, v);
+}
+function readEvValue(r, k) {
+  if (!EV_NUM_KEYS.has(k)) return decodeValue(r);
+  const p = r.varu();
+  const kind = p % 4;
+  if (kind === 3) {
+    if (p !== 3) throw new RangeError('EVENTS: bad packed escape');
+    return decodeValue(r);
+  }
+  if (kind === 2) throw new RangeError('EVENTS: bad packed number');
+  const u = (p - kind) / 4;
+  const z = u % 2 === 0 ? u / 2 : -(u + 1) / 2;
+  return kind === 0 ? z : z / 100;
+}
+
+function writeEventsBody(w, batchSeq, fromTick, toTick, events) {
+  if (!Array.isArray(events)) throw new TypeError('EVENTS: events must be an array');
+  w.varu(batchSeq >>> 0);
+  w.varu(toTick >>> 0);
+  w.vari((toTick >>> 0) - (fromTick >>> 0));
+  const from = fromTick >>> 0;
+  w.varu(events.length);
+  const dyn = new Map(); // sorted-keys signature -> batch shape index
+  for (const ev of events) {
+    if (ev === null || typeof ev !== 'object' || Array.isArray(ev)) throw new TypeError('EVENTS: an event must be a plain object');
+    const t = ev.tick;
+    const tcode = Number.isSafeInteger(t) && t >= from ? t - from + 1 : 0;
+    w.varu(tcode);
+    const own = Object.keys(ev).filter((k) => ev[k] !== undefined && !(tcode > 0 && k === 'tick'));
+    let keys = null;
+    if (typeof ev.type === 'string') {
+      const ks = own.filter((k) => k !== 'type').sort();
+      const si = STATIC_INDEX.get(`${ev.type}|${ks.join(',')}`);
+      if (si !== undefined) {
+        w.varu(1 + si);
+        keys = ks;
+      }
+    }
+    if (!keys) {
+      keys = own.slice().sort();
+      if (keys.length > MAX_EVENT_KEYS) throw new RangeError(`EVENTS: an event with ${keys.length} members`);
+      const sig = keys.join(',');
+      const j = dyn.get(sig);
+      if (j !== undefined) w.varu(1 + STATIC_SHAPES.length + j);
+      else {
+        w.varu(0);
+        w.varu(keys.length);
+        for (const k of keys) encodeKey(w, k);
+        dyn.set(sig, dyn.size);
+      }
+    }
+    for (const k of keys) writeEvValue(w, k, ev[k]);
+  }
+}
+
+function readEventsBody(r) {
+  const batchSeq = r.varu();
+  const toTick = r.varu();
+  const fromTick = toTick - r.vari();
+  const n = r.varu();
+  if (n > r.remaining) throw new RangeError('EVENTS: more events than bytes');
+  const dyn = [];
+  const events = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const tcode = r.varu();
+    const scode = r.varu();
+    let keys;
+    let type;
+    if (scode === 0) {
+      const nk = r.varu();
+      if (nk > MAX_EVENT_KEYS || nk > r.remaining) throw new RangeError('EVENTS: bad inline shape');
+      keys = new Array(nk);
+      for (let k = 0; k < nk; k++) {
+        const key = decodeKey(r);
+        if (key === '__proto__') throw new RangeError('EVENTS: __proto__ member');
+        keys[k] = key;
+      }
+      dyn.push(keys);
+    } else if (scode <= STATIC_SHAPES.length) {
+      const sh = STATIC_SHAPES[scode - 1];
+      keys = sh.keys;
+      type = sh.type;
+    } else {
+      keys = dyn[scode - 1 - STATIC_SHAPES.length];
+      if (!keys) throw new RangeError(`EVENTS: unknown shape ${scode}`);
+    }
+    const ev = {};
+    if (tcode > 0) ev.tick = fromTick + tcode - 1;
+    if (type !== undefined) ev.type = type;
+    for (const k of keys) ev[k] = readEvValue(r, k);
+    events[i] = ev;
+  }
+  return { batchSeq, fromTick, toTick, events };
+}
+
 export function encodeEvents(seat, batchSeq, fromTick, toTick, events) {
   const w = frameWriter(BIN.EVENTS, seat, 64 + events.length * 24);
-  w.u32(batchSeq).u32(fromTick >>> 0).u32(toTick >>> 0);
-  encodeValue(w, events);
+  writeEventsBody(w, batchSeq, fromTick, toTick, events);
   return w.finish();
 }
 export function decodeEvents(u8) {
   const r = new ByteReader(u8);
   if (r.u8() !== BIN.EVENTS) throw new RangeError('not an EVENTS frame');
   const seat = r.u8();
-  const batchSeq = r.u32();
-  const fromTick = r.u32();
-  const toTick = r.u32();
-  const events = decodeValue(r);
-  if (!Array.isArray(events)) throw new RangeError('EVENTS body is not an array');
+  const b = readEventsBody(r);
   if (r.remaining !== 0) throw new RangeError('EVENTS trailing bytes');
-  return { seat, batchSeq, fromTick, toTick, events };
+  return { seat, ...b };
 }
 
 // ----------------------------------------------------------- EVENTS_U --
-// Host -> guest, UNRELIABLE (M5b): the newest <= 3 EVENTS batches, each the
+// Host -> guest, UNRELIABLE (M5b): recent EVENTS batches again, each the
 // exact body of its reliable EVENTS frame (after the envelope), so a guest
-// dedupes by batchSeq and decodes both copies with one decoder.
+// dedupes by batchSeq and decodes both copies with one decoder. Since
+// protocol v3 the host sends ONE: the previous batch (driver.js).
 //   envelope · u8 count · (varu length · EVENTS body)…
 export function eventsBody(frame) {
   return frame.subarray(2);
@@ -373,13 +512,9 @@ export function decodeEventsBundle(u8) {
   for (let i = 0; i < n; i++) {
     const body = r.blob();
     const br = new ByteReader(body);
-    const batchSeq = br.u32();
-    const fromTick = br.u32();
-    const toTick = br.u32();
-    const events = decodeValue(br);
-    if (!Array.isArray(events)) throw new RangeError('EVENTS_U batch is not an array');
+    const b = readEventsBody(br);
     if (br.remaining !== 0) throw new RangeError('EVENTS_U batch trailing bytes');
-    out.push({ seat, batchSeq, fromTick, toTick, events });
+    out.push({ seat, ...b });
   }
   if (r.remaining !== 0) throw new RangeError('EVENTS_U trailing bytes');
   return out;

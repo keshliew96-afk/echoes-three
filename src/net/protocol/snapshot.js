@@ -171,10 +171,14 @@ export function createSnapshotHost({ hotPath = HOT_PATH, ringSize = BASELINE_RIN
     const p = base ? diff(base.cold, rec.cold) : null;
     const coldSame = !!base && isEmptyPatch(p);
     w.u8((rec.hadHot ? 1 : 0) | (coldSame ? 2 : 0));
-    const hot = encodeHot(w, rec.q, base ? base.q : null);
+    // dt = tick distance to the baseline: the patches' baseline-relative
+    // forms (bvalue.js 'u' / 'w' / 'D' / based 'k', protocol v3) decode
+    // against the guest's copy of the same baseline.
+    const dt = base ? rec.tick - base.tick : 0;
+    const hot = encodeHot(w, rec.q, base ? base.q : null, dt, rec.tick);
     const coldStart = w.len;
     if (!base) encodeValue(w, rec.cold);
-    else if (!coldSame) encodePatch(w, p);
+    else if (!coldSame) encodePatch(w, p, base.cold, dt);
     const body = w.finish();
     if (base) {
       stats.deltaBodies += 1;
@@ -334,7 +338,8 @@ export function createSnapshotClient({ hotPath = HOT_PATH, ringSize = BASELINE_R
     let rec;
     try {
       const bodyFlags = h.r.u8();
-      const q = decodeHot(h.r, base ? base.q : null);
+      const dt = base ? h.tick - base.tick : 0;
+      const q = decodeHot(h.r, base ? base.q : null, dt, h.tick);
       let cold;
       if (!base) {
         cold = decodeValue(h.r);
@@ -342,7 +347,7 @@ export function createSnapshotClient({ hotPath = HOT_PATH, ringSize = BASELINE_R
       } else if (bodyFlags & 2) {
         cold = base.cold;
       } else {
-        cold = apply(plainClone(base.cold), decodePatch(h.r));
+        cold = apply(plainClone(base.cold), decodePatch(h.r, 0, base.cold, dt));
       }
       if (h.r.remaining !== 0) throw new RangeError(`${h.r.remaining} trailing bytes`);
       rec = { seq: h.seq, tick: h.tick, q, cold, hadHot: (bodyFlags & 1) === 1 };

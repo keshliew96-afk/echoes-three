@@ -118,6 +118,7 @@ export function moverAt(anchor, vx, vz, tick) {
 export function quantizeEntity(e, tick, anchors) {
   const q = { id: e.id, ch: 0, qx: 0, qz: 0, hp: 0, yaw: 0, ax: 0, az: 0, fp: 0, fv: 0, mv: null, rest: null };
   const rest = {};
+  let moverVel = null;
   const handled = new Set(['id', ...DROP_KEYS]);
   if (isLinearMover(e)) {
     q.ch |= CH.MOVER;
@@ -127,9 +128,16 @@ export function quantizeEntity(e, tick, anchors) {
     const tx = qpos(e.x);
     const tz = qpos(e.z);
     const ttr = qhpPos(e.traveled);
+    // Protocol v3: the replicated velocity is quantised to 1/65536 u per
+    // tick (a dyadic value — 3-5 bytes on the wire instead of 9) and BOTH
+    // sides extrapolate with it; the host's re-anchor test below uses the same
+    // quantised velocity, so the view still never drifts > 1/64 u from truth.
+    const qvx = qvel(e.vx);
+    const qvz = qvel(e.vz);
+    moverVel = { vx: qvx, vz: qvz };
     let a = anchors ? anchors.get(e.id) : undefined;
     if (a) {
-      const p = moverAt(a, e.vx, e.vz, tick);
+      const p = moverAt(a, qvx, qvz, tick);
       if (Math.abs(p.qx - tx) > MOVER_TOL || Math.abs(p.qz - tz) > MOVER_TOL || Math.abs(p.qtr - ttr) > MOVER_TOL || tick < a.t0) a = undefined;
     }
     if (!a) {
@@ -182,9 +190,33 @@ export function quantizeEntity(e, tick, anchors) {
     if (v === undefined) continue;
     rest[k] = v;
   }
+  if (moverVel) {
+    rest.vx = moverVel.vx;
+    rest.vz = moverVel.vz;
+  }
+  // Protocol v3 (fix-M5a-r4, NET4-F3 — measured per-snapshot costs): unit
+  // directions that ride in the rest as raw doubles are snapped to the same
+  // 256-step table as YAW (values k/4096: dyadic, 3 bytes each), so a
+  // Healer's aim (lastAimDir) or a ram's guard arc (guard.dirX/dirZ, rewritten
+  // every tick from its facing) changes on the wire only when the direction
+  // moves a step. Presentation-only on a guest; the host sim keeps its own.
+  if (isVec(rest.lastAimDir) && isUnit(rest.lastAimDir.x, rest.lastAimDir.z)) {
+    const i = yawOf(rest.lastAimDir.x, rest.lastAimDir.z);
+    rest.lastAimDir = { x: COS8[i], z: SIN8[i] };
+  }
+  const g = rest.guard;
+  if (g !== null && typeof g === 'object' && !Array.isArray(g) && isUnit(g.dirX, g.dirZ)) {
+    const i = yawOf(g.dirX, g.dirZ);
+    rest.guard = { ...g, dirX: COS8[i], dirZ: SIN8[i] };
+  }
   q.rest = rest;
   if (!(q.ch & CH.YAWF)) q.yawf = 0;
   return q;
+}
+// Replicated mover velocity: 1/65536 u per tick (exact dyadic); beyond
+// ±2^20 u/tick (never in the sim) the raw value is kept.
+function qvel(v) {
+  return Math.abs(v) < 2 ** 20 ? Math.round(v * 65536) / 65536 + 0 : v;
 }
 // traveled uses the position grid too (a distance in u).
 function qhpPos(v) {

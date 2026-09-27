@@ -7,16 +7,23 @@
 //
 //   varu despawnCount · varu ids (ascending, first absolute then +gaps)
 //   varu changedCount · entries (ascending id):
-//     varu id (first absolute, then +gap) · u16 field mask ·
-//     bit 0  NEW    no baseline entity: every present channel written raw
-//     bit 1  CH     u8 channel layout (always with NEW)
-//     bit 2  X      vari Δqx          bit 3  Z     vari Δqz
+//     varu id (first absolute, then +gap) · varu field mask (protocol v3:
+//     the bits every moving actor sets sit below 128, so the usual mask is
+//     ONE byte — fix-M5a-r4 NET4-F3; v2 wrote a u16 with X at bit 2) ·
+//     bit 0  X      vari Δqx          bit 1  Z     vari Δqz
+//     bit 2  YAWF   u8 yaw            bit 3  REST  (see below)
 //     bit 4  HP     vari Δhp          bit 5  YAW   u8 yaw
-//     bit 6  YAWF   u8 yaw            bit 7  AIM   vari Δax · vari Δaz
-//     bit 8  FLAGS  varu presence · varu values
-//     bit 9  MOVER  vari Δt0 · vari Δx0 · vari Δz0 · vari Δtr0 (anchor)
-//     bit 10 REST   the rest-field tree-diff patch (bvalue.js encodePatch),
-//                   or the whole rest object with NEW (bvalue.js encodeValue)
+//     bit 6  FLAGS  varu presence · varu values
+//     bit 7  AIM    vari Δax · vari Δaz
+//     bit 8  NEW    no baseline entity: every present channel written raw
+//     bit 9  CH     u8 channel layout (always with NEW)
+//     bit 10 MOVER  u8 present · vari Δt0 · vari Δx0 · vari Δz0 · vari Δtr0
+//                   (anchor; a NEW mover's t0 is relative to the snapshot tick)
+//     REST          the rest-field tree-diff patch (bvalue.js encodePatch
+//                   against the baseline entity's rest and the snapshot's
+//                   tick distance), or the whole rest object with NEW
+//                   (bvalue.js encodeValue)
+//   Fields are written in the order CH X Z HP YAW YAWF AIM FLAGS MOVER REST.
 //
 // Unchanged entities cost nothing; a moving actor costs ~5-7 bytes; a linear
 // mover costs its spawn entry once and then nothing until it despawns (or
@@ -27,25 +34,27 @@ import { sameAnchor } from './quantize.js';
 import { encodeValue, decodeValue, encodePatch, decodePatch } from './bvalue.js';
 
 export const M = Object.freeze({
-  NEW: 1 << 0,
-  CH: 1 << 1,
-  X: 1 << 2,
-  Z: 1 << 3,
+  X: 1 << 0,
+  Z: 1 << 1,
+  YAWF: 1 << 2,
+  REST: 1 << 3,
   HP: 1 << 4,
   YAW: 1 << 5,
-  YAWF: 1 << 6,
+  FLAGS: 1 << 6,
   AIM: 1 << 7,
-  FLAGS: 1 << 8,
-  MOVER: 1 << 9,
-  REST: 1 << 10,
+  NEW: 1 << 8,
+  CH: 1 << 9,
+  MOVER: 1 << 10,
 });
 
 const ZERO = Object.freeze({ id: 0, ch: 0, qx: 0, qz: 0, hp: 0, yaw: 0, yawf: 0, ax: 0, az: 0, fp: 0, fv: 0, mv: null, rest: {} });
 const ZERO_MV = Object.freeze({ t0: 0, x0: 0, z0: 0, tr0: 0 });
 
-// encodeHot(w, cur, base) — cur/base: arrays of quantised entities in
-// ascending id order (base null = full). Returns { changed, despawned, bytes }.
-export function encodeHot(w, cur, base) {
+// encodeHot(w, cur, base, dt?, tick?) — cur/base: arrays of quantised
+// entities in ascending id order (base null = full); dt = cur tick - base tick
+// (rest patches), tick = the snapshot tick (NEW mover anchors). The decoder
+// passes the same dt / tick. Returns { changed, despawned, bytes }.
+export function encodeHot(w, cur, base, dt = 0, tick = 0) {
   const start = w.len;
   const baseMap = new Map();
   if (base) for (const b of base) baseMap.set(b.id, b);
@@ -75,7 +84,7 @@ export function encodeHot(w, cur, base) {
   entries.forEach(({ e, b, patch }, i) => {
     w.varu(i === 0 ? e.id : e.id - prev);
     prev = e.id;
-    writeEntity(w, e, b, patch);
+    writeEntity(w, e, b, patch, dt, tick);
   });
   return { changed: entries.length, despawned: despawned.length, bytes: w.len - start };
 }
@@ -96,7 +105,7 @@ function sameChannelsNoRest(a, b) {
   );
 }
 
-function writeEntity(w, e, b, patch) {
+function writeEntity(w, e, b, patch, dt, tick) {
   const isNew = !b;
   const base = b || ZERO;
   let mask = 0;
@@ -113,7 +122,7 @@ function writeEntity(w, e, b, patch) {
   if (isNew) {
     if (Object.keys(e.rest).length > 0) mask |= M.REST;
   } else if (patch && !isEmptyPatch(patch)) mask |= M.REST;
-  w.u16(mask);
+  w.varu(mask);
   if (mask & M.CH) w.u8(e.ch);
   if (mask & M.X) w.vari(e.qx - base.qx);
   if (mask & M.Z) w.vari(e.qz - base.qz);
@@ -130,7 +139,7 @@ function writeEntity(w, e, b, patch) {
   }
   if (mask & M.MOVER) {
     const m = e.mv || ZERO_MV;
-    const bm = base.mv || ZERO_MV;
+    const bm = base.mv || (isNew ? { ...ZERO_MV, t0: tick } : ZERO_MV);
     w.u8(e.mv ? 1 : 0);
     w.vari(m.t0 - bm.t0);
     w.vari(m.x0 - bm.x0);
@@ -139,14 +148,14 @@ function writeEntity(w, e, b, patch) {
   }
   if (mask & M.REST) {
     if (isNew) encodeValue(w, e.rest);
-    else encodePatch(w, patch);
+    else encodePatch(w, patch, b.rest, dt);
   }
 }
 
 // decodeHot(r, base) -> quantised entity array (ascending id). `base` is the
 // baseline's quantised array (null for a full snapshot). Baseline objects are
 // never mutated (their rest objects are shared when unchanged).
-export function decodeHot(r, base) {
+export function decodeHot(r, base, dt = 0, tick = 0) {
   const map = new Map();
   if (base) for (const b of base) map.set(b.id, b);
   const nDes = r.varu();
@@ -159,7 +168,8 @@ export function decodeHot(r, base) {
   id = 0;
   for (let i = 0; i < nCh; i++) {
     id = i === 0 ? r.varu() : id + r.varu();
-    const mask = r.u16();
+    const mask = r.varu();
+    if (mask >= 1 << 11) throw new RangeError(`delta: bad field mask ${mask}`);
     const b = map.get(id);
     const isNew = (mask & M.NEW) !== 0;
     if (isNew === !!b) throw new RangeError(isNew ? `NEW entity ${id} already in baseline` : `delta for entity ${id} missing from baseline`);
@@ -194,7 +204,7 @@ export function decodeHot(r, base) {
     }
     if (mask & M.MOVER) {
       const present = r.u8() === 1;
-      const bm = base.mv || ZERO_MV;
+      const bm = base.mv || (isNew ? { ...ZERO_MV, t0: tick } : ZERO_MV);
       const m = { t0: bm.t0 + r.vari(), x0: bm.x0 + r.vari(), z0: bm.z0 + r.vari(), tr0: bm.tr0 + r.vari() };
       q.mv = present ? m : null;
     }
@@ -203,7 +213,7 @@ export function decodeHot(r, base) {
         const obj = decodeValue(r);
         if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new RangeError('NEW rest is not an object');
         q.rest = obj;
-      } else q.rest = apply(plainClone(base.rest), decodePatch(r));
+      } else q.rest = apply(plainClone(base.rest), decodePatch(r, 0, base.rest, dt));
     } else if (isNew) q.rest = {};
     map.set(id, q);
   }

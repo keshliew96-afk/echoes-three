@@ -78,7 +78,7 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
   let frameNet = 0; // net ms accumulated in the current rendered frame
   const ledger = [];
   const ledgerOrd = new Map();
-  const recentBodies = []; // the newest 2 EVENTS batch bodies (EVENTS_U resend)
+  let prevBody = null; // the previous EVENTS batch body (EVENTS_U resend)
   const push = (arr, v, cap = 600) => {
     arr.push(v);
     if (arr.length > cap) arr.shift();
@@ -371,6 +371,10 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     if (!guests.length || net.transport.state !== 'open') {
       pending = [];
       evFrom = tick;
+      // Nobody received the batches of this gap: a guest joining later must
+      // never get an old batch as its first (its delivery clock would wait
+      // for the batches in between forever).
+      prevBody = null;
       frameNet += now() - t0;
       return;
     }
@@ -395,19 +399,21 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     stats.snapshots += 1;
     // One EVENTS batch per snapshot (an empty one too: it keeps the guests'
     // "events delivered through tick" clock moving — prediction retractions
-    // wait on it), reliable; then the newest TWO batches again, unreliable
+    // wait on it), reliable; then the PREVIOUS batch again, unreliable
     // (EVENTS_U) — a batch whose reliable copy sits in a retransmit still
-    // reaches the guest ahead of its render clock. Two copies cover a single
-    // loss of either copy; a third cost ~1 KB/s per guest of the §3.7
-    // downstream budget for no measurable gain (measured at N1/N2).
+    // reaches the guest one snapshot later, ahead of its render clock (the
+    // interpolation delay is >= 2 snapshot intervals). One copy, 50 ms after
+    // the reliable one, also outlives a short burst that took both copies
+    // sent together. fix-M5a-r4 NET4-F3: v2 resent the newest TWO batches
+    // (the current one twice in the same instant) — 3 copies of every event,
+    // 26-29 % of a guest's downstream in Levels 2-3, over the §3.7 budget.
     const evFrame = encodeEvents(SEAT_ALL, ++batchSeq, evFrom, tick, pending);
     net.transport.sendBinary(evFrame);
     stats.eventBatches += 1;
     stats.eventsSent += pending.length;
     pending = [];
-    recentBodies.push(eventsBody(evFrame).slice());
-    while (recentBodies.length > 2) recentBodies.shift();
-    net.transport.sendBinary(encodeEventsBundle(SEAT_ALL, recentBodies));
+    if (prevBody) net.transport.sendBinary(encodeEventsBundle(SEAT_ALL, [prevBody]));
+    prevBody = eventsBody(evFrame).slice();
     evFrom = tick;
     if (tick - lastKeyframeTick >= KEYFRAME_EVERY_TICKS) {
       lastKeyframeTick = tick;
