@@ -128,6 +128,12 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   const keepAsBackup = (cur) => parse(cur) !== null;
   const hasDeferred = () => deferred.playtimeSec > 0 || deferred.lastAct !== null || deferred.furthest > 0;
   const isDirty = () => pending.length > 0 || hasDeferred();
+  // A stored main that no longer parses: the next flush repairs it from the
+  // newest readable copy (sync) even when this tab has nothing of its own.
+  const mainDamaged = () => {
+    const t = store.read(PROFILE_KEY);
+    return t !== null && parse(t) === null;
+  };
 
   function applyDeferred(p) {
     if (deferred.playtimeSec > 0) p.playtimeSec = Math.round((p.playtimeSec + deferred.playtimeSec) * 10) / 10;
@@ -148,16 +154,27 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     return out;
   }
 
-  // Adopt what storage holds now (another tab may have written it). Nothing
-  // readable stored (cleared site data, a damaged file and no backup) keeps
-  // this tab's copy: the next write puts it back. -> true when it changed.
+  // Adopt what storage holds now (another tab may have written it). A main
+  // that is gone (cleared site data) keeps this tab's copy: the next write
+  // puts it back. A DAMAGED main is replaced by the newest readable copy —
+  // this tab's own, the .bak or a torn write's .tmp, by savedAt — never by a
+  // backup older than what this tab already holds. -> true when it changed.
   function sync() {
     const text = store.read(PROFILE_KEY);
     if (text === baseText) return false;
     let p = text !== null ? parse(text) : null;
     if (!p && text !== null) {
-      const bak = store.read(`${PROFILE_KEY}.bak`);
-      p = bak !== null ? parse(bak) : null;
+      let best = null;
+      for (const k of [`${PROFILE_KEY}.bak`, `${PROFILE_KEY}.tmp`]) {
+        const t = store.read(k);
+        const c = t !== null ? parse(t) : null;
+        if (c && (!best || String(c.savedAt || '') > String(best.savedAt || ''))) best = c;
+      }
+      p = best && String(best.savedAt || '') > String(base.savedAt || '') ? best : null;
+      if (!p) {
+        baseText = text; // keep this tab's copy; the next write repairs main
+        return false;
+      }
     }
     if (!p) return false;
     base = p;
@@ -384,7 +401,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     load,
     persist,
     sync, // SAVE4-F1: adopt another tab's write (the `storage` event)
-    flush: () => (isDirty() ? persist() : { ok: true }),
+    flush: () => (isDirty() || mainDamaged() ? persist() : { ok: true }),
     recordRun,
     addPlaytime,
     noteRunStart,

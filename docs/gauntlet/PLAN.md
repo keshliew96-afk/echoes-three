@@ -653,6 +653,19 @@ deepestRoom: {1,2,3} }, unlocks: { acts: [1] }, playtimeSec }` — atomic like a
 slot (+`.bak`). **Score** = `round((100 × roomsCleared + 5 × kills + 1000 ×
 victory) × actMul × challengeMul) + (victory ? max(0, 900 − timeSec) : 0)`,
 actMul 1.0/1.5/2.0, challengeMul relaxed 0.75 / standard 1 / harrowing 1.5.
+*Several tabs (gauntlet r4, SAVE4-F1 — binding):* every open tab of the game
+shares this storage, so no tab ever writes its in-memory profile over the
+file. A profile write = re-read the stored profile, replay this tab's own
+unwritten changes (runs, level clears, unlocks; playtime / last level /
+furthest level as counters), write atomically; a failed write keeps them
+pending. `.bak` only receives a readable profile; a damaged main is replaced
+by the newest readable copy (the tab's own, `.bak`, `.tmp`, by `savedAt`) —
+never by a backup older than what the tab holds. Slot decisions (Continue,
+the autosave rotation, the import target, New Game's impact) re-scan the
+catalogue when the stored index differs from the one the tab wrote; the
+ended-runs list is read-modify-write; a `storage` event keeps the other tab's
+Records / Level Select / saves list / title live. Nothing earned in one tab is
+ever taken back by another tab's reload, close or navigation.
 
 **Round-trip probe** (`save.debug.roundTrip`): freeze the realtime loop;
 `A = capture()`; run `ticks` (default 600) with `scriptedInput(scriptSeed, t)`

@@ -59,7 +59,7 @@ export default async function (h) {
       rows: document.querySelectorAll('.sv-scores tr, .sv-scores .sv-srow').length,
       unlocked: window.__echoes.campaign.unlocked(),
       hs: window.__echoes.save.profile().highScores.length,
-      tabs: window.__echoes.save.tabs(),
+      tabs: window.__echoes.save.tabs ? window.__echoes.save.tabs() : null,
     }));
     h.page = B;
     await B.bringToFront();
@@ -68,7 +68,7 @@ export default async function (h) {
     h.log('legP-live', { bBefore, recA, bLive });
     h.check(bBefore.sub && /^0 runs/.test(bBefore.sub), 'B Records start at 0 runs', bBefore);
     h.check(bLive.unlocked.includes(2) && bLive.hs === 1 && /^1 run/.test(bLive.sub || ''), "B's open Records + unlocks follow A's write without a reload", bLive);
-    h.check(bLive.tabs.adopted.profile >= 1, 'B adopted the profile from the storage event', bLive.tabs);
+    h.check(!!bLive.tabs && bLive.tabs.adopted.profile >= 1, 'B adopted the profile from the storage event', bLive.tabs);
     // B plays on, then reloads — the critic's exit
     await B.evaluate(() => window.__echoes.app.back());
     await h.sleep(300);

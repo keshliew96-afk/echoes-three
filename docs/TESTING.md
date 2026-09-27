@@ -746,6 +746,37 @@ preview, ring, row click, in-game Delete), `node tools/gntfixM23-cards.mjs`
 thumb worker), `node tools/gntfixM23-regress.mjs` (round trip, export/import,
 rename, autosave quit, overwrite, remove, run meta).
 
+**fix-M2-r4 (v0.5.125).** *Several tabs of the game share one storage.* The
+profile (`echoes.profile.v1`) is never written blindly: every write re-reads
+the stored file and replays only this tab's own changes (runs, level clears,
+unlocks = ops; playtime, last level, furthest level = counters), so a stale
+tab reloaded / closed / navigated away adds its playtime and nothing else; a
+write that fails (quota) keeps its ops pending and applies them once later;
+`.bak` only ever receives a readable profile, and a damaged main is repaired
+on the next flush from the newest readable copy (this tab's, `.bak`, `.tmp`
+by `savedAt` — never a backup older than the tab's own). The slot catalogue re-scans
+whenever the stored index differs from the one the tab wrote (the index is
+written in catalogue order, identical bytes from every tab) — before list /
+latest / Continue, the autosave rotation, the import target, New Game's
+impact; `echoes.save.v1.endedRuns` is read-modify-write. A `storage` event
+adopts another tab's profile at once and re-scans the slots 150 ms after the
+last slot key lands; an open Records / Saves screen and the title redraw
+(`save.onProfileChanged(fn)`, `save.onSlotsChanged(fn)`, app event
+`saves_changed`). Debug: `__echoes.save.tabs()` → `{ profile: { pending,
+deferred, dirty, baseSavedAt, syncLog }, adopted: { profile, slots },
+indexFresh }`. A probe that injects `echoes.profile.v1` under a running page
+now sees it kept (the page merges instead of overwriting). Probes: `node
+tools/gntfixM24-profile-tabs.mjs` (Node, two stores over one storage, 26
+checks), `node tools/gntfixM24-drive.mjs <scenario> [--url U] [--tag t]`
+(own copy of the save critic's driver; runs `tools/gntcsave4-sc-twotabs4.mjs`
+/ `-twotabs3.mjs` unchanged, `GCS4_BASE` / `GCS4_NEUTRAL` for a preview) with
+`tools/gntfixM24-sc-tabs.mjs` (live Records + unlock in the other tab, B sees
+A's saves, rotation spares A's run, import never lands on A's slot, open saves
+screen follows a delete, ended runs of both tabs kept),
+`tools/gntfixM24-sc-playtime.mjs` (a tab's exit adds exactly its own seconds)
+and `tools/gntfixM24-sc-twotabs3x.mjs` (the critic's exit matrix + each B's
+unwritten seconds).
+
 ### M5a — network core: server, lobby, protocol, conditioner, netbench (Gauntlet W3, owner M5a)
 
 **Session server** (zero npm dependencies — node:http / crypto / os only):

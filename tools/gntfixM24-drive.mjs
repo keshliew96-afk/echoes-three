@@ -44,7 +44,7 @@ for (let attempt = 1; attempt <= opt.tries; attempt++) {
       fail: (msg, v) => { out.failures.push({ msg, v }); console.log(`[FAIL] ${msg} ${v !== undefined ? JSON.stringify(v).slice(0, 1500) : ''}`); },
       check: (cond, msg, v) => { if (!cond) h.fail(msg, v); return !!cond; },
       ev: (fn, ...args) => page.evaluate(fn, ...args),
-      shot: async (n, clip) => { const p = join(outDir, `gntfixM24-${n}.png`); await page.screenshot({ path: p, clip }); console.log(`[shot] ${p}`); return p; },
+      shot: async (n, clip) => { const p = join(outDir, `gntfixM24-${n}${opt.tag ? "-" + opt.tag : ""}.png`); await page.screenshot({ path: p, clip }); console.log(`[shot] ${p}`); return p; },
       key: async (k, ms = 60) => { await page.keyboard.down(k); await sleep(ms); await page.keyboard.up(k); await sleep(60); },
       waitFor: async (fn, timeout = 30000, poll = 100, ...args) => page.waitForFunction(fn, { timeout, polling: poll }, ...args),
       open: async (url) => {

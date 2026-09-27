@@ -173,6 +173,39 @@ const run1 = { act: 1, result: 'abandoned', roomsCleared: 3, kills: 20, timeSec:
   const s = stored(ls);
   check('9 reset in A survives B\'s exit (B adds only its playtime)', s.highScores.length === 0 && s.records.runs === 0 && s.playtimeSec === 1, sum(s));
 }
+// 10. The critic's corruption leg: a run recorded, then main truncated under the
+//     running tab (the .bak is the OLDER copy without that run). The tab's exit
+//     must not adopt the older backup: it repairs main from its own newer copy.
+{
+  const ls = sharedStorage();
+  const A = tab(ls);
+  A.prof.addPlaytime(1);
+  A.prof.flush(); // .bak will be this (no run)
+  A.prof.recordRun({ act: 1, result: 'abandoned', roomsCleared: 2, kills: 2, timeSec: 20 });
+  const s0 = stored(ls);
+  const t = ls.getItem(PROFILE_KEY);
+  ls.setItem(PROFILE_KEY, t.slice(0, Math.floor(t.length / 3)));
+  A.prof.addPlaytime(2); // ticks since the run
+  const w = A.prof.flush();
+  const s1 = stored(ls);
+  check("10 damaged main + older .bak: the exit keeps this tab's newer copy", w.ok && s1 && s1.highScores.length === 1 && s1.records.runs === 1, { s0: sum(s0), s1: sum(s1) });
+  const B = tab(ls);
+  check('10 reload reads the run back (report ok)', B.prof.get().highScores.length === 1 && B.prof.report.status === 'ok', B.prof.report);
+  // damaged main with nothing pending: flush still repairs it
+  const t2 = ls.getItem(PROFILE_KEY);
+  ls.setItem(PROFILE_KEY, t2.slice(0, 20));
+  const w2 = B.prof.flush();
+  check('10 a clean tab repairs a damaged main on flush', w2.ok && stored(ls) && stored(ls).highScores.length === 1, sum(stored(ls)));
+  // .bak newer than this tab's copy (another tab wrote, then main was damaged): adopt the .bak
+  const C = tab(ls);
+  B.prof.recordRun({ act: 1, result: 'defeat', roomsCleared: 1, kills: 0, timeSec: 5 }); // B writes run 2
+  B.prof.recordRun({ act: 1, result: 'defeat', roomsCleared: 1, kills: 0, timeSec: 6 }); // run 3 -> .bak holds run 2
+  const t3 = ls.getItem(PROFILE_KEY);
+  ls.setItem(PROFILE_KEY, t3.slice(0, 30));
+  C.prof.addPlaytime(1);
+  C.prof.flush();
+  check('10 a stale tab adopts a newer .bak over its own older copy', stored(ls).records.runs >= 2, sum(stored(ls)));
+}
 
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
