@@ -54,7 +54,18 @@ const CORRECTION = [
   'Meaning: the player equips AT MOST 4 skills (keys 1-4, the command bar shows 4 skill tiles, drafts never offer a 5th skill once 4 are owned); EVERY skill gets 8 NODE SOCKETS (was: active skills 2 sockets — slot A cap rare, slot B cap legendary — and the passive Warding Aura 1 socket cap rare). The 9 new skills and 9 new nodes remain as draftable content.',
   'SECOND USER CLARIFICATION (2026-09-22, binding): "for the 8 sockets, no more split between rare and legendary control, any rarity of the node can insert into any socket". Meaning: REMOVE the §15.2 per-socket rarity caps entirely — every one of the 8 sockets on every skill (the passive Warding Aura included) accepts a node of any rarity (common, rare, legendary). Consequences to handle: legendaries (Ascend, Resonance, any new legendary) become socketable on passives, so give each a defined passive reinterpretation (BUILD_BRIEF §15.3 already sketches Resonance on a passive: every 3rd pulse x2) instead of the old cap verdict; the old cap denial reasons and cap UI (slot A/B labels, cap badges) go away. KEEP the per-node repetition limits (limit per skill) and the grey / no-effect verdicts.',
 ].join(' ')
-const CORRECTED_KEYS = ['M4c', 'M5b', 'INT', 'CAMPAIGN', 'DEPLOY']
+const CORRECTED_KEYS = ['M4c', 'M5b', 'INT', 'CAMPAIGN', 'DEPLOY', 'PARTYD', 'PARTY']
+
+// ---------------- user feature (2026-09-27): per-character builds ----------------
+const PARTY_FROM = 5 // design + review + build run after round 4's fixes; the party critic judges from round 5
+const PARTY_SPEC = 'PER-CHARACTER BUILDS (user, verbatim, 2026-09-27): "Other character add in also their own skill slot skill node select option like the healer mouse but the skill and node match the character class." Today only the Healer (mouse) has a build: at most 4 equipped skills drafted from a pool, each with 8 node sockets, any rarity in any socket. The Tank (badger), Swordsman (fox) and Archer (hare) have fixed 4-skill kits (src/sim/allies.js ALLY_KITS) and no nodes at all.'
+const PARTY_RULES = [
+  'PER-CHARACTER BUILDS (binding from round ' + PARTY_FROM + '): EVERY party member — Healer, Tank, Swordsman, Archer — has the Healer\'s build model: at most 4 equipped skills, 8 node sockets per skill, NO rarity caps (any node in any socket, passives included), the per-node repetition limits and grey/no-effect verdicts. Each class draws from its OWN class skill pool and a class-matched node pool: skills and nodes must fit the class fantasy and role (Tank protects and controls, Swordsman strikes and chains close-quarter combos, Archer kites at range, Healer sustains), and nodes reinterpret per class skill the way the Healer\'s technique nodes already do. The existing fixed kits become each class\'s starting skills.',
+  'SELECTION: the player can select skills and socket nodes for every character — rewards/drafts, the shop and the socket screen show clearly WHICH character a card or socket belongs to and switch between characters quickly by keyboard, mouse and gamepad. In multiplayer each human builds their OWN character (the host builds AI-held seats); no one ever waits on a silent picker (timeouts/auto-pick with notice); builds replicate. AI-held characters equip and cast their chosen skills sensibly. All four builds carry across levels in the campaign, save/load with a schema bump + migration, and the difficulty is retuned for four built characters.',
+].join('\n')
+const PARTY_NOTE = PARTY_RULES
+
+
 
 // ---------------- user-approved hosting work (2026-09-26) ----------------
 const DEPLOY_FROM = 4 // the DEPLOY builder runs after round 3's fixes; the deploy critic judges from round 4
@@ -171,6 +182,8 @@ const BUILDERS = {
   M4c: { spec: SPEC.content + ' ' + CORRECTION_SHORT, focus: 'CONTENT CORRECTION (runs alone, before M5b finishes network play): revert SKILL_SLOTS 8 -> 4 end to end (sim slot arrays, input keys 1-4 with 5-8 unbound, HUD command bar back to 4 skill tiles, draft free = 4 - owned, socket screen, shop, autopilot, audio/UI cues, save capture, net build/seat replication); raise node sockets per skill to 8 with NO rarity caps (any node of any rarity fits any socket on every skill, the passive included — remove the §15.2 cap system, its denial reasons and its A/B cap UI, and give legendaries a defined passive reinterpretation), keep per-node repetition limits, and make grey/reinterpretation verdicts, denial feedback and the Siphon card line work on all 8 sockets; redesign the socket screen for 4 skills x 8 sockets so it is readable and fast at 1024x576 and 2560x1440 by keyboard, mouse and gamepad, and show each skill tile\'s socket fill on the command bar; rebalance node supply (node drafts, shop stock, prices) so 8 sockets per skill are meaningfully fillable across a run, and RETUNE the difficulty curve — M4a tuned it against an 8-skill build — so every act and level configuration still lands inside its playability band (re-run the act/expedition probes by real input); migrate older saves (schema version bump: skills beyond 4 and 2-socket build rows convert deterministically, never a crash) and re-record the goldens whose traces legitimately change, proving single-player determinism holds; update BUILD_BRIEF §15.2/§23, PLAN.md (§4.3 and every affected gate) and TESTING.md so builders and critics share the corrected design truth; keep the M2 save probes and the M5a net probes green.' },
   CAMPAIGN: { spec: CAMPAIGN_SPEC, focus: 'LINEAR CAMPAIGN REFACTOR (runs alone, every file open when the root cause lives there): implement the CAMPAIGN MODEL exactly — the state machine (camp -> level 1 -> transition -> level 2 -> transition -> level 3 -> campaign victory -> camp; defeat and Quit to Lobby exits) and a level manager that tears the finished level down completely before building the next (dispose geometries/materials/textures of level-specific dressing, return pooled VFX, stop per-level audio voices, unsubscribe per-level bus listeners, clear timers), the level-clear trigger firing exactly once (boss + last add dying on one tick, a defeat on the same tick, pause/Esc/quit/save pressed during the transition), the level-clear transition card with background preloading and a hard timeout fallback so it can never hang or show a black frame, the lobby level select with sequential locking, the pause-menu Quit to Lobby, the carry/restore/reset rule table, the difficulty retune, save schema + migration + autosave, records, multiplayer sync of every transition, harness param + debug-API probes (e.g. __echoes.campaign: level, unlocked, transitionState, memory snapshot helpers) — then update BUILD_BRIEF (supersede A14 and the §23.1 picker; new campaign section), PLAN.md (state machine, gates, a new campaign gate block) and TESTING.md. Write the design into the docs FIRST (commit), then build, then self-verify every campaign gate: memory flat across L1->L2->L3 and across 3 back-to-back campaigns (renderer.info.memory geometries/textures and programs, JS heap after GC, entity count, bus listener count, VFX pool sizes, DOM nodes, live audio voices), carry/reset table verified by state diff at every transition, transition from the killing blow to controllable next level within the documented bound with zero near-black frames and zero > 250 ms stalls, level index advancing exactly once per clear, locked levels unstartable by every input path, and the original single-level harness flows still working.' },
   DEPLOY: { spec: DEPLOY_SPEC, focus: 'ZERO-CONFIG HOSTED MULTIPLAYER (runs alone, every file open when the root cause lives there): (1) the client resolves its server address as: ?net= param > an address the player explicitly saved > a build-time override (e.g. VITE_NET_URL, for a game on a CDN with the server elsewhere) > the page\'s own origin (https -> wss://<host>/echoes, http -> ws://<host>/echoes) — and on file:// or a host with no session server it shows the existing unreachable panel, honestly worded with how to fix it; Settings -> Network shows "Automatic (this site)" with the resolved address and a "Reset to automatic" control, validation unchanged; (2) dev/preview parity: vite server.proxy and preview.proxy forward /echoes (ws) to the local session server port, so "npm run dev -- --host" and "npm run preview -- --host" give LAN friends a zero-config join; (3) one-process deploy: the session server gains "--static <dir>" serving the built game at / on the same port as the WebSocket (correct MIME types incl. .wasm/.js/.mjs, index.html fallback, no-cache on index.html, long immutable cache on hashed assets, path-traversal safe, HEAD support, 404s), plus "npm run serve" (build then serve on 0.0.0.0) and the health endpoint kept; (4) public-hosting hardening with sane defaults: an optional origin allow-list, a per-IP connection cap, the existing message rate limits and size limits; (5) a redeploy never strands players: a client whose cached page is older than the server gets a clear "A new version of Echoes is available — Reload" prompt instead of a bare version_mismatch; (6) README: a "Host it on a server" section — a VPS with Node, "npm run serve", a Caddyfile (automatic HTTPS, one domain, / and /echoes proxied) and an nginx equivalent, a systemd unit, firewall ports, and how players join (just open the link) — updated so the existing multiplayer section no longer tells guests to type a server address for the common case; (7) PLAN/TESTING updated (a DEPLOY gate block). MUST NOT BREAK: single-player with no server, every M5a/M5b/CAMPAIGN probe (they pass ?net= and their own ports), the 9/9 Node goldens, the core loop. Self-verify by running the production build behind "npm run net -- --static dist" on your own port with 2-3 fresh browser profiles joining with no settings, and behind a local TLS proxy you write (self-signed) for the https/wss path.' },
+  PARTYD: { spec: PARTY_SPEC, focus: 'DESIGN ONLY (no gameplay code; runs alone). Write the per-character build design into docs/BUILD_BRIEF.md (a dated section + ruling), docs/gauntlet/PLAN.md (state, data contracts, UI flows, a numbered PARTY gate block with measurable gates) and docs/TESTING.md (probes the critic will run), then commit. Cover: (1) per class — Tank, Swordsman, Archer — a skill pool of at least 8 skills (the 4 current kit skills + at least 4 new ones), each with id, name, role, delivery shape, numbers, AI-use rule, VFX/audio intent, fitting the art bible; (2) per class at least 6 class-matched nodes plus which shared nodes a class may take, each with its per-skill reinterpretation and grey cases (a full node x skill grid per class); (3) the selection UX: how rewards offer cards per character (benchmark Across the Obelisk per-hero rewards, Darkest Dungeon per-hero skill loadouts, Children of Morta per-character trees), how the draft/shop/socket screens tag and switch characters, keyboard/mouse/gamepad paths, 1024x576 to 2560x1440 layouts; (4) supply: how many skills and nodes each character receives per level so all four builds grow meaningfully across a campaign without flooding the player with choices; (5) multiplayer ownership, timeouts and replication; (6) AI equip/cast policy for AI-held seats; (7) save schema bump + migration from fixed kits; (8) campaign carry rules for all four builds; (9) difficulty retune method and target band; (10) what stays unchanged for the Healer. Keep every existing user correction (max 4 skills, 8 sockets, no rarity caps, linear campaign, zero-config hosting).' },
+  PARTY: { spec: PARTY_SPEC, focus: 'IMPLEMENT the per-character build design committed by PARTYD in docs/BUILD_BRIEF.md / docs/gauntlet/PLAN.md exactly (runs alone; every file open when the root cause lives there): class skill pools and class node pools in data + sim (every skill cast, effect, VFX, audio cue and AI-use rule; every node\'s per-class reinterpretation and grey verdicts), ally builds replacing the fixed kits (4 slots x 8 sockets, no rarity caps), rewards / shop / socket screen / HUD with clear character tagging and fast character switching by keyboard, mouse and gamepad at 1024x576 to 2560x1440, multiplayer ownership (each human builds their own character, host builds AI seats, timeouts with notice, replication), AI equip + cast policy, campaign carry of all four builds, save schema bump + migration, records, the difficulty retune for four built characters, and every PARTY gate self-verified on dev and production. MUST NOT BREAK: the Healer\'s build, single-player determinism (re-record goldens only where traces legitimately change and prove it), the campaign, save/load, multiplayer and hosting.' },
   INT: { spec: SPEC.overall, focus: 'INTEGRATION: in-game pause menu (resume, settings, save, quit to title), the full player journey across all modules without dead ends, cross-module wiring (audio for new enemies/skills/interactables, save disabled or host-only in network play, settings applied on boot), removal of dev-only chrome from player builds (fps meter etc. behind a debug flag), `npm run build` production bundle that boots and plays under `vite preview`, and a regression pass on the original core loop.' },
 }
 const WAVES = [['M1', 'M3'], ['M4a', 'M4b'], ['M2', 'M5a'], ['M4c'], ['M5b'], ['INT']]
@@ -191,6 +204,7 @@ function builderPrompt(key, fixItems, round) {
   ]
   if (fixItems || CORRECTED_KEYS.indexOf(key) >= 0) parts.splice(2, 0, CORRECTION)
   if (key === 'DEPLOY' || (fixItems && round >= DEPLOY_FROM)) parts.push(HOSTING_NOTE)
+  if (key === 'PARTYD' || key === 'PARTY' || (fixItems && round >= PARTY_FROM)) parts.push(PARTY_NOTE)
   return parts.join('\n\n')
 }
 
@@ -231,6 +245,11 @@ const CRITICS = {
     bench: 'Zero-config browser multiplayer (Jackbox.tv room codes, skribbl.io and gartic.io private rooms, krunker.io and agar.io: open a link and play), static-hosting conventions (itch.io HTML5 uploads, Netlify/Vercel cache headers for hashed assets), and standard reverse-proxy deployments of WebSocket games behind Caddy/nginx with automatic HTTPS.',
     probes: 'Build the production bundle; start the session server with --static on YOUR port; open the page by its URL with NO ?net param in 2-3 fresh browser profiles: host with Multiplayer -> Host a Game and join by code with ZERO settings touched (time from page load to in-game for the guest). Settings -> Network shows the automatic address; an explicit address persists and wins; Reset to automatic works; a wrong saved address leads to the unreachable panel with a clear fix. HTTPS: put a local TLS proxy in front (write a small Node https+wss proxy with a self-signed cert; launch Chrome with --ignore-certificate-errors) — the page over https connects over wss automatically. Dev parity: a dev or preview server on your port with --host proxies /echoes so a second profile joins with zero settings. Static serving: MIME types, 404, path traversal (../, %2e%2e), HEAD, index.html no-cache vs hashed assets immutable, large assets. Redeploy: connect with build A, rebuild and restart with build B, reload one client and leave the other stale — the stale one gets the reload prompt, never a dead end. Hardening: origin allow-list and per-IP cap behave as documented. README: follow the "Host it on a server" section VERBATIM as a new user — every command works as written (report each step). Regression: single-player with no server, a ?net= harness session, the core loop.',
   },
+  party: {
+    owners: ['PARTY'], spec: PARTY_SPEC,
+    bench: 'Party-build systems in shipped games: Across the Obelisk (four heroes, each with an own deck and per-hero rewards), Darkest Dungeon (per-hero skill loadouts chosen from a class pool), Children of Morta (per-character skill trees and relics), Diablo III / Path of Exile class skill identity, Hades boon reinterpretation — judged for class identity, choice clarity, UI speed and fairness in co-op.',
+    probes: 'For EACH of Tank, Swordsman, Archer (and the Healer unchanged): the class skill pool matches the PLAN design (count, names, numbers); equip up to 4 and prove a 5th is refused; 8 sockets per equipped skill with no rarity caps; cast every class skill by real input on a human seat and verify its sim effect, VFX and audio; socket every class node and verify its per-skill reinterpretation and grey cases; class identity — do the Tank\'s options protect/control, the Swordsman\'s combo up close, the Archer\'s kite at range (blind benchmark judgement with evidence). SELECTION UX: rewards, shop and socket screen always say which character a card or socket belongs to, switching characters takes <= 2 inputs, keyboard / mouse / mocked gamepad paths, no overlap or clipping at 1024x576 and 2560x1440, time-to-decide feels comparable to the Healer-only flow. AI: over a full campaign every equipped skill of every AI-held ally is cast (report casts per skill), no idle equipped skill, sensible targets. MULTIPLAYER: a guest builds only their own character, the host builds AI seats, a picker that stalls is timed out with notice, builds replicate identically (state hash), drop-in and rejoin keep the build. PERSISTENCE: all four builds carry across levels and survive save/load and an old-save migration. BALANCE: the difficulty band still holds per level with four built characters (report the numbers). REGRESSION: the Healer build, single-player determinism (goldens), the campaign loop, hosting.',
+  },
   journey: {
     owners: ['INT'], spec: SPEC.overall,
     bench: 'The first-hour flow of shipped roguelikes (Hades, Dead Cells, Slay the Spire): boot -> title -> settings -> new game -> play -> pause -> save -> quit -> continue, with no dead ends, no lost state, consistent input handling and audio throughout.',
@@ -251,7 +270,7 @@ function criticPrompt(key, round) {
     'Write docs/gauntlet/critic-' + key + '-r' + round + '.md (benchmark checklist, probe tables, verdict).',
     checkpoint('docs/gauntlet/critic-' + key + '-r' + round + '.md', pfx),
     'Return the VERDICT structured result.',
-  ].join('\n\n') + (round >= DEPLOY_FROM ? '\n\n' + HOSTING_NOTE : '')
+  ].join('\n\n') + (round >= DEPLOY_FROM ? '\n\n' + HOSTING_NOTE : '') + (round >= PARTY_FROM ? '\n\n' + PARTY_NOTE : '')
 }
 
 const REFUTE_LENSES = [
@@ -264,7 +283,7 @@ function refutePrompt(key, f, lens, round) {
     'Your lens: ' + lens.desc,
     context('gntr' + key + round + lens.key + '-', CRITIC_ROLE),
     'Reproduce it yourself with fresh captures following the reproduce field (the critic\'s captures and report are readable), then try to show it is an artifact or not a real requirement. refuted=true ONLY with your own evidence; if it reproduces and violates the spec/plan/standard, refuted=false. mustFix per the quoted rule.',
-  ].join('\n\n') + (round >= DEPLOY_FROM ? '\n\n' + HOSTING_NOTE : '')
+  ].join('\n\n') + (round >= DEPLOY_FROM ? '\n\n' + HOSTING_NOTE : '') + (round >= PARTY_FROM ? '\n\n' + PARTY_NOTE : '')
 }
 function completenessPrompt(key, v, round) {
   return [
@@ -281,6 +300,16 @@ function synthPrompt(history, passed) {
     'Overall verdict: ' + (passed ? 'ALL MODULES PASS' : 'NOT YET PASSING — list what remains') + '.',
     'ROUND DATA (JSON):\n' + JSON.stringify(history, null, 1),
     'Structure: verdict line with version (src/version.js) and git HEAD; one section per module (menu, audio, save, content, net, journey/regression) with the benchmark checklist score, the measured numbers that matter, what was fixed across rounds (commits), and remaining advisories; a short "what a player notices" paragraph; open risks. Return a 10-line plain-text summary.',
+  ].join('\n\n')
+}
+
+function partyReviewPrompt() {
+  return [
+    'You are the PARTY DESIGN REVIEWER: an adversarial senior game designer with fresh context. Review the per-character build design just committed to docs/BUILD_BRIEF.md, docs/gauntlet/PLAN.md and docs/TESTING.md BEFORE it is implemented.',
+    context('gnt-partyrev-', 'ROLE: REVIEWER. Do not modify any file. Read code only to check the design fits the real codebase (src/sim/allies.js ALLY_KITS, src/sim/skills.js, src/sim/nodes.js, the draft/shop/socket UI, save, net).'),
+    'FEATURE (user, verbatim): ' + PARTY_SPEC,
+    PARTY_RULES,
+    'Find mustFix gaps for: any class without a distinct, role-true skill pool (at least 8 skills) or class-matched nodes (at least 6) with complete per-skill reinterpretations; a selection flow that is slow, ambiguous about which character a card belongs to, or impossible by keyboard/mouse/gamepad; a supply plan that leaves builds starved or floods the player; multiplayer ownership that can deadlock, let a guest edit another player\'s build, or desync; an AI policy that leaves equipped skills unused; a save/migration/carry plan that can lose a build; a difficulty plan without a measurable band; gates that are not measurable; anything contradicting the user corrections (max 4 skills, 8 sockets, no rarity caps, linear campaign, zero-config hosting). mustFix=false for improvements. sound=true only with no mustFix gaps.',
   ].join('\n\n')
 }
 
@@ -388,7 +417,26 @@ for (let round = startRound; round < startRound + MAX_ROUNDS; round++) {
     log('build DEPLOY: ' + (db.done ? 'done ' + db.version : 'INCOMPLETE: ' + db.summary.slice(0, 200)))
     phase('Critique')
   }
-  const order = round >= DEPLOY_FROM ? CRITIC_ORDER.concat(['deploy']) : CRITIC_ORDER
+  if (round === PARTY_FROM && !history.partyBuilt && !(typeof args === 'object' && args && args.partyBuilt)) {
+    phase('Build')
+    log('Queued feature before round ' + round + ': per-character builds (design -> review -> build)')
+    const pd = await ag(builderPrompt('PARTYD', null, 0), { label: 'build:PARTYD', phase: 'Build', schema: BUILD })
+    history.builds.push({ key: 'PARTYD', result: pd })
+    if (!pd) return { aborted: true, stage: 'build PARTYD', history }
+    const pr = await ag(partyReviewPrompt(), { label: 'party-design-review', phase: 'Build', schema: REVIEW })
+    if (!pr) return { aborted: true, stage: 'party-design-review', history }
+    const gaps = pr.gaps.filter((g) => g.mustFix)
+    history.builds.push({ key: 'PARTY-review', result: { sound: pr.sound, gaps: pr.gaps } })
+    log('party design review: ' + (gaps.length ? gaps.length + ' must-fix gaps handed to the builder' : 'sound'))
+    const pb = await ag(builderPrompt('PARTY', null, 0) + (gaps.length ? '\n\nDESIGN REVIEW — an adversarial reviewer found these must-fix gaps in the committed design. Fix the design docs FIRST (commit), then implement the corrected design:\n' + JSON.stringify(gaps, null, 1) : ''), { label: 'build:PARTY', phase: 'Build', schema: BUILD })
+    history.builds.push({ key: 'PARTY', result: pb })
+    if (!pb) return { aborted: true, stage: 'build PARTY', history }
+    history.partyBuilt = true
+    log('build PARTY: ' + (pb.done ? 'done ' + pb.version : 'INCOMPLETE: ' + pb.summary.slice(0, 200)))
+    phase('Critique')
+  }
+  let order = round >= DEPLOY_FROM ? CRITIC_ORDER.concat(['deploy']) : CRITIC_ORDER
+  if (round >= PARTY_FROM) order = order.concat(['party'])
   log('Gauntlet round ' + round + ': critics ' + order.join(', '))
   const raw = await parallel(order.map((k) => () => runCritic(k, round)))
   const dead = order.filter((k, i) => !raw[i])
@@ -398,8 +446,9 @@ for (let round = startRound; round < startRound + MAX_ROUNDS; round++) {
   if (dead.length) return { aborted: true, stage: 'critics r' + round + ': ' + dead.join(','), history }
   const failed = results.filter((r) => !r.pass)
   log('Round ' + round + ': ' + (results.length - failed.length) + ' pass / ' + failed.length + ' fail (' + failed.map((r) => r.key).join(', ') + ')')
-  if (!failed.length && round >= DEPLOY_FROM) { passed = true; break }
-  if (!failed.length) { log('Round ' + round + ' passed; continuing to round ' + DEPLOY_FROM + ' so the queued DEPLOY work is built and judged'); continue }
+  const FINAL_FROM = Math.max(DEPLOY_FROM, PARTY_FROM)
+  if (!failed.length && round >= FINAL_FROM) { passed = true; break }
+  if (!failed.length) { log('Round ' + round + ' passed; continuing to round ' + FINAL_FROM + ' so the queued work is built and judged'); continue }
   if (round === startRound + MAX_ROUNDS - 1) break
 
   phase('Fix')
