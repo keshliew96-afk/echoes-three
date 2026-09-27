@@ -1366,6 +1366,13 @@ meant the opposite axis:*
   shelf at 15/20/25 (BUILD_BRIEF §14 M4c note); **difficulty retuned** for the
   corrected build (§4.2 constants, BUILD_BRIEF §23.2 M4c note); **saves**
   migrate schema 1 → 2 (§3.4).
+- **A full build keeps progressing** (fix-M4a-r4, 2026-09-27, CONTENT4-F1 —
+  BUILD_BRIEF §14 note): every node pool is layered — the unchanged FILL
+  layer first, the UPGRADE layer (nodes that outrank a grey / +0 or
+  lower-rarity socketed node, `buildSys.upgradeFor()`) only when the fill
+  layer cannot serve a draw; auto-fill swaps upgrades in (the occupant banks);
+  offers / shop cards name the swap; the empty reward page only for a
+  complete build (`reason: 'build_complete'`).
 
 ### 4.4 New skills (9) and nodes (9) — full tables in BUILD_BRIEF §23.3–23.4
 
@@ -1837,6 +1844,13 @@ tools/gntM4c-band.mjs (band analysis).
   and never four; the default-build autopilot reaches the Stag with ≥ 50% of
   its owned sockets filled (Act I seeds 1–3); auto-fill places only live
   nodes within limits, spreads, is deterministic, refuses in combat.
+  fix-M4a-r4: with every socket filled the supply continues from the upgrade
+  layer — a clear drops fewer than 2 only when fewer than 2 commons / rares
+  outrank anything (the page says so), a reward page is empty only for a
+  complete build; while any node can still fill or outrank a socket, every
+  Level-3 reward offers a node and the Level-3 shelf is non-empty
+  (`node tools/gntfixM4a4-supply.mjs --from 1|2|3 --seeds 1-5` exit 0;
+  `node tools/gntfixM4a4-chain.mjs 4` all PASS).
 - **G4c.8 Difficulty on the corrected build**: the §4.2 band (G4a.10) holds by
   the act runner over seeds 1–5 in Node AND in page with the M4c constants,
   and G4a.8 / G4a.9's real-input legs (Acts I, II, III seed 1, keyboard +

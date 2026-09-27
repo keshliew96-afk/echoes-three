@@ -561,6 +561,24 @@ rooms). `node tools/gntM4c-realrun.mjs --act 1|2|3 --seed 1` = a whole act by
 real keyboard + mouse (the socket screen by its own keys: Enter places a
 drafted node, B·F·Esc auto-fills the spoils on every page).
 
+**fix-M4a-r4 (v0.5.132) — a full build keeps progressing (CONTENT4-F1).**
+Pools are layered (fill, then upgrade — BUILD_BRIEF §14 note). Probe
+surface: `cmd('draftPools')` → `{ skill, node, upgrade, free }`;
+`run.view().reward.pool === 'upgrade'` + `.upgrade { skill, slot,
+replaces, why }` (read live), `.reason === 'build_complete'` on the empty
+page; `spoils.upgrades`; per shop card `upgrade`; events carry the same
+keys only when set (fill-only traces are bit-identical: goldens 9/9).
+`node tools/gntfixM4a4-supply.mjs --from 1|2|3 --seeds 1-5` (Node: per-level
+spoils per clear, offers, shelf, buys, the build at each Stag; exit 1 on a
+short drop or an empty page while the pools could still serve it).
+`node tools/gntfixM4a4-chain.mjs [seed]` (GPU harness on ECHOES_URL, default
+dev: Level-3 start → upgrade offer + 2 spoils → real Enter Take → socket
+screen with the node in hand on the sim's upgrade target → Enter swaps → F
+swaps the spoils in → shop cards name their upgrades, a click buys → shelf
+fit at 1024×576 / 1600×900 / 2560×1440 → a debug-built complete build gets
+the "BUILD COMPLETE" page). `tools/gntfixM4a4-c-{l3rewards,offers,l3start}.mjs`
+= the round-4 critic's probes with own output names.
+
 ### M4b — enemies, hazards, interactables, layouts, biomes (Gauntlet W2, owner M4b)
 
 **Deterministic setups (PLAN §6.4).** `cmd('spawn', etype, x, z, { elite,

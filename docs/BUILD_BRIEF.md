@@ -513,6 +513,32 @@ Glint buys three. Measured on the default-build autopilot (Act I, seeds 1–3):
 spoils 12 + drafted 4 + purchased 3 per run; the party reaches the Stag with
 19 of 32 sockets filled (≥ 50%, the M4c supply gate).
 
+**Tuning note (fix-M4a-r4, 2026-09-27 — a full build keeps progressing;
+CONTENT4-F1).** In the linear campaign a carried build fills all 32 sockets
+by the Level 2 Stag (a Level-3 start arrives 32/32 from its grant), and the
+vacant-socket filter then emptied every pool: Level 3 gave no reward, no
+spoils and an empty shelf while the wallet held ~115 Glint. Binding now:
+every node pool is **layered**. The FILL layer (`usable_by_party`, §15.5 —
+a vacant socket where the node works) is drawn first, exactly as before; only
+when it cannot serve a draw does the **UPGRADE layer** step in: nodes with no
+vacant usable socket that **outrank** a socketed node — the occupant is dead
+weight on its skill (grey or +0) or of a lower rarity (common < rare <
+legendary, the ladder the shelf prices by), the candidate is live there and
+within its limit with the occupant out. Clear spoils top up from the upgrade
+layer's commons + rares, a node reward (or a skill reward substituted by a
+node) draws from it, and an empty shelf stratum takes the same rarity from
+it — each card and offer names the swap ("⇧ upgrades Spirit Bolt · replaces
+Quicken"). The spoils are still commons + rares, so a drop is short only
+when no common or rare outranks anything any more (the page says so); the
+empty reward page is only for a COMPLETE build (4 skills, no node fills or
+outranks a socket — "BUILD COMPLETE · Nothing outranks your build"). Measured
+(Node, default autopilot, seeds 1–5): Level 3 of a carried campaign 0 / 0 / 0
+→ spoils 5–7, drafted 4, purchased 1–2 (Level-3 start: 6–8 / 4 / 1–3); every
+Level 3 reward offer is an upgrade node; the build at the L3 Stag holds 1–3
+commons / 21–23 rares / 6–8 legendaries; Levels 1–2 draw exactly as before
+until their rows fill (goldens bit-identical), and the §4.2 band holds for
+campaigns from Levels 1, 2 and 3.
+
 ---
 
 ## 15. Build system — nodes, sockets, reinterpretation
@@ -556,7 +582,13 @@ skills**, and **every skill — actives and passives alike — has 8 sockets**.
   Y / button and the default-build autopilot both call it): bench order, each
   node to the owned skill where it is LIVE (never grey, never saturation-
   inert), within its limit, with a vacant socket, preferring the skill with
-  the fewest filled sockets (ties: the lower skill slot).
+  the fewest filled sockets (ties: the lower skill slot). **Upgrade swap
+  (fix-M4a-r4):** a bench node with no vacant live socket replaces the
+  weakest socketed node it **outranks** (`upgradeFor()`: a grey / +0
+  occupant first, then a lower rarity; the node live there and within its
+  limit with the occupant out; ties: the lower skill slot, then the lower
+  socket) — the occupant banks to the bench. A fill raises the socket count
+  and a swap raises the build's rank sum, so auto-fill terminates.
 
 ### 15.3 Technique reinterpretation matrix (authored numbers)
 
@@ -616,6 +648,10 @@ realized **+0** (saturation-inert).
 - **Never encode state by color alone** — every state has a shape/glyph channel.
 - Draft/shop pools filter by `usable_by_party` (∃ owned skill + vacant socket
   where the node is non-grey and within its limit — M4c: no cap clause).
+  fix-M4a-r4: that is the FILL layer; when it cannot serve a draw, the
+  UPGRADE layer (§14 note — nodes that outrank a socketed node) serves it,
+  and the card shows "⇧ upgrades <skill> · replaces <node>" instead of the
+  kit verdict.
 
 ---
 
@@ -628,7 +664,9 @@ realized **+0** (saturation-inert).
   nodes filtered by `usable_by_party`. Uniform seeded draw from the pool sorted ascending id.
   Empty promised pool → substitute the other type with an explicit line
   ("no slot free — offering a Node instead"); both empty → "the run moves on" +
-  Continue. Declines have no memory. Taken skill → first empty slot; taken node
+  Continue. (fix-M4a-r4: the node pool is layered — fill, then upgrade, §14
+  note — so "both empty" means the build is COMPLETE; the card reads "BUILD
+  COMPLETE · Nothing outranks your build", never "spent".) Declines have no memory. Taken skill → first empty slot; taken node
   → bench (never auto-socketed). Taking a node chains straight into the Socket
   screen with the candidate pre-focused (M4c: IN HAND, the cursor on the socket
   the auto-fill policy picks, so Enter places it). The page names the room's
