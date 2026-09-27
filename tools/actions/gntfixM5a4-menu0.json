@@ -1,0 +1,10 @@
+[
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({v:__echoes.version,tick:__echoes.tick,app:__echoes.app&&__echoes.app.state,params:location.search,ls:Object.keys(localStorage).filter(k=>k.startsWith('echoes.net')),body:(document.body.innerText||'').slice(0,200)}))()"
+ }
+]
