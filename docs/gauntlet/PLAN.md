@@ -1422,8 +1422,9 @@ meant the opposite axis:*
   tables keep their wire layout), world slot loop, the §4 order (skills
   ascending slot 0–3, then basic fire), HUD command bar (4 portraits · 4 skill
   tiles · dodge), cooldown grammar/nudges on all 4, draft `free_skill_slots =
-  4 − owned` (a 5th skill is never offered — the §16 substitution line offers
-  a node), run-UI carry keys 1–4, Controls tab. Ally kits stay 4.
+  4 − owned` (a 5th skill is never offered — *PARTY / ruling A17: with 4
+  owned the skill reward is a SWAP offer, §16.3*), run-UI carry keys 1–4,
+  Controls tab. Ally kits stay 4.
 - **8 node sockets on every skill** (`SOCKETS_PER_SKILL = 8`, the passives
   included) and **no rarity caps**: any node of any rarity fits any socket;
   hard blocks are only the per-skill repetition limit (kept), a full row,
@@ -2386,7 +2387,7 @@ fresh run frame is rolled from the CARRIED run RNG stream (no reseed); the
 per-level counters reset (room index, stipend counter, rooms done, reward
 promises, spoils, shop, layout memory); `level_start { level, name, index,
 from, campaign }`; `enterRoom(1)` (room 1's reward is a Skill draft as ever —
-with 4 skills owned the §16 substitution offers a node).
+with 4 skills owned it is a SWAP offer, ruling A17 / §16.3).
 
 ### 12.3 Carry / restore / reset rules (one table — `src/data/campaign.js` `CARRY_RULES`)
 
@@ -2902,9 +2903,11 @@ alone (§16.11 ownership).
   Archer — fixed, `CLASS_OF_SEAT`).
 - **Loadout** = the ≤ 4 skills a seat holds (slot order = key order 1–4 =
   the AI's cast order). There is no reserve: no seat ever holds more than
-  4 skills; an ally's new class skill arrives by a **swap** that replaces
-  one (the replaced skill returns to the class pool, its nodes to the
-  bench). **Build** = loadout + sockets (per skill, 8) + bench + purse.
+  4 skills; a new skill for a character that holds 4 (every ally from the
+  start, the Healer once full — ruling A17, the user's rule of 2026-09-27)
+  arrives by a **swap** that replaces one (the replaced skill returns to
+  the class pool, its nodes to the bench); a skill reward is never turned
+  into a node any more. **Build** = loadout + sockets (per skill, 8) + bench + purse.
 - **Owner** of a seat's build = the human controlling the seat, else the
   host (single-player: the player owns everything).
 - **Party page** = the room reward page with one **card** per seat.
@@ -3037,6 +3040,30 @@ src/sim/allycast.js, PARTY):
   loadout and resolved cooldowns.
 
 **Run system (src/sim/run.js) — the party page and shop.**
+- **Full-slot skill rewards are SWAP offers for every seat (ruling A17,
+  the user's rule — supersedes the §16 substitution line for skills).** The
+  Healer's draft: with `free_skill_slots == 0` and a skill promise,
+  `draft.offer()` draws from the Healer's class pool (all 17 Healer skills −
+  owned, sorted ascending id; with both starting skills owned = today's
+  `DRAFTABLE_SKILL_IDS − owned`, so the draw is unchanged while the
+  starting skills are held) and returns `{ type: 'skill', swap: true, line:
+  null, ... }`; a node promise whose node pools are empty substitutes a
+  skill (a swap when full) with `SUBSTITUTE_LINE.skill`. `run.reward` gains
+  `swap: true` and `replace: 0–3` (the §25.8 suggestion, the Healer
+  priority) — keys present only when set, so fill-case payloads and views
+  hash as before; `reward_offer` gains `swap: true, replace` likewise.
+  `takeReward(replace?)` on a swap replaces slot `replace ?? reward.replace`
+  through `skillSys.replaceSkill(slot, id)` (the new skill in that slot,
+  ready; the old skill's aura clock cleared) + `buildSys.releaseSkill(id)`
+  (its row's nodes to the bench with their provenance, its Resonance count,
+  pending Echo recasts and Reapply clock dropped) → `draft_taken { reward:
+  'skill', id, slot, swap: true, replaced, released: [nodeIds] }` +
+  `skill_swapped { seat: 0, id, slot, replaced, released }`; `declineReward()`
+  = Leave (`draft_declined`, loadout unchanged). `cmd('draftTake', slot?)`,
+  `cmd('draftReplace', slot)` (moves the pending choice) and
+  `runUi().draft.replace` expose it. The autopilot / leader bot / timeouts
+  apply the §25.8 Healer rule (take when the offered skill outranks the
+  lowest-priority owned skill, replacing it; else Leave).
 - `presentReward()` keeps rolling the Healer's `run.reward` exactly as
   today (gameplay stream, same order, same `reward_offer` payload), then
   asks `party.offerCards(promised)` for seats 1–3 (party stream, seat
@@ -3077,19 +3104,38 @@ src/sim/allycast.js, PARTY):
   purse +12 per combat clear → `purse_gain { seat, amount, purse, reason }`.
 - **Shop** — `openShop()` rolls the Healer's shelf unchanged, then seats 1–3
   shelves (party stream) → `run.partyShop = { shelves: [null, Shelf ×3],
-  touched: [bool ×4], done: [bool ×4], openedTick, leaveTick | null }`,
-  `party_shop_open { shelves }`; `partyBuy(seat, index)` (own purse; the
-  same denial) → `shop_purchase { seat, ... }`; `partyShopDone(seat)`;
-  `shopAdvance()` applies the mode's AI buys for untouched AI-held seats and
-  auto-fills AI-held benches (`suggest` / `auto`) and every human seat whose
-  `autoSocketOwn` is on, then leaves (network: countdown / deadline per
-  §25.7).
+  touched: [bool ×4], done: [bool ×4], marked: [null, [bool ×4] ×3],
+  openedTick, leaveTick | null }`, `party_shop_open { shelves, marked }`;
+  `partyBuy(seat, index)` (own purse; the same denial) → `shop_purchase {
+  seat, ... }` and `touched[seat] = true`; `partyShopMark(seat, index, on)`
+  toggles a Suggested mark (`party_shop_mark { seat, index, on }`, owner
+  rules as `partyBuy`); `partyShopDone(seat)`. **Suggested** pre-marks each
+  AI-held shelf with the §25.8 buys at open (`marked[seat]`), shown on the
+  tab; VIEWING a tab changes nothing (switching is navigation, never a
+  commit — the review fix of 2026-09-27). `shopAdvance()` buys, for every
+  AI-held seat whose `touched` is false, its still-marked cards in shelf
+  order while its purse lasts (a seat the player bought on keeps exactly
+  the player's purchases), auto-fills AI-held benches (`suggest` / `auto`)
+  and every human seat whose `autoSocketOwn` is on, then leaves (network:
+  countdown / deadline per §25.7). Manual: nothing marked, nothing bought
+  for an untouched tab. Automatic: bought at open (the tab is a summary).
 - **Doors** — unchanged except the network deadline (`doorDeadlineTick`,
   the left door, `party_autopick { seat: 0, reason: 'door_timeout' }`).
 - **Deadlines** are sim ticks written into run state (replicated, saved);
-  set only when `humans ≥ 2` (the net seat table in `setSeatInputs`); a
+  they exist only while `humans ≥ 2` (the net seat table in
+  `setSeatInputs`) and are armed LIVE by `party.syncDeadlines(tick)`, run at
+  the end of every tick: (1) a page / door / shop decision open with
+  `humans ≥ 2` and no deadline → arm it from THIS tick (page / door 1800,
+  shop 5400); (2) a card whose owner changed to a human while it is
+  undecided (a drop-in onto an AI-held Manual card, a return from away) →
+  `deadlineTick = max(deadlineTick, tick + 1800)`; (3) `humans` falls to ≤ 1
+  → every open deadline is cleared (`party_deadline { what, tick: null }`).
+  At a deadline the host applies the §25.8 suggestion to EVERY undecided
+  card (human-owned, or AI-held and undecided in Manual) with
+  `party_autopick { seat, reason: 'timeout' }` each, then commits. A
   `party_deadline { what: 'page'|'door'|'shop'|'socket', tick }` event
-  starts every client's countdown.
+  starts every client's countdown. `world.loadState` on a page with no
+  session (single-player load of a network save) clears every deadline.
 
 **AI (src/sim/partyai.js, new, PARTY)** — `suggestCard(seat, card)`,
 `suggestShelf(seat, shelf, purse)`, `planLoadout(seat)` (the §25.8
@@ -3189,10 +3235,27 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
 - **Deadlines** (`PARTY_DEADLINES`, sim ticks, host clock, replicated;
   only when ≥ 2 humans): page 1800, door 1800 after the page commit, shop
   5400 from open, the Advance countdown 900, socket hold 480; countdown UI
-  from 600 ticks before. At a deadline the host applies the §25.8
-  suggestion and emits `party_autopick` → one toast on every client (the
-  owner's names what they got). An AWAY / dropped guest's seat is AI-held →
-  decided by the host at once (nobody waits on a hidden tab).
+  from 600 ticks before. Armed live by `party.syncDeadlines` (§16.3: on
+  the tick humans reaches 2 while a decision is open; a fresh 1800 for a
+  card that turns human-owned while undecided; cleared when humans ≤ 1). At
+  a deadline the host applies the §25.8 suggestion to EVERY undecided card
+  (human-owned or an AI-held Manual card) and emits `party_autopick` → one
+  toast on every client (the owner's names what they got). An AWAY /
+  dropped guest's seat is AI-held → decided by the host at once (nobody
+  waits on a hidden tab).
+- **Guest dash / vault / hop prediction** (review fix, 2026-09-27): a human
+  seat's skill displacement follows the BUILD_BRIEF §25.2 human-seat rule
+  (aim-based, never a hostile position). `sim/allycast.js` exports ONE pure
+  function `seatDisplacement(seatBody, resolvedDef, sockets, aim) → { vx,
+  vz, ticks, iframes, cause } | null` that the host sim and the guest's
+  predictor both call; `src/net/predict.js` starts the displacement on the
+  predicted press exactly as it starts a predicted dodge (same swept step,
+  same per-input-frame advance, the §3.7 starvation rule), and
+  `src/net/reconcile.js` replays it during rewind like the dodge. Bounded
+  correction policy for anything that still diverges (a wall the guest's
+  collider set lacks): smoothed like any other error, the existing
+  CORRECTION_SNAP_U snap unchanged. GP.4 and GP.9 measure predErr during
+  these casts.
 - **Replication**: `systems.party` and `run.party` / `run.partyShop` ride
   the COLD tree; the 30-tick hash covers them; the protocol-v3 EVENTS
   static-shape table (src/net/protocol) gains the new event types; the
@@ -3281,11 +3344,16 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
 The Healer's skill and node pools, numbers, limits and all 289 grid cells
 (`gntPARTYD-grid.mjs` cross-check); `DRAFTABLE_SKILL_IDS` / `NODE_IDS` for
 the Healer; 2 spoils per clear; the 4-card shelf at 15/15/20/25; wallet 72
-at the shop; `free_skill_slots = 4 − owned`; the §16 substitution / empty
-lines; the Healer's `reward_offer` / `spoils_drop` / `shop_open` payload
-keys; `systems.skills` / `systems.build` save shapes; the socket screen's
+at the shop; `free_skill_slots = 4 − owned`; the §16 node → skill
+substitution and empty lines; the Healer's `reward_offer` / `spoils_drop` /
+`shop_open` payload keys (a swap offer ADDS `swap` / `replace` only when
+set); `systems.skills` / `systems.build` save shapes; the socket screen's
 Healer grid, keys 1–4, F, X, Enter, Esc; one Enter per room in Suggested
-mode; the autopilot and the seat-0 leader bot.
+mode; the autopilot and the seat-0 leader bot. **Changed on purpose by the
+user's rule (ruling A17)**: with 4 skills owned a Healer skill reward is a
+SWAP offer (never a node), the Healer's pool for it = all 17 Healer skills
+− owned, and the autopilot / leader bot resolve it by the §25.8 Healer
+priority — GP.14 checks the new behaviour instead of the old substitution.
 
 ### 16.11 Ownership, ports, harness
 
@@ -3300,7 +3368,9 @@ mode; the autopilot and the seat-0 leader bot.
   cues), ui/run/{draft,shop,cards,transit,endscreens,index}.js,
   ui/socket/index.js, ui/hud/commandbar.js, ui/menu/tabs/gameplay.js,
   src/app/gamepad.js, src/save/{codec,capture,describe}.js,
-  src/net/{session,predict}.js + src/net/protocol event shapes, docs §16 /
+  src/net/{session,predict,reconcile}.js + src/net/protocol event shapes
+  (reconcile.js added by the 2026-09-27 review: guest dash / vault / hop
+  prediction), docs §16 /
   BUILD_BRIEF §25 + §23.2 note / TESTING PARTY section / PROGRESS row.
   **Must not break**: the Healer (§16.10), single-player determinism
   (§16.9), the campaign (GC.*), save / load (G2.*), multiplayer (G5*.*),
@@ -3311,7 +3381,12 @@ mode; the autopilot and the seat-0 leader bot.
 - **Boot params** (§6.1): `?party=suggest|manual|auto` (the mode for this
   boot, overrides the setting without saving it), `?partygrant=N` (menu-skip
   harness: every ally gets `STARTER_GRANT[N].allies` at run start — a built
-  party in Level 1 for probes; marks the run `harness: true`).
+  party in Level 1 for probes; marks the run `harness: true`),
+  `?partygrant=max` (the deterministic BUILD_BRIEF §25.10 MAX-STRESS build:
+  all four seats 32 / 32 with the instance-multiplying nodes — the
+  precondition of GP.10 and GP.15). An explicit `?partygrant` REPLACES a
+  Level-N start's own ally grant (never stacks; the Healer's §23.2 grant
+  still applies unless `max`).
 - **Commands** (`__echoes.cmd`, act at a tick boundary, return plain data):
   `partyPools()`, `partyVerdicts()`, `partyView(seat)`, `partySwap(seat,
   id, slot?)` (puts ANY class skill of that seat into `slot`, its old
@@ -3322,7 +3397,10 @@ mode; the autopilot and the seat-0 leader bot.
   `partyPick(seat, 'take'|'leave', replace?)`, `partyBuy(seat, index)`,
   `partyShopDone(seat)`, `partyMode(mode)`, `partyPurse(seat, n?)`,
   `partyCast(seat, slot, { x, z }?)` (fires a loadout slot as a human press
-  would — for sim / VFX / audio probes), `partyAiLog()`, `partyGrant(level)`.
+  would — for sim / VFX / audio probes), `partyAiLog()`, `partyGrant(level)`,
+  `partyStress()` (= `?partygrant=max` on the live run, between rooms),
+  `partyShopMark(seat, index, on)`, `draftTake(slot?)` / `draftReplace(slot)`
+  (the Healer's swap offer, ruling A17).
 - **`__echoes.party`** (service-backed): `state()` (all four builds +
   page + shop + mode + owners + deadlines), `view(seat)`, `pools(seat)`,
   `verdict(seat, skill, node)`, `aiLog()`, `oracle()` (the committed JSON).
@@ -3363,7 +3441,15 @@ Measured on the dev server AND the production build (`npx vite build
   the class pool × every socket 1–8 of every class skill, rows emptied
   between) accepts every placement except `limit` (count the operations —
   one run per class, 0 unexpected denials); `combat_active` blocks every
-  socket / swap / reorder.
+  socket / swap / reorder. **Full-slot swap offers (ruling A17)**: for every
+  seat, the Healer included, a skill promise with 4 skills owned yields a
+  `reward: 'skill', swap: true` card (never a node, never an empty page);
+  Take with each replace target 0–3 → exactly 4 skills, the new skill in
+  that slot, the replaced skill back in the class pool (drawable again),
+  its nodes on the bench with provenance (0 lost), its Resonance count /
+  pending Echo recasts / passive clocks gone; Leave → loadout, sockets and
+  bench unchanged; the AI / autopilot / timeout pick = the §25.8 priority
+  rule.
 - **GP.3 Grids**: every cell of the three grids (440 cells) equals the
   oracle (`--verify-node` and `--verify-page`: 0 mismatches), and the sim
   shows every LIVE class-node cell's effect at least once per skill shape
@@ -3383,7 +3469,12 @@ Measured on the dev server AND the production build (`npx vite build
   inside a 240×240 box around the caster between the pre-cast and the +4
   frame capture) and its audio cue (the skill's cue in `audio.cueLog` on
   the guest within 150 ms of the press); the three passives pulse every
-  60 ticks ± 1 while owned and stop the tick they are swapped out.
+  60 ticks ± 1 while owned and stop the tick they are swapped out. **Guest
+  displacement prediction**: during every Shoulder Charge, Fox Step, Vault
+  Shot, Pursuit and Disengage cast on the guest seat (≥ 10 casts each, N1
+  and N2), the guest's own-seat predErr p95 ≤ 0.15 u at N1 and max ≤ 1.0 u
+  at N2, 0 snaps (no correction > CORRECTION_SNAP_U) and no single-frame
+  correction > 0.1 u (the G5b.2 bars, measured inside the cast windows).
 - **GP.5 Class identity (critic judgement with evidence)**: over a carried
   campaign (seeds 1–3, Suggested) — Tank: its taunts redirect ≥ 50% of the
   taunted hostiles that were targeting another party member within 1 s,
@@ -3430,13 +3521,25 @@ Measured on the dev server AND the production build (`npx vite build
   Advance with a guest not Done → 15 s countdown → leave; the shop's own
   90 s deadline; an open guest socket screen holds the door ≤ 8 s then
   closes banking its node; an away guest's card is decided at once;
-  single-player never shows a countdown.
+  single-player never shows a countdown. **Live re-arming (review fix)**:
+  (a) host alone in Manual mode opens a page (no deadline), a guest drops
+  in onto an AI-held undecided seat → a deadline is armed that tick and the
+  page commits ≤ 30.5 s later with that card holding the AI suggestion; (b)
+  a card that turns human-owned while undecided gets a fresh 30 s from the
+  take-over; (c) at a deadline every undecided card (human or AI-held
+  Manual) is decided by the suggestion; (d) the 2nd human leaves → the
+  countdown disappears on the host (deadline null); (e) a network save
+  made on an open page with a deadline, loaded single-player → no
+  countdown, no auto-pick after 60 s; (f) the guest's predErr bars above
+  hold while it dashes / vaults on its own seat.
 - **GP.10 Replication**: after every page commit, purchase, socket op and
   level transition the guest's `systems.party` + `run.party` equal the
   host's (hash) — 0 desyncs over a 10-minute session; drop-in takes the
   AI-built seat with its build; a rejoin keeps the build; a migration
-  keeps all four; Level 3 with four full builds (`?partygrant=3`): guest
-  downstream ≤ 12 KB/s average and ≤ 24 KB/s p95 at N1 (the §3.7 budget).
+  keeps all four; Level 3 with the deterministic MAX-STRESS builds
+  (`?level=3&partygrant=max`: every seat 32 / 32 with the
+  instance-multiplying nodes, BUILD_BRIEF §25.10): guest downstream ≤ 12
+  KB/s average and ≤ 24 KB/s p95 at N1 (the §3.7 budget).
 - **GP.11 Carry + save**: at both level transitions of a carried campaign
   the four builds (skills in slot order, sockets, bench, purse) are identical
   before and after the card, every seat at max HP, standing, no statuses,
@@ -3452,7 +3555,12 @@ Measured on the dev server AND the production build (`npx vite build
   stops, nothing pre-decided, ally benches untouched; Automatic — 1 focus
   stop, no ally tab stops, summary line, ally shop buys at open;
   `autoSocketOwn` On fills the own bench at commit, Off leaves it (the
-  Healer default); each measured by real input on the running game.
+  Healer default); each measured by real input on the running game. **Shop
+  in Suggested (review fix)**: by real input, view EVERY tab (Q/E through
+  all four) then Advance → each AI-held tab's pre-marked suggested buys
+  are still bought (purses drop by their prices, benches grow); un-marking
+  a card on a tab (Enter on its ribbon) removes exactly that buy; buying
+  on an AI-held tab keeps only the player's buys there.
 - **GP.13 Difficulty band** (Node + a page spot check, seeds 1–5, carried
   from Level 1 AND Level-2 / Level-3 starts with the grant): (a) the §4.2 /
   GC.12 band; (b) per level, median party damage per combat room and median
@@ -3464,12 +3572,20 @@ Measured on the dev server AND the production build (`npx vite build
 - **GP.14 The Healer is unchanged**: every §16.10 invariant (Node probe
   against a `git archive` of v0.5.150: pools, numbers, 289 grid cells,
   spoils / shelf / wallet numbers, `reward_offer` / `spoils_drop` /
-  `shop_open` payload keys for seat 0); by real input the Healer's reward
+  `shop_open` payload keys for seat 0 — a swap adds only `swap` /
+  `replace`); by real input the Healer's reward
   still commits with ONE Enter in Suggested mode, its node still chains into
   the socket screen with the node in hand, keys 1–4 / F / X / Esc behave as
-  before.
-- **GP.15 Performance**: GPU harness, Level 3 room 6 with four full builds
-  (`?level=3&partygrant=3` + `skipToRoom(6)`): after warm-up no frame > 50
+  before. **Ruling A17 by real input**: with 4 Healer skills owned a skill
+  room shows the swap card with the Replaces selector (W/S, ↑/↓, wheel,
+  D-pad, click cycle it); Enter takes it (the chosen skill replaced, the
+  command bar tile shows the new skill in that key, its nodes on the bench,
+  the socket screen chained with the auto-fill offer); X / Leave keeps the
+  loadout byte-identical.
+- **GP.15 Performance**: GPU harness, Level 3 room 6 with the four
+  deterministic MAX-STRESS builds (`?level=3&partygrant=max` +
+  `skipToRoom(6)`; BUILD_BRIEF §25.10 — the worst case: every seat's
+  instance multipliers stacked): after warm-up no frame > 50
   ms and p95 ≤ 20 ms over 60 s; Node sim step p95 ≤ 4 ms; events per
   second ≤ 2.5× the v0.5.150 Level 3 room 6 baseline; the party page / shop /
   socket screen interactive within 350 ms of opening.
@@ -3491,3 +3607,5 @@ Measured on the dev server AND the production build (`npx vite build
 | 5 | AI equip + cast policy; save schema 4 + `MIGRATIONS[3]` + catch-up grant; carry rules for four builds; the ally starter grant; the retune method with a baseline-relative band | §16.3, §16.6–16.8, BUILD_BRIEF §25.8–25.10 |
 | 6 | Determinism policy (empty-build casts reproduce v0.5.150; party draw stream), Healer invariants, ownership, ports, params, cmds, tools, gates GP.1–GP.16 | §16.9–16.11, §2.1, §6.1, §6.3, §6.4, docs/TESTING.md PARTY |
 | 7 | PARTYD self-review (v0.5.152): the reserve ("satchel") of known-but-unequipped skills dropped — the user's cap is literal, no character ever holds more than 4 skills; an ally grows by SWAP offers (the replaced skill back to the class pool, its nodes to the bench), `partySwap` / `partyReorder`; an Echo replays the delivery only and is never a cast (combo / Momentum / Flow / Resonance); a CMD after its page closed → `command_rejected closed`; a network save loads single-player with every seat's build; the pad's Auto-fill all is a focusable button; the AI-held Healer seat follows the autopilot | §16.1, §16.3, §16.4, §16.5, §16.6, §16.7, GP.2 / GP.4 / GP.8 / GP.11, BUILD_BRIEF §25.1–25.9 |
+| 8 | **The user's rule (2026-09-27, ruling A17)** — "when the 4 slot of skill is full, player still pick skill wave, do not change it to node reward wave, instead the reward is still skill, but player can choose whether to replace one of the current 4 skill or not to replace": full-slot skill rewards are SWAP offers for EVERY character, the Healer included (the §16 "skill promise becomes a node" line and "the Healer never gets a swap offer" are superseded); the Healer's pool for a swap = all 17 Healer skills − owned; the Healer priority for the autopilot / leader bot / timeouts; `takeReward(replace?)`, `draftReplace`, `skill_swapped { seat: 0 }` | §16.1, §16.3, §16.10, GP.2, GP.14, BUILD_BRIEF §16, §25.1, §25.5, §25.6, §25.8, §25.11, ruling A17 |
+| 9 | PARTY design review (2026-09-27), 4 must-fix gaps: (a) guest dash / vault / hop — aim-based human-seat displacement (never a hostile position), one shared `seatDisplacement()` predicted by predict.js / reconcile.js like the dodge, GP.4 / GP.9 predErr bars inside the cast windows; (b) deadlines armed LIVE by `party.syncDeadlines` (humans reaching 2 mid-decision, a fresh 30 s for a card turning human-owned, cleared at ≤ 1 human), a deadline decides EVERY undecided card, a single-player load clears saved deadlines, GP.9 cases (a)–(f); (c) shop Suggested — AI-held tabs show pre-marked suggested buys, viewing never cancels, Advance buys the still-marked cards unless the player bought on that tab, GP.12 real-input check; (d) the deterministic MAX-STRESS build (`?partygrant=max` / `partyStress`) is the precondition of GP.10 / GP.15, and `?partygrant` replaces (never stacks with) a Level-N start's ally grant | §16.3, §16.5, §16.11, GP.4, GP.9, GP.10, GP.12, GP.15, BUILD_BRIEF §25.2, §25.6, §25.7, §25.10 |

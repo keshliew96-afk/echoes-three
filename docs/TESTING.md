@@ -1588,7 +1588,10 @@ docs/gauntlet/party-oracle.json (`node tools/gntPARTYD-grid.mjs` writes it;
   page with the AI-held cards as the mode left them — in the default
   **Suggested** mode that is today's one-call behaviour, so the §6.2 core
   loop, `tools/actions/gnt-arch-coreloop.json`, the act / campaign runners
-  and `gnt-arch-simtrace.mjs --mode run` keep working unchanged. Seat-0
+  and `gnt-arch-simtrace.mjs --mode run` keep working unchanged (ruling
+  A17: on a Healer SWAP offer — 4 skills owned, a skill promise —
+  `takeReward()` / `cmd('draftTake')` take it replacing the suggested slot
+  `run.view().reward.replace`; `cmd('draftTake', k)` names the slot). Seat-0
   commands (`giveSkill`, `grantNode`, `socket`, `unsocket`, `autoFill`,
   `build*`, `shopBuy`, `wallet`) keep their meaning; ally builds use the
   `party*` commands (PLAN §16.11). Params: `?party=suggest|manual|auto`,
@@ -1624,7 +1627,14 @@ numbers are the pass bars):
    hand-edited save) on every seat, the Healer included → never; every
    class skill × every pool node × sockets 1..8 on an emptied row (combat
    inactive: the party page or camp) → only `limit` denials (count them);
-   in combat every socket / swap / reorder → `combat_active`.
+   in combat every socket / swap / reorder → `combat_active`. **Ruling A17
+   (every seat, the Healer included)**: give a seat 4 skills, walk to a
+   skill-promising room (`?seed=7`, room 1 is always a skill; for the
+   Healer `giveSkill` twice first) → `reward_offer { reward: 'skill', swap:
+   true, replace }` (never `reward: 'node'`); `cmd('draftTake', k)` for k =
+   0..3 on fresh boots → the new skill in slot k, the old one drawable again
+   (`draftPools().skill`), its nodes on the bench (count them); `draftDecline`
+   → loadout / sockets / bench byte-identical.
 3. **Grid effects (GP.3)** — for every LIVE class-node cell (and the guard /
    hostile-field shared cells): socket the node alone on that skill
    (`partySocket`), then `partyCast(seat, slot)` into a `spawn('boar' |
@@ -1649,6 +1659,11 @@ numbers are the pass bars):
    (`tools/analyze.mjs --box`), the skill's cue in the guest's
    `__echoes.audio.cueLog()` within 150 ms. Passives: `aura_pulse { seat }`
    every 60 ± 1 ticks while owned; none from the tick it is swapped out.
+   **Displacement prediction**: with the guest on each dash / vault / hop
+   skill (Shoulder Charge, Fox Step, Vault Shot, Pursuit, Disengage), ≥ 10
+   casts at N1 and N2: `__echoes.net.stats()` predErr inside the cast
+   windows — p95 ≤ 0.15 u (N1), max ≤ 1.0 u (N2), 0 snaps, no per-frame
+   correction > 0.1 u.
 5. **Class identity (GP.5)** — `tools/gntPARTY-campaign.mjs --seeds 1-3` (or
    the critic's own runner over `cmd('autopilot')` + `partyAiLog`): Tank
    taunt redirect ≥ 50% within 1 s, share of hostile attack starts aimed at
@@ -1693,15 +1708,20 @@ numbers are the pass bars):
    15 s countdown; the shop's own 90 s deadline; a guest socket screen open
    at the door commit holds it ≤ 8 s, then closes with its node banked; an
    away (hidden) guest's card is decided at once; single-player (no `?net`)
-   never shows a countdown.
+   never shows a countdown. Live re-arming: host alone in Manual, page open
+   (no countdown), a guest drops in onto an undecided AI-held seat → a
+   deadline appears that tick and the page commits ≤ 30.5 s later with
+   the suggestion on that card; the 2nd human leaves → the countdown
+   disappears; a network save taken on a page with a deadline, loaded with
+   no `?net` → no countdown and no auto-pick after 60 s.
 10. **Replication (GP.10)** — the same session for 10 minutes: after every
     commit / purchase / socket op / level transition the guest's
     `systems.party` and `run.party` hash equals the host's and
     `net.stats().desyncs` = 0; drop a guest (`/admin/drop`) and rejoin →
     the same build; `/admin/kill-host` → the migration keeps all four
     builds; bandwidth: `tools/gnt-M5a-netbench.mjs --mode combat` on
-    `?level=3&partygrant=3` → guest downstream ≤ 12 KB/s avg, ≤ 24 KB/s p95
-    at N1.
+    `?level=3&partygrant=max` (the deterministic max-stress builds) → guest
+    downstream ≤ 12 KB/s avg, ≤ 24 KB/s p95 at N1.
 11. **Carry + save (GP.11)** — a carried campaign: diff the four builds and
     the party state at both `level_transit`s (identical builds; max HP,
     standing, no statuses, cooldowns ready, no taunts / parries / dashes /
@@ -1716,7 +1736,10 @@ numbers are the pass bars):
     auto-filled at commit; Manual — 4 focus stops, nothing pre-decided, ally
     benches untouched; Automatic — 1 focus stop, the summary line, ally shop
     buys at open; `gameplay.autoSocketOwn` On fills the own bench at commit,
-    Off leaves it.
+    Off leaves it. Shop in Suggested: view every tab (Q/E), then Advance →
+    each AI-held tab's pre-marked buys still happen (purses drop, benches
+    grow); an un-marked card is not bought; a tab the player bought on
+    keeps only the player's buys.
 13. **Difficulty band (GP.13)** — `tools/gntCAMPAIGN-camprun.mjs --from
     1|2|3 --seeds 1-5` (Node, as extended by PARTY) against
     `captures/gntPARTY-baseline-from{1,2,3}.json`: the §4.2 / GC.12 band;
@@ -1732,8 +1755,13 @@ numbers are the pass bars):
     seat-0 `reward_offer` / `spoils_drop` / `shop_open` payload key sets; by
     real input: one Enter commits the page in Suggested mode, a Healer node
     card chains into the socket screen with the node in hand on the
-    auto-fill target, keys 1–4 / F / X / Esc unchanged.
-15. **Performance (GP.15)** — GPU harness `?level=3&partygrant=3&seed=1`,
+    auto-fill target, keys 1–4 / F / X / Esc unchanged. Ruling A17 by real
+    input: with 4 Healer skills a skill room shows the swap card; W/S, the
+    wheel and a click move the Replaces mark; Enter replaces (the command
+    bar key shows the new skill, nodes on the bench, socket screen chained
+    with the auto-fill offer); X keeps the loadout.
+15. **Performance (GP.15)** — GPU harness `?level=3&partygrant=max&seed=1`
+    (the deterministic max-stress builds),
     `cmd('skipToRoom', 6)`, 60 s of combat after warm-up: 0 frames > 50 ms,
     p95 ≤ 20 ms (`app.frameStats()`); Node sim step p95 ≤ 4 ms in the same
     room; events per second ≤ 2.5× the v0.5.150 L3 room-6 baseline; each build
