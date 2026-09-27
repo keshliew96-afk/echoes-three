@@ -5,8 +5,10 @@
 // ally AI in Suggested mode — the CAMPAIGN runner's recipe — and measures
 // from the sim's own events:
 //   GP.5  Tank: taunt redirects within 60 ticks, the share of hostile attack
-//         instances (hits + blocks) aimed at the Tank while a taunt source is
-//         equipped vs the SAME recipe on v0.5.150 (--base150), Tank-granted
+//         STARTS (telegraphs raised at a party member + melee bites) aimed at
+//         the Tank while a taunt source is equipped vs the SAME recipe on
+//         v0.5.150 (--base150; the hits + blocks share and the time-weighted
+//         "aimed at" share are printed as [info]), Tank-granted
 //         shields' share of the party's damage in Shield Wall rooms;
 //         Swordsman: median distance to its target at cast, Crescent
 //         Finisher casts with combo >= 1; Archer: median distance to the
@@ -85,6 +87,10 @@ function runCampaign(T, seed, { party = true } = {}) {
   const partyIds = () => new Set(registry.all().filter((e) => e.partyIndex !== undefined).map((e) => e.id));
   const M = {
     attacks: { tank: 0, all: 0, tankTauntRooms: 0, allTauntRooms: 0 },
+    // GP.5's literal "hostile attack STARTS aimed at the Tank": a telegraph
+    // raised at a party member (lanes, lobs, shots, the Stag's quake) or a
+    // melee bite, counted when it starts.
+    starts: { tank: 0, all: 0, tankT: 0, allT: 0 },
     aim: { tank: 0, all: 0, tankT: 0, allT: 0 },
     taunts: [],
     shield: { absorbedByTank: 0, damageAll: 0 },
@@ -163,6 +169,16 @@ function runCampaign(T, seed, { party = true } = {}) {
             const src = sh ? sh.src : lastBroken.get(`${e.tick}:${tgt.id}`);
             if (src === tankId()) M.shield.absorbedByTank += e.absorbed;
           }
+        }
+      }
+    } else if ((t === 'telegraph_start' || t === 'enemy_bite') && e.target != null && room && room.end === null) {
+      const tgt = byId(e.target);
+      if (tgt && tgt.partyIndex !== undefined) {
+        M.starts.all += 1;
+        if (tgt.partyIndex === 1) M.starts.tank += 1;
+        if (tauntSource) {
+          M.starts.allT += 1;
+          if (tgt.partyIndex === 1) M.starts.tankT += 1;
         }
       }
     } else if (t === 'shield_broken') lastBroken.set(`${e.tick}:${e.targetId}`, e.src);
@@ -374,7 +390,10 @@ const sum = (f) => runs.reduce((a, x) => a + f(x.r.M), 0);
     // "aimed at": the time-weighted share of hostiles whose target is the Tank.
     const aimNow = sum((m) => m.aim.tankT) / Math.max(1, sum((m) => m.aim.allT));
     const aimBase = base.reduce((a, x) => a + x.r.M.aim.tank, 0) / Math.max(1, base.reduce((a, x) => a + x.r.M.aim.all, 0));
-    check('GP.5', `hostiles aimed at the Tank while a taunt source is equipped: ${(aimNow * 100).toFixed(1)}% of hostile-time vs v0.5.150 ${(aimBase * 100).toFixed(1)}% (x${(aimNow / aimBase).toFixed(2)}, >= 1.3)`, aimNow >= 1.3 * aimBase, { aimNow, aimBase });
+    console.log(`[info] hostiles aimed at the Tank while a taunt source is equipped: ${(aimNow * 100).toFixed(1)}% of hostile-time vs v0.5.150 ${(aimBase * 100).toFixed(1)}% (x${(aimNow / aimBase).toFixed(2)})`);
+    const stNow = sum((m) => m.starts.tankT) / Math.max(1, sum((m) => m.starts.allT));
+    const stBase = base.reduce((a, x) => a + x.r.M.starts.tank, 0) / Math.max(1, base.reduce((a, x) => a + x.r.M.starts.all, 0));
+    check('GP.5', `hostile attack starts aimed at the Tank while a taunt source is equipped: ${(stNow * 100).toFixed(1)}% (${sum((m) => m.starts.tankT)} / ${sum((m) => m.starts.allT)}) vs v0.5.150 ${(stBase * 100).toFixed(1)}% (x${(stNow / stBase).toFixed(2)}, >= 1.3)`, stNow >= 1.3 * stBase, { stNow, stBase });
   }
   const abs = sum((m) => m.shield.absorbedByTank);
   const dmg = sum((m) => m.shield.damageAll);
