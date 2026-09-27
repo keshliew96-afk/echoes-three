@@ -308,7 +308,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   // levels: [{ level, rooms, kills, cleared, ticks }], levelsCleared, complete }.
   // Rank and "New best" are measured against the freshest stored profile
   // (another tab's runs included).
-  function recordRun({ act = 1, victory = false, result = null, roomsCleared = 0, kills = 0, timeSec = 0, seed = null, challenge = 'standard', lastRoom = 0, campaign = null }) {
+  function recordRun({ act = 1, victory = false, result = null, roomsCleared = 0, kills = 0, timeSec = 0, seed = null, challenge = 'standard', lastRoom = 0, campaign = null, builds = null }) {
     const res = result === 'abandoned' || result === 'defeat' || result === 'victory' ? result : victory ? 'victory' : 'defeat';
     const camp = campaign && campaign.mode === 'campaign' && Array.isArray(campaign.levels) && campaign.levels.length ? campaign : null;
     const complete = !!(camp ? camp.complete : res === 'victory');
@@ -331,6 +331,8 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       startLevel: camp ? camp.startLevel ?? act : act,
       levels: camp ? camp.levels.filter((l) => l.cleared).length : res === 'victory' ? 1 : 0,
     };
+    // PARTY (PLAN §16.6): the four builds of the run (a new optional key).
+    if (Array.isArray(builds) && builds.length) entry.party = builds.map((b) => ({ classId: b.classId, skills: (b.skills || []).slice(0, 4), filled: b.filled | 0 }));
     const { result: out, w } = commit((p) => {
       const r = p.records;
       const prevBest = r.bestScore;

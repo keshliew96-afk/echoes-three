@@ -33,7 +33,8 @@ import { clonePlain, checkTree } from './codec.js';
 
 // Must equal codec.js TREE_VERSION (schema 2, M4c: 4 skill slots, 8 sockets
 // per skill; schema 3, CAMPAIGN: systems.run.campaign + autoReturnTick).
-export const STATE_VERSION = 3;
+// PARTY (schema 4): systems.party (the three ally builds) + run.partyPages.
+export const STATE_VERSION = 4;
 
 export function createStateIO({ clock, rng, registry, world, scene = null, appState = null }) {
   function sceneState() {

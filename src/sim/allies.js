@@ -2065,6 +2065,8 @@ export function createAllySystem({
       prevBasicHeld,
       campSeats,
     };
+    // PARTY: the room-start tick the AI's idle fallback measures from.
+    if (roomStartTick) out.roomStartTick = roomStartTick;
     // M5b: network seat control rides along ONLY while some seat is not at
     // its single-player default (a saved single-player tree is unchanged).
     if (controllers.some((c, i) => c !== DEFAULT_CONTROLLERS[i]) || prevHumanBasic.some(Boolean)) {
@@ -2086,6 +2088,7 @@ export function createAllySystem({
     carriedBasic = !!d.carriedBasic;
     prevBasicHeld = !!d.prevBasicHeld;
     campSeats = d.campSeats ?? null;
+    roomStartTick = Number.isFinite(d.roomStartTick) ? d.roomStartTick : 0;
     // M5b: seat controllers (absent = the single-player defaults). Per-tick
     // seat inputs are external and never saved: after a load every seat is
     // driven by whatever the next world.step hands in (a network save loads

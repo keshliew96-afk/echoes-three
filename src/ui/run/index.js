@@ -695,6 +695,29 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     if (ev.reward === 'skill' && ev.swap && Array.isArray(ev.released) && ev.released.length > 0 && socket)
       socket.cmd('openSocket', { released: ev.released.length });
   });
+  // PARTY: one toast for an old save's ally catch-up (PLAN §16.6) and for a
+  // network auto-pick (PLAN §16.5: the owner's line says nothing is lost).
+  bus.on('party_catchup', (ev) => {
+    const a = service('app');
+    const each = ev.perSeat ? Math.max(...Object.values(ev.perSeat)) : 0;
+    if (a && typeof a.toast === 'function') a.toast(`Your allies caught up: ${each} nodes each`, { tone: 'info', ms: 5200 });
+  });
+  bus.on('party_autopick', (ev) => {
+    const a = service('app');
+    if (!a || typeof a.toast !== 'function') return;
+    const who = ['Healer', 'Tank', 'Swordsman', 'Archer'][ev.seat] ?? 'party';
+    if (ev.reason === 'door_timeout') a.toast("Time's up — the left door was taken", { tone: 'info', ms: 4200 });
+    else a.toast(`Time's up — the ${who}'s reward was picked (${ev.choice === 'take' ? 'taken' : 'left'})${ev.seat === ownSeat() ? ' — you can re-socket it between rooms' : ''}`, { tone: 'info', ms: 4800 });
+  });
+  function ownSeat() {
+    const n = service('net');
+    try {
+      if (n && typeof n.isGuest === 'function' && n.isGuest()) return Number.isInteger(n.seat) ? n.seat : 0;
+    } catch {
+      /* none */
+    }
+    return 0;
+  }
   // A run ending or a room starting must never leave a page hanging.
   bus.on('room_start', () => setScreen('none'));
 

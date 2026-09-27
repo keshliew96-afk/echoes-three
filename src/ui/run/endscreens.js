@@ -7,6 +7,7 @@
 // state is already wiped by then (§13 "wiped at run end: everything").
 import { esc } from './style.js';
 import { SKILLS } from '../../sim/skills.js';
+import { buildsHtml } from './transit.js';
 import { NODES } from '../../sim/nodes.js';
 import { service } from '../../app/registry.js'; // M2 NEW-BEST: the save service's run record
 import { levelFor } from '../../data/levels.js';
@@ -103,7 +104,7 @@ export function createEndScreen({ run }) {
     kitEl.style.display = '';
     kitEl.innerHTML = `<b>${esc(names.join(' · '))}</b>${
       nodes.length ? ` &nbsp;·&nbsp; ${esc(nodes.join(' · '))}` : ''
-    }`;
+    }${s.builds ? `<div class="rn-builds">${buildsHtml(s.builds)}</div>` : ''}`;
   }
 
   function key(code, fresh) {

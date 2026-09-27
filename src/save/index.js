@@ -24,7 +24,7 @@ import { SKILL_SLOTS } from '../core/constants.js';
 import { scriptedInput } from '../sim/script.js';
 import { levelFor } from '../data/levels.js';
 import { createStateIO } from './capture.js';
-import { buildFile, parseFile, encodeOrdered, clonePlain, SCHEMA, campaignMeta } from './codec.js';
+import { buildFile, parseFile, encodeOrdered, clonePlain, SCHEMA, campaignMeta, buildsMeta } from './codec.js';
 import { lockLine, FIRST_LEVEL } from '../data/campaign.js';
 import { createSaveStorage, INDEX_KEY, PROFILE_KEY, SAVE_PREFIX } from './storage.js';
 import {
@@ -408,6 +408,8 @@ export function createSaveSystem({
       level: run.act ?? 1,
       levelName: actName,
       campaign: campaignMeta(run),
+      // PARTY (schema 4, PLAN §16.6): the four builds' lines for the slot list.
+      builds: buildsMeta(tree),
       bytes: 0,
     };
   }
@@ -1015,6 +1017,7 @@ export function createSaveSystem({
       challenge: ev.challenge ?? (s && s.challenge) ?? 'standard',
       lastRoom: s ? s.lastRoom : 0,
       campaign,
+      builds: s && Array.isArray(s.builds) ? s.builds : null, // PARTY: the four builds
     };
     profileStore.addPlaytime(profileTicks / TICK_HZ);
     profileTicks = 0;

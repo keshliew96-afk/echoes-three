@@ -25,9 +25,14 @@ export const SAVE_FORMAT = 'echoes-save';
 // included) and `meta.level / levelName / campaign`. Schema-2 files load
 // through MIGRATIONS[2] below (an active act run becomes a campaign from its
 // level).
-export const SCHEMA = 3;
+// Schema 4 (PARTY, 2026-09-27 — PLAN §16.6, per-character builds): the three
+// ally builds, purses and the party draw stream (`systems.party`), the party
+// page / shelves / door deadline (`systems.run.partyPages`, present only while
+// open) and `meta.builds`. Schema-3 files load through MIGRATIONS[3] below
+// (every ally on its §7 kit + an ally catch-up grant the sim applies once).
+export const SCHEMA = 4;
 // StateTree `v` written by capture.js (STATE_VERSION there must equal this).
-export const TREE_VERSION = 3;
+export const TREE_VERSION = 4;
 const MAX_DEPTH = 64;
 
 // --------------------------------------------------------------- clone --
@@ -280,14 +285,130 @@ export function migrateFile2to3(file) {
   return { ...file, schema: 3, meta, state: tree };
 }
 
+// 3 -> 4 (PARTY, the user's per-character builds — PLAN §16.6). Pure,
+// deterministic, no game RNG, never throws on a structurally valid v3 tree.
+// Frozen schema-4 constants (a later change lands as its own migration):
+//   - systems.party: the party stream seeded from the save's gameplay seed by
+//     the §16.3 derivation (no draw), every ally on its §7 kit (the starting
+//     loadout), an empty build, purse 0, Ally builds 'suggest';
+//   - an ACTIVE run queues `systems.party.catchUp = { level, roomsCleared }`:
+//     the sim grants STARTER_GRANT[level].allies + 2 nodes and 12 Glint per
+//     ally per combat room already cleared, once, on the first tick after the
+//     load (`party_catchup`) — so an old campaign's allies meet the retuned
+//     levels fairly;
+//   - a run on its reward page gets ally cards `{ type: null, reason:
+//     'migrated', decided: true, choice: 'leave' }` (the Healer's card is its
+//     run.reward, unchanged); a run in the shop gets empty ally shelves.
+//   - meta.builds (the slot list's four build lines).
+const V4_KITS = Object.freeze({
+  1: Object.freeze({ classId: 'tank', slots: Object.freeze(['heavy_slam', 'brutal_cleave', 'ground_crack', 'whirling_guard']) }),
+  2: Object.freeze({ classId: 'swordsman', slots: Object.freeze(['flurry', 'lunge_strike', 'blade_storm', 'caltrops']) }),
+  3: Object.freeze({ classId: 'archer', slots: Object.freeze(['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova']) }),
+});
+function v4PartySeed(seed) {
+  let h = ((seed >>> 0) ^ 0x50415254) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
+}
+const V4_EMPTY_BUILD = () => ({ bench: [], assignments: [], resonance: [], suppress: 0, lastHeal: null, lastHit: null, echoQueue: [], auraEchoNext: [] });
+function migrateTree3to4(tree) {
+  const t = clonePlain(tree);
+  t.v = 4;
+  const sys = t.systems && typeof t.systems === 'object' ? t.systems : (t.systems = {});
+  const run = sys.run && typeof sys.run === 'object' ? sys.run : null;
+  const tick = t.clock && Number.isFinite(t.clock.tick) ? t.clock.tick : 0;
+  const seed = run && run.frame && Number.isFinite(run.frame.seed) ? run.frame.seed : t.rng && Number.isFinite(t.rng.seed) ? t.rng.seed : 0;
+  const ps = v4PartySeed(seed);
+  if (!sys.party || typeof sys.party !== 'object') {
+    sys.party = {
+      v: 1,
+      rng: { seed: ps, s: ps | 0, draws: 0 },
+      mode: 'suggest',
+      autoSocketOwn: [false, false, false, false],
+      seats: [
+        null,
+        ...[1, 2, 3].map((i) => ({
+          seat: i,
+          classId: V4_KITS[i].classId,
+          slots: [...V4_KITS[i].slots],
+          purse: 0,
+          build: V4_EMPTY_BUILD(),
+          state: { combo: {}, recentCasts: [], retaliate: {}, stillSince: tick },
+          auraNext: {},
+        })),
+      ],
+    };
+    if (run && run.active) {
+      const level = Number.isFinite(run.act) ? run.act : 1;
+      const cleared = Number.isFinite(run.clearedRooms) ? Math.min(6, run.clearedRooms) : 0;
+      sys.party.catchUp = { level, roomsCleared: cleared };
+    }
+  }
+  if (run && run.active && !run.partyPages) {
+    if (run.phase === 'reward') {
+      const r = run.reward && typeof run.reward === 'object' ? run.reward : null;
+      run.partyPages = {
+        page: {
+          room: run.roomIndex ?? 0,
+          promised: r ? r.promised ?? null : null,
+          openedTick: tick,
+          deadlineTick: null,
+          owners: ['human', 'ai', 'ai', 'ai'],
+          cards: [
+            { seat: 0, type: r ? r.type ?? null : null, id: r ? r.id ?? null : null, swap: !!(r && r.swap), substituted: !!(r && r.substituted), line: r ? r.line ?? null : null, spoils: [], replace: r && r.swap ? r.replace ?? 0 : null, suggest: { choice: 'take', replace: null }, decided: false, choice: null, by: null },
+            ...[1, 2, 3].map((i) => ({ seat: i, type: null, id: null, swap: false, substituted: false, line: null, reason: 'migrated', spoils: [], replace: null, suggest: { choice: 'leave', replace: null }, decided: true, choice: 'leave', by: 'ai' })),
+          ],
+        },
+        shop: null,
+        doorDeadlineTick: null,
+      };
+    } else if (run.phase === 'shop') {
+      run.partyPages = {
+        page: null,
+        shop: { room: run.roomIndex ?? 7, shelves: [null, [], [], []], marked: [null, [], [], []], touched: [false, false, false, false], done: [false, false, false, false], openedTick: tick, leaveTick: null, deadlineTick: null },
+        doorDeadlineTick: null,
+      };
+    }
+  }
+  return t;
+}
+// meta.builds — the four build lines of the slot list (schema 4).
+export function buildsMeta(tree) {
+  const sys = tree && tree.systems ? tree.systems : {};
+  const out = [];
+  const sk = sys.skills && Array.isArray(sys.skills.slots) ? sys.skills.slots : [];
+  const b0 = sys.build || {};
+  const rows0 = Array.isArray(b0.assignments) ? b0.assignments : [];
+  const filled = (rows) => rows.reduce((n, p) => n + (Array.isArray(p) && Array.isArray(p[1]) ? p[1].filter(Boolean).length : 0), 0);
+  out.push({ classId: 'healer', skills: sk.map((s) => (s ? s.id : null)), filled: filled(rows0), purse: sys.run && Number.isFinite(sys.run.wallet) ? sys.run.wallet : 0 });
+  const P = sys.party;
+  for (const i of [1, 2, 3]) {
+    const s = P && Array.isArray(P.seats) ? P.seats[i] : null;
+    out.push(
+      s
+        ? { classId: s.classId, skills: Array.isArray(s.slots) ? [...s.slots] : [], filled: filled(s.build && Array.isArray(s.build.assignments) ? s.build.assignments : []), purse: Number.isFinite(s.purse) ? s.purse : 0 }
+        : { classId: V4_KITS[i].classId, skills: [...V4_KITS[i].slots], filled: 0, purse: 0 }
+    );
+  }
+  return out;
+}
+export function migrateFile3to4(file) {
+  const tree = migrateTree3to4(file.state);
+  const meta = file.meta && typeof file.meta === 'object' ? { ...file.meta } : file.meta;
+  if (meta && typeof meta === 'object') meta.builds = buildsMeta(tree);
+  return { ...file, schema: 4, meta, state: tree };
+}
+
 export const MIGRATIONS = Object.freeze({
   1: migrateFile1to2,
   2: migrateFile2to3,
+  3: migrateFile3to4,
 });
 
 // ------------------------------------------------------------ envelope --
 const TREE_KEYS = ['v', 'clock', 'rng', 'registry', 'world', 'systems', 'scene', 'app'];
-const SYSTEM_KEYS = ['combat', 'skills', 'build', 'enemies', 'waves', 'allies', 'boss', 'run', 'layout', 'movement', 'shapes'];
+const SYSTEM_KEYS = ['combat', 'skills', 'build', 'enemies', 'waves', 'allies', 'boss', 'run', 'layout', 'movement', 'shapes', 'party'];
 
 // checkTree(tree) -> null | 'reason' — structural validation BEFORE anything
 // touches the live world (apply() refuses a tree that fails it).
@@ -312,6 +433,11 @@ export function checkTree(tree) {
   for (const k of SYSTEM_KEYS) if (!(k in tree.systems)) return `state.systems.${k} missing`;
   if (!tree.systems.run || typeof tree.systems.run.phase !== 'string') return 'state.systems.run.phase missing';
   if (!tree.systems.skills || !Array.isArray(tree.systems.skills.slots)) return 'state.systems.skills.slots missing';
+  // PARTY (schema 4): never more than 4 skills on any seat — a hand-edited
+  // file cannot smuggle in a 5th (the sim also trims on load).
+  if (tree.systems.skills.slots.filter(Boolean).length > 4) return 'state.systems.skills has more than 4 skills';
+  const P = tree.systems.party;
+  if (!P || !Array.isArray(P.seats)) return 'state.systems.party.seats missing';
   return null;
 }
 

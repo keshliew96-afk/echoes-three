@@ -177,3 +177,19 @@ console.log('wrote gntPARTY-socket.json');
   writeFileSync('tools/actions/gntPARTY-shop.json', JSON.stringify(shopA, null, 1));
 }
 console.log('wrote gntPARTY-shop.json');
+
+// Browser save round trip with four max-stress builds, then on the party page.
+{
+  const rt = ev(`const r=__echoes.save.roundTrip({ticks:300});return {equal:r.equal,cont:r.continuationEqual,first:r.firstDivergence||null,phase:__echoes.state().run.phase}`);
+  const save = [
+    loop('room1', `(()=>{const r=${RUN};return r&&r.phase==='combat'&&r.room===1})()`, [wait(150)], 20000),
+    wait(1500),
+    rt,
+    loop('clear1', `(()=>{const r=${RUN};return r&&r.phase==='reward'})()`, [ev(`__echoes.cmd('killAllEnemies');return 1`), wait(400)], 40000),
+    wait(600),
+    rt,
+    ev(`return {builds:__echoes.cmd('partyState').seats.map(s=>s.filled+'/'+s.sockets)}`),
+  ];
+  writeFileSync('tools/actions/gntPARTY-save.json', JSON.stringify(save, null, 1));
+}
+console.log('wrote gntPARTY-save.json');

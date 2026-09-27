@@ -43,7 +43,23 @@ export const TRANSIT_CSS = `
     background: #221F1B; border: 1px solid #9C918688; overflow: hidden; }
   .rn-transit .rn-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: linear-gradient(90deg, #D9B872, #E8A23D); }
   .rn-transit .rn-ready { font-size: 17px; color: #C9C2B3; min-height: 22px; }
+  /* PARTY: the four builds that ride on, one compact line each. */
+  .rn-builds { display: grid; grid-template-columns: auto auto auto auto; gap: 2px 16px; margin-top: 8px; font-size: 16px; color: #C9C2B3; }
+  .rn-builds .rn-bn { color: #F4EFE6; font-weight: 800; }
+  .rn-builds .rn-bv { font-variant-numeric: tabular-nums; text-align: right; }
 `;
+
+// PARTY (BUILD_BRIEF §25.6): "Tank · 4 skills · 12/32 · ◉ 30" × 4.
+export function buildsHtml(builds) {
+  if (!Array.isArray(builds) || builds.length === 0) return '';
+  const NAME = { healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer' };
+  return builds
+    .map(
+      (b) =>
+        `<span class="rn-bn" data-seat="${b.seat}">${esc(NAME[b.classId] ?? b.classId)}</span><span class="rn-bv">${(b.skills || []).filter(Boolean).length} skills</span><span class="rn-bv">${b.filled}/${b.sockets ?? 32}</span><span class="rn-bv">◉ ${b.purse ?? 0}</span>`
+    )
+    .join('');
+}
 
 export function createTransitScreen({ run }) {
   const el = document.createElement('div');
@@ -56,6 +72,7 @@ export function createTransitScreen({ run }) {
     <div class="rn-next"><span class="rn-lab">NEXT</span><b class="rn-nextname"></b></div>
     <div class="rn-carry"></div>
     <div class="rn-kit"></div>
+    <div class="rn-builds"></div>
     <div class="rn-bar"><i></i></div>
     <div class="rn-ready" aria-live="polite"></div>
     <div class="rn-hint"><b>Enter</b> set out now</div>`;
@@ -66,6 +83,7 @@ export function createTransitScreen({ run }) {
   const nextRow = el.querySelector('.rn-next');
   const carryEl = el.querySelector('.rn-carry');
   const kitEl = el.querySelector('.rn-kit');
+  const buildsEl = el.querySelector('.rn-builds');
   const barFill = el.querySelector('.rn-bar i');
   const readyEl = el.querySelector('.rn-ready');
   const hintEl = el.querySelector('.rn-hint');
@@ -115,6 +133,9 @@ export function createTransitScreen({ run }) {
     // (a network guest sees the party leader's build — it says whose it is)
     kitEl.textContent = guest() && names.length ? `The Healer carries · ${names.join(' · ')}` : names.join(' · ');
     hintEl.innerHTML = guest() ? 'The Healer leads on…' : '<b>Enter</b> set out now';
+    // PARTY: all four builds carry (skills in slot order, sockets, bench, purse).
+    buildsEl.innerHTML = buildsHtml(s.builds);
+    buildsEl.style.display = s.builds ? '' : 'none';
   }
 
   // Per-frame: progress bar + readiness line (the level manager's status).

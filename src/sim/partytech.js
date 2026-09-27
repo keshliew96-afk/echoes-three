@@ -630,6 +630,21 @@ export function createPartyTech(ctx) {
 
   combat.setHooks({ onParry, onPartyDamaged });
 
+  // Save (PLAN §16.6): Heartseeker's first-hit memory and Flow's once-per-cast
+  // memory outlive a tick (a bolt / zone lands later) — plain data.
+  function saveState() {
+    return {
+      firstHits: [...firstHits.entries()].map(([k, s]) => [k, [...s]]),
+      flowDone: [...flowDone.keys()],
+    };
+  }
+  function loadState(d) {
+    firstHits.clear();
+    flowDone.clear();
+    for (const [k, ids] of (d && d.firstHits) || []) firstHits.set(k, new Set(ids));
+    for (const k of (d && d.flowDone) || []) flowDone.set(k, true);
+  }
+
   void KNOCKBACK;
   return {
     castMods,
@@ -643,6 +658,8 @@ export function createPartyTech(ctx) {
     afterPulse,
     pulseMods,
     endOfTick,
+    saveState,
+    loadState,
     current: () => cur,
   };
 }

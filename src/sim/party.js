@@ -19,6 +19,7 @@ import { createGameplayRng } from '../core/rng.js';
 import { SKILLS } from './skills.js';
 import { NODES, createBuildSystem, classVerdict } from './nodes.js';
 import { createDraftSystem } from './draft.js';
+import { grantFor } from '../data/campaign.js';
 import {
   CLASS_OF_SEAT,
   CLASS_SKILLS,
@@ -74,6 +75,11 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
   const autoSocketOwn = [false, false, false, false];
   let caster = null; // sim/allycast.js (late-bound by the ally system)
   let tech = null; // sim/partytech.js (late-bound)
+  // PLAN §16.6: a schema-3 save's ally catch-up grant (MIGRATIONS[3] queues it;
+  // applied once on the first tick after the load), and the auto-fill it owes
+  // at the next non-combat point.
+  let catchUp = null;
+  let fillOwed = false;
 
   const body = (i) => registry.all().find((e) => e.kind === 'ally' && e.partyIndex === i) || null;
 
@@ -313,7 +319,38 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     for (const i of PARTY_SEATS) seats[i].build.step(tick);
   }
   function discrete() {
+    if (catchUp) applyCatchUp();
+    if (fillOwed && !isCombatActive()) {
+      fillOwed = false;
+      for (const i of PARTY_SEATS) seats[i].build.autoFill();
+    }
     for (const i of PARTY_SEATS) seats[i].build.discrete();
+  }
+
+  // STARTER_GRANT[level].allies + 2 nodes and 12 Glint per ally per combat
+  // room already cleared in the level — party stream, seat order, once.
+  function applyCatchUp() {
+    const c = catchUp;
+    catchUp = null;
+    const g = grantFor(c.level);
+    const perSeat = {};
+    for (const i of PARTY_SEATS) perSeat[i] = 0;
+    if (g && g.allies) {
+      const r = applyGrant({ ...g.allies }, 'catchup', { fill: false });
+      for (const rec of r) perSeat[rec.seat] += rec.nodes.length;
+    }
+    const rooms = Math.max(0, c.roomsCleared | 0);
+    for (const i of PARTY_SEATS) {
+      const s = seats[i];
+      for (let k = 0; k < rooms; k++) {
+        const ids = drafts[i].spoils(2);
+        for (const id of ids) s.build.grantNode(id, 'catchup');
+        perSeat[i] += ids.length;
+        s.purse += 12;
+      }
+    }
+    fillOwed = true;
+    events.emit(getTick(), 'party_catchup', { level: c.level, rooms, perSeat });
   }
   function endOfTick() {
     if (tech) tech.endOfTick(getTick());
@@ -342,7 +379,7 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
   // An ally starter grant / catch-up (§25.10 STARTER_GRANT[N].allies): swap
   // offers resolved by the §25.8 AI rule, node draws in pairs with auto-fill
   // after each, legendary draws, purse Glint. Party stream, seat order.
-  function applyGrant(g, provenance = 'grant') {
+  function applyGrant(g, provenance = 'grant', { fill = true } = {}) {
     if (!g) return null;
     const out = [];
     for (const i of PARTY_SEATS) {
@@ -368,7 +405,7 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
           rec.nodes.push(id);
         }
         left -= ids.length;
-        s.build.autoFill();
+        if (fill) s.build.autoFill();
       }
       for (let k = 0; k < (g.legendaries ?? 0); k++) {
         const pool = d.nodePool().filter((id) => NODES[id].rarity === 'legendary');
@@ -377,7 +414,7 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
         const id = up[stream.int(up.length)];
         s.build.grantNode(id, provenance);
         rec.nodes.push(id);
-        s.build.autoFill();
+        if (fill) s.build.autoFill();
       }
       if (g.glint) {
         s.purse += g.glint;
@@ -476,6 +513,8 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
       s.purse = 0;
       s.state = { combo: {}, recentCasts: [], retaliate: {}, stillSince: getTick() };
       s.auraNext = {};
+      catchUp = null;
+      fillOwed = false;
       // Silent (no build_restored): a run start must not add events.
       s.build.loadState({ bench: [], assignments: [], resonance: [], suppress: 0, lastHeal: null, lastHit: null, echoQueue: [], auraEchoNext: [] });
     }
@@ -501,6 +540,11 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
       rng: stream.getState(),
       mode,
       autoSocketOwn: [...autoSocketOwn],
+      ...(catchUp ? { catchUp: { ...catchUp } } : {}),
+      ...(fillOwed ? { fillOwed: true } : {}),
+      // The technique module's cross-tick memory + the cast id counter.
+      tech: tech ? tech.saveState() : null,
+      castSeq: caster ? caster.getSeq() : 0,
       seats: [
         null,
         ...PARTY_SEATS.map((i) => {
@@ -517,6 +561,10 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
       stream.setState(d.rng);
     }
     mode = PARTY_MODES.includes(d.mode) ? d.mode : 'suggest';
+    catchUp = d.catchUp && Number.isFinite(d.catchUp.level) ? { level: d.catchUp.level, roomsCleared: d.catchUp.roomsCleared | 0 } : null;
+    fillOwed = !!d.fillOwed;
+    if (tech) tech.loadState(d.tech ?? null);
+    if (caster) caster.setSeq(d.castSeq ?? 0);
     for (let k = 0; k < 4; k++) autoSocketOwn[k] = !!(d.autoSocketOwn && d.autoSocketOwn[k]);
     for (const i of PARTY_SEATS) {
       const s = seats[i];

@@ -28,6 +28,7 @@ const { SKILLS } = await import(u('src/sim/skills.js'));
 const { NODES } = await import(u('src/sim/nodes.js'));
 const { ALLY_KITS, ALLY_KITS_V150 } = await import(u('src/sim/allies.js'));
 const C = await import(u('src/data/classes.js'));
+const C_KITS = { 1: ['heavy_slam', 'brutal_cleave', 'ground_crack', 'whirling_guard'], 2: ['flurry', 'lunge_strike', 'blade_storm', 'caltrops'], 3: ['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova'] };
 const oracle = JSON.parse(readFileSync(join(here, 'docs/gauntlet/party-oracle.json'), 'utf8'));
 
 function mk(seed = 7, room = null) {
@@ -370,6 +371,125 @@ if (want('skills')) {
     const hits = ev(W, k, 'hit').filter((e) => e.source === 'kestrel_watch');
     const pulses = ev(W, k, 'aura_pulse').filter((e) => e.seat === 3);
     check('skills', 'Kestrel Watch: a pulse every 60 ticks strikes the nearest hostile in 4.0 u for 6', hits.length === 2 && pulses.length === 2 && hits[0].amount >= 6, { hits: hits.map((h) => h.amount), pulses: pulses.length });
+  }
+}
+
+// ------------------------------------------------------ GP.11 save / load --
+if (want('save')) {
+  const { createStateIO } = await import(u('src/save/capture.js'));
+  const { hashState } = await import(u('src/core/hash.js'));
+  const codec = await import(u('src/save/codec.js'));
+  const { scriptedInput } = await import(u('src/sim/script.js'));
+  function mkIO(seed = 7) {
+    let impl = createGameplayRng(seed >>> 0);
+    const rng = {
+      stream: 'gameplay',
+      get seed() { return impl.seed; },
+      get drawIndex() { return impl.drawIndex; },
+      float: () => impl.float(),
+      range: (a, b) => impl.range(a, b),
+      int: (n) => impl.int(n),
+      chance: (q) => impl.chance(q),
+      pick: (a) => impl.pick(a),
+      reseed: (s2) => { impl = createGameplayRng(s2 >>> 0); return impl.seed; },
+      getState: () => impl.getState(),
+      setState: (st) => { impl = createGameplayRng(st.seed >>> 0); return impl.setState(st); },
+    };
+    const registry = createRegistry();
+    const bus = createEventBus();
+    const clock = createClock();
+    const world = createWorld({ rng, registry, events: bus, harness: false, requestHitstop: clock.requestHitstop, room: null });
+    const evs = [];
+    bus.on('*', (e) => { if (e.type !== 'sound') evs.push(e); });
+    const io = createStateIO({ clock, rng, registry, world });
+    const stepN = (n, driver = null) => {
+      let k = 0;
+      for (let g = 0; k < n && g < n * 8 + 64; g++) if (clock.stepOnce((t) => world.step(t, scriptedInput(3, t, { skillSlots: 4 })))) { k += 1; if (driver) driver(world, clock.tick); }
+    };
+    return { world, io, stepN, clock, evs };
+  }
+  const drive = (world, tick) => {
+    if (tick % 240 !== 0) return;
+    world.cmd('killAllEnemies');
+    const r = world.runSystem().view();
+    if (r.phase === 'reward') world.runSystem().takeReward();
+    if (r.phase === 'path') world.cmd('pathChoose', 0);
+    if (r.phase === 'shop') world.cmd('shopAdvance');
+  };
+  const trip = (label, prep) => {
+    const A = mkIO();
+    prep(A);
+    const tree = A.io.capture();
+    const B = mkIO(99);
+    const ok = B.io.apply(tree);
+    const same0 = hashState(tree) === hashState(B.io.capture());
+    const hA = [];
+    const hB = [];
+    for (let k = 0; k < 8; k++) {
+      A.stepN(60, drive);
+      B.stepN(60, drive);
+      hA.push(hashState(A.io.capture()));
+      hB.push(hashState(B.io.capture()));
+    }
+    check('save', `${label}: capture → apply to a fresh world → equal tree + identical continuation (8 × 60 ticks)`, ok.ok && same0 && JSON.stringify(hA) === JSON.stringify(hB), { ok, same0, first: hA.findIndex((h, i) => h !== hB[i]) });
+  };
+  trip('four max-stress builds mid-level', (A) => {
+    A.world.runSystem().setHarnessGrant('max');
+    A.world.runSystem().startRun();
+    A.stepN(400);
+  });
+  trip('on the party page', (A) => {
+    A.world.runSystem().startRun();
+    for (let k = 0; k < 40 && A.world.runSystem().view().phase === 'combat'; k++) {
+      A.stepN(60);
+      A.world.cmd('killAllEnemies');
+      A.stepN(2);
+    }
+  });
+  // A REAL schema-3 file from the v0.5.150 tree (--base150 <dir> = a `git
+  // archive` of it), loaded by this build: allies on their kits + ONE
+  // catch-up grant.
+  const baseDir = opt('base150');
+  if (baseDir) {
+    const bu = (p2) => pathToFileURL(join(baseDir, p2)).href;
+    const rngM = await import(bu('src/core/rng.js'));
+    const regM = await import(bu('src/core/registry.js'));
+    const busM = await import(bu('src/core/events.js'));
+    const clkM = await import(bu('src/core/clock.js'));
+    const wM = await import(bu('src/sim/world.js'));
+    const capM = await import(bu('src/save/capture.js'));
+    const codM = await import(bu('src/save/codec.js'));
+    let impl = rngM.createGameplayRng(7);
+    const rng = { stream: 'gameplay', get seed() { return impl.seed; }, get drawIndex() { return impl.drawIndex; }, float: () => impl.float(), range: (a, b) => impl.range(a, b), int: (n) => impl.int(n), chance: (q) => impl.chance(q), pick: (a) => impl.pick(a), reseed: (s2) => { impl = rngM.createGameplayRng(s2 >>> 0); return impl.seed; }, getState: () => impl.getState(), setState: (st) => { impl = rngM.createGameplayRng(st.seed >>> 0); return impl.setState(st); } };
+    const registry = regM.createRegistry();
+    const bus = busM.createEventBus();
+    const clock = clkM.createClock();
+    const world = wM.createWorld({ rng, registry, events: bus, harness: false, requestHitstop: clock.requestHitstop, room: null });
+    const io = capM.createStateIO({ clock, rng, registry, world });
+    world.runSystem().startCampaign({ level: 2, harness: false });
+    const st = (n) => { for (let k = 0, g = 0; k < n && g < n * 8; g++) if (clock.stepOnce((t) => world.step(t, scriptedInput(3, t, { skillSlots: 4 })))) k += 1; };
+    for (let room = 0; room < 2; room++) {
+      for (let k = 0; k < 40 && world.runSystem().view().phase === 'combat'; k++) { st(60); world.cmd('killAllEnemies'); st(2); }
+      if (world.runSystem().view().phase === 'reward') world.runSystem().takeReward();
+      if (world.runSystem().view().phase === 'path') world.cmd('pathChoose', 0);
+      st(40);
+    }
+    const tree3 = io.capture();
+    const built = codM.buildFile({ slot: { id: 'manual-1' }, meta: { act: 2, skills: [] }, state: tree3, game: { version: '0.5.150' }, createdAt: 0, savedAt: 0 });
+    check('save', 'the v0.5.150 tree writes a schema-3 file', built.file.schema === 3);
+    const parsed = codec.parseFile(built.text);
+    check('save', 'a schema-3 file parses + migrates to schema 4 (meta.builds present)', parsed.ok && parsed.migrated && parsed.file.schema === 4 && Array.isArray(parsed.file.meta.builds) && parsed.file.meta.builds.length === 4, { ok: parsed.ok, err: parsed.detail, schema: parsed.file && parsed.file.schema });
+    const C = mkIO(5);
+    const r = C.io.apply(parsed.file.state);
+    check('save', 'the migrated tree applies; every ally on its §7 kit', r.ok && [1, 2, 3].every((i) => JSON.stringify(C.world.cmd('partyView', i).slots) === JSON.stringify(C_KITS[i])), r);
+    const k0 = C.evs.length;
+    C.stepN(3);
+    const cu = C.evs.slice(k0).filter((e) => e.type === 'party_catchup');
+    const views = [1, 2, 3].map((i) => C.world.cmd('partyView', i));
+    check('save', 'the ally catch-up grant fires exactly once (STARTER_GRANT[2].allies + 2 nodes / 12 Glint per cleared room)', cu.length === 1 && cu[0].level === 2 && views.every((v) => v.bench.length + v.filled >= 12 && v.purse >= 30), { cu, views: views.map((v) => ({ n: v.bench.length + v.filled, purse: v.purse, slots: v.slots })) });
+    C.stepN(200);
+    check('save', 'no second catch-up', C.evs.filter((e) => e.type === 'party_catchup').length === 1);
+    check('save', 'MIGRATIONS chain 1 → 2 → 3 → 4 is complete', typeof codec.MIGRATIONS[1] === 'function' && typeof codec.MIGRATIONS[2] === 'function' && typeof codec.MIGRATIONS[3] === 'function' && codec.SCHEMA === 4);
   }
 }
 

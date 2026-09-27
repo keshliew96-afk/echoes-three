@@ -695,6 +695,11 @@ export function createAllyCaster(ctx) {
   }
 
   return {
+    // Save (PLAN §16.6): the per-cast id counter (bolt / zone mods key on it).
+    getSeq: () => castSeq,
+    setSeq: (n) => {
+      castSeq = Number.isFinite(n) ? n : 0;
+    },
     cast,
     runPending,
     stepDash,
