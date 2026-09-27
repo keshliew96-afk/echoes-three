@@ -1,4 +1,5 @@
-STATUS: PARTIAL
+STATUS: COMPLETE
+VERDICT: NET4-F2 FIXED — a host that reloads (F5 / crash), reopens its tab, opens a second tab or is duplicated never wipes the party run: a fresh page's Rejoin resumes hosting from the server keyframe (<= 2 s back) and every guest re-baselines; sessions are per tab and never offered while live in another tab; before/after on the critic's own probes (hostreload: idle camp Glint 0 -> L1 room 2 kept, Glint 12 -> 24; secondtab: offer -> none; sametab (c): Healer seat taken -> own Tank seat). Commits 52fdf8b e0d67a7 7857fc8 5e8ac3d 66a1665 632487e (+ this checkpoint).
 # fix-M5b-r4 — NET4-F2 (host reload / second tab Rejoin wipes the run)
 
 ## Steps
@@ -36,3 +37,29 @@ STATUS: PARTIAL
 - [step 5] campaign transition leg: tools/gntfixM5b4-hostreload.mjs --mode reload --at levelclear 9/9 — the host reloads while the L1 level-clear card is up on every page (transitionState 'card', Glint 84); Rejoin at 5.6 s; keyframe tick 750 (stateAgeMs 30, apply 46 ms) -> host and both guests continue into Level 2 room 1 combat with Glint 84 and the same skills, 0 desyncs; guests' level events: level_start once (no second level_clear).
 - [step 5 COMMITTED] 66a1665 (v0.5.140).
 - [step 6] tools/gntfixM5b4-duptab.mjs 4/4: a "Duplicate tab" of the live host (sessionStorage copied, same tab id) re-keys (tab_rekeyed bb7a…->85d8…), gets no Rejoin (rejoinInfo null) and the toast "Session WH72L is open in another tab of this browser — carry on there."; the host tab stays host, its record under its own id.
+
+- [step 6 COMMITTED] 632487e (v0.5.141).
+- [final regression] after the last code commit: smoke + core loop on the dev server at v0.5.138 (exit 0, 0 PAGEERROR, phase reward); at v0.5.141 the shared dev server on :5199 had gone down (connection refused; vite.config.js being edited by another agent — never restarted by me), so the final smoke + core loop ran on the production preview of the final tree: gntfixM5b4-smoke-prod exit 0 / 0 PAGEERROR (version 0.5.141), gntfixM5b4-core-prod run_start -> room_cleared -> reward_offer, 0 PAGEERROR. SP goldens 9/9. Node-bot netbench PASS.
+
+## Decisions (PLAN silent -> best-in-class choice)
+- D1 Resume source = the server's keyframe cache (the one migration uses, <= 2 s old), not a pagehide snapshot: works for a crash / killed tab too, one code path with migration, state age reported to every player ("the run resumed from X s earlier").
+- D2 Resume gate: the restored sim waits <= 1 s (typically one frame) for every connected guest's first input, so seats that never dropped are not handed to the AI ("lost connection" notes) on the resume tick.
+- D3 Per-tab session records (sessionStorage tab id) + live-tab detection by BroadcastChannel query/answer (works on http:// LAN pages) and Web Locks where the page is a secure context (covers a frozen tab); a duplicated tab re-keys.
+- D4 A second tab / duplicate of a live session is never offered Rejoin and is told where the session is (toast) — the WhatsApp-Web "open in another window" rule; no "use here" steal from the title.
+- D5 Server safety net: a fresh reconnect of the host while its old socket is live (a page that could not see the live tab) supersedes it and still resumes from the keyframe; the old tab reads "This session continued in another window."
+- D6 No usable keyframe (none, or > 10 s of play missing) -> migrate now to a guest (its view is newest; a stale keyframe is dropped), the returning player plays the Healer as a guest; alone -> room closed + explicit reject.
+- D7 The title probes the session's server before offering Rejoin (a killed / restarted server gets no "your party is waiting"; r4 advisory A2), Multiplayer still lists Rejoin once the server answers within the minute.
+- D8 Host copy: "You were hosting ABCDE — your party is waiting. Rejoin to carry on the run." (true for a resume and for a post-grace return as the Healer); menu caption "You were hosting — your party is waiting for you".
+- D9 The Multiplayer menu never waits on the live-tab look (opens on the server probe; cache primed at boot).
+
+## Cross-owner edits (minimal, anchored)
+- src/net/lobbyClient.js (M5a): per-tab records via tabsession.js, rejoin({ code }) with fresh:true + live-tab refusal, rejoinInfo/rejoinCandidate/tabId, BECOME_HOST applies m.room before emitting, hostResumes counter.
+- server/lobby.mjs + server/server.mjs (M5a; transferred to M5b in W4 for fixes): reattach({ fresh }) -> resumeHost; RECONNECT passes fresh and lets a fresh host through the "already connected" branch.
+- src/ui/net/update.js (DEPLOY copy inside M5b's src/ui/net/**): reloadForUpdate clears both the per-tab map and the legacy key.
+- docs/gauntlet/PLAN.md §3.7 (control table + binding paragraph), docs/TESTING.md M5b section.
+- New file src/net/tabsession.js (M5b).
+
+## Findings for other owners (not fixed here)
+- tools/gntcnet4-ui.mjs steps 5-6: its raw filler clients send hello v:2; the server is on protocol 3 since fix-M5a-r4 (version_mismatch) — the room never fills. Probe needs v:3.
+- tools/gntcnet4-drops.mjs leg C hard-codes the critic's preview port 4328; leg F clicks New Game behind the title's Rejoin modal (the critic used gntcnet4-killsp for the server kill); leg E's old-host message check reads the page ~15 s after a 5.2 s toast (fails on the critic's own r4 run too) and its 55 ticks/s bar is load-sensitive (54.6 measured on this loaded machine with migration at 10.3 s, 0 desyncs).
+- Grace timing: a host whose reloaded page needs longer than the 10 s grace to reach the title comes back after the migration as the Healer guest (run kept; --mode late 7/7).
