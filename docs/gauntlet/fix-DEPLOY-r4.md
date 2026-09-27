@@ -1,4 +1,5 @@
-STATUS: PARTIAL
+STATUS: COMPLETE
+VERDICT: F1 FIXED — the dev/preview /echoes proxy prints nothing when players leave (raw aborts 45 traces in 30 trials -> 0 in 60; critic zeroconf close 2 of 3 runs printed -> 0 of 3; critic abort kill 3 lines -> 0 x2; Vite-API proxy unit 6/19 -> 19/19), a genuine proxy error still reports, server-down upgrades get an honest 502 + one hint line; smoke 0 PAGEERROR, core loop to reward, goldens 9/9, gntDEPLOY-sp 4/4. Commits c695f63 (+ this checkpoint).
 fix-DEPLOY-r4 (gauntlet round 4) — F1: dev/preview /echoes proxy prints stack traces when players leave.
 
 ## Steps
@@ -18,3 +19,22 @@ fix-DEPLOY-r4 (gauntlet round 4) — F1: dev/preview /echoes proxy prints stack 
   - critic abort (navigate / close / kill) x2: 0 / 0 / 0 new lines both runs (captures/gntfixDEPLOY4/gntfixDEPLOY4-critic-abort-after3.json, -after4.json). BEFORE: kill 3 lines (read ECONNRESET + stack). The critic's own captures/gntcdeploy4/gntcdeploy4-abort.json restored after each run.
   - proxyunit (Vite preview() API, capturing logger) --tag after3: 19/19 — 12 injected leave-codes (destroy + emit) log 0; unexpected EFAKE still reported by Vite; listener count unchanged; proxy still relays; server down -> ws 502 x3, http 502 + body, ONE hint, 0 Vite errors. Pre-fix config (captures/gntfixDEPLOY4/vite.config.before.mjs) --tag before3: 6/19.
   - smoke: cert-capture shot gntfixDEPLOY4-smoke --url http://127.0.0.1:4394/ (production build; 5199 is down) exit 0, 0 PAGEERROR, boot card "Ready".
+- [commit c695f63 v0.5.143] fix(build): vite.config.js proxy fix + tools/gntfixDEPLOY4-rawabort.mjs + tools/gntfixDEPLOY4-proxyunit.mjs + TESTING DEPLOY "fix-DEPLOY-r4" probes; smoke exit 0 / 0 PAGEERROR before the commit.
+- [final regression, production build of v0.5.143 (dist-gntfixDEPLOY4, preview :4394 pid 72520; the 5199 dev server is down)]
+  - smoke gntfixDEPLOY4-smoke exit 0, 0 PAGEERROR (boot card "Ready").
+  - core loop tools/actions/gntfixDEPLOY4-coreloop.json on ?seed=7&menu=0: camp tick 152 -> portal 308 -> combat room 1 330 -> reward 498 (run_start@320, room_cleared@428, reward_offer@428), 0 PAGEERROR, frame shows "A GIFT ON THE ROAD" reward card, v0.5.143 (captures/gntfixDEPLOY4-core.png).
+  - tools/gntDEPLOY-sp.mjs --url http://127.0.0.1:4397/ (a second preview, ECHOES_NET_PORT=7937 with NO server — exercises the new ws-502 path end to end): 4/4 — 0 /echoes sockets through single-player to the reward, Multiplayer shows the unreachable panel with the site address + "npm run net", 0 page errors; the preview log has exactly ONE "[echoes] ... no session server there" line and no stack for 2 refused upgrades.
+  - Node goldens tools/gntM2-goldens.mjs: 9/9 matched (no src/ change).
+  - critic probes on the final config: zeroconf x3 11/11 with 0 new proxy log lines; abort (navigate/close/kill) x2 all 0.
+
+## Decisions
+- D1 Swap, don't suppress globally: only the listener Vite added in its own proxyReqWs handler is replaced (listeners present before the emit — http-proxy's cleanUpProxySockets — are untouched, listener count unchanged 4 -> 4), and it forwards every error that is NOT a went-away code to Vite's original logger, so a genuine proxy fault still prints its stack (proxyunit A.unexpected.EFAKE.reported).
+- D2 Went-away set = ECONNRESET, ECONNABORTED (Windows), EPIPE, ETIMEDOUT (a dropped network), ERR_STREAM_WRITE_AFTER_END / ERR_STREAM_DESTROYED / ERR_STREAM_PREMATURE_CLOSE (teardown races), ECONNREFUSED (session server down -> the throttled one-line hint). Applied to both the client-socket listener and the proxy 'error' event (upstream side: the session server going away mid-game, whose own terminal says why).
+- D3 Server down + WebSocket upgrade: the 101 was never sent, so the raw socket carries "HTTP/1.1 502 Bad Gateway" + the "not running (npm run net)" body instead of a silent close (PLAN §14.2 "the proxy answers 502"). The browser sees the same failed handshake as before (gntDEPLOY-sp unreachable copy unchanged).
+- D4 No Vite patch / no node_modules edit / no dependency: the fix lives in the config's configure(proxy) hook (Vite 8.2.1's proxyMiddleware is shared by dev and preview), so it survives npm install.
+- D5 PLAN.md not edited: §14.2 already states the contract this fix now meets ("client aborts log nothing"); the probes are documented in TESTING.md (DEPLOY section).
+
+## Cross-owner / environment notes
+- vite.config.js header: owner INT, DEPLOY §14.2 binding for the /echoes proxy — the edit is confined to netProxy() (the DEPLOY block added in acec501).
+- The shared dev server on :5199 was DOWN when this instance resumed (another agent, fix-M5b-r4, logged it going down while vite.config.js was being edited — that was this fix's killed predecessor's uncommitted edit; Vite reloads its config on every save). Per the rules it was not restarted by me. The committed config loads cleanly (vite build + two vite preview servers loaded it), so the orchestrator can restart `npx vite` as usual.
+- The critic's tools/gntcdeploy4-abort.mjs writes a fixed path (captures/gntcdeploy4/gntcdeploy4-abort.json): each of my runs was copied to captures/gntfixDEPLOY4/ and the critic's file restored afterwards.
