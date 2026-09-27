@@ -286,6 +286,89 @@ cue('ally_cast_archer', { slot: 'cast', levelDb: -10, maxVoices: 2 }, (k, t, d, 
     k.noise(d, t, { type: 'highpass', f0: 3500, q: 0.7, d: 0.16, gain: 0.25 })
   )
 );
+// PARTY (BUILD_BRIEF §25.2): one procedural cue per new class skill, in its
+// class's family (the Tank's low thud, the Swordsman's swish, the Archer's
+// string); SFX bus, cast slot, <= 2 voices. Passive pulses <= -24 dB, 1 voice,
+// and only when the pulse does something (the event map below).
+// Tank: Taunting Roar — a low growl over a frame drum.
+cue('tank_roar', { slot: 'cast', levelDb: -8, maxVoices: 2 }, (k, t, d, p) =>
+  Math.max(
+    k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 420), q: 0.9, a: 0.04, hold: 0.18, d: 0.3, gain: 1 }),
+    k.tone(d, t, { type: 'sawtooth', f0: P(p, 95), f1: P(p, 70), a: 0.05, d: 0.45, gain: 0.35 }),
+    k.tone(d, t + 0.02, { f0: P(p, 110), f1: P(p, 48), d: 0.2, gain: 0.8 })
+  )
+);
+// Tank: Shield Wall — a wood knock and a soft bell.
+cue('tank_shield', { slot: 'cast', levelDb: -9, maxVoices: 2 }, (k, t, d, p) =>
+  Math.max(
+    k.noise(d, t, { type: 'bandpass', f0: P(p, 900), q: 3, d: 0.06, gain: 0.9 }),
+    k.bell(d, t + 0.03, { f: P(p, 523), ratio: 2.4, index: 0.8, d: 0.6, gain: 0.35 })
+  )
+);
+// Tank: Shoulder Charge — a whoosh into a thud.
+cue('tank_charge', { slot: 'cast', levelDb: -8, maxVoices: 2 }, (k, t, d, p) =>
+  Math.max(
+    k.noise(d, t, { f0: P(p, 500), f1: P(p, 1800), q: 1, a: 0.08, d: 0.18, gain: 0.7 }),
+    k.tone(d, t + 0.2, { f0: P(p, 120), f1: P(p, 45), d: 0.2, gain: 1 })
+  )
+);
+// Tank: Iron Stance — a soft low hum (only when a shield grows).
+cue('tank_stance', { slot: 'aura', levelDb: -26, maxVoices: 1, cooldownMs: 400 }, (k, t, d, p) =>
+  k.tone(d, t, { f0: P(p, 110), a: 0.12, d: 0.4, gain: 0.6 })
+);
+// Swordsman: Fox Step — a swish with a blade ring.
+cue('sword_step', { slot: 'cast', levelDb: -9, maxVoices: 2 }, (k, t, d, p) =>
+  Math.max(
+    k.noise(d, t, { f0: P(p, 1200), f1: P(p, 4200), q: 1.4, a: 0.01, d: 0.12, gain: 0.9 }),
+    k.tone(d, t + 0.1, { type: 'triangle', f0: P(p, 2400), f1: P(p, 2200), d: 0.25, gain: 0.25 })
+  )
+);
+// Swordsman: Crescent Finisher — a ring sweep (+3 semitones per combo stack).
+cue('sword_finisher', { slot: 'cast', levelDb: -8, maxVoices: 2 }, (k, t, d, p) =>
+  Math.max(
+    k.noise(d, t, { f0: P(p, 600), f1: P(p, 3600), q: 1.1, a: 0.02, d: 0.22, gain: 0.9 }),
+    k.tone(d, t + 0.05, { type: 'triangle', f0: P(p, 880), f1: P(p, 1320), d: 0.3, gain: 0.35 })
+  )
+);
+// Swordsman: Riposte — a bell tink and a slash.
+cue('sword_parry', { slot: 'cast', levelDb: -9, maxVoices: 2 }, (k, t, d, p) =>
+  Math.max(
+    k.bell(d, t, { f: P(p, 1568), ratio: 3.1, index: 1.2, d: 0.35, gain: 0.45 }),
+    k.noise(d, t + 0.04, { f0: P(p, 1500), f1: P(p, 4800), q: 1.3, a: 0.01, d: 0.09, gain: 0.7 })
+  )
+);
+// Swordsman: Razor Wake — a soft whirr (only on a hit).
+cue('sword_wake', { slot: 'aura', levelDb: -26, maxVoices: 1, cooldownMs: 400 }, (k, t, d, p) =>
+  k.noise(d, t, { f0: P(p, 1800), f1: P(p, 2600), q: 2, a: 0.03, d: 0.14, gain: 0.8 })
+);
+// Archer: Vault Shot — a cloth flap and a twang.
+cue('archer_vault', { slot: 'cast', levelDb: -9, maxVoices: 2 }, (k, t, d, p) =>
+  Math.max(
+    k.noise(d, t, { type: 'lowpass', f0: P(p, 900), q: 0.8, a: 0.03, d: 0.12, gain: 0.8 }),
+    k.tone(d, t + 0.15, { type: 'triangle', f0: P(p, 520), f1: P(p, 210), d: 0.14, gain: 0.5 })
+  )
+);
+// Archer: Pinning Arrow — a heavy twang and a thunk.
+cue('archer_pin', { slot: 'cast', levelDb: -9, maxVoices: 2 }, (k, t, d, p) =>
+  Math.max(
+    k.tone(d, t, { type: 'triangle', f0: P(p, 330), f1: P(p, 140), d: 0.16, gain: 0.6 }),
+    k.tone(d, t + 0.12, { f0: P(p, 180), f1: P(p, 70), d: 0.1, gain: 0.7 })
+  )
+);
+// Archer: Rain of Arrows — rising whistles.
+cue('archer_rain', { slot: 'cast', levelDb: -10, maxVoices: 2 }, (k, t, d, p) =>
+  Math.max(
+    ...[0, 0.06, 0.12, 0.18].map((o, i) => k.tone(d, t + o, { type: 'sine', f0: P(p, 900 + i * 120), f1: P(p, 1800 + i * 160), d: 0.2, gain: 0.25 })),
+    k.noise(d, t, { type: 'highpass', f0: 3000, q: 0.7, d: 0.3, gain: 0.2 })
+  )
+);
+// Archer: Kestrel Watch — a tiny chirp and a hiss (only on a hit).
+cue('archer_kestrel', { slot: 'aura', levelDb: -25, maxVoices: 1, cooldownMs: 400 }, (k, t, d, p) =>
+  Math.max(
+    k.tone(d, t, { type: 'sine', f0: P(p, 2600), f1: P(p, 3400), d: 0.06, gain: 0.5 }),
+    k.noise(d, t + 0.04, { type: 'highpass', f0: 3800, q: 0.8, d: 0.08, gain: 0.4 })
+  )
+);
 cue('bolt', { slot: 'cast', levelDb: -21, priority: 1, maxVoices: 3, cooldownMs: 50 }, (k, t, d) =>
   k.noise(d, t, { f0: 1800, f1: 2600, q: 1.5, a: 0.01, d: 0.07, gain: 1 })
 );
@@ -582,6 +665,18 @@ const PARTY_KINDS = new Set(['player', 'ally']);
 const isBoss = (ev) => ev.kind === 'stag' || ev.kind === 'boss' || ev.boss === true;
 
 const HEAL_SKILLS = new Set(['mending_bolt', 'swift_mend', 'restorative_wave', 'guardian_bond']);
+// PARTY: the new class skills' own cues (BUILD_BRIEF §25.2 audio column).
+export const CLASS_SKILL_CUE = Object.freeze({
+  taunting_roar: 'tank_roar',
+  shield_wall: 'tank_shield',
+  shoulder_charge: 'tank_charge',
+  fox_step: 'sword_step',
+  crescent_finisher: 'sword_finisher',
+  riposte: 'sword_parry',
+  vault_shot: 'archer_vault',
+  pinning_arrow: 'archer_pin',
+  rain_of_arrows: 'archer_rain',
+});
 function skillFamily(ev) {
   const s = ev.skill;
   if (s === 'sanctuary') return 'cast_zone';
@@ -614,12 +709,27 @@ export const DEFAULT_EVENT_CUES = {
   death: (ev, h) => one(isBoss(ev) ? 'boss_death' : 'kill', at(ev, h, ev.id)),
   heal: (ev, h) => one(ev.crit ? 'heal_crit' : 'heal', at(ev, h, ev.target)),
   full_heal: (ev, h) => one('sparkle', at(ev, h, ev.target)),
-  aura_pulse: (ev, h) => one('aura', at({}, h)),
+  // PARTY: a class passive pulse (ev.seat) plays its own quiet cue only when
+  // it did something; the Healer's aura keeps its cue.
+  aura_pulse: (ev, h) => {
+    if (ev.seat === undefined) return one('aura', at({}, h));
+    const did = (ev.hit && ev.hit.length) || (ev.shielded && ev.shielded.length);
+    if (!did) return null;
+    const c = ev.skill === 'iron_stance' ? 'tank_stance' : ev.skill === 'razor_wake' ? 'sword_wake' : 'archer_kestrel';
+    return one(c, at(ev, h));
+  },
   zone_tick: (ev, h) => one('zone_pulse', at(ev, h, ev.id)),
   azone_tick: (ev, h) => one('azone_pulse', at(ev, h, ev.id)),
   skill_cast: (ev, h) => one(skillFamily(ev), at({}, h)),
-  ally_cast: (ev, h) =>
-    one(ev.classId === 'tank' ? 'ally_cast_tank' : ev.classId === 'archer' ? 'ally_cast_archer' : 'ally_cast_sword', at(ev, h, ev.id)),
+  ally_cast: (ev, h) => {
+    // PARTY: a new class skill's own cue (Crescent Finisher +3 semitones per
+    // combo stack); the starting kit keeps its class family.
+    const own = CLASS_SKILL_CUE[ev.skill];
+    if (own) return one(own, at(ev, h, ev.id), ev.combo ? { pitch: Math.pow(2, (3 * ev.combo) / 12) } : undefined);
+    return one(ev.classId === 'tank' ? 'ally_cast_tank' : ev.classId === 'archer' ? 'ally_cast_archer' : 'ally_cast_sword', at(ev, h, ev.id));
+  },
+  ally_dash: (ev, h) => one('whoosh', { x: ev.x0, z: ev.z0 }, { pitch: ev.cause === 'dash' ? 0.9 : 1.1 }),
+  parry_counter: (ev, h) => one('sword_parry', at(ev, h, ev.id), { pitch: 1.25 }),
   skill_bolt_spawn: (ev, h) => one('bolt', at(ev, h, ev.id)),
   zone_spawn: (ev, h) => one('zone_spawn', at(ev, h, ev.id)),
   azone_spawn: (ev, h) => one('azone_spawn', at(ev, h, ev.id)),
@@ -687,6 +797,9 @@ export const PREBAKE = [
   ['bow', 0.8],
   ...['zone_pulse', 'azone_pulse', 'aura', 'sparkle', 'dodge', 'dash_end', 'mark', 'downed', 'deny_empty', 'deny_cd'].map((c) => [c, 1]),
   ...['cast_heal', 'cast_damage', 'cast_zone', 'cast_nova', 'cast_aura', 'ally_cast_tank', 'ally_cast_sword', 'ally_cast_archer', 'zone_spawn', 'azone_spawn'].map((c) => [c, 1]),
+  // PARTY class skill cues (+ the finisher's combo pitches, the counter).
+  ...['tank_roar', 'tank_shield', 'tank_charge', 'tank_stance', 'sword_step', 'sword_finisher', 'sword_parry', 'sword_wake', 'archer_vault', 'archer_pin', 'archer_rain', 'archer_kestrel'].map((c) => [c, 1]),
+  ['sword_finisher', Math.pow(2, 3 / 12)], ['sword_finisher', Math.pow(2, 6 / 12)], ['sword_parry', 1.25], ['whoosh', 0.9], ['whoosh', 1.1],
   ...['quake_warn', 'quake_hit', 'trample', 'horn', 'roar', 'boss_death', 'revive_hum', 'revive', 'revive_snap', 'rally'].map((c) => [c, 1]),
   ...[1.12, 1.24, 1.36, 1.48, 1.6, 1.72].map((p) => ['bounce', p]), // bounce_hop 1..6
   ...['echo', 'echo_tick', 'siphon', 'siphon_heal', 'fizzle', 'detonate', 'detonate_heal', 'break', 'whoosh'].map((c) => [c, 1]),

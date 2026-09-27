@@ -353,6 +353,10 @@ registerContentCues(service('audio'), world);
 }
 // Gauntlet skill / status / technique VFX (render/skillfx/content.js).
 const contentfx = PLAYABLE ? createContentFx({ stage, world, bus, cosmetic }) : null;
+// PARTY (BUILD_BRIEF §25.2): the class skills', class passives' and taunts' VFX.
+import { createClassFx } from './render/skillfx/class/index.js';
+const classfx = PLAYABLE ? createClassFx({ stage, world, bus, cosmetic }) : null;
+if (classfx) service('content').classFx = () => classfx.debugCounts();
 // Probe surface: __echoes.content.fx() -> the layer's live element counts.
 if (contentfx) service('content').fx = () => contentfx.debugCounts();
 // Real-input harness surface (tools/gntM4a-realrun.mjs): the autopilot's
@@ -602,6 +606,7 @@ function frame(now) {
   fizzleCue?.update(now / 1000);
   // @gnt:M4a RENDER-TICK begin
   contentfx?.update(now / 1000, alpha);
+  classfx?.update(now / 1000, alpha);
   // @gnt:M4a RENDER-TICK end
   // @gnt:M4b RENDER-TICK begin
   m4bLayers?.update(now / 1000, alpha);
