@@ -787,6 +787,24 @@ import { warmupHold } from './render/warmup.js';
   };
   requestAnimationFrame(poll);
 })();
+// A host's Quit to Lobby, told to the guests (gauntlet r4 J4-F3). The host
+// confirms "Quit to the lobby?" and the whole session goes back to camp
+// (run.js abandonRun: run_end 'abandoned' + return_to_camp { reason }); a
+// guest used to be pulled out of its fight into the camp with nothing on
+// screen saying why — it read as a crash or a desync. The guest's replica
+// replays the host's return_to_camp WITH its reason (a normal return after
+// an end card carries none), so the guest gets one toast naming the host,
+// the quit and where the party is now. The host chose it (no notice); a
+// single-player Quit to Lobby has nobody to tell.
+bus.on('return_to_camp', (ev) => {
+  if (!ev || typeof ev.reason !== 'string') return;
+  const net = service('net');
+  if (!net || typeof net.isGuest !== 'function' || !net.isGuest()) return;
+  const room = net.room;
+  const hostSeat = room && Array.isArray(room.seats) && Number.isFinite(room.hostSeat) ? room.seats.find((s) => s && s.index === room.hostSeat) : null;
+  const who = hostSeat && hostSeat.name ? `${hostSeat.name} (host)` : 'The host';
+  app.toast(`${who} quit to the lobby — the campaign ended and the party is back at camp`, { tone: 'info', ms: 6500 });
+});
 // @gnt:INT-WIRING end
 scheduler.start();
 

@@ -1331,6 +1331,18 @@ whose root causes lived in other keys' files (minimal edits, listed here):
   window write with picture and ≤ 50 ms frames, hidden, pagehide, pause, Save
   & Quit supersedes, Load of the slot it would overwrite, New Game, the M2
   G2.7 sequence).
+- *A guest is told when the host quits to the lobby (J4-F3).* The host's
+  Quit to Lobby (run.js `abandonRun`) emits `return_to_camp` WITH a `reason`
+  (a normal return after an end card carries none); the guest's replica
+  replays it, and main.js `@gnt:INT-WIRING` shows the guest ONE app toast —
+  "<name> (host) quit to the lobby — the campaign ended and the party is back
+  at camp" (6.5 s, `__echoes.app.toasts()`); the host and a single-player
+  quit get none. Probes: the critic's `node tools/gntcjourney4-mpnotice.mjs
+  --url <preview> --port <net>` (N1: host confirms Quit to Lobby from Level 2
+  through the real pause menu, zero-config via the preview proxy) and `node
+  tools/gntfixINT4-mpquit.mjs --url <u> --port <net>` (Q1 one toast naming
+  the host within 3 s, Q2 no toast on a defeat → camp, Q3 none in single
+  player).
 
 ### CAMPAIGN — linear campaign (the user's CRITICAL REFACTOR, 2026-09-25, owner CAMPAIGN)
 
