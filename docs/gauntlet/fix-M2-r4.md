@@ -1,5 +1,5 @@
-STATUS: PARTIAL
-fix-M2-r4 (SAVE4-F1: stale second tab erases profile on unload) — in progress
+STATUS: COMPLETE
+VERDICT: SAVE4-F1 FIXED — a stale second tab reloaded / closed / navigated away no longer erases high scores, records or level unlocks (dev + production BEFORE hs 1->0, unlocks [1,2]->[1], levelClears {1:1}->{1:0} -> AFTER all kept); profile merged on every write, slot catalogue + ended runs re-read before every decision, other tabs follow live. Commits 8a9a8bf (v0.5.125), ac89332 (v0.5.128), checkpoint (v0.5.129).
 
 ## Steps
 ### Step 1 — BEFORE (reproduced on dev, v0.5.124)
@@ -37,3 +37,27 @@ fix-M2-r4 (SAVE4-F1: stale second tab erases profile on unload) — in progress
 - The critic's corrupt scenario records a run, then truncates echoes.profile.v1 under the RUNNING page and reloads. The .bak there is the copy BEFORE that run. The first cut of sync() fell back to .bak whenever main was unreadable, so the page's exit would have written the older .bak (run lost). Fix: on a damaged main, adopt the newest readable copy among this tab's own / .bak / .tmp by savedAt (never a backup older than the tab's copy), and flush() repairs a damaged main even when the tab has nothing pending.
 - Node probe now 30/30 (case 10: damaged main + older .bak keeps the tab's newer copy, reload report ok; clean tab repairs on flush; a stale tab adopts a NEWER .bak).
 - Critic corrupt scenario on dev: profile leg PASS (hs 1 kept, report ok). Its close-mid-save row d=150 ms was "OTHER" once: the probe reads `want` = hash() in one evaluate and starts save() in the next, and the save captures at the next tick end — a tick between the two calls gives a legit later-tick file (the critic noted the same race class on prod); not touched by this fix (no slot-file write path changed).
+
+### Step 5 — final regression on the production build of ac89332 (v0.5.128, entry index-C61-EBy7.js, MY port 4362, PID 78252, killed)
+- Critic twotabs4: OK, storage before/after B's F5 identical (hs 1, unlocks [1,2], levelClears {1:1}, abandoned 1) — captures/gntfixM24-sc-twotabs4-final-prod.json, Records + Level Select screens captures/gntfixM24-twotabs4-records-after-final-prod.png, captures/gntfixM24-twotabs4-level-select-after-final-prod.png.
+- tools/gntfixM24-sc-tabs.mjs: OK 0 FAILS (captures/gntfixM24-sc-tabs-final-prod.json).
+- Critic profclobber: OK — leg1 an injected profile (416 B, hs 1, unlocks [1,2]) written under a running page is KEPT after that page's unload (545 B = merged with the page's playtime; BEFORE: 403 B, hs 0, unlocks [1]); leg3/leg4 two-tab runs kept (hs 3 after both tabs recorded).
+- Critic scores (G2.8) OK, newgame (J3-F3 rotation + G2.9) OK, 0 page errors.
+- Critic corrupt: profile leg OK (main 605 B / .bak 401 B older -> truncated main -> reload hs 1, report ok: the Step-4 rule at work); 1 FAIL "case truncate5 did not return within 25 s" = the critic's own recorded ADVISORY page stall (critic-save-r4 Step 16: loads ~60 ms apart freeze the page in native GL code on production 4/4; not a save-path defect, reproduced on v0.5.124 by the critic).
+- Dev after the last commit: smoke exit 0 / 0 PAGEERROR; core loop (?seed=7&menu=0): camp 122 -> portal 276 -> combat room 1 663 -> reward 845 (run_start@288, room_cleared@773, reward_offer@773), 0 PAGEERROR (first attempt hit a 180 s navigation timeout while the dev server was loaded — retried per the harness contract).
+- Node: tools/gntfixM24-profile-tabs.mjs 30/30; goldens tools/gntM2-goldens.mjs 9/9 (no sim file touched).
+
+## Decisions (PLAN was silent on several tabs)
+- D1 Merge, never lock: a second tab stays fully playable (no "open in another tab" lockout — browsers restore old tabs on their own, and a lockout would strand the player's session); instead nothing a tab writes can take back another tab's progress. Profile = stored base + this tab's op log (runs, level clears, unlocks) + counters (playtime, last level, furthest level); counters from both tabs add up, unlocks union, high scores merge (top 10), ranks / New best measured against the freshest stored copy.
+- D2 Last writer is never blind: every profile write re-reads storage first (works even when a frozen tab never received the storage event); the `storage` event is only the live-UI layer (Records, Level Select via content.unlockedActs, title Continue, saves list).
+- D3 A damaged main is repaired from the newest readable copy (this tab's / .bak / .tmp by savedAt); .bak only receives a readable profile (writeAtomic `backupIf`). A cleared main (null — the player cleared site data) is re-written only when the tab has something of its own to write (old behaviour).
+- D4 Slots: the index is the cheap change detector (catalogue-ordered bytes, identical from every tab); decisions re-scan when it differs. Slot FILES are whole saves chosen by the player, so a manual overwrite in one tab of a slot the other tab just wrote is still an explicit overwrite (the confirm reads the fresh list).
+- D5 Explicit Records reset (profileStore.reset) still wins over other tabs' older copies (a later stale exit adds only its playtime).
+
+## Cross-owner edits
+- src/ui/menu/title.js (M1): one anchored line `// @gnt:M2 TABS` — `app.events.on('saves_changed', schedule)` so the title's Continue follows another tab's saves (the save service emits the app event after a storage-driven re-scan).
+- docs/gauntlet/PLAN.md §3.4 Profile: the multi-tab contract paragraph; docs/TESTING.md: fix-M2-r4 note.
+- Not changed, noted for M1: src/app/settings.js persists the whole settings blob on pagehide only when THIS tab changed a setting (dirty) — last-changer-wins for settings, no silent loss of progress; left as is.
+
+## Processes
+- vite preview 4362 (PID 69392, then 78252) and 4363 (PID 83612) — all killed, no listener on 4362/4363, no node process with gntfixM24/dist-gntfixM24 left. Export dirs (git archive of 8a9a8bf / 26ffd81 / ac89332) removed after unlinking their node_modules junctions.
