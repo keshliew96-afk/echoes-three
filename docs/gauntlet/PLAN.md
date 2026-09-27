@@ -650,7 +650,20 @@ save and the profile.
 the camp after `run_end`/`return_to_camp`, and Save & Quit. Never during a
 transition fade, never as a net guest (host saves with `meta.network: true`;
 loading such a save starts single-player with AI in every seat). Throttle ≥ 20 s
-between autosaves except run end. Work is split across frames (capture at the
+between autosaves except run end. *Nothing is dropped (gauntlet r4 J4-F2 — binding):* the
+throttle spaces WRITES only. A safe point inside the window is captured on its
+own tick (rule 6) and HELD — the newest held capture wins, an older one is
+superseded — and written when the window ends; at once (async) when the sim
+pauses or the app leaves play (pause menu, title), so Save / Load / Continue
+list it; and synchronously (~4-6 ms, no frame waits) on `visibilitychange`
+hidden and `pagehide`, so closing, reloading or backgrounding the tab never
+costs a completed room, a draft or Glint. A write that finds a newer capture
+of the writer already on disk is superseded; Save & Quit supersedes a held
+capture; a Load never writes a held capture over the slot it is about to
+read (that capture is dropped — the player chose that save); New Game writes
+the old game's held capture first. No "Leave site?" prompt: the tab close is
+protected by the pagehide write, like a console game's quit-anytime save.
+Work is split across frames (capture at the
 `clock.onTickEnd` that follows the safe-point event — rule 6 — then encode +
 write in `requestIdleCallback`/next frames) so no frame exceeds 50 ms. For
 `room_enter` the captured tick is the room's first tick (its end), so a load

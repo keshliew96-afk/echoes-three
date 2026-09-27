@@ -443,7 +443,12 @@ export function createSaveSystem({
   // auto-slot rotation) is the CAPTURE time when the caller passes
   // `capturedAt`; the write itself may land seconds later (calm frames,
   // thumbnail, idle tasks) and must never re-rank the file (J3).
-  async function writeSlot(id, tree, { name, kind, reason = 'manual', thumb = true, calm = false, capturedAt = null } = {}) {
+  // `shotP`: a picture requested earlier (a held autosave's, taken as its room
+  // was entered) instead of the next frame's; `superseded()` -> true: a newer
+  // capture of this writer already landed — nothing is written (gauntlet r4
+  // J4-F2, INT: a held autosave may be written synchronously on pagehide while
+  // an older one is still in these async pieces).
+  async function writeSlot(id, tree, { name, kind, reason = 'manual', thumb = true, calm = false, capturedAt = null, shotP: earlyShot = null, superseded = null } = {}) {
     const t0 = performance.now();
     const calmMs = calm ? await calmFrames() : 0;
     const key = slotKey(id);
@@ -466,7 +471,7 @@ export function createSaveSystem({
     let shot = null;
     let shotP = null;
     const tThumb = performance.now();
-    if (thumb) shotP = thumbs.next();
+    if (thumb) shotP = earlyShot || thumbs.next();
     await nextIdle();
     const t1 = performance.now();
     const meta = metaFor(tree);
@@ -493,6 +498,7 @@ export function createSaveSystem({
       thumbMs = shot ? shot.ms : null;
     }
     const t3 = performance.now();
+    if (typeof superseded === 'function' && superseded()) return { ok: false, error: 'superseded', calmMs, reason };
     const w = store.writeAtomic(key, built.text);
     if (!w.ok) return { ok: false, error: w.error, detail: w.detail };
     // This save's own picture, or none: a previous save's picture never
@@ -520,6 +526,51 @@ export function createSaveSystem({
       verifyWrite: r1(verifyWriteMs),
     };
     return { ok: true, meta: m, bytes: built.text.length, ms: r1(performance.now() - t0), writeMs, thumbMs, thumbLate, calmMs, pieces, hash: built.hash, reason };
+  }
+
+  // writeSlotNow — the SAME file as writeSlot, built, verified and written in
+  // one synchronous call (gauntlet r4 J4-F2, INT): the autosave flush on
+  // visibilitychange hidden / pagehide, where the page may never run another
+  // task, and before a Load / New Game replaces the state. The picture is the
+  // one the held capture took, when it has landed; otherwise it is attached
+  // when it lands (a hidden page may never deliver it: the slot then shows no
+  // picture, never a previous save's).
+  function writeSlotNow(id, tree, { name = 'Autosave', kind = 'auto', reason = 'flush', capturedAt = null, shot = null, shotP = null } = {}) {
+    const t0 = performance.now();
+    const key = slotKey(id);
+    const prevText = store.read(key);
+    const prev = prevText !== null ? parseFile(prevText) : null;
+    const prevFile = prev && prev.ok ? prev.file : null;
+    const stampIso = typeof capturedAt === 'string' && capturedAt ? capturedAt : new Date().toISOString();
+    const slot = {
+      id,
+      kind: kind ?? slotKind(id),
+      name: (name && String(name).slice(0, 32)) || (prevFile && prevFile.slot && prevFile.slot.name) || defaultSlotName(id),
+    };
+    const meta = metaFor(tree);
+    let built = buildFile({ slot, meta, state: tree, game: VERSION, createdAt: (prevFile && prevFile.createdAt) || stampIso, savedAt: stampIso });
+    meta.bytes = built.text.length;
+    built = buildFile({ slot, meta, state: tree, game: VERSION, createdAt: (prevFile && prevFile.createdAt) || stampIso, savedAt: stampIso });
+    const check = parseFile(built.text);
+    if (!check.ok || check.file.hash !== built.hash) {
+      return { ok: false, error: 'corrupt', detail: `self-check failed (${check.ok ? 'hash' : check.detail})` };
+    }
+    const w = store.writeAtomic(key, built.text);
+    if (!w.ok) return { ok: false, error: w.error, detail: w.detail };
+    const pic = shot && shot.dataUrl ? shot : null;
+    if (pic) store.writePlain(`${key}.thumb`, pic.dataUrl);
+    else store.remove(`${key}.thumb`);
+    const m = metaOf(built.file, { id, bytes: built.text.length, thumb: !!pic });
+    putSlot(id, m);
+    if (!pic && shotP && typeof shotP.then === 'function') {
+      pendingThumbs.set(id, { savedAt: stampIso, hash: built.hash, since: performance.now() });
+      shotP.then((sv) => attachLateThumb(id, stampIso, built.hash, sv)).catch(() => attachLateThumb(id, stampIso, built.hash, null));
+    } else pendingThumbs.delete(id);
+    profileStore.addPlaytime(profileTicks / TICK_HZ);
+    profileTicks = 0;
+    profileStore.flush();
+    const ms = r1(performance.now() - t0);
+    return { ok: true, meta: m, bytes: built.text.length, ms, writeMs: ms, thumbMs: pic ? pic.ms : null, pieces: { syncWrite: ms }, hash: built.hash, reason, sync: true };
   }
 
   // A picture that missed THUMB_WAIT_MS: written to the slot when it lands —
@@ -606,6 +657,7 @@ export function createSaveSystem({
     if (!isSlotId(id)) return { ok: false, error: 'missing', detail: `unknown slot ${id}` };
     const gate = canLoad();
     if (!gate.ok) return { ok: false, error: 'not_allowed', reason: gate.reason };
+    autosaver.flushNow('load', { avoid: id }); // gauntlet r4 J4-F2: the game being left keeps its last safe point
     const text = store.read(slotKey(id));
     if (text === null) return { ok: false, error: 'missing' };
     const pf = parseFile(text);
@@ -745,12 +797,19 @@ export function createSaveSystem({
     },
     capture: () => io.capture(),
     pickSlot: (tree) => pickAutoSlot(tree),
-    write: (slot, tree, { reason, calm, capturedAt }) => writeSlot(slot, tree, { kind: 'auto', name: 'Autosave', reason, calm, capturedAt }),
+    write: (slot, tree, { reason, calm, capturedAt, shotP, superseded }) => writeSlot(slot, tree, { kind: 'auto', name: 'Autosave', reason, calm, capturedAt, shotP, superseded }),
+    // gauntlet r4 J4-F2 (INT): a safe point inside the throttle window is held,
+    // not dropped — its picture on a calm frame after the capture, its write at
+    // the window's end, or at once (sync) when the page is hidden / closed.
+    writeNow: (slot, tree, { reason, capturedAt, shot, shotP }) => writeSlotNow(slot, tree, { kind: 'auto', name: 'Autosave', reason, capturedAt, shot, shotP }),
+    snapshot: () => calmFrames().then(() => thumbs.next()),
+    holdWhile: () => probing,
   });
   async function autosave(reason = 'manual') {
     if (reason === 'quit') {
       const g = canSave();
       if (!g.ok && g.code !== 'transition') return { ok: false, error: 'not_allowed', reason: g.reason };
+      autosaver.supersedeAll('quit'); // gauntlet r4 J4-F2: the quit capture is newer than any held / in-flight one
       const c = await requestCapture('autosave:quit');
       if (!c.ok) return { ok: false, error: 'busy' };
       const slot = pickAutoSlot(c.tree);
@@ -898,6 +957,7 @@ export function createSaveSystem({
     return t;
   }
   function resetToFresh({ seed = Math.floor(Math.random() * 0x100000000) >>> 0 } = {}) {
+    autosaver.flushNow('new_game'); // gauntlet r4 J4-F2: the game being left keeps its last safe point
     const t = freshTree(seed);
     if (!t) return { ok: false, error: 'unavailable' };
     const r = applyTree(t, 'new_game', { seed: seed >>> 0 });
@@ -1007,6 +1067,24 @@ export function createSaveSystem({
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) flushNow();
     });
+    // gauntlet r4 J4-F2 (INT): a closed or hidden tab never loses a safe point.
+    // The autosave the throttle window is holding (or the async writer has not
+    // landed) is written synchronously the moment the page is hidden or goes
+    // away — a tab close, a reload, a navigation, a phone switching apps; the
+    // pause menu and the title hand it to the writer at once, so Save / Load /
+    // Continue list it.
+    window.addEventListener('pagehide', () => autosaver.flushNow('pagehide'));
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) autosaver.flushNow('hidden');
+    });
+    if (app && app.events && typeof app.events.on === 'function') {
+      app.events.on('sim_pause', (e) => {
+        if (e && e.paused) autosaver.flushSoon(e.reason || 'pause');
+      });
+      app.events.on('app_state', (e) => {
+        if (e && e.state !== 'playing') autosaver.flushSoon(e.state);
+      });
+    }
     // SEVERAL TABS (SAVE4-F1): another tab of the game wrote. The profile is
     // adopted at once (Records, Level Select, the portal read it live); slot
     // writes arrive as several keys (tmp, bak, main, thumb, index), so the
@@ -1299,6 +1377,8 @@ export function createSaveSystem({
     resetToFresh,
     recovery: () => recovery.map((r) => ({ ...r })),
     autosaveLog: () => autosaver.log(),
+    // gauntlet r4 J4-F2: the capture the throttle window is holding (null: none)
+    autosaveHeld: () => autosaver.held,
     // Per-game rotation probes (J3-F3): the slot the next autosave of the
     // live state would take, and the New Game impact.
     autoSlotFor: () => {

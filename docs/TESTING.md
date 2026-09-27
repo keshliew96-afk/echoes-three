@@ -1279,6 +1279,59 @@ whose root causes lived in other keys' files (minimal edits, listed here):
   `node tools/gntfixINT3-newgame.mjs <url> <tag> [--legs critic,two,load,end,abandon,rotate,fresh] [--real 1]`
   (`--real 1` waits the real 20 s autosave throttle instead of resetting it).
 
+**Round-4 fixes (INT fix builder, `gntfixINT4-*`, v0.5.145+).**
+- *No first-use stall at run start or in the first fight (J4-F1).* Three
+  first-use costs the boot warm-up missed, each measured with a Chrome trace
+  in a fresh GPU-harness browser: (1) the §19.1 band guard is part of a lit
+  material's program, and the 30-frame rescan patched the Level 1 monolith
+  (toon + emissiveMap) only after it had been precompiled / warmed unguarded —
+  a relink 0.2 s into every run (60-78 ms of `GetProgramiv`): now
+  `env/bandguard.js guardSubtree()` runs on every dressing when built and on
+  every `warmPark` rig; (2) the camp hides the arena root, so dressings parked
+  in the camp were never drawn — the parked dressing now hangs off the scene
+  for its 3 frames, and a dressing never drawn (the boot layout) gets one;
+  (3) the HUD's boot paint warm-up ran under the title's `ap-hide-game`
+  (visibility: hidden), so the first cooldown wipe (conic-gradient) and slot
+  flash / numeral of the first fight compiled Chrome's raster pipelines
+  (242-267 ms GPU-process frames) — a title boot now re-runs it under the
+  (translucent) loading card with the layers paintable at 2/1000 opacity,
+  holding `warmupPending()` (render/warmup.js `warmupHold`) so "Ready" waits
+  for it. Debug: `window.__echoesUiWarm` ({ on: 'loading'|'title', startedAt,
+  ms }). The 1.5-2.7 s freezes ~120-230 s after a HEADLESS browser launches
+  are the browser's own (a plain WebGL page freezes the same way; a browser
+  aged 3 minutes before the game starts shows none) — a probe that gates on
+  frame time over a full campaign should start the game in a browser that is
+  already a few minutes old, or discount a single > 1 s frame whose program /
+  texture counts are unchanged. Probes: `node tools/gntfixINT4-runstart.mjs
+  --url <u> --reps 3 --fight 1 [--trace 1] [--prof 1]` (camp → portal → Level
+  1 room 1 by real input; frames > 50 ms attributed; GL hook lists programs
+  linked / first drawn after E — expect none), `node tools/gntfixINT4-uiwarm.mjs
+  --url <u>` (the warm runs under the card, invisible, hidden again; ?menu=0
+  unaffected), `node tools/gntfixINT4-trace.mjs --url <u> --seed 7 --tag <t>`
+  (the journey critic's 8-room + Level 2 real-input trace plus the GL hook;
+  analyse with `tools/gntcjourney4-trace8an.mjs`), `tools/gntfixINT4-titletrace.mjs`.
+- *Closing the tab never loses a completed room (J4-F2).* PLAN §3.4 rule:
+  the 20 s autosave throttle spaces WRITES only — a safe point inside the
+  window is captured on its tick and HELD (newest wins), written when the
+  window ends, at once when the sim pauses / the app leaves play, and
+  synchronously on `visibilitychange` hidden / `pagehide`. The autosave log
+  keeps `skipped: 'throttle' | 'busy'` for the postponed write with
+  `deferred: true` (nothing is dropped); new entries `skipped: 'superseded'`,
+  `'superseded:quit'`, `'avoid:load'`, `{ flush: 'pause' | 'title' | … }` and
+  sync writes `{ sync: 'hidden' | 'pagehide' | 'load' | 'new_game', syncMs }`.
+  Debug: `__echoes.save.autosaveHeld()` → the held capture (reason, eventTick,
+  captureTick, dueInMs) or null. **Harness note:** a probe that reads the
+  auto slots right after a room entry inside the window sees the previous
+  room until the window ends, a pause opens, or the page hides — call
+  `save.resetAutosaveThrottle()` (it now writes the held capture at once) when
+  a test needs it on disk. Probes: the critic's `node
+  tools/gntcjourney4-closeloss.mjs --url <u> --seed 7 --stay 25000|2000`
+  (real input, real tab close → Continue at room 2 with the drafted build)
+  and `node tools/gntfixINT4-autosave.mjs --url <u> [--only A1,…]` (held +
+  window write with picture and ≤ 50 ms frames, hidden, pagehide, pause, Save
+  & Quit supersedes, Load of the slot it would overwrite, New Game, the M2
+  G2.7 sequence).
+
 ### CAMPAIGN — linear campaign (the user's CRITICAL REFACTOR, 2026-09-25, owner CAMPAIGN)
 
 Design + gates: docs/gauntlet/PLAN.md §12 (GC.1–GC.13). Evidence:
