@@ -1310,6 +1310,28 @@ whose root causes lived in other keys' files (minimal edits, listed here):
   unaffected), `node tools/gntfixINT4-trace.mjs --url <u> --seed 7 --tag <t>`
   (the journey critic's 8-room + Level 2 real-input trace plus the GL hook;
   analyse with `tools/gntcjourney4-trace8an.mjs`), `tools/gntfixINT4-titletrace.mjs`.
+- *The level-clear frame carries no background build (J4-F1, v0.5.149).*
+  `level_transit` (inside the clear tick) runs the level teardown AND raises
+  the dressing pump's budget to 24 ms, so the old clear frame built the next
+  level's treeline + props in the same frame (88-109 ms on a quiet machine,
+  2x that under load). Now `env/biomes/builder.js pumpDressings(budget,
+  spentMs)` skips a HEAVY frame (pre-pump time > 14 ms and > 2.5x the
+  device's usual, at most 4 frames in a row) and the arena pump learns each
+  build step's cost and never starts a step predicted to overrun its slice
+  unless nothing ran yet — a card frame carries at most one build step.
+  Debug: `__echoes.campaign.residency().perf` → `pump` ({ heavySkipped,
+  usualSpentMs, log: [t, spentMs, budget, skipped] }), `stepMs` (learned cost
+  per step), `slices` ([t, ms, steps, budget]). Probe: `node
+  tools/gntfixINT4-lvlclear.mjs --url <u> --what clear [--bossms 10000]
+  [--prof 1]` (fresh GPU browser, title boot, campaign L1 → room 8 → killBoss:
+  the clear frame, the pump's decision on it — `clearPump.clearFramePump[3]`
+  = 1 skipped — the card's slices, new programs (expect none) and, with
+  --prof on an unminified build, the long frames' JS by path). Machine load
+  inflates every number here; compare A/B builds on the same minutes.
+  `node tools/gntfixINT4-shopraster.mjs --url <u> --variants
+  base,noshadow,noglowanim` measures the room-7 shop page's GPU raster in the
+  1.5 s after `shop_open` with the page's shadows / animated layers switched
+  off per variant (a lead for M4a — the shop open is raster, not script).
 - *Closing the tab never loses a completed room (J4-F2).* PLAN §3.4 rule:
   the 20 s autosave throttle spaces WRITES only — a safe point inside the
   window is captured on its tick and HELD (newest wins), written when the

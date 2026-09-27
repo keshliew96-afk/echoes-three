@@ -2129,6 +2129,12 @@ N2–N4 (playable, bounded, never broken).
   before the game starts shows none; program / texture counts unchanged, no
   longtask): a full-campaign GI.6 trace starts the game in a browser that is
   already a few minutes old, or reports such a frame separately.
+  Background work never stacks on a heavy frame: the dressing pump skips a
+  frame whose pre-pump time is > 14 ms and > 2.5x the device's usual (the
+  level-clear frame's teardown), at most 4 in a row, and a pump slice starts
+  no build step predicted to overrun it — one step per card frame
+  (tools/gntfixINT4-lvlclear.mjs; clear frame 121-139 -> 70-83 ms under the
+  same load).
 
 ---
 
