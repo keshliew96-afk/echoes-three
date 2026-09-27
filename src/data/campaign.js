@@ -86,10 +86,17 @@ export const TRANSIT = Object.freeze({
 // PARTY (BUILD_BRIEF §25.10): `allies` = what EACH ally additionally
 // receives (party stream, after the Healer's grant, seat order): `swaps` swap
 // offers resolved by the §25.8 AI rule, `nodes` in pairs with auto-fill,
-// `legendaries`, purse `glint` — the median carried ally build at that card.
+// `legendaries`, purse `glint`. Retuned by PARTY (2026-09-28, BUILD_BRIEF
+// §23.2 PARTY note): Level 3 = the median carried ally at the Level 2 -> 3
+// card (2 new skills, 21 sockets filled, 43 Glint: 3 offers of which the AI
+// takes ~2, 19 nodes + 2 legendaries); Level 2 sits BELOW the carried median
+// (2 new skills, 12 filled, 34 Glint) — 1 offer, 9 nodes + 1 legendary —
+// because a Level-2 start must stay in the band against the v0.5.150
+// Level-2-start baseline, whose party (the Healer's grant) was weaker than
+// a carried one.
 export const STARTER_GRANT = Object.freeze({
-  2: Object.freeze({ skills: 2, nodes: 18, legendaries: 1, glint: 34, allies: Object.freeze({ swaps: 2, nodes: 12, legendaries: 1, glint: 30 }) }),
-  3: Object.freeze({ skills: 2, nodes: 30, legendaries: 2, glint: 60, allies: Object.freeze({ swaps: 4, nodes: 24, legendaries: 2, glint: 50 }) }),
+  2: Object.freeze({ skills: 2, nodes: 18, legendaries: 1, glint: 34, allies: Object.freeze({ swaps: 1, nodes: 9, legendaries: 1, glint: 34 }) }),
+  3: Object.freeze({ skills: 2, nodes: 30, legendaries: 2, glint: 60, allies: Object.freeze({ swaps: 3, nodes: 19, legendaries: 2, glint: 43 }) }),
 });
 
 export function grantFor(level) {

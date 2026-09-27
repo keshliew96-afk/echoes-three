@@ -3,15 +3,15 @@
 // the wave director (sim/run.js, sim/waves.js) and may add fields, never
 // change the numbers without a dated BUILD_BRIEF tuning note.
 //
-//   T(act)    = ACT_TIER[act]                    1.00 / 1.60 / 2.80 (CAMPAIGN)
-//   R(room)   = 1 + ROOM_SLOPE × (room − 1)       rooms 1..6 (combat), slope 0.16
+//   T(act)    = ACT_TIER[act]                    1.00 / 1.60 / 3.10 (PARTY)
+//   R(room)   = 1 + ROOM_SLOPE × (room − 1)       rooms 1..6 (combat), slope 0.21 (PARTY)
 //   hpMul     = T × R × CHALLENGE[c].hp
 //   dmgMul    = (1 + 0.5 × (T × R − 1)) × CHALLENGE[c].dmg
 //   budget    = 4.0 × T × R   threat points per kill_all wave (defend: × 1.25)
 //   elite     = ELITE[act](room)
 //   interval  = 480 ticks × (1 − 0.04 × (room − 1)) × INTERVAL_ACT[act]
-//   bossHp    = 2400 × T × STAG_HP_LEVEL[act] (1 / 1.35 / 1)
-//   bossDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1), slope 0.9 (CAMPAIGN)
+//   bossHp    = 2400 × T × STAG_HP_LEVEL[act] (1 / 1.8 / 1.2, PARTY)
+//   bossDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1), slope 1.8 (PARTY)
 //   boss adds = the act tier alone (hpMul T, dmgMul 1 + BOSS_DMG_SLOPE(T − 1))
 //               — the Stag and its adds scale together (sim/run.js)
 //
@@ -55,18 +55,44 @@
 // 4/5, L3 start 3/5, every band check true (tools/gntCAMPAIGN-camprun.mjs).
 // Gate G4a.5 compares this module with the note: tools/gntfixM4a3-g4a5.mjs.
 //
+// TUNING NOTE (PARTY, 2026-09-28 — the binding dated note in BUILD_BRIEF
+// §23.2, PLAN §16.8 / GP.13): the per-character builds give the three allies
+// the Healer's growth model (4 skills x 8 sockets, swap offers, class
+// techniques: taunts, Iron Stance / Shield Wall shields, parries). On the
+// CAMPAIGN constants the four built characters flattened the game: party
+// damage per combat room fell to x0.51-0.73 of the v0.5.150 baseline and the
+// Stag room's to x0.41 (tools/gntPARTY-band.mjs, seeds 1-5, carried from
+// Level 1 and Level-2 / Level-3 starts). Only constants moved, never the
+// formula's shape: room slope 0.16 -> 0.21, Level 3 tier 2.80 -> 3.10,
+// BOSS_DMG_SLOPE 0.9 -> 1.8, STAG_HP_LEVEL [1, 1.35, 1] -> [1, 1.8, 1.2] (a
+// longer, survivable Stag fight keeps its damage spike instead of a burst
+// that wipes the party), and the ally starter grant (src/data/campaign.js
+// STARTER_GRANT[N].allies). Measured (seeds 1-5): every §4.2 / GC.12 band
+// check true from all three starts; per-level combat-room damage x0.80-1.24
+// and time-to-clear x1.00-1.16 of the baseline; the Level 3 Stag room >= 0.84
+// x its baseline (docs/gauntlet/build-PARTY.md S8).
+//
 // Pure module. The ?room= harness (no run, no act) never calls this: it keeps
 // the legacy §11 composition exactly (PLAN gate G4a.6).
 
-export const ACT_TIER = Object.freeze([null, 1.0, 1.6, 2.8]);
-export const ROOM_SLOPE = 0.16;
+export const ACT_TIER = Object.freeze([null, 1.0, 1.6, 3.1]);
+export const ROOM_SLOPE = 0.21;
 export const BASE_BUDGET = 4.0;
 export const DEFEND_BUDGET_SCALE = 1.25;
 export const STAG_BASE_HP = 2400; // bossHp = STAG_BASE_HP × T × STAG_HP_LEVEL[act]
 // Per-level Stag HP factor (CAMPAIGN retune, 2026-09-25): the Stag meets a
 // CARRIED build from Level 2 on; 1.0 keeps a level on the plain formula.
-export const STAG_HP_LEVEL = Object.freeze([null, 1.0, 1.35, 1.0]);
-export const BOSS_DMG_SLOPE = 0.9; // bossDmgMul = addDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1)
+export const STAG_HP_LEVEL = Object.freeze([null, 1.0, 1.8, 1.2]);
+export const BOSS_DMG_SLOPE = 1.8; // bossDmgMul = addDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1)
+// PARTY (PLAN §16.9): the determinism proof's Node-only switch — the
+// v0.5.150 (CAMPAIGN) constants back in force (cmd('difficultyLegacy')). The
+// game never sets it; tools/gntPARTY-goldenproof.mjs does.
+const LEGACY = Object.freeze({ tier: Object.freeze([null, 1.0, 1.6, 2.8]), slope: 0.16, stag: Object.freeze([null, 1.0, 1.35, 1.0]), bossSlope: 0.9 });
+let legacy = false;
+export function setDifficultyLegacy(on) {
+  legacy = !!on;
+  return legacy;
+}
 export const WAVE_INTERVAL_TICKS = 480; // §11 8 s
 export const INTERVAL_ACT = Object.freeze([null, 1.0, 0.95, 0.9]);
 export const WAVE_SIZE_CAP = 8; // enemies per wave
@@ -108,8 +134,12 @@ export function difficulty(act = 1, room = 1, challenge = 'standard') {
   const a = Math.min(3, Math.max(1, act | 0));
   const r = Math.min(6, Math.max(1, room | 0));
   const c = CHALLENGE[challenge] ?? CHALLENGE.standard;
-  const T = ACT_TIER[a];
-  const R = 1 + ROOM_SLOPE * (r - 1);
+  const tiers = legacy ? LEGACY.tier : ACT_TIER;
+  const slope = legacy ? LEGACY.slope : ROOM_SLOPE;
+  const stagLevel = legacy ? LEGACY.stag : STAG_HP_LEVEL;
+  const bossSlope = legacy ? LEGACY.bossSlope : BOSS_DMG_SLOPE;
+  const T = tiers[a];
+  const R = 1 + slope * (r - 1);
   return Object.freeze({
     act: a,
     room: r,
@@ -123,11 +153,11 @@ export function difficulty(act = 1, room = 1, challenge = 'standard') {
     eliteChance: r4(ELITE[a](r)),
     waveIntervalTicks: Math.round(WAVE_INTERVAL_TICKS * (1 - 0.04 * (r - 1)) * INTERVAL_ACT[a]),
     waystoneHp: Math.round(150 * Math.sqrt(T)),
-    bossHp: Math.round(STAG_BASE_HP * T * (STAG_HP_LEVEL[a] ?? 1) * c.hp),
+    bossHp: Math.round(STAG_BASE_HP * T * (stagLevel[a] ?? 1) * c.hp),
     // Boss adds scale with the act tier alone, like the Stag they serve.
     addHpMul: r4(T * c.hp),
-    addDmgMul: r4((1 + BOSS_DMG_SLOPE * (T - 1)) * c.dmg),
-    bossDmgMul: r4((1 + BOSS_DMG_SLOPE * (T - 1)) * c.dmg),
+    addDmgMul: r4((1 + bossSlope * (T - 1)) * c.dmg),
+    bossDmgMul: r4((1 + bossSlope * (T - 1)) * c.dmg),
   });
 }
 

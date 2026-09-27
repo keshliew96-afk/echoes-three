@@ -1444,6 +1444,102 @@ kill_all rooms) while it passes the pooled rooms 5–6 check — the ceiling for
 with THIS table (`node tools/gntfixM4a3-g4a5.mjs`: difficultyTable, roomPlan per
 room, measured spawn hp / base hp, Stag and add hp, starter-grant events, ± 1 %).
 
+**Tuning note (PARTY, 2026-09-28) — retuned for four built characters
+(PLAN §16.8, GP.13, §25.10); this table is now binding.** Per-character
+builds give the Tank, the Swordsman and the Archer the Healer's growth model
+(4 skills × 8 sockets, swap offers, the class techniques: taunts, Iron Stance
+and Shield Wall shields, parries, dashes). On the CAMPAIGN constants the four
+built characters flattened the game: re-measured on the same deterministic
+default-build autopilot (the Healer) + the §25.8 ally AI in Suggested mode
+(`tools/gntPARTY-band.mjs`, which runs `tools/gntCAMPAIGN-camprun.mjs --from
+1|2|3 --seeds 1-5` and compares with the v0.5.150 baseline recorded before
+PARTY's first sim edit, `captures/gntPARTY-baseline-from{1,2,3}.json`), the
+median party damage per combat room fell to × 0.66 / 0.95 / 0.68 of the
+baseline (carried Levels 1 / 2 / 3), × 0.73 / 0.56 (Level-2 start) and × 0.51
+(Level-3 start), and the Level 3 Stag room's to × 0.41–0.45 — the Stag died in
+a burst before it could bite, while time-to-clear stayed near the baseline
+(× 0.75–1.05). Only constants moved, the formula's shape did not (`hpMul =
+T·R`, `dmgMul = 1 + 0.5(T·R − 1)`, `budget = 4·T·R`, `R = 1 + slope·(room − 1)`,
+Stag HP `2400·T·S`, Stag + adds damage `1 + k(T − 1)`); the names are the
+`src/data/difficulty.js` / `src/data/campaign.js` exports:
+
+| constant | CAMPAIGN | PARTY |
+|---|---|---|
+| room slope — `ROOM_SLOPE` | 0.16 | **0.21** |
+| level tier T (Level 1 / 2 / 3) — `ACT_TIER` | 1.00 / 1.60 / 2.80 | **1.00 / 1.60 / 3.10** |
+| Stag HP factor S (Level 1 / 2 / 3) — `STAG_HP_LEVEL` | 1 / 1.35 / 1 | **1 / 1.8 / 1.2** (a longer, survivable Stag fight keeps the room's damage spike instead of a burst that wipes the party) |
+| Stag + adds damage slope k — `BOSS_DMG_SLOPE` | 0.9 | **1.8** (Level 1 unaffected: T = 1) |
+| ally starter grant — `STARTER_GRANT[N].allies` | 2: 2 / 12 / 1 / 30 · 3: 4 / 24 / 2 / 50 | **the ally grant table below** |
+
+Everything else holds: defend budget × 1.25, the elite chances, the wave
+interval, Waystone 150·√T, the threat costs, the wave fill and the Healer's
+own starter grant. Binding table, standard challenge (hpMul / dmgMul /
+kill_all budget — a defend room's budget is × 1.25):
+
+| room | Level 1 | Level 2 | Level 3 |
+|---|---|---|---|
+| 1 | 1 / 1 / 4 | 1.6 / 1.3 / 6.4 | 3.1 / 2.05 / 12.4 |
+| 2 | 1.21 / 1.105 / 4.84 | 1.936 / 1.468 / 7.744 | 3.751 / 2.3755 / 15.004 |
+| 3 | 1.42 / 1.21 / 5.68 | 2.272 / 1.636 / 9.088 | 4.402 / 2.701 / 17.608 |
+| 4 | 1.63 / 1.315 / 6.52 | 2.608 / 1.804 / 10.432 | 5.053 / 3.0265 / 20.212 |
+| 5 | 1.84 / 1.42 / 7.36 | 2.944 / 1.972 / 11.776 | 5.704 / 3.352 / 22.816 |
+| 6 | 2.05 / 1.525 / 8.2 | 3.28 / 2.14 / 13.12 | 6.355 / 3.6775 / 25.42 |
+
+| per level | Level 1 | Level 2 | Level 3 |
+|---|---|---|---|
+| tier T | 1 | 1.6 | 3.1 |
+| Stag HP | 2400 | 6912 | 8928 |
+| Stag damage × | 1 | 2.08 | 4.78 |
+| adds HP × | 1 | 1.6 | 3.1 |
+| adds damage × | 1 | 2.08 | 4.78 |
+| Waystone HP | 150 | 190 | 264 |
+| elite chance | 0 / 0 / 0 / 0.08 / 0.08 / 0.08 | 0.12 / 0.14 / 0.16 / 0.18 / 0.2 / 0.22 | 0.2 / 0.23 / 0.26 / 0.29 / 0.32 / 0.35 |
+| kill_all wave interval, ticks (room 1 → 6) | 480 → 384 | 456 → 365 | 432 → 346 |
+
+**Starter grant** — the Healer's is unchanged (the CAMPAIGN table, repeated
+here because this note is the binding one):
+
+| start at | skills | nodes | legendaries | Glint | arrives with |
+|---|---|---|---|---|---|
+| Level 2 | 2 | 18 | 1 | 34 | 4 skills, 19 / 32 sockets filled, 34 Glint (= the carried Level 1 → 2 card) |
+| Level 3 | 2 | 30 | 2 | 60 | 4 skills, 32 / 32 sockets filled, 60 Glint (the carried card: 4 / 32 of 32 / ~118 Glint) |
+
+Each ally additionally receives (party stream, after the Healer's grant, seat
+order; `swaps` = swap OFFERS resolved by the §25.8 rule, `nodes` in pairs with
+auto-fill, then `legendaries`, then purse Glint). Measured carried medians at
+the cards (15 allies over seeds 1–5): Level 1 → 2 — 2 new skills, 12 sockets
+filled, 34 Glint; Level 2 → 3 — 2 new skills, 21 filled, 43 Glint. Level 3 is
+that median; Level 2 sits below it because a Level-2 start must stay in the
+band against the v0.5.150 Level-2-start baseline, whose party (the Healer's
+grant, allies on their kits) was weaker than a carried one:
+
+| ally start at | swap offers | nodes | legendaries | Glint |
+|---|---|---|---|---|
+| Level 2 | 1 | 9 | 1 | 34 |
+| Level 3 | 3 | 19 | 2 | 43 |
+
+Measured band (v0.5.162, headless Node sim, seeds 1–5,
+`captures/gntPARTY-band-v162*.json`): **carried from Level 1** — clears 5/5 ·
+5/5 · 3/5, every §4.2 / GC.12 band check true (19); per-level combat-room
+damage × 1.18 / 1.24 / 0.90 and time-to-clear × 1.16 / 1.13 / 1.01 of the
+baseline; the Level 3 Stag room 2383 vs 2824 (× 0.84). **Started at Level 2** —
+5/5 · 4/5, every band check true (13); × 0.91 / 0.80 damage, × 1.16 / 1.00
+time; Stag 2950 vs 2885. **Started at Level 3** — 4/5, every band check true
+(6); × 0.81 damage, × 1.02 time; Stag 2888 vs 2663. Party downs: Level 3 on
+5 · 5 · 4 of 5 seeds, the Level-2 start's Level 2 on 1 of 5; the carried
+Levels 1 and 2 on 0 of 5 — exactly as the v0.5.150 baseline (0 of 5 on both);
+GP.13 (d) ("≥ 1 down on ≥ 2 of 5 seeds per level") is therefore not met there,
+and meeting it would push those levels past (b)'s × 1.35 damage ceiling (a
+design conflict recorded in docs/gauntlet/build-PARTY.md for the design
+owner). Seeds 1–20 spot check (the same constants run from a scratch copy,
+`captures/gntPARTY-band-tune-N1-from{1,2,3}.json`): clears 20/20 · 20/20 ·
+14/20 carried, 20/20 · 14/20 from Level 2, 13/20 from Level 3; every band
+check true except Level 1's ρ time 0.543 (room 2 is a defend room on 10 of 20
+seeds against 2 of 5 in the baseline's seeds, so room 2's median time sits
+above rooms 3–4). The determinism proof (PLAN §16.9) runs
+with these constants switched back by `cmd('difficultyLegacy')`. Gate G4a.5
+compares the running game with THIS table.
+
 **Felt escalation (v0.5.1).** The table is necessary, not sufficient: in play,
 time-to-clear and party damage taken per room must rise across rooms 1–6 of
 each act (defend rooms and the Stag above their neighbours) and from act to

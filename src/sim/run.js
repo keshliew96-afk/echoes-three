@@ -76,7 +76,7 @@ import { PARTY_ALLIES, STARTING_SKILLS, SKILLS } from './skills.js';
 import { createDraftSystem, SPOILS_PER_CLEAR } from './draft.js';
 import { NODES } from './nodes.js';
 import { levelFor, ACT_IDS } from '../data/levels.js';
-import { difficulty, CHALLENGE } from '../data/difficulty.js';
+import { difficulty, CHALLENGE, setDifficultyLegacy } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
 import { swapSuggestion, CLASS_OF_SEAT, PARTY_DEADLINES } from '../data/classes.js';
@@ -1650,6 +1650,10 @@ export function createRunSystem({
         return partyShopMark(args[0], args[1], args[2]);
       case 'partyShopDone':
         return partyShopDone(args[0]);
+      case 'difficultyLegacy':
+        // ('difficultyLegacy', on) — Node-only determinism proof (PLAN §16.9):
+        // the v0.5.150 difficulty constants back in force. Never set by the game.
+        return setDifficultyLegacy(args[0] !== false);
       case 'partyScreen':
         // ('partyScreen', seat, open) — a socket screen open / closed (the
         // network socket hold, BUILD_BRIEF §25.7).

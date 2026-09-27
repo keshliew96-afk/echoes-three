@@ -1686,6 +1686,19 @@ their own files through `impl.debug`):
   G2.10 and G5b.8 is now the M4c-end build**; M5b's start-of-W4 check compares
   against these. The legacy seed-7 `?room=` traces are back on the v0.5.0
   goldens (`d1eff38b03f581aa` kill_all / `554cd9c41db19975` defend).
+- **PARTY re-record (2026-09-28, §16.9).** The per-character builds (the
+  ally cards, spoils, purses, shelves) and the PARTY retune (BUILD_BRIEF
+  §23.2 PARTY note) change the 3 `run` traces legitimately; the 6 `?room=`
+  traces stay bit-identical. Proof first: `node tools/gntPARTY-goldenproof.mjs`
+  replays the run recipe with the ally supply OFF (`cmd('partySupply',
+  false)`) and the v0.5.150 constants back (`cmd('difficultyLegacy', true)`)
+  and reproduces the v0.5.150 run goldens' events hash, state hash and RNG
+  draws bit for bit. The v0.5.150 files are kept as
+  `captures/gntPARTY-v0.5.150-golden-run-<seed>.json`; the v0.5.162 build is
+  recorded over `captures/gnt-M2-golden-run-<seed>.json` (run-1
+  `1a01792ae45708ad` / `89a56b63e6ad93aa`, 134 draws; run-2
+  `737aba2d51d39bc0` / `e1f81c05ac1e781e`, 163; run-3 `f382df118f5432c3` /
+  `7d307644a874c95a`, 136) — the reference for G2.10 / G5b.8 from v0.5.162.
 
 ### 6.6 Audio probing
 
