@@ -77,7 +77,7 @@ import { makeFlameSprite, createEmberField } from '../env/flame.js';
 import { COOL, EMBER_GLOW, mix } from '../env/colors.js';
 import { variantLayoutRng } from '../env/layout.js';
 import { createAfterimages } from '../render/critters/afterimage.js';
-import { installBandGuard, bandGuardInfo } from '../env/bandguard.js';
+import { installBandGuard, bandGuardInfo, guardSubtree } from '../env/bandguard.js';
 
 // Yielded by a dressing build that is waiting on the paint worker: the
 // background pump stops for the frame instead of spinning on it.
@@ -470,6 +470,10 @@ export function createArenaScene(stage, toggles, ctx) {
     yield;
     const fx = mountEmitters(group, emitters, dspec);
     root.add(group);
+    // gauntlet r4 J4-F1 (INT): band-guard the dressing BEFORE its programs are
+    // precompiled / warm-drawn, so the variant it warms is the one it draws with
+    // (the 30-frame rescan used to patch it 0.2 s into the room: one relink).
+    guardSubtree(group);
     return {
       id: dspec.id,
       spec: dspec,
@@ -903,6 +907,7 @@ export function createArenaScene(stage, toggles, ctx) {
       if (active) active.group.visible = false;
       active = d;
       d.group.visible = true;
+      if (root.visible) d.drawnOnce = true;
       root.name = `arena-v${d.id}`;
       if (typeof window !== 'undefined') window.__groundCanvas = d.groundCanvas;
       // @gnt:CAMPAIGN ACTIVATE begin — the finished level's last dressing (the
@@ -973,7 +978,7 @@ export function createArenaScene(stage, toggles, ctx) {
     d.gpuReady = true;
   }
   function beginWarmDraw(d) {
-    if (d === active) return;
+    if (d === active && root.visible) return;
     const culled = new Map();
     const lights = [];
     d.group.traverse((o) => {
@@ -995,13 +1000,23 @@ export function createArenaScene(stage, toggles, ctx) {
     d.group.scale.setScalar(0.001);
     d.group.position.set(0, -60, 0);
     d.group.visible = true;
-    warmDraw = { d, frames: 3, culled, lights };
+    // gauntlet r4 J4-F1 (INT): the camp hides the whole arena root
+    // (camp.js setMode), so a dressing parked under it was never DRAWN — its
+    // programs met the GPU in the first room that showed them (measured: the
+    // monolith's first use on the run's first frame, 17 ms of
+    // getProgramInfoLog plus the lazy executable compile). While the root is
+    // hidden the parked dressing hangs off the scene itself for its frames.
+    const host = root.visible ? null : d.group.parent;
+    if (host) stage.scene.add(d.group);
+    warmDraw = { d, frames: 3, culled, lights, host };
   }
   function endWarmDraw() {
-    const { d, culled, lights } = warmDraw;
+    const { d, culled, lights, host } = warmDraw;
     tl(d.id, 'warm');
     for (const [o, v] of culled) o.frustumCulled = v;
     for (const l of lights) l.visible = true;
+    if (host) host.add(d.group);
+    d.drawnOnce = true;
     d.group.scale.setScalar(1);
     d.group.position.set(0, 0, 0);
     d.group.visible = d === active;
@@ -1079,6 +1094,16 @@ export function createArenaScene(stage, toggles, ctx) {
       compiling = null;
       beginWarmDraw(d);
       return;
+    }
+    // gauntlet r4 J4-F1 (INT): in the camp (arena root hidden) a built
+    // dressing that has never been drawn — the boot's own layout, built
+    // synchronously and never parked — takes one parked draw too.
+    if (!job && !root.visible) {
+      for (const x of dressings.values()) {
+        if (x.drawnOnce || x.disposed || !x.gpuReady) continue;
+        beginWarmDraw(x);
+        return;
+      }
     }
     const t0 = performance.now();
     if (!job) {

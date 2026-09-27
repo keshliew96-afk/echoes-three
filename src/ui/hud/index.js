@@ -311,6 +311,7 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
   let warmStarted = false;
   let warmEndPending = false;
   let warmRestore = false;
+  let warmOnEnd = null; // rewarm(): called on the frame the warm paint ends
   const WARM_ROOMS = [
     null, // frame 0: the boss plate (WARM_BOSS)
     { cleared: false, mode: 'defend', waystone: { hp: 96, maxHp: 150 }, defendTicksLeft: 9 * 60, softFailed: false },
@@ -326,6 +327,11 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
       bar.prewarmEnd();
       banner.reset();
       try { performance.mark('hudwarm-end'); } catch (e) { /* trace marker only */ }
+      if (warmOnEnd) {
+        const fn = warmOnEnd;
+        warmOnEnd = null;
+        try { fn(); } catch (e) { /* the caller's own cleanup */ }
+      }
       return false;
     }
     if (!warmStarted) {
@@ -505,5 +511,22 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     if (banner.update(room, combat ? runBoss ?? bossEntity : null, combat)) publishZones();
   });
   // @gnt:M2 RESTORE-RESYNC end
-  return { update, debug, el: root, scale: () => scale };
+  // gauntlet r4 J4-F1 (INT): the boot warm-up above runs ~18 frames after
+  // load. On a TITLE boot that is under the title's `ap-hide-game` rule
+  // (visibility: hidden), so the compositor never rasterised a warm frame and
+  // the first cooldown wipe / slot flash of the first fight paid the GPU
+  // raster pipeline compile instead (242-267 ms frames, 0.6-0.9 s into Level 1
+  // room 1, once per fresh browser). `rewarm` re-runs the same warm paint
+  // when the caller has made the HUD paintable (main.js @gnt:INT-WIRING);
+  // `onEnd` fires on the frame the warm paint ends, before the real repaint.
+  function rewarm({ onEnd = null } = {}) {
+    warmWait = 1;
+    warmStarted = false;
+    warmLeft = 0;
+    warmEndPending = false;
+    warmOnEnd = onEnd;
+    return WARM_FRAMES;
+  }
+
+  return { update, debug, el: root, scale: () => scale, rewarm };
 }

@@ -161,14 +161,30 @@ function scan(root) {
   return n;
 }
 
+const guardEnabled = () =>
+  typeof location === 'undefined' || new URLSearchParams(location.search).get('bandguard') !== '0';
+
+// Guard a subtree NOW (gauntlet r4 J4-F1, INT — a minimal edit in M4b's file).
+// The guard is part of a material's program (onBeforeCompile), so a material
+// whose program is compiled or warm-drawn BEFORE the 30-frame rescan reaches it
+// is linked twice: once unguarded at the warm-up, then again the moment the
+// rescan patches it — on the first frames of the room that shows it (measured:
+// the Level 1 monolith, toon + emissiveMap, relinked 0.2 s into every run for a
+// 110-135 ms frame, 60-78 ms of it GetProgramiv waiting on the link). Whatever
+// is about to be precompiled or parked calls this first, so the ONE program it
+// warms is the one it will draw with. Call it once the subtree hangs under its
+// final parent (the enemyfx exemption reads the parent chain).
+export function guardSubtree(root) {
+  if (!root || !guardEnabled()) return 0;
+  return scan(root);
+}
+
 // Install on everything currently in `root`, and hand back a `rescan` the
 // scene's update loop calls on a slow cadence so rigs built later (party
 // critters spawned mid-run, props hot-added by another chain) are covered too.
 // `?bandguard=0` disables the whole thing for A/B captures.
 export function installBandGuard(root) {
-  const enabled =
-    typeof location === 'undefined' ||
-    new URLSearchParams(location.search).get('bandguard') !== '0';
+  const enabled = guardEnabled();
   if (!enabled) {
     guardUniform.value.w = 0;
     return { rescan() {}, info: () => ({ enabled: false, materials: 0 }), setGuard };

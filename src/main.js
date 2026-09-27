@@ -727,6 +727,66 @@ window.addEventListener('keydown', (e) => {
   requestAnimationFrame(check);
   timer = setInterval(check, 100); // rAF-less (hidden) tabs still hand over
 })();
+// First-fight paint warm-up on a TITLE boot (gauntlet r4 J4-F1). The HUD's own
+// boot warm-up (ui/hud/index.js: cooling / counting / denied slots, banners,
+// portraits, six threat pointers at 2/1000 opacity) runs ~18 frames after
+// load — which on a title boot is under the `ap-hide-game` rule (visibility:
+// hidden, app/style.js), so the compositor never rasterised it. Measured on
+// the production build in a fresh GPU-harness browser: the first cooldown wipe
+// (a conic-gradient) and the first slot flash + numeral of Level 1 room 1 each
+// stalled the GPU process 242-267 ms (raster pipelines compiled on first use;
+// a warm browser: none). So while the loading card is up (translucent, so the
+// layers beneath it are still rasterised), the same warm paint runs with the
+// HUD layers paintable (at 2/1000 opacity, invisible under the card) and
+// hidden again on the frame it ends; it holds warmupPending() so the card's
+// "Ready" waits for it — the one-time compile lands in the loading bar, never
+// in the title or the first fight. A menu-skip boot (?menu=0) warms in play.
+import { warmupHold } from './render/warmup.js';
+(function firstFightPaintWarmup() {
+  if (!hud || typeof hud.rewarm !== 'function') return;
+  const css = document.createElement('style');
+  css.id = 'pz-uiwarm-style';
+  css.textContent =
+    'body.ap-hide-game.pz-uiwarm #hud, body.ap-hide-game.pz-uiwarm #hud-threat, body.ap-hide-game.pz-uiwarm #dmg-num-layer { visibility: visible; }';
+  document.head.appendChild(css);
+  const warmupLog = { armed: true, on: null, startedAt: null, ms: null };
+  window.__echoesUiWarm = warmupLog;
+  let started = false;
+  const start = (on) => {
+    started = true;
+    const t0 = performance.now();
+    const release = warmupHold();
+    // the HUD root goes to 2/1000 opacity BEFORE its layer is made visible
+    // (the warm paint keeps it there; the HUD restores it when the warm ends)
+    hud.el.style.opacity = '0.002';
+    document.body.classList.add('pz-uiwarm');
+    prewarmNumberPools(6);
+    let ended = false;
+    const end = () => {
+      if (ended) return;
+      ended = true;
+      document.body.classList.remove('pz-uiwarm');
+      release();
+      warmupLog.ms = Math.round(performance.now() - t0);
+    };
+    hud.rewarm({ onEnd: end });
+    setTimeout(end, 3000); // no frames (a hidden tab): the layers hide and the card goes on anyway
+    warmupLog.on = on;
+    warmupLog.startedAt = Math.round(t0);
+  };
+  const WAIT_FRAMES = 18; // the HUD's own boot warm-up delay: the bar and portraits exist by then
+  const poll = () => {
+    if (started) return;
+    if (app.state === 'playing') return; // menu-skip boot: the boot warm-up painted in play
+    const loading = app.screens.has('loading');
+    if ((loading && app.frameCount >= WAIT_FRAMES) || (app.state === 'title' && !loading)) {
+      start(loading ? 'loading' : 'title');
+      return;
+    }
+    requestAnimationFrame(poll);
+  };
+  requestAnimationFrame(poll);
+})();
 // @gnt:INT-WIRING end
 scheduler.start();
 

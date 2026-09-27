@@ -34,6 +34,8 @@
 //
 // Parked objects are 1/1000 scale at y = -60: outside the camera's cone at the
 // §1 elevation, and behind the ground plane in depth if it ever were inside.
+import { guardSubtree } from '../env/bandguard.js';
+
 const HOLD_FRAMES = 3; // rendered frames a parked rig is kept in the scene
 const PARK_Y = -60;
 const PARK_SCALE = 0.001;
@@ -56,6 +58,11 @@ export function warmPark(root, obj, onDrop = null) {
     o.frustumCulled = false;
   });
   root.add(obj);
+  // gauntlet r4 J4-F1 (INT): the §19.1 band guard is part of a lit material's
+  // program; patch the rig NOW (under its final parent, so the enemyfx
+  // exemption holds) or the park warms the unguarded variant and the real
+  // instance relinks the guarded one on its first frames in a room.
+  guardSubtree(obj);
   parked.push({ root, obj, onDrop, left: HOLD_FRAMES });
 }
 
@@ -77,5 +84,20 @@ export function warmupUpdate() {
   }
 }
 
-export const warmupPending = () => parked.length;
+// Holds (gauntlet r4 J4-F1, INT): a warm-up that is not a parked rig — the
+// title-boot HUD paint warm-up (main.js @gnt:INT-WIRING) — counts as pending
+// until it releases, so the loading card (ui/menu/loading.js: ready once
+// warmupPending() is 0) covers it instead of the title or the first fight.
+let holds = 0;
+export function warmupHold() {
+  holds += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    holds -= 1;
+  };
+}
+
+export const warmupPending = () => parked.length + holds;
 export const warmupRetained = () => retained.length;
