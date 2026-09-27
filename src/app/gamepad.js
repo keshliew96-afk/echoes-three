@@ -15,7 +15,9 @@
 const DEADZONE = 0.5;
 const REPEAT_DELAY_MS = 400;
 const REPEAT_EVERY_MS = 90;
-const BUTTON_ACTIONS = Object.freeze({ 0: 'confirm', 1: 'back', 2: 'secondary', 3: 'tertiary', 4: 'tabPrev', 5: 'tabNext' });
+// PARTY (PLAN §16.4): LT (6) / RT (7) = rowPrev / rowNext — the socket screen's
+// skill rows once LB / RB switch characters; menus ignore them.
+const BUTTON_ACTIONS = Object.freeze({ 0: 'confirm', 1: 'back', 2: 'secondary', 3: 'tertiary', 4: 'tabPrev', 5: 'tabNext', 6: 'rowPrev', 7: 'rowNext' });
 const DPAD = Object.freeze({ 12: 'up', 13: 'down', 14: 'left', 15: 'right' });
 const START = 9;
 

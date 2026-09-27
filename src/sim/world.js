@@ -318,6 +318,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     buildSys,
     allySys,
     combat,
+    party: partySys,
   });
   events.on('room_cleared', (ev) => runSys.onRoomCleared(ev));
   events.on('defeat', () => runSys.onDefeat());

@@ -61,6 +61,11 @@ export function parseBootParams(search = typeof window !== 'undefined' ? window.
     netSeat: int('netseat'),
     netCond: p.get('netcond'), // client-side conditioner spec, e.g. lat75,jit10,loss10
     netRate: int('netrate'), // M5a: snapshot rate override 10..60 Hz (tests)
+    // PARTY (PLAN §16.11): the Ally builds mode for this boot (not saved), and
+    // a harness grant for every ally at run start (N = STARTER_GRANT[N].allies,
+    // 'max' = the deterministic max-stress build of all four seats).
+    party: ['suggest', 'manual', 'auto'].includes(p.get('party')) ? p.get('party') : null,
+    partyGrant: p.get('partygrant') === 'max' ? 'max' : p.has('partygrant') && Number.isFinite(Number(p.get('partygrant'))) ? Number(p.get('partygrant')) : null,
   });
 }
 

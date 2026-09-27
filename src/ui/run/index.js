@@ -41,6 +41,7 @@
 // rn-primary when it opens (draft: Take; path: the sim's door 0), so no page
 // ever inherits a focus from the page before it.
 import { RUN_CSS, isCompact } from './style.js';
+import { PARTY_STRIP_CSS } from './partystrip.js';
 import { SKILL_SLOTS } from '../../core/constants.js';
 import { parseBootParams } from '../../app/params.js';
 import { service } from '../../app/registry.js';
@@ -64,7 +65,7 @@ const SCREEN_FOR = {
 export function createRunUi({ bus, world, socket = null, autostart = false }) {
   const style = document.createElement('style');
   style.id = 'run-style';
-  style.textContent = RUN_CSS + TRANSIT_CSS;
+  style.textContent = RUN_CSS + TRANSIT_CSS + PARTY_STRIP_CSS;
   document.head.appendChild(style);
 
   // Veil sits UNDER #hud (§16: Zone 1 persists beneath); the page and the
@@ -81,11 +82,13 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
 
   const run = () => world.runSystem();
   const build = () => world.buildSystem();
+  // PARTY: the party system (the three ally builds) for the build pages.
+  const party = () => (typeof world.partySystem === 'function' ? world.partySystem() : null);
 
   const screens = {
-    draft: createDraftScreen({ run, build }),
+    draft: createDraftScreen({ run, build, party }),
     path: createPathScreen({ run }),
-    shop: createShopScreen({ run, build }),
+    shop: createShopScreen({ run, build, party }),
     end: createEndScreen({ run }),
     transit: createTransitScreen({ run }),
   };
@@ -181,7 +184,10 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   const SETTLE_MAX_MS = 1000;
   // Ruling A17: W / S, ↑ / ↓ move a swap offer's Replaces mark — navigation,
   // so the settle window drops them too (a carried strafe never moves it).
-  const NAV_KEYS = new Set(['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyS', 'ArrowUp', 'ArrowDown']);
+  // PARTY (PLAN §16.4): the character switch (Q / E, PgUp / PgDn, F1-F4) is
+  // navigation too — dropped for the page's first 300 ms, and E / F1-F4 (the
+  // combat's revive / heal-override keys) keep restarting that window.
+  const NAV_KEYS = new Set(['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyS', 'ArrowUp', 'ArrowDown', 'KeyQ', 'KeyE', 'PageUp', 'PageDown', 'F1', 'F2', 'F3', 'F4']);
   // X (the draft's decline, ruling A13) is a commit key: settle-guarded and
   // fresh-press only, exactly like Enter.
   const COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'KeyX']);
@@ -239,6 +245,12 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // A cheap signature so a screen only re-renders when something it draws has
   // actually changed (the shop's shake animation must never be restarted by an
   // unrelated repaint).
+  function partyFill() {
+    const P = party();
+    if (!P) return '';
+    return [1, 2, 3].map((i) => (P.slots(i) || []).join(',') + ':' + P.view(i).filled).join(';');
+  }
+
   function swapFill() {
     const b = build();
     return b ? b.view().skills.map((s) => s.filled).join(',') : '';
@@ -258,6 +270,18 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       // Ruling A17: a swap offer repaints when its Replaces mark moves or the
       // socket screen changed how many nodes a skill holds.
       r && r.swap ? `${r.replace}:${r.suggest}:${swapFill()}` : '-',
+      // PARTY: the party page's decisions / replaces / countdown seconds and
+      // the party shelves (purses, sold, marks).
+      v.party
+        ? v.party.cards.map((c) => `${c.seat}${c.type}${c.id}${c.decided ? 1 : 0}${c.choice}${c.replace}`).join('|') +
+          `/${v.party.mode}/${v.party.deadlineInTicks === null ? '-' : Math.ceil(v.party.deadlineInTicks / 60)}/${partyFill()}`
+        : '-',
+      v.partyShop
+        ? v.partyShop.shelves
+            .slice(1)
+            .map((s) => `${s.purse}:${s.stock.map((i) => `${i.node}${i.sold ? 'x' : ''}${i.marked ? 'm' : ''}${i.owned}`).join(',')}`)
+            .join('|') + `/${v.partyShop.leaveInTicks === null ? '-' : Math.ceil(v.partyShop.leaveInTicks / 60)}/${v.partyShop.deadlineInTicks === null ? '-' : Math.ceil(v.partyShop.deadlineInTicks / 60)}`
+        : '-',
       p ? `${p.nextRoom}:${p.focus}:${p.options.map((o) => o.win + o.reward).join(',')}` : '-',
       s ? s.stock.map((i) => `${i.node}${i.price}${i.sold ? 'x' : ''}${i.owned}`).join('|') : '-',
       v.summary ? `${v.summary.result}:${v.summary.rooms}:${v.summary.glint}` : '-',
@@ -577,7 +601,10 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     }
     if (current === 'none') return;
     const sig = sigOf(v);
-    if (sig !== signature) {
+    // PARTY: a page that changed its own view (a character switch, a moved
+    // Replaces mark) asks for a repaint too.
+    const pageDirty = typeof screens[current].dirty === 'function' && screens[current].dirty();
+    if (sig !== signature || pageDirty) {
       signature = sig;
       screens[current].render(v);
       refreshShines(); // the render replaced the card DOM
@@ -620,7 +647,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
         e.stopPropagation();
         return;
       }
-      if (screens[current].key(code, fresh)) {
+      if (screens[current].key(code, fresh, e)) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -644,7 +671,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // §16 insufficient funds: plaque emphasis + one ~300 ms shake, driven by the
   // sim's own denial event so a scripted buy shakes exactly like a click.
   bus.on('currency_denied', (ev) => {
-    if (current === 'shop') screens.shop.denyShake(ev.index ?? 0);
+    if (current === 'shop') screens.shop.denyShakeSeat(ev); // PARTY: the shelf on show
   });
   // §16 purchase: "price-stamp flash -> card departs to the bench". The sim
   // emits `shop_purchase` BEFORE the shelf re-renders, so the screen only
@@ -760,8 +787,22 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     run().startRun({ act: p.act ?? 1, challenge });
   }
 
+  // PARTY (PLAN §16.4): the pad on the build pages (app.js routes it here
+  // when no app screen is open) — the current page's pad(); a page still
+  // arriving drops navigation / commits exactly like the keyboard's settle.
+  function padAction(action) {
+    if (current === 'none' || (socket && socket.isOpen())) return false;
+    const s = screens[current];
+    if (!s || typeof s.pad !== 'function') return false;
+    if (!settled()) return true;
+    const used = s.pad(action);
+    if (used) signature = '';
+    return used;
+  }
+
   return {
     update,
+    padAction,
     isOpen: () => current !== 'none',
     screen: () => current,
     debug: () => {

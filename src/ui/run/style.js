@@ -256,6 +256,26 @@ export const RUN_CSS = `
     box-shadow: 0 0 18px ${PALETTE.hearthAmber}44;
   }
   .rn-btn.rn-primary { border-color: ${PALETTE.hearthAmber}AA; }
+  /* PARTY: the shop's character tabs + per-card owner band + Suggested marks. */
+  .rn-shop .rn-shopstrip { width: 100%; }
+  .rn-shop .rn-shopstrip .rn-pstrip { margin: 0 0 6px; }
+  /* The owner band and the Suggested ribbon: a tab row above each card. */
+  .rn-itemtabs { display: flex; justify-content: space-between; width: 100%; gap: 6px; margin: 0 0 -4px; min-height: 22px; }
+  .rn-minowner {
+    font-size: 16px; font-weight: 800; letter-spacing: 0.04em; color: ${PALETTE.parchment}; line-height: 20px;
+    background: ${PALETTE.voidCharcoal}; border: 1px solid ${PALETTE.warmGrey}66;
+    border-left: 5px solid var(--acc, ${PALETTE.warmGrey}); padding: 0 6px; border-radius: 5px;
+    white-space: nowrap;
+  }
+  .rn-suggest {
+    line-height: 20px; white-space: nowrap;
+    font-size: 16px; font-weight: 800; letter-spacing: 0;
+    padding: 0 7px; border-radius: 5px; color: ${PALETTE.warmGrey};
+    background: ${PALETTE.voidCharcoal}; border: 1px dashed ${PALETTE.warmGrey}88; cursor: pointer;
+  }
+  .rn-suggest.rn-on { color: ${PALETTE.voidCharcoal}; background: ${PALETTE.hearthAmber}; border: 1px solid ${PALETTE.hearthAmber}; }
+  /* PARTY: another player's card — read-only (the tab still shows it). */
+  .rn-btn.rn-disabled { opacity: 0.45; pointer-events: none; }
 
   /* ------------------------------ Replaces selector (ruling A17 swap offer) */
   /* The 4 owned skills under a swap card; the one the new skill would replace

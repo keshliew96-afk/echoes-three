@@ -47,8 +47,13 @@ const FRAMING = {
   archer: { xBias: 0.19, earPad: 0.1 },
 };
 
+// PARTY: the rendered heads, cached for every build page's party strip.
+let CACHE = {};
+export const portraitCache = () => CACHE;
+
 export function renderClassPortraits({ cosmetic = null } = {}) {
   const out = {};
+  CACHE = out;
   let renderer = null;
   try {
     renderer = new WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });

@@ -79,7 +79,12 @@ import { levelFor, ACT_IDS } from '../data/levels.js';
 import { difficulty, CHALLENGE } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
-import { swapSuggestion } from '../data/classes.js';
+import { swapSuggestion, CLASS_OF_SEAT } from '../data/classes.js';
+// PARTY (PLAN §16.3): the party page + the party shelves.
+import { createPartyPages } from './partypage.js';
+import { fillStress } from './party.js';
+import { STRESS_LOADOUT } from '../data/classes.js';
+import { SHARED_NODE_IDS } from './nodes.js';
 import {
   CARRY_RULES,
   TRANSIT,
@@ -126,6 +131,7 @@ export function createRunSystem({
   buildSys,
   allySys,
   combat,
+  party = null, // PARTY: the party system (sim/party.js)
 }) {
   const draft = createDraftSystem({
     rng,
@@ -136,6 +142,21 @@ export function createRunSystem({
   // exist before the run system): Resonance's per-cast hook, and Echo's
   // recasts / passive Reapply pulses through the kit's own delivery.
   if (typeof skillSys.attachBuild === 'function') skillSys.attachBuild(buildSys);
+  // PARTY: the party page / shelves module over the three ally builds. The
+  // ally supply can be switched off (Node determinism proof, PLAN §16.9).
+  const controllers = () => (allySys && typeof allySys.controllers === 'function' ? allySys.controllers() : ['human', 'ai', 'ai', 'ai']);
+  const pages = party
+    ? createPartyPages({
+        party,
+        events,
+        getTick,
+        controllers,
+        humansInSession: () => controllers().filter((c) => c === 'human').length,
+      })
+    : null;
+  let supplyOn = !!party;
+  let harnessGrant = null; // ?partygrant=N | 'max' — applied at the next run start
+  const allyOn = () => supplyOn && !!pages;
   if (typeof buildSys.attachSkills === 'function') buildSys.attachSkills(skillSys);
   const statusTracker = createStatusTracker({ registry, events, getTick });
   const autopilot = createAutopilot({
@@ -274,6 +295,10 @@ export function createRunSystem({
       grant: null,
       transitions: 0,
     };
+    // PARTY: every ally back to its starting loadout, empty build, purse 0;
+    // the party stream seeded from the run SEED (no gameplay draw).
+    if (party) party.resetForRun(frame.seed);
+    if (pages) pages.reset();
     // Payload unchanged since v0.5.x (the goldens hash every event).
     events.emit(getTick(), 'run_start', {
       seed: frame.seed,
@@ -284,7 +309,35 @@ export function createRunSystem({
       actName: levelFor(act).name,
       challenge,
     });
-    if (act !== FIRST_LEVEL) applyStarterGrant(act);
+    // PARTY: an explicit harness grant (?partygrant) REPLACES a Level-N
+    // start's ally grant (never stacks, BUILD_BRIEF §25.10); `max` = the
+    // deterministic max-stress build for all four seats.
+    const hg = harnessGrant;
+    harnessGrant = null;
+    if (act !== FIRST_LEVEL && hg !== 'max') applyStarterGrant(act, { allies: hg === null });
+    if (hg !== null && allyOn()) applyHarnessGrant(hg);
+  }
+
+  // `?partygrant=N` / `max` (PLAN §16.11) — marks the run harness.
+  function applyHarnessGrant(g) {
+    if (campaign) campaign.harness = true;
+    if (g === 'max') {
+      stressHealer();
+      party.stress();
+      return;
+    }
+    const lv = Number(g);
+    const gr = grantFor(lv);
+    if (gr && gr.allies) party.applyGrant(gr.allies, 'grant');
+  }
+  // The Healer's max-stress build (BUILD_BRIEF §25.10): its loadout + a full
+  // 32 / 32 in the stress order.
+  function stressHealer() {
+    const want = STRESS_LOADOUT.healer;
+    const kit = want.map((id) => ({ id, remaining: 0 }));
+    buildSys.restore({ bench: [], assignments: [] });
+    skillSys.restore({ slots: kit, override: null });
+    fillStress(buildSys, want, SHARED_NODE_IDS);
   }
 
   // PLAN §12.4 starter grant for a start AT level N > 1: skill draws, node
@@ -292,7 +345,7 @@ export function createRunSystem({
   // auto-fill, legendary draws, then Glint. Fixed draw order off the run RNG
   // (right after the run frame), no combat active (phase idle), so the same
   // seed always grants the same kit.
-  function applyStarterGrant(level) {
+  function applyStarterGrant(level, { allies = true } = {}) {
     const g = grantFor(level);
     if (!g) return null;
     const tick = getTick();
@@ -327,6 +380,9 @@ export function createRunSystem({
     if (g.glint) gainGlint(g.glint, 'starter_grant');
     campaign.grant = { level, skills, nodes, glint: g.glint ?? 0 };
     events.emit(tick, 'starter_grant', { level, skills: [...skills], nodes: [...nodes], glint: g.glint ?? 0 });
+    // PARTY §25.10: each ally's STARTER_GRANT[N].allies (party stream, after
+    // the Healer's, seat order; swaps by the §25.8 AI rule).
+    if (allies && allyOn() && g.allies) campaign.grant.allies = party.applyGrant(g.allies, 'grant');
     return campaign.grant;
   }
 
@@ -453,6 +509,7 @@ export function createRunSystem({
     clearedRooms += 1;
     roomsDone = Math.max(roomsDone, roomIndex);
     gainGlint(RUN.stipend, 'clear_stipend');
+    if (allyOn()) pages.stipend('clear_stipend'); // PARTY: +12 per ally purse
 
     if (roomIndex === RUN.bossRoom) {
       onLevelCleared(tick);
@@ -468,7 +525,9 @@ export function createRunSystem({
       return;
     }
     dropSpoils(tick);
-    presentReward();
+    // PARTY: each ally's clear spoils (party stream, after the Healer's).
+    const allySpoils = allyOn() ? pages.dropSpoils(roomIndex) : null;
+    presentReward(allySpoils);
   }
 
   function sweepPlayerTransients(tick, cause) {
@@ -526,7 +585,7 @@ export function createRunSystem({
   // Ruling A17: the Healer's loadout in slot order (null = empty slot).
   const healerSlots = () => skillSys.slotsView().map((s) => (s ? s.id : null));
 
-  function presentReward() {
+  function presentReward(allySpoils = null) {
     const promised = rewardFor[roomIndex] ?? 'skill';
     reward = draft.offer(promised);
     // Ruling A17 (the user's rule): a SWAP offer carries the §25.8 suggestion
@@ -561,6 +620,10 @@ export function createRunSystem({
       // their exact payload).
       ...(reward.swap ? { swap: true, replace: reward.replace, suggest: reward.suggest } : {}),
     });
+    // PARTY: the ally cards (party stream, seats 1 → 3) — the Healer's card 0
+    // mirrors run.reward. With the ally supply off no page opens (the §16.9
+    // proof: exactly v0.5.150's events).
+    if (allyOn()) pages.open(roomIndex, promised, reward, allySpoils);
   }
 
   // Ruling A17: move the pending Replaces choice of a swap offer (the UI's
@@ -574,12 +637,62 @@ export function createRunSystem({
     return s;
   }
 
-  // §16: take-or-decline, no confirm, no reroll, no reopen.
+  // PARTY (PLAN §16.3): a card's decision. Seat 0 = the Healer's card (its
+  // swap slot moves run.reward.replace); seats 1-3 = the ally cards. The page
+  // COMMITS when every card is decided (commitIfReady) — in Suggested mode
+  // the AI-held cards open decided, so the Healer's one decision commits.
+  function partyPick(seat, choice, replace = null, { by = 'human' } = {}) {
+    if (phase !== 'reward') return { denied: 'closed' };
+    const s = Number(seat);
+    if (s === 0) {
+      if (choice === 'take' && (!reward || !reward.type)) return { denied: 'nothing_to_take' };
+      if (reward && reward.swap && Number.isInteger(replace)) setRewardReplace(replace);
+      if (pages && pages.isOpen()) pages.pick(0, choice, reward && reward.swap ? reward.replace : null, { by });
+      else return choice === 'take' ? takeReward(replace ?? undefined) : declineReward();
+      return commitIfReady() ?? { ok: true, seat: 0, choice };
+    }
+    if (!pages || !pages.isOpen()) return { denied: 'closed' };
+    const r = pages.pick(s, choice, replace, { by });
+    if (r && r.denied) return r;
+    return commitIfReady() ?? r;
+  }
+  function commitIfReady() {
+    if (!pages || !pages.isOpen()) return null;
+    if (pages.undecided().length > 0) return null;
+    return commitPage('commit');
+  }
+  // Apply the page: seat 0 exactly as today, then seats 1-3, then the doors.
+  function commitPage(reason = 'commit') {
+    const c0 = pages && pages.isOpen() ? pages.card(0) : null;
+    const choice0 = c0 && c0.decided ? c0.choice : reward && reward.type ? 'take' : 'leave';
+    const taken = choice0 === 'take' && reward && reward.type ? applyTake(reward.swap ? reward.replace : undefined) : applyDecline();
+    if (pages && pages.isOpen()) pages.applyAllies(reason);
+    if (party && party.autoSocketOwn(0) && controllers()[0] === 'human') buildSys.autoFill();
+    afterReward(taken);
+    return taken ?? { declined: true };
+  }
+
+  // §16: take-or-decline, no confirm, no reroll, no reopen. The legacy
+  // one-call entry (the harness, the autopilot, cmd('draftTake')): the
+  // Healer's card taken, then the page committed with the ally cards as the
+  // mode left them (Suggested: today's one-call behaviour).
   // Ruling A17: on a SWAP offer `replace` names the slot the new skill takes
   // (default: the pending choice, reward.replace); the old skill leaves the
   // loadout and its nodes go to the bench.
   function takeReward(replace) {
     if (phase !== 'reward' || !reward || !reward.type) return null;
+    if (pages && pages.isOpen()) {
+      if (reward.swap && Number.isInteger(replace)) setRewardReplace(replace);
+      pages.pick(0, 'take', reward.swap ? reward.replace : null, { by: 'human' });
+      return commitPage('commit');
+    }
+    const taken = applyTake(replace);
+    if (taken) afterReward(taken);
+    return taken;
+  }
+
+  function applyTake(replace) {
+    if (!reward || !reward.type) return null;
     const tick = getTick();
     const taken = { type: reward.type, id: reward.id };
     if (reward.type === 'skill' && reward.swap) {
@@ -602,17 +715,24 @@ export function createRunSystem({
       events.emit(tick, 'draft_taken', { reward: 'node', id: reward.id, bench: true });
     }
     reward = null;
-    afterReward(taken);
     return taken;
   }
 
   function declineReward() {
     if (phase !== 'reward') return null;
+    if (pages && pages.isOpen()) {
+      pages.pick(0, 'leave', null, { by: 'human' });
+      return commitPage('commit');
+    }
+    const r = applyDecline();
+    afterReward(null);
+    return r;
+  }
+  function applyDecline() {
     const type = reward ? reward.type : null;
     const id = reward ? reward.id : null;
     events.emit(getTick(), 'draft_declined', { reward: type, id }); // declines have no memory
     reward = null;
-    afterReward(null);
     return { declined: true, type, id };
   }
 
@@ -642,6 +762,7 @@ export function createRunSystem({
       freeSkillSlots: draft.freeSkillSlots(),
     };
     phase = 'path';
+    if (pages) pages.armDoor(getTick()); // PARTY: network door deadline (≥ 2 humans)
     events.emit(getTick(), 'path_offer', {
       room: roomIndex,
       nextRoom,
@@ -659,6 +780,7 @@ export function createRunSystem({
   function choosePath(side) {
     if (phase !== 'path' || !path) return null;
     const opt = path.options[side === 1 ? 1 : 0];
+    if (pages) pages.clearDoor();
     rewardFor[path.nextRoom] = opt.reward;
     events.emit(getTick(), 'path_chosen', {
       room: roomIndex,
@@ -727,6 +849,9 @@ export function createRunSystem({
   // dressing) follows the `level_transit` event (src/campaign/manager.js).
   function resetLevel(tick, cause) {
     if (CARRY_RULES.resetShop) shop = null;
+    // PARTY: the party page, the four shelves and every deadline are level-bound.
+    if (pages) pages.reset();
+    if (party && CARRY_RULES.resetEntities) party.resetLevelState();
     reward = null;
     path = null;
     pendingRoom = 0;
@@ -771,6 +896,12 @@ export function createRunSystem({
       }
       if (CARRY_RULES.restoreHp) e.hp = e.maxHp;
       if (CARRY_RULES.clearStatuses && e.status) e.status = {};
+      // PARTY: no parry window, dash / vault or pending cast rides across.
+      if (e.kind === 'ally') {
+        if (e.guard && e.guard.parry) e.guard = null;
+        e.skillDash = null;
+        e.pendingCast = null;
+      }
       if (CARRY_RULES.resetCooldowns) {
         if (Array.isArray(e.cds)) e.cds = e.cds.map(() => tick);
         if (e.kind === 'ally' && Number.isFinite(e.dodgeReadyTick)) e.dodgeReadyTick = tick;
@@ -833,7 +964,30 @@ export function createRunSystem({
       bench: b.bench.length,
       wallet,
       grant: campaign && campaign.grant ? cloneData(campaign.grant) : null,
+      // PARTY: the four builds that ride on (the card's compact lines).
+      ...(party ? { builds: partyBuilds() } : {}),
     };
+  }
+
+  // PARTY: [{ seat, classId, skills, filled, sockets, bench, purse }] ×4.
+  function partyBuilds() {
+    const b = buildSys.view();
+    const out = [
+      {
+        seat: 0,
+        classId: 'healer',
+        skills: skillSys.slotsView().map((s) => (s ? s.id : null)),
+        filled: b.skills.reduce((n, s) => n + s.filled, 0),
+        sockets: 32,
+        bench: b.bench.length,
+        purse: wallet,
+      },
+    ];
+    for (const i of [1, 2, 3]) {
+      const v = party.view(i);
+      out.push({ seat: i, classId: CLASS_OF_SEAT[i], skills: [...v.slots], filled: v.filled, sockets: 32, bench: v.bench.length, purse: v.purse });
+    }
+    return out;
   }
 
   // Phase 'transit' — the level-clear card (kind 'clear') or the setting-out
@@ -996,6 +1150,26 @@ export function createRunSystem({
       stock: stock.map((s) => ({ node: s.node, rarity: s.rarity, price: s.price })),
       affordableAny2: stock.length >= 2,
     });
+    // PARTY: each ally's own 4-card class shelf (party stream, seats 1 → 3).
+    if (allyOn()) pages.openShop(roomIndex);
+  }
+
+  // PARTY: a purchase for an ally, from ITS purse (`partyBuy`); seat 0 is
+  // the Healer's buy() above.
+  function partyBuy(seat, index) {
+    if (phase !== 'shop') return null;
+    if (Number(seat) === 0) return buy(index);
+    if (!pages || !pages.shopOpen()) return null;
+    return pages.buy(Number(seat), index, { by: 'human' });
+  }
+  function partyShopMark(seat, index, on) {
+    if (phase !== 'shop' || !pages || !pages.shopOpen()) return null;
+    return pages.mark(Number(seat), index, on);
+  }
+  function partyShopDone(seat) {
+    if (phase !== 'shop' || !pages || !pages.shopOpen()) return null;
+    pages.done(Number(seat));
+    return true;
   }
 
   // §14: integer wallet, atomic spend; insufficient funds => `currency_denied`
@@ -1031,6 +1205,9 @@ export function createRunSystem({
 
   function advanceFromShop() {
     if (phase !== 'shop') return null;
+    // PARTY: every AI-held shelf's still-marked buys (Suggested), benches
+    // auto-filled, then the shelves close.
+    if (pages && pages.shopOpen()) pages.closeShop();
     // The shop room is a room the player leaves behind, so it counts toward
     // the §18 summary row (it pays no stipend — `clearedRooms` is untouched).
     roomsDone = Math.max(roomsDone, RUN.shopRoom);
@@ -1070,6 +1247,7 @@ export function createRunSystem({
         .slotsView()
         .filter(Boolean)
         .map((s) => s.id),
+      ...(party ? { builds: partyBuilds() } : {}),
       nodes: {
         bench: b.bench.map((x) => x.node),
         socketed: b.skills.flatMap((sk) =>
@@ -1160,6 +1338,9 @@ export function createRunSystem({
     });
     skillSys.restore({ slots: kit, override: null });
     buildSys.restore({ bench: [], assignments: [] });
+    // PARTY: every ally back to its starting loadout, empty build, purse 0.
+    if (party) party.resetForRun(rng.seed);
+    if (pages) pages.reset();
     for (const e of registry.all()) {
       if (e.partyIndex === undefined) continue;
       e.hp = e.maxHp;
@@ -1204,12 +1385,38 @@ export function createRunSystem({
     // Status bookkeeping for the tick that just resolved (announce + prune),
     // before a fade can walk into the next room.
     statusTracker.endOfTick();
+    // PARTY: network deadlines (armed live; nothing in single-player).
+    if (pages && (phase === 'reward' || phase === 'path' || phase === 'shop')) partyDeadlines();
     if (phase === 'fade' && getTick() >= fadeUntilTick) enterRoom(pendingRoom);
     // PLAN §12.2: the card's own hard bound — the sim advances whatever the
     // presentation does (hidden host tab, no UI, a stuck preload).
     if (phase === 'transit' && campaign && campaign.card && getTick() >= campaign.card.hardUntilTick) advanceLevel('timeout');
     // CAMPAIGN COMPLETE -> camp, in sim time (pause holds it; guests follow).
     if (phase === 'victory' && autoReturnTick !== null && getTick() >= autoReturnTick) returnToCamp();
+  }
+
+  // PARTY (PLAN §16.3 / §16.5): arm / fire the network deadlines.
+  function partyDeadlines() {
+    const tick = getTick();
+    pages.syncDeadlines(tick);
+    const due = pages.due(tick);
+    if (!due) return;
+    if (due === 'page' && phase === 'reward') {
+      pages.timeoutPage();
+      const c0 = pages.card(0);
+      if (c0 && !c0.decided) {
+        // The Healer's own card (a human host that never chose): the §25.8 rule.
+        const choice = reward && reward.type ? (reward.swap ? reward.suggest : 'take') : 'leave';
+        pages.pick(0, choice, reward && reward.swap ? reward.replace : null, { by: 'timeout' });
+        events.emit(tick, 'party_autopick', { seat: 0, reason: 'timeout', choice, id: reward ? reward.id : null });
+      }
+      commitPage('timeout');
+    } else if (due === 'door' && phase === 'path') {
+      events.emit(tick, 'party_autopick', { seat: 0, reason: 'door_timeout', choice: 'left' });
+      choosePath(0);
+    } else if (due === 'shop' && phase === 'shop') {
+      advanceFromShop();
+    }
   }
 
   // §2: defeat = all 4 party members Downed simultaneously (the ONLY defeat
@@ -1297,6 +1504,10 @@ export function createRunSystem({
           }
         : null,
       boss: active && roomIndex === RUN.bossRoom ? boss.view() : null,
+      // PARTY: the party page / shelves (keys present only while open, so a
+      // v0.5.150 view hashes exactly as before when none is up).
+      ...(pages && pages.isOpen() ? { party: pages.pageView() } : {}),
+      ...(pages && pages.shopOpen() ? { partyShop: pages.shopView() } : {}),
       summary,
       fadeTicksLeft: phase === 'fade' ? Math.max(0, fadeUntilTick - getTick()) : 0,
     };
@@ -1371,6 +1582,43 @@ export function createRunSystem({
         return takeReward(Number.isInteger(args[0]) ? args[0] : undefined);
       case 'draftReplace':
         return setRewardReplace(args[0]);
+      // ------------------------------------------- PARTY (PLAN §16.11) --
+      case 'partyPick':
+        return partyPick(args[0], args[1], Number.isInteger(args[2]) ? args[2] : null, { by: 'human' });
+      case 'partyReplace':
+        // ('partyReplace', seat, slot) — move a swap card's Replaces mark.
+        if (Number(args[0]) === 0) return setRewardReplace(args[1]);
+        return pages && pages.isOpen() ? pages.setReplace(Number(args[0]), args[1]) : null;
+      case 'partyCommit':
+        return phase === 'reward' && pages && pages.isOpen() ? commitPage('commit') : null;
+      case 'partyPage':
+        return pages ? pages.pageView() : null;
+      case 'partyShop':
+        return pages ? pages.shopView() : null;
+      case 'partyBuy':
+        return partyBuy(args[0], args[1] ?? 0);
+      case 'partyShopMark':
+        return partyShopMark(args[0], args[1], args[2]);
+      case 'partyShopDone':
+        return partyShopDone(args[0]);
+      case 'partySupply':
+        // Node determinism proof only (PLAN §16.9): the ally supply off.
+        if (args[0] !== undefined) supplyOn = !!args[0] && !!pages;
+        return supplyOn;
+      case 'partyGrant': {
+        // ('partyGrant', level | 'max') — now, between rooms (probes).
+        if (!party) return null;
+        if (args[0] === 'max') {
+          stressHealer();
+          return party.stress();
+        }
+        const gr = grantFor(Number(args[0]));
+        return gr && gr.allies ? party.applyGrant(gr.allies, 'grant') : null;
+      }
+      case 'partyHarnessGrant':
+        // ('partyHarnessGrant', N | 'max' | null) — applied at the next run start.
+        harnessGrant = args[0] === undefined ? null : args[0];
+        return harnessGrant;
       case 'draftDecline':
         return declineReward();
       case 'pathFocus':
@@ -1411,6 +1659,7 @@ export function createRunSystem({
         while (clearedRooms < combatBefore) {
           clearedRooms += 1;
           gainGlint(RUN.stipend, 'skip_stipend');
+          if (allyOn()) pages.stipend('skip_stipend'); // PARTY: every purse keeps the §14 arithmetic
         }
         roomsDone = Math.max(roomsDone, n - 1); // every room before n is behind us
         enterRoom(n);
@@ -1519,6 +1768,9 @@ export function createRunSystem({
       // CAMPAIGN (schema 3): the level director's whole state, the card included.
       campaign: cloneData(campaign),
       autoReturnTick,
+      // PARTY (schema 4, PLAN §16.6): the party page, the shelves, the door
+      // deadline — present only when something is open.
+      ...(pages && (pages.isOpen() || pages.shopOpen() || pages.doorDeadline() !== null) ? { partyPages: pages.saveState() } : {}),
     };
   }
   function loadState(d) {
@@ -1569,6 +1821,7 @@ export function createRunSystem({
       };
     }
     autoReturnTick = Number.isFinite(d.autoReturnTick) ? d.autoReturnTick : null;
+    if (pages) pages.loadState(d.partyPages ?? null);
   }
 
   const api = {
@@ -1608,6 +1861,31 @@ export function createRunSystem({
     takeReward,
     declineReward,
     setRewardReplace,
+    // PARTY (PLAN §16.3): the party page / shelves entry points.
+    partyPick,
+    partyCommit: () => (phase === 'reward' && pages && pages.isOpen() ? commitPage('commit') : null),
+    partyReplace: (seat, slot) => (Number(seat) === 0 ? setRewardReplace(slot) : pages && pages.isOpen() ? pages.setReplace(Number(seat), slot) : null),
+    partyBuy,
+    partyShopMark,
+    partyShopDone,
+    partyPages: () => pages,
+    // PARTY (§25.1): reorder a character's 4 skills between rooms.
+    reorderLoadout(seat, from, to) {
+      if (combatActive()) return { denied: 'combat_active' };
+      if (Number(seat) === 0) return skillSys.reorderSkills(from, to);
+      return party ? party.reorder(Number(seat), from, to) : null;
+    },
+    // The Auto-fill all button (socket screen, Shift+F / pad).
+    autoFillAll() {
+      if (combatActive()) return { denied: 'combat_active' };
+      const out = [{ seat: 0, ...buildSys.autoFill() }];
+      if (party) out.push(...party.autoFill('all'));
+      return out;
+    },
+    setHarnessGrant: (g) => {
+      harnessGrant = g ?? null;
+      return harnessGrant;
+    },
     focusPath,
     choosePath,
     buy,

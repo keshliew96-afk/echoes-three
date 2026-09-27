@@ -83,9 +83,13 @@ export const TRANSIT = Object.freeze({
 // legendary band, then Glint. Tuned against the §4.2 band (PLAN §12.10,
 // BUILD_BRIEF §23.2 CAMPAIGN note): a Level-N start with this grant lands in
 // the same band as a carried campaign that reached Level N.
+// PARTY (BUILD_BRIEF §25.10): `allies` = what EACH ally additionally
+// receives (party stream, after the Healer's grant, seat order): `swaps` swap
+// offers resolved by the §25.8 AI rule, `nodes` in pairs with auto-fill,
+// `legendaries`, purse `glint` — the median carried ally build at that card.
 export const STARTER_GRANT = Object.freeze({
-  2: Object.freeze({ skills: 2, nodes: 18, legendaries: 1, glint: 34 }),
-  3: Object.freeze({ skills: 2, nodes: 30, legendaries: 2, glint: 60 }),
+  2: Object.freeze({ skills: 2, nodes: 18, legendaries: 1, glint: 34, allies: Object.freeze({ swaps: 2, nodes: 12, legendaries: 1, glint: 30 }) }),
+  3: Object.freeze({ skills: 2, nodes: 30, legendaries: 2, glint: 60, allies: Object.freeze({ swaps: 4, nodes: 24, legendaries: 2, glint: 50 }) }),
 });
 
 export function grantFor(level) {

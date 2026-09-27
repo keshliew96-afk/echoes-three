@@ -476,9 +476,25 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
       s.purse = 0;
       s.state = { combo: {}, recentCasts: [], retaliate: {}, stillSince: getTick() };
       s.auraNext = {};
-      s.build.restore({ bench: [], assignments: [] });
+      // Silent (no build_restored): a run start must not add events.
+      s.build.loadState({ bench: [], assignments: [], resonance: [], suppress: 0, lastHeal: null, lastHit: null, echoQueue: [], auraEchoNext: [] });
     }
   }
+  // A level transition (CARRY_RULES reset): pending Echo recasts, Reapply
+  // clocks, Retaliate windows, combo / recent-cast memory end with the level.
+  function resetLevelState() {
+    const tick = getTick();
+    for (const i of PARTY_SEATS) {
+      const s = seats[i];
+      const bs = structuredClone(s.build.saveState());
+      bs.echoQueue = [];
+      bs.auraEchoNext = [];
+      s.build.loadState(bs);
+      s.state = { combo: {}, recentCasts: [], retaliate: {}, stillSince: tick };
+      for (const id of Object.keys(s.auraNext)) s.auraNext[id] = tick + AURA_CADENCE_TICKS;
+    }
+  }
+
   function saveState() {
     return {
       v: 1,
@@ -570,6 +586,7 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     discrete,
     endOfTick,
     resetForRun,
+    resetLevelState,
     saveState,
     loadState,
     state,

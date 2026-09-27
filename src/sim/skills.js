@@ -382,6 +382,21 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
     return { slot, replaced: old.id };
   }
 
+  // PARTY (§25.1): between rooms the 4 owned skills can be REORDERED (slot
+  // order = keys 1-4); cooldowns and sockets travel with their skill (the
+  // build keys sockets by skill id).
+  function reorderSkills(from, to) {
+    const ok = (k) => Number.isInteger(k) && k >= 0 && k < SKILL_SLOTS;
+    if (!ok(from) || !ok(to) || from === to) return { denied: 'no_such_slot' };
+    const t = slots[from];
+    slots[from] = slots[to];
+    slots[to] = t;
+    player.skills[from] = slots[from] ? slots[from].id : null;
+    player.skills[to] = slots[to] ? slots[to].id : null;
+    events.emit(getTick(), 'loadout_reorder', { seat: 0, from, to, slots: slots.map((s) => (s ? s.id : null)) });
+    return { ok: true, slots: slots.map((s) => (s ? s.id : null)) };
+  }
+
   // ----------------------------------------------------------------- fire --
   // Called by the world in §4 per-actor order (skills ascending slot), only
   // when the player is NOT dashing (the world owns priority_suppressed).
@@ -763,6 +778,7 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
     loadState,
     giveSkill,
     replaceSkill,
+    reorderSkills,
     tryFire,
     step,
     zonePhase,

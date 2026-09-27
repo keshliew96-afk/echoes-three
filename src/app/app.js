@@ -121,7 +121,19 @@ export function createApp({ params }) {
   });
   const gamepad = createGamepadPoller({
     onAction(action, meta) {
-      if (!screens.isOpen()) return; // gameplay on a gamepad is out of scope (menus only)
+      if (!screens.isOpen()) {
+        // PARTY (PLAN §16.4): the build pages — the socket screen, then the
+        // run's party page / shop — take the pad (LB/RB characters, D-pad,
+        // A / X / Y). Gameplay on a gamepad stays out of scope.
+        const sock = ctx && ctx.socket;
+        if (sock && typeof sock.isOpen === 'function' && sock.isOpen() && typeof sock.padAction === 'function') {
+          sock.padAction(action, meta);
+          return;
+        }
+        const ru = ctx && ctx.runUi;
+        if (ru && typeof ru.isOpen === 'function' && ru.isOpen() && typeof ru.padAction === 'function') ru.padAction(action, meta);
+        return;
+      }
       nav.act(action, 'gamepad', meta);
     },
     onStart(meta) {

@@ -32,11 +32,23 @@
 //     the window shows a different frame (>= 15 frames at 60 fps);
 //   * the denial shake stays (8 px, 300 ms, decaying) and its plaque
 //     emphasis lingers ~700 ms so a slow screenshot still catches it.
+//
+// PARTY (BUILD_BRIEF §25.6, PLAN §16.4): the party strip rides the top rail
+// (chips = purses); the shelf shows the VIEWED character's 4 class cards,
+// each with its owner band and `data-seat`, and the Glint strip that
+// character's purse. A whole-card click buys for THAT character from ITS
+// purse. Suggested mode pre-marks the AI's picks on every AI-held tab
+// ("SUGGESTED" ribbon, toggled by a click on it / Shift+1-4 / pad Y) —
+// viewing a tab never cancels them; Advance buys the still-marked cards of
+// every AI-held tab the player did not buy on. Q / E, PgUp / PgDn, F1-F4 and
+// pad LB / RB switch character; 1-4 buy on the viewed tab.
 import { esc } from './style.js';
 import { nodeCardHtml, RARITY_COLOR } from './cards.js';
 import { iconHtml } from '../hud/icons.js';
 import { NODES } from '../../sim/nodes.js';
-import { PALETTE } from '../../data/palette.js';
+import { PALETTE, CLASS_ACCENTS } from '../../data/palette.js';
+import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
+import { createPartyStrip } from './partystrip.js';
 
 // ROUND-2 CERTIFICATION FIX (shop check 10 "motion juice", player scorer 1/2).
 // The choreography existed and rendered 37 frames — but it was 620 ms long, and
@@ -77,7 +89,7 @@ const slam = (k) => {
   return 1 + Math.sin(t * Math.PI) * 0.09 * (1 - t);
 };
 
-export function createShopScreen({ run, build }) {
+export function createShopScreen({ run, build, party = () => null }) {
   const el = document.createElement('div');
   el.className = 'rn-page rn-shop';
   el.innerHTML = `
@@ -93,6 +105,7 @@ export function createShopScreen({ run, build }) {
         <span class="rn-lab">OF 8</span>
       </div>
     </div>
+    <div class="rn-shopstrip"></div>
     <div class="rn-shelf"></div>
     <div class="rn-note rn-empty" style="display:none"></div>
     <div class="rn-note rn-bought" style="display:none"></div>
@@ -114,7 +127,27 @@ export function createShopScreen({ run, build }) {
   const lamp = el.querySelector('.rn-lamp');
   const lantern = el.querySelector('.rn-lantern');
   const lanternGlow = el.querySelector('.rn-lanternglow');
-  el.querySelector('.rn-advance').addEventListener('click', () => run().advanceFromShop());
+  const advanceBtn = el.querySelector('.rn-advance');
+  advanceBtn.addEventListener('click', () => run().advanceFromShop());
+  // PARTY: the character tabs on the top rail.
+  let viewSeat = 0;
+  let lastView = null;
+  let padFocus = -1; // pad card focus on the viewed shelf (-1 = the lamp)
+  const strip = createPartyStrip({ onSelect: (s) => setView(s), host: el.querySelector('.rn-shopstrip') });
+  function setView(seat) {
+    viewSeat = ((Number(seat) % 4) + 4) % 4;
+    padFocus = -1;
+    signature = '';
+    if (buyAnim) finishBuy();
+    if (lastView) render(lastView);
+  }
+  // The viewed shelf in the Healer's shape ({ wallet, stock }).
+  function shelfOf(view, seat) {
+    if (seat === 0 || !view.partyShop) return view.shop;
+    const s = view.partyShop.shelves[seat];
+    return s ? { wallet: s.purse, stock: s.stock } : view.shop;
+  }
+  const buyOn = (i) => (viewSeat === 0 ? run().buy(i) : run().partyBuy(viewSeat, i));
 
   const plaques = []; // index -> plaque element
   const cards = []; // index -> card element
@@ -124,21 +157,29 @@ export function createShopScreen({ run, build }) {
 
   // ---------------------------------------------------------- shelf --
   function build3(view) {
-    const s = view.shop;
+    const s = shelfOf(view, viewSeat);
+    const seat = viewSeat;
+    const aiTab = seat > 0 && !!view.partyShop;
+    const P = party();
     shelf.innerHTML = '';
     plaques.length = 0;
     cards.length = 0;
     stamps.length = 0;
-    const sys = build();
+    const sys = seat === 0 ? build() : P ? P.build(seat) : null;
+    const clsName = CLASS_NAME[CLASS_OF_SEAT[seat]];
     (s.stock ?? []).forEach((item, i) => {
       const n = NODES[item.node];
       const wrap = document.createElement('div');
       wrap.className = `rn-item${item.sold ? ' rn-sold' : ''}`;
-      const verdict = sys ? sys.kitVerdict(item.node) : null;
+      wrap.dataset.seat = String(seat);
+      let verdict = sys ? sys.kitVerdict(item.node) : null;
+      if (verdict && seat !== 0) verdict = verdict.replace('your kit', `the ${clsName}'s kit`);
       const extra = item.node === 'siphon' && sys ? sys.siphonCardLine() : null;
       const rar = RARITY_COLOR[item.rarity] ?? RARITY_COLOR.common;
+      const mark = aiTab && !item.sold ? `<div class="rn-suggest${item.marked ? ' rn-on' : ''}" data-idx="${i}">${item.marked ? '✓ SUGGESTED' : '+ SUGGEST'}</div>` : '';
       wrap.innerHTML = `
-        <div class="rn-card${n && n.rarity === 'legendary' ? ' rn-legendary' : ''}"
+        <div class="rn-itemtabs"><div class="rn-minowner" style="--acc:${CLASS_ACCENTS[CLASS_OF_SEAT[seat]]}">${esc(clsName.toUpperCase())}</div>${mark}</div>
+        <div class="rn-card${n && n.rarity === 'legendary' ? ' rn-legendary' : ''}" data-seat="${seat}"
              style="--rar:${rar};--rarGlow:${rar}77">
           ${nodeCardHtml(item.node, { verdict, extra, owned: item.owned, compact: true, bench: item.sold, row: true, upgrade: item.sold ? null : item.upgrade ?? null })}
           <div class="rn-stamp">SOLD</div>
@@ -148,7 +189,13 @@ export function createShopScreen({ run, build }) {
           <span class="rn-price">${item.price}</span><span class="rn-cur">GLINT</span>
         </div>`;
       const card = wrap.querySelector('.rn-card');
-      card.addEventListener('click', () => run().buy(i));
+      card.addEventListener('click', () => buyOn(i));
+      // A click on the SUGGESTED ribbon toggles the mark (never a purchase).
+      const rib = wrap.querySelector('.rn-suggest');
+      if (rib) rib.addEventListener('click', (e) => {
+        e.stopPropagation();
+        run().partyShopMark(seat, i);
+      });
       // Hover state also settable by class (captures fire synthetic events
       // that do not move the real pointer).
       card.addEventListener('mouseenter', () => card.classList.add('rn-hover'));
@@ -172,20 +219,39 @@ export function createShopScreen({ run, build }) {
   }
 
   function render(view) {
-    const s = view.shop;
+    lastView = view;
+    if (view.phase !== 'shop') return;
+    if (viewSeat > 0 && !view.partyShop) viewSeat = 0;
+    const s = shelfOf(view, viewSeat);
     if (!s) return;
+    // PARTY: the strip (chips = purses) + the lamp copy.
+    const ps = view.partyShop;
+    const P = party();
+    if (ps) {
+      const rows = [0, 1, 2, 3].map((k) => ({ chip: `◉ ${k === 0 ? view.shop.wallet : ps.shelves[k].purse}${ps.done && ps.done[k] ? ' · Done' : ''}`, tone: k === viewSeat ? 'take' : '' }));
+      strip.update(rows, viewSeat);
+      const buyers = [1, 2, 3].filter((k) => !ps.touched[k] && ps.shelves[k].stock.some((c) => c.marked && !c.sold)).map((k) => CLASS_NAME[CLASS_OF_SEAT[k]]);
+      const base = 'Advance to the Hollow Stag';
+      const lamp = buyers.length ? `${base} · ${buyers.join(', ')} buy suggested` : base;
+      const cd = ps.leaveInTicks !== null && ps.leaveInTicks !== undefined ? ` · leaving in ${Math.ceil(ps.leaveInTicks / 60)} s` : '';
+      if (advanceBtn.textContent !== lamp + cd) advanceBtn.textContent = lamp + cd;
+    }
+    el.querySelector('.rn-shopstrip').style.display = ps ? '' : 'none';
+    void P;
     // The strip numeral is owned by the coin-fly countdown while a purchase
     // animates; it lands on the true wallet when the animation ends.
     if (!buyAnim) amtEl.textContent = String(s.wallet);
     lastWallet = s.wallet;
-    const sig = (s.stock ?? [])
-      .map(
-        (i) =>
-          `${i.node}:${i.price}:${i.sold ? 1 : 0}:${i.owned}:${i.affordable === false ? 's' : 'a'}:${
-            i.upgrade ? `${i.upgrade.skill}/${i.upgrade.replaces}` : '-'
-          }`
-      )
-      .join('|');
+    const sig =
+      `${viewSeat}#` +
+      (s.stock ?? [])
+        .map(
+          (i) =>
+            `${i.node}:${i.price}:${i.sold ? 1 : 0}:${i.owned}:${i.affordable === false ? 's' : 'a'}:${i.marked ? 'm' : ''}:${
+              i.upgrade ? `${i.upgrade.skill}/${i.upgrade.replaces}` : '-'
+            }`
+        )
+        .join('|');
     if (sig !== signature) {
       signature = sig;
       build3(view);
@@ -209,6 +275,8 @@ export function createShopScreen({ run, build }) {
   let pinT = null;
   let buyFrames = 0; // rendered frames the current/last choreography spans
   function onPurchase(ev) {
+    // PARTY: the choreography plays on the shelf on show only.
+    if ((ev.seat ?? 0) !== viewSeat) return;
     pendingBuy = ev.index ?? 0;
     // Wallet before the spend, for the countdown (the view already spent it).
     pendingWalletFrom = (ev.wallet ?? 0) + (ev.price ?? 0);
@@ -578,9 +646,21 @@ export function createShopScreen({ run, build }) {
     if (!moteRaf) moteRaf = requestAnimationFrame(stepMotes);
   }
 
-  function key(code, fresh) {
-    if (code === 'Digit1' || code === 'Digit2' || code === 'Digit3') {
-      run().buy(Number(code.slice(5)) - 1);
+  function key(code, fresh, e = null) {
+    // PARTY: character switch (navigation, settle-guarded by the run UI).
+    const fk = { F1: 0, F2: 1, F3: 2, F4: 3 }[code];
+    if (fk !== undefined && lastView && lastView.partyShop) {
+      if (fresh) setView(fk);
+      return true;
+    }
+    if ((code === 'KeyQ' || code === 'PageUp' || code === 'KeyE' || code === 'PageDown') && lastView && lastView.partyShop) {
+      if (fresh) setView(viewSeat + (code === 'KeyQ' || code === 'PageUp' ? -1 : 1));
+      return true;
+    }
+    if (code === 'Digit1' || code === 'Digit2' || code === 'Digit3' || code === 'Digit4') {
+      const i = Number(code.slice(5)) - 1;
+      if (e && e.shiftKey && viewSeat > 0) run().partyShopMark(viewSeat, i);
+      else buyOn(i);
       return true;
     }
     if (code === 'Enter' || code === 'NumpadEnter') {
@@ -620,7 +700,40 @@ export function createShopScreen({ run, build }) {
     };
   }
 
-  return { el, render, key, denyShake, onPurchase, animState, pin, name: 'shop' };
+  // Gamepad: LB / RB characters, left / right a card focus (-1 = the lamp),
+  // A buys the focused card or advances from the lamp, Y toggles a mark.
+  function pad(action) {
+    const view = lastView;
+    if (!view) return false;
+    if ((action === 'tabPrev' || action === 'tabNext') && view.partyShop) {
+      setView(viewSeat + (action === 'tabPrev' ? -1 : 1));
+      return true;
+    }
+    const n = (shelfOf(view, viewSeat).stock ?? []).length;
+    if (action === 'left' || action === 'right') {
+      padFocus = Math.max(-1, Math.min(n - 1, padFocus + (action === 'left' ? -1 : 1)));
+      cards.forEach((c, k) => c && c.classList.toggle('rn-hover', k === padFocus));
+      advanceBtn.classList.toggle('rn-focus', padFocus < 0);
+      return true;
+    }
+    if (action === 'confirm') {
+      if (padFocus >= 0) buyOn(padFocus);
+      else run().advanceFromShop();
+      return true;
+    }
+    if (action === 'tertiary' && padFocus >= 0 && viewSeat > 0) {
+      run().partyShopMark(viewSeat, padFocus);
+      return true;
+    }
+    return false;
+  }
+  // Probe: the viewed seat + what the shelf shows.
+  const probe = () => ({ viewSeat, cards: cards.map((c) => (c ? { seat: Number(c.dataset.seat), marked: !!c.querySelector('.rn-suggest.rn-on') } : null)), lamp: advanceBtn.textContent });
+  const denyShakeSeat = (ev) => {
+    if ((ev.seat ?? 0) === viewSeat) denyShake(ev.index ?? 0);
+  };
+
+  return { el, render, key, pad, denyShake, denyShakeSeat, onPurchase, animState, pin, probe, name: 'shop' };
 }
 
 export { PALETTE as _shopPalette };

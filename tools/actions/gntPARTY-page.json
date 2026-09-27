@@ -1,0 +1,114 @@
+[
+ {
+  "type": "loop",
+  "label": "room1",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase==='combat'&&r.room===1})()",
+  "maxMs": 20000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 150
+   }
+  ]
+ },
+ {
+  "type": "loop",
+  "label": "clear1",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase==='reward'})()",
+  "maxMs": 40000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{__echoes.cmd('killAllEnemies');return 1})()"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 1100
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {phase:r&&r.phase,room:r&&r.room,mode:r&&r.party&&r.party.mode,cards:r&&r.party&&r.party.cards.map(c=>[c.seat,c.type,c.id,c.swap,c.decided,c.choice,c.replace]),draft:u&&u.draft,settle:u&&u.settleInMs}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntPARTY-page-healer"
+ },
+ {
+  "type": "key",
+  "key": "e",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {phase:r&&r.phase,room:r&&r.room,mode:r&&r.party&&r.party.mode,cards:r&&r.party&&r.party.cards.map(c=>[c.seat,c.type,c.id,c.swap,c.decided,c.choice,c.replace]),draft:u&&u.draft,settle:u&&u.settleInMs}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntPARTY-page-tank"
+ },
+ {
+  "type": "key",
+  "key": "F4",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {phase:r&&r.phase,room:r&&r.room,mode:r&&r.party&&r.party.mode,cards:r&&r.party&&r.party.cards.map(c=>[c.seat,c.type,c.id,c.swap,c.decided,c.choice,c.replace]),draft:u&&u.draft,settle:u&&u.settleInMs}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntPARTY-page-archer"
+ },
+ {
+  "type": "key",
+  "key": "q",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {phase:r&&r.phase,room:r&&r.room,mode:r&&r.party&&r.party.mode,cards:r&&r.party&&r.party.cards.map(c=>[c.seat,c.type,c.id,c.swap,c.decided,c.choice,c.replace]),draft:u&&u.draft,settle:u&&u.settleInMs}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const t=document.querySelector('.rn-draft .rn-ptab[data-seat=\"0\"]');t.dispatchEvent(new MouseEvent('click',{bubbles:true}));return 1})()"
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {phase:r&&r.phase,room:r&&r.room,mode:r&&r.party&&r.party.mode,cards:r&&r.party&&r.party.cards.map(c=>[c.seat,c.type,c.id,c.swap,c.decided,c.choice,c.replace]),draft:u&&u.draft,settle:u&&u.settleInMs}})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {phase:r&&r.phase,room:r&&r.room,mode:r&&r.party&&r.party.mode,cards:r&&r.party&&r.party.cards.map(c=>[c.seat,c.type,c.id,c.swap,c.decided,c.choice,c.replace]),draft:u&&u.draft,settle:u&&u.settleInMs}})()"
+ }
+]

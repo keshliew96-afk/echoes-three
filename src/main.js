@@ -333,6 +333,13 @@ provide('content', createContentService({ world, bus, service }));
 // press). (The §4.1 expedition picker is superseded by the CAMPAIGN block's
 // Level Select — PLAN §12.7.)
 registerChallengeSetting(app.settings);
+// @gnt:PARTY SETTINGS begin — Settings ▸ Gameplay ▸ Ally builds / Socket my
+// new nodes (PLAN §16.4), `?party=` (this boot) and `?partygrant=` (every
+// ally built at the next run start — harness, marks the run).
+import { registerPartySettings } from './ui/run/partysettings.js';
+registerPartySettings(app.settings, { world, params: bootParams });
+if (bootParams.partyGrant !== null && world.runSystem() && typeof world.runSystem().setHarnessGrant === 'function') world.runSystem().setHarnessGrant(bootParams.partyGrant);
+// @gnt:PARTY SETTINGS end
 registerContentCues(service('audio'), world);
 // The deterministic default-build autopilot (src/sim/autopilot.js, PLAN §6.7)
 // replaces the tick's intent snapshot while it is on — for BOTH the realtime

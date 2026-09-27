@@ -46,6 +46,17 @@
 //                 View (Back) opens/closes it between rooms
 // __echoes.cmd('openSocket'|'closeSocket') drives the same paths for tests.
 //
+// PARTY (BUILD_BRIEF §25.6, PLAN §16.4): the party strip across the top — the
+// VIEWED character's 4 rows × 8 sockets and its own bench (each row carries
+// `data-seat` + the class accent). Q / E, PgUp / PgDn, F1-F4, a click on a
+// tab, pad LB / RB switch character (the pad's row jump moves to LT / RT).
+// REORDER: ← from socket 1 reaches the row's skill header; Enter picks the
+// skill up; ↑ / ↓ (or 1-4) to another header; Enter swaps the two rows
+// (sockets travel; slot order = keys 1-4 = the AI's cast order). Mouse: click
+// a header, click another. F auto-fills the viewed character; Shift+F or the
+// "Auto-fill all" button (pad: D-pad up to it from row 1's header, A) fills
+// all four.
+//
 // Reads sim truth exclusively through world.buildSystem() (view / preview /
 // verdictFor / planFill) and mutates only through socket / unsocket /
 // autoFill — the same entry points as __echoes.cmd, so every screen action
@@ -55,7 +66,10 @@ import { SKILLS } from '../../sim/skills.js';
 import { NODES } from '../../sim/nodes.js';
 import { SKILL_SLOTS } from '../../core/constants.js';
 import { iconHtml, hasIcon } from '../hud/icons.js';
-import { NODE_EFFECT } from '../run/cards.js';
+import { NODE_EFFECT, NODE_GLYPH as CARD_GLYPH } from '../run/cards.js';
+import { createPartyStrip } from '../run/partystrip.js';
+import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
+import { CLASS_ACCENTS } from '../../data/palette.js';
 
 const RARITY_COLOR = {
   common: PALETTE.bone,
@@ -83,6 +97,8 @@ const NODE_GLYPH = {
   bulwark: '▣',
   split: '⋔',
   resonance: '⁂',
+  // PARTY class nodes: the same glyphs as the cards.
+  ...Object.fromEntries(Object.entries(CARD_GLYPH).filter(([k]) => !['sharpen', 'quicken', 'multiply', 'ascend', 'bounce', 'siphon', 'echo', 'detonate', 'widen', 'reach', 'linger', 'keen', 'snare', 'galvanize', 'bulwark', 'split', 'resonance'].includes(k))),
 };
 
 const SHAPE_LABEL = {
@@ -107,11 +123,19 @@ const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const DESIGN_W = 1280;
-const DESIGN_H = 700;
+const DESIGN_H = 764; // PARTY: + the party strip row (was 700)
 const COLS = 8;
 
 export function createSocketScreen({ bus, world }) {
-  const build = () => world.buildSystem();
+  // PARTY: the viewed character's build (seat 0 = the Healer's, unchanged).
+  let viewSeat = 0;
+  let headerInHand = null; // a skill row picked up to reorder (row index)
+  const partySys = () => (typeof world.partySystem === 'function' ? world.partySystem() : null);
+  const build = () => {
+    if (viewSeat === 0) return world.buildSystem();
+    const P = partySys();
+    return P ? P.build(viewSeat) : null;
+  };
   let swapNote = null; // ruling A17: the note a swap-chained open shows once
 
   // ------------------------------------------------------------------ style --
@@ -152,6 +176,7 @@ export function createSocketScreen({ bus, world }) {
     .nd-total { font-size: 17px; color: ${PALETTE.bone}; font-variant-numeric: tabular-nums; }
     .nd-total b { color: ${PALETTE.parchment}; font-size: 20px; }
     .nd-btn {
+      white-space: nowrap;
       display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
       height: 38px; padding: 0 14px; border-radius: 9px;
       font-size: 18px; font-weight: 800; letter-spacing: 0.04em;
@@ -181,6 +206,14 @@ export function createSocketScreen({ bus, world }) {
       border: 1px solid ${PALETTE.warmGrey}33; border-radius: 12px;
     }
     .nd-row.nd-rowfocus { border-color: ${PALETTE.warmGrey}AA; background: #2a2622E6; }
+    /* PARTY: whose row (the class accent), the header zone, a row picked up. */
+    .nd-row { border-left: 4px solid var(--seatAcc, ${PALETTE.warmGrey}); }
+    .nd-row.nd-headfocus .nd-rowhead { outline: 2px solid ${PALETTE.hearthAmber}; outline-offset: 2px; border-radius: 10px; }
+    .nd-row.nd-rowheld { border-color: ${PALETTE.hearthAmber}; box-shadow: 0 0 16px ${PALETTE.hearthAmber}44; }
+    .nd-row .nd-rowhead { cursor: pointer; }
+    .nd-strip { display: flex; justify-content: center; margin: 2px 0 6px; }
+    .nd-strip .rn-pstrip { margin: 0; }
+    .nd-btn.nd-focusbtn { outline: 2px solid ${PALETTE.hearthAmber}; outline-offset: 2px; }
     .nd-rowhead { display: flex; align-items: center; gap: 10px; min-width: 0; }
     /* the skill's key (1-4) rides the icon medallion's corner as a keycap */
     .nd-rkey {
@@ -344,13 +377,15 @@ export function createSocketScreen({ bus, world }) {
         <span class="nd-orn">◆ ◇</span>
         <span class="nd-title">SOCKETS</span>
         <span class="nd-orn">◇ ◆</span>
-        <span class="nd-sub"><b>8 sockets</b> on every skill · <b>any node fits any socket</b></span>
+        <span class="nd-sub"><b>8 sockets</b> per skill · <b>any node, any socket</b></span>
         <span class="nd-headr">
           <span class="nd-total"></span>
           <span class="nd-btn nd-auto" data-act="auto"><span class="nd-k">F</span>Auto-fill</span>
+          <span class="nd-btn nd-autoall" data-act="autoall"><span class="nd-k">⇧F</span>Fill all</span>
           <span class="nd-btn nd-close" data-act="close"><span class="nd-k">Esc</span>Close</span>
         </span>
       </div>
+      <div class="nd-strip"></div>
       <div class="nd-lock"></div>
       <div class="nd-main">
         <div class="nd-rows"></div>
@@ -362,8 +397,8 @@ export function createSocketScreen({ bus, world }) {
       <div class="nd-detail"></div>
       <div class="nd-foot">
         <span><b>←↑→↓</b> move</span><span><b>Enter</b> pick · place</span><span><b>X</b> remove</span>
-        <span><b>F</b> auto-fill</span><span><b>1–4</b> skill</span><span><b>Tab</b> bench</span><span><b>Esc</b> close</span>
-        <span class="nd-pad">pad <b>Ⓐ</b> pick · place <b>Ⓧ</b> remove <b>Ⓨ</b> auto-fill <b>Ⓑ</b> back</span>
+        <span><b>F</b> auto-fill</span><span><b>1–4</b> skill</span><span><b>Q</b>/<b>E</b> character</span><span><b>←</b> reorder</span><span><b>Esc</b> close</span>
+        <span class="nd-pad">pad <b>LB</b>/<b>RB</b> character <b>Ⓐ</b> place <b>Ⓧ</b> remove <b>Ⓨ</b> fill <b>Ⓑ</b> back</span>
       </div>
       <div class="nd-toast"></div>
     </div>`;
@@ -378,10 +413,23 @@ export function createSocketScreen({ bus, world }) {
   const totalEl = rootEl.querySelector('.nd-total');
   const autoBtn = rootEl.querySelector('.nd-auto');
   const toastEl = rootEl.querySelector('.nd-toast');
+  const autoAllBtn = rootEl.querySelector('.nd-autoall');
+  const strip = createPartyStrip({ onSelect: (s) => setSeat(s), host: rootEl.querySelector('.nd-strip') });
+  function setSeat(seat) {
+    const s = ((Number(seat) % 4) + 4) % 4;
+    if (s === viewSeat) return;
+    viewSeat = s;
+    held = null;
+    headerInHand = null;
+    if (open) {
+      renderAll();
+      setFocus({ zone: chips.length ? 'bench' : 'cells', r: 0, c: 0, i: 0 });
+    }
+  }
 
   let scale = 1;
   function fitScale() {
-    const s = Math.max(0.5, Math.min(1.75, window.innerWidth / 1320, window.innerHeight / 740));
+    const s = Math.max(0.5, Math.min(1.75, window.innerWidth / 1320, window.innerHeight / 812)); // PARTY: + the party strip row
     scale = s;
     rootEl.style.setProperty('--nd-s', s.toFixed(4));
     return s;
@@ -516,6 +564,15 @@ export function createSocketScreen({ bus, world }) {
     const sys = sysOk();
     if (!sys) return;
     view = sys.view();
+    // PARTY: the strip (chips = sockets filled + bench nodes waiting).
+    const P = partySys();
+    const rowsFor = [0, 1, 2, 3].map((s) => {
+      const v = s === 0 ? world.buildSystem().view() : P ? P.build(s).view() : null;
+      if (!v) return { chip: '—' };
+      const f = v.skills.reduce((a, k) => a + k.filled, 0);
+      return { chip: `${f}/${v.skills.length * v.socketCount}${v.bench.length ? ` · ▲${v.bench.length}` : ''}`, tone: v.bench.length ? 'take' : '' };
+    });
+    strip.update(rowsFor, viewSeat);
     const bench = view.bench;
     chips = groupBench(bench);
     if (held && !bench.some((b) => b.node === held.node)) held = null;
@@ -543,8 +600,10 @@ export function createSocketScreen({ bus, world }) {
       }
       const def = SKILLS[sk.id];
       const row = document.createElement('div');
-      row.className = 'nd-row';
+      row.className = `nd-row${headerInHand === r ? ' nd-rowheld' : ''}`;
       row.dataset.skill = sk.id;
+      row.dataset.seat = String(viewSeat); // PARTY: whose row (probes + the accent)
+      row.style.setProperty('--seatAcc', CLASS_ACCENTS[CLASS_OF_SEAT[viewSeat]]);
       const iconCls = def && def.archetype === 'heal' ? ' nd-heal' : def && def.archetype === 'damage' ? ' nd-damage' : '';
       const vd = held ? rowVerdict(sys, sk, held.node) : null;
       row.innerHTML = `
@@ -560,6 +619,12 @@ export function createSocketScreen({ bus, world }) {
           vd ? `<span class="nd-verd v-${vd.k}">${esc(vd.text)}</span>` : `<span class="nd-verd" style="color:${PALETTE.warmGrey}">${sk.live} live</span>`
         }</div>
         <div class="nd-rstats">${statsLine(sk)}</div>`;
+      const head = row.querySelector('.nd-rowhead');
+      head.addEventListener('mouseenter', () => setFocus({ zone: 'head', r }));
+      head.addEventListener('click', () => {
+        setFocus({ zone: 'head', r });
+        activateHead();
+      });
       const cells = row.querySelector('.nd-cells');
       sk.sockets.forEach((rec, c) => {
         const cell = document.createElement('div');
@@ -672,6 +737,7 @@ export function createSocketScreen({ bus, world }) {
   function clampFocus() {
     const rows = view ? view.skills.length : 0;
     if (focus.zone === 'bench' && chips.length === 0) focus.zone = 'cells';
+    if (focus.zone === 'head' && rows === 0) focus.zone = 'cells';
     if (focus.zone === 'cells' && rows === 0 && chips.length > 0) focus.zone = 'bench';
     focus.r = Math.max(0, Math.min(Math.max(0, rows - 1), focus.r));
     focus.c = Math.max(0, Math.min(COLS - 1, focus.c));
@@ -687,8 +753,11 @@ export function createSocketScreen({ bus, world }) {
   function paintFocus() {
     for (const el of cellEls.values()) el.classList.remove('nd-focus', 'nd-suggest');
     for (const el of chipEls) if (el) el.classList.remove('nd-focus');
-    for (const el of rowEls) if (el) el.classList.remove('nd-rowfocus');
-    if (focus.zone === 'cells') {
+    for (const el of rowEls) if (el) el.classList.remove('nd-rowfocus', 'nd-headfocus');
+    autoAllBtn.classList.toggle('nd-focusbtn', focus.zone === 'autoall');
+    if (focus.zone === 'head') {
+      if (rowEls[focus.r]) rowEls[focus.r].classList.add('nd-rowfocus', 'nd-headfocus');
+    } else if (focus.zone === 'cells') {
       const el = cellEls.get(`${focus.r}:${focus.c}`);
       if (el) el.classList.add('nd-focus');
       if (rowEls[focus.r]) rowEls[focus.r].classList.add('nd-rowfocus');
@@ -714,7 +783,18 @@ export function createSocketScreen({ bus, world }) {
     let title = '';
     let verdict = '';
     const handTag = held ? `<span class="nd-hand">▲ IN HAND</span>` : '';
-    if (focus.zone === 'bench' && chips[focus.i]) {
+    if (focus.zone === 'head' && view.skills[focus.r]) {
+      // PARTY reorder zone.
+      const sk = view.skills[focus.r];
+      title = `<span>${esc(sk.name)}</span><span class="nd-rar">key ${focus.r + 1} · row ${focus.r + 1} of ${view.skills.length}</span>`;
+      if (headerInHand === null) lines.push('Enter picks this skill up to REORDER — its sockets travel with it');
+      else if (headerInHand === focus.r) lines.push('picked up — ↑ / ↓ or 1–4 to another skill, Enter there swaps the two rows · Esc drops it');
+      else lines.push(`Enter swaps ${esc(view.skills[headerInHand].name)} (key ${headerInHand + 1}) with ${esc(sk.name)} (key ${focus.r + 1}) — keys follow the new order`);
+      lines.push(esc(viewSeat === 0 ? 'slot order = keys 1–4' : 'slot order = keys 1–4 = the order the AI casts in'));
+    } else if (focus.zone === 'autoall') {
+      title = '<span>Auto-fill all</span>';
+      lines.push('every character’s bench goes into its own live sockets — the same policy as F, for all four');
+    } else if (focus.zone === 'bench' && chips[focus.i]) {
       const g = chips[focus.i];
       const prov = Object.entries(g.provenance)
         .map(([k, v]) => `${k}${v > 1 ? ` ×${v}` : ''}`)
@@ -776,7 +856,7 @@ export function createSocketScreen({ bus, world }) {
         lines.push(`<span>${statsLine(sk)}</span>`);
       }
     } else {
-      title = '<span>Your build</span>';
+      title = `<span>${viewSeat === 0 ? 'Your build' : `The ${esc(CLASS_NAME[CLASS_OF_SEAT[viewSeat]])}'s build`}</span>`;
       lines.push('4 skills · 8 sockets each · grey cells socket freely but contribute nothing');
     }
     detailEl.innerHTML = `
@@ -842,6 +922,45 @@ export function createSocketScreen({ bus, world }) {
     if (chips.length) setFocus({ zone: 'bench', i: 0 });
   }
 
+  // PARTY reorder: Enter on a header picks the skill up; Enter on another
+  // header swaps the two rows (sockets and cooldowns travel with the skill).
+  function activateHead() {
+    if (!view || !view.skills[focus.r]) return;
+    if (headerInHand === null) {
+      headerInHand = focus.r;
+      toast(`${view.skills[focus.r].name} picked up — ↑ / ↓ to another skill, Enter to swap the rows`);
+      renderAll();
+      return;
+    }
+    if (headerInHand === focus.r) {
+      headerInHand = null;
+      renderAll();
+      return;
+    }
+    const from = headerInHand;
+    const to = focus.r;
+    headerInHand = null;
+    const run = world.runSystem();
+    const r = run && typeof run.reorderLoadout === 'function' ? run.reorderLoadout(viewSeat, from, to) : null;
+    if (r && r.denied) toast(`⊘ ${DENY_COPY[r.denied] ?? r.denied}`);
+    else if (r === false) toast('read-only — only your own character');
+    else toast(`rows ${from + 1} ⇄ ${to + 1} — keys follow the new order`);
+    renderAll();
+  }
+  function autoFillAll() {
+    const run = world.runSystem();
+    const r = run && typeof run.autoFillAll === 'function' ? run.autoFillAll() : null;
+    if (r && r.denied) {
+      toast(`⊘ ${DENY_COPY[r.denied] ?? r.denied}`);
+      return r;
+    }
+    held = null;
+    renderAll();
+    const n = Array.isArray(r) ? r.reduce((a, x) => a + (x.socketed ? x.socketed.length : 0), 0) : 0;
+    toast(r === false ? 'read-only — only your own character' : `auto-fill all: ${n} node${n === 1 ? '' : 's'} socketed across the party`);
+    return r;
+  }
+
   function removeFocused() {
     const sys = sysOk();
     if (!sys || !view || focus.zone !== 'cells') return;
@@ -893,7 +1012,23 @@ export function createSocketScreen({ bus, world }) {
   function move(dx, dy) {
     if (!view) return;
     const rows = view.skills.length;
+    // PARTY: the header zone (reorder) left of socket 1; the Auto-fill all
+    // button above row 1's header (the pad's way to it).
+    if (focus.zone === 'autoall') {
+      if (dy > 0 || dx !== 0) setFocus({ zone: 'head', r: 0 });
+      return;
+    }
+    if (focus.zone === 'head') {
+      if (dx > 0) setFocus({ zone: 'cells', c: 0 });
+      else if (dy < 0 && focus.r === 0 && headerInHand === null) setFocus({ zone: 'autoall' });
+      else if (dy !== 0) setFocus({ r: Math.max(0, Math.min(rows - 1, focus.r + dy)) });
+      return;
+    }
     if (focus.zone === 'cells') {
+      if (dx < 0 && focus.c === 0) {
+        setFocus({ zone: 'head' });
+        return;
+      }
       if (dx !== 0) {
         const c = focus.c + dx;
         if (c > COLS - 1) {
@@ -959,6 +1094,7 @@ export function createSocketScreen({ bus, world }) {
   }
 
   rootEl.querySelector('[data-act="auto"]').addEventListener('click', () => autoFill());
+  autoAllBtn.addEventListener('click', () => autoFillAll());
   rootEl.querySelector('[data-act="close"]').addEventListener('click', () => setOpen(false));
 
   // Keyboard. While open the screen owns the keyboard (the run UI steps aside,
@@ -969,7 +1105,7 @@ export function createSocketScreen({ bus, world }) {
     ArrowUp: [0, -1], KeyW: [0, -1],
     ArrowDown: [0, 1], KeyS: [0, 1],
   };
-  const OWN_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'Tab', 'KeyX', 'Delete', 'Backspace', 'KeyF', 'Escape', 'KeyB', 'Digit1', 'Digit2', 'Digit3', 'Digit4']);
+  const OWN_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'Tab', 'KeyX', 'Delete', 'Backspace', 'KeyF', 'Escape', 'KeyB', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'KeyQ', 'KeyE', 'PageUp', 'PageDown', 'F1', 'F2', 'F3', 'F4']);
   window.addEventListener('keydown', (e) => {
     if (!open) {
       if (e.repeat) return;
@@ -984,16 +1120,29 @@ export function createSocketScreen({ bus, world }) {
     let used = true;
     if (dir) move(dir[0], dir[1]); // auto-repeat allowed: a held arrow glides
     else if (e.repeat) used = OWN_KEYS.has(code); // swallow repeats, act once
-    else if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') activate();
-    else if (code === 'KeyX' || code === 'Delete' || code === 'Backspace') removeFocused();
+    else if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') {
+      if (focus.zone === 'head') activateHead();
+      else if (focus.zone === 'autoall') autoFillAll();
+      else activate();
+    } else if (code === 'KeyX' || code === 'Delete' || code === 'Backspace') removeFocused();
+    else if (code === 'KeyF' && e.shiftKey) autoFillAll();
     else if (code === 'KeyF') autoFill();
+    else if (code === 'KeyQ' || code === 'PageUp') setSeat(viewSeat - 1);
+    else if (code === 'KeyE' || code === 'PageDown') setSeat(viewSeat + 1);
+    else if (/^F[1-4]$/.test(code)) setSeat(Number(code.slice(1)) - 1);
     else if (code === 'Tab') setFocus(focus.zone === 'cells' ? { zone: 'bench' } : { zone: 'cells' });
     else if (/^Digit[1-4]$/.test(code)) {
       const r = Number(code.slice(5)) - 1;
-      if (view && view.skills[r]) {
+      if (focus.zone === 'head' && headerInHand !== null && view && view.skills[r]) {
+        setFocus({ zone: 'head', r });
+        activateHead();
+      } else if (view && view.skills[r]) {
         const c = view.skills[r].sockets.indexOf(null);
         setFocus({ zone: 'cells', r, c: c >= 0 ? c : 0 });
       }
+    } else if ((code === 'KeyB' || code === 'Escape') && headerInHand !== null) {
+      headerInHand = null; // drop the skill picked up for a reorder
+      renderAll();
     } else if (code === 'KeyB' || code === 'Escape') {
       // The socket screen is a sub-overlay (PLAN §1.5): its Esc closes it
       // (banking the candidate) and is CONSUMED — the pause menu listener,
@@ -1036,17 +1185,25 @@ export function createSocketScreen({ bus, world }) {
       }
       return;
     }
-    if (i === 0) activate();
-    else if (i === 1) {
+    if (i === 0) {
+      if (focus.zone === 'head') activateHead();
+      else if (focus.zone === 'autoall') autoFillAll();
+      else activate();
+    } else if (i === 1) {
       if (held) {
         held = null;
+        renderAll();
+      } else if (headerInHand !== null) {
+        headerInHand = null;
         renderAll();
       } else setOpen(false);
     } else if (i === 2) removeFocused();
     else if (i === 3) autoFill();
-    else if (i === 4 || i === 5) {
+    else if (i === 4 || i === 5) setSeat(viewSeat + (i === 5 ? 1 : -1)); // PARTY: LB / RB = character
+    else if (i === 6 || i === 7) {
+      // PARTY: LT / RT = previous / next skill row (was LB / RB).
       const rows = view ? view.skills.length : 0;
-      if (rows) setFocus({ zone: 'cells', r: (focus.r + (i === 5 ? 1 : rows - 1)) % rows });
+      if (rows) setFocus({ zone: 'cells', r: (focus.r + (i === 7 ? 1 : rows - 1)) % rows });
     } else if (i === 8) setOpen(false);
   }
   function pollPad(now) {
@@ -1110,9 +1267,14 @@ export function createSocketScreen({ bus, world }) {
   });
   bus.on('build_restored', () => open && renderAll());
   bus.on('skill_equip', () => open && renderAll());
+  bus.on('skill_swapped', () => open && renderAll());
+  bus.on('loadout_reorder', () => open && renderAll());
+  bus.on('build_autofill', () => open && renderAll());
   bus.on('draft_taken', (ev) => {
     // §16 chain: the run UI opens us right after this; open with the drafted
     // node in hand and the cursor on the socket the auto-fill policy picks.
+    // PARTY: the Healer's own card — its tab.
+    if (ev.reward === 'node' || ev.swap) viewSeat = 0;
     if (ev.reward === 'node') prefocus = ev.id;
     // Ruling A17: a taken swap releases the replaced skill's nodes.
     if (ev.reward === 'skill' && ev.swap && Array.isArray(ev.released) && ev.released.length > 0) {
@@ -1217,6 +1379,14 @@ export function createSocketScreen({ bus, world }) {
         auto: rectOf(autoBtn),
       },
       pad: padLog.slice(-10),
+      // PARTY probe surface (PLAN §16.4 socketUi()).
+      viewSeat,
+      inHand: held ? held.node : null,
+      headerInHand,
+      rowSeats: rowEls.map((r) => (r ? Number(r.dataset.seat) : null)),
+      tabs: strip.tabs().map((t) => ({ seat: Number(t.dataset.seat), viewed: t.classList.contains('rn-pview'), chip: t.querySelector('.rn-pchip').textContent, h: Math.round(t.getBoundingClientRect().height) })),
     }),
+    // PARTY: view a character's tab (the chain from a party card, probes).
+    setSeat,
   };
 }

@@ -41,7 +41,7 @@
  },
  {
   "type": "eval",
-  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.socketUi?__echoes.socketUi():null}})()"
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null}})()"
  },
  {
   "type": "shot",
@@ -58,7 +58,7 @@
  },
  {
   "type": "eval",
-  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.socketUi?__echoes.socketUi():null}})()"
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null}})()"
  },
  {
   "type": "key",
@@ -80,7 +80,7 @@
  },
  {
   "type": "eval",
-  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.socketUi?__echoes.socketUi():null}})()"
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null}})()"
  },
  {
   "type": "shot",
@@ -100,7 +100,7 @@
  },
  {
   "type": "eval",
-  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.socketUi?__echoes.socketUi():null}})()"
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null}})()"
  },
  {
   "type": "key",
@@ -122,7 +122,7 @@
  },
  {
   "type": "eval",
-  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.socketUi?__echoes.socketUi():null}})()"
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null}})()"
  },
  {
   "type": "shot",
