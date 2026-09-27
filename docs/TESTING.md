@@ -1461,3 +1461,27 @@ docs/gauntlet/build-DEPLOY.md.
     the stale pages' update dialog / panel and the reload onto B (GD.7).
   - `tools/gntDEPLOY-sp.mjs --url http://127.0.0.1:5199/` — zero `/echoes`
     sockets through a single-player room, then the unreachable copy (GD.9).
+- **fix-DEPLOY-r4 (F1, PLAN §14.2 "client aborts log nothing")**: the dev /
+  preview `/echoes` proxy is silent when a player leaves by any path — Vite
+  hangs its own stack-printing "ws proxy socket error" listener on every
+  proxied CLIENT socket, which vite.config.js swaps for one that stays silent
+  for "the connection went away" codes (ECONNRESET / ECONNABORTED / EPIPE /
+  ETIMEDOUT / stream-destroyed) and still reports anything else. With the
+  session server down a WebSocket upgrade gets `HTTP/1.1 502 Bad Gateway`.
+  Probes (DEPLOY ports; serve `vite preview --outDir <dist> --port <p> --host`
+  with `ECHOES_NET_PORT=<q>`, stdout+stderr to a log, beside `node
+  server/index.mjs --port <q>`):
+  - `tools/gntfixDEPLOY4-rawabort.mjs --port <p> --log <preview log> --reps
+    10 --tag <t>` — browser-free: raw sockets upgrade through the proxy (101
+    from the real server) and leave by close frame / FIN / RST / RST while the
+    server streams / a 6-socket RST burst / half a frame then RST; every new
+    proxy log line fails. Pass = 0 lines (was 45 traces in 30 trials).
+  - `tools/gntfixDEPLOY4-proxyunit.mjs --net <q> --down <unused port> --portA
+    <p1> --portB <p2> --outDir <dist> [--config <vite config>] --tag <t>` —
+    Vite's preview() API with a capturing logger: 12 injected leave errors log
+    0, an unexpected one is still reported, the proxy keeps relaying; server
+    down → ws 502 ×3, http 502 + body, ONE hint, no stack (19/19; the pre-fix
+    config scores 6/19).
+  - The deploy critic's `tools/gntcdeploy4-zeroconf.mjs --guests 1` and
+    `tools/gntcdeploy4-abort.mjs --log <preview log>` (navigate / close /
+    kill) must add 0 lines to the preview log.

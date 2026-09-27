@@ -23,8 +23,31 @@ const NET_TARGET = `http://127.0.0.1:${NET_PORT}`;
 // One quiet line instead of a stack trace per attempt while the session
 // server is not running (every Multiplayer check would print one), and no
 // log at all when a player simply closes the tab mid-connection.
+//
+// GONE = errors that only mean a connection went away, never a bug worth a
+// stack: ECONNREFUSED = no session server (the hint below); the rest = a
+// player's browser left (a closed tab / killed browser / dropped network
+// resets its socket — read ECONNRESET — or the proxy pipes the server's next
+// snapshot into a socket already gone — write ECONNABORTED on Windows, EPIPE
+// elsewhere — and the teardown that follows) or the session server went away
+// mid-game (its own terminal says why). A client socket's error reaches Vite
+// twice (fix-DEPLOY-r4 F1): http-proxy re-emits it as a proxy 'error'
+// (filtered in emit below) AND Vite's own proxyReqWs handler hangs a
+// stack-printing "ws proxy socket error" listener on that socket, which is
+// swapped for one that stays silent for GONE and still reports anything else.
 let lastHint = 0;
-const QUIET = new Set(['ECONNREFUSED', 'ECONNRESET', 'ECONNABORTED', 'EPIPE']);
+const GONE = new Set(['ECONNREFUSED', 'ECONNRESET', 'ECONNABORTED', 'EPIPE', 'ETIMEDOUT', 'ERR_STREAM_WRITE_AFTER_END', 'ERR_STREAM_DESTROYED', 'ERR_STREAM_PREMATURE_CLOSE']);
+function quietClientSocket(socket, before) {
+  if (!socket || typeof socket.listeners !== 'function') return;
+  const added = socket.listeners('error').filter((fn) => !before.includes(fn));
+  if (!added.length) return;
+  for (const fn of added) socket.removeListener('error', fn);
+  socket.on('error', (err) => {
+    if (err && GONE.has(err.code)) return;
+    for (const fn of added) fn.call(socket, err);
+  });
+}
+const NOT_RUNNING = 'Echoes session server not running (npm run net)\n';
 function netProxy() {
   return {
     '^/echoes(?:[?#]|$)': {
@@ -34,17 +57,31 @@ function netProxy() {
       configure(proxy) {
         const emit = proxy.emit.bind(proxy);
         proxy.emit = (event, err, req, res, ...rest) => {
-          if (event === 'error' && err && QUIET.has(err.code)) {
+          if (event === 'proxyReqWs') {
+            // (proxyReq, req, clientSocket, options, head): let Vite attach its
+            // listeners, then take its socket-error logger back off.
+            const before = res && typeof res.listeners === 'function' ? res.listeners('error') : [];
+            const handled = emit(event, err, req, res, ...rest);
+            quietClientSocket(res, before);
+            return handled;
+          }
+          if (event === 'error' && err && GONE.has(err.code)) {
+            const refused = err.code === 'ECONNREFUSED';
             const now = Date.now();
-            if (err.code === 'ECONNREFUSED' && now - lastHint > 30000) {
+            if (refused && now - lastHint > 30000) {
               lastHint = now;
               console.log(`[echoes] /echoes -> ${NET_TARGET}: no session server there (${err.code}). Multiplayer needs it: run "npm run net" in another terminal.`);
             }
             try {
               if (res && typeof res.writeHead === 'function') {
                 if (!res.headersSent) res.writeHead(502, { 'content-type': 'text/plain' });
-                res.end('Echoes session server not running (npm run net)\n');
-              } else if (res && typeof res.destroy === 'function') res.destroy();
+                res.end(refused ? NOT_RUNNING : undefined);
+              } else if (res && typeof res.destroy === 'function') {
+                // A WebSocket upgrade: refused = the 101 was never sent, so the
+                // raw socket can still carry an honest 502; otherwise just drop it.
+                if (refused && res.writable && !res.destroyed) res.end(`HTTP/1.1 502 Bad Gateway\r\nContent-Type: text/plain\r\nContent-Length: ${NOT_RUNNING.length}\r\nConnection: close\r\n\r\n${NOT_RUNNING}`);
+                else res.destroy();
+              }
             } catch {
               /* socket already gone */
             }
