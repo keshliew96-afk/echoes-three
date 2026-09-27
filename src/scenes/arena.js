@@ -59,7 +59,7 @@ import { PALETTE } from '../data/palette.js';
 import { makeGlowSprite, getRadialTexture } from '../render/glow.js';
 import { createGrayboxScene } from './graybox.js';
 import { layoutSpec, biomeInfo, biomeOfLayout, LAYOUT_SPEC_IDS } from '../env/biomes/index.js';
-import { registerDressingPump } from '../env/biomes/builder.js';
+import { registerDressingPump, pumpStatsDebug } from '../env/biomes/builder.js';
 import { requestPaint, stats as paintStats } from '../env/biomes/paint-client.js';
 import { paintGroundSteps, groundMeshFromCanvas, paintApronSteps, apronMeshFromCanvas, drain } from '../env/ground.js';
 import { buildTreeline } from '../env/treeline.js';
@@ -1056,6 +1056,7 @@ export function createArenaScene(stage, toggles, ctx) {
     }
     return null;
   }
+  const stepCost = []; // gauntlet r4 J4-F1: learned ms per build step index (see pump)
   function pump(budgetMs = 8) {
     if (warmDraw) {
       if (--warmDraw.frames <= 0) endWarmDraw();
@@ -1121,16 +1122,28 @@ export function createArenaScene(stage, toggles, ctx) {
             : 0;
       if (!queue.length || pick < 0) return;
       const id = queue.splice(pick, 1)[0];
-      job = { id, gen: buildDressingSteps(layoutSpec(id), true), t0, waiting: false };
+      job = { id, gen: buildDressingSteps(layoutSpec(id), true), t0, waiting: false, step: 0 };
       tl(id, 'start');
     }
+    let ran = 0;
     try {
       while (performance.now() - t0 < budgetMs) {
+        // gauntlet r4 J4-F1 (INT, GI.6): every layout runs the same step order,
+        // so each step's cost is learned (EMA); a step predicted to overrun the
+        // slice waits for the next frame unless nothing ran yet (progress) —
+        // the level-clear card used to chain treeline + props (13 + 65 ms).
+        const est = stepCost[job.step];
+        if (ran > 0 && est !== undefined && performance.now() - t0 + est > budgetMs) break;
+        const s0 = performance.now();
         const r = job.gen.next();
         if (r.value === WAIT) {
           job.waiting = true;
           break;
         }
+        const sm = performance.now() - s0;
+        stepCost[job.step] = est === undefined ? sm : est * 0.6 + sm * 0.4;
+        job.step += 1;
+        ran += 1;
         job.waiting = false;
         if (r.done) {
           dressings.set(job.id, r.value);
@@ -1148,6 +1161,8 @@ export function createArenaScene(stage, toggles, ctx) {
     const ms = performance.now() - t0;
     buildStats.slices += 1;
     if (ms > buildStats.maxSliceMs) buildStats.maxSliceMs = Math.round(ms * 10) / 10;
+    (buildStats.sliceLog ||= []).push([Math.round(t0), Math.round(ms * 10) / 10, ran, budgetMs]);
+    if (buildStats.sliceLog.length > 32) buildStats.sliceLog.shift();
   }
   function ensureDressing(id) {
     let d = dressings.get(id);
@@ -1212,6 +1227,9 @@ export function createArenaScene(stage, toggles, ctx) {
       if (o.isInstancedMesh) out.instanced.add(o);
       const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
       for (const m of mats) {
+        // gauntlet r4 J4-F1 (INT): a material shared by many meshes is scanned
+        // once (same result; the level-clear teardown walks the whole scene).
+        if (out.materials.has(m)) continue;
         out.materials.add(m);
         for (const k of Object.keys(m)) addTex(m[k]);
         if (m.uniforms) for (const u of Object.values(m.uniforms)) if (u) addTex(u.value);
@@ -1342,7 +1360,7 @@ export function createArenaScene(stage, toggles, ctx) {
   function residencyState() {
     return {
       timeline: buildStats.timeline.slice(-6),
-      perf: { uploads: (buildStats.uploads || []).slice(-12), maxSliceMs: buildStats.maxSliceMs, maxUploadMs: buildStats.maxUploadMs ?? 0, lastApplyMs: buildStats.lastApplyMs ?? 0, maxApplyMs: buildStats.maxApplyMs ?? 0, syncBuilds: buildStats.syncBuilds.slice(-4) },
+      perf: { uploads: (buildStats.uploads || []).slice(-12), stepMs: stepCost.map((x) => Math.round(x * 10) / 10), slices: (buildStats.sliceLog || []).slice(), pump: pumpStatsDebug(), maxSliceMs: buildStats.maxSliceMs, maxUploadMs: buildStats.maxUploadMs ?? 0, lastApplyMs: buildStats.lastApplyMs ?? 0, maxApplyMs: buildStats.maxApplyMs ?? 0, syncBuilds: buildStats.syncBuilds.slice(-4) },
       prefetched: [...prefetched.keys()],
       resident: residentAct,
       dressings: [...dressings.keys()].sort((x, y) => x - y),

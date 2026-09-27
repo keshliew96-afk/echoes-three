@@ -94,7 +94,10 @@ export function createWorldContentLayers({ stage, world, bus, cosmetic, runUi = 
       const busy = run && typeof run.combatActive === 'function' && run.combatActive();
       const app = service('app');
       const hold = !!(app && typeof app.backgroundHold === 'function' && app.backgroundHold());
-      pumpDressings(busy || hold ? 0 : 8);
+      // gauntlet r4 J4-F1 (INT): the frame's time so far (tSec is the frame's
+      // own start stamp) — a frame that already did heavy work skips its slice.
+      const spentMs = Math.max(0, performance.now() - tSec * 1000);
+      pumpDressings(busy || hold ? 0 : 8, spentMs);
     },
     debugState: () => ({ ...hazards.debugState(), ...assets.debugState(), prompt: prompts.debug(), cues }),
   };

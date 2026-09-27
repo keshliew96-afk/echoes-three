@@ -23,7 +23,40 @@ export function setPumpBudgetOverride(ms) {
   return budgetOverride;
 }
 
-export function pumpDressings(budgetMs = 8) {
+// gauntlet r4 J4-F1 (INT, GI.6): frame-aware slicing. `spentMs` = what this
+// frame already spent before the pump (its sim ticks — a level teardown at the
+// clear, a room entry, a load). A HEAVY frame — one that already spent more
+// than HEAVY_FRAME_MS and 2.5x this device's usual pre-pump time (a slow or
+// busy machine is not starved) — gets no build work: the build waits a frame
+// (the level-clear frame used to carry the teardown AND a whole build step,
+// 88-109 ms on a quiet machine). At most MAX_HEAVY_SKIPS frames in a row, so a
+// build always progresses.
+const HEAVY_FRAME_MS = 14;
+const HEAVY_FACTOR = 2.5;
+const MAX_HEAVY_SKIPS = 4;
+let heavySkips = 0;
+let spentEma = null;
+const pumpStats = { heavySkipped: 0, lastSpentMs: 0, log: [] };
+export function pumpStatsDebug() {
+  return { heavySkipped: pumpStats.heavySkipped, lastSpentMs: pumpStats.lastSpentMs, usualSpentMs: spentEma === null ? null : Math.round(spentEma * 10) / 10, heavyFrameMs: HEAVY_FRAME_MS, maxHeavySkips: MAX_HEAVY_SKIPS, log: pumpStats.log.slice() };
+}
+
+export function pumpDressings(budgetMs = 8, spentMs = 0) {
   const b = budgetMs > 0 && budgetOverride !== null ? budgetOverride : budgetMs;
+  if (b > 0) {
+    const heavyAt = Math.max(HEAVY_FRAME_MS, spentEma === null ? 0 : spentEma * HEAVY_FACTOR);
+    const heavy = spentMs > heavyAt && heavySkips < MAX_HEAVY_SKIPS;
+    spentEma = spentEma === null ? spentMs : spentEma + (spentMs - spentEma) * 0.05;
+    pumpStats.lastSpentMs = Math.round(spentMs * 10) / 10;
+    // probe ring: [performance.now(), spent, budget, skipped 0|1]
+    pumpStats.log.push([Math.round(performance.now()), pumpStats.lastSpentMs, b, heavy ? 1 : 0]);
+    if (pumpStats.log.length > 240) pumpStats.log.shift();
+    if (heavy) {
+      heavySkips += 1;
+      pumpStats.heavySkipped += 1;
+      return;
+    }
+    heavySkips = 0;
+  }
   for (const p of pumps) p(b);
 }
