@@ -1056,6 +1056,28 @@ watchdog fires, 0 snaps, guest == host), `node tools/gntfixM5b3-freeze.mjs
 --port P --base U` (a guest `sim.freeze()`: 0 ticks, 0 watchdog steps, the
 seat does not move; thaw walks).
 
+**Host reload / second tab (fix-M5b-r4, NET4-F2).** A fresh page's Rejoin
+resumes a host from the server keyframe (`become_host { reason: 'host_resume' }`,
+host `net.stats().hostResume` { keyframeTick, stateAgeMs, applied, ms } and
+`hostResumes`; session log `host_resume` / `resume_hold_end`); sessions are
+stored per tab (`echoes.net.sessions`, `net.tabId`) and never offered while
+live in another tab (`net.rejoinCandidate()` -> { info, elsewhere }); the title
+probes the server before the offer (session log `rejoin_offer_skipped`). Probes
+(production preview on 4307 + own servers 7821-7826):
+`node tools/gntfixM5b4-hostreload.mjs --port P --base U --mode reload|reopen|late`
+(host + 2 guests, L1 room 2: the host page reloads / reopens in a new tab /
+rejoins after the grace; run kept on every page, 0 desyncs, no false notes),
+`node tools/gntfixM5b4-takeover.mjs --port P --base U --case steal|reward`
+(another page supersedes a live host — the server-side net; a reload on the
+reward page), `node tools/gntfixM5b4-lobbyunit.mjs` (server resume rules,
+no browser), `node tools/gntfixM5b4-killsp.mjs --port P --base U` (server kill:
+title + message, no Rejoin for a dead server, SP New Game walks), `node
+tools/gntfixM5b4-mprejoin.mjs --port P --base U` (Multiplayer menu: no Rejoin in
+a second tab of the live host; the reloaded host's "Rejoin ABCDE — You were
+hosting…" button resumes the run). The critic's
+`tools/gntcnet4-hostreload.mjs`, `gntcnet4-secondtab.mjs`, `gntcnet4-sametab.mjs`
+run unchanged with `GNTCNET4_BASE=<preview>`.
+
 **Probes** (all start their own session server on the M5b ports 7820–7829;
 the long browser runs use a production preview so HMR never reloads a page:
 `npx vite build --outDir dist-M5b --emptyOutDir` + `npx vite preview --outDir

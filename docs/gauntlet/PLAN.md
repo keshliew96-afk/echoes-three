@@ -976,7 +976,7 @@ reliable-over-UDP layer would do). The UI never claims UDP.
 | select_seat | { seat } | peer_joined / peer_left | { peerId, seat } |
 | set_ready | { ready } | peer_dropped / peer_restored | { peerId, seat, holdMs } |
 | start_game (host) | { seed } | game_starting | { countdownMs: 1500, seats } |
-| reconnect | { token, code } | host_lost / host_changed / become_host | { graceMs } / { hostPeerId } / { keyframe, seats } |
+| reconnect | { token, code, fresh? } | host_lost / host_changed / become_host | { graceMs } / { hostPeerId, reason? } / { keyframe, seats, reason?, room? } |
 | ping | { t } | pong | { t, serverTime } |
 
 **Lobby / matchmaking states.** Room: `lobby → starting → in_game → closed`
@@ -1188,6 +1188,33 @@ lowest RTT, sends `become_host { keyframe (≤ 2 s old), seats }`; the new host
 seat 0 → leader bot; other guests re-baseline. No guests left → room closes.
 Server kill: every client returns to the title with "Connection to the server
 was lost" and single-player intact.
+
+*Host page reload / reopened tab / second tab (fix-M5b-r4, NET4-F2 — binding).*
+A page that comes back through "Rejoin" has NO world for the session, so it
+sends `reconnect { token, code, fresh: true }`. For the room's HOST (in game or
+inside the grace, also while its old tab still holds the socket) the server
+answers `become_host { reason: 'host_resume', keyframe, seats, room }` — the
+room's newest keyframe, the exact tree the host streamed ≤ 2 s before it went
+quiet — and `host_changed { reason: 'host_resume', stateAgeMs }` to the guests
+(they re-baseline as after a migration). The page `save.apply()`s the keyframe
+BEFORE it hosts (never a boot camp), then holds the restored sim ≤ 1 s until
+every connected guest's first input frame is in (no AI handover / "lost
+connection" notes for seats that never dropped). No keyframe that misses ≤ 10 s
+of play → migrate at once to a guest (the returning player plays the Healer as
+a guest); nobody else in the room → the room closes and the reconnect is
+rejected ("the session ended — nobody else was in it"). A plain (non-fresh)
+reconnect — the in-page link-blip path — is unchanged (`peer_restored { host }`,
+the host's own world continues).
+Stored sessions are PER TAB (`echoes.net.sessions` = { tabId: record }, tab id in
+sessionStorage; builds ≤ v0.5.133 used one `echoes.net.session`, still read).
+A tab in a room is LIVE (answers "live?" on BroadcastChannel `echoes.net.tabs`;
+holds a Web Lock `echoes.net.live.<token>` where the page is a secure context).
+The title offers this tab's own record (a reload) or one whose tab is gone (a
+closed / crashed tab reopened) — never a session live in another tab (that tab
+says "Session ABCDE is open in another tab of this browser — carry on there.")
+— and only after probing the session's server (a dead server gets no offer).
+Host copy: "You were hosting ABCDE — your party is waiting. Rejoin to carry on
+the run."
 
 **No server / unreachable / LAN (binding UI states — plan-review fix).**
 *DEPLOY (2026-09-26): the address is now automatic — the page's own origin's
