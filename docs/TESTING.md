@@ -1074,7 +1074,10 @@ no browser), `node tools/gntfixM5b4-killsp.mjs --port P --base U` (server kill:
 title + message, no Rejoin for a dead server, SP New Game walks), `node
 tools/gntfixM5b4-mprejoin.mjs --port P --base U` (Multiplayer menu: no Rejoin in
 a second tab of the live host; the reloaded host's "Rejoin ABCDE — You were
-hosting…" button resumes the run). The critic's
+hosting…" button resumes the run), `node tools/gntfixM5b4-duptab.mjs --port P
+--base U` ("Duplicate tab" of a live host: the copy re-keys its tab id, is not
+offered the live session, the host's record is untouched), `--at levelclear` on
+the hostreload probe (reload on the level-clear card -> Level 2 together). The critic's
 `tools/gntcnet4-hostreload.mjs`, `gntcnet4-secondtab.mjs`, `gntcnet4-sametab.mjs`
 run unchanged with `GNTCNET4_BASE=<preview>`.
 
