@@ -110,6 +110,16 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
   }
   window.addEventListener('resize', () => placeChip());
   let synced = false;
+  // A join that has waited this long for the host's first snapshot says so
+  // and names the way out (NET4-F1, fix-M5a-r4: the banner read "Receiving
+  // the world from the host" for as long as the host never sent it).
+  const JOIN_SLOW_MS = 8000;
+  let joiningSince = 0;
+  function joinBanner(code) {
+    if (!joiningSince) joiningSince = performance.now();
+    if (performance.now() - joiningSince >= JOIN_SLOW_MS) setBanner(`Still joining ${code || ''}…`, "The host's game hasn't sent the world yet. Keep waiting, or leave with Esc → Leave Session.");
+    else setBanner(`Joining ${code || ''}…`, 'Receiving the world from the host');
+  }
   let lostUntil = 0;
   let reconnectUntil = 0;
   let timer = 0;
@@ -211,6 +221,9 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     if (settings.get('net.showStats')) {
       if (!timer) timer = setTimeout(tick, 0);
     } else detail.style.display = 'none';
+    // A join still waiting for the host's world turns into the slow-join
+    // banner on this 1 s read (update() is not called while nothing changes).
+    if (last && last.role === 'guest' && !synced && joiningSince && !last.reconnecting && !last.hostLost) joinBanner(last.code);
     linkLevel = level;
     lastLink = { level, reasons: q ? q.reasons.slice() : [], rttMs: rtt, lossPct: loss, lossInPct: inP, lossOutPct: outP, lossBySeat: s && s.lossBySeat ? s.lossBySeat : null, text: ltEl.textContent };
   }
@@ -256,8 +269,11 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     reconnectUntil = 0;
     if (st.hostLost) {
       // Countdown drawn by the ticker below.
-    } else if (st.role === 'guest' && !synced) setBanner(`Joining ${st.code || ''}…`, 'Receiving the world from the host');
-    else setBanner(null);
+    } else if (st.role === 'guest' && !synced) joinBanner(st.code);
+    else {
+      if (synced) joiningSince = 0;
+      setBanner(null);
+    }
   }
 
   function drawReconnect() {
@@ -301,6 +317,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
       else stopLinkTimer();
       if (!on) {
         synced = false;
+        joiningSince = 0;
         lostUntil = 0;
         reconnectUntil = 0;
         setBanner(null);

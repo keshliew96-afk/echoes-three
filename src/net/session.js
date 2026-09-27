@@ -163,6 +163,7 @@ export function createNetSession(ctx) {
   const frameStats = { guestNetMs: [], frameOver50Net: 0 };
   let sessionStartedAt = 0;
   let hostHiddenFedMs = 0;
+  let hiddenMode = null; // null | 'host' | 'guest' — the hidden-tab loop running now (reconcileHidden)
   let sessionEnding = false;
 
   // ---------------------------------------------------------- frame clock --
@@ -386,6 +387,9 @@ export function createNetSession(ctx) {
     if (localSeat() !== 0) setLeaderBot(true, clock.tick);
     startRaf();
     log('host_start', { seat: localSeat(), migrated });
+    // A tab already in the background (hidden during the countdown, a
+    // migration onto a hidden guest) ticks on the metronome from now on.
+    reconcileHidden(migrated ? 'migrated' : 'host_start');
     changed();
   }
   function stopHost() {
@@ -462,6 +466,9 @@ export function createNetSession(ctx) {
     const nb = new URLSearchParams(location.search).get('netbot');
     if (nb !== null && !bot) api.setBotInput({ seed: Number(nb) || 3 });
     log('guest_start', { seat });
+    // A guest whose tab is already hidden joins as away (the AI plays its
+    // seat) and keeps acking on the metronome until it is shown.
+    reconcileHidden('guest_start');
     changed();
   }
   function stopGuest() {
@@ -1045,16 +1052,24 @@ export function createNetSession(ctx) {
   }
 
   // --------------------------------------------------- hidden tabs (§3.7) --
-  function onVisibility() {
-    if (role === 'guest' && guest) {
-      if (document.hidden) {
-        guest.away = true;
-        // Neutral + away at once, then 20 Hz away frames on the Worker.
-        guestTickAway();
-        metronome.start(20, () => guestTickAway());
-        log('guest_away', {});
-      } else {
-        metronome.stop();
+  // The hidden-tab loop follows the page's visibility AND the session role,
+  // whichever changes: a host whose tab is already in the background when
+  // the session starts — hidden during the 1.5 s countdown, a migration onto
+  // a hidden guest — runs the shared sim on the Worker metronome from its
+  // first tick, exactly like a host hidden mid-game (NET4-F1, fix-M5a-r4:
+  // the loop was entered only from a visibilitychange seen WHILE hosting, so
+  // a host hidden before the start never ticked and every guest waited on
+  // "Joining…" until the host tab came back). reconcileHidden() is
+  // idempotent; it runs on visibilitychange and after every role change.
+  const pageHidden = () => typeof document !== 'undefined' && !!document.hidden;
+  function reconcileHidden(cause = 'visibility') {
+    const hidden = pageHidden();
+    const want = hidden && role === 'host' && host ? 'host' : hidden && role === 'guest' && guest ? 'guest' : null;
+    if (want === hiddenMode) return;
+    // Leave the loop that runs now.
+    if (hiddenMode === 'guest') {
+      metronome.stop();
+      if (guest && role === 'guest') {
         guest.away = false;
         // The stall watchdog waits for the first rendered frame after the return.
         guestLastStepAt = null;
@@ -1066,27 +1081,41 @@ export function createNetSession(ctx) {
         guest.shadow.reset();
         guest.newestTick = -1;
         requestFull('return');
-        log('guest_return', {});
+        log('guest_return', { cause });
       }
-    } else if (role === 'host' && host) {
-      if (document.hidden) {
-        let last = now();
-        metronome.start(SIM_HZ, (t) => {
-          const ms = Math.max(0, Math.min(250, t - last));
-          last = t;
-          hostHiddenFedMs += ms; // wall time handed to the clock (hitstop included)
-          rawAdvance(ms, (tick) => host && host.step(tick));
-          // No rendered frames while hidden: each metronome period is the
-          // unit of the host's net-work accounting (hostNetMs).
-          if (host) host.frameEnd(ms);
-        });
-        log('host_hidden_metronome', {});
-      } else {
-        metronome.stop();
-        skipNextFrame = true;
-        log('host_visible', {});
-      }
+    } else if (hiddenMode === 'host') {
+      metronome.stop();
+      // The first rAF frame after the return spans the hidden time the
+      // metronome already fed: it advances nothing.
+      if (host && role === 'host') skipNextFrame = true;
+      log('host_visible', { cause });
     }
+    hiddenMode = null;
+    // Enter the one the page needs now.
+    if (want === 'guest') {
+      guest.away = true;
+      // Neutral + away at once, then 20 Hz away frames on the Worker.
+      guestTickAway();
+      metronome.start(20, () => guestTickAway());
+      log('guest_away', { cause });
+    } else if (want === 'host') {
+      let last = now();
+      metronome.start(SIM_HZ, (t) => {
+        const ms = Math.max(0, Math.min(250, t - last));
+        last = t;
+        if (!host) return;
+        hostHiddenFedMs += ms; // wall time handed to the clock (hitstop included)
+        rawAdvance(ms, (tick) => host && host.step(tick));
+        // No rendered frames while hidden: each metronome period is the
+        // unit of the host's net-work accounting (hostNetMs).
+        if (host) host.frameEnd(ms);
+      });
+      log('host_hidden_metronome', { cause });
+    }
+    hiddenMode = want;
+  }
+  function onVisibility() {
+    reconcileHidden('visibility');
   }
   function guestTickAway() {
     const g = guest;
@@ -1217,6 +1246,8 @@ export function createNetSession(ctx) {
     stopHost();
     stopGuest();
     metronome.stop();
+    hiddenMode = null;
+    skipNextFrame = false;
     stopRaf();
     unwrapAdvance();
     setSimStep(null);
