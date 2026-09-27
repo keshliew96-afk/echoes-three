@@ -409,6 +409,9 @@ export class Lobby {
     }
     if (!usable) {
       this.log('host_resume_migrate', { code: room.code, peer: peer.id, keyframe: !!kf, stateAgeMs });
+      // A keyframe that misses more play than a guest's own view is no
+      // state to continue from: the new host keeps its (newer) view.
+      if (kf) room.keyframe = null;
       this.migrate(room, 'host_reloaded');
       return { ok: true, room, seat: seat.index, host: false };
     }

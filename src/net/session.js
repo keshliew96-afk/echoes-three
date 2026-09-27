@@ -1179,7 +1179,7 @@ export function createNetSession(ctx) {
           if (hud && m.reason === 'host_resume') {
             hud.hostBack(null);
             const back = Number.isFinite(m.stateAgeMs) ? Math.round(m.stateAgeMs / 100) / 10 : null;
-            if (back !== null && back >= 0.5) hud.note(`The run resumed from ${back} s before the host dropped`);
+            if (back !== null && back >= 0.5) hud.note(`The run resumed from ${back} s earlier`);
           } else if (hud) hud.hostBack(nameOfSeat(m.seat) || 'a new host');
           requestFull('host_changed');
         }
@@ -1246,7 +1246,7 @@ export function createNetSession(ctx) {
     hostLost = null;
     if (hud) {
       const back = Number.isFinite(m.keyframe.stateAgeMs) ? Math.round(m.keyframe.stateAgeMs / 100) / 10 : null;
-      hud.note(back !== null && back >= 0.5 ? `Welcome back — you are hosting again (the run resumed from ${back} s before you dropped)` : 'Welcome back — you are hosting again');
+      hud.note(back !== null && back >= 0.5 ? `Welcome back — you are hosting again (the run resumed from ${back} s earlier)` : 'Welcome back — you are hosting again');
     }
     changed();
   }
@@ -1428,7 +1428,7 @@ export function createNetSession(ctx) {
     const t0 = now();
     const check = typeof net.rejoinCandidate === 'function' ? net.rejoinCandidate() : Promise.resolve({ info: net.rejoinInfo(), elsewhere: [] });
     check
-      .then(({ info, elsewhere }) => {
+      .then(async ({ info, elsewhere }) => {
         if (app.state !== 'title' || role !== 'none') return;
         if (!info) {
           const e = elsewhere && elsewhere[0];
@@ -1441,13 +1441,22 @@ export function createNetSession(ctx) {
         if (rejoinOffered === info.code) return;
         rejoinOffered = info.code;
         const hosting = info.role === 'host';
+        // Offer only what can happen: the session's server must answer
+        // (a dead server after a kill / restart is not "a seat held for
+        // you" — the lost-connection message already said so; Multiplayer
+        // still shows Rejoin once the server is back within the minute).
+        const reach = typeof net.probe === 'function' ? await net.probe(info.url || null).catch(() => ({ state: 'unreachable' })) : { state: 'online' };
+        if (reach.state !== 'online') {
+          log('rejoin_offer_skipped', { code: info.code, server: reach.state });
+          return;
+        }
         setTimeout(() => {
           if (app.state !== 'title' || app.screens.top() !== 'title') return;
           app
             .confirm({
               title: `Rejoin ${info.code}?`,
               body: hosting
-                ? `You were hosting ${info.code} — your party is waiting. Rejoin to carry on the run as its host.`
+                ? `You were hosting ${info.code} — your party is waiting. Rejoin to carry on the run.`
                 : `Your ${seatLabel(info.seat ?? 1)} seat is held for a minute after a disconnect. Rejoin the session now?`,
               confirmLabel: 'Rejoin',
               cancelLabel: 'Not now',
