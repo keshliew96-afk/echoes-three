@@ -28,7 +28,19 @@ import { DEFAULT_URL, WS_PATH } from './protocol/constants.js';
 // chose it; session.js migrates it to "automatic" exactly once.
 export const LEGACY_DEFAULT_URL = DEFAULT_URL;
 
-// validateServerUrl(u, { https }) -> { ok, url } | { ok:false, reason }
+// The host exactly as typed ("ws://12:7800/x" -> "12"), or null.
+function typedHost(s) {
+  const m = /^[a-z][a-z0-9+.-]*:\/\/(?:[^@/?#]*@)?(\[[^\]]*\]|[^:/?#]*)/i.exec(s);
+  return m ? m[1].toLowerCase() : null;
+}
+const IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/;
+
+// validateServerUrl(u, { https }) -> { ok, url } | { ok:false, reason[, typed, host] }
+// A host the URL parser would REWRITE is refused, never saved as a different
+// address (MENU-R4-F1 follow-up): a numbers-only host becomes IPv4 —
+// "ws://12" -> ws://0.0.0.12, "ws://192.168.1" -> ws://192.168.0.1, a leading
+// zero reads as octal — reason 'incomplete' with { typed, host }. 0.0.0.0/8
+// is where a server listens, never an address to reach: 'unroutable'.
 export function validateServerUrl(u, { https = false } = {}) {
   if (typeof u !== 'string' || !u.trim()) return { ok: false, reason: 'empty' };
   let parsed;
@@ -39,6 +51,11 @@ export function validateServerUrl(u, { https = false } = {}) {
   }
   if (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') return { ok: false, reason: 'not_ws' };
   if (https && parsed.protocol === 'ws:') return { ok: false, reason: 'insecure_on_https' };
+  if (IPV4.test(parsed.hostname)) {
+    const typed = typedHost(u.trim());
+    if (typed !== parsed.hostname) return { ok: false, reason: 'incomplete', typed, host: parsed.hostname };
+    if (parsed.hostname.startsWith('0.')) return { ok: false, reason: 'unroutable', host: parsed.hostname };
+  }
   return { ok: true, url: parsed.href.replace(/\/$/, parsed.pathname === '/' ? '' : '/') };
 }
 

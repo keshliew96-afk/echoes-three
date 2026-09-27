@@ -147,7 +147,11 @@ function buildNetworkTab(ctx) {
             ? 'This page is served over https, so the browser only allows secure (wss://) servers.'
             : r.reason === 'not_ws'
               ? 'Server addresses start with ws:// or wss://'
-              : 'Not a server address — e.g. ws://192.168.1.20:7800/echoes'
+              : r.reason === 'incomplete'
+                ? `“${r.typed}” isn’t a full address (it would reach ${r.host}) — e.g. ws://192.168.1.20:7800/echoes`
+                : r.reason === 'unroutable'
+                  ? `${r.host} is where a server listens, not an address to reach — use the host computer’s address, e.g. ws://192.168.1.20:7800/echoes`
+                  : 'Not a server address — e.g. ws://192.168.1.20:7800/echoes'
         );
         return;
       }
