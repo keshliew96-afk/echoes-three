@@ -50,6 +50,13 @@ import { clampPlacement, countFinal, clampHalfAngle, createSkillBolts, fanDirect
 // Network play (M5b, docs/gauntlet/PLAN.md §3.7): human-controlled ally seats
 // share one movement / dodge model with the guest's own-seat predictor.
 import { stepHumanMove, dodgeVelocity, aimDir, DOWNED_CRAWL_SPEED, HUMAN_DODGE } from './remote.js';
+// PARTY (docs/gauntlet/PLAN.md §16.3): every ally skill — AI or human seat —
+// is cast from the seat's LOADOUT (sim/party.js) through ONE pipeline
+// (sim/allycast.js); the AI picks with the §25.8 rules (sim/partyai.js).
+import { SKILLS } from './skills.js';
+import { STARTING_LOADOUT } from '../data/classes.js';
+import { createAllyCaster, cdTicksOf } from './allycast.js';
+import { castChoice } from './partyai.js';
 
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -147,12 +154,23 @@ export const ALLY_CLASSES = Object.freeze({
 
 const BOLT_RADIUS = 0.05; // same swept-vs-wall scaffold radius as every other bolt
 
-// §7 ally kits — fixed, all damage, table rows VERBATIM.
+// §7 ally kits — the STARTING LOADOUTS since PARTY (ruling A16): derived
+// from the cls-tagged SKILLS rows (field for field the v0.5.150 table below)
+// in data/classes.js STARTING_LOADOUT order. Kept exported for existing
+// readers (the HUD's AI-seat tiles, probes).
 //   melee_arc: range = reach u, area = half-angle °, count = max targets
 //   nova:      area = burst radius u, count = max targets
 //   projectile:range = max travel u, count = simultaneous bolts, speed u/s
 //   ground_aoe:range = max placement u, area = zone radius u, durationSec
 export const ALLY_KITS = Object.freeze({
+  tank: Object.freeze(STARTING_LOADOUT.tank.map((id) => SKILLS[id])),
+  swordsman: Object.freeze(STARTING_LOADOUT.swordsman.map((id) => SKILLS[id])),
+  archer: Object.freeze(STARTING_LOADOUT.archer.map((id) => SKILLS[id])),
+});
+
+// The v0.5.150 kit table, verbatim (reference only — the SKILLS rows above
+// equal it field for field; gntPARTY-sim GP.1 checks it).
+export const ALLY_KITS_V150 = Object.freeze({
   // Tank (badger): Heavy Slam (arc 34, 5 s, 1.00/40°, cap 3) · Brutal Cleave
   // (arc 16/target, 4 s, 0.95/80°, cap 6) · Ground Crack (ground_aoe 10/tick,
   // 8 s, range 2.6, radius 0.9, 4 s) · Whirling Guard (nova 20/target, 9 s,
@@ -206,6 +224,7 @@ export function createAllySystem({
   rng, // reserved: ally rolls all live inside combat's crit pipeline
   getTick,
   getRoomState = () => null,
+  party: partyRef = () => null, // PARTY: the party system (loadouts, seat builds)
 }) {
   // --- party command state (§8, party-shared)
   let mark = null; // enemy spawn ordinal, or null
@@ -233,13 +252,29 @@ export function createAllySystem({
   let carriedBasic = false;
   let prevBasicHeld = false;
 
+  // PARTY: the one ally cast pipeline (created below, once the selectors exist).
+  let caster = null;
+  // GP.8 AI log (debug, never saved): seat -> skill -> { casts, fallbacks, lastTick }.
+  const aiLog = [null, {}, {}, {}];
+  let roomStartTick = 0;
+
   // Ally kit bolts ride their own subsystem instance (owner tag keeps the
   // healer kit from double-stepping them, §6 speeds are per-skill data).
   const bolts = createSkillBolts({
     registry,
     events,
     owner: 'ally_kits',
+    onExpire: (tick, bolt) => {
+      if (bolt.mods && caster) caster.boltExpire(tick, bolt);
+    },
     onImpact: (tick, bolt, target) => {
+      // PARTY: a bolt carrying per-cast modifiers (a built ally's skill)
+      // resolves through the cast pipeline; a plain bolt keeps this path.
+      if (bolt.mods && caster) {
+        const tt = registry.byId(target.id);
+        if (tt) caster.boltImpact(tick, bolt, tt);
+        return;
+      }
       const len = Math.hypot(bolt.vx, bolt.vz);
       const dirX = len > 1e-9 ? bolt.vx / len : 0;
       const dirZ = len > 1e-9 ? bolt.vz / len : 0;
@@ -264,6 +299,53 @@ export function createAllySystem({
   // `hittable` on the clear tick, so they leave the set for free (§13).
   const hostiles = () =>
     registry.all().filter((e) => e.faction === 'hostile' && e.hittable && e.hp > 0);
+
+  caster = createAllyCaster({
+    registry,
+    events,
+    combat,
+    getTick,
+    bolts,
+    enemiesInArc: (...x) => enemiesInArc(...x),
+    enemiesInNova: (...x) => enemiesInNova(...x),
+    face: (...x) => face(...x),
+    hostiles: () => hostiles(),
+    party: () => party(),
+    rewound: (f, fn) => rewound(f, fn),
+    compensatedAim: (f, a, d) => compensatedAim(f, a, d),
+    isIframed: (e) => (e.iframeUntilTick ?? 0) > getTick(),
+    leashAnchor: () => leashAnchor(),
+    leashRadius: LEASH.radius,
+    tech: () => {
+      const P = partyRef();
+      return P ? P.tech() : null;
+    },
+    build: (seat) => {
+      const P = partyRef();
+      return P ? P.build(seat) : null;
+    },
+    skillDef: (id) => SKILLS[id] ?? null,
+  });
+
+  // PARTY: a seat's loadout (ids ×4, null = empty) and resolved def.
+  const loadoutOf = (a) => {
+    const P = partyRef();
+    const s = P ? P.slots(a.partyIndex) : null;
+    return s ?? ALLY_KITS[a.classId].map((d) => d.id);
+  };
+  const resolvedOf = (a, def) => {
+    const P = partyRef();
+    const b = P ? P.build(a.partyIndex) : null;
+    return b ? b.resolveDef(def) : def;
+  };
+  function logCast(a, id, fallback, tick) {
+    const L = aiLog[a.partyIndex];
+    if (!L) return;
+    const r = L[id] || (L[id] = { casts: 0, fallbacks: 0, lastTick: -1 });
+    r.casts += 1;
+    if (fallback) r.fallbacks += 1;
+    r.lastTick = tick;
+  }
 
   // §12: the room's live leash_anchor — the Waystone in a defend room until
   // soft-fail flips it back to the party.
@@ -537,7 +619,13 @@ export function createAllySystem({
       a.aiState = 'engage';
       a.graceUntilTick = -1;
       a.targetId = null;
+      // PARTY: nothing of a cast outlives the room (a pending dash delivery,
+      // an AI dash in flight, an open parry window).
+      if (a.pendingCast) a.pendingCast = null;
+      if (a.skillDash) a.skillDash = null;
+      if (a.guard && a.guard.parry) a.guard = null;
     }
+    if (reason === 'room_start') roomStartTick = tick;
     defeated = false;
   }
 
@@ -1074,7 +1162,10 @@ export function createAllySystem({
       if (r.ended) ended = true;
     }
     a.dashing = a.dashTicksLeft > 0;
-    if (a.dashing) a.iframeUntilTick = tick + 1;
+    // PARTY: a skill dash without i-frames (Shoulder Charge) rides the same
+    // machinery; the dodge and every i-frame dash stay i-framed.
+    if (a.dashing && a.dashIframes !== false) a.iframeUntilTick = tick + 1;
+    if (!a.dashing && a.dashIframes !== undefined) delete a.dashIframes;
     a.moving = moved;
     if (a.hp > 0) {
       const d = aimDir(a, a.aim, { x: a.faceX ?? 0, z: a.faceZ ?? 1 });
@@ -1107,7 +1198,7 @@ export function createAllySystem({
     const tagOf = (kind) => ({ seat: i, inputSeq: pseq(kind) });
     const kinds = new Set(f.presses.map((p) => p.kind));
     const S = ALLY_CLASSES[a.classId];
-    const kit = ALLY_KITS[a.classId];
+    const loadout = loadoutOf(a);
     const moving = f.moves.some((m) => m.x !== 0 || m.z !== 0);
     const skillPressed = [...kinds].some((k) => k.startsWith('skill_'));
     const freshBasic = f.basic && !prevHumanBasic[i];
@@ -1131,11 +1222,20 @@ export function createAllySystem({
           events.emit(tick, 'ally_dodge', { id: a.id, partyIndex: i, classId: a.classId, dx: r2(a.dashVel.x / l), dz: r2(a.dashVel.z / l), ...dtag });
         }
       }
-      for (let slot = 0; slot < kit.length; slot++) {
+      // PARTY: a displaced press delivers when its dash ends.
+      if (a.pendingCast && !(a.dashTicksLeft > 0)) caster.runPending(a, tick, { f });
+      for (let slot = 0; slot < loadout.length; slot++) {
         const kind = `skill_${slot + 1}`;
         if (!kinds.has(kind)) continue;
         const ktag = tagOf(kind);
-        if (a.dashTicksLeft > 0 || stunned) {
+        const id = loadout[slot];
+        const base = id ? SKILLS[id] : null;
+        if (!base || base.shape === 'aura') {
+          // An empty slot or a passive: nothing activatable (closed vocabulary).
+          seatDeny(a, kind, DENIAL.emptySlot, ktag, tick);
+          continue;
+        }
+        if (a.dashTicksLeft > 0 || stunned || a.pendingCast) {
           seatDeny(a, kind, DENIAL.prioritySuppressed, ktag, tick);
           continue;
         }
@@ -1143,14 +1243,14 @@ export function createAllySystem({
           seatDeny(a, kind, DENIAL.onCooldown, ktag, tick);
           continue;
         }
-        fireHumanSkill(a, kit[slot], slot, f, tick, ktag);
-        const cdT = Math.max(CD_FLOOR_TICKS, secTicks(kit[slot].cd));
+        fireHumanSkill(a, base, slot, f, tick, ktag);
+        const cdT = cdTicksOf(resolvedOf(a, base));
         a.cds[slot] = tick + cdT;
         T.cds[slot] = ktag.inputSeq + cdT;
       }
       for (const k of kinds) {
         if (!k.startsWith('skill_')) continue;
-        if (Number(k.slice(6)) > kit.length) seatDeny(a, k, DENIAL.emptySlot, tagOf(k), tick);
+        if (Number(k.slice(6)) > loadout.length) seatDeny(a, k, DENIAL.emptySlot, tagOf(k), tick);
       }
       if (f.basic && seq >= T.basic && !stunned && (!humanChannelling(a) || freshBasic)) {
         if (a.dashTicksLeft > 0) {
@@ -1229,7 +1329,17 @@ export function createAllySystem({
     });
   }
 
+  // PARTY: a human seat's press goes through the ONE cast pipeline (aim-based
+  // displacement, lag-compensated selection) — sim/allycast.js.
   function fireHumanSkill(a, def, slot, f, tick, tag) {
+    const d = aimDir(a, f.aim, { x: a.faceX ?? 0, z: a.faceZ ?? 1 });
+    face(a, d.x, d.z);
+    caster.cast(a, def, slot, tick, { mode: 'human', f, tag, d });
+  }
+
+  // (v0.5.150 human-seat delivery, superseded by the pipeline above; kept
+  // for reference by the determinism proof — never called.)
+  function fireHumanSkillV150(a, def, slot, f, tick, tag) {
     const d = aimDir(a, f.aim, { x: a.faceX ?? 0, z: a.faceZ ?? 1 });
     face(a, d.x, d.z);
     a.castLeftTicks = Math.max(a.castLeftTicks, 24);
@@ -1366,7 +1476,13 @@ export function createAllySystem({
       }
       if (a.hp <= 0) {
         a.moving = false;
+        if (a.skillDash) a.skillDash = null;
         continue; // §10: Downed characters cannot act
+      }
+      // PARTY: a skill dash / vault / hop suspends §12 steering while it runs.
+      if (a.skillDash) {
+        a.leashD0 = distTo(a, anchor.x, anchor.z);
+        if (caster.stepDash(a, tick)) continue;
       }
       steerAlly(a, tick, anchor);
     }
@@ -1420,6 +1536,7 @@ export function createAllySystem({
     }
 
     bolts.step(tick);
+    caster.scatterShards.step(tick);
   }
 
   // ------------------------------------------------------ discrete phase --
@@ -1521,18 +1638,47 @@ export function createAllySystem({
   // skills fire ascending slot; AI basic-attacks between casts." One kit skill
   // per tick, lowest eligible slot; the basic only fires on a non-cast tick.
   function resolveAllyAttack(a, tick) {
+    // PARTY: a displaced cast (dash / vault) delivers the tick its dash ends.
+    if (a.pendingCast) {
+      caster.runPending(a, tick);
+      return;
+    }
+    if (caster.displacing(a)) return;
     const target = a.targetId != null ? registry.byId(a.targetId) : null;
     if (!target || !(target.hp > 0)) return;
     const S = ALLY_CLASSES[a.classId];
-    const kit = ALLY_KITS[a.classId];
     const d = distTo(a, target.x, target.z);
 
-    for (let slot = 0; slot < kit.length; slot++) {
-      const def = kit[slot];
-      if (tick < a.cds[slot]) continue;
-      if (d > shapeRange(def)) continue;
-      fireAllySkill(a, def, slot, target, tick);
-      a.cds[slot] = tick + Math.max(CD_FLOOR_TICKS, secTicks(def.cd));
+    // PARTY §25.8: walk the equipped slots ascending — the first ACTIVE off
+    // cooldown whose §25.2 AI rule holds (the §7 range rule for the starting
+    // skills, so an unbuilt party casts exactly as v0.5.150), else the idle
+    // fallback; else the basic.
+    const slots = loadoutOf(a);
+    const P = partyRef();
+    const st = P ? P.seatState(a.partyIndex) : null;
+    const pick = castChoice(a, target, tick, {
+      registry,
+      slots,
+      baseDef: (id) => SKILLS[id] ?? null,
+      resolve: (def) => resolvedOf(a, def),
+      cds: a.cds,
+      readySince: slots.map((_, k) => Math.max(a.cds[k] ?? 0, roomStartTick)),
+      hostiles: () => hostiles(),
+      party: () => party(),
+      healer: () => player,
+      waystone: () => registry.all().find((e) => e.kind === 'waystone' && e.hp > 0) || null,
+      comboCount: (id, t, def) => {
+        if (!st || !def.combo) return 0;
+        let n = 0;
+        for (const [sid, when] of Object.entries(st.combo || {})) if (sid !== id && t - when <= def.combo.windowTicks) n += 1;
+        return n;
+      },
+    });
+    if (pick) {
+      const rdef = resolvedOf(a, pick.def);
+      caster.cast(a, pick.def, pick.slot, tick, { mode: 'ai', target: pick.target && pick.target.faction === 'hostile' ? pick.target : target });
+      a.cds[pick.slot] = tick + cdTicksOf(rdef);
+      logCast(a, pick.def.id, !!pick.fallback, tick);
       return;
     }
 
@@ -1756,14 +1902,17 @@ export function createAllySystem({
       const hitIds = [];
       for (const t of occupants) {
         const tl = Math.hypot(t.x - z.x, t.z - z.z) || 1;
-        const r = combat.applyDamage(t, z.power, {
+        const opts = {
           delivery: 'skill',
           shape: 'ground_aoe',
           dirX: (t.x - z.x) / tl,
           dirZ: (t.z - z.z) / tl,
           attacker: z.sourceId,
           source: z.skill,
-        });
+        };
+        // PARTY: a built ally's zone (mods / a status) resolves through the
+        // cast pipeline; a plain zone keeps this path.
+        const r = z.mods || z.applies ? caster.zoneHit(z, t, opts) : combat.applyDamage(t, z.power, opts);
         if (r && !r.immune) hitIds.push(t.id);
       }
       events.emit(tick, 'azone_tick', { id: z.id, skill: z.skill, n: z.ticksDone, hit: hitIds });
@@ -1970,6 +2119,10 @@ export function createAllySystem({
     basicSuppressed,
     ALLY_CLASSES,
     ALLY_KITS,
+    // PARTY: the cast pipeline (the party system's echo / counter / pulse
+    // hooks reach it here) and the GP.8 AI log.
+    caster: () => caster,
+    aiLog: () => aiLog.map((l) => (l ? structuredClone(l) : null)),
     // M5b network seats (host): per-tick seat inputs, the E presses they
     // made this tick (resolved with the Healer's in the interactables pass),
     // the seat controllers and the lag-compensation counters.

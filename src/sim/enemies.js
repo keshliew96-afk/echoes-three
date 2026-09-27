@@ -292,6 +292,14 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
   // Nearest living party-faction body (player, future sim allies, and the
   // Waystone in defend rooms). Downed (hp <= 0) bodies are outside the set.
   function nearestTarget(e) {
+    // PARTY (BUILD_BRIEF §25.2): a live taunt overrides the nearest-target
+    // rule (and the defend room's objective-inclusive set) while its source
+    // stands — interposition by force. The §11 governor is untouched.
+    const ts = statusMod.tauntSource(e, getTick());
+    if (ts !== null) {
+      const src = registry.byId(ts);
+      if (src && src.hp > 0 && src.faction === 'party') return src;
+    }
     let best = null;
     let bestD2 = Infinity;
     for (const t of registry.all()) {

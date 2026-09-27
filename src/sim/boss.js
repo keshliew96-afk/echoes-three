@@ -239,7 +239,14 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       return;
     }
 
-    const target = nearestParty(b.x, b.z);
+    // PARTY (BUILD_BRIEF §25.2): a live taunt (≤ 60 ticks on the Stag, then
+    // 300 ticks immune — status.js) picks the target while its source stands.
+    let target = nearestParty(b.x, b.z);
+    const ts = combat.status && typeof combat.status.tauntSource === 'function' ? combat.status.tauntSource(b, getTick()) : null;
+    if (ts !== null) {
+      const src = registry.byId(ts);
+      if (src && src.hp > 0) target = src;
+    }
     b.targetId = target ? target.id : null;
     if (!target) return;
     const dx = target.x - b.x;

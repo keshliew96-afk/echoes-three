@@ -159,7 +159,91 @@ export const SKILLS = Object.freeze({
     power: 2, area: 1.2, cadenceSec: 1.0, // 2 per pulse, 1.0 s cadence
     status: Object.freeze({ kind: 'ward', mag: 0.15, ticks: 72 }), // allies inside: ward 15%, pulse-refreshed
   }),
+
+  // ------------------------------------ PARTY class skills (BUILD_BRIEF §25.2) --
+  // `cls` = the only class that may hold the row (Healer rows carry none).
+  // The 12 starting rows (`·s`) equal v0.5.150 allies.js ALLY_KITS field for
+  // field (ALLY_KITS is now derived from these rows); the 12 new rows are the
+  // §25.2 numbers VERBATIM. Plain-data modifiers: dash / vault / combo / parry
+  // (§25.2 "the new mechanics"), `field` + `output` on passives, `shieldCap`.
+  // Tank (badger) — protects and controls.
+  heavy_slam: Object.freeze({ id: 'heavy_slam', name: 'Heavy Slam', abbrev: 'HS', cls: 'tank', archetype: 'damage', shape: 'melee_arc', power: 34, cd: 5, range: 1.0, area: 40, count: 3 }),
+  brutal_cleave: Object.freeze({ id: 'brutal_cleave', name: 'Brutal Cleave', abbrev: 'BC', cls: 'tank', archetype: 'damage', shape: 'melee_arc', power: 16, cd: 4, range: 0.95, area: 80, count: 6 }),
+  ground_crack: Object.freeze({ id: 'ground_crack', name: 'Ground Crack', abbrev: 'GC', cls: 'tank', archetype: 'damage', shape: 'ground_aoe', power: 10, cd: 8, range: 2.6, area: 0.9, durationSec: 4 }),
+  whirling_guard: Object.freeze({ id: 'whirling_guard', name: 'Whirling Guard', abbrev: 'WG', cls: 'tank', archetype: 'damage', shape: 'nova', power: 20, cd: 9, area: 1.3, count: 5 }),
+  taunting_roar: Object.freeze({
+    id: 'taunting_roar', name: 'Taunting Roar', abbrev: 'TR', cls: 'tank', archetype: 'damage', shape: 'nova',
+    power: 6, cd: 10, area: 2.0, count: 6,
+    status: Object.freeze({ kind: 'taunt', mag: 1, ticks: 150 }), // the Stag: 60, then 300 ticks immune
+  }),
+  shield_wall: Object.freeze({
+    id: 'shield_wall', name: 'Shield Wall', abbrev: 'SW', cls: 'tank', archetype: 'guard', shape: 'direct',
+    power: 24, cd: 10, range: 3.0, count: 2, // recipients = the bottom-2 HP fractions in range (Tank eligible)
+    status: Object.freeze({ kind: 'shield', mag: 24, ticks: 240 }),
+  }),
+  shoulder_charge: Object.freeze({
+    id: 'shoulder_charge', name: 'Shoulder Charge', abbrev: 'SC', cls: 'tank', archetype: 'damage', shape: 'melee_arc',
+    power: 22, cd: 7, range: 0.9, area: 60, count: 3,
+    dash: Object.freeze({ dist: 2.4, speed: 9 }), // no i-frames
+    status: Object.freeze({ kind: 'stun', mag: 1, ticks: 36 }), // non-boss
+  }),
+  iron_stance: Object.freeze({
+    id: 'iron_stance', name: 'Iron Stance', abbrev: 'IS', cls: 'tank', archetype: 'passive', field: 'ally', output: 'shield', shape: 'aura',
+    power: 3, area: 1.3, cadenceSec: 1.0, shieldCap: 12, // +3 shield per pulse to everyone inside (Tank included), this source <= 12, 240 ticks
+  }),
+  // Swordsman (fox) — strikes and chains close-quarter combos.
+  flurry: Object.freeze({ id: 'flurry', name: 'Flurry', abbrev: 'FL', cls: 'swordsman', archetype: 'damage', shape: 'melee_arc', power: 11, cd: 3, range: 0.8, area: 60, count: 6 }),
+  lunge_strike: Object.freeze({ id: 'lunge_strike', name: 'Lunge Strike', abbrev: 'LS', cls: 'swordsman', archetype: 'damage', shape: 'melee_arc', power: 26, cd: 4, range: 1.3, area: 30, count: 2 }),
+  blade_storm: Object.freeze({ id: 'blade_storm', name: 'Blade Storm', abbrev: 'BS', cls: 'swordsman', archetype: 'damage', shape: 'nova', power: 14, cd: 7, area: 1.0, count: 5 }),
+  caltrops: Object.freeze({ id: 'caltrops', name: 'Caltrops', abbrev: 'CT', cls: 'swordsman', archetype: 'damage', shape: 'ground_aoe', power: 8, cd: 6.5, range: 2.0, area: 0.7, durationSec: 5 }),
+  fox_step: Object.freeze({
+    id: 'fox_step', name: 'Fox Step', abbrev: 'FS', cls: 'swordsman', archetype: 'damage', shape: 'melee_arc',
+    power: 18, cd: 5, range: 0.8, area: 50, count: 3,
+    dash: Object.freeze({ dist: 2.0, speed: 10, iframes: true }),
+  }),
+  crescent_finisher: Object.freeze({
+    id: 'crescent_finisher', name: 'Crescent Finisher', abbrev: 'CF', cls: 'swordsman', archetype: 'damage', shape: 'melee_arc',
+    power: 20, cd: 6, range: 1.0, area: 70, count: 5,
+    combo: Object.freeze({ perStack: 0.5, maxStacks: 2, windowTicks: 120 }), // +50% per OTHER skill that connected in 120 ticks
+  }),
+  riposte: Object.freeze({
+    id: 'riposte', name: 'Riposte', abbrev: 'RP', cls: 'swordsman', archetype: 'damage', shape: 'melee_arc',
+    power: 30, cd: 8, range: 0.9, area: 90, count: 3, // the counter arc
+    parry: Object.freeze({ windowTicks: 36 }),
+  }),
+  razor_wake: Object.freeze({
+    id: 'razor_wake', name: 'Razor Wake', abbrev: 'RZ', cls: 'swordsman', archetype: 'passive', field: 'hostile', output: 'damage', shape: 'aura',
+    power: 4, area: 0.9, count: 3, cadenceSec: 1.0, knockback: 0, // the 3 nearest hostiles inside; never pushes
+  }),
+  // Archer (hare) — kites at range.
+  piercing_shot: Object.freeze({ id: 'piercing_shot', name: 'Piercing Shot', abbrev: 'PS', cls: 'archer', archetype: 'damage', shape: 'projectile', power: 30, cd: 3, range: 5.5, speed: 6.2, count: 1, area: 0 }),
+  volley: Object.freeze({ id: 'volley', name: 'Volley', abbrev: 'VO', cls: 'archer', archetype: 'damage', shape: 'projectile', power: 14, cd: 4.5, range: 4.8, speed: 5.4, count: 3, area: 0 }),
+  detonating_charge: Object.freeze({ id: 'detonating_charge', name: 'Detonating Charge', abbrev: 'DC', cls: 'archer', archetype: 'damage', shape: 'ground_aoe', power: 12, cd: 7, range: 4.2, area: 0.85, durationSec: 3 }),
+  sundering_nova: Object.freeze({ id: 'sundering_nova', name: 'Sundering Nova', abbrev: 'SN', cls: 'archer', archetype: 'damage', shape: 'nova', power: 16, cd: 8, area: 1.1, count: 4 }),
+  vault_shot: Object.freeze({
+    id: 'vault_shot', name: 'Vault Shot', abbrev: 'VS', cls: 'archer', archetype: 'damage', shape: 'projectile',
+    power: 18, cd: 6, range: 4.5, speed: 6.0, count: 1, area: 0,
+    vault: Object.freeze({ dist: 1.6, ticks: 10, iframes: true }),
+    status: Object.freeze({ kind: 'slow', mag: 0.3, ticks: 90 }),
+  }),
+  pinning_arrow: Object.freeze({
+    id: 'pinning_arrow', name: 'Pinning Arrow', abbrev: 'PA', cls: 'archer', archetype: 'damage', shape: 'projectile',
+    power: 20, cd: 7, range: 5.0, speed: 6.0, count: 1, area: 0,
+    status: Object.freeze({ kind: 'stun', mag: 1, ticks: 45 }), // non-boss
+  }),
+  rain_of_arrows: Object.freeze({
+    id: 'rain_of_arrows', name: 'Rain of Arrows', abbrev: 'RA', cls: 'archer', archetype: 'damage', shape: 'ground_aoe',
+    power: 7, cd: 11, range: 5.0, area: 1.4, durationSec: 4,
+    status: Object.freeze({ kind: 'slow', mag: 0.25, ticks: 72 }), // refreshed by every zone tick
+  }),
+  kestrel_watch: Object.freeze({
+    id: 'kestrel_watch', name: 'Kestrel Watch', abbrev: 'KW', cls: 'archer', archetype: 'passive', field: 'hostile', output: 'damage', shape: 'aura',
+    power: 6, area: 4.0, count: 1, cadenceSec: 1.0, // the nearest hostile within 4.0 u (basic-hit knockback)
+  }),
 });
+
+// A skill's class (Healer rows carry no `cls`).
+export const classOfSkill = (id) => (SKILLS[id] ? SKILLS[id].cls ?? 'healer' : null);
 
 // §7 starting kit: Mending Bolt slot 1, Swift Mend slot 2 (the draft block
 // re-owns loadout initialization when it lands).

@@ -36,11 +36,16 @@ import { createProjectileSystem } from './projectiles.js';
 import { createCombat } from './combat.js';
 import { createEnemySystem } from './enemies.js';
 import { createWaveDirector } from './waves.js';
-import { createSkillSystem, STARTING_SKILLS, PARTY_ALLIES } from './skills.js';
+import { createSkillSystem, STARTING_SKILLS, PARTY_ALLIES, SKILLS as SKILLS_REF } from './skills.js';
 import { createBuildSystem } from './nodes.js';
 import { createAllySystem } from './allies.js';
 import { createBossSystem } from './boss.js';
 import { createRunSystem } from './run.js';
+// PARTY (docs/gauntlet/PLAN.md §16.3): the three ally builds + their
+// technique module (the cast pipeline lives in the ally system).
+import { createPartySystem } from './party.js';
+import { createPartyTech } from './partytech.js';
+import { seatDisplacement } from './allycast.js';
 // @gnt:M4b IMPORTS begin — hazards / interactables / layout director (PLAN §3.6)
 import { createHazardSystem, createLayoutSystem } from './hazards.js';
 import { createInteractableSystem } from './interactables.js';
@@ -172,6 +177,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   // its §15.4 resolver through this late-bound hook (identity until it lands).
   let buildSys = null;
   let runSys = null; // run block (§2/§13): late-bound, owns combat_active
+  let partySys = null; // PARTY: the three ally builds (late-bound for the ally system)
   const skillSys = createSkillSystem({
     player,
     registry,
@@ -218,6 +224,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     rng,
     getTick: () => currentTick,
     getRoomState: () => waves.roomState(),
+    party: () => partySys,
   });
   events.on('room_cleared', () => allySys.onRoomBoundary('room_clear'));
   events.on('room_start', () => allySys.onRoomBoundary('room_start'));
@@ -247,6 +254,43 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       return !!(r && !r.cleared);
     },
   });
+
+  // --- Party builds (PARTY, PLAN §16.3): seats 1-3 get the Healer's build
+  // model — loadouts from their class pools, 8 sockets per skill, purses —
+  // and a technique module that reacts to their class skills' primary
+  // events. Created after the Healer's build system so every pre-existing
+  // listener keeps its delivery order.
+  const combatActiveNow = () => {
+    if (runSys && runSys.isActive()) return runSys.combatActive();
+    const r = waves.roomState();
+    return !!(r && !r.cleared);
+  };
+  partySys = createPartySystem({
+    rng,
+    registry,
+    events,
+    combat,
+    getTick: () => currentTick,
+    player,
+    isIframed,
+    queueDeferred: (carrierOrdinal, resolve) => deferred.push({ carrierOrdinal, resolve }),
+    queueContinuation: (fn) => continuations.push({ resolve: fn }),
+    isCombatActive: combatActiveNow,
+  });
+  const partyTech = createPartyTech({
+    registry,
+    events,
+    combat,
+    getTick: () => currentTick,
+    queueContinuation: (fn) => continuations.push({ resolve: fn }),
+    build: (s) => partySys.build(s),
+    state: (s) => partySys.seatState(s),
+    body: (s) => partySys.body(s),
+    caster: () => allySys.caster(),
+    seatDisplacement,
+    slotsOf: (s) => partySys.slots(s) ?? [],
+  });
+  partySys.attach({ caster: allySys.caster(), tech: partyTech });
 
   // --- Run structure (run block, §2/§13/§14/§16): the 8-room run frame, the
   // room-clear boundary sequence, drafts/path/shop, the Glint wallet, and the
@@ -466,6 +510,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     projectiles.step(currentTick);
     skillSys.step(currentTick);
     buildSys.step(currentTick);
+    partySys.step(currentTick); // PARTY: the seat builds' echo / split bolts
 
     // Wisp drift (velocity applied; decisions happen in their resolution).
     for (const e of registry.all()) {
@@ -500,6 +545,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // impacts join this tick's deferred batch below.
     buildSys.discrete();
     drainContinuations(); // ③ techniques triggered by instant echo recasts
+    partySys.discrete(); // PARTY: the ally seats' echo recasts + Reapply pulses
+    drainContinuations();
 
     // ① deferred maturations, ascending carrier spawn ordinal.
     if (deferred.length > 0) {
@@ -544,6 +591,10 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // techniques (Siphon per tick per occupant) — drain ③ after.
     skillSys.zonePhase();
     drainContinuations();
+    // PARTY: the ally class passives (Iron Stance, Razor Wake, Kestrel Watch)
+    // pulse on their 1.0 s cadence, ascending slot per seat.
+    partySys.pulsePhase();
+    drainContinuations();
 
     // ④ continued: ally damage zones (ally block, §7 ground_aoe kit rows),
     // then the §2 defeat rule on live HP so an all-four-down lands its
@@ -551,6 +602,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // which §2 says defeat outranks.
     allySys.endOfTick();
     drainContinuations();
+    partySys.endOfTick(); // PARTY: parry windows close, Steady Aim stillness
 
     // Encounter director: spawn-telegraph maturations, wave triggers, and the
     // §11 clear predicates (evaluated end of tick).
@@ -1172,6 +1224,12 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         }
         if (name === 'lagCompensation') return allySys.setLagCompensation(args[0] !== false);
         // @gnt:M5b CMD end
+        // @gnt:PARTY CMD begin (PLAN §16.11)
+        {
+          const pc = partyCmd(name, args);
+          if (pc !== undefined) return pc;
+        }
+        // @gnt:PARTY CMD end
         const ran = runSys.cmd(name, args);
         if (ran !== undefined) return ran;
         const handled = allySys.cmd(name, args);
@@ -1179,6 +1237,80 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         console.warn(`__echoes.cmd('${name}') lands with a later block`);
         return null;
       }
+    }
+  }
+
+  // PARTY debug / harness commands (PLAN §16.11). Seat-0 commands keep their
+  // meaning; these address the ally seats.
+  function partyCmd(name, args) {
+    const P = partySys;
+    switch (name) {
+      case 'partyPools':
+        return P.partyPools();
+      case 'partyVerdicts':
+        return P.partyVerdicts();
+      case 'partyView':
+        return P.view(args[0]);
+      case 'partyState':
+        return P.state();
+      case 'partySwap':
+        return P.swap(args[0], args[1], Number.isInteger(args[2]) ? args[2] : null, { by: 'cmd' });
+      case 'partyReorder':
+        return P.reorder(args[0], args[1], args[2]);
+      case 'partyGrantNode':
+        return P.grantNode(args[0], args[1], args[2] ?? 'grant');
+      case 'partySocket': {
+        const b = P.build(args[0]);
+        return b ? b.socket(args[1], args[2], Number.isInteger(args[3]) ? args[3] : null) : { error: 'no_such_seat' };
+      }
+      case 'partyUnsocket': {
+        const b = P.build(args[0]);
+        return b ? b.unsocket(args[1], args[2]) : { error: 'no_such_seat' };
+      }
+      case 'partyAutoFill':
+        return P.autoFill(args[0] ?? 'all');
+      case 'partyMode':
+        return args[0] === undefined ? P.mode() : P.setMode(args[0]);
+      case 'partyPurse':
+        return args[1] === undefined ? P.purse(args[0]) : P.setPurse(args[0], args[1]);
+      case 'partyAiLog':
+        return allySys.aiLog();
+      case 'partyStress':
+        return P.stress();
+      case 'partyCast': {
+        // ('partyCast', seat, slot, { x, z }?) — fires a loadout slot as a
+        // press would (aim at the point, else the facing) — sim / VFX /
+        // audio probes. Ignores the cooldown; starts it.
+        const [seat, slot, at] = args;
+        const a = P.body(seat);
+        const id = P.slots(seat) ? P.slots(seat)[slot] : null;
+        if (!a || !id) return { error: 'empty_slot' };
+        const def = SKILLS_REF[id];
+        if (def.shape === 'aura') return P.pulse(seat, id);
+        const aim = at && Number.isFinite(at.x) ? { x: at.x, z: at.z } : { x: a.x + (a.faceX ?? 0) * 2, z: a.z + (a.faceZ ?? 1) * 2 };
+        const l = Math.hypot(aim.x - a.x, aim.z - a.z) || 1;
+        const d = { x: (aim.x - a.x) / l, z: (aim.z - a.z) / l };
+        if (allySys.isHumanSeat(seat)) allySys.caster().cast(a, def, slot, currentTick, { mode: 'human', f: { aim, viewTick: currentTick }, tag: null, d });
+        else {
+          // An AI-held seat casts at the hostile nearest the aim point.
+          let target = null;
+          let bd = Infinity;
+          for (const e of registry.all()) {
+            if (e.faction !== 'hostile' || !e.hittable || !(e.hp > 0)) continue;
+            const dd = (e.x - aim.x) ** 2 + (e.z - aim.z) ** 2;
+            if (dd < bd) {
+              bd = dd;
+              target = e;
+            }
+          }
+          allySys.caster().cast(a, def, slot, currentTick, { mode: 'ai', target });
+        }
+        const rdef = P.build(seat).resolveDef(def);
+        if (Array.isArray(a.cds)) a.cds[slot] = currentTick + Math.max(30, Math.round((rdef.cd ?? 0) * TICK_HZ));
+        return { ok: true, seat, slot, skill: id };
+      }
+      default:
+        return undefined;
     }
   }
 
@@ -1203,6 +1335,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // reads the Stag body read-only.
     runSystem: () => runSys,
     bossSystem: () => bossSys,
+    // PARTY: the party system (the ally builds) — pages, socket screen, HUD.
+    partySystem: () => partySys,
     // Ally-block accessor (render layer reads the mark, the revive channels
     // and the per-ally AI state read-only; it never mutates sim state).
     allySystem: () => allySys,
@@ -1247,6 +1381,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
           boss: bossSys.saveState(),
           run: runSys.saveState(),
           layout: layoutSys.saveState(),
+          // PARTY (PLAN §16.6): the three ally builds, purses, the party stream.
+          party: partySys.saveState(),
         },
       };
     },
@@ -1270,6 +1406,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       bossSys.loadState(s.boss);
       runSys.loadState(s.run);
       layoutSys.loadState(s.layout);
+      // PARTY: absent in an older tree (the save codec's MIGRATIONS[3] adds it;
+      // an in-memory older payload keeps the starting loadouts).
+      if (s.party) partySys.loadState(s.party);
       return true;
     },
     // @gnt:M2 WORLD-STATE end

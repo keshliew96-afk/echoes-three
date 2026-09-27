@@ -103,7 +103,32 @@ export const NODES = Object.freeze({
   bulwark: Object.freeze({ id: 'bulwark', name: 'Bulwark', kind: 'technique', rarity: 'rare', limit: 1 }),
   split: Object.freeze({ id: 'split', name: 'Split', kind: 'technique', rarity: 'rare', limit: 1 }),
   resonance: Object.freeze({ id: 'resonance', name: 'Resonance', kind: 'technique', rarity: 'legendary', limit: 1 }),
+
+  // ------------------------------------ PARTY class nodes (BUILD_BRIEF §25.3) --
+  // All techniques; `cls` = the only class whose pool holds it (shared nodes
+  // above carry none). Per-column effects: sim/partytech.js.
+  provoke: Object.freeze({ id: 'provoke', name: 'Provoke', kind: 'technique', rarity: 'common', limit: 1, cls: 'tank' }),
+  brace: Object.freeze({ id: 'brace', name: 'Brace', kind: 'technique', rarity: 'common', limit: 2, cls: 'tank' }),
+  tremor: Object.freeze({ id: 'tremor', name: 'Tremor', kind: 'technique', rarity: 'rare', limit: 1, cls: 'tank' }),
+  anchor: Object.freeze({ id: 'anchor', name: 'Anchor', kind: 'technique', rarity: 'rare', limit: 1, cls: 'tank' }),
+  retaliate: Object.freeze({ id: 'retaliate', name: 'Retaliate', kind: 'technique', rarity: 'rare', limit: 1, cls: 'tank' }),
+  aegis: Object.freeze({ id: 'aegis', name: 'Aegis', kind: 'technique', rarity: 'legendary', limit: 1, cls: 'tank' }),
+  flow: Object.freeze({ id: 'flow', name: 'Flow', kind: 'technique', rarity: 'common', limit: 2, cls: 'swordsman' }),
+  momentum: Object.freeze({ id: 'momentum', name: 'Momentum', kind: 'technique', rarity: 'common', limit: 1, cls: 'swordsman' }),
+  parry: Object.freeze({ id: 'parry', name: 'Parry', kind: 'technique', rarity: 'common', limit: 1, cls: 'swordsman' }),
+  pursuit: Object.freeze({ id: 'pursuit', name: 'Pursuit', kind: 'technique', rarity: 'rare', limit: 1, cls: 'swordsman' }),
+  lethality: Object.freeze({ id: 'lethality', name: 'Lethality', kind: 'technique', rarity: 'rare', limit: 1, cls: 'swordsman' }),
+  execute: Object.freeze({ id: 'execute', name: 'Execute', kind: 'technique', rarity: 'legendary', limit: 1, cls: 'swordsman' }),
+  skewer: Object.freeze({ id: 'skewer', name: 'Skewer', kind: 'technique', rarity: 'common', limit: 2, cls: 'archer' }),
+  concussive: Object.freeze({ id: 'concussive', name: 'Concussive', kind: 'technique', rarity: 'common', limit: 1, cls: 'archer' }),
+  steady_aim: Object.freeze({ id: 'steady_aim', name: 'Steady Aim', kind: 'technique', rarity: 'rare', limit: 1, cls: 'archer' }),
+  disengage: Object.freeze({ id: 'disengage', name: 'Disengage', kind: 'technique', rarity: 'rare', limit: 1, cls: 'archer' }),
+  scatter: Object.freeze({ id: 'scatter', name: 'Scatter', kind: 'technique', rarity: 'rare', limit: 1, cls: 'archer' }),
+  heartseeker: Object.freeze({ id: 'heartseeker', name: 'Heartseeker', kind: 'technique', rarity: 'legendary', limit: 1, cls: 'archer' }),
 });
+
+// The Healer's 17 shared nodes (class nodes excluded), ascending id.
+export const SHARED_NODE_IDS = Object.freeze(Object.keys(NODES).filter((id) => !NODES[id].cls).sort());
 
 // §15.3 + A4 + §23.4 authored technique numbers, verbatim.
 export const TECH = Object.freeze({
@@ -201,6 +226,126 @@ const GREY_REASONS = Object.freeze({
   no_retargetable_impact: 'needs a retargetable impact (projectile or direct)',
 });
 
+// ------------------------------------------- PARTY class verdicts (§25.3/§25.4) --
+// The node × class-skill rules of BUILD_BRIEF §25.3 — exactly the rules the
+// design oracle (tools/gntPARTYD-grid.mjs, docs/gauntlet/party-oracle.json)
+// derives the 440 cells from. Healer rows keep the §15 rules below
+// (verdictFor), which the oracle cross-checks separately (289 cells).
+// Static except the two per-copy saturation cases (Widen on a clamped arc,
+// Multiply on a guard that already reaches the party), resolved by the build.
+const isClassSkill = (def) => !!def && !!def.cls && def.cls !== 'healer';
+const areaShape = (d) => d.shape === 'melee_arc' || d.shape === 'nova' || d.shape === 'ground_aoe';
+const rollsCrit = (d) => d.archetype === 'damage' || d.archetype === 'heal' || (isPassiveDef(d) && d.output !== 'shield');
+const PASSIVE_GREY = 'a passive field — nothing here for this technique to act on';
+function classHasStat(d, stat) {
+  if (stat === 'critBonus') return rollsCrit(d);
+  if (stat === 'area') return d.area !== undefined && d.area > 0;
+  if (stat === 'duration') return d.durationSec !== undefined || (!!d.status && !isPassiveDef(d)) || (!!d.parry && !isPassiveDef(d));
+  return d[stat] !== undefined;
+}
+const CLASS_GREY_STAT = Object.freeze({
+  cd: 'no cooldown stat on this skill',
+  count: 'no count stat on this skill',
+  area: 'single-target shape — no area to widen',
+  range: 'no range stat on this skill',
+  duration: 'nothing on this skill lasts — no duration to extend',
+  critBonus: 'shields never crit',
+  power: 'no power stat',
+});
+// classVerdict(def, nodeId) -> { state: 'live'|'grey'|'inert', reason? } for
+// the FIRST copy on an otherwise empty row (the oracle's cell).
+export function classVerdict(d, id) {
+  const n = NODES[id];
+  if (!n) return { state: 'grey', reason: 'unknown_node' };
+  const G = (reason) => ({ state: 'grey', reason });
+  const I = (reason) => ({ state: 'inert', reason });
+  const L = { state: 'live' };
+  const passive = isPassiveDef(d);
+  const dmg = d.archetype === 'damage';
+  if (n.kind === 'stat') {
+    if (!classHasStat(d, n.stat)) return G(CLASS_GREY_STAT[n.stat]);
+    if (id === 'widen' && d.shape === 'melee_arc' && d.area >= 90) return I('+0 — already a full 90° half-angle (the §23.4 clamp)');
+    if (id === 'multiply' && (d.archetype === 'heal' || d.archetype === 'guard') && (d.shape === 'direct' || d.shape === 'nova' || d.shape === 'melee_arc') && (d.count ?? 1) >= 4)
+      return I('+0 — the whole party is already reached');
+    return L;
+  }
+  switch (id) {
+    case 'bounce':
+      if (passive) return G(PASSIVE_GREY);
+      return retargetable(d) ? L : G('needs a retargetable impact (projectile or direct)');
+    case 'siphon':
+      if (d.archetype === 'guard') return G('a shield drains nothing');
+      if (passive) return d.field === 'hostile' ? L : G(PASSIVE_GREY);
+      return L;
+    case 'echo':
+    case 'resonance':
+      return L;
+    case 'detonate':
+      if (passive) return d.field === 'hostile' ? L : G(PASSIVE_GREY);
+      return L;
+    case 'snare':
+    case 'galvanize':
+    case 'bulwark':
+      return L;
+    case 'split':
+      if (passive) return G(PASSIVE_GREY);
+      return retargetable(d) ? L : G('needs a retargetable impact (projectile or direct)');
+    case 'provoke':
+      if (passive) return d.field === 'ally' ? L : G('a hostile field of another class');
+      if (d.archetype === 'guard') return L;
+      if (d.status && d.status.kind === 'taunt' && d.status.ticks >= 90) return I('+0 — this skill already taunts longer (150 ticks)');
+      return L;
+    case 'brace':
+      return L;
+    case 'tremor':
+      if (!dmg || !areaShape(d)) return G(passive ? PASSIVE_GREY : 'no hostile delivery to stagger with');
+      if (d.status && d.status.kind === 'stun' && d.status.ticks >= 18) return I('+0 — this skill already stuns longer (36 ticks)');
+      return L;
+    case 'anchor':
+      if (!dmg || !areaShape(d)) return G(passive ? PASSIVE_GREY : 'no hostile area delivery to pull with');
+      return L;
+    case 'retaliate':
+      return passive ? G(PASSIVE_GREY) : L;
+    case 'aegis':
+    case 'flow':
+    case 'momentum':
+      return L;
+    case 'parry':
+      return passive ? G(PASSIVE_GREY) : L;
+    case 'pursuit':
+      if (passive) return G(PASSIVE_GREY);
+      if (d.parry) return G('the counter answers an attacker already in reach');
+      if (d.dash) return L;
+      if (d.shape === 'melee_arc' || d.shape === 'nova') return L;
+      return G('the delivery is placed at range — nothing to close');
+    case 'lethality':
+    case 'execute':
+    case 'concussive':
+    case 'steady_aim':
+    case 'heartseeker':
+      return L;
+    case 'skewer':
+      return d.shape === 'projectile' ? L : G('only a bolt can pierce');
+    case 'disengage':
+      return passive ? G(PASSIVE_GREY) : L;
+    case 'scatter':
+      if (d.shape === 'ground_aoe' || d.shape === 'projectile') return L;
+      return G(passive ? PASSIVE_GREY : 'a self burst has nothing to scatter');
+    default:
+      return G('unknown_node');
+  }
+}
+
+// createBuildSystem options added by PARTY (PLAN §16.3): the world makes FOUR
+// instances — seat 0 (the Healer, today's buildSys: same object, same API,
+// same events, same save subtree) and seats 1-3 (the party system). A seat
+// instance:
+//   seat, classId   — which character; `owns(skillId)` = the skill's class
+//   caster()        — the body its techniques act for (default: the player)
+//   echoCast(rec)   — an Echo recast of an ally skill (sim/allycast.js)
+//   pulseCast(id, o)— a passive's bonus Reapply pulse (the party system)
+// A seat instance registers NO technique listener of its own — the party
+// technique module (sim/partytech.js) reacts for it through `tech` below.
 export function createBuildSystem({
   player,
   registry,
@@ -212,7 +357,19 @@ export function createBuildSystem({
   queueContinuation,
   getSkillSlots,
   isCombatActive = () => false,
+  seat = 0,
+  classId = 'healer',
+  caster = null,
+  echoCast = null,
+  pulseCast = null,
 }) {
+  // The body this build's techniques act for (the Healer: the player).
+  const P = () => (caster ? caster() : player);
+  const isHealer = classId === 'healer';
+  const owns = (id) => {
+    const d = SKILLS[id];
+    return !!d && (isHealer ? !d.cls || d.cls === 'healer' : d.cls === classId);
+  };
   // ------------------------------------------------------- sockets & bench --
   const bench = []; // { node, provenance: 'drafted'|'purchased'|... } — uncapped
   const assignments = new Map(); // skillId -> [null | { node, provenance }] per slot
@@ -247,6 +404,7 @@ export function createBuildSystem({
   function verdictFor(def, nodeId, selfSlot = null) {
     const n = NODES[nodeId];
     if (!n) return { state: 'grey', reason: 'unknown_node' };
+    if (isClassSkill(def)) return classVerdictLive(def, nodeId, selfSlot);
     if (n.kind === 'stat') {
       if (!hasStat(def, n.stat)) return { state: 'grey', reason: `no_${n.stat}_stat` };
       if (
@@ -287,6 +445,25 @@ export function createBuildSystem({
     return { state: 'live' };
   }
 
+  // PARTY: the §25.3 class rules + the per-copy saturation of this build's
+  // rows (a SECOND Widen on Brutal Cleave: 80° → 90° → 90° is +0 on the
+  // second copy, judged per copy as socketed).
+  function classVerdictLive(def, nodeId, selfSlot) {
+    const v = classVerdict(def, nodeId);
+    if (v.state !== 'live') return v;
+    if (nodeId === 'widen' && def.shape === 'melee_arc') {
+      const slotIdx = selfSlotOf(def, nodeId, selfSlot);
+      const base = slotIdx >= 0 ? resolveWithout(def, slotIdx) : resolveDef(def);
+      if (base.area >= 90) return { state: 'inert', reason: '+0 — already a full 90° half-angle (the §23.4 clamp)' };
+    }
+    if (nodeId === 'multiply' && def.archetype === 'guard') {
+      const slotIdx = selfSlotOf(def, nodeId, selfSlot);
+      const base = slotIdx >= 0 ? resolveWithout(def, slotIdx) : resolveDef(def);
+      if (Math.floor(base.count ?? 1) >= 4) return { state: 'inert', reason: '+0 — the whole party is already reached' };
+    }
+    return v;
+  }
+
   // ---------------------------------------------------------------- resolver --
   // §15.4 per stat key: base → +flat → ×max(0,1+Σpct) → ×Πmult → clamp.
   // Returns the original frozen def untouched when nothing is socketed, so the
@@ -298,7 +475,7 @@ export function createBuildSystem({
     if (out) return out;
     out = { ...def };
     for (const stat of STAT_KEYS) {
-      if (!hasStat(def, stat)) continue; // stat key absent — grey, untouched
+      if (!(isClassSkill(def) ? classHasStat(def, stat) : hasStat(def, stat))) continue; // stat key absent — grey, untouched
       let flat = 0;
       let pct = 0;
       let mult = 1;
@@ -319,6 +496,7 @@ export function createBuildSystem({
         // durationSec into ticks / 1.0 s cadence and rounds). Statuses: ticks.
         if (def.durationSec !== undefined) out.durationSec = (def.durationSec + flat) * k;
         if (def.status) out.status = { ...def.status, ticks: Math.round(def.status.ticks * k) };
+        if (def.parry) out.parry = { ...def.parry, windowTicks: Math.round(def.parry.windowTicks * k) }; // PARTY: a parry window lasts
         continue;
       }
       if (stat === 'critBonus') {
@@ -476,7 +654,7 @@ export function createBuildSystem({
   let lastHit = null; // most recent primary hit event (death correlation)
 
   const isPrimary = (src) =>
-    typeof src === 'string' && !src.includes(':') && SKILLS[src] !== undefined;
+    typeof src === 'string' && !src.includes(':') && SKILLS[src] !== undefined && owns(src);
 
   // Socketed technique node ids on a skill, ascending slot order, live only.
   function liveTechs(skillId) {
@@ -497,10 +675,12 @@ export function createBuildSystem({
   const S = () => combat.status ?? STATUS;
   function giveStatus(e, kind, mag, ticks) {
     if (!e || !(e.hp > 0)) return null;
-    return S().apply(e, kind, mag, ticks, getTick(), player.id);
+    return S().apply(e, kind, mag, ticks, getTick(), P().id);
   }
 
-  events.on('*', (ev) => {
+  // The Healer's technique listener (seat 0 only — a seat instance's
+  // techniques react through sim/partytech.js, PLAN §16.3).
+  if (isHealer) events.on('*', (ev) => {
     if (suppress > 0) return; // §15.3: technique output never triggers techniques
     switch (ev.type) {
       case 'heal': {
@@ -619,7 +799,7 @@ export function createBuildSystem({
               for (const id of healed) {
                 const m = registry.byId(id);
                 if (m && m.hp > 0)
-                  S().addShield(m, TECH.bulwarkPassiveAdd, TECH.bulwarkPassiveCap, TECH.bulwarkTicks, tick, player.id);
+                  S().addShield(m, TECH.bulwarkPassiveAdd, TECH.bulwarkPassiveCap, TECH.bulwarkTicks, tick, P().id);
               }
               events.emit(tick, 'technique_pulse', { skill: src, node: 'bulwark', targets: healed });
             });
@@ -665,7 +845,7 @@ export function createBuildSystem({
           x: r2(best.x),
           z: r2(best.z),
         });
-        combat.applyHeal(best, power, { healer: player.id, source: `${skillId}:bounce`, critBonus: rdef.critBonus ?? 0 });
+        combat.applyHeal(best, power, { healer: P().id, source: `${skillId}:bounce`, critBonus: rdef.critBonus ?? 0 });
         cx = best.x;
         cz = best.z;
       }
@@ -715,7 +895,7 @@ export function createBuildSystem({
           shape: 'bounce',
           dirX,
           dirZ,
-          attacker: player.id,
+          attacker: P().id,
           source: `${skillId}:bounce`,
           critBonus: rdef.critBonus ?? 0,
         });
@@ -780,7 +960,7 @@ export function createBuildSystem({
       events.emit(tick, 'hit', {
         target: best.id,
         kind: best.kind,
-        attacker: player.id,
+        attacker: P().id,
         source: `${skillId}:siphon`,
         amount,
         crit: false, // never rolls
@@ -809,28 +989,28 @@ export function createBuildSystem({
   // per instance. Same immunity: no crit roll (HP still tops out at max_hp —
   // that is physics, not the resolver's clamp stage).
   function runSiphonSelfHeal(skillId) {
-    if (!(player.hp > 0)) return; // Downed: outside the pipeline
+    if (!(P().hp > 0)) return; // Downed: outside the pipeline
     const amount = r2(TECH.siphonFrac * flatStagePower(skillId));
-    const applied = Math.min(amount, player.maxHp - player.hp);
-    player.hp += applied;
+    const applied = Math.min(amount, P().maxHp - P().hp);
+    P().hp += applied;
     const tick = getTick();
     suppress += 1;
     try {
       events.emit(tick, 'heal', {
-        target: player.id,
-        healer: player.id,
+        target: P().id,
+        healer: P().id,
         source: `${skillId}:siphon`,
         amount,
         applied: r2(applied),
         crit: false,
-        x: r2(player.x),
-        z: r2(player.z),
+        x: r2(P().x),
+        z: r2(P().z),
       });
       events.emit(tick, 'siphon_selfheal', {
         skill: skillId,
         amount,
-        x: r2(player.x),
-        z: r2(player.z),
+        x: r2(P().x),
+        z: r2(P().z),
       });
     } finally {
       suppress -= 1;
@@ -864,7 +1044,7 @@ export function createBuildSystem({
           shape: 'detonate',
           dirX,
           dirZ,
-          attacker: player.id,
+          attacker: P().id,
           source: `${skillId}:detonate`,
           critBonus: rdef.critBonus ?? 0,
         });
@@ -899,7 +1079,7 @@ export function createBuildSystem({
     suppress += 1;
     try {
       for (const t of targets)
-        combat.applyHeal(t, power, { healer: player.id, source: `${skillId}:detonate`, critBonus: rdef.critBonus ?? 0 });
+        combat.applyHeal(t, power, { healer: P().id, source: `${skillId}:detonate`, critBonus: rdef.critBonus ?? 0 });
     } finally {
       suppress -= 1;
     }
@@ -910,11 +1090,11 @@ export function createBuildSystem({
   // instance's overheal (pre-clamp − applied) becomes a shield on the
   // recipient, up to 50% of the instance's resolved power (refresh = max).
   function runBulwarkDamage(skillId, amount) {
-    if (!(player.hp > 0) || !(amount > 0)) return;
+    if (!(P().hp > 0) || !(amount > 0)) return;
     const tick = getTick();
-    const rec = S().addShield(player, TECH.bulwarkDamageFrac * amount, TECH.bulwarkDamageCap, TECH.bulwarkTicks, tick, player.id);
+    const rec = S().addShield(P(), TECH.bulwarkDamageFrac * amount, TECH.bulwarkDamageCap, TECH.bulwarkTicks, tick, P().id);
     if (rec)
-      events.emit(tick, 'technique_pulse', { skill: skillId, node: 'bulwark', mode: 'damage', targets: [player.id], shield: r2(rec.mag) });
+      events.emit(tick, 'technique_pulse', { skill: skillId, node: 'bulwark', mode: 'damage', targets: [P().id], shield: r2(rec.mag) });
   }
 
   function runBulwarkHeal(skillId, targetId, amount, applied) {
@@ -935,7 +1115,7 @@ export function createBuildSystem({
   const shardBolts = createSkillBolts({
     registry,
     events,
-    owner: 'split_shards',
+    owner: seat === 0 ? 'split_shards' : `split_shards:${seat}`, // one subsystem per build (PARTY: seats 1-3 tag their own)
     onImpact: (tick, bolt, target) => {
       const targetId = target.id;
       const { power, skill } = bolt;
@@ -953,7 +1133,7 @@ export function createBuildSystem({
             shape: 'projectile',
             dirX,
             dirZ,
-            attacker: player.id,
+            attacker: P().id,
             source: `${skill}:split`,
             critBonus,
           });
@@ -984,7 +1164,7 @@ export function createBuildSystem({
         power,
         skill: skillId,
         heal: false,
-        sourceId: player.id,
+        sourceId: P().id,
         critBonus: rdef.critBonus ?? 0,
         tech: 'split',
         exclude: [victimId],
@@ -1020,7 +1200,7 @@ export function createBuildSystem({
     suppress += 1;
     try {
       for (const m of near)
-        combat.applyHeal(m, power, { healer: player.id, source: `${skillId}:split`, critBonus: rdef.critBonus ?? 0 });
+        combat.applyHeal(m, power, { healer: P().id, source: `${skillId}:split`, critBonus: rdef.critBonus ?? 0 });
     } finally {
       suppress -= 1;
     }
@@ -1030,13 +1210,13 @@ export function createBuildSystem({
   // refreshed each pulse.
   function runPassiveSnare(skillId, x, z, area) {
     const tick = getTick();
-    const cx = Number.isFinite(x) ? x : player.x;
-    const cz = Number.isFinite(z) ? z : player.z;
+    const cx = Number.isFinite(x) ? x : P().x;
+    const cz = Number.isFinite(z) ? z : P().z;
     const radius = Number.isFinite(area) ? area : resolveDef(SKILLS[skillId]).area;
     const hit = [];
     for (const e of hostiles()) {
       if ((e.x - cx) ** 2 + (e.z - cz) ** 2 > radius * radius) continue;
-      if (S().apply(e, 'slow', TECH.snarePassiveSlow, TECH.pulseStatusTicks, tick, player.id)) hit.push(e.id);
+      if (S().apply(e, 'slow', TECH.snarePassiveSlow, TECH.pulseStatusTicks, tick, P().id)) hit.push(e.id);
     }
     events.emit(tick, 'technique_pulse', { skill: skillId, node: 'snare', targets: hit });
   }
@@ -1050,7 +1230,7 @@ export function createBuildSystem({
     const n = (resonance.get(skillId) ?? 0) + 1;
     resonance.set(skillId, n);
     if (n % TECH.resonanceEvery !== 0) return { powerMul: 1, resonance: false, count: n };
-    events.emit(getTick(), 'resonance_proc', { skill: skillId, n, mul: TECH.resonanceMul, x: r2(player.x), z: r2(player.z) });
+    events.emit(getTick(), 'resonance_proc', { skill: skillId, n, mul: TECH.resonanceMul, x: r2(P().x), z: r2(P().z) });
     return { powerMul: TECH.resonanceMul, resonance: true, count: n };
   }
 
@@ -1064,7 +1244,7 @@ export function createBuildSystem({
     const n = (resonance.get(skillId) ?? 0) + 1;
     resonance.set(skillId, n);
     if (n % TECH.resonanceEvery !== 0) return { powerMul: 1, resonance: false, count: n };
-    events.emit(getTick(), 'resonance_proc', { skill: skillId, n, mul: TECH.resonanceMul, pulse: true, x: r2(player.x), z: r2(player.z) });
+    events.emit(getTick(), 'resonance_proc', { skill: skillId, n, mul: TECH.resonanceMul, pulse: true, x: r2(P().x), z: r2(P().z) });
     return { powerMul: TECH.resonanceMul, resonance: true, count: n };
   }
 
@@ -1081,7 +1261,7 @@ export function createBuildSystem({
     events,
     // A stable owner tag (M2, PLAN §3.4): an unnamed instance is numbered per
     // page (`bolts#N`), which would make a saved echo bolt page-dependent.
-    owner: 'echo_bolts',
+    owner: seat === 0 ? 'echo_bolts' : `echo_bolts:${seat}`, // PARTY: seats 1-3 tag their own (PLAN §16.3)
     onImpact: (tick, bolt, target) => {
       const targetId = target.id;
       const { power, skill, heal, sourceId } = bolt;
@@ -1116,9 +1296,15 @@ export function createBuildSystem({
       skill: rec.skill,
       shape: base.shape,
       power: r2(power),
-      x: r2(player.x),
-      z: r2(player.z),
+      x: r2(P().x),
+      z: r2(P().z),
     });
+    // PARTY: an ally skill's echo replays its DELIVERY through the ally cast
+    // pipeline (never the dash / vault / parry window; never a cast).
+    if (echoCast) {
+      echoCast(rec, def, power);
+      return;
+    }
     if (skills && typeof skills.deliver === 'function') {
       skills.deliver(def, power, { skill: rec.skill, shape: base.shape, echo: true }, {
         tick,
@@ -1151,12 +1337,13 @@ export function createBuildSystem({
       execEchoRecast(echoQueue.shift());
     }
     for (const id of Object.keys(SKILLS)) {
-      if (!isPassiveDef(SKILLS[id])) continue;
+      if (!isPassiveDef(SKILLS[id]) || !owns(id)) continue;
       if (echoAuraLive(id)) {
         if (!auraEchoNext.has(id)) auraEchoNext.set(id, tick + TECH.echoAuraTicks);
         while (tick >= auraEchoNext.get(id)) {
           auraEchoNext.set(id, auraEchoNext.get(id) + TECH.echoAuraTicks);
-          if (skills && typeof skills.pulseAura === 'function') skills.pulseAura(id, { echo: true });
+          if (pulseCast) pulseCast(id, { echo: true });
+          else if (skills && typeof skills.pulseAura === 'function') skills.pulseAura(id, { echo: true });
         }
       } else {
         auraEchoNext.delete(id);
@@ -1564,7 +1751,43 @@ export function createBuildSystem({
     invalidate();
   }
 
+  // PARTY (sim/partytech.js): the technique internals a seat instance's
+  // class-aware listener drives — the shared primitives act for P().
+  const tech = {
+    liveTechs,
+    flatStagePower,
+    isPrimary,
+    isSuppressed: () => suppress > 0,
+    withSuppress(fn) {
+      suppress += 1;
+      try {
+        return fn();
+      } finally {
+        suppress -= 1;
+      }
+    },
+    setLastHit: (ev) => {
+      lastHit = ev;
+    },
+    lastHit: () => lastHit,
+    armEcho(skillId, cast, dueTick) {
+      echoQueue.push({ due: dueTick, skill: skillId, cast });
+      events.emit(getTick(), 'echo_armed', { skill: skillId, dueTick });
+    },
+    runDamageChain,
+    runSiphonSelfHeal,
+    runDetonateDamage,
+    runBulwarkDamage,
+    runSplitShards,
+    runPassiveSnare,
+    giveStatus,
+  };
+
   return {
+    seat,
+    classId,
+    owns,
+    tech,
     saveState,
     loadState,
     resolveDef,

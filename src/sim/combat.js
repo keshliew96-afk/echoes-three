@@ -96,10 +96,24 @@ export function createCombat({
   // draws no RNG. It deals 0, emits `hit_blocked` and returns
   // { blocked: true, amount: 0 }. A caller that passes no direction is never
   // blocked.
+  // PARTY (BUILD_BRIEF §25.2 / §25.3, PLAN §16.3) — optional per-instance
+  // modifiers, all absent on every pre-PARTY caller (so every v0.5.150
+  // instance resolves exactly as before):
+  //   critMul    crit multiplier instead of CRIT.mult (Lethality ×2.2)
+  //   forceCrit  the crit result is forced true — the roll is STILL drawn,
+  //              so the seeded stream's order never changes (Heartseeker)
+  //   kbScale    knockback multiplier; negative = a pull toward the hit's
+  //              origin (Concussive ×2, Anchor pull, Razor Wake 0)
+  //   kbDist     absolute knockback distance override (signed like kbScale)
+  // A PARRY guard (the fox's Riposte / Parry node: `guard.parry`, shapes
+  // ['*']) blocks the next instance from a HOSTILE attacker of any shape from
+  // any direction — before the crit roll, exactly like the Ram's guard — and
+  // reports it to the party hook (the counter). `hooks.onPartyDamaged`
+  // (Retaliate) hears every hostile instance that lands on a party member.
   function applyDamage(
     target,
     base,
-    { delivery = 'basic', shape = null, dirX = 0, dirZ = 0, attacker = null, source = null, critBonus = 0 } = {}
+    { delivery = 'basic', shape = null, dirX = 0, dirZ = 0, attacker = null, source = null, critBonus = 0, critMul = null, forceCrit = false, kbScale = null, kbDist = null } = {}
   ) {
     const tick = getTick();
     if (!target || !(target.hp > 0)) return null; // outside the pipeline
@@ -115,6 +129,26 @@ export function createCombat({
     }
 
     const g = target.guard;
+    if (g && g.parry && g.active && g.untilTick > tick && attacker !== null && attacker !== undefined) {
+      const src = registry.byId(attacker);
+      if (src && src.faction === 'hostile') {
+        stats.blocked = (stats.blocked ?? 0) + 1;
+        target.lastBlockedTick = tick;
+        g.active = false; // the first blocked instance ends the window
+        events.emit(tick, 'hit_blocked', {
+          targetId: target.id,
+          attackerId: attacker,
+          shape,
+          delivery,
+          source,
+          x: r2(target.x),
+          z: r2(target.z),
+          parry: true,
+        });
+        if (hooks.onParry) hooks.onParry(target, src, g);
+        return { blocked: true, amount: 0, parry: true };
+      }
+    }
     if (g && g.active && Array.isArray(g.shapes) && g.shapes.includes(shape)) {
       const gdl = Math.hypot(dirX, dirZ);
       const gl = Math.hypot(g.dirX ?? 0, g.dirZ ?? 0);
@@ -141,12 +175,15 @@ export function createCombat({
 
     const atk = attacker !== null && attacker !== undefined ? registry.byId(attacker) : null;
     const dealt = atk ? STATUS.damageDealtMul(atk, tick) : 1;
-    const crit = rng.chance(CRIT.chance + critBonus); // strict roll < chance (§7)
+    const rolled = rng.chance(CRIT.chance + critBonus); // strict roll < chance (§7)
+    const crit = forceCrit ? true : rolled;
     let amount = base * dealt;
-    if (crit) amount *= CRIT.mult;
+    if (crit) amount *= critMul ?? CRIT.mult;
     amount *= STATUS.damageTakenMul(target, tick);
     let absorbed = 0;
+    let shieldSrc = null;
     if (target.status && target.status.shield) {
+      shieldSrc = target.status.shield;
       const r = STATUS.absorb(target, amount, tick);
       absorbed = r.absorbed;
       amount = r.remaining;
@@ -163,9 +200,13 @@ export function createCombat({
       const len = Math.hypot(dirX, dirZ);
       if (len > 1e-6) {
         kb = delivery === 'basic' ? KNOCKBACK.basicDist : KNOCKBACK.skillDist;
-        target.kbVx = (dirX / len) * (kb / KNOCKBACK.durationTicks);
-        target.kbVz = (dirZ / len) * (kb / KNOCKBACK.durationTicks);
-        target.kbTicks = KNOCKBACK.durationTicks;
+        if (kbDist !== null && kbDist !== undefined) kb = kbDist;
+        else if (kbScale !== null && kbScale !== undefined) kb *= kbScale;
+        if (kb !== 0) {
+          target.kbVx = (dirX / len) * (kb / KNOCKBACK.durationTicks);
+          target.kbVz = (dirZ / len) * (kb / KNOCKBACK.durationTicks);
+          target.kbTicks = KNOCKBACK.durationTicks;
+        }
       }
     }
 
@@ -201,7 +242,13 @@ export function createCombat({
         x: r2(target.x),
         z: r2(target.z),
       });
+      // PARTY (Detonate on a guard skill): a shield that a PARTY skill
+      // granted breaks — its source skill rides the record (`skill`).
+      if (shieldSrc && shieldSrc.skill && !(shieldSrc.mag > 1e-6))
+        events.emit(tick, 'shield_broken', { targetId: target.id, srcSkill: shieldSrc.skill, src: shieldSrc.src ?? null, x: r2(target.x), z: r2(target.z) });
     }
+    // PARTY (Retaliate): a hostile instance landed on a party member.
+    if (hooks.onPartyDamaged && target.partyIndex !== undefined && atk && atk.faction === 'hostile') hooks.onPartyDamaged(target, atk, amount + absorbed);
 
     // §9 #4, melee half: a melee-arc connect that does NOT kill pauses the
     // whole sim for 2 ticks — the weight the brief asks a swing to land with.
@@ -307,5 +354,8 @@ export function createCombat({
     stopTick = d && Number.isFinite(d.stopTick) ? d.stopTick : -1;
     stopGranted = d && Number.isFinite(d.stopGranted) ? d.stopGranted : 0;
   }
-  return { applyDamage, applyHeal, kill, status: STATUS, saveState, loadState };
+  // PARTY hooks (sim/partytech.js installs them; absent = no-op).
+  const hooks = { onParry: null, onPartyDamaged: null };
+  const setHooks = (h = {}) => Object.assign(hooks, h);
+  return { applyDamage, applyHeal, kill, status: STATUS, saveState, loadState, setHooks };
 }

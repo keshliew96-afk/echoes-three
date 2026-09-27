@@ -39,7 +39,7 @@
 // from the seeded gameplay stream in a fixed order, so one seed replays one
 // run frame.
 import { SKILLS, STARTING_SKILLS, HEALER_SKILL_IDS } from './skills.js';
-import { NODES } from './nodes.js';
+import { NODES, SHARED_NODE_IDS } from './nodes.js';
 
 // §16 "Skill pool = draftable healer skills − owned": every authored healer
 // skill (17 after §23.3) minus the 2 the Healer starts with = 15. Sorted ascending id (the §16
@@ -48,7 +48,9 @@ export const DRAFTABLE_SKILL_IDS = Object.freeze(
   HEALER_SKILL_IDS.filter((id) => !STARTING_SKILLS.includes(id))
 );
 
-export const NODE_IDS = Object.freeze(Object.keys(NODES).sort());
+// The Healer's node pool: the 17 shared nodes (PARTY class nodes excluded —
+// PLAN §16.2 reader hazard).
+export const NODE_IDS = SHARED_NODE_IDS;
 
 // §14 shop prices by rarity — M4c rebalance (4 skills × 8 sockets = 32
 // sockets to feed): 15 / 20 / 25 (were 25 / 30 / 35 for a 3-card shelf and
@@ -81,7 +83,10 @@ export const EMPTY_REASON = Object.freeze({
 
 // build  = () => the build system (nodes block) — pools read its verdicts.
 // slots  = () => skillSys.slotsView() (4 entries, null = empty slot).
-export function createDraftSystem({ rng, build, slots }) {
+// PARTY (PLAN §16.3): a seat's draft system passes its CLASS pools —
+// `skillIds` (its 8 class skills, ascending id) and `nodeIds` (its class node
+// pool, ascending id); the Healer's defaults are unchanged.
+export function createDraftSystem({ rng, build, slots, skillIds = HEALER_SKILL_IDS, nodeIds = NODE_IDS }) {
   const ownedSkillIds = () => slots().filter(Boolean).map((s) => s.id);
   const freeSkillSlots = () => slots().filter((s) => !s).length;
 
@@ -114,11 +119,11 @@ export function createDraftSystem({ rng, build, slots }) {
   // unchanged.
   function skillPool() {
     const owned = new Set(ownedSkillIds());
-    return HEALER_SKILL_IDS.filter((id) => !owned.has(id));
+    return skillIds.filter((id) => !owned.has(id));
   }
 
   function nodePool() {
-    return NODE_IDS.filter(usableByParty);
+    return nodeIds.filter(usableByParty);
   }
 
   // fix-M4a-r4 UPGRADE layer: where this node would replace the weakest
@@ -134,7 +139,7 @@ export function createDraftSystem({ rng, build, slots }) {
   // Nodes with NO vacant usable socket that still upgrade the build, sorted
   // ascending id (the §16 draw order).
   function upgradePool() {
-    return NODE_IDS.filter((id) => upgradeInfo(id) !== null);
+    return nodeIds.filter((id) => upgradeInfo(id) !== null);
   }
 
   // ONE candidate for a promised reward type. Returns

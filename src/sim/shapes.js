@@ -232,7 +232,7 @@ export function clampPlacement(caster, aim, range) {
 //   - `critBonus` (Keen) and `tech` (a technique-produced bolt, e.g. a Split
 //     shard: its impact is labelled `<skill>:<tech>` so it never re-triggers
 //     techniques, §15.3 depth-1) ride the bolt entity as plain data.
-export function createSkillBolts({ registry, events, onImpact, owner = null }) {
+export function createSkillBolts({ registry, events, onImpact, owner = null, onExpire = null }) {
   // Owner tag: more than one subsystem instance can share the registry (the
   // healer kit + the build block's Echo recasts). Each instance advances ONLY
   // the bolts it spawned — otherwise every bolt would be stepped once per live
@@ -272,6 +272,9 @@ export function createSkillBolts({ registry, events, onImpact, owner = null }) {
     }
     if (opts.critBonus > 0) spec.critBonus = opts.critBonus;
     if (opts.tech) spec.tech = opts.tech;
+    // PARTY (sim/allycast.js): an ally skill bolt's per-cast modifiers ride
+    // the bolt as plain data (present only when set).
+    if (opts.mods) spec.mods = opts.mods;
     const b = registry.spawn(spec);
     events.emit(tick, 'skill_bolt_spawn', {
       id: b.id,
@@ -362,7 +365,12 @@ export function createSkillBolts({ registry, events, onImpact, owner = null }) {
         const { hit, t } = sweptStep(b, dx, dz, b.radius);
         b.traveled += Math.hypot(dx, dz) * t;
         if (hit) despawn(tick, b, 'wall');
-        else if (expires) despawn(tick, b, 'expired');
+        else if (expires) {
+          despawn(tick, b, 'expired');
+          // PARTY (Scatter, BUILD_BRIEF §25.3): a bolt spent at max range
+          // without a hit may burst — the owner decides, after the despawn.
+          if (onExpire) onExpire(tick, b);
+        }
         break;
       }
     }
