@@ -484,7 +484,17 @@ to a screen restores its last focus. The focus ring (2 px Hearth Amber
 `#E8A23D` outline + 3% scale + plate lift) is always visible on exactly one
 item while any screen is open, including after mouse use. No focus traps:
 every screen except the title root has a back path. Text inputs (room code,
-slot name, player name) take typing; Esc blurs/backs, Enter confirms. UI sounds:
+slot name, player name, server address) take typing; Enter confirms; moving
+off a field (↑/↓/Tab/click) keeps what was typed. **Esc / B / right-click is
+CANCEL, never commit** (fix-M1-r4, MENU-R4-F1, v0.5.126): in a dialog it
+cancels the dialog; in a field that saves as it is edited (Settings ▸ Network)
+it first reverts an uncommitted edit to the saved value — the caret stays, the
+row says "Change cancelled", the footer reads "Esc Cancel edit" while there is
+one — and with nothing to cancel it backs one level. Contract: `back` asks the
+focused field's `__navCancelEdit(source) -> bool` before the screen's own
+handling; a screen may answer `onFocusLost(el)` to re-home a ring whose item
+disabled itself (Settings: the next row, never an unselected tab). IME
+composition keys are never nav actions. UI sounds:
 the audio engine subscribes to `nav` app events (M3), never the other way round.
 
 **Frame scheduler** — `src/app/loop.js` (stub committed; M1 implements pacing):
@@ -2560,8 +2570,11 @@ candidate (mixed content) and records it in `skipped`:
 | 4 | the page's own origin: https → `wss://<host>/echoes`, http → `ws://<host>/echoes` | `site` | "Automatic (this site)" |
 | 5 | no web origin (file://, Node bots) → `ws://127.0.0.1:7800/echoes` | `local` | "Automatic (this computer)" |
 
-- `net.serverUrl` default is now `''` = automatic (validation unchanged:
-  `ws://`/`wss://`, `wss://` only on an https page). Builds ≤ v0.5.117 stored
+- `net.serverUrl` default is now `''` = automatic (validation:
+  `ws://`/`wss://`, `wss://` only on an https page; since v0.5.127 a host the
+  URL parser would rewrite — numbers-only / partial / leading-zero IPv4 such
+  as `ws://12` → 0.0.0.12 — is refused as `incomplete`, and 0.0.0.0/8 as
+  `unroutable`; Esc in the field cancels, §3.3). Builds ≤ v0.5.117 stored
   their default in every settings blob; it is read ONCE as automatic (marker
   key `net.serverUrlV = 1`, in memory until something persists), so a player
   who later types that exact address keeps it.

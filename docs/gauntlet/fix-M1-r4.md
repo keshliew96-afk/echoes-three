@@ -1,5 +1,5 @@
-STATUS: PARTIAL
-fix-M1-r4: MENU-R4-F1 (Esc in a Settings > Network text field commits the half-typed value and closes Settings)
+STATUS: COMPLETE
+VERDICT: MENU-R4-F1 fixed + verified on dev and production — Esc / pad B / right-click in a Settings > Network text field is CANCEL (reverts an uncommitted edit, caret stays, "Change cancelled"; backs one level only with nothing to cancel), never commit (v0.5.126); addresses the URL parser would rewrite ("ws://12" -> 0.0.0.12) or 0.x hosts are refused with a reason and a stored ws://0.0.0.12 heals to Automatic (v0.5.127); self-found: a self-disabling button no longer drops the ring on an unselected tab. 0 page errors; core loop, journey, nav, ring pass. fix-M1-r4 builder checkpoint, started 2026-09-27 on v0.5.124.
 
 ## Steps
 - [start] checkpoint created 2026-09-27
@@ -20,3 +20,34 @@ fix-M1-r4: MENU-R4-F1 (Esc in a Settings > Network text field commits the half-t
   Node table (16 inputs) + tools/gntfixM14-address.mjs on dev: ws://12, ws://192.168.1:7800/echoes, ws://0.0.0.0:7800/echoes + Enter refused with those notes, nothing stored; ws://192.168.1.20:7800/echoes saved; stored ws://0.0.0.12 -> reload -> '' / addressInfo source 'site'. TOTAL FAILS 0, 0 page errors.
   AFTER textesc2 (captures/gntfixM14-after-textesc2.log): saved '' after 'ws://12'+Esc, after a reload Multiplayer resolves Automatic (this site) ws://127.0.0.1:5199/echoes (was: "Can't reach … ws://0.0.0.12 … custom address").
   Pre-commit: smoke exit 0 / 0 PAGEERROR; core loop portal tick 268 -> combat room 1 tick 287 -> reward tick 477, 0 PAGEERROR.
+- [x] S5 PRODUCTION (npx vite build --outDir dist-gntfixM14, v0.5.127 entry index-D9ZNY_FF.js; vite preview :4372 listening PID 88900 + cmd parent 79228 — both killed, port 4372 free, dist-gntfixM14 removed): ECHOES_URL=http://127.0.0.1:4372/ tools/gntfixM14-textesc.mjs (captures/gntfixM14-prod-textesc.log): all 4 cases stack stays title,settings, nothing stored (critic prod log: identical to the dev failure); gntfixM14-cancel.mjs (captures/gntfixM14-cancel-prod.log) TOTAL FAILS 0; gntfixM14-address.mjs TOTAL FAILS 0; gntfixM14-ctextin (critic B28) TOTAL FAILS 0; gntfixM14-textesc2 saved '' -> Multiplayer resolves Automatic (this site) ws://127.0.0.1:4372/echoes; gntfixM14-ring TOTAL FAILS 0 (captures/gntfixM14-prod-ring.log); gntfixM14-cnav 53 PASS / 0 FAIL; prod smoke exit 0 / 0 PAGEERROR; prod core loop ?seed=7&menu=0 portal tick 256 -> combat room 1 tick 283 -> reward tick 479, 0 PAGEERROR.
+- [x] S6 FINAL REGRESSION after the last code commit (dev, HEAD f85bfdb incl. other builders' v0.5.128-129): smoke exit 0 / 0 PAGEERROR (captures/gntfixM14-final-smoke); core loop portal tick 257 -> combat room 1 tick 274 -> reward tick 466, 0 PAGEERROR (captures/gntfixM14-final-coreloop); tools/gntfixM14-cjourney.mjs (critic r4 journey copy) 17 PASS + J7 FAIL = identical to the critic's own r4 log (J7 = the probe does not answer the New-Game-over-a-run dialog, critic-documented probe artifact); tools/gntfixM14-join.mjs: Join-by-code typed + ONE Esc -> title, caret gone, ring 1, 0 page errors.
+
+## BEFORE / AFTER (MENU-R4-F1)
+| probe | BEFORE (v0.5.124) | AFTER (v0.5.126+) dev | AFTER prod |
+|---|---|---|---|
+| textesc 'ws://12' + Esc | stack title; net.serverUrl 'ws://0.0.0.12' (memory + storage) | stack title,settings; '' | same as dev |
+| textesc 'ws://127.0.0.1:7841/echoes' + Esc | saved, Settings closed | not saved, Settings open, field reverted | same |
+| textesc 'Zed' (name) + Esc | 'Zed' saved | name unchanged, "Change cancelled — your name is still …" | same |
+| textesc2 reload -> Multiplayer | "Can't reach … ws://0.0.0.12 … custom address" | Automatic (this site) | Automatic (this site) |
+| critic B28 textin | 5 FAIL (T5 = F1 + cascade) | 0 FAIL | 0 FAIL |
+| 'ws://12' + ENTER | saved as ws://0.0.0.12 | refused: "“12” isn’t a full address (it would reach 0.0.0.12)" | same |
+
+## Decisions (PLAN silent -> best-in-class choice)
+- D1 Esc in a live-saving text field = the spreadsheet / address-bar model: the FIRST Esc cancels an uncommitted edit (field back to the saved value, caret kept so the player can retype, inline "Change cancelled" note); an Esc with nothing to cancel backs exactly one level (G1.2 unchanged whenever nothing is being edited). The critic's own B28 expectation (T5: "leaves the field without committing … and without closing Settings") is met. Pad B and right-click behave the same (one "back" vocabulary).
+- D2 Dialogs whose only content is the text (rename save, change server, join code) keep one-Esc cancel-and-close (OS dialog convention; their fields have no live-save hook).
+- D3 Leaving a field with ↑/↓/Tab/a click keeps what was typed (web-form rule, as before) — only the explicit cancel inputs discard.
+- D4 While the caret is in a text field the Settings footer tells the truth: "↑↓ Select · Enter Save · Esc Cancel edit" (dirty) / "Esc Back" (clean); Q/E and ←/→ type or move the caret there, so "Tabs"/"Change" are hidden.
+- D5 IME composition keys (isComposing / keyCode 229) are never menu actions — Esc drops the composition, Enter picks the candidate (verified with a CDP composition).
+- D6 An address the browser would silently rewrite is refused with the address it would have reached; 0.0.0.0/8 is refused (where a server listens, not a destination — the UI tells players to run `--host 0.0.0.0`, so this is the likely typo). A stored value that now fails validation falls back to Automatic, like any invalid stored key.
+- D7 A focused control that disables itself re-homes the ring on the next row in Settings' reading-order ring (screen hook onFocusLost), and Settings' fallback focus follows the active tab — never an unselected tab button (r3 F2 invariant).
+
+## Cross-owner edits (minimal, cited by the finding)
+- src/ui/menu/tabs/network.js (M5b / DEPLOY): textRow tracks the committed value, __navCancelEdit / __navDirty, cancel notes, 'incomplete' / 'unroutable' refusal copy. No other logic touched.
+- src/net/address.js (DEPLOY): validateServerUrl rewrite / 0.x refusal (+ typed/host fields on the refusal).
+- docs/gauntlet/PLAN.md (ARCH): §3.3 text-input rule + hook contract; §14.1 validation line. docs/TESTING.md M1 subsection note.
+- M1-owned: src/app/nav.js, src/app/screens.js, src/ui/menu/settings.js, src/ui/menu/hints.js.
+- Every probe run used renamed copies (tools/gntfixM14-*); the critic's own logs were never overwritten.
+
+## Commits
+66d21c9 (v0.5.126) Esc = cancel + hints + focus re-home · 44cd385 (v0.5.127) address validator · docs/checkpoint commit (this file, PLAN §3.3/§14.1, TESTING).

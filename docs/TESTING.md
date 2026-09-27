@@ -294,6 +294,18 @@ nav `confirm` action is an untrusted click and is NOT mouse input (hint glyphs
 keep following the pad / keyboard; no second response is logged) -
 `tools/gntfixM13-padhints.mjs`.
 
+**Text fields: Esc is cancel** (gauntlet fix-M1-r4, v0.5.126+). In Settings >
+Network, Esc / pad B / right-click with an uncommitted edit reverts the field
+to the saved value (caret stays, "Change cancelled" note, footer "Enter Save ·
+Esc Cancel edit"); with nothing to cancel it backs one level. Enter commits;
+leaving the field with ↑/↓/Tab/click keeps what was typed. Dialogs (rename
+save, change server) still close on one Esc without saving. A server address
+the browser would rewrite (`ws://12` -> 0.0.0.12) or a 0.x host is refused
+with a reason. Probes: `node tools/gntfixM14-cancel.mjs` (keys / pad / right
+click / IME / dialogs / Settings over play / Reset-to-automatic focus; 24
+checks), `tools/gntfixM14-address.mjs`, `tools/gntfixM14-textesc.mjs` (the
+critic's MENU-R4-F1 repro); `ECHOES_URL` targets a preview.
+
 ### M3 — audio engine and mixer (Gauntlet W1, owner M3)
 
 **Locked until a gesture.** No AudioContext exists before the first
