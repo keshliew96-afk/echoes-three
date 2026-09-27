@@ -507,10 +507,18 @@ export function createRunSystem({
   // never auto-socketed; the reward page and the socket screen name them.
   function dropSpoils(tick) {
     const ids = draft.spoils(RUN.spoilsPerClear);
+    // fix-M4a-r4: the drops that UPGRADE a full build (no vacant socket —
+    // auto-fill swaps them in over a weaker node), named on the reward page.
+    const upgrades = ids.filter((id) => draft.upgradeInfo(id) !== null);
     for (const id of ids) buildSys.grantNode(id, 'spoils');
-    spoils = { room: roomIndex, nodes: ids };
+    spoils = upgrades.length ? { room: roomIndex, nodes: ids, upgrades } : { room: roomIndex, nodes: ids };
     spoilsTotal += ids.length;
-    events.emit(tick, 'spoils_drop', { room: roomIndex, nodes: [...ids], total: spoilsTotal });
+    events.emit(tick, 'spoils_drop', {
+      room: roomIndex,
+      nodes: [...ids],
+      total: spoilsTotal,
+      ...(upgrades.length ? { upgrades: [...upgrades] } : {}),
+    });
   }
 
   // ----------------------------------------------------------------- draft --
@@ -532,6 +540,11 @@ export function createRunSystem({
       line: reward.line,
       freeSkillSlots: reward.freeSkillSlots,
       poolSize: reward.poolSize,
+      // fix-M4a-r4: an UPGRADE offer names its swap target; an empty offer
+      // names why (keys present only when set, so fill-pool traces are
+      // byte-identical to the pre-fix ones).
+      ...(reward.pool ? { pool: reward.pool, upgrade: reward.upgrade ? { ...reward.upgrade } : null } : {}),
+      ...(reward.reason ? { reason: reward.reason } : {}),
     });
   }
 
@@ -923,6 +936,15 @@ export function createRunSystem({
     };
   }
 
+  // fix-M4a-r4: `{ upgrade: { skill, slot, replaces, why } }` when `nodeId`
+  // would UPGRADE the build (no vacant usable socket, outranks a socketed
+  // node), else {} — spread into view objects so the key exists only then.
+  function upgradeKey(nodeId) {
+    if (!nodeId) return {};
+    const up = draft.upgradeInfo(nodeId);
+    return up ? { upgrade: up } : {};
+  }
+
   // ------------------------------------------------------------------ shop --
   function openShop() {
     const stock = draft.shopStock().map((s) => ({ ...s, sold: false }));
@@ -1179,7 +1201,14 @@ export function createRunSystem({
         ? { seed: frame.seed, modes: [...frame.modes], defendAt: [...frame.defendAt], sides: [...frame.sides] }
         : null,
       rewardFor: { ...rewardFor },
-      spoils: spoils ? { room: spoils.room, nodes: [...spoils.nodes] } : null,
+      // fix-M4a-r4: `upgrades` (the drops that upgrade a full build) is
+      // present only when non-empty — the view is part of snapshotState(), so
+      // a fill-only run hashes exactly as it did before the fix.
+      spoils: spoils
+        ? spoils.upgrades && spoils.upgrades.length
+          ? { room: spoils.room, nodes: [...spoils.nodes], upgrades: [...spoils.upgrades] }
+          : { room: spoils.room, nodes: [...spoils.nodes] }
+        : null,
       spoilsTotal,
       reward: reward
         ? {
@@ -1189,6 +1218,14 @@ export function createRunSystem({
             substituted: reward.substituted,
             line: reward.line,
             freeSkillSlots: reward.freeSkillSlots,
+            // fix-M4a-r4: `pool: 'upgrade'` when drawn from the upgrade
+            // layer, `upgrade` = the swap target read LIVE (the player may
+            // re-socket while the page is up; absent once the node would fill
+            // a vacant socket), `reason` = why an empty offer is empty. Each
+            // key is present only when set (hash-stable view, see spoils).
+            ...(reward.pool ? { pool: reward.pool } : {}),
+            ...upgradeKey(reward.type === 'node' ? reward.id : null),
+            ...(reward.reason ? { reason: reward.reason } : {}),
           }
         : null,
       path: path
@@ -1208,6 +1245,9 @@ export function createRunSystem({
               price: s.price,
               sold: s.sold,
               owned: draft.ownedCount(s.node),
+              // fix-M4a-r4: the swap target when this card UPGRADES a full
+              // build — present only then (hash-stable view).
+              ...upgradeKey(s.sold ? null : s.node),
               affordable: wallet >= s.price,
             })),
           }
@@ -1347,7 +1387,12 @@ export function createRunSystem({
         return wallet;
       }
       case 'draftPools':
-        return { skill: draft.skillPool(), node: draft.nodePool(), free: draft.freeSkillSlots() };
+        return {
+          skill: draft.skillPool(),
+          node: draft.nodePool(),
+          upgrade: draft.upgradePool(), // fix-M4a-r4: the layer a full build draws from
+          free: draft.freeSkillSlots(),
+        };
       case 'autoFill':
         // The socket screen's Auto-fill (M4c D7) — the same policy the
         // autopilot uses; refused while combat is live.

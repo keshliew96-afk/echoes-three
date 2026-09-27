@@ -449,7 +449,7 @@ export function createBuildSystem({
       verdict: verdict.state, // 'grey' rides out as the advisory warning
       swapped: prev ? prev.node : null,
     });
-    return { skill: skillId, node: nodeId, slot: target, verdict: verdict.state };
+    return { skill: skillId, node: nodeId, slot: target, verdict: verdict.state, swapped: prev ? prev.node : null };
   }
 
   function unsocket(skillId, slot) {
@@ -1356,28 +1356,96 @@ export function createBuildSystem({
         const filled = row.filter(Boolean).length;
         if (!best || filled < best.filled) best = { id, vacant, filled };
       }
-      if (!best) continue;
+      if (!best) {
+        // No vacant live socket anywhere: an UPGRADE swap (fix-M4a-r4) —
+        // replace the weakest socketed node this one outranks.
+        const up = upgradeFor(nodeId, rows);
+        if (!up) continue;
+        rows.get(up.skill)[up.slot] = { node: nodeId, provenance: 'plan' };
+        plan.push({ skill: up.skill, node: nodeId, slot: up.slot, benchIndex: bi, replaces: up.replaces, why: up.why });
+        continue;
+      }
       rows.get(best.id)[best.vacant] = { node: nodeId, provenance: 'plan' };
       plan.push({ skill: best.id, node: nodeId, slot: best.vacant, benchIndex: bi });
     }
     return plan;
   }
 
+  // ------------------------------------------------------------- upgrades --
+  // fix-M4a-r4 (CONTENT4-F1): a FULL build keeps progressing. A node with no
+  // vacant live socket can still UPGRADE a row by replacing a weaker occupant
+  // (the occupant banks to the bench — socket()'s free swap). The candidate
+  // OUTRANKS an occupant when that occupant is dead weight on its skill (grey
+  // or saturation-inert: score −1) or of a lower rarity (RARITY_RANK: common
+  // 0 < rare 1 < legendary 2) — the same value ladder the shop prices by.
+  // The candidate must be LIVE on the skill and stay within its repetition
+  // limit with the occupant out. Target = the weakest outranked occupant
+  // (lowest score), ties: the lower skill slot, then the lower socket.
+  // Deterministic, no RNG, pure read (the rows may be a planned copy).
+  const occupantScore = (def, rec, slot) =>
+    verdictFor(def, rec.node, slot).state === 'live' ? RARITY_RANK[NODES[rec.node].rarity] : -1;
+
+  function upgradeIn(skillId, nodeId, row = null) {
+    const n = NODES[nodeId];
+    const def = SKILLS[skillId];
+    if (!n || !def) return null;
+    const list = row ?? rowOf(skillId);
+    const copies = list.filter((r) => r && r.node === nodeId).length;
+    if (copies + 1 > n.limit) return null; // the occupant is never this node (same rank)
+    if (verdictFor(def, nodeId).state !== 'live') return null;
+    const rank = RARITY_RANK[n.rarity];
+    let best = null;
+    for (let i = 0; i < list.length; i++) {
+      const rec = list[i];
+      if (!rec || rec.node === nodeId || !NODES[rec.node]) continue;
+      const score = occupantScore(def, rec, i);
+      if (score >= rank) continue;
+      if (!best || score < best.score)
+        best = {
+          skill: skillId,
+          slot: i,
+          replaces: rec.node,
+          score,
+          why: score < 0 ? verdictFor(def, rec.node, i).state : 'rarity', // 'grey' | 'inert' | 'rarity'
+        };
+    }
+    return best;
+  }
+
+  function upgradeFor(nodeId, rows = null) {
+    let best = null;
+    for (const id of ownedIds()) {
+      const up = upgradeIn(id, nodeId, rows ? rows.get(id) : null);
+      if (up && (!best || up.score < best.score)) best = up;
+    }
+    return best;
+  }
+
   function autoFill() {
     if (isCombatActive()) return { denied: 'combat_active', socketed: [] };
     const socketed = [];
     // Re-plan after every placement: a Multiply that just landed can make a
-    // later node's verdict inert, and bench indices shift as cards leave.
-    for (let guard = 0; guard < 64; guard++) {
+    // later node's verdict inert, and bench indices shift as cards leave. An
+    // upgrade swap strictly raises the build's rank sum and a vacant fill
+    // raises its socket count, so this terminates; the guard is a backstop
+    // (32 fills + at most 3 rank steps per socket).
+    for (let guard = 0; guard < 256; guard++) {
       const plan = planFill();
       if (plan.length === 0) break;
       const p = plan[0];
       const r = socket(p.skill, p.node, p.slot, p.benchIndex);
       if (!r || r.denied) break;
-      socketed.push({ skill: p.skill, node: p.node, slot: r.slot });
+      socketed.push(
+        r.swapped ? { skill: p.skill, node: p.node, slot: r.slot, replaced: r.swapped } : { skill: p.skill, node: p.node, slot: r.slot }
+      );
     }
-    events.emit(getTick(), 'build_autofill', { socketed: socketed.length, bench: bench.length });
-    return { socketed, bench: bench.length };
+    const upgraded = socketed.filter((s) => s.replaced).length;
+    events.emit(getTick(), 'build_autofill', {
+      socketed: socketed.length,
+      bench: bench.length,
+      ...(upgraded ? { upgraded } : {}),
+    });
+    return { socketed, bench: bench.length, upgraded };
   }
 
   // Persistence plumbing for the run block (§13: bench + assignments persist
@@ -1481,6 +1549,17 @@ export function createBuildSystem({
     pulseMods,
     autoFill,
     planFill,
+    // fix-M4a-r4: where a node would UPGRADE the build (replace the weakest
+    // socketed node it outranks) — the draft/shop pools, the socket screen's
+    // suggestion and auto-fill all read this one policy.
+    upgradeFor: (nodeId) => {
+      const up = upgradeFor(nodeId);
+      return up ? { skill: up.skill, slot: up.slot, replaces: up.replaces, why: up.why } : null;
+    },
+    upgradeIn: (skillId, nodeId) => {
+      const up = upgradeIn(skillId, nodeId);
+      return up ? { skill: up.skill, slot: up.slot, replaces: up.replaces, why: up.why } : null;
+    },
     grantNode,
     socket,
     unsocket,

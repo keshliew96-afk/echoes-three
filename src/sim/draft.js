@@ -21,6 +21,17 @@
 //   - Clear spoils (M4c): every combat-room clear drops SPOILS_PER_CLEAR nodes
 //     on the bench, drawn without replacement from the live usable pool's
 //     commons and rares.
+//   - A FULL build keeps progressing (fix-M4a-r4, CONTENT4-F1). Every pool is
+//     LAYERED: the FILL pool (`usable_by_party`: a vacant socket where the
+//     node works) is drawn first, exactly as before; only when it cannot
+//     serve a draw does the UPGRADE pool step in — nodes with no vacant
+//     usable socket that OUTRANK a socketed node (a grey / +0 occupant, or a
+//     lower rarity; buildSys.upgradeFor(), the policy auto-fill swaps by). A
+//     node offer, a spoils top-up and an empty shop stratum therefore never
+//     come back empty while the build can still improve; the offer carries
+//     `pool: 'upgrade'` + the swap target. Both layers empty with 4 skills
+//     owned = the build is COMPLETE (reason 'build_complete') — the only case
+//     the §16 "the run moves on" page remains for.
 //
 // Sim discipline: no DOM, no render imports, no wall clock. Every draw comes
 // from the seeded gameplay stream in a fixed order, so one seed replays one
@@ -62,6 +73,11 @@ export const SUBSTITUTE_LINE = Object.freeze({
   skill: 'nothing in your kit sockets a Node — offering a Skill instead',
 });
 export const EMPTY_LINE = 'the run moves on';
+// Why a reward came back empty (the draft page words it — never "spent").
+export const EMPTY_REASON = Object.freeze({
+  build_complete: 'build_complete', // 4 skills and no node fills or outranks a socket
+  no_candidates: 'no_candidates', // defensive: fewer than 4 skills yet no candidate
+});
 
 // build  = () => the build system (nodes block) — pools read its verdicts.
 // slots  = () => skillSys.slotsView() (4 entries, null = empty slot).
@@ -99,23 +115,44 @@ export function createDraftSystem({ rng, build, slots }) {
     return NODE_IDS.filter(usableByParty);
   }
 
+  // fix-M4a-r4 UPGRADE layer: where this node would replace the weakest
+  // socketed node it outranks — null when it fills a vacant socket instead
+  // (that is the FILL layer) or when it improves nothing.
+  function upgradeInfo(nodeId) {
+    const sys = build();
+    if (!sys || typeof sys.upgradeFor !== 'function') return null;
+    if (usableByParty(nodeId)) return null;
+    return sys.upgradeFor(nodeId);
+  }
+
+  // Nodes with NO vacant usable socket that still upgrade the build, sorted
+  // ascending id (the §16 draw order).
+  function upgradePool() {
+    return NODE_IDS.filter((id) => upgradeInfo(id) !== null);
+  }
+
   // ONE candidate for a promised reward type. Returns
   //   { type: 'skill'|'node'|null, id, promised, substituted, line, freeSkillSlots }
   function offer(promised) {
-    const pools = { skill: skillPool(), node: nodePool() };
+    // Node pool = the FILL layer; only when it is empty, the UPGRADE layer.
+    const fill = nodePool();
+    const upgrading = fill.length === 0;
+    const pools = { skill: skillPool(), node: upgrading ? upgradePool() : fill };
     let type = promised;
     let substituted = false;
     if (pools[type].length === 0) {
       const other = type === 'skill' ? 'node' : 'skill';
       if (pools[other].length === 0) {
+        const free = freeSkillSlots();
         return {
           type: null,
           id: null,
           promised,
           substituted: false,
           line: EMPTY_LINE,
-          freeSkillSlots: freeSkillSlots(),
+          freeSkillSlots: free,
           poolSize: 0,
+          reason: free === 0 ? EMPTY_REASON.build_complete : EMPTY_REASON.no_candidates,
         };
       }
       type = other;
@@ -123,7 +160,7 @@ export function createDraftSystem({ rng, build, slots }) {
     }
     const pool = pools[type]; // already ascending-id (both builders sort)
     const id = pool[rng.int(pool.length)];
-    return {
+    const out = {
       type,
       id,
       promised,
@@ -132,6 +169,11 @@ export function createDraftSystem({ rng, build, slots }) {
       freeSkillSlots: freeSkillSlots(),
       poolSize: pool.length,
     };
+    if (type === 'node' && upgrading) {
+      out.pool = 'upgrade';
+      out.upgrade = upgradeInfo(id);
+    }
+    return out;
   }
 
   // §16 shop: SHOP_SIZE (4) node cards WITHOUT REPLACEMENT from the live
@@ -141,25 +183,39 @@ export function createDraftSystem({ rng, build, slots }) {
   // authored against that shelf. If a rarity band is empty after the
   // usable_by_party filter, the slot is backfilled from what is left (and
   // with fewer eligible nodes the shelf simply shows fewer, §16).
+  //
+  // fix-M4a-r4: a stratum the FILL pool cannot serve draws the same rarity
+  // from the UPGRADE pool (so a full build still sees a 15/15/20/25 shelf of
+  // things that improve it), and the backfill takes the fill pool's rest
+  // first, then the upgrade pool's. With a fill pool that serves every
+  // stratum the draws are exactly the pre-fix ones.
   function shopStock() {
     const avail = nodePool();
     const bands = { common: [], rare: [], legendary: [] };
     for (const id of avail) bands[NODES[id].rarity].push(id);
+    let up = null; // the upgrade layer, computed only if a stratum needs it
+    const upPool = () => {
+      if (up === null) up = upgradePool();
+      return up;
+    };
     const picked = [];
     const taken = new Set();
     for (const rarity of SHOP_STRATA) {
-      const band = bands[rarity].filter((id) => !taken.has(id));
+      let band = bands[rarity].filter((id) => !taken.has(id));
+      if (band.length === 0) band = upPool().filter((id) => NODES[id].rarity === rarity && !taken.has(id));
       if (band.length === 0) continue;
       const id = band[rng.int(band.length)];
       taken.add(id);
       picked.push({ node: id, rarity, price: PRICES[rarity] });
     }
     if (picked.length < SHOP_SIZE) {
-      const rest = avail.filter((id) => !taken.has(id));
-      while (picked.length < SHOP_SIZE && rest.length > 0) {
-        const id = rest.splice(rng.int(rest.length), 1)[0];
-        taken.add(id);
-        picked.push({ node: id, rarity: NODES[id].rarity, price: PRICES[NODES[id].rarity] });
+      for (const layer of [() => avail, upPool]) {
+        const rest = layer().filter((id) => !taken.has(id));
+        while (picked.length < SHOP_SIZE && rest.length > 0) {
+          const id = rest.splice(rng.int(rest.length), 1)[0];
+          taken.add(id);
+          picked.push({ node: id, rarity: NODES[id].rarity, price: PRICES[NODES[id].rarity] });
+        }
       }
     }
     return picked;
@@ -168,10 +224,17 @@ export function createDraftSystem({ rng, build, slots }) {
   // Clear spoils (M4c): `n` distinct nodes, drawn without replacement from
   // the live usable pool's commons and rares (sorted ascending id, one seeded
   // draw each — the §16 draw discipline). Fewer when the pool is smaller.
+  // fix-M4a-r4: when the fill pool runs short, the rest of the drop comes
+  // from the upgrade pool's commons and rares (same draw discipline), so a
+  // full build still gets its SPOILS_PER_CLEAR.
   function spoils(n = SPOILS_PER_CLEAR) {
     const pool = nodePool().filter((id) => SPOILS_RARITIES.includes(NODES[id].rarity));
     const out = [];
     while (out.length < n && pool.length > 0) out.push(pool.splice(rng.int(pool.length), 1)[0]);
+    if (out.length < n) {
+      const up = upgradePool().filter((id) => SPOILS_RARITIES.includes(NODES[id].rarity) && !out.includes(id));
+      while (out.length < n && up.length > 0) out.push(up.splice(rng.int(up.length), 1)[0]);
+    }
     return out;
   }
 
@@ -191,6 +254,8 @@ export function createDraftSystem({ rng, build, slots }) {
     spoils,
     ownedCount,
     usableByParty,
+    upgradeInfo,
+    upgradePool,
     skillPool,
     nodePool,
     freeSkillSlots,

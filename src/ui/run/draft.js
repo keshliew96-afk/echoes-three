@@ -12,6 +12,7 @@
 import { esc, isCompact } from './style.js';
 import { skillCardHtml, nodeCardHtml, RARITY_COLOR, NODE_GLYPH } from './cards.js';
 import { NODES } from '../../sim/nodes.js';
+import { SPOILS_PER_CLEAR } from '../../sim/draft.js';
 
 export function createDraftScreen({ run, build }) {
   const el = document.createElement('div');
@@ -86,24 +87,52 @@ export function createDraftScreen({ run, build }) {
         verdict,
         extra,
         compact: isCompact(),
+        upgrade: r.upgrade ?? null, // fix-M4a-r4: a full build's offer names its swap
       })}</div>`;
     } else {
-      host.innerHTML = `<div class="rn-card" style="--rar:${RARITY_COLOR.common}">
-        <div class="rn-cardkind">NOTHING LEFT TO OFFER</div>
-        <div class="rn-cardicon">·</div>
-        <div class="rn-cardname">Empty-handed</div>
-        <div class="rn-body">Both pools are spent.</div></div>`;
+      // fix-M4a-r4: the page says WHY nothing is offered, truthfully. With the
+      // upgrade layer this only happens once no node fills or outranks any
+      // socket of the 4 skills (the old "Both pools are spent" was untrue: the
+      // pools were filtered out by a full build, not spent).
+      // (A reward emptied by the schema-1 save migration carries no reason:
+      // it gets the neutral line, never the build-complete claim.)
+      const complete = r.reason === 'build_complete';
+      host.innerHTML = `<div class="rn-card" style="--rar:${complete ? RARITY_COLOR.legendary : RARITY_COLOR.common}">
+        <div class="rn-cardkind">${complete ? 'BUILD COMPLETE' : 'NOTHING TO OFFER'}</div>
+        <div class="rn-cardicon">${complete ? '★' : '·'}</div>
+        <div class="rn-cardname">${complete ? 'Nothing outranks your build' : 'Empty-handed'}</div>
+        <div class="rn-body">${
+          complete
+            ? 'All 4 skills are equipped and every socket already holds a node no reward could beat.'
+            : 'This reward has nowhere to go in your kit.'
+        }</div></div>`;
     }
     // Clear spoils of THIS room (already on the bench).
-    const sp = view.spoils && view.spoils.room === view.room ? view.spoils.nodes : [];
+    const dropped = !!(view.spoils && view.spoils.room === view.room); // a clear (a soft-fail forfeits: no drop)
+    const sp = dropped ? view.spoils.nodes : [];
+    const spUp = dropped && view.spoils.upgrades ? view.spoils.upgrades : [];
+    const short = dropped && sp.length < SPOILS_PER_CLEAR;
     if (sp.length) {
       spoilsEl.style.display = '';
+      // fix-M4a-r4: a drop that UPGRADES a full build carries ⇧, and the line
+      // says how it gets in (B opens the sockets, F auto-fill swaps it in). A
+      // SHORT drop says why it is short — the pools are not "spent", the
+      // build has outgrown every common and rare that is left.
+      const tail = short
+        ? ' — the last common / rare upgrade: <b>F</b> auto-fill swaps it in'
+        : spUp.length
+          ? ' — <b>⇧</b> upgrades: <b>B</b> sockets · <b>F</b> auto-fill swaps them in'
+          : '';
       spoilsEl.innerHTML = `<b>Spoils</b> → bench: ${sp
         .map((id) => {
           const n = NODES[id];
-          return `<span style="color:${RARITY_COLOR[n ? n.rarity : 'common']}">${esc(NODE_GLYPH[id] ?? '')} ${esc(n ? n.name : id)}</span>`;
+          const up = spUp.includes(id) ? '⇧ ' : '';
+          return `<span style="color:${RARITY_COLOR[n ? n.rarity : 'common']}">${up}${esc(NODE_GLYPH[id] ?? '')} ${esc(n ? n.name : id)}</span>`;
         })
-        .join(' · ')}`;
+        .join(' · ')}${tail}`;
+    } else if (short) {
+      spoilsEl.style.display = '';
+      spoilsEl.innerHTML = '<b>Spoils</b>: none — no common or rare node outranks your build any more';
     } else {
       spoilsEl.style.display = 'none';
       spoilsEl.textContent = '';

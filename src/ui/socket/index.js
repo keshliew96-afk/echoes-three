@@ -265,6 +265,7 @@ export function createSocketScreen({ bus, world }) {
     .nd-rfill .nd-of { font-size: 16px; color: ${PALETTE.warmGrey}; }
     .nd-rfill .nd-verd { display: block; font-size: 16px; font-weight: 800; letter-spacing: 0.03em; margin-top: 2px; }
     .nd-verd.v-live { color: ${PALETTE.hearthAmber}; }
+    .nd-verd.v-upgrade { color: ${PALETTE.paleGold}; }
     .nd-verd.v-grey, .nd-verd.v-inert, .nd-verd.v-limit, .nd-verd.v-full { color: ${PALETTE.bone}; }
     .nd-rstats {
       grid-column: 1 / span 3; font-size: 16px; color: ${PALETTE.bone};
@@ -436,13 +437,19 @@ export function createSocketScreen({ bus, world }) {
     });
   }
 
-  // Per-row verdict of the node in hand: live / grey / inert / limit / full.
+  // Per-row verdict of the node in hand: live / grey / inert / limit / full
+  // / upgrade (fix-M4a-r4: a full row where the node OUTRANKS a socketed one —
+  // the sim's upgradeIn(), the same policy auto-fill swaps by).
   function rowVerdict(sys, sk, nodeId) {
     const n = info(nodeId);
     if (!n) return { k: 'grey', text: '—' };
     const copies = sk.sockets.filter((s) => s && s.node === nodeId).length;
     if (copies >= n.limit) return { k: 'limit', text: `⊘ limit ${n.limit}` };
-    if (!sk.sockets.some((s) => s === null)) return { k: 'full', text: '⊘ full' };
+    if (!sk.sockets.some((s) => s === null)) {
+      const up = typeof sys.upgradeIn === 'function' ? sys.upgradeIn(sk.id, nodeId) : null;
+      if (up) return { k: 'upgrade', text: '⇧ better', up }; // fits the 76 px verdict column
+      return { k: 'full', text: '⊘ full' };
+    }
     const v = sys.verdictFor(sk.id, nodeId);
     if (v.state === 'grey') return { k: 'grey', text: '⊘ grey' };
     if (v.state === 'inert') return { k: 'inert', text: '＋0 inert' };
@@ -462,6 +469,13 @@ export function createSocketScreen({ bus, world }) {
       if (!best || sk.filled < best.filled) best = { r, c, filled: sk.filled };
     });
     if (best) return best;
+    // fix-M4a-r4: no vacant live socket — the upgrade swap auto-fill would
+    // make (the weakest socketed node this one outranks), so Enter swaps it in.
+    const up = typeof sys.upgradeFor === 'function' ? sys.upgradeFor(nodeId) : null;
+    if (up) {
+      const r = view.skills.findIndex((s) => s.id === up.skill);
+      if (r >= 0) return { r, c: up.slot, filled: view.skills[r].filled, upgrade: up };
+    }
     // Nowhere live: the first vacant socket of the first row that is not limit-blocked.
     for (let r = 0; r < view.skills.length; r++) {
       const sk = view.skills[r];
@@ -581,7 +595,10 @@ export function createSocketScreen({ bus, world }) {
     chips.forEach((g, i) => {
       const n = info(g.node);
       const chip = document.createElement('div');
-      const fits = view.skills.some((sk) => rowVerdict(sys, sk, g.node).k === 'live');
+      const fits = view.skills.some((sk) => {
+        const k = rowVerdict(sys, sk, g.node).k;
+        return k === 'live' || k === 'upgrade';
+      });
       chip.className = `nd-chip${n && n.rarity === 'legendary' ? ' nd-legendary' : ''}${fits ? '' : ' nd-cold'}${held && held.node === g.node ? ' nd-held' : ''}`;
       chip.style.setProperty('--rar', RARITY_COLOR[n ? n.rarity : 'common']);
       chip.dataset.node = g.node;
@@ -706,7 +723,7 @@ export function createSocketScreen({ bus, world }) {
       else lines.push(esc(NODE_EFFECT[g.node] ?? ''));
       const per = view.skills.map((sk) => {
         const vd = rowVerdict(sys, sk, g.node);
-        const cls = vd.k === 'live' ? 'nd-live' : 'nd-warn';
+        const cls = vd.k === 'live' || vd.k === 'upgrade' ? 'nd-live' : 'nd-warn';
         return `${esc(sk.name)} <span class="${cls}">${esc(vd.text)}</span>`;
       });
       if (per.length) lines.push(per.join(' · '));
@@ -719,7 +736,7 @@ export function createSocketScreen({ bus, world }) {
         const p = sys.preview(sk.id, held.node);
         const vd = rowVerdict(sys, sk, held.node);
         title = handTag + nodeTitle(held.node, where);
-        const mark = vd.k === 'live' ? '◆' : vd.k === 'inert' ? '＋0' : '⊘';
+        const mark = vd.k === 'live' ? '◆' : vd.k === 'upgrade' ? '⇧' : vd.k === 'inert' ? '＋0' : '⊘';
         const why =
           vd.k === 'limit'
             ? `repeat limit — ${info(held.node).limit} per skill already socketed here`
@@ -728,10 +745,21 @@ export function createSocketScreen({ bus, world }) {
               : p && p.lines
                 ? p.lines.filter((l) => l !== sys.siphonCardLine()).join(' — ')
                 : '';
-        lines.push(`<span class="${vd.k === 'live' ? 'nd-live' : 'nd-warn'}">${mark}</span> ${esc(why)}`);
+        lines.push(`<span class="${vd.k === 'live' || vd.k === 'upgrade' ? 'nd-live' : 'nd-warn'}">${mark}</span> ${esc(why)}`);
+        // fix-M4a-r4: a swap says whether it is an upgrade (the node in hand
+        // outranks this occupant: a grey / +0 one, or a lower rarity), a
+        // sidegrade or a downgrade — words + glyph, never colour alone.
+        const tag = rec ? swapTag(held.node, rec) : '';
         if (held.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(sys.siphonCardLine())}”</span>`);
-        else if (rec) lines.push(`swaps out ${esc(info(rec.node).name)} (it banks to the bench)`);
-        verdict = vd.k === 'limit' ? 'refused on this skill — try another row' : vd.k === 'grey' ? 'legal here, but it contributes nothing on this skill' : 'Enter places it here';
+        else if (rec) lines.push(`${tag ? `${esc(tag)} — ` : ''}swaps out ${esc(info(rec.node).name)} (it banks to the bench)`);
+        verdict =
+          vd.k === 'limit'
+            ? 'refused on this skill — try another row'
+            : vd.k === 'grey'
+              ? 'legal here, but it contributes nothing on this skill'
+              : rec
+                ? `Enter swaps it in here${tag.startsWith('⇧') ? ' — an upgrade' : ''}`
+                : 'Enter places it here';
       } else if (rec) {
         title = nodeTitle(rec.node, where);
         const p = sys.preview(sk.id, rec.node);
@@ -823,6 +851,18 @@ export function createSocketScreen({ bus, world }) {
     else if (r && !r.error) renderAll();
   }
 
+  // fix-M4a-r4: how a swap of the node in hand for a socketed one ranks.
+  function swapTag(nodeId, rec) {
+    const a = info(nodeId);
+    const b = info(rec.node);
+    if (!a || !b || rec.node === nodeId) return '';
+    const ra = RARITY_RANK[a.rarity] ?? 0;
+    const rb = rec.verdict === 'live' ? RARITY_RANK[b.rarity] ?? 0 : -1;
+    if (ra > rb) return rec.verdict === 'live' ? `⇧ upgrade (${b.rarity} → ${a.rarity})` : `⇧ upgrade (replaces a ${rec.verdict === 'grey' ? 'grey' : '+0'} node)`;
+    if (ra === rb) return '⇄ sidegrade';
+    return `⇩ downgrade (${b.rarity} → ${a.rarity})`;
+  }
+
   function autoFill() {
     const sys = sysOk();
     if (!sys || typeof sys.autoFill !== 'function') return null;
@@ -840,7 +880,12 @@ export function createSocketScreen({ bus, world }) {
     held = null;
     renderAll();
     const n = r && r.socketed ? r.socketed.length : 0;
-    toast(n > 0 ? `auto-fill socketed ${n} node${n === 1 ? '' : 's'} · ${r.bench} left on the bench` : 'auto-fill: nothing on the bench has a live socket left');
+    const u = r && r.upgraded ? r.upgraded : 0;
+    toast(
+      n > 0
+        ? `auto-fill socketed ${n} node${n === 1 ? '' : 's'}${u ? ` (${u} upgrade${u === 1 ? '' : 's'} — the replaced node${u === 1 ? ' is' : 's are'} on the bench)` : ''} · ${r.bench} left on the bench`
+        : 'auto-fill: nothing on the bench fills or upgrades a socket'
+    );
     return r;
   }
 

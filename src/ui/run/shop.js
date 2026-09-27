@@ -140,7 +140,7 @@ export function createShopScreen({ run, build }) {
       wrap.innerHTML = `
         <div class="rn-card${n && n.rarity === 'legendary' ? ' rn-legendary' : ''}"
              style="--rar:${rar};--rarGlow:${rar}77">
-          ${nodeCardHtml(item.node, { verdict, extra, owned: item.owned, compact: true, bench: item.sold, row: true })}
+          ${nodeCardHtml(item.node, { verdict, extra, owned: item.owned, compact: true, bench: item.sold, row: true, upgrade: item.sold ? null : item.upgrade ?? null })}
           <div class="rn-stamp">SOLD</div>
         </div>
         <div class="rn-plaque${item.affordable === false ? ' rn-short' : ''}">
@@ -179,7 +179,12 @@ export function createShopScreen({ run, build }) {
     if (!buyAnim) amtEl.textContent = String(s.wallet);
     lastWallet = s.wallet;
     const sig = (s.stock ?? [])
-      .map((i) => `${i.node}:${i.price}:${i.sold ? 1 : 0}:${i.owned}:${i.affordable === false ? 's' : 'a'}`)
+      .map(
+        (i) =>
+          `${i.node}:${i.price}:${i.sold ? 1 : 0}:${i.owned}:${i.affordable === false ? 's' : 'a'}:${
+            i.upgrade ? `${i.upgrade.skill}/${i.upgrade.replaces}` : '-'
+          }`
+      )
       .join('|');
     if (sig !== signature) {
       signature = sig;

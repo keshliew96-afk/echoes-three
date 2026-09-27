@@ -152,9 +152,22 @@ export function skillCardHtml(id) {
 // a narrow shelf card never wraps its header — the round-1 "Ascend" defect was
 // "NODE · legendary" breaking onto two lines, and the M4c 4-card shelf (216 px
 // cards in the compact reflow) has no room for a tag beside "Resonance".
+// fix-M4a-r4 (CONTENT4-F1): a node that UPGRADES a full build names the
+// socket it would take — "⇧ upgrades Spirit Bolt · replaces Quicken" (a grey
+// or +0 occupant is named as such). `upgrade` = draft.upgradeInfo() data.
+export function upgradeLine(upgrade) {
+  if (!upgrade || !upgrade.skill) return '';
+  const sk = SKILLS[upgrade.skill];
+  const occ = NODES[upgrade.replaces];
+  const skillName = sk ? sk.name : upgrade.skill;
+  const occName = occ ? occ.name : upgrade.replaces;
+  const dead = upgrade.why === 'grey' ? 'a grey ' : upgrade.why === 'inert' ? 'a +0 ' : '';
+  return `⇧ upgrades ${skillName} · replaces ${dead}${occName}`;
+}
+
 export function nodeCardHtml(
   id,
-  { verdict = null, extra = null, owned = 0, compact = false, bench = false, row = false } = {}
+  { verdict = null, extra = null, owned = 0, compact = false, bench = false, row = false, upgrade = null } = {}
 ) {
   const n = NODES[id];
   if (!n) return '';
@@ -172,9 +185,11 @@ export function nodeCardHtml(
     <div class="rn-body">${esc(effect)}</div>
     ${extra ? `<div class="rn-body">“${esc(extra)}”</div>` : ''}
     ${
-      verdict
-        ? `<div class="rn-verdict${verdict.startsWith('fits') ? '' : ' rn-cold'}">${esc(verdict)}</div>`
-        : ''
+      upgrade
+        ? `<div class="rn-verdict rn-upgrade">${esc(upgradeLine(upgrade))}</div>`
+        : verdict
+          ? `<div class="rn-verdict${verdict.startsWith('fits') ? '' : ' rn-cold'}">${esc(verdict)}</div>`
+          : ''
     }
     ${
       owned > 0

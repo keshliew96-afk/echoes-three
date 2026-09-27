@@ -229,6 +229,9 @@ export const RUN_CSS = `
   .rn-body { font-size: 17px; color: ${PALETTE.bone}; text-align: center; line-height: 1.35; }
   .rn-verdict { font-size: 17px; color: ${PALETTE.hearthAmber}; text-align: center; }
   .rn-verdict.rn-cold { color: ${PALETTE.warmGrey}; }
+  /* fix-M4a-r4: a node that UPGRADES a full build (glyph ⇧ + words, never
+     colour alone) — Pale Gold, the colour of what the shop sells. */
+  .rn-verdict.rn-upgrade { color: ${PALETTE.paleGold}; font-weight: 700; }
   .rn-note {
     margin-top: 10px; padding: 8px 14px; border-radius: 10px;
     border: 1px solid ${PALETTE.warmGrey}66; background: ${PALETTE.voidCharcoal};
