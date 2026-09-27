@@ -201,6 +201,8 @@ duplicate_in_tick, not_anchor, revive_occupied})` for HUD nudges (§17).
 Player controls the **Healer** (party_index 0, party anchor). AI drives Tank,
 Swordsman, Archer (fixed 4-skill kits, no build growth — the player's build
 grows, allies' don't; that's the intended power curve).
+*PARTY (2026-09-27, ruling A16): superseded — every character grows a build
+(§25); the kits below are the allies' STARTING loadouts.*
 
 | Stat | Healer (mouse) | Tank (badger) | Archer (hare) | Swordsman (fox) |
 |---|---|---|---|---|
@@ -229,6 +231,8 @@ Warding Aura occupies a skill slot when drafted but has no activation (its slot
 icon renders as a passive glyph, never a cooldown wipe).
 
 ### Ally kits (fixed, all damage)
+*PARTY (ruling A16): these are each ally's starting loadout inside an 8-skill
+class pool (§25.2); the AI-cast line below still governs these four skills.*
 **Tank (badger)**: Heavy Slam (arc 34, 5 s, 1.00/40°, cap 3) · Brutal Cleave
 (arc 16/target, 4 s, 0.95/80°, cap 6) · Ground Crack (ground_aoe 10/tick, 8 s,
 range 2.6, radius 0.9, 4 s) · Whirling Guard (nova 20/target, 9 s, 1.3, cap 5).
@@ -499,6 +503,8 @@ visible).
 | invariants | all 4 = 15+15+20+25 = 75 > 72 (never the whole shelf) · any 3 ≤ 60 ≤ 72 (any 3 affordable) |
 | clear spoils | **+2 nodes** to the bench per combat-room clear, rooms 1–6 (M4c; commons + rares from the usable pool; forfeited with the reward on a defend soft-fail) |
 
+*PARTY (ruling A16): every character has its own purse with these numbers;
+the Healer's purse is this wallet (§25.5).*
 Wallet: integer ≥ 0, atomic spend; insufficient funds → `currency_denied` no-op
 (item never hidden or greyed for price). Wiped at run end. Glint UI color Pale
 Gold `#D9B872` with a ≥24 px coin icon.
@@ -657,6 +663,9 @@ realized **+0** (saturation-inert).
 
 ## 16. Draft, shop, path flow
 
+- *PARTY (ruling A16): after every combat room the draft page is the PARTY
+  page — one such card per character, the player's own card focused first
+  (§25.6); everything below holds per card.*
 - **Draft** = ONE candidate card, take-or-decline, no reroll, no confirm dialog,
   no reopen. Skill pool = the draftable healer skills (15 after §23.3) − owned
   (`free_skill_slots = 4 − owned`: at most 4 skills, M4c — a 5th skill is
@@ -1152,6 +1161,7 @@ Every juice-contract event fires its sound slot. Master volume constant, no UI.
 | A13 | (Gauntlet v0.5.1) **Esc opens the pause menu on every page** — combat, draft, path, shop, victory/defeat (docs/gauntlet/PLAN.md §1.5). This supersedes §16 "draft Esc = decline" and §16 settle rule (3) "Esc … stays the decline path": the draft declines with **X** or the Decline button, and X is settle-guarded like Enter (rule (2)). The socket screen is a sub-overlay: its Esc still banks the candidate and closes it, consuming that Esc. A reflexive pause press can never forfeit a reward. |
 | A14 | *(SUPERSEDED 2026-09-25 by A15.)* (Gauntlet v0.5.1) **Portal rule**: the expedition picker (§23.1) opens only in a title-booted session with ≥ 2 acts unlocked; menu-skip / harness boots and single-unlock profiles start the act directly on E (v0.4.63 behaviour). In the picker E, Enter or Space confirms the preselected (last-played) card. |
 | A15 | (CAMPAIGN, 2026-09-25 — the user's CRITICAL REFACTOR) **Linear campaign** (§24, docs/gauntlet/PLAN.md §12): the portal's Begin Run ALWAYS starts a campaign at Level 1 (no picker); clearing a level shows a ~3 s level-clear card while the next level loads, then the next level starts on its own (1 → 2 → 3); the camp returns only after the final level's CAMPAIGN COMPLETE card, a paused "Quit to Lobby", or a defeat card. Other unlocked levels start from the lobby's Level Select (map table beside the portal / L at the prompt); clearing Level N unlocks N+1 permanently. Skills, sockets, bench and Glint carry between levels; HP, downs, statuses and cooldowns are restored; everything level-bound resets. Menu-skip harness boots keep rule 1 of A14 (`?act=N` / `?level=N` start there). |
+| A16 | (PARTY, 2026-09-27 — the user's request) **Per-character builds** (§25, docs/gauntlet/PLAN.md §16): the Tank, Swordsman and Archer get the Healer's build model — at most 4 equipped skills, 8 node sockets per skill, no rarity caps, the repetition limits and grey / inert verdicts — drawn from their OWN class skill pool (8 each; the §7 kit = the starting loadout; a full ally LEARNS a skill into the loadout or its satchel) and a class-matched node pool (6 class nodes + the shared nodes its fantasy allows). Every combat room offers every character a card on one party page (the player's own card first; AI-held cards pre-picked by default, so one Enter still commits); each character has its own purse and shelf; in multiplayer each human builds their own character (the host builds AI-held seats) with 30 s auto-pick deadlines. §7's "allies' builds don't grow" and §12's kit-cast rule are superseded; the Healer is unchanged (§25.11). |
 
 ---
 
@@ -1636,3 +1646,614 @@ deepest room while never cleared). A campaign's score sums its levels
 transition autosaves; a save made on the level-clear card loads back onto the
 card with its remaining time; a save whose run sits in a level this profile
 has not unlocked is refused with the lock line.
+
+## 25. Per-character builds (PARTY, 2026-09-27 — the user's request) — binding design truth
+
+Ruling A16; the state, contracts, flows and gates are docs/gauntlet/PLAN.md
+§16. The user: "Other character add in also their own skill slot skill node
+select option like the healer mouse but the skill and node match the
+character class." Until now only the Healer grew a build; the Tank, the
+Swordsman and the Archer fought with the fixed §7 kits. This section
+supersedes §7's "fixed 4-skill kits, no build growth — the player's build
+grows, allies' don't", §7's ally-kit AI line and §12's kit-cast rule; the
+design oracle (every number, pool and grid cell below in machine-readable
+form) is `docs/gauntlet/party-oracle.json`, written by
+`node tools/gntPARTYD-grid.mjs` (which also re-derives today's Healer grid
+from the same rules and checks it against the real src/sim/nodes.js — 289
+cells, 0 mismatches).
+
+### 25.1 One build model for all four characters
+
+Every party member — Healer (mouse, seat 0), Tank (badger, seat 1),
+Swordsman (fox, seat 2), Archer (hare, seat 3) — has the Healer's build
+model exactly: **at most 4 equipped skills** (keys 1–4 on a human seat),
+**8 node sockets on every skill** (passives included), **no rarity caps**
+(any node of any rarity in any socket), the per-node **repetition limits**
+(copies on one skill, the candidate included, ≤ the node's limit), the §15.5
+**grey / saturation-inert / verdict** display contract, the §15.4 stat
+pipeline, the §15.3 technique rules (ascending socket order 1 → 8, depth-1,
+Siphon's flat-stage rule, an Echo never re-arms its own echo, Resonance's
+per-skill counter), the uncapped per-character **bench** (provenance
+`drafted` / `purchased` / `spoils` / `grant` / `catchup`), socket / unsocket
+only while `combat_active == false`, the hard blocks (`limit`, `full`,
+`no_such_slot`, `combat_active`, `not_on_bench`, `skill_not_owned`) and the
+one **auto-fill** policy (live placements, fewest-filled skill first,
+fix-M4a-r4 upgrade swap). What differs per class is what is IN the pools:
+
+- **Skill pool** — the class's own 8 skills (§25.2). The Healer's pool is
+  unchanged (2 starting + 15 draftable, §7 / §23.3).
+- **Node pool** — the class's 6 class nodes plus the shared nodes its
+  fantasy allows (§25.3). The Healer's pool is unchanged (the 17 shared
+  nodes).
+- **Starting build** — each ally's §7 fixed kit becomes its starting
+  LOADOUT: all 4 skills equipped, every socket empty, bench empty. The
+  Healer starts as before (Mending Bolt + Swift Mend, 2 free slots).
+- **Learning when full — the satchel (allies).** An ally starts with 4
+  equipped skills, so its skill growth follows Darkest Dungeon's hero
+  loadouts: a skill reward TEACHES a class skill, and the player chooses
+  which equipped skill it replaces — or sends the new skill to the
+  **satchel** (known, not equipped). Between rooms the loadout is re-chosen
+  freely from the known skills; never more than 4 are equipped (the user's
+  cap). A skill keeps its 8 sockets and their nodes while it rests in the
+  satchel; nothing in the satchel acts or counts toward pools and verdicts.
+  The Healer never learns a fifth skill (§16 unchanged: with 4 owned, a
+  skill promise becomes a node).
+
+**Class identity (binding; the party critic judges it blind):** the Tank
+protects and controls (taunts, shields, stuns, pulls, thorns, ward); the
+Swordsman strikes and chains close-quarter combos (dashes, a combo
+finisher, parries, cooldown chaining, crits, executes); the Archer kites at
+range (vaults, pins, slows, piercing, the longest reaches, stand-still
+power); the Healer sustains (unchanged). No ally skill heals — Bright Heal
+stays the Healer's.
+
+### 25.2 Class skill pools
+
+Table grammar = §7 (power per instance; cooldown floor §6; `·s` = starting
+kit, numbers VERBATIM from §7 / src/sim/allies.js `ALLY_KITS`). Shapes stay
+the closed §6 set of six; the new behaviours ride plain-data modifiers
+(`dash`, `vault`, `combo`, `parry`, `status`) defined under the tables.
+**AI rule** = when an AI-held seat casts it (§25.8); every rule falls back
+to the §7 range rule once the skill has been ready and unused for 480 ticks
+(`AI_IDLE_FALLBACK_TICKS`, 8 s), so no equipped skill idles. **VFX** follow
+§19.4 (player damage: parchment-white core + amber glow + trail, ≥ 3 layers)
+and §23.3 (stun = Bone ring glyph, slow = Signal Blue ink ring, shield =
+Parchment hex rim + pale shell, ward = soft Bone dome); the class accent
+appears only as a thin trim or ring, never a fill; never Ember, never
+violet, never Bright Heal. **Audio**: one procedural cue per new skill in
+its class's family (the existing `ally_cast_tank` low thud, `ally_cast_sword`
+swish, `ally_cast_archer` string), SFX bus, cast slot, ≤ 2 voices;
+passive pulses ≤ −24 dB, 1 voice, and only when the pulse does something.
+
+**Tank (badger) — protects and controls**
+
+| Skill (id) | Archetype / shape | power | cd s | range | area | count | extra | AI rule | VFX · audio |
+|---|---|---|---|---|---|---|---|---|---|
+| Heavy Slam ·s (`heavy_slam`) | damage / melee_arc | 34 | 5 | 1.0 | 40° | 3 | — | §7: target in reach | existing wedge + a Bone dust ring · `ally_cast_tank` |
+| Brutal Cleave ·s (`brutal_cleave`) | damage / melee_arc | 16 | 4 | 0.95 | 80° | 6 | — | §7 | existing wide wedge · `ally_cast_tank` |
+| Ground Crack ·s (`ground_crack`) | damage / ground_aoe | 10 /tick | 8 | 2.6 | 0.9 | — | 4 s | §7 (placed on the target) | existing ally zone · `azone_spawn` |
+| Whirling Guard ·s (`whirling_guard`) | damage / nova | 20 | 9 | — | 1.3 | 5 | — | §7: target inside 1.3 u | existing ring · `ally_cast_tank` |
+| **Taunting Roar** (`taunting_roar`) | damage / nova | 6 | 10 | — | 2.0 | 6 | **taunt** 150 ticks (the Stag 60) | a hostile within 2.0 u targets a party member other than the Tank (or the Waystone), or ≥ 3 hostiles within 2.0 u | Parchment shockwave ring with a thin Tank-accent inner band; a Parchment "!" plate over each taunted enemy + a 0.3 s Parchment tether to the Tank · `tank_roar` (low growl + frame drum) |
+| **Shield Wall** (`shield_wall`) | **guard** / direct | 24 shield | 10 | 3.0 | — | 2 | recipients = the bottom-2 HP fractions in range, Tank eligible (§8 smart-target rules, self exempt from the range test); shield lasts 240 ticks | a party member in range below 75% HP, or standing inside a live Ember telegraph | a Warm Grey plate glyph flies Tank → recipient (0.25 s), then the §23.3 shell + portrait hex rim · `tank_shield` (wood knock + soft bell) |
+| **Shoulder Charge** (`shoulder_charge`) | damage / melee_arc + **dash** | 22 | 7 | 0.9 | 60° | 3 | dash ≤ 2.4 u at 9 u/s toward the target; **stun** 36 ticks (non-boss) | target beyond 1.1 u and within 3.3 u; or a hostile within 1.0 u of the Healer while the Tank is > 1.5 u from the Healer (peel — it charges that hostile) | Bone dust trail along the dash, arrival wedge, Bone stun rings · `tank_charge` (whoosh + thud) |
+| **Iron Stance** (`iron_stance`) | **passive** (ally field) / aura | 3 shield per pulse | — | — | 1.3 | — | 1.0 s cadence; every party member inside (the Tank included) +3 shield, this source capped at 12, 240 ticks | always on | a faint Warm Grey hex ring at 1.3 u; a pulse flickers the hex rim on the shielded · `tank_stance` (soft low hum, only when a shield grows) |
+
+**Swordsman (fox) — strikes and chains close-quarter combos**
+
+| Skill (id) | Archetype / shape | power | cd s | range | area | count | extra | AI rule | VFX · audio |
+|---|---|---|---|---|---|---|---|---|---|
+| Flurry ·s (`flurry`) | damage / melee_arc | 11 | 3 | 0.8 | 60° | 6 | — | §7 | existing wedge · `ally_cast_sword` |
+| Lunge Strike ·s (`lunge_strike`) | damage / melee_arc | 26 | 4 | 1.3 | 30° | 2 | — | §7 | existing narrow wedge · `ally_cast_sword` |
+| Blade Storm ·s (`blade_storm`) | damage / nova | 14 | 7 | — | 1.0 | 5 | — | §7 | existing ring · `ally_cast_sword` |
+| Caltrops ·s (`caltrops`) | damage / ground_aoe | 8 /tick | 6.5 | 2.0 | 0.7 | — | 5 s | §7 | existing ally zone · `azone_spawn` |
+| **Fox Step** (`fox_step`) | damage / melee_arc + **dash** | 18 | 5 | 0.8 | 50° | 3 | dash ≤ 2.0 u at 10 u/s, i-frames while dashing | target beyond 0.75 u (the basic reach) and within 2.8 u | a Parchment speed-line ribbon with a thin Swordsman-accent edge, arrival wedge · `sword_step` (swish + blade ring) |
+| **Crescent Finisher** (`crescent_finisher`) | damage / melee_arc + **combo** | 20 | 6 | 1.0 | 70° | 5 | +50% power per OTHER Swordsman skill that connected in the last 120 ticks (max 2 stacks, +100%) | combo ≥ 1 and the target in reach | a wide crescent drawn with 1–3 Parchment bands by stack; 1–2 small diamond pips above the fox while a combo is open (glyph channel) · `sword_finisher` (ring sweep, +3 semitones per stack) |
+| **Riposte** (`riposte`) | damage / melee_arc + **parry** | 30 (the counter) | 8 | 0.9 | 90° | 3 | a 36-tick guard: the next hostile damage instance on the fox (any shape, any direction, the Stag included) is blocked — 0 damage, `hit_blocked`, the Bone "blocked" numeral — and answered at once by the counter arc toward the attacker; no hit in the window → no counter (the cooldown is spent) | a hostile within 1.0 u targets the fox, or a telegraph covers the fox | a crossed-blades Parchment glyph over the fox during the guard; on a block a Parchment spark + the arc · `sword_parry` (bell tink + slash) |
+| **Razor Wake** (`razor_wake`) | **passive** (hostile field) / aura | 4 per pulse | — | — | 0.9 | 3 | 1.0 s cadence; the 3 nearest hostiles inside; **no knockback** (it must never push foes out of the fox's reach) | always on | 3 Parchment blade glints orbiting at 0.9 u; a spark per pulse hit · `sword_wake` (soft whirr, only on a hit) |
+
+**Archer (hare) — kites at range**
+
+| Skill (id) | Archetype / shape | power | cd s | range | area | count | extra | AI rule | VFX · audio |
+|---|---|---|---|---|---|---|---|---|---|
+| Piercing Shot ·s (`piercing_shot`) | damage / projectile | 30 | 3 | 5.5 | 0 | 1 | speed 6.2 (a single-target shot as authored; Skewer makes it pierce) | §7 | existing bolt · `ally_cast_archer` |
+| Volley ·s (`volley`) | damage / projectile | 14 /bolt | 4.5 | 4.8 | 0 | 3 (fan) | speed 5.4 | §7 | existing fan · `ally_cast_archer` |
+| Detonating Charge ·s (`detonating_charge`) | damage / ground_aoe | 12 /tick | 7 | 4.2 | 0.85 | — | 3 s | §7 | existing ally zone · `azone_spawn` |
+| Sundering Nova ·s (`sundering_nova`) | damage / nova | 16 | 8 | — | 1.1 | 4 | — | §7 | existing ring · `ally_cast_archer` |
+| **Vault Shot** (`vault_shot`) | damage / projectile + **vault** | 18 | 6 | 4.5 | 0 | 1 | speed 6.0; the hare first vaults 1.6 u directly away from the nearest hostile over 10 ticks (i-frames), then fires; a hit **slows** 30% for 90 ticks | a hostile within 1.4 u of the Archer | Bone leaf-swirl motes at take-off, the §19.4 bolt, the Signal Blue slow ring · `archer_vault` (cloth flap + twang) |
+| **Pinning Arrow** (`pinning_arrow`) | damage / projectile | 20 | 7 | 5.0 | 0 | 1 | speed 6.0; **stun** 45 ticks (non-boss) | prefers a hostile within 2.0 u of the Healer (or the Waystone), else the current target; never the Stag while another target qualifies | a heavy bolt with a Parchment fletch trail; a Bone stake glyph + stun ring on the target · `archer_pin` (heavy twang + thunk) |
+| **Rain of Arrows** (`rain_of_arrows`) | damage / ground_aoe | 7 /tick | 11 | 5.0 | 1.4 | — | 4 s; hostiles inside **slowed** 25% (72 ticks, refreshed by every zone tick) | the hostile position in range with the most hostiles within 1.4 u when ≥ 3, else the target | falling parchment-white streaks inside a translucent Warm Grey blob (never an Ember look), ticking numerals, slow rings · `archer_rain` (rising whistles; a soft patter per tick) |
+| **Kestrel Watch** (`kestrel_watch`) | **passive** (hostile field) / aura | 6 per pulse | — | — | 4.0 | 1 | 1.0 s cadence; strikes the nearest hostile within 4.0 u (a spectral kestrel dart; basic-hit knockback) | always on | a small Parchment-and-Bone kestrel glyph circling the hare; a dart streak per pulse · `archer_kestrel` (tiny chirp + hiss) |
+
+**The new mechanics** (plain data on entities / seat state; sim-owned; the
+§23.8 grammar; none is a new delivery shape):
+
+- **taunt** — a new status kind, hostile-only, `src` = the taunter. While
+  it is live and its source is standing (not Downed), the enemy's target
+  IS the source: it overrides the §11 nearest-target rule and the defend
+  room's objective-inclusive set (interposition by force). Refresh = max
+  expiry, never stacks; cap 240 ticks. **The Stag**: a taunt lasts ≤ 60
+  ticks, then 300 ticks of taunt immunity (the §23.8 stun rule's shape).
+  The §11 telegraph governor is untouched (a taunt changes WHO is targeted,
+  never how many telegraph at once). Glyph: a Parchment "!" plate above the
+  enemy — a shape channel, never Ember.
+- **dash / vault** — a caster displacement before the delivery, swept
+  against walls and colliders like the §5 dodge; i-frames for its ticks
+  when `iframes` (Fox Step, Vault Shot — Shoulder Charge has none); the
+  ally's §12 steering is suspended while it runs; a dash stops at the
+  delivery's reach from its target and never carries an AI-held ally past
+  its leash; a vault moves directly away from the nearest hostile. Never
+  scaled by haste / slow (§3.6 (b): dodges never are).
+- **combo** — per Swordsman seat, the tick at which each of its skills last
+  CONNECTED (≥ 1 hit). Crescent Finisher counts the OTHER skills inside its
+  120-tick window at cast time.
+- **parry** — the §3.6 (c) `guard` data put on the fox for the window
+  (`shapes: ['*']`, 360°); the first blocked instance ends it and fires the
+  counter; `hit_blocked` carries `parry: true`. The block precedes the crit
+  roll (no RNG drawn), exactly as the Ram's guard.
+- **guard archetype** — an active whose output is a protective status on
+  party members (Shield Wall). Its node column is §25.3's "guard".
+- **passive fields** — `field: 'ally'` (Warding Aura, Quiet Hearth, Iron
+  Stance) keeps the §15.3 / §23.4 passive column; `field: 'hostile'` (Razor
+  Wake, Kestrel Watch) pulses damage and has its own column (§25.3).
+- **cast-time power stage** (§15.4 extended): combo, Momentum and Steady
+  Aim add to the additive-pct stage of THAT cast (with Sharpen); Resonance
+  and Ascend stay multiplicative; Execute (×2 on a low-HP target) is
+  applied per instance after the cast's power is resolved; Lethality
+  changes that instance's crit multiplier; Heartseeker forces its crit
+  result (the roll is still drawn, so the seeded stream's order never
+  changes). Per instance: base → +flat → ×(1 + Σpct) → ×Πmult → Execute →
+  inspired → crit → exposed × ward → shield → HP.
+
+### 25.3 Nodes — class nodes and shared access
+
+Six class nodes per class, all techniques, each exclusive to its class. The
+§15.3 technique rules hold: they fire in ascending socket order; their
+output (taunts, stuns, pulls, shields, cooldown cuts, counters, hops, thorns)
+never triggers a technique (depth-1); a node reinterprets per skill — the
+column is the skill's archetype, the cell may be grey or saturation-inert.
+
+**Tank nodes**
+
+| Node (glyph) | Rarity | Limit | on a damage skill | on a guard skill (Shield Wall) | on an ally-field passive (Iron Stance) |
+|---|---|---|---|---|---|
+| Provoke (‼) | common | 1 | hit non-boss enemies are taunted onto the Tank for 90 ticks (the Stag 45); every zone tick refreshes | hostiles within 1.5 u of each recipient are taunted onto the Tank for 60 ticks | each pulse taunts the 2 nearest hostiles inside for 72 ticks |
+| Brace (▣) | common | 2 | every cast shields the Tank +8 per copy (240 ticks; §23.8 cap) | same | each pulse +2 per copy to the Tank (cap 12) |
+| Tremor (∿) | rare | 1 | area deliveries (arc, nova, zone): hit non-boss enemies stunned 18 ticks (a zone: its first tick on each enemy; the §23.8 immunity applies) | GREY | GREY |
+| Anchor (⤓) | rare | 1 | area deliveries: non-boss enemies hit are PULLED 0.5 u toward the Tank (a zone: toward its centre) instead of knocked back | GREY | GREY |
+| Retaliate (↺) | rare | 1 | for 120 ticks after the cast, every hostile damage instance on the Tank answers its attacker with 25% of this skill's flat-stage power (no crit roll — Siphon's rule) | same | GREY |
+| Aegis (⬡) | legendary | 1 | while this skill is on cooldown the Tank has ward 20% (applied at the cast for the resolved cooldown, ≤ 600 ticks) | same, and the recipients ward 20% for their shield's life | allies inside ward 10% (pulse-refreshed) |
+
+**Swordsman nodes**
+
+| Node (glyph) | Rarity | Limit | on a damage skill | on a hostile-field passive (Razor Wake) |
+|---|---|---|---|---|
+| Flow (⟳) | common | 2 | a cast that connects cuts every OTHER Swordsman skill's remaining cooldown by 0.3 s per copy (once per cast; a zone: its first connecting tick) | each pulse that hits cuts the others by 0.1 s per copy |
+| Momentum (⇶) | common | 1 | +12% power per distinct OTHER Swordsman skill cast in the last 120 ticks (max +36%, additive with the combo) | pulses +12% per skill cast in the last 120 ticks (max +36%) |
+| Parry (⟂) | common | 1 | after the cast a 24-tick parry (Riposte's rules; the counter = one melee_arc instance of 50% resolved power on the attacker); on Riposte: its window +24 ticks | GREY |
+| Pursuit (↗) | rare | 1 | self-anchored deliveries (arc, nova): dash ≤ 1.2 u toward the target first (Fox Step's dash rules); on Fox Step: +1.0 u of dash; Riposte and Caltrops GREY | GREY |
+| Lethality (✕) | rare | 1 | crits from this skill deal ×2.2 instead of ×1.5 (the roll is unchanged) | same on pulses |
+| Execute (⌖) | legendary | 1 | ×2 power on a hostile at or below 35% HP (read before the instance; the Stag included) | same on pulses |
+
+**Archer nodes**
+
+| Node (glyph) | Rarity | Limit | on a damage skill | on a hostile-field passive (Kestrel Watch) |
+|---|---|---|---|---|
+| Skewer (→) | common | 2 | projectile: pierces +1 enemy per copy (full power each, Pale Lance's pierce rule); other shapes GREY | GREY |
+| Concussive (⊙) | common | 1 | non-boss hits knocked back ×2 (skill 0.72 → 1.44 u; the Stag immune as always) | same on pulses |
+| Steady Aim (⊡) | rare | 1 | +40% power when the Archer has not moved in the 30 ticks before the cast (a zone: at placement) | pulses +40% while it has stood still 30 ticks |
+| Disengage (↶) | rare | 1 | after the cast the Archer hops 1.0 u directly away from the nearest hostile within 2.5 u (swept, 8 i-frame ticks); on Vault Shot: the vault +0.8 u | GREY |
+| Scatter (⁂) | rare | 1 | ground_aoe: 3 zones of 60% radius and 60% power in a triangle 0.8 u around the aim point; projectile: a bolt spent at max range without a hit bursts into 3 shards (±30°, 40% power, 1.5 u); nova GREY | GREY |
+| Heartseeker (♡) | legendary | 1 | the first instance of each cast on each target is a guaranteed crit (the roll is still drawn) | every pulse instance is a guaranteed crit |
+
+Glyphs are single BMP symbols with no emoji presentation, distinct from
+every §15/§23 glyph (ui/run/cards.js `NODE_GLYPH`); rarity rides the card
+rim AND text (§15.5 colour-blind fence).
+
+**Shared-node access per class** (a class's node pool = its 6 class nodes +
+these):
+
+| Class | Shared nodes it may take | Pool | Rarity bands (c / r / l) |
+|---|---|---|---|
+| Healer | all 17 (unchanged) | 17 | 8 / 7 / 2 |
+| Tank | Sharpen, Quicken, Multiply, Ascend, Widen, Reach, Linger, Echo, Snare, Galvanize, Bulwark, Resonance | 18 | 8 / 7 / 3 |
+| Swordsman | Sharpen, Quicken, Multiply, Ascend, Widen, Reach, Keen, Siphon, Echo, Detonate, Galvanize, Resonance | 18 | 9 / 6 / 3 |
+| Archer | Sharpen, Quicken, Multiply, Ascend, Reach, Linger, Keen, Bounce, Split, Snare, Detonate, Echo, Resonance | 19 | 7 / 9 / 3 |
+
+Left out on purpose (class fantasy): the Tank takes no Bounce / Split (no
+bolts), Siphon (the Healer sustains), Keen (crit belongs to the Swordsman) or
+Detonate (explosions belong to the Archer); the Swordsman no Bounce / Split,
+Snare / Linger / Bulwark (control and shields belong to the Tank); the
+Archer no Widen (its areas grow by Scatter), Siphon, Galvanize or Bulwark.
+
+**Shared nodes on the two new columns** (the damage column is §15.3 /
+§23.4's, unchanged; stat nodes follow the §15.5 stat-key rule):
+
+| Node | on a guard skill (Shield Wall) | on a hostile-field passive (Razor Wake, Kestrel Watch) |
+|---|---|---|
+| Sharpen / Ascend | shield amount +25% / ×2 | pulse damage +25% / ×2 |
+| Quicken | cooldown −15% | GREY (no cooldown) |
+| Multiply | +1 recipient (2 → 3; saturation-inert once the count covers the 4-member party) | +1 target (3 → 4, 1 → 2) |
+| Widen | GREY (direct — no area) | field radius +25% |
+| Reach | eligibility range +25% | GREY (no range) |
+| Linger | shield lifetime +50% (240 → 360 ticks) | GREY (nothing lasts) |
+| Keen | GREY — shields never crit (Iron Stance likewise) | crit chance +0.15 |
+| Bounce | the shield hops to the next-lowest-HP other ally within 2.2 u, full power, 1 hop per copy | GREY |
+| Siphon | GREY — a shield drains nothing | each pulse that hits heals the caster 25% of flat-stage pulse power (once per pulse) |
+| Echo | recast 1.0 s later at 50% | Reapply: one bonus pulse every 3.0 s |
+| Detonate | a shield from this skill that breaks bursts for 50% resolved power, r 1.2, around its bearer (damage) | kills by a pulse explode: 50% power, r 1.2 |
+| Snare | shielded allies haste 20% for 90 ticks | hostiles hit slowed 25% (pulse-refreshed) |
+| Galvanize | shielded allies inspired +15% for 180 ticks | hostiles hit exposed +10% (pulse-refreshed) |
+| Bulwark | the Tank also gains 50% of each shield it grants | caster shield 20% of pulse damage (cap 10) |
+| Split | the 2 nearest other allies within 2.5 u of each recipient get 40% | GREY |
+| Resonance | every 3rd cast ×2 | every 3rd pulse ×2 |
+
+**Saturation-inert** (§15.5 "+0", never the grey strike) extends to:
+Multiply on a guard direct whose count already covers the party; Widen on
+an arc already at the 90° clamp (Riposte; a SECOND Widen on Brutal Cleave:
+80° → 90° → 90° realizes +0 on the second copy, judged per copy as
+socketed); a class node whose effect the skill already exceeds (Provoke on
+Taunting Roar — it taunts 150 ticks; Tremor on Shoulder Charge — it stuns
+36). Linger never lifts a stun past the §23.8 60-tick cap (Pinning Arrow
+45 → 60, not 68) nor a taunt past 240.
+
+### 25.4 Node × skill grids (generated — `node tools/gntPARTYD-grid.mjs --md`)
+
+`live` = contributes; `GREY` = legal, contributes nothing (§15.5 strike);
+`inert` = saturation-inert (+0). "live cap" = Σ repetition limits of the
+live nodes — every class skill can fill all 8 sockets with live nodes
+(minimum 14 / 17 / 12). Every cell holds on all 8 sockets. The per-cell
+effect text is in `docs/gauntlet/party-oracle.json`.
+
+#### Tank — node × skill grid (8 skills × 18 nodes = 144 cells)
+
+| Skill | Sharpen | Quicken | Multiply | Ascend | Widen | Reach | Linger | Echo | Snare | Galvanize | Bulwark | Resonance | Provoke | Brace | Tremor | Anchor | Retaliate | Aegis | live cap |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Heavy Slam ·s | live | live | live | live | live | live | GREY | live | live | live | live | live | live | live | live | live | live | live | 22 |
+| Brutal Cleave ·s | live | live | live | live | live | live | GREY | live | live | live | live | live | live | live | live | live | live | live | 22 |
+| Ground Crack ·s | live | live | GREY | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | 22 |
+| Whirling Guard ·s | live | live | live | live | live | GREY | GREY | live | live | live | live | live | live | live | live | live | live | live | 20 |
+| Taunting Roar | live | live | live | live | live | GREY | live | live | live | live | live | live | inert | live | live | live | live | live | 20 |
+| Shield Wall | live | live | live | live | GREY | live | live | live | live | live | live | live | live | live | GREY | GREY | live | live | 19 |
+| Shoulder Charge | live | live | live | live | live | live | live | live | live | live | live | live | live | live | inert | live | live | live | 22 |
+| Iron Stance | live | GREY | GREY | live | live | GREY | GREY | live | live | live | live | live | live | live | GREY | GREY | GREY | live | 14 |
+
+Grey / inert reasons: Heavy Slam × Linger GREY: nothing on this skill lasts — no duration to extend · Brutal Cleave × Linger GREY: nothing on this skill lasts — no duration to extend · Ground Crack × Multiply GREY: no count stat on this skill · Whirling Guard × Reach GREY: no range stat on this skill · Whirling Guard × Linger GREY: nothing on this skill lasts — no duration to extend · Taunting Roar × Reach GREY: no range stat on this skill · Taunting Roar × Provoke inert: +0 — this skill already taunts longer (150 ticks) · Shield Wall × Widen GREY: single-target shape — no area to widen · Shield Wall × Tremor GREY: no hostile delivery to stagger with · Shield Wall × Anchor GREY: no hostile area delivery to pull with · Shoulder Charge × Tremor inert: +0 — this skill already stuns longer (36 ticks) · Iron Stance × Quicken GREY: no cooldown stat on this skill · Iron Stance × Multiply GREY: no count stat on this skill · Iron Stance × Reach GREY: no range stat on this skill · Iron Stance × Linger GREY: nothing on this skill lasts — no duration to extend · Iron Stance × Tremor GREY: a passive field — nothing here for this technique to act on · Iron Stance × Anchor GREY: a passive field — nothing here for this technique to act on · Iron Stance × Retaliate GREY: a passive field — nothing here for this technique to act on.
+
+#### Swordsman — node × skill grid (8 skills × 18 nodes = 144 cells)
+
+| Skill | Sharpen | Quicken | Multiply | Ascend | Widen | Reach | Keen | Siphon | Echo | Detonate | Galvanize | Resonance | Flow | Momentum | Parry | Pursuit | Lethality | Execute | live cap |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Flurry ·s | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | 23 |
+| Lunge Strike ·s | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | 23 |
+| Blade Storm ·s | live | live | live | live | live | GREY | live | live | live | live | live | live | live | live | live | live | live | live | 21 |
+| Caltrops ·s | live | live | GREY | live | live | live | live | live | live | live | live | live | live | live | live | GREY | live | live | 21 |
+| Fox Step | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | 23 |
+| Crescent Finisher | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | 23 |
+| Riposte | live | live | live | live | inert | live | live | live | live | live | live | live | live | live | live | GREY | live | live | 20 |
+| Razor Wake | live | GREY | live | live | live | GREY | live | live | live | live | live | live | live | live | GREY | GREY | live | live | 17 |
+
+Grey / inert reasons: Blade Storm × Reach GREY: no range stat on this skill · Caltrops × Multiply GREY: no count stat on this skill · Caltrops × Pursuit GREY: the delivery is placed at range — nothing to close · Riposte × Widen inert: +0 — already a full 90° half-angle (the §23.4 clamp) · Riposte × Pursuit GREY: the counter answers an attacker already in reach · Razor Wake × Quicken GREY: no cooldown stat on this skill · Razor Wake × Reach GREY: no range stat on this skill · Razor Wake × Parry GREY: a passive field — nothing here for this technique to act on · Razor Wake × Pursuit GREY: a passive field — nothing here for this technique to act on.
+
+#### Archer — node × skill grid (8 skills × 19 nodes = 152 cells)
+
+| Skill | Sharpen | Quicken | Multiply | Ascend | Reach | Linger | Keen | Bounce | Split | Snare | Detonate | Echo | Resonance | Skewer | Concussive | Steady Aim | Disengage | Scatter | Heartseeker | live cap |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Piercing Shot ·s | live | live | live | live | live | GREY | live | live | live | live | live | live | live | live | live | live | live | live | live | 23 |
+| Volley ·s | live | live | live | live | live | GREY | live | live | live | live | live | live | live | live | live | live | live | live | live | 23 |
+| Detonating Charge ·s | live | live | GREY | live | live | live | live | GREY | GREY | live | live | live | live | GREY | live | live | live | live | live | 18 |
+| Sundering Nova ·s | live | live | live | live | GREY | GREY | live | GREY | GREY | live | live | live | live | GREY | live | live | live | GREY | live | 15 |
+| Vault Shot | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | 24 |
+| Pinning Arrow | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | live | 24 |
+| Rain of Arrows | live | live | GREY | live | live | live | live | GREY | GREY | live | live | live | live | GREY | live | live | live | live | live | 18 |
+| Kestrel Watch | live | GREY | live | live | GREY | GREY | live | GREY | GREY | live | live | live | live | GREY | live | live | GREY | GREY | live | 12 |
+
+Grey / inert reasons: Piercing Shot × Linger GREY: nothing on this skill lasts — no duration to extend · Volley × Linger GREY: nothing on this skill lasts — no duration to extend · Detonating Charge × Multiply GREY: no count stat on this skill · Detonating Charge × Bounce GREY: needs a retargetable impact (projectile or direct) · Detonating Charge × Split GREY: needs a retargetable impact (projectile or direct) · Detonating Charge × Skewer GREY: only a bolt can pierce · Sundering Nova × Reach GREY: no range stat on this skill · Sundering Nova × Linger GREY: nothing on this skill lasts — no duration to extend · Sundering Nova × Bounce GREY: needs a retargetable impact (projectile or direct) · Sundering Nova × Split GREY: needs a retargetable impact (projectile or direct) · Sundering Nova × Skewer GREY: only a bolt can pierce · Sundering Nova × Scatter GREY: a self burst has nothing to scatter · Rain of Arrows × Multiply GREY: no count stat on this skill · Rain of Arrows × Bounce GREY: needs a retargetable impact (projectile or direct) · Rain of Arrows × Split GREY: needs a retargetable impact (projectile or direct) · Rain of Arrows × Skewer GREY: only a bolt can pierce · Kestrel Watch × Quicken GREY: no cooldown stat on this skill · Kestrel Watch × Reach GREY: no range stat on this skill · Kestrel Watch × Linger GREY: nothing on this skill lasts — no duration to extend · Kestrel Watch × Bounce GREY: a passive field — nothing here for this technique to act on · Kestrel Watch × Split GREY: a passive field — nothing here for this technique to act on · Kestrel Watch × Skewer GREY: only a bolt can pierce · Kestrel Watch × Disengage GREY: a passive field — nothing here for this technique to act on · Kestrel Watch × Scatter GREY: a passive field — nothing here for this technique to act on.
+
+### 25.5 Supply — what each character receives, per level
+
+Every combat room clear (rooms 1–6 of every level, the defend soft-fail
+rule of §11 unchanged — a forfeit forfeits every character's reward and
+spoils) pays EVERY character; the shop pays each from its own shelf:
+
+| Source | Healer (unchanged) | Each ally (Tank, Swordsman, Archer) |
+|---|---|---|
+| Clear stipend | +12 Glint to the Healer's purse (= the §14 wallet) | +12 Glint to its own purse |
+| Clear spoils → its own bench | 2 nodes (commons + rares; the fill layer, then the fix-M4a-r4 upgrade layer) | **1** node (same rule, its class pool) |
+| Room reward (the party page) | 1 card: the door's promise (skill or node, §16) | 1 card: the same promise — a skill promise is a LEARN offer from its class pool (§25.1), a node promise a node from its class pool |
+| Shop (room 7, one visit) | its 4-card shelf: 2 common + 1 rare + 1 legendary at 15 / 15 / 20 / 25 | its own 4-card class shelf, same strata and prices |
+| Purse at the shop | 72 (= 12 × 6, §14 unchanged) | 72 — the §14 invariants hold per purse (the whole shelf 75 > 72, any three ≤ 60) |
+
+- **Growth arc** (expected, default autopilot + the §25.8 AI, doors 50/50):
+  each ally ≈ 6 spoils + ≈ 3.5 node rewards + ≤ 3 buys ≈ 12–13 nodes a
+  level → ≈ 12 / 32 sockets at the Level 1 Stag, ≈ 25 / 32 at the Level 2
+  Stag, 32 / 32 during Level 3, then the upgrade layer keeps improving it
+  (a full build keeps progressing, §14 fix-M4a-r4 note, per character). The
+  Healer keeps its faster arc (32 / 32 by the Level 2 Stag). Skills: ≈ 2–3
+  learn offers per ally per level (room 1 always promises a skill); the 4
+  new class skills are known by about the middle of Level 2, after which a
+  skill promise substitutes a node for that ally ("all Tank skills known —
+  offering a Node instead", the §16 substitution line). PARTY measures and
+  records the real arc (PLAN GP.7) and tunes only the ally spoils count (1)
+  if an ally sits outside 8–16 / 32 at the Level 1 Stag or 20–30 / 32 at the
+  Level 2 Stag.
+- **No flood of decisions**: spoils and the AI-held seats' cards need no
+  input (§25.6 Suggested); the player's per-room input count stays the
+  Healer-only flow's ONE Enter by default.
+- **Purses, not one wallet.** Each character carries its own Glint purse;
+  a purse buys only from its own character's shelf. The Healer's purse IS
+  the §14 wallet (every Healer number unchanged); four builds never compete
+  for one wallet, and a network party never contends for coins. The HUD's
+  Glint readout shows the viewed character's purse (the Healer in
+  single-player).
+- **Starter grant** (a Level-N start, §24): the Healer's §23.2 grant is
+  unchanged; each ally additionally receives `STARTER_GRANT[N].allies`
+  (learn draws, node draws in pairs + auto-fill, legendary draws, purse
+  Glint) = the median carried ally build at that level's card (§25.10).
+
+### 25.6 Selection UX — rewards, shop, socket screen
+
+Benchmarks: **Across the Obelisk** (every hero gets its own reward after a
+fight, shown with the hero's portrait; in co-op each player picks for their
+own heroes at the same time), **Darkest Dungeon** (a roster strip to pick
+the hero; a per-hero skill loadout — more skills known than the 4
+equipped, changed out of combat), **Children of Morta** (per-character
+growth, one family roster to switch between). Echoes takes AtO's
+owner-tagged per-hero reward, DD's roster strip and known-vs-equipped
+loadout, and keeps the Healer-only flow's speed.
+
+**The party strip** — ONE component on the reward page, the shop shelf, the
+socket screen, the level-clear card and the Setting-out card: 4 tabs in
+party order (Healer · Tank · Swordsman · Archer = the command bar's
+portrait order = F1–F4). Each tab = the rendered portrait (§17 head), the
+class glyph drawn in Parchment ink (Healer bell, Tank shield block,
+Swordsman diagonal blade, Archer bow arc — the §19.2 silhouette props), the
+class name, a thin class-accent underline, and a state chip (reward: "✓
+Take" / "✕ Leave" / "AI ✓ Take" / "… 18 s" / "—"; shop: "◉ 72"; socket:
+"19/32 · ▲3" = sockets filled + bench nodes waiting). The viewed tab is
+raised, outlined in Hearth Amber (§19.1 selection) and carries a ▼ caret —
+never colour alone. In a network session each tab names its owner: "you",
+"AI" or the player's name.
+
+**Ownership on every item**: every card, shelf card and socket row carries
+an owner band ("FOR THE TANK" + the portrait + glyph + accent stripe) and
+`data-seat` for probes.
+
+**Switching character** — ≤ 2 inputs from any tab to any other (1 with a
+direct key), on the app's existing tab convention (PLAN §3.3: Q / E,
+PageUp / PageDown and pad LB / RB are tabPrev / tabNext): **Q / E** or
+**PgUp / PgDn** (previous / next, wrapping), **F1–F4** (direct — the
+portrait keys), a **click** on a tab (or on a command-bar portrait while a
+build page is open), pad **LB / RB**. Switching is navigation, never a
+commit, and obeys the §16 settle window: dropped for the page's first
+300 ms, and E / F1–F4 keep restarting that window as carry-over keys, so a
+combat revive or override press never lands as a switch.
+
+**Reward page → the party page** (after every combat room; replaces the
+one-card draft page):
+
+- The §16 title strip (A GIFT ON THE ROAD · SKILL SLOTS FREE — of the viewed
+  character · ROOM), the party strip, the viewed character's card (the §16
+  card grammar + its owner band), that character's spoils line ("Spoils →
+  Tank's bench: Brace"), and **Take** / **Leave**.
+- A **learn** offer for a full ally adds the **Replaces** selector under the
+  card: the 4 equipped skill icons + a Satchel chip, the chosen target
+  marked ✕ with a sentence ("Taunting Roar replaces Ground Crack — Ground
+  Crack goes to the satchel" / "Keep the loadout — Taunting Roar goes to the
+  satchel"). W / S, ↑ / ↓, pad D-pad up / down, the mouse wheel or a click on
+  an icon cycles the target. Its default is the AI suggestion (§25.8).
+- Focus opens on the viewer's OWN card (the Healer in single-player) on
+  Take (the §16 primary rule). **Enter takes the focused card and moves to
+  the next card THIS player still has to decide; with none left, the page
+  commits.** X (pad X) leaves likewise; a click on Take / Leave does the
+  same for the viewed card.
+- **Settings ▸ Gameplay ▸ Ally builds** (`gameplay.allyBuilds`; a
+  single-player / host setting; it governs AI-held seats only):
+  - **Suggested** (default) — AI-held cards open pre-decided with the AI's
+    pick (chip "AI ✓"); the player may view and change any of them before
+    committing. Enter on the own card commits: ONE input per room, exactly
+    the Healer-only flow.
+  - **Manual** — AI-held cards open undecided; Enter walks Healer → Tank →
+    Swordsman → Archer and commits after the last (4 inputs per room); their
+    nodes stay on the benches until the player sockets them.
+  - **Automatic** — AI-held cards are decided by the AI, shown as one
+    summary line under the strip, with no focus stops (tabs stay viewable).
+  Every mode measurably changes the page (focus stops, pre-decided cards,
+  auto-fill) — PLAN GP.12. The row's help line says it only applies to
+  AI-held characters.
+- **Settings ▸ Gameplay ▸ Socket my new nodes** (`gameplay.autoSocketOwn`,
+  Off by default — the §16 rule for the Healer is unchanged): On =
+  the player's OWN character's bench is auto-filled (the shared policy) at
+  every page commit. Per player (each network player has their own).
+- Unchanged from §16: no reroll, no reopen, a decline has no memory, a taken
+  node goes to that character's bench, taking a node on the viewer's own
+  card chains into the socket screen on that character's tab with the node
+  in hand (M4c), the empty page ("BUILD COMPLETE · Nothing outranks your
+  build") is per card, the settle window.
+- **AI-held seats socket automatically** at commit in Suggested and
+  Automatic (the shared auto-fill on their benches; socketed nodes are
+  never moved except by the fix-M4a-r4 upgrade swap); in Manual, never.
+
+**Shop** (room 7, one visit): the compact ornate panel keeps its §16
+tunings; the party strip sits on its top rail (chips = purses); the shelf
+shows the viewed character's 4 class cards (owner band on each, the price
+plaque below), the Glint strip shows that character's purse. A whole-card
+click buys for THAT character from ITS purse — the same meaning on every
+tab; the denial shake is unchanged. Suggested: an AI-held tab the player
+never opened during this visit buys the AI's picks on Advance (the lamp
+reads "Advance · Tank, Archer buy suggested"); Manual: nothing is bought
+for an untouched tab; Automatic: AI-held tabs are summaries and buy at
+shop open.
+
+**Socket screen** (between rooms; B / pad View, or chained): the party
+strip across the top, then the viewed character's 4 rows × 8 sockets and
+its own bench (the M4c one-page layout, no scroll 1024×576 → 2560×1440)
+and, for an ally, the **satchel column** right of the rows (known,
+unequipped skills; each chip says "3 nodes resting"). **Loadout swap**: ←
+from socket 1 reaches the row's skill header; Enter picks the equipped
+skill up; move to a satchel chip; Enter swaps (each skill keeps its own
+sockets); X on a satchel chip unsockets its resting nodes to the bench.
+Mouse: click the header, click the chip. F auto-fills the viewed
+character; **Shift+F** (pad: hold Y 0.5 s; the "Auto-fill all" button)
+fills all four. Keys otherwise as §16 / M4c, except that the pad's row
+jump moves from LB / RB (now the character switch) to **LT / RT**; 1–4
+still jump rows.
+
+**HUD**: unchanged for the Healer (4 tiles + socket strips). A network
+guest's command bar shows ITS seat's loadout (tiles, cooldowns, strips).
+
+**Cards and records**: the level-clear card, the Setting-out card, the end
+card and the save-slot list show all four builds compactly ("Tank · 4 ·
+12/32 · ◉ 30").
+
+**Layouts**: the party page, shop and socket screen at 1024×576, 1600×900,
+1920×1080 and 2560×1440 — one page, no scrolling, no overlap, no clipping,
+text at the §17 floors in design px, every tab ≥ 44 design px tall.
+
+### 25.7 Multiplayer — ownership, parallel picks, timeouts, replication
+
+- **Ownership.** Seat s's build — loadout, satchel, sockets, bench, purse,
+  its reward card, its shelf — belongs to the human playing seat s; an
+  AI-held seat (never joined, dropped, away) belongs to the HOST, who builds
+  it under the host's Ally builds mode. A client changes only what it owns;
+  the host rejects anything else (`command_rejected { reason: 'not_owner' }`,
+  no state change). Ownership follows seat control live: a drop hands the
+  seat to the AI and the host, a return hands it back; decisions already
+  made stand. This replaces PLAN §3.7's "build decisions belong to the host"
+  for everything except the doors and the level flow.
+- **Parallel decisions.** Every human decides their own card at the same
+  time on their own screen; the page commits when every human card is
+  decided — or at the **deadline**: 30 s after the page opened (1800 sim
+  ticks), with a countdown on every client for its last 10 s ("Waiting for
+  Fox — auto-pick in 8 s"). At the deadline the host applies the AI
+  suggestion to every undecided human card and tells everyone once ("Time's
+  up — the Swordsman's reward was picked: Flow"); the owner's own line adds
+  that nothing is lost ("you can re-socket it between rooms").
+- **Doors**: the host picks (unchanged); new deadline 30 s after the page
+  commits → the left door, with the same one-line notice.
+- **Shop**: each human buys on their own tab and presses Done (Enter on the
+  Advance lamp, which reads "Done" for a guest); the host's Advance leaves
+  at once when every human is Done, else starts a 15 s countdown shown to
+  all; the shop also leaves by itself 90 s after it opened (a countdown for
+  its last 10 s). Untouched AI-held tabs buy per the host's mode.
+- **Socket screens**: every human may open their own between rooms (socket
+  operations go to the host as CMDs, validated for ownership and
+  `combat_active == false`). When the party is about to leave (a committed
+  door, the shop leaving, the level-clear card advancing) every open socket
+  screen shows the same countdown; the door waits ≤ 8 s while any human's
+  socket screen is open, then the screens close and bank a node in hand.
+- **Deadlines exist only with ≥ 2 humans in the session**; single-player
+  never times the player out.
+- **Replication.** Builds are host-authoritative sim state in the snapshot's
+  COLD tree; every client renders every build read-only except its own
+  editable tab; build events carry `seat`; the 30-tick state hash covers
+  the builds (0 desyncs is a gate). A guest's own-seat prediction reads its
+  replicated loadout and resolved cooldowns (Quicken counts).
+- **Drop-in, rejoin, migration.** A drop-in guest takes an AI-held seat
+  WITH the build the host gave it; a rejoin keeps the seat's build; a
+  migration keyframe carries all four builds, the party page, the shelves
+  and the deadlines.
+
+### 25.8 AI policy for AI-held seats
+
+**Equip** (deterministic, state-only, no RNG, the same code for Suggested
+pre-picks, Automatic, host-built seats and timeouts):
+
+| Class | Priority (the AI keeps its 4 highest KNOWN skills equipped) |
+|---|---|
+| Tank | shield_wall · taunting_roar · heavy_slam · shoulder_charge · whirling_guard · iron_stance · brutal_cleave · ground_crack |
+| Swordsman | flurry · crescent_finisher · fox_step · lunge_strike · riposte · blade_storm · razor_wake · caltrops |
+| Archer | piercing_shot · volley · pinning_arrow · vault_shot · rain_of_arrows · kestrel_watch · detonating_charge · sundering_nova |
+
+- A learn offer: Take; the target is the lowest-priority equipped skill if
+  the new skill outranks it, else the satchel. A node offer: Take. A skill
+  swapped to the satchel by the AI releases its nodes to the bench, and
+  the shared auto-fill re-places them (a human's resting nodes are never
+  touched).
+- Shop: the autopilot rule — the cheapest affordable card first while the
+  purse lasts (ties: shelf order).
+
+**Cast** (every tick, AI-held seats only; human-held seats never
+AI-cast): walk the equipped slots ascending; fire the first ACTIVE that is
+off cooldown and whose §25.2 AI rule holds; else the §7 basic. Range tests
+use the RESOLVED definition (Reach, Widen, dash distance). The idle
+fallback casts an active that has been ready ≥ 480 ticks under the §7
+range rule. Passives are always on.
+
+**Sensible targets**: a guard skill never targets a Downed member; Taunting
+Roar and Provoke skip the Stag while the Tank is below 30% HP; Pinning Arrow
+never picks the Stag (immune to stun) while another target qualifies;
+Riposte is not cast with no hostile within 1.5 u; a dash / vault never ends
+beyond the §12 leash. **Steering** (§12) adds one rule: an Archer holding a
+ready Steady Aim skill stands still for 30 ticks before casting it when no
+hostile is within 2.0 u.
+
+### 25.9 Campaign carry, saves, records
+
+- **Carry** (§24, PLAN §12.3 `CARRY_RULES`) applies to all four builds:
+  equipped skills, the satchel (new rule `carryKnown`), every socketed node,
+  every bench and every purse carry; HP, downs, statuses and cooldowns of
+  every seat are restored; everything level-bound resets, now including
+  taunts, parry windows, dashes / vaults in progress, combo windows, every
+  seat's pending Echo recasts and Reapply clocks, the party page, the four
+  shelves and every multiplayer deadline.
+- **Saves**: schema 4 (PLAN §16.6) — the four builds, the party page with
+  its decisions and deadline, the shelves, the purses and the party draw
+  stream; `MIGRATIONS[3]` turns a schema-3 save's fixed kits into the
+  starting loadouts and queues an **ally catch-up grant** that the sim
+  applies on the first tick after the load (from the party stream, so it is
+  deterministic): the level's `STARTER_GRANT[N].allies` plus, for every
+  combat room already cleared in the current level, 2 nodes and 12 Glint
+  per ally — so an old campaign's allies meet the retuned levels fairly.
+  Schema 1 / 2 saves chain through it. A toast names it once ("Your allies
+  caught up: 14 nodes each").
+- **Records**: the end card, the level-clear card and the slot list show
+  the four builds; high-score entries gain `party: [{ classId, skills,
+  filled }]`.
+
+### 25.10 Difficulty retune for four built characters
+
+- **Method** (constants only — the §4.2 / §23.2 formula's shape unchanged):
+  the deterministic default-build autopilot for the Healer + the §25.8 AI
+  for the allies (Suggested mode), the carried campaign from Level 1 AND
+  Level-N starts with the grant (`tools/gntCAMPAIGN-camprun.mjs`, extended
+  by PARTY), seeds 1–5 (1–20 for the final spot check), standard challenge.
+  Movable: the level tiers T, the room slope, the defend budget scale,
+  `STAG_HP_LEVEL`, `BOSS_DMG_SLOPE`, the ally starter grant and — only if
+  GP.7's arc misses — the ally spoils count.
+- **Target band** (PLAN GP.13): (a) the §4.2 / GC.12 band unchanged
+  (clears ≥ 3 / 3 / 2 of 5 per level, ρ ≥ 0.6, no combat-room median above
+  120 s, defend rooms and the Stag above their neighbours, per-room damage
+  medians rising level to level); (b) so four builds do not flatten the
+  game: per level, the median party damage taken per combat room and the
+  median time-to-clear stay within ×0.75–×1.35 of the **v0.5.150
+  baseline** (PARTY measures it with the same runner and seeds before its
+  first sim edit); (c) the Level 3 Stag room's median party damage ≥ 0.8 ×
+  its baseline; (d) the carried campaign does not win every level on every
+  seed with zero party downs (≥ 1 down per level on at least 2 of 5 seeds —
+  the game still bites).
+- **Starter grant** — `STARTER_GRANT[N].allies` = the median carried ally
+  build at the Level N card (learned skills, socketed nodes, 1 legendary per
+  level, purse). First proposal, re-measured by PARTY: Level 2 `{ learn: 2,
+  nodes: 12, legendaries: 1, glint: 30 }`, Level 3 `{ learn: 4, nodes: 24,
+  legendaries: 2, glint: 50 }`. The dated retune note goes into §23.2
+  (the table §4.2, §12.10 and G4a.5 cite).
+
+### 25.11 What stays unchanged for the Healer
+
+The Healer's skill pool (Mending Bolt + Swift Mend starting, the 15
+draftable) and numbers; its 17-node pool, limits, rarities and every §15 /
+§23.4 grid cell; 4 slots, keys 1–4, the command bar; 8 sockets, no caps;
+the §16 rules (a 5th skill is never offered — a skill promise becomes a
+node; take-or-decline; the substitution and BUILD COMPLETE lines; a taken
+node goes to the bench and chains into the socket screen with the node in
+hand; the settle window); 2 clear spoils per combat room; its 4-card shelf
+at 15 / 15 / 20 / 25; its purse = the §14 wallet (+12 per combat clear, 72 at
+the shop); the auto-fill policy; the Healer's starter grant; the
+deterministic autopilot and the seat-0 leader bot; its save subtrees
+(`systems.skills`, `systems.build`, `run.reward`, `run.shop`, `run.wallet`
+keep their shapes); every Healer event payload (seat keys are added to
+ally events only). The Healer's own draws stay on the gameplay stream in
+the same order — every ally draw uses the separate party stream. What the
+Healer player sees change: the party strip on the build pages (its own card
+still focused first, still one Enter), per-character purses on the shop
+rail, and the retuned levels.

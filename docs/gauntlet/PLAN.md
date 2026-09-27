@@ -14,7 +14,8 @@ Contents: §0 scope · §1 architecture + state machine · §2 file ownership ·
 §7 acceptance gates · §8 benchmark systems · §9 waves, dependencies, risks ·
 §10 revision log (v0.5.1: the 19 plan-review fixes and where each landed) ·
 §12 linear campaign · §14 hosted multiplayer (DEPLOY: zero-config join,
-one-process deploy, hardening, redeploy, gates GD.1–GD.9).
+one-process deploy, hardening, redeploy, gates GD.1–GD.9) · §16 per-character
+builds (PARTY: class pools, party page, ownership, schema 4, gates GP.1–GP.16).
 
 ---
 
@@ -51,6 +52,17 @@ one-process deploy, hardening, redeploy, gates GD.1–GD.9).
    the lobby's level select offers only sequentially unlocked levels. Design,
    rules and gates: **§12** (owner CAMPAIGN). It supersedes BUILD_BRIEF A14,
    the §23.1 picker and §4.1 portal rule 3.
+7. **PER-CHARACTER BUILDS (user feature, 2026-09-27, binding)** — "Other
+   character add in also their own skill slot skill node select option like
+   the healer mouse but the skill and node match the character class." The
+   Tank, Swordsman and Archer get the Healer's build model (≤ 4 equipped
+   skills, 8 sockets per skill, no rarity caps, repetition limits, grey /
+   inert verdicts) from their own class skill and node pools; the player
+   builds every character (in multiplayer each human builds their own, the
+   host builds AI-held seats). Design: BUILD_BRIEF §25 (ruling A16); state,
+   contracts, flows and gates: **§16** (design PARTYD, build PARTY). It
+   supersedes BUILD_BRIEF §7's "allies' builds don't grow" and §3.7's "build
+   decisions belong to the host".
 
 **Production-ready means, for every module:** zero uncaught page errors; no
 console errors other than the two known ANGLE shader warnings (X3595, X4000);
@@ -256,6 +268,8 @@ chosen so that routing lands on the right owner.
 | **INT** (W5) | src/ui/menu/pause.js · vite.config.js · package.json scripts · index.html · main.js `@gnt:INT-WIRING` · everything else only via anchors | tools/gnt-INT-* |
 | **DEPLOY** (2026-09-26, alone — the user's hosted-multiplayer request, §14) | src/net/address.js · src/ui/net/update.js · server/static.mjs · every file where a hosting root cause lives (minimal anchored edits, listed in docs/gauntlet/build-DEPLOY.md): lobbyClient.js / session.js address + update wiring, mpmenu / mpjoin / lobby / tabs/network.js copy, server.mjs / index.mjs / admin.mjs / ws.mjs, vite.config.js, package.json scripts, index.html boot card, README Multiplayer + Host it on a server, docs §14 / TESTING DEPLOY section | tools/gntDEPLOY-* · tools/actions/gntDEPLOY-* — net 7920–7939, preview / TLS 4390–4399 |
 | **CAMPAIGN** (2026-09-25, alone — the user's linear-campaign refactor) | src/data/campaign.js · src/campaign/** · src/ui/run/{transit,levels}.js · the campaign state machine in src/sim/run.js · every other file where a campaign root cause lives (minimal anchored edits, listed in docs/gauntlet/build-CAMPAIGN.md): camp.js BEGIN-RUN, arena.js dressing lifecycle, save codec/profile/records, pause.js Quit to Lobby, autopilot transit, audio `stopLevelVoices`, net guards, docs §12 / BUILD_BRIEF A15 + §23.2 note / TESTING campaign section | tools/gntCAMPAIGN-* · tools/actions/gntCAMPAIGN-* — net 7900–7909, preview 4380 |
+| **PARTYD** (2026-09-27, alone — design only) | docs: BUILD_BRIEF §25 + ruling A16 + the §7 / §14 / §16 notes, this PLAN (§0 item 7, contents, §2.1 rows, §3.7 note, §6.1 / §6.3 / §6.4 rows, §16, §17), docs/TESTING.md PARTY section, docs/gauntlet/party-oracle.json, PROGRESS row | tools/gntPARTYD-* (the oracle generator / checker — read-only for everyone else) |
+| **PARTY** (2026-09-27, alone — builds §16) | src/data/classes.js · src/sim/{party,allycast,partyai}.js · src/ui/run/partystrip.js · src/render/skillfx/class/** · every file where a PARTY root cause lives (minimal anchored edits, listed in docs/gauntlet/build-PARTY.md — the §16.11 list) · docs §16 build notes / BUILD_BRIEF §23.2 PARTY retune note / TESTING PARTY results | tools/gntPARTY-* · tools/actions/gntPARTY-* — net 7950–7959, preview 4400–4401 |
 
 ### 2.2 Shared files and anchored regions
 
@@ -1001,7 +1015,9 @@ oldest public `lobby` room with a free seat and the same protocol/build, else
 create one and wait; after 15 s alone the UI offers "Start now — AI fills the
 empty seats". Drop-in: joining an `in_game` room takes an AI-held seat (host
 sends a full snapshot). Start: host only, enabled when every connected human is
-ready. Build decisions (draft, path, shop, socket, expedition) belong to the
+ready. *PARTY (§16.5, 2026-09-27): superseded for builds — each human builds
+their OWN seat's draft card, shelf and sockets; the host keeps the doors, the
+level flow and every AI-held seat.* Build decisions (draft, path, shop, socket, expedition) belong to the
 **host**; guests see the pages read-only with "The Healer is choosing…"
 (guest attempts return `command_rejected`), and may "ping" a door/card (a
 highlight broadcast as CMD).
@@ -1523,6 +1539,8 @@ immediately.
 | `?fresh=1` | wipe all `echoes.*` localStorage before boot (clean profile) | ARCH |
 | `?act=1..3` | expedition for `?run=1` (single-level harness run) / the level a menu-skip portal press starts | M4a / CAMPAIGN |
 | `?level=1..3` | menu-skip boot, then a CAMPAIGN at that level starts on the first ticked frame (harness: bypasses locks, `campaign.harness`; §12.11) — skips the title | CAMPAIGN |
+| `?party=suggest\|manual\|auto` | the Ally builds mode for this boot (overrides `gameplay.allyBuilds` without saving it; §16) | PARTY |
+| `?partygrant=N` | harness: every ally receives `STARTER_GRANT[N].allies` when the run / campaign starts (a built party in any level; with `?level=`, `?run=1` or `?menu=0` — it does not skip the title by itself; the run is `harness: true`; §16.11) | PARTY |
 | `?slot=<id>` | load that save slot at boot (skips the title) | M2 |
 | `?audio=0` | engine built muted | M3 |
 | `?debug=1` · `?fps=1` | sim panel · fps meter in player builds | existing / INT |
@@ -1566,6 +1584,7 @@ re-verified at v0.5.1: portal tick 459 → combat room 1 tick 480 → reward tic
 | fix builders | 7890–7899 | 4360–4379 |
 | CAMPAIGN builder · campaign critic | 7900–7909 · 7910–7919 | 4380 · 4332 |
 | DEPLOY builder · deploy critic | 7920–7939 · 7940–7949 | 4390–4399 (incl. the TLS proxy) · 4334–4339 |
+| PARTY builder · party critic · PARTYD (design; its own smoke / core-loop preview) | 7950–7959 · 7960–7969 · — | 4400–4401 · 4402–4403 · 4404 |
 
 ### 6.4 Debug API namespaces (`window.__echoes`)
 
@@ -1616,6 +1635,9 @@ their own files through `impl.debug`):
 - **`__echoes.campaign`** (CAMPAIGN, §12.11): `state()`, `unlocked()`,
   `choose(n)`, `rules()`, `memory()`, `snapshot(label)`, `snapshots()`,
   `transitions()`, `ready(level)`, `unlock(list|null)`.
+- **`__echoes.party`** (PARTY, §16.11): `state()`, `view(seat)`,
+  `pools(seat)`, `verdict(seat, skill, node)`, `aiLog()`, `oracle()`; the
+  `party*` commands of §16.11.
 - **Deterministic content setup commands** (`__echoes.cmd`, plan-review fix
   — every critic and refuter builds its scenario with these, never by
   waiting for RNG): M4b — `spawn(etype, x, z, { elite?, hpMul?, dmgMul? })`
@@ -2844,3 +2866,611 @@ dist-DEPLOY`):
 | 6 | `--origins`, `--max-per-ip`, admin behind proxies, half-close fix | §14.4, server.mjs, admin.mjs, ws.mjs |
 | 7 | Update detection + prompt, redeploy watch | §14.5, lobbyClient.js, src/ui/net/update.js, mpmenu.js, mpjoin.js |
 | 8 | Probes, ports, gates GD.1–GD.9 | §14.6, §6.3, docs/TESTING.md DEPLOY |
+
+## 16. Per-character builds (PARTY, 2026-09-27 — the user's feature request)
+
+**User, verbatim:** "Other character add in also their own skill slot skill
+node select option like the healer mouse but the skill and node match the
+character class." **Binding rules** (the workflow's PARTY rules): EVERY party
+member — Healer, Tank, Swordsman, Archer — has the Healer's build model (at
+most 4 equipped skills, 8 node sockets per skill, NO rarity caps, the
+per-node repetition limits and grey / no-effect verdicts) drawn from its OWN
+class skill pool and a class-matched node pool; the existing fixed kits
+become each class's starting skills; the player can select skills and
+socket nodes for every character, with rewards / drafts, the shop and the
+socket screen showing clearly WHICH character a card or socket belongs to
+and switching characters quickly by keyboard, mouse and gamepad; in
+multiplayer each human builds their OWN character (the host builds AI-held
+seats), no one ever waits on a silent picker (timeouts / auto-pick with
+notice) and builds replicate; AI-held characters equip and cast their chosen
+skills sensibly; all four builds carry across levels, save / load with a
+schema bump + migration, and the difficulty is retuned for four built
+characters. Every earlier user correction stays in force (max 4 skills, 8
+sockets, no rarity caps, linear campaign, zero-config hosting).
+
+**Design truth:** docs/BUILD_BRIEF.md §25 (ruling A16) — the class skill
+pools, class nodes, shared access, the node × skill grids, supply, UX, AI,
+retune method. **Oracle:** `docs/gauntlet/party-oracle.json`, written by
+`node tools/gntPARTYD-grid.mjs` (PARTYD's tool; read-only for everyone
+else). Precedence: the user's words > this §16 > BUILD_BRIEF §25 > code
+comments. PARTYD wrote the design (docs only); **PARTY** implements it
+alone (§16.11 ownership).
+
+### 16.1 Terms
+
+- **Seat** = party index 0–3 = class (0 Healer, 1 Tank, 2 Swordsman, 3
+  Archer — fixed, `CLASS_OF_SEAT`).
+- **Loadout** = the ≤ 4 equipped skills of a seat (slot order = key order
+  1–4 = the AI's cast order). **Known** = every skill the seat has learned
+  (the loadout + the **satchel**). **Build** = loadout + known + sockets
+  (per skill, 8) + bench + purse.
+- **Owner** of a seat's build = the human controlling the seat, else the
+  host (single-player: the player owns everything).
+- **Party page** = the room reward page with one **card** per seat.
+- **Party stream** = a second seeded mulberry32 stream for every ally draw
+  (never the gameplay stream).
+- **Mode** = `gameplay.allyBuilds` ∈ `suggest` (default) | `manual` |
+  `auto` — how AI-held seats' cards, shelves and benches are decided.
+
+### 16.2 Data contracts (pure data — src/data/classes.js, new, PARTY)
+
+```js
+export const CLASS_OF_SEAT = ['healer', 'tank', 'swordsman', 'archer'];
+export const CLASS_SKILLS = { tank: [8 ids], swordsman: [8 ids], archer: [8 ids] };   // BUILD_BRIEF §25.2 order
+export const STARTING_LOADOUT = { tank: ['heavy_slam', 'brutal_cleave', 'ground_crack', 'whirling_guard'],
+  swordsman: ['flurry', 'lunge_strike', 'blade_storm', 'caltrops'],
+  archer: ['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova'] };        // = §7 kit order = slot order
+export const CLASS_NODES = { tank: [6 ids], swordsman: [6 ids], archer: [6 ids] };
+export const SHARED_ACCESS = { healer: [all 17], tank: [12], swordsman: [12], archer: [13] };   // §25.3
+export const AI_PRIORITY = { tank: [8], swordsman: [8], archer: [8] };                  // §25.8
+export const ALLY_SUPPLY = { spoilsPerClear: 1, stipend: 12 };                          // §25.5 (Healer: SPOILS_PER_CLEAR 2, unchanged)
+export const PARTY_DEADLINES = { pageTicks: 1800, doorTicks: 1800, shopTicks: 5400, shopAdvanceTicks: 900,
+  socketHoldTicks: 480, countdownTicks: 600 };                                          // §25.7, sim ticks
+export const AI_IDLE_FALLBACK_TICKS = 480;
+export const TAUNT = { capTicks: 240, stagCapTicks: 60, stagImmuneTicks: 300 };
+```
+- **SKILLS** (src/sim/skills.js) gains the 24 class rows (§25.2 numbers
+  VERBATIM; the 12 starting rows equal `ALLY_KITS` field for field) with
+  `cls: 'tank'|'swordsman'|'archer'`; Healer rows read as `cls: 'healer'`
+  (absent = healer). New optional row fields: `archetype: 'guard'`, `field:
+  'ally'|'hostile'`, `output`, `dash { dist, speed, iframes }`, `vault {
+  dist, ticks, iframes }`, `combo { perStack, maxStacks, windowTicks }`,
+  `parry { windowTicks }`, `knockback`, `shieldCap`. `ALLY_KITS` stays
+  exported (derived from SKILLS + STARTING_LOADOUT) for existing readers.
+- **NODES** (src/sim/nodes.js) gains the 18 class nodes with `cls`; shared
+  nodes read as `cls: null`. `NODE_EFFECT` / `NODE_GLYPH` (ui/run/cards.js,
+  ui/socket) gain their card copy + glyphs.
+- **Reader hazard (binding):** every existing reader that enumerates
+  `Object.keys(SKILLS)` or `Object.keys(NODES)` must filter by class, or the
+  Healer's pools change: draft.js `DRAFTABLE_SKILL_IDS` / `NODE_IDS`,
+  nodes.js `discrete()` passive Reapply loop, autopilot.js, skills.js
+  passive pulse loop, ui cards / socket / HUD icon tables, save
+  describe.js, the net protocol dictionaries. GP.14 proves the Healer's
+  pools are byte-identical to v0.5.150.
+- **Oracle equality:** the implemented pools and every verdict equal
+  `party-oracle.json` (GP.3; `node tools/gntPARTYD-grid.mjs --verify-node`
+  and `--verify-page` read `world.cmd('partyPools')` → `{ [cls]: { skills:
+  [ids], nodes: [ids] } }` and `world.cmd('partyVerdicts')` → `{ [cls]: {
+  [skillId]: { [nodeId]: 'live'|'grey'|'inert' } } }`, the verdict of a
+  node's FIRST copy on an otherwise empty row with the full party alive).
+
+### 16.3 Sim architecture (contracts; PARTY implements)
+
+**Per-seat build systems.** `createBuildSystem` gains options `{ seat = 0,
+classId = 'healer', pool = SHARED_ACCESS[classId] ∪ CLASS_NODES[classId],
+caster }`; the world creates four instances — seat 0 is today's `buildSys`
+(same object, same API, same events, same save subtree `systems.build`),
+seats 1–3 live in the new **party system** (`src/sim/party.js`,
+`createPartySystem`, saved as `systems.party`). Each instance only reacts to
+primary events whose `source` / `skill` belongs to its class (skill ids are
+class-unique), so the four `'*'` listeners never double-trigger; their
+registration order is seat 0 → 3 (deterministic continuation order). All
+four share the verdict rules; class-node rules are added to `verdictFor`
+with the grey / inert reasons of the oracle.
+```js
+world.partySystem() -> {
+  seat(i) -> { classId, slots: [id|null ×4], known: [ids], purse, build /* the seat's build system */ },
+  learn(seat, skillId, replace /* slot 0–3 | 'satchel' */) -> { ok, slot|null, replaced|null } | { denied: 'unknown'|'not_class'|'known'|'combat_active' },
+  equip(seat, skillId, slot) -> { ok, swapped } | { denied: 'not_known'|'full'|'no_such_slot'|'combat_active' },   // a 5th equip is 'full'
+  view(seat) -> { ...build.view(), known, satchel: [{ id, filled }], purse, mode, owner },
+  pools(seat) -> { skill: [ids], node: [ids], upgrade: [ids] },
+  autoFill(seat | 'all'), aiPlan(seat) /* the §25.8 suggestion for the current card / shelf */,
+  aiLog() -> { [seat]: { [skillId]: { casts, lastTick, fallbacks } } }   // debug, never saved
+}
+```
+- `giveSkill` / `grantNode` / `socket` / `unsocket` / `autoFill` / the
+  existing `build*` cmds keep addressing seat 0 unchanged; seat-aware cmds
+  are listed in §16.11.
+
+**Ally cast pipeline.** allies.js `fireAllySkill` / `fireHumanSkill` and the
+AI's slot loop read the seat's LOADOUT (`party.seat(i).slots`) instead of
+`ALLY_KITS[classId]`, and deliver through ONE shared function
+`castAllySkill(caster, baseDef, aim|target, tag, { echo })` (new
+src/sim/allycast.js, PARTY):
+1. `def = seatBuild.resolveDef(baseDef)` (the §15.4 pipeline; an empty
+   build returns `baseDef` itself), `mods = seatBuild.castMods(id, caster,
+   tick)` (Resonance ×2, combo / Momentum / Steady Aim pct, Heartseeker
+   flag), 2. the displacement (`dash` / `vault` — swept like the §5 dodge,
+   i-frames, steering suspended; `ally_dash { seat, id, skill, x0, z0, x1,
+   z1, ticks, cause: 'dash'|'vault'|'pursuit'|'disengage' }`), 3. the §6
+   delivery with `source: def.id` on every instance (the build listener's
+   trigger), per-instance `critMul` (Lethality), `forceCrit` (Heartseeker —
+   the roll is still drawn), `powerMulFor(target)` (Execute), `kbMul`
+   (Concussive / Anchor pull as a negative impulse / Razor Wake 0), `pierce`
+   (Skewer), 4. the cooldown `a.cds[slot] = tick + max(CD_FLOOR,
+   secTicks(def.cd))` (Quicken counts), 5. `ally_cast` — its payload is
+   byte-identical to v0.5.150 for an empty build (power / cd are the
+   resolved values, equal to the base ones); new keys appear only when set
+   (`echo`, `resonance`, `combo`, `dash`, `vault`).
+- **Echo** for allies arms on `ally_cast` (Healer: `skill_cast`, unchanged)
+  and recasts through `castAllySkill(..., { echo: true })` at the recorded
+  aim / target; echoed bolts ride the seat build's own bolt subsystem
+  (stable owner tag `echo_bolts:<seat>`).
+- **Passives** (Iron Stance, Razor Wake, Kestrel Watch) pulse on their 1.0
+  s cadence in ascending slot order per seat from the party system's
+  discrete phase, emit `aura_pulse { seat, skill, x, z, area, healed |
+  hit }` (the build listener's passive trigger), obey `pulseMods`
+  (Resonance) and Echo Reapply; a passive in the satchel never pulses.
+- **Status `taunt`** (status.js write side): hostile-only kind, `src` =
+  taunter; `TAUNT` caps; enemies.js / enemies/*.js / boss.js target
+  selection reads `status.tauntSource(e, tick)` first (M4b's §3.6 (d)
+  faction rule unchanged). **Parry** puts §3.6 (c) guard data on the fox
+  (`{ active, shapes: ['*'], halfArcDeg: 180, parry: true, untilTick }`);
+  combat.applyDamage's guard check (before the crit roll) accepts `'*'` and
+  a party target; the counter is queued as a continuation. **Retaliate**
+  (thorns) and **Detonate-on-guard** (shield break) read two new combat /
+  status hooks: `onPartyDamaged(target, attacker, amount)` and
+  `shield_broken { targetId, srcSkill }` (status.absorb emits it via the
+  tracker). All technique output carries `':'`-labelled sources (depth-1).
+- **Combo / Momentum / Flow** state lives on the seat: `combo = { [skillId]:
+  lastConnectTick }`, `recentCasts = [{ skill, tick }]` (≤ 8, pruned past
+  120 ticks); Flow subtracts from `a.cds[other]` (never below `tick`).
+- **Human seats** (network): `skill_1..4` map to the seat's loadout slots;
+  a press on an empty slot or a passive → `intent_denied empty_slot`
+  (unchanged vocabulary); predict.js's action shadow reads the replicated
+  loadout and resolved cooldowns.
+
+**Run system (src/sim/run.js) — the party page and shop.**
+- `presentReward()` keeps rolling the Healer's `run.reward` exactly as
+  today (gameplay stream, same order, same `reward_offer` payload), then
+  asks `party.offerCards(promised)` for seats 1–3 (party stream, seat
+  order 1 → 3) → `run.party = { room, promised, openedTick, deadlineTick |
+  null, cards: [Card ×4] }` with `Card = { seat, type:
+  'skill'|'node'|null, id, learn: bool, substituted, line, pool?, upgrade?,
+  reason?, spoils: [ids], replace: 0–3|'satchel'|null, suggest: { choice,
+  replace }, decided: bool, choice: 'take'|'leave'|null, by:
+  'human'|'ai'|'timeout'|null }` (card 0 mirrors `run.reward`). Emits
+  `party_offer { room, promised, cards: [{ seat, reward, id, learn,
+  substituted, pool?, upgrade?, suggest }] }` (seats 1–3; `reward_offer`
+  stays the Healer's).
+- **Pre-decision** by mode: `suggest` → AI-held cards `decided: true, by:
+  'ai'` with the suggestion; `manual` → undecided; `auto` → decided and
+  locked for the UI (still editable by cmd). Human-owned cards start
+  undecided (the Healer's in single-player).
+- `partyPick(seat, choice, replace?, { by })` sets / changes a card (owner
+  check in network play; `party_pick { seat, choice, replace?, by }` for
+  seats 1–3 only); `takeReward()` / `declineReward()` keep their signatures
+  and meaning for seat 0 — they record card 0's decision (announced, as
+  today, by `draft_taken` / `draft_declined` when the commit applies it) and
+  call `commitIfReady()`. `party_offer`, `party_pick` and `party_commit` are
+  emitted only when the page holds ally cards, so a page with the ally
+  supply switched off (§16.9 proof) emits exactly v0.5.150's events. **Commit** (`party_commit { room,
+  cards: [{ seat, choice, id, replace?, by }] }`) happens when every card
+  is decided, or at `deadlineTick` (network, ≥ 2 humans) after
+  `party_autopick { seat, reason: 'timeout' }` for each undecided human
+  card; it applies seat 0 exactly as today, then seats 1–3 ascending
+  (learn → `skill_learned { seat, id, slot, replaced }`; node → bench
+  `node_granted { seat, ... }`), then auto-fills AI-held seats (`suggest` /
+  `auto`) and every human seat whose `autoSocketOwn` is on, then `afterReward()`
+  (doors) exactly as today. `phase` stays `reward` until the commit (the
+  settle window, save / load and the guest pages read it).
+- **Spoils** — `dropSpoils()` keeps the Healer's 2 (gameplay stream) and
+  adds `ALLY_SUPPLY.spoilsPerClear` per ally (party stream, seat order) →
+  `spoils_drop { seat, ... }` per ally (the Healer's payload unchanged).
+- **Stipend / purses** — `gainGlint` stays the Healer's wallet; each ally
+  purse +12 per combat clear → `purse_gain { seat, amount, purse, reason }`.
+- **Shop** — `openShop()` rolls the Healer's shelf unchanged, then seats 1–3
+  shelves (party stream) → `run.partyShop = { shelves: [null, Shelf ×3],
+  touched: [bool ×4], done: [bool ×4], openedTick, leaveTick | null }`,
+  `party_shop_open { shelves }`; `partyBuy(seat, index)` (own purse; the
+  same denial) → `shop_purchase { seat, ... }`; `partyShopDone(seat)`;
+  `shopAdvance()` applies the mode's AI buys for untouched AI-held seats and
+  auto-fills AI-held benches (`suggest` / `auto`) and every human seat whose
+  `autoSocketOwn` is on, then leaves (network: countdown / deadline per
+  §25.7).
+- **Doors** — unchanged except the network deadline (`doorDeadlineTick`,
+  the left door, `party_autopick { seat: 0, reason: 'door_timeout' }`).
+- **Deadlines** are sim ticks written into run state (replicated, saved);
+  set only when `humans ≥ 2` (the net seat table in `setSeatInputs`); a
+  `party_deadline { what: 'page'|'door'|'shop'|'socket', tick }` event
+  starts every client's countdown.
+
+**AI (src/sim/partyai.js, new, PARTY)** — `suggestCard(seat, card)`,
+`suggestShelf(seat, shelf, purse)`, `planLoadout(seat)` (the §25.8
+priority list), `castChoice(a, tick)` (the §25.2 rules + idle fallback,
+called by allies.js `resolveAllyAttack` in place of the kit loop).
+Deterministic, state-only, ascending ids.
+
+**Party stream.** `mulberry32(hash32(runSeed, 0x50415254))` created at
+`startRun` / `startCampaign` from the gameplay handle's SEED (no draw from
+the gameplay stream), carried across levels, saved in `systems.party.rng
+{ seed, s, draws }`. The Healer's draws, the run frame, waves and every
+crit roll stay on the gameplay stream (crits of ally instances too).
+
+**Events (new names; §2.3 bus rule — never a payload key `type`):**
+`party_offer`, `party_pick`, `party_commit`, `party_autopick`,
+`party_deadline`, `skill_learned`, `loadout_swap { seat, slot, from, to }`,
+`equip_denied { seat, reason }`, `purse_gain`, `party_shop_open`,
+`party_shop_done { seat }`, `ally_dash`, `parry_open { seat, id, untilTick
+}`, `parry_counter { seat, id, attackerId }`, `shield_broken`,
+`party_catchup { level, perSeat }`, `party_mode { mode }`. Existing build
+events (`node_granted`, `node_socketed`, `node_unsocketed`,
+`socket_denied`, `build_autofill`, `spoils_drop`, `shop_purchase`,
+`resonance_proc`, `echo_armed`, `echo_recast`, `technique_pulse`,
+`aura_pulse`) gain `seat` for seats 1–3 only (seat-0 payloads unchanged).
+
+### 16.4 UI flows (PARTY; §25.6 is the design)
+
+- **Party strip** — `src/ui/run/partystrip.js` (new, `rn-` prefix):
+  `createPartyStrip({ mode: 'reward'|'shop'|'socket'|'card', onSelect })
+  → { el, setView(seat), update(state), viewSeat() }`; 4 tabs (`[data-seat]`,
+  `.rn-ptab`, portrait canvas from the §17 portrait cache, class glyph,
+  name, chip, owner line), ≥ 44 design px tall, the viewed tab raised +
+  Hearth Amber outline + ▼ caret.
+- **Input map on build pages** (added to the existing page maps; the §16
+  settle window drops nav / commit keys for 300 ms and treats E, F1–F4 as
+  carry-over keys that restart it):
+
+| Action | Keyboard | Mouse | Gamepad |
+|---|---|---|---|
+| previous / next character | Q / E, PgUp / PgDn (wrap) | click a tab / a command-bar portrait | LB / RB |
+| character directly | F1–F4 | click the tab | — (≤ 2 bumpers reach any tab) |
+| Take / Leave the viewed card | Enter / X (A/D or ←/→ move between the buttons) | click Take / Leave | A / X |
+| cycle Replaces | W / S, ↑ / ↓ | wheel, click an icon | D-pad ↑ / ↓ |
+| buy (shop) | Enter on the focused card | click the card | A |
+| Done / Advance (shop) | Enter on the lamp | click the lamp | A on the lamp (Start stays pause) |
+| socket screen rows | 1–4, ↑ / ↓ | click | LT / RT, D-pad |
+| loadout swap | ← from socket 1 → header, Enter, → to satchel, Enter | click header, click chip | same with D-pad + A |
+| auto-fill viewed / all | F / Shift+F | buttons | Y / hold Y 0.5 s |
+
+  gamepad.js (M1's file, minimal anchored edit) maps buttons 6 / 7 to
+  `rowPrev` / `rowNext`.
+- **Party page** (`src/ui/run/draft.js` → the party page; `rn-draft` kept as
+  the root class so existing probes find it): opens on the viewer's own
+  card; Enter = take + advance to the next undecided OWN card, commit when
+  none; the network countdown line; the spoils line per character;
+  `runUi().party = { open, viewSeat, mode, tabs: [{ seat, classId, owner,
+  decided, choice, replace, by, chip }], focusStops, commitsInMs,
+  deadlineInMs }`.
+- **Shop** (`src/ui/run/shop.js`): the strip on the top rail, the viewed
+  character's shelf and purse, the lamp copy per §25.6; `runUi().shop.party
+  = { viewSeat, purses, touched, done, leaveInMs }`.
+- **Socket screen** (`src/ui/socket/index.js`): the strip, per-seat grid +
+  bench + satchel column; `__echoes.hud`-style probe `socketUi() = { viewSeat,
+  rows, satchel, bench, inHand }` (extends the existing debug surface).
+- **Settings** (M1's Gameplay tab, minimal edit): rows `gameplay.allyBuilds`
+  (Suggested / Manual / Automatic; help: "Applies to allies played by the
+  computer. In multiplayer each player builds their own character.") and
+  `gameplay.autoSocketOwn` (Off / On); the store keys are registered with
+  defaults `suggest` / `false`. A change mid-run reaches the sim as
+  `cmd('partyMode', mode)` (UI layer → sim, like challenge) and applies from
+  the next page.
+- **HUD** (commandbar.js `@gnt:M5b VIEW-SEAT` region): a guest's tiles read
+  its seat's loadout + resolved cooldowns; the Healer's bar is unchanged.
+- **Cards** (transit.js, endscreens.js, levels Setting-out): four compact
+  build lines; the Glint line per purse.
+- **Layouts**: 1024×576 · 1600×900 · 1920×1080 · 2560×1440, no overlap, no
+  clip, one page, §17 floors in design px (GP.6 audits bounding boxes).
+
+### 16.5 Multiplayer contract (M5b files; §25.7 is the design)
+
+- **Ownership**: `ownerOf(seat) = controllers[seat] === 'human' ?
+  peerOf(seat) : host`. Guest CMDs (reliable class): `party_pick { seat,
+  choice, replace? }`, `party_buy { seat, index }`, `party_done { seat }`,
+  `party_socket { seat, op: 'socket'|'unsocket'|'autofill'|'equip', ... }`,
+  `party_pref { seat, autoSocketOwn }` (sent at join and on every change of
+  the player's own setting; stored in `systems.party.autoSocketOwn[seat]`).
+  The host validates `seat === sender's seat` (else `command_rejected {
+  reason: 'not_owner' }`), phase and `combat_active`, then calls the sim
+  entry point — the same one single-player uses. The host's own UI may act
+  on seat 0 and every AI-held seat.
+- The existing guest guard (`@gnt:M5b GUEST-GUARD`) changes from "every
+  page read-only" to "every tab but your own read-only"; its "The Healer is
+  choosing…" line becomes per tab ("Fox is choosing… 18 s").
+- **Deadlines** (`PARTY_DEADLINES`, sim ticks, host clock, replicated;
+  only when ≥ 2 humans): page 1800, door 1800 after the page commit, shop
+  5400 from open, the Advance countdown 900, socket hold 480; countdown UI
+  from 600 ticks before. At a deadline the host applies the §25.8
+  suggestion and emits `party_autopick` → one toast on every client (the
+  owner's names what they got). An AWAY / dropped guest's seat is AI-held →
+  decided by the host at once (nobody waits on a hidden tab).
+- **Replication**: `systems.party` and `run.party` / `run.partyShop` ride
+  the COLD tree; the 30-tick hash covers them; the protocol-v3 EVENTS
+  static-shape table (src/net/protocol) gains the new event types; the
+  L3 bandwidth budget (§3.7) must still hold with four built characters
+  (GP.10).
+- **Drop-in / rejoin / migration**: the seat's build is sim state — a
+  drop-in takes it, a rejoin keeps it, a keyframe carries it.
+
+### 16.6 Save schema 4 (M2 files, minimal edits by PARTY)
+
+- StateTree `v: 4`; new `systems.party = { v: 1, rng: { seed, s, draws },
+  mode, autoSocketOwn: [bool ×4], seats: [null, SeatBuild ×3] }` with
+  `SeatBuild = { seat, classId, slots: [id|null ×4], known: [ids], purse,
+  build: <createBuildSystem().saveState()>, combo, recentCasts }`;
+  `systems.run` gains `party`, `partyShop`, `doorDeadlineTick`. Seat 0 is
+  unchanged (`systems.skills`, `systems.build`, `run.reward`, `run.shop`,
+  `run.wallet`).
+- `meta.party = [{ classId, skills: [4 ids|null], filled, purse }] ×4` (the
+  slot list's build lines).
+- **`MIGRATIONS[3]`** (src/save/codec.js; pure, deterministic, no game RNG;
+  frozen constants like MIGRATIONS[1]): creates `systems.party` — `rng`
+  seeded from the save's gameplay seed by the §16.3 derivation, seats 1–3 =
+  the §7 kits as loadout and known, empty builds, purse 0; a run in phase
+  `reward` gets seats 1–3 cards `{ type: null, reason: 'migrated', decided:
+  true, choice: 'leave' }`; a run in phase `shop` gets empty ally shelves;
+  and `systems.party.catchUp = { level, roomsCleared }` when a run is
+  active. The sim applies the **catch-up** on the first tick after
+  `state_restored`: `STARTER_GRANT[level].allies` + 2 nodes and 12 Glint per
+  ally per combat room already cleared in the current level (party stream,
+  auto-filled at the next non-combat point), `party_catchup` + one toast.
+  Schema 1 / 2 saves chain 1 → 2 → 3 → 4. A schema-4 file is refused by a
+  schema-3 build ("made by a newer version of Echoes"), as today.
+- Profile: high-score entries gain `party: [{ classId, skills, filled }]`;
+  no schema change for the profile (new optional keys).
+
+### 16.7 Campaign (CAMPAIGN files, minimal edits by PARTY)
+
+- `CARRY_RULES` (src/data/campaign.js) — every carry / restore flag now
+  applies to seats 0–3 (`carrySkills`, `carrySockets`, `carryBench`,
+  `carryGlint` = every purse, `resetCooldowns` = every seat); new named rule
+  `carryKnown: true` (the satchel; false → the known list shrinks to the
+  loadout); `resetEntities` / `clearStatuses` also clear taunts, parry
+  windows, dashes / vaults in progress, combo windows and every seat's
+  pending Echo recasts and Reapply clocks; `resetShop` drops the four
+  shelves; the party page and every deadline reset.
+- `STARTER_GRANT[N].allies = { learn, nodes, legendaries, glint }` (per
+  ally; applied after the Healer's grant, party stream, seat order,
+  auto-fill after each pair) — numbers per §25.10, re-measured.
+- GC.5's state diff at every transition covers all four builds.
+
+### 16.8 Difficulty (M4a files, minimal edits by PARTY)
+
+- **Baseline first**: before its first sim edit PARTY records the v0.5.150
+  band with `tools/gntCAMPAIGN-camprun.mjs --from 1|2|3 --seeds 1-5`
+  (Node) into `captures/gntPARTY-baseline-from{1,2,3}.json`.
+- **Retune** constants only (§25.10 list); the dated PARTY note goes into
+  BUILD_BRIEF §23.2 with the new binding table; `tools/gntfixM4a3-g4a5.mjs`
+  (G4a.5) compares against it.
+- **Band** = GP.13.
+
+### 16.9 Determinism and goldens
+
+- Single-player stays deterministic (same seed → same trace), Node and page
+  alike. The ally cast pipeline with EMPTY builds reproduces v0.5.150's
+  events and RNG draws exactly: the 6 `?room=` goldens (kill_all / defend
+  × seeds 1, 2, 3 — no run, starting loadouts, no rewards) keep
+  `eventsHash` and `rngDraws` bit-identical; their `stateHash` may change
+  only by the new `systems.party` subtree (PARTY proves it by hashing the
+  tree with that subtree removed). The 3 `run` goldens legitimately change
+  (the retuned levels and the growing allies). PARTY proves that nothing
+  else changed them: with a Node-only switch that turns the ally supply off
+  (no party page cards, spoils, purses or shelves for seats 1–3) and puts
+  the v0.5.150 difficulty constants back, the new build reproduces the
+  v0.5.150 run goldens' events and RNG draws bit for bit (the state hash
+  with the `systems.party` subtree removed); then it re-records them as
+  `captures/gnt-M2-golden-run-*` after keeping the old ones as `captures/gntPARTY-v0.5.150-golden-run-*`,
+  and updates the §6.5 note.
+- Network: the replica never runs the party system's listeners (the
+  replica-bus rule); guest `simCalls` frozen, `refusedEmits` 0 (G5b.14).
+
+### 16.10 The Healer invariants (GP.14 checks each)
+
+The Healer's skill and node pools, numbers, limits and all 289 grid cells
+(`gntPARTYD-grid.mjs` cross-check); `DRAFTABLE_SKILL_IDS` / `NODE_IDS` for
+the Healer; 2 spoils per clear; the 4-card shelf at 15/15/20/25; wallet 72
+at the shop; `free_skill_slots = 4 − owned`; the §16 substitution / empty
+lines; the Healer's `reward_offer` / `spoils_drop` / `shop_open` payload
+keys; `systems.skills` / `systems.build` save shapes; the socket screen's
+Healer grid, keys 1–4, F, X, Enter, Esc; one Enter per room in Suggested
+mode; the autopilot and the seat-0 leader bot.
+
+### 16.11 Ownership, ports, harness
+
+- **PARTY** (alone; every file where a PARTY root cause lives, minimal
+  anchored edits in other keys' files, listed in docs/gauntlet/build-PARTY.md):
+  new src/data/classes.js · src/sim/party.js · src/sim/allycast.js ·
+  src/sim/partyai.js · src/ui/run/partystrip.js · src/render/skillfx/class/**
+  (the §25.2 VFX) · tools/gntPARTY-* · tools/actions/gntPARTY-*; edits in
+  skills.js, nodes.js, draft.js, run.js, allies.js, world.js, status.js,
+  combat.js, shapes.js, enemies*.js / boss.js (taunt), autopilot.js,
+  src/data/campaign.js, src/data/difficulty.js, src/audio/cues.js (the new
+  cues), ui/run/{draft,shop,cards,transit,endscreens,index}.js,
+  ui/socket/index.js, ui/hud/commandbar.js, ui/menu/tabs/gameplay.js,
+  src/app/gamepad.js, src/save/{codec,capture,describe}.js,
+  src/net/{session,predict}.js + src/net/protocol event shapes, docs §16 /
+  BUILD_BRIEF §25 + §23.2 note / TESTING PARTY section / PROGRESS row.
+  **Must not break**: the Healer (§16.10), single-player determinism
+  (§16.9), the campaign (GC.*), save / load (G2.*), multiplayer (G5*.*),
+  hosting (GD.*).
+- **Ports**: PARTY builder net 7950–7959, preview 4400–4401; party critic
+  net 7960–7969, preview 4402–4403; PARTYD preview 4404; the party design
+  reviewer none.
+- **Boot params** (§6.1): `?party=suggest|manual|auto` (the mode for this
+  boot, overrides the setting without saving it), `?partygrant=N` (menu-skip
+  harness: every ally gets `STARTER_GRANT[N].allies` at run start — a built
+  party in Level 1 for probes; marks the run `harness: true`).
+- **Commands** (`__echoes.cmd`, act at a tick boundary, return plain data):
+  `partyPools()`, `partyVerdicts()`, `partyView(seat)`, `partyLearn(seat,
+  id, replace?)`, `partyEquip(seat, id, slot)`, `partyGrantNode(seat, id,
+  provenance?)`, `partySocket(seat, skill, node, slot?)`,
+  `partyUnsocket(seat, skill, slot)`, `partyAutoFill(seat|'all')`,
+  `partyPick(seat, 'take'|'leave', replace?)`, `partyBuy(seat, index)`,
+  `partyShopDone(seat)`, `partyMode(mode)`, `partyPurse(seat, n?)`,
+  `partyCast(seat, slot, { x, z }?)` (fires a loadout slot as a human press
+  would — for sim / VFX / audio probes), `partyAiLog()`, `partyGrant(level)`.
+- **`__echoes.party`** (service-backed): `state()` (all four builds +
+  page + shop + mode + owners + deadlines), `view(seat)`, `pools(seat)`,
+  `verdict(seat, skill, node)`, `aiLog()`, `oracle()` (the committed JSON).
+- **Tools** (PARTY writes them; the critic may reuse read-only):
+  `tools/gntPARTY-sim.mjs` (Node: pools, numbers, caps, the socket sweep,
+  learn / equip / satchel, every class skill's sim effect, every live cell's
+  effect event, AI loadout choices, save schema 4 + migrations, the Healer
+  invariants), `tools/gntPARTY-ux.mjs` (GPU harness: the three pages × 4
+  sizes, switching by keyboard / mouse / mocked pad, owner tags, settle
+  window, modes), `tools/gntPARTY-casts.mjs` (every class skill cast by
+  real keys on a human seat in a 2-page session: event, VFX frame diff in a
+  box around the caster, `audio.cueLog`), `tools/gntPARTY-net.mjs` (2–4
+  clients: ownership, parallel picks, a stalled guest's deadline, shop
+  Done / countdown, socket hold, hashes, drop-in / rejoin / migration),
+  `tools/gntPARTY-campaign.mjs` (the carried campaign: AI casts per skill
+  per level, carry diffs, save round trips, the band). The oracle checker is
+  `tools/gntPARTYD-grid.mjs --verify-node | --verify-page <url>`.
+
+### PARTY gates (GP.*)
+
+Measured on the dev server AND the production build (`npx vite build
+--outDir dist-party` + `npx vite preview --port 4400`) unless marked Node.
+
+- **GP.1 Class pools (Node + page)**: for each of Tank, Swordsman, Archer
+  the skill pool is the 8 ids of BUILD_BRIEF §25.2 with every number equal
+  (power, cd, range, area, count, speed, duration, status, dash / vault /
+  combo / parry fields; the 4 `·s` rows equal v0.5.150 `ALLY_KITS` field for
+  field) and the node pool is the 6 class nodes + the §25.3 shared list —
+  `gntPARTYD-grid.mjs --verify-node` and `--verify-page` report 0 pool
+  mismatches.
+- **GP.2 Four skills, eight sockets, no caps**: per ally seat — the starting
+  loadout = the §7 kit in order; `partyEquip` of a 5th skill → `equip_denied
+  full` and the loadout unchanged; `partyLearn` with a full loadout sends
+  the skill to the replaced slot or the satchel, never a 5th slot; every
+  equipped skill has exactly 8 sockets; the any-rarity sweep (every node of
+  the class pool × every socket 1–8 of every class skill, rows emptied
+  between) accepts every placement except `limit` (count the operations —
+  one run per class, 0 unexpected denials); `combat_active` blocks every
+  socket / equip / learn.
+- **GP.3 Grids**: every cell of the three grids (440 cells) equals the
+  oracle (`--verify-node` and `--verify-page`: 0 mismatches), and the sim
+  shows every LIVE class-node cell's effect at least once per skill shape
+  (an event or state change named in the oracle's effect text: taunt
+  status, stun, pull displacement < 0 along the hit direction, thorns
+  instance, ward, cooldown cut, combo pct, parry block + counter, dash
+  displacement, crit ×2.2 amount, ×2 execute amount, pierce count,
+  knockback ×2, stand-still +40%, hop displacement, 3 zones / 3 shards,
+  forced crit with the roll still drawn); grey cells contribute nothing
+  (the instance amounts equal the unsocketed ones) and show the §15.5 strike
+  on the socket screen; inert cells show "+0".
+- **GP.4 Every class skill works**: each of the 24 class skills cast by
+  REAL keys (1–4) on a human seat (a 2-page host + guest session; the guest
+  takes each class seat in turn; the host makes the skill known and equips
+  it with `partyLearn` + `partyEquip` between rooms) produces its sim effect (the §25.2 numbers: damage / shield /
+  status / displacement / taunt target switch), its VFX (a pixel diff ≥ 1.5%
+  inside a 240×240 box around the caster between the pre-cast and the +4
+  frame capture) and its audio cue (the skill's cue in `audio.cueLog` on
+  the guest within 150 ms of the press); the three passives pulse every
+  60 ticks ± 1 while equipped and never while in the satchel.
+- **GP.5 Class identity (critic judgement with evidence)**: over a carried
+  campaign (seeds 1–3, Suggested) — Tank: its taunts redirect ≥ 50% of the
+  taunted hostiles that were targeting another party member within 1 s,
+  the share of hostile attack starts aimed at the Tank is ≥ 1.3× its
+  v0.5.150 baseline share (same seeds) while a taunt source is equipped,
+  and shields the Tank granted absorb ≥ 8% of the party's damage taken in
+  rooms where Shield Wall is equipped; Swordsman: median distance to its
+  target at cast ≤ 1.2 u and ≥ 60% of Crescent Finisher casts with combo ≥
+  1; Archer: median distance to the nearest hostile at cast ≥ 2.5 u and ≥
+  2× the Swordsman's. The critic adds its blind benchmark verdict (Darkest Dungeon /
+  Across the Obelisk / Diablo class identity).
+- **GP.6 Selection UX**: on the party page, the shop and the socket screen
+  every card / shelf card / socket row carries an owner band naming its
+  character and a matching `data-seat`; from any tab to any other ≤ 2
+  inputs by keyboard (Q/E, F1–F4), mouse (1 click) and mocked gamepad
+  (LB/RB); the Replaces selector cycles by W/S, wheel and D-pad; the settle
+  window drops a switch in the first 300 ms and E / F1–F4 restart it; at
+  1024×576, 1600×900, 1920×1080 and 2560×1440: 0 overlapping interactive
+  boxes, 0 clipped text nodes, no scrollbars, every tab ≥ 44 design px,
+  text ≥ the §17 floors. Real input only (no cmd) for this gate.
+- **GP.7 Supply arc (Node, seeds 1–5, carried campaign, Suggested)**: per
+  level and per ally: spoils 1 per combat clear, 1 card per combat room,
+  shop 4 cards / buys ≤ 3 (any three affordable at 72), purse +12 per
+  clear; sockets filled at the Level 1 Stag 8–16 / 32 and at the Level 2
+  Stag 20–30 / 32 (median), 32 / 32 before the Level 3 Stag, then upgrade
+  offers (never an empty ally page while an upgrade exists); the Healer's
+  counts equal §14 exactly; inputs per party page in Suggested mode = 1.
+- **GP.8 AI**: over a full carried campaign (seeds 1–3, Suggested), every
+  EQUIPPED active of every AI-held ally is cast in every combat room it was
+  equipped for ≥ 20 s (`partyAiLog`: 0 idle equipped actives; report casts
+  per skill per level), the idle fallback accounts for ≤ 25% of casts,
+  guard skills never target a Downed member, 0 dash / vault end points
+  beyond the leash, 0 Pinning Arrows on the Stag while another target
+  qualified; the AI loadout equals the §25.8 priority rule after every
+  learn; timeouts use the same suggestion.
+- **GP.9 Multiplayer ownership + deadlines** (N1 conditions, 2–4 clients):
+  each guest changes only its own seat — every attempt on another seat
+  (page, shop, socket, equip) → `command_rejected not_owner`, state hash
+  unchanged; the host changes seat 0 and AI-held seats only; parallel
+  picks commit when the last human decides (≤ one snapshot later on every
+  client); a stalled guest (never answers) → the page commits at 30.0 s ±
+  0.5 s with `party_autopick` + the toast on every client and the stalled
+  seat holding the AI suggestion; the door deadline 30 s → left door; shop:
+  Advance with a guest not Done → 15 s countdown → leave; the shop's own
+  90 s deadline; an open guest socket screen holds the door ≤ 8 s then
+  closes banking its node; an away guest's card is decided at once;
+  single-player never shows a countdown.
+- **GP.10 Replication**: after every page commit, purchase, socket op and
+  level transition the guest's `systems.party` + `run.party` equal the
+  host's (hash) — 0 desyncs over a 10-minute session; drop-in takes the
+  AI-built seat with its build; a rejoin keeps the build; a migration
+  keeps all four; Level 3 with four full builds (`?partygrant=3`): guest
+  downstream ≤ 12 KB/s average and ≤ 24 KB/s p95 at N1 (the §3.7 budget).
+- **GP.11 Carry + save**: at both level transitions of a carried campaign
+  the four builds (loadout, known, sockets, bench, purse) are identical
+  before and after the card, every seat at max HP, standing, no statuses,
+  cooldowns ready, no taunts / parries / dashes / echo recasts pending;
+  `save.roundTrip` mid-level and on the party page with four built
+  characters → equal hashes and an identical continuation; a real schema-3
+  file (from `git archive` of v0.5.150) loads: allies on their kits + the
+  catch-up grant applied once (`party_catchup`), a schema-1 and a schema-2
+  file chain to schema 4; Continue resumes mid-campaign with all four
+  builds.
+- **GP.12 Modes are real**: Suggested — 1 focus stop, AI-held cards
+  pre-decided, AI-held benches auto-filled at commit; Manual — 4 focus
+  stops, nothing pre-decided, ally benches untouched; Automatic — 1 focus
+  stop, no ally tab stops, summary line, ally shop buys at open;
+  `autoSocketOwn` On fills the own bench at commit, Off leaves it (the
+  Healer default); each measured by real input on the running game.
+- **GP.13 Difficulty band** (Node + a page spot check, seeds 1–5, carried
+  from Level 1 AND Level-2 / Level-3 starts with the grant): (a) the §4.2 /
+  GC.12 band; (b) per level, median party damage per combat room and median
+  time-to-clear within ×0.75–×1.35 of the v0.5.150 baseline
+  (`captures/gntPARTY-baseline-*`); (c) the Level 3 Stag room's median
+  party damage ≥ 0.8 × baseline; (d) ≥ 1 party down per level on ≥ 2 of 5
+  seeds; the numbers written into BUILD_BRIEF §23.2 as a dated note and
+  G4a.5 passing against it.
+- **GP.14 The Healer is unchanged**: every §16.10 invariant (Node probe
+  against a `git archive` of v0.5.150: pools, numbers, 289 grid cells,
+  spoils / shelf / wallet numbers, `reward_offer` / `spoils_drop` /
+  `shop_open` payload keys for seat 0); by real input the Healer's reward
+  still commits with ONE Enter in Suggested mode, its node still chains into
+  the socket screen with the node in hand, keys 1–4 / F / X / Esc behave as
+  before.
+- **GP.15 Performance**: GPU harness, Level 3 room 6 with four full builds
+  (`?level=3&partygrant=3` + `skipToRoom(6)`): after warm-up no frame > 50
+  ms and p95 ≤ 20 ms over 60 s; Node sim step p95 ≤ 4 ms; events per
+  second ≤ 2.5× the v0.5.150 Level 3 room 6 baseline; the party page / shop /
+  socket screen interactive within 350 ms of opening.
+- **GP.16 No regressions**: smoke exit 0; the §6.2 core loop to the reward
+  page (now the party page); the 6 `?room=` goldens event-identical
+  (§16.9) and the 3 run goldens re-recorded with proof; GC.1–GC.13 flows
+  (`tools/gntCAMPAIGN-gates.mjs`), G2 save probes (`gntM2-nodetrip`),
+  `gntM5b-ui` / `gntCAMPAIGN-net` sessions, GD.9 (single-player makes 0
+  `/echoes` sockets); 0 page errors throughout.
+
+## 17. Revision log — PARTY design (PARTYD, 2026-09-27)
+
+| # | What changed | Where |
+|---|---|---|
+| 1 | The user's per-character builds: every character has the Healer's build model from its own class pools; §7 kits = starting loadouts; the satchel for learning when full | §0 item 7, §16.1–16.3, BUILD_BRIEF §25.1–25.2, ruling A16 |
+| 2 | 24 class skills (12 new), 18 class nodes, shared access per class, guard + hostile-field columns, taunt status, dash / vault / combo / parry modifiers; oracle + generator with a Healer cross-check (289 cells, 0 mismatches) | BUILD_BRIEF §25.2–25.4, docs/gauntlet/party-oracle.json, tools/gntPARTYD-grid.mjs |
+| 3 | Party page (one card per character, own card first, Suggested / Manual / Automatic), per-character purses and shelves, socket screen tabs + satchel, the party strip and its keyboard / mouse / gamepad map | §16.4, BUILD_BRIEF §25.5–25.6 |
+| 4 | Multiplayer: each human builds their own seat, host builds AI seats, 30 s page / door deadlines, shop Done + countdowns, socket hold, replication | §3.7 note, §16.5, BUILD_BRIEF §25.7 |
+| 5 | AI equip + cast policy; save schema 4 + `MIGRATIONS[3]` + catch-up grant; carry rules for four builds; the ally starter grant; the retune method with a baseline-relative band | §16.3, §16.6–16.8, BUILD_BRIEF §25.8–25.10 |
+| 6 | Determinism policy (empty-build casts reproduce v0.5.150; party draw stream), Healer invariants, ownership, ports, params, cmds, tools, gates GP.1–GP.16 | §16.9–16.11, §2.1, §6.1, §6.3, §6.4, docs/TESTING.md PARTY |

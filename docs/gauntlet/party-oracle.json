@@ -1,0 +1,2570 @@
+{
+ "schema": "echoes-party-oracle/1",
+ "generatedBy": "tools/gntPARTYD-grid.mjs",
+ "classes": {
+  "tank": {
+   "skills": [
+    {
+     "id": "heavy_slam",
+     "name": "Heavy Slam",
+     "archetype": "damage",
+     "shape": "melee_arc",
+     "power": 34,
+     "cd": 5,
+     "range": 1,
+     "area": 40,
+     "count": 3,
+     "start": true
+    },
+    {
+     "id": "brutal_cleave",
+     "name": "Brutal Cleave",
+     "archetype": "damage",
+     "shape": "melee_arc",
+     "power": 16,
+     "cd": 4,
+     "range": 0.95,
+     "area": 80,
+     "count": 6,
+     "start": true
+    },
+    {
+     "id": "ground_crack",
+     "name": "Ground Crack",
+     "archetype": "damage",
+     "shape": "ground_aoe",
+     "power": 10,
+     "cd": 8,
+     "range": 2.6,
+     "area": 0.9,
+     "durationSec": 4,
+     "start": true
+    },
+    {
+     "id": "whirling_guard",
+     "name": "Whirling Guard",
+     "archetype": "damage",
+     "shape": "nova",
+     "power": 20,
+     "cd": 9,
+     "area": 1.3,
+     "count": 5,
+     "start": true
+    },
+    {
+     "id": "taunting_roar",
+     "name": "Taunting Roar",
+     "archetype": "damage",
+     "shape": "nova",
+     "power": 6,
+     "cd": 10,
+     "area": 2,
+     "count": 6,
+     "status": {
+      "kind": "taunt",
+      "mag": 1,
+      "ticks": 150
+     }
+    },
+    {
+     "id": "shield_wall",
+     "name": "Shield Wall",
+     "archetype": "guard",
+     "shape": "direct",
+     "power": 24,
+     "cd": 10,
+     "range": 3,
+     "count": 2,
+     "status": {
+      "kind": "shield",
+      "mag": 24,
+      "ticks": 240
+     }
+    },
+    {
+     "id": "shoulder_charge",
+     "name": "Shoulder Charge",
+     "archetype": "damage",
+     "shape": "melee_arc",
+     "power": 22,
+     "cd": 7,
+     "range": 0.9,
+     "area": 60,
+     "count": 3,
+     "dash": {
+      "dist": 2.4,
+      "speed": 9
+     },
+     "status": {
+      "kind": "stun",
+      "mag": 1,
+      "ticks": 36
+     }
+    },
+    {
+     "id": "iron_stance",
+     "name": "Iron Stance",
+     "archetype": "passive",
+     "field": "ally",
+     "output": "shield",
+     "shape": "aura",
+     "power": 3,
+     "area": 1.3,
+     "cadenceSec": 1,
+     "shieldCap": 12
+    }
+   ],
+   "starting": [
+    "heavy_slam",
+    "brutal_cleave",
+    "ground_crack",
+    "whirling_guard"
+   ],
+   "pool": [
+    "sharpen",
+    "quicken",
+    "multiply",
+    "ascend",
+    "widen",
+    "reach",
+    "linger",
+    "echo",
+    "snare",
+    "galvanize",
+    "bulwark",
+    "resonance",
+    "provoke",
+    "brace",
+    "tremor",
+    "anchor",
+    "retaliate",
+    "aegis"
+   ],
+   "classNodes": [
+    {
+     "id": "provoke",
+     "name": "Provoke",
+     "cls": "tank",
+     "kind": "technique",
+     "rarity": "common",
+     "limit": 1,
+     "glyph": "‼"
+    },
+    {
+     "id": "brace",
+     "name": "Brace",
+     "cls": "tank",
+     "kind": "technique",
+     "rarity": "common",
+     "limit": 2,
+     "glyph": "▣"
+    },
+    {
+     "id": "tremor",
+     "name": "Tremor",
+     "cls": "tank",
+     "kind": "technique",
+     "rarity": "rare",
+     "limit": 1,
+     "glyph": "∿"
+    },
+    {
+     "id": "anchor",
+     "name": "Anchor",
+     "cls": "tank",
+     "kind": "technique",
+     "rarity": "rare",
+     "limit": 1,
+     "glyph": "⤓"
+    },
+    {
+     "id": "retaliate",
+     "name": "Retaliate",
+     "cls": "tank",
+     "kind": "technique",
+     "rarity": "rare",
+     "limit": 1,
+     "glyph": "↺"
+    },
+    {
+     "id": "aegis",
+     "name": "Aegis",
+     "cls": "tank",
+     "kind": "technique",
+     "rarity": "legendary",
+     "limit": 1,
+     "glyph": "⬡"
+    }
+   ],
+   "shared": [
+    "sharpen",
+    "quicken",
+    "multiply",
+    "ascend",
+    "widen",
+    "reach",
+    "linger",
+    "echo",
+    "snare",
+    "galvanize",
+    "bulwark",
+    "resonance"
+   ],
+   "bands": {
+    "common": [
+     "sharpen",
+     "quicken",
+     "widen",
+     "reach",
+     "snare",
+     "galvanize",
+     "provoke",
+     "brace"
+    ],
+    "rare": [
+     "multiply",
+     "linger",
+     "echo",
+     "bulwark",
+     "tremor",
+     "anchor",
+     "retaliate"
+    ],
+    "legendary": [
+     "ascend",
+     "resonance",
+     "aegis"
+    ]
+   },
+   "grid": {
+    "heavy_slam": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (34→42.5)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (5→4.25 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 3→4"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (34→68)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "half-angle +25% (40°→50°)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (1→1.25 u)"
+     },
+     "linger": {
+      "state": "grey",
+      "reason": "nothing on this skill lasts — no duration to extend"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "bulwark": {
+      "state": "live",
+      "effect": "caster shield 20% of final damage (cap 30)"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "provoke": {
+      "state": "live",
+      "effect": "hit enemies taunted onto the Tank for 90 ticks (Stag 45)"
+     },
+     "brace": {
+      "state": "live",
+      "effect": "each cast shields the Tank +8 per copy (240 ticks)"
+     },
+     "tremor": {
+      "state": "live",
+      "effect": "hit enemies stunned 18 ticks (non-boss)"
+     },
+     "anchor": {
+      "state": "live",
+      "effect": "enemies hit pulled 0.5 u toward the Tank (not knocked back)"
+     },
+     "retaliate": {
+      "state": "live",
+      "effect": "for 120 ticks after the cast, hostiles that hit the Tank take 25% flat-stage power"
+     },
+     "aegis": {
+      "state": "live",
+      "effect": "ward 20% on the Tank while this skill is on cooldown"
+     }
+    },
+    "brutal_cleave": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (16→20)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (4→3.4 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 6→7"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (16→32)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "half-angle +25% (80°→90°)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (0.95→1.188 u)"
+     },
+     "linger": {
+      "state": "grey",
+      "reason": "nothing on this skill lasts — no duration to extend"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "bulwark": {
+      "state": "live",
+      "effect": "caster shield 20% of final damage (cap 30)"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "provoke": {
+      "state": "live",
+      "effect": "hit enemies taunted onto the Tank for 90 ticks (Stag 45)"
+     },
+     "brace": {
+      "state": "live",
+      "effect": "each cast shields the Tank +8 per copy (240 ticks)"
+     },
+     "tremor": {
+      "state": "live",
+      "effect": "hit enemies stunned 18 ticks (non-boss)"
+     },
+     "anchor": {
+      "state": "live",
+      "effect": "enemies hit pulled 0.5 u toward the Tank (not knocked back)"
+     },
+     "retaliate": {
+      "state": "live",
+      "effect": "for 120 ticks after the cast, hostiles that hit the Tank take 25% flat-stage power"
+     },
+     "aegis": {
+      "state": "live",
+      "effect": "ward 20% on the Tank while this skill is on cooldown"
+     }
+    },
+    "ground_crack": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (10→12.5)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (8→6.8 s)"
+     },
+     "multiply": {
+      "state": "grey",
+      "reason": "no count stat on this skill"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (10→20)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "radius +25% (0.9→1.125 u)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (2.6→3.25 u)"
+     },
+     "linger": {
+      "state": "live",
+      "effect": "zone 4→6 zone ticks"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "bulwark": {
+      "state": "live",
+      "effect": "caster shield 20% of final damage (cap 30)"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "provoke": {
+      "state": "live",
+      "effect": "hit enemies taunted onto the Tank for 90 ticks (Stag 45)"
+     },
+     "brace": {
+      "state": "live",
+      "effect": "each cast shields the Tank +8 per copy (240 ticks)"
+     },
+     "tremor": {
+      "state": "live",
+      "effect": "the first zone tick on each enemy stuns 18 ticks"
+     },
+     "anchor": {
+      "state": "live",
+      "effect": "enemies hit pulled 0.5 u toward the zone centre"
+     },
+     "retaliate": {
+      "state": "live",
+      "effect": "for 120 ticks after the cast, hostiles that hit the Tank take 25% flat-stage power"
+     },
+     "aegis": {
+      "state": "live",
+      "effect": "ward 20% on the Tank while this skill is on cooldown"
+     }
+    },
+    "whirling_guard": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (20→25)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (9→7.65 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 5→6"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (20→40)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "radius +25% (1.3→1.625 u)"
+     },
+     "reach": {
+      "state": "grey",
+      "reason": "no range stat on this skill"
+     },
+     "linger": {
+      "state": "grey",
+      "reason": "nothing on this skill lasts — no duration to extend"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "bulwark": {
+      "state": "live",
+      "effect": "caster shield 20% of final damage (cap 30)"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "provoke": {
+      "state": "live",
+      "effect": "hit enemies taunted onto the Tank for 90 ticks (Stag 45)"
+     },
+     "brace": {
+      "state": "live",
+      "effect": "each cast shields the Tank +8 per copy (240 ticks)"
+     },
+     "tremor": {
+      "state": "live",
+      "effect": "hit enemies stunned 18 ticks (non-boss)"
+     },
+     "anchor": {
+      "state": "live",
+      "effect": "enemies hit pulled 0.5 u toward the Tank (not knocked back)"
+     },
+     "retaliate": {
+      "state": "live",
+      "effect": "for 120 ticks after the cast, hostiles that hit the Tank take 25% flat-stage power"
+     },
+     "aegis": {
+      "state": "live",
+      "effect": "ward 20% on the Tank while this skill is on cooldown"
+     }
+    },
+    "taunting_roar": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (6→7.5)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (10→8.5 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 6→7"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (6→12)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "radius +25% (2→2.5 u)"
+     },
+     "reach": {
+      "state": "grey",
+      "reason": "no range stat on this skill"
+     },
+     "linger": {
+      "state": "live",
+      "effect": "taunt 150→225 ticks (taunt cap 240; the Stag stays ≤ 60)"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "bulwark": {
+      "state": "live",
+      "effect": "caster shield 20% of final damage (cap 30)"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "provoke": {
+      "state": "inert",
+      "reason": "+0 — this skill already taunts longer (150 ticks)"
+     },
+     "brace": {
+      "state": "live",
+      "effect": "each cast shields the Tank +8 per copy (240 ticks)"
+     },
+     "tremor": {
+      "state": "live",
+      "effect": "hit enemies stunned 18 ticks (non-boss)"
+     },
+     "anchor": {
+      "state": "live",
+      "effect": "enemies hit pulled 0.5 u toward the Tank (not knocked back)"
+     },
+     "retaliate": {
+      "state": "live",
+      "effect": "for 120 ticks after the cast, hostiles that hit the Tank take 25% flat-stage power"
+     },
+     "aegis": {
+      "state": "live",
+      "effect": "ward 20% on the Tank while this skill is on cooldown"
+     }
+    },
+    "shield_wall": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (24→30)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (10→8.5 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 2→3"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (24→48)"
+     },
+     "widen": {
+      "state": "grey",
+      "reason": "single-target shape — no area to widen"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (3→3.75 u)"
+     },
+     "linger": {
+      "state": "live",
+      "effect": "shield 240→360 ticks"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "shielded allies haste 20% for 90 ticks"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "shielded allies inspired +15% for 180 ticks"
+     },
+     "bulwark": {
+      "state": "live",
+      "effect": "the caster also gains 50% of each shield it grants"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "provoke": {
+      "state": "live",
+      "effect": "hostiles within 1.5 u of each recipient taunted onto the Tank for 60 ticks"
+     },
+     "brace": {
+      "state": "live",
+      "effect": "each cast shields the Tank +8 per copy (240 ticks)"
+     },
+     "tremor": {
+      "state": "grey",
+      "reason": "no hostile delivery to stagger with"
+     },
+     "anchor": {
+      "state": "grey",
+      "reason": "no hostile area delivery to pull with"
+     },
+     "retaliate": {
+      "state": "live",
+      "effect": "for 120 ticks after the cast, hostiles that hit the Tank take 25% flat-stage power"
+     },
+     "aegis": {
+      "state": "live",
+      "effect": "ward 20% on the Tank while on cooldown; recipients ward 20% for the shield's life"
+     }
+    },
+    "shoulder_charge": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (22→27.5)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (7→5.95 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 3→4"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (22→44)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "half-angle +25% (60°→75°)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (0.9→1.125 u)"
+     },
+     "linger": {
+      "state": "live",
+      "effect": "stun 36→54 ticks (the §23.8 60-tick stun cap)"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "bulwark": {
+      "state": "live",
+      "effect": "caster shield 20% of final damage (cap 30)"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "provoke": {
+      "state": "live",
+      "effect": "hit enemies taunted onto the Tank for 90 ticks (Stag 45)"
+     },
+     "brace": {
+      "state": "live",
+      "effect": "each cast shields the Tank +8 per copy (240 ticks)"
+     },
+     "tremor": {
+      "state": "inert",
+      "reason": "+0 — this skill already stuns longer (36 ticks)"
+     },
+     "anchor": {
+      "state": "live",
+      "effect": "enemies hit pulled 0.5 u toward the Tank (not knocked back)"
+     },
+     "retaliate": {
+      "state": "live",
+      "effect": "for 120 ticks after the cast, hostiles that hit the Tank take 25% flat-stage power"
+     },
+     "aegis": {
+      "state": "live",
+      "effect": "ward 20% on the Tank while this skill is on cooldown"
+     }
+    },
+    "iron_stance": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (3→3.75)"
+     },
+     "quicken": {
+      "state": "grey",
+      "reason": "no cooldown stat on this skill"
+     },
+     "multiply": {
+      "state": "grey",
+      "reason": "no count stat on this skill"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (3→6)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "radius +25% (1.3→1.625 u)"
+     },
+     "reach": {
+      "state": "grey",
+      "reason": "no range stat on this skill"
+     },
+     "linger": {
+      "state": "grey",
+      "reason": "nothing on this skill lasts — no duration to extend"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "Reapply: one bonus pulse every 3.0 s"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hostiles inside slowed 25% (pulse-refreshed)"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "allies inside inspired +10% (pulse-refreshed)"
+     },
+     "bulwark": {
+      "state": "live",
+      "effect": "each pulse +2 shield to allies inside (cap 10)"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd pulse ×2"
+     },
+     "provoke": {
+      "state": "live",
+      "effect": "each pulse taunts the 2 nearest hostiles inside for 72 ticks"
+     },
+     "brace": {
+      "state": "live",
+      "effect": "each pulse +2 shield per copy to the Tank (cap 12)"
+     },
+     "tremor": {
+      "state": "grey",
+      "reason": "a passive field — nothing here for this technique to act on"
+     },
+     "anchor": {
+      "state": "grey",
+      "reason": "a passive field — nothing here for this technique to act on"
+     },
+     "retaliate": {
+      "state": "grey",
+      "reason": "a passive field — nothing here for this technique to act on"
+     },
+     "aegis": {
+      "state": "live",
+      "effect": "allies inside ward 10% (pulse-refreshed)"
+     }
+    }
+   },
+   "capacity": {
+    "heavy_slam": 22,
+    "brutal_cleave": 22,
+    "ground_crack": 22,
+    "whirling_guard": 20,
+    "taunting_roar": 20,
+    "shield_wall": 19,
+    "shoulder_charge": 22,
+    "iron_stance": 14
+   },
+   "cells": 144
+  },
+  "swordsman": {
+   "skills": [
+    {
+     "id": "flurry",
+     "name": "Flurry",
+     "archetype": "damage",
+     "shape": "melee_arc",
+     "power": 11,
+     "cd": 3,
+     "range": 0.8,
+     "area": 60,
+     "count": 6,
+     "start": true
+    },
+    {
+     "id": "lunge_strike",
+     "name": "Lunge Strike",
+     "archetype": "damage",
+     "shape": "melee_arc",
+     "power": 26,
+     "cd": 4,
+     "range": 1.3,
+     "area": 30,
+     "count": 2,
+     "start": true
+    },
+    {
+     "id": "blade_storm",
+     "name": "Blade Storm",
+     "archetype": "damage",
+     "shape": "nova",
+     "power": 14,
+     "cd": 7,
+     "area": 1,
+     "count": 5,
+     "start": true
+    },
+    {
+     "id": "caltrops",
+     "name": "Caltrops",
+     "archetype": "damage",
+     "shape": "ground_aoe",
+     "power": 8,
+     "cd": 6.5,
+     "range": 2,
+     "area": 0.7,
+     "durationSec": 5,
+     "start": true
+    },
+    {
+     "id": "fox_step",
+     "name": "Fox Step",
+     "archetype": "damage",
+     "shape": "melee_arc",
+     "power": 18,
+     "cd": 5,
+     "range": 0.8,
+     "area": 50,
+     "count": 3,
+     "dash": {
+      "dist": 2,
+      "speed": 10,
+      "iframes": true
+     }
+    },
+    {
+     "id": "crescent_finisher",
+     "name": "Crescent Finisher",
+     "archetype": "damage",
+     "shape": "melee_arc",
+     "power": 20,
+     "cd": 6,
+     "range": 1,
+     "area": 70,
+     "count": 5,
+     "combo": {
+      "perStack": 0.5,
+      "maxStacks": 2,
+      "windowTicks": 120
+     }
+    },
+    {
+     "id": "riposte",
+     "name": "Riposte",
+     "archetype": "damage",
+     "shape": "melee_arc",
+     "power": 30,
+     "cd": 8,
+     "range": 0.9,
+     "area": 90,
+     "count": 3,
+     "parry": {
+      "windowTicks": 36
+     }
+    },
+    {
+     "id": "razor_wake",
+     "name": "Razor Wake",
+     "archetype": "passive",
+     "field": "hostile",
+     "output": "damage",
+     "shape": "aura",
+     "power": 4,
+     "area": 0.9,
+     "count": 3,
+     "cadenceSec": 1,
+     "knockback": 0
+    }
+   ],
+   "starting": [
+    "flurry",
+    "lunge_strike",
+    "blade_storm",
+    "caltrops"
+   ],
+   "pool": [
+    "sharpen",
+    "quicken",
+    "multiply",
+    "ascend",
+    "widen",
+    "reach",
+    "keen",
+    "siphon",
+    "echo",
+    "detonate",
+    "galvanize",
+    "resonance",
+    "flow",
+    "momentum",
+    "parry",
+    "pursuit",
+    "lethality",
+    "execute"
+   ],
+   "classNodes": [
+    {
+     "id": "flow",
+     "name": "Flow",
+     "cls": "swordsman",
+     "kind": "technique",
+     "rarity": "common",
+     "limit": 2,
+     "glyph": "⟳"
+    },
+    {
+     "id": "momentum",
+     "name": "Momentum",
+     "cls": "swordsman",
+     "kind": "technique",
+     "rarity": "common",
+     "limit": 1,
+     "glyph": "⇶"
+    },
+    {
+     "id": "parry",
+     "name": "Parry",
+     "cls": "swordsman",
+     "kind": "technique",
+     "rarity": "common",
+     "limit": 1,
+     "glyph": "⟂"
+    },
+    {
+     "id": "pursuit",
+     "name": "Pursuit",
+     "cls": "swordsman",
+     "kind": "technique",
+     "rarity": "rare",
+     "limit": 1,
+     "glyph": "↗"
+    },
+    {
+     "id": "lethality",
+     "name": "Lethality",
+     "cls": "swordsman",
+     "kind": "technique",
+     "rarity": "rare",
+     "limit": 1,
+     "glyph": "✕"
+    },
+    {
+     "id": "execute",
+     "name": "Execute",
+     "cls": "swordsman",
+     "kind": "technique",
+     "rarity": "legendary",
+     "limit": 1,
+     "glyph": "⌖"
+    }
+   ],
+   "shared": [
+    "sharpen",
+    "quicken",
+    "multiply",
+    "ascend",
+    "widen",
+    "reach",
+    "keen",
+    "siphon",
+    "echo",
+    "detonate",
+    "galvanize",
+    "resonance"
+   ],
+   "bands": {
+    "common": [
+     "sharpen",
+     "quicken",
+     "widen",
+     "reach",
+     "siphon",
+     "galvanize",
+     "flow",
+     "momentum",
+     "parry"
+    ],
+    "rare": [
+     "multiply",
+     "keen",
+     "echo",
+     "detonate",
+     "pursuit",
+     "lethality"
+    ],
+    "legendary": [
+     "ascend",
+     "resonance",
+     "execute"
+    ]
+   },
+   "grid": {
+    "flurry": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (11→13.75)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (3→2.55 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 6→7"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (11→22)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "half-angle +25% (60°→75°)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (0.8→1 u)"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "siphon": {
+      "state": "live",
+      "effect": "caster self-heals 25% of flat-stage power per instance"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "flow": {
+      "state": "live",
+      "effect": "a connecting cast: other skills −0.3 s per copy"
+     },
+     "momentum": {
+      "state": "live",
+      "effect": "+12% power per other Swordsman skill cast in the last 120 ticks (max +36%)"
+     },
+     "parry": {
+      "state": "live",
+      "effect": "after the cast, a 24-tick parry: the next hit is blocked, the attacker takes 50% power"
+     },
+     "pursuit": {
+      "state": "live",
+      "effect": "dash up to 1.2 u toward the target before resolving"
+     },
+     "lethality": {
+      "state": "live",
+      "effect": "crits deal ×2.2 (not ×1.5)"
+     },
+     "execute": {
+      "state": "live",
+      "effect": "×2 on hostiles at or below 35% HP"
+     }
+    },
+    "lunge_strike": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (26→32.5)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (4→3.4 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 2→3"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (26→52)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "half-angle +25% (30°→37.5°)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (1.3→1.625 u)"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "siphon": {
+      "state": "live",
+      "effect": "caster self-heals 25% of flat-stage power per instance"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "flow": {
+      "state": "live",
+      "effect": "a connecting cast: other skills −0.3 s per copy"
+     },
+     "momentum": {
+      "state": "live",
+      "effect": "+12% power per other Swordsman skill cast in the last 120 ticks (max +36%)"
+     },
+     "parry": {
+      "state": "live",
+      "effect": "after the cast, a 24-tick parry: the next hit is blocked, the attacker takes 50% power"
+     },
+     "pursuit": {
+      "state": "live",
+      "effect": "dash up to 1.2 u toward the target before resolving"
+     },
+     "lethality": {
+      "state": "live",
+      "effect": "crits deal ×2.2 (not ×1.5)"
+     },
+     "execute": {
+      "state": "live",
+      "effect": "×2 on hostiles at or below 35% HP"
+     }
+    },
+    "blade_storm": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (14→17.5)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (7→5.95 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 5→6"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (14→28)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "radius +25% (1→1.25 u)"
+     },
+     "reach": {
+      "state": "grey",
+      "reason": "no range stat on this skill"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "siphon": {
+      "state": "live",
+      "effect": "caster self-heals 25% of flat-stage power per instance"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "flow": {
+      "state": "live",
+      "effect": "a connecting cast: other skills −0.3 s per copy"
+     },
+     "momentum": {
+      "state": "live",
+      "effect": "+12% power per other Swordsman skill cast in the last 120 ticks (max +36%)"
+     },
+     "parry": {
+      "state": "live",
+      "effect": "after the cast, a 24-tick parry: the next hit is blocked, the attacker takes 50% power"
+     },
+     "pursuit": {
+      "state": "live",
+      "effect": "dash up to 1.2 u toward the target before resolving"
+     },
+     "lethality": {
+      "state": "live",
+      "effect": "crits deal ×2.2 (not ×1.5)"
+     },
+     "execute": {
+      "state": "live",
+      "effect": "×2 on hostiles at or below 35% HP"
+     }
+    },
+    "caltrops": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (8→10)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (6.5→5.525 s)"
+     },
+     "multiply": {
+      "state": "grey",
+      "reason": "no count stat on this skill"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (8→16)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "radius +25% (0.7→0.875 u)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (2→2.5 u)"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "siphon": {
+      "state": "live",
+      "effect": "caster self-heals 25% of flat-stage power per instance"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "flow": {
+      "state": "live",
+      "effect": "first connecting zone tick: other skills −0.3 s per copy"
+     },
+     "momentum": {
+      "state": "live",
+      "effect": "+12% power per other Swordsman skill cast in the last 120 ticks (max +36%)"
+     },
+     "parry": {
+      "state": "live",
+      "effect": "after the cast, a 24-tick parry: the next hit is blocked, the attacker takes 50% power"
+     },
+     "pursuit": {
+      "state": "grey",
+      "reason": "the delivery is placed at range — nothing to close"
+     },
+     "lethality": {
+      "state": "live",
+      "effect": "crits deal ×2.2 (not ×1.5)"
+     },
+     "execute": {
+      "state": "live",
+      "effect": "×2 on hostiles at or below 35% HP"
+     }
+    },
+    "fox_step": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (18→22.5)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (5→4.25 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 3→4"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (18→36)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "half-angle +25% (50°→62.5°)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (0.8→1 u)"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "siphon": {
+      "state": "live",
+      "effect": "caster self-heals 25% of flat-stage power per instance"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "flow": {
+      "state": "live",
+      "effect": "a connecting cast: other skills −0.3 s per copy"
+     },
+     "momentum": {
+      "state": "live",
+      "effect": "+12% power per other Swordsman skill cast in the last 120 ticks (max +36%)"
+     },
+     "parry": {
+      "state": "live",
+      "effect": "after the cast, a 24-tick parry: the next hit is blocked, the attacker takes 50% power"
+     },
+     "pursuit": {
+      "state": "live",
+      "effect": "dash +1.0 u (2→3 u)"
+     },
+     "lethality": {
+      "state": "live",
+      "effect": "crits deal ×2.2 (not ×1.5)"
+     },
+     "execute": {
+      "state": "live",
+      "effect": "×2 on hostiles at or below 35% HP"
+     }
+    },
+    "crescent_finisher": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (20→25)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (6→5.1 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 5→6"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (20→40)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "half-angle +25% (70°→87.5°)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (1→1.25 u)"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "siphon": {
+      "state": "live",
+      "effect": "caster self-heals 25% of flat-stage power per instance"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "flow": {
+      "state": "live",
+      "effect": "a connecting cast: other skills −0.3 s per copy"
+     },
+     "momentum": {
+      "state": "live",
+      "effect": "+12% power per other Swordsman skill cast in the last 120 ticks (max +36%)"
+     },
+     "parry": {
+      "state": "live",
+      "effect": "after the cast, a 24-tick parry: the next hit is blocked, the attacker takes 50% power"
+     },
+     "pursuit": {
+      "state": "live",
+      "effect": "dash up to 1.2 u toward the target before resolving"
+     },
+     "lethality": {
+      "state": "live",
+      "effect": "crits deal ×2.2 (not ×1.5)"
+     },
+     "execute": {
+      "state": "live",
+      "effect": "×2 on hostiles at or below 35% HP"
+     }
+    },
+    "riposte": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (30→37.5)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (8→6.8 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 3→4"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (30→60)"
+     },
+     "widen": {
+      "state": "inert",
+      "reason": "+0 — already a full 90° half-angle (the §23.4 clamp)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (0.9→1.125 u)"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "siphon": {
+      "state": "live",
+      "effect": "caster self-heals 25% of flat-stage power per instance"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hit enemies exposed +20% for 180 ticks"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "flow": {
+      "state": "live",
+      "effect": "a connecting cast: other skills −0.3 s per copy"
+     },
+     "momentum": {
+      "state": "live",
+      "effect": "+12% power per other Swordsman skill cast in the last 120 ticks (max +36%)"
+     },
+     "parry": {
+      "state": "live",
+      "effect": "parry window +24 ticks (36→60)"
+     },
+     "pursuit": {
+      "state": "grey",
+      "reason": "the counter answers an attacker already in reach"
+     },
+     "lethality": {
+      "state": "live",
+      "effect": "crits deal ×2.2 (not ×1.5)"
+     },
+     "execute": {
+      "state": "live",
+      "effect": "×2 on hostiles at or below 35% HP"
+     }
+    },
+    "razor_wake": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (4→5)"
+     },
+     "quicken": {
+      "state": "grey",
+      "reason": "no cooldown stat on this skill"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 3→4"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (4→8)"
+     },
+     "widen": {
+      "state": "live",
+      "effect": "radius +25% (0.9→1.125 u)"
+     },
+     "reach": {
+      "state": "grey",
+      "reason": "no range stat on this skill"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "siphon": {
+      "state": "live",
+      "effect": "each pulse that hits heals the caster 25% of flat-stage pulse power"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "Reapply: one bonus pulse every 3.0 s"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by a pulse explode: 50% power, r 1.2"
+     },
+     "galvanize": {
+      "state": "live",
+      "effect": "hostiles hit exposed +10% (pulse-refreshed)"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd pulse ×2"
+     },
+     "flow": {
+      "state": "live",
+      "effect": "each pulse that hits: other skills −0.1 s per copy"
+     },
+     "momentum": {
+      "state": "live",
+      "effect": "pulses +12% per skill cast in the last 120 ticks (max +36%)"
+     },
+     "parry": {
+      "state": "grey",
+      "reason": "a passive field — nothing here for this technique to act on"
+     },
+     "pursuit": {
+      "state": "grey",
+      "reason": "a passive field — nothing here for this technique to act on"
+     },
+     "lethality": {
+      "state": "live",
+      "effect": "crits deal ×2.2 (not ×1.5)"
+     },
+     "execute": {
+      "state": "live",
+      "effect": "×2 on hostiles at or below 35% HP"
+     }
+    }
+   },
+   "capacity": {
+    "flurry": 23,
+    "lunge_strike": 23,
+    "blade_storm": 21,
+    "caltrops": 21,
+    "fox_step": 23,
+    "crescent_finisher": 23,
+    "riposte": 20,
+    "razor_wake": 17
+   },
+   "cells": 144
+  },
+  "archer": {
+   "skills": [
+    {
+     "id": "piercing_shot",
+     "name": "Piercing Shot",
+     "archetype": "damage",
+     "shape": "projectile",
+     "power": 30,
+     "cd": 3,
+     "range": 5.5,
+     "speed": 6.2,
+     "count": 1,
+     "area": 0,
+     "start": true
+    },
+    {
+     "id": "volley",
+     "name": "Volley",
+     "archetype": "damage",
+     "shape": "projectile",
+     "power": 14,
+     "cd": 4.5,
+     "range": 4.8,
+     "speed": 5.4,
+     "count": 3,
+     "area": 0,
+     "start": true
+    },
+    {
+     "id": "detonating_charge",
+     "name": "Detonating Charge",
+     "archetype": "damage",
+     "shape": "ground_aoe",
+     "power": 12,
+     "cd": 7,
+     "range": 4.2,
+     "area": 0.85,
+     "durationSec": 3,
+     "start": true
+    },
+    {
+     "id": "sundering_nova",
+     "name": "Sundering Nova",
+     "archetype": "damage",
+     "shape": "nova",
+     "power": 16,
+     "cd": 8,
+     "area": 1.1,
+     "count": 4,
+     "start": true
+    },
+    {
+     "id": "vault_shot",
+     "name": "Vault Shot",
+     "archetype": "damage",
+     "shape": "projectile",
+     "power": 18,
+     "cd": 6,
+     "range": 4.5,
+     "speed": 6,
+     "count": 1,
+     "area": 0,
+     "vault": {
+      "dist": 1.6,
+      "ticks": 10,
+      "iframes": true
+     },
+     "status": {
+      "kind": "slow",
+      "mag": 0.3,
+      "ticks": 90
+     }
+    },
+    {
+     "id": "pinning_arrow",
+     "name": "Pinning Arrow",
+     "archetype": "damage",
+     "shape": "projectile",
+     "power": 20,
+     "cd": 7,
+     "range": 5,
+     "speed": 6,
+     "count": 1,
+     "area": 0,
+     "status": {
+      "kind": "stun",
+      "mag": 1,
+      "ticks": 45
+     }
+    },
+    {
+     "id": "rain_of_arrows",
+     "name": "Rain of Arrows",
+     "archetype": "damage",
+     "shape": "ground_aoe",
+     "power": 7,
+     "cd": 11,
+     "range": 5,
+     "area": 1.4,
+     "durationSec": 4,
+     "status": {
+      "kind": "slow",
+      "mag": 0.25,
+      "ticks": 72
+     }
+    },
+    {
+     "id": "kestrel_watch",
+     "name": "Kestrel Watch",
+     "archetype": "passive",
+     "field": "hostile",
+     "output": "damage",
+     "shape": "aura",
+     "power": 6,
+     "area": 4,
+     "count": 1,
+     "cadenceSec": 1
+    }
+   ],
+   "starting": [
+    "piercing_shot",
+    "volley",
+    "detonating_charge",
+    "sundering_nova"
+   ],
+   "pool": [
+    "sharpen",
+    "quicken",
+    "multiply",
+    "ascend",
+    "reach",
+    "linger",
+    "keen",
+    "bounce",
+    "split",
+    "snare",
+    "detonate",
+    "echo",
+    "resonance",
+    "skewer",
+    "concussive",
+    "steady_aim",
+    "disengage",
+    "scatter",
+    "heartseeker"
+   ],
+   "classNodes": [
+    {
+     "id": "skewer",
+     "name": "Skewer",
+     "cls": "archer",
+     "kind": "technique",
+     "rarity": "common",
+     "limit": 2,
+     "glyph": "→"
+    },
+    {
+     "id": "concussive",
+     "name": "Concussive",
+     "cls": "archer",
+     "kind": "technique",
+     "rarity": "common",
+     "limit": 1,
+     "glyph": "⊙"
+    },
+    {
+     "id": "steady_aim",
+     "name": "Steady Aim",
+     "cls": "archer",
+     "kind": "technique",
+     "rarity": "rare",
+     "limit": 1,
+     "glyph": "⊡"
+    },
+    {
+     "id": "disengage",
+     "name": "Disengage",
+     "cls": "archer",
+     "kind": "technique",
+     "rarity": "rare",
+     "limit": 1,
+     "glyph": "↶"
+    },
+    {
+     "id": "scatter",
+     "name": "Scatter",
+     "cls": "archer",
+     "kind": "technique",
+     "rarity": "rare",
+     "limit": 1,
+     "glyph": "⁂"
+    },
+    {
+     "id": "heartseeker",
+     "name": "Heartseeker",
+     "cls": "archer",
+     "kind": "technique",
+     "rarity": "legendary",
+     "limit": 1,
+     "glyph": "♡"
+    }
+   ],
+   "shared": [
+    "sharpen",
+    "quicken",
+    "multiply",
+    "ascend",
+    "reach",
+    "linger",
+    "keen",
+    "bounce",
+    "split",
+    "snare",
+    "detonate",
+    "echo",
+    "resonance"
+   ],
+   "bands": {
+    "common": [
+     "sharpen",
+     "quicken",
+     "reach",
+     "bounce",
+     "snare",
+     "skewer",
+     "concussive"
+    ],
+    "rare": [
+     "multiply",
+     "linger",
+     "keen",
+     "split",
+     "detonate",
+     "echo",
+     "steady_aim",
+     "disengage",
+     "scatter"
+    ],
+    "legendary": [
+     "ascend",
+     "resonance",
+     "heartseeker"
+    ]
+   },
+   "grid": {
+    "piercing_shot": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (30→37.5)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (3→2.55 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 1→2"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (30→60)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (5.5→6.875 u)"
+     },
+     "linger": {
+      "state": "grey",
+      "reason": "nothing on this skill lasts — no duration to extend"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "bounce": {
+      "state": "live",
+      "effect": "impact ricochets to the nearest other enemy within 2.2 u"
+     },
+     "split": {
+      "state": "live",
+      "effect": "2 shards at ±35°, 40% power, 2.0 u"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "skewer": {
+      "state": "live",
+      "effect": "pierces +1 enemy per copy (full power)"
+     },
+     "concussive": {
+      "state": "live",
+      "effect": "knockback ×2 on non-boss hits"
+     },
+     "steady_aim": {
+      "state": "live",
+      "effect": "+40% power if the Archer stood still for 30 ticks"
+     },
+     "disengage": {
+      "state": "live",
+      "effect": "after the cast, hop 1.0 u away from the nearest hostile (8 i-frames)"
+     },
+     "scatter": {
+      "state": "live",
+      "effect": "a bolt spent at max range bursts into 3 shards (40%)"
+     },
+     "heartseeker": {
+      "state": "live",
+      "effect": "the first instance per target per cast is a guaranteed crit"
+     }
+    },
+    "volley": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (14→17.5)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (4.5→3.825 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 3→4"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (14→28)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (4.8→6 u)"
+     },
+     "linger": {
+      "state": "grey",
+      "reason": "nothing on this skill lasts — no duration to extend"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "bounce": {
+      "state": "live",
+      "effect": "impact ricochets to the nearest other enemy within 2.2 u"
+     },
+     "split": {
+      "state": "live",
+      "effect": "2 shards at ±35°, 40% power, 2.0 u"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "skewer": {
+      "state": "live",
+      "effect": "pierces +1 enemy per copy (full power)"
+     },
+     "concussive": {
+      "state": "live",
+      "effect": "knockback ×2 on non-boss hits"
+     },
+     "steady_aim": {
+      "state": "live",
+      "effect": "+40% power if the Archer stood still for 30 ticks"
+     },
+     "disengage": {
+      "state": "live",
+      "effect": "after the cast, hop 1.0 u away from the nearest hostile (8 i-frames)"
+     },
+     "scatter": {
+      "state": "live",
+      "effect": "a bolt spent at max range bursts into 3 shards (40%)"
+     },
+     "heartseeker": {
+      "state": "live",
+      "effect": "the first instance per target per cast is a guaranteed crit"
+     }
+    },
+    "detonating_charge": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (12→15)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (7→5.95 s)"
+     },
+     "multiply": {
+      "state": "grey",
+      "reason": "no count stat on this skill"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (12→24)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (4.2→5.25 u)"
+     },
+     "linger": {
+      "state": "live",
+      "effect": "zone 3→5 zone ticks"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "bounce": {
+      "state": "grey",
+      "reason": "needs a retargetable impact (projectile or direct)"
+     },
+     "split": {
+      "state": "grey",
+      "reason": "needs a retargetable impact (projectile or direct)"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "skewer": {
+      "state": "grey",
+      "reason": "only a bolt can pierce"
+     },
+     "concussive": {
+      "state": "live",
+      "effect": "knockback ×2 on non-boss hits"
+     },
+     "steady_aim": {
+      "state": "live",
+      "effect": "+40% power if the Archer stood still for 30 ticks"
+     },
+     "disengage": {
+      "state": "live",
+      "effect": "after the cast, hop 1.0 u away from the nearest hostile (8 i-frames)"
+     },
+     "scatter": {
+      "state": "live",
+      "effect": "3 zones of 60% radius and power in a triangle"
+     },
+     "heartseeker": {
+      "state": "live",
+      "effect": "the first instance per target per cast is a guaranteed crit"
+     }
+    },
+    "sundering_nova": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (16→20)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (8→6.8 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 4→5"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (16→32)"
+     },
+     "reach": {
+      "state": "grey",
+      "reason": "no range stat on this skill"
+     },
+     "linger": {
+      "state": "grey",
+      "reason": "nothing on this skill lasts — no duration to extend"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "bounce": {
+      "state": "grey",
+      "reason": "needs a retargetable impact (projectile or direct)"
+     },
+     "split": {
+      "state": "grey",
+      "reason": "needs a retargetable impact (projectile or direct)"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "skewer": {
+      "state": "grey",
+      "reason": "only a bolt can pierce"
+     },
+     "concussive": {
+      "state": "live",
+      "effect": "knockback ×2 on non-boss hits"
+     },
+     "steady_aim": {
+      "state": "live",
+      "effect": "+40% power if the Archer stood still for 30 ticks"
+     },
+     "disengage": {
+      "state": "live",
+      "effect": "after the cast, hop 1.0 u away from the nearest hostile (8 i-frames)"
+     },
+     "scatter": {
+      "state": "grey",
+      "reason": "a self burst has nothing to scatter"
+     },
+     "heartseeker": {
+      "state": "live",
+      "effect": "the first instance per target per cast is a guaranteed crit"
+     }
+    },
+    "vault_shot": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (18→22.5)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (6→5.1 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 1→2"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (18→36)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (4.5→5.625 u)"
+     },
+     "linger": {
+      "state": "live",
+      "effect": "slow 90→135 ticks"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "bounce": {
+      "state": "live",
+      "effect": "impact ricochets to the nearest other enemy within 2.2 u"
+     },
+     "split": {
+      "state": "live",
+      "effect": "2 shards at ±35°, 40% power, 2.0 u"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "skewer": {
+      "state": "live",
+      "effect": "pierces +1 enemy per copy (full power)"
+     },
+     "concussive": {
+      "state": "live",
+      "effect": "knockback ×2 on non-boss hits"
+     },
+     "steady_aim": {
+      "state": "live",
+      "effect": "+40% power if the Archer stood still for 30 ticks"
+     },
+     "disengage": {
+      "state": "live",
+      "effect": "vault +0.8 u (1.6→2.4 u)"
+     },
+     "scatter": {
+      "state": "live",
+      "effect": "a bolt spent at max range bursts into 3 shards (40%)"
+     },
+     "heartseeker": {
+      "state": "live",
+      "effect": "the first instance per target per cast is a guaranteed crit"
+     }
+    },
+    "pinning_arrow": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (20→25)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (7→5.95 s)"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 1→2"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (20→40)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (5→6.25 u)"
+     },
+     "linger": {
+      "state": "live",
+      "effect": "stun 45→60 ticks (the §23.8 60-tick stun cap)"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "bounce": {
+      "state": "live",
+      "effect": "impact ricochets to the nearest other enemy within 2.2 u"
+     },
+     "split": {
+      "state": "live",
+      "effect": "2 shards at ±35°, 40% power, 2.0 u"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "skewer": {
+      "state": "live",
+      "effect": "pierces +1 enemy per copy (full power)"
+     },
+     "concussive": {
+      "state": "live",
+      "effect": "knockback ×2 on non-boss hits"
+     },
+     "steady_aim": {
+      "state": "live",
+      "effect": "+40% power if the Archer stood still for 30 ticks"
+     },
+     "disengage": {
+      "state": "live",
+      "effect": "after the cast, hop 1.0 u away from the nearest hostile (8 i-frames)"
+     },
+     "scatter": {
+      "state": "live",
+      "effect": "a bolt spent at max range bursts into 3 shards (40%)"
+     },
+     "heartseeker": {
+      "state": "live",
+      "effect": "the first instance per target per cast is a guaranteed crit"
+     }
+    },
+    "rain_of_arrows": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (7→8.75)"
+     },
+     "quicken": {
+      "state": "live",
+      "effect": "cooldown −15% (11→9.35 s)"
+     },
+     "multiply": {
+      "state": "grey",
+      "reason": "no count stat on this skill"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (7→14)"
+     },
+     "reach": {
+      "state": "live",
+      "effect": "range +25% (5→6.25 u)"
+     },
+     "linger": {
+      "state": "live",
+      "effect": "zone 4→6 zone ticks"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "bounce": {
+      "state": "grey",
+      "reason": "needs a retargetable impact (projectile or direct)"
+     },
+     "split": {
+      "state": "grey",
+      "reason": "needs a retargetable impact (projectile or direct)"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hit enemies slowed 40% for 90 ticks"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by this skill explode: 50% power, r 1.2"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "recast 1.0 s later at 50%"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd cast ×2"
+     },
+     "skewer": {
+      "state": "grey",
+      "reason": "only a bolt can pierce"
+     },
+     "concussive": {
+      "state": "live",
+      "effect": "knockback ×2 on non-boss hits"
+     },
+     "steady_aim": {
+      "state": "live",
+      "effect": "+40% power if the Archer stood still for 30 ticks"
+     },
+     "disengage": {
+      "state": "live",
+      "effect": "after the cast, hop 1.0 u away from the nearest hostile (8 i-frames)"
+     },
+     "scatter": {
+      "state": "live",
+      "effect": "3 zones of 60% radius and power in a triangle"
+     },
+     "heartseeker": {
+      "state": "live",
+      "effect": "the first instance per target per cast is a guaranteed crit"
+     }
+    },
+    "kestrel_watch": {
+     "sharpen": {
+      "state": "live",
+      "effect": "power +25% (6→7.5)"
+     },
+     "quicken": {
+      "state": "grey",
+      "reason": "no cooldown stat on this skill"
+     },
+     "multiply": {
+      "state": "live",
+      "effect": "count 1→2"
+     },
+     "ascend": {
+      "state": "live",
+      "effect": "power ×2 (6→12)"
+     },
+     "reach": {
+      "state": "grey",
+      "reason": "no range stat on this skill"
+     },
+     "linger": {
+      "state": "grey",
+      "reason": "nothing on this skill lasts — no duration to extend"
+     },
+     "keen": {
+      "state": "live",
+      "effect": "crit chance +0.15"
+     },
+     "bounce": {
+      "state": "grey",
+      "reason": "a passive field — nothing here for this technique to act on"
+     },
+     "split": {
+      "state": "grey",
+      "reason": "a passive field — nothing here for this technique to act on"
+     },
+     "snare": {
+      "state": "live",
+      "effect": "hostiles inside slowed 25% (pulse-refreshed)"
+     },
+     "detonate": {
+      "state": "live",
+      "effect": "kills by a pulse explode: 50% power, r 1.2"
+     },
+     "echo": {
+      "state": "live",
+      "effect": "Reapply: one bonus pulse every 3.0 s"
+     },
+     "resonance": {
+      "state": "live",
+      "effect": "every 3rd pulse ×2"
+     },
+     "skewer": {
+      "state": "grey",
+      "reason": "only a bolt can pierce"
+     },
+     "concussive": {
+      "state": "live",
+      "effect": "knockback ×2 on non-boss hits"
+     },
+     "steady_aim": {
+      "state": "live",
+      "effect": "pulses +40% while standing still 30 ticks"
+     },
+     "disengage": {
+      "state": "grey",
+      "reason": "a passive field — nothing here for this technique to act on"
+     },
+     "scatter": {
+      "state": "grey",
+      "reason": "a passive field — nothing here for this technique to act on"
+     },
+     "heartseeker": {
+      "state": "live",
+      "effect": "every pulse instance is a guaranteed crit"
+     }
+    }
+   },
+   "capacity": {
+    "piercing_shot": 23,
+    "volley": 23,
+    "detonating_charge": 18,
+    "sundering_nova": 15,
+    "vault_shot": 24,
+    "pinning_arrow": 24,
+    "rain_of_arrows": 18,
+    "kestrel_watch": 12
+   },
+   "cells": 152
+  }
+ },
+ "problems": [],
+ "healerCrossCheck": {
+  "cells": 289,
+  "mismatches": 0
+ }
+}

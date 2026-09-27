@@ -1572,3 +1572,171 @@ docs/gauntlet/build-DEPLOY.md.
   - The deploy critic's `tools/gntcdeploy4-zeroconf.mjs --guests 1` and
     `tools/gntcdeploy4-abort.mjs --log <preview log>` (navigate / close /
     kill) must add 0 lines to the preview log.
+
+### PARTY — per-character builds (2026-09-27; design PARTYD, build PARTY)
+
+Design: docs/BUILD_BRIEF.md §25 (ruling A16). State, contracts, flows and
+gates: docs/gauntlet/PLAN.md §16 (GP.1–GP.16). Oracle:
+docs/gauntlet/party-oracle.json (`node tools/gntPARTYD-grid.mjs` writes it;
+`--md` prints the §25.4 grids). Evidence: docs/gauntlet/build-PARTYD.md
+(design), docs/gauntlet/build-PARTY.md (build).
+
+- **What changes for every harness.** After a combat room the reward page is
+  the PARTY page (root class `rn-draft` kept; `run.view().phase` is still
+  `reward` until the page commits). `takeReward()` / `cmd('draftTake')` /
+  `cmd('draftDecline')` still address the Healer's card and then commit the
+  page with the AI-held cards as the mode left them — in the default
+  **Suggested** mode that is today's one-call behaviour, so the §6.2 core
+  loop, `tools/actions/gnt-arch-coreloop.json`, the act / campaign runners
+  and `gnt-arch-simtrace.mjs --mode run` keep working unchanged. Seat-0
+  commands (`giveSkill`, `grantNode`, `socket`, `unsocket`, `autoFill`,
+  `build*`, `shopBuy`, `wallet`) keep their meaning; ally builds use the
+  `party*` commands (PLAN §16.11). Params: `?party=suggest|manual|auto`,
+  `?partygrant=N` (a built party for probes; combine with `?level=`,
+  `?run=1` or `?menu=0`).
+- **Ports**: PARTY builder net 7950–7959, preview 4400–4401; party critic
+  net 7960–7969, preview 4402–4403 (`npx vite build --outDir dist-party`
+  then `npx vite preview --outDir dist-party --port <p> --strictPort`).
+- **Oracle checker** (runnable the moment PARTY lands; before that it exits
+  2 "not implemented", never a false pass): `node tools/gntPARTYD-grid.mjs
+  --verify-node` (Node world, `cmd('partyPools')` + `cmd('partyVerdicts')`)
+  and `--verify-page [url]` (GPU harness, default
+  `http://127.0.0.1:5199/?menu=0&seed=7`). Pass = 0 pool mismatches and 0
+  of 440 grid-cell mismatches. The plain run (no flag) re-derives the
+  Healer's 289 cells from the same rules and compares them with the real
+  src/sim/nodes.js — it must stay at 0 mismatches after PARTY (GP.14).
+
+**Probes the party critic runs** (each is also PARTY's self-check; the
+numbers are the pass bars):
+
+1. **Pools + numbers (GP.1)** — the oracle checker in Node and in page;
+   `cmd('partyView', s)` for s = 1..3 after `?menu=0&seed=7` → the loadout
+   equals `STARTING_LOADOUT` (the §7 kit order), and every class skill row
+   in `__echoes.party.state()` equals BUILD_BRIEF §25.2 (compare with the
+   oracle's `skills` arrays field by field; the 12 `·s` rows also equal
+   v0.5.150's `ALLY_KITS`, read from a `git archive` of v0.5.150).
+2. **Cap + sockets sweep (GP.2)** — per ally: `partyEquip` of a 5th skill →
+   `equip_denied full`; learn the 4 new skills (`partyLearn` with `replace`
+   'satchel' and with slots 0–3) → loadout ≤ 4, known 8, satchel 4; every
+   class skill × every pool node × sockets 1..8 on an emptied row (combat
+   inactive: the party page or camp) → only `limit` denials (count them);
+   in combat every socket / equip / learn → `combat_active`.
+3. **Grid effects (GP.3)** — for every LIVE class-node cell (and the guard /
+   hostile-field shared cells): socket the node alone on that skill
+   (`partySocket`), then `partyCast(seat, slot)` into a `spawn('boar' |
+   'mantis', …)` set-up (a Stag for Execute and the taunt caps:
+   `skipToRoom(8)`); assert the oracle's effect text from events / state —
+   the taunt status and the enemy's target id = the Tank; stun ticks; a
+   pull = displacement toward the caster; a thorns instance with a
+   `retaliate:*` source; ward 20% for the resolved cooldown; the cooldown
+   cuts in `a.cds`; `hit_blocked { parry: true }` + `parry_counter`; dash /
+   hop displacement; a crit of base × 2.2; ×2 at ≤ 35% HP; the pierce count;
+   knockback ×2; +40% when standing still; 3 zones / 3 shards; a forced crit
+   while `rng.drawIndex` still advances. A GREY cell: instance amounts equal
+   the unsocketed cast and the socket screen shows the strike glyph; an
+   INERT cell shows "+0".
+4. **Casts by real input (GP.4)** — a 2-page session on your own server
+   (`?net=ws://127.0.0.1:<p>/echoes&nethost=1` / `&netjoin=CODE&netseat=N`);
+   for each class seat and each of its 8 skills: the host makes it known
+   and equips it between rooms (`partyLearn` + `partyEquip`), the guest
+   presses its key (1–4) aimed at a spawned enemy;
+   pass = the §25.2 sim effect in the host's events, a ≥ 1.5% pixel diff in
+   a 240×240 box around the caster between the pre-press frame and +4 frames
+   (`tools/analyze.mjs --box`), the skill's cue in the guest's
+   `__echoes.audio.cueLog()` within 150 ms. Passives: `aura_pulse { seat }`
+   every 60 ± 1 ticks while equipped, none while in the satchel.
+5. **Class identity (GP.5)** — `tools/gntPARTY-campaign.mjs --seeds 1-3` (or
+   the critic's own runner over `cmd('autopilot')` + `partyAiLog`): Tank
+   taunt redirect ≥ 50% within 1 s, share of hostile attack starts aimed at
+   the Tank ≥ 1.3× its v0.5.150 baseline share while a taunt source is
+   equipped, Tank-granted shields absorb ≥ 8% of the party's damage where
+   Shield Wall is equipped; Swordsman median cast distance ≤ 1.2 u, ≥ 60% of
+   Crescent Finisher casts with combo ≥ 1; Archer median distance to the
+   nearest hostile at cast ≥ 2.5 u and ≥ 2× the Swordsman's. Plus the
+   critic's blind benchmark judgement (Darkest Dungeon / Across the Obelisk
+   / Diablo III class identity) with capture evidence.
+6. **Selection UX by real input (GP.6)** — GPU harness at 1024×576,
+   1600×900, 1920×1080, 2560×1440: the party page, the shop
+   (`skipToRoom(7)`) and the socket screen (B); for every pair of tabs count
+   the inputs to switch (Q/E, F1–F4, a click, a mocked pad's LB/RB) — max 2;
+   every card / shelf card / socket row has an owner band + `data-seat`
+   matching the viewed tab; Replaces cycles by W/S, the wheel and the D-pad;
+   a switch inside the first 300 ms is dropped and E / F1–F4 restart the
+   window (`runUi().settleInMs`); layout audit: 0 overlapping interactive
+   boxes, 0 clipped text nodes (scrollWidth > clientWidth), no scrollbars,
+   tabs ≥ 44 design px, text at the §17 floors.
+7. **Supply arc (GP.7)** — Node, `tools/gntPARTY-campaign.mjs --from 1
+   --seeds 1-5 --node 1`: per ally per combat clear 1 spoils, 1 card, +12
+   purse; shop 4 cards, ≤ 3 buys; sockets filled at the L1 Stag 8–16 / 32
+   and the L2 Stag 20–30 / 32 (median), 32 / 32 before the L3 Stag, upgrade
+   offers after; the Healer's numbers exactly §14; inputs per party page in
+   Suggested = 1.
+8. **AI (GP.8)** — the same campaign run: `partyAiLog()` per level — 0
+   equipped actives with 0 casts in a room where they were equipped ≥ 20 s;
+   idle fallbacks ≤ 25% of casts; 0 guard casts on Downed members; 0 dash /
+   vault end points beyond the leash; 0 Pinning Arrows on the Stag while
+   another target qualified; the loadout after every learn = the §25.8
+   priority rule.
+9. **Multiplayer ownership + deadlines (GP.9)** — 3 clients at N1
+   (`--latency 150 --jitter 20 --loss 0.1` on your server): each guest sends
+   `party_pick` / `party_buy` / `party_socket` for ANOTHER seat →
+   `command_rejected not_owner`, hash unchanged; parallel picks commit ≤ one
+   snapshot after the last decision; a guest that never answers → commit at
+   30.0 ± 0.5 s with `party_autopick { reason: 'timeout' }`, one toast on
+   every client, the stalled seat holding the AI suggestion; door deadline
+   30 s → the left door; shop: the host's Advance with a guest not Done →
+   15 s countdown; the shop's own 90 s deadline; a guest socket screen open
+   at the door commit holds it ≤ 8 s, then closes with its node banked; an
+   away (hidden) guest's card is decided at once; single-player (no `?net`)
+   never shows a countdown.
+10. **Replication (GP.10)** — the same session for 10 minutes: after every
+    commit / purchase / socket op / level transition the guest's
+    `systems.party` and `run.party` hash equals the host's and
+    `net.stats().desyncs` = 0; drop a guest (`/admin/drop`) and rejoin →
+    the same build; `/admin/kill-host` → the migration keeps all four
+    builds; bandwidth: `tools/gnt-M5a-netbench.mjs --mode combat` on
+    `?level=3&partygrant=3` → guest downstream ≤ 12 KB/s avg, ≤ 24 KB/s p95
+    at N1.
+11. **Carry + save (GP.11)** — a carried campaign: diff the four builds and
+    the party state at both `level_transit`s (identical builds; max HP,
+    standing, no statuses, cooldowns ready, no taunts / parries / dashes /
+    pending echoes); `__echoes.save.roundTrip()` mid-level and on the party
+    page with `?partygrant=2` → `equal` and `continuationEqual`; a REAL
+    schema-3 save made on v0.5.150 (boot a `git archive` of it on your
+    preview port, save a slot mid-Level-2, export the file) → allies on
+    their kits, `party_catchup` once, `meta.party` present; schema-1 /
+    schema-2 fixtures chain to 4; Continue resumes with all four builds.
+12. **Modes (GP.12)** — real input per mode (`?party=` or Settings ▸
+    Gameplay): Suggested — 1 focus stop, pre-decided ally cards, ally benches
+    auto-filled at commit; Manual — 4 focus stops, nothing pre-decided, ally
+    benches untouched; Automatic — 1 focus stop, the summary line, ally shop
+    buys at open; `gameplay.autoSocketOwn` On fills the own bench at commit,
+    Off leaves it.
+13. **Difficulty band (GP.13)** — `tools/gntCAMPAIGN-camprun.mjs --from
+    1|2|3 --seeds 1-5` (Node, as extended by PARTY) against
+    `captures/gntPARTY-baseline-from{1,2,3}.json`: the §4.2 / GC.12 band;
+    per-level median party damage per combat room and time-to-clear within
+    ×0.75–×1.35 of baseline; the L3 Stag room's damage ≥ 0.8 × baseline;
+    ≥ 1 party down per level on ≥ 2 of 5 seeds; `node
+    tools/gntfixM4a3-g4a5.mjs` passes against the new §23.2 note. Spot-check
+    2 seeds in page.
+14. **The Healer unchanged (GP.14)** — `node tools/gntPARTYD-grid.mjs` (the
+    Healer cross-check, 0 mismatches) + a Node comparison against a `git
+    archive` of v0.5.150: `DRAFTABLE_SKILL_IDS`, the Healer's node pool,
+    every Healer skill row, spoils 2, shelf 4 at 15/15/20/25, wallet 72, the
+    seat-0 `reward_offer` / `spoils_drop` / `shop_open` payload key sets; by
+    real input: one Enter commits the page in Suggested mode, a Healer node
+    card chains into the socket screen with the node in hand on the
+    auto-fill target, keys 1–4 / F / X / Esc unchanged.
+15. **Performance (GP.15)** — GPU harness `?level=3&partygrant=3&seed=1`,
+    `cmd('skipToRoom', 6)`, 60 s of combat after warm-up: 0 frames > 50 ms,
+    p95 ≤ 20 ms (`app.frameStats()`); Node sim step p95 ≤ 4 ms in the same
+    room; events per second ≤ 2.5× the v0.5.150 L3 room-6 baseline; each build
+    page interactive ≤ 350 ms after it opens.
+16. **Regression (GP.16)** — the smoke; the §6.2 core loop to the (party)
+    reward page; `node tools/gntM2-goldens.mjs` under the §16.9 policy (the
+    6 `?room=` goldens event-identical; the 3 run goldens re-recorded with
+    the supply-off / legacy-constants proof); `tools/gntCAMPAIGN-gates.mjs`
+    flows; `node tools/gntM2-nodetrip.mjs`; the `gntM5b-ui` and
+    `gntCAMPAIGN-net` sessions; `tools/gntDEPLOY-sp.mjs` (0 `/echoes`
+    sockets in single-player); 0 page errors everywhere.
