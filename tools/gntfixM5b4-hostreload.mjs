@@ -16,8 +16,9 @@ const A = args();
 const port = Number(A.port || 7821);
 const BASE = A.base || 'http://127.0.0.1:4307/';
 const MODE = A.mode || 'reload';
-const OUT = A.out || `gntfixM5b4-hostreload-${MODE}`;
+const OUT = A.out || `gntfixM5b4-hostreload-${MODE}${A.at ? '-' + A.at : ''}`;
 const HOLD = Number(A.observe || 30);
+const AT = A.at || 'room2'; // room2 | levelclear (the reload lands on the level-clear transition card)
 const out = { tool: 'gntfixM5b4-hostreload', mode: MODE, port, base: BASE, trail: [], checks: [] };
 const check = (name, ok, detail) => { out.checks.push({ name, ok: !!ok, detail }); console.log(ok ? 'PASS' : 'FAIL', name, JSON.stringify(detail).slice(0, 500)); };
 const srv = await startServer(port, ['--admin']);
@@ -34,12 +35,24 @@ try {
   await Promise.all([G1, G2].map((g) => waitFor(g.page, () => { const d = window.__echoes.net.session.debugGuest(); return !!(d && d.synced); }, { timeout: 20000 })));
   await H.page.evaluate(() => window.__echoes.cmd('startCampaign', { level: 1 }));
   await waitFor(H.page, () => window.__echoes.state().run.phase === 'combat', { timeout: 20000 });
-  await H.page.evaluate(() => window.__echoes.cmd('killAllEnemies'));
-  await waitFor(H.page, () => window.__echoes.state().run.phase === 'reward', { timeout: 20000 });
-  for (let k = 0; k < 6; k++) { const ph = await H.page.evaluate(() => window.__echoes.state().run.phase); if (ph === 'combat') break; await H.page.keyboard.press('Enter'); await sleep(900); }
+  if (AT === 'levelclear') {
+    await H.page.evaluate(() => window.__echoes.cmd('skipToRoom', 8));
+    await waitFor(H.page, () => { const s = window.__echoes.state(); return s.run.room === 8 && s.run.phase === 'combat'; }, { timeout: 20000 });
+    await sleep(2500);
+    for (let k = 0; k < 20; k++) { const ph = await H.page.evaluate(() => { const E = window.__echoes; try { E.cmd('bossHp', 0.001); } catch { /* */ } E.cmd('killAllEnemies'); return E.campaign.state().transitionState; }); if (ph !== 'none') break; await sleep(400); }
+    await sleep(2300); // a keyframe taken on the card (every 2 s)
+  } else {
+    await H.page.evaluate(() => window.__echoes.cmd('killAllEnemies'));
+    await waitFor(H.page, () => window.__echoes.state().run.phase === 'reward', { timeout: 20000 });
+    for (let k = 0; k < 6; k++) { const ph = await H.page.evaluate(() => window.__echoes.state().run.phase); if (ph === 'combat') break; await H.page.keyboard.press('Enter'); await sleep(900); }
+  }
   const keepAlive = () => { const E = window.__echoes; window.__rk = setInterval(() => { try { for (const m of E.state().party || []) if (!m.downed && m.hp < m.maxHp * 0.6) E.cmd('setHp', m.id, m.maxHp); } catch { /* */ } }, 700); };
-  await H.page.evaluate(keepAlive);
-  await sleep(3000);
+  if (AT !== 'levelclear') {
+    await H.page.evaluate(keepAlive);
+    await sleep(3000);
+  }
+  out.beforeCampaign = await Promise.all([H, G1, G2].map((c) => c.page.evaluate(() => { const c2 = window.__echoes.campaign.state(); return { level: c2.level, transitionState: c2.transitionState, card: !!c2.card }; })));
+  for (const c of [G1, G2]) await c.page.evaluate(() => { window.__lv = []; for (const t of ['level_clear', 'level_transit', 'level_start']) window.__echoes.on(t, (ev) => window.__lv.push({ type: t, tick: ev.tick })); });
   out.code = code;
   out.before = { host: await snapState(H.page), g1: await snapState(G1.page), g2: await snapState(G2.page) };
   out.before.stored = await H.page.evaluate(() => ({ sessions: localStorage.getItem('echoes.net.sessions'), legacy: localStorage.getItem('echoes.net.session'), tab: sessionStorage.getItem('echoes.net.tab') }));
@@ -94,7 +107,10 @@ try {
   await shot(G1.page, `${OUT}-g1.png`);
   const b = out.before.host;
   const a = out.after;
-  const sameRun = (x) => x && x.level === b.level && x.room >= b.room && x.wallet >= b.wallet && x.skills === b.skills;
+  const sameRun = AT === 'levelclear'
+    ? (x) => x && x.level === 2 && x.phase === 'combat' && x.wallet >= b.wallet && x.skills === b.skills
+    : (x) => x && x.level === b.level && x.room >= b.room && x.wallet >= b.wallet && x.skills === b.skills;
+  if (AT === 'levelclear') out.guestLevelEvents = await Promise.all([G1, G2].map((c) => c.page.evaluate(() => window.__lv).catch(() => null)));
   if (MODE === 'late') {
     check('late Rejoin (after the grace): a guest took over, the old host plays the Healer as a guest', a.host.net === 'guest' && a.host.seat === 0, { host: a.host });
   } else {
