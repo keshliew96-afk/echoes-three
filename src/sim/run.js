@@ -619,8 +619,9 @@ export function createRunSystem({
       ...(reward.pool ? { pool: reward.pool, upgrade: reward.upgrade ? { ...reward.upgrade } : null } : {}),
       ...(reward.reason ? { reason: reward.reason } : {}),
       // Ruling A17: keys present only on a swap offer (fill-case traces keep
-      // their exact payload).
-      ...(reward.swap ? { swap: true, replace: reward.replace, suggest: reward.suggest } : {}),
+      // their exact payload) — exactly `swap` + `replace` (PLAN §16.3; the
+      // suggestion rides the run view, never the event).
+      ...(reward.swap ? { swap: true, replace: reward.replace } : {}),
     });
     // PARTY: the ally cards (party stream, seats 1 → 3) — the Healer's card 0
     // mirrors run.reward. With the ally supply off no page opens (the §16.9

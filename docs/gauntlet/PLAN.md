@@ -1694,11 +1694,13 @@ their own files through `impl.debug`):
   false)`) and the v0.5.150 constants back (`cmd('difficultyLegacy', true)`)
   and reproduces the v0.5.150 run goldens' events hash, state hash and RNG
   draws bit for bit. The v0.5.150 files are kept as
-  `captures/gntPARTY-v0.5.150-golden-run-<seed>.json`; the v0.5.162 build is
+  `captures/gntPARTY-v0.5.150-golden-run-<seed>.json`; the v0.5.163 build is
   recorded over `captures/gnt-M2-golden-run-<seed>.json` (run-1
-  `1a01792ae45708ad` / `89a56b63e6ad93aa`, 134 draws; run-2
-  `737aba2d51d39bc0` / `e1f81c05ac1e781e`, 163; run-3 `f382df118f5432c3` /
-  `7d307644a874c95a`, 136) — the reference for G2.10 / G5b.8 from v0.5.162.
+  `f7acf143b15362eb` / `89a56b63e6ad93aa`, 134 draws; run-2
+  `a220dc247b1bc8b4` / `e1f81c05ac1e781e`, 163; run-3 `b94b631c08638788` /
+  `7d307644a874c95a`, 136) — the reference for G2.10 / G5b.8 from v0.5.163
+  (re-recorded after v0.5.162's: class passives no longer pulse between
+  rooms, Flow's pulse cut, the swap `reward_offer` keys).
 
 ### 6.6 Audio probing
 
@@ -3273,7 +3275,14 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
   the COLD tree; the 30-tick hash covers them; the protocol-v3 EVENTS
   static-shape table (src/net/protocol) gains the new event types; the
   L3 bandwidth budget (§3.7) must still hold with four built characters
-  (GP.10).
+  (GP.10). *Built (2026-09-28, PARTY):* protocol **v4** — the new event
+  shapes, snapshot keys and strings appended to evshapes.js / bvalue.js
+  (existing indices unchanged) and five sim-only entity fields (`mods`,
+  `hitIds`, `hitsLeft`, `power`, `boltOwner`) dropped from the replicated
+  view (quantize.js DROP_KEYS); replicated state no longer churns every tick
+  (stillness written on transitions, a seat build's `lastHit` cleared at the
+  tick's end); a network save loaded single-player hands every human seat
+  back to the AI on its first tick (world.js), which clears its deadlines.
 - **Drop-in / rejoin / migration**: the seat's build is sim state — a
   drop-in takes it, a rejoin keeps it, a keyframe carries it.
 

@@ -1773,3 +1773,51 @@ numbers are the pass bars):
     flows; `node tools/gntM2-nodetrip.mjs`; the `gntM5b-ui` and
     `gntCAMPAIGN-net` sessions; `tools/gntDEPLOY-sp.mjs` (0 `/echoes`
     sockets in single-player); 0 page errors everywhere.
+
+**PARTY build — self-check tools and decisions (2026-09-28).** The build
+(docs/gauntlet/build-PARTY.md) measured every gate with its own `gntPARTY-`
+tools on the production preview (`npx vite build --outDir dist-party`,
+`npx vite preview --outDir dist-party --port 4400`) and its own session
+server (7950):
+
+- `node tools/gntPARTY-sim.mjs [--only pools,cap,sweep,combat,skills,save]
+  [--base150 <archive>]` — GP.1 / GP.2 / GP.11 in Node.
+- `node tools/gntPARTY-cells.mjs` — GP.3: every LIVE class-node cell per
+  skill shape (72 cases incl. one GREY cell per node) against the oracle's
+  effect text, on training dummies (they never walk off a zone).
+- `node tools/gntPARTY-casts.mjs` — GP.4 single-player leg (arena harness,
+  the realtime loop frozen for a control window and the cast window).
+- `node tools/gntPARTY-net.mjs --mode own | casts --seat N [--part dash]
+  [--cond N1|N2] | rearm | repl | bw --cond N1 [--secs 300] [--reskip 1]`
+  — GP.4 network leg (REAL keys 1–4 on a guest seat, the guest's cue
+  latency, pooled predErr inside the displacement windows), GP.9 (ownership,
+  parallel picks, deadlines, socket hold, shop Done / countdown, away,
+  live re-arming (a)–(e)), GP.10 (42 equality checks after commits / socket
+  ops / purchases / transitions, drop-in, rejoin, a ≥ 10-minute session with
+  0 desyncs, migration; bandwidth).
+- `node tools/gntPARTY-band.mjs [--seeds 1-5] [--root <copy>]` — GP.13 (a)–(d)
+  against `captures/gntPARTY-baseline-from{1,2,3}.json`, runs the CAMPAIGN
+  runner read-only.
+- `node tools/gntPARTY-healer.mjs --base150 <archive>` — GP.14 data + play
+  invariants against a `git archive` of v0.5.150.
+- `node tools/gntPARTY-campaign.mjs [--seeds 1-3] [--base150 <archive>]` —
+  GP.5 / GP.7 / GP.8 / GP.11 over whole carried campaigns (Node, the
+  CAMPAIGN runner's recipe, Suggested), from the sim's own events.
+- Diagnostics: `tools/gntPARTY-coldprobe.mjs [--natural 1] [--age 4]
+  [--dict 1]` (Node: which snapshot COLD paths / HOT rest fields / events
+  cost bytes, the dictionary misses), `tools/gntPARTY-snapprobe.mjs`.
+
+Decisions: **protocol v4** (PROTOCOL_VERSION 3 → 4) — the per-character
+build events, keys and strings appended to the static tables
+(src/net/protocol/evshapes.js, bvalue.js; existing indices unchanged) and five
+SIM-ONLY entity fields dropped from the replicated view (quantize.js
+DROP_KEYS: `mods`, `hitIds`, `hitsLeft`, `power`, `boltOwner` — no
+presentation layer reads them; a replica never steps, guests cannot save, a
+migrated host resumes from the exact keyframe). **GP.10 bandwidth** is
+measured over a whole Level 3 played in order with the four max-stress builds
+(`--mode bw`, the host's Healer on M4a's autopilot with `socket: 'off'`, the
+guest's scripted bot fighting, samples every 500 ms): 10.7–11.4 KB/s average
+at N1 at v0.5.163; re-entering room 6 every time it clears (`--reskip 1`, a
+spawn-heavy worst case the gate does not ask for) reads ~13 KB/s. **GP.13
+(d)** on the carried Levels 1–2 conflicts with (b): the v0.5.150 baseline
+itself has 0 of 5 seeds with a down there (BUILD_BRIEF §23.2 PARTY note).

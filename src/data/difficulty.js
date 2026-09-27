@@ -67,10 +67,10 @@
 // BOSS_DMG_SLOPE 0.9 -> 1.8, STAG_HP_LEVEL [1, 1.35, 1] -> [1, 1.8, 1.2] (a
 // longer, survivable Stag fight keeps its damage spike instead of a burst
 // that wipes the party), and the ally starter grant (src/data/campaign.js
-// STARTER_GRANT[N].allies). Measured (seeds 1-5): every §4.2 / GC.12 band
-// check true from all three starts; per-level combat-room damage x0.80-1.24
-// and time-to-clear x1.00-1.16 of the baseline; the Level 3 Stag room >= 0.84
-// x its baseline (docs/gauntlet/build-PARTY.md S8).
+// STARTER_GRANT[N].allies). Measured (v0.5.163, seeds 1-5): every §4.2 /
+// GC.12 band check true from all three starts; per-level combat-room damage
+// x0.75-1.18 and time-to-clear x0.99-1.16 of the baseline; the Level 3 Stag
+// room >= 1.0 x its baseline (docs/gauntlet/build-PARTY.md S8, S9).
 //
 // Pure module. The ?room= harness (no run, no act) never calls this: it keeps
 // the legacy §11 composition exactly (PLAN gate G4a.6).

@@ -40,7 +40,16 @@ export const MOVER_TOL = QPOS / 64; // re-anchor when drift > 1/64 u (4 position
 // host sim rewrites before every read (allies.js `leashD0` = the pre-move
 // distance the same tick's post-separation clamp reads). Changing this list
 // changes the replicated view (bump PROTOCOL_VERSION).
-export const DROP_KEYS = Object.freeze(['px', 'pz', 'leashD0']);
+// PARTY (protocol v4, GP.10): SIM-ONLY bolt / zone fields no presentation
+// layer reads — a pierce's hitsLeft + hitIds (host-side hit bookkeeping),
+// the class-technique `mods` (castId, scatter, execute …), the damage
+// `power` and the bolt subsystem tag `boltOwner` — so a NEW bolt costs ~26
+// bytes less on every delta that still carries it (with four max-stress
+// builds bolts spawn at ~12 / s). A replica never steps (the session's end
+// resets the world synchronously, app.quitToTitle), guests cannot save, and
+// a migrated host resumes from the exact keyframe — the dropped fields are
+// never needed off the host.
+export const DROP_KEYS = Object.freeze(['px', 'pz', 'leashD0', 'mods', 'hitIds', 'hitsLeft', 'power', 'boltOwner']);
 
 // Channel bits (quantised entity `ch`).
 export const CH = Object.freeze({ POS: 1, HP: 2, YAW: 4, YAWF: 8, AIM: 16, FLAGS: 32, MOVER: 64 });

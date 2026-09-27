@@ -610,6 +610,11 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       deltaBytesAvg: sh.deltaAvg ? Math.round(sh.deltaAvg * 10) / 10 : null,
       deltaRatio: sh.fullAvg && sh.deltaAvg ? Math.round((sh.deltaAvg / sh.fullAvg) * 1000) / 1000 : null,
       fullSnapshots: sh.fullCount,
+      // PARTY (GP.10 bandwidth probe): the average delta body split.
+      deltaHotAvg: Math.round((sh.deltaHotAvg || 0) * 10) / 10,
+      deltaColdAvg: Math.round((sh.deltaColdAvg || 0) * 10) / 10,
+      deltaChangedAvg: Math.round((sh.deltaChangedAvg || 0) * 10) / 10,
+      moverAnchors: sh.anchors,
       pacedDeltas: sh.pacedDeltas,
       snapshotsSent: stats.snapshots,
       eventBatches: stats.eventBatches,

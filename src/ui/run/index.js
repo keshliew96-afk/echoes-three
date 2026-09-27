@@ -969,6 +969,8 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
         // Ruling A17: the draft page's swap state (focus 0 Take / 1 Leave,
         // the Replaces mark, the 4 owned ids).
         draft: typeof screens.draft.probe === 'function' ? screens.draft.probe() : null,
+        // PARTY: the shop's viewed tab, card owners and lamp copy.
+        shop: typeof screens.shop.probe === 'function' ? screens.shop.probe() : null,
         shopAnim: () => screens.shop.animState(),
         shopPin: (ms) => screens.shop.pin(ms),
       };

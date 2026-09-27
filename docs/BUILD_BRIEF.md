@@ -1518,19 +1518,19 @@ grant, allies on their kits) was weaker than a carried one:
 | Level 2 | 1 | 9 | 1 | 34 |
 | Level 3 | 3 | 19 | 2 | 43 |
 
-Measured band (v0.5.162, headless Node sim, seeds 1–5,
-`captures/gntPARTY-band-v162*.json`): **carried from Level 1** — clears 5/5 ·
+Measured band (v0.5.163, headless Node sim, seeds 1–5,
+`captures/gntPARTY-band-v163*.json`): **carried from Level 1** — clears 5/5 ·
 5/5 · 3/5, every §4.2 / GC.12 band check true (19); per-level combat-room
-damage × 1.18 / 1.24 / 0.90 and time-to-clear × 1.16 / 1.13 / 1.01 of the
-baseline; the Level 3 Stag room 2383 vs 2824 (× 0.84). **Started at Level 2** —
+damage × 1.18 / 1.15 / 0.75 and time-to-clear × 1.09 / 1.13 / 0.99 of the
+baseline; the Level 3 Stag room 2819 vs 2824 (× 1.00). **Started at Level 2** —
 5/5 · 4/5, every band check true (13); × 0.91 / 0.80 damage, × 1.16 / 1.00
-time; Stag 2950 vs 2885. **Started at Level 3** — 4/5, every band check true
-(6); × 0.81 damage, × 1.02 time; Stag 2888 vs 2663. Party downs: Level 3 on
-5 · 5 · 4 of 5 seeds, the Level-2 start's Level 2 on 1 of 5; the carried
-Levels 1 and 2 on 0 of 5 — exactly as the v0.5.150 baseline (0 of 5 on both);
-GP.13 (d) ("≥ 1 down on ≥ 2 of 5 seeds per level") is therefore not met there,
-and meeting it would push those levels past (b)'s × 1.35 damage ceiling (a
-design conflict recorded in docs/gauntlet/build-PARTY.md for the design
+time; Stag 2950 vs 2885. **Started at Level 3** — 5/5, every band check true
+(6); × 0.81 damage, × 1.02 time; Stag 2888 vs 2663. Party downs: every Level 3
+on ≥ 3 of 5 seeds; Level 2 on 1 of 5 (carried and started); the carried
+Level 1 on 0 of 5 — the v0.5.150 baseline has 0 of 5 on Levels 1 and 2;
+GP.13 (d) ("≥ 1 down on ≥ 2 of 5 seeds per level") is therefore not met
+there, and meeting it would push those levels past (b)'s × 1.35 damage ceiling
+(a design conflict recorded in docs/gauntlet/build-PARTY.md for the design
 owner). Seeds 1–20 spot check (the same constants run from a scratch copy,
 `captures/gntPARTY-band-tune-N1-from{1,2,3}.json`): clears 20/20 · 20/20 ·
 14/20 carried, 20/20 · 14/20 from Level 2, 13/20 from Level 3; every band

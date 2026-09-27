@@ -276,6 +276,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     queueDeferred: (carrierOrdinal, resolve) => deferred.push({ carrierOrdinal, resolve }),
     queueContinuation: (fn) => continuations.push({ resolve: fn }),
     isCombatActive: combatActiveNow,
+    isBetweenRooms: () => !!(runSys && runSys.isActive() && !runSys.combatActive()),
   });
   const partyTech = createPartyTech({
     registry,
@@ -870,6 +871,13 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     } else if (seatsActive) {
       // The session ended: every seat returns to the §12 AI on this tick.
       seatsActive = false;
+      allySys.setSeatInputs(null, tick);
+    } else if (allySys.controllers().some((c, i) => i > 0 && c === 'human')) {
+      // PARTY (BUILD_BRIEF §25.7, PLAN GP.9 (e)): a NETWORK save loaded as
+      // single-player restores its human seat controllers — no input will
+      // ever drive them here: every ally seat returns to the AI on the first
+      // tick (seat_control), so the party page's network deadlines (armed
+      // only with >= 2 humans) are cleared on that tick too.
       allySys.setSeatInputs(null, tick);
     }
     continuousPhase(snapshot);

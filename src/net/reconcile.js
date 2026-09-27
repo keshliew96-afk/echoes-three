@@ -377,6 +377,9 @@ export function createOwnSeat({ seat, kit = null }) {
       skillCasts: stats.skillCasts,
       skillDashes: stats.skillDashes,
     }),
+    // PARTY probes (GP.4 / GP.9): the raw own-seat prediction errors since the
+    // last resetStats (pooled across cast windows by tools/gntPARTY-net.mjs).
+    predErrList: () => stats.predErr.map((e) => Math.round(e * 10000) / 10000),
     resetStats() {
       stats.predErr.length = 0;
       stats.predErrMax = 0;

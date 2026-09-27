@@ -7,7 +7,10 @@
 // u / w / D / based k), a one-byte HOT field mask, NEW mover anchors relative
 // to the snapshot tick, EVENTS bodies with static shapes (evshapes.js),
 // re-measured dictionaries; EVENTS_U carries the previous batch only.
-export const PROTOCOL_VERSION = 3;
+// v4 (PARTY, PLAN §16.5 / GP.10): the per-character build event shapes,
+// snapshot keys and strings appended to the static tables (evshapes.js,
+// bvalue.js) — existing indices unchanged, a v3 peer is refused as before.
+export const PROTOCOL_VERSION = 4;
 export const WS_PATH = '/echoes';
 export const DEFAULT_PORT = 7800; // player default; agents use their own ports (PLAN §6.3)
 export const DEFAULT_URL = `ws://127.0.0.1:${DEFAULT_PORT}${WS_PATH}`;

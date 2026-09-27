@@ -69,7 +69,7 @@ export function fillStress(build, ids, pool) {
   }
 }
 
-export function createPartySystem({ rng, registry, events, combat, getTick, player, isIframed, queueDeferred, queueContinuation, isCombatActive }) {
+export function createPartySystem({ rng, registry, events, combat, getTick, player, isIframed, queueDeferred, queueContinuation, isCombatActive, isBetweenRooms = null }) {
   let stream = createGameplayRng(partySeed(rng.seed));
   let mode = 'suggest';
   const autoSocketOwn = [false, false, false, false];
@@ -240,6 +240,11 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
         }
         if (tick < next) continue;
         s.auraNext[id] = next + AURA_CADENCE_TICKS;
+        // A class passive is a combat field: in a live run, between rooms (the
+        // party page, the doors, the shelf) and on the level card it keeps its
+        // cadence but does not pulse — the §25.9 carry rule (no statuses at
+        // the card). Harness scenes (no run) pulse as always.
+        if (isBetweenRooms && isBetweenRooms()) continue;
         pulse(i, id);
       }
     }
@@ -354,6 +359,13 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
   }
   function endOfTick() {
     if (tech) tech.endOfTick(getTick());
+    // A seat build's `lastHit` correlates a death with the hit that caused
+    // it in the SAME tick only (nodes.js); cleared at the tick's end so the
+    // replicated state does not churn with every hit (GP.10 bandwidth).
+    for (const i of PARTY_SEATS) {
+      const t = seats[i].build.tech;
+      if (t && t.lastHit() !== null) t.setLastHit(null);
+    }
   }
 
   // --------------------------------------------------------- grants / build --

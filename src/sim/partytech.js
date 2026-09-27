@@ -465,7 +465,9 @@ export function createPartyTech(ctx) {
               });
             });
           } else if (t === 'flow') {
-            if (c && c.echo) continue; // an echo is not a cast
+            // An echo is not a cast; a passive's pulse cuts by its own rule
+            // (afterPulse: −0.1 s per pulse that hits, never the cast's −0.3 s).
+            if (c && (c.echo || c.pulse)) continue;
             const key = c ? c.castId : `${src}@${ev.tick}`;
             if (flowDone.has(key)) continue;
             flowDone.set(key, true);
@@ -615,16 +617,24 @@ export function createPartyTech(ctx) {
   }
 
   // The per-tick bookkeeping: Steady Aim stillness, parry windows.
+  // Stillness is written only on a TRANSITION (GP.10 bandwidth: replicated
+  // state must not churn every tick): `stillSince` = the last tick the body
+  // moved, set when it stops (null while it moves — "still for 0 ticks").
+  // A move = this tick's displacement (x vs px, the tick-start position).
   function endOfTick(tick) {
     expireGuards(tick);
     for (const i of [1, 2, 3]) {
       const a = bodyOf(i);
       const st = stateOf(i);
       if (!a || !st) continue;
-      const moved = st.lastX === undefined || Math.abs(a.x - st.lastX) > 1e-4 || Math.abs(a.z - st.lastZ) > 1e-4;
-      if (moved) st.stillSince = tick;
-      st.lastX = a.x;
-      st.lastZ = a.z;
+      if ('lastX' in st) {
+        delete st.lastX;
+        delete st.lastZ;
+      }
+      const moved = Math.abs(a.x - (a.px ?? a.x)) > 1e-4 || Math.abs(a.z - (a.pz ?? a.z)) > 1e-4;
+      if (moved) {
+        if (st.stillSince !== null) st.stillSince = null;
+      } else if (st.stillSince === null || st.stillSince === undefined) st.stillSince = tick - 1;
     }
   }
 

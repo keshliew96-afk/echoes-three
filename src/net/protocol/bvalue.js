@@ -106,6 +106,16 @@ export const KEY_DICT = Object.freeze([
   'defendTicksLeft', 'waystone', 'interactable', 'total', 'n', 'hit', 'reach', 'halfAngle',
   'burrowed', 'flier', 'pct', 'amp', 'adds', 'quake', 'lunging', 'v', 'entities', 'playtimeSec',
   'seat', 'inputSeq', 'predicted', 'predId', 'controller', 'reason', 'ready',
+  // PARTY (protocol v4, GP.10): the per-character build state and event
+  // values, appended in measured order (existing indices unchanged).
+  'stillSince', 'seats', 'auraNext', 'iron_stance', 'razor_wake', 'kestrel_watch', 'auraEchoNext',
+  'hitsLeft', 'mods', 'castId', 'lantern_flurry', 'scatter', 'pale_lance', 'castSeq', 'nova_bloom',
+  'bell_toll', 'echo', 'recentCasts', 'replace', 'zx', 'zz', 'swap', 'substituted', 'suggest',
+  'choice', 'decided', 'execute', 'line', 'caltrops', 'by', 'heartseeker', 'applies', 'purse',
+  'kbDist', 'taunting_roar', 'promised', 'firstHits', 'flowDone', 'combo', 'retaliate',
+  'partyPages', 'page', 'openedTick', 'deadlineTick', 'owners', 'cards', 'doorDeadlineTick',
+  'parry', 'pendingCast', 'skillDash', 'dashIframes', 'catchUp', 'fillOwed', 'autoSocketOwn',
+  'screens', 'hold', 'touched', 'done', 'marked', 'shelves', 'leaveTick', 'classes',
 ]);
 
 export const STR_DICT = Object.freeze([
@@ -153,6 +163,24 @@ export const STR_DICT = Object.freeze([
   'guardian_bond', 'kindred_shield', 'sanctuary', 'The Sunken Mill', 'mill', 'THE HOLLOW STAG',
   'defeat', 'WA', 'Warding Aura', 'passive', 'aura', 'KS', 'Kindred Shield', 'GB', 'Guardian Bond',
   'DF', 'Dewfall', 'revive', 'SA', 'Sanctuary', 'aura_pulse',
+  // PARTY (protocol v4, GP.10): skill / node / owner / event strings of the
+  // per-character builds, appended in measured order.
+  'lantern_flurry', 'iron_stance', 'razor_wake', 'ward', 'pale_lance', 'kestrel_watch', 'nova_bloom',
+  'on_cooldown', 'rain_of_arrows', 'provoke', 'taunting_roar', 'echo_bolts', 'scatter_shards',
+  'scatter', 'rally_end', 'ally_regroup', 'nova_bloom:detonate', 'scatter_burst', 'rally', 'mark',
+  'target_cycle', 'no_enemies', 'split_shards:1', 'split_shards:2', 'split_shards:3',
+  'echo_bolts:1', 'echo_bolts:2', 'echo_bolts:3', 'volley:scatter', 'piercing_shot:scatter',
+  'take', 'leave', 'skill_bolt_pierce', 'ai', 'human', 'shield_broken', 'brace', 'aegis',
+  'volley:bounce', 'tremor', 'lethality', 'steady_aim', 'taunt', 'mark_gone', 'exposed',
+  'purse_gain', 'spent', 'lantern_flurry:bounce', 'lantern_flurry:split', 'pale_lance:bounce',
+  'riposte', 'kestrel_watch:detonate', 'disengage', 'ally_dash', 'party_offer', 'shield_wall',
+  'shoulder_charge', 'fox_step', 'crescent_finisher', 'vault_shot', 'pinning_arrow', 'anchor',
+  'retaliate', 'flow', 'momentum', 'parry', 'pursuit', 'execute', 'skewer', 'concussive',
+  'heartseeker', 'parry_open', 'parry_close', 'parry_counter', 'party_autopick', 'party_deadline',
+  'party_commit', 'skill_swapped', 'loadout_reorder', 'seat_denied', 'seat_control', 'hit_blocked',
+  'dash', 'vault', 'catchup', 'party_grant', 'party_shop_mark', 'party_shop_done', 'party_mode',
+  'party_socket_close', 'socket_hold', 'shop_advance', 'door', 'lantern_flurry:multiply',
+  'pale_lance:split', 'nova_bloom:echo', 'bell_toll:echo', 'rain_of_arrows:scatter',
 ]);
 
 const KEY_INDEX = new Map(KEY_DICT.map((k, i) => [k, i]));
