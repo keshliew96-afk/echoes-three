@@ -1161,7 +1161,7 @@ Every juice-contract event fires its sound slot. Master volume constant, no UI.
 | A13 | (Gauntlet v0.5.1) **Esc opens the pause menu on every page** — combat, draft, path, shop, victory/defeat (docs/gauntlet/PLAN.md §1.5). This supersedes §16 "draft Esc = decline" and §16 settle rule (3) "Esc … stays the decline path": the draft declines with **X** or the Decline button, and X is settle-guarded like Enter (rule (2)). The socket screen is a sub-overlay: its Esc still banks the candidate and closes it, consuming that Esc. A reflexive pause press can never forfeit a reward. |
 | A14 | *(SUPERSEDED 2026-09-25 by A15.)* (Gauntlet v0.5.1) **Portal rule**: the expedition picker (§23.1) opens only in a title-booted session with ≥ 2 acts unlocked; menu-skip / harness boots and single-unlock profiles start the act directly on E (v0.4.63 behaviour). In the picker E, Enter or Space confirms the preselected (last-played) card. |
 | A15 | (CAMPAIGN, 2026-09-25 — the user's CRITICAL REFACTOR) **Linear campaign** (§24, docs/gauntlet/PLAN.md §12): the portal's Begin Run ALWAYS starts a campaign at Level 1 (no picker); clearing a level shows a ~3 s level-clear card while the next level loads, then the next level starts on its own (1 → 2 → 3); the camp returns only after the final level's CAMPAIGN COMPLETE card, a paused "Quit to Lobby", or a defeat card. Other unlocked levels start from the lobby's Level Select (map table beside the portal / L at the prompt); clearing Level N unlocks N+1 permanently. Skills, sockets, bench and Glint carry between levels; HP, downs, statuses and cooldowns are restored; everything level-bound resets. Menu-skip harness boots keep rule 1 of A14 (`?act=N` / `?level=N` start there). |
-| A16 | (PARTY, 2026-09-27 — the user's request) **Per-character builds** (§25, docs/gauntlet/PLAN.md §16): the Tank, Swordsman and Archer get the Healer's build model — at most 4 equipped skills, 8 node sockets per skill, no rarity caps, the repetition limits and grey / inert verdicts — drawn from their OWN class skill pool (8 each; the §7 kit = the starting loadout; a full ally LEARNS a skill into the loadout or its satchel) and a class-matched node pool (6 class nodes + the shared nodes its fantasy allows). Every combat room offers every character a card on one party page (the player's own card first; AI-held cards pre-picked by default, so one Enter still commits); each character has its own purse and shelf; in multiplayer each human builds their own character (the host builds AI-held seats) with 30 s auto-pick deadlines. §7's "allies' builds don't grow" and §12's kit-cast rule are superseded; the Healer is unchanged (§25.11). |
+| A16 | (PARTY, 2026-09-27 — the user's request) **Per-character builds** (§25, docs/gauntlet/PLAN.md §16): the Tank, Swordsman and Archer get the Healer's build model — at most 4 equipped skills, 8 node sockets per skill, no rarity caps, the repetition limits and grey / inert verdicts — drawn from their OWN class skill pool (8 each; the §7 kit = the starting loadout; a new class skill always REPLACES one of the 4 — the old one returns to the class pool, its nodes to the bench; no character ever holds more than 4 skills) and a class-matched node pool (6 class nodes + the shared nodes its fantasy allows). Every combat room offers every character a card on one party page (the player's own card first; AI-held cards pre-picked by default, so one Enter still commits); each character has its own purse and shelf; in multiplayer each human builds their own character (the host builds AI-held seats) with 30 s auto-pick deadlines. §7's "allies' builds don't grow" and §12's kit-cast rule are superseded; the Healer is unchanged (§25.11). |
 
 ---
 
@@ -1688,16 +1688,19 @@ fix-M4a-r4 upgrade swap). What differs per class is what is IN the pools:
 - **Starting build** — each ally's §7 fixed kit becomes its starting
   LOADOUT: all 4 skills equipped, every socket empty, bench empty. The
   Healer starts as before (Mending Bolt + Swift Mend, 2 free slots).
-- **Learning when full — the satchel (allies).** An ally starts with 4
-  equipped skills, so its skill growth follows Darkest Dungeon's hero
-  loadouts: a skill reward TEACHES a class skill, and the player chooses
-  which equipped skill it replaces — or sends the new skill to the
-  **satchel** (known, not equipped). Between rooms the loadout is re-chosen
-  freely from the known skills; never more than 4 are equipped (the user's
-  cap). A skill keeps its 8 sockets and their nodes while it rests in the
-  satchel; nothing in the satchel acts or counts toward pools and verdicts.
-  The Healer never learns a fifth skill (§16 unchanged: with 4 owned, a
-  skill promise becomes a node).
+- **New skills when full — the SWAP offer (allies).** An ally starts with
+  4 skills, and the user's cap is literal: **no character ever holds more
+  than 4 skills** (never a 5th slot, never a hidden reserve). An ally's
+  skill reward is therefore a SWAP offer: one class skill it does not own,
+  and the player chooses which of its 4 skills it REPLACES — or Leaves the
+  offer and keeps the loadout. The replaced skill leaves the build and
+  returns to the class pool (it can be offered again later); the nodes it
+  held go to that character's bench (never lost; its Resonance counter and
+  pending Echo recasts end with it). Between rooms the 4 owned skills can be
+  REORDERED (slot order = keys 1–4 = the AI's cast order; sockets travel
+  with their skill). The Healer is unchanged: it fills its 4 slots from
+  draft rewards and never gets a swap offer (§16: with 4 owned, a skill
+  promise becomes a node).
 
 **Class identity (binding; the party critic judges it blind):** the Tank
 protects and controls (taunts, shields, stuns, pulls, thorns, ward); the
@@ -1784,8 +1787,13 @@ passive pulses ≤ −24 dB, 1 voice, and only when the pulse does something.
   its leash; a vault moves directly away from the nearest hostile. Never
   scaled by haste / slow (§3.6 (b): dodges never are).
 - **combo** — per Swordsman seat, the tick at which each of its skills last
-  CONNECTED (≥ 1 hit). Crescent Finisher counts the OTHER skills inside its
-  120-tick window at cast time.
+  CONNECTED (≥ 1 hit) on a real cast. Crescent Finisher counts the OTHER
+  skills inside its 120-tick window at cast time.
+- **echoes of modified skills** — an Echo recast (§15.3) replays the
+  DELIVERY only: never the dash or vault, never a parry window (on Riposte
+  the echo arms when the counter fires and replays the counter arc). An
+  echo is not a cast: it never advances Resonance, the combo, Momentum or
+  Flow (the same rule Resonance already follows).
 - **parry** — the §3.6 (c) `guard` data put on the fox for the window
   (`shapes: ['*']`, 360°); the first blocked instance ends it and fires the
   counter; `hit_blocked` carries `parry: true`. The block precedes the crit
@@ -1959,7 +1967,7 @@ spoils) pays EVERY character; the shop pays each from its own shelf:
 |---|---|---|
 | Clear stipend | +12 Glint to the Healer's purse (= the §14 wallet) | +12 Glint to its own purse |
 | Clear spoils → its own bench | 2 nodes (commons + rares; the fill layer, then the fix-M4a-r4 upgrade layer) | **1** node (same rule, its class pool) |
-| Room reward (the party page) | 1 card: the door's promise (skill or node, §16) | 1 card: the same promise — a skill promise is a LEARN offer from its class pool (§25.1), a node promise a node from its class pool |
+| Room reward (the party page) | 1 card: the door's promise (skill or node, §16) | 1 card: the same promise — a skill promise is a SWAP offer — one class skill it does not own, replacing one of its 4 (§25.1), a node promise a node from its class pool |
 | Shop (room 7, one visit) | its 4-card shelf: 2 common + 1 rare + 1 legendary at 15 / 15 / 20 / 25 | its own 4-card class shelf, same strata and prices |
 | Purse at the shop | 72 (= 12 × 6, §14 unchanged) | 72 — the §14 invariants hold per purse (the whole shelf 75 > 72, any three ≤ 60) |
 
@@ -1969,10 +1977,13 @@ spoils) pays EVERY character; the shop pays each from its own shelf:
   Stag, 32 / 32 during Level 3, then the upgrade layer keeps improving it
   (a full build keeps progressing, §14 fix-M4a-r4 note, per character). The
   Healer keeps its faster arc (32 / 32 by the Level 2 Stag). Skills: ≈ 2–3
-  learn offers per ally per level (room 1 always promises a skill); the 4
-  new class skills are known by about the middle of Level 2, after which a
-  skill promise substitutes a node for that ally ("all Tank skills known —
-  offering a Node instead", the §16 substitution line). PARTY measures and
+  SWAP offers per ally per level (room 1 always promises a skill), each one
+  of the 4 class skills it does not own (uniform draw, party stream); the
+  §25.8 AI takes an offer that outranks its lowest-priority skill, so an AI
+  loadout reaches its priority top four in about two levels and then keeps
+  it (Leave); a human may re-shape the loadout at every skill room. The
+  swap never adds a skill, so the ally's skill offers never run dry and
+  never need the §16 substitution line. PARTY measures and
   records the real arc (PLAN GP.7) and tunes only the ally spoils count (1)
   if an ally sits outside 8–16 / 32 at the Level 1 Stag or 20–30 / 32 at the
   Level 2 Stag.
@@ -1987,19 +1998,21 @@ spoils) pays EVERY character; the shop pays each from its own shelf:
   single-player).
 - **Starter grant** (a Level-N start, §24): the Healer's §23.2 grant is
   unchanged; each ally additionally receives `STARTER_GRANT[N].allies`
-  (learn draws, node draws in pairs + auto-fill, legendary draws, purse
-  Glint) = the median carried ally build at that level's card (§25.10).
+  (swap offers resolved by the §25.8 AI, node draws in pairs + auto-fill,
+  legendary draws, purse Glint) = the median carried ally build at that
+  level's card (§25.10).
 
 ### 25.6 Selection UX — rewards, shop, socket screen
 
 Benchmarks: **Across the Obelisk** (every hero gets its own reward after a
 fight, shown with the hero's portrait; in co-op each player picks for their
 own heroes at the same time), **Darkest Dungeon** (a roster strip to pick
-the hero; a per-hero skill loadout — more skills known than the 4
-equipped, changed out of combat), **Children of Morta** (per-character
-growth, one family roster to switch between). Echoes takes AtO's
-owner-tagged per-hero reward, DD's roster strip and known-vs-equipped
-loadout, and keeps the Healer-only flow's speed.
+the hero; a per-hero 4-skill loadout changed out of combat), **Children of
+Morta** (per-character growth, one family roster to switch between).
+Echoes takes AtO's owner-tagged per-hero reward and DD's roster strip and
+4-skill loadout — but keeps the user's cap literally (DD lets a hero know 7
+skills and equip 4; an Echoes character never holds more than 4, so a new
+skill always swaps one out) — and keeps the Healer-only flow's speed.
 
 **The party strip** — ONE component on the reward page, the shop shelf, the
 socket screen, the level-clear card and the Setting-out card: 4 tabs in
@@ -2035,12 +2048,13 @@ one-card draft page):
   character · ROOM), the party strip, the viewed character's card (the §16
   card grammar + its owner band), that character's spoils line ("Spoils →
   Tank's bench: Brace"), and **Take** / **Leave**.
-- A **learn** offer for a full ally adds the **Replaces** selector under the
-  card: the 4 equipped skill icons + a Satchel chip, the chosen target
-  marked ✕ with a sentence ("Taunting Roar replaces Ground Crack — Ground
-  Crack goes to the satchel" / "Keep the loadout — Taunting Roar goes to the
-  satchel"). W / S, ↑ / ↓, pad D-pad up / down, the mouse wheel or a click on
-  an icon cycles the target. Its default is the AI suggestion (§25.8).
+- A **swap** offer (an ally's skill card) adds the **Replaces** selector
+  under the card: the ally's 4 skill icons, the chosen one marked ✕, with a
+  sentence ("Taunting Roar replaces Ground Crack — Ground Crack's 3 nodes
+  go to the Tank's bench"). W / S, ↑ / ↓, pad D-pad up / down, the mouse
+  wheel or a click on an icon cycles the target; Leave keeps the loadout.
+  Its default is the AI suggestion (§25.8; when the AI would Leave, the
+  selector opens on the lowest-priority skill and the card on Leave).
 - Focus opens on the viewer's OWN card (the Healer in single-player) on
   Take (the §16 primary rule). **Enter takes the focused card and moves to
   the next card THIS player still has to decide; with none left, the page
@@ -2087,13 +2101,11 @@ shop open.
 **Socket screen** (between rooms; B / pad View, or chained): the party
 strip across the top, then the viewed character's 4 rows × 8 sockets and
 its own bench (the M4c one-page layout, no scroll 1024×576 → 2560×1440)
-and, for an ally, the **satchel column** right of the rows (known,
-unequipped skills; each chip says "3 nodes resting"). **Loadout swap**: ←
-from socket 1 reaches the row's skill header; Enter picks the equipped
-skill up; move to a satchel chip; Enter swaps (each skill keeps its own
-sockets); X on a satchel chip unsockets its resting nodes to the bench.
-Mouse: click the header, click the chip. F auto-fills the viewed
-character; **Shift+F** (pad: hold Y 0.5 s; the "Auto-fill all" button)
+**Reorder**: ← from socket 1 reaches the row's skill header; Enter picks
+the skill up; ↑ / ↓ (or 1–4) to another header; Enter swaps the two rows
+(sockets travel with their skills; slot order = keys 1–4 = the AI's cast
+order). Mouse: click a header, click another. F auto-fills the viewed
+character; **Shift+F** or the "Auto-fill all" button (pad: D-pad to it, A)
 fills all four. Keys otherwise as §16 / M4c, except that the pad's row
 jump moves from LB / RB (now the character switch) to **LT / RT**; 1–4
 still jump rows.
@@ -2111,7 +2123,7 @@ text at the §17 floors in design px, every tab ≥ 44 design px tall.
 
 ### 25.7 Multiplayer — ownership, parallel picks, timeouts, replication
 
-- **Ownership.** Seat s's build — loadout, satchel, sockets, bench, purse,
+- **Ownership.** Seat s's build — loadout, slot order, sockets, bench, purse,
   its reward card, its shelf — belongs to the human playing seat s; an
   AI-held seat (never joined, dropped, away) belongs to the HOST, who builds
   it under the host's Ally builds mode. A client changes only what it owns;
@@ -2158,19 +2170,24 @@ text at the §17 floors in design px, every tab ≥ 44 design px tall.
 **Equip** (deterministic, state-only, no RNG, the same code for Suggested
 pre-picks, Automatic, host-built seats and timeouts):
 
-| Class | Priority (the AI keeps its 4 highest KNOWN skills equipped) |
+| Class | Priority (the AI's loadout converges to its top four) |
 |---|---|
 | Tank | shield_wall · taunting_roar · heavy_slam · shoulder_charge · whirling_guard · iron_stance · brutal_cleave · ground_crack |
 | Swordsman | flurry · crescent_finisher · fox_step · lunge_strike · riposte · blade_storm · razor_wake · caltrops |
 | Archer | piercing_shot · volley · pinning_arrow · vault_shot · rain_of_arrows · kestrel_watch · detonating_charge · sundering_nova |
 
-- A learn offer: Take; the target is the lowest-priority equipped skill if
-  the new skill outranks it, else the satchel. A node offer: Take. A skill
-  swapped to the satchel by the AI releases its nodes to the bench, and
-  the shared auto-fill re-places them (a human's resting nodes are never
-  touched).
+- A swap offer: Take, replacing the lowest-priority owned skill, when the
+  offered skill outranks it; else Leave. A node offer: Take. The nodes a
+  replaced skill releases go to the bench and the shared auto-fill
+  re-places them (for AI-held seats; a human's bench is theirs). After a
+  swap the AI orders its 4 slots by priority (its cast order).
 - Shop: the autopilot rule — the cheapest affordable card first while the
   purse lasts (ties: shelf order).
+- The Healer seat, when AI-held (a network host migration left it to the
+  leader bot): the autopilot's own rules (take every card, the same shop
+  rule, auto-fill) — its §16 flow is otherwise untouched.
+- A starter grant or catch-up for a HUMAN-owned seat is resolved by these
+  same rules; the player re-shapes it between rooms.
 
 **Cast** (every tick, AI-held seats only; human-held seats never
 AI-cast): walk the equipped slots ascending; fire the first ACTIVE that is
@@ -2190,8 +2207,8 @@ hostile is within 2.0 u.
 ### 25.9 Campaign carry, saves, records
 
 - **Carry** (§24, PLAN §12.3 `CARRY_RULES`) applies to all four builds:
-  equipped skills, the satchel (new rule `carryKnown`), every socketed node,
-  every bench and every purse carry; HP, downs, statuses and cooldowns of
+  the 4 skills in their slot order, every socketed node, every bench and
+  every purse carry; HP, downs, statuses and cooldowns of
   every seat are restored; everything level-bound resets, now including
   taunts, parry windows, dashes / vaults in progress, combo windows, every
   seat's pending Echo recasts and Reapply clocks, the party page, the four
@@ -2232,9 +2249,9 @@ hostile is within 2.0 u.
   seed with zero party downs (≥ 1 down per level on at least 2 of 5 seeds —
   the game still bites).
 - **Starter grant** — `STARTER_GRANT[N].allies` = the median carried ally
-  build at the Level N card (learned skills, socketed nodes, 1 legendary per
-  level, purse). First proposal, re-measured by PARTY: Level 2 `{ learn: 2,
-  nodes: 12, legendaries: 1, glint: 30 }`, Level 3 `{ learn: 4, nodes: 24,
+  build at the Level N card (swapped-in skills, socketed nodes, 1 legendary
+  per level, purse). First proposal, re-measured by PARTY: Level 2 `{ swaps:
+  2, nodes: 12, legendaries: 1, glint: 30 }`, Level 3 `{ swaps: 4, nodes: 24,
   legendaries: 2, glint: 50 }`. The dated retune note goes into §23.2
   (the table §4.2, §12.10 and G4a.5 cite).
 

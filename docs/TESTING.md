@@ -1615,12 +1615,16 @@ numbers are the pass bars):
    in `__echoes.party.state()` equals BUILD_BRIEF §25.2 (compare with the
    oracle's `skills` arrays field by field; the 12 `·s` rows also equal
    v0.5.150's `ALLY_KITS`, read from a `git archive` of v0.5.150).
-2. **Cap + sockets sweep (GP.2)** — per ally: `partyEquip` of a 5th skill →
-   `equip_denied full`; learn the 4 new skills (`partyLearn` with `replace`
-   'satchel' and with slots 0–3) → loadout ≤ 4, known 8, satchel 4; every
+2. **Cap + sockets sweep (GP.2)** — per ally: `partySwap(seat, id)` with no
+   slot on the full loadout → `swap_denied full`, loadout unchanged; swap
+   each of the 4 new skills into slots 0–3 in turn (`partySwap(seat, id,
+   slot)`) → always exactly 4 skills, each replaced skill back in the pool,
+   its nodes on the bench with provenance (count them: 0 lost); try every
+   other path to a 5th skill (reward, grant, catch-up, cmd, a guest CMD, a
+   hand-edited save) on every seat, the Healer included → never; every
    class skill × every pool node × sockets 1..8 on an emptied row (combat
    inactive: the party page or camp) → only `limit` denials (count them);
-   in combat every socket / equip / learn → `combat_active`.
+   in combat every socket / swap / reorder → `combat_active`.
 3. **Grid effects (GP.3)** — for every LIVE class-node cell (and the guard /
    hostile-field shared cells): socket the node alone on that skill
    (`partySocket`), then `partyCast(seat, slot)` into a `spawn('boar' |
@@ -1637,14 +1641,14 @@ numbers are the pass bars):
    INERT cell shows "+0".
 4. **Casts by real input (GP.4)** — a 2-page session on your own server
    (`?net=ws://127.0.0.1:<p>/echoes&nethost=1` / `&netjoin=CODE&netseat=N`);
-   for each class seat and each of its 8 skills: the host makes it known
-   and equips it between rooms (`partyLearn` + `partyEquip`), the guest
-   presses its key (1–4) aimed at a spawned enemy;
+   for each class seat and each of its 8 skills: the host puts it in a slot
+   between rooms (`partySwap(seat, id, slot)`), the guest presses that key
+   (1–4) aimed at a spawned enemy;
    pass = the §25.2 sim effect in the host's events, a ≥ 1.5% pixel diff in
    a 240×240 box around the caster between the pre-press frame and +4 frames
    (`tools/analyze.mjs --box`), the skill's cue in the guest's
    `__echoes.audio.cueLog()` within 150 ms. Passives: `aura_pulse { seat }`
-   every 60 ± 1 ticks while equipped, none while in the satchel.
+   every 60 ± 1 ticks while owned; none from the tick it is swapped out.
 5. **Class identity (GP.5)** — `tools/gntPARTY-campaign.mjs --seeds 1-3` (or
    the critic's own runner over `cmd('autopilot')` + `partyAiLog`): Tank
    taunt redirect ≥ 50% within 1 s, share of hostile attack starts aimed at
@@ -1675,8 +1679,9 @@ numbers are the pass bars):
    equipped actives with 0 casts in a room where they were equipped ≥ 20 s;
    idle fallbacks ≤ 25% of casts; 0 guard casts on Downed members; 0 dash /
    vault end points beyond the leash; 0 Pinning Arrows on the Stag while
-   another target qualified; the loadout after every learn = the §25.8
-   priority rule.
+   another target qualified; the loadout after every swap offer = the §25.8
+   priority rule (take when it outranks the lowest-priority skill, else
+   Leave).
 9. **Multiplayer ownership + deadlines (GP.9)** — 3 clients at N1
    (`--latency 150 --jitter 20 --loss 0.1` on your server): each guest sends
    `party_pick` / `party_buy` / `party_socket` for ANOTHER seat →

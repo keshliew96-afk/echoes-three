@@ -2900,10 +2900,11 @@ alone (§16.11 ownership).
 
 - **Seat** = party index 0–3 = class (0 Healer, 1 Tank, 2 Swordsman, 3
   Archer — fixed, `CLASS_OF_SEAT`).
-- **Loadout** = the ≤ 4 equipped skills of a seat (slot order = key order
-  1–4 = the AI's cast order). **Known** = every skill the seat has learned
-  (the loadout + the **satchel**). **Build** = loadout + known + sockets
-  (per skill, 8) + bench + purse.
+- **Loadout** = the ≤ 4 skills a seat holds (slot order = key order 1–4 =
+  the AI's cast order). There is no reserve: no seat ever holds more than
+  4 skills; an ally's new class skill arrives by a **swap** that replaces
+  one (the replaced skill returns to the class pool, its nodes to the
+  bench). **Build** = loadout + sockets (per skill, 8) + bench + purse.
 - **Owner** of a seat's build = the human controlling the seat, else the
   host (single-player: the player owns everything).
 - **Party page** = the room reward page with one **card** per seat.
@@ -2969,10 +2970,12 @@ four share the verdict rules; class-node rules are added to `verdictFor`
 with the grey / inert reasons of the oracle.
 ```js
 world.partySystem() -> {
-  seat(i) -> { classId, slots: [id|null ×4], known: [ids], purse, build /* the seat's build system */ },
-  learn(seat, skillId, replace /* slot 0–3 | 'satchel' */) -> { ok, slot|null, replaced|null } | { denied: 'unknown'|'not_class'|'known'|'combat_active' },
-  equip(seat, skillId, slot) -> { ok, swapped } | { denied: 'not_known'|'full'|'no_such_slot'|'combat_active' },   // a 5th equip is 'full'
-  view(seat) -> { ...build.view(), known, satchel: [{ id, filled }], purse, mode, owner },
+  seat(i) -> { classId, slots: [id|null ×4], purse, build /* the seat's build system */ },
+  swap(seat, skillId, slot) -> { ok, slot, replaced, released: [nodeIds] }
+    | { denied: 'unknown'|'not_class'|'owned'|'full' /* no slot given on a full loadout */|'no_such_slot'|'combat_active' },
+    // the ONLY way a class skill enters a full loadout; `slot` null fills a vacant slot (never a 5th)
+  reorder(seat, fromSlot, toSlot) -> { ok } | { denied: 'no_such_slot'|'combat_active' },   // sockets travel with their skill
+  view(seat) -> { ...build.view(), purse, mode, owner },
   pools(seat) -> { skill: [ids], node: [ids], upgrade: [ids] },
   autoFill(seat | 'all'), aiPlan(seat) /* the §25.8 suggestion for the current card / shelf */,
   aiLog() -> { [seat]: { [skillId]: { casts, lastTick, fallbacks } } }   // debug, never saved
@@ -3005,12 +3008,15 @@ src/sim/allycast.js, PARTY):
 - **Echo** for allies arms on `ally_cast` (Healer: `skill_cast`, unchanged)
   and recasts through `castAllySkill(..., { echo: true })` at the recorded
   aim / target; echoed bolts ride the seat build's own bolt subsystem
-  (stable owner tag `echo_bolts:<seat>`).
+  (stable owner tag `echo_bolts:<seat>`). An echo replays the DELIVERY
+  only — never the dash / vault, never a parry window (on Riposte the echo
+  arms when the counter fires and replays the counter arc) — and an echo
+  is not a cast: it never advances Resonance, combo, Momentum or Flow.
 - **Passives** (Iron Stance, Razor Wake, Kestrel Watch) pulse on their 1.0
   s cadence in ascending slot order per seat from the party system's
   discrete phase, emit `aura_pulse { seat, skill, x, z, area, healed |
   hit }` (the build listener's passive trigger), obey `pulseMods`
-  (Resonance) and Echo Reapply; a passive in the satchel never pulses.
+  (Resonance) and Echo Reapply; a passive stops the tick it is swapped out.
 - **Status `taunt`** (status.js write side): hostile-only kind, `src` =
   taunter; `TAUNT` caps; enemies.js / enemies/*.js / boss.js target
   selection reads `status.tauntSource(e, tick)` first (M4b's §3.6 (d)
@@ -3036,11 +3042,11 @@ src/sim/allycast.js, PARTY):
   asks `party.offerCards(promised)` for seats 1–3 (party stream, seat
   order 1 → 3) → `run.party = { room, promised, openedTick, deadlineTick |
   null, cards: [Card ×4] }` with `Card = { seat, type:
-  'skill'|'node'|null, id, learn: bool, substituted, line, pool?, upgrade?,
-  reason?, spoils: [ids], replace: 0–3|'satchel'|null, suggest: { choice,
+  'skill'|'node'|null, id, swap: bool, substituted, line, pool?, upgrade?,
+  reason?, spoils: [ids], replace: 0–3|null, suggest: { choice,
   replace }, decided: bool, choice: 'take'|'leave'|null, by:
   'human'|'ai'|'timeout'|null }` (card 0 mirrors `run.reward`). Emits
-  `party_offer { room, promised, cards: [{ seat, reward, id, learn,
+  `party_offer { room, promised, cards: [{ seat, reward, id, swap,
   substituted, pool?, upgrade?, suggest }] }` (seats 1–3; `reward_offer`
   stays the Healer's).
 - **Pre-decision** by mode: `suggest` → AI-held cards `decided: true, by:
@@ -3059,7 +3065,7 @@ src/sim/allycast.js, PARTY):
   is decided, or at `deadlineTick` (network, ≥ 2 humans) after
   `party_autopick { seat, reason: 'timeout' }` for each undecided human
   card; it applies seat 0 exactly as today, then seats 1–3 ascending
-  (learn → `skill_learned { seat, id, slot, replaced }`; node → bench
+  (swap → `skill_swapped { seat, id, slot, replaced, released }`; node → bench
   `node_granted { seat, ... }`), then auto-fills AI-held seats (`suggest` /
   `auto`) and every human seat whose `autoSocketOwn` is on, then `afterReward()`
   (doors) exactly as today. `phase` stays `reward` until the commit (the
@@ -3099,8 +3105,8 @@ crit roll stay on the gameplay stream (crits of ally instances too).
 
 **Events (new names; §2.3 bus rule — never a payload key `type`):**
 `party_offer`, `party_pick`, `party_commit`, `party_autopick`,
-`party_deadline`, `skill_learned`, `loadout_swap { seat, slot, from, to }`,
-`equip_denied { seat, reason }`, `purse_gain`, `party_shop_open`,
+`party_deadline`, `skill_swapped`, `loadout_reorder { seat, from, to }`,
+`swap_denied { seat, reason }`, `purse_gain`, `party_shop_open`,
 `party_shop_done { seat }`, `ally_dash`, `parry_open { seat, id, untilTick
 }`, `parry_counter { seat, id, attackerId }`, `shield_broken`,
 `party_catchup { level, perSeat }`, `party_mode { mode }`. Existing build
@@ -3130,8 +3136,8 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
 | buy (shop) | Enter on the focused card | click the card | A |
 | Done / Advance (shop) | Enter on the lamp | click the lamp | A on the lamp (Start stays pause) |
 | socket screen rows | 1–4, ↑ / ↓ | click | LT / RT, D-pad |
-| loadout swap | ← from socket 1 → header, Enter, → to satchel, Enter | click header, click chip | same with D-pad + A |
-| auto-fill viewed / all | F / Shift+F | buttons | Y / hold Y 0.5 s |
+| reorder skills | ← from socket 1 → header, Enter, ↑/↓ or 1–4 to another header, Enter | click a header, click another | same with D-pad + A |
+| auto-fill viewed / all | F / Shift+F | buttons | Y / D-pad to the "Auto-fill all" button, A |
 
   gamepad.js (M1's file, minimal anchored edit) maps buttons 6 / 7 to
   `rowPrev` / `rowNext`.
@@ -3145,9 +3151,10 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
 - **Shop** (`src/ui/run/shop.js`): the strip on the top rail, the viewed
   character's shelf and purse, the lamp copy per §25.6; `runUi().shop.party
   = { viewSeat, purses, touched, done, leaveInMs }`.
-- **Socket screen** (`src/ui/socket/index.js`): the strip, per-seat grid +
-  bench + satchel column; `__echoes.hud`-style probe `socketUi() = { viewSeat,
-  rows, satchel, bench, inHand }` (extends the existing debug surface).
+- **Socket screen** (`src/ui/socket/index.js`): the strip, the viewed
+  seat's grid + bench, row headers that reorder; probe `socketUi() = {
+  viewSeat, rows, bench, inHand, headerInHand }` (extends the existing
+  debug surface).
 - **Settings** (M1's Gameplay tab, minimal edit): rows `gameplay.allyBuilds`
   (Suggested / Manual / Automatic; help: "Applies to allies played by the
   computer. In multiplayer each player builds their own character.") and
@@ -3171,8 +3178,10 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
   `party_pref { seat, autoSocketOwn }` (sent at join and on every change of
   the player's own setting; stored in `systems.party.autoSocketOwn[seat]`).
   The host validates `seat === sender's seat` (else `command_rejected {
-  reason: 'not_owner' }`), phase and `combat_active`, then calls the sim
-  entry point — the same one single-player uses. The host's own UI may act
+  reason: 'not_owner' }`), phase and `combat_active` (a CMD that arrives
+  after its page / shop has committed → `command_rejected { reason:
+  'closed' }`, nothing changes), then calls the sim entry point — the same
+  one single-player uses. The host's own UI may act
   on seat 0 and every AI-held seat.
 - The existing guest guard (`@gnt:M5b GUEST-GUARD`) changes from "every
   page read-only" to "every tab but your own read-only"; its "The Healer is
@@ -3196,7 +3205,7 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
 
 - StateTree `v: 4`; new `systems.party = { v: 1, rng: { seed, s, draws },
   mode, autoSocketOwn: [bool ×4], seats: [null, SeatBuild ×3] }` with
-  `SeatBuild = { seat, classId, slots: [id|null ×4], known: [ids], purse,
+  `SeatBuild = { seat, classId, slots: [id|null ×4], purse,
   build: <createBuildSystem().saveState()>, combo, recentCasts }`;
   `systems.run` gains `party`, `partyShop`, `doorDeadlineTick`. Seat 0 is
   unchanged (`systems.skills`, `systems.build`, `run.reward`, `run.shop`,
@@ -3206,7 +3215,7 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
 - **`MIGRATIONS[3]`** (src/save/codec.js; pure, deterministic, no game RNG;
   frozen constants like MIGRATIONS[1]): creates `systems.party` — `rng`
   seeded from the save's gameplay seed by the §16.3 derivation, seats 1–3 =
-  the §7 kits as loadout and known, empty builds, purse 0; a run in phase
+  the §7 kits as the loadout, empty builds, purse 0; a run in phase
   `reward` gets seats 1–3 cards `{ type: null, reason: 'migrated', decided:
   true, choice: 'leave' }`; a run in phase `shop` gets empty ally shelves;
   and `systems.party.catchUp = { level, roomsCleared }` when a run is
@@ -3214,7 +3223,9 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
   `state_restored`: `STARTER_GRANT[level].allies` + 2 nodes and 12 Glint per
   ally per combat room already cleared in the current level (party stream,
   auto-filled at the next non-combat point), `party_catchup` + one toast.
-  Schema 1 / 2 saves chain 1 → 2 → 3 → 4. A schema-4 file is refused by a
+  Schema 1 / 2 saves chain 1 → 2 → 3 → 4. A network save (`meta.network`)
+  still loads as single-player with AI in every ally seat — the seats keep
+  the builds their players made. A schema-4 file is refused by a
   schema-3 build ("made by a newer version of Echoes"), as today.
 - Profile: high-score entries gain `party: [{ classId, skills, filled }]`;
   no schema change for the profile (new optional keys).
@@ -3222,16 +3233,17 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
 ### 16.7 Campaign (CAMPAIGN files, minimal edits by PARTY)
 
 - `CARRY_RULES` (src/data/campaign.js) — every carry / restore flag now
-  applies to seats 0–3 (`carrySkills`, `carrySockets`, `carryBench`,
-  `carryGlint` = every purse, `resetCooldowns` = every seat); new named rule
-  `carryKnown: true` (the satchel; false → the known list shrinks to the
-  loadout); `resetEntities` / `clearStatuses` also clear taunts, parry
+  applies to seats 0–3 (`carrySkills` = the 4 skills in slot order,
+  `carrySockets`, `carryBench`, `carryGlint` = every purse, `resetCooldowns`
+  = every seat); `resetEntities` / `clearStatuses` also clear taunts, parry
   windows, dashes / vaults in progress, combo windows and every seat's
   pending Echo recasts and Reapply clocks; `resetShop` drops the four
   shelves; the party page and every deadline reset.
-- `STARTER_GRANT[N].allies = { learn, nodes, legendaries, glint }` (per
-  ally; applied after the Healer's grant, party stream, seat order,
-  auto-fill after each pair) — numbers per §25.10, re-measured.
+- `STARTER_GRANT[N].allies = { swaps, nodes, legendaries, glint }` (per
+  ally; applied after the Healer's grant, party stream, seat order:
+  `swaps` swap offers resolved by the §25.8 AI rule, node draws in pairs
+  with auto-fill after each, legendary draws, purse Glint) — numbers per
+  §25.10, re-measured.
 - GC.5's state diff at every transition covers all four builds.
 
 ### 16.8 Difficulty (M4a files, minimal edits by PARTY)
@@ -3301,8 +3313,10 @@ mode; the autopilot and the seat-0 leader bot.
   harness: every ally gets `STARTER_GRANT[N].allies` at run start — a built
   party in Level 1 for probes; marks the run `harness: true`).
 - **Commands** (`__echoes.cmd`, act at a tick boundary, return plain data):
-  `partyPools()`, `partyVerdicts()`, `partyView(seat)`, `partyLearn(seat,
-  id, replace?)`, `partyEquip(seat, id, slot)`, `partyGrantNode(seat, id,
+  `partyPools()`, `partyVerdicts()`, `partyView(seat)`, `partySwap(seat,
+  id, slot?)` (puts ANY class skill of that seat into `slot`, its old
+  skill's nodes to the bench — the harness way to cast every class skill),
+  `partyReorder(seat, from, to)`, `partyGrantNode(seat, id,
   provenance?)`, `partySocket(seat, skill, node, slot?)`,
   `partyUnsocket(seat, skill, slot)`, `partyAutoFill(seat|'all')`,
   `partyPick(seat, 'take'|'leave', replace?)`, `partyBuy(seat, index)`,
@@ -3314,7 +3328,7 @@ mode; the autopilot and the seat-0 leader bot.
   `verdict(seat, skill, node)`, `aiLog()`, `oracle()` (the committed JSON).
 - **Tools** (PARTY writes them; the critic may reuse read-only):
   `tools/gntPARTY-sim.mjs` (Node: pools, numbers, caps, the socket sweep,
-  learn / equip / satchel, every class skill's sim effect, every live cell's
+  swap / reorder, every class skill's sim effect, every live cell's
   effect event, AI loadout choices, save schema 4 + migrations, the Healer
   invariants), `tools/gntPARTY-ux.mjs` (GPU harness: the three pages × 4
   sizes, switching by keyboard / mouse / mocked pad, owner tags, settle
@@ -3340,14 +3354,16 @@ Measured on the dev server AND the production build (`npx vite build
   `gntPARTYD-grid.mjs --verify-node` and `--verify-page` report 0 pool
   mismatches.
 - **GP.2 Four skills, eight sockets, no caps**: per ally seat — the starting
-  loadout = the §7 kit in order; `partyEquip` of a 5th skill → `equip_denied
-  full` and the loadout unchanged; `partyLearn` with a full loadout sends
-  the skill to the replaced slot or the satchel, never a 5th slot; every
-  equipped skill has exactly 8 sockets; the any-rarity sweep (every node of
+  loadout = the §7 kit in order; a swap with no slot on the full loadout →
+  `swap_denied full`, loadout unchanged; every swap keeps exactly 4 skills
+  (the replaced one back in the pool, its nodes on the bench with their
+  provenance — 0 nodes lost); no path (reward, grant, catch-up, cmd, CMD,
+  save file) ever yields a 5th skill on any seat, the Healer included;
+  every skill has exactly 8 sockets; the any-rarity sweep (every node of
   the class pool × every socket 1–8 of every class skill, rows emptied
   between) accepts every placement except `limit` (count the operations —
   one run per class, 0 unexpected denials); `combat_active` blocks every
-  socket / equip / learn.
+  socket / swap / reorder.
 - **GP.3 Grids**: every cell of the three grids (440 cells) equals the
   oracle (`--verify-node` and `--verify-page`: 0 mismatches), and the sim
   shows every LIVE class-node cell's effect at least once per skill shape
@@ -3361,13 +3377,13 @@ Measured on the dev server AND the production build (`npx vite build
   on the socket screen; inert cells show "+0".
 - **GP.4 Every class skill works**: each of the 24 class skills cast by
   REAL keys (1–4) on a human seat (a 2-page host + guest session; the guest
-  takes each class seat in turn; the host makes the skill known and equips
-  it with `partyLearn` + `partyEquip` between rooms) produces its sim effect (the §25.2 numbers: damage / shield /
+  takes each class seat in turn; the host puts the skill in a slot with
+  `partySwap` between rooms) produces its sim effect (the §25.2 numbers: damage / shield /
   status / displacement / taunt target switch), its VFX (a pixel diff ≥ 1.5%
   inside a 240×240 box around the caster between the pre-cast and the +4
   frame capture) and its audio cue (the skill's cue in `audio.cueLog` on
   the guest within 150 ms of the press); the three passives pulse every
-  60 ticks ± 1 while equipped and never while in the satchel.
+  60 ticks ± 1 while owned and stop the tick they are swapped out.
 - **GP.5 Class identity (critic judgement with evidence)**: over a carried
   campaign (seeds 1–3, Suggested) — Tank: its taunts redirect ≥ 50% of the
   taunted hostiles that were targeting another party member within 1 s,
@@ -3402,7 +3418,7 @@ Measured on the dev server AND the production build (`npx vite build
   guard skills never target a Downed member, 0 dash / vault end points
   beyond the leash, 0 Pinning Arrows on the Stag while another target
   qualified; the AI loadout equals the §25.8 priority rule after every
-  learn; timeouts use the same suggestion.
+  swap offer; timeouts use the same suggestion.
 - **GP.9 Multiplayer ownership + deadlines** (N1 conditions, 2–4 clients):
   each guest changes only its own seat — every attempt on another seat
   (page, shop, socket, equip) → `command_rejected not_owner`, state hash
@@ -3422,7 +3438,7 @@ Measured on the dev server AND the production build (`npx vite build
   keeps all four; Level 3 with four full builds (`?partygrant=3`): guest
   downstream ≤ 12 KB/s average and ≤ 24 KB/s p95 at N1 (the §3.7 budget).
 - **GP.11 Carry + save**: at both level transitions of a carried campaign
-  the four builds (loadout, known, sockets, bench, purse) are identical
+  the four builds (skills in slot order, sockets, bench, purse) are identical
   before and after the card, every seat at max HP, standing, no statuses,
   cooldowns ready, no taunts / parries / dashes / echo recasts pending;
   `save.roundTrip` mid-level and on the party page with four built
@@ -3468,9 +3484,10 @@ Measured on the dev server AND the production build (`npx vite build
 
 | # | What changed | Where |
 |---|---|---|
-| 1 | The user's per-character builds: every character has the Healer's build model from its own class pools; §7 kits = starting loadouts; the satchel for learning when full | §0 item 7, §16.1–16.3, BUILD_BRIEF §25.1–25.2, ruling A16 |
+| 1 | The user's per-character builds: every character has the Healer's build model from its own class pools; §7 kits = starting loadouts; a full ally grows by SWAP offers (never a 5th skill) | §0 item 7, §16.1–16.3, BUILD_BRIEF §25.1–25.2, ruling A16 |
 | 2 | 24 class skills (12 new), 18 class nodes, shared access per class, guard + hostile-field columns, taunt status, dash / vault / combo / parry modifiers; oracle + generator with a Healer cross-check (289 cells, 0 mismatches) | BUILD_BRIEF §25.2–25.4, docs/gauntlet/party-oracle.json, tools/gntPARTYD-grid.mjs |
-| 3 | Party page (one card per character, own card first, Suggested / Manual / Automatic), per-character purses and shelves, socket screen tabs + satchel, the party strip and its keyboard / mouse / gamepad map | §16.4, BUILD_BRIEF §25.5–25.6 |
+| 3 | Party page (one card per character, own card first, Suggested / Manual / Automatic), per-character purses and shelves, socket screen tabs + skill reorder, the party strip and its keyboard / mouse / gamepad map | §16.4, BUILD_BRIEF §25.5–25.6 |
 | 4 | Multiplayer: each human builds their own seat, host builds AI seats, 30 s page / door deadlines, shop Done + countdowns, socket hold, replication | §3.7 note, §16.5, BUILD_BRIEF §25.7 |
 | 5 | AI equip + cast policy; save schema 4 + `MIGRATIONS[3]` + catch-up grant; carry rules for four builds; the ally starter grant; the retune method with a baseline-relative band | §16.3, §16.6–16.8, BUILD_BRIEF §25.8–25.10 |
 | 6 | Determinism policy (empty-build casts reproduce v0.5.150; party draw stream), Healer invariants, ownership, ports, params, cmds, tools, gates GP.1–GP.16 | §16.9–16.11, §2.1, §6.1, §6.3, §6.4, docs/TESTING.md PARTY |
+| 7 | PARTYD self-review (v0.5.152): the reserve ("satchel") of known-but-unequipped skills dropped — the user's cap is literal, no character ever holds more than 4 skills; an ally grows by SWAP offers (the replaced skill back to the class pool, its nodes to the bench), `partySwap` / `partyReorder`; an Echo replays the delivery only and is never a cast (combo / Momentum / Flow / Resonance); a CMD after its page closed → `command_rejected closed`; a network save loads single-player with every seat's build; the pad's Auto-fill all is a focusable button; the AI-held Healer seat follows the autopilot | §16.1, §16.3, §16.4, §16.5, §16.6, §16.7, GP.2 / GP.4 / GP.8 / GP.11, BUILD_BRIEF §25.1–25.9 |
