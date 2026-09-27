@@ -444,7 +444,8 @@ async function verifyNode() {
   const world = createWorld({ rng: createGameplayRng(7), registry: createRegistry(), events: createEventBus(), harness: false, requestHitstop: clock.requestHitstop, room: null });
   const pools = world.cmd('partyPools');
   const verdicts = world.cmd('partyVerdicts');
-  if (pools === undefined || verdicts === undefined) return { notImplemented: true };
+  // An unknown cmd answers null / undefined (world.js: "lands with a later block").
+  if (pools == null || verdicts == null) return { notImplemented: true };
   return compareImpl(pools, verdicts);
 }
 
