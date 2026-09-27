@@ -552,6 +552,28 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     m.geometry.attributes.position.needsUpdate = true;
     m.geometry.computeBoundingSphere();
   }
+  // The bond's above-plane arc: three ribbons (glow / ink / core). Built on
+  // demand and pooled; one is also parked at boot (prewarm below).
+  function makeBondArc(color = HEAL) {
+    const arc = new Group();
+    // Widths are HALF-widths in world units; at gameplay zoom the ground
+    // plane runs ~90-100 px/u, so this is an ~8 px Bright Heal line inside a
+    // ~4 px charcoal rim inside a feathered ~36 px glow — the same
+    // core/ink/halo proportion the heal bolt wears in flight.
+    const arcGlow = makeBondRibbon(0.19, ribbonMat(color, 0.26, { additive: true, feather: true }));
+    arcGlow.renderOrder = 11;
+    arcGlow.name = 'arcGlow';
+    const arcInk = makeBondRibbon(0.085, ribbonMat(PALETTE.voidCharcoal, 0.62));
+    arcInk.renderOrder = 12;
+    arcInk.name = 'arcInk';
+    const arcCore = makeBondRibbon(0.042, ribbonMat('#ffffff', 0.94));
+    arcCore.renderOrder = 13;
+    arcCore.name = 'arcCore';
+    arc.add(arcGlow);
+    arc.add(arcInk);
+    arc.add(arcCore);
+    return arc;
+  }
   function spawnBeam(x0, z0, x1, z1, color = HEAL) {
     const dx = x1 - x0;
     const dz = z1 - z0;
@@ -583,26 +605,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     // Above-plane slice: a wide dim rail with a bright thin rail inside it,
     // both bowing over the party's heads. They carry WORLD-space vertices, so
     // they hang off `root` directly instead of the beam's rotated group.
-    let arc = arcPool.pop();
-    if (!arc) {
-      arc = new Group();
-      // Widths are HALF-widths in world units; at gameplay zoom the ground
-      // plane runs ~90-100 px/u, so this is an ~8 px Bright Heal line inside a
-      // ~4 px charcoal rim inside a feathered ~36 px glow — the same
-      // core/ink/halo proportion the heal bolt wears in flight.
-      const arcGlow = makeBondRibbon(0.19, ribbonMat(color, 0.26, { additive: true, feather: true }));
-      arcGlow.renderOrder = 11;
-      arcGlow.name = 'arcGlow';
-      const arcInk = makeBondRibbon(0.085, ribbonMat(PALETTE.voidCharcoal, 0.62));
-      arcInk.renderOrder = 12;
-      arcInk.name = 'arcInk';
-      const arcCore = makeBondRibbon(0.042, ribbonMat('#ffffff', 0.94));
-      arcCore.renderOrder = 13;
-      arcCore.name = 'arcCore';
-      arc.add(arcGlow);
-      arc.add(arcInk);
-      arc.add(arcCore);
-    }
+    const arc = arcPool.pop() || makeBondArc(color);
     const sh = bondShape(x0, z0, x1, z1, beams.filter((v) => v.age === 0).map((v) => v.dir));
     for (const name of ['arcGlow', 'arcInk', 'arcCore']) {
       const m = arc.getObjectByName(name);
@@ -1053,6 +1056,18 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     warmPark(root, makeBoltRig(true));
     warmPark(root, makeBoltRig(false));
     warmPark(root, makeZoneRig(SKILLS.sanctuary ? SKILLS.sanctuary.area : 1.5));
+    // gauntlet r4 J4-F1 (INT): the Swift Mend bond arc — transparent,
+    // double-sided ribbons, i.e. a back-face and a front-face program each —
+    // linked 4 programs on the first Swift Mend of the first fight (a 55-109 ms
+    // frame ~6 s into Level 1 room 1). Parked with a real bowed shape, then
+    // handed to the arc pool.
+    const warmArc = makeBondArc(HEAL);
+    const wsh = bondShape(0, 0, 2, 0, []);
+    for (const m of warmArc.children) aimBondRibbon(m, 0, 0, 2, 0, wsh);
+    warmPark(root, warmArc, (g) => {
+      for (const m of g.children) m.frustumCulled = false; // world-space ribbons (makeBondRibbon)
+      arcPool.push(g);
+    });
   }
 
   let lastElapsed = null;

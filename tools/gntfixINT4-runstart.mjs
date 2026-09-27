@@ -20,13 +20,13 @@ async function waitFor(page, body, timeout = 30000) { const t0 = Date.now(); whi
 // GL hook: every linkProgram is recorded with the three.js SHADER_NAME of its fragment source and the time;
 // every useProgram of a program never used before is recorded too (its first draw compiles the executables).
 const GLHOOK = () => {
-  window.__glh = { links: [], firstUse: [], defs: {} };
+  window.__glh = { links: [], firstUse: [], defs: {} }; window.__glhStacks = true;
   const src = new WeakMap(); const progs = new WeakMap(); let id = 0;
   for (const C of [window.WebGL2RenderingContext, window.WebGLRenderingContext]) {
     if (!C) continue; const P = C.prototype;
     const ss = P.shaderSource; P.shaderSource = function (sh, s) { src.set(sh, s); return ss.call(this, sh, s); };
     const at = P.attachShader; P.attachShader = function (p, sh) { const r = progs.get(p) || { id: ++id, names: [], used: false }; const s = src.get(sh) || ''; const m = s.match(/#define SHADER_NAME ([^\n]*)/); if (m) r.names.push(m[1]); if (/gl_FragColor|pc_fragColor|out highp vec4/.test(s)) r.fragLen = s.length; else r.vertLen = s.length; progs.set(p, r); return at.call(this, p, sh); };
-    const lp = P.linkProgram; P.linkProgram = function (p) { const r = progs.get(p) || { id: ++id, names: [] }; try { const sh = this.getAttachedShaders(p) || []; window.__glh.defs[r.id] = sh.map((h) => (src.get(h) || '').split(String.fromCharCode(10)).filter((l) => /^#define|^uniform|^#include/.test(l.trim())).join('|')); } catch { /* */ } const t = performance.now(); const x = lp.call(this, p); window.__glh.links.push([+t.toFixed(1), r.id, (r.names[0] || '?').slice(0, 60), r.vertLen || 0, r.fragLen || 0]); return x; };
+    const lp = P.linkProgram; P.linkProgram = function (p) { const r = progs.get(p) || { id: ++id, names: [] }; try { const sh = this.getAttachedShaders(p) || []; window.__glh.defs[r.id] = sh.map((h) => (src.get(h) || '').split(String.fromCharCode(10)).filter((l) => /^#define|^uniform|^#include/.test(l.trim())).join('|')); } catch { /* */ } const t = performance.now(); const x = lp.call(this, p); window.__glh.links.push([+t.toFixed(1), r.id, (r.names[0] || '?').slice(0, 60), r.vertLen || 0, r.fragLen || 0, window.__glhStacks ? String(new Error().stack).split(String.fromCharCode(10)).slice(2, 14).map((l) => l.trim().split(location.origin + '/assets/').join('')).join(' < ') : null]); return x; };
     const up = P.useProgram; P.useProgram = function (p) { const r = p && progs.get(p); if (r && !r.used) { r.used = true; window.__glh.firstUse.push([+performance.now().toFixed(1), r.id, (r.names[0] || '?').slice(0, 60)]); } return up.call(this, p); };
   }
 };
@@ -111,7 +111,7 @@ for (let rep = 0; rep < reps; rep++) {
     if (glHook) {
       const g = await page.evaluate(() => window.__glh);
       R.linksTotal = g.links.length;
-      R.linksAfterE = g.links.filter((x) => x[0] >= ePerf - 20).map((x) => [Math.round(x[0] - ePerf), x[1], x[2], x[3], x[4]]);
+      R.linksAfterE = g.links.filter((x) => x[0] >= ePerf - 20).map((x) => [Math.round(x[0] - ePerf), x[1], x[2], x[3], x[4], x[5]]);
       R.firstUseAfterE = g.firstUse.filter((x) => x[0] >= ePerf - 20).map((x) => [Math.round(x[0] - ePerf), x[1], x[2]]);
       R.firstUseDefs = R.firstUseAfterE.map(([t, id2]) => ({ t, id: id2, defines: ((g.defs[id2] || []).join("|")).split("|").filter((x) => /^#define (USE_|SHADER_TYPE|TOON|FLAT|DOUBLE|INSTANC|NUM_|ALPHA)/.test(x)) }));
       // the defines of every program linked after E, diffed against the closest program linked before E

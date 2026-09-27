@@ -2117,6 +2117,18 @@ N2–N4 (playable, bounded, never broken).
   keydown-to-move ≤ 2 ticks; dodge i-frames; telegraphs ≥ 0.7 s; camp, combat
   and boss frames each ≥ 16/20 on docs/REFERENCE_BAR.md with no zero; no
   frame > 100 ms after warm-up on the GPU harness (§6.7); 0 page errors.
+  *Round 4 (J4-F1):* "warm-up" covers every first-use cost the game can
+  pay before play — the loading card holds `warmupPending()` until the
+  title-boot HUD paint warm-up (raster pipelines) has run, dressings and
+  parked rigs are band-guarded before their programs are warmed, and a
+  dressing parked in the camp is really drawn — so camp → portal → Level 1
+  room 1 by real input has no frame > 50 ms and no program linked or first
+  drawn after E (tools/gntfixINT4-runstart.mjs). A single 1.5-2.7 s frame
+  120-230 s after a HEADLESS harness browser launches is the browser's own
+  (a plain WebGL page without Echoes shows it; a browser aged 3 minutes
+  before the game starts shows none; program / texture counts unchanged, no
+  longtask): a full-campaign GI.6 trace starts the game in a browser that is
+  already a few minutes old, or reports such a frame separately.
 
 ---
 

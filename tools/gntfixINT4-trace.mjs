@@ -26,7 +26,7 @@ ps2.stdout.on('data', (d) => { for (const l of String(d).split(/\r?\n/)) { const
 const out = { schema: 'gntcjourney4-trace8/1', at: new Date().toISOString(), base, seed, tag, steps: [] };
 const step = (name, detail) => { out.steps.push({ name, at: Date.now(), detail }); log('STEP', name, JSON.stringify(detail ?? '').slice(0, 300)); };
 // wait for a quiet machine: no chrome.exe for quietS seconds (max 10 min)
-{ const t0 = Date.now(); let quietSince = null; while (Date.now() - t0 < 600000) { await sleep(500); const last = load[load.length - 1]; if (!last) continue; if (last.n === 0) { quietSince = quietSince ?? Date.now(); if (Date.now() - quietSince >= quietS * 1000) break; } else quietSince = null; } out.quietWaitMs = Date.now() - t0; out.chromeBeforeLaunch = (load[load.length - 1] || {}).n; log('quiet wait', out.quietWaitMs, 'chrome before launch', out.chromeBeforeLaunch); }
+{ const t0 = Date.now(); let quietSince = null; while (arg('noquiet', '0') !== '1' && Date.now() - t0 < 600000) { await sleep(500); const last = load[load.length - 1]; if (!last) continue; if (last.n === 0) { quietSince = quietSince ?? Date.now(); if (Date.now() - quietSince >= quietS * 1000) break; } else quietSince = null; } out.quietWaitMs = Date.now() - t0; out.chromeBeforeLaunch = (load[load.length - 1] || {}).n; log('quiet wait', out.quietWaitMs, 'chrome before launch', out.chromeBeforeLaunch); }
 const view = (page) => page.evaluate(() => { const r = window.__echoes.state().run; const c = window.__echoes.campaign.state(); return { active: r.active, room: r.room, phase: r.phase, mode: r.mode, level: c.level }; });
 const uiScreen = (page) => page.evaluate(() => (window.__echoes.runUi() || {}).screen ?? 'none');
 const settled = (page) => page.evaluate(() => (window.__echoes.runUi() || {}).settled === true);
@@ -62,6 +62,9 @@ const browser = await launchEchoes({ gpu: true });
 out.browserPid = browser.process() ? browser.process().pid : null;
 let page, errors, consoleLines;
 try {
+  const ageS = Number(arg('age', 0)); // let the browser age first (the headless browser's own ~120-230 s freeze, PLAN GI.6 note)
+  if (ageS > 0) { const ap = await browser.newPage(); await ap.goto('about:blank'); log('aging browser', ageS, 's'); await sleep(ageS * 1000); await ap.close(); }
+  out.ageS = ageS;
   const ctx = await browser.createBrowserContext();
   {
     page = await ctx.newPage(); errors = []; consoleLines = [];
