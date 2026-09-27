@@ -282,6 +282,7 @@ export function createSavesScreen(ctx) {
   let queued = null; // the last press made while busy — replayed when it ends (r3 F3)
   let savingId = null; // the slot a save is being written to (row shows "Saving…")
   let offThumb = null;
+  let offSlots = null;
   const rowEls = new Map(); // slot id -> row button
 
   const save = () => service('save');
@@ -965,6 +966,13 @@ export function createSavesScreen(ctx) {
       cancelHover();
       const s = save();
       if (!offThumb && s && typeof s.onThumb === 'function') offThumb = s.onThumb((id) => refreshThumb(id));
+      // Another tab of the game saved, overwrote or deleted a slot (SAVE4-F1):
+      // the list redraws in place (a confirm on top redraws it on return).
+      if (!offSlots && s && typeof s.onSlotsChanged === 'function') {
+        offSlots = s.onSlotsChanged(() => {
+          if (open && !busy && manager.top() === 'saves') render();
+        });
+      }
       render({ keepFocus: false });
     },
     onFocus() {
@@ -976,6 +984,8 @@ export function createSavesScreen(ctx) {
       cancelHover();
       if (offThumb) offThumb();
       offThumb = null;
+      if (offSlots) offSlots();
+      offSlots = null;
     },
     onFocusChange(node, source) {
       if (!node || !node.dataset || !node.dataset.slot) {

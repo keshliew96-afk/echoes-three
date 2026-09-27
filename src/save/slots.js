@@ -78,10 +78,18 @@ export function backupMeta(store, id) {
   return metaOf(r.file, { id, bytes: text.length });
 }
 
+// The index text is a pure function of the slots (catalogue order), so every
+// tab that scans the same storage writes the same bytes: a tab compares the
+// stored index with the one it last wrote to see that another tab changed a
+// slot (SAVE4-F1, index.js ensureFresh). -> { ok, text (what is stored now) }
 export function writeIndex(store, slots) {
   const idx = { v: 1, slots: {} };
-  for (const [id, m] of Object.entries(slots)) {
+  for (const id of ALL_SLOTS) {
+    const m = slots[id];
+    if (!m) continue;
     idx.slots[id] = { id, kind: m.kind, name: m.name, savedAt: m.savedAt, status: m.status, bytes: m.bytes, hash: m.hash };
   }
-  return store.writePlain(INDEX_KEY, JSON.stringify(idx));
+  const text = JSON.stringify(idx);
+  const w = store.writePlain(INDEX_KEY, text);
+  return { ...w, text: w.ok ? text : store.read(INDEX_KEY) };
 }

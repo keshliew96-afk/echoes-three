@@ -117,6 +117,7 @@ export function createRecordsScreen(ctx) {
   });
   foot.append(hints.el, back);
 
+  let offProfile = null;
   function render() {
     const s = service('save');
     const p = s ? s.profile() : null;
@@ -209,9 +210,16 @@ export function createRecordsScreen(ctx) {
     defaultFocus: '#sv-records-back',
     onOpen() {
       render();
+      // Another tab of the game recorded a run (SAVE4-F1): redraw in place.
+      const s = service('save');
+      if (!offProfile && s && typeof s.onProfileChanged === 'function') offProfile = s.onProfileChanged(() => render());
     },
     onFocus() {
       render();
+    },
+    onClose() {
+      if (offProfile) offProfile();
+      offProfile = null;
     },
   };
 }

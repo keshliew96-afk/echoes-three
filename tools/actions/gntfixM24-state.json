@@ -1,0 +1,1 @@
+[{"type":"wait","ms":2000},{"type":"eval","code":"(()=>({url:location.href,app:__echoes.app.state,tick:__echoes.tick,v:__echoes.version}))()"}]

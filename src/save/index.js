@@ -26,7 +26,7 @@ import { levelFor } from '../data/levels.js';
 import { createStateIO } from './capture.js';
 import { buildFile, parseFile, encodeOrdered, clonePlain, SCHEMA, campaignMeta } from './codec.js';
 import { lockLine, FIRST_LEVEL } from '../data/campaign.js';
-import { createSaveStorage, INDEX_KEY, PROFILE_KEY } from './storage.js';
+import { createSaveStorage, INDEX_KEY, PROFILE_KEY, SAVE_PREFIX } from './storage.js';
 import {
   ALL_SLOTS,
   MANUAL_SLOTS,
@@ -265,10 +265,43 @@ export function createSaveSystem({
   // ------------------------------------------------------- slot cache --
   let slots = {};
   const recovery = [];
+  // SEVERAL TABS (gauntlet r4, SAVE4-F1): another tab of the game may write,
+  // overwrite or delete a slot at any moment, so this catalogue is never
+  // trusted blindly. `indexText` is the index this tab last wrote or read; a
+  // stored index that differs (the other tab's writeIndex) — or a `storage`
+  // event on a slot key (slotsStale) — means the catalogue is re-scanned
+  // before anything reads it (list / latest / Continue, the autosave
+  // rotation, the import target, New Game's impact) or writes the index.
+  let indexText = null;
+  let slotsStale = false;
+  const slotListeners = new Set(); // onSlotsChanged: another tab changed the catalogue
+  const profileListeners = new Set(); // onProfileChanged: another tab wrote the profile
+  const notify = (set, what) => {
+    for (const fn of set) {
+      try {
+        fn(what);
+      } catch (err) {
+        console.warn(`[save] ${what} listener threw`, err);
+      }
+    }
+  };
+  const tabSync = { profile: 0, slots: 0, timer: 0 }; // debug counters
   function rescan() {
     slots = scanSlots(store);
-    writeIndex(store, slots);
+    indexText = writeIndex(store, slots).text;
+    slotsStale = false;
     return slots;
+  }
+  function ensureFresh() {
+    if (slotsStale || store.read(INDEX_KEY) !== indexText) rescan();
+  }
+  // A slot entry changed by THIS tab: the index follows (never a stale
+  // catalogue over another tab's entries — ensureFresh first).
+  function putSlot(id, m) {
+    ensureFresh();
+    if (m) slots[id] = m;
+    else delete slots[id];
+    indexText = writeIndex(store, slots).text;
   }
   // Boot recovery: a leftover .tmp = a write torn after step 1. A VALID tmp
   // newer than main (or with main missing / damaged) is promoted; anything
@@ -467,8 +500,7 @@ export function createSaveSystem({
     if (shot && shot.dataUrl) store.writePlain(`${key}.thumb`, shot.dataUrl);
     else if (thumb) store.remove(`${key}.thumb`);
     const m = metaOf(built.file, { id, bytes: built.text.length, thumb: !!(shot && shot.dataUrl) || (!thumb && store.read(`${key}.thumb`) !== null) });
-    slots[id] = m;
-    writeIndex(store, slots);
+    putSlot(id, m);
     if (thumbLate) {
       pendingThumbs.set(id, { savedAt: stampIso, hash: built.hash, since: performance.now() });
       shotP.then((s) => attachLateThumb(id, stampIso, built.hash, s)).catch(() => attachLateThumb(id, stampIso, built.hash, null));
@@ -500,6 +532,7 @@ export function createSaveSystem({
   function attachLateThumb(id, savedAt, hash, s) {
     const p = pendingThumbs.get(id);
     if (p && p.savedAt === savedAt) pendingThumbs.delete(id);
+    ensureFresh(); // another tab may have overwritten the slot meanwhile
     const cur = slots[id];
     let result;
     if (!s || !s.dataUrl) result = 'no picture';
@@ -609,8 +642,7 @@ export function createSaveSystem({
     const key = slotKey(id);
     for (const k of [key, `${key}.bak`, `${key}.tmp`, `${key}.thumb`]) store.remove(k);
     pendingThumbs.delete(id);
-    delete slots[id];
-    writeIndex(store, slots);
+    putSlot(id, null);
     return { ok: true };
   }
 
@@ -662,6 +694,7 @@ export function createSaveSystem({
     }
   }
   function firstEmptyManual() {
+    ensureFresh();
     return MANUAL_SLOTS.find((id) => !slots[id]) ?? null;
   }
   function importText(text, target = null) {
@@ -763,7 +796,9 @@ export function createSaveSystem({
   // Loading such a save revives its game (the player chose to play it on).
   const ENDED_KEY = INDEX_KEY.replace(/index$/, 'endedRuns');
   const ENDED_MAX = 24;
-  let endedRuns = (() => {
+  // Shared with the other tabs (SAVE4-F1): re-read before every use and
+  // every write, so one tab's list never drops a game another tab ended.
+  function readEnded() {
     try {
       const t = store.read(ENDED_KEY);
       const a = t ? JSON.parse(t) : [];
@@ -771,8 +806,13 @@ export function createSaveSystem({
     } catch {
       return [];
     }
-  })();
+  }
+  let endedRuns = readEnded();
+  function refreshEnded() {
+    endedRuns = readEnded();
+  }
   function markEnded(key, ended) {
+    refreshEnded();
     if (!key || endedRuns.includes(key) === !!ended) return;
     endedRuns = ended ? [...endedRuns, key].slice(-ENDED_MAX) : endedRuns.filter((k) => k !== key);
     try {
@@ -800,6 +840,8 @@ export function createSaveSystem({
   };
   // pickAutoSlot(tree | { runKey }) -> 'auto-1' | 'auto-2'
   function pickAutoSlot(tree) {
+    ensureFresh();
+    refreshEnded();
     const key = tree && typeof tree === 'object' && 'runKey' in tree ? tree.runKey : gameKeyOfTree(tree);
     let best = null;
     for (const id of AUTO_SLOTS) {
@@ -819,6 +861,8 @@ export function createSaveSystem({
   // NEW game's first autosave would overwrite (null: no run is lost; an
   // older autosave of a game whose newer one stays is not a lost run).
   function newGameImpact() {
+    ensureFresh();
+    refreshEnded();
     const byGame = new Map();
     for (const id of AUTO_SLOTS) {
       const m = slots[id];
@@ -939,6 +983,7 @@ export function createSaveSystem({
           else app.toast(r.reason || SAVE_ERRORS[r.error] || "Couldn't quicksave", { tone: 'warn' });
         });
       } else {
+        ensureFresh();
         if (!slots[QUICK_SLOT]) {
           app.toast('No quicksave yet — press F5 to make one', { tone: 'info' });
           return;
@@ -962,11 +1007,44 @@ export function createSaveSystem({
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) flushNow();
     });
+    // SEVERAL TABS (SAVE4-F1): another tab of the game wrote. The profile is
+    // adopted at once (Records, Level Select, the portal read it live); slot
+    // writes arrive as several keys (tmp, bak, main, thumb, index), so the
+    // catalogue re-scans once they settle and an open saves screen redraws.
+    window.addEventListener('storage', (e) => {
+      try {
+        if (e.storageArea && typeof localStorage !== 'undefined' && e.storageArea !== localStorage) return;
+      } catch {
+        return;
+      }
+      const k = e.key;
+      if (k === null || k === PROFILE_KEY) {
+        if (profileStore.sync()) {
+          tabSync.profile += 1;
+          notify(profileListeners, 'profile');
+        }
+      }
+      if (k === null || (k.startsWith(SAVE_PREFIX) && !k.endsWith('.tmp'))) {
+        slotsStale = true;
+        clearTimeout(tabSync.timer);
+        tabSync.timer = setTimeout(() => {
+          if (!slotsStale) return;
+          rescan();
+          tabSync.slots += 1;
+          notify(slotListeners, 'slots');
+          // the title's Continue / Load Game redraw (app event, UI only)
+          try {
+            if (app && app.events && typeof app.events.emit === 'function') app.events.emit('saves_changed', { source: 'tab' });
+          } catch {
+            /* UI refresh only */
+          }
+        }, 150);
+      }
+    });
   }
 
   // ------------------------------------------------------- catalogue --
-  const sorted = () =>
-    Object.values(slots).sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')) || ALL_SLOTS.indexOf(a.id) - ALL_SLOTS.indexOf(b.id));
+  const sorted = () => (ensureFresh(), Object.values(slots)).sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')) || ALL_SLOTS.indexOf(a.id) - ALL_SLOTS.indexOf(b.id));
   function list() {
     return sorted().map((m) => ({ ...m, meta: { ...m.meta } }));
   }
@@ -1143,7 +1221,7 @@ export function createSaveSystem({
     hash: (tree) => hashState(tree ?? capture()),
     requestCapture,
     list,
-    hasAny: () => Object.keys(slots).length > 0,
+    hasAny: () => (ensureFresh(), Object.keys(slots).length > 0),
     latest,
     canSave,
     canLoad,
@@ -1169,12 +1247,22 @@ export function createSaveSystem({
     // A save whose picture is still being encoded (attached when it lands).
     thumbPending: (id) => pendingThumbs.has(id),
     onThumb,
+    // SAVE4-F1: another tab changed the saves (the open saves screen redraws)
+    onSlotsChanged(fn) {
+      slotListeners.add(fn);
+      return () => slotListeners.delete(fn);
+    },
+    // ... and the profile (an open Records screen redraws)
+    onProfileChanged(fn) {
+      profileListeners.add(fn);
+      return () => profileListeners.delete(fn);
+    },
     rescan,
     flush() {
       profileStore.addPlaytime(profileTicks / TICK_HZ);
       profileTicks = 0;
       profileStore.flush();
-      writeIndex(store, slots);
+      ensureFresh(); // the index stays the stored catalogue (never this tab's stale copy)
       return true;
     },
     get storageAvailable() {
@@ -1221,7 +1309,10 @@ export function createSaveSystem({
       }
     },
     newGameImpact,
-    endedRuns: () => endedRuns.slice(),
+    endedRuns: () => (refreshEnded(), endedRuns.slice()),
+    // SAVE4-F1: this tab's unwritten profile changes and what it adopted
+    // from other tabs (storage events: profile adoptions, slot re-scans)
+    tabs: () => ({ profile: profileStore.debugState(), adopted: { profile: tabSync.profile, slots: tabSync.slots }, indexFresh: store.read(INDEX_KEY) === indexText && !slotsStale }),
     autosave: (reason) => autosave(reason),
     autosaveEnabled: (on) => autosaver.setEnabled(on),
     resetAutosaveThrottle: () => autosaver.resetThrottle(),

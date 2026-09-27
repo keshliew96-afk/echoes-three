@@ -113,7 +113,9 @@ export function createSaveStorage({ storage = defaultStorage() } = {}) {
   }
 
   // -> { ok: true } | { ok: false, error: 'quota' | 'unavailable', detail }
-  function writeAtomic(key, text) {
+  // `backupIf(cur)` (optional): step 2 copies the current main to .bak only
+  // when it returns true — a damaged main never replaces a good backup.
+  function writeAtomic(key, text, { backupIf = null } = {}) {
     const tmp = `${key}.tmp`;
     try {
       write(tmp, text);
@@ -123,7 +125,7 @@ export function createSaveStorage({ storage = defaultStorage() } = {}) {
     }
     try {
       const cur = read(key);
-      if (cur !== null && cur !== text) write(`${key}.bak`, cur);
+      if (cur !== null && cur !== text && (!backupIf || backupIf(cur))) write(`${key}.bak`, cur);
     } catch (err) {
       remove(tmp);
       return { ok: false, error: isQuotaError(err) ? 'quota' : 'unavailable', detail: String(err && err.message) };

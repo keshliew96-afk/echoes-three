@@ -234,6 +234,8 @@ export function createTitleScreen(ctx) {
   };
   app.events.on('service', schedule);
   app.events.on('screens', schedule);
+  // @gnt:M2 TABS — another tab of the game saved / deleted (SAVE4-F1): Continue follows.
+  app.events.on('saves_changed', schedule);
 
   const screen = {
     el,

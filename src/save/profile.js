@@ -94,10 +94,27 @@ function sane(p) {
   return out;
 }
 
+// SEVERAL TABS (gauntlet r4, SAVE4-F1). Every open tab of the game holds its
+// own copy of the profile, and another tab may write the file at any moment
+// (a run recorded, a level unlocked). A tab never writes its copy blindly
+// over the file: every write re-reads the stored profile first (sync) and
+// replays only THIS tab's own changes on top of it — its pending ops (a run
+// recorded, a level cleared) and its deferred counters (playtime, last level,
+// furthest level). So a stale tab that is played again and then reloaded,
+// closed or navigated away adds its playtime and nothing else: it never takes
+// back a high score, a record or an unlock another tab earned. Ops whose
+// write failed (quota) stay pending and ride the next write. index.js also
+// runs sync() on the `storage` event, so an open Records screen, Level Select
+// or portal in the other tab shows the new state without a reload.
 export function createProfileStore({ store, now = () => new Date().toISOString() }) {
-  let profile = freshProfile();
+  let base = freshProfile(); // the stored profile this tab last read or wrote
+  let baseText = null; // its text as stored (null: nothing stored yet)
+  let profile = base; // base + this tab's unwritten changes (what the game shows)
+  let pending = []; // this tab's ops not yet in storage: { apply(p) -> result }
+  const noDeferred = () => ({ playtimeSec: 0, lastAct: null, furthest: 0 });
+  let deferred = noDeferred(); // counters that ride the next write (flush)
   let report = { status: 'fresh', detail: null };
-  let dirty = false;
+  const syncLog = []; // debug: the last 10 adoptions of another tab's write
 
   function parse(text) {
     try {
@@ -105,6 +122,50 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     } catch {
       return null;
     }
+  }
+  const clone = (p) => sane(JSON.parse(JSON.stringify(p))) ?? freshProfile();
+  // .bak only ever receives a readable profile (a torn main never replaces it)
+  const keepAsBackup = (cur) => parse(cur) !== null;
+  const hasDeferred = () => deferred.playtimeSec > 0 || deferred.lastAct !== null || deferred.furthest > 0;
+  const isDirty = () => pending.length > 0 || hasDeferred();
+
+  function applyDeferred(p) {
+    if (deferred.playtimeSec > 0) p.playtimeSec = Math.round((p.playtimeSec + deferred.playtimeSec) * 10) / 10;
+    if (deferred.lastAct !== null) p.lastAct = deferred.lastAct;
+    if (deferred.furthest > (p.records.furthestLevel ?? 0)) p.records.furthestLevel = deferred.furthest;
+  }
+  // The view = the stored base + this tab's pending ops + deferred counters.
+  // Returns what `want` (one of the pending ops) returned in this rebuild.
+  function rebuild(want = null) {
+    const view = clone(base);
+    let out;
+    for (const op of pending) {
+      const r = op.apply(view);
+      if (op === want) out = r;
+    }
+    applyDeferred(view);
+    profile = view;
+    return out;
+  }
+
+  // Adopt what storage holds now (another tab may have written it). Nothing
+  // readable stored (cleared site data, a damaged file and no backup) keeps
+  // this tab's copy: the next write puts it back. -> true when it changed.
+  function sync() {
+    const text = store.read(PROFILE_KEY);
+    if (text === baseText) return false;
+    let p = text !== null ? parse(text) : null;
+    if (!p && text !== null) {
+      const bak = store.read(`${PROFILE_KEY}.bak`);
+      p = bak !== null ? parse(bak) : null;
+    }
+    if (!p) return false;
+    base = p;
+    baseText = text;
+    rebuild();
+    syncLog.push({ at: Date.now(), savedAt: p.savedAt ?? null, highScores: p.highScores.length, unlocks: p.unlocks.acts.slice(), pending: pending.length });
+    if (syncLog.length > 10) syncLog.shift();
+    return true;
   }
 
   function load() {
@@ -120,13 +181,17 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     }
     const text = store.read(PROFILE_KEY);
     if (text === null) {
-      profile = freshProfile();
+      base = freshProfile();
+      baseText = null;
+      rebuild();
       if (report.status !== 'promoted') report = { status: 'fresh', detail: null };
       return profile;
     }
     const p = parse(text);
     if (p) {
-      profile = p;
+      base = p;
+      baseText = text;
+      rebuild();
       if (report.status !== 'promoted') report = { status: 'ok', detail: null };
       return profile;
     }
@@ -135,30 +200,60 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     const bak = store.read(`${PROFILE_KEY}.bak`);
     const b = bak !== null ? parse(bak) : null;
     if (b) {
-      profile = b;
-      store.writeAtomic(PROFILE_KEY, JSON.stringify(b));
+      base = b;
+      const bt = JSON.stringify(b);
+      baseText = store.writeAtomic(PROFILE_KEY, bt).ok ? bt : text;
       report = { status: 'backup', detail: 'the records file was unreadable — restored the backup' };
     } else {
-      profile = freshProfile();
+      base = freshProfile();
+      baseText = text;
       report = { status: 'recovered', detail: 'the records file was unreadable — records were reset' };
     }
+    rebuild();
     return profile;
   }
 
+  // Write: storage's current profile + this tab's changes. A failed write
+  // (quota, blocked storage) keeps them pending for the next write.
   function persist() {
+    sync();
+    rebuild();
     profile.savedAt = now();
-    const r = store.writeAtomic(PROFILE_KEY, JSON.stringify(profile));
-    dirty = !r.ok;
+    const text = JSON.stringify(profile);
+    const r = store.writeAtomic(PROFILE_KEY, text, { backupIf: keepAsBackup });
+    if (r.ok) {
+      base = profile;
+      baseText = text;
+      pending = [];
+      deferred = noDeferred();
+      rebuild();
+    }
     return r;
   }
+  // Apply one op to the freshest stored profile and write it at once.
+  function commit(apply) {
+    sync();
+    const op = { apply };
+    pending.push(op);
+    const result = rebuild(op);
+    const w = persist();
+    return { result, w };
+  }
 
-  // Unlock `level` (idempotent). Returns true when it was newly unlocked.
+  // Unlock `level` in `p` (idempotent). Returns true when it was newly unlocked.
+  function unlockIn(p, level) {
+    const n = Number(level);
+    if (!CAMPAIGN_LEVELS.includes(n) || p.unlocks.acts.includes(n)) return false;
+    p.unlocks.acts.push(n);
+    p.unlocks.acts.sort((a, b) => a - b);
+    return true;
+  }
   function unlockLevel(level) {
     const n = Number(level);
-    if (!CAMPAIGN_LEVELS.includes(n) || profile.unlocks.acts.includes(n)) return false;
-    profile.unlocks.acts.push(n);
-    profile.unlocks.acts.sort((a, b) => a - b);
-    return true;
+    if (!CAMPAIGN_LEVELS.includes(n)) return false;
+    sync();
+    if (profile.unlocks.acts.includes(n)) return false;
+    return commit((p) => unlockIn(p, n)).result === true;
   }
 
   // CAMPAIGN (PLAN §12.7 / §12.8): a level's Stag room cleared — Level N+1
@@ -168,21 +263,23 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   function noteLevelClear(level) {
     const n = Number(level);
     if (!CAMPAIGN_LEVELS.includes(n)) return { ok: false };
-    const r = profile.records;
-    r.levelClears[n] = (r.levelClears[n] ?? 0) + 1;
-    if (n > (r.furthestLevel ?? 0)) r.furthestLevel = n;
     const nx = nextLevel(n);
-    const unlocked = nx !== null ? unlockLevel(nx) : false;
-    const w = persist();
-    return { ok: w.ok, level: n, next: nx, unlocked, clears: r.levelClears[n] };
+    const { result, w } = commit((p) => {
+      const r = p.records;
+      r.levelClears[n] = (r.levelClears[n] ?? 0) + 1;
+      if (n > (r.furthestLevel ?? 0)) r.furthestLevel = n;
+      const unlocked = nx !== null ? unlockIn(p, nx) : false;
+      return { unlocked, clears: r.levelClears[n] };
+    });
+    return { ok: w.ok, level: n, next: nx, unlocked: result.unlocked, clears: result.clears };
   }
   // A level entered (run start / level start): the furthest level reached.
   function noteLevelReached(level) {
     const n = Number(level);
     if (!CAMPAIGN_LEVELS.includes(n)) return false;
     if (n > (profile.records.furthestLevel ?? 0)) {
-      profile.records.furthestLevel = n;
-      dirty = true;
+      deferred.furthest = Math.max(deferred.furthest, n);
+      rebuild();
       return true;
     }
     return false;
@@ -192,6 +289,8 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   // `result` 'victory' | 'defeat' | 'abandoned' (Quit to Lobby; falls back to
   // `victory`). `campaign` (PLAN §12.8) = { mode, startLevel, level,
   // levels: [{ level, rooms, kills, cleared, ticks }], levelsCleared, complete }.
+  // Rank and "New best" are measured against the freshest stored profile
+  // (another tab's runs included).
   function recordRun({ act = 1, victory = false, result = null, roomsCleared = 0, kills = 0, timeSec = 0, seed = null, challenge = 'standard', lastRoom = 0, campaign = null }) {
     const res = result === 'abandoned' || result === 'defeat' || result === 'victory' ? result : victory ? 'victory' : 'defeat';
     const camp = campaign && campaign.mode === 'campaign' && Array.isArray(campaign.levels) && campaign.levels.length ? campaign : null;
@@ -215,51 +314,54 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       startLevel: camp ? camp.startLevel ?? act : act,
       levels: camp ? camp.levels.filter((l) => l.cleared).length : res === 'victory' ? 1 : 0,
     };
-    const r = profile.records;
-    const prevBest = r.bestScore;
-    r.runs += 1;
-    if (res === 'victory') r.victories += 1;
-    else if (res === 'abandoned') r.abandoned = (r.abandoned ?? 0) + 1;
-    else r.defeats += 1;
-    if (score > r.bestScore) r.bestScore = score;
-    if (kills > r.mostKills) r.mostKills = kills;
-    // Per level: deepest room, fastest clear (a campaign's cleared levels
-    // each count with their own clear time).
-    const lvls = camp ? camp.levels : [{ level: act, rooms: roomsCleared, cleared: res === 'victory', ticks: Math.round(timeSec * 60) }];
-    lvls.forEach((l, i) => {
-      const a = l.level;
-      const last = i === lvls.length - 1;
-      const deep = l.cleared ? 8 : last ? Math.max(0, lastRoom) : l.rooms || 0;
-      if (deep > (r.deepestRoom[a] ?? 0)) r.deepestRoom[a] = deep;
-      if (l.cleared) {
-        const sec = Math.round((l.ticks || 0) / 60);
-        const cur = r.fastestVictorySec[a];
-        if (sec > 0 && (cur === null || cur === undefined || sec < cur)) r.fastestVictorySec[a] = sec;
-        const nx = nextLevel(a);
-        if (nx !== null) unlockLevel(nx);
-      }
-      if (a > (r.furthestLevel ?? 0)) r.furthestLevel = a;
-    });
-    if (camp) {
-      r.campaigns = (r.campaigns ?? 0) + 1;
-      if (complete) {
-        r.campaignsCompleted = (r.campaignsCompleted ?? 0) + 1;
-        const from1 = (camp.startLevel ?? act) === FIRST_LEVEL;
-        if (from1 && (r.fastestCampaignSec === null || r.fastestCampaignSec === undefined || entry.timeSec < r.fastestCampaignSec)) {
-          r.fastestCampaignSec = entry.timeSec;
+    const { result: out, w } = commit((p) => {
+      const r = p.records;
+      const prevBest = r.bestScore;
+      r.runs += 1;
+      if (res === 'victory') r.victories += 1;
+      else if (res === 'abandoned') r.abandoned = (r.abandoned ?? 0) + 1;
+      else r.defeats += 1;
+      if (score > r.bestScore) r.bestScore = score;
+      if (kills > r.mostKills) r.mostKills = kills;
+      // Per level: deepest room, fastest clear (a campaign's cleared levels
+      // each count with their own clear time).
+      const lvls = camp ? camp.levels : [{ level: act, rooms: roomsCleared, cleared: res === 'victory', ticks: Math.round(timeSec * 60) }];
+      lvls.forEach((l, i) => {
+        const a = l.level;
+        const last = i === lvls.length - 1;
+        const deep = l.cleared ? 8 : last ? Math.max(0, lastRoom) : l.rooms || 0;
+        if (deep > (r.deepestRoom[a] ?? 0)) r.deepestRoom[a] = deep;
+        if (l.cleared) {
+          const sec = Math.round((l.ticks || 0) / 60);
+          const cur = r.fastestVictorySec[a];
+          if (sec > 0 && (cur === null || cur === undefined || sec < cur)) r.fastestVictorySec[a] = sec;
+          const nx = nextLevel(a);
+          if (nx !== null) unlockIn(p, nx);
+        }
+        if (a > (r.furthestLevel ?? 0)) r.furthestLevel = a;
+      });
+      if (camp) {
+        r.campaigns = (r.campaigns ?? 0) + 1;
+        if (complete) {
+          r.campaignsCompleted = (r.campaignsCompleted ?? 0) + 1;
+          const from1 = (camp.startLevel ?? act) === FIRST_LEVEL;
+          if (from1 && (r.fastestCampaignSec === null || r.fastestCampaignSec === undefined || entry.timeSec < r.fastestCampaignSec)) {
+            r.fastestCampaignSec = entry.timeSec;
+          }
         }
       }
-    }
-    profile.lastAct = act;
-    const list = [...profile.highScores, entry].sort((a, b) => b.score - a.score || String(a.date).localeCompare(String(b.date)));
-    const rank = list.indexOf(entry);
-    profile.highScores = list.slice(0, MAX_SCORES);
-    const w = persist();
+      p.lastAct = act;
+      const mine = { ...entry };
+      const list = [...p.highScores, mine].sort((a, b) => b.score - a.score || String(a.date).localeCompare(String(b.date)));
+      const rank = list.indexOf(mine);
+      p.highScores = list.slice(0, MAX_SCORES);
+      return { prevBest, rank };
+    });
     return {
       score,
-      rank: rank >= 0 && rank < MAX_SCORES ? rank + 1 : null,
-      newBest: score > prevBest,
-      prevBest,
+      rank: out.rank >= 0 && out.rank < MAX_SCORES ? out.rank + 1 : null,
+      newBest: score > out.prevBest,
+      prevBest: out.prevBest,
       entry,
       written: w.ok,
       error: w.ok ? null : w.error,
@@ -268,12 +370,12 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
 
   function addPlaytime(sec) {
     if (!(sec > 0)) return;
-    profile.playtimeSec = Math.round((profile.playtimeSec + sec) * 10) / 10;
-    dirty = true;
+    deferred.playtimeSec += sec;
+    rebuild();
   }
   function noteRunStart(act) {
-    profile.lastAct = act;
-    dirty = true;
+    deferred.lastAct = act;
+    rebuild();
   }
 
   load();
@@ -281,7 +383,8 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     get: () => profile,
     load,
     persist,
-    flush: () => (dirty ? persist() : { ok: true }),
+    sync, // SAVE4-F1: adopt another tab's write (the `storage` event)
+    flush: () => (isDirty() ? persist() : { ok: true }),
     recordRun,
     addPlaytime,
     noteRunStart,
@@ -291,9 +394,31 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     get report() {
       return report;
     },
+    // debug (SAVE4-F1): what this tab has not written yet + recent adoptions
+    debugState: () => ({
+      pending: pending.length,
+      deferred: { ...deferred },
+      dirty: isDirty(),
+      baseSavedAt: base.savedAt ?? null,
+      syncLog: syncLog.map((r) => ({ ...r })),
+    }),
+    // Records reset (explicit, this tab's choice): a fresh profile replaces
+    // the stored one; nothing this tab had pending survives it.
     reset() {
-      profile = freshProfile();
-      return persist();
+      pending = [];
+      deferred = noDeferred();
+      base = freshProfile();
+      baseText = null;
+      rebuild();
+      profile.savedAt = now();
+      const text = JSON.stringify(profile);
+      const r = store.writeAtomic(PROFILE_KEY, text, { backupIf: keepAsBackup });
+      if (r.ok) {
+        base = profile;
+        baseText = text;
+        rebuild();
+      }
+      return r;
     },
   };
 }
