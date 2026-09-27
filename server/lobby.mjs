@@ -24,6 +24,9 @@ import { CLASS_BY_SEAT, ERR, sanitizeName } from '../src/net/protocol/messages.j
 
 export const LOBBY_HOLD_MS = 10000; // a disconnected lobby member keeps the seat 10 s (page reload)
 export const START_COUNTDOWN_MS = 1500;
+// A returning host's page resumes from the keyframe cache only while the
+// keyframe misses at most this much play (keyframes arrive every 2 s).
+export const RESUME_MAX_STATE_AGE_MS = 10000;
 
 function newSeat(i) {
   return { index: i, classId: CLASS_BY_SEAT[i], peerId: null, name: null, ready: false, connected: false, rttMs: null, holdUntil: null };
@@ -37,7 +40,7 @@ export class Lobby {
     this.maxRooms = maxRooms;
     this.rooms = new Map(); // code -> room
     this.onRoomClosed = onRoomClosed;
-    this.counters = { created: 0, closed: 0, joins: 0, rejects: {}, migrations: 0, hostReturns: 0, raceLosses: 0 };
+    this.counters = { created: 0, closed: 0, joins: 0, rejects: {}, migrations: 0, hostReturns: 0, hostResumes: 0, raceLosses: 0 };
   }
 
   // ------------------------------------------------------------ helpers --
@@ -337,14 +340,18 @@ export class Lobby {
     this.pushState(room);
   }
 
-  // reconnect { token, code } after hello resumed the identity.
-  reattach(peer, code) {
+  // reconnect { token, code, fresh? } after hello resumed the identity.
+  // `fresh` = the client is a page with no world for this session (the
+  // title's "Rejoin" after a reload, a reopened tab) — a HOST coming back
+  // that way gets the run back from the keyframe cache (resumeHost).
+  reattach(peer, code, { fresh = false } = {}) {
     const room = code ? this.rooms.get(code) : null;
     if (!room || room.state === 'closed') return this.reject(peer, REJECT.NOT_FOUND, MSG.RECONNECT, { code, detail: 'room closed' });
     if (room.evicted.has(peer.id)) return this.reject(peer, REJECT.NOT_FOUND, MSG.RECONNECT, { code, detail: 'removed from the room' });
     const seat = this.seatOf(room, peer.id);
     if (!seat) return this.reject(peer, REJECT.NOT_FOUND, MSG.RECONNECT, { code, detail: 'seat hold expired' });
     const wasHost = room.hostPeerId === peer.id;
+    if (fresh && wasHost && (room.state === 'in_game' || room.state === 'migrating')) return this.resumeHost(room, peer, seat);
     seat.connected = true;
     seat.holdUntil = null;
     seat.name = peer.name;
@@ -361,6 +368,58 @@ export class Lobby {
     this.broadcast(room, MSG.PEER_RESTORED, { peerId: peer.id, seat: seat.index, host: wasHost }, peer.id);
     this.pushState(room);
     return { ok: true, room, seat: seat.index, host: wasHost };
+  }
+
+  // ---------------------------------------------------------- host resume --
+  // fix-M5b-r4 (NET4-F2). The host's page reloaded (F5, a crashed or closed
+  // tab reopened, the game opened again in another tab) and it accepted
+  // "Rejoin" — within the grace, or while its old tab still held the socket.
+  // That page has NO world: letting it host would stream a fresh camp to the
+  // party and wipe the run. It gets the room's newest keyframe instead —
+  // the exact state tree it streamed <= 2 s before it went quiet, the same
+  // state a migration hands a guest — via become_host { reason:
+  // 'host_resume', keyframe, room }; the guests re-baseline on host_changed
+  // { reason: 'host_resume' } (sequence spaces restart, as after a
+  // migration). No usable keyframe (the host dropped before its first one):
+  // migrate now to a guest (its view is the newest state) and the returning
+  // player plays the Healer as a guest; nobody else in the room: the session
+  // ends with an explicit answer.
+  resumeHost(room, peer, seat) {
+    const now = this.now();
+    const kf = room.keyframe;
+    const others = room.seats.filter((s) => s.peerId && s.connected && s.peerId !== peer.id);
+    const lastHeard = kf ? (kf.hostPeerId === peer.id ? kf.hostLastSeenAt ?? kf.receivedAt : room.hostLostAt ?? now) : now;
+    const stateAgeMs = kf ? Math.max(0, lastHeard - kf.receivedAt) : null;
+    const usable = !!kf && stateAgeMs <= RESUME_MAX_STATE_AGE_MS;
+    if (!usable && !others.length) {
+      this.log('host_resume_failed', { code: room.code, peer: peer.id, keyframe: !!kf, stateAgeMs });
+      this.closeRoom(room, 'host_reloaded');
+      return this.reject(peer, REJECT.NOT_FOUND, MSG.RECONNECT, { code: room.code, detail: 'the session ended — nobody else was in it' });
+    }
+    seat.connected = true;
+    seat.holdUntil = null;
+    seat.name = peer.name;
+    room.peerRef.set(peer.id, peer);
+    peer.roomCode = room.code;
+    peer.seat = seat.index;
+    if (room.state === 'migrating') {
+      room.state = 'in_game';
+      room.hostLostAt = null;
+      room.migrateAt = null;
+    }
+    if (!usable) {
+      this.log('host_resume_migrate', { code: room.code, peer: peer.id, keyframe: !!kf, stateAgeMs });
+      this.migrate(room, 'host_reloaded');
+      return { ok: true, room, seat: seat.index, host: false };
+    }
+    this.counters.hostResumes += 1;
+    const keyframe = { tick: kf.tick, bytes: kf.bytes.length, b64: kf.b64(), receivedAt: kf.receivedAt, stateAgeMs, ageMs: now - kf.receivedAt };
+    this.log('host_resume', { code: room.code, peer: peer.id, seat: seat.index, keyframeTick: kf.tick, stateAgeMs });
+    const view = this.view(room);
+    this.send(peer, MSG.BECOME_HOST, { code: room.code, keyframe, seats: view.seats, hostSeat: seat.index, previousHost: peer.id, reason: 'host_resume', room: view });
+    this.broadcast(room, MSG.HOST_CHANGED, { hostPeerId: peer.id, seat: seat.index, previousHost: peer.id, reason: 'host_resume', stateAgeMs }, peer.id);
+    this.pushState(room);
+    return { ok: true, room, seat: seat.index, host: true, resumed: true };
   }
 
   // ------------------------------------------------------------ migration --

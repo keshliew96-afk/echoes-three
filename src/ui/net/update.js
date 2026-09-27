@@ -10,7 +10,7 @@
 // after the server restarted under a session — one dialog offers Reload /
 // Not now. A single-player run in progress is never interrupted: the dialog
 // waits for the title.
-import { SESSION_KEY } from '../../net/lobbyClient.js';
+import { forgetStoredSessions } from '../../net/tabsession.js';
 
 export function updateCopy(u) {
   const mine = u && u.mine ? `v${u.mine}` : null;
@@ -30,7 +30,7 @@ export function updateCopy(u) {
 // not offer a Rejoin into a room of another version.
 export function reloadForUpdate() {
   try {
-    window.localStorage.removeItem(SESSION_KEY);
+    forgetStoredSessions(window.localStorage); // every tab's record + the pre-v0.5.135 single one
   } catch {
     /* storage blocked — nothing stored either */
   }

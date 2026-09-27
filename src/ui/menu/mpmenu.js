@@ -272,7 +272,7 @@ function createMpMenuScreen(ctx) {
     retryBtn.removeAttribute('data-nav-default');
     if (info) {
       rejoinBtn.querySelector('.nt-bl').textContent = `Rejoin ${info.code}`;
-      setCaption(rejoinBtn, `Your ${seatLabel(info.seat ?? 1)} seat is held for a minute after a disconnect`);
+      setCaption(rejoinBtn, info.role === 'host' ? 'You were hosting — your party is waiting for you' : `Your ${seatLabel(info.seat ?? 1)} seat is held for a minute after a disconnect`);
       actions.appendChild(rejoinBtn);
     }
     for (const b of [hostBtn, hostPubBtn, joinBtn, quickBtn]) {
@@ -315,7 +315,11 @@ function createMpMenuScreen(ctx) {
     errEl.textContent = '';
     render();
     renderSide();
+    // fix-M5b-r4: a fresh look at this browser's other tabs, so Rejoin is
+    // never offered for a session that is live in another tab.
+    const liveP = typeof n.rejoinCandidate === 'function' ? n.rejoinCandidate().catch(() => null) : null;
     const r = await n.probe();
+    if (liveP) await liveP;
     if (gen !== probeGen || manager.top() === null) return;
     lastProbe = r;
     state = r.state === 'online' ? 'online' : r.state === 'update' ? 'update' : 'unreachable';
@@ -396,8 +400,9 @@ function createMpMenuScreen(ctx) {
     busy = true;
     setError('Rejoining…');
     try {
-      const r = await n.rejoin();
-      if (!r.ok) setError(`Couldn’t rejoin — ${r.text || r.reason || 'the seat was released'}.`);
+      const info = n.rejoinInfo ? n.rejoinInfo() : null;
+      const r = await n.rejoin(info ? { code: info.code } : {});
+      if (!r.ok) setError(`Couldn’t rejoin — ${r.detail || r.text || r.reason || 'the seat was released'}.`);
     } finally {
       busy = false;
       if (manager.top() === 'mp-menu') render();

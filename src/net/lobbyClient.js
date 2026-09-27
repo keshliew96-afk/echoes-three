@@ -49,7 +49,10 @@ import { normalizeCode, sanitizeName, reasonText } from './protocol/messages.js'
 import { createSnapshotHost, createSnapshotClient, pct, readSnapHeader } from './protocol/snapshot.js';
 import { encodeInputPacket, decodeInputPacket, encodeKeyframe, encodeEvents, decodeEvents, decodeCmd, encodeCmd, SEAT_ALL, channelOf } from './protocol/codec.js';
 import { validateServerUrl, resolveServerAddress, pageLocation, isNewerVersion, fetchSiteBuild, ownEntryChunk } from './address.js';
+import { createTabSessions } from './tabsession.js';
 
+// The single-record key of builds <= v0.5.133; sessions are stored PER TAB
+// since fix-M5b-r4 (tabsession.js, `echoes.net.sessions`).
 export const SESSION_KEY = 'echoes.net.session';
 export const IDENTITY_KEY = 'echoes.net.identity';
 export const REJOIN_WINDOW_MS = 60000;
@@ -108,7 +111,11 @@ export function createNetClient(opts = {}) {
   let rejoinToken = null; // set only by rejoin() for its one connect()
   let name = sanitizeName(params.netName || readJSON(IDENTITY_KEY)?.name || 'Player');
   const rtt = { samples: [], srtt: null, jitter: 0, last: null, offsetMs: null };
-  const counters = { reconnects: 0, lastReconnectMs: null, drops: 0, sessionLost: 0, rejects: {}, migrations: 0 };
+  const counters = { reconnects: 0, lastReconnectMs: null, drops: 0, sessionLost: 0, rejects: {}, migrations: 0, hostResumes: 0 };
+  // fix-M5b-r4 (NET4-F2): stored sessions are per TAB, and a session live in
+  // another tab of this browser is never offered for Rejoin (tabsession.js).
+  const tabs = createTabSessions({ storage, wallNow, windowMs: REJOIN_WINDOW_MS, log: (k, d) => log(k, d) });
+  tabs.setLive(() => (token && (room || reconnect) ? { token, code: room ? room.code : reconnect.code, role, seat } : null));
   const statExtensions = [];
   let snapEvery = params.netRate ? Math.max(1, Math.round(SIM_HZ / Math.max(10, Math.min(60, params.netRate)))) : SNAPSHOT_EVERY_TICKS;
 
@@ -313,10 +320,12 @@ export function createNetClient(opts = {}) {
   }
   function saveSession() {
     if (!room || !token) return;
-    writeJSON(SESSION_KEY, { url, token, code: room.code, seat, role, savedAt: wallNow() });
+    tabs.save({ url, token, code: room.code, seat, role });
+    tabs.announce();
   }
   function clearSession() {
-    writeJSON(SESSION_KEY, null);
+    tabs.clear();
+    tabs.gone(token);
   }
 
   // --------------------------------------------------------- connection --
@@ -690,9 +699,20 @@ export function createNetClient(opts = {}) {
         emit('host_changed', m);
         break;
       case MSG.BECOME_HOST:
-        counters.migrations += 1;
-        log('become_host', { keyframeTick: m.keyframe ? m.keyframe.tick : null, stateAgeMs: m.keyframe ? m.keyframe.stateAgeMs : null });
+        if (m.reason === 'host_resume') counters.hostResumes += 1;
+        else counters.migrations += 1;
+        log('become_host', { reason: m.reason ?? null, keyframeTick: m.keyframe ? m.keyframe.tick : null, stateAgeMs: m.keyframe ? m.keyframe.stateAgeMs : null });
+        // fix-M5b-r4: a resuming host's page knows no room yet — the room
+        // rides along so the session sees its seat BEFORE the state change
+        // (which would otherwise start a fresh host world first).
+        if (m.room && m.room.seats) {
+          room = m.room;
+          const s = mySeat();
+          seat = s ? s.index : null;
+          role = s ? (room.hostPeerId === peerId ? 'host' : 'guest') : 'none';
+        }
         emit('become_host', m);
+        if (m.room && m.room.seats) applyRoom(m.room);
         break;
       case MSG.GAME_STARTING:
       case MSG.MATCH_STATUS:
@@ -827,22 +847,47 @@ export function createNetClient(opts = {}) {
     const r = await waitFor((m) => (m.t === MSG.GAME_STARTING ? { ok: true, countdownMs: m.countdownMs, seed: m.seed } : rejected(m, MSG.START_GAME)), 3000);
     return r;
   }
-  async function rejoin() {
-    const s = readJSON(SESSION_KEY);
-    if (!s || wallNow() - s.savedAt > REJOIN_WINDOW_MS) return { ok: false, reason: 'no_session' };
+  // rejoin({ code? }): resume a stored session from a page that has no world
+  // for it (the title's "Rejoin ABCDE?" after a reload, or a closed / crashed
+  // tab reopened). fix-M5b-r4 (NET4-F2): the record is THIS tab's own, else
+  // one whose tab is gone — never a session live in another tab of this
+  // browser ('open_elsewhere'); the reconnect says `fresh: true`, so a
+  // returning HOST gets the room's newest keyframe back (become_host
+  // { reason: 'host_resume' }) and the run continues instead of restarting.
+  async function rejoin({ code = null } = {}) {
+    if (transport.state === 'open' && room) return { ok: false, reason: 'already_in_room' };
+    const liveMap = await tabs.live();
+    const s = tabs.pick({ liveMap, code });
+    if (!s) {
+      const busy = [...liveMap.values()].some((e) => !code || e.code === code);
+      return busy ? { ok: false, reason: 'open_elsewhere', text: 'That session is open in another tab of this browser.' } : { ok: false, reason: 'no_session' };
+    }
+    // Connected under another identity (this page hosted / left before):
+    // the stored identity needs its own hello.
+    if (transport.state === 'open' && peerId && token !== s.token) disconnect();
     url = s.url || url;
     rejoinToken = s.token;
     const c = await connect();
     if (!c.ok) return { ok: false, reason: c.error };
-    transport.sendControl({ t: MSG.RECONNECT, token, code: s.code });
+    transport.sendControl({ t: MSG.RECONNECT, token, code: s.code, fresh: true });
     const r = await waitFor((m) => (m.t === MSG.ROOM_STATE && m.room.seats.some((x) => x.peerId === peerId && x.connected) ? { ok: true, code: m.room.code } : rejected(m, MSG.RECONNECT)), 4000);
+    if (s.tabId !== tabs.tabId) tabs.remove(s.tabId); // the record now lives under this tab (or is spent)
     if (!r.ok) clearSession();
     return r;
   }
+  function infoOf(s) {
+    return s ? { code: s.code, url: s.url, seat: s.seat, role: s.role, ageMs: wallNow() - s.savedAt, ownTab: s.tabId === tabs.tabId } : null;
+  }
+  // Sync (menus): from the cached picture of the other tabs.
   function rejoinInfo() {
-    const s = readJSON(SESSION_KEY);
-    if (!s || !s.code || wallNow() - s.savedAt > REJOIN_WINDOW_MS) return null;
-    return { code: s.code, url: s.url, seat: s.seat, role: s.role, ageMs: wallNow() - s.savedAt };
+    return infoOf(tabs.pick());
+  }
+  // Async (the title's offer): a fresh query of the other tabs first.
+  // -> { info | null, elsewhere: [{ code, role, seat }] } — `elsewhere` lists
+  // this browser's sessions that are live in other tabs (never offered).
+  async function rejoinCandidate() {
+    const liveMap = await tabs.live();
+    return { info: infoOf(tabs.pick({ liveMap })), elsewhere: tabs.elsewhere(liveMap) };
   }
   // drop(ms): force-close the socket as if the link died; no reconnect attempt
   // lands before `ms` has passed (drop-off tests).
@@ -1206,6 +1251,7 @@ export function createNetClient(opts = {}) {
       lastReconnectMs: counters.lastReconnectMs,
       drops: counters.drops,
       migrations: counters.migrations,
+      hostResumes: counters.hostResumes,
       hostNetMsP50: hostStream ? pct(hostStream.hostNetMs, 0.5) : null,
       hostNetMsP95: hostStream ? pct(hostStream.hostNetMs, 0.95) : null,
       captureMsP95: sh ? sh.captureMsP95 : null,
@@ -1365,6 +1411,11 @@ export function createNetClient(opts = {}) {
     start,
     rejoin,
     rejoinInfo,
+    rejoinCandidate,
+    // fix-M5b-r4: this tab's id for per-tab session records (probes).
+    get tabId() {
+      return tabs.tabId;
+    },
     drop,
     disconnect,
     setName,

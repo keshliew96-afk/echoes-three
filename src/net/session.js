@@ -61,6 +61,7 @@ const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'focusPath', 'choos
 const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);
 const INPUT_REDUNDANCY = 6;
 const RECONNECT_GIVEUP_MS = 15000;
+const RESUME_HOLD_MS = 1000; // a resumed host waits at most this long for its guests' first inputs
 
 // First differing path between two plain trees (desync diagnostics).
 function firstDiff(a, b, path = '') {
@@ -379,7 +380,7 @@ export function createNetSession(ctx) {
         skipNextFrame = false;
         ms = 0;
       }
-      return rawAdvance(ms, fn);
+      return rawAdvance(resumeGate(ms), fn);
     });
     net.setSessionDriver({ onBinary: (u8) => host && host.onBinary(u8), onControl: (m) => onControl(m) });
     host.start({ migrated });
@@ -392,7 +393,27 @@ export function createNetSession(ctx) {
     reconcileHidden(migrated ? 'migrated' : 'host_start');
     changed();
   }
+  // Resume gate (fix-M5b-r4): a host resumed from a keyframe restores every
+  // seat's controller as the keyframe had it (the guests: human). Its fresh
+  // driver has no input from them yet, so stepping at once would hand their
+  // seats to the AI for a few ticks ("<name> lost connection" notes on every
+  // screen, a seat that twitches). The restored world waits — at most
+  // RESUME_HOLD_MS, typically one frame — until every connected guest's
+  // first input frame is in; the guests are frozen meanwhile anyway.
+  let resumeHold = null;
+  function resumeGate(ms) {
+    if (!resumeHold) return ms;
+    const fed = resumeHold.seats.every((i) => {
+      const f = host && host.feeds && host.feeds.get(i);
+      return !!f && f.buffer.size > 0;
+    });
+    if (!fed && now() < resumeHold.until) return 0;
+    log('resume_hold_end', { fed, heldMs: Math.round(now() - resumeHold.at) });
+    resumeHold = null;
+    return ms;
+  }
   function stopHost() {
+    resumeHold = null;
     if (!host) return;
     host.stop();
     host = null;
@@ -1105,7 +1126,7 @@ export function createNetSession(ctx) {
         last = t;
         if (!host) return;
         hostHiddenFedMs += ms; // wall time handed to the clock (hitstop included)
-        rawAdvance(ms, (tick) => host && host.step(tick));
+        rawAdvance(resumeGate(ms), (tick) => host && host.step(tick));
         // No rendered frames while hidden: each metronome period is the
         // unit of the host's net-work accounting (hostNetMs).
         if (host) host.frameEnd(ms);
@@ -1138,6 +1159,9 @@ export function createNetSession(ctx) {
         }
         break;
       case 'host_changed':
+        // (reason 'host_resume', fix-M5b-r4: the SAME host came back from a
+        // reloaded page and resumed from the server's keyframe — its new
+        // driver restarts every sequence space, exactly like a new host.)
         if (role === 'guest' && guest && m.hostPeerId !== net.peerId) {
           // A new authority: sequence spaces restart; re-baseline.
           guest.dec.reset();
@@ -1152,7 +1176,11 @@ export function createNetSession(ctx) {
           // The new host numbers its event batches from 1.
           guest.batches = { seen: new Set(), toTick: new Map(), contig: 0, throughTick: 0, dupCopies: 0, viaReliable: 0, viaUnreliable: 0 };
           hostLost = null;
-          if (hud) hud.hostBack(nameOfSeat(m.seat) || 'a new host');
+          if (hud && m.reason === 'host_resume') {
+            hud.hostBack(null);
+            const back = Number.isFinite(m.stateAgeMs) ? Math.round(m.stateAgeMs / 100) / 10 : null;
+            if (back !== null && back >= 0.5) hud.note(`The run resumed from ${back} s before the host dropped`);
+          } else if (hud) hud.hostBack(nameOfSeat(m.seat) || 'a new host');
           requestFull('host_changed');
         }
         break;
@@ -1170,7 +1198,62 @@ export function createNetSession(ctx) {
     changed();
   }
 
+  // fix-M5b-r4 (NET4-F2): this page came back as the HOST of a running
+  // session it holds no world for — the title's "Rejoin" after a reload, a
+  // closed or crashed tab reopened, or the game opened again in another tab.
+  // Hosting straight away would stream this page's boot camp to the party
+  // and wipe the run for everyone. The server hands back the room's newest
+  // keyframe (become_host { reason: 'host_resume' }): the exact tree this
+  // host streamed <= 2 s before it went quiet. It is applied first; only
+  // then does this page start hosting — the guests re-baseline onto it.
+  function resumeHost(m) {
+    const t0 = now();
+    log('host_resume', { seat: m.hostSeat, keyframeTick: m.keyframe ? m.keyframe.tick : null, stateAgeMs: m.keyframe ? m.keyframe.stateAgeMs : null });
+    if (guest) stopGuest();
+    if (host) stopHost();
+    role = 'none';
+    let applied = false;
+    let error = null;
+    if (m.keyframe && m.keyframe.b64) {
+      enterPlaying(); // title -> playing; the boot world is replaced just below
+      try {
+        const { tree } = decodeKeyframe(fromBase64(m.keyframe.b64));
+        const save = service('save');
+        const r = save && typeof save.apply === 'function' ? save.apply(tree) : { ok: false, error: 'no_save_service' };
+        applied = !!(r && r.ok);
+        if (!applied) error = (r && (r.error || r.detail)) || 'apply_failed';
+      } catch (err) {
+        error = String(err && err.message);
+      }
+    } else error = 'no_keyframe';
+    resume.last = { ms: Math.round(now() - t0), keyframeTick: m.keyframe ? m.keyframe.tick : null, stateAgeMs: m.keyframe ? m.keyframe.stateAgeMs : null, applied, error, tick: clock.tick, at: Date.now() };
+    if (!applied) {
+      // Never host a world that is not the party's: step out of the room
+      // (a leave migrates at once — the run carries on with another host).
+      log('host_resume_failed', { error });
+      const text = "Couldn't restore the session on this page — another player carries on hosting.";
+      net.leave().finally(() => {
+        if (app.state === 'playing' && typeof app.quitToTitle === 'function') app.quitToTitle({ save: false }).then(() => app.toast(text, { tone: 'warn', ms: 5200 }));
+        else app.toast(text, { tone: 'warn', ms: 5200 });
+      });
+      return;
+    }
+    startHost();
+    const room = net.room;
+    const seats = room && room.seats ? room.seats.filter((x) => x.peerId && x.connected && x.peerId !== net.peerId).map((x) => x.index) : [];
+    if (seats.length) resumeHold = { at: now(), until: now() + RESUME_HOLD_MS, seats };
+    ensureHud();
+    hostLost = null;
+    if (hud) {
+      const back = Number.isFinite(m.keyframe.stateAgeMs) ? Math.round(m.keyframe.stateAgeMs / 100) / 10 : null;
+      hud.note(back !== null && back >= 0.5 ? `Welcome back — you are hosting again (the run resumed from ${back} s before you dropped)` : 'Welcome back — you are hosting again');
+    }
+    changed();
+  }
+  const resume = { last: null };
+
   function becomeHost(m) {
+    if (m && m.reason === 'host_resume') return resumeHost(m);
     log('become_host', { seat: m.hostSeat, keyframeTick: m.keyframe ? m.keyframe.tick : null, stateAgeMs: m.keyframe ? m.keyframe.stateAgeMs : null });
     const t0 = now();
     stopGuest();
@@ -1332,29 +1415,52 @@ export function createNetSession(ctx) {
     hud.note(seatControlText(ev, (i) => nameOfSeat(i)));
   });
 
-  // Offer "Rejoin ABCDE?" when the title comes up with a live stored session.
+  // Offer "Rejoin ABCDE?" when the title comes up with a stored session.
+  // fix-M5b-r4 (NET4-F2): only THIS tab's own session (a reload) or one whose
+  // tab is gone (closed or crashed, reopened from the link). A session that
+  // is live in another tab of this browser is never offered — accepting it
+  // threw that live tab to the title — the title says where it is instead.
+  // A host is told the truth: the party is waiting and the run carries on.
   let rejoinOffered = null;
+  let elsewhereNoted = null;
   app.events.on('app_state', (p) => {
     if (p.state !== 'title' || role !== 'none') return;
-    const info = net.rejoinInfo();
-    if (!info || rejoinOffered === info.code) return;
-    rejoinOffered = info.code;
-    setTimeout(() => {
-      if (app.state !== 'title' || app.screens.top() !== 'title') return;
-      app
-        .confirm({
-          title: `Rejoin ${info.code}?`,
-          body: `Your ${seatLabel(info.seat ?? 1)} seat is held for a minute after a disconnect. Rejoin the session now?`,
-          confirmLabel: 'Rejoin',
-          cancelLabel: 'Not now',
-          defaultFocus: 'confirm',
-        })
-        .then(async (yes) => {
-          if (!yes) return;
-          const r = await net.rejoin();
-          if (!r.ok) app.toast(`Couldn't rejoin ${info.code} — ${r.text || r.reason || 'the seat was released'}`, { tone: 'warn' });
-        });
-    }, 400);
+    const t0 = now();
+    const check = typeof net.rejoinCandidate === 'function' ? net.rejoinCandidate() : Promise.resolve({ info: net.rejoinInfo(), elsewhere: [] });
+    check
+      .then(({ info, elsewhere }) => {
+        if (app.state !== 'title' || role !== 'none') return;
+        if (!info) {
+          const e = elsewhere && elsewhere[0];
+          if (e && elsewhereNoted !== e.code) {
+            elsewhereNoted = e.code;
+            app.toast(`Session ${e.code} is open in another tab of this browser — carry on there.`, { tone: 'info', ms: 5200 });
+          }
+          return;
+        }
+        if (rejoinOffered === info.code) return;
+        rejoinOffered = info.code;
+        const hosting = info.role === 'host';
+        setTimeout(() => {
+          if (app.state !== 'title' || app.screens.top() !== 'title') return;
+          app
+            .confirm({
+              title: `Rejoin ${info.code}?`,
+              body: hosting
+                ? `You were hosting ${info.code} — your party is waiting. Rejoin to carry on the run as its host.`
+                : `Your ${seatLabel(info.seat ?? 1)} seat is held for a minute after a disconnect. Rejoin the session now?`,
+              confirmLabel: 'Rejoin',
+              cancelLabel: 'Not now',
+              defaultFocus: 'confirm',
+            })
+            .then(async (yes) => {
+              if (!yes) return;
+              const r = await net.rejoin({ code: info.code });
+              if (!r.ok) app.toast(`Couldn't rejoin ${info.code} — ${r.detail || r.text || r.reason || 'the seat was released'}`, { tone: 'warn' });
+            });
+        }, Math.max(0, 400 - (now() - t0)));
+      })
+      .catch((err) => log('rejoin_check_error', { error: String(err && err.message) }));
   });
 
   // DEPLOY (PLAN §14.5): a redeploy never strands a player — when the net
@@ -1475,7 +1581,7 @@ export function createNetSession(ctx) {
 
   // Everything the session knows, merged into __echoes.net.stats().
   net.extendStats(() => {
-    const base = { session: role, sessionMs: role !== 'none' ? Math.round(now() - sessionStartedAt) : null, migration: migration.last, metronome: metronome.stats(), hostHiddenFedMs: Math.round(hostHiddenFedMs) };
+    const base = { session: role, sessionMs: role !== 'none' ? Math.round(now() - sessionStartedAt) : null, migration: migration.last, hostResume: resume.last, metronome: metronome.stats(), hostHiddenFedMs: Math.round(hostHiddenFedMs) };
     if (host) return { ...base, ...host.stats(), stream: 'driver-host' };
     if (guest) return { ...base, ...guestStats(), stream: 'driver-guest' };
     return base;

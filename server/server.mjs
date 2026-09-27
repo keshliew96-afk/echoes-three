@@ -357,7 +357,10 @@ export function createEchoesServer(options = {}) {
         if (peer.roomCode === m.code) {
           const room = lobby.roomOf(peer);
           const seat = room && lobby.seatOf(room, peer.id);
-          if (seat && seat.connected) {
+          // fix-M5b-r4: a FRESH page (fresh: true — a reload / another tab
+          // that superseded the live socket) of the room's HOST has no world:
+          // it goes through reattach -> resumeHost for the keyframe.
+          if (seat && seat.connected && !(m.fresh === true && room.hostPeerId === peer.id)) {
             sendControl(peer, MSG.ROOM_STATE, { room: lobby.view(room) });
             break;
           }
@@ -366,7 +369,7 @@ export function createEchoesServer(options = {}) {
           sendControl(peer, MSG.ERROR, { reason: ERR.ALREADY_IN_ROOM, re: MSG.RECONNECT });
           break;
         }
-        lobby.reattach(peer, m.code);
+        lobby.reattach(peer, m.code, { fresh: m.fresh === true });
         break;
       case MSG.PING: {
         if (Number.isFinite(m.rttMs)) {
