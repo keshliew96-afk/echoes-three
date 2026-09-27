@@ -315,17 +315,31 @@ function createMpMenuScreen(ctx) {
     errEl.textContent = '';
     render();
     renderSide();
-    // fix-M5b-r4: a fresh look at this browser's other tabs, so Rejoin is
-    // never offered for a session that is live in another tab.
+    // fix-M5b-r4: a fresh look at this browser's other tabs (<= 0.2 s), so
+    // Rejoin is never offered for a session that is live in another tab. It
+    // never holds the menu in 'checking': the menu opens on the probe's
+    // answer (the cached picture, primed at boot) and renders again only if
+    // the fresh look changes what Rejoin shows.
+    const rejoinKey = () => {
+      const i = n.rejoinInfo ? n.rejoinInfo() : null;
+      return i ? `${i.code}|${i.role}|${i.seat}` : '';
+    };
     const liveP = typeof n.rejoinCandidate === 'function' ? n.rejoinCandidate().catch(() => null) : null;
     const r = await n.probe();
-    if (liveP) await liveP;
     if (gen !== probeGen || manager.top() === null) return;
     lastProbe = r;
     state = r.state === 'online' ? 'online' : r.state === 'update' ? 'update' : 'unreachable';
     render();
     renderSide();
     focusDefault();
+    if (liveP) {
+      const shown = rejoinKey();
+      liveP.then(() => {
+        if (gen !== probeGen || manager.top() !== 'mp-menu' || busy || rejoinKey() === shown) return;
+        render();
+        focusDefault();
+      });
+    }
   }
   function focusDefault() {
     if (manager.top() !== 'mp-menu') return;

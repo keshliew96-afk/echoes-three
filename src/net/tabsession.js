@@ -131,6 +131,8 @@ export function createTabSessions({ storage = null, wallNow = () => Date.now(), 
   // Duplicate-tab check: a tab that answers for our id is another tab.
   const nonce = randomId();
   post({ t: 'tab?', tabId, n: nonce });
+  // Prime the cached picture of the live tabs (menus read it synchronously).
+  post({ t: 'q', n: nonce });
   function rekey() {
     const old = tabId;
     tabId = randomId();
