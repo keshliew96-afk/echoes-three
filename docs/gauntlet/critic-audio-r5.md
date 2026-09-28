@@ -1,5 +1,5 @@
-STATUS: PARTIAL
-(in progress — critic-audio round 5)
+STATUS: COMPLETE
+VERDICT: FAIL - audio engine + mixer at v0.5.165 (production build): G3.1-G3.3 and G3.5-G3.10 pass by independent measurement (curves 30/30 at 0.00 dB, decoupling <= 0.02 dB, boss clipper input -1.71 dBFS with 0 % over -1, 6 music states with 1.5-2.5 s crossfades and 0 ms gaps, spatial +/-10.37 dB, autoplay locked with 0 warnings, Audio tab fully operable by keys, mouse and pad, settings persist, p95 0.4 ms); benchmark 16 met / 2 partial / 0 not met of 18; 2 must-fix: AUD5-F1 every selection change on the run choice pages (swap offer, door picker, shop) is silent (UI tap -188.37 dBFS, 0 cues) while the same keys tick in the pause menu; AUD5-F2 G3.4 UI clause - 14 of 22 UI-bus cues peak < +3 dB over the combat music RMS (ui_move -0.87 dB median, 0/6).
 
 # Critic — AUDIO ENGINE & MIXER SETTINGS — round 5
 
@@ -56,3 +56,72 @@ well-behaved HTML5 games (CrossCode web build, itch.io WebGL/Web Audio titles, P
 - step 20: intensity (captures/gntcaudio5-intensity.json): combat score setIntensity 0 -> 1: centroid 112-147 Hz -> 522-523 Hz, RMS -24.35 -> -22.8..-23.08 (layers pad+bass+drum+ostinato+shaker+lead). B8 met.
 - step 21: G3.4 UI clause, complete table (captures/gntcaudio5-uicues.json): 22 UI-bus cues x6 over live Level-1 combat music at defaults (music RMS -23.0..-25.3 dBFS): median ui-peak minus music-RMS >= +3 dB only for room_clear +3.92 (6/6), draft_take +5.52 (6/6), socket +4.33 (6/6), purchase +3.86 (5/6), path +4.69 (3/6), ui_confirm +4.40 (4/6), shop_open +3.27 (3/6), reward +3.07 (3/6); BELOW +3 dB: ui_move -0.87 (0/6), ui_blip -0.95 (0/6), ui_slider -0.36 (0/6), ui_tab +0.45 (0/6), draft_decline +0.44 (0/6), unsocket +0.57 (0/6), glint +0.79 (0/6), ui_deny +1.45, room_start +1.95, wave_start +2.24, ui_toggle +2.40, node_grant +2.41, deny +2.45, ui_back +2.15 (0-2/6). 14 of 22 UI cues fail the gate's +3 dB margin in combat.
 - step 22: F1 scope verified by frames (captures/gntcaudio5-runui2.json; gntcaudio5-runui2-swapE.png = page switched to "FOR THE TANK / Shield Wall", -swapD.png = Leave highlighted, -doorD.png = right door highlighted, -shopE.png = Tank shelf; -shopHover.png = card lifted): every one of those selection changes: ui tap -188.37 dBFS, 0 UI cues, 0 other cues; Enter (Take) right after: node_grant + draft_take + socket x3, ui peak -16.01 dBFS.
+- step 23 (resume, new instance): HEAD 85f5f19 = 038ca62 + docs only (git diff 038ca62..HEAD -- src server: empty) -> dist-caudio5 (v0.5.165, built 2026-09-27T22:17Z) is still the code under test; the previous preview (PID 57428) is gone (that PID now belongs to an unrelated process — not touched); re-served dist-caudio5 with vite preview on my port 4322. Dev server 5199 is up again (PID 83500, not mine, not touched).
+- step 24: G3.9 pad clause (tools/gntcaudio5-pad.mjs -> captures/gntcaudio5-pad.json; frames gntcaudio5-pad-audio.png, -pad-curve.png, -pad-muted.png): mocked standard-mapping pad only (no keys/mouse). D-pad Down x2 + A -> Settings (ui_confirm); RB -> Audio tab, focus lands on the Master slider (ui_tab); d-pad Left x3 on Master 0.80 -> 0.75 -> 0.70 -> 0.65 (-3.22 -> -4.15 -> -5.15 -> -6.22 dB, ui_slider each), Right -> 0.70; left stick Left/Right = one 5 % step each; Down -> Mute, Left -> Curve, A -> "Curve: Linear" 0.55 (-5.193 dB, loudness kept vs -5.146) and A -> log 0.70 back; A on Mute -> master -999 dB, A -> -5.146 back; A on Test -> test_ui + test_sfx; stick Down -> Music slider, d-pad Left 0.60 -> 0.55 (-8.63 dB); SFX d-pad Left -> 0.75 with a test_sfx preview; A on SFX Test -> test_sfx; d-pad walks every row (all 5 channels, Mute on focus loss, Reset, Back, tab) both ways with ui_move each; LB/RB switch tabs (ui_tab); B -> title with focus back on Settings (ui_back). Footer glyphs "D-pad Select / ◀ ▶ Change / LB RB Tabs / B Back" (pixels, -pad-curve.png). 0 page errors. G3.9 pad PASS. Minor: B at the title root (no-op) still plays ui_back.
+- step 25: round-5 multiplayer class cue on the GUEST (tools/gntcaudio5-mpclass.mjs -> captures/gntcaudio5-mpclass.json; own net server 7846 PID 66176 stopped by the script, port free afterwards; host + guest on my preview 4322): guest joined seat 1 (Tank, slots heavy_slam / brutal_cleave / ground_crack / whirling_guard); camp music camp:wood on both, after the host's run start combat:wood on both. Guest REAL keys Digit1-4: 6/6 casts produced the guest's own ally_cast_tank cue 10-16 ms after the keydown (sound-event stamp; cueLog poll 17-33 ms) — GP.4 audio clause (<= 150 ms) PASS, build-PARTY S9 "own cue <= 45 ms" CONFIRMED; presses on cooldown play deny_cd. Guest hears the shared fight (impact / hurt / bite / swing / bow / kill / wave_start / downed from other seats). My hpMul-8 boar spawns then wiped the party (defeat) — harness choice, not a defect. 0 page errors on both pages. The four starter-kit Tank skills share one family cue (ally_cast_tank); the distinct class cues (tank_roar ...) belong to the new pool skills (step 18: 12/12).
+- step 26: remaining evidence pulled from existing captures for the verdict: pause-menu ui_move margins over the ducked combat music +2.2 / +4.2 / +3.8 dB (runui.json, 2/3 >= 3 dB); door choice (path + room_start + wave_start) +0.6 dB (runui.json "path: choose"); frames gntcaudio5-runui2-door0.png vs -doorD.png re-viewed: the highlight moves from the left door to the right door while the UI tap stays at -188.37 dBFS.
+
+## 2. Benchmark scorecard (blind checklist §1, scored after inspection)
+
+| # | Item | Score | Evidence (capture, numbers) |
+|---|---|---|---|
+| B1 | Separate buses into one master | MET | Master / Music / SFX / Ambience / Interface rows (gntcaudio5-tab2.json, -pad-curve.png); one node into the destination (decouple.json) |
+| B2 | Buses decoupled | MET | decouple.json: Music 1.0 -> 0 moves the SFX tap 0.00 dB and the destination 3 kHz bin <= 0.02 dB; SFX 1.0 -> 0 moves music 0.00 dB; Master -10.00 dB on every tap |
+| B3 | Perceptual (dB) slider, 0 = silence | MET | curves.json: log 0.25 / 0.5 / 0.75 = -20.00 / -10.00 / -4.15 dB (0.00 dB error on param, tap and destination); s = 0 -> -999; log is the default curve |
+| B4 | Master mute = digital silence | MET | decouple.json, tab3.json, pad.json: master mute -> every tap and the destination -999 dB, exact restore |
+| B5 | Master limiter, no clipping | MET | boss-max.json: prelimit peak -1.71 dBFS, 0.000 % > -1 dBFS of 2 402 816 samples, GR <= 6 dB in 100 % of 452 windows, destination peak -1.73 |
+| B6 | Voice caps, stealing, cooldown | MET | boss-max.json peak 16/48, 3 stolen, 120 cooldown drops; coverage.json peak 27/48, 1201 same-cue drops |
+| B7 | Music per state, crossfades, no gaps | MET | music.json, music2.json, victory.json: menu, camp, combat, boss, victory, defeat; 1.5-2.5 s crossfades; longest destination run < -50 dBFS 0 ms; tempo 56/72/104/127/152/44 bpm (stall behaviour = advisory A1) |
+| B8 | Intensity layers + per-level themes | MET | intensity.json centroid 112-147 -> 522 Hz; wood -> mill -> barrow follow the campaign (music2.json) |
+| B9 | SFX + UI coverage | PARTIAL | every §3.5 sim-event row fires (coverage.json, classcues.json 12/12, misc.json); selection changes on the run's choice pages are silent (runui2.json, AUD5-F1) |
+| B10 | Spatial pan + attenuation | MET | spatial.json +/-6 u -> +/-10.37 dB, 12 u 8.07 dB under 3 u; classcues.json 198/198 real cues pan to the correct side, mean pan monotonic |
+| B11 | Mix balance (SFX over music, UI audible) | PARTIAL | balance.json master median -22.34 dBFS, SFX peaks +9.4 dB over music RMS; UI clicks under the combat music (uicues.json, AUD5-F2) |
+| B12 | Settings persist | MET | tab3.json reload: master 0.75 log, music 0.87 linear MUTED, sfx 0.75 log identical (localStorage echoes.settings) |
+| B13 | Settings UI: readout, live preview, keys / mouse / pad, test | MET | tab2 / tab3 / pad.json: "80 % · -3.2 dB" readouts, ui_slider and test_sfx previews, 5 % steps, drag, Curve / Mute / Test by all three devices (Home/End no-op = A3) |
+| B14 | Mute when unfocused | MET | blur.json -22.19 -> -999 dBFS hidden -> -23.30 restored; option off keeps -23.92 |
+| B15 | HTML5 autoplay handling | MET | autoplay.json: 0 AudioContext before a gesture, 0 warnings, prompt visible; Space / click -> 'running' when the constructor returns (90.6-99.4 ms); Esc keeps it locked |
+| B16 | Pause ducks gameplay audio | MET | pause.json music -24.30 -> -28.88 dBFS (-4.6 dB), SFX -186, restore -24.27 |
+| B17 | No voice leak | MET | boss-max.json voices 3 -> 0 in 1.85 s; levelvoices.json 0 SFX voices under the level card |
+| B18 | Zipper-free gain changes | MET | zipper.json 10-90 % fall in 60 ms, max sample step ratio 1.00 vs the pure sine |
+
+Score: **16 met / 2 partial / 0 not met of 18.**
+
+## 3. PLAN gates (literal)
+
+| Gate | Result | Evidence |
+|---|---|---|
+| G3.1 Curves | PASS | 30/30 points, param error <= 0.001 dB, tap error 0.00 dB (curves.json) |
+| G3.2 Decoupling | PASS | <= 0.02 dB cross-talk; Master moves every tap -10.00 dB (decouple.json) |
+| G3.3 No clipping | PASS | clipper input -1.71 dBFS, 0 % > -1 dBFS, GR <= 6 dB in 100 % of windows, 0 excursions > 10 dB (boss-max.json, adds alive min 6 / median 13) |
+| G3.4 Balance | **FAIL (UI clause)** | master median -22.34 dBFS PASS; SFX peaks +9.4 dB over music RMS PASS; "UI clicks >= 3 dB above the music RMS" at defaults in combat: 14 of 22 UI-bus cues median < +3 dB (ui_move -0.87, 0/6) (uicues.json); the reachable combat nav clicks (pause menu, music ducked 4.6 dB) +2.2 / +4.2 / +3.8 dB; a door choice +0.6 dB (runui.json) — AUD5-F2 |
+| G3.5 Music | PASS | 6 states distinct (tempo 22-44 % apart), crossfades 1.5-2.5 s, 0 ms below -50 dBFS across every transition (music.json, music2.json, victory.json) |
+| G3.6 Spatial | PASS | +10.37 / -10.38 / 0.00 dB; 12 u 8.07 dB quieter than 3 u (spatial.json) |
+| G3.7 Coverage | PASS | every §3.5 row fires (coverage.json + misc.json + boss-max.json); the nav row fires in the app menus only (AUD5-F1) |
+| G3.8 Autoplay | PASS | locked, 0 contexts, 0 warnings, prompt; 'running' 90.6-99.4 ms after the key / click (autoplay.json, autoplay-ctor.json) |
+| G3.9 Persistence + tab operable | PASS | reload identical (tab3.json); mute on blur (blur.json); keyboard + mouse (tab2 / tab3.json), pad (pad.json) |
+| G3.10 Cost | PASS | p95 0.4 ms per frame, max 0.9; voices peak 27/48; 3 -> 0 in 1.85 s after the fight (coverage.json, boss-max.json) |
+| §12.5 level voices | PASS | 0 SFX voices under the level card, Level 2 starts clean (levelvoices.json) |
+| GP.4 audio clause (guest own cue <= 150 ms) | PASS | 6/6 guest casts, own cue 10-16 ms after the key (mpclass.json) |
+
+## 4. Builder claims re-measured
+- build-PARTY S6 "12 procedural class cues": CONFIRMED, 12/12 fire in real autopilot rooms (classcues.json: tank_charge 4, tank_stance 16, sword_parry 1, sword_wake 2 + the 8 in coverage.json).
+- build-PARTY S9 GP.4 net leg "own cue <= 45 ms": CONFIRMED on my own 2-page session, 10-16 ms (mpclass.json).
+- r4 AUD4-F1 (ruled advisory, PROGRESS G30): UNCHANGED — rAF held 4 s -> 2.7 s of music silence then a -5.74 dBFS catch-up clump (pause.json stall legs). No audio commit since r4.
+- r3 AUD3-F2 / r4 A2 (title nav ticks under the menu score, advisory): UNCHANGED, -3.84..+1.10 dB, 6/8 below (zipper.json title leg).
+
+## 5. Verdict
+FAIL — 2 must-fix.
+
+- **AUD5-F1 (must-fix; benchmark B9 / B13 and the §3.5 "app nav move" row): moving the selection on the run's choice pages makes no sound.** On the full-slot SWAP offer (the round-5 feature: W/S Replaces selector, mouse click on a replace slot, Q/E character switch, A/D Take / Leave, hover on Take / Leave), the door picker (A/D) and the shop (A/D, arrows, Q/E, mouse hover on a card), every selection change, verified in state and in pixels (gntcaudio5-runui2-door0.png vs -doorD.png: the highlight moves from the left door to the right door), leaves the UI tap at -188.37 dBFS with 0 cues (runui2.json 9 changes, swap.json + swapmouse.json 14 actions). The same keys in the pause menu over the same page play ui_move. Hades (boon / Well / Charon hover ticks), Dead Cells and shipped roguelikes give an audible tick per selection move; a silent picker next to ticking menus reads as unfinished. Fix: emit the nav move cue on every selection change of the reward / swap / draft / door / shop / party pages (keys, pad and pointer hover), loud enough to clear the combat music (F2).
+- **AUD5-F2 (must-fix; PLAN G3.4 UI clause): UI clicks sit under the combat music at defaults.** 22 UI-bus cues x 6 over live Level 1 combat music (uicues.json): ui_move -0.87 dB median (0/6 >= +3), ui_blip -0.95, ui_slider -0.36, ui_tab +0.45, draft_decline +0.44, unsocket +0.57, glint +0.79, ui_deny +1.45, room_start +1.95, ui_back +2.15, wave_start +2.24, ui_toggle +2.40, node_grant +2.41, deny +2.45: 14 of 22 miss "UI clicks >= 3 dB above the music RMS". In real play the pause-menu ticks reach +2.2 / +4.2 / +3.8 dB only because the music ducks 4.6 dB, and walking through a door (path + room_start) is +0.6 dB (runui.json). Only confirm-type cues pass (draft_take +5.52, socket +4.33, room_clear +3.92, ui_confirm +4.40). Fix: raise the UI-bus staging of nav / progression cues (or duck the music bus about 3 dB under a UI cue while a run page is open) until every UI-bus cue peaks >= 3 dB over the combat music RMS; re-measure with tools/gntcaudio5-uicues.mjs.
+
+Advisories (not must-fix):
+- A1 AUD4-F1 unchanged: the music sequencer starves when the render loop stalls (rAF held 4 s -> 2700 ms silence + a -5.74 dBFS catch-up clump, +7.5 dB over normal peaks; main thread busy 2.5 s -> a -5.17 dBFS clump). Real single-player journeys this round never stalled over 969 ms, so no audible gap was observed.
+- A2 Title nav ticks under the menu score (-3.84..+1.10 dB, 6/8 below; AUD3-F2 lineage).
+- A3 Home / End do nothing on the volume sliders (most PC settings jump to 0 / 100 %).
+- A4 The key that unlocks audio loses its own UI cue (dropped.locked 1-2), so the first menu move after the prompt is silent.
+- A5 After Quit to Lobby from Level 2 the camp music keeps the "mill" theme (camp at boot and after a reload is "wood"): the lobby's musical identity depends on the last level played.
+- A6 B / Esc at the title root (a no-op) still plays ui_back (pad.json "B back again").
+- A7 The four starter-kit skills of each ally class share one family cue (ally_cast_tank for heavy_slam / brutal_cleave / ground_crack / whirling_guard, mpclass.json); only the new pool skills have distinct cues.
+
+Processes: my vite preview on 4322 (dist-caudio5) is killed before returning; the net server on 7846 was stopped by its probe (port free). Nothing committed; no src / server / PLAN / BUILD_BRIEF edits.
