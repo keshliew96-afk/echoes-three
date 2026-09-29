@@ -1374,7 +1374,13 @@ export function createBuildSystem({
       lines.push(GREY_REASONS[v.reason] ?? v.reason);
       lines.push('legal to socket — contributes nothing');
     } else if (v.state === 'inert') {
-      lines.push(`+1 target — currently +0 (all ${v.pop} allies already hit)`);
+      // §15.5 "+0": the Healer's saturated Multiply names the party it
+      // already reaches; a class cell (§25.3, fix-PARTY-r5 F6) states its own
+      // reason — "+0 — this skill already taunts longer (150 ticks)" — never
+      // the Multiply template with an unfilled party size.
+      if (v.reason === 'saturated' && Number.isFinite(v.pop)) lines.push(`+1 target — currently +0 (all ${v.pop} allies already hit)`);
+      else lines.push(typeof v.reason === 'string' && v.reason ? v.reason : '+0 — contributes nothing on this skill right now');
+      lines.push('legal to socket — contributes nothing while this holds');
     } else if (n.kind === 'stat') {
       const from = seated ? resolveWithout(def, selfSlot) : resolveDef(def);
       const to = seated ? resolveDef(def) : resolveWith(def, nodeId);
