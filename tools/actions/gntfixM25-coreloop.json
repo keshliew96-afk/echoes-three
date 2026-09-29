@@ -1,0 +1,71 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();return {v:__echoes.version,tick:__echoes.tick,app:__echoes.app&&__echoes.app.state,phase:s.run&&s.run.phase,room:s.run&&s.run.room,inPortal:__echoes.cmd(\"campState\").inPortal}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "w"
+ },
+ {
+  "type": "loop",
+  "label": "walk-to-portal",
+  "cond": "__echoes.cmd(\"campState\").inPortal",
+  "maxMs": 9000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 100
+   }
+  ]
+ },
+ {
+  "type": "keyup",
+  "key": "w"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();return {v:__echoes.version,tick:__echoes.tick,app:__echoes.app&&__echoes.app.state,phase:s.run&&s.run.phase,room:s.run&&s.run.room,inPortal:__echoes.cmd(\"campState\").inPortal}})()"
+ },
+ {
+  "type": "key",
+  "key": "e",
+  "ms": 120
+ },
+ {
+  "type": "loop",
+  "label": "run-start",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase===\"combat\"&&r.room===1})()",
+  "maxMs": 8000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 100
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();return {v:__echoes.version,tick:__echoes.tick,app:__echoes.app&&__echoes.app.state,phase:s.run&&s.run.phase,room:s.run&&s.run.room,inPortal:__echoes.cmd(\"campState\").inPortal}})()"
+ },
+ {
+  "type": "loop",
+  "label": "kill-to-reward",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase===\"reward\"})()",
+  "maxMs": 20000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{const r=__echoes.state().run;if(r&&r.phase===\"combat\")__echoes.cmd(\"killAllEnemies\");return r&&r.phase})()"
+   },
+   {
+    "type": "wait",
+    "ms": 300
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();return {v:__echoes.version,tick:__echoes.tick,app:__echoes.app&&__echoes.app.state,phase:s.run&&s.run.phase,room:s.run&&s.run.room,inPortal:__echoes.cmd(\"campState\").inPortal}})()"
+ }
+]
