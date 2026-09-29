@@ -529,6 +529,30 @@ table, rolled plans). `node tools/gntM4a-drive.mjs <scenario> [--url U] [--w W
 nodes), `acts` (G4a.4: layouts / hazards / interactables / music theme / boss
 adds per act), `picker` (G4a.11), `challenge`, `pages` (G4a.12).
 
+**fix-M4a-r5 probes (gauntlet round 5, 2026-09-30; docs/gauntlet/fix-M4a-r5.md).**
+Node (deterministic, built like `gntCAMPAIGN-camprun`): `node
+tools/gntfixM4a5-ainode.mjs --from 1|2|3 --seeds 1-10 [--root <checkout>]
+[--trace L:R] [--stopAfter N]` — per room each AI seat's loadout, casts per
+skill, basics, damage by victim and by source, min HP per member, downs; GP.8
+idle pairs (a combat room ≥ 20 s, an active equipped all room, 0 casts) and
+the idle-fallback share; `--trace` prints positions / targets / cooldowns every
+30 ticks. `node tools/gntfixM4a5-leash.mjs --from 1 --seeds 1-3` — every AI
+dash / vault / lunge end point against the SEAT's ring (the melee pair's
+vanguard ring 5.4 u in a campaign, BUILD_BRIEF §25.8; GP.8 wants 0).
+`node tools/gntfixM4a5-band.mjs --seeds 1-5 --tag T` = `gntPARTY-band` (GP.13)
+with renamed outputs; `node tools/gntfixM4a5-sweep.mjs --root <scratch>
+--seeds 1-10 "K=V ..."` runs env-knob variants of a scratch checkout in
+parallel against GP.13 (a)–(d) + GP.8. Page (GPU harness; `ECHOES_URL` = a
+production preview): `tools/gntfixM4a5-socketui.mjs W H` (the critic's G4c.5
+probe for all four seats + a fit / caret / clip listing), `-socknames.mjs W H`
+(all 24 class skill row names unclipped), `-shellread.mjs <tag> [--level L
+--seed S]` (the shield / ward shell readability in pixels: body-interior mean
+|ΔRGB|, washed share, saturation ratio against a no-status frame), `-swap.mjs
+healerS|tankS 101-106` (the critic's swap probe + the page cards after Enter),
+`-bootstress.mjs N`, `-isready.mjs slowmech` (the deterministic slow-driver
+`isReady` probe), `-aiuse.mjs 1-3` / `-aggro.mjs` / `-melee.mjs` (critic copies,
+outputs renamed).
+
 ### M4c — content correction: 4 skills, 8 sockets per skill, no rarity caps (Gauntlet W3.5, owner M4c)
 
 **The truth (user correction 2026-09-22).** `SKILL_SLOTS = 4` (keys Digit1–4;

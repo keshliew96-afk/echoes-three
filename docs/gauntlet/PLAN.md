@@ -3561,7 +3561,13 @@ Measured on the dev server AND the production build (`npx vite build
   guard skills never target a Downed member, 0 dash / vault end points
   beyond the leash, 0 Pinning Arrows on the Stag while another target
   qualified; the AI loadout equals the §25.8 priority rule after every
-  swap offer; timeouts use the same suggestion.
+  swap offer; timeouts use the same suggestion. *(fix-M4a-r5, 2026-09-30 —
+  BUILD_BRIEF §25.8 "Engagement": in a campaign the Tank's and the
+  Swordsman's leash is their vanguard ring, 3.4 + 2.0 = 5.4 u (`allyState`
+  reports `leash` per melee seat while the rules are on), so "beyond the
+  leash" means beyond the SEAT's ring — a probe that reads only
+  `LEASH.radius` (3.4) flags the melee pair's legal dashes / lunges between
+  3.7 and 5.4 u. Checked by tools/gntfixM4a5-leash.mjs.)*
 - **GP.9 Multiplayer ownership + deadlines** (N1 conditions, 2–4 clients):
   each guest changes only its own seat — every attempt on another seat
   (page, shop, socket, equip) → `command_rejected not_owner`, state hash
@@ -3620,7 +3626,14 @@ Measured on the dev server AND the production build (`npx vite build
   (`captures/gntPARTY-baseline-*`); (c) the Level 3 Stag room's median
   party damage ≥ 0.8 × baseline; (d) ≥ 1 party down per level on ≥ 2 of 5
   seeds; the numbers written into BUILD_BRIEF §23.2 as a dated note and
-  G4a.5 passing against it.
+  G4a.5 passing against it. *(fix-M4a-r5, 2026-09-30: (a)–(c) hold after the
+  AI engagement fix with the BUILD_BRIEF §23.2 fix-M4a-r5 note; (d) is still
+  not met on Levels 1–2 — every Stag / room setting that downs a member on
+  ≥ 2 of 5 seeds there also wipes the party on 10–40 % of seeds through §12's
+  unconditional revive. OPEN for the design owner, with the measured options
+  (A) the Level-1 bite as a HP floor, (B) accept Level-1/2 losses, (C) a
+  safe-revive §12 amendment + GP.8 exempting Downed time —
+  docs/gauntlet/fix-M4a-r5.md step 7.)*
 - **GP.14 The Healer is unchanged**: every §16.10 invariant (Node probe
   against a `git archive` of v0.5.150: pools, numbers, 289 grid cells,
   spoils / shelf / wallet numbers, `reward_offer` / `spoils_drop` /

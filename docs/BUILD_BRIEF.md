@@ -1540,6 +1540,79 @@ above rooms 3–4). The determinism proof (PLAN §16.9) runs
 with these constants switched back by `cmd('difficultyLegacy')`. Gate G4a.5
 compares the running game with THIS table.
 
+**Tuning note (fix-M4a-r5, 2026-09-30) — retuned after the AI engagement fix
+(content r5 F5 / GP.8, §25.8 engagement note); this table is now binding.**
+The AI-held seats now engage in a campaign (docs/gauntlet/fix-M4a-r5.md,
+`src/data/classes.js` `AI_ENGAGE`: an overdue equipped active is served first
+and its seat closes on a hostile, a melee arc / nova lunging the last ≤ 1.2 u;
+the Tank and the Swordsman may step 2 u past the §12 ring to meet a threat).
+With the Tank's MENACE (fix-M4b-r5) the melee pair now takes Level 1's hits the
+Archer's arrows used to prevent: Level 1's median party damage per combat room
+rose to × 1.50–1.66 of the v0.5.150 baseline (GP.13 (b) caps it at × 1.35), and
+a Level-2 start with the granted build fell to × 0.57–0.68. Two constants moved
+and one was added (`src/data/difficulty.js`, `src/data/campaign.js`):
+
+| constant | PARTY | fix-M4a-r5 |
+|---|---|---|
+| per-level enemy damage on the combat rooms — `LEVEL_DMG` (new; `dmgMul × LEVEL_DMG[level]`) | 1 / 1 / 1 | **0.75 / 1 / 1** |
+| Level-2 ally starter grant — `STARTER_GRANT[2].allies` (swaps / nodes / legendaries / Glint) | 1 / 9 / 1 / 34 | **1 / 3 / 0 / 34** |
+
+Everything else is the PARTY note (tiers, slope, Stag, adds, elites, interval,
+Waystone, the Healer's grant, the Level-3 ally grant). Binding table, standard
+challenge (hpMul / dmgMul / kill_all budget — a defend room's budget is × 1.25):
+
+| room | Level 1 | Level 2 | Level 3 |
+|---|---|---|---|
+| 1 | 1 / 0.75 / 4 | 1.6 / 1.3 / 6.4 | 3.1 / 2.05 / 12.4 |
+| 2 | 1.21 / 0.8288 / 4.84 | 1.936 / 1.468 / 7.744 | 3.751 / 2.3755 / 15.004 |
+| 3 | 1.42 / 0.9075 / 5.68 | 2.272 / 1.636 / 9.088 | 4.402 / 2.701 / 17.608 |
+| 4 | 1.63 / 0.9863 / 6.52 | 2.608 / 1.804 / 10.432 | 5.053 / 3.0265 / 20.212 |
+| 5 | 1.84 / 1.065 / 7.36 | 2.944 / 1.972 / 11.776 | 5.704 / 3.352 / 22.816 |
+| 6 | 2.05 / 1.1437 / 8.2 | 3.28 / 2.14 / 13.12 | 6.355 / 3.6775 / 25.42 |
+
+| per level | Level 1 | Level 2 | Level 3 |
+|---|---|---|---|
+| tier T | 1 | 1.6 | 3.1 |
+| Stag HP | 2400 | 6912 | 8928 |
+| Stag damage × | 1 | 2.08 | 4.78 |
+| adds HP × | 1 | 1.6 | 3.1 |
+| adds damage × | 1 | 2.08 | 4.78 |
+| Waystone HP | 150 | 190 | 264 |
+| elite chance | 0 / 0 / 0 / 0.08 / 0.08 / 0.08 | 0.12 / 0.14 / 0.16 / 0.18 / 0.2 / 0.22 | 0.2 / 0.23 / 0.26 / 0.29 / 0.32 / 0.35 |
+| kill_all wave interval, ticks (room 1 → 6) | 480 → 384 | 456 → 365 | 432 → 346 |
+
+**Starter grant** — the Healer's is unchanged:
+
+| start at | skills | nodes | legendaries | Glint | arrives with |
+|---|---|---|---|---|---|
+| Level 2 | 2 | 18 | 1 | 34 | 4 skills, 19 / 32 sockets filled, 34 Glint (= the carried Level 1 → 2 card) |
+| Level 3 | 2 | 30 | 2 | 60 | 4 skills, 32 / 32 sockets filled, 60 Glint (the carried card: 4 / 32 of 32 / ~118 Glint) |
+
+| ally start at | swap offers | nodes | legendaries | Glint |
+|---|---|---|---|---|
+| Level 2 | 1 | 3 | 0 | 34 |
+| Level 3 | 3 | 19 | 2 | 43 |
+
+Measured band (v0.5.183, headless Node sim, `tools/gntfixM4a5-band.mjs` =
+`gntPARTY-band` with renamed outputs, seeds 1–5, captures/gntfixM4a5-band-tune1*.json):
+**carried from Level 1** — clears 5/5 · 5/5 · 3/5, every §4.2 / GC.12 band check
+true (19); combat-room damage × 1.14 / 1.31 / 1.01, time × 1.10 / 1.13 / 0.98;
+Stag 2734 vs 2824 (× 0.97). **Started at Level 2** — 5/5 · 4/5, band true (13);
+× 0.88 / 0.84 damage, × 1.11 / 1.04 time; Stag 2976 vs 2885. **Started at
+Level 3** — 5/5, band true (6); × 0.82, × 0.96; Stag 2699 vs 2663. Seeds 1–10
+(`tools/gntfixM4a5-sweep.mjs`): carried × 1.24 / 1.05 / 0.86, Level-2 start
+× 0.91 / 0.84, Level-3 start × 0.82; clears carried 10 · 10 · 8 of 10, Level-2
+start 10 · 7, Level-3 start 9. GP.8 (the equipped actives used): 0 idle of 4223
+room-skill pairs over those 30 campaigns, idle fallback ≤ 9.5 % of casts.
+**Party downs (GP.13 (d)) are still not met on Levels 1–2** (carried Level 1
+0/5, Level 2 1/5, Level-2 start 0/5; every Level 3 5/5): the engaging AI and
+MENACE make Level 1 safer still (lowest HP of any member in any Level-1 combat
+room ≥ 35 % over seeds 1–10), and every Level-1 / Level-2 Stag setting that
+downs a member on ≥ 2 of 5 seeds also wipes the party on 10–40 % of seeds — §12's
+unconditional revive kneels the next ally in the Stag's quake ring. The
+measured options for the design owner are in docs/gauntlet/fix-M4a-r5.md
+(step 7). Gate G4a.5 compares the running game with THIS table.
+
 **Felt escalation (v0.5.1).** The table is necessary, not sufficient: in play,
 time-to-clear and party damage taken per room must rise across rooms 1–6 of
 each act (defend rooms and the Stag above their neighbours) and from act to
@@ -2369,6 +2442,31 @@ Riposte is not cast with no hostile within 1.5 u; a dash / vault never ends
 beyond the §12 leash. **Steering** (§12) adds one rule: an Archer holding a
 ready Steady Aim skill stands still for 30 ticks before casting it when no
 hostile is within 2.0 u.
+
+**Engagement (fix-M4a-r5, 2026-09-30 — content r5 F5, GP.8; `src/data/classes.js`
+`AI_ENGAGE`).** The rules above left equipped actives idle for whole rooms
+(v0.5.165: 14 of 598 room-skill pairs over carried campaigns seeds 1–3 — the
+Swordsman's Flurry / Blade Storm, the Tank's Heavy Slam / Brutal Cleave in
+Level 1–2 defend rooms): the Archer and the Healer killed every wave 4–7 u
+out while the melee pair waited on the 3.4 u ring, only acting on the shared
+target, and a lower slot starved behind higher ones. In a campaign run (never
+the `?room=` harness, never the Node-only legacy switch — the §16.9 goldens
+and the v0.5.150 proof keep their traces) an AI-held seat now:
+- serves an **overdue** active FIRST — ready ≥ 480 ticks (`AI_IDLE_FALLBACK_TICKS`),
+  or ≥ 240 ticks (`firstUseTicks`) for one not yet cast this room: its own
+  §25.2 rule, else the nearest hostile in its reach; a melee arc / nova
+  delivery cast that way closes the last ≤ 1.2 u with a short **lunge** (the
+  Pursuit dash machinery, `ally_dash` cause `lunge`, no i-frames, 9 u/s) — a
+  parry opens with a hostile within its reach + 1.2 u, never lunging;
+- **commits**: while one of its actives is overdue it takes the nearest
+  hostile it can reach inside its ring and closes to 0.8 × that skill's reach;
+- the **melee pair** (Tank, Swordsman) has a **vanguard ring**: the §12 leash
+  + 2.0 u (5.4 u) — they may step out to meet a threat before it reaches the
+  ranged line; the Archer and the Healer keep 3.4 u. "A dash / vault never ends
+  beyond the §12 leash" reads the seat's own ring (`allyState` shows
+  `leash` per melee seat while the rules are on).
+Measured: 0 idle equipped actives over 40 Node campaigns (from Level 1 seeds
+1–20, Level-2 / Level-3 starts seeds 1–10), the idle fallback 3–10 % of casts.
 
 ### 25.9 Campaign carry, saves, records
 
