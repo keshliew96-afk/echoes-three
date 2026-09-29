@@ -77,7 +77,13 @@ export function registerPartySettings(settings, { world, params = null } = {}) {
         w.setNote?.(override ? `${NOTE[cur]} · this session runs ${LABEL[override]} (?party=)` : `${NOTE[cur]} · applies from the next reward page`);
       };
       paint();
-      return w.el;
+      // fix-M1-r5: the Gameplay tab calls sync() on every gameplay.* change
+      // (Reset to defaults, another screen) so the row never shows a stale value.
+      const sync = () => {
+        w.set(store.get(ALLY_BUILDS_KEY) ?? 'suggest');
+        paint();
+      };
+      return { el: w.el, sync };
     },
   });
   registerSettingsRow('gameplay', {
@@ -91,10 +97,20 @@ export function registerPartySettings(settings, { world, params = null } = {}) {
         label: 'Socket my new nodes',
         value: !!store.get(AUTO_SOCKET_OWN_KEY),
         help: 'On: every node your own character gets from a reward page, spoils or the shop is socketed for you (the same policy as Auto-fill) when the page commits. Off: they wait on your bench for you to place.',
-        onChange: (v) => store.set(AUTO_SOCKET_OWN_KEY, !!v, { source: 'ui' }),
+        onChange: (v) => {
+          store.set(AUTO_SOCKET_OWN_KEY, !!v, { source: 'ui' });
+          paint();
+        },
       });
-      t.setNote?.(store.get(AUTO_SOCKET_OWN_KEY) ? 'Your bench is auto-filled at every commit' : 'Your new nodes wait on the bench');
-      return t.el;
+      // The sub-line says what the CURRENT value does (fix-M1-r5, MENU-R5-F1:
+      // it was set once at build and contradicted the toggle all session).
+      const paint = () => t.setNote?.(store.get(AUTO_SOCKET_OWN_KEY) ? 'Your bench is auto-filled at every commit' : 'Your new nodes wait on the bench');
+      paint();
+      const sync = () => {
+        t.set(!!store.get(AUTO_SOCKET_OWN_KEY));
+        paint();
+      };
+      return { el: t.el, sync };
     },
   });
   return { apply };

@@ -55,7 +55,13 @@ export function registerChallengeSetting(settings) {
         w.setNote?.(run && run !== cur ? `${base} · this run stays ${LABEL[run]} — applies from your next expedition` : `${base} · applies from your next expedition`);
       }
       paintNote();
-      return w.el;
+      // fix-M1-r5: the Gameplay tab calls sync() on every gameplay.* change
+      // (Reset to defaults, another screen) so the row never shows a stale value.
+      const sync = () => {
+        w.set(store.get(CHALLENGE_KEY) ?? 'standard');
+        paintNote();
+      };
+      return { el: w.el, sync };
     },
   });
 }
