@@ -25,6 +25,7 @@ import {
   MeshBasicMaterial,
   PlaneGeometry,
   RingGeometry,
+  ShaderMaterial,
   SphereGeometry,
   Sprite,
   SpriteMaterial,
@@ -62,6 +63,44 @@ function additive(color, opacity, { side = null, depthTest = true } = {}) {
   });
   if (side) m.side = side;
   return m;
+}
+// fix-M4a-r5 (F4): the shield's "pale shell on the body" is a RIM, not a fill.
+// A fresnel term keeps the shell clear where it faces the camera (the body
+// behind it keeps its own colours, class accents and identity ring) and lights
+// only its silhouette edge — a Parchment outline around the character, the way
+// barrier bubbles read in shipped action games. Additive, front faces only (the
+// old DoubleSide fill added twice), no depth write. One program for every
+// shell (the source is constant; uniforms carry colour / strength), warmed with
+// the status rig at boot like every other part.
+function rimShell(color, opacity) {
+  return new ShaderMaterial({
+    uniforms: { uColor: { value: new Color(color) }, uOpacity: { value: opacity } },
+    transparent: true,
+    depthWrite: false,
+    blending: AdditiveBlending,
+    toneMapped: false,
+    vertexShader: /* glsl */ `
+      varying vec3 vN;
+      varying vec3 vV;
+      void main() {
+        vec4 mv = modelViewMatrix * vec4( position, 1.0 );
+        vN = normalize( normalMatrix * normal );
+        vV = normalize( -mv.xyz );
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uColor;
+      uniform float uOpacity;
+      varying vec3 vN;
+      varying vec3 vV;
+      void main() {
+        float f = 1.0 - abs( dot( normalize( vN ), normalize( vV ) ) );
+        float a = smoothstep( 0.5, 0.92, f ) * uOpacity;
+        gl_FragColor = vec4( uColor, a );
+      }
+    `,
+  });
 }
 function flat(color, opacity, { side = null, depthTest = true } = {}) {
   const m = new MeshBasicMaterial({ color: new Color(color), transparent: true, opacity, depthWrite: false, depthTest });
@@ -303,7 +342,8 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
   const statusRigs = new Map(); // id -> { g, parts }
   const slowGeo = sharedGeo('cfx-slow-ring', () => new RingGeometry(0.9, 1.0, 40));
   const crackGeo = sharedGeo('cfx-crack-ring', () => new RingGeometry(0.86, 1.0, 12, 1, 0, Math.PI * 1.7));
-  const shellGeo = sharedGeo('cfx-shell', () => new SphereGeometry(1, 20, 14));
+  const shellGeo = sharedGeo('cfx-shell', () => new SphereGeometry(1, 24, 16));
+  const hexFloorGeo = sharedGeo('cfx-hexfloor', () => new PlaneGeometry(1, 1));
   const domeGeo = sharedGeo('cfx-dome', () => new SphereGeometry(1, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2));
   const streakGeo = sharedGeo('cfx-streak', () => new PlaneGeometry(1, 1));
   function makeStatusRig() {
@@ -332,17 +372,27 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
     stun.position.y = 1.35;
     const stunGlow = makeGlowSprite({ color: BONE, size: 0.7, opacity: 0.3 });
     stunGlow.position.y = 1.35;
-    // shield: pale Parchment shell + hex rim sprite + glow.
-    const shell = new Mesh(shellGeo, additive(PARCH, 0.13, { side: DoubleSide }));
-    shell.scale.set(0.46, 0.62, 0.46);
-    shell.position.y = 0.52;
-    const hex = glyphSprite('hex', 0.95);
-    hex.position.y = 0.6;
-    hex.material.opacity = 0.55;
-    const shieldGlow = makeGlowSprite({ color: PARCH, size: 1.0, opacity: 0.12 });
-    shieldGlow.position.y = 0.55;
-    // ward: soft Bone dome.
-    const ward = new Mesh(domeGeo, additive(BONE, 0.1, { side: DoubleSide }));
+    // shield (fix-M4a-r5 F4 — the body stays readable): a pale Parchment RIM
+    // shell (fresnel, clear in the middle, just outside the body's silhouette),
+    // the Parchment hex drawn FLAT on the ground around the feet outside the
+    // identity ring (the shape channel — it never crosses the body, which the
+    // old always-on-top hex sprite did), and a faint glow at the feet that
+    // the body occludes. Magnitude reads from the rim's strength.
+    const shell = new Mesh(shellGeo, rimShell(PARCH, 0.25));
+    shell.scale.set(0.52, 0.66, 0.52);
+    shell.position.y = 0.5;
+    shell.renderOrder = 2;
+    const hex = new Mesh(hexFloorGeo, new MeshBasicMaterial({ map: glyphTexture('hex'), transparent: true, opacity: 0.5, depthWrite: false, toneMapped: false }));
+    hex.rotation.x = -Math.PI / 2;
+    hex.position.y = 0.034;
+    hex.scale.set(1.7, 1.7, 1);
+    hex.renderOrder = 1;
+    const shieldGlow = makeGlowSprite({ color: PARCH, size: 1.1, opacity: 0.05 });
+    shieldGlow.position.y = 0.05;
+    // ward: soft Bone dome — drawn as a rim like the shield shell (fix-M4a-r5
+    // F4: Quiet Hearth keeps a ward up on the whole party, and the old
+    // double-sided fill greyed every body under it).
+    const ward = new Mesh(domeGeo, rimShell(BONE, 0.2));
     ward.scale.set(0.58, 0.74, 0.58);
     const wardRim = new Mesh(slowGeo, additive(BONE, 0.4));
     wardRim.rotation.x = -Math.PI / 2;
@@ -655,13 +705,17 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
       P.shell.visible = P.hex.visible = P.shieldGlow.visible = !!sh;
       if (sh) {
         const k = Math.min(1, sh.mag / 20);
-        P.shell.material.opacity = 0.06 + 0.1 * k + 0.02 * Math.sin(tSec * 4);
-        P.hex.material.opacity = 0.35 + 0.35 * k;
-        P.hex.material.rotation = tSec * 0.6;
+        // below the bloom threshold even where two shells overlap
+        P.shell.material.uniforms.uOpacity.value = 0.16 + 0.18 * k + 0.03 * Math.sin(tSec * 4 + e.id);
+        P.shell.scale.set(0.52 * scale, 0.66 * scale, 0.52 * scale);
+        P.shell.position.y = 0.5 * scale;
+        P.hex.material.opacity = 0.3 + 0.25 * k;
+        P.hex.rotation.z = tSec * 0.6;
+        P.hex.scale.set(1.7 * scale, 1.7 * scale, 1);
       }
       const ward = !!liveStatus(e, 'ward', tick);
       P.ward.visible = P.wardRim.visible = ward;
-      if (ward) P.ward.material.opacity = 0.08 + 0.03 * Math.sin(tSec * 2.4 + e.id);
+      if (ward) P.ward.material.uniforms.uOpacity.value = 0.17 + 0.05 * Math.sin(tSec * 2.4 + e.id);
       const insp = !!liveStatus(e, 'inspired', tick);
       P.inspired.visible = P.inspiredGlow.visible = insp;
       if (insp) P.inspired.position.y = 1.45 + 0.06 * Math.sin(tSec * 4 + e.id);
