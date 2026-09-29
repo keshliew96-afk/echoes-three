@@ -33,7 +33,7 @@ import { NODES } from '../../sim/nodes.js';
 import { SPOILS_PER_CLEAR } from '../../sim/draft.js';
 import { SKILLS } from '../../sim/skills.js';
 import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
-import { createPartyStrip, ownerBandHtml } from './partystrip.js';
+import { createPartyStrip, ownerBandHtml, netOwners } from './partystrip.js';
 import { service } from '../../app/registry.js';
 
 const TICK_HZ = 60;
@@ -293,9 +293,12 @@ export function createDraftScreen({ run, build, party = () => null }) {
     // for it (style.js `rn-short`).
     el.classList.toggle('rn-party', !!page);
     if (page) {
+      // fix-M5a-r5 (NET5-F1): the owner line names the player (BUILD_BRIEF
+      // §25.6: "you", "AI" or the player's name — was the word "player").
+      const owners = page.owners && isNet() ? netOwners(page.owners) : null;
       const rows = [0, 1, 2, 3].map((s) => ({
         ...chipOf(view, s, page),
-        owner: page.owners && isNet() ? (s === ownSeat() ? 'you' : page.owners[s] === 'human' ? 'player' : 'AI') : '',
+        owner: owners ? owners[s] : '',
       }));
       strip.update(rows, seat);
     }

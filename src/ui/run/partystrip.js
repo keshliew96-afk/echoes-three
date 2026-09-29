@@ -18,6 +18,7 @@ import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
 import { iconHtml } from '../hud/icons.js';
 import { portraitCache } from '../hud/portraits.js';
 import { esc } from './style.js';
+import { service } from '../../app/registry.js';
 
 export const PARTY_STRIP_CSS = `
   .rn-pstrip { display: flex; gap: 8px; margin: 0 0 10px; justify-content: center; }
@@ -46,7 +47,24 @@ export const PARTY_STRIP_CSS = `
   .rn-ptab .rn-pchip { font-size: 16px; color: ${PALETTE.bone}; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .rn-ptab .rn-pchip.rn-ptake { color: ${PALETTE.hearthAmber}; }
   .rn-ptab .rn-pchip.rn-pwait { color: ${PALETTE.parchment}; font-weight: 700; }
-  .rn-ptab .rn-powner { position: absolute; right: 8px; top: 3px; font-size: 16px; color: ${PALETTE.warmGrey}; }
+  /* fix-M5a-r5 (NET5-F1): the owner line is IN FLOW — a pill after the
+     class name on the name row (was absolutely pinned to the tab's top-right
+     corner, drawn over "Healer" / "Swordsman"). Only a tab that has an owner
+     (a network session) gets the third column, so single-player tabs keep
+     their exact size; a long player name ends in an ellipsis (full name in
+     the tooltip / accessible name), never over its neighbour. */
+  .rn-ptab .rn-powner { display: none; }
+  .rn-ptab.rn-howner { grid-template-columns: 40px auto auto; }
+  .rn-ptab.rn-howner .rn-pname { grid-column: 2; grid-row: 1; }
+  .rn-ptab.rn-howner .rn-pchip { grid-column: 2 / span 2; grid-row: 2; }
+  .rn-ptab.rn-howner .rn-powner {
+    display: block; grid-column: 3; grid-row: 1; justify-self: start; align-self: center;
+    max-width: 7.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: 16px; line-height: 1.1; font-weight: 700; color: ${PALETTE.bone};
+    padding: 0 6px 1px; border: 1px solid ${PALETTE.warmGrey}88; border-radius: 6px;
+  }
+  .rn-ptab.rn-howner .rn-powner.rn-pyou { color: ${PALETTE.parchment}; border-color: ${PALETTE.parchment}aa; }
+  .rn-ptab.rn-howner .rn-powner.rn-pai { color: ${PALETTE.warmGrey}; font-weight: 600; }
   .rn-ptab .rn-paccent { position: absolute; left: 10px; right: 10px; bottom: 2px; height: 3px; border-radius: 2px; }
   .rn-ptab .rn-pcaret {
     position: absolute; left: 50%; top: -17px; transform: translateX(-50%);
@@ -79,6 +97,47 @@ export function ownerBandHtml(seat, { you = false } = {}) {
   const acc = CLASS_ACCENTS[classId];
   const label = seat === 0 ? (you ? 'FOR YOU — THE HEALER' : 'FOR THE HEALER') : `FOR THE ${CLASS_NAME[classId].toUpperCase()}`;
   return `<div class="rn-owner" data-seat="${seat}" style="--acc:${acc}"><span class="rn-ownerface">${faceHtml(classId, 22)}</span>${iconHtml(`cls_${classId}`, { size: 18 })}<span>${esc(label)}</span></div>`;
+}
+
+// fix-M5a-r5 (NET5-F1): the owner line of each tab in a network session
+// (BUILD_BRIEF §25.6): "you" (the viewer's own character), the player's name
+// (another human's character) or "AI" (an AI-held seat — the host builds it).
+// ['', '', '', ''] outside a session: single-player tabs carry no owner line.
+// `kinds` = per-seat 'human' | 'ai' when the page knows it (the party page's
+// `owners`); otherwise the sim's seat controllers, then the room roster.
+export function netOwners(kinds = null) {
+  const none = ['', '', '', ''];
+  const n = service('net');
+  let guest = false;
+  let host = false;
+  try {
+    guest = !!(n && typeof n.isGuest === 'function' && n.isGuest());
+    host = !guest && !!(n && typeof n.isHost === 'function' && n.isHost());
+  } catch {
+    return none;
+  }
+  if (!guest && !host) return none;
+  const own = guest && Number.isInteger(n.seat) ? n.seat : 0;
+  const seats = (n.room && Array.isArray(n.room.seats) && n.room.seats) || [];
+  const seatOf = (i) => seats.find((x) => x && x.index === i) || null;
+  let k = Array.isArray(kinds) ? kinds : null;
+  if (!k) {
+    try {
+      const c = service('content');
+      const w = c && typeof c.world === 'function' ? c.world() : null;
+      const a = w && typeof w.allySystem === 'function' ? w.allySystem() : null;
+      const ctl = a && typeof a.controllers === 'function' ? a.controllers() : null;
+      if (Array.isArray(ctl)) k = ctl;
+    } catch {
+      k = null;
+    }
+  }
+  return [0, 1, 2, 3].map((s) => {
+    if (s === own) return 'you';
+    const r = seatOf(s);
+    const human = k ? k[s] === 'human' : !!(r && r.peerId && r.connected);
+    return human ? (r && r.peerId && r.name) || 'player' : 'AI';
+  });
 }
 
 export function createPartyStrip({ onSelect = null, host = null } = {}) {
@@ -119,6 +178,7 @@ export function createPartyStrip({ onSelect = null, host = null } = {}) {
   function update(rows, viewSeat) {
     if (Object.keys(portraitCache()).join(',') !== faces) build();
     view = viewSeat;
+    let owners = null;
     for (let s = 0; s < 4; s++) {
       const t = tabs[s];
       const r = (rows && rows[s]) || {};
@@ -126,9 +186,16 @@ export function createPartyStrip({ onSelect = null, host = null } = {}) {
       const txt = r.chip ?? '—';
       if (chip.textContent !== txt) chip.textContent = txt;
       chip.className = `rn-pchip${r.tone === 'take' ? ' rn-ptake' : r.tone === 'wait' ? ' rn-pwait' : ''}`;
+      // A row without an `owner` (the shop and socket strips) takes the
+      // session's owner line; '' = no line (single-player).
       const own = t.querySelector('.rn-powner');
-      const o = r.owner ?? '';
-      if (own.textContent !== o) own.textContent = o;
+      const o = r.owner !== undefined && r.owner !== null ? String(r.owner) : (owners || (owners = netOwners()))[s];
+      if (own.textContent !== o) {
+        own.textContent = o;
+        own.title = o === 'you' ? 'Your character' : o === 'AI' ? 'AI-held — the host builds it' : o ? `Played by ${o}` : '';
+      }
+      own.className = `rn-powner${o === 'you' ? ' rn-pyou' : o === 'AI' ? ' rn-pai' : ''}`;
+      t.classList.toggle('rn-howner', !!o);
       const on = s === viewSeat;
       t.classList.toggle('rn-pview', on);
       t.setAttribute('aria-selected', on ? 'true' : 'false');
