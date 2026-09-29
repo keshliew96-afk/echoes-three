@@ -158,7 +158,7 @@ export const AI_IDLE_FALLBACK_TICKS = 480;
 //   - a melee delivery (arc / nova) cast that way closes the last <= lungeU
 //     with a short lunge (the Pursuit dash machinery, cause 'lunge', no
 //     iframes) instead of swinging at air.
-export const AI_ENGAGE = Object.freeze({ vanguardU: 2.0, lungeU: 1.2, lungeSpeed: 9, commitStandFrac: 0.8, firstUseTicks: 300 });
+export const AI_ENGAGE = Object.freeze({ vanguardU: 2.0, lungeU: 1.2, lungeSpeed: 9, commitStandFrac: 0.8, firstUseTicks: 240 });
 export const MELEE_CLASSES = Object.freeze(['tank', 'swordsman']);
 
 // §25.2 taunt rules.

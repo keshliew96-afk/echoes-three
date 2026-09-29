@@ -74,7 +74,7 @@ async function runOne(seed) {
       lv = { level, rooms: [], downs: 0, outcome: null };
       levels.push(lv);
     }
-    cur = { room: e.index, mode: e.mode, t0: e.tick, end: null, lo: loadout(), lo2: null, casts: { 1: {}, 2: {}, 3: {} }, basics: { 1: 0, 2: 0, 3: 0 }, dmg: 0, byVictim: {}, minHp: {}, downs: 0, downsBy: {}, ai0: cmd('partyAiLog'), near: { 1: [], 2: [] } };
+    cur = { room: e.index, mode: e.mode, t0: e.tick, end: null, lo: loadout(), lo2: null, casts: { 1: {}, 2: {}, 3: {} }, basics: { 1: 0, 2: 0, 3: 0 }, dmg: 0, byVictim: {}, bySrc: {}, minHp: {}, downs: 0, downsBy: {}, ai0: cmd('partyAiLog'), near: { 1: [], 2: [] } };
     lv.rooms.push(cur);
   });
   bus.on('ally_cast', (e) => { if (cur && e.partyIndex >= 1) cur.casts[e.partyIndex][e.skill] = (cur.casts[e.partyIndex][e.skill] || 0) + 1; });
@@ -83,6 +83,9 @@ async function runOne(seed) {
     if (!cur) return;
     if (party.has(e.kind)) {
       cur.dmg += e.amount + (e.absorbed ?? 0);
+      const src = e.attacker != null ? registry.byId(e.attacker) : null;
+      const sk = src ? src.kind : String(e.source || e.delivery || '?');
+      cur.bySrc[sk] = (cur.bySrc[sk] || 0) + e.amount + (e.absorbed ?? 0);
       const t = registry.byId(e.target ?? e.id);
       const k = t && t.partyIndex !== undefined ? t.partyIndex : 'p?';
       cur.byVictim[k] = (cur.byVictim[k] || 0) + e.amount + (e.absorbed ?? 0);
@@ -179,6 +182,7 @@ async function runOne(seed) {
     dmgMed: med(L.rooms.filter((r) => r.mode === 'kill_all' || r.mode === 'defend').map((r) => r.dmg)),
     ticksMed: med(L.rooms.filter((r) => (r.mode === 'kill_all' || r.mode === 'defend') && r.end != null).map((r) => r.end - r.t0)),
     bossDmg: (L.rooms.find((r) => r.mode === 'boss') || {}).dmg ?? null,
+    bySrc: (() => { const o = {}; for (const r of L.rooms) if (r.mode === 'kill_all' || r.mode === 'defend') for (const [k, v] of Object.entries(r.bySrc)) o[k] = (o[k] || 0) + v; for (const k of Object.keys(o)) o[k] = Math.round(o[k]); return o; })(),
     victim: (() => { const o = {}; for (const r of L.rooms) if (r.mode === 'kill_all' || r.mode === 'defend') for (const [k, v] of Object.entries(r.byVictim)) o[k] = (o[k] || 0) + v; for (const k of Object.keys(o)) o[k] = Math.round(o[k]); return o; })(),
     downRooms: L.rooms.filter((r) => r.downs).map((r) => `r${r.room}${r.mode[0]}:${JSON.stringify(r.downsBy)}`),
     minHp: (() => { const o = {}; for (const r of L.rooms) for (const [k, v] of Object.entries(r.minHp)) { const key = (r.mode === 'boss' ? 'B' : 'R') + k; o[key] = Math.min(o[key] ?? 1, v); } for (const k of Object.keys(o)) o[k] = Math.round(o[k] * 100); return o; })(),
@@ -200,7 +204,7 @@ for (const s of SEEDS) {
   out.runs.push(r);
   const lowB = r.basicsL12.filter((b) => b[0] <= 7 && b[1] <= 7).length;
   const f = (x) => (x == null ? '-' : typeof x === 'number' ? +x.toFixed(2) : x);
-  console.log(`seed ${s} ${r.outcome} ${((Date.now() - t0) / 1000).toFixed(0)}s idle ${r.idle.length}/${r.pairs} fallback ${r.fallbackPct}% | L1-2 rooms tank+sword basics<=7: ${lowB}/${r.basicsL12.length} | ${r.perLevel.map((p) => `L${p.level}:${p.outcome} downs ${p.downs} dmg ${f(p.dmgMed)} t ${p.ticksMed} boss ${f(p.bossDmg)} nearT ${f(p.nearTank)} nearS ${f(p.nearSword)} vict ${JSON.stringify(p.victim)} minHp% ${JSON.stringify(p.minHp)} ${p.downRooms.join(',')}`).join(' | ')}`);
+  console.log(`seed ${s} ${r.outcome} ${((Date.now() - t0) / 1000).toFixed(0)}s idle ${r.idle.length}/${r.pairs} fallback ${r.fallbackPct}% | L1-2 rooms tank+sword basics<=7: ${lowB}/${r.basicsL12.length} | ${r.perLevel.map((p) => `L${p.level}:${p.outcome} downs ${p.downs} dmg ${f(p.dmgMed)} t ${p.ticksMed} boss ${f(p.bossDmg)} nearT ${f(p.nearTank)} nearS ${f(p.nearSword)} vict ${JSON.stringify(p.victim)} src ${JSON.stringify(p.bySrc)} minHp% ${JSON.stringify(p.minHp)} ${p.downRooms.join(',')}`).join(' | ')}`);
   if (r.idle.length && !QUIET) console.log('   idle:', r.idle.join('; '));
 }
 const all = out.runs;

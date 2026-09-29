@@ -6,7 +6,7 @@
 //   T(act)    = ACT_TIER[act]                    1.00 / 1.60 / 3.10 (PARTY)
 //   R(room)   = 1 + ROOM_SLOPE × (room − 1)       rooms 1..6 (combat), slope 0.21 (PARTY)
 //   hpMul     = T × R × CHALLENGE[c].hp
-//   dmgMul    = (1 + 0.5 × (T × R − 1)) × CHALLENGE[c].dmg
+//   dmgMul    = (1 + 0.5 × (T × R − 1)) × CHALLENGE[c].dmg × LEVEL_DMG[act] (0.75 / 1 / 1, fix-M4a-r5)
 //   budget    = 4.0 × T × R   threat points per kill_all wave (defend: × 1.25)
 //   elite     = ELITE[act](room)
 //   interval  = 480 ticks × (1 − 0.04 × (room − 1)) × INTERVAL_ACT[act]
@@ -84,6 +84,14 @@ export const STAG_BASE_HP = 2400; // bossHp = STAG_BASE_HP × T × STAG_HP_LEVEL
 // CARRIED build from Level 2 on; 1.0 keeps a level on the plain formula.
 export const STAG_HP_LEVEL = Object.freeze([null, 1.0, 1.8, 1.2]);
 export const BOSS_DMG_SLOPE = 1.8; // bossDmgMul = addDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1)
+// fix-M4a-r5 (content r5 F5 / F7, GP.13 — the dated BUILD_BRIEF §23.2 note):
+// the per-level enemy-damage factor on the combat rooms (dmgMul). The AI
+// engagement fix (data/classes.js AI_ENGAGE) put the melee pair in front of
+// Level 1's waves — the Tank and the Swordsman now take the hits the Archer's
+// arrows used to prevent — and Level 1's median party damage per combat room
+// rose to x1.5 of the v0.5.150 baseline (GP.13 (b) caps it at x1.35); Level 1's
+// enemies hit 25 % softer so the first level keeps its measured feel.
+export const LEVEL_DMG = Object.freeze([null, 0.75, 1.0, 1.0]);
 // PARTY (PLAN §16.9): the determinism proof's Node-only switch — the
 // v0.5.150 (CAMPAIGN) constants back in force (cmd('difficultyLegacy')). The
 // game never sets it; tools/gntPARTY-goldenproof.mjs does.
@@ -141,6 +149,7 @@ export function difficulty(act = 1, room = 1, challenge = 'standard') {
   const bossSlope = legacy ? LEGACY.bossSlope : BOSS_DMG_SLOPE;
   const T = tiers[a];
   const R = 1 + slope * (r - 1);
+  const levelDmg = legacy ? 1 : LEVEL_DMG[a] ?? 1;
   return Object.freeze({
     act: a,
     room: r,
@@ -148,7 +157,7 @@ export function difficulty(act = 1, room = 1, challenge = 'standard') {
     tier: T,
     ramp: r4(R),
     hpMul: r4(T * R * c.hp),
-    dmgMul: r4((1 + 0.5 * (T * R - 1)) * c.dmg),
+    dmgMul: r4((1 + 0.5 * (T * R - 1)) * c.dmg * levelDmg),
     budget: r4(BASE_BUDGET * T * R),
     defendBudget: r4(BASE_BUDGET * T * R * DEFEND_BUDGET_SCALE),
     eliteChance: r4(ELITE[a](r)),

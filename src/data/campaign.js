@@ -95,7 +95,10 @@ export const TRANSIT = Object.freeze({
 // Level-2-start baseline, whose party (the Healer's grant) was weaker than
 // a carried one.
 export const STARTER_GRANT = Object.freeze({
-  2: Object.freeze({ skills: 2, nodes: 18, legendaries: 1, glint: 34, allies: Object.freeze({ swaps: 1, nodes: 9, legendaries: 1, glint: 34 }) }),
+  // fix-M4a-r5 (GP.13 (b)): the Level-2 ally grant 9 nodes + 1 legendary ->
+  // 3 nodes + 0 (the AI engagement made a granted party x0.57-0.68 of the
+  // v0.5.150 Level-2-start damage; the Healer's own grant is unchanged).
+  2: Object.freeze({ skills: 2, nodes: 18, legendaries: 1, glint: 34, allies: Object.freeze({ swaps: 1, nodes: 3, legendaries: 0, glint: 34 }) }),
   3: Object.freeze({ skills: 2, nodes: 30, legendaries: 2, glint: 60, allies: Object.freeze({ swaps: 3, nodes: 19, legendaries: 2, glint: 43 }) }),
 });
 
