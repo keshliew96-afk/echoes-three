@@ -78,6 +78,7 @@ import { COOL, EMBER_GLOW, mix } from '../env/colors.js';
 import { variantLayoutRng } from '../env/layout.js';
 import { createAfterimages } from '../render/critters/afterimage.js';
 import { installBandGuard, bandGuardInfo, guardSubtree } from '../env/bandguard.js';
+import { compileAsyncSafe } from '../render/precompile.js';
 
 // Yielded by a dressing build that is waiting on the paint worker: the
 // background pump stops for the frame instead of spinning on it.
@@ -1032,17 +1033,26 @@ export function createArenaScene(stage, toggles, ctx) {
   // draw), and only then takes its parked warm draw — which is left with the
   // GPU-side executable compile alone. Measured before: a 154 ms frame at a
   // room clear, 73% of it getProgramInfoLog waiting on links.
+  // gauntlet r5 CAMPAIGN F2: through compileAsyncSafe — a level change that
+  // disposes this dressing while its links are pending (Level Select -> III
+  // during the camp's Level-1 preload, a ?level=3 boot) used to throw
+  // "reading 'isReady'" from three's poll timer and leave the promise hanging.
   let compiling = null; // { d, ready }
+  const compileLog = { runs: 0, dropped: 0, timedOut: 0, maxMs: 0 };
   function precompile(d) {
     const R = stage.renderer;
-    if (typeof R.compileAsync !== 'function' || !stage.composer) return beginWarmDraw(d);
+    if (typeof R.compile !== 'function' || !R.properties || !stage.composer) return beginWarmDraw(d);
     const job2 = { d, ready: false };
     compiling = job2;
     const prevRT = R.getRenderTarget();
     try {
       R.setRenderTarget(stage.composer.readBuffer);
-      R.compileAsync(d.group, stage.camera, stage.scene).then(
-        () => {
+      compileLog.runs++;
+      compileAsyncSafe(R, d.group, stage.camera, stage.scene).then(
+        (r) => {
+          compileLog.dropped += r.dropped;
+          if (r.timedOut) compileLog.timedOut++;
+          compileLog.maxMs = Math.max(compileLog.maxMs, r.ms);
           job2.ready = true;
         },
         () => {
@@ -1367,6 +1377,7 @@ export function createArenaScene(stage, toggles, ctx) {
       active: active ? { id: active.id, disposed: !!active.disposed } : null,
       queued: [...queue],
       building: job ? job.id : null,
+      compile: { ...compileLog, pending: compiling ? compiling.d.id : null },
       ...residencyLog,
       disposedIds: [...residencyLog.disposedIds],
       freed: { ...residencyLog.freed },
