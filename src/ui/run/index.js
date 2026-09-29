@@ -883,9 +883,91 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const w = on ? chooserLabel() : 'Healer';
     const tab = on ? partyTabLine(w) : null;
     const text = on ? (tab !== null ? tab : GUEST_LINES[current] ? GUEST_LINES[current](w) : `The ${w} is choosing…`) : '';
+    const changed = guestNote.textContent !== text || guestNote.style.display !== (on && text ? '' : 'none');
     if (guestNote.textContent !== text) guestNote.textContent = text;
     const disp = on && text ? '' : 'none';
     if (guestNote.style.display !== disp) guestNote.style.display = disp;
+    placeGuestNote(disp === '', changed);
+  }
+  // fix-M5a-r5 (NET5-F1 family, 2026-09-30): the note never covers the page
+  // it talks about (at 1024x576 the party page starts 8 px from the top, so
+  // the note sat on the party strip — over the viewed tab's caret). In
+  // order: top centre while the page leaves room above it; a compact 16 px
+  // line in the band above the page; in the band under it (clear of the
+  // command bar and the network chip); beside a narrow page (the doors);
+  // in the command bar's row right of the bar (wrapping to its width).
+  // Where none is free — and while the socket screen is open (its header
+  // shows its own countdown) — it steps aside: the page's party strip /
+  // countdown carries the same news. Re-placed at once when the line
+  // changes, else at 10 Hz when the page, bar or window moved.
+  let notePlacedAt = 0;
+  let noteSig = '';
+  const NOTE_FULL = { top: '14px', left: '50%', transform: 'translateX(-50%)', padding: '8px 18px', fontSize: '18px', lineHeight: '1.2', maxWidth: '', whiteSpace: 'nowrap', textAlign: '' };
+  const NOTE_COMPACT = { ...NOTE_FULL, top: '4px', padding: '4px 14px', fontSize: '16px' };
+  const rectOf = (sel) => {
+    const e = document.querySelector(sel);
+    if (!e) return null;
+    const cs = getComputedStyle(e);
+    if (cs.display === 'none' || cs.visibility === 'hidden') return null;
+    const r = e.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 ? r : null;
+  };
+  function placeGuestNote(shown, now = false) {
+    if (!shown) return;
+    const t = performance.now();
+    if (!now && t - notePlacedAt < 100) return;
+    notePlacedAt = t;
+    const sockOpen = !!(socket && typeof socket.isOpen === 'function' && socket.isOpen());
+    const pg = current !== 'none' && screens[current] ? screens[current].el : null;
+    const pr = !sockOpen && pg && pg.style.display !== 'none' ? pg.getBoundingClientRect() : null;
+    const chipR = rectOf('#nt-hud:not(.nt-off) .nt-chip');
+    const br = rectOf('.hud-bar');
+    const q = (r) => (r ? `${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.right)},${Math.round(r.bottom)}` : '-');
+    const sig = `${sockOpen}|${window.innerWidth}x${window.innerHeight}|${q(pr)}|${q(chipR)}|${q(br)}|${guestNote.textContent}`;
+    if (!now && sig === noteSig) return;
+    noteSig = sig;
+    const setPlace = (where, css, hidden = false) => {
+      guestNote.dataset.place = where;
+      for (const k of Object.keys(css)) guestNote.style[k] = css[k];
+      guestNote.style.visibility = hidden ? 'hidden' : '';
+    };
+    if (sockOpen) return setPlace('aside', NOTE_FULL, true);
+    setPlace('top', NOTE_FULL);
+    if (!pr || pr.height <= 0) return;
+    const PAD = 4;
+    const fps = rectOf('#fps-meter');
+    const obstacles = [[pr, PAD], [chipR, PAD], [fps, 2]].filter(([o]) => o);
+    const clear = (r) => r.left >= 0 && r.top >= 0 && r.right <= window.innerWidth && r.bottom <= window.innerHeight && obstacles.every(([o, pad]) => r.right <= o.left - pad || r.left >= o.right + pad || r.bottom <= o.top - pad || r.top >= o.bottom + pad);
+    const at = (where, css) => {
+      setPlace(where, css);
+      return clear(guestNote.getBoundingClientRect());
+    };
+    if (clear(guestNote.getBoundingClientRect())) return;
+    setPlace('top', NOTE_COMPACT);
+    const h = guestNote.getBoundingClientRect().height;
+    if (pr.top - PAD >= h + 4 && at('top-compact', { ...NOTE_COMPACT, top: `${Math.max(4, Math.round((pr.top - h) / 2))}px` })) return;
+    const limit = br ? br.top : window.innerHeight;
+    if (limit - pr.bottom >= h + 2 * PAD && at('under-page', { ...NOTE_COMPACT, top: `${Math.round(pr.bottom + (limit - pr.bottom - h) / 2)}px` })) return;
+    // Wrapped variants (a column beside the page / the bar): 16 px, 1.1 lines.
+    const wrapCss = (x0, room) => ({ ...NOTE_COMPACT, left: `${x0}px`, transform: 'none', maxWidth: `${room - 26}px`, whiteSpace: 'normal', padding: '3px 12px', lineHeight: '1.1', textAlign: 'left' });
+    const besideX = Math.round(pr.right + 12);
+    const besideRoom = window.innerWidth - 14 - besideX;
+    if (besideRoom >= 200) {
+      setPlace('beside-page', wrapCss(besideX, besideRoom));
+      const r = guestNote.getBoundingClientRect();
+      if (at('beside-page', { ...wrapCss(besideX, besideRoom), top: `${Math.round(pr.top + Math.max(0, (pr.height - r.height) / 2))}px` })) return;
+    }
+    if (br) {
+      const x0 = Math.round(br.right + 10);
+      const room = window.innerWidth - 14 - x0;
+      if (room >= 160) {
+        setPlace('bar-right', wrapCss(x0, room));
+        const r = guestNote.getBoundingClientRect();
+        // Top-aligned with the bar (the corner's fps meter sits low).
+        if (r.height <= br.height && at('bar-right', { ...wrapCss(x0, room), top: `${Math.round(br.top + 1)}px` })) return;
+      }
+    }
+    setPlace('aside', NOTE_FULL, true);
   }
   bus.on('net_ping', (ev) => {
     if (current === 'none' || !Number.isInteger(ev.index)) return;

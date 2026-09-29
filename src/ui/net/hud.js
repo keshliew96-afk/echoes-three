@@ -30,6 +30,11 @@ const CSS = `
 .nt-dot { width: 9px; height: 9px; border-radius: 50%; background: ${P.hearthAmber}; box-shadow: 0 0 6px ${P.hearthAmber}AA; }
 .nt-chip.nt-warn .nt-dot { background: ${P.bone}; box-shadow: none; animation: nt-blink 0.9s steps(2) infinite; }
 .nt-chip .nt-sub { color: ${P.bone}; font-weight: 600; }
+.nt-chip .nt-short { display: none; color: ${P.bone}; font-weight: 600; }
+.nt-chip.nt-compact { gap: 7px; padding: 2px 10px 2px 9px; }
+.nt-chip.nt-compact .nt-main, .nt-chip.nt-compact .nt-sub { display: none; }
+.nt-chip.nt-compact .nt-short { display: inline; }
+.nt-chip.nt-aside, .nt-detail.nt-aside { display: none !important; }
 .nt-link { display: inline-flex; align-items: center; gap: 6px; color: ${P.bone}; font-weight: 600; font-variant-numeric: tabular-nums; }
 .nt-link.nt-off { display: none; }
 .nt-q { position: relative; display: inline-flex; align-items: flex-end; gap: 2px; height: 13px; }
@@ -74,7 +79,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
   root.id = 'nt-hud';
   root.className = 'nt-off';
   root.innerHTML = `
-    <div class="nt-chip"><span class="nt-dot"></span><span class="nt-main"></span><span class="nt-sub"></span><span class="nt-link nt-off"><span class="nt-q" data-level="good"><i></i><i></i><i></i><b class="nt-bang">!</b></span><span class="nt-lt"></span></span></div>
+    <div class="nt-chip"><span class="nt-dot"></span><span class="nt-main"></span><span class="nt-sub"></span><span class="nt-short"></span><span class="nt-link nt-off"><span class="nt-q" data-level="good"><i></i><i></i><i></i><b class="nt-bang">!</b></span><span class="nt-lt"></span></span></div>
     <div class="nt-detail" style="display:none"></div>
     <div class="nt-notes"></div>
     <div class="nt-banner nt-off"><div class="nt-bt"></div><div class="nt-bs"></div></div>
@@ -83,6 +88,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
   const chip = root.querySelector('.nt-chip');
   const main = root.querySelector('.nt-main');
   const sub = root.querySelector('.nt-sub');
+  const shortEl = root.querySelector('.nt-short');
   const linkEl = root.querySelector('.nt-link');
   const qEl = root.querySelector('.nt-q');
   const ltEl = root.querySelector('.nt-lt');
@@ -95,20 +101,109 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
   // The chip sits just ABOVE the command bar (whose height grows with the
   // viewport): at 1024x576 a fixed bottom offset put it on top of the
   // portraits. Re-measured on resize and while the HUD is visible.
+  //
+  // fix-M5a-r5 (NET5-F1 family, 2026-09-30): a modal build page — the run
+  // pages (party reward page, shop, doors, level card) and the socket
+  // screen — owns the middle of the screen, and the chip (z 64) drew over
+  // its text: the socket screen's node detail at every size, the shop's
+  // hint / Done button up to 1280x720, the party page's hint at 1024x576.
+  // While one is open the chip DOCKS where it covers none of the page: its
+  // usual place when that is clear, else the command bar's row left of the
+  // bar (the run pages keep the bar), else the band under the page (the
+  // socket screen covers the bar) — full, or compact (dot · players · link
+  // bars · ping) when only that fits; where neither fits it steps aside
+  // until the page closes (the connection banners and notes still show).
+  // Re-placed at 5 Hz while shown, so a page opening or closing re-docks it.
+  const visible = (e) => {
+    if (!e) return false;
+    const cs = getComputedStyle(e);
+    return cs.display !== 'none' && cs.visibility !== 'hidden';
+  };
+  function modalPage() {
+    const sock = document.getElementById('socket-screen');
+    if (visible(sock)) {
+      const pg = sock.querySelector('.nd-page');
+      const r = pg ? pg.getBoundingClientRect() : null;
+      if (r && r.width > 0 && r.height > 0) return { r, keepsBar: false };
+    }
+    const run = document.getElementById('run-screen');
+    if (run && run.classList.contains('rn-open') && visible(run)) {
+      for (const pg of run.querySelectorAll('.rn-page')) {
+        if (!visible(pg)) continue;
+        const r = pg.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) return { r, keepsBar: true };
+      }
+    }
+    return null;
+  }
+  const PAD = 6;
+  const hits = (x0, y0, x1, y1, r) => !!r && x0 < r.right + PAD && x1 > r.left - PAD && y0 < r.bottom + PAD && y1 > r.top - PAD;
+  let dock = 'free';
+  let placeSig = '';
   function placeChip() {
+    const H = window.innerHeight;
     const bar = document.querySelector('.hud-bar');
+    let barR = null;
     let bottom = 44;
     if (bar) {
       const r = bar.getBoundingClientRect();
-      if (r.height > 0) bottom = Math.max(14, Math.round(window.innerHeight - r.top + 10));
+      if (r.height > 0) {
+        barR = r;
+        bottom = Math.max(14, Math.round(H - r.top + 10));
+      }
     }
-    // Bottom-left column, stacked upward from the bar: chip, the optional
-    // detail line, then the notes.
-    chip.style.bottom = `${bottom}px`;
-    detail.style.bottom = `${bottom + 34}px`;
-    notes.style.bottom = `${bottom + 66}px`;
+    const m = root.classList.contains('nt-off') ? null : modalPage();
+    // Nothing moved (page, bar, window, chip text, detail line): keep the
+    // placement — the 10 Hz check then costs a few rect reads, no reflow.
+    const q = (r) => (r ? `${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.right)},${Math.round(r.bottom)}` : '-');
+    const sig = `${window.innerWidth}x${H}|${q(barR)}|${m ? q(m.r) : 'none'}|${main.textContent}|${sub.textContent}|${ltEl.textContent}|${detail.style.display}`;
+    if (sig === placeSig) return;
+    placeSig = sig;
+    chip.classList.remove('nt-aside');
+    detail.classList.remove('nt-aside');
+    // Bottom-left column, stacked upward from the chip: the optional detail
+    // line (only where it covers no page), then the notes.
+    const put = (b, where, compact) => {
+      dock = where;
+      chip.classList.toggle('nt-compact', compact);
+      chip.style.bottom = `${Math.round(b)}px`;
+      const ch = chip.offsetHeight || 32;
+      const top = H - b - ch;
+      if (m && hits(14, top - 30, 374, top - 4, m.r)) detail.classList.add('nt-aside');
+      detail.style.bottom = `${Math.round(b + ch + 4)}px`;
+      const detailOn = detail.style.display !== 'none' && !detail.classList.contains('nt-aside');
+      notes.style.bottom = `${Math.round(b + ch + (detailOn ? 36 : 8))}px`;
+    };
+    if (!m) {
+      put(bottom, 'free', false);
+      return;
+    }
+    const L = 14;
+    for (const compact of [false, true]) {
+      chip.classList.toggle('nt-compact', compact);
+      const w = chip.offsetWidth;
+      const h = chip.offsetHeight;
+      // 1. its usual place, above the command bar
+      if (!hits(L, H - bottom - h, L + w, H - bottom, m.r)) return put(bottom, 'above-bar', compact);
+      // 2. the command bar's row, left of the bar
+      if (barR && m.keepsBar) {
+        const y0 = barR.top + (barR.height - h) / 2;
+        if (L + w <= barR.left - 8 && y0 >= 0 && y0 + h <= H && !hits(L, y0, L + w, y0 + h, m.r)) return put(H - y0 - h, 'bar-row', compact);
+      }
+      // 3. the band under the page
+      const band = H - m.r.bottom;
+      if (band >= h + 4) {
+        const y0 = m.r.bottom + (band - h) / 2;
+        if (!(m.keepsBar && barR && hits(L, y0, L + w, y0 + h, barR))) return put(H - y0 - h, 'under-page', compact);
+      }
+    }
+    // 4. no room anywhere: step aside while the page is open
+    put(bottom, 'aside', false);
+    chip.classList.add('nt-aside');
+    detail.classList.add('nt-aside');
   }
   window.addEventListener('resize', () => placeChip());
+  let placeTimer = 0;
   let synced = false;
   // A join that has waited this long for the host's first snapshot says so
   // and names the way out (NET4-F1, fix-M5a-r4: the banner read "Receiving
@@ -261,6 +356,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     main.textContent = role;
     const humans = st.seats.filter((s) => s.name && s.connected).length;
     sub.textContent = `${st.code ? `Room ${st.code} · ` : ''}${humans} player${humans === 1 ? '' : 's'}`;
+    shortEl.textContent = `${humans} player${humans === 1 ? '' : 's'}`;
     refreshLink();
     chip.classList.toggle('nt-warn', !!(st.reconnecting || st.hostLost));
     if (st.reconnecting) {
@@ -317,6 +413,11 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     show(on) {
       root.classList.toggle('nt-off', !on);
       if (on) placeChip();
+      if (on && !placeTimer) placeTimer = setInterval(placeChip, 100);
+      if (!on && placeTimer) {
+        clearInterval(placeTimer);
+        placeTimer = 0;
+      }
       if (on) startLinkTimer();
       else stopLinkTimer();
       if (!on) {
@@ -347,7 +448,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
       clearTimeout(pingTimer);
       pingTimer = setTimeout(() => pingEl.classList.remove('nt-on'), 1600);
     },
-    debug: () => ({ visible: !root.classList.contains('nt-off'), banner: banner.classList.contains('nt-off') ? null : bt.textContent, chip: `${main.textContent} ${sub.textContent} ${ltEl.textContent}`.trim(), link: lastLink, notes: [...notes.children].map((n) => n.textContent) }),
+    debug: () => ({ visible: !root.classList.contains('nt-off'), banner: banner.classList.contains('nt-off') ? null : bt.textContent, chip: `${main.textContent} ${sub.textContent} ${ltEl.textContent}`.trim(), link: lastLink, notes: [...notes.children].map((n) => n.textContent), dock }),
     nameOfSeat,
     app,
   };

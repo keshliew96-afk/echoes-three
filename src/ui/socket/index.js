@@ -1166,12 +1166,16 @@ export function createSocketScreen({ bus, world }) {
   });
   // The leave countdown every open socket screen shows (a door held for a
   // socket screen, the shop leaving, a page deadline): its last 10 s.
+  // fix-M5a-r5 (NET5-F1 family): it sits IN the header, in the subtitle's
+  // place while it counts (was pinned over the header's Fill all / Close
+  // buttons, hiding Close, on every multiplayer socket screen).
   const countEl = document.createElement('div');
   countEl.className = 'nd-count';
   countEl.style.cssText =
-    'position:absolute;right:18px;top:10px;z-index:6;padding:6px 14px;border-radius:10px;' +
+    'flex:none;white-space:nowrap;padding:5px 14px;border-radius:10px;' +
     'background:#3A2A12EE;color:#F4EFE6;font:800 16px/1.2 "Nunito","Trebuchet MS",system-ui,sans-serif;border:1px solid #E8A23D;display:none;';
-  rootEl.querySelector('.nd-page').appendChild(countEl);
+  const subEl = rootEl.querySelector('.nd-sub');
+  subEl.after(countEl);
   function leaveIn() {
     let v = null;
     try {
@@ -1194,7 +1198,10 @@ export function createSocketScreen({ bus, world }) {
     const text = l ? `${l.what === 'page' ? 'Auto-pick' : 'The party leaves'} in ${Math.max(0, Math.ceil(l.ticks / 60))} s` : '';
     if (countEl.textContent !== text) countEl.textContent = text;
     const disp = l ? '' : 'none';
-    if (countEl.style.display !== disp) countEl.style.display = disp;
+    if (countEl.style.display !== disp) {
+      countEl.style.display = disp;
+      subEl.style.display = l ? 'none' : '';
+    }
   }, 200);
 
   rootEl.querySelector('[data-act="auto"]').addEventListener('click', () => autoFill());

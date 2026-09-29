@@ -32,7 +32,7 @@ const OUT = String(A.out || 'gntfixM5a5-partytabs');
 const LONG = 'Maximilian Wolfe'; // 16 = NAME_MAX
 const SIZES = [[1024, 576], [1024, 640], [1280, 720], [1600, 900], [1920, 1080], [2560, 1440]];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const out = { tool: OUT, base: BASE, reward: {}, socket: {}, shop: {}, sp: null, errors: {}, verdict: null };
+const out = { tool: OUT, base: BASE, sp: null, errors: {}, verdict: null };
 
 const GPU = ['--use-angle=d3d11', '--enable-gpu-rasterization', '--ignore-gpu-blocklist', '--enable-webgl'];
 const BG = ['--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows'];
@@ -70,7 +70,11 @@ async function waitOn(c, fn, timeout = 30000, arg) {
 }
 
 // In-page measurement (one function, serialised).
-const measure = (sel) => {
+const measure = ([sel, modalSel]) => {
+  const modal = document.querySelector(modalSel);
+  const pe = document.createElement('style');
+  pe.textContent = '* { pointer-events: auto !important; }';
+  document.head.appendChild(pe);
   const onScreen = (e) => {
     for (let n = e; n && n !== document.documentElement; n = n.parentElement) {
       const cs = getComputedStyle(n);
@@ -101,7 +105,20 @@ const measure = (sel) => {
       if (w <= 1 || h <= 1) continue;
       const small = Math.min((a.x1 - a.x0) * (a.y1 - a.y0), (b.x1 - b.x0) * (b.y1 - b.y0));
       const frac = (w * h) / small;
-      if (frac > 0.25) pairs.push({ a: a.t, ac: a.cls.slice(0, 40), b: b.t, bc: b.cls.slice(0, 40), frac: Math.round(frac * 100) / 100 });
+      if (frac > 0.25) {
+        // Who is on top across the intersection (5 sample points)?
+        const ix0 = Math.max(a.x0, b.x0), iy0 = Math.max(a.y0, b.y0), ix1 = Math.min(a.x1, b.x1), iy1 = Math.min(a.y1, b.y1);
+        let aVis = 0, bVis = 0;
+        for (const [fx, fy] of [[0.5, 0.5], [0.25, 0.3], [0.75, 0.3], [0.25, 0.7], [0.75, 0.7]]) {
+          const top = document.elementFromPoint(ix0 + (ix1 - ix0) * fx, iy0 + (iy1 - iy0) * fy);
+          if (!top) continue;
+          if (a.e === top || a.e.contains(top) || (top.contains(a.e) && !top.contains(b.e))) aVis += 1;
+          if (b.e === top || b.e.contains(top) || (top.contains(b.e) && !top.contains(a.e))) bVis += 1;
+        }
+        const inModal = (e) => !!(modal && modal.contains(e));
+        const kind = aVis && bVis ? 'text-on-text' : aVis ? (inModal(b.e) ? 'covers-modal' : 'modal-over-hud') : bVis ? (inModal(a.e) ? 'covers-modal' : 'modal-over-hud') : 'both-covered';
+        pairs.push({ a: a.t, ac: a.cls.slice(0, 40), b: b.t, bc: b.cls.slice(0, 40), frac: Math.round(frac * 100) / 100, kind, top: aVis ? 'a' : bVis ? 'b' : '-' });
+      }
     }
     return { n: boxes.length, pairs };
   };
@@ -128,15 +145,43 @@ const measure = (sel) => {
       };
     });
   }
-  return { fonts: document.fonts.status, strips: strips.length, box, tabs, audit: audit(true), auditRaw: audit(false) };
+  // The network chip vs the modal page (fix-M5a-r5 chip docking).
+  const chipEl = document.querySelector('#nt-hud .nt-chip');
+  const chipShown = !!(chipEl && getComputedStyle(chipEl).display !== 'none' && !document.getElementById('nt-hud').classList.contains('nt-off'));
+  const modalPg = modal ? (modal.id === 'socket-screen' ? modal.querySelector('.nd-page') : [...modal.querySelectorAll('.rn-page')].find((e) => getComputedStyle(e).display !== 'none')) : null;
+  const mr = R(modalPg);
+  const cr = chipShown ? R(chipEl) : null;
+  const chip = { shown: chipShown, rect: cr, compact: !!(chipEl && chipEl.classList.contains('nt-compact')), aside: !!(chipEl && chipEl.classList.contains('nt-aside')), text: chipEl ? chipEl.innerText.replace(/s+/g, ' ').trim() : null, modal: mr, overlapPx: ov(cr, mr), inView: !!(cr && cr.x >= 0 && cr.y >= 0 && cr.r <= innerWidth && cr.b <= innerHeight) };
+  const cnt = document.querySelector('#socket-screen .nd-count');
+  const count = cnt && getComputedStyle(cnt).display !== 'none' ? { text: cnt.textContent, rect: R(cnt), overButtons: [...document.querySelectorAll('#socket-screen .nd-btn')].map((b) => ov(R(cnt), R(b))).reduce((a, b) => a + b, 0) } : null;
+  const noteEl = document.querySelector('.nt-guest-note');
+  const note = noteEl && getComputedStyle(noteEl).display !== 'none' ? { text: noteEl.textContent, place: noteEl.dataset.place || '-', hidden: getComputedStyle(noteEl).visibility === 'hidden', rect: R(noteEl), overPage: ov(R(noteEl), mr), overChip: ov(R(noteEl), cr) } : null;
+  const au = audit(true);
+  const raw = audit(false);
+  pe.remove();
+  const defects = au.pairs.filter((q) => q.kind === 'text-on-text' || q.kind === 'covers-modal');
+  return { fonts: document.fonts.status, strips: strips.length, box, tabs, audit: au, auditRaw: raw, defects, chip, count, note, vw: innerWidth, vh: innerHeight };
 };
 
 const EXPECT = { Host: ['you', 'Fox', LONG, 'AI'], Fox: ['Host', 'you', LONG, 'AI'], Long: ['Host', 'Fox', 'you', 'AI'] };
+const STRIPRE = /rn-p(name|owner|chip|caret|tab)/;
 const fails = [];
+const others = [];
+const transients = []; // visible overlaps elsewhere on the page (reported, judged separately)
 function judge(where, tag, m, expectOwners) {
-  if (!m.strips) { fails.push(`${where} ${tag}: no strip on screen`); return; }
-  const pairs = m.audit.pairs.filter((p) => /rn-p/.test(p.ac) || /rn-p/.test(p.bc));
-  if (pairs.length) fails.push(`${where} ${tag}: strip text overlap ${JSON.stringify(pairs)}`);
+  if (m.note && !m.note.hidden && (m.note.overPage > 0 || m.note.overChip > 0)) fails.push(`${where} ${tag}: the guest note covers the ${m.note.overPage > 0 ? 'page' : 'net chip'} (${m.note.place})`);
+  if (m.note && m.note.hidden && !/^socket/.test(where)) others.push(`${where} ${tag}: the guest note stepped aside (no free band)`);
+  if (m.note && !m.note.hidden && m.note.rect && (m.note.rect.x < 0 || m.note.rect.y < 0 || m.note.rect.r > m.vw || m.note.rect.b > m.vh)) fails.push(`${where} ${tag}: the guest note is off screen ${JSON.stringify(m.note.rect)}`);
+  if (m.defects.length && !m.strips) others.push(`${where} ${tag}: ${JSON.stringify(m.defects)}`);
+  if (m.chip && m.chip.shown && m.chip.overlapPx > 0 && !m.strips) fails.push(`${where} ${tag}: the net chip covers the page`);
+  if (!m.strips) { if (!/^path/.test(where)) fails.push(`${where} ${tag}: no strip on screen`); return; }
+  const strip = m.defects.filter((p) => STRIPRE.test(p.ac) || STRIPRE.test(p.bc));
+  if (strip.length) fails.push(`${where} ${tag}: STRIP text overlap ${JSON.stringify(strip)}`);
+  const other = m.defects.filter((p) => !(STRIPRE.test(p.ac) || STRIPRE.test(p.bc)));
+  if (other.length) (m.otherDefects = other), others.push(`${where} ${tag}: ${JSON.stringify(other)}`);
+  if (m.chip && m.chip.shown && m.chip.overlapPx > 0) fails.push(`${where} ${tag}: the net chip covers the page (${m.chip.overlapPx} px2)`);
+  if (m.chip && m.chip.shown && !m.chip.inView) fails.push(`${where} ${tag}: the net chip is off screen ${JSON.stringify(m.chip.rect)}`);
+  if (m.count && m.count.overButtons > 0) fails.push(`${where} ${tag}: the socket countdown covers the header buttons`);
   for (const t of m.tabs) {
     if (t.ovNameOwner || t.ovOwnerChip || t.ovNameChip) fails.push(`${where} ${tag} seat ${t.seat}: overlap px name/owner ${t.ovNameOwner} owner/chip ${t.ovOwnerChip} name/chip ${t.ovNameChip}`);
     if (t.nameClipped) fails.push(`${where} ${tag} seat ${t.seat}: name clipped`);
@@ -175,55 +220,78 @@ try {
   await sleep(900);
   out.controllersGuest = await G.page.evaluate(() => { try { return window.__echoes.content.world().allySystem().controllers(); } catch (e) { return String(e); } });
 
-  // 1) The party reward page.
-  for (const [w, h] of SIZES) {
-    for (const c of cl) await c.page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
-    await sleep(1000);
-    const r = {};
-    for (const c of cl) {
-      r[c.tag] = await c.page.evaluate(measure, '#run-screen .rn-pstrip');
-      judge(`reward ${w}x${h}`, c.tag, r[c.tag], EXPECT[c.tag]);
-      if (w === 1024 || w === 1920) await c.page.screenshot({ path: path.join(CAP, `${OUT}-reward-${c.tag}-${w}x${h}.png`) });
-    }
-    out.reward[`${w}x${h}`] = r;
-    console.log('reward', w, h, cl.map((c) => `${c.tag}: ${r[c.tag].tabs.map((t) => `${t.name}|${t.owner}|ov${t.ovNameOwner}${t.ownerClipped ? '|ell' : ''}`).join(' ')} pairs ${r[c.tag].audit.pairs.length}/${r[c.tag].auditRaw.pairs.length}`).join(' || '));
+  const line = (r, c) => `${c.tag}: ${r.tabs.map((t) => `${t.name}|${t.owner}|ov${t.ovNameOwner}${t.ownerClipped ? '|ell' : ''}`).join(' ')} vis ${r.defects.length} chip ${r.chip.shown ? (r.chip.compact ? 'compact' : 'full') : r.chip.aside ? 'aside' : 'off'}${r.count ? ' count[' + r.count.text + ']' : ''}${r.note ? ` note[${r.note.place}${r.note.hidden ? ' hidden' : ''} ov${r.note.overPage}/${r.note.overChip}]` : ''}`;
+  // One pass over the sizes: each client's own view, then (guests) another
+  // tab's view — the guest note ("Host is choosing…") shows there.
+  const TIGHT = [[1024, 576], [1024, 640], [1280, 720], [1920, 1080]];
+  // Measure + judge; a failure that is gone 600 ms later is a TRANSIENT (a page
+  // re-rendering between two 10 Hz placements) — kept apart, not a verdict.
+  async function settle(c, where, args) {
+    const before = fails.length;
+    const m = await c.page.evaluate(measure, args);
+    judge(where, c.tag, m, EXPECT[c.tag]);
+    if (fails.length === before) return m;
+    const first = fails.splice(before);
+    await sleep(600);
+    const m2 = await c.page.evaluate(measure, args);
+    const b2 = fails.length;
+    judge(where, c.tag, m2, EXPECT[c.tag]);
+    if (fails.length === b2) transients.push(...first.map((f) => f + ' (gone 600 ms later)'));
+    return m2;
   }
-  // 2) The socket screen (each client opens its own), at the sizes.
-  for (const c of cl) await c.page.evaluate(() => window.__echoes.cmd('openSocket'));
-  await sleep(800);
-  for (const [w, h] of SIZES) {
-    for (const c of cl) await c.page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
-    await sleep(1000);
-    const r = {};
-    for (const c of cl) {
-      r[c.tag] = await c.page.evaluate(measure, '.nd-strip .rn-pstrip');
-      judge(`socket ${w}x${h}`, c.tag, r[c.tag], EXPECT[c.tag]);
-      if (w === 1024 || w === 1920) await c.page.screenshot({ path: path.join(CAP, `${OUT}-socket-${c.tag}-${w}x${h}.png`) });
-    }
-    out.socket[`${w}x${h}`] = r;
-    console.log('socket', w, h, cl.map((c) => `${c.tag}: ${r[c.tag].tabs.map((t) => `${t.name}|${t.owner}|ov${t.ovNameOwner}${t.ownerClipped ? '|ell' : ''}`).join(' ')} pairs ${r[c.tag].audit.pairs.length}`).join(' || '));
-  }
-  for (const c of cl) await c.page.evaluate(() => window.__echoes.cmd('closeSocket'));
-  for (const c of cl) await c.page.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1 });
-  // 3) The party shop: everyone decides, then the host skips to room 7.
-  for (const c of cl) await c.page.evaluate(() => { try { const s = window.__echoes.net.seat ?? 0; window.__echoes.content.world().runSystem().partyPick(s, 'leave'); } catch { /* */ } return 1; });
-  await sleep(1500);
-  out.skip = await H.page.evaluate(() => { try { return window.__echoes.cmd('skipToRoom', 7); } catch (e) { return String(e); } });
-  try {
-    for (const c of cl) await waitOn(c, () => { const v = window.__echoes.state().run; return v.phase === 'shop'; }, 45000);
-    await sleep(1200);
-    for (const [w, h] of SIZES) {
+  async function pass(name, stripSel, modalSel, { other = false, otherSizes = SIZES, sizes = SIZES, key = 'KeyQ', back = 'KeyE' } = {}) {
+    out[name] = out[name] || {};
+    for (const [w, h] of sizes) {
       for (const c of cl) await c.page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
       await sleep(1000);
       const r = {};
       for (const c of cl) {
-        r[c.tag] = await c.page.evaluate(measure, '#run-screen .rn-shopstrip .rn-pstrip');
-        judge(`shop ${w}x${h}`, c.tag, r[c.tag], EXPECT[c.tag]);
-        if (w === 1024 || w === 1920) await c.page.screenshot({ path: path.join(CAP, `${OUT}-shop-${c.tag}-${w}x${h}.png`) });
+        r[c.tag] = await settle(c, `${name} ${w}x${h}`, [stripSel, modalSel]);
+        if (w === 1024 || w === 1920) await c.page.screenshot({ path: path.join(CAP, `${OUT}-${name}-${c.tag}-${w}x${h}.png`) });
+        if (other && c.tag !== 'Host' && otherSizes.some(([a, b]) => a === w && b === h)) {
+          await c.page.keyboard.press(key);
+          await sleep(450);
+          const o = await settle(c, `${name}-other ${w}x${h}`, [stripSel, modalSel]);
+          if (!o.note || o.note.hidden) fails.push(`${name}-other ${w}x${h} ${c.tag}: no guest note while viewing another tab`);
+          r[c.tag + '-other'] = o;
+          if (w === 1024 || w === 1920) await c.page.screenshot({ path: path.join(CAP, `${OUT}-${name}-other-${c.tag}-${w}x${h}.png`) });
+          await c.page.keyboard.press(back);
+          await sleep(350);
+        }
       }
-      out.shop[`${w}x${h}`] = r;
-      console.log('shop', w, h, cl.map((c) => `${c.tag}: ${r[c.tag].tabs.map((t) => `${t.name}|${t.owner}|ov${t.ovNameOwner}${t.ownerClipped ? '|ell' : ''}`).join(' ')} pairs ${r[c.tag].audit.pairs.length}`).join(' || '));
+      out[name][`${w}x${h}`] = r;
+      console.log(name, w, h, Object.keys(r).map((k) => line(r[k], { tag: k })).join(' || '));
     }
+  }
+  // 1) The party reward page (30 s page deadline: the other-tab views at the tight sizes only).
+  await pass('reward', '#run-screen .rn-pstrip', '#run-screen', { other: true, otherSizes: TIGHT });
+  // 2) The socket screen during the page's last 10 s (the header countdown), tight sizes.
+  for (const c of cl) await c.page.evaluate(() => window.__echoes.cmd('openSocket'));
+  try {
+    await waitOn(H, () => { const v = window.__echoes.state().run; return !v.party || v.party.deadlineInTicks === null || v.party.deadlineInTicks <= 560; }, 30000);
+  } catch { /* */ }
+  await pass('socketcount', '.nd-strip .rn-pstrip', '#socket-screen', { sizes: [[1024, 576], [1280, 720]] });
+  for (const c of cl) await c.page.evaluate(() => window.__echoes.cmd('closeSocket'));
+  for (const c of cl) await c.page.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1 });
+  // 3) Everyone decides -> the door page (a guest's note: "The Healer picks the door…").
+  for (const c of cl) await c.page.evaluate(() => { try { const s = window.__echoes.net.seat ?? 0; window.__echoes.content.world().runSystem().partyPick(s, 'leave'); } catch { /* */ } return 1; });
+  try {
+    for (const c of cl) await waitOn(c, () => window.__echoes.state().run.phase === 'path', 20000);
+    await sleep(900);
+    await pass('path', '#run-screen .rn-pstrip-none', '#run-screen');
+  } catch (e) { out.pathErr = String(e.message || e); console.log('path phase not reached', out.pathErr); }
+  // 4) The party shop (host skips to room 7).
+  out.skip = await H.page.evaluate(() => { try { return window.__echoes.cmd('skipToRoom', 7); } catch (e) { return String(e); } });
+  try {
+    for (const c of cl) await waitOn(c, () => window.__echoes.state().run.phase === 'shop', 45000);
+    await sleep(1200);
+    await pass('shop', '#run-screen .rn-shopstrip .rn-pstrip', '#run-screen', { other: true });
+    // 5) The socket screen between rooms (the shop), every size.
+    for (const c of cl) await c.page.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1 });
+    for (const c of cl) await c.page.evaluate(() => window.__echoes.cmd('openSocket'));
+    await sleep(800);
+    await pass('socket', '.nd-strip .rn-pstrip', '#socket-screen');
+    for (const c of cl) await c.page.evaluate(() => window.__echoes.cmd('closeSocket'));
   } catch (e) { out.shopErr = String(e.message || e); fails.push('shop not reached: ' + out.shopErr); }
 } catch (e) { out.crash = String(e.stack || e); fails.push('crash ' + out.crash); console.log('CRASH', out.crash); }
 finally {
@@ -241,7 +309,7 @@ try {
   await c.page.evaluate(() => window.__echoes.cmd('killAllEnemies'));
   await waitOn(c, () => { const v = window.__echoes.state().run; return v.phase === 'reward' && !!v.party; }, 60000);
   await sleep(1000);
-  out.sp = await c.page.evaluate(measure, '#run-screen .rn-pstrip');
+  out.sp = await c.page.evaluate(measure, ['#run-screen .rn-pstrip', '#run-screen']);
   judge('sp 1920x1080', 'sp', out.sp, null);
   await c.page.screenshot({ path: path.join(CAP, `${OUT}-sp-1920x1080.png`) });
   out.errors.sp = c.errors;
@@ -250,7 +318,12 @@ try {
   await c.browser.close().catch(() => {});
 } catch (e) { fails.push('sp crash ' + String(e.message || e)); }
 out.fails = fails;
+out.others = others;
+out.transients = transients;
 out.verdict = fails.length ? 'FAIL' : 'PASS';
 fs.writeFileSync(path.join(CAP, `${OUT}.json`), JSON.stringify(out, null, 1));
 console.log(out.verdict, fails.length, JSON.stringify(fails.slice(0, 20)));
+console.log('TRANSIENT', transients.length, JSON.stringify(transients));
+console.log('OTHER visible overlaps', others.length);
+for (const o of others) console.log('  ', o.slice(0, 600));
 process.exit(0);
