@@ -63,6 +63,7 @@ export const TAP_SCRIPT = `(() => {
   const db = (p) => p > 0 ? Math.round(10 * Math.log10(p) * 100) / 100 : -999;
   G.reset = () => { for (const t of G.ctxs) { t.n = 0; t.sl = 0; t.sr = 0; t.peak = 0; t.over0 = 0; t.overM1 = 0; t.blocks = []; } };
   G.read = () => { const t = G.ctxs[G.ctxs.length - 1]; if (!t || !t.n) return null; return { n: t.n, rmsDb: db((t.sl + t.sr) / (2 * t.n)), lDb: db(t.sl / t.n), rDb: db(t.sr / t.n), peakDb: t.peak > 0 ? Math.round(20 * Math.log10(t.peak) * 100) / 100 : -999, over0: t.over0, overM1: t.overM1, blocks: t.blocks.length }; };
+  G.bin = async (hz, reads = 12) => { const t = G.ctxs[G.ctxs.length - 1]; const a = t.an; const buf = new Float32Array(a.frequencyBinCount); const k = Math.round(hz / (a.context.sampleRate / a.fftSize)); let acc = 0; for (let i = 0; i < reads; i++) { a.getFloatFrequencyData(buf); let m = -999; for (let j = k - 2; j <= k + 2; j++) m = Math.max(m, buf[j]); acc += Math.pow(10, m / 10); await new Promise(r => setTimeout(r, 60)); } return Math.round(10 * Math.log10(acc / reads) * 100) / 100; };
   G.series = (from = 0) => { const t = G.ctxs[G.ctxs.length - 1]; if (!t) return []; return t.blocks.slice(from).map(b => [b[0], db((b[1] + b[2]) / 2), b[3] > 0 ? Math.round(20 * Math.log10(b[3]) * 10) / 10 : -999]); };
 })();`;
 export async function bootTap(params = '', opts = {}) {
@@ -77,4 +78,35 @@ export async function bootTap(params = '', opts = {}) {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 180000 });
   await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick >= 0, { timeout: 180000 });
   return { browser, page, errors, consoleLines, url };
+}
+// Background 100 ms sampler of the music/master taps + music/app/campaign state (page side).
+export async function startSampler(page, periodMs = 100) {
+  await page.evaluate((periodMs) => {
+    const E = window.__echoes, A = E.audio;
+    const S = (window.__gntSamp = { rows: [], t0: performance.now(), on: true });
+    const tick = () => {
+      if (!S.on) return;
+      try {
+        const m = A.meters(); A.meterReset();
+        const mu = A.music(); const c = E.campaign ? E.campaign.state() : null;
+        S.rows.push([Math.round(performance.now() - S.t0), m.music.rmsDb, m.master.rmsDb, mu.state, mu.theme, mu.crossfading ? 1 : 0, E.app.state, (E.app.stack() || []).join('>'), c ? c.transitionState + ':' + c.level + ':' + c.phase : '', m.music.centroidHz, mu.stinger ? 1 : 0, m.sfx.peakDb, m.ui.peakDb]);
+      } catch (e) { S.rows.push([Math.round(performance.now() - S.t0), 'ERR ' + e.message]); }
+      setTimeout(tick, periodMs);
+    };
+    tick();
+  }, periodMs);
+}
+export async function stopSampler(page) {
+  return page.evaluate(() => { const S = window.__gntSamp; S.on = false; return S.rows; });
+}
+// Longest run (ms) of consecutive samples with music tap below thr (dB), excluding rows whose music state is excluded.
+export function gaps(rows, thr = -50, exclude = ['silence']) {
+  let best = 0, cur = 0, start = null, bestAt = null; const runs = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i]; const dt = r[0] - rows[i - 1][0];
+    if (typeof r[1] === 'number' && r[1] < thr && !exclude.includes(r[3])) { if (cur === 0) start = r[0]; cur += dt; if (cur > best) { best = cur; bestAt = start; } }
+    else { if (cur > 300) runs.push([start, cur]); cur = 0; }
+  }
+  if (cur > 300) runs.push([start, cur]);
+  return { longestMs: best, at: bestAt, runsOver300: runs };
 }
