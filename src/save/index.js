@@ -22,6 +22,7 @@ import { canonicalJSON } from '../core/canonical.js';
 import { createGameplayRng } from '../core/rng.js';
 import { SKILL_SLOTS } from '../core/constants.js';
 import { scriptedInput } from '../sim/script.js';
+import { partySeed } from '../sim/party.js';
 import { levelFor } from '../data/levels.js';
 import { createStateIO } from './capture.js';
 import { buildFile, parseFile, encodeOrdered, clonePlain, SCHEMA, campaignMeta, buildsMeta } from './codec.js';
@@ -951,10 +952,16 @@ export function createSaveSystem({
   } catch (err) {
     console.warn('[save] boot snapshot failed', err);
   }
+  // Every stream the boot derives from the gameplay seed is re-derived from
+  // the NEW seed, so a New Game camp is exactly a fresh boot with that seed
+  // (G2.9): the gameplay stream AND the party stream (PLAN §16.3
+  // partySeed(seed), no gameplay draw — gauntlet r5 SAVE5-F1: the boot
+  // snapshot's party stream used to ride into every later New Game).
   function freshTree(seed) {
     if (!bootTree) return null;
     const t = clonePlain(bootTree);
     t.rng = createGameplayRng(seed >>> 0).getState();
+    if (t.systems && t.systems.party && t.systems.party.rng) t.systems.party.rng = createGameplayRng(partySeed(seed >>> 0)).getState();
     t.app = { playtimeTicks: 0, runKillBase: 0 };
     return t;
   }
