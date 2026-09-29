@@ -3322,7 +3322,11 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
   unchanged (`systems.skills`, `systems.build`, `run.reward`, `run.shop`,
   `run.wallet`).
 - `meta.party = [{ classId, skills: [4 ids|null], filled, purse }] ×4` (the
-  slot list's build lines).
+  slot list's build lines). *As built:* stored as `meta.builds` (the key
+  `meta.party` already held the four HP entries `{ classId, hp, maxHp }`
+  since schema 1); the slot detail joins the two into one table per save —
+  Party · HP · Skills (icons) · Nodes filled/sockets · Glint — that fits
+  without scrolling at every §16.4 layout size (fix-M2-r5, SAVE5-F2).
 - **`MIGRATIONS[3]`** (src/save/codec.js; pure, deterministic, no game RNG;
   frozen constants like MIGRATIONS[1]): creates `systems.party` — `rng`
   seeded from the save's gameplay seed by the §16.3 derivation, seats 1–3 =

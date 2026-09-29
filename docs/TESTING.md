@@ -834,6 +834,25 @@ screen follows a delete, ended runs of both tabs kept),
 and `tools/gntfixM24-sc-twotabs3x.mjs` (the critic's exit matrix + each B's
 unwritten seconds).
 
+**fix-M2-r5 (v0.5.173+).** *G2.9:* New Game after Quit to Title re-derives
+the party stream (`systems.party.rng = partySeed(newSeed)`, PLAN §16.3) as
+well as the gameplay stream, so its camp hashes like `?menu=0&seed=<seed>
+&freeze=1`. *Slot detail:* the four builds are a table (Party · HP · Skills
+as the HUD's skill icons, names on hover / aria · Nodes filled/sockets ·
+Glint purse) from `meta.builds` joined with `meta.party` (HP); the picture is
+the flexible part of the panel (≥ 120 design px, ≤ 16:9 of the panel width)
+so every line fits at 1024x576 … 2560x1440; below those sizes the text box
+scrolls with a chevron, the wheel, the right stick and Up / Down on the
+panel's buttons. Probes (`node tools/gntfixM25-drive.mjs <scenario> [--w --h]
+[--tag t]`, `GFM25_BASE` = the page origin, default the dev server):
+`tools/gntfixM25-sc-g29.mjs` (`GFM25_G29=clean|dirty`), `-g29repeat.mjs`,
+`-g29seed.mjs` (the critic's G2.9 diff), `tools/gntfixM25-sc-detailfit.mjs`
+(10 window sizes: 0 clipped leaves, no scroller, three ally rows with 4
+icons; `GFM25_PURSE=999` for the widest Glint column; 800x450: keys / stick /
+wheel reach the last line), `tools/gntfixM25-sc-detailstates.mjs` (camp,
+damaged, Save tab empty / overwrite at 1024x576 and 1920x1080),
+`tools/gntfixM25-sc-detailwheel.mjs` (the critic's label probe).
+
 ### M5a — network core: server, lobby, protocol, conditioner, netbench (Gauntlet W3, owner M5a)
 
 **Session server** (zero npm dependencies — node:http / crypto / os only):

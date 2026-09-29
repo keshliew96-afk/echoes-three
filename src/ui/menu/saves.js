@@ -23,6 +23,9 @@ import { PALETTE as P } from '../../data/palette.js';
 import { createHints } from './hints.js';
 import { createRecordsScreen } from './records.js';
 import { transitWhere } from '../../save/describe.js';
+import { iconEl } from '../hud/icons.js';
+import { SKILLS } from '../../sim/skills.js';
+import { SKILL_SLOTS, SOCKETS_PER_SKILL } from '../../core/constants.js';
 
 const SAVE_ERRORS = {
   quota: 'Not enough browser storage — delete a slot or export saves to files.',
@@ -103,6 +106,50 @@ export function whereLine(m) {
   return 'Camp — at the hearth';
 }
 
+// The four characters of a save, in seat order (gauntlet r5 SAVE5-F2): the
+// schema-4 build lines (meta.builds — PLAN §16.6's "slot list's build lines":
+// classId, skills [4 ids|null], filled, purse) joined with the party's HP
+// (meta.party). A meta written before schema 4 (no builds) keeps what it
+// has: the Healer's skills (meta.skills) and every character's HP.
+export function partyLines(meta) {
+  const m = meta || {};
+  const hp = Array.isArray(m.party) ? m.party.filter(Boolean) : [];
+  const builds = Array.isArray(m.builds) ? m.builds.filter(Boolean) : [];
+  const n = Math.max(hp.length, builds.length);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const b = builds[i] ?? null;
+    const classId = (b && b.classId) || (hp[i] && hp[i].classId) || null;
+    const h = hp.find((p) => p.classId === classId) ?? hp[i] ?? null;
+    let skills = null;
+    if (b && Array.isArray(b.skills)) skills = b.skills.slice(0, SKILL_SLOTS);
+    else if (classId === 'healer' && Array.isArray(m.skills)) skills = m.skills.slice(0, SKILL_SLOTS);
+    if (skills) while (skills.length < SKILL_SLOTS) skills.push(null);
+    const owned = skills ? skills.filter(Boolean).length : 0;
+    out.push({
+      classId,
+      name: CLASS_NAME[classId] || classId || '—',
+      hp: h && Number.isFinite(h.hp) ? h.hp : null,
+      maxHp: h && Number.isFinite(h.maxHp) ? h.maxHp : null,
+      skills,
+      filled: b && Number.isFinite(b.filled) ? b.filled : null,
+      sockets: owned * SOCKETS_PER_SKILL,
+      purse: b && Number.isFinite(b.purse) ? b.purse : null,
+    });
+  }
+  return out;
+}
+const skillName = (id) => (id && SKILLS[id] && SKILLS[id].name) || (id ? String(id).replace(/_/g, ' ') : 'empty slot');
+// "Tank 150/150 HP · Taunting Roar, … · 32/32 nodes · 24 Glint" (row / panel labels).
+export function partyLineText(p) {
+  const bits = [p.name];
+  if (p.hp !== null && p.maxHp) bits.push(`${Math.round(p.hp)}/${p.maxHp} HP`);
+  if (p.skills) bits.push(p.skills.filter(Boolean).map(skillName).join(', ') || 'no skills');
+  if (p.filled !== null) bits.push(`${p.filled}/${p.sockets} nodes`);
+  if (p.purse !== null) bits.push(`${p.purse} Glint`);
+  return bits.join(' · ');
+}
+
 // ---------------------------------------------------------------- style --
 const CSS = `
 .sv-screen .sv-panel {
@@ -161,23 +208,56 @@ const CSS = `
 .sv-pip > i { display: block; height: 100%; background: ${P.bone}; }
 .sv-pip.sv-down { background: transparent; border-style: dashed; }
 .sv-glint { font-size: ${px(22)}; color: ${P.paleGold}; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* The detail panel (gauntlet r5 SAVE5-F2): picture, name, then ONE scroll
+   box (where / when / played / file + the four builds) and the actions. The
+   picture is the flexible part — it takes the height the text leaves (up to
+   16:9 of the panel width) and never pushes a line out of view; only when
+   even its minimum leaves no room does the text box scroll (visible thin
+   scrollbar, a chevron at the cut edge, wheel, right stick, and Up / Down on
+   the panel's buttons). */
 .sv-detail {
   flex: 0 0 38%; min-width: 0; display: flex; flex-direction: column; gap: ${px(10)};
   padding: ${px(18)} ${px(22)}; border-radius: ${px(14)}; background: ${P.voidCharcoal}; border: 1px solid ${P.warmGrey}44; overflow: hidden;
+  container-type: inline-size;
 }
-.sv-big { width: 100%; aspect-ratio: 16 / 9; max-height: 26vh; border-radius: ${px(10)}; overflow: hidden; background: #161411;
-  border: 1px solid ${P.warmGrey}55; display: flex; align-items: center; justify-content: center; color: ${P.warmGrey}; font-size: ${px(24)}; flex: 0 0 auto; }
+.sv-big { width: 100%; flex: 1 1 0; min-height: ${px(120)}; max-height: min(calc(100cqw * 0.5625), 30vh); border-radius: ${px(10)}; overflow: hidden; background: #161411;
+  border: 1px solid ${P.warmGrey}55; display: flex; align-items: center; justify-content: center; color: ${P.warmGrey}; font-size: ${px(24)}; }
 .sv-big img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .sv-dname { font-size: ${px(30)}; line-height: 1.3; padding-bottom: ${px(2)}; font-weight: 800; letter-spacing: 0.04em; color: ${P.parchment}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 0 auto; }
-.sv-dl { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; gap: ${px(2)} ${px(14)}; margin: 0; font-size: ${px(22)}; line-height: 1.35; overflow-y: auto; overflow-x: hidden; min-height: 0; flex: 1 1 auto; scrollbar-color: ${P.warmGrey}88 transparent; }
+.sv-dscroll {
+  flex: 0 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: ${px(10)};
+  scrollbar-width: thin; scrollbar-color: ${P.warmGrey}AA transparent; position: relative;
+}
+.sv-dscroll.sv-more-below::after {
+  content: '▾'; position: sticky; bottom: 0; display: block; flex: 0 0 auto; pointer-events: none;
+  height: ${px(34)}; margin-top: ${px(-34)}; line-height: ${px(40)}; text-align: center; font-size: ${px(24)}; color: ${P.bone};
+  background: linear-gradient(180deg, ${P.voidCharcoal}00 0%, ${P.voidCharcoal}F2 75%);
+}
+.sv-dl { display: grid; grid-template-columns: minmax(${px(68)}, max-content) minmax(0, 1fr); align-content: start; gap: ${px(2)} ${px(14)}; margin: 0; font-size: ${px(22)}; line-height: 1.35; flex: 0 0 auto; }
 .sv-dl dt { color: ${P.warmGrey}; margin: 0; white-space: nowrap; }
 .sv-dl dd { color: ${P.bone}; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sv-dl dd.sv-wrap { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 /* Rows size to their (wrapped) content: an overflow:hidden grid item has a
    zero automatic minimum, so in a short panel the auto rows used to shrink to
-   one line and clip the second line of Where / Party / Skills (r3). The list
-   scrolls instead when it is taller than the panel. */
+   one line and clip the second line of Where / Party / Skills (r3). */
 .sv-dl { grid-auto-rows: max-content; }
+/* The four builds (PLAN §16.6 meta.builds, BUILD_BRIEF §25.6): one line per
+   character — class, HP, the four skills as the HUD's own icons (names on
+   hover and for screen readers), nodes socketed / sockets, purse. */
+.sv-party { width: 100%; border-collapse: collapse; font-size: ${px(22)}; line-height: 1.3; flex: 0 0 auto; }
+.sv-party th, .sv-party td { padding: ${px(2)} 0; white-space: nowrap; text-align: left; font-weight: 400; vertical-align: middle; }
+.sv-party th + th, .sv-party th + td, .sv-party td + td { padding-left: ${px(12)}; }
+.sv-party thead th { color: ${P.warmGrey}; }
+.sv-party tbody th { color: ${P.parchment}; font-weight: 800; }
+.sv-party .sv-num { text-align: right; font-variant-numeric: tabular-nums; color: ${P.bone}; }
+.sv-party .sv-gl { color: ${P.paleGold}; font-weight: 700; }
+.sv-party .sv-skc { text-align: center; }
+.sv-party tr.sv-down td.sv-hp { color: ${P.warmGrey}; }
+.sv-sks { display: inline-flex; gap: ${px(4)}; vertical-align: middle; }
+.sv-sk { width: ${px(30)}; height: ${px(30)}; border-radius: ${px(6)}; border: 1px solid ${P.warmGrey}66; background: #161411; color: ${P.bone};
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.sv-sk svg { width: ${px(24)}; height: ${px(24)}; display: block; }
+.sv-sk.sv-none { border-style: dashed; background: transparent; }
 .sv-msg { font-size: ${px(22)}; color: ${P.parchment}; line-height: 1.4; white-space: pre-line; overflow-y: auto; min-height: 0; flex: 0 1 auto; }
 .sv-acts { display: flex; flex-wrap: wrap; gap: ${px(8)}; margin-top: auto; flex: 0 0 auto; padding-top: ${px(4)}; }
 .sv-acts .ap-btn { min-width: ${px(96)}; padding: 0 ${px(14)}; font-size: ${px(22)}; letter-spacing: 0.04em; }
@@ -193,7 +273,7 @@ const CSS = `
 .sv-rename .ap-dlg input.ap-focus { outline: max(2px, ${px(2)}) solid ${P.hearthAmber}; outline-offset: ${px(2)}; border-color: ${P.hearthAmber}AA; }
 .sv-rename .sv-count { font-size: ${px(22)}; color: ${P.warmGrey}; text-align: right; }
 @media (max-width: 1180px) {
-  .sv-detail { flex-basis: 40%; padding: ${px(14)} ${px(16)}; }
+  .sv-detail { flex-basis: 42%; padding: ${px(14)} ${px(16)}; }
   .sv-row { grid-template-columns: ${px(128)} minmax(0, 1fr) auto; min-height: ${px(92)}; }
   .sv-thumb { width: ${px(128)}; height: ${px(72)}; }
   .sv-side .sv-pips { display: none; }
@@ -203,8 +283,19 @@ const CSS = `
   .sv-big { display: none; }
 }
 @media (max-height: 700px) {
-  .sv-dl { font-size: ${px(22)}; line-height: 1.25; }
+  .sv-dl, .sv-party { font-size: ${px(22)}; line-height: 1.25; }
   .sv-big { max-height: 22vh; }
+  .sv-dscroll { gap: ${px(8)}; }
+}
+@media (max-width: 1180px) {
+  .sv-party th + th, .sv-party th + td, .sv-party td + td { padding-left: ${px(7)}; }
+  .sv-sks { gap: ${px(2)}; }
+  .sv-sk { width: ${px(27)}; height: ${px(27)}; }
+  .sv-sk svg { width: ${px(21)}; height: ${px(21)}; }
+  /* Overwrite · Rename · Export · Delete stay on one line (a wrapped second
+     button row pushed the File line out of a 1024x576 panel). */
+  .sv-acts { gap: ${px(6)}; }
+  .sv-acts .ap-btn { min-width: ${px(84)}; padding: 0 ${px(10)}; }
 }
 `;
 let styled = false;
@@ -215,6 +306,79 @@ function installSaveStyle() {
   s.id = 'sv-style';
   s.textContent = CSS;
   document.head.appendChild(s);
+}
+
+// The party table of the detail panel: Party | HP | Skills | Nodes | Glint.
+function partyTable(lines) {
+  const t = document.createElement('table');
+  t.className = 'sv-party';
+  t.setAttribute('aria-label', 'Party builds');
+  const head = document.createElement('thead');
+  const hr = document.createElement('tr');
+  for (const [label, num] of [
+    ['Party', false],
+    ['HP', true],
+    ['Skills', 'sv-skc'],
+    ['Nodes', true],
+    ['Glint', true],
+  ]) {
+    const th = document.createElement('th');
+    th.scope = 'col';
+    th.textContent = label;
+    if (num) th.className = num === true ? 'sv-num' : num;
+    hr.appendChild(th);
+  }
+  head.appendChild(hr);
+  t.appendChild(head);
+  const body = document.createElement('tbody');
+  for (const p of lines) {
+    const tr = document.createElement('tr');
+    tr.dataset.cls = p.classId || '';
+    if (p.hp !== null && p.hp <= 0) tr.className = 'sv-down';
+    tr.title = partyLineText(p);
+    const th = document.createElement('th');
+    th.scope = 'row';
+    th.textContent = p.name;
+    const hp = document.createElement('td');
+    hp.className = 'sv-num sv-hp';
+    hp.textContent = p.hp !== null && p.maxHp ? `${Math.round(p.hp)}/${p.maxHp}` : '—';
+    const sk = document.createElement('td');
+    sk.className = 'sv-skc';
+    if (p.skills) {
+      const wrap = document.createElement('span');
+      wrap.className = 'sv-sks';
+      wrap.setAttribute('role', 'img');
+      wrap.setAttribute('aria-label', p.skills.filter(Boolean).map(skillName).join(', ') || 'no skills');
+      for (const id of p.skills) {
+        const s = document.createElement('span');
+        s.className = id ? 'sv-sk' : 'sv-sk sv-none';
+        s.title = skillName(id);
+        if (id) {
+          s.dataset.skill = id;
+          s.appendChild(iconEl(id, { size: 24 }));
+        }
+        wrap.appendChild(s);
+      }
+      sk.appendChild(wrap);
+    } else sk.textContent = '—';
+    const nodes = document.createElement('td');
+    nodes.className = 'sv-num';
+    nodes.textContent = p.filled !== null ? `${p.filled}/${p.sockets}` : '—';
+    const gl = document.createElement('td');
+    gl.className = 'sv-num sv-gl';
+    gl.textContent = p.purse !== null ? `◉ ${p.purse}` : '—';
+    tr.append(th, hp, sk, nodes, gl);
+    body.appendChild(tr);
+  }
+  t.appendChild(body);
+  return t;
+}
+
+// The cut-edge chevron of a scroll box that has more below its fold.
+function moreMarks(box) {
+  if (!box || !box.isConnected) return;
+  const below = box.scrollHeight - box.clientHeight - box.scrollTop > 2;
+  box.classList.toggle('sv-more-below', below);
 }
 
 function mkBtn(label, id, cls, onPress) {
@@ -509,7 +673,7 @@ export function createSavesScreen(ctx) {
       side.appendChild(pips(m.meta));
       const g = document.createElement('div');
       g.className = 'sv-glint';
-      g.textContent = m.meta.mode === 'run' ? `◆ ${m.meta.wallet ?? 0}` : '';
+      g.textContent = m.meta.mode === 'run' ? `◉ ${m.meta.wallet ?? 0}` : '';
       side.appendChild(g);
     }
     b.appendChild(side);
@@ -518,7 +682,8 @@ export function createSavesScreen(ctx) {
       b.setAttribute('aria-busy', 'true');
       l1.textContent = 'Saving…';
     }
-    b.setAttribute('aria-label', `${name.textContent}. ${l1.textContent}. ${l2.textContent}`);
+    const party = !m.empty && m.status === 'ok' ? partyLines(m.meta).map(partyLineText).join('. ') : '';
+    b.setAttribute('aria-label', `${name.textContent}. ${l1.textContent}. ${l2.textContent}${party ? `. ${party}` : ''}`);
     b.addEventListener('click', () => primary(m.id));
     return b;
   }
@@ -557,6 +722,8 @@ export function createSavesScreen(ctx) {
       detailEl.appendChild(t);
     } else {
       const meta = m.meta || {};
+      const box = document.createElement('div');
+      box.className = 'sv-dscroll';
       const dl = document.createElement('dl');
       dl.className = 'sv-dl';
       const add = (k, v, wrap = false) => {
@@ -569,14 +736,21 @@ export function createSavesScreen(ctx) {
       };
       add('Where', whereLine(m), true);
       add('Saved', `${fmtDate(m.savedAt)} · ${fmtAgo(m.savedAt)}`);
-      add('Played', fmtPlaytime(meta.playtimeSec));
-      add('Party', (meta.party || []).map((p) => `${CLASS_NAME[p.classId] || p.classId} ${Math.round(p.hp)}/${p.maxHp}`).join(' · ') || '—', true);
-      const skills = (meta.skills || []).filter(Boolean);
-      add('Skills', skills.length ? `${skills.length} — ${skills.map((s) => s.replace(/_/g, ' ')).join(', ')}` : '—', true);
       const ch = meta.challenge ? meta.challenge[0].toUpperCase() + meta.challenge.slice(1) : 'Standard';
-      add('Run', meta.mode === 'run' ? `${meta.wallet ?? 0} Glint · ${ch} challenge` : `${ch} challenge`);
-      add('File', `${Math.max(1, Math.round((m.bytes || 0) / 1024))} KB · v${m.game || '?'}${meta.network ? ' · online (host)' : ''}`);
-      detailEl.appendChild(dl);
+      add('Played', `${fmtPlaytime(meta.playtimeSec)} · ${ch} challenge`);
+      box.appendChild(dl);
+      const lines = partyLines(meta);
+      if (lines.length) box.appendChild(partyTable(lines));
+      const dl2 = document.createElement('dl');
+      dl2.className = 'sv-dl';
+      const dt = document.createElement('dt');
+      dt.textContent = 'File';
+      const dd = document.createElement('dd');
+      dd.textContent = `${Math.max(1, Math.round((m.bytes || 0) / 1024))} KB · v${m.game || '?'}${meta.network ? ' · online (host)' : ''}`;
+      dl2.append(dt, dd);
+      box.appendChild(dl2);
+      detailEl.appendChild(box);
+      box.addEventListener('scroll', () => moreMarks(box), { passive: true });
     }
     const acts = document.createElement('div');
     acts.className = 'sv-acts';
@@ -602,6 +776,7 @@ export function createSavesScreen(ctx) {
       n.textContent = can.reason;
       detailEl.appendChild(n);
     }
+    moreMarks(detailEl.querySelector('.sv-dscroll'));
   }
 
   function renderHead() {
@@ -1025,9 +1200,42 @@ export function createSavesScreen(ctx) {
         if (r) manager.focusElement(r, 'api');
         return true;
       }
+      // A detail taller than its panel (only below the §16.4 layout sizes, or
+      // a very long name): Up / Down on the panel's buttons page its text box
+      // while it can still move that way (SAVE5-F2 — never unreachable).
+      if ((action === 'up' || action === 'down') && a && detailEl.contains(a)) {
+        const box = detailBox();
+        if (box && canScroll(box, action === 'down' ? 1 : -1)) {
+          box.scrollTop += (action === 'down' ? 1 : -1) * Math.max(24, box.clientHeight * 0.6);
+          moreMarks(box);
+          return true;
+        }
+      }
       return false;
     },
+    // Right stick (manager.scroll): the detail's text box when it overflows;
+    // otherwise the default (the focused row's list).
+    onScroll(dy) {
+      const box = detailBox();
+      if (!box || !canScroll(box, Math.sign(dy))) return false;
+      const before = box.scrollTop;
+      box.scrollTop = before + dy;
+      moreMarks(box);
+      return box.scrollTop !== before;
+    },
   };
+  function detailBox() {
+    const box = detailEl.querySelector('.sv-dscroll');
+    return box && box.scrollHeight > box.clientHeight + 1 ? box : null;
+  }
+  function canScroll(box, dir) {
+    if (dir > 0) return box.scrollTop + box.clientHeight < box.scrollHeight - 1;
+    if (dir < 0) return box.scrollTop > 0;
+    return false;
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(() => moreMarks(detailEl.querySelector('.sv-dscroll'))).observe(detailEl);
+  }
   return screen;
 }
 
