@@ -210,4 +210,12 @@ export const MAX_PIXEL_RATIO = 2;
 export const SOCKETS_PER_SKILL = 8;
 // @gnt:M4a CONSTANTS end
 // @gnt:M4b CONSTANTS begin (enemies / hazards / interactables / biomes)
+// The Tank's MENACE (BUILD_BRIEF §25.1 "the Tank protects", PLAN GP.5): while
+// the Tank holds a taunt source — Taunting Roar equipped, or a live Provoke
+// socketed on an equipped skill (one source each) — every non-boss hostile
+// choosing whom to attack weighs the Tank as `perSourceU` closer per source
+// (at most `maxU`) than it really is. A live taunt still forces its target;
+// the Hollow Stag keeps its own rule (boss.js). Pure geometry, zero RNG draws;
+// with no source equipped targeting is the v0.5.150 nearest-body rule exactly.
+export const MENACE = Object.freeze({ perSourceU: 0.3, maxU: 0.55 });
 // @gnt:M4b CONSTANTS end

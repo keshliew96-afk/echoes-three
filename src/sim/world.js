@@ -49,6 +49,7 @@ import { seatDisplacement } from './allycast.js';
 // @gnt:M4b IMPORTS begin — hazards / interactables / layout director (PLAN §3.6)
 import { createHazardSystem, createLayoutSystem } from './hazards.js';
 import { createInteractableSystem } from './interactables.js';
+import { MENACE } from '../core/constants.js';
 // @gnt:M4b IMPORTS end
 
 // §10: a Downed character crawls at 0.8 u/s (movement only, cannot act).
@@ -367,6 +368,22 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   events.on('room_cleared', () => layoutSys.onRoomCleared());
   events.on('run_end', (ev) => layoutSys.exit(ev.tick));
   events.on('return_to_camp', (ev) => layoutSys.exit(ev.tick));
+  // The Tank's MENACE (constants.js MENACE, PLAN GP.5): its taunt sources —
+  // Taunting Roar equipped, a live Provoke on an equipped skill — make every
+  // non-boss hostile weigh it closer when choosing whom to attack. Read from
+  // the seat build each tick by enemies.js; nothing new is saved.
+  enemies.setThreat(() => {
+    const tank = partySys.body(1);
+    if (!tank || !(tank.hp > 0)) return null;
+    const b = partySys.build(1);
+    let n = 0;
+    for (const id of partySys.slots(1) || []) {
+      if (!id) continue;
+      if (id === 'taunting_roar') n += 1;
+      if (b && b.tech.liveTechs(id).includes('provoke')) n += 1;
+    }
+    return n > 0 ? new Map([[tank.id, Math.min(MENACE.maxU, n * MENACE.perSourceU)]]) : null;
+  });
   // @gnt:M4b CONTENT-SYSTEMS end
 
   // --- Harness wisps (sim-core proving population; ?scene=simtest only).
@@ -1222,6 +1239,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         // @gnt:M4a CMD end
         // @gnt:M4b CMD begin (spawnHazard / spawnInteractable / hazardPhase / armKeg / setLayout ...)
         if (name === 'burrow') return enemies.setBurrow(args[0], args[1] !== false);
+        // MENACE probe: { bodyId: u } of the live presence map ({} = none).
+        if (name === 'threat') return enemies.threat();
         {
           const rc = layoutSys.cmd(name, args);
           if (rc !== undefined) return rc;

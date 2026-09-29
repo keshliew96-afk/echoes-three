@@ -289,6 +289,23 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     return spawn(etype, x, z, wave, { hpMul, dmgMul, elite });
   }
 
+  // MENACE (constants.js MENACE, PLAN GP.5): the world installs a threat
+  // source — () => Map(bodyId -> u) | null, the Tank's taunt-source presence
+  // — read once per tick (the loadout only changes between rooms). Derived
+  // state, never saved: a restore drops the cache.
+  let threatOf = null;
+  let threatTick = -1;
+  let threatMap = null;
+  function menace() {
+    if (!threatOf) return null;
+    const tick = getTick();
+    if (threatTick !== tick) {
+      threatTick = tick;
+      threatMap = threatOf();
+    }
+    return threatMap;
+  }
+
   // Nearest living party-faction body (player, future sim allies, and the
   // Waystone in defend rooms). Downed (hp <= 0) bodies are outside the set.
   function nearestTarget(e) {
@@ -299,6 +316,22 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     if (ts !== null) {
       const src = registry.byId(ts);
       if (src && src.hp > 0 && src.faction === 'party') return src;
+    }
+    // MENACE: a body with presence counts as `u` closer (the Tank draws
+    // fire while it carries a taunt). Without one, the exact v0.5.150 rule.
+    const tm = menace();
+    if (tm && tm.size > 0) {
+      let pick = null;
+      let pickD = Infinity;
+      for (const t of registry.all()) {
+        if (t.faction !== 'party' || !(t.hp > 0)) continue;
+        const d = Math.hypot(t.x - e.x, t.z - e.z) - (tm.get(t.id) || 0);
+        if (d < pickD) {
+          pickD = d;
+          pick = t;
+        }
+      }
+      return pick;
     }
     let best = null;
     let bestD2 = Infinity;
@@ -816,6 +849,8 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
   function restore(data) {
     lastPlayerTelegraphStart =
       data && Number.isFinite(data.lastPlayerTelegraphStart) ? data.lastPlayerTelegraphStart : -100000;
+    threatTick = -1; // MENACE is derived from the loaded builds
+    threatMap = null;
   }
 
   return {
@@ -840,5 +875,13 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     setSpawnGate: (fn) => {
       spawnGate = typeof fn === "function" ? fn : null;
     },
+    // MENACE (PLAN GP.5): () => Map(bodyId -> u) | null; null uninstalls.
+    setThreat: (fn) => {
+      threatOf = typeof fn === 'function' ? fn : null;
+      threatTick = -1;
+      threatMap = null;
+    },
+    // Probe view: the live presence map ({ bodyId: u }), {} when none.
+    threat: () => Object.fromEntries(menace() || []),
   };
 }
