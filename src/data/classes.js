@@ -137,6 +137,30 @@ export const PARTY_DEADLINES = Object.freeze({
 // the §7 range rule, so no equipped skill idles.
 export const AI_IDLE_FALLBACK_TICKS = 480;
 
+// fix-M4a-r5 (content r5 F5, GP.8 — BUILD_BRIEF §25.8 engagement note): in a
+// campaign run an AI-held seat ENGAGES instead of idling behind the ranged
+// line. v0.5.165 measured 14 of 598 equipped actives never cast in combat
+// rooms of 20 s+ over carried campaigns seeds 1-3 (the Swordsman's Flurry /
+// Blade Storm, the Tank's Heavy Slam / Brutal Cleave in Level 1-2 defend
+// rooms: the Archer and the Healer killed every wave 4-7 u out while the
+// melee pair waited on the 3.4 u leash ring). The rules, all off in the
+// ?room= harness (no run) and under the Node-only legacy switch, so the
+// §16.9 goldens and the v0.5.150 proof keep their traces:
+//   - vanguardU: the melee classes (Tank, Swordsman) may step out this much
+//     past the §12 leash ring to meet a threat (3.4 + 2.0 = 5.4 u; the Archer
+//     and the Healer keep 3.4). Dash / vault / lunge end points are capped by
+//     the same per-seat ring.
+//   - an OVERDUE active (ready >= AI_IDLE_FALLBACK_TICKS; firstUseTicks for
+//     one not yet cast this room) is served before the higher slots (it never
+//     starves behind them), takes the nearest hostile in its reach, and its
+//     seat steers to bring one inside that reach (a parry opens with a hostile
+//     inside its reach + lungeU, never lunging);
+//   - a melee delivery (arc / nova) cast that way closes the last <= lungeU
+//     with a short lunge (the Pursuit dash machinery, cause 'lunge', no
+//     iframes) instead of swinging at air.
+export const AI_ENGAGE = Object.freeze({ vanguardU: 2.0, lungeU: 1.2, lungeSpeed: 9, commitStandFrac: 0.8, firstUseTicks: 300 });
+export const MELEE_CLASSES = Object.freeze(['tank', 'swordsman']);
+
 // §25.2 taunt rules.
 export const TAUNT = Object.freeze({ capTicks: 240, stagCapTicks: 60, stagImmuneTicks: 300 });
 

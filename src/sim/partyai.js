@@ -10,7 +10,7 @@
 // fallback casts an active that has been ready ≥ 480 ticks under the §7 range
 // rule, so no equipped skill idles. For the 12 starting skills the AI rule IS
 // the §7 range rule, so an unbuilt party casts exactly as v0.5.150.
-import { AI_IDLE_FALLBACK_TICKS, swapSuggestion } from '../data/classes.js';
+import { AI_IDLE_FALLBACK_TICKS, AI_ENGAGE, swapSuggestion } from '../data/classes.js';
 import { shapeRange } from './allycast.js';
 
 const d2 = (ax, az, bx, bz) => (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
@@ -50,12 +50,42 @@ export function telegraphCovers(registry, x, z, tick) {
 // castChoice(a, tick, ctx) -> { slot, def, target } | null
 //   ctx: { registry, slots (ids ×4), resolve(def), baseDef(id), cds (a.cds),
 //          readySince (per-slot tick an active became ready), hostiles,
-//          party, healer, waystone, combo (seat state), leashOk(x, z) }
+//          party, healer, waystone, combo (seat state), leashOk(x, z),
+//          engage (campaign engagement rules on, AI_ENGAGE), reachOk(e) }
 export function castChoice(a, target, tick, ctx) {
   const { slots } = ctx;
   const hostiles = ctx.hostiles();
   const near = (x, z, r) => hostiles.filter((e) => d2(e.x, e.z, x, z) <= r * r);
   const dist = (e) => Math.hypot(e.x - a.x, e.z - a.z);
+  if (ctx.engage) {
+    // fix-M4a-r5 (GP.8): an OVERDUE active is served first — its own rule,
+    // else the nearest hostile in its reach (a melee delivery lunging the last
+    // <= AI_ENGAGE.lungeU) — so a higher slot never starves a lower one.
+    for (let slot = 0; slot < slots.length; slot++) {
+      const id = slots[slot];
+      if (!id) continue;
+      const base = ctx.baseDef(id);
+      if (!base || base.shape === 'aura') continue;
+      if (tick < (ctx.cds[slot] ?? 0)) continue;
+      const since = ctx.readySince ? ctx.readySince[slot] : null;
+      const wait = ctx.castThisRoom && !ctx.castThisRoom(slot) ? AI_ENGAGE.firstUseTicks : AI_IDLE_FALLBACK_TICKS;
+      if (!(Number.isFinite(since) && tick - since >= wait)) continue;
+      const def = ctx.resolve(base);
+      const pick = ruleFor(a, id, def, target, tick, ctx, { near, dist, hostiles });
+      if (pick) return { slot, def: base, target: pick };
+      if (def.archetype === 'guard') continue;
+      const r = shapeRange(def);
+      const melee = (def.shape === 'melee_arc' || def.shape === 'nova') && !def.parry;
+      const reach = melee || def.parry ? r + AI_ENGAGE.lungeU : r;
+      let best = null;
+      for (const e of hostiles) {
+        const d = dist(e);
+        if (d > reach || (ctx.reachOk && !ctx.reachOk(e))) continue;
+        if (!best || d < best.d || (d === best.d && e.id < best.e.id)) best = { e, d };
+      }
+      if (best) return { slot, def: base, target: best.e, fallback: true, lunge: melee && best.d > r * AI_ENGAGE.commitStandFrac };
+    }
+  }
   for (let slot = 0; slot < slots.length; slot++) {
     const id = slots[slot];
     if (!id) continue;

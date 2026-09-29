@@ -27,7 +27,7 @@
 import { TICK_HZ } from '../core/constants.js';
 import { clampPlacement, countFinal, fanDirections, selectDirect, createSkillBolts } from './shapes.js';
 import { sweptStep } from './movement.js';
-import { CLASS_TECH } from '../data/classes.js';
+import { CLASS_TECH, AI_ENGAGE } from '../data/classes.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 const secTicks = (s) => Math.round(s * TICK_HZ);
@@ -128,10 +128,12 @@ export function createAllyCaster(ctx) {
   // ---------------------------------------------------------- displacement --
   // AI seats: target-based, leash-capped. Returns the same shape as
   // seatDisplacement() or null.
-  function aiDisplacement(a, def, techs, target, phase) {
+  function aiDisplacement(a, def, techs, target, phase, lunge = false) {
     const has = (id) => Array.isArray(techs) && techs.includes(id);
     const anchor = typeof ctx.leashAnchor === 'function' ? ctx.leashAnchor() : null;
-    const R = ctx.leashRadius ?? Infinity;
+    // fix-M4a-r5: the seat's own ring (a melee seat's vanguard ring in a
+    // campaign, AI_ENGAGE) — a number for every seat before.
+    const R = typeof ctx.leashRadius === 'function' ? ctx.leashRadius(a) : ctx.leashRadius ?? Infinity;
     const clampEnd = (ex, ez) => {
       if (!anchor) return { x: ex, z: ez };
       const dx = ex - anchor.x;
@@ -171,6 +173,10 @@ export function createAllyCaster(ctx) {
       if (def.dash) dash = { dist: def.dash.dist + (has('pursuit') ? CLASS_TECH.pursuitFoxBonusU : 0), speed: def.dash.speed, iframes: !!def.dash.iframes, cause: 'dash' };
       else if (has('pursuit') && !def.parry && (def.shape === 'melee_arc' || def.shape === 'nova'))
         dash = { dist: CLASS_TECH.pursuitDashU, speed: 10, iframes: true, cause: 'pursuit' };
+      // fix-M4a-r5 (GP.8): an overdue melee delivery cast at a hostile just
+      // out of reach closes the gap first (AI seats in a campaign only).
+      else if (lunge && !def.parry && (def.shape === 'melee_arc' || def.shape === 'nova'))
+        dash = { dist: AI_ENGAGE.lungeU, speed: AI_ENGAGE.lungeSpeed, iframes: false, cause: 'lunge' };
       if (!dash || !target) return null;
       const d = Math.hypot(target.x - a.x, target.z - a.z);
       const reach = shapeRange(def) || 0;
@@ -257,7 +263,7 @@ export function createAllyCaster(ctx) {
       if (T) T.openParry(a, def, slot, tick, { rec: null, tag: how.tag ?? null, primary: true, cast: true, human });
       return true;
     }
-    const disp = human ? seatDisplacement(a, def, techs, aim, 'pre') : aiDisplacement(a, def, techs, how.target, 'pre');
+    const disp = human ? seatDisplacement(a, def, techs, aim, 'pre') : aiDisplacement(a, def, techs, how.target, 'pre', !!how.lunge);
     if (disp) {
       a.pendingCast = {
         slot,

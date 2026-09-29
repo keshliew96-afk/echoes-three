@@ -76,7 +76,7 @@ import { PARTY_ALLIES, STARTING_SKILLS, SKILLS } from './skills.js';
 import { createDraftSystem, SPOILS_PER_CLEAR } from './draft.js';
 import { NODES } from './nodes.js';
 import { levelFor, ACT_IDS } from '../data/levels.js';
-import { difficulty, CHALLENGE, setDifficultyLegacy } from '../data/difficulty.js';
+import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
 import { swapSuggestion, CLASS_OF_SEAT, PARTY_DEADLINES } from '../data/classes.js';
@@ -178,6 +178,10 @@ export function createRunSystem({
   enemies.setSpawnGate(combatAllowed);
 
   let active = false;
+  // fix-M4a-r5 (GP.8, data/classes.js AI_ENGAGE): the AI-held seats' campaign
+  // engagement rules run while a run is live — never in the ?room= harness and
+  // never under the Node-only legacy switch (the §16.9 determinism proof).
+  if (allySys && typeof allySys.setEngage === 'function') allySys.setEngage(() => active && !isDifficultyLegacy());
   let roomIndex = 0; // 1..8 while a run is live
   let phase = 'idle'; // idle | combat | reward | path | shop | fade | victory | defeat
   let wallet = RUN.startingGlint;

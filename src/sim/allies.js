@@ -54,7 +54,7 @@ import { stepHumanMove, dodgeVelocity, aimDir, DOWNED_CRAWL_SPEED, HUMAN_DODGE }
 // is cast from the seat's LOADOUT (sim/party.js) through ONE pipeline
 // (sim/allycast.js); the AI picks with the §25.8 rules (sim/partyai.js).
 import { SKILLS } from './skills.js';
-import { STARTING_LOADOUT } from '../data/classes.js';
+import { STARTING_LOADOUT, AI_ENGAGE, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS } from '../data/classes.js';
 import { createAllyCaster, cdTicksOf } from './allycast.js';
 import { castChoice } from './partyai.js';
 
@@ -254,6 +254,16 @@ export function createAllySystem({
 
   // PARTY: the one ally cast pipeline (created below, once the selectors exist).
   let caster = null;
+  // fix-M4a-r5 (GP.8, data/classes.js AI_ENGAGE): the campaign engagement
+  // rules are on while the run system says so (a live run, not the Node-only
+  // legacy switch) — never in the ?room= harness, so the §16.9 goldens keep
+  // their v0.5.150 traces. run.js installs the predicate.
+  let engageFn = () => false;
+  const engageOn = () => !!engageFn();
+  const isMelee = (a) => MELEE_CLASSES.includes(a.classId);
+  // The seat's leash ring: §12's 3.4 u, a melee seat's vanguard ring (+2.0 u)
+  // while the engagement rules are on.
+  const leashFor = (a) => LEASH.radius + (isMelee(a) && engageOn() ? AI_ENGAGE.vanguardU : 0);
   // GP.8 AI log (debug, never saved): seat -> skill -> { casts, fallbacks, lastTick }.
   const aiLog = [null, {}, {}, {}];
   let roomStartTick = 0;
@@ -315,7 +325,7 @@ export function createAllySystem({
     compensatedAim: (f, a, d) => compensatedAim(f, a, d),
     isIframed: (e) => (e.iframeUntilTick ?? 0) > getTick(),
     leashAnchor: () => leashAnchor(),
-    leashRadius: LEASH.radius,
+    leashRadius: (a) => leashFor(a),
     tech: () => {
       const P = partyRef();
       return P ? P.tech() : null;
@@ -689,11 +699,32 @@ export function createAllySystem({
     if (mark !== null) {
       const m = registry.byId(mark);
       if (m && m.hp > 0 && m.hittable) {
-        const reachable = distTo(m, anchor.x, anchor.z) <= LEASH.radius + S.basicRange;
+        const reachable = distTo(m, anchor.x, anchor.z) <= leashFor(a) + S.basicRange;
         if (reachable) return m;
       }
     }
     return nearestHostileTo(anchor.x, anchor.z);
+  }
+
+  // fix-M4a-r5 (GP.8): the shortest-reach equipped active that has sat ready
+  // AI_IDLE_FALLBACK_TICKS or longer this room (null when none) — its seat
+  // commits to bringing a hostile inside that reach.
+  function overdueOf(a, tick) {
+    const slots = loadoutOf(a);
+    let best = null;
+    for (let k = 0; k < slots.length; k++) {
+      const def = slots[k] ? SKILLS[slots[k]] : null;
+      if (!def || def.shape === 'aura' || def.archetype === 'guard') continue;
+      if (tick < (a.cds[k] ?? 0)) continue;
+      // not cast yet this room (its cooldown ended before the room began):
+      // the shorter first-use wait — saved state only (cds, roomStartTick).
+      const wait = (a.cds[k] ?? 0) <= roomStartTick ? AI_ENGAGE.firstUseTicks : AI_IDLE_FALLBACK_TICKS;
+      if (tick - Math.max(a.cds[k] ?? 0, roomStartTick) < wait) continue;
+      const r = def.shape === 'nova' ? def.area : def.range;
+      if (!(r > 0)) continue;
+      if (!best || r < best.range) best = { slot: k, range: r };
+    }
+    return best;
   }
 
   function steerAlly(a, tick, anchor) {
@@ -761,10 +792,33 @@ export function createAllySystem({
     }
 
     // --- engage / return (§12 leash + shared targeting)
-    const target = pickTarget(a, anchor);
+    let target = pickTarget(a, anchor);
+    const LR = leashFor(a);
+    // fix-M4a-r5 (GP.8): an overdue active makes the seat take the nearest
+    // hostile it can reach inside its ring and close to that skill's reach.
+    let commitRange = null;
+    if (engageOn()) {
+      const od = overdueOf(a, tick);
+      if (od) {
+        let best = null;
+        let bd = Infinity;
+        for (const e of hostiles()) {
+          if (distTo(e, anchor.x, anchor.z) > LR + od.range) continue;
+          const q = dist2(e.x, e.z, a.x, a.z);
+          if (q < bd) {
+            bd = q;
+            best = e;
+          }
+        }
+        if (best) {
+          target = best;
+          commitRange = od.range;
+        }
+      }
+    }
     a.targetId = target ? target.id : null;
     const inReach = target ? distTo(a, target.x, target.z) <= S.basicRange : false;
-    if (!a.leashOut && d0 > LEASH.radius + LEASH_DEADZONE && !inReach) a.leashOut = true;
+    if (!a.leashOut && d0 > LR + LEASH_DEADZONE && !inReach) a.leashOut = true;
     if (a.leashOut && d0 <= LEASH.radius * LEASH.reengageFactor) a.leashOut = false;
 
     if (a.leashOut) {
@@ -788,16 +842,17 @@ export function createAllySystem({
       //     station at 2x the leash).
       let gx = a.x;
       let gz = a.z;
-      if (d > S.standRange) {
-        const t = (d - S.standRange) / d;
+      const stand = commitRange !== null ? Math.min(S.standRange, commitRange * AI_ENGAGE.commitStandFrac) : S.standRange;
+      if (d > stand) {
+        const t = (d - stand) / d;
         gx = a.x + (target.x - a.x) * t;
         gz = a.z + (target.z - a.z) * t;
       }
       const gdx = gx - anchor.x;
       const gdz = gz - anchor.z;
       const gd = Math.hypot(gdx, gdz);
-      if (gd > LEASH.radius) {
-        const s = LEASH.radius / gd;
+      if (gd > LR) {
+        const s = LR / gd;
         gx = anchor.x + gdx * s;
         gz = anchor.z + gdz * s;
       }
@@ -819,7 +874,7 @@ export function createAllySystem({
   // state machine above is already walking the ally home.
   function clampLeash(a, anchor) {
     const d = distTo(a, anchor.x, anchor.z);
-    const cap = Math.max(LEASH.radius, a.leashD0 ?? LEASH.radius);
+    const cap = Math.max(leashFor(a), a.leashD0 ?? LEASH.radius);
     if (d > cap && d > 1e-6) {
       const s = cap / d;
       a.x = anchor.x + (a.x - anchor.x) * s;
@@ -1667,6 +1722,13 @@ export function createAllySystem({
       party: () => party(),
       healer: () => player,
       waystone: () => registry.all().find((e) => e.kind === 'waystone' && e.hp > 0) || null,
+      engage: engageOn(),
+      castThisRoom: (k) => (a.cds[k] ?? 0) > roomStartTick,
+      // a hostile an overdue skill may be cast at: inside the seat's ring + its basic reach
+      reachOk: (e) => {
+        const an = leashAnchor();
+        return distTo(e, an.x, an.z) <= leashFor(a) + S.basicRange;
+      },
       comboCount: (id, t, def) => {
         if (!st || !def.combo) return 0;
         let n = 0;
@@ -1676,7 +1738,7 @@ export function createAllySystem({
     });
     if (pick) {
       const rdef = resolvedOf(a, pick.def);
-      caster.cast(a, pick.def, pick.slot, tick, { mode: 'ai', target: pick.target && pick.target.faction === 'hostile' ? pick.target : target });
+      caster.cast(a, pick.def, pick.slot, tick, { mode: 'ai', target: pick.target && pick.target.faction === 'hostile' ? pick.target : target, lunge: !!pick.lunge });
       a.cds[pick.slot] = tick + cdTicksOf(rdef);
       logCast(a, pick.def.id, !!pick.fallback, tick);
       return;
@@ -1981,6 +2043,9 @@ export function createAllySystem({
         moving: !!a.moving,
         graceUntilTick: a.graceUntilTick ?? -1,
         cds: (a.cds ?? [0, 0, 0, 0]).map((c) => Math.max(0, c - getTick())),
+        // fix-M4a-r5: a melee seat's vanguard ring while the campaign
+        // engagement rules are on (the key only then: harness views unchanged).
+        ...(engageOn() && isMelee(a) ? { leash: r2(leashFor(a)) } : {}),
       })),
     };
   }
@@ -2126,6 +2191,12 @@ export function createAllySystem({
     // hooks reach it here) and the GP.8 AI log.
     caster: () => caster,
     aiLog: () => aiLog.map((l) => (l ? structuredClone(l) : null)),
+    // fix-M4a-r5 (GP.8): run.js installs the campaign-engagement predicate.
+    setEngage: (fn) => {
+      engageFn = typeof fn === 'function' ? fn : () => false;
+    },
+    engageOn,
+    leashFor,
     // M5b network seats (host): per-tick seat inputs, the E presses they
     // made this tick (resolved with the Healer's in the interactables pass),
     // the seat controllers and the lag-compensation counters.

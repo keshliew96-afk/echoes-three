@@ -93,6 +93,7 @@ export function setDifficultyLegacy(on) {
   legacy = !!on;
   return legacy;
 }
+export const isDifficultyLegacy = () => legacy;
 export const WAVE_INTERVAL_TICKS = 480; // §11 8 s
 export const INTERVAL_ACT = Object.freeze([null, 1.0, 0.95, 0.9]);
 export const WAVE_SIZE_CAP = 8; // enemies per wave
