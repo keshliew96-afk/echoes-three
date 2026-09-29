@@ -19,6 +19,13 @@
 // on an unselected tab (whose content is not the one shown), and every stop
 // comes round again (fix-M1-r3 MENU-R3-F2: the screen-wide spatial wrap sent
 // Down from Reset to the Network tab and skipped the first rows forever).
+// Overflow (fix-M1-r5 MENU-R5-F2): content taller than the tab's box is
+// never out of reach of a keyboard or pad player. The box fades with a
+// chevron at the cut edge; the ring entering a tab brings that end of the
+// content into view and leaving it shows the end it passed; a READ-ONLY tab
+// (no focusable rows — Controls) becomes one focus stop whose ↑/↓ scroll a
+// step at a time before the ring moves on; the right stick scrolls the box
+// from anywhere on the screen (screen.onScroll), the wheel as always.
 import { settingsTabs, settingsTab, service } from '../../app/registry.js';
 import { createHints } from './hints.js';
 
@@ -69,6 +76,13 @@ export function createSettingsScreen(ctx) {
   // an uncommitted edit before it ever backs out (MENU-R4-F1).
   function syncHints() {
     const n = focusedEl && el.contains(focusedEl) ? focusedEl : null;
+    if (n && n.dataset && n.dataset.navScroll === '1') {
+      return hints.setItems([
+        ['move', 'Scroll'],
+        ['tabs', 'Tabs'],
+        ['back', 'Back'],
+      ]);
+    }
     const text = !!n && n.tagName === 'INPUT' && (n.type || 'text') === 'text' && document.activeElement === n;
     if (!text) return hints.setItems(HINTS);
     const dirty = typeof n.__navDirty === 'function' && n.__navDirty();
@@ -154,8 +168,74 @@ export function createSettingsScreen(ctx) {
     wrap.appendChild(body);
     const rec = { def, inst, body };
     built.set(id, rec);
+    if (resizeObs) resizeObs.observe(body);
     return rec;
   }
+
+  // ------------------------------------------ overflow (fix-M1-r5 F2) --
+  const SCROLL_HELP = 'Scroll with ↑ / ↓ (the D-pad or the right stick on a gamepad) or the mouse wheel.';
+  const scrollMax = () => Math.max(0, wrap.scrollHeight - wrap.clientHeight);
+  function syncFades() {
+    const max = scrollMax();
+    const top = wrap.scrollTop;
+    wrap.classList.toggle('ap-more-below', max > 1 && top < max - 1);
+    wrap.classList.toggle('ap-more-above', max > 1 && top > 1);
+  }
+  // A read-only tab that overflows gets ONE focus stop: its content root.
+  function syncOverflow() {
+    syncFades();
+    const rec = activeId && built.get(activeId);
+    const region = rec && !rec.inst.unavailable && !rec.inst.failed ? rec.inst.el : null;
+    if (!region) return;
+    const others = manager.navigable(rec.body).filter((n) => n !== region);
+    const want = scrollMax() > 1 && others.length === 0;
+    if (want === region.hasAttribute('data-nav')) return;
+    const label = rec.def.label || rec.def.id;
+    if (want) {
+      if (!region.id) region.id = `ap-scroll-${rec.def.id}`;
+      region.classList.add('ap-scrollstop');
+      region.setAttribute('data-nav', '');
+      region.tabIndex = -1;
+      region.setAttribute('role', 'region');
+      region.setAttribute('aria-label', `${label} — scroll with ↑ ↓`);
+      region.dataset.navScroll = '1';
+      region.dataset.helpTitle = `${label} reference`;
+      region.dataset.help = SCROLL_HELP;
+    } else {
+      const wasFocused = focusedEl === region;
+      region.classList.remove('ap-scrollstop');
+      for (const a of ['data-nav', 'tabindex', 'role', 'aria-label', 'data-nav-scroll', 'data-help-title', 'data-help']) region.removeAttribute(a);
+      if (wasFocused && open && manager.top() === 'settings') manager.focusElement(tabBtns.get(activeId), 'api');
+    }
+    const fr = firstRow(rec);
+    screen.defaultFocus = fr && fr.id ? `#${fr.id}` : null;
+  }
+  // ↑/↓ on a scroll stop: one step (~45% of the box) while there is more.
+  function scrollStep(sign) {
+    const max = scrollMax();
+    const top = wrap.scrollTop;
+    if (sign > 0 ? top >= max - 1 : top <= 1) return false;
+    const step = Math.max(40, Math.round(wrap.clientHeight * 0.45));
+    wrap.scrollTop = sign > 0 ? Math.min(max, top + step) : Math.max(0, top - step);
+    syncFades();
+    return true;
+  }
+  // The ring entering the tab's content shows the end it came in at; leaving
+  // it shows the end it passed (a note above the first row or below the last
+  // is never stranded out of view).
+  function edgeScroll(cur, target, dir) {
+    const rec = activeId && built.get(activeId);
+    if (!rec || scrollMax() <= 1) return;
+    const fromBody = !!cur && rec.body.contains(cur);
+    const toBody = !!target && rec.body.contains(target);
+    if (fromBody === toBody) return;
+    const toEnd = toBody ? dir !== 'down' : dir === 'down';
+    wrap.scrollTop = toEnd ? scrollMax() : 0;
+    syncFades();
+  }
+  const resizeObs = typeof ResizeObserver === 'function' ? new ResizeObserver(() => open && syncOverflow()) : null;
+  if (resizeObs) resizeObs.observe(wrap);
+  wrap.addEventListener('scroll', syncFades, { passive: true });
 
   function renderTabs() {
     const defs = settingsTabs();
@@ -215,6 +295,7 @@ export function createSettingsScreen(ctx) {
       if (next.inst.onShow) next.inst.onShow();
     }
     if (changed) wrap.scrollTop = 0;
+    syncOverflow();
     const resettable = next.inst.resettable !== false && !next.inst.unavailable && !next.inst.failed;
     resetBtn.setDisabled(!resettable, 'Nothing to reset on this tab');
     const target = focus === 'tab' ? tabBtns.get(id) : firstRow(next) || tabBtns.get(id);
@@ -322,9 +403,15 @@ export function createSettingsScreen(ctx) {
 
   function walk(dir, source) {
     const cur = focusedEl;
+    // A read-only tab's scroll stop scrolls first, then lets the ring go on.
+    if (cur && cur.dataset && cur.dataset.navScroll === '1' && el.contains(cur) && scrollStep(dir === 'down' ? 1 : -1)) return true;
     const target = walkTarget(cur, dir);
     if (target === false) return false; // manager's initial focus
-    if (target && target !== cur) manager.focusElement(target, source, { scroll: true });
+    if (target && target !== cur) {
+      edgeScroll(cur, target, dir);
+      // A scroll stop is taller than the box: edgeScroll placed it already.
+      manager.focusElement(target, source, { scroll: !(target.dataset && target.dataset.navScroll === '1') });
+    }
     return true;
   }
 
@@ -475,6 +562,13 @@ export function createSettingsScreen(ctx) {
         return true;
       }
       return false;
+    },
+    // Right stick (app.js -> manager.scroll): the tab's box, from anywhere.
+    onScroll(dy) {
+      if (busy || scrollMax() <= 1) return false;
+      wrap.scrollTop = Math.max(0, Math.min(scrollMax(), wrap.scrollTop + dy));
+      syncFades();
+      return true;
     },
     back() {
       requestClose();

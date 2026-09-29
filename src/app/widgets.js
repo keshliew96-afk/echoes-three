@@ -291,13 +291,17 @@ export function button({ label, onPress, variant = 'secondary', disabled = false
   };
 }
 
-// section(title) -> heading element; note(text) -> muted paragraph
+// section(title) -> heading element; note(text, tone) -> muted paragraph
 export function section(title) {
   return h('h3', 'ap-section', title);
 }
 
+// The tone is a NAMESPACED class (ap-note-<tone>): a bare `ap-${tone}` made
+// tone 'info' collide with the Settings side panel's .ap-info, which narrow
+// windows hide — the Controls tab's "Key rebinding isn't available" note
+// vanished at 1024x576 and 1152x648 (fix-M1-r5, MENU-R5-F2).
 export function note(text, tone = 'info') {
-  return h('p', `ap-note ap-${tone}`, text);
+  return h('p', `ap-note ap-note-${tone}`, text);
 }
 
 export const widgets = Object.freeze({ slider, toggle, select, button, section, note });

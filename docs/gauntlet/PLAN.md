@@ -445,7 +445,11 @@ onShow?, onHide?, hasPendingChanges?, revert?, confirm?, destroy? }, available?
 })`; orders: Display 10, Audio 20, Gameplay 30, Controls 40, Network 50.
 `ctx = { settings, widgets, app, services: { service }, toast, close }`.
 **Rows** into another key's tab: `registerSettingsRow(tabId, { id, order,
-build(ctx) → HTMLElement })` (M4a's Challenge row → `gameplay`). Controls tab is
+build(ctx) → HTMLElement | { el, sync?(), destroy?() } })` (M4a's Challenge row
+→ `gameplay`); the Gameplay tab calls `sync()` on every `gameplay.*` change,
+on show and after Reset, so a row's value and status line always match the
+store (fix-M1-r5). A read-only tab whose content overflows its box becomes
+one focus stop that ↑/↓ scroll before the ring moves on (fix-M1-r5). Controls tab is
 a complete read-only reference (keyboard, mouse, gamepad-in-menus) that reads
 the live bindings (1–8 after M4a, E interact); rebinding is out of scope this
 iteration and the tab says so.
@@ -488,7 +492,7 @@ factory(ctx) -> { el, blocking=true, onOpen?(params), onClose?(), onFocus?(), on
 |---|---|
 | Keyboard | ↑↓←→ and W/A/S/D; Enter/NumpadEnter/Space = confirm; Esc/Backspace = back; Q/E and PageUp/PageDown = tabPrev/tabNext; Delete = secondary; F2 = tertiary |
 | Mouse | hover focuses (no scroll-jump); click = confirm on that item; wheel scrolls lists; right-click on a menu = back |
-| Gamepad (standard mapping, polled every frame via `navigator.getGamepads()` — never cache the function, never require `gamepadconnected`, so a mocked pad works) | D-pad / left stick (deadzone 0.5, repeat after 400 ms then every 90 ms) = directions; A(0) confirm; B(1) back; X(2) secondary; Y(3) tertiary; LB(4)/RB(5) tabs; Start(9) = pause / back on the pause menu |
+| Gamepad (standard mapping, polled every frame via `navigator.getGamepads()` — never cache the function, never require `gamepadconnected`, so a mocked pad works) | D-pad / left stick (deadzone 0.5, repeat after 400 ms then every 90 ms) = directions; A(0) confirm; B(1) back; X(2) secondary; Y(3) tertiary; LB(4)/RB(5) tabs; Start(9) = pause / back on the pause menu; right stick Y (axis 3, deadzone 0.3, standard mapping) scrolls the open menu's content via `manager.scroll(dy)` → `screen.onScroll` or the focused item's scroll box (fix-M1-r5) |
 
 Focus model: each screen's `[data-nav]` items; up/down moves between rows,
 left/right adjusts the focused control (`__navAdjust`) or moves between columns

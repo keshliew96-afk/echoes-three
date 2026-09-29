@@ -12,6 +12,9 @@
 //     onNav?(action, source, meta) -> bool,   // screen-specific handling first; true = consumed
 //     back?(source) -> bool,        // Esc / B / Backspace / right-click; true = handled
 //                                   //   (default when absent or false: pop this screen)
+//     onScroll?(dy, source) -> bool,  // right stick: scroll the screen's content
+//                                   //   by dy CSS px (default: the focused
+//                                   //   item's nearest scrollable box)
 //     onFocusChange?(el, source),   // the focused item changed (info panels)
 //     onFocusLost?(el) -> el|null,  // the focused item got disabled / hidden:
 //                                   //   the item to re-home on (next to it);
@@ -401,6 +404,29 @@ export function createScreenManager({ root, ctx = {} } = {}) {
     }
   }
 
+  // scroll(dy, source) -> bool: the right stick (gamepad.js onScroll). The
+  // top screen's onScroll first; otherwise the focused item's nearest
+  // scrollable ancestor inside the screen. Not a nav action: no cue, no
+  // response sample, focus unchanged (fix-M1-r5, MENU-R5-F2).
+  function scroll(dy, source = 'gamepad') {
+    const t = topEntry();
+    if (!t || !dy) return false;
+    if (typeof t.screen.onScroll === 'function' && t.screen.onScroll(dy, source)) return true;
+    let n = validFocus(t) ? t.focusEl : null;
+    while (n && n !== t.screen.el) {
+      if (n.scrollHeight > n.clientHeight + 1) {
+        const oy = getComputedStyle(n).overflowY;
+        if (oy === 'auto' || oy === 'scroll') {
+          const before = n.scrollTop;
+          n.scrollTop = before + dy;
+          return n.scrollTop !== before;
+        }
+      }
+      n = n.parentElement;
+    }
+    return false;
+  }
+
   // Focus `el` if it is an enabled item of the top screen. Pointer focus
   // (hover / click) never scroll-jumps; a screen's own keyboard / gamepad
   // move passes { scroll: true } so the new item is brought into view.
@@ -493,6 +519,7 @@ export function createScreenManager({ root, ctx = {} } = {}) {
     has: (id) => stack.some((e) => e.id === id),
     isBlocking,
     nav,
+    scroll,
     focusElement,
     // spatial(cur, items, dir, { wrap }) -> element | null — the default
     // spatial pick, restricted to `items` (a screen's own zone order).

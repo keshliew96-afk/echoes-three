@@ -1,10 +1,19 @@
 // Settings ▸ Controls (docs/gauntlet/PLAN.md §3.2). Owner: M1.
 // A complete READ-ONLY reference that reads the LIVE bindings from the input
-// controller (core/input.js bindings(): skill keys follow SKILL_SLOTS, so it
-// shows 1–4 today and 1–8 once the content extension lands) plus the menu
-// controls for keyboard, mouse and gamepad. Key rebinding is out of scope this
-// iteration and the tab says so. Nothing here is focusable except the tab bar
-// and footer, so Reset is disabled ("Nothing to reset on this tab").
+// controller (core/input.js bindings(): skill keys follow SKILL_SLOTS — 1–4,
+// the user's 4-skill rule) plus the menu controls for keyboard, mouse and
+// gamepad. Key rebinding is out of scope this iteration and the tab says so.
+// Nothing here is focusable except the tab bar and footer, so Reset is
+// disabled ("Nothing to reset on this tab").
+//
+// LAYOUT (fix-M1-r5, MENU-R5-F2 — G1.1 "nothing clipped" at 1024x576): two
+// balanced columns — PLAY (11 rows) | GENERAL (3) + MENUS keyboard & mouse
+// (4) + MENUS gamepad (2) — so each column is one heading + 11 rows high,
+// and short windows (≤ 700 px) tighten the row pitch (style.js), which fits
+// the whole reference AND the rebinding note inside the 1024x576 box. Should
+// a window still be too small (browser zoom, < 1024x576), the Settings screen
+// makes this read-only tab one focus stop that ↑/↓ (D-pad), the right stick
+// and the wheel scroll, with a fade at the cut edge (settings.js).
 const KEY_NAMES = {
   Space: 'Space',
   Tab: 'Tab',
@@ -53,7 +62,7 @@ export function buildControlsTab(ctx) {
   el.style.flexDirection = 'column';
   el.style.gap = 'calc(8px * var(--ap-s, 1))';
 
-  const noteEl = widgets.note('Key rebinding isn’t available in this version — this is the full control reference.', 'info');
+  const noteEl = widgets.note('Key rebinding isn’t available in this version — this is the full control reference.', 'ref');
   const grid = document.createElement('div');
   grid.className = 'ap-ref';
   el.append(noteEl, grid);
@@ -91,20 +100,21 @@ export function buildControlsTab(ctx) {
     if (cyc.length) left.appendChild(row('Mark the next enemy', cyc));
     if (targets.length) left.appendChild(row('Select an ally for a heal', [`${targets[0]}–${targets[targets.length - 1]}`]));
     left.appendChild(row('Build workbench (between rooms)', ['B']));
-    left.appendChild(row('Fullscreen', ['Alt', 'Enter']));
-    // M2: the quick-slot keys (single-player, in play) — shown with the save service.
-    const svc = ctx.services && typeof ctx.services.service === 'function' ? ctx.services.service('save') : null;
-    if (svc) left.appendChild(row('Quicksave · Quickload', ['F5', 'F9']));
 
     const right = document.createElement('div');
     right.className = 'ap-ref-col';
-    right.appendChild(head('Menus — keyboard'));
+    right.appendChild(head('General'));
+    // main.js PAUSE_KEYS (Esc / P) while playing; Start on a gamepad.
+    right.appendChild(row('Pause · Resume', ['Esc', 'P']));
+    right.appendChild(row('Fullscreen', ['Alt', 'Enter']));
+    // M2: the quick-slot keys (single-player, in play) — shown with the save service.
+    const svc = ctx.services && typeof ctx.services.service === 'function' ? ctx.services.service('save') : null;
+    if (svc) right.appendChild(row('Quicksave · Quickload', ['F5', 'F9']));
+    right.appendChild(head('Menus — keyboard & mouse'));
     right.appendChild(row('Move', ['↑↓←→', 'WASD']));
-    right.appendChild(row('Choose', ['Enter', 'Space']));
-    right.appendChild(row('Back', ['Esc', 'Backspace']));
+    right.appendChild(row('Choose', ['Enter', 'Space', 'Click']));
+    right.appendChild(row('Back', ['Esc', 'Backspace', 'Right-click']));
     right.appendChild(row('Tabs', ['Q', 'E']));
-    right.appendChild(head('Menus — mouse'));
-    right.appendChild(row('Choose · Back', ['Click', 'Right-click']));
     right.appendChild(head('Menus — gamepad'));
     right.appendChild(row('Move · Choose · Back', ['D-pad', 'A', 'B'], true));
     right.appendChild(row('Tabs · Pause', ['LB', 'RB', 'Start'], true));

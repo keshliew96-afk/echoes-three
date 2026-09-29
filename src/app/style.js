@@ -308,7 +308,7 @@ body.ap-hide-game #dmg-num-layer, body.ap-hide-game #nd-fizzle-layer { visibilit
 .ap-step:hover { border-color: ${P.hearthAmber}88; color: ${P.parchment}; }
 .ap-select .ap-choice[disabled], .ap-select .ap-step[disabled] { opacity: 0.6; cursor: default; }
 p.ap-note { margin: 0; font-size: ${px(22)}; color: ${INK_DIM}; line-height: 1.35; }
-p.ap-note.ap-warn { color: ${P.bone}; }
+p.ap-note.ap-note-warn { color: ${P.bone}; }
 
 /* ------------------------------------------------------------ dialogs -- */
 .ap-dialog .ap-dlg {
@@ -381,6 +381,34 @@ p.ap-note.ap-warn { color: ${P.bone}; }
 .ap-ref-row { display: flex; align-items: center; justify-content: space-between; gap: ${px(12)}; min-height: ${px(38)}; padding: 0 ${px(8)}; border-bottom: 1px solid ${P.warmGrey}22; }
 .ap-ref-row .ap-ref-act { font-size: ${px(22)}; color: ${P.parchment}; }
 .ap-ref-row .ap-ref-keys { display: inline-flex; gap: ${px(6)}; flex-wrap: wrap; justify-content: flex-end; }
+/* The honest "no rebinding" line: a quiet plate above the reference. */
+p.ap-note.ap-note-ref {
+  color: ${P.bone}; padding: ${px(6)} ${px(14)}; border-radius: ${px(10)};
+  background: ${P.voidCharcoal}; border: 1px solid ${P.warmGrey}33;
+}
+
+/* A read-only tab taller than its box (fix-M1-r5, MENU-R5-F2): the box
+   fades at the cut edge with a chevron while more content lies beyond it,
+   and the tab's content is ONE focus stop (settings.js) whose ring is drawn
+   on the visible box — the content itself is taller than the view. */
+.ap-tabwrap { position: relative; }
+.ap-tabwrap.ap-more-below::after, .ap-tabwrap.ap-more-above::before {
+  content: '▾'; position: sticky; display: block; z-index: 2; pointer-events: none;
+  height: ${px(44)}; line-height: ${px(52)}; text-align: center;
+  font-size: ${px(26)}; color: ${P.bone};
+}
+.ap-tabwrap.ap-more-below::after {
+  bottom: 0; margin-top: calc(${px(-44)});
+  background: linear-gradient(180deg, ${P.voidCharcoal}00 0%, ${P.voidCharcoal}F2 78%);
+}
+.ap-tabwrap.ap-more-above::before {
+  content: '▴'; top: 0; margin-bottom: calc(${px(-44)}); line-height: ${px(34)};
+  background: linear-gradient(0deg, ${P.voidCharcoal}00 0%, ${P.voidCharcoal}F2 78%);
+}
+.ap-tabwrap:has(.ap-scrollstop.ap-focus) {
+  outline: max(2px, ${px(2)}) solid ${P.hearthAmber}; outline-offset: ${px(-2)}; border-radius: ${px(12)};
+}
+.ap-scrollstop { outline: none; }
 
 /* Narrow windows: the info panel steps aside so every row keeps a one-line
    status note at the type floor (the notes carry the honest copy). */
@@ -390,8 +418,14 @@ p.ap-note.ap-warn { color: ${P.bone}; }
 }
 
 /* Short windows: the title stack tightens (type floors unchanged). The hints
-   live in the bottom-right corner, so the column may run close to the bottom. */
+   live in the bottom-right corner, so the column may run close to the bottom.
+   The Controls reference tightens its row pitch (type unchanged: 16.5 CSS px
+   at 1024x576) so both columns and the note fit the box unscrolled. */
 @media (max-height: 700px) {
+  .ap-ref-col { gap: ${px(2)}; }
+  .ap-ref-row { min-height: ${px(32)}; }
+  .ap-ref-row .ap-kbd { height: ${px(29)}; }
+  .ap-ref .ap-section { margin-top: ${px(2)}; }
   .ap-title .ap-title-col { gap: ${px(22)}; padding-bottom: ${px(56)}; }
   .ap-logo-word { font-size: ${px(104)}; }
   .ap-menu { gap: ${px(9)}; }

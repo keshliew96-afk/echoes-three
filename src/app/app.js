@@ -136,6 +136,10 @@ export function createApp({ params }) {
       }
       nav.act(action, 'gamepad', meta);
     },
+    // Right stick: scroll the open menu's content (never the game's pages).
+    onScroll(dy) {
+      if (screens.isOpen()) screens.scroll(dy, 'gamepad');
+    },
     onStart(meta) {
       const top = screens.top();
       if (!top) {
