@@ -1717,6 +1717,18 @@ their own files through `impl.debug`):
   `7d307644a874c95a`, 136) — the reference for G2.10 / G5b.8 from v0.5.163
   (re-recorded after v0.5.162's: class passives no longer pulse between
   rooms, Flow's pulse cut, the swap `reward_offer` keys).
+- **fix-M4a-r5 re-record (2026-09-30).** The campaign AI engagement rules
+  (BUILD_BRIEF §25.8 Engagement, v0.5.179) and the fix-M4a-r5 retune
+  (§23.2 note, v0.5.183) change the 3 `run` traces legitimately (M4b's MENACE,
+  v0.5.180, leaves them identical); the 6 `?room=` traces stay bit-identical
+  (the engagement rules are off without a run). Proof: `gntPARTY-goldenproof`
+  ok (supply off + legacy constants = v0.5.150 bit for bit; the legacy switch
+  turns the engagement rules off too). The v0.5.163 files are kept as
+  `captures/gntfixM4a5-prev-golden-run-<seed>.json`; the v0.5.184 sim is
+  recorded over `captures/gnt-M2-golden-run-<seed>.json` (run-1
+  `26248bc12220514c` / `4deb19c880797a57`, 130 draws; run-2
+  `f4b1de84195be987` / `b99e890329a08ff6`, 160; run-3 `bd43384911d117a9` /
+  `b42c0af175fc067a`, 114) — the reference for G2.10 / G5b.8 from v0.5.184.
 
 ### 6.6 Audio probing
 
