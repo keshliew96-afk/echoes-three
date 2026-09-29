@@ -122,7 +122,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     <div class="rn-note rn-empty" style="display:none"></div>
     <div class="rn-note rn-bought" style="display:none"></div>
     <div class="rn-buttons">
-      <span class="rn-hint rn-hint-l">click a card to buy</span>
+      <span class="rn-hint rn-hint-l"><b>A</b>/<b>D</b> or click a card to buy</span>
       <div class="rn-btn rn-advance rn-primary rn-focus">Advance to the Hollow Stag</div>
       <span class="rn-hint rn-hint-r"><b>Enter</b> advance (one-way)</span>
     </div>
@@ -141,6 +141,13 @@ export function createShopScreen({ run, build, party = () => null }) {
   const lanternGlow = el.querySelector('.rn-lanternglow');
   const advanceBtn = el.querySelector('.rn-advance');
   advanceBtn.addEventListener('click', () => run().advanceFromShop());
+  // What Enter does now (fix-M3-r5, keyboard half of PLAN §16.4): both lines
+  // share one grid cell and only visibility flips, so the hint keeps its
+  // width and moving the focus never re-flows the shelf.
+  const hintR = el.querySelector('.rn-hint-r');
+  hintR.style.display = 'grid';
+  hintR.innerHTML = '<span style="grid-area:1/1"><b>Enter</b> advance (one-way)</span><span style="grid-area:1/1;visibility:hidden"><b>Enter</b> buy this card</span>';
+  const [hintLampEl, hintCardEl] = hintR.children;
   // PARTY: the character tabs on the top rail.
   let viewSeat = 0;
   let lastView = null;
@@ -232,6 +239,10 @@ export function createShopScreen({ run, build, party = () => null }) {
     boughtEl.style.display = 'none';
     boughtEl.textContent = '';
     buildMotes();
+    // The keyboard / pad card focus survives a shelf rebuild (a purchase, a
+    // wallet change): re-applied to the new cards.
+    if (padFocus >= cards.length) padFocus = -1;
+    paintPadFocus();
     if (pendingBuy !== null) {
       const idx = pendingBuy;
       pendingBuy = null;
@@ -702,9 +713,17 @@ export function createShopScreen({ run, build, party = () => null }) {
       else buyOn(i);
       return true;
     }
+    // PLAN §16.4 input map ("buy — Enter on the focused card", "Advance —
+    // Enter on the lamp"): A / D, ← / → move the same card focus the pad's
+    // D-pad moves (-1 = the lamp; the page opens on the lamp).
+    if (code === 'KeyA' || code === 'ArrowLeft' || code === 'KeyD' || code === 'ArrowRight') {
+      if (fresh) pad(code === 'KeyA' || code === 'ArrowLeft' ? 'left' : 'right');
+      return true;
+    }
     if (code === 'Enter' || code === 'NumpadEnter') {
       if (!fresh) return true; // fresh-press rule: never advance on a held key
-      run().advanceFromShop();
+      if (padFocus >= 0) buyOn(padFocus);
+      else run().advanceFromShop();
       return true;
     }
     // Esc passes through unconsumed to the pause menu (PLAN §1.5, ruling
@@ -751,8 +770,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     const n = (shelfOf(view, viewSeat).stock ?? []).length;
     if (action === 'left' || action === 'right') {
       padFocus = Math.max(-1, Math.min(n - 1, padFocus + (action === 'left' ? -1 : 1)));
-      cards.forEach((c, k) => c && c.classList.toggle('rn-hover', k === padFocus));
-      advanceBtn.classList.toggle('rn-focus', padFocus < 0);
+      paintPadFocus();
       return true;
     }
     if (action === 'confirm') {
@@ -766,13 +784,30 @@ export function createShopScreen({ run, build, party = () => null }) {
     }
     return false;
   }
+  // The keyboard / pad card focus as drawn: the lifted card, the lamp's ring
+  // and what Enter does now (fix-M3-r5: the keyboard half of PLAN §16.4).
+  function paintPadFocus() {
+    cards.forEach((c, k) => c && c.classList.toggle('rn-hover', k === padFocus));
+    advanceBtn.classList.toggle('rn-focus', padFocus < 0);
+    hintLampEl.style.visibility = padFocus < 0 ? '' : 'hidden';
+    hintCardEl.style.visibility = padFocus < 0 ? 'hidden' : '';
+  }
+  // The shelf opens on the lamp: a focus left on a card by an earlier visit
+  // never turns this visit's first Enter into a purchase.
+  function open() {
+    padFocus = -1;
+    paintPadFocus();
+  }
   // Probe: the viewed seat + what the shelf shows.
-  const probe = () => ({ viewSeat, cards: cards.map((c) => (c ? { seat: Number(c.dataset.seat), marked: !!c.querySelector('.rn-suggest.rn-on') } : null)), lamp: advanceBtn.textContent });
+  const probe = () => ({ viewSeat, focus: padFocus, cards: cards.map((c) => (c ? { seat: Number(c.dataset.seat), marked: !!c.querySelector('.rn-suggest.rn-on') } : null)), lamp: advanceBtn.textContent });
+  // fix-M3-r5 (AUD5-F1): the selection signature the run UI polls for its
+  // selection ticks (src/audio/uiselect.js) — '<viewed character>|<card focus>'.
+  const sel = () => `${viewSeat}|${padFocus}`;
   const denyShakeSeat = (ev) => {
     if ((ev.seat ?? 0) === viewSeat) denyShake(ev.index ?? 0);
   };
 
-  return { el, render, key, pad, denyShake, denyShakeSeat, onPurchase, animState, pin, probe, setView, resetView, name: 'shop' };
+  return { el, render, key, pad, open, denyShake, denyShakeSeat, onPurchase, animState, pin, probe, sel, setView, resetView, name: 'shop' };
 }
 
 export { PALETTE as _shopPalette };

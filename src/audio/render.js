@@ -519,7 +519,14 @@ function workerMain() {
         const out = new Float32Array(len);
         for (const [prim, t, o] of job.score) PRIMS[prim](out, t, o);
         out[len - 1] = 0;
-        results.push({ id: job.id, data: out });
+        // The sample's own peak (|x| max): the engine plays UI-bus cues at
+        // exactly their levelDb from it (fix-M3-r5).
+        let peak = 0;
+        for (let i = 0; i < len; i++) {
+          const a = out[i] < 0 ? -out[i] : out[i];
+          if (a > peak) peak = a;
+        }
+        results.push({ id: job.id, data: out, peak });
         transfer.push(out.buffer);
       } catch (err) {
         results.push({ id: job.id, error: String((err && err.message) || err) });

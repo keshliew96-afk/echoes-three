@@ -584,6 +584,10 @@ export function createDraftScreen({ run, build, party = () => null }) {
     owner: ownerHost.textContent.trim(),
     cardSeat: host.querySelector('.rn-card') ? Number(host.querySelector('.rn-card').dataset.seat) : null,
   });
+  // fix-M3-r5 (AUD5-F1): the cheap selection signature the run UI polls once
+  // per frame for its selection ticks (src/audio/uiselect.js) —
+  // '<viewed character>|<Take / Leave focus>:<Replaces mark>'.
+  const sel = () => `${viewSeat}|${focus}:${swapView ? swapView.replace : '-'}`;
 
-  return { el, render, key, pad, open, probe, setView, dirty, name: 'draft' };
+  return { el, render, key, pad, open, probe, sel, setView, dirty, name: 'draft' };
 }

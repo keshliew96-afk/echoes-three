@@ -402,6 +402,33 @@ exit 1 on any FAIL). A pre-fix bundle for comparison: `GNT_AUDIO_TAB=<old
 audio.js> npx vite build --config tools/gntfixM33-vite-before.mjs --outDir
 dist-gntfixM33-before`.
 
+**Build-page selection ticks + UI over combat music (fix-M3-r5 AUD5-F1 /
+AUD5-F2).** Every selection change on the run's build pages ticks like a
+menu move (app `nav` → ui_move, a character tab → ui_tab): the reward / swap /
+party page (Q/E, F1-F4, LB/RB, tab clicks, A/D Take ↔ Leave, W/S / wheel /
+click on the Replaces mark), the door picker (A/D, the d-pad — the page now
+has a pad map, A walks through), the shop (Q/E, and A/D / ←/→ move the card
+focus the pad moves: PLAN §16.4 "Enter on the focused card" buys, "Enter on
+the lamp" advances; the page opens on the lamp) and the socket screen
+(cursor, tab). Pointer hover onto a page button / door / card / tab — and
+onto another app-menu item — ticks once. Commit keys never tick (their own
+cue plays), nothing ticks without a player input (combat keys, a page opening
+under a held key, replicated picks). Mechanism: src/audio/uiselect.js (the
+pages report a cheap `sel()` signature per frame). UI staging: every UI-bus
+cue peaks at the §3.5 ceiling (-12 dBFS pre-bus; baked UI samples play from
+their own measured peak), and the engine's UI duck (`UI_DUCK`, -3 dB,
+released ~0.4 s after the latest UI cue; exempt: Audio-tab previews / Test
+phrases, and while the pause duck holds) dips the score under them —
+`audio.music().uiDuck`. Probes (own port via `GNTFIXM35_BASE`, default
+http://127.0.0.1:4303/, outputs `captures/gntfixM35/<GNTFIXM35_TAG>-*.json`):
+`node tools/gntfixM35-nav.mjs` (legs A-F: pad on the swap offer, doors by
+keys / pad / mouse, socket screen, shop keyboard focus + buy + advance, pause
+hover, no spurious ticks; prints ALL PASS), `node
+tools/gntfixM35-shopshot.mjs [WxH ...]` (the shop hint / lamp boxes with the
+focus on the lamp and on a card: no re-flow, no overlap), and the critic's
+round-5 probes re-run as `tools/gntfixM35-c-{runui2,swap,swapmouse,uicues,
+runui,balance,boss,pause}.mjs` (logic unchanged).
+
 **Adding sounds for new content (W2+).** From your own module (never
 src/audio/**): `service('audio').registerCue(id, { bus: 'sfx', levelDb,
 priority, maxVoices, cooldownMs, voice(ctx, t, dest, p) { … return endTime } })`

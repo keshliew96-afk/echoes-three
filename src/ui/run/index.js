@@ -51,6 +51,8 @@ import { createShopScreen } from './shop.js';
 import { createEndScreen } from './endscreens.js';
 // CAMPAIGN (docs/gauntlet/PLAN.md §12.6): the level-transition card.
 import { createTransitScreen, TRANSIT_CSS } from './transit.js';
+// @gnt:M3 RUN-NAV-SOUND (fix-M3-r5): selection ticks for the build pages.
+import { createSelectionSound } from '../../audio/uiselect.js';
 
 // phase -> screen name. Anything absent means "no meta screen".
 const SCREEN_FOR = {
@@ -902,6 +904,68 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     syncGuestNote();
   };
   // @gnt:M5b GUEST-GUARD end
+  // @gnt:M3 RUN-NAV-SOUND begin — fix-M3-r5 AUD5-F1 (PLAN §3.5 "app nav ->
+  // UI bus"): moving the selection on a build page ticks exactly like a menu
+  // move — the character tab (Q / E, F1-F4, LB / RB, a tab click), Take /
+  // Leave (A / D), the Replaces mark (W / S, wheel, a click), the doors, the
+  // shop's card focus — by keyboard, pad and pointer, and the pointer
+  // entering a page's button / door / card / tab ticks once (a hover). The
+  // pages only report a cheap signature (page.sel()); src/audio/uiselect.js
+  // decides and emits the app `nav` event the audio engine already plays.
+  // Commit keys never tick (their own cue plays: draft_take, path, purchase).
+  const selSound = createSelectionSound('run');
+  const SEL_COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'KeyX', 'Escape']);
+  const HOVER_SEL = {
+    draft: '.rn-btn, .rn-rep, .rn-ptab',
+    path: '.rn-doorwrap',
+    shop: '.rn-card, .rn-suggest, .rn-advance, .rn-ptab',
+    end: '.rn-btn',
+  };
+  const pageOpen = () => current !== 'none' && !(socket && socket.isOpen());
+  window.addEventListener(
+    'keydown',
+    (e) => {
+      // A key the page drops (the settle window, a held key) moves nothing.
+      if (!pageOpen() || !settled() || e.repeat) return;
+      selSound.input('keyboard', SEL_COMMIT_KEYS.has(e.code));
+    },
+    true
+  );
+  let hoverKey = null;
+  let lastPX = null;
+  let lastPY = null;
+  rootEl.addEventListener(
+    'pointermove',
+    (e) => {
+      // Real pointer motion only (a page opening under a still cursor, or a
+      // re-render under it, makes the browser re-send the SAME position).
+      const moved = e.clientX !== lastPX || e.clientY !== lastPY;
+      lastPX = e.clientX;
+      lastPY = e.clientY;
+      if (!pageOpen() || e.pointerType === 'touch' || !moved) return;
+      selSound.input('mouse', false);
+      const q = HOVER_SEL[current];
+      const el = q && e.target && e.target.closest ? e.target.closest(q) : null;
+      // Keyed by the item's place on the page, so a rebuilt card under the
+      // cursor is the same item, not a new hover.
+      const key = el && !el.closest('.rn-sold') ? `${current}:${[...screens[current].el.querySelectorAll(q)].indexOf(el)}` : null;
+      if (key === hoverKey) return;
+      hoverKey = key;
+      if (key && settled()) selSound.hover(current);
+    },
+    { passive: true }
+  );
+  rootEl.addEventListener('pointerleave', () => (hoverKey = null), { passive: true });
+  for (const type of ['pointerdown', 'wheel']) rootEl.addEventListener(type, () => pageOpen() && selSound.input('mouse', false), { passive: true, capture: true });
+  const selUpdate = update;
+  // eslint-disable-next-line no-func-assign
+  update = function selectionAwareUpdate() {
+    selUpdate();
+    const s = current === 'none' ? null : screens[current];
+    if (current === 'none') hoverKey = null;
+    selSound.poll(current, s && typeof s.sel === 'function' ? s.sel() : null);
+  };
+  // @gnt:M3 RUN-NAV-SOUND end
   let pendingAutostart = !!autostart;
   function maybeAutostart() {
     if (!pendingAutostart || world.tick < 1) return;
@@ -921,6 +985,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const s = screens[current];
     if (!s || typeof s.pad !== 'function') return false;
     if (!settled()) return true;
+    selSound.input('gamepad', action === 'confirm' || action === 'secondary'); // @gnt:M3 RUN-NAV-SOUND (fix-M3-r5)
     const used = s.pad(action);
     if (used) signature = '';
     return used;

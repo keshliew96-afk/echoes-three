@@ -802,6 +802,18 @@ for their new events with `registerEventCue` in their own files; INT audits):
 | room_start · wave_start · room_cleared · reward_offer · draft_taken/declined · path_chosen · shop_open · shop_purchase · currency_denied · glint_gain · node_socketed · socket_denied · run_start · run_end · return_to_camp | UI / progression cues (UI bus) |
 | app `nav` (move/confirm/back/tab) · slider ticks · toggles | UI bus |
 
+*(fix-M3-r5, binding)* The run's build pages (reward / swap / party page,
+doors, shop, socket screen) are not app screens, so they emit the same app
+`nav` event (`screen: 'run:<page>'` / `'socket:socket'`) through
+src/audio/uiselect.js on every player-caused selection change (keys, pad,
+pointer; a character switch = `tabNext` → ui_tab); a pointer entering a page
+item, or moving the screen manager's focus to another menu item, ticks once
+(ui_move, source `hover`). Commits and input-less changes never tick. UI
+staging: every UI-bus cue peaks AT the −12 dBFS ceiling (baked UI samples from
+their own measured peak), and a UI cue ducks the score (`UI_DUCK`: −3 dB,
+held for the cue's transient + 0.15 s, released τ 0.12 s; Audio-tab previews /
+Test phrases and the pause duck exempt) so G3.4's UI clause holds in combat.
+
 The engine KEEPS emitting `sound` events (`{ slot }` for the four legacy
 slots shoot/hit/kill/heal, `{ slot, cue }` for everything else) into the sim
 bus — the observable contract in headless captures. `sound` events are
@@ -3198,8 +3210,9 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
 | character directly | F1–F4 | click the tab | — (≤ 2 bumpers reach any tab) |
 | Take / Leave the viewed card | Enter / X (A/D or ←/→ move between the buttons) | click Take / Leave | A / X |
 | cycle Replaces | W / S, ↑ / ↓ | wheel, click an icon | D-pad ↑ / ↓ |
-| buy (shop) | Enter on the focused card | click the card | A |
-| Done / Advance (shop) | Enter on the lamp | click the lamp | A on the lamp (Start stays pause) |
+| buy (shop) | Enter on the focused card (A / D, ← / → move the card focus; fix-M3-r5) | click the card | A |
+| Done / Advance (shop) | Enter on the lamp (the shelf opens on the lamp) | click the lamp | A on the lamp (Start stays pause) |
+| door (path page) | A / D, ← / →, Enter | hover / click a door | d-pad / stick left-right, A (fix-M3-r5) |
 | socket screen rows | 1–4, ↑ / ↓ | click | LT / RT, D-pad |
 | reorder skills | ← from socket 1 → header, Enter, ↑/↓ or 1–4 to another header, Enter | click a header, click another | same with D-pad + A |
 | auto-fill viewed / all | F / Shift+F | buttons | Y / D-pad to the "Auto-fill all" button, A |

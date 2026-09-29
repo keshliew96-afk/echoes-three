@@ -18,7 +18,7 @@
 //                 record kit: the primitive calls, a few microseconds each)
 //                 and posts them to the render worker, which synthesises
 //                 them with a DSP twin of the Web Audio primitives.
-//   get(key)      -> { buffer, sid, o, d } (round-robin over the variants) or
+//   get(key)      -> { buffer, sid, o, d, peak } (round-robin over the variants) or
 //                 null. The engine plays a cue in the sampler worklet (sid —
 //                 the worker's array is transferred there, no copy) and a
 //                 music note as ONE AudioBufferSourceNode (buffer).
@@ -213,7 +213,9 @@ export function createBaker({ ctx, onCost = null, sampler = null }) { // eslint-
       }
       const data = r.data;
       const n = data.length - 1; // last frame = interpolation guard
-      const reg = { buffer: null, sid: null, o: 0, d: p.dur, bytes: data.length * 4, lastUse: ctx.currentTime, kind: kindOf(key) };
+      // peak: the rendered sample's |x| max (render worker) — the engine plays
+      // a UI-bus cue at exactly its levelDb from it (fix-M3-r5).
+      const reg = { buffer: null, sid: null, o: 0, d: p.dur, bytes: data.length * 4, lastUse: ctx.currentTime, kind: kindOf(key), peak: Number.isFinite(r.peak) ? r.peak : null };
       // Cues and notes both play in the sampler worklets when available (the
       // music players' layer samplers share its sample memory).
       if (sampler && sampler.ok) reg.sid = sampler.uploadOwned(data);

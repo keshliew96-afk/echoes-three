@@ -67,6 +67,17 @@ export const AUDIO_CHANNELS = Object.freeze(['master', ...AUDIO_BUSES]);
 export const AUDIO_DEFAULT_LEVELS = Object.freeze({ master: 0.8, music: 0.6, sfx: 0.8, ambient: 0.6, ui: 0.7 });
 export const LIMITER = Object.freeze({ threshold: -6, knee: 6, ratio: 12, attack: 0.003, release: 0.15 });
 export const VOICE_CAP = 48;
+// UI duck (fix-M3-r5 AUD5-F2, gate G3.4 "UI clicks >= 3 dB above the music
+// RMS"): every UI-bus cue dips the score by `db` for the cue's transient —
+// attack `attackTau`, held `min(max(cue length, holdMinSec), holdMaxSec) +
+// tailSec` after the latest UI cue, released with `releaseTau` (~0.4 s back
+// to unity) — the sidechain "interface duck" a Wwise / FMOD mix puts on the
+// music bus, so a menu tick reads over a loud combat loop without the UI bus
+// breaking its -12 dBFS staging ceiling. Rapid navigation holds one dip
+// instead of pumping. The Audio tab's channel previews and Test phrases are
+// exempt (they exist to judge a channel's own loudness), and so is any cue
+// while the pause duck already holds the score down.
+export const UI_DUCK = Object.freeze({ db: -3, attackTau: 0.012, holdMinSec: 0.1, holdMaxSec: 0.35, tailSec: 0.15, releaseTau: 0.12, exemptSources: Object.freeze(['preview', 'test', 'measure']) });
 // G3.10 frame budget (docs/gauntlet/fix-M3-r1.md, gate: engine main-thread
 // <= 1 ms/frame p95). Gameplay cue requests heard during the frame's sim
 // ticks are queued (their event handlers still run at once, so positions are
@@ -404,7 +415,13 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     g.musicPost.gain.value = dbToGain(MUSIC_BUS.postDb);
     g.musicIn.connect(g.musicComp);
     g.musicComp.connect(g.musicPost);
-    g.musicPost.connect(g.duckGain);
+    // UI duck (UI_DUCK): the score's sidechain dip under interface cues, in
+    // the music content path like the pause duck (test tones never see it).
+    g.uiDuck = ctx.createGain();
+    g.musicPost.connect(g.uiDuck);
+    g.uiDuck.connect(g.duckGain);
+    g.uiDuckUntil = 0;
+    g.uiDucks = 0;
     g.musicCompOn = true;
     // Meter taps: AudioWorklet accumulators (audio thread) once the module
     // loads (a few ms), analyser fallback otherwise. Their silent outputs
@@ -591,10 +608,6 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       counters.stolen += 1;
     }
     const t = ctx.currentTime + 0.003;
-    // calDb: the recipe's measured design peak (CUE_CAL for built-ins; a
-    // registerCue caller may pass its own) so the cue peaks at levelDb.
-    const lvlDb = (def.levelDb ?? -12) - (def.calDb ?? CUE_CAL[cueId] ?? 0) + (Number(opts.gainDb) || 0);
-    const level = dbToGain(lvlDb) * (spatialOn ? SPATIAL.trim : 1);
     // Cosmetic pitch jitter (±2.5 %) so repeats never machine-gun.
     const base = Number(opts.pitch) || 1;
     const jitter = opts.exactPitch ? 1 : 1 + (Math.random() - 0.5) * 0.05;
@@ -611,6 +624,15 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     //    recipe is synthesised live into a slot and the bake is queued.
     const key = baker && def.bake !== false ? `c:${cueId}:${Math.round(base * 1000)}` : null;
     const reg = key ? baker.get(key) : null;
+    // calDb: the recipe's measured design peak (CUE_CAL for built-ins; a
+    // registerCue caller may pass its own) so the cue peaks at levelDb. A
+    // UI-bus cue playing a baked sample uses that sample's OWN measured peak
+    // (bake.js, per rendered variant): a short tick with a noise layer lands
+    // within ±2 dB of its design peak per render, so its levelDb (the UI
+    // staging ceiling, G3.4) is met exactly instead of on average (fix-M3-r5).
+    const calDb = b === 'ui' && reg && reg.peak > 1e-6 ? gainToDb(reg.peak) : def.calDb ?? CUE_CAL[cueId] ?? 0;
+    const lvlDb = (def.levelDb ?? -12) - calDb + (Number(opts.gainDb) || 0);
+    const level = dbToGain(lvlDb) * (spatialOn ? SPATIAL.trim : 1);
     if (reg && reg.sid != null && sampler && sampler.ok) {
       const sr = ctx.sampleRate;
       let gL = level;
@@ -734,6 +756,30 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     console.info(`[audio] ${key} failed: ${err && err.message ? err.message : err}`);
   }
 
+  // UI duck (UI_DUCK): a UI-bus voice just started — dip the score now and
+  // (re)schedule its release after the latest UI cue's transient.
+  function uiDuckKick(v, source) {
+    if (!graph || !graph.uiDuck || graph.ducked || UI_DUCK.exemptSources.includes(source)) return;
+    const now = ctx.currentTime;
+    const len = Math.min(UI_DUCK.holdMaxSec, Math.max(UI_DUCK.holdMinSec, v.end - v.t0));
+    const until = Math.max(graph.uiDuckUntil, v.t0 + len + UI_DUCK.tailSec);
+    const p = graph.uiDuck.gain;
+    try {
+      if (p.cancelAndHoldAtTime) p.cancelAndHoldAtTime(now);
+      else {
+        p.cancelScheduledValues(now);
+        p.setValueAtTime(p.value, now);
+      }
+      p.setTargetAtTime(dbToGain(UI_DUCK.db), now, UI_DUCK.attackTau);
+      p.setTargetAtTime(1, until, UI_DUCK.releaseTau);
+      p.setValueAtTime(1, until + UI_DUCK.releaseTau * 9); // land exactly on unity
+    } catch {
+      p.value = 1;
+    }
+    graph.uiDuckUntil = until;
+    graph.uiDucks += 1;
+  }
+
   // One cue request: cooldown / lock checks, voice, cueLog, `sound` event.
   function trigger(cueId, opts = {}, source = 'api') {
     const t0 = performance.now();
@@ -754,7 +800,10 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     if (!dropped) {
       res = spawn(cueId, def, opts);
       if (res.dropped) dropped = res.dropped;
-      else lastPlayed.set(cueId, now);
+      else {
+        lastPlayed.set(cueId, now);
+        if (res.voice && res.voice.bus === 'ui') uiDuckKick(res.voice, source);
+      }
     }
     if (dropped) counters.dropped[dropped] = (counters.dropped[dropped] || 0) + 1;
     const x = Number.isFinite(opts.x) ? Math.round(opts.x * 100) / 100 : null;
@@ -970,6 +1019,19 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
   }
   appEvents.on('nav', onNav);
   if (app && app.screens && typeof app.screens.on === 'function') app.screens.on('nav', onNav);
+  // Pointer hover onto another menu item (the screen manager moves its focus
+  // ring only on real pointer motion) ticks like a key move — the same
+  // "every selection change is heard" rule the build pages follow
+  // (fix-M3-r5 AUD5-F1; src/audio/uiselect.js). Keyboard / pad focus moves
+  // already ticked through `nav`.
+  function onFocusMove(p) {
+    if (!p || p.source !== 'mouse') return;
+    const now = performance.now();
+    if (now - lastNavCueAt < 70) return; // the click / nav that moved it already sounded
+    lastNavCueAt = now;
+    trigger('ui_move', {}, 'hover');
+  }
+  if (app && app.screens && typeof app.screens.on === 'function') app.screens.on('focus', onFocusMove);
 
   // ----------------------------------------------------- music driver --
   let lastRunView = null; // the run view deriveMusic read (driveMusic reuses it)
@@ -1546,7 +1608,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       cueLog.length = 0;
       return true;
     },
-    music: () => (music ? { ...music.debug(), derived, pinned: pin ? pin.state : null, stinger: stinger ? stinger.state : null, intensityOverride, fight: { ...fight }, ducked: !!(graph && graph.ducked), musicCompReductionDb: graph ? Math.round(graph.musicComp.reduction * 100) / 100 : null } : { state: null, locked: true }),
+    music: () => (music ? { ...music.debug(), derived, pinned: pin ? pin.state : null, stinger: stinger ? stinger.state : null, intensityOverride, fight: { ...fight }, ducked: !!(graph && graph.ducked), uiDuck: graph && graph.uiDuck ? { db: Math.round(gainToDb(Math.max(1e-6, graph.uiDuck.gain.value)) * 100) / 100, active: ctx.currentTime < graph.uiDuckUntil, kicks: graph.uiDucks, config: { ...UI_DUCK } } : null, musicCompReductionDb: graph ? Math.round(graph.musicComp.reduction * 100) / 100 : null } : { state: null, locked: true }),
     setMusic: (st, opts = {}) => {
       if (!MUSIC_STATES.includes(st)) return null;
       pin = { state: st, derivedAtPin: derived ?? deriveMusic(), bed: opts.bed };
@@ -1646,7 +1708,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       for (const v of active) stopVoice(v, 0.01);
       return true;
     },
-    config: () => ({ buses: [...AUDIO_BUSES], channels: [...AUDIO_CHANNELS], defaults: { ...AUDIO_DEFAULT_LEVELS }, voiceCap: VOICE_CAP, rampTau: RAMP_TAU, limiter: { ...LIMITER } }),
+    config: () => ({ buses: [...AUDIO_BUSES], channels: [...AUDIO_CHANNELS], defaults: { ...AUDIO_DEFAULT_LEVELS }, voiceCap: VOICE_CAP, rampTau: RAMP_TAU, limiter: { ...LIMITER }, uiDuck: { ...UI_DUCK } }),
     get lastUpdateAt() {
       return lastUpdateAt;
     },

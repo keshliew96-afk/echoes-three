@@ -71,6 +71,8 @@ import { createPartyStrip } from '../run/partystrip.js';
 import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
 import { CLASS_ACCENTS } from '../../data/palette.js';
 import { service } from '../../app/registry.js';
+// @gnt:M3 RUN-NAV-SOUND (fix-M3-r5 AUD5-F1): cursor / tab moves tick like a menu move.
+import { createSelectionSound } from '../../audio/uiselect.js';
 
 const RARITY_COLOR = {
   common: PALETTE.bone,
@@ -1203,6 +1205,7 @@ export function createSocketScreen({ bus, world }) {
       return;
     }
     const code = e.code;
+    selSound.input('keyboard', code === 'Escape' || code === 'KeyB'); // @gnt:M3 RUN-NAV-SOUND
     const dir = KEY_DIR[code];
     let used = true;
     if (dir) move(dir[0], dir[1]); // auto-repeat allowed: a held arrow glides
@@ -1272,6 +1275,7 @@ export function createSocketScreen({ bus, world }) {
       }
       return;
     }
+    selSound.input('gamepad', i === 1 || i === 8); // @gnt:M3 RUN-NAV-SOUND
     if (i === 0) {
       if (focus.zone === 'head') activateHead();
       else if (focus.zone === 'autoall') autoFillAll();
@@ -1326,15 +1330,39 @@ export function createSocketScreen({ bus, world }) {
       if (d) {
         padLog.push({ t: Math.round(now), dir: d, open });
         if (padLog.length > 30) padLog.shift();
+        selSound.input('gamepad'); // @gnt:M3 RUN-NAV-SOUND
         move(DIRV[d][0], DIRV[d][1]);
       }
     } else if (d && now - pad.since >= 400 && now - pad.last >= 90) {
       pad.last = now;
+      selSound.input('gamepad'); // @gnt:M3 RUN-NAV-SOUND
       move(DIRV[d][0], DIRV[d][1]);
     }
   }
+  // @gnt:M3 RUN-NAV-SOUND begin — fix-M3-r5 AUD5-F1: the cursor (cell / bench
+  // chip / row header / Auto-fill all) and the viewed character tick like a
+  // menu move when a key, the pad or the pointer moves them (src/audio/
+  // uiselect.js; Esc / B / the pad's B close and never tick).
+  const selSound = createSelectionSound('socket');
+  let lastPX = null;
+  let lastPY = null;
+  rootEl.addEventListener(
+    'pointermove',
+    (e) => {
+      // Real motion only: a re-render under a still cursor re-sends the same position.
+      const moved = e.clientX !== lastPX || e.clientY !== lastPY;
+      lastPX = e.clientX;
+      lastPY = e.clientY;
+      if (open && e.pointerType !== 'touch' && moved) selSound.input('mouse', false);
+    },
+    { passive: true }
+  );
+  for (const type of ['pointerdown', 'wheel']) rootEl.addEventListener(type, () => open && selSound.input('mouse', false), { passive: true, capture: true });
+  const selSig = () => (open ? `${viewSeat}|${focus.zone}:${focus.r}:${focus.c}:${focus.i}` : null);
+  // @gnt:M3 RUN-NAV-SOUND end
   function padLoop(now) {
     pollPad(now);
+    selSound.poll('socket', selSig()); // @gnt:M3 RUN-NAV-SOUND
     requestAnimationFrame(padLoop);
   }
   requestAnimationFrame(padLoop);

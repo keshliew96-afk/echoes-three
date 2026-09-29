@@ -548,83 +548,91 @@ cue('soft_fail', { slot: 'warning', levelDb: -11, priority: 4, maxVoices: 1, coo
 );
 
 // ------------------------------------------------ UI / progression (UI bus) --
+// UI staging (fix-M3-r5 AUD5-F2, gate G3.4 "UI clicks >= 3 dB above the
+// music RMS" at defaults in combat): every UI-bus cue peaks AT the §3.5 UI
+// ceiling (<= -12 dBFS pre-bus) — a 20 ms move tick and a 1 s room-clear
+// chord at the same peak still read in that order (duration / timbre carry
+// the hierarchy, not a quieter peak). Baked UI samples play from their own
+// measured peak (engine spawn), so every tick lands at exactly this level;
+// the engine's UI duck (UI_DUCK) dips the score under it.
+export const UI_PEAK_DB = -12;
 function ui(id, def, fn) {
-  cue(id, { bus: 'ui', slot: 'ui', priority: 3, maxVoices: 3, cooldownMs: 25, levelDb: -14, ...def }, fn);
+  cue(id, { bus: 'ui', slot: 'ui', priority: 3, maxVoices: 3, cooldownMs: 25, levelDb: UI_PEAK_DB, ...def }, fn);
 }
-ui('ui_move', { levelDb: -16 }, (k, t, d, p) =>
+ui('ui_move', { levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   Math.max(k.tone(d, t, { f0: P(p, 1400), d: 0.02, gain: 0.6 }), k.noise(d, t, { type: 'highpass', f0: 5000, d: 0.012, gain: 0.25 }))
 );
-ui('ui_confirm', { levelDb: -12 }, (k, t, d, p) =>
+ui('ui_confirm', { levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   Math.max(k.tone(d, t, { f0: P(p, 880), f1: P(p, 1320), d: 0.07, gain: 0.55 }), k.tone(d, t + 0.03, { f0: P(p, 1760), d: 0.08, gain: 0.3 }))
 );
-ui('ui_back', { levelDb: -14 }, (k, t, d, p) => k.tone(d, t, { f0: P(p, 660), f1: P(p, 440), d: 0.08, gain: 0.7 }));
-ui('ui_tab', { levelDb: -14 }, (k, t, d, p) =>
+ui('ui_back', { levelDb: UI_PEAK_DB }, (k, t, d, p) => k.tone(d, t, { f0: P(p, 660), f1: P(p, 440), d: 0.08, gain: 0.7 }));
+ui('ui_tab', { levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   Math.max(k.noise(d, t, { f0: 2000, q: 1.2, d: 0.035, gain: 0.5 }), k.tone(d, t, { f0: P(p, 990), d: 0.035, gain: 0.45 }))
 );
-ui('ui_slider', { levelDb: -16, cooldownMs: 40 }, (k, t, d, p) => k.tone(d, t, { f0: P(p, 700), d: 0.025, gain: 0.8 }));
-ui('ui_toggle', { levelDb: -14 }, (k, t, d, p) =>
+ui('ui_slider', { levelDb: UI_PEAK_DB, cooldownMs: 40 }, (k, t, d, p) => k.tone(d, t, { f0: P(p, 700), d: 0.025, gain: 0.8 }));
+ui('ui_toggle', { levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   Math.max(k.tone(d, t, { f0: P(p, 1200), d: 0.02, gain: 0.5 }), k.tone(d, t + 0.05, { f0: P(p, 1600), d: 0.025, gain: 0.5 }))
 );
-ui('ui_deny', { levelDb: -15 }, (k, t, d, p) =>
+ui('ui_deny', { levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   k.tone(d, t, { type: 'square', f0: P(p, 160), d: 0.1, gain: 0.5, filter: { f0: 1200, q: 0.7 } })
 );
-ui('room_start', { slot: 'progress', levelDb: -16 }, (k, t, d) =>
+ui('room_start', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d) =>
   Math.max(...[0, 0.06, 0.12, 0.18].map((o, i) => k.noise(d, t + o, { type: 'lowpass', f0: 600 + i * 150, q: 0.8, d: 0.05, gain: 0.4 + i * 0.15 })))
 );
-ui('wave_start', { slot: 'progress', levelDb: -14 }, (k, t, d, p) =>
+ui('wave_start', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   Math.max(
     k.tone(d, t, { type: 'sawtooth', f0: P(p, 196), a: 0.02, d: 0.35, gain: 0.45, filter: { f0: 1200, q: 1 } }),
     k.tone(d, t, { type: 'sawtooth', f0: P(p, 294), a: 0.02, d: 0.3, gain: 0.3, filter: { f0: 1200, q: 1 } })
   )
 );
-ui('room_clear', { slot: 'progress', levelDb: -12, cooldownMs: 300 }, (k, t, d, p) =>
+ui('room_clear', { slot: 'progress', levelDb: UI_PEAK_DB, cooldownMs: 300 }, (k, t, d, p) =>
   Math.max(...[293.66, 369.99, 440, 587.33].map((f, i) => k.pluck(d, t + i * 0.05, { f: P(p, f), d: 1.0, gain: 0.35, bright: 3600 })))
 );
-ui('reward', { slot: 'progress', levelDb: -14, cooldownMs: 200 }, (k, t, d, p) =>
+ui('reward', { slot: 'progress', levelDb: UI_PEAK_DB, cooldownMs: 200 }, (k, t, d, p) =>
   Math.max(...[1174.7, 1568, 1760, 2349.3].map((f, i) => k.tone(d, t + i * 0.045, { f0: P(p, f), d: 0.2, gain: 0.3 })))
 );
-ui('draft_take', { slot: 'progress', levelDb: -12 }, (k, t, d, p) =>
+ui('draft_take', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   Math.max(k.bell(d, t, { f: P(p, 784), ratio: 2, index: 0.8, d: 0.4, gain: 0.5 }), k.bell(d, t + 0.05, { f: P(p, 1175), ratio: 2, index: 0.6, d: 0.45, gain: 0.35 }))
 );
-ui('draft_decline', { slot: 'progress', levelDb: -16 }, (k, t, d, p) => k.tone(d, t, { type: 'triangle', f0: P(p, 440), f1: P(p, 330), d: 0.13, gain: 0.7 }));
-ui('path', { slot: 'progress', levelDb: -13 }, (k, t, d, p) =>
+ui('draft_decline', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) => k.tone(d, t, { type: 'triangle', f0: P(p, 440), f1: P(p, 330), d: 0.13, gain: 0.7 }));
+ui('path', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   Math.max(k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 320, q: 0.8, d: 0.12, gain: 0.8 }), k.tone(d, t, { f0: P(p, 150), f1: P(p, 90), d: 0.13, gain: 0.5 }))
 );
-ui('shop_open', { slot: 'progress', levelDb: -13 }, (k, t, d, p) => k.bell(d, t, { f: P(p, 880), ratio: 3.01, index: 1.2, d: 0.7, gain: 0.7 }));
-ui('purchase', { slot: 'progress', levelDb: -11 }, (k, t, d, p) =>
+ui('shop_open', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) => k.bell(d, t, { f: P(p, 880), ratio: 3.01, index: 1.2, d: 0.7, gain: 0.7 }));
+ui('purchase', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   Math.max(
     ...[2093, 2637, 3136].map((f, i) => k.tone(d, t + i * 0.04, { f0: P(p, f), d: 0.1, gain: 0.3 })),
     k.noise(d, t, { type: 'highpass', f0: 6000, q: 0.7, d: 0.12, gain: 0.2 })
   )
 );
-ui('deny', { slot: 'progress', levelDb: -14 }, (k, t, d, p) =>
+ui('deny', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   k.tone(d, t, { type: 'square', f0: P(p, 150), d: 0.13, gain: 0.55, filter: { f0: 1200, q: 0.7 } })
 );
-ui('glint', { slot: 'progress', levelDb: -16 }, (k, t, d, p) =>
+ui('glint', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   Math.max(k.tone(d, t, { f0: P(p, 1568), d: 0.06, gain: 0.4 }), k.tone(d, t + 0.05, { f0: P(p, 2093), d: 0.08, gain: 0.35 }))
 );
-ui('socket', { slot: 'progress', levelDb: -12 }, (k, t, d, p) =>
+ui('socket', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   Math.max(k.noise(d, t, { f0: 3000, q: 2, d: 0.015, gain: 0.6 }), k.tone(d, t + 0.01, { f0: P(p, 660), f1: P(p, 880), d: 0.07, gain: 0.5 }))
 );
-ui('unsocket', { slot: 'progress', levelDb: -16 }, (k, t, d, p) =>
+ui('unsocket', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   Math.max(k.noise(d, t, { f0: 2400, q: 2, d: 0.015, gain: 0.6 }), k.tone(d, t + 0.01, { f0: P(p, 880), f1: P(p, 620), d: 0.07, gain: 0.5 }))
 );
-ui('node_grant', { slot: 'progress', levelDb: -14 }, (k, t, d, p) =>
+ui('node_grant', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   Math.max(k.tone(d, t, { f0: P(p, 1046.5), d: 0.12, gain: 0.45 }), k.tone(d, t + 0.06, { f0: P(p, 1318.5), d: 0.15, gain: 0.4 }))
 );
-ui('run_start', { slot: 'progress', levelDb: -10, cooldownMs: 500 }, (k, t, d, p) =>
+ui('run_start', { slot: 'progress', levelDb: UI_PEAK_DB, cooldownMs: 500 }, (k, t, d, p) =>
   Math.max(
     k.noise(d, t, { f0: 300, f1: 1500, q: 0.9, a: 0.3, d: 0.5, gain: 0.7 }),
     ...[293.66, 440, 587.33].map((f, i) => k.tone(d, t + 0.3 + i * 0.02, { f0: P(p, f), a: 0.03, d: 0.7, gain: 0.22 }))
   )
 );
-ui('run_end', { slot: 'progress', levelDb: -12, cooldownMs: 500 }, (k, t, d, p) =>
+ui('run_end', { slot: 'progress', levelDb: UI_PEAK_DB, cooldownMs: 500 }, (k, t, d, p) =>
   Math.max(k.bell(d, t, { f: P(p, 196), ratio: 2, index: 1.5, d: 1.4, gain: 0.6 }), k.bell(d, t, { f: P(p, 392), ratio: 2.76, index: 0.7, d: 1.0, gain: 0.25 }))
 );
-ui('camp_return', { slot: 'progress', levelDb: -16, cooldownMs: 300 }, (k, t, d, p) =>
+ui('camp_return', { slot: 'progress', levelDb: UI_PEAK_DB, cooldownMs: 300 }, (k, t, d, p) =>
   k.noise(d, t, { f0: P(p, 1400), f1: P(p, 380), q: 0.8, a: 0.05, d: 0.3, gain: 1 })
 );
-ui('ui_blip', { levelDb: -18 }, (k, t, d, p) => k.tone(d, t, { f0: P(p, 1046.5), d: 0.04, gain: 0.7 }));
+ui('ui_blip', { levelDb: UI_PEAK_DB }, (k, t, d, p) => k.tone(d, t, { f0: P(p, 1046.5), d: 0.04, gain: 0.7 }));
 
 // Channel test phrases (Audio tab "Test"), one per bus.
 cue('test_sfx', { slot: 'test', levelDb: -8, priority: 3, maxVoices: 3, cooldownMs: 0 }, (k, t, d, p) =>
@@ -763,7 +771,9 @@ export const DEFAULT_EVENT_CUES = {
   room_soft_fail: () => [{ cue: 'soft_fail' }],
   // Progression / UI bus (non-spatial).
   room_start: () => [{ cue: 'room_start' }],
-  wave_start: (ev) => (ev.index > 0 ? [{ cue: 'wave_start' }] : [{ cue: 'wave_start', gainDb: -3 }]),
+  // (fix-M3-r5: the first wave no longer plays 3 dB under the others — at the
+  // UI staging level a -3 dB horn sat under the combat music, G3.4.)
+  wave_start: () => [{ cue: 'wave_start' }],
   room_cleared: () => [{ cue: 'room_clear' }],
   reward_offer: () => [{ cue: 'reward' }],
   reward_forfeited: () => [{ cue: 'draft_decline' }],

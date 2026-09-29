@@ -1,0 +1,45 @@
+// gntfixM35 copy of tools/gntcaudio5-runui.mjs (the round-5 audio critic's probe, logic unchanged;
+// own port + outputs via tools/gntfixM35-lib.mjs). Run-UI cues with real keys: swap offer (Q/E, W/S,
+// A/D, X), path, the next reward, pause-menu nav in combat, shop.
+import { bootTap, out, sleep, shotPath } from './gntfixM35-lib.mjs';
+const { browser, page, errors } = await bootTap('level=1&seed=7');
+await page.waitForFunction(() => window.__echoes.audio.state === 'running' && window.__echoes.tick > 120, { timeout: 180000 });
+await sleep(3000);
+const presses = [];
+const P = async (key, label, wait = 380) => {
+  await page.evaluate(() => { window.__echoes.audio.meterReset(); window.__gntCL = window.__echoes.audio.cueLog(400).length; });
+  await page.keyboard.press(key); await sleep(wait);
+  const m = await page.evaluate(() => { const E = window.__echoes, A = E.audio; const ms = A.meters(); const cl = A.cueLog(400).slice(window.__gntCL); const r = E.state().run; return { uiPk: ms.ui.peakDb, music: ms.music.rmsDb, cues: cl.map((c) => c.cue).join(','), phase: r?.phase, reward: r?.reward ? `${r.reward.type}:${r.reward.id}:swap=${r.reward.swap}:rep=${r.reward.replace}` : null, stack: E.app.stack().join('>'), focus: E.app.focus()?.label?.slice(0, 30) }; });
+  presses.push({ key, label, ...m, margin: m.uiPk > -150 ? +(m.uiPk - m.music).toFixed(1) : null });
+  await sleep(250);
+};
+await page.evaluate(() => { const E = window.__echoes; E.cmd('giveSkill', 'nova_bloom'); E.cmd('giveSkill', 'sanctuary'); E.cmd('killAllEnemies'); });
+await page.waitForFunction(() => !!window.__echoes.state().run?.reward, { timeout: 20000 }); await sleep(1500);
+await P('KeyE', 'swap: next character (E)'); await P('KeyE', 'swap: next character (E)'); await P('KeyQ', 'swap: prev character (Q)'); await P('KeyQ', 'swap: prev character (Q)');
+await P('KeyS', 'swap: W/S replace down'); await P('KeyW', 'swap: W/S replace up');
+await P('KeyD', 'swap: A/D choose right'); await P('KeyA', 'swap: A/D choose left');
+await page.screenshot({ path: shotPath('runui-swap') });
+await P('KeyX', 'swap: X leave', 900);
+await page.screenshot({ path: shotPath('runui-afterleave') });
+await P('KeyD', 'path: move right'); await P('KeyA', 'path: move left');
+await P('Enter', 'path: choose', 1200);
+await sleep(2500);
+await page.evaluate(() => window.__echoes.cmd('killAllEnemies'));
+await page.waitForFunction(() => !!window.__echoes.state().run?.reward || window.__echoes.state().run?.phase === 'path', { timeout: 30000 }).catch(() => {});
+await sleep(1500);
+await page.screenshot({ path: shotPath('runui-room2') });
+await P('KeyD', 'room2 reward: right'); await P('KeyA', 'room2 reward: left'); await P('KeyS', 'room2 reward: down');
+await P('Enter', 'room2 reward: commit', 900);
+await sleep(1500);
+await P('Escape', 'pause open', 700);
+await P('ArrowDown', 'pause: down'); await P('ArrowDown', 'pause: down'); await P('ArrowUp', 'pause: up');
+await P('Escape', 'pause close', 700);
+await page.evaluate(() => window.__echoes.cmd('skipToRoom', 7)); await sleep(4000);
+await page.screenshot({ path: shotPath('runui-shop') });
+const shopState = await page.evaluate(() => ({ phase: window.__echoes.state().run?.phase, shop: JSON.stringify(window.__echoes.state().run?.shop || null).slice(0, 200) }));
+await P('KeyD', 'shop: right'); await P('KeyA', 'shop: left'); await P('ArrowRight', 'shop: arrow right');
+const res = { presses, shopState, errors };
+console.log(out('runui', res));
+console.table(presses.map((p) => ({ label: p.label, uiPk: p.uiPk, music: p.music, margin: p.margin, cues: p.cues.slice(0, 40), phase: p.phase, reward: p.reward && p.reward.slice(0, 40), stack: p.stack })));
+console.log(JSON.stringify(shopState), 'errors', errors);
+await browser.close();
