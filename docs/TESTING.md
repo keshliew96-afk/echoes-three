@@ -1487,6 +1487,30 @@ docs/gauntlet/build-CAMPAIGN.md.
   - `tools/gntCAMPAIGN-leak.mjs` / `tools/gntCAMPAIGN-warm.mjs` — the leak
     hunt's diagnostics (scene census diff; GL geometries alive in campaign 2
     that were not in campaign 1).
+  - `tools/gntfixCAMPAIGN5-isready.mjs legacy|mech|slow|slowmech|slowquit
+    [--n 8] [--par 5] [--slow 2500] [--base URL]` — gauntlet r5 F2 (0 page
+    errors, GC.13 / GP.16): a level change that disposes a parked dressing
+    while its async shader links are pending. `slow*` modes emulate a slow
+    driver (KHR_parallel_shader_compile's COMPLETION_STATUS reads "not ready"
+    for `--slow` ms after a program's first poll) so the window is wide and
+    the race deterministic; `slowmech` = Level Select -> III fired on a frame
+    a Level-1 layout compile is in flight; `legacy --par 5` = the critic's
+    `?level=3&seed=4&fresh=1` boot under 5 parallel pages. Pass: 0
+    `isReady` page errors, the resident level's layouts all built after
+    the level change (`campaign.residency().compile` shows `dropped` > 0 on
+    trials that hit the race: disposed materials leave the wait, the compile
+    promise settles; `timedOut` counts the 10 s deadline).
+  - `tools/gntfixCAMPAIGN5-swapfocus.mjs --how
+    key|arrow|mouse|wheel|pad|click|xkey|none [--seeds 104,108,111]` —
+    gauntlet r5 F3 (GP.14 "Enter takes it"): `?level=2&seed=S` (4 Healer
+    skills), room 1 by cmd, then REAL input on the Healer's swap card: move
+    the Replaces selector to another slot and confirm. Pass: every
+    selector-moving path commits `draft_taken` with exactly the chosen slot
+    replaced — also on seeds whose AI suggestion is Leave (the card opens on
+    Leave; a pick moves focus to "Take · Replace"); `xkey` keeps the build
+    byte-identical (`draft_declined`); `none` (no pick, Enter) follows the
+    suggestion. The focused button is filled Hearth Amber (checked from the
+    computed style in the row's `buttons`).
 
 ### DEPLOY — hosted multiplayer, zero-config join (2026-09-26, owner DEPLOY)
 

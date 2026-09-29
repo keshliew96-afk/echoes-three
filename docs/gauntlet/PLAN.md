@@ -3202,6 +3202,15 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
 
   gamepad.js (M1's file, minimal anchored edit) maps buttons 6 / 7 to
   `rowPrev` / `rowNext`.
+- **Swap-card focus (gauntlet r5 CAMPAIGN F3, binding)**: a swap card opens
+  on the AI's suggestion (Leave when the AI would keep the loadout, so a
+  reflexive Enter never costs a skill); ANY player pick on the Replaces
+  selector (W/S, ↑/↓, wheel, a click on a tile, D-pad) moves focus to
+  "Take · Replace", so Enter / A commits the replacement just chosen; X,
+  the Leave button, or D/→ then Enter keep the loadout. A focus the player
+  chose (A/D or a pick) is kept per candidate across tab switches. The
+  focused button is FILLED Hearth Amber (fill + luminance, never label
+  colour alone).
 - **Party page** (`src/ui/run/draft.js` → the party page; `rn-draft` kept as
   the root class so existing probes find it): opens on the viewer's own
   card; Enter = take + advance to the next undecided OWN card, commit when

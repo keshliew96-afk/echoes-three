@@ -14,7 +14,9 @@
 // the pad's D-pad, the mouse wheel over the strip or a click on a tile moves
 // it; Take replaces it (its nodes go to that character's bench), Leave keeps
 // the loadout. The selector opens on the AI's suggestion (§25.8); when the AI
-// would Leave, the card opens on Leave so a reflexive Enter never costs a skill.
+// would Leave, the card opens on Leave so a reflexive Enter never costs a skill
+// — and the moment the player picks the skill to replace, focus moves to
+// "Take · Replace", so Enter / A commits that choice (gauntlet r5 F3).
 //
 // The PARTY STRIP (partystrip.js) across the top: the viewed character's card
 // below it with its owner band ("FOR THE TANK"). Switching character is
@@ -95,6 +97,10 @@ export function createDraftScreen({ run, build, party = () => null }) {
   // player moved to on one card is never where a later card opens
   // (certification B-r3 F1).
   let focus = 0;
+  // gauntlet r5 CAMPAIGN F3: the focus the PLAYER chose on a candidate (A / D,
+  // or picking the skill a swap replaces) — kept per candidate so switching to
+  // another character's tab and back never reverts it to the suggestion.
+  const chosenFocus = new Map(); // candidate key -> 0 | 1
   let shown = ''; // room:seat:type:id of the candidate currently on the card
   let viewSeat = 0; // the character whose card is on show
   let lastView = null; // the last run view rendered
@@ -162,11 +168,25 @@ export function createDraftScreen({ run, build, party = () => null }) {
     { passive: false }
   );
 
+  // A player's pick on the Replaces selector (W / S, ↑ / ↓, D-pad, wheel,
+  // click) IS the choice to take the swap: focus moves to "Take · Replace", so
+  // the confirm (Enter / A) commits the replacement the player just chose —
+  // also when the AI would Leave (gauntlet r5 CAMPAIGN F3: the card opened on
+  // Leave for such a suggestion and a pick + Enter silently discarded the new
+  // skill). A reflexive Enter with no pick still follows the suggestion; X /
+  // the Leave button / D then Enter keep the loadout.
   function setReplace(slot) {
     if (!swapView) return;
     const r = viewSeat === 0 ? run().setRewardReplace(slot) : run().partyReplace(viewSeat, slot);
     if (Number.isInteger(r)) swapView.replace = r;
+    setFocus(0);
     rerender();
+  }
+  // Player-chosen focus (remembered for the candidate on show).
+  function setFocus(f) {
+    focus = f;
+    if (shown) chosenFocus.set(shown, f);
+    paintFocus();
   }
   function cycleReplace(dir) {
     if (!swapView) return false;
@@ -237,6 +257,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
     focus = 0;
     viewSeat = ownSeat();
     shown = '';
+    chosenFocus.clear();
     paintFocus();
   }
 
@@ -282,9 +303,10 @@ export function createDraftScreen({ run, build, party = () => null }) {
     const candidate = `${view.room}:${seat}:${c.type}:${c.id}`;
     if (candidate !== shown) {
       shown = candidate;
-      // A new candidate opens on Take — except a swap the AI would Leave.
+      // A new candidate opens on Take — except a swap the AI would Leave;
+      // a candidate the player already chose on keeps the player's choice.
       const sug = c.swap ? (seat === 0 ? c.suggest : c.suggest && c.suggest.choice) : null;
-      focus = c.decided ? (c.choice === 'leave' ? 1 : 0) : c.swap && sug === 'leave' ? 1 : 0;
+      focus = chosenFocus.has(candidate) ? chosenFocus.get(candidate) : c.decided ? (c.choice === 'leave' ? 1 : 0) : c.swap && sug === 'leave' ? 1 : 0;
     }
     // Strip text: the viewed character's free slots / the swap line.
     const slots = slotsOf(seat);
@@ -497,13 +519,11 @@ export function createDraftScreen({ run, build, party = () => null }) {
       return true;
     }
     if (code === 'KeyA' || code === 'ArrowLeft') {
-      focus = 0;
-      paintFocus();
+      setFocus(0);
       return true;
     }
     if (code === 'KeyD' || code === 'ArrowRight') {
-      focus = 1;
-      paintFocus();
+      setFocus(1);
       return true;
     }
     // Ruling A13 (PLAN §1.5): Esc opens the pause menu on every page and is
@@ -537,8 +557,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
       return true;
     }
     if (action === 'left' || action === 'right') {
-      focus = action === 'left' ? 0 : 1;
-      paintFocus();
+      setFocus(action === 'left' ? 0 : 1);
       return true;
     }
     if (action === 'confirm') {

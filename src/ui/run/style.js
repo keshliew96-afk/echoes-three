@@ -293,6 +293,15 @@ export const RUN_CSS = `
   .rn-suggest.rn-on { color: ${PALETTE.voidCharcoal}; background: ${PALETTE.hearthAmber}; border: 1px solid ${PALETTE.hearthAmber}; }
   /* PARTY: another player's card — read-only (the tab still shows it). */
   .rn-btn.rn-disabled { opacity: 0.45; pointer-events: none; }
+  /* gauntlet r5 CAMPAIGN F3: on the reward / party page the button Enter
+     commits is FILLED (luminance + fill, never label colour alone); the
+     primary's resting amber border yields to the focus, so "Take · Replace"
+     and "Leave" never look alike. */
+  .rn-draft .rn-btn.rn-primary:not(.rn-focus) { border-color: ${PALETTE.warmGrey}88; }
+  .rn-draft .rn-btn.rn-focus {
+    background: ${PALETTE.hearthAmber}; color: ${PALETTE.voidCharcoal};
+    border-color: ${PALETTE.hearthAmber};
+  }
 
   /* ------------------------------ Replaces selector (ruling A17 swap offer) */
   /* The 4 owned skills under a swap card; the one the new skill would replace
