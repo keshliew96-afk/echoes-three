@@ -24,10 +24,12 @@
 //   - No state by colour alone: grey = strike, inert = "+0", live preview = ◆,
 //     limit block = ⊘, in hand = ▲ — every state has a glyph channel.
 //
-// LAYOUT. One page authored at 1280×700 virtual px, uniformly scaled by
-// min(innerWidth/1320, innerHeight/740) (clamped 0.5-1.75), so the whole
-// build — 4 rows × 8 cells, the bench, the detail line — is on screen at once
-// from 1024×576 (×0.78) to 2560×1440 (×1.75) with no scrolling.
+// LAYOUT. One page authored at DESIGN_W × DESIGN_H (1280×690) virtual px,
+// uniformly scaled by min(innerWidth/1320, innerHeight/730) (clamped
+// 0.5-1.75), so the whole build — the party strip, 4 rows × 8 cells, the
+// bench, the detail line — is on screen at once from 1024×576 (×0.776: 64 px
+// cells = 49.7 real px, 16 px text = 12.4 real px — G4c.5's 48 / 12 floors)
+// to 2560×1440 (×1.75) with no scrolling.
 //
 // INTERACTION (fast by keyboard, mouse and gamepad — one focus cursor):
 //   ←↑→↓ / WASD  move the cursor over the socket grid and the bench
@@ -126,7 +128,12 @@ const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const DESIGN_W = 1280;
-const DESIGN_H = 764; // PARTY: + the party strip row (was 700)
+// fix-M4a-r5 (F8, G4c.5): the page is compacted vertically (head 52, rows
+// 98, detail 108, foot 32 — the party strip kept) so the fit at 1024×576 is
+// width-limited again (×0.776: cells 49.7 real px, 16 px text 12.4 real px);
+// the PARTY strip had grown it to 764 (×0.709: 45.4 / 11.4, under the floors).
+const DESIGN_H = 690;
+const FIT_MARGIN = 40; // design px kept free above + below the page
 const COLS = 8;
 
 export function createSocketScreen({ bus, world }) {
@@ -189,7 +196,7 @@ export function createSocketScreen({ bus, world }) {
     }
     .nd-head {
       display: flex; align-items: center; gap: 14px; flex: none;
-      padding: 10px 20px; height: 58px;
+      padding: 7px 20px; height: 52px;
       border-bottom: 1px solid ${PALETTE.warmGrey}44;
       background: ${PALETTE.voidCharcoal}80;
     }
@@ -220,13 +227,13 @@ export function createSocketScreen({ bus, world }) {
       font-size: 18px; text-align: center;
     }
     .nd-lock.nd-on { display: block; }
-    .nd-main { flex: 1 1 auto; min-height: 0; display: flex; gap: 12px; padding: 10px 16px 8px; }
+    .nd-main { flex: 1 1 auto; min-height: 0; display: flex; gap: 12px; padding: 6px 16px 6px; }
     /* ------------------------------------------------------------ rows --- */
-    .nd-rows { flex: none; width: 892px; display: flex; flex-direction: column; gap: 7px; }
+    .nd-rows { flex: none; width: 892px; display: flex; flex-direction: column; gap: 6px; }
     .nd-row {
-      position: relative; height: 106px; padding: 7px 10px 5px 10px;
-      display: grid; grid-template-columns: 214px ${COLS * 64 + (COLS - 1) * 7}px 76px; grid-template-rows: 64px 26px;
-      column-gap: 10px; row-gap: 4px; align-items: center;
+      position: relative; height: 98px; padding: 5px 10px 3px 10px;
+      display: grid; grid-template-columns: 214px ${COLS * 64 + (COLS - 1) * 7}px 76px; grid-template-rows: 64px 22px;
+      column-gap: 10px; row-gap: 2px; align-items: center;
       background: ${PALETTE.voidCharcoal}B3;
       border: 1px solid ${PALETTE.warmGrey}33; border-radius: 12px;
     }
@@ -236,8 +243,13 @@ export function createSocketScreen({ bus, world }) {
     .nd-row.nd-headfocus .nd-rowhead { outline: 2px solid ${PALETTE.hearthAmber}; outline-offset: 2px; border-radius: 10px; }
     .nd-row.nd-rowheld { border-color: ${PALETTE.hearthAmber}; box-shadow: 0 0 16px ${PALETTE.hearthAmber}44; }
     .nd-row .nd-rowhead { cursor: pointer; }
-    .nd-strip { display: flex; justify-content: center; margin: 2px 0 6px; }
+    /* the viewed tab's caret (17 px above the tab + its 3 px lift) sits in
+       the strip's top margin, clear of the header's buttons (party r5 F4) */
+    .nd-strip { display: flex; justify-content: center; margin: 17px 0 0; flex: none; }
     .nd-strip .rn-pstrip { margin: 0; }
+    .nd-strip .rn-ptab { min-height: 46px; padding: 3px 12px 4px 6px; }
+    .nd-strip .rn-ptab .rn-pname, .nd-strip .rn-ptab .rn-pchip { line-height: 1.15; }
+    .nd-strip .rn-ptab .rn-pcaret { line-height: 1; top: -15px; }
     .nd-btn.nd-focusbtn { outline: 2px solid ${PALETTE.hearthAmber}; outline-offset: 2px; }
     .nd-rowhead { display: flex; align-items: center; gap: 10px; min-width: 0; }
     /* the skill's key (1-4) rides the icon medallion's corner as a keycap */
@@ -254,7 +266,10 @@ export function createSocketScreen({ bus, world }) {
     }
     .nd-ricon.nd-heal { color: ${PALETTE.brightHeal}; }
     .nd-ricon.nd-damage { color: ${PALETTE.hearthAmber}; }
-    .nd-rname { font-size: 19px; font-weight: 800; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* a long class-skill name ("Detonating Charge") wraps to a second line
+       inside the 64 px header instead of being elided (party r5 F4) */
+    .nd-rname { font-size: 19px; font-weight: 800; line-height: 1.1; overflow: hidden;
+      display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
     .nd-rsub { font-size: 16px; color: ${PALETTE.warmGrey}; white-space: nowrap; }
     .nd-cells { display: flex; gap: 7px; }
     .nd-cell {
@@ -332,7 +347,7 @@ export function createSocketScreen({ bus, world }) {
     }
     .nd-rstats .nd-mod { color: ${PALETTE.hearthAmber}; font-weight: 700; }
     .nd-rstats .nd-warn { color: ${PALETTE.parchment}; font-weight: 800; }
-    .nd-rowempty { height: 108px; border: 1px dashed ${PALETTE.warmGrey}33; border-radius: 12px;
+    .nd-rowempty { height: 98px; border: 1px dashed ${PALETTE.warmGrey}33; border-radius: 12px;
       display: flex; align-items: center; justify-content: center; font-size: 17px; color: ${PALETTE.warmGrey}; }
     /* ----------------------------------------------------------- bench --- */
     .nd-benchp {
@@ -364,9 +379,9 @@ export function createSocketScreen({ bus, world }) {
     .nd-chip.nd-held .nd-chip-n::before { content: '▲ '; color: ${PALETTE.hearthAmber}; }
     /* ---------------------------------------------------------- detail --- */
     .nd-detail {
-      flex: none; height: 122px; margin: 0 16px; padding: 8px 14px;
+      flex: none; height: 108px; margin: 0 16px; padding: 4px 14px;
       border: 1px solid ${PALETTE.warmGrey}44; border-radius: 12px; background: ${PALETTE.voidCharcoal}CC;
-      display: flex; flex-direction: column; justify-content: center; gap: 3px; overflow: hidden;
+      display: flex; flex-direction: column; justify-content: center; gap: 1px; overflow: hidden;
     }
     .nd-dtitle { font-size: 20px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .nd-dtitle .nd-rar { font-weight: 700; font-size: 16px; letter-spacing: 0.08em; text-transform: uppercase; margin-left: 8px; }
@@ -377,7 +392,7 @@ export function createSocketScreen({ bus, world }) {
     .nd-dline.nd-quote { font-style: italic; }
     .nd-dverdict { font-size: 16px; color: ${PALETTE.warmGrey}; font-style: italic; }
     .nd-foot {
-      flex: none; height: 38px; padding: 0 20px; display: flex; align-items: center; gap: 18px;
+      flex: none; height: 32px; padding: 0 20px; display: flex; align-items: center; gap: 18px;
       font-size: 16px; color: ${PALETTE.warmGrey}; white-space: nowrap; overflow: hidden;
     }
     .nd-foot b { color: ${PALETTE.bone}; font-weight: 800; }
@@ -455,7 +470,7 @@ export function createSocketScreen({ bus, world }) {
 
   let scale = 1;
   function fitScale() {
-    const s = Math.max(0.5, Math.min(1.75, window.innerWidth / 1320, window.innerHeight / 812)); // PARTY: + the party strip row
+    const s = Math.max(0.5, Math.min(1.75, window.innerWidth / (DESIGN_W + FIT_MARGIN), window.innerHeight / (DESIGN_H + FIT_MARGIN)));
     scale = s;
     rootEl.style.setProperty('--nd-s', s.toFixed(4));
     return s;
