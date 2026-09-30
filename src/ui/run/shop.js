@@ -271,10 +271,16 @@ export function createShopScreen({ run, build, party = () => null }) {
     const ps = view.partyShop;
     const P = party();
     const seats = ps ? [0, 1, 2, 3] : [0];
-    const fill = (k) => {
+    // Each card is laid out as it stands AND as it will stand once bought (the
+    // SOLD face carries "you own N · on the bench"), so a purchase never grows
+    // the frame under the player's next click.
+    const fill = (k, withSold = true) => {
       const sh = shelfOf(view, k);
       const sys = k === 0 ? build() : P ? P.build(k) : null;
-      twin.innerHTML = (sh.stock ?? []).map((item, i) => `<div class="rn-item${item.sold ? ' rn-sold' : ''}">${itemInner(k, item, i, sys, k > 0 && !!ps)}</div>`).join('');
+      const html = (item, i) => `<div class="rn-item${item.sold ? ' rn-sold' : ''}">${itemInner(k, item, i, sys, k > 0 && !!ps)}</div>`;
+      const stock = sh.stock ?? [];
+      const sold = withSold ? stock.filter((it) => !it.sold).map((it) => ({ ...it, sold: true, owned: Math.max(1, (it.owned || 0) + 1), upgrade: null })) : [];
+      twin.innerHTML = stock.map(html).join('') + sold.map((it) => html(it, stock.indexOf(stock.find((s) => s.node === it.node)))).join('');
     };
     // 1. Does every owner band + Suggested ribbon share its row?
     let stack = shelfFrame.stack;
