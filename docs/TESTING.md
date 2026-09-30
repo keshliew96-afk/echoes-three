@@ -1947,3 +1947,23 @@ still does not fit shrinks (≥ 0.75) instead of clipping. **Pre-paint**: the
 boot pre-paint opens the PARTY shop (the Healer's and an ally's shelf) and the
 party page (a swap card) — a new page element that is not in it pays its
 GPU pipelines on its first real open.
+
+**fix-PARTY-r5 probes (gauntlet round 5, 2026-10-01; docs/gauntlet/fix-PARTY-r5.md).**
+`node tools/gntfixPARTY5-shopfit.mjs [--url u] [--sizes 1024x576,...] [--tag t]` —
+the party page and the shop by real F1–F4 at each size: the tab row's y per
+viewed character (spread ≤ 3 px = the viewed tab's own lift; the page and the
+shop are FIXED FRAMES sized to their tallest character), Take / Leave y, page
+height, owner band × Suggested ribbon overlaps / ribbons past their card, anything
+off the window, `--rn-s`. `node tools/gntfixPARTY5-mptabs.mjs --port 7951` — host +
+guest party page: glyph-rect overlaps inside the tab strip (owner pills vs names)
+and the frame holding still in a session. `node tools/gntfixPARTY5-shine.mjs` —
+the legendary shimmer's band box stays on its card while its ::before sweeps.
+`node tools/gntfixPARTY5-sweep.mjs --root <scratch copy> --sets 'A:STAGDMG1=4,STAGDMG2=2'`
+— GP.13 tuning sweeps (the CAMPAIGN runner on a copy whose Stag HP / damage read
+env knobs): per start / level clears, wipes, seeds with a down, downs by room
+kind. Narrow short windows (compact, < 1280 px wide) put the shop's character
+tabs in its header row (`.rn-shop.rn-tabhead`) and stack the Suggested ribbon
+under the owner band (`.rn-ribstack`) when the two cannot share a row; a docked
+page that would clip at ≥ 1024×640 shrinks just enough to stay on screen.
+`tools/gntPARTY-campaign.mjs` now reads the SEAT's leash ring for the dash /
+vault check and accepts a short Healer spoils drop only with dry pools.

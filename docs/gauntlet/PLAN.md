@@ -3646,6 +3646,13 @@ Measured on the dev server AND the production build (`npx vite build
   (A) the Level-1 bite as a HP floor, (B) accept Level-1/2 losses, (C) a
   safe-revive §12 amendment + GP.8 exempting Downed time —
   docs/gauntlet/fix-M4a-r5.md step 7.)*
+  *(fix-PARTY-r5, 2026-10-01: (d) MET — the Stag's own hits got a per-level
+  factor, `STAG_DMG_LEVEL` 4 / 2 / 1 (quake / trample 60 / 48 at Level 1,
+  62 / 50 at Level 2; adds, §12 revive and GP.8 untouched), the dated BUILD_BRIEF
+  §23.2 fix-PARTY-r5 note: 18/18 checks on seeds 1–5, (d) 3/5 · 2/5 · 4/4
+  carried, 3/5 · 4/4 from Level 2, 5/5 from Level 3; over seeds 1–20 the
+  default-autopilot campaign wins 12/20 (was 16/20), every level inside the
+  §4.2 band; docs/gauntlet/fix-PARTY-r5.md.)*
 - **GP.14 The Healer is unchanged**: every §16.10 invariant (Node probe
   against a `git archive` of v0.5.150: pools, numbers, 289 grid cells,
   spoils / shelf / wallet numbers, `reward_offer` / `spoils_drop` /

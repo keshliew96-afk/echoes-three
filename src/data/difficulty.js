@@ -11,8 +11,8 @@
 //   elite     = ELITE[act](room)
 //   interval  = 480 ticks × (1 − 0.04 × (room − 1)) × INTERVAL_ACT[act]
 //   bossHp    = 2400 × T × STAG_HP_LEVEL[act] (1 / 1.8 / 1.2, PARTY)
-//   bossDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1), slope 1.8 (PARTY)
-//   boss adds = the act tier alone (hpMul T, dmgMul 1 + BOSS_DMG_SLOPE(T − 1))
+//   bossDmgMul = (1 + BOSS_DMG_SLOPE × (T − 1)) × STAG_DMG_LEVEL[act], slope 1.8 (PARTY), 4 / 2 / 1 (fix-PARTY-r5)
+//   boss adds = the act tier alone (hpMul T, dmgMul 1 + BOSS_DMG_SLOPE(T − 1), no STAG_DMG_LEVEL)
 //               — the Stag and its adds scale together (sim/run.js)
 //
 // TUNING NOTE (M4a, 2026-09-22 — BUILD_BRIEF §23.2 dated note, PLAN §4.2
@@ -92,6 +92,19 @@ export const BOSS_DMG_SLOPE = 1.8; // bossDmgMul = addDmgMul = 1 + BOSS_DMG_SLOP
 // rose to x1.5 of the v0.5.150 baseline (GP.13 (b) caps it at x1.35); Level 1's
 // enemies hit 25 % softer so the first level keeps its measured feel.
 export const LEVEL_DMG = Object.freeze([null, 0.75, 1.0, 1.0]);
+// fix-PARTY-r5 (party critic r5 F9 — GP.13 (d) ">= 1 party down per level on
+// >= 2 of 5 seeds"; the dated BUILD_BRIEF §23.2 note): the per-level factor on
+// the STAG's own hits (quake, trample — never its adds). Once the four
+// characters were built and the AI engaged (MENACE, overdue-first casts), a
+// carried party met the Level 1 and Level 2 Stags with no member going down on
+// 4-5 of 5 seeds: the party's healing soaks attrition (a Level 1 Stag with 2x
+// HP and 2x damage still downed nobody in 20 seeds) — only a HIT that is a
+// real threat does. The Level 1 Stag's quake / trample now land 60 / 48 (x4)
+// and the Level 2 Stag's 62 / 50 (x2 on top of its tier): a telegraphed boss
+// hit that can down the Archer or a just-revived member, as the Level 3
+// Stag's already could (72 / 57). Measured: tools/gntfixPARTY5-sweep.mjs,
+// tools/gntPARTY-band.mjs (docs/gauntlet/fix-PARTY-r5.md).
+export const STAG_DMG_LEVEL = Object.freeze([null, 4.0, 2.0, 1.0]);
 // PARTY (PLAN §16.9): the determinism proof's Node-only switch — the
 // v0.5.150 (CAMPAIGN) constants back in force (cmd('difficultyLegacy')). The
 // game never sets it; tools/gntPARTY-goldenproof.mjs does.
@@ -167,7 +180,7 @@ export function difficulty(act = 1, room = 1, challenge = 'standard') {
     // Boss adds scale with the act tier alone, like the Stag they serve.
     addHpMul: r4(T * c.hp),
     addDmgMul: r4((1 + bossSlope * (T - 1)) * c.dmg),
-    bossDmgMul: r4((1 + bossSlope * (T - 1)) * c.dmg),
+    bossDmgMul: r4((1 + bossSlope * (T - 1)) * c.dmg * (legacy ? 1 : STAG_DMG_LEVEL[a] ?? 1)),
   });
 }
 

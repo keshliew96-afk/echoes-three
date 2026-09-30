@@ -1613,6 +1613,79 @@ unconditional revive kneels the next ally in the Stag's quake ring. The
 measured options for the design owner are in docs/gauntlet/fix-M4a-r5.md
 (step 7). Gate G4a.5 compares the running game with THIS table.
 
+**Tuning note (fix-PARTY-r5, 2026-10-01) — the Level 1 / Level 2 Stags hit
+like bosses (party critic r5 F9, GP.13 (d)); this table is now binding.**
+GP.13 (d) asks for ≥ 1 party down per level on ≥ 2 of 5 seeds. After the
+per-character builds, the AI engagement fix and MENACE, the carried party met
+the Level 1 and Level 2 Stags with nobody going down on 4–5 of 5 seeds (the
+fix-M4a-r5 note above: Level 1 0/5, Level 2 1/5, Level-2 start 0/5). Measured
+with a sweep of the Stag's numbers (`tools/gntfixPARTY5-sweep.mjs`, the
+CAMPAIGN runner on a scratch copy whose Stag HP / damage factors read env
+knobs, seeds 1–20): the party's healing soaks ATTRITION — a Level 1 Stag with
+×2 HP and ×2 damage downed nobody in 20 seeds, ×2.5 HP / ×2 damage nobody —
+and only a HIT that is a real threat downs a member. One constant was added
+(`src/data/difficulty.js` `STAG_DMG_LEVEL`, the factor on the Stag's own
+quake / trample, never its adds — the adds stay on the act tier): **Level 1
+× 4, Level 2 × 2, Level 3 × 1**. The Level 1 Stag's quake / trample land
+60 / 48, the Level 2 Stag's 62 / 50, the Level 3 Stag's 72 / 57 (unchanged): a
+telegraphed boss hit (0.7 s ring) that can down the Archer (80 HP) or a
+just-revived member, as the Level 3 Stag's always could. §12's revive rule is
+unchanged. Everything else is the fix-M4a-r5 note. Binding table, standard
+challenge (hpMul / dmgMul / kill_all budget — a defend room's budget is × 1.25):
+
+
+| room | Level 1 | Level 2 | Level 3 |
+|---|---|---|---|
+| 1 | 1 / 0.75 / 4 | 1.6 / 1.3 / 6.4 | 3.1 / 2.05 / 12.4 |
+| 2 | 1.21 / 0.8288 / 4.84 | 1.936 / 1.468 / 7.744 | 3.751 / 2.3755 / 15.004 |
+| 3 | 1.42 / 0.9075 / 5.68 | 2.272 / 1.636 / 9.088 | 4.402 / 2.701 / 17.608 |
+| 4 | 1.63 / 0.9863 / 6.52 | 2.608 / 1.804 / 10.432 | 5.053 / 3.0265 / 20.212 |
+| 5 | 1.84 / 1.065 / 7.36 | 2.944 / 1.972 / 11.776 | 5.704 / 3.352 / 22.816 |
+| 6 | 2.05 / 1.1437 / 8.2 | 3.28 / 2.14 / 13.12 | 6.355 / 3.6775 / 25.42 |
+
+| per level | Level 1 | Level 2 | Level 3 |
+|---|---|---|---|
+| tier T | 1 | 1.6 | 3.1 |
+| Stag HP | 2400 | 6912 | 8928 |
+| Stag damage × | **4** | **4.16** | 4.78 |
+| adds HP × | 1 | 1.6 | 3.1 |
+| adds damage × | 1 | 2.08 | 4.78 |
+| Waystone HP | 150 | 190 | 264 |
+| elite chance | 0 / 0 / 0 / 0.08 / 0.08 / 0.08 | 0.12 / 0.14 / 0.16 / 0.18 / 0.2 / 0.22 | 0.2 / 0.23 / 0.26 / 0.29 / 0.32 / 0.35 |
+| kill_all wave interval, ticks (room 1 → 6) | 480 → 384 | 456 → 365 | 432 → 346 |
+
+**Starter grant** — the Healer's is unchanged:
+
+| start at | skills | nodes | legendaries | Glint | arrives with |
+|---|---|---|---|---|---|
+| Level 2 | 2 | 18 | 1 | 34 | 4 skills, 19 / 32 sockets filled, 34 Glint (= the carried Level 1 → 2 card) |
+| Level 3 | 2 | 30 | 2 | 60 | 4 skills, 32 / 32 sockets filled, 60 Glint (the carried card: 4 / 32 of 32 / ~118 Glint) |
+
+| ally start at | swap offers | nodes | legendaries | Glint |
+|---|---|---|---|---|
+| Level 2 | 1 | 3 | 0 | 34 |
+| Level 3 | 3 | 19 | 2 | 43 |
+
+
+Measured band (v0.5.192 tree, headless Node sim, `tools/gntPARTY-band.mjs --tag
+gntfixPARTY5-f9`, seeds 1–5): **18/18 GP.13 checks** (fix-M4a-r5: 15/18) —
+**carried from Level 1** clears 5/5 · 4/5 · 4/4, every §4.2 / GC.12 band check
+true (19); combat-room damage × 1.14 / 0.88 / 0.83, time × 1.10 / 0.96 / 0.81;
+the Level 3 Stag 2966 vs 2824; **(d) seeds with a down 3/5 · 2/5 · 4/4**.
+**Started at Level 2** — 4/5 · 2/4, band true (13); × 0.88 / 0.86 damage,
+× 1.11 / 1.05 time; Stag 3020 vs 2885; (d) 3/5 · 4/4. **Started at Level 3** —
+5/5, band true (6); × 0.82, × 0.96; Stag 2699 vs 2663; (d) 5/5. The price, over
+seeds 1–20 (`gntfixPARTY5-sweep` set d5 vs b0 = the fix-M4a-r5 constants):
+carried clears Level 1 18/20 (was 20/20), Level 2 15/18 (20/20), Level 3 12/15
+(16/20) — 12 of 20 default-autopilot campaigns won (was 16); a Level-2 start
+17/20 · 8/17 (20/20 · 13/20); seeds with a down Level 1 12/20 (0/20),
+carried Level 2 10/18 (1/20), Level-2 start 14/20 (1/20). Every level stays
+inside the §4.2 band (≥ 3/5, ≥ 3/5, ≥ 2/5 clears). GP.8 on the carried
+campaign (`gntPARTY-campaign --seeds 1-3`, 28/28 checks): 0 idle equipped
+actives, and the critic's own counter (`gntfixPARTY5-c-aicasts`, which does not
+discount Downed time) 0 idle, 3/3 victories, 4 / 4 / 8 downs. Gate G4a.5
+compares the running game with THIS table.
+
 **Felt escalation (v0.5.1).** The table is necessary, not sufficient: in play,
 time-to-clear and party damage taken per room must rise across rooms 1–6 of
 each act (defend rooms and the Stag above their neighbours) and from act to
