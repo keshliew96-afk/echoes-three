@@ -34,7 +34,7 @@ const CSS = `
 .nt-chip.nt-compact { gap: 7px; padding: 2px 10px 2px 9px; }
 .nt-chip.nt-compact .nt-main, .nt-chip.nt-compact .nt-sub { display: none; }
 .nt-chip.nt-compact .nt-short { display: inline; }
-.nt-chip.nt-aside, .nt-detail.nt-aside { display: none !important; }
+.nt-chip.nt-aside, .nt-detail.nt-aside, .nt-notes.nt-aside { display: none !important; }
 .nt-link { display: inline-flex; align-items: center; gap: 6px; color: ${P.bone}; font-weight: 600; font-variant-numeric: tabular-nums; }
 .nt-link.nt-off { display: none; }
 .nt-q { position: relative; display: inline-flex; align-items: flex-end; gap: 2px; height: 13px; }
@@ -56,15 +56,18 @@ const CSS = `
 .nt-note { padding: 6px 12px; font-size: 15px; color: ${P.parchment}; background: ${P.voidCharcoal}E0; border-left: 3px solid ${P.hearthAmber};
   border-radius: 6px; transition: opacity 0.4s; }
 .nt-note.nt-fade { opacity: 0; }
+#nt-hud .nt-note.nt-wait { display: none !important; }
+.nt-notes.nt-row { flex-direction: row; align-items: center; }
+.nt-notes.nt-row > :not(:last-child) { display: none; }
+.nt-notes.nt-row > * { min-width: 0; max-width: 100%; padding-top: 2px; padding-bottom: 2px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt-notes.nt-row2 > :last-child { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.nt-pingnote { padding: 6px 12px; font-size: 15px; font-weight: 700; color: ${P.voidCharcoal}; background: ${P.hearthAmber}; border-radius: 10px; }
 .nt-banner { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); min-width: 320px; max-width: 80vw; padding: 16px 26px;
   text-align: center; color: ${P.parchment}; background: ${P.voidCharcoal}F0; border: 1px solid ${P.warmGrey}88; border-radius: 14px;
   box-shadow: 0 6px 24px #000A; }
 .nt-banner.nt-off { display: none; }
 .nt-banner .nt-bt { font-size: 22px; font-weight: 800; letter-spacing: 0.03em; }
 .nt-banner .nt-bs { margin-top: 6px; font-size: 16px; color: ${P.bone}; }
-.nt-ping { position: absolute; right: 18px; top: 12px; padding: 6px 12px; font-size: 15px; font-weight: 700; color: ${P.voidCharcoal};
-  background: ${P.hearthAmber}; border-radius: 10px; opacity: 0; transition: opacity 0.25s; }
-.nt-ping.nt-on { opacity: 1; }
 @keyframes nt-blink { 50% { opacity: 0.25; } }
 `;
 
@@ -82,8 +85,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     <div class="nt-chip"><span class="nt-dot"></span><span class="nt-main"></span><span class="nt-sub"></span><span class="nt-short"></span><span class="nt-link nt-off"><span class="nt-q" data-level="good"><i></i><i></i><i></i><b class="nt-bang">!</b></span><span class="nt-lt"></span></span></div>
     <div class="nt-detail" style="display:none"></div>
     <div class="nt-notes"></div>
-    <div class="nt-banner nt-off"><div class="nt-bt"></div><div class="nt-bs"></div></div>
-    <div class="nt-ping"></div>`;
+    <div class="nt-banner nt-off"><div class="nt-bt"></div><div class="nt-bs"></div></div>`;
   document.body.appendChild(root);
   const chip = root.querySelector('.nt-chip');
   const main = root.querySelector('.nt-main');
@@ -97,7 +99,11 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
   const banner = root.querySelector('.nt-banner');
   const bt = root.querySelector('.nt-bt');
   const bs = root.querySelector('.nt-bs');
-  const pingEl = root.querySelector('.nt-ping');
+  // The ping line ("Fox points at card 2") lives in the notes column, so it
+  // docks with the notes (it sat top-right, over the HUD's Glint plate, on
+  // every page it pinged); in the DOM only while it shows.
+  const pingEl = document.createElement('div');
+  pingEl.className = 'nt-pingnote';
   // The chip sits just ABOVE the command bar (whose height grows with the
   // viewport): at 1024x576 a fixed bottom offset put it on top of the
   // portraits. Re-measured on resize and while the HUD is visible.
@@ -140,6 +146,10 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
   const hits = (x0, y0, x1, y1, r) => !!r && x0 < r.right + PAD && x1 > r.left - PAD && y0 < r.bottom + PAD && y1 > r.top - PAD;
   let dock = 'free';
   let placeSig = '';
+  // What the last docking saw, for the notes column (placeNotes).
+  let lastModal = null;
+  let lastBar = null;
+  let notesBase = { b: 92, chip: null };
   function placeChip() {
     const H = window.innerHeight;
     const bar = document.querySelector('.hud-bar');
@@ -157,8 +167,15 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     // placement — the 10 Hz check then costs a few rect reads, no reflow.
     const q = (r) => (r ? `${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.right)},${Math.round(r.bottom)}` : '-');
     const sig = `${window.innerWidth}x${H}|${q(barR)}|${m ? q(m.r) : 'none'}|${main.textContent}|${sub.textContent}|${ltEl.textContent}|${detail.style.display}`;
-    if (sig === placeSig) return;
-    placeSig = sig;
+    if (sig !== placeSig) {
+      placeSig = sig;
+      lastModal = m;
+      lastBar = barR;
+      dockChip(H, m, barR, bottom);
+    }
+    placeNotes();
+  }
+  function dockChip(H, m, barR, bottom) {
     chip.classList.remove('nt-aside');
     detail.classList.remove('nt-aside');
     // Bottom-left column, stacked upward from the chip: the optional detail
@@ -172,7 +189,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
       if (m && hits(14, top - 30, 374, top - 4, m.r)) detail.classList.add('nt-aside');
       detail.style.bottom = `${Math.round(b + ch + 4)}px`;
       const detailOn = detail.style.display !== 'none' && !detail.classList.contains('nt-aside');
-      notes.style.bottom = `${Math.round(b + ch + (detailOn ? 36 : 8))}px`;
+      notesBase = { b: Math.round(b + ch + (detailOn ? 36 : 8)), chip: { x0: 14, y0: top, x1: 14 + chip.offsetWidth, y1: H - b, b: Math.round(b), h: ch } };
     };
     if (!m) {
       put(bottom, 'free', false);
@@ -201,6 +218,139 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     put(bottom, 'aside', false);
     chip.classList.add('nt-aside');
     detail.classList.add('nt-aside');
+    notesBase = { b: notesBase.b, chip: null };
+  }
+  // fix-M5a-r5 (the NET5-F1 family, 2026-09-30): the notes column ("No
+  // updates from the host…", "Not applied (…)", "Fox reconnecting…") and the
+  // ping line stacked above the chip wherever it docked — over the socket
+  // screen's footer keys at 1920x1080 once the chip sat in the band under
+  // the page. While a modal page is open the column docks too, in order:
+  //   stack — its usual place above the chip, when that covers none of it;
+  //   side  — the same stack narrowed into the margin left of the page (>= 200 px);
+  //   row   — ONE line beside the chip, in the chip's docked row (the newest
+  //           message, ellipsis, full text in the tooltip; >= 180 px);
+  //   held  — no room at all (the socket screen filling a 16:9 window): new
+  //           messages wait, and show — with their full lifetime — as soon as
+  //           there is room (page closed / window grown); a message that
+  //           waited NOTE_HOLD_MS is dropped as stale; a ping is not kept (the
+  //           pinged card's outline already shows it).
+  // The connection banners (reconnecting / host lost) still overlay: the
+  // game is frozen or about to hand over and the page cannot be used.
+  const NOTE_HOLD_MS = 15000;
+  const ROW_H = 22; // one message line: 15 px type, line-height 1.2, 2 px padding
+  const ROW2_H = 44; // two lines
+  let notesMode = 'stack';
+  let notesSig = '';
+  let notesRev = 0; // bumped on every message in / out (identical texts too)
+  function placeNotes(force = false) {
+    const now = performance.now();
+    for (const n of [...notes.querySelectorAll('.nt-wait')]) {
+      if (now - Number(n.dataset.at || now) > NOTE_HOLD_MS) {
+        n.remove();
+        notesRev += 1;
+      }
+    }
+    const m = lastModal;
+    const sig = `${placeSig}|${notesRev}|${notes.children.length}`;
+    if (!force && sig === notesSig) return;
+    notesSig = sig;
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const base = notesBase;
+    const waiting = [...notes.querySelectorAll('.nt-wait')];
+    const reset = () => {
+      notes.classList.remove('nt-row', 'nt-row2', 'nt-aside');
+      notes.style.left = '14px';
+      notes.style.maxWidth = '';
+      notes.style.height = '';
+      notes.style.bottom = `${base.b}px`;
+    };
+    const release = (mode) => {
+      notesMode = mode;
+      for (const n of waiting) {
+        n.classList.remove('nt-wait');
+        armNote(n);
+      }
+    };
+    reset();
+    // Nothing to show, or no page to keep clear: the usual stack.
+    if (!m || !notes.children.length) return release('stack');
+    // Measure with the waiting messages laid out (same frame, never painted).
+    for (const n of waiting) n.classList.remove('nt-wait');
+    // Clear of the page AND of the command bar (a stack above a chip docked
+    // in the bar's row reaches over the bar's portraits at 1024x576).
+    const clearOf = (pad) => {
+      const r = notes.getBoundingClientRect();
+      const hit = (o) => !!o && r.left < o.right + pad && r.right > o.left - pad && r.top < o.bottom + pad && r.bottom > o.top - pad;
+      return r.top >= 0 && r.bottom <= H && r.right <= W && !hit(m.r) && !hit(lastBar);
+    };
+    let mode = null;
+    if (clearOf(PAD)) mode = 'stack';
+    const margin = Math.floor(m.r.left - PAD - 2 - 14);
+    if (!mode && margin >= 200) {
+      notes.style.maxWidth = `${margin}px`;
+      if (clearOf(PAD)) mode = 'side';
+      else notes.style.maxWidth = '';
+    }
+    if (!mode) {
+      // A message row in a free slot: beside the docked chip, just above it,
+      // or the band under the page (its top 44 px, or all of it) — the
+      // widest gap between the page, the bar, the chip and the corner labels
+      // (version / fps) on that slot; two lines where the slot is >= 44 px
+      // tall. The slot with the most room (width x lines) wins.
+      const c = base.chip;
+      const slots = [];
+      if (c) slots.push({ y0: c.y0, h: c.h }, { y0: c.y0 - 6 - ROW_H, h: ROW_H });
+      const band = H - m.r.bottom;
+      if (band >= ROW_H + 8) {
+        slots.push({ y0: m.r.bottom + 4, h: Math.min(ROW2_H, band - 8) });
+        if (band - 8 > ROW2_H) slots.push({ y0: m.r.bottom + 4, h: band - 8 });
+      }
+      const obstacles = [m.r, lastBar, c ? { left: c.x0, right: c.x1, top: c.y0, bottom: c.y1 } : null];
+      for (const id of ['version-label', 'fps-meter']) {
+        const e = document.getElementById(id);
+        if (e && getComputedStyle(e).display !== 'none') obstacles.push(e.getBoundingClientRect());
+      }
+      let best = null;
+      for (const s of slots) {
+        if (s.y0 < 0 || s.y0 + s.h > H) continue;
+        let gaps = [[14, W - 14]];
+        for (const o of obstacles) {
+          if (!o || !(o.top < s.y0 + s.h + 1 && o.bottom > s.y0 - 1)) continue;
+          const a = o.left - 8;
+          const b = o.right + 8;
+          gaps = gaps.flatMap(([g0, g1]) => (b <= g0 || a >= g1 ? [[g0, g1]] : [[g0, Math.min(g1, a)], [Math.max(g0, b), g1]].filter(([p, q]) => q - p > 0)));
+        }
+        const g = gaps.reduce((w, x) => (!w || x[1] - x[0] > w[1] - w[0] ? x : w), null);
+        if (!g || g[1] - g[0] < 180) continue;
+        const lines = s.h >= ROW2_H ? 2 : 1;
+        const room = (g[1] - g[0]) * lines;
+        if (best && room <= best.room) continue;
+        notes.classList.add('nt-row');
+        notes.classList.toggle('nt-row2', lines === 2);
+        notes.style.left = `${Math.round(g[0])}px`;
+        notes.style.maxWidth = `${Math.floor(g[1] - g[0])}px`;
+        notes.style.bottom = `${Math.round(H - s.y0 - s.h)}px`;
+        notes.style.height = `${s.h}px`;
+        if (clearOf(1)) best = { room, lines, left: notes.style.left, maxWidth: notes.style.maxWidth, bottom: notes.style.bottom, height: notes.style.height };
+      }
+      reset();
+      if (best) {
+        notes.classList.add('nt-row');
+        notes.classList.toggle('nt-row2', best.lines === 2);
+        Object.assign(notes.style, { left: best.left, maxWidth: best.maxWidth, bottom: best.bottom, height: best.height });
+        mode = 'row';
+      }
+    }
+    if (mode) return release(mode);
+    // No room anywhere: hold what has not shown yet, hide what has.
+    for (const n of waiting) n.classList.add('nt-wait');
+    notes.classList.add('nt-aside');
+    notesMode = 'held';
+    if (pingEl.parentNode) {
+      pingEl.remove();
+      notesRev += 1;
+    }
   }
   window.addEventListener('resize', () => placeChip());
   let placeTimer = 0;
@@ -396,14 +546,30 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     if (lostUntil || reconnectUntil || (settings.get('net.showStats') && !root.classList.contains('nt-off'))) timer = setTimeout(tick, 250);
   }
 
+  // A message's lifetime starts when it first SHOWS (placeNotes releases it):
+  // one that arrives while a page leaves no room waits instead of timing out
+  // unseen.
+  function armNote(n) {
+    const ms = Number(n.dataset.ms) || 3600;
+    setTimeout(() => n.classList.add('nt-fade'), ms);
+    setTimeout(() => {
+      n.remove();
+      notesRev += 1;
+      placeNotes();
+    }, ms + 450);
+  }
   function note(text, ms = 3600) {
     const n = document.createElement('div');
-    n.className = 'nt-note';
+    n.className = 'nt-note nt-wait';
     n.textContent = text;
+    n.title = text;
+    n.dataset.ms = String(ms);
+    n.dataset.at = String(performance.now());
     notes.appendChild(n);
-    while (notes.children.length > 4) notes.removeChild(notes.firstChild);
-    setTimeout(() => n.classList.add('nt-fade'), ms);
-    setTimeout(() => n.remove(), ms + 450);
+    const all = notes.querySelectorAll('.nt-note');
+    for (let i = 0; i < all.length - 4; i++) all[i].remove();
+    notesRev += 1;
+    placeChip();
   }
 
   return {
@@ -444,11 +610,18 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     },
     ping(p, who) {
       pingEl.textContent = `${who} points at ${p.page === 'path' ? 'door' : p.page === 'shop' ? 'item' : 'card'} ${Number.isInteger(p.index) ? p.index + 1 : ''}`;
-      pingEl.classList.add('nt-on');
+      pingEl.title = pingEl.textContent;
+      notes.appendChild(pingEl);
+      notesRev += 1;
       clearTimeout(pingTimer);
-      pingTimer = setTimeout(() => pingEl.classList.remove('nt-on'), 1600);
+      pingTimer = setTimeout(() => {
+        if (pingEl.parentNode) pingEl.remove();
+        notesRev += 1;
+        placeNotes();
+      }, 1600);
+      placeChip();
     },
-    debug: () => ({ visible: !root.classList.contains('nt-off'), banner: banner.classList.contains('nt-off') ? null : bt.textContent, chip: `${main.textContent} ${sub.textContent} ${ltEl.textContent}`.trim(), link: lastLink, notes: [...notes.children].map((n) => n.textContent), dock }),
+    debug: () => ({ visible: !root.classList.contains('nt-off'), banner: banner.classList.contains('nt-off') ? null : bt.textContent, chip: `${main.textContent} ${sub.textContent} ${ltEl.textContent}`.trim(), link: lastLink, notes: [...notes.querySelectorAll('.nt-note:not(.nt-wait)')].map((n) => n.textContent), held: [...notes.querySelectorAll('.nt-wait')].map((n) => n.textContent), ping: pingEl.parentNode ? pingEl.textContent : null, notesMode, dock }),
     nameOfSeat,
     app,
   };
