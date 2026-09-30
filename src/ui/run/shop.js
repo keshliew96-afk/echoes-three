@@ -42,7 +42,7 @@
 // viewing a tab never cancels them; Advance buys the still-marked cards of
 // every AI-held tab the player did not buy on. Q / E, PgUp / PgDn, F1-F4 and
 // pad LB / RB switch character; 1-4 buy on the viewed tab.
-import { esc } from './style.js';
+import { esc, isCompact } from './style.js';
 import { nodeCardHtml, RARITY_COLOR } from './cards.js';
 import { iconHtml } from '../hud/icons.js';
 import { NODES } from '../../sim/nodes.js';
@@ -153,13 +153,38 @@ export function createShopScreen({ run, build, party = () => null }) {
   let lastView = null;
   let padFocus = -1; // pad card focus on the viewed shelf (-1 = the lamp)
   const strip = createPartyStrip({ onSelect: (s) => setView(s), host: el.querySelector('.rn-shopstrip') });
+  // gauntlet r5 PARTY F4 — a NARROW, short window (compact, < 1280 px wide:
+  // the 216 px cards, the Suggested ribbon stacked under the owner band) has
+  // no height for a title row AND a tab row above the shelf: at 1024x640 the
+  // Swordsman's shelf measured 584 px against 528 px of room and its header
+  // left the window. There the character tabs take the title's place in the
+  // header row (`rn-tabhead`) — the way the party page's short layout makes
+  // its strip the header — and the lantern and the Glint strip stay beside
+  // them. Wider windows keep the title row and the tab row.
+  const stripEl = el.querySelector('.rn-shopstrip');
+  const headEl = el.querySelector('.rn-head');
+  const ornEl = el.querySelector('.rn-orn');
+  function placeStrip(party) {
+    const inHead = party && isCompact() && window.innerWidth < 1280;
+    if (inHead === el.classList.contains('rn-tabhead')) return;
+    el.classList.toggle('rn-tabhead', inHead);
+    if (inHead) headEl.insertBefore(stripEl, ornEl);
+    else el.insertBefore(stripEl, shelf);
+  }
   function setView(seat) {
     viewSeat = ((Number(seat) % 4) + 4) % 4;
     padFocus = -1;
     signature = '';
     if (buyAnim) finishBuy();
     if (lastView) render(lastView);
+    dirtyFlag = true; // the run UI re-fits the page on its next frame
   }
+  let dirtyFlag = false;
+  const dirty = () => {
+    const d = dirtyFlag;
+    dirtyFlag = false;
+    return d;
+  };
   // The boot pre-paint (run UI index.js) views an ally's shelf; this puts the
   // shelf back on the Healer's tab WITHOUT a render (the next real render
   // rebuilds it from the real view).
@@ -184,28 +209,17 @@ export function createShopScreen({ run, build, party = () => null }) {
   let lastWallet = null;
 
   // ---------------------------------------------------------- shelf --
-  function build3(view) {
-    const s = shelfOf(view, viewSeat);
-    const seat = viewSeat;
-    const aiTab = seat > 0 && !!view.partyShop;
-    const P = party();
-    shelf.innerHTML = '';
-    plaques.length = 0;
-    cards.length = 0;
-    stamps.length = 0;
-    const sys = seat === 0 ? build() : P ? P.build(seat) : null;
+  // One shelf card's markup (owner band + Suggested ribbon, the card, the
+  // price plaque) — shared by the live shelf and the measuring twin below.
+  function itemInner(seat, item, i, sys, aiTab) {
+    const n = NODES[item.node];
     const clsName = CLASS_NAME[CLASS_OF_SEAT[seat]];
-    (s.stock ?? []).forEach((item, i) => {
-      const n = NODES[item.node];
-      const wrap = document.createElement('div');
-      wrap.className = `rn-item${item.sold ? ' rn-sold' : ''}`;
-      wrap.dataset.seat = String(seat);
-      let verdict = sys ? sys.kitVerdict(item.node) : null;
-      if (verdict && seat !== 0) verdict = verdict.replace('your kit', `the ${clsName}'s kit`);
-      const extra = item.node === 'siphon' && sys ? sys.siphonCardLine() : null;
-      const rar = RARITY_COLOR[item.rarity] ?? RARITY_COLOR.common;
-      const mark = aiTab && !item.sold ? `<div class="rn-suggest${item.marked ? ' rn-on' : ''}" data-idx="${i}">${item.marked ? '✓ SUGGESTED' : '+ SUGGEST'}</div>` : '';
-      wrap.innerHTML = `
+    let verdict = sys ? sys.kitVerdict(item.node) : null;
+    if (verdict && seat !== 0) verdict = verdict.replace('your kit', `the ${clsName}'s kit`);
+    const extra = item.node === 'siphon' && sys ? sys.siphonCardLine() : null;
+    const rar = RARITY_COLOR[item.rarity] ?? RARITY_COLOR.common;
+    const mark = aiTab && !item.sold ? `<div class="rn-suggest${item.marked ? ' rn-on' : ''}" data-idx="${i}">${item.marked ? '✓ SUGGESTED' : '+ SUGGEST'}</div>` : '';
+    return `
         <div class="rn-itemtabs"><div class="rn-minowner" style="--acc:${CLASS_ACCENTS[CLASS_OF_SEAT[seat]]}">${esc(clsName.toUpperCase())}</div>${mark}</div>
         <div class="rn-card${n && n.rarity === 'legendary' ? ' rn-legendary' : ''}" data-seat="${seat}"
              style="--rar:${rar};--rarGlow:${rar}77">
@@ -216,6 +230,98 @@ export function createShopScreen({ run, build, party = () => null }) {
           <span class="rn-plaque-coin">${iconHtml('coin', { size: 18 })}</span>
           <span class="rn-price">${item.price}</span><span class="rn-cur">GLINT</span>
         </div>`;
+  }
+
+  // gauntlet r5 PARTY F4 — the shop is ONE FIXED FRAME across the four
+  // shelves. Each class shelf has its own card heights (Siphon's binding
+  // quote, a long class verdict) and the docked panel grows UPWARD, so a
+  // character switch used to move the tabs 62-77 px and, at 1024x576, push
+  // the title / lamp / Glint header above the window (the page was not
+  // re-fitted after a switch either). A hidden twin shelf lays out every
+  // seat's cards whenever the stock changes; the live shelf keeps the tallest
+  // as its min height (grow-only for the visit / window size), so the tabs,
+  // the ribbons and the Advance lamp stay put and the run UI fits one size.
+  // The same pass checks the owner band + Suggested ribbon row: where a class
+  // name and the ribbon cannot share one row inside a card's width (the
+  // Swordsman at 216 px: "SWORDSMAN" 135 + "✓ SUGGESTED" 126 px), the whole
+  // visit stacks the ribbon under the band (rn-ribstack) — never under the
+  // next card's band.
+  const twin = document.createElement('div');
+  twin.className = 'rn-shelf rn-shelftwin';
+  twin.setAttribute('aria-hidden', 'true');
+  const shelfFrame = { size: '', key: '', h: 0, stack: false };
+  function frameKeyOf(view) {
+    const ps = view.partyShop;
+    const seats = ps ? [0, 1, 2, 3] : [0];
+    return JSON.stringify(seats.map((k) => (shelfOf(view, k).stock ?? []).map((i) => [i.node, i.sold ? 1 : 0, i.owned, i.marked ? 1 : 0, i.upgrade ? 1 : 0, i.affordable === false ? 0 : 1])));
+  }
+  function measureShelves(view) {
+    const host = el.parentElement;
+    const size = `${window.innerWidth}x${window.innerHeight}|${host ? host.className : ''}`;
+    if (size !== shelfFrame.size) {
+      shelfFrame.size = size;
+      shelfFrame.key = '';
+      shelfFrame.h = 0;
+      shelfFrame.stack = false;
+    }
+    const key = frameKeyOf(view);
+    if (key === shelfFrame.key) return;
+    shelfFrame.key = key;
+    if (!twin.isConnected) el.appendChild(twin);
+    const ps = view.partyShop;
+    const P = party();
+    const seats = ps ? [0, 1, 2, 3] : [0];
+    const fill = (k) => {
+      const sh = shelfOf(view, k);
+      const sys = k === 0 ? build() : P ? P.build(k) : null;
+      twin.innerHTML = (sh.stock ?? []).map((item, i) => `<div class="rn-item${item.sold ? ' rn-sold' : ''}">${itemInner(k, item, i, sys, k > 0 && !!ps)}</div>`).join('');
+    };
+    // 1. Does every owner band + Suggested ribbon share its row?
+    let stack = shelfFrame.stack;
+    if (!stack && ps) {
+      el.classList.remove('rn-ribstack');
+      for (const k of [1, 2, 3]) {
+        fill(k);
+        for (const it of twin.querySelectorAll('.rn-item')) {
+          const o = it.querySelector('.rn-minowner');
+          const g = it.querySelector('.rn-suggest');
+          if (!o || !g) continue;
+          const ib = it.getBoundingClientRect();
+          const ob = o.getBoundingClientRect();
+          const gb = g.getBoundingClientRect();
+          if (ob.right + 4 > gb.left || gb.right > ib.right + 0.5) stack = true;
+        }
+        if (stack) break;
+      }
+    }
+    shelfFrame.stack = stack;
+    el.classList.toggle('rn-ribstack', stack);
+    // 2. The tallest shelf.
+    let h = shelfFrame.h;
+    for (const k of seats) {
+      fill(k);
+      h = Math.max(h, twin.offsetHeight);
+    }
+    twin.innerHTML = '';
+    if (h > 0) shelfFrame.h = h;
+  }
+  const frameProbe = () => ({ shelfH: shelfFrame.h, stack: shelfFrame.stack });
+
+  function build3(view) {
+    const s = shelfOf(view, viewSeat);
+    const seat = viewSeat;
+    const aiTab = seat > 0 && !!view.partyShop;
+    const P = party();
+    shelf.innerHTML = '';
+    plaques.length = 0;
+    cards.length = 0;
+    stamps.length = 0;
+    const sys = seat === 0 ? build() : P ? P.build(seat) : null;
+    (s.stock ?? []).forEach((item, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = `rn-item${item.sold ? ' rn-sold' : ''}`;
+      wrap.dataset.seat = String(seat);
+      wrap.innerHTML = itemInner(seat, item, i, sys, aiTab);
       const card = wrap.querySelector('.rn-card');
       card.addEventListener('click', () => buyOn(i));
       // A click on the SUGGESTED ribbon toggles the mark (never a purchase).
@@ -287,6 +393,7 @@ export function createShopScreen({ run, build, party = () => null }) {
       if (advanceBtn.textContent !== lamp + cd) advanceBtn.textContent = lamp + cd;
     }
     el.querySelector('.rn-shopstrip').style.display = ps ? '' : 'none';
+    placeStrip(!!ps);
     void P;
     // The strip numeral is owned by the coin-fly countdown while a purchase
     // animates; it lands on the true wallet when the animation ends.
@@ -304,6 +411,8 @@ export function createShopScreen({ run, build, party = () => null }) {
         .join('|');
     if (sig !== signature) {
       signature = sig;
+      measureShelves(view);
+      shelf.style.minHeight = shelfFrame.h > 0 ? `${shelfFrame.h}px` : '';
       build3(view);
     }
     startMotes();
@@ -799,7 +908,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     paintPadFocus();
   }
   // Probe: the viewed seat + what the shelf shows.
-  const probe = () => ({ viewSeat, focus: padFocus, cards: cards.map((c) => (c ? { seat: Number(c.dataset.seat), marked: !!c.querySelector('.rn-suggest.rn-on') } : null)), lamp: advanceBtn.textContent });
+  const probe = () => ({ viewSeat, focus: padFocus, cards: cards.map((c) => (c ? { seat: Number(c.dataset.seat), marked: !!c.querySelector('.rn-suggest.rn-on') } : null)), lamp: advanceBtn.textContent, frame: frameProbe() });
   // fix-M3-r5 (AUD5-F1): the selection signature the run UI polls for its
   // selection ticks (src/audio/uiselect.js) — '<viewed character>|<card focus>'.
   const sel = () => `${viewSeat}|${padFocus}`;
@@ -807,7 +916,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     if ((ev.seat ?? 0) === viewSeat) denyShake(ev.index ?? 0);
   };
 
-  return { el, render, key, pad, open, denyShake, denyShakeSeat, onPurchase, animState, pin, probe, sel, setView, resetView, name: 'shop' };
+  return { el, render, key, pad, open, denyShake, denyShakeSeat, onPurchase, animState, pin, probe, sel, setView, resetView, dirty, name: 'shop' };
 }
 
 export { PALETTE as _shopPalette };

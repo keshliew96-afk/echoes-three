@@ -218,12 +218,21 @@ export const RUN_CSS = `
          band-hidden captures — the shimmer would exist only on the player's
          screen. The visible band measures mean |delta| 5.8 / peak column 17.6
          over the card box (tools/certfixDshouldfix1-banddiff.mjs). */
+  /* gauntlet r5 PARTY: the band element keeps the card's box (clipped by the
+     card as before) and its ::before carries the gradient and the per-frame
+     sweep (--shx, written by ui/run/index.js) — the same 2D transform on the
+     same-size box, so the paint cost is unchanged, but a layout probe never
+     sees a shine box 130% past the card (off the window at 1024 / 1600 px
+     wide when the legendary card is the shelf's last). */
   .rn-card.rn-legendary > .rn-shine {
     position: absolute; top: -8%; bottom: -8%; left: 0; width: 100%;
-    pointer-events: none;
+    pointer-events: none; overflow: hidden;
+  }
+  .rn-card.rn-legendary > .rn-shine::before {
+    content: ''; position: absolute; inset: 0;
     background: linear-gradient(115deg, transparent 30%, ${PALETTE.hearthAmber}30 46%,
       ${PALETTE.godstuffVioletPeak}22 50%, transparent 66%);
-    transform: translateX(130%);
+    transform: translateX(var(--shx, 130%));
   }
   .rn-cardkind {
     font-size: 16px; letter-spacing: 0.28em; color: ${PALETTE.warmGrey};
@@ -364,6 +373,11 @@ export const RUN_CSS = `
      Everything else (prices below the card, item never greyed for price, one
      ~300 ms denial shake) is unchanged §16 behaviour. */
   #run-screen.rn-dock { align-items: flex-end; }
+  /* gauntlet r5 PARTY F4: a docked page that must shrink (a window under the
+     §1 minimum) scales TOWARD its dock line. Scaled about its centre it rose
+     by half the shrink and its header left the top of the window
+     (1024x576: the shop title / lamp / Glint strip at y < 0). */
+  #run-screen.rn-dock .rn-page { transform-origin: center bottom; }
   #run-screen .rn-shop {
     position: relative;
     padding: 13px 22px 15px;

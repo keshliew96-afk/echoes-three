@@ -158,7 +158,10 @@ export function createDraftScreen({ run, build, party = () => null }) {
     if (!t || !swapView) return;
     setReplace(Number(t.dataset.slot));
   });
-  repEl.addEventListener(
+  // The wheel cycles the Replaces mark over the whole card row — the new
+  // skill's card as well as the Replaces strip beside / under it (GP.6 "the
+  // Replaces selector cycles by W/S, wheel and D-pad"; party critic r5 S6).
+  el.querySelector('.rn-cardrow').addEventListener(
     'wheel',
     (e) => {
       if (!swapView) return;
@@ -274,13 +277,93 @@ export function createDraftScreen({ run, build, party = () => null }) {
     return { chip: dl !== null && dl <= 10 ? `… ${dl} s` : '… choose', tone: 'wait' };
   }
 
+  // gauntlet r5 PARTY F3 — the party page is ONE FIXED FRAME while it is open.
+  // Each character's card has its own height (a plain skill card, a swap card
+  // with its Replaces row + replace line, spoils, a substitution line), and
+  // the run screen centres the page, so a character switch used to re-centre
+  // the whole page (tab row y [220, 147, 129, 147] px at 1600x900): the tab
+  // the mouse was about to click moved under the cursor. Now the page is
+  // measured with EVERY character's card whenever the page's content changes
+  // (never on a plain switch), and it keeps the tallest / widest of them as
+  // its min size — grow-only while the page is open, reset per room / window
+  // size. The card rows sit at the top of the frame and the Take / Leave row
+  // at its bottom (partystrip.js CSS), so the tabs, the card and the buttons
+  // stay put on every switch; the run UI's fit then scales one stable size.
+  const frame = { size: '', key: '', h: 0, w: 0 };
+  function frameKeyOf(view) {
+    const p = view.party;
+    const dl = p.deadlineInTicks === null || p.deadlineInTicks === undefined ? 0 : 1;
+    const sp = view.spoils && view.spoils.room === view.room ? view.spoils : null;
+    return JSON.stringify([view.room, p.mode, p.owners, dl, isNet(), p.cards, view.reward, sp, view.freeSkillSlots]);
+  }
+  function measureFrame(view) {
+    const host = el.parentElement;
+    const size = `${window.innerWidth}x${window.innerHeight}|${host ? host.className : ''}`;
+    if (size !== frame.size) {
+      frame.size = size;
+      frame.key = '';
+      frame.h = 0;
+      frame.w = 0;
+    }
+    const key = frameKeyOf(view);
+    if (key === frame.key) return;
+    frame.key = key;
+    const keep = { viewSeat, shown, focus, swapView };
+    el.classList.add('rn-measuring'); // no transitions while the tabs flip
+    el.style.minHeight = '';
+    el.style.minWidth = '';
+    let h = frame.h;
+    let w = frame.w;
+    for (let s = 0; s < 4; s++) {
+      viewSeat = s;
+      paint(view);
+      h = Math.max(h, el.offsetHeight);
+      w = Math.max(w, el.offsetWidth);
+    }
+    viewSeat = keep.viewSeat;
+    shown = keep.shown;
+    focus = keep.focus;
+    swapView = keep.swapView;
+    // A page that is not laid out (the boot pre-paint's hidden pass) keeps
+    // no frame.
+    if (h > 0) {
+      frame.h = h;
+      frame.w = w;
+    }
+  }
+  function applyFrame(page) {
+    if (page && frame.h > 0) {
+      el.style.minHeight = `${frame.h}px`;
+      el.style.minWidth = `${frame.w}px`;
+    } else {
+      el.style.minHeight = '';
+      el.style.minWidth = '';
+    }
+    if (el.classList.contains('rn-measuring')) {
+      void el.offsetHeight; // settle the viewed tab's state before transitions return
+      el.classList.remove('rn-measuring');
+    }
+  }
+  const frameProbe = () => ({ h: frame.h, w: frame.w });
+
   function render(view, force = false) {
     lastView = view;
     const page = partyPage(view);
     if (view.room !== openedRoom) {
       openedRoom = view.room;
       viewSeat = ownSeat();
+      frame.key = '';
+      frame.h = 0;
+      frame.w = 0;
     }
+    if (page) measureFrame(view);
+    paint(view);
+    applyFrame(page);
+    void force;
+  }
+
+  function paint(view) {
+    const page = partyPage(view);
     // Automatic mode: AI-held tabs are summaries — the view stays on own tabs
     // unless the player clicked one.
     roomEl.textContent = String(view.room);
@@ -377,13 +460,25 @@ export function createDraftScreen({ run, build, party = () => null }) {
       summaryEl.textContent = '';
     }
     // Network countdown (only with ≥ 2 humans — the sim sets no deadline otherwise).
-    if (page && page.deadlineInTicks !== null && page.deadlineInTicks !== undefined && page.deadlineInTicks <= 600) {
+    // gauntlet r5 PARTY F3: while a deadline is armed the countdown row keeps
+    // its place (hidden until the last 10 s), so its appearance never grows
+    // the fixed frame.
+    const armed = !!page && page.deadlineInTicks !== null && page.deadlineInTicks !== undefined;
+    if (armed) {
       const secs = Math.ceil(page.deadlineInTicks / TICK_HZ);
       const waiting = [0, 1, 2, 3].filter((s) => page.owners[s] === 'human' && !page.cards[s].decided).map((s) => CLASS_NAME[CLASS_OF_SEAT[s]]);
+      const all = [0, 1, 2, 3].filter((s) => page.owners[s] === 'human').map((s) => CLASS_NAME[CLASS_OF_SEAT[s]]);
+      const live = page.deadlineInTicks <= 600;
       countdownEl.style.display = '';
-      countdownEl.textContent = waiting.length ? `Waiting for ${waiting.join(', ')} — auto-pick in ${secs} s` : `Committing in ${secs} s`;
+      countdownEl.style.visibility = live ? '' : 'hidden';
+      countdownEl.textContent = live
+        ? waiting.length
+          ? `Waiting for ${waiting.join(', ')} — auto-pick in ${secs} s`
+          : `Committing in ${secs} s`
+        : `Waiting for ${all.join(', ')} — auto-pick in 10 s`; // the reserve's size
     } else {
       countdownEl.style.display = 'none';
+      countdownEl.style.visibility = '';
       countdownEl.textContent = '';
     }
     // Buttons: Take / Leave on the viewed card (read-only for a tab this
@@ -397,7 +492,6 @@ export function createDraftScreen({ run, build, party = () => null }) {
     btnDecline.classList.toggle('rn-disabled', !mine);
     if (empty) focus = 1;
     paintFocus();
-    void force;
   }
 
   const isNet = () => {
@@ -586,6 +680,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
     tabs: strip.tabs().map((t) => ({ seat: Number(t.dataset.seat), viewed: t.classList.contains('rn-pview'), chip: t.querySelector('.rn-pchip').textContent, h: t.getBoundingClientRect().height })),
     owner: ownerHost.textContent.trim(),
     cardSeat: host.querySelector('.rn-card') ? Number(host.querySelector('.rn-card').dataset.seat) : null,
+    frame: frameProbe(),
   });
   // fix-M3-r5 (AUD5-F1): the cheap selection signature the run UI polls once
   // per frame for its selection ticks (src/audio/uiselect.js) —

@@ -82,6 +82,55 @@ export const PARTY_STRIP_CSS = `
   .rn-owner .rn-ownerface img { width: 100%; height: 100%; object-fit: cover; display: block; }
   #run-screen.rn-compact .rn-ptab { min-height: 48px; min-width: 138px; padding: 4px 10px 6px 5px; }
   #run-screen.rn-compact .rn-pstrip { margin: 0 0 6px; gap: 6px; }
+  /* gauntlet r5 PARTY F3: the party page is one fixed frame (draft.js sizes
+     it to its tallest character card). The note row takes the spare height
+     BELOW its notes, so the strip, the card and the Take / Leave row sit at
+     the same place on every character's tab. */
+  #run-screen .rn-draft.rn-party .rn-noterow { flex: 1 0 auto; align-content: flex-start; }
+  /* The frame / shelf measuring pass flips every tab in one task: no
+     transition may start from those unpainted states. */
+  #run-screen .rn-measuring, #run-screen .rn-measuring * { transition: none !important; }
+  /* gauntlet r5 PARTY F4 — the shop's party rail.
+     (a) The viewed tab's caret (17 px above the tab + its 3 px lift) sits in
+         the strip's own top margin, clear of the title row (1024x576: the
+         Healer tab's caret was drawn over "THE PEDDLER'S SHELF"); the tabs
+         are the socket screen's 46 px ones (>= 44 design px) to pay for it. */
+  #run-screen .rn-shop .rn-shopstrip .rn-pstrip { margin: 15px 0 6px; }
+  #run-screen .rn-shop .rn-ptab { min-height: 46px; padding: 3px 12px 4px 6px; grid-template-columns: 36px auto; }
+  #run-screen .rn-shop .rn-ptab .rn-pface { width: 36px; height: 36px; }
+  #run-screen .rn-shop .rn-ptab .rn-pname, #run-screen .rn-shop .rn-ptab .rn-pchip { line-height: 1.15; }
+  #run-screen .rn-shop .rn-ptab .rn-pcaret { line-height: 1; top: -15px; }
+  #run-screen .rn-shop .rn-ptab.rn-howner { grid-template-columns: 36px auto auto; }
+  /* (b) The measuring twin (shop.js): laid out like the shelf, never seen,
+         never hit, never in the page's flow. */
+  #run-screen .rn-shop .rn-shelf.rn-shelftwin {
+    position: absolute; left: 0; top: 0; width: max-content; margin: 0;
+    visibility: hidden; pointer-events: none; z-index: -1;
+  }
+  /* (c) Stacked ribbons (shop.js decides per visit): the owner band on its
+         own row, the Suggested ribbon under it at the right — every item's
+         row the same height on every shelf, so the cards start at one y. */
+  #run-screen .rn-shop.rn-ribstack .rn-itemtabs {
+    flex-direction: column; align-items: flex-start; justify-content: flex-start;
+    gap: 2px; min-height: 46px;
+  }
+  #run-screen .rn-shop.rn-ribstack .rn-suggest { align-self: flex-end; }
+  /* (e) Narrow + short windows (shop.js rn-tabhead): the tabs take the
+         title's place in the header row; the row's top padding holds the
+         viewed tab's caret. */
+  #run-screen .rn-shop.rn-tabhead .rn-title { display: none; }
+  #run-screen .rn-shop.rn-tabhead .rn-head { padding-top: 15px; align-items: center; }
+  #run-screen .rn-shop.rn-tabhead .rn-head .rn-shopstrip { width: auto; flex: 0 0 auto; }
+  #run-screen .rn-shop.rn-tabhead .rn-head .rn-shopstrip .rn-pstrip { margin: 0; }
+  #run-screen.rn-compact .rn-shop.rn-tabhead { padding-top: 5px; padding-bottom: 8px; }
+  #run-screen.rn-compact .rn-shop.rn-tabhead .rn-plaque { padding-top: 3px; padding-bottom: 3px; }
+  /* (d) Windows at least 1280 px wide give the compact shelf the roomy
+         280 px cards (4 x 280 + 3 x 14 + 40 = 1202 px): the band and the
+         ribbon share one row there, and the copy wraps less. */
+  @media (min-width: 1280px) {
+    #run-screen.rn-compact .rn-shop .rn-item,
+    #run-screen.rn-compact .rn-shop .rn-item .rn-card { width: 280px; }
+  }
 `;
 
 const faceHtml = (classId, px = 40) => {

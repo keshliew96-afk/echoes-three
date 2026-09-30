@@ -52,6 +52,7 @@ async function load(root) {
     classes: await import(u('src/data/classes.js')).catch(() => null),
     skills: await import(u('src/sim/skills.js')),
     allies: await import(u('src/sim/allies.js')),
+    nodes: await import(u('src/sim/nodes.js')).catch(() => null),
   };
 }
 const median = (a) => {
@@ -108,6 +109,7 @@ function runCampaign(T, seed, { party = true } = {}) {
     guardDowned: 0,
     guardCasts: 0,
     leashOut: [],
+    shortSpoils: [], // fix-PARTY-r5: the Healer's drops of < 2 + whether its pools were dry
     pinStag: { onStag: 0, violations: 0 },
     swapRule: { checked: 0, bad: [] },
     carry: [],
@@ -233,14 +235,31 @@ function runCampaign(T, seed, { party = true } = {}) {
       }
     } else if (t === 'ally_dash' && e.inputSeq === undefined) {
       // §12 leash anchor: the live Waystone in a defend room, else the Healer.
-      const anchor = registry.all().find((x) => x.kind === 'waystone' && x.hp > 0) || registry.all().find((x) => x.kind === 'player') || null;
+      // fix-PARTY-r5: measured against the SEAT's ring (BUILD_BRIEF §25.8
+      // Engagement: a melee seat's vanguard ring = §12's 3.4 u + 2.0 u while
+      // the engagement rules are on) whenever allyState() reports one.
+      let av = null;
+      try { av = world.cmd('allyState'); } catch { av = null; }
+      const me = av && av.allies ? av.allies.find((x) => x.partyIndex === e.seat) : null;
+      const anchor = (av && av.anchor != null ? registry.byId(av.anchor) : null) || registry.all().find((x) => x.kind === 'waystone' && x.hp > 0) || registry.all().find((x) => x.kind === 'player') || null;
       if (anchor) {
         const d = Math.hypot(e.x1 - anchor.x, e.z1 - anchor.z);
-        if (d > T.allies.LEASH.radius + 0.3) M.leashOut.push({ seat: e.seat, skill: e.skill, d: r2(d) });
+        const ring = me && Number.isFinite(me.leash) ? me.leash : T.allies.LEASH.radius;
+        if (d > ring + 0.3) M.leashOut.push({ seat: e.seat, skill: e.skill, d: r2(d), ring: r2(ring) });
       }
     } else if (t === 'spoils_drop') {
       const s = e.seat === undefined ? 0 : e.seat;
       if (M.spoils[s]) M.spoils[s].push(e.nodes.length);
+      // fix-PARTY-r5: §14 drops fewer than 2 only when the Healer's common /
+      // rare fill AND upgrade pools are dry — checked on the drop's own tick.
+      if (s === 0 && e.nodes.length < 2) {
+        let pools = null;
+        try { pools = world.cmd('draftPools'); } catch { pools = null; }
+        const NN = T.nodes ? T.nodes.NODES : null;
+        const cr = (ids) => (ids || []).filter((id) => NN && NN[id] && (NN[id].rarity === 'common' || NN[id].rarity === 'rare') && !e.nodes.includes(id));
+        const dry = !!pools && !!NN && cr(pools.node).length === 0 && cr(pools.upgrade).length === 0;
+        M.shortSpoils.push({ tick: e.tick, n: e.nodes.length, dry });
+      }
     } else if (t === 'party_offer') {
       if (room) room.offer = true;
       lastOffer = { room: e.room, cards: e.cards, slots: P ? [0, 1, 2, 3].map((i) => (i ? [...P.slots(i)] : null)) : null };
@@ -419,7 +438,12 @@ const sum = (f) => runs.reduce((a, x) => a + f(x.r.M), 0);
   // §14: 2 per clear while the Healer's usable pool holds 2 (v0.5.150 drops
   // fewer as its pool runs dry the same way).
   const hist = (a) => a.reduce((o, n) => ((o[n] = (o[n] || 0) + 1), o), {});
-  check('GP.7', `the Healer's spoils follow §14 (sizes ${JSON.stringify(hist(hs))}; v0.5.150 ${JSON.stringify(hb ? hist(hb) : null)})`, hs.length > 0 && hs.every((n) => n === 2 || n === 1) && (!hb || hb.some((n) => n !== 2) || hs.every((n) => n === 2)), { now: hist(hs), base: hb && hist(hb) });
+  // fix-PARTY-r5: a short drop (0 / 1) is legal only when the common / rare
+  // fill and upgrade pools are dry on its tick — checked per drop instead of
+  // comparing the histograms of two different campaigns.
+  const shorts = runs.flatMap((x) => x.r.M.shortSpoils || []);
+  const wet = shorts.filter((x) => !x.dry);
+  check('GP.7', `the Healer's spoils follow §14: 2 per clear, short only with dry pools (sizes ${JSON.stringify(hist(hs))}, short ${shorts.length}, short with a non-dry pool ${wet.length}; v0.5.150 ${JSON.stringify(hb ? hist(hb) : null)})`, hs.length > 0 && hs.every((n) => n >= 0 && n <= 2) && wet.length === 0, { now: hist(hs), base: hb && hist(hb), wet: wet.slice(0, 5) });
   const shelves = runs.flatMap((x) => x.r.M.shelves);
   check('GP.7', `every ally shelf holds 4 cards (${shelves.length} shops)`, shelves.length > 0 && shelves.every((sh) => sh.every((n) => n === 4)), shelves);
   // (a defend soft-fail forfeits the room's reward for everyone, §11)

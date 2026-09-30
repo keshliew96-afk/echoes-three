@@ -153,7 +153,17 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     // shrinks rather than clips (the note above); at 1024x640 and up the
     // clamp holds and the §17 floors are real px.
     const underMin = window.innerWidth < 1024 || window.innerHeight < 640;
-    const s = Math.max(underMin ? UNDER_MIN_SCALE : MIN_SCALE, fit);
+    let s = Math.max(underMin ? UNDER_MIN_SCALE : MIN_SCALE, fit);
+    // gauntlet r5 PARTY F4: the DOCKED shop grows upward from the command
+    // bar, so a shelf taller than the room above the bar (the compact
+    // layouts fit every measured stock, but the fixed frame takes the
+    // tallest class shelf — Siphon's binding quote, owned / upgrade lines)
+    // must never push its header off the window: it shrinks just enough to
+    // keep the page on screen (4 px) — shrinking beats clipping, and a page
+    // that fits keeps the §17 clamp above.
+    if (!underMin && rootEl.classList.contains('rn-dock') && pg && h * s > window.innerHeight - reserve - 4) {
+      s = Math.max(UNDER_MIN_SCALE, (window.innerHeight - reserve - 4) / h);
+    }
     rootEl.style.setProperty('--rn-s', s.toFixed(4));
     lastFit = { s, compact, reserve, fit: Math.round(fit * 1e4) / 1e4, page: { w, h } };
     return s;
@@ -337,8 +347,10 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     if (list.length === 0) return;
     // 130% -> -130% of the card's width, the travel the old keyframe ran.
     const x = 130 - 260 * ((nowMs % SHINE_MS) / SHINE_MS);
-    const t = `translateX(${x.toFixed(2)}%)`;
-    for (const band of list) band.style.transform = t;
+    // gauntlet r5 PARTY: the band's BOX stays on the card (its ::before
+    // sweeps), so no layout probe ever finds a shine box off the window.
+    const t = `${x.toFixed(2)}%`;
+    for (const band of list) band.style.setProperty('--shx', t);
   }
 
   // ----------------------------------------------------- boot pre-paint --
