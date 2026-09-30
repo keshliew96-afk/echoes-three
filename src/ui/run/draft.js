@@ -261,6 +261,12 @@ export function createDraftScreen({ run, build, party = () => null }) {
     viewSeat = ownSeat();
     shown = '';
     chosenFocus.clear();
+    // A real open starts a fresh frame (the boot pre-paint renders this page
+    // with a synthetic view and must not leave its size behind).
+    frame.size = '';
+    frame.key = '';
+    frame.h = 0;
+    frame.w = 0;
     paintFocus();
   }
 

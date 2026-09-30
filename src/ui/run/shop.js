@@ -911,6 +911,12 @@ export function createShopScreen({ run, build, party = () => null }) {
   // never turns this visit's first Enter into a purchase.
   function open() {
     padFocus = -1;
+    // A real visit starts a fresh frame (never the boot pre-paint's size).
+    shelfFrame.size = '';
+    shelfFrame.key = '';
+    shelfFrame.h = 0;
+    shelfFrame.stack = false;
+    signature = '';
     paintPadFocus();
   }
   // Probe: the viewed seat + what the shelf shows.
