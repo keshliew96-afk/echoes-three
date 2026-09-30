@@ -1037,6 +1037,25 @@ hidden before the start) and `node tools/gntfixM5a4-slowjoin.mjs --port <server>
 (the guest's down link drops every snapshot: the slow-join copy, Esc → Leave
 Session, synced once the link is lifted).
 
+**Nothing multiplayer draws over a build page (fix-M5a-r5, NET5-F1,
+v0.5.182 / .185 / .189).** The party strip's owner line ("you" / the
+player's name / "AI") is a pill in flow after the class name, never over
+it; the connection chip, the guest's status note, the socket screen's
+countdown, the session notes and the ping line all dock clear of an open
+run page / socket screen (the notes: stack above the chip → the page's side
+margin → one or two lines in the widest free slot beside the chip / under
+the page → held until there is room, full lifetime, dropped after 15 s;
+`net` HUD `debug()` reports `dock`, `notesMode`, `held`, `ping`). Probes
+(own child server, `--base` = the dev server or a production preview):
+`node tools/gntfixM5a5-partytabs.mjs --port <p>` (host + 2 guests, one
+16-character name; party page / socket screen / doors / shop at 1024×576 …
+2560×1440; ancestor-aware text-overlap audit; single-player control),
+`node tools/gntfixM5a5-netnotes.mjs --port <p>` (real triggers: a
+not_owner party CMD → the guest's note, a guest door focus → the host's
+ping; every shown message clear of the page and of other text, held →
+shown on close), and the critic's probe with renamed outputs
+`GNTCNET5_BASE=<base> node tools/gntfixM5a5-critic-partytabs.mjs --port <p>`.
+
 ### M5b — network play (Gauntlet W4, owner M5b)
 
 **Playing.** `npm run net` (LAN: `npm run net -- --host 0.0.0.0`), then title
