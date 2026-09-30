@@ -48,7 +48,7 @@ import { service } from '../../app/registry.js';
 import { createDraftScreen } from './draft.js';
 import { createPathScreen } from './path.js';
 import { createShopScreen } from './shop.js';
-import { createEndScreen } from './endscreens.js';
+import { createEndScreen, END_CSS } from './endscreens.js';
 // CAMPAIGN (docs/gauntlet/PLAN.md §12.6): the level-transition card.
 import { createTransitScreen, TRANSIT_CSS } from './transit.js';
 // @gnt:M3 RUN-NAV-SOUND (fix-M3-r5): selection ticks for the build pages.
@@ -67,7 +67,7 @@ const SCREEN_FOR = {
 export function createRunUi({ bus, world, socket = null, autostart = false }) {
   const style = document.createElement('style');
   style.id = 'run-style';
-  style.textContent = RUN_CSS + TRANSIT_CSS + PARTY_STRIP_CSS;
+  style.textContent = RUN_CSS + TRANSIT_CSS + PARTY_STRIP_CSS + END_CSS; // fix-INT-r5: + the end card
   document.head.appendChild(style);
 
   // Veil sits UNDER #hud (§16: Zone 1 persists beneath); the page and the
@@ -161,11 +161,29 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     // must never push its header off the window: it shrinks just enough to
     // keep the page on screen (4 px) — shrinking beats clipping, and a page
     // that fits keeps the §17 clamp above.
-    if (!underMin && rootEl.classList.contains('rn-dock') && pg && h * s > window.innerHeight - reserve - 4) {
+    // fix-INT-r5 (J5-F2): the end card is never clipped either — it shrinks
+    // under the same rule when a window at / above the minimum is too short.
+    const endCard = current === 'end' && !pageEl;
+    if (!underMin && (rootEl.classList.contains('rn-dock') || endCard) && pg && h * s > window.innerHeight - reserve - 4) {
       s = Math.max(UNDER_MIN_SCALE, (window.innerHeight - reserve - 4) / h);
     }
     rootEl.style.setProperty('--rn-s', s.toFixed(4));
-    lastFit = { s, compact, reserve, fit: Math.round(fit * 1e4) / 1e4, page: { w, h } };
+    // fix-INT-r5 (J5-F2): the end card also keeps clear of the HUD's corner
+    // plates (location, Glint) when the room between them and the command bar
+    // holds it — it centres in that band (--rn-top = the plates' bottom);
+    // a window without that room centres it as before (--rn-top 0).
+    let top = 0;
+    if (endCard && pg) {
+      let band = 0;
+      for (const sel of ['.hud-loc', '.hud-glint']) {
+        const n = document.querySelector(sel);
+        const r = n ? n.getBoundingClientRect() : null;
+        if (r && r.width > 1 && r.height > 1) band = Math.max(band, Math.round(r.bottom) + 8);
+      }
+      if (band > 0 && h * s <= window.innerHeight - reserve - band - 8) top = band;
+    }
+    rootEl.style.setProperty('--rn-top', `${top}px`);
+    lastFit = { s, compact, reserve, fit: Math.round(fit * 1e4) / 1e4, page: { w, h }, top };
     return s;
   }
   fitScale();
