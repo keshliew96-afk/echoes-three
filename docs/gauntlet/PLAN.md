@@ -2520,6 +2520,15 @@ card); Level 3 — 2 skills, 30 nodes, 2 legendaries, 60 Glint (4 skills,
 - **Campaign victory** — the end card reads "CAMPAIGN COMPLETE" (levels 3 / 3,
   rooms, time, score); "Returning to camp in N s" counts down in sim time
   (pause-aware, net-synced); Enter returns now. Defeat keeps its card (Enter).
+  *As built (fix-INT-r5, J5-F2, v0.5.196):* both end cards are a FIXED-WIDTH
+  plate (min(980 px, 100vw − 96); 1020 in the roomy layout) — never sized by
+  their content: SCORE hero line, the stats two key / value pairs per row,
+  THE PARTY table (one row per character: portrait + class, the equipped
+  skills as chips wrapping in their own column, sockets filled, purse;
+  shared columns), party totals for SKILLS CARRIED / NODES HELD; short
+  windows drop the ornament and put the Enter hint beside the button; the
+  card centres in the band under the HUD corner plates when it fits there
+  and shrinks rather than clips (ui/run/index.js fitScale).
 - **Quit to Lobby** — pause menu, single-player and network host, confirmed
   ("Abandon this campaign and return to camp? Unlocks and records are kept.")
   → `abandonRun` → camp with no end card; the level is torn down; records

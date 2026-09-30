@@ -1455,6 +1455,33 @@ whose root causes lived in other keys' files (minimal edits, listed here):
   the host within 3 s, Q2 no toast on a defeat → camp, Q3 none in single
   player).
 
+**fix-INT-r5 probes (gauntlet round 5, 2026-10-01; docs/gauntlet/fix-INT-r5.md).**
+- *The end card is a fixed-width plate (J5-F2, v0.5.196).* `.rn-page.rn-end`
+  is min(980 px, 100vw − 96) wide (1020 in the roomy ≥ 1200 px tall layout)
+  whatever it holds: SCORE hero line, the stats as key / value pairs two per
+  row, THE PARTY table (one `.rn-prow[data-seat]` per character: portrait +
+  class (+ the player's name in a session) · skill chips · `n / 32 nodes` ·
+  purse; columns shared by subgrid); SKILLS CARRIED / NODES HELD are the
+  party's totals. `__echoes.runUi().fit.top` / `#run-screen` `--rn-top` =
+  the band under the HUD corner plates the card centres in when it fits
+  (0 otherwise). Probes: the critic's `node tools/gntcjourney5-endcard.mjs
+  --url <preview> --level 2 --tag <t>` (panel rect per size) and `node
+  tools/gntfixINT5-endcard.mjs --url <u> --scen def2,def1,vic3 --sizes …
+  --tag <t>` (the refuter's spec probe + `extra`: per-row column x spread,
+  skill lines per character, text outside the panel, overlap with `.hud-loc`
+  / `.hud-glint` / `.hud-bar`). Pass: panel ≤ 1020 px and never the full
+  window at ≥ 1024x576, colSpread 0, spill 0, no HUD overlap at ≥ 1024x640,
+  the same width with 0 / 28 / 95 nodes. `node tools/gntfixINT5-endret.mjs
+  --url <u>`: Enter, a mouse click on Return to Camp, and Esc (pause over the
+  card) → Esc → Enter all leave to camp.
+- *Full-slot swap commit (J5-F3, fixed by CAMPAIGN v0.5.167).* Re-verify with
+  `node tools/gntfixINT5-swap.mjs --url <u> --seeds 1,2,3,4,5,6 --mode select`
+  (copy of the critic's probe: S + Enter must take the offered skill into the
+  chosen slot, seed 3's suggestion is Leave) and `node
+  tools/gntfixINT5-swapfocus.mjs --base <u>/ --seeds 3,101,102 --how
+  key|arrow|mouse|pad|none` (copy of CAMPAIGN's; `none` = the reflexive-Enter
+  control that follows the suggestion).
+
 ### CAMPAIGN — linear campaign (the user's CRITICAL REFACTOR, 2026-09-25, owner CAMPAIGN)
 
 Design + gates: docs/gauntlet/PLAN.md §12 (GC.1–GC.13). Evidence:
