@@ -293,13 +293,13 @@ export function classVerdict(d, id) {
     case 'provoke':
       if (passive) return d.field === 'ally' ? L : G('a hostile field of another class');
       if (d.archetype === 'guard') return L;
-      if (d.status && d.status.kind === 'taunt' && d.status.ticks >= 90) return I('+0 — this skill already taunts longer (150 ticks)');
+      if (d.status && d.status.kind === 'taunt' && d.status.ticks >= 90) return I(`+0 — this skill already taunts longer (${d.status.ticks} ticks)`);
       return L;
     case 'brace':
       return L;
     case 'tremor':
       if (!dmg || !areaShape(d)) return G(passive ? PASSIVE_GREY : 'no hostile delivery to stagger with');
-      if (d.status && d.status.kind === 'stun' && d.status.ticks >= 18) return I('+0 — this skill already stuns longer (36 ticks)');
+      if (d.status && d.status.kind === 'stun' && d.status.ticks >= 18) return I(`+0 — this skill already stuns longer (${d.status.ticks} ticks)`);
       return L;
     case 'anchor':
       if (!dmg || !areaShape(d)) return G(passive ? PASSIVE_GREY : 'no hostile area delivery to pull with');
@@ -1374,13 +1374,16 @@ export function createBuildSystem({
       lines.push(GREY_REASONS[v.reason] ?? v.reason);
       lines.push('legal to socket — contributes nothing');
     } else if (v.state === 'inert') {
-      // §15.5 "+0": the Healer's saturated Multiply names the party it
-      // already reaches; a class cell (§25.3, fix-PARTY-r5 F6) states its own
-      // reason — "+0 — this skill already taunts longer (150 ticks)" — never
-      // the Multiply template with an unfilled party size.
-      if (v.reason === 'saturated' && Number.isFinite(v.pop)) lines.push(`+1 target — currently +0 (all ${v.pop} allies already hit)`);
-      else lines.push(typeof v.reason === 'string' && v.reason ? v.reason : '+0 — contributes nothing on this skill right now');
-      lines.push('legal to socket — contributes nothing while this holds');
+      // §15.5 "+0": the Healer's saturated Multiply keeps its binding copy.
+      // A class cell (§25.3) states its own reason instead of the Multiply
+      // template; the socket screen already prints the "＋0" mark, so the
+      // reason's own "+0 — " lead is dropped here.
+      if (v.reason === 'saturated') lines.push(`+1 target — currently +0 (all ${v.pop} allies already hit)`);
+      else {
+        const why = typeof v.reason === 'string' ? v.reason.replace(/^\+0\s*—\s*/, '') : '';
+        lines.push(why || 'contributes nothing on this skill right now');
+        lines.push('legal to socket — contributes nothing while this holds');
+      }
     } else if (n.kind === 'stat') {
       const from = seated ? resolveWithout(def, selfSlot) : resolveDef(def);
       const to = seated ? resolveDef(def) : resolveWith(def, nodeId);

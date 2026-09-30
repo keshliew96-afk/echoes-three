@@ -945,7 +945,13 @@ export function createSocketScreen({ bus, world }) {
       if (r && !r.denied) {
         held = null;
         if (r.verdict === 'grey') toast('socketed — grey here: it contributes nothing on this skill');
-        else if (r.verdict === 'inert') toast('socketed — +0 right now (every target already covered)');
+        else if (r.verdict === 'inert') {
+          // A class cell's +0 has its own reason (§25.3); only the Healer's
+          // saturated Multiply is "every target already covered".
+          const v = sys.verdictFor(sk.id, r.node, r.slot);
+          const why = v && typeof v.reason === 'string' && v.reason !== 'saturated' ? v.reason.replace(/^\+0\s*—\s*/, '') : '';
+          toast(why ? `socketed — +0 right now: ${why}` : 'socketed — +0 right now (every target already covered)');
+        }
         renderAll();
       }
       return; // a denial shakes the cell via the socket_denied listener
