@@ -40,8 +40,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const GPU = ['--use-angle=d3d11', '--enable-gpu-rasterization', '--ignore-gpu-blocklist', '--enable-webgl'];
 const BG = ['--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows'];
 
+// --launch WxH: every client is launched at that size (never resized before the shop) — the size a
+// player's window simply is; default 1280x720 then the --sizes sweep resizes.
+const [LW, LH] = String(A.launch || '1280x720').split('x').map(Number);
 async function openClient(url, tag) {
-  const browser = await puppeteer.launch({ headless: true, protocolTimeout: 300000, defaultViewport: { width: 1280, height: 720, deviceScaleFactor: 1 }, args: ['--disable-dev-shm-usage', '--no-first-run', '--no-default-browser-check', ...GPU, ...BG, '--window-size=1280,720'] });
+  const browser = await puppeteer.launch({ headless: true, protocolTimeout: 300000, defaultViewport: { width: LW, height: LH, deviceScaleFactor: 1 }, args: ['--disable-dev-shm-usage', '--no-first-run', '--no-default-browser-check', ...GPU, ...BG, `--window-size=${LW},${LH}`] });
   const page = (await browser.pages())[0] || (await browser.newPage());
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e && e.message ? e.message : e)));
@@ -89,14 +92,24 @@ const measure = () => {
   // The painted part only: a text run inside a box that clips (overflow != visible, e.g. an ellipsized
   // owner pill) is cut to that box, the way the frame shows it.
   const clipTo = (r, e) => { let x0 = r.left, x1 = r.right, y0 = r.top, y1 = r.bottom; for (let p = e; p && p !== page; p = p.parentElement) { if (getComputedStyle(p).overflowX !== 'visible') { const b = p.getBoundingClientRect(); x0 = Math.max(x0, b.left); x1 = Math.min(x1, b.right); y0 = Math.max(y0, b.top); y1 = Math.min(y1, b.bottom); } } return { left: x0, right: x1, top: y0, bottom: y1, width: Math.max(0, x1 - x0), height: Math.max(0, y1 - y0) }; };
-  const tb = texts.map(({ e, t }) => { const rg = document.createRange(); const n = [...e.childNodes].find((x) => x.nodeType === 3 && x.textContent.trim()); rg.selectNodeContents(n); const r = clipTo(rg.getBoundingClientRect(), e); return { t, cls: String(e.className).slice(0, 20), r }; });
+  // Text box = the union of the client rects of the element's OWN text nodes (the net critic r6 audit's
+  // method: an inline label broken over two lines counts as one box spanning both).
+  const tb = texts.map(({ e, t }) => {
+    const rg = document.createRange(); let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const n of e.childNodes) if (n.nodeType === 3 && n.textContent.trim()) { rg.selectNodeContents(n); for (const q of rg.getClientRects()) { x0 = Math.min(x0, q.left); y0 = Math.min(y0, q.top); x1 = Math.max(x1, q.right); y1 = Math.max(y1, q.bottom); } }
+    const r = clipTo({ left: x0, right: x1, top: y0, bottom: y1 }, e);
+    return { e, t: e.textContent.trim().slice(0, 24), cls: String(e.className).slice(0, 20), r };
+  }).filter((b) => b.r.width > 0 && b.r.height > 0);
   const overlap = [];
   for (let i = 0; i < tb.length; i++) for (let j = i + 1; j < tb.length; j++) {
     const a = tb[i].r; const b = tb[j].r;
     const w = Math.min(a.right, b.right) - Math.max(a.left, b.left); const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
-    // Same-row overlap only: the boxes share more than half of the shorter one's height (a font's
-    // ascent / descent box bleeding into the row above or below is not text drawn over text).
-    if (w > 1 && h > 0.5 * Math.min(a.height, b.height)) overlap.push({ a: tb[i].t, b: tb[j].t, px: Math.round(w * h) });
+    if (tb[i].e.contains(tb[j].e) || tb[j].e.contains(tb[i].e)) continue;
+    // Same-row overlap (the boxes share more than half of the shorter one's height — a font's ascent /
+    // descent bleeding into the row above or below is not text over text), or the critic's rule: the
+    // intersection covers > 25 % of the smaller box.
+    const frac = w > 0 && h > 0 ? (w * h) / Math.min(a.width * a.height, b.width * b.height) : 0;
+    if ((w > 1 && h > 0.5 * Math.min(a.height, b.height)) || frac > 0.25) overlap.push({ a: tb[i].t, b: tb[j].t, px: Math.round(w * h), frac: Math.round(frac * 100) / 100 });
   }
   const head = page.querySelector('.rn-head');
   const plate = page.querySelector('.rn-head .rn-strip');

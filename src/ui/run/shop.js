@@ -113,7 +113,7 @@ export function createShopScreen({ run, build, party = () => null }) {
       <div class="rn-orn"><i></i><b class="rn-lantern"><i class="rn-lanternglow"></i>${iconHtml('lantern', { size: 34 })}</b><i></i></div>
       <div class="rn-strip">
         <span class="rn-glint"><span class="rn-coin">${iconHtml('coin', { size: 18 })}</span><span class="rn-amt">0</span></span>
-        <span class="rn-lab">GLINT<span class="rn-labsep"> · </span><span class="rn-labbr"></span>ROOM</span><span class="rn-num">7</span>
+        <span class="rn-lab">GLINT<span class="rn-labsep"> · </span><span class="rn-labbr"></span><span class="rn-labrm">ROOM</span></span><span class="rn-num">7</span>
         <span class="rn-lab">OF 8</span>
       </div>
     </div>
