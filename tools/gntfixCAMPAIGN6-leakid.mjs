@@ -8,7 +8,7 @@ import { launch, open, sleep, writeJson, heap, ARGS } from './gntfixCAMPAIGN6-li
 const base = ARGS.base || 'http://127.0.0.1:4332/';
 const mode = ARGS.mode || 'fast';
 const W = +(ARGS.warm || 2), K = +(ARGS.k || 3);
-const NAME = `gntfixCAMPAIGN6-leakid-${mode}`;
+const NAME = `gntfixCAMPAIGN6-leakid-${mode}${ARGS.tag ? "-" + ARGS.tag : ""}`;
 const R = { base, mode, W, K, samples: [] };
 const browser = await launch({ autoplay: true });
 const { page, errors, cdp } = await open(browser, base + '?menu=0&seed=7&fresh=1');

@@ -1643,6 +1643,67 @@ docs/gauntlet/build-CAMPAIGN.md.
     byte-identical (`draft_declined`); `none` (no pick, Enter) follows the
     suggestion. The focused button is filled Hearth Amber (checked from the
     computed style in the row's `buttons`).
+  - **fix-CAMPAIGN-r6 (CR6-F2, GC.6 memory flat across campaigns)** — run on a
+    production preview (`npx vite build --outDir dist-<you>` + `npx vite
+    preview --outDir dist-<you> --port <yours>`); evidence in
+    docs/gauntlet/fix-CAMPAIGN-r6.md.
+    - `tools/gntfixCAMPAIGN6-memdet.mjs --base URL --tag t --campaigns 6
+      [--snap 3,6] [--census 1] [--track 1]` — the critic's deterministic
+      full-play probe (New Game seed 7 + `startCampaign` per campaign, the
+      autopilot plays every room, sim stepped 15 ticks per frame), samples at
+      the first controllable frame of L1 / L2 / L3 and in camp. `--census 1`
+      adds a three.js object census in camp (every LIVE Material /
+      BufferGeometry / Texture via CDP `Runtime.queryObjects`, grouped
+      in-scene `S` / off-scene `o`, ShaderMaterials by a djb2 hash of their
+      shader source + uniform names, diffed campaign to campaign); `--track N`
+      arms `campaign.glTrack()` after campaign N and stores `glAlive` /
+      `glOffScene` at every later sample (the GL-registered geometries that
+      persist). Pass (GC.6 after the one warm-up campaign): the same level /
+      camp has the same `gl.geometries` / `gl.textures` / `gl.programs` ± 2 in
+      every campaign, the off-scene rim-shell ShaderMaterials (hash `z8pbzx`,
+      skillfx/content.js) stay bounded (≤ 2 anchors + 2 × 16 pooled rigs),
+      the heap after a forced GC within ± 8 MB of campaign 1 and not climbing.
+      `tools/gntfixCAMPAIGN6-heapretain.mjs A.heapsnapshot B.heapsnapshot
+      <class>` groups objects new in B by retainer chain (`ga` = the minified
+      ShaderMaterial class in the v0.5.197 bundle; look the class up again on
+      a new bundle).
+    - `tools/gntfixCAMPAIGN6-leakid.mjs --base URL --mode full --warm 2 --k 3`
+      — bit-identical full-play campaigns; the GL tracker armed after the
+      warm-up lists geometries alive OFF the scene (a leak or an untrimmed
+      pool names itself). Pass: `offScene` 0 and camp geometries equal.
+    - `tools/gntfixCAMPAIGN6-statusvis.mjs --base URL` — the pooled status
+      rigs (shield + ward on the party, slow + stun on an enemy; clear /
+      re-apply / 20 cycles): same visible parts after a pool round trip, the
+      pool shrinks on re-apply, the live rim-shell count does not grow; at
+      Level 2's first frame no skill flourish is carried over. Screenshots
+      `-A` / `-B`.
+    - `tools/gntfixCAMPAIGN6-meterring.mjs` (Node) — the audio meters'
+      history ring against the committed meter.js (identical deterministic
+      samples, past the 12 000-window cap and across reset): all outputs
+      identical. `tools/gntfixCAMPAIGN6-meterlive.mjs --base URL` — the live
+      meters still file windows and answer `meters()` / `history(n)`.
+    - `tools/gntfixCAMPAIGN6-memloop.mjs --base URL --campaigns 10 [--snap
+      2,5]` — the heap trend WITHOUT probe-side compilation churn (the
+      memdet / leakid probes compile a fresh `page.evaluate` + `eval` every
+      15 ticks, ~3 000 scripts a campaign, which the page heap carries for a
+      while): one in-page driver plays each bit-identical campaign. Read the
+      heap with `tools/gntfixCAMPAIGN6-heapsplit.mjs a.heapsnapshot
+      b.heapsnapshot` — self size split into V8 code (the JIT keeps tiering
+      up more of the bundle the longer a session runs), engine-native data
+      and the game's own JavaScript objects; judge a campaign-over-campaign
+      leak on the JS part. `tools/gntfixCAMPAIGN6-heapchain.mjs A B [--name
+      Cls] [--depth N]` = net growth by class + retainer chain (churn
+      cancels); `tools/gntfixCAMPAIGN6-heappath.mjs X <id>` = the shortest
+      strong path from the GC roots to one node.
+    - `tools/gntfixCAMPAIGN6-allyvis.mjs --base URL` — the ally render
+      layer after its level teardown: the pooled revive instrument (its
+      geometry handed back at the L1 -> L2 boundary) draws again in Level 2;
+      melee wedges / kit zones / millrace curbs keep drawing (`-play.png`).
+    - Regression copies with renamed outputs: `gntfixCAMPAIGN6-gates.mjs`
+      (flow / quit / edge / locks), `-legacy.mjs` (GC.13), `-frames.mjs`
+      (transition timing; pass `--shot 0` for frame gaps — a CDP screencast
+      inflates arrival gaps), `-locks.mjs`, `-memory.mjs` (seed-varying
+      portal campaigns), `tools/actions/gntfixCAMPAIGN6-coreloop.json`.
 
 ### DEPLOY — hosted multiplayer, zero-config join (2026-09-26, owner DEPLOY)
 
