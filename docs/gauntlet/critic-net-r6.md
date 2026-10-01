@@ -1,5 +1,5 @@
-STATUS: PARTIAL
-(net critic round 6 — in progress; steps appended below as completed)
+STATUS: COMPLETE
+VERDICT: FAIL - 2 must-fix. NET6-F1: a guest's full-slot swap card does not predict the Replaces mark, so at N1 / N2 presses within one round trip are lost (S S S W Down Up -> final mark off by one, 3/3 runs) and S + Enter 150 ms later replaced Ground Crack instead of the chosen Whirling Guard (2/2 runs; N0 correct). NET6-F2: the multiplayer shop pushes "GLINT · ROOM 7 OF 8" outside the window at 1024x576 / 1024x640 / 1152x648 (3 / 3 / 1 text boxes off-window; SP 0) because the NET5-F1 owner pills widen the tab row. Re-measured and met: 0 desyncs / 7115 checks over 3 guests x 180 s x N1-N4; delta 3-7 % of full; hit-reg 98.0 / 98.2 % vs 67.5 / 74.4 % without the rewind; 16 injected corruptions detected + repaired in <= 409 ms; reconnect 2.1-2.3 s, migration grace + 0.4 s (state age <= 665 ms); L3 max-stress 10.79 / 18.85 KB/s; PARTY ownership / deadlines / build replication 20/20 with 4 clients; campaign MP 8/8; SP bit-identical; NET5-F1 fixed. Benchmark 21 met / 4 partial / 0 not met of 25.
 
 # Critic NET — round 6
 
@@ -259,3 +259,144 @@ Follow-up of the Step-10 observation (S, S moved the mark once). NEW `node tools
 | N1 | 300 ms | 3 / 3 | 3 | 3 |
 
 - The guest's Replaces mark is not predicted locally: after a W/S press the tile highlight does not move until the host's confirmation comes back (~0.3-0.4 s at N1), and every further press is computed from that stale replicated mark, so presses inside one round trip are lost (final mark off by one in 3/3 runs at N1 / N2, 0 at N0). Enter inside that window commits the OLD target: the owner's Shield Wall replaced Ground Crack although the player had moved the mark to Whirling Guard - an irreversible wrong swap on the full-slot reward the user asked for ("in multiplayer the character's owner decides"). Single-player / N0 controls are correct. PLAN GP.6 ("the Replaces selector cycles by W/S, wheel and D-pad") and the own-action feedback rule (G5b.12, "<= 1 rendered frame") are not met for this selector in multiplayer.
+
+## Resume (2026-10-01, after the workflow pause)
+- HEAD 885ad8a (docs-only commits since f91670d; `git diff f91670d HEAD -- src server` empty) -> the build under test is unchanged, v0.5.197; dist-cnet6/version.json still {0.5.197, index-OoO8EUa-.js}. The pre-pause processes (96028 / 85720) were gone (nothing listening on 7841 / 4328).
+- Restarted MY processes: session server `node server/index.mjs --port 7841 --admin --static dist-cnet6` (listener PID 70224, /health protocol 4, build 0.5.197); preview `ECHOES_NET_PORT=7841 npx vite preview --outDir dist-cnet6 --port 4328 --strictPort` (listener PID 74556). Shared dev server 5199 untouched.
+- Found an unrecorded in-flight step: tools/gntcnet6-desyncinject2.mjs -> captures/gntcnet6-desyncinject2.json = harness crash (`debugGuest()` returned null before the guest was a replica), no result. Redone as Step 24.
+
+## Step 24 - desync DETECTION + REPAIR under injected corruption (B15) (done) - captures/gntcnet6-wirecorrupt.json, -wirecorrupt-combat.json (+ .stdout.txt), gntcnet6-desyncinject3.json / 4.json, gntcnet6-desyncsurf*.json
+- Debug-API tampering cannot reach the decoder: `dec.viewOf(seq)` hands out copies (`same: false`, a write to it is not seen by the next `viewOf`), and corrupting the replica's applied / newest views (wallet +500, Healer x +3) is overwritten by the next snapshot (guest wallet 0 / 12 = host's on every poll, 0 desyncs) - captures/gntcnet6-desyncinject3.json / 4.json. `session.requestFull()` -> a full snapshot 406 ms later (fullRequests 1 -> 2).
+- NEW `node tools/gntcnet6-wirecorrupt.mjs --port 7841 --tag combat`: the GUEST page's WebSocket is wrapped before boot so ONE byte (XOR 0x5a) of ONE incoming snapshot frame (type 1, 114-247 B) is flipped on demand, at 16 relative offsets 0.05-0.97; room 1 kept in combat by durable harmless mantises; host + 1 guest, no conditioner.
+
+| outcome of a 1-byte flip in a live delta snapshot | trials | detection | repair |
+|---|---|---|---|
+| decoder rejects the frame (`decodeErrors` / dec `corrupt` +1) | 9 / 16 | <= 407 ms (first poll) | full snapshot re-sent (fullCount +1) <= 407 ms; next 8-9 hash checks clean |
+| decodes to a WRONG state -> 30-tick state hash mismatch (`desyncs` +1) | 4 / 16 | 400-409 ms | full requested + applied <= 409 ms; next 8-9 hash checks clean |
+| no effect seen (header / hot field overwritten by the next snapshot: offsets 6, 14, 192) | 3 / 16 | - | 0 hash mismatches in the next 8 checks |
+
+- After 16 corruptions: desyncs 4, decodeErrors 9, fulls 14; the last 7 checks 0 mismatches; guest synced, 0 page errors on both pages. The earlier no-keeper run (captures/gntcnet6-wirecorrupt.json): 1 decode-corrupt + 1 hash desync, both repaired in <= 407 ms. **B15 met: a divergence is detected within one hash interval and repaired by a full state resend; none persisted.**
+
+## Step 25 - spot re-checks after the resume (done) - captures/gntcnet6-firstkey-cond-enter150-resume.json / gntcnet6-firstkey-N1-enter150-resume.stdout.txt (pre-pause copy -prepause.json)
+- `node tools/gntcnet6-firstkey.mjs --port 7847 --cond lat75,jit10,loss10 --enterAfter 150 --legs warm` (own child server, killed by the tool): the Tank guest on its full-slot swap card presses REAL S then Enter 150 ms later -> mark at Enter 2 / DOM tile 2 (intended 3); host card {replace: 2, decided: true, choice: take}; loadout before [heavy_slam, brutal_cleave, ground_crack, whirling_guard] -> after [heavy_slam, brutal_cleave, **shield_wall**, whirling_guard] = Ground Crack replaced although the player had moved the mark to Whirling Guard. **Identical to the pre-pause run** (2 of 2 runs at N1). 0 page errors.
+- Frame re-read: captures/gntcnet6-mpwidth-shop-H-1024x576.png (session, host) - the purse plate reads "72 GLINT ·" and is cut at the window's right edge (x 1024); "ROOM 7 OF 8" is not visible; the plate sits outside the shop frame's right border. SP control captures/gntcnet6-mpwidth-sp-shop-H-1024x576.png: "72 GLINT · ROOM 7 OF 8" fully inside the frame. Tabs in the session carry the owner pills "you" / "Maximilian ..." / "Wren" / "AI".
+- G5b.11 stale input from the host's own stats across every window I ran: staleRepeatTicksMax 4-8 (rtt 4 / 7 / 8 / 8, loss 5-8, soak 8 x4, hitch 8 x5; bar <= 8).
+
+## Builder checkpoint claims, re-measured
+- **fix-M5a-r5 NET5-F1** (owner labels over the names): HOLDS. Step 11: 0 owner x name pairs at 1024x640 / 1280x720 / 1600x900 / 1920x1080 on host and guest; the pills name the player ("you" / "Fox" / "Wren" / "AI"); the drop note "Wren lost connection - AI plays the Swordsman" has its own row, 0 pairs.
+- **fix-M5a-r5 "regression green"**: DOES NOT HOLD for the shop. The in-flow owner pills from that fix (v0.5.182) widen the shop's tab row by ~214 px at 1024x640 (MP tab widths [171, 235, 226, 160] vs SP [138, 138, 164, 138]). The shop frame does not re-fit, so the purse / room plate leaves the window at 1024x576, 1024x640 and 1152x648 (Step 11). Their broadened probe audited text-on-text overlap only, never text outside the window.
+- **fix-PARTY-r5 F4** ("nothing off-screen 1024x576-2560x1440" for the shop): HOLDS in single-player (gntcnet6-spshop-1024.png: 0 boxes outside). It does NOT hold in a session (Step 11), and their MP probe (gntfixPARTY5-mptabs) covered the party page only at 1280x720 / 1024x640 / 1600x900, not the shop at 1024x576.
+- **fix-CAMPAIGN-r5 F3** (swap pick + Enter "every input path 100 %"): HOLDS in single-player and for a guest at N0 (Step 23: S + Enter after 150 ms replaced the chosen slot). FAILS for a guest at N1 / N2: presses inside one round trip are lost and Enter commits the stale target (Steps 23, 25).
+- **build-PARTY GP.9**: HOLDS with 4 clients at N1 (Step 9, 20/20).
+- **build-PARTY GP.10**: HOLDS. Builds are equal on 4 clients after every commit / buy / socket op / level transition, and a migration keeps all three ally builds (Steps 9, 13). L3 max-stress measures 10.79 / 18.85 KB/s with 1 guest and 8.5 / 17.0 with 3 at N1 (budget 12 / 24).
+- **build-PARTY GP.4 net leg**:
+  - HOLDS at N1: 36/36 casts host = guest, 0 snaps.
+  - At N2, 3 snaps in 2 of 12 Swordsman casts in the loaded run, and 0 in 16 in the controlled re-run (Step 12).
+- **G5a.5 netbench** (builder harness, run unmodified on my port): every verdict true (Step 22).
+
+## PLAN gates, literally
+
+| gate | result | evidence |
+|---|---|---|
+| G5a.1 | MET | own servers listen < 1 s, /health ok (protocol 4, build 0.5.197); 20 sequential + 8 simultaneous clients (Step 3) |
+| G5a.2 | MET | create / join by code (lower-case too) / quick match / seat / ready / start; last-seat race 50/50 exactly one winner; every rejection explicit: seat_taken, not_host, not_ready, full, not_found, version_mismatch (Step 3) |
+| G5a.3 | MET | live delta 0.03-0.07 of full in every window; protocol 72/72 incl. the full corpus + 10 000 fuzz pairs, 0 failures (Step 6) |
+| G5a.4 | MET | latency 75.00 ms, jitter sigma 9.95, loss 10 % -> 10.20 %, 20 % -> 20.27 %, dup 1.034 %, reorder 1.98 %, GE burst 11.56 vs 11.43 %, outage (Step 6) |
+| G5a.5 | MET | Step 22 |
+| G5a.6 | MET | goldens 9/9; simtrace d1eff38b03f581aa / 554cd9c41db19975 (Step 6) |
+| G5b.1 | MET | 2-4 clients; position path dev p95 <= 0.08 u; orientation p95 / max 0.29 deg; actions predicted = host 1929 / 1929; AI seats; drop-in (Steps 3, 4, 7, 19) |
+| G5b.2 | MET (own move = SP parity) | N1: predErr p95 0.003-0.031 u, 0 correction snaps, remote party jumps > 0.3 u: 0. N2 / N3: p95 <= 0.082, max <= 0.42 u, hostile jumps > 0.6 u 0.01-0.2 % of frames, 0 desyncs, no reconnect. N4: 0 decode errors, 0 duplicated events (Step 7). Key -> first moved frame: guest {1: 4, 2: 4} vs SP {1: 2, 2: 6, 3: 1} (Step 19) |
+| G5b.3 | MET | 98.0 % (N1) / 98.2 % (N2, 85 clamps) with the rewind vs 67.5 / 74.4 % without (Step 16) |
+| G5b.4 | MET | Level 1 3.1-5.1 KB/s avg, p95 <= 13.1; Level 3 max-stress 10.79 / 18.85 KB/s (1 guest), 8.5 / 17.0 (3 guests) at N1; delta ratio <= 0.07 (Steps 4, 5, 7, 21) |
+| G5b.5 | MET | 0 mismatches over 3 guests x 180 s x N1 / N2 / N3 / N4 = 7115 checks (Step 7) |
+| G5b.6 | MET | guest resynced 2106-2314 ms after the link returned (reload 454-517 ms); host loss: grace 10 s, then migration at +0.39 / +0.47 s, state age 368 / 665 ms; server kill -> "Connection to the server was lost." at 15.13 s, then single-player works (Step 13) |
+| G5b.7 | MET | same-tick interaction -> 1 activation (24/24 incl. 12 lagged trials); per-seat picks single; last seat 50/50; both pause menus open -> 60.28 / 59.92 ticks/s (Steps 3, 9, 15) |
+| G5b.8 | MET | goldens 9/9; in-page 817f1e9940c91d76 with / without a server; campaign trace f1d0bd3db0ef5c8e identical after hosting (Steps 6, 18) |
+| G5b.9 | PARTIAL (not provable here) | best controlled window hostNet p95 2.9-3.1 ms (bar 2), frameOver50Net 0-1 (bar 0); host 37-65 fps on a CPU at 100 % (Step 8) |
+| G5b.10 | PARTIAL | key -> move parity with SP and the dodge predicted; >= 60 fps cannot be shown on this machine |
+| G5b.11 | PARTIAL | staleRepeatTicksMax <= 8; guest away in 15 ms and back in 46 ms; hidden host 60.1 metronome ticks/s, but the guest-applied 2 s windows had mean 58.9 with 2 of 10 outside 60 +- 2 (Step 19) |
+| G5b.12 | MET in function, literal 17 ms not met | own-action feedback p95 20-58 ms at 28-40 fps (1-2 rendered frames); 8/8 denials retracted 71-134 ms after the key (mispredictRetractMs p95 0.6); 0 doubled cues (Steps 4, 19) |
+| G5b.13 | MET for what I re-ran | unreachable panel 4657 ms after the click (bar 5 s); Retry 4 ms; "That room is full." (Step 19). Change-server / LAN / https not re-run |
+| G5b.14 | MET | replayedOnce true, 0 duplicates, simCalls 0, refusedEmits 0 on every guest over 180 s x 4 (Step 7) |
+| GC.11 | MET | 8/8: L1 -> card -> L2 exactly once on both, guest 27 ms / 153 ms behind, layout / wallet / skills equal, 0 desyncs; host Quit to Lobby -> both camp (Step 17) |
+| GD.2 / GD.4 / GD.9 | MET | zero-config 12/12; single-player opens 0 WebSockets (Steps 18, 19) |
+| GP.4 net leg | MET at N1; N2 3 snaps in 2 of 28 Swordsman casts (advisory A-DASH) | Step 12 |
+| **GP.6 (multiplayer)** | **NOT MET** | (a) the guest's Replaces selector drops presses inside one round trip, and Enter commits the stale target (Steps 23, 25); (b) the session shop clips "GLINT · ROOM 7 OF 8" outside the window at 1024x576 (Step 11) |
+| GP.9 | MET | 20/20 (Step 9) |
+| GP.10 | MET | Steps 9, 13, 21 |
+
+## Benchmark scoring (Step 1 checklist, scored after the probes)
+
+| # | score | evidence |
+|---|---|---|
+| B1 authoritative tick + redundant input | MET | INPUT packet carries 6 redundant frames, 28-43 B, 1.4-1.6 KB/s up. staleRepeatTicksMax <= 8. In the soaks, predicted / confirmed is 1929 / 1929 (Steps 6, 7) |
+| B2 ~20 Hz snapshots, interpolation, bounded extrapolation | MET | 18.3-21.0 snaps/s (14.9-15.9 at 20 % loss); remote party jumps > 0.3 u: 0 in every window, max 0.24 u under burst loss (Steps 4, 5, 7) |
+| B3 own-move prediction + smoothed reconciliation | MET (advisory A-DASH) | key -> move parity with SP; predErr p95 <= 0.08 u; 0 correction snaps in 12 x 180 s; 70 of 72 guest dashes clean, with 3 snaps in 2 N2 casts on a ~1 s late host (Steps 7, 12, 19) |
+| B4 lag compensation | MET | 98.0 / 98.2 % with the rewind vs 67.5 / 74.4 % without (Step 16) |
+| B5 truthful net_graph | MET | rttMs = server RTT within a few ms at 0-250 ms; quality chip + tooltip (ping, loss in / out) (Steps 4, 19). r5 A2 fixed |
+| B6 timeout -> clear reason, usable menu | PARTIAL | reconnect banners in 5-99 ms; "Connection to the server was lost." at 15.13 s with a working title. But the old host barred by kill-host lands on a silent title (Step 13 E) |
+| B7 delta vs the ACKED baseline | MET | baseline age p50 2-6 ticks; fulls only after burst outages / request (Steps 4, 7) |
+| B8 unchanged ~0 B, delta <= 10-30 % | MET | 117-462 B vs 3.2-7.6 KB = 3-7 % |
+| B9 loss absorbed without resync | MET | 20 % loss: 0 desyncs, 0 decode errors, baseline age max 9 ticks (Step 5) |
+| B10 dup / reorder discarded | MET | 29-33 dups / 22-30 reorders per guest -> 0 decode errors, 0 duplicate events (Step 5) |
+| B11 own-ability prediction + rollback, no double cue | MET | feedback p95 20-58 ms (1-2 frames); 8/8 denials retracted in 71-134 ms; 0 doubled (Step 19) |
+| B12 input buffer robust to hitches | PARTIAL | guest hitches are absorbed in 0.7-2.2 s. A 1 s host hitch drains in 1.25 s (r5: 7.5 s), but a 2 s hitch still runs 1.8 s late and takes 3.5 s to drain (Step 20) |
+| B13 favour-the-shooter with a cap | MET | 85 clamps at N2, still 98.2 % |
+| B14 graceful degradation + quality indicator | MET | L20 / N2: own path dev p95 <= 0.07 u, 0 remote party jumps; the chip reads good / fair / poor in line with the link |
+| B15 desync detected and repaired | MET | 16 injected byte flips: 9 decode rejects + 4 hash mismatches, each detected and full-resynced in <= 409 ms; 0 persisted (Step 24) |
+| B16 host / code / quick play / roster | MET | Steps 3, 19 (stale lobby copy: advisory A-COPY) |
+| B17 seats / ready / last slot / full | MET | 50/50 one winner; "That room is full." in 133 ms |
+| B18 drop-in | MET | takes AI seat 2 in 1.3 ms (Step 3) |
+| B19 guest drop -> rejoin with state | MET | resynced 2.1-2.3 s after the link returned; a reload rejoins in 0.45-0.52 s; builds equal (Step 13) |
+| B20 host drop policy | MET | migration at grace + 0.4 s, state age <= 665 ms; a host reload resumes the run; second tab gets no offer (Steps 13, 14) |
+| B21 pause never freezes online | MET | 60.28 / 59.92 ticks/s with both menus open (Step 15) |
+| B22 synced shared moments, own reward pick, no silent picker | PARTIAL | transitions exactly once on every client; 30.00 s autopick, 30.00 s door, 15.00 s shop; only the owner decides a swap. But under latency the owner's Replaces choice is applied to the wrong slot (NET6-F1) |
+| B23 builds replicated and kept across transitions | MET | equal on 4 clients after every commit / buy / socket op / L1 -> L2; kept through migration (Steps 9, 13) |
+| B24 modest bandwidth + version check | MET | 3-11 KB/s down, 1.4-1.6 up; version_mismatch explicit (Steps 3, 21) |
+| B25 MP overlay hygiene | PARTIAL | NET5-F1 is fixed and the drop note gets its own row. But the session shop pushes the purse / room plate out of the window at <= 1152 px wide (NET6-F2), and the lobby copy is stale |
+
+Score: **21 met / 4 partial / 0 not met of 25**.
+
+## Verdict
+**FAIL - 2 must-fix.**
+
+The replication core is strong this round. Every number below was re-measured on my own server and clients against v0.5.197:
+- **Desync:** 0 over 3 guests x 180 s x N1-N4 (7115 hash checks), and 0 in every other window.
+- **Delta size:** 3-7 % of a full snapshot.
+- **Diagnostics:** the RTT readout now matches the link (the r5 A2 advisory is fixed).
+- **Hit registration:** 98.0 / 98.2 % with the rewind vs 67.5 / 74.4 % without.
+- **Desync repair:** 16 injected corruptions were each caught in <= 409 ms and repaired by a full resend; none persisted.
+- **Drop-offs:** guest reconnect in 2.1-2.3 s; migration at grace + 0.4 s with state age <= 665 ms.
+- **PARTY rules:** ownership, the 30 s deadlines and build replication hold with 4 clients.
+- **Campaign MP:** 8/8.
+- **Single-player:** bit-identical.
+- **NET5-F1:** fixed.
+
+Two multiplayer-only defects fail PLAN GP.6. Both sit on the build pages every co-op player uses between rooms.
+
+### Must-fix
+| id | title | evidence | reproduce |
+|---|---|---|---|
+| NET6-F1 | A guest's full-slot swap card ignores Replaces presses made within one round trip, and Enter then replaces the WRONG skill | Steps 23 and 25, captures/gntcnet6-firstkey-*.json / .stdout.txt. The guest's W/S marker is not predicted locally: it moves only when the host's echo returns, ~0.3-0.4 s at N1. Further presses are computed from that stale mark. At N1 / N2 with presses 250 ms apart, the sequence S S S W Down Up from mark 2 reads 2 3 3 0 2 1 (intended 3 0 1 0 1 0). 2 of 6 presses are lost, and the final mark is off by one in 3/3 runs. At N0 the same probe reads 6/6 correct. S then Enter 150 ms later at N1: the DOM mark at Enter is 2, and the host replaced slot 2. Ground Crack was swapped for Shield Wall although the player had moved the mark to Whirling Guard (slot 3). This reproduced in 2/2 runs, including one after the resume (gntcnet6-firstkey-cond-enter150-resume.json); at N0 slot 3 was replaced as intended. The result is an irreversible loss of a skill the player did not choose. It breaks the user's rule that "in multiplayer the character's owner decides", the PLAN §16.4 swap-card rule ("Enter / A commits the replacement just chosen"), GP.6 ("the Replaces selector cycles by W/S, wheel and D-pad") and the G5b.12 own-input feedback rule. | `node tools/gntcnet6-firstkey.mjs --port <free> --cond lat75,jit10,loss10 --enterAfter 150 --legs warm` (wrong slot), and `--cond lat75,jit10,loss10 --gap 250` (lost presses); control without `--cond` |
+| NET6-F2 | The multiplayer shop pushes the purse / room plate ("72 GLINT · ROOM 7 OF 8") outside the window at 1024x576, 1024x640 and 1152x648 | Step 11 (captures/gntcnet6-mpwidth.json, frames gntcnet6-mpwidth-shop-H-1024x576.png / -1024x640.png / -M-*.png, gntcnet6-mpoverlap-shop-Fox-1024.png). Text boxes outside the window: host 3 at 1024x576 ("GLINT · ROOM" 959-1077 px, "7" 1084-1095, "OF 8" 1103-1141), 3 at 1024x640, 1 at 1152x648. The guest named "Maximilian Wolfe" also has 3 at 1024x576 / 1024x640. The frame reads "72 GLINT ·" cut at the edge. Single-player control at the same sizes: 0 (gntcnet6-mpwidth-sp.json, gntcnet6-spshop-1024.png "72 GLINT · ROOM 7 OF 8" inside). Cause, measured: the in-flow owner pills of the NET5-F1 fix widen the shop tab row (MP [171, 235, 226, 160] vs SP [138, 138, 164, 138] px) and the shop frame does not re-fit. This breaks GP.6 ("0 clipped text nodes" at 1024x576). The fix-M5a-r5 / fix-PARTY-r5 claims missed it because they audited overlap only, not off-window text, in a session. | `node tools/gntcnet6-mpwidth.mjs --port <free>` (host + "Maximilian Wolfe" + "Wren", shop + reward page at 1024x576 / 1024x640 / 1152x648 / 1280x720 / 1366x768), and the control `--sp 1` |
+
+### Advisories
+- **A1 Host stall recovery (reduced).** A 1 s host hitch now drains in 1.25 s (r5: 7.5 s). A 2 s hitch still peaks at 1.8 s of input lag and drains in 3.5 s at ~0.75-1x. PLAN §3.7 says presses are applied <= 250 ms late (Step 20).
+- **A-DASH Fox Step snap at N2.** There were 3 out-and-back 3.0 u own-body snaps in 2 of 12 Swordsman casts. Both casts are the only ones in which the host executed the dash 0.9-1.1 s after the guest's predicted start. The instrumented re-run had 0 of 16. A 900 ms host freeze alone gives 0 snaps in 8/8 (Step 12). GP.4 asks for 0 snaps at N2.
+- **A3 Silent title for a barred host.** The old host barred by an admin kill-host lands on a plain title with no message (Step 13 E; r3-r5).
+- **A4 Dropped lobby member blocks Start.** Start says "Every player must be ready first." for ~15 s while a dead member's seat is held. The copy names nobody and blames readiness (Step 20; r3-r5).
+- **A5 Hidden host mid-game.** The guest-applied rate has mean 58.9 ticks/s with 2 of 10 two-second windows outside 60 +- 2 (r5: 57.5, 3/10). G5b.11 is literally partial (Step 19).
+- **A9 Literal fps / latency bars.** These bars cannot be shown on this shared machine: the CPU was at 100 % with 40 Chrome processes from other agents.
+  - G5b.9: best window hostNet p95 2.9-3.1 ms (bar 2), frameOver50Net 0-1 (bar 0).
+  - G5b.10: >= 60 fps.
+  - G5b.12: 17 ms. Feedback p95 is 20-58 ms at 28-40 fps.
+- **A10 E targets a used Dewfont.** Next to a fresh Dewfont, E still targets the older used one: in 6 of 12 lagged trials both presses were denied (Step 15; r4-r5).
+- **A-COPY Stale lobby text.** The SHARE panel says "The host plays the Healer and makes the build choices between rooms; everyone else plays an ally." Since PARTY, each human builds their own character (frame gntcnet6-ui-lobby-guest.png).
+- **A-N3 Burst bandwidth.** Under N3 burst loss the 1 s download maximum reached 24.6-49.1 KB, with 3-8 full snapshots re-sent per guest after outages. The p95 of 12.0-13.1 KB/s is within budget (Step 7).
+
+### Processes
+- Pre-pause: session server PID 96028 and preview PID 85720 were already gone at the resume.
+- After the resume I started the session server, listener PID 70224 (:7841), and the vite preview, listener PID 74556 (:4328). I stopped both at the end, and nothing is listening on 7841-7849 / 4328.
+- Child servers 7842-7849 were started and stopped by their tools.
+- No node process running a gntcnet6 tool remains.
+- The shared dev server 5199 was never touched.
