@@ -166,9 +166,38 @@ export function createSettingsStore({
     const prev = values.get(path);
     if (Object.is(prev, norm)) return norm;
     values.set(path, norm);
-    emitter.emit('change', { path, value: norm, prev, source });
+    deliver({ path, value: norm, prev, source });
     if (persist && s.persist) schedulePersist();
     return norm;
+  }
+
+  // Change events are delivered in the order the changes happened (FIFO).
+  // A set() made INSIDE a change listener updates the value at once (get()
+  // sees it) but its event waits until the current event has reached every
+  // listener. Delivering it re-entrantly let later listeners hear the new
+  // value FIRST and the superseded one LAST: the display service refusing a
+  // gamepad fullscreen request (display.fullscreen true -> false) left the
+  // Display tab's chip on "Fullscreen (browser)" while the game stayed
+  // windowed (fix-M1-r6, MENU-R6-F1).
+  const queue = [];
+  let delivering = false;
+  function deliver(ev) {
+    queue.push(ev);
+    if (delivering) return;
+    delivering = true;
+    try {
+      let n = 0;
+      while (queue.length) {
+        if (++n > 10000) {
+          console.error('[settings] change listeners keep setting each other — dropped', queue.length, 'queued events');
+          queue.length = 0;
+          break;
+        }
+        emitter.emit('change', queue.shift());
+      }
+    } finally {
+      delivering = false;
+    }
   }
 
   // subscribe('display.renderScale' | 'display' | '*', fn(value, path, prev, source))

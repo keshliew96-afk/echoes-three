@@ -113,12 +113,30 @@ export function createDisplay({ settings, stage, scheduler, toast, lastSource })
     try {
       const req = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen();
       note({ ev: 'fullscreen_request', source });
-      if (req && typeof req.catch === 'function') req.catch((err) => refuse(err && err.name === 'TypeError' ? 'unsupported' : 'no_gesture', source));
+      // Chromium rejects a request without a user gesture with a TypeError
+      // too ("Permissions check failed"): name it 'unsupported' only when the
+      // browser really has no fullscreen here.
+      if (req && typeof req.catch === 'function') req.catch(() => refuse(fsSupported() ? 'no_gesture' : 'unsupported', source));
+      armWatchdog(source);
     } catch {
       refuse('no_gesture', source);
       return false;
     }
     return true;
+  }
+
+  // A request that neither enters nor rejects (old WebKit's prefixed API has
+  // no promise) must not leave the setting claiming fullscreen: after 2 s
+  // without a fullscreenchange the mirror returns to the real state.
+  let watchdog = 0;
+  function armWatchdog(source) {
+    clearTimeout(watchdog);
+    const askedAt = performance.now();
+    watchdog = setTimeout(() => {
+      watchdog = 0;
+      if (lastFsChangeAt >= askedAt || fsElement()) return;
+      if (settings.get('display.fullscreen')) refuse('no_gesture', source);
+    }, 2000);
   }
 
   function exitFullscreen() {

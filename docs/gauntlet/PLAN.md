@@ -414,6 +414,12 @@ store.reset(prefix?) · store.snapshot() · store.persist() · store.keys() · s
 V.num(min,max,step) · V.int · V.bool · V.oneOf(list) · V.str(maxLen)
 ```
 
+Change events are delivered **FIFO** (fix-M1-r6): a `set()` made inside a
+change listener updates the value at once (`get()` sees it) but its event is
+queued until the current event has reached every listener, so every
+listener's last-heard value equals the store (re-entrant delivery left the
+Display chip on a refused fullscreen request — MENU-R6-F1).
+
 Payload `{ v: 1, savedAt, data: { '<path>': value } }`; debounced write 150 ms,
 flushed on `pagehide`/hidden. Corrupt → defaults + `.corrupt` copy +
 `loadReport.status='recovered'` + a toast ("Settings were reset — the saved

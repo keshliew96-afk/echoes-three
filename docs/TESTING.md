@@ -306,6 +306,22 @@ click / IME / dialogs / Settings over play / Reset-to-automatic focus; 24
 checks), `tools/gntfixM14-address.mjs`, `tools/gntfixM14-textesc.mjs` (the
 critic's MENU-R4-F1 repro); `ECHOES_URL` targets a preview.
 
+**Display mode never shows a mode the game is not in** (gauntlet fix-M1-r6,
+v0.5.200+). The Display-mode chip mirrors `document.fullscreenElement`, not
+the request: a pad A / D-pad press keeps "Windowed" and shows "Press Enter or
+click — browsers don't let a gamepad button switch to fullscreen" (a pad can
+LEAVE fullscreen); the first Enter / click / arrow enters; "Switching to
+fullscreen…" while a request is in flight. The settings store delivers change
+events FIFO (a set() inside a listener is heard by every later listener after
+the outer change), and a trusted pointerdown makes the pointer the input
+source before the control acts. Probes: `node tools/gntfixM16-padfs.mjs [--tag
+x]` (the critic's two sequences + no-activation pad, resting-pointer click,
+pad A in fullscreen, Enter in/out, a per-frame "lie frame" counter; RESULT
+line), `tools/gntfixM16-cpadfs.mjs` / `-cpadfs2.mjs` (verbatim critic
+MENU-R6-F1 repros, renamed outputs), `tools/gntfixM16-store.mjs` (store
+ordering, the audio log/linear level move, the gamepad refusal);
+`ECHOES_URL` targets a preview.
+
 ### M3 — audio engine and mixer (Gauntlet W1, owner M3)
 
 **Locked until a gesture.** No AudioContext exists before the first

@@ -44,7 +44,7 @@ export function buildDisplayTab(ctx) {
   // ------------------------------------------------------ keep / revert --
   let baseline = { scale: settings.get('display.renderScale'), fullscreen: false };
   let armed = { scale: false, fullscreen: false };
-  const isFs = () => !!document.fullscreenElement;
+  const isFs = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
 
   const scale = widgets.slider({
     id: 'ap-display-renderScale',
@@ -67,6 +67,15 @@ export function buildDisplayTab(ctx) {
     },
   });
 
+  // The Display-mode chip shows the REAL state — document.fullscreenElement —
+  // never the requested one (PLAN §3.3 "a live mirror"; benchmark S2). A
+  // press asks the browser; the chip moves when fullscreenchange says it took
+  // and stays put when the request is refused (a gamepad press, a blocked
+  // request), so no frame ever shows a mode the game is not in (fix-M1-r6,
+  // MENU-R6-F1).
+  const syncMode = () => {
+    if (mode.get() !== isFs()) mode.set(isFs());
+  };
   const mode = widgets.select({
     id: 'ap-display-mode',
     label: 'Display mode',
@@ -78,12 +87,21 @@ export function buildDisplayTab(ctx) {
     help: HELP.mode,
     onChange: (v) => {
       // Inside the keydown / click that changed it: the Fullscreen API's user
-      // gesture requirement is met synchronously by display.js.
-      settings.set('display.fullscreen', !!v, { source: 'ui' });
+      // gesture requirement is met synchronously by display.js. The request
+      // is made against the real state (the chip always shows it), so the
+      // first Enter / click / arrow always switches.
+      const want = !!v;
+      if (want !== isFs() && settings.get('display.fullscreen') === want) {
+        // The store already holds this request (one still in flight, or a
+        // mirror that has not caught up): ask again from this gesture.
+        settings.set('display.fullscreen', !want, { source: 'system' });
+      }
+      settings.set('display.fullscreen', want, { source: 'ui' });
       // Entering arms Keep/Revert (it only counts while fullscreen actually
       // took: hasPendingChanges() checks document.fullscreenElement, so a
       // refused request never prompts); leaving applies at once, no dialog.
-      armed.fullscreen = !!v && !baseline.fullscreen;
+      armed.fullscreen = want && !baseline.fullscreen;
+      syncMode();
       paint();
     },
   });
@@ -153,7 +171,9 @@ export function buildDisplayTab(ctx) {
     const parts = [];
     if (d && d.browserFullscreen()) parts.push('Browser fullscreen (F11) is on — press F11 to leave');
     else if (isFs() && d && d.keyboardLock) parts.push('Hold Esc to leave fullscreen');
-    if (app.nav && app.nav.lastSource === 'gamepad') parts.push("Press Enter or click — browsers don't let a gamepad button switch to fullscreen");
+    else if (!isFs() && settings.get('display.fullscreen')) parts.push('Switching to fullscreen…');
+    // A gamepad button can LEAVE fullscreen (no gesture needed) but not enter it.
+    if (!isFs() && app.nav && app.nav.lastSource === 'gamepad') parts.push("Press Enter or click — browsers don't let a gamepad button switch to fullscreen");
     parts.push('Fullscreen lasts for this visit — browsers leave it when the page reloads.');
     return parts.join(' · ');
   }
@@ -202,6 +222,7 @@ export function buildDisplayTab(ctx) {
   }
 
   function paint() {
+    syncMode();
     scale.setNote(scaleNote());
     mode.setNote(modeNote());
     vsync.setNote(vsyncNote());
@@ -220,7 +241,7 @@ export function buildDisplayTab(ctx) {
     settings.subscribe('display', (v, path, prev, source) => {
       if (path === 'display.renderScale') scale.set(Math.round(v * 100));
       else if (path === 'display.fullscreen') {
-        mode.set(!!v);
+        syncMode(); // the real state, whatever the store event says
         if (source === 'system') {
           if (v && !baseline.fullscreen && visible) armed.fullscreen = true; // entered on this visit
           if (!v) armed.fullscreen = false;
@@ -232,6 +253,16 @@ export function buildDisplayTab(ctx) {
       paint();
     })
   );
+
+  // The chip follows the browser the moment fullscreen takes or ends, even
+  // when the store already held the value (a request made from this tab).
+  const onFsChange = () => paint();
+  document.addEventListener('fullscreenchange', onFsChange);
+  document.addEventListener('webkitfullscreenchange', onFsChange);
+  offs.push(() => {
+    document.removeEventListener('fullscreenchange', onFsChange);
+    document.removeEventListener('webkitfullscreenchange', onFsChange);
+  });
 
   let visible = false;
   let timer = 0;

@@ -205,6 +205,22 @@ export function createNav({ screens, root, onFullscreenToggle, isRecentFullscree
     root.addEventListener(type, (e) => e.stopPropagation(), { passive: true });
   }
 
+  // A real press of the pointer is pointer input from that moment — before
+  // the control's own click handler runs. The click listener below only
+  // switched the source after the control had already acted (and never for
+  // the ‹ › step buttons), so a click with no pointer motion since a gamepad
+  // press reached the display service as 'gamepad' and fullscreen was
+  // refused although a click is a user gesture (fix-M1-r6, MENU-R6-F1).
+  root.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (!e.isTrusted) return;
+      setSource('mouse');
+      lastInputAt = performance.now();
+    },
+    { capture: true, passive: true }
+  );
+
   root.addEventListener(
     'pointermove',
     (e) => {
