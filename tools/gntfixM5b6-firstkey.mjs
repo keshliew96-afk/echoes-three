@@ -43,11 +43,16 @@ const mark = (c) => ev(c, () => {
 // number of frame starts after the keydown's dispatch up to that write (1 = drawn by the next frame).
 const installRecorder = (c) => ev(c, () => {
   const R = (window.__gntfixM5b6 = { keys: [], marks: [], frames: [], stop: false });
+  // the game's own rendered-frame counter (app.update, called at the END of each rendered frame,
+  // after the run UI's update). The MutationObserver callback is a microtask that runs only after the
+  // whole rAF callback returned — after that frame's app.update counted it — so a mark written by the
+  // first frame after the keydown reads keydown count + 1: drawn frames = mark count - keydown count.
+  const fcNow = () => (window.__echoes.app && Number.isFinite(window.__echoes.app.frameCount) ? window.__echoes.app.frameCount : null);
   const cur = () => { const sel = [...document.querySelectorAll('.rn-rep.rn-sel')].filter((e) => e.offsetParent); return sel.length === 1 ? Number(sel[0].dataset.slot) : null; };
   let last = cur();
   R.marks.push({ t: performance.now(), m: last });
-  window.addEventListener('keydown', (e) => { if (e.isTrusted) R.keys.push({ t: e.timeStamp, d: performance.now(), code: e.code }); }, { capture: true });
-  const mo = new MutationObserver(() => { const m = cur(); if (m !== last && m !== null) { last = m; R.marks.push({ t: performance.now(), m }); } });
+  window.addEventListener('keydown', (e) => { if (e.isTrusted) R.keys.push({ t: e.timeStamp, d: performance.now(), fc: fcNow(), code: e.code }); }, { capture: true });
+  const mo = new MutationObserver(() => { const m = cur(); if (m !== last && m !== null) { last = m; R.marks.push({ t: performance.now(), fc: fcNow(), m }); } });
   mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
   R.mo = mo;
   const loop = (ft) => { R.frames.push(ft); if (!R.stop) requestAnimationFrame(loop); else mo.disconnect(); };
@@ -130,13 +135,15 @@ async function legSeq({ F }) {
   const presses = rec.keys.filter((k) => keys.includes(k.code));
   const lat = presses.map((k) => { const ch = rec.marks.find((m) => m.t >= k.t); return ch ? Math.round(ch.t - k.t) : null; });
   const latFrames = presses.map((k) => { const ch = rec.marks.find((m) => m.t >= k.t); return ch ? framesTo(rec, k.d, ch.t) : null; });
+  // rendered game frames from the keydown to the frame that drew the new mark (1 = the next frame).
+  const gameFrames = presses.map((k) => { const ch = rec.marks.find((m) => m.t >= k.t); return ch && k.fc !== null && ch.fc !== null ? ch.fc - k.fc : null; });
   const domSeq = seq.slice(1).map((s) => s.dom);
   return {
     intendedSeq, domSeq, uiSeq: seq.slice(1).map((s) => s.ui), simSeq: seq.slice(1).map((s) => s.sim),
     domCorrect: domSeq.filter((d, i) => d === intendedSeq[i]).length, presses: keys.length,
     allMoved: domSeq.every((d, i) => d === intendedSeq[i]),
     markAtEnter: atEnter.dom, chipAfterEnter: (await mark(F)).chip,
-    pressToDomMs: lat, pressToDomFrames: latFrames, frameMs: frameMs(rec), intendedFinal: intended,
+    pressToDomMs: lat, pressToDomFrames: latFrames, pressToDrawnGameFrames: gameFrames, frameMs: frameMs(rec), intendedFinal: intended,
   };
 }
 
@@ -153,7 +160,7 @@ async function legEnter({ F, H, seat }) {
   const rec = await readRecorder(F);
   const k0 = rec.keys.find((k) => k.code === 'KeyS');
   const ch = k0 ? rec.marks.find((m) => m.t >= k0.t) : null;
-  return { markBefore: m0.dom, markAtEnter: m1.dom, uiAtEnter: m1.ui, simAtEnter: m1.sim, chipRightAfterEnter: m2.chip, hostCard, pressToDomMs: ch ? Math.round(ch.t - k0.t) : null, pressToDomFrames: ch ? framesTo(rec, k0.d, ch.t) : null, frameMs: frameMs(rec), intendedFinal: cyc(m0.dom, 1) };
+  return { markBefore: m0.dom, markAtEnter: m1.dom, uiAtEnter: m1.ui, simAtEnter: m1.sim, chipRightAfterEnter: m2.chip, hostCard, pressToDomMs: ch ? Math.round(ch.t - k0.t) : null, pressToDomFrames: ch ? framesTo(rec, k0.d, ch.t) : null, pressToDrawnGameFrames: ch && k0.fc !== null && ch.fc !== null ? ch.fc - k0.fc : null, frameMs: frameMs(rec), intendedFinal: cyc(m0.dom, 1) };
 }
 
 async function legBurst({ F, H, seat }) {

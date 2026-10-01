@@ -1258,8 +1258,9 @@ predicted own body). Probes (production preview on 4307, own servers
 7821-7823): `node tools/gntfixM5b6-firstkey.mjs --port P [--cond
 lat75,jit10,loss10] [--legs paths,seq,enter,burst] [--gap 250] [--enterAfter
 150] [--tag t]` (host + Tank guest on the room-1 swap card; per step the DOM
-mark, the run-UI mark, the replicated card, keydown -> mark-write frames via a
-MutationObserver + rAF frame starts; the slot the host REPLACED vs the
+mark, the run-UI mark, the replicated card, `pressToDrawnGameFrames` = the
+game's rendered frames from the keydown to the frame that wrote the new mark
+(app.frameCount read in a MutationObserver, 1 = the next frame); the slot the host REPLACED vs the
 intended one; legs: wheel / click / mocked D-pad + pad A, S S S W ↓ ↑ + Enter,
 S + Enter after 150 ms, S S Enter 60 ms apart), `node
 tools/gntfixM5b6-shadowunit.mjs` (the shadow's rules, no browser), and the
