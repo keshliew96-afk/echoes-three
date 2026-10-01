@@ -445,6 +445,30 @@ focus on the lamp and on a card: no re-flow, no overlap), and the critic's
 round-5 probes re-run as `tools/gntfixM35-c-{runui2,swap,swapmouse,uicues,
 runui,balance,boss,pause}.mjs` (logic unchanged).
 
+**Pointer activation sounds (fix-M3-r6 AUD6-F1, v0.5.203+).** A mouse
+click or a tap on an app-menu item plays the same cue as Enter / pad A on it:
+src/app/nav.js (`@gnt:M3 POINTER-NAV-SOUND`) announces a trusted press and
+release on one `[data-nav]` item of the top screen as app `nav` `{ action:
+'confirm', source: 'mouse', pointer: true, el }` before the control acts, and
+the engine picks the cue from the item (cues.js `activationCue`: disabled /
+aria-disabled → ui_deny, role="tab" → ui_tab, id `*-back` / `*-cancel` →
+ui_back, else ui_confirm) for every device; pointer cues carry `event:
+'pointer'` in `audio.cueLog()`. Probe `node tools/gntfixM36-activate.mjs
+[tag]` (base `GNTFIXM36_BASE`, default http://127.0.0.1:4303/; output
+`captures/gntfixM36/<tag>-activate.json`, prints ALL PASS): 15 title / Settings
+/ pause / confirm items activated by mouse, Enter and a mocked pad A in
+fresh browsers must give the same single cue (≥ −24 dBFS UI tap), plus
+pointer-only legs (a natively disabled Load Game denies, a press slid off
+the item is silent, slider-track / select-step clicks keep their own tick,
+right-click backs, a tap = the click cue, a splash-dismissing click or tap
+never sounds a title item — run that leg without the autoplay flag and
+read state through CDP `userGesture: false`, since puppeteer's evaluate
+grants user activation). The critic's round-6 probes re-run as
+`tools/gntfixM36-c-{mouseclick,mouseclick2,mouseclick3,levelsel,pad,tab3,
+runui2,swapmouse}.mjs` (logic unchanged, `GNTFIXM36_TAG` names the outputs).
+Run the pad probes one browser at a time: an 80 ms pad tap is missed when
+three GPU browsers share the CPU.
+
 **Adding sounds for new content (W2+).** From your own module (never
 src/audio/**): `service('audio').registerCue(id, { bus: 'sfx', levelDb,
 priority, maxVoices, cooldownMs, voice(ctx, t, dest, p) { … return endTime } })`
