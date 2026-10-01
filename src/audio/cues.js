@@ -834,3 +834,20 @@ export const NAV_CUES = {
   secondary: 'ui_toggle',
   tertiary: 'ui_toggle',
 };
+
+// The cue of ACTIVATING one menu item — Enter / Space, pad A, a mouse click or
+// a tap all speak through here (fix-M3-r6, AUD6-F1), so an item sounds the
+// same whatever pressed it. Roles come from structure, never from the label
+// text (labels are translated): a [disabled] / aria-disabled item (a locked
+// Level Select card, a greyed-out button) denies; a tab chip (role="tab")
+// switches tabs like Q / E; a Back / Cancel item (id ending in -back or
+// -cancel: ap-settings-back, sv-back, nt-mp-back, ap-confirm-cancel ...)
+// backs out like Esc; anything else confirms.
+export const ACTIVATION_BACK_ID = /(^|-)(back|cancel)$/;
+export function activationCue(el) {
+  if (!el || typeof el.getAttribute !== 'function') return NAV_CUES.confirm;
+  if (el.disabled === true || el.getAttribute('aria-disabled') === 'true') return 'ui_deny';
+  if (el.getAttribute('role') === 'tab') return NAV_CUES.tabNext;
+  if (ACTIVATION_BACK_ID.test(el.id || '')) return NAV_CUES.back;
+  return NAV_CUES.confirm;
+}

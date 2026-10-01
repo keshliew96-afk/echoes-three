@@ -25,6 +25,9 @@
 // ms } — inputTs is the event's timeStamp (gamepad: the poll that saw the
 // press), paintTs the first task after the next rendered frame (rAF -> message),
 // i.e. when the change could first be on screen. Last 50 kept (G1.3).
+// @gnt:M3 POINTER-NAV-SOUND begin (import)
+import { appEvents } from './events.js';
+// @gnt:M3 POINTER-NAV-SOUND end (import)
 const KEYMAP = Object.freeze({
   ArrowUp: 'up',
   ArrowDown: 'down',
@@ -220,6 +223,60 @@ export function createNav({ screens, root, onFullscreenToggle, isRecentFullscree
     },
     { capture: true, passive: true }
   );
+
+  // @gnt:M3 POINTER-NAV-SOUND begin — a pointer activation of a menu item is
+  // the same nav 'confirm' a key / pad press is (fix-M3-r6, AUD6-F1: a click
+  // was silent while Enter / A played ui_confirm). It is announced on the
+  // app 'nav' event BEFORE the control's own click handler runs (capture
+  // phase) — as screens.nav announces Enter before it presses the item — so
+  // the audio engine plays one activation cue whatever the device, and a
+  // setting the control changes folds its own tick into it exactly as for
+  // Enter. `el` lets the engine tell a Back / Cancel item, a tab chip or a
+  // disabled / locked item (ui_deny) from a plain button (PLAN §3.5).
+  // Only a real press-and-release on ONE item of the top screen counts: the
+  // press began on that item (a click that dismissed the splash and lands on
+  // a title item is not an activation), a keyboard-made click (detail 0) is
+  // left to the nav that made it, and sliders / text fields are adjusted or
+  // typed into, never activated. A natively [disabled] button gets no click
+  // event at all, so its release announces the (denied) activation.
+  let pressItem = null;
+  const pointerItem = (e) => (e.target && e.target.closest ? e.target.closest('[data-nav]') : null);
+  const activatable = (el) =>
+    !!el && inTopScreen(el) && el.tagName !== 'SELECT' && !isTextInput(el) && !(el.tagName === 'INPUT' && el.type === 'range');
+  const announceActivation = (el) =>
+    appEvents.emit('nav', { action: 'confirm', source: 'mouse', screen: screens.top(), repeat: false, pointer: true, el });
+  root.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (!e.isTrusted) return;
+      pressItem = e.button === 0 ? pointerItem(e) : null;
+    },
+    { capture: true, passive: true }
+  );
+  root.addEventListener(
+    'pointerup',
+    (e) => {
+      if (!e.isTrusted || e.button !== 0) return;
+      const item = pointerItem(e);
+      if (item && item === pressItem && item.disabled === true && activatable(item)) {
+        pressItem = null;
+        announceActivation(item);
+      }
+    },
+    { capture: true, passive: true }
+  );
+  root.addEventListener(
+    'click',
+    (e) => {
+      if (!e.isTrusted || !(e.detail > 0)) return;
+      const item = pointerItem(e);
+      const pressed = pressItem;
+      pressItem = null;
+      if (item && item === pressed && activatable(item)) announceActivation(item);
+    },
+    { capture: true, passive: true }
+  );
+  // @gnt:M3 POINTER-NAV-SOUND end
 
   root.addEventListener(
     'pointermove',

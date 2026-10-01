@@ -54,7 +54,7 @@ import { V } from '../app/settings.js';
 import { appEvents } from '../app/events.js';
 import { sliderToGain, sliderToDb, gainToDb, dbToGain, dbToSlider, MODES } from './mixmath.js';
 import { createVoiceKit, createDryKit } from './voices.js';
-import { DEFAULT_CUES, DEFAULT_EVENT_CUES, NAV_CUES, CUE_CAL, PREBAKE } from './cues.js';
+import { DEFAULT_CUES, DEFAULT_EVENT_CUES, NAV_CUES, CUE_CAL, PREBAKE, activationCue } from './cues.js';
 import { createSpatial, cameraFocus, SPATIAL } from './spatial.js';
 import { createMeterTap, createReductionMonitor, loadMeterWorklet } from './meter.js';
 import { createMusic, MUSIC_STATES, registerMusicTheme, STINGER_SEC, MUSIC_BUS } from './music.js';
@@ -1012,10 +1012,21 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     lastNav = { action: p.action, at: now };
     const ae = typeof document !== 'undefined' ? document.activeElement : null;
     if ((p.action === 'left' || p.action === 'right') && ae && typeof ae.__navAdjust === 'function') return; // the control's own tick plays
-    const cueId = NAV_CUES[p.action];
+    // An activation sounds by the item it presses, whatever pressed it
+    // (fix-M3-r6, AUD6-F1): the pointer's item (src/app/nav.js passes it) or
+    // the focused item of the top screen (keys / pad — the screen manager
+    // keeps DOM focus on it). Back / Cancel items back, tab chips tab, a
+    // disabled / locked item denies (cues.js activationCue).
+    const cueId = p.action === 'confirm' ? activationCue(activatedItem(p, ae)) : NAV_CUES[p.action];
     if (!cueId) return;
     lastNavCueAt = now;
-    trigger(cueId, {}, 'nav');
+    trigger(cueId, p.pointer ? { event: 'pointer' } : {}, 'nav');
+  }
+  function activatedItem(p, ae) {
+    if (p.el && typeof p.el.getAttribute === 'function') return p.el;
+    if (!ae || typeof ae.closest !== 'function' || !ae.matches || !ae.matches('[data-nav]')) return null;
+    const host = ae.closest('[data-screen]');
+    return host && host.dataset.screen === p.screen ? ae : null;
   }
   appEvents.on('nav', onNav);
   if (app && app.screens && typeof app.screens.on === 'function') app.screens.on('nav', onNav);

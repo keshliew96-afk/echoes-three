@@ -820,6 +820,27 @@ their own measured peak), and a UI cue ducks the score (`UI_DUCK`: −3 dB,
 held for the cue's transient + 0.15 s, released τ 0.12 s; Audio-tab previews /
 Test phrases and the pause duck exempt) so G3.4's UI clause holds in combat.
 
+*(fix-M3-r6, binding — AUD6-F1)* ACTIVATING an app-menu item sounds the same
+whatever pressed it: Enter / Space, pad A, a mouse click and a tap. The
+pointer path is a nav event too — src/app/nav.js (anchor `@gnt:M3
+POINTER-NAV-SOUND`) emits app `nav` `{ action: 'confirm', source: 'mouse',
+pointer: true, el }` in the CAPTURE phase of a trusted click (`detail > 0`)
+on a `[data-nav]` item of the top screen, before the control's own handler —
+exactly where screens.nav announces Enter — so a setting the control changes
+folds its own tick into the activation as it does for Enter. Only a press
+and release on ONE item counts (the press began on that item: a tap that
+dismissed the splash and lands on a title item is no activation); sliders,
+text fields and selects are adjusted / typed into, never activated; a
+natively `[disabled]` button (no click event) announces on its pointerup.
+The cue comes from the item, never its label (labels get translated —
+cues.js `activationCue`): `[disabled]` / `aria-disabled` → ui_deny (a locked
+Level Select card, a greyed-out Load Game); `role="tab"` → ui_tab; id ending
+in `-back` / `-cancel` (ap-settings-back, sv-back, nt-mp-back,
+ap-confirm-cancel …) → ui_back; anything else → ui_confirm. Keys / pad
+resolve the same item from DOM focus, so Enter on Back now plays ui_back and
+Enter on a tab chip ui_tab (were ui_confirm). New Back / Cancel buttons keep
+the `-back` / `-cancel` id suffix.
+
 The engine KEEPS emitting `sound` events (`{ slot }` for the four legacy
 slots shoot/hit/kill/heal, `{ slot, cue }` for everything else) into the sim
 bus — the observable contract in headless captures. `sound` events are
