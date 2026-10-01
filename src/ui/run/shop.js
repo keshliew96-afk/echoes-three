@@ -113,7 +113,7 @@ export function createShopScreen({ run, build, party = () => null }) {
       <div class="rn-orn"><i></i><b class="rn-lantern"><i class="rn-lanternglow"></i>${iconHtml('lantern', { size: 34 })}</b><i></i></div>
       <div class="rn-strip">
         <span class="rn-glint"><span class="rn-coin">${iconHtml('coin', { size: 18 })}</span><span class="rn-amt">0</span></span>
-        <span class="rn-lab">GLINT · ROOM</span><span class="rn-num">7</span>
+        <span class="rn-lab">GLINT<span class="rn-labsep"> · </span><span class="rn-labbr"></span>ROOM</span><span class="rn-num">7</span>
         <span class="rn-lab">OF 8</span>
       </div>
     </div>
@@ -171,6 +171,52 @@ export function createShopScreen({ run, build, party = () => null }) {
     if (inHead) headEl.insertBefore(stripEl, ornEl);
     else el.insertBefore(stripEl, shelf);
   }
+  // fix-M5a-r6 (NET6-F2) — the tab-head FIT. In a network session every tab
+  // carries its owner pill ("you" / a player's name / "AI", NET5-F1), which
+  // made the one header row (4 tabs + lantern + the Glint / room plate) up to
+  // 196 px wider than the header at 1024-1279 px: the plate left the frame
+  // and the window. The header now steps through ordered fit levels until it
+  // holds its content (partystrip.js (f) draws them): L1 each owner pill
+  // joins the narrower line of its tab (beside the purse), L2 the plate on two
+  // lines, L3-L4 long names end in an ellipsis sooner (5 / 4 em, full name in
+  // the tooltip), L5 the lantern ornament steps aside (names before
+  // decoration), L6 names at 3 em, L7 the plate wraps (last resort). Measured
+  // with the WIDEST purse any tab can show, so switching characters never
+  // re-flows the header; re-fitted only when the window or the tab text
+  // changes (never per frame). Single-player headers fit at level 0.
+  const HEAD_FIT = ['rn-hf-own2', 'rn-hf-plate2', 'rn-hf-own5', 'rn-hf-own4', 'rn-hf-nolamp', 'rn-hf-own3', 'rn-hf-wrap'];
+  const headFit = { key: '', level: 0, tab0: null };
+  const textW = (node) => {
+    if (!node) return 0;
+    const rg = document.createRange();
+    rg.selectNodeContents(node);
+    return rg.getBoundingClientRect().width;
+  };
+  function fitHead(view) {
+    const on = el.classList.contains('rn-tabhead') && headEl.clientWidth > 0;
+    const tabs = strip.tabs();
+    const ps = view.partyShop;
+    const purses = [view.shop ? view.shop.wallet : 0, ...(ps ? [1, 2, 3].map((k) => ps.shelves[k].purse) : [])];
+    const digits = Math.max(1, ...purses.map((p) => String(p ?? 0).length));
+    const key = on ? `${window.innerWidth}x${window.innerHeight}|${digits}|${strip.el.textContent}` : 'off';
+    if (key === headFit.key && tabs[0] === headFit.tab0) return;
+    headFit.key = key;
+    headFit.tab0 = tabs[0];
+    const apply = (n) => HEAD_FIT.forEach((c, i) => el.classList.toggle(c, i < n));
+    apply(0);
+    let n = 0;
+    if (on) {
+      for (const t of tabs) {
+        const owned = t.classList.contains('rn-howner');
+        t.classList.toggle('rn-pown2', owned && textW(t.querySelector('.rn-pchip')) <= textW(t.querySelector('.rn-pname')));
+      }
+      const shown = amtEl.textContent;
+      amtEl.textContent = '8'.repeat(digits);
+      while (n < HEAD_FIT.length && headEl.scrollWidth > headEl.clientWidth + 0.5) apply(++n);
+      amtEl.textContent = shown;
+    }
+    headFit.level = n;
+  }
   function setView(seat) {
     viewSeat = ((Number(seat) % 4) + 4) % 4;
     padFocus = -1;
@@ -193,6 +239,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     padFocus = -1;
     signature = '';
     lastView = null;
+    headFit.key = '';
   }
   // The viewed shelf in the Healer's shape ({ wallet, stock }).
   function shelfOf(view, seat) {
@@ -405,8 +452,13 @@ export function createShopScreen({ run, build, party = () => null }) {
     // animates; it lands on the true wallet when the animation ends.
     if (!buyAnim) amtEl.textContent = String(s.wallet);
     lastWallet = s.wallet;
+    // fix-M5a-r6: the window size is part of the shelf signature. A resize
+    // while the shelf is open used to keep the previous size's fixed frame
+    // and card copy until the first character switch re-measured it — the
+    // frame then jumped (1280x720 -> 1024x640: top 59 -> 18 px on the first
+    // Q / E). Now a resize re-measures the frame and rebuilds the shelf at once.
     const sig =
-      `${viewSeat}#` +
+      `${window.innerWidth}x${window.innerHeight}|${viewSeat}#` +
       (s.stock ?? [])
         .map(
           (i) =>
@@ -421,6 +473,7 @@ export function createShopScreen({ run, build, party = () => null }) {
       shelf.style.minHeight = shelfFrame.h > 0 ? `${shelfFrame.h}px` : '';
       build3(view);
     }
+    fitHead(view);
     startMotes();
   }
 
@@ -917,10 +970,11 @@ export function createShopScreen({ run, build, party = () => null }) {
     shelfFrame.h = 0;
     shelfFrame.stack = false;
     signature = '';
+    headFit.key = '';
     paintPadFocus();
   }
   // Probe: the viewed seat + what the shelf shows.
-  const probe = () => ({ viewSeat, focus: padFocus, cards: cards.map((c) => (c ? { seat: Number(c.dataset.seat), marked: !!c.querySelector('.rn-suggest.rn-on') } : null)), lamp: advanceBtn.textContent, frame: frameProbe() });
+  const probe = () => ({ viewSeat, focus: padFocus, cards: cards.map((c) => (c ? { seat: Number(c.dataset.seat), marked: !!c.querySelector('.rn-suggest.rn-on') } : null)), lamp: advanceBtn.textContent, frame: frameProbe(), headFit: headFit.level });
   // fix-M3-r5 (AUD5-F1): the selection signature the run UI polls for its
   // selection ticks (src/audio/uiselect.js) — '<viewed character>|<card focus>'.
   const sel = () => `${viewSeat}|${padFocus}`;

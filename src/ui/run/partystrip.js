@@ -124,6 +124,35 @@ export const PARTY_STRIP_CSS = `
   #run-screen .rn-shop.rn-tabhead .rn-head .rn-shopstrip .rn-pstrip { margin: 0; }
   #run-screen.rn-compact .rn-shop.rn-tabhead { padding-top: 5px; padding-bottom: 8px; }
   #run-screen.rn-compact .rn-shop.rn-tabhead .rn-plaque { padding-top: 3px; padding-bottom: 3px; }
+  /* (f) fix-M5a-r6 (NET6-F2) — the tab-head FIT levels (shop.js fitHead
+         adds them in order until the header row holds its content; a
+         session's owner pills pushed the Glint / room plate out of the
+         window at 1024-1279 px).
+         L1 the owner pill joins the narrower line of its tab (beside the
+            purse when the purse is the shorter line). */
+  #run-screen .rn-shop.rn-hf-own2 .rn-ptab.rn-howner.rn-pown2 .rn-pname { grid-column: 2 / span 2; grid-row: 1; }
+  #run-screen .rn-shop.rn-hf-own2 .rn-ptab.rn-howner.rn-pown2 .rn-pchip { grid-column: 2; grid-row: 2; }
+  #run-screen .rn-shop.rn-hf-own2 .rn-ptab.rn-howner.rn-pown2 .rn-powner { grid-column: 3; grid-row: 2; }
+  /*     L2 the plate on two lines: "◉ 72 GLINT" over "ROOM 7 OF 8" (same
+            text, same type sizes — the " · " rule hides, a line break shows). */
+  #run-screen .rn-shop.rn-hf-plate2 .rn-head .rn-strip {
+    display: block; text-align: center; white-space: nowrap; line-height: 1;
+    padding-top: 2px; padding-bottom: 2px; margin-bottom: 0; border-radius: 14px;
+  }
+  #run-screen .rn-shop.rn-hf-plate2 .rn-head .rn-strip .rn-glint { display: inline-flex; vertical-align: middle; }
+  #run-screen .rn-shop.rn-hf-plate2 .rn-head .rn-strip .rn-labsep { display: none; }
+  #run-screen .rn-shop.rn-hf-plate2 .rn-head .rn-strip .rn-labbr::before { content: '\\A'; white-space: pre; }
+  #run-screen .rn-shop.rn-hf-plate2 .rn-head .rn-strip .rn-num { margin-left: 0.35em; }
+  /*     L3 / L4 / L6 a long player name ends in an ellipsis sooner (the
+            full name stays in the pill's tooltip / accessible name). */
+  #run-screen .rn-shop.rn-hf-own5 .rn-ptab.rn-howner .rn-powner { max-width: 5em; }
+  #run-screen .rn-shop.rn-hf-own4 .rn-ptab.rn-howner .rn-powner { max-width: 4em; }
+  #run-screen .rn-shop.rn-hf-own3 .rn-ptab.rn-howner .rn-powner { max-width: 3em; }
+  /*     L5 the lantern ornament steps aside (names before decoration); L7
+            the plate wraps under the tabs (last resort — never off the frame). */
+  #run-screen .rn-shop.rn-hf-nolamp .rn-head .rn-orn { display: none; }
+  #run-screen .rn-shop.rn-hf-nolamp .rn-head .rn-strip { margin-left: auto; }
+  #run-screen .rn-shop.rn-hf-wrap .rn-head { flex-wrap: wrap; row-gap: 4px; }
   /* (d) Windows at least 1280 px wide give the compact shelf the roomy
          280 px cards (4 x 280 + 3 x 14 + 40 = 1202 px): the band and the
          ribbon share one row there, and the copy wraps less. */
