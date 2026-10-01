@@ -512,6 +512,12 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       if (r && r.reason) {
         stats.rejected += 1;
         sendCmd(c.seat, { kind: 'command_rejected', re: c.cmdSeq, what: cmd.op ?? null, seat: Number.isInteger(cmd.seat) ? cmd.seat : null, reason: r.reason });
+      } else {
+        // fix-M5b-r6 (NET6-F1): applied — the ack names the host tick, so
+        // the guest's party shadow retires its prediction once the replica
+        // state it shows is past that tick (it then carries the change).
+        stats.partyAcks = (stats.partyAcks || 0) + 1;
+        sendCmd(c.seat, { kind: 'party_ack', re: c.cmdSeq, what: cmd.op ?? null, tick: clock.tick });
       }
       return;
     }

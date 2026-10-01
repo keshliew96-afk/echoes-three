@@ -3389,6 +3389,24 @@ events (`node_granted`, `node_socketed`, `node_unsocketed`,
   back to the AI on its first tick (world.js), which clears its deadlines.
 - **Drop-in / rejoin / migration**: the seat's build is sim state — a
   drop-in takes it, a rejoin keeps it, a keyframe carries it.
+- **Own-card prediction (fix-M5b-r6, NET6-F1 — binding).** A guest's own
+  party-page card is PREDICTED like its own body (§3.7): the Replaces mark
+  (W / S, ↑ / ↓, wheel, a tile click, D-pad) and Take / Leave show on the
+  next rendered frame, every press counts, and Enter / A sends the mark the
+  player sees. `net/predict.js createPartyShadow` keeps each own `replace` /
+  `pick` CMD as a pending op under its cmdSeq; the guest's run view (and its
+  `__echoes.state().run`) is the replicated card with every pending op
+  re-applied (idempotent sets — no flicker whatever order the ack and the
+  snapshot arrive in). The host answers every applied `party` CMD with
+  `party_ack { re, what, tick }` (reliable CMD, net/driver.js); an op retires
+  when its ack arrived AND the applied replica tick is past `tick`, on
+  `command_rejected { re }`, when its card is gone (page committed, another
+  page / candidate, the seat no longer human-held) or 4 s unacked (8 s
+  acked). The authoritative replicated card stays readable:
+  `__echoes.net.session.partyShadow()` → { pending, authoritative, shown,
+  stats }; `net.stats().partyPredict` → { predicted, acked, rejected,
+  retired, dropped, expired, corrections, ackMs }. Single-player and the
+  host never predict (no sim, replica, hash or bus change).
 
 ### 16.6 Save schema 4 (M2 files, minimal edits by PARTY)
 

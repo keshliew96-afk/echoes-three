@@ -553,3 +553,149 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// Own build-page decisions — the guest's PARTY SHADOW (fix-M5b-r6, NET6-F1).
+//
+// A guest decides its OWN party-page card (PLAN §16.5: the character's owner
+// decides), but the card lives in the host's sim and reaches the guest through
+// the interpolated replica — ~0.3-0.4 s after a press at N1. Without
+// prediction the Replaces mark moved only when that echo came back, every
+// press inside the round trip cycled from the stale mark (2 of 6 presses
+// lost) and Enter sent the stale mark (the wrong skill replaced, for good).
+//
+// The card is predicted exactly like movement (input-sequence
+// reconciliation): each own `party` CMD that changes the card — `replace`
+// (the W / S, wheel, D-pad, click Replaces mark) and `pick` (Take / Leave,
+// with the mark it commits) — is kept as a pending op under its cmdSeq, and
+// the run view the guest's UI reads is the replicated card with every pending
+// op re-applied in order. Both ops are idempotent SETS, so re-applying one the
+// replicated state already carries changes nothing (no flicker however the
+// ack and the snapshot interleave). An op retires when
+//   · the host's `party_ack { re, tick }` arrived AND the applied replica
+//     state is past that host tick (the state now carries the op), or
+//   · the host refused it (`command_rejected { re }` — the HUD says why), or
+//   · its card is gone: the page committed, another candidate / page is up,
+//     or the seat is no longer human-held (the AI / a timeout decides), or
+//   · PARTY_PENDING_MAX_MS passed without an ack (a CMD lost to a host
+//     change) — the replicated card then shows; acked ops are held at most
+//     twice that while the replica catches up.
+// Single-player and the host never create a shadow (presentation-only; the
+// sim, the replica, the state hash and the bus are untouched).
+export const PARTY_PENDING_MAX_MS = 4000;
+
+export function createPartyShadow({ seat, now = () => performance.now(), maxMs = PARTY_PENDING_MAX_MS } = {}) {
+  let pending = []; // { seq, op: 'replace'|'pick', slot, choice, replace, key, at, ackAt, ackTick }
+  let shown = null; // { key, replace, decided, choice } the prediction last showed
+  const st = { predicted: 0, acked: 0, rejected: 0, retired: 0, dropped: 0, expired: 0, corrections: 0, maxPending: 0, ackMs: [] };
+  const cardOf = (view) => {
+    const p = view && view.party;
+    return p && Array.isArray(p.cards) ? p.cards[seat] ?? null : null;
+  };
+  // A card instance: the page (room + the tick it opened) and the candidate.
+  const keyOf = (view) => {
+    const c = cardOf(view);
+    return c ? `${view.party.room}:${view.party.openedTick}:${c.type}:${c.id}` : null;
+  };
+  const humanHeld = (view) => {
+    const o = view && view.party && view.party.owners;
+    return !!o && o[seat] === 'human';
+  };
+  function applyOp(c, p) {
+    if (p.op === 'replace') {
+      if (c.swap) c.replace = p.slot;
+    } else if (p.op === 'pick') {
+      c.decided = true;
+      c.choice = p.choice;
+      c.by = 'human';
+      if (c.swap && Number.isInteger(p.replace)) c.replace = p.replace;
+    }
+  }
+  // Would the host accept this op on the card the guest sees now? (the same
+  // checks as sim/partypage.js setReplace / pick — never predict a refusal).
+  function valid(view, body) {
+    const c = cardOf(view);
+    if (!c || !humanHeld(view)) return false;
+    if (body.op === 'replace') return !!c.swap && Number.isInteger(body.slot) && body.slot >= 0 && body.slot < 4;
+    if (body.op === 'pick') return (body.choice === 'take' || body.choice === 'leave') && !(body.choice === 'take' && !c.type);
+    return false;
+  }
+  return {
+    // Record an own CMD just sent (seq = its cmdSeq). Returns true when it
+    // is predicted (the view shows it from now on).
+    push(seq, body, view) {
+      if (!valid(view, body)) return false;
+      const replace = body.op === 'pick' && Number.isInteger(body.replace) && body.replace >= 0 && body.replace < 4 ? body.replace : null;
+      pending.push({ seq, op: body.op, slot: body.op === 'replace' ? body.slot : null, choice: body.op === 'pick' ? body.choice : null, replace, key: keyOf(view), at: now(), ackAt: null, ackTick: null });
+      st.predicted += 1;
+      if (pending.length > st.maxPending) st.maxPending = pending.length;
+      return true;
+    },
+    ack(seq, tick) {
+      const p = pending.find((q) => q.seq === seq);
+      if (!p || p.ackTick !== null) return false;
+      p.ackTick = Number.isFinite(tick) ? tick : -1;
+      p.ackAt = now();
+      st.acked += 1;
+      st.ackMs.push(p.ackAt - p.at);
+      if (st.ackMs.length > 200) st.ackMs.shift();
+      return true;
+    },
+    reject(seq) {
+      const n = pending.length;
+      pending = pending.filter((q) => q.seq !== seq);
+      if (pending.length === n) return false;
+      st.rejected += 1;
+      return true;
+    },
+    // The guest UI's view of the run: the replicated card + the pending ops.
+    // `appliedTick` = the host tick of the replica state this view was read from.
+    view(v, appliedTick) {
+      if (pending.length === 0 && !shown) return v;
+      const key = keyOf(v);
+      const held = humanHeld(v);
+      const t = now();
+      pending = pending.filter((p) => {
+        if (p.key !== key || !held) {
+          st.dropped += 1;
+          return false;
+        }
+        if (p.ackTick !== null && Number.isFinite(appliedTick) && appliedTick > p.ackTick) {
+          st.retired += 1;
+          return false;
+        }
+        if (t - p.at > (p.ackTick === null ? maxMs : maxMs * 2)) {
+          st.expired += 1;
+          return false;
+        }
+        return true;
+      });
+      const c = cardOf(v);
+      if (pending.length === 0 || !c) {
+        // Reconciled: the replicated card shows again. A visible correction
+        // only when it differs from what the prediction last showed on the
+        // same card (a refused / expired op, or a host-side override).
+        if (shown && c && shown.key === key && held && (shown.replace !== c.replace || shown.decided !== c.decided || shown.choice !== c.choice)) st.corrections += 1;
+        shown = null;
+        return v;
+      }
+      const card = { ...c };
+      for (const p of pending) applyOp(card, p);
+      shown = { key, replace: card.replace, decided: card.decided, choice: card.choice };
+      const cards = v.party.cards.slice();
+      cards[seat] = card;
+      return { ...v, party: { ...v.party, cards } };
+    },
+    pendingCount: () => pending.length,
+    pending: () => pending.map((p) => ({ ...p })),
+    clear() {
+      pending = [];
+      shown = null;
+    },
+    stats: () => {
+      const a = [...st.ackMs].sort((x, y) => x - y);
+      const q = (f) => (a.length ? Math.round(a[Math.min(a.length - 1, Math.floor(a.length * f))]) : null);
+      return { predicted: st.predicted, acked: st.acked, rejected: st.rejected, retired: st.retired, dropped: st.dropped, expired: st.expired, corrections: st.corrections, pending: pending.length, maxPending: st.maxPending, ackMs: a.length ? { p50: q(0.5), p95: q(0.95), n: a.length } : null };
+    },
+  };
+}

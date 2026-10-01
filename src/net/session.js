@@ -37,7 +37,7 @@ import { createHostDriver } from './driver.js';
 import { createReplica } from './replica.js';
 import { createInterpClock } from './interp.js';
 import { createOwnSeat } from './reconcile.js';
-import { createActionShadow } from './predict.js';
+import { createActionShadow, createPartyShadow } from './predict.js';
 import { createMetronome } from './metronome.js';
 import { seatLabel, seatControlText, chooserSeat } from './seats.js';
 import { createCosmetics } from '../ui/net/cosmetics.js';
@@ -237,6 +237,7 @@ export function createNetSession(ctx) {
   // and shown to everyone as a ping). Presentation reads pass through.
   const rawRunSystem = world.runSystem;
   const rawBuildSystem = world.buildSystem;
+  const rawSnapshotState = world.snapshotState;
   const rawPartySystem = typeof world.partySystem === 'function' ? world.partySystem : null;
   let runProxy = null;
   let buildProxy = null;
@@ -247,6 +248,14 @@ export function createNetSession(ctx) {
         const v = t[prop];
         // PARTY: the guest's own-seat build calls become `party` CMDs.
         if (typeof v === 'function' && area === 'run') {
+          // fix-M5b-r6 (NET6-F1): the own card's Replaces mark and Take /
+          // Leave are PREDICTED (net/predict.js createPartyShadow) — the
+          // run view the guest's pages read carries the pending own ops, and
+          // a Replaces move answers with the slot at once (the page adopts
+          // it on the press, so the next press / Enter starts from it).
+          if (prop === 'view') return () => guestRunView(t);
+          if (prop === 'partyReplace') return (seat, slot) => guestPartyPredict(GUEST_PARTY_RUN.partyReplace(seat, slot), t);
+          if (prop === 'partyPick') return (seat, choice, replace) => guestPartyPredict(GUEST_PARTY_RUN.partyPick(seat, choice, replace), t);
           if (Object.prototype.hasOwnProperty.call(GUEST_PARTY_RUN, prop)) return (...args) => guestPartyCall(GUEST_PARTY_RUN[prop](...args));
           if (prop === 'autoFillAll') return () => guestPartyCall({ op: 'autofill', seat: localSeat() });
           // BUILD_BRIEF §25.7: a guest's Advance lamp reads "Done".
@@ -273,6 +282,18 @@ export function createNetSession(ctx) {
     buildProxy = guardProxy(rawBuildSystem(), BUILD_MUTATORS, 'build');
     world.runSystem = () => runProxy;
     world.buildSystem = () => buildProxy;
+    // fix-M5b-r6: this client's observable state shows its predicted own
+    // party card, as it shows its predicted own body (presentation only — the
+    // replica, the state hash and save captures read the sim directly).
+    if (typeof rawSnapshotState === 'function') {
+      world.snapshotState = () => {
+        const s = rawSnapshotState();
+        const g = guest;
+        if (!g || !g.party || !s || !s.run) return s;
+        const run = g.party.view(s.run, g.replica.appliedTick);
+        return run === s.run ? s : { ...s, run };
+      };
+    }
     if (rawPartySystem) {
       partyProxy = null;
       world.partySystem = () => {
@@ -288,6 +309,7 @@ export function createNetSession(ctx) {
     guardsOn = false;
     world.runSystem = rawRunSystem;
     world.buildSystem = rawBuildSystem;
+    if (typeof rawSnapshotState === 'function') world.snapshotState = rawSnapshotState;
     if (rawPartySystem) world.partySystem = rawPartySystem;
     partyProxy = null;
     world.setReplica(false);
@@ -326,7 +348,28 @@ export function createNetSession(ctx) {
     }
     partyStats.sent += 1;
     log('guest_party', { op: body.op, seat: body.seat });
-    return { ok: true, pending: true, seat: localSeat(), op: body.op };
+    return { ok: true, pending: true, seat: localSeat(), op: body.op, seq: cmdSeq };
+  }
+  // fix-M5b-r6 (NET6-F1): the guest's run view = the replicated run + its own
+  // pending card ops (the party shadow), read at the replica's applied tick.
+  function guestRunView(R) {
+    const v = R.view();
+    const g = guest;
+    if (!g || !g.party || !v) return v;
+    return g.party.view(v, g.replica.appliedTick);
+  }
+  // An own-card CMD (replace / pick): sent like any party CMD, and predicted
+  // when the host would accept it on the card this guest sees. A predicted
+  // Replaces move returns the slot (what the single-player call returns), so
+  // the page moves its mark on the press itself.
+  function guestPartyPredict(body, R) {
+    const g = guest;
+    const seen = g && g.party && body && Number(body.seat) === localSeat() ? guestRunView(R) : null;
+    const r = guestPartyCall(body);
+    if (!r || !seen) return r;
+    const ok = g.party.push(r.seq, body, seen);
+    if (ok) partyStats.predicted = (partyStats.predicted || 0) + 1;
+    return ok && body.op === 'replace' ? body.slot : r;
   }
   // A seat build as the local UI may touch it.
   function seatBuildGuard(b, seat, mode) {
@@ -756,6 +799,7 @@ export function createNetSession(ctx) {
       bytesCh: {},
     };
     g.shadow = createActionShadow({ bus, seat, cosmetics, kit: () => seatKit(seat) });
+    g.party = createPartyShadow({ seat });
     g.replica.setSuppress((ev) => g.suppressed.has(ev));
     guest = g;
     installGuards();
@@ -1345,8 +1389,12 @@ export function createNetSession(ctx) {
   function guestCmd(c) {
     const cmd = c.cmd || {};
     if (cmd.kind === 'ping') showPing(cmd);
-    else if (cmd.kind === 'command_rejected') {
+    else if (cmd.kind === 'party_ack') {
+      // fix-M5b-r6: the host applied an own party CMD at host tick `tick`.
+      if (guest && guest.party) guest.party.ack(Number(cmd.re), Number(cmd.tick));
+    } else if (cmd.kind === 'command_rejected') {
       guest.rejected += 1;
+      if (guest.party && Number.isInteger(cmd.re)) guest.party.reject(cmd.re);
       if (PARTY_OPS.has(cmd.what) && Number.isInteger(cmd.seat)) {
         // PARTY: an own-seat CMD the host refused (closed / combat / purse).
         partyStats.rejected += 1;
@@ -1863,6 +1911,8 @@ export function createNetSession(ctx) {
       mispredictRetractMs: ss.mispredictRetractMs,
       predictedActions: ss.predicted,
       confirmedActions: ss.confirmed,
+      // fix-M5b-r6: the own party card's predicted Replaces / Take / Leave.
+      partyPredict: g.party ? g.party.stats() : null,
       eventsReplayed: rs.eventsReplayed,
       eventsSuppressed: rs.eventsSuppressed,
       eventsLate: rs.eventsLate,
@@ -1964,6 +2014,19 @@ export function createNetSession(ctx) {
     // (bypasses the guest's local own-seat check, so a probe can show the
     // HOST refusing another seat: command_rejected not_owner).
     partyStats: () => ({ role, ...partyStats, byReason: { ...partyStats.byReason } }),
+    // fix-M5b-r6 probe: the guest's own-card prediction — pending ops, the
+    // AUTHORITATIVE replicated card (what the host has applied, as received)
+    // and the card this client shows.
+    partyShadow() {
+      const g = guest;
+      if (!g || !g.party) return null;
+      const R = rawRunSystem();
+      const v = R && R.view ? R.view() : null;
+      const auth = v && v.party ? v.party.cards[g.seat] : null;
+      const shown = v ? guestRunView(R) : null;
+      const pick = (c) => (c ? { type: c.type, id: c.id, swap: !!c.swap, replace: c.replace, decided: c.decided, choice: c.choice, by: c.by } : null);
+      return { seat: g.seat, appliedTick: g.replica.appliedTick, pending: g.party.pending(), authoritative: pick(auth), shown: pick(shown && shown.party ? shown.party.cards[g.seat] : null), stats: g.party.stats() };
+    },
     debugPartyCmd(body) {
       if (role !== 'guest' || !body) return false;
       cmdSeq += 1;

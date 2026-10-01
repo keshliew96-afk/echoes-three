@@ -1246,6 +1246,27 @@ the hostreload probe (reload on the level-clear card -> Level 2 together). The c
 `tools/gntcnet4-hostreload.mjs`, `gntcnet4-secondtab.mjs`, `gntcnet4-sametab.mjs`
 run unchanged with `GNTCNET4_BASE=<preview>`.
 
+**Guest swap card under latency (fix-M5b-r6, NET6-F1).** A guest's own
+party card (the full-slot swap's Replaces mark, Take / Leave) is predicted
+(PLAN §16.5 "Own-card prediction"): the mark moves on the next rendered frame
+by every input path, presses inside one round trip all count, and Enter / pad
+A commits the mark on screen. Read the prediction with
+`__echoes.net.session.partyShadow()` (pending ops, the AUTHORITATIVE replicated
+card, the shown card) and `net.stats().partyPredict`; a guest's
+`__echoes.state().run.party.cards[seat]` is the card it SHOWS (like its
+predicted own body). Probes (production preview on 4307, own servers
+7821-7823): `node tools/gntfixM5b6-firstkey.mjs --port P [--cond
+lat75,jit10,loss10] [--legs paths,seq,enter,burst] [--gap 250] [--enterAfter
+150] [--tag t]` (host + Tank guest on the room-1 swap card; per step the DOM
+mark, the run-UI mark, the replicated card, keydown -> mark-write frames via a
+MutationObserver + rAF frame starts; the slot the host REPLACED vs the
+intended one; legs: wheel / click / mocked D-pad + pad A, S S S W ↓ ↑ + Enter,
+S + Enter after 150 ms, S S Enter 60 ms apart), `node
+tools/gntfixM5b6-shadowunit.mjs` (the shadow's rules, no browser), and the
+critic's probe copy `GNTCNET5_BASE=<preview> node
+tools/gntfixM5b6-critfirstkey.mjs --port P --cond ... [--gap 250 | --enterAfter
+150 --legs warm]` (outputs renamed `gntfixM5b6-critfirstkey*`).
+
 **Probes** (all start their own session server on the M5b ports 7820–7829;
 the long browser runs use a production preview so HMR never reloads a page:
 `npx vite build --outDir dist-M5b --emptyOutDir` + `npx vite preview --outDir
