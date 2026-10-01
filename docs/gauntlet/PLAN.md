@@ -2963,6 +2963,13 @@ dist-DEPLOY`):
   reward; smoke exit 0; the §6.2 core loop; `?net=` harness probes
   (gntM5b-ui, gntM5b-ui2, gnt-M5a-netbench, gntCAMPAIGN-net) pass on the new
   build; the 9 Node goldens match.
+- **GD.10 Lobby copy tells the truth** (fix-DEPLOY-r6, DEP6-F2, 2026-10-02):
+  the lobby's SHARE how-to line follows the PER-CHARACTER BUILDS rule (§16) —
+  told to the viewer: each player builds their own character between rooms,
+  the host builds the AI-held seats; never "the host makes the build choices";
+  a guest's refused press on a shared decision names its owner ("The Healer
+  picks the door"); the line fits the panel at 1024x576 without growing it
+  (`tools/gntfixDEPLOY6-lobbycopy.mjs`, docs/TESTING.md DEPLOY).
 
 ## 15. Revision log — DEPLOY (2026-09-26)
 
@@ -2976,6 +2983,7 @@ dist-DEPLOY`):
 | 6 | `--origins`, `--max-per-ip`, admin behind proxies, half-close fix | §14.4, server.mjs, admin.mjs, ws.mjs |
 | 7 | Update detection + prompt, redeploy watch | §14.5, lobbyClient.js, src/ui/net/update.js, mpmenu.js, mpjoin.js |
 | 8 | Probes, ports, gates GD.1–GD.9 | §14.6, §6.3, docs/TESTING.md DEPLOY |
+| 9 | fix-DEPLOY-r6 (2026-10-02): lobby how-to line per viewer (each player builds their own character, the host the AI-held seats); a refused shared press names its owner; gate GD.10 | §14.6, src/ui/menu/lobby.js, src/net/session.js, README Multiplayer |
 
 ## 16. Per-character builds (PARTY, 2026-09-27 — the user's feature request)
 

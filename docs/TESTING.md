@@ -1898,6 +1898,33 @@ docs/gauntlet/build-DEPLOY.md.
   - The deploy critic's `tools/gntcdeploy4-zeroconf.mjs --guests 1` and
     `tools/gntcdeploy4-abort.mjs --log <preview log>` (navigate / close /
     kill) must add 0 lines to the preview log.
+- **fix-DEPLOY-r6 (DEP6-F2, lobby copy vs PER-CHARACTER BUILDS)**: the lobby's
+  SHARE how-to line is `howtoLine(room, peerId)` (src/ui/menu/lobby.js), told
+  to the viewer from the room's seats — the host "You play the Healer. Between
+  rooms each player builds their own character; you also build the AI-held
+  seats (Settings ▸ Gameplay)…", a guest "You play the <its class> and build
+  it yourself between rooms…; the host plays the <host's class> and builds the
+  AI-held seats…" (follows a seat change / a migrated host). It must never say
+  the host makes the build choices. In game, a guest's refused press on a
+  shared decision names its owner (src/net/session.js `hostDecidesCopy`): a
+  door → "The Healer picks the door — your pick was shown to the party". Probe
+  (DEPLOY ports; `npx vite build --outDir <dist>` then `node server/index.mjs
+  --static <dist> --port <p> --origins self`):
+  - `tools/gntfixDEPLOY6-lobbycopy.mjs --port <p> --tag <t> [--w --h]
+    [--base-scroll 0] [--lobby-only 1]` — two fresh profiles, zero-config,
+    real clicks (Host a Game / Join by Code / Ready / Start): L1 no "makes the
+    build choices", L2 own class + "build" + own / yourself + "AI-held seats",
+    L3 visible inside the window and the panel, panel scroll ≤ base (also
+    during the start countdown), L4 (`--lobby-only 1`) the guest takes the
+    Swordsman seat and the line follows, R1 the guest's card is "FOR THE
+    <class>" and the host's "FOR YOU — THE HEALER", N1 the guest's Enter on the
+    door page notes "picks the door", 0 page errors. Pass = 14/14 (full) or
+    11/11 (lobby-only) at 1024x576, 1280x720, 1920x1080; v0.5.209 scored 7 FAIL.
+  - Title press timing: the title drops a mouse press in its first 350 ms
+    (OPEN_GUARD_MS — a splash-dismissing tap never lands on an item); a probe
+    that clicks the instant `app.state === 'title'` must wait or retry
+    (`tools/gntfixDEPLOY6-firstclick.mjs --url <page> [--fast 1] [--wait ms]`:
+    +10-20 ms dropped, +150 ms and later opens Multiplayer in 200 ms).
 
 ### PARTY — per-character builds (2026-09-27; design PARTYD, build PARTY)
 
