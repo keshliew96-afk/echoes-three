@@ -133,8 +133,32 @@ export function loadMeterWorklet(ctx) {
     .finally(() => URL.revokeObjectURL(url));
 }
 
-function fresh() {
-  return { sumL: 0, sumR: 0, n: 0, peak: 0, over: 0, clips: 0, hist: [], centSum: 0, centW: 0, lostSamples: 0 };
+// fix-CAMPAIGN-r6 (CR6-F2 / GC.6): the 20-minute window history is a
+// PREALLOCATED ring (two Float64Arrays per tap, 192 KB, values bit-identical
+// to before) instead of a JS array of [rms, peak] pairs — that array grew by
+// 10 small arrays a second per tap (~4 MB over the first 20 minutes), so the
+// JS heap after a forced GC rose with every campaign until it was full. Same
+// contents, same API; reset() empties the ring without reallocating it.
+function makeHist() {
+  return { r: new Float64Array(HISTORY_MAX), p: new Float64Array(HISTORY_MAX), head: 0, length: 0 };
+}
+function histPush(h, r, p) {
+  h.r[h.head] = r;
+  h.p[h.head] = p;
+  h.head = (h.head + 1) % HISTORY_MAX;
+  if (h.length < HISTORY_MAX) h.length += 1;
+}
+// i = 0 is the oldest window still held
+const histIx = (h, i) => (h.head - h.length + i + HISTORY_MAX) % HISTORY_MAX;
+const histRms = (h, i) => h.r[histIx(h, i)];
+const histPeak = (h, i) => h.p[histIx(h, i)];
+
+function fresh(hist = null) {
+  if (hist) {
+    hist.head = 0;
+    hist.length = 0;
+  }
+  return { sumL: 0, sumR: 0, n: 0, peak: 0, over: 0, clips: 0, hist: hist || makeHist(), centSum: 0, centW: 0, lostSamples: 0 };
 }
 
 // createMeterTap(ctx, source, { name, worklet, centroid, sink })
@@ -162,8 +186,7 @@ export function createMeterTap(ctx, source, { name, worklet = false, centroid = 
     if (pk > acc.peak) acc.peak = pk;
     acc.over += ov;
     acc.clips += cl;
-    acc.hist.push([Math.sqrt((sl + sr) / (2 * Math.max(1, n))), pk]);
-    if (acc.hist.length > HISTORY_MAX) acc.hist.shift();
+    histPush(acc.hist, Math.sqrt((sl + sr) / (2 * Math.max(1, n))), pk);
     uiPeak = Math.max(pk, uiPeak * 0.6);
   }
 
@@ -267,7 +290,7 @@ export function createMeterTap(ctx, source, { name, worklet = false, centroid = 
   }
 
   function reset() {
-    acc = fresh();
+    acc = fresh(acc.hist);
     pend = { sl: 0, sr: 0, pk: 0, ov: 0, cl: 0, n: 0 };
     lastT = null;
     if (node) node.port.postMessage('reset');
@@ -277,8 +300,9 @@ export function createMeterTap(ctx, source, { name, worklet = false, centroid = 
     const lim = Math.pow(10, dbfs / 20);
     let best = 0;
     let cur = 0;
-    for (const w of acc.hist) {
-      if (w[0] < lim) {
+    const h = acc.hist;
+    for (let i = 0; i < h.length; i++) {
+      if (histRms(h, i) < lim) {
         cur += 1;
         if (cur > best) best = cur;
       } else cur = 0;
@@ -290,7 +314,7 @@ export function createMeterTap(ctx, source, { name, worklet = false, centroid = 
     const out = [];
     const h = acc.hist;
     for (let i = 0; i + 3 < h.length; i += 4) {
-      const s = (h[i][0] ** 2 + h[i + 1][0] ** 2 + h[i + 2][0] ** 2 + h[i + 3][0] ** 2) / 4;
+      const s = (histRms(h, i) ** 2 + histRms(h, i + 1) ** 2 + histRms(h, i + 2) ** 2 + histRms(h, i + 3) ** 2) / 4;
       out.push(DB(Math.sqrt(s)));
     }
     return out;
@@ -307,8 +331,13 @@ export function createMeterTap(ctx, source, { name, worklet = false, centroid = 
     const lr = Math.sqrt(acc.sumL / n);
     const rr = Math.sqrt(acc.sumR / n);
     const h = acc.hist;
-    const recent = h.slice(-15);
-    const short = h.slice(-4);
+    const tail = (k) => {
+      const out = [];
+      for (let i = Math.max(0, h.length - k); i < h.length; i++) out.push([histRms(h, i), histPeak(h, i)]);
+      return out;
+    };
+    const recent = tail(15);
+    const short = tail(4);
     const shortRms = short.length ? Math.sqrt(short.reduce((s, w) => s + w[0] * w[0], 0) / short.length) : 0;
     const w400 = rms400();
     return {
@@ -336,7 +365,12 @@ export function createMeterTap(ctx, source, { name, worklet = false, centroid = 
   }
 
   function history(nWin = 50) {
-    return acc.hist.slice(-nWin).map(([r, p]) => [R2(DB(r)), R2(DB(p))]);
+    const h = acc.hist;
+    const out = [];
+    // (Array.slice(-0) is the whole array — keep that for nWin = 0)
+    const from = nWin > 0 ? Math.max(0, h.length - nWin) : 0;
+    for (let i = from; i < h.length; i++) out.push([R2(DB(histRms(h, i))), R2(DB(histPeak(h, i)))]);
+    return out;
   }
 
   return {

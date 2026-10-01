@@ -333,7 +333,9 @@ function buildMillrace(h) {
   spin.add(water);
   // Stone curbs along both banks (the lane reads as a built channel).
   const curbMat = toonMaterial({ color: STONE });
-  const curbG = sharedGeo(`hz-curb:${len.toFixed(2)}`, () => new BoxGeometry(1, 0.1, 0.16));
+  // fix-CAMPAIGN-r6 (GC.6): the box is a unit length scaled per lane — one
+  // shared copy (the length-keyed cache minted an identical box per lane length).
+  const curbG = sharedGeo('hz-curb', () => new BoxGeometry(1, 0.1, 0.16));
   for (const side of [-1, 1]) {
     const c = new Mesh(curbG, curbMat);
     c.scale.x = len;

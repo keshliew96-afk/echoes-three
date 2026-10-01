@@ -162,6 +162,15 @@ export function createTechFx({ stage, bus, cosmetic }) {
     let list = arcPool.get(key);
     if (!list) arcPool.set(key, (list = []));
     if (list.length < ARC_CAP) list.push({ core: rec.core, glow: rec.glow, width: rec.width });
+    else {
+      // fix-CAMPAIGN-r6: a record the full pool cannot keep gives its GL
+      // buffers back instead of leaking them (never reached at the current
+      // caps; kept so a cap change cannot reopen the leak).
+      rec.core.geometry.dispose();
+      rec.glow.geometry.dispose();
+      rec.core.material.dispose();
+      rec.glow.material.dispose();
+    }
     arcs.splice(i, 1);
   }
 
@@ -385,7 +394,7 @@ export function createTechFx({ stage, bus, cosmetic }) {
   // @gnt:M2 RESTORE-RESYNC begin — a load cuts away every in-flight
   // technique flourish (they belonged to the moment that left): arcs and
   // rings go back to their pools, flashes and motes too.
-  bus.on('state_restored', () => {
+  function returnAll() {
     for (let i = arcs.length - 1; i >= 0; i--) retireArc(i);
     for (let i = rings.length - 1; i >= 0; i--) retireRing(i);
     for (const f of flashes.splice(0)) {
@@ -396,8 +405,30 @@ export function createTechFx({ stage, bus, cosmetic }) {
       root.remove(m.s);
       motePool.push(m.s);
     }
-  });
+  }
+  bus.on('state_restored', returnAll);
   // @gnt:M2 RESTORE-RESYNC end
+  // fix-CAMPAIGN-r6 (CR6-F2, PLAN §12.5 teardown): at a level boundary every
+  // flourish goes back to its pool AND the pooled arc tubes hand their GL
+  // buffers back (geometry.dispose(); the record and its arrays are kept and
+  // three re-uploads them on the arc's next use). Arc tubes are the only
+  // per-record geometry here; the pool's high-water mark is set by the most
+  // arcs ever alive at once, which varies with frame timing, so without this
+  // a later campaign could leave 2-4 more tubes registered than an earlier
+  // identical one (the critic's off-scene TubeGeometry, r=0.05/0.17 and
+  // 0.035/0.119).
+  function levelTeardown() {
+    returnAll();
+    for (const list of arcPool.values()) {
+      for (const rec of list) {
+        rec.core.geometry.dispose();
+        rec.glow.geometry.dispose();
+      }
+    }
+  }
+  bus.on('level_transit', levelTeardown);
+  bus.on('run_end', levelTeardown);
+  bus.on('return_to_camp', levelTeardown);
   return {
     update,
     debugCounts: () => ({
@@ -405,6 +436,7 @@ export function createTechFx({ stage, bus, cosmetic }) {
       rings: rings.length,
       flashes: flashes.length,
       motes: motes.length,
+      pooledArcs: [...arcPool.values()].reduce((n, l) => n + l.length, 0),
     }),
   };
 }

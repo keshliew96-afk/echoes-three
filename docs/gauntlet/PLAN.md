@@ -2490,6 +2490,23 @@ card); Level 3 — 2 skills, 30 nodes, 2 legendaries, 60 Glint (4 skills,
   level-clear stinger plays. Presentation listeners are registered once at
   boot, never per level; the probe shows the bus listener count unchanged
   across levels.
+  *As fixed (gauntlet r6, fix-CAMPAIGN-r6, CR6-F2 — memory flat across
+  campaigns):* the boot-registered skill render layers (render/skillfx,
+  skillfx/content, techfx) tear down on the same three events: in-flight
+  flourishes go back to their pools; pooled per-record GL geometry (techfx
+  arc tubes, the Swift Mend bond-arc ribbons) and the "(n)" absorb numerals'
+  canvas textures are handed back (`dispose()`; the record is kept and three
+  re-uploads it on its next use), so a pool's high-water mark — which follows
+  frame timing — never carries into the next level's first frame; constant
+  per-record shapes are shared (`sharedGeo`) and radius-keyed shapes are a
+  unit geometry scaled to the radius (a new radius must not mint geometry).
+  **Rule: a ShaderMaterial is never dropped without `dispose()`** — three
+  keeps every DRAWN ShaderMaterial in WebGLPrograms' shader cache (a strong
+  Map keyed by the material) until then; per-entity rigs that own one are
+  pooled (skillfx/content status rigs, cap 16, overflow released) or leave
+  with `releaseTree` (the boot warm-up anchor keeps the program linked). The
+  audio meters' 20-minute window history is a preallocated ring (constant
+  heap from boot).
 - **Preload** — under the card the builder runs at 12 ms/frame (8 in camp, 0
   in live combat) on the next level's layouts (paint in the worker, sliced
   main-thread steps, one texture upload per frame, `compileAsync` + a 3-frame
@@ -2705,6 +2722,7 @@ what GC.12 re-measures.
 | 8 | Harness: `?level=N`, campaign cmds, `__echoes.campaign`, ports; gates GC.1–GC.13; G4a.4 / G4a.11 picker halves superseded | §6.1, §6.3, §6.4, §7, §12.11 |
 | 9 | Build notes (v0.5.91–0.5.93): records Lifetime rows per level; save lock refusal (`error: 'locked'`); GC.6 measured deterministically after one warm-up campaign (first-use caches); a dynamic box collider keeps its yaw verbatim (save round-trip identity) | §12.8, GC.6, src/sim/movement.js |
 | 10 | Round-3 fix (M4a, 2026-09-26, CONTENT-R3-F2): the CAMPAIGN retune's numbers — tiers, Stag HP factor, boss damage slope, starter grant, the per-room / per-level tables and the measured band — written into BUILD_BRIEF §23.2 as the dated CAMPAIGN note that §4.2, §12.10 and BUILD_BRIEF §24 cite; §4.2 / §12.4 / §12.10 / G4a.5 quote it; G4a.5 probe `tools/gntfixM4a3-g4a5.mjs` | §4.2, §12.4, §12.10, G4a.5, BUILD_BRIEF §23.2 |
+| 11 | Round-6 fix (fix-CAMPAIGN-r6, CR6-F2): memory flat across campaigns — status rigs pooled (no ShaderMaterial dropped undisposed: three's shader cache keeps it), skill render layers tear down their pools at every level boundary (pooled GL geometry / numeral textures handed back), constant shapes shared, radius-keyed shapes unit-scaled, the audio meter history a preallocated ring | §12.5 teardown note, src/render/skillfx/{content,index}.js, src/render/techfx/index.js, src/audio/meter.js |
 
 ## 14. Hosted multiplayer (DEPLOY, 2026-09-26 — zero-config join)
 

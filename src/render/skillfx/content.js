@@ -34,7 +34,7 @@ import {
 import { PALETTE } from '../../data/palette.js';
 import { SKILLS } from '../../sim/skills.js';
 import { makeGlowSprite } from '../glow.js';
-import { sharedGeo } from '../geocache.js';
+import { releaseTree, sharedGeo } from '../geocache.js';
 import { warmPark } from '../warmup.js';
 
 const HEAL = PALETTE.brightHeal;
@@ -418,6 +418,31 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
     }
     return { g, parts, lastX: null, lastZ: null, dirX: 1, dirZ: 0 };
   }
+  // fix-CAMPAIGN-r6 (CR6-F2, GC.6): status rigs are POOLED. A rig's shield
+  // shell and ward dome are ShaderMaterials, and three keeps every DRAWN
+  // ShaderMaterial in WebGLPrograms' shader cache (a strong Map keyed by the
+  // material) until material.dispose() — the old `root.remove(rig.g)` left
+  // ~190 of them (and the rest of the rig) alive per campaign. A rig that
+  // leaves goes back to the pool hidden; beyond the cap its materials are
+  // disposed (the boot anchor in prewarm() keeps their programs linked —
+  // warmup.js), so the heap holds at most RIG_POOL_CAP idle rigs, ever.
+  const RIG_POOL_CAP = 16;
+  const rigPool = [];
+  function acquireStatusRig() {
+    const rig = rigPool.pop() ?? makeStatusRig();
+    rig.lastX = null;
+    rig.lastZ = null;
+    rig.dirX = 1;
+    rig.dirZ = 0;
+    rig.moving = undefined;
+    return rig;
+  }
+  function releaseStatusRig(rig) {
+    root.remove(rig.g);
+    for (const p of Object.values(rig.parts)) p.visible = false;
+    if (rigPool.length < RIG_POOL_CAP) rigPool.push(rig);
+    else releaseTree(rig.g); // shared geometry and glyph textures are kept
+  }
   const liveStatus = (e, k, tick) => {
     const s = e.status && e.status[k];
     return s && s.untilTick > tick && (k !== 'shield' || s.mag > 1e-6) ? s : null;
@@ -444,16 +469,22 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
   const zoneRigs = new Map();
   function makeRootRig(radius) {
     const g = new Group();
-    const ink = new Mesh(sharedGeo(`cfx-root-ink:${radius}`, () => new RingGeometry(radius * 0.9, radius * 1.03, 48)), flat(INK, 0.6));
+    // fix-CAMPAIGN-r6 (GC.6): UNIT shapes scaled to the zone's radius — a
+    // radius-keyed cache minted 3 new GL geometries for every new Rootsnare
+    // radius a build reached (Reach stacks), so memory grew with the builds.
+    const ink = new Mesh(sharedGeo('cfx-root-ink:unit', () => new RingGeometry(0.9, 1.03, 48)), flat(INK, 0.6));
     ink.rotation.x = -Math.PI / 2;
     ink.position.y = 0.012;
-    const rim = new Mesh(sharedGeo(`cfx-root-rim:${radius}`, () => new RingGeometry(radius * 0.93, radius, 48)), flat(BLUE, 0.85));
+    ink.scale.set(radius, radius, 1);
+    const rim = new Mesh(sharedGeo('cfx-root-rim:unit', () => new RingGeometry(0.93, 1, 48)), flat(BLUE, 0.85));
     rim.rotation.x = -Math.PI / 2;
     rim.position.y = 0.016;
+    rim.scale.set(radius, radius, 1);
     rim.name = 'rim';
-    const fill = new Mesh(sharedGeo(`cfx-root-fill:${radius}`, () => new CircleGeometry(radius, 40)), additive(AMBER, 0.06));
+    const fill = new Mesh(sharedGeo('cfx-root-fill:unit', () => new CircleGeometry(1, 40)), additive(AMBER, 0.06));
     fill.rotation.x = -Math.PI / 2;
     fill.position.y = 0.01;
+    fill.scale.set(radius, radius, 1);
     fill.name = 'fill';
     g.add(ink, rim, fill);
     // Root strands: dark tendrils with a parchment edge, radial from the centre.
@@ -485,13 +516,15 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
     let g = wedgePool.pop();
     if (!g) {
       g = new Group();
-      const fill = new Mesh(new CircleGeometry(MT.range, 30, -tideHalf, tideHalf * 2), additive(HEAL, 0.28));
+      // fix-CAMPAIGN-r6 (GC.6): the wedge's shapes are constants — shared, so
+      // a pool that reaches a new high-water mark adds no GL geometry.
+      const fill = new Mesh(sharedGeo('cfx-tide-fill', () => new CircleGeometry(MT.range, 30, -tideHalf, tideHalf * 2)), additive(HEAL, 0.28));
       fill.rotation.x = -Math.PI / 2;
       fill.name = 'fill';
-      const rim = new Mesh(new RingGeometry(MT.range * 0.9, MT.range, 30, 1, -tideHalf, tideHalf * 2), additive(HEAL, 0.8));
+      const rim = new Mesh(sharedGeo('cfx-tide-rim', () => new RingGeometry(MT.range * 0.9, MT.range, 30, 1, -tideHalf, tideHalf * 2)), additive(HEAL, 0.8));
       rim.rotation.x = -Math.PI / 2;
       rim.name = 'rim';
-      const crest = new Mesh(new CylinderGeometry(MT.range, MT.range, 0.5, 30, 1, true, -tideHalf, tideHalf * 2), additive(HEAL, 0.35, { side: DoubleSide }));
+      const crest = new Mesh(sharedGeo('cfx-tide-crest', () => new CylinderGeometry(MT.range, MT.range, 0.5, 30, 1, true, -tideHalf, tideHalf * 2)), additive(HEAL, 0.35, { side: DoubleSide }));
       crest.position.y = 0.25;
       crest.name = 'crest';
       g.add(fill, rim, crest);
@@ -664,7 +697,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
       seen.add(e.id);
       let rig = statusRigs.get(e.id);
       if (!rig) {
-        rig = makeStatusRig();
+        rig = acquireStatusRig();
         statusRigs.set(e.id, rig);
         root.add(rig.g);
       }
@@ -730,7 +763,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
     }
     for (const [id, rig] of statusRigs) {
       if (!seen.has(id)) {
-        root.remove(rig.g);
+        releaseStatusRig(rig);
         statusRigs.delete(id);
       }
     }
@@ -778,6 +811,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
     for (const [id, rig] of zoneRigs) {
       if (!zseen.has(id)) {
         root.remove(rig.g);
+        releaseTree(rig.g); // fix-CAMPAIGN-r6: its materials are its own (geometry is shared)
         zoneRigs.delete(id);
       }
     }
@@ -800,6 +834,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
     for (const [id, rig] of lances) {
       if (!lseen.has(id)) {
         root.remove(rig.g);
+        releaseTree(rig.g); // fix-CAMPAIGN-r6: its materials are its own (geometry is shared)
         lances.delete(id);
       }
     }
@@ -914,6 +949,8 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
       quietHearth: qhGroup.visible,
       statusRigs: statusRigs.size,
       status,
+      // fix-CAMPAIGN-r6: idle pooled objects (bounded) — the GC.6 probe reads them
+      pooled: { statusRigs: rigPool.length, motes: motePool.length, flashes: flashPool.length, numerals: numPool.length, wedges: wedgePool.length },
     };
   }
 
@@ -921,14 +958,59 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
   // shells, damage-zone rigs and lance streaks are keyed by entity id, so
   // they are dropped (exactly as the reconcile drops an unseen id) and
   // update() rebuilds what the restored sim holds.
-  bus.on('state_restored', () => {
-    for (const rig of statusRigs.values()) root.remove(rig.g);
+  function dropEntityRigs() {
+    for (const rig of statusRigs.values()) releaseStatusRig(rig);
     statusRigs.clear();
-    for (const rig of zoneRigs.values()) root.remove(rig.g);
+    for (const rig of zoneRigs.values()) {
+      root.remove(rig.g);
+      releaseTree(rig.g);
+    }
     zoneRigs.clear();
-    for (const rig of lances.values()) root.remove(rig.g);
+    for (const rig of lances.values()) {
+      root.remove(rig.g);
+      releaseTree(rig.g);
+    }
     lances.clear();
-  });
+  }
+  bus.on('state_restored', dropEntityRigs);
   // @gnt:M2 RESTORE-RESYNC end
+  // fix-CAMPAIGN-r6 (CR6-F2, PLAN §12.5 teardown): a level boundary returns
+  // everything this layer holds for the level — entity rigs, in-flight motes /
+  // flashes / rings / glyphs / numerals / tide wedges back to their pools — and
+  // the pooled "(n)" numerals give their canvas textures back to the GPU (the
+  // record is kept; three re-uploads it on its next use), so the GL texture
+  // count at a level's first frame never carries the last level's high-water.
+  function levelTeardown() {
+    dropEntityRigs();
+    for (const m of motes.splice(0)) {
+      root.remove(m.s);
+      motePool.push(m.s);
+    }
+    for (const f of flashes.splice(0)) {
+      root.remove(f.s);
+      flashPool.push(f.s);
+    }
+    for (const r of rings.splice(0)) {
+      root.remove(r.m);
+      ringPool.get(r.m.userData.key)?.push(r.m);
+    }
+    for (const g of glyphs.splice(0)) {
+      root.remove(g.s);
+      g.s.material.dispose();
+    }
+    for (const n of nums.splice(0)) {
+      root.remove(n.rec.s);
+      numPool.push(n.rec);
+    }
+    for (const rec of numPool) rec.tex.dispose();
+    for (const w of wedges.splice(0)) {
+      root.remove(w.g);
+      wedgePool.push(w.g);
+    }
+    qhPulse = 0;
+  }
+  bus.on('level_transit', levelTeardown);
+  bus.on('run_end', levelTeardown);
+  bus.on('return_to_camp', levelTeardown);
   return { update, debugCounts };
 }
