@@ -185,7 +185,9 @@ export function createPartyPages(ctx) {
         if (reason === 'timeout' || (aiHeld(c.seat) && mode !== 'manual')) {
           c.choice = c.suggest ? c.suggest.choice : 'leave';
           c.by = reason === 'timeout' ? 'timeout' : 'ai';
-          if (c.swap && c.suggest) c.replace = c.suggest.replace;
+          // A Replaces mark the player moved stays (the Healer's timeout
+          // keeps run.reward.replace the same way) — PARTY6-F1.
+          if (c.swap && c.suggest && !c.keyed) c.replace = c.suggest.replace;
           if (reason === 'timeout') events.emit(tick, 'party_autopick', { seat: c.seat, reason: 'timeout', choice: c.choice, id: c.id });
         } else {
           c.choice = 'leave';
@@ -383,7 +385,7 @@ export function createPartyPages(ctx) {
       if (c.decided) continue;
       if (c.seat === 0) continue; // run.js decides the Healer's with the same rule
       c.choice = c.suggest ? c.suggest.choice : 'leave';
-      if (c.swap && c.suggest) c.replace = c.suggest.replace;
+      if (c.swap && c.suggest && !c.keyed) c.replace = c.suggest.replace; // a player's moved mark stays
       c.decided = true;
       c.by = 'timeout';
       events.emit(getTick(), 'party_autopick', { seat: c.seat, reason: 'timeout', choice: c.choice, id: c.id });

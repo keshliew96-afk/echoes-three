@@ -2492,7 +2492,9 @@ pre-picks, Automatic, host-built seats and timeouts):
   moved on the AI's pre-decided Take, and a player's reorder all make
   that character's key order the player's for the rest of the run (an
   `arranged` flag per seat, saved, carried across levels); later AI swaps
-  on such a seat put the new skill in the replaced key and never re-sort.
+  on such a seat put the new skill in the replaced key and never re-sort;
+  a page that times out keeps a Replaces mark the player moved (as the
+  Healer's timeout always kept run.reward.replace).
   An untouched AI Take that the sort will re-order says so on its card
   ("AI re-sorts keys to cast order: <skill> → key N"), and every move of
   the sort is a `loadout_reorder` event, so the event trace replays to the

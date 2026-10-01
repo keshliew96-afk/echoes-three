@@ -200,6 +200,37 @@ for (const seed of SEEDS) {
       },
     });
   }
+  // -------------------------------------------------------------- timeout --
+  // Manual mode (AI-held cards open undecided), the player moves the mark,
+  // then the page times out (pages.timeoutPage — the network deadline's
+  // path): a card whose suggestion is Take lands in the PLAYER's mark.
+  {
+    const W = mk(seed);
+    W.P().setMode('manual');
+    drive(W, {
+      onPage: ({ v, pageNo }) => {
+        const picks = [];
+        for (const c of swapCards(v)) {
+          if (c.decided) continue;
+          const k = (pageNo + c.seat + 2) % 4;
+          W.R().partyReplace(c.seat, k);
+          picks.push({ seat: c.seat, id: c.id, k, sug: c.suggest ? c.suggest.choice : null });
+        }
+        W.R().partyPages().timeoutPage();
+        return {
+          after: ({ pre, ev, post }) => {
+            for (const p of picks) {
+              const want = [...pre[p.seat]];
+              if (p.sug === 'take') want[p.k] = p.id;
+              const ok = same(post[p.seat], want) && same(replay(pre[p.seat], ev, p.seat), post[p.seat]);
+              cases.push({ scenario: 'timeout', seed, seat: p.seat, k: p.k, id: p.id, sug: p.sug, pre: pre[p.seat], post: post[p.seat], want, ok });
+              check('timeout', `seed ${seed} seat ${p.seat}: mark moved to key ${p.k + 1}, the page times out (suggest ${p.sug}) -> ${p.sug === 'take' ? `${p.id} in key ${p.k + 1}, others unmoved` : 'loadout unchanged'}`, ok, { pre: pre[p.seat], post: post[p.seat], want });
+            }
+          },
+        };
+      },
+    });
+  }
   // ------------------------------------------------------------------- ai --
   {
     const W = mk(seed);
@@ -259,7 +290,7 @@ for (const seed of SEEDS) {
 
 const by = (g) => results.filter((r) => r.group === g);
 const summary = {};
-for (const g of ['human', 'mark', 'reorder', 'ai', 'save']) summary[g] = `${by(g).filter((r) => r.pass).length}/${by(g).length}`;
+for (const g of ['human', 'mark', 'reorder', 'timeout', 'ai', 'save']) summary[g] = `${by(g).filter((r) => r.pass).length}/${by(g).length}`;
 const ok = results.every((r) => r.pass);
 writeFileSync(join(here, 'captures', `${OUT}.json`), JSON.stringify({ ok, summary, cases, results }, null, 1));
 console.log(JSON.stringify({ ok, summary, fails: results.filter((r) => !r.pass).length }));

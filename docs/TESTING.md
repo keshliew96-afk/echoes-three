@@ -2213,7 +2213,9 @@ PARTY6-F1 — keys never move under a player. `node tools/gntfixPARTY6-keysnode.
 [--seeds 1,2,3,4,5]` — headless Level-1 runs (exit 0 = all pass): every ally swap
 card Taken by the player into key k (k cycling 0–3) lands in key k with the other
 keys unmoved and `skill_swapped.slot` = k; a Replaces mark moved on the AI's
-pre-decided Take lands in the marked key; after a player reorder an untouched AI
+pre-decided Take lands in the marked key; a page that TIMES OUT (Manual mode,
+`partyPages().timeoutPage()` — the network deadline's path) keeps a mark the
+player moved; after a player reorder an untouched AI
 Take lands in the replaced key and keeps the player's order; an untouched AI Take
 on a never-arranged seat follows the §25.8 priority sort and the
 `skill_swapped` + `loadout_reorder` events replay to the final loadout; the
