@@ -127,7 +127,7 @@ const measure = () => {
   return {
     win: [innerWidth, innerHeight], tabhead: page.classList.contains('rn-tabhead'), cls: page.className,
     frame: R(pr), head: head ? { ...R(head.getBoundingClientRect()), h: Math.round(head.getBoundingClientRect().height), over: head.scrollWidth - head.clientWidth, items: [...head.children].filter((c) => getComputedStyle(c).display !== 'none').map((c) => `${String(c.className).split(' ')[0]}:${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(' '), tabH: [...head.querySelectorAll('.rn-ptab')].map((t) => Math.round(t.getBoundingClientRect().height)).join('/') } : null,
-    fit: (() => { try { return window.__echoes.content ? null : null; } catch { return null; } })(),
+    fitLevel: (() => { try { return window.__echoes.runUi().shop.headFit; } catch { return null; } })(),
     plate: plate ? { ...R(plate.getBoundingClientRect()), text: plate.textContent.replace(/\s+/g, ' ').trim(), rows, kids: [...plate.querySelectorAll('.rn-coin, .rn-amt, .rn-lab, .rn-num')].map((k) => { const r = k.getBoundingClientRect(); return `${k.className.split(' ')[0]}:${r.left.toFixed(1)},${r.top.toFixed(1)},${r.width.toFixed(1)}x${r.height.toFixed(1)}`; }).join(' ') } : null,
     tabRects: [...page.querySelectorAll('.rn-ptab')].filter((e) => e.offsetParent).map((t) => { const r = t.getBoundingClientRect(); return `${r.left.toFixed(1)},${r.width.toFixed(1)}x${r.height.toFixed(1)}`; }).join(' '),
     out, nOut: out.length, overlap, tabs, s: getComputedStyle(document.getElementById('run-screen')).getPropertyValue('--rn-s').trim(),
@@ -205,7 +205,7 @@ try {
         if (m.plate && !(/GLINT/.test(m.plate.text) && /ROOM\s*7\s*OF 8/.test(m.plate.text.replace('· ', '')))) why.push(`plate text "${m.plate.text}"`);
       }
       if (why.length) out.fails.push({ size: key, client: c.tag, why });
-      console.log(key, c.tag, why.length ? 'FAIL ' + why.join(' | ') : 'ok', '| tabs', m.tabs ? m.tabs.map((t) => `${t.w}${t.owner ? `[${t.owner}${t.trunc ? '~' : ''}]` : ''}`).join(' ') : '-', '| plate', m.plate ? `${m.plate.l}-${m.plate.r} rows ${m.plate.rows}` : '-', '| frame', m.frame ? `${m.frame.l}-${m.frame.r} t${m.frame.t}` : '-', '| head h', m.head ? `${m.head.h} [${m.head.items}] tabs h ${m.head.tabH}` : '-', 's', m.s);
+      console.log(key, c.tag, why.length ? 'FAIL ' + why.join(' | ') : 'ok', '| tabs', m.tabs ? m.tabs.map((t) => `${t.w}${t.owner ? `[${t.owner}${t.trunc ? '~' : ''}]` : ''}`).join(' ') : '-', '| plate', m.plate ? `${m.plate.l}-${m.plate.r} rows ${m.plate.rows}` : '-', '| frame', m.frame ? `${m.frame.l}-${m.frame.r} t${m.frame.t}` : '-', '| head h', m.head ? `${m.head.h} [${m.head.items}] tabs h ${m.head.tabH}` : '-', 's', m.s, 'fit level', m.fitLevel);
       if (SHOTS.has(key)) {
         await c.page.screenshot({ path: path.join(CAP, `${OUT}-${c.tag}-${key}.png`) });
         // The header row alone (a closer look at the tabs, the lantern and the plate).

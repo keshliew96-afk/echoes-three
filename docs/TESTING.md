@@ -1132,6 +1132,33 @@ ping; every shown message clear of the page and of other text, held →
 shown on close), and the critic's probe with renamed outputs
 `GNTCNET5_BASE=<base> node tools/gntfixM5a5-critic-partytabs.mjs --port <p>`.
 
+**The multiplayer shop header always fits its frame (fix-M5a-r6, NET6-F2,
+v0.5.208 / .210).** In a narrow short window (compact, < 1280 px wide) the
+shop's header row holds the four tabs, the lantern and the Glint / room
+plate; in a session the owner pills made it up to 196 px wider than the
+header. `shop.js` `fitHead` now adds ordered fit levels on `.rn-shop` until
+the row holds its content: `rn-hf-own2` (each owner pill joins the narrower
+line of its tab — beside the purse), `rn-hf-plate2` (the plate on two lines,
+"◉ 72 GLINT" over "ROOM 7 OF 8"), `rn-hf-own5` / `rn-hf-own4` (names end in
+an ellipsis at 5 / 4 em, full name in the tooltip), `rn-hf-nolamp`,
+`rn-hf-own3`, `rn-hf-wrap`. It measures with the widest purse any tab can
+show (a character switch never re-flows the header) and re-fits only when
+the window or the strip text changes; single-player fits at level 0
+(identical layout). The level is on the debug API:
+`__echoes.runUi().shop.headFit` (0 = as authored, 1-7 = the levels above). A window resize while the shop is open
+re-measures its fixed frame at once (it used to wait for the first Q / E
+and then jump). Probe (own child server, `--base` = dev or a production
+preview): `node tools/gntfixM5a6-shophead.mjs --port <p> [--names
+"Host,Maximilian Wolfe,Wren"] [--done 1] [--interact 1024x640] [--launch
+WxH] [--sp 1]` — every text box inside the window and the frame, 0
+same-row / > 25 % header text overlaps (the critic's own-text-node boxes),
+0 header spill, truncated names keep their tooltip, the plate still reads
+the wallet and "ROOM 7 OF 8"; `--interact` also checks that four character
+switches move neither the tabs nor the frame, then a purchase and a
+guest's Done. The critic's probes with renamed outputs:
+`GNTCNET5_BASE=<base> node tools/gntfixM5a6-critic-mpwidth.mjs --port <p>`
+and `tools/gntfixM5a6-critic-mpoverlap.mjs`.
+
 ### M5b — network play (Gauntlet W4, owner M5b)
 
 **Playing.** `npm run net` (LAN: `npm run net -- --host 0.0.0.0`), then title
