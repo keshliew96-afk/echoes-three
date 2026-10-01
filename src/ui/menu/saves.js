@@ -139,7 +139,10 @@ export function partyLines(meta) {
   }
   return out;
 }
-const skillName = (id) => (id && SKILLS[id] && SKILLS[id].name) || (id ? String(id).replace(/_/g, ' ') : 'empty slot');
+// fix-M2-r6 (SAVE6-F1): a skill this version doesn't have (a file from
+// another version) is named as such — loading removes it (save/content.js).
+const skillName = (id) =>
+  (id && Object.prototype.hasOwnProperty.call(SKILLS, id) && SKILLS[id].name) || (id ? `${String(id).replace(/_/g, ' ')} (not in this version)` : 'empty slot');
 // "Tank 150/150 HP · Taunting Roar, … · 32/32 nodes · 24 Glint" (row / panel labels).
 export function partyLineText(p) {
   const bits = [p.name];
@@ -886,7 +889,7 @@ export function createSavesScreen(ctx) {
   }
 
   function toast(text, tone = 'info') {
-    app.toast(text, { tone, ms: tone === 'error' ? 4600 : 2600 });
+    app.toast(text, { tone, ms: tone === 'error' ? 4600 : tone === 'warn' ? 5200 : 2600 });
   }
 
   // One operation at a time (a save, a confirm, a load). A press that lands
@@ -1113,7 +1116,9 @@ export function createSavesScreen(ctx) {
       }
       const r = await s.importFile(f, target);
       if (r.ok) {
-        toast(`Imported into “${r.meta ? r.meta.name : r.slotId}”`, 'good');
+        // fix-M2-r6: a file naming content this build lacks says so up front.
+        if (r.drift) toast(`Imported into “${r.meta ? r.meta.name : r.slotId}” — ${r.drift.short}`, 'warn');
+        else toast(`Imported into “${r.meta ? r.meta.name : r.slotId}”`, 'good');
         mode = 'load';
         selectedId = r.slotId;
         render({ keepFocus: false });

@@ -25,6 +25,7 @@ import { scriptedInput } from '../sim/script.js';
 import { partySeed } from '../sim/party.js';
 import { levelFor } from '../data/levels.js';
 import { createStateIO } from './capture.js';
+import { reconcileContent, describeRepair } from './content.js';
 import { buildFile, parseFile, encodeOrdered, clonePlain, SCHEMA, campaignMeta, buildsMeta } from './codec.js';
 import { lockLine, FIRST_LEVEL } from '../data/campaign.js';
 import { createSaveStorage, INDEX_KEY, PROFILE_KEY, SAVE_PREFIX } from './storage.js';
@@ -109,6 +110,9 @@ export const SAVE_ERRORS = Object.freeze({
   // CAMPAIGN (PLAN §12.7): a save whose run sits in a level this profile has
   // not unlocked (a copied / imported file) is refused, like every other path.
   locked: "That save is in a level you haven't unlocked yet",
+  // fix-M2-r6 (SAVE6-F1): a save this build cannot run even after removing
+  // the content it lacks (content.js) — rolled back, the game carries on.
+  content: "That save needs content this version of Echoes doesn't have — it can't be loaded here",
 });
 
 const CAN_SAVE_REASON = Object.freeze({
@@ -647,12 +651,26 @@ export function createSaveSystem({
       }
     }
   }
-  function applyTree(tree, reason = 'load', extra = {}) {
+  // fix-M2-r6 (SAVE6-F1): io.apply reconciles the tree with this build's
+  // content (report in `repair`) and rolls a tree back that the live read
+  // paths still cannot run — the layers then resync to the restored world.
+  function applyTree(tree, reason = 'load', extra = {}, opts = {}) {
     if (stepping) return { ok: false, error: 'busy', detail: 'apply() inside a sim step' };
-    const r = io.apply(tree);
-    if (!r.ok) return r;
+    const r = io.apply(tree, opts);
+    if (!r.ok) {
+      if (r.rolledBack) postRestore('rollback', { failed: reason });
+      return r;
+    }
     postRestore(reason, extra);
-    return { ok: true };
+    return { ok: true, repair: r.repair ?? null };
+  }
+  // The player-facing note for a load that removed content (null: none).
+  function repairNote(r) {
+    try {
+      return r && r.repair ? describeRepair(r.repair) : null;
+    } catch {
+      return null;
+    }
   }
 
   async function load(id) {
@@ -671,11 +689,15 @@ export function createSaveSystem({
     const lock = lockCheck(pf.file.state);
     if (lock) return { ok: false, error: 'locked', reason: `${SAVE_ERRORS.locked} — ${lock.line}`, detail: lock.line, level: lock.level };
     const r = applyTree(pf.file.state, 'load', { slot: id });
-    if (!r.ok) return { ok: false, error: r.error, detail: r.detail, backup: backupMeta(store, id) };
+    if (!r.ok) return { ok: false, error: r.error, detail: r.detail, reason: r.error === 'content' ? SAVE_ERRORS.content : undefined, backup: backupMeta(store, id) };
     const meta = slots[id] ?? metaOf(pf.file, { id, bytes: text.length });
     markEnded(gameKeyOfTree(pf.file.state), false); // playing it on: in progress again (J3-F3)
-    lastLoad = { slot: id, ms: r1(performance.now() - t0), tick: clock.tick, hash: pf.file.hash, at: Date.now() };
-    return { ok: true, meta, ms: lastLoad.ms, migrated: pf.migrated };
+    // fix-M2-r6 (SAVE6-F1): content this build lacks was removed — say so
+    // (the file itself is untouched; a build that has it loads it whole).
+    const repaired = repairNote(r);
+    if (repaired && app && typeof app.toast === 'function') app.toast(repaired.line, { tone: 'warn', ms: 9000 });
+    lastLoad = { slot: id, ms: r1(performance.now() - t0), tick: clock.tick, hash: pf.file.hash, at: Date.now(), repaired };
+    return { ok: true, meta, ms: lastLoad.ms, migrated: pf.migrated, repaired };
   }
 
   function restoreBackup(id) {
@@ -752,6 +774,15 @@ export function createSaveSystem({
     ensureFresh();
     return MANUAL_SLOTS.find((id) => !slots[id]) ?? null;
   }
+  // What a load of this tree would remove (fix-M2-r6): reconciled on a
+  // private copy, nothing applied. null = every id is known.
+  function contentCheck(tree) {
+    try {
+      return describeRepair(reconcileContent(clonePlain(tree)));
+    } catch (err) {
+      return { line: `content check failed (${String(err && err.message).slice(0, 80)})`, short: 'it may not load in this version', counts: null };
+    }
+  }
   function importText(text, target = null) {
     const pf = parseFile(text);
     if (!pf.ok) return { ok: false, error: pf.error, detail: pf.detail };
@@ -769,7 +800,7 @@ export function createSaveSystem({
     if (!w.ok) return { ok: false, error: w.error };
     store.remove(`${slotKey(id)}.thumb`);
     rescan();
-    return { ok: true, slotId: id, hash: pf.file.hash, meta: slots[id] };
+    return { ok: true, slotId: id, hash: pf.file.hash, meta: slots[id], drift: contentCheck(pf.file.state) };
   }
   async function importFile(file, target = null) {
     if (!file || typeof file.text !== 'function') return { ok: false, error: 'corrupt', detail: 'no file' };
@@ -1369,9 +1400,20 @@ export function createSaveSystem({
     remove,
     rename,
     capture: () => capture(),
-    apply: (tree) => applyTree(tree, 'api'),
+    // opts.reconcile === false: probes only (the post-apply read check alone).
+    apply: (tree, opts) => applyTree(tree, 'api', {}, opts || {}),
     order: () => registry.all().map((e) => e.id),
-    hash: () => hashState(capture()),
+    // Critic r6 A10: hash(tree) hashes the tree it is given.
+    hash: (tree) => hashState(tree ?? capture()),
+    // fix-M2-r6: what loading `tree` (or a slot's file) would remove.
+    contentCheck: (treeOrSlot) => {
+      if (typeof treeOrSlot === 'string') {
+        const text = isSlotId(treeOrSlot) ? store.read(slotKey(treeOrSlot)) : null;
+        const pf = text !== null ? parseFile(text) : null;
+        return pf && pf.ok ? contentCheck(pf.file.state) : { error: pf ? pf.error : 'missing' };
+      }
+      return contentCheck(treeOrSlot ?? capture());
+    },
     roundTrip,
     continuation: continuationProbe,
     corrupt,

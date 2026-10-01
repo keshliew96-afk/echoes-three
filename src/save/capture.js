@@ -27,16 +27,37 @@
 // last: the saved dynamic list is exact at the tick end) -> app trackers.
 // A failure after the rollback snapshot re-applies it, so a bad tree can
 // never leave the live world half-loaded.
+//
+// CONTENT (fix-M2-r6, SAVE6-F1): before anything touches the live world the
+// private clone is reconciled against this build's skills and nodes
+// (content.js — a strict no-op on a tree whose ids are all known), and after
+// the apply the read paths every frame and menu takes (world.snapshotState:
+// run view, skill slots, build view; the party view of all four characters)
+// are run once. A tree that still cannot be read is rolled back like any
+// failed apply ({ ok: false, error: 'content', rolledBack: true }) — a save
+// can never leave the game with a sim that throws on every frame.
 import { serializeMovement, restoreMovement } from '../sim/movement.js';
 import { serializeShapes, restoreShapes } from '../sim/shapes.js';
 import { clonePlain, checkTree } from './codec.js';
+import { reconcileContent } from './content.js';
 
 // Must equal codec.js TREE_VERSION (schema 2, M4c: 4 skill slots, 8 sockets
 // per skill; schema 3, CAMPAIGN: systems.run.campaign + autoReturnTick).
 // PARTY (schema 4): systems.party (the three ally builds) + run.partyPages.
 export const STATE_VERSION = 4;
 
-export function createStateIO({ clock, rng, registry, world, scene = null, appState = null }) {
+export function createStateIO({ clock, rng, registry, world, scene = null, appState = null, verify = null }) {
+  // The live read paths a loaded world must survive (see CONTENT above).
+  // Read-only: the build views create all-empty socket rows lazily, which
+  // build.saveState() omits, so a check never changes a state hash.
+  function verifyLive() {
+    if (typeof verify === 'function') return verify();
+    if (typeof world.snapshotState === 'function') world.snapshotState();
+    const P = typeof world.partySystem === 'function' ? world.partySystem() : null;
+    if (P && typeof P.state === 'function') P.state();
+    return true;
+  }
+
   function sceneState() {
     let mode = null;
     try {
@@ -85,9 +106,13 @@ export function createStateIO({ clock, rng, registry, world, scene = null, appSt
     if (appState) appState.load(tree.app ?? {});
   }
 
-  // apply(tree) -> { ok: true } | { ok: false, error, detail }
+  // apply(tree, { reconcile = true }) ->
+  //   { ok: true, repair: <content.js report> | null }
+  //   { ok: false, error: 'corrupt'|'busy'|'content', detail, rolledBack? }
   // The caller's tree is never aliased into live state (it is cloned first).
-  function apply(treeIn) {
+  // `reconcile: false` is for probes only (it proves the read check alone
+  // catches a tree the reconcile would have repaired).
+  function apply(treeIn, { reconcile = true } = {}) {
     const bad = checkTree(treeIn);
     if (bad) return { ok: false, error: 'corrupt', detail: bad };
     let tree;
@@ -96,25 +121,43 @@ export function createStateIO({ clock, rng, registry, world, scene = null, appSt
     } catch (err) {
       return { ok: false, error: 'corrupt', detail: String(err && err.message) };
     }
+    let repair = null;
+    if (reconcile) {
+      try {
+        const r = reconcileContent(tree);
+        repair = r && r.changed ? r : null;
+      } catch (err) {
+        return { ok: false, error: 'corrupt', detail: `content check failed (${String(err && err.message).slice(0, 120)})` };
+      }
+    }
     let rollback = null;
     try {
       rollback = capture();
     } catch (err) {
       return { ok: false, error: 'busy', detail: String(err && err.message) };
     }
-    try {
-      applyRaw(tree);
-      return { ok: true };
-    } catch (err) {
-      console.warn('[save] apply failed — rolling back to the pre-load state', err);
+    const undo = (why, err) => {
+      console.warn(`[save] ${why} — rolling back to the pre-load state`, err);
       try {
         applyRaw(rollback);
       } catch (err2) {
         console.error('[save] rollback failed', err2);
       }
-      return { ok: false, error: 'corrupt', detail: String(err && err.message) };
+    };
+    try {
+      applyRaw(tree);
+    } catch (err) {
+      undo('apply failed', err);
+      return { ok: false, error: 'corrupt', detail: String(err && err.message), rolledBack: true };
     }
+    try {
+      verifyLive();
+    } catch (err) {
+      undo('the loaded state cannot be read by this build', err);
+      return { ok: false, error: 'content', detail: `this version of Echoes can't run that save (${String(err && err.message).slice(0, 120)})`, rolledBack: true };
+    }
+    return { ok: true, repair };
   }
 
-  return { capture, apply, sceneState };
+  return { capture, apply, sceneState, verify: verifyLive };
 }
