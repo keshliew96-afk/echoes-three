@@ -565,8 +565,20 @@ export function createDraftScreen({ run, build, party = () => null }) {
     const nodes = n === 0 ? `${oldName} holds no nodes` : `${oldName}'s ${n} node${n === 1 ? '' : 's'} go to ${whose}`;
     const sug = seat === 0 ? c.suggest : c.suggest && c.suggest.choice;
     const advice = sug === 'leave' ? ' · suggested: Leave — the current four outrank it' : '';
+    // PARTY6-F1: a key the player chooses is where the skill lands. Only the
+    // AI's own untouched Take on a seat whose keys the AI still orders is
+    // re-sorted to its cast order (§25.8) — then the card says where it lands.
+    let lands = '';
+    const P = seat > 0 ? party() : null;
+    if (P && typeof P.aiOrder === 'function' && c.decided && c.choice === 'take' && c.by === 'ai' && !c.keyed) {
+      const placed = ids.slice();
+      placed[rep] = c.id;
+      const order = P.aiOrder(seat, placed);
+      const at = order ? order.indexOf(c.id) : rep;
+      if (order && order.some((id, i) => id !== placed[i])) lands = ` · AI re-sorts keys to cast order: ${newName} → key ${at + 1}`;
+    }
     repLine.style.display = '';
-    repLine.textContent = `${newName} replaces ${oldName} — ${nodes}${advice}`;
+    repLine.textContent = `${newName} replaces ${oldName} — ${nodes}${advice}${lands}`;
   }
 
   // The viewed character's clear spoils (already on its bench).

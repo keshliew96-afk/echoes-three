@@ -2207,3 +2207,30 @@ under the owner band (`.rn-ribstack`) when the two cannot share a row; a docked
 page that would clip at ≥ 1024×640 shrinks just enough to stay on screen.
 `tools/gntPARTY-campaign.mjs` now reads the SEAT's leash ring for the dash /
 vault check and accepts a short Healer spoils drop only with dry pools.
+
+**fix-PARTY-r6 probes (gauntlet round 6, 2026-10-02; docs/gauntlet/fix-PARTY-r6.md).**
+PARTY6-F1 — keys never move under a player. `node tools/gntfixPARTY6-keysnode.mjs
+[--seeds 1,2,3,4,5]` — headless Level-1 runs (exit 0 = all pass): every ally swap
+card Taken by the player into key k (k cycling 0–3) lands in key k with the other
+keys unmoved and `skill_swapped.slot` = k; a Replaces mark moved on the AI's
+pre-decided Take lands in the marked key; after a player reorder an untouched AI
+Take lands in the replaced key and keeps the player's order; an untouched AI Take
+on a never-arranged seat follows the §25.8 priority sort and the
+`skill_swapped` + `loadout_reorder` events replay to the final loadout; the
+`arranged` flag survives a save → fresh-world load and is absent from a
+never-arranged tree. `node tools/gntfixPARTY6-keys.mjs [--url u] [--seeds 1,2,3]
+[--modes untouched,mark,pad,reorder] [--w --h] [--tag t]` — the same by REAL
+input on the page (F-keys + S + F1 Enter, mocked pad RB / D-pad / A, the
+socket-screen reorder by keys), the card's "AI re-sorts keys to cast order:
+<skill> → key N" line checked against the committed loadout, the save tree's
+flag read back through `__echoes.save.apply`, `__echoes.party`, and the Healer's
+card-0 mirror following its mark. Critic probe copies with renamed outputs:
+`tools/gntfixPARTY6-{reorderswap,swapkeys,swapnodes,swapleave,modes,reorder}.mjs`.
+GOLDENS: the 3 `run` goldens were re-recorded at v0.5.214 because the AI's own
+sort now emits its `loadout_reorder` events — `node tools/gntfixPARTY6-goldenproof.mjs`
+proves the trace with those events removed equals the previous goldens
+(tick, count, events hash, state hash, RNG draws) on seeds 1–3 and the 6
+`?room=` goldens are unchanged (`--record 1` re-records only when that proof holds).
+**`__echoes.party`** (PLAN §16.11): `state()`, `view(seat)`, `pools(seat)`,
+`verdict(seat, skill, node)`, `arranged(seat)`, `aiOrder(seat)`, `aiLog()`,
+`oracle()`, `cmd(name, ...args)` (`cmd('view', 1)` = `cmd('partyView', 1)`).

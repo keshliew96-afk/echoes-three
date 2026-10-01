@@ -156,12 +156,16 @@ export function createPartyPages(ctx) {
     if (seat > 0) events.emit(getTick(), 'party_pick', { seat, choice, ...(c.swap ? { replace: c.replace } : {}), by });
     return { ok: true, seat, choice, replace: c.replace };
   }
-  // Move a swap card's Replaces mark without deciding (the UI's W/S).
+  // Move a swap card's Replaces mark without deciding (the UI's W/S). The
+  // player placed the mark: a Take of this card — the player's or the AI's
+  // pre-decided one — lands in exactly that key and never re-sorts the
+  // others (PARTY6-F1). `keyed` is on the card only once set.
   function setReplace(seat, slot) {
     if (!page) return null;
     const c = page.cards[seat];
     if (!c || !c.swap || !(Number.isInteger(slot) && slot >= 0 && slot < 4)) return null;
     c.replace = slot;
+    if (seat > 0) c.keyed = true;
     return slot;
   }
 
@@ -191,11 +195,19 @@ export function createPartyPages(ctx) {
       }
       const rec = { seat: c.seat, choice: c.choice, id: c.id, by: c.by };
       if (c.choice === 'take' && c.type === 'skill') {
-        const r = party.swap(c.seat, c.id, c.swap ? c.replace : null, { by: c.by });
+        // PARTY6-F1 (GP.2 "Take with each replace target 0-3 -> the new skill
+        // in that slot"; BUILD_BRIEF §25.1 slot order = keys = cast order):
+        // a key the PLAYER chose — the player's own Take, or a Replaces mark
+        // the player moved on the AI's pre-decided Take — is final, and the
+        // seat's order is the player's from then on. Only an AI decision on
+        // a seat whose keys the AI still orders re-sorts by the §25.8
+        // priority (aiSort refuses an arranged seat).
+        const keyed = c.by === 'human' || !!c.keyed;
+        const r = party.swap(c.seat, c.id, c.swap ? c.replace : null, { by: c.by, keyed });
         if (r && r.ok) {
           rec.replace = r.slot;
           rec.replaced = r.replaced;
-          if (aiHeld(c.seat)) party.aiSort(c.seat);
+          if (aiHeld(c.seat) && !keyed) party.aiSort(c.seat);
         }
       } else if (c.choice === 'take' && c.type === 'node') {
         party.build(c.seat).grantNode(c.id, 'drafted');

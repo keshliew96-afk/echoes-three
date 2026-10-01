@@ -100,6 +100,13 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
       purse: 0,
       state: { combo: {}, recentCasts: [], retaliate: {}, stillSince: 0 },
       auraNext: {}, // passive skillId -> next pulse tick
+      // gauntlet r6 PARTY6-F1: the PLAYER has set this character's key
+      // order (a reorder, a swap the player took into a chosen key, or a
+      // Replaces mark the player moved). From then on keys never move under
+      // the player: an AI swap puts the new skill in the replaced key and
+      // never re-sorts (§25.8's priority sort applies only to a seat whose
+      // keys the AI still orders). Saved only when set; reset per run.
+      arranged: false,
       build: null,
     };
     s.build = createBuildSystem({
@@ -144,8 +151,10 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
   // loadout: `skillId` takes `slot`, the old skill leaves (back to the class
   // pool), its nodes go to the bench (never lost; Resonance, pending Echo
   // recasts and the pulse / Reapply clocks end with it). No slot on a full
-  // loadout → `swap_denied full`. Never a 5th skill.
-  function swap(seat, skillId, slot = null, { by = 'cmd' } = {}) {
+  // loadout → `swap_denied full`. Never a 5th skill. `keyed` (default: the
+  // player took it) = the player chose the key → the seat's order is the
+  // player's from now on (PARTY6-F1).
+  function swap(seat, skillId, slot = null, { by = 'cmd', keyed = by === 'human' } = {}) {
     const s = S(seat);
     const tick = getTick();
     const deny = (reason) => {
@@ -168,6 +177,7 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     const released = replaced ? s.build.releaseSkill(replaced) : [];
     if (replaced) delete s.auraNext[replaced];
     s.slots[target] = skillId;
+    if (keyed) s.arranged = true;
     if (def.shape === 'aura') s.auraNext[skillId] = tick + AURA_CADENCE_TICKS;
     const a = body(seat);
     if (a && Array.isArray(a.cds)) a.cds[target] = tick; // the new skill is ready
@@ -189,6 +199,7 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     const t = s.slots[from];
     s.slots[from] = s.slots[to];
     s.slots[to] = t;
+    s.arranged = true; // the player's order from now on (PARTY6-F1)
     const a = body(seat);
     if (a && Array.isArray(a.cds)) {
       const c = a.cds[from];
@@ -199,12 +210,29 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     return { ok: true, slots: [...s.slots] };
   }
 
-  // The AI's own order after an AI swap (§25.8).
+  // Would the AI's own §25.8 sort move this seat's keys? (a pure question —
+  // the party page's swap card says where an AI Take will land).
+  function aiOrder(seat, slots = null) {
+    const s = S(seat);
+    if (!s) return null;
+    const cur = slots ? [...slots] : [...s.slots];
+    if (s.arranged) return cur;
+    const want = prioritySorted(s.classId, cur.filter(Boolean));
+    while (want.length < SKILL_SLOTS) want.push(null);
+    return want;
+  }
+
+  // The AI's own order after an AI swap (§25.8) — only while the AI still
+  // orders this seat's keys: a seat the player arranged keeps its keys
+  // (PARTY6-F1: keys never move under a player). Each move is a
+  // `loadout_reorder` (the same event as a player's reorder), so the event
+  // trace replays to the committed loadout. Returns the number of moves.
   function aiSort(seat) {
     const s = S(seat);
-    if (!s) return;
-    const want = prioritySorted(s.classId, s.slots.filter(Boolean));
-    while (want.length < SKILL_SLOTS) want.push(null);
+    if (!s || s.arranged) return 0;
+    const want = aiOrder(seat);
+    const tick = getTick();
+    let moves = 0;
     // Reorder by pairwise swaps (sockets and cooldowns travel).
     for (let i = 0; i < SKILL_SLOTS; i++) {
       if (s.slots[i] === want[i]) continue;
@@ -219,8 +247,11 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
           a.cds[i] = a.cds[j];
           a.cds[j] = c;
         }
+        moves += 1;
+        events.emit(tick, 'loadout_reorder', { seat, from: j, to: i, slots: [...s.slots] });
       }
     }
+    return moves;
   }
 
   // ------------------------------------------------------------- passives --
@@ -490,6 +521,7 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
       sockets: bv.skills.length * bv.socketCount,
       mode,
       autoSocketOwn: autoSocketOwn[i],
+      arranged: !!s.arranged,
     };
   }
   function pools(i) {
@@ -522,6 +554,7 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     for (const i of PARTY_SEATS) {
       const s = seats[i];
       s.slots = [...STARTING_LOADOUT[s.classId]];
+      s.arranged = false;
       s.purse = 0;
       s.state = { combo: {}, recentCasts: [], retaliate: {}, stillSince: getTick() };
       s.auraNext = {};
@@ -561,7 +594,8 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
         null,
         ...PARTY_SEATS.map((i) => {
           const s = seats[i];
-          return { seat: i, classId: s.classId, slots: [...s.slots], purse: s.purse, build: s.build.saveState(), state: structuredClone(s.state), auraNext: { ...s.auraNext } };
+          // `arranged` only when set (a never-arranged tree is byte-identical).
+          return { seat: i, classId: s.classId, slots: [...s.slots], ...(s.arranged ? { arranged: true } : {}), purse: s.purse, build: s.build.saveState(), state: structuredClone(s.state), auraNext: { ...s.auraNext } };
         }),
       ],
     };
@@ -592,6 +626,7 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
       }
       while (slots.length < SKILL_SLOTS) slots.push(null);
       s.slots = slots;
+      s.arranged = src.arranged === true;
       s.purse = Number.isFinite(src.purse) ? src.purse : 0;
       s.state = src.state ? structuredClone(src.state) : { combo: {}, recentCasts: [], retaliate: {}, stillSince: 0 };
       s.auraNext = src.auraNext ? { ...src.auraNext } : {};
@@ -616,6 +651,8 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     swap,
     reorder,
     aiSort,
+    aiOrder,
+    arranged: (i) => !!(S(i) && seats[i].arranged),
     view: seatView,
     pools,
     partyPools,

@@ -2484,6 +2484,19 @@ pre-picks, Automatic, host-built seats and timeouts):
   replaced skill releases go to the bench and the shared auto-fill
   re-places them (for AI-held seats; a human's bench is theirs). After a
   swap the AI orders its 4 slots by priority (its cast order).
+  **As built (fix-PARTY-r6, 2026-10-02 — keys never move under a
+  player):** the priority sort applies only to the AI's OWN decision on a
+  seat whose keys the AI still orders. A key the player chose is final:
+  the player's own Take on any seat (the new skill lands in the marked
+  key, the other three keys stay put — GP.2), a Replaces mark the player
+  moved on the AI's pre-decided Take, and a player's reorder all make
+  that character's key order the player's for the rest of the run (an
+  `arranged` flag per seat, saved, carried across levels); later AI swaps
+  on such a seat put the new skill in the replaced key and never re-sort.
+  An untouched AI Take that the sort will re-order says so on its card
+  ("AI re-sorts keys to cast order: <skill> → key N"), and every move of
+  the sort is a `loadout_reorder` event, so the event trace replays to the
+  committed loadout.
 - Shop: the autopilot rule — the cheapest affordable card first while the
   purse lasts (ties: shelf order).
 - **The Healer** (ruling A17): its swap offers follow the same rule with

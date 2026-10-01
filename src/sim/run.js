@@ -641,6 +641,11 @@ export function createRunSystem({
     const s = Number(slot);
     if (!(Number.isInteger(s) && s >= 0 && s < SKILL_SLOTS) || !healerSlots()[s]) return null;
     reward.replace = s;
+    // The party page's card 0 mirrors run.reward: its mark follows at once
+    // (was stale until the Healer's decision — state().run.party.cards[0]
+    // .replace disagreed with the card on screen; PARTY r6 advisory).
+    const c0 = pages && pages.isOpen() ? pages.card(0) : null;
+    if (c0 && c0.swap) c0.replace = s;
     return s;
   }
 

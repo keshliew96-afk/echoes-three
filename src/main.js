@@ -927,6 +927,30 @@ window.__echoes = {
     const c = service('campaign');
     return c ? c.debug ?? c : null;
   },
+  // PARTY (PLAN §16.11): the per-character build probe surface — read-only
+  // views of the ally seats (1-3; the Healer's build stays content / cmd)
+  // plus the party* commands by name (party r5 / r6 minor: was undefined).
+  get party() {
+    const P = typeof world.partySystem === 'function' ? world.partySystem() : null;
+    if (!P) return null;
+    return {
+      state: () => P.state(),
+      view: (seat) => P.view(Number(seat)),
+      pools: (seat) => P.pools(Number(seat)),
+      verdict: (seat, skill, node) => {
+        const b = P.build(Number(seat));
+        return b ? b.verdictFor(skill, node) : null;
+      },
+      arranged: (seat) => P.arranged(Number(seat)),
+      aiOrder: (seat) => P.aiOrder(Number(seat)),
+      aiLog: () => world.cmd('partyAiLog'),
+      oracle: () => ({ pools: P.partyPools(), verdicts: P.partyVerdicts() }),
+      cmd: (name, ...args) => {
+        const n = String(name);
+        return window.__echoes.cmd(n.startsWith('party') ? n : `party${n.charAt(0).toUpperCase()}${n.slice(1)}`, ...args);
+      },
+    };
+  },
   get settings() {
     const s = service('settings');
     return s
