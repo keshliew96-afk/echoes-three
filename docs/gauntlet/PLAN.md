@@ -648,6 +648,18 @@ the backup from <date>?") or marks the slot "Damaged — export raw / delete". A
 leftover valid `.tmp` newer than main is promoted on boot. QuotaExceededError
 leaves main untouched and shows "Not enough browser storage — delete a slot or
 export saves to files". Nothing on this path may throw to the page.
+*As built (fix-M2-r6, SAVE6-F1 — content drift):* integrity says nothing about
+CONTENT — a valid file may name a skill / node this build lacks (renamed or
+removed by an update). `apply()` therefore reconciles its private clone with
+the live content first (`src/save/content.js`: unknown / foreign / repeated /
+5th+ skills leave the loadout and their socketed nodes go to the bench,
+unknown nodes leave sockets / benches / shelves, offers for unknown content
+become empty, effects in flight of unknown skills end; a strict no-op when
+every id is known, so hashes and G2.1 are unchanged), then runs the live read
+paths once (`world.snapshotState()`, the party view) and rolls back a tree
+that still throws (`error: 'content'` — "That save needs content this version
+of Echoes doesn't have — it can't be loaded here"). A repaired load toasts
+what it removed; an import says so up front; the file is never rewritten.
 
 **Migration**: `MIGRATIONS = { 1: s => s /* v1 -> v2 */ }` chain applied
 before hash verification of the migrated tree; a save with `schema` newer than

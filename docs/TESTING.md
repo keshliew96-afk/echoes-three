@@ -917,6 +917,42 @@ wheel reach the last line), `tools/gntfixM25-sc-detailstates.mjs` (camp,
 damaged, Save tab empty / overwrite at 1024x576 and 1920x1080),
 `tools/gntfixM25-sc-detailwheel.mjs` (the critic's label probe).
 
+**fix-M2-r6 (v0.5.204+) — content drift (SAVE6-F1).** A hash-valid save may
+name a skill / node this build does not have (an update renamed or removed
+it, a hand-edited file). `src/save/content.js` `reconcileContent(tree)`
+checks every StateTree path that holds a skill / node / class id (census:
+`node tools/gntfixM26-idpaths.mjs`) against the live `SKILLS` / `NODES`
+(own keys only) and repairs the load's private clone: a skill a character
+cannot hold (unknown, another class's, a repeat, a 5th+) leaves the loadout
+and its socketed nodes go to that character's bench (A17), its Resonance /
+Echo / passive clocks end; unknown nodes leave sockets, benches, shop stock
+and party shelves (`marked` kept aligned); a reward card for unknown content
+becomes an empty offer ("not in this version of Echoes — the run moves
+on"), a swap offer whose character gained a free slot becomes a plain one;
+effects in flight of an unknown skill end (`<class>_basic` arrows are
+content); records (spoils, level card / summary build lists, starter grant)
+drop the ids. It is a strict no-op on a tree whose ids are known (same hash
+— G2.1 / goldens unchanged). `io.apply` then runs the live read paths once
+(`world.snapshotState()`, the party view); a tree that still throws is
+rolled back (`{ ok: false, error: 'content', rolledBack: true }`, layers
+resync with `state_restored { reason: 'rollback' }`) and the player reads
+"That save needs content this version of Echoes doesn't have — it can't be
+loaded here". A repaired load toasts what was removed (`load()` →
+`repaired: { line, short, counts }`); an import of such a file says it up
+front (`importText()` → `drift`); the slot detail names an unknown skill
+"… (not in this version)". The file itself is never rewritten. Debug:
+`__echoes.save.contentCheck(tree | slotId)`, `__echoes.save.apply(tree, {
+reconcile: false })` (probes: the read check alone), `__echoes.save.hash(tree)`
+now hashes its argument (critic r6 A10). Probes: `node
+tools/gntfixM26-drift-node.mjs` (headless: no-op on 12 moments, 17 drift
+cases apply + expected repair + clean re-check + 600 ticks with the run
+driver, the safety net refuses with an exact rollback), `node
+tools/gntfixM26-drive.mjs tools/gntfixM26-sc-driftrepro.mjs` (the critic's
+player-input repro: real file chooser → Load → confirm; input
+`captures/gntfixM26-drift-retired-skill.json`), `-sc-drift.mjs` (13 cases by
+the title's Load Game), `-sc-crafted.mjs` (25 hostile files); `GFM26_BASE` =
+the page origin (a preview, e.g. `http://127.0.0.1:4302/`).
+
 ### M5a — network core: server, lobby, protocol, conditioner, netbench (Gauntlet W3, owner M5a)
 
 **Session server** (zero npm dependencies — node:http / crypto / os only):
