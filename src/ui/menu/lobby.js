@@ -4,7 +4,8 @@
 // The room code (large, to read out loud), who sits where — seat 0 the
 // Healer is always the host, seats 1–3 Tank / Swordsman / Archer, empty
 // seats read "AI" — each player's ready state, connection and ping, the
-// host's network addresses (LAN play), and the one action that matters for
+// host's network addresses (LAN play), who builds what (each player their
+// own character, the host the AI-held seats — howtoLine), and the one action that matters for
 // each role: guests toggle Ready (and may take a free seat), the host
 // Starts once every connected player is ready (the AI plays the empty
 // seats). Quick match: while alone in a fresh public room the lobby says it
@@ -53,6 +54,27 @@ function installLobbyStyle() {
 }
 const CLASS_TINT = ['#33513C', '#6B6157', '#6B2E3A', '#6E7A3F'];
 
+// fix-DEPLOY-r6 (DEP6-F2): who plays and who builds what, told to THIS
+// viewer. PER-CHARACTER BUILDS (PLAN §16, BUILD_BRIEF §25.7): every human
+// builds their OWN character between rooms (reward card, sockets, shop); the
+// host builds the AI-held seats under Settings ▸ Gameplay ▸ Ally builds; the
+// doors and the level flow stay the host's. Seats come from the room, so a
+// guest who takes another free seat — or a host after a migration — reads
+// its real character. (Was one fixed line: "The host plays the Healer and
+// makes the build choices between rooms".)
+const NBSP = String.fromCharCode(160); // the settings path never breaks before a ▸
+export function howtoLine(room, peerId) {
+  const seats = (room && room.seats) || [];
+  const mine = seats.find((s) => s.peerId && s.peerId === peerId) || null;
+  const hostSeat = seats.find((s) => s.peerId && room && s.peerId === room.hostPeerId) || null;
+  const cls = (s) => SEAT_LABELS[s.index] || 'ally';
+  if (mine && hostSeat && mine === hostSeat)
+    return `You play the ${cls(mine)}. Between rooms each player builds their own character; you also build the AI-held seats (Settings${NBSP}▸${NBSP}Gameplay). Anyone can drop in later.`;
+  const host = hostSeat ? `the host plays the ${cls(hostSeat)} and builds the AI-held seats` : 'the host builds the AI-held seats';
+  if (mine) return `You play the ${cls(mine)} and build it yourself between rooms — its skills, nodes and shop picks. ${host.charAt(0).toUpperCase()}${host.slice(1)}; anyone can drop in later.`;
+  return `Each player builds their own character between rooms; ${host}. Anyone can drop in later.`;
+}
+
 export function createLobbyScreen(ctx) {
   installLobbyStyle();
   const { app, manager } = ctx;
@@ -70,7 +92,7 @@ export function createLobbyScreen(ctx) {
           <h3>Share</h3>
           <div class="nt-line nt-share"></div>
           <div class="nt-line nt-lanline"></div>
-          <div class="nt-line nt-howto">The host plays the Healer and makes the build choices between rooms; everyone else plays an ally. Empty seats are played by the AI — anyone can drop in later.</div>
+          <div class="nt-line nt-howto"></div>
           <div class="nt-countdown"></div>
         </aside>
       </div>
@@ -82,6 +104,7 @@ export function createLobbyScreen(ctx) {
   const seatsEl = el.querySelector('.nt-seats');
   const shareEl = el.querySelector('.nt-share');
   const lanEl = el.querySelector('.nt-lanline');
+  const howtoEl = el.querySelector('.nt-howto');
   const cdEl = el.querySelector('.nt-countdown');
   const errEl = el.querySelector('.nt-err');
   const acts = el.querySelector('.nt-acts');
@@ -136,6 +159,7 @@ export function createLobbyScreen(ctx) {
     const r = net ? net.room : null;
     if (!r) {
       codeEl.textContent = '·····';
+      howtoEl.textContent = howtoLine(null, null);
       return;
     }
     codeEl.textContent = r.code;
@@ -168,6 +192,7 @@ export function createLobbyScreen(ctx) {
     // DEPLOY (PLAN §14): the invite is the page link when the game is served
     // from a site (no address to type); the LAN server line otherwise.
     lanEl.textContent = inviteLine(net, { code: r.code });
+    howtoEl.textContent = howtoLine(r, net.peerId);
     // Actions.
     acts.textContent = '';
     const others = r.seats.filter((s) => s.peerId && s.peerId !== r.hostPeerId);

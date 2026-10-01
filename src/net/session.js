@@ -78,6 +78,17 @@ const GUEST_PARTY_RUN = {
 const PARTY_SYS_MUTATORS = new Set(['swap', 'reorder', 'aiSort', 'grantNode', 'autoFill', 'gainPurse', 'setPurse', 'spend', 'pulse', 'applyGrant', 'stress', 'setMode', 'setAutoSocketOwn', 'resetForRun', 'resetLevelState']);
 const SEAT_BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'releaseSkill', 'echoArm', 'setResonance', 'attachSkills']);
 const PARTY_OPS = new Set(['pick', 'replace', 'buy', 'mark', 'done', 'reorder', 'socket', 'unsocket', 'autofill', 'pref', 'screen']);
+// fix-DEPLOY-r6 (DEP6-F2): a guest's refused press on a SHARED decision says
+// whose it is — the doors and the level flow are the host's seat's (w = the
+// chooser's class); anything else is the Healer's own build, which belongs to
+// its player (each human builds their OWN character, BUILD_BRIEF §25.7). Was
+// always "The Healer makes the build choices", also on a door press.
+const LEVEL_FLOW_OPS = new Set(['returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
+function hostDecidesCopy(what, w) {
+  if (what === 'choosePath') return `The ${w} picks the door — your pick was shown to the party`;
+  if (LEVEL_FLOW_OPS.has(what)) return 'The host leads the party between levels — your press was shown to the party';
+  return 'That is the Healer’s build, not yours — your own character is on your tab';
+}
 const PARTY_REJECT_COPY = {
   not_owner: 'That is another player’s character — only your own tab is yours to change',
   closed: 'Too late — that choice already closed',
@@ -1400,7 +1411,7 @@ export function createNetSession(ctx) {
         partyStats.rejected += 1;
         partyStats.byReason[cmd.reason] = (partyStats.byReason[cmd.reason] || 0) + 1;
         if (hud && cmd.what !== 'screen' && cmd.what !== 'pref') hud.note(PARTY_REJECT_COPY[cmd.reason] ?? `Not applied (${cmd.reason})`);
-      } else if (hud) hud.note('The Healer makes the build choices — your pick was shown to the party');
+      } else if (hud) hud.note(hostDecidesCopy(cmd.what, seatLabel(chooserSeat(net.room))));
     }
   }
 

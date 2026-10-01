@@ -113,6 +113,13 @@ Tank, Swordsman and Archer, and the AI plays every empty seat. **Players join by
 opening the game's link** — the game finds its multiplayer server on the site it
 was loaded from, so nobody types a server address.
 
+Between rooms **every player builds their own character** — their reward card
+(a new skill, or a swap when all 4 slots are full), their node sockets and
+their shop purchases, all at the same time on their own screen (with two or
+more players a reward card nobody decides is picked for them after 30 s, with a
+notice). The host also builds the AI-held seats (Settings ▸ Gameplay ▸ Ally
+builds) and picks the doors.
+
 ### Play on your home network
 
 On the host's computer, in the game folder:
