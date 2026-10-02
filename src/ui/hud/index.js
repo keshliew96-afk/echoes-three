@@ -47,7 +47,7 @@ function locationCopy(scene, rv) {
   // J6-F1) until the return to camp.
   if (rv && !rv.active && (rv.phase === 'victory' || rv.phase === 'defeat')) {
     const place = rv.act > 1 && rv.actName ? String(rv.actName).toUpperCase() : 'THE HOLLOW';
-    return { name: place, sub: rv.phase === 'victory' ? 'THE STAG FALLS · RETURNING TO CAMP' : 'THE PARTY HAS FALLEN' };
+    return { name: place, sub: rv.phase === 'victory' ? 'VICTORY · RETURNING TO CAMP' : 'THE PARTY HAS FALLEN' };
   }
   if (scene === 'camp') return { name: 'THE HEARTH CAMP', sub: 'NIGHT · BEFORE THE ROAD' };
   return { name: 'THE PROVING CLEARING', sub: 'ARENA · NO RUN' };
