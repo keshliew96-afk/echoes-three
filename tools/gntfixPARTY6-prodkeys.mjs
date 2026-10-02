@@ -45,7 +45,7 @@ try {
     while (Date.now() - t0 < 420000) {
       const v = await page.evaluate(() => {
         const s = window.__echoes.state();
-        return { phase: s.run.phase, room: s.run.room, party: s.run.party ? s.run.party.cards.map((c) => ({ seat: c.seat, type: c.type, swap: !!c.swap, id: c.id, decided: !!c.decided, replace: c.replace })) : null, ui: (window.__echoes.runUi() || {}).screen };
+        return { phase: s.run.phase, room: s.run.room, party: s.run.party ? s.run.party.cards.map((c) => ({ seat: c.seat, type: c.type, swap: !!c.swap, id: c.id, decided: !!c.decided, choice: c.choice ?? null, replace: c.replace })) : null, ui: (window.__echoes.runUi() || {}).screen };
       });
       if (v.room > 6 || v.phase === 'idle' || v.phase === 'defeat') break;
       if (v.phase === 'combat') {
@@ -89,6 +89,8 @@ try {
             const d = window.__echoes.runUi().draft || {};
             return { viewSeat: d.viewSeat, replace: d.replace, ids: d.ids };
           });
+          // A focuses Take (an AI-suggested Leave opens with Leave focused).
+          await press(page, 'KeyA');
           await press(page, 'Enter');
           c.k = shown.replace;
           c.pre = pre;
@@ -104,8 +106,8 @@ try {
           wantSlots[c.k] = c.id;
           const took = post.includes(c.id);
           const ok = took && same(post, wantSlots) && c.shown.viewSeat === c.seat;
-          cases.push({ seed, room: v.room, seat: c.seat, id: c.id, markShown: c.k, pre: c.pre, post, ok, took });
-          console.log(`${ok ? 'PASS' : 'FAIL'} seed ${seed} room ${v.room} seat ${c.seat}: ${c.id} -> card marked key ${c.k + 1}; ${JSON.stringify(c.pre)} -> ${JSON.stringify(post)}`);
+          cases.push({ seed, room: v.room, seat: c.seat, id: c.id, aiChoice: c.choice, markShown: c.k, pre: c.pre, post, ok, took });
+          console.log(`${ok ? 'PASS' : 'FAIL'} seed ${seed} room ${v.room} seat ${c.seat} (AI ${c.choice}): ${c.id} -> card marked key ${c.k + 1}; ${JSON.stringify(c.pre)} -> ${JSON.stringify(post)}`);
         }
         if (swaps.length && pageNo % 2 === 0) await page.screenshot({ path: `captures/gntfixPARTY6-prodkeys-s${seed}-r${v.room}.png` }).catch(() => {});
         pageNo += 1;
