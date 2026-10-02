@@ -2236,3 +2236,33 @@ proves the trace with those events removed equals the previous goldens
 **`__echoes.party`** (PLAN §16.11): `state()`, `view(seat)`, `pools(seat)`,
 `verdict(seat, skill, node)`, `arranged(seat)`, `aiOrder(seat)`, `aiLog()`,
 `oracle()`, `cmd(name, ...args)` (`cmd('view', 1)` = `cmd('partyView', 1)`).
+`node tools/gntfixPARTY6-prodkeys.mjs --url <production server> [--seeds 1,2,3]
+[--size 1024x576]` (fix-PARTY-r6 finish) — self-contained (no critic lib): on a
+PRODUCTION bundle, Level 1 from `?level=1`, every ally swap card by real keys
+(F<seat> to view it, S until the Replaces mark sits on the target key, Enter,
+then F1 Enter for the Healer's card); pass = the new skill in the key the card
+marked, the other three keys unmoved, 0 page errors (exit 0).
+
+**fix-M4a-r6 / fix-INT-r6 probes (gauntlet round 6, 2026-10-02;
+docs/gauntlet/fix-M4a-r6.md, fix-INT-r6.md).**
+`node tools/gntfixM4a6-stag.mjs [--seeds 1-10] [--variants auto,strip,idle]
+[--root dir] [--out f]` — headless Level 1 from the camp with the default
+autopilot, the Healer's sockets varied: `auto` (as shipped), `strip` (the Healer
+never sockets a node — the content r6 F1 / journey r6 J6-F2 player), `idle`
+(strip + the Healer stands still in the Stag room). Prints Stag clears / wipes,
+fight seconds, downs, the first down after `boss_spawn`, the largest Stag hit,
+seeds with a down and seeds with a member below 35 % HP. `--root` simulates
+another checkout (a scratch copy with an edited constant = a tuning sweep).
+`node tools/gntfixINT6-endcard.mjs --url <server> [--scen vic3,def1] [--size
+1024x576] [--tag t]` — samples every rAF frame from the end card until the camp
+returns: `app.mode`, run phase, the top-left plate, the Glint plate, the party's
+downed count; pass = no card frame over THE HEARTH CAMP plate or in app mode
+camp, the Glint the run ended with, a defeat card over a fallen party, then the
+camp after the countdown (victory) or Enter (defeat).
+`tools/cert-capture.mjs --wait domcontentloaded` — for hosts where
+`networkidle2` never settles (a sandbox proxy holding a request open): waits
+for `__echoes` instead; the default stays `networkidle2`.
+Linux sandboxes: `PUPPETEER_EXECUTABLE_PATH` to the installed Chromium, and
+`ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader
+--enable-unsafe-swiftshader"` for the two probes above (software GL runs the
+page at a few fps; both probes hold keys across frames and wait on sim state).

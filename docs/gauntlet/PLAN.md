@@ -2699,6 +2699,12 @@ what GC.12 re-measures.
 - **GC.4 Campaign end**: the final clear → CAMPAIGN COMPLETE card → camp
   automatically within 600 ticks (Enter earlier); defeat → defeat card → camp;
   Quit to Lobby from combat, a run page and the card → camp with no end card.
+  *(fix-INT-r6, 2026-10-02, journey r6 J6-F1 / campaign r6 CR6-F1: the arrow
+  order is literal — the victory and defeat cards sit over the level they
+  ended in (app mode `run`, the level's plate, the Glint and build the run
+  ended with, a fallen party still down) and the camp replaces it only at
+  `return_to_camp`; run.js ends the run's world at `run_end` and resets the
+  loadout (`run_wiped`) with the return.)*
 - **GC.5 Carry / restore / reset**: a state diff at every transition matches
   §12.3 (skills + sockets + bench + wallet identical; every party member at
   max HP, standing, no statuses, cooldowns ready; 0 enemies, projectiles,
@@ -3745,6 +3751,14 @@ Measured on the dev server AND the production build (`npx vite build
   carried, 3/5 · 4/4 from Level 2, 5/5 from Level 3; over seeds 1–20 the
   default-autopilot campaign wins 12/20 (was 16/20), every level inside the
   §4.2 band; docs/gauntlet/fix-PARTY-r5.md.)*
+  *(fix-M4a-r6, 2026-10-02: (d) on Level 1 OPEN again — the Level 1 Stag's
+  × 4 wiped every party whose Healer had not socketed nodes (content r6 F1,
+  journey r6 J6-F2: 0/10 headless, 3/3 by real input), which breaks the
+  user's "without breaking the existing core gameplay loops". `STAG_DMG_LEVEL`
+  Level 1 4 → 2.1 (the dated BUILD_BRIEF §23.2 fix-M4a-r6 note): unsocketed
+  Healer 19/20 clears, autopilot 20/20, `gntPARTY-band` 17/18 — (d) Level 1
+  0/5, Levels 2–3 met. No Level 1 Stag setting met (d) without wiping that
+  party; the design owner rules (the fix-M4a-r5 options A / B / C).)*
 - **GP.14 The Healer is unchanged**: every §16.10 invariant (Node probe
   against a `git archive` of v0.5.150: pools, numbers, 289 grid cells,
   spoils / shelf / wallet numbers, `reward_offer` / `spoils_drop` /

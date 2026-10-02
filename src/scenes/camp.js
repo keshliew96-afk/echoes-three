@@ -442,13 +442,17 @@ export function createCampScene(stage, toggles, ctx) {
   applyCampSim();
   seatParty();
 
-  // The run ending is what brings the world home (§2: "run end (victory or
-  // defeat screen) returns to Camp"). The end PAGE is still up at this point —
-  // the environment behind it is the camp, which is what makes the §18 Victory
-  // wash "the only screen where the environment matches party warmth" a fact
-  // about the world and not just about a div.
-  bus.on('run_end', () => {
+  // The return to camp is what brings the world home. Gauntlet r6 (journey
+  // J6-F1 / campaign CR6-F1; PLAN §12.1 "CAMPAIGN COMPLETE card (10 s) ->
+  // automatic return", ruling A15 "the camp returns only after the final
+  // level's CAMPAIGN COMPLETE card ... or a defeat card"): the victory and
+  // defeat cards sit over the level they ended in, with the party where the
+  // last blow left it; the camp replaces it with return_to_camp (the card's
+  // countdown, Enter or its button). Only a run that ends without a card
+  // (Quit to Lobby: run_end 'abandoned', then return_to_camp) goes home here.
+  bus.on('run_end', (ev) => {
     runs += 1;
+    if (ev && (ev.result === 'victory' || ev.result === 'defeat')) return;
     setMode('camp');
     seatParty();
   });
