@@ -3,7 +3,8 @@
 A top-down party roguelike for the browser, built with Three.js. You play the
 mouse Healer leading three AI (or human) allies — a badger Tank, a fox Swordsman
 and a hare Archer — through eight-room expeditions, drafting skills and socketing
-nodes between fights, until you face the Hollow Stag.
+nodes between fights, until you face the expedition's boss: the Hollow Stag, the
+Drowned Heron or the Barrow Wyrm.
 
 - Single player and up to 4-player online co-op (one host + 3 guests)
 - Three expeditions (Hollow Wood, Sunken Mill, Ashen Barrow), each a full run
@@ -50,7 +51,8 @@ back.
 **The loop:** you start at the night camp. Walk to the violet portal at the top
 of the camp and press **E** to begin an expedition (once you have won Act I, the
 portal offers an expedition picker). A run is eight rooms: kill-all and defend
-rooms, a shop in room 7, and the Hollow Stag in room 8. Clearing a room offers a
+rooms, a shop in room 7, and the expedition's boss in room 8 (the Hollow Stag, the
+Drowned Heron or the Barrow Wyrm). Clearing a room offers a
 reward draft — a skill or a node — then you pick a door to the next room.
 Winning or dying returns you to camp with your records updated.
 
