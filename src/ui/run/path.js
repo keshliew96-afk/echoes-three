@@ -5,6 +5,9 @@
 //
 // A/D or arrows focus; Enter commits under the FRESH-PRESS RULE (a held Enter
 // carried in from the draft screen never commits). Irreversible; Esc inert.
+// RELICS: a cursed door wears the curse mark; its words ride a note below.
+import { CURSES } from '../../sim/relics.js';
+import { curseIconHtml } from './relicicons.js';
 import { esc } from './style.js';
 import { WIN_GLYPH, REWARD_GLYPH } from '../../sim/run.js';
 
@@ -45,6 +48,7 @@ export function createPathScreen({ run }) {
       </div>
     </div>
     <div class="rn-legend"></div>
+    <div class="rl-cursenote" style="display:none"></div>
     <div class="rn-hint"><b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> walk through</div>`;
 
   const wraps = [...el.querySelectorAll('.rn-doorwrap')];
@@ -52,6 +56,15 @@ export function createPathScreen({ run }) {
   const winEls = wraps.map((w) => w.querySelector('.rn-gwin'));
   const rewEls = wraps.map((w) => w.querySelector('.rn-grew'));
   const legendEl = el.querySelector('.rn-legend');
+  const curseNote = el.querySelector('.rl-cursenote');
+  const curseMarks = doors.map((d) => {
+    const m = document.createElement('div');
+    m.className = 'rl-gcurse';
+    m.innerHTML = curseIconHtml(30);
+    m.style.display = 'none';
+    d.appendChild(m);
+    return m;
+  });
   const freeEl = el.querySelector('.rn-free');
   const nextEl = el.querySelector('.rn-next');
 
@@ -73,6 +86,8 @@ export function createPathScreen({ run }) {
       winEls[i].textContent = WIN_GLYPH[o.win] ?? '⚔';
       rewEls[i].textContent = REWARD_GLYPH[o.reward] ?? '✦';
       doors[i].classList.toggle('rn-focus', p.focus === i);
+      doors[i].classList.toggle('rl-cursed', !!o.curse);
+      curseMarks[i].style.display = o.curse ? '' : 'none';
       wraps[i].classList.toggle('rn-on', p.focus === i);
     }
     // Screen-level legend: decodes the two glyph families for BOTH doors at
@@ -82,6 +97,11 @@ export function createPathScreen({ run }) {
       <span><b>${WIN_GLYPH[win] ?? '⚔'}</b> ${esc(WIN_LABEL[win] ?? win)}</span>
       <span><b>${REWARD_GLYPH.skill}</b> ${esc(REWARD_LABEL.skill)}</span>
       <span><b>${REWARD_GLYPH.node}</b> ${esc(REWARD_LABEL.node)}</span>`;
+    // RELICS: what the cursed door costs and pays (words, not colour alone).
+    const cursed = p.options.find((o) => o.curse);
+    const c = cursed ? CURSES[cursed.curse] : null;
+    curseNote.style.display = c ? '' : 'none';
+    if (c) curseNote.innerHTML = `${curseIconHtml(26)}<div><b>Cursed door (${cursed.side === 0 ? 'left' : 'right'}): ${esc(c.name)}.</b> ${esc(c.text)} Clear the room for a relic.</div>`;
     shownFocus = p.focus;
   }
   // fix-M3-r5 (AUD5-F1): the focused door as drawn, the selection signature

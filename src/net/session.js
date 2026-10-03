@@ -57,7 +57,7 @@ const KEY_OF = { dodge: 'Space', interact: 'KeyE', basic: 'Mouse2' };
 for (let i = 1; i <= 4; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
 // (+ CAMPAIGN, PLAN §12.9: a guest can neither start, advance nor abandon a
 // campaign — the host drives every level transition.)
-const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
+const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
 // M4c: autoFill (the socket screen's F / pad Y) mutates the build too — a guest's
 // press becomes the same refused CMD as a socket() (build decisions are the host's).
 const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);
@@ -86,6 +86,7 @@ const PARTY_OPS = new Set(['pick', 'replace', 'buy', 'mark', 'done', 'reorder', 
 const LEVEL_FLOW_OPS = new Set(['returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
 function hostDecidesCopy(what, w) {
   if (what === 'choosePath') return `The ${w} picks the door — your pick was shown to the party`;
+  if (what === 'chooseRelic' || what === 'focusRelic') return `The ${w} picks the party's relic — your pick was shown to the party`;
   if (LEVEL_FLOW_OPS.has(what)) return 'The host leads the party between levels — your press was shown to the party';
   return 'That is the Healer’s build, not yours — your own character is on your tab';
 }
@@ -558,7 +559,7 @@ export function createNetSession(ctx) {
     const v = run && run.view ? run.view() : null;
     const index = Number.isInteger(args[0]) ? args[0] : null;
     cmdSeq += 1;
-    net.transport.sendBinary(encodeCmd(localSeat(), cmdSeq, { kind: what === 'focusPath' ? 'ping' : 'pick', what, area, index, page: v ? v.phase : null }));
+    net.transport.sendBinary(encodeCmd(localSeat(), cmdSeq, { kind: what === 'focusPath' || what === 'focusRelic' ? 'ping' : 'pick', what, area, index, page: v ? v.phase : null }));
     log('guest_pick', { what, index });
   }
 
