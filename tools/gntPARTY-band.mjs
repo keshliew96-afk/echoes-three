@@ -10,12 +10,16 @@
 //   (b) per level, the median party damage per combat room and the median
 //       time-to-clear within x0.75-x1.35 of the baseline;
 //   (c) the Level 3 Stag room's median party damage >= 0.8 x baseline;
-//   (d) >= 1 party down per level on >= 2 of 5 seeds; on Level 1 a seed also
-//       counts when a member drops below 35 % HP (the design owner's ruling,
-//       2026-10-03: Level 1's bite is an HP dip, not a down — PLAN GP.13).
+//   (d) >= 1 party down per level on >= 2 of 5 seeds. Level 1 instead (PLAN
+//       GP.13, 2026-10-03): its bite is an HP dip — a down or a member below
+//       35 % HP — on at least as many of seeds 1-40 as the v0.5.150 baseline
+//       (Level 1 only: `camprun --stop-after 1`; seeds 1-5 are printed too).
 //
-//   node tools/gntPARTY-band.mjs [--seeds 1-5] [--from 1,2,3] [--root <checkout>] [--tag now] [--reuse 1]
+//   node tools/gntPARTY-band.mjs [--seeds 1-5] [--from 1,2,3] [--l1seeds 1-40] [--root <checkout>] [--tag now] [--reuse 1]
 //   --reuse 1  read the tagged runner outputs instead of re-running them.
+// The Level 1 baseline is captures/gntPARTY-baseline-l1.json (captures/ is not
+// in git): node tools/gntCAMPAIGN-camprun.mjs --from 1 --seeds 1-40 --stop-after 1
+//   --root <git archive 2a6139b> --out captures/gntPARTY-baseline-l1.json
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 
@@ -29,6 +33,7 @@ const FROMS = opt('from', '1,2,3').split(',').map(Number);
 const ROOT = opt('root', null);
 const TAG = opt('tag', 'now');
 const REUSE = opt('reuse', '0') === '1';
+const L1_SEEDS = opt('l1seeds', '1-40');
 mkdirSync('captures', { recursive: true });
 
 const med = (a) => {
@@ -41,15 +46,16 @@ const r2 = (v) => (v === null ? null : Math.round(v * 100) / 100);
 // GP.13 (d) on Level 1: a member below this HP fraction counts as the bite.
 const L1_BITE_HP = 0.35;
 
-function runOnce(from) {
-  const out = `captures/gntPARTY-band-${TAG}-from${from}.json`;
+function runOnce(from, l1 = false) {
+  const out = l1 ? `captures/gntPARTY-band-${TAG}-l1.json` : `captures/gntPARTY-band-${TAG}-from${from}.json`;
   if (!(REUSE && existsSync(out))) {
-    const args = ['tools/gntCAMPAIGN-camprun.mjs', '--from', String(from), '--seeds', SEEDS, '--out', out];
+    const args = ['tools/gntCAMPAIGN-camprun.mjs', '--from', String(from), '--seeds', l1 ? L1_SEEDS : SEEDS, '--out', out];
+    if (l1) args.push('--stop-after', '1');
     if (ROOT) args.push('--root', ROOT);
     const t0 = Date.now();
     const r = spawnSync(process.execPath, args, { encoding: 'utf8', maxBuffer: 64 << 20 });
     if (r.status !== 0 && !existsSync(out)) throw new Error(`camprun --from ${from} failed: ${(r.stderr || r.stdout || '').slice(-800)}`);
-    console.log(`[band] from ${from}: ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+    console.log(`[band] ${l1 ? `Level 1 only, seeds ${L1_SEEDS}` : `from ${from}`}: ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   }
   return JSON.parse(readFileSync(out, 'utf8'));
 }
@@ -126,12 +132,22 @@ for (const from of FROMS) {
     // Levels 1-2 it is 0 of 5 (BUILD_BRIEF §23.2 PARTY note: (d) there cannot
     // be met without breaking (b)'s x1.35 ceiling — a recorded design conflict).
     if (lvl === 1) {
-      // Level 1 (ruling 2026-10-03): a down OR a member below 35 % HP.
+      // Level 1 (PLAN GP.13, 2026-10-03): a seed bites on a down OR a member
+      // below 35 % HP, counted over seeds 1-40 (Level 1 only) against the
+      // v0.5.150 baseline; seeds 1-5 alone are too few (1 of 5 at x2.1, 13
+      // of 40).
       const bit = (L) => (s) => (L.downsBySeed[s] || 0) >= 1 || (Number.isFinite(L.minHpBySeed[s]) && L.minHpBySeed[s] < L1_BITE_HP);
-      const seedsBit = Object.keys(n.downsBySeed).filter(bit(n)).length;
-      const baseBit = Object.keys(b.minHpBySeed).length ? `${Object.keys(b.downsBySeed).filter(bit(b)).length} of ${Object.keys(b.downsBySeed).length}` : 'n/a (no minHpFrac)';
-      const noHp = Object.keys(n.downsBySeed).length > 0 && Object.keys(n.minHpBySeed).length === 0;
-      gate(`(d) from ${from} L1: a party down or a member below ${L1_BITE_HP * 100} % HP on >= 2 of ${Object.keys(n.downsBySeed).length} seeds (${seedsBit}; the v0.5.150 baseline: ${baseBit})`, !noHp && seedsBit >= 2, { downsBySeed: n.downsBySeed, minHpBySeed: n.minHpBySeed });
+      const count = (L) => `${Object.keys(L.downsBySeed).filter(bit(L)).length} of ${Object.keys(L.downsBySeed).length}`;
+      if (!existsSync('captures/gntPARTY-baseline-l1.json')) throw new Error('captures/gntPARTY-baseline-l1.json is missing — see the header for the command that records it');
+      const wN = stats(runOnce(1, true))[1];
+      const wB = stats(JSON.parse(readFileSync('captures/gntPARTY-baseline-l1.json', 'utf8')))[1];
+      const seeds = Object.keys(wN.downsBySeed);
+      const same = seeds.length > 0 && seeds.length === Object.keys(wB.downsBySeed).length && seeds.every((s) => s in wB.downsBySeed);
+      const noHp = Object.keys(wN.minHpBySeed).length === 0 || Object.keys(wB.minHpBySeed).length === 0;
+      const nowBit = seeds.filter(bit(wN)).length;
+      const baseBit = Object.keys(wB.downsBySeed).filter(bit(wB)).length;
+      report.levels['1:L1-wide'] = { seeds: L1_SEEDS, biteSeeds: seeds.filter(bit(wN)).map(Number), baseBiteSeeds: Object.keys(wB.downsBySeed).filter(bit(wB)).map(Number), minHpBySeed: wN.minHpBySeed };
+      gate(`(d) from ${from} L1: a party down or a member below ${L1_BITE_HP * 100} % HP on at least as many of seeds ${L1_SEEDS} as the v0.5.150 baseline (${count(wN)} vs ${count(wB)}; seeds ${SEEDS}: ${count(n)}, baseline ${count(b)})`, same && !noHp && nowBit >= baseBit, { now: count(wN), base: count(wB), sameSeeds: same });
     } else {
       const seedsWithDown = Object.values(n.downsBySeed).filter((d) => d >= 1).length;
       const baseWithDown = Object.values(b.downsBySeed).filter((d) => d >= 1).length;

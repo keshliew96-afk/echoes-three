@@ -2150,7 +2150,13 @@ server (7950):
   0 desyncs, migration; bandwidth).
 - `node tools/gntPARTY-band.mjs [--seeds 1-5] [--root <copy>]` — GP.13 (a)–(d)
   against `captures/gntPARTY-baseline-from{1,2,3}.json`, runs the CAMPAIGN
-  runner read-only.
+  runner read-only. Level 1's (d) is an HP dip (a down or a member below
+  35 % HP) counted over `--l1seeds 1-40` (Level 1 only, `gntCAMPAIGN-camprun
+  --stop-after 1`, each room's `minHpFrac`) against
+  `captures/gntPARTY-baseline-l1.json`; captures/ is not in git, so record
+  it once from a `git archive 2a6139b` (v0.5.150) copy:
+  `node tools/gntCAMPAIGN-camprun.mjs --from 1 --seeds 1-40 --stop-after 1
+  --root <copy> --out captures/gntPARTY-baseline-l1.json` (7 of 40 bite).
 - `node tools/gntPARTY-healer.mjs --base150 <archive>` — GP.14 data + play
   invariants against a `git archive` of v0.5.150.
 - `node tools/gntPARTY-campaign.mjs [--seeds 1-3] [--base150 <archive>]` —
