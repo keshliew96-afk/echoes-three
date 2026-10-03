@@ -5,11 +5,11 @@
 //
 // A/D or arrows focus; Enter commits under the FRESH-PRESS RULE (a held Enter
 // carried in from the draft screen never commits). Irreversible; Esc inert.
-import { esc } from './style.js';
-import { WIN_GLYPH, REWARD_GLYPH } from '../../sim/run.js';
 // RELICS: a cursed door wears the curse mark; its words ride a note below.
 import { CURSES } from '../../sim/relics.js';
 import { curseIconHtml } from './relicicons.js';
+import { esc } from './style.js';
+import { WIN_GLYPH, REWARD_GLYPH } from '../../sim/run.js';
 
 const WIN_LABEL = {
   kill_all: 'clear every enemy',
