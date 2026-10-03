@@ -79,6 +79,8 @@ import { levelFor, ACT_IDS } from '../data/levels.js';
 import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
+// RELICS (docs/CONTENT_PLAN.md §5): run-long relics + cursed doors.
+import { createRelicSystem, cursedDiff } from './relics.js';
 import { swapSuggestion, CLASS_OF_SEAT, PARTY_DEADLINES } from '../data/classes.js';
 // PARTY (PLAN §16.3): the party page + the party shelves.
 import { createPartyPages } from './partypage.js';
@@ -156,9 +158,11 @@ export function createRunSystem({
     : null;
   let supplyOn = !!party;
   let harnessGrant = null; // ?partygrant=N | 'max' — applied at the next run start
+  let relicsDefault = true; // RELICS: campaigns roll relics + curses (cmd('relicsDefault'))
   const allyOn = () => supplyOn && !!pages;
   if (typeof buildSys.attachSkills === 'function') buildSys.attachSkills(skillSys);
   const statusTracker = createStatusTracker({ registry, events, getTick });
+  const relics = createRelicSystem({ registry, events, getTick, combat, skillSys, player, live: () => active });
   const autopilot = createAutopilot({
     registry,
     player,
@@ -303,6 +307,8 @@ export function createRunSystem({
     // the party stream seeded from the run SEED (no gameplay draw).
     if (party) party.resetForRun(frame.seed);
     if (pages) pages.reset();
+    // RELICS: on for campaigns, off for the legacy single-level run (goldens).
+    relics.reset(frame.seed, mode === 'campaign' && relicsDefault);
     // Payload unchanged since v0.5.x (the goldens hash every event).
     events.emit(getTick(), 'run_start', {
       seed: frame.seed,
@@ -436,7 +442,10 @@ export function createRunSystem({
     path = null;
     positionParty();
     const combatRoom = mode === 'kill_all' || mode === 'defend';
-    const diff = difficulty(act, Math.min(6, n), challenge);
+    const baseDiff = difficulty(act, Math.min(6, n), challenge);
+    // RELICS: a cursed room rolls its waves with the curse's numbers.
+    const roomCurse = combatRoom ? relics.curseFor(n) : null;
+    const diff = roomCurse ? cursedDiff(baseDiff, roomCurse) : baseDiff;
     if (combatRoom) waves.planRoom(mode, { act, room: n, challenge, level, diff });
     // Layout AFTER the schedule (one fixed roll order per room).
     const layoutId = rollLayout(n, mode);
@@ -471,6 +480,7 @@ export function createRunSystem({
     if (combatRoom) {
       phase = 'combat'; // §13 step 7: next room's first tick, combat_active := true
       waves.beginRoom();
+      relics.onRoomEnter(n, mode);
     } else if (mode === 'shop') {
       phase = 'shop';
       openShop();
@@ -490,6 +500,7 @@ export function createRunSystem({
       // The ally block hangs its room-start hygiene off this event (channels,
       // mark, rally, AI state) exactly as it does for wave rooms.
       events.emit(tick, 'room_start', { mode: 'boss', waves: [] });
+      relics.onRoomEnter(n, mode);
     }
   }
 
@@ -516,6 +527,9 @@ export function createRunSystem({
     roomsDone = Math.max(roomsDone, roomIndex);
     gainGlint(RUN.stipend, 'clear_stipend');
     if (allyOn()) pages.stipend('clear_stipend'); // PARTY: +12 per ally purse
+    // RELICS: clear procs (Grave Coin, Hearthstone), the curse lifts, and a
+    // relic pick is owed after room 1 and after a cursed room.
+    relics.onRoomCleared(roomIndex, { forfeited: !!ev.softFailed, gainGlint, boss: roomIndex === RUN.bossRoom });
 
     if (roomIndex === RUN.bossRoom) {
       onLevelCleared(tick);
@@ -749,13 +763,34 @@ export function createRunSystem({
   }
 
   function afterReward(taken = null) {
+    // RELICS: an owed relic pick comes after the draft, before the doors.
+    if (relics.presentDue(gainGlint)) {
+      phase = 'relic';
+      return taken;
+    }
+    afterRelic();
+    return taken;
+  }
+  function afterRelic() {
     if (roomIndex <= RUN.pathRooms) {
       presentPath();
     } else {
       // Rooms 6->7 and 7->8 are fixed transitions (§2: no choice).
       beginFade(roomIndex + 1);
     }
-    return taken;
+  }
+
+  // RELICS: the relic page (phase 'relic') — one of three, no reroll.
+  function focusRelic(i) {
+    if (phase !== 'relic') return null;
+    return relics.focus(i);
+  }
+  function chooseRelic(i) {
+    if (phase !== 'relic') return null;
+    const id = relics.choose(i);
+    if (!id) return null;
+    afterRelic();
+    return { relic: id };
   }
 
   // ------------------------------------------------------------------ path --
@@ -767,6 +802,9 @@ export function createRunSystem({
       { side: 0, win, reward: skillLeft ? 'skill' : 'node' },
       { side: 1, win, reward: skillLeft ? 'node' : 'skill' },
     ];
+    // RELICS: one door may carry a curse (key present only then).
+    const dc = relics.rollDoorCurse();
+    if (dc) options[dc.side].curse = dc.curse;
     path = {
       nextRoom,
       options,
@@ -778,7 +816,7 @@ export function createRunSystem({
     events.emit(getTick(), 'path_offer', {
       room: roomIndex,
       nextRoom,
-      options: options.map((o) => ({ side: o.side, win: o.win, reward: o.reward })),
+      options: options.map((o) => ({ side: o.side, win: o.win, reward: o.reward, ...(o.curse ? { curse: o.curse } : {}) })),
       freeSkillSlots: path.freeSkillSlots,
     });
   }
@@ -813,9 +851,10 @@ export function createRunSystem({
       reward: opt.reward,
     });
     const next = path.nextRoom;
+    if (opt.curse) relics.takeCurse(opt.curse, next);
     path = null;
     beginFade(next);
-    return { nextRoom: next, reward: opt.reward, win: opt.win };
+    return { nextRoom: next, reward: opt.reward, win: opt.win, ...(opt.curse ? { curse: opt.curse } : {}) };
   }
 
   // §13/§16 transition fade (<= 300 ms) between the meta screens and the next
@@ -874,6 +913,7 @@ export function createRunSystem({
     if (CARRY_RULES.resetShop) shop = null;
     // PARTY: the party page, the four shelves and every deadline are level-bound.
     if (pages) pages.reset();
+    relics.levelReset(); // RELICS: the relics ride on; curse / pick do not
     if (party && CARRY_RULES.resetEntities) party.resetLevelState();
     reward = null;
     path = null;
@@ -1165,7 +1205,8 @@ export function createRunSystem({
 
   // ------------------------------------------------------------------ shop --
   function openShop() {
-    const stock = draft.shopStock().map((s) => ({ ...s, sold: false }));
+    // RELICS (Peddler's Seal): the Healer's shelf prices (identity when off).
+    const stock = draft.shopStock().map((s) => ({ ...s, price: relics.shopPrice(s.price), sold: false }));
     shop = { stock, visited: true };
     events.emit(getTick(), 'shop_open', {
       room: roomIndex,
@@ -1294,6 +1335,7 @@ export function createRunSystem({
         .filter(Boolean)
         .map((s) => s.id),
       ...(party ? { builds: partyBuilds() } : {}),
+      ...(relics.enabled() ? { relics: relics.owned() } : {}),
       nodes: {
         bench: b.bench.map((x) => x.node),
         socketed: b.skills.flatMap((sk) =>
@@ -1427,6 +1469,8 @@ export function createRunSystem({
   }
 
   function endOfTick() {
+    // RELICS: this tick's procs (Thorn Mail, Leech Fang) land first.
+    if (active) relics.endOfTick();
     if (active && roomIndex === RUN.bossRoom && phase === 'combat') boss.endOfTick();
     // Status bookkeeping for the tick that just resolved (announce + prune),
     // before a fade can walk into the next room.
@@ -1567,6 +1611,8 @@ export function createRunSystem({
       ...(pages && pages.shopOpen() ? { partyShop: pages.shopView() } : {}),
       // PARTY: which socket screens are open (network only; present only then).
       ...(pages && pages.screensAny() ? { socketScreens: pages.screens() } : {}),
+      // RELICS: present only while a run with relics is live (hash-stable).
+      ...(active && relics.enabled() ? { relics: relics.view() } : {}),
       summary,
       fadeTicksLeft: phase === 'fade' ? Math.max(0, fadeUntilTick - getTick()) : 0,
     };
@@ -1688,6 +1734,25 @@ export function createRunSystem({
         return harnessGrant;
       case 'draftDecline':
         return declineReward();
+      // ------------------------------------------------------ RELICS --
+      case 'relicChoose':
+        return chooseRelic(args[0]);
+      case 'relicFocus':
+        return focusRelic(args[0] ?? 0);
+      case 'relics':
+        // ('relics'[, on]) — turn relics on / off for the live run (probes;
+        // a single-level startRun() has them off).
+        if (args[0] !== undefined) {
+          if (args[0] && !relics.enabled()) relics.reset(frame ? frame.seed : rng.seed, true);
+          else if (!args[0]) relics.reset(0, false);
+        }
+        return relics.enabled() ? relics.view() : null;
+      case 'relicsDefault':
+        // ('relicsDefault', on) — whether the NEXT campaign rolls relics.
+        if (args[0] !== undefined) relicsDefault = !!args[0];
+        return relicsDefault;
+      case 'relicGrant':
+        return relics.grant(args[0]);
       case 'pathFocus':
         return focusPath(args[0] ?? 0);
       case 'pathChoose':
@@ -1838,6 +1903,8 @@ export function createRunSystem({
       // PARTY (schema 4, PLAN §16.6): the party page, the shelves, the door
       // deadline — present only when something is open.
       ...(pages && (pages.isOpen() || pages.shopOpen() || pages.doorDeadline() !== null || pages.screensAny()) ? { partyPages: pages.saveState() } : {}),
+      // RELICS: present only when the run rolls relics.
+      ...(active && relics.enabled() ? { relics: relics.saveState() } : {}),
     };
   }
   function loadState(d) {
@@ -1889,6 +1956,7 @@ export function createRunSystem({
     }
     autoReturnTick = Number.isFinite(d.autoReturnTick) ? d.autoReturnTick : null;
     if (pages) pages.loadState(d.partyPages ?? null);
+    relics.loadState(d.relics ?? null);
   }
 
   const api = {
@@ -1959,6 +2027,10 @@ export function createRunSystem({
     },
     focusPath,
     choosePath,
+    // RELICS: the relic page's entry points.
+    focusRelic,
+    chooseRelic,
+    relics: () => (relics.enabled() ? relics.view() : null),
     buy,
     advanceFromShop,
     returnToCamp,

@@ -51,6 +51,10 @@ import { createShopScreen } from './shop.js';
 import { createEndScreen, END_CSS } from './endscreens.js';
 // CAMPAIGN (docs/gauntlet/PLAN.md §12.6): the level-transition card.
 import { createTransitScreen, TRANSIT_CSS } from './transit.js';
+// RELICS (docs/CONTENT_PLAN.md §5): the relic page + the relic strip.
+import { createRelicScreen, RELIC_CSS } from './relic.js';
+import { createRelicStrip, RELIC_STRIP_CSS } from './relicstrip.js';
+import { RELICS, CURSES } from '../../sim/relics.js';
 // @gnt:M3 RUN-NAV-SOUND (fix-M3-r5): selection ticks for the build pages.
 import { createSelectionSound } from '../../audio/uiselect.js';
 
@@ -62,12 +66,13 @@ const SCREEN_FOR = {
   victory: 'end',
   defeat: 'end',
   transit: 'transit', // CAMPAIGN: level-clear / setting-out card
+  relic: 'relic', // RELICS: pick one of three
 };
 
 export function createRunUi({ bus, world, socket = null, autostart = false }) {
   const style = document.createElement('style');
   style.id = 'run-style';
-  style.textContent = RUN_CSS + TRANSIT_CSS + PARTY_STRIP_CSS + END_CSS; // fix-INT-r5: + the end card
+  style.textContent = RUN_CSS + TRANSIT_CSS + PARTY_STRIP_CSS + END_CSS + RELIC_CSS + RELIC_STRIP_CSS; // fix-INT-r5: + the end card
   document.head.appendChild(style);
 
   // Veil sits UNDER #hud (§16: Zone 1 persists beneath); the page and the
@@ -93,7 +98,9 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     shop: createShopScreen({ run, build, party }),
     end: createEndScreen({ run }),
     transit: createTransitScreen({ run }),
+    relic: createRelicScreen({ run }),
   };
+  const relicStrip = createRelicStrip();
   for (const s of Object.values(screens)) {
     s.el.style.display = 'none';
     rootEl.appendChild(s.el);
@@ -318,7 +325,9 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
             .map((s) => `${s.purse}:${s.stock.map((i) => `${i.node}${i.sold ? 'x' : ''}${i.marked ? 'm' : ''}${i.owned}`).join(',')}`)
             .join('|') + `/${v.partyShop.leaveInTicks === null ? '-' : Math.ceil(v.partyShop.leaveInTicks / 60)}/${v.partyShop.deadlineInTicks === null ? '-' : Math.ceil(v.partyShop.deadlineInTicks / 60)}`
         : '-',
-      p ? `${p.nextRoom}:${p.focus}:${p.options.map((o) => o.win + o.reward).join(',')}` : '-',
+      p ? `${p.nextRoom}:${p.focus}:${p.options.map((o) => o.win + o.reward + (o.curse ?? '')).join(',')}` : '-',
+      // RELICS: the relic page's offer and focus.
+      v.relics && v.relics.offer ? `${v.relics.offer.room}:${v.relics.offer.focus}:${v.relics.offer.choices.map((c) => c.id).join(',')}:${v.relics.owned.length}` : '-',
       s ? s.stock.map((i) => `${i.node}${i.price}${i.sold ? 'x' : ''}${i.owned}`).join('|') : '-',
       v.summary ? `${v.summary.result}:${v.summary.rooms}:${v.summary.glint}` : '-',
       campaignSig(v),
@@ -414,6 +423,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     { screen: 'draft', view: 'draft', frames: 4 },
     { screen: 'draft', view: 'draft', frames: 4, seat: 1 },
     { screen: 'path', view: 'path', frames: 4 },
+    { screen: 'relic', view: 'relic', frames: 4 }, // RELICS
     { screen: 'end', view: 'victory', frames: 4, tone: 'victory' },
     { screen: 'end', view: 'defeat', frames: 3, tone: 'defeat' },
     { screen: 'transit', view: 'transit', frames: 4, tone: 'transit' }, // CAMPAIGN card
@@ -535,9 +545,26 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
           nextRoom: 4,
           options: [
             { win: 'kill_all', reward: 'skill' },
-            { win: 'defend', reward: 'node' },
+            { win: 'defend', reward: 'node', curse: 'iron_hide' },
           ],
           focus: 0,
+        },
+      },
+      // RELICS: a cursed room's relic page (one card of each rarity).
+      relic: {
+        ...base,
+        phase: 'relic',
+        relics: {
+          owned: [{ id: 'whetstone', ...RELICS.whetstone }],
+          curse: null,
+          cursesTaken: 1,
+          offer: {
+            room: 3,
+            source: 'curse',
+            focus: 1,
+            curse: { id: 'iron_hide', name: CURSES.iron_hide.name },
+            choices: ['millstone', 'hearthstone', 'last_light'].map((id) => ({ id, ...RELICS[id] })),
+          },
         },
       },
       victory: { ...base, phase: 'victory', summary },
@@ -700,6 +727,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const sys = run();
     if (!sys) return;
     const v = sys.view();
+    relicStrip.update(v); // RELICS: the strip under the Glint plate
     setScreen(SCREEN_FOR[v.phase] ?? 'none');
     setVeilTone(v.phase);
     fade.classList.toggle('rn-on', v.phase === 'fade');
@@ -826,6 +854,13 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     }
     return 0;
   }
+  // RELICS: a toast when the party walks into a cursed room (the strip
+  // carries it for the rest of the room).
+  bus.on('curse_apply', (ev) => {
+    const a = service('app');
+    const c = CURSES[ev.curse];
+    if (a && typeof a.toast === 'function' && c) a.toast(`Cursed room: ${c.name}. ${c.text} Clear it for a relic.`, { tone: 'info', ms: 5200 });
+  });
   // A run ending or a room starting must never leave a page hanging.
   bus.on('room_start', () => setScreen('none'));
 
