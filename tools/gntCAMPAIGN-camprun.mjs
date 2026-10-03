@@ -4,7 +4,7 @@
 // (src/sim/autopilot.js: drafts taken, first door, cheapest shop, auto-fill,
 // the level-transition card advanced at its untilTick) and reports, per
 // level: every room { room, mode, layoutId, ticksToClear, partyDamageTaken,
-// downs }, the level outcome, the §4.2 playability band per level, plus a
+// downs, minHpFrac }, the level outcome, the §4.2 playability band per level, plus a
 // carry / restore / reset diff at every transition (the §12.3 table).
 //
 //   node tools/gntCAMPAIGN-camprun.mjs --from 1|2|3 --seeds 1-5 [--node 1] [--challenge standard] [--out f]
@@ -88,7 +88,7 @@ function installCollector(ctx) {
     }
   });
   on('room_enter', (e) => {
-    cur = { room: e.index, mode: e.mode, layoutId: e.layoutId ?? null, act: e.act ?? null, startTick: e.tick, endTick: null, partyDamageTaken: 0, downs: 0 };
+    cur = { room: e.index, mode: e.mode, layoutId: e.layoutId ?? null, act: e.act ?? null, startTick: e.tick, endTick: null, partyDamageTaken: 0, downs: 0, minHpFrac: 1 };
     if (lv) lv.rooms.push(cur);
   });
   on('room_cleared', (e) => {
@@ -96,8 +96,13 @@ function installCollector(ctx) {
   });
   on('hit', (e) => {
     if (!cur) return;
-    if (party.has(e.kind)) cur.partyDamageTaken += e.amount + (e.absorbed ?? 0);
-    else if (e.kind === 'waystone') cur.partyDamageTaken += e.amount;
+    if (party.has(e.kind)) {
+      cur.partyDamageTaken += e.amount + (e.absorbed ?? 0);
+      // GP.13 (d) Level 1 (ruling 2026-10-03): the lowest HP fraction any
+      // party member reaches in the room. `hit` fires after the HP write.
+      const t = registry.byId ? registry.byId(e.target) : registry.all().find((x) => x.id === e.target);
+      if (t && t.maxHp > 0 && Number.isFinite(t.hp)) cur.minHpFrac = Math.min(cur.minHpFrac, Math.max(0, t.hp) / t.maxHp);
+    } else if (e.kind === 'waystone') cur.partyDamageTaken += e.amount;
   });
   on('downed', () => {
     if (cur) cur.downs += 1;
@@ -130,6 +135,7 @@ function installCollector(ctx) {
         ticksToClear: r.endTick !== null ? r.endTick - r.startTick : null,
         partyDamageTaken: Math.round(r.partyDamageTaken * 10) / 10,
         downs: r.downs,
+        minHpFrac: Math.round(r.minHpFrac * 1000) / 1000,
         startTick: r.startTick,
       })),
     })),

@@ -10,7 +10,9 @@
 //   (b) per level, the median party damage per combat room and the median
 //       time-to-clear within x0.75-x1.35 of the baseline;
 //   (c) the Level 3 Stag room's median party damage >= 0.8 x baseline;
-//   (d) >= 1 party down per level on >= 2 of 5 seeds.
+//   (d) >= 1 party down per level on >= 2 of 5 seeds; on Level 1 a seed also
+//       counts when a member drops below 35 % HP (the design owner's ruling,
+//       2026-10-03: Level 1's bite is an HP dip, not a down — PLAN GP.13).
 //
 //   node tools/gntPARTY-band.mjs [--seeds 1-5] [--from 1,2,3] [--root <checkout>] [--tag now] [--reuse 1]
 //   --reuse 1  read the tagged runner outputs instead of re-running them.
@@ -36,6 +38,8 @@ const med = (a) => {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 };
 const r2 = (v) => (v === null ? null : Math.round(v * 100) / 100);
+// GP.13 (d) on Level 1: a member below this HP fraction counts as the bite.
+const L1_BITE_HP = 0.35;
 
 function runOnce(from) {
   const out = `captures/gntPARTY-band-${TAG}-from${from}.json`;
@@ -55,12 +59,14 @@ function stats(json) {
   const per = {};
   for (const run of json.runs) {
     for (const lv of run.levels) {
-      const L = (per[lv.level] = per[lv.level] || { dmg: [], ticks: [], boss: [], downsBySeed: {}, cleared: 0, reached: 0 });
+      const L = (per[lv.level] = per[lv.level] || { dmg: [], ticks: [], boss: [], downsBySeed: {}, minHpBySeed: {}, cleared: 0, reached: 0 });
       L.reached += 1;
       if (lv.outcome === 'cleared') L.cleared += 1;
       let downs = 0;
+      let minHp = null; // null when the runner output predates minHpFrac
       for (const rm of lv.rooms) {
         downs += rm.downs || 0;
+        if (Number.isFinite(rm.minHpFrac)) minHp = Math.min(minHp ?? 1, rm.minHpFrac);
         if (rm.mode === 'kill_all' || rm.mode === 'defend') {
           if (Number.isFinite(rm.partyDamageTaken)) L.dmg.push(rm.partyDamageTaken);
           if (Number.isFinite(rm.ticksToClear)) L.ticks.push(rm.ticksToClear);
@@ -68,6 +74,7 @@ function stats(json) {
         if (rm.mode === 'boss' && Number.isFinite(rm.partyDamageTaken)) L.boss.push(rm.partyDamageTaken);
       }
       L.downsBySeed[run.seed] = (L.downsBySeed[run.seed] || 0) + downs;
+      if (minHp !== null) L.minHpBySeed[run.seed] = Math.min(L.minHpBySeed[run.seed] ?? 1, minHp);
     }
   }
   return per;
@@ -110,16 +117,26 @@ for (const from of FROMS) {
       bossDamage: r2(med(n.boss)),
       baseBossDamage: r2(med(b.boss)),
       downsBySeed: n.downsBySeed,
+      minHpBySeed: n.minHpBySeed,
     };
     report.levels[`${from}:${lvl}`] = row;
     gate(`(b) from ${from} L${lvl}: combat-room median damage x${row.damageRatio} (${row.medDamage} vs ${row.baseDamage}) and time-to-clear x${row.ttcRatio} (${row.medTicks} vs ${row.baseTicks} ticks) within x0.75-x1.35`, dmgR >= 0.75 && dmgR <= 1.35 && ttcR >= 0.75 && ttcR <= 1.35, row);
     if (lvl === 3) gate(`(c) from ${from} L3: the Stag room's median party damage ${row.bossDamage} >= 0.8 x ${row.baseBossDamage}`, med(n.boss) >= 0.8 * med(b.boss), { now: row.bossDamage, base: row.baseBossDamage });
-    const seedsWithDown = Object.values(n.downsBySeed).filter((d) => d >= 1).length;
-    const baseWithDown = Object.values(b.downsBySeed).filter((d) => d >= 1).length;
     // The v0.5.150 baseline's own count is printed alongside: on the carried
     // Levels 1-2 it is 0 of 5 (BUILD_BRIEF §23.2 PARTY note: (d) there cannot
     // be met without breaking (b)'s x1.35 ceiling — a recorded design conflict).
-    gate(`(d) from ${from} L${lvl}: >= 1 party down on >= 2 of ${Object.keys(n.downsBySeed).length} seeds (${seedsWithDown}; the v0.5.150 baseline: ${baseWithDown} of ${Object.keys(b.downsBySeed).length})`, seedsWithDown >= 2, n.downsBySeed);
+    if (lvl === 1) {
+      // Level 1 (ruling 2026-10-03): a down OR a member below 35 % HP.
+      const bit = (L) => (s) => (L.downsBySeed[s] || 0) >= 1 || (Number.isFinite(L.minHpBySeed[s]) && L.minHpBySeed[s] < L1_BITE_HP);
+      const seedsBit = Object.keys(n.downsBySeed).filter(bit(n)).length;
+      const baseBit = Object.keys(b.minHpBySeed).length ? `${Object.keys(b.downsBySeed).filter(bit(b)).length} of ${Object.keys(b.downsBySeed).length}` : 'n/a (no minHpFrac)';
+      const noHp = Object.keys(n.downsBySeed).length > 0 && Object.keys(n.minHpBySeed).length === 0;
+      gate(`(d) from ${from} L1: a party down or a member below ${L1_BITE_HP * 100} % HP on >= 2 of ${Object.keys(n.downsBySeed).length} seeds (${seedsBit}; the v0.5.150 baseline: ${baseBit})`, !noHp && seedsBit >= 2, { downsBySeed: n.downsBySeed, minHpBySeed: n.minHpBySeed });
+    } else {
+      const seedsWithDown = Object.values(n.downsBySeed).filter((d) => d >= 1).length;
+      const baseWithDown = Object.values(b.downsBySeed).filter((d) => d >= 1).length;
+      gate(`(d) from ${from} L${lvl}: >= 1 party down on >= 2 of ${Object.keys(n.downsBySeed).length} seeds (${seedsWithDown}; the v0.5.150 baseline: ${baseWithDown} of ${Object.keys(b.downsBySeed).length})`, seedsWithDown >= 2, n.downsBySeed);
+    }
   }
 }
 writeFileSync(`captures/gntPARTY-band-${TAG}.json`, JSON.stringify(report, null, 1));
