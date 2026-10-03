@@ -15,6 +15,10 @@ export function setImpactFx(api) {
   active = api || null;
 }
 
+export function setImpactFxDirected(on) {
+  impactFx.directed = !!on;
+}
+
 export const impactFx = {
   // Every ordinary hit: dark debris + a spark + a smoke puff (check 5).
   hit(x, z, opts) {
@@ -36,6 +40,11 @@ export const impactFx = {
   scorch(x, z, radius) {
     if (active) active.decals.scorch(x, z, radius);
   },
+  // VFX redesign: a styled spray of one particle family (render/vfx/
+  // signature.js recipes): spray('spark'|'chunk'|'smoke'|'shard', x, y, z, n, opts).
+  spray(mode, x, y, z, n, opts) {
+    if (active && active.particles.spray) active.particles.spray(mode, x, y, z, n, opts);
+  },
   // Persistent dark splat (kills).
   splat(x, z) {
     if (active) active.decals.spawn(x, z);
@@ -43,4 +52,7 @@ export const impactFx = {
   get ready() {
     return !!active;
   },
+  // True while the VFX director (render/vfx/signature.js) draws the styled
+  // hit / kill debris itself — the scene then skips its generic burst.
+  directed: false,
 };

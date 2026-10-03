@@ -1,0 +1,180 @@
+# VFX redesign — class signatures, enemy and boss effects
+
+Owner: VFX (the user's 2026-10-02 request). This document replaces the
+queued "upgrade the skill VFX" design (PROGRESS G41, `design-VFX.md` was its
+planned file) and is the binding source for every combat effect.
+
+The user's words: *"design high-quality VFX (VFX Style, Energy & Shapes,
+Light & Glow, Debris & Pacing, Camera & View; all of it need to match the
+class of the character) and replace current VFX of all character and enemies
+and boss"*.
+
+## 1. What was wrong
+
+Before this change every party member shared one damage grammar: a
+Parchment-white core with a Hearth Amber glow (BUILD_BRIEF §19.4, "player
+damage bolts"). The Tank's Heavy Slam, the Swordsman's Flurry and the Archer's
+Volley all drew the same amber wedge or the same amber ring, so a fight read
+as "a lot of orange flashes" and nobody could tell who did what. Enemies were
+better separated (Ember telegraphs), but their hits all threw the same spark
+and puff, and the Stag's quake was an Ember ring plus a shake.
+
+## 2. Rules that do not change
+
+These stay binding, because gameplay readability depends on them:
+
+- **Ember Danger** (`#FF5A36`) is enemy threat only: telegraphs, enemy shots,
+  enemy hits on the party. No party effect uses it.
+- **Bright Heal** (`#5FE873`) is heal output only. No damage effect is green.
+- **God-stuff Violet** (`#B79CF0`) is the Stag and corruption only.
+- **Signal Blue** stays the mark reticle glyph.
+- Telegraph *shapes* (lanes, rings, cones, chevrons) and their timing are sim
+  truth and are not redrawn here; only what plays around them changes.
+- Nothing is communicated by colour alone. Each class and each enemy is told
+  apart by **shape** first, colour second.
+- Effects never hide a character: ground layers stay under the bodies,
+  airborne layers fade out above head height (~1.6 u).
+- Render-only. No sim number, event or RNG draw changes, so the goldens and
+  eventsHash traces are untouched. All randomness uses the cosmetic stream.
+
+## 3. What changes in the colour law
+
+§19.4's "player damage = parchment core + amber glow" becomes **per class**.
+Every class keeps a Parchment-white hot core (so damage still reads as
+"ours"), and gets its own glow hue, debris material and shape language. The
+hues are picked to stay clear of the reserved ones above:
+
+| Class | Signature glow | Second tone | Debris | Hue gap to the nearest reserved hue |
+|---|---|---|---|---|
+| Healer (mouse) | Lantern Gold `#E8A23D` (Hearth Amber) | Bright Heal on heals | soft petals and motes | Ember 25°, Heal 92° |
+| Tank (badger) | Forge Steel `#9DB8CF` | Earth Ochre `#8F6B45` | rock chunks and dust | Signal Blue 6°, but desaturated (s 0.24 vs 0.62) and never a glyph |
+| Swordsman (fox) | Fox Crimson `#E8577A` | Moon Silver `#E7E3F0` | thin blade glints | Ember 32°, Violet 82° |
+| Archer (hare) | Wind Jade `#5ED3C0` | Feather Bone `#C9C2B3` | feathers and wind streaks | Heal 42°, Signal Blue 34° |
+
+The hexes live in `src/data/palette.js` (`VFX_SIGNATURE`), the only place
+render code may take a colour from.
+
+## 4. The five pillars, per class
+
+Each class row answers the five things the user asked for.
+
+### Healer — "lantern in the dark"
+
+| Pillar | Design |
+|---|---|
+| Style | Soft, round, warm. Storybook lantern light and petals. |
+| Energy & shapes | Circles, blooms, rising spirals. Bolts are round lantern orbs with a short soft tail; heals are petal rings that open outward and motes that rise. Nothing has a hard corner. |
+| Light & glow | The strongest *glow* of the party, but low *contrast*: a wide warm pool of light on the ground under every cast and impact (fake light, no extra scene lights). Heals keep the Bright Heal core and the "+HP" glyph. |
+| Debris & pacing | Almost no debris: petals and motes drift up and linger (0.8–1.2 s). Pacing is a swell: 0.12 s gather, a soft bloom, a long fade. |
+| Camera & view | No kick on casts. Big heals (Nova Bloom, Hearthsong, Mending Tide) add a small inward "breath" (dolly 0.04 u) so a party-wide heal feels like a held breath. |
+
+### Tank — "the mountain hits back"
+
+| Pillar | Design |
+|---|---|
+| Style | Heavy, blunt, physical. Iron and earth. |
+| Energy & shapes | Thick short arcs, squares, jagged rings, ground cracks. Swings draw a wide blunt crescent with a hard leading edge; slams draw a jagged shockwave plus radial crack lines; Iron Stance and Shield Wall use a square/hex plate motif. |
+| Light & glow | Little glow, cold steel sparks on the hard edge only. The light pool is small and brief: the Tank's light is the flash of metal, not a lantern. |
+| Debris & pacing | The most debris of any class: rock chunks that arc and land, dust clouds that roll outward and settle, a crack decal that stays ~1.5 s. Pacing is anticipation then weight: a 0.08 s squash, an impact frame held ~5 frames, debris for 0.6–0.9 s. |
+| Camera & view | A directional kick (0.05 u) along the swing on every connecting skill, the strongest party kick. Ground Crack and Taunting Roar add a short dolly punch toward the impact. |
+
+### Swordsman — "a red line, then the cut"
+
+| Pillar | Design |
+|---|---|
+| Style | Fast, sharp, elegant. Crimson ink strokes with silver edges. |
+| Energy & shapes | Thin long crescents, X-crosses, straight dash lines, orbiting blade glints. Flurry draws three thin offset slashes in quick succession; Crescent Finisher draws a wide double crescent; Blade Storm draws a full spinning ring of slashes; Fox Step and Lunge draw a straight silver line along the path. |
+| Light & glow | Bright thin edges, narrow glow. Crimson light pool is narrow and short. A white glint pops at the tip of each slash. |
+| Debris & pacing | Light debris: a few silver blade glints and sparks flung along the cut, no dust. Pacing is snap: no wind-up, the slash sweeps in 0.06–0.1 s and is gone by 0.25 s; afterimage lines hold 0.2 s. |
+| Camera & view | A short sharp kick along the cut (0.03 u, 70 ms). No dolly — speed, not weight. |
+
+### Archer — "wind and precision"
+
+| Pillar | Design |
+|---|---|
+| Style | Precise, airy, long. Jade wind lines and feathers. |
+| Energy & shapes | Straight lines and points. Arrows are long thin darts with a jade wind trail; Piercing Shot leaves a straight streak through everything it passed; Volley fans three streaks; Rain of Arrows drops vertical streaks into a ring; Detonating Charge plants a pulsing point that bursts into a star of short lines; Kestrel Watch circles a feather. |
+| Light & glow | Thin bright cores, long faint trails. A small sharp light pool where an arrow lands; a release flash at the bow. |
+| Debris & pacing | Feathers drift down slowly (0.9 s), wind streak motes travel along the shot. Pacing is release: an instant flash at the bow, a long clean trail (0.35 s), a crisp pin-point impact. |
+| Camera & view | No kick on release. Detonating Charge and Sundering Nova get a small burst kick (0.03 u) away from the blast. |
+
+## 5. Enemies — one threat colour, seven shapes
+
+Every enemy keeps Ember as its threat colour and the indigo corruption tell.
+What tells them apart is the shape of what they throw and what their hits
+leave behind. These are drawn by the shared enemy style table, so a new enemy
+type gets a sensible default (§7) and can opt into its own row.
+
+| Enemy | Attack effect | Impact on the party | Death |
+|---|---|---|---|
+| Thorn Boar | dust kicked up behind the charge, gouge streaks | dirt clods + Ember sparks | dirt burst |
+| Spitting Mantis | thin Ember sickle-shaped spit with a wet trail | short needle spray | chitin shards |
+| Quillback | quills trail off the roll; a radial quill burst at the lane's end | quill shards | quill burst |
+| Mire Toad | a dark glossy glob with drip trail; splash ring on landing | droplets | wet splash ring |
+| Gloam Moth | scale-dust trail on the swoop | pale dust puff | dust cloud that settles |
+| Barrow Ram | stone sparks and a forward shock cone on the slam | stone chips | stone chunks |
+| Grave Mole | an earth eruption with rock chunks when it surfaces | rock chips | earth burst |
+
+Pillars for all enemies: **style** cold and wrong, never round and warm;
+**shapes** angular (spikes, sickles, cones); **light** Ember only on the
+attack itself, indigo glints on the body; **debris** matches the body
+material (dirt, chitin, quills, slime, dust, stone, earth); **camera** only
+the sim's own shake on heavy hits, no added kick (the party should feel the
+weight, not the enemy).
+
+## 6. The Hollow Stag
+
+| Pillar | Design |
+|---|---|
+| Style | Corrupted grandeur: violet veins under Ember threat. |
+| Energy & shapes | Antler forks and fracturing rings. Antler Quake: an Ember warning ring (unchanged), then on landing a violet fracture ring, radial ground cracks, a pillar of violet light and a dust wall rolling outward. Trample: hoof-strike crack plus a violet shock arc. Add waves: a violet flare from the antlers. |
+| Light & glow | The Stag is the brightest emitter in the room (unchanged); its quake throws the largest light pool of the game, violet fading to Ember. |
+| Debris & pacing | Heaviest debris in the game: rock chunks, a rolling dust wall, violet embers that hang for 1.5 s. Pacing: the sim's telegraph is the anticipation, the landing holds ~6 frames, then the long linger. |
+| Camera & view | The sim's stomp shake (unchanged) plus a dolly punch toward the landing (0.08 u, the largest in the game) and a 2-frame vignette pulse via the light pool. |
+
+## 7. Architecture
+
+```
+src/data/palette.js      VFX_SIGNATURE hexes (the only colour source)
+src/data/vfx.js          VFX style table: classes, enemies, boss, defaults;
+                         vfxClassStyle(id) / vfxEnemyStyle(kind) never throw
+src/render/vfx/kit.js    pooled primitives: slash, shockwave, light pool,
+                         flash, streak, cracks, pillar (one shared program
+                         each, fixed pools, no per-cast allocations)
+src/render/vfx/camerafx.js  render-only kick + dolly punch (scaled by the
+                         Screen shake setting; Reduced effects turns it off)
+src/render/vfx/signature.js the director: listens to cast / hit / death /
+                         enemy / boss events and plays each style's recipe
+```
+
+- **New enemies pick it up for free.** `vfxEnemyStyle(kind)` falls back to a
+  default row built from the enemy's family (`charger`, `shooter`, `lobber`,
+  `flyer`, `burrower`, `brute`), and to a generic Ember row when nothing is
+  known. A new enemy type adds one row to `ENEMY_VFX` in `src/data/vfx.js` to
+  get its own debris and shapes; no render file needs editing.
+- **Replacing the old layers.** The generic amber wedge/ring the ally layer
+  drew for every class, the amber skill-bolt rig used for Archer arrows, the
+  amber class-skill accents and the one-size spark on every hit are replaced
+  by the class recipes. Heal grammar (Bright Heal, "+HP"), status glyphs, the
+  mark reticle, revive rings and all enemy telegraph shapes stay as they are.
+- **Budget.** Every primitive is a fixed pool (slashes 24, rings 24, light
+  pools 16, streaks 48, cracks 12, pillars 8) plus the existing three particle
+  clouds (caps raised to 160 / 120 / 56). A full four-class fight with seven
+  enemies stays within ~12 extra draw calls.
+
+## 8. Settings
+
+Settings ▸ Gameplay gains **Effects: Full / Reduced** (`gameplay.effects`).
+Reduced halves particle counts, turns off the camera kick and dolly, removes
+the light-pool flash and keeps every gameplay-relevant shape (telegraphs,
+heal glyphs, status rings). The existing Screen shake setting also scales
+the kick and dolly (Off turns them off).
+
+## 9. Verification
+
+- `node tools/vfx-gallery.mjs <prefix>` stages a live room with all seven
+  enemy types, fires all 24 Tank/Swordsman/Archer skills and the Healer's
+  skills, then the Stag's room, and screenshots each beat.
+- `__echoes.content.vfx()` reports the director's live counts per primitive
+  and the camera offset.
+- Smoke, the core loop and the 9 goldens must stay green (render-only change).

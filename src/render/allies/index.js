@@ -52,6 +52,8 @@ import { warmPark } from '../warmup.js';
 import { createCritter, FALL_ANGLE } from '../critters/index.js';
 import { exactColor, exactHex, makeSwingSmear } from '../critters/common.js';
 import { ALLY_CLASSES, ALLY_KITS, REVIVE } from '../../sim/allies.js';
+import { vfxClassStyle } from '../../data/vfx.js';
+import { impactFx } from '../vfx/hub.js';
 
 const PARCH = PALETTE.parchment;
 const AMBER = PALETTE.hearthAmber;
@@ -325,14 +327,21 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   const byId = (id) => world.entities().find((e) => e.id === id) ?? null;
 
   // ------------------------------------------------------------ bus wiring --
+  // VFX redesign (docs/gauntlet/design-VFX.md): the swing / burst a cast
+  // draws is each class's own now — render/vfx/signature.js plays it from the
+  // class row in src/data/vfx.js. This layer keeps the pose (cast hold).
+  // The old shared Parchment + Hearth Amber wedge (spawnWedge) and nova ring
+  // are kept below only as the fallback when no director is running.
   bus.on('ally_basic', (ev) => {
     const st = rigState.get(ev.classId);
     if (st) st.castLeft = CAST_HOLD;
+    if (impactFx.directed) return;
     if (ev.shape === 'melee_arc') spawnWedge(ev, ev.reach, ev.halfAngle, 0.28);
   });
   bus.on('ally_cast', (ev) => {
     const st = rigState.get(ev.classId);
     if (st) st.castLeft = CAST_HOLD;
+    if (impactFx.directed) return;
     if (ev.shape === 'melee_arc') spawnWedge(ev, ev.reach, ev.halfAngle, 0.4);
     else if (ev.shape === 'nova') {
       spawnRing(ev.x, ev.z, { from: 0.25, to: ev.radius, life: 0.4, opacity: 0.85 });
@@ -375,8 +384,9 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       to: rig.radius,
       life: 0.3,
       opacity: 0.6,
+      color: rig.glow,
     });
-    spawnMotes(rig.g.position.x, rig.g.position.z, { count: 5, spread: rig.radius * 0.8 });
+    spawnMotes(rig.g.position.x, rig.g.position.z, { count: 5, spread: rig.radius * 0.8, color: rig.glow });
   });
   bus.on('revive', (ev) => {
     const m = byId(ev.target);
@@ -564,7 +574,13 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   // §19.4 AoE grammar: layered translucent discs + rim + particles. Party
   // damage family = Parchment core over a Hearth Amber glow.
   const zoneRigs = new Map(); // azone id -> { g, radius, pulseT, moteClock }
-  function makeZoneRig(radius) {
+  // VFX redesign: a zone wears its caster's class signature (Tank Forge
+  // Steel, Swordsman Fox Crimson, Archer Wind Jade) instead of the shared
+  // Hearth Amber, so whose ground it is reads at a glance.
+  function makeZoneRig(radius, classId = null) {
+    const vs = vfxClassStyle(classId);
+    const AMBER = vs.glow;
+    const PARCH = vs.id === 'swordsman' ? vs.second : vs.core;
     const g = new Group();
     // Shared per radius (F1): an ally AoE rig is built per sim zone and dropped
     // when it expires, so these three discs used to leak on every kit cast.
@@ -882,7 +898,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       seenZones.add(e.id);
       let rig = zoneRigs.get(e.id);
       if (!rig) {
-        rig = { g: makeZoneRig(e.radius), radius: e.radius, pulseT: 0, moteClock: 0 };
+        rig = { g: makeZoneRig(e.radius, e.classId), radius: e.radius, pulseT: 0, moteClock: 0, glow: vfxClassStyle(e.classId).glow };
         rig.g.position.set(e.x, 0.012, e.z);
         root.add(rig.g);
         zoneRigs.set(e.id, rig);
@@ -894,7 +910,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       rig.moteClock += dt;
       if (rig.moteClock > 0.35) {
         rig.moteClock = 0;
-        spawnMotes(e.x, e.z, { count: 2, spread: rig.radius * 0.85 });
+        spawnMotes(e.x, e.z, { count: 2, spread: rig.radius * 0.85, color: rig.glow });
       }
     }
     for (const [id, rig] of zoneRigs) {
