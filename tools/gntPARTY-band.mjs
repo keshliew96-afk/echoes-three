@@ -21,7 +21,7 @@
 // in git): node tools/gntCAMPAIGN-camprun.mjs --from 1 --seeds 1-40 --stop-after 1
 //   --root <git archive 2a6139b> --out captures/gntPARTY-baseline-l1.json
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 
 const argv = process.argv.slice(2);
 const opt = (k, d = null) => {
@@ -48,13 +48,18 @@ const L1_BITE_HP = 0.35;
 
 function runOnce(from, l1 = false) {
   const out = l1 ? `captures/gntPARTY-band-${TAG}-l1.json` : `captures/gntPARTY-band-${TAG}-from${from}.json`;
+  // A tag recorded before the Level 1 run existed must not pair its outputs
+  // with a fresh Level 1 run of whatever tree is here now.
+  if (REUSE && l1 && !existsSync(out)) throw new Error(`--reuse: ${out} is missing (the tag predates the Level 1 run) — re-run without --reuse`);
   if (!(REUSE && existsSync(out))) {
     const args = ['tools/gntCAMPAIGN-camprun.mjs', '--from', String(from), '--seeds', l1 ? L1_SEEDS : SEEDS, '--out', out];
     if (l1) args.push('--stop-after', '1');
     if (ROOT) args.push('--root', ROOT);
+    // A failed run must never leave an earlier run's file to be read as this one.
+    rmSync(out, { force: true });
     const t0 = Date.now();
     const r = spawnSync(process.execPath, args, { encoding: 'utf8', maxBuffer: 64 << 20 });
-    if (r.status !== 0 && !existsSync(out)) throw new Error(`camprun --from ${from} failed: ${(r.stderr || r.stdout || '').slice(-800)}`);
+    if (r.status !== 0 || !existsSync(out)) throw new Error(`camprun --from ${from}${l1 ? ' --stop-after 1' : ''} failed (exit ${r.status}): ${(r.stderr || r.stdout || '').slice(-800)}`);
     console.log(`[band] ${l1 ? `Level 1 only, seeds ${L1_SEEDS}` : `from ${from}`}: ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   }
   return JSON.parse(readFileSync(out, 'utf8'));

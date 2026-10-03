@@ -580,7 +580,8 @@ the idle-fallback share; `--trace` prints positions / targets / cooldowns every
 dash / vault / lunge end point against the SEAT's ring (the melee pair's
 vanguard ring 5.4 u in a campaign, BUILD_BRIEF §25.8; GP.8 wants 0).
 `node tools/gntfixM4a5-band.mjs --seeds 1-5 --tag T` = `gntPARTY-band` (GP.13)
-with renamed outputs; `node tools/gntfixM4a5-sweep.mjs --root <scratch>
+as of fix-M4a-r5, with renamed outputs (its (d) still wants a down on Level 1;
+`gntPARTY-band` is the current gate); `node tools/gntfixM4a5-sweep.mjs --root <scratch>
 --seeds 1-10 "K=V ..."` runs env-knob variants of a scratch checkout in
 parallel against GP.13 (a)–(d) + GP.8. Page (GPU harness; `ECHOES_URL` = a
 production preview): `tools/gntfixM4a5-socketui.mjs W H` (the critic's G4c.5
@@ -2098,7 +2099,9 @@ numbers are the pass bars):
     `captures/gntPARTY-baseline-from{1,2,3}.json`: the §4.2 / GC.12 band;
     per-level median party damage per combat room and time-to-clear within
     ×0.75–×1.35 of baseline; the L3 Stag room's damage ≥ 0.8 × baseline;
-    ≥ 1 party down per level on ≥ 2 of 5 seeds; `node
+    ≥ 1 party down per level on ≥ 2 of 5 seeds, except Level 1, whose bite
+    is a down or a member below 35 % HP on at least as many of seeds 1–40
+    as the baseline (`tools/gntPARTY-band.mjs` runs all of this); `node
     tools/gntfixM4a3-g4a5.mjs` passes against the new §23.2 note. Spot-check
     2 seeds in page.
 14. **The Healer unchanged (GP.14)** — `node tools/gntPARTYD-grid.mjs` (the
