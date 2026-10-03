@@ -1,0 +1,60 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>({v:__echoes.version,tick:__echoes.tick,state:__echoes.app.state,run:__echoes.state().run}))()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__t0=__echoes.tick;return __echoes.tick})()"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause');const items=el?[...el.querySelectorAll('[data-nav]')].map(b=>({id:b.id,lab:(b.querySelector('.pz-lab')||{}).textContent,cap:(b.querySelector('.pz-cap')||{}).textContent||'',dis:!!b.disabled,r:(r=>({x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}))(b.getBoundingClientRect())})):null;return{v:__echoes.version,tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),reason:a.pauseReason(),focus:a.focus(),rings:a.ringCount(),where:el?el.querySelector('.pz-where').textContent:null,online:el?!el.querySelector('.pz-online').hidden:null,items}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({t0:window.__t0,now:__echoes.tick,elapsed:__echoes.tick-window.__t0}))()"
+ },
+ {
+  "type": "shot",
+  "name": "gntINT-pause-camp"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({stack:__echoes.app.stack(),simPaused:__echoes.app.simPaused(),tick:__echoes.tick}))()"
+ },
+ {
+  "type": "wait",
+  "ms": 500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({tickAfter:__echoes.tick,state:__echoes.app.state}))()"
+ },
+ {
+  "type": "shot",
+  "name": "gntINT-pause-resumed"
+ }
+]

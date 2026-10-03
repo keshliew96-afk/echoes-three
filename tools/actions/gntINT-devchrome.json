@@ -1,0 +1,48 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const q=id=>document.getElementById(id);const f=q('fps-meter');const d=q('debug-overlay');const v=q('version-label');const cs=e=>e?getComputedStyle(e):null;const r=e=>{const b=e.getBoundingClientRect();return{x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)}};return{TAG:'boot',state:__echoes.app.state,stack:__echoes.app.stack(),fpsMeter:f?{display:cs(f).display,visible:f.offsetParent!==null||cs(f).display!=='none',text:f.textContent}:null,debugPanel:d?{present:true,text:d.textContent.slice(0,20)}:null,version:v?{text:v.textContent,fontPx:cs(v).fontSize,rect:r(v)}:null,showFps:__echoes.settings.get('display.showFps'),strayIds:[...document.body.children].map(n=>n.id||n.tagName.toLowerCase()).filter(Boolean)}})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const q=id=>document.getElementById(id);const f=q('fps-meter');const d=q('debug-overlay');const v=q('version-label');const cs=e=>e?getComputedStyle(e):null;const r=e=>{const b=e.getBoundingClientRect();return{x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)}};return{TAG:'title',state:__echoes.app.state,stack:__echoes.app.stack(),fpsMeter:f?{display:cs(f).display,visible:f.offsetParent!==null||cs(f).display!=='none',text:f.textContent}:null,debugPanel:d?{present:true,text:d.textContent.slice(0,20)}:null,version:v?{text:v.textContent,fontPx:cs(v).fontSize,rect:r(v)}:null,showFps:__echoes.settings.get('display.showFps'),strayIds:[...document.body.children].map(n=>n.id||n.tagName.toLowerCase()).filter(Boolean)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntINT-prod-title"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({focus:__echoes.app.focus(),items:__echoes.app.focusables().map(f=>f.id+(f.label?':'+f.label.slice(0,28):''))}))()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 3000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const q=id=>document.getElementById(id);const f=q('fps-meter');const d=q('debug-overlay');const v=q('version-label');const cs=e=>e?getComputedStyle(e):null;const r=e=>{const b=e.getBoundingClientRect();return{x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height)}};return{TAG:'playing',state:__echoes.app.state,stack:__echoes.app.stack(),fpsMeter:f?{display:cs(f).display,visible:f.offsetParent!==null||cs(f).display!=='none',text:f.textContent}:null,debugPanel:d?{present:true,text:d.textContent.slice(0,20)}:null,version:v?{text:v.textContent,fontPx:cs(v).fontSize,rect:r(v)}:null,showFps:__echoes.settings.get('display.showFps'),strayIds:[...document.body.children].map(n=>n.id||n.tagName.toLowerCase()).filter(Boolean)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntINT-prod-newgame"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({tick:__echoes.tick,mode:__echoes.app.mode,camp:__echoes.cmd('campState').player}))()"
+ }
+]

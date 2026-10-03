@@ -1,0 +1,17 @@
+[
+ {"type":"wait","ms":2500},
+ {"type":"eval","code":"(()=>{__echoes.cmd('teleport',-3.3,-4.85);return __echoes.cmd('campState').levelTable})()"},
+ {"type":"wait","ms":900},
+ {"type":"eval","code":"(()=>__echoes.cmd('campState').levelTable)()"},
+ {"type":"shot","name":"gntCAMPAIGN-table-prompt"},
+ {"type":"key","key":"e"},
+ {"type":"wait","ms":700},
+ {"type":"eval","code":"(()=>({overlay:__echoes.app.overlay,cards:[...document.querySelectorAll('.cg-levels .cg-card')].length}))()"},
+ {"type":"key","key":"Escape"},
+ {"type":"wait","ms":500},
+ {"type":"eval","code":"(()=>({overlay:__echoes.app.overlay,active:__echoes.state().run.active,table:__echoes.cmd('campState').levelTable.promptVisible}))()"},
+ {"type":"eval","code":"(()=>{__echoes.cmd('teleport',0,-5.2);return __echoes.cmd('campState').inPortal})()"},
+ {"type":"wait","ms":700},
+ {"type":"shot","name":"gntCAMPAIGN-table-portal"},
+ {"type":"eval","code":"(()=>{const c=document.querySelector('#camp-prompt .cp-levels');const r=c.getBoundingClientRect();return {inPortal:__echoes.cmd('campState').inPortal,chip:{x:Math.round(r.x+r.width/2),y:Math.round(r.y+r.height/2)},text:__echoes.cmd('campState').portalPromptText}})()"}
+]

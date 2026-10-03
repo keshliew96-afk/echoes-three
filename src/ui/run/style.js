@@ -39,6 +39,21 @@ export function isCompact() {
   return window.innerHeight < COMPACT_BELOW_H;
 }
 
+// PARTY (GP.6, PLAN §16.4 layouts): the party page carries the character
+// strip, the owner band and — on an ally's swap card — the Replaces row, the
+// replace line AND the ally's spoils; stacked, that page measured 659–696 px,
+// taller than the room above the command bar of any window under ~860 px
+// (1024x576 .. 1366x768). Below this height the party page REFLOWS again
+// (`.rn-short`): the strip becomes the page's header (the title and its
+// ornament are dropped), the slots line and the owner band share one row, the
+// Replaces slots sit in a 2x2 grid BESIDE the card, and short notes share a
+// row. Every type size stays at its §17 floor or above.
+export const SHORT_BELOW_H = 860; // px of window height
+
+export function isShort() {
+  return window.innerHeight < SHORT_BELOW_H;
+}
+
 export const RUN_CSS = `
   #run-screen {
     position: fixed; inset: 0; z-index: 28; display: none;
@@ -203,12 +218,21 @@ export const RUN_CSS = `
          band-hidden captures — the shimmer would exist only on the player's
          screen. The visible band measures mean |delta| 5.8 / peak column 17.6
          over the card box (tools/certfixDshouldfix1-banddiff.mjs). */
+  /* gauntlet r5 PARTY: the band element keeps the card's box (clipped by the
+     card as before) and its ::before carries the gradient and the per-frame
+     sweep (--shx, written by ui/run/index.js) — the same 2D transform on the
+     same-size box, so the paint cost is unchanged, but a layout probe never
+     sees a shine box 130% past the card (off the window at 1024 / 1600 px
+     wide when the legendary card is the shelf's last). */
   .rn-card.rn-legendary > .rn-shine {
     position: absolute; top: -8%; bottom: -8%; left: 0; width: 100%;
-    pointer-events: none;
+    pointer-events: none; overflow: hidden;
+  }
+  .rn-card.rn-legendary > .rn-shine::before {
+    content: ''; position: absolute; inset: 0;
     background: linear-gradient(115deg, transparent 30%, ${PALETTE.hearthAmber}30 46%,
       ${PALETTE.godstuffVioletPeak}22 50%, transparent 66%);
-    transform: translateX(130%);
+    transform: translateX(var(--shx, 130%));
   }
   .rn-cardkind {
     font-size: 16px; letter-spacing: 0.28em; color: ${PALETTE.warmGrey};
@@ -229,6 +253,9 @@ export const RUN_CSS = `
   .rn-body { font-size: 17px; color: ${PALETTE.bone}; text-align: center; line-height: 1.35; }
   .rn-verdict { font-size: 17px; color: ${PALETTE.hearthAmber}; text-align: center; }
   .rn-verdict.rn-cold { color: ${PALETTE.warmGrey}; }
+  /* fix-M4a-r4: a node that UPGRADES a full build (glyph ⇧ + words, never
+     colour alone) — Pale Gold, the colour of what the shop sells. */
+  .rn-verdict.rn-upgrade { color: ${PALETTE.paleGold}; font-weight: 700; }
   .rn-note {
     margin-top: 10px; padding: 8px 14px; border-radius: 10px;
     border: 1px solid ${PALETTE.warmGrey}66; background: ${PALETTE.voidCharcoal};
@@ -253,6 +280,62 @@ export const RUN_CSS = `
     box-shadow: 0 0 18px ${PALETTE.hearthAmber}44;
   }
   .rn-btn.rn-primary { border-color: ${PALETTE.hearthAmber}AA; }
+  /* PARTY: the shop's character tabs + per-card owner band + Suggested marks. */
+  .rn-shop .rn-shopstrip { width: 100%; }
+  .rn-shop .rn-shopstrip .rn-pstrip { margin: 0 0 6px; }
+  /* The owner band and the Suggested ribbon: a tab row above each card. */
+  /* 2 px under the tabs + the item gap clear the 8 px hover lift, so a lifted
+     card never slides over its own owner tab / suggest ribbon (GP.6). */
+  .rn-itemtabs { display: flex; justify-content: space-between; width: 100%; gap: 6px; margin: 0 0 2px; min-height: 22px; }
+  .rn-minowner {
+    font-size: 16px; font-weight: 800; letter-spacing: 0.04em; color: ${PALETTE.parchment}; line-height: 20px;
+    background: ${PALETTE.voidCharcoal}; border: 1px solid ${PALETTE.warmGrey}66;
+    border-left: 5px solid var(--acc, ${PALETTE.warmGrey}); padding: 0 6px; border-radius: 5px;
+    white-space: nowrap;
+  }
+  .rn-suggest {
+    line-height: 20px; white-space: nowrap;
+    font-size: 16px; font-weight: 800; letter-spacing: 0;
+    padding: 0 7px; border-radius: 5px; color: ${PALETTE.warmGrey};
+    background: ${PALETTE.voidCharcoal}; border: 1px dashed ${PALETTE.warmGrey}88; cursor: pointer;
+  }
+  .rn-suggest.rn-on { color: ${PALETTE.voidCharcoal}; background: ${PALETTE.hearthAmber}; border: 1px solid ${PALETTE.hearthAmber}; }
+  /* PARTY: another player's card — read-only (the tab still shows it). */
+  .rn-btn.rn-disabled { opacity: 0.45; pointer-events: none; }
+  /* gauntlet r5 CAMPAIGN F3: on the reward / party page the button Enter
+     commits is FILLED (luminance + fill, never label colour alone); the
+     primary's resting amber border yields to the focus, so "Take · Replace"
+     and "Leave" never look alike. */
+  .rn-draft .rn-btn.rn-primary:not(.rn-focus) { border-color: ${PALETTE.warmGrey}88; }
+  .rn-draft .rn-btn.rn-focus {
+    background: ${PALETTE.hearthAmber}; color: ${PALETTE.voidCharcoal};
+    border-color: ${PALETTE.hearthAmber};
+  }
+
+  /* ------------------------------ Replaces selector (ruling A17 swap offer) */
+  /* The 4 owned skills under a swap card; the one the new skill would replace
+     is raised, outlined in Hearth Amber (§19.1 selection) and carries a ✕
+     badge + the word "replace" — never colour alone. */
+  .rn-replace { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
+  .rn-rep {
+    position: relative; width: 132px; padding: 8px 8px 7px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    border: 2px solid ${PALETTE.warmGrey}66; border-radius: 10px;
+    background: ${PALETTE.voidCharcoal}; cursor: pointer;
+    transition: border-color 120ms ease, transform 120ms ease;
+  }
+  .rn-rep:hover { border-color: ${PALETTE.bone}; }
+  .rn-rep .rn-repname { font-size: 16px; font-weight: 700; color: ${PALETTE.parchment}; text-align: center; line-height: 1.1; white-space: nowrap; }
+  .rn-rep .rn-repmeta { font-size: 16px; color: ${PALETTE.warmGrey}; font-variant-numeric: tabular-nums; }
+  .rn-rep .rn-repkey { position: absolute; left: 6px; top: 4px; font-size: 16px; color: ${PALETTE.warmGrey}; font-weight: 700; }
+  .rn-rep.rn-sel { border-color: ${PALETTE.hearthAmber}; transform: translateY(-3px); box-shadow: 0 0 16px ${PALETTE.hearthAmber}44; }
+  .rn-rep.rn-sel .rn-repmeta { color: ${PALETTE.hearthAmber}; }
+  .rn-rep .rn-repx {
+    position: absolute; right: 5px; top: 3px; display: none;
+    font-size: 16px; font-weight: 900; color: ${PALETTE.parchment};
+  }
+  .rn-rep.rn-sel .rn-repx { display: block; }
+  .rn-swapkind { color: ${PALETTE.hearthAmber}; }
 
   /* ------------------------------------------------------------ shop shelf */
   .rn-shelf { display: flex; gap: 26px; margin: 4px 0 2px; align-items: flex-start; }
@@ -290,6 +373,11 @@ export const RUN_CSS = `
      Everything else (prices below the card, item never greyed for price, one
      ~300 ms denial shake) is unchanged §16 behaviour. */
   #run-screen.rn-dock { align-items: flex-end; }
+  /* gauntlet r5 PARTY F4: a docked page that must shrink (a window under the
+     §1 minimum) scales TOWARD its dock line. Scaled about its centre it rose
+     by half the shrink and its header left the top of the window
+     (1024x576: the shop title / lamp / Glint strip at y < 0). */
+  #run-screen.rn-dock .rn-page { transform-origin: center bottom; }
   #run-screen .rn-shop {
     position: relative;
     padding: 13px 22px 15px;
@@ -445,7 +533,10 @@ export const RUN_CSS = `
   #run-screen .rn-shop .rn-cardhead {
     display: flex; align-items: baseline; gap: 9px; min-width: 0; white-space: nowrap;
   }
+  #run-screen .rn-shop .rn-cardsub .rn-sublimit { display: block; }
+  #run-screen .rn-shop .rn-cardsub .rn-cardkind,
   #run-screen .rn-shop .rn-cardhead .rn-cardkind {
+    display: inline-block; margin-right: 4px;
     font-size: 16px; letter-spacing: 0.06em; text-transform: uppercase;
     color: var(--rar, ${PALETTE.bone}); opacity: 0.92;
     padding: 2px 7px; border-radius: 6px;
@@ -667,6 +758,25 @@ export const RUN_CSS = `
   #run-screen.rn-compact .rn-stats i { font-size: 16px; }
   #run-screen.rn-compact .rn-note { font-size: 16px; padding: 4px 12px; margin-top: 5px; line-height: 1.2; }
 
+  #run-screen.rn-compact .rn-replace { margin-top: 6px; gap: 8px; }
+  #run-screen.rn-compact .rn-rep { width: 124px; padding: 5px 6px 5px; }
+
+  /* The party page's row groups stack like the page itself by default... */
+  .rn-headrow, .rn-cardrow, .rn-noterow { display: flex; flex-direction: column; align-items: center; }
+  /* ...and sit side by side in a short window (see isShort()). */
+  #run-screen.rn-short .rn-draft { padding: 10px 20px 10px; }
+  #run-screen.rn-short .rn-draft.rn-party .rn-title,
+  #run-screen.rn-short .rn-draft.rn-party .rn-orn { display: none; }
+  #run-screen.rn-short .rn-draft .rn-headrow { flex-direction: row; gap: 10px; margin-bottom: 8px; }
+  #run-screen.rn-short .rn-draft .rn-headrow .rn-strip { margin-bottom: 0; }
+  #run-screen.rn-short .rn-draft .rn-headrow .rn-owner { margin: 0; }
+  #run-screen.rn-short .rn-draft .rn-cardrow { flex-direction: row; align-items: center; gap: 14px; }
+  #run-screen.rn-short .rn-draft .rn-cardrow .rn-replace {
+    display: grid; grid-template-columns: repeat(2, auto); gap: 8px; margin-top: 0;
+  }
+  #run-screen.rn-short .rn-draft .rn-noterow {
+    flex-direction: row; flex-wrap: wrap; justify-content: center; column-gap: 10px; max-width: 920px;
+  }
   #run-screen.rn-compact .rn-buttons { margin-top: 10px; gap: 12px; }
   #run-screen.rn-compact .rn-btn { min-width: 132px; padding: 7px 16px; font-size: 18px; }
 
@@ -690,9 +800,14 @@ export const RUN_CSS = `
   #run-screen.rn-compact .rn-shop .rn-shelf { margin: 0; }
   #run-screen.rn-compact .rn-shop .rn-title { font-size: 23px; }
   /* §17 floor: HUD text is never below 16 px, tags included. */
+  #run-screen.rn-compact .rn-shop .rn-cardsub .rn-cardkind,
   #run-screen.rn-compact .rn-shop .rn-cardhead .rn-cardkind { font-size: 16px; padding: 0 6px; letter-spacing: 0.06em; }
+  /* M4c: FOUR cards on the shelf. 216 px in the compact reflow keeps the
+     whole plate inside a 1024 px window (4 x 216 + 3 x 14 + 40 = 946) at the
+     same §17 type sizes; the rarity tag rides the sub line (cards.js row). */
+  #run-screen.rn-compact .rn-shop .rn-shelf { gap: 14px; }
   #run-screen.rn-compact .rn-shop .rn-item,
-  #run-screen.rn-compact .rn-shop .rn-item .rn-card { width: 280px; }
+  #run-screen.rn-compact .rn-shop .rn-item .rn-card { width: 216px; }
   #run-screen.rn-compact .rn-shop .rn-buttons { margin-top: 6px; }
   #run-screen.rn-compact .rn-shop .rn-lamp { top: -6px; height: 120px; }
 

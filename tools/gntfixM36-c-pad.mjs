@@ -1,0 +1,82 @@
+// gntfixM36 copy of tools/gntcaudio6-pad.mjs (critic probe; own port 4303 + outputs captures/gntfixM36/<tag>-*) — gntcaudio6 — G3.9 "Audio tab fully operable by pad": a mocked standard-mapping gamepad (navigator.getGamepads)
+// drives title -> Settings -> Audio tab; d-pad / stick walk the rows, d-pad Left/Right change a slider, A toggles
+// Curve / Mute and fires Test, LB/RB switch tabs, B backs out. Every step records focus, settings, bus dB and cues.
+import { bootTap, out, sleep } from './gntfixM36-lib.mjs';
+import { launchEchoes } from './gnt-arch-browser.mjs';
+const GF_TAG = process.env.GNTFIXM36_TAG || 'run';
+const PAD = `(() => {
+  const buttons = Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 }));
+  const pad = { id: 'gntcaudio6 mock pad (STANDARD GAMEPAD)', index: 0, connected: true, mapping: 'standard', axes: [0, 0, 0, 0], buttons, timestamp: 0 };
+  navigator.getGamepads = () => { pad.timestamp = performance.now(); return [pad, null, null, null]; };
+  window.__gcaPress = (i, on) => { buttons[i].pressed = !!on; buttons[i].value = on ? 1 : 0; buttons[i].touched = !!on; };
+  window.__gcaAxis = (i, v) => { pad.axes[i] = v; };
+  window.addEventListener('load', () => { try { const e = new Event('gamepadconnected'); e.gamepad = pad; window.dispatchEvent(e); } catch (x) {} });
+})();`;
+const { browser, page, errors } = await bootTap('fresh=1');
+await page.evaluateOnNewDocument(PAD);
+await page.reload({ waitUntil: 'domcontentloaded' });
+await page.waitForFunction(() => !!window.__echoes && window.__echoes.app && window.__echoes.app.state === 'title', { timeout: 180000 });
+await sleep(2500);
+const log = [];
+const snap = async () => page.evaluate(() => {
+  const E = window.__echoes, S = E.settings; const fo = E.app.focus();
+  const o = { stack: E.app.stack().join('>'), focus: fo && fo.id };
+  for (const c of ['master', 'music', 'sfx']) o[c] = `${S.get(`audio.${c}.level`)}|${S.get(`audio.${c}.mode`)}|${S.get(`audio.${c}.muted`) ? 'MUTED' : 'on'}|${E.audio.busGain(c).db}dB`;
+  return o;
+});
+const tap = async (b, hold = 80) => { await page.evaluate((b) => window.__gcaPress(b, true), b); await sleep(hold); await page.evaluate((b) => window.__gcaPress(b, false), b); await sleep(220); };
+const stick = async (a, v, hold = 90) => { await page.evaluate((a, v) => window.__gcaAxis(a, v), a, v); await sleep(hold); await page.evaluate((a) => window.__gcaAxis(a, 0), a); await sleep(220); };
+const act = async (label, fn, wait = 150) => {
+  await page.evaluate(() => { window.__echoes.audio.meterReset(); window.__gcaCL = window.__echoes.audio.cueLog(400).length; });
+  await fn(); await sleep(wait);
+  const cues = await page.evaluate(() => window.__echoes.audio.cueLog(400).slice(window.__gcaCL).map((c) => c.cue + '@' + c.bus).join(','));
+  const pk = await page.evaluate(() => { const m = window.__echoes.audio.meters(); return { ui: m.ui.peakDb, sfx: m.sfx.peakDb }; });
+  const row = { label, ...(await snap()), cues, uiPk: pk.ui, sfxPk: pk.sfx };
+  log.push(row); console.log(`${label.padEnd(28)} focus=${row.focus} stack=${row.stack} master=${row.master} music=${row.music} sfx=${row.sfx} cues=${cues}`);
+  return row;
+};
+const hint = async () => page.evaluate(() => { const t = document.body.innerText; const m = t.match(/(D-pad[^\n]{0,80})/g); return m ? [...new Set(m)].slice(0, 4) : []; });
+const B = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 };
+await act('start (title)', async () => {});
+const titleItems = await page.evaluate(() => (window.__echoes.app.focusables() || []).map((f) => f.label));
+for (let i = 0; i < titleItems.indexOf('Settings'); i++) await act('dpad down', () => tap(B.DOWN));
+await act('A -> Settings', () => tap(B.A), 700);
+await act('RB -> next tab', () => tap(B.RB), 600);
+const hints = await hint();
+await page.screenshot({ path: `captures/gntfixM36/${GF_TAG}-pad-audio.png` });
+// RB lands on the Master slider (au-master-level)
+for (let i = 0; i < 3; i++) await act('dpad LEFT on master slider', () => tap(B.LEFT));
+await act('dpad RIGHT on master slider', () => tap(B.RIGHT));
+await act('stick LEFT on master slider', () => stick(0, -0.95));
+await act('stick RIGHT on master slider', () => stick(0, 0.95));
+await act('dpad down -> master mute', () => tap(B.DOWN));
+await act('dpad left -> master curve', () => tap(B.LEFT));
+await act('A on master Curve', () => tap(B.A));
+await page.screenshot({ path: `captures/gntfixM36/${GF_TAG}-pad-curve.png` });
+await act('A on master Curve again', () => tap(B.A));
+await act('dpad right -> master Mute', () => tap(B.RIGHT));
+await act('A on master Mute', () => tap(B.A));
+await page.screenshot({ path: `captures/gntfixM36/${GF_TAG}-pad-muted.png` });
+await act('A on master Mute again', () => tap(B.A));
+await act('dpad right -> master Test', () => tap(B.RIGHT));
+await act('A on master Test', () => tap(B.A), 900);
+await act('stick down -> music slider', () => stick(1, 0.95));
+await act('dpad LEFT on music slider', () => tap(B.LEFT));
+await act('dpad down -> music mute', () => tap(B.DOWN));
+await act('dpad down -> sfx slider', () => tap(B.DOWN));
+await act('dpad LEFT on sfx slider (preview)', () => tap(B.LEFT), 500);
+await act('dpad down -> sfx mute', () => tap(B.DOWN));
+await act('dpad right -> sfx test', () => tap(B.RIGHT));
+await act('A on sfx Test', () => tap(B.A), 900);
+for (let i = 0; i < 14; i++) await act('dpad down (walk)', () => tap(B.DOWN), 60);
+await page.screenshot({ path: `captures/gntfixM36/${GF_TAG}-pad-bottom.png` });
+for (let i = 0; i < 14; i++) await act('dpad up (walk)', () => tap(B.UP), 60);
+await act('LB -> prev tab', () => tap(B.LB), 500);
+await act('RB -> Audio again', () => tap(B.RB), 500);
+await act('B back', () => tap(B.B), 600);
+await act('B back again', () => tap(B.B), 600);
+const res = { hints, log, errors };
+console.log('hints', JSON.stringify(hints));
+console.log(out('pad', res));
+console.log('errors', errors.length);
+await browser.close();

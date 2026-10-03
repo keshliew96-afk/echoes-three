@@ -1,0 +1,15 @@
+[
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const el=document.querySelector('.pz-pause.ap-open');if(!el)return{err:'no pause'};const vw=innerWidth,vh=innerHeight;const items=[...el.querySelectorAll('[data-nav]')].map(b=>{const r=b.getBoundingClientRect();const lab=b.querySelector('.pz-lab');const cap=b.querySelector('.pz-cap');return{id:b.id,x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),labPx:lab?Math.round(parseFloat(getComputedStyle(lab).fontSize)*10)/10:null,capPx:cap?Math.round(parseFloat(getComputedStyle(cap).fontSize)*10)/10:null}});const plate=el.querySelector('.pz-plate').getBoundingClientRect();const texts=[...el.querySelectorAll('.pz-where,.ap-h2,.pz-online,.ap-hints .ap-hint')].map(n=>({cls:n.className,px:Math.round(parseFloat(getComputedStyle(n).fontSize)*10)/10,txt:(n.textContent||'').trim().slice(0,28)}));let overlap=0;for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){const a=items[i],b=items[j];if(a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h)overlap++;}const outside=items.filter(i=>i.x<0||i.y<0||i.x+i.w>vw+1||i.y+i.h>vh+1).map(i=>i.id);const small=items.filter(i=>i.w<40||i.h<40).map(i=>i.id+':'+i.w+'x'+i.h);const minText=Math.min(...items.map(i=>i.labPx||99),...items.map(i=>i.capPx||99),...texts.map(t=>t.px));return{vw,vh,plate:{x:Math.round(plate.x),y:Math.round(plate.y),w:Math.round(plate.width),h:Math.round(plate.height)},items:items.length,overlap,outside,small,minText,plateInside:plate.x>=0&&plate.y>=0&&plate.right<=vw+1&&plate.bottom<=vh+1,texts}})()"
+ }
+]

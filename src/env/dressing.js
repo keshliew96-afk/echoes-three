@@ -75,18 +75,41 @@ function getPoolTexture() {
 // Subscribe to the run frame's room events through the debug API once it
 // exists (it is created after the scenes are built). Polls at animation-frame
 // cadence for up to ~10 s, then gives up silently.
-function watchRun(onRoom) {
+// CAMPAIGN (docs/gauntlet/PLAN.md §12.5, gate GC.6): ONE module-level bus
+// subscription fans out to every live dressing's watcher, and a disposed
+// dressing unregisters its watcher. (Each dressing used to add four bus
+// listeners that were never removed — once dressings are torn down and
+// rebuilt per level, that leaked 12 listeners and the disposed room groups
+// they closed over at every level.)
+const watchers = new Set();
+let hooked = false;
+function hookOnce() {
+  if (hooked) return;
+  hooked = true;
   let tries = 0;
   const tryHook = () => {
     const E = typeof window !== 'undefined' ? window.__echoes : null;
     if (E && typeof E.on === 'function') {
-      E.on('room_enter', (ev) => onRoom(ev.mode ?? null));
-      for (const t of ['run_end', 'return_to_camp', 'run_wiped']) E.on(t, () => onRoom(null));
+      E.on('room_enter', (ev) => {
+        for (const fn of watchers) fn(ev.mode ?? null);
+      });
+      for (const t of ['run_end', 'return_to_camp', 'run_wiped']) {
+        E.on(t, () => {
+          for (const fn of watchers) fn(null);
+        });
+      }
       return;
     }
     if (++tries < 600) requestAnimationFrame(tryHook);
+    else hooked = false;
   };
   if (typeof requestAnimationFrame === 'function') requestAnimationFrame(tryHook);
+  else hooked = false;
+}
+function watchRun(onRoom) {
+  watchers.add(onRoom);
+  hookOnce();
+  return () => watchers.delete(onRoom);
 }
 
 // Build every room-dressing group declared in `spec.rooms`:
@@ -97,7 +120,7 @@ function watchRun(onRoom) {
 export function buildRoomDressing(root, spec, cosmetic, opts) {
   const rooms = spec.rooms ?? null;
   const info = { groups: [], active: null };
-  if (!rooms) return { footprints: [], info, setRoom() {} };
+  if (!rooms) return { footprints: [], info, setRoom() {}, dispose() {} };
 
   const { types, mats, place, mount, buildShadows } = opts;
   const groups = new Map();
@@ -128,9 +151,9 @@ export function buildRoomDressing(root, spec, cosmetic, opts) {
     info.active = mode;
     for (const [m, g] of groups) g.visible = m === mode;
   }
-  watchRun(setRoom);
+  const unwatch = watchRun(setRoom);
   setRoom(null);
-  return { footprints, info, setRoom };
+  return { footprints, info, setRoom, dispose: unwatch };
 }
 
 // The Shopkeep's stall: the stall prop (props.js `stall`) plus its hanging

@@ -53,6 +53,9 @@ import { sharedGeo, markShared, releaseTree } from '../geocache.js';
 import { warmPark } from '../warmup.js';
 import { impactFx } from '../vfx/hub.js';
 import { exactColor, underBloom, getShadowTexture } from '../critters/common.js';
+// Gauntlet skills whose cast / zone reads live in ./content.js (a damage nova
+// or a damage zone must never draw this layer's green heal grammar).
+import { CONTENT_CAST_SKILLS } from './content.js';
 
 // Cosmetic scaffold tunables (render-only, not brief numbers).
 const BOLT_Y = 0.55; // matches the basic bolt's flight height
@@ -388,7 +391,8 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   function spawnRing(x, z, { color = HEAL, from = 0.3, to = 1.4, life = 0.35, opacity = 0.7 } = {}) {
     let m = ringPool.pop();
     if (!m) {
-      m = new Mesh(new RingGeometry(0.86, 1.0, 44), groundMat(color, opacity));
+      // fix-CAMPAIGN-r6 (GC.6): one shared unit ring — a pooled record adds no GL geometry
+      m = new Mesh(sharedGeo('sfx-ring-unit', () => new RingGeometry(0.86, 1.0, 44)), groundMat(color, opacity));
       m.rotation.x = -Math.PI / 2;
       m.renderOrder = -4;
     }
@@ -549,6 +553,28 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     m.geometry.attributes.position.needsUpdate = true;
     m.geometry.computeBoundingSphere();
   }
+  // The bond's above-plane arc: three ribbons (glow / ink / core). Built on
+  // demand and pooled; one is also parked at boot (prewarm below).
+  function makeBondArc(color = HEAL) {
+    const arc = new Group();
+    // Widths are HALF-widths in world units; at gameplay zoom the ground
+    // plane runs ~90-100 px/u, so this is an ~8 px Bright Heal line inside a
+    // ~4 px charcoal rim inside a feathered ~36 px glow — the same
+    // core/ink/halo proportion the heal bolt wears in flight.
+    const arcGlow = makeBondRibbon(0.19, ribbonMat(color, 0.26, { additive: true, feather: true }));
+    arcGlow.renderOrder = 11;
+    arcGlow.name = 'arcGlow';
+    const arcInk = makeBondRibbon(0.085, ribbonMat(PALETTE.voidCharcoal, 0.62));
+    arcInk.renderOrder = 12;
+    arcInk.name = 'arcInk';
+    const arcCore = makeBondRibbon(0.042, ribbonMat('#ffffff', 0.94));
+    arcCore.renderOrder = 13;
+    arcCore.name = 'arcCore';
+    arc.add(arcGlow);
+    arc.add(arcInk);
+    arc.add(arcCore);
+    return arc;
+  }
   function spawnBeam(x0, z0, x1, z1, color = HEAL) {
     const dx = x1 - x0;
     const dz = z1 - z0;
@@ -557,11 +583,12 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     let b = beamPool.pop();
     if (!b) {
       const g = new Group();
-      const core = new Mesh(new PlaneGeometry(1, 0.09), groundMat(color, 0.85));
+      // fix-CAMPAIGN-r6 (GC.6): constant strips — shared, so the pool's high-water adds no GL geometry
+      const core = new Mesh(sharedGeo('sfx-beam-core', () => new PlaneGeometry(1, 0.09)), groundMat(color, 0.85));
       core.rotation.x = -Math.PI / 2;
       core.renderOrder = -4;
       core.name = 'core';
-      const glow = new Mesh(new PlaneGeometry(1, 0.3), groundMat(color, 0.35));
+      const glow = new Mesh(sharedGeo('sfx-beam-glow', () => new PlaneGeometry(1, 0.3)), groundMat(color, 0.35));
       glow.rotation.x = -Math.PI / 2;
       glow.renderOrder = -5;
       glow.name = 'glow';
@@ -580,26 +607,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     // Above-plane slice: a wide dim rail with a bright thin rail inside it,
     // both bowing over the party's heads. They carry WORLD-space vertices, so
     // they hang off `root` directly instead of the beam's rotated group.
-    let arc = arcPool.pop();
-    if (!arc) {
-      arc = new Group();
-      // Widths are HALF-widths in world units; at gameplay zoom the ground
-      // plane runs ~90-100 px/u, so this is an ~8 px Bright Heal line inside a
-      // ~4 px charcoal rim inside a feathered ~36 px glow — the same
-      // core/ink/halo proportion the heal bolt wears in flight.
-      const arcGlow = makeBondRibbon(0.19, ribbonMat(color, 0.26, { additive: true, feather: true }));
-      arcGlow.renderOrder = 11;
-      arcGlow.name = 'arcGlow';
-      const arcInk = makeBondRibbon(0.085, ribbonMat(PALETTE.voidCharcoal, 0.62));
-      arcInk.renderOrder = 12;
-      arcInk.name = 'arcInk';
-      const arcCore = makeBondRibbon(0.042, ribbonMat('#ffffff', 0.94));
-      arcCore.renderOrder = 13;
-      arcCore.name = 'arcCore';
-      arc.add(arcGlow);
-      arc.add(arcInk);
-      arc.add(arcCore);
-    }
+    const arc = arcPool.pop() || makeBondArc(color);
     const sh = bondShape(x0, z0, x1, z1, beams.filter((v) => v.age === 0).map((v) => v.dir));
     for (const name of ['arcGlow', 'arcInk', 'arcCore']) {
       const m = arc.getObjectByName(name);
@@ -645,15 +653,16 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     let g = wedgePool.pop();
     if (!g) {
       g = new Group();
+      // fix-CAMPAIGN-r6 (GC.6): the wedge's five shapes are constants of the skill table — shared.
       const fill = new Mesh(
-        new CircleGeometry(WAVE.range, 26, -wedgeHalf, wedgeHalf * 2),
+        sharedGeo('sfx-wave-fill', () => new CircleGeometry(WAVE.range, 26, -wedgeHalf, wedgeHalf * 2)),
         groundMat(HEAL, 0.3)
       );
       fill.rotation.x = -Math.PI / 2;
       fill.renderOrder = -5;
       fill.name = 'fill';
       const rim = new Mesh(
-        new RingGeometry(WAVE.range * 0.9, WAVE.range, 26, 1, -wedgeHalf, wedgeHalf * 2),
+        sharedGeo('sfx-wave-rim', () => new RingGeometry(WAVE.range * 0.9, WAVE.range, 26, 1, -wedgeHalf, wedgeHalf * 2)),
         groundMat(HEAL, 0.75)
       );
       rim.rotation.x = -Math.PI / 2;
@@ -665,7 +674,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       // centred on +Z (three's CylinderGeometry theta 0 points +Z and grows
       // toward +X), so aiming is one rotation.y = PI/2 - yaw.
       const curtain = new Mesh(
-        new CylinderGeometry(WAVE.range, WAVE.range, WAVE_WALL, 26, 1, true, -wedgeHalf, wedgeHalf * 2),
+        sharedGeo('sfx-wave-curtain', () => new CylinderGeometry(WAVE.range, WAVE.range, WAVE_WALL, 26, 1, true, -wedgeHalf, wedgeHalf * 2)),
         riseMat(HEAL, 0.5)
       );
       curtain.position.y = WAVE_WALL / 2 - 0.035;
@@ -690,7 +699,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       // The curtain body below it still depth-tests, so the volume of light
       // stays behind the characters and only the leading edge crosses them.
       const crest = new Mesh(
-        new CylinderGeometry(WAVE.range * 1.008, WAVE.range * 1.008, 0.06, 26, 1, true, -wedgeHalf, wedgeHalf * 2),
+        sharedGeo('sfx-wave-crest', () => new CylinderGeometry(WAVE.range * 1.008, WAVE.range * 1.008, 0.06, 26, 1, true, -wedgeHalf, wedgeHalf * 2)),
         ribbonMat('#ffffff', 0.9)
       );
       crest.material.color.copy(underBloom(exactColor(HEAL_CORE)));
@@ -708,7 +717,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       // Drawn after the curtain (renderOrder 2.5) so it actually darkens it,
       // and before the crest (3) so the crest stays the top layer.
       const inkEdge = new Mesh(
-        new CylinderGeometry(WAVE.range * 1.004, WAVE.range * 1.004, 0.14, 26, 1, true, -wedgeHalf, wedgeHalf * 2),
+        sharedGeo('sfx-wave-ink', () => new CylinderGeometry(WAVE.range * 1.004, WAVE.range * 1.004, 0.14, 26, 1, true, -wedgeHalf, wedgeHalf * 2)),
         ribbonMat('#ffffff', 0.55)
       );
       inkEdge.material.color.copy(exactColor(PALETTE.voidCharcoal));
@@ -878,16 +887,22 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     const g = new Group();
     // Zone rigs are built per sim zone entity and dropped when it expires:
     // every disc, rim and wall below is shared per radius (F1).
-    const fill = new Mesh(sharedGeo(`zone-fill:${radius}`, () => new CircleGeometry(radius, 40)), groundMat(HEAL, 0.13));
+    // fix-CAMPAIGN-r6 (GC.6): UNIT shapes scaled to the radius — keyed by
+    // radius, every new zone radius a build reached (Reach nodes) minted four
+    // GL geometries that were never released.
+    const fill = new Mesh(sharedGeo('zone-fill:unit', () => new CircleGeometry(1, 40)), groundMat(HEAL, 0.13));
+    fill.scale.set(radius, radius, 1);
     fill.rotation.x = -Math.PI / 2;
     fill.renderOrder = -6;
     g.add(fill);
-    const inner = new Mesh(sharedGeo(`zone-inner:${radius}`, () => new CircleGeometry(radius * 0.55, 32)), groundMat(HEAL, 0.18));
+    const inner = new Mesh(sharedGeo('zone-inner:unit', () => new CircleGeometry(1, 32)), groundMat(HEAL, 0.18));
+    inner.scale.set(radius * 0.55, radius * 0.55, 1);
     inner.rotation.x = -Math.PI / 2;
     inner.position.y = 0.004;
     inner.renderOrder = -6;
     g.add(inner);
-    const rim = new Mesh(sharedGeo(`zone-rim:${radius}`, () => new RingGeometry(radius * 0.93, radius, 44)), groundMat(HEAL, 0.55));
+    const rim = new Mesh(sharedGeo('zone-rim:unit', () => new RingGeometry(0.93, 1, 44)), groundMat(HEAL, 0.55));
+    rim.scale.set(radius, radius, 1);
     rim.rotation.x = -Math.PI / 2;
     rim.position.y = 0.006;
     rim.renderOrder = -5;
@@ -908,9 +923,10 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     // veil in front and a clear standing rim behind, and the zone still reads
     // from above the bodies.
     const wall = new Mesh(
-      sharedGeo(`zone-wall:${radius}`, () => new CylinderGeometry(radius, radius, ZONE_WALL, 44, 1, true)),
+      sharedGeo('zone-wall:unit', () => new CylinderGeometry(1, 1, ZONE_WALL, 44, 1, true)),
       riseMat(HEAL, 0.20)
     );
+    wall.scale.set(radius, 1, radius);
     wall.position.y = ZONE_WALL / 2;
     wall.renderOrder = 2;
     wall.name = 'wall';
@@ -993,7 +1009,8 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   bus.on('skills_restored', (ev) => {
     auraOn = ev.slots.includes('warding_aura');
   });
-  bus.on('aura_pulse', () => {
+  bus.on('aura_pulse', (ev) => {
+    if (ev && ev.skill && ev.skill !== 'warding_aura') return; // Quiet Hearth: ./content.js
     auraPulseT = 0.45;
     spawnRing(world.player.x, world.player.z, { color: HEAL, from: 0.25, to: AURA.area, life: 0.4, opacity: 0.55 });
   });
@@ -1006,6 +1023,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   });
   bus.on('skill_cast', (ev) => {
     const p = world.player;
+    if (CONTENT_CAST_SKILLS.has(ev.skill)) return;
     if (ev.shape === 'nova') {
       const def = SKILLS[ev.skill];
       spawnFlash(p.x, 0.45, p.z, { color: HEAL, size: 0.5, opacity: 0.9, life: 0.25, grow: 0.5 });
@@ -1048,6 +1066,18 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     warmPark(root, makeBoltRig(true));
     warmPark(root, makeBoltRig(false));
     warmPark(root, makeZoneRig(SKILLS.sanctuary ? SKILLS.sanctuary.area : 1.5));
+    // gauntlet r4 J4-F1 (INT): the Swift Mend bond arc — transparent,
+    // double-sided ribbons, i.e. a back-face and a front-face program each —
+    // linked 4 programs on the first Swift Mend of the first fight (a 55-109 ms
+    // frame ~6 s into Level 1 room 1). Parked with a real bowed shape, then
+    // handed to the arc pool.
+    const warmArc = makeBondArc(HEAL);
+    const wsh = bondShape(0, 0, 2, 0, []);
+    for (const m of warmArc.children) aimBondRibbon(m, 0, 0, 2, 0, wsh);
+    warmPark(root, warmArc, (g) => {
+      for (const m of g.children) m.frustumCulled = false; // world-space ribbons (makeBondRibbon)
+      arcPool.push(g);
+    });
   }
 
   let lastElapsed = null;
@@ -1112,7 +1142,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     // Zones: sync rigs to sim zone entities; breathe; drip motes.
     const seenZones = new Set();
     for (const e of world.entities()) {
-      if (e.kind !== 'zone') continue;
+      if (e.kind !== 'zone' || e.damage) continue; // damage zones: ./content.js
       seenZones.add(e.id);
       let rig = zoneRigs.get(e.id);
       if (!rig) {
@@ -1315,5 +1345,57 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     };
   }
 
+  // @gnt:M2 RESTORE-RESYNC begin — after a load the bolt / zone ids may name
+  // other entities: drop those rigs silently (update() rebuilds them) and
+  // re-read the two event-fed flags (aura owned, heal override) from the sim.
+  bus.on('state_restored', () => {
+    for (const g of boltRigs.values()) {
+      root.remove(g);
+      releaseTree(g);
+    }
+    boltRigs.clear();
+    for (const rig of zoneRigs.values()) {
+      root.remove(rig.g);
+      releaseTree(rig.g);
+    }
+    zoneRigs.clear();
+    const snap = world.snapshotState();
+    auraOn = (snap.skills || []).some((s) => s && s.id === 'warding_aura');
+    overrideIndex = snap.healOverride ?? null;
+  });
+  // @gnt:M2 RESTORE-RESYNC end
+  // fix-CAMPAIGN-r6 (CR6-F2, PLAN §12.5 teardown): a level boundary returns
+  // every in-flight flourish to its pool and the pooled bond arcs hand their
+  // GL buffers back (the ribbons are per-record world-space geometry; the
+  // record and its arrays are kept and three re-uploads them on the arc's
+  // next use) — the pool's high-water mark follows frame timing, so without
+  // this a later campaign could start a level with 3-6 more geometries
+  // registered than an identical earlier one. Bolt / zone rigs are per entity
+  // and already leave with their entities.
+  function levelTeardown() {
+    const back = (list, pool, key) => {
+      for (const r of list.splice(0)) {
+        const o = r[key];
+        root.remove(o);
+        pool.push(o);
+      }
+    };
+    back(motes, motePool, 's');
+    back(flashes, flashPool, 's');
+    back(glyphs, glyphPool, 's');
+    back(rings, ringPool, 'm');
+    back(trails, trailPool, 's');
+    back(wedges, wedgePool, 'g');
+    for (const b of beams.splice(0)) {
+      root.remove(b.g);
+      beamPool.push(b.g);
+      root.remove(b.arc);
+      arcPool.push(b.arc);
+    }
+    for (const arc of arcPool) for (const m of arc.children) if (m.geometry) m.geometry.dispose();
+  }
+  bus.on('level_transit', levelTeardown);
+  bus.on('run_end', levelTeardown);
+  bus.on('return_to_camp', levelTeardown);
   return { update, debugCounts };
 }

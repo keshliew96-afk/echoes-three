@@ -9,14 +9,22 @@
 // queue between ticks; sample() drains it (so a press always lands on exactly
 // one tick, the first tick sampled after the keydown).
 import { emptySnapshot } from './intents.js';
+import { SKILL_SLOTS } from './constants.js';
 
-// §3 control map -> discrete intent presses.
+// §3 control map -> discrete intent presses. Skill keys Digit1..DigitN are
+// derived from SKILL_SLOTS (4: the player equips at most 4 skills — the content
+// extension's 8 are NODE SOCKETS per skill, M4c; Digit5-8 stay unbound).
+// @gnt:M4a INPUT-KEYS begin — skill keys derive from SKILL_SLOTS; KeyE
+// `interact` is already bound below (M4b needs no edit in this file).
+const SKILL_KEYS = {};
+for (let i = 0; i < SKILL_SLOTS; i++) SKILL_KEYS[`Digit${i + 1}`] = { kind: `skill_${i + 1}`, slot: i };
+// @gnt:M4a INPUT-KEYS end
 const KEY_TO_PRESS = Object.freeze({
   Space: { kind: 'dodge' },
-  Digit1: { kind: 'skill_1', slot: 0 },
-  Digit2: { kind: 'skill_2', slot: 1 },
-  Digit3: { kind: 'skill_3', slot: 2 },
-  Digit4: { kind: 'skill_4', slot: 3 },
+  ...SKILL_KEYS,
+  // KeyE is ALSO the held revive channel (sample() reads it as reviveHeld);
+  // the discrete press feeds interactables (PLAN §4.6).
+  KeyE: { kind: 'interact' },
   KeyR: { kind: 'rally' },
   Tab: { kind: 'target_cycle' },
   F1: { kind: 'target_select', index: 0 },
@@ -120,5 +128,49 @@ export function createInputController({ target = window, screenToWorld = null } 
     for (const [type, fn] of bindings) target.removeEventListener(type, fn);
   }
 
-  return { sample, detach };
+  // @gnt:M1 INPUT-GATE begin — releaseAll() (clear held keys, basicHeld,
+  // pending presses) and setEnabled(on) for the app input gate (PLAN §1.5).
+  // The app calls releaseAll() on every transition to a blocking screen (a key
+  // held when the menu opened must not stay "down" behind it — its keyup may
+  // be one the menu consumed) and setEnabled(false) while one is open, so a
+  // tick sampled under a menu (network sessions never pause the sim) carries
+  // neutral intents; aim rides through (it mutates nothing). controlMap()
+  // lists the live control map for the Controls reference tab.
+  let enabled = true;
+  function releaseAll() {
+    held.clear();
+    basicHeld = false;
+    pressQueue = [];
+  }
+  function setEnabled(on) {
+    enabled = !!on;
+    if (!enabled) releaseAll();
+  }
+  function gatedSample() {
+    if (enabled) return sample();
+    releaseAll();
+    const snap = emptySnapshot();
+    if (mouseScreen && screenToWorld) snap.aim = screenToWorld(mouseScreen.x, mouseScreen.y);
+    return snap;
+  }
+  function controlMap() {
+    return {
+      presses: Object.entries(KEY_TO_PRESS).map(([code, press]) => ({ code, ...press })),
+      move: Object.keys(MOVE_KEYS),
+      basicAttack: 'MouseRight',
+      reviveHeld: 'KeyE',
+    };
+  }
+  // @gnt:M1 INPUT-GATE end
+
+  return {
+    sample: gatedSample,
+    detach,
+    releaseAll,
+    setEnabled,
+    bindings: controlMap,
+    get enabled() {
+      return enabled;
+    },
+  };
 }

@@ -1,0 +1,22 @@
+[
+ {"type":"wait","ms":2500},
+ {"type":"eval","code":"(()=>({unlocked:__echoes.campaign.unlocked(),choose2:__echoes.campaign.choose(2),choose1:__echoes.campaign.choose(1)}))()"},
+ {"type":"loop","label":"to-L1","cond":"(()=>{const v=__echoes.state().run;return v.active&&v.phase==='combat'&&v.room===1})()","maxMs":20000,"body":[{"type":"wait","ms":200}]},
+ {"type":"eval","code":"(()=>({c:__echoes.cmd('campaignState'),begin:__echoes.cmd('campState').lastBegin}))()"},
+ {"type":"eval","code":"(()=>{__echoes.cmd('skipToRoom',8);return __echoes.state().run.room})()"},
+ {"type":"wait","ms":600},
+ {"type":"loop","label":"to-card","cond":"__echoes.state().run.phase==='transit'","maxMs":10000,"body":[{"type":"eval","code":"(()=>{__echoes.cmd('killBoss');__echoes.cmd('killAllEnemies');return 1})()"},{"type":"wait","ms":100}]},
+ {"type":"wait","ms":1200},
+ {"type":"eval","code":"(()=>({card:__echoes.campaign.state().card&&{kind:__echoes.campaign.state().card.kind,from:__echoes.campaign.state().card.from,to:__echoes.campaign.state().card.to},unlocked:__echoes.campaign.unlocked(),profile:{unlocks:__echoes.save.profile().unlocks,lc:__echoes.save.profile().records.levelClears,furthest:__echoes.save.profile().records.furthestLevel},lastLevelClear:__echoes.save.lastLevelClear(),autosave:__echoes.save.autosaveLog().slice(-2),canSave:__echoes.save.canSave()}))()"},
+ {"type":"eval","code":"(async()=>{const r=await __echoes.save.save('manual-1',{name:'on the card'});const l=__echoes.save.list().map(m=>({id:m.id,phase:m.meta.phase,level:m.meta.level,levelName:m.meta.levelName,campaign:m.meta.campaign}));return {ok:r.ok,error:r.error,reason:r.reason,list:l}})()"},
+ {"type":"loop","label":"to-L2","cond":"(()=>{const v=__echoes.state().run;return v.active&&v.phase==='combat'&&v.act===2})()","maxMs":20000,"body":[{"type":"wait","ms":200}]},
+ {"type":"wait","ms":1500},
+ {"type":"eval","code":"(async()=>{const r=await __echoes.save.load('manual-1');await new Promise(r=>setTimeout(r,300));const s=__echoes.campaign.state();return {ok:r.ok,error:r.error,phase:__echoes.state().run.phase,act:__echoes.state().run.act,card:s.card&&{kind:s.card.kind,to:s.card.to,elapsed:s.card.elapsedTicks,until:s.card.untilTick-s.card.startTick},page:__echoes.runUi().screen,resident:s.resident,ready:s.ready}})()"},
+ {"type":"shot","name":"gntCAMPAIGN-save1-card-loaded"},
+ {"type":"loop","label":"to-L2-again","cond":"(()=>{const v=__echoes.state().run;return v.active&&v.phase==='combat'&&v.act===2})()","maxMs":20000,"body":[{"type":"wait","ms":200}]},
+ {"type":"eval","code":"(()=>({c:__echoes.cmd('campaignState').index,level:__echoes.cmd('campaignState').level,t:__echoes.campaign.transitions().slice(-1)[0]}))()"},
+ {"type":"eval","code":"(async()=>{const r=await __echoes.save.save('manual-2',{name:'in level 2'});__echoes.campaign.unlock([1]);const l=await __echoes.save.load('manual-2');__echoes.campaign.unlock(null);const l2=await __echoes.save.load('manual-2');return {saved:r.ok,lockedLoad:{ok:l.ok,error:l.error,reason:l.reason},unlockedLoad:{ok:l2.ok,phase:__echoes.state().run.phase,act:__echoes.state().run.act}}})()"},
+ {"type":"eval","code":"(()=>{const r=__echoes.cmd('abandonRun','quit');return {r:!!r,phase:__echoes.state().run.phase,rec:__echoes.save.profile().records}})()"},
+ {"type":"wait","ms":800},
+ {"type":"eval","code":"(()=>({mode:__echoes.cmd('campState').mode,phase:__echoes.state().run.phase,hs:__echoes.save.profile().highScores.slice(0,2)}))()"}
+]

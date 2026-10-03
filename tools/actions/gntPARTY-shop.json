@@ -1,0 +1,103 @@
+[
+ {
+  "type": "loop",
+  "label": "room1",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase==='combat'&&r.room===1})()",
+  "maxMs": 20000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 150
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{__echoes.cmd('skipToRoom',7);return __echoes.state().run.phase})()"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();const P=__echoes.cmd('partyState');return {phase:r&&r.phase,room:r&&r.room,wallet:r&&r.wallet,ps:r&&r.partyShop&&r.partyShop.shelves.slice(1).map(x=>({purse:x.purse,stock:x.stock.map(c=>c.node+(c.marked?'*':'')+(c.sold?'$':''))})),purses:P.seats.map(q=>q.purse),bench:P.seats.map(q=>q.bench.length+q.filled),shop:u&&u.shop}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntPARTY-shop-healer"
+ },
+ {
+  "type": "key",
+  "key": "e",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "shot",
+  "name": "gntPARTY-shop-tank"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const r=__echoes.runUi();return r&&r.screen})()"
+ },
+ {
+  "type": "key",
+  "key": "e",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "key",
+  "key": "e",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const b=[...document.querySelectorAll('.rn-shop .rn-suggest.rn-on')][0];if(!b)return null;const idx=b.dataset.idx;b.dispatchEvent(new MouseEvent('click',{bubbles:true}));return idx})()"
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();const P=__echoes.cmd('partyState');return {phase:r&&r.phase,room:r&&r.room,wallet:r&&r.wallet,ps:r&&r.partyShop&&r.partyShop.shelves.slice(1).map(x=>({purse:x.purse,stock:x.stock.map(c=>c.node+(c.marked?'*':'')+(c.sold?'$':''))})),purses:P.seats.map(q=>q.purse),bench:P.seats.map(q=>q.bench.length+q.filled),shop:u&&u.shop}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntPARTY-shop-archer"
+ },
+ {
+  "type": "key",
+  "key": "e",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();const P=__echoes.cmd('partyState');return {phase:r&&r.phase,room:r&&r.room,wallet:r&&r.wallet,ps:r&&r.partyShop&&r.partyShop.shelves.slice(1).map(x=>({purse:x.purse,stock:x.stock.map(c=>c.node+(c.marked?'*':'')+(c.sold?'$':''))})),purses:P.seats.map(q=>q.purse),bench:P.seats.map(q=>q.bench.length+q.filled),shop:u&&u.shop}})()"
+ }
+]

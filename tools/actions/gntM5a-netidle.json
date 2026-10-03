@@ -1,0 +1,6 @@
+[
+  { "type": "wait", "ms": 3000 },
+  { "type": "eval", "code": "(async () => { const E = window.__echoes; const n = E.net; const s = E.save; return JSON.stringify({ v: E.version, netState: n && n.state, inSession: n && n.inSession(), role: n && n.role, serverState: n && n.serverState, url: n && n.serverUrl, connected: n && n.connected, canSave: s && typeof s.canSave === 'function' ? s.canSave() : (window.__echoes.save ? 'n/a' : null), app: E.app && E.app.state, simPaused: E.app && typeof E.app.frameStats === 'function' ? null : null, tick: E.tick }); })()" },
+  { "type": "wait", "ms": 1000 },
+  { "type": "eval", "code": "(() => JSON.stringify({ tick: window.__echoes.tick, wsEntries: performance.getEntriesByType('resource').filter((e) => /^wss?:/.test(e.name)).length }))()" }
+]

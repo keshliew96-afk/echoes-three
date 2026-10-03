@@ -40,13 +40,69 @@ export function createClock() {
       }
       tick += 1;
       stepFn(tick);
+      tickEnd(tick);
     }
     return accumulator / TICK_MS;
   }
 
+  // TICK BOUNDARY hooks (docs/gauntlet/PLAN.md §3.4 "capture point"): run
+  // after a world step has fully returned, before the next one starts — the
+  // ONLY place where save.capture()/apply(), autosave and net snapshots or
+  // keyframes may touch the sim (a bus listener runs MID-step, while the
+  // world's deferred/continuation queues still hold closures). A listener
+  // sets a flag; the capture happens here. fn(tick) must not step the clock.
+  const tickEndFns = [];
+  function tickEnd(t) {
+    for (let i = 0; i < tickEndFns.length; i++) tickEndFns[i](t);
+  }
+  function onTickEnd(fn) {
+    tickEndFns.push(fn);
+    return () => {
+      const i = tickEndFns.indexOf(fn);
+      if (i >= 0) tickEndFns.splice(i, 1);
+    };
+  }
+
+  // Step exactly ONE 60 Hz tick outside wall time (docs/gauntlet/PLAN.md
+  // §3.4: __echoes.sim.stepN, save round-trip probe, net host catch-up). A
+  // pending hitstop tick is consumed instead of stepping the world, exactly
+  // as advance() would. Returns true when the world stepped. The render-side
+  // accumulator is untouched.
+  function stepOnce(stepFn) {
+    if (hitstopRemaining > 0) {
+      hitstopRemaining -= 1;
+      return false;
+    }
+    tick += 1;
+    stepFn(tick);
+    tickEnd(tick);
+    return true;
+  }
+
+  // @gnt:M2 CLOCK-STATE begin — serialize()/restore() of { tick,
+  // hitstopRemaining, grants } land here with the save system (PLAN §3.4).
+  // The accumulator is wall time (render pacing), not sim state: a restore
+  // empties it so the first frame after a load never replays banked time.
+  function serialize() {
+    return { tick, hitstopRemaining, grants: grants.map((g) => ({ atTick: g.atTick, amount: g.amount })) };
+  }
+  function restore(data) {
+    if (!data || !Number.isFinite(data.tick)) throw new TypeError('clock.restore: missing tick');
+    tick = data.tick;
+    hitstopRemaining = Number.isFinite(data.hitstopRemaining) ? data.hitstopRemaining : 0;
+    grants.length = 0;
+    for (const g of data.grants ?? []) grants.push({ atTick: g.atTick, amount: g.amount });
+    accumulator = 0;
+  }
+  // @gnt:M2 CLOCK-STATE end
+
   return {
     advance,
+    stepOnce,
+    onTickEnd,
     requestHitstop,
+    serialize,
+    restore,
     get tick() {
       return tick;
     },

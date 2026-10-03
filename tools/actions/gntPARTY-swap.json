@@ -1,0 +1,131 @@
+[
+ {
+  "type": "loop",
+  "label": "room1",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase==='combat'&&r.room===1})()",
+  "maxMs": 20000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 150
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{__echoes.cmd('giveSkill','bell_toll');__echoes.cmd('giveSkill','pale_lance');__echoes.cmd('grantNode','sharpen');__echoes.cmd('grantNode','echo');return (__echoes.state().skills||[]).map(x=>x&&x.id)})()"
+ },
+ {
+  "type": "loop",
+  "label": "clear1",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase==='reward'})()",
+  "maxMs": 40000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{__echoes.cmd('killAllEnemies');return 1})()"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return [__echoes.cmd('socket','pale_lance','sharpen'),__echoes.cmd('socket','pale_lance','echo'),__echoes.cmd('socket','bell_toll','sharpen')]})()"
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntPARTY-swap-open"
+ },
+ {
+  "type": "key",
+  "key": "s",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null}})()"
+ },
+ {
+  "type": "key",
+  "key": "ArrowUp",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "key",
+  "key": "w",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 250
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntPARTY-swap-moved"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const t=document.querySelector('.rn-rep[data-slot=\"3\"]');if(!t)return null;const b=t.getBoundingClientRect();window.__gntTile={x:Math.round(b.x+b.width/2),y:Math.round(b.y+b.height/2)};return window.__gntTile})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const t=document.querySelector('.rn-rep[data-slot=\"3\"]');t.dispatchEvent(new MouseEvent('click',{bubbles:true}));return __echoes.state().run.reward.replace})()"
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null}})()"
+ },
+ {
+  "type": "key",
+  "key": "a",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();const r=s.run;const u=__echoes.runUi&&__echoes.runUi();return {v:__echoes.version,tick:__echoes.tick,phase:r&&r.phase,room:r&&r.room,reward:r&&r.reward,skills:(s.skills||[]).map(x=>x&&x.id),bench:(s.build&&s.build.bench||[]).map(b=>b.node),rows:(s.build&&s.build.skills||[]).map(k=>k.id+':'+k.filled),page:u&&u.screen,draft:u&&u.draft,settled:u&&u.settled,socket:__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntPARTY-swap-taken"
+ }
+]

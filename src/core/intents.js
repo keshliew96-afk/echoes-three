@@ -18,6 +18,20 @@ export const DISCRETE_INTENTS = Object.freeze([
   'skill_2',
   'skill_3',
   'skill_4',
+  // Reserved (docs/gauntlet/PLAN.md §4.3): SKILL_SLOTS is 4 — the player
+  // equips at most 4 skills (M4c user correction; the content extension's 8
+  // are node sockets per skill). No key and no sim path produces skill_5..8;
+  // the names stay in the closed vocabulary so the net press-bit tables keep
+  // their wire layout.
+  'skill_5',
+  'skill_6',
+  'skill_7',
+  'skill_8',
+  // Interactable use (PLAN §4.6, M4b): a discrete press on KeyE, alongside the
+  // held `revive_hold` the same key already drives. The world ignores it
+  // until the interactables system resolves it (after revive arbitration: a
+  // press next to a Downed ally is a revive, never an interaction).
+  'interact',
   'rally', // player-only
   'target_cycle', // player-only
   'target_select', // player-only, carries index 0-3

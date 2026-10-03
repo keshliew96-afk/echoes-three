@@ -1,5 +1,5 @@
-STATUS: COMPLETE
-VERDICT: PASS (7/7 probes pass at v0.4.63; 0 must-fix; 0 should-fix; 11 advisories A1-A11. The r3 should-fix S1 — the 145-291 ms first-use VFX stall — is fixed: the worst first-use frame is now 72.1 ms and only under contention; 0 frames over 60 ms in every probe re-run alone.)
+STATUS: PARTIAL
+VERDICT (pre-audit, being re-checked by the certD5-b- audit-gap probes below): PASS (7/7 probes pass at v0.4.63; 0 must-fix; 0 should-fix; 11 advisories A1-A11. The r3 should-fix S1 — the 145-291 ms first-use VFX stall — is fixed: the worst first-use frame is now 72.1 ms and only under contention; 0 frames over 60 ms in every probe re-run alone.)
 
 # Certification block D round 5 — Performance & Chrome
 
@@ -312,3 +312,90 @@ certD5-lay-combat-1024, certD5-lay-combat-2560, certD5-lay-shop-1024, certD5-lay
 certD5-lay-boss-2560, certD5-lay-end-1024, certD5-lay-end-2560, certD5-leak; crops certD5-crop-ver-{camp,combat,1024,2560},
 certD5-crop-endseam-1024.
 Reproduce a perf probe: `node tools/cert-capture.mjs shot certD5-wave2 --url "http://127.0.0.1:5199/?seed=999" --settle 3000 --actions tools/actions/certD5-wave2.json --timeout 180000` then `node tools/certD5-digest.mjs certD5-wave2`.
+
+## Audit-gap re-run (certD5-b-) — rAF frame rate at 2560x1440 / 1920x1080 (IN PROGRESS)
+
+Gap raised by the completeness audit: no rAF sampler ever ran at 2560x1440, and A7 wrote the low 2560 E.fps / meter
+readings off as a meter error. This section re-runs the camp-idle, wave2 and boss probes at 2560x1440 and 1920x1080
+(plus a 1600x900 control in the same sitting), each alone on the machine, and applies the D1-D3 gates. Build unchanged:
+`src/version.js` still `0.4.63` (file dated 2026-09-11, same as the probes above).
+
+Raw log (appended as measured; tables below are rebuilt at the end):
+- `certD5-b-camp-2560` (alone: 0 headless browsers, CPU 6 % before launch; exit 0; GOTO 7.2 s): canvas backing 2560x1440,
+  drawingBuffer 2560x1440, dpr 1, antialias false, ANGLE AMD Radeon D3D11. rAF 10.06 s: ALL 42.1 fps, WARM 45.0,
+  **STEADY 40.9 fps** (288 f, p50 24.3, p95 30.5, p99 42.6, max 54.4 ms), 0 gaps > 100 ms, 0 long tasks. 2 s buckets
+  48.4 / 40.9 / 43.6 / 40.8 / 37.1 fps. Game JS per frame (rAF-callback CPU) steady mean 12.52 ms = 0.512 of the 24.43 ms
+  frame. E.fps and the `#fps-meter` text agree every second (55/55, then 41.3 x8 = "41 fps"). Sim 329 -> 870 ticks in 9 s
+  = 60.1 ticks/s.
+- `certD5-b-camp-1600` (control, same sitting, alone; exit 0; GOTO 9.2 s): backing 1600x900, dpr 1. rAF 10.02 s:
+  **STEADY 112.0 fps** (785 f, p50 6.2, p95 12.2, p99 12.4, max 18.4 ms), 0 gaps, 0 long tasks; buckets 107.8-115.7.
+  rAF-callback CPU 9.43 ms (>= the 8.92 ms frame: CPU-bound / uncapped here). E.fps reads 161.3 / 83.3 and the meter
+  "161 fps" / "84 fps" while rAF measures 112 — at 1600 the meter over-reads (it tracked rAF exactly at 2560).
+- `certD5-b-camp-1920` (alone; exit 0; GOTO 8.0 s): backing 1920x1080, dpr 1. rAF 10.04 s: **STEADY 83.8 fps** (587 f,
+  p50 12.1, p95 18.3, p99 24.2, max 24.4 ms), 0 gaps, 0 long tasks; buckets 76.7-93.3. CPU 10.31 ms = 0.863 of the frame.
+  E.fps 82.0-82.6 / meter "82-83 fps" agree with rAF.
+  Note: frame times quantise to multiples of ~6.07 ms (p50 6.2 @1600, 12.1 @1920, 24.3 @2560): the harness display
+  interval is ~165 Hz and a frame that misses an interval waits for the next one.
+- `certD5-b-wave2-2560` (alone: 0 headless Chromes, node = vite only, CPU 14 %; exit 0; GOTO 7.2 s): room 2 kill_all
+  [4,5], peak **5** enemies @t634 / 17 ents, 9 deaths, `room_cleared` t1018 (sample t374-1551). rAF 20.03 s: ALL 49.4,
+  WARM 51.3, **STEADY 49.0 fps** (835 f, p50 18.2, p95 24.4, p99 30.4, max 78.7 ms), 0 gaps > 100 ms, 0 long tasks;
+  worst 15 s window 48.8 fps / 0 gaps / max 78.7. 2 s buckets 45.0-52.5 fps (combat t0-12 s 45.0-52.5, empty cleared
+  arena t12-20 s 47.9-51.7). CPU 9.08 ms = 0.445 of the 20.39 ms frame. Max frame 78.7 ms at rel 3806 ms = the wave-1 ->
+  wave-2 hand-off (`death mantis` + `wave_start` t584 125 ms before the frame start). E.fps/meter read 54.9 / "55 fps"
+  in 18 of 20 s (41.5 / "41 fps" at 12-13 s) while rAF measured 45-52.5: the meter over-reads by ~6 fps here.
+- `certD5-b-wave2-1920` first pass — **CONTENDED, not judged**: 26 headless Chrome processes of another agent were on the
+  machine at launch (GOTO 37.3 s vs 7-9 s alone). Read 33.8 fps steady with one 187.9 ms frame (rel 5545 ms,
+  `ally_cast piercing_shot` + `volley` x3 bolts t582-591) and E.fps 27-33 on an EMPTY cleared arena (t12-19 s, 4 ents)
+  — the co-tenant signature documented in "Contention" above. Re-run alone below. From here every capture goes through
+  `tools/certD5-b-run.sh`, which waits for 0 other capture jobs / 0 headless Chromes and logs co-tenants every 3 s to
+  `captures/<name>.cotenant.txt`.
+- `certD5-b-wave2-1920` re-run ALONE (runner PRE: 0 other capture jobs, 0 headless Chrome, CPU 4 %; monitor max 1 job /
+  10 chrome = this run only; exit 0; GOTO 12.3 s): room 2 [4,5], peak 5 @t737 / 17 ents, 9 deaths, cleared t1118.
+  rAF 20.05 s: ALL 76.3, WARM 78.2, **STEADY 76.0 fps** (1292 f, p50 12.1, p95 18.3, p99 18.6, max **139.4 ms**),
+  **1 gap > 100 ms** at rel 5539 ms (139.4 ms), worst 15 s window 75.1 fps / 1 gap. Buckets 68.3-82.8. CPU 10.1 ms =
+  0.767 of the frame. The 139.4 ms frame has the same signature and the same relative time as the contended pass's
+  187.9 ms frame (rel 5545): `projectile_spawn` id 43 (t781 alone / t570 contended) 81-126 ms before frame start,
+  `ally_cast piercing_shot` right after it — reproduces 2/2 at 1920 (not seen at 2560, max 78.7, nor 1600 r5, max 34.3).
+  Gate: 1 gap < 3 per 15 s and < 250 ms -> not a FAIL; advisory. E.fps/meter 82.0-82.6 / "82-83 fps" vs rAF 68-83.
+- `certD5-b-boss-2560` ALONE (PRE 0 jobs / 0 headless Chrome, CPU 17 %; monitor max 1 job / 9 chrome; exit 0; GOTO 9.8 s):
+  natural fight, quakes t240 / 522 / 804 / 1113, adds t436 (0.75, 3) / t676 (0.5, 3) / t916 (0.25, 2), peak **7**
+  enemies @t921 / 17 ents, Stag 0.61 -> 0.01, party wiped (7 `downed`, `run_end` t1322), sample t473-1609. rAF 20.04 s:
+  ALL 40.9, WARM 45.9, **STEADY 40.0 fps** (681 f, p50 24.3, p95 36.4, p99 42.6, max 73.2 ms), 0 gaps > 100 ms, 1 long
+  task (77 ms); **worst 15 s window 38.9 fps**. 2 s buckets: 46.4 / 46.3 / 37.9 / **32.7** / 34.2 / 40.9 / 42.1 / 37.9 /
+  42.1 / 48.5 — the Stag-alive stretch t4-12 s with 5 enemies + 2-3 azones is 32.7-37.9 fps. CPU 13.79 ms = 0.552 of
+  the 24.98 ms frame (main thread idle ~45 % of each frame -> GPU-bound). E.fps / meter track rAF here: 33.0-33.3 /
+  "33 fps" at 8-11 s where rAF buckets read 32.7-34.2. **Below the 45 fps gate -> FAIL.**
+- `certD5-b-boss-1920` ALONE (PRE 0 / 0, CPU 9 %; monitor max 1 job / 9 chrome; exit 0; GOTO 11.2 s): same fight script
+  (quakes t330 / 612 / 894 / 1203, adds t526 / 766 / 1006, peak 7 @t1006, wipe `run_end` t1412). rAF 20.05 s:
+  **STEADY 66.7 fps** (1134 f, p50 12.2, p95 24.1, p99 24.6, max **145.5 ms**), **1 gap > 100 ms** at rel 4927 ms
+  (145.5 ms; events inside the frame: `hit ally` t824, `hit stag` t825 x2 — no first-use cast), worst 15 s window
+  65.5 fps / 1 gap. Buckets 57.7-76.0 (Stag alive 57.7-71.1). CPU 11.51 ms = 0.767. Gate: PASS (1 gap, < 250 ms);
+  advisory. E.fps flips 82 / 55 on the ~6.07 ms quantisation grid.
+- `certD5-b-wave2-1600` first pass — **co-tenant arrived mid-sample, not judged**: monitor shows 1 job / 9 chrome until
+  20:08:10, then **2 jobs / 18 chrome** from 20:08:16 (another agent's capture). Read 67.5 fps steady with a 109 ms frame at
+  rel 18230 ms (no sim event near it) and 57.3 fps buckets at 10-16 s on an empty arena. Re-run below.
+- `certD5-b-wave2-1600` re-run ALONE (waited 39 s for the co-tenant to leave; monitor max 1 job / 9 chrome over 9
+  samples; exit 0; GOTO 21.0 s): room 2 [4,5], peak 5 @t830 / 17 ents. rAF 20.06 s: **STEADY 104.1 fps** (1771 f,
+  p50 11.9, p95 12.3, p99 18.4, max 24.7 ms), 0 gaps, worst 15 s 102.7 fps. Buckets 86.7-115.9. CPU 10.6 ms (>= frame:
+  CPU-bound). Meter flips "83" / "161 fps" (quantised) while rAF reads 104.
+- `certD5-b-boss-1600` ALONE (monitor max 1 job / 10 chrome; exit 0; GOTO 10.2 s): quakes t226 / 508 / 790 / 1099, adds
+  t422 / 662 / 902, peak 7 @t904, wipe. rAF 20.06 s: **STEADY 81.6 fps** (1388 f, p50 12.1, p95 18.4, p99 24.4, max
+  43.0 ms), 0 gaps, worst 15 s 79.1 fps. Buckets 63.5-105.3 (Stag alive 63.5-80.7). CPU 12.31 ms = 1.005 (CPU-bound).
+- `certD5-b-camp-2560r` (repeat, ALONE: monitor max 1 job / 10 chrome; exit 0; GOTO 10.6 s): rAF 10.04 s: **STEADY
+  50.7 fps** (357 f, p50 18.2, p95 24.4, p99 24.9, max 30.7 ms), 0 gaps; buckets 48.0-51.1; CPU 10.28 ms = 0.522.
+  E.fps / meter 54.9 / "55 fps" all 10 s (over-reads by ~4 fps). The two alone camp-2560 samples straddle the gate
+  (40.9 and 50.7): frames sit on the 18.2 ms (3-interval) / 24.3 ms (4-interval) boundary, so the mean flips between
+  ~41 and ~51 run to run. A 30 s sample follows to settle it.
+- `certD5-b-boss-2560r` (repeat, ALONE: monitor max 1 job / 10 chrome; exit 0; GOTO 11.1 s): same fight (quakes t239 /
+  521 / 803 / 1112, adds t435 / 675 / 915, peak 7 @t917, wipe). rAF 20.06 s: **STEADY 46.9 fps** (798 f, p50 18.3, p95
+  30.3, p99 30.7, max 42.4 ms), 0 gaps; worst 15 s 46.2 fps. Buckets: Stag alive (0-16 s) **43.1-47.1**, end screen 52.0-52.2.
+  CPU 12.0 ms = 0.563. E.fps / meter "41 fps" for 13 of the 15 Stag-alive seconds (rAF 43-47: meter under-reads here).
+- `certD5-b-camp30-2560` (30 s, ALONE: monitor max 1 job / 9 chrome; exit 0; GOTO 10.1 s): rAF 30.08 s: **STEADY 50.0 fps**
+  (1350 f, p50 18.2, p95 24.5, p99 30.3, max 36.4 ms), 0 gaps; worst 15 s window **49.3 fps**; 2 s buckets 44.5-53.3.
+  CPU 10.42 ms = 0.52. Meter "55 fps" 25/30 s, "41 fps" 5/30 s (E.fps = 1000 / a whole number of 6.07 ms intervals).
+  Caveat on the first `certD5-b-camp-2560` (40.9): it ran BEFORE the co-tenant monitor existed and ~2 min before another
+  agent's 26 headless Chromes were seen, so it is not certified alone; the two monitored camp-2560 samples read 50.7 / 50.0.
+- `certD5-b-wave2-2560r` (repeat, ALONE: monitor max 1 job / 10 chrome; exit 0; GOTO 11.0 s): room 2 [4,5], peak 5
+  @t563. rAF 20.03 s: **STEADY 45.4 fps** (773 f, p50 24.1, p95 30.3, p99 36.4, max 79.0 ms), 0 gaps; **worst 15 s
+  window 44.8 fps**; buckets: combat (0-12 s) 40.6 / 41.9 / 47.5 / 44.0 at 4-12 s, cleared arena 45.4-48.8. Max frame
+  79.0 ms = the wave-2 spawn (5 x `enemy_spawn` t559, 82 ms before the frame). CPU 10.79 ms = 0.49.

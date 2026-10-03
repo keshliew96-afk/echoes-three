@@ -1,0 +1,36 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const E=__echoes;const r1=E.cmd(\"partySwap\",1,\"taunting_roar\",0);const g=E.cmd(\"partyGrantNode\",1,\"provoke\");const s=E.cmd(\"partySocket\",1,\"taunting_roar\",\"provoke\",0);return {r1,g,s,view:E.cmd(\"partyView\",1).slots,threat:E.cmd(\"threat\")}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "key",
+  "key": "b",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "key",
+  "key": "F2",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const t=[...document.querySelectorAll(\"*\")].filter(e=>e.children.length===0&&/prefer the Tank/.test(e.textContent)).map(e=>{const r=e.getBoundingClientRect();return {text:e.textContent.slice(0,140),w:Math.round(r.width),h:Math.round(r.height),sw:e.scrollWidth,cw:e.clientWidth,sh:e.scrollHeight,ch:e.clientHeight}});return {n:t.length,t,threat:__echoes.cmd(\"threat\")}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntfixM4b5-socket-tank"
+ }
+]

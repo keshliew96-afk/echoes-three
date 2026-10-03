@@ -70,3 +70,2169 @@ right" into the same numbers the critics measure:
 It measures **>160 3.418%, >200 1.427%, 16/16 buckets** — that is the benchmark.
 A frame whose whole histogram sits below bucket 8 is murk, no matter how much
 content it contains: fix lighting/exposure, not content.
+
+## Gauntlet Loop harness rules (v0.5.0+, revised v0.5.1, binding — details in docs/gauntlet/PLAN.md §6)
+
+**Boot params.** A plain URL (tools/cert-capture.mjs's default) now shows the
+TITLE SCREEN once M1 lands, with the sim paused. Regression captures that must
+boot straight into camp use **`?menu=0`** — or any legacy harness param
+(`?scene=`, `?room=`, `?run=1`, `?seed=`, `?variant=`), which all keep their
+v0.4.63 behaviour and skip the title — including the portal: a menu-skip boot
+never opens the expedition picker, so E at the portal starts Act I as before
+(PLAN §4.1). `?layout=N` (M4b) also skips the title: layout N's dressing PLUS
+its hazards/interactables in the `?room=` harness, while `?variant=N` stays
+dressing-only (legacy golden traces unchanged). `?menu=1` forces the title
+even with legacy params (e.g. a seeded journey: `?seed=5&menu=1`). Other params:
+`?freeze=1` (sim frozen at tick 0 until `__echoes.sim.thaw()`), `?fresh=1`
+(wipe all `echoes.*` localStorage first — a clean profile), `?act=1..3`,
+`?slot=<id>`, `?audio=0`, `?fps=1`, `?net=…`, `?nethost=1`, `?netjoin=CODE`,
+`?netquick=1`, `?netname=`, `?netseat=`, `?netcond=lat75,jit10,loss10`,
+`?netrate=`. Never use `?room=` for a network room code (it is the legacy wave
+room param) — use `?netjoin=`.
+
+**Loopback workaround (2026-09-22 ~22:30, this machine).** Headless Chrome for
+Testing 152 stopped reaching loopback ports (`net::ERR_CONNECTION_TIMED_OUT`
+to 127.0.0.1 after 21 s, while curl / node fetch reach the same server): its
+Windows AppContainer network-service sandbox refuses loopback.
+`--disable-features=NetworkServiceSandbox` restores it with no system
+change. When a harness shows that error, use the flag: tools/gntM4c-certcapture.mjs
+is tools/cert-capture.mjs + that flag (same CLI, same output),
+tools/gntM4c-actrun.mjs is the act runner + the flag, and
+`launchEchoes({ extraArgs: ['--disable-features=NetworkServiceSandbox'] })`
+fixes any harness built on tools/gnt-arch-browser.mjs.
+
+**Smoke + core loop (every builder commit).**
+`node tools/cert-capture.mjs shot <pfx>smoke --settle 4000 --timeout 180000`
+must exit 0 with zero `[PAGEERROR]`. Core loop:
+`node tools/cert-capture.mjs shot <pfx>core --url "http://127.0.0.1:5199/?seed=7&menu=0" --actions tools/actions/gnt-arch-coreloop.json --timeout 180000`
+(hold W to the portal → E → room 1 → killAllEnemies → phase `reward`;
+re-verified at v0.5.1). A key that must change this recipe writes
+`tools/actions/gnt-<KEY>-coreloop.json` and updates this pointer in the same
+commit; ARCH files are never edited by builders.
+
+**Esc = pause everywhere (v0.5.1).** Once INT lands, Esc opens the pause menu
+from combat and from every run page (draft, path, shop, end cards); an open
+socket screen closes on the first Esc. Esc never declines a draft — decline is
+**X** or the Decline button. Action files that used Esc to decline must press
+X instead.
+
+**Named harnesses (v0.5.1, PLAN §6.7).** Import `tools/gnt-arch-browser.mjs`
+(read-only): `launchEchoes({ gpu, headful, background, autoplay })`,
+`openEchoes`, `waitReady`, `measureRaf`. *GPU harness* = headless + ANGLE/D3D11
+(every fps gate). *Display harness* = the same headful (V-Sync / frame-limit
+cadence; run `node tools/gnt-arch-browser.mjs rafhz --headful` first — this
+machine measured ~161 Hz rAF headful AND headless at v0.5.1, a ~165 Hz panel).
+*Multi-page* = `background: true` (default: `--disable-renderer-backgrounding
+--disable-background-timer-throttling --disable-backgrounding-occluded-windows`)
+— mandatory for any harness with more than one page or an unfocused page.
+*Audio* = `autoplay: true`. The network multi-client harness is
+`tools/gnt-M5a-netbench.mjs` (fixed CLI + `echoes-netbench/1` schema, PLAN §6.7)
+and the act runner is `tools/gnt-M4a-actrun.mjs` once those keys land.
+
+**Capture point (v0.5.1).** Save captures/applies and net snapshots run only
+at `clock.onTickEnd` (after a world step returns) or between frames — never
+inside a bus listener. Probes that save from an event must set a flag and
+capture at the tick end.
+
+**Deterministic content setups.** Build scenarios with the PLAN §6.4 commands
+(`spawn(etype, x, z, { elite })`, `spawnHazard`, `spawnInteractable`,
+`hazardPhase`, `armKeg`, `setLayout`, `burrow`, `setStatus`, `clearStatus`,
+`startRun({ act, challenge })`, `autopilot`, `echoArm`, `resonance`) as their
+owners land them — never by waiting for RNG.
+
+**File prefixes.** Every tool / action / capture an agent creates starts with
+its prefix (`gnt<KEY>-`, fix builders `gntfix<KEY><round>-`, critics
+`gntc<key><round>-`, refuters `gntr…`, architect `gnt-arch-`). Never edit
+tools/cert-capture.mjs, tools/capture.mjs, tools/analyze.mjs, tools/cert-gen.mjs
+or another agent's prefixed files.
+
+**Ports.** vite dev 5199 is shared — never start another dev server, never kill
+it. Your own net server (`npm run net -- --port P`) and production preview
+(`npx vite build --outDir dist-<key>` then
+`npx vite preview --outDir dist-<key> --port P --strictPort`) use ONLY the ports
+PLAN.md §6.3 assigns your key; kill exactly those PIDs before returning.
+
+**Debug API additions** (`window.__echoes`): `sim` (freeze / thaw / stepN /
+trace / hash / script — ARCH), `app` (state, overlay, stack, open, back, press,
+focus, responses, frameStats, display — M1), `settings` (get / set / reset /
+dump / keys / persist / storageKey / loadReport), `audio` (buses, busGain,
+meter, meterReset, testTone, cueLog, music, voices — M3), `save` (list / save /
+load / remove / capture / hash / roundTrip / corrupt / simulateQuota /
+simulateTornWrite / profile / usage — M2), `net` (state, role, room, seat,
+peers, stats, conditioner, connect / host / join / quickMatch / leave /
+setReady / start / drop / log — M5a/M5b), `content` (levels, unlockedActs,
+difficultyTable, roomPlan, probes + M4b's hazards / interactables / layout —
+committed service, M4a/M4b fill it), `busCounters` (emitted / replayed /
+simCalls / presentationCalls / refusedEmits / replica — the replica-bus gate).
+A namespace is `null` until its module provides the service.
+
+**Determinism.** `node tools/gnt-arch-simtrace.mjs --mode kill_all|defend|run
+--ticks 3600 [--seed 7 --script 3] [--root <checkout>] [--record f | --golden f]`
+runs the sim headless in Node exactly as main.js builds it. In page:
+`?seed=7&scene=arena&room=kill_all&freeze=1` then `__echoes.sim.trace(600, 3)`.
+Both exclude `sound` events (audio is not sim state). v0.5.0 references:
+Node kill_all 3600 ticks `d1eff38b03f581aa` / `bca6aa1051309b21` (identical to
+v0.4.63); in-page trace `8e8d6fd519dca899` / `817f1e9940c91d76`. v0.5.1
+re-verified all nine Node traces (kill_all / defend / run × seeds 1, 2, 7) and
+the in-page trace identical. Goldens for W3/W4 are recorded from the W2-end
+build by M2 before its first edit and re-checked by M5b (PLAN §6.5).
+
+**Audio probes.** Launch your own puppeteer with
+`--autoplay-policy=no-user-gesture-required` (`launchEchoes({ autoplay: true })`);
+measure only through `__echoes.audio.meter()` / `testTone()` (headless Chrome
+renders Web Audio to a null sink; analyser taps work). Clipping is measured at
+the `prelimit` tap (clipper input), never after the tanh ceiling. The
+locked-state probe runs WITHOUT the flag: no AudioContext may exist before the
+first trusted key/click, which reaches `audio.unlock` through the app gesture
+hook even while a blocking menu swallows the key.
+
+**Network probes.** Start your own server instance; drive 2–4 clients with your
+own harness (puppeteer pages and/or Node WebSocket bots using
+src/net/protocol/*); shape links with the server's `--latency --jitter --loss
+--dup --reorder --burst` flags or `POST /admin/conditioner` (server started with
+`--admin`), and drop links with `POST /admin/drop`. Report every net gate at
+the four PLAN §7 conditions N1 (150 ms ± 20, 10% loss), N2 (250 ms ± 40, 20%),
+N3 (burst loss) and N4 (dup + reorder). Multi-page runs use the multi-page
+launch profile. `npm run net -- --host 0.0.0.0` exposes the server on the LAN
+(default bind 127.0.0.1). A guest must show `busCounters.simCalls` frozen and
+`refusedEmits === 0` for the whole session (replica bus).
+
+**Gamepad probes.** The menu polls `navigator.getGamepads()` every frame and
+does not require `gamepadconnected`, so a mock installed by an `eval`
+(override `navigator.getGamepads` to return a standard-mapping pad whose
+`buttons[i].pressed` you toggle) drives the menus.
+
+### M1 — app shell, title, settings, display (Gauntlet W1, owner M1)
+
+**Boot.** Plain URL → `loading` splash (sim frozen at tick 0 while the boot
+warm-up drains; then "Press any key or click" only while the audio engine is
+`locked`) → `title` over the live camp (sim paused, `__echoes.app.titleCam()`
+reports the backdrop framing). `?menu=0` / any legacy harness param =
+`app.state === 'playing'` from the first frame, exactly v0.4.63 (no splash,
+no title, no auto-pause on blur, FPS meter shown). A title boot never ticks
+until New Game (so `gnt-arch-browser.mjs waitReady()` — which waits for
+tick ≥ 240 — needs `?menu=0` or a New Game press first).
+
+**Driving menus.** Real input works everywhere (the window capture-phase gate
+turns keys into nav actions while a blocking screen is open — no game listener
+sees them). Scripted: `__echoes.app.press('down'|'up'|'left'|'right'|'confirm'|
+'back'|'tabPrev'|'tabNext')`, `open(id, params)` (e.g. `open('settings', { tab:
+'display' })`), `back()`. Wrap calls that return a promise (`confirm`,
+`keepDisplay`, `newGame`) in an eval that returns `true`, or the capture waits
+for the dialog to resolve. Element ids are stable: `ap-title-{new,load,
+settings,exit,continue,multiplayer,records}`, `ap-tab-<id>`, `ap-display-
+{renderScale,mode,vsync,frameLimit,showFps}`, `ap-gameplay-{screenshake,
+autoPause}`, `ap-settings-{reset,back}`, `ap-confirm-{ok,cancel}`,
+`ap-keep-{keep,revert}`, `ap-farewell-return`. `window.close` really closes a
+puppeteer tab with one history entry — `history.pushState` first (or stub it)
+to reach the farewell card.
+
+**`__echoes.app` (M1).** `state`, `overlay`, `mode`, `stack()`, `screens()`,
+`focus()` → `{ screen, id, label, rect, ring }`, `focusables()`,
+`ringCount()` (must be 1 while a screen is open), `responses()` /
+`clearResponses()` (last 50 `{ action, source, screen, inputTs, paintTs, ms }`),
+`frameStats()` (`renderedFps, rafHz, displayHz, source, vsync, limit,
+frameMsP50/P95, workMsP50/P95, frames, uncappedFps`), `display()` (render scale,
+drawing buffer, css, dpr, clamp, fullscreen / browser-F11 / keyboard-lock,
+vsync, limit), `displayLog()`, `simPaused()`, `pauseReason()`, `lastSource()`,
+`gamepad()`, `toasts()`, `titleCam()`, `confirm(o)`, `keepDisplay(o)`,
+`toast(t,o)`, `requestPause(src)`, `newGame()`, `exit()`, `quitToTitle(o)`,
+`provide(name, impl)` / `service(name)` (probe seam — e.g. a recording audio
+stub for the gesture-hook gate), `freshWorld`, `frameCount`, `prebuildMs`.
+
+**Display facts a probe can rely on.** Render scale = `renderer` pixel ratio
+`min(dpr, 2) × s`, drawing buffer ≤ 3840×2160 (`display().clamped`), applied
+synchronously (the next rendered frame). V-Sync off = rAF-anchored uncapped
+loop (extra frames between refreshes, none once refreshes are being missed);
+`displayHz` is the vsync-period estimate (10th-percentile rAF interval) — use it,
+not `rafHz`, as the display rate when the page is GPU-bound. Frame limits pace
+rendered frames only; the sim stays 60 ticks/s. Fullscreen is session-only and
+must be entered from a trusted key/click (puppeteer `keyboard.press` counts);
+Keep/Revert opens when the Display tab is left or Settings closes.
+
+**M1 probes** (`node tools/gntM1-drive.mjs tools/gntM1-sc-<name>.mjs [--url U]
+[--w W --h H] [--gpu 1] [--headful 1]`, GPU harness by default; output
+`captures/gntM1-sc-<name>.json`): `layout` (G1.1, run at 1024×576 / 1600×900 /
+2560×1440), `nav` (G1.2), `response` (G1.3), `scale` (G1.4, `?menu=0`),
+`keeprevert` (G1.5 + G1.9), `pacing` / `pacing-half` (G1.6 + G1.7, `?menu=0`),
+`persist` (G1.8, `?menu=0`), `exit` (G1.10), `journey` (G1.11), `palette` then
+`node tools/gntM1-palette-check.mjs` (G1.12), `gesture` (G1.13), `shake`
+(screen-shake scaling, `?menu=0`), `misc` (FPS meter toggle, auto-pause,
+overlay pause).
+
+**G1.3 in the title's first seconds** (gauntlet fix MENU-R1-F1, v0.5.64):
+`node tools/gntfixM11-early.mjs [--src keyboard|gamepad|mouse]` = the critic's
+early window (20 presses 220 ms apart from +0.7 s after `app.state ===
+'title'`, `app.responses()` + keydown → first rAF after the DOM mutation) plus
+the rAF-gap / long-task timeline and a settled set; `tools/gntfixM11-builder.mjs`
+logs the background dressing builder around the title (built / worker / slice
+ms, texture uploads); `tools/gntfixM11-trace.mjs` records a Chrome trace with
+the GPU-process categories and digests CrGpuMain. `app.backgroundHold()` is
+true while an app screen is open and a menu input came within 1.5 s — the
+arena's dressing pre-builder runs no main-thread slice then.
+
+**Menu order and short-window layouts** (gauntlet fix-M1-r3, v0.5.95+).
+Settings has ONE vertical ring in reading order: the SELECTED tab -> the tab's
+visual rows (rows = items whose centres share a band; Down/Up step one row and
+enter it at the item nearest in x; Left/Right move inside a row of buttons,
+e.g. an audio channel's Curve / Mute / Test) -> Reset (skipped while disabled)
+-> Back -> the selected tab; Up is the exact reverse, Tab / Shift+Tab and the
+D-pad walk the same ring, and the cursor never rests on an unselected tab.
+Probes: `node tools/gntfixM13-ring.mjs` (every tab x arrows / Tab / D-pad x
+1024x576 + 1600x900; `SIZES`, `TABS` env filters) and
+`tools/gntfixM13-tabland.mjs` (the critic's MENU-R3-F2 repro). The title's
+control hints + version sit in the bottom-RIGHT corner; `max-height: 620px`
+tightens the title column so seven rows (a save's Continue caption - slot name
+last, clamped to two lines - Multiplayer, Records) end above the hint band.
+The pause menu's rows never shrink below their text; windows <= 760 px tall
+lay each row out on one line (caption right-aligned).
+`node tools/gntfixM13-layout.mjs` audits the title (fresh / with a save),
+Settings > Display and the pause menu (camp, run, the boon draft reached by
+the player path) at 1024x576 ... 2560x1440: rects, text inside rows,
+scroll-box cuts, chrome vs items, lower-edge hit tests. `el.click()` from the
+nav `confirm` action is an untrusted click and is NOT mouse input (hint glyphs
+keep following the pad / keyboard; no second response is logged) -
+`tools/gntfixM13-padhints.mjs`.
+
+**Text fields: Esc is cancel** (gauntlet fix-M1-r4, v0.5.126+). In Settings >
+Network, Esc / pad B / right-click with an uncommitted edit reverts the field
+to the saved value (caret stays, "Change cancelled" note, footer "Enter Save ·
+Esc Cancel edit"); with nothing to cancel it backs one level. Enter commits;
+leaving the field with ↑/↓/Tab/click keeps what was typed. Dialogs (rename
+save, change server) still close on one Esc without saving. A server address
+the browser would rewrite (`ws://12` -> 0.0.0.12) or a 0.x host is refused
+with a reason. Probes: `node tools/gntfixM14-cancel.mjs` (keys / pad / right
+click / IME / dialogs / Settings over play / Reset-to-automatic focus; 24
+checks), `tools/gntfixM14-address.mjs`, `tools/gntfixM14-textesc.mjs` (the
+critic's MENU-R4-F1 repro); `ECHOES_URL` targets a preview.
+
+**Display mode never shows a mode the game is not in** (gauntlet fix-M1-r6,
+v0.5.200+). The Display-mode chip mirrors `document.fullscreenElement`, not
+the request: a pad A / D-pad press keeps "Windowed" and shows "Press Enter or
+click — browsers don't let a gamepad button switch to fullscreen" (a pad can
+LEAVE fullscreen); the first Enter / click / arrow enters; "Switching to
+fullscreen…" while a request is in flight. The settings store delivers change
+events FIFO (a set() inside a listener is heard by every later listener after
+the outer change), and a trusted pointerdown makes the pointer the input
+source before the control acts. Probes: `node tools/gntfixM16-padfs.mjs [--tag
+x]` (the critic's two sequences + no-activation pad, resting-pointer click,
+pad A in fullscreen, Enter in/out, a per-frame "lie frame" counter; RESULT
+line), `tools/gntfixM16-cpadfs.mjs` / `-cpadfs2.mjs` (verbatim critic
+MENU-R6-F1 repros, renamed outputs), `tools/gntfixM16-store.mjs` (store
+ordering, the audio log/linear level move, the gamepad refusal);
+`ECHOES_URL` targets a preview.
+
+### M3 — audio engine and mixer (Gauntlet W1, owner M3)
+
+**Locked until a gesture.** No AudioContext exists before the first
+user-activation gesture: `__echoes.audio.state === 'locked'` and
+`gestureNeeded === true` on a normal boot; the app gesture hook's first
+trusted key (not Esc) / click / touch creates it synchronously
+(`autoplay().unlockedVia`, `unlockedAtMs`, `runningAtMs`). Puppeteer's
+`page.evaluate` counts as a user gesture — a locked-state probe must read the
+page through a CDP session with `Runtime.evaluate({ userGesture: false })`
+(see `tools/gntM3-gates.mjs autoplay`). With
+`--autoplay-policy=no-user-gesture-required` (`launchEchoes({ autoplay: true
+})`) a silent media-element trial unlocks the engine right after main.js
+finishes evaluating (~4 s into a headless boot) — wait for `state ===
+'running'` before measuring. `?audio=0` builds the engine with Master
+force-muted for the visit (unmuting Master in the Audio tab ends it).
+
+**Measuring (never by ear).** `__echoes.audio.meter(tap)` for taps
+`master | prelimit | music | sfx | ambient | ui` (AudioWorklet accumulators on
+the audio thread: integrated `rmsDb / lRmsDb / rRmsDb / peakDb`, `peakHoldDb`,
+`shortRmsDb`, `overMinus1Pct`, `clipCount`, 400 ms window median / p10 / p90,
+`longestBelowMinus50Ms`, `centroidHz` once any meter call armed it);
+`meterReset()`; `history(tap, n)` (100 ms windows). Bus taps sit AFTER the
+Master send, so every tap moves with Master; `prelimit` is the limiter output
+= the ceiling clipper's input. `testTone(bus, { freq, dbfs, ms, x, z })`
+plays a sine whose RMS is `dbfs` pre-fader and returns `expectedTapRmsDb`
+(x/z = spatial through a panner). Silence the score first with `quiet()`
+(pins music `silence` + no bed) and note that an HMR reload restarts it.
+`busGain(name)` = the live AudioParam values (a −180 dBFS keep-alive keeps
+every chain rendering, so values are live even in silence); `buses()` = the
+settings view with `gainDb / effectiveDb`; `limiter()` = reduction now / max,
+`pctWindowsUnder6dB`, `excursionsOver10dB`, `makeupCompDb`; `voices()`,
+`cueLog(n)`, `cost()` / `costReset()` (engine main-thread ms per frame),
+`music()` (state, theme, bpm, intensity, `fight`, transitions with
+`crossfadeMs`), `setMusic(state, { theme, bed, crossfadeSec, intensity })` /
+`releaseMusic()`, `play(cue, opts)`, `cues()`, `eventTypes()`,
+`listener()`, `spatialModel()`, `predictPan(x, z)`, `autoplay()`.
+
+**Sound events.** Every cue request is still a `sound` event on the sim bus
+(`{ slot, cue, voice?, dropped? }`; legacy slots `shoot / hit / kill / heal`),
+including requests merged by the 30 ms same-cue cooldown (`dropped:
+'cooldown'`) and requests while locked (`dropped: 'locked'`). Traces exclude
+`sound`.
+
+**Engine cost (G3.10, fix-M3-r1).** Cue recipes and the combat / boss
+grooves' notes are baked into samples at runtime: the main thread only
+records a recipe's primitive calls (src/audio/render.js record kit) and a Web
+Worker renders them with a DSP twin of the voices.js primitives
+(src/audio/bake.js; fidelity vs Web Audio: `node tools/gntfixM31-fidelity.mjs`).
+Baked cues play in the sampler worklet and baked notes in a per-player layer
+sampler (src/audio/sampler.js, one message per frame, no nodes). Gameplay cue
+requests are queued by the sim listener and started in `update()` under
+`FRAME_BUDGET` (priority >= 4 always; a request that cannot start within
+max(100 ms, 2.5 frames) is virtualised: `dropped: 'budget'`, still a `sound`
+event). `cost()` files every engine interval per frame (update + handlers +
+API cues + meter messages + bake slicing): `p50Ms / p95Ms / p99Ms / maxMs`,
+`avgPartsMs`, `tailPartsMs` (mean make-up of the frames at/above p95),
+`budget` (queued, deferred, budget drops, baked / sampler / live starts,
+`liveTop` = keys still synthesised live) and `bake` (keys, MB, queues,
+worker state, record cost). `bake()`, `sampler()`, `bakeEnabled(false)`
+(A/B: every cue and note live, the pre-fix path), `music().notes` (baked vs
+live notes). The limiter's per-frame reduction sampling runs once a probe
+armed the meters (`meterReset()`, `meter()`, `limiter()`).
+The spectral centroid is computed in the meter worklet (`centroidSource:
+'worklet-fft'`). Probe: `node tools/gntfixM31-cost.mjs --mode adds|natural|camp
+[--runs n] [--seed s] [--fight sec] [--throttle x] [--profile] [--per-second]`
+(the critic scenario; closes its browser and retries after an HMR reload).
+
+**Mixer facts.** Slider curves are src/audio/mixmath.js (log: −20 / −10 /
+−4.15 dB at 25 / 50 / 75 %; linear: −12.04 / −6.02 / −2.50). Switching a
+channel's curve moves its level to the same dB (not on reset). Basic attack in
+probes = RIGHT mouse button. Default mix (combat): music ≈ −24 dBFS RMS at the
+master tap, beds ≈ −28, SFX peaks ≈ −8, UI peaks ≈ −20.
+
+**M3 probes** (`node tools/gntM3-gates.mjs <gate>` → `captures/gntM3-gate-
+<gate>.json`): `curves` (G3.1), `decouple` (G3.2), `clip` (G3.3, boss fight
+at 100 %), `balance` (G3.4), `music` (G3.5, title → camp → combat → boss →
+victory → camp → combat → defeat → camp by the real flow), `spatial` (G3.6),
+`coverage` (G3.7), `autoplay` (G3.8, no flag, key / click / touch + with-flag
+check), `persist` + `tab` (G3.9: reload, mute on blur / hidden, the Audio tab
+by keyboard, mouse and a mocked pad), `cost` (G3.10, a whole run).
+`node tools/gntM3-calibrate.mjs [--only cues|music|post|beds]` re-measures
+the cue peaks / music trims / bed trims after a sound-design change.
+
+**Audio-tab focus visibility (fix-M3-r3 AUD3-F1).** The Settings ring order
+(tab -> rows -> Reset -> Back) is M1's `walk()`; on top of it every keyboard /
+D-pad / API focus inside the Audio tab scrolls the list so the whole channel
+group (its name, slider, Curve · Mute · Test, meter) and the focus ring are
+shown — the first channel also brings in the status line and "Volume", the
+toggle its "Behaviour" heading; hover never scrolls. Probe: `node
+tools/gntfixM33-reveal.mjs [WxH ...]` (arrows, W/S, mocked pad, `app.press`,
+hover; per stop: control + ring inside the list, channel name shown, group
+shown when it fits; Up = reverse of Down; `GNT_URL=` for a preview build;
+exit 1 on any FAIL). A pre-fix bundle for comparison: `GNT_AUDIO_TAB=<old
+audio.js> npx vite build --config tools/gntfixM33-vite-before.mjs --outDir
+dist-gntfixM33-before`.
+
+**Build-page selection ticks + UI over combat music (fix-M3-r5 AUD5-F1 /
+AUD5-F2).** Every selection change on the run's build pages ticks like a
+menu move (app `nav` → ui_move, a character tab → ui_tab): the reward / swap /
+party page (Q/E, F1-F4, LB/RB, tab clicks, A/D Take ↔ Leave, W/S / wheel /
+click on the Replaces mark), the door picker (A/D, the d-pad — the page now
+has a pad map, A walks through), the shop (Q/E, and A/D / ←/→ move the card
+focus the pad moves: PLAN §16.4 "Enter on the focused card" buys, "Enter on
+the lamp" advances; the page opens on the lamp) and the socket screen
+(cursor, tab). Pointer hover onto a page button / door / card / tab — and
+onto another app-menu item — ticks once. Commit keys never tick (their own
+cue plays), nothing ticks without a player input (combat keys, a page opening
+under a held key, replicated picks). Mechanism: src/audio/uiselect.js (the
+pages report a cheap `sel()` signature per frame). UI staging: every UI-bus
+cue peaks at the §3.5 ceiling (-12 dBFS pre-bus; baked UI samples play from
+their own measured peak), and the engine's UI duck (`UI_DUCK`, -3 dB,
+released ~0.4 s after the latest UI cue; exempt: Audio-tab previews / Test
+phrases, and while the pause duck holds) dips the score under them —
+`audio.music().uiDuck`. Probes (own port via `GNTFIXM35_BASE`, default
+http://127.0.0.1:4303/, outputs `captures/gntfixM35/<GNTFIXM35_TAG>-*.json`):
+`node tools/gntfixM35-nav.mjs` (legs A-F: pad on the swap offer, doors by
+keys / pad / mouse, socket screen, shop keyboard focus + buy + advance, pause
+hover, no spurious ticks; prints ALL PASS), `node
+tools/gntfixM35-shopshot.mjs [WxH ...]` (the shop hint / lamp boxes with the
+focus on the lamp and on a card: no re-flow, no overlap), and the critic's
+round-5 probes re-run as `tools/gntfixM35-c-{runui2,swap,swapmouse,uicues,
+runui,balance,boss,pause}.mjs` (logic unchanged).
+
+**Pointer activation sounds (fix-M3-r6 AUD6-F1, v0.5.203+).** A mouse
+click or a tap on an app-menu item plays the same cue as Enter / pad A on it:
+src/app/nav.js (`@gnt:M3 POINTER-NAV-SOUND`) announces a trusted press and
+release on one `[data-nav]` item of the top screen as app `nav` `{ action:
+'confirm', source: 'mouse', pointer: true, el }` before the control acts, and
+the engine picks the cue from the item (cues.js `activationCue`: disabled /
+aria-disabled → ui_deny, role="tab" → ui_tab, id `*-back` / `*-cancel` →
+ui_back, else ui_confirm) for every device; pointer cues carry `event:
+'pointer'` in `audio.cueLog()`. Probe `node tools/gntfixM36-activate.mjs
+[tag]` (base `GNTFIXM36_BASE`, default http://127.0.0.1:4303/; output
+`captures/gntfixM36/<tag>-activate.json`, prints ALL PASS): 15 title / Settings
+/ pause / confirm items activated by mouse, Enter and a mocked pad A in
+fresh browsers must give the same single cue (≥ −24 dBFS UI tap), plus
+pointer-only legs (a natively disabled Load Game denies, a press slid off
+the item is silent, slider-track / select-step clicks keep their own tick,
+right-click backs, a tap = the click cue, a splash-dismissing click or tap
+never sounds a title item — run that leg without the autoplay flag and
+read state through CDP `userGesture: false`, since puppeteer's evaluate
+grants user activation). The critic's round-6 probes re-run as
+`tools/gntfixM36-c-{mouseclick,mouseclick2,mouseclick3,levelsel,pad,tab3,
+runui2,swapmouse}.mjs` (logic unchanged, `GNTFIXM36_TAG` names the outputs).
+Run the pad probes one browser at a time: an 80 ms pad tap is missed when
+three GPU browsers share the CPU.
+
+**Adding sounds for new content (W2+).** From your own module (never
+src/audio/**): `service('audio').registerCue(id, { bus: 'sfx', levelDb,
+priority, maxVoices, cooldownMs, voice(ctx, t, dest, p) { … return endTime } })`
+(`p.kit` = the src/audio/voices.js primitives: tone / noise / bell / pluck /
+pad) and `service('audio').registerEventCue(eventType, (ev, h) => [{ cue, x,
+z, gainDb, pitch }] | null)` — handlers run before the built-in map, a non-null
+result replaces the built-in cues for that event instance; `h.pos(id)` /
+`h.player()` give world positions. Themes / beds: `registerMusicTheme(id,
+params)` / `registerAmbientBed(id, builder)`; the run's act (from `run_start`
+/ `layout_enter` `act`) picks theme wood / mill / barrow. New cues are
+measured in page with `await __echoes.audio.measureCue(id)` →
+`designPeakDb`; pass it as `calDb` to registerCue so the cue peaks exactly at
+its `levelDb` (built-in cues: `node tools/gntM3-calibrate.mjs --only cues`).
+
+### M4a — eight slots, skills, nodes, expeditions, difficulty curve (Gauntlet W2, owner M4a)
+
+> **Superseded in part by the M4c user correction (next section):** the
+> player has at most **4** skill slots (keys 1–4) and **8 node sockets per
+> skill** with no rarity caps. The 8-slot / 2-socket / `capped` lines below
+> describe the W2 build; M4a's probes that assert them (gntM4a-simprobe
+> `slots` + the Resonance cap checks, gntM4a-drive `hud` / `socket` /
+> `nudges` on tiles 5–8, gntM4a-realrun's two-click socketing) are
+> superseded by the gntM4c-* probes. Everything else in this section stands.
+
+**Eight slots (W2 — superseded).** `SKILL_SLOTS = 8` (src/core/constants.js) drove every slot
+array: `state().skills` had 8 entries (`null` = empty), keys Digit1–8,
+`cmd('restoreSkillState', { slots: [8 × { id, remaining } | null], override:
+null })` loads a kit, `cmd('grantNode', id)` benches a node,
+`cmd('buildVerdict', skillId, nodeId)` / `cmd('kitVerdict', nodeId)` = the
+§23.4 cell state (`live | grey | inert | capped`) and its copy.
+`__echoes.hud.slots()` → per tile `{ key, cooling, wipeDeg, iconDrawn, nudge:
+{ frame, slot, flash } }`. Legacy 4-slot traces:
+`node tools/gntM4a-legacytrace.mjs --slots 4` (eventsHash must stay the v0.5.0
+goldens `d1eff38b03f581aa` kill_all / `554cd9c41db19975` defend).
+
+**Statuses.** `cmd('setStatus', id, kind, mag, ticks)` → the stored record or
+`{ refused }` (party-only haste/shield/ward/inspired, hostile-only
+stun/exposed, the Stag immune to slow/stun, 120-tick stun immunity);
+`cmd('clearStatus', id, kind?)`, `cmd('statusOf', id)`. Events:
+`status_apply` (announced at the end of the tick the record landed),
+`status_expire`, `shield_absorb`, `hit_blocked` (a Ram's guard). Training
+dummies have 20 HP — one Bell Toll kills them and a corpse is never stunned,
+so prove stun on `cmd('spawn', 'boar', x, z, { hpMul: 6 })`. Number probes
+park the allies and make targets non-knockbackable (their lunges otherwise
+move the targets out of an area mid-measure).
+
+**Expeditions + curve.** `cmd('startRun', { act, challenge })` (bypasses act
+locks), `cmd('skipToRoom', n[, { act, challenge }])`, `cmd('roomPlan')`;
+`__echoes.content`: `levels()`, `level(act)`, `unlockedActs()`,
+`lastActInfo()` → `{ act, reason: 'last' | 'newest' }`, `curve(act,
+challenge)`, `difficultyTable(challenge)`, `roomPlan()`, `sessionWins()`,
+`unlock([1, 2])` (probe override for the ≥ 2-acts portal branch; `null`
+restores the truthful rule), `fx()` (live skill/status VFX element counts),
+plus M4b's probes (`hazards()`, `interactables()`, …). URL `?act=2|3` starts
+that act from the portal / `?run=1`. The Challenge setting is
+`gameplay.challenge` (relaxed / standard / harrowing), read at the portal
+press — it changes the NEXT run only. Portal rule: `?menu=0` → Act I
+directly (the ARCH core-loop check is unchanged); a title session with only
+Act I unlocked → Act I directly; ≥ 2 unlocked → the `expedition` picker (sim
+paused, E confirms, Esc backs out).
+
+**Autopilot + act runner.** `cmd('autopilot', cfg | false)` plays the run
+inside the sim (drafts, door 0, cheapest shop card, auto-socket).
+`node tools/gnt-M4a-actrun.mjs --act all --seeds 1-5` (in page by default:
+`?menu=0`, sim frozen, `__echoes.sim.stepN` chunks; `--node 1` = the
+identical headless sim; `--url` for another server) → per room ticksToClear,
+party damage, downs, enemies by type, elites, boss adds, plus the §4.2 band
+verdict (Spearman ρ ≥ 0.6, wins ≥ 3/3/2 of 5, no room live 180 s, defend and
+boss spikes, per-room damage medians I < II < III). Constants retuned
+2026-09-22 (BUILD_BRIEF §23.2 note): act tier 1.00 / 1.15 / 1.60, slope 0.12,
+defend × 1.25, Stag 2400·T — and retuned again by M4c for the corrected build:
+act tier 1.00 / 1.15 / 1.75, slope 0.16, Stag damage slope 0.7 — and by the
+linear campaign for the carried build (BUILD_BRIEF §23.2 CAMPAIGN note, the
+binding table): level tier 1.00 / 1.60 / 2.80, Stag HP 2400·T × 1 / 1.35 / 1,
+Stag + adds damage slope 0.9, starter grant L2 {2 skills, 18 nodes, 1
+legendary, 34 Glint} / L3 {2, 30, 2, 60}. **G4a.5 probe**: `node
+tools/gntfixM4a3-g4a5.mjs [--url U] [--seed S] [--out f]` parses the latest
+dated note of §23.2 (per-room, per-level and starter-grant tables) and
+compares it ± 1 % with the running game — `content.difficultyTable`, a real
+`startCampaign` per level with `roomPlan` per room, measured spawn hp /
+base hp, the Stag's maxHp and its add phase, the `starter_grant` events;
+PASS = 0 mismatches, 0 page errors.
+
+**Real input.** `__echoes.content.advise()` = what the autopilot would press
+this tick (never applied); `__echoes.content.project(x, z)` = world → CSS
+pixels. `node tools/gntM4a-realrun.mjs --act 1|2|3 --seed S [--url U]` plays a
+whole act with puppeteer keys and mouse only (retries an HMR reload up to 3
+times); `node tools/gntM4a-fpscmp.mjs --url U --tag T` = the fixed scripted
+fight for build-to-build fps comparison (production builds on 4304).
+
+**M4a probes.** `node tools/gntM4a-simprobe.mjs` (Node; every §23.3 number,
+statuses, the 238-cell §23.4 matrix, node behaviours, Keen crit rate, curve
+table, rolled plans). `node tools/gntM4a-drive.mjs <scenario> [--url U] [--w W
+--h H]` (GPU harness; `captures/gntM4a-drive-<scenario>.json`): `skills`
+(G4a.2, all 9 cast by keys 3–8 + VFX frames), `hud` (G4a.1, 1024×576 /
+1600×900 / 2560×1440), `socket` (8 rows, scroll, Esc consumed), `nudges`
+(denial + cooldown grammar on tiles 3–8), `grey` (§15.5 display for the new
+nodes), `acts` (G4a.4: layouts / hazards / interactables / music theme / boss
+adds per act), `picker` (G4a.11), `challenge`, `pages` (G4a.12).
+
+**fix-M4a-r5 probes (gauntlet round 5, 2026-09-30; docs/gauntlet/fix-M4a-r5.md).**
+Node (deterministic, built like `gntCAMPAIGN-camprun`): `node
+tools/gntfixM4a5-ainode.mjs --from 1|2|3 --seeds 1-10 [--root <checkout>]
+[--trace L:R] [--stopAfter N]` — per room each AI seat's loadout, casts per
+skill, basics, damage by victim and by source, min HP per member, downs; GP.8
+idle pairs (a combat room ≥ 20 s, an active equipped all room, 0 casts) and
+the idle-fallback share; `--trace` prints positions / targets / cooldowns every
+30 ticks. `node tools/gntfixM4a5-leash.mjs --from 1 --seeds 1-3` — every AI
+dash / vault / lunge end point against the SEAT's ring (the melee pair's
+vanguard ring 5.4 u in a campaign, BUILD_BRIEF §25.8; GP.8 wants 0).
+`node tools/gntfixM4a5-band.mjs --seeds 1-5 --tag T` = `gntPARTY-band` (GP.13)
+with renamed outputs; `node tools/gntfixM4a5-sweep.mjs --root <scratch>
+--seeds 1-10 "K=V ..."` runs env-knob variants of a scratch checkout in
+parallel against GP.13 (a)–(d) + GP.8. Page (GPU harness; `ECHOES_URL` = a
+production preview): `tools/gntfixM4a5-socketui.mjs W H` (the critic's G4c.5
+probe for all four seats + a fit / caret / clip listing), `-socknames.mjs W H`
+(all 24 class skill row names unclipped), `-shellread.mjs <tag> [--level L
+--seed S]` (the shield / ward shell readability in pixels: body-interior mean
+|ΔRGB|, washed share, saturation ratio against a no-status frame), `-swap.mjs
+healerS|tankS 101-106` (the critic's swap probe + the page cards after Enter),
+`-bootstress.mjs N`, `-isready.mjs slowmech` (the deterministic slow-driver
+`isReady` probe), `-aiuse.mjs 1-3` / `-aggro.mjs` / `-melee.mjs` (critic copies,
+outputs renamed).
+
+### M4c — content correction: 4 skills, 8 sockets per skill, no rarity caps (Gauntlet W3.5, owner M4c)
+
+**The truth (user correction 2026-09-22).** `SKILL_SLOTS = 4` (keys Digit1–4;
+5–8 unbound; `state().skills` has 4 entries), `SOCKETS_PER_SKILL = 8` on every
+skill, the passives included, and any node of any rarity fits any socket.
+`cmd('buildView')` → `{ combatActive, socketCount: 8, bench[], skills: [{ id,
+sockets: [8 × { node, verdict } | null], filled, live, resolved, resonance,
+… }] }`; `cmd('socket', skillId, nodeId, slot?)` (slot 0–7; omitted = first
+vacant) → `{ skill, node, slot, verdict }` or `{ denied: 'limit' | 'full' |
+'no_such_slot' | 'combat_active' | 'not_on_bench' | 'skill_not_owned' }` (no
+`cap` reason exists); `cmd('unsocket', skillId, slot)`; `cmd('autoFill')` =
+the one auto-socket policy (live placements only, within limits, spread to
+the skill with the fewest filled sockets; the autopilot and the socket
+screen's F call it). `cmd('buildVerdict', …)` states are `live | grey |
+inert` (Resonance on a passive = `live`, reason `pulse`). Legendaries on
+passives: Ascend ×2 pulse power, Resonance every 3rd pulse ×2
+(`resonance_proc { pulse: true }`).
+
+**Node supply.** Every combat-room clear drops 2 spoils on the bench
+(`spoils_drop { room, nodes, total }`, provenance `spoils`; forfeited on a
+defend soft-fail; `state().run.spoils`); the shop shelf is 4 cards (2
+common + 1 rare + 1 legendary) at 15 / 20 / 25 — 72 Glint buys any three,
+never four; the autopilot buys cheapest-first while the wallet lasts.
+
+**Screens.** Socket screen: `__echoes.content.socketUi()` → `{ open, scale,
+rows, cells[4][8] { state: vacant|ghost|filled, grey, inert, fits, limited,
+focus }, bench [{ node, count }], focus { zone: cells|bench, r, c, i }, held,
+detail, rects { page, rows, cells, chips, detail, auto }, pad }`. Keys while
+open: arrows/WASD, Enter/Space pick · place · move, X/Delete remove, F
+auto-fill, 1–4 rows, Tab bench ⇄ sockets, Esc/B close (consumed). Pad
+(standard mapping, polled per frame; a mock `navigator.getGamepads` works):
+View (8) opens between rooms, D-pad/stick, A, B (drop hand / close), X, Y,
+LB/RB. HUD: `hud.slots()[i].sockets` = `{ filled, live, grey, of: 8 }` and an
+8-segment `.hud-slot-pips` strip under each of the 4 skill tiles. Draft page:
+`.rn-spoils` line. Shop: 4 `.rn-item` cards.
+
+**Saves.** Schema 2 / StateTree `v: 2`; a schema-1 file migrates on load
+(first 4 skills kept, dropped skills' nodes to the bench, rows padded to 8, a
+stale skill reward → the empty offer). Goldens: the 9 references
+`captures/gnt-M2-golden-*.json` were re-recorded at the M4c-end build (W2-end
+originals: `captures/gntM4c-w2end-golden-*.json`; copies
+`captures/gntM4c-golden-*.json`); `node tools/gntM2-goldens.mjs` is 9/9 on
+the M4c build.
+
+**M4c probes.** `node tools/gntM4c-simprobe.mjs` (Node, 72 checks: slots,
+sockets incl. the 2312-operation any-rarity sweep, passive legendaries, the
+corrected matrix on sockets 1/4/8, auto-fill, supply, the curve table, a
+GENUINE v1 save from `git archive ebd0609` migrated and applied, determinism;
+it exports that v1 build to `captures/gntM4c-v1root` on first use).
+`node tools/gntM4c-drive.mjs socket|sizes|hud|pages` (GPU harness, loopback
+flag built in; JSON `captures/gntM4c-drive-<scenario>.json`).
+`node tools/gnt-M4a-actrun.mjs --act all --seeds 1-5 --node 1` (Node) /
+`node tools/gntM4c-actrun.mjs --act all --seeds 1-5` (in page) → the §4.2
+band; `node tools/gntM4c-band.mjs <actrun.json>` → kill_all-only per-room
+medians + ρ (the gate's per-room medians mix the randomly placed 45 s defend
+rooms). `node tools/gntM4c-realrun.mjs --act 1|2|3 --seed 1` = a whole act by
+real keyboard + mouse (the socket screen by its own keys: Enter places a
+drafted node, B·F·Esc auto-fills the spoils on every page).
+
+**fix-M4a-r4 (v0.5.132) — a full build keeps progressing (CONTENT4-F1).**
+Pools are layered (fill, then upgrade — BUILD_BRIEF §14 note). Probe
+surface: `cmd('draftPools')` → `{ skill, node, upgrade, free }`;
+`run.view().reward.pool === 'upgrade'` + `.upgrade { skill, slot,
+replaces, why }` (read live), `.reason === 'build_complete'` on the empty
+page; `spoils.upgrades`; per shop card `upgrade`; events carry the same
+keys only when set (fill-only traces are bit-identical: goldens 9/9).
+`node tools/gntfixM4a4-supply.mjs --from 1|2|3 --seeds 1-5` (Node: per-level
+spoils per clear, offers, shelf, buys, the build at each Stag; exit 1 on a
+short drop or an empty page while the pools could still serve it).
+`node tools/gntfixM4a4-chain.mjs [seed]` (GPU harness on ECHOES_URL, default
+dev: Level-3 start → upgrade offer + 2 spoils → real Enter Take → socket
+screen with the node in hand on the sim's upgrade target → Enter swaps → F
+swaps the spoils in → shop cards name their upgrades, a click buys → shelf
+fit at 1024×576 / 1600×900 / 2560×1440 → a debug-built complete build gets
+the "BUILD COMPLETE" page). `tools/gntfixM4a4-c-{l3rewards,offers,l3start}.mjs`
+= the round-4 critic's probes with own output names.
+
+### M4b — enemies, hazards, interactables, layouts, biomes (Gauntlet W2, owner M4b)
+
+**Deterministic setups (PLAN §6.4).** `cmd('spawn', etype, x, z, { elite,
+hpMul })` for every archetype (boar, mantis, quillback, toad, moth, ram, mole);
+`cmd('burrow', id, bool)`; `cmd('spawnHazard', htype, params)` /
+`cmd('spawnInteractable', itype, params)`; `cmd('hazardPhase', id,
+'idle' | 'telegraph' | 'active' | 'cooldown')`; `cmd('armKeg', id)`;
+`cmd('interactPress', partyIndex)`; `cmd('setLayout', n)` / `cmd('clearLayout')`
+(placements of data/layouts.js layout n); `cmd('contentState')`. Probes on
+`__echoes.content`: `hazards()`, `interactables()`, `layout()`, `render()`
+(hazard / asset layer counts + prompt + cue count), `prompt()`, `enemyfx()`
+(archetype telegraphs, globs, slicks, wake). In the camp scene
+`cmd('arenaLayout')` → the dressing builder (`layoutId, biome, built, queued,
+building, syncBuilds, slices, maxSliceMs, worker, failed`) and
+`cmd('applyLayout', n)`; in `?scene=arena` the same via
+`__arenaProbe.layoutState()` / `applyLayout(n)`.
+
+**URLs.** `?layout=N` (1–9) = layout N's dressing AND its placements in the
+`?room=` harness / `?scene=arena`; `?variant=N` = dressing only (no
+placements, legacy goldens unchanged). `?act=2|3` with `?menu=0` also makes
+the camp pre-build that act's dressings first.
+
+**Dressings.** One per layout (env/biomes/{wood,mill,barrow}.js), swapped on
+the run's `layout_enter` under the room fade. Floors paint off-thread in
+env/biomes/paint-worker.js (`node tools/gntM4b-groundhash.mjs 1,2,3` — the
+main-thread paint — must print the Act-I hashes
+`2fe56349e8ca1052/9a63967c8cf4e1eb`, `fc901236d5b9c5ea/57c079ffdd7eb997`,
+`5cdb746f53462607/19cb00393d941294`). Since v0.5.64 (gauntlet MENU-R1-F1) the
+worker rasterises in software (a GPU-accelerated worker canvas stalled the GPU
+process 35-113 ms per readback behind the title), so `--worker` prints
+`e1baf1a9d63742b7/19c8a6be6e4509af`, `16da75d4aed6cc75/261012868e591861`,
+`1cc78844b10901c2/6dbb1bf69097a68c` with `streamInSync: true` — the same draws
+and RNG stream, mean |Δ| 1.1–1.7/255 from the GPU raster
+(`tools/gntfixM11-rasterdiff.mjs`). Outside a run the builder pre-builds every
+layout (holding while `app.backgroundHold()` — a menu in use); inside a run
+only the run's act; never in live combat.
+
+**M4b probes.** `node tools/gntM4b-simprobe.mjs` (Node; every §23.5–23.7
+number, governor, spacing, assets, blockers, canonicalJSON mid-wave in
+layouts 1/4/7; 85 checks). `node tools/gntM4b-layoutcheck.mjs` (placement
+rules vs spawns / Waystone / party spots / dressing anchors).
+`node tools/gntM4b-drive.mjs <scenario>` (GPU harness, captures/gntM4b-*):
+`zoo`, `sheet` (silhouettes + elites), `tele` / `shapedbg` (Ember shapes),
+`layout --layout N` (placements idle + forced telegraphs), `biome --variant N
+[--at x,z] [--hide pools|glows|lights]` (dressing frame + draw calls),
+`run --act N [--seed S] [--at x,z] [--top kinds] [--cold]` (real run: camp
+pre-build, startRun, wave with a new archetype, a hazard forced into its
+telegraph during a live enemy telegraph, RMB + 1 + 2, shot — the G4b.7 frame).
+`node tools/gntM4b-perf.mjs --acts 1,2,3 --secs 64` (G4b.5: autopilot real
+time; combat fps, frames > 100 ms after warm-up, worst frame per room swap,
+Long-Animation-Frame list); `node tools/gntM4b-prof.mjs --act N --from s --to s`
+(CPU profile attributed per long frame). `node tools/gntM4b-cuecal.mjs
+[--write] [--verify]` (content cue calDb; verify = 17 cues within 2 dB of
+levelDb, none above −6 dBFS). Helpers: `gntM4b-buildcost.mjs`,
+`gntM4b-slices.mjs`, `gntM4b-groundpng.mjs`, `gntM4b-crop.mjs`.
+
+### M2 — save / load, slots, autosave, records (Gauntlet W3, owner M2)
+
+**What a save is.** `__echoes.save.capture()` = the complete StateTree v1
+(src/save/capture.js): `clock` (tick, hitstop, grants), `rng` (the LIVE
+stream: seed, mulberry32 word, draws), `registry` (every entity, ascending
+id, `nextOrdinal`), `world` (tick, stats, harness flags), `systems` (combat,
+skills, build, enemies, waves, allies, boss, run incl. autopilot, layout incl.
+hazards + interactables, movement colliders, shapes counter — each system's
+`saveState()` / `loadState()`; skills / nodes keep their older
+`serialize()/restore()` for the run block's relative persistence), `scene`
+(camp|run + the room layout), `app` (playtime ticks, the run's kill base).
+`apply(tree)` validates, snapshots a rollback, re-enters the scene mode
+(colliders + camp seat hold, dressing via `restoreScene`; never seatParty),
+then clock → rng → registry (patched IN PLACE, rebuilt ascending) → every
+system → module state, and emits one `state_restored` (every render / UI /
+audio layer resyncs on it). Capture points: `clock.onTickEnd` or between
+frames only — a capture from inside a sim step throws `CapturePointError`;
+`requestCapture()` defers it (tick end for in-step events, a microtask for
+events a command emitted between frames — either way captureTick ===
+eventTick). The file is `{ format:'echoes-save', schema:2 (M4c; schema-1 files migrate on load), game, slot,
+createdAt, savedAt, meta, state, hash }`, hash = hashState(state) (FNV-1a 64
+over canonical JSON), body written in insertion key order (so a loaded object
+iterates like the saved one); `MIGRATIONS` chain runs after the hash check of
+the stored tree; a newer schema is refused and never modified.
+
+**Storage.** `echoes.save.v1.<slot>` (+ `.bak` = the previous good file,
+`.tmp` only mid-write, `.thumb` 256×144 JPEG data URL), `echoes.save.v1.index`
+(a cache — rebuilt by scanning), `echoes.profile.v1` (+ `.bak`). Slots:
+`manual-1…8`, `auto-1/auto-2` (alternating), `quick` (F5 / F9 in play). Atomic
+write: tmp → bak → main → drop tmp; a newer valid tmp is promoted at boot, an
+invalid one dropped (`__echoes.save.recovery()`). Blocked site data (the
+`localStorage` getter throws) → the game still boots and saves live in memory
+("Saves last for this visit only"). A camp save is ~4 KB, a mid-combat Act III
+save ~13 KB.
+
+**`__echoes.save`** (the debug surface): `list() save(slot,{name}) load(slot)`
+(through app.loadSlot: enters play) `loadRaw(slot) remove rename capture()
+apply(tree) order() hash() roundTrip({ticks=600, scriptSeed=1, every=60,
+restore=true})` → `{hashBefore, hashAfterApply, equal, continuationEqual,
+firstDivergence, events, eventsHash, hashes[]}` (freezes the realtime loop,
+restores the moment afterwards) · `continuation({ticks, scriptSeed, every,
+restore})` (the reload leg: save → continuation → reload → loadRaw →
+continuation, compare) · `corrupt(slot, 'truncate'|'schema'|'keys'|'hash'|'newer')
+simulateQuota(on) simulateTornWrite(slot,{valid}) usage() profile()
+profileReport() recovery() autosaveLog() autosave(reason)
+autosaveEnabled(on) resetAutosaveThrottle() captureLog() requestCapture(r)
+captureOnEvent(type)` (G2.12 probe) `lastLoad() lastRecord() bootHash()
+bootTree() freshHash(seed) freshTree(seed) tracker() thumb(slot) lastThumb()
+exportText(slot) importText(text, slot?) restoreBackup(slot) resetToFresh({seed})
+canSave() errors`. `__echoes.sim.hash()` is now the complete-capture hash
+(the in-page `sim.trace` stateHash therefore differs from the v0.5.0
+reference; its eventsHash does not).
+
+**Menus.** Title: Continue (newest valid save, focused), Load Game (enabled
+when any slot exists), Records. `app.open('saves', { mode: 'load'|'save' })`
+— INT's pause menu opens the Save tab in W5; until then saving in play is F5
++ autosave. Stable ids: `sv-slot-<id>`, `sv-act-{load,save,rename,export,
+delete,restore}`, `sv-import` (+ hidden `sv-import-file`), `sv-back`,
+`sv-mode-{save,load}`, `sv-rename-{input,ok,cancel}`, `sv-records-back`.
+Keys: Enter/A = the primary action, Delete/X = delete (confirm, Cancel
+focused), F2/Y = rename, Q/E LB/RB = Save⇄Load (in play), Esc/B back; ←/→
+hop between a row and its action buttons. Autosave safe points:
+`room_enter`, `shop_open`, `run_end` (unthrottled), `return_to_camp`, quit
+(`autosave('quit')`, unthrottled); ≥ 20 s between the others; never while a
+probe drives the sim, never outside `playing`, never as a net guest. Score
+(profile, end card "SCORE … · New best!", Records) = PLAN §3.4 formula; kills
+= `world.stats.kills` since `run_start`.
+
+**M2 probes** (`node tools/gntM2-drive.mjs tools/gntM2-sc-<name>.mjs [--w --h]`,
+GPU harness, retries HMR reloads; JSON in `captures/gntM2-sc-<name>.json`):
+`roundtrip` (G2.1/G2.2: 8 moments, in page + after reload;
+`GNTM2_MOMENTS=camp,combat,…` picks some; moment builders in
+tools/gntM2-moments.mjs), `slots` (G2.3, real keyboard + mouse, layout audit
+— run at 1024x576 / 1600x900 / 2560x1440), `integrity` (G2.4 corruption +
+quota, G2.5 torn writes across a reload, G2.6 export → real download → real
+file-chooser import), `autosave` (G2.7 safe points, captureTick, throttle,
+per-piece main-thread cost, autosave-OFF control) + `autosave-steady` (G2.7
+frames: 8 autosaves in live combat vs 8 idle windows), `gates` (G2.8 scores +
+end cards + Records, G2.9 New Game == fresh boot, G2.11 interleaved-id
+registry, G2.12 capture point), `records` (Records layout, 3 sizes), `misc`
+(?slot= boots, Continue, gamepad-only slots/records), `private` (blocked
+storage). Node: `node tools/gntM2-nodetrip.mjs` (9 headless round trips incl.
+a FRESH world through the file codec), `node tools/gntM2-goldens.mjs` (G2.10:
+the 9 goldens `captures/gnt-M2-golden-{kill_all,defend,run}-{1,2,3}.json`,
+recorded from `git archive 9246562` before M2's first edit and re-recorded at
+the M4c-end build by the user's skill/socket correction — M5b re-checks
+them). Layout audit helper: tools/gntM2-audit.mjs.
+
+**fix-M2-r1 (v0.5.67–0.5.68).** The saves screen is on the overlay band
+(z 1100, like Settings) and the screen manager keeps the top of the stack
+above everything under it (src/app/screens.js `liftAbove`: a pushed screen
+whose band is lower than the highest band beneath it gets that z-index
+inline) — so Save / Load opened from the pause menu is drawn over the pause
+card and takes the mouse. A FRESH title (boot, Quit / Save & Quit to Title,
+farewell Return) focuses its primary: Continue whenever a save exists, New
+Game otherwise; returning to the title from a sub-screen still restores the
+last focus. Probes (`node tools/gntfixM21-drive.mjs <scenario> [--tag t]` —
+a copy of the save critic's driver writing `captures/gntfixM21-*`):
+`tools/gntfixM21-sc-mouse.mjs` (the in-game Save / Load screens by mouse
+only: save, overwrite + confirm, rename, delete + confirm, Load tab, load +
+confirm, Import… file chooser, right-click back, Back, Resume; title Load),
+`tools/gntfixM21-sc-lift.mjs` (the stacking invariant), the critic's
+`tools/gntcsave1-sc-followup.mjs` / `-sc-final.mjs`; F2 variants with
+`node tools/gntfixM21-rtitle.mjs A|C|D`. **Probe note:** a poll for
+`app.state === 'playing' && save.hash() === savedHash` after a title Load
+races the first sim step (the load runs in the key task; the next frame
+steps the sim before a 16 ms poll usually runs, more so while that first
+frame compiles the run's shaders, ~90 ms) — wait on
+`save.lastLoad().hash === savedHash` instead (tools/gntfixM21-m2slots-robust.mjs
+is gntM2-sc-slots with only that wait changed); G2.1 covers the continuation.
+
+**fix-M2-r3 (v0.5.106–0.5.107).** *Mouse on the saves screen:* a hover moves
+the focus ring at once, but the detail panel (whose Load / Rename / Export /
+Delete act on the slot it shows) only follows a row the pointer RESTS on —
+< 6 px for 180 ms, or 450 ms when the pointer's last motion was aimed into
+the panel ("menu aim"); keyboard / gamepad focus selects at once, a row
+click acts on that row, and leaving the list from a merely-crossed row puts
+the ring back on the selected row. A probe that hovers a row and wants its
+details must REST there (≥ 0.5 s is safe) — a synthetic path that stops on
+a row for longer than that legitimately previews it. *Level cards:*
+`meta.campaign.card = { kind: 'clear'|'depart', from, to }`; the wording
+lives in src/save/describe.js ("Level I cleared — next: Level II · …" /
+"Setting out — Level II · …"; title "Level I cleared" / "Setting out ·
+Level II · …"; files without the card fall back on `meta.room`).
+*Thumbnails:* the encoder is an inline Blob worker (named `echoes-thumb`,
+no module fetch) prewarmed ~1.2 s after boot (`save.thumbWarm()`); a save
+waits ≤ 250 ms for its picture and a later one is attached when it lands
+(`save.thumbPending(slot)`, `save.thumbLog()`; a worker slower than 900 ms
+is bypassed by a main-thread encode, `lastThumb().via === 'main-fallback'`),
+so poll `save.thumb(slot)` rather than assuming the picture is there when
+`save()` resolves. The row shows "Saving…" the frame after the press and a
+press made while a save / confirm runs is replayed when it ends. Probes:
+`node tools/gntfixM23-mousepaths.mjs [--url U] [--tag t]` (13 mouse paths
+row → Load / Export / Delete incl. 3 s and a 300 ms stop on another row,
+preview, ring, row click, in-game Delete), `node tools/gntfixM23-cards.mjs`
+(clear / setting-out card saves, legacy files, title captions),
+`node tools/gntfixM23-savelat.mjs [--slow ms] [--reps n] [--midshot 1]`
+(press → "Saving…" → written → picture, 2nd press, F5; `--slow` delays the
+thumb worker), `node tools/gntfixM23-regress.mjs` (round trip, export/import,
+rename, autosave quit, overwrite, remove, run meta).
+
+**fix-M2-r4 (v0.5.125).** *Several tabs of the game share one storage.* The
+profile (`echoes.profile.v1`) is never written blindly: every write re-reads
+the stored file and replays only this tab's own changes (runs, level clears,
+unlocks = ops; playtime, last level, furthest level = counters), so a stale
+tab reloaded / closed / navigated away adds its playtime and nothing else; a
+write that fails (quota) keeps its ops pending and applies them once later;
+`.bak` only ever receives a readable profile, and a damaged main is repaired
+on the next flush from the newest readable copy (this tab's, `.bak`, `.tmp`
+by `savedAt` — never a backup older than the tab's own). The slot catalogue re-scans
+whenever the stored index differs from the one the tab wrote (the index is
+written in catalogue order, identical bytes from every tab) — before list /
+latest / Continue, the autosave rotation, the import target, New Game's
+impact; `echoes.save.v1.endedRuns` is read-modify-write. A `storage` event
+adopts another tab's profile at once and re-scans the slots 150 ms after the
+last slot key lands; an open Records / Saves screen and the title redraw
+(`save.onProfileChanged(fn)`, `save.onSlotsChanged(fn)`, app event
+`saves_changed`). Debug: `__echoes.save.tabs()` → `{ profile: { pending,
+deferred, dirty, baseSavedAt, syncLog }, adopted: { profile, slots },
+indexFresh }`. A probe that injects `echoes.profile.v1` under a running page
+now sees it kept (the page merges instead of overwriting). Probes: `node
+tools/gntfixM24-profile-tabs.mjs` (Node, two stores over one storage, 26
+checks), `node tools/gntfixM24-drive.mjs <scenario> [--url U] [--tag t]`
+(own copy of the save critic's driver; runs `tools/gntcsave4-sc-twotabs4.mjs`
+/ `-twotabs3.mjs` unchanged, `GCS4_BASE` / `GCS4_NEUTRAL` for a preview) with
+`tools/gntfixM24-sc-tabs.mjs` (live Records + unlock in the other tab, B sees
+A's saves, rotation spares A's run, import never lands on A's slot, open saves
+screen follows a delete, ended runs of both tabs kept),
+`tools/gntfixM24-sc-playtime.mjs` (a tab's exit adds exactly its own seconds)
+and `tools/gntfixM24-sc-twotabs3x.mjs` (the critic's exit matrix + each B's
+unwritten seconds).
+
+**fix-M2-r5 (v0.5.173+).** *G2.9:* New Game after Quit to Title re-derives
+the party stream (`systems.party.rng = partySeed(newSeed)`, PLAN §16.3) as
+well as the gameplay stream, so its camp hashes like `?menu=0&seed=<seed>
+&freeze=1`. *Slot detail:* the four builds are a table (Party · HP · Skills
+as the HUD's skill icons, names on hover / aria · Nodes filled/sockets ·
+Glint purse) from `meta.builds` joined with `meta.party` (HP); the picture is
+the flexible part of the panel (≥ 120 design px, ≤ 16:9 of the panel width)
+so every line fits at 1024x576 … 2560x1440; below those sizes the text box
+scrolls with a chevron, the wheel, the right stick and Up / Down on the
+panel's buttons. Probes (`node tools/gntfixM25-drive.mjs <scenario> [--w --h]
+[--tag t]`, `GFM25_BASE` = the page origin, default the dev server):
+`tools/gntfixM25-sc-g29.mjs` (`GFM25_G29=clean|dirty`), `-g29repeat.mjs`,
+`-g29seed.mjs` (the critic's G2.9 diff), `tools/gntfixM25-sc-detailfit.mjs`
+(10 window sizes: 0 clipped leaves, no scroller, three ally rows with 4
+icons; `GFM25_PURSE=999` for the widest Glint column; 800x450: keys / stick /
+wheel reach the last line), `tools/gntfixM25-sc-detailstates.mjs` (camp,
+damaged, Save tab empty / overwrite at 1024x576 and 1920x1080),
+`tools/gntfixM25-sc-detailwheel.mjs` (the critic's label probe).
+
+**fix-M2-r6 (v0.5.204+) — content drift (SAVE6-F1).** A hash-valid save may
+name a skill / node this build does not have (an update renamed or removed
+it, a hand-edited file). `src/save/content.js` `reconcileContent(tree)`
+checks every StateTree path that holds a skill / node / class id (census:
+`node tools/gntfixM26-idpaths.mjs`) against the live `SKILLS` / `NODES`
+(own keys only) and repairs the load's private clone: a skill a character
+cannot hold (unknown, another class's, a repeat, a 5th+) leaves the loadout
+and its socketed nodes go to that character's bench (A17), its Resonance /
+Echo / passive clocks end; unknown nodes leave sockets, benches, shop stock
+and party shelves (`marked` kept aligned); a reward card for unknown content
+becomes an empty offer ("not in this version of Echoes — the run moves
+on"), a swap offer whose character gained a free slot becomes a plain one;
+effects in flight of an unknown skill end (`<class>_basic` arrows are
+content); records (spoils, level card / summary build lists, starter grant)
+drop the ids. It is a strict no-op on a tree whose ids are known (same hash
+— G2.1 / goldens unchanged). `io.apply` then runs the live read paths once
+(`world.snapshotState()`, the party view); a tree that still throws is
+rolled back (`{ ok: false, error: 'content', rolledBack: true }`, layers
+resync with `state_restored { reason: 'rollback' }`) and the player reads
+"That save needs content this version of Echoes doesn't have — it can't be
+loaded here". A repaired load toasts what was removed (`load()` →
+`repaired: { line, short, counts }`); an import of such a file says it up
+front (`importText()` → `drift`); the slot detail names an unknown skill
+"… (not in this version)". The file itself is never rewritten. Debug:
+`__echoes.save.contentCheck(tree | slotId)`, `__echoes.save.apply(tree, {
+reconcile: false })` (probes: the read check alone), `__echoes.save.hash(tree)`
+now hashes its argument (critic r6 A10). Probes: `node
+tools/gntfixM26-drift-node.mjs` (headless: no-op on 12 moments, 17 drift
+cases apply + expected repair + clean re-check + 600 ticks with the run
+driver, the safety net refuses with an exact rollback), `node
+tools/gntfixM26-drive.mjs tools/gntfixM26-sc-driftrepro.mjs` (the critic's
+player-input repro: real file chooser → Load → confirm; input
+`captures/gntfixM26-drift-retired-skill.json`), `-sc-drift.mjs` (13 cases by
+the title's Load Game), `-sc-crafted.mjs` (25 hostile files); `GFM26_BASE` =
+the page origin (a preview, e.g. `http://127.0.0.1:4302/`).
+
+### M5a — network core: server, lobby, protocol, conditioner, netbench (Gauntlet W3, owner M5a)
+
+**Session server** (zero npm dependencies — node:http / crypto / os only):
+`npm run net -- --port P [--host 0.0.0.0] [--admin] [--log]` prints the
+URLs and a machine-readable `[echoes-net] ready {…}` line (~150 ms). Default
+bind 127.0.0.1; `--host 0.0.0.0` prints every LAN `ws://…/echoes` URL (also in
+`welcome.lanUrls`). Conditioner on EVERY link: `--latency ms --jitter ms
+--loss f --dup f --reorder f --burst pGB,pBG,lossInBad --bw kbit/s --seed n`
+(fractions 0–1 or `10%`) or `--cond lat75,jit10,loss10,dup1,reo2,burst0.05:0.3:0.8,bw256,out5000:3000,seed7`
+(compact form: loss/dup/reo in PERCENT, one-way ms — lat75 on both
+directions = 150 ms RTT). Admin API (only with `--admin`, loopback callers
+only): `GET /stats` · `POST /admin/conditioner {target:'all'|peerId|roomCode, up, down}`
+(`"off"` clears) · `POST /admin/drop {peerId, mode:'close'|'blackhole', forMs}`
+(close: socket closed and the identity refused for forMs; blackhole: the link
+goes silent — > 5 s silence drops a guest, > 3 s an in-game host) ·
+`POST /admin/kill-host {code}` (host closed + barred → 10 s grace → migration).
+`GET /health` is always on. **Restart your server after editing server/** or
+src/net/protocol/** — a running Node process keeps the old code.**
+
+**Link model** (src/net/protocol/conditioner.js, same on server links, the
+browser `?netcond=` and Node bots): unreliable = SNAP, INPUT and the ping/pong
+heartbeat (loss / burst / dup / reorder +20–60 ms / latency + normal jitter /
+bandwidth tail-drop past a 300 ms queue); reliable = every other control
+message, EVENTS, CMD, KEYFRAME — in order PER STREAM, never dropped, each
+simulated loss = +max(200 ms, 2 × base RTT). Node timers on Windows wake on a
+15.6 ms tick; server links and Node bots use a precise pump (~0.1 ms; costs up
+to one CPU core only while shaped traffic is queued; unshaped = synchronous
+pass-through).
+
+**Protocol** (src/net/protocol/*): relay envelope `u8 channel · u8 seat` on
+every binary frame; SNAP = baseline/ack delta (Quake 3) — HOT entity table
+quantised (pos 1/256 u, hp 0.01, yaw 256 steps via a 1/4096-rounded table,
+aim 1/64 u, 16 flag bits, linear movers dead-reckoned from an anchor) + COLD
+null-safe tagged tree diff, both carried by a binary canonical-value codec
+(bvalue.js); a u64 quantised-tree hash every ≥ 30 ticks. INPUT = up to 6
+unacked frames delta-coded (steady state 28 B/packet). `__echoes.net` (the
+`net` service, idle in single-player): `state role room code seat peerId
+serverState serverUrl lanUrls inSession() connect(url) probe(url) host({visibility})
+join(code, seat?) quickMatch() cancelMatch() leave() setReady(b) selectSeat(s)
+start(seed?) rejoin() rejoinInfo() drop(ms) disconnect() stats() peers() log(n)
+conditioner.{set,get,clear,stats} on(type, fn) setSessionDriver(d) extendStats(fn)`.
+`?nethost=1 / ?netjoin=CODE / ?netquick=1 / ?netname= / ?netseat= / ?netcond= /
+?netrate=` act at lobby level. Until M5b registers a session driver, a started
+room runs the **probe stream** (host: save.capture() at every 3rd tick end →
+per-guest delta snapshots + EVENTS + a KEYFRAME every 120 ticks; guests decode,
+hash-check, ack at 60 Hz) — transport measurement only, nothing is written
+into the guest's world.
+
+**Probes.** `node tools/gntM5a-protocol.mjs` (tree-diff law corpus + 10 000
+fuzz pairs on the JSON and binary forms, codec round trips, conditioner
+accuracy — 72 checks) · `node tools/gntM5a-corpus.mjs` (G5a.3: the REAL sim
+headless, acts 1–3 + boss, M2's StateTree v1, 3 guests at 20 % snapshot +
+20 % ack loss + reorder + dup; exactness, hashes, delta ratio, bytes) ·
+`node tools/gntM5a-lobby.mjs [--trials 50] [--quick]` (G5a.1/2/4: in-process
+server on 7811 + a child server on 7812; RFC 6455 conformance, every lobby
+path and rejection reason, last-seat race, relay, reconnect, blackhole,
+admin drop, host grace, kill-host migration, 8 Node clients, server kill,
+unreachable probe — 28 checks) · **`node tools/gnt-M5a-netbench.mjs --server
+ws://127.0.0.1:<port>/echoes`** (PLAN §6.7 CLI + `echoes-netbench/1`; start the
+server with `--admin` for per-guest-link shaping and drops; `--pages N --bots M
+--seconds S --mode lobby|combat|boss --cond … --drop guest:MS@Ts|host:close@Ts
+--out f`, plus `--w/--h` (default 1600×900), `--seed`, `--rate`, `--settle`).
+**Every page opens in its own browser window**: tabs of one window are
+`hidden` and stop requestAnimationFrame even with the multi-page flags (use
+`openEchoesWindow` from tools/gntM5a-botlib.mjs in any multi-client harness).
+All pages boot and finish their warm-up before any of them connects (then host /
+join through `__echoes.net`). The netbench retries a run (≤ 3) when a dev-server
+reload hits a page, and its bots speak the pages' build — but while other
+builders commit, long multi-page runs are only stable against a production
+preview: `npx vite build --outDir dist-<key>` + `npx vite preview --outDir
+dist-<key> --port <your preview port> --strictPort` and `--url
+http://127.0.0.1:<port>/`. Baseline for fps comparisons:
+`node tools/gntM5a-fpsbase.mjs --pages 2 --w 960 --h 540` (N single-player
+windows, no network: 2 windows ≈ 51 fps here). Dev aid:
+`node tools/gntM5a-pagedebug.mjs ws://…` (host + guest windows, dumps net logs).
+
+**Link quality (fix-M5a-r1, NET-F2, v0.5.72+).** `net.stats()` on a GUEST:
+`lossInPct` (downstream: snapshot-seq gaps over 5 s, counted on every SNAP
+frame before the session driver takes it; null until 20 seqs are spanned),
+`lossOutPct` (upstream: the host's measured loss of this guest's input packets,
+echoed in the snapshot header flags bits 0-6), `lossPct` = the worse of the
+two, `lossInWindow` / `lossInTotal` `{ pct, got, expected }` (the 5 s window /
+cumulative since the session began — compare `lossInTotal` differenced over a
+window with the server's `/stats` link counters differenced over the same
+window, not a single 5 s `lossPct` sample with a cumulative `appliedLossPct`),
+`snapshotAgeMs`, `quality { level good|fair|poor, reasons [stalled|loss|latency|jitter],
+raw, sinceMs, lossPct }` (thresholds `QUALITY_THRESHOLDS` in src/net/transport.js:
+poor loss ≥ 8 % | RTT ≥ 250 ms | jitter ≥ 80 ms | no snapshot ≥ 1.5 s; fair loss
+≥ 2 % | RTT ≥ 150 ms | jitter ≥ 40 ms; a better level shows after 2 s). On a
+HOST: `lossPct` = input-packet loss over every guest (5 s, a > 1 s seq jump —
+a reconnect — restarts the window), `lossBySeat`, and `quality.lossPct` = the
+loss every seat shares (its own link). The in-game chip shows the level as
+signal bars + ping + "N% loss" (≥ 1 %), refreshed at 1 Hz; `#nt-hud .nt-q
+[data-level]`, the chip's `title`. Probe: `node tools/gntfixM5a1-loss.mjs
+--server ws://127.0.0.1:<port>/echoes --base <preview url> --sweep
+N0,L5,L10,L20,DOWN20,UP20,SOLO20,BURST,N2,R250,DROP3,N0 [--seconds 20]
+[--showstats]` (host page + guest page + 2 playing bots; per-direction
+applied loss from the server's differenced counters; reaction times; chip
+frames). Unit: `node tools/gntfixM5a1-unit.mjs`.
+
+**Protocol v3 — the §3.7 bandwidth budget in every level (fix-M5a-r4,
+NET4-F3, v0.5.134+).** `PROTOCOL_VERSION` 3 (restart your server: a v2 server
+refuses v3 pages with "A new version of Echoes is available"). Same model and
+the same SNAP header (tick / seq / baseline at bytes 2 / 6 / 10, so wire taps
+keep working); tighter bytes: (1) tree-diff patches are written against the
+baseline both sides hold — a number that moved by exactly the tick distance
+(`clock.tick`, `castLeftTicks`, `untilTick`-style timers) costs no value, a
+safe integer rides as its delta, a keyed array whose order is the base's (or
+the base's minus drops plus appends) sends no id list, and a queue (front
+consumed, back appended — `echoQueue`, `clock.grants`) is a shifted array op;
+the decoder rebuilds exactly the JSON op of §3.7, so the tree-diff law is
+unchanged; (2) the HOT field mask is a varint whose usual moving-actor bits
+sit below 128 (one byte); a NEW mover's anchor tick is relative to the
+snapshot; (3) mover velocities are replicated at 1/65536 u per tick and unit
+directions in an entity's rest (`lastAimDir`, a ram's `guard.dirX/dirZ`) on
+the YAW table — dyadic values with their own 3-5 byte tag; both sides
+extrapolate with the replicated velocity and the host re-anchors against it
+(the view stays within 1/64 u of truth); (4) EVENTS bodies are `varu
+batchSeq · varu toTick · vari span` + per event a tick delta, a static shape
+(`src/net/protocol/evshapes.js`: type + sorted member keys, measured from
+play) or an inline shape reused within the batch, and the values — members in
+`EV_NUM_KEYS` as packed numbers; (5) dictionaries re-measured over Levels 1-3
+and the Stag; (6) EVENTS_U carries the PREVIOUS batch only (two copies of
+every event, the second 50 ms later); (7) a room in play pushes roster pings
+(room_state) at most every 10 s; (8) paced fulls — a link waiting for the ack
+of a full gets deltas against that full, and a new full only after its round
+trip + 50 ms (100-600 ms), never one per snapshot (a guest busy preloading a
+level drew 48 fulls in one second before; host `net.stats().pacedDeltas`).
+Measured on a production build, 1 guest, N1:
+Level 3 downstream 7.1 KB/s avg / 10.5 p95 (v2: 16.4 / 28.5 — numbers per
+condition and level in docs/gauntlet/fix-M5a-r4.md). Probes:
+`node tools/gntfixM5a4-unit.mjs` (20 000 based patch pairs incl. queues, 5 000
+event batches, HOT masks — canonical round trips), `node tools/gntM5a-protocol.mjs`
+(72 checks) and `node tools/gntM5a-corpus.mjs` (real sim, 3 lossy guests: 0
+mismatches, hashes agree) must stay green after any protocol edit;
+`node tools/gntfixM5a4-bwscope.mjs --levels 1,2,3 [--room 8] [--seconds 45]`
+(dev server: one single-player autopilot page, the REAL encoders at 20 Hz
+against a baseline acked 4 snapshots back — bytes/s split into snapshot / events /
+EVENTS_U / keyframes, the costliest COLD paths, HOT kinds and rest keys, event
+types); `node tools/gntfixM5a4-dictscan.mjs` + `node tools/gntfixM5a4-gendict.mjs`
+regenerate the dictionaries and event shapes (a protocol change: bump
+`PROTOCOL_VERSION`). The critic's wire sweep (`tools/gntcnet4-sweep.mjs --guests
+1 --conds N1 --seconds 120 --level 3`) is the end-to-end check.
+
+**A host already in the background when the session starts (fix-M5a-r4,
+NET4-F1, v0.5.131+).** The hidden-tab loop follows visibility AND the session
+role: a host whose tab is hidden during the 1.5 s countdown (or a guest that
+becomes host while hidden) runs the shared sim on the 60 Hz Worker metronome
+from its first tick; a guest that starts hidden joins as away (the AI plays its
+seat) and keeps acking at 20 Hz until shown. A guest still without the world
+8 s after the session started (visible time only) reads "Still joining CODE…
+The host's game hasn't sent the world yet. Keep waiting, or leave with Esc →
+Leave Session." Probes: `node tools/gntfixM5a4-hiddenstart.mjs --port <server>
+--cases A,B,G [--hideAt 800] [--observe 40]` (GNTCNET4_BASE = a production
+preview; the critic's real-UI scenario with every click waiting for its button
+to be enabled — A: host hides 0.8 s after Start, B: 3 s after sync, G: guest
+hidden before the start) and `node tools/gntfixM5a4-slowjoin.mjs --port <server>`
+(the guest's down link drops every snapshot: the slow-join copy, Esc → Leave
+Session, synced once the link is lifted).
+
+**Nothing multiplayer draws over a build page (fix-M5a-r5, NET5-F1,
+v0.5.182 / .185 / .189).** The party strip's owner line ("you" / the
+player's name / "AI") is a pill in flow after the class name, never over
+it; the connection chip, the guest's status note, the socket screen's
+countdown, the session notes and the ping line all dock clear of an open
+run page / socket screen (the notes: stack above the chip → the page's side
+margin → one or two lines in the widest free slot beside the chip / under
+the page → held until there is room, full lifetime, dropped after 15 s;
+`net` HUD `debug()` reports `dock`, `notesMode`, `held`, `ping`). Probes
+(own child server, `--base` = the dev server or a production preview):
+`node tools/gntfixM5a5-partytabs.mjs --port <p>` (host + 2 guests, one
+16-character name; party page / socket screen / doors / shop at 1024×576 …
+2560×1440; ancestor-aware text-overlap audit; single-player control),
+`node tools/gntfixM5a5-netnotes.mjs --port <p>` (real triggers: a
+not_owner party CMD → the guest's note, a guest door focus → the host's
+ping; every shown message clear of the page and of other text, held →
+shown on close), and the critic's probe with renamed outputs
+`GNTCNET5_BASE=<base> node tools/gntfixM5a5-critic-partytabs.mjs --port <p>`.
+
+**The multiplayer shop header always fits its frame (fix-M5a-r6, NET6-F2,
+v0.5.208 / .210).** In a narrow short window (compact, < 1280 px wide) the
+shop's header row holds the four tabs, the lantern and the Glint / room
+plate; in a session the owner pills made it up to 196 px wider than the
+header. `shop.js` `fitHead` now adds ordered fit levels on `.rn-shop` until
+the row holds its content: `rn-hf-own2` (each owner pill joins the narrower
+line of its tab — beside the purse), `rn-hf-plate2` (the plate on two lines,
+"◉ 72 GLINT" over "ROOM 7 OF 8"), `rn-hf-own5` / `rn-hf-own4` (names end in
+an ellipsis at 5 / 4 em, full name in the tooltip), `rn-hf-nolamp`,
+`rn-hf-own3`, `rn-hf-wrap`. It measures with the widest purse any tab can
+show (a character switch never re-flows the header) and re-fits only when
+the window or the strip text changes; single-player fits at level 0
+(identical layout). The level is on the debug API:
+`__echoes.runUi().shop.headFit` (0 = as authored, 1-7 = the levels above). A window resize while the shop is open
+re-measures its fixed frame at once (it used to wait for the first Q / E
+and then jump). Probe (own child server, `--base` = dev or a production
+preview): `node tools/gntfixM5a6-shophead.mjs --port <p> [--names
+"Host,Maximilian Wolfe,Wren"] [--done 1] [--interact 1024x640] [--launch
+WxH] [--sp 1]` — every text box inside the window and the frame, 0
+same-row / > 25 % header text overlaps (the critic's own-text-node boxes),
+0 header spill, truncated names keep their tooltip, the plate still reads
+the wallet and "ROOM 7 OF 8"; `--interact` also checks that four character
+switches move neither the tabs nor the frame, then a purchase and a
+guest's Done. The critic's probes with renamed outputs:
+`GNTCNET5_BASE=<base> node tools/gntfixM5a6-critic-mpwidth.mjs --port <p>`
+and `tools/gntfixM5a6-critic-mpoverlap.mjs`.
+
+### M5b — network play (Gauntlet W4, owner M5b)
+
+**Playing.** `npm run net` (LAN: `npm run net -- --host 0.0.0.0`), then title
+▸ Multiplayer ▸ Host a Game / Host a Public Game / Join by Code / Quick Match
+▸ lobby (seats, Ready, Start). The host plays the Healer (seat 0, its full
+4-skill build with the 8-socket rows); guests play Tank / Swordsman / Archer
+(seats 1–3, their 4-skill class kits, keys 1–4, Space dodge, right mouse
+basic, E interact / hold-E revive); empty seats and dropped guests are the
+§12 ally AI, a host-less seat 0 after a migration is M4a's leader bot. Build
+decisions (draft, path, shop, sockets, expedition) are the host's: guest
+pages are read-only ("The Healer is choosing…"), a guest's pick becomes a
+refused CMD shown to everyone as a ping. The socket screen on a guest says
+"Read-only — the Healer sets the sockets". Single-player never touches any
+of this (goldens: `node tools/gntM2-goldens.mjs` 9/9).
+
+**Session surface** (`__echoes.net.session`, the `net` service's session):
+`status()` (role, seats, synced, frozen, hostLost, reconnecting,
+reconnectLeftMs), `role`, `localSeat()`, `leaveSession()`, `pings()`,
+`log(n)`, `statsLine()`, probes `setLagCompensation(on)` (host),
+`requestFull()`, `setBotInput({ seed, aim, aimAll, chase } | null)` (scripted
+guest input; also `?netbot=<seed>`), `ownPose()` (the own seat as the last
+frame drew it), `renderedHostiles()` (every hostile where the last frame drew
+it + that frame's host tick), `debugGuest()` / `debugHost()`, `resetStats()`.
+`__echoes.net.stats()` adds, on a guest: predErrP50/P95/Max, corrections,
+maxCorrectionPerFrame, remoteJumpMax / remoteJumps03 / remoteJumpRate06 /
+remoteFrames (party), hostileJumpMax, smoothed / smoothedMaxU / smoothSnaps /
+teleportFrames, extrapolatedFrames / heldFrames, interpDelayMs,
+ownActionFeedbackMs, mispredictRetractMs, retractions, predicted/confirmed
+actions (the shadow's own `debugGuest().shadow.stats()` adds
+`retractsByPath` {state, denied, events, local}, `stateConfirmed`,
+`pendingOpen`), eventsReplayed / Suppressed / Late, replayedOnce, desyncs /
+hashChecks / desyncPaths, decodeErrors, snapshotBytesAvg / fullBytesAvg /
+deltaRatio, inputRate, guestNetMsP95, frameOver50Net; on a host:
+hostNetMsP50/P95/Max, frameOver50Net, captureMsP95, encodeMsP95,
+inputBufferDepth, staleRepeatTicksMax / staleLog, humanSeats / awaySeats,
+playerController, rewindTicksAvg / rewindClamped / rewindWantedP50/P95 /
+rewindMaxTicks, lagCompHits, hostHiddenFedMs, migration.
+
+**Numbers that differ from the PLAN text (decisions in docs/gauntlet/build-M5b.md).**
+Rewind window 24 ticks / 400 ms (PLAN 15 / 250 ms: an N1 guest's view is
+18–20 ticks old at the PLAN's own interp + depth-2 buffer); reconnect backoff
+capped 1.5 s; in-session reconnect gives up after 15 s → title "Connection to
+the server was lost." with "Rejoin ABCDE?" while the server's 60 s seat hold
+lasts; the unreliable EVENTS_U resend carries the PREVIOUS batch only (protocol
+v3, fix-M5a-r4 NET4-F3: the newest two — three copies of every event — broke
+the Level 2-3 downstream budget); per-guest snapshot
+encodes are spread over the ticks between snapshots (one capture); party
+bodies cannot be stunned (status rule), so the G5b.12 forced mispredict is a
+host-side Downed (`setHp(seat, 0)`), which RACES the press — a trial ends
+either retracted (tile restored) or confirmed (the host resolved the cast
+first). Remote bodies never pop: a path discontinuity decays as an offset at
+≤ 0.2 u per rendered frame and only a > 4 u error snaps; frames that cross an
+authoritative teleport, a data stall (> 12 ticks without data) or a render-
+clock re-anchor are counted apart (`teleportFrames` / `stallFrames` /
+`clockFrames`), not as smoothness faults.
+
+**Own-seat consistency rules (fix-M5b-r3, NET3-F1 / NET3-F2).** A snapshot's
+k is the seat's last consumed input seq AT ITS CAPTURE (the 2nd / 3rd guest is
+served from the same capture 1-2 ticks later). A human seat's dash advances
+one step per consumed input frame: on a starved tick (the <= 8-tick held-state
+repeat AND the neutral ticks after it, up to `DASH_HOLD_TICKS` = 30 in
+sim/netseats.js) it waits; a longer silence runs it out (host
+`net.stats().longStarves`). A guest whose browser stops drawing while the page
+stays visible (a GPU / raster stall) keeps sending 60 Hz frames: a render-stall
+watchdog steps the same fixed-tick advance headlessly after 50 ms without a
+frame (guest `stallSteps` / `stallStepMs` / `stallGapMaxMs`; it never fires at
+the 30 fps limit, hidden, paused or frozen). It keys off the session's own rAF
+heartbeat: only a browser that has drawn NO frame for 50-1000 ms while the
+frame loop was advancing the guest is stepped — a page that keeps drawing
+without advancing (`__echoes.sim.freeze()`, the save round-trip freeze) never
+is. A seat handed from the AI to a
+human and a room / level re-seat re-base the prediction (`handoffs`, no predErr
+sample). After a migration the leader bot plays the Healer only while no human
+holds seat 0 (session log `leader_bot`); with a human Healer the run pages wait
+for the host and the guest banner names the deciding seat. Probes (production
+preview + own server in the M5b band): `node tools/gntfixM5b3-rejoin.mjs --port P
+--base U` (old host Rejoin after a migration walks; re-drop hand-back; pages),
+`node tools/gntfixM5b3-dodgediag.mjs --port P --base U --cond lat75,jit10 --reps 12`
+(per-dodge timelines: press, every local frame, every reconcile, the host's
+ally_dodge / seat_denied, starve counters), `node tools/gntfixM5b3-prederr.mjs`
+(every predErr > 0.3 u with its context over 3-4 rooms), `node
+tools/gntfixM5b3-spdodge.mjs` (single-player dodge frame timing — the HUD
+raster-stall reference), `node tools/gntfixM5b3-stall.mjs --port P --base U`
+(a deterministic 420 ms render stall — the guest page's requestAnimationFrame
+held with its main thread free — during a walk and right after a dodge: the
+watchdog fires, 0 snaps, guest == host), `node tools/gntfixM5b3-freeze.mjs
+--port P --base U` (a guest `sim.freeze()`: 0 ticks, 0 watchdog steps, the
+seat does not move; thaw walks).
+
+**Host reload / second tab (fix-M5b-r4, NET4-F2).** A fresh page's Rejoin
+resumes a host from the server keyframe (`become_host { reason: 'host_resume' }`,
+host `net.stats().hostResume` { keyframeTick, stateAgeMs, applied, ms } and
+`hostResumes`; session log `host_resume` / `resume_hold_end`); sessions are
+stored per tab (`echoes.net.sessions`, `net.tabId`) and never offered while
+live in another tab (`net.rejoinCandidate()` -> { info, elsewhere }); the title
+probes the server before the offer (session log `rejoin_offer_skipped`). Probes
+(production preview on 4307 + own servers 7821-7826):
+`node tools/gntfixM5b4-hostreload.mjs --port P --base U --mode reload|reopen|late`
+(host + 2 guests, L1 room 2: the host page reloads / reopens in a new tab /
+rejoins after the grace; run kept on every page, 0 desyncs, no false notes),
+`node tools/gntfixM5b4-takeover.mjs --port P --base U --case steal|reward`
+(another page supersedes a live host — the server-side net; a reload on the
+reward page), `node tools/gntfixM5b4-lobbyunit.mjs` (server resume rules,
+no browser), `node tools/gntfixM5b4-killsp.mjs --port P --base U` (server kill:
+title + message, no Rejoin for a dead server, SP New Game walks), `node
+tools/gntfixM5b4-mprejoin.mjs --port P --base U` (Multiplayer menu: no Rejoin in
+a second tab of the live host; the reloaded host's "Rejoin ABCDE — You were
+hosting…" button resumes the run), `node tools/gntfixM5b4-duptab.mjs --port P
+--base U` ("Duplicate tab" of a live host: the copy re-keys its tab id, is not
+offered the live session, the host's record is untouched), `--at levelclear` on
+the hostreload probe (reload on the level-clear card -> Level 2 together). The critic's
+`tools/gntcnet4-hostreload.mjs`, `gntcnet4-secondtab.mjs`, `gntcnet4-sametab.mjs`
+run unchanged with `GNTCNET4_BASE=<preview>`.
+
+**Guest swap card under latency (fix-M5b-r6, NET6-F1).** A guest's own
+party card (the full-slot swap's Replaces mark, Take / Leave) is predicted
+(PLAN §16.5 "Own-card prediction"): the mark moves on the next rendered frame
+by every input path, presses inside one round trip all count, and Enter / pad
+A commits the mark on screen. Read the prediction with
+`__echoes.net.session.partyShadow()` (pending ops, the AUTHORITATIVE replicated
+card, the shown card) and `net.stats().partyPredict`; a guest's
+`__echoes.state().run.party.cards[seat]` is the card it SHOWS (like its
+predicted own body). Probes (production preview on 4307, own servers
+7821-7823): `node tools/gntfixM5b6-firstkey.mjs --port P [--cond
+lat75,jit10,loss10] [--legs paths,seq,enter,burst] [--gap 250] [--enterAfter
+150] [--tag t]` (host + Tank guest on the room-1 swap card; per step the DOM
+mark, the run-UI mark, the replicated card, `pressToDrawnGameFrames` = the
+game's rendered frames from the keydown to the frame that wrote the new mark
+(app.frameCount read in a MutationObserver, 1 = the next frame); the slot the host REPLACED vs the
+intended one; legs: wheel / click / mocked D-pad + pad A, S S S W ↓ ↑ + Enter,
+S + Enter after 150 ms, S S Enter 60 ms apart), `node
+tools/gntfixM5b6-shadowunit.mjs` (the shadow's rules, no browser), and the
+critic's probe copy `GNTCNET5_BASE=<preview> node
+tools/gntfixM5b6-critfirstkey.mjs --port P --cond ... [--gap 250 | --enterAfter
+150 --legs warm]` (outputs renamed `gntfixM5b6-critfirstkey*`).
+
+**Probes** (all start their own session server on the M5b ports 7820–7829;
+the long browser runs use a production preview so HMR never reloads a page:
+`npx vite build --outDir dist-M5b --emptyOutDir` + `npx vite preview --outDir
+dist-M5b --port 4307 --strictPort`, then `--base http://127.0.0.1:4307/`):
+- `node tools/gntfixM5b1-retract.mjs --server ws://127.0.0.1:P/echoes --base http://127.0.0.1:Q/ [--sweep N2] [--seconds 180] [--bots 2] [--force downed --forcePeriod 8 --forceDown 2.5] [--tag x]`
+  — fix-M5b-r1 (NET-F1): every retraction on the guest with its PATH
+  (state / denied / events / local), the in-game metric and the PLAN §3.7
+  clock (retract − arrival of the first snapshot with lastInputSeqConsumed
+  ≥ seq), the host's events for the seat; `--force downed` has the host
+  Down the guest's body every 8 s for 2.5 s (a stream of denied predictions
+  on demand). Retractions are proved from STATE: the snapshot's per-seat
+  timers carry `fire` (the input frame of the seat's last basic that fired;
+  `cds[slot] − cd` and `dodge − cooldown` are fire-only already), so a
+  prediction is confirmed or retracted at the first snapshot that covers its
+  ±3-frame window — never on the reliable event stream's retransmit. The
+  held basic is predicted with the host's §4/§5 rule over a log of the sent
+  frames, rebuilt from the host's timer at every snapshot.
+- `node tools/gntM5b-simseats.mjs` — Node, 23 checks: seat_control, human
+  walk / dodge / kit / basic / aim shapes, lag-comp hit vs miss, same-tick E,
+  human revive, host-vs-predictor parity (maxErr 0 over 400 frames), replica refusal.
+- `node tools/gntM5b-smoke2.mjs [--port 7821]` — host + guest windows, a guest walk by real keys.
+- `node tools/gntM5b-ui.mjs --w W --h H` (1024×576 / 1600×900 / 2560×1440) and
+  `node tools/gntM5b-ui2.mjs` — G5b.13 by real keys: unreachable panel from the
+  menu AND from Host / Join / Quick Match after the server dies (≤ 5 s; Windows
+  needs ~2 s per refused loopback connect), Retry, Change server (ws:// / wss://),
+  Back, LAN URLs, lobby flow, and an **https** leg (`tools/gntM5b-https.mjs`
+  serves dist-M5b over a self-signed loopback cert on 7829; the browser runs
+  with `--ignore-certificate-errors`): the https line, ws:// refused, wss:// saved.
+- `node tools/gntM5b-play.mjs --cond N1|N2|N3|N4 [--pages 2] [--mbots 2] [--seconds 180] [--mode combat|boss] [--hostHidden] [--hostKeys]`
+  — G5b.1/2/4/5/9/14: prediction error, remote jumps (rendered positions),
+  bandwidth (1 s windows), delta ratio, desyncs / hash checks, the exactly-once
+  replay audit (host sent-ledger vs guest replay ledger by tick|type|ordinal),
+  simCalls / refusedEmits, fps, host net ms, host keydown-to-move.
+  `--mbots N` adds PLAYING Node guests (tools/gntM5b-botlib.mjs).
+- `node tools/gntM5b-feel.mjs [--conds N1,N2] [--seat 3] [--hostpage]` —
+  G5b.10/12 by trusted keys + mouse on a guest window. The host is a NODE
+  process by default (`tools/gntM5b-hostbot.mjs`: the real sim + the real
+  src/net/driver.js, so the guest page is the only rendering page on the
+  machine — what G5b.10 asks for); `--hostpage` puts the host back in a
+  hidden browser tab on its Worker metronome. Reports frames from dispatch to
+  a moved body / dash pose / cooldown tile, ownActionFeedbackMs, the
+  Downed-seat mispredict race (retracted or confirmed), doubled
+  presentations, guest fps. `node tools/gntM5b-spfeel.mjs` = the SP reference
+  (same window size, no network).
+- `node tools/gntM5b-lagcomp.mjs [--conds N1,N2] [--seconds 90] [--lag both|on|off]`
+  — G5b.3: instant shapes valid on the guest's SCREEN (0.05 u margin; strict
+  reported too) that register on the host, with rewind on and off.
+- `node tools/gntM5b-drops.mjs` — G5b.6: guest close / blackhole reconnect,
+  host blackhole resume, kill-host migration, server kill → title + SP.
+- `node tools/gntM5b-races.mjs` — G5b.7: same-moment E on one Dewfont, a
+  guest's Take / door click while the host applies, last-seat join race ×5,
+  simultaneous Esc.
+- `node tools/gntM5b-stale.mjs` — G5b.11: 1 s input cut (≤ 8 repeat ticks
+  then neutral), hidden guest tab (seat to AI / back), hidden host tab 20 s.
+Conditions (per direction on each guest link, via `POST /admin/conditioner`):
+N1 `lat75,jit10,loss10` · N2 `lat125,jit20,loss20` · N3 `lat75,burst0.05:0.3:0.8` · N4 `lat50,dup1,reo2`.
+
+### INT — integration: pause, journey, player build (Gauntlet W5, owner INT)
+
+Owns src/ui/menu/pause.js, vite.config.js, package.json scripts, index.html and
+main.js `@gnt:INT-WIRING`. Everything below is re-runnable by any critic.
+
+**Pause menu (`pause`, PLAN §1.3, gate GI.2).** Esc — or P, or the gamepad
+Start button — opens it from combat, draft, path, shop and the end card. The
+listener lives in main.js `@gnt:INT-WIRING`, registered LAST in the BUBBLE
+phase, and opens the menu only when `!e.defaultPrevented`, so:
+- a blocking app screen is open → M1's capture gate already swallowed the key;
+- the socket screen is open → it closes itself and consumes that Esc (a second
+  Esc then opens the pause menu);
+- a run page is up → it never consumes Escape, so the menu opens OVER the page,
+  which keeps its DOM, focus and settle window; the draft candidate is still
+  offered on Resume.
+An Esc within 150 ms of a `fullscreenchange` is ignored (leaving fullscreen
+must not also open a menu). Single player: 0 ticks elapse while the menu is up.
+Network session: the sim keeps running, the menu says "Online — the game keeps
+running", Save/Load are disabled with the save service's own reason and
+"Leave Session" replaces the two quit items.
+Probe surface: `__echoes.app.stack()` / `.focus()` / `.simPaused()` and the
+screen's own `debug()` (where, online, items with their disabled reason);
+in the DOM `.pz-pause.ap-open [data-nav]`.
+
+**Harnesses (all prefixed `gntINT-`, none of them edit another key's tool):**
+- `node tools/gntINT-journey.mjs [--url U] [--port 7830] [--shots]` — GI.1, the
+  whole journey by real input: title → Settings (a display and an audio change,
+  with the Keep/Revert answer) → New Game → camp → portal on foot → room 1 →
+  draft → pause → Save → Quit to Title → Continue (same room, phase, wallet,
+  build and run seed) → victory → high score → Multiplayer (host through the
+  menus + a headless guest by code, each in its OWN browser context so a
+  `?fresh=1` cannot wipe the other's storage) → both leave to the title →
+  reload with the settings, saves and profile applied on boot. 38 checks,
+  exit 1 on any failure. Run it against a `vite preview` URL to certify the
+  player build.
+- `node tools/gntINT-regress.mjs [--seed 7]` — GI.6 on the GPU harness: the
+  8-room loop by real input (WASD into the portal ring, right-mouse basics,
+  keys 1-4, Enter on every page, Escape to close a chained socket screen),
+  keydown-to-move, dodge i-frames, telegraph spans, frame budget, and the
+  camp / combat / boss frames for the REFERENCE_BAR pass
+  (`captures/gntINT-rb-*.png`). The frame sampler mutes itself around its own
+  screenshots — a puppeteer capture stalls the page for up to 1.6 s and is not
+  a game frame.
+- `node tools/gntINT-cueaudit.mjs` — GI.3: triggers every new W2 event with the
+  deterministic content commands under the audio harness profile and pairs it
+  with the `sound` the engine answered within 2 ticks. Its `SILENT` table lists
+  every event type that is cue-less BY DESIGN, with the reason.
+- `tools/actions/gntINT-pauselayout.json` with `cert-capture --w --h` — the
+  pause menu at 1024x576 / 1600x900 / 2560x1440 (type floor, overlaps, hit
+  targets, plate inside the viewport).
+
+**Player build (GI.4 / GI.5).** `npm run build` → `dist/` (base `./`, es2022,
+no sourcemaps, `three` in its own cached chunk); `npx vite preview --port 4311`
+serves it. On the plain player URL there is NO dev chrome: the fps meter is
+`display:none` (setting `display.showFps`, forced on by `?fps=1`, `?debug=1` or
+a menu-skip harness boot) and `#debug-overlay` only exists with `?debug=1`; the
+version label stays, 12 px, bottom-left.
+
+**Round-1 fixes (INT fix builder, `gntfixINT1-*`).** Two journey failures
+whose root causes lived in other keys' files (minimal edits, listed here):
+- *Save ordering is by capture time (J3).* `src/save/index.js` `writeSlot()`
+  stamps `savedAt` with the `capturedAt` the caller passes — the moment the
+  tree was captured (`requestCapture()` resolves `{ ok, tree, rec,
+  capturedAt }`; `src/save/autosave.js` records it right after `capture()`).
+  The deferred write (calm frames → thumbnail → idle tasks) may land seconds
+  later under load and no longer re-ranks the file: a room-enter autosave
+  written after a later quicksave / manual save stays BELOW it, so
+  `save.list()[0]`, `save.latest()` (the title's Continue) and the auto-slot
+  rotation follow the state's age. The Load screen's default selection is
+  `save.latest()` (the entry Continue would resume) even though the autosave
+  group is pinned above the player's slots (`src/ui/menu/saves.js`).
+  Probe: `node tools/gntfixINT1-j3order.mjs --tag t --cpu 4 --f5 1 --room2 0
+  --delay 300` → `captures/gntfixINT1-j3order-t.json` Q2 `flipped` must be
+  false and Q3's Continue caption must name the quicksave.
+- *Drop-in by code into a running room enters play (J4).* The server seats a
+  late joiner in an `in_game` room and the lobby client goes straight to
+  `guest`; the session's `sync()` enters play and clears the screen stack.
+  `src/ui/menu/mpjoin.js` therefore opens NO lobby when the joined room's
+  `state !== 'lobby'` (toast "Joined CODE — the game is under way. You play
+  the <seat>."), and `src/ui/menu/lobby.js` closes itself should it ever sit
+  over an `in_game` room (`closeIfPlaying()` on open, `room` and `state`).
+  Probe: `node tools/gntfixINT1-dropin.mjs --port 789x --tag t --mode both`
+  → 3/3 (R rejoin by code, F3 brand-new third client): stack `[]`, app
+  `playing`, net `guest`, the dropped-in seat moves on the host under WASD.
+- *A save write never stalls on an occluded window.* `src/save/index.js`
+  `nextIdle()` (the frame-gap between the encode, verify and write pieces,
+  G2.7) races `requestAnimationFrame` against a 40 ms timeout: Chrome stops
+  rAF for an occluded or hidden window, and a Save pressed just before the
+  player alt-tabbed (or under several harness windows) used to wait on it
+  indefinitely. `calmFrames` (1.5 s) and `thumbnail.next()` (500 ms) were
+  already bounded. Probe: `node tools/gntfixINT1-slotclick.mjs --run 1`
+  → 3/3 real clicks on Save-mode slots in room-1 combat write the save.
+- Harness note: `cert-capture seq` takes `<name> <count> <intervalMs>`
+  positionally BEFORE `--url` / `--actions` (`seq x 1 0 --url …`); written
+  as `seq x --url …` it silently captures the default URL. On menu-skip boots
+  puppeteer's `networkidle2` can wait the whole navigation timeout because
+  the biome paint module worker's script request stays pending in CDP
+  (`tools/gntfixINT1-loadevent.mjs`; the page's load event fires at ~3.6 s) —
+  pass `--timeout 180000`.
+
+**Round-3 fixes (INT fix builder, `gntfixINT3-*`, v0.5.114–0.5.116).**
+- *Boot splash on the first painted frame (J3-F2).* `index.html` holds a
+  static `#boot-splash` (ECHOES, ◆, a compositor-driven sweep bar, "Lighting
+  the hearth…") laid out rule-for-rule like the loading screen (`--ap-s` set
+  by an inline head script with `apScale`'s formula). main.js
+  `@gnt:INT-FIRST-PAINT` awaits one animation frame (+ a task; cap 1.5 s;
+  hidden tabs never wait) before the boot's long main-thread stretch, so a
+  cold browser paints the splash first; `@gnt:INT-WIRING` hands over — title
+  boots cut to the loading screen the rAF it is fully opaque (pixel-identical,
+  0 px rect deltas), menu-skip boots fade the splash after 2 rendered frames.
+  An uncaught error / failed script that leaves the splash unclaimed for 4 s
+  becomes "Echoes couldn't start." with the reason and a focused Reload.
+  Probe surface: `window.__echoesBootSplash.state` ({ released, releasedAt,
+  failed, errors }). **Harness note:** DOMContentLoaded / `load` now fire
+  BEFORE `window.__echoes` exists — poll for it (openEchoes does;
+  cert-capture's networkidle2 + settle is unaffected). Probe:
+  `node tools/gntfixINT3-boot.mjs <url> <tag> [--reps 3] [--legs static,frames,menuskip,fail]`
+  → first content frame, raw-world frames before the title (must be 0),
+  uncovered rAFs (0), hand-over rect deltas (0 px), the failure card.
+- *Setting-out saves described right (J3-F1)* — fixed by M2 (fix-M2-r3 F2,
+  `src/save/describe.js`); re-verified by `node tools/gntfixINT3-departsave.mjs
+  <url> <tag> --path real` (Level 1 cleared → Quit to Lobby → Level II → on the
+  card: autosave row, Load "Where", Slot 1 row, title Continue all read
+  "Setting out — Level II · The Sunken Mill"; Continue restores the card).
+- *A saved run is never silently replaced by a new game (J3-F3).* The two
+  autosave slots rotate PER GAME (`src/save/index.js pickAutoSlot`; game key =
+  the run seed, constant through a campaign): an autosave overwrites an empty
+  slot, else this game's older save, else a slot with no run in progress,
+  and only then another game's run in progress. Games that ended (victory,
+  defeat, Quit to Lobby) are remembered in `echoes.save.v1.endedRuns`; their
+  leftover autosaves are ordinary old saves again (loading one revives it).
+  The title's New Game over a run in progress asks first — "Start a new
+  game?" (the run stays in Load Game, named; default Start New Game) or, only
+  when both autosave slots hold other games' runs, "Replace a saved run?"
+  naming the older run (danger, default Keep My Run). `app.newGame()` (API /
+  harness) stays confirm-free; **tools that press the title's New Game with a
+  run in progress in the autosaves must answer that confirm.** Debug:
+  `__echoes.save.newGameImpact()`, `.autoSlotFor()`, `.endedRuns()`. Probe:
+  `node tools/gntfixINT3-newgame.mjs <url> <tag> [--legs critic,two,load,end,abandon,rotate,fresh] [--real 1]`
+  (`--real 1` waits the real 20 s autosave throttle instead of resetting it).
+
+**Round-4 fixes (INT fix builder, `gntfixINT4-*`, v0.5.145+).**
+- *No first-use stall at run start or in the first fight (J4-F1).* Three
+  first-use costs the boot warm-up missed, each measured with a Chrome trace
+  in a fresh GPU-harness browser: (1) the §19.1 band guard is part of a lit
+  material's program, and the 30-frame rescan patched the Level 1 monolith
+  (toon + emissiveMap) only after it had been precompiled / warmed unguarded —
+  a relink 0.2 s into every run (60-78 ms of `GetProgramiv`): now
+  `env/bandguard.js guardSubtree()` runs on every dressing when built and on
+  every `warmPark` rig; (2) the camp hides the arena root, so dressings parked
+  in the camp were never drawn — the parked dressing now hangs off the scene
+  for its 3 frames, and a dressing never drawn (the boot layout) gets one;
+  (3) the HUD's boot paint warm-up ran under the title's `ap-hide-game`
+  (visibility: hidden), so the first cooldown wipe (conic-gradient) and slot
+  flash / numeral of the first fight compiled Chrome's raster pipelines
+  (242-267 ms GPU-process frames) — a title boot now re-runs it under the
+  (translucent) loading card with the layers paintable at 2/1000 opacity,
+  holding `warmupPending()` (render/warmup.js `warmupHold`) so "Ready" waits
+  for it. Debug: `window.__echoesUiWarm` ({ on: 'loading'|'title', startedAt,
+  ms }). The 1.5-2.7 s freezes ~120-230 s after a HEADLESS browser launches
+  are the browser's own (a plain WebGL page freezes the same way; a browser
+  aged 3 minutes before the game starts shows none) — a probe that gates on
+  frame time over a full campaign should start the game in a browser that is
+  already a few minutes old, or discount a single > 1 s frame whose program /
+  texture counts are unchanged. Probes: `node tools/gntfixINT4-runstart.mjs
+  --url <u> --reps 3 --fight 1 [--trace 1] [--prof 1]` (camp → portal → Level
+  1 room 1 by real input; frames > 50 ms attributed; GL hook lists programs
+  linked / first drawn after E — expect none), `node tools/gntfixINT4-uiwarm.mjs
+  --url <u>` (the warm runs under the card, invisible, hidden again; ?menu=0
+  unaffected), `node tools/gntfixINT4-trace.mjs --url <u> --seed 7 --tag <t>`
+  (the journey critic's 8-room + Level 2 real-input trace plus the GL hook;
+  analyse with `tools/gntcjourney4-trace8an.mjs`), `tools/gntfixINT4-titletrace.mjs`.
+- *The level-clear frame carries no background build (J4-F1, v0.5.149).*
+  `level_transit` (inside the clear tick) runs the level teardown AND raises
+  the dressing pump's budget to 24 ms, so the old clear frame built the next
+  level's treeline + props in the same frame (88-109 ms on a quiet machine,
+  2x that under load). Now `env/biomes/builder.js pumpDressings(budget,
+  spentMs)` skips a HEAVY frame (pre-pump time > 14 ms and > 2.5x the
+  device's usual, at most 4 frames in a row) and the arena pump learns each
+  build step's cost and never starts a step predicted to overrun its slice
+  unless nothing ran yet — a card frame carries at most one build step.
+  Debug: `__echoes.campaign.residency().perf` → `pump` ({ heavySkipped,
+  usualSpentMs, log: [t, spentMs, budget, skipped] }), `stepMs` (learned cost
+  per step), `slices` ([t, ms, steps, budget]). Probe: `node
+  tools/gntfixINT4-lvlclear.mjs --url <u> --what clear [--bossms 10000]
+  [--prof 1]` (fresh GPU browser, title boot, campaign L1 → room 8 → killBoss:
+  the clear frame, the pump's decision on it — `clearPump.clearFramePump[3]`
+  = 1 skipped — the card's slices, new programs (expect none) and, with
+  --prof on an unminified build, the long frames' JS by path). Machine load
+  inflates every number here; compare A/B builds on the same minutes.
+  `node tools/gntfixINT4-shopraster.mjs --url <u> --variants
+  base,noshadow,noglowanim` measures the room-7 shop page's GPU raster in the
+  1.5 s after `shop_open` with the page's shadows / animated layers switched
+  off per variant (a lead for M4a — the shop open is raster, not script).
+- *Closing the tab never loses a completed room (J4-F2).* PLAN §3.4 rule:
+  the 20 s autosave throttle spaces WRITES only — a safe point inside the
+  window is captured on its tick and HELD (newest wins), written when the
+  window ends, at once when the sim pauses / the app leaves play, and
+  synchronously on `visibilitychange` hidden / `pagehide`. The autosave log
+  keeps `skipped: 'throttle' | 'busy'` for the postponed write with
+  `deferred: true` (nothing is dropped); new entries `skipped: 'superseded'`,
+  `'superseded:quit'`, `'avoid:load'`, `{ flush: 'pause' | 'title' | … }` and
+  sync writes `{ sync: 'hidden' | 'pagehide' | 'load' | 'new_game', syncMs }`.
+  Debug: `__echoes.save.autosaveHeld()` → the held capture (reason, eventTick,
+  captureTick, dueInMs) or null. **Harness note:** a probe that reads the
+  auto slots right after a room entry inside the window sees the previous
+  room until the window ends, a pause opens, or the page hides — call
+  `save.resetAutosaveThrottle()` (it now writes the held capture at once) when
+  a test needs it on disk. Probes: the critic's `node
+  tools/gntcjourney4-closeloss.mjs --url <u> --seed 7 --stay 25000|2000`
+  (real input, real tab close → Continue at room 2 with the drafted build)
+  and `node tools/gntfixINT4-autosave.mjs --url <u> [--only A1,…]` (held +
+  window write with picture and ≤ 50 ms frames, hidden, pagehide, pause, Save
+  & Quit supersedes, Load of the slot it would overwrite, New Game, the M2
+  G2.7 sequence).
+- *A guest is told when the host quits to the lobby (J4-F3).* The host's
+  Quit to Lobby (run.js `abandonRun`) emits `return_to_camp` WITH a `reason`
+  (a normal return after an end card carries none); the guest's replica
+  replays it, and main.js `@gnt:INT-WIRING` shows the guest ONE app toast —
+  "<name> (host) quit to the lobby — the campaign ended and the party is back
+  at camp" (6.5 s, `__echoes.app.toasts()`); the host and a single-player
+  quit get none. Probes: the critic's `node tools/gntcjourney4-mpnotice.mjs
+  --url <preview> --port <net>` (N1: host confirms Quit to Lobby from Level 2
+  through the real pause menu, zero-config via the preview proxy) and `node
+  tools/gntfixINT4-mpquit.mjs --url <u> --port <net>` (Q1 one toast naming
+  the host within 3 s, Q2 no toast on a defeat → camp, Q3 none in single
+  player).
+
+**fix-INT-r5 probes (gauntlet round 5, 2026-10-01; docs/gauntlet/fix-INT-r5.md).**
+- *The end card is a fixed-width plate (J5-F2, v0.5.196).* `.rn-page.rn-end`
+  is min(980 px, 100vw − 96) wide (1020 in the roomy ≥ 1200 px tall layout)
+  whatever it holds: SCORE hero line, the stats as key / value pairs two per
+  row, THE PARTY table (one `.rn-prow[data-seat]` per character: portrait +
+  class (+ the player's name in a session) · skill chips · `n / 32 nodes` ·
+  purse; columns shared by subgrid); SKILLS CARRIED / NODES HELD are the
+  party's totals. `__echoes.runUi().fit.top` / `#run-screen` `--rn-top` =
+  the band under the HUD corner plates the card centres in when it fits
+  (0 otherwise). Probes: the critic's `node tools/gntcjourney5-endcard.mjs
+  --url <preview> --level 2 --tag <t>` (panel rect per size) and `node
+  tools/gntfixINT5-endcard.mjs --url <u> --scen def2,def1,vic3 --sizes …
+  --tag <t>` (the refuter's spec probe + `extra`: per-row column x spread,
+  skill lines per character, text outside the panel, overlap with `.hud-loc`
+  / `.hud-glint` / `.hud-bar`). Pass: panel ≤ 1020 px and never the full
+  window at ≥ 1024x576, colSpread 0, spill 0, no HUD overlap at ≥ 1024x640,
+  the same width with 0 / 28 / 95 nodes. `node tools/gntfixINT5-endret.mjs
+  --url <u>`: Enter, a mouse click on Return to Camp, and Esc (pause over the
+  card) → Esc → Enter all leave to camp.
+- *Full-slot swap commit (J5-F3, fixed by CAMPAIGN v0.5.167).* Re-verify with
+  `node tools/gntfixINT5-swap.mjs --url <u> --seeds 1,2,3,4,5,6 --mode select`
+  (copy of the critic's probe: S + Enter must take the offered skill into the
+  chosen slot, seed 3's suggestion is Leave) and `node
+  tools/gntfixINT5-swapfocus.mjs --base <u>/ --seeds 3,101,102 --how
+  key|arrow|mouse|pad|none` (copy of CAMPAIGN's; `none` = the reflexive-Enter
+  control that follows the suggestion).
+
+### CAMPAIGN — linear campaign (the user's CRITICAL REFACTOR, 2026-09-25, owner CAMPAIGN)
+
+Design + gates: docs/gauntlet/PLAN.md §12 (GC.1–GC.13). Evidence:
+docs/gauntlet/build-CAMPAIGN.md.
+
+- **What changed for every harness.** The portal's E starts a CAMPAIGN at
+  Level 1 (menu-skip boots with `?act=N` start at N). Clearing a level no
+  longer ends the run: the sim enters phase `transit` (the level-clear card)
+  and the next level's room 1 follows. Only the final level's clear reaches
+  `victory`. Single-level harness runs are unchanged: `cmd('startRun', { act,
+  challenge })`, `?run=1[&act=N]`, `skipToRoom(n, { act })` with no run live,
+  the act runner (`tools/gnt-M4a-actrun.mjs`) and the Node simtrace still end
+  at the Stag with `victory`. Every start at level N > 1 (campaign or single)
+  carries the starter grant (PLAN §12.4), so the act runner measures a
+  Level-N start. The expedition picker screen no longer exists — a probe that
+  pushed `expedition` opens `levels`.
+- **Boot param** `?level=N` — menu-skip boot + a campaign at level N on the
+  first ticked frame (harness, bypasses locks).
+- **Commands** `cmd('startCampaign', { level, challenge, depart })`,
+  `cmd('campaignAdvance')` (the card's Enter; refused before 30 ticks),
+  `cmd('abandonRun')` (Quit to Lobby), `cmd('campaignState')`,
+  `cmd('campLevels')` (opens the Level Select), `cmd('campChoose', n)`
+  (player-facing: refuses a locked level). The autopilot advances the card at
+  its `untilTick`, so `cmd('autopilot', true)` + `sim.stepN` plays whole
+  campaigns deterministically.
+- **Debug API** `__echoes.campaign` — `state()`, `unlocked()`, `choose(n)`,
+  `rules()`, `memory()`, `snapshot(label)`, `snapshots()`, `transitions()`,
+  `ready(level)`, `unlock(list | null)`; `__echoes.busCounters.listeners`.
+- **Reaching a level clear fast** (say so in a report): `cmd('startCampaign',
+  { level: 1 })`, `cmd('skipToRoom', 8)`, then `cmd('bossHp', 0.02, true)` and
+  finish the Stag by real input (or `cmd('killBoss')` + `killAllEnemies`).
+- **Debug API additions** (v0.5.92) `__echoes.campaign.census()` (unique
+  geometries / materials reachable from the scene, per top-level group),
+  `glTrack()` + `glAlive()` / `glOffScene()` (arm a GL geometry tracker, then
+  list every live geometry by type + parameters — a leak names itself),
+  `memory()` also reports `pools.numeralCapacity` (numeral elements ever
+  allocated), `domToasts` and `domParts` (element count per top-level
+  container), `transitions()` rows carry `restored: true` for a load onto
+  the card.
+- **Save** (schema 3, v0.5.91): `systems.run.campaign` + `autoReturnTick`;
+  `MIGRATIONS[2]` turns an active schema-2 act run into a campaign from its
+  level (not harness, no grant). `level_transit` is an unthrottled autosave
+  safe point. `load()` refuses a run in (or a card heading to) a level the
+  profile has not unlocked: `{ ok: false, error: 'locked', reason }` —
+  harness-started runs (`campaign.harness`) are exempt. `__echoes.save`
+  adds `lastLevelClear()` and `lockCheck(tree?)`. The profile writes the
+  unlock at the `level_clear` itself (`records.levelClears`,
+  `furthestLevel`), and `recordRun` takes `result: 'abandoned'` (Quit to
+  Lobby) + the campaign's per-level rooms / kills for the campaign score.
+- **Tools** (read-only for everyone else):
+  - `tools/gntCAMPAIGN-camprun.mjs --from 1|2|3 --seeds 1-5 [--node 1]` —
+    campaign runner: per-level rooms, outcome, the §4.2 band per level and a
+    carry / restore / reset verdict at every transition (GC.5 sim half,
+    GC.12).
+  - `tools/gntCAMPAIGN-edge.mjs [--seeds 1-5]` — Node, the sim's
+    exactly-once cases (GC.3 sim half): Stag + adds on one tick, Stag first,
+    a replayed room clear, a wipe on the clear tick, 10 advances in one tick,
+    the settle refusal, the 600-tick hard bound, Quit to Lobby on the card,
+    the final clear's auto-return, a defeat in Level 2.
+  - `tools/gntCAMPAIGN-save.mjs` — Node save / records (GC.9 / GC.10 core):
+    card + mid-Level-2 round trips bit-identical over 900 / 600 ticks (same
+    world and a fresh world), schema 2 -> 3 and 1 -> 2 -> 3 migrations, the
+    one-level campaign score identity (324 inputs) and the profile rules.
+  - `tools/gntCAMPAIGN-probe.mjs memory|frames [--url U] [--tag t]` — GPU
+    harness. `memory`: New Game with seed 7 before every campaign, the sim
+    frozen and stepped (`sim.stepN`), so every campaign plays the same ticks;
+    one warm-up campaign (c0 — first-use shared caches such as elite rings
+    and the interactables' part boxes are created once and kept), then three
+    measured campaigns sampled at level start + 90 ticks and in camp:
+    GL geometries / textures / programs, heap after a forced GC, entities,
+    bus listeners, pool allocations, DOM (the HUD's off-screen threat
+    pointers and toasts are wall-clock transients), resident dressings, then
+    a Quit to Lobby from Level 2. `frames`: CDP screencast luma over L1->L2
+    and L2->L3 (auto and Enter at 0.5 s) + a 4x CPU stress row (reported, not
+    a gate): near-black frames, frame gaps, killing blow -> first
+    controllable frame, card wall time, live audio voices in combat vs on the
+    card (launch with `--autoplay-policy=no-user-gesture-required`; a Shift
+    press unlocks the engine). Run it on the dev server AND a production
+    preview (`npx vite build --outDir dist-CAMPAIGN` + `npx vite preview
+    --outDir dist-CAMPAIGN --port 4380 --strictPort`, `--url
+    http://127.0.0.1:4380/`).
+  - `tools/gntCAMPAIGN-gates.mjs flow|quit|edge|locks|all [--tag t]` — the
+    player paths, every leg in its own browser context (a fresh profile):
+    `flow` (title session -> New Game -> portal E = Level 1 with every level
+    unlocked; per-frame camp/run mode across both transitions; the card's
+    reset / restore / carry state; CAMPAIGN COMPLETE auto-return; exact event
+    counts), `quit` (pause menu -> Quit to Lobby -> confirm from combat, the
+    reward page and the card), `edge` (Esc holds the card, F5 on the card,
+    Enter x12, a hidden tab emulated in the page — rAF held + visibilitychange
+    — for 3 s, a load onto the card), `locks` (keyboard / mouse / mocked
+    gamepad with a positive control / `campaign.choose` / `cmd('campChoose')`
+    / a save file; the unlock surviving a reload; a Level-2 start through the
+    setting-out card to CAMPAIGN COMPLETE; the Records screen).
+  - `tools/gntCAMPAIGN-net.mjs [--port 7900] [--cond lat60,jit10,loss2]` —
+    own server + host + guest: guest mutators refused, every guest frame on
+    the card while the applied host tick is inside [clear, advance) and in
+    Level 2 after it, level / phase / layout equal, the guest's
+    `level_ready`, 0 desyncs, the guest pause menu (Leave Session only), the
+    host's Quit to Lobby taking both to camp with the session up.
+  - `tools/gntCAMPAIGN-legacy.mjs` — GC.13: `?scene=arena&room=kill_all`,
+    `?run=1` (single run -> victory card -> camp), `cmd('startRun', { act:
+    2 })`, `?level=3`, `?menu=0&act=2` + portal E, `skipToRoom(5)` with no
+    run.
+  - `tools/gntfixCAMPAIGN3-inflight.mjs <base> <tag> [trials] [--enter]
+    [--luma] [--seed0 20]` — GC.7 with enemy shots IN FLIGHT at the killing
+    blow (the round-3 critic's method: `?level=1&seed=S`, `skipToRoom(8)`,
+    Stag at 50 %, a Quillback beside the party, one cmd kill once
+    `state().eshots.length >= 1`): wait ticks kill -> `level_clear` (1),
+    card ticks, killing blow -> first controllable Level-2 frame (<= 4000 ms
+    auto, <= 1500 ms with `--enter` at 0.5 s), exactly-once counts, shots
+    left / Downed after the clear, near-black frames with `--luma`, and the
+    level manager's own transition record (readiness, advance reason, long
+    frames). Run it on 5199 AND a production preview.
+  - `tools/gntfixCAMPAIGN3-edge.mjs [--seeds 1-10]` — the same in Node: a
+    shot in flight at the kill -> the clear (campaign) / victory (legacy
+    `startRun`) on the next tick with the shot dissolved (`eshot_despawn`
+    cause `room_clear`) and no impact after it; a wipe on the kill step is
+    still a defeat; Stag first then the adds -> the clear on the adds' tick.
+  - `tools/gntCAMPAIGN-leak.mjs` / `tools/gntCAMPAIGN-warm.mjs` — the leak
+    hunt's diagnostics (scene census diff; GL geometries alive in campaign 2
+    that were not in campaign 1).
+  - `tools/gntfixCAMPAIGN5-isready.mjs legacy|mech|slow|slowmech|slowquit
+    [--n 8] [--par 5] [--slow 2500] [--base URL]` — gauntlet r5 F2 (0 page
+    errors, GC.13 / GP.16): a level change that disposes a parked dressing
+    while its async shader links are pending. `slow*` modes emulate a slow
+    driver (KHR_parallel_shader_compile's COMPLETION_STATUS reads "not ready"
+    for `--slow` ms after a program's first poll) so the window is wide and
+    the race deterministic; `slowmech` = Level Select -> III fired on a frame
+    a Level-1 layout compile is in flight; `legacy --par 5` = the critic's
+    `?level=3&seed=4&fresh=1` boot under 5 parallel pages. Pass: 0
+    `isReady` page errors, the resident level's layouts all built after
+    the level change (`campaign.residency().compile` shows `dropped` > 0 on
+    trials that hit the race: disposed materials leave the wait, the compile
+    promise settles; `timedOut` counts the 10 s deadline).
+  - `tools/gntfixCAMPAIGN5-swapfocus.mjs --how
+    key|arrow|mouse|wheel|pad|click|xkey|none [--seeds 104,108,111]` —
+    gauntlet r5 F3 (GP.14 "Enter takes it"): `?level=2&seed=S` (4 Healer
+    skills), room 1 by cmd, then REAL input on the Healer's swap card: move
+    the Replaces selector to another slot and confirm. Pass: every
+    selector-moving path commits `draft_taken` with exactly the chosen slot
+    replaced — also on seeds whose AI suggestion is Leave (the card opens on
+    Leave; a pick moves focus to "Take · Replace"); `xkey` keeps the build
+    byte-identical (`draft_declined`); `none` (no pick, Enter) follows the
+    suggestion. The focused button is filled Hearth Amber (checked from the
+    computed style in the row's `buttons`).
+  - **fix-CAMPAIGN-r6 (CR6-F2, GC.6 memory flat across campaigns)** — run on a
+    production preview (`npx vite build --outDir dist-<you>` + `npx vite
+    preview --outDir dist-<you> --port <yours>`); evidence in
+    docs/gauntlet/fix-CAMPAIGN-r6.md.
+    - `tools/gntfixCAMPAIGN6-memdet.mjs --base URL --tag t --campaigns 6
+      [--snap 3,6] [--census 1] [--track 1]` — the critic's deterministic
+      full-play probe (New Game seed 7 + `startCampaign` per campaign, the
+      autopilot plays every room, sim stepped 15 ticks per frame), samples at
+      the first controllable frame of L1 / L2 / L3 and in camp. `--census 1`
+      adds a three.js object census in camp (every LIVE Material /
+      BufferGeometry / Texture via CDP `Runtime.queryObjects`, grouped
+      in-scene `S` / off-scene `o`, ShaderMaterials by a djb2 hash of their
+      shader source + uniform names, diffed campaign to campaign); `--track N`
+      arms `campaign.glTrack()` after campaign N and stores `glAlive` /
+      `glOffScene` at every later sample (the GL-registered geometries that
+      persist). Pass (GC.6 after the one warm-up campaign): the same level /
+      camp has the same `gl.geometries` / `gl.textures` / `gl.programs` ± 2 in
+      every campaign, the off-scene rim-shell ShaderMaterials (hash `z8pbzx`,
+      skillfx/content.js) stay bounded (≤ 2 anchors + 2 × 16 pooled rigs),
+      the heap after a forced GC within ± 8 MB of campaign 1 and not climbing.
+      `tools/gntfixCAMPAIGN6-heapretain.mjs A.heapsnapshot B.heapsnapshot
+      <class>` groups objects new in B by retainer chain (`ga` = the minified
+      ShaderMaterial class in the v0.5.197 bundle; look the class up again on
+      a new bundle).
+    - `tools/gntfixCAMPAIGN6-leakid.mjs --base URL --mode full --warm 2 --k 3`
+      — bit-identical full-play campaigns; the GL tracker armed after the
+      warm-up lists geometries alive OFF the scene (a leak or an untrimmed
+      pool names itself). Pass: `offScene` 0 and camp geometries equal.
+    - `tools/gntfixCAMPAIGN6-statusvis.mjs --base URL` — the pooled status
+      rigs (shield + ward on the party, slow + stun on an enemy; clear /
+      re-apply / 20 cycles): same visible parts after a pool round trip, the
+      pool shrinks on re-apply, the live rim-shell count does not grow; at
+      Level 2's first frame no skill flourish is carried over. Screenshots
+      `-A` / `-B`.
+    - `tools/gntfixCAMPAIGN6-meterring.mjs` (Node) — the audio meters'
+      history ring against the committed meter.js (identical deterministic
+      samples, past the 12 000-window cap and across reset): all outputs
+      identical. `tools/gntfixCAMPAIGN6-meterlive.mjs --base URL` — the live
+      meters still file windows and answer `meters()` / `history(n)`.
+    - `tools/gntfixCAMPAIGN6-memloop.mjs --base URL --campaigns 10 [--snap
+      2,5]` — the heap trend WITHOUT probe-side compilation churn (the
+      memdet / leakid probes compile a fresh `page.evaluate` + `eval` every
+      15 ticks, ~3 000 scripts a campaign, which the page heap carries for a
+      while): one in-page driver plays each bit-identical campaign. Read the
+      heap with `tools/gntfixCAMPAIGN6-heapsplit.mjs a.heapsnapshot
+      b.heapsnapshot` — self size split into V8 code (the JIT keeps tiering
+      up more of the bundle the longer a session runs), engine-native data
+      and the game's own JavaScript objects; judge a campaign-over-campaign
+      leak on the JS part. `tools/gntfixCAMPAIGN6-heapchain.mjs A B [--name
+      Cls] [--depth N]` = net growth by class + retainer chain (churn
+      cancels); `tools/gntfixCAMPAIGN6-heappath.mjs X <id>` = the shortest
+      strong path from the GC roots to one node.
+    - `tools/gntfixCAMPAIGN6-allyvis.mjs --base URL` — the ally render
+      layer after its level teardown: the pooled revive instrument (its
+      geometry handed back at the L1 -> L2 boundary) draws again in Level 2;
+      melee wedges / kit zones / millrace curbs keep drawing (`-play.png`).
+    - Regression copies with renamed outputs: `gntfixCAMPAIGN6-gates.mjs`
+      (flow / quit / edge / locks), `-legacy.mjs` (GC.13), `-frames.mjs`
+      (transition timing; pass `--shot 0` for frame gaps — a CDP screencast
+      inflates arrival gaps), `-locks.mjs`, `-memory.mjs` (seed-varying
+      portal campaigns), `tools/actions/gntfixCAMPAIGN6-coreloop.json`.
+
+### DEPLOY — hosted multiplayer, zero-config join (2026-09-26, owner DEPLOY)
+
+Design + gates: docs/gauntlet/PLAN.md §14 (GD.1–GD.9). Evidence:
+docs/gauntlet/build-DEPLOY.md.
+
+- **What changed for every harness.** The multiplayer address is automatic:
+  `?net=` > a saved `net.serverUrl` > `VITE_NET_URL` > the page's own origin
+  (`ws(s)://<host>/echoes`) > `ws://127.0.0.1:7800/echoes` (file://, Node).
+  **Probes that pass `?net=` (every M5a / M5b / CAMPAIGN probe) behave exactly
+  as before.** A page WITHOUT `?net=` on the dev server (5199) now reaches
+  `ws://127.0.0.1:5199/echoes`, which Vite proxies to 127.0.0.1:7800 — so a
+  probe that wants "no server" on 5199 must not have a session server on
+  7800 (nobody may: 7800 is the player default), and a probe that wants a
+  server must pass `?net=` with its own port. Nothing connects until
+  Multiplayer is opened (single-player makes zero `/echoes` sockets).
+- **Debug API**: `__echoes.net.addressInfo()` → `{ url, source: 'param' |
+  'saved' | 'build' | 'site' | 'local', auto, site, https, file, skipped,
+  saved, param }`; `__echoes.net.updateInfo` (`{ latest, mine, via }` once a
+  newer build was seen, else null); `__echoes.net.siteUrls`;
+  `net.serverUrl = ''` returns to automatic. Settings: `net.serverUrl` default
+  `''` (automatic), marker `net.serverUrlV` (1 = the ≤ v0.5.117 default was
+  migrated). Net event `update_available`.
+- **Server**: `node server/index.mjs --static <dist>` serves the build on the
+  WebSocket's port; `--origins '*'|self|<origins>`, `--max-per-ip n`
+  (default 16, loopback exempt), `--build v`. `/health` adds `build`,
+  `static`, `siteUrls`, `origins`, `maxPerIp`; `welcome` adds `latestBuild`,
+  `latestEntry`, `siteUrls`. `createEchoesServer({ static, origins,
+  maxPerIp, build })` in-process for probes. `npm run serve` (build + serve on
+  0.0.0.0:7800, `--origins self`) and `npm start` are PLAYER commands — a
+  probe passes `--port` (`npm run serve -- --port <yours>`) and remembers that
+  `npm run serve` rebuilds `dist/`.
+- **Build**: every production build now contains `version.json` (`{ name,
+  version, entry, builtAt }`).
+- **Ports**: DEPLOY net 7920–7939, preview / TLS proxy 4390–4399; deploy
+  critic net 7940–7949, preview 4334–4339.
+- **Probes** (each starts and kills its own servers; build first with `npx vite
+  build --outDir dist-DEPLOY`):
+  - `tools/gntDEPLOY-zeroconf.mjs --url <page> [--guests 2] [--insecure]
+    [--expect <ws url>] --tag <t>` — fresh browser contexts (own storage),
+    real clicks: host → Host a Game, guests → Join by Code → Ready, host →
+    Start; asserts `source: 'site'`, `net.serverUrl === ''`, in game +
+    synced, 0 page errors (GD.2 / GD.3 / GD.4). Serve the page with `node
+    server/index.mjs --static dist-DEPLOY --port <p> [--origins self]`, or
+    `vite preview --outDir dist-DEPLOY --port <p> --host` with
+    `ECHOES_NET_PORT=<q>` + `node server/index.mjs --port <q>`.
+  - `tools/gntDEPLOY-tls.mjs --port <https port> --to <server port>` — the
+    https + wss reverse proxy (self-signed, Host preserved, X-Forwarded-*):
+    open `https://127.0.0.1:<https port>/` with `--insecure` (GD.3).
+  - `tools/gntDEPLOY-settings.mjs --dist dist-DEPLOY --port <p>` — Settings ▸
+    Network automatic view, custom address persists + wins, reset, wrong
+    saved address, `?net=` precedence, validation, legacy blobs, file://
+    (GD.1).
+  - `tools/gntDEPLOY-hardening.mjs --dist dist-DEPLOY --port <p>` — static
+    serving + origins + per-IP cap + admin behind proxy + size / flood limits
+    (GD.5 / GD.6).
+  - `tools/gntDEPLOY-redeploy.mjs --dist dist-DEPLOY --port <p> --mode
+    graceful|crash` — build B = A with a new entry name and version 0.5.999;
+    the stale pages' update dialog / panel and the reload onto B (GD.7).
+  - `tools/gntDEPLOY-sp.mjs --url http://127.0.0.1:5199/` — zero `/echoes`
+    sockets through a single-player room, then the unreachable copy (GD.9).
+- **fix-DEPLOY-r4 (F1, PLAN §14.2 "client aborts log nothing")**: the dev /
+  preview `/echoes` proxy is silent when a player leaves by any path — Vite
+  hangs its own stack-printing "ws proxy socket error" listener on every
+  proxied CLIENT socket, which vite.config.js swaps for one that stays silent
+  for "the connection went away" codes (ECONNRESET / ECONNABORTED / EPIPE /
+  ETIMEDOUT / stream-destroyed) and still reports anything else. With the
+  session server down a WebSocket upgrade gets `HTTP/1.1 502 Bad Gateway`.
+  Probes (DEPLOY ports; serve `vite preview --outDir <dist> --port <p> --host`
+  with `ECHOES_NET_PORT=<q>`, stdout+stderr to a log, beside `node
+  server/index.mjs --port <q>`):
+  - `tools/gntfixDEPLOY4-rawabort.mjs --port <p> --log <preview log> --reps
+    10 --tag <t>` — browser-free: raw sockets upgrade through the proxy (101
+    from the real server) and leave by close frame / FIN / RST / RST while the
+    server streams / a 6-socket RST burst / half a frame then RST; every new
+    proxy log line fails. Pass = 0 lines (was 45 traces in 30 trials).
+  - `tools/gntfixDEPLOY4-proxyunit.mjs --net <q> --down <unused port> --portA
+    <p1> --portB <p2> --outDir <dist> [--config <vite config>] --tag <t>` —
+    Vite's preview() API with a capturing logger: 12 injected leave errors log
+    0, an unexpected one is still reported, the proxy keeps relaying; server
+    down → ws 502 ×3, http 502 + body, ONE hint, no stack (19/19; the pre-fix
+    config scores 6/19).
+  - The deploy critic's `tools/gntcdeploy4-zeroconf.mjs --guests 1` and
+    `tools/gntcdeploy4-abort.mjs --log <preview log>` (navigate / close /
+    kill) must add 0 lines to the preview log.
+- **fix-DEPLOY-r6 (DEP6-F2, lobby copy vs PER-CHARACTER BUILDS)**: the lobby's
+  SHARE how-to line is `howtoLine(room, peerId)` (src/ui/menu/lobby.js), told
+  to the viewer from the room's seats — the host "You play the Healer. Between
+  rooms each player builds their own character; you also build the AI-held
+  seats (Settings ▸ Gameplay)…", a guest "You play the <its class> and build
+  it yourself between rooms…; the host plays the <host's class> and builds the
+  AI-held seats…" (follows a seat change / a migrated host). It must never say
+  the host makes the build choices. In game, a guest's refused press on a
+  shared decision names its owner (src/net/session.js `hostDecidesCopy`): a
+  door → "The Healer picks the door — your pick was shown to the party". Probe
+  (DEPLOY ports; `npx vite build --outDir <dist>` then `node server/index.mjs
+  --static <dist> --port <p> --origins self`):
+  - `tools/gntfixDEPLOY6-lobbycopy.mjs --port <p> --tag <t> [--w --h]
+    [--base-scroll 0] [--lobby-only 1]` — two fresh profiles, zero-config,
+    real clicks (Host a Game / Join by Code / Ready / Start): L1 no "makes the
+    build choices", L2 own class + "build" + own / yourself + "AI-held seats",
+    L3 visible inside the window and the panel, panel scroll ≤ base (also
+    during the start countdown), L4 (`--lobby-only 1`) the guest takes the
+    Swordsman seat and the line follows, R1 the guest's card is "FOR THE
+    <class>" and the host's "FOR YOU — THE HEALER", N1 the guest's Enter on the
+    door page notes "picks the door", 0 page errors. Pass = 14/14 (full) or
+    11/11 (lobby-only) at 1024x576, 1280x720, 1920x1080; v0.5.209 scored 7 FAIL.
+  - Title press timing: the title drops a mouse press in its first 350 ms
+    (OPEN_GUARD_MS — a splash-dismissing tap never lands on an item); a probe
+    that clicks the instant `app.state === 'title'` must wait or retry
+    (`tools/gntfixDEPLOY6-firstclick.mjs --url <page> [--fast 1] [--wait ms]`:
+    +10-20 ms dropped, +150 ms and later opens Multiplayer in 200 ms).
+
+### PARTY — per-character builds (2026-09-27; design PARTYD, build PARTY)
+
+Design: docs/BUILD_BRIEF.md §25 (ruling A16). State, contracts, flows and
+gates: docs/gauntlet/PLAN.md §16 (GP.1–GP.16). Oracle:
+docs/gauntlet/party-oracle.json (`node tools/gntPARTYD-grid.mjs` writes it;
+`--md` prints the §25.4 grids). Evidence: docs/gauntlet/build-PARTYD.md
+(design), docs/gauntlet/build-PARTY.md (build).
+
+- **What changes for every harness.** After a combat room the reward page is
+  the PARTY page (root class `rn-draft` kept; `run.view().phase` is still
+  `reward` until the page commits). `takeReward()` / `cmd('draftTake')` /
+  `cmd('draftDecline')` still address the Healer's card and then commit the
+  page with the AI-held cards as the mode left them — in the default
+  **Suggested** mode that is today's one-call behaviour, so the §6.2 core
+  loop, `tools/actions/gnt-arch-coreloop.json`, the act / campaign runners
+  and `gnt-arch-simtrace.mjs --mode run` keep working unchanged (ruling
+  A17: on a Healer SWAP offer — 4 skills owned, a skill promise —
+  `takeReward()` / `cmd('draftTake')` take it replacing the suggested slot
+  `run.view().reward.replace`; `cmd('draftTake', k)` names the slot). Seat-0
+  commands (`giveSkill`, `grantNode`, `socket`, `unsocket`, `autoFill`,
+  `build*`, `shopBuy`, `wallet`) keep their meaning; ally builds use the
+  `party*` commands (PLAN §16.11). Params: `?party=suggest|manual|auto`,
+  `?partygrant=N` (a built party for probes; combine with `?level=`,
+  `?run=1` or `?menu=0`).
+- **Ports**: PARTY builder net 7950–7959, preview 4400–4401; party critic
+  net 7960–7969, preview 4402–4403 (`npx vite build --outDir dist-party`
+  then `npx vite preview --outDir dist-party --port <p> --strictPort`).
+- **Oracle checker** (runnable the moment PARTY lands; before that it exits
+  2 "not implemented", never a false pass): `node tools/gntPARTYD-grid.mjs
+  --verify-node` (Node world, `cmd('partyPools')` + `cmd('partyVerdicts')`)
+  and `--verify-page [url]` (GPU harness, default
+  `http://127.0.0.1:5199/?menu=0&seed=7`). Pass = 0 pool mismatches and 0
+  of 440 grid-cell mismatches. The plain run (no flag) re-derives the
+  Healer's 289 cells from the same rules and compares them with the real
+  src/sim/nodes.js — it must stay at 0 mismatches after PARTY (GP.14).
+
+**Probes the party critic runs** (each is also PARTY's self-check; the
+numbers are the pass bars):
+
+1. **Pools + numbers (GP.1)** — the oracle checker in Node and in page;
+   `cmd('partyView', s)` for s = 1..3 after `?menu=0&seed=7` → the loadout
+   equals `STARTING_LOADOUT` (the §7 kit order), and every class skill row
+   in `__echoes.party.state()` equals BUILD_BRIEF §25.2 (compare with the
+   oracle's `skills` arrays field by field; the 12 `·s` rows also equal
+   v0.5.150's `ALLY_KITS`, read from a `git archive` of v0.5.150).
+2. **Cap + sockets sweep (GP.2)** — per ally: `partySwap(seat, id)` with no
+   slot on the full loadout → `swap_denied full`, loadout unchanged; swap
+   each of the 4 new skills into slots 0–3 in turn (`partySwap(seat, id,
+   slot)`) → always exactly 4 skills, each replaced skill back in the pool,
+   its nodes on the bench with provenance (count them: 0 lost); try every
+   other path to a 5th skill (reward, grant, catch-up, cmd, a guest CMD, a
+   hand-edited save) on every seat, the Healer included → never; every
+   class skill × every pool node × sockets 1..8 on an emptied row (combat
+   inactive: the party page or camp) → only `limit` denials (count them);
+   in combat every socket / swap / reorder → `combat_active`. **Ruling A17
+   (every seat, the Healer included)**: give a seat 4 skills, walk to a
+   skill-promising room (`?seed=7`, room 1 is always a skill; for the
+   Healer `giveSkill` twice first) → `reward_offer { reward: 'skill', swap:
+   true, replace }` (never `reward: 'node'`); `cmd('draftTake', k)` for k =
+   0..3 on fresh boots → the new skill in slot k, the old one drawable again
+   (`draftPools().skill`), its nodes on the bench (count them); `draftDecline`
+   → loadout / sockets / bench byte-identical.
+3. **Grid effects (GP.3)** — for every LIVE class-node cell (and the guard /
+   hostile-field shared cells): socket the node alone on that skill
+   (`partySocket`), then `partyCast(seat, slot)` into a `spawn('boar' |
+   'mantis', …)` set-up (a Stag for Execute and the taunt caps:
+   `skipToRoom(8)`); assert the oracle's effect text from events / state —
+   the taunt status and the enemy's target id = the Tank; stun ticks; a
+   pull = displacement toward the caster; a thorns instance with a
+   `retaliate:*` source; ward 20% for the resolved cooldown; the cooldown
+   cuts in `a.cds`; `hit_blocked { parry: true }` + `parry_counter`; dash /
+   hop displacement; a crit of base × 2.2; ×2 at ≤ 35% HP; the pierce count;
+   knockback ×2; +40% when standing still; 3 zones / 3 shards; a forced crit
+   while `rng.drawIndex` still advances. A GREY cell: instance amounts equal
+   the unsocketed cast and the socket screen shows the strike glyph; an
+   INERT cell shows "+0".
+4. **Casts by real input (GP.4)** — a 2-page session on your own server
+   (`?net=ws://127.0.0.1:<p>/echoes&nethost=1` / `&netjoin=CODE&netseat=N`);
+   for each class seat and each of its 8 skills: the host puts it in a slot
+   between rooms (`partySwap(seat, id, slot)`), the guest presses that key
+   (1–4) aimed at a spawned enemy;
+   pass = the §25.2 sim effect in the host's events, a ≥ 1.5% pixel diff in
+   a 240×240 box around the caster between the pre-press frame and +4 frames
+   (`tools/analyze.mjs --box`), the skill's cue in the guest's
+   `__echoes.audio.cueLog()` within 150 ms. Passives: `aura_pulse { seat }`
+   every 60 ± 1 ticks while owned; none from the tick it is swapped out.
+   **Displacement prediction**: with the guest on each dash / vault / hop
+   skill (Shoulder Charge, Fox Step, Vault Shot, Pursuit, Disengage), ≥ 10
+   casts at N1 and N2: `__echoes.net.stats()` predErr inside the cast
+   windows — p95 ≤ 0.15 u (N1), max ≤ 1.0 u (N2), 0 snaps, no per-frame
+   correction > 0.1 u.
+5. **Class identity (GP.5)** — `tools/gntPARTY-campaign.mjs --seeds 1-3` (or
+   the critic's own runner over `cmd('autopilot')` + `partyAiLog`): Tank
+   taunt redirect ≥ 50% within 1 s, share of hostile attack starts aimed at
+   the Tank ≥ 1.3× its v0.5.150 baseline share while a taunt source is
+   equipped, Tank-granted shields absorb ≥ 8% of the party's damage where
+   Shield Wall is equipped; Swordsman median cast distance ≤ 1.2 u, ≥ 60% of
+   Crescent Finisher casts with combo ≥ 1; Archer median distance to the
+   nearest hostile at cast ≥ 2.5 u and ≥ 2× the Swordsman's. Plus the
+   critic's blind benchmark judgement (Darkest Dungeon / Across the Obelisk
+   / Diablo III class identity) with capture evidence.
+6. **Selection UX by real input (GP.6)** — GPU harness at 1024×576,
+   1600×900, 1920×1080, 2560×1440: the party page, the shop
+   (`skipToRoom(7)`) and the socket screen (B); for every pair of tabs count
+   the inputs to switch (Q/E, F1–F4, a click, a mocked pad's LB/RB) — max 2;
+   every card / shelf card / socket row has an owner band + `data-seat`
+   matching the viewed tab; Replaces cycles by W/S, the wheel and the D-pad;
+   a switch inside the first 300 ms is dropped and E / F1–F4 restart the
+   window (`runUi().settleInMs`); layout audit: 0 overlapping interactive
+   boxes, 0 clipped text nodes (scrollWidth > clientWidth), no scrollbars,
+   tabs ≥ 44 design px, text at the §17 floors.
+7. **Supply arc (GP.7)** — Node, `tools/gntPARTY-campaign.mjs --from 1
+   --seeds 1-5 --node 1`: per ally per combat clear 1 spoils, 1 card, +12
+   purse; shop 4 cards, ≤ 3 buys; sockets filled at the L1 Stag 8–16 / 32
+   and the L2 Stag 20–30 / 32 (median), 32 / 32 before the L3 Stag, upgrade
+   offers after; the Healer's numbers exactly §14; inputs per party page in
+   Suggested = 1.
+8. **AI (GP.8)** — the same campaign run: `partyAiLog()` per level — 0
+   equipped actives with 0 casts in a room where they were equipped ≥ 20 s;
+   idle fallbacks ≤ 25% of casts; 0 guard casts on Downed members; 0 dash /
+   vault end points beyond the leash; 0 Pinning Arrows on the Stag while
+   another target qualified; the loadout after every swap offer = the §25.8
+   priority rule (take when it outranks the lowest-priority skill, else
+   Leave).
+9. **Multiplayer ownership + deadlines (GP.9)** — 3 clients at N1
+   (`--latency 150 --jitter 20 --loss 0.1` on your server): each guest sends
+   `party_pick` / `party_buy` / `party_socket` for ANOTHER seat →
+   `command_rejected not_owner`, hash unchanged; parallel picks commit ≤ one
+   snapshot after the last decision; a guest that never answers → commit at
+   30.0 ± 0.5 s with `party_autopick { reason: 'timeout' }`, one toast on
+   every client, the stalled seat holding the AI suggestion; door deadline
+   30 s → the left door; shop: the host's Advance with a guest not Done →
+   15 s countdown; the shop's own 90 s deadline; a guest socket screen open
+   at the door commit holds it ≤ 8 s, then closes with its node banked; an
+   away (hidden) guest's card is decided at once; single-player (no `?net`)
+   never shows a countdown. Live re-arming: host alone in Manual, page open
+   (no countdown), a guest drops in onto an undecided AI-held seat → a
+   deadline appears that tick and the page commits ≤ 30.5 s later with
+   the suggestion on that card; the 2nd human leaves → the countdown
+   disappears; a network save taken on a page with a deadline, loaded with
+   no `?net` → no countdown and no auto-pick after 60 s.
+10. **Replication (GP.10)** — the same session for 10 minutes: after every
+    commit / purchase / socket op / level transition the guest's
+    `systems.party` and `run.party` hash equals the host's and
+    `net.stats().desyncs` = 0; drop a guest (`/admin/drop`) and rejoin →
+    the same build; `/admin/kill-host` → the migration keeps all four
+    builds; bandwidth: `tools/gnt-M5a-netbench.mjs --mode combat` on
+    `?level=3&partygrant=max` (the deterministic max-stress builds) → guest
+    downstream ≤ 12 KB/s avg, ≤ 24 KB/s p95 at N1.
+11. **Carry + save (GP.11)** — a carried campaign: diff the four builds and
+    the party state at both `level_transit`s (identical builds; max HP,
+    standing, no statuses, cooldowns ready, no taunts / parries / dashes /
+    pending echoes); `__echoes.save.roundTrip()` mid-level and on the party
+    page with `?partygrant=2` → `equal` and `continuationEqual`; a REAL
+    schema-3 save made on v0.5.150 (boot a `git archive` of it on your
+    preview port, save a slot mid-Level-2, export the file) → allies on
+    their kits, `party_catchup` once, `meta.party` present; schema-1 /
+    schema-2 fixtures chain to 4; Continue resumes with all four builds.
+12. **Modes (GP.12)** — real input per mode (`?party=` or Settings ▸
+    Gameplay): Suggested — 1 focus stop, pre-decided ally cards, ally benches
+    auto-filled at commit; Manual — 4 focus stops, nothing pre-decided, ally
+    benches untouched; Automatic — 1 focus stop, the summary line, ally shop
+    buys at open; `gameplay.autoSocketOwn` On fills the own bench at commit,
+    Off leaves it. Shop in Suggested: view every tab (Q/E), then Advance →
+    each AI-held tab's pre-marked buys still happen (purses drop, benches
+    grow); an un-marked card is not bought; a tab the player bought on
+    keeps only the player's buys.
+13. **Difficulty band (GP.13)** — `tools/gntCAMPAIGN-camprun.mjs --from
+    1|2|3 --seeds 1-5` (Node, as extended by PARTY) against
+    `captures/gntPARTY-baseline-from{1,2,3}.json`: the §4.2 / GC.12 band;
+    per-level median party damage per combat room and time-to-clear within
+    ×0.75–×1.35 of baseline; the L3 Stag room's damage ≥ 0.8 × baseline;
+    ≥ 1 party down per level on ≥ 2 of 5 seeds; `node
+    tools/gntfixM4a3-g4a5.mjs` passes against the new §23.2 note. Spot-check
+    2 seeds in page.
+14. **The Healer unchanged (GP.14)** — `node tools/gntPARTYD-grid.mjs` (the
+    Healer cross-check, 0 mismatches) + a Node comparison against a `git
+    archive` of v0.5.150: `DRAFTABLE_SKILL_IDS`, the Healer's node pool,
+    every Healer skill row, spoils 2, shelf 4 at 15/15/20/25, wallet 72, the
+    seat-0 `reward_offer` / `spoils_drop` / `shop_open` payload key sets; by
+    real input: one Enter commits the page in Suggested mode, a Healer node
+    card chains into the socket screen with the node in hand on the
+    auto-fill target, keys 1–4 / F / X / Esc unchanged. Ruling A17 by real
+    input: with 4 Healer skills a skill room shows the swap card; W/S, the
+    wheel and a click move the Replaces mark; Enter replaces (the command
+    bar key shows the new skill, nodes on the bench, socket screen chained
+    with the auto-fill offer); X keeps the loadout.
+15. **Performance (GP.15)** — GPU harness `?level=3&partygrant=max&seed=1`
+    (the deterministic max-stress builds),
+    `cmd('skipToRoom', 6)`, 60 s of combat after warm-up: 0 frames > 50 ms,
+    p95 ≤ 20 ms (`app.frameStats()`); Node sim step p95 ≤ 4 ms in the same
+    room; events per second ≤ 2.5× the v0.5.150 L3 room-6 baseline; each build
+    page interactive ≤ 350 ms after it opens.
+16. **Regression (GP.16)** — the smoke; the §6.2 core loop to the (party)
+    reward page; `node tools/gntM2-goldens.mjs` under the §16.9 policy (the
+    6 `?room=` goldens event-identical; the 3 run goldens re-recorded with
+    the supply-off / legacy-constants proof); `tools/gntCAMPAIGN-gates.mjs`
+    flows; `node tools/gntM2-nodetrip.mjs`; the `gntM5b-ui` and
+    `gntCAMPAIGN-net` sessions; `tools/gntDEPLOY-sp.mjs` (0 `/echoes`
+    sockets in single-player); 0 page errors everywhere.
+
+**PARTY build — self-check tools and decisions (2026-09-28).** The build
+(docs/gauntlet/build-PARTY.md) measured every gate with its own `gntPARTY-`
+tools on the production preview (`npx vite build --outDir dist-party`,
+`npx vite preview --outDir dist-party --port 4400`) and its own session
+server (7950):
+
+- `node tools/gntPARTY-sim.mjs [--only pools,cap,sweep,combat,skills,save]
+  [--base150 <archive>]` — GP.1 / GP.2 / GP.11 in Node.
+- `node tools/gntPARTY-cells.mjs` — GP.3: every LIVE class-node cell per
+  skill shape (72 cases incl. one GREY cell per node) against the oracle's
+  effect text, on training dummies (they never walk off a zone).
+- `node tools/gntPARTY-casts.mjs` — GP.4 single-player leg (arena harness,
+  the realtime loop frozen for a control window and the cast window).
+- `node tools/gntPARTY-net.mjs --mode own | casts --seat N [--part dash]
+  [--cond N1|N2] | rearm | repl | bw --cond N1 [--secs 300] [--reskip 1]`
+  — GP.4 network leg (REAL keys 1–4 on a guest seat, the guest's cue
+  latency, pooled predErr inside the displacement windows), GP.9 (ownership,
+  parallel picks, deadlines, socket hold, shop Done / countdown, away,
+  live re-arming (a)–(e)), GP.10 (42 equality checks after commits / socket
+  ops / purchases / transitions, drop-in, rejoin, a ≥ 10-minute session with
+  0 desyncs, migration; bandwidth).
+- `node tools/gntPARTY-band.mjs [--seeds 1-5] [--root <copy>]` — GP.13 (a)–(d)
+  against `captures/gntPARTY-baseline-from{1,2,3}.json`, runs the CAMPAIGN
+  runner read-only.
+- `node tools/gntPARTY-healer.mjs --base150 <archive>` — GP.14 data + play
+  invariants against a `git archive` of v0.5.150.
+- `node tools/gntPARTY-campaign.mjs [--seeds 1-3] [--base150 <archive>]` —
+  GP.5 / GP.7 / GP.8 / GP.11 over whole carried campaigns (Node, the
+  CAMPAIGN runner's recipe, Suggested), from the sim's own events.
+- `node tools/gntPARTY-ux.mjs [--sizes 1024x576,…]` — GP.6 by real keys,
+  mouse and a mocked pad at the four sizes (the whole page inside the
+  window, a shelf card hovered for the overlap audit);
+  `node tools/gntPARTY-modes.mjs` — GP.12; `node tools/gntPARTY-perf.mjs
+  --base150 <archive>` — GP.15 (the frame gate counts frames of room 6's
+  COMBAT only; the page timings from the page's own open).
+- Diagnostics: `tools/gntPARTY-coldprobe.mjs [--natural 1] [--age 4]
+  [--dict 1]` (Node: which snapshot COLD paths / HOT rest fields / events
+  cost bytes, the dictionary misses), `tools/gntPARTY-snapprobe.mjs`.
+
+Decisions: **protocol v4** (PROTOCOL_VERSION 3 → 4) — the per-character
+build events, keys and strings appended to the static tables
+(src/net/protocol/evshapes.js, bvalue.js; existing indices unchanged) and five
+SIM-ONLY entity fields dropped from the replicated view (quantize.js
+DROP_KEYS: `mods`, `hitIds`, `hitsLeft`, `power`, `boltOwner` — no
+presentation layer reads them; a replica never steps, guests cannot save, a
+migrated host resumes from the exact keyframe). **GP.10 bandwidth** is
+measured over a whole Level 3 played in order with the four max-stress builds
+(`--mode bw`, the host's Healer on M4a's autopilot with `socket: 'off'`, the
+guest's scripted bot fighting, samples every 500 ms): 10.7–11.4 KB/s average
+at N1 at v0.5.163; re-entering room 6 every time it clears (`--reskip 1`, a
+spawn-heavy worst case the gate does not ask for) reads ~13 KB/s. **GP.13
+(d)** on the carried Levels 1–2 conflicts with (b): the v0.5.150 baseline
+itself has 0 of 5 seeds with a down there (BUILD_BRIEF §23.2 PARTY note). **Short
+windows**: under 860 px of window height the party page reflows again
+(`.rn-short`, src/ui/run/style.js) so the four-character page fits 1024×576
+through 1366×768 at scale 1.0; under the §1 minimum (1024×640) a page that
+still does not fit shrinks (≥ 0.75) instead of clipping. **Pre-paint**: the
+boot pre-paint opens the PARTY shop (the Healer's and an ally's shelf) and the
+party page (a swap card) — a new page element that is not in it pays its
+GPU pipelines on its first real open.
+
+**fix-PARTY-r5 probes (gauntlet round 5, 2026-10-01; docs/gauntlet/fix-PARTY-r5.md).**
+`node tools/gntfixPARTY5-shopfit.mjs [--url u] [--sizes 1024x576,...] [--tag t]` —
+the party page and the shop by real F1–F4 at each size: the tab row's y per
+viewed character (spread ≤ 3 px = the viewed tab's own lift; the page and the
+shop are FIXED FRAMES sized to their tallest character), Take / Leave y, page
+height, owner band × Suggested ribbon overlaps / ribbons past their card, anything
+off the window, `--rn-s`. `node tools/gntfixPARTY5-mptabs.mjs --port 7951` — host +
+guest party page: glyph-rect overlaps inside the tab strip (owner pills vs names)
+and the frame holding still in a session. `node tools/gntfixPARTY5-shine.mjs` —
+the legendary shimmer's band box stays on its card while its ::before sweeps.
+`node tools/gntfixPARTY5-sweep.mjs --root <scratch copy> --sets 'A:STAGDMG1=4,STAGDMG2=2'`
+— GP.13 tuning sweeps (the CAMPAIGN runner on a copy whose Stag HP / damage read
+env knobs): per start / level clears, wipes, seeds with a down, downs by room
+kind. Narrow short windows (compact, < 1280 px wide) put the shop's character
+tabs in its header row (`.rn-shop.rn-tabhead`) and stack the Suggested ribbon
+under the owner band (`.rn-ribstack`) when the two cannot share a row; a docked
+page that would clip at ≥ 1024×640 shrinks just enough to stay on screen.
+`tools/gntPARTY-campaign.mjs` now reads the SEAT's leash ring for the dash /
+vault check and accepts a short Healer spoils drop only with dry pools.
+
+**fix-PARTY-r6 probes (gauntlet round 6, 2026-10-02; docs/gauntlet/fix-PARTY-r6.md).**
+PARTY6-F1 — keys never move under a player. `node tools/gntfixPARTY6-keysnode.mjs
+[--seeds 1,2,3,4,5]` — headless Level-1 runs (exit 0 = all pass): every ally swap
+card Taken by the player into key k (k cycling 0–3) lands in key k with the other
+keys unmoved and `skill_swapped.slot` = k; a Replaces mark moved on the AI's
+pre-decided Take lands in the marked key; a page that TIMES OUT (Manual mode,
+`partyPages().timeoutPage()` — the network deadline's path) keeps a mark the
+player moved; after a player reorder an untouched AI
+Take lands in the replaced key and keeps the player's order; an untouched AI Take
+on a never-arranged seat follows the §25.8 priority sort and the
+`skill_swapped` + `loadout_reorder` events replay to the final loadout; the
+`arranged` flag survives a save → fresh-world load and is absent from a
+never-arranged tree. `node tools/gntfixPARTY6-keys.mjs [--url u] [--seeds 1,2,3]
+[--modes untouched,mark,pad,reorder] [--w --h] [--tag t]` — the same by REAL
+input on the page (F-keys + S + F1 Enter, mocked pad RB / D-pad / A, the
+socket-screen reorder by keys), the card's "AI re-sorts keys to cast order:
+<skill> → key N" line checked against the committed loadout, the save tree's
+flag read back through `__echoes.save.apply`, `__echoes.party`, and the Healer's
+card-0 mirror following its mark. Critic probe copies with renamed outputs:
+`tools/gntfixPARTY6-{reorderswap,swapkeys,swapnodes,swapleave,modes,reorder}.mjs`.
+GOLDENS: the 3 `run` goldens were re-recorded at v0.5.214 because the AI's own
+sort now emits its `loadout_reorder` events — `node tools/gntfixPARTY6-goldenproof.mjs`
+proves the trace with those events removed equals the previous goldens
+(tick, count, events hash, state hash, RNG draws) on seeds 1–3 and the 6
+`?room=` goldens are unchanged (`--record 1` re-records only when that proof holds).
+**`__echoes.party`** (PLAN §16.11): `state()`, `view(seat)`, `pools(seat)`,
+`verdict(seat, skill, node)`, `arranged(seat)`, `aiOrder(seat)`, `aiLog()`,
+`oracle()`, `cmd(name, ...args)` (`cmd('view', 1)` = `cmd('partyView', 1)`).

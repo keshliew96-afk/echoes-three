@@ -80,6 +80,10 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
   let phasesFired = 0;
   let lastAddsTick = -Infinity; // tick of the last add phase (cadence gate)
   let addIds = [];
+  // Act scaling (docs/gauntlet/PLAN.md §4.2, set by run.js at room 8 through
+  // start()'s opts — minimal M4a hook): Stag HP / damage multiplier and the
+  // act's add composition + ramp. Defaults = v0.4.63 exactly.
+  let scale = { dmgMul: 1, adds: null, addHpMul: 1, addDmgMul: 1 };
   // Cross-block telegraph cadence: the last START tick of ANY player-targeted
   // telegraph, observed on the bus (mantis starts included).
   let lastPlayerTelegraphStart = -100000;
@@ -128,9 +132,17 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
   }
 
   // --------------------------------------------------------------- spawn --
-  function start(x = 0, z = -4.2) {
+  function start(x = 0, z = -4.2, opts = {}) {
     const tick = getTick();
     despawn();
+    const o = opts && typeof opts === 'object' ? opts : {};
+    const hpMax = Number.isFinite(o.hp) && o.hp > 0 ? o.hp : STAG.hp;
+    scale = {
+      dmgMul: Number.isFinite(o.dmgMul) && o.dmgMul > 0 ? o.dmgMul : 1,
+      adds: Array.isArray(o.adds) && o.adds.length > 0 ? o.adds.flatMap(([et, n]) => new Array(Math.max(0, n | 0)).fill(et)) : null,
+      addHpMul: Number.isFinite(o.addHpMul) && o.addHpMul > 0 ? o.addHpMul : 1,
+      addDmgMul: Number.isFinite(o.addDmgMul) && o.addDmgMul > 0 ? o.addDmgMul : 1,
+    };
     const { mx, mz } = innerBounds(STAG.radius);
     const sx = Math.min(mx, Math.max(-mx, x));
     const sz = Math.min(mz, Math.max(-mz, z));
@@ -139,8 +151,8 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       faction: 'hostile',
       hittable: true,
       knockbackable: false, // §11: boss immune to knockback
-      hp: STAG.hp,
-      maxHp: STAG.hp,
+      hp: hpMax,
+      maxHp: hpMax,
       radius: STAG.radius,
       x: sx,
       z: sz,
@@ -171,7 +183,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     events.emit(tick, 'boss_spawn', {
       id: e.id,
       name: 'THE HOLLOW STAG',
-      hp: STAG.hp,
+      hp: hpMax,
       x: r2(sx),
       z: r2(sz),
     });
@@ -213,7 +225,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
             b.lungeHit = true;
             const l = d > 1e-6 ? d : 1;
             events.emit(getTick(), 'boss_trample_hit', { id: b.id, target: p.id });
-            combat.applyDamage(p, STAG.trample.damage, {
+            combat.applyDamage(p, STAG.trample.damage * scale.dmgMul, {
               delivery: 'contact',
               shape: 'contact',
               dirX: (p.x - b.x) / l,
@@ -227,7 +239,14 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       return;
     }
 
-    const target = nearestParty(b.x, b.z);
+    // PARTY (BUILD_BRIEF §25.2): a live taunt (≤ 60 ticks on the Stag, then
+    // 300 ticks immune — status.js) picks the target while its source stands.
+    let target = nearestParty(b.x, b.z);
+    const ts = combat.status && typeof combat.status.tauntSource === 'function' ? combat.status.tauntSource(b, getTick()) : null;
+    if (ts !== null) {
+      const src = registry.byId(ts);
+      if (src && src.hp > 0) target = src;
+    }
     b.targetId = target ? target.id : null;
     if (!target) return;
     const dx = target.x - b.x;
@@ -278,7 +297,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
         });
         for (const p of victims) {
           const l = Math.hypot(p.x - x, p.z - z) || 1;
-          combat.applyDamage(p, STAG.quake.damage, {
+          combat.applyDamage(p, STAG.quake.damage * scale.dmgMul, {
             delivery: 'skill',
             shape: 'ground_aoe',
             dirX: (p.x - x) / l,
@@ -373,15 +392,23 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       return;
     }
 
-    // Boss down: the room clears once the adds are gone too.
+    // Boss down: the room clears once the adds are gone too — on the killing
+    // blow's own tick (§11 "Clear = boss and adds all dead"). An enemy shot
+    // still in flight never holds the clear: it dissolves with it (§13 step 2,
+    // "no instance may land after the clear tick"; the Gungeon / Hades rule —
+    // the last kill clears the bullets). Waiting for it (a shot flies up to
+    // 7 u / 4 u/s = 105 ticks) delayed `level_clear` and pushed the campaign's
+    // killing blow -> next-level control past PLAN GC.7's 4.0 s bound
+    // (CAMPAIGN fix r3, GC7-inflight-4s). A party wipe still outranks it.
     if (liveAdds() > 0) return;
     let partyUp = false;
-    let shots = 0;
     for (const e of registry.all()) {
-      if (e.partyIndex !== undefined && e.hp > 0) partyUp = true;
-      else if (e.kind === 'eshot') shots += 1;
+      if (e.partyIndex !== undefined && e.hp > 0) {
+        partyUp = true;
+        break;
+      }
     }
-    if (!partyUp || shots > 0) return;
+    if (!partyUp) return;
     cleared = true;
     enemies.despawnShots();
     enemies.retreatAllSurvivors();
@@ -390,10 +417,13 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
 
   function spawnAdds(tick, pct) {
     const spawned = [];
-    for (const etype of STAG.addComposition) {
+    for (const etype of scale.adds ?? STAG.addComposition) {
       if (liveAdds() >= STAG.addCap) break; // §11 concurrent cap
       const [sx, sz] = SPAWN_POINTS[rng.int(SPAWN_POINTS.length)];
-      const e = enemies.spawn(etype, sx, sz, 100 + phasesFired);
+      const scaled = scale.adds && typeof enemies.spawnScaled === 'function';
+      const e = scaled
+        ? enemies.spawnScaled(etype, sx, sz, { hpMul: scale.addHpMul, dmgMul: scale.addDmgMul, wave: 100 + phasesFired })
+        : enemies.spawn(etype, sx, sz, 100 + phasesFired);
       if (e) {
         addIds.push(e.id);
         spawned.push({ id: e.id, etype, x: r2(sx), z: r2(sz) });
@@ -417,7 +447,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       name: 'THE HOLLOW STAG',
       id: bossId,
       hp: b ? r2(b.hp) : 0,
-      maxHp: STAG.hp,
+      maxHp: b ? b.maxHp : STAG.hp,
       pct: b ? r2(Math.max(0, b.hp / b.maxHp)) : 0,
       x: b ? r2(b.x) : 0,
       z: b ? r2(b.z) : 0,
@@ -436,7 +466,27 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     };
   }
 
+  // Save system (docs/gauntlet/PLAN.md §3.4, M2): the Stag fight's private
+  // state (the body and its adds are registry data; addIds are ids).
+  // lastAddsTick starts at -Infinity (canonical JSON tags it).
+  function saveState() {
+    return { bossId, active, cleared, phasesFired, lastAddsTick, addIds, scale, lastPlayerTelegraphStart };
+  }
+  function loadState(d) {
+    if (!d) throw new TypeError('boss.loadState: missing data');
+    bossId = d.bossId ?? null;
+    active = !!d.active;
+    cleared = !!d.cleared;
+    phasesFired = d.phasesFired ?? 0;
+    lastAddsTick = typeof d.lastAddsTick === 'number' ? d.lastAddsTick : -Infinity;
+    addIds = Array.isArray(d.addIds) ? d.addIds : [];
+    scale = d.scale ?? { dmgMul: 1, adds: null, addHpMul: 1, addDmgMul: 1 };
+    lastPlayerTelegraphStart = Number.isFinite(d.lastPlayerTelegraphStart) ? d.lastPlayerTelegraphStart : -100000;
+  }
+
   return {
+    saveState,
+    loadState,
     start,
     despawn,
     continuous,
@@ -457,7 +507,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
         while (phasesFired < STAG.addPhases.length && pct <= STAG.addPhases[phasesFired])
           phasesFired += 1;
       }
-      b.hp = Math.max(0, STAG.hp * pct);
+      b.hp = Math.max(0, (b.maxHp ?? STAG.hp) * pct);
       if (b.hp <= 0) combat.kill(b);
       return r2(b.hp);
     },

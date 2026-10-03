@@ -1,0 +1,284 @@
+[
+ {
+  "type": "eval",
+  "code": "__echoes.cmd('startRun',{act:1,challenge:'standard'})"
+ },
+ {
+  "type": "loop",
+  "label": "combat1",
+  "cond": "(()=>{const r=__echoes.state().run;return r.phase==='combat'&&r.room===1})()",
+  "maxMs": 12000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 150
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'combat-pause',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntINT-esc-combat"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'combat-resumed',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "loop",
+  "label": "clear1",
+  "cond": "(()=>__echoes.state().run.phase!=='combat')()",
+  "maxMs": 30000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "__echoes.cmd('killAllEnemies')"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 1400
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'draft-open',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'draft-pause',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntINT-esc-draft"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'draft-resumed',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "key",
+  "key": "b",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'socket-open',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'after-esc-1',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntINT-esc-socket1"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'after-esc-2',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntINT-esc-socket2"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'socket-resumed',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "eval",
+  "code": "__echoes.cmd('draftDecline')"
+ },
+ {
+  "type": "wait",
+  "ms": 1200
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'path-open',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'path-pause',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntINT-esc-path"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "__echoes.cmd('skipToRoom',7)"
+ },
+ {
+  "type": "wait",
+  "ms": 2000
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'shop-open',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'shop-pause',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntINT-esc-shop"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "__echoes.cmd('endRun','victory')"
+ },
+ {
+  "type": "wait",
+  "ms": 2500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'end-open',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'end-pause',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntINT-esc-end"
+ },
+ {
+  "type": "key",
+  "key": "Escape",
+  "ms": 80
+ },
+ {
+  "type": "wait",
+  "ms": 450
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const a=__echoes.app;const el=document.querySelector('.pz-pause.ap-open');const ui=__echoes.runUi?__echoes.runUi():null;const sk=__echoes.content&&__echoes.content.socketUi?__echoes.content.socketUi():null;return{TAG:'end-resumed',tick:__echoes.tick,state:a.state,stack:a.stack(),simPaused:a.simPaused(),rings:a.ringCount(),focus:a.focus()&&a.focus().id,where:el?el.querySelector('.pz-where').textContent:null,disabled:el?[...el.querySelectorAll('[data-nav]')].filter(b=>b.disabled).map(b=>b.id+':'+((b.querySelector('.pz-cap')||{}).textContent||'')):null,run:{phase:__echoes.state().run.phase,room:__echoes.state().run.room,reward:__echoes.state().run.reward&&__echoes.state().run.reward.id},page:ui?ui.screen:null,pageFocus:ui&&ui.cards?ui.cards.map(c=>c.focused):null,socket:sk?sk.open:null}})()"
+ }
+]

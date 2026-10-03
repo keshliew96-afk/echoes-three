@@ -37,6 +37,7 @@ import { createParticlePool } from '../render/vfx/particles.js';
 import { createDecalPool } from '../render/vfx/decals.js';
 import { setImpactFx } from '../render/vfx/hub.js';
 import { sharedGeo } from '../render/geocache.js';
+import { service } from '../app/registry.js'; // M1: gameplay.screenshake (SHAKE-SCALE)
 
 // Graybox scaffold numbers (render-only): wall height 0.75 u sits inside the
 // §13 band (70-80% of the 1.05 u standing height — never fully occludes);
@@ -288,7 +289,12 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
   // the camera moved and why. amp/duration ride the event, clamped to the
   // brief ceilings.
   bus.on('screenshake', (ev) => {
-    const amp = Math.min(SCREENSHAKE.maxAmp, ev.amp ?? SCREENSHAKE.amp);
+    // @gnt:M1 SHAKE-SCALE begin — amp x settings gameplay.screenshake (0/0.5/1).
+    // Read live per shake, so a change in Settings applies to the next one.
+    const shakeSetting = service('settings')?.get('gameplay.screenshake');
+    const shakeMul = typeof shakeSetting === 'number' ? shakeSetting : 1;
+    const amp = Math.min(SCREENSHAKE.maxAmp, ev.amp ?? SCREENSHAKE.amp) * shakeMul;
+    // @gnt:M1 SHAKE-SCALE end
     const dur = Math.min(SCREENSHAKE.maxDurationSec, ev.durationSec ?? SCREENSHAKE.durationSec);
     // A bigger shake always wins; a smaller one never cuts one already running.
     shakeCount += 1;
@@ -515,7 +521,13 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     decals.update(dt);
 
     // §22 camera: smoothed follow + aim lookahead, driven by render dt.
-    followRig.update(dt, ix, iz, player.aim);
+    // @gnt:M5b FOLLOW-SEAT begin — a guest follows its own seat's body.
+    // world.followSeat (net session): the local seat's interpolated body +
+    // aim; absent (single-player, the Healer's seat) = the Healer as ever.
+    const seatFollow = world.followSeat ? world.followSeat(alpha) : null;
+    if (seatFollow) followRig.update(dt, seatFollow.x, seatFollow.z, seatFollow.aim);
+    else followRig.update(dt, ix, iz, player.aim);
+    // @gnt:M5b FOLLOW-SEAT end
 
     // §9 #7 screenshake: small decaying camera offset, kills only.
     if (shakeLeft > 0) {
@@ -569,5 +581,8 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     setSmearEnabled: (v) => {
       smearEnabled = !!v;
     },
+    // CAMPAIGN (PLAN §12.5): the level manager returns the pooled VFX of a
+    // finished level (particles, kill splats, scorches, numerals).
+    clearVfx: () => ({ particles: particles.clear(), decals: decals.clear(), numerals: typeof numbers.releaseAll === 'function' ? numbers.releaseAll() : 0 }),
   };
 }

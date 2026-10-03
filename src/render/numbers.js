@@ -47,6 +47,14 @@ export function numberPoolCount() {
   return n;
 }
 
+// CAMPAIGN (PLAN §12.5 memory probe): numeral elements allocated (a pool that
+// grows level after level would show here; live counts come and go).
+export function numberPoolCapacity() {
+  let n = 0;
+  for (const p of POOLS) n += typeof p.capacity === 'function' ? p.capacity() : 0;
+  return n;
+}
+
 // --- SAME-TICK FAN (run-block round-3 fix) --------------------------------
 // §17 authored a +/-16 px lateral jitter, which is nothing next to a 31-77 px
 // glyph: four party members landing on the Stag in one tick stacked their
@@ -316,6 +324,7 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
     releaseAll,
     count: () => active.length,
   };
-  POOLS.add({ tick: update, releaseAll, count: () => active.length, prewarm });
+  // (capacity — CAMPAIGN GC.6: numeral elements ever allocated, live + parked.)
+  POOLS.add({ tick: update, releaseAll, count: () => active.length, capacity: () => active.length + pool.length, prewarm });
   return api;
 }

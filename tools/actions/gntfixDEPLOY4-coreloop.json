@@ -1,0 +1,87 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>({href:location.href,state:__echoes.app&&__echoes.app.state,menuSkip:__echoes.app&&__echoes.app.params&&__echoes.app.params.menuSkip}))()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();return {v:__echoes.version,tick:__echoes.tick,app:__echoes.app&&__echoes.app.state,mode:s.vfx&&s.vfx.mode,phase:s.run&&s.run.phase,room:s.run&&s.run.room,camp:__echoes.cmd(\"campState\").inPortal,player:__echoes.cmd(\"campState\").player,settings:__echoes.settings&&__echoes.settings.dump(),loadReport:__echoes.settings&&__echoes.settings.loadReport.status}})()"
+ },
+ {
+  "type": "keydown",
+  "key": "w"
+ },
+ {
+  "type": "loop",
+  "label": "walk-to-portal",
+  "cond": "__echoes.cmd(\"campState\").inPortal",
+  "maxMs": 9000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 100
+   }
+  ]
+ },
+ {
+  "type": "keyup",
+  "key": "w"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();return {v:__echoes.version,tick:__echoes.tick,app:__echoes.app&&__echoes.app.state,mode:s.vfx&&s.vfx.mode,phase:s.run&&s.run.phase,room:s.run&&s.run.room,camp:__echoes.cmd(\"campState\").inPortal,player:__echoes.cmd(\"campState\").player,settings:__echoes.settings&&__echoes.settings.dump(),loadReport:__echoes.settings&&__echoes.settings.loadReport.status}})()"
+ },
+ {
+  "type": "key",
+  "key": "e",
+  "ms": 120
+ },
+ {
+  "type": "loop",
+  "label": "run-start",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase===\"combat\"&&r.room===1})()",
+  "maxMs": 8000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 100
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();return {v:__echoes.version,tick:__echoes.tick,app:__echoes.app&&__echoes.app.state,mode:s.vfx&&s.vfx.mode,phase:s.run&&s.run.phase,room:s.run&&s.run.room,camp:__echoes.cmd(\"campState\").inPortal,player:__echoes.cmd(\"campState\").player,settings:__echoes.settings&&__echoes.settings.dump(),loadReport:__echoes.settings&&__echoes.settings.loadReport.status}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntfixDEPLOY4-core-room1"
+ },
+ {
+  "type": "loop",
+  "label": "clear-room1",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase!==\"combat\"})()",
+  "maxMs": 30000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "__echoes.cmd(\"killAllEnemies\")"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();return {v:__echoes.version,tick:__echoes.tick,app:__echoes.app&&__echoes.app.state,mode:s.vfx&&s.vfx.mode,phase:s.run&&s.run.phase,room:s.run&&s.run.room,camp:__echoes.cmd(\"campState\").inPortal,player:__echoes.cmd(\"campState\").player,settings:__echoes.settings&&__echoes.settings.dump(),loadReport:__echoes.settings&&__echoes.settings.loadReport.status}})()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({runUi:__echoes.runUi&&__echoes.runUi.state? __echoes.runUi.state().screen:null, events: __echoes.events.filter(e=>[\"room_cleared\",\"reward_offer\",\"run_start\"].includes(e.type)).map(e=>e.type+\"@\"+e.tick)}))()"
+ }
+]

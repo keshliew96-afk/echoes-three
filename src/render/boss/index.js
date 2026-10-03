@@ -453,5 +453,24 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     };
   }
 
+  // @gnt:M2 RESTORE-RESYNC begin — a load may bring a different Stag (or
+  // none): release the live rig, its quake ring and the room dim silently;
+  // update() re-adopts whatever the restored registry holds next frame.
+  bus.on('state_restored', () => {
+    if (rec) {
+      releaseRig(rec.rig);
+      rec = null;
+    }
+    dropRing();
+    restoreRoom();
+    for (const d of dying.splice(0)) releaseRig(d.rig);
+    for (const b of bursts.splice(0)) {
+      root.remove(b.b.group);
+      releaseTree(b.b.group);
+    }
+    emberDebt = 0;
+    camBiasPrimed = false;
+  });
+  // @gnt:M2 RESTORE-RESYNC end
   return { update, debugCounts, root };
 }

@@ -1,0 +1,6 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>{const s=__echoes.state();return {keys:Object.keys(s),player:s.player,party0:s.party&&s.party[0],run:Object.keys(s.run||{})}})()"
+ }
+]

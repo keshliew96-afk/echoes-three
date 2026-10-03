@@ -20,7 +20,21 @@
 // startRoom, so one seed always produces one composition (the §1 run-frame
 // discipline). Nothing after startRoom draws from the stream except combat
 // crit rolls.
+//
+// GAUNTLET (docs/gauntlet/PLAN.md §4.2, BUILD_BRIEF §23.2) — inside a RUN the
+// run system plans each room with a `plan` = { act, room, challenge, level,
+// diff } (data/levels.js + data/difficulty.js): kill_all rooms roll 2 + int(2)
+// waves (+1 from room 4), defend rooms 4 waves at 0/12/24/36 s; every wave is
+// FILLED to its threat budget (4.0·T·R, defend × 0.8) by seeded weighted draws
+// from the act roster (types introduced by this room), each draw with its own
+// elite roll, while the unit's cost ≤ remaining + 0.5, at most 8 per wave;
+// spawns carry the room's hpMul / dmgMul through enemies.spawnScaled (M4b);
+// the kill_all wave interval and the Waystone's HP follow the curve; at most
+// 20 hostiles live per room (a spawn waits in its telegraph while the room is
+// full). The `?room=` harness (no plan) keeps the legacy §11 roll EXACTLY
+// (gate G4a.6).
 import { innerBounds } from './movement.js';
+import { THREAT, ELITE_COST, WAVE_SIZE_CAP, ROOM_CONCURRENT_CAP } from '../data/difficulty.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -63,16 +77,29 @@ export const SPAWN_POINTS = Object.freeze([
 
 export function createWaveDirector({ registry, events, rng, enemies, getTick }) {
   let mode = null; // null | 'kill_all' | 'defend'
-  let schedule = []; // [{ size, units: [{ etype, x, z }] }]
+  let schedule = []; // [{ size, units: [{ etype, x, z, elite?, cost? }], budget?, cost? }]
   let waveIndex = -1;
-  let pending = []; // spawn telegraphs in flight: { etype, x, z, spawnTick, wave }
+  let pending = []; // spawn telegraphs in flight: { etype, x, z, spawnTick, wave, elite? }
   let fullySpawnedTick = -1; // current wave (kill_all pacing)
   let startTick = 0;
   let waystoneId = null;
   let cleared = false;
   let softFailed = false;
+  // Gauntlet run plan for the live room (null in the ?room= harness): the
+  // difficulty numbers the schedule was rolled with + what spawns carry.
+  let plan = null; // { act, room, challenge, hpMul, dmgMul, eliteChance, intervalTicks, waystoneHp, budget, defendBudget }
+  let planned = null; // mode staged by planRoom(), started by beginRoom()
 
-  const isEnemy = (e) => e.kind === 'boar' || e.kind === 'mantis';
+  // Live hostile wave bodies (every enemy kind, by faction — PLAN §3.6 (d)):
+  // the Stag and enemy shots are not wave members; retreating bodies no
+  // longer count (their `state` leaves 'active').
+  const isEnemy = (e) => e.faction === 'hostile' && e.state !== undefined && e.kind !== 'stag' && e.kind !== 'eshot';
+
+  // M4b's content contract: `spawnScaled(etype, x, z, { hpMul, dmgMul, elite,
+  // wave })` and `hasType(etype)`. Without them (a build before M4b) only the
+  // two v0.4.63 archetypes exist and nothing is scaled.
+  const knownType = (etype) =>
+    typeof enemies.hasType === 'function' ? !!enemies.hasType(etype) : etype === 'boar' || etype === 'mantis';
 
   function rollWave(size) {
     const units = [];
@@ -89,38 +116,134 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     return { size, units };
   }
 
-  function startRoom(m) {
+  // §23.2 budget fill (one wave). Draw order per unit: type (weighted), elite
+  // (only when the room's chance is > 0), spawn point — fixed, so one seed is
+  // one composition. The first unit always joins (every wave has a body).
+  function rollBudgetWave(budget, p) {
+    const roster = p.roster; // [[etype, weight], ...] sorted by etype, introduced + known
+    const total = roster.reduce((s, [, w]) => s + w, 0);
+    const units = [];
+    let remaining = budget;
+    let cost = 0;
+    while (units.length < WAVE_SIZE_CAP && roster.length > 0) {
+      let r = rng.float() * total;
+      let etype = roster[roster.length - 1][0];
+      for (const [et, w] of roster) {
+        if (r < w) {
+          etype = et;
+          break;
+        }
+        r -= w;
+      }
+      const elite = p.eliteChance > 0 ? rng.chance(p.eliteChance) : false;
+      const c = (THREAT[etype] ?? 1) * (elite ? ELITE_COST : 1);
+      if (units.length > 0 && c > remaining + 0.5) break;
+      const [sx, sz] = SPAWN_POINTS[rng.int(SPAWN_POINTS.length)];
+      units.push({ etype, sx, sz, elite, cost: Math.round(c * 100) / 100 });
+      remaining -= c;
+      cost += c;
+    }
+    // Same deterministic tangential fan as the legacy roll, per spawn point.
+    const byPoint = new Map();
+    for (const u of units) {
+      const k = `${u.sx},${u.sz}`;
+      byPoint.set(k, (byPoint.get(k) ?? 0) + 1);
+    }
+    const seen = new Map();
+    const out = units.map((u) => {
+      const k = `${u.sx},${u.sz}`;
+      const n = byPoint.get(k);
+      const i = seen.get(k) ?? 0;
+      seen.set(k, i + 1);
+      const inv = Math.hypot(u.sx, u.sz) || 1;
+      const tx = u.sz / inv;
+      const tz = -(u.sx / inv);
+      const off = (i - (n - 1) / 2) * 0.55;
+      const unit = { etype: u.etype, x: r2(u.sx + tx * off), z: r2(u.sz + tz * off), cost: u.cost };
+      if (u.elite) unit.elite = true;
+      return unit;
+    });
+    return { size: out.length, units: out, budget: Math.round(budget * 100) / 100, cost: Math.round(cost * 100) / 100 };
+  }
+
+  // planRoom(m, runPlan?) rolls the whole schedule (no events, no spawns);
+  // beginRoom() then starts it. The run system rolls its room layout BETWEEN
+  // the two (PLAN §3.6 (a): "after the wave schedule") and emits
+  // layout_enter / room_enter before the room begins.
+  function planRoom(m, runPlan = null) {
     if (m !== 'kill_all' && m !== 'defend') return null;
-    const tick = getTick();
     enemies.reset();
     if (waystoneId !== null && registry.byId(waystoneId)) registry.despawn(waystoneId);
-    mode = m;
-    startTick = tick;
+    mode = null;
     waveIndex = -1;
     pending = [];
     fullySpawnedTick = -1;
     cleared = false;
     softFailed = false;
     waystoneId = null;
-
-    // One fixed roll sequence (see header) — the whole room frame up front.
+    plan = null;
     schedule = [];
-    if (m === 'kill_all') {
-      const n = WAVE_RULES.killAll.minWaves + rng.int(WAVE_RULES.killAll.extraWaves);
-      for (let w = 0; w < n; w++) {
-        schedule.push(rollWave(WAVE_RULES.killAll.minSize + rng.int(WAVE_RULES.killAll.extraSize)));
+    if (!runPlan) {
+      // One fixed roll sequence (see header) — the whole room frame up front.
+      if (m === 'kill_all') {
+        const n = WAVE_RULES.killAll.minWaves + rng.int(WAVE_RULES.killAll.extraWaves);
+        for (let w = 0; w < n; w++) {
+          schedule.push(rollWave(WAVE_RULES.killAll.minSize + rng.int(WAVE_RULES.killAll.extraSize)));
+        }
+      } else {
+        for (let w = 0; w < WAVE_RULES.defend.waveAtTicks.length; w++) {
+          schedule.push(rollWave(WAVE_RULES.defend.minSize + rng.int(WAVE_RULES.defend.extraSize)));
+        }
       }
     } else {
-      for (let w = 0; w < WAVE_RULES.defend.waveAtTicks.length; w++) {
-        schedule.push(rollWave(WAVE_RULES.defend.minSize + rng.int(WAVE_RULES.defend.extraSize)));
+      const d = runPlan.diff;
+      const level = runPlan.level;
+      const roster = Object.keys(level.roster)
+        .sort()
+        .filter((et) => (level.introduce[et] ?? 1) <= runPlan.room && knownType(et))
+        .map((et) => [et, level.roster[et]]);
+      plan = {
+        act: runPlan.act,
+        room: runPlan.room,
+        challenge: runPlan.challenge,
+        hpMul: d.hpMul,
+        dmgMul: d.dmgMul,
+        eliteChance: d.eliteChance,
+        intervalTicks: d.waveIntervalTicks,
+        waystoneHp: d.waystoneHp,
+        budget: d.budget,
+        defendBudget: d.defendBudget,
+        roster: roster.map(([et, w]) => [et, w]),
+      };
+      if (roster.length === 0) plan.roster = [['boar', 1]];
+      if (m === 'kill_all') {
+        const n = WAVE_RULES.killAll.minWaves + rng.int(WAVE_RULES.killAll.extraWaves) + (runPlan.room >= 4 ? 1 : 0);
+        for (let w = 0; w < n; w++) schedule.push(rollBudgetWave(d.budget, plan));
+      } else {
+        for (let w = 0; w < WAVE_RULES.defend.waveAtTicks.length; w++)
+          schedule.push(rollBudgetWave(d.defendBudget, plan));
       }
+    }
+    planned = m;
+    return { mode: m, waves: schedule.map((w) => w.size) };
+  }
+
+  function beginRoom() {
+    const m = planned;
+    if (!m) return null;
+    planned = null;
+    const tick = getTick();
+    mode = m;
+    startTick = tick;
+    if (m === 'defend') {
+      const hp = plan ? plan.waystoneHp : WAYSTONE.hp;
       const ws = registry.spawn({
         kind: 'waystone',
         faction: 'party', // joins the §11 defend candidate set {party} ∪ {objective}
         hittable: true,
         knockbackable: false,
-        hp: WAYSTONE.hp,
-        maxHp: WAYSTONE.hp,
+        hp,
+        maxHp: hp,
         radius: WAYSTONE.radius,
         x: WAYSTONE.x,
         z: WAYSTONE.z,
@@ -129,11 +252,16 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
         iframeUntilTick: 0,
       });
       waystoneId = ws.id;
-      events.emit(tick, 'waystone_spawn', { id: ws.id, x: WAYSTONE.x, z: WAYSTONE.z, hp: WAYSTONE.hp });
+      events.emit(tick, 'waystone_spawn', { id: ws.id, x: WAYSTONE.x, z: WAYSTONE.z, hp });
     }
     events.emit(tick, 'room_start', { mode: m, waves: schedule.map((w) => w.size) });
     beginWave(0);
     return { mode: m, waves: schedule.map((w) => w.size) };
+  }
+
+  function startRoom(m, runPlan = null) {
+    if (!planRoom(m, runPlan)) return null;
+    return beginRoom();
   }
 
   function beginWave(i) {
@@ -145,8 +273,24 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     for (const u of wave.units) {
       const spawnTick = tick + WAVE_RULES.spawnTelegraphTicks; // §11 0.8 s telegraph
       pending.push({ ...u, spawnTick, wave: i });
-      events.emit(tick, 'spawn_telegraph', { etype: u.etype, x: u.x, z: u.z, spawnTick, wave: i });
+      const ev = { etype: u.etype, x: u.x, z: u.z, spawnTick, wave: i };
+      if (u.elite) ev.elite = true;
+      events.emit(tick, 'spawn_telegraph', ev);
     }
+  }
+
+  function spawnUnit(p) {
+    if (plan && typeof enemies.spawnScaled === 'function') {
+      return enemies.spawnScaled(p.etype, p.x, p.z, { hpMul: plan.hpMul, dmgMul: plan.dmgMul, elite: !!p.elite, wave: p.wave });
+    }
+    const e = enemies.spawn(p.etype, p.x, p.z, p.wave);
+    // A build without M4b's spawnScaled: the curve's HP still lands.
+    if (e && plan && plan.hpMul !== 1) {
+      e.hp *= plan.hpMul;
+      e.maxHp *= plan.hpMul;
+      e.dmgMul = plan.dmgMul;
+    }
+    return e;
   }
 
   // End-of-tick director work (§4 ④ slot; §11 clear predicates are evaluated
@@ -155,12 +299,26 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     if (!mode || cleared) return;
     const tick = getTick();
 
-    // Spawn maturations.
+    // Spawn maturations. Inside a run the room holds at most
+    // ROOM_CONCURRENT_CAP live hostiles: a due spawn waits in its telegraph
+    // (in schedule order) until a body frees a place.
     if (pending.length > 0) {
       const due = pending.filter((p) => tick >= p.spawnTick);
       if (due.length > 0) {
-        pending = pending.filter((p) => tick < p.spawnTick);
-        for (const p of due) enemies.spawn(p.etype, p.x, p.z, p.wave);
+        if (!plan) {
+          pending = pending.filter((p) => tick < p.spawnTick);
+          for (const p of due) spawnUnit(p);
+        } else {
+          let live = 0;
+          for (const e of registry.all()) if (isEnemy(e) && e.state === 'active') live += 1;
+          const room = Math.max(0, ROOM_CONCURRENT_CAP - live);
+          const go = due.slice(0, room);
+          if (go.length > 0) {
+            const goSet = new Set(go);
+            pending = pending.filter((p) => !goSet.has(p));
+            for (const p of go) spawnUnit(p);
+          }
+        }
       }
       if (pending.length === 0 && fullySpawnedTick < 0) fullySpawnedTick = tick;
     } else if (fullySpawnedTick < 0) {
@@ -188,7 +346,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     if (mode === 'kill_all') {
       if (!lastWave && pending.length === 0 && fullySpawnedTick >= 0) {
         const timer =
-          fullySpawnedTick + WAVE_RULES.killAll.graceTicks + WAVE_RULES.killAll.intervalTicks;
+          fullySpawnedTick + WAVE_RULES.killAll.graceTicks + (plan ? plan.intervalTicks : WAVE_RULES.killAll.intervalTicks);
         if (alive === 0 || tick >= timer) beginWave(waveIndex + 1); // §11 whichever first
       }
     } else {
@@ -229,6 +387,8 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     if (waystoneId !== null && registry.byId(waystoneId)) registry.despawn(waystoneId);
     const dropped = pending.length;
     mode = null;
+    planned = null;
+    plan = null;
     schedule = [];
     waveIndex = -1;
     pending = [];
@@ -278,5 +438,82 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
   // Render-side accessor: spawn telegraphs in flight (read-only copies).
   const pendingSpawnsList = () => pending.map((p) => ({ ...p }));
 
-  return { startRoom, stop, step, forceNextWave, forceClear, roomState, pendingSpawnsList };
+  // The rolled plan of the live room (content probe `roomPlan()`, the act
+  // runner, the curve gate G4a.5): the difficulty numbers it was rolled with
+  // and every wave's budget / cost / units.
+  function planView() {
+    if (!mode && !planned) return null;
+    return {
+      mode: mode ?? planned,
+      legacy: !plan,
+      act: plan ? plan.act : null,
+      room: plan ? plan.room : null,
+      challenge: plan ? plan.challenge : null,
+      hpMul: plan ? plan.hpMul : 1,
+      dmgMul: plan ? plan.dmgMul : 1,
+      eliteChance: plan ? plan.eliteChance : 0,
+      intervalTicks: plan ? plan.intervalTicks : WAVE_RULES.killAll.intervalTicks,
+      waystoneHp: plan ? plan.waystoneHp : WAYSTONE.hp,
+      roster: plan ? plan.roster.map(([et, w]) => ({ etype: et, weight: w })) : [{ etype: 'boar', weight: 0.6 }, { etype: 'mantis', weight: 0.4 }],
+      waves: schedule.map((w) => ({
+        size: w.size,
+        budget: w.budget ?? null,
+        cost: w.cost ?? null,
+        elites: w.units.filter((u) => u.elite).length,
+        units: w.units.map((u) => ({ etype: u.etype, elite: !!u.elite, cost: u.cost ?? null })),
+      })),
+      waveIndex,
+      pendingSpawns: pending.length,
+    };
+  }
+
+  // Persistence (PLAN §3.4 per-system contract): the director's private state
+  // is plain data (entities are ids).
+  function serialize() {
+    return {
+      mode,
+      planned,
+      plan: plan ? { ...plan, roster: plan.roster.map((r) => [...r]) } : null,
+      schedule: schedule.map((w) => ({ ...w, units: w.units.map((u) => ({ ...u })) })),
+      waveIndex,
+      pending: pending.map((p) => ({ ...p })),
+      fullySpawnedTick,
+      startTick,
+      waystoneId,
+      cleared,
+      softFailed,
+    };
+  }
+  function restore(d) {
+    if (!d) return;
+    mode = d.mode ?? null;
+    planned = d.planned ?? null;
+    plan = d.plan ? { ...d.plan, roster: (d.plan.roster ?? []).map((r) => [...r]) } : null;
+    schedule = (d.schedule ?? []).map((w) => ({ ...w, units: w.units.map((u) => ({ ...u })) }));
+    waveIndex = d.waveIndex ?? -1;
+    pending = (d.pending ?? []).map((p) => ({ ...p }));
+    fullySpawnedTick = d.fullySpawnedTick ?? -1;
+    startTick = d.startTick ?? 0;
+    waystoneId = d.waystoneId ?? null;
+    cleared = !!d.cleared;
+    softFailed = !!d.softFailed;
+  }
+
+  return {
+    startRoom,
+    planRoom,
+    beginRoom,
+    stop,
+    step,
+    forceNextWave,
+    forceClear,
+    roomState,
+    pendingSpawnsList,
+    planView,
+    serialize,
+    restore,
+    // Save system (PLAN §3.4, M2): serialize() is already the complete state.
+    saveState: serialize,
+    loadState: restore,
+  };
 }

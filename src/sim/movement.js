@@ -22,6 +22,18 @@
 // projection cannot tunnel. The list is EMPTY in every combat scene — the
 // arena's edge props are dressing the brief keeps navigable (§19.3) — so this
 // changes nothing on the combat path.
+//
+// DYNAMIC COLLIDERS (Gauntlet M4b, docs/gauntlet/PLAN.md §3.6 (a)/(g)). Layout
+// blockers that live and die with the sim — barricades, rockfall rubble — are
+// ENTITY-OWNED colliders the content systems (sim/interactables.js,
+// sim/hazards.js) install every tick through setDynamicColliders(list). Same
+// shapes as the statics (`{ x, z, r }` / `{ x, z, hx, hz, yaw }`) plus the
+// owning entity id. walkStep / sweptStep resolve bodies out of them exactly
+// like statics (fliers — `e.flier` — pass over them), and sweptContact() gives
+// projectiles the first contact over walls + statics + dynamics with the
+// blocker's entity id, so a bolt stops ON a barricade and the barricade takes
+// the hit. The list is empty unless a layout placed a blocker, so every legacy
+// path (the ?room= harness, the golden traces) is untouched.
 import { ARENA } from '../core/constants.js';
 
 export function innerBounds(radius) {
@@ -60,6 +72,52 @@ export function staticColliders() {
   return statics;
 }
 
+// --- Dynamic (entity-owned) colliders --------------------------------------
+let dynamics = [];
+
+function solveCollider(c) {
+  if (c.hx !== undefined) {
+    const yaw = c.yaw ?? 0;
+    // `yaw` is kept verbatim for serializeMovement (CAMPAIGN fix: atan2 of
+    // cos/sin is not idempotent in doubles — 0.2 saved as 0.19999999999999998
+    // restored as ...96 — so a save round trip changed the tree hash).
+    return { kind: 'box', id: c.id ?? null, x: c.x, z: c.z, hx: c.hx, hz: c.hz, c: Math.cos(yaw), s: Math.sin(yaw), yaw };
+  }
+  return { kind: 'circle', id: c.id ?? null, x: c.x, z: c.z, r: c.r };
+}
+
+// Install (or clear) the entity-owned collider list. Called by the content
+// systems at the start of every tick they own blockers, so a collider exists
+// exactly while its entity does. Returns the installed count.
+export function setDynamicColliders(list) {
+  dynamics = [];
+  if (!list) return 0;
+  for (const c of list) dynamics.push({ ...solveCollider(c), dyn: true });
+  return dynamics.length;
+}
+
+export function dynamicColliders() {
+  return dynamics;
+}
+
+// Module-level state for the save system (PLAN §3.4 rule 4): the dynamic list
+// is DERIVED from entities (the content systems rebuild it every tick), and
+// statics are re-installed by re-entering the saved scene mode — so the
+// serialised form is the dynamic list as plain data, for completeness.
+export function serializeMovement() {
+  return {
+    dynamics: dynamics.map((c) =>
+      c.kind === 'box'
+        ? { id: c.id, x: c.x, z: c.z, hx: c.hx, hz: c.hz, yaw: Number.isFinite(c.yaw) ? c.yaw : Math.atan2(c.s, c.c) }
+        : { id: c.id, x: c.x, z: c.z, r: c.r }
+    ),
+  };
+}
+
+export function restoreMovement(data) {
+  setDynamicColliders(data && Array.isArray(data.dynamics) ? data.dynamics : null);
+}
+
 // Signed clearance of a circle at (x, z) from the nearest static collider
 // (negative = penetrating). Probe helper; the step helpers use resolveStatics.
 export function staticClearance(x, z, radius) {
@@ -88,11 +146,14 @@ export function staticClearance(x, z, radius) {
 // wall re-clamp so a prop can never project a body outside the rect. Returns
 // true if any contact was resolved.
 export function resolveStatics(e, radius) {
-  if (statics.length === 0) return false;
+  const useDyn = dynamics.length > 0 && !e.flier && !e.burrowed; // fliers pass over, burrowers under
+  if (statics.length === 0 && !useDyn) return false;
+  const list = useDyn ? (statics.length > 0 ? statics.concat(dynamics) : dynamics) : statics;
   let pushed = false;
   for (let pass = 0; pass < 3; pass++) {
     let any = false;
-    for (const c of statics) {
+    for (const c of list) {
+      if (c.dyn && c.id === e.id) continue; // an entity never collides with its own collider
       if (c.kind === 'circle') {
         const dx = e.x - c.x;
         const dz = e.z - c.z;
@@ -167,7 +228,7 @@ export function walkStep(e, dx, dz, radius) {
   else if (e.x > mx) { e.x = mx; hit = true; }
   if (e.z < -mz) { e.z = -mz; hit = true; }
   else if (e.z > mz) { e.z = mz; hit = true; }
-  if (statics.length > 0 && resolveStatics(e, radius)) hit = true;
+  if ((statics.length > 0 || dynamics.length > 0) && resolveStatics(e, radius)) hit = true;
   return hit;
 }
 
@@ -202,6 +263,94 @@ export function sweptStep(e, dx, dz, radius) {
   else if (e.x > mx) e.x = mx;
   if (e.z < -mz) e.z = -mz;
   else if (e.z > mz) e.z = mz;
-  if (statics.length > 0 && resolveStatics(e, radius)) hit = true;
+  if ((statics.length > 0 || dynamics.length > 0) && resolveStatics(e, radius)) hit = true;
   return { hit, t };
+}
+
+// --- Swept contact vs colliders (PLAN §3.6 (g)) -----------------------------
+// First contact parameter of a circle of `radius` sweeping (dx, dz) from
+// (x, z) against ONE collider: a circle (quadratic) or a yaw-rotated box
+// expanded by the radius (slab method in box-local space; the corner rounding
+// is ignored — a projectile's radius is <= 0.07 u). Already overlapping = 0.
+function colliderContactT(c, x, z, dx, dz, radius) {
+  if (c.kind === 'circle') {
+    const R = c.r + radius;
+    const rx = x - c.x;
+    const rz = z - c.z;
+    const cc = rx * rx + rz * rz - R * R;
+    if (cc <= 0) return 0;
+    const a = dx * dx + dz * dz;
+    if (a < 1e-12) return Infinity;
+    const b = 2 * (rx * dx + rz * dz);
+    const disc = b * b - 4 * a * cc;
+    if (disc < 0) return Infinity;
+    const t = (-b - Math.sqrt(disc)) / (2 * a);
+    return t >= 0 && t <= 1 ? t : Infinity;
+  }
+  // World -> box-local (same rotation convention as resolveStatics).
+  const ox = x - c.x;
+  const oz = z - c.z;
+  const lx = ox * c.c - oz * c.s;
+  const lz = ox * c.s + oz * c.c;
+  const ldx = dx * c.c - dz * c.s;
+  const ldz = dx * c.s + dz * c.c;
+  const ex = c.hx + radius;
+  const ez = c.hz + radius;
+  if (Math.abs(lx) <= ex && Math.abs(lz) <= ez) return 0;
+  let t0 = 0;
+  let t1 = 1;
+  for (const [p, d, e] of [
+    [lx, ldx, ex],
+    [lz, ldz, ez],
+  ]) {
+    if (Math.abs(d) < 1e-12) {
+      if (Math.abs(p) > e) return Infinity;
+      continue;
+    }
+    let ta = (-e - p) / d;
+    let tb = (e - p) / d;
+    if (ta > tb) [ta, tb] = [tb, ta];
+    if (ta > t0) t0 = ta;
+    if (tb < t1) t1 = tb;
+    if (t0 > t1) return Infinity;
+  }
+  return t0 >= 0 && t0 <= 1 ? t0 : Infinity;
+}
+
+// Dynamic (entity-owned) colliders only: { t, entityId } of the earliest
+// contact along the step, t = Infinity when none. Ascending install order on
+// exact ties (the content systems install in ascending entity id).
+export function sweptDynamicContact(x, z, dx, dz, radius) {
+  let best = Infinity;
+  let id = null;
+  for (const c of dynamics) {
+    const t = colliderContactT(c, x, z, dx, dz, radius);
+    if (t < best) {
+      best = t;
+      id = c.id;
+    }
+  }
+  return { t: best, entityId: id };
+}
+
+// sweptContact(x, z, dx, dz, radius) -> { t, entityId | null } — the FIRST
+// contact over walls, static colliders and dynamic colliders (PLAN §3.6 (g),
+// the contract shapes.js calls for skill + echo bolts). t in [0, 1]; t === 1
+// with entityId null means no contact this step. entityId is set only when the
+// first contact is an entity-owned dynamic collider (a barricade, rubble).
+export function sweptContact(x, z, dx, dz, radius) {
+  let t = Math.max(0, Math.min(1, sweptContactT(x, z, dx, dz, radius)));
+  let entityId = null;
+  for (const c of statics) {
+    const ct = colliderContactT(c, x, z, dx, dz, radius);
+    if (ct < t) t = ct;
+  }
+  for (const c of dynamics) {
+    const ct = colliderContactT(c, x, z, dx, dz, radius);
+    if (ct < t) {
+      t = ct;
+      entityId = c.id;
+    }
+  }
+  return { t, entityId };
 }

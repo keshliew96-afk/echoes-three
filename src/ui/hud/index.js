@@ -30,13 +30,18 @@ const ROOM_POLL_MS = 100;
 // have. Room 7 is the §16 shop, room 8 the §11 Hollow Stag.
 const MODE_WORD = { kill_all: 'CLEAR THE CLEARING', defend: 'HOLD THE WAYSTONE', shop: 'THE PEDDLER', boss: 'THE HOLLOW STAG' };
 function locationCopy(scene, rv) {
+  // CAMPAIGN (PLAN §12.6): between two levels the plate says so (the card
+  // names both levels).
+  if (rv && rv.active && rv.phase === 'transit') return { name: 'ON THE ROAD', sub: 'BETWEEN LEVELS' };
   if (rv && rv.active && rv.room >= 1) {
     const room = rv.room;
     const total = rv.rooms ?? 8;
-    if (room >= total) return { name: 'THE HOLLOW', sub: `ROOM ${room} OF ${total} · ${MODE_WORD.boss}` };
+    // Gauntlet M4b: Acts II / III name their own biome (the Act I copy stays).
+    const place = rv.act > 1 && rv.actName ? String(rv.actName).toUpperCase() : null;
+    if (room >= total) return { name: place ?? 'THE HOLLOW', sub: `ROOM ${room} OF ${total} · ${MODE_WORD.boss}` };
     if (rv.phase === 'shop' || rv.mode === 'shop') return { name: "THE PEDDLER'S CLEARING", sub: `ROOM ${room} OF ${total} · ${MODE_WORD.shop}` };
-    const mode = MODE_WORD[rv.mode] ?? 'ON THE ROAD';
-    return { name: 'UNEASY WOODLAND', sub: `ROOM ${room} OF ${total} · ${mode}` };
+    const mode = rv.mode === 'kill_all' && place ? 'CLEAR THE ROOM' : MODE_WORD[rv.mode] ?? 'ON THE ROAD';
+    return { name: place ?? 'UNEASY WOODLAND', sub: `ROOM ${room} OF ${total} · ${mode}` };
   }
   if (scene === 'camp') return { name: 'THE HEARTH CAMP', sub: 'NIGHT · BEFORE THE ROAD' };
   return { name: 'THE PROVING CLEARING', sub: 'ARENA · NO RUN' };
@@ -184,6 +189,8 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     'room_soft_fail',
     'room_enter',
     'room_transition',
+    'level_transit', // CAMPAIGN: the level-clear card hides the combat chrome at once
+    'level_start',
   ];
   // Run-end edges (round D, camp critic F2 / run critic F6): the banner,
   // the threat pointers and the bar's own combat residue are cleared IN THE
@@ -304,6 +311,7 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
   let warmStarted = false;
   let warmEndPending = false;
   let warmRestore = false;
+  let warmOnEnd = null; // rewarm(): called on the frame the warm paint ends
   const WARM_ROOMS = [
     null, // frame 0: the boss plate (WARM_BOSS)
     { cleared: false, mode: 'defend', waystone: { hp: 96, maxHp: 150 }, defendTicksLeft: 9 * 60, softFailed: false },
@@ -319,6 +327,11 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
       bar.prewarmEnd();
       banner.reset();
       try { performance.mark('hudwarm-end'); } catch (e) { /* trace marker only */ }
+      if (warmOnEnd) {
+        const fn = warmOnEnd;
+        warmOnEnd = null;
+        try { fn(); } catch (e) { /* the caller's own cleanup */ }
+      }
       return false;
     }
     if (!warmStarted) {
@@ -486,5 +499,34 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     },
   };
 
-  return { update, debug, el: root, scale: () => scale };
+  // @gnt:M2 RESTORE-RESYNC begin — a load is a room / run boundary the HUD
+  // never saw: drop the combat chrome of the moment that left (banner,
+  // threat pointers, the bar's combat residue, the revive-channel mirror),
+  // then re-read the restored room in the same JS turn (as ROOM_EVENTS do).
+  bus.on('state_restored', () => {
+    endCombatChrome();
+    channels.clear();
+    pollRoom(performance.now());
+    combat = readCombat();
+    if (banner.update(room, combat ? runBoss ?? bossEntity : null, combat)) publishZones();
+  });
+  // @gnt:M2 RESTORE-RESYNC end
+  // gauntlet r4 J4-F1 (INT): the boot warm-up above runs ~18 frames after
+  // load. On a TITLE boot that is under the title's `ap-hide-game` rule
+  // (visibility: hidden), so the compositor never rasterised a warm frame and
+  // the first cooldown wipe / slot flash of the first fight paid the GPU
+  // raster pipeline compile instead (242-267 ms frames, 0.6-0.9 s into Level 1
+  // room 1, once per fresh browser). `rewarm` re-runs the same warm paint
+  // when the caller has made the HUD paintable (main.js @gnt:INT-WIRING);
+  // `onEnd` fires on the frame the warm paint ends, before the real repaint.
+  function rewarm({ onEnd = null } = {}) {
+    warmWait = 1;
+    warmStarted = false;
+    warmLeft = 0;
+    warmEndPending = false;
+    warmOnEnd = onEnd;
+    return WARM_FRAMES;
+  }
+
+  return { update, debug, el: root, scale: () => scale, rewarm };
 }

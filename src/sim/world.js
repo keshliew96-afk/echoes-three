@@ -28,6 +28,7 @@ import {
   HEALER,
   ARENA,
   HARNESS,
+  SKILL_SLOTS,
 } from '../core/constants.js';
 import { DENIAL } from '../core/intents.js';
 import { innerBounds, walkStep, sweptStep } from './movement.js';
@@ -35,11 +36,21 @@ import { createProjectileSystem } from './projectiles.js';
 import { createCombat } from './combat.js';
 import { createEnemySystem } from './enemies.js';
 import { createWaveDirector } from './waves.js';
-import { createSkillSystem, STARTING_SKILLS, PARTY_ALLIES } from './skills.js';
+import { createSkillSystem, STARTING_SKILLS, PARTY_ALLIES, SKILLS as SKILLS_REF } from './skills.js';
 import { createBuildSystem } from './nodes.js';
 import { createAllySystem } from './allies.js';
 import { createBossSystem } from './boss.js';
 import { createRunSystem } from './run.js';
+// PARTY (docs/gauntlet/PLAN.md §16.3): the three ally builds + their
+// technique module (the cast pipeline lives in the ally system).
+import { createPartySystem } from './party.js';
+import { createPartyTech } from './partytech.js';
+import { seatDisplacement } from './allycast.js';
+// @gnt:M4b IMPORTS begin — hazards / interactables / layout director (PLAN §3.6)
+import { createHazardSystem, createLayoutSystem } from './hazards.js';
+import { createInteractableSystem } from './interactables.js';
+import { MENACE } from '../core/constants.js';
+// @gnt:M4b IMPORTS end
 
 // §10: a Downed character crawls at 0.8 u/s (movement only, cannot act).
 const DOWNED_CRAWL_SPEED = 0.8;
@@ -48,6 +59,10 @@ const TICK_DT = 1 / TICK_HZ; // seconds per tick, for u/s -> u/tick
 const r2 = (v) => Math.round(v * 100) / 100;
 
 export function createWorld({ rng, registry, events, harness = true, requestHitstop = null, room = null }) {
+  // Every listener a sim module registers is tagged SIM (core/events.js):
+  // same listener list and order as before, but a network guest's replay()
+  // skips them (docs/gauntlet/PLAN.md §3.7 "replica bus").
+  if (events && typeof events.sim === 'function') events = events.sim();
   let currentTick = 0;
 
   // ① deferred maturations: { carrierOrdinal, resolve() } — sorted by carrier
@@ -163,6 +178,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   // its §15.4 resolver through this late-bound hook (identity until it lands).
   let buildSys = null;
   let runSys = null; // run block (§2/§13): late-bound, owns combat_active
+  let partySys = null; // PARTY: the three ally builds (late-bound for the ally system)
   const skillSys = createSkillSystem({
     player,
     registry,
@@ -209,6 +225,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     rng,
     getTick: () => currentTick,
     getRoomState: () => waves.roomState(),
+    party: () => partySys,
   });
   events.on('room_cleared', () => allySys.onRoomBoundary('room_clear'));
   events.on('room_start', () => allySys.onRoomBoundary('room_start'));
@@ -239,6 +256,44 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     },
   });
 
+  // --- Party builds (PARTY, PLAN §16.3): seats 1-3 get the Healer's build
+  // model — loadouts from their class pools, 8 sockets per skill, purses —
+  // and a technique module that reacts to their class skills' primary
+  // events. Created after the Healer's build system so every pre-existing
+  // listener keeps its delivery order.
+  const combatActiveNow = () => {
+    if (runSys && runSys.isActive()) return runSys.combatActive();
+    const r = waves.roomState();
+    return !!(r && !r.cleared);
+  };
+  partySys = createPartySystem({
+    rng,
+    registry,
+    events,
+    combat,
+    getTick: () => currentTick,
+    player,
+    isIframed,
+    queueDeferred: (carrierOrdinal, resolve) => deferred.push({ carrierOrdinal, resolve }),
+    queueContinuation: (fn) => continuations.push({ resolve: fn }),
+    isCombatActive: combatActiveNow,
+    isBetweenRooms: () => !!(runSys && runSys.isActive() && !runSys.combatActive()),
+  });
+  const partyTech = createPartyTech({
+    registry,
+    events,
+    combat,
+    getTick: () => currentTick,
+    queueContinuation: (fn) => continuations.push({ resolve: fn }),
+    build: (s) => partySys.build(s),
+    state: (s) => partySys.seatState(s),
+    body: (s) => partySys.body(s),
+    caster: () => allySys.caster(),
+    seatDisplacement,
+    slotsOf: (s) => partySys.slots(s) ?? [],
+  });
+  partySys.attach({ caster: allySys.caster(), tech: partyTech });
+
   // --- Run structure (run block, §2/§13/§14/§16): the 8-room run frame, the
   // room-clear boundary sequence, drafts/path/shop, the Glint wallet, and the
   // room-8 Hollow Stag (sim/boss.js). The world only calls its three phase
@@ -265,9 +320,71 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     buildSys,
     allySys,
     combat,
+    party: partySys,
   });
   events.on('room_cleared', (ev) => runSys.onRoomCleared(ev));
   events.on('defeat', () => runSys.onDefeat());
+
+  // @gnt:M4b CONTENT-SYSTEMS begin — the hazards (sim/hazards.js) and
+  // interactables (sim/interactables.js) systems are created here, hook the
+  // phases at the CONTENT-* anchors below and receive the rolled room layout
+  // through runSys.setRoomHooks({ enter(layout, tick), exit(tick) }) (M4a
+  // implements setRoomHooks in run.js — docs/gauntlet/PLAN.md §2 / §3.6).
+  const hazardSys = createHazardSystem({
+    registry,
+    events,
+    combat,
+    getTick: () => currentTick,
+    getSeed: () => rng.seed,
+    governor: enemies.governor,
+  });
+  const interactSys = createInteractableSystem({
+    registry,
+    events,
+    combat,
+    getTick: () => currentTick,
+    player,
+    hazards: hazardSys,
+  });
+  const layoutSys = createLayoutSystem({
+    registry,
+    events,
+    getTick: () => currentTick,
+    hazards: hazardSys,
+    interactables: interactSys,
+    getRunView: () => (runSys && runSys.isActive() ? runSys.view() : null),
+    getRoomMode: () => (waves.roomState() ? waves.roomState().mode : null),
+    getSeed: () => rng.seed,
+  });
+  if (typeof runSys.setRoomHooks === 'function') {
+    runSys.setRoomHooks({
+      enter: (layout, tick) => layoutSys.enter(layout, tick),
+      exit: (tick) => layoutSys.exit(tick),
+    });
+  }
+  // §13: a cleared room's hazards and assets stop acting (the reward pages
+  // run on a live sim); run end clears them through the exit hook, and as a
+  // belt-and-braces sweep here for a run.js without room hooks.
+  events.on('room_cleared', () => layoutSys.onRoomCleared());
+  events.on('run_end', (ev) => layoutSys.exit(ev.tick));
+  events.on('return_to_camp', (ev) => layoutSys.exit(ev.tick));
+  // The Tank's MENACE (constants.js MENACE, PLAN GP.5): its taunt sources —
+  // Taunting Roar equipped, a live Provoke on an equipped skill — make every
+  // non-boss hostile weigh it closer when choosing whom to attack. Read from
+  // the seat build each tick by enemies.js; nothing new is saved.
+  enemies.setThreat(() => {
+    const tank = partySys.body(1);
+    if (!tank || !(tank.hp > 0)) return null;
+    const b = partySys.build(1);
+    let n = 0;
+    for (const id of partySys.slots(1) || []) {
+      if (!id) continue;
+      if (id === 'taunting_roar') n += 1;
+      if (b && b.tech.liveTechs(id).includes('provoke')) n += 1;
+    }
+    return n > 0 ? new Map([[tank.id, Math.min(MENACE.maxU, n * MENACE.perSourceU)]]) : null;
+  });
+  // @gnt:M4b CONTENT-SYSTEMS end
 
   // --- Harness wisps (sim-core proving population; ?scene=simtest only).
   function spawnWisp(x, z) {
@@ -367,7 +484,14 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         // §5: velocity = dir * move_speed, instant (no ramp). Walking slides
         // along walls; only the dash hard-stops. §10: a Downed player keeps
         // movement only, at the 0.8 u/s crawl.
-        const spd = player.hp > 0 ? HEALER.moveSpeed : DOWNED_CRAWL_SPEED;
+        // @gnt:M4a PLAYER-SPEED begin — M4a multiplies spd by
+        // status.speedMul(player, currentTick) (haste/slow, BUILD_BRIEF §23.8).
+        // The Downed crawl is never scaled; with no status the factor is 1.
+        const spd =
+          player.hp > 0
+            ? HEALER.moveSpeed * (combat.status ? combat.status.speedMul(player, currentTick) : 1)
+            : DOWNED_CRAWL_SPEED;
+        // @gnt:M4a PLAYER-SPEED end
         walkStep(player, x * spd * TICK_DT, z * spd * TICK_DT, player.radius);
         player.facing = { x, z };
       }
@@ -386,6 +510,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // Run block (§11 boss): the Hollow Stag steers/lunges with the enemy pass,
     // so its body settles before knockback and projectile sweeps.
     runSys.continuous();
+    // @gnt:M4b CONTENT-CONTINUOUS begin — hazard pushes/slows, interactable timers.
+    layoutSys.continuous();
+    // @gnt:M4b CONTENT-CONTINUOUS end
 
     // §9 #3 knockback displacement: impulse away from the hit over kbTicks,
     // swept vs walls (no slide — wall contact ends the impulse). Runs before
@@ -402,6 +529,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     projectiles.step(currentTick);
     skillSys.step(currentTick);
     buildSys.step(currentTick);
+    partySys.step(currentTick); // PARTY: the seat builds' echo / split bolts
 
     // Wisp drift (velocity applied; decisions happen in their resolution).
     for (const e of registry.all()) {
@@ -436,6 +564,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // impacts join this tick's deferred batch below.
     buildSys.discrete();
     drainContinuations(); // ③ techniques triggered by instant echo recasts
+    partySys.discrete(); // PARTY: the ally seats' echo recasts + Reapply pulses
+    drainContinuations();
 
     // ① deferred maturations, ascending carrier spawn ordinal.
     if (deferred.length > 0) {
@@ -468,11 +598,21 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // ② continued: the boss (run block) resolves with the enemy pass.
     runSys.discrete();
     drainContinuations();
+    // @gnt:M4b CONTENT-DISCRETE begin — hazard resolutions and `interact`
+    // presses (after the ally pass, so revive arbitration has already claimed
+    // KeyE next to a Downed body), ascending spawn ordinal.
+    layoutSys.discrete(snapshot);
+    drainContinuations();
+    // @gnt:M4b CONTENT-DISCRETE end
 
     // ④ persistent-zone scheduled ticks, ascending zone spawn ordinal, then
     // the Warding Aura cadence (skills block). Zone/aura heals can carry
     // techniques (Siphon per tick per occupant) — drain ③ after.
     skillSys.zonePhase();
+    drainContinuations();
+    // PARTY: the ally class passives (Iron Stance, Razor Wake, Kestrel Watch)
+    // pulse on their 1.0 s cadence, ascending slot per seat.
+    partySys.pulsePhase();
     drainContinuations();
 
     // ④ continued: ally damage zones (ally block, §7 ground_aoe kit rows),
@@ -481,6 +621,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // which §2 says defeat outranks.
     allySys.endOfTick();
     drainContinuations();
+    partySys.endOfTick(); // PARTY: parry windows close, Steady Aim stillness
 
     // Encounter director: spawn-telegraph maturations, wave triggers, and the
     // §11 clear predicates (evaluated end of tick).
@@ -550,15 +691,22 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // suppressed (§5) — the world owns that rule; the skill system owns
     // empty/passive/cooldown denials and the actual §6 instant-cast fire.
     // Same-frame multi-skill presses all fire here, ascending slot.
-    for (let slot = 0; slot < 4; slot++) {
+    // @gnt:M4a SKILL-SLOTS begin — slot loop runs 0..SKILL_SLOTS-1 (4 -> 8,
+    // PLAN §4.3); M4a adds the stun gate (status.canAct) here.
+    // A stunned caster starts nothing (BUILD_BRIEF §23.8). status.apply
+    // refuses stun on party bodies by rule, so this gate is the contract's
+    // belt-and-braces half: it can never fire in a v0.4.63 trace.
+    const stunned = !!(combat.status && combat.status.isStunned(player, currentTick));
+    for (let slot = 0; slot < SKILL_SLOTS; slot++) {
       const kind = `skill_${slot + 1}`;
       if (!accepted.has(kind)) continue;
-      if (player.dashTicksLeft > 0) {
+      if (player.dashTicksLeft > 0 || stunned) {
         deny(kind, DENIAL.prioritySuppressed);
       } else {
         skillSys.tryFire(slot);
       }
     }
+    // @gnt:M4a SKILL-SLOTS end
 
     // Basic-attack fire (slot 4).
     resolveBasic(snapshot);
@@ -703,11 +851,72 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
 
   // ------------------------------------------------------------------ step --
 
-  function step(tick, snapshot) {
+  // @gnt:M5b SEAT-INPUTS begin — network play extends this to
+  // step(tick, snapshot, seatInputs) where seatInputs[partyIndex] is a human
+  // guest's snapshot for that ally seat (absent -> the §12 AI), plus the
+  // replica flag (world.setReplica: a guest's world is never stepped and
+  // refuses mutating cmd()s, PLAN §3.7). Single-player never passes either
+  // and must stay bit-identical (PLAN gate G5b.8).
+  //
+  // seatInputs (host of a network session only, sim/netseats.js):
+  //   { seats: { [1..3]: SeatInput }, reasons, player: 'human'|'ai', rewind }
+  // allySys.setSeatInputs() runs FIRST (controller changes emit
+  // `seat_control` on this tick), then the usual two phases: the human seats
+  // move in the ally continuous pass and resolve in their party_index slot;
+  // their E presses join the Healer's in ONE interactables pass (ascending
+  // party index — a same-tick double use activates once).
+  let replicaMode = false; // world.setReplica (M5b REPLICA): a guest never steps
+  let seatsActive = false;
+  const refusals = { steps: 0, cmds: 0, byName: {} };
+  // Commands a replica still answers: pure reads of the replicated state.
+  const REPLICA_READ_CMDS = new Set([
+    'skillState', 'buildView', 'buildPreview', 'kitVerdict', 'buildVerdict', 'buildState',
+    'allyState', 'reviveState', 'runState', 'wallet', 'draftPools', 'roomPlan',
+    'difficultyTable', 'statusOf', 'contentState', 'netSeats',
+    // PARTY: the replicated builds (a guest's probes / HUD reads).
+    'partyView', 'partyState', 'partyPools', 'partyVerdicts', 'partyAiLog',
+  ]);
+  function step(tick, snapshot, seatInputs) {
+    if (replicaMode) {
+      refusals.steps += 1;
+      return;
+    }
     currentTick = tick;
+    if (seatInputs) {
+      seatsActive = true;
+      allySys.setSeatInputs(seatInputs, tick);
+    } else if (seatsActive) {
+      // The session ended: every seat returns to the §12 AI on this tick.
+      seatsActive = false;
+      allySys.setSeatInputs(null, tick);
+    } else if (allySys.controllers().some((c, i) => i > 0 && c === 'human')) {
+      // PARTY (BUILD_BRIEF §25.7, PLAN GP.9 (e)): a NETWORK save loaded as
+      // single-player restores its human seat controllers — no input will
+      // ever drive them here: every ally seat returns to the AI on the first
+      // tick (seat_control), so the party page's network deadlines (armed
+      // only with >= 2 humans) are cleared on that tick too.
+      allySys.setSeatInputs(null, tick);
+    }
     continuousPhase(snapshot);
     discretePhase(snapshot);
   }
+  // Human seats' E presses resolve inside the interactables pass, together
+  // with the Healer's, sorted by party index (sim/interactables.js
+  // resolvePresses). With no human press this is the untouched original.
+  {
+    const rawInteractDiscrete = interactSys.discrete;
+    interactSys.discrete = (snap) => {
+      const extra = seatsActive ? allySys.humanInteracts() : null;
+      if (!extra || extra.length === 0) return rawInteractDiscrete(snap);
+      const own = snap && Array.isArray(snap.presses) ? snap.presses.find((p) => p.kind === 'interact') : null;
+      rawInteractDiscrete(own ? { ...snap, presses: snap.presses.filter((p) => p.kind !== 'interact') } : snap);
+      const list = own ? [{ actor: player, press: own }] : [];
+      for (const x of extra) list.push(x);
+      interactSys.resolvePresses(list);
+      return undefined;
+    };
+  }
+  // @gnt:M5b SEAT-INPUTS end
 
   // ------------------------------------------- debug API (docs/TESTING.md) --
 
@@ -804,11 +1013,17 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         .all()
         .filter((e) => e.kind === 'bolt')
         .map((e) => ({ id: e.id, x: r2(e.x), z: r2(e.z), traveled: r2(e.traveled) })),
+      // @gnt:M4b HOSTILE-KINDS begin — new enemy kinds must appear here
+      // (faction === 'hostile' test replacing the kind list, PLAN §2.2).
       enemies: registry
         .all()
         .filter(
-          (e) => e.kind === 'wisp' || e.kind === 'dummy' || e.kind === 'boar' || e.kind === 'mantis'
+          // Faction rule (PLAN §3.6 (d)): every living hostile body except the
+          // boss (its own view) — burrowed moles and retreating enemies stay
+          // listed; shots/globs carry no HP. Plus the simtest wisps.
+          (e) => e.kind === 'wisp' || (e.faction === 'hostile' && e.hp > 0 && e.kind !== 'stag')
         )
+      // @gnt:M4b HOSTILE-KINDS end
         .map((e) => ({
           id: e.id,
           kind: e.kind,
@@ -837,7 +1052,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       case 'spawn': {
         const [type, x, z] = args; // ('dummy'|'wisp'|'boar'|'mantis', x, z)
         // Real §11 enemies (enemies block) — full AI/telegraph/juice pipeline.
-        if (type === 'boar' || type === 'mantis') return enemies.debugSpawn(type, x, z);
+        // M4b: every enemy archetype, with { elite, hpMul, dmgMul } (PLAN §6.4).
+        if (enemies.hasType(type)) return enemies.debugSpawn(type, x, z, args[3] ?? null);
         // Wisps exist only in the simtest harness (they have no game-scene
         // visuals); game scenes get combat-juice training dummies.
         if (type === 'wisp' && harness) return spawnWisp(x, z).id;
@@ -882,13 +1098,12 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         return e.hp;
       }
       case 'killAllEnemies': {
+        // @gnt:M4b HOSTILE-KINDS2 begin (same rule as snapshotState).
         maintainPopulation = false;
         const hostiles = registry
           .all()
-          .filter(
-            (e) =>
-              e.kind === 'wisp' || e.kind === 'dummy' || e.kind === 'boar' || e.kind === 'mantis'
-          );
+          .filter((e) => e.kind === 'wisp' || (e.faction === 'hostile' && e.hp > 0 && e.kind !== 'stag'));
+        // @gnt:M4b HOSTILE-KINDS2 end
         for (const h of hostiles) {
           if (h.kind === 'wisp') killWisp(h);
           else combat.kill(h);
@@ -1017,6 +1232,34 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         // draftDecline / pathFocus / pathChoose / shopBuy / shopAdvance /
         // skipToRoom / bossHp / killBoss / wallet / draftPools / endRun /
         // returnToCamp), then the ally-block ones.
+        // Gauntlet debug commands (PLAN §6.4): each key routes ITS commands
+        // from its own block — `const r = mySys.cmd(name, args); if (r !==
+        // undefined) return r;` — never by editing another key's block.
+        // @gnt:M4a CMD begin (setStatus / clearStatus / autopilot / startRun{act,challenge} ...)
+        // @gnt:M4a CMD end
+        // @gnt:M4b CMD begin (spawnHazard / spawnInteractable / hazardPhase / armKeg / setLayout ...)
+        if (name === 'burrow') return enemies.setBurrow(args[0], args[1] !== false);
+        // MENACE probe: { bodyId: u } of the live presence map ({} = none).
+        if (name === 'threat') return enemies.threat();
+        {
+          const rc = layoutSys.cmd(name, args);
+          if (rc !== undefined) return rc;
+        }
+        // @gnt:M4b CMD end
+        // @gnt:M5b CMD begin (replica-mode refusal of mutating commands, seat control)
+        // Read-only network-seat probe (replica refusal itself wraps cmd in
+        // setReplica below, so it also covers the explicit cases above).
+        if (name === 'netSeats') {
+          return { controllers: allySys.controllers(), lag: allySys.lagStats(), replica: replicaMode, refusals: { ...refusals, byName: { ...refusals.byName } } };
+        }
+        if (name === 'lagCompensation') return allySys.setLagCompensation(args[0] !== false);
+        // @gnt:M5b CMD end
+        // @gnt:PARTY CMD begin (PLAN §16.11)
+        {
+          const pc = partyCmd(name, args);
+          if (pc !== undefined) return pc;
+        }
+        // @gnt:PARTY CMD end
         const ran = runSys.cmd(name, args);
         if (ran !== undefined) return ran;
         const handled = allySys.cmd(name, args);
@@ -1027,6 +1270,83 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     }
   }
 
+  // PARTY debug / harness commands (PLAN §16.11). Seat-0 commands keep their
+  // meaning; these address the ally seats.
+  function partyCmd(name, args) {
+    const P = partySys;
+    switch (name) {
+      case 'partyPools':
+        return P.partyPools();
+      case 'partyVerdicts':
+        return P.partyVerdicts();
+      case 'partyView':
+        return P.view(args[0]);
+      case 'partyState':
+        return P.state();
+      case 'partySwap':
+        return P.swap(args[0], args[1], Number.isInteger(args[2]) ? args[2] : null, { by: 'cmd' });
+      case 'partyReorder':
+        return P.reorder(args[0], args[1], args[2]);
+      case 'partyGrantNode':
+        return P.grantNode(args[0], args[1], args[2] ?? 'grant');
+      case 'partySocket': {
+        const b = P.build(args[0]);
+        return b ? b.socket(args[1], args[2], Number.isInteger(args[3]) ? args[3] : null) : { error: 'no_such_seat' };
+      }
+      case 'partyUnsocket': {
+        const b = P.build(args[0]);
+        return b ? b.unsocket(args[1], args[2]) : { error: 'no_such_seat' };
+      }
+      case 'partyAutoFill':
+        return P.autoFill(args[0] ?? 'all');
+      case 'partyMode':
+        return args[0] === undefined ? P.mode() : P.setMode(args[0]);
+      case 'partyPurse':
+        return args[1] === undefined ? P.purse(args[0]) : P.setPurse(args[0], args[1]);
+      case 'partyAiLog':
+        return allySys.aiLog();
+      case 'partyStress':
+        return P.stress();
+      case 'partyCast': {
+        // ('partyCast', seat, slot, { x, z }?) — fires a loadout slot as a
+        // press would (aim at the point, else the facing) — sim / VFX /
+        // audio probes. Ignores the cooldown; starts it.
+        const [seat, slot, at] = args;
+        const a = P.body(seat);
+        const id = P.slots(seat) ? P.slots(seat)[slot] : null;
+        if (!a || !id) return { error: 'empty_slot' };
+        const def = SKILLS_REF[id];
+        if (def.shape === 'aura') return P.pulse(seat, id);
+        const aim = at && Number.isFinite(at.x) ? { x: at.x, z: at.z } : { x: a.x + (a.faceX ?? 0) * 2, z: a.z + (a.faceZ ?? 1) * 2 };
+        const l = Math.hypot(aim.x - a.x, aim.z - a.z) || 1;
+        const d = { x: (aim.x - a.x) / l, z: (aim.z - a.z) / l };
+        if (allySys.isHumanSeat(seat)) allySys.caster().cast(a, def, slot, currentTick, { mode: 'human', f: { aim, viewTick: currentTick }, tag: null, d });
+        else {
+          // An AI-held seat casts at the hostile nearest the aim point.
+          let target = null;
+          let bd = Infinity;
+          for (const e of registry.all()) {
+            if (e.faction !== 'hostile' || !e.hittable || !(e.hp > 0)) continue;
+            const dd = (e.x - aim.x) ** 2 + (e.z - aim.z) ** 2;
+            if (dd < bd) {
+              bd = dd;
+              target = e;
+            }
+          }
+          allySys.caster().cast(a, def, slot, currentTick, { mode: 'ai', target });
+        }
+        const rdef = P.build(seat).resolveDef(def);
+        if (Array.isArray(a.cds)) a.cds[slot] = currentTick + Math.max(30, Math.round((rdef.cd ?? 0) * TICK_HZ));
+        return { ok: true, seat, slot, skill: id };
+      }
+      default:
+        return undefined;
+    }
+  }
+
+  // @gnt:M2 WORLD-STATE — serialize()/restore() of the world's own state and
+  // every system's (PLAN §3.4) are exposed from this object; M2 adds its
+  // members inside the WORLD-STATE begin/end block at the end of it.
   return {
     step,
     cmd,
@@ -1045,6 +1365,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // reads the Stag body read-only.
     runSystem: () => runSys,
     bossSystem: () => bossSys,
+    // PARTY: the party system (the ally builds) — pages, socket screen, HUD.
+    partySystem: () => partySys,
     // Ally-block accessor (render layer reads the mark, the revive channels
     // and the per-ally AI state read-only; it never mutates sim state).
     allySystem: () => allySys,
@@ -1054,5 +1376,96 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     get tick() {
       return currentTick;
     },
+    // @gnt:M2 WORLD-STATE begin
+    // Complete-state capture for the save system (docs/gauntlet/PLAN.md §3.4).
+    // saveState() hands out LIVE state (the save layer deep-clones the whole
+    // tree once); loadState() receives a private clone and adopts it. Both
+    // run ONLY at a tick boundary (clock.onTickEnd or between frames): the ①
+    // deferred and ③ continuation queues hold closures mid-tick, so a capture
+    // that finds either non-empty throws a named CapturePointError listing
+    // what is pending (the save layer then retries at the next tick end).
+    pendingQueues: () => ({
+      deferred: deferred.length,
+      continuations: continuations.length,
+      carriers: deferred.map((d) => d.carrierOrdinal),
+    }),
+    saveState() {
+      if (deferred.length > 0 || continuations.length > 0) {
+        const err = new Error(
+          `world.saveState outside a tick boundary: ${deferred.length} deferred maturation(s)` +
+            ` (carriers ${deferred.map((d) => d.carrierOrdinal).join(', ') || '-'}) and ${continuations.length} continuation(s) pending`
+        );
+        err.name = 'CapturePointError';
+        err.pending = { deferred: deferred.length, continuations: continuations.length };
+        throw err;
+      }
+      return {
+        world: { tick: currentTick, stats, maintainPopulation, harness },
+        systems: {
+          combat: combat.saveState(),
+          skills: skillSys.saveState(),
+          build: buildSys.saveState(),
+          enemies: enemies.saveState(),
+          waves: waves.saveState(),
+          allies: allySys.saveState(),
+          boss: bossSys.saveState(),
+          run: runSys.saveState(),
+          layout: layoutSys.saveState(),
+          // PARTY (PLAN §16.6): the three ally builds, purses, the party stream.
+          party: partySys.saveState(),
+        },
+      };
+    },
+    loadState(data) {
+      const w = data && data.world;
+      const s = data && data.systems;
+      if (!w || !s || !Number.isFinite(w.tick)) throw new TypeError('world.loadState: expected { world, systems }');
+      currentTick = w.tick;
+      // `stats` is shared by reference with the combat pipeline: patch in place.
+      for (const k of Object.keys(stats)) if (!(k in (w.stats ?? {}))) delete stats[k];
+      Object.assign(stats, w.stats ?? {});
+      maintainPopulation = !!w.maintainPopulation;
+      deferred = [];
+      continuations.length = 0;
+      combat.loadState(s.combat);
+      skillSys.loadState(s.skills);
+      buildSys.loadState(s.build);
+      enemies.loadState(s.enemies);
+      waves.loadState(s.waves);
+      allySys.loadState(s.allies);
+      bossSys.loadState(s.boss);
+      runSys.loadState(s.run);
+      layoutSys.loadState(s.layout);
+      // PARTY: absent in an older tree (the save codec's MIGRATIONS[3] adds it;
+      // an in-memory older payload keeps the starting loadouts).
+      if (s.party) partySys.loadState(s.party);
+      return true;
+    },
+    // @gnt:M2 WORLD-STATE end
+    // @gnt:M5b REPLICA begin (setReplica / replica flag, PLAN §3.7)
+    // A network guest's world is a REPLICA: never stepped (step() refuses),
+    // written only by snapshot application (registry.restore + loadState),
+    // and cmd() refuses every mutating command (returns null, counted) — so
+    // the camp scene's run_end -> seatParty -> cmd('teleport') is inert on a
+    // guest while its scene swap still happens. Read-only probes pass.
+    setReplica(on) {
+      replicaMode = !!on;
+      if (replicaMode) {
+        this.cmd = (name, ...args) => {
+          if (REPLICA_READ_CMDS.has(name)) return cmd(name, ...args);
+          refusals.cmds += 1;
+          refusals.byName[name] = (refusals.byName[name] || 0) + 1;
+          return null;
+        };
+      } else this.cmd = cmd;
+      return replicaMode;
+    },
+    get replica() {
+      return replicaMode;
+    },
+    replicaRefusals: () => ({ ...refusals, byName: { ...refusals.byName } }),
+    // Seat control surface for the net session driver (host).
+    seatControllers: () => allySys.controllers(),
+    // @gnt:M5b REPLICA end
   };
 }

@@ -939,6 +939,253 @@ function propTypes(mats, spec) {
     };
   }
 
+  // ---------------------------------------------------------------------
+  // GAUNTLET biome props (M4b, BUILD_BRIEF §23.1). Same grammar: primitive
+  // layers, ink on the masses, a footprint that covers the widest layer.
+  // Sunken Mill: sluice frame, reed bed, footbridge, timber pile, rope crate,
+  // mill house (amber windows = a warm pool source). Ashen Barrow: standing
+  // stone, barrow gate, bone cairn, broken urn, grave slab.
+  // ---------------------------------------------------------------------
+  if (mats.wetWood) {
+    // --- Sluice-gate frame: two posts + a lintel + a raised gate board.
+    {
+      const posts = mergeGeometries([
+        new BoxGeometry(0.12, 1.0, 0.12).translate(-0.5, 0.5, 0),
+        new BoxGeometry(0.12, 1.0, 0.12).translate(0.5, 0.5, 0),
+      ]);
+      const lintel = new BoxGeometry(1.24, 0.12, 0.16).translate(0, 1.0, 0);
+      const board = new BoxGeometry(0.86, 0.36, 0.07).translate(0, 0.74, 0.02);
+      const wheel = new TorusGeometry(0.12, 0.025, 5, 12).translate(0.62, 0.9, 0.12);
+      T.sluiceframe = {
+        layers: [
+          { geo: posts, mat: mats.wetWood, ink: PROP_INK_PX },
+          { geo: lintel, mat: mats.wetWood, ink: DETAIL_INK_PX },
+          { geo: board, mat: mats.wetWoodDark, ink: DETAIL_INK_PX },
+          { geo: wheel, mat: mats.iron },
+        ],
+        foot: 0.62,
+        rz: 0.18,
+      };
+    }
+    // --- Reed bed: a clump of tall blades + cattail heads.
+    {
+      const blades = mergeGeometries(
+        [0, 1, 2, 3, 4, 5, 6, 7, 8].map((k) =>
+          new CylinderGeometry(0.008, 0.024, 0.56 + (k % 4) * 0.12, 3)
+            .rotateZ(((k % 5) - 2) * 0.14)
+            .rotateX(((k % 3) - 1) * 0.12)
+            .translate(Math.cos(k * 2.4) * 0.18, 0.3 + (k % 4) * 0.06, Math.sin(k * 2.4) * 0.18)
+        )
+      );
+      const heads = mergeGeometries(
+        [0, 2, 4, 6].map((k) => new CylinderGeometry(0.03, 0.03, 0.12, 5).translate(Math.cos(k * 2.4) * 0.18, 0.66 + (k % 4) * 0.12, Math.sin(k * 2.4) * 0.18))
+      );
+      T.reeds = {
+        layers: [
+          { geo: blades, mat: mats.reed, ink: 1.15 },
+          { geo: heads, mat: mats.wetWoodDark },
+        ],
+        foot: 0.3,
+      };
+    }
+    // --- Footbridge: a short plank span on four stubby posts with a rail.
+    {
+      const deck = mergeGeometries([-0.45, -0.15, 0.15, 0.45].map((x) => new BoxGeometry(0.28, 0.05, 0.62).translate(x, 0.22, 0)));
+      const posts = mergeGeometries(
+        [-0.58, 0.58].flatMap((x) => [-0.3, 0.3].map((z) => new CylinderGeometry(0.045, 0.055, 0.32, 5).translate(x, 0.16, z)))
+      );
+      const rail = mergeGeometries([
+        new BoxGeometry(1.24, 0.04, 0.04).translate(0, 0.5, 0.3),
+        new CylinderGeometry(0.025, 0.025, 0.3, 4).translate(-0.58, 0.36, 0.3),
+        new CylinderGeometry(0.025, 0.025, 0.3, 4).translate(0.58, 0.36, 0.3),
+      ]);
+      T.footbridge = {
+        layers: [
+          { geo: deck, mat: mats.wetWood, ink: PROP_INK_PX },
+          { geo: posts, mat: mats.wetWoodDark, ink: 1.5 },
+          { geo: rail, mat: mats.wetWood, ink: DETAIL_INK_PX },
+        ],
+        foot: 0.7,
+        rz: 0.36,
+      };
+    }
+    // --- Timber pile: stacked rotting beams with a moss cap.
+    {
+      const beams = mergeGeometries([
+        new BoxGeometry(1.1, 0.14, 0.16).translate(0, 0.07, -0.16),
+        new BoxGeometry(1.06, 0.14, 0.16).translate(0.04, 0.07, 0.02),
+        new BoxGeometry(1.0, 0.14, 0.16).translate(-0.02, 0.07, 0.2),
+        new BoxGeometry(1.0, 0.13, 0.15).rotateY(0.06).translate(0.02, 0.21, -0.06),
+        new BoxGeometry(0.9, 0.13, 0.15).rotateY(-0.05).translate(0, 0.21, 0.12),
+      ]);
+      const moss = new IcosahedronGeometry(0.16, 0).scale(1.3, 0.22, 0.9).translate(-0.2, 0.3, 0.02);
+      T.timberpile = {
+        layers: [
+          { geo: beams, mat: mats.wetWood, ink: PROP_INK_PX },
+          { geo: moss, mat: mats.moss },
+        ],
+        foot: 0.58,
+        rz: 0.3,
+      };
+    }
+    // --- Rope crate: a crate with a coil of rope and a hook on top.
+    {
+      const body = new BoxGeometry(0.46, 0.4, 0.46).translate(0, 0.2, 0);
+      const lid = new BoxGeometry(0.5, 0.06, 0.5).translate(0, 0.42, 0);
+      const coil = mergeGeometries([
+        new TorusGeometry(0.13, 0.035, 6, 14).rotateX(Math.PI / 2).translate(0.02, 0.48, 0.02),
+        new TorusGeometry(0.1, 0.03, 6, 12).rotateX(Math.PI / 2).translate(0.02, 0.53, 0.02),
+      ]);
+      T.ropecrate = {
+        layers: [
+          { geo: body, mat: mats.wetWood, ink: PROP_INK_PX },
+          { geo: lid, mat: mats.wetWoodDark, ink: DETAIL_INK_PX },
+          { geo: coil, mat: mats.rope, ink: 1.15 },
+        ],
+        foot: 0.32,
+      };
+    }
+    // --- Mill house: a squat ruined timber house with a slumped roof and two
+    // AMBER WINDOWS (warm-pool emitters, §23.1 "amber windows of the mill").
+    {
+      const walls = new BoxGeometry(1.3, 0.8, 0.9).translate(0, 0.4, 0);
+      const roof = mergeGeometries([
+        new BoxGeometry(1.46, 0.07, 0.62).rotateX(0.55).translate(0, 0.96, -0.2),
+        new BoxGeometry(1.46, 0.07, 0.62).rotateX(-0.55).rotateZ(0.06).translate(0, 0.94, 0.2),
+      ]);
+      const frame = mergeGeometries([
+        new BoxGeometry(0.08, 0.84, 0.08).translate(-0.66, 0.42, 0.46),
+        new BoxGeometry(0.08, 0.84, 0.08).translate(0.66, 0.42, 0.46),
+        new BoxGeometry(1.36, 0.08, 0.08).translate(0, 0.8, 0.46),
+      ]);
+      const windows = mergeGeometries([
+        new BoxGeometry(0.2, 0.22, 0.03).translate(-0.34, 0.46, 0.46),
+        new BoxGeometry(0.2, 0.22, 0.03).translate(0.3, 0.5, 0.46),
+      ]);
+      const door = new BoxGeometry(0.26, 0.44, 0.03).translate(-0.02, 0.22, 0.462);
+      T.millhouse = {
+        layers: [
+          { geo: walls, mat: mats.wetWood, ink: PROP_INK_PX },
+          { geo: roof, mat: mats.wetWoodDark, ink: PROP_INK_PX },
+          { geo: frame, mat: mats.wetWoodDark, ink: DETAIL_INK_PX },
+          { geo: door, mat: mats.ironDark },
+          { geo: windows, mat: mats.glass },
+        ],
+        foot: 0.86,
+        rz: 0.6,
+        faint: true,
+        emitter: (t) => {
+          const yaw = t.yaw ?? 0;
+          const sc = t.s ?? 1;
+          return { kind: 'lantern', x: t.x + Math.sin(yaw) * 0.5 * sc, y: 0.5 * (t.sy ?? sc), z: t.z + Math.cos(yaw) * 0.5 * sc };
+        },
+      };
+    }
+  }
+  if (mats.boneStone) {
+    // --- Standing stone: a tall weathered slab leaning a touch, a lichen band.
+    {
+      const slab = new BoxGeometry(0.34, 1.02, 0.2, 1, 3, 1).translate(0, 0.51, 0);
+      const pos = slab.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const y = pos.getY(i);
+        pos.setX(i, pos.getX(i) * (1 - y * 0.18));
+        pos.setZ(i, pos.getZ(i) * (1 - y * 0.12));
+      }
+      slab.computeVertexNormals();
+      const cap = new IcosahedronGeometry(0.16, 0).scale(1.05, 0.5, 0.7).translate(0.02, 1.02, 0);
+      const band = new BoxGeometry(0.36, 0.06, 0.22).translate(0, 0.36, 0);
+      const foot = mergeGeometries([
+        new IcosahedronGeometry(0.12, 0).scale(1, 0.5, 1).translate(0.16, 0.04, 0.1),
+        new IcosahedronGeometry(0.1, 0).scale(1, 0.5, 1).translate(-0.15, 0.04, -0.08),
+      ]);
+      T.standingstone = {
+        layers: [
+          { geo: slab, mat: mats.boneStone, ink: PROP_INK_PX },
+          { geo: cap, mat: mats.boneStoneLit, ink: DETAIL_INK_PX },
+          { geo: band, mat: mats.lichen },
+          { geo: foot, mat: mats.boneStoneDark, ink: DETAIL_INK_PX },
+        ],
+        foot: 0.3,
+      };
+    }
+    // --- Barrow gate: a grassed mound with a stone door frame over a dark mouth.
+    {
+      const mound = new IcosahedronGeometry(0.8, 1).scale(1.2, 0.5, 0.8).translate(0, 0.2, -0.2);
+      const jambs = mergeGeometries([
+        new BoxGeometry(0.18, 0.7, 0.2).translate(-0.34, 0.35, 0.42),
+        new BoxGeometry(0.18, 0.7, 0.2).translate(0.34, 0.35, 0.42),
+      ]);
+      const lintel = new BoxGeometry(0.98, 0.18, 0.26).translate(0, 0.76, 0.42);
+      const mouth = new BoxGeometry(0.5, 0.6, 0.06).translate(0, 0.3, 0.4);
+      T.barrowgate = {
+        layers: [
+          { geo: mound, mat: mats.ochreTurf, ink: PROP_INK_PX },
+          { geo: jambs, mat: mats.boneStone, ink: PROP_INK_PX },
+          { geo: lintel, mat: mats.boneStoneLit, ink: PROP_INK_PX },
+          { geo: mouth, mat: mats.ironDark },
+        ],
+        foot: 0.96,
+        rz: 0.66,
+      };
+    }
+    // --- Bone cairn: pale stones heaped with long-bone shapes.
+    {
+      const stones = mergeGeometries([
+        new IcosahedronGeometry(0.24, 0).scale(1.1, 0.55, 0.95).translate(0, 0.12, 0),
+        new IcosahedronGeometry(0.18, 0).scale(1, 0.6, 0.9).rotateY(0.6).translate(0.04, 0.3, -0.02),
+        new IcosahedronGeometry(0.12, 0).scale(1, 0.7, 0.9).translate(-0.02, 0.44, 0.02),
+      ]);
+      // Cylinders are indexed, icosahedra are not: mergeGeometries refuses a
+      // mix (returns null), so de-index the shafts first.
+      const bones = mergeGeometries([
+        new CylinderGeometry(0.022, 0.022, 0.36, 5).toNonIndexed().rotateZ(1.2).translate(0.1, 0.22, 0.2),
+        new IcosahedronGeometry(0.04, 0).translate(0.26, 0.28, 0.2),
+        new IcosahedronGeometry(0.04, 0).translate(-0.06, 0.16, 0.2),
+        new CylinderGeometry(0.02, 0.02, 0.3, 5).toNonIndexed().rotateX(1.3).rotateY(0.5).translate(-0.18, 0.1, 0.02),
+      ]);
+      T.bonecairn = {
+        layers: [
+          { geo: stones, mat: mats.boneStone, ink: PROP_INK_PX },
+          { geo: bones, mat: mats.boneStoneLit, ink: 1.15 },
+        ],
+        foot: 0.32,
+      };
+    }
+    // --- Broken urn: a lathed pot cracked open, shards around it.
+    {
+      const profile = [[0.001, 0], [0.13, 0.015], [0.18, 0.12], [0.19, 0.24], [0.14, 0.3], [0.001, 0.3]].map(([x, y]) => new Vector2(x, y));
+      const body = new LatheGeometry(profile, 10, 0, Math.PI * 1.35);
+      const shards = mergeGeometries([
+        new BoxGeometry(0.14, 0.03, 0.1).rotateY(0.6).translate(0.26, 0.02, 0.12),
+        new BoxGeometry(0.1, 0.03, 0.08).rotateY(-0.4).translate(-0.24, 0.02, 0.16),
+        new BoxGeometry(0.12, 0.03, 0.07).rotateY(1.2).translate(0.08, 0.02, -0.26),
+      ]);
+      T.brokenurn = {
+        layers: [
+          { geo: body, mat: mats.stone, ink: PROP_INK_PX },
+          { geo: shards, mat: mats.stoneDark },
+        ],
+        foot: 0.3,
+      };
+    }
+    // --- Grave slab: a lying stone slab with a carved channel and a headstone.
+    {
+      const slab = new BoxGeometry(0.5, 0.1, 0.9).translate(0, 0.05, 0);
+      const carve = new BoxGeometry(0.06, 0.02, 0.62).translate(0, 0.11, 0);
+      const head = new BoxGeometry(0.44, 0.44, 0.1).translate(0, 0.22, -0.48);
+      T.graveslab = {
+        layers: [
+          { geo: slab, mat: mats.boneStoneDark, ink: PROP_INK_PX },
+          { geo: carve, mat: mats.ironDark },
+          { geo: head, mat: mats.boneStone, ink: PROP_INK_PX },
+        ],
+        foot: 0.5,
+        rz: 0.52,
+      };
+    }
+  }
+
   void spec;
   return T;
 }
@@ -1110,6 +1357,123 @@ function buildMonolith(root, [x, z, yaw], shadows, emitters, cosmetic, footprint
 }
 
 // ---------------------------------------------------------------------------
+// GAUNTLET tells (M4b): the same vein grammar as the monolith (God-stuff Violet
+// geometry bars at a pre-compensated linear tone + an emissive under-glow),
+// on the act's own corrupted object. Each pushes a `monolith` emitter so the
+// arena mounts the violet halo + underglow pool on it.
+function veinMaterial(gain = 1) {
+  const m = new MeshBasicMaterial({ toneMapped: false });
+  m.color.setRGB(VEIN_LINEAR[0] * gain, VEIN_LINEAR[1] * gain, VEIN_LINEAR[2] * gain, LinearSRGBColorSpace);
+  return m;
+}
+
+function buildMillWheel(root, [x, z, yaw], shadows, emitters, cosmetic, footprints, mats) {
+  const R = 0.95;
+  const g = new Mesh(
+    mergeGeometries([
+      new TorusGeometry(R, 0.07, 6, 24),
+      new TorusGeometry(R * 0.36, 0.06, 5, 14),
+      ...[0, 1, 2, 3, 4, 5].map((k) => new BoxGeometry(0.07, R * 1.9, 0.08).rotateZ((k / 6) * Math.PI)),
+    ]).translate(0, R + 0.02, 0),
+    new MeshToonMaterial({
+      color: new Color(ENV.monolith).lerp(new Color(ENV.bark), 0.35),
+      gradientMap: getGradientMap(),
+      emissive: new Color(PALETTE.godstuffViolet),
+      emissiveIntensity: 0.12, // a faint under-glow; the vein bars carry the read
+    })
+  );
+  g.position.set(x, 0, z);
+  g.rotation.set(0, yaw, 0.08);
+  addPropInk(g);
+  root.add(g);
+  // Paddles around the rim (a few broken off).
+  const paddles = [];
+  for (let k = 0; k < 12; k++) {
+    if (k % 5 === 3) continue;
+    const a = (k / 12) * Math.PI * 2;
+    paddles.push(new BoxGeometry(0.1, 0.24, 0.34).rotateZ(a).translate(Math.cos(a) * (R + 0.08), R + 0.02 + Math.sin(a) * (R + 0.08), 0));
+  }
+  const pm = new Mesh(mergeGeometries(paddles), mats.wetWoodDark ?? mats.barkDark);
+  pm.position.copy(g.position);
+  pm.rotation.copy(g.rotation);
+  addPropInk(pm, 1.5);
+  root.add(pm);
+  // Veins: thin bars creeping out along three spokes and a few rim cracks —
+  // the monolith's vein AREA, not more (a wheel-full of bright bars blooms
+  // into a violet fog over half the frame).
+  const bars = [];
+  for (let k = 0; k < 3; k++) {
+    const a = (k / 3) * Math.PI * 2 + 0.4;
+    const len = cosmetic.range(0.45, 0.7) * R;
+    bars.push(new BoxGeometry(0.018, len, 0.02).translate(0, len / 2 + 0.05, 0.06).rotateZ(a + cosmetic.range(-0.05, 0.05)));
+  }
+  for (let k = 0; k < 4; k++) {
+    const a = cosmetic.range(0, Math.PI * 2);
+    bars.push(new BoxGeometry(0.14, 0.018, 0.02).rotateZ(a + Math.PI / 2).translate(Math.cos(a) * R, Math.sin(a) * R, 0.08));
+  }
+  const veins = new Mesh(mergeGeometries(bars).translate(0, R + 0.02, 0), veinMaterial(0.85));
+  veins.position.copy(g.position);
+  veins.rotation.copy(g.rotation);
+  veins.renderOrder = 2;
+  root.add(veins);
+  // Axle post + sunk base.
+  const base = new Mesh(new BoxGeometry(0.5, 0.22, 0.5).translate(0, 0.11, 0), toonMaterial({ color: ENV.monolithBase }));
+  base.position.set(x, 0, z);
+  base.rotation.y = yaw;
+  addPropInk(base);
+  root.add(base);
+  shadows.push({ x, z, rx: 1.1, rz: 0.5, yaw });
+  footprints.push({ x, z, r: 1.1 });
+  emitters.push({ kind: 'monolith', x, y: R + 0.1, z });
+  // No emissive-map on this timber, so the arena's vein "breath" (it drives the
+  // returned material to ~1.9) would light the WHOLE wheel: hand it the vein
+  // bars' own material instead (a basic material — the breath is a no-op) and
+  // let the halo carry the pulse.
+  return veins.material;
+}
+
+function buildVeinStones(root, [x, z, yaw], shadows, emitters, cosmetic, footprints, mats, types) {
+  // Three standing stones in an arc; the centre one veined (the one tell).
+  const offs = [[-0.72, 0.1, 0.9], [0, -0.1, 1.2], [0.74, 0.12, 0.95]];
+  let mat = null;
+  offs.forEach(([ox, oz, h], i) => {
+    const px = x + Math.cos(yaw) * ox + Math.sin(yaw) * oz;
+    const pz = z - Math.sin(yaw) * ox + Math.cos(yaw) * oz;
+    const geo = new BoxGeometry(0.4, h, 0.24, 1, 3, 1).translate(0, h / 2, 0);
+    const pos = geo.attributes.position;
+    for (let k = 0; k < pos.count; k++) {
+      const y = pos.getY(k) / h;
+      pos.setX(k, pos.getX(k) * (1 - y * 0.2));
+    }
+    geo.computeVertexNormals();
+    const m = new MeshToonMaterial({
+      color: new Color(i === 1 ? ENV.monolith : mats.boneStone ? mats.boneStone.color : ENV.stone),
+      gradientMap: getGradientMap(),
+      emissive: new Color(PALETTE.godstuffViolet),
+      emissiveIntensity: i === 1 ? 0.14 : 0,
+    });
+    const mesh = new Mesh(geo, m);
+    mesh.position.set(px, 0, pz);
+    mesh.rotation.set(0, yaw + (i - 1) * 0.25, (i - 1) * 0.05);
+    addPropInk(mesh);
+    root.add(mesh);
+    if (i === 1) {
+      const veins = new Mesh(buildVeins(h * 0.86, cosmetic).scale(0.55, 1, 0.62), veinMaterial());
+      veins.position.copy(mesh.position);
+      veins.rotation.copy(mesh.rotation);
+      veins.renderOrder = 2;
+      root.add(veins);
+      mat = veins.material; // see buildMillWheel: the breath must not light the slab
+    }
+    shadows.push({ x: px, z: pz, rx: 0.42, rz: 0.3, yaw });
+    footprints.push({ x: px, z: pz, r: 0.34 });
+  });
+  void types;
+  emitters.push({ kind: 'monolith', x, y: 0.7, z });
+  return mat;
+}
+
+// ---------------------------------------------------------------------------
 // Cluster expansion: authored anchors -> 2-4 scattered props with scale jitter.
 // ---------------------------------------------------------------------------
 function expandClusters(spec, cosmetic, types, seedDiscs = [], clusters = spec.clusters) {
@@ -1206,6 +1570,25 @@ export function buildProps(root, spec, cosmetic) {
     canvas: toonMaterial({ color: shade(mix(mix(PALETTE.bone, PALETTE.warmGrey, 0.42), COOL.mist, 0.2), 0.62) }),
     canvasShade: toonMaterial({ color: shade(mix(mix(PALETTE.bone, PALETTE.warmGrey, 0.42), COOL.ambient, 0.42), 0.5) }),
   };
+  // GAUNTLET biome material families (M4b): a spec may OVERRIDE any of the
+  // base tones (`spec.mats`, colour values) and switch on a biome family
+  // (`spec.propFamily`: 'mill' | 'barrow'). Act I passes neither.
+  if (spec.mats) {
+    for (const [k, c] of Object.entries(spec.mats)) if (mats[k]) mats[k].color.copy(new Color(c));
+  }
+  if (spec.propFamily === 'mill') {
+    mats.wetWood = toonMaterial({ color: shade(mix(mix(PALETTE.bruiseUmber, COOL.mist, 0.42), PALETTE.warmGrey, 0.2), 0.5) });
+    mats.wetWoodDark = toonMaterial({ color: shade(mix(mix(PALETTE.bruiseUmber, COOL.ambient, 0.5), PALETTE.voidCharcoal, 0.2), 0.7) });
+    mats.reed = toonMaterial({ color: hslColor(84, 0.34, 0.24) });
+    mats.rope = toonMaterial({ color: shade(mix(PALETTE.bone, PALETTE.paleGold, 0.3), 0.55) });
+  }
+  if (spec.propFamily === 'barrow') {
+    mats.boneStone = toonMaterial({ color: shade(mix(PALETTE.bone, COOL.mist, 0.18), 0.62) });
+    mats.boneStoneLit = toonMaterial({ color: shade(mix(PALETTE.bone, PALETTE.parchment, 0.2), 0.72) });
+    mats.boneStoneDark = toonMaterial({ color: shade(mix(PALETTE.bone, COOL.ambient, 0.35), 0.44) });
+    mats.lichen = toonMaterial({ color: hslColor(44, 0.3, 0.3) });
+    mats.ochreTurf = toonMaterial({ color: hslColor(42, 0.3, 0.22) });
+  }
 
   const types = propTypes(mats, spec);
 
@@ -1246,6 +1629,8 @@ export function buildProps(root, spec, cosmetic) {
   if (spec.monolith) {
     seedDiscs.push({ x: spec.monolith[0], z: spec.monolith[1], r: 0.86 });
   }
+  if (spec.millwheel) seedDiscs.push({ x: spec.millwheel[0], z: spec.millwheel[1], r: 1.15 });
+  if (spec.veinStones) seedDiscs.push({ x: spec.veinStones[0], z: spec.veinStones[1], r: 1.3 });
 
   const { byType: placed, placedDiscs } = expandClusters(spec, cosmetic, types, seedDiscs);
   placed.set('torch', torchT);
@@ -1279,6 +1664,16 @@ export function buildProps(root, spec, cosmetic) {
   let monolithMat = null;
   if (spec.monolith) {
     monolithMat = buildMonolith(root, spec.monolith, shadows, emitters, cosmetic, footprints);
+    typeCount += 1;
+  }
+  // GAUNTLET act tells (one violet corruption tell per biome, §23.1): the
+  // Sunken Mill's veined mill wheel, the Ashen Barrow's veined standing stones.
+  if (spec.millwheel) {
+    monolithMat = buildMillWheel(root, spec.millwheel, shadows, emitters, cosmetic, footprints, mats);
+    typeCount += 1;
+  }
+  if (spec.veinStones) {
+    monolithMat = buildVeinStones(root, spec.veinStones, shadows, emitters, cosmetic, footprints, mats, types);
     typeCount += 1;
   }
 
@@ -1320,5 +1715,7 @@ export function buildProps(root, spec, cosmetic) {
   // bush, boulder, cairn, torch post, lantern, monolith, and (fix round 1)
   // tower, banner, barricade (reference bar check 4 needs >=8 in a combat
   // arena; typeCount reports the live number per variant).
-  return { emitters, shadows, footprints, mats, typeCount, monolithMat, dressing: dressing.info };
+  // (roomDressingDispose — CAMPAIGN, PLAN §12.5: a torn-down dressing's room
+  // groups stop watching the run.)
+  return { emitters, shadows, footprints, mats, typeCount, monolithMat, dressing: dressing.info, roomDressingDispose: dressing.dispose };
 }

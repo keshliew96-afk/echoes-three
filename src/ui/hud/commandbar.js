@@ -1,6 +1,11 @@
 // ZONE 1 — Command Bar (BUILD_BRIEF §17). The only permanent UI: four party
 // portraits (player + 3 allies), four skill slots in slot order (= execution
-// order), and the dodge slot on the right.
+// order), and the dodge slot on the right. Under each skill tile (where a
+// portrait carries its HP bar) an 8-segment SOCKET-FILL strip shows how many
+// of that skill's 8 node sockets hold a node (M4c): a filled Parchment
+// segment = a live node, a hollow Bone segment = a grey / saturation-inert
+// node (socketed, contributes nothing now), a dark segment = a vacant socket
+// — shape and value channels, never colour alone.
 //
 // PORTRAIT STATE MACHINE (§17, all seven states reproducible on camera):
 //   Healthy   (>50%)   static
@@ -34,7 +39,7 @@
 // own opaque plate in the tile's bottom strip (a box that is DISJOINT from the
 // abbrev box at every scale — see style.js); ready-pop 120 ms.
 import { PALETTE } from '../../data/palette.js';
-import { DODGE, TICK_HZ } from '../../core/constants.js';
+import { DODGE, TICK_HZ, SKILL_SLOTS, SOCKETS_PER_SKILL } from '../../core/constants.js';
 import { ACCENTS, CHROME } from './style.js';
 import { iconEl, hasIcon } from './icons.js';
 
@@ -192,6 +197,14 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     el('div', 'hud-port-sel', cell);
     el('div', 'hud-port-tab', cell);
     const rally = el('div', 'hud-port-rally', cell);
+    // §23.3 shield read on the portrait: a Parchment HEX RIM around the tile
+    // (shape channel, never colour alone) while the member carries a live
+    // shield, plus the shield's points on a small plate.
+    const shieldRim = svgEl('svg', 'hud-port-shield', cell);
+    shieldRim.setAttribute('viewBox', '0 0 72 72');
+    const hexPath = svgEl('path', null, shieldRim);
+    hexPath.setAttribute('d', 'M36 2 L65 18.5 L65 53.5 L36 70 L7 53.5 L7 18.5 Z');
+    const shieldNum = el('span', 'hud-port-shieldnum', cell);
 
     const hp = el('div', 'hud-port-hp proto-port-hp', cell);
     const fill = el('i', null, hp);
@@ -223,6 +236,8 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       rf,
       rally,
       img,
+      shieldNum,
+      shieldShown: -1,
       state: 'healthy',
       lastPct: -1,
       lastState: '',
@@ -325,12 +340,62 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     if (id && hasIcon(id)) s.iconHost.appendChild(iconEl(id, { size: 26 }));
   }
 
+  // SKILL_SLOTS (4) tiles in slot order = execution order, keys 1-4 (M4c:
+  // at most 4 equipped skills). Each tile sits in a column with its socket-
+  // fill strip beneath it (the portraits' HP-bar row).
   const skillGroup = el('div', 'hud-group hud-group-skill', bar);
   const skillEls = [];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < SKILL_SLOTS; i++) {
     const s = makeSlot(String(i + 1));
-    skillGroup.appendChild(s.slot);
+    const col = el('div', 'hud-skillcol', skillGroup);
+    col.appendChild(s.slot);
+    s.col = col;
+    s.pips = el('div', 'hud-slot-pips', col);
+    s.pipEls = [];
+    for (let k = 0; k < SOCKETS_PER_SKILL; k++) s.pipEls.push(el('i', null, s.pips));
+    s.pipSig = '';
+    s.sockets = null;
     skillEls.push(s);
+  }
+  // Socket fill, repainted from the build system only when the build or the
+  // kit changes (never per frame): filled / live / grey counts per tile.
+  let socketsDirty = true;
+  const markSockets = () => {
+    socketsDirty = true;
+  };
+  for (const t of ['node_socketed', 'node_unsocketed', 'build_restored', 'build_autofill', 'skill_equip', 'skills_restored', 'run_wiped', 'run_start', 'state_restored', 'room_start', 'room_cleared'])
+    bus.on(t, markSockets);
+  function paintSockets() {
+    socketsDirty = false;
+    const guestSeat = !!(world.netView && world.netView.seat > 0);
+    const b = typeof world.buildSystem === 'function' ? world.buildSystem() : null;
+    const v = b && typeof b.view === 'function' ? b.view() : null;
+    const slotsNow = world.skillSlots();
+    for (let i = 0; i < skillEls.length; i++) {
+      const s = skillEls[i];
+      const d = slotsNow[i];
+      const sk = d && v ? v.skills.find((x) => x.id === d.id) : null;
+      const row = sk ? sk.sockets : null;
+      const sig = guestSeat ? 'guest' : !d ? 'none' : row ? row.map((c) => (c ? (c.verdict === 'live' ? 'L' : 'G') : '.')).join('') : '........';
+      if (sig === s.pipSig) continue;
+      s.pipSig = sig;
+      s.pips.style.visibility = guestSeat || !d ? 'hidden' : '';
+      const cells = row ?? [];
+      let filled = 0;
+      let live = 0;
+      let grey = 0;
+      for (let k = 0; k < s.pipEls.length; k++) {
+        const c = cells[k] ?? null;
+        const on = !!c && c.verdict === 'live';
+        const g = !!c && c.verdict !== 'live';
+        s.pipEls[k].className = on ? 'is-on' : g ? 'is-grey' : '';
+        if (c) filled += 1;
+        if (on) live += 1;
+        if (g) grey += 1;
+      }
+      s.sockets = d ? { filled, live, grey, of: SOCKETS_PER_SKILL } : null;
+      s.col.title = d ? `${filled} / ${SOCKETS_PER_SKILL} sockets filled${grey ? ` (${grey} contribute nothing here)` : ''}` : '';
+    }
   }
   el('div', 'hud-sep', bar);
   const dodgeGroup = el('div', 'hud-group hud-group-dodge', bar);
@@ -360,7 +425,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       denyNudge(dodge, ev.reason);
       return;
     }
-    const m = /^skill_([1-4])$/.exec(kind);
+    const m = /^skill_([1-9])$/.exec(kind);
     if (!m) return;
     const s = skillEls[Number(m[1]) - 1];
     if (s) denyNudge(s, ev.reason);
@@ -530,13 +595,24 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       }
 
       p.cell.classList.toggle('is-selected', overrideIndex === p.i);
+
+      // Shield rim (§23.3 / §23.8): shown while a live shield has points left.
+      const sh = m && m.status && m.status.shield;
+      const pts = sh && sh.untilTick > tickNow && sh.mag > 1e-6 && m.hp > 0 ? Math.max(1, Math.round(sh.mag)) : 0;
+      if (pts !== p.shieldShown) {
+        p.shieldShown = pts;
+        p.cell.classList.toggle('has-shield', pts > 0);
+        p.shieldNum.textContent = pts > 0 ? String(pts) : '';
+      }
     }
   }
+  let tickNow = 0;
 
   // ------------------------------------------------------------ update --
   function update(now, ctx) {
     const members = ctx.members;
     const channels = ctx.channels;
+    tickNow = ctx.tick ?? 0;
     updatePortraits(now, members, channels);
 
     paintCooldown(
@@ -546,7 +622,8 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     );
 
     const view = world.skillSlots();
-    for (let i = 0; i < 4; i++) {
+    if (socketsDirty || skillEls.some((s, i) => (view[i] ? view[i].id : null) !== s.iconId)) paintSockets();
+    for (let i = 0; i < skillEls.length; i++) {
       const s = skillEls[i];
       const d = view[i];
       if (!d) {
@@ -675,6 +752,88 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     }
   }
 
+  // @gnt:M5b VIEW-SEAT begin — setViewSeat(partyIndex): a guest's bar shows
+  // its own seat's kit (4 tiles, ally kits stay 4) and portrait focus.
+  // The net session publishes the local seat on `world.netView` ({ seat,
+  // skillSlots(), dodge() } — the guest's action shadow, so a predicted cast
+  // starts its tile on the press frame). Seat 0 / single-player: the bar is
+  // exactly the Healer's (the wrapped update below is a pass-through).
+  let viewSeat = 0;
+  const healerUpdate = update;
+  function setViewSeat(partyIndex) {
+    viewSeat = partyIndex | 0;
+    for (const p of ports) p.cell.classList.toggle('nt-self', viewSeat > 0 && p.i === viewSeat);
+    if (viewSeat === 0) {
+      for (const s of skillEls) s.slot.style.display = '';
+      markSockets(); // the Healer's socket strips repaint on the next update
+    }
+    return viewSeat;
+  }
+  if (typeof document !== 'undefined' && !document.getElementById('nt-bar-style')) {
+    const st = document.createElement('style');
+    st.id = 'nt-bar-style';
+    st.textContent =
+      `.hud-port.nt-self { outline: 2px solid ${PALETTE.hearthAmber}; outline-offset: 2px; border-radius: 10px; }` +
+      `.hud-slot .nt-abbr { position: relative; z-index: 2; font: 800 18px/1 "Nunito", "Trebuchet MS", system-ui, sans-serif; color: ${PALETTE.parchment}; letter-spacing: 0.02em; }`;
+    document.head.appendChild(st);
+  }
+  // eslint-disable-next-line no-func-assign
+  update = function seatAwareUpdate(now, ctx) {
+    const nv = world.netView;
+    const slots = nv && nv.seat > 0 && typeof nv.skillSlots === 'function' ? nv.skillSlots() : null;
+    if ((nv ? nv.seat : 0) !== viewSeat) setViewSeat(slots ? nv.seat : 0);
+    if (!slots) return healerUpdate(now, ctx);
+    tickNow = ctx.tick ?? 0;
+    updatePortraits(now, ctx.members, ctx.channels);
+    const dg = typeof nv.dodge === 'function' ? nv.dodge() : null;
+    paintCooldown(dodge, dg ? dg.remaining : 0, dg ? dg.total : DODGE.cooldownTicks);
+    for (let i = 0; i < skillEls.length; i++) {
+      const s = skillEls[i];
+      const d = slots[i];
+      if (!d) {
+        s.slot.style.display = 'none';
+        continue;
+      }
+      s.slot.style.display = '';
+      s.slot.classList.remove('is-empty', 'is-passive', 'is-grey');
+      // PARTY: a class passive (Iron Stance / Razor Wake / Kestrel Watch) in
+      // the seat's loadout reads as the Healer's passives do (no key press).
+      if (d.passive) s.slot.classList.add('is-passive');
+      // The guest's tiles keep the medallion only (its sockets live on the
+      // party socket screen); the Healer's 8-socket strip never shows here.
+      if (s.pips && s.pipSig !== 'guest') {
+        s.pips.style.visibility = 'hidden';
+        s.pipSig = 'guest';
+        s.sockets = null;
+      }
+      setIcon(s, d.id, d.abbrev);
+      // Ally kit skills have no drawn icon: their two-letter abbrev fills
+      // the medallion instead (Parchment, >= 16 real px).
+      if (!hasIcon(d.id) && s.iconHost.childElementCount === 0) {
+        const t = document.createElement('span');
+        t.className = 'nt-abbr';
+        t.textContent = d.abbrev;
+        s.iconHost.appendChild(t);
+      }
+      paintCooldown(s, d.remainingTicks, d.totalTicks);
+    }
+    return undefined;
+  };
+  // The local seat's own denials (sim `seat_denied`, tagged by seat) nudge
+  // its tiles like the Healer's intent_denied does.
+  bus.on('seat_denied', (ev) => {
+    if (!viewSeat || ev.seat !== viewSeat) return;
+    const kind = ev.kind ?? '';
+    if (kind === 'dodge') {
+      denyNudge(dodge, ev.reason);
+      return;
+    }
+    const m = /^skill_([1-9])$/.exec(kind);
+    if (!m) return;
+    const s = skillEls[Number(m[1]) - 1];
+    if (s && s.slot.style.display !== 'none') denyNudge(s, ev.reason);
+  });
+  // @gnt:M5b VIEW-SEAT end
   return {
     el: bar,
     update,
@@ -737,6 +896,8 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
             keyColor: getComputedStyle(p.key).color,
             imgFilter: p.img ? getComputedStyle(p.img).filter : null,
             hasImage: !!p.img,
+            shield: p.shieldShown > 0 ? p.shieldShown : 0,
+            shieldBox: rect(p.cell.querySelector('.hud-port-shield')),
           };
         }),
       slots: () =>
@@ -754,6 +915,8 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
           passive: s.slot.classList.contains('is-passive'),
           cooling: s.cooling,
           keyBox: rect(s.slot.querySelector('.hud-slot-key')),
+          sockets: s.sockets ?? null,
+          pipsBox: s.pips ? rect(s.pips) : null,
           abbrevBox: rect(s.abbrev),
           numBox: rect(s.num),
           tileBox: rect(s.slot),

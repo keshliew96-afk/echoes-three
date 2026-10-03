@@ -568,16 +568,21 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     const g = new Group();
     // Shared per radius (F1): an ally AoE rig is built per sim zone and dropped
     // when it expires, so these three discs used to leak on every kit cast.
-    const fill = new Mesh(sharedGeo(`ally-zone-fill:${radius}`, () => new CircleGeometry(radius, 36)), flatMat(AMBER, 0.14, true));
+    // fix-CAMPAIGN-r6 (GC.6): UNIT discs scaled to the radius (a radius-keyed
+    // cache minted 3 GL geometries for every new radius a build reached).
+    const fill = new Mesh(sharedGeo('ally-zone-fill:unit', () => new CircleGeometry(1, 36)), flatMat(AMBER, 0.14, true));
+    fill.scale.set(radius, radius, 1);
     fill.rotation.x = -Math.PI / 2;
     fill.renderOrder = -6;
     g.add(fill);
-    const inner = new Mesh(sharedGeo(`ally-zone-inner:${radius}`, () => new CircleGeometry(radius * 0.5, 28)), flatMat(PARCH, 0.16, true));
+    const inner = new Mesh(sharedGeo('ally-zone-inner:unit', () => new CircleGeometry(1, 28)), flatMat(PARCH, 0.16, true));
+    inner.scale.set(radius * 0.5, radius * 0.5, 1);
     inner.rotation.x = -Math.PI / 2;
     inner.position.y = 0.004;
     inner.renderOrder = -6;
     g.add(inner);
-    const rim = new Mesh(sharedGeo(`ally-zone-rim:${radius}`, () => new RingGeometry(radius * 0.9, radius, 40)), flatMat(AMBER, 0.6, true));
+    const rim = new Mesh(sharedGeo('ally-zone-rim:unit', () => new RingGeometry(0.9, 1, 40)), flatMat(AMBER, 0.6, true));
+    rim.scale.set(radius, radius, 1);
     rim.rotation.x = -Math.PI / 2;
     rim.position.y = 0.006;
     rim.renderOrder = -5;
@@ -629,7 +634,8 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   const ringPool = [];
   function spawnRing(x, z, { from = 0.25, to = 1.2, life = 0.34, opacity = 0.75, color = AMBER } = {}) {
     const m = ringPool.pop() ?? (() => {
-      const mm = new Mesh(new RingGeometry(0.87, 1.0, 40), flatMat(AMBER, opacity, true));
+      // fix-CAMPAIGN-r6 (GC.6): one shared unit ring — a pooled record adds no GL geometry
+      const mm = new Mesh(sharedGeo('ally-ring-unit', () => new RingGeometry(0.87, 1.0, 40)), flatMat(AMBER, opacity, true));
       mm.rotation.x = -Math.PI / 2;
       mm.renderOrder = -4;
       return mm;
@@ -647,13 +653,16 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   // and motes = the three layers §19.4 requires of every attack effect.
   const wedges = [];
   const wedgePool = new Map(); // shape key -> [group, ...]
-  const wedgeGeo = new Map(); // shape key -> { fill, rim }
-  function wedgeGeometry(key, reach, half) {
+  const wedgeGeo = new Map(); // half-angle key -> { fill, rim }
+  // fix-CAMPAIGN-r6 (GC.6): a UNIT wedge per half-angle, scaled to the
+  // event's reach — keyed by reach too, every new reach a build reached (Reach
+  // nodes) minted two GL geometries that were never released.
+  function wedgeGeometry(key, half) {
     let g = wedgeGeo.get(key);
     if (!g) {
       g = {
-        fill: new CircleGeometry(reach, 24, -half, half * 2),
-        rim: new RingGeometry(reach * 0.86, reach, 24, 1, -half, half * 2),
+        fill: new CircleGeometry(1, 24, -half, half * 2),
+        rim: new RingGeometry(0.86, 1, 24, 1, -half, half * 2),
       };
       wedgeGeo.set(key, g);
     }
@@ -661,7 +670,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   }
   function spawnWedge(ev, reach, halfAngleDeg, opacity) {
     if (!reach || !halfAngleDeg) return;
-    const key = `${reach}/${halfAngleDeg}`;
+    const key = `${halfAngleDeg}`;
     const half = (halfAngleDeg * Math.PI) / 180;
     // Geometry per distinct §7 arc row is built ONCE and the groups are
     // pooled: three allies swinging several times a second would otherwise
@@ -673,7 +682,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     }
     let g = pool.pop();
     if (!g) {
-      const geo = wedgeGeometry(key, reach, half);
+      const geo = wedgeGeometry(key, half);
       g = new Group();
       const fill = new Mesh(geo.fill, flatMat(AMBER, opacity, true));
       fill.rotation.x = -Math.PI / 2;
@@ -688,6 +697,8 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     }
     const fill = g.getObjectByName('fill');
     const rim = g.getObjectByName('rim');
+    fill.scale.set(reach, reach, 1);
+    rim.scale.set(reach, reach, 1);
     const yaw = Math.atan2(ev.dz, ev.dx);
     fill.rotation.z = -yaw;
     rim.rotation.z = -yaw;
@@ -1095,5 +1106,62 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     };
   }
 
+  // @gnt:M2 RESTORE-RESYNC begin — a load replaces the sim: kit zones are
+  // keyed by entity id (drop them silently, update() rebuilds), the revive
+  // rings and their reverse-drain memory belong to the moment that left.
+  // The four critters are keyed by class and simply follow the new bodies.
+  bus.on('state_restored', () => {
+    for (const rig of zoneRigs.values()) {
+      root.remove(rig.g);
+      releaseTree(rig.g);
+    }
+    zoneRigs.clear();
+    drains.clear();
+    for (const g of reviveRigs.values()) {
+      inkRoot.remove(g);
+      revivePool.push(g);
+    }
+    reviveRigs.clear();
+  });
+  // @gnt:M2 RESTORE-RESYNC end
+  // fix-CAMPAIGN-r6 (CR6-F2, PLAN §12.5 teardown): at a level boundary the
+  // pooled revive instruments hand their per-record GL geometry back
+  // (dispose(); the record is kept, three re-uploads it on its next use) —
+  // the pool's high-water is the most bodies ever downed at once, so without
+  // this a later campaign could start a level with ~8 more geometries
+  // registered than an earlier one. In-flight flourishes go back to their pools.
+  bus.on('level_transit', allyLevelTeardown);
+  bus.on('run_end', allyLevelTeardown);
+  bus.on('return_to_camp', allyLevelTeardown);
+  function allyLevelTeardown() {
+    for (const g of reviveRigs.values()) {
+      inkRoot.remove(g);
+      revivePool.push(g);
+    }
+    reviveRigs.clear();
+    drains.clear();
+    for (const g of revivePool) {
+      g.getObjectByName('fill').geometry.setDrawRange(0, 0);
+      g.traverse((o) => {
+        if (o.geometry && !o.isSprite && !o.geometry.userData?.shared) o.geometry.dispose();
+      });
+    }
+    for (const f of flashes.splice(0)) {
+      root.remove(f.s);
+      flashPool.push(f.s);
+    }
+    for (const m of motes.splice(0)) {
+      root.remove(m.s);
+      motePool.push(m.s);
+    }
+    for (const r of rings.splice(0)) {
+      root.remove(r.m);
+      ringPool.push(r.m);
+    }
+    for (const w of wedges.splice(0)) {
+      root.remove(w.g);
+      wedgePool.get(w.key).push(w.g);
+    }
+  }
   return { root, update, debugCounts };
 }

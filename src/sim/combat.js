@@ -26,6 +26,7 @@
 // Render-side contract members (#1 flash, #2 numbers, #6 kill pop/decal,
 // #7 screenshake) and #5 sound slots subscribe to the events emitted here.
 import { CRIT, HITSTOP, KNOCKBACK, SCREENSHAKE } from '../core/constants.js';
+import * as STATUS from './status.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -80,10 +81,39 @@ export function createCombat({
   // pipeline — dead/Downed/missing).
   // source: optional skill-id label (skills block) — rides the event so tests
   // and the HUD can attribute an instance to the skill that produced it.
+  //   critBonus: additive crit-chance bonus for this instance (Keen node,
+  //     BUILD_BRIEF §23.4) — still ONE strict `roll < chance` draw.
+  //
+  // Gauntlet pipeline order (BUILD_BRIEF §23.8, binding): base -> attacker
+  // `inspired` -> crit roll -> target `exposed` x `ward` -> shield absorb ->
+  // HP. With no statuses on either body every factor is exactly 1, so the
+  // v0.4.63 numbers (and the legacy golden traces) are untouched.
+  //
+  // Guard (docs/gauntlet/PLAN.md §3.6 contract (c), the Barrow Ram's horn
+  // guard): a target carrying `guard = { active, dirX, dirZ, halfArcDeg,
+  // shapes }` blocks an instance whose `shape` is listed and whose hit
+  // direction arrives inside the guard arc — BEFORE the crit roll, so a block
+  // draws no RNG. It deals 0, emits `hit_blocked` and returns
+  // { blocked: true, amount: 0 }. A caller that passes no direction is never
+  // blocked.
+  // PARTY (BUILD_BRIEF §25.2 / §25.3, PLAN §16.3) — optional per-instance
+  // modifiers, all absent on every pre-PARTY caller (so every v0.5.150
+  // instance resolves exactly as before):
+  //   critMul    crit multiplier instead of CRIT.mult (Lethality ×2.2)
+  //   forceCrit  the crit result is forced true — the roll is STILL drawn,
+  //              so the seeded stream's order never changes (Heartseeker)
+  //   kbScale    knockback multiplier; negative = a pull toward the hit's
+  //              origin (Concussive ×2, Anchor pull, Razor Wake 0)
+  //   kbDist     absolute knockback distance override (signed like kbScale)
+  // A PARRY guard (the fox's Riposte / Parry node: `guard.parry`, shapes
+  // ['*']) blocks the next instance from a HOSTILE attacker of any shape from
+  // any direction — before the crit roll, exactly like the Ram's guard — and
+  // reports it to the party hook (the counter). `hooks.onPartyDamaged`
+  // (Retaliate) hears every hostile instance that lands on a party member.
   function applyDamage(
     target,
     base,
-    { delivery = 'basic', shape = null, dirX = 0, dirZ = 0, attacker = null, source = null } = {}
+    { delivery = 'basic', shape = null, dirX = 0, dirZ = 0, attacker = null, source = null, critBonus = 0, critMul = null, forceCrit = false, kbScale = null, kbDist = null } = {}
   ) {
     const tick = getTick();
     if (!target || !(target.hp > 0)) return null; // outside the pipeline
@@ -98,9 +128,68 @@ export function createCombat({
       return { immune: true }; // no instance, no RNG draw
     }
 
-    const crit = rng.chance(CRIT.chance); // strict roll < chance (§7)
-    const amount = crit ? base * CRIT.mult : base;
+    const g = target.guard;
+    if (g && g.parry && g.active && g.untilTick > tick && attacker !== null && attacker !== undefined) {
+      const src = registry.byId(attacker);
+      if (src && src.faction === 'hostile') {
+        stats.blocked = (stats.blocked ?? 0) + 1;
+        target.lastBlockedTick = tick;
+        g.active = false; // the first blocked instance ends the window
+        events.emit(tick, 'hit_blocked', {
+          targetId: target.id,
+          attackerId: attacker,
+          shape,
+          delivery,
+          source,
+          x: r2(target.x),
+          z: r2(target.z),
+          parry: true,
+        });
+        if (hooks.onParry) hooks.onParry(target, src, g);
+        return { blocked: true, amount: 0, parry: true };
+      }
+    }
+    if (g && g.active && Array.isArray(g.shapes) && g.shapes.includes(shape)) {
+      const gdl = Math.hypot(dirX, dirZ);
+      const gl = Math.hypot(g.dirX ?? 0, g.dirZ ?? 0);
+      if (gdl > 1e-6 && gl > 1e-6) {
+        // The hit TRAVELS along (dirX, dirZ), so it arrives from -dir; it is
+        // blocked when that arrival direction sits inside the guard arc.
+        const dot = (-dirX / gdl) * (g.dirX / gl) + (-dirZ / gdl) * (g.dirZ / gl);
+        if (dot >= Math.cos(((g.halfArcDeg ?? 55) * Math.PI) / 180)) {
+          stats.blocked = (stats.blocked ?? 0) + 1;
+          target.lastBlockedTick = tick;
+          events.emit(tick, 'hit_blocked', {
+            targetId: target.id,
+            attackerId: attacker ?? null,
+            shape,
+            delivery,
+            source,
+            x: r2(target.x),
+            z: r2(target.z),
+          });
+          return { blocked: true, amount: 0 };
+        }
+      }
+    }
+
+    const atk = attacker !== null && attacker !== undefined ? registry.byId(attacker) : null;
+    const dealt = atk ? STATUS.damageDealtMul(atk, tick) : 1;
+    const rolled = rng.chance(CRIT.chance + critBonus); // strict roll < chance (§7)
+    const crit = forceCrit ? true : rolled;
+    let amount = base * dealt;
+    if (crit) amount *= critMul ?? CRIT.mult;
+    amount *= STATUS.damageTakenMul(target, tick);
+    let absorbed = 0;
+    let shieldSrc = null;
+    if (target.status && target.status.shield) {
+      shieldSrc = target.status.shield;
+      const r = STATUS.absorb(target, amount, tick);
+      absorbed = r.absorbed;
+      amount = r.remaining;
+    }
     target.hp -= amount;
+    target.lastHitTick = tick; // PLAN §3.6: archetypes react to damage the next tick
     stats.hits += 1;
     if (crit) stats.crits += 1;
 
@@ -111,9 +200,13 @@ export function createCombat({
       const len = Math.hypot(dirX, dirZ);
       if (len > 1e-6) {
         kb = delivery === 'basic' ? KNOCKBACK.basicDist : KNOCKBACK.skillDist;
-        target.kbVx = (dirX / len) * (kb / KNOCKBACK.durationTicks);
-        target.kbVz = (dirZ / len) * (kb / KNOCKBACK.durationTicks);
-        target.kbTicks = KNOCKBACK.durationTicks;
+        if (kbDist !== null && kbDist !== undefined) kb = kbDist;
+        else if (kbScale !== null && kbScale !== undefined) kb *= kbScale;
+        if (kb !== 0) {
+          target.kbVx = (dirX / len) * (kb / KNOCKBACK.durationTicks);
+          target.kbVz = (dirZ / len) * (kb / KNOCKBACK.durationTicks);
+          target.kbTicks = KNOCKBACK.durationTicks;
+        }
       }
     }
 
@@ -121,7 +214,7 @@ export function createCombat({
     // spray ALONG the impact instead of as an omnidirectional puff
     // (REFERENCE_BAR check 5 — a hit has to read as an event with a direction).
     const dl = Math.hypot(dirX, dirZ);
-    events.emit(tick, 'hit', {
+    const hitEv = {
       target: target.id,
       kind: target.kind,
       attacker,
@@ -135,7 +228,27 @@ export function createCombat({
       dirZ: dl > 1e-6 ? r2(dirZ / dl) : 0,
       x: r2(target.x),
       z: r2(target.z),
-    });
+    };
+    // §23.8: numerals equal HP deltas; the shield's share rides separately
+    // (a small Bone "(n)" beside the numeral) and on its own event.
+    if (absorbed > 0) hitEv.absorbed = r2(absorbed);
+    events.emit(tick, 'hit', hitEv);
+    if (absorbed > 0) {
+      events.emit(tick, 'shield_absorb', {
+        target: target.id,
+        kind: target.kind,
+        absorbed: r2(absorbed),
+        left: r2(STATUS.magnitude(target, 'shield', tick)),
+        x: r2(target.x),
+        z: r2(target.z),
+      });
+      // PARTY (Detonate on a guard skill): a shield that a PARTY skill
+      // granted breaks — its source skill rides the record (`skill`).
+      if (shieldSrc && shieldSrc.skill && !(shieldSrc.mag > 1e-6))
+        events.emit(tick, 'shield_broken', { targetId: target.id, srcSkill: shieldSrc.skill, src: shieldSrc.src ?? null, x: r2(target.x), z: r2(target.z) });
+    }
+    // PARTY (Retaliate): a hostile instance landed on a party member.
+    if (hooks.onPartyDamaged && target.partyIndex !== undefined && atk && atk.faction === 'hostile') hooks.onPartyDamaged(target, atk, amount + absorbed);
 
     // §9 #4, melee half: a melee-arc connect that does NOT kill pauses the
     // whole sim for 2 ticks — the weight the brief asks a swing to land with.
@@ -169,6 +282,21 @@ export function createCombat({
   // (render side hangs the pop/burst/decal/shake off this), despawn.
   function kill(target, { delivery = 'basic' } = {}) {
     const tick = getTick();
+    // Breakable world objects (docs/gauntlet/PLAN.md §4.6 — barricades, kegs,
+    // puffcaps; entity field `lifecycle: 'break'`, M4b) leave the pipeline
+    // as a `broken` event: no kill stat, no kill hitstop, no screenshake, no
+    // kill decal. The owning sim system reacts to the event (a keg ignites).
+    if (target.lifecycle === 'break') {
+      events.emit(tick, 'broken', {
+        id: target.id,
+        kind: target.kind,
+        delivery,
+        x: r2(target.x),
+        z: r2(target.z),
+      });
+      registry.despawn(target.id);
+      return;
+    }
     stats.kills += 1;
     requestStop('kill', HITSTOP.killTicks);
     events.emit(tick, 'death', {
@@ -192,10 +320,10 @@ export function createCombat({
   }
 
   // One heal instance: same crit roll, clamped at max_hp, full_heal per §9.
-  function applyHeal(target, base, { healer = null, source = null } = {}) {
+  function applyHeal(target, base, { healer = null, source = null, critBonus = 0 } = {}) {
     const tick = getTick();
     if (!target || !(target.hp > 0)) return null; // Downed/dead: outside the pipeline
-    const crit = rng.chance(CRIT.chance);
+    const crit = rng.chance(CRIT.chance + critBonus);
     const preClamp = crit ? base * CRIT.mult : base;
     const room = target.maxHp - target.hp;
     const applied = Math.min(preClamp, room);
@@ -216,5 +344,18 @@ export function createCombat({
     return { amount: preClamp, applied, crit };
   }
 
-  return { applyDamage, applyHeal, kill };
+  // `status` = the committed status contract (sim/status.js), handed to every
+  // system that already holds the combat pipeline (world walk, ally steering,
+  // enemies / hazards through their ctx) — one implementation, no re-imports.
+  // Save system (docs/gauntlet/PLAN.md §3.4, M2): the hitstop coordinator's
+  // per-tick memory — the only private state of the pipeline.
+  const saveState = () => ({ stopTick, stopGranted });
+  function loadState(d) {
+    stopTick = d && Number.isFinite(d.stopTick) ? d.stopTick : -1;
+    stopGranted = d && Number.isFinite(d.stopGranted) ? d.stopGranted : 0;
+  }
+  // PARTY hooks (sim/partytech.js installs them; absent = no-op).
+  const hooks = { onParry: null, onPartyDamaged: null };
+  const setHooks = (h = {}) => Object.assign(hooks, h);
+  return { applyDamage, applyHeal, kill, status: STATUS, saveState, loadState, setHooks };
 }

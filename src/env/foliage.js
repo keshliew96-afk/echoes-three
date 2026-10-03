@@ -58,11 +58,31 @@ function blockedBy(footprints, x, z) {
 
 // Rejection-sample a spot: off the dirt path, out of every prop footprint,
 // thinned toward the arena center so the combat read stays clean.
+// GAUNTLET (M4b): distance outside a biome's water channels (spec.water:
+// [{ pts, w }]) — nothing grows on the race. Act I specs have no water.
+function waterClearance(spec, x, z) {
+  let best = Infinity;
+  for (const ch of spec.water ?? []) {
+    const pts = ch.pts;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [ax, az] = pts[i];
+      const [bx, bz] = pts[i + 1];
+      const dx = bx - ax;
+      const dz = bz - az;
+      const len2 = dx * dx + dz * dz;
+      const t = len2 > 0 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / len2)) : 0;
+      best = Math.min(best, Math.hypot(x - (ax + dx * t), z - (az + dz * t)) - ch.w / 2);
+    }
+  }
+  return best;
+}
+
 function sampleSpot(spec, cosmetic, footprints, tries = 28) {
   for (let i = 0; i < tries; i++) {
     const x = cosmetic.range(-ARENA.halfW + 0.35, ARENA.halfW - 0.35);
     const z = cosmetic.range(-ARENA.halfD + 0.35, ARENA.halfD - 0.35);
     if (pathClearance(spec, x, z) < 0.22) continue;
+    if (spec.water && waterClearance(spec, x, z) < 0.12) continue;
     if (blockedBy(footprints, x, z)) continue;
     const central = Math.abs(x) < ARENA.halfW * 0.58 && Math.abs(z) < ARENA.halfD * 0.56;
     if (central && !cosmetic.chance(0.8)) continue;
@@ -82,6 +102,9 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
   const shH = g.shadeH ?? 170;
   const shS = g.shadeS ?? 0.26;
   const shL = g.shadeL ?? Math.max(0.05, g.l - 0.13);
+  // GAUNTLET (M4b): a biome may tint its blades apart from the floor's lit
+  // hue (mossy reeds on wet slate, dead ochre grass on ash). Act I: the floor.
+  const bl = g.blade ?? g;
 
   // --- Grass tufts.
   const grass = new InstancedMesh(tuftGeometry(), toonMaterial({ color: '#FFFFFF' }), spec.grass);
@@ -116,7 +139,10 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
       c.setHSL(
         (shH + 8 + r(-8, 8)) / 360,
         Math.min(1, shS + r(0.08, 0.16)),
-        Math.max(0.03, shL + r(0.05, 0.1)),
+        // GAUNTLET: a paved biome floor is lighter than the Act-I night
+        // field, so its shade blades sit nearer the paving (`bladeShadeL`)
+        // instead of reading as black specks. Act I: unset -> the floor's.
+        Math.max(0.03, (g.bladeShadeL ?? shL) + r(0.05, 0.1)),
         SRGBColorSpace
       );
     } else if (cool) {
@@ -128,13 +154,13 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
       );
     } else {
       c.setHSL(
-        (g.h + r(-10, 8)) / 360,
-        Math.min(1, g.s + r(0.0, 0.12)),
+        (bl.h + r(-10, 8)) / 360,
+        Math.min(1, bl.s + r(0.0, 0.12)),
         // Blades sit a step UNDER the lit floor value. Round 3's floor was so
         // dark that grass authored at floor value read fine; with the floor
         // lifted to its §19.3 value the same numbers turn the tufts into
         // yellow-white confetti, so they are keyed off the floor, not fixed.
-        Math.max(0.03, g.l * 0.78 + r(-0.01, 0.07)),
+        Math.max(0.03, bl.l * 0.78 + r(-0.01, 0.07)),
         SRGBColorSpace
       );
     }
@@ -162,7 +188,7 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
   ]);
   const stems = new InstancedMesh(
     stemGeo,
-    toonMaterial({ color: hslColor(g.h + 8, Math.min(1, g.s + 0.05), Math.max(0.05, g.l * 0.72)) }),
+    toonMaterial({ color: hslColor(bl.h + 8, Math.min(1, bl.s + 0.05), Math.max(0.05, bl.l * 0.72)) }),
     spec.flowers
   );
   stems.frustumCulled = false;
@@ -180,6 +206,7 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
     const z = cl.z + r(-0.5, 0.5);
     if (Math.abs(x) > ARENA.halfW - 0.3 || Math.abs(z) > ARENA.halfD - 0.3) continue;
     if (pathClearance(spec, x, z) < 0.15) continue;
+    if (spec.water && waterClearance(spec, x, z) < 0.12) continue;
     if (blockedBy(footprints, x, z)) continue;
     q.setFromAxisAngle(UP, r(0, Math.PI * 2));
     p.set(x, 0, z);
@@ -188,7 +215,8 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
     m.compose(p, q, s);
     flowers.setMatrixAt(placedF, m);
     stems.setMatrixAt(placedF, m);
-    flowers.setColorAt(placedF, FLOWER_TINTS[Math.floor(r(0, FLOWER_TINTS.length))]);
+    const tints = spec.flowerTints ?? FLOWER_TINTS;
+    flowers.setColorAt(placedF, tints[Math.floor(r(0, tints.length))]);
     placedF += 1;
   }
   flowers.count = placedF;

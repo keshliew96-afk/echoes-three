@@ -1,0 +1,74 @@
+[
+ {
+  "type": "wait",
+  "ms": 1500
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({v:__echoes.version,app:__echoes.app.state,camp:__echoes.cmd(\"campState\").mode,res:__echoes.campaign&&__echoes.campaign.residency(),mem:__echoes.campaign&&__echoes.campaign.memory()}))()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const r=__echoes.cmd(\"startCampaign\",{level:1});return {phase:r.phase,room:r.room,c:__echoes.cmd(\"campaignState\")}})()"
+ },
+ {
+  "type": "wait",
+  "ms": 800
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{__echoes.cmd(\"skipToRoom\",8);return __echoes.state().run.phase})()"
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{__echoes.cmd(\"killBoss\");__echoes.cmd(\"killAllEnemies\");return 1})()"
+ },
+ {
+  "type": "loop",
+  "label": "to-transit",
+  "cond": "__echoes.state().run.phase===\"transit\"",
+  "maxMs": 8000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 100
+   },
+   {
+    "type": "eval",
+    "code": "(()=>{__echoes.cmd(\"killAllEnemies\");return __echoes.state().run.phase})()"
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({phase:__echoes.state().run.phase,c:__echoes.campaign.state(),mem:__echoes.campaign.memory(),page:__echoes.runUi().screen}))()"
+ },
+ {
+  "type": "shot",
+  "name": "card"
+ },
+ {
+  "type": "loop",
+  "label": "to-L2",
+  "cond": "__echoes.state().run.phase===\"combat\"&&__echoes.state().run.act===2",
+  "maxMs": 15000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 200
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({phase:__echoes.state().run.phase,act:__echoes.state().run.act,room:__echoes.state().run.room,c:__echoes.campaign.state(),t:__echoes.campaign.transitions(),mem:__echoes.campaign.memory()}))()"
+ }
+]

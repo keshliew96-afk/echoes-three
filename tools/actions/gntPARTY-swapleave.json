@@ -1,0 +1,59 @@
+[
+ {
+  "type": "loop",
+  "label": "room1",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase==='combat'&&r.room===1})()",
+  "maxMs": 20000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 150
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{__echoes.cmd('giveSkill','bell_toll');__echoes.cmd('giveSkill','pale_lance');return 1})()"
+ },
+ {
+  "type": "loop",
+  "label": "clear1",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase==='reward'})()",
+  "maxMs": 40000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{__echoes.cmd('killAllEnemies');return 1})()"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 900
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{window.__gntBefore=JSON.stringify([__echoes.state().skills.map(x=>x&&x.id),__echoes.state().build]);return __echoes.state().run.reward})()"
+ },
+ {
+  "type": "key",
+  "key": "x",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 600
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const after=JSON.stringify([__echoes.state().skills.map(x=>x&&x.id),__echoes.state().build]);return {phase:__echoes.state().run.phase,same:after===window.__gntBefore,skills:__echoes.state().skills.map(x=>x&&x.id)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntPARTY-swap-leave"
+ }
+]

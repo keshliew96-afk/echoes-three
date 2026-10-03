@@ -269,6 +269,25 @@ export function hudCss() {
   100% { transform: scale(1.55); opacity: 0; }
 }
 .hud-port-rally.go { animation: hud-rally 380ms ease-out; }
+/* §23.3 shield: a Parchment HEX RIM around the portrait tile (a shape, never
+   colour alone) + the shield's points on its own small opaque plate at the
+   tile's top-left, clear of the F-key chip (top-right band) and the Critical
+   numeral (bottom-right). */
+.hud-port-shield {
+  position: absolute; left: -6px; top: -6px; width: ${TILE + 12}px; height: ${TILE + 12}px;
+  display: none; pointer-events: none; overflow: visible; z-index: 7;
+}
+.hud-port-shield path { fill: none; stroke: ${PALETTE.parchment}; stroke-width: 2.6; stroke-linejoin: round;
+  filter: drop-shadow(0 0 1.5px ${PALETTE.voidCharcoal}); }
+.hud-port.has-shield .hud-port-shield { display: block; }
+.hud-port-shieldnum {
+  position: absolute; left: -10px; top: 30px; min-width: 30px; height: 28px; padding: 0 4px;
+  display: none; align-items: center; justify-content: center; z-index: 8;
+  background: ${CHROME.plate}; border: 2px solid ${PALETTE.parchment}; border-radius: 6px;
+  font-size: ${FS_KEY}px; font-weight: 800; line-height: 1; color: ${PALETTE.parchment};
+  pointer-events: none;
+}
+.hud-port.has-shield .hud-port-shieldnum { display: flex; }
 
 /* PORTRAIT TOP BAND (rows 0..${KEY_H}). ONE opaque charcoal plate carrying the
    F-key chip — "F1".."F4", the §8 heal-override affordance — at its NATURAL
@@ -489,6 +508,22 @@ export function hudCss() {
   border: 2px solid ${CHROME.rim};
   overflow: hidden;
 }
+/* SOCKET-FILL strip (M4c): 8 segments under each skill tile, in the row
+   where a portrait carries its HP bar (same gap, same height), so the bar's
+   silhouette is unchanged. Live node = filled Parchment; grey / inert node =
+   a hollow Bone segment; vacant = the dark plate. */
+.hud-skillcol { position: relative; width: ${TILE}px; }
+.hud-slot-pips {
+  display: flex; gap: 2px;
+  margin-top: ${HP_GAP}px; height: ${HP_H}px;
+}
+.hud-slot-pips i {
+  flex: 1 1 0; border-radius: 2px;
+  background: ${CHROME.plateSunk};
+  border: 1px solid ${CHROME.rimDim};
+}
+.hud-slot-pips i.is-on { background: ${PALETTE.parchment}; border-color: ${PALETTE.parchment}; }
+.hud-slot-pips i.is-grey { background: transparent; border: 2px solid ${PALETTE.bone}; }
 .hud-slot.is-empty { border-style: dashed; border-color: ${CHROME.rimDim}; }
 .hud-slot.is-empty { background: ${CHROME.plate}; }
 .hud-slot.is-empty .hud-slot-abbrev { color: ${CHROME.rimHot}; background: ${CHROME.plate}; box-shadow: none; }
@@ -840,6 +875,11 @@ export function hudCss() {
 #hud-threat .tm.spawn .tm-dot { fill: ${PALETTE.godstuffViolet}; }
 #hud-threat .tm .tm-ring { fill: none; stroke: none; stroke-width: 2.5; }
 #hud-threat .tm.marked .tm-ring { stroke: ${PALETTE.signalBlue}; }
+/* Burrowed threat (a Grave Mole underground, PLAN §3.6 (d)): the dirt-ripple
+   variant — a hollow, dashed Bone head over a dashed ring, so the pointer
+   says "something is tunnelling this way" without claiming a hittable body. */
+#hud-threat .tm.burrow .tm-head { fill: none; stroke: ${PALETTE.bone}; stroke-width: 3; stroke-dasharray: 4 3; }
+#hud-threat .tm.burrow .tm-ring { stroke: ${PALETTE.bone}; stroke-dasharray: 3 4; }
 /* HIT TICK. An off-frame enemy still takes damage, and §9's juice contract
    wants that hit to READ. The clamped damage numeral (render/numbers.js) puts
    the number on the frame edge; this ring is the pointer's own half of the

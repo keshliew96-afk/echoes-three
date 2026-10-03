@@ -40,11 +40,19 @@
 // apply unchanged. Each page also re-initialises its own focus to its
 // rn-primary when it opens (draft: Take; path: the sim's door 0), so no page
 // ever inherits a focus from the page before it.
-import { RUN_CSS, isCompact } from './style.js';
+import { RUN_CSS, isCompact, isShort } from './style.js';
+import { PARTY_STRIP_CSS } from './partystrip.js';
+import { SKILL_SLOTS } from '../../core/constants.js';
+import { parseBootParams } from '../../app/params.js';
+import { service } from '../../app/registry.js';
 import { createDraftScreen } from './draft.js';
 import { createPathScreen } from './path.js';
 import { createShopScreen } from './shop.js';
-import { createEndScreen } from './endscreens.js';
+import { createEndScreen, END_CSS } from './endscreens.js';
+// CAMPAIGN (docs/gauntlet/PLAN.md §12.6): the level-transition card.
+import { createTransitScreen, TRANSIT_CSS } from './transit.js';
+// @gnt:M3 RUN-NAV-SOUND (fix-M3-r5): selection ticks for the build pages.
+import { createSelectionSound } from '../../audio/uiselect.js';
 
 // phase -> screen name. Anything absent means "no meta screen".
 const SCREEN_FOR = {
@@ -53,12 +61,13 @@ const SCREEN_FOR = {
   shop: 'shop',
   victory: 'end',
   defeat: 'end',
+  transit: 'transit', // CAMPAIGN: level-clear / setting-out card
 };
 
 export function createRunUi({ bus, world, socket = null, autostart = false }) {
   const style = document.createElement('style');
   style.id = 'run-style';
-  style.textContent = RUN_CSS;
+  style.textContent = RUN_CSS + TRANSIT_CSS + PARTY_STRIP_CSS + END_CSS; // fix-INT-r5: + the end card
   document.head.appendChild(style);
 
   // Veil sits UNDER #hud (§16: Zone 1 persists beneath); the page and the
@@ -75,12 +84,15 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
 
   const run = () => world.runSystem();
   const build = () => world.buildSystem();
+  // PARTY: the party system (the three ally builds) for the build pages.
+  const party = () => (typeof world.partySystem === 'function' ? world.partySystem() : null);
 
   const screens = {
-    draft: createDraftScreen({ run, build }),
+    draft: createDraftScreen({ run, build, party }),
     path: createPathScreen({ run }),
-    shop: createShopScreen({ run, build }),
+    shop: createShopScreen({ run, build, party }),
     end: createEndScreen({ run }),
+    transit: createTransitScreen({ run }),
   };
   for (const s of Object.values(screens)) {
     s.el.style.display = 'none';
@@ -108,6 +120,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   const DESIGN = { w: 980, h: 700 };
   const RESERVE_FALLBACK = 120; // px, until the HUD bar exists to be measured
   const MIN_SCALE = 1; // §17 floors are REAL px: never scale the pages down
+  const UNDER_MIN_SCALE = 0.75; // a window under 1024x640 only
   let lastFit = { s: 1, compact: false, reserve: RESERVE_FALLBACK, fit: 1 };
 
   function reservePx() {
@@ -125,6 +138,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     // reflowed only after measuring would need two renders to settle).
     const compact = isCompact();
     rootEl.classList.toggle('rn-compact', compact);
+    rootEl.classList.toggle('rn-short', isShort());
     const reserve = reservePx();
     rootEl.style.setProperty('--rn-reserve', `${reserve}px`);
     const pg = pageEl ?? (current !== 'none' ? screens[current].el : null);
@@ -135,9 +149,41 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       (window.innerWidth - 40) / w,
       (window.innerHeight - 28 - reserve) / h
     );
-    const s = Math.max(MIN_SCALE, fit);
+    // Below the §1 minimum window (1024x640) a page that still does not fit
+    // shrinks rather than clips (the note above); at 1024x640 and up the
+    // clamp holds and the §17 floors are real px.
+    const underMin = window.innerWidth < 1024 || window.innerHeight < 640;
+    let s = Math.max(underMin ? UNDER_MIN_SCALE : MIN_SCALE, fit);
+    // gauntlet r5 PARTY F4: the DOCKED shop grows upward from the command
+    // bar, so a shelf taller than the room above the bar (the compact
+    // layouts fit every measured stock, but the fixed frame takes the
+    // tallest class shelf — Siphon's binding quote, owned / upgrade lines)
+    // must never push its header off the window: it shrinks just enough to
+    // keep the page on screen (4 px) — shrinking beats clipping, and a page
+    // that fits keeps the §17 clamp above.
+    // fix-INT-r5 (J5-F2): the end card is never clipped either — it shrinks
+    // under the same rule when a window at / above the minimum is too short.
+    const endCard = current === 'end' && !pageEl;
+    if (!underMin && (rootEl.classList.contains('rn-dock') || endCard) && pg && h * s > window.innerHeight - reserve - 4) {
+      s = Math.max(UNDER_MIN_SCALE, (window.innerHeight - reserve - 4) / h);
+    }
     rootEl.style.setProperty('--rn-s', s.toFixed(4));
-    lastFit = { s, compact, reserve, fit: Math.round(fit * 1e4) / 1e4, page: { w, h } };
+    // fix-INT-r5 (J5-F2): the end card also keeps clear of the HUD's corner
+    // plates (location, Glint) when the room between them and the command bar
+    // holds it — it centres in that band (--rn-top = the plates' bottom);
+    // a window without that room centres it as before (--rn-top 0).
+    let top = 0;
+    if (endCard && pg) {
+      let band = 0;
+      for (const sel of ['.hud-loc', '.hud-glint']) {
+        const n = document.querySelector(sel);
+        const r = n ? n.getBoundingClientRect() : null;
+        if (r && r.width > 1 && r.height > 1) band = Math.max(band, Math.round(r.bottom) + 8);
+      }
+      if (band > 0 && h * s <= window.innerHeight - reserve - band - 8) top = band;
+    }
+    rootEl.style.setProperty('--rn-top', `${top}px`);
+    lastFit = { s, compact, reserve, fit: Math.round(fit * 1e4) / 1e4, page: { w, h }, top };
     return s;
   }
   fitScale();
@@ -172,10 +218,19 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // so a lone choose key after a quiet 300 ms counts exactly as documented.
   const GRACE_MS = 300;
   const SETTLE_MAX_MS = 1000;
-  const NAV_KEYS = new Set(['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight']);
-  const COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space']);
+  // Ruling A17: W / S, ↑ / ↓ move a swap offer's Replaces mark — navigation,
+  // so the settle window drops them too (a carried strafe never moves it).
+  // PARTY (PLAN §16.4): the character switch (Q / E, PgUp / PgDn, F1-F4) is
+  // navigation too — dropped for the page's first 300 ms, and E / F1-F4 (the
+  // combat's revive / heal-override keys) keep restarting that window.
+  const NAV_KEYS = new Set(['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyS', 'ArrowUp', 'ArrowDown', 'KeyQ', 'KeyE', 'PageUp', 'PageDown', 'F1', 'F2', 'F3', 'F4']);
+  // X (the draft's decline, ruling A13) is a commit key: settle-guarded and
+  // fresh-press only, exactly like Enter.
+  const COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'KeyX']);
+  // §23.9: the carry-over set follows the skill keys (Digit1..Digit8).
   const CARRY_KEYS = new Set([
-    'Digit1', 'Digit2', 'Digit3', 'Digit4', 'KeyW', 'KeyS', 'KeyR', 'KeyE', 'Tab', 'F1', 'F2', 'F3', 'F4',
+    ...Array.from({ length: SKILL_SLOTS }, (_, i) => `Digit${i + 1}`),
+    'KeyW', 'KeyS', 'KeyR', 'KeyE', 'Tab', 'F1', 'F2', 'F3', 'F4',
   ]);
   let openedAt = -Infinity; // performance.now() when the current page appeared
   let carryAt = -Infinity; // last carry-over key pressed on the current page
@@ -211,6 +266,12 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   }
 
   function setVeilTone(phase) {
+    // CAMPAIGN: the transition card's warm veil (never a black full-screen).
+    veil.classList.toggle('rn-transit', phase === 'transit');
+    if (phase === 'transit') {
+      const c = run().campaign ? run().campaign() : null;
+      veil.classList.toggle('rn-depart', !!(c && c.card && c.card.kind === 'depart'));
+    } else veil.classList.remove('rn-depart');
     veil.classList.toggle('rn-victory', phase === 'victory');
     veil.classList.toggle('rn-defeat', phase === 'defeat');
     rootEl.classList.toggle('rn-victory', phase === 'victory');
@@ -220,6 +281,17 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // A cheap signature so a screen only re-renders when something it draws has
   // actually changed (the shop's shake animation must never be restarted by an
   // unrelated repaint).
+  function partyFill() {
+    const P = party();
+    if (!P) return '';
+    return [1, 2, 3].map((i) => (P.slots(i) || []).join(',') + ':' + P.view(i).filled).join(';');
+  }
+
+  function swapFill() {
+    const b = build();
+    return b ? b.view().skills.map((s) => s.filled).join(',') : '';
+  }
+
   function sigOf(v) {
     const r = v.reward;
     const p = v.path;
@@ -231,10 +303,36 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       v.wallet,
       v.freeSkillSlots,
       r ? `${r.type}:${r.id}:${r.substituted}` : '-',
+      // Ruling A17: a swap offer repaints when its Replaces mark moves or the
+      // socket screen changed how many nodes a skill holds.
+      r && r.swap ? `${r.replace}:${r.suggest}:${swapFill()}` : '-',
+      // PARTY: the party page's decisions / replaces / countdown seconds and
+      // the party shelves (purses, sold, marks).
+      v.party
+        ? v.party.cards.map((c) => `${c.seat}${c.type}${c.id}${c.decided ? 1 : 0}${c.choice}${c.replace}`).join('|') +
+          `/${v.party.mode}/${v.party.deadlineInTicks === null ? '-' : Math.ceil(v.party.deadlineInTicks / 60)}/${partyFill()}`
+        : '-',
+      v.partyShop
+        ? v.partyShop.shelves
+            .slice(1)
+            .map((s) => `${s.purse}:${s.stock.map((i) => `${i.node}${i.sold ? 'x' : ''}${i.marked ? 'm' : ''}${i.owned}`).join(',')}`)
+            .join('|') + `/${v.partyShop.leaveInTicks === null ? '-' : Math.ceil(v.partyShop.leaveInTicks / 60)}/${v.partyShop.deadlineInTicks === null ? '-' : Math.ceil(v.partyShop.deadlineInTicks / 60)}`
+        : '-',
       p ? `${p.nextRoom}:${p.focus}:${p.options.map((o) => o.win + o.reward).join(',')}` : '-',
       s ? s.stock.map((i) => `${i.node}${i.price}${i.sold ? 'x' : ''}${i.owned}`).join('|') : '-',
       v.summary ? `${v.summary.result}:${v.summary.rooms}:${v.summary.glint}` : '-',
+      campaignSig(v),
     ].join('/');
+  }
+
+  // CAMPAIGN: the transition card and the CAMPAIGN COMPLETE countdown
+  // repaint when their numbers move (whole seconds only).
+  function campaignSig(v) {
+    if (v.phase !== 'transit' && v.phase !== 'victory') return '-';
+    const c = run().campaign ? run().campaign() : null;
+    if (!c) return '-';
+    if (v.phase === 'transit') return c.card ? `${c.card.kind}:${c.card.from}:${c.card.to}:${c.card.startTick}` : '-';
+    return c.autoReturnInTicks !== null && c.autoReturnInTicks !== undefined ? `r${Math.ceil(c.autoReturnInTicks / 60)}` : '-';
   }
 
   // ---------------------------------------------- legendary shimmer (F2) --
@@ -267,8 +365,10 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     if (list.length === 0) return;
     // 130% -> -130% of the card's width, the travel the old keyframe ran.
     const x = 130 - 260 * ((nowMs % SHINE_MS) / SHINE_MS);
-    const t = `translateX(${x.toFixed(2)}%)`;
-    for (const band of list) band.style.transform = t;
+    // gauntlet r5 PARTY: the band's BOX stays on the card (its ::before
+    // sweeps), so no layout probe ever finds a shine box off the window.
+    const t = `${x.toFixed(2)}%`;
+    for (const band of list) band.style.setProperty('--shx', t);
   }
 
   // ----------------------------------------------------- boot pre-paint --
@@ -299,13 +399,24 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // 2/1000 opacity with the fades suppressed, ~20 frames after boot in camp.
   // The player sees nothing (the camp frame's analyzer numbers are unchanged)
   // and the first real open of every page finds its pipelines built.
+  //
+  // PARTY: the shop and the party page are opened the PARTY way too — the
+  // character strip with its portraits, the owner tabs, the Suggested
+  // ribbons (an ally's shelf, `seat: 1`), the owner band, the spoils line and
+  // a swap card's Replaces row (the Tank's card). Without them the first
+  // real shop open measured two 206 / 286 ms frames at v0.5.163 (GP.15) —
+  // the synthetic shop view also has to be IN the shop phase, or the PARTY
+  // shop's render (which ignores a view of another phase) paints nothing.
   const PREPAINT_WAIT = 20;
   const PREPAINT_SEQ = [
     { screen: 'shop', view: 'shop', frames: 16, dock: true, light: true },
+    { screen: 'shop', view: 'shop', frames: 8, dock: true, light: true, seat: 1 },
     { screen: 'draft', view: 'draft', frames: 4 },
+    { screen: 'draft', view: 'draft', frames: 4, seat: 1 },
     { screen: 'path', view: 'path', frames: 4 },
     { screen: 'end', view: 'victory', frames: 4, tone: 'victory' },
     { screen: 'end', view: 'defeat', frames: 3, tone: 'defeat' },
+    { screen: 'transit', view: 'transit', frames: 4, tone: 'transit' }, // CAMPAIGN card
   ];
   const prepaintLog = { started: null, done: null, frames: 0, step: null }; // probe surface
   let prepaintWait = PREPAINT_WAIT;
@@ -358,23 +469,64 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       seed: 4242,
       ticks: 3600,
     };
+    // PARTY: an ally shelf per seat (the class nodes, marked / unmarked /
+    // sold / short) and a party page with an ally swap card.
+    const it = (node, rarity, price, o = {}) => ({ node, rarity, price, sold: false, marked: false, owned: 0, affordable: true, ...o });
+    const partyShop = {
+      room: 7,
+      touched: [false, false, false, false],
+      done: [false, false, false, false],
+      deadlineTick: null,
+      leaveTick: null,
+      deadlineInTicks: null,
+      leaveInTicks: null,
+      shelves: [
+        null,
+        { seat: 1, purse: 72, stock: [it('galvanize', 'common', 15, { marked: true }), it('echo', 'rare', 20, { sold: true, owned: 1 }), it('aegis', 'legendary', 25), it('reach', 'common', 15, { marked: true, affordable: false })] },
+        { seat: 2, purse: 72, stock: [it('siphon', 'common', 15, { marked: true }), it('reach', 'common', 15), it('pursuit', 'rare', 20, { marked: true }), it('ascend', 'legendary', 25)] },
+        { seat: 3, purse: 72, stock: [it('skewer', 'common', 15, { marked: true }), it('concussive', 'common', 15), it('split', 'rare', 20, { owned: 1 }), it('heartseeker', 'legendary', 25)] },
+      ],
+    };
+    const card = (seat, type, id, o = {}) => ({ seat, type, id, swap: false, substituted: false, line: null, spoils: [], replace: null, suggest: { choice: 'take', replace: null }, decided: false, choice: null, by: null, ...o });
+    const party = {
+      room: 1,
+      promised: 'node',
+      openedTick: 0,
+      deadlineTick: null,
+      deadlineInTicks: null,
+      mode: 'suggest',
+      owners: ['human', 'ai', 'ai', 'ai'],
+      cards: [
+        card(0, 'node', 'ascend'),
+        card(1, 'skill', 'shield_wall', { swap: true, spoils: ['widen'], replace: 2, suggest: { choice: 'take', replace: 2 }, decided: true, choice: 'take', by: 'ai' }),
+        card(2, 'skill', 'riposte', { swap: true, spoils: ['multiply'], replace: 3, suggest: { choice: 'take', replace: 3 }, decided: true, choice: 'leave', by: 'ai' }),
+        card(3, 'node', 'split', { spoils: ['split'] }),
+      ],
+    };
     return {
       shop: {
         ...base,
+        phase: 'shop',
+        room: 7,
         shop: {
           wallet: 42,
           stock: [
             { node: 'ascend', price: 35, sold: false, owned: false, affordable: true, rarity: 'legendary' },
             { node: 'bounce', price: 25, sold: true, owned: true, affordable: true, rarity: 'common' },
             { node: 'echo', price: 30, sold: false, owned: false, affordable: false, rarity: 'rare' },
+            { node: 'reach', price: 15, sold: false, owned: false, affordable: true, rarity: 'common' },
           ],
         },
+        partyShop,
       },
       draft: {
         ...base,
+        phase: 'reward',
         room: 1,
         freeSkillSlots: 0,
         reward: { type: 'node', id: 'ascend', substituted: false, line: null },
+        spoils: { room: 1, nodes: ['snare', 'sharpen'] },
+        party,
       },
       path: {
         ...base,
@@ -390,6 +542,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       },
       victory: { ...base, phase: 'victory', summary },
       defeat: { ...base, phase: 'defeat', summary: { ...summary, rooms: 5, glint: 60 } },
+      transit: {
+        ...base,
+        phase: 'transit',
+        __card: { kind: 'clear', from: 1, to: 2, name: 'The Sunken Mill', fromName: 'The Hollow Wood', startTick: 0, untilTick: 180, elapsedTicks: 60, due: false, summary: { skills: ['mending_bolt'], socketed: 12, sockets: 32, bench: 1, wallet: 34 } },
+      },
     };
   }
 
@@ -415,9 +572,16 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     rootEl.classList.toggle('rn-defeat', step.tone === 'defeat');
     veil.classList.toggle('rn-victory', step.tone === 'victory');
     veil.classList.toggle('rn-defeat', step.tone === 'defeat');
+    veil.classList.toggle('rn-transit', step.tone === 'transit');
     const page = screens[step.screen];
     prepaintPage = page.el;
     page.el.style.display = '';
+    // PARTY: an ally's tab (the Suggested ribbons, a swap card's Replaces row).
+    try {
+      if (typeof page.setView === 'function') page.setView(step.seat ?? 0, false);
+    } catch (e) {
+      /* warm-up only */
+    }
     try {
       const sys = run();
       if (sys) page.render(prepaintViews(sys.view())[step.view]);
@@ -455,7 +619,19 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     }
   }
 
+  // The pages the pre-paint switched to an ally's tab open on their own tab
+  // again (the draft re-picks it in open(); the shop keeps its tab, so it is
+  // put back here without a render).
+  function prepaintResetViews() {
+    try {
+      if (typeof screens.shop.resetView === 'function') screens.shop.resetView();
+    } catch (e) {
+      /* warm-up only */
+    }
+  }
+
   function prepaintEnd() {
+    prepaintResetViews();
     prepaintHidePage();
     prepaintSeedsRemove();
     prepaintStep = PREPAINT_SEQ.length;
@@ -464,7 +640,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     try { performance.mark('prepaint-end'); } catch (e) { /* trace marker only */ }
     signature = ''; // the synthetic content above must never be mistaken for state
     rootEl.classList.remove('rn-open', 'rn-dock', 'rn-victory', 'rn-defeat');
-    veil.classList.remove('rn-open', 'rn-light', 'rn-victory', 'rn-defeat');
+    veil.classList.remove('rn-open', 'rn-light', 'rn-victory', 'rn-defeat', 'rn-transit');
     rootEl.style.opacity = '';
     rootEl.style.pointerEvents = '';
     veil.style.opacity = '';
@@ -476,6 +652,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // with `?run=1` and a very fast first room): drop the synthetic page and the
   // overrides, keep the classes setScreen() has just set.
   function prepaintAbort() {
+    prepaintResetViews();
     prepaintHidePage();
     prepaintSeedsRemove();
     prepaintStep = PREPAINT_SEQ.length;
@@ -532,12 +709,17 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     }
     if (current === 'none') return;
     const sig = sigOf(v);
-    if (sig !== signature) {
+    // PARTY: a page that changed its own view (a character switch, a moved
+    // Replaces mark) asks for a repaint too.
+    const pageDirty = typeof screens[current].dirty === 'function' && screens[current].dirty();
+    if (sig !== signature || pageDirty) {
       signature = sig;
       screens[current].render(v);
       refreshShines(); // the render replaced the card DOM
       fitScale(); // content changed => the page's layout height may have changed
     }
+    // Per-frame page work (the transition card's progress bar / readiness).
+    if (typeof screens[current].tick === 'function') screens[current].tick(v);
     driveShines(performance.now());
   }
 
@@ -573,7 +755,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
         e.stopPropagation();
         return;
       }
-      if (screens[current].key(code, fresh)) {
+      if (screens[current].key(code, fresh, e)) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -597,7 +779,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // §16 insufficient funds: plaque emphasis + one ~300 ms shake, driven by the
   // sim's own denial event so a scripted buy shakes exactly like a click.
   bus.on('currency_denied', (ev) => {
-    if (current === 'shop') screens.shop.denyShake(ev.index ?? 0);
+    if (current === 'shop') screens.shop.denyShakeSeat(ev); // PARTY: the shelf on show
   });
   // §16 purchase: "price-stamp flash -> card departs to the bench". The sim
   // emits `shop_purchase` BEFORE the shelf re-renders, so the screen only
@@ -615,7 +797,35 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // without erasing the event's own name — see the note in sim/run.js.
   bus.on('draft_taken', (ev) => {
     if (ev.reward === 'node' && socket) socket.cmd('openSocket');
+    // Ruling A17: a taken SWAP whose replaced skill held nodes chains into the
+    // socket screen too — the released nodes wait on the bench with the
+    // auto-fill offered (F).
+    if (ev.reward === 'skill' && ev.swap && Array.isArray(ev.released) && ev.released.length > 0 && socket)
+      socket.cmd('openSocket', { released: ev.released.length });
   });
+  // PARTY: one toast for an old save's ally catch-up (PLAN §16.6) and for a
+  // network auto-pick (PLAN §16.5: the owner's line says nothing is lost).
+  bus.on('party_catchup', (ev) => {
+    const a = service('app');
+    const each = ev.perSeat ? Math.max(...Object.values(ev.perSeat)) : 0;
+    if (a && typeof a.toast === 'function') a.toast(`Your allies caught up: ${each} nodes each`, { tone: 'info', ms: 5200 });
+  });
+  bus.on('party_autopick', (ev) => {
+    const a = service('app');
+    if (!a || typeof a.toast !== 'function') return;
+    const who = ['Healer', 'Tank', 'Swordsman', 'Archer'][ev.seat] ?? 'party';
+    if (ev.reason === 'door_timeout') a.toast("Time's up — the left door was taken", { tone: 'info', ms: 4200 });
+    else a.toast(`Time's up — the ${who}'s reward was picked (${ev.choice === 'take' ? 'taken' : 'left'})${ev.seat === ownSeat() ? ' — you can re-socket it between rooms' : ''}`, { tone: 'info', ms: 4800 });
+  });
+  function ownSeat() {
+    const n = service('net');
+    try {
+      if (n && typeof n.isGuest === 'function' && n.isGuest()) return Number.isInteger(n.seat) ? n.seat : 0;
+    } catch {
+      /* none */
+    }
+    return 0;
+  }
   // A run ending or a room starting must never leave a page hanging.
   bus.on('room_start', () => setScreen('none'));
 
@@ -623,15 +833,279 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // run is its own block). It is DEFERRED to the first update with a ticked
   // sim: starting a run before tick 1 would run the room-boundary sweep over
   // ally bodies the AI has not spun up yet.
+  // @gnt:M2 RESTORE-RESYNC begin — one `state_restored` handler: close the
+  // page or re-open the one run.view() implies (PLAN §3.4 rule 5). Closing
+  // is enough: the next update() opens SCREEN_FOR[phase] FRESH — its own
+  // focus, a new settle window, every held key (the Enter that confirmed the
+  // load) marked stale — so a load can never commit a pick by itself.
+  bus.on('state_restored', () => {
+    setScreen('none');
+    signature = '';
+  });
+  // @gnt:M2 RESTORE-RESYNC end
+  // @gnt:M5b GUEST-GUARD begin — guests see pages read-only ("The Healer is
+  // choosing…"); their presses become CMD pings, never sim calls.
+  // The guard itself is the net session's run-system proxy (every mutating
+  // call on a guest becomes a CMD the host answers command_rejected + a
+  // party-wide ping); this block adds what the guest SEES: a banner that
+  // says who decides, and the ping highlight on the card / door / item a
+  // party member pointed at (`net_ping`, a view-only replayed event).
+  const guestNote = document.createElement('div');
+  guestNote.className = 'nt-guest-note';
+  guestNote.style.cssText =
+    'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:70;padding:8px 18px;border-radius:12px;' +
+    `background:${'#221F1B'}EE;color:#F4EFE6;font:700 18px/1.2 "Nunito","Trebuchet MS",system-ui,sans-serif;` +
+    'border:1px solid #9C918688;pointer-events:none;display:none;';
+  document.body.appendChild(guestNote);
+  const pingCss = document.createElement('style');
+  pingCss.textContent = '.nt-pinged { outline: 3px solid #E8A23D !important; outline-offset: 4px; transition: outline-color 0.2s; }';
+  document.head.appendChild(pingCss);
+  const netGuest = () => {
+    const n = service('net');
+    return !!(n && typeof n.isGuest === 'function' && n.isGuest());
+  };
+  // Who decides: the host's seat — the Healer, unless a migration moved the
+  // host and a human is back on the Healer (then the host's class decides;
+  // net/seats.js chooserSeat).
+  const GUEST_LINES = {
+    draft: (w) => `The ${w} is choosing the reward…`,
+    path: (w) => `The ${w} picks the door — point with ←/→ and Enter`,
+    shop: (w) => `The ${w} is shopping…`,
+    end: (w) => `Waiting for the ${w}…`,
+    transit: (w) => `The ${w} leads on to the next level…`,
+  };
+  const chooserLabel = () => {
+    const n = service('net');
+    try {
+      return (n && n.session && typeof n.session.chooserLabel === 'function' && n.session.chooserLabel()) || 'Healer';
+    } catch {
+      return 'Healer';
+    }
+  };
+  // PARTY (PLAN §16.5): per tab — the guest's OWN card / shelf is its to
+  // decide (no banner, or its own countdown); another tab says who decides.
+  const SEAT_NAME = ['Healer', 'Tank', 'Swordsman', 'Archer'];
+  function partyTabLine(w) {
+    if (current !== 'draft' && current !== 'shop') return null;
+    const sc = screens[current];
+    const pr = sc && typeof sc.probe === 'function' ? sc.probe() : null;
+    const v = world.runSystem() ? world.runSystem().view() : null;
+    const party = current === 'draft' ? v && v.party : v && v.partyShop;
+    if (!pr || !party) return null;
+    const seat = pr.viewSeat;
+    const me = ownSeat();
+    const left = current === 'draft' ? party.deadlineInTicks : [party.leaveInTicks, party.deadlineInTicks].filter((t) => t !== null && t !== undefined).reduce((a, b) => Math.min(a, b), Infinity);
+    const secs = Number.isFinite(left) && left !== null && left <= 600 ? ` — ${Math.max(0, Math.ceil(left / 60))} s` : '';
+    if (seat === me) {
+      if (current === 'draft') {
+        const c = party.cards && party.cards[seat];
+        return c && c.decided ? `Your pick is in — waiting for the party${secs}` : secs ? `Your card — auto-pick${secs}` : '';
+      }
+      return party.done && party.done[seat] ? `Done — waiting for the party${secs}` : secs ? `The shop closes${secs}` : '';
+    }
+    const owners = current === 'draft' ? party.owners : null;
+    const human = seat === 0 || (owners ? owners[seat] === 'human' : false);
+    const who = seat === 0 ? w : human ? `${SEAT_NAME[seat]}'s player` : `the ${w} (for the ${SEAT_NAME[seat]})`;
+    return current === 'draft' ? `${who.charAt(0).toUpperCase()}${who.slice(1)} is choosing…${secs}` : `${who.charAt(0).toUpperCase()}${who.slice(1)} is shopping…${secs}`;
+  }
+  function syncGuestNote() {
+    const on = current !== 'none' && netGuest();
+    const w = on ? chooserLabel() : 'Healer';
+    const tab = on ? partyTabLine(w) : null;
+    const text = on ? (tab !== null ? tab : GUEST_LINES[current] ? GUEST_LINES[current](w) : `The ${w} is choosing…`) : '';
+    const changed = guestNote.textContent !== text || guestNote.style.display !== (on && text ? '' : 'none');
+    if (guestNote.textContent !== text) guestNote.textContent = text;
+    const disp = on && text ? '' : 'none';
+    if (guestNote.style.display !== disp) guestNote.style.display = disp;
+    placeGuestNote(disp === '', changed);
+  }
+  // fix-M5a-r5 (NET5-F1 family, 2026-09-30): the note never covers the page
+  // it talks about (at 1024x576 the party page starts 8 px from the top, so
+  // the note sat on the party strip — over the viewed tab's caret). In
+  // order: top centre while the page leaves room above it; a compact 16 px
+  // line in the band above the page; in the band under it (clear of the
+  // command bar and the network chip); beside a narrow page (the doors);
+  // in the command bar's row right of the bar (wrapping to its width).
+  // Where none is free — and while the socket screen is open (its header
+  // shows its own countdown) — it steps aside: the page's party strip /
+  // countdown carries the same news. Re-placed at once when the line
+  // changes, else at 10 Hz when the page, bar or window moved.
+  let notePlacedAt = 0;
+  let noteSig = '';
+  const NOTE_FULL = { top: '14px', left: '50%', transform: 'translateX(-50%)', padding: '8px 18px', fontSize: '18px', lineHeight: '1.2', maxWidth: '', whiteSpace: 'nowrap', textAlign: '' };
+  const NOTE_COMPACT = { ...NOTE_FULL, top: '4px', padding: '4px 14px', fontSize: '16px' };
+  const rectOf = (sel) => {
+    const e = document.querySelector(sel);
+    if (!e) return null;
+    const cs = getComputedStyle(e);
+    if (cs.display === 'none' || cs.visibility === 'hidden') return null;
+    const r = e.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 ? r : null;
+  };
+  function placeGuestNote(shown, now = false) {
+    if (!shown) return;
+    const t = performance.now();
+    if (!now && t - notePlacedAt < 100) return;
+    notePlacedAt = t;
+    const sockOpen = !!(socket && typeof socket.isOpen === 'function' && socket.isOpen());
+    const pg = current !== 'none' && screens[current] ? screens[current].el : null;
+    const pr = !sockOpen && pg && pg.style.display !== 'none' ? pg.getBoundingClientRect() : null;
+    const chipR = rectOf('#nt-hud:not(.nt-off) .nt-chip');
+    const br = rectOf('.hud-bar');
+    const q = (r) => (r ? `${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.right)},${Math.round(r.bottom)}` : '-');
+    const sig = `${sockOpen}|${window.innerWidth}x${window.innerHeight}|${q(pr)}|${q(chipR)}|${q(br)}|${guestNote.textContent}`;
+    if (!now && sig === noteSig) return;
+    noteSig = sig;
+    const setPlace = (where, css, hidden = false) => {
+      guestNote.dataset.place = where;
+      for (const k of Object.keys(css)) guestNote.style[k] = css[k];
+      guestNote.style.visibility = hidden ? 'hidden' : '';
+    };
+    if (sockOpen) return setPlace('aside', NOTE_FULL, true);
+    setPlace('top', NOTE_FULL);
+    if (!pr || pr.height <= 0) return;
+    const PAD = 4;
+    const fps = rectOf('#fps-meter');
+    const obstacles = [[pr, PAD], [chipR, PAD], [fps, 2]].filter(([o]) => o);
+    const clear = (r) => r.left >= 0 && r.top >= 0 && r.right <= window.innerWidth && r.bottom <= window.innerHeight && obstacles.every(([o, pad]) => r.right <= o.left - pad || r.left >= o.right + pad || r.bottom <= o.top - pad || r.top >= o.bottom + pad);
+    const at = (where, css) => {
+      setPlace(where, css);
+      return clear(guestNote.getBoundingClientRect());
+    };
+    if (clear(guestNote.getBoundingClientRect())) return;
+    setPlace('top', NOTE_COMPACT);
+    const h = guestNote.getBoundingClientRect().height;
+    if (pr.top - PAD >= h + 4 && at('top-compact', { ...NOTE_COMPACT, top: `${Math.max(4, Math.round((pr.top - h) / 2))}px` })) return;
+    const limit = br ? br.top : window.innerHeight;
+    if (limit - pr.bottom >= h + 2 * PAD && at('under-page', { ...NOTE_COMPACT, top: `${Math.round(pr.bottom + (limit - pr.bottom - h) / 2)}px` })) return;
+    // Wrapped variants (a column beside the page / the bar): 16 px, 1.1 lines.
+    const wrapCss = (x0, room) => ({ ...NOTE_COMPACT, left: `${x0}px`, transform: 'none', maxWidth: `${room - 26}px`, whiteSpace: 'normal', padding: '3px 12px', lineHeight: '1.1', textAlign: 'left' });
+    const besideX = Math.round(pr.right + 12);
+    const besideRoom = window.innerWidth - 14 - besideX;
+    if (besideRoom >= 200) {
+      setPlace('beside-page', wrapCss(besideX, besideRoom));
+      const r = guestNote.getBoundingClientRect();
+      if (at('beside-page', { ...wrapCss(besideX, besideRoom), top: `${Math.round(pr.top + Math.max(0, (pr.height - r.height) / 2))}px` })) return;
+    }
+    if (br) {
+      const x0 = Math.round(br.right + 10);
+      const room = window.innerWidth - 14 - x0;
+      if (room >= 160) {
+        setPlace('bar-right', wrapCss(x0, room));
+        const r = guestNote.getBoundingClientRect();
+        // Top-aligned with the bar (the corner's fps meter sits low).
+        if (r.height <= br.height && at('bar-right', { ...wrapCss(x0, room), top: `${Math.round(br.top + 1)}px` })) return;
+      }
+    }
+    setPlace('aside', NOTE_FULL, true);
+  }
+  bus.on('net_ping', (ev) => {
+    if (current === 'none' || !Number.isInteger(ev.index)) return;
+    const page = screens[current] && screens[current].el;
+    if (!page) return;
+    const items = [...page.querySelectorAll(current === 'path' ? '.rn-door' : '.rn-card')];
+    const el = items[ev.index];
+    if (!el) return;
+    el.classList.add('nt-pinged');
+    setTimeout(() => el.classList.remove('nt-pinged'), 1400);
+  });
+  const pageUpdate = update;
+  // eslint-disable-next-line no-func-assign
+  update = function guestAwareUpdate() {
+    pageUpdate();
+    syncGuestNote();
+  };
+  // @gnt:M5b GUEST-GUARD end
+  // @gnt:M3 RUN-NAV-SOUND begin — fix-M3-r5 AUD5-F1 (PLAN §3.5 "app nav ->
+  // UI bus"): moving the selection on a build page ticks exactly like a menu
+  // move — the character tab (Q / E, F1-F4, LB / RB, a tab click), Take /
+  // Leave (A / D), the Replaces mark (W / S, wheel, a click), the doors, the
+  // shop's card focus — by keyboard, pad and pointer, and the pointer
+  // entering a page's button / door / card / tab ticks once (a hover). The
+  // pages only report a cheap signature (page.sel()); src/audio/uiselect.js
+  // decides and emits the app `nav` event the audio engine already plays.
+  // Commit keys never tick (their own cue plays: draft_take, path, purchase).
+  const selSound = createSelectionSound('run');
+  const SEL_COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'KeyX', 'Escape']);
+  const HOVER_SEL = {
+    draft: '.rn-btn, .rn-rep, .rn-ptab',
+    path: '.rn-doorwrap',
+    shop: '.rn-card, .rn-suggest, .rn-advance, .rn-ptab',
+    end: '.rn-btn',
+  };
+  const pageOpen = () => current !== 'none' && !(socket && socket.isOpen());
+  window.addEventListener(
+    'keydown',
+    (e) => {
+      // A key the page drops (the settle window, a held key) moves nothing.
+      if (!pageOpen() || !settled() || e.repeat) return;
+      selSound.input('keyboard', SEL_COMMIT_KEYS.has(e.code));
+    },
+    true
+  );
+  let hoverKey = null;
+  let lastPX = null;
+  let lastPY = null;
+  rootEl.addEventListener(
+    'pointermove',
+    (e) => {
+      // Real pointer motion only (a page opening under a still cursor, or a
+      // re-render under it, makes the browser re-send the SAME position).
+      const moved = e.clientX !== lastPX || e.clientY !== lastPY;
+      lastPX = e.clientX;
+      lastPY = e.clientY;
+      if (!pageOpen() || e.pointerType === 'touch' || !moved) return;
+      selSound.input('mouse', false);
+      const q = HOVER_SEL[current];
+      const el = q && e.target && e.target.closest ? e.target.closest(q) : null;
+      // Keyed by the item's place on the page, so a rebuilt card under the
+      // cursor is the same item, not a new hover.
+      const key = el && !el.closest('.rn-sold') ? `${current}:${[...screens[current].el.querySelectorAll(q)].indexOf(el)}` : null;
+      if (key === hoverKey) return;
+      hoverKey = key;
+      if (key && settled()) selSound.hover(current);
+    },
+    { passive: true }
+  );
+  rootEl.addEventListener('pointerleave', () => (hoverKey = null), { passive: true });
+  for (const type of ['pointerdown', 'wheel']) rootEl.addEventListener(type, () => pageOpen() && selSound.input('mouse', false), { passive: true, capture: true });
+  const selUpdate = update;
+  // eslint-disable-next-line no-func-assign
+  update = function selectionAwareUpdate() {
+    selUpdate();
+    const s = current === 'none' ? null : screens[current];
+    if (current === 'none') hoverKey = null;
+    selSound.poll(current, s && typeof s.sel === 'function' ? s.sel() : null);
+  };
+  // @gnt:M3 RUN-NAV-SOUND end
   let pendingAutostart = !!autostart;
   function maybeAutostart() {
     if (!pendingAutostart || world.tick < 1) return;
     pendingAutostart = false;
-    run().startRun();
+    // `?run=1&act=N` (PLAN §6.1): the expedition and the Gameplay-tab
+    // challenge ride startRun, exactly like the portal press.
+    const p = parseBootParams();
+    const challenge = service('settings')?.get?.('gameplay.challenge') ?? 'standard';
+    run().startRun({ act: p.act ?? 1, challenge });
+  }
+
+  // PARTY (PLAN §16.4): the pad on the build pages (app.js routes it here
+  // when no app screen is open) — the current page's pad(); a page still
+  // arriving drops navigation / commits exactly like the keyboard's settle.
+  function padAction(action) {
+    if (current === 'none' || (socket && socket.isOpen())) return false;
+    const s = screens[current];
+    if (!s || typeof s.pad !== 'function') return false;
+    if (!settled()) return true;
+    selSound.input('gamepad', action === 'confirm' || action === 'secondary'); // @gnt:M3 RUN-NAV-SOUND (fix-M3-r5)
+    const used = s.pad(action);
+    if (used) signature = '';
+    return used;
   }
 
   return {
     update,
+    padAction,
     isOpen: () => current !== 'none',
     screen: () => current,
     debug: () => {
@@ -745,6 +1219,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
         // clock at a chosen offset — the same step function, told what time
         // it is — so a capture can photograph any phase; shopPin(null) hands
         // the clock back and the choreography finishes normally.
+        // Ruling A17: the draft page's swap state (focus 0 Take / 1 Leave,
+        // the Replaces mark, the 4 owned ids).
+        draft: typeof screens.draft.probe === 'function' ? screens.draft.probe() : null,
+        // PARTY: the shop's viewed tab, card owners and lamp copy.
+        shop: typeof screens.shop.probe === 'function' ? screens.shop.probe() : null,
         shopAnim: () => screens.shop.animState(),
         shopPin: (ms) => screens.shop.pin(ms),
       };

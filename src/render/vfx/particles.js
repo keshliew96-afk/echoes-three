@@ -375,5 +375,18 @@ export function createParticlePool(parent, cosmetic) {
     }
   }
 
-  return { burst, kill, hit, embers, impact, update, count, prewarm };
+  // CAMPAIGN (PLAN §12.3 resetPresentation): a level transition returns every
+  // live particle to the pool — nothing drifts into the next level.
+  function clear() {
+    let n = 0;
+    for (const key of Object.keys(clouds)) {
+      const cloud = clouds[key];
+      n += cloud.list.length;
+      cloud.list.length = 0;
+      cloud.geo.setDrawRange(0, 0);
+    }
+    return n;
+  }
+
+  return { burst, kill, hit, embers, impact, update, count, prewarm, clear };
 }

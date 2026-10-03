@@ -73,6 +73,65 @@ const ICONS = {
     ['path', { d: 'M16 3 V10 M12.5 6.5 H19.5' }],
   ],
 
+  // ------------------------------------------ Gauntlet skills (§23.3) --
+  // Lantern Flurry: three diamond bolt-heads fanned out from one point.
+  lantern_flurry: [
+    ['path', { d: 'M4 26 L14 18 M4 26 L16 22 M4 26 L12 14', 'stroke-width': 1.8 }],
+    ['path', { d: 'M22 5 L26 9 L22 13 L18 9 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M26 16 L30 20 L26 24 L22 20 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M15 13 L18 16 L15 19 L12 16 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Pale Lance: a long lance through two bodies (pierce ticks).
+  pale_lance: [
+    ['path', { d: 'M3 29 L23 9', 'stroke-width': 3 }],
+    ['path', { d: 'M20 5 L28 4 L27 12 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M8 18 L14 24 M14 12 L20 18', 'stroke-width': 1.8 }],
+  ],
+  // Bell Toll: a bell with its clapper and two sound arcs.
+  bell_toll: [
+    ['path', { d: 'M9 22 C9 12 11 7 16 7 C21 7 23 12 23 22 Z' }],
+    ['path', { d: 'M6 22 H26', 'stroke-width': 2.8 }],
+    ['circle', { cx: 16, cy: 26, r: 2.2, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M3 12 A12 12 0 0 1 6 6 M29 12 A12 12 0 0 0 26 6', 'stroke-width': 1.8 }],
+  ],
+  // Rootsnare: a ground line with three roots curling out of it.
+  rootsnare: [
+    ['path', { d: 'M3 18 H29' }],
+    ['path', { d: 'M8 18 C7 23 11 25 9 29 M16 18 C18 23 14 25 16 29 M24 18 C23 23 27 24 25 29', 'stroke-width': 2 }],
+    ['path', { d: 'M12 18 C12 13 8 11 9 6 M21 18 C21 12 25 11 23 5', 'stroke-width': 2 }],
+  ],
+  // Dewfall: three drops falling onto a ground arc.
+  dewfall: [
+    ['path', { d: 'M9 4 C11 8 12 10 9 12 C6 10 7 8 9 4 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M20 7 C22 11 23 13 20 15 C17 13 18 11 20 7 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M14 14 C16 18 17 20 14 22 C11 20 12 18 14 14 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M4 27 A14 7 0 0 1 28 27' }],
+  ],
+  // Kindred Shield: a shield with the heal cross inside it.
+  kindred_shield: [
+    ['path', { d: 'M16 4 L26 8 V15 C26 21 21 25.5 16 28 C11 25.5 6 21 6 15 V8 Z' }],
+    ['path', { d: 'M16 10 V21 M10.5 15.5 H21.5', 'stroke-width': 2.8 }],
+  ],
+  // Mending Tide: one wide swell under a rising cross.
+  mending_tide: [
+    ['path', { d: 'M2 22 Q9 12 16 20 T30 18' }],
+    ['path', { d: 'M4 28 Q11 19 18 26 T30 25', 'stroke-width': 1.8 }],
+    ['path', { d: 'M16 3 V11 M12 7 H20' }],
+  ],
+  // Hearthsong: a hearth flame with two song arcs.
+  hearthsong: [
+    ['path', { d: 'M16 5 C21 10 22 14 20 19 C19 22 13 22 12 19 C10 14 11 10 16 5 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M6 26 A11 5 0 0 0 26 26' }],
+    ['path', { d: 'M4 12 A13 13 0 0 1 7 7 M28 12 A13 13 0 0 0 25 7', 'stroke-width': 1.8 }],
+  ],
+  // Quiet Hearth: a dome over a small hearth stone (a ward).
+  quiet_hearth: [
+    ['path', { d: 'M4 24 A12 12 0 0 1 28 24' }],
+    ['path', { d: 'M2 26.5 H30' }],
+    ['path', { d: 'M13 24 V20 H19 V24', 'stroke-width': 1.8 }],
+    ['path', { d: 'M16 10 V16 M13 13 H19', 'stroke-width': 1.8 }],
+  ],
+
   // ----------------------------------------------------------- nodes --
   // Sharpen: a whetted blade with a sparkle.
   sharpen: [
@@ -128,6 +187,286 @@ const ICONS = {
         stroke: 'none',
       },
     ],
+  ],
+
+  // ------------------------------------------- Gauntlet nodes (§23.4) --
+  // Widen: a ring pushed outward by two arrows.
+  widen: [
+    ['circle', { cx: 16, cy: 16, r: 5.5 }],
+    ['path', { d: 'M2 16 H8 M24 16 H30' }],
+    ['path', { d: 'M5 12 L1.5 16 L5 20 M27 12 L30.5 16 L27 20', 'stroke-width': 2 }],
+  ],
+  // Reach: a long shaft with a head, past a range tick.
+  reach: [
+    ['path', { d: 'M3 16 H27' }],
+    ['path', { d: 'M22 10 L28.5 16 L22 22', 'stroke-width': 2.6 }],
+    ['path', { d: 'M9 10 V22 M15 12 V20', 'stroke-width': 1.8 }],
+  ],
+  // Linger: an hourglass.
+  linger: [
+    ['path', { d: 'M8 4 H24 M8 28 H24', 'stroke-width': 2.6 }],
+    ['path', { d: 'M10 4 C10 12 16 13 16 16 C16 19 10 20 10 28 M22 4 C22 12 16 13 16 16 C16 19 22 20 22 28' }],
+    ['path', { d: 'M12.5 25 L16 21.5 L19.5 25 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Keen: a four-point glint.
+  keen: [
+    ['path', { d: 'M16 2 L18.8 13.2 L30 16 L18.8 18.8 L16 30 L13.2 18.8 L2 16 L13.2 13.2 Z', fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 25, cy: 7, r: 1.8, fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Snare: a closing loop of rope.
+  snare: [
+    ['path', { d: 'M16 6 A10 10 0 1 1 7.5 21' }],
+    ['path', { d: 'M16 12 A4.5 4.5 0 1 1 11.5 16.5' }],
+    ['path', { d: 'M7.5 21 L3 29', 'stroke-width': 2 }],
+  ],
+  // Galvanize: a zig-zag bolt.
+  galvanize: [
+    ['path', { d: 'M19 2 L8 17 H15 L12 30 L24 13 H17 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Bulwark: a hexagonal shield plate.
+  bulwark: [
+    ['path', { d: 'M16 3 L27 9.5 V22.5 L16 29 L5 22.5 V9.5 Z' }],
+    ['path', { d: 'M16 9 L22 12.5 V19.5 L16 23 L10 19.5 V12.5 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Split: one line forking into two heads.
+  split: [
+    ['path', { d: 'M3 16 H13 L25 7 M13 16 L25 25' }],
+    ['path', { d: 'M20 5 L26 6.5 L24.5 12 M20 27 L26 25.5 L24.5 20', 'stroke-width': 2 }],
+  ],
+  // Resonance: three nested arcs around a core (x2 on the third cast).
+  resonance: [
+    ['circle', { cx: 9, cy: 16, r: 3, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M14 10 A8 8 0 0 1 14 22' }],
+    ['path', { d: 'M19 6 A13 13 0 0 1 19 26' }],
+    ['path', { d: 'M24 3 A18 18 0 0 1 24 29', 'stroke-width': 1.8 }],
+  ],
+
+  // ------------------------------------ PARTY class skills (§25.2) --
+  // Tank (badger) — protects and controls.
+  heavy_slam: [
+    ['path', { d: 'M8 5 H20 V13 H8 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M14 13 V23' }],
+    ['path', { d: 'M4 27 H28 M7 23 L4 20 M25 23 L28 20', 'stroke-width': 2 }],
+  ],
+  brutal_cleave: [
+    ['path', { d: 'M5 22 A13 13 0 0 1 27 22', 'stroke-width': 3 }],
+    ['path', { d: 'M16 9 L21 4 L27 10 L22 15 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M16 9 L9 26' }],
+  ],
+  ground_crack: [
+    ['path', { d: 'M2 21 H30' }],
+    ['path', { d: 'M16 21 L12 26 L15 29 M16 21 L21 25 L19 29 M16 21 L16 14', 'stroke-width': 2 }],
+    ['path', { d: 'M9 12 L16 6 L23 12', 'stroke-width': 2 }],
+  ],
+  whirling_guard: [
+    ['path', { d: 'M16 4 A12 12 0 0 1 28 16', 'stroke-width': 2.6 }],
+    ['path', { d: 'M16 28 A12 12 0 0 1 4 16', 'stroke-width': 2.6 }],
+    ['path', { d: 'M24 12 L28 16 L32 12 M8 20 L4 16 L0 20', 'stroke-width': 2 }],
+    ['circle', { cx: 16, cy: 16, r: 4, fill: 'currentColor', stroke: 'none' }],
+  ],
+  taunting_roar: [
+    ['path', { d: 'M5 11 L14 16 L5 21 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M18 10 A7 7 0 0 1 18 22 M22 6 A12 12 0 0 1 22 26' }],
+    ['path', { d: 'M27 4 V14 M27 18 V20', 'stroke-width': 2.6 }],
+  ],
+  shield_wall: [
+    ['path', { d: 'M4 6 H14 V20 L9 26 L4 20 Z' }],
+    ['path', { d: 'M18 6 H28 V20 L23 26 L18 20 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  shoulder_charge: [
+    ['path', { d: 'M14 8 H24 A4 4 0 0 1 28 12 V20 A4 4 0 0 1 24 24 H14 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M2 11 H10 M4 16 H11 M2 21 H10' }],
+  ],
+  iron_stance: [
+    ['path', { d: 'M16 4 L26 9.5 V21.5 L16 27 L6 21.5 V9.5 Z' }],
+    ['path', { d: 'M11 26 V20 M21 26 V20 M16 11 V17', 'stroke-width': 2 }],
+    ['path', { d: 'M3 29.5 H29', 'stroke-width': 1.8 }],
+  ],
+  // Swordsman (fox) — strikes and chains close-quarter combos.
+  flurry: [
+    ['path', { d: 'M5 26 L20 11 M9 28 L25 12 M13 29 L28 15' }],
+    ['path', { d: 'M21 4 L28 4 L28 11', 'stroke-width': 2 }],
+  ],
+  lunge_strike: [
+    ['path', { d: 'M3 16 H26' , 'stroke-width': 3 }],
+    ['path', { d: 'M22 11 L29 16 L22 21 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M5 11 V21', 'stroke-width': 2 }],
+  ],
+  blade_storm: [
+    ...[0, 90, 180, 270].map((a) => ['path', { d: 'M16 16 L16 3 L20 8 Z', fill: 'currentColor', stroke: 'none', transform: `rotate(${a} 16 16)` }]),
+    ['circle', { cx: 16, cy: 16, r: 11, 'stroke-width': 1.6 }],
+  ],
+  caltrops: [
+    ['path', { d: 'M8 20 L12 12 L16 20 Z M16 26 L20 18 L24 26 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M2 28 H30' }],
+    ['path', { d: 'M22 8 L26 4 M26 8 L22 4', 'stroke-width': 1.8 }],
+  ],
+  fox_step: [
+    ['path', { d: 'M3 23 C9 23 12 9 19 9', 'stroke-width': 2 }],
+    ['path', { d: 'M17 9 L28 20 M24 6 L28 10', 'stroke-width': 2.8 }],
+    ['path', { d: 'M3 17 H7 M3 29 H10', 'stroke-width': 1.6 }],
+  ],
+  crescent_finisher: [
+    ['path', { d: 'M8 5 A13 13 0 1 0 27 19 A10 10 0 1 1 8 5 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M23 5 L25 8 L28 9 L25 10 L23 13 L21 10 L18 9 L21 8 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  riposte: [
+    ['path', { d: 'M5 27 L25 5 M7 5 L27 27' }],
+    ['path', { d: 'M3 21 L11 29 M21 29 L29 21', 'stroke-width': 2 }],
+  ],
+  razor_wake: [
+    ['circle', { cx: 16, cy: 16, r: 10, 'stroke-dasharray': '4 3' }],
+    ['path', { d: 'M16 3 L19 8 L13 8 Z M27 21 L22 22 L24 17 Z M5 21 L8 17 L10 22 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Archer (hare) — kites at range.
+  piercing_shot: [
+    ['path', { d: 'M3 16 H27' }],
+    ['path', { d: 'M22 11 L29 16 L22 21', 'stroke-width': 2.6 }],
+    ['circle', { cx: 14, cy: 16, r: 4.5, 'stroke-width': 1.8 }],
+  ],
+  volley: [
+    ['path', { d: 'M4 26 L24 6 M4 16 L24 16 M4 6 L24 26', 'stroke-width': 2 }],
+    ['path', { d: 'M20 5 L25 5 L25 10 M21 13 L26 16 L21 19 M20 27 L25 27 L25 22', 'stroke-width': 1.8 }],
+  ],
+  detonating_charge: [
+    ['circle', { cx: 13, cy: 19, r: 8, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M18 12 C21 7 25 8 26 4', 'stroke-width': 2 }],
+    ['path', { d: 'M27 2 L29 5 M30 6 L27 7', 'stroke-width': 1.6 }],
+  ],
+  sundering_nova: [
+    ['circle', { cx: 16, cy: 16, r: 5 }],
+    ['path', { d: 'M16 2 V8 M16 24 V30 M2 16 H8 M24 16 H30 M6 6 L10 10 M22 22 L26 26 M26 6 L22 10 M6 26 L10 22', 'stroke-width': 2 }],
+  ],
+  vault_shot: [
+    ['path', { d: 'M4 26 C8 10 20 6 28 8', 'stroke-width': 2 }],
+    ['path', { d: 'M23 4 L28 8 L23 12', 'stroke-width': 2.4 }],
+    ['path', { d: 'M3 28 H13', 'stroke-width': 1.8 }],
+  ],
+  pinning_arrow: [
+    ['path', { d: 'M4 4 L22 22', 'stroke-width': 2.8 }],
+    ['path', { d: 'M17 25 L25 25 L25 17 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M2 30 H30 M22 26 V30', 'stroke-width': 1.8 }],
+  ],
+  rain_of_arrows: [
+    ['path', { d: 'M7 3 V17 M16 6 V20 M25 3 V17', 'stroke-width': 2 }],
+    ['path', { d: 'M4 14 L7 19 L10 14 M13 17 L16 22 L19 17 M22 14 L25 19 L28 14', 'stroke-width': 1.8 }],
+    ['path', { d: 'M3 27 H29', 'stroke-width': 2 }],
+  ],
+  kestrel_watch: [
+    ['path', { d: 'M3 14 L13 12 L16 7 L19 12 L29 14 L19 16 L16 25 L13 16 Z', fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 16, cy: 16, r: 13, 'stroke-width': 1.4, 'stroke-dasharray': '3 3' }],
+  ],
+
+  // ------------------------------------- PARTY class nodes (§25.3) --
+  provoke: [
+    ['path', { d: 'M10 4 V20 M22 4 V20', 'stroke-width': 3.2 }],
+    ['circle', { cx: 10, cy: 26, r: 2.2, fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 22, cy: 26, r: 2.2, fill: 'currentColor', stroke: 'none' }],
+  ],
+  brace: [
+    ['path', { d: 'M5 5 H27 V27 H5 Z' }],
+    ['path', { d: 'M10 10 H22 V22 H10 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  tremor: [
+    ['path', { d: 'M2 16 Q6 8 10 16 T18 16 T26 16 T30 12' }],
+    ['path', { d: 'M4 25 H28', 'stroke-width': 1.8 }],
+  ],
+  anchor: [
+    ['circle', { cx: 16, cy: 6, r: 3 }],
+    ['path', { d: 'M16 9 V27 M10 14 H22' }],
+    ['path', { d: 'M5 20 C6 27 12 28 16 27 C20 28 26 27 27 20', 'stroke-width': 2.2 }],
+  ],
+  retaliate: [
+    ['path', { d: 'M24 9 A10 10 0 1 0 26 19', 'stroke-width': 2.6 }],
+    ['path', { d: 'M20 4 L25 9 L19 12', 'stroke-width': 2.2 }],
+    ['path', { d: 'M13 13 L19 19 M19 13 L13 19', 'stroke-width': 2 }],
+  ],
+  aegis: [
+    ['path', { d: 'M16 3 L28 10 V22 L16 29 L4 22 V10 Z' }],
+    ['path', { d: 'M16 8 L23 12 V20 L16 24 L9 20 V12 Z', 'stroke-width': 1.8 }],
+    ['circle', { cx: 16, cy: 16, r: 2.6, fill: 'currentColor', stroke: 'none' }],
+  ],
+  flow: [
+    ['path', { d: 'M24 8 A10 10 0 1 0 26 20', 'stroke-width': 2.4 }],
+    ['path', { d: 'M20 3 L25 8 L19 11', 'stroke-width': 2.2 }],
+    ['path', { d: 'M12 16 H20', 'stroke-width': 2 }],
+  ],
+  momentum: [
+    ['path', { d: 'M3 16 H13 M3 9 H11 M3 23 H11', 'stroke-width': 2 }],
+    ['path', { d: 'M14 6 L27 16 L14 26 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  parry: [
+    ['path', { d: 'M16 3 V29', 'stroke-width': 3 }],
+    ['path', { d: 'M4 26 H28', 'stroke-width': 3 }],
+    ['path', { d: 'M10 10 L16 4 L22 10', 'stroke-width': 1.8 }],
+  ],
+  pursuit: [
+    ['path', { d: 'M5 27 L25 7', 'stroke-width': 2.6 }],
+    ['path', { d: 'M15 6 H26 V17', 'stroke-width': 2.6 }],
+    ['path', { d: 'M4 19 L8 23 M9 14 L13 18', 'stroke-width': 1.6 }],
+  ],
+  lethality: [
+    ['path', { d: 'M6 6 L26 26 M26 6 L6 26', 'stroke-width': 3.2 }],
+    ['circle', { cx: 16, cy: 16, r: 3.6, fill: 'currentColor', stroke: 'none' }],
+  ],
+  execute: [
+    ['circle', { cx: 16, cy: 16, r: 11 }],
+    ['circle', { cx: 16, cy: 16, r: 4.5, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M16 1 V9 M16 23 V31 M1 16 H9 M23 16 H31', 'stroke-width': 2 }],
+  ],
+  skewer: [
+    ['path', { d: 'M2 16 H28', 'stroke-width': 2.4 }],
+    ['path', { d: 'M23 11 L29 16 L23 21', 'stroke-width': 2.2 }],
+    ['circle', { cx: 10, cy: 16, r: 3.4 }],
+    ['circle', { cx: 18, cy: 16, r: 3.4 }],
+  ],
+  concussive: [
+    ['circle', { cx: 12, cy: 16, r: 7, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M22 9 A10 10 0 0 1 22 23 M26 5 A15 15 0 0 1 26 27', 'stroke-width': 2 }],
+  ],
+  steady_aim: [
+    ['path', { d: 'M5 5 H27 V27 H5 Z', 'stroke-width': 2 }],
+    ['path', { d: 'M16 5 V11 M16 21 V27 M5 16 H11 M21 16 H27', 'stroke-width': 2 }],
+    ['circle', { cx: 16, cy: 16, r: 2.4, fill: 'currentColor', stroke: 'none' }],
+  ],
+  disengage: [
+    ['path', { d: 'M26 22 C22 8 12 6 6 12', 'stroke-width': 2.4 }],
+    ['path', { d: 'M4 6 L6 13 L13 12', 'stroke-width': 2.2 }],
+    ['path', { d: 'M18 28 H30', 'stroke-width': 1.8 }],
+  ],
+  scatter: [
+    ['circle', { cx: 16, cy: 8, r: 4, fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 8, cy: 23, r: 4, fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 24, cy: 23, r: 4, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M16 12 V16 L10 20 M16 16 L22 20', 'stroke-width': 1.6 }],
+  ],
+  heartseeker: [
+    ['path', { d: 'M16 27 L5 16 A6 6 0 0 1 16 8 A6 6 0 0 1 27 16 Z' }],
+    ['path', { d: 'M2 4 L20 20', 'stroke-width': 2.2 }],
+    ['path', { d: 'M16 21 L21 21 L21 16', 'stroke-width': 2 }],
+  ],
+
+  // ------------------------------------ class glyphs (§25.6 strip) --
+  // The §19.2 silhouette props, drawn in Parchment ink on the party strip.
+  cls_healer: [
+    ['path', { d: 'M10 24 C10 14 11 7 16 7 C21 7 22 14 22 24 Z' }],
+    ['path', { d: 'M7 24 H25', 'stroke-width': 2.4 }],
+    ['circle', { cx: 16, cy: 27, r: 2, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M16 3 V7', 'stroke-width': 2 }],
+  ],
+  cls_tank: [
+    ['path', { d: 'M6 5 H26 V16 C26 23 21 27 16 29 C11 27 6 23 6 16 Z' }],
+    ['path', { d: 'M11 10 H21 V16 H11 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  cls_swordsman: [
+    ['path', { d: 'M6 26 L24 8', 'stroke-width': 3 }],
+    ['path', { d: 'M22 4 L28 4 L28 10', 'stroke-width': 2 }],
+    ['path', { d: 'M5 21 L11 27', 'stroke-width': 2.6 }],
+  ],
+  cls_archer: [
+    ['path', { d: 'M9 3 C23 9 23 23 9 29', 'stroke-width': 2.6 }],
+    ['path', { d: 'M9 3 V29', 'stroke-width': 1.4 }],
+    ['path', { d: 'M3 16 H27 M23 12 L28 16 L23 20', 'stroke-width': 2 }],
   ],
 
   // ----------------------------------------------------------- chrome --

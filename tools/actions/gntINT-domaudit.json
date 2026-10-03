@@ -1,0 +1,10 @@
+[
+ {
+  "type": "eval",
+  "code": "(()=>[...document.body.children].map(n=>({id:n.id||null,cls:String(n.className||'').slice(0,40),tag:n.tagName.toLowerCase(),vis:getComputedStyle(n).display+'/'+getComputedStyle(n).visibility,z:getComputedStyle(n).zIndex,txt:(n.textContent||'').trim().slice(0,40)})))()"
+ },
+ {
+  "type": "eval",
+  "code": "(()=>({fpsParam:__echoes.app.state,meter:getComputedStyle(document.getElementById('fps-meter')).display,panel:!!document.getElementById('debug-overlay')}))()"
+ }
+]

@@ -1,0 +1,197 @@
+[
+ {
+  "type": "loop",
+  "label": "room1",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase==='combat'&&r.room===1})()",
+  "maxMs": 20000,
+  "body": [
+   {
+    "type": "wait",
+    "ms": 150
+   }
+  ]
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{['sharpen','quicken','echo'].forEach(n=>__echoes.cmd('partyGrantNode',1,n,'drafted'));return 1})()"
+ },
+ {
+  "type": "loop",
+  "label": "clear1",
+  "cond": "(()=>{const r=__echoes.state().run;return r&&r.phase==='reward'})()",
+  "maxMs": 40000,
+  "body": [
+   {
+    "type": "eval",
+    "code": "(()=>{__echoes.cmd('killAllEnemies');return 1})()"
+   },
+   {
+    "type": "wait",
+    "ms": 400
+   }
+  ]
+ },
+ {
+  "type": "wait",
+  "ms": 1100
+ },
+ {
+  "type": "key",
+  "key": "x",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 700
+ },
+ {
+  "type": "key",
+  "key": "b",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 400
+ },
+ {
+  "type": "key",
+  "key": "e",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const d=__echoes.content&&__echoes.content.socketUi&&__echoes.content.socketUi();const P=__echoes.cmd('partyState');return {open:d&&d.open,viewSeat:d&&d.viewSeat,rows:d&&d.rows,rowSeats:d&&d.rowSeats,headerInHand:d&&d.headerInHand,focus:d&&d.focus,tabs:d&&d.tabs,slots:P.seats.map(s=>s.slots),filled:P.seats.map(s=>s.filled),bench:P.seats.map(s=>s.bench.length)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntPARTY-socket-tank"
+ },
+ {
+  "type": "key",
+  "key": "ArrowRight",
+  "ms": 90
+ },
+ {
+  "type": "key",
+  "key": "Tab",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 100
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{return 1})()"
+ },
+ {
+  "type": "key",
+  "key": "Digit1",
+  "ms": 90
+ },
+ {
+  "type": "key",
+  "key": "ArrowLeft",
+  "ms": 40
+ },
+ {
+  "type": "key",
+  "key": "ArrowLeft",
+  "ms": 40
+ },
+ {
+  "type": "key",
+  "key": "ArrowLeft",
+  "ms": 40
+ },
+ {
+  "type": "key",
+  "key": "ArrowLeft",
+  "ms": 40
+ },
+ {
+  "type": "key",
+  "key": "ArrowLeft",
+  "ms": 40
+ },
+ {
+  "type": "key",
+  "key": "ArrowLeft",
+  "ms": 40
+ },
+ {
+  "type": "key",
+  "key": "ArrowLeft",
+  "ms": 40
+ },
+ {
+  "type": "key",
+  "key": "ArrowLeft",
+  "ms": 40
+ },
+ {
+  "type": "key",
+  "key": "ArrowLeft",
+  "ms": 40
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const d=__echoes.content&&__echoes.content.socketUi&&__echoes.content.socketUi();const P=__echoes.cmd('partyState');return {open:d&&d.open,viewSeat:d&&d.viewSeat,rows:d&&d.rows,rowSeats:d&&d.rowSeats,headerInHand:d&&d.headerInHand,focus:d&&d.focus,tabs:d&&d.tabs,slots:P.seats.map(s=>s.slots),filled:P.seats.map(s=>s.filled),bench:P.seats.map(s=>s.bench.length)}})()"
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 200
+ },
+ {
+  "type": "key",
+  "key": "ArrowDown",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 150
+ },
+ {
+  "type": "key",
+  "key": "Enter",
+  "ms": 90
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const d=__echoes.content&&__echoes.content.socketUi&&__echoes.content.socketUi();const P=__echoes.cmd('partyState');return {open:d&&d.open,viewSeat:d&&d.viewSeat,rows:d&&d.rows,rowSeats:d&&d.rowSeats,headerInHand:d&&d.headerInHand,focus:d&&d.focus,tabs:d&&d.tabs,slots:P.seats.map(s=>s.slots),filled:P.seats.map(s=>s.filled),bench:P.seats.map(s=>s.bench.length)}})()"
+ },
+ {
+  "type": "key",
+  "key": "F",
+  "ms": 120
+ },
+ {
+  "type": "wait",
+  "ms": 300
+ },
+ {
+  "type": "eval",
+  "code": "(()=>{const d=__echoes.content&&__echoes.content.socketUi&&__echoes.content.socketUi();const P=__echoes.cmd('partyState');return {open:d&&d.open,viewSeat:d&&d.viewSeat,rows:d&&d.rows,rowSeats:d&&d.rowSeats,headerInHand:d&&d.headerInHand,focus:d&&d.focus,tabs:d&&d.tabs,slots:P.seats.map(s=>s.slots),filled:P.seats.map(s=>s.filled),bench:P.seats.map(s=>s.bench.length)}})()"
+ },
+ {
+  "type": "shot",
+  "name": "gntPARTY-socket-tank2"
+ }
+]

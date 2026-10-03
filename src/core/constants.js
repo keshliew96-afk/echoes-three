@@ -6,6 +6,18 @@ export const TICK_HZ = 60;
 export const TICK_MS = 1000 / TICK_HZ;
 export const MAX_FRAME_MS = 250; // accumulator clamp so a hitch never spirals
 
+// §6 skill slots: the player equips AT MOST 4 skills (keys Digit1..Digit4 —
+// core/input.js derives its bindings from this; 5-8 stay unbound). USER
+// CORRECTION 2026-09-22 (docs/gauntlet/PLAN.md §4.3, M4c): the content
+// extension's "8" is the number of NODE SOCKETS on every skill
+// (SOCKETS_PER_SKILL below), never the number of skill slots. Every slot
+// array — sim, world slot loop, HUD command bar, draft free-slot count, the
+// socket screen's rows — follows SKILL_SLOTS. Basic-attack fire keeps
+// resolving AFTER every skill slot (§4 "slot 4" = "after the last skill slot").
+// @gnt:M4a SKILL-SLOTS begin
+export const SKILL_SLOTS = 4;
+// @gnt:M4a SKILL-SLOTS end
+
 // §5 Dodge roll — integer tick counts (no gameplay logic reads wall-clock).
 // distance 1.8 u over 0.25 s = 7.2 u/s (3x run); own cooldown timer, outside
 // the skill pipeline.
@@ -187,3 +199,23 @@ export const CAMERA = Object.freeze({
 
 // §1 Performance: canvas fully responsive; devicePixelRatio capped at 2.
 export const MAX_PIXEL_RATIO = 2;
+
+// Gauntlet content constants (docs/gauntlet/PLAN.md §2.2): each key appends
+// ONLY inside its own block, frozen tables, no edits above this line.
+// @gnt:M4a CONSTANTS begin (skills / nodes / statuses / slots)
+// Node sockets per skill (M4c, user correction 2026-09-22): EVERY skill —
+// actives and passives alike — has 8 sockets, and any node of any rarity fits
+// any socket (the old §15.2 slot-A-rare / slot-B-legendary / passive-rare caps
+// are gone). The per-skill repetition limits (§15.1 / §23.4) still hold.
+export const SOCKETS_PER_SKILL = 8;
+// @gnt:M4a CONSTANTS end
+// @gnt:M4b CONSTANTS begin (enemies / hazards / interactables / biomes)
+// The Tank's MENACE (BUILD_BRIEF §25.1 "the Tank protects", PLAN GP.5): while
+// the Tank holds a taunt source — Taunting Roar equipped, or a live Provoke
+// socketed on an equipped skill (one source each) — every non-boss hostile
+// choosing whom to attack weighs the Tank as `perSourceU` closer per source
+// (at most `maxU`) than it really is. A live taunt still forces its target;
+// the Hollow Stag keeps its own rule (boss.js). Pure geometry, zero RNG draws;
+// with no source equipped targeting is the v0.5.150 nearest-body rule exactly.
+export const MENACE = Object.freeze({ perSourceU: 0.3, maxU: 0.55 });
+// @gnt:M4b CONSTANTS end

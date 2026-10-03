@@ -82,7 +82,12 @@ export function createPathScreen({ run }) {
       <span><b>${WIN_GLYPH[win] ?? '⚔'}</b> ${esc(WIN_LABEL[win] ?? win)}</span>
       <span><b>${REWARD_GLYPH.skill}</b> ${esc(REWARD_LABEL.skill)}</span>
       <span><b>${REWARD_GLYPH.node}</b> ${esc(REWARD_LABEL.node)}</span>`;
+    shownFocus = p.focus;
   }
+  // fix-M3-r5 (AUD5-F1): the focused door as drawn, the selection signature
+  // the run UI polls for its selection ticks (src/audio/uiselect.js).
+  let shownFocus = null;
+  const sel = () => (shownFocus === null ? null : `0|${shownFocus}`);
 
   function key(code, fresh) {
     const sys = run();
@@ -106,9 +111,29 @@ export function createPathScreen({ run }) {
       sys.choosePath(focus);
       return true;
     }
-    if (code === 'Escape') return true; // §16: Esc inert on the path screen
+    // Esc is NOT this page's key (PLAN §1.5, ruling A13): it passes through,
+    // unconsumed, to the pause menu. The page itself stays inert to it.
     return false;
   }
 
-  return { el, render, key, name: 'path' };
+  // Gamepad (PLAN §16.4 pad parity on the build pages; fix-M3-r5 — the door
+  // picker had no pad() at all, so a pad could neither move nor commit here):
+  // d-pad / stick left / right focus a door, A walks through the focused one.
+  // The run UI's padAction drops both while the page settles.
+  function pad(action) {
+    const sys = run();
+    if (action === 'left' || action === 'right') {
+      sys.focusPath(action === 'left' ? 0 : 1);
+      render(sys.view());
+      return true;
+    }
+    if (action === 'confirm') {
+      const view = sys.view();
+      sys.choosePath(view.path ? view.path.focus : 0);
+      return true;
+    }
+    return false;
+  }
+
+  return { el, render, key, pad, sel, name: 'path' };
 }
