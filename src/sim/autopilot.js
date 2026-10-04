@@ -178,9 +178,20 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       autoSocket();
       return true;
     }
+    // RELICS: take the first relic of the three (the relic stream already
+    // weighted the roll), then walk on.
+    if (v.phase === 'relic') {
+      if (typeof r.chooseRelic === 'function') r.chooseRelic(0);
+      stats.relics = (stats.relics ?? 0) + 1;
+      return true;
+    }
     if (v.phase === 'path') {
       autoSocket();
-      r.choosePath(cfg.doors === 1 ? 1 : 0);
+      // RELICS: `curses: 'avoid'` walks the other door when the configured
+      // one is cursed (default 'take': the configured door, cursed or not).
+      let side = cfg.doors === 1 ? 1 : 0;
+      if (cfg.curses === 'avoid' && v.path && v.path.options[side] && v.path.options[side].curse) side = 1 - side;
+      r.choosePath(side);
       stats.doors += 1;
       return true;
     }

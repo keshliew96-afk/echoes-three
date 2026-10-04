@@ -749,6 +749,67 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     camfx.apply(tSec);
   }
 
+  // ------------------------------------------------- relics and curses --
+  // (sim/relics.js) A relic taken rises off the Healer in its rarity colour;
+  // a proc marks the body it touched; a cursed room opens with a violet ring
+  // closing on the party and lifts with one bursting outward.
+  const RELIC_RARITY = { common: BONE, rare: PALETTE.signalBlue, legendary: PALETTE.hearthAmber };
+  const VIOLET = PALETTE.godstuffViolet;
+  const VIOLET_PEAK = PALETTE.godstuffVioletPeak;
+  const bodyAt = (ev) => {
+    const b = byId(ev.target);
+    return b ? { x: b.x, z: b.z } : { x: ev.x ?? player()?.x ?? 0, z: ev.z ?? player()?.z ?? 0 };
+  };
+  bus.on('relic_gain', (ev) => {
+    const p = player();
+    const x = p ? p.x : ev.x ?? 0;
+    const z = p ? p.z : ev.z ?? 0;
+    const c = RELIC_RARITY[ev.rarity] ?? BONE;
+    kit.ring({ x, z, r0: 0.3, r1: 2.2, width: 0.14, life: 0.7, core: PARCH, glow: c, soft: 0.5, y: 0.06 });
+    kit.flash({ x, y: 1.4, z, color: c, size: 1.1, life: 0.5, hold: 0.12 });
+    kit.light({ x, z, radius: 2.4, color: c, opacity: 0.55, life: 0.8 });
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * TAU;
+      kit.streak({ a: { x: x + Math.cos(a) * 0.5, y: 0.1, z: z + Math.sin(a) * 0.5 }, b: { x: x + Math.cos(a) * 0.35, y: 1.9, z: z + Math.sin(a) * 0.35 }, width: 0.05, tailW: 0, core: PARCH, glow: c, life: 0.6, delay: i * 0.04, fall: 0.6 });
+    }
+    spray('spark', x, 0.4, z, ev.rarity === 'legendary' ? 18 : 10, { color: c, speed: [0.2, 0.7], up: [1.4, 2.6], size: [0.05, 0.1], life: [0.8, 1.3], gravity: -0.2, drag: 1.2, jitter: 0.5, opacity: 0.9 });
+  });
+  bus.on('relic_proc', (ev) => {
+    const { x, z } = bodyAt(ev);
+    if (ev.relic === 'last_light') {
+      kit.flash({ x, y: 0.9, z, color: PARCH, size: 1.3, life: 0.45, hold: 0.15 });
+      kit.ring({ x, z, r0: 1.6, r1: 0.4, width: 0.16, life: 0.5, core: PARCH, glow: PALETTE.hearthAmber, soft: 0.4, y: 0.08 });
+      kit.light({ x, z, radius: 2.0, color: PALETTE.hearthAmber, opacity: 0.6, life: 0.6 });
+    } else if (ev.relic === 'thorn_mail') {
+      const from = byId(ev.from);
+      const ang = from ? Math.atan2(z - from.z, x - from.x) : rnd(0, TAU);
+      for (const s of [-0.5, 0, 0.5]) {
+        const a = ang + s;
+        kit.streak({ a: { x: x - Math.cos(a) * 0.5, y: 0.5, z: z - Math.sin(a) * 0.5 }, b: { x: x + Math.cos(a) * 0.2, y: 0.55, z: z + Math.sin(a) * 0.2 }, width: 0.05, tailW: 0.05, core: PARCH, glow: PALETTE.signalBlue, life: 0.2, fall: 1.2 });
+      }
+    } else if (ev.relic === 'leech_fang' || ev.relic === 'hearthstone') {
+      kit.ring({ x, z, r0: 0.2, r1: ev.relic === 'hearthstone' ? 2.6 : 0.9, width: 0.1, life: 0.5, core: PARCH, glow: HEAL, soft: 0.6, y: 0.06 });
+      spray('spark', x, 0.3, z, ev.relic === 'hearthstone' ? 12 : 4, { color: HEAL, speed: [0.1, 0.4], up: [0.8, 1.6], size: [0.05, 0.09], life: [0.6, 1.0], gravity: -0.3, drag: 1.4, jitter: 0.6, opacity: 0.85 });
+    } else if (ev.relic === 'heron_quill') {
+      kit.ring({ x, z, r0: 0.3, r1: 1.6, width: 0.1, life: 0.45, core: PARCH, glow: PALETTE.signalBlue, soft: 0.5, y: 0.06 });
+    }
+  });
+  bus.on('curse_apply', (ev) => {
+    const p = player();
+    const x = p ? p.x : ev.x ?? 0;
+    const z = p ? p.z : ev.z ?? 0;
+    kit.ring({ x, z, r0: 5.5, r1: 0.6, width: 0.22, life: 0.9, core: VIOLET_PEAK, glow: VIOLET, soft: 0.5, y: 0.06 });
+    kit.light({ x, z, radius: 3.4, color: VIOLET, opacity: 0.45, life: 1.0 });
+    spray('spark', x, 0.1, z, 16, { color: VIOLET, speed: [0.1, 0.5], up: [0.6, 1.4], size: [0.06, 0.12], life: [1.0, 1.6], gravity: -0.35, drag: 1.4, jitter: 3.0, opacity: 0.85 });
+  });
+  bus.on('curse_lift', (ev) => {
+    if (ev.forfeited) return;
+    const p = player();
+    if (!p) return;
+    kit.ring({ x: p.x, z: p.z, r0: 0.6, r1: 6.0, width: 0.2, life: 0.8, core: VIOLET_PEAK, glow: VIOLET, soft: 0.6, y: 0.06 });
+    kit.flash({ x: p.x, y: 1.2, z: p.z, color: VIOLET_PEAK, size: 1.0, life: 0.4 });
+  });
+
   function levelTeardown() {
     trails.clear();
     wakeClock.clear();

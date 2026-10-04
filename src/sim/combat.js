@@ -175,11 +175,19 @@ export function createCombat({
 
     const atk = attacker !== null && attacker !== undefined ? registry.byId(attacker) : null;
     const dealt = atk ? STATUS.damageDealtMul(atk, tick) : 1;
-    const rolled = rng.chance(CRIT.chance + critBonus); // strict roll < chance (§7)
+    // RELICS (sim/relics.js): party-wide modifiers, read only while a relic
+    // or a curse is live. A hostile target hit by anything that is not
+    // hostile counts as party damage (bolts carry no attacker id).
+    const M = mods && mods.active() ? mods : null;
+    const partyHit = !!M && target.partyIndex !== undefined;
+    const partyDeals = !!M && target.faction === 'hostile' && !(atk && atk.faction === 'hostile');
+    const rolled = rng.chance(CRIT.chance + critBonus + (partyDeals ? M.critChance() : 0)); // strict roll < chance (§7)
     const crit = forceCrit ? true : rolled;
     let amount = base * dealt;
-    if (crit) amount *= critMul ?? CRIT.mult;
+    if (partyDeals) amount *= M.dealtMul();
+    if (crit) amount *= (critMul ?? CRIT.mult) + (partyDeals ? M.critMulAdd() : 0);
     amount *= STATUS.damageTakenMul(target, tick);
+    if (partyHit) amount *= M.takenMul();
     let absorbed = 0;
     let shieldSrc = null;
     if (target.status && target.status.shield) {
@@ -202,6 +210,7 @@ export function createCombat({
         kb = delivery === 'basic' ? KNOCKBACK.basicDist : KNOCKBACK.skillDist;
         if (kbDist !== null && kbDist !== undefined) kb = kbDist;
         else if (kbScale !== null && kbScale !== undefined) kb *= kbScale;
+        if (partyDeals) kb *= M.kbMul();
         if (kb !== 0) {
           target.kbVx = (dirX / len) * (kb / KNOCKBACK.durationTicks);
           target.kbVz = (dirZ / len) * (kb / KNOCKBACK.durationTicks);
@@ -249,12 +258,16 @@ export function createCombat({
     }
     // PARTY (Retaliate): a hostile instance landed on a party member.
     if (hooks.onPartyDamaged && target.partyIndex !== undefined && atk && atk.faction === 'hostile') hooks.onPartyDamaged(target, atk, amount + absorbed);
+    if (partyHit && atk && atk.faction === 'hostile') M.onPartyHit(target, atk, amount + absorbed);
 
     // §9 #4, melee half: a melee-arc connect that does NOT kill pauses the
     // whole sim for 2 ticks — the weight the brief asks a swing to land with.
     // A LETHAL arc connect skips this and takes the 3-tick kill pause below
     // instead (one pause per impact, the stronger cause wins).
     if (shape === 'melee_arc' && target.hp > 0) requestStop('melee_arc', HITSTOP.meleeTicks);
+
+    // RELICS (Last Light): the blow leaves the member standing at 1 HP.
+    if (partyHit && target.hp <= 0 && M.saveFromDown(target)) target.hp = 1;
 
     if (target.hp <= 0) {
       if (target.partyIndex !== undefined) {
@@ -273,6 +286,7 @@ export function createCombat({
         });
       } else {
         kill(target, { delivery });
+        if (partyDeals && target.faction === 'hostile' && target.lifecycle !== 'break') M.onKill(target);
       }
     }
     return { amount, crit };
@@ -323,7 +337,10 @@ export function createCombat({
   function applyHeal(target, base, { healer = null, source = null, critBonus = 0 } = {}) {
     const tick = getTick();
     if (!target || !(target.hp > 0)) return null; // Downed/dead: outside the pipeline
-    const crit = rng.chance(CRIT.chance + critBonus);
+    // RELICS: heal modifiers on the party (Lantern Oil, Hawk Feather, Famine).
+    const M = mods && mods.active() && target.partyIndex !== undefined ? mods : null;
+    const crit = rng.chance(CRIT.chance + critBonus + (M ? M.critChance() : 0));
+    if (M) base *= M.healMul();
     const preClamp = crit ? base * CRIT.mult : base;
     const room = target.maxHp - target.hp;
     const applied = Math.min(preClamp, room);
@@ -357,5 +374,10 @@ export function createCombat({
   // PARTY hooks (sim/partytech.js installs them; absent = no-op).
   const hooks = { onParry: null, onPartyDamaged: null };
   const setHooks = (h = {}) => Object.assign(hooks, h);
-  return { applyDamage, applyHeal, kill, status: STATUS, saveState, loadState, setHooks };
+  // RELICS: the relic system's modifier table (sim/relics.js), null = none.
+  let mods = null;
+  const setMods = (m) => {
+    mods = m ?? null;
+  };
+  return { applyDamage, applyHeal, kill, status: STATUS, saveState, loadState, setHooks, setMods };
 }
