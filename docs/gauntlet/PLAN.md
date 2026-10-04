@@ -3767,9 +3767,12 @@ Measured on the dev server AND the production build (`npx vite build
   are too few at a ~1-in-3 dip rate (x2.1: 1 of 5, 13 of 40; v0.5.150: 1 of
   5, 7 of 40). Levels 2–3 keep "≥ 1 down on ≥ 2 of 5 seeds". MET at x2.1:
   13 of 40 vs 7 of 40, `gntPARTY-band` 18/18; a Level 1 Stag at x1.0 bites 3
-  of 40 and fails. A sweep of the Level 1 Stag damage / HP and room damage
-  found no setting that raises the 40-seed rate while an unsocketed party
-  still clears; docs/gauntlet/fix-M4a-r6.md S8.)*
+  of 40 and fails. No Level 1 retune earns the 5-seed pass honestly: the
+  Stag damage / HP settings that keep an unsocketed party alive bite on 0–1
+  of seeds 1–5, and the room-damage settings that pass all of seeds 1–5
+  (`LEVEL_DMG[1]` 1.01–1.03, alone or with Stag 2.12) bite on 9–15 of 40
+  (x2.1: 13) while the unsocketed party clears 15–18 of the unseen seeds
+  21–40 (x2.1: 19); docs/gauntlet/fix-M4a-r6.md S8.)*
 - **GP.14 The Healer is unchanged**: every §16.10 invariant (Node probe
   against a `git archive` of v0.5.150: pools, numbers, 289 grid cells,
   spoils / shelf / wallet numbers, `reward_offer` / `spoils_drop` /

@@ -2187,8 +2187,10 @@ measured over a whole Level 3 played in order with the four max-stress builds
 guest's scripted bot fighting, samples every 500 ms): 10.7–11.4 KB/s average
 at N1 at v0.5.163; re-entering room 6 every time it clears (`--reskip 1`, a
 spawn-heavy worst case the gate does not ask for) reads ~13 KB/s. **GP.13
-(d)** on the carried Levels 1–2 conflicts with (b): the v0.5.150 baseline
-itself has 0 of 5 seeds with a down there (BUILD_BRIEF §23.2 PARTY note). **Short
+(d)** on the carried Levels 1–2 conflicted with (b) at v0.5.163: the v0.5.150
+baseline itself has 0 of 5 seeds with a down there (BUILD_BRIEF §23.2 PARTY
+note). Level 2 has met it since fix-PARTY-r5; Level 1 is judged by the
+2026-10-03 HP-dip ruling (PLAN GP.13, `gntPARTY-band` above). **Short
 windows**: under 860 px of window height the party page reflows again
 (`.rn-short`, src/ui/run/style.js) so the four-character page fits 1024×576
 through 1366×768 at scale 1.0; under the §1 minimum (1024×640) a page that

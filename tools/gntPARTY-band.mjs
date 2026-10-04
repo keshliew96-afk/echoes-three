@@ -133,9 +133,9 @@ for (const from of FROMS) {
     report.levels[`${from}:${lvl}`] = row;
     gate(`(b) from ${from} L${lvl}: combat-room median damage x${row.damageRatio} (${row.medDamage} vs ${row.baseDamage}) and time-to-clear x${row.ttcRatio} (${row.medTicks} vs ${row.baseTicks} ticks) within x0.75-x1.35`, dmgR >= 0.75 && dmgR <= 1.35 && ttcR >= 0.75 && ttcR <= 1.35, row);
     if (lvl === 3) gate(`(c) from ${from} L3: the Stag room's median party damage ${row.bossDamage} >= 0.8 x ${row.baseBossDamage}`, med(n.boss) >= 0.8 * med(b.boss), { now: row.bossDamage, base: row.baseBossDamage });
-    // The v0.5.150 baseline's own count is printed alongside: on the carried
-    // Levels 1-2 it is 0 of 5 (BUILD_BRIEF §23.2 PARTY note: (d) there cannot
-    // be met without breaking (b)'s x1.35 ceiling — a recorded design conflict).
+    // The v0.5.150 baseline's own count is printed alongside (its carried
+    // Levels 1-2 have no down on any of seeds 1-5). Level 2's (d) has been met
+    // since fix-PARTY-r5; Level 1's is the 2026-10-03 HP-dip ruling below.
     if (lvl === 1) {
       // Level 1 (PLAN GP.13, 2026-10-03): a seed bites on a down OR a member
       // below 35 % HP, counted over seeds 1-40 (Level 1 only) against the

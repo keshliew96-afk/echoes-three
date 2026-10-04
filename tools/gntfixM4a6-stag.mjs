@@ -10,8 +10,10 @@
 //   idle   strip + the Healer stands still in the Stag room (journey stagopen:
 //          the game AI alone holds the opening)
 // Prints per variant: Stag clears / wipes, fight seconds, downs, the first
-// down's time after boss_spawn, the largest single Stag hit, and the
-// GP.13 (d) count (seeds with >= 1 party down anywhere in Level 1).
+// down's time after boss_spawn, the largest single Stag hit, the seeds with
+// >= 1 party down anywhere in Level 1 (GP.13 (d)'s rule before 2026-10-03),
+// and the bite on seeds 1-5 (a down or a member below 35 % HP). Level 1's
+// gate is now gntPARTY-band's HP dip over seeds 1-40 (PLAN GP.13).
 //
 //   node tools/gntfixM4a6-stag.mjs [--seeds 1-10] [--variants auto,strip,idle] [--root dir] [--out f]
 import { pathToFileURL } from 'node:url';
@@ -89,8 +91,8 @@ async function runOne(seed, variant) {
     const t = registry.byId(e.target);
     if (t && t.maxHp > 0) {
       const f = Math.max(0, t.hp) / t.maxHp;
-      if (f < r.minHpFrac) r.minHpFrac = Math.round(f * 1000) / 1000;
-      if (inBoss && f < r.minHpFracStag) r.minHpFracStag = Math.round(f * 1000) / 1000;
+      if (f < r.minHpFrac) r.minHpFrac = f; // unrounded: the 35 % test is strict
+      if (inBoss && f < r.minHpFracStag) r.minHpFracStag = f;
     }
     if (!inBoss) return;
     const a = e.attacker !== undefined ? registry.byId(e.attacker) : null;
@@ -128,8 +130,8 @@ for (const variant of VARIANTS) {
   const downSeeds = rows.filter((x) => x.downsL1 > 0).map((x) => x.seed);
   const down5 = downSeeds.filter((s) => s <= 5).length;
   const bite = rows.filter((x) => x.seed <= 5 && (x.downsL1 > 0 || x.minHpFrac < 0.35)).length;
-  console.log(`${variant.padEnd(6)} bite (down or <35% HP) seeds 1-5: ${bite}/5 | min HP med ${med(rows.map((x) => x.minHpFrac))}`);
-  console.log(`${variant.padEnd(6)} clears ${cleared.length}/${rows.length} | wipes [${rows.filter((x) => x.outcome !== 'cleared').map((x) => `${x.seed}:${x.outcome}@${x.fightS}s`).join(' ')}] | fight med ${med(cleared.map((x) => x.fightS))} s | stag downs ${rows.reduce((s, x) => s + x.stagDowns, 0)} | first down med ${med(rows.map((x) => x.firstDownS))} s | max stag hit ${Math.max(...rows.map((x) => x.maxStagHit))} | hits>=60 ${rows.reduce((s, x) => s + x.stagHits60, 0)} | GP.13(d) down seeds 1-5: ${down5}/5 all: ${downSeeds.length}/${rows.length} | healer sockets ${[...new Set(rows.map((x) => x.healerSockets))].join(',')}`);
+  console.log(`${variant.padEnd(6)} bite (down or <35% HP) seeds 1-5: ${bite}/5 | min HP med ${Math.round(med(rows.map((x) => x.minHpFrac)) * 1000) / 1000}`);
+  console.log(`${variant.padEnd(6)} clears ${cleared.length}/${rows.length} | wipes [${rows.filter((x) => x.outcome !== 'cleared').map((x) => `${x.seed}:${x.outcome}@${x.fightS}s`).join(' ')}] | fight med ${med(cleared.map((x) => x.fightS))} s | stag downs ${rows.reduce((s, x) => s + x.stagDowns, 0)} | first down med ${med(rows.map((x) => x.firstDownS))} s | max stag hit ${Math.max(...rows.map((x) => x.maxStagHit))} | hits>=60 ${rows.reduce((s, x) => s + x.stagHits60, 0)} | down seeds 1-5: ${down5}/5 all: ${downSeeds.length}/${rows.length} | healer sockets ${[...new Set(rows.map((x) => x.healerSockets))].join(',')}`);
 }
 if (OUT) {
   mkdirSync(dirname(OUT), { recursive: true });
