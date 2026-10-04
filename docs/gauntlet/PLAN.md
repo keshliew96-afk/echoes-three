@@ -2699,6 +2699,12 @@ what GC.12 re-measures.
 - **GC.4 Campaign end**: the final clear → CAMPAIGN COMPLETE card → camp
   automatically within 600 ticks (Enter earlier); defeat → defeat card → camp;
   Quit to Lobby from combat, a run page and the card → camp with no end card.
+  *(fix-INT-r6, 2026-10-02, journey r6 J6-F1 / campaign r6 CR6-F1: the arrow
+  order is literal — the victory and defeat cards sit over the level they
+  ended in (app mode `run`, the level's plate, the Glint and build the run
+  ended with, a fallen party still down) and the camp replaces it only at
+  `return_to_camp`; run.js ends the run's world at `run_end` and resets the
+  loadout (`run_wiped`) with the return.)*
 - **GC.5 Carry / restore / reset**: a state diff at every transition matches
   §12.3 (skills + sockets + bench + wallet identical; every party member at
   max HP, standing, no statuses, cooldowns ready; 0 enemies, projectiles,
@@ -3745,6 +3751,28 @@ Measured on the dev server AND the production build (`npx vite build
   carried, 3/5 · 4/4 from Level 2, 5/5 from Level 3; over seeds 1–20 the
   default-autopilot campaign wins 12/20 (was 16/20), every level inside the
   §4.2 band; docs/gauntlet/fix-PARTY-r5.md.)*
+  *(fix-M4a-r6, 2026-10-02: (d) on Level 1 OPEN again — the Level 1 Stag's
+  × 4 wiped every party whose Healer had not socketed nodes (content r6 F1,
+  journey r6 J6-F2: 0/10 headless, 3/3 by real input), which breaks the
+  user's "without breaking the existing core gameplay loops". `STAG_DMG_LEVEL`
+  Level 1 4 → 2.1 (the dated BUILD_BRIEF §23.2 fix-M4a-r6 note): unsocketed
+  Healer 19/20 clears, autopilot 20/20, `gntPARTY-band` 17/18 — (d) Level 1
+  0/5, Levels 2–3 met. No Level 1 Stag setting met (d) without wiping that
+  party; the design owner rules (the fix-M4a-r5 options A / B / C).)*
+  *(Design owner's ruling, 2026-10-03: (d) on **Level 1** is an HP dip — a
+  seed bites when a member goes down OR drops below 35 % HP anywhere in
+  Level 1 — counted over seeds 1–40 (Level 1 only, `gntCAMPAIGN-camprun
+  --stop-after 1`) and met when it bites on at least as many seeds as the
+  v0.5.150 baseline (`captures/gntPARTY-baseline-l1.json`). Seeds 1–5 alone
+  are too few at a ~1-in-3 dip rate (x2.1: 1 of 5, 13 of 40; v0.5.150: 1 of
+  5, 7 of 40). Levels 2–3 keep "≥ 1 down on ≥ 2 of 5 seeds". MET at x2.1:
+  13 of 40 vs 7 of 40, `gntPARTY-band` 18/18; a Level 1 Stag at x1.0 bites 3
+  of 40 and fails. No Level 1 retune earns the 5-seed pass honestly: the
+  Stag damage / HP settings that keep an unsocketed party alive bite on 0–1
+  of seeds 1–5, and the room-damage settings that pass all of seeds 1–5
+  (`LEVEL_DMG[1]` 1.01–1.03, alone or with Stag 2.12) bite on 9–15 of 40
+  (x2.1: 13) while the unsocketed party clears 15–18 of the unseen seeds
+  21–40 (x2.1: 19); docs/gauntlet/fix-M4a-r6.md S8.)*
 - **GP.14 The Healer is unchanged**: every §16.10 invariant (Node probe
   against a `git archive` of v0.5.150: pools, numbers, 289 grid cells,
   spoils / shelf / wallet numbers, `reward_offer` / `spoils_drop` /

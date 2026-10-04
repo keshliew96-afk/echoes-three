@@ -844,6 +844,10 @@ sweep.
 
 - **Victory screen**: warm high-key wash — the only screen where the
   environment matches party warmth. Run summary + "Return to Camp".
+  *(Ruling A15 refines this, gauntlet r6 fix-INT-r6, 2026-10-02: the victory
+  and defeat cards sit over the LEVEL they ended in — the warm / violet wash is
+  the card's own — and the camp returns with the countdown, Enter or the
+  button, never under the card.)*
 - **Defeat screen**: soft God-stuff violet-white wash regardless of act
   (theatrical curtain-call, not harsh); wry tone ("The gods applaud.");
   "Return to Camp". Vignette: static violet, fade-in ≤600 ms, ≤12% screen width
@@ -1685,6 +1689,71 @@ campaign (`gntPARTY-campaign --seeds 1-3`, 28/28 checks): 0 idle equipped
 actives, and the critic's own counter (`gntfixPARTY5-c-aicasts`, which does not
 discount Downed time) 0 idle, 3/3 victories, 4 / 4 / 8 downs. Gate G4a.5
 compares the running game with THIS table.
+
+**Tuning note (fix-M4a-r6, 2026-10-02) — the Level 1 Stag stops being a
+hidden socket check (content r6 F1, journey r6 J6-F2); this table is now
+binding.** At × 4 the Level 1 Stag's quake / trample landed 60 / 48 (crits to
+90) and the opening quake + trample chain downed a melee ally 0.78 s into the
+fight. A party whose Healer never opened the socket screen was wiped every
+time: headless sweep `tools/gntfixM4a6-stag.mjs` (Level 1 from the camp, the
+default autopilot, seeds 1–10) gave 0/10 clears with the Healer at 0 / 32
+sockets, against 10/10 with the autopilot's own build (15–19 / 32). The
+round-6 content and journey critics reproduced the same wipe by real input
+(10–13 s into the fight), which breaks the user's rule that the existing core
+loop still plays. Swept the factor (1.5 / 1.75 / 1.8 / 1.9 / 2 / 2.1 / 2.2 /
+2.25 / 2.5 / 3 / 4, plus trample-only cuts and an opening grace): the
+unsocketed party's clears fall off a cliff above × 2.2 (2.25: 7/10, 2.5:
+5/10, 3: 5/10). One constant moved: **`STAG_DMG_LEVEL` Level 1 4 → 2.1**
+(quake / trample 31.5 / 25.2; Level 2 × 2 and Level 3 × 1 unchanged, the
+adds untouched). Measured on this tree: unsocketed Healer 19/20 clears (seeds
+1–20, fight median 20.3 s, first down median 14.8 s), the autopilot's build
+20/20; `tools/gntPARTY-band.mjs` 17/18 checks — the one failure is **GP.13 (d)
+on Level 1 (0/5 seeds with a down; the v0.5.150 baseline was 0/5 too)**. No
+Level 1 Stag setting that downs a built party on ≥ 2 of 5 seeds also lets an
+unsocketed party clear, so (d) for Level 1 was handed back to the design owner
+(the fix-M4a-r5 options A / B / C). Over seeds 1–20 the carried
+campaign wins 12/20 (unchanged), Level 1 clears 20/20 (was 18/20).
+**Ruling (design owner, 2026-10-03):** Level 1's bite is an HP dip — a down
+or a member below 35 % HP — counted over seeds 1–40 and met when it bites at
+least as often as v0.5.150 (PLAN GP.13). At × 2.1: 13 of 40 against 7 of 40
+(seeds 1–5 alone: 1 of 5 each), `tools/gntPARTY-band.mjs` 18/18; the table
+below is unchanged by the ruling.
+Binding table, standard challenge (hpMul / dmgMul / kill_all budget — a
+defend room's budget is × 1.25):
+
+| room | Level 1 | Level 2 | Level 3 |
+|---|---|---|---|
+| 1 | 1 / 0.75 / 4 | 1.6 / 1.3 / 6.4 | 3.1 / 2.05 / 12.4 |
+| 2 | 1.21 / 0.8288 / 4.84 | 1.936 / 1.468 / 7.744 | 3.751 / 2.3755 / 15.004 |
+| 3 | 1.42 / 0.9075 / 5.68 | 2.272 / 1.636 / 9.088 | 4.402 / 2.701 / 17.608 |
+| 4 | 1.63 / 0.9863 / 6.52 | 2.608 / 1.804 / 10.432 | 5.053 / 3.0265 / 20.212 |
+| 5 | 1.84 / 1.065 / 7.36 | 2.944 / 1.972 / 11.776 | 5.704 / 3.352 / 22.816 |
+| 6 | 2.05 / 1.1437 / 8.2 | 3.28 / 2.14 / 13.12 | 6.355 / 3.6775 / 25.42 |
+
+| per level | Level 1 | Level 2 | Level 3 |
+|---|---|---|---|
+| tier T | 1 | 1.6 | 3.1 |
+| Stag HP | 2400 | 6912 | 8928 |
+| Stag damage × | **2.1** | 4.16 | 4.78 |
+| adds HP × | 1 | 1.6 | 3.1 |
+| adds damage × | 1 | 2.08 | 4.78 |
+| Waystone HP | 150 | 190 | 264 |
+| elite chance | 0 / 0 / 0 / 0.08 / 0.08 / 0.08 | 0.12 / 0.14 / 0.16 / 0.18 / 0.2 / 0.22 | 0.2 / 0.23 / 0.26 / 0.29 / 0.32 / 0.35 |
+| kill_all wave interval, ticks (room 1 → 6) | 480 → 384 | 456 → 365 | 432 → 346 |
+
+**Starter grant** — the Healer's is unchanged:
+
+| start at | skills | nodes | legendaries | Glint | arrives with |
+|---|---|---|---|---|---|
+| Level 2 | 2 | 18 | 1 | 34 | 4 skills, 19 / 32 sockets filled, 34 Glint (= the carried Level 1 → 2 card) |
+| Level 3 | 2 | 30 | 2 | 60 | 4 skills, 32 / 32 sockets filled, 60 Glint (the carried card: 4 / 32 of 32 / ~118 Glint) |
+
+| ally start at | swap offers | nodes | legendaries | Glint |
+|---|---|---|---|---|
+| Level 2 | 1 | 3 | 0 | 34 |
+| Level 3 | 3 | 19 | 2 | 43 |
+
+Gate G4a.5 compares the running game with THIS table.
 
 **Felt escalation (v0.5.1).** The table is necessary, not sufficient: in play,
 time-to-clear and party damage taken per room must rise across rooms 1–6 of
@@ -2599,7 +2668,9 @@ Measured: 0 idle equipped actives over 40 Node campaigns (from Level 1 seeds
   first sim edit); (c) the Level 3 Stag room's median party damage ≥ 0.8 ×
   its baseline; (d) the carried campaign does not win every level on every
   seed with zero party downs (≥ 1 down per level on at least 2 of 5 seeds —
-  the game still bites).
+  the game still bites; Level 1 by the design owner's 2026-10-03 ruling: a
+  down or a member below 35 % HP, on at least as many of seeds 1–40 as the
+  v0.5.150 baseline — PLAN GP.13).
 - **Starter grant** — `STARTER_GRANT[N].allies` = the median carried ally
   build at the Level N card (swapped-in skills, socketed nodes, 1 legendary
   per level, purse). First proposal, re-measured by PARTY: Level 2 `{ swaps:
