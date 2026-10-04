@@ -14,7 +14,8 @@
 //
 // Render-only: reads sim entities and events, never writes either; all
 // randomness from the COSMETIC stream.
-import { PALETTE } from '../../data/palette.js';
+import { Color } from 'three';
+import { PALETTE, VFX_BIOME } from '../../data/palette.js';
 import {
   vfxClassStyle,
   vfxSkillClass,
@@ -76,8 +77,89 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   };
   const spray = (mode, x, y, z, n, opts) => {
     const c = N(n);
-    if (c > 0) impactFx.spray(mode, x, y, z, c, opts);
+    if (c <= 0) return;
+    // Biome tint (AAA pass): smoke and dust take a quarter of the act's air
+    // (moss in the Hollow Wood, cold slate in the Sunken Mill, ash in the
+    // Barrow), so the same puff belongs to the room it is in.
+    if ((mode === 'smoke' || mode === 'chunk') && opts && opts.color != null) opts = { ...opts, color: biomeTint(opts.color, mode === 'smoke' ? 0.28 : 0.15) };
+    impactFx.spray(mode, x, y, z, c, opts);
   };
+
+  // ------------------------------------------------------------ biome --
+  let biomeAct = 1;
+  let biomeClock = 0;
+  const readBiome = () => {
+    try {
+      const a = world.runSystem?.()?.view?.()?.act;
+      if (a) biomeAct = a;
+    } catch {
+      /* the run system is optional (harness scenes) */
+    }
+  };
+  const tintCache = new Map();
+  const _ca = new Color();
+  const _cb = new Color();
+  function biomeTint(hex, k) {
+    const air = VFX_BIOME[biomeAct] ?? VFX_BIOME[1];
+    const key = `${hex}|${air}|${k}`;
+    let v = tintCache.get(key);
+    if (v === undefined) {
+      _ca.set(hex);
+      _cb.set(air);
+      v = '#' + _ca.lerp(_cb, k).getHexString();
+      if (tintCache.size > 512) tintCache.clear();
+      tintCache.set(key, v);
+    }
+    return v;
+  }
+
+  // ------------------------------------------- AAA layering helpers --
+  // Every beat is built in three movements (design-VFX.md §10):
+  //   anticipation  energy drawn IN (an imploding ring, motes and lines
+  //                 rushing to the source) for the few frames before;
+  //   impact        a white-hot core and a coloured flare that pop on the
+  //                 frame it lands (kit.star), a flash, a light pool, a
+  //                 shockwave ring, the camera's punch;
+  //   dissipation   what is left: embers drifting up, smoke rolling out, a
+  //                 ground mark whose seam cools over a second or two.
+  // Delays below ~0.1 s are carried by a tiny timer list (after()).
+  const timers = [];
+  const after = (sec, fn) => {
+    if (sec <= 0) fn();
+    else timers.push({ t: sec, fn });
+  };
+  const ANTICIP = 0.06; // s — the gather before a big cast lands (~4 frames)
+  function anticipate(x, z, radius, color, { y = 0.45, lines = 6, core = PARCH } = {}) {
+    kit.ring({ x, z, r0: radius * 1.25, r1: 0.12, width: 0.07, life: ANTICIP + 0.04, core, glow: color, soft: 0.4, y: 0.06, opacity: 0.85 });
+    for (let i = 0; i < N(lines); i++) {
+      const a = (i / lines) * TAU + rnd(-0.25, 0.25);
+      const r = radius * rnd(0.9, 1.3);
+      const sp = r / (ANTICIP + 0.02);
+      kit.streak({ a: { x: x + Math.cos(a) * (r + 0.3), y, z: z + Math.sin(a) * (r + 0.3) }, b: { x: x + Math.cos(a) * r, y, z: z + Math.sin(a) * r }, width: 0.05, tailW: 0, core, glow: color, life: ANTICIP + 0.02, travel: { x: -Math.cos(a) * sp, y: 0, z: -Math.sin(a) * sp }, fall: 1.2 });
+    }
+    kit.flash({ x, y, z, color, size: 0.35, life: ANTICIP + 0.05, grow: -0.4, opacity: 0.6 });
+  }
+  // The landing frame: a coloured flare with a white-hot core over it.
+  function flare(x, y, z, color, size, { kind = 'star', life = 0.2, core = PARCH, spin = 0, angle, delay = 0 } = {}) {
+    const ang = angle ?? rnd(0, Math.PI);
+    kit.star({ x, y, z, color, size, life, kind, spin, angle: ang, delay });
+    kit.star({ x, y, z, color: core, size: size * 0.42, life: life * 0.7, kind, spin, angle: ang, delay });
+  }
+  function shock(x, z, radius, color, { life = 0.3, width = 0.08, core = PARCH, y = 0.07, delay = 0, jag = 0 } = {}) {
+    kit.ring({ x, z, r0: 0.15, r1: radius, width, life, core, glow: color, soft: 0.35, y, delay, jag, thin: 0.6 });
+  }
+  function embersUp(x, z, color, n, { radius = 0.5, life = [1.0, 1.7], y = 0.3 } = {}) {
+    spray('spark', x, y, z, n, { color, speed: [0.05, 0.35], up: [0.5, 1.2], size: [0.04, 0.08], life, gravity: -0.35, drag: 1.5, jitter: radius, opacity: 0.85 });
+  }
+  const flareKind = (st) => (st.shape === 'blunt' || st.shape === 'round' ? 'burst' : 'star');
+  // Each class's floor mark: the Tank cratering, the Swordsman's cut, the
+  // Archer's jade sigil, the Healer's lantern sigil.
+  function classMark(st, x, z, radius, angle = undefined) {
+    if (st.shape === 'blunt') kit.mark({ x, z, radius: radius * 1.5, kind: 'crater', stain: st.debrisColor, glow: st.glow, cool: 0.9, life: 3.2, opacity: 0.55 });
+    else if (st.shape === 'sharp') kit.mark({ x, z, radius: radius * 1.4, kind: 'gouge', angle, stretch: 1.6, stain: INK, glow: st.glow, cool: 0.7, life: 2.4, opacity: 0.4 });
+    else if (st.shape === 'line') kit.mark({ x, z, radius: radius * 1.6, kind: 'sigil', stain: INK, glow: st.glow, cool: 1.0, life: 1.8, opacity: 0.2 });
+    else kit.mark({ x, z, radius: radius * 1.7, kind: 'sigil', stain: INK, glow: st.glow, cool: 1.2, life: 2.0, opacity: 0.15 });
+  }
 
   // ------------------------------------------------------------ entities --
   let cacheTick = -1;
@@ -125,7 +207,10 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       kit.slash({ x, z, angle, radius: reach * 0.72, width: sl.width * 0.7, span: half * 1.7, sweep: sl.sweep * 1.3, life: sl.life * 0.9, core: st.second, glow: st.second, soft: 0.8, jag: 0.4, lift: 0.02, y: 0.18, reverse: side, gain: 0.6, opacity: 0.55 });
       spray('chunk', tipX, 0.3, tipZ, big ? st.debris.chunk : 3, { color: st.debrisColor, speed: [1.2, 2.8], up: [1.4, 3.0], size: [0.06, 0.14], life: [0.45, 0.8], dir: { x: Math.cos(angle), z: Math.sin(angle) }, dirBias: 0.6, jitter: reach * 0.25 });
       spray('smoke', tipX, 0.2, tipZ, big ? st.debris.dust : 1, { color: st.second, speed: [0.5, 1.2], up: [0.2, 0.5], size: [0.32, 0.5], grow: 1.3, life: [0.6, 0.95], opacity: 0.32, gravity: -0.2, drag: 2.6, jitter: reach * 0.3 });
+      flare(tipX, 0.4, tipZ, st.glow, big ? 1.1 : 0.55, { kind: 'burst', life: big ? 0.24 : 0.16 });
       if (big) {
+        shock(tipX, tipZ, 0.9 + reach * 0.3, st.glow, { jag: 0.6, width: 0.12 });
+        classMark(st, tipX, tipZ, 0.55 + reach * 0.2);
         kit.crack({ x: tipX, z: tipZ, radius: 0.55 + reach * 0.25, glow: st.glow, life: 1.3, cool: 0.35 });
         kit.light({ x: tipX, z: tipZ, radius: st.light.scale * reach, color: st.glow, opacity: st.light.opacity, life: st.light.life });
         camfx.kick(Math.cos(angle), Math.sin(angle), st.camera.kick, 0.13);
@@ -161,18 +246,35 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       kit.flash({ x: x + Math.cos(endA) * reach, y: 0.55, z: z + Math.sin(endA) * reach, color: st.second, size: big ? 0.42 : 0.26, life: 0.16, delay: st.slash.sweep * 0.9 });
       spray('spark', tipX, 0.5, tipZ, big ? st.debris.spark : 3, { color: st.second, speed: [1.6, 3.2], up: [0.4, 1.4], size: [0.04, 0.09], life: [0.16, 0.3], dir: { x: Math.cos(angle), z: Math.sin(angle) }, dirBias: 0.7 });
       if (big) {
+        flare(x + Math.cos(endA) * reach, 0.55, z + Math.sin(endA) * reach, st.glow, 0.9, { life: 0.2, core: st.second, delay: 0 });
+        classMark(st, tipX, tipZ, 0.5 + reach * 0.25, angle + Math.PI / 2);
+        embersUp(tipX, tipZ, st.glow, 5, { radius: reach * 0.4, life: [0.6, 1.0] });
         kit.light({ x: tipX, z: tipZ, radius: st.light.scale * reach, color: st.glow, opacity: st.light.opacity, life: st.light.life });
         camfx.kick(Math.cos(angle), Math.sin(angle), st.camera.kick, 0.08);
       }
     } else {
       // Healer / Archer / unknown: one soft sweep in the class glow.
       kit.slash({ x, z, angle, radius: reach * 0.9, width: sl.width, span: half * 2, sweep: sl.sweep, life: sl.life, core: st.core, glow: st.glow, soft: sl.soft, lift: 0.1, reverse: side });
+      if (big) {
+        flare(tipX, 0.5, tipZ, st.glow, 0.8, { kind: flareKind(st), life: 0.22 });
+        classMark(st, tipX, tipZ, 0.6);
+      }
       if (st.debris.shardKind) spray('shard', tipX, 0.5, tipZ, 3, { color: st.debrisColor, tile: SHARD_TILE[st.debris.shardKind] ?? 0, speed: [0.4, 1.0], up: [0.4, 1.0], size: [0.1, 0.16], life: [0.6, 1.0], gravity: 1.2, drag: 1.5, spin: [-4, 4], flutter: 0.4, opacity: 0.9 });
     }
   }
 
-  // A burst around the caster (nova).
-  function nova(st, x, z, radius, { skill = null } = {}) {
+  // A burst around the caster (nova): energy gathers in, then it lands.
+  function nova(st, x, z, radius, opts = {}) {
+    anticipate(x, z, radius * 0.6, st.glow, { core: st.shape === 'sharp' ? st.second : PARCH });
+    after(ANTICIP, () => {
+      novaLand(st, x, z, radius, opts);
+      flare(x, 0.55, z, st.glow, 1.2 + radius * 0.35, { kind: flareKind(st), life: 0.26, core: st.shape === 'sharp' ? st.second : PARCH });
+      shock(x, z, radius * 1.25, st.glow, { life: 0.4, width: 0.06 });
+      classMark(st, x, z, radius * 0.7);
+      embersUp(x, z, st.glow, 10, { radius: radius * 0.6 });
+    });
+  }
+  function novaLand(st, x, z, radius, { skill = null } = {}) {
     if (st.shape === 'blunt') {
       // Tank: a jagged steel shockwave + an ochre ground wave behind it,
       // cracks, a ring of dust rolling out, rock thrown up.
@@ -225,6 +327,11 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   function healBloom(x, z, radius = 0.6, big = false) {
     spray('shard', x, 0.3, z, big ? 9 : 3, { color: HEAL, tile: SHARD_TILE.petal, speed: [0.3, 0.9], up: [0.8, 1.4], size: [0.09, 0.14], life: [0.8, 1.2], gravity: 0.25, drag: 1.4, spin: [-3, 3], flutter: 0.4, jitter: radius * 0.4 });
     kit.light({ x, z, radius: radius * 1.5, color: HEAL, opacity: big ? 0.45 : 0.25, life: big ? 0.6 : 0.4, attack: 0.06 });
+    if (big) {
+      kit.mark({ x, z, radius: radius * 1.6, kind: 'sigil', stain: INK, glow: HEAL, cool: 1.1, life: 1.6, opacity: 0.12 });
+      flare(x, 0.6, z, HEAL, 1.0, { kind: 'burst', life: 0.28 });
+      embersUp(x, z, HEAL, 8, { radius: radius * 0.5 });
+    }
   }
 
   // Projectile release at the caster.
@@ -232,6 +339,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const mx = x + dx * 0.35;
     const mz = z + dz * 0.35;
     kit.flash({ x: mx, y: 0.6, z: mz, color: st.glow, size: count > 1 ? 0.5 : 0.36, life: 0.14 });
+    flare(mx, 0.6, mz, st.glow, count > 1 ? 0.75 : 0.55, { kind: flareKind(st), life: 0.14, angle: Math.atan2(dz, dx) });
     if (st.shape === 'line') {
       // Wind lines blow back off the bow.
       for (let i = 0; i < 2; i++) {
@@ -248,6 +356,14 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   function classImpact(st, x, z, dx, dz, { crit = false, big = false } = {}) {
     const dir = Math.hypot(dx, dz) > 1e-4 ? { x: dx, z: dz } : null;
     const s = crit ? 1.4 : 1;
+    // The landing frame, every hit: a class-coloured flare with a hot core;
+    // a crit adds a shockwave, rising embers and a little camera punch.
+    flare(x, 0.5, z, st.glow, (big ? 0.75 : 0.55) * (crit ? 1.6 : 1), { kind: flareKind(st), life: crit ? 0.24 : 0.16, core: st.shape === 'sharp' ? st.second : PARCH });
+    if (crit) {
+      shock(x, z, 1.0, st.glow, { life: 0.26, width: 0.07 });
+      embersUp(x, z, st.glow, 4, { radius: 0.25, life: [0.6, 1.0] });
+      if (dir) camfx.kick(dir.x, dir.z, 0.025, 0.08);
+    }
     if (st.shape === 'blunt') {
       spray('spark', x, 0.45, z, Math.round(st.debris.spark * s), { color: st.glow, speed: [1.4, 3.0], up: [0.8, 2.0], size: [0.05, 0.1], life: [0.18, 0.32], dir, dirBias: 0.6 });
       spray('chunk', x, 0.38, z, Math.round((big ? 5 : 3) * s), { color: st.debrisColor, speed: [1.0, 2.4], up: [1.2, 2.6], size: [0.06, 0.12], life: [0.4, 0.7], dir, dirBias: 0.5 });
@@ -285,6 +401,12 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (es.shard) spray('shard', x, 0.5, z, 3, { color: matter, tile: SHARD_TILE[es.shard] ?? 0, speed: [1.0, 2.0], up: [0.6, 1.4], size: [0.1, 0.15], life: [0.4, 0.7], gravity: 3, drag: 0.8, spin: [-6, 6], dir, dirBias: 0.5 });
     if (es.dust) spray('smoke', x, 0.4, z, 1, { color: matter, speed: [0.2, 0.5], up: [0.3, 0.6], size: [0.3, 0.42], grow: 1, life: [0.5, 0.8], opacity: 0.3, gravity: -0.25, drag: 2.4 });
     kit.flash({ x, y: 0.5, z, color: boss ? vfxBossStyle(bossKind).corruption : EMBER, size: boss ? 0.6 : 0.4, life: 0.14 });
+    // Hurt frame: an Ember needle-flare on the body (a boss's is a violet
+    // burst with a shockwave).
+    if (boss) {
+      flare(x, 0.55, z, vfxBossStyle(bossKind).corruption, 1.3, { kind: 'burst', life: 0.24, core: vfxBossStyle(bossKind).peak });
+      shock(x, z, 1.1, vfxBossStyle(bossKind).corruption, { life: 0.3 });
+    } else flare(x, 0.5, z, EMBER, 0.6, { life: 0.16 });
   }
   // A kit boss's hits throw its own matter (the Stag keeps its legacy row).
   const BOSS_HIT = {
@@ -297,6 +419,13 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const es = vfxEnemyStyle(kind);
     const matter = vfxMatterColor(es.matter);
     impactFx.kill(x, z, { color: BONE, debris: matter });
+    // The break: a bone-white burst, a ring of the body's matter, the
+    // corruption leaving as indigo motes, a stain that lingers.
+    flare(x, 0.5, z, BONE, 1.0, { kind: 'burst', life: 0.22 });
+    shock(x, z, 1.0, matter, { life: 0.35, width: 0.1, core: BONE });
+    spray('spark', x, 0.4, z, 6, { color: TELL_INDIGO_GLOW, speed: [0.05, 0.3], up: [0.9, 1.6], size: [0.05, 0.09], life: [0.8, 1.3], gravity: -0.4, drag: 1.4, jitter: 0.25, opacity: 0.85 });
+    const wet = es.matter === 'slime' || es.matter === 'ichor' || es.matter === 'water';
+    kit.mark({ x, z, radius: 0.9, kind: wet ? 'splash' : 'scorch', stain: matter, glow: null, life: 3.5, opacity: 0.45 });
     if (es.shard) spray('shard', x, 0.45, z, 6, { color: matter, tile: SHARD_TILE[es.shard] ?? 0, speed: [1.2, 2.6], up: [1.0, 2.2], size: [0.11, 0.17], life: [0.5, 0.9], gravity: 4, drag: 0.6, spin: [-8, 8] });
     if (es.dust) spray('smoke', x, 0.35, z, es.dust, { color: matter, speed: [0.4, 1.0], up: [0.2, 0.5], size: [0.34, 0.5], grow: 1.3, life: [0.7, 1.1], opacity: 0.3, gravity: -0.2, drag: 2.4 });
     if (es.matter === 'slime') kit.ring({ x, z, r0: 0.2, r1: 0.9, width: 0.12, life: 0.4, core: matter, glow: matter, soft: 0.8, y: 0.03, opacity: 0.6, gain: 0.5 });
@@ -348,6 +477,14 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
 
   // Ground-placed class skills: the moment of placement.
   function placeZone(st, skill, x, z, radius, cx, cz) {
+    anticipate(x, z, radius * 0.8, st.glow, { y: 0.15, lines: 8 });
+    after(ANTICIP, () => {
+      placeZoneLand(st, skill, x, z, radius, cx, cz);
+      flare(x, 0.35, z, st.glow, 1.0 + radius * 0.3, { kind: flareKind(st), life: 0.22 });
+      classMark(st, x, z, radius * 0.8);
+    });
+  }
+  function placeZoneLand(st, skill, x, z, radius, cx, cz) {
     if (skill === 'rain_of_arrows' || (st.shape === 'line' && skill !== 'detonating_charge')) {
       // Arrows rain down into the ring over half a second.
       kit.ring({ x, z, r0: radius * 0.4, r1: radius, width: 0.08, life: 0.5, core: PARCH, glow: st.glow, soft: 0.3, y: 0.05 });
@@ -428,6 +565,10 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const dx = x1 - x0;
     const dz = z1 - z0;
     const L = Math.hypot(dx, dz) || 1;
+    // Take-off and arrival frames.
+    flare(x0, 0.45, z0, st.glow, 0.6, { kind: flareKind(st), life: 0.14 });
+    flare(x1, 0.45, z1, st.glow, 0.8, { kind: flareKind(st), life: 0.2, core: st.shape === 'sharp' ? st.second : PARCH });
+    if (st.shape === 'blunt' || st.shape === 'sharp') kit.mark({ x: (x0 + x1) / 2, z: (z0 + z1) / 2, radius: Math.min(2.4, L) * 0.9, kind: 'gouge', angle: Math.atan2(dz, dx), stretch: 1.8, stain: st.shape === 'blunt' ? st.debrisColor : INK, glow: st.glow, cool: 0.5, life: 1.8, opacity: 0.35 });
     if (st.shape === 'blunt') {
       // Shoulder Charge: a wide steel wake and dust boiling off the path.
       kit.streak({ a: { x: x0, y: 0.3, z: z0 }, b: { x: x1, y: 0.35, z: z1 }, width: 0.34, tailW: 0.3, core: st.core, glow: st.glow, life: 0.3, fall: 1.2, opacity: 0.7 });
@@ -468,6 +609,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       kit.streak({ a: { x: x - Math.cos(a0) * 0.45, y: 0.4, z: z - Math.sin(a0) * 0.45 }, b: { x: x + Math.cos(a0) * 0.45, y: 0.65, z: z + Math.sin(a0) * 0.45 }, width: 0.09, tailW: 0.1, core: st.second, glow: st.glow, life: 0.24, delay: s > 0 ? 0.05 : 0, fall: 0.7 });
     }
     kit.flash({ x, y: 0.55, z, color: st.second, size: 0.6, life: 0.18 });
+    flare(x, 0.55, z, st.glow, 1.4, { life: 0.26, core: st.second, spin: 2 });
+    shock(x, z, 1.2, st.glow, { life: 0.28 });
     kit.light({ x, z, radius: 0.8, color: st.glow, opacity: 0.4, life: 0.22 });
     camfx.kick(ev.dx ?? 0, ev.dz ?? 0, st.camera.kick, 0.09);
   });
@@ -570,7 +713,10 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const owner = byId(ev.id);
     if (owner && ev.shot != null && ENEMY_SHOT_TRAIL[owner.kind]) shotKind.set(ev.shot, owner.kind);
     // The crow's caw flash is its own recipe (crow_volley).
-    if (owner?.kind !== 'crow') kit.flash({ x: ev.x, y: ESHOT_Y, z: ev.z, color: EMBER, size: 0.34, life: 0.12 });
+    if (owner?.kind !== 'crow') {
+      kit.flash({ x: ev.x, y: ESHOT_Y, z: ev.z, color: EMBER, size: 0.34, life: 0.12 });
+      flare(ev.x + (ev.dx ?? 0) * 0.3, ESHOT_Y, ev.z + (ev.dz ?? 0) * 0.3, EMBER, 0.5, { life: 0.12, angle: Math.atan2(ev.dz ?? 0, ev.dx ?? 1) });
+    }
   });
   bus.on('enemy_lob', (ev) => {
     const owner = byId(ev.id);
@@ -591,6 +737,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const es = vfxEnemyStyle(owner?.kind ?? 'toad', 'lobber');
     const matter = vfxMatterColor(es.matter);
     kit.ring({ x: ev.x, z: ev.z, r0: 0.2, r1: 1.0, width: 0.14, life: 0.4, core: EMBER, glow: EMBER, soft: 0.6, y: 0.04, opacity: 0.55, gain: 0.7 });
+    flare(ev.x, 0.3, ev.z, EMBER, 0.9, { kind: 'burst', life: 0.2 });
+    kit.mark({ x: ev.x, z: ev.z, radius: (ev.radius ?? 1) * 1.3, kind: 'splash', stain: matter, glow: EMBER, cool: 0.4, life: 3.0, opacity: 0.5 });
     spray('shard', ev.x, 0.3, ev.z, 8, { color: matter, tile: SHARD_TILE.drop, speed: [1.0, 2.2], up: [1.4, 2.6], size: [0.1, 0.16], life: [0.4, 0.7], gravity: 7, drag: 0.4, spin: [-2, 2] });
     spray('smoke', ev.x, 0.2, ev.z, 2, { color: matter, speed: [0.3, 0.7], up: [0.2, 0.4], size: [0.32, 0.45], grow: 1, life: [0.5, 0.8], opacity: 0.35, gravity: -0.1, drag: 2.4 });
   });
@@ -605,6 +753,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       }
     }
     spray('smoke', ev.x, 0.2, ev.z, es.dust || 2, { color: matter, speed: [0.5, 1.2], up: [0.2, 0.5], size: [0.32, 0.48], grow: 1.2, life: [0.6, 0.9], opacity: 0.32, gravity: -0.2, drag: 2.6 });
+    shock(ev.x, ev.z, 1.0, matter, { life: 0.35, width: 0.12, core: BONE });
+    if (ev.cause === 'wall') flare(ev.x, 0.4, ev.z, EMBER, 0.8, { kind: 'burst', life: 0.2 });
     if (ev.cause === 'wall') spray('chunk', ev.x, 0.3, ev.z, 4, { color: matter, speed: [1.0, 2.0], up: [1.2, 2.2], size: [0.06, 0.12], life: [0.4, 0.7] });
   });
   bus.on('enemy_slam', (ev) => {
@@ -616,6 +766,9 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const oz = owner ? owner.z : ev.z;
     kit.slash({ x: ox, z: oz, angle: ang, radius: Math.max(0.8, Math.hypot(ev.x - ox, ev.z - oz) + 0.3), width: 0.36, span: 1.3, sweep: 0.08, life: 0.35, core: PARCH, glow: EMBER, soft: 0.4, jag: 0.5, lift: 0.04, y: 0.2, gain: 0.9 });
     kit.crack({ x: ev.x, z: ev.z, radius: 0.8, glow: EMBER, life: 1.0, cool: 0.3 });
+    flare(ev.x, 0.35, ev.z, EMBER, 1.1, { kind: 'burst', life: 0.22 });
+    shock(ev.x, ev.z, 1.3, EMBER, { life: 0.32, width: 0.1, jag: 0.6 });
+    kit.mark({ x: ev.x, z: ev.z, radius: 1.3, kind: 'crater', stain: matter, glow: EMBER, cool: 0.6, life: 3.0, opacity: 0.5 });
     spray('chunk', ev.x, 0.3, ev.z, es.chunk || 5, { color: matter, speed: [1.0, 2.4], up: [1.6, 3.0], size: [0.07, 0.14], life: [0.5, 0.8] });
     spray('spark', ev.x, 0.4, ev.z, 5, { color: PARCH, speed: [1.6, 3.0], up: [0.6, 1.6], size: [0.04, 0.08], life: [0.15, 0.28] });
   });
@@ -633,6 +786,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const es = vfxEnemyStyle(ev.etype, 'burrower');
     const matter = vfxMatterColor(es.matter);
     kit.crack({ x: ev.x, z: ev.z, radius: 1.0, glow: EMBER, life: 1.2, cool: 0.3 });
+    flare(ev.x, 0.3, ev.z, EMBER, 1.0, { kind: 'burst', life: 0.22 });
+    kit.mark({ x: ev.x, z: ev.z, radius: 1.4, kind: 'crater', stain: matter, glow: EMBER, cool: 0.5, life: 3.0, opacity: 0.55 });
     kit.ring({ x: ev.x, z: ev.z, r0: 0.2, r1: 1.0, width: 0.2, life: 0.4, core: matter, glow: EMBER, soft: 0.5, jag: 0.8, y: 0.04, opacity: 0.7, gain: 0.6 });
     spray('chunk', ev.x, 0.15, ev.z, es.chunk || 6, { color: matter, speed: [0.6, 1.6], up: [2.4, 4.0], size: [0.07, 0.16], life: [0.6, 1.0], jitter: 0.25 });
     spray('smoke', ev.x, 0.2, ev.z, es.dust || 3, { color: matter, speed: [0.5, 1.2], up: [0.4, 0.9], size: [0.36, 0.52], grow: 1.3, life: [0.7, 1.1], opacity: 0.34, gravity: -0.15, drag: 2.4 });
@@ -649,6 +804,12 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const e = byId(ev.id);
     if (!e) return;
     spray('spark', e.x, 0.25, e.z, 3, { color: EMBER, speed: [0.05, 0.2], up: [0.6, 1.1], size: [0.05, 0.1], life: [0.35, 0.55], gravity: -0.4, drag: 1.4, jitter: 0.35, opacity: 0.8 });
+    // Anticipation: a few Ember lines rush into the body as it winds up
+    // (the telegraph shape on the floor stays the enemy layer's).
+    for (let i = 0; i < 4; i++) {
+      const a = rnd(0, TAU);
+      kit.streak({ a: { x: e.x + Math.cos(a) * 1.1, y: 0.5, z: e.z + Math.sin(a) * 1.1 }, b: { x: e.x + Math.cos(a) * 0.8, y: 0.5, z: e.z + Math.sin(a) * 0.8 }, width: 0.04, tailW: 0, core: PARCH, glow: EMBER, life: 0.14, delay: i * 0.03, travel: { x: -Math.cos(a) * 5, y: 0, z: -Math.sin(a) * 5 }, fall: 1.2, opacity: 0.8 });
+    }
   });
 
   // -------------------------------------------------------------- boss --
@@ -669,6 +830,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     kit.ring({ x: ev.x, z: ev.z, r0: 0.2, r1: r * 0.85, width: 0.2, life: 0.45, core: PARCH, glow: bs.threat, soft: 0.3, y: 0.08, delay: 0.04 });
     kit.ring({ x: ev.x, z: ev.z, r0: r * 0.5, r1: r * 1.5, width: 0.5, life: 0.9, core: matter, glow: matter, soft: 0.95, y: 0.2, delay: 0.06, opacity: 0.45, gain: 0.5 });
     kit.crack({ x: ev.x, z: ev.z, radius: r * 1.25, glow: bs.corruption, life: 2.4, cool: 0.9 });
+    flare(ev.x, 0.6, ev.z, bs.corruption, 2.6, { kind: 'burst', life: 0.32, core: bs.peak });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.6, kind: 'crater', stain: vfxMatterColor(bs.matter), glow: bs.corruption, cool: 1.4, life: 4.5, opacity: 0.6 });
     kit.pillar({ x: ev.x, z: ev.z, radius: r * 0.45, height: q.pillarH, color: bs.corruption, life: q.life, opacity: 0.65 });
     kit.flash({ x: ev.x, y: 0.6, z: ev.z, color: bs.peak, size: 1.6, life: 0.3, hold: 0.1 });
     kit.light({ x: ev.x, z: ev.z, radius: r * 1.7, color: bs.corruption, opacity: 0.6, life: 0.9, attack: 0.04 });
@@ -687,6 +850,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const ang = t ? Math.atan2(t.z - ev.z, t.x - ev.x) : 0;
     kit.slash({ x: ev.x, z: ev.z, angle: ang, radius: 1.5, width: 0.42, span: 1.5, sweep: 0.09, life: 0.4, core: bs.peak, glow: bs.corruption, soft: 0.4, jag: 0.5, lift: 0.05, y: 0.25 });
     kit.crack({ x: ev.x + Math.cos(ang) * 0.8, z: ev.z + Math.sin(ang) * 0.8, radius: 0.9, glow: bs.corruption, life: 1.2, cool: 0.4 });
+    flare(ev.x + Math.cos(ang) * 0.9, 0.4, ev.z + Math.sin(ang) * 0.9, bs.corruption, 1.4, { kind: 'burst', life: 0.24, core: bs.peak });
+    kit.mark({ x: ev.x + Math.cos(ang) * 0.9, z: ev.z + Math.sin(ang) * 0.9, radius: 1.3, kind: 'gouge', angle: ang, stretch: 1.6, stain: vfxMatterColor(bs.matter), glow: bs.corruption, cool: 0.7, life: 3, opacity: 0.5 });
     spray('chunk', ev.x, 0.2, ev.z, bs.trample.chunk, { color: vfxMatterColor(bs.matter), speed: [1.0, 2.4], up: [1.6, 3.0], size: [0.07, 0.15], life: [0.5, 0.9], dir: { x: Math.cos(ang), z: Math.sin(ang) }, dirBias: 0.5 });
     camfx.kick(Math.cos(ang), Math.sin(ang), 0.05, 0.16);
   });
@@ -703,6 +868,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     kit.pillar({ x, z, radius: 1.0, height: 4, color: bs.corruption, life: 1.4, opacity: 0.7 });
     kit.ring({ x, z, r0: 0.5, r1: 4, width: 0.4, life: 1.0, core: bs.peak, glow: bs.corruption, soft: 0.5, y: 0.06 });
     kit.crack({ x, z, radius: 2.2, glow: bs.corruption, life: 3, cool: 1.2 });
+    flare(x, 1.0, z, bs.corruption, 3.2, { kind: 'burst', life: 0.45, core: bs.peak, spin: 0.8 });
+    kit.mark({ x, z, radius: 3.2, kind: 'crater', stain: vfxMatterColor(bs.matter), glow: bs.corruption, cool: 2.0, life: 6, opacity: 0.6 });
     kit.light({ x, z, radius: 4, color: bs.corruption, opacity: 0.6, life: 1.4 });
     spray('spark', x, 0.4, z, 30, { color: bs.corruption, speed: [0.3, 1.2], up: [0.8, 2.0], size: [0.06, 0.13], life: [1.2, 2.0], gravity: -0.3, drag: 1.2, jitter: 0.8 });
     spray('chunk', x, 0.5, z, 18, { color: vfxMatterColor(bs.matter), speed: [1.2, 3.0], up: [2.0, 4.0], size: [0.08, 0.18], life: [0.8, 1.2], jitter: 0.6 });
@@ -740,6 +907,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     spray('smoke', x, 0.45, z, 4, { color: SPORE, speed: [0.1, 0.35], up: [0.4, 0.8], size: [0.36, 0.5], grow: 1.7, life: [1.0, 1.4], opacity: 0.4, gravity: -0.25, drag: 2.2, jitter: 0.2 });
     spray('spark', x, 0.5, z, 8, { color: SPORE, speed: [0.1, 0.4], up: [0.3, 0.8], size: [0.04, 0.07], life: [1.2, 1.8], gravity: -0.15, drag: 1.6, jitter: 0.3, opacity: 0.8 });
     kit.flash({ x, y: 0.55, z, color: SPORE, size: 0.6, life: 0.2 });
+    flare(x, 0.55, z, SPORE, 0.9, { kind: 'burst', life: 0.22 });
   });
   function sporeCloud(x, z, radius) {
     mark('rotcap_spore_cloud');
@@ -750,6 +918,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       const a = (i / 8) * TAU + rnd(-0.2, 0.2);
       spray('smoke', x + Math.cos(a) * 0.25, 0.25, z + Math.sin(a) * 0.25, 1, { color: SPORE, speed: radius * 1.8, up: [0.1, 0.35], size: [0.4, 0.56], grow: 1.6, life: [1.1, 1.5], opacity: 0.36, gravity: -0.12, drag: 2.8, dir: { x: Math.cos(a), z: Math.sin(a) }, dirBias: 1 });
     }
+    flare(x, 0.3, z, EMBER, 1.0, { kind: 'burst', life: 0.2, core: SPORE });
+    kit.mark({ x, z, radius: radius * 1.5, kind: 'splash', stain: SPORE, glow: null, life: 3.5, opacity: 0.35 });
     // Motes that hang over the slick: the "don't stand here" afterglow.
     spray('spark', x, 0.15, z, 16, { color: SPORE, speed: [0.05, 0.25], up: [0.2, 0.6], size: [0.04, 0.08], life: [1.8, 2.6], gravity: -0.08, drag: 1.8, jitter: radius * 0.8, opacity: 0.75 });
   }
@@ -766,6 +936,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     kit.flash({ x, y: LANTERN_Y, z, color: TELL_INDIGO_GLOW, size: 0.9, life: 0.35, hold: 0.08 });
     kit.ring({ x, z, r0: 0.3, r1: r, width: 0.1, life: 0.7, core: TELL_INDIGO, glow: TELL_INDIGO_GLOW, soft: 0.6, y: 0.05, opacity: 0.7 });
     kit.light({ x, z, radius: r * 0.7, color: TELL_INDIGO_GLOW, opacity: 0.35, life: 0.6, attack: 0.06 });
+    flare(x, LANTERN_Y, z, TELL_INDIGO_GLOW, 1.0, { kind: 'burst', life: 0.3 });
+    kit.mark({ x, z, radius: r * 0.9, kind: 'sigil', stain: INK, glow: TELL_INDIGO_GLOW, cool: 1.0, life: 1.5, opacity: 0.1 });
     for (const h of ev.healed || []) {
       const t = byId(h.id);
       if (!t) continue;
@@ -785,6 +957,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const bx = ev.x + d.x * 0.3;
     const bz = ev.z + d.z * 0.3;
     kit.flash({ x: bx, y: 0.55, z: bz, color: EMBER, size: 0.4, life: 0.12 });
+    flare(bx, 0.55, bz, EMBER, 0.8, { life: 0.16, angle: base });
     kit.slash({ x: ev.x, z: ev.z, angle: base, radius: 0.7, width: 0.07, span: 0.6, sweep: 0.05, life: 0.2, core: PARCH, glow: EMBER, soft: 0.3, lift: 0.1, y: 0.5, gain: 0.8 });
     for (const k of [-1, 0, 1]) {
       const a = base + k * 0.26;
@@ -800,6 +973,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const { x, z } = ev;
     kit.ring({ x, z, r0: 0.2, r1: 1.0, width: 0.16, life: 0.45, core: ICHOR, glow: ICHOR, soft: 0.8, y: 0.03, opacity: 0.6, gain: 0.5 });
     kit.flash({ x, y: 0.4, z, color: BONE, size: 0.55, life: 0.16 });
+    kit.mark({ x, z, radius: 1.3, kind: 'splash', stain: ICHOR, glow: null, life: 3.5, opacity: 0.45 });
     spray('shard', x, 0.4, z, 10, { color: ICHOR, tile: SHARD_TILE.drop, speed: [0.8, 2.0], up: [1.2, 2.4], size: [0.1, 0.15], life: [0.4, 0.7], gravity: 7, drag: 0.4, spin: [-2, 2] });
     for (const id of ev.brood || []) {
       const b = byId(id);
@@ -862,6 +1036,9 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     // The bill itself: a violet-edged spearhead running down the lane.
     kit.streak({ a: { x, y: 0.75, z }, b: { x: x + d.x * 0.9, y: 0.75, z: z + d.z * 0.9 }, width: 0.08, tailW: 0.6, core: PARCH, glow: HERON.corruption, life: sweep, travel: { x: d.x * 11, y: 0, z: d.z * 11 }, fall: 0.4 });
     kit.flash({ x: x + d.x * 0.6, y: 0.75, z: z + d.z * 0.6, color: HERON.peak, size: 0.6, life: 0.16 });
+    flare(x + d.x * 0.6, 0.75, z + d.z * 0.6, HERON.corruption, 1.4, { life: 0.22, core: HERON.peak, angle: Math.atan2(d.z, d.x) });
+    // Wet stains laid down the lane as the drive passes over them.
+    for (let i = 1; i <= 3; i++) kit.mark({ x: x + d.x * len * (i / 3.5), z: z + d.z * len * (i / 3.5), radius: 1.3, kind: 'splash', stain: SILT, glow: WATER, glowOpacity: 0.35, cool: 0.6, life: 2.8, opacity: 0.4, delay: (len * (i / 3.5)) / 11 });
     spray('shard', x, 0.2, z, 8, { color: WATER, tile: SHARD_TILE.drop, speed: [1.0, 2.2], up: [1.4, 2.4], size: [0.1, 0.15], life: [0.4, 0.7], gravity: 7, drag: 0.4, spin: [-2, 2], dir: { x: -d.x, z: -d.z }, dirBias: 0.4 });
   });
   bus.on('boss_spear_hit', (ev) => {
@@ -872,6 +1049,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const d = b ? unit2(b.dashVx ?? 0, b.dashVz ?? 0) : { x: 0, z: 1 };
     spray('shard', t.x, 0.45, t.z, 7, { color: WATER, tile: SHARD_TILE.drop, speed: [1.2, 2.6], up: [1.0, 2.0], size: [0.1, 0.15], life: [0.4, 0.7], gravity: 7, drag: 0.4, spin: [-2, 2], dir: d, dirBias: 0.6 });
     kit.flash({ x: t.x, y: 0.55, z: t.z, color: HERON.corruption, size: 0.7, life: 0.16 });
+    flare(t.x, 0.55, t.z, HERON.corruption, 1.5, { kind: 'burst', life: 0.24, core: HERON.peak });
     camfx.kick(d.x, d.z, HERON.camera.kick, 0.14);
   });
   bus.on('boss_wingbeat', (ev) => {
@@ -884,6 +1062,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       kit.streak({ a: { x: x + Math.cos(a) * 0.5, y: 0.45, z: z + Math.sin(a) * 0.5 }, b: { x: x + Math.cos(a) * r * rnd(0.9, 1.1), y: 0.3, z: z + Math.sin(a) * r * rnd(0.9, 1.1) }, width: 0.06, tailW: 0, core: PARCH, glow: WATER, life: 0.3, delay: rnd(0, 0.05), fall: 1.6 });
     }
     kit.ring({ x, z, r0: 0.5, r1: r * 1.1, width: 0.14, life: 0.45, core: HERON.peak, glow: HERON.corruption, soft: 0.5, y: 0.06 });
+    flare(x, 1.2, z, HERON.corruption, 1.8, { kind: 'burst', life: 0.26, core: HERON.peak });
+    kit.mark({ x, z, radius: r * 1.6, kind: 'splash', stain: SILT, glow: null, life: 3, opacity: 0.35 });
     spray('shard', x, 1.2, z, w.feathers, { color: WATER, tile: SHARD_TILE.feather, speed: [1.2, 2.4], up: [0.4, 1.0], size: [0.13, 0.18], life: [1.0, 1.5], gravity: 0.7, drag: 1.6, spin: [-4, 4], flutter: 0.55 });
     spray('shard', x, 0.2, z, w.spray, { color: WATER, tile: SHARD_TILE.drop, speed: [1.8, 3.0], up: [0.8, 1.6], size: [0.1, 0.14], life: [0.4, 0.6], gravity: 7, drag: 0.5, spin: [-2, 2], jitter: r * 0.4 });
     kit.light({ x, z, radius: r * 1.2, color: HERON.corruption, opacity: 0.4, life: 0.4 });
@@ -899,6 +1079,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     spray('shard', x, 0.3, z, 16, { color: WATER, tile: SHARD_TILE.drop, speed: [0.8, 2.0], up: [2.0, 3.4], size: [0.1, 0.16], life: [0.6, 0.9], gravity: 7, drag: 0.3, spin: [-2, 2], jitter: 0.4 });
     spray('smoke', x, 0.15, z, 5, { color: SILT, speed: [0.4, 1.0], up: [0.05, 0.2], size: [0.45, 0.62], grow: 1.5, life: [1.2, 1.7], opacity: 0.4, gravity: 0, drag: 2.4, jitter: 0.5 });
     kit.flash({ x, y: 0.4, z, color: HERON.corruption, size: 1.0, life: 0.3 });
+    kit.mark({ x, z, radius: 2.4, kind: 'splash', stain: SILT, glow: WATER, glowOpacity: 0.3, cool: 0.8, life: 4, opacity: 0.45 });
   });
   bus.on('boss_surface', (ev) => {
     mark('heron_surface');
@@ -907,6 +1088,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     kit.pillar({ x, z, radius: 0.7, height: g.height, color: WATER, life: 0.8, opacity: 0.55 });
     kit.pillar({ x, z, radius: 0.3, height: g.height * 1.1, color: HERON.corruption, life: 0.7, opacity: 0.6 });
     kit.flash({ x, y: 1.6, z, color: HERON.peak, size: 1.4, life: 0.32, hold: 0.08 });
+    flare(x, 1.2, z, HERON.corruption, 2.4, { kind: 'burst', life: 0.32, core: HERON.peak });
+    kit.mark({ x, z, radius: 2.6, kind: 'splash', stain: SILT, glow: WATER, glowOpacity: 0.35, cool: 1.0, life: 4, opacity: 0.45 });
     ripples(x, z, g.ripples, (ev.radius ?? 1.8) * 1.2);
     spray('shard', x, 1.2, z, g.drops, { color: WATER, tile: SHARD_TILE.drop, speed: [0.6, 1.8], up: [3.0, 5.0], size: [0.11, 0.17], life: [0.8, 1.2], gravity: 7, drag: 0.2, spin: [-2, 2], jitter: 0.4 });
     spray('chunk', x, 0.2, z, 6, { color: SILT, speed: [0.8, 1.8], up: [1.6, 2.8], size: [0.06, 0.12], life: [0.5, 0.8] });
@@ -918,6 +1101,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     // draining out of it, feathers left on the water.
     mark('heron_death');
     kit.pillar({ x, z, radius: 0.9, height: 3.6, color: HERON.corruption, life: 1.3, opacity: 0.65 });
+    flare(x, 1.0, z, HERON.corruption, 3.2, { kind: 'burst', life: 0.45, core: HERON.peak, spin: 0.8 });
+    kit.mark({ x, z, radius: 3.4, kind: 'splash', stain: SILT, glow: WATER, glowOpacity: 0.4, cool: 1.5, life: 6, opacity: 0.5 });
     kit.ring({ x, z, r0: 0.5, r1: 3.6, width: 0.32, life: 0.9, core: HERON.peak, glow: HERON.corruption, soft: 0.5, y: 0.06 });
     ripples(x, z, 4, 3.0, 0.1);
     spray('shard', x, 0.6, z, 28, { color: WATER, tile: SHARD_TILE.drop, speed: [1.0, 2.6], up: [2.4, 4.4], size: [0.11, 0.17], life: [0.8, 1.2], gravity: 7, drag: 0.3, spin: [-2, 2], jitter: 0.7 });
@@ -960,10 +1145,19 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     }
     spray('spark', x + d.x * 0.6, 0.45, z + d.z * 0.6, br.cinders, { color: EMBER, speed: [2.0, 4.2], up: [0.2, 1.0], size: [0.04, 0.09], life: [0.5, 0.9], gravity: -0.2, drag: 1.0, dir: d, dirBias: 0.85 });
     kit.light({ x: x + d.x * R * 0.5, z: z + d.z * R * 0.5, radius: R * 0.8, color: EMBER, opacity: 0.4, life: 0.45, attack: 0.04 });
+    flare(x + d.x * 0.5, 0.6, z + d.z * 0.5, EMBER, 1.6, { kind: 'burst', life: 0.24, core: WYRM.peak });
+    // The breath scorches the cone: burns that cool from Ember to ash.
+    for (let i = 0; i < 4; i++) {
+      const a = base + (i - 1.5) * half * 0.45;
+      const r = R * (i % 2 ? 0.45 : 0.72);
+      kit.mark({ x: x + Math.cos(a) * r, z: z + Math.sin(a) * r, radius: 1.5, kind: 'scorch', stain: INK, glow: EMBER, cool: 1.1, life: 3.6, opacity: 0.55, delay: 0.04 + i * 0.03 });
+    }
     camfx.kick(d.x, d.z, WYRM.camera.kick * 0.6, 0.16);
   });
   function moundBurst(x, z, big) {
     const e = WYRM.erupt;
+    flare(x, 0.4, z, big ? EMBER : WYRM.corruption, big ? 2.2 : 1.2, { kind: 'burst', life: big ? 0.3 : 0.22, core: WYRM.peak });
+    kit.mark({ x, z, radius: big ? 3 : 1.8, kind: 'crater', stain: EARTH, glow: big ? EMBER : WYRM.corruption, cool: big ? 1.3 : 0.8, life: big ? 4.5 : 3, opacity: 0.6 });
     kit.crack({ x, z, radius: big ? 2.0 : 1.2, glow: WYRM.corruption, life: big ? 2.2 : 1.4, cool: big ? 0.8 : 0.4 });
     kit.ring({ x, z, r0: 0.2, r1: big ? 2.1 : 1.3, width: big ? 0.32 : 0.2, life: 0.5, core: EARTH, glow: big ? EMBER : WYRM.corruption, soft: 0.4, jag: 0.9, y: 0.05, opacity: 0.8 });
     spray('chunk', x, 0.2, z, big ? e.chunk : 8, { color: EARTH, speed: [0.8, 2.4], up: [2.4, 4.4], size: [0.08, 0.17], life: [0.7, 1.1], jitter: 0.4 });
@@ -1001,6 +1195,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     // It crumbles to ash: the body's cinders rise, the cracks go cold.
     mark('wyrm_death');
     kit.pillar({ x, z, radius: 1.0, height: 3.8, color: WYRM.corruption, life: 1.4, opacity: 0.65 });
+    flare(x, 1.0, z, WYRM.corruption, 3.2, { kind: 'burst', life: 0.45, core: WYRM.peak, spin: 0.8 });
+    kit.mark({ x, z, radius: 3.4, kind: 'crater', stain: INK, glow: WYRM.corruption, cool: 2.0, life: 6, opacity: 0.6 });
     kit.ring({ x, z, r0: 0.5, r1: 4, width: 0.4, life: 1.0, core: WYRM.peak, glow: WYRM.corruption, soft: 0.5, y: 0.06 });
     kit.crack({ x, z, radius: 2.4, glow: WYRM.corruption, life: 3, cool: 1.2 });
     spray('smoke', x, 0.4, z, 14, { color: CINDER, speed: [0.3, 1.0], up: [0.5, 1.2], size: [0.5, 0.72], grow: 1.6, life: [1.6, 2.2], opacity: 0.42, gravity: -0.3, drag: 2.0, jitter: 1.2 });
@@ -1069,6 +1265,18 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   function update(tSec) {
     const dt = last === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - last));
     last = tSec;
+    for (let i = timers.length - 1; i >= 0; i--) {
+      const tm = timers[i];
+      tm.t -= dt;
+      if (tm.t <= 0) {
+        timers.splice(i, 1);
+        tm.fn();
+      }
+    }
+    if ((biomeClock -= dt) <= 0) {
+      biomeClock = 1;
+      readBiome();
+    }
     const seen = new Set();
     for (const e of world.entities()) {
       const k = e.kind;
@@ -1084,9 +1292,13 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         const hx = e.x;
         const hz = e.z;
         if (!rec) {
-          rec = { spec, s: kit.streak({ a: { x: hx, y: spec.y, z: hz }, b: { x: hx, y: spec.y, z: hz }, width: spec.width, tailW: spec.tailW, core: spec.core, glow: spec.glow, hold: true, owner: e.id, fall: 1.6, opacity: 0.9 }) };
+          // The head: a pulsing orb in the trail's glow, the white-hot core
+          // the eye follows (AAA pass).
+          const g = kit.glow({ x: hx, y: spec.y, z: hz, color: spec.glow, size: spec.width * 4.2 + 0.12, owner: e.id, pulse: 8 });
+          rec = { spec, g, s: kit.streak({ a: { x: hx, y: spec.y, z: hz }, b: { x: hx, y: spec.y, z: hz }, width: spec.width, tailW: spec.tailW, core: spec.core, glow: spec.glow, hold: true, owner: e.id, fall: 1.6, opacity: 0.9 }) };
           trails.set(e.id, rec);
         }
+        if (rec.g && rec.g.owner === e.id) kit.setGlow(rec.g, hx, spec.y, hz);
         if (rec.s.owner !== e.id) continue; // its slot was recycled
         kit.setStreak(rec.s, hx - (vx / vl) * len, spec.y, hz - (vz / vl) * len, hx, spec.y, hz);
         continue;
@@ -1116,6 +1328,10 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       if (seen.has(id)) continue;
       shotKind.delete(id);
       if (rec.s.owner === id) kit.release(rec.s, 0.12);
+      if (rec.g && rec.g.owner === id) {
+        kit.release(rec.g, 0.14);
+        rec.g.owner = null;
+      }
       trails.delete(id);
     }
     if (wakeClock.size > 64) wakeClock.clear();
@@ -1193,6 +1409,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   function levelTeardown() {
     trails.clear();
     wakeClock.clear();
+    timers.length = 0;
+    biomeClock = 0;
     globKind.clear();
     shotKind.clear();
     bossMode.clear();
