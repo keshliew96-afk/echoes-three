@@ -76,6 +76,7 @@ import { PARTY_ALLIES, STARTING_SKILLS, SKILLS } from './skills.js';
 import { createDraftSystem, SPOILS_PER_CLEAR } from './draft.js';
 import { NODES } from './nodes.js';
 import { levelFor, ACT_IDS } from '../data/levels.js';
+import { LAYOUTS } from '../data/layouts.js';
 import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
@@ -399,12 +400,15 @@ export function createRunSystem({
   // §4.1 room table roll: one layout per combat room from the act's pool,
   // never the one the previous combat room used. Drawn with the run RNG after
   // the wave schedule (PLAN §3.6 (a)).
+  // Slice 2 layouts (10-15) join campaign tables only: the legacy single-level
+  // run keeps `legacyLayouts`, so the goldens roll the same rooms.
   function rollLayout(n, mode) {
     const level = levelFor(act);
     if (mode === 'boss') return level.bossLayout;
-    if (mode === 'shop') return lastCombatLayout ?? level.layouts[0];
-    const pool = level.layouts.filter((id) => id !== lastCombatLayout);
-    const pick = pool.length > 0 ? pool[rng.int(pool.length)] : level.layouts[0];
+    const table = campaign && campaign.mode !== 'campaign' && level.legacyLayouts ? level.legacyLayouts : level.layouts;
+    if (mode === 'shop') return lastCombatLayout ?? table[0];
+    const pool = table.filter((id) => id !== lastCombatLayout);
+    const pick = pool.length > 0 ? pool[rng.int(pool.length)] : table[0];
     lastCombatLayout = pick;
     return pick;
   }
@@ -449,6 +453,9 @@ export function createRunSystem({
     if (combatRoom) waves.planRoom(mode, { act, room: n, challenge, level, diff });
     // Layout AFTER the schedule (one fixed roll order per room).
     const layoutId = rollLayout(n, mode);
+    // A slice-2 layout's own spawn ring: move the rolled units onto it.
+    const ring = combatRoom ? LAYOUTS[layoutId]?.spawns : null;
+    if (ring) waves.relocateSpawns(ring);
     layout = { act, layoutId, biome: level.biome, room: n, mode };
     roomPlanView = {
       act,

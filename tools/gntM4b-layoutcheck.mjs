@@ -57,9 +57,17 @@ for (const [lid, L] of Object.entries(LAYOUTS)) {
     if (dress.veinStones) anchors.push({ x: dress.veinStones[0], z: dress.veinStones[1], r: 1.3, what: 'veinStones' });
     for (const t of dress.landmarks ?? []) anchors.push({ x: t[0], z: t[1], r: t[2] ?? 1.0, what: `landmark ${t[3] ?? ''}` });
   }
+  // Slice-2 layouts carry their own spawn ring (index-aligned, 8 points).
+  const ring = L.spawns ?? SPAWN_POINTS;
+  if (ring.length !== SPAWN_POINTS.length) note(lid, { type: 'spawns' }, `spawn ring has ${ring.length} points, want ${SPAWN_POINTS.length}`);
+  for (const [sx, sz] of ring) {
+    if (Math.abs(sx) > ARENA.halfW - 1.2 || Math.abs(sz) > ARENA.halfD - 0.9) note(lid, { type: 'spawn', x: sx, z: sz }, 'spawn outside the playfield');
+    const w = PLACEMENT_RULES.waystone;
+    if (Math.hypot(sx - w.x, sz - w.z) < 5) note(lid, { type: 'spawn', x: sx, z: sz }, 'spawn within 5 u of the Waystone');
+  }
   for (const p of all) {
     for (const s of shapesOf(p)) {
-      for (const [sx, sz] of SPAWN_POINTS) {
+      for (const [sx, sz] of ring) {
         const d = distTo(s, sx, sz);
         if (d < PLACEMENT_RULES.spawnClear) note(lid, p, `spawn (${sx},${sz}) ${d.toFixed(2)} < ${PLACEMENT_RULES.spawnClear}`);
       }

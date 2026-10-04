@@ -1,7 +1,8 @@
 // Act III — The Ashen Barrow (BUILD_BRIEF §23.1): cold blue-grey ash,
 // bone-stone cairns, ochre dead grass, brazier pools; violet ONLY in the veins
 // of the standing stones (the act tell). Layouts 7 Barrow Gate · 8 Ossuary
-// Row · 9 Moonwell (9 is also the boss room's dressing).
+// Row · 9 Moonwell (9 is also the boss room's dressing) · 14 Bell Tower ·
+// 15 Open Grave (slice 2).
 //
 // Palette (display-space HSL, §23.1): shade base cold blue-grey H 212-224
 // S .16-.24 L .09-.15; lit ash H 28-40 S .06-.12 L .30-.38 + dead ochre grass
@@ -189,6 +190,74 @@ export const LAYOUT_SPECS = Object.freeze({
       [-6.4, 5.2, 0.5, 'bonecairn'],
       [6.6, 5.8, 0.5, 'banner brokenurn'],
       [8.4, 4.4, 0.5, 'standingstone'],
+    ],
+    rooms: ROOMS,
+  }),
+  // ---- 14 · Bell Tower (slice 2): the tower's broken cairn walls stand in
+  // the middle (data/layouts.js barricades); standing stones and the two
+  // bells' cairns ring it.
+  14: Object.freeze({
+    id: 14,
+    name: 'belltower',
+    biome: 'barrow',
+    mood: { key: 0.45, fill: 0.7, warmth: 0.0, keyWhite: 0.0, poolGain: 0.8, poolTint: '#E6B456', poolR: 0.9 },
+    ground: GROUND,
+    ...SHARED,
+    paths: [
+      { pts: [[-12.6, -3.4], [-6.4, -2.8], [-3.4, -5.6], [0.0, -8.6]], w: 1.3 },
+      { pts: [[12.6, -3.4], [6.4, -2.8], [3.4, -5.6]], w: 1.3 },
+    ],
+    torches: [[-11.2, -2.0], [11.2, -2.0], [-3.8, 7.2], [3.8, 7.2]],
+    lightIdx: [0, 1],
+    lanterns: [[-2.6, -7.3, -1.5708], [2.6, -7.3, -1.5708]],
+    braziers: [[-6.4, 0.6], [6.4, 0.6], [-1.8, 2.6], [1.8, -2.8]],
+    veinStones: [8.4, -3.2, 0.2],
+    clusters: [
+      [-5.4, -7.3, 0.55, 'standingstone bonecairn'],
+      [5.4, -7.3, 0.55, 'bonecairn graveslab'],
+      [-11.2, 2.4, 0.6, 'graveslab brokenurn'],
+      [11.2, 2.4, 0.6, 'standingstone urn'],
+      [-4.6, 7.3, 0.55, 'graveslab'],
+      [4.8, 7.3, 0.55, 'bonecairn'],
+      [-8.6, -4.0, 0.5, 'tower graveslab'],
+      [-8.8, 4.2, 0.5, 'banner bonecairn'],
+      [8.8, 4.2, 0.5, 'tower'],
+      [-11.3, -4.6, 0.4, 'bonecairn'],
+    ],
+    rooms: ROOMS,
+  }),
+
+  // ---- 15 · Open Grave (slice 2): opened graves in a grid; slabs and urns
+  // heaped at the grid's edges.
+  15: Object.freeze({
+    id: 15,
+    name: 'opengrave',
+    biome: 'barrow',
+    mood: { key: 0.43, fill: 0.72, warmth: 0.0, keyWhite: 0.0, poolGain: 0.8, poolTint: '#E6B456', poolR: 0.9 },
+    ground: GROUND,
+    ...SHARED,
+    paths: [
+      { pts: [[0.0, -8.6], [0.2, -3.6], [-0.4, 1.0], [-2.2, 4.4], [-4.6, 8.6]], w: 1.3 },
+      { pts: [[-12.6, -0.8], [-6.8, -1.8], [-2.4, -1.4]], w: 1.1 },
+    ],
+    torches: [[-11.2, 2.0], [11.2, 2.0], [-7.8, -7.2], [7.8, 7.2]],
+    lightIdx: [2, 1],
+    lanterns: [[-1.4, -7.3, -1.5708], [3.0, 7.3, 1.5708]],
+    braziers: [[-2.0, 2.0], [2.2, -1.8], [-6.0, 1.2], [6.2, 1.2]],
+    veinStones: [7.4, -6.7, -0.2],
+    clusters: [
+      [-9.6, -7.2, 0.5, 'graveslab'],
+      [-4.2, -7.3, 0.4, 'graveslab'],
+      [4.2, -7.3, 0.4, 'brokenurn'],
+      [-11.2, -4.0, 0.5, 'graveslab bonecairn'],
+      [11.2, -2.6, 0.5, 'standingstone'],
+      [11.2, 6.6, 0.5, 'graveslab brokenurn'],
+      [-11.2, 2.4, 0.4, 'urn'],
+      [-8.8, 7.3, 0.5, 'graveslab'],
+      [8.6, 7.3, 0.5, 'bonecairn'],
+      [-2.4, 7.3, 0.4, 'graveslab'],
+      [-9.2, 0.8, 0.5, 'tower'],
+      [9.2, 0.8, 0.5, 'tower graveslab'],
     ],
     rooms: ROOMS,
   }),

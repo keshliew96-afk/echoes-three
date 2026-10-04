@@ -1,7 +1,8 @@
 // Act II — The Sunken Mill (BUILD_BRIEF §23.1): wet slate + black-teal water,
 // moss, rotten timber, amber lantern pools; violet ONLY on the corrupted mill
 // wheel's veins (the act tell). Layouts 4 Millpond · 5 Weir · 6 Drowned
-// Granary (6 is also the boss room's dressing). Spec grammar = env/variants.js
+// Granary (6 is also the boss room's dressing) · 12 Sluice Gates · 13 Flooded
+// Cellar (slice 2). Spec grammar = env/variants.js
 // (ground / paths / clusters / torches / lanterns / braziers + mood) plus the
 // Gauntlet biome fields: ground.flagstones / ground.blade / ground.moss*,
 // `water` channels, `millwheel` (the tell), `propFamily: 'mill'`, `apron`,
@@ -213,6 +214,79 @@ export const LAYOUT_SPECS = Object.freeze({
       [-4.4, 4.4, 0.5, 'reeds banner'],
       [5.6, 3.2, 0.5, 'tower'],
       [-3.6, -6.4, 0.4, 'sack'],
+    ],
+    rooms: ROOMS,
+  }),
+  // ---- 12 · Sluice Gates (slice 2): two short races flowing opposite ways
+  // between pond pools, a track across both on footbridge planks.
+  12: Object.freeze({
+    id: 12,
+    name: 'sluicegates',
+    biome: 'mill',
+    mood: { key: 0.47, fill: 0.7, warmth: 0.0, keyWhite: 0.12, poolGain: 0.8, poolTint: '#E6B456', poolR: 0.9 },
+    ground: GROUND,
+    ...SHARED,
+    water: [
+      { pts: [[-4.8, -5.6], [-4.8, 5.6]], w: 1.62 },
+      { pts: [[4.8, 5.6], [4.8, -5.6]], w: 1.62 },
+      { pts: [[-5.6, 6.2], [-3.8, 6.8]], w: 2.2 },
+      { pts: [[3.8, -6.8], [5.6, -6.2]], w: 2.2 },
+    ],
+    paths: [{ pts: [[-12.6, 0.8], [-6.4, 0.4], [-1.6, -0.6], [2.8, 0.2], [7.0, 0.6], [12.6, 1.2]], w: 1.4 }],
+    torches: [[-11.2, -4.6], [11.2, 4.6], [-1.6, -7.2], [1.8, 7.2]],
+    lightIdx: [2, 1],
+    lanterns: [[-7.6, -7.3, -1.5708], [7.8, 7.3, 1.5708]],
+    braziers: [[-2.6, 1.6], [2.4, -1.8], [-7.4, -0.8], [7.6, 0.8]],
+    millwheel: [-9.6, -4.6, 1.5708],
+    clusters: [
+      [-2.4, -7.3, 0.6, 'sluiceframe reeds'],
+      [8.4, -7.3, 0.6, 'timberpile reeds'],
+      [11.2, -5.4, 0.5, 'reeds'],
+      [11.2, 0.0, 0.5, 'ropecrate'],
+      [-11.2, 0.0, 0.5, 'reeds timberpile'],
+      [-11.2, 5.4, 0.5, 'reeds'],
+      [-1.4, 7.4, 0.6, 'crate barrel'],
+      [10.0, 7.2, 0.4, 'millhouse'],
+      [-8.6, 3.8, 0.55, 'tower reeds'],
+      [8.6, -3.8, 0.55, 'banner timberpile'],
+      [-1.4, 5.6, 0.4, 'reeds'],
+      [2.2, -5.4, 0.45, 'reeds'],
+    ],
+    rooms: ROOMS,
+  }),
+
+  // ---- 13 · Flooded Cellar (slice 2): races along both long walls squeeze
+  // the floor into a cellar; the sluice gate stands at the west end.
+  13: Object.freeze({
+    id: 13,
+    name: 'cellar',
+    biome: 'mill',
+    mood: { key: 0.43, fill: 0.74, warmth: 0.0, keyWhite: 0.14, poolR: 0.95, poolGain: 0.8, poolTint: '#E6B456' },
+    ground: GROUND,
+    ...SHARED,
+    water: [
+      { pts: [[-9.2, -5.2], [9.2, -5.2]], w: 1.62 },
+      { pts: [[9.2, 5.4], [-9.2, 5.4]], w: 1.62 },
+      { pts: [[9.4, -5.4], [11.6, -6.4]], w: 1.8 },
+      { pts: [[-9.4, 5.6], [-11.6, 6.6]], w: 1.8 },
+    ],
+    paths: [{ pts: [[-12.6, -1.2], [-7.6, -1.0], [-1.6, 0.6], [5.6, -0.2], [12.6, 0.6]], w: 1.3 }],
+    torches: [[-11.2, 3.4], [11.2, -2.0], [-3.6, -7.2], [3.8, 7.2]],
+    lightIdx: [2, 1],
+    lanterns: [[0.4, -7.3, -1.5708], [-0.6, 7.3, 1.5708]],
+    braziers: [[-1.6, 2.8], [1.6, -2.6], [-7.6, -3.4], [7.8, 3.6]],
+    millwheel: [10.6, 5.4, -1.5708],
+    clusters: [
+      [-8.4, -7.3, 0.6, 'timberpile reeds'],
+      [6.4, -7.3, 0.6, 'ropecrate crate barrel'],
+      [-6.4, 7.3, 0.6, 'sack crate'],
+      [5.6, 7.4, 0.5, 'reeds'],
+      [-11.2, -5.6, 0.5, 'reeds'],
+      [11.2, -4.6, 0.4, 'reeds'],
+      [-8.0, 3.4, 0.45, 'tower reeds'],
+      [8.6, -2.6, 0.5, 'banner timberpile'],
+      [-6.8, 3.6, 0.45, 'barrel'],
+      [6.6, -3.8, 0.45, 'crate'],
     ],
     rooms: ROOMS,
   }),
