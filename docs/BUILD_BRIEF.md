@@ -1710,9 +1710,14 @@ adds untouched). Measured on this tree: unsocketed Healer 19/20 clears (seeds
 20/20; `tools/gntPARTY-band.mjs` 17/18 checks — the one failure is **GP.13 (d)
 on Level 1 (0/5 seeds with a down; the v0.5.150 baseline was 0/5 too)**. No
 Level 1 Stag setting that downs a built party on ≥ 2 of 5 seeds also lets an
-unsocketed party clear, so (d) for Level 1 is handed back to the design owner
-(the fix-M4a-r5 options A / B / C still stand). Over seeds 1–20 the carried
+unsocketed party clear, so (d) for Level 1 was handed back to the design owner
+(the fix-M4a-r5 options A / B / C). Over seeds 1–20 the carried
 campaign wins 12/20 (unchanged), Level 1 clears 20/20 (was 18/20).
+**Ruling (design owner, 2026-10-03):** Level 1's bite is an HP dip — a down
+or a member below 35 % HP — counted over seeds 1–40 and met when it bites at
+least as often as v0.5.150 (PLAN GP.13). At × 2.1: 13 of 40 against 7 of 40
+(seeds 1–5 alone: 1 of 5 each), `tools/gntPARTY-band.mjs` 18/18; the table
+below is unchanged by the ruling.
 Binding table, standard challenge (hpMul / dmgMul / kill_all budget — a
 defend room's budget is × 1.25):
 
@@ -2663,7 +2668,9 @@ Measured: 0 idle equipped actives over 40 Node campaigns (from Level 1 seeds
   first sim edit); (c) the Level 3 Stag room's median party damage ≥ 0.8 ×
   its baseline; (d) the carried campaign does not win every level on every
   seed with zero party downs (≥ 1 down per level on at least 2 of 5 seeds —
-  the game still bites).
+  the game still bites; Level 1 by the design owner's 2026-10-03 ruling: a
+  down or a member below 35 % HP, on at least as many of seeds 1–40 as the
+  v0.5.150 baseline — PLAN GP.13).
 - **Starter grant** — `STARTER_GRANT[N].allies` = the median carried ally
   build at the Level N card (swapped-in skills, socketed nodes, 1 legendary
   per level, purse). First proposal, re-measured by PARTY: Level 2 `{ swaps:

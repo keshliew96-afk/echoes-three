@@ -111,8 +111,10 @@ export const LEVEL_DMG = Object.freeze([null, 0.75, 1.0, 1.0]);
 // sweep tools/gntfixM4a6-stag.mjs, seeds 1-10: 0/10 clears, first down 0.78 s
 // into the fight), so the original 8-room loop no longer played by real input.
 // At x2.1 (32 / 25) that party clears 10/10 and the autopilot's built party
-// 10/10; Levels 2 and 3 are unchanged. The cost: GP.13 (d) on Level 1 is no
-// longer met (0/5 seeds with a down) — recorded for the design owner.
+// 10/10; Levels 2 and 3 are unchanged. GP.13 (d) on Level 1 (0/5 seeds with
+// a down) went to the design owner, who ruled (2026-10-03) that Level 1's bite
+// is an HP dip below 35 % counted over seeds 1-40 against v0.5.150: 13 of 40
+// vs 7 of 40 at x2.1 (tools/gntPARTY-band.mjs 18/18).
 export const STAG_DMG_LEVEL = Object.freeze([null, 2.1, 2.0, 1.0]);
 // PARTY (PLAN §16.9): the determinism proof's Node-only switch — the
 // v0.5.150 (CAMPAIGN) constants back in force (cmd('difficultyLegacy')). The

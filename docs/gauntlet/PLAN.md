@@ -3759,6 +3759,17 @@ Measured on the dev server AND the production build (`npx vite build
   Healer 19/20 clears, autopilot 20/20, `gntPARTY-band` 17/18 — (d) Level 1
   0/5, Levels 2–3 met. No Level 1 Stag setting met (d) without wiping that
   party; the design owner rules (the fix-M4a-r5 options A / B / C).)*
+  *(Design owner's ruling, 2026-10-03: (d) on **Level 1** is an HP dip — a
+  seed bites when a member goes down OR drops below 35 % HP anywhere in
+  Level 1 — counted over seeds 1–40 (Level 1 only, `gntCAMPAIGN-camprun
+  --stop-after 1`) and met when it bites on at least as many seeds as the
+  v0.5.150 baseline (`captures/gntPARTY-baseline-l1.json`). Seeds 1–5 alone
+  are too few at a ~1-in-3 dip rate (x2.1: 1 of 5, 13 of 40; v0.5.150: 1 of
+  5, 7 of 40). Levels 2–3 keep "≥ 1 down on ≥ 2 of 5 seeds". MET at x2.1:
+  13 of 40 vs 7 of 40, `gntPARTY-band` 18/18; a Level 1 Stag at x1.0 bites 3
+  of 40 and fails. A sweep of the Level 1 Stag damage / HP and room damage
+  found no setting that raises the 40-seed rate while an unsocketed party
+  still clears; docs/gauntlet/fix-M4a-r6.md S8.)*
 - **GP.14 The Healer is unchanged**: every §16.10 invariant (Node probe
   against a `git archive` of v0.5.150: pools, numbers, 289 grid cells,
   spoils / shelf / wallet numbers, `reward_offer` / `spoils_drop` /
