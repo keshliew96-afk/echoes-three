@@ -198,8 +198,15 @@ export function createEndScreen({ run }) {
     // campaign; CAMPAIGN COMPLETE returns to camp by itself (sim time).
     const camp = s && s.campaign && s.campaign.mode === 'campaign' ? s.campaign : null;
     const complete = !!(camp && camp.complete);
-    headline.textContent = win ? (complete ? 'CAMPAIGN COMPLETE' : 'VICTORY') : camp ? 'THE CAMPAIGN ENDS' : 'THE RUN ENDS';
-    flavour.textContent = win
+    // ENDLESS (docs/ENDLESS.md): a descent always ends in a fall; its card
+    // leads with the depth reached and the profile's depth record.
+    const deep = camp && camp.endless ? camp : null;
+    headline.textContent = deep ? 'THE DESCENT ENDS' : win ? (complete ? 'CAMPAIGN COMPLETE' : 'VICTORY') : camp ? 'THE CAMPAIGN ENDS' : 'THE RUN ENDS';
+    flavour.textContent = deep
+      ? deep.won
+        ? `The campaign was won, and the party went on. The dark took them at Depth ${deep.depth}.`
+        : `The party fell at Depth ${deep.depth}, before the Barrow. The gods applaud.`
+      : win
       ? complete
         ? 'The last of the old beasts falls. Every level is clear — the long night is over.'
         : BOSS_WIN_FLAVOUR[view.actBoss && view.actBoss.kind] ?? WIN_FLAVOUR[view.act] ?? WIN_FLAVOUR[1]
@@ -234,7 +241,17 @@ export function createEndScreen({ run }) {
     // key of a row is indented from the first pair's value).
     const pairs = [];
     let rooms = [`${s.rooms} / 8`];
-    if (camp) {
+    if (deep) {
+      const sv = service('save');
+      const rec = sv && typeof sv.lastRecord === 'function' ? sv.lastRecord() : null;
+      const e = rec && rec.endless && rec.summary && rec.summary.seed === s.seed ? rec.endless : null;
+      pairs.push(['DEPTH REACHED', `${deep.depth} · ${levelFor(deep.level).name}${e && e.newDepthRecord ? ' · New record!' : ''}`]);
+      pairs.push(['DEEPEST EVER', String(e ? Math.max(e.depth, e.prevBestDepth) : deep.depth)]);
+      pairs.push(['DEPTHS CLEARED', String(deep.depthsCleared ?? deep.levelsCleared)]);
+      pairs.push(['CAMPAIGN', deep.won ? 'won' : 'not won']);
+      const n = (camp.levels || []).reduce((acc, l) => acc + (l.rooms || 0), 0);
+      rooms = [String(n)];
+    } else if (camp) {
       const span = CAMPAIGN_LEVELS.filter((l) => l >= camp.startLevel);
       const n = (camp.levels || []).reduce((acc, l) => acc + (l.rooms || 0), 0);
       pairs.push(['LEVELS CLEARED', `${camp.levelsCleared} / ${span.length}`]);
@@ -251,7 +268,7 @@ export function createEndScreen({ run }) {
       : s.nodes.bench.length + s.nodes.socketed.length;
     pairs.push(['ROOMS CLEARED', rooms[0]], ['GLINT EARNED', String(s.glint)]);
     pairs.push(['SKILLS CARRIED', String(skillsHeld)], ['NODES HELD', String(nodesHeld)]);
-    pairs.push(['RUN SEED', String(s.seed ?? '—')], [camp ? 'CAMPAIGN LENGTH' : 'RUN LENGTH', `${Math.round(s.ticks / 60)} s`]);
+    pairs.push(['RUN SEED', String(s.seed ?? '—')], [deep ? 'DESCENT LENGTH' : camp ? 'CAMPAIGN LENGTH' : 'RUN LENGTH', `${Math.round(s.ticks / 60)} s`]);
     summaryEl.innerHTML =
       (scoreRow ? `<div class="rn-hero">${scoreRow}</div>` : '') +
       pairs.map(([k, v], i) => (i % 2 ? row(k, v).replace('class="rn-k"', 'class="rn-k rn-k2"') : row(k, v))).join('');

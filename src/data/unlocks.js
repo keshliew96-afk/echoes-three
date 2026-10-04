@@ -20,6 +20,7 @@ import { RELICS, RELIC_IDS, CURSES } from '../sim/relics.js';
 import { SKILLS } from '../sim/skills.js';
 import { CLASS_NAME, CLASS_OF_SEAT } from './classes.js';
 import { LEVELS, ACT_IDS, bossFor } from './levels.js';
+import { endlessBossIndex } from './endless.js';
 
 export const META_VERSION = 1;
 export const CURRENCY = 'Embers';
@@ -240,10 +241,15 @@ export function runFacts(summary, records = {}) {
   // `index`; the boss each one met is the run's own record when it has one.
   const isDeep = (l) => !!(camp && camp.endless) && num(l.index) > 3;
   const deep = clearedRows.filter(isDeep).map((l) => l.index);
-  // (past Depth 3 the boss alternates by depth, so only a row that names its
-  // boss counts there; within the campaign the seed decides: bossFor)
+  // (past Depth 3 the boss alternates by depth: endlessBossIndex; within the
+  // campaign the seed decides: bossFor)
+  const deepBoss = (l) => {
+    const list = LEVELS[l.level] && LEVELS[l.level].bosses;
+    const b = list ? list[endlessBossIndex(l.index, s.seed ?? null)] : null;
+    return b ? b.kind : null;
+  };
   const bosses = clearedRows
-    .map((l) => (typeof l.boss === 'string' ? l.boss : isDeep(l) ? null : bossFor(l.level, s.seed ?? null).kind))
+    .map((l) => (typeof l.boss === 'string' ? l.boss : isDeep(l) ? deepBoss(l) : bossFor(l.level, s.seed ?? null).kind))
     .filter(Boolean);
   const boons = s.boons || null;
   const depth = camp && camp.endless ? Math.max(num(camp.depth), num(camp.index), ...camp.levels.map((l) => num(l.index))) : 0;

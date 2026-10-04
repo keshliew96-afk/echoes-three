@@ -69,6 +69,7 @@ import { buildCampColliders, campRoadsClear } from '../env/camp/colliders.js';
 import { buildMapTable, createTablePrompt, withinTable, MAP_TABLE } from '../campaign/maptable.js';
 import { FIRST_LEVEL, isLevel, lockLine } from '../data/campaign.js';
 import { levelFor } from '../data/levels.js';
+import { endlessUnlockedFrom } from '../data/endless.js';
 
 // §18: "deep indigo/teal ambient". Two numbers carry the whole night read —
 // the key drops to a cold moon (a twelfth of the Act-1 sun) and the hemisphere
@@ -582,6 +583,17 @@ export function createCampScene(stage, toggles, ctx) {
     return app && app.params ? !!app.params.menuSkip : true;
   };
   let picking = false; // the Level Select is open for this camp visit
+  // ENDLESS: ?endless=1 (harness) / the profile's won flag.
+  const endlessParam = () => new URLSearchParams(window.location.search).get('endless') === '1';
+  function endlessOpen() {
+    if (endlessParam()) return true;
+    const save = svc('save');
+    try {
+      return endlessUnlockedFrom(save && typeof save.profile === 'function' ? save.profile() : null);
+    } catch {
+      return false;
+    }
+  }
   function isGuest() {
     const netSvc = svc('net');
     return !!(netSvc && typeof netSvc.isGuest === 'function' && netSvc.isGuest());
@@ -610,13 +622,15 @@ export function createCampScene(stage, toggles, ctx) {
   // Begin Run (E at the portal / the prompt's Begin Run chip).
   function beginRun() {
     if (!canBegin() || !withinPortal() || picking) return false;
+    // ENDLESS: a menu-skip boot with ?endless=1 sets out on the descent.
+    if (menuSkip() && endlessParam()) return beginLevel(FIRST_LEVEL, { harness: true, via: 'portal', endless: true });
     const harness = menuSkip() ? bootLevel() : null;
     return beginLevel(harness ?? FIRST_LEVEL, { harness: harness !== null, via: 'portal' });
   }
 
-  function beginLevel(level, { harness = false, via = 'portal' } = {}) {
+  function beginLevel(level, { harness = false, via = 'portal', endless = false } = {}) {
     if (!canBegin()) return false;
-    begin = { pressedAt: performance.now(), started: false, level, act: level, harness, via };
+    begin = { pressedAt: performance.now(), started: false, level, act: level, harness, via, endless };
     fade.classList.add('cp-on');
     prompt.classList.remove('cp-on');
     if (tablePrompt) tablePrompt.classList.remove('cg-on');
@@ -679,6 +693,14 @@ export function createCampScene(stage, toggles, ctx) {
   // PLAYER-FACING start at a level (the Level Select, cmd('campChoose'),
   // __echoes.campaign.choose): refuses a locked level (PLAN §12.7).
   function chooseLevel(level, via = 'select') {
+    // ENDLESS (docs/ENDLESS.md): the Endless Descent card, open once the game is won.
+    if (level === 'endless') {
+      if (!endlessOpen()) return { ok: false, reason: 'locked', level, line: 'Win the campaign to unlock' };
+      if (isGuest()) return { ok: false, reason: 'guest', level };
+      if (!canBegin()) return { ok: false, reason: 'busy', level };
+      beginLevel(FIRST_LEVEL, { harness: false, via, endless: true });
+      return { ok: true, level, endless: true };
+    }
     const n = Number(level);
     if (!isLevel(n)) return { ok: false, reason: 'no_such_level', level: n };
     if (!unlockedLevels().includes(n)) return { ok: false, reason: 'locked', level: n, line: lockLine(n) };
@@ -703,7 +725,7 @@ export function createCampScene(stage, toggles, ctx) {
     const ready = arena.levelStatus ? arena.levelStatus(level).ready : true;
     const depart = level !== FIRST_LEVEL || !ready;
     const boons = equippedBoons(!!begin.harness);
-    world.runSystem().startCampaign({ level, challenge, depart, harness: !!begin.harness, ...(boons ? { boons } : {}) });
+    world.runSystem().startCampaign({ level, challenge, depart, harness: !!begin.harness, ...(begin.endless ? { endless: true } : {}), ...(boons ? { boons } : {}) });
     begin.started = true;
     begin.startedAt = performance.now();
     lastBegin = {
@@ -714,6 +736,7 @@ export function createCampScene(stage, toggles, ctx) {
       depart,
       ready,
       harness: !!begin.harness,
+      endless: !!begin.endless,
       challenge,
       boons,
       pressedAt: Math.round(begin.pressedAt),
