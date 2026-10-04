@@ -205,9 +205,11 @@ async function enemyClip(name, act, kinds, frames = 210) {
 
 // Boss clips: step the fight (off camera) until the next signature beat is
 // about to land, record it, repeat.
-async function bossClip(name, act, beats) {
+async function bossClip(name, act, beats, kind = null) {
   if (only && !only.has(name)) return;
   const page = await open(5);
+  // A named boss: a fresh run of that act that ends with it.
+  if (kind) await page.evaluate(new Function(`__echoes.sim.freeze(); if (__echoes.state().run?.active) __echoes.cmd('abandonRun', 'quit'); __echoes.cmd('startRun', { act: ${act}, boss: '${kind}' }); __echoes.sim.stepN(30, null);`));
   await page.evaluate(ROOM(act, 8));
   await page.evaluate(() => __echoes.cmd('autopilot', true));
   const segs = [];
@@ -223,6 +225,7 @@ async function bossClip(name, act, beats) {
           const bb = X.state().run.boss;
           if (!bb) break;
           const t = bb.telegraph || (bb.quake ? { attack: 'quake' } : null);
+          const R = X.content.vfx().recipes || {};
           if (${b.until}) break;
         }
       `),
@@ -258,6 +261,26 @@ try {
     { pre: "X.cmd('bossHp', 0.45);", until: 'true', frames: 40 },
     { pre: "X.cmd('killBoss');", until: 'true', frames: 70 },
   ]);
+  // Content slice 2 (design-VFX.md §5c / §6c).
+  await enemyClip('enemies-wood2', 1, ['wasp', 'thornling', 'wasp']);
+  await enemyClip('enemies-mill2', 2, ['crab', 'lamprey', 'crab']);
+  await enemyClip('enemies-barrow2', 3, ['knight', 'ram', 'gravewisp']);
+  await bossClip('boss-thornmother', 1, [
+    { until: "t && t.attack === 'charge'", frames: 85 },
+    { until: "(R.thorn_seed_root ?? 0) > (window.__r0 ?? 0)", pre: 'window.__r0 = (X.content.vfx().recipes || {}).thorn_seed_root ?? 0;', frames: 60 },
+    { pre: "X.cmd('killBoss');", until: 'true', frames: 70 },
+  ], 'thornmother');
+  await bossClip('boss-millwheel', 2, [
+    { until: "t && t.attack === 'shards'", frames: 70 },
+    { until: "t && t.attack === 'crosscut'", frames: 110 },
+    { pre: "X.cmd('killBoss');", until: 'true', frames: 70 },
+  ], 'millwheel');
+  await bossClip('boss-lichram', 3, [
+    { until: "t && t.attack === 'rush'", frames: 100 },
+    { until: "(R.lichram_grave_call ?? 0) > (window.__r0 ?? 0)", pre: 'window.__r0 = (X.content.vfx().recipes || {}).lichram_grave_call ?? 0;', frames: 75 },
+    { pre: "X.cmd('bossHp', 0.35);", until: 'true', frames: 40 },
+    { pre: "X.cmd('killBoss');", until: 'true', frames: 70 },
+  ], 'lichram');
 } finally {
   await browser.close();
 }
