@@ -162,6 +162,7 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
     impactFx.embers(ev.x, ev.z, { n: 6, radius: 0.5, tall: 1.1 });
   });
   bus.on('enemy_emerge', (ev) => {
+    if (ev.etype === 'lamprey') return; // it breaks water, not earth (director)
     counters.erupts += 1;
     impactFx.hit(ev.x, ev.z, { n: 12 });
     impactFx.scorch(ev.x, ev.z, 0.7);
@@ -173,44 +174,9 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
   bus.on('enemy_charge', (ev) => {
     impactFx.hit(ev.x, ev.z, { n: 6, dir: { x: -(ev.dx ?? 0), z: -(ev.dz ?? 0) } });
   });
-  // --- Content slice 2 placeholder beats (full VFX comes in a later pass):
-  // each lands with an existing impactFx primitive in the enemy's register.
-  bus.on('knight_slam', (ev) => {
-    impactFx.hit(ev.x, ev.z, { n: 12 });
-    impactFx.scorch(ev.x, ev.z, 0.9);
-  });
-  bus.on('crab_snap', (ev) => {
-    impactFx.impact(ev.x, ev.z, { color: PALETTE.bone, n: 6 });
-  });
-  bus.on('lamprey_lunge', (ev) => {
-    impactFx.impact(ev.x, ev.z, { color: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.5).getHex(), n: 10 });
-  });
-  bus.on('lamprey_beach', (ev) => {
-    impactFx.hit(ev.x, ev.z, { n: 5 });
-  });
-  bus.on('thorn_plant', (ev) => {
-    impactFx.impact(ev.x, ev.z, { color: mix(PALETTE.voidCharcoal, PALETTE.sageCloak, 0.7).getHex(), n: 8 });
-  });
-  bus.on('wisp_tether', (ev) => {
-    impactFx.embers(ev.x, ev.z, { n: 5, radius: 0.4, tall: 1.2 });
-  });
-  bus.on('boss_thorn_burst', (ev) => {
-    impactFx.impact(ev.x, ev.z, { color: mix(PALETTE.voidCharcoal, PALETTE.sageCloak, 0.7).getHex(), n: 14 });
-    impactFx.embers(ev.x, ev.z, { n: 6, radius: ev.radius ?? 1, tall: 0.8 });
-  });
-  bus.on('boss_grind', (ev) => {
-    impactFx.hit(ev.x, ev.z, { n: 10 });
-  });
-  bus.on('boss_grave_raise', (ev) => {
-    impactFx.scorch(ev.x, ev.z, 0.8);
-    impactFx.hit(ev.x, ev.z, { n: 8 });
-  });
-  for (const t of ['boss_charge_end', 'boss_cut_end', 'boss_horns_stuck']) {
-    bus.on(t, (ev) => {
-      impactFx.hit(ev.x, ev.z, { n: 12 });
-      impactFx.scorch(ev.x, ev.z, 1.0);
-    });
-  }
+  // Content slice 2's beats (knight slam, crab snap, lamprey lunge / beach,
+  // thorn planting, wisp tether, the second bosses') are the VFX director's
+  // (render/vfx/signature.js, design-VFX.md §5c / §6c).
   bus.on('enemy_charge_end', (ev) => {
     if (ev.cause === 'wall') impactFx.hit(ev.x, ev.z, { n: 9 });
   });
@@ -305,7 +271,8 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
       slicks.delete(id);
     }
     // Slice 2: the Grave Wisp's TETHER — a thin pulsing indigo thread from the
-    // wisp to the enemy it wards (placeholder until its full VFX pass).
+    // wisp to the enemy it wards (the director adds the take, the motes
+    // running down it, the ward glint and the snap).
     const liveTethers = new Set();
     for (const w of wisps) {
       const t = byId.get(w.tetherId);

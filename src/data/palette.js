@@ -70,4 +70,13 @@ export const VFX_MATTER = Object.freeze({
   water: '#A9C0C4', // Drowned Heron: millrace foam (desaturated, never a glyph)
   silt: '#4E5848', // Drowned Heron: the mill's murky silt
   cinder: '#5E5853', // Barrow Wyrm: ash smoke light enough to read on the barrow floor
+  // Content slice 2 creatures (design-VFX.md §5c / §6c).
+  bramble: '#3F4A2E', // Thornling, Thornmother: dark bramble green-brown (well off Bright Heal)
+  wasp: '#7A6A3A', // Briar Wasp: dull ochre wing dust
+  carapace: '#6E5547', // Weir Crab: rusty brown shell
+  eel: '#3D4840', // Bog Lamprey: dark weed-green hide
+  wisp: '#8C90A8', // Grave Wisp: pale grave-mist lilac-grey
+  boneplate: '#C9C0AE', // Bone Knight, Lich Ram: old bone armour
+  iron: '#5A5C60', // Bone Knight's shield, the Millwheel's tyre
+  oak: '#5C4630', // the Millwheel's planks
 });
