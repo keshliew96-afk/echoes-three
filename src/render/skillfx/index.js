@@ -56,6 +56,7 @@ import { exactColor, underBloom, getShadowTexture } from '../critters/common.js'
 // Gauntlet skills whose cast / zone reads live in ./content.js (a damage nova
 // or a damage zone must never draw this layer's green heal grammar).
 import { CONTENT_CAST_SKILLS } from './content.js';
+import { vfxClassStyle, vfxSkillClass } from '../../data/vfx.js';
 
 // Cosmetic scaffold tunables (render-only, not brief numbers).
 const BOLT_Y = 0.55; // matches the basic bolt's flight height
@@ -749,7 +750,14 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   // Sync render rigs to sim 'skillbolt' entities (§19.4 3-layer + shadow).
   const boltRigs = new Map(); // id -> group
   const boltCoreGeo = markShared(new CapsuleGeometry(0.092, 0.20, 4, 10)); // +22% radius: the old core was ~10 px in flight, thin enough that FXAA blended its whole width into the grass
-  function makeBoltRig(heal) {
+  // VFX redesign (docs/gauntlet/design-VFX.md): a damage bolt wears its
+  // caster's class — the Healer's lantern orb stays Hearth Amber, an Archer
+  // arrow is a long thin Wind Jade dart. The skill id names the class
+  // (data/vfx.js vfxSkillClass); heal bolts keep Bright Heal for everyone.
+  function makeBoltRig(heal, skill = null) {
+    const vs = vfxClassStyle(vfxSkillClass(skill) ?? 'healer');
+    const AMBER = heal ? HEAL : vs.glow;
+    const arrow = !heal && vs.bolt.look === 'arrow';
     const g = new Group();
     const core = new Mesh(
       boltCoreGeo,
@@ -849,10 +857,12 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     // Wider but no brighter: the halo spreads past the ink line so it reads as
     // a light around the bolt, while its peak stays where round 1 put it (three
     // Volley bolts must not sum back into one blown white mass).
-    const glow = makeGlowSprite({ color: heal ? HEAL : AMBER, size: 0.86, opacity: 0.5 });
+    const glow = makeGlowSprite({ color: heal ? HEAL : AMBER, size: arrow ? 0.62 : 0.86, opacity: arrow ? 0.42 : 0.5 });
     glow.position.y = BOLT_Y;
     glow.renderOrder = 3;
     g.add(glow);
+    // An arrow: the capsule stretched long and thin (its axis is local y).
+    if (arrow) for (const m of [core, ink, shell]) m.scale.set(m.scale.x * 0.55, m.scale.y * 2.1, m.scale.z * 0.55);
     // Contact shadow: wide + dark enough to survive the additive glow above it
     // (§19.2 / REFERENCE_BAR check 8: every flier is grounded). It has to beat
     // the glow it sits under, so it is wider than the glow's bright core.
@@ -1049,9 +1059,10 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     if (ev.heal) {
       spawnFlash(ev.x, BOLT_Y, ev.z, { color: HEAL, size: 0.4, opacity: 0.95, life: 0.2, grow: 0.4 });
     } else {
+      const glow = vfxClassStyle(vfxSkillClass(ev.skill) ?? 'healer').glow;
       spawnFlash(ev.x, BOLT_Y, ev.z, { color: PARCH, size: 0.28, opacity: 0.95, life: 0.16, grow: 0.3 });
-      spawnFlash(ev.x, BOLT_Y, ev.z, { color: AMBER, size: 0.55, opacity: 0.7, life: 0.25, grow: 0.5 });
-      spawnMotes(ev.x, ev.z, { color: AMBER, count: 5, y: BOLT_Y - 0.15, riseMin: 0.3, riseMax: 0.8, lifeMin: 0.25, lifeMax: 0.45 });
+      spawnFlash(ev.x, BOLT_Y, ev.z, { color: glow, size: 0.55, opacity: 0.7, life: 0.25, grow: 0.5 });
+      spawnMotes(ev.x, ev.z, { color: glow, count: 5, y: BOLT_Y - 0.15, riseMin: 0.3, riseMax: 0.8, lifeMin: 0.25, lifeMax: 0.45 });
     }
   });
 
@@ -1093,7 +1104,8 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       seen.add(e.id);
       let g = boltRigs.get(e.id);
       if (!g) {
-        g = makeBoltRig(e.heal);
+        g = makeBoltRig(e.heal, e.skill);
+        g.userData.trail = e.heal ? HEAL : vfxClassStyle(vfxSkillClass(e.skill) ?? 'healer').glow;
         boltRigs.set(e.id, g);
         root.add(g);
       }
@@ -1101,8 +1113,8 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       const bz = e.pz + (e.z - e.pz) * alpha;
       g.position.set(bx, 0, bz);
       g.getObjectByName('core').rotation.y = Math.atan2(e.vz, -e.vx);
-      spawnTrailDot(bx, bz, e.heal ? HEAL : AMBER);
-      sparkAt.push({ x: bx, z: bz, heal: !!e.heal });
+      spawnTrailDot(bx, bz, g.userData.trail);
+      sparkAt.push({ x: bx, z: bz, heal: !!e.heal, color: g.userData.trail });
     }
     for (const [id, g] of boltRigs) {
       if (!seen.has(id)) {
@@ -1121,7 +1133,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       boltSparkDebt -= n;
       for (let i = 0; i < n; i++) {
         const b = sparkAt[i % sparkAt.length];
-        impactFx.impact(b.x, b.z, { color: b.heal ? HEAL : AMBER, n: 1 });
+        impactFx.impact(b.x, b.z, { color: b.color, n: 1 });
       }
     } else boltSparkDebt = 0;
     for (let i = trails.length - 1; i >= 0; i--) {

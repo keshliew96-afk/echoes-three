@@ -357,6 +357,22 @@ const contentfx = PLAYABLE ? createContentFx({ stage, world, bus, cosmetic }) : 
 import { createClassFx } from './render/skillfx/class/index.js';
 const classfx = PLAYABLE ? createClassFx({ stage, world, bus, cosmetic }) : null;
 if (classfx) service('content').classFx = () => classfx.debugCounts();
+// VFX redesign (docs/gauntlet/design-VFX.md): the class-signature director —
+// every class's swings / bursts / zones / dashes / hits, every enemy's attack
+// and death debris and the Stag's beats, styled from src/data/vfx.js, plus
+// the render-only camera kick / dolly. Probe: __echoes.content.vfx().
+import { createSignatureFx, registerSkillAreas } from './render/vfx/signature.js';
+import { setImpactFxDirected } from './render/vfx/hub.js';
+import { registerEffectsSetting } from './ui/run/effects.js';
+import { SKILLS as VFX_SKILL_ROWS } from './sim/skills.js';
+registerEffectsSetting(app.settings);
+registerSkillAreas(VFX_SKILL_ROWS);
+const signaturefx = PLAYABLE ? createSignatureFx({ stage, world, bus, cosmetic, settings: app.settings }) : null;
+if (signaturefx) {
+  setImpactFxDirected(true);
+  signaturefx.prewarm();
+  service('content').vfx = () => signaturefx.debugCounts();
+}
 // Probe surface: __echoes.content.fx() -> the layer's live element counts.
 if (contentfx) service('content').fx = () => contentfx.debugCounts();
 // Real-input harness surface (tools/gntM4a-realrun.mjs): the autopilot's
@@ -607,6 +623,7 @@ function frame(now) {
   // @gnt:M4a RENDER-TICK begin
   contentfx?.update(now / 1000, alpha);
   classfx?.update(now / 1000, alpha);
+  signaturefx?.update(now / 1000);
   // @gnt:M4a RENDER-TICK end
   // @gnt:M4b RENDER-TICK begin
   m4bLayers?.update(now / 1000, alpha);
@@ -615,6 +632,8 @@ function frame(now) {
   // BEFORE this frame renders (the new room is on screen the same frame).
   campaignMgr?.update(now);
   // @gnt:CAMPAIGN RENDER-TICK end
+  // VFX camera kick / dolly rides on top of wherever the layers put the camera.
+  signaturefx?.applyCamera(now / 1000);
   // Damage numerals age HERE, in the one loop that never stops, after the
   // scenes have settled their cameras (world->screen projection needs the
   // final camera of this frame). No scene swap can freeze the pool.

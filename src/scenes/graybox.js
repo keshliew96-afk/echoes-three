@@ -35,7 +35,7 @@ import { createFollowRig } from '../render/camera.js';
 import { createNumberPool } from '../render/numbers.js';
 import { createParticlePool } from '../render/vfx/particles.js';
 import { createDecalPool } from '../render/vfx/decals.js';
-import { setImpactFx } from '../render/vfx/hub.js';
+import { setImpactFx, impactFx } from '../render/vfx/hub.js';
 import { sharedGeo } from '../render/geocache.js';
 import { service } from '../app/registry.js'; // M1: gameplay.screenshake (SHAKE-SCALE)
 
@@ -265,7 +265,8 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     // §19.1 reservation — party-incoming hits spark Ember (the enemy's
     // attack), our outgoing hits spark Parchment.
     const hd = Math.hypot(ev.dirX || 0, ev.dirZ || 0);
-    particles.hit(ev.x, ev.z, {
+    // VFX redesign: the director throws each class's / enemy's own debris.
+    if (!impactFx.directed) particles.hit(ev.x, ev.z, {
       color: partyVictim ? PALETTE.emberDanger : PALETTE.parchment,
       dir: hd > 1e-4 ? { x: ev.dirX / hd, z: ev.dirZ / hd } : null,
       scale: ev.crit ? 1.35 : 1,
@@ -281,7 +282,7 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
       rig.mat.emissiveIntensity = HITFLASH.intensity; // white-hot through the pop
       dying.push({ rig, age: 0 });
     }
-    particles.kill(ev.x, ev.z); // §9 #6 burst: sparks + debris + smoke
+    if (!impactFx.directed) particles.kill(ev.x, ev.z); // §9 #6 burst (the VFX director throws the styled one)
     decals.spawn(ev.x, ev.z); // §9 #6 persistent decal
   });
   // §9 #7 screenshake is now an EVENT the sim emits (kills, boss stomps and
@@ -310,7 +311,7 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     const r = ev.radius ?? 1.6;
     decals.scorch(ev.x, ev.z, r);
     particles.embers(ev.x, ev.z, { n: 14, radius: r * 0.9 });
-    particles.hit(ev.x, ev.z, { color: PALETTE.emberDanger, scale: 1.6 });
+    if (!impactFx.directed) particles.hit(ev.x, ev.z, { color: PALETTE.emberDanger, scale: 1.6 });
   });
   // Every other render layer (enemies, boss, skill FX) reaches these two pools
   // through the impact-FX hub instead of allocating its own.

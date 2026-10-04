@@ -28,3 +28,29 @@ export const CLASS_ACCENTS = Object.freeze({
   swordsman: '#6B2E3A',
   archer: '#6E7A3F',
 });
+
+// Class VFX signatures (docs/gauntlet/design-VFX.md §3). Each class keeps a
+// Parchment-white hot core and gets its own glow hue, second tone and debris
+// material, clear of the reserved hues (Ember = enemy threat, Bright Heal =
+// heal output, Violet = the Stag / corruption). The Healer's damage glow stays
+// Hearth Amber — the lantern it always was.
+export const VFX_SIGNATURE = Object.freeze({
+  healer: Object.freeze({ glow: '#E8A23D', second: '#F6D58E', debris: '#F4EFE6' }), // Lantern Gold
+  tank: Object.freeze({ glow: '#9DB8CF', second: '#8F6B45', debris: '#5A4632' }), // Forge Steel / Earth Ochre
+  swordsman: Object.freeze({ glow: '#E8577A', second: '#E7E3F0', debris: '#E7E3F0' }), // Fox Crimson / Moon Silver
+  archer: Object.freeze({ glow: '#5ED3C0', second: '#C9C2B3', debris: '#C9C2B3' }), // Wind Jade / Feather Bone
+});
+
+// Enemy debris materials (design-VFX.md §5). The threat colour is always
+// Ember; these are only what a body is made of when it breaks or what its
+// attack throws (dirt, chitin, quills, slime, scale dust, stone, earth).
+export const VFX_MATTER = Object.freeze({
+  dirt: '#4A3A2C',
+  chitin: '#3E5A5E',
+  quill: '#C9C2B3',
+  slime: '#2B3330',
+  dust: '#BDB6C8',
+  stone: '#7D7A76',
+  earth: '#5A4632',
+  ash: '#221F1B',
+});
