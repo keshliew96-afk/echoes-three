@@ -1262,7 +1262,13 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     return null;
   };
   let last = null;
+  let updateMs = 0; // EMA of this director's own per-frame CPU cost (probes)
   function update(tSec) {
+    const t0 = performance.now();
+    updateBody(tSec);
+    updateMs += (performance.now() - t0 - updateMs) * 0.1;
+  }
+  function updateBody(tSec) {
     const dt = last === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - last));
     last = tSec;
     for (let i = timers.length - 1; i >= 0; i--) {
@@ -1429,7 +1435,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   }
 
   function debugCounts() {
-    return { ...kit.counts(), recipes: { ...fired }, trails: trails.size, camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
+    return { ...kit.counts(), recipes: { ...fired }, updateMs: Math.round(updateMs * 1000) / 1000, trails: trails.size, camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
   }
 
   return { update, applyCamera, prewarm, debugCounts, kit, camfx };

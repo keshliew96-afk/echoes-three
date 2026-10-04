@@ -218,3 +218,41 @@ the kick and dolly (Off turns them off).
   signature beat and runs the three boss rooms with the autopilot, failing
   if any Heron / Wyrm / slice-1 enemy recipe never played.
 - Smoke, the core loop and the 9 goldens must stay green (render-only change).
+
+## 10. AAA pass (2026-10-04)
+
+The user's review of §4-§6b: *"VFX quality is not high enough, upgrade again
+using AAA gaming standard"*. The target is what a player accepts in a
+top-down action game at the Diablo IV / Hades bar. Every beat now plays in
+three movements, built from shared helpers in the director, so each class,
+enemy and boss gets the same structure in its own colours and shapes:
+
+| Movement | What plays | Where |
+|---|---|---|
+| Anticipation | An imploding ring and lines rushing into the source for ~4 frames before a big cast lands (novas, ground skills); Ember lines rushing into an enemy as its telegraph starts. The telegraph shapes themselves are unchanged. | `anticipate()`, `telegraph_start` |
+| Impact | A two-layer flare (`kit.star`: a coloured spiked flare under a white-hot core) that pops in over two frames on every hit, crit, muzzle, landing and boss beat; plus the existing flash, light pool and a shockwave ring; crits add embers and a small camera punch. Spike shape follows the class: needle stars for the Swordsman and Archer, round bursts for the Tank and Healer. | `flare()`, `shock()`, `classImpact()` |
+| Dissipation | Ground marks that linger 2-6 s (`kit.mark`): a dark stain in the matter's colour under an additive seam that cools: the Tank's crater, the Swordsman's cut, the Archer's and Healer's sigils, enemy stains on death, Ember-cooling scorches down the Wyrm's breath, wet stains down the Heron's lane, violet-seamed craters under every boss beat. Embers drift up after big casts. | `classMark()`, `kit.mark` |
+
+Also in this pass:
+
+- **Projectile heads.** Every bolt, arrow and enemy shot carries a pulsing
+  orb (`kit.glow`) in its trail's colour at its head.
+- **Enemy deaths** break with a bone-white burst, a ring of the body's matter
+  and the corruption leaving as indigo motes, and leave a stain.
+- **Biome tint.** Smoke and dust lean toward the act's air (`VFX_BIOME`):
+  moss in Act I, cold slate in Act II, ash in Act III.
+- **Budget.** Three new fixed pools (stars 48, marks 24, glows 32), each one
+  shared material type warmed in camp, so no shader compiles mid-fight
+  (`tools/vfx-budget.mjs`: GL programs 101 at the start and the end of a busy
+  room). The director costs ~0.6 ms of CPU a frame in a busy room; live VFX
+  objects there roughly double (p50 26 -> 56), a few dozen extra draw calls.
+- **Reduced effects** still halves particles and drops the camera punch; the
+  marks' seams dim with the light setting.
+
+Review tools:
+
+- `?vfxlab=1` on any build opens a panel that triggers every class reel,
+  every enemy type and every boss room in the live game (`src/ui/vfxlab.js`).
+- `node tools/vfx-clips.mjs` records real-speed 30 fps clips of each class,
+  the enemies and each boss fight on a machine with no GPU, by running the
+  page on a virtual clock (one 1/30 s step per captured frame).
