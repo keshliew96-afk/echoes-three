@@ -90,6 +90,15 @@ Six new layouts, two per expedition, using the existing hazard and interactable 
 | 14 | Barrow | Bell Tower | Two bells (stun) and a rockfall ring around the centre. |
 | 15 | Barrow | Open Grave | Gravefire glyphs on a grid; moles and broods favoured. |
 
+**Shipped** (campaign rooms; the legacy single-level run keeps each level's `legacyLayouts`, so the Node goldens are unchanged). Each new layout also has its own spawn ring (`spawns` in `src/data/layouts.js`): the wave roll still draws a point index and the run frame moves the rolled units onto the room's ring, with no extra draw. Where the build differs from the hooks above:
+- *Fallen Oak*: the trunk is a row of five timber barricades (it blocks, and it can be chopped through); the crown is a bramble thicket at its east end.
+- *Sluice Gates*: the two races surge half a cycle apart; each sluice is still pulled by a player, as everywhere else.
+- *Flooded Cellar*: "narrow" comes from two races along the long walls; there is no slick floor type yet.
+- *Bell Tower*: rockfall stays party-targeted; the ring is four broken cairn walls round the middle with doorways at the corners.
+- *Open Grave*: rosters are not changed per layout (the layout is rolled after the wave schedule, and the rosters belong to the roster work); the grid is five gravefire lines rippling a fifth of a cycle apart.
+
+Probes: `node tools/slice2-layouts.mjs` (headless; each layout in a campaign room: spawn ring, all four seats moving, clear, doors, reachability) and `tools/slice2-layouts-shots.mjs` (browser screenshots against `npm run dev`).
+
 ## 5. Run modifiers: relics and curses (slice 4)
 
 The run has no persistent modifiers today. Two kinds are planned, both stored in run state (saved and replicated like the wallet).

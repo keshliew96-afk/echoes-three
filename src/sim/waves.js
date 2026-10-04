@@ -259,6 +259,29 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     return { mode: m, waves: schedule.map((w) => w.size) };
   }
 
+  // Slice-2 layouts (data/layouts.js `spawns`): move every planned unit from
+  // its SPAWN_POINTS point onto the same index of the room's own ring, fan
+  // offset kept. Called by the run frame right after the layout roll — no
+  // draws, and the relocated schedule is what serialize() already saves.
+  function relocateSpawns(ring) {
+    if (!Array.isArray(ring) || ring.length !== SPAWN_POINTS.length) return;
+    for (const w of schedule) {
+      for (const u of w.units) {
+        let k = 0;
+        let best = Infinity;
+        for (let i = 0; i < SPAWN_POINTS.length; i++) {
+          const d = Math.hypot(u.x - SPAWN_POINTS[i][0], u.z - SPAWN_POINTS[i][1]);
+          if (d < best) {
+            best = d;
+            k = i;
+          }
+        }
+        u.x = r2(u.x + ring[k][0] - SPAWN_POINTS[k][0]);
+        u.z = r2(u.z + ring[k][1] - SPAWN_POINTS[k][1]);
+      }
+    }
+  }
+
   function startRoom(m, runPlan = null) {
     if (!planRoom(m, runPlan)) return null;
     return beginRoom();
@@ -503,6 +526,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     startRoom,
     planRoom,
     beginRoom,
+    relocateSpawns,
     stop,
     step,
     forceNextWave,
