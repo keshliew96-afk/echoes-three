@@ -14,12 +14,19 @@
 import { esc } from './style.js';
 import { SKILLS } from '../../sim/skills.js';
 import { service } from '../../app/registry.js';
+import { bossFor } from '../../data/levels.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 const FLAVOUR = {
   1: 'The Hollow Stag falls. The wood breathes out.',
   2: 'The Drowned Heron sinks. The water runs clear again.',
   3: 'The Barrow Wyrm is still. The long night lifts.',
+};
+// Slice 2: the second boss of each act has its own line.
+const BOSS_FLAVOUR = {
+  thornmother: 'The Thornmother falls. The briars let the wood go.',
+  millwheel: 'The Millwheel shatters. The water runs clear again.',
+  lichram: 'The Lich Ram crumbles. The graves close; the long night lifts.',
 };
 
 export const TRANSIT_CSS = `
@@ -109,7 +116,9 @@ export function createTransitScreen({ run }) {
     if (card.kind === 'clear') {
       kicker.textContent = `LEVEL ${ROMAN[card.from] ?? card.from} CLEARED`;
       headline.textContent = (card.fromName || '').toUpperCase();
-      flavour.textContent = FLAVOUR[card.from] ?? 'The way ahead opens.';
+      const rv = v && !v.__card ? v : null;
+      const met = rv && rv.frame ? bossFor(card.from, rv.frame.seed).kind : null;
+      flavour.textContent = BOSS_FLAVOUR[met] ?? FLAVOUR[card.from] ?? 'The way ahead opens.';
       nextRow.style.display = '';
       nextName.textContent = `Level ${ROMAN[to] ?? to} · ${card.name}`;
       carryEl.innerHTML = [

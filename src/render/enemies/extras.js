@@ -13,6 +13,7 @@
 //   - dust at a quillback's charge start and at a ram's slam
 // Render-only: reads sim entities and bus events, never mutates sim state.
 import {
+  BoxGeometry,
   CanvasTexture,
   CircleGeometry,
   Group,
@@ -76,6 +77,7 @@ function getSlickTexture() {
 export function createContentExtras({ root, stage, world, bus, cosmetic, shapes }) {
   const globs = new Map(); // glob id -> { g, core, shadow, ring }
   const slicks = new Map(); // slick id -> mesh
+  const tethers = new Map(); // gravewisp id -> beam (slice 2)
   const wake = []; // { mesh, age }
   const wakePool = [];
   const moleTrack = new Map(); // mole id -> { x, z }
@@ -171,6 +173,44 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
   bus.on('enemy_charge', (ev) => {
     impactFx.hit(ev.x, ev.z, { n: 6, dir: { x: -(ev.dx ?? 0), z: -(ev.dz ?? 0) } });
   });
+  // --- Content slice 2 placeholder beats (full VFX comes in a later pass):
+  // each lands with an existing impactFx primitive in the enemy's register.
+  bus.on('knight_slam', (ev) => {
+    impactFx.hit(ev.x, ev.z, { n: 12 });
+    impactFx.scorch(ev.x, ev.z, 0.9);
+  });
+  bus.on('crab_snap', (ev) => {
+    impactFx.impact(ev.x, ev.z, { color: PALETTE.bone, n: 6 });
+  });
+  bus.on('lamprey_lunge', (ev) => {
+    impactFx.impact(ev.x, ev.z, { color: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.5).getHex(), n: 10 });
+  });
+  bus.on('lamprey_beach', (ev) => {
+    impactFx.hit(ev.x, ev.z, { n: 5 });
+  });
+  bus.on('thorn_plant', (ev) => {
+    impactFx.impact(ev.x, ev.z, { color: mix(PALETTE.voidCharcoal, PALETTE.sageCloak, 0.7).getHex(), n: 8 });
+  });
+  bus.on('wisp_tether', (ev) => {
+    impactFx.embers(ev.x, ev.z, { n: 5, radius: 0.4, tall: 1.2 });
+  });
+  bus.on('boss_thorn_burst', (ev) => {
+    impactFx.impact(ev.x, ev.z, { color: mix(PALETTE.voidCharcoal, PALETTE.sageCloak, 0.7).getHex(), n: 14 });
+    impactFx.embers(ev.x, ev.z, { n: 6, radius: ev.radius ?? 1, tall: 0.8 });
+  });
+  bus.on('boss_grind', (ev) => {
+    impactFx.hit(ev.x, ev.z, { n: 10 });
+  });
+  bus.on('boss_grave_raise', (ev) => {
+    impactFx.scorch(ev.x, ev.z, 0.8);
+    impactFx.hit(ev.x, ev.z, { n: 8 });
+  });
+  for (const t of ['boss_charge_end', 'boss_cut_end', 'boss_horns_stuck']) {
+    bus.on(t, (ev) => {
+      impactFx.hit(ev.x, ev.z, { n: 12 });
+      impactFx.scorch(ev.x, ev.z, 1.0);
+    });
+  }
   bus.on('enemy_charge_end', (ev) => {
     if (ev.cause === 'wall') impactFx.hit(ev.x, ev.z, { n: 9 });
   });
@@ -185,7 +225,11 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
     const tick = world.tick;
     const seenG = new Set();
     const seenS = new Set();
+    const wisps = [];
+    const byId = new Map();
     for (const e of world.entities()) {
+      byId.set(e.id, e);
+      if (e.kind === 'gravewisp' && e.tetherId != null && e.state === 'active') wisps.push(e);
       if (e.kind === 'eglob') {
         seenG.add(e.id);
         let r = globs.get(e.id);
@@ -213,6 +257,9 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
         let m = slicks.get(e.id);
         if (!m) {
           m = makeSlick();
+          // Slice 2: a thorn patch (Thornling, Thornmother) reads as dark
+          // bramble-green, not the toad's black-teal.
+          if (e.variant === 'thorn') m.material.color.copy(mix(PALETTE.voidCharcoal, PALETTE.sageCloak, 0.7).multiplyScalar(1.5));
           m.position.x = e.x;
           m.position.z = e.z;
           m.scale.set(e.radius, e.radius, 1);
@@ -256,6 +303,38 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
       if (seenS.has(id)) continue;
       root.remove(m);
       slicks.delete(id);
+    }
+    // Slice 2: the Grave Wisp's TETHER — a thin pulsing indigo thread from the
+    // wisp to the enemy it wards (placeholder until its full VFX pass).
+    const liveTethers = new Set();
+    for (const w of wisps) {
+      const t = byId.get(w.tetherId);
+      if (!t) continue;
+      liveTethers.add(w.id);
+      let beam = tethers.get(w.id);
+      if (!beam) {
+        beam = new Mesh(
+          sharedGeo('s2-tether', () => new BoxGeometry(1, 1, 1)),
+          new MeshBasicMaterial({ color: exactColor(PALETTE.signalBlue).lerp(exactColor(PALETTE.godstuffViolet), 0.5), transparent: true, opacity: 0.6, depthWrite: false, toneMapped: false })
+        );
+        root.add(beam);
+        tethers.set(w.id, beam);
+      }
+      const ax = w.x;
+      const az = w.z;
+      const bx = t.x;
+      const bz = t.z;
+      const len = Math.hypot(bx - ax, bz - az);
+      beam.position.set((ax + bx) / 2, 0.75, (az + bz) / 2);
+      beam.rotation.set(0, Math.atan2(bx - ax, bz - az), 0);
+      beam.scale.set(0.05, 0.05, Math.max(0.01, len));
+      beam.material.opacity = 0.45 + 0.25 * Math.sin(tSec * 9);
+    }
+    for (const [id, beam] of tethers) {
+      if (liveTethers.has(id)) continue;
+      root.remove(beam);
+      beam.material.dispose();
+      tethers.delete(id);
     }
     for (let i = wake.length - 1; i >= 0; i--) {
       const w = wake[i];

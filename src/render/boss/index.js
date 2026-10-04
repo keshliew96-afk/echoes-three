@@ -32,6 +32,7 @@ import { makeGlowSprite } from '../glow.js';
 import { buildStag } from './stag.js';
 import { buildHeron } from './heron.js';
 import { buildWyrm } from './wyrm.js';
+import { buildThornmother, buildMillwheel, buildLichram } from './slice2.js';
 import { createTelegraphShapes } from '../enemies/shapes.js';
 import { makeQuakeRing, makeQuakeBurst } from './quake.js';
 import { releaseTree } from '../geocache.js';
@@ -41,7 +42,7 @@ import { impactFx } from '../vfx/hub.js';
 
 // One rig builder per boss kind (docs/CONTENT_PLAN.md §2). Every rig shares
 // the Stag's interface: { group, setYaw, setFlash, pose }.
-const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: buildWyrm };
+const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: buildWyrm, thornmother: buildThornmother, millwheel: buildMillwheel, lichram: buildLichram };
 const isBossBody = (e) => e.kind === 'stag' || e.boss === true;
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;
@@ -102,7 +103,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   // and one burst are built and COMPILED a few frames after boot, parked far
   // under the floor, and then pooled for reuse.
   const spareRigs = []; // Stag rigs
-  const spareByKind = { heron: [], wyrm: [] };
+  const spareByKind = { heron: [], wyrm: [], thornmother: [], millwheel: [], lichram: [] };
   // Lane / cone telegraphs (the Heron's spear, the Wyrm's breath) reuse the
   // enemy layer's pooled Ember shapes; rings stay the Stag's quake ring.
   const shapes = createTelegraphShapes(root);
@@ -352,7 +353,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       rec.walkPhase += simSpeed * dt * Math.PI * WALK_HZ;
       const telTarget = ent.telegraph ? 1 : 0;
       rec.telegraphK += (telTarget - rec.telegraphK) * (1 - Math.exp(-12 * dt));
-      const lungeTarget = ent.lungeTicksLeft > 0 || ent.mode === 'dash' ? 1 : 0;
+      const lungeTarget = ent.lungeTicksLeft > 0 || ent.mode === 'dash' || ent.mode === 'charge' || ent.mode === 'rush' || ent.mode === 'cut' ? 1 : 0;
       rec.lungeK += (lungeTarget - rec.lungeK) * (1 - Math.exp(-18 * dt));
 
       const hpFrac = Math.max(0, ent.hp / ent.maxHp);

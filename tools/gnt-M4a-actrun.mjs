@@ -34,6 +34,7 @@ const SEEDS = seedsArg.includes('-')
     })()
   : seedsArg.split(',').map(Number);
 const CHALLENGE = opt('challenge', 'standard');
+const BOSS = opt('boss', null); // slice 2: force the act's boss (stag | thornmother | heron | millwheel | wyrm | lichram)
 const NODE = opt('node', '0') === '1';
 const URL0 = opt('url', 'http://127.0.0.1:5199/');
 const OUT = opt('out', `captures/gnt-M4a-actrun-${ACTS.join('')}-${SEEDS.join('_')}${NODE ? '-node' : ''}.json`);
@@ -80,6 +81,9 @@ function installCollector(on) {
   on('boss_adds', (e) => {
     if (cur) cur.bossAdds += e.spawned ?? 0;
   });
+  on('boss_spawn', (e) => {
+    if (cur) cur.boss = e.kind ?? 'stag';
+  });
   return () =>
     rooms.map((r) => ({
       room: r.room,
@@ -93,6 +97,7 @@ function installCollector(on) {
       enemiesByType: r.enemiesByType,
       elites: r.elites,
       bossAdds: r.bossAdds,
+      ...(r.boss ? { boss: r.boss } : {}),
       startTick: r.startTick,
     }));
 }
@@ -114,7 +119,7 @@ async function runNode(act, seed) {
   const world = createWorld({ rng, registry, events: bus, harness: false, requestHitstop: clock.requestHitstop, room: null });
   const ap = world.runSystem().autopilot;
   const read = installCollector((t, f) => bus.on(t, f));
-  world.runSystem().startRun({ act, challenge: CHALLENGE });
+  world.runSystem().startRun({ act, challenge: CHALLENGE, ...(BOSS ? { boss: BOSS } : {}) });
   ap.configure(true);
   let stuck = null;
   let outcome = null;
@@ -142,17 +147,18 @@ async function runPage(browser, act, seed) {
   const { page, errors } = await openEchoes(browser, `${URL0}?menu=0&seed=${seed}`, { width: 1280, height: 720 });
   await page.waitForFunction(() => window.__echoes && window.__echoes.tick > 20, { timeout: 120000 });
   await page.evaluate(
-    (collectorSrc, a, c) => {
+    (collectorSrc, a, c, b) => {
       __echoes.sim.freeze();
       const install = new Function(`return (${collectorSrc})`)();
       window.__actRead = install((t, f) => __echoes.on(t, f));
-      __echoes.cmd('startRun', { act: a, challenge: c });
+      __echoes.cmd('startRun', { act: a, challenge: c, ...(b ? { boss: b } : {}) });
       __echoes.cmd('autopilot', true);
       return true;
     },
     installCollector.toString(),
     act,
-    CHALLENGE
+    CHALLENGE,
+    BOSS
   );
   let outcome = null;
   let stuck = null;
@@ -334,8 +340,10 @@ try {
       const r = NODE ? await runNode(act, seed) : await runPage(browser, act, seed);
       r.ms = Date.now() - t0;
       runs.push(r);
+      const bossRoom = r.rooms.find((x) => x.boss);
+      if (bossRoom) r.boss = bossRoom.boss;
       const clears = r.rooms.map((x) => (x.ticksToClear === null ? '-' : Math.round(x.ticksToClear / 6) / 10)).join(' ');
-      console.log(`act ${act} seed ${seed}: ${r.outcome}${r.stuck ? ` (room ${r.stuck.room})` : ''} ticks ${r.ticks}  clears[s] ${clears}  pageErrors ${r.pageErrors.length}  ${r.ms} ms`);
+      console.log(`act ${act} seed ${seed}${r.boss ? ` [${r.boss}]` : ''}: ${r.outcome}${r.stuck ? ` (room ${r.stuck.room})` : ''} ticks ${r.ticks}  clears[s] ${clears}  pageErrors ${r.pageErrors.length}  ${r.ms} ms`);
     }
   }
 } finally {

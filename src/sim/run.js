@@ -75,7 +75,7 @@ import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
 import { PARTY_ALLIES, STARTING_SKILLS, SKILLS } from './skills.js';
 import { createDraftSystem, SPOILS_PER_CLEAR } from './draft.js';
 import { NODES } from './nodes.js';
-import { levelFor, ACT_IDS } from '../data/levels.js';
+import { levelFor, ACT_IDS, bossFor } from '../data/levels.js';
 import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
@@ -219,6 +219,11 @@ export function createRunSystem({
   // card (phase 'transit') = { kind: 'clear'|'depart', from, to, startTick,
   //   untilTick, minSkipTick, hardUntilTick, summary }.
   let campaign = null;
+  // Content slice 2: which boss room 8 holds is bossFor(act, frame.seed) — a
+  // pure hash of the seed, nothing saved. `bossPick` is the harness override
+  // (cmd('startRun', { act, boss })), saved only while it is set.
+  let bossPick = null;
+  const currentBoss = () => bossFor(act, frame ? frame.seed : null, bossPick);
   // CAMPAIGN COMPLETE card -> camp at this tick (survives the run-end wipe).
   let autoReturnTick = null;
 
@@ -253,6 +258,7 @@ export function createRunSystem({
   function startRun(opts = {}) {
     const o = opts && typeof opts === 'object' ? opts : {};
     openRun({ act: o.act, challenge: o.challenge, mode: 'single', harness: true });
+    if (typeof o.boss === 'string') bossPick = o.boss;
     enterRoom(1);
     return view();
   }
@@ -268,6 +274,7 @@ export function createRunSystem({
     const o = opts && typeof opts === 'object' ? opts : {};
     const level = isLevel(o.level ?? o.act) ? Number(o.level ?? o.act) : FIRST_LEVEL;
     openRun({ act: level, challenge: o.challenge, mode: 'campaign', harness: !!o.harness });
+    if (o.harness && typeof o.boss === 'string') bossPick = o.boss;
     if (o.depart) beginTransit('depart', null, level, getTick());
     else enterRoom(1);
     return view();
@@ -276,6 +283,7 @@ export function createRunSystem({
   function openRun({ act: a, challenge: c, mode, harness }) {
     wipeState({ silent: true });
     autoReturnTick = null;
+    bossPick = null;
     act = ACT_IDS.includes(Number(a)) ? Number(a) : 1;
     challenge = CHALLENGE[c] ? c : 'standard';
     frame = rollFrame();
@@ -490,11 +498,13 @@ export function createRunSystem({
       // §23.1/§23.2: the Stag scales with the act (HP 2400·T after the
       // M4a tuning note, damage × 1 + 0.5(T − 1)) and calls the act's own
       // add phases, which scale with the act tier alone (data/difficulty.js).
+      // Slice 2: the act's boss for this run's seed (data/levels.js bossFor).
+      const bd = currentBoss();
       boss.start(0, -4.2, {
-        kind: level.boss ?? 'stag',
+        kind: bd.kind ?? 'stag',
         hp: diff.bossHp,
         dmgMul: diff.bossDmgMul,
-        adds: level.bossAdds.map(([et, k]) => [et, k]),
+        adds: bd.adds.map(([et, k]) => [et, k]),
         addHpMul: diff.addHpMul,
         addDmgMul: diff.addDmgMul,
       });
@@ -1564,6 +1574,10 @@ export function createRunSystem({
       act,
       actName: levelFor(act).name,
       challenge,
+      // Slice 2: the boss this run meets, from room 6 on (the shop's Advance
+      // label, the boss banner); absent earlier so the hashed view of the
+      // certified early rooms is unchanged.
+      ...(active && roomIndex >= 6 ? { actBoss: { kind: currentBoss().kind, name: currentBoss().name } } : {}),
       layout: layout ? { ...layout } : null,
       mode: frame && roomIndex ? frame.modes[roomIndex - 1] : null,
       wallet,
@@ -1931,6 +1945,7 @@ export function createRunSystem({
       ...(pages && (pages.isOpen() || pages.shopOpen() || pages.doorDeadline() !== null || pages.screensAny()) ? { partyPages: pages.saveState() } : {}),
       // RELICS: present only when the run rolls relics.
       ...(active && relics.enabled() ? { relics: relics.saveState() } : {}),
+      ...(bossPick ? { bossPick } : {}),
     };
   }
   function loadState(d) {
@@ -1953,6 +1968,7 @@ export function createRunSystem({
     everStarted = !!d.everStarted;
     act = ACT_IDS.includes(d.act) ? d.act : 1;
     challenge = CHALLENGE[d.challenge] ? d.challenge : 'standard';
+    bossPick = typeof d.bossPick === 'string' ? d.bossPick : null;
     layout = d.layout ?? null;
     lastCombatLayout = d.lastCombatLayout ?? null;
     roomPlanView = d.roomPlan ?? null;
