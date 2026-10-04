@@ -580,7 +580,8 @@ the idle-fallback share; `--trace` prints positions / targets / cooldowns every
 dash / vault / lunge end point against the SEAT's ring (the melee pair's
 vanguard ring 5.4 u in a campaign, BUILD_BRIEF §25.8; GP.8 wants 0).
 `node tools/gntfixM4a5-band.mjs --seeds 1-5 --tag T` = `gntPARTY-band` (GP.13)
-with renamed outputs; `node tools/gntfixM4a5-sweep.mjs --root <scratch>
+as of fix-M4a-r5, with renamed outputs (its (d) still wants a down on Level 1;
+`gntPARTY-band` is the current gate); `node tools/gntfixM4a5-sweep.mjs --root <scratch>
 --seeds 1-10 "K=V ..."` runs env-knob variants of a scratch checkout in
 parallel against GP.13 (a)–(d) + GP.8. Page (GPU harness; `ECHOES_URL` = a
 production preview): `tools/gntfixM4a5-socketui.mjs W H` (the critic's G4c.5
@@ -2098,7 +2099,9 @@ numbers are the pass bars):
     `captures/gntPARTY-baseline-from{1,2,3}.json`: the §4.2 / GC.12 band;
     per-level median party damage per combat room and time-to-clear within
     ×0.75–×1.35 of baseline; the L3 Stag room's damage ≥ 0.8 × baseline;
-    ≥ 1 party down per level on ≥ 2 of 5 seeds; `node
+    ≥ 1 party down per level on ≥ 2 of 5 seeds, except Level 1, whose bite
+    is a down or a member below 35 % HP on at least as many of seeds 1–40
+    as the baseline (`tools/gntPARTY-band.mjs` runs all of this); `node
     tools/gntfixM4a3-g4a5.mjs` passes against the new §23.2 note. Spot-check
     2 seeds in page.
 14. **The Healer unchanged (GP.14)** — `node tools/gntPARTYD-grid.mjs` (the
@@ -2150,7 +2153,13 @@ server (7950):
   0 desyncs, migration; bandwidth).
 - `node tools/gntPARTY-band.mjs [--seeds 1-5] [--root <copy>]` — GP.13 (a)–(d)
   against `captures/gntPARTY-baseline-from{1,2,3}.json`, runs the CAMPAIGN
-  runner read-only.
+  runner read-only. Level 1's (d) is an HP dip (a down or a member below
+  35 % HP) counted over `--l1seeds 1-40` (Level 1 only, `gntCAMPAIGN-camprun
+  --stop-after 1`, each room's `minHpFrac`) against
+  `captures/gntPARTY-baseline-l1.json`; captures/ is not in git, so record
+  it once from a `git archive 2a6139b` (v0.5.150) copy:
+  `node tools/gntCAMPAIGN-camprun.mjs --from 1 --seeds 1-40 --stop-after 1
+  --root <copy> --out captures/gntPARTY-baseline-l1.json` (7 of 40 bite).
 - `node tools/gntPARTY-healer.mjs --base150 <archive>` — GP.14 data + play
   invariants against a `git archive` of v0.5.150.
 - `node tools/gntPARTY-campaign.mjs [--seeds 1-3] [--base150 <archive>]` —
@@ -2178,8 +2187,10 @@ measured over a whole Level 3 played in order with the four max-stress builds
 guest's scripted bot fighting, samples every 500 ms): 10.7–11.4 KB/s average
 at N1 at v0.5.163; re-entering room 6 every time it clears (`--reskip 1`, a
 spawn-heavy worst case the gate does not ask for) reads ~13 KB/s. **GP.13
-(d)** on the carried Levels 1–2 conflicts with (b): the v0.5.150 baseline
-itself has 0 of 5 seeds with a down there (BUILD_BRIEF §23.2 PARTY note). **Short
+(d)** on the carried Levels 1–2 conflicted with (b) at v0.5.163: the v0.5.150
+baseline itself has 0 of 5 seeds with a down there (BUILD_BRIEF §23.2 PARTY
+note). Level 2 has met it since fix-PARTY-r5; Level 1 is judged by the
+2026-10-03 HP-dip ruling (PLAN GP.13, `gntPARTY-band` above). **Short
 windows**: under 860 px of window height the party page reflows again
 (`.rn-short`, src/ui/run/style.js) so the four-character page fits 1024×576
 through 1366×768 at scale 1.0; under the §1 minimum (1024×640) a page that
@@ -2236,3 +2247,33 @@ proves the trace with those events removed equals the previous goldens
 **`__echoes.party`** (PLAN §16.11): `state()`, `view(seat)`, `pools(seat)`,
 `verdict(seat, skill, node)`, `arranged(seat)`, `aiOrder(seat)`, `aiLog()`,
 `oracle()`, `cmd(name, ...args)` (`cmd('view', 1)` = `cmd('partyView', 1)`).
+`node tools/gntfixPARTY6-prodkeys.mjs --url <production server> [--seeds 1,2,3]
+[--size 1024x576]` (fix-PARTY-r6 finish) — self-contained (no critic lib): on a
+PRODUCTION bundle, Level 1 from `?level=1`, every ally swap card by real keys
+(F<seat> to view it, S until the Replaces mark sits on the target key, Enter,
+then F1 Enter for the Healer's card); pass = the new skill in the key the card
+marked, the other three keys unmoved, 0 page errors (exit 0).
+
+**fix-M4a-r6 / fix-INT-r6 probes (gauntlet round 6, 2026-10-02;
+docs/gauntlet/fix-M4a-r6.md, fix-INT-r6.md).**
+`node tools/gntfixM4a6-stag.mjs [--seeds 1-10] [--variants auto,strip,idle]
+[--root dir] [--out f]` — headless Level 1 from the camp with the default
+autopilot, the Healer's sockets varied: `auto` (as shipped), `strip` (the Healer
+never sockets a node — the content r6 F1 / journey r6 J6-F2 player), `idle`
+(strip + the Healer stands still in the Stag room). Prints Stag clears / wipes,
+fight seconds, downs, the first down after `boss_spawn`, the largest Stag hit,
+seeds with a down and seeds with a member below 35 % HP. `--root` simulates
+another checkout (a scratch copy with an edited constant = a tuning sweep).
+`node tools/gntfixINT6-endcard.mjs --url <server> [--scen vic3,def1] [--size
+1024x576] [--tag t]` — samples every rAF frame from the end card until the camp
+returns: `app.mode`, run phase, the top-left plate, the Glint plate, the party's
+downed count; pass = no card frame over THE HEARTH CAMP plate or in app mode
+camp, the Glint the run ended with, a defeat card over a fallen party, then the
+camp after the countdown (victory) or Enter (defeat).
+`tools/cert-capture.mjs --wait domcontentloaded` — for hosts where
+`networkidle2` never settles (a sandbox proxy holding a request open): waits
+for `__echoes` instead; the default stays `networkidle2`.
+Linux sandboxes: `PUPPETEER_EXECUTABLE_PATH` to the installed Chromium, and
+`ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader
+--enable-unsafe-swiftshader"` for the two probes above (software GL runs the
+page at a few fps; both probes hold keys across frames and wait on sim state).

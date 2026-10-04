@@ -22,10 +22,10 @@ if (mode !== 'shot' && mode !== 'seq') {
 const name = argv[1];
 let count = 1, interval = 0, rest = 2;
 if (mode === 'seq') { count = parseInt(argv[2], 10); interval = parseInt(argv[3], 10); rest = 4; }
-const opt = { url: 'http://127.0.0.1:5199', settle: 2500, actions: null, w: 1600, h: 900, zoom: 1, timeout: 90000 };
+const opt = { url: 'http://127.0.0.1:5199', settle: 2500, actions: null, w: 1600, h: 900, zoom: 1, timeout: 90000, wait: 'networkidle2' };
 for (let i = rest; i < argv.length; i += 2) {
   const k = argv[i].replace(/^--/, '');
-  opt[k] = k === 'url' || k === 'actions' ? argv[i + 1] : parseFloat(argv[i + 1]);
+  opt[k] = k === 'url' || k === 'actions' || k === 'wait' ? argv[i + 1] : parseFloat(argv[i + 1]);
 }
 
 const outDir = join(root, 'captures');
@@ -50,7 +50,10 @@ try {
   page.on('pageerror', (e) => { hadError = true; logLines.push(`[PAGEERROR] ${e.message}`); });
   page.on('requestfailed', (r) => logLines.push(`[REQFAIL] ${r.url()} ${r.failure()?.errorText}`));
 
-  await page.goto(opt.url, { waitUntil: 'networkidle2', timeout: opt.timeout });
+  // --wait domcontentloaded: hosts where networkidle2 never settles (a
+  // sandbox whose proxy holds a font request open); __echoes is awaited next.
+  await page.goto(opt.url, { waitUntil: opt.wait, timeout: opt.timeout });
+  if (opt.wait !== 'networkidle2') await page.waitForFunction(() => !!window.__echoes, { timeout: opt.timeout });
   logLines.push(`[GOTO] ${Date.now() - t0} ms, ${reqs} requests, last request at ${lastReq} ms`);
   if (opt.zoom !== 1) await page.evaluate((z) => { document.body.style.zoom = z; }, opt.zoom);
   await sleep(opt.settle);

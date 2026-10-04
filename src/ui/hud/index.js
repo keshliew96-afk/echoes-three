@@ -43,6 +43,12 @@ function locationCopy(scene, rv) {
     const mode = rv.mode === 'kill_all' && place ? 'CLEAR THE ROOM' : MODE_WORD[rv.mode] ?? 'ON THE ROAD';
     return { name: place ?? 'UNEASY WOODLAND', sub: `ROOM ${room} OF ${total} · ${mode}` };
   }
+  // The victory / defeat card sits over the level it ended in (gauntlet r6
+  // J6-F1) until the return to camp.
+  if (rv && !rv.active && (rv.phase === 'victory' || rv.phase === 'defeat')) {
+    const place = rv.act > 1 && rv.actName ? String(rv.actName).toUpperCase() : 'THE HOLLOW';
+    return { name: place, sub: rv.phase === 'victory' ? 'VICTORY · RETURNING TO CAMP' : 'THE PARTY HAS FALLEN' };
+  }
   if (scene === 'camp') return { name: 'THE HEARTH CAMP', sub: 'NIGHT · BEFORE THE ROAD' };
   return { name: 'THE PROVING CLEARING', sub: 'ARENA · NO RUN' };
 }

@@ -4,13 +4,15 @@
 // (src/sim/autopilot.js: drafts taken, first door, cheapest shop, auto-fill,
 // the level-transition card advanced at its untilTick) and reports, per
 // level: every room { room, mode, layoutId, ticksToClear, partyDamageTaken,
-// downs }, the level outcome, the §4.2 playability band per level, plus a
+// downs, minHpFrac }, the level outcome, the §4.2 playability band per level, plus a
 // carry / restore / reset diff at every transition (the §12.3 table).
 //
 //   node tools/gntCAMPAIGN-camprun.mjs --from 1|2|3 --seeds 1-5 [--node 1] [--challenge standard] [--out f]
 //   --node 1   headless Node sim (built exactly like main.js; fast)   (default)
 //   --node 0   in page on the dev server (__echoes.sim.stepN, realtime loop frozen)
 //   --root d   simulate another checkout (tuning experiments)
+//   --stop-after N   (Node) end each run once Level N is cleared; Level N's
+//              records are the same as a whole campaign's (GP.13 (d) Level 1)
 //
 // A room still live 180 s after it started is STUCK (the run stops there).
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -36,6 +38,7 @@ const NODE = opt('node', '1') !== '0';
 const URL0 = opt('url', 'http://127.0.0.1:5199/');
 const ROOT = resolve(opt('root', here));
 const OUT = opt('out', `captures/gntCAMPAIGN-camprun-from${FROM}-${SEEDS.join('_')}${NODE ? '-node' : ''}.json`);
+const STOP_AFTER = Number(opt('stop-after', '0')) || 0;
 const STUCK_TICKS = 10800;
 const MAX_TICKS = 220000;
 
@@ -88,7 +91,7 @@ function installCollector(ctx) {
     }
   });
   on('room_enter', (e) => {
-    cur = { room: e.index, mode: e.mode, layoutId: e.layoutId ?? null, act: e.act ?? null, startTick: e.tick, endTick: null, partyDamageTaken: 0, downs: 0 };
+    cur = { room: e.index, mode: e.mode, layoutId: e.layoutId ?? null, act: e.act ?? null, startTick: e.tick, endTick: null, partyDamageTaken: 0, downs: 0, minHpFrac: null };
     if (lv) lv.rooms.push(cur);
   });
   on('room_cleared', (e) => {
@@ -96,8 +99,15 @@ function installCollector(ctx) {
   });
   on('hit', (e) => {
     if (!cur) return;
-    if (party.has(e.kind)) cur.partyDamageTaken += e.amount + (e.absorbed ?? 0);
-    else if (e.kind === 'waystone') cur.partyDamageTaken += e.amount;
+    if (party.has(e.kind)) {
+      cur.partyDamageTaken += e.amount + (e.absorbed ?? 0);
+      // GP.13 (d) Level 1 (ruling 2026-10-03): the lowest HP fraction any
+      // party member reaches in the room. `hit` fires after the HP write.
+      // null = no party hit read (page mode's registry shim cannot look the
+      // target up, so it stays null there instead of a false 1).
+      const t = registry.byId ? registry.byId(e.target) : registry.all().find((x) => x.id === e.target);
+      if (t && t.maxHp > 0 && Number.isFinite(t.hp)) cur.minHpFrac = Math.min(cur.minHpFrac ?? 1, Math.max(0, t.hp) / t.maxHp);
+    } else if (e.kind === 'waystone') cur.partyDamageTaken += e.amount;
   });
   on('downed', () => {
     if (cur) cur.downs += 1;
@@ -130,6 +140,7 @@ function installCollector(ctx) {
         ticksToClear: r.endTick !== null ? r.endTick - r.startTick : null,
         partyDamageTaken: Math.round(r.partyDamageTaken * 10) / 10,
         downs: r.downs,
+        minHpFrac: r.minHpFrac, // unrounded: the band's 35 % test is strict
         startTick: r.startTick,
       })),
     })),
@@ -165,12 +176,18 @@ async function runNode(seed) {
   const run = world.runSystem();
   const ap = run.autopilot;
   const read = installCollector({ on: (t, f) => bus.on(t, f), world, registry });
+  let stopNow = false;
+  if (STOP_AFTER) bus.on('level_clear', (e) => { if (e.level >= STOP_AFTER) stopNow = true; });
   run.startCampaign({ level: FROM, challenge: CHALLENGE, harness: true });
   ap.configure(true);
   let stuck = null;
   let outcome = null;
   for (let i = 0; i < MAX_TICKS; i++) {
     clock.stepOnce((t) => world.step(t, ap.intents(t, emptySnapshot())));
+    if (stopNow) {
+      outcome = 'stopped';
+      break;
+    }
     const v = run.view();
     if (v.phase === 'victory' || v.phase === 'defeat') {
       outcome = v.phase;
