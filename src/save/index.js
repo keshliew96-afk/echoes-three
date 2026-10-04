@@ -44,6 +44,7 @@ import {
   metaOf,
 } from './slots.js';
 import { createProfileStore, scoreRun } from './profile.js';
+import { loadoutBoons, loadoutTints } from '../data/unlocks.js';
 import { createThumbnailer } from './thumbnail.js';
 import { createAutosave } from './autosave.js';
 
@@ -1061,7 +1062,32 @@ export function createSaveSystem({
     profileTicks = 0;
     const res = profileStore.recordRun(summary);
     lastRecord = { ...res, runEndTick: ev.tick, summary };
+    // CROSS-RUN UNLOCKS (docs/UNLOCKS.md): the run's Embers, on THIS player's
+    // profile (a network guest earns on its own profile from the same run).
+    lastAward = profileStore.awardRun({
+      ...summary,
+      relics: s && Array.isArray(s.relics) ? s.relics : [],
+      curses: s && Number.isFinite(s.curses) ? s.curses : 0,
+      boons: s && s.boons ? s.boons : null,
+    });
+    lastAward.runEndTick = ev.tick;
+    notify(profileListeners, 'award');
+    if (lastAward.embers > 0 && app && typeof app.toast === 'function') {
+      const extra = lastAward.deeds.length ? ` · ${lastAward.deeds.length} deed${lastAward.deeds.length === 1 ? '' : 's'}` : '';
+      try {
+        app.toast(`+${lastAward.embers} Embers${extra} — spend them at the camp (U)`, { tone: 'good', ms: 4200 });
+      } catch {
+        /* UI only */
+      }
+    }
   });
+  let lastAward = null;
+  // The Unlocks screen's calls: each is one atomic profile write.
+  const unlockCall = (fn) => (...args) => {
+    const r = fn(...args);
+    notify(profileListeners, 'unlocks');
+    return r;
+  };
   function recordRun(summary) {
     return profileStore.recordRun(summary);
   }
@@ -1362,6 +1388,15 @@ export function createSaveSystem({
     profileReport: () => profileStore.report,
     recordRun,
     lastRecord: () => lastRecord,
+    // CROSS-RUN UNLOCKS (docs/UNLOCKS.md)
+    meta: () => profileStore.get().meta,
+    lastAward: () => lastAward,
+    buyUnlock: unlockCall(profileStore.buyUnlock),
+    equipUnlock: unlockCall(profileStore.equipUnlock),
+    clearLoadout: unlockCall(profileStore.clearLoadout),
+    grantFreeUnlocks: unlockCall(profileStore.grantFreeUnlocks),
+    boons: () => loadoutBoons(profileStore.get().meta),
+    tints: () => loadoutTints(profileStore.get().meta),
     thumb: thumbOf,
     // A save whose picture is still being encoded (attached when it lands).
     thumbPending: (id) => pendingThumbs.has(id),
