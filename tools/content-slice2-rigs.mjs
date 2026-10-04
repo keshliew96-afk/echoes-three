@@ -8,7 +8,7 @@
 //      ticks -> apply -> the same 600 ticks hash for hash);
 //   and no page errors anywhere. Exit code 1 on any page error or divergence.
 //
-//   node tools/content-slice2-rigs.mjs [--url http://127.0.0.1:5199/]
+//   node tools/content-slice2-rigs.mjs [--url http://127.0.0.1:5199/] [--only enemies|bosses]
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 import { mkdirSync } from 'node:fs';
@@ -16,6 +16,7 @@ import { mkdirSync } from 'node:fs';
 const here = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const URL0 = argv.includes('--url') ? argv[argv.indexOf('--url') + 1] : 'http://127.0.0.1:5199/';
+const ONLY = argv.includes('--only') ? argv[argv.indexOf('--only') + 1] : null;
 const { launchEchoes, openEchoes } = await import('./gnt-arch-browser.mjs');
 const browser = await launchEchoes({ gpu: false, width: 1280, height: 720, extraArgs: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
 mkdirSync(join(here, 'captures'), { recursive: true });
@@ -35,7 +36,7 @@ async function shot(page, name) {
 }
 
 // --- 1. enemies --------------------------------------------------------------
-for (const [act, kinds] of [
+for (const [act, kinds] of ONLY === 'bosses' ? [] : [
   [1, ['wasp', 'thornling']],
   [2, ['crab', 'lamprey']],
   [3, ['gravewisp', 'knight', 'mole']],
@@ -68,10 +69,13 @@ for (const [act, kinds] of [
 }
 
 // --- 2. bosses ---------------------------------------------------------------
-for (const [act, kind] of [
-  [1, 'thornmother'],
-  [2, 'millwheel'],
-  [3, 'lichram'],
+// Each kit's boss-body telegraphs (seed volleys and grave calls telegraph on
+// their globs instead). The loop stops once all are captured, so the party
+// does not kill the boss before the add phase and the save round trip.
+for (const [act, kind, beats] of ONLY === 'enemies' ? [] : [
+  [1, 'thornmother', ['charge']],
+  [2, 'millwheel', ['shards', 'crosscut']],
+  [3, 'lichram', ['rush']],
 ]) {
   const { page, errors } = await open();
   await page.evaluate(
@@ -86,7 +90,7 @@ for (const [act, kind] of [
   );
   await shot(page, `${kind}-enter`);
   const shotsTaken = new Set();
-  for (let i = 0; i < 120 && shotsTaken.size < 2; i++) {
+  for (let i = 0; i < 120 && shotsTaken.size < beats.length; i++) {
     const t = await page.evaluate(() => {
       __echoes.sim.stepN(10, null);
       const b = __echoes.state().run.boss;
@@ -96,7 +100,7 @@ for (const [act, kind] of [
     if (t && !shotsTaken.has(t)) {
       shotsTaken.add(t);
       await page.evaluate(() => __echoes.sim.stepN(20, null));
-      await wait(300);
+      await wait(2600); // ~1 fps under SwiftShader: let a frame of this tick render first
       const fx = await page.evaluate(() => __echoes.state().bossfx);
       console.log(`${kind} telegraph ${t}: render ring=${fx.ring} shape=${fx.shape} at=${JSON.stringify(fx.shapeAt)}`);
       await shot(page, `${kind}-${t}`);
