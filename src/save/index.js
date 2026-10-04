@@ -1428,6 +1428,15 @@ export function createSaveSystem({
     scoreRun,
   };
   api.debug = {
+    // UNLOCKS probes: the profile's Embers + the Unlocks screen's calls.
+    embers: (n) => {
+      const r = profileStore.debugEmbers(n);
+      notify(profileListeners, 'unlocks');
+      return r;
+    },
+    buyUnlock: (id) => api.buyUnlock(id),
+    equipUnlock: (id, on) => api.equipUnlock(id, on),
+    boons: () => api.boons(),
     list,
     save: (slot, opts) => save(slot, opts),
     load: (slot) => (app && typeof app.loadSlot === 'function' ? app.loadSlot(slot) : load(slot)),

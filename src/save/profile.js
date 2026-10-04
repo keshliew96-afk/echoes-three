@@ -25,6 +25,13 @@
 // above — identical for one level):
 //   round(sum over levels (100 rooms_L + 5 kills_L + 1000 cleared_L) actMul_L x challengeMul)
 //     + (complete ? max(0, 900 x levelsPlayed - timeSec) : 0)
+//
+// UNLOCKS (docs/UNLOCKS.md): profile v1 + `meta` (Embers, owned unlocks,
+// deeds, bosses felled, relics found, the equipped loadout, the last award),
+// versioned on its own and sanitised by data/unlocks.js saneMeta(). awardRun
+// pays a finished run; buyUnlock / equipUnlock / clearLoadout are the Unlocks
+// screen's writes. All go through commit() (atomic, multi-tab safe); a
+// records reset keeps `meta`.
 import { PROFILE_KEY } from './storage.js';
 import { CAMPAIGN_LEVELS, FIRST_LEVEL, nextLevel } from '../data/campaign.js';
 import { freshMeta, saneMeta, runFacts, awardFor, grantFree, UNLOCKS, reqMet } from '../data/unlocks.js';
@@ -494,6 +501,12 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     noteLevelReached, // CAMPAIGN
     unlockLevel, // CAMPAIGN
     awardRun, // UNLOCKS
+    // probe seam (tools/unlocks-net.mjs): add Embers as one atomic write
+    debugEmbers: (n) => commit((p) => {
+      p.meta.embers += Math.max(0, Math.round(n));
+      p.meta.earned += Math.max(0, Math.round(n));
+      return p.meta.embers;
+    }).result,
     grantFreeUnlocks,
     buyUnlock,
     equipUnlock,

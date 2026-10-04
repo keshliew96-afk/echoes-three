@@ -85,8 +85,22 @@ export const CLASS_VFX = Object.freeze({
 // but in plain Parchment, so they are never mistaken for an existing class.
 const CLASS_DEFAULT = Object.freeze({ ...CLASS_VFX.healer, id: 'default', glow: PALETTE.parchment, second: PALETTE.bone, camera: Object.freeze({ kick: 0, dolly: 0 }) });
 
+// UNLOCKS (docs/UNLOCKS.md): a tint the local player equipped recolours a
+// class's glow / second / debris on THIS screen only (render data; the sim
+// never reads it). setClassTints({ classId: { glow, second, debris } }).
+const tinted = new Map(); // classId -> frozen style with the tint applied
+export function setClassTints(tints = {}) {
+  tinted.clear();
+  for (const [cls, c] of Object.entries(tints || {})) {
+    const st = CLASS_VFX[cls];
+    if (!st || !c) continue;
+    tinted.set(cls, Object.freeze({ ...st, glow: c.glow ?? st.glow, second: c.second ?? st.second, debrisColor: c.debris ?? st.debrisColor, tint: true }));
+  }
+  return [...tinted.keys()];
+}
+
 export function vfxClassStyle(classId) {
-  return CLASS_VFX[classId] ?? CLASS_DEFAULT;
+  return tinted.get(classId) ?? CLASS_VFX[classId] ?? CLASS_DEFAULT;
 }
 
 // Which class owns a skill id, for events that carry only the skill

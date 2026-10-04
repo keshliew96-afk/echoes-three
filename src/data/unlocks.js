@@ -29,6 +29,9 @@ export const EMBER_RULES = Object.freeze({
   perRoom: 3, // every room left behind (combat + shop)
   perLevelClear: Object.freeze({ 1: 20, 2: 40, 3: 60 }), // the level's boss killed
   campaignComplete: 50,
+  // The Endless Descent (docs/ENDLESS.md): a depth past 3 cleared pays the
+  // Act III clear plus this much per depth beyond 3.
+  perDeepDepth: 20,
   challengeMul: Object.freeze({ relaxed: 0.75, standard: 1, harrowing: 1.5 }),
   perVow: 0.25, // +25% of the run's Embers for each vow worn
 });
@@ -41,7 +44,7 @@ export const BOSSES = Object.freeze(
 // One-off deeds: paid once, on the run that first meets them (not multiplied).
 const bossDeeds = BOSSES.map((b) => [
   `boss_${b.kind}`,
-  { name: `Fell ${b.name.replace(/^The /, 'the ')}`, text: `Defeat ${b.name}.`, embers: 25, test: (r) => r.bosses.includes(b.kind) },
+  { name: `Fell ${b.name.replace(/^The /, 'the ')}`, text: `Defeat ${b.name.replace(/^The /, 'the ')}.`, embers: 25, test: (r) => r.bosses.includes(b.kind) },
 ]);
 export const DEEDS = Object.freeze(
   Object.fromEntries([
@@ -53,6 +56,8 @@ export const DEEDS = Object.freeze(
     ['magpie', { name: 'Magpie', text: 'Hold 5 relics at once.', embers: 25, test: (r) => r.relics.length >= 5 }],
     ['oathbound', { name: 'Oathbound', text: 'Clear a level wearing 2 vows.', embers: 40, test: (r) => r.cleared.length > 0 && r.vows.length >= 2 }],
     ['veteran', { name: 'Veteran', text: 'Finish 10 runs.', embers: 30, test: (r) => r.runs >= 10 }],
+    ['deep_five', { name: 'Into the Deep', text: 'Reach Depth 5 of the Endless Descent.', embers: 50, test: (r) => r.depth >= 5 }],
+    ['deep_eight', { name: 'Abyss Walker', text: 'Reach Depth 8 of the Endless Descent.', embers: 100, test: (r) => r.depth >= 8 }],
   ])
 );
 export const DEED_IDS = Object.freeze(Object.keys(DEEDS));
@@ -63,6 +68,7 @@ export const DEED_IDS = Object.freeze(Object.keys(DEEDS));
 //   { level: N }    Level N cleared once     { campaign: true } a campaign completed
 //   { boss: kind }  that boss defeated once  { relic: id }      that relic taken in a run
 //   { unlock: id }  another unlock owned     { runs: N }        N runs finished
+//   { depth: N }    Depth N reached in the Endless Descent (records.endlessBestDepth)
 const KIT_ROWS = [
   ['kit_lanternbearer', 'healer', 'Lanternbearer', ['mending_bolt', 'lantern_flurry'], 60, null, 'Trade Swift Mend for Lantern Flurry: three lantern darts that hit back.'],
   ['kit_grovekeeper', 'healer', 'Grovekeeper', ['dewfall', 'mending_tide'], 90, { level: 1 }, 'Begin with Dewfall and Mending Tide: healing pools and a sweeping mend.'],
@@ -91,6 +97,7 @@ const TINT_ROWS = [
   ['tint_thornbloom', 'archer', 'Thornbloom', { glow: '#B8E05E', second: '#F0E6A0', debris: '#C9C2B3' }, 30, null],
   ['tint_wyrmfire', 'healer', 'Wyrmfire', { glow: '#FF5A3C', second: '#FFC27A', debris: '#FFE2C0' }, 0, { boss: 'wyrm' }],
   ['tint_heronmist', 'archer', 'Heron Mist', { glow: '#A9C6D8', second: '#EEF4F8', debris: '#EEF4F8' }, 0, { boss: 'heron' }],
+  ['tint_abyssal', 'swordsman', 'Abyssal', { glow: '#7A5CFF', second: '#D8CCFF', debris: '#D8CCFF' }, 0, { depth: 6 }],
 ];
 
 function build() {
@@ -180,6 +187,7 @@ export function reqMet(req, { meta, records }) {
   if (req.relic) return Array.isArray(meta.relicsSeen) && meta.relicsSeen.includes(req.relic);
   if (req.unlock) return meta.owned && meta.owned[req.unlock] !== undefined;
   if (req.runs) return (rec.runs || 0) >= req.runs;
+  if (req.depth) return (rec.endlessBestDepth || 0) >= req.depth;
   return false;
 }
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
@@ -187,10 +195,11 @@ export function reqText(req) {
   if (!req) return '';
   if (req.level) return `Clear Level ${ROMAN[req.level] ?? req.level}`;
   if (req.campaign) return 'Complete a campaign';
-  if (req.boss) return `Defeat ${(BOSSES.find((b) => b.kind === req.boss) || {}).name ?? req.boss}`;
+  if (req.boss) return `Defeat ${((BOSSES.find((b) => b.kind === req.boss) || {}).name ?? req.boss).replace(/^The /, 'the ')}`;
   if (req.relic) return `Find ${RELICS[req.relic] ? RELICS[req.relic].name : req.relic} in a run`;
   if (req.unlock) return `Own ${UNLOCKS[req.unlock] ? UNLOCKS[req.unlock].name : req.unlock}`;
   if (req.runs) return `Finish ${req.runs} runs`;
+  if (req.depth) return `Reach Depth ${req.depth} of the Endless Descent`;
   return '';
 }
 
@@ -225,13 +234,25 @@ export function grantFree(meta, records) {
 export function runFacts(summary, records = {}) {
   const s = summary || {};
   const camp = s.campaign && Array.isArray(s.campaign.levels) ? s.campaign : null;
-  const cleared = camp ? camp.levels.filter((l) => l.cleared).map((l) => l.level) : s.result === 'victory' ? [s.act ?? 1] : [];
-  const bosses = cleared.map((lv) => bossFor(lv, s.seed ?? null).kind);
+  const clearedRows = camp ? camp.levels.filter((l) => l.cleared) : s.result === 'victory' ? [{ level: s.act ?? 1, index: 1 }] : [];
+  const cleared = clearedRows.map((l) => l.level);
+  // ENDLESS (docs/ENDLESS.md): levels past Depth 3 carry their depth as
+  // `index`; the boss each one met is the run's own record when it has one.
+  const isDeep = (l) => !!(camp && camp.endless) && num(l.index) > 3;
+  const deep = clearedRows.filter(isDeep).map((l) => l.index);
+  // (past Depth 3 the boss alternates by depth, so only a row that names its
+  // boss counts there; within the campaign the seed decides: bossFor)
+  const bosses = clearedRows
+    .map((l) => (typeof l.boss === 'string' ? l.boss : isDeep(l) ? null : bossFor(l.level, s.seed ?? null).kind))
+    .filter(Boolean);
   const boons = s.boons || null;
+  const depth = camp && camp.endless ? Math.max(num(camp.depth), num(camp.index), ...camp.levels.map((l) => num(l.index))) : 0;
   return {
     result: s.result ?? (s.victory ? 'victory' : 'defeat'),
     rooms: Math.max(0, num(s.roomsCleared ?? s.rooms)),
-    cleared,
+    cleared: cleared.filter((_, i) => !isDeep(clearedRows[i])),
+    deep,
+    depth,
     bosses,
     complete: !!(camp ? camp.complete : false),
     challenge: s.challenge ?? 'standard',
@@ -249,6 +270,7 @@ export function awardFor(facts, meta) {
   const lines = [];
   if (facts.rooms > 0) lines.push({ label: `${facts.rooms} room${facts.rooms === 1 ? '' : 's'} cleared`, embers: facts.rooms * R.perRoom });
   for (const lv of facts.cleared) lines.push({ label: `Level ${ROMAN[lv] ?? lv} cleared`, embers: R.perLevelClear[lv] ?? 20 });
+  for (const d of facts.deep || []) lines.push({ label: `Depth ${d} cleared`, embers: R.perLevelClear[3] + R.perDeepDepth * (d - 3) });
   if (facts.complete) lines.push({ label: 'Campaign complete', embers: R.campaignComplete });
   let base = lines.reduce((n, l) => n + l.embers, 0);
   const chMul = R.challengeMul[facts.challenge] ?? 1;
@@ -329,8 +351,18 @@ export function loadoutTints(meta) {
 // reachable first, then the nearest locked ones with their requirement.
 export function nextGoals(ctx, n = 3) {
   const rows = UNLOCK_IDS.map((id) => ({ id, u: UNLOCKS[id], st: unlockState(id, ctx) })).filter((r) => r.st !== 'owned');
-  const buyable = rows.filter((r) => r.st === 'buy' || r.st === 'poor').sort((a, b) => a.u.cost - b.u.cost);
-  const locked = rows.filter((r) => r.st === 'locked' && !(r.u.req && r.u.req.relic));
+  // One goal per kind first (the cheapest of each), so the list shows the
+  // range of what is on offer rather than three of a kind.
+  const byCost = (a, b) => a.u.cost - b.u.cost;
+  const spread = (list) => {
+    const seen = new Set();
+    const first = [];
+    const rest = [];
+    for (const r of list) (seen.has(r.u.kind) ? rest : (seen.add(r.u.kind), first)).push(r);
+    return [...first, ...rest];
+  };
+  const buyable = spread(rows.filter((r) => r.st === 'buy' || r.st === 'poor').sort(byCost));
+  const locked = spread(rows.filter((r) => r.st === 'locked' && !(r.u.req && r.u.req.relic)));
   const goals = [];
   for (const r of buyable) {
     if (goals.length >= n) break;
