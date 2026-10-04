@@ -21,6 +21,7 @@ import { PALETTE as P } from '../../data/palette.js';
 import { service } from '../../app/registry.js';
 import { CAMPAIGN_LEVELS, FIRST_LEVEL, FINAL_LEVEL, grantFor, lockLine } from '../../data/campaign.js';
 import { levelFor } from '../../data/levels.js';
+import { endlessUnlockedFrom } from '../../data/endless.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 const STYLE_ID = 'cg-levels-style';
@@ -35,7 +36,7 @@ function installStyle() {
   st.textContent = `
 .cg-levels .cg-wrap {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: min(94vw, ${px(1420)}); max-height: 94vh; padding: ${px(28)} ${px(34)} ${px(22)};
+  width: min(96vw, ${px(1720)}); max-height: 94vh; padding: ${px(28)} ${px(34)} ${px(22)};
   display: flex; flex-direction: column; align-items: center; gap: ${px(14)};
 }
 .cg-levels .cg-head { display: flex; flex-direction: column; align-items: center; gap: ${px(4)}; text-align: center; }
@@ -75,6 +76,8 @@ function installStyle() {
 .cg-levels .cg-lock { display: none; align-items: center; gap: ${px(10)}; font-size: ${px(21)}; font-weight: 700; color: ${P.bone}; }
 .cg-levels .cg-card[aria-disabled="true"] .cg-lock { display: flex; }
 .cg-levels .cg-lock svg { width: ${px(26)}; height: ${px(26)}; flex: none; }
+.cg-levels .cg-card.cg-endless { background: linear-gradient(172deg, #2A2433 0%, ${P.voidCharcoal} 72%); }
+.cg-levels .cg-card.cg-endless .cg-lvl { color: ${P.hearthAmber}; }
 .cg-levels .cg-card.cg-shake { animation: cg-shake 320ms ease; }
 @keyframes cg-shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(${px(-9)}); } 40% { transform: translateX(${px(8)}); } 60% { transform: translateX(${px(-6)}); } 80% { transform: translateX(${px(4)}); } }
 .cg-levels .cg-note { min-height: ${px(28)}; font-size: ${px(21)}; color: ${P.bone}; text-align: center; }
@@ -119,6 +122,29 @@ export function levelInfo() {
       grant: grantFor(level),
     };
   });
+}
+
+// ENDLESS (docs/ENDLESS.md): the Endless Descent card — open once the game
+// is won (or with the ?endless=1 harness), with the profile's depth record.
+export function endlessInfo() {
+  let profile = null;
+  try {
+    const save = service('save');
+    profile = save && typeof save.profile === 'function' ? save.profile() : null;
+  } catch {
+    profile = null;
+  }
+  const rec = profile && profile.records ? profile.records : {};
+  const harness = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('endless') === '1';
+  return {
+    level: 'endless',
+    name: 'The Endless Descent',
+    blurb: 'Past the Barrow the road turns back into the wood, darker each time. The three lands repeat, harder at every depth, until the party falls.',
+    unlocked: harness || endlessUnlockedFrom(profile),
+    bestDepth: rec.endlessBestDepth || 0,
+    runs: rec.endlessRuns || 0,
+    lockLine: 'Win the campaign to unlock',
+  };
 }
 
 export function createLevelsScreen(ctx) {
@@ -219,6 +245,39 @@ export function createLevelsScreen(ctx) {
       });
       cardsEl.appendChild(card);
     }
+    // ENDLESS: one more card after the levels.
+    {
+      const info = endlessInfo();
+      infos.push(info);
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'cg-card cg-endless';
+      card.dataset.level = 'endless';
+      card.setAttribute('data-nav', '');
+      if (!info.unlocked) card.setAttribute('aria-disabled', 'true');
+      card.innerHTML = `
+        <div class="cg-lvl">ENDLESS</div>
+        <div class="cg-name"></div>
+        <div class="cg-blurb"></div>
+        <div class="cg-biome">Wood · Mill · Barrow · and down again</div>
+        <div class="cg-danger"><span>Danger rises every depth</span></div>
+        <div class="cg-status"></div>
+        <div class="cg-grant">Begins at Level I with the starting kit</div>
+        <div class="cg-lock">${LOCK_SVG}<span class="cg-lock-t"></span></div>`;
+      card.querySelector('.cg-name').textContent = info.name;
+      card.querySelector('.cg-blurb').textContent = info.blurb;
+      card.querySelector('.cg-status').innerHTML = info.bestDepth ? `<b>Deepest: Depth ${info.bestDepth}</b> · ${info.runs} descent${info.runs === 1 ? '' : 's'}` : 'No descent yet';
+      card.querySelector('.cg-lock-t').textContent = info.lockLine;
+      card.setAttribute('aria-label', `The Endless Descent.${info.unlocked ? '' : ` Locked: ${info.lockLine}.`}`);
+      card.addEventListener('click', () => {
+        if (!info.unlocked) {
+          deny(card, info, 'click');
+          return;
+        }
+        finish('endless');
+      });
+      cardsEl.appendChild(card);
+    }
     noteEl.textContent = '';
   }
 
@@ -268,7 +327,7 @@ export function createLevelsScreen(ctx) {
       cards: [...cardsEl.querySelectorAll('.cg-card')].map((c) => {
         const r = c.getBoundingClientRect();
         return {
-          level: Number(c.dataset.level),
+          level: c.dataset.level === 'endless' ? 'endless' : Number(c.dataset.level),
           locked: c.getAttribute('aria-disabled') === 'true',
           focused: c.classList.contains('ap-focus'),
           text: c.textContent.replace(/\s+/g, ' ').trim(),

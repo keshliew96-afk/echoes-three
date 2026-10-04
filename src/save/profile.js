@@ -25,6 +25,13 @@
 // above — identical for one level):
 //   round(sum over levels (100 rooms_L + 5 kills_L + 1000 cleared_L) actMul_L x challengeMul)
 //     + (complete ? max(0, 900 x levelsPlayed - timeSec) : 0)
+//
+// ENDLESS (docs/ENDLESS.md): records.gameWon (any campaign completed, an
+// endless descent's Depth 3 included), endlessRuns, endlessBestDepth (the
+// deepest depth an endless descent reached); an endless high-score entry
+// gains `depth`. A level played past Depth 3 scores at actMul 2.0 + 0.5 per
+// depth beyond 3 and stays out of the per-level records (deepest room,
+// fastest clear), which keep meaning "the campaign's own levels".
 import { PROFILE_KEY } from './storage.js';
 import { CAMPAIGN_LEVELS, FIRST_LEVEL, nextLevel } from '../data/campaign.js';
 
@@ -45,7 +52,8 @@ export function scoreCampaign({ levels = [], challenge = 'standard', complete = 
   const chMul = CHALLENGE_MUL[challenge] ?? 1;
   let sum = 0;
   for (const l of levels) {
-    const actMul = ACT_MUL[l.level] ?? 1;
+    const deep = (l.index ?? 0) > CAMPAIGN_LEVELS.length; // ENDLESS: past Depth 3
+    const actMul = deep ? ACT_MUL[CAMPAIGN_LEVELS.length] + 0.5 * (l.index - CAMPAIGN_LEVELS.length) : ACT_MUL[l.level] ?? 1;
     sum += (100 * (l.rooms || 0) + 5 * (l.kills || 0) + 1000 * (l.cleared ? 1 : 0)) * actMul;
   }
   const played = Math.max(1, levels.length);
@@ -73,6 +81,10 @@ export function freshProfile() {
       furthestLevel: 0,
       fastestCampaignSec: null,
       levelClears: perLevel(0),
+      // ENDLESS (docs/ENDLESS.md)
+      gameWon: false,
+      endlessRuns: 0,
+      endlessBestDepth: 0,
     },
     unlocks: { acts: [1] },
     lastAct: null,
@@ -89,6 +101,8 @@ function sane(p) {
   out.records.fastestVictorySec = { ...f.records.fastestVictorySec, ...((p.records && p.records.fastestVictorySec) || {}) };
   out.records.deepestRoom = { ...f.records.deepestRoom, ...((p.records && p.records.deepestRoom) || {}) };
   out.records.levelClears = { ...f.records.levelClears, ...((p.records && p.records.levelClears) || {}) };
+  // ENDLESS: a profile from before the flag that completed a campaign has won.
+  out.records.gameWon = !!(out.records.gameWon || out.records.campaignsCompleted > 0);
   out.unlocks = { acts: Array.isArray(p.unlocks && p.unlocks.acts) ? [...new Set([1, ...p.unlocks.acts])].sort((a, b) => a - b) : [1] };
   out.playtimeSec = Number.isFinite(p.playtimeSec) ? p.playtimeSec : 0;
   return out;
@@ -330,12 +344,14 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       campaign: !!camp,
       startLevel: camp ? camp.startLevel ?? act : act,
       levels: camp ? camp.levels.filter((l) => l.cleared).length : res === 'victory' ? 1 : 0,
+      ...(camp && camp.endless ? { depth: camp.depth ?? camp.index } : {}),
     };
     // PARTY (PLAN §16.6): the four builds of the run (a new optional key).
     if (Array.isArray(builds) && builds.length) entry.party = builds.map((b) => ({ classId: b.classId, skills: (b.skills || []).slice(0, 4), filled: b.filled | 0 }));
     const { result: out, w } = commit((p) => {
       const r = p.records;
       const prevBest = r.bestScore;
+      const prevDepth = r.endlessBestDepth ?? 0;
       r.runs += 1;
       if (res === 'victory') r.victories += 1;
       else if (res === 'abandoned') r.abandoned = (r.abandoned ?? 0) + 1;
@@ -346,6 +362,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       // each count with their own clear time).
       const lvls = camp ? camp.levels : [{ level: act, rooms: roomsCleared, cleared: res === 'victory', ticks: Math.round(timeSec * 60) }];
       lvls.forEach((l, i) => {
+        if (camp && camp.endless && (l.index ?? 0) > CAMPAIGN_LEVELS.length) return; // ENDLESS: past Depth 3
         const a = l.level;
         const last = i === lvls.length - 1;
         const deep = l.cleared ? 8 : last ? Math.max(0, lastRoom) : l.rooms || 0;
@@ -359,6 +376,11 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
         }
         if (a > (r.furthestLevel ?? 0)) r.furthestLevel = a;
       });
+      if (camp && complete) r.gameWon = true;
+      if (camp && camp.endless) {
+        r.endlessRuns = (r.endlessRuns ?? 0) + 1;
+        if (entry.depth > prevDepth) r.endlessBestDepth = entry.depth;
+      }
       if (camp) {
         r.campaigns = (r.campaigns ?? 0) + 1;
         if (complete) {
@@ -374,13 +396,14 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       const list = [...p.highScores, mine].sort((a, b) => b.score - a.score || String(a.date).localeCompare(String(b.date)));
       const rank = list.indexOf(mine);
       p.highScores = list.slice(0, MAX_SCORES);
-      return { prevBest, rank };
+      return { prevBest, prevDepth, rank };
     });
     return {
       score,
       rank: out.rank >= 0 && out.rank < MAX_SCORES ? out.rank + 1 : null,
       newBest: score > out.prevBest,
       prevBest: out.prevBest,
+      ...(entry.depth ? { endless: { depth: entry.depth, prevBestDepth: out.prevDepth, newDepthRecord: entry.depth > out.prevDepth } } : {}),
       entry,
       written: w.ok,
       error: w.ok ? null : w.error,
