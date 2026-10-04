@@ -237,7 +237,7 @@ try {
   for (const cls of ['tank', 'swordsman', 'archer']) await classClip(cls);
   await healerClip();
   await enemyClip('enemies-act1', 1, ['boar', 'mantis', 'quillback', 'toad', 'ram', 'mole']);
-  await enemyClip('enemies-act2-act3', 3, ['crow', 'brood', 'crow']);
+  await enemyClip('enemies-barrow', 3, ['crow', 'brood', 'crow']);
   await enemyClip('enemies-mill', 2, ['rotcap', 'snail', 'rotcap']);
   await bossClip('boss-stag', 1, [
     { until: "t && t.attack === 'quake'", frames: 80 },
