@@ -52,7 +52,7 @@ export function createAutopilot({ registry, player, run, skills, build }) {
   const hostiles = () =>
     registry
       .all()
-      .filter((e) => e.faction === 'hostile' && e.hp > 0 && e.hittable && (e.state === 'active' || e.kind === 'stag'))
+      .filter((e) => e.faction === 'hostile' && e.hp > 0 && e.hittable && (e.state === 'active' || e.kind === 'stag' || e.boss === true))
       .sort((a, b) => a.id - b.id);
 
   function nearest(list, x, z) {

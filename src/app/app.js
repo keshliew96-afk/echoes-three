@@ -171,7 +171,12 @@ export function createApp({ params }) {
   // 'camp' | 'run' — which half of the hosted camp scene is live.
   function mode() {
     const run = ctx && ctx.world && ctx.world.runSystem ? ctx.world.runSystem() : null;
-    return run && run.isActive() ? 'run' : 'camp';
+    if (!run) return 'camp';
+    if (run.isActive()) return 'run';
+    // A victory / defeat card is up over the level it ended in (gauntlet r6
+    // J6-F1): the world is still the run's until the return to camp.
+    const ph = typeof run.view === 'function' ? run.view().phase : null;
+    return ph === 'victory' || ph === 'defeat' ? 'run' : 'camp';
   }
 
   function netActive() {

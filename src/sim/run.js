@@ -491,6 +491,7 @@ export function createRunSystem({
       // M4a tuning note, damage × 1 + 0.5(T − 1)) and calls the act's own
       // add phases, which scale with the act tier alone (data/difficulty.js).
       boss.start(0, -4.2, {
+        kind: level.boss ?? 'stag',
         hp: diff.bossHp,
         dmgMul: diff.bossDmgMul,
         adds: level.bossAdds.map(([et, k]) => [et, k]),
@@ -1379,8 +1380,16 @@ export function createRunSystem({
       campaign: summary.campaign ? cloneData(summary.campaign) : null,
     });
     // §2/§13: ALL run state is wiped at run end (the end screen renders from
-    // the frozen summary above, never from live state).
-    wipeState({ silent: false });
+    // the frozen summary above, never from live state). Gauntlet r6 (journey
+    // J6-F1 / campaign CR6-F1, PLAN §12.1 "CAMPAIGN COMPLETE card -> camp",
+    // ruling A15): the run's world ends here — the director, the Stag, every
+    // hostile and shot go, nothing can fight — but the party and its build
+    // stay exactly as the last blow left them while the victory / defeat card
+    // is up, so the level (and a fallen party) is what the card sits over.
+    // The loadout reset (run_wiped) happens with the return to camp. A Quit
+    // to Lobby has no card and resets at once.
+    if (result === 'abandoned') wipeState({ silent: false });
+    else endWorld();
     phase = result; // 'victory' | 'defeat'
     return summary;
   }
@@ -1390,6 +1399,13 @@ export function createRunSystem({
   // bench + sockets empty, Glint 0, party topped up and standing, dodge timer
   // clear, arena emptied of enemies and of the boss.
   function wipeState({ silent }) {
+    endWorld();
+    resetLoadout({ silent });
+  }
+
+  // The run's world goes: room, campaign, pages, director, Stag, hostiles,
+  // shots, zones. combatAllowed() is false from here.
+  function endWorld() {
     const tick = getTick();
     exitRoom(tick);
     lastCombatLayout = null;
@@ -1407,7 +1423,6 @@ export function createRunSystem({
     clearedRooms = 0;
     spoils = null;
     spoilsTotal = 0;
-    wallet = RUN.startingGlint;
     phase = 'idle';
     // The encounter director stops dead (schedule + spawn telegraphs +
     // Waystone), then the boss + adds, every hostile body and shot, and every
@@ -1419,7 +1434,15 @@ export function createRunSystem({
     enemies.reset();
     sweepPlayerTransients(tick, 'run_end');
     allySys.cmd('mark', [null]);
+  }
+
+  // Everything the party carried goes back to boot condition.
+  function resetLoadout({ silent }) {
+    const tick = getTick();
+    // (the boundary's free revive stands a fallen party up — at the return,
+    // never under the defeat card)
     allySys.cmd('roomBoundary');
+    wallet = RUN.startingGlint;
     const kit = new Array(SKILL_SLOTS).fill(null);
     STARTING_SKILLS.forEach((id, i) => {
       kit[i] = { id, remaining: 0 };
@@ -1443,8 +1466,8 @@ export function createRunSystem({
   }
 
   function returnToCamp() {
-    // The camp hub scene lands with its own block; run state is already wiped
-    // at run end, so this only dismisses the end screen.
+    // The camp hub scene lands with its own block; the run's world went at
+    // run end, so this dismisses the end screen and resets the loadout.
     if (phase !== 'victory' && phase !== 'defeat') return null;
     phase = 'idle';
     autoReturnTick = null;
@@ -1455,6 +1478,9 @@ export function createRunSystem({
     waves.stop('return_to_camp');
     boss.despawn();
     enemies.reset();
+    // The party leaves the end card's world: its loadout resets now (always,
+    // so a card restored from a save resets too).
+    resetLoadout({ silent: false });
     events.emit(getTick(), 'return_to_camp', { enemies: leaked });
     return { phase, enemies: leaked };
   }

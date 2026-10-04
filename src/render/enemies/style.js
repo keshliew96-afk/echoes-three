@@ -60,6 +60,21 @@ export const HIDE = Object.freeze({
   moleClaw: new Color(PALETTE.bone).multiplyScalar(0.88),
   earth: mix(PALETTE.bruiseUmber, PALETTE.warmGrey, 0.55).multiplyScalar(0.92),
   earthDark: mix(PALETTE.voidCharcoal, PALETTE.bruiseUmber, 0.6),
+  // --- Content slice 1 (docs/CONTENT_PLAN.md §3), same cool families.
+  // Rotcap: a pale cool-grey cap over a dark stalk, pale gills.
+  rotCap: slate(0.32, 0.42).multiplyScalar(0.92),
+  rotStalk: mix(PALETTE.warmGrey, PALETTE.signalBlue, 0.25).lerp(new Color(PALETTE.bone), 0.35).multiplyScalar(0.9),
+  rotGill: slate(0.4, 0.15).multiplyScalar(0.5),
+  // Lantern Snail: a dark coiled shell, a pale slug body.
+  snailShell: slate(0.38, 0.18).multiplyScalar(0.62),
+  snailShellDark: slate(0.42, 0.1).multiplyScalar(0.42),
+  snailBody: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.5).lerp(new Color(PALETTE.bone), 0.4).multiplyScalar(0.95),
+  // Barrow Crow: near-black feathers with a slate sheen, a pale bone beak.
+  crowBody: slate(0.42, 0.12).multiplyScalar(0.4),
+  crowWing: slate(0.46, 0.18).multiplyScalar(0.55),
+  // Brood Spider: a bloated grey-blue abdomen over dark legs.
+  broodBody: slate(0.36, 0.28).multiplyScalar(0.78),
+  broodDark: slate(0.4, 0.1).multiplyScalar(0.42),
 });
 
 // The single violet corruption tell (§11): God-stuff Violet with its own hue,

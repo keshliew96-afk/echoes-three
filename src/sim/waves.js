@@ -93,7 +93,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
   // Live hostile wave bodies (every enemy kind, by faction — PLAN §3.6 (d)):
   // the Stag and enemy shots are not wave members; retreating bodies no
   // longer count (their `state` leaves 'active').
-  const isEnemy = (e) => e.faction === 'hostile' && e.state !== undefined && e.kind !== 'stag' && e.kind !== 'eshot';
+  const isEnemy = (e) => e.faction === 'hostile' && e.state !== undefined && e.kind !== 'stag' && e.boss !== true && e.kind !== 'eshot';
 
   // M4b's content contract: `spawnScaled(etype, x, z, { hpMul, dmgMul, elite,
   // wave })` and `hasType(etype)`. Without them (a build before M4b) only the

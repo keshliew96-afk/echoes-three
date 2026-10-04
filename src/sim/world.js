@@ -1021,7 +1021,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
           // Faction rule (PLAN §3.6 (d)): every living hostile body except the
           // boss (its own view) — burrowed moles and retreating enemies stay
           // listed; shots/globs carry no HP. Plus the simtest wisps.
-          (e) => e.kind === 'wisp' || (e.faction === 'hostile' && e.hp > 0 && e.kind !== 'stag')
+          (e) => e.kind === 'wisp' || (e.faction === 'hostile' && e.hp > 0 && e.kind !== 'stag' && e.boss !== true)
         )
       // @gnt:M4b HOSTILE-KINDS end
         .map((e) => ({
@@ -1102,13 +1102,22 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         maintainPopulation = false;
         const hostiles = registry
           .all()
-          .filter((e) => e.kind === 'wisp' || (e.faction === 'hostile' && e.hp > 0 && e.kind !== 'stag'));
+          .filter((e) => e.kind === 'wisp' || (e.faction === 'hostile' && e.hp > 0 && e.kind !== 'stag' && e.boss !== true));
         // @gnt:M4b HOSTILE-KINDS2 end
         for (const h of hostiles) {
           if (h.kind === 'wisp') killWisp(h);
           else combat.kill(h);
         }
-        return hostiles.length;
+        // A Brood Spider splits on death: sweep its young too (a no-op pass
+        // for every other roster, so legacy traces are unchanged).
+        let killed = hostiles.length;
+        for (let pass = 0; pass < 3; pass++) {
+          const young = registry.all().filter((e) => e.faction === 'hostile' && e.hp > 0 && e.state === 'active' && e.kind !== 'stag' && e.boss !== true && enemies.isEnemyKind(e.kind));
+          if (young.length === 0) break;
+          for (const h of young) combat.kill(h);
+          killed += young.length;
+        }
+        return killed;
       }
       // --- Enemies-block test commands (§11 rooms/waves, docs/TESTING.md).
       case 'startRoom': {

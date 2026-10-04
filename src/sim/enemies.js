@@ -64,6 +64,14 @@ import toad from './enemies/toad.js';
 import moth from './enemies/moth.js';
 import ram from './enemies/ram.js';
 import mole from './enemies/mole.js';
+// Content slice 1 (docs/CONTENT_PLAN.md §3): Rotcap, Lantern Snail, Barrow
+// Crow, Brood Spider (+ its Broodlings). Same plain-data module contract, plus
+// two optional hooks: `onDeath(ctx, e, tick)` (fired from the kill's `death`
+// event, before the body is despawned) and ctx.fireShot / ctx.spawnChild.
+import rotcap from './enemies/rotcap.js';
+import snail from './enemies/snail.js';
+import crow from './enemies/crow.js';
+import brood, { broodling } from './enemies/brood.js';
 
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -123,7 +131,7 @@ function circleContactT(px, pz, dx, dz, cx, cz, R) {
 }
 
 // Gauntlet archetypes (M4b): etype -> plain-data module (PLAN §3.6).
-export const ARCHETYPES = Object.freeze({ quillback, toad, moth, ram, mole });
+export const ARCHETYPES = Object.freeze({ quillback, toad, moth, ram, mole, rotcap, snail, crow, brood, broodling });
 // Every hostile enemy kind this system owns (the boss is sim/boss.js's).
 export const ENEMY_KINDS = Object.freeze(new Set(['boar', 'mantis', ...Object.keys(ARCHETYPES)]));
 // §23.5 Elite modifier (any non-boss).
@@ -220,7 +228,39 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     endTelegraph,
     strike: (e, targets, base, fx, fz, opts) => strike(ctx, e, targets, base, fx, fz, opts),
     spawnGlob: (e, tick, o) => spawnGlob(e, tick, o),
+    isEnemyKind: (k) => isEnemyKind(k),
+    // A straight enemy shot (kind 'eshot', the mantis's flight model) along a
+    // unit direction: { speed u/s, range u, power }.
+    fireShot(e, tick, dirX, dirZ, o) {
+      const shot = registry.spawn({
+        kind: 'eshot',
+        faction: 'hostile',
+        x: e.x,
+        z: e.z,
+        px: e.x,
+        pz: e.z,
+        vx: dirX * o.speed * TICK_DT,
+        vz: dirZ * o.speed * TICK_DT,
+        traveled: 0,
+        range: o.range,
+        radius: ENEMY_STATS.mantis.shotRadius,
+        power: o.power,
+        delivery: 'shot',
+      });
+      events.emit(tick, 'enemy_fire', { id: e.id, shot: shot.id, x: r2(e.x), z: r2(e.z), dx: r2(dirX), dz: r2(dirZ) });
+      return shot;
+    },
+    spawnChild: (etype, x, z, o) => spawnScaled(etype, x, z, o),
   };
+  // onDeath hooks (Rotcap spore burst, Brood split). The `death` event fires
+  // inside combat.kill before the body is despawned, so the corpse is readable.
+  events.on('death', (ev) => {
+    const A = ARCHETYPES[ev.kind];
+    if (!A || typeof A.onDeath !== 'function') return;
+    const e = registry.byId(ev.id);
+    if (!e || e.state !== 'active') return;
+    A.onDeath(ctx, e, ev.tick);
+  });
 
   function spawn(etype, x = 0, z = 0, wave = -1, opts = null) {
     const A = ARCHETYPES[etype] ?? null;

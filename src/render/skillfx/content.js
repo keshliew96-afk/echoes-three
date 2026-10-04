@@ -715,7 +715,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
       rig.lastX = pos.x;
       rig.lastZ = pos.z;
       rig.g.position.set(pos.x, 0, pos.z);
-      const scale = e.kind === 'stag' ? 2.2 : e.radius ? Math.max(0.8, e.radius / 0.3) : 1;
+      const scale = e.kind === 'stag' || e.boss === true ? 2.2 : e.radius ? Math.max(0.8, e.radius / 0.3) : 1;
       const P = rig.parts;
       const slow = !!liveStatus(e, 'slow', tick);
       P.slow.visible = P.slowInk.visible = P.slowGlow.visible = slow;

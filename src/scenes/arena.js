@@ -1622,7 +1622,7 @@ export function createArenaScene(stage, toggles, ctx) {
     // the death collapse. Braziers, lanterns and the monolith are untouched.
     let stagAlive = false;
     for (const e of world.entities()) {
-      if (e.kind === 'stag' && e.hp > 0) {
+      if ((e.kind === 'stag' || e.boss === true) && e.hp > 0) {
         stagAlive = true;
         break;
       }

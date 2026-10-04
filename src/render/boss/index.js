@@ -30,12 +30,19 @@ const BOSS_FLASH = Object.freeze({ ticks: 5, peak: 0.28, refractoryTicks: 8 });
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { buildStag } from './stag.js';
+import { buildHeron } from './heron.js';
+import { buildWyrm } from './wyrm.js';
+import { createTelegraphShapes } from '../enemies/shapes.js';
 import { makeQuakeRing, makeQuakeBurst } from './quake.js';
 import { releaseTree } from '../geocache.js';
 import { warmPark } from '../warmup.js';
 import { STAG } from '../../sim/boss.js';
 import { impactFx } from '../vfx/hub.js';
 
+// One rig builder per boss kind (docs/CONTENT_PLAN.md §2). Every rig shares
+// the Stag's interface: { group, setYaw, setFlash, pose }.
+const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: buildWyrm };
+const isBossBody = (e) => e.kind === 'stag' || e.boss === true;
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;
 const BURST_SEC = 0.55;
@@ -94,7 +101,12 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   // §1's "no >100 ms hitches" makes that a defect, so the rig, the quake ring
   // and one burst are built and COMPILED a few frames after boot, parked far
   // under the floor, and then pooled for reuse.
-  const spareRigs = [];
+  const spareRigs = []; // Stag rigs
+  const spareByKind = { heron: [], wyrm: [] };
+  // Lane / cone telegraphs (the Heron's spear, the Wyrm's breath) reuse the
+  // enemy layer's pooled Ember shapes; rings stay the Stag's quake ring.
+  const shapes = createTelegraphShapes(root);
+  let shapeRec = null; // { shape, kind }
   let warmFrames = 0;
   let warmed = false;
 
@@ -119,6 +131,11 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     // warmPark keeps all three in the scene for a few RENDERED frames,
     // sub-pixel and under the floor, then hands the rig back to the pool.
     warmPark(root, rig.group, () => spareRigs.push(rig));
+    for (const k of Object.keys(spareByKind)) {
+      const r2 = BUILDERS[k](cosmetic);
+      r2.kind = k;
+      warmPark(root, r2.group, () => spareByKind[k].push(r2));
+    }
     warmPark(root, r.group);
     warmPark(root, b.group);
     try {
@@ -130,8 +147,12 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
 
   // Take a rig from the pool (or build one) with every animated value back at
   // its spawn state — the death clip squashes scale and burns emissive.
-  function acquireRig() {
-    const rig = spareRigs.pop() || buildStag(cosmetic);
+  function acquireRig(kind = 'stag') {
+    let rig;
+    if (spareByKind[kind]) {
+      rig = spareByKind[kind].pop() || BUILDERS[kind](cosmetic);
+      rig.kind = kind;
+    } else rig = spareRigs.pop() || buildStag(cosmetic);
     rig.group.position.set(0, 0, 0);
     rig.group.scale.set(1, 1, 1);
     rig.group.visible = true;
@@ -143,7 +164,8 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     root.remove(rig.group);
     rig.group.scale.set(1, 1, 1);
     rig.setFlash(0);
-    if (spareRigs.length < 2) spareRigs.push(rig);
+    const pool = spareByKind[rig.kind] ?? spareRigs;
+    if (pool.length < 2) pool.push(rig);
   }
 
   // The Stag is a 2.2x-scale body, so a full-intensity emissive latch is a very
@@ -158,12 +180,17 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     if (ev.tick - rec.flashStartTick < BOSS_FLASH.refractoryTicks) return;
     rec.flashStartTick = ev.tick;
   });
-  bus.on('boss_quake_resolve', (ev) => {
+  const burstAt = (ev) => {
     const b = makeQuakeBurst(ev.radius ?? STAG.quake.radius);
     b.at(ev.x, ev.z);
     root.add(b.group);
     bursts.push({ b, age: 0 });
-  });
+  };
+  bus.on('boss_quake_resolve', burstAt);
+  // The kit bosses' ring beats land with the same burst (wingbeat, surfacing, emergence).
+  bus.on('boss_wingbeat', burstAt);
+  bus.on('boss_surface', burstAt);
+  bus.on('boss_emerge', burstAt);
   bus.on('death', (ev) => {
     if (!rec || ev.id !== rec.id) return;
     rec.rig.setFlash(BOSS_FLASH.peak);
@@ -181,6 +208,13 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   });
 
   function dropRing() {
+    if (shapeRec) {
+      shapes.release(shapeRec.shape);
+      shapeRec = null;
+    }
+    dropQuakeRing();
+  }
+  function dropQuakeRing() {
     if (ring) {
       root.remove(ring.group);
       releaseTree(ring.group); // one ring per quake telegraph — its four materials are its own
@@ -276,15 +310,20 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
 
     let ent = null;
     for (const e of world.entities()) {
-      if (e.kind === 'stag') {
+      if (isBossBody(e)) {
         ent = e;
         break;
       }
     }
 
     if (ent) {
+      if (rec && rec.id !== ent.id) {
+        releaseRig(rec.rig);
+        dropRing();
+        rec = null;
+      }
       if (!rec || rec.id !== ent.id) {
-        const rig = acquireRig();
+        const rig = acquireRig(ent.kind);
         root.add(rig.group);
         rec = {
           id: ent.id,
@@ -313,7 +352,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       rec.walkPhase += simSpeed * dt * Math.PI * WALK_HZ;
       const telTarget = ent.telegraph ? 1 : 0;
       rec.telegraphK += (telTarget - rec.telegraphK) * (1 - Math.exp(-12 * dt));
-      const lungeTarget = ent.lungeTicksLeft > 0 ? 1 : 0;
+      const lungeTarget = ent.lungeTicksLeft > 0 || ent.mode === 'dash' ? 1 : 0;
       rec.lungeK += (lungeTarget - rec.lungeK) * (1 - Math.exp(-18 * dt));
 
       const hpFrac = Math.max(0, ent.hp / ent.maxHp);
@@ -324,6 +363,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
         telegraphK: rec.telegraphK,
         lungeK: rec.lungeK,
         hpFrac,
+        e: ent,
       });
 
       // Linear decay from the hit tick; peak capped below HITFLASH.intensity so
@@ -335,8 +375,27 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
           : 0;
       rec.rig.setFlash(lit);
 
+      // Lane / cone telegraphs (kit bosses): the pooled Ember shapes.
+      const tk = ent.telegraph ? ent.telegraph.kind : null;
+      if (tk === 'lane' || tk === 'cone') {
+        if (ring) {
+          root.remove(ring.group);
+          releaseTree(ring.group);
+          ring = null;
+        }
+        if (!shapeRec || shapeRec.kind !== tk) {
+          if (shapeRec) shapes.release(shapeRec.shape);
+          shapeRec = { shape: shapes.acquire(tk), kind: tk };
+        }
+        const span = ent.telegraph.resolveTick - ent.telegraph.startTick;
+        const k = span > 0 ? (tick - ent.telegraph.startTick) / span : 1;
+        shapeRec.shape.set(ent.telegraph, tSec, Math.min(1, Math.max(0, k)));
+      } else if (shapeRec) {
+        shapes.release(shapeRec.shape);
+        shapeRec = null;
+      }
       // Quake ring, straight off sim entity state.
-      if (ent.telegraph) {
+      if (ent.telegraph && tk !== 'lane' && tk !== 'cone') {
         if (!ring) {
           ring = makeQuakeRing(ent.telegraph.radius ?? STAG.quake.radius);
           root.add(ring.group);
@@ -356,8 +415,8 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
         for (let i = 0; i < n; i++)
           impactFx.embers(ent.telegraph.x, ent.telegraph.z, { n: 1, radius: rr * 0.95 });
       } else {
-        dropRing();
-        emberDebt = 0;
+        dropQuakeRing();
+        if (!shapeRec) emberDebt = 0;
       }
     } else if (rec) {
       releaseRig(rec.rig);
@@ -394,7 +453,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       const squash = 1 - k * 0.85;
       d.rig.group.scale.set(1 + k * 0.35, Math.max(0.02, squash), 1 + k * 0.35);
       d.rig.setFlash(Math.max(0, 1 - k * 1.6));
-      d.rig.pose({ t: tSec, walkPhase: 0, moveK: 0, telegraphK: 0, lungeK: 0, hpFrac: 0 });
+      d.rig.pose({ t: tSec, walkPhase: 0, moveK: 0, telegraphK: 0, lungeK: 0, hpFrac: 0, e: null });
     }
 
     frameBoss(dt); // last word on the camera this frame (room 8 only)
@@ -442,6 +501,10 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     return {
       boss: !!rec,
       ring: !!ring,
+      shape: shapeRec ? shapeRec.kind : null,
+      shapeAt: shapeRec
+        ? { visible: shapeRec.shape.group.visible, x: Math.round(shapeRec.shape.group.position.x * 100) / 100, z: Math.round(shapeRec.shape.group.position.z * 100) / 100, inScene: !!shapeRec.shape.group.parent }
+        : null,
       bursts: bursts.length,
       dying: dying.length,
       roomDimmed: !!dimmed,

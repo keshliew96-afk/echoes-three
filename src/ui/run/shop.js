@@ -50,6 +50,10 @@ import { PALETTE, CLASS_ACCENTS } from '../../data/palette.js';
 import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
 import { createPartyStrip } from './partystrip.js';
 import { service } from '../../app/registry.js';
+import { bossNameFor } from '../../data/levels.js';
+
+// 'Advance to the Drowned Heron' — the act's own room-8 boss.
+const advanceLabel = (view) => `Advance to ${bossNameFor(view && view.act).replace(/^The /, 'the ')}`;
 
 // The viewer's seat in a network session (a guest: its class seat).
 function netSeat() {
@@ -413,6 +417,10 @@ export function createShopScreen({ run, build, party = () => null }) {
   function render(view) {
     lastView = view;
     if (view.phase !== 'shop') return;
+    if (!view.partyShop) {
+      const t = advanceLabel(view);
+      if (advanceBtn.textContent !== t) advanceBtn.textContent = t;
+    }
     if (viewSeat > 0 && !view.partyShop) viewSeat = 0;
     // PARTY: a network guest's shop opens on its own tab.
     const gSeat = netSeat();
@@ -430,7 +438,7 @@ export function createShopScreen({ run, build, party = () => null }) {
       const rows = [0, 1, 2, 3].map((k) => ({ chip: `◉ ${k === 0 ? view.shop.wallet : ps.shelves[k].purse}${ps.done && ps.done[k] ? ' · Done' : ''}`, tone: k === viewSeat ? 'take' : '' }));
       strip.update(rows, viewSeat);
       const buyers = [1, 2, 3].filter((k) => !ps.touched[k] && ps.shelves[k].stock.some((c) => c.marked && !c.sold)).map((k) => CLASS_NAME[CLASS_OF_SEAT[k]]);
-      const base = 'Advance to the Hollow Stag';
+      const base = advanceLabel(view);
       // BUILD_BRIEF §25.7: a guest's lamp reads "Done" (the host's Advance
       // leaves at once when every human is Done, else a 15 s countdown).
       const lamp =

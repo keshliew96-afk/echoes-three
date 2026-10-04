@@ -10,6 +10,7 @@ import { CURSES } from '../../sim/relics.js';
 import { curseIconHtml } from './relicicons.js';
 import { esc } from './style.js';
 import { WIN_GLYPH, REWARD_GLYPH } from '../../sim/run.js';
+import { bossNameFor } from '../../data/levels.js';
 
 const WIN_LABEL = {
   kill_all: 'clear every enemy',
@@ -94,7 +95,7 @@ export function createPathScreen({ run }) {
     // once, so no door carries a third piece of information.
     const win = p.options[0].win;
     legendEl.innerHTML = `
-      <span><b>${WIN_GLYPH[win] ?? '⚔'}</b> ${esc(WIN_LABEL[win] ?? win)}</span>
+      <span><b>${WIN_GLYPH[win] ?? '⚔'}</b> ${esc(win === 'boss' ? bossNameFor(view.act).replace(/^The /, 'the ') : WIN_LABEL[win] ?? win)}</span>
       <span><b>${REWARD_GLYPH.skill}</b> ${esc(REWARD_LABEL.skill)}</span>
       <span><b>${REWARD_GLYPH.node}</b> ${esc(REWARD_LABEL.node)}</span>`;
     // RELICS: what the cursed door costs and pays (words, not colour alone).

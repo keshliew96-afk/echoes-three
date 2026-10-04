@@ -174,7 +174,13 @@ export function createCampaignManager({ world, bus, scene, stage, app, registry,
     skipRequested = null;
     waitedMs = 0;
   };
-  bus.on('run_end', toCamp);
+  // The victory / defeat card keeps its level on screen (gauntlet r6 J6-F1):
+  // only the level's effects and voices go at run_end; the level itself stays
+  // resident until the return to camp.
+  bus.on('run_end', (ev) => {
+    if (ev && (ev.result === 'victory' || ev.result === 'defeat')) clearPresentation();
+    else toCamp();
+  });
   bus.on('return_to_camp', toCamp);
   // A load (or a network re-baseline) lands anywhere: resident = the level it
   // is in (the card's next level while a card is up), Level 1 in camp.

@@ -11,7 +11,7 @@
 //   elite     = ELITE[act](room)
 //   interval  = 480 ticks × (1 − 0.04 × (room − 1)) × INTERVAL_ACT[act]
 //   bossHp    = 2400 × T × STAG_HP_LEVEL[act] (1 / 1.8 / 1.2, PARTY)
-//   bossDmgMul = (1 + BOSS_DMG_SLOPE × (T − 1)) × STAG_DMG_LEVEL[act], slope 1.8 (PARTY), 4 / 2 / 1 (fix-PARTY-r5)
+//   bossDmgMul = (1 + BOSS_DMG_SLOPE × (T − 1)) × STAG_DMG_LEVEL[act], slope 1.8 (PARTY), 2.1 / 2 / 1 (fix-M4a-r6)
 //   boss adds = the act tier alone (hpMul T, dmgMul 1 + BOSS_DMG_SLOPE(T − 1), no STAG_DMG_LEVEL)
 //               — the Stag and its adds scale together (sim/run.js)
 //
@@ -104,7 +104,18 @@ export const LEVEL_DMG = Object.freeze([null, 0.75, 1.0, 1.0]);
 // hit that can down the Archer or a just-revived member, as the Level 3
 // Stag's already could (72 / 57). Measured: tools/gntfixPARTY5-sweep.mjs,
 // tools/gntPARTY-band.mjs (docs/gauntlet/fix-PARTY-r5.md).
-export const STAG_DMG_LEVEL = Object.freeze([null, 4.0, 2.0, 1.0]);
+//
+// fix-M4a-r6 (content r6 F1, journey r6 J6-F2 — the dated BUILD_BRIEF §23.2
+// note): Level 1 x4 -> x2.1. At x4 the Level 1 Stag's quake / trample (60 / 48,
+// crits 72-90) wiped every party whose Healer had not socketed nodes (headless
+// sweep tools/gntfixM4a6-stag.mjs, seeds 1-10: 0/10 clears, first down 0.78 s
+// into the fight), so the original 8-room loop no longer played by real input.
+// At x2.1 (32 / 25) that party clears 10/10 and the autopilot's built party
+// 10/10; Levels 2 and 3 are unchanged. GP.13 (d) on Level 1 (0/5 seeds with
+// a down) went to the design owner, who ruled (2026-10-03) that Level 1's bite
+// is an HP dip below 35 % counted over seeds 1-40 against v0.5.150: 13 of 40
+// vs 7 of 40 at x2.1 (tools/gntPARTY-band.mjs 18/18).
+export const STAG_DMG_LEVEL = Object.freeze([null, 2.1, 2.0, 1.0]);
 // PARTY (PLAN §16.9): the determinism proof's Node-only switch — the
 // v0.5.150 (CAMPAIGN) constants back in force (cmd('difficultyLegacy')). The
 // game never sets it; tools/gntPARTY-goldenproof.mjs does.
@@ -137,6 +148,12 @@ export const THREAT = Object.freeze({
   moth: 1.3,
   ram: 3.0,
   mole: 1.5,
+  // Content slice 1 (docs/CONTENT_PLAN.md §3).
+  rotcap: 1.0,
+  snail: 1.4,
+  crow: 1.6,
+  brood: 2.0, // its two Broodlings ride on the mother's cost
+  broodling: 0.4,
 });
 export const ELITE_COST = 1.8;
 export const ELITE_MUL = Object.freeze({ hp: 1.8, dmg: 1.25, scale: 1.2 });
