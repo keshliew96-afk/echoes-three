@@ -24,6 +24,8 @@
 //     gravefire    vents [[x, z] x3], offset (ticks into its 420-tick cycle)
 //   interactables:  { type, x, z, yaw?, ...params }
 //     dewfont · barricade (yaw, skin) · keg · sluice (lanes: millrace indices) · bell
+//   spawns (optional): [[x, z] x 8] this room's spawn ring, index-aligned with
+//                   waves.js SPAWN_POINTS (layouts 10-15)
 export const LAYOUTS = Object.freeze({
   // ---------------------------------------------------------- Act I
   1: Object.freeze({
@@ -199,15 +201,189 @@ export const LAYOUTS = Object.freeze({
       { type: 'keg', x: 4.8, z: 4.2 },
     ]),
   }),
+
+  // ------------------------------------------- slice 2 (docs/CONTENT_PLAN.md §4)
+  // Two more per expedition. These also carry `spawns`: the room's own spawn
+  // ring, index-aligned with waves.js SPAWN_POINTS (the wave roll still draws
+  // a point index; run.js relocates the rolled units onto this ring, no extra
+  // draw). Campaign rooms only: the legacy single-level run keeps each level's
+  // `legacyLayouts` table so the Node goldens stay bit-identical.
+
+  // Act I · 10 — three bramble rows: a north hedge with one gate and a hedge
+  // down each flank. Spawns sit at the east and west ends, so charges run the
+  // hedge lanes; kegs cap the flank rows.
+  10: Object.freeze({
+    id: 10,
+    act: 1,
+    biome: 'wood',
+    name: 'Bramble Maze',
+    spawns: Object.freeze([[-10.4, -6.2], [10.4, -6.2], [-10.6, -1.0], [10.6, -1.0], [-10.6, 3.0], [10.6, 3.0], [-8.6, 6.6], [8.6, 6.6]]),
+    hazards: Object.freeze([
+      { type: 'bramble', x: -6.3, z: -4.8, r: 0.95 },
+      { type: 'bramble', x: -4.15, z: -5.0, r: 0.95 },
+      { type: 'bramble', x: -2.0, z: -5.1, r: 0.95 },
+      { type: 'bramble', x: 2.0, z: -5.1, r: 0.95 },
+      { type: 'bramble', x: 4.15, z: -5.0, r: 0.95 },
+      { type: 'bramble', x: 6.3, z: -4.8, r: 0.95 },
+      { type: 'bramble', x: -6.8, z: -1.6, r: 0.95 },
+      { type: 'bramble', x: -6.8, z: 0.55, r: 0.95 },
+      { type: 'bramble', x: -6.6, z: 2.7, r: 0.95 },
+      { type: 'bramble', x: 6.8, z: -1.6, r: 0.95 },
+      { type: 'bramble', x: 6.8, z: 0.55, r: 0.95 },
+      { type: 'bramble', x: 6.6, z: 2.7, r: 0.95 },
+      { type: 'puffcap', x: -3.6, z: 4.4, offset: 90, minRoom: 2 },
+      { type: 'puffcap', x: 3.6, z: 4.4, offset: 240, minRoom: 2 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'dewfont', x: 0.0, z: -5.8 },
+      { type: 'keg', x: -7.0, z: -3.3 },
+      { type: 'keg', x: 7.0, z: -3.3 },
+      { type: 'keg', x: -6.6, z: 4.6 },
+      { type: 'keg', x: 6.6, z: 4.6 },
+    ]),
+  }),
+  // Act I · 11 — an oak lies across the west and middle of the north half (a
+  // timber barricade trunk you can chop through), its crown a bramble thicket
+  // at the east end. Most spawns are behind the trunk; puffcaps grow in its lee.
+  11: Object.freeze({
+    id: 11,
+    act: 1,
+    biome: 'wood',
+    name: 'Fallen Oak',
+    spawns: Object.freeze([[-6.4, -6.9], [6.6, -6.9], [-10.4, -6.2], [10.4, -5.8], [-2.4, -6.9], [2.4, -6.9], [-10.6, 3.4], [10.6, 2.6]]),
+    hazards: Object.freeze([
+      { type: 'bramble', x: 2.6, z: -4.0, r: 1.05 },
+      { type: 'bramble', x: 4.9, z: -3.7, r: 0.95 },
+      { type: 'puffcap', x: -7.0, z: -2.5, offset: 0, minRoom: 2 },
+      { type: 'puffcap', x: -4.2, z: -2.5, offset: 160, minRoom: 2 },
+      { type: 'puffcap', x: 4.6, z: 3.8, offset: 80, minRoom: 2 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'barricade', x: -9.0, z: -3.9, yaw: 0.06, skin: 'timber' },
+      { type: 'barricade', x: -7.25, z: -4.0, yaw: 0.0, skin: 'timber' },
+      { type: 'barricade', x: -5.5, z: -4.1, yaw: -0.04, skin: 'timber' },
+      { type: 'barricade', x: -3.75, z: -4.2, yaw: 0.0, skin: 'timber' },
+      { type: 'barricade', x: -2.0, z: -4.3, yaw: 0.08, skin: 'timber' },
+      { type: 'dewfont', x: -6.2, z: 3.4 },
+      { type: 'barricade', x: 6.2, z: 0.6, yaw: 1.4, skin: 'crates' },
+      { type: 'keg', x: 6.2, z: -2.6 },
+      { type: 'keg', x: -9.6, z: -2.4 },
+    ]),
+  }),
+
+  // Act II · 12 — two short millraces flowing opposite ways, west lane south
+  // and east lane north, surging half a cycle apart. Each lane has its own
+  // sluice; every spawn sits outside the lanes, so every body crosses water.
+  12: Object.freeze({
+    id: 12,
+    act: 2,
+    biome: 'mill',
+    name: 'Sluice Gates',
+    spawns: Object.freeze([[-8.4, -6.6], [8.4, -6.6], [-10.4, -2.6], [10.4, -2.6], [-10.4, 2.6], [10.4, 2.6], [-8.4, 6.6], [8.4, 6.6]]),
+    hazards: Object.freeze([
+      { type: 'millrace', x0: -4.8, z0: -5.4, x1: -4.8, z1: 5.4, w: 1.4, offset: 0 },
+      { type: 'millrace', x0: 4.8, z0: 5.4, x1: 4.8, z1: -5.4, w: 1.4, offset: 270 },
+      { type: 'puffcap', x: -2.6, z: -4.6, offset: 60 },
+      { type: 'puffcap', x: 2.6, z: 4.6, offset: 210 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'sluice', x: -6.6, z: -2.4, yaw: 1.5708, lanes: [0] },
+      { type: 'sluice', x: 6.6, z: 2.4, yaw: -1.5708, lanes: [1] },
+      { type: 'dewfont', x: 0.0, z: -5.6 },
+      { type: 'barricade', x: -2.9, z: 3.8, yaw: 0.0, skin: 'timber' },
+      { type: 'barricade', x: 2.9, z: -3.8, yaw: 0.0, skin: 'crates' },
+      { type: 'keg', x: -7.0, z: 4.4 },
+      { type: 'keg', x: 7.0, z: -4.4 },
+    ]),
+  }),
+  // Act II · 13 — a cellar squeezed between two races along the north and
+  // south walls, with a broken ring of barricades round the middle. Bodies
+  // enter from the flooded east and west ends; one sluice stops both races.
+  13: Object.freeze({
+    id: 13,
+    act: 2,
+    biome: 'mill',
+    name: 'Flooded Cellar',
+    spawns: Object.freeze([[-10.6, -3.0], [10.6, -3.0], [-10.6, 0.2], [10.6, 0.2], [-10.6, 3.2], [10.6, 3.2], [-7.6, -7.0], [7.6, 7.0]]),
+    hazards: Object.freeze([
+      { type: 'millrace', x0: -9.0, z0: -5.2, x1: 9.0, z1: -5.2, w: 1.4, offset: 90 },
+      { type: 'millrace', x0: 9.0, z0: 5.4, x1: -9.0, z1: 5.4, w: 1.4, offset: 360 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'barricade', x: -4.4, z: -0.2, yaw: 1.5708, skin: 'timber' },
+      { type: 'barricade', x: 4.4, z: -0.2, yaw: 1.5708, skin: 'crates' },
+      { type: 'barricade', x: -3.3, z: -3.4, yaw: 0.785, skin: 'crates' },
+      { type: 'barricade', x: 3.3, z: -3.4, yaw: -0.785, skin: 'timber' },
+      { type: 'barricade', x: -3.2, z: 3.2, yaw: -0.785, skin: 'timber' },
+      { type: 'barricade', x: 3.2, z: 3.2, yaw: 0.785, skin: 'crates' },
+      { type: 'sluice', x: -9.0, z: 1.6, yaw: 1.5708, lanes: [0, 1] },
+      { type: 'dewfont', x: 7.4, z: -1.6 },
+      { type: 'keg', x: -6.6, z: -2.4 },
+      { type: 'keg', x: 6.6, z: 2.2 },
+    ]),
+  }),
+
+  // Act III · 14 — a ruined bell tower: four cairn walls round the middle with
+  // doorways at the corners, a bell outside each north doorway, rockfall, and
+  // one gravefire line in the south. Spawns come from the four corners.
+  14: Object.freeze({
+    id: 14,
+    act: 3,
+    biome: 'barrow',
+    name: 'Bell Tower',
+    spawns: Object.freeze([[-10.6, -6.6], [10.6, -6.6], [-10.6, 6.4], [10.6, 6.4], [-7.4, -6.9], [7.4, -6.9], [-7.6, 6.9], [7.6, 6.9]]),
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gravefire', vents: [[-1.5, 6.3], [0.0, 6.6], [1.5, 6.3]], offset: 140 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'barricade', x: -2.4, z: -4.4, yaw: 0.0, skin: 'cairn' },
+      { type: 'barricade', x: 2.4, z: -4.4, yaw: 0.0, skin: 'cairn' },
+      { type: 'barricade', x: -4.4, z: -1.6, yaw: 1.5708, skin: 'cairn' },
+      { type: 'barricade', x: 4.4, z: -1.6, yaw: 1.5708, skin: 'cairn' },
+      { type: 'barricade', x: -2.6, z: 4.4, yaw: 0.0, skin: 'cairn' },
+      { type: 'barricade', x: 2.6, z: 4.4, yaw: 0.0, skin: 'cairn' },
+      { type: 'bell', x: -4.8, z: -4.6 },
+      { type: 'bell', x: 4.8, z: -4.6 },
+      { type: 'dewfont', x: 0.0, z: -6.0 },
+      { type: 'keg', x: -7.4, z: 2.6 },
+      { type: 'keg', x: 7.4, z: 2.6 },
+    ]),
+  }),
+  // Act III · 15 — five gravefire lines on a grid, rippling a fifth of a cycle
+  // apart; spawns in the gaps between the graves. No rockfall: the floor is
+  // the threat.
+  15: Object.freeze({
+    id: 15,
+    act: 3,
+    biome: 'barrow',
+    name: 'Open Grave',
+    spawns: Object.freeze([[-5.6, -6.6], [5.6, -6.6], [-10.4, -0.4], [10.4, -0.4], [-2.6, -6.9], [2.6, -6.9], [-5.6, 6.4], [5.6, 6.4]]),
+    hazards: Object.freeze([
+      { type: 'gravefire', vents: [[-7.6, -4.2], [-5.6, -4.2], [-3.6, -4.2]], offset: 0 },
+      { type: 'gravefire', vents: [[3.6, -4.2], [5.6, -4.2], [7.6, -4.2]], offset: 84 },
+      { type: 'gravefire', vents: [[-7.6, 3.4], [-5.6, 3.4], [-3.6, 3.4]], offset: 168 },
+      { type: 'gravefire', vents: [[3.6, 3.4], [5.6, 3.4], [7.6, 3.4]], offset: 252 },
+      { type: 'gravefire', vents: [[0.0, 4.8], [0.0, 5.8], [0.0, 6.8]], offset: 336 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'barricade', x: -6.6, z: -0.4, yaw: 1.5708, skin: 'cairn' },
+      { type: 'barricade', x: 6.6, z: -0.4, yaw: 1.5708, skin: 'cairn' },
+      { type: 'bell', x: -9.4, z: 5.2 },
+      { type: 'dewfont', x: 9.4, z: -5.6 },
+      { type: 'keg', x: -4.6, z: -2.6 },
+      { type: 'keg', x: 4.6, z: -2.6 },
+    ]),
+  }),
 });
 
-export const LAYOUT_IDS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+export const LAYOUT_IDS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
 
 export function layoutFor(id) {
   return LAYOUTS[id] ?? null;
 }
 
-// Act of a layout id (4-6 -> II, 7-9 -> III), used by ?variant=N / ?layout=N.
+// Act of a layout id (4-6, 12-13 -> II; 7-9, 14-15 -> III), used by ?variant=N / ?layout=N.
 export function actOfLayout(id) {
   return LAYOUTS[id] ? LAYOUTS[id].act : 1;
 }

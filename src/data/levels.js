@@ -19,6 +19,8 @@
 //   layouts                    room table: layout ids (data/layouts.js, M4b);
 //                              the run frame rolls one per combat room, never
 //                              the same layout twice in a row
+//   legacyLayouts              the pre-slice-2 table the legacy single-level
+//                              run keeps (Node goldens, act runner)
 //   bossLayout                 boss-room dressing
 //   music                      audio theme id (M3 registerMusicTheme)
 //   roster                     etype -> spawn weight for budget draws
@@ -45,7 +47,8 @@ export const LEVELS = Object.freeze({
     blurb: 'Night-dark woodland where the beasts first turned.',
     tier: 1,
     biome: 'wood',
-    layouts: Object.freeze([1, 2, 3]),
+    layouts: Object.freeze([1, 2, 3, 10, 11]),
+    legacyLayouts: Object.freeze([1, 2, 3]),
     bossLayout: 3,
     music: 'wood',
     // Slice 2 (Act I balance pass): the Rotcap, the Briar Wasp and the
@@ -74,7 +77,8 @@ export const LEVELS = Object.freeze({
     blurb: 'Flooded millrace and rotting weirs; the water runs wrong.',
     tier: 2,
     biome: 'mill',
-    layouts: Object.freeze([4, 5, 6]),
+    layouts: Object.freeze([4, 5, 6, 12, 13]),
+    legacyLayouts: Object.freeze([4, 5, 6]),
     bossLayout: 6,
     music: 'mill',
     roster: Object.freeze({ boar: 0.1, mantis: 0.17, quillback: 0.12, toad: 0.2, moth: 0.2, rotcap: 0.11, snail: 0.1, crab: 0.12, lamprey: 0.1 }),
@@ -100,7 +104,8 @@ export const LEVELS = Object.freeze({
     blurb: 'Burial mounds under a cold moon, where the corruption is oldest.',
     tier: 3,
     biome: 'barrow',
-    layouts: Object.freeze([7, 8, 9]),
+    layouts: Object.freeze([7, 8, 9, 14, 15]),
+    legacyLayouts: Object.freeze([7, 8, 9]),
     bossLayout: 9,
     music: 'barrow',
     roster: Object.freeze({ mantis: 0.1, quillback: 0.1, moth: 0.14, ram: 0.16, mole: 0.22, crow: 0.14, brood: 0.14, gravewisp: 0.1, knight: 0.06 }),
