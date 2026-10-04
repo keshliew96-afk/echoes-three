@@ -14,7 +14,8 @@
 import { esc } from './style.js';
 import { SKILLS } from '../../sim/skills.js';
 import { service } from '../../app/registry.js';
-import { bossFor } from '../../data/levels.js';
+import { bossFor, levelFor } from '../../data/levels.js';
+import { endlessBossIndex } from '../../data/endless.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 const FLAVOUR = {
@@ -113,14 +114,23 @@ export function createTransitScreen({ run }) {
     if (!card) return;
     const s = card.summary || {};
     const to = card.to;
+    // ENDLESS (docs/ENDLESS.md): `card.depth` = the depth the card leads to.
+    const depth = Number.isFinite(card.depth) ? card.depth : null;
     if (card.kind === 'clear') {
-      kicker.textContent = `LEVEL ${ROMAN[card.from] ?? card.from} CLEARED`;
-      headline.textContent = (card.fromName || '').toUpperCase();
       const rv = v && !v.__card ? v : null;
-      const met = rv && rv.frame ? bossFor(card.from, rv.frame.seed).kind : null;
-      flavour.textContent = BOSS_FLAVOUR[met] ?? FLAVOUR[card.from] ?? 'The way ahead opens.';
+      let met = rv && rv.frame ? bossFor(card.from, rv.frame.seed).kind : null;
+      if (depth !== null && depth - 1 > 3 && rv && rv.frame) {
+        const lv = levelFor(card.from);
+        met = lv.bosses ? lv.bosses[endlessBossIndex(depth - 1, rv.frame.seed)].kind : met;
+      }
+      kicker.textContent = depth !== null ? `DEPTH ${depth - 1} CLEARED` : `LEVEL ${ROMAN[card.from] ?? card.from} CLEARED`;
+      headline.textContent = (card.fromName || '').toUpperCase();
+      flavour.textContent =
+        depth === 4
+          ? 'The campaign is won. The road does not end; it turns back into the dark wood, deeper than before.'
+          : BOSS_FLAVOUR[met] ?? FLAVOUR[card.from] ?? 'The way ahead opens.';
       nextRow.style.display = '';
-      nextName.textContent = `Level ${ROMAN[to] ?? to} · ${card.name}`;
+      nextName.textContent = depth !== null ? `Depth ${depth} · ${card.name}${depth > 3 ? ' · danger rises' : ''}` : `Level ${ROMAN[to] ?? to} · ${card.name}`;
       carryEl.innerHTML = [
         row('SKILLS CARRIED', `${(s.skills || []).length} / 4`),
         row('SOCKETS FILLED', `${s.socketed ?? 0} / ${s.sockets ?? 0}`),
@@ -129,9 +139,9 @@ export function createTransitScreen({ run }) {
         row('PARTY', 'restored to full'),
       ].join('');
     } else {
-      kicker.textContent = 'SETTING OUT';
+      kicker.textContent = depth !== null ? 'THE ENDLESS DESCENT' : 'SETTING OUT';
       headline.textContent = `LEVEL ${ROMAN[to] ?? to} · ${String(card.name || '').toUpperCase()}`;
-      flavour.textContent = 'The campaign begins here and runs on to the final level.';
+      flavour.textContent = depth !== null ? 'Through all three lands and down again, until the party falls.' : 'The campaign begins here and runs on to the final level.';
       nextRow.style.display = 'none';
       const g = s.grant;
       carryEl.innerHTML = g

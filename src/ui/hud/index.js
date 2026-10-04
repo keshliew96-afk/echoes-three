@@ -36,7 +36,12 @@ const MODE_WORD = { kill_all: 'CLEAR THE CLEARING', defend: 'HOLD THE WAYSTONE',
 function locationCopy(scene, rv) {
   // CAMPAIGN (PLAN §12.6): between two levels the plate says so (the card
   // names both levels).
-  if (rv && rv.active && rv.phase === 'transit') return { name: 'ON THE ROAD', sub: 'BETWEEN LEVELS' };
+  if (rv && rv.active && rv.phase === 'transit') return { name: 'ON THE ROAD', sub: rv.endless ? 'THE DESCENT GOES ON' : 'BETWEEN LEVELS' };
+  // ENDLESS (docs/ENDLESS.md): the depth leads the plate's second line.
+  if (rv && rv.active && rv.room >= 1 && rv.endless) {
+    const c = locationCopy(scene, { ...rv, endless: undefined });
+    return { name: c.name, sub: `DEPTH ${rv.endless.depth} · ${c.sub.replace(/^ROOM (\d+) OF (\d+)/, 'ROOM $1/$2')}`, depth: rv.endless.depth };
+  }
   if (rv && rv.active && rv.room >= 1) {
     const room = rv.room;
     const total = rv.rooms ?? 8;

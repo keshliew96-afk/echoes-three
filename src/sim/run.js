@@ -76,6 +76,8 @@ import { PARTY_ALLIES, STARTING_SKILLS, SKILLS } from './skills.js';
 import { createDraftSystem, SPOILS_PER_CLEAR } from './draft.js';
 import { NODES } from './nodes.js';
 import { levelFor, ACT_IDS, bossFor } from '../data/levels.js';
+// ENDLESS (docs/ENDLESS.md): the descent past Act III.
+import { endlessDifficulty, endlessLevel, endlessBossIndex, endlessNextLevel, endlessRules, levelOfDepth } from '../data/endless.js';
 import { LAYOUTS } from '../data/layouts.js';
 import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
@@ -224,7 +226,18 @@ export function createRunSystem({
   // pure hash of the seed, nothing saved. `bossPick` is the harness override
   // (cmd('startRun', { act, boss })), saved only while it is set.
   let bossPick = null;
-  const currentBoss = () => bossFor(act, frame ? frame.seed : null, bossPick);
+  // ENDLESS: past Depth 3 each cycle meets the act's other boss in turn.
+  const currentBoss = () => {
+    if (!bossPick && endlessDepth() > 3) {
+      const lv = levelFor(act);
+      if (lv.bosses && lv.bosses.length) return lv.bosses[endlessBossIndex(endlessDepth(), frame ? frame.seed : null)];
+    }
+    return bossFor(act, frame ? frame.seed : null, bossPick);
+  };
+  // ENDLESS: the depth of a live endless campaign (= its level index), else 0.
+  const endlessDepth = () => (campaign && campaign.endless ? campaign.index : 0);
+  // The level after `level` in this campaign: the endless cycle wraps.
+  const nextOf = (c, level) => (c && c.mode === 'campaign' ? (c.endless ? endlessNextLevel(level) : nextLevel(level)) : null);
   // CAMPAIGN COMPLETE card -> camp at this tick (survives the run-end wipe).
   let autoReturnTick = null;
 
@@ -274,14 +287,16 @@ export function createRunSystem({
   function startCampaign(opts = {}) {
     const o = opts && typeof opts === 'object' ? opts : {};
     const level = isLevel(o.level ?? o.act) ? Number(o.level ?? o.act) : FIRST_LEVEL;
-    openRun({ act: level, challenge: o.challenge, mode: 'campaign', harness: !!o.harness });
+    // ENDLESS: an endless descent always sets out from the first level.
+    const endless = !!o.endless;
+    openRun({ act: endless ? FIRST_LEVEL : level, challenge: o.challenge, mode: 'campaign', harness: !!o.harness, endless });
     if (o.harness && typeof o.boss === 'string') bossPick = o.boss;
-    if (o.depart) beginTransit('depart', null, level, getTick());
+    if (o.depart) beginTransit('depart', null, act, getTick());
     else enterRoom(1);
     return view();
   }
 
-  function openRun({ act: a, challenge: c, mode, harness }) {
+  function openRun({ act: a, challenge: c, mode, harness, endless = false }) {
     wipeState({ silent: true });
     autoReturnTick = null;
     bossPick = null;
@@ -311,6 +326,10 @@ export function createRunSystem({
       card: null,
       grant: null,
       transitions: 0,
+      // ENDLESS: present only on an endless campaign (a plain campaign's
+      // record, and so its saves and hashes, are unchanged). `won` = the
+      // final level was cleared (the campaign itself is won).
+      ...(endless && mode === 'campaign' ? { endless: true, won: false } : {}),
     };
     // PARTY: every ally back to its starting loadout, empty build, purse 0;
     // the party stream seeded from the run SEED (no gameplay draw).
@@ -449,12 +468,14 @@ export function createRunSystem({
     if (pages && pages.screensAny()) for (let s = 0; s < 4; s++) pages.setScreen(s, false);
     roomIndex = n;
     const mode = frame.modes[n - 1];
-    const level = levelFor(act);
+    const depth = endlessDepth();
+    // ENDLESS: the wave director rolls from the depth's (mixed) roster.
+    const level = depth ? endlessLevel(depth) : levelFor(act);
     reward = null;
     path = null;
     positionParty();
     const combatRoom = mode === 'kill_all' || mode === 'defend';
-    const baseDiff = difficulty(act, Math.min(6, n), challenge);
+    const baseDiff = depth > 3 ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
     // RELICS: a cursed room rolls its waves with the curse's numbers.
     const roomCurse = combatRoom ? relics.curseFor(n) : null;
     const diff = roomCurse ? cursedDiff(baseDiff, roomCurse) : baseDiff;
@@ -893,7 +914,7 @@ export function createRunSystem({
     const c = campaign;
     if (c && c.clearedAt === c.index) return;
     const level = act;
-    const next = c && c.mode === 'campaign' ? nextLevel(level) : null;
+    const next = nextOf(c, level);
     const levelTicks = c ? tick - c.levelStartTick : tick - startTick;
     if (c) {
       c.clearedAt = c.index;
@@ -902,6 +923,12 @@ export function createRunSystem({
         rec.rooms = roomsDone;
         rec.cleared = true;
         rec.ticks = levelTicks;
+      }
+      // ENDLESS: the final level's first clear wins the campaign; the
+      // descent goes on.
+      if (c.endless && !c.won && nextLevel(level) === null) {
+        c.won = true;
+        events.emit(tick, 'campaign_won', { level, depth: c.index, endless: true });
       }
     }
     events.emit(tick, 'level_clear', {
@@ -913,6 +940,7 @@ export function createRunSystem({
       campaign: !!(c && c.mode === 'campaign'),
       ticks: levelTicks,
       rooms: roomsDone,
+      ...(c && c.endless ? { depth: c.index } : {}),
     });
     if (next === null) {
       endRun('victory');
@@ -1090,6 +1118,8 @@ export function createRunSystem({
       hardUntilTick: tick + TRANSIT.hardTicks,
       summary: carriedSummary(),
       leftovers,
+      // ENDLESS: the depth the card leads to (present only then).
+      ...(campaign.endless ? { depth: campaign.index + (kind === 'clear' ? 1 : 0) } : {}),
     };
     campaign.transitions += 1;
     phase = 'transit';
@@ -1102,6 +1132,7 @@ export function createRunSystem({
       untilTick: campaign.card.untilTick,
       minSkipTick: campaign.card.minSkipTick,
       hardUntilTick: campaign.card.hardUntilTick,
+      ...(campaign.endless ? { depth: campaign.card.depth } : {}),
     });
   }
 
@@ -1155,6 +1186,7 @@ export function createRunSystem({
       reason,
       seed: frame.seed,
       modes: [...frame.modes],
+      ...(campaign.endless ? { depth: campaign.index } : {}),
     });
     enterRoom(1);
     return view();
@@ -1198,7 +1230,8 @@ export function createRunSystem({
       level: c.level,
       name: levelFor(c.level).name,
       index: c.index,
-      next: c.mode === 'campaign' ? nextLevel(c.level) : null,
+      next: nextOf(c, c.level),
+      ...(c.endless ? { endless: true, depth: c.index, won: !!c.won } : {}),
       levels: cloneData(c.levels),
       levelsCleared: c.levels.filter((l) => l.cleared).length,
       clearedAt: c.clearedAt,
@@ -1374,8 +1407,10 @@ export function createRunSystem({
             index: campaign.index,
             levels: cloneData(campaign.levels),
             levelsCleared: campaign.levels.filter((l) => l.cleared).length,
-            complete: campaign.mode === 'campaign' && result === 'victory',
+            complete: campaign.mode === 'campaign' && (result === 'victory' || !!campaign.won),
             grant: cloneData(campaign.grant),
+            // ENDLESS: how deep the descent went (present only on one).
+            ...(campaign.endless ? { endless: true, depth: campaign.index, depthsCleared: campaign.levels.filter((l) => l.cleared).length, won: !!campaign.won } : {}),
           }
         : null,
     };
@@ -1585,6 +1620,8 @@ export function createRunSystem({
       // label, the boss banner); absent earlier so the hashed view of the
       // certified early rooms is unchanged.
       ...(active && roomIndex >= 6 ? { actBoss: { kind: currentBoss().kind, name: currentBoss().name } } : {}),
+      // ENDLESS: present only on an endless descent (hash-stable view).
+      ...(endlessDepth() ? { endless: { depth: endlessDepth(), won: !!campaign.won } } : {}),
       layout: layout ? { ...layout } : null,
       mode: frame && roomIndex ? frame.modes[roomIndex - 1] : null,
       wallet,
@@ -1686,6 +1723,24 @@ export function createRunSystem({
         return campaignView();
       case 'campaignRules':
         return campaignRules();
+      case 'endlessRules':
+        return endlessRules();
+      case 'endlessJump': {
+        // ('endlessJump', depth) — probes: a live endless descent clears the
+        // level it is in AS depth - 1 and opens the card to `depth` (marks
+        // the campaign harness). Never in a plain campaign.
+        if (!active || !campaign || !campaign.endless || phase === 'transit') return null;
+        const d = Math.max(campaign.index + 1, Number(args[0]) | 0);
+        const tick = getTick();
+        campaign.harness = true;
+        campaign.index = d - 1;
+        act = levelOfDepth(d - 1);
+        campaign.level = act;
+        if (d - 1 > 3) campaign.won = true;
+        campaign.levels.push({ level: act, index: campaign.index, startTick: tick, rooms: 0, cleared: false, ticks: 0 });
+        onLevelCleared(tick);
+        return campaignView();
+      }
       // ------------------------------------------ Gauntlet M4a probe cmds --
       case 'setStatus': {
         // ('setStatus', id, kind, mag, ticks) -> the stored record | refusal
