@@ -27,9 +27,13 @@ import { SCREENSHAKE, TICK_HZ } from '../core/constants.js';
 import { walkStep, innerBounds } from './movement.js';
 import { SPAWN_POINTS } from './waves.js';
 import { GOVERNOR } from './enemies.js';
-import { partyInRadius } from './enemies/common.js';
+import { partyInRadius, neutralsInRadius } from './enemies/common.js';
 import heron from './bosses/heron.js';
 import wyrm from './bosses/wyrm.js';
+// Content slice 2: the second boss of each act (docs/CONTENT_PLAN.md §2.4).
+import thornmother from './bosses/thornmother.js';
+import millwheel from './bosses/millwheel.js';
+import lichram from './bosses/lichram.js';
 
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -74,7 +78,7 @@ export const STAG = Object.freeze({
 // and view shapes are hashed by the golden traces); every other boss is a
 // plain-data kit module (src/sim/bosses/<id>.js) driven through `kctx`, and
 // its body carries `boss: true` (status.isBoss) instead of kind 'stag'.
-export const BOSS_KITS = Object.freeze({ heron, wyrm });
+export const BOSS_KITS = Object.freeze({ heron, wyrm, thornmother, millwheel, lichram });
 export const BOSS_KINDS = Object.freeze(['stag', ...Object.keys(BOSS_KITS)]);
 export const isBossKind = (k) => k === 'stag' || !!BOSS_KITS[k];
 // Display names per boss kind (HUD banner, end screens, path text).
@@ -173,6 +177,20 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     dmgMul: () => scale.dmgMul,
     governorGrants,
     partyIn: (x, z, r) => partyInRadius(registry, x, z, r).filter((p) => p.partyIndex !== undefined),
+    neutralsIn: (x, z, r) => neutralsInRadius(registry, x, z, r),
+    // Lobbed globs and straight shots owned by the boss body (the enemy
+    // system's models; `power` is the final damage, so scale it with dmgMul()).
+    spawnGlob: (b, tick, o) => enemies.spawnGlob(b, tick, o),
+    fireShot: (b, tick, dx, dz, o) => enemies.fireShot(b, tick, dx, dz, o),
+    // A kit-raised add (the Lich Ram's graves): scaled like the phase adds,
+    // counted against the same §11 add cap, and part of "clear = boss and
+    // adds dead".
+    raiseAdd(etype, x, z) {
+      if (liveAdds() >= STAG.addCap) return null;
+      const e = enemies.spawnScaled(etype, x, z, { hpMul: scale.addHpMul, dmgMul: scale.addDmgMul, wave: 100 + phasesFired });
+      if (e) addIds.push(e.id);
+      return e;
+    },
     // rec: { kind, attack, ticks, x, z, ...shape fields, targetId }
     startTelegraph(b, tick, rec) {
       const playerTargeted = true;

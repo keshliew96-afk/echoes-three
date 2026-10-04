@@ -41,6 +41,7 @@ import { markShared } from '../geocache.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { HIDE, TELL_INDIGO, TELL_INDIGO_DIM, TELL_INDIGO_GLOW } from './style.js';
+import { buildWasp, buildThornling, buildCrab, buildLamprey, buildGravewisp, buildKnight } from './slice2.js';
 
 const flashable = (color) => toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0 });
 const inkMat = () => new MeshBasicMaterial({ color: exactColor(PALETTE.voidCharcoal), toneMapped: false });
@@ -1013,6 +1014,13 @@ export const ARCH_BUILDERS = Object.freeze({
   crow: buildCrow,
   brood: buildBrood,
   broodling: buildBroodling,
+  // Content slice 2 (render/enemies/slice2.js).
+  wasp: buildWasp,
+  thornling: buildThornling,
+  crab: buildCrab,
+  lamprey: buildLamprey,
+  gravewisp: buildGravewisp,
+  knight: buildKnight,
 });
 // Crown height per kind (world u above the ground at scale 1).
-export const CROWN_Y = Object.freeze({ boar: 0.95, mantis: 1.35, quillback: 0.95, toad: 0.72, moth: 1.75, ram: 1.12, mole: 0.62, rotcap: 0.78, snail: 0.92, crow: 0.92, brood: 0.85, broodling: 0.45 });
+export const CROWN_Y = Object.freeze({ boar: 0.95, mantis: 1.35, quillback: 0.95, toad: 0.72, moth: 1.75, ram: 1.12, mole: 0.62, rotcap: 0.78, snail: 0.92, crow: 0.92, brood: 0.85, broodling: 0.45, wasp: 1.2, thornling: 0.95, crab: 0.72, lamprey: 0.55, gravewisp: 1.55, knight: 1.55 });

@@ -98,7 +98,7 @@ export function whereLine(m) {
   if (meta.mode === 'run' && meta.phase === 'transit') return transitWhere(meta) || `Level ${roman ?? 'I'} — between levels`;
   if (meta.mode === 'run' && meta.room) {
     const act = roman ? `Level ${roman} · ${meta.levelName || meta.actName || ''}`.replace(/ · $/, '') : meta.actName || `Act ${meta.act || 1}`;
-    const kind = meta.roomMode === 'boss' ? bossNameFor(meta.act ?? lv) : ROOM_LABEL[meta.roomMode] || '';
+    const kind = meta.roomMode === 'boss' ? bossNameFor(meta.act ?? lv, meta.seed) : ROOM_LABEL[meta.roomMode] || '';
     const phase = PHASE_LABEL[meta.phase] ? ` — ${PHASE_LABEL[meta.phase]}` : '';
     return `${act} · Room ${meta.room} of 8${kind ? ` · ${kind}` : ''}${phase}`;
   }

@@ -29,6 +29,13 @@
 //   boss                       boss kind for room 8 (sim/boss.js BOSS_KINDS:
 //                              'stag' | 'heron' | 'wyrm', docs/CONTENT_PLAN.md §2)
 //   bossAdds                   [[etype, count], ...] per boss add phase (§11: 3 phases)
+//   bosses                     every boss this act can end on: [{ kind, name,
+//                              adds }]. The first is the act's original boss
+//                              (= boss / bossName / bossAdds). Which one a run
+//                              meets is bossFor(act, seed): a pure function of
+//                              the run seed — no RNG draw, nothing saved, so
+//                              a seed always meets the same boss and a replay
+//                              on another seed can end differently.
 //   unlock                     null | { afterVictory: act }
 export const LEVELS = Object.freeze({
   1: Object.freeze({
@@ -41,8 +48,11 @@ export const LEVELS = Object.freeze({
     layouts: Object.freeze([1, 2, 3]),
     bossLayout: 3,
     music: 'wood',
-    roster: Object.freeze({ boar: 0.45, mantis: 0.3, quillback: 0.25 }),
-    introduce: Object.freeze({ boar: 1, mantis: 1, quillback: 2 }),
+    // Slice 2 (Act I balance pass): the Rotcap, the Briar Wasp and the
+    // Thornling join from room 4, so rooms 1-3 roll exactly the v0.4.63 waves
+    // (the certified Act I traces) and the new bodies add to the late rooms.
+    roster: Object.freeze({ boar: 0.45, mantis: 0.3, quillback: 0.25, rotcap: 0.14, wasp: 0.1, thornling: 0.1 }),
+    introduce: Object.freeze({ boar: 1, mantis: 1, quillback: 2, rotcap: 4, wasp: 4, thornling: 5 }),
     hazards: Object.freeze(['bramble', 'puffcap']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg']),
     boss: 'stag',
@@ -50,6 +60,10 @@ export const LEVELS = Object.freeze({
     bossAdds: Object.freeze([
       ['boar', 2],
       ['mantis', 1],
+    ]),
+    bosses: Object.freeze([
+      Object.freeze({ kind: 'stag', name: 'The Hollow Stag', adds: Object.freeze([Object.freeze(['boar', 2]), Object.freeze(['mantis', 1])]) }),
+      Object.freeze({ kind: 'thornmother', name: 'The Thornmother', adds: Object.freeze([Object.freeze(['boar', 2]), Object.freeze(['mantis', 1])]) }),
     ]),
     unlock: null,
   }),
@@ -63,8 +77,8 @@ export const LEVELS = Object.freeze({
     layouts: Object.freeze([4, 5, 6]),
     bossLayout: 6,
     music: 'mill',
-    roster: Object.freeze({ boar: 0.1, mantis: 0.17, quillback: 0.12, toad: 0.2, moth: 0.2, rotcap: 0.11, snail: 0.1 }),
-    introduce: Object.freeze({ boar: 1, mantis: 1, quillback: 1, toad: 1, moth: 2, rotcap: 1, snail: 2 }),
+    roster: Object.freeze({ boar: 0.1, mantis: 0.17, quillback: 0.12, toad: 0.2, moth: 0.2, rotcap: 0.11, snail: 0.1, crab: 0.12, lamprey: 0.1 }),
+    introduce: Object.freeze({ boar: 1, mantis: 1, quillback: 1, toad: 1, moth: 2, rotcap: 1, snail: 2, crab: 2, lamprey: 3 }),
     hazards: Object.freeze(['millrace', 'puffcap']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg', 'sluice']),
     boss: 'heron',
@@ -72,6 +86,10 @@ export const LEVELS = Object.freeze({
     bossAdds: Object.freeze([
       ['toad', 1],
       ['moth', 2],
+    ]),
+    bosses: Object.freeze([
+      Object.freeze({ kind: 'heron', name: 'The Drowned Heron', adds: Object.freeze([Object.freeze(['toad', 1]), Object.freeze(['moth', 2])]) }),
+      Object.freeze({ kind: 'millwheel', name: 'The Millwheel', adds: Object.freeze([Object.freeze(['crab', 1]), Object.freeze(['moth', 1])]) }),
     ]),
     unlock: Object.freeze({ afterVictory: 1 }),
   }),
@@ -85,8 +103,8 @@ export const LEVELS = Object.freeze({
     layouts: Object.freeze([7, 8, 9]),
     bossLayout: 9,
     music: 'barrow',
-    roster: Object.freeze({ mantis: 0.1, quillback: 0.1, moth: 0.14, ram: 0.16, mole: 0.22, crow: 0.14, brood: 0.14 }),
-    introduce: Object.freeze({ mantis: 1, quillback: 1, moth: 1, mole: 1, ram: 2, crow: 1, brood: 2 }),
+    roster: Object.freeze({ mantis: 0.1, quillback: 0.1, moth: 0.14, ram: 0.16, mole: 0.22, crow: 0.14, brood: 0.14, gravewisp: 0.1, knight: 0.06 }),
+    introduce: Object.freeze({ mantis: 1, quillback: 1, moth: 1, mole: 1, ram: 2, crow: 1, brood: 2, gravewisp: 3, knight: 4 }),
     hazards: Object.freeze(['rockfall', 'gravefire']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg', 'bell']),
     boss: 'wyrm',
@@ -94,6 +112,11 @@ export const LEVELS = Object.freeze({
     bossAdds: Object.freeze([
       ['ram', 1],
       ['mole', 2],
+    ]),
+    bosses: Object.freeze([
+      Object.freeze({ kind: 'wyrm', name: 'The Barrow Wyrm', adds: Object.freeze([Object.freeze(['ram', 1]), Object.freeze(['mole', 2])]) }),
+      // It raises moles itself (Grave Call), so its phases bring a crow.
+      Object.freeze({ kind: 'lichram', name: 'The Lich Ram', adds: Object.freeze([Object.freeze(['ram', 1]), Object.freeze(['crow', 1])]) }),
     ]),
     unlock: Object.freeze({ afterVictory: 2 }),
   }),
@@ -105,7 +128,41 @@ export function levelFor(act) {
   return LEVELS[act] ?? LEVELS[1];
 }
 
-// The room-8 boss's display name for an act ('The Hollow Stag' by default).
-export function bossNameFor(act) {
-  return levelFor(Number(act) || 1).bossName ?? 'The Hollow Stag';
+// Which of the act's bosses a run meets: a pure hash of (seed, act), so it
+// costs no RNG draw and needs no saved field — every seed meets the same boss
+// on every replay, and a campaign rolls each level on its own.
+export function bossIndexFor(act, seed) {
+  const lv = levelFor(Number(act) || 1);
+  const n = lv.bosses ? lv.bosses.length : 1;
+  if (n <= 1 || seed === null || seed === undefined || !Number.isFinite(Number(seed))) return 0;
+  let h = (Number(seed) >>> 0) ^ Math.imul((Number(act) || 1) >>> 0, 0x9e3779b1);
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) % n;
+}
+
+// { kind, name, adds } of the boss a run on `seed` meets in `act`. With no
+// seed (menus before a run), the act's original boss.
+export function bossFor(act, seed = null, forceKind = null) {
+  const lv = levelFor(Number(act) || 1);
+  const list = lv.bosses ?? [{ kind: lv.boss ?? 'stag', name: lv.bossName ?? 'The Hollow Stag', adds: lv.bossAdds }];
+  if (forceKind) {
+    const f = list.find((b) => b.kind === forceKind);
+    if (f) return f;
+  }
+  return list[bossIndexFor(act, seed)] ?? list[0];
+}
+
+// The boss name a UI shows for a run view: the run's own roll when it has one.
+export function bossNameOfRun(view) {
+  if (!view) return bossNameFor(1);
+  if (view.actBoss && view.actBoss.name) return view.actBoss.name;
+  return bossNameFor(view.act, view.frame ? view.frame.seed : null);
+}
+
+// The room-8 boss's display name for an act ('The Hollow Stag' by default);
+// pass the run seed for the boss this run actually meets.
+export function bossNameFor(act, seed = null, forceKind = null) {
+  return bossFor(act, seed, forceKind).name ?? 'The Hollow Stag';
 }
