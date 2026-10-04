@@ -139,7 +139,24 @@ Matters added to `VFX_MATTER`: spore, shell, feather, ichor (and water, silt,
 cinder for the bosses below). The snail's indigo is the existing rank-and-file
 corruption tell (`TELL_INDIGO`), so no new hue enters the frame.
 
-## 6. The Hollow Stag
+### 5c. Content slice 2 enemies (all three acts)
+
+Built to the §10 AAA structure from the start (anticipation, a white-hot
+landing frame, a shockwave, a ground mark that cools). Their beats are
+recipes keyed by their own sim events; the slice-2 placeholder puffs in
+`render/enemies/extras.js` are gone.
+
+| Enemy | Attack / signature effect | Impact on the party | Death |
+|---|---|---|---|
+| Briar Wasp (Act I) | the dart: a small Ember gather, then a thin Ember needle running the short lane at the dart's own 9 u/s with an ochre buzz of wing dust behind it; a tiny burst where it pulls up. A swarm reads as three quick stitches, not the moth's long smear | needle shards | wing glints fluttering down, ochre dust |
+| Thornling (Act I) | the planting: brambles gather in, then thorns punch up out of the floor inside a thin Ember hazard edge, a jagged bramble shockwave and a dark stain; on every prick each of its live patches bristles with thorns and Ember glints | needle shards | a last few thorns, needles and leaves |
+| Weir Crab (Act II) | the snap: two short claw arcs scissor shut across the cone with a white-hot star where they meet, a carapace shockwave and weir water thrown forward | water drops | carapace chunks, water |
+| Bog Lamprey (Act II) | it breaks the surface in a foam ring and ripples; the lunge is a water wake ripping down the lane at 10 u/s with an Ember head, wet stains left behind; the beaching is a slap of silt and spray; the dive back is a small splash | water drops | ripples and a spray of water |
+| Grave Wisp (Act III) | the ward is indigo (the rank-and-file corruption tell): the tether takes with an indigo flare, a thread to the ward and a ring closing on it; while it holds, motes run down the thread and the ward shimmers; a hit the ward eats glints indigo; the snap scatters the thread | (no attack) | the ward light gutters out: an indigo pop, a ring, the grave mist sinking |
+| Bone Knight (Act III) | the overhead slam: the blade falls as an Ember line onto a white-hot star, an Ember ring the size of the telegraph and a wider bone shockwave behind it, cracks, a crater and bone chips | bone and earth chunks | the armour falls apart: bone plates, the shield's iron, the crown's last flash |
+
+Matters added: bramble, wasp, carapace, eel, wisp, boneplate, iron, oak.
+
 
 | Pillar | Design |
 |---|---|
@@ -168,6 +185,22 @@ ring stay exactly the sim's shapes.
 
 The boss rows live in `BOSS_VFX` (`heron`, `wyrm`); `vfxBossStyle(kind)`
 keeps falling back to the Stag for any future boss without a row.
+
+## 6c. The Thornmother, the Millwheel and the Lich Ram
+
+Each act's second boss (content slice 2). Violet stays the corruption and
+Ember the threat; the lanes, cones and rings stay exactly the sim's.
+
+| Pillar | Thornmother (Act I) | Millwheel (Act II) | Lich Ram (Act III) |
+|---|---|---|---|
+| Style | She fights the floor: bramble and torn earth over violet rot. | The mill's own wheel turned: oak, iron and millrace water over a violet hub. | Bone and grave earth over violet; the graves open under the party. |
+| Energy & shapes | Seed Volley: a violet flare off her back, seeds and husks thrown up. Each pod that lands roots in a ring of thorn spikes punching up, a jagged bramble shockwave and a violet-seamed crater. Briar Charge: violet gather on the wind-up, a torn-earth wake laid down the lane at 10 u/s with a violet spearhead, dirt thrown off her flanks while she runs; every patch she tears up bursts in a ring of flying needles and thorns. The stop is a crater, cracks and a dirt wall, bigger against a wall. | Spokes: Ember gather and a held flash at the hub. Cog Shards: five Ember muzzle lines down the fan with a needle flare on each, an iron shockwave, a spray of hot sparks and oak splinters; its shards fly as short hot iron splinters. Crosscut: a water wake and four iron gouges laid down the lane at 9 u/s, sparks thrown off the tyre while it rolls, props ground to splinters. The wall slam is the biggest beat: a violet burst, a jagged iron shockwave, cracks and a crater; then it wobbles, dizzy, under a ring of bone-white stars. On the rim: drips and the odd spark. | Rush: violet gather and two horn flares on the wind-up, a grave-dust wake down the lane at 11 u/s with a violet spearhead. Horns stuck: a violet star where they bury, a jagged bone shockwave, cracks, earth thrown back. Grave Call: violet gather, a violet sigil under it and threads to each grave. Each grave cracks open: Ember hazard edge, cracks, a crater, earth and bone thrown high; where the dead climb out, a violet pillar. Enrage: a violet pillar, a ring and a sigil, then violet motes smouldering off it for the rest of the fight. |
+| Light & glow | Violet at her and in every rooting; Ember only on the threat edges. | Ember in the spokes and the shards (the attack), violet at the hub. | Violet throughout; Ember only on the graves' edges. |
+| Debris & pacing | Needles (fast, heavy), dirt clods, leaves that flutter. | Oak splinters, hot sparks (short-lived), water drops. | Earth, bone chips, motes that hang ~1.5 s. |
+| Camera & view | A kick down the charge; a dolly on the wall stop and the death. | A kick along the fan and the crosscut; a dolly on the wall slam and the death. | A kick down the rush; a dolly on the horns stuck, the enrage and the death. |
+| Death | The thicket dies with her: a last ring of thorns, needles and leaves, violet draining out of the torn earth. | The wheel comes apart: planks flying outward, iron, the millrace it carried pouring out. | The bones come apart and the graves close: bone burst, the lich-light going up. |
+
+The rows live in `BOSS_VFX` (`thornmother`, `millwheel`, `lichram`).
 
 ## 7. Architecture
 
@@ -217,6 +250,8 @@ the kick and dolly (Off turns them off).
 - `node tools/vfx-roster2.mjs` (content slice 1) stages each new enemy's
   signature beat and runs the three boss rooms with the autopilot, failing
   if any Heron / Wyrm / slice-1 enemy recipe never played.
+- `node tools/vfx-roster3.mjs` (content slice 2) does the same for the six
+  slice-2 enemies and the Thornmother, Millwheel and Lich Ram fights.
 - Smoke, the core loop and the 9 goldens must stay green (render-only change).
 
 ## 10. AAA pass (2026-10-04)

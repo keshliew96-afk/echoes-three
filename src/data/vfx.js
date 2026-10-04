@@ -124,6 +124,16 @@ export const ENEMY_VFX = Object.freeze({
   crow: Object.freeze({ matter: 'feather', family: 'shooter', shard: 'feather', chunk: 0, dust: 1, shot: Object.freeze({ look: 'dart', trail: 0.18 }), feathers: 9 }),
   brood: Object.freeze({ matter: 'ichor', family: 'charger', shard: 'drop', chunk: 4, dust: 0, legs: 8 }),
   broodling: Object.freeze({ matter: 'ichor', family: 'charger', shard: 'drop', chunk: 1, dust: 0, legs: 3 }),
+  // Content slice 2 (docs/CONTENT_PLAN.md §3; design-VFX.md §5c). Their
+  // signature beats (dart, planting, snap, lunge, ward, overhead slam) are
+  // director recipes keyed by the sim event; these rows give hits, deaths
+  // and movement wakes the right material.
+  wasp: Object.freeze({ matter: 'wasp', family: 'flyer', shard: 'needle', chunk: 0, dust: 1 }),
+  thornling: Object.freeze({ matter: 'bramble', family: 'support', shard: 'needle', chunk: 3, dust: 1 }),
+  crab: Object.freeze({ matter: 'carapace', family: 'brute', shard: 'drop', chunk: 6, dust: 0 }),
+  lamprey: Object.freeze({ matter: 'eel', family: 'burrower', shard: 'drop', chunk: 2, dust: 0 }),
+  gravewisp: Object.freeze({ matter: 'wisp', family: 'flyer', shard: null, chunk: 0, dust: 3 }),
+  knight: Object.freeze({ matter: 'boneplate', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),
 });
 
 const FAMILY_DEFAULT = Object.freeze({
@@ -194,6 +204,49 @@ export const BOSS_VFX = Object.freeze({
     // The tunnel trail it leaves while underground (s between puffs).
     tunnel: Object.freeze({ every: 0.12 }),
     camera: Object.freeze({ dolly: 0.08, kick: 0.05 }),
+  }),
+  // Content slice 2: each act's second boss (design-VFX.md §6c).
+  //   thornmother  bramble and torn earth: seed pods that root into thorn
+  //                patches, a charge that rips them up (Act I, the wood)
+  //   millwheel    oak, iron and millrace water: a fan of cog shards, a
+  //                rim of sparks, a crosscut that gouges the floor (Act II)
+  //   lichram      bone and grave earth: a horns-down rush, graves that
+  //                crack open under the party (Act III)
+  thornmother: Object.freeze({
+    id: 'thornmother',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'bramble',
+    second: 'dirt',
+    volley: Object.freeze({ seeds: 10 }),
+    root: Object.freeze({ spikes: 9, needles: 10 }),
+    charge: Object.freeze({ every: 0.05, wakeW: 0.6 }),
+    burst: Object.freeze({ spikes: 12, needles: 14 }),
+    camera: Object.freeze({ dolly: 0.07, kick: 0.06 }),
+  }),
+  millwheel: Object.freeze({
+    id: 'millwheel',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'oak',
+    second: 'iron',
+    shards: Object.freeze({ sparks: 18, splinters: 8 }),
+    cut: Object.freeze({ every: 0.06, sparks: 3 }),
+    roll: Object.freeze({ every: 0.22 }),
+    camera: Object.freeze({ dolly: 0.08, kick: 0.06 }),
+  }),
+  lichram: Object.freeze({
+    id: 'lichram',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'boneplate',
+    second: 'earth',
+    rush: Object.freeze({ every: 0.05, wakeW: 0.5 }),
+    grave: Object.freeze({ chunk: 10, bones: 6 }),
+    camera: Object.freeze({ dolly: 0.08, kick: 0.06 }),
   }),
 });
 export function isVfxBoss(kind) {

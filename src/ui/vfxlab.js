@@ -4,8 +4,8 @@
 // probes use (__echoes.cmd), so what plays is exactly what a run plays, at
 // the real frame rate:
 //
-//   Rooms    jump to a live Act I / II / III room (enemies cleared) or to a
-//            boss room
+//   Rooms    jump to a live Act I / II / III room (enemies cleared) or to
+//            either boss of an act
 //   Party    equip one of the class skill sets and play it as a reel: each
 //            skill fires at a cluster of training targets in front of the
 //            party, one after another (the Healer's through its own keys)
@@ -34,9 +34,18 @@ const CLASS_SETS = {
   ],
 };
 const ENEMIES = [
-  ['Act I', 1, ['boar', 'mantis', 'quillback', 'toad', 'moth', 'ram', 'mole']],
-  ['Act II', 2, ['rotcap', 'snail']],
-  ['Act III', 3, ['crow', 'brood']],
+  ['Act I', 1, ['boar', 'mantis', 'quillback', 'toad', 'moth', 'ram', 'mole', 'wasp', 'thornling']],
+  ['Act II', 2, ['rotcap', 'snail', 'crab', 'lamprey']],
+  ['Act III', 3, ['crow', 'brood', 'knight', 'gravewisp']],
+];
+// Each act's two bosses: [label, act, boss kind].
+const BOSSES = [
+  ['Stag', 1, 'stag'],
+  ['Thornmother', 1, 'thornmother'],
+  ['Heron', 2, 'heron'],
+  ['Millwheel', 2, 'millwheel'],
+  ['Wyrm', 3, 'wyrm'],
+  ['Lich Ram', 3, 'lichram'],
 ];
 
 export function mountVfxLab() {
@@ -101,15 +110,16 @@ export function mountVfxLab() {
 
   // ---------------------------------------------------------------- rooms --
   const run = () => X().state().run || {};
-  async function room(act, n) {
+  async function room(act, n, boss = null) {
     say(`entering Act ${act} room ${n}...`);
-    // A live run keeps its act: switching acts abandons it and starts anew.
-    if (run().active && run().act !== act) {
+    // A live run keeps its act (and its boss): switching acts, or asking for
+    // a particular boss, abandons it and starts anew.
+    if (run().active && (run().act !== act || boss)) {
       X().cmd('abandonRun', 'quit');
       await wait(300);
     }
     if (!run().active) {
-      X().cmd('startRun', { act });
+      X().cmd('startRun', boss ? { act, boss } : { act });
       for (let i = 0; i < 100 && run().phase !== 'combat'; i++) await wait(100);
     }
     X().cmd('skipToRoom', n, { act });
@@ -134,7 +144,7 @@ export function mountVfxLab() {
   }
   const rooms = section('Rooms');
   for (const a of [1, 2, 3]) button(rooms, `Act ${['I', 'II', 'III'][a - 1]} room`, () => room(a, 3));
-  for (const a of [1, 2, 3]) button(rooms, ['Stag', 'Heron', 'Wyrm'][a - 1], () => room(a, 8), `Act ${a} boss room`);
+  for (const [label, a, kind] of BOSSES) button(rooms, label, () => room(a, 8, kind), `Act ${a} boss room: ${label}`);
 
   // ---------------------------------------------------------------- party --
   function seatOf(cls) {
@@ -186,7 +196,8 @@ export function mountVfxLab() {
         if (run().act !== act || run().room === 8 || run().phase !== 'combat') await room(act, 3);
         X().cmd('killAllEnemies');
         const f = front();
-        X().cmd('spawn', k, f.x - 1.1, f.z - 1.6);
+        // A wisp only acts with someone to ward: pair it with a Barrow Ram.
+        X().cmd('spawn', k === 'gravewisp' ? 'ram' : k, f.x - 1.1, f.z - 1.6);
         X().cmd('spawn', k, f.x + 1.1, f.z - 1.6);
         say(`${k} x2: watch them attack and die`);
       });
