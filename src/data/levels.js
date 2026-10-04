@@ -25,7 +25,10 @@
 //   introduce                  etype -> earliest room it may appear
 //   hazards / interactables    type ids allowed in this act (placements live in
 //                              data/layouts.js per layout)
-//   bossAdds                   [[etype, count], ...] per Stag add phase (§11: 3 phases)
+//   bossName                   display name of the room-8 boss (UI copy)
+//   boss                       boss kind for room 8 (sim/boss.js BOSS_KINDS:
+//                              'stag' | 'heron' | 'wyrm', docs/CONTENT_PLAN.md §2)
+//   bossAdds                   [[etype, count], ...] per boss add phase (§11: 3 phases)
 //   unlock                     null | { afterVictory: act }
 export const LEVELS = Object.freeze({
   1: Object.freeze({
@@ -42,6 +45,8 @@ export const LEVELS = Object.freeze({
     introduce: Object.freeze({ boar: 1, mantis: 1, quillback: 2 }),
     hazards: Object.freeze(['bramble', 'puffcap']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg']),
+    boss: 'stag',
+    bossName: 'The Hollow Stag',
     bossAdds: Object.freeze([
       ['boar', 2],
       ['mantis', 1],
@@ -58,10 +63,12 @@ export const LEVELS = Object.freeze({
     layouts: Object.freeze([4, 5, 6]),
     bossLayout: 6,
     music: 'mill',
-    roster: Object.freeze({ boar: 0.15, mantis: 0.2, quillback: 0.15, toad: 0.25, moth: 0.25 }),
-    introduce: Object.freeze({ boar: 1, mantis: 1, quillback: 1, toad: 1, moth: 2 }),
+    roster: Object.freeze({ boar: 0.1, mantis: 0.17, quillback: 0.12, toad: 0.2, moth: 0.2, rotcap: 0.11, snail: 0.1 }),
+    introduce: Object.freeze({ boar: 1, mantis: 1, quillback: 1, toad: 1, moth: 2, rotcap: 1, snail: 2 }),
     hazards: Object.freeze(['millrace', 'puffcap']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg', 'sluice']),
+    boss: 'heron',
+    bossName: 'The Drowned Heron',
     bossAdds: Object.freeze([
       ['toad', 1],
       ['moth', 2],
@@ -78,10 +85,12 @@ export const LEVELS = Object.freeze({
     layouts: Object.freeze([7, 8, 9]),
     bossLayout: 9,
     music: 'barrow',
-    roster: Object.freeze({ mantis: 0.15, quillback: 0.15, moth: 0.2, ram: 0.2, mole: 0.3 }),
-    introduce: Object.freeze({ mantis: 1, quillback: 1, moth: 1, mole: 1, ram: 2 }),
+    roster: Object.freeze({ mantis: 0.1, quillback: 0.1, moth: 0.14, ram: 0.16, mole: 0.22, crow: 0.14, brood: 0.14 }),
+    introduce: Object.freeze({ mantis: 1, quillback: 1, moth: 1, mole: 1, ram: 2, crow: 1, brood: 2 }),
     hazards: Object.freeze(['rockfall', 'gravefire']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg', 'bell']),
+    boss: 'wyrm',
+    bossName: 'The Barrow Wyrm',
     bossAdds: Object.freeze([
       ['ram', 1],
       ['mole', 2],
@@ -94,4 +103,9 @@ export const ACT_IDS = Object.freeze([1, 2, 3]);
 
 export function levelFor(act) {
   return LEVELS[act] ?? LEVELS[1];
+}
+
+// The room-8 boss's display name for an act ('The Hollow Stag' by default).
+export function bossNameFor(act) {
+  return levelFor(Number(act) || 1).bossName ?? 'The Hollow Stag';
 }

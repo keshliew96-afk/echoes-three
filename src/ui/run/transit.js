@@ -18,8 +18,8 @@ import { service } from '../../app/registry.js';
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 const FLAVOUR = {
   1: 'The Hollow Stag falls. The wood breathes out.',
-  2: 'The mill wheel stops. The water runs clear again.',
-  3: 'The barrow is still. The long night lifts.',
+  2: 'The Drowned Heron sinks. The water runs clear again.',
+  3: 'The Barrow Wyrm is still. The long night lifts.',
 };
 
 export const TRANSIT_CSS = `

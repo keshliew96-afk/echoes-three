@@ -27,6 +27,9 @@ import { SCREENSHAKE, TICK_HZ } from '../core/constants.js';
 import { walkStep, innerBounds } from './movement.js';
 import { SPAWN_POINTS } from './waves.js';
 import { GOVERNOR } from './enemies.js';
+import { partyInRadius } from './enemies/common.js';
+import heron from './bosses/heron.js';
+import wyrm from './bosses/wyrm.js';
 
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -66,6 +69,19 @@ export const STAG = Object.freeze({
   standoff: 0.15, // scaffold: stop just inside contact so the charge reads
 });
 
+// Boss kits beyond the Stag (docs/CONTENT_PLAN.md §2): one distinct boss per
+// expedition. The Stag keeps its v0.4.63 code path below verbatim (its entity
+// and view shapes are hashed by the golden traces); every other boss is a
+// plain-data kit module (src/sim/bosses/<id>.js) driven through `kctx`, and
+// its body carries `boss: true` (status.isBoss) instead of kind 'stag'.
+export const BOSS_KITS = Object.freeze({ heron, wyrm });
+export const BOSS_KINDS = Object.freeze(['stag', ...Object.keys(BOSS_KITS)]);
+export const isBossKind = (k) => k === 'stag' || !!BOSS_KITS[k];
+// Display names per boss kind (HUD banner, end screens, path text).
+export function bossName(k) {
+  return BOSS_KITS[k] ? BOSS_KITS[k].def.name : 'THE HOLLOW STAG';
+}
+
 // NO immunity, no HP floor. An earlier cut clamped the Stag's HP at each
 // unplayed add threshold ("the Hollow Seal") to stretch the fight against the
 // party's burst; it was not in §11, had no tell, and absorbed hits that still
@@ -80,6 +96,9 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
   let phasesFired = 0;
   let lastAddsTick = -Infinity; // tick of the last add phase (cadence gate)
   let addIds = [];
+  let kind = 'stag'; // which boss this room holds (BOSS_KINDS)
+  const kit = () => BOSS_KITS[kind] ?? null;
+  const def = () => (BOSS_KITS[kind] ? BOSS_KITS[kind].def : STAG);
   // Act scaling (docs/gauntlet/PLAN.md §4.2, set by run.js at room 8 through
   // start()'s opts — minimal M4a hook): Stag HP / damage multiplier and the
   // act's add composition + ramp. Defaults = v0.4.63 exactly.
@@ -131,22 +150,125 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     );
   }
 
+  // Kit context: everything a boss kit module may use (src/sim/bosses/*.js).
+  function pickTarget(b) {
+    let target = nearestParty(b.x, b.z);
+    const ts = combat.status && typeof combat.status.tauntSource === 'function' ? combat.status.tauntSource(b, getTick()) : null;
+    if (ts !== null) {
+      const src = registry.byId(ts);
+      if (src && src.hp > 0) target = src;
+    }
+    return target;
+  }
+  const kctx = {
+    registry,
+    events,
+    combat,
+    getTick,
+    walkStep,
+    innerBounds,
+    partyBodies,
+    pickTarget,
+    liveAdds: () => liveAdds(),
+    dmgMul: () => scale.dmgMul,
+    governorGrants,
+    partyIn: (x, z, r) => partyInRadius(registry, x, z, r).filter((p) => p.partyIndex !== undefined),
+    // rec: { kind, attack, ticks, x, z, ...shape fields, targetId }
+    startTelegraph(b, tick, rec) {
+      const playerTargeted = true;
+      b.telegraph = { ...rec, startTick: tick, resolveTick: tick + rec.ticks, playerTargeted };
+      lastPlayerTelegraphStart = tick;
+      events.emit(tick, 'boss_telegraph_start', {
+        id: b.id,
+        attack: rec.attack,
+        shape: rec.kind,
+        x: r2(rec.x),
+        z: r2(rec.z),
+        resolveTick: b.telegraph.resolveTick,
+      });
+      events.emit(tick, 'telegraph_start', {
+        id: b.id,
+        target: rec.targetId ?? null,
+        x: r2(rec.x),
+        z: r2(rec.z),
+        resolveTick: b.telegraph.resolveTick,
+        playerTargeted,
+      });
+    },
+    endTelegraph(b, tick) {
+      b.telegraph = null;
+      events.emit(tick, 'telegraph_resolve', { id: b.id, playerTargeted: true });
+    },
+    cancelTelegraph(b, tick, reason) {
+      if (!b.telegraph) return;
+      b.telegraph = null;
+      events.emit(tick, 'telegraph_cancel', { id: b.id, etype: b.kind, reason, playerTargeted: true });
+    },
+    shake(tick, cause, x, z) {
+      events.emit(tick, 'screenshake', { cause, amp: SCREENSHAKE.maxAmp, durationSec: SCREENSHAKE.bossSec, x: r2(x), z: r2(z) });
+    },
+    hitAll(b, victims, base, fx, fz, shape = 'ground_aoe') {
+      for (const p of victims) {
+        if (!registry.byId(p.id) || !(p.hp > 0)) continue;
+        const dx = p.x - fx;
+        const dz = p.z - fz;
+        const l = Math.hypot(dx, dz);
+        combat.applyDamage(p, base * scale.dmgMul, {
+          delivery: 'skill',
+          shape,
+          dirX: l > 1e-6 ? dx / l : b.faceX ?? 0,
+          dirZ: l > 1e-6 ? dz / l : b.faceZ ?? 1,
+          attacker: b.id,
+        });
+      }
+    },
+  };
+
   // --------------------------------------------------------------- spawn --
   function start(x = 0, z = -4.2, opts = {}) {
     const tick = getTick();
     despawn();
     const o = opts && typeof opts === 'object' ? opts : {};
-    const hpMax = Number.isFinite(o.hp) && o.hp > 0 ? o.hp : STAG.hp;
+    kind = isBossKind(o.kind) ? o.kind : 'stag';
+    const hpBase = Number.isFinite(o.hp) && o.hp > 0 ? o.hp : STAG.hp;
+    const kitDef = BOSS_KITS[kind] ? BOSS_KITS[kind].def : null;
+    const hpMax = kitDef && kitDef.hpMul ? Math.round(hpBase * kitDef.hpMul) : hpBase;
     scale = {
       dmgMul: Number.isFinite(o.dmgMul) && o.dmgMul > 0 ? o.dmgMul : 1,
       adds: Array.isArray(o.adds) && o.adds.length > 0 ? o.adds.flatMap(([et, n]) => new Array(Math.max(0, n | 0)).fill(et)) : null,
       addHpMul: Number.isFinite(o.addHpMul) && o.addHpMul > 0 ? o.addHpMul : 1,
       addDmgMul: Number.isFinite(o.addDmgMul) && o.addDmgMul > 0 ? o.addDmgMul : 1,
     };
-    const { mx, mz } = innerBounds(STAG.radius);
+    const D = def();
+    const { mx, mz } = innerBounds(D.radius);
     const sx = Math.min(mx, Math.max(-mx, x));
     const sz = Math.min(mz, Math.max(-mz, z));
-    const e = registry.spawn({
+    const K = kit();
+    const e = K
+      ? registry.spawn({
+          kind: K.id,
+          boss: true,
+          faction: 'hostile',
+          hittable: true,
+          knockbackable: false,
+          hp: hpMax,
+          maxHp: hpMax,
+          radius: D.radius,
+          x: sx,
+          z: sz,
+          px: sx,
+          pz: sz,
+          kbVx: 0,
+          kbVz: 0,
+          kbTicks: 0,
+          iframeUntilTick: 0,
+          state: 'active',
+          targetId: null,
+          telegraph: null,
+          faceX: 0,
+          faceZ: 1,
+        })
+      : registry.spawn({
       kind: 'stag',
       faction: 'hostile',
       hittable: true,
@@ -174,6 +296,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       faceX: 0,
       faceZ: 1,
     });
+    if (K) K.spawn(kctx, e, tick);
     bossId = e.id;
     active = true;
     cleared = false;
@@ -182,7 +305,8 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     addIds = [];
     events.emit(tick, 'boss_spawn', {
       id: e.id,
-      name: 'THE HOLLOW STAG',
+      name: D === STAG ? 'THE HOLLOW STAG' : D.name,
+      ...(K ? { kind: K.id } : {}),
       hp: hpMax,
       x: r2(sx),
       z: r2(sz),
@@ -212,6 +336,10 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
   function continuous() {
     const b = boss();
     if (!active || !b || b.hp <= 0) return;
+    if (kit()) {
+      kit().continuous(kctx, b, getTick());
+      return;
+    }
 
     // Trample lunge owns the body while it travels; contact damage lands on
     // the first party body the lunge touches (once).
@@ -270,6 +398,10 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     const b = boss();
     if (!active || !b || b.hp <= 0) return;
     const tick = getTick();
+    if (kit()) {
+      kit().resolve(kctx, b, tick);
+      return;
+    }
 
     // Antler Quake maturation: burst 15 on every party body inside the ring.
     if (b.telegraph) {
@@ -381,12 +513,14 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       // Mantis (cap <= 7). One threshold resolves per tick so a single burst
       // that crosses two of them still lands two distinct `boss_adds` beats;
       // HP is never clamped and nothing here touches the damage pipeline.
-      if (phasesFired < STAG.addPhases.length && tick - lastAddsTick >= STAG.addPhaseGapTicks) {
-        const pct = STAG.addPhases[phasesFired];
+      const phases = def().addPhases;
+      if (phasesFired < phases.length && tick - lastAddsTick >= STAG.addPhaseGapTicks) {
+        const pct = phases[phasesFired];
         if (b.hp <= b.maxHp * pct) {
           phasesFired += 1;
           lastAddsTick = tick;
           spawnAdds(tick, pct);
+          if (kit()) kit().onAddPhase(kctx, b, tick);
         }
       }
       return;
@@ -417,7 +551,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
 
   function spawnAdds(tick, pct) {
     const spawned = [];
-    for (const etype of scale.adds ?? STAG.addComposition) {
+    for (const etype of scale.adds ?? def().addComposition) {
       if (liveAdds() >= STAG.addCap) break; // §11 concurrent cap
       const [sx, sz] = SPAWN_POINTS[rng.int(SPAWN_POINTS.length)];
       const scaled = scale.adds && typeof enemies.spawnScaled === 'function';
@@ -441,6 +575,28 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
   // ----------------------------------------------------------------- view --
   function view() {
     const b = boss();
+    const K = kit();
+    if (K) {
+      const t = b && b.telegraph;
+      return {
+        active,
+        cleared,
+        name: K.def.name,
+        kind: K.id,
+        id: bossId,
+        hp: b ? r2(b.hp) : 0,
+        maxHp: b ? b.maxHp : 0,
+        pct: b ? r2(Math.max(0, b.hp / b.maxHp)) : 0,
+        x: b ? r2(b.x) : 0,
+        z: b ? r2(b.z) : 0,
+        phasesFired,
+        adds: liveAdds(),
+        telegraph: t
+          ? { attack: t.attack, shape: t.kind, x: r2(t.x), z: r2(t.z), startTick: t.startTick, resolveTick: t.resolveTick }
+          : null,
+        ...(b ? K.view(b) : {}),
+      };
+    }
     return {
       active,
       cleared,
@@ -470,11 +626,13 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
   // state (the body and its adds are registry data; addIds are ids).
   // lastAddsTick starts at -Infinity (canonical JSON tags it).
   function saveState() {
-    return { bossId, active, cleared, phasesFired, lastAddsTick, addIds, scale, lastPlayerTelegraphStart };
+    // `kind` only when it is not the Stag (Stag saves stay byte-identical).
+    return { bossId, active, cleared, phasesFired, lastAddsTick, addIds, scale, lastPlayerTelegraphStart, ...(kind !== 'stag' ? { kind } : {}) };
   }
   function loadState(d) {
     if (!d) throw new TypeError('boss.loadState: missing data');
     bossId = d.bossId ?? null;
+    kind = isBossKind(d.kind) ? d.kind : 'stag';
     active = !!d.active;
     cleared = !!d.cleared;
     phasesFired = d.phasesFired ?? 0;
@@ -496,6 +654,7 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     entity: boss,
     isActive: () => active,
     isCleared: () => cleared,
+    kind: () => kind,
     // Test hook: drive the Stag to a HP fraction through the real pipeline's
     // sibling path (no crit roll — this is a debug setter, not an instance).
     // skipPhases = true marks the add waves at or above pct as already played,
@@ -503,8 +662,9 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     setHpPct: (pct, skipPhases = false) => {
       const b = boss();
       if (!b) return null;
+      const phases = def().addPhases;
       if (skipPhases) {
-        while (phasesFired < STAG.addPhases.length && pct <= STAG.addPhases[phasesFired])
+        while (phasesFired < phases.length && pct <= phases[phasesFired])
           phasesFired += 1;
       }
       b.hp = Math.max(0, (b.maxHp ?? STAG.hp) * pct);

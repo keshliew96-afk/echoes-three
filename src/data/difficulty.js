@@ -148,6 +148,12 @@ export const THREAT = Object.freeze({
   moth: 1.3,
   ram: 3.0,
   mole: 1.5,
+  // Content slice 1 (docs/CONTENT_PLAN.md §3).
+  rotcap: 1.0,
+  snail: 1.4,
+  crow: 1.6,
+  brood: 2.0, // its two Broodlings ride on the mother's cost
+  broodling: 0.4,
 });
 export const ELITE_COST = 1.8;
 export const ELITE_MUL = Object.freeze({ hp: 1.8, dmg: 1.25, scale: 1.2 });

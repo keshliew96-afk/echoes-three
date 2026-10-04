@@ -117,7 +117,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
     (e.partyIndex !== undefined && e.hp > 0) || (ENEMY_KINDS.has(e.kind) && e.state === 'active');
   function damageable(e, self) {
     if (!(e.hp > 0) || e === self || e.id === self.id) return false;
-    if (e.kind === 'stag') return false; // boss rooms carry no hazards; never a hazard victim
+    if (e.kind === 'stag' || e.boss === true) return false; // boss rooms carry no hazards; never a hazard victim
     if (e.faction === 'party') return true;
     if (e.faction === 'hostile') return e.hittable !== false;
     if (e.faction === 'neutral') return !!e.hittable;
@@ -304,7 +304,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
       if (dormant) continue;
       if (h.htype === 'bramble') {
         for (const e of all) {
-          if (!isMobile(e) || !isGround(e) || e.kind === 'stag') continue;
+          if (!isMobile(e) || !isGround(e) || e.kind === 'stag' || e.boss === true) continue;
           if (Math.hypot(e.x - h.x, e.z - h.z) > h.radius) continue;
           lease(e, 'slow', h.slow, tick, h.id);
         }

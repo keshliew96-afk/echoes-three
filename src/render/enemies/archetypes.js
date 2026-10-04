@@ -608,6 +608,361 @@ export function buildMole() {
   };
 }
 
+// ======================================================================
+// Content slice 1 (docs/CONTENT_PLAN.md §3): Rotcap, Lantern Snail, Barrow
+// Crow, Brood Spider + Broodling. Same grammar: flat-faceted primitives, cool
+// hides with a value structure, ink on the big masses, a contact shadow, and
+// ONE indigo tell each.
+//   rotcap     a fat toadstool on a stubby stalk; indigo spots on the cap.
+//              The cap swells before a bite and pulses as it shuffles
+//   snail      a big coiled shell on a low slug foot; an indigo LANTERN bulb
+//              on an eyestalk that swells through the mend wind-up
+//   crow       a hunched black bird, bone beak; indigo eye glint. Hops; the
+//              wings fan out through the caw (cone telegraph)
+//   brood      a bloated round abdomen on eight angular legs; an indigo
+//              hourglass on the back
+//   broodling  the brood in miniature (no hourglass — a single indigo dot)
+
+// ------------------------------------------------------------ ROTCAP --
+export function buildRotcap() {
+  const group = new Group();
+  group.name = 'rotcap';
+  const yaw = new Group();
+  group.add(yaw);
+  const rig = new Group();
+  yaw.add(rig);
+  const mats = [];
+  const track = (m) => (mats.push(m), m);
+  const stalk = new Mesh(shared('rc-stalk', () => new CylinderGeometry(0.15, 0.19, 0.34, 7)), track(flashable(HIDE.rotStalk)));
+  stalk.position.y = 0.17;
+  addInk(stalk);
+  rig.add(stalk);
+  const capPivot = new Group();
+  capPivot.position.y = 0.36;
+  rig.add(capPivot);
+  const cap = new Mesh(shared('rc-cap', () => new SphereGeometry(0.34, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2)), track(flashable(HIDE.rotCap)));
+  cap.scale.set(1, 0.7, 1);
+  addInk(cap);
+  capPivot.add(cap);
+  const gills = new Mesh(shared('rc-gill', () => new CircleGeometry(0.33, 12)), track(flashable(HIDE.rotGill)));
+  gills.rotation.x = Math.PI / 2;
+  gills.position.y = 0.005;
+  capPivot.add(gills);
+  // Indigo spots on the cap (the tell) + a faint spore glow.
+  const spotG = shared('rc-spot', () => new IcosahedronGeometry(0.045, 0));
+  for (const [x, y, z] of [[0.12, 0.2, 0.1], [-0.15, 0.18, 0.04], [0.02, 0.23, -0.12], [-0.05, 0.15, 0.2], [0.2, 0.12, -0.08]]) {
+    const sp = new Mesh(spotG, tellMat());
+    sp.position.set(x, y, z);
+    capPivot.add(sp);
+  }
+  const spore = tellGlow(0.7, 0.18);
+  spore.position.y = 0.3;
+  capPivot.add(spore);
+  slitEyes(rig, { x: 0.07, y: 0.24, z: 0.16, len: 0.07, slant: 0.35 });
+  const feet = [];
+  const footG = shared('rc-foot', () => new IcosahedronGeometry(0.07, 0));
+  for (const side of [-1, 1]) {
+    const f = new Mesh(footG, track(flashable(HIDE.rotStalk)));
+    f.position.set(side * 0.12, 0.04, 0.04);
+    rig.add(f);
+    feet.push(f);
+  }
+  group.add(groundShadow(0.42, 0.8));
+  let lastBite = -1;
+  let biteAge = 9;
+  let lastT = null;
+  return {
+    group,
+    mats,
+    setYaw: (r) => {
+      yaw.rotation.y = r;
+    },
+    pose({ t, walkPhase, moveK, e }) {
+      const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
+      lastT = t;
+      if (e && e.biteTick !== lastBite && e.biteTick >= 0) {
+        lastBite = e.biteTick;
+        biteAge = 0;
+      }
+      biteAge += dt;
+      const k = biteAge < 0.3 ? Math.sin((biteAge / 0.3) * Math.PI) : 0;
+      const sway = Math.sin(walkPhase) * moveK;
+      rig.rotation.z = 0.12 * sway;
+      rig.position.y = 0.03 * Math.abs(sway);
+      capPivot.rotation.x = 0.5 * k;
+      capPivot.scale.setScalar(1 + 0.05 * Math.sin(t * 2.6) + 0.12 * k);
+      feet[0].position.z = 0.04 + 0.06 * sway;
+      feet[1].position.z = 0.04 - 0.06 * sway;
+      spore.material.opacity = 0.14 + 0.06 * Math.sin(t * 2.6);
+    },
+  };
+}
+
+// ------------------------------------------------------------- SNAIL --
+export function buildSnail() {
+  const group = new Group();
+  group.name = 'snail';
+  const yaw = new Group();
+  group.add(yaw);
+  const rig = new Group();
+  yaw.add(rig);
+  const mats = [];
+  const track = (m) => (mats.push(m), m);
+  const foot = new Mesh(shared('sn-foot', () => new IcosahedronGeometry(0.3, 1)), track(flashable(HIDE.snailBody)));
+  foot.scale.set(0.85, 0.32, 1.7);
+  foot.position.set(0, 0.1, 0.05);
+  addInk(foot);
+  rig.add(foot);
+  const head = new Mesh(shared('sn-head', () => new IcosahedronGeometry(0.15, 1)), track(flashable(HIDE.snailBody)));
+  head.position.set(0, 0.2, 0.5);
+  addInk(head);
+  rig.add(head);
+  // Shell: two stacked tori read as a coil, a dark core.
+  const shell = new Group();
+  shell.position.set(0, 0.42, -0.1);
+  rig.add(shell);
+  const coilA = new Mesh(shared('sn-coilA', () => new TorusGeometry(0.24, 0.13, 6, 12)), track(flashable(HIDE.snailShell)));
+  addInk(coilA);
+  shell.add(coilA);
+  const coilB = new Mesh(shared('sn-coilB', () => new TorusGeometry(0.11, 0.08, 6, 10)), track(flashable(HIDE.snailShellDark)));
+  coilB.position.z = 0.1;
+  shell.add(coilB);
+  const core = new Mesh(shared('sn-core', () => new IcosahedronGeometry(0.1, 0)), track(flashable(HIDE.snailShellDark)));
+  core.position.z = 0.04;
+  shell.add(core);
+  // Eyestalk + the LANTERN bulb (the tell, and the mend read).
+  const stalk = new Mesh(shared('sn-stalk', () => new CylinderGeometry(0.025, 0.03, 0.36, 5)), track(flashable(HIDE.snailBody)));
+  stalk.position.set(0, 0.36, 0.56);
+  stalk.rotation.x = 0.35;
+  rig.add(stalk);
+  const bulb = new Mesh(shared('sn-bulb', () => new SphereGeometry(0.07, 8, 6)), tellMat());
+  bulb.position.set(0, 0.54, 0.63);
+  rig.add(bulb);
+  const lantern = tellGlow(0.6, 0.35);
+  lantern.position.copy(bulb.position);
+  rig.add(lantern);
+  const pulse = new Mesh(
+    shared('sn-pulse', () => new RingGeometry(0.92, 1.0, 40)),
+    new MeshBasicMaterial({ color: TELL_INDIGO, transparent: true, opacity: 0, depthWrite: false, toneMapped: false })
+  );
+  pulse.rotation.x = -Math.PI / 2;
+  pulse.position.y = 0.02;
+  group.add(pulse);
+  group.add(groundShadow(0.5, 0.86, { forward: 0.05, wide: 1.0, deep: 1.5 }));
+  let lastMend = -1;
+  let mendAge = 9;
+  let lastT = null;
+  return {
+    group,
+    mats,
+    setYaw: (r) => {
+      yaw.rotation.y = r;
+    },
+    pose({ t, walkPhase, moveK, e }) {
+      const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
+      lastT = t;
+      if (e && e.mendTick !== lastMend && e.mendTick >= 0) {
+        lastMend = e.mendTick;
+        mendAge = 0;
+      }
+      mendAge += dt;
+      const windup = e && e.mendStartTick >= 0 ? 1 : 0;
+      const creep = Math.sin(walkPhase * 0.6) * moveK;
+      foot.scale.z = 1.7 + 0.12 * creep;
+      head.position.z = 0.5 + 0.05 * creep;
+      bulb.scale.setScalar(1 + 0.6 * windup + 0.1 * Math.sin(t * 3));
+      lantern.material.opacity = 0.3 + 0.35 * windup + 0.06 * Math.sin(t * 3);
+      // The mend pulse: an indigo ring that sweeps out to the 3.2 u radius.
+      const k = mendAge / 0.6;
+      if (k < 1) {
+        const r = 0.6 + 2.6 * k;
+        pulse.scale.set(r, r, 1);
+        pulse.material.opacity = 0.7 * (1 - k);
+      } else pulse.material.opacity = 0;
+    },
+  };
+}
+
+// -------------------------------------------------------------- CROW --
+export function buildCrow() {
+  const group = new Group();
+  group.name = 'crow';
+  const yaw = new Group();
+  group.add(yaw);
+  const rig = new Group();
+  yaw.add(rig);
+  const mats = [];
+  const track = (m) => (mats.push(m), m);
+  const body = new Mesh(shared('cr-body', () => new IcosahedronGeometry(0.22, 1)), track(flashable(HIDE.crowBody)));
+  body.scale.set(0.9, 0.95, 1.35);
+  body.position.set(0, 0.36, -0.02);
+  body.rotation.x = -0.35;
+  addInk(body);
+  rig.add(body);
+  const head = new Group();
+  head.position.set(0, 0.6, 0.2);
+  rig.add(head);
+  const skull = new Mesh(shared('cr-head', () => new IcosahedronGeometry(0.13, 0)), track(flashable(HIDE.crowBody)));
+  addInk(skull);
+  head.add(skull);
+  const beak = new Mesh(shared('cr-beak', () => new ConeGeometry(0.055, 0.24, 4)), track(flashable(HIDE.bone)));
+  beak.rotation.x = Math.PI / 2;
+  beak.position.set(0, -0.02, 0.18);
+  head.add(beak);
+  const glints = [];
+  for (const side of [-1, 1]) {
+    const g = new Mesh(shared('cr-eye', () => new BoxGeometry(0.05, 0.02, 0.02)), tellMat());
+    g.position.set(side * 0.08, 0.03, 0.08);
+    g.rotation.z = side * 0.4;
+    head.add(g);
+    const gl = tellGlow(0.22, 0.3);
+    gl.position.copy(g.position);
+    head.add(gl);
+    glints.push(gl);
+  }
+  const wings = [];
+  const wingG = shared('cr-wing', () => new ConeGeometry(0.16, 0.5, 3));
+  for (const side of [-1, 1]) {
+    const pivot = new Group();
+    pivot.position.set(side * 0.17, 0.44, 0.02);
+    rig.add(pivot);
+    const w = new Mesh(wingG, track(flashable(HIDE.crowWing)));
+    w.scale.set(0.45, 1, 1);
+    w.rotation.x = -Math.PI / 2 - 0.3;
+    w.position.z = -0.2;
+    addInk(w);
+    pivot.add(w);
+    wings.push({ pivot, side });
+  }
+  const tail = new Mesh(shared('cr-tail', () => new ConeGeometry(0.12, 0.3, 3)), track(flashable(HIDE.crowWing)));
+  tail.rotation.x = -Math.PI / 2 - 0.6;
+  tail.position.set(0, 0.28, -0.32);
+  rig.add(tail);
+  const legG = shared('cr-leg', () => new CylinderGeometry(0.018, 0.018, 0.2, 4));
+  for (const side of [-1, 1]) {
+    const l = new Mesh(legG, inkMat());
+    l.position.set(side * 0.08, 0.1, 0.02);
+    rig.add(l);
+  }
+  group.add(groundShadow(0.32, 0.8));
+  let lastFire = -1;
+  let fireAge = 9;
+  let lastT = null;
+  return {
+    group,
+    mats,
+    setYaw: (r) => {
+      yaw.rotation.y = r;
+    },
+    pose({ t, walkPhase, moveK, telegraphK, e }) {
+      const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
+      lastT = t;
+      if (e && e.fireTick !== lastFire && e.fireTick >= 0) {
+        lastFire = e.fireTick;
+        fireAge = 0;
+      }
+      fireAge += dt;
+      const snap = fireAge < 0.25 ? Math.sin((fireAge / 0.25) * Math.PI) : 0;
+      // Hop-walk; fan the wings through the caw; the head thrusts on the volley.
+      rig.position.y = Math.max(0, Math.sin(walkPhase * 1.2)) * 0.08 * moveK;
+      for (const w of wings) {
+        w.pivot.rotation.z = w.side * (0.15 + 1.0 * telegraphK + 0.3 * snap);
+      }
+      head.rotation.x = -0.35 * telegraphK + 0.4 * snap;
+      head.position.z = 0.2 + 0.08 * snap;
+      for (const g of glints) g.material.opacity = 0.25 + 0.4 * telegraphK + 0.06 * Math.sin(t * 3);
+    },
+  };
+}
+
+// ------------------------------------------------------------- BROOD --
+function spiderRig(name, { size, hourglass }) {
+  const group = new Group();
+  group.name = name;
+  const yaw = new Group();
+  group.add(yaw);
+  const rig = new Group();
+  yaw.add(rig);
+  const mats = [];
+  const track = (m) => (mats.push(m), m);
+  const abdomen = new Mesh(shared('br-abd', () => new IcosahedronGeometry(0.3, 1)), track(flashable(HIDE.broodBody)));
+  abdomen.scale.set(1.05 * size, 0.85 * size, 1.15 * size);
+  abdomen.position.set(0, 0.34 * size, -0.16 * size);
+  addInk(abdomen);
+  rig.add(abdomen);
+  const thorax = new Mesh(shared('br-thx', () => new IcosahedronGeometry(0.16, 0)), track(flashable(HIDE.broodDark)));
+  thorax.scale.setScalar(size);
+  thorax.position.set(0, 0.22 * size, 0.18 * size);
+  addInk(thorax);
+  rig.add(thorax);
+  if (hourglass) {
+    const hg = new Mesh(
+      shared('br-hg', () => mergeGeometries([new ConeGeometry(0.07, 0.12, 4).translate(0, 0.06, 0), new ConeGeometry(0.07, 0.12, 4).rotateX(Math.PI).translate(0, -0.06, 0)])),
+      tellMat()
+    );
+    hg.rotation.x = -Math.PI / 2 + 0.35;
+    hg.position.set(0, 0.6 * size, -0.12 * size);
+    rig.add(hg);
+    const gl = tellGlow(0.45, 0.22);
+    gl.position.copy(hg.position);
+    rig.add(gl);
+  } else {
+    const dot = new Mesh(shared('br-dot', () => new IcosahedronGeometry(0.05, 0)), tellMat());
+    dot.position.set(0, 0.6 * size, -0.12 * size);
+    rig.add(dot);
+  }
+  slitEyes(thorax, { x: 0.06, y: 0.04, z: 0.13, len: 0.06, slant: 0.5 });
+  // Eight angular legs: two-part bent shafts, phase-alternated.
+  const legs = [];
+  const legG = shared('br-leg', () => new CylinderGeometry(0.022, 0.016, 0.34, 4).translate(0, -0.17, 0));
+  const legMat = track(flashable(HIDE.broodDark));
+  for (let i = 0; i < 4; i++) {
+    for (const side of [-1, 1]) {
+      const pivot = new Group();
+      pivot.position.set(side * 0.1 * size, 0.24 * size, (0.26 - i * 0.12) * size);
+      rig.add(pivot);
+      const upper = new Mesh(legG, legMat);
+      upper.scale.setScalar(size);
+      upper.rotation.z = side * -1.1;
+      pivot.add(upper);
+      const lower = new Mesh(legG, legMat);
+      lower.scale.setScalar(size);
+      lower.position.set(side * 0.3 * size, 0.12 * size, 0);
+      lower.rotation.z = side * 0.35;
+      pivot.add(lower);
+      pivot.rotation.y = side * (0.5 - i * 0.33);
+      legs.push({ pivot, phase: (i % 2 ? 1 : 0) ^ (side > 0 ? 1 : 0) });
+    }
+  }
+  group.add(groundShadow(0.48 * size, 0.8));
+  let lastBite = -1;
+  let biteAge = 9;
+  let lastT = null;
+  return {
+    group,
+    mats,
+    setYaw: (r) => {
+      yaw.rotation.y = r;
+    },
+    pose({ t, walkPhase, moveK, e }) {
+      const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
+      lastT = t;
+      if (e && e.biteTick !== lastBite && e.biteTick >= 0) {
+        lastBite = e.biteTick;
+        biteAge = 0;
+      }
+      biteAge += dt;
+      const k = biteAge < 0.22 ? Math.sin((biteAge / 0.22) * Math.PI) : 0;
+      for (const l of legs) l.pivot.rotation.x = Math.sin(walkPhase * 2 + l.phase * Math.PI) * 0.35 * moveK;
+      rig.position.y = Math.abs(Math.sin(walkPhase * 2)) * 0.02 * moveK;
+      thorax.position.z = (0.18 + 0.06 * k) * size;
+      abdomen.scale.y = 0.85 * size * (1 + 0.04 * Math.sin(t * 2.2));
+    },
+  };
+}
+export const buildBrood = () => spiderRig('brood', { size: 1, hourglass: true });
+export const buildBroodling = () => spiderRig('broodling', { size: 0.5, hourglass: false });
+
 // ------------------------------------------------------------ ELITE --
 // §23.5 Elite: an indigo crown glyph above the head + a second, outer indigo
 // ring on the ground (never violet). Attached to any rig by the layer.
@@ -653,6 +1008,11 @@ export const ARCH_BUILDERS = Object.freeze({
   moth: buildMoth,
   ram: buildRam,
   mole: buildMole,
+  rotcap: buildRotcap,
+  snail: buildSnail,
+  crow: buildCrow,
+  brood: buildBrood,
+  broodling: buildBroodling,
 });
 // Crown height per kind (world u above the ground at scale 1).
-export const CROWN_Y = Object.freeze({ boar: 0.95, mantis: 1.35, quillback: 0.95, toad: 0.72, moth: 1.75, ram: 1.12, mole: 0.62 });
+export const CROWN_Y = Object.freeze({ boar: 0.95, mantis: 1.35, quillback: 0.95, toad: 0.72, moth: 1.75, ram: 1.12, mole: 0.62, rotcap: 0.78, snail: 0.92, crow: 0.92, brood: 0.85, broodling: 0.45 });

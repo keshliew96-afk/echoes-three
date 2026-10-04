@@ -481,6 +481,7 @@ export function createRunSystem({
       // M4a tuning note, damage × 1 + 0.5(T − 1)) and calls the act's own
       // add phases, which scale with the act tier alone (data/difficulty.js).
       boss.start(0, -4.2, {
+        kind: level.boss ?? 'stag',
         hp: diff.bossHp,
         dmgMul: diff.bossDmgMul,
         adds: level.bossAdds.map(([et, k]) => [et, k]),

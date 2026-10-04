@@ -17,6 +17,7 @@
 // that still make sense (restore the backup, export the raw file, delete).
 // Palette: Void Charcoal plates, Parchment ink, Warm Grey chrome, Hearth
 // Amber focus (the thumbnails are pictures of the game, like the backdrop).
+import { bossNameFor } from '../../data/levels.js';
 import { service, registerScreen } from '../../app/registry.js';
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
@@ -97,7 +98,7 @@ export function whereLine(m) {
   if (meta.mode === 'run' && meta.phase === 'transit') return transitWhere(meta) || `Level ${roman ?? 'I'} — between levels`;
   if (meta.mode === 'run' && meta.room) {
     const act = roman ? `Level ${roman} · ${meta.levelName || meta.actName || ''}`.replace(/ · $/, '') : meta.actName || `Act ${meta.act || 1}`;
-    const kind = ROOM_LABEL[meta.roomMode] || '';
+    const kind = meta.roomMode === 'boss' ? bossNameFor(meta.act ?? lv) : ROOM_LABEL[meta.roomMode] || '';
     const phase = PHASE_LABEL[meta.phase] ? ` — ${PHASE_LABEL[meta.phase]}` : '';
     return `${act} · Room ${meta.room} of 8${kind ? ` · ${kind}` : ''}${phase}`;
   }

@@ -9,6 +9,13 @@ import { esc } from './style.js';
 import { SKILLS } from '../../sim/skills.js';
 import { service } from '../../app/registry.js'; // M2 NEW-BEST: the save service's run record
 import { levelFor } from '../../data/levels.js';
+
+// Per-act victory line (matches ui/run/transit.js FLAVOUR).
+const WIN_FLAVOUR = {
+  1: 'The Hollow Stag falls. The wood breathes out.',
+  2: 'The Drowned Heron sinks. The water runs clear again.',
+  3: 'The Barrow Wyrm is still. The long night lifts.',
+};
 import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
 import { PALETTE } from '../../data/palette.js';
 import { CLASS_NAME, CLASS_OF_SEAT } from '../../data/classes.js';
@@ -189,8 +196,8 @@ export function createEndScreen({ run }) {
     headline.textContent = win ? (complete ? 'CAMPAIGN COMPLETE' : 'VICTORY') : camp ? 'THE CAMPAIGN ENDS' : 'THE RUN ENDS';
     flavour.textContent = win
       ? complete
-        ? 'The last Stag falls. Every level is clear — the long night is over.'
-        : 'The Hollow Stag falls. The wood breathes out.'
+        ? 'The last of the old beasts falls. Every level is clear — the long night is over.'
+        : WIN_FLAVOUR[view.act] ?? WIN_FLAVOUR[1]
       : 'The gods applaud.';
     {
       const c = run().campaign ? run().campaign() : null;
