@@ -115,6 +115,15 @@ export const ENEMY_VFX = Object.freeze({
   moth: Object.freeze({ matter: 'dust', family: 'flyer', shard: null, chunk: 0, dust: 5 }),
   ram: Object.freeze({ matter: 'stone', family: 'brute', shard: null, chunk: 7, dust: 3 }),
   mole: Object.freeze({ matter: 'earth', family: 'burrower', shard: null, chunk: 8, dust: 4 }),
+  // Content slice 1 (docs/CONTENT_PLAN.md §3). Their signature beats (spore
+  // burst, lantern mend, feather fan, brood split) are recipes in the
+  // director keyed by the sim event; these rows give their hits and deaths
+  // the right material.
+  rotcap: Object.freeze({ matter: 'spore', family: 'brute', shard: null, chunk: 3, dust: 5, spores: true }),
+  snail: Object.freeze({ matter: 'shell', family: 'support', shard: null, chunk: 6, dust: 0, lantern: true }),
+  crow: Object.freeze({ matter: 'feather', family: 'shooter', shard: 'feather', chunk: 0, dust: 1, shot: Object.freeze({ look: 'dart', trail: 0.18 }), feathers: 9 }),
+  brood: Object.freeze({ matter: 'ichor', family: 'charger', shard: 'drop', chunk: 4, dust: 0, legs: 8 }),
+  broodling: Object.freeze({ matter: 'ichor', family: 'charger', shard: 'drop', chunk: 1, dust: 0, legs: 3 }),
 });
 
 const FAMILY_DEFAULT = Object.freeze({
@@ -124,6 +133,7 @@ const FAMILY_DEFAULT = Object.freeze({
   flyer: Object.freeze({ matter: 'dust', family: 'flyer', shard: null, chunk: 0, dust: 4 }),
   burrower: Object.freeze({ matter: 'earth', family: 'burrower', shard: null, chunk: 7, dust: 4 }),
   brute: Object.freeze({ matter: 'stone', family: 'brute', shard: null, chunk: 6, dust: 3 }),
+  support: Object.freeze({ matter: 'shell', family: 'support', shard: null, chunk: 4, dust: 0 }),
 });
 const ENEMY_DEFAULT = Object.freeze({ matter: 'ash', family: 'brute', shard: null, chunk: 4, dust: 2, shot: Object.freeze({ look: 'sickle', trail: 0.2 }) });
 
@@ -138,8 +148,15 @@ export function vfxMatterColor(matter) {
 }
 
 // ------------------------------------------------------------------ boss --
+// Every boss shares the God-stuff Violet corruption (its identity tell, §11)
+// and Ember for the threat itself; what tells them apart is matter and shape.
+//   stag   stone, antler forks and fracturing rings
+//   heron  water and silt: spear wakes, foam rings, a geyser (Act II, the mill)
+//   wyrm   ash and cinders: a breath of streaking cinders, earth eruptions
+//          (Act III, the barrow)
 export const BOSS_VFX = Object.freeze({
   stag: Object.freeze({
+    id: 'stag',
     corruption: PALETTE.godstuffViolet,
     peak: PALETTE.godstuffVioletPeak,
     threat: PALETTE.emberDanger,
@@ -148,7 +165,40 @@ export const BOSS_VFX = Object.freeze({
     trample: Object.freeze({ chunk: 8, dust: 4 }),
     camera: Object.freeze({ dolly: 0.08 }),
   }),
+  heron: Object.freeze({
+    id: 'heron',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'water',
+    second: 'silt',
+    // Bill Spear: the foam wake down the lane, droplets every `every` s of the drive.
+    spear: Object.freeze({ wakeW: 0.5, drops: 3, every: 0.05 }),
+    // Wingbeat: gust lines + feathers + spray thrown off the ring edge.
+    wing: Object.freeze({ gusts: 12, feathers: 10, spray: 12 }),
+    // Surfacing: a geyser of foam with a violet core.
+    geyser: Object.freeze({ height: 3.4, drops: 22, ripples: 3 }),
+    camera: Object.freeze({ dolly: 0.07, kick: 0.05 }),
+  }),
+  wyrm: Object.freeze({
+    id: 'wyrm',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'cinder',
+    second: 'earth',
+    // Ash Breath: cinder streaks + rolling ash down the cone.
+    breath: Object.freeze({ streaks: 14, smoke: 9, cinders: 22 }),
+    // Burrow Strike: the eruption where it surfaces.
+    erupt: Object.freeze({ chunk: 18, dust: 8, cinders: 20, pillarH: 3.0 }),
+    // The tunnel trail it leaves while underground (s between puffs).
+    tunnel: Object.freeze({ every: 0.12 }),
+    camera: Object.freeze({ dolly: 0.08, kick: 0.05 }),
+  }),
 });
+export function isVfxBoss(kind) {
+  return Object.prototype.hasOwnProperty.call(BOSS_VFX, kind);
+}
 export function vfxBossStyle(kind) {
   return BOSS_VFX[kind] ?? BOSS_VFX.stag;
 }

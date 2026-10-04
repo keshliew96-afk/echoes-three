@@ -53,4 +53,12 @@ export const VFX_MATTER = Object.freeze({
   stone: '#7D7A76',
   earth: '#5A4632',
   ash: '#221F1B',
+  // Content slice 1 creatures (design-VFX.md §5b / §6b).
+  spore: '#B3B597', // Rotcap: a sickly pale olive-grey spore dust (far off Bright Heal: s 0.15)
+  shell: '#4C5763', // Lantern Snail: dark slate shell shards
+  feather: '#2B2D35', // Barrow Crow: near-black feathers
+  ichor: '#8E9C98', // Brood Spider: pale grey-green ichor and egg sac
+  water: '#A9C0C4', // Drowned Heron: millrace foam (desaturated, never a glyph)
+  silt: '#4E5848', // Drowned Heron: the mill's murky silt
+  cinder: '#5E5853', // Barrow Wyrm: ash smoke light enough to read on the barrow floor
 });

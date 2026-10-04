@@ -122,6 +122,23 @@ material (dirt, chitin, quills, slime, dust, stone, earth); **camera** only
 the sim's own shake on heavy hits, no added kick (the party should feel the
 weight, not the enemy).
 
+### 5b. Content slice 1 enemies (Sunken Mill, Ashen Barrow)
+
+Same pillars as above. Their signature beats are recipes keyed by their own
+sim events (`rotcap_burst`, `snail_mend`, `crow_volley`, `brood_split`); their
+hits and deaths read the `ENEMY_VFX` row's matter.
+
+| Enemy | Attack / signature effect | Impact on the party | Death |
+|---|---|---|---|
+| Rotcap | the kill pops the cap: pale spore puff and cap fragments; when the burst lands, a thin Ember edge under a soft spore wave rolling out to the ring, then spore motes that hang over the slick | spore dust | spore puff (the burst is the real death beat) |
+| Lantern Snail | the mend is neither an attack nor party healing, so it is neither Ember nor Bright Heal: an indigo flash off the shell-lantern, a thin indigo ring out to the mend radius, an indigo tether to each body it mended, indigo motes rising off them | shell chips | the lantern pops and goes out (indigo flash, light), slate shell shards, a wet ring |
+| Barrow Crow | the caw: an Ember beak flash, a short caw arc across the fan, three muzzle lines on the three headings, black feathers shaken loose; its shots trail as thin bone-cored darts | feather shards | a burst of black feathers drifting down, a bone beak chip |
+| Brood Spider | the split: a wet ichor ring, ichor drops, pale web strands thrown to each Broodling | ichor drops | chitin leg needles (Broodlings: fewer needles and a small ichor ring) |
+
+Matters added to `VFX_MATTER`: spore, shell, feather, ichor (and water, silt,
+cinder for the bosses below). The snail's indigo is the existing rank-and-file
+corruption tell (`TELL_INDIGO`), so no new hue enters the frame.
+
 ## 6. The Hollow Stag
 
 | Pillar | Design |
@@ -131,6 +148,26 @@ weight, not the enemy).
 | Light & glow | The Stag is the brightest emitter in the room (unchanged); its quake throws the largest light pool of the game, violet fading to Ember. |
 | Debris & pacing | Heaviest debris in the game: rock chunks, a rolling dust wall, violet embers that hang for 1.5 s. Pacing: the sim's telegraph is the anticipation, the landing holds ~6 frames, then the long linger. |
 | Camera & view | The sim's stomp shake (unchanged) plus a dolly punch toward the landing (0.08 u, the largest in the game) and a 2-frame vignette pulse via the light pool. |
+
+## 6b. The Drowned Heron and the Barrow Wyrm
+
+Both keep God-stuff Violet as their corruption (it is the boss colour, §11)
+and Ember for the threat; their matter and shapes tell them apart from the
+Stag and each other. Every effect plays at the telegraph's resolve or after
+it, never over the warning: the Heron's lane and ring and the Wyrm's cone and
+ring stay exactly the sim's shapes.
+
+| Pillar | Drowned Heron (Act II, the mill) | Barrow Wyrm (Act III, the barrow) |
+|---|---|---|
+| Style | Drowned and cold: foam and silt over violet rot. | A furnace under the grave: ash and cinders over violet cracks. |
+| Energy & shapes | Long straight wakes. Bill Spear: a foam wake laid down the lane at the drive's own speed (11 u/s) with a violet-edged spearhead running along it, spray thrown off both legs while it drives, a splash ring where it stops. Wingbeat: radial gust lines and feathers out to the ring, spray off the edge. Submerge: splash, three ripple rings, a silt cloud. Surfacing: a foam geyser with a violet core. | Fans and eruptions. Ash Breath: a violet throat flare, an Ember front sweeping to the cone's rim, cinder streaks filling the cone, ash rolling down it. Burrow: a mound bursts. While underground: a trail of turned earth and ash so the party can read where it is tunnelling. Emergence: cracks, a jagged earth ring, a violet pillar, earth thrown high. Enrage: a violet flare and cracks. |
+| Light & glow | Violet on the bill, the geyser core and the wingbeat; never warm. | Ember down the breath (it is the attack), violet from the cracks and the eruption. |
+| Debris & pacing | Water drops (fast, heavy fall), feathers (slow flutter), silt clouds that linger ~1.5 s. | Earth chunks thrown high, ash smoke that rolls and rises, cinders that hang ~1.5 s. |
+| Camera & view | A kick along the spear when it connects; a dolly on the surfacing and the death. | A short kick down the breath; a dolly on the emergence and the death. |
+| Death | Falls into the millrace: the act's largest splash, feathers left on the water, violet draining up. | Crumbles to ash: cinders and violet embers rise, the cracks go cold. |
+
+The boss rows live in `BOSS_VFX` (`heron`, `wyrm`); `vfxBossStyle(kind)`
+keeps falling back to the Stag for any future boss without a row.
 
 ## 7. Architecture
 
@@ -175,6 +212,9 @@ the kick and dolly (Off turns them off).
 - `node tools/vfx-gallery.mjs <prefix>` stages a live room with all seven
   enemy types, fires all 24 Tank/Swordsman/Archer skills and the Healer's
   skills, then the Stag's room, and screenshots each beat.
-- `__echoes.content.vfx()` reports the director's live counts per primitive
-  and the camera offset.
+- `__echoes.content.vfx()` reports the director's live counts per primitive,
+  the camera offset and `recipes` (how often each creature recipe has played).
+- `node tools/vfx-roster2.mjs` (content slice 1) stages each new enemy's
+  signature beat and runs the three boss rooms with the autopilot, failing
+  if any Heron / Wyrm / slice-1 enemy recipe never played.
 - Smoke, the core loop and the 9 goldens must stay green (render-only change).
