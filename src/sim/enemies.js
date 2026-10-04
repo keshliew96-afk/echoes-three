@@ -72,6 +72,15 @@ import rotcap from './enemies/rotcap.js';
 import snail from './enemies/snail.js';
 import crow from './enemies/crow.js';
 import brood, { broodling } from './enemies/brood.js';
+// Content slice 2 (docs/CONTENT_PLAN.md §3): Briar Wasp + Thornling (Wood),
+// Weir Crab + Bog Lamprey (Mill), Grave Wisp + Bone Knight (Barrow). Two more
+// optional module fields: `alwaysElite` (the Bone Knight) and ctx.spawnSlick.
+import wasp from './enemies/wasp.js';
+import thornling from './enemies/thornling.js';
+import crab from './enemies/crab.js';
+import lamprey from './enemies/lamprey.js';
+import gravewisp from './enemies/gravewisp.js';
+import knight from './enemies/knight.js';
 
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -131,7 +140,7 @@ function circleContactT(px, pz, dx, dz, cx, cz, R) {
 }
 
 // Gauntlet archetypes (M4b): etype -> plain-data module (PLAN §3.6).
-export const ARCHETYPES = Object.freeze({ quillback, toad, moth, ram, mole, rotcap, snail, crow, brood, broodling });
+export const ARCHETYPES = Object.freeze({ quillback, toad, moth, ram, mole, rotcap, snail, crow, brood, broodling, wasp, thornling, crab, lamprey, gravewisp, knight });
 // Every hostile enemy kind this system owns (the boss is sim/boss.js's).
 export const ENEMY_KINDS = Object.freeze(new Set(['boar', 'mantis', ...Object.keys(ARCHETYPES)]));
 // §23.5 Elite modifier (any non-boss).
@@ -251,7 +260,29 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       return shot;
     },
     spawnChild: (etype, x, z, o) => spawnScaled(etype, x, z, o),
+    // A slow ground patch with no glob in front of it (the Thornling's
+    // planted thicket): { radius, ticks, slow, variant }.
+    spawnSlick: (owner, x, z, o) => spawnSlick(owner, x, z, o),
   };
+  function spawnSlick(owner, x, z, o) {
+    const tick = getTick();
+    const s = registry.spawn({
+      kind: 'slick',
+      faction: 'neutral',
+      x,
+      z,
+      px: x,
+      pz: z,
+      radius: o.radius,
+      slow: o.slow,
+      startTick: tick,
+      untilTick: tick + o.ticks,
+      ownerId: owner ? owner.id : null,
+      ...(o.variant ? { variant: o.variant } : {}),
+    });
+    events.emit(tick, 'slick_spawn', { id: s.id, x: r2(x), z: r2(z), radius: o.radius, untilTick: s.untilTick, ...(o.variant ? { variant: o.variant } : {}) });
+    return s;
+  }
   // onDeath hooks (Rotcap spore burst, Brood split). The `death` event fires
   // inside combat.kill before the body is despawned, so the corpse is readable.
   events.on('death', (ev) => {
@@ -271,7 +302,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       events.emit(tick, "spawn_blocked", { etype, x: r2(x), z: r2(z), wave });
       return null;
     }
-    const elite = !!(opts && opts.elite);
+    const elite = !!(opts && opts.elite) || !!(A && A.alwaysElite);
     const hpMul = (opts && opts.hpMul > 0 ? opts.hpMul : 1) * (elite ? ELITE.hpMul : 1);
     const dmgMul = (opts && opts.dmgMul > 0 ? opts.dmgMul : 1) * (elite ? ELITE.dmgMul : 1);
     const radius = elite ? S.radius * ELITE.scale : S.radius;
@@ -589,6 +620,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       slickRadius: o.slickRadius,
       slickTicks: o.slickTicks,
       slickSlow: o.slickSlow,
+      ...(o.slickVariant ? { slickVariant: o.slickVariant } : {}),
       telegraph: {
         kind: 'ring',
         startTick: tick,
@@ -656,6 +688,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     registry.despawn(g.id);
     const src = owner ?? { id: g.ownerId, kind: g.ownerKind, faceX: 0, faceZ: 1 };
     strike(ctx, src, victims.concat(props), g.power, g.tx, g.tz, { delivery: 'skill', shape: 'ring' });
+    if (!(g.slickRadius > 0)) return; // a glob with no ground patch (the Lich Ram's graves)
     const slick = registry.spawn({
       kind: 'slick',
       faction: 'neutral',
@@ -668,8 +701,9 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       startTick: tick,
       untilTick: tick + g.slickTicks,
       ownerId: g.ownerId,
+      ...(g.slickVariant ? { variant: g.slickVariant } : {}),
     });
-    events.emit(tick, 'slick_spawn', { id: slick.id, x: r2(g.tx), z: r2(g.tz), radius: g.slickRadius, untilTick: slick.untilTick });
+    events.emit(tick, 'slick_spawn', { id: slick.id, x: r2(g.tx), z: r2(g.tz), radius: g.slickRadius, untilTick: slick.untilTick, ...(g.slickVariant ? { variant: g.slickVariant } : {}) });
   }
 
   // Slicks slow PARTY bodies standing in them (30%, §23.5); fliers never land.
@@ -896,6 +930,10 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
   return {
     spawn,
     spawnScaled,
+    // Boss kits (sim/boss.js kctx): the same glob and shot models the
+    // archetypes use, owned by the boss body.
+    spawnGlob: (owner, tick, o) => spawnGlob(owner, tick, o),
+    fireShot: (owner, tick, dirX, dirZ, o) => ctx.fireShot(owner, tick, dirX, dirZ, o),
     hasType: (etype) => !!(ENEMY_STATS[etype] || ARCHETYPES[etype]),
     isEnemyKind,
     governor,

@@ -13,7 +13,7 @@
 // edges, the two zones are offset from the canvas edges by --zb / --zt, which
 // are solved here so each zone lands a fixed number of REAL px from its
 // window edge. See the SIZING CONTRACT note in style.js.
-import { bossNameFor } from '../../data/levels.js';
+import { bossNameOfRun } from '../../data/levels.js';
 import { bossName as simBossName } from '../../sim/boss.js';
 // Title-case boss name for an entity kind ('THE DROWNED HERON' -> 'The Drowned Heron').
 const bossName = (kind) => simBossName(kind).toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
@@ -42,7 +42,7 @@ function locationCopy(scene, rv) {
     const total = rv.rooms ?? 8;
     // Gauntlet M4b: Acts II / III name their own biome (the Act I copy stays).
     const place = rv.act > 1 && rv.actName ? String(rv.actName).toUpperCase() : null;
-    if (room >= total) return { name: place ?? 'THE HOLLOW', sub: `ROOM ${room} OF ${total} · ${bossNameFor(rv.act).toUpperCase()}` };
+    if (room >= total) return { name: place ?? 'THE HOLLOW', sub: `ROOM ${room} OF ${total} · ${bossNameOfRun(rv).toUpperCase()}` };
     if (rv.phase === 'shop' || rv.mode === 'shop') return { name: "THE PEDDLER'S CLEARING", sub: `ROOM ${room} OF ${total} · ${MODE_WORD.shop}` };
     const mode = rv.mode === 'kill_all' && place ? 'CLEAR THE ROOM' : MODE_WORD[rv.mode] ?? 'ON THE ROAD';
     return { name: place ?? 'UNEASY WOODLAND', sub: `ROOM ${room} OF ${total} · ${mode}` };
