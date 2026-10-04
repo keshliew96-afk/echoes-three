@@ -303,7 +303,9 @@ export function createCampScene(stage, toggles, ctx) {
   prompt.innerHTML =
     `<span class="cp-chip cp-begin"><span class="cp-key">E</span><span class="cp-lab"><b>Begin Run</b> &nbsp;·&nbsp; Level 1 · ${levelFor(FIRST_LEVEL).name}</span></span>` +
     '<span class="cp-sep"></span>' +
-    '<span class="cp-chip cp-levels"><span class="cp-key">L</span><span class="cp-lab">Levels</span></span>';
+    '<span class="cp-chip cp-levels"><span class="cp-key">L</span><span class="cp-lab">Levels</span></span>' +
+    '<span class="cp-sep"></span>' +
+    '<span class="cp-chip cp-unlocks"><span class="cp-key">U</span><span class="cp-lab">Unlocks</span></span>';
   document.body.appendChild(prompt);
   {
     const st = document.createElement('style');
@@ -321,6 +323,10 @@ export function createCampScene(stage, toggles, ctx) {
   prompt.querySelector('.cp-levels').addEventListener('click', (e) => {
     e.stopPropagation();
     openLevels('prompt');
+  });
+  prompt.querySelector('.cp-unlocks').addEventListener('click', (e) => {
+    e.stopPropagation();
+    openUnlocks('prompt');
   });
   const tablePrompt = createTablePrompt(() => openLevels('table'));
   const fitPrompt = () => {
@@ -653,6 +659,37 @@ export function createCampScene(stage, toggles, ctx) {
     return true;
   }
 
+  // UNLOCKS (docs/UNLOCKS.md): the between-runs screen (app screen
+  // 'unlocks', src/ui/run/unlocks.js). A network guest may open it too: it
+  // is that player's own profile.
+  function openUnlocks(via = 'key') {
+    if (mode !== 'camp' || begin || picking) return false;
+    const app = svc('app');
+    if (!app || !app.screens || !appReg || !appReg.screenFactory?.('unlocks')) return false;
+    if (app.state !== 'playing' || app.screens.isOpen()) return false;
+    picking = true;
+    prompt.classList.remove('cp-on');
+    if (tablePrompt) tablePrompt.classList.remove('cg-on');
+    const off = app.screens.on('change', () => {
+      if (app.screens.has('unlocks')) return;
+      picking = false;
+      if (typeof off === 'function') off();
+    });
+    app.screens.push('unlocks', { via });
+    return true;
+  }
+  // The boons a real Begin Run carries: what the player equipped (null =
+  // nothing, a plain run). Developer starts (?level=N) never carry them.
+  function equippedBoons(harness) {
+    if (harness) return null;
+    const save = svc('save');
+    try {
+      return save && typeof save.boons === 'function' ? save.boons() : null;
+    } catch {
+      return null;
+    }
+  }
+
   // PLAYER-FACING start at a level (the Level Select, cmd('campChoose'),
   // __echoes.campaign.choose): refuses a locked level (PLAN §12.7).
   function chooseLevel(level, via = 'select') {
@@ -687,7 +724,8 @@ export function createCampScene(stage, toggles, ctx) {
     const level = isLevel(begin.level) ? begin.level : FIRST_LEVEL;
     const ready = arena.levelStatus ? arena.levelStatus(level).ready : true;
     const depart = level !== FIRST_LEVEL || !ready;
-    world.runSystem().startCampaign({ level, challenge, depart, harness: !!begin.harness, ...(begin.endless ? { endless: true } : {}) });
+    const boons = equippedBoons(!!begin.harness);
+    world.runSystem().startCampaign({ level, challenge, depart, harness: !!begin.harness, ...(begin.endless ? { endless: true } : {}), ...(boons ? { boons } : {}) });
     begin.started = true;
     begin.startedAt = performance.now();
     lastBegin = {
@@ -700,6 +738,7 @@ export function createCampScene(stage, toggles, ctx) {
       harness: !!begin.harness,
       endless: !!begin.endless,
       challenge,
+      boons,
       pressedAt: Math.round(begin.pressedAt),
       startedAt: Math.round(begin.startedAt),
       deltaMs: Math.round(begin.startedAt - begin.pressedAt),
@@ -717,6 +756,7 @@ export function createCampScene(stage, toggles, ctx) {
     // L = the Levels entry of the camp prompt (anywhere in camp; the portal
     // prompt shows the key).
     if (e.code === 'KeyL' && !e.ctrlKey && !e.metaKey && !e.altKey) openLevels('key');
+    if (e.code === 'KeyU' && !e.ctrlKey && !e.metaKey && !e.altKey) openUnlocks('key');
   });
   // @gnt:M4a BEGIN-RUN end
 

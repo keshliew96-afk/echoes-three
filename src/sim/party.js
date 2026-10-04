@@ -549,11 +549,14 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
   }
 
   // ---------------------------------------------------------- persistence --
-  function resetForRun(seed) {
+  // `kits` (UNLOCKS, docs/UNLOCKS.md): { classId: [skillId...] } — a kit the
+  // player equipped replaces that class's starting loadout for this run.
+  function resetForRun(seed, kits = null) {
     stream = createGameplayRng(partySeed(seed));
     for (const i of PARTY_SEATS) {
       const s = seats[i];
-      s.slots = [...STARTING_LOADOUT[s.classId]];
+      const kit = kits && Array.isArray(kits[s.classId]) && kits[s.classId].length ? kits[s.classId] : null;
+      s.slots = [...(kit ?? STARTING_LOADOUT[s.classId])];
       s.arranged = false;
       s.purse = 0;
       s.state = { combo: {}, recentCasts: [], retaliate: {}, stillSince: getTick() };

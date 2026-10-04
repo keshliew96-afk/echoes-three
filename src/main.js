@@ -463,6 +463,31 @@ if (bootParams.slot && bootParams.menuSkip) {
 }
 // @gnt:SAVE end
 
+// @gnt:UNLOCKS begin — cross-run unlocks (docs/UNLOCKS.md): the between-runs
+// screen the camp opens (U / the portal prompt's Unlocks chip), and this
+// player's equipped tints applied to the class VFX (render only; re-applied
+// whenever the profile changes, another tab's write included).
+import { createUnlocksScreen } from './ui/run/unlocks.js';
+import { setClassTints } from './data/vfx.js';
+registerScreen('unlocks', createUnlocksScreen);
+{
+  const applyTints = () => {
+    try {
+      setClassTints(saveSystem.tints());
+    } catch {
+      /* cosmetic only */
+    }
+  };
+  try {
+    saveSystem.grantFreeUnlocks();
+  } catch {
+    /* a profile this browser can't write still plays */
+  }
+  applyTints();
+  saveSystem.onProfileChanged(applyTints);
+}
+// @gnt:UNLOCKS end
+
 // @gnt:NET begin (M5a W3: provide('net', client) only; M5b W4: the session
 // driver) — `simStep` is THE seam the frame loop calls once per sim tick.
 // M5b swaps it for the host/guest driver (host: world.step(tick, snap,

@@ -84,6 +84,8 @@ import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
 // RELICS (docs/CONTENT_PLAN.md §5): run-long relics + cursed doors.
 import { createRelicSystem, cursedDiff } from './relics.js';
+// CROSS-RUN UNLOCKS (docs/UNLOCKS.md): the boons a campaign is started with.
+import { sanitizeBoons } from '../data/unlocks.js';
 import { swapSuggestion, CLASS_OF_SEAT, PARTY_DEADLINES } from '../data/classes.js';
 // PARTY (PLAN §16.3): the party page + the party shelves.
 import { createPartyPages } from './partypage.js';
@@ -289,14 +291,17 @@ export function createRunSystem({
     const level = isLevel(o.level ?? o.act) ? Number(o.level ?? o.act) : FIRST_LEVEL;
     // ENDLESS: an endless descent always sets out from the first level.
     const endless = !!o.endless;
-    openRun({ act: endless ? FIRST_LEVEL : level, challenge: o.challenge, mode: 'campaign', harness: !!o.harness, endless });
+    openRun({ act: endless ? FIRST_LEVEL : level, challenge: o.challenge, mode: 'campaign', harness: !!o.harness, endless, boons: o.boons });
     if (o.harness && typeof o.boss === 'string') bossPick = o.boss;
     if (o.depart) beginTransit('depart', null, act, getTick());
     else enterRoom(1);
     return view();
   }
 
-  function openRun({ act: a, challenge: c, mode, harness, endless = false }) {
+  function openRun({ act: a, challenge: c, mode, harness, endless = false, boons: rawBoons = null }) {
+    // UNLOCKS: what the player equipped between runs (campaigns only). null =
+    // nothing picked, and then nothing below differs from a plain run.
+    const boons = mode === 'campaign' ? sanitizeBoons(rawBoons) : null;
     wipeState({ silent: true });
     autoReturnTick = null;
     bossPick = null;
@@ -330,10 +335,19 @@ export function createRunSystem({
       // record, and so its saves and hashes, are unchanged). `won` = the
       // final level was cleared (the campaign itself is won).
       ...(endless && mode === 'campaign' ? { endless: true, won: false } : {}),
+      ...(boons ? { boons } : {}),
     };
     // PARTY: every ally back to its starting loadout, empty build, purse 0;
     // the party stream seeded from the run SEED (no gameplay draw).
-    if (party) party.resetForRun(frame.seed);
+    // UNLOCKS: an equipped kit replaces a class's starting skills.
+    if (party) party.resetForRun(frame.seed, boons && boons.kits ? boons.kits : null);
+    if (boons && boons.kits && boons.kits.healer) {
+      const kit = new Array(SKILL_SLOTS).fill(null);
+      boons.kits.healer.slice(0, SKILL_SLOTS).forEach((id, i) => {
+        kit[i] = { id, remaining: 0 };
+      });
+      skillSys.restore({ slots: kit, override: null });
+    }
     if (pages) pages.reset();
     // RELICS: on for campaigns, off for the legacy single-level run (goldens).
     relics.reset(frame.seed, mode === 'campaign' && relicsDefault);
@@ -354,7 +368,22 @@ export function createRunSystem({
     harnessGrant = null;
     if (act !== FIRST_LEVEL && hg !== 'max') applyStarterGrant(act, { allies: hg === null });
     if (hg !== null && allyOn()) applyHarnessGrant(hg);
+    if (boons) applyBoons(boons);
   }
+
+  // UNLOCKS: the heirloom relic and the purse land after the starter grant
+  // (no draws: the relic is given, not rolled). One `boons` event names them.
+  function applyBoons(b) {
+    const relic = b.relic ? relics.grant(b.relic) : null;
+    if (b.glint) gainGlint(b.glint, 'boon_purse');
+    events.emit(getTick(), 'boons', {
+      kits: b.kits ? Object.keys(b.kits) : [],
+      relic,
+      glint: b.glint ?? 0,
+      vows: b.vows ? [...b.vows] : [],
+    });
+  }
+  const runVows = () => (campaign && campaign.boons && Array.isArray(campaign.boons.vows) ? campaign.boons.vows : null);
 
   // `?partygrant=N` / `max` (PLAN §16.11) — marks the run harness.
   function applyHarnessGrant(g) {
@@ -478,7 +507,10 @@ export function createRunSystem({
     const baseDiff = depth > 3 ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
     // RELICS: a cursed room rolls its waves with the curse's numbers.
     const roomCurse = combatRoom ? relics.curseFor(n) : null;
-    const diff = roomCurse ? cursedDiff(baseDiff, roomCurse) : baseDiff;
+    let diff = roomCurse ? cursedDiff(baseDiff, roomCurse) : baseDiff;
+    // UNLOCKS: each vow the party wears curses every combat room.
+    const vows = combatRoom ? runVows() : null;
+    if (vows) for (const v of vows) diff = cursedDiff(diff, v);
     if (combatRoom) waves.planRoom(mode, { act, room: n, challenge, level, diff });
     // Layout AFTER the schedule (one fixed roll order per room).
     const layoutId = rollLayout(n, mode);
@@ -1386,7 +1418,9 @@ export function createRunSystem({
         .filter(Boolean)
         .map((s) => s.id),
       ...(party ? { builds: partyBuilds() } : {}),
-      ...(relics.enabled() ? { relics: relics.owned() } : {}),
+      ...(relics.enabled() ? { relics: relics.owned(), curses: relics.view().cursesTaken } : {}),
+      // UNLOCKS: what the run was started with (present only when something was).
+      ...(campaign && campaign.boons ? { boons: cloneData(campaign.boons) } : {}),
       nodes: {
         bench: b.bench.map((x) => x.node),
         socketed: b.skills.flatMap((sk) =>
@@ -1697,6 +1731,8 @@ export function createRunSystem({
       ...(pages && pages.screensAny() ? { socketScreens: pages.screens() } : {}),
       // RELICS: present only while a run with relics is live (hash-stable).
       ...(active && relics.enabled() ? { relics: relics.view() } : {}),
+      // UNLOCKS: the run's boons (present only when the player picked some).
+      ...(active && campaign && campaign.boons ? { boons: cloneData(campaign.boons) } : {}),
       summary,
       fadeTicksLeft: phase === 'fade' ? Math.max(0, fadeUntilTick - getTick()) : 0,
     };

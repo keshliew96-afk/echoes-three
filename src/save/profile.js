@@ -32,8 +32,16 @@
 // gains `depth`. A level played past Depth 3 scores at actMul 2.0 + 0.5 per
 // depth beyond 3 and stays out of the per-level records (deepest room,
 // fastest clear), which keep meaning "the campaign's own levels".
+//
+// UNLOCKS (docs/UNLOCKS.md): profile v1 + `meta` (Embers, owned unlocks,
+// deeds, bosses felled, relics found, the equipped loadout, the last award),
+// versioned on its own and sanitised by data/unlocks.js saneMeta(). awardRun
+// pays a finished run; buyUnlock / equipUnlock / clearLoadout are the Unlocks
+// screen's writes. All go through commit() (atomic, multi-tab safe); a
+// records reset keeps `meta`.
 import { PROFILE_KEY } from './storage.js';
 import { CAMPAIGN_LEVELS, FIRST_LEVEL, nextLevel } from '../data/campaign.js';
+import { freshMeta, saneMeta, runFacts, awardFor, grantFree, UNLOCKS, reqMet } from '../data/unlocks.js';
 
 export const ACT_MUL = Object.freeze({ 1: 1.0, 2: 1.5, 3: 2.0 });
 export const CHALLENGE_MUL = Object.freeze({ relaxed: 0.75, standard: 1, harrowing: 1.5 });
@@ -89,6 +97,11 @@ export function freshProfile() {
     unlocks: { acts: [1] },
     lastAct: null,
     playtimeSec: 0,
+    // CROSS-RUN UNLOCKS (docs/UNLOCKS.md): Embers, owned unlocks, deeds and
+    // the equipped loadout. Versioned on its own (`mv`): saneMeta() lifts any
+    // older or damaged block to the current shape, so a v1 profile without it
+    // loads with a fresh one.
+    meta: freshMeta(),
   };
 }
 
@@ -105,6 +118,7 @@ function sane(p) {
   out.records.gameWon = !!(out.records.gameWon || out.records.campaignsCompleted > 0);
   out.unlocks = { acts: Array.isArray(p.unlocks && p.unlocks.acts) ? [...new Set([1, ...p.unlocks.acts])].sort((a, b) => a - b) : [1] };
   out.playtimeSec = Number.isFinite(p.playtimeSec) ? p.playtimeSec : 0;
+  out.meta = saneMeta(p.meta);
   return out;
 }
 
@@ -410,6 +424,82 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     };
   }
 
+  // CROSS-RUN UNLOCKS (docs/UNLOCKS.md). awardRun: a finished run's Embers,
+  // deeds, bosses felled and relics found, plus any free unlock whose
+  // requirement is now met. Runs after recordRun (records include this run).
+  function awardRun(summary) {
+    const { result, w } = commit((p) => {
+      const m = p.meta;
+      const facts = runFacts(summary, p.records);
+      const a = awardFor(facts, m);
+      m.embers += a.embers;
+      m.earned += a.embers;
+      for (const d of a.deeds) if (!m.deeds.includes(d)) m.deeds.push(d);
+      for (const k of a.bosses) m.bosses[k] = (m.bosses[k] ?? 0) + 1;
+      for (const r of facts.relics) if (!m.relicsSeen.includes(r)) m.relicsSeen.push(r);
+      const freed = grantFree(m, p.records);
+      m.lastAward = { at: now(), result: facts.result, embers: a.embers, lines: a.lines, deeds: a.deeds, unlocked: freed };
+      return { ...a, unlocked: freed, balance: m.embers };
+    });
+    return { ...result, written: w.ok };
+  }
+  // Free unlocks whose requirement was met outside a run's award (a level
+  // clear recorded before this build) — run on boot and on opening the screen.
+  function grantFreeUnlocks() {
+    sync();
+    const probe = clone(profile);
+    if (grantFree(probe.meta, probe.records).length === 0) return [];
+    return commit((p) => grantFree(p.meta, p.records)).result;
+  }
+  // Buy an unlock: requirement met, enough Embers. Equipping is the
+  // player's own pick, except a kit / heirloom / purse / tint bought now is
+  // equipped at once (the press that bought it is the pick). Vows never are.
+  function buyUnlock(id) {
+    const u = UNLOCKS[id];
+    if (!u) return { ok: false, reason: 'unknown' };
+    sync();
+    const m0 = profile.meta;
+    if (m0.owned[id] !== undefined) return { ok: false, reason: 'owned' };
+    if (!reqMet(u.req, { meta: m0, records: profile.records })) return { ok: false, reason: 'locked' };
+    if (m0.embers < u.cost) return { ok: false, reason: 'poor', need: u.cost - m0.embers };
+    const { result, w } = commit((p) => {
+      const m = p.meta;
+      if (m.owned[id] !== undefined || m.embers < u.cost) return false;
+      m.embers -= u.cost;
+      m.owned[id] = u.cost;
+      if (u.kind !== 'vow') equipIn(m, id, true);
+      return true;
+    });
+    return result ? { ok: true, id, balance: profile.meta.embers, written: w.ok } : { ok: false, reason: 'poor' };
+  }
+  // Equip (on = true) or take off one owned unlock.
+  function equipIn(m, id, on) {
+    const u = UNLOCKS[id];
+    if (!u || m.owned[id] === undefined) return false;
+    const l = m.loadout;
+    if (u.kind === 'kit') l.kits[u.cls] = on ? id : l.kits[u.cls] === id ? null : l.kits[u.cls];
+    else if (u.kind === 'tint') l.tints[u.cls] = on ? id : l.tints[u.cls] === id ? null : l.tints[u.cls];
+    else if (u.kind === 'heirloom') l.heirloom = on ? id : l.heirloom === id ? null : l.heirloom;
+    else if (u.kind === 'purse') l.purse = on ? u.tier : l.purse === u.tier ? 0 : l.purse;
+    else if (u.kind === 'vow') l.vows = on ? [...new Set([...l.vows, id])] : l.vows.filter((v) => v !== id);
+    return true;
+  }
+  function equipUnlock(id, on = true) {
+    sync();
+    if (!UNLOCKS[id] || profile.meta.owned[id] === undefined) return { ok: false, reason: 'not_owned' };
+    const { result, w } = commit((p) => equipIn(p.meta, id, !!on));
+    return { ok: !!result, id, on: !!on, written: w.ok };
+  }
+  // Take everything off (the Unlocks screen's "Plain run").
+  function clearLoadout() {
+    const { w } = commit((p) => {
+      const keepTints = { ...p.meta.loadout.tints };
+      p.meta = saneMeta({ ...p.meta, loadout: { tints: keepTints } });
+      return true;
+    });
+    return { ok: w.ok };
+  }
+
   function addPlaytime(sec) {
     if (!(sec > 0)) return;
     deferred.playtimeSec += sec;
@@ -433,6 +523,17 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     noteLevelClear, // CAMPAIGN
     noteLevelReached, // CAMPAIGN
     unlockLevel, // CAMPAIGN
+    awardRun, // UNLOCKS
+    // probe seam (tools/unlocks-net.mjs): add Embers as one atomic write
+    debugEmbers: (n) => commit((p) => {
+      p.meta.embers += Math.max(0, Math.round(n));
+      p.meta.earned += Math.max(0, Math.round(n));
+      return p.meta.embers;
+    }).result,
+    grantFreeUnlocks,
+    buyUnlock,
+    equipUnlock,
+    clearLoadout,
     get report() {
       return report;
     },
@@ -449,7 +550,11 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     reset() {
       pending = [];
       deferred = noDeferred();
+      // UNLOCKS: a records reset clears scores and records, never the Embers
+      // and unlocks the player earned (docs/UNLOCKS.md).
+      const keepMeta = saneMeta(profile.meta);
       base = freshProfile();
+      base.meta = keepMeta;
       baseText = null;
       rebuild();
       profile.savedAt = now();
