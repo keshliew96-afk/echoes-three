@@ -7,8 +7,9 @@
 //
 // Room.state: lobby -> starting -> in_game -> closed, plus `migrating` while
 // the host is lost (grace window, then migration). Seat 0 is the Healer and
-// belongs to the host at creation; seats 1-3 (Tank, Swordsman, Archer) are
-// guests. An empty or dropped seat is played by the §12 ally AI on the host.
+// belongs to the host at creation; seats 1-3 are Tank, Swordsman, Archer. In
+// the lobby any player (the host too) may move to any free seat (CLASS
+// SELECT). An empty or dropped seat is played by the AI on the host.
 import { randomInt } from 'node:crypto';
 import {
   MSG,
@@ -76,9 +77,12 @@ export class Lobby {
   isFree(seat, now = this.now()) {
     return seat.peerId === null && !(seat.holdUntil !== null && seat.holdUntil > now);
   }
+  // CLASS SELECT (docs/CLASS_SELECT.md): every free seat, the Healer's
+  // included once the host has moved off it. Guests fill 1-3 first.
   freeGuestSeats(room) {
     const now = this.now();
-    return room.seats.filter((s) => s.index > 0 && this.isFree(s, now));
+    const free = room.seats.filter((s) => this.isFree(s, now));
+    return free.filter((s) => s.index > 0).concat(free.filter((s) => s.index === 0));
   }
 
   view(room) {
@@ -100,7 +104,7 @@ export class Lobby {
         classId: s.classId,
         peerId: s.peerId,
         name: s.name,
-        ready: s.index === 0 && s.peerId === room.hostPeerId ? true : s.ready,
+        ready: s.peerId && s.peerId === room.hostPeerId ? true : s.ready,
         connected: s.connected,
         rttMs: s.rttMs,
         ai: !s.peerId || !s.connected,
@@ -240,19 +244,14 @@ export class Lobby {
   // The host left for good (explicit leave, hold expired, killed).
   hostGone(room, reason) {
     if (room.state === 'lobby' || room.state === 'starting') {
-      // Lobby: pass the host to the longest-seated connected guest, who moves
-      // to seat 0 (the host's seat) — nothing has started, so no state moves.
-      const next = room.seats.filter((s) => s.index > 0 && s.peerId && s.connected).sort((a, b) => a.index - b.index)[0];
+      // Lobby: pass the host to the next connected player, who keeps the
+      // class they picked (CLASS SELECT) — nothing has started, so no state moves.
+      const next = room.seats.filter((s) => s.peerId && s.connected).sort((a, b) => a.index - b.index)[0];
       if (!next) {
         this.closeRoom(room, 'host_left');
         return;
       }
       const p = room.peerRef.get(next.peerId);
-      const s0 = room.seats[0];
-      if (s0.peerId === null) {
-        this.clearSeat(next);
-        this.seatPeer(room, s0, p);
-      }
       room.hostPeerId = p.id;
       room.state = 'lobby';
       room.startAt = null;
@@ -270,10 +269,10 @@ export class Lobby {
     const room = this.roomOf(peer);
     if (!room) return this.error(peer, ERR.NOT_IN_ROOM, MSG.SELECT_SEAT);
     if (room.state !== 'lobby') return this.error(peer, ERR.WRONG_STATE, MSG.SELECT_SEAT, { state: room.state });
-    if (room.hostPeerId === peer.id) return this.error(peer, ERR.WRONG_STATE, MSG.SELECT_SEAT, { detail: 'the host plays the Healer (seat 0)' });
+    // CLASS SELECT: any player, the host included, takes any free seat.
     const cur = this.seatOf(room, peer.id);
     const target = room.seats[want];
-    if (!target || want === 0) return this.error(peer, ERR.BAD_REQUEST, MSG.SELECT_SEAT);
+    if (!target) return this.error(peer, ERR.BAD_REQUEST, MSG.SELECT_SEAT);
     if (cur && cur.index === want) {
       this.pushState(room);
       return { ok: true };

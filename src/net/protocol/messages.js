@@ -88,11 +88,11 @@ const C2S = {
         : !optional(m.dropIn, (x) => typeof x === 'boolean')
           ? 'bad_request'
           : null,
-  [MSG.JOIN_ROOM]: (m) => (normalizeCode(m.code) === null ? 'not_found' : !optional(m.seat, (x) => isInt(x, 1, MAX_SEATS - 1)) ? 'bad_request' : null),
+  [MSG.JOIN_ROOM]: (m) => (normalizeCode(m.code) === null ? 'not_found' : !optional(m.seat, (x) => isInt(x, 0, MAX_SEATS - 1)) ? 'bad_request' : null),
   [MSG.QUICK_MATCH]: () => null,
   [MSG.CANCEL_MATCH]: () => null,
   [MSG.LEAVE_ROOM]: () => null,
-  [MSG.SELECT_SEAT]: (m) => (isInt(m.seat, 1, MAX_SEATS - 1) ? null : 'bad_request'),
+  [MSG.SELECT_SEAT]: (m) => (isInt(m.seat, 0, MAX_SEATS - 1) ? null : 'bad_request'),
   [MSG.SET_READY]: (m) => (typeof m.ready === 'boolean' ? null : 'bad_request'),
   [MSG.START_GAME]: (m) => (optional(m.seed, (x) => isInt(x, 0, 0xffffffff)) ? null : 'bad_request'),
   [MSG.RECONNECT]: (m) => (typeof m.token === 'string' && TOKEN_RE.test(m.token) && normalizeCode(m.code) !== null ? null : 'bad_request'),

@@ -1,6 +1,7 @@
 // Seat model for network play (docs/gauntlet/PLAN.md §3.7). Owner: M5b.
-// Seat index == party index: seat 0 = the Healer (the host, or the leader
-// bot after a migration), 1 Tank, 2 Swordsman, 3 Archer. Pure data.
+// Seat index == party index: seat 0 = the Healer, 1 Tank, 2 Swordsman,
+// 3 Archer. CLASS SELECT (docs/CLASS_SELECT.md): any player, the host
+// included, takes any free seat; an empty seat 0 is the leader bot's. Pure data.
 export const SEAT_CLASSES = Object.freeze(['healer', 'tank', 'swordsman', 'archer']);
 export const SEAT_LABELS = Object.freeze(['Healer', 'Tank', 'Swordsman', 'Archer']);
 export const SEAT_CRITTERS = Object.freeze(['Mouse', 'Badger', 'Fox', 'Hare']);
@@ -35,15 +36,12 @@ export function seatControlText(ev, nameOf = () => null) {
 }
 
 // chooserSeat(room) — whose call the between-room choices (draft, door, shop,
-// sockets) are right now: the HOST's (PLAN §3.7) — except while the leader
-// bot plays the Healer for a host that is not seat 0 (after a migration with
-// nobody on seat 0: the bot makes the Healer's choices). A human back on
-// seat 0 (the old host accepting "Rejoin", a drop-in) hands the choices to
-// the host. Guests' read-only banners name this seat.
+// sockets) are right now: the HOST's (PLAN §3.7), whichever seat it plays —
+// CLASS SELECT (docs/CLASS_SELECT.md) lets the host pick any class, and the
+// seat-0 leader bot plays the Healer's combat only. Guests' read-only
+// banners name this seat.
 export function chooserSeat(room) {
   if (!room || !Array.isArray(room.seats)) return 0;
   const hostSeat = room.seats.find((s) => s && s.peerId && s.peerId === room.hostPeerId);
-  if (!hostSeat || hostSeat.index === 0) return 0;
-  const s0 = room.seats.find((s) => s && s.index === 0);
-  return s0 && s0.peerId && s0.connected !== false ? hostSeat.index : 0;
+  return hostSeat ? hostSeat.index : 0;
 }

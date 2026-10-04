@@ -28,6 +28,7 @@
 // Healer's card commits — exactly the Healer-only flow. Manual: nothing is
 // pre-decided (4 Enters). Automatic: AI-held cards are a summary line.
 import { esc, isCompact } from './style.js';
+import { viewerSeat } from '../../app/viewerseat.js';
 import { skillCardHtml, nodeCardHtml, RARITY_COLOR, NODE_GLYPH, cardIconHtml } from './cards.js';
 import { NODES } from '../../sim/nodes.js';
 import { SPOILS_PER_CLEAR } from '../../sim/draft.js';
@@ -109,16 +110,10 @@ export function createDraftScreen({ run, build, party = () => null }) {
 
   const strip = createPartyStrip({ onSelect: (seat) => setView(seat, true), host: stripHost });
 
-  // The viewer's own seat: the Healer in single-player / on the host; a
-  // guest's own class seat in a network session.
+  // The viewer's own seat: the class this player plays (CLASS SELECT —
+  // the Healer by default; a guest's own class seat in a network session).
   function ownSeat() {
-    const n = service('net');
-    try {
-      if (n && typeof n.isGuest === 'function' && n.isGuest()) return Number.isInteger(n.seat) ? n.seat : 0;
-    } catch {
-      /* no session */
-    }
-    return 0;
+    return viewerSeat();
   }
   const isGuest = () => {
     const n = service('net');

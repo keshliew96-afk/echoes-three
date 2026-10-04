@@ -41,6 +41,7 @@
 // rn-primary when it opens (draft: Take; path: the sim's door 0), so no page
 // ever inherits a focus from the page before it.
 import { RUN_CSS, isCompact, isShort } from './style.js';
+import { viewerSeat } from '../../app/viewerseat.js';
 import { PARTY_STRIP_CSS } from './partystrip.js';
 import { SKILL_SLOTS } from '../../core/constants.js';
 import { parseBootParams } from '../../app/params.js';
@@ -846,13 +847,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     else a.toast(`Time's up — the ${who}'s reward was picked (${ev.choice === 'take' ? 'taken' : 'left'})${ev.seat === ownSeat() ? ' — you can re-socket it between rooms' : ''}`, { tone: 'info', ms: 4800 });
   });
   function ownSeat() {
-    const n = service('net');
-    try {
-      if (n && typeof n.isGuest === 'function' && n.isGuest()) return Number.isInteger(n.seat) ? n.seat : 0;
-    } catch {
-      /* none */
-    }
-    return 0;
+    return viewerSeat();
   }
   // RELICS: a toast when the party walks into a cursed room (the strip
   // carries it for the rest of the room).
