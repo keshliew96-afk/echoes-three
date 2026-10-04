@@ -36,13 +36,22 @@ A long, low, segmented grave worm.
 - **Enrage** under 50% HP: breath cooldown −30%.
 - HP is 0.85× the act's boss HP because the burrow windows already stretch the fight.
 
-### 2.4 Later boss work (slice 3)
-- **Alternate bosses**, one more per act, rolled per run so a replay can end differently:
-  - Act I *The Thornmother*: a bramble sow that seeds bramble hazards and charges through them.
-  - Act II *The Millwheel*: a rolling wheel construct that sweeps lanes across the room and grinds barricades.
-  - Act III *The Lich Ram*: a ram skeleton with a horn-guard (front immune like the Barrow Ram) that raises moles from graves.
-- **Boss medals and icons**: the HUD banner medal still draws the Stag icon for every boss; each boss needs its own icon in `src/ui/hud/icons.js`.
-- **Boss music stings** per boss (audio theme hooks already exist per act).
+### 2.4 Second boss per act ✅ slice 2
+Each act now has two bosses. Which one a run meets is `bossFor(act, seed)` in `src/data/levels.js`: a pure hash of the run seed and the act, so it costs no RNG draw and saves nothing. A seed always meets the same boss, a replay on another seed can end differently, and a campaign rolls each level on its own (over seeds 1–40: Act I 15 Stag / 25 Thornmother, Act II 22 Heron / 18 Millwheel, Act III 25 Wyrm / 15 Lich Ram). `cmd('startRun', { act, boss })` forces one for probes. Kits live in `src/sim/bosses/`, rigs in `src/render/boss/slice2.js`.
+
+- **Act I *The Thornmother*** (`thornmother`): a bramble sow that fights the floor rather than the party.
+  - **Seed Volley**: three lobbed pods (one at the target, two 1.9 u to its sides), Ember rings r 1.0 for 54 ticks, 12 damage each, and each roots a thorn patch (r 1.1, 35% slow, 720 ticks). Cooldown 300.
+  - **Briar Charge**: an Ember lane through the target to the wall (1.4 u wide, 60 ticks), then a 10 u/s charge for 18. Every thorn patch she runs through is torn up and bursts for 8 on whoever still stands in it. She skids for 40 ticks after. Cooldown 420.
+- **Act II *The Millwheel*** (`millwheel`): the mill's wheel, torn off its axle. It owns the room's edge.
+  - **Rim Roll**: it rolls round the walls at 2.4 u/s and grinds anyone it touches (3, at most every 90 ticks per body). The centre is the party's ground.
+  - **Cog Shards**: an Ember cone locked on the target (r 6, half-angle 28°, 48 ticks), then a fan of five shards, 5 each. Cooldown 240.
+  - **Crosscut** (also at every add phase): an Ember lane from the wheel through the target to the far wall (1.6 u, 66 ticks), a 9 u/s roll across for 14 that grinds barricades, kegs and puffcaps, then 75 ticks DIZZY at the far wall (the punish window). Cooldown 480. HP is 0.75× the act's boss HP.
+- **Act III *The Lich Ram*** (`lichram`): a ram skeleton the graves answer.
+  - **Horn Guard**: projectiles within ±60° of its facing are blocked; it turns at 75°/s, so the party works its flanks.
+  - **Grave Call**: three lobbed souls (Ember rings r 1.0, 60 ticks, 10 each) around the target; the grave under the target raises a Grave Mole inside the §11 add cap. Cooldown 390 (270 under 40% HP).
+  - **Bone Rush**: only along its horns (target within ±25°), an Ember lane (1.3 u, 54 ticks) and an 11 u/s rush for 12; the horns lodge and it is STUCK, guard down, for 75 ticks. Cooldown 300. HP is 0.8× the act's boss HP.
+
+Still to do: **boss medals and icons** (the HUD banner medal draws the Stag icon for every boss; each boss needs its own icon in `src/ui/hud/icons.js`) and **boss music stings** per boss.
 
 ## 3. Enemies per biome
 
@@ -55,18 +64,18 @@ Shipped in slice 1 (✅). Each is a plain-data module in `src/sim/enemies/<id>.j
 | ✅ **Barrow Crow** | Barrow | ranged | 14 HP, keeps 3.5–5.5 u. Cone telegraph (45 ticks), then a fan of three shots (−15°/0°/+15°, 5 dmg each). |
 | ✅ **Brood Spider** | Barrow | splitter | 30 HP contact biter (8 dmg). On death it splits into two **Broodlings** (6 HP, 2.8 u/s, 3 dmg) that inherit its scaling. |
 
-Planned (slice 2):
+Shipped in slice 2 (✅). Rigs are in `src/render/enemies/slice2.js`.
 
-| Enemy | Biome | Idea |
-|---|---|---|
-| Briar Wasp | Wood | Spawns in groups of 3; low HP fliers that dive in short lanes; a "swarm" read for Act I. |
-| Thornling | Wood | Plants a bramble patch where it stands every few seconds (uses the existing bramble hazard). |
-| Weir Crab | Mill | Side-steps; its claw guard blocks frontal projectiles (the Ram's guard, but mobile and small). |
-| Bog Lamprey | Mill | Lurks in the millrace hazard and lunges out in a lane when a party member enters the water. |
-| Grave Wisp | Barrow | Tethers to another enemy and makes it immune until the wisp dies. |
-| Bone Knight | Barrow | Elite-only heavy with a shield turn and a delayed overhead slam (ring). |
+| Enemy | Biome | Role | Mechanic |
+|---|---|---|---|
+| ✅ **Briar Wasp** (`wasp`) | Wood | swarm | One wave draw is a swarm of three 10 HP fliers on a tight orbit. Each darts down a short Ember lane (0.6 × 3.6 u, 42 ticks) at 9 u/s for 4; the sisters' first darts are staggered, so a swarm reads as a string of small lanes. |
+| ✅ **Thornling** (`thornling`) | Wood | zoner | 26 HP, never bites, keeps 2.6–4.2 u away. Every 240 ticks it roots for 30 and plants a thorn patch (r 1.0, 420 ticks, 35% slow, pricks for 3 every 40 ticks), at most three alive. Chasing it means wading through its thicket. |
+| ✅ **Weir Crab** (`crab`) | Mill | mobile shield | 40 HP, closes sideways. Its claw guard blocks projectiles within ±60° and it turns at 300°/s, so circling fails; melee, arcs and novas work. Its snap (cone r 1.4, 42 ticks, 10) drops the guard for the wind-up and 45 ticks after. |
+| ✅ **Bog Lamprey** (`lamprey`) | Mill | ambusher | 28 HP, lurks submerged (untargetable) 3 u from its target, on the millrace when one is near. It surfaces into a lane lunge (0.9 × 5 u, 48 ticks, 10 u/s, 12) and is beached and hittable for 110 ticks after. |
+| ✅ **Grave Wisp** (`gravewisp`) | Barrow | warder | 12 HP flier with no attack. It tethers the nearest other enemy within 5.5 u, which is immune (`hit_immune`) while the tether holds: 240 ticks, snaps past 6.5 u, then 150 ticks to gather a new one. |
+| ✅ **Bone Knight** (`knight`) | Barrow | elite heavy | Always Elite (`alwaysElite`). A tower shield blocks projectiles and melee arcs within ±65°; it turns at 110°/s and wheels (×3) when hit from behind. Its overhead slam is a 66-tick ring r 1.4 in front of it for 12; the shield is down for the swing. |
 
-Act I deliberately stays unchanged in slice 1. Its Stag fight is the most RNG-sensitive in the autopilot runs: putting the Rotcap in Act I dropped autopilot wins from 24/30 to 16/30 purely by reshuffling drafts, so new Act I enemies wait for slice 2 with a dedicated Act I balance pass.
+Act I's balance pass (slice 2): the Rotcap, Briar Wasp and Thornling join the wood from room 4 (Thornling room 5), so rooms 1–3 roll exactly the certified v0.4.63 waves and the golden traces are unchanged. In slice 1, putting the Rotcap in from room 1 dropped autopilot wins from 24/30 to 16/30 by reshuffling drafts; introducing the new bodies late keeps the early draft path identical.
 
 ## 4. Room layouts (slice 2)
 
@@ -106,8 +115,8 @@ The run has no persistent modifiers today. Two kinds are planned, both stored in
 ## 6. Slice order
 
 1. ✅ **Slice 1**: Drowned Heron + Barrow Wyrm, Rotcap / Lantern Snail / Barrow Crow / Brood Spider (+ Broodling), boss names across the HUD, shop, path, end and save screens. (This PR.)
-2. **Slice 2**: the six slice-2 enemies, six layouts, and the Act I balance pass (Rotcap into the wood).
-3. **Slice 3**: alternate bosses, boss icons and stings.
+2. **Slice 2**: ✅ the six slice-2 enemies, the Act I balance pass (Rotcap into the wood) and, pulled forward from slice 3, the second boss of each act; six layouts.
+3. **Slice 3**: boss icons and stings, full VFX for the slice-2 creatures.
 4. **Slice 4**: relics and curses.
 
 ## 7. How slice 1 was verified
@@ -122,3 +131,18 @@ The run has no persistent modifiers today. Two kinds are planned, both stored in
   | II | 15/16 | 15/16, boss ~60 s vs ~45 s |
   | III | 13/16 | 11/16, boss ~46 s |
 - The legacy golden traces (`node tools/gntM2-goldens.mjs`: 9 hashes for kill_all, defend and run seeds 1–3) are identical before and after.
+
+## 8. How slice 2 was verified
+
+- `node tools/content-slice2.mjs` (headless, 31 checks): every new enemy spawns in a real run of its act and fires its beat (the knight always Elite, wasps in threes, a wisp ward turning hits immune); all six bosses fight a real room 8 and every new boss fires each beat of its kit; `bossFor` gives both bosses per act over seeds 1–40 and a run meets exactly that boss; a mid-fight capture of each new boss and of an Act III wisp room continues bit-identically in a fresh world for 600 ticks.
+- `node tools/content-slice2-rigs.mjs` (browser, against `npm run dev`): each new rig in a room of its act and each new boss's telegraphs in the real renderer, an in-page save round trip per room, no page errors.
+- Balance, `node tools/gnt-M4a-actrun.mjs --act N --seeds 1-16 --node 1` (autopilot wins; `--boss <kind>` forces a boss):
+
+  | Act | Before | After | Bosses met (after) |
+  |---|---|---|---|
+  | I | 16/16 | 16/16 | Stag 6/6, Thornmother 10/10 |
+  | II | 15/16 | 16/16 | Heron 7/7, Millwheel 9/9 |
+  | III | 11/16 | 10/16 | Wyrm 7/8, Lich Ram 3/3 (11 of 16 runs reach the boss; 12 before) |
+
+- Level 1 in campaigns (relics on), `node tools/gntCAMPAIGN-camprun.mjs --from 1 --seeds 1-40 --stop-after 1`: 40/40 clear before and after. The GP.13 (d) Level 1 HP dip (a down or a member under 35%) lands on 23 of 40 seeds, against 7 for v0.5.150 and 12 before this slice, so the ruling's "at least as often as v0.5.150" still holds.
+- The legacy golden traces (`node tools/gntM2-goldens.mjs`, 9 hashes) are identical before and after.

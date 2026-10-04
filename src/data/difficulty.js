@@ -154,6 +154,13 @@ export const THREAT = Object.freeze({
   crow: 1.6,
   brood: 2.0, // its two Broodlings ride on the mother's cost
   broodling: 0.4,
+  // Content slice 2 (docs/CONTENT_PLAN.md §3).
+  wasp: 1.5, // the whole swarm of three
+  thornling: 1.2,
+  crab: 1.8,
+  lamprey: 1.6,
+  gravewisp: 1.4,
+  knight: 5.4, // always Elite: 3.0 x ELITE_COST baked in
 });
 export const ELITE_COST = 1.8;
 export const ELITE_MUL = Object.freeze({ hp: 1.8, dmg: 1.25, scale: 1.2 });

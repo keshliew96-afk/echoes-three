@@ -50,10 +50,10 @@ import { PALETTE, CLASS_ACCENTS } from '../../data/palette.js';
 import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
 import { createPartyStrip } from './partystrip.js';
 import { service } from '../../app/registry.js';
-import { bossNameFor } from '../../data/levels.js';
+import { bossNameOfRun } from '../../data/levels.js';
 
 // 'Advance to the Drowned Heron' — the act's own room-8 boss.
-const advanceLabel = (view) => `Advance to ${bossNameFor(view && view.act).replace(/^The /, 'the ')}`;
+const advanceLabel = (view) => `Advance to ${bossNameOfRun(view).replace(/^The /, 'the ')}`;
 
 // The viewer's seat in a network session (a guest: its class seat).
 function netSeat() {

@@ -1067,3 +1067,8 @@ window.__echoes = {
     return world.cmd(name, ...args);
   },
 };
+// VFX lab (src/ui/vfxlab.js): ?vfxlab=1 opens a review panel that triggers
+// every class skill, enemy and boss beat in the live game.
+if (PLAYABLE && new URLSearchParams(location.search).has('vfxlab')) {
+  import('./ui/vfxlab.js').then((m) => m.mountVfxLab());
+}

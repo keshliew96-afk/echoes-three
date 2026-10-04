@@ -41,6 +41,15 @@ export const VFX_SIGNATURE = Object.freeze({
   archer: Object.freeze({ glow: '#5ED3C0', second: '#C9C2B3', debris: '#C9C2B3' }), // Wind Jade / Feather Bone
 });
 
+// Biome air (AAA VFX pass, design-VFX.md §10): the tone each act's smoke and
+// dust lean toward, so a puff belongs to the room it is in. Act I the Hollow
+// Wood's moss, Act II the Sunken Mill's cold slate, Act III the Barrow's ash.
+export const VFX_BIOME = Object.freeze({
+  1: '#5B6B43',
+  2: '#4F6672',
+  3: '#5E5450',
+});
+
 // Enemy debris materials (design-VFX.md §5). The threat colour is always
 // Ember; these are only what a body is made of when it breaks or what its
 // attack throws (dirt, chitin, quills, slime, scale dust, stone, earth).
@@ -53,4 +62,12 @@ export const VFX_MATTER = Object.freeze({
   stone: '#7D7A76',
   earth: '#5A4632',
   ash: '#221F1B',
+  // Content slice 1 creatures (design-VFX.md §5b / §6b).
+  spore: '#B3B597', // Rotcap: a sickly pale olive-grey spore dust (far off Bright Heal: s 0.15)
+  shell: '#4C5763', // Lantern Snail: dark slate shell shards
+  feather: '#2B2D35', // Barrow Crow: near-black feathers
+  ichor: '#8E9C98', // Brood Spider: pale grey-green ichor and egg sac
+  water: '#A9C0C4', // Drowned Heron: millrace foam (desaturated, never a glyph)
+  silt: '#4E5848', // Drowned Heron: the mill's murky silt
+  cinder: '#5E5853', // Barrow Wyrm: ash smoke light enough to read on the barrow floor
 });

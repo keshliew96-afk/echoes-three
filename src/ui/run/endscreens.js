@@ -16,6 +16,11 @@ const WIN_FLAVOUR = {
   2: 'The Drowned Heron sinks. The water runs clear again.',
   3: 'The Barrow Wyrm is still. The long night lifts.',
 };
+const BOSS_WIN_FLAVOUR = {
+  thornmother: 'The Thornmother falls. The briars let the wood go.',
+  millwheel: 'The Millwheel shatters. The water runs clear again.',
+  lichram: 'The Lich Ram crumbles. The graves close; the long night lifts.',
+};
 import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
 import { PALETTE } from '../../data/palette.js';
 import { CLASS_NAME, CLASS_OF_SEAT } from '../../data/classes.js';
@@ -197,7 +202,7 @@ export function createEndScreen({ run }) {
     flavour.textContent = win
       ? complete
         ? 'The last of the old beasts falls. Every level is clear — the long night is over.'
-        : WIN_FLAVOUR[view.act] ?? WIN_FLAVOUR[1]
+        : BOSS_WIN_FLAVOUR[view.actBoss && view.actBoss.kind] ?? WIN_FLAVOUR[view.act] ?? WIN_FLAVOUR[1]
       : 'The gods applaud.';
     {
       const c = run().campaign ? run().campaign() : null;

@@ -16,6 +16,14 @@
 //           a tapered tail: arrow trails, dash lines, rain, wind, quill spray.
 //   cracks  a radial ground fracture: dark ink with a glowing seam that cools.
 //   pillar  a vertical column of light fading upward.
+//   star    (AAA pass) an impact flare: a hot core with spikes that POPS in
+//           over two frames, holds, then shrinks while its rays stretch — the
+//           "this landed" frame of every hit, crit and boss beat.
+//   mark    (AAA pass) a ground decal that lingers: a dark stain in the
+//           matter's colour under an additive seam that cools (scorch,
+//           crater, gouge, splash, sigil). Dissipation's last word.
+//   glow    (AAA pass) a held, pulsing sprite that rides a projectile's
+//           head (the orb in front of every trail).
 //
 // Colours come in already resolved (data/vfx.js rows -> palette.js hexes).
 // Render-only; randomness from the COSMETIC stream only.
@@ -43,7 +51,7 @@ import { exactColor, underBloom } from '../critters/common.js';
 import { warmPark } from '../warmup.js';
 import { PALETTE } from '../../data/palette.js';
 
-export const KIT_CAPS = Object.freeze({ arc: 40, light: 16, flash: 28, streak: 64, cracks: 12, pillar: 8 });
+export const KIT_CAPS = Object.freeze({ arc: 40, light: 16, flash: 28, streak: 64, cracks: 12, pillar: 8, star: 48, mark: 24, glow: 32 });
 const FLASH_HOLD = 0.066; // s — 4 frames at 60 fps at full strength
 
 // Resolved colours are cached per hex: exactColor runs an inverse of the post
@@ -223,6 +231,147 @@ function getRiseTexture() {
   return riseTex;
 }
 
+// ----------------------------------------------------------------- star --
+// Impact flare textures (white on transparent, tinted by the material):
+//   'star'   four long needle spikes + four short diagonals over a hot core
+//            (sharp classes, crits, enemy hits)
+//   'burst'  eight soft rays over a fat core (blunt / round classes, bosses)
+const starTex = {};
+function getStarTexture(kind) {
+  if (starTex[kind]) return starTex[kind];
+  const S = 256;
+  const H = S / 2;
+  const c = document.createElement('canvas');
+  c.width = S;
+  c.height = S;
+  const g = c.getContext('2d');
+  g.globalCompositeOperation = 'lighter';
+  const core = g.createRadialGradient(H, H, 0, H, H, S * (kind === 'burst' ? 0.24 : 0.17));
+  core.addColorStop(0, 'rgba(255,255,255,1)');
+  core.addColorStop(0.35, 'rgba(255,255,255,0.8)');
+  core.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = core;
+  g.fillRect(0, 0, S, S);
+  const spike = (a, len, w, alpha) => {
+    g.save();
+    g.translate(H, H);
+    g.rotate(a);
+    const grad = g.createLinearGradient(0, 0, len, 0);
+    grad.addColorStop(0, `rgba(255,255,255,${alpha})`);
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grad;
+    g.beginPath();
+    g.moveTo(0, -w);
+    g.lineTo(len, 0);
+    g.lineTo(0, w);
+    g.lineTo(-len * 0.02, 0);
+    g.closePath();
+    g.fill();
+    g.restore();
+  };
+  if (kind === 'burst') {
+    for (let i = 0; i < 8; i++) spike((i / 8) * Math.PI * 2, H * (i % 2 ? 0.62 : 0.92), S * 0.035, 0.75);
+  } else {
+    for (let i = 0; i < 4; i++) spike((i / 4) * Math.PI * 2, H * 0.98, S * 0.022, 1);
+    for (let i = 0; i < 4; i++) spike((i / 4) * Math.PI * 2 + Math.PI / 4, H * 0.45, S * 0.016, 0.7);
+  }
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  starTex[kind] = t;
+  return t;
+}
+
+// ----------------------------------------------------------------- mark --
+// Ground decal textures (white on transparent). Drawn once each.
+const markTex = {};
+function getMarkTexture(kind, cosmetic) {
+  if (markTex[kind]) return markTex[kind];
+  const S = 256;
+  const H = S / 2;
+  const c = document.createElement('canvas');
+  c.width = S;
+  c.height = S;
+  const g = c.getContext('2d');
+  const R = (a, b) => cosmetic.range(a, b);
+  const blob = (x, y, r, a) => {
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, `rgba(255,255,255,${a})`);
+    gr.addColorStop(0.7, `rgba(255,255,255,${a * 0.6})`);
+    gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr;
+    g.beginPath();
+    g.arc(x, y, r, 0, Math.PI * 2);
+    g.fill();
+  };
+  if (kind === 'gouge') {
+    // A long tapered cut, brightest at its middle (a blade or claw scar).
+    for (let k = 0; k < 3; k++) {
+      const off = (k - 1) * S * 0.09;
+      g.beginPath();
+      g.moveTo(S * 0.06, H + off);
+      g.quadraticCurveTo(H, H + off - S * 0.06, S * 0.94, H + off);
+      g.quadraticCurveTo(H, H + off + S * 0.025, S * 0.06, H + off);
+      g.fillStyle = `rgba(255,255,255,${k === 1 ? 0.95 : 0.55})`;
+      g.fill();
+    }
+  } else if (kind === 'splash') {
+    blob(H, H, S * 0.3, 0.8);
+    for (let i = 0; i < 16; i++) {
+      const a = R(0, Math.PI * 2);
+      const d = R(S * 0.22, S * 0.46);
+      blob(H + Math.cos(a) * d, H + Math.sin(a) * d, R(S * 0.02, S * 0.06), 0.85);
+    }
+  } else if (kind === 'sigil') {
+    // A drawn circle with ticks: the trace a spell leaves on the floor.
+    g.strokeStyle = 'rgba(255,255,255,0.95)';
+    g.lineWidth = S * 0.025;
+    g.beginPath();
+    g.arc(H, H, S * 0.44, 0, Math.PI * 2);
+    g.stroke();
+    g.lineWidth = S * 0.012;
+    g.beginPath();
+    g.arc(H, H, S * 0.34, 0, Math.PI * 2);
+    g.stroke();
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      g.beginPath();
+      g.moveTo(H + Math.cos(a) * S * 0.34, H + Math.sin(a) * S * 0.34);
+      g.lineTo(H + Math.cos(a) * S * (i % 3 ? 0.4 : 0.44), H + Math.sin(a) * S * (i % 3 ? 0.4 : 0.44));
+      g.stroke();
+    }
+  } else {
+    // scorch / crater: a mottled burn, with radial fractures for a crater.
+    for (let i = 0; i < 14; i++) {
+      const a = R(0, Math.PI * 2);
+      const d = R(0, S * 0.2);
+      blob(H + Math.cos(a) * d, H + Math.sin(a) * d, R(S * 0.14, S * 0.26), 0.35);
+    }
+    if (kind === 'crater') {
+      g.strokeStyle = 'rgba(255,255,255,0.9)';
+      g.lineCap = 'round';
+      for (let i = 0; i < 9; i++) {
+        let a = (i / 9) * Math.PI * 2 + R(-0.2, 0.2);
+        let x = H;
+        let y = H;
+        g.lineWidth = S * 0.02;
+        g.beginPath();
+        g.moveTo(x, y);
+        for (let k = 0; k < 5; k++) {
+          a += R(-0.45, 0.45);
+          x += Math.cos(a) * S * 0.09;
+          y += Math.sin(a) * S * 0.09;
+          g.lineTo(x, y);
+        }
+        g.stroke();
+      }
+    }
+  }
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  markTex[kind] = t;
+  return t;
+}
+
 let arcGeo = null;
 let streakGeo = null;
 let discGeo = null;
@@ -240,6 +389,9 @@ export function createVfxKit({ stage, cosmetic }) {
   discGeo ??= markShared(new CircleGeometry(1, 40));
   quadGeo ??= markShared(new PlaneGeometry(2, 2));
   tubeGeo ??= markShared(new CylinderGeometry(1, 1, 1, 20, 1, true));
+  // Draw every flare / decal texture now (in camp), never mid-fight.
+  for (const k of ['star', 'burst']) getStarTexture(k);
+  for (const k of ['scorch', 'crater', 'gouge', 'splash', 'sigil']) getMarkTexture(k, cosmetic);
 
   // Each pool slot: { obj, live, age, life, delay, step(rec, k, dt) }.
   function makePool(cap, build) {
@@ -672,6 +824,154 @@ export function createVfxKit({ stage, cosmetic }) {
     s.obj.scale.set(r, s.h * (0.7 + 0.3 * Math.min(1, k * 4)), r);
   }
 
+  // ----------------------------------------------------------------- star --
+  const stars = makePool(KIT_CAPS.star, () => {
+    const mat = new SpriteMaterial({
+      map: getStarTexture('star'),
+      color: new Color(),
+      transparent: true,
+      opacity: 0,
+      blending: AdditiveBlending,
+      depthWrite: false,
+    });
+    const sp = new Sprite(mat);
+    sp.renderOrder = 10;
+    return { obj: sp, mat };
+  });
+  // opts: x, y, z, color, size, life, kind ('star' | 'burst'), spin (rad/s),
+  // opacity, delay. Pops in over ~2 frames, holds ~3, then shrinks while the
+  // rays stretch out.
+  function star(o) {
+    const s = stars.take();
+    s.live = true;
+    s.age = 0;
+    s.delay = o.delay ?? 0;
+    s.life = o.life ?? 0.2;
+    s.size = o.size ?? 0.8;
+    s.op = (o.opacity ?? 1) * 0.9;
+    s.spin = o.spin ?? 0;
+    s.mat.map = getStarTexture(o.kind ?? 'star');
+    s.mat.rotation = o.angle ?? rnd(0, Math.PI);
+    s.mat.color.copy(soft(o.color ?? PALETTE.parchment));
+    s.mat.opacity = 0;
+    s.obj.position.set(o.x, o.y ?? 0.5, o.z);
+    s.obj.scale.set(0.01, 0.01, 1);
+    s.obj.visible = s.delay <= 0;
+    return s;
+  }
+  function stepStar(s, t, dt) {
+    const pop = Math.min(1, t / 0.035);
+    const hold = 0.05;
+    const k = t < hold ? 0 : (t - hold) / Math.max(0.01, s.life - hold);
+    s.mat.opacity = s.op * pop * Math.pow(1 - Math.min(1, k), 1.4);
+    const sc = s.size * (0.55 + 0.45 * pop) * (1 + 0.35 * k);
+    s.obj.scale.set(sc * (1 + 0.25 * k), sc * (1 - 0.35 * k), 1);
+    s.mat.rotation += s.spin * dt;
+  }
+
+  // ----------------------------------------------------------------- mark --
+  const marks = makePool(KIT_CAPS.mark, () => {
+    const stain = new MeshBasicMaterial({ map: getMarkTexture('scorch', cosmetic), color: new Color(), transparent: true, opacity: 0, depthWrite: false, blending: NormalBlending });
+    const seam = new MeshBasicMaterial({ map: getMarkTexture('scorch', cosmetic), color: new Color(), transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending });
+    const g = new Group();
+    const a = new Mesh(quadGeo, stain);
+    a.rotation.x = -Math.PI / 2;
+    a.renderOrder = -8;
+    const b = new Mesh(quadGeo, seam);
+    b.rotation.x = -Math.PI / 2;
+    b.position.y = 0.003;
+    b.renderOrder = -6;
+    g.add(a);
+    g.add(b);
+    return { obj: g, stain, seam };
+  });
+  // opts: x, z, radius, kind ('scorch' | 'crater' | 'gouge' | 'splash' |
+  // 'sigil'), angle (rad, gouge direction), stain (hex, the matter), glow
+  // (hex, the hot seam; null = none), cool (s the seam takes to go out), life
+  // (s to fully fade), opacity, stretch (x scale for gouges), delay.
+  function mark(o) {
+    const s = marks.take();
+    s.live = true;
+    s.age = 0;
+    s.delay = o.delay ?? 0;
+    s.life = o.life ?? 2.6;
+    s.cool = Math.min(s.life, o.cool ?? 0.6);
+    s.op = o.opacity ?? 0.6;
+    s.gop = o.glow ? (o.glowOpacity ?? 0.9) * lightGain + 0.25 * (1 - lightGain) : 0;
+    s.r = o.radius ?? 0.8;
+    const tex = getMarkTexture(o.kind ?? 'scorch', cosmetic);
+    s.stain.map = tex;
+    s.seam.map = tex;
+    s.stain.color.copy(col(o.stain ?? PALETTE.voidCharcoal));
+    if (o.glow) s.seam.color.copy(col(o.glow));
+    s.obj.position.set(o.x, 0.02 + (marks.slots.indexOf(s) % 8) * 0.0015, o.z);
+    s.obj.rotation.y = o.angle !== undefined ? -o.angle : rnd(0, Math.PI * 2);
+    s.sx = o.stretch ?? 1;
+    s.obj.scale.set(s.r * 0.6 * s.sx, 1, s.r * 0.6);
+    s.obj.visible = s.delay <= 0;
+    return s;
+  }
+  function stepMark(s, t) {
+    const grow = 1 - Math.pow(1 - Math.min(1, t / 0.08), 2);
+    const sc = s.r * (0.6 + 0.4 * grow) * 0.5;
+    s.obj.scale.set(sc * s.sx, 1, sc);
+    const k = t / s.life;
+    s.stain.opacity = s.op * Math.min(1, t / 0.05) * (k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4);
+    s.seam.opacity = s.gop * (t < s.cool ? Math.pow(1 - t / s.cool, 1.5) : 0);
+  }
+
+  // ----------------------------------------------------------------- glow --
+  const glows = makePool(KIT_CAPS.glow, () => {
+    const mat = new SpriteMaterial({
+      map: getRadialTexture(),
+      color: new Color(),
+      transparent: true,
+      opacity: 0,
+      blending: AdditiveBlending,
+      depthWrite: false,
+    });
+    const sp = new Sprite(mat);
+    sp.renderOrder = 9;
+    return { obj: sp, mat };
+  });
+  // A held orb (projectile head): opts x, y, z, color, size, opacity, owner,
+  // pulse (Hz). Moved with setGlow, let go with release().
+  function glow(o) {
+    const s = glows.take();
+    s.live = true;
+    s.age = 0;
+    s.delay = 0;
+    s.life = 0.12;
+    s.hold = true;
+    s.owner = o.owner ?? null;
+    s.size = o.size ?? 0.4;
+    s.op = (o.opacity ?? 0.9) * 0.85;
+    s.pulse = o.pulse ?? 9;
+    s.phase = rnd(0, 6.28);
+    s.mat.color.copy(soft(o.color ?? PALETTE.parchment));
+    s.mat.opacity = s.op;
+    s.obj.position.set(o.x, o.y ?? 0.5, o.z);
+    s.obj.scale.set(s.size, s.size, 1);
+    s.obj.visible = true;
+    return s;
+  }
+  function setGlow(s, x, y, z) {
+    s.obj.position.set(x, y, z);
+  }
+  function stepGlow(s, t) {
+    if (s.hold) {
+      const w = 1 + 0.14 * Math.sin(s.age * s.pulse * 6.283 + s.phase);
+      s.obj.scale.set(s.size * w, s.size * w, 1);
+      s.mat.opacity = s.op;
+      return;
+    }
+    // Released: a last bloom, then gone.
+    const k = Math.min(1, t / s.life);
+    s.mat.opacity = s.op * (1 - k);
+    const sc = s.size * (1 + 0.8 * k);
+    s.obj.scale.set(sc, sc, 1);
+  }
+
   // --------------------------------------------------------------- update --
   const POOLS = [
     [arcs, stepArc],
@@ -680,6 +980,9 @@ export function createVfxKit({ stage, cosmetic }) {
     [streaks, stepStreak],
     [cracks, stepCrack],
     [pillars, stepPillar],
+    [stars, stepStar],
+    [marks, stepMark],
+    [glows, stepGlow],
   ];
   function update(dt) {
     for (const [pool, step] of POOLS) {
@@ -723,6 +1026,9 @@ export function createVfxKit({ stage, cosmetic }) {
       streaks: streaks.live(),
       cracks: cracks.live(),
       pillars: pillars.live(),
+      stars: stars.live(),
+      marks: marks.live(),
+      glows: glows.live(),
     };
   }
 
@@ -745,5 +1051,5 @@ export function createVfxKit({ stage, cosmetic }) {
     lightGain = l;
   }
 
-  return { root, slash, ring, light, flash, streak, setStreak, release, crack, pillar, update, clear, counts, prewarm, setIntensity };
+  return { root, slash, ring, light, flash, streak, setStreak, release, crack, pillar, star, mark, glow, setGlow, update, clear, counts, prewarm, setIntensity };
 }
