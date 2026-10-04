@@ -44,7 +44,7 @@ const GRAVITY = 8.5; // u/s^2
 const START_Y = 0.45;
 // Per-family live ceiling (§1 density): impacts are frequent, so each cloud is
 // capped and the OLDEST particle is dropped rather than letting a wave stack.
-const CAP = { spark: 110, chunk: 90, smoke: 40 };
+const CAP = { spark: 160, chunk: 120, smoke: 56, shard: 96 };
 // The points shader takes gl_PointSize in pixels before size attenuation; this
 // converts the world-unit sizes the callers author into that scale so a
 // particle authored at 0.2 u covers about 0.2 u of ground.
@@ -77,19 +77,97 @@ function getChunkTexture() {
   return tex;
 }
 
+// --- Shard atlas (VFX redesign, docs/gauntlet/design-VFX.md): the class and
+// enemy debris that has a SHAPE — Healer petals, Archer feathers, quills /
+// mantis needles, toad droplets. A 2x2 atlas so one Points cloud draws all
+// four; each particle picks its tile and spins (aTile / aRot below).
+// Tiles: 0 petal, 1 feather, 2 needle, 3 drop.
+export const SHARD_TILE = Object.freeze({ petal: 0, feather: 1, needle: 2, drop: 3 });
+let shardTex = null;
+function getShardTexture() {
+  if (shardTex) return shardTex;
+  const S = 128;
+  const H = S / 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = S;
+  canvas.height = S;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#ffffff';
+  // petal: a soft almond
+  ctx.save();
+  ctx.translate(H * 0.5, H * 0.5);
+  ctx.beginPath();
+  ctx.moveTo(0, -24);
+  ctx.quadraticCurveTo(15, -4, 0, 24);
+  ctx.quadraticCurveTo(-15, -4, 0, -24);
+  ctx.fill();
+  ctx.restore();
+  // feather: a vane with a quill line
+  ctx.save();
+  ctx.translate(H * 1.5, H * 0.5);
+  ctx.beginPath();
+  ctx.moveTo(0, -27);
+  ctx.quadraticCurveTo(11, -8, 3, 22);
+  ctx.lineTo(-3, 22);
+  ctx.quadraticCurveTo(-11, -8, 0, -27);
+  ctx.globalAlpha = 0.8;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, -24);
+  ctx.lineTo(0, 28);
+  ctx.stroke();
+  ctx.restore();
+  // needle: a long thin spike
+  ctx.save();
+  ctx.translate(H * 0.5, H * 1.5);
+  ctx.beginPath();
+  ctx.moveTo(0, -28);
+  ctx.lineTo(4, 10);
+  ctx.lineTo(0, 28);
+  ctx.lineTo(-4, 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  // drop: a teardrop
+  ctx.save();
+  ctx.translate(H * 1.5, H * 1.5);
+  ctx.beginPath();
+  ctx.moveTo(0, -22);
+  ctx.quadraticCurveTo(16, 8, 0, 18);
+  ctx.quadraticCurveTo(-16, 8, 0, -22);
+  ctx.fill();
+  ctx.restore();
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  shardTex = tex;
+  return tex;
+}
+
+const ROLLED = ['speed', 'up', 'size', 'life', 'opacity', 'spin', 'flutter', 'grow', 'drag', 'gravity'];
+
 // Palette-anchored particle colours (§19.1 — no invented hexes).
 const DEBRIS_DARK = new Color(PALETTE.voidCharcoal);
 const SMOKE_DARK = new Color(PALETTE.voidCharcoal).lerp(new Color(PALETTE.warmGrey), 0.22);
 const _c = new Color();
 
-function makeCloud(map, blending, cap, renderOrder) {
+function makeCloud(map, blending, cap, renderOrder, { atlas = false } = {}) {
   const geo = new BufferGeometry();
   const position = new Float32Array(cap * 3);
   const color = new Float32Array(cap * 4); // vec4 => USE_COLOR_ALPHA
   const aSize = new Float32Array(cap);
+  // Atlas clouds only: per-particle spin (radians) and atlas tile (0..3).
+  const aRot = atlas ? new Float32Array(cap) : null;
+  const aTile = atlas ? new Float32Array(cap) : null;
   geo.setAttribute('position', new BufferAttribute(position, 3));
   geo.setAttribute('color', new BufferAttribute(color, 4));
   geo.setAttribute('aSize', new BufferAttribute(aSize, 1));
+  if (atlas) {
+    geo.setAttribute('aRot', new BufferAttribute(aRot, 1));
+    geo.setAttribute('aTile', new BufferAttribute(aTile, 1));
+  }
   geo.setDrawRange(0, 0);
   const material = new PointsMaterial({
     map,
@@ -104,11 +182,33 @@ function makeCloud(map, blending, cap, renderOrder) {
     shader.vertexShader =
       'attribute float aSize;\n' +
       shader.vertexShader.replace('gl_PointSize = size;', 'gl_PointSize = aSize;');
+    if (atlas) {
+      // Spin the sprite and pick its quarter of the 2x2 atlas.
+      shader.vertexShader =
+        'attribute float aRot;\nattribute float aTile;\nvarying float vRot;\nvarying vec2 vTile;\n' +
+        shader.vertexShader.replace(
+          'gl_PointSize = aSize;',
+          'gl_PointSize = aSize;\n\tvRot = aRot;\n\tvTile = vec2( mod( aTile, 2.0 ), floor( aTile / 2.0 ) ) * 0.5;'
+        );
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying float vRot;\nvarying vec2 vTile;')
+        .replace(
+          '#include <map_particle_fragment>',
+          [
+            'vec2 pc = gl_PointCoord - 0.5;',
+            'float cr = cos( vRot ), sr = sin( vRot );',
+            'vec2 ruv = clamp( vec2( cr * pc.x - sr * pc.y, sr * pc.x + cr * pc.y ) + 0.5, 0.0, 1.0 );',
+            'diffuseColor *= texture2D( map, vTile + vec2( ruv.x, 1.0 - ruv.y ) * 0.5 );',
+          ].join('\n')
+        );
+    }
   };
+  // Distinct cache key: the atlas cloud's program differs from the plain ones.
+  if (atlas) material.customProgramCacheKey = () => 'echoes-particles-atlas';
   const points = new Points(geo, material);
   points.frustumCulled = false;
   points.renderOrder = renderOrder;
-  return { geo, points, position, color, aSize, list: [], cap };
+  return { geo, points, position, color, aSize, aRot, aTile, list: [], cap, atlas };
 }
 
 export function createParticlePool(parent, cosmetic) {
@@ -117,6 +217,9 @@ export function createParticlePool(parent, cosmetic) {
     smoke: makeCloud(getRadialTexture(), NormalBlending, CAP.smoke, 7),
     chunk: makeCloud(getChunkTexture(), NormalBlending, CAP.chunk, 8),
     spark: makeCloud(getRadialTexture(), AdditiveBlending, CAP.spark, 9),
+    // Shaped debris (petals, feathers, needles, drops) between the dark
+    // debris and the hot sparks.
+    shard: makeCloud(getShardTexture(), NormalBlending, CAP.shard, 8, { atlas: true }),
   };
   for (const key of Object.keys(clouds)) parent.add(clouds[key].points);
 
@@ -134,6 +237,10 @@ export function createParticlePool(parent, cosmetic) {
       gravity = GRAVITY,
       dir = null, // { x, z } biases the spray along an axis
       dirBias = 0,
+      tile = 0, // shard cloud: atlas tile (SHARD_TILE)
+      spin = 0, // shard cloud: rad/s
+      flutter = 0, // shard cloud: sideways sway (u/s) for petals / feathers
+      floor = 0.03, // rest height (sparks / debris)
     } = opts;
     const cloud = clouds[mode];
     if (cloud.list.length >= cloud.cap) cloud.list.shift(); // oldest out
@@ -166,6 +273,11 @@ export function createParticlePool(parent, cosmetic) {
       drag,
       gravity,
       smoke: mode === 'smoke',
+      tile,
+      rot: mode === 'shard' ? cosmetic.range(0, Math.PI * 2) : 0,
+      spin,
+      flutter,
+      floor,
     });
   }
 
@@ -175,7 +287,8 @@ export function createParticlePool(parent, cosmetic) {
 
   // §9 #6 kill burst: hot sparks + dark debris + a smoke puff. The debris and
   // smoke are what make a kill read as matter breaking rather than a flashbulb.
-  function kill(x, z, { color = PALETTE.bone } = {}) {
+  // VFX redesign: `debris` tints the chunks with what the body was made of.
+  function kill(x, z, { color = PALETTE.bone, debris = DEBRIS_DARK } = {}) {
     for (let i = 0; i < 10; i++)
       emit('spark', x, START_Y, z, {
         color,
@@ -187,7 +300,7 @@ export function createParticlePool(parent, cosmetic) {
       });
     for (let i = 0; i < 8; i++)
       emit('chunk', x, START_Y * 0.8, z, {
-        color: DEBRIS_DARK,
+        color: debris,
         speed: rnd(1.4, 3.2),
         up: rnd(1.6, 3.4),
         size: rnd(0.07, 0.15),
@@ -210,11 +323,11 @@ export function createParticlePool(parent, cosmetic) {
 
   // Every ordinary hit (REFERENCE_BAR check 5: "a single hit reads as an
   // event"). Small, cheap, and biased along the impact direction.
-  function hit(x, z, { color = PALETTE.parchment, dir = null, scale = 1 } = {}) {
+  function hit(x, z, { color = PALETTE.parchment, dir = null, scale = 1, debris = DEBRIS_DARK } = {}) {
     const n = Math.max(2, Math.round(4 * scale));
     for (let i = 0; i < n; i++)
       emit('chunk', x, START_Y * 0.85, z, {
-        color: DEBRIS_DARK,
+        color: debris,
         speed: rnd(1.0, 2.4) * scale,
         up: rnd(0.9, 2.2),
         size: rnd(0.05, 0.11) * scale,
@@ -308,8 +421,10 @@ export function createParticlePool(parent, cosmetic) {
       p.x += p.vx * dt;
       p.z += p.vz * dt;
       p.y += p.vy * dt;
-      if (!p.smoke && p.y < 0.03) {
-        p.y = 0.03; // debris and sparks rest on the floor while they fade
+      if (p.spin) p.rot += p.spin * dt;
+      if (p.flutter) p.x += Math.sin(p.age * 7 + p.rot) * p.flutter * dt;
+      if (!p.smoke && p.y < p.floor) {
+        p.y = p.floor; // debris and sparks rest on the floor while they fade
         p.vy = 0;
         p.vx *= 0.6;
         p.vz *= 0.6;
@@ -327,23 +442,48 @@ export function createParticlePool(parent, cosmetic) {
       color[i * 4 + 2] = p.b;
       color[i * 4 + 3] = o;
       aSize[i] = p.size * (1 + p.grow * k) * SIZE_SCALE;
+      if (cloud.atlas) {
+        cloud.aRot[i] = p.rot;
+        cloud.aTile[i] = p.tile;
+      }
     }
     cloud.geo.setDrawRange(0, list.length);
     if (list.length > 0) {
       cloud.geo.attributes.position.needsUpdate = true;
       cloud.geo.attributes.color.needsUpdate = true;
       cloud.geo.attributes.aSize.needsUpdate = true;
+      if (cloud.atlas) {
+        cloud.geo.attributes.aRot.needsUpdate = true;
+        cloud.geo.attributes.aTile.needsUpdate = true;
+      }
     }
   }
 
   function update(dt) {
     updateCloud(clouds.smoke, dt);
     updateCloud(clouds.chunk, dt);
+    updateCloud(clouds.shard, dt);
     updateCloud(clouds.spark, dt);
   }
 
   const count = () =>
-    clouds.spark.list.length + clouds.chunk.list.length + clouds.smoke.list.length;
+    clouds.spark.list.length + clouds.chunk.list.length + clouds.smoke.list.length + clouds.shard.list.length;
+
+  // VFX redesign: the styled emitter the class / enemy recipes use
+  // (render/vfx/signature.js). `n` particles of one family at (x, y, z);
+  // every other option is emit()'s, with `[min, max]` pairs rolled per
+  // particle from the cosmetic stream.
+  const roll = (v) => (Array.isArray(v) ? rnd(v[0], v[1]) : v);
+  function spray(mode, x, y, z, n, opts = {}) {
+    if (!clouds[mode] || !(n > 0)) return;
+    const o = { ...opts };
+    for (let i = 0; i < n; i++) {
+      for (const k of ROLLED) if (k in opts) o[k] = roll(opts[k]);
+      const jx = opts.jitter ? rnd(-opts.jitter, opts.jitter) : 0;
+      const jz = opts.jitter ? rnd(-opts.jitter, opts.jitter) : 0;
+      emit(mode, x + jx, y, z + jz, o);
+    }
+  }
 
   // First-draw warm-up (certification fix D-r3 S1, see render/warmup.js).
   // A cloud with a draw range of 0 is submitted every frame, which links its
@@ -388,5 +528,5 @@ export function createParticlePool(parent, cosmetic) {
     return n;
   }
 
-  return { burst, kill, hit, embers, impact, update, count, prewarm, clear };
+  return { burst, kill, hit, embers, impact, spray, update, count, prewarm, clear };
 }

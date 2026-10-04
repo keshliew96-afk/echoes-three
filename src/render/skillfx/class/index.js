@@ -44,7 +44,8 @@ import {
   SpriteMaterial,
   SRGBColorSpace,
 } from 'three';
-import { PALETTE, CLASS_ACCENTS } from '../../../data/palette.js';
+import { PALETTE } from '../../../data/palette.js';
+import { vfxClassStyle } from '../../../data/vfx.js';
 import { makeGlowSprite } from '../../glow.js';
 import { warmPark } from '../../warmup.js';
 
@@ -54,6 +55,11 @@ const BONE = PALETTE.bone;
 const GREY = PALETTE.warmGrey;
 const INK = PALETTE.voidCharcoal;
 const MOTE_CAP = 200;
+// VFX redesign (docs/gauntlet/design-VFX.md): the persistent class pieces this
+// layer keeps wear their class signature — Iron Stance's hex field in Forge
+// Steel, Razor Wake's orbiting blades in Fox Crimson / Moon Silver.
+const TANK = vfxClassStyle('tank');
+const SWORD = vfxClassStyle('swordsman');
 
 function add(color, opacity) {
   return new MeshBasicMaterial({ color: new Color(color), transparent: true, opacity, blending: AdditiveBlending, depthWrite: false });
@@ -267,26 +273,6 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
       motes.push({ s, age: 0, life: cosmetic.range(life[0], life[1]), vy: cosmetic.range(vy[0], vy[1]), vx: d.x, vz: d.z, sz });
     }
   }
-  function flash(x, y, z, { color = PARCH, size = 0.5, opacity = 0.9, life = 0.28, grow = 0.5 } = {}) {
-    const s = makeGlowSprite({ color, size, opacity });
-    s.position.set(x, y, z);
-    track(s, life, (k, o) => {
-      o.material.opacity = opacity * (1 - k);
-      const sc = size * (1 + grow * k);
-      o.scale.set(sc, sc, 1);
-    });
-  }
-  function ring(x, z, { from = 0.2, to = 1.2, life = 0.36, opacity = 0.8, color = PARCH, width = 0.07 } = {}) {
-    const m = new Mesh(new RingGeometry(0.8, 1, 48), add(color, opacity));
-    m.rotation.x = -Math.PI / 2;
-    m.position.set(x, 0.05, z);
-    track(m, life, (k, o) => {
-      const r = from + (to - from) * (1 - (1 - k) * (1 - k));
-      o.scale.set(r, r, 1);
-      o.material.opacity = opacity * (1 - k);
-      void width;
-    });
-  }
   function glyphPop(id, x, y, z, { size = 0.5, life = 0.5, rise = 0.25 } = {}) {
     const s = glyphSprite(id, size);
     s.position.set(x, y, z);
@@ -312,11 +298,11 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
   // Taunt plates (one per taunted enemy), the Iron Stance hex field, the
   // Razor Wake glints, the Kestrel glyph, the parry blades, combo pips.
   const tauntPlates = new Map(); // enemy id -> sprite
-  const stanceMesh = new Mesh(new CircleGeometry(1.3, 36), flat(GREY, 0.06));
+  const stanceMesh = new Mesh(new CircleGeometry(1.3, 36), flat(TANK.glow, 0.06));
   stanceMesh.rotation.x = -Math.PI / 2;
   const stance = new Group();
   stance.add(stanceMesh);
-  const stanceRim = new Mesh(new RingGeometry(1.24, 1.3, 6), add(GREY, 0.5));
+  const stanceRim = new Mesh(new RingGeometry(1.24, 1.3, 6), add(TANK.glow, 0.5));
   stanceRim.rotation.x = -Math.PI / 2;
   stanceRim.rotation.z = Math.PI / 6;
   stance.add(stanceRim);
@@ -324,13 +310,13 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
   root.add(stance);
   let stanceFlick = 0;
   const glints = [0, 1, 2].map(() => {
-    const s = makeGlowSprite({ color: PARCH, size: 0.14, opacity: 0.95 });
+    const s = makeGlowSprite({ color: SWORD.glow, size: 0.14, opacity: 0.95 });
     s.visible = false;
     root.add(s);
     return s;
   });
   const glintCores = [0, 1, 2].map(() => {
-    const m = new Mesh(new PlaneGeometry(0.16, 0.05), add(PARCH, 0.9));
+    const m = new Mesh(new PlaneGeometry(0.16, 0.05), add(SWORD.second, 0.9));
     m.visible = false;
     root.add(m);
     return m;
@@ -350,15 +336,9 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
 
   // ------------------------------------------------------------ bus wiring --
   bus.on('ally_cast', (ev) => {
-    const acc = CLASS_ACCENTS[ev.classId] ?? GREY;
     switch (ev.skill) {
-      case 'taunting_roar': {
-        ring(ev.x, ev.z, { from: 0.3, to: ev.radius ?? 2, life: 0.45, opacity: 0.9, color: PARCH });
-        ring(ev.x, ev.z, { from: 0.2, to: (ev.radius ?? 2) * 0.8, life: 0.4, opacity: 0.6, color: acc });
-        flash(ev.x, 0.6, ev.z, { color: AMBER, size: 0.9, opacity: 0.5, life: 0.35 });
-        spawnMotes(ev.x, ev.z, { count: 12, spread: 1.2, color: BONE });
-        break;
-      }
+      // taunting_roar: the roar's shockwave is the Tank's nova recipe in
+      // render/vfx/signature.js (VFX redesign); the taunt plates stay here.
       case 'shield_wall': {
         const a = byId(ev.id);
         for (const tid of ev.targets || []) {
@@ -372,93 +352,43 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
             o.position.set(x0 + (tt.x - x0) * k, 0.9 + Math.sin(k * Math.PI) * 0.4, z0 + (tt.z - z0) * k);
             o.material.opacity = k < 0.85 ? 1 : 1 - (k - 0.85) / 0.15;
           });
-          flash(t.x, 0.6, t.z, { color: PARCH, size: 0.6, opacity: 0.55, life: 0.4 });
-          spawnMotes(t.x, t.z, { count: 6, spread: 0.3, color: BONE });
+          spawnMotes(t.x, t.z, { count: 6, spread: 0.3, color: TANK.glow });
         }
         break;
       }
-      case 'crescent_finisher': {
-        const bands = 1 + Math.min(2, ev.combo || 0);
-        for (let b = 0; b < bands; b++) {
-          const m = new Mesh(new RingGeometry(0.55 + b * 0.18, 0.62 + b * 0.18, 32, 1, -((ev.halfAngle ?? 70) * Math.PI) / 180, ((ev.halfAngle ?? 70) * Math.PI * 2) / 180), add(PARCH, 0.85 - b * 0.15));
-          m.rotation.x = -Math.PI / 2;
-          m.rotation.z = -Math.atan2(ev.dz, ev.dx);
-          m.position.set(ev.x, 0.4 + b * 0.02, ev.z);
-          track(m, 0.32 + b * 0.05, (k, o) => {
-            o.material.opacity = (0.85 - b * 0.15) * (1 - k);
-            const sc = 1 + 0.5 * k;
-            o.scale.set(sc, sc, 1);
-          });
-        }
-        flash(ev.x + ev.dx * 0.6, 0.5, ev.z + ev.dz * 0.6, { color: AMBER, size: 0.7, opacity: 0.5 });
-        spawnMotes(ev.x + ev.dx * 0.6, ev.z + ev.dz * 0.6, { count: 8, spread: 0.5 });
-        break;
-      }
-      case 'vault_shot':
-      case 'pinning_arrow': {
-        flash(ev.x, 0.55, ev.z, { color: PARCH, size: 0.5, opacity: 0.7, life: 0.22 });
-        spawnMotes(ev.x, ev.z, { count: 6, spread: 0.2, color: BONE, dir: { x: -ev.dx * 0.6, z: -ev.dz * 0.6 } });
-        break;
-      }
-      case 'rain_of_arrows': {
-        ring(ev.zx ?? ev.x, ev.zz ?? ev.z, { from: 0.4, to: ev.radius ?? 1.4, life: 0.4, opacity: 0.7, color: BONE });
-        break;
-      }
+      // crescent_finisher / vault_shot / pinning_arrow / rain_of_arrows: the
+      // strokes, release flashes and arrow rain are the class recipes in
+      // render/vfx/signature.js (VFX redesign).
       default:
         break;
     }
-    if (ev.dash || ev.vault) spawnMotes(ev.x, ev.z, { count: 8, spread: 0.3, color: PARCH });
   });
-  bus.on('ally_dash', (ev) => {
-    const col = ev.cause === 'vault' || ev.cause === 'disengage' ? BONE : PARCH;
-    line(ev.x0, ev.z0, ev.x1, ev.z1, { color: col, width: 0.12, life: 0.35, opacity: 0.75, y: 0.3 });
-    line(ev.x0, ev.z0, ev.x1, ev.z1, { color: AMBER, width: 0.3, life: 0.3, opacity: 0.25, y: 0.29 });
-    const n = 6;
-    for (let i = 0; i < n; i++) {
-      const k = i / n;
-      spawnMotes(ev.x0 + (ev.x1 - ev.x0) * k, ev.z0 + (ev.z1 - ev.z0) * k, { count: 2, spread: 0.12, color: ev.cause === 'dash' ? BONE : PARCH, y: 0.12, vy: [0.2, 0.6] });
-    }
-    if (ev.cause === 'vault' || ev.cause === 'disengage') spawnMotes(ev.x0, ev.z0, { count: 8, spread: 0.25, color: BONE, vy: [0.8, 1.4] });
-  });
+  // ally_dash: the dash wake is the class recipe in render/vfx/signature.js
+  // (VFX redesign: the Tank's steel wake + dust, the fox's silver line, the
+  // hare's wind lines + feathers).
   bus.on('parry_counter', (ev) => {
+    // The crossed-cut + glint is the Swordsman's recipe (render/vfx/
+    // signature.js); this layer keeps the spark glyph — the parry's SHAPE.
     const a = byId(ev.id);
-    const t = byId(ev.attackerId);
     const x = a ? a.x : ev.x;
     const z = a ? a.z : ev.z;
     glyphPop('spark', x + (ev.dx ?? 0) * 0.4, 0.7, z + (ev.dz ?? 0) * 0.4, { size: 0.55, life: 0.3, rise: 0.05 });
-    flash(x, 0.7, z, { color: AMBER, size: 0.7, opacity: 0.6, life: 0.3 });
-    if (t) line(x, z, t.x, t.z, { color: PARCH, width: 0.08, life: 0.25, opacity: 0.9, y: 0.5 });
   });
   bus.on('hit_blocked', (ev) => {
     if (!ev.parry) return;
     const t = byId(ev.targetId);
-    if (t) spawnMotes(t.x, t.z, { count: 10, spread: 0.25, color: PARCH, y: 0.6 });
+    if (t) spawnMotes(t.x, t.z, { count: 10, spread: 0.25, color: SWORD.second, y: 0.6 });
   });
   bus.on('aura_pulse', (ev) => {
     if (ev.seat === undefined) return;
-    if (ev.skill === 'iron_stance') {
-      stanceFlick = 0.4;
-      for (const id of ev.shielded || []) {
-        const m = byId(id);
-        if (m) flash(m.x, 0.6, m.z, { color: PARCH, size: 0.4, opacity: 0.4, life: 0.3 });
-      }
-      spawnMotes(ev.x, ev.z, { count: 5, spread: 1.1, color: GREY });
-    } else if (ev.skill === 'razor_wake') {
+    // Iron Stance keeps its hex field flicker; the pulse ring, Razor Wake's
+    // cuts and Kestrel Watch's strike lines are the class recipes in
+    // render/vfx/signature.js (VFX redesign).
+    if (ev.skill === 'iron_stance') stanceFlick = 0.4;
+    else if (ev.skill === 'razor_wake') {
       for (const id of ev.hit || []) {
         const e = byId(id);
-        if (e) {
-          glyphPop('spark', e.x, 0.55, e.z, { size: 0.36, life: 0.22, rise: 0 });
-          spawnMotes(e.x, e.z, { count: 3, spread: 0.1 });
-        }
-      }
-    } else if (ev.skill === 'kestrel_watch') {
-      for (const id of ev.hit || []) {
-        const e = byId(id);
-        if (e) {
-          line(ev.x, ev.z, e.x, e.z, { color: PARCH, width: 0.05, life: 0.22, opacity: 0.95, y: 1.1 });
-          flash(e.x, 0.6, e.z, { color: AMBER, size: 0.45, opacity: 0.55, life: 0.22 });
-          spawnMotes(e.x, e.z, { count: 4, spread: 0.12 });
-        }
+        if (e) glyphPop('spark', e.x, 0.55, e.z, { size: 0.36, life: 0.22, rise: 0 });
       }
     }
   });
@@ -478,13 +408,11 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
     }
     if (ev.node === 'flow') {
       const a = seatBody(ev.seat);
-      if (a) spawnMotes(a.x, a.z, { count: 6, spread: 0.25, color: AMBER });
+      if (a) spawnMotes(a.x, a.z, { count: 6, spread: 0.25, color: SWORD.glow });
     }
   });
-  bus.on('scatter_burst', (ev) => {
-    flash(ev.x, 0.5, ev.z, { color: AMBER, size: 0.5, opacity: 0.6, life: 0.25 });
-    spawnMotes(ev.x, ev.z, { count: 6, spread: 0.2 });
-  });
+  // scatter_burst: the jade shard burst is the Archer's recipe in
+  // render/vfx/signature.js (VFX redesign).
   bus.on('skill_bolt_despawn', (ev) => {
     if (ev.skill !== 'pinning_arrow' || ev.cause !== 'impact') return;
     glyphPop('stake', ev.x, 0.8, ev.z, { size: 0.42, life: 0.6, rise: -0.15 });
