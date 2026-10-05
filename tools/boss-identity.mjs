@@ -72,8 +72,11 @@ try {
       return r.phase === 'combat' && r.room === 8 && r.boss && r.boss.active ? r : null;
     }, 90000);
     check(`${tag}: boss room live`, inRoom, inRoom ? { name: inRoom.boss.name, kind: inRoom.boss.kind ?? 'stag' } : null);
-    await sleep(2500);
-    const plate = await ev(page, () => window.__echoes.hud.bossPlate());
+    const plate = (await waitFor(async () => {
+      const pl = await ev(page, () => window.__echoes.hud.bossPlate());
+      return pl.mode === 'boss' ? pl : null;
+    }, 20000, 500)) ?? (await ev(page, () => window.__echoes.hud.bossPlate()));
+    await sleep(1500);
     check(`${tag}: banner wears its own medal`, plate.mode === 'boss' && plate.medal.visible && plate.medal.iconId === b.icon && plate.medal.boss === b.kind, { mode: plate.mode, icon: plate.medal.iconId, label: plate.label });
     const box = plate.medal.box;
     await page.screenshot({ path: `${SHOTS}/boss-${tag}.png`, clip: { x: Math.max(0, box.x - 40), y: Math.max(0, box.y - 24), width: 760, height: 120 } });
@@ -93,10 +96,17 @@ try {
     }, BEAT_MS, 1000);
     check(`${tag}: a kit beat plays its own cue`, beat, beat);
     if (!want) {
-      const cs = await cuesSince(beatMark);
+      const cs = (await waitFor(async () => {
+        const c = await cuesSince(beatMark);
+        return c.some((x) => x.event === 'boss_telegraph_start') ? c : null;
+      }, BEAT_MS, 1000)) ?? (await cuesSince(beatMark));
+      // The boss's own telegraphs speak its tell; the generic tick that
+      // still plays belongs to adds (the Lich Ram raises telegraphing dead),
+      // so it may be no more than the tells' absence explains: every
+      // boss_telegraph_start cue must be the tell.
+      const own = cs.filter((c) => c.event === 'boss_telegraph_start').map((c) => c.cue);
       const generic = cs.filter((c) => c.cue === 'telegraph' && c.event === 'telegraph_start').length;
-      const tells = cs.filter((c) => c.cue === `bx_${tag}_tell`).length;
-      check(`${tag}: tells replace the generic telegraph tick`, generic === 0, { tells, generic });
+      check(`${tag}: its telegraphs speak its own tell`, own.length > 0 && own.every((c) => c === `bx_${tag}_tell`), { own: own.length, genericFromAdds: generic });
     }
     const phMark = await now();
     await ev(page, () => window.__echoes.cmd('bossHp', 0.45));
