@@ -264,8 +264,42 @@ const MOTIFS = {
   barrow: [[0, 4, 8], [8, 5, 4], [12, 4, 4], [16, 1, 8], [24, 0, 8]],
 };
 
+// Boss identity: the second boss of each act plays its own variant of the
+// act's boss groove (same key, tempo, drone and pad, so the three act themes
+// stay one score; its own progression, ostinato figure, drum pattern and
+// lead). The act's first boss (Stag, Heron, Wyrm) keeps the act groove as it
+// was. Unknown kinds fall back to the act groove.
+export const BOSS_MUSIC = Object.freeze({
+  thornmother: {
+    theme: 'wood',
+    prog: [0, 1, 4, 1],
+    arp: { instr: 'lute', pattern: [0, 2, 1, 3, 0, 2, 4, 3] },
+    drum: { 0: 1, 2: 0.45, 3: 0.6, 6: 0.75, 8: 0.9, 10: 0.45, 11: 0.6, 14: 0.8 },
+    lead: 'lute',
+    motif: [[0, 0, 1], [2, 1, 1], [4, 2, 1], [6, 4, 2], [8, 3, 1], [10, 4, 1], [12, 6, 4], [16, 4, 2], [18, 3, 2], [20, 1, 4], [24, 0, 8]],
+    shaker: true,
+  },
+  millwheel: {
+    theme: 'mill',
+    prog: [0, 1, 0, 5],
+    arp: { instr: 'bell', pattern: [0, 0, 2, 0, 1, 0, 3, 0] },
+    drum: { 0: 1, 2: 0.4, 4: 0.75, 6: 0.4, 8: 0.95, 10: 0.4, 12: 0.75, 14: 0.4 },
+    lead: 'reed',
+    motif: [[0, 0, 4], [4, 1, 4], [8, 0, 4], [12, -3, 4], [16, 0, 4], [20, 1, 4], [24, 3, 8]],
+  },
+  lichram: {
+    theme: 'barrow',
+    prog: [0, 1, 0, 5],
+    arp: { instr: 'bell', pattern: [0, 1, 2, 1, 0, 1, 3, 1] },
+    drum: { 0: 1, 1: 0.45, 3: 0.65, 4: 0.9, 5: 0.45, 7: 0.65, 8: 1, 9: 0.45, 11: 0.65, 12: 0.9, 13: 0.45, 15: 0.65 },
+    lead: 'brass',
+    motif: [[0, 0, 2], [2, 0, 2], [4, 4, 6], [12, 3, 4], [16, 0, 2], [18, 0, 2], [20, 1, 10]],
+  },
+});
+export const bossMusicKey = (kind) => (kind && BOSS_MUSIC[kind] ? kind : null);
+
 // --------------------------------------------------------- state specs --
-export function stateSpec(state, themeId = 'wood') {
+export function stateSpec(state, themeId = 'wood', bossKind = null) {
   const th = THEMES[themeId] || THEMES.wood;
   const base = { root: 50, scale: 'dorian', padType: 'sawtooth', padCut: 1000 };
   switch (state) {
@@ -304,6 +338,22 @@ export function stateSpec(state, themeId = 'wood') {
       };
     }
     case 'boss': {
+      const v = BOSS_MUSIC[bossKind];
+      if (v) {
+        return {
+          ...base, ...th, state, boss: bossKind, scale: th.bossScale, prog: v.prog, bpm: Math.round(th.combatBpm * 1.22),
+          layers: [
+            droneLayer(0.4),
+            padLayer(0.25, { oct: 0, every: 32 }),
+            drumLayer('taiko', 0.62, 'taiko', v.drum),
+            bassLayer(0.45, [0, 2, 4, 6, 8, 10, 12, 14], { lenSteps: 1.6 }),
+            arpLayer('ostinato', 0.4, v.arp.instr, { every: 1, oct: 1, pattern: v.arp.pattern, min: 0.25 }),
+            ...(v.shaker ? [shakerLayer(0.16, { min: 0.4, every: 2 })] : []),
+            stabLayer(0.4, [0, 6, 12], { min: 0.5 }),
+            leadLayer(0.38, v.lead, v.motif, { min: 0.75, oct: 1 }),
+          ],
+        };
+      }
       return {
         ...base, ...th, state, scale: th.bossScale, prog: th.bossProg, bpm: Math.round(th.combatBpm * 1.22),
         layers: [
@@ -391,8 +441,8 @@ const noteBuild = (instr, f, v, len) => (kk, tt, dd) => INSTR[instr](kk, dd, tt,
 // swallows them); they stay live-synthesised. Returns an incremental job
 // (deadline) -> done that hands each new note to `onNote(key, build)` — the
 // engine runs it inside its frame budget (src/audio/bake.js addJob).
-export function stateNotesJob(state, themeId, dryKit, onNote) {
-  const spec = stateSpec(state, themeId);
+export function stateNotesJob(state, themeId, dryKit, onNote, bossKind = null) {
+  const spec = stateSpec(state, themeId, bossKind);
   if (!spec) return null;
   const seen = new Set();
   const stepDur = 60 / spec.bpm / 4;
@@ -581,6 +631,7 @@ function createPlayer(ctx, kit, dest, spec, { trimDb = 0, intensity = 0, baker =
 // The music controller: owns the players and the crossfades.
 export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM, baker = null, dryKit = null, sampler = null }) {
   let theme = 'wood';
+  let boss = null; // bossMusicKey of the boss in the room (null = the act groove)
   let state = null;
   let intensity = 0;
   let current = null;
@@ -596,7 +647,8 @@ export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM, baker = null, 
   function setState(next, { crossfadeSec } = {}) {
     if (!MUSIC_STATES.includes(next)) return state;
     const themed = next === 'combat' || next === 'boss';
-    if (next === state && (next === 'silence' || (current && current.spec.state === next && (!themed || current.spec.themeKey === theme)))) return state;
+    const key = next === 'boss' && boss ? `${theme}|${boss}` : theme;
+    if (next === state && (next === 'silence' || (current && current.spec.state === next && (!themed || current.spec.themeKey === key)))) return state;
     const prev = state;
     const sec = crossfadeSec ?? (next === 'combat' ? CROSSFADE.toCombat : next === 'victory' || next === 'defeat' ? CROSSFADE.toStinger : prev === 'victory' || prev === 'defeat' ? CROSSFADE.fromStinger : CROSSFADE.default);
     state = next;
@@ -605,9 +657,9 @@ export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM, baker = null, 
       fading.push(current);
       current = null;
     }
-    const spec = stateSpec(next, theme);
+    const spec = stateSpec(next, theme, next === 'boss' ? boss : null);
     if (spec) {
-      spec.themeKey = theme;
+      spec.themeKey = key;
       current = createPlayer(ctx, kit, dest, spec, { trimDb: trimFor(next, theme), intensity, baker, sampler });
       current.fade('in', sec);
       // Only the must-lead notes now; engine.update spreads the rest.
@@ -625,7 +677,7 @@ export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM, baker = null, 
   // most likely next, so a fight's first bars are already samples).
   function prebake(st, th = theme) {
     if (!baker || !dryKit) return false;
-    const job = stateNotesJob(st, th, dryKit, (key, build) => baker.request(key, build, { variants: 1 }));
+    const job = stateNotesJob(st, th, dryKit, (key, build) => baker.request(key, build, { variants: 1 }), st === 'boss' ? boss : null);
     if (job) baker.addJob(job);
     return !!job;
   }
@@ -640,6 +692,19 @@ export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM, baker = null, 
       setState(st, { crossfadeSec: CROSSFADE.default });
     }
     return theme;
+  }
+
+  // Boss identity: the boss whose groove the boss state plays. Re-enters a
+  // playing boss state when it changes (a lab jump between bosses).
+  function setBoss(kind) {
+    const k = bossMusicKey(kind);
+    if (k === boss) return boss;
+    boss = k;
+    if (state === 'boss') {
+      state = null;
+      setState('boss', { crossfadeSec: CROSSFADE.default });
+    }
+    return boss;
   }
 
   function setIntensity(v) {
@@ -685,6 +750,7 @@ export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM, baker = null, 
       crossfading: fading.length > 0 && ctx.currentTime - lastTransitionAt < lastTransitionMs / 1000,
       lastTransitionMs,
       sinceTransitionMs: Math.round((ctx.currentTime - lastTransitionAt) * 1000),
+      boss: current && current.spec.state === 'boss' ? current.spec.boss || null : null,
       bpm: current ? current.spec.bpm : null,
       scale: current ? current.spec.scale : null,
       layers: current ? current.spec.layers.map((l) => l.id) : [],
@@ -697,6 +763,7 @@ export function createMusic({ ctx, kit, dest, trims = MUSIC_TRIM, baker = null, 
   return {
     setState,
     setTheme,
+    setBoss,
     setIntensity,
     update,
     prebake,

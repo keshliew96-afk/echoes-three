@@ -477,6 +477,59 @@ const ICONS = {
     ['path', { d: 'M16 12 L22 19 L20 29 H12 L10 19 Z', fill: 'currentColor', stroke: 'none' }],
     ['circle', { cx: 16, cy: 8.5, r: 2.2, fill: 'currentColor', stroke: 'none' }],
   ],
+  // Boss medals (Boss identity): one silhouette per boss for the banner's
+  // medallion, drawn to the Stag's grammar (a filled mass plus a few bold
+  // strokes) so all six read as one set at 34 px. Holes (eyes, sockets) are
+  // cut with evenodd so the medal stays one ink.
+  // The Thornmother: a five-petal briar rose inside a thorned ring.
+  boss_thornmother: [
+    ['circle', { cx: 16, cy: 16, r: 11.4, 'stroke-width': 2.2 }],
+    ...[0, 60, 120, 180, 240, 300].map((a) => [
+      'path',
+      { d: 'M14 5.4 L16 0.6 L18 5.4 Z', fill: 'currentColor', stroke: 'none', transform: `rotate(${a + 30} 16 16)` },
+    ]),
+    ...[0, 72, 144, 216, 288].map((a) => [
+      'path',
+      { d: 'M16 16 C12.2 13 12.6 7.4 16 6.4 C19.4 7.4 19.8 13 16 16 Z', fill: 'currentColor', stroke: 'none', transform: `rotate(${a} 16 16)` },
+    ]),
+    ['circle', { cx: 16, cy: 16, r: 2.4, fill: 'none', 'stroke-width': 1.4 }],
+  ],
+  // The Drowned Heron: a crested head in profile, the spear-bill out front,
+  // the S of its neck below.
+  boss_heron: [
+    ['path', { d: 'M19.5 30 C24.5 24 14.5 20.5 18.5 14', 'stroke-width': 2.8 }],
+    ['path', { d: 'M14 11 C15 7 21 5.8 23.4 8.8 C25 11 22.6 14.4 18.6 14.4 C16.4 14.4 14.6 13.2 14 11 Z M17.9 9.6 a1.3 1.3 0 1 0 2.6 0 a1.3 1.3 0 1 0 -2.6 0 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['path', { d: 'M14.6 9.8 L1.5 12.4 L14.6 12.8 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M22.4 8 L29.5 3.5 M23 9.6 L30.5 7.6', 'stroke-width': 1.7 }],
+  ],
+  // The Millwheel: a spoked water-wheel with paddles round the rim.
+  boss_millwheel: [
+    ['circle', { cx: 16, cy: 16, r: 10, 'stroke-width': 2.4 }],
+    ...[0, 45, 90, 135, 180, 225, 270, 315].map((a) => [
+      'path',
+      { d: 'M14.4 2.2 H17.6 V6.6 H14.4 Z', fill: 'currentColor', stroke: 'none', transform: `rotate(${a + 22.5} 16 16)` },
+    ]),
+    ['path', { d: 'M16 6 V26 M6 16 H26 M8.9 8.9 L23.1 23.1 M23.1 8.9 L8.9 23.1', 'stroke-width': 1.6 }],
+    ['circle', { cx: 16, cy: 16, r: 3.6, fill: 'currentColor', stroke: 'none' }],
+  ],
+  // The Barrow Wyrm: a horned dragon head in profile, jaws open, a spined
+  // neck curling down out of the barrow.
+  boss_wyrm: [
+    ['path', { d: 'M4 30.5 C4.6 24.6 7.4 20.4 12.4 17', 'stroke-width': 4.6 }],
+    ['path', { d: 'M3.2 22.6 L1.2 20.4 L4.8 20.6 Z M6 18.6 L4.6 15.8 L8 16.6 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M9.6 17.6 C9.4 11.6 13.4 7.8 18.8 7.8 L30.4 10.2 L21.8 13.6 Z M15.6 11.2 a1.5 1.5 0 1 0 3 0 a1.5 1.5 0 1 0 -3 0 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['path', { d: 'M11.2 19.4 L22.2 15.2 L27.6 20.4 L16.6 22.6 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M23.6 12.4 L24.4 14.6 M26.6 11.4 L27.4 13.4 M20.8 18.6 L21.8 16.6', 'stroke-width': 1.2 }],
+    ['path', { d: 'M13 10.2 C10.4 5.4 6.6 3.6 2.6 4.4 M16.4 8.2 C15.6 5.4 13.6 3.2 11.4 2.2', 'stroke-width': 2.2 }],
+  ],
+  // The Lich Ram: a ram's skull, horns curled to either side, a grave-flame
+  // over the brow.
+  boss_lichram: [
+    ['path', { d: 'M12 11.5 C6.5 7 1.8 11.5 3.6 16.8 C5.4 21.5 11 20.2 10.4 15.8 C10 13.4 7.4 13.4 7.2 15.6', 'stroke-width': 2.4 }],
+    ['path', { d: 'M20 11.5 C25.5 7 30.2 11.5 28.4 16.8 C26.6 21.5 21 20.2 21.6 15.8 C22 13.4 24.6 13.4 24.8 15.6', 'stroke-width': 2.4 }],
+    ['path', { d: 'M11 12.4 C11 8.6 21 8.6 21 12.4 L20 19.6 L18.2 26.4 H13.8 L12 19.6 Z M12.8 13.4 L15.2 12.6 L15.4 15.4 L13.4 15.8 Z M19.2 13.4 L16.8 12.6 L16.6 15.4 L18.6 15.8 Z M15 20.6 H17 L16 22.6 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['path', { d: 'M16 1.6 C18.4 3.8 17.6 6 16 7.2 C14.4 6 13.6 3.8 16 1.6 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
   // Glint coin: rim, inner ring, a glint stroke.
   coin: [
     ['circle', { cx: 16, cy: 16, r: 12.5 }],

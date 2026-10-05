@@ -224,6 +224,9 @@ provide(
   createAudioEngine({ bus, settings: app.settings, stage, app, world, registry, params: bootParams })
 );
 registerAudioTab();
+// Boss identity: each boss's stings and beat cues (src/audio/bosscues.js).
+import { registerBossCues } from './audio/bosscues.js';
+registerBossCues(service('audio'));
 // @gnt:AUDIO end
 
 const buildScene = SCENES[sceneKey];

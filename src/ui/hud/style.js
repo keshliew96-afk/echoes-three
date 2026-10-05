@@ -37,7 +37,7 @@
 // — `.is-counting` hides the abbrev outright — so the sub-1 s numeral cannot
 // collide with the abbrev at any scale, by construction rather than by
 // tuning. tools/actions/hd-boxes.json asserts the rectangles never intersect.
-import { PALETTE, CLASS_ACCENTS } from '../../data/palette.js';
+import { PALETTE, CLASS_ACCENTS, VFX_BIOME, VFX_MATTER } from '../../data/palette.js';
 
 const hex2rgb = (h) => [
   parseInt(h.slice(1, 3), 16),
@@ -768,6 +768,22 @@ export function hudCss() {
 #hud-banner.boss .hud-bn-medal { display: flex; grid-row: 1 / span 2; grid-column: 1; }
 .hud-bn-medal-ico { position: relative; display: block; width: 34px; height: 34px; z-index: 1;
   filter: drop-shadow(0 0 4px ${PALETTE.godstuffViolet}); }
+/* Boss identity: the five newer bosses keep the violet boss rim and studs
+   but sink their medal into their own ground (the Stag keeps the plain
+   violet well): bramble, millrace foam, oak and iron, cinder, grave mist. */
+${Object.entries({
+  thornmother: mix(VFX_BIOME[1], VFX_MATTER.bramble, 0.3),
+  heron: mix(VFX_MATTER.water, VFX_BIOME[2], 0.45),
+  millwheel: mix(VFX_MATTER.oak, VFX_MATTER.iron, 0.35),
+  wyrm: mix(VFX_MATTER.cinder, VFX_MATTER.earth, 0.5),
+  lichram: mix(VFX_MATTER.wisp, VFX_MATTER.boneplate, 0.25),
+})
+  .map(
+    ([k, tint]) => `.hud-bn-medal[data-boss="${k}"] {
+  background: radial-gradient(circle at 50% 40%, ${mix(C, mix(PALETTE.godstuffViolet, tint, 0.62), 0.42)} 0%, ${CHROME.plateSunk} 74%);
+}`
+  )
+  .join('\n')}
 .hud-bn-medal-ring { position: absolute; inset: -7px; border-radius: 50%; pointer-events: none; }
 .hud-bn-stud {
   position: absolute; width: 9px; height: 9px;

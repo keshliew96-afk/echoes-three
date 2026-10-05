@@ -34,6 +34,16 @@ import { iconEl } from './icons.js';
 // Mirrors sim/boss.js STAG.addPhases; the sim's `phasesFired` fills them.
 const BOSS_PHASES = [0.75, 0.5, 0.25];
 
+// Boss kind -> medal icon (src/ui/hud/icons.js). The Stag keeps its original.
+export const BOSS_MEDAL = Object.freeze({
+  stag: 'stag',
+  thornmother: 'boss_thornmother',
+  heron: 'boss_heron',
+  millwheel: 'boss_millwheel',
+  wyrm: 'boss_wyrm',
+  lichram: 'boss_lichram',
+});
+
 const el = (tag, cls, parent) => {
   const n = document.createElement(tag);
   if (cls) n.className = cls;
@@ -55,7 +65,21 @@ export function createBanner() {
   const medal = el('div', 'hud-bn-medal', root);
   const medalRing = el('div', 'hud-bn-medal-ring', medal);
   for (let i = 0; i < 4; i++) el('i', `hud-bn-stud s${i}`, medalRing);
-  medal.appendChild(iconEl('stag', { size: 34, cls: 'hud-bn-medal-ico' }));
+  // Boss identity: each boss wears its own medal (icons.js boss_*), picked by
+  // the boss kind the run view / entity scan hands over; no kind = the Stag.
+  let medalIco = iconEl('stag', { size: 34, cls: 'hud-bn-medal-ico' });
+  medal.appendChild(medalIco);
+  let medalKind = 'stag';
+  function setMedal(kind) {
+    const k = BOSS_MEDAL[kind] ? kind : 'stag';
+    if (k === medalKind) return;
+    medalKind = k;
+    const next = iconEl(BOSS_MEDAL[k], { size: 34, cls: 'hud-bn-medal-ico' });
+    medal.replaceChild(next, medalIco);
+    medalIco = next;
+    medal.dataset.boss = k;
+  }
+  medal.dataset.boss = 'stag';
 
   const label = el('span', 'hud-bn-label', root);
   const pips = el('span', 'hud-bn-pips', root);
@@ -138,6 +162,7 @@ export function createBanner() {
     if (mode === 'none') return changed;
 
     if (mode === 'boss') {
+      setMedal(boss.kind);
       const name = (boss.name ?? 'THE HOLLOW STAG').toUpperCase();
       const frac = boss.maxHp > 0 ? Math.max(0, boss.hp / boss.maxHp) : 0;
       // §11: clear = boss AND adds all dead, so the room can outlive the Stag.
@@ -146,7 +171,7 @@ export function createBanner() {
       // add mop-up).
       const felled = boss.hp <= 0;
       const adds = boss.adds ?? boss.addsAlive ?? (room && room.adds) ?? null;
-      const key = `b|${name}|${felled ? 'F' + adds : Math.round(boss.hp)}|${boss.maxHp}`;
+      const key = `b|${medalKind}|${name}|${felled ? 'F' + adds : Math.round(boss.hp)}|${boss.maxHp}`;
       if (key === lastKey) return changed;
       lastKey = key;
       label.textContent = felled ? `${name} · FELLED` : name;
@@ -230,7 +255,7 @@ export function createBanner() {
     },
     debug: {
       boss: (d) => {
-        bossOverride = d ? { name: d.name ?? 'THE HOLLOW STAG', hp: d.hp ?? 200, maxHp: d.maxHp ?? 200 } : null;
+        bossOverride = d ? { name: d.name ?? 'THE HOLLOW STAG', kind: d.kind ?? 'stag', hp: d.hp ?? 200, maxHp: d.maxHp ?? 200 } : null;
         return bossOverride;
       },
       // Boss plate anatomy (check 9): medallion, caps, phase pips, in real px.
@@ -241,7 +266,7 @@ export function createBanner() {
         };
         return {
           mode,
-          medal: { visible: getComputedStyle(medal).display !== 'none', box: box(medal), icon: !!medal.querySelector('svg[data-icon="stag"]') },
+          medal: { visible: getComputedStyle(medal).display !== 'none', box: box(medal), icon: !!medal.querySelector('svg[data-icon="stag"]'), boss: medalKind, iconId: medalIco.dataset.icon },
           caps: { visible: getComputedStyle(capL).display !== 'none', l: box(capL), r: box(capR) },
           phases: phaseEls.map((p, i) => ({ at: BOSS_PHASES[i], fired: p.classList.contains('fired'), box: box(p) })),
           label: label.textContent,

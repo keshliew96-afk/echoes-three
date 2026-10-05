@@ -12,6 +12,7 @@
 //   Enemies  spawn a pair of one enemy type in front of the party; they
 //            fight, telegraph, hit and die as in a run
 //   Boss     force the add phase / enrage, or end the fight
+//   Sound    each boss's sting, phase and fall stings and its boss groove
 //
 // Off unless the URL asks for it; touches nothing else in the UI.
 const HEALER_SETS = [
@@ -212,6 +213,34 @@ export function mountVfxLab() {
   button(boss, 'Kill boss', () => {
     X().cmd('killBoss');
     say('boss death');
+  });
+
+  // -------------------------------------------------------- boss identity --
+  // Each boss's own stings and groove, without fighting it (the boss room
+  // buttons above show its medal on the live banner and play its beats).
+  const audio = () => X().app.service('audio');
+  const THEME = { 1: 'wood', 2: 'mill', 3: 'barrow' };
+  for (const [label, a, kind] of BOSSES) {
+    const row = section(`Sound, ${label}`);
+    for (const [part, name] of [['sting', 'Sting'], ['phase', 'Phase'], ['fall', 'Fall']]) {
+      button(row, name, () => {
+        audio().play(`bx_${kind}_${part}`);
+        say(`${label}: ${name.toLowerCase()} sting`);
+      }, `bx_${kind}_${part}`);
+    }
+    button(row, 'Groove', () => {
+      const au = audio();
+      au.music.setBoss(kind);
+      au.debug.setMusic('boss', { theme: THEME[a], intensity: 1 });
+      say(`${label}: boss groove (Release to hand back)`);
+    }, 'its boss music at full intensity');
+  }
+  const rel = section('Music');
+  button(rel, 'Release', () => {
+    const au = audio();
+    au.music.setBoss(null);
+    au.music.release();
+    say('music follows the game again');
   });
 
   document.body.appendChild(panel);

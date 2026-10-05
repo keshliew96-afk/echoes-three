@@ -260,7 +260,7 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     const b = snap.run && snap.run.boss;
     runBoss =
       b && b.active && !b.cleared
-        ? { name: b.name, hp: b.hp, maxHp: b.maxHp, adds: b.adds, phasesFired: b.phasesFired ?? 0 }
+        ? { name: b.name, kind: b.kind ?? 'stag', hp: b.hp, maxHp: b.maxHp, adds: b.adds, phasesFired: b.phasesFired ?? 0 }
         : null;
     // Corner plates read the same run view the meta pages draw from.
     const rv = snap.run ?? null;
@@ -381,7 +381,7 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
       if (e.partyIndex !== undefined && (e.kind === 'player' || e.kind === 'ally')) {
         members[e.partyIndex] = e;
       } else if ((e.kind === 'stag' || e.boss === true) && e.hp > 0) {
-        bossEntity = { name: bossName(e.kind), hp: e.hp, maxHp: e.maxHp };
+        bossEntity = { name: bossName(e.kind), kind: e.kind, hp: e.hp, maxHp: e.maxHp };
       }
     }
 
