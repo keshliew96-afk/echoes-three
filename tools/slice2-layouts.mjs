@@ -151,7 +151,9 @@ async function probe(id, seed) {
     }
   });
   bus.on('path_offer', (e) => {
-    if (room && room.cleared && !room.offer) room.offer = e.options.map((o) => ({ side: o.side, win: o.win, reward: o.reward, curse: o.curse ?? null }));
+    // By room index: a soft-failed defend room goes straight to the doors
+    // inside the run's own room_cleared handler, before ours has run.
+    if (room && e.room === room.index && !room.offer) room.offer = e.options.map((o) => ({ side: o.side, win: o.win, reward: o.reward, curse: o.curse ?? null }));
   });
   bus.on('run_end', () => {
     if (!done) done = room ? 'run_end' : 'no_room';

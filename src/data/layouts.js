@@ -358,6 +358,13 @@ export const LAYOUTS = Object.freeze({
     act: 3,
     biome: 'barrow',
     name: 'Open Grave',
+    // Balance pass (2026-10-05): the CONTENT_PLAN hook "moles and broods
+    // favoured". Every second planned unit of threat <= 2 that is not already
+    // one becomes a Grave Mole or a Brood Spider in turn (sim/waves.js
+    // favourRoster, after the layout roll, no draw); Rams and Knights stay.
+    // Moles surface between the graves, broods spill Broodlings across the
+    // gravefire lines.
+    mix: Object.freeze({ favour: Object.freeze(['mole', 'mole', 'brood']), every: 2, maxThreat: 2 }),
     spawns: Object.freeze([[-5.6, -6.6], [5.6, -6.6], [-10.4, -0.4], [10.4, -0.4], [-2.6, -6.9], [2.6, -6.9], [-5.6, 6.4], [5.6, 6.4]]),
     hazards: Object.freeze([
       { type: 'gravefire', vents: [[-7.6, -4.2], [-5.6, -4.2], [-3.6, -4.2]], offset: 0 },

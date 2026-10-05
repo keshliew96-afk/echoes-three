@@ -110,7 +110,11 @@ export default {
     let gx = target.x + dir.x * S.lurkDist;
     let gz = target.z + dir.z * S.lurkDist;
     const rp = racePoint(ctx, gx, gz);
-    if (rp && rp.d <= S.raceReach) {
+    // Balance pass: a race point outside the lunge band is skipped. Waiting
+    // there, too close or too far to lunge, with the party idle (nothing it
+    // can hit) left a room live forever.
+    const rd = rp ? Math.hypot(rp.x - target.x, rp.z - target.z) : 0;
+    if (rp && rp.d <= S.raceReach && rd >= S.lungeMin + 0.2 && rd <= S.lungeMax - 0.2) {
       gx = rp.x;
       gz = rp.z;
     }

@@ -54,7 +54,7 @@ import { stepHumanMove, dodgeVelocity, aimDir, DOWNED_CRAWL_SPEED, HUMAN_DODGE }
 // is cast from the seat's LOADOUT (sim/party.js) through ONE pipeline
 // (sim/allycast.js); the AI picks with the §25.8 rules (sim/partyai.js).
 import { SKILLS } from './skills.js';
-import { STARTING_LOADOUT, AI_ENGAGE, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS } from '../data/classes.js';
+import { STARTING_LOADOUT, AI_ENGAGE, AI_EVADE, AI_KITE, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS } from '../data/classes.js';
 import { createAllyCaster, cdTicksOf } from './allycast.js';
 import { castChoice } from './partyai.js';
 
@@ -703,7 +703,22 @@ export function createAllySystem({
         if (reachable) return m;
       }
     }
-    return nearestHostileTo(anchor.x, anchor.z);
+    // Balance pass: a Grave Wisp's ward makes its enemy immune, so a seat
+    // looks past a warded hostile to the nearest one it can hurt (all three
+    // seats used to stand on a warded Crow while its wisp hovered unhit).
+    const near = nearestHostileTo(anchor.x, anchor.z);
+    if (!near || !near.wardedBy) return near;
+    let best = null;
+    let bd = Infinity;
+    for (const e of hostiles()) {
+      if (e.wardedBy) continue;
+      const q = dist2(e.x, e.z, anchor.x, anchor.z);
+      if (q < bd) {
+        bd = q;
+        best = e;
+      }
+    }
+    return best ?? near;
   }
 
   // fix-M4a-r5 (GP.8): the shortest-reach equipped active that has sat ready
@@ -725,6 +740,49 @@ export function createAllySystem({
       if (!best || r < best.range) best = { slot: k, range: r };
     }
     return best;
+  }
+
+  // Balance pass (AI_EVADE): a spot outside every in-flight glob ring that
+  // would catch this seat, or null when none would. Straight out from the
+  // ring's centre first; when the leash ring blocks that way, the nearest
+  // turn of it (45° steps, left before right) that stays inside the leash
+  // and clear of every ring.
+  function evadeGoal(a, anchor, LR) {
+    const rings = [];
+    // R = the ring's reach on this body plus the margin: a seat inside R
+    // keeps walking out (to R + exit), so it never hovers on the edge and
+    // drifts back in towards its stand-off spot.
+    for (const g of registry.all()) if (g.kind === 'eglob') rings.push({ x: g.tx, z: g.tz, R: (g.blastRadius ?? 0) + a.radius + AI_EVADE.margin, g });
+    let hit = null;
+    for (const r of rings) if (Math.hypot(a.x - r.x, a.z - r.z) < r.R && (!hit || r.g.landTick < hit.g.landTick)) hit = r;
+    if (!hit) return null;
+    const d = Math.hypot(a.x - hit.x, a.z - hit.z);
+    // Dead centre: step away from the thrower's side (deterministic).
+    let ux = d > 1e-4 ? (a.x - hit.x) / d : hit.x - hit.g.fromX;
+    let uz = d > 1e-4 ? (a.z - hit.z) / d : hit.z - hit.g.fromZ;
+    const ul = Math.hypot(ux, uz) || 1;
+    ux /= ul;
+    uz /= ul;
+    const clear = (x, z) => Math.hypot(x - anchor.x, z - anchor.z) <= LR && rings.every((r) => Math.hypot(x - r.x, z - r.z) >= r.R);
+    for (const deg of [0, 45, -45, 90, -90, 135, -135]) {
+      const c = Math.cos((deg * Math.PI) / 180);
+      const sn = Math.sin((deg * Math.PI) / 180);
+      const vx = ux * c - uz * sn;
+      const vz = ux * sn + uz * c;
+      // Walk out along this heading until clear of the hit ring.
+      const t = solveExit(a.x - hit.x, a.z - hit.z, vx, vz, hit.R + AI_EVADE.exit);
+      const x = a.x + vx * t;
+      const z = a.z + vz * t;
+      if (clear(x, z)) return { x, z };
+    }
+    return { x: hit.x + ux * (hit.R + AI_EVADE.exit), z: hit.z + uz * (hit.R + AI_EVADE.exit) };
+  }
+
+  // Distance t >= 0 along unit (vx, vz) from offset (px, pz) to the circle R.
+  function solveExit(px, pz, vx, vz, R) {
+    const b = px * vx + pz * vz;
+    const c = px * px + pz * pz - R * R;
+    return -b + Math.sqrt(Math.max(0, b * b - c));
   }
 
   function steerAlly(a, tick, anchor) {
@@ -847,6 +905,26 @@ export function createAllySystem({
         const t = (d - stand) / d;
         gx = a.x + (target.x - a.x) * t;
         gz = a.z + (target.z - a.z) * t;
+      }
+      // Balance pass (AI_KITE): a ranged seat steps back from a hostile that
+      // closed inside minU (the nearest one), still aiming at its target.
+      if (engageOn() && !isMelee(a)) {
+        const near = nearestHostileTo(a.x, a.z);
+        const nd = near ? distTo(near, a.x, a.z) : Infinity;
+        if (nd < AI_KITE.minU) {
+          const ux = nd > 1e-4 ? (a.x - near.x) / nd : -(target.x - a.x) / (d || 1);
+          const uz = nd > 1e-4 ? (a.z - near.z) / nd : -(target.z - a.z) / (d || 1);
+          gx = near.x + ux * AI_KITE.toU;
+          gz = near.z + uz * AI_KITE.toU;
+        }
+      }
+      // Balance pass (AI_EVADE): a glob ring a ranged seat stands in wins over
+      // the stand-off spot; it walks out, still aiming. Melee seats hold their
+      // ground (they stay on the enemies; Toad rooms otherwise dragged on).
+      const ev = engageOn() && !isMelee(a) ? evadeGoal(a, anchor, LR) : null;
+      if (ev) {
+        gx = ev.x;
+        gz = ev.z;
       }
       const gdx = gx - anchor.x;
       const gdz = gz - anchor.z;

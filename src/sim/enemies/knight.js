@@ -29,6 +29,7 @@ const S = Object.freeze({
   openTicks: 50,
   kbScale: 0.4,
   firstAttackDelay: 70,
+  starveTicks: 240, // held back by the governor this long -> swings anyway
 });
 
 const DEG = Math.PI / 180;
@@ -109,7 +110,15 @@ export default {
     // Only swings at what is in front of it.
     if ((d.x * e.faceX + d.z * e.faceZ) < Math.cos(50 * DEG)) return;
     const playerTargeted = target.partyIndex !== undefined;
-    if (playerTargeted && !ctx.governor.grants(tick)) return;
+    // Balance pass: a Knight the telegraph governor has held back for
+    // S.starveTicks swings anyway. Its shield only drops to swing, so a room
+    // of cawing Crows that kept the governor busy left it unhittable forever.
+    if (playerTargeted && !ctx.governor.grants(tick)) {
+      // (a run of consecutive held ticks; any gap starts it again)
+      if (e.heldLast !== tick - 1) e.heldSince = tick;
+      e.heldLast = tick;
+      if (tick - e.heldSince < S.starveTicks) return;
+    }
     e.mode = 'slam';
     const reach = S.slamReach * (e.scale ?? 1);
     ctx.startTelegraph(e, tick, {

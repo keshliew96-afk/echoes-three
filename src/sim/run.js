@@ -517,6 +517,10 @@ export function createRunSystem({
     // A slice-2 layout's own spawn ring: move the rolled units onto it.
     const ring = combatRoom ? LAYOUTS[layoutId]?.spawns : null;
     if (ring) waves.relocateSpawns(ring);
+    // Balance pass: a layout with its own enemy mix (Open Grave) retypes part
+    // of the rolled schedule toward its favoured types, again with no draw.
+    const mix = combatRoom ? LAYOUTS[layoutId]?.mix : null;
+    if (mix) waves.favourRoster(mix, level, n);
     layout = { act, layoutId, biome: level.biome, room: n, mode };
     roomPlanView = {
       act,

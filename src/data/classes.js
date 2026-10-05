@@ -161,6 +161,19 @@ export const AI_IDLE_FALLBACK_TICKS = 480;
 export const AI_ENGAGE = Object.freeze({ vanguardU: 2.0, lungeU: 1.2, lungeSpeed: 9, commitStandFrac: 0.8, firstUseTicks: 240 });
 export const MELEE_CLASSES = Object.freeze(['tank', 'swordsman']);
 
+// Balance pass (2026-10-05): a ranged AI seat (the Archer) steps out of a
+// lobbed glob's landing ring (the Mire Toad's, the Thornmother's, the Lich
+// Ram's graves) while the engagement rules are on. Before it, a stand-off
+// seat stood still under the ring: past Depth 3 the Archer took half the
+// party's downs, and Toad globs landed half of those (docs/BALANCE_PASS.md).
+// `margin` = the clearance past the ring's edge that still counts as inside;
+// `exit` = how far past that the seat walks, so it never hovers on the edge.
+export const AI_EVADE = Object.freeze({ margin: 0.3, exit: 0.2 });
+// Balance pass: a ranged AI seat (the Archer) backs off a hostile that gets
+// inside `minU`, to `toU` from it, instead of standing and trading blows with
+// its 80 HP body (the stand-off rule only ever closed distance).
+export const AI_KITE = Object.freeze({ minU: 1.6, toU: 2.8 });
+
 // §25.2 taunt rules.
 export const TAUNT = Object.freeze({ capTicks: 240, stagCapTicks: 60, stagImmuneTicks: 300 });
 
