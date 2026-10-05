@@ -94,3 +94,9 @@ Hollow Stag at or near full HP, so the losses are in the boss fight itself,
 which the content plan already flags as the most RNG-sensitive fight (any
 change to kill timing reshuffles it). Worth a look in the planned Act I
 balance pass.
+
+**Update (balance pass, v0.5.224):** that run was on the relics branch while
+the Level 1 Stag still hit at x4.0; PR #4 set it to x2.1 before the relics
+merged. Re-measured on `gauntlet` (seeds 1-40, `gntCAMPAIGN-camprun
+--stop-after 1`, `--relics 0` for the A/B): 40/40 cleared with relics on and
+40/40 off, so relics and curses are unchanged. Numbers in docs/BALANCE_PASS.md.

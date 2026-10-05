@@ -10,7 +10,7 @@ An endless descent is a campaign from Level 1 that does not stop at the Ashen Ba
 - **Depths 1-3 are the campaign.** Same difficulty numbers, rosters, bosses, relics, shop and carry rules, number for number. A plain campaign is untouched: its record, view and events carry no endless key, the 9 goldens match, and plain campaigns over seeds 1-16 replay bit-identically against gauntlet.
 - **Past Depth 3** (`src/data/endless.js`):
   - every depth is built on the Act III numbers (`difficulty(3, room)`), so Depth 4's woodland is never easier than the Barrow just left;
-  - each depth past 4 multiplies enemy, boss and add HP by `1 + 0.18 k`, damage by `1 + 0.10 k`, wave budget by `1 + 0.06 k`, and adds `0.03 k` elite chance (capped at 55 %), with `k = depth - 4`;
+  - each depth past 4 multiplies enemy, boss and add HP by `1 + 0.21 k`, damage by `1 + 0.12 k` (0.18 / 0.10 before the balance pass, docs/BALANCE_PASS.md), wave budget by `1 + 0.06 k`, and adds `0.03 k` elite chance (capped at 55 %), with `k = depth - 4`;
   - rosters mix: the home biome's roster plus every other act's creatures at 35 % of their own weight, one room later than at home;
   - the boss alternates: each cycle meets the act's other boss from the one the seed met before, so both bosses of every act appear. An Act I or Act II boss met on the Act III numbers hits at 70 % / 90 % of them (`BOSS_HOME_DMG`), because its kit was tuned for its own act's multiplier.
 - **Determinism.** Everything is a pure function of (depth, room, seed): no extra RNG draw and nothing saved beyond the campaign record (`campaign.endless`, `campaign.won`). Saves and network snapshots carry it with the run.
@@ -48,6 +48,8 @@ An endless high-score entry carries `depth`. The run summary's `campaign` carrie
 Depths 1-3 match the plain campaign exactly (gauntlet: 16, 15, 9 of 16). Median depth cleared: 4; deepest: 10; no stuck rooms. The tuning went through three passes: the first (Depth 4 already one step up, Act I bosses on full Act III damage) dropped from 9 runs to 4 at Depth 4, mostly at the Stag and the Thornmother; the second (Depth 4 = the Act III numbers, home-act boss damage) halved at Depth 6; the third (smaller steps) is the curve above.
 
 Share of party downs by seat (Healer / Tank / Swordsman / Archer): depths 1-3 6 / 14 / 46 / 34 %, depths 4+ 4 / 11 / 35 / 50 %. The Archer, the lightest body, takes a larger share as damage rises.
+
+**Balance pass (v0.5.224, docs/BALANCE_PASS.md).** The Archer's share came from standing still under Mire Toad globs. The ranged AI seat now steps out of glob rings and backs off close enemies, and the depth step went to HP 0.21 / damage 0.12 to keep the curve. Seeds 1-32: depths 4+ share 6 / 12 / 49 / 33 % (was 4 / 9 / 38 / 49 %), median depths cleared 6 (was 6). The table above is the PR #10 curve.
 
 ## Verification
 

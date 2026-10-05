@@ -13,6 +13,8 @@
 //   --root d   simulate another checkout (tuning experiments)
 //   --stop-after N   (Node) end each run once Level N is cleared; Level N's
 //              records are the same as a whole campaign's (GP.13 (d) Level 1)
+//   --relics 0  (Node) play the campaign with relics and curses off (they are
+//              on by default for campaigns, docs/RELICS.md)
 //
 // A room still live 180 s after it started is STUCK (the run stops there).
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -39,6 +41,7 @@ const URL0 = opt('url', 'http://127.0.0.1:5199/');
 const ROOT = resolve(opt('root', here));
 const OUT = opt('out', `captures/gntCAMPAIGN-camprun-from${FROM}-${SEEDS.join('_')}${NODE ? '-node' : ''}.json`);
 const STOP_AFTER = Number(opt('stop-after', '0')) || 0;
+const RELICS_OFF = opt('relics', '1') === '0';
 const STUCK_TICKS = 10800;
 const MAX_TICKS = 220000;
 
@@ -178,6 +181,7 @@ async function runNode(seed) {
   const read = installCollector({ on: (t, f) => bus.on(t, f), world, registry });
   let stopNow = false;
   if (STOP_AFTER) bus.on('level_clear', (e) => { if (e.level >= STOP_AFTER) stopNow = true; });
+  if (RELICS_OFF) run.cmd('relicsDefault', [false]);
   run.startCampaign({ level: FROM, challenge: CHALLENGE, harness: true });
   ap.configure(true);
   let stuck = null;

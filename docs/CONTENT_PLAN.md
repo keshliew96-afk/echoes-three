@@ -95,7 +95,7 @@ Six new layouts, two per expedition, using the existing hazard and interactable 
 - *Sluice Gates*: the two races surge half a cycle apart; each sluice is still pulled by a player, as everywhere else.
 - *Flooded Cellar*: "narrow" comes from two races along the long walls; there is no slick floor type yet.
 - *Bell Tower*: rockfall stays party-targeted; the ring is four broken cairn walls round the middle with doorways at the corners.
-- *Open Grave*: rosters are not changed per layout (the layout is rolled after the wave schedule, and the rosters belong to the roster work); the grid is five gravefire lines rippling a fifth of a cycle apart.
+- *Open Grave*: the grid is five gravefire lines rippling a fifth of a cycle apart. Its moles and broods came with the balance pass (v0.5.224, docs/BALANCE_PASS.md): a layout `mix` retypes part of the rolled schedule after the layout roll, with no draw, so moles and broods are 58 % of its units (other Barrow layouts 35 %).
 
 Probes: `node tools/slice2-layouts.mjs` (headless; each layout in a campaign room: spawn ring, all four seats moving, clear, doors, reachability) and `tools/slice2-layouts-shots.mjs` (browser screenshots against `npm run dev`).
 

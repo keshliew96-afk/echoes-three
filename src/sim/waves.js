@@ -282,6 +282,39 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     }
   }
 
+  // Balance pass (data/layouts.js `mix`): a layout that favours some types
+  // retypes part of the planned schedule after the layout roll, like
+  // relocateSpawns: no draws, and serialize() saves the result. Walking the
+  // units in plan order, every `every`-th unit that is not already favoured,
+  // costs at most `maxThreat` (so Rams and Knights stay) becomes the next
+  // favoured type in turn (only types already introduced by this room). Its
+  // cost is re-read so the room's planned threat stays honest.
+  function favourRoster(mix, level, room) {
+    if (!mix || !Array.isArray(mix.favour) || !plan) return 0;
+    const intro = (level && level.introduce) || {};
+    const favour = mix.favour.filter((et) => (intro[et] ?? 1) <= room && knownType(et));
+    if (favour.length === 0) return 0;
+    const every = Math.max(1, mix.every | 0 || 2);
+    let seen = 0;
+    let next = 0;
+    let swapped = 0;
+    for (const w of schedule) {
+      const before = swapped;
+      for (const u of w.units) {
+        if (favour.includes(u.etype)) continue;
+        if ((THREAT[u.etype] ?? 1) > (mix.maxThreat ?? 2)) continue;
+        seen += 1;
+        if ((seen - 1) % every !== 0) continue;
+        u.etype = favour[next % favour.length];
+        next += 1;
+        u.cost = Math.round((THREAT[u.etype] ?? 1) * (u.elite ? ELITE_COST : 1) * 100) / 100;
+        swapped += 1;
+      }
+      if (swapped > before) w.cost = Math.round(w.units.reduce((n, u) => n + (u.cost ?? 0), 0) * 100) / 100;
+    }
+    return swapped;
+  }
+
   function startRoom(m, runPlan = null) {
     if (!planRoom(m, runPlan)) return null;
     return beginRoom();
@@ -527,6 +560,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     planRoom,
     beginRoom,
     relocateSpawns,
+    favourRoster,
     stop,
     step,
     forceNextWave,

@@ -27,10 +27,13 @@ export const CYCLE = ORDER.length; // 3 biomes per cycle
 
 // Per depth past Depth 4 (k = depth - 4; Depth 4 plays the Act III numbers). Tuned against the headless
 // endless runner (tools/endless-run.mjs, seeds 1-16, docs/ENDLESS.md): the
-// survival curve falls a step at a time, not off a cliff.
+// survival curve falls a step at a time, not off a cliff. Balance pass
+// (2026-10-05, docs/BALANCE_PASS.md): hp .18 -> .21 and dmg .10 -> .12, so
+// the Archer's smarter footing (data/classes.js AI_EVADE / AI_KITE) does not
+// make the deep descent easier: median depths cleared stays at 6 of seeds 1-32.
 export const DEPTH_STEP = Object.freeze({
-  hp: 0.18, // enemy + boss + add HP: x (1 + hp k)
-  dmg: 0.1, // enemy + boss + add damage: x (1 + dmg k)
+  hp: 0.21, // enemy + boss + add HP: x (1 + hp k)
+  dmg: 0.12, // enemy + boss + add damage: x (1 + dmg k)
   budget: 0.06, // threat points per wave: x (1 + budget k)
   elite: 0.03, // elite chance: + elite k (capped at ELITE_CAP)
 });
