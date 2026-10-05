@@ -300,6 +300,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
   let lastIntensity = -1e9;
   let stinger = null; // { state, until }
   let themeOverride = null;
+  let bossOverride = null; // lab / probe: music.setBoss pins the boss groove
   let fight = { hostiles: 0, bossHpPct: null, partyHpPct: null }; // last intensity inputs (debug)
   let intensityOverride = null; // null = derived from the fight (hostiles, boss HP, party HP)
   let bakeCalm = true; // no wave being fought (driveMusic)
@@ -1076,6 +1077,18 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     return 'camp';
   }
 
+  // Boss identity: the kind of the boss in the room (the run view's boss,
+  // else a live boss body for the harness rooms); the Stag has no kind field.
+  function deriveBoss() {
+    const v = lastRunView;
+    if (v && v.actBoss && v.actBoss.kind) return v.actBoss.kind;
+    if (v && v.boss) return v.boss.kind || 'stag';
+    if (v && v.active) return null;
+    const reg = registry && registry.all ? registry.all() : [];
+    const e = reg.find((x) => isHostileBody(x) && isBossBody(x));
+    return e ? e.kind : null;
+  }
+
   function deriveTheme() {
     if (themeOverride) return themeOverride;
     return THEME_BY_ACT[runAct] || 'wood';
@@ -1143,6 +1156,9 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     const target = pin ? pin.state : d;
     const th = deriveTheme();
     if (target === 'combat' || target === 'boss') music.setTheme(th);
+    // From room 6 the run view names the act's boss, so the next state's
+    // prebake already bakes its groove.
+    if ((target === 'boss' || target === 'combat') && !bossOverride) music.setBoss(deriveBoss());
     if (music.state !== target) {
       music.setState(target);
       prebakeMusic(target, th);
@@ -1635,6 +1651,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     releaseMusic: () => {
       pin = null;
       themeOverride = null;
+      bossOverride = null;
       intensityOverride = null;
       return true;
     },
@@ -1807,6 +1824,11 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       setTheme: (id) => {
         themeOverride = id;
         return music ? music.setTheme(id) : id;
+      },
+      // Boss identity: pin the boss groove (null releases it to the run).
+      setBoss: (kind) => {
+        bossOverride = kind || null;
+        return music ? music.setBoss(kind) : kind;
       },
       release: () => debug.releaseMusic(),
       get state() {

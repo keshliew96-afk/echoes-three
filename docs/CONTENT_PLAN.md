@@ -51,7 +51,7 @@ Each act now has two bosses. Which one a run meets is `bossFor(act, seed)` in `s
   - **Grave Call**: three lobbed souls (Ember rings r 1.0, 60 ticks, 10 each) around the target; the grave under the target raises a Grave Mole inside the §11 add cap. Cooldown 390 (270 under 40% HP).
   - **Bone Rush**: only along its horns (target within ±25°), an Ember lane (1.3 u, 54 ticks) and an 11 u/s rush for 12; the horns lodge and it is STUCK, guard down, for 75 ticks. Cooldown 300. HP is 0.8× the act's boss HP.
 
-Still to do: **boss medals and icons** (the HUD banner medal draws the Stag icon for every boss; each boss needs its own icon in `src/ui/hud/icons.js`) and **boss music stings** per boss.
+Boss medals and music stings: ✅ done in the Boss identity slice (see `docs/BOSS_IDENTITY.md`): each boss wears its own banner medal and has its own signature, phase and death stings, beat cues and (for each act's second boss) its own boss groove.
 
 ## 3. Enemies per biome
 
@@ -116,7 +116,7 @@ The run has no persistent modifiers today. Two kinds are planned, both stored in
 
 1. ✅ **Slice 1**: Drowned Heron + Barrow Wyrm, Rotcap / Lantern Snail / Barrow Crow / Brood Spider (+ Broodling), boss names across the HUD, shop, path, end and save screens. (This PR.)
 2. **Slice 2**: ✅ the six slice-2 enemies, the Act I balance pass (Rotcap into the wood) and, pulled forward from slice 3, the second boss of each act; six layouts.
-3. **Slice 3**: boss icons and stings, full VFX for the slice-2 creatures.
+3. **Slice 3**: ✅ boss icons and stings (Boss identity), full VFX for the slice-2 creatures (PR #9).
 4. **Slice 4**: relics and curses.
 
 ## 7. How slice 1 was verified
