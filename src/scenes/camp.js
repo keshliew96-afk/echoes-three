@@ -70,6 +70,7 @@ import { buildMapTable, createTablePrompt, withinTable, MAP_TABLE } from '../cam
 import { FIRST_LEVEL, isLevel, lockLine } from '../data/campaign.js';
 import { levelFor } from '../data/levels.js';
 import { endlessUnlockedFrom } from '../data/endless.js';
+import { CLASS_OF_SEAT, CLASS_NAME } from '../data/classes.js';
 
 // §18: "deep indigo/teal ambient". Two numbers carry the whole night read —
 // the key drops to a cold moon (a twelfth of the Act-1 sun) and the hemisphere
@@ -305,7 +306,9 @@ export function createCampScene(stage, toggles, ctx) {
     '<span class="cp-sep"></span>' +
     '<span class="cp-chip cp-levels"><span class="cp-key">L</span><span class="cp-lab">Levels</span></span>' +
     '<span class="cp-sep"></span>' +
-    '<span class="cp-chip cp-unlocks"><span class="cp-key">U</span><span class="cp-lab">Unlocks</span></span>';
+    '<span class="cp-chip cp-unlocks"><span class="cp-key">U</span><span class="cp-lab">Unlocks</span></span>' +
+    '<span class="cp-sep"></span>' +
+    '<span class="cp-chip cp-class"><span class="cp-key">C</span><span class="cp-lab">Class · <b class="cp-class-n">Healer</b></span></span>';
   document.body.appendChild(prompt);
   {
     const st = document.createElement('style');
@@ -327,6 +330,10 @@ export function createCampScene(stage, toggles, ctx) {
   prompt.querySelector('.cp-unlocks').addEventListener('click', (e) => {
     e.stopPropagation();
     openUnlocks('prompt');
+  });
+  prompt.querySelector('.cp-class').addEventListener('click', (e) => {
+    e.stopPropagation();
+    openClasses('prompt');
   });
   const tablePrompt = createTablePrompt(() => openLevels('table'));
   const fitPrompt = () => {
@@ -442,7 +449,10 @@ export function createCampScene(stage, toggles, ctx) {
       a.rig.setAnim('idle');
     }
     // Snap (not slide) the follow rig: a huge dt drives the exponential to 1.
-    followRig.update(5, CAMP_SPOTS.healer.x, CAMP_SPOTS.healer.z, null);
+    // CLASS SELECT: onto the chosen class's own spot.
+    const nv = world.netView;
+    const own = nv && nv.seat > 0 ? CAMP_SPOTS[CLASS_OF_SEAT[nv.seat]] : null;
+    followRig.update(5, (own || CAMP_SPOTS.healer).x, (own || CAMP_SPOTS.healer).z, null);
   }
 
   applyCampLighting();
@@ -469,8 +479,15 @@ export function createCampScene(stage, toggles, ctx) {
   });
 
   // ------------------------------------------------------- Begin Run --
+  // CLASS SELECT: the body the local player walks (their chosen class's
+  // seat, world.netView — the Healer by default).
+  function localBody() {
+    const nv = world.netView;
+    const b = nv && typeof nv.followTarget === 'function' ? nv.followTarget() : null;
+    return b || world.player;
+  }
   function withinPortal() {
-    const p = world.player;
+    const p = localBody();
     const dx = p.x - PORTAL.x;
     const dz = p.z - (PORTAL.z + 0.55);
     return dx * dx + dz * dz <= PORTAL.radius * PORTAL.radius;
@@ -678,6 +695,38 @@ export function createCampScene(stage, toggles, ctx) {
     app.screens.push('unlocks', { via });
     return true;
   }
+  // CLASS SELECT (docs/CLASS_SELECT.md): the class picker (app screen
+  // 'classes', src/ui/run/classpick.js). Single-player only: in a network
+  // session the class IS the lobby seat, so the picker stays shut there.
+  function inSession() {
+    const n = svc('net');
+    try {
+      return !!(n && ((typeof n.isGuest === 'function' && n.isGuest()) || (typeof n.isHost === 'function' && n.isHost())));
+    } catch {
+      return false;
+    }
+  }
+  function openClasses(via = 'key') {
+    if (mode !== 'camp' || begin || picking || inSession()) return false;
+    const app = svc('app');
+    if (!app || !app.screens || !appReg || !appReg.screenFactory?.('classes')) return false;
+    if (app.state !== 'playing' || app.screens.isOpen()) return false;
+    picking = true;
+    prompt.classList.remove('cp-on');
+    if (tablePrompt) tablePrompt.classList.remove('cg-on');
+    const off = app.screens.on('change', () => {
+      if (app.screens.has('classes')) return;
+      picking = false;
+      if (typeof off === 'function') off();
+    });
+    app.screens.push('classes', { via });
+    return true;
+  }
+  function playingClass() {
+    const nv = world.netView;
+    return CLASS_OF_SEAT[nv && nv.seat > 0 ? nv.seat : 0];
+  }
+
   // The boons a real Begin Run carries: what the player equipped (null =
   // nothing, a plain run). Developer starts (?level=N) never carry them.
   function equippedBoons(harness) {
@@ -750,13 +799,14 @@ export function createCampScene(stage, toggles, ctx) {
     if (e.repeat || mode !== 'camp') return;
     if (e.code === 'KeyE') {
       if (withinPortal()) beginRun();
-      else if (withinTable(world.player.x, world.player.z)) openLevels('table');
+      else if (withinTable(localBody().x, localBody().z)) openLevels('table');
       return;
     }
     // L = the Levels entry of the camp prompt (anywhere in camp; the portal
     // prompt shows the key).
     if (e.code === 'KeyL' && !e.ctrlKey && !e.metaKey && !e.altKey) openLevels('key');
     if (e.code === 'KeyU' && !e.ctrlKey && !e.metaKey && !e.altKey) openUnlocks('key');
+    if (e.code === 'KeyC' && !e.ctrlKey && !e.metaKey && !e.altKey) openClasses('key');
   });
   // @gnt:M4a BEGIN-RUN end
 
@@ -856,6 +906,17 @@ export function createCampScene(stage, toggles, ctx) {
 
     fx.update(elapsedSec);
     flies.update(elapsedSec);
+    {
+      const cn = prompt.querySelector('.cp-class-n');
+      const want = CLASS_NAME[playingClass()];
+      if (cn && cn.textContent !== want) cn.textContent = want;
+      const chip = prompt.querySelector('.cp-class');
+      const hide = inSession();
+      if (chip && chip.style.display !== (hide ? 'none' : '')) {
+        chip.style.display = hide ? 'none' : '';
+        if (chip.previousElementSibling) chip.previousElementSibling.style.display = hide ? 'none' : '';
+      }
+    }
     placePrompt();
 
     // Gate marker: brighter and a touch larger while the Healer stands in it.
@@ -874,7 +935,8 @@ export function createCampScene(stage, toggles, ctx) {
 
     // @gnt:CAMPAIGN TABLE-UPDATE begin — the Level Select map table (PLAN §12.7).
     {
-      const inTable = withinTable(p.x, p.z);
+      const lb = localBody();
+      const inTable = withinTable(lb.x, lb.z);
       mapTable.update(elapsedSec, inTable);
       if (++tableTick % 30 === 1) mapTable.setUnlocked(unlockedLevels());
       if (tablePrompt) {
@@ -926,6 +988,8 @@ export function createCampScene(stage, toggles, ctx) {
       portal: { x: PORTAL.x, z: PORTAL.z, radius: PORTAL.radius },
       hearth: { x: HEARTH.x, z: HEARTH.z },
       player: { x: Math.round(p.x * 100) / 100, z: Math.round(p.z * 100) / 100 },
+      playClass: playingClass(),
+      local: { x: r2(localBody().x), z: r2(localBody().z) },
       // Criterion 1/2 probes: distinct prop types, contact shadows, emitters.
       propTypes: camp.typeCount + edge.typeCount,
       campPropTypes: camp.names,
@@ -1091,6 +1155,8 @@ export function createCampScene(stage, toggles, ctx) {
         return openLevels('cmd');
       case 'campChoose':
         return chooseLevel(args[0], 'cmd');
+      case 'campClasses':
+        return openClasses('cmd');
       // @gnt:CAMPAIGN CAMP-CMD end
       // @gnt:M5b CAMP-CMD begin (followSeat)
       // Network play: install (fn(alpha) -> { x, z, aim } | null) or clear

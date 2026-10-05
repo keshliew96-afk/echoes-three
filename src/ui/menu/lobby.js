@@ -2,8 +2,10 @@
 // Owner: M5b.
 //
 // The room code (large, to read out loud), who sits where — seat 0 the
-// Healer is always the host, seats 1–3 Tank / Swordsman / Archer, empty
-// seats read "AI" — each player's ready state, connection and ping, the
+// Healer, seats 1–3 Tank / Swordsman / Archer, empty seats read "AI" (CLASS
+// SELECT: every player, the host too, picks a class by taking its free seat;
+// on arrival the player moves to the class chosen in camp when it is free;
+// a taken class reads "Taken") — each player's ready state, connection and ping, the
 // host's network addresses (LAN play), who builds what (each player their
 // own character, the host the AI-held seats — howtoLine), and the one action that matters for
 // each role: guests toggle Ready (and may take a free seat), the host
@@ -21,7 +23,8 @@ import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { createHints } from './hints.js';
 import { installMpStyle, mkBtn, setCaption, inviteLine } from './mpmenu.js';
-import { SEAT_LABELS, SEAT_CRITTERS } from '../../net/seats.js';
+import { SEAT_LABELS, SEAT_CRITTERS, SEAT_CLASSES } from '../../net/seats.js';
+import { PLAY_CLASS_KEY } from '../../app/playclass.js';
 import { QUICK_MATCH_ALONE_MS } from '../../net/protocol/constants.js';
 
 const CSS = `
@@ -138,7 +141,31 @@ export function createLobbyScreen(ctx) {
   let cdTimer = 0;
   let offs = [];
   let busy = false;
+  let preferTried = null; // the room code the camp class was last asked for
   const n = () => service('net');
+  // CLASS SELECT: on arriving in a room, move to the class chosen in camp
+  // (app/playclass.js) when its seat is free — once per room.
+  async function takePreferred() {
+    const net = n();
+    const r = net && net.room;
+    if (!r || r.state !== 'lobby' || busy || preferTried === r.code || !app.settings) return;
+    const mine = me();
+    if (!mine) return;
+    preferTried = r.code;
+    const want = SEAT_CLASSES.indexOf(app.settings.get(PLAY_CLASS_KEY));
+    if (want < 0 || want === mine.index) return;
+    const target = r.seats[want];
+    if (!target || target.peerId) return;
+    busy = true;
+    try {
+      await net.selectSeat(want);
+    } catch {
+      /* stays on its seat */
+    } finally {
+      busy = false;
+      render();
+    }
+  }
 
   function setErr(t) {
     errEl.textContent = t || '';
@@ -176,7 +203,7 @@ export function createLobbyScreen(ctx) {
       b.querySelector('.nt-srole').textContent = `${SEAT_LABELS[s.index]} · the ${SEAT_CRITTERS[s.index]}${ping}`;
       const tag = b.querySelector('.nt-stag');
       tag.className = 'nt-stag';
-      if (!s.peerId) tag.textContent = host ? 'AI plays' : 'Free — take it';
+      if (!s.peerId) tag.textContent = r.state === 'lobby' ? 'AI · take it' : 'AI plays';
       else if (!s.connected) tag.textContent = 'Reconnecting…';
       else if (isHostSeat) {
         tag.textContent = 'Host';
@@ -185,7 +212,8 @@ export function createLobbyScreen(ctx) {
         tag.textContent = 'Ready';
         tag.classList.add('nt-ready');
       } else tag.textContent = 'Not ready';
-      const canTake = !s.peerId && !host && r.state === 'lobby' && s.index !== 0;
+      if (s.peerId && !mine) b.querySelector('.nt-srole').textContent += ' · Taken';
+      const canTake = !s.peerId && r.state === 'lobby';
       b.setAttribute('aria-label', `${SEAT_LABELS[s.index]}: ${s.peerId ? s.name : 'AI'}${canTake ? ' — press to take this seat' : ''}`);
     }
     shareEl.textContent = `Friends open Multiplayer ▸ Join by Code and type ${r.code}.`;
@@ -264,12 +292,16 @@ export function createLobbyScreen(ctx) {
     const s = net.room.seats[i];
     const mine = me();
     if (mine && mine.index === i && !amHost()) return toggleReady();
-    if (s.peerId || amHost() || i === 0) return undefined;
+    if (s.peerId || (mine && mine.index === i) || net.room.state !== 'lobby') return undefined;
     busy = true;
     try {
       const r = await net.selectSeat(i);
-      if (!r.ok) setErr(r.text || `That seat is taken (${r.reason})`);
-      else setErr('');
+      if (!r.ok) setErr(r.text || `That class is taken (${r.reason})`);
+      else {
+        setErr('');
+        // The lobby pick is this player's class from now on (camp too).
+        if (app.settings) app.settings.set(PLAY_CLASS_KEY, SEAT_CLASSES[i]);
+      }
     } finally {
       busy = false;
       render();
@@ -320,7 +352,12 @@ export function createLobbyScreen(ctx) {
       queuedSince = params.via === 'quick' ? performance.now() : null;
       if (net) {
         offs = [
-          net.on('room', () => open && !closeIfPlaying() && render()),
+          net.on('room', () => {
+            if (open && !closeIfPlaying()) {
+              render();
+              takePreferred();
+            }
+          }),
           net.on('state', () => closeIfPlaying()),
           net.on('game_starting', (m) => {
             countdownUntil = performance.now() + (m.countdownMs || 1500);
@@ -345,6 +382,8 @@ export function createLobbyScreen(ctx) {
         ];
       }
       render();
+      preferTried = null;
+      takePreferred();
       if (queuedSince !== null) cdTimer = setTimeout(tickCountdown, 1000);
       // Opened over a room that is already playing: close once push() has
       // finished (never pop from inside onOpen).

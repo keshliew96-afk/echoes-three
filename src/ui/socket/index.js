@@ -64,6 +64,7 @@
 // autoFill — the same entry points as __echoes.cmd, so every screen action
 // emits the same sim events.
 import { PALETTE } from '../../data/palette.js';
+import { viewerSeat } from '../../app/viewerseat.js';
 import { SKILLS } from '../../sim/skills.js';
 import { NODES } from '../../sim/nodes.js';
 import { SKILL_SLOTS } from '../../core/constants.js';
@@ -156,10 +157,7 @@ export function createSocketScreen({ bus, world }) {
     const n = netSvc();
     return !!(n && ((typeof n.isGuest === 'function' && n.isGuest()) || (typeof n.isHost === 'function' && n.isHost())));
   };
-  const ownSeat = () => {
-    const n = netSvc();
-    return isGuest() && Number.isInteger(n.seat) ? n.seat : 0;
-  };
+  const ownSeat = () => viewerSeat();
   let noteSync = () => {};
   let headerInHand = null; // a skill row picked up to reorder (row index)
   const partySys = () => (typeof world.partySystem === 'function' ? world.partySystem() : null);

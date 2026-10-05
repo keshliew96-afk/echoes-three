@@ -40,6 +40,7 @@ import { createOwnSeat } from './reconcile.js';
 import { createActionShadow, createPartyShadow } from './predict.js';
 import { createMetronome } from './metronome.js';
 import { seatLabel, seatControlText, chooserSeat } from './seats.js';
+import { LEADER_BOT as PLAY_LEADER_BOT } from '../app/playclass.js';
 import { createCosmetics } from '../ui/net/cosmetics.js';
 import { createNetHud } from '../ui/net/hud.js';
 import { installUpdatePrompt } from '../ui/net/update.js';
@@ -683,7 +684,9 @@ export function createNetSession(ctx) {
   // over on that very tick and takes it back on a drop / away / leave. While
   // a human plays the Healer the between-room choices are the host's pages
   // (PLAN §3.7 "build decisions belong to the host").
-  const LEADER_BOT = Object.freeze({ seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto' });
+  // CLASS SELECT: the bot plays the Healer's combat only (`pages: false`):
+  // the between-room pages are the host's, whichever class it plays.
+  const LEADER_BOT = PLAY_LEADER_BOT;
   function setLeaderBot(on, tick = clock.tick) {
     const rs = rawRunSystem();
     const ap = rs && rs.autopilot;
@@ -725,6 +728,13 @@ export function createNetSession(ctx) {
     host.start({ migrated });
     installPresentation(localSeat());
     if (localSeat() !== 0) setLeaderBot(true, clock.tick);
+    else {
+      // CLASS SELECT: a solo leader bot (app/playclass.js) hands the Healer
+      // back to the host who now plays it.
+      const ap = rawRunSystem() && rawRunSystem().autopilot;
+      const v = ap && typeof ap.view === 'function' ? ap.view() : null;
+      if (v && v.active && v.cfg && v.cfg.leader) world.cmd('autopilot', false);
+    }
     startRaf();
     log('host_start', { seat: localSeat(), migrated });
     // A tab already in the background (hidden during the countdown, a

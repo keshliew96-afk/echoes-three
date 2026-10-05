@@ -470,6 +470,9 @@ if (bootParams.slot && bootParams.menuSkip) {
 import { createUnlocksScreen } from './ui/run/unlocks.js';
 import { setClassTints } from './data/vfx.js';
 registerScreen('unlocks', createUnlocksScreen);
+// CLASS SELECT (docs/CLASS_SELECT.md): the camp's class picker (C / the portal prompt's Class chip).
+import { createClassesScreen } from './ui/run/classpick.js';
+registerScreen('classes', createClassesScreen);
 {
   const applyTints = () => {
     try {
@@ -493,7 +496,12 @@ registerScreen('unlocks', createUnlocksScreen);
 // M5b swaps it for the host/guest driver (host: world.step(tick, snap,
 // seatInputs); guest: no world step — replica apply + own-seat prediction).
 // Single-player keeps exactly this function (PLAN §3.7, gate G5b.8).
-let simStep = (tick) => world.step(tick, sampleIntents());
+// CLASS SELECT (docs/CLASS_SELECT.md): the Healer — the default — steps
+// exactly as before; another chosen class drives its own seat (app/playclass.js).
+import { createPlayClass, registerPlayClassSetting } from './app/playclass.js';
+registerPlayClassSetting(app.settings);
+const playClass = createPlayClass({ world, registry, settings: app.settings, scene: activeScene, sampleIntents: () => sampleIntents() });
+let simStep = (tick) => playClass.step(tick);
 // M5a (W3): the network client service (src/net/lobbyClient.js) — server
 // probe, lobby, matchmaking, transport, reconnect, conditioner. Idle until
 // something calls connect()/host()/join()/quickMatch() (or a ?nethost /
@@ -949,6 +957,8 @@ const simDebug = {
 // --- Debug API (docs/TESTING.md). cmd surface grows as systems land.
 window.__echoes = {
   version: VERSION,
+  // CLASS SELECT (docs/CLASS_SELECT.md): the class the local player plays.
+  playClass: () => playClass.debug(),
   // @gnt:DEBUG-API begin — Gauntlet namespaces (PLAN §6.4). Each resolves its
   // module's service lazily, so owners never edit this file for their probes:
   // provide('<name>', impl) with impl.debug = { ... }.

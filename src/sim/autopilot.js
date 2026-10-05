@@ -388,7 +388,9 @@ export function createAutopilot({ registry, player, run, skills, build }) {
     stats.ticks += 1;
     const r = run();
     const v = r ? r.view() : null;
-    if (v && v.active && pages()) {
+    // CLASS SELECT: `pages: false` (the leader bot under a human on another
+    // seat) plays the Healer in combat only — the pages stay the human's.
+    if (v && v.active && cfg.pages !== false && pages()) {
       const s = emptySnapshot();
       s.aim = snap && snap.aim ? { ...snap.aim } : null;
       return s;
