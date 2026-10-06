@@ -71,11 +71,11 @@ export const DEED_IDS = Object.freeze(Object.keys(DEEDS));
 //   { unlock: id }  another unlock owned     { runs: N }        N runs finished
 //   { depth: N }    Depth N reached in the Endless Descent (records.endlessBestDepth)
 const KIT_ROWS = [
-  ['kit_lanternbearer', 'healer', 'Lanternbearer', ['mending_bolt', 'lantern_flurry'], 60, null, 'Trade Swift Mend for Lantern Flurry: three lantern darts that hit back.'],
+  ['kit_lanternbearer', 'healer', 'Lanternbearer', ['mending_bolt', 'lantern_flurry'], 60, null, 'Begin with Mending Bolt and Lantern Flurry: three lantern darts that hit back.'],
   ['kit_grovekeeper', 'healer', 'Grovekeeper', ['dewfall', 'mending_tide'], 90, { level: 1 }, 'Begin with Dewfall and Mending Tide: healing pools and a sweeping mend.'],
-  ['kit_bulwark', 'tank', 'Bulwark', ['heavy_slam', 'shield_wall', 'taunting_roar', 'iron_stance'], 80, null, 'The Tank begins with Shield Wall, Taunting Roar and Iron Stance.'],
-  ['kit_duelist', 'swordsman', 'Duelist', ['flurry', 'fox_step', 'riposte', 'crescent_finisher'], 80, { level: 1 }, 'The Swordsman begins with Fox Step, Riposte and Crescent Finisher.'],
-  ['kit_warden', 'archer', 'Warden', ['piercing_shot', 'pinning_arrow', 'rain_of_arrows', 'kestrel_watch'], 80, { level: 2 }, 'The Archer begins with Pinning Arrow, Rain of Arrows and Kestrel Watch.'],
+  ['kit_bulwark', 'tank', 'Bulwark', ['heavy_slam', 'shield_wall', 'taunting_roar', 'iron_stance'], 80, null, 'The Tank begins with Heavy Slam, Shield Wall, Taunting Roar and Iron Stance.'],
+  ['kit_duelist', 'swordsman', 'Duelist', ['flurry', 'fox_step', 'riposte', 'crescent_finisher'], 80, { level: 1 }, 'The Swordsman begins with Flurry, Fox Step, Riposte and Crescent Finisher.'],
+  ['kit_warden', 'archer', 'Warden', ['piercing_shot', 'pinning_arrow', 'rain_of_arrows', 'kestrel_watch'], 80, { level: 2 }, 'The Archer begins with Piercing Shot, Pinning Arrow, Rain of Arrows and Kestrel Watch.'],
 ];
 const HEIRLOOM_COST = Object.freeze({ common: 40, rare: 90, legendary: 160 });
 const PURSE_ROWS = [

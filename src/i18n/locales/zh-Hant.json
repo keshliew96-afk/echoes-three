@@ -1455,7 +1455,7 @@
  "THE {critter}": "{critter}",
  "the 2 nearest other allies within {r} u get {n} too": "{r} u 內最近的另外 2 名隊友也獲得 {n}",
  "The address of the Echoes server — ws://host:port/echoes (wss:// for a secure server). Automatic uses the server of the site you opened the game from.": "Echoes 伺服器的位址：ws://host:port/echoes（安全伺服器用 wss://）。「自動」會使用你開啟遊戲的網站的伺服器。",
- "The Archer begins with Pinning Arrow, Rain of Arrows and Kestrel Watch.": "弓箭手開局即擁有釘身箭、箭雨與紅隼守望。",
+ "The Archer begins with Piercing Shot, Pinning Arrow, Rain of Arrows and Kestrel Watch.": "弓箭手開局即擁有穿透射擊、釘身箭、箭雨與紅隼守望。",
  "The Ashen Barrow": "灰燼古塚",
  "The Barrow Wyrm": "古塚魔龍",
  "THE BARROW WYRM": "古塚魔龍",
@@ -1558,8 +1558,8 @@
  "The shop closes — {secs} s": "商店即將關閉 — {secs} 秒",
  "the starting kit": "初始技能組",
  "The Sunken Mill": "沉沒磨坊",
- "The Swordsman begins with Fox Step, Riposte and Crescent Finisher.": "劍士開局即擁有狐步、反擊與新月終結。",
- "The Tank begins with Shield Wall, Taunting Roar and Iron Stance.": "坦克開局即擁有盾牆、挑釁怒吼與鋼鐵架式。",
+ "The Swordsman begins with Flurry, Fox Step, Riposte and Crescent Finisher.": "劍士開局即擁有連斬、狐步、反擊與新月終結。",
+ "The Tank begins with Heavy Slam, Shield Wall, Taunting Roar and Iron Stance.": "坦克開局即擁有重擊、盾牆、挑釁怒吼與鋼鐵架式。",
  "the Tank strikes back for 2 s.": "坦克反擊 2 秒。",
  "the Tank takes 20% less damage while this skill cools down · shields ward their bearers · Iron Stance wards allies inside.": "此技能冷卻期間坦克承受傷害降低 20% · 護盾守護持有者 · 鋼鐵架式守護範圍內隊友。",
  "The Thornmother": "荊棘之母",
@@ -1609,7 +1609,7 @@
  "Too late — that choice already closed": "太遲了，該選擇已關閉",
  "Too many requests — slow down.": "請求太頻繁，請放慢速度。",
  "TR": "怒吼",
- "Trade Swift Mend for Lantern Flurry: three lantern darts that hit back.": "以提燈連射取代迅捷治療：三發會反擊的提燈飛鏢。",
+ "Begin with Mending Bolt and Lantern Flurry: three lantern darts that hit back.": "開局即擁有癒療箭與提燈連射：三發會反擊的提燈飛鏢。",
  "Traditional Chinese": "繁體中文",
  "Tremor": "震顫",
  "Type the room code the host sees in their lobby.": "輸入房主在大廳看到的房間代碼。",
@@ -1730,5 +1730,6 @@
  "Your shelf at the peddler is 25% cheaper.": "行商貨架上你的商品便宜 25%。",
  "zone": "區域",
  "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "區域 {a} 刻 → {b} 刻（{sa} 秒 → {sb} 秒）",
- "HS@@Hearthsong": "爐歌"
+ "HS@@Hearthsong": "爐歌",
+ "Basic attack and dodge. Skills come from wave rewards.": "普通攻擊和閃避。技能來自波次獎勵。"
 }

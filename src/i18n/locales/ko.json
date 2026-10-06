@@ -1455,7 +1455,7 @@
  "THE {critter}": "{critter}",
  "the 2 nearest other allies within {r} u get {n} too": "{r}u 안의 가장 가까운 다른 동료 2명도 {n}",
  "The address of the Echoes server — ws://host:port/echoes (wss:// for a secure server). Automatic uses the server of the site you opened the game from.": "Echoes 서버 주소 — ws://host:port/echoes (보안 서버는 wss://). 자동은 게임을 연 사이트의 서버를 사용합니다.",
- "The Archer begins with Pinning Arrow, Rain of Arrows and Kestrel Watch.": "궁수가 고정 화살, 화살비, 황조롱이 감시를 갖고 시작합니다.",
+ "The Archer begins with Piercing Shot, Pinning Arrow, Rain of Arrows and Kestrel Watch.": "궁수가 관통 사격, 고정 화살, 화살비, 황조롱이 감시를 갖고 시작합니다.",
  "The Ashen Barrow": "잿빛 고분",
  "The Barrow Wyrm": "고분의 비룡",
  "THE BARROW WYRM": "고분의 비룡",
@@ -1558,8 +1558,8 @@
  "The shop closes — {secs} s": "상점 마감 — {secs}초",
  "the starting kit": "시작 키트",
  "The Sunken Mill": "가라앉은 방앗간",
- "The Swordsman begins with Fox Step, Riposte and Crescent Finisher.": "검사가 여우 걸음, 응수, 초승달 마무리를 갖고 시작합니다.",
- "The Tank begins with Shield Wall, Taunting Roar and Iron Stance.": "탱커가 방패벽, 도발의 포효, 강철 자세를 갖고 시작합니다.",
+ "The Swordsman begins with Flurry, Fox Step, Riposte and Crescent Finisher.": "검사가 연속 베기, 여우 걸음, 응수, 초승달 마무리를 갖고 시작합니다.",
+ "The Tank begins with Heavy Slam, Shield Wall, Taunting Roar and Iron Stance.": "탱커가 강타, 방패벽, 도발의 포효, 강철 자세를 갖고 시작합니다.",
  "the Tank strikes back for 2 s.": "탱커가 2초간 반격.",
  "the Tank takes 20% less damage while this skill cools down · shields ward their bearers · Iron Stance wards allies inside.": "이 스킬의 재사용 대기 중 탱커가 받는 피해 20% 감소 · 보호막이 보유자를 보호 · 강철 자세는 안의 동료를 보호.",
  "The Thornmother": "가시어미",
@@ -1609,7 +1609,7 @@
  "Too late — that choice already closed": "너무 늦었습니다 — 이미 마감된 선택입니다",
  "Too many requests — slow down.": "요청이 너무 많습니다 — 잠시 기다려 주세요.",
  "TR": "포효",
- "Trade Swift Mend for Lantern Flurry: three lantern darts that hit back.": "신속 치유 대신 등불 연사: 되받아치는 등불 다트 세 발.",
+ "Begin with Mending Bolt and Lantern Flurry: three lantern darts that hit back.": "치유탄과 등불 연사를 갖고 시작: 되받아치는 등불 다트 세 발.",
  "Traditional Chinese": "중국어 번체",
  "Tremor": "진동",
  "Type the room code the host sees in their lobby.": "호스트의 로비에 표시된 방 코드를 입력하세요.",
@@ -1730,5 +1730,6 @@
  "Your shelf at the peddler is 25% cheaper.": "행상인의 내 진열대가 25% 저렴해집니다.",
  "zone": "지대",
  "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "지대 {a}틱 → {b}틱 ({sa}초 → {sb}초)",
- "HS@@Hearthsong": "노래"
+ "HS@@Hearthsong": "노래",
+ "Basic attack and dodge. Skills come from wave rewards.": "기본 공격과 회피. 스킬은 웨이브 보상으로 얻습니다."
 }

@@ -1527,7 +1527,7 @@
  "THE {critter}": "{critter}",
  "the 2 nearest other allies within {r} u get {n} too": "les 2 autres alliés les plus proches à {r} u reçoivent aussi {n}",
  "The address of the Echoes server — ws://host:port/echoes (wss:// for a secure server). Automatic uses the server of the site you opened the game from.": "L’adresse du serveur Echoes — ws://hôte:port/echoes (wss:// pour un serveur sécurisé). Automatique utilise le serveur du site d’où tu as ouvert le jeu.",
- "The Archer begins with Pinning Arrow, Rain of Arrows and Kestrel Watch.": "L’Archer commence avec Flèche clouante, Pluie de flèches et Guet de crécerelle.",
+ "The Archer begins with Piercing Shot, Pinning Arrow, Rain of Arrows and Kestrel Watch.": "L’Archer commence avec Tir perçant, Flèche clouante, Pluie de flèches et Guet de crécerelle.",
  "The Ashen Barrow": "Le Tertre Cendré",
  "The Barrow Wyrm": "La Guivre du Tertre",
  "THE BARROW WYRM": "LA GUIVRE DU TERTRE",
@@ -1630,8 +1630,8 @@
  "The shop closes — {secs} s": "La boutique ferme — {secs} s",
  "the starting kit": "le kit de départ",
  "The Sunken Mill": "Le Moulin Englouti",
- "The Swordsman begins with Fox Step, Riposte and Crescent Finisher.": "Le Bretteur commence avec Pas du renard, Riposte et Croissant final.",
- "The Tank begins with Shield Wall, Taunting Roar and Iron Stance.": "Le Tank commence avec Mur de boucliers, Rugissement provocateur et Garde de fer.",
+ "The Swordsman begins with Flurry, Fox Step, Riposte and Crescent Finisher.": "Le Bretteur commence avec Rafale, Pas du renard, Riposte et Croissant final.",
+ "The Tank begins with Heavy Slam, Shield Wall, Taunting Roar and Iron Stance.": "Le Tank commence avec Coup assommant, Mur de boucliers, Rugissement provocateur et Garde de fer.",
  "the Tank strikes back for 2 s.": "le Tank riposte pendant 2 s.",
  "the Tank takes 20% less damage while this skill cools down · shields ward their bearers · Iron Stance wards allies inside.": "le Tank subit 20 % de dégâts en moins pendant la recharge de cette compétence · les boucliers protègent leurs porteurs · Garde de fer protège les alliés dedans.",
  "The Thornmother": "La Mère-Épine",
@@ -1681,7 +1681,7 @@
  "Too late — that choice already closed": "Trop tard — ce choix est déjà clos",
  "Too many requests — slow down.": "Trop de requêtes — ralentis.",
  "TR": "RP",
- "Trade Swift Mend for Lantern Flurry: three lantern darts that hit back.": "Échange Soin rapide contre Rafale de lanterne : trois traits de lanterne qui frappent.",
+ "Begin with Mending Bolt and Lantern Flurry: three lantern darts that hit back.": "Commence avec Trait guérisseur et Rafale de lanterne : trois traits de lanterne qui frappent.",
  "Traditional Chinese": "Chinois traditionnel",
  "Tremor": "Secousse",
  "Type the room code the host sees in their lobby.": "Tape le code du salon que l’hôte voit dans son salon.",
@@ -1806,5 +1806,6 @@
  "Your shelf at the peddler is 25% cheaper.": "Ton étal chez le colporteur coûte 25 % de moins.",
  "zone": "zone",
  "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "zone {a} ticks → {b} ticks ({sa} s → {sb} s)",
- "HS@@Hearthsong": "CÂ"
+ "HS@@Hearthsong": "CÂ",
+ "Basic attack and dodge. Skills come from wave rewards.": "Attaque de base et esquive. Les compétences viennent des récompenses de vague."
 }

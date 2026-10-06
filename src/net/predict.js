@@ -59,8 +59,6 @@ import { TICK_HZ, DODGE } from '../core/constants.js';
 import { SEAT_CLASSES } from './seats.js';
 import { pct } from './protocol/snapshot.js';
 
-const secTicks = (s) => Math.round(s * TICK_HZ);
-const CD_FLOOR = secTicks(0.5);
 const MATCH_WINDOW = 3;
 // Input frames of local frame log kept while no snapshot trims it (6 s).
 const LOG_KEEP = 360;
@@ -77,7 +75,9 @@ const r2 = (v) => Math.round(v * 100) / 100;
 // the §7 starting kit.
 export function createActionShadow({ bus, seat, cosmetics = null, now = () => performance.now(), kit: kitFn = null, dodgeCd = () => DODGE.cooldownTicks }) {
   const classId = SEAT_CLASSES[seat];
-  const staticKit = seat > 0 && ALLY_KITS[classId] ? ALLY_KITS[classId].map((d) => ({ id: d.id, abbrev: d.abbrev, def: d, cdTicks: Math.max(CD_FLOOR, secTicks(d.cd)), passive: false })) : null;
+  // v0.5.227: every seat starts a run with empty skill slots, so before the
+  // first snapshot nothing is predicted for 1-4 (only basic / dodge).
+  const staticKit = seat > 0 && ALLY_KITS[classId] ? [null, null, null, null] : null;
   const kitNow = () => {
     let k = null;
     try {

@@ -247,7 +247,10 @@ export const classOfSkill = (id) => (SKILLS[id] ? SKILLS[id].cls ?? 'healer' : n
 
 // §7 starting kit: Mending Bolt slot 1, Swift Mend slot 2 (the draft block
 // re-owns loadout initialization when it lands).
-export const STARTING_SKILLS = Object.freeze(['mending_bolt', 'swift_mend']);
+// v0.5.227 (CAMP FIXES): the Healer starts with NO skills, like every class;
+// skills come only from wave rewards (or an equipped Unlocks kit). The §7 kit
+// was ['mending_bolt', 'swift_mend'].
+export const STARTING_SKILLS = Object.freeze([]);
 
 // Ruling A17 (the user's rule, 2026-09-27): the Healer's CLASS pool — every
 // Healer skill, sorted ascending id. A swap offer (4 skills owned) draws from

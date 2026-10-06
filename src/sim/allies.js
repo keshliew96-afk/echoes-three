@@ -54,7 +54,7 @@ import { stepHumanMove, dodgeVelocity, aimDir, DOWNED_CRAWL_SPEED, HUMAN_DODGE }
 // is cast from the seat's LOADOUT (sim/party.js) through ONE pipeline
 // (sim/allycast.js); the AI picks with the §25.8 rules (sim/partyai.js).
 import { SKILLS } from './skills.js';
-import { STARTING_LOADOUT, AI_ENGAGE, AI_EVADE, AI_KITE, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS } from '../data/classes.js';
+import { CLASS_BASE_KIT, STARTING_LOADOUT, AI_ENGAGE, AI_EVADE, AI_KITE, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS } from '../data/classes.js';
 import { createAllyCaster, cdTicksOf } from './allycast.js';
 import { castChoice } from './partyai.js';
 
@@ -154,18 +154,18 @@ export const ALLY_CLASSES = Object.freeze({
 
 const BOLT_RADIUS = 0.05; // same swept-vs-wall scaffold radius as every other bolt
 
-// §7 ally kits — the STARTING LOADOUTS since PARTY (ruling A16): derived
-// from the cls-tagged SKILLS rows (field for field the v0.5.150 table below)
-// in data/classes.js STARTING_LOADOUT order. Kept exported for existing
-// readers (the HUD's AI-seat tiles, probes).
+// §7 ally kits — derived from the cls-tagged SKILLS rows (field for field the
+// v0.5.150 table below) in data/classes.js CLASS_BASE_KIT order. No longer a
+// starting loadout (v0.5.227: every seat starts empty); kept exported for
+// the render warm-up and probes.
 //   melee_arc: range = reach u, area = half-angle °, count = max targets
 //   nova:      area = burst radius u, count = max targets
 //   projectile:range = max travel u, count = simultaneous bolts, speed u/s
 //   ground_aoe:range = max placement u, area = zone radius u, durationSec
 export const ALLY_KITS = Object.freeze({
-  tank: Object.freeze(STARTING_LOADOUT.tank.map((id) => SKILLS[id])),
-  swordsman: Object.freeze(STARTING_LOADOUT.swordsman.map((id) => SKILLS[id])),
-  archer: Object.freeze(STARTING_LOADOUT.archer.map((id) => SKILLS[id])),
+  tank: Object.freeze(CLASS_BASE_KIT.tank.map((id) => SKILLS[id])),
+  swordsman: Object.freeze(CLASS_BASE_KIT.swordsman.map((id) => SKILLS[id])),
+  archer: Object.freeze(CLASS_BASE_KIT.archer.map((id) => SKILLS[id])),
 });
 
 // The v0.5.150 kit table, verbatim (reference only — the SKILLS rows above
@@ -341,7 +341,7 @@ export function createAllySystem({
   const loadoutOf = (a) => {
     const P = partyRef();
     const s = P ? P.slots(a.partyIndex) : null;
-    return s ?? ALLY_KITS[a.classId].map((d) => d.id);
+    return s ?? [...STARTING_LOADOUT[a.classId]];
   };
   const resolvedOf = (a, def) => {
     const P = partyRef();
@@ -1589,6 +1589,10 @@ export function createAllySystem({
   function continuous(snapshot) {
     if (campSeats) {
       holdSeats();
+      // A human seat can fire in camp (class select): its bolts and shards
+      // must fly and expire here exactly as in a room, or they hang in the air.
+      bolts.step(getTick());
+      caster.scatterShards.step(getTick());
       return;
     }
     const tick = getTick();
