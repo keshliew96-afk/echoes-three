@@ -1805,5 +1805,6 @@
  "Your settings were saved by a newer version of Echoes — using defaults for now": "Tus ajustes se guardaron con una versión más reciente de Echoes; de momento se usan los predeterminados",
  "Your shelf at the peddler is 25% cheaper.": "Tu estante del buhonero es un 25 % más barato.",
  "zone": "zona",
- "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "zona {a} tics → {b} tics ({sa} s → {sb} s)"
+ "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "zona {a} tics → {b} tics ({sa} s → {sb} s)",
+ "HS@@Hearthsong": "CH"
 }

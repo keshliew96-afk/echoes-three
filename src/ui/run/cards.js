@@ -148,6 +148,14 @@ export const NODE_EFFECT_SHORT = {
   heartseeker: 'first hit per enemy crits.',
 };
 
+// A skill's two-letter medallion (shown where a skill has no icon art). Two
+// skills share 'HS' in English (Hearthsong, Heavy Slam), so the Healer's gets
+// its own key and each language can letter both from their own names.
+export function skillAbbrev(def) {
+  if (!def) return '?';
+  return def.id === 'hearthsong' ? t('HS@@Hearthsong') : t(def.abbrev);
+}
+
 export const SHAPE_LABEL = {
   projectile: 'projectile',
   direct: 'direct',

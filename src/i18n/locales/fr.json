@@ -280,7 +280,7 @@
  "a bolt pierces one more enemy per copy, full power each.": "un trait transperce un ennemi de plus par copie, à pleine puissance.",
  "A burst: 16 to up to 4 enemies around the hare.": "Une explosion : 16 à 4 ennemis max autour du lièvre.",
  "A campaign runs from the level you choose through Level {level}. Clear a level to open the next.": "Une campagne va du niveau choisi jusqu’au niveau {level}. Termine un niveau pour ouvrir le suivant.",
- "A charge at the target for 3 s: 12 per second to enemies inside.": "Une charge vers la cible pendant 3 s : 12 par seconde aux ennemis dedans.",
+ "A charge at the target for 3 s: 12 per second to enemies inside.": "Une charge explosive sur la cible pendant 3 s : 12 par seconde aux ennemis dedans.",
  "a connect cuts other cooldowns.": "un coup réussi réduit les autres recharges.",
  "a connecting cast cuts every other Swordsman skill’s cooldown by 0.3 s per copy.": "un lancer qui touche réduit la recharge de toutes les autres compétences du Bretteur de 0,3 s par copie.",
  "A crescent sweep: 20, +50% for each other fox skill that just connected (up to +100%).": "Un balayage en croissant : 20, +50 % par autre compétence du renard qui vient de toucher (max +100 %).",
@@ -530,7 +530,7 @@
  "Choose a slot — autosaves and the quicksave (F5) are kept separately": "Choisis un emplacement — les sauvegardes auto et la sauvegarde rapide (F5) sont gardées à part",
  "Choose an expedition": "Choisis une expédition",
  "Choose what it leaves behind.": "Choisis ce qu’elle laisse derrière.",
- "Choose what it pays.": "Choisis ce qu’elle coûte.",
+ "Choose what it pays.": "Choisis ce qu’elle rapporte.",
  "Choose with ← / → (the D-pad on a gamepad), or click the arrows.": "Choisis avec ← / → (la croix à la manette), ou clique sur les flèches.",
  "Choose your class": "Choisis ta classe",
  "Choosing a boon": "Choix d’un bienfait",
@@ -1717,7 +1717,7 @@
  "WA": "AP",
  "Wait for the transition to finish": "Attends la fin de la transition",
  "Waiting for {names} — auto-pick in {secs} s": "En attente de {names} — choix auto dans {secs} s",
- "Waiting for {names} to be ready": "En attente de {names}",
+ "Waiting for {names} to be ready": "En attente de l’état prêt : {names}",
  "Waiting for the {cls}…": "En attente de {cls}…",
  "Walk through 3 cursed doors in one run.": "Franchis 3 portes maudites en une partie.",
  "ward": "protection",
@@ -1805,5 +1805,6 @@
  "Your settings were saved by a newer version of Echoes — using defaults for now": "Tes réglages viennent d’une version plus récente d’Echoes — valeurs par défaut pour l’instant",
  "Your shelf at the peddler is 25% cheaper.": "Ton étal chez le colporteur coûte 25 % de moins.",
  "zone": "zone",
- "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "zone {a} ticks → {b} ticks ({sa} s → {sb} s)"
+ "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "zone {a} ticks → {b} ticks ({sa} s → {sb} s)",
+ "HS@@Hearthsong": "CÂ"
 }

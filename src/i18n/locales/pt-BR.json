@@ -866,7 +866,7 @@
  "How hard the enemies of your NEXT expedition are. Relaxed: 75% HP, 70% damage. Standard: as designed. Harrowing: 125% HP, 130% damage. The challenge is fixed when you step through the camp gate, so a run in progress keeps the one it started with. Harrowing scores ×1.5, Relaxed ×0.75.": "Quão difíceis são os inimigos da sua PRÓXIMA expedição. Tranquilo: 75% de PV, 70% de dano. Padrão: como projetado. Tormentoso: 125% de PV, 130% de dano. O desafio é fixado quando você atravessa o portão do acampamento, então uma partida em andamento mantém o seu. Tormentoso pontua ×1,5, Tranquilo ×0,75.",
  "How much the skills, hits and the Stag throw on screen. Reduced keeps every warning and every heal sign, with half the particles and no camera kick.": "Quanto as habilidades, golpes e o Cervo jogam na tela. Reduzido mantém todo aviso e todo sinal de cura, com metade das partículas e sem tranco de câmera.",
  "HP": "PV",
- "HS": "CL",
+ "HS": "PP",
  "Hunt": "Caçada",
  "Hunted": "Caçado",
  "If the host does not come back, another player takes over and the run continues.": "Se o anfitrião não voltar, outro jogador assume e a partida continua.",
@@ -1805,5 +1805,6 @@
  "Your settings were saved by a newer version of Echoes — using defaults for now": "Suas configurações foram salvas por uma versão mais nova de Echoes — usando o padrão por enquanto",
  "Your shelf at the peddler is 25% cheaper.": "Sua prateleira no mascate fica 25% mais barata.",
  "zone": "zona",
- "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "zona {a} tiques → {b} tiques ({sa} s → {sb} s)"
+ "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "zona {a} tiques → {b} tiques ({sa} s → {sb} s)",
+ "HS@@Hearthsong": "CL"
 }

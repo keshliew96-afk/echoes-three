@@ -4450,6 +4450,11 @@
   ],
   "data": true
  },
+ "HS@@Hearthsong": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
  "Hunt": {
   "files": [
    "src/ui/menu/saves.js"

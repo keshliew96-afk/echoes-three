@@ -1824,5 +1824,6 @@
  "Your settings were saved by a newer version of Echoes — using defaults for now": "Настройки сохранены более новой версией Echoes — пока используются стандартные",
  "Your shelf at the peddler is 25% cheaper.": "Твоя полка у коробейника на 25% дешевле.",
  "zone": "зона",
- "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "зона (тики): {a} → {b} ({sa} с → {sb} с)"
+ "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "зона (тики): {a} → {b} ({sa} с → {sb} с)",
+ "HS@@Hearthsong": "ПУ"
 }

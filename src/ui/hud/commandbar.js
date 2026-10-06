@@ -44,6 +44,7 @@ import { DODGE, TICK_HZ, SKILL_SLOTS, SOCKETS_PER_SKILL } from '../../core/const
 import { ACCENTS, CHROME } from './style.js';
 import { iconEl, hasIcon } from './icons.js';
 import { t } from '../../i18n/index.js';
+import { skillAbbrev } from '../run/cards.js';
 
 // Cooldown ring geometry (40-box viewBox over the medallion): r 16.5 -> the
 // Parchment arc that grows clockwise from 12 as the skill recharges.
@@ -831,7 +832,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       if (!hasIcon(d.id) && s.iconHost.childElementCount === 0) {
         const ab = document.createElement('span');
         ab.className = 'nt-abbr';
-        ab.textContent = t(d.abbrev);
+        ab.textContent = skillAbbrev(d);
         s.iconHost.appendChild(ab);
       }
       paintCooldown(s, d.remainingTicks, d.totalTicks);

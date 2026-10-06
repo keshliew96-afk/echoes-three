@@ -1729,5 +1729,6 @@
  "Your settings were saved by a newer version of Echoes — using defaults for now": "더 새로운 버전의 Echoes에서 저장된 설정입니다 — 지금은 기본값을 사용합니다",
  "Your shelf at the peddler is 25% cheaper.": "행상인의 내 진열대가 25% 저렴해집니다.",
  "zone": "지대",
- "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "지대 {a}틱 → {b}틱 ({sa}초 → {sb}초)"
+ "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "지대 {a}틱 → {b}틱 ({sa}초 → {sb}초)",
+ "HS@@Hearthsong": "노래"
 }

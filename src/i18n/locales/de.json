@@ -267,7 +267,7 @@
  "a bolt pierces one more enemy per copy, full power each.": "ein Geschoss durchbohrt pro Kopie einen Gegner mehr, jeweils volle Stärke.",
  "A burst: 16 to up to 4 enemies around the hare.": "Eine Explosion: 16 an bis zu 4 Gegner um den Hasen.",
  "A campaign runs from the level you choose through Level {level}. Clear a level to open the next.": "Ein Feldzug läuft vom gewählten Level bis Level {level}. Schaffe ein Level, um das nächste zu öffnen.",
- "A charge at the target for 3 s: 12 per second to enemies inside.": "Ein Ansturm aufs Ziel für 3 s: 12 pro Sekunde an Gegner darin.",
+ "A charge at the target for 3 s: 12 per second to enemies inside.": "Eine Sprengladung am Ziel für 3 s: 12 pro Sekunde an Gegner darin.",
  "a connect cuts other cooldowns.": "ein Treffer senkt andere Abklingzeiten.",
  "a connecting cast cuts every other Swordsman skill’s cooldown by 0.3 s per copy.": "ein treffendes Wirken senkt die Abklingzeit jeder anderen Schwertkämpfer-Fähigkeit um 0,3 s pro Kopie.",
  "A crescent sweep: 20, +50% for each other fox skill that just connected (up to +100%).": "Ein Sichelschwung: 20, +50% für jede andere Fuchs-Fähigkeit, die gerade traf (bis +100%).",
@@ -1786,5 +1786,6 @@
  "Your settings were saved by a newer version of Echoes — using defaults for now": "Deine Einstellungen stammen aus einer neueren Echoes-Version — vorerst gelten die Standardwerte",
  "Your shelf at the peddler is 25% cheaper.": "Dein Regal beim Krämer ist 25% billiger.",
  "zone": "Zone",
- "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "Zone {a} Ticks → {b} Ticks ({sa} s → {sb} s)"
+ "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "Zone {a} Ticks → {b} Ticks ({sa} s → {sb} s)",
+ "HS@@Hearthsong": "HS"
 }

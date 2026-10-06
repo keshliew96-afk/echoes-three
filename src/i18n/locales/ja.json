@@ -302,7 +302,7 @@
  "AI-held allies arrive pre-picked — one Enter commits the page; you can change any card": "AIの仲間は選択済みで届きます — Enter一回でページを決定。どのカードも変更可能",
  "AI-held allies build themselves — a one-line summary on each page": "AIの仲間は自動でビルド — 各ページに1行の概要を表示",
  "Aim": "照準",
- "All 4 skills are equipped and every socket already holds a node no reward could beat.": "4つのスキルがすべて装備済みで、どのソケットにも報酬を上回らないノードが入っています。",
+ "All 4 skills are equipped and every socket already holds a node no reward could beat.": "4つのスキルがすべて装備済みで、どのソケットにも報酬では上回れないノードが入っています。",
  "all 8 sockets on this skill are full": "このスキルの8ソケットはすべて埋まっています",
  "allies inside are inspired: +10% damage dealt (refreshed every pulse)": "内部の仲間を鼓舞：与ダメ+10%（パルスごとに更新）",
  "ally": "仲間",
@@ -466,7 +466,7 @@
  "Choose a slot — autosaves and the quicksave (F5) are kept separately": "スロットを選択 — オートセーブとクイックセーブ (F5) は別に保存されます",
  "Choose an expedition": "遠征先を選択",
  "Choose what it leaves behind.": "残していくものを選んでください。",
- "Choose what it pays.": "支払うものを選んでください。",
+ "Choose what it pays.": "見返りを選んでください。",
  "Choose with ← / → (the D-pad on a gamepad), or click the arrows.": "← / →（ゲームパッドは十字キー）で選択、または矢印をクリック。",
  "Choose your class": "クラスを選択",
  "Choosing a boon": "恩恵を選択中",
@@ -590,7 +590,7 @@
  "DEPTHS CLEARED": "踏破した深度",
  "DESCENT LENGTH": "降下時間",
  "Detonate": "起爆",
- "Detonating Charge": "起爆突進",
+ "Detonating Charge": "起爆爆薬",
  "Dewfall": "露の雫",
  "DF": "DF",
  "direct": "直撃",
@@ -1729,5 +1729,6 @@
  "Your settings were saved by a newer version of Echoes — using defaults for now": "設定は新しいバージョンのEchoesで保存されています — 一時的に初期設定を使用します",
  "Your shelf at the peddler is 25% cheaper.": "行商人の自分の棚が25%安くなる。",
  "zone": "ゾーン",
- "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "ゾーン {a}ティック → {b}ティック（{sa}秒 → {sb}秒）"
+ "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "ゾーン {a}ティック → {b}ティック（{sa}秒 → {sb}秒）",
+ "HS@@Hearthsong": "HS"
 }

@@ -69,7 +69,7 @@ import { SKILLS } from '../../sim/skills.js';
 import { NODES } from '../../sim/nodes.js';
 import { SKILL_SLOTS } from '../../core/constants.js';
 import { iconHtml, hasIcon } from '../hud/icons.js';
-import { NODE_EFFECT, NODE_GLYPH as CARD_GLYPH } from '../run/cards.js';
+import { NODE_EFFECT, NODE_GLYPH as CARD_GLYPH, skillAbbrev } from '../run/cards.js';
 import { createPartyStrip } from '../run/partystrip.js';
 import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
 import { CLASS_ACCENTS } from '../../data/palette.js';
@@ -821,7 +821,7 @@ export function createSocketScreen({ bus, world }) {
       const vd = held ? rowVerdict(sys, sk, held.node) : null;
       row.innerHTML = `
         <div class="nd-rowhead">
-          <span class="nd-ricon${iconCls}">${hasIcon(sk.id) ? iconHtml(sk.id, { size: 28 }) : esc(def ? t(def.abbrev) : '?')}<span class="nd-rkey">${r + 1}</span></span>
+          <span class="nd-ricon${iconCls}">${hasIcon(sk.id) ? iconHtml(sk.id, { size: 28 }) : esc(skillAbbrev(def))}<span class="nd-rkey">${r + 1}</span></span>
           <span style="min-width:0">
             <div class="nd-rname">${esc(t(sk.name))}</div>
             <div class="nd-rsub">${sk.shape === 'aura' ? t('passive · aura field') : `${esc(word(sk.archetype))} · ${esc(SHAPE_LABEL[sk.shape] ?? sk.shape)}`}</div>

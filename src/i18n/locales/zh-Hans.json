@@ -561,7 +561,7 @@
  "Danger rises every depth": "危险随深度提升",
  "dash to the target first.": "先冲向目标。",
  "Date": "日期",
- "DC": "爆冲",
+ "DC": "爆药",
  "Decline": "拒绝",
  "DEED": "功绩",
  "Deed: {name}": "功绩：{name}",
@@ -590,7 +590,7 @@
  "DEPTHS CLEARED": "已通过深度",
  "DESCENT LENGTH": "深渊时长",
  "Detonate": "引爆",
- "Detonating Charge": "引爆冲锋",
+ "Detonating Charge": "引爆炸药",
  "Dewfall": "降露",
  "DF": "降露",
  "direct": "直射",
@@ -802,7 +802,7 @@
  "How hard the enemies of your NEXT expedition are. Relaxed: 75% HP, 70% damage. Standard: as designed. Harrowing: 125% HP, 130% damage. The challenge is fixed when you step through the camp gate, so a run in progress keeps the one it started with. Harrowing scores ×1.5, Relaxed ×0.75.": "你下一次远征中敌人的强度。轻松：75% 生命，70% 伤害。标准：按设计。煎熬：125% 生命，130% 伤害。难度在你穿过营地大门时确定，因此进行中的冒险保持开始时的难度。煎熬分数 ×1.5，轻松 ×0.75。",
  "How much the skills, hits and the Stag throw on screen. Reduced keeps every warning and every heal sign, with half the particles and no camera kick.": "技能、命中和雄鹿在屏幕上产生的特效量。减弱会保留所有预警和治疗提示，粒子减半且无镜头冲击。",
  "HP": "生命",
- "HS": "HS",
+ "HS": "重砸",
  "Hunt": "猎杀",
  "Hunted": "被猎",
  "If the host does not come back, another player takes over and the run continues.": "如果房主没有回来，另一位玩家会接任，冒险继续。",
@@ -1729,5 +1729,6 @@
  "Your settings were saved by a newer version of Echoes — using defaults for now": "设置由更新版本的 Echoes 保存——暂时使用默认值",
  "Your shelf at the peddler is 25% cheaper.": "你在行商处的货架便宜 25%。",
  "zone": "区域",
- "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "区域 {a} 刻 → {b} 刻（{sa} 秒 → {sb} 秒）"
+ "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "区域 {a} 刻 → {b} 刻（{sa} 秒 → {sb} 秒）",
+ "HS@@Hearthsong": "炉歌"
 }
