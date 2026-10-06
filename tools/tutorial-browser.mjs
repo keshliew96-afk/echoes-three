@@ -162,9 +162,11 @@ check(camp && camp.mode === 'camp', `back in camp (${camp && camp.mode})`);
 await shot('8-done');
 const recAfter = await page.evaluate(() => JSON.stringify(window.__echoes.save?.profile?.()?.records ?? null)).catch(() => null);
 check(recBefore === recAfter, 'no run was recorded');
-await page.click('#tu-coach .tu-ok');
+// (the card also closes itself after 16 s of wall time, which a slow
+// software-GL page can spend before this line)
+await page.evaluate(() => document.querySelector('#tu-coach .tu-ok').click());
 await sleep(500);
-check(!(await visible()), 'Got it closes the closing card');
+check(!(await visible()), 'Got it (or its timeout) closes the closing card');
 
 // 4. Tips.
 const tipOn = () => page.evaluate(() => {

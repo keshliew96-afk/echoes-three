@@ -183,6 +183,14 @@ for (const lang of LANGS) {
     if (r === undefined) throw new Error('no campLevels');
   });
   await back();
+  // TUTORIAL (docs/TUTORIAL.md): the guided room's coach card, then skip it.
+  await step('tutorial', async () => {
+    const ok = await app(() => window.__echoes.tutorial().startNow('probe'));
+    if (!ok) throw new Error('the tutorial did not start');
+    await page.waitForFunction(() => window.__echoes.tutorial().debug().coach, { timeout: 240000, polling: 250 });
+  });
+  await app(() => window.__echoes.tutorial().skip());
+  await sleep(1500);
   // A campaign run.
   await step('combat', async () => {
     await cmd('startCampaign', { level: 1 });
