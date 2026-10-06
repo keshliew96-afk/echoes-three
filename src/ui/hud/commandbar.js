@@ -38,6 +38,7 @@
 // dims uniformly instead. <1.0 s remaining -> >=20 px Parchment numeral on its
 // own opaque plate in the tile's bottom strip (a box that is DISJOINT from the
 // abbrev box at every scale — see style.js); ready-pop 120 ms.
+import { dodgeCooldownTicks } from '../../sim/relics.js';
 import { PALETTE } from '../../data/palette.js';
 import { DODGE, TICK_HZ, SKILL_SLOTS, SOCKETS_PER_SKILL } from '../../core/constants.js';
 import { ACCENTS, CHROME } from './style.js';
@@ -609,6 +610,19 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   let tickNow = 0;
 
   // ------------------------------------------------------------ update --
+  // RELICS (Ash Feather): the dodge ring's full length follows the relics.
+  // Read once per sim tick (the relic view is cheap, but this paints per frame).
+  let dodgeTotalAt = -1;
+  let dodgeTotalV = DODGE.cooldownTicks;
+  function dodgeTotal() {
+    if (tickNow === dodgeTotalAt) return dodgeTotalV;
+    dodgeTotalAt = tickNow;
+    const R = typeof world.runSystem === 'function' ? world.runSystem() : null;
+    const rl = R && typeof R.relics === 'function' ? R.relics() : null;
+    dodgeTotalV = dodgeCooldownTicks(DODGE.cooldownTicks, rl ? rl.owned.map((o) => o.id) : null);
+    return dodgeTotalV;
+  }
+
   function update(now, ctx) {
     const members = ctx.members;
     const channels = ctx.channels;
@@ -618,7 +632,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     paintCooldown(
       dodge,
       Math.max(0, world.player.dodgeReadyTick - ctx.tick),
-      DODGE.cooldownTicks
+      dodgeTotal()
     );
 
     const view = world.skillSlots();

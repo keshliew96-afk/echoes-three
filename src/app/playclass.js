@@ -19,6 +19,7 @@ import { emptySnapshot } from '../core/intents.js';
 import { frameFromSnapshot, seatInputOf } from '../sim/netseats.js';
 import { SKILLS } from '../sim/skills.js';
 import { SEAT_CLASSES } from '../net/seats.js';
+import { dodgeCooldownTicks } from '../sim/relics.js';
 
 export const PLAY_CLASS_KEY = 'gameplay.playClass';
 export const PLAY_CLASSES = SEAT_CLASSES;
@@ -89,7 +90,12 @@ export function createPlayClass({ world, registry, settings, scene, sampleIntent
       skillSlots: () => slots(),
       dodge: () => {
         const e = seatEntity(s);
-        return e ? { remaining: Math.max(0, (e.dodgeReadyTick || 0) - world.tick), total: 72 } : null;
+        if (!e) return null;
+        // RELICS (Ash Feather): the ring's full length follows the relics.
+        const R = typeof world.runSystem === 'function' ? world.runSystem() : null;
+        const rl = R && typeof R.relics === 'function' ? R.relics() : null;
+        const total = dodgeCooldownTicks(72, rl ? rl.owned.map((o) => o.id) : null);
+        return { remaining: Math.max(0, (e.dodgeReadyTick || 0) - world.tick), total };
       },
     };
     world.followSeat = (alpha) => {

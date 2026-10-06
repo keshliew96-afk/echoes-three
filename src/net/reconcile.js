@@ -36,7 +36,7 @@ const MAX_CORRECTION_PER_FRAME = 0.1;
 // (sim/allycast.js seatDisplacement: own position, own aim at the press, the
 // resolved skill, the walls; never a hostile position), started on the
 // press frame and stepped per input frame exactly like the dodge.
-export function createOwnSeat({ seat, kit = null }) {
+export function createOwnSeat({ seat, kit = null, dodgeCd = () => HUMAN_DODGE.cooldownTicks }) {
   const classId = SEAT_CLASSES[seat];
   const baseSpeed = seat === 0 ? HEALER_MOVE_SPEED : ALLY_CLASSES[classId] ? ALLY_CLASSES[classId].moveSpeed : 2.4;
   let body = null;
@@ -159,8 +159,10 @@ export function createOwnSeat({ seat, kit = null }) {
       const mv = si.moves[si.moves.length - 1];
       b.dashVel = dodgeVelocity(b, mv, si.aim, { x: b.faceX, z: b.faceZ });
       b.dashTicksLeft = HUMAN_DODGE.durationTicks;
-      b.dodgeReadyTick = t + HUMAN_DODGE.cooldownTicks;
-      b.dodgeSeq = si.seq + HUMAN_DODGE.cooldownTicks;
+      // RELICS (Ash Feather): the same cooldown the host applies.
+      const cd = dodgeCd();
+      b.dodgeReadyTick = t + cd;
+      b.dodgeSeq = si.seq + cd;
       dodged = true;
     }
     // PARTY: then the kit presses (a same-frame dodge suppresses them there).

@@ -103,6 +103,15 @@ function weightedTake(stream, pool) {
   return pool.splice(k, 1)[0];
 }
 
+// Ash Feather: the dodge cooldown for a set of owned relic ids (the sim's
+// mods.dodgeCdMul() as a pure function, for the guest's predictors and the
+// HUD rings, which only see the replicated run view).
+export function dodgeCooldownTicks(base, ownedIds) {
+  const ids = Array.isArray(ownedIds) ? ownedIds : [];
+  const add = ids.reduce((s, id) => s + ((RELICS[id] && RELICS[id].dodgeCd) || 0), 0);
+  return add ? Math.round(base * Math.max(0.2, 1 + add)) : base;
+}
+
 // The relic stream's seed: derived from the run SEED with no gameplay draw.
 export function relicSeed(seed) {
   let h = ((seed >>> 0) ^ 0x52454c43) >>> 0; // 'RELC'

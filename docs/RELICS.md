@@ -47,7 +47,7 @@ pays 20 Glint instead.
 | Last Light | legendary | Once per room, each member who would fall stays at 1 HP |
 | Glass Heart | legendary | Party damage +35%, damage taken +20% |
 | Ashen Crown | legendary | +8% party damage per curse taken this run (max +40%) |
-| Ash Feather | common | Dodges recover 25% faster (72 → 54 ticks) |
+| Ash Feather | common | Dodges recover 25% faster (72 → 54 ticks); a network guest's dodge prediction and every dodge ring use the same cooldown |
 | Spore Sac | rare | Party kills leave no death hazard (a Rotcap's spore burst) and puff a spore ring (r 1.8) that slows enemies 35% for 1.5 s |
 
 ## Curses (6 room curses, 4 major)
