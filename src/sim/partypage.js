@@ -137,6 +137,13 @@ export function createPartyPages(ctx) {
     // migration) decides like any AI seat.
     if (!reward.type) {
       c.decided = false; // the Continue press still commits the page
+    } else if (aiHeld(0) && party.mode() !== 'manual') {
+      // v0.5.227 (Kesh: "for skill and node selection ... auto select by AI
+      // like other AI control class"): a Healer the player does not control
+      // (class select) opens decided, like the other AI seats' cards.
+      c.decided = true;
+      c.choice = c.suggest.choice;
+      c.by = 'ai';
     }
     return c;
   }

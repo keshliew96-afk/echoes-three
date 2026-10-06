@@ -35,6 +35,12 @@ const DODGE_LEAD_TICKS = 30; // dodge a covering telegraph this close to resolvi
 const REVIVE_SAFE_U = 2.0; // no hostile this close to the body before we channel
 const DESPERATE_START = 0.6; // with <= 1 ally up: start a channel under threat at >= 60% HP
 const DESPERATE_HOLD = 0.3; //   ...and hold it (no dodge) while HP stays above 30%
+// v0.5.227 — the AI Healer under a player on another class (`leader`): Kesh
+// saw it "only know basic attack". It now heals anyone below 90% and fires
+// each ready damage skill at the nearest foe that skill reaches, the way the
+// AI-held allies spend their kits. The plain autopilot (harness runs, the
+// act runner) keeps the 70% rule and its single target.
+const LEADER_HEAL_BELOW = 0.9;
 const DEFAULT_CFG = Object.freeze({ seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto' });
 
 const d2 = (ax, az, bx, bz) => (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
@@ -347,7 +353,7 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       if (!needy || f < needy.f || (f === needy.f && m.partyIndex < needy.m.partyIndex)) needy = { m, f };
     }
     const view = skills.slotsView();
-    const healing = !!(needy && needy.f < HEAL_BELOW);
+    const healing = !!(needy && needy.f < (cfg.leader ? LEADER_HEAL_BELOW : HEAL_BELOW));
     const aimHeals = healing && needy.m.id !== player.id;
     const pressed = new Set();
     const press = (i) => {
@@ -368,6 +374,7 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       }
       if (aimHeals) s.aim = { x: needy.m.x, z: needy.m.z };
     }
+    const healPresses = pressed.size;
     if (!aimHeals && target) {
       s.aim = { x: target.e.x, z: target.e.z };
       for (let i = 0; i < nSlots; i++) {
@@ -382,6 +389,26 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       }
       // 5. Basic attack the target in range (only while aimed at it).
       if (target.d <= BASIC_RANGE) s.basicAttackHeld = true;
+    }
+    // Leader: a ready damage skill the target is out of reach for goes to the
+    // nearest foe it does reach (one aim per tick: the first such foe).
+    if (cfg.leader && !aimHeals && foes.length > 0 && pressed.size === healPresses) {
+      let alt = null;
+      for (let i = 0; i < nSlots; i++) {
+        const sl = view[i];
+        if (!sl || sl.passive || sl.remainingTicks > 0 || pressed.has(i)) continue;
+        const def = SKILLS[sl.id];
+        if (def.archetype !== 'damage' || def.shape === 'nova') continue;
+        const reach = def.range ?? BASIC_RANGE;
+        const f = alt ? (Math.hypot(alt.x - player.x, alt.z - player.z) <= reach ? alt : null) : nearest(foes.filter((e) => Math.hypot(e.x - player.x, e.z - player.z) <= reach), player.x, player.z)?.e ?? null;
+        if (!f) continue;
+        alt = f;
+        press(i);
+      }
+      if (alt && !(target && target.e === alt)) {
+        s.aim = { x: alt.x, z: alt.z };
+        s.basicAttackHeld = Math.hypot(alt.x - player.x, alt.z - player.z) <= BASIC_RANGE;
+      }
     }
     return s;
   }
