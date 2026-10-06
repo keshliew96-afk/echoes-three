@@ -12,6 +12,9 @@
 // settings info panel shows for the focused row), `note` (the one-line status
 // printed under the row).
 // Styling lives in src/app/style.js (ap- prefix). No colour literals here.
+// Callers pass translated text; only the kit's own fixed words go through t().
+
+import { t } from '../i18n/index.js';
 
 function h(tag, cls, text) {
   const n = document.createElement(tag);
@@ -137,7 +140,7 @@ export function slider({
 }
 
 // toggle({ label, value=false, onChange, onLabel='On', offLabel='Off', note, help, id })
-export function toggle({ label, value = false, onChange, onLabel = 'On', offLabel = 'Off', note = '', help = '', id = '' }) {
+export function toggle({ label, value = false, onChange, onLabel = t('On'), offLabel = t('Off'), note = '', help = '', id = '' }) {
   const { el, lab, ctl, noteEl } = rowShell('ap-toggle', { label, help, id });
   const btn = h('button', 'ap-switch');
   btn.type = 'button';
@@ -199,8 +202,8 @@ export function select({ label, options, value, onChange, note = '', help = '', 
   const cur = h('button', 'ap-choice');
   const next = h('button', 'ap-step ap-next', '›');
   for (const b of [prev, cur, next]) b.type = 'button';
-  prev.setAttribute('aria-label', `${label}: previous`);
-  next.setAttribute('aria-label', `${label}: next`);
+  prev.setAttribute('aria-label', t('{label}: previous', { label }));
+  next.setAttribute('aria-label', t('{label}: next', { label }));
   if (id) cur.id = id;
   cur.setAttribute('data-nav', '');
   cur.setAttribute('aria-label', label);

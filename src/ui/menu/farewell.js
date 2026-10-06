@@ -5,6 +5,7 @@
 // click, and Esc / B) goes back to the title with every setting intact.
 import { service } from '../../app/registry.js';
 import { createHints } from './hints.js';
+import { t } from '../../i18n/index.js';
 
 export function createFarewellScreen(ctx) {
   const { app } = ctx;
@@ -14,7 +15,7 @@ export function createFarewellScreen(ctx) {
   el.innerHTML = `
     <div class="ap-dlg ap-plate">
       <div class="ap-logo"><div class="ap-logo-word">ECHOES</div><div class="ap-logo-rule">◆</div></div>
-      <div class="ap-dlg-title">Thanks for playing Echoes.</div>
+      <div class="ap-dlg-title">${t('Thanks for playing Echoes.')}</div>
       <div class="ap-dlg-body"></div>
       <div class="ap-dlg-btns" style="justify-content:center"></div>
     </div>`;
@@ -24,12 +25,12 @@ export function createFarewellScreen(ctx) {
   ret.type = 'button';
   ret.className = 'ap-btn ap-primary';
   ret.id = 'ap-farewell-return';
-  ret.textContent = 'Return to Title';
+  ret.textContent = t('Return to Title');
   ret.setAttribute('data-nav', '');
   ret.setAttribute('data-nav-default', '');
   ret.addEventListener('click', () => app.returnToTitle());
   btns.appendChild(ret);
-  const hints = createHints(app, [['confirm', 'Return to Title']]);
+  const hints = createHints(app, [['confirm', t('Return to Title')]]);
   hints.el.style.justifyContent = 'center';
   el.querySelector('.ap-dlg').appendChild(hints.el);
 
@@ -38,8 +39,9 @@ export function createFarewellScreen(ctx) {
     blocking: true,
     layer: 'farewell',
     onOpen() {
-      const saved = service('save') ? 'Your progress is saved.' : 'Your settings are saved.';
-      body.textContent = `Your browser keeps this tab open — close it whenever you like. ${saved}`;
+      body.textContent = service('save')
+        ? t('Your browser keeps this tab open — close it whenever you like. Your progress is saved.')
+        : t('Your browser keeps this tab open — close it whenever you like. Your settings are saved.');
     },
     back() {
       app.returnToTitle();

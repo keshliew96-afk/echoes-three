@@ -23,45 +23,62 @@ import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { createHints } from './hints.js';
 import { createRecordsScreen } from './records.js';
-import { transitWhere } from '../../save/describe.js';
+import { transitWhere, slotDisplayName } from '../../save/describe.js';
+import { t, tn } from '../../i18n/index.js';
 import { iconEl } from '../hud/icons.js';
 import { SKILLS } from '../../sim/skills.js';
 import { SKILL_SLOTS, SOCKETS_PER_SKILL } from '../../core/constants.js';
 
+// Player-facing lines are getters: looked up in the current language when read.
 const SAVE_ERRORS = {
-  quota: 'Not enough browser storage — delete a slot or export saves to files.',
-  unavailable: "This browser isn't letting Echoes store saves (private mode?). Export to a file instead.",
-  not_allowed: "You can't save right now.",
-  busy: 'Another save is still being written — try again in a moment.',
-  missing: 'That slot is empty.',
-  corrupt: 'That save file is damaged.',
-  version: 'That save was made by a newer version of Echoes — this build cannot read it.',
-  hash: 'That save failed its integrity check — it was changed or damaged.',
-  full: 'Every save slot is in use — delete one first, or pick a slot to replace.',
+  get quota() { return t('Not enough browser storage — delete a slot or export saves to files.'); },
+  get unavailable() { return t("This browser isn't letting Echoes store saves (private mode?). Export to a file instead."); },
+  get not_allowed() { return t("You can't save right now."); },
+  get busy() { return t('Another save is still being written — try again in a moment.'); },
+  get missing() { return t('That slot is empty.'); },
+  get corrupt() { return t('That save file is damaged.'); },
+  get version() { return t('That save was made by a newer version of Echoes — this build cannot read it.'); },
+  get hash() { return t('That save failed its integrity check — it was changed or damaged.'); },
+  get full() { return t('Every save slot is in use — delete one first, or pick a slot to replace.'); },
 };
 
-const ROOM_LABEL = { kill_all: 'Hunt', defend: 'Defend', shop: 'Shop', boss: 'The Hollow Stag' };
-const PHASE_LABEL = {
-  reward: 'at the reward',
-  path: 'choosing a path',
-  shop: 'at the shop',
-  victory: 'victory card',
-  defeat: 'defeat card',
-  fade: 'between rooms',
+const ROOM_LABEL = {
+  get kill_all() { return t('Hunt'); },
+  get defend() { return t('Defend'); },
+  get shop() { return t('Shop'); },
+  get boss() { return t('The Hollow Stag'); },
 };
-const CLASS_NAME = { healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer' };
+const PHASE_LABEL = {
+  get reward() { return t('at the reward'); },
+  get path() { return t('choosing a path'); },
+  get shop() { return t('at the shop'); },
+  get victory() { return t('victory card'); },
+  get defeat() { return t('defeat card'); },
+  get fade() { return t('between rooms'); },
+};
+const CHALLENGE_NAME = {
+  get relaxed() { return t('Relaxed'); },
+  get standard() { return t('Standard'); },
+  get harrowing() { return t('Harrowing'); },
+};
+const CLASS_NAME = {
+  get healer() { return t('Healer'); },
+  get tank() { return t('Tank'); },
+  get swordsman() { return t('Swordsman'); },
+  get archer() { return t('Archer'); },
+};
 
 // A player-facing reason for a damaged file (the raw detail stays in the
 // debug API: __echoes.save.list()[i].detail).
 export function friendlyDetail(m) {
   const d = String((m && m.detail) || '');
-  if (m && m.error === 'hash') return "Its contents changed after it was saved (the checksum doesn't match).";
-  if (/not valid JSON|empty file/.test(d)) return 'The file is cut short or garbled — the write may have been interrupted.';
-  if (/schema missing/.test(d)) return "The file's version stamp is missing.";
-  if (/required keys missing/.test(d)) return 'Parts of the game state are missing from the file.';
-  if (/not an Echoes save/.test(d)) return "This isn't an Echoes save file.";
-  if (/not plain data/.test(d)) return 'The file holds data Echoes cannot read.';
-  return 'The file could not be read.';
+  if (m && m.error === 'hash') return t("Its contents changed after it was saved (the checksum doesn't match).");
+  if (/not valid JSON|empty file/.test(d)) return t('The file is cut short or garbled — the write may have been interrupted.');
+  if (/schema missing/.test(d)) return t("The file's version stamp is missing.");
+  if (/required keys missing/.test(d)) return t('Parts of the game state are missing from the file.');
+  if (/not an Echoes save/.test(d)) return t("This isn't an Echoes save file.");
+  if (/not plain data/.test(d)) return t('The file holds data Echoes cannot read.');
+  return t('The file could not be read.');
 }
 
 // --------------------------------------------------------------- format --
@@ -70,23 +87,23 @@ export function fmtPlaytime(sec) {
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const ss = s % 60;
-  if (h > 0) return `${h} h ${String(m).padStart(2, '0')} min`;
-  if (m > 0) return `${m} min ${String(ss).padStart(2, '0')} s`;
-  return `${ss} s`;
+  if (h > 0) return t('{h} h {m} min', { h, m: String(m).padStart(2, '0') });
+  if (m > 0) return t('{m} min {s} s', { m, s: String(ss).padStart(2, '0') });
+  return t('{s} s', { s: ss });
 }
 export function fmtAgo(iso) {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return '';
-  const s = Math.max(0, (Date.now() - t) / 1000);
-  if (s < 45) return 'just now';
-  if (s < 3600) return `${Math.max(1, Math.round(s / 60))} min ago`;
-  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
-  return `${Math.round(s / 86400)} d ago`;
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return '';
+  const s = Math.max(0, (Date.now() - ms) / 1000);
+  if (s < 45) return t('just now');
+  if (s < 3600) return t('{n} min ago', { n: Math.max(1, Math.round(s / 60)) });
+  if (s < 86400) return t('{n} h ago', { n: Math.round(s / 3600) });
+  return t('{n} d ago', { n: Math.round(s / 86400) });
 }
 export function fmtDate(iso) {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return '—';
-  return new Date(t).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return '—';
+  return new Date(ms).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 export function whereLine(m) {
   const meta = (m && m.meta) || {};
@@ -95,16 +112,23 @@ export function whereLine(m) {
   // Level-N start ("Setting out — Level II · …"), src/save/describe.js (r3 F2).
   const lv = meta.level ?? meta.act ?? null;
   const roman = lv ? ['', 'I', 'II', 'III', 'IV', 'V'][lv] ?? String(lv) : null;
-  if (meta.mode === 'run' && meta.phase === 'transit') return transitWhere(meta) || `Level ${roman ?? 'I'} — between levels`;
+  if (meta.mode === 'run' && meta.phase === 'transit') return transitWhere(meta) || t('Level {level} — between levels', { level: roman ?? 'I' });
   if (meta.mode === 'run' && meta.room) {
-    const act = roman ? `Level ${roman} · ${meta.levelName || meta.actName || ''}`.replace(/ · $/, '') : meta.actName || `Act ${meta.act || 1}`;
-    const kind = meta.roomMode === 'boss' ? bossNameFor(meta.act ?? lv, meta.seed) : ROOM_LABEL[meta.roomMode] || '';
+    const lname = meta.levelName || meta.actName || '';
+    const act = roman
+      ? lname
+        ? t('Level {level} · {name}', { level: roman, name: t(lname) })
+        : t('Level {level}', { level: roman })
+      : meta.actName
+        ? t(meta.actName)
+        : t('Act {act}', { act: meta.act || 1 });
+    const kind = meta.roomMode === 'boss' ? t(bossNameFor(meta.act ?? lv, meta.seed)) : ROOM_LABEL[meta.roomMode] || '';
     const phase = PHASE_LABEL[meta.phase] ? ` — ${PHASE_LABEL[meta.phase]}` : '';
-    return `${act} · Room ${meta.room} of 8${kind ? ` · ${kind}` : ''}${phase}`;
+    return `${t('{where} · Room {room} of 8', { where: act, room: meta.room })}${kind ? ` · ${kind}` : ''}${phase}`;
   }
-  if (meta.phase === 'victory' || meta.phase === 'defeat') return `Camp — ${PHASE_LABEL[meta.phase]}`;
-  if (meta.mode === 'run') return 'In the arena';
-  return 'Camp — at the hearth';
+  if (meta.phase === 'victory' || meta.phase === 'defeat') return t('Camp — {phase}', { phase: PHASE_LABEL[meta.phase] });
+  if (meta.mode === 'run') return t('In the arena');
+  return t('Camp — at the hearth');
 }
 
 // The four characters of a save, in seat order (gauntlet r5 SAVE5-F2): the
@@ -143,14 +167,15 @@ export function partyLines(meta) {
 // fix-M2-r6 (SAVE6-F1): a skill this version doesn't have (a file from
 // another version) is named as such — loading removes it (save/content.js).
 const skillName = (id) =>
-  (id && Object.prototype.hasOwnProperty.call(SKILLS, id) && SKILLS[id].name) || (id ? `${String(id).replace(/_/g, ' ')} (not in this version)` : 'empty slot');
+  (id && Object.prototype.hasOwnProperty.call(SKILLS, id) && t(SKILLS[id].name)) ||
+  (id ? t('{skill} (not in this version)', { skill: String(id).replace(/_/g, ' ') }) : t('empty slot'));
 // "Tank 150/150 HP · Taunting Roar, … · 32/32 nodes · 24 Glint" (row / panel labels).
 export function partyLineText(p) {
   const bits = [p.name];
-  if (p.hp !== null && p.maxHp) bits.push(`${Math.round(p.hp)}/${p.maxHp} HP`);
-  if (p.skills) bits.push(p.skills.filter(Boolean).map(skillName).join(', ') || 'no skills');
-  if (p.filled !== null) bits.push(`${p.filled}/${p.sockets} nodes`);
-  if (p.purse !== null) bits.push(`${p.purse} Glint`);
+  if (p.hp !== null && p.maxHp) bits.push(t('{hp}/{maxHp} HP', { hp: Math.round(p.hp), maxHp: p.maxHp }));
+  if (p.skills) bits.push(p.skills.filter(Boolean).map(skillName).join(', ') || t('no skills'));
+  if (p.filled !== null) bits.push(t('{filled}/{sockets} nodes', { filled: p.filled, sockets: p.sockets }));
+  if (p.purse !== null) bits.push(t('{purse} Glint', { purse: p.purse }));
   return bits.join(' · ');
 }
 
@@ -314,17 +339,17 @@ function installSaveStyle() {
 
 // The party table of the detail panel: Party | HP | Skills | Nodes | Glint.
 function partyTable(lines) {
-  const t = document.createElement('table');
-  t.className = 'sv-party';
-  t.setAttribute('aria-label', 'Party builds');
+  const tbl = document.createElement('table');
+  tbl.className = 'sv-party';
+  tbl.setAttribute('aria-label', t('Party builds'));
   const head = document.createElement('thead');
   const hr = document.createElement('tr');
   for (const [label, num] of [
-    ['Party', false],
-    ['HP', true],
-    ['Skills', 'sv-skc'],
-    ['Nodes', true],
-    ['Glint', true],
+    [t('Party'), false],
+    [t('HP'), true],
+    [t('Skills'), 'sv-skc'],
+    [t('Nodes'), true],
+    [t('Glint'), true],
   ]) {
     const th = document.createElement('th');
     th.scope = 'col';
@@ -333,7 +358,7 @@ function partyTable(lines) {
     hr.appendChild(th);
   }
   head.appendChild(hr);
-  t.appendChild(head);
+  tbl.appendChild(head);
   const body = document.createElement('tbody');
   for (const p of lines) {
     const tr = document.createElement('tr');
@@ -352,7 +377,7 @@ function partyTable(lines) {
       const wrap = document.createElement('span');
       wrap.className = 'sv-sks';
       wrap.setAttribute('role', 'img');
-      wrap.setAttribute('aria-label', p.skills.filter(Boolean).map(skillName).join(', ') || 'no skills');
+      wrap.setAttribute('aria-label', p.skills.filter(Boolean).map(skillName).join(', ') || t('no skills'));
       for (const id of p.skills) {
         const s = document.createElement('span');
         s.className = id ? 'sv-sk' : 'sv-sk sv-none';
@@ -374,8 +399,8 @@ function partyTable(lines) {
     tr.append(th, hp, sk, nodes, gl);
     body.appendChild(tr);
   }
-  t.appendChild(body);
-  return t;
+  tbl.appendChild(body);
+  return tbl;
 }
 
 // The cut-edge chevron of a scroll box that has more below its fold.
@@ -409,7 +434,7 @@ export function createSavesScreen(ctx) {
     <div class="ap-veil"></div>
     <div class="sv-panel ap-plate">
       <div class="sv-head">
-        <h2 class="ap-h2 sv-title">Load Game</h2>
+        <h2 class="ap-h2 sv-title">${t('Load Game')}</h2>
         <div class="sv-modes"></div>
         <div class="sv-sub"></div>
         <div class="sv-usage"></div>
@@ -428,10 +453,10 @@ export function createSavesScreen(ctx) {
   const detailEl = el.querySelector('.sv-detail');
   const footEl = el.querySelector('.sv-foot');
   const hints = createHints(app, [
-    ['move', 'Select'],
-    ['confirm', 'Choose'],
-    ['secondary', 'Delete'],
-    ['back', 'Back'],
+    ['move', t('Select')],
+    ['confirm', t('Choose')],
+    ['secondary', t('Delete')],
+    ['back', t('Back')],
   ]);
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
@@ -439,8 +464,8 @@ export function createSavesScreen(ctx) {
   fileInput.style.display = 'none';
   fileInput.id = 'sv-import-file';
   el.appendChild(fileInput);
-  const importBtn = mkBtn('Import…', 'sv-import', '', () => fileInput.click());
-  const backBtn = mkBtn('Back', 'sv-back', 'ap-primary', () => close());
+  const importBtn = mkBtn(t('Import…'), 'sv-import', '', () => fileInput.click());
+  const backBtn = mkBtn(t('Back'), 'sv-back', 'ap-primary', () => close());
   footEl.append(hints.el, importBtn, backBtn);
 
   let mode = 'load';
@@ -589,7 +614,7 @@ export function createSavesScreen(ctx) {
   }
   function defaultName(id) {
     const n = Number(String(id).split('-')[1]);
-    return Number.isFinite(n) ? `Slot ${n}` : id;
+    return Number.isFinite(n) ? `Slot ${n}` : id; // shown through slotDisplayName
   }
 
   function thumbEl(id, big = false) {
@@ -607,8 +632,8 @@ export function createSavesScreen(ctx) {
       // The save is written; its picture is still being encoded (r3 F3) —
       // swapped in by the onThumb listener when it lands.
       box.classList.add('sv-wait');
-      box.textContent = big ? 'Picture on its way…' : '…';
-    } else box.textContent = big ? 'No picture' : '◇';
+      box.textContent = big ? t('Picture on its way…') : '…';
+    } else box.textContent = big ? t('No picture') : '◇';
     box.dataset.thumbFor = id || '';
     return box;
   }
@@ -630,10 +655,10 @@ export function createSavesScreen(ctx) {
   }
 
   function tag(text, bad = false) {
-    const t = document.createElement('span');
-    t.className = bad ? 'sv-tag sv-bad' : 'sv-tag';
-    t.textContent = text;
-    return t;
+    const g = document.createElement('span');
+    g.className = bad ? 'sv-tag sv-bad' : 'sv-tag';
+    g.textContent = text;
+    return g;
   }
 
   function rowFor(m) {
@@ -649,25 +674,25 @@ export function createSavesScreen(ctx) {
     txt.className = 'sv-txt';
     const name = document.createElement('div');
     name.className = 'sv-name';
-    name.textContent = m.empty ? `${m.name} — empty` : m.name;
-    if (m.kind === 'auto') name.appendChild(tag('Auto'));
-    if (m.kind === 'quick') name.appendChild(tag('Quick'));
-    if (m.status === 'damaged') name.appendChild(tag('Damaged', true));
-    if (m.status === 'newer') name.appendChild(tag('Newer version', true));
+    name.textContent = m.empty ? t('{name} — empty', { name: slotDisplayName(m.name) }) : slotDisplayName(m.name);
+    if (m.kind === 'auto') name.appendChild(tag(t('Auto')));
+    if (m.kind === 'quick') name.appendChild(tag(t('Quick')));
+    if (m.status === 'damaged') name.appendChild(tag(t('Damaged'), true));
+    if (m.status === 'newer') name.appendChild(tag(t('Newer version'), true));
     txt.appendChild(name);
     const l1 = document.createElement('div');
     l1.className = 'sv-line';
     const l2 = document.createElement('div');
     l2.className = 'sv-line sv-dim';
     if (m.empty) {
-      l1.textContent = mode === 'save' ? 'Save your game here' : '';
+      l1.textContent = mode === 'save' ? t('Save your game here') : '';
       l2.textContent = '';
     } else if (m.status !== 'ok') {
-      l1.textContent = m.status === 'newer' ? 'Made by a newer version of Echoes' : 'This file could not be read';
-      l2.textContent = m.backup ? `Backup from ${fmtDate(m.backup.savedAt)} available` : m.savedAt ? fmtDate(m.savedAt) : '';
+      l1.textContent = m.status === 'newer' ? t('Made by a newer version of Echoes') : t('This file could not be read');
+      l2.textContent = m.backup ? t('Backup from {date} available', { date: fmtDate(m.backup.savedAt) }) : m.savedAt ? fmtDate(m.savedAt) : '';
     } else {
       l1.textContent = whereLine(m);
-      l2.textContent = `${fmtDate(m.savedAt)} · ${fmtAgo(m.savedAt)} · Playtime ${fmtPlaytime(m.meta.playtimeSec)}`;
+      l2.textContent = t('{date} · {ago} · Playtime {time}', { date: fmtDate(m.savedAt), ago: fmtAgo(m.savedAt), time: fmtPlaytime(m.meta.playtimeSec) });
     }
     txt.append(l1, l2);
     b.appendChild(txt);
@@ -684,7 +709,7 @@ export function createSavesScreen(ctx) {
     if (savingId === m.id) {
       b.classList.add('sv-saving');
       b.setAttribute('aria-busy', 'true');
-      l1.textContent = 'Saving…';
+      l1.textContent = t('Saving…');
     }
     const party = !m.empty && m.status === 'ok' ? partyLines(m.meta).map(partyLineText).join('. ') : '';
     b.setAttribute('aria-label', `${name.textContent}. ${l1.textContent}. ${l2.textContent}${party ? `. ${party}` : ''}`);
@@ -702,28 +727,28 @@ export function createSavesScreen(ctx) {
     if (!m) {
       const e = document.createElement('div');
       e.className = 'sv-msg sv-dim';
-      e.textContent = mode === 'save' ? 'Pick a slot to save into.' : 'Pick a save to see it here.';
+      e.textContent = mode === 'save' ? t('Pick a slot to save into.') : t('Pick a save to see it here.');
       detailEl.appendChild(e);
       return;
     }
     detailEl.appendChild(thumbEl(m.empty ? null : m.id, true));
     const nm = document.createElement('div');
     nm.className = 'sv-dname';
-    nm.textContent = m.empty ? `${m.name} — empty` : m.name;
+    nm.textContent = m.empty ? t('{name} — empty', { name: slotDisplayName(m.name) }) : slotDisplayName(m.name);
     detailEl.appendChild(nm);
     if (m.empty) {
-      const t = document.createElement('div');
-      t.className = 'sv-msg';
-      t.textContent = 'An empty slot. Saving here keeps your current camp or run exactly as it is now.';
-      detailEl.appendChild(t);
+      const msg = document.createElement('div');
+      msg.className = 'sv-msg';
+      msg.textContent = t('An empty slot. Saving here keeps your current camp or run exactly as it is now.');
+      detailEl.appendChild(msg);
     } else if (m.status !== 'ok') {
-      const t = document.createElement('div');
-      t.className = 'sv-msg';
+      const msg = document.createElement('div');
+      msg.className = 'sv-msg';
       const why = m.status === 'newer' ? SAVE_ERRORS.version : `${SAVE_ERRORS[m.error] || SAVE_ERRORS.corrupt}\n${friendlyDetail(m)}`;
-      t.textContent = m.backup
-        ? `${why}\n\nA backup from ${fmtDate(m.backup.savedAt)} (${whereLine(m.backup)}) is intact.`
-        : `${why}\n\nExport the raw file to keep it, or delete the slot.`;
-      detailEl.appendChild(t);
+      msg.textContent = m.backup
+        ? `${why}\n\n${t('A backup from {date} ({where}) is intact.', { date: fmtDate(m.backup.savedAt), where: whereLine(m.backup) })}`
+        : `${why}\n\n${t('Export the raw file to keep it, or delete the slot.')}`;
+      detailEl.appendChild(msg);
     } else {
       const meta = m.meta || {};
       const box = document.createElement('div');
@@ -738,19 +763,19 @@ export function createSavesScreen(ctx) {
         if (wrap) dd.className = 'sv-wrap';
         dl.append(dt, dd);
       };
-      add('Where', whereLine(m), true);
-      add('Saved', `${fmtDate(m.savedAt)} · ${fmtAgo(m.savedAt)}`);
-      const ch = meta.challenge ? meta.challenge[0].toUpperCase() + meta.challenge.slice(1) : 'Standard';
-      add('Played', `${fmtPlaytime(meta.playtimeSec)} · ${ch} challenge`);
+      add(t('Where'), whereLine(m), true);
+      add(t('Saved'), `${fmtDate(m.savedAt)} · ${fmtAgo(m.savedAt)}`);
+      const ch = meta.challenge ? CHALLENGE_NAME[meta.challenge] || meta.challenge[0].toUpperCase() + meta.challenge.slice(1) : CHALLENGE_NAME.standard;
+      add(t('Played'), t('{time} · {challenge} challenge', { time: fmtPlaytime(meta.playtimeSec), challenge: ch }));
       box.appendChild(dl);
       const lines = partyLines(meta);
       if (lines.length) box.appendChild(partyTable(lines));
       const dl2 = document.createElement('dl');
       dl2.className = 'sv-dl';
       const dt = document.createElement('dt');
-      dt.textContent = 'File';
+      dt.textContent = t('File');
       const dd = document.createElement('dd');
-      dd.textContent = `${Math.max(1, Math.round((m.bytes || 0) / 1024))} KB · v${m.game || '?'}${meta.network ? ' · online (host)' : ''}`;
+      dd.textContent = `${t('{kb} KB', { kb: Math.max(1, Math.round((m.bytes || 0) / 1024)) })} · v${m.game || '?'}${meta.network ? ` · ${t('online (host)')}` : ''}`;
       dl2.append(dt, dd);
       box.appendChild(dl2);
       detailEl.appendChild(box);
@@ -760,19 +785,19 @@ export function createSavesScreen(ctx) {
     acts.className = 'sv-acts';
     const can = save() ? save().canSave() : { ok: false };
     if (mode === 'save') {
-      const b = mkBtn(savingId === m.id ? 'Saving…' : m.empty ? 'Save here' : 'Overwrite', 'sv-act-save', 'ap-primary', () => primary(m.id));
+      const b = mkBtn(savingId === m.id ? t('Saving…') : m.empty ? t('Save here') : t('Overwrite'), 'sv-act-save', 'ap-primary', () => primary(m.id));
       if (!can.ok) {
         b.disabled = true;
         b.title = can.reason || '';
       }
       acts.appendChild(b);
     } else if (!m.empty && m.status === 'ok') {
-      acts.appendChild(mkBtn('Load', 'sv-act-load', 'ap-primary', () => primary(m.id)));
+      acts.appendChild(mkBtn(t('Load'), 'sv-act-load', 'ap-primary', () => primary(m.id)));
     }
-    if (!m.empty && m.status !== 'ok' && m.backup) acts.appendChild(mkBtn('Restore backup', 'sv-act-restore', 'ap-primary', () => restoreBackup(m.id)));
-    if (!m.empty && m.status === 'ok') acts.appendChild(mkBtn('Rename', 'sv-act-rename', '', () => rename(m.id)));
-    if (!m.empty) acts.appendChild(mkBtn('Export', 'sv-act-export', '', () => exportSlot(m.id)));
-    if (!m.empty) acts.appendChild(mkBtn('Delete', 'sv-act-delete', 'ap-danger', () => remove(m.id)));
+    if (!m.empty && m.status !== 'ok' && m.backup) acts.appendChild(mkBtn(t('Restore backup'), 'sv-act-restore', 'ap-primary', () => restoreBackup(m.id)));
+    if (!m.empty && m.status === 'ok') acts.appendChild(mkBtn(t('Rename'), 'sv-act-rename', '', () => rename(m.id)));
+    if (!m.empty) acts.appendChild(mkBtn(t('Export'), 'sv-act-export', '', () => exportSlot(m.id)));
+    if (!m.empty) acts.appendChild(mkBtn(t('Delete'), 'sv-act-delete', 'ap-danger', () => remove(m.id)));
     detailEl.appendChild(acts);
     if (mode === 'save' && !can.ok && can.reason) {
       const n = document.createElement('div');
@@ -784,36 +809,36 @@ export function createSavesScreen(ctx) {
   }
 
   function renderHead() {
-    titleEl.textContent = mode === 'save' ? 'Save Game' : 'Load Game';
+    titleEl.textContent = mode === 'save' ? t('Save Game') : t('Load Game');
     el.setAttribute('aria-label', titleEl.textContent);
     modesEl.textContent = '';
     if (inGame()) {
       for (const [m, label] of [
-        ['save', 'Save'],
-        ['load', 'Load'],
+        ['save', t('Save')],
+        ['load', t('Load')],
       ]) {
-        const t = document.createElement('button');
-        t.type = 'button';
-        t.className = mode === m ? 'ap-tab ap-active' : 'ap-tab';
-        t.id = `sv-mode-${m}`;
-        t.textContent = label;
-        t.setAttribute('data-nav', '');
-        t.addEventListener('click', () => setMode(m));
-        modesEl.appendChild(t);
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = mode === m ? 'ap-tab ap-active' : 'ap-tab';
+        tab.id = `sv-mode-${m}`;
+        tab.textContent = label;
+        tab.setAttribute('data-nav', '');
+        tab.addEventListener('click', () => setMode(m));
+        modesEl.appendChild(tab);
       }
     }
     const s = save();
     const n = s ? s.list().length : 0;
     subEl.textContent =
       mode === 'save'
-        ? 'Choose a slot — autosaves and the quicksave (F5) are kept separately'
+        ? t('Choose a slot — autosaves and the quicksave (F5) are kept separately')
         : n
-          ? `${n} save${n === 1 ? '' : 's'} · newest first`
+          ? tn(n, '{n} save · newest first', '{n} saves · newest first')
           : '';
     if (s) {
       try {
         const u = s.debug.usage();
-        usageEl.textContent = u.backend === 'memory' ? "Saves last for this visit only (browser storage is off)" : `Browser storage ${Math.max(1, Math.round(u.total / 1024))} KB used`;
+        usageEl.textContent = u.backend === 'memory' ? t('Saves last for this visit only (browser storage is off)') : t('Browser storage {kb} KB used', { kb: Math.max(1, Math.round(u.total / 1024)) });
       } catch {
         usageEl.textContent = '';
       }
@@ -831,18 +856,19 @@ export function createSavesScreen(ctx) {
       e.className = 'sv-empty';
       e.textContent =
         mode === 'save'
-          ? 'Saving is not available right now.'
-          : 'No saved games yet.\nYour game autosaves at every room and at the camp — or import a save file.';
+          ? t('Saving is not available right now.')
+          : t('No saved games yet.\nYour game autosaves at every room and at the camp — or import a save file.');
       listEl.appendChild(e);
       selectedId = null;
     } else {
       let lastSect = null;
       for (const m of list) {
-        const sect = mode === 'load' ? (m.kind === 'manual' ? 'Your saves' : 'Autosaves & quicksave') : null;
+        // The group id (not its displayed heading) decides where a heading goes.
+        const sect = mode === 'load' ? (m.kind === 'manual' ? 'manual' : 'auto') : null;
         if (sect && sect !== lastSect && list.some((x) => x.kind !== 'manual') && list.some((x) => x.kind === 'manual')) {
           const h = document.createElement('div');
           h.className = 'sv-sect';
-          h.textContent = sect;
+          h.textContent = sect === 'manual' ? t('Your saves') : t('Autosaves & quicksave');
           listEl.appendChild(h);
           lastSect = sect;
         }
@@ -934,11 +960,11 @@ export function createSavesScreen(ctx) {
       r.classList.add('sv-saving');
       r.setAttribute('aria-busy', 'true');
       const l1 = r.querySelector('.sv-line');
-      if (l1) l1.textContent = 'Saving…';
+      if (l1) l1.textContent = t('Saving…');
     }
     const b = detailEl.querySelector('#sv-act-save');
     if (b) {
-      b.textContent = 'Saving…';
+      b.textContent = t('Saving…');
       b.setAttribute('aria-disabled', 'true');
     }
   }
@@ -969,10 +995,10 @@ export function createSavesScreen(ctx) {
       }
       if (!m.empty) {
         const ok = await app.confirm({
-          title: `Overwrite “${m.name}”?`,
-          body: m.status === 'ok' ? `The save from ${fmtDate(m.savedAt)} (${whereLine(m)}) will be replaced.` : 'The damaged file in this slot will be replaced.',
-          confirmLabel: 'Overwrite',
-          cancelLabel: 'Cancel',
+          title: t('Overwrite “{name}”?', { name: slotDisplayName(m.name) }),
+          body: m.status === 'ok' ? t('The save from {date} ({where}) will be replaced.', { date: fmtDate(m.savedAt), where: whereLine(m) }) : t('The damaged file in this slot will be replaced.'),
+          confirmLabel: t('Overwrite'),
+          cancelLabel: t('Cancel'),
           danger: true,
           defaultFocus: 'cancel',
         });
@@ -986,12 +1012,12 @@ export function createSavesScreen(ctx) {
         savingId = null;
       }
       if (r.ok) {
-        toast(`Saved to “${r.meta.name}”`, 'good');
+        toast(t('Saved to “{name}”', { name: slotDisplayName(r.meta.name) }), 'good');
         selectedId = m.id;
         render();
       } else {
         render();
-        toast(r.reason || SAVE_ERRORS[r.error] || "Couldn't save", r.error === 'quota' ? 'error' : 'warn');
+        toast(r.reason || SAVE_ERRORS[r.error] || t("Couldn't save"), r.error === 'quota' ? 'error' : 'warn');
       }
     });
   }
@@ -1000,10 +1026,10 @@ export function createSavesScreen(ctx) {
     return guarded(async () => {
       if (inGame()) {
         const ok = await app.confirm({
-          title: `Load “${m.name}”?`,
-          body: 'Anything since your last save will be lost.',
-          confirmLabel: 'Load',
-          cancelLabel: 'Cancel',
+          title: t('Load “{name}”?', { name: slotDisplayName(m.name) }),
+          body: t('Anything since your last save will be lost.'),
+          confirmLabel: t('Load'),
+          cancelLabel: t('Cancel'),
           danger: false,
           defaultFocus: 'confirm',
         });
@@ -1015,10 +1041,10 @@ export function createSavesScreen(ctx) {
       const why = SAVE_ERRORS[r && r.error] || SAVE_ERRORS.corrupt;
       if (r && r.backup) {
         const ok = await app.confirm({
-          title: 'This save could not be loaded',
-          body: `${why}\nRestore the backup from ${fmtDate(r.backup.savedAt)}?`,
-          confirmLabel: 'Restore backup',
-          cancelLabel: 'Not now',
+          title: t('This save could not be loaded'),
+          body: `${why}\n${t('Restore the backup from {date}?', { date: fmtDate(r.backup.savedAt) })}`,
+          confirmLabel: t('Restore backup'),
+          cancelLabel: t('Not now'),
           defaultFocus: 'confirm',
         });
         if (ok) await restoreBackupNow(m.id);
@@ -1028,8 +1054,8 @@ export function createSavesScreen(ctx) {
 
   async function restoreBackupNow(id) {
     const r = save().restoreBackup(id);
-    if (r.ok) toast('Backup restored — the slot is loadable again', 'good');
-    else toast(SAVE_ERRORS[r.error] || "Couldn't restore the backup", 'error');
+    if (r.ok) toast(t('Backup restored — the slot is loadable again'), 'good');
+    else toast(SAVE_ERRORS[r.error] || t("Couldn't restore the backup"), 'error');
     selectedId = id;
     render();
   }
@@ -1038,10 +1064,13 @@ export function createSavesScreen(ctx) {
     return guarded(async () => {
       const m = entries().find((x) => x.id === id);
       const ok = await app.confirm({
-        title: 'Restore the backup?',
-        body: m && m.backup ? `The damaged file is replaced by the backup from ${fmtDate(m.backup.savedAt)} (${whereLine(m.backup)}).` : 'The damaged file is replaced by its backup.',
-        confirmLabel: 'Restore',
-        cancelLabel: 'Cancel',
+        title: t('Restore the backup?'),
+        body:
+          m && m.backup
+            ? t('The damaged file is replaced by the backup from {date} ({where}).', { date: fmtDate(m.backup.savedAt), where: whereLine(m.backup) })
+            : t('The damaged file is replaced by its backup.'),
+        confirmLabel: t('Restore'),
+        cancelLabel: t('Cancel'),
         defaultFocus: 'confirm',
       });
       if (ok) await restoreBackupNow(id);
@@ -1054,16 +1083,16 @@ export function createSavesScreen(ctx) {
       const m = entries().find((x) => x.id === id);
       if (!m || m.empty) return;
       const ok = await app.confirm({
-        title: `Delete “${m.name}”?`,
-        body: m.status === 'ok' ? `${whereLine(m)} · saved ${fmtDate(m.savedAt)}.\nThis can't be undone.` : "This can't be undone.",
-        confirmLabel: 'Delete',
-        cancelLabel: 'Cancel',
+        title: t('Delete “{name}”?', { name: slotDisplayName(m.name) }),
+        body: m.status === 'ok' ? t("{where} · saved {date}.\nThis can't be undone.", { where: whereLine(m), date: fmtDate(m.savedAt) }) : t("This can't be undone."),
+        confirmLabel: t('Delete'),
+        cancelLabel: t('Cancel'),
         danger: true,
         defaultFocus: 'cancel',
       });
       if (!ok) return;
       const r = save().remove(id);
-      if (r.ok) toast(`Deleted “${m.name}”`, 'info');
+      if (r.ok) toast(t('Deleted “{name}”', { name: slotDisplayName(m.name) }), 'info');
       render();
       if (mode === 'load' && entries().length === 0) manager.refocus();
     });
@@ -1079,16 +1108,16 @@ export function createSavesScreen(ctx) {
       });
       if (name === null || name === undefined || name === m.name) return;
       const r = await save().rename(id, name);
-      if (r.ok) toast(`Renamed to “${r.meta.name}”`, 'good');
-      else toast(SAVE_ERRORS[r.error] || "Couldn't rename", 'warn');
+      if (r.ok) toast(t('Renamed to “{name}”', { name: r.meta.name }), 'good');
+      else toast(SAVE_ERRORS[r.error] || t("Couldn't rename"), 'warn');
       render();
     });
   }
 
   function exportSlot(id) {
     const r = save().exportSlot(id);
-    if (r.ok) toast(`Exported ${r.filename}`, 'good');
-    else toast(SAVE_ERRORS[r.error] || "Couldn't export", 'warn');
+    if (r.ok) toast(t('Exported {file}', { file: r.filename }), 'good');
+    else toast(SAVE_ERRORS[r.error] || t("Couldn't export"), 'warn');
   }
 
   fileInput.addEventListener('change', () => {
@@ -1106,9 +1135,9 @@ export function createSavesScreen(ctx) {
           return;
         }
         const ok = await app.confirm({
-          title: `Replace “${sel.name}” with the imported file?`,
-          body: 'Every slot is in use.',
-          confirmLabel: 'Replace',
+          title: t('Replace “{name}” with the imported file?', { name: slotDisplayName(sel.name) }),
+          body: t('Every slot is in use.'),
+          confirmLabel: t('Replace'),
           danger: true,
           defaultFocus: 'cancel',
         });
@@ -1118,14 +1147,15 @@ export function createSavesScreen(ctx) {
       const r = await s.importFile(f, target);
       if (r.ok) {
         // fix-M2-r6: a file naming content this build lacks says so up front.
-        if (r.drift) toast(`Imported into “${r.meta ? r.meta.name : r.slotId}” — ${r.drift.short}`, 'warn');
-        else toast(`Imported into “${r.meta ? r.meta.name : r.slotId}”`, 'good');
+        const into = r.meta ? slotDisplayName(r.meta.name) : r.slotId;
+        if (r.drift) toast(t('Imported into “{name}” — {detail}', { name: into, detail: r.drift.short }), 'warn');
+        else toast(t('Imported into “{name}”', { name: into }), 'good');
         mode = 'load';
         selectedId = r.slotId;
         render({ keepFocus: false });
       } else {
         const why = r.error === 'full' || r.error === 'quota' || r.error === 'version' ? SAVE_ERRORS[r.error] : friendlyDetail(r);
-        toast(`Couldn't import that file — ${why}`, 'error');
+        toast(t("Couldn't import that file — {why}", { why }), 'error');
       }
     });
   });
@@ -1255,7 +1285,7 @@ function createRenameScreen(ctx) {
   el.innerHTML = `
     <div class="ap-veil"></div>
     <div class="ap-dlg ap-plate">
-      <div class="ap-dlg-title">Rename save</div>
+      <div class="ap-dlg-title">${t('Rename save')}</div>
       <input type="text" id="sv-rename-input" maxlength="32" autocomplete="off" spellcheck="false" data-nav data-nav-default />
       <div class="sv-count"></div>
       <div class="ap-dlg-btns"></div>
@@ -1271,16 +1301,16 @@ function createRenameScreen(ctx) {
     if (manager.top() === 'sv-rename') manager.pop();
     if (p && typeof p.resolve === 'function') p.resolve(v);
   }
-  const ok = mkBtn('Rename', 'sv-rename-ok', 'ap-primary', () => finish(input.value.trim() || null));
-  const cancel = mkBtn('Cancel', 'sv-rename-cancel', '', () => finish(null));
+  const ok = mkBtn(t('Rename'), 'sv-rename-ok', 'ap-primary', () => finish(input.value.trim() || null));
+  const cancel = mkBtn(t('Cancel'), 'sv-rename-cancel', '', () => finish(null));
   btns.append(ok, cancel);
   const upd = () => {
     count.textContent = `${input.value.length} / 32`;
   };
   input.addEventListener('input', upd);
   const hints = createHints(app, [
-    ['confirm', 'Rename'],
-    ['back', 'Cancel'],
+    ['confirm', t('Rename')],
+    ['back', t('Cancel')],
   ]);
   hints.el.style.justifyContent = 'flex-end';
   el.querySelector('.ap-dlg').appendChild(hints.el);

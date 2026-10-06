@@ -6,6 +6,7 @@
 // observable effect — the caller restores the drawing buffer / exits
 // fullscreen). params: { changes: [text], seconds = 10, resolve('keep'|'revert') }
 import { createHints } from './hints.js';
+import { t } from '../../i18n/index.js';
 
 export function createKeepDisplayScreen(ctx) {
   const { app, manager } = ctx;
@@ -16,7 +17,7 @@ export function createKeepDisplayScreen(ctx) {
   el.innerHTML = `
     <div class="ap-veil" style="opacity:0.55"></div>
     <div class="ap-dlg ap-plate">
-      <div class="ap-dlg-title">Keep these display settings?</div>
+      <div class="ap-dlg-title">${t('Keep these display settings?')}</div>
       <ul class="ap-dlg-list"></ul>
       <div class="ap-dlg-count" aria-live="polite"></div>
       <div class="ap-dlg-btns"></div>
@@ -25,9 +26,9 @@ export function createKeepDisplayScreen(ctx) {
   const countEl = el.querySelector('.ap-dlg-count');
   const btns = el.querySelector('.ap-dlg-btns');
   const hints = createHints(app, [
-    ['adjust', 'Select'],
-    ['confirm', 'OK'],
-    ['back', 'Revert'],
+    ['adjust', t('Select')],
+    ['confirm', t('OK')],
+    ['back', t('Revert')],
   ]);
   hints.el.style.justifyContent = 'flex-end';
   el.querySelector('.ap-dlg').appendChild(hints.el);
@@ -67,21 +68,21 @@ export function createKeepDisplayScreen(ctx) {
       p = params;
       settled = false;
       list.textContent = '';
-      for (const c of params.changes && params.changes.length ? params.changes : ['Display settings changed']) {
+      for (const c of params.changes && params.changes.length ? params.changes : [t('Display settings changed')]) {
         const li = document.createElement('li');
         li.textContent = c;
         list.appendChild(li);
       }
       btns.textContent = '';
-      const keep = mk('Keep', 'ap-primary', 'ap-keep-keep', () => finish('keep'));
-      const revert = mk('Revert', 'ap-secondary', 'ap-keep-revert', () => finish('revert'));
+      const keep = mk(t('Keep'), 'ap-primary', 'ap-keep-keep', () => finish('keep'));
+      const revert = mk(t('Revert'), 'ap-secondary', 'ap-keep-revert', () => finish('revert'));
       keep.setAttribute('data-nav-default', '');
       btns.append(keep, revert);
       const secs = Math.max(1, Number(params.seconds) || 10);
       until = performance.now() + secs * 1000;
       const paint = () => {
         const left = Math.max(0, Math.ceil((until - performance.now()) / 1000));
-        countEl.textContent = `Reverting in ${left} s`;
+        countEl.textContent = t('Reverting in {n} s', { n: left });
       };
       paint();
       tickTimer = setInterval(paint, 200);

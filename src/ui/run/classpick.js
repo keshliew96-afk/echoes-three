@@ -16,15 +16,16 @@ import { SKILLS, STARTING_SKILLS } from '../../sim/skills.js';
 import { UNLOCKS } from '../../data/unlocks.js';
 import { SEAT_CLASSES, SEAT_CRITTERS } from '../../net/seats.js';
 import { PLAY_CLASS_KEY } from '../../app/playclass.js';
+import { t } from '../../i18n/index.js';
 
 const STYLE_ID = 'cs-classes-style';
 const ROLE = Object.freeze({
-  healer: 'Keeps the party standing: heals, wards and the revive. Fragile, so stay behind the line.',
-  tank: 'Holds the front: heavy blows, taunts and the most health. Slow on its feet.',
-  swordsman: 'Fast blade in the thick of it: quick strikes, dashes and burst damage.',
-  archer: 'Damage from range: arrows, volleys and traps. Keep your distance.',
+  healer: () => t('Keeps the party standing: heals, wards and the revive. Fragile, so stay behind the line.'),
+  tank: () => t('Holds the front: heavy blows, taunts and the most health. Slow on its feet.'),
+  swordsman: () => t('Fast blade in the thick of it: quick strikes, dashes and burst damage.'),
+  archer: () => t('Damage from range: arrows, volleys and traps. Keep your distance.'),
 });
-const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 function installStyle() {
   if (document.getElementById(STYLE_ID)) return;
@@ -84,7 +85,7 @@ function wornKit(cls) {
 
 function startSkills(cls, kit) {
   const ids = kit && Array.isArray(kit.skills) ? kit.skills : cls === 'healer' ? STARTING_SKILLS : STARTING_LOADOUT[cls] || [];
-  return ids.map((id) => (SKILLS[id] ? SKILLS[id].name : id));
+  return ids.map((id) => (SKILLS[id] ? t(SKILLS[id].name) : id));
 }
 
 export function createClassesScreen(ctx) {
@@ -94,21 +95,21 @@ export function createClassesScreen(ctx) {
   el.className = 'cs-classes';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
-  el.setAttribute('aria-label', 'Choose your class');
+  el.setAttribute('aria-label', t('Choose your class'));
   el.innerHTML = `
     <div class="ap-veil"></div>
     <div class="cs-wrap ap-plate">
       <div>
-        <div class="cs-kicker">BEFORE THE RUN</div>
-        <h2 class="ap-h2">Choose your class</h2>
+        <div class="cs-kicker">${esc(t('BEFORE THE RUN'))}</div>
+        <h2 class="ap-h2">${esc(t('Choose your class'))}</h2>
       </div>
-      <div class="cs-blurb">You play one of the four. The AI plays the other three, so the party is always whole.</div>
+      <div class="cs-blurb">${esc(t('You play one of the four. The AI plays the other three, so the party is always whole.'))}</div>
       <div class="cs-grid"></div>
       <div class="cs-note" aria-live="polite"></div>
       <div class="cs-keys">
-        <span><b>←</b><b>→</b>Class</span>
-        <span><b>Enter</b>Play this class</span>
-        <span><b>Esc</b>Back to camp</span>
+        <span><b>←</b><b>→</b>${esc(t('Class'))}</span>
+        <span><b>Enter</b>${esc(t('Play this class'))}</span>
+        <span><b>Esc</b>${esc(t('Back to camp'))}</span>
       </div>
     </div>`;
   const gridEl = el.querySelector('.cs-grid');
@@ -137,12 +138,12 @@ export function createClassesScreen(ctx) {
       const skills = startSkills(cls, kit);
       b.dataset.on = String(cls === on);
       b.innerHTML =
-        `<div class="cs-crit">THE ${SEAT_CRITTERS[i].toUpperCase()}</div>` +
-        `<div class="cs-name">${CLASS_NAME[cls]}</div>` +
-        `<div class="cs-role">${esc(ROLE[cls])}</div>` +
-        `<div class="cs-stats"><span>Health <b>${st.maxHp}</b></span><span>Speed <b>${st.moveSpeed}</b></span></div>` +
-        `<div class="cs-kit"><h4>${kit ? `KIT · ${esc(kit.name.toUpperCase())}` : 'STARTS WITH'}</h4>${skills.map(esc).join(' · ')}</div>` +
-        `<div class="cs-foot">${cls === on ? '✓ Playing' : 'Play'}</div>`;
+        `<div class="cs-crit">${esc(t('THE {critter}', { critter: t(SEAT_CRITTERS[i]).toUpperCase() }))}</div>` +
+        `<div class="cs-name">${esc(t(CLASS_NAME[cls]))}</div>` +
+        `<div class="cs-role">${esc(ROLE[cls]())}</div>` +
+        `<div class="cs-stats"><span>${t('Health <b>{hp}</b>', { hp: st.maxHp })}</span><span>${t('Speed <b>{speed}</b>', { speed: st.moveSpeed })}</span></div>` +
+        `<div class="cs-kit"><h4>${esc(kit ? t('KIT · {name}', { name: t(kit.name).toUpperCase() }) : t('STARTS WITH'))}</h4>${skills.map(esc).join(' · ')}</div>` +
+        `<div class="cs-foot">${esc(cls === on ? t('✓ Playing') : t('Play'))}</div>`;
       b.setAttribute('aria-label', b.textContent.replace(/\s+/g, ' ').trim());
     });
   }
@@ -153,7 +154,7 @@ export function createClassesScreen(ctx) {
     log.push(cls);
     if (log.length > 20) log.shift();
     render();
-    if (typeof app.toast === 'function') app.toast(`You play the ${CLASS_NAME[cls]}`, { tone: 'info', ms: 2600 });
+    if (typeof app.toast === 'function') app.toast(t('You play the {cls}', { cls: t(CLASS_NAME[cls]) }), { tone: 'info', ms: 2600 });
     if (manager.top() === 'classes') manager.pop();
     return true;
   }

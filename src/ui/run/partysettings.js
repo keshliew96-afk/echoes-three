@@ -16,15 +16,16 @@
 // `?party=` overrides the mode for one boot without saving it.
 import { registerSettingsRow, service } from '../../app/registry.js';
 import { V } from '../../app/settings.js';
+import { t } from '../../i18n/index.js';
 
 export const ALLY_BUILDS_KEY = 'gameplay.allyBuilds';
 export const AUTO_SOCKET_OWN_KEY = 'gameplay.autoSocketOwn';
 const MODES = ['suggest', 'manual', 'auto'];
-const LABEL = { suggest: 'Suggested', manual: 'Manual', auto: 'Automatic' };
+const LABEL = { suggest: () => t('Suggested'), manual: () => t('Manual'), auto: () => t('Automatic') };
 const NOTE = {
-  suggest: 'AI-held allies arrive pre-picked — one Enter commits the page; you can change any card',
-  manual: 'You decide every ally card, shelf and bench yourself',
-  auto: 'AI-held allies build themselves — a one-line summary on each page',
+  suggest: () => t('AI-held allies arrive pre-picked — one Enter commits the page; you can change any card'),
+  manual: () => t('You decide every ally card, shelf and bench yourself'),
+  auto: () => t('AI-held allies build themselves — a one-line summary on each page'),
 };
 
 // Push the stored values into the sim (and again whenever they change).
@@ -63,10 +64,10 @@ export function registerPartySettings(settings, { world, params = null } = {}) {
       const store = ctx.settings;
       const w = widgets.select({
         id: 'pt-gameplay-allyBuilds',
-        label: 'Ally builds',
-        options: MODES.map((id) => ({ value: id, label: LABEL[id], note: NOTE[id] })),
+        label: t('Ally builds'),
+        options: MODES.map((id) => ({ value: id, label: LABEL[id](), note: NOTE[id]() })),
         value: store.get(ALLY_BUILDS_KEY) ?? 'suggest',
-        help: 'Applies to allies played by the computer. In multiplayer each player builds their own character. Suggested: their reward cards arrive pre-picked (one Enter commits) and their benches fill themselves. Manual: you decide every ally card and socket. Automatic: allies build themselves, shown as one summary line.',
+        help: t('Applies to allies played by the computer. In multiplayer each player builds their own character. Suggested: their reward cards arrive pre-picked (one Enter commits) and their benches fill themselves. Manual: you decide every ally card and socket. Automatic: allies build themselves, shown as one summary line.'),
         onChange: (v) => {
           store.set(ALLY_BUILDS_KEY, v, { source: 'ui' });
           paint();
@@ -74,7 +75,8 @@ export function registerPartySettings(settings, { world, params = null } = {}) {
       });
       const paint = () => {
         const cur = store.get(ALLY_BUILDS_KEY) ?? 'suggest';
-        w.setNote?.(override ? `${NOTE[cur]} · this session runs ${LABEL[override]} (?party=)` : `${NOTE[cur]} · applies from the next reward page`);
+        const note = NOTE[cur] ? NOTE[cur]() : undefined;
+        w.setNote?.(override ? t('{note} · this session runs {mode} (?party=)', { note, mode: LABEL[override] ? LABEL[override]() : undefined }) : t('{note} · applies from the next reward page', { note }));
       };
       paint();
       // fix-M1-r5: the Gameplay tab calls sync() on every gameplay.* change
@@ -92,11 +94,11 @@ export function registerPartySettings(settings, { world, params = null } = {}) {
     build(ctx) {
       const { widgets } = ctx;
       const store = ctx.settings;
-      const t = widgets.toggle({
+      const tg = widgets.toggle({
         id: 'pt-gameplay-autoSocketOwn',
-        label: 'Socket my new nodes',
+        label: t('Socket my new nodes'),
         value: !!store.get(AUTO_SOCKET_OWN_KEY),
-        help: 'On: every node your own character gets from a reward page, spoils or the shop is socketed for you (the same policy as Auto-fill) when the page commits. Off: they wait on your bench for you to place.',
+        help: t('On: every node your own character gets from a reward page, spoils or the shop is socketed for you (the same policy as Auto-fill) when the page commits. Off: they wait on your bench for you to place.'),
         onChange: (v) => {
           store.set(AUTO_SOCKET_OWN_KEY, !!v, { source: 'ui' });
           paint();
@@ -104,13 +106,13 @@ export function registerPartySettings(settings, { world, params = null } = {}) {
       });
       // The sub-line says what the CURRENT value does (fix-M1-r5, MENU-R5-F1:
       // it was set once at build and contradicted the toggle all session).
-      const paint = () => t.setNote?.(store.get(AUTO_SOCKET_OWN_KEY) ? 'Your bench is auto-filled at every commit' : 'Your new nodes wait on the bench');
+      const paint = () => tg.setNote?.(store.get(AUTO_SOCKET_OWN_KEY) ? t('Your bench is auto-filled at every commit') : t('Your new nodes wait on the bench'));
       paint();
       const sync = () => {
-        t.set(!!store.get(AUTO_SOCKET_OWN_KEY));
+        tg.set(!!store.get(AUTO_SOCKET_OWN_KEY));
         paint();
       };
-      return { el: t.el, sync };
+      return { el: tg.el, sync };
     },
   });
   return { apply };

@@ -7,6 +7,7 @@
 // caller may open the next screen from its continuation. Rebuilt per open
 // (reusable: false), so two nested confirms never share state.
 import { createHints } from './hints.js';
+import { t } from '../../i18n/index.js';
 
 export function createConfirmScreen(ctx) {
   const { app, manager } = ctx;
@@ -27,9 +28,9 @@ export function createConfirmScreen(ctx) {
   const countEl = el.querySelector('.ap-dlg-count');
   const btns = el.querySelector('.ap-dlg-btns');
   const hints = createHints(app, [
-    ['adjust', 'Select'],
-    ['confirm', 'OK'],
-    ['back', 'Cancel'],
+    ['adjust', t('Select')],
+    ['confirm', t('OK')],
+    ['back', t('Cancel')],
   ]);
   hints.el.style.justifyContent = 'flex-end';
   el.querySelector('.ap-dlg').appendChild(hints.el);
@@ -67,12 +68,12 @@ export function createConfirmScreen(ctx) {
     onOpen(params = {}) {
       p = params;
       settled = false;
-      titleEl.textContent = params.title || 'Are you sure?';
+      titleEl.textContent = params.title || t('Are you sure?');
       bodyEl.textContent = params.body || '';
       bodyEl.style.display = params.body ? '' : 'none';
       btns.textContent = '';
-      const ok = mk(params.confirmLabel || 'Confirm', params.danger ? 'ap-danger' : 'ap-primary', 'ap-confirm-ok', () => finish(true));
-      const cancel = mk(params.cancelLabel || 'Cancel', 'ap-secondary', 'ap-confirm-cancel', () => finish(false));
+      const ok = mk(params.confirmLabel || t('Confirm'), params.danger ? 'ap-danger' : 'ap-primary', 'ap-confirm-ok', () => finish(true));
+      const cancel = mk(params.cancelLabel || t('Cancel'), 'ap-secondary', 'ap-confirm-cancel', () => finish(false));
       btns.append(ok, cancel);
       (params.defaultFocus === 'confirm' ? ok : cancel).setAttribute('data-nav-default', '');
       countEl.textContent = '';
@@ -83,7 +84,7 @@ export function createConfirmScreen(ctx) {
         const paint = () => {
           const left = Math.max(0, Math.ceil((until - performance.now()) / 1000));
           countEl.style.display = '';
-          countEl.textContent = `${params.timeoutResult ? params.confirmLabel || 'Confirm' : params.cancelLabel || 'Cancel'} in ${left} s`;
+          countEl.textContent = t('{action} in {n} s', { action: params.timeoutResult ? params.confirmLabel || t('Confirm') : params.cancelLabel || t('Cancel'), n: left });
         };
         paint();
         tickTimer = setInterval(paint, 250);

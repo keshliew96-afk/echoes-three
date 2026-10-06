@@ -7,13 +7,14 @@ import { esc } from './style.js';
 import { RARITY_COLOR } from './cards.js';
 import { relicIconHtml, curseIconHtml } from './relicicons.js';
 import { PALETTE } from '../../data/palette.js';
+import { t } from '../../i18n/index.js';
 
 export const RELIC_STRIP_CSS = `
   #relic-strip {
     position: fixed; z-index: 13; display: none;
     flex-direction: column; align-items: flex-end; gap: 6px;
     pointer-events: auto; user-select: none;
-    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-family: system-ui, -apple-system, 'Segoe UI', var(--i18n-font, sans-serif);
   }
   #relic-strip.rl-on { display: flex; }
   #relic-strip .rl-badges {
@@ -90,19 +91,19 @@ export function createRelicStrip() {
         const badges = R.owned
           .map((o) => {
             const fresh = !known.has(o.id);
-            return `<div class="rl-badge${fresh ? ' rl-new' : ''}" style="--rar:${RARITY_COLOR[o.rarity] ?? PALETTE.bone}" title="${esc(`${o.name} — ${o.text}`)}">${relicIconHtml(o.id, 22)}</div>`;
+            return `<div class="rl-badge${fresh ? ' rl-new' : ''}" style="--rar:${RARITY_COLOR[o.rarity] ?? PALETTE.bone}" title="${esc(`${t(o.name)} — ${t(o.text)}`)}">${relicIconHtml(o.id, 22)}</div>`;
           })
           .join('');
         known = new Set(R.owned.map((o) => o.id));
         // The bound row carries every major curse, by mark and name, for the
         // rest of the run (its own room included); the CURSED line is the
         // room curse being fought.
-        const bound = majors.map((m) => `<div class="rl-major" title="${esc(`${m.name} (bound for the run) — ${m.text}`)}">${curseIconHtml(22, true)}<span>${esc(m.name)}</span></div>`).join('');
+        const bound = majors.map((m) => `<div class="rl-major" title="${esc(t('{name} (bound for the run) — {text}', { name: t(m.name), text: t(m.text) }))}">${curseIconHtml(22, true)}<span>${esc(t(m.name))}</span></div>`).join('');
         const roomCurse = curseLive && !curseLive.major ? curseLive : null;
         el.innerHTML =
           (badges ? `<div class="rl-badges">${badges}</div>` : '') +
-          (bound ? `<div class="rl-majors">BOUND ${bound}</div>` : '') +
-          (roomCurse ? `<div class="rl-curse" title="${esc(roomCurse.text)}">${curseIconHtml(22)} CURSED <span>${esc(roomCurse.name)}</span></div>` : '');
+          (bound ? `<div class="rl-majors">${esc(t('BOUND'))} ${bound}</div>` : '') +
+          (roomCurse ? `<div class="rl-curse" title="${esc(t(roomCurse.text))}">${curseIconHtml(22)} ${esc(t('CURSED'))} <span>${esc(t(roomCurse.name))}</span></div>` : '');
       }
       place(true);
     } else if (show) place();

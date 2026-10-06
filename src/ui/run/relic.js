@@ -7,6 +7,7 @@ import { esc } from './style.js';
 import { RARITY_COLOR } from './cards.js';
 import { relicIconHtml, curseIconHtml } from './relicicons.js';
 import { PALETTE } from '../../data/palette.js';
+import { t, tn } from '../../i18n/index.js';
 
 export const RELIC_CSS = `
   .rn-relic .rl-row { display: flex; gap: 22px; margin: 4px 0 2px; }
@@ -96,12 +97,12 @@ export function createRelicScreen({ run }) {
   const el = document.createElement('div');
   el.className = 'rn-page rn-relic';
   el.innerHTML = `
-    <div class="rn-title rl-title">A RELIC ON THE ROAD</div>
+    <div class="rn-title rl-title">${esc(t('A RELIC ON THE ROAD'))}</div>
     <div class="rn-orn">◆ ◆ ◆</div>
     <div class="rn-sub rl-sub"></div>
     <div class="rl-row"></div>
     <div class="rl-owned"></div>
-    <div class="rn-hint"><b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> take it</div>`;
+    <div class="rn-hint">${t('<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> take it')}</div>`;
   const titleEl = el.querySelector('.rl-title');
   const subEl = el.querySelector('.rl-sub');
   const row = el.querySelector('.rl-row');
@@ -129,24 +130,24 @@ export function createRelicScreen({ run }) {
   }
   function build(view, o) {
     if (o.source === 'major' && o.curse) {
-      titleEl.textContent = 'A GREATER RELIC';
-      subEl.innerHTML = `<span class="rl-lift">${curseIconHtml(20, true)} ${esc(o.curse.name)} binds you for the rest of the run.</span><span>Choose what it pays.</span>`;
+      titleEl.textContent = t('A GREATER RELIC');
+      subEl.innerHTML = `<span class="rl-lift">${curseIconHtml(20, true)} ${esc(t('{name} binds you for the rest of the run.', { name: t(o.curse.name) }))}</span><span>${esc(t('Choose what it pays.'))}</span>`;
     } else if (o.source === 'curse' && o.curse) {
-      titleEl.textContent = 'THE CURSE LIFTS';
-      subEl.innerHTML = `<span class="rl-lift">${curseIconHtml(20)} ${esc(o.curse.name)} is broken.</span><span>Choose what it leaves behind.</span>`;
+      titleEl.textContent = t('THE CURSE LIFTS');
+      subEl.innerHTML = `<span class="rl-lift">${curseIconHtml(20)} ${esc(t('{name} is broken.', { name: t(o.curse.name) }))}</span><span>${esc(t('Choose what it leaves behind.'))}</span>`;
     } else {
-      titleEl.textContent = 'A RELIC ON THE ROAD';
-      subEl.textContent = 'Relics last the whole run. Choose one.';
+      titleEl.textContent = t('A RELIC ON THE ROAD');
+      subEl.textContent = t('Relics last the whole run. Choose one.');
     }
     row.innerHTML = o.choices
       .map(
         (c, i) => `
       <div class="rl-slot" data-i="${i}">
         <div class="rn-card rn-${c.rarity}" style="--rar:${RARITY_COLOR[c.rarity] ?? PALETTE.bone}">
-          <div class="rn-cardkind">${esc((RARITY_WORD[c.rarity] ?? c.rarity).toUpperCase())}</div>
+          <div class="rn-cardkind">${esc(t(RARITY_WORD[c.rarity] ?? c.rarity).toUpperCase())}</div>
           <div class="rn-cardicon">${relicIconHtml(c.id, 44)}</div>
-          <div class="rn-cardname">${esc(c.name)}</div>
-          <div class="rn-body">${esc(c.text)}</div>
+          <div class="rn-cardname">${esc(t(c.name))}</div>
+          <div class="rn-body">${esc(t(c.text))}</div>
         </div>
         <div class="rl-caret">▲</div>
       </div>`
@@ -163,7 +164,7 @@ export function createRelicScreen({ run }) {
       });
     }
     const n = view.relics.owned.length;
-    ownedEl.textContent = n === 0 ? 'Your first relic of the run.' : `You carry ${n} relic${n === 1 ? '' : 's'}: ${view.relics.owned.map((r) => r.name).join(', ')}.`;
+    ownedEl.textContent = n === 0 ? t('Your first relic of the run.') : tn(n, 'You carry {n} relic: {names}.', 'You carry {n} relics: {names}.', { names: view.relics.owned.map((r) => t(r.name)).join(', ') });
   }
   const sel = () => (shownFocus === null ? null : `0|${shownFocus}`);
 

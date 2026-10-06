@@ -39,7 +39,7 @@ import { createInterpClock } from './interp.js';
 import { createOwnSeat } from './reconcile.js';
 import { createActionShadow, createPartyShadow } from './predict.js';
 import { createMetronome } from './metronome.js';
-import { seatLabel, seatControlText, chooserSeat } from './seats.js';
+import { seatLabel, chooserSeat } from './seats.js';
 import { LEADER_BOT as PLAY_LEADER_BOT } from '../app/playclass.js';
 import { createCosmetics } from '../ui/net/cosmetics.js';
 import { createNetHud } from '../ui/net/hud.js';
@@ -50,6 +50,23 @@ import { sanitizeName } from './protocol/messages.js';
 import { SKILLS } from '../sim/skills.js';
 import { cdTicksOf } from '../sim/allycast.js';
 import { dodgeCooldownTicks } from '../sim/relics.js';
+import { t } from '../i18n/index.js';
+
+// seats.js seatControlText() in the player's language (docs/I18N.md): the net
+// HUD note for a seat changing hands.
+function seatControlCopy(ev, nameOf = () => null) {
+  const cls = t(seatLabel(ev.partyIndex));
+  const who = nameOf(ev.partyIndex) || cls;
+  if (ev.controller === 'ai') {
+    if (ev.reason === 'away') return t('{who} stepped away — AI plays the {cls}', { who, cls });
+    if (ev.reason === 'drop') return t('{who} lost connection — AI plays the {cls}', { who, cls });
+    if (ev.reason === 'migrate') return t('The {cls} is played by AI', { cls });
+    return t('AI plays the {cls}', { cls });
+  }
+  if (ev.reason === 'return') return t('{who} is back on the {cls}', { who, cls });
+  if (ev.reason === 'migrate') return t('{who} keeps the {cls}', { who, cls });
+  return t('{who} took the {cls}', { who, cls });
+}
 
 const now = () => performance.now();
 // A seat plays at most 4 skills (keys 1-4; the user's correction — the
@@ -89,16 +106,24 @@ const PARTY_OPS = new Set(['pick', 'replace', 'buy', 'relic', 'mark', 'done', 'r
 // always "The Healer makes the build choices", also on a door press.
 const LEVEL_FLOW_OPS = new Set(['returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
 function hostDecidesCopy(what, w) {
-  if (what === 'choosePath') return `The ${w} picks the door — your pick was shown to the party`;
-  if (what === 'chooseRelic' || what === 'focusRelic') return `The ${w} picks the party's relic — your pick was shown to the party`;
-  if (LEVEL_FLOW_OPS.has(what)) return 'The host leads the party between levels — your press was shown to the party';
-  return 'That is the Healer’s build, not yours — your own character is on your tab';
+  if (what === 'choosePath') return t('The {cls} picks the door — your pick was shown to the party', { cls: t(w) });
+  if (what === 'chooseRelic' || what === 'focusRelic') return t("The {cls} picks the party's relic — your pick was shown to the party", { cls: t(w) });
+  if (LEVEL_FLOW_OPS.has(what)) return t('The host leads the party between levels — your press was shown to the party');
+  return t('That is the Healer’s build, not yours — your own character is on your tab');
 }
 const PARTY_REJECT_COPY = {
-  not_owner: 'That is another player’s character — only your own tab is yours to change',
-  closed: 'Too late — that choice already closed',
-  combat_active: 'Not during combat',
-  insufficient_funds: 'Not enough Glint in your purse',
+  get not_owner() {
+    return t('That is another player’s character — only your own tab is yours to change');
+  },
+  get closed() {
+    return t('Too late — that choice already closed');
+  },
+  get combat_active() {
+    return t('Not during combat');
+  },
+  get insufficient_funds() {
+    return t('Not enough Glint in your purse');
+  },
 };
 const INPUT_REDUNDANCY = 6;
 const RECONNECT_GIVEUP_MS = 15000;
@@ -1440,7 +1465,7 @@ export function createNetSession(ctx) {
         // PARTY: an own-seat CMD the host refused (closed / combat / purse).
         partyStats.rejected += 1;
         partyStats.byReason[cmd.reason] = (partyStats.byReason[cmd.reason] || 0) + 1;
-        if (hud && cmd.what !== 'screen' && cmd.what !== 'pref') hud.note(PARTY_REJECT_COPY[cmd.reason] ?? `Not applied (${cmd.reason})`);
+        if (hud && cmd.what !== 'screen' && cmd.what !== 'pref') hud.note(PARTY_REJECT_COPY[cmd.reason] ?? t('Not applied ({reason})', { reason: cmd.reason }));
       } else if (hud) hud.note(hostDecidesCopy(cmd.what, seatLabel(chooserSeat(net.room))));
     }
   }
@@ -1563,8 +1588,8 @@ export function createNetSession(ctx) {
           if (hud && m.reason === 'host_resume') {
             hud.hostBack(null);
             const back = Number.isFinite(m.stateAgeMs) ? Math.round(m.stateAgeMs / 100) / 10 : null;
-            if (back !== null && back >= 0.5) hud.note(`The run resumed from ${back} s earlier`);
-          } else if (hud) hud.hostBack(nameOfSeat(m.seat) || 'a new host');
+            if (back !== null && back >= 0.5) hud.note(t('The run resumed from {secs} s earlier', { secs: back }));
+          } else if (hud) hud.hostBack(nameOfSeat(m.seat) || t('a new host'));
           requestFull('host_changed');
         }
         break;
@@ -1615,7 +1640,7 @@ export function createNetSession(ctx) {
       // Never host a world that is not the party's: step out of the room
       // (a leave migrates at once — the run carries on with another host).
       log('host_resume_failed', { error });
-      const text = "Couldn't restore the session on this page — another player carries on hosting.";
+      const text = t(`Couldn't restore the session on this page — another player carries on hosting.`);
       net.leave().finally(() => {
         if (app.state === 'playing' && typeof app.quitToTitle === 'function') app.quitToTitle({ save: false }).then(() => app.toast(text, { tone: 'warn', ms: 5200 }));
         else app.toast(text, { tone: 'warn', ms: 5200 });
@@ -1630,7 +1655,7 @@ export function createNetSession(ctx) {
     hostLost = null;
     if (hud) {
       const back = Number.isFinite(m.keyframe.stateAgeMs) ? Math.round(m.keyframe.stateAgeMs / 100) / 10 : null;
-      hud.note(back !== null && back >= 0.5 ? `Welcome back — you are hosting again (the run resumed from ${back} s earlier)` : 'Welcome back — you are hosting again');
+      hud.note(back !== null && back >= 0.5 ? t('Welcome back — you are hosting again (the run resumed from {secs} s earlier)', { secs: back }) : t('Welcome back — you are hosting again'));
     }
     changed();
   }
@@ -1658,7 +1683,7 @@ export function createNetSession(ctx) {
     hostLost = null;
     if (hud) {
       hud.hostBack('you');
-      hud.note(applied ? 'You are now hosting — the session continues' : 'You are now hosting (no keyframe: continuing from your last view)');
+      hud.note(applied ? t('You are now hosting — the session continues') : t('You are now hosting (no keyframe: continuing from your last view)'));
     }
   }
   const migration = { last: null };
@@ -1739,8 +1764,8 @@ export function createNetSession(ctx) {
     changed();
   });
   net.on('become_host', (m) => becomeHost(m));
-  net.on('session_lost', (m) => endSession('session_lost', m && m.text ? m.text : 'Connection to the server was lost.'));
-  net.on('room_closed', (m) => endSession('room_closed', m && m.detail === 'no_guests' ? 'The session ended — everyone else left.' : 'The session ended.'));
+  net.on('session_lost', (m) => endSession('session_lost', m && m.text ? t(m.text) : t('Connection to the server was lost.')));
+  net.on('room_closed', (m) => endSession('room_closed', m && m.detail === 'no_guests' ? t('The session ended — everyone else left.') : t('The session ended.')));
   // Reconnect give-up (PLAN §3.7 "Reconnect + host drop", best-in-class
   // choice where the PLAN is silent on how long the game waits in-session):
   // the client retries with backoff 0.25/0.5/1/2/2.5 s; after
@@ -1766,7 +1791,7 @@ export function createNetSession(ctx) {
           log('reconnect_give_up', { afterMs: Math.round(now() - at) });
           // The session ends FIRST (with its message), then the retry loop
           // stops (its 'offline' state change then finds no session).
-          endSession('session_lost', 'Connection to the server was lost.');
+          endSession('session_lost', t('Connection to the server was lost.'));
           try {
             net.disconnect(); // the stored session stays for "Rejoin ABCDE?"
           } catch {
@@ -1785,18 +1810,18 @@ export function createNetSession(ctx) {
     changed();
   });
   net.on('peer_dropped', (m) => {
-    if (hud && m.seat !== localSeat()) hud.note(`${nameOfSeat(m.seat) || lastSeatNames[m.seat] || seatLabel(m.seat)} reconnecting…`);
+    if (hud && m.seat !== localSeat()) hud.note(t('{name} reconnecting…', { name: nameOfSeat(m.seat) || lastSeatNames[m.seat] || t(seatLabel(m.seat)) }));
   });
   net.on('peer_restored', (m) => {
-    if (hud && m.seat !== localSeat() && !m.host) hud.note(`${nameOfSeat(m.seat) || seatLabel(m.seat)} is back`);
+    if (hud && m.seat !== localSeat() && !m.host) hud.note(t('{name} is back', { name: nameOfSeat(m.seat) || t(seatLabel(m.seat)) }));
   });
   net.on('peer_left', (m) => {
-    if (hud && m.seat !== localSeat()) hud.note(`${lastSeatNames[m.seat] || seatLabel(m.seat)} left — AI plays the ${seatLabel(m.seat)}`);
+    if (hud && m.seat !== localSeat()) hud.note(t('{name} left — AI plays the {cls}', { name: lastSeatNames[m.seat] || t(seatLabel(m.seat)), cls: t(seatLabel(m.seat)) }));
   });
   bus.on('seat_control', (ev) => {
     if (!hud || role === 'none') return;
     if (ev.partyIndex === localSeat() && ev.controller === 'human') return;
-    hud.note(seatControlText(ev, (i) => nameOfSeat(i)));
+    hud.note(seatControlCopy(ev, (i) => nameOfSeat(i)));
   });
 
   // Offer "Rejoin ABCDE?" when the title comes up with a stored session.
@@ -1818,7 +1843,7 @@ export function createNetSession(ctx) {
           const e = elsewhere && elsewhere[0];
           if (e && elsewhereNoted !== e.code) {
             elsewhereNoted = e.code;
-            app.toast(`Session ${e.code} is open in another tab of this browser — carry on there.`, { tone: 'info', ms: 5200 });
+            app.toast(t('Session {code} is open in another tab of this browser — carry on there.', { code: e.code }), { tone: 'info', ms: 5200 });
           }
           return;
         }
@@ -1838,18 +1863,18 @@ export function createNetSession(ctx) {
           if (app.state !== 'title' || app.screens.top() !== 'title') return;
           app
             .confirm({
-              title: `Rejoin ${info.code}?`,
+              title: t('Rejoin {code}?', { code: info.code }),
               body: hosting
-                ? `You were hosting ${info.code} — your party is waiting. Rejoin to carry on the run.`
-                : `Your ${seatLabel(info.seat ?? 1)} seat is held for a minute after a disconnect. Rejoin the session now?`,
-              confirmLabel: 'Rejoin',
-              cancelLabel: 'Not now',
+                ? t('You were hosting {code} — your party is waiting. Rejoin to carry on the run.', { code: info.code })
+                : t('Your {cls} seat is held for a minute after a disconnect. Rejoin the session now?', { cls: t(seatLabel(info.seat ?? 1)) }),
+              confirmLabel: t('Rejoin'),
+              cancelLabel: t('Not now'),
               defaultFocus: 'confirm',
             })
             .then(async (yes) => {
               if (!yes) return;
               const r = await net.rejoin({ code: info.code });
-              if (!r.ok) app.toast(`Couldn't rejoin ${info.code} — ${r.detail || r.text || r.reason || 'the seat was released'}`, { tone: 'warn' });
+              if (!r.ok) app.toast(t(`Couldn't rejoin {code} — {why}`, { code: info.code, why: r.detail ? t(r.detail) : r.text ? t(r.text) : r.reason || t('the seat was released') }), { tone: 'warn' });
             });
         }, Math.max(0, 400 - (now() - t0)));
       })

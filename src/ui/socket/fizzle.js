@@ -5,6 +5,7 @@
 // takes none of the reserved accents). World→screen projected DOM, pooled.
 import { Vector3 } from 'three';
 import { PALETTE } from '../../data/palette.js';
+import { t } from '../../i18n/index.js';
 
 const LIFE_SEC = 0.9;
 const RISE_U = 0.22;
@@ -26,7 +27,7 @@ export function createSiphonFizzleCue({ bus, camera, container = document.body }
       }
       .nd-fizzle {
         position: absolute; left: 0; top: 0;
-        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        font-family: system-ui, -apple-system, 'Segoe UI', var(--i18n-font, sans-serif);
         font-size: 16px; font-weight: 700; letter-spacing: 0.04em;
         color: ${PALETTE.bone};
         background: ${PALETTE.voidCharcoal};
@@ -56,7 +57,7 @@ export function createSiphonFizzleCue({ bus, camera, container = document.body }
     if (!el) {
       el = document.createElement('div');
       el.className = 'nd-fizzle';
-      el.textContent = 'nobody near';
+      el.textContent = t('nobody near');
       layer.appendChild(el);
     }
     el.style.visibility = 'visible';

@@ -13,6 +13,7 @@
 //           preselectReason:'last'|'newest', onChoose(act), onCancel() }
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
+import { t } from '../../i18n/index.js';
 
 const ROMAN = ['', 'I', 'II', 'III'];
 const STYLE_ID = 'ex-style';
@@ -46,12 +47,11 @@ function installStyle() {
   box-shadow: 0 ${px(12)} ${px(28)} #000000AA, 0 0 ${px(20)} ${P.hearthAmber}33;
 }
 .ex-picker .ex-card.ex-pre::after {
-  content: 'NEWEST'; position: absolute; right: ${px(16)}; top: ${px(-13)};
+  content: attr(data-badge); position: absolute; right: ${px(16)}; top: ${px(-13)};
   font-size: ${px(16)}; font-weight: 800; letter-spacing: 0.14em;
   padding: ${px(3)} ${px(10)}; border-radius: ${px(8)};
   background: ${P.voidCharcoal}; color: ${P.hearthAmber}; border: 1px solid ${P.hearthAmber}AA;
 }
-.ex-picker .ex-card.ex-pre.ex-last::after { content: 'LAST PLAYED'; }
 .ex-picker .ex-card[aria-disabled="true"] .ex-pip.ex-on { background: ${P.bone}66; border-color: ${P.bone}99; }
 .ex-picker .ex-act { font-size: ${px(20)}; font-weight: 800; letter-spacing: 0.22em; color: ${P.warmGrey}; }
 .ex-picker .ex-name { font-size: ${px(34)}; font-weight: 800; letter-spacing: 0.03em; line-height: 1.1; }
@@ -80,7 +80,7 @@ function installStyle() {
 const LOCK_SVG =
   '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="7" y="14" width="18" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M11 14 V10 A5 5 0 0 1 21 10 V14" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="16" cy="20.5" r="2" fill="currentColor"/></svg>';
 
-const BIOME_LABEL = { wood: 'Night woodland', mill: 'Flooded mill', barrow: 'Burial mounds' };
+const BIOME_LABEL = { wood: () => t('Night woodland'), mill: () => t('Flooded mill'), barrow: () => t('Burial mounds') };
 
 export function createExpeditionScreen(ctx) {
   installStyle();
@@ -89,20 +89,20 @@ export function createExpeditionScreen(ctx) {
   el.className = 'ex-picker';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
-  el.setAttribute('aria-label', 'Choose an expedition');
+  el.setAttribute('aria-label', t('Choose an expedition'));
   el.innerHTML = `
     <div class="ap-veil"></div>
     <div class="ex-wrap ap-plate">
       <div class="ex-head">
         <div class="ap-orn">◆ ◇ ◆</div>
-        <h2 class="ap-h2">Choose an expedition</h2>
-        <div class="ex-sub">The gate opens onto three roads. Each is a full run of eight rooms.</div>
+        <h2 class="ap-h2">${t('Choose an expedition')}</h2>
+        <div class="ex-sub">${t('The gate opens onto three roads. Each is a full run of eight rooms.')}</div>
       </div>
       <div class="ex-cards"></div>
       <div class="ex-foot">
-        <span><b>←</b><b>→</b>Choose</span>
-        <span><b>E</b><b>Enter</b>Set out</span>
-        <span><b>Esc</b>Back to camp</span>
+        <span><b>←</b><b>→</b>${t('Choose')}</span>
+        <span><b>E</b><b>Enter</b>${t('Set out')}</span>
+        <span><b>Esc</b>${t('Back to camp')}</span>
       </div>
     </div>`;
   const cardsEl = el.querySelector('.ex-cards');
@@ -135,20 +135,28 @@ export function createExpeditionScreen(ctx) {
         card.setAttribute('data-nav-default', '');
         card.classList.add('ex-pre');
         if (p.preselectReason === 'last') card.classList.add('ex-last');
+        card.dataset.badge = p.preselectReason === 'last' ? t('LAST PLAYED') : t('NEWEST');
       }
       const prev = levels.find((l) => l.act === lv.act - 1);
       const pips = [1, 2, 3].map((i) => `<i class="ex-pip${i <= lv.act ? ' ex-on' : ''}"></i>`).join('');
       card.innerHTML = `
-        <div class="ex-act">ACT ${ROMAN[lv.act] ?? lv.act}</div>
+        <div class="ex-act">${t('ACT {act}', { act: ROMAN[lv.act] ?? lv.act })}</div>
         <div class="ex-name"></div>
         <div class="ex-blurb"></div>
-        <div class="ex-biome">${BIOME_LABEL[lv.biome] ?? ''}</div>
-        <div class="ex-danger"><span>Danger ${ROMAN[lv.act] ?? lv.act}</span><span class="ex-pips">${pips}</span></div>
+        <div class="ex-biome">${BIOME_LABEL[lv.biome] ? BIOME_LABEL[lv.biome]() : ''}</div>
+        <div class="ex-danger"><span>${t('Danger {level}', { level: ROMAN[lv.act] ?? lv.act })}</span><span class="ex-pips">${pips}</span></div>
         <div class="ex-lock">${LOCK_SVG}<span class="ex-lock-t"></span></div>`;
-      card.querySelector('.ex-name').textContent = lv.name;
-      card.querySelector('.ex-blurb').textContent = lv.blurb;
-      card.querySelector('.ex-lock-t').textContent = prev ? `Win ${prev.name} to unlock` : 'Locked';
-      card.setAttribute('aria-label', `${lv.name}. Danger ${ROMAN[lv.act]}.${open ? '' : ` Locked: win ${prev ? prev.name : 'the previous act'} to unlock.`}`);
+      card.querySelector('.ex-name').textContent = t(lv.name);
+      card.querySelector('.ex-blurb').textContent = t(lv.blurb);
+      card.querySelector('.ex-lock-t').textContent = prev ? t('Win {name} to unlock', { name: t(prev.name) }) : t('Locked');
+      card.setAttribute(
+        'aria-label',
+        open
+          ? t('{name}. Danger {level}.', { name: t(lv.name), level: ROMAN[lv.act] })
+          : prev
+            ? t('{name}. Danger {level}. Locked: win {prev} to unlock.', { name: t(lv.name), level: ROMAN[lv.act], prev: t(prev.name) })
+            : t('{name}. Danger {level}. Locked: win the previous act to unlock.', { name: t(lv.name), level: ROMAN[lv.act] }),
+      );
       card.addEventListener('click', () => {
         if (!open) return;
         finish(lv.act);

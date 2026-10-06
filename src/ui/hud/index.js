@@ -23,6 +23,7 @@ import { createCommandBar } from './commandbar.js';
 import { createBanner } from './banner.js';
 import { createThreatLayer } from './threat.js';
 import { iconEl } from './icons.js';
+import { t } from '../../i18n/index.js';
 
 const BAR_EDGE_PX = 16; // real px from the window bottom to the command bar
 const BANNER_EDGE_PX = 14; // real px from the window top to the banner
@@ -32,34 +33,51 @@ const ROOM_POLL_MS = 100;
 // Location label copy (Reference D: "Gate Bridge" top-left). Derived from the
 // scene + the run's room index; nothing here invents a room the sim does not
 // have. Room 7 is the §16 shop, room 8 the §11 Hollow Stag.
-const MODE_WORD = { kill_all: 'CLEAR THE CLEARING', defend: 'HOLD THE WAYSTONE', shop: 'THE PEDDLER', boss: 'THE HOLLOW STAG' };
-function locationCopy(scene, rv) {
+// Getters: looked up (translated) when read, after the language has loaded.
+const MODE_WORD = {
+  get kill_all() {
+    return t('CLEAR THE CLEARING');
+  },
+  get defend() {
+    return t('HOLD THE WAYSTONE');
+  },
+  get shop() {
+    return t('THE PEDDLER');
+  },
+  get boss() {
+    return t('THE HOLLOW STAG');
+  },
+};
+// The room line: 'ROOM 3 OF 8 · …', or 'ROOM 3/8 · …' under the endless depth.
+const roomLine = (short, room, total, what) =>
+  short ? t('ROOM {room}/{total} · {what}', { room, total, what }) : t('ROOM {room} OF {total} · {what}', { room, total, what });
+function locationCopy(scene, rv, short = false) {
   // CAMPAIGN (PLAN §12.6): between two levels the plate says so (the card
   // names both levels).
-  if (rv && rv.active && rv.phase === 'transit') return { name: 'ON THE ROAD', sub: rv.endless ? 'THE DESCENT GOES ON' : 'BETWEEN LEVELS' };
+  if (rv && rv.active && rv.phase === 'transit') return { name: t('ON THE ROAD'), sub: rv.endless ? t('THE DESCENT GOES ON') : t('BETWEEN LEVELS') };
   // ENDLESS (docs/ENDLESS.md): the depth leads the plate's second line.
   if (rv && rv.active && rv.room >= 1 && rv.endless) {
-    const c = locationCopy(scene, { ...rv, endless: undefined });
-    return { name: c.name, sub: `DEPTH ${rv.endless.depth} · ${c.sub.replace(/^ROOM (\d+) OF (\d+)/, 'ROOM $1/$2')}`, depth: rv.endless.depth };
+    const c = locationCopy(scene, { ...rv, endless: undefined }, true);
+    return { name: c.name, sub: t('DEPTH {depth} · {where}', { depth: rv.endless.depth, where: c.sub }), depth: rv.endless.depth };
   }
   if (rv && rv.active && rv.room >= 1) {
     const room = rv.room;
     const total = rv.rooms ?? 8;
     // Gauntlet M4b: Acts II / III name their own biome (the Act I copy stays).
-    const place = rv.act > 1 && rv.actName ? String(rv.actName).toUpperCase() : null;
-    if (room >= total) return { name: place ?? 'THE HOLLOW', sub: `ROOM ${room} OF ${total} · ${bossNameOfRun(rv).toUpperCase()}` };
-    if (rv.phase === 'shop' || rv.mode === 'shop') return { name: "THE PEDDLER'S CLEARING", sub: `ROOM ${room} OF ${total} · ${MODE_WORD.shop}` };
-    const mode = rv.mode === 'kill_all' && place ? 'CLEAR THE ROOM' : MODE_WORD[rv.mode] ?? 'ON THE ROAD';
-    return { name: place ?? 'UNEASY WOODLAND', sub: `ROOM ${room} OF ${total} · ${mode}` };
+    const place = rv.act > 1 && rv.actName ? t(String(rv.actName)).toUpperCase() : null;
+    if (room >= total) return { name: place ?? t('THE HOLLOW'), sub: roomLine(short, room, total, t(bossNameOfRun(rv)).toUpperCase()) };
+    if (rv.phase === 'shop' || rv.mode === 'shop') return { name: t("THE PEDDLER'S CLEARING"), sub: roomLine(short, room, total, MODE_WORD.shop) };
+    const mode = rv.mode === 'kill_all' && place ? t('CLEAR THE ROOM') : MODE_WORD[rv.mode] ?? t('ON THE ROAD');
+    return { name: place ?? t('UNEASY WOODLAND'), sub: roomLine(short, room, total, mode) };
   }
   // The victory / defeat card sits over the level it ended in (gauntlet r6
   // J6-F1) until the return to camp.
   if (rv && !rv.active && (rv.phase === 'victory' || rv.phase === 'defeat')) {
-    const place = rv.act > 1 && rv.actName ? String(rv.actName).toUpperCase() : 'THE HOLLOW';
-    return { name: place, sub: rv.phase === 'victory' ? 'VICTORY · RETURNING TO CAMP' : 'THE PARTY HAS FALLEN' };
+    const place = rv.act > 1 && rv.actName ? t(String(rv.actName)).toUpperCase() : t('THE HOLLOW');
+    return { name: place, sub: rv.phase === 'victory' ? t('VICTORY · RETURNING TO CAMP') : t('THE PARTY HAS FALLEN') };
   }
-  if (scene === 'camp') return { name: 'THE HEARTH CAMP', sub: 'NIGHT · BEFORE THE ROAD' };
-  return { name: 'THE PROVING CLEARING', sub: 'ARENA · NO RUN' };
+  if (scene === 'camp') return { name: t('THE HEARTH CAMP'), sub: t('NIGHT · BEFORE THE ROAD') };
+  return { name: t('THE PROVING CLEARING'), sub: t('ARENA · NO RUN') };
 }
 
 export function createHud({ bus, world, stage, cosmetic = null, scene = null }) {
@@ -103,7 +121,7 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
   glintNum.textContent = '0';
   const glintLab = document.createElement('span');
   glintLab.className = 'hud-glint-lab';
-  glintLab.textContent = 'GLINT';
+  glintLab.textContent = t('GLINT');
   glint.append(coin, glintNum, glintLab);
   root.appendChild(glint);
   let locKey = '';
@@ -285,8 +303,8 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
 
   // Re-read and repaint the banner IN THE SAME JS TURN as the room event, so
   // the 150 ms CSS fade is the whole of the <=300 ms budget.
-  for (const t of ROOM_EVENTS) {
-    bus.on(t, () => {
+  for (const ev of ROOM_EVENTS) {
+    bus.on(ev, () => {
       pollRoom(performance.now());
       combat = readCombat();
       if (banner.update(room, combat ? runBoss ?? bossEntity : null, combat)) publishZones();
@@ -302,7 +320,7 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     bar.endRun();
     publishZones();
   }
-  for (const t of END_EVENTS) bus.on(t, endCombatChrome);
+  for (const ev of END_EVENTS) bus.on(ev, endCombatChrome);
 
   // A/B switch for frame-cost probes only (tools/actions/hd-fps-ab.json):
   // when off, the whole HUD update is skipped and the overlay is hidden, so a

@@ -56,6 +56,7 @@ import { updateNumberPools, flushNumberPools, prewarmNumberPools } from './rende
 import { warmupUpdate, warmupPending, warmupRetained } from './render/warmup.js';
 import { parseBootParams, wipeEchoesStorage } from './app/params.js';
 import { createApp } from './app/app.js';
+import { registerLanguageSetting, i18nDebug } from './i18n/index.js';
 import { service, provide } from './app/registry.js';
 import { createContentService } from './data/content.js';
 import { createFrameScheduler } from './app/loop.js';
@@ -64,6 +65,7 @@ import { emptySnapshot } from './core/intents.js';
 import { scriptedInput } from './sim/script.js';
 import { hashState, fnv1a64Hex } from './core/hash.js';
 import { canonicalJSON } from './core/canonical.js';
+import { t } from './i18n/index.js';
 
 // @gnt:INT-FIRST-PAINT begin (INT, gauntlet r3 J3-F2) — let the page paint
 // index.html's boot splash BEFORE the boot builds the world. Everything below
@@ -111,6 +113,7 @@ const toggles = {
 const bootParams = parseBootParams();
 if (bootParams.fresh) wipeEchoesStorage();
 const app = createApp({ params: bootParams });
+registerLanguageSetting(app.settings); // docs/I18N.md: Settings ▸ Gameplay ▸ Language
 // @gnt:APP-BOOT end
 
 const stage = createStage({ container: document.getElementById('app'), toggles });
@@ -460,7 +463,7 @@ registerSaveScreens();
 if (bootParams.slot && bootParams.menuSkip) {
   setTimeout(() => {
     saveSystem.load(bootParams.slot).then((r) => {
-      if (!r.ok) app.toast(`Couldn't load save "${bootParams.slot}"`, { tone: 'warn' });
+      if (!r.ok) app.toast(t(`Couldn't load save "{slot}"`, { slot: bootParams.slot }), { tone: 'warn' });
     });
   }, 0);
 }
@@ -869,8 +872,12 @@ bus.on('return_to_camp', (ev) => {
   if (!net || typeof net.isGuest !== 'function' || !net.isGuest()) return;
   const room = net.room;
   const hostSeat = room && Array.isArray(room.seats) && Number.isFinite(room.hostSeat) ? room.seats.find((s) => s && s.index === room.hostSeat) : null;
-  const who = hostSeat && hostSeat.name ? `${hostSeat.name} (host)` : 'The host';
-  app.toast(`${who} quit to the lobby — the campaign ended and the party is back at camp`, { tone: 'info', ms: 6500 });
+  app.toast(
+    hostSeat && hostSeat.name
+      ? t('{name} (host) quit to the lobby — the campaign ended and the party is back at camp', { name: hostSeat.name })
+      : t('The host quit to the lobby — the campaign ended and the party is back at camp'),
+    { tone: 'info', ms: 6500 }
+  );
 });
 // @gnt:INT-WIRING end
 scheduler.start();
@@ -962,6 +969,7 @@ window.__echoes = {
   version: VERSION,
   // CLASS SELECT (docs/CLASS_SELECT.md): the class the local player plays.
   playClass: () => playClass.debug(),
+  i18n: () => i18nDebug(), // docs/I18N.md: { lang, misses, seen }
   // @gnt:DEBUG-API begin — Gauntlet namespaces (PLAN §6.4). Each resolves its
   // module's service lazily, so owners never edit this file for their probes:
   // provide('<name>', impl) with impl.debug = { ... }.

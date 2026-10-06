@@ -30,18 +30,50 @@
 // (label included) win. Pointer focus (hover) never scrolls (PLAN §3.3).
 import { registerSettingsTab } from '../../../app/registry.js';
 import { sliderToDb, formatDb } from '../../../audio/mixmath.js';
+import { t } from '../../../i18n/index.js';
 
-const CHANNELS = [
-  { id: 'master', label: 'Master', help: 'Scales every other channel. Music, Sound Effects, Ambience and Interface never change each other.' },
-  { id: 'music', label: 'Music', help: 'The score: menu, camp, combat, boss and the victory / defeat stingers.' },
-  { id: 'sfx', label: 'Sound Effects', help: 'Combat and world sounds, placed left / right and by distance from the camera.' },
-  { id: 'ambient', label: 'Ambience', help: 'The hearth fire at camp, wind and water on expeditions.' },
-  { id: 'ui', label: 'Interface', help: 'Menu clicks, rewards, purchases and progress chimes.' },
+// Built when the tab is built (text is looked up after boot picks the language).
+const channels = () => [
+  {
+    id: 'master',
+    label: t('Master'),
+    help: t('Scales every other channel. Music, Sound Effects, Ambience and Interface never change each other.'),
+    muteHelp: t('Silences everything without moving any slider.'),
+    testHelp: t('Plays an interface chime and a hit at the current Master level.'),
+  },
+  {
+    id: 'music',
+    label: t('Music'),
+    help: t('The score: menu, camp, combat, boss and the victory / defeat stingers.'),
+    muteHelp: t('Silences Music without moving its slider.'),
+    testHelp: t('Plays a short music sample at its current level.'),
+  },
+  {
+    id: 'sfx',
+    label: t('Sound Effects'),
+    help: t('Combat and world sounds, placed left / right and by distance from the camera.'),
+    muteHelp: t('Silences Sound Effects without moving its slider.'),
+    testHelp: t('Plays a hit on your left, in the centre and on your right.'),
+  },
+  {
+    id: 'ambient',
+    label: t('Ambience'),
+    help: t('The hearth fire at camp, wind and water on expeditions.'),
+    muteHelp: t('Silences Ambience without moving its slider.'),
+    testHelp: t('Plays a short ambience sample at its current level.'),
+  },
+  {
+    id: 'ui',
+    label: t('Interface'),
+    help: t('Menu clicks, rewards, purchases and progress chimes.'),
+    muteHelp: t('Silences Interface without moving its slider.'),
+    testHelp: t('Plays a short interface sample at its current level.'),
+  },
 ];
 const KEY_STEP = 0.05;
-const CURVE_LABEL = { log: 'Log (perceptual)', linear: 'Linear' };
-const CURVE_HELP =
-  'Log (perceptual): each half of the slider sounds about half as loud (−10 dB at 50 %), the way most PC games feel.\nLinear: the gain follows the slider directly (−6 dB at 50 %), so the top of the slider changes very little.\nSwitching keeps the current loudness — the slider moves to the matching spot.';
+const curveLabel = (mode) => (mode === 'log' ? t('Log (perceptual)') : mode === 'linear' ? t('Linear') : undefined);
+const curveHelp = () =>
+  t('Log (perceptual): each half of the slider sounds about half as loud (−10 dB at 50 %), the way most PC games feel.\nLinear: the gain follows the slider directly (−6 dB at 50 %), so the top of the slider changes very little.\nSwitching keeps the current loudness — the slider moves to the matching spot.');
 const S = (n) => `calc(${n}px * var(--ap-s, 1))`;
 
 let styled = false;
@@ -74,11 +106,13 @@ function injectStyle() {
   document.head.appendChild(st);
 }
 
-const readout = (level, mode, muted) => (muted ? `${Math.round(level * 100)} %  ·  muted` : `${Math.round(level * 100)} %  ·  ${formatDb(sliderToDb(level, mode))}`);
+const readout = (level, mode, muted) => (muted ? t('{pct} %  ·  muted', { pct: Math.round(level * 100) }) : `${Math.round(level * 100)} %  ·  ${formatDb(sliderToDb(level, mode))}`);
 
 function build(ctx) {
   injectStyle();
   const { settings, widgets: W } = ctx;
+  const CHANNELS = channels();
+  const CURVE_HELP = curveHelp();
   const audio = () => (ctx.services && ctx.services.service ? ctx.services.service('audio') : null);
   const set = (path, v) => settings.set(path, v, { source: 'ui' });
   const el = document.createElement('div');
@@ -90,7 +124,7 @@ function build(ctx) {
   const status = W.note('', 'status');
   status.classList.add('au-status');
   el.appendChild(status);
-  el.appendChild(W.section('Volume'));
+  el.appendChild(W.section(t('Volume')));
 
   const rows = {};
   for (const ch of CHANNELS) {
@@ -105,7 +139,7 @@ function build(ctx) {
       max: 1,
       step: 0.01,
       value: settings.get(`audio.${ch.id}.level`),
-      help: `${ch.help}\n←/→ or the D-pad change it in 5 % steps; drag with the mouse for fine control.`,
+      help: t('{help}\n←/→ or the D-pad change it in 5 % steps; drag with the mouse for fine control.', { help: ch.help }),
       format: (v) => readout(v, settings.get(`audio.${ch.id}.mode`), muted()),
       onInput: (v) => {
         set(`audio.${ch.id}.level`, v);
@@ -131,16 +165,16 @@ function build(ctx) {
     const acts = document.createElement('div');
     acts.className = 'au-acts';
     const curve = W.button({
-      label: 'Curve',
+      label: t('Curve'),
       id: `au-${ch.id}-curve`,
       help: CURVE_HELP,
       onPress: () => set(`audio.${ch.id}.mode`, settings.get(`audio.${ch.id}.mode`) === 'log' ? 'linear' : 'log'),
     });
     curve.el.classList.add('au-curve');
     const mute = W.button({
-      label: 'Mute',
+      label: t('Mute'),
       id: `au-${ch.id}-mute`,
-      help: ch.id === 'master' ? 'Silences everything without moving any slider.' : `Silences ${ch.label} without moving its slider.`,
+      help: ch.muteHelp,
       onPress: () => {
         const a = audio();
         // ?audio=0 mutes Master for the visit without touching the setting:
@@ -154,34 +188,29 @@ function build(ctx) {
       },
     });
     const test = W.button({
-      label: 'Test',
+      label: t('Test'),
       id: `au-${ch.id}-test`,
-      help:
-        ch.id === 'sfx'
-          ? 'Plays a hit on your left, in the centre and on your right.'
-          : ch.id === 'master'
-            ? 'Plays an interface chime and a hit at the current Master level.'
-            : `Plays a short ${ch.label.toLowerCase()} sample at its current level.`,
+      help: ch.testHelp,
       onPress: () => {
         const a = audio();
         if (!a || a.state !== 'running') {
-          if (ctx.toast) ctx.toast(a && a.state === 'locked' ? 'Sound starts after your first key press or click' : 'Sound is unavailable right now', { tone: 'warn' });
+          if (ctx.toast) ctx.toast(a && a.state === 'locked' ? t('Sound starts after your first key press or click') : t('Sound is unavailable right now'), { tone: 'warn' });
           return;
         }
         if (ch.id === 'master' && muted()) {
-          if (ctx.toast) ctx.toast('Master is muted', { tone: 'warn' });
+          if (ctx.toast) ctx.toast(t('Master is muted'), { tone: 'warn' });
         }
         a.testChannel(ch.id);
       },
     });
-    test.el.setAttribute('aria-label', `Test ${ch.label}`);
-    curve.el.dataset.helpTitle = `${ch.label} · curve`;
-    mute.el.dataset.helpTitle = `${ch.label} · mute`;
-    test.el.dataset.helpTitle = `${ch.label} · test`;
+    test.el.setAttribute('aria-label', t('Test {channel}', { channel: ch.label }));
+    curve.el.dataset.helpTitle = t('{channel} · curve', { channel: ch.label });
+    mute.el.dataset.helpTitle = t('{channel} · mute', { channel: ch.label });
+    test.el.dataset.helpTitle = t('{channel} · test', { channel: ch.label });
     const meter = document.createElement('div');
     meter.className = 'au-meter';
     meter.setAttribute('aria-hidden', 'true');
-    meter.title = `${ch.label} level`;
+    meter.title = t('{channel} level', { channel: ch.label });
     const bar = document.createElement('i');
     meter.appendChild(bar);
     acts.append(curve.el, mute.el, test.el, meter);
@@ -190,13 +219,13 @@ function build(ctx) {
     rows[ch.id] = { group, slider, curve, mute, test, bar, muted };
   }
 
-  const behaviourHead = W.section('Behaviour');
+  const behaviourHead = W.section(t('Behaviour'));
   el.appendChild(behaviourHead);
   const blur = W.toggle({
-    label: 'Mute when the game loses focus',
+    label: t('Mute when the game loses focus'),
     id: 'au-muteonblur',
     value: !!settings.get('audio.muteOnBlur'),
-    help: 'Fades everything out while you are in another window or tab, and back in when you return.',
+    help: t('Fades everything out while you are in another window or tab, and back in when you return.'),
     onChange: (v) => set('audio.muteOnBlur', v),
   });
   el.appendChild(blur.el);
@@ -206,23 +235,23 @@ function build(ctx) {
     let text;
     let tone = 'info';
     if (!a) {
-      text = 'Sound is unavailable in this build.';
+      text = t('Sound is unavailable in this build.');
       tone = 'warn';
     } else if (a.state === 'unavailable') {
-      text = 'This browser has no Web Audio — sound is unavailable.';
+      text = t('This browser has no Web Audio — sound is unavailable.');
       tone = 'warn';
     } else if (a.state === 'locked') {
-      text = 'Sound starts after your first key press or click (a browser rule).';
+      text = t('Sound starts after your first key press or click (a browser rule).');
       tone = 'warn';
     } else if (a.forceMuted) {
-      text = 'Muted for this visit by the ?audio=0 link — unmute Master to hear sound.';
+      text = t('Muted for this visit by the ?audio=0 link — unmute Master to hear sound.');
       tone = 'warn';
     } else if (a.state === 'suspended') {
-      text = 'Sound is paused by the browser — press any key or click to resume.';
+      text = t('Sound is paused by the browser — press any key or click to resume.');
       tone = 'warn';
     } else {
       const sr = a.context ? Math.round(a.context.sampleRate / 100) / 10 : null;
-      text = `Sound is on${sr ? ` · ${sr} kHz stereo` : ''}. Changes apply instantly and are saved.`;
+      text = sr ? t('Sound is on · {rate} kHz stereo. Changes apply instantly and are saved.', { rate: sr }) : t('Sound is on. Changes apply instantly and are saved.');
     }
     if (status.textContent !== text) status.textContent = text;
     status.setAttribute('data-tone', tone);
@@ -234,8 +263,8 @@ function build(ctx) {
       const mode = settings.get(`audio.${ch.id}.mode`);
       const m = r.muted();
       r.slider.set(settings.get(`audio.${ch.id}.level`));
-      r.curve.set(`Curve: ${CURVE_LABEL[mode] || mode}`);
-      r.mute.set(m ? 'Muted' : 'Mute');
+      r.curve.set(t('Curve: {curve}', { curve: curveLabel(mode) || mode }));
+      r.mute.set(m ? t('Muted') : t('Mute'));
       const mn = r.mute.node || r.mute.el;
       mn.setAttribute('aria-pressed', m ? 'true' : 'false');
       r.group.setAttribute('data-muted', m ? 'true' : 'false');
@@ -322,17 +351,17 @@ function build(ctx) {
   function info(node) {
     const group = node && node.closest ? node.closest('.au-chan') : null;
     const a = audio();
-    if (!group) return a ? `Sound: ${a.state}` : '';
+    if (!group) return a ? t('Sound: {state}', { state: a.state }) : '';
     const id = group.getAttribute('data-channel');
     const lvl = settings.get(`audio.${id}.level`);
     const mode = settings.get(`audio.${id}.mode`);
     const own = sliderToDb(lvl, mode);
-    const lines = [`${Math.round(lvl * 100)} % on the ${CURVE_LABEL[mode]} curve = ${formatDb(own)}`];
+    const lines = [t('{pct} % on the {curve} curve = {db}', { pct: Math.round(lvl * 100), curve: curveLabel(mode), db: formatDb(own) })];
     if (a && a.debug && a.debug.buses) {
       const b = a.debug.buses()[id];
-      if (b) lines.push(id === 'master' ? `Master gain now: ${formatDb(b.effectiveDb <= -998 ? -Infinity : b.effectiveDb)}` : `With Master: ${formatDb(b.effectiveDb <= -998 ? -Infinity : b.effectiveDb)}`);
+      if (b) lines.push(id === 'master' ? t('Master gain now: {db}', { db: formatDb(b.effectiveDb <= -998 ? -Infinity : b.effectiveDb) }) : t('With Master: {db}', { db: formatDb(b.effectiveDb <= -998 ? -Infinity : b.effectiveDb) }));
     }
-    if (rows[id] && rows[id].muted()) lines.push('Muted');
+    if (rows[id] && rows[id].muted()) lines.push(t('Muted'));
     return lines.join('\n');
   }
 

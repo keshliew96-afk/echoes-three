@@ -7,8 +7,18 @@ import { service } from '../../app/registry.js';
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { createHints } from './hints.js';
+import { t, tn } from '../../i18n/index.js';
 
-const ACT_NAME = { 1: 'The Hollow Wood', 2: 'The Sunken Mill', 3: 'The Ashen Barrow' };
+const ACT_NAME = {
+  get 1() { return t('The Hollow Wood'); },
+  get 2() { return t('The Sunken Mill'); },
+  get 3() { return t('The Ashen Barrow'); },
+};
+const CHALLENGE_NAME = {
+  get relaxed() { return t('Relaxed'); },
+  get standard() { return t('Standard'); },
+  get harrowing() { return t('Harrowing'); },
+};
 
 const CSS = `
 .sv-records .sv-rpanel {
@@ -58,7 +68,7 @@ const hours = (sec) => {
   const s = Math.max(0, Math.round(sec || 0));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
-  return h > 0 ? `${h} h ${m} min` : `${m} min`;
+  return h > 0 ? t('{h} h {m} min', { h, m }) : t('{m} min', { m });
 };
 const day = (iso) => {
   const t = Date.parse(iso);
@@ -67,20 +77,20 @@ const day = (iso) => {
   const sameYear = d.getFullYear() === new Date().getFullYear();
   return d.toLocaleDateString(undefined, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: '2-digit' });
 };
-const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : '');
+const cap = (s) => (s ? CHALLENGE_NAME[s] || s[0].toUpperCase() + s.slice(1) : '');
 // CAMPAIGN (PLAN §12.8) record cells.
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 function levelCell(h) {
   if (h.campaign) {
     const from = h.startLevel ?? 1;
-    return from === h.act ? `${ROMAN[from] ?? from} · ${ACT_NAME[from] || ''}` : `${ROMAN[from] ?? from} → ${ROMAN[h.act] ?? h.act} · Campaign`;
+    return from === h.act ? `${ROMAN[from] ?? from} · ${ACT_NAME[from] || ''}` : t('{from} → {to} · Campaign', { from: ROMAN[from] ?? from, to: ROMAN[h.act] ?? h.act });
   }
   return `${ROMAN[h.act] || h.act} · ${ACT_NAME[h.act] || ''}`;
 }
 function resultWord(h) {
-  if (h.result === 'abandoned') return 'Abandoned';
-  if (h.campaign && h.victory) return 'Campaign complete';
-  return h.victory ? 'Victory' : 'Defeat';
+  if (h.result === 'abandoned') return t('Abandoned');
+  if (h.campaign && h.victory) return t('Campaign complete');
+  return h.victory ? t('Victory') : t('Defeat');
 }
 
 export function createRecordsScreen(ctx) {
@@ -89,11 +99,11 @@ export function createRecordsScreen(ctx) {
   const el = document.createElement('div');
   el.className = 'sv-records';
   el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', 'Records');
+  el.setAttribute('aria-label', t('Records'));
   el.innerHTML = `
     <div class="ap-veil"></div>
     <div class="sv-rpanel ap-plate">
-      <div class="sv-rhead"><h2 class="ap-h2">Records</h2><div class="sv-rsub"></div></div>
+      <div class="sv-rhead"><h2 class="ap-h2">${t('Records')}</h2><div class="sv-rsub"></div></div>
       <div class="sv-rbody">
         <div class="sv-scores"></div>
         <aside class="sv-rside"></aside>
@@ -104,12 +114,12 @@ export function createRecordsScreen(ctx) {
   const scoresEl = el.querySelector('.sv-scores');
   const side = el.querySelector('.sv-rside');
   const foot = el.querySelector('.sv-rfoot');
-  const hints = createHints(app, [['back', 'Back']]);
+  const hints = createHints(app, [['back', t('Back')]]);
   const back = document.createElement('button');
   back.type = 'button';
   back.className = 'ap-btn ap-primary';
   back.id = 'sv-records-back';
-  back.textContent = 'Back';
+  back.textContent = t('Back');
   back.setAttribute('data-nav', '');
   back.setAttribute('data-nav-default', '');
   back.addEventListener('click', () => {
@@ -124,20 +134,20 @@ export function createRecordsScreen(ctx) {
     scoresEl.textContent = '';
     side.textContent = '';
     if (!p) {
-      scoresEl.innerHTML = '<div class="sv-rempty">Records are not available in this browser mode.</div>';
+      scoresEl.innerHTML = `<div class="sv-rempty">${t('Records are not available in this browser mode.')}</div>`;
       return;
     }
     const last = s.lastRecord ? s.lastRecord() : null;
-    sub.textContent = `${p.records.runs} run${p.records.runs === 1 ? '' : 's'} · ${p.records.victories} won`;
+    sub.textContent = tn(p.records.runs, '{n} run · {won} won', '{n} runs · {won} won', { won: p.records.victories });
     if (!p.highScores.length) {
       const e = document.createElement('div');
       e.className = 'sv-rempty';
-      e.textContent = 'No runs finished yet.\nYour ten best runs will be listed here.';
+      e.textContent = t('No runs finished yet.\nYour ten best runs will be listed here.');
       e.style.whiteSpace = 'pre-line';
       scoresEl.appendChild(e);
     } else {
-      const t = document.createElement('table');
-      t.innerHTML = `<thead><tr><th class="sv-num">#</th><th class="sv-num">Score</th><th>Level</th><th>Result</th><th class="sv-num">Rooms</th><th class="sv-num">Kills</th><th class="sv-num sv-opt">Time</th><th class="sv-opt">Date</th></tr></thead>`;
+      const tbl = document.createElement('table');
+      tbl.innerHTML = `<thead><tr><th class="sv-num">#</th><th class="sv-num">${t('Score')}</th><th>${t('Level')}</th><th>${t('Result')}</th><th class="sv-num">${t('Rooms')}</th><th class="sv-num">${t('Kills')}</th><th class="sv-num sv-opt">${t('Time')}</th><th class="sv-opt">${t('Date')}</th></tr></thead>`;
       const tb = document.createElement('tbody');
       p.highScores.forEach((h, i) => {
         const tr = document.createElement('tr');
@@ -164,12 +174,12 @@ export function createRecordsScreen(ctx) {
         }
         tb.appendChild(tr);
       });
-      t.appendChild(tb);
-      scoresEl.appendChild(t);
+      tbl.appendChild(tb);
+      scoresEl.appendChild(tbl);
     }
     const r = p.records;
     const h3 = document.createElement('h3');
-    h3.textContent = 'Lifetime';
+    h3.textContent = t('Lifetime');
     const dl = document.createElement('dl');
     const add = (k, v) => {
       const dt = document.createElement('dt');
@@ -178,28 +188,28 @@ export function createRecordsScreen(ctx) {
       dd.textContent = v;
       dl.append(dt, dd);
     };
-    add('Runs', String(r.runs));
-    add('Victories · defeats', `${r.victories} · ${r.defeats}`);
+    add(t('Runs'), String(r.runs));
+    add(t('Victories · defeats'), `${r.victories} · ${r.defeats}`);
     // CAMPAIGN (PLAN §12.8)
-    add('Campaigns completed', `${r.campaignsCompleted ?? 0} of ${r.campaigns ?? 0}`);
-    add('Abandoned', String(r.abandoned ?? 0));
-    add('Furthest level', r.furthestLevel ? `Level ${ROMAN[r.furthestLevel] ?? r.furthestLevel}` : '—');
-    add('Fastest campaign', mmss(r.fastestCampaignSec));
-    add('Best score', r.bestScore ? r.bestScore.toLocaleString() : '—');
-    add('Most kills in a run', r.mostKills ? String(r.mostKills) : '—');
+    add(t('Campaigns completed'), t('{done} of {total}', { done: r.campaignsCompleted ?? 0, total: r.campaigns ?? 0 }));
+    add(t('Abandoned'), String(r.abandoned ?? 0));
+    add(t('Furthest level'), r.furthestLevel ? t('Level {level}', { level: ROMAN[r.furthestLevel] ?? r.furthestLevel }) : '—');
+    add(t('Fastest campaign'), mmss(r.fastestCampaignSec));
+    add(t('Best score'), r.bestScore ? r.bestScore.toLocaleString() : '—');
+    add(t('Most kills in a run'), r.mostKills ? String(r.mostKills) : '—');
     // One row per level: clears · fastest clear · deepest room.
     for (const a of [1, 2, 3]) {
       const lc = r.levelClears ? r.levelClears[a] ?? 0 : 0;
       // Cleared: how often + the fastest clear; never cleared: the deepest room.
-      const v = lc > 0 ? `×${lc}${r.fastestVictorySec[a] ? ` · ${mmss(r.fastestVictorySec[a])}` : ''}` : r.deepestRoom[a] ? `room ${r.deepestRoom[a]}/8` : '—';
-      add(`Level ${ROMAN[a]} cleared`, v);
+      const v = lc > 0 ? `×${lc}${r.fastestVictorySec[a] ? ` · ${mmss(r.fastestVictorySec[a])}` : ''}` : r.deepestRoom[a] ? t('room {room}/8', { room: r.deepestRoom[a] }) : '—';
+      add(t('Level {level} cleared', { level: ROMAN[a] }), v);
     }
-    add('Levels open', p.unlocks.acts.map((a) => ROMAN[a] ?? a).join(' · '));
-    add('Time played', hours(p.playtimeSec));
+    add(t('Levels open'), p.unlocks.acts.map((a) => ROMAN[a] ?? a).join(' · '));
+    add(t('Time played'), hours(p.playtimeSec));
     const f = document.createElement('div');
     f.className = 'sv-formula';
     f.textContent =
-      'Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).';
+      t('Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).');
     side.append(h3, dl, f);
   }
 

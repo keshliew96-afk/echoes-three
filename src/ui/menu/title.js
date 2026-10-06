@@ -16,18 +16,19 @@
 import { service, screenFactory } from '../../app/registry.js';
 import { createHints } from './hints.js';
 import { VERSION } from '../../version.js';
-import { transitShort, roman } from '../../save/describe.js';
+import { transitShort, roman, slotDisplayName } from '../../save/describe.js';
+import { t } from '../../i18n/index.js';
 
 const OPEN_GUARD_MS = 350; // a touch/click that dismissed the splash never lands on an item
 
 function ago(iso) {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return '';
-  const s = Math.max(0, (Date.now() - t) / 1000);
-  if (s < 60) return 'just now';
-  if (s < 3600) return `${Math.round(s / 60)} min ago`;
-  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
-  return `${Math.round(s / 86400)} d ago`;
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return '';
+  const s = Math.max(0, (Date.now() - ms) / 1000);
+  if (s < 60) return t('just now');
+  if (s < 3600) return t('{n} min ago', { n: Math.round(s / 60) });
+  if (s < 86400) return t('{n} h ago', { n: Math.round(s / 3600) });
+  return t('{n} d ago', { n: Math.round(s / 86400) });
 }
 
 // "Level I · The Hollow Wood · Room 1 · just now · Autosave": where and when
@@ -42,12 +43,14 @@ function slotCaption(meta) {
   // a level card reads "Level I cleared" (clear card) or "Setting out ·
   // Level II · The Sunken Mill" (a Level-N start) — src/save/describe.js (M2, r3 F2).
   const lv = m.level ?? m.act;
-  if (m.mode === 'run' && m.phase === 'transit') parts.push(transitShort(m) || `Level ${roman(lv)}`);
-  else if (m.mode === 'run' && m.room) parts.push(`${lv ? `Level ${roman(lv)} · ` : ''}${m.levelName || m.actName || 'Run'} · Room ${m.room}`);
-  else if (m.mode === 'camp') parts.push('Camp');
+  if (m.mode === 'run' && m.phase === 'transit') parts.push(transitShort(m) || t('Level {level}', { level: roman(lv) }));
+  else if (m.mode === 'run' && m.room) {
+    const nm = m.levelName || m.actName ? t(m.levelName || m.actName) : t('Run');
+    parts.push(lv ? t('Level {level} · {name} · Room {room}', { level: roman(lv), name: nm, room: m.room }) : t('{name} · Room {room}', { name: nm, room: m.room }));
+  } else if (m.mode === 'camp') parts.push(t('Camp'));
   const when = ago(meta.savedAt || (meta.meta && meta.meta.savedAt));
   if (when) parts.push(when);
-  if (name) parts.push(name);
+  if (name) parts.push(slotDisplayName(name));
   return parts.join(' · ');
 }
 
@@ -56,14 +59,14 @@ export function createTitleScreen(ctx) {
   const el = document.createElement('div');
   el.className = 'ap-title';
   el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', 'Echoes — title');
+  el.setAttribute('aria-label', t('Echoes — title'));
   el.innerHTML = `
     <div class="ap-title-scrim"></div>
     <div class="ap-title-col">
       <div class="ap-logo">
         <div class="ap-logo-word">ECHOES</div>
         <div class="ap-logo-rule">◆</div>
-        <div class="ap-logo-sub">A healer, three friends, and a world going wrong</div>
+        <div class="ap-logo-sub">${t('A healer, three friends, and a world going wrong')}</div>
       </div>
       <div class="ap-menu" role="menu"></div>
     </div>
@@ -71,8 +74,8 @@ export function createTitleScreen(ctx) {
   const menu = el.querySelector('.ap-menu');
   const foot = el.querySelector('.ap-title-foot');
   const hints = createHints(app, [
-    ['move', 'Select'],
-    ['confirm', 'Choose'],
+    ['move', t('Select')],
+    ['confirm', t('Choose')],
   ]);
   const ver = document.createElement('span');
   ver.textContent = `v${VERSION}`;
@@ -140,24 +143,24 @@ export function createTitleScreen(ctx) {
     if (lost) {
       const kept = impact.kept && impact.kept[0];
       body =
-        `The new game's autosaves will replace your older run in progress:\n${where(lost)}` +
-        (kept ? `\n\nYour latest run stays in Load Game:\n${where(kept)}` : '') +
-        '\n\nTo keep both, load the older run from Load Game and save it to a numbered slot first.';
+        t("The new game's autosaves will replace your older run in progress:\n{run}", { run: where(lost) }) +
+        (kept ? `\n\n${t('Your latest run stays in Load Game:\n{run}', { run: where(kept) })}` : '') +
+        `\n\n${t('To keep both, load the older run from Load Game and save it to a numbered slot first.')}`;
     } else {
       const n = impact.runs.length;
+      const runs = impact.runs.map(where).join('\n');
       body =
-        `${n > 1 ? 'Your runs in progress stay' : 'Your run in progress stays'} in Load Game:\n` +
-        impact.runs.map(where).join('\n') +
-        '\n\nThe new game autosaves to its own slot.';
+        (n > 1 ? t('Your runs in progress stay in Load Game:\n{runs}', { runs }) : t('Your run in progress stays in Load Game:\n{runs}', { runs })) +
+        `\n\n${t('The new game autosaves to its own slot.')}`;
     }
     asking = true;
     let ok = false;
     try {
       ok = await app.confirm({
-        title: lost ? 'Replace a saved run?' : 'Start a new game?',
+        title: lost ? t('Replace a saved run?') : t('Start a new game?'),
         body,
-        confirmLabel: 'Start New Game',
-        cancelLabel: lost ? 'Keep My Run' : 'Cancel',
+        confirmLabel: t('Start New Game'),
+        cancelLabel: lost ? t('Keep My Run') : t('Cancel'),
         danger: !!lost,
         defaultFocus: lost ? 'cancel' : 'confirm',
       });
@@ -184,32 +187,32 @@ export function createTitleScreen(ctx) {
       // file — says why instead of doing nothing.)
       list.push({
         id: 'continue',
-        label: 'Continue',
+        label: t('Continue'),
         caption: slotCaption(latest),
         primary: true,
         onPress: () =>
           Promise.resolve(app.continueGame()).then((r) => {
             if (r && r.ok === false && typeof app.toast === 'function') {
               const errs = save && save.errors ? save.errors : {};
-              app.toast(r.reason || errs[r.error] || "Couldn't continue that save", { tone: 'warn' });
+              app.toast(r.reason || errs[r.error] || t("Couldn't continue that save"), { tone: 'warn' });
             }
             return r;
           }),
       });
     }
-    list.push({ id: 'new', label: 'New Game', primary: list.length === 0, onPress: () => newGameFlow(save) });
+    list.push({ id: 'new', label: t('New Game'), primary: list.length === 0, onPress: () => newGameFlow(save) });
     const savesScreen = !!screenFactory('saves');
     list.push({
       id: 'load',
-      label: 'Load Game',
+      label: t('Load Game'),
       disabled: !(save && savesScreen && hasAny),
-      reason: 'No saved games yet',
+      reason: t('No saved games yet'),
       onPress: () => manager.push('saves', { mode: 'load' }),
     });
-    if (screenFactory('mp-menu')) list.push({ id: 'multiplayer', label: 'Multiplayer', onPress: () => manager.push('mp-menu') });
-    list.push({ id: 'settings', label: 'Settings', onPress: () => manager.push('settings') });
-    if (save && screenFactory('records')) list.push({ id: 'records', label: 'Records', onPress: () => manager.push('records') });
-    list.push({ id: 'exit', label: 'Exit', onPress: () => app.exit() });
+    if (screenFactory('mp-menu')) list.push({ id: 'multiplayer', label: t('Multiplayer'), onPress: () => manager.push('mp-menu') });
+    list.push({ id: 'settings', label: t('Settings'), onPress: () => manager.push('settings') });
+    if (save && screenFactory('records')) list.push({ id: 'records', label: t('Records'), onPress: () => manager.push('records') });
+    list.push({ id: 'exit', label: t('Exit'), onPress: () => app.exit() });
     return list;
   }
 

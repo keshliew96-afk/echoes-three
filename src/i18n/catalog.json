@@ -1,0 +1,9114 @@
+{
+ " s": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ " u": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "— nothing": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "… {secs} s": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "… choose": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "· ROOM": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "“{typed}” isn’t a full address (it would reach {host}) — e.g. ws://192.168.1.20:7800/echoes": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "({n} upgrade — the replaced node is on the bench)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "({n} upgrades — the replaced nodes are on the bench)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ],
+  "plural": true,
+  "one": "({n} upgrade — the replaced node is on the bench)"
+ },
+ "{action} in {n} s": {
+  "files": [
+   "src/ui/menu/confirm.js"
+  ]
+ },
+ "{advance} · {classes} buy suggested": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "{alive} LEFT": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
+ "{ally}'s player is choosing…": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "{ally}'s player is choosing… — {secs} s": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "{ally}'s player is shopping…": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "{ally}'s player is shopping… — {secs} s": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "{bench} left on the bench": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "{challenge} ×{mul}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{channel} · curve": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "{channel} · mute": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "{channel} · test": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "{channel} level": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "{cls} · SKILL SLOTS FREE": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "{cls} · the {critter}": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "{cls} is choosing…": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "{cls} is choosing… — {secs} s": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "{cls} is shopping…": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "{cls} is shopping… — {secs} s": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "{cls} KIT": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{cls} leaves {what}": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "{cls} takes {what}": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "{cls} TINT": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{cls}: {name} kit": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{cls}: {who}": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "{cls}: {who} — press to take this seat": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "{cls}: nothing": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "{currency} & Unlocks": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{currency} +{pct}%": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{currency} and unlocks": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{currency} earned": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{date} · {ago} · Playtime {time}": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{depth} · {land} · New record!": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "{done} of {total}": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "{filled} / {total} sockets filled": {
+  "files": [
+   "src/ui/hud/commandbar.js"
+  ]
+ },
+ "{filled} / {total} sockets filled ({grey} contribute nothing here)": {
+  "files": [
+   "src/ui/hud/commandbar.js"
+  ]
+ },
+ "{filled}/{sockets} nodes": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{from} → {to} · Campaign": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "{h} h {m} min": {
+  "files": [
+   "src/ui/menu/records.js",
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{help}\n←/→ or the D-pad change it in 5 % steps; drag with the mouse for fine control.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "{host} is where a server listens, not an address to reach — use the host computer’s address, e.g. ws://192.168.1.20:7800/echoes": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "{hp}/{maxHp} HP": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{kb} KB": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{label} — scroll with ↑ ↓": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "{label} reference": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "{label} settings reset to defaults": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "{label} settings. Switch tabs with Q / E (LB / RB on a gamepad) from anywhere on this screen.": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "{label}: next": {
+  "files": [
+   "src/app/widgets.js"
+  ]
+ },
+ "{label}: previous": {
+  "files": [
+   "src/app/widgets.js"
+  ]
+ },
+ "{lamp} · leaving in {secs} s": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "{language} · press Apply to switch": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "{loss} loss": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "{m} min": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "{m} min {s} s": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{ms} ms": {
+  "files": [
+   "src/ui/menu/lobby.js",
+   "src/ui/net/hud.js"
+  ]
+ },
+ "{n} ADD REMAIN": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
+ "{n} ADDS REMAIN": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ],
+  "plural": true,
+  "one": "{n} ADD REMAIN"
+ },
+ "{n} d ago": {
+  "files": [
+   "src/ui/menu/saves.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "{n} deed": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "{n} deeds": {
+  "files": [
+   "src/save/index.js"
+  ],
+  "plural": true,
+  "one": "{n} deed"
+ },
+ "{n} descent": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "{n} descents": {
+  "files": [
+   "src/ui/run/levels.js"
+  ],
+  "plural": true,
+  "one": "{n} descent"
+ },
+ "{n} fps": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "{n} h ago": {
+  "files": [
+   "src/ui/menu/saves.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "{n} live": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "{n} min ago": {
+  "files": [
+   "src/ui/menu/saves.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "{n} more {currency}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{n} node from {skill} back on the bench — F auto-fills them": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "{n} nodes from {skill} back on the bench — F auto-fills them": {
+  "files": [
+   "src/ui/socket/index.js"
+  ],
+  "plural": true,
+  "one": "{n} node from {skill} back on the bench — F auto-fills them"
+ },
+ "{n} player": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "{n} players": {
+  "files": [
+   "src/ui/net/hud.js"
+  ],
+  "plural": true,
+  "one": "{n} player"
+ },
+ "{n} room cleared": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{n} rooms cleared": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ],
+  "plural": true,
+  "one": "{n} room cleared"
+ },
+ "{n} run · {won} won": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "{n} runs · {won} won": {
+  "files": [
+   "src/ui/menu/records.js"
+  ],
+  "plural": true,
+  "one": "{n} run · {won} won"
+ },
+ "{n} save · newest first": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{n} saves · newest first": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ],
+  "plural": true,
+  "one": "{n} save · newest first"
+ },
+ "{n} vow +{pct}%": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{n} vows +{pct}%": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ],
+  "plural": true,
+  "one": "{n} vow +{pct}%"
+ },
+ "{name} — empty": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{name} · FELLED": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
+ "{name} · Room {room}": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "{name} (bound for the run) — {text}": {
+  "files": [
+   "src/ui/run/relicstrip.js"
+  ]
+ },
+ "{name} (host) quit to the lobby — the campaign ended and the party is back at camp": {
+  "files": [
+   "src/main.js"
+  ]
+ },
+ "{name} (you)": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "{name} binds you for the rest of the run.": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "{name} costs {cost} {currency}. You have {have}.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{name} equipped.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{name} is back": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "{name} is broken.": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "{name} is locked — {line}.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "{name} is now hosting": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "{name} is ready · setting out in {secs} s": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "{name} joins the party. {text}": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "{name} left — AI plays the {cls}": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "{name} points at card {n}": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "{name} points at door {n}": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "{name} points at item {n}": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "{name} reconnecting…": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "{name} sworn.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{name} taken off.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{name} unlocked and equipped.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{name} unlocked.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{name}: {req}.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{name}: done.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{name}. Danger {level}.": {
+  "files": [
+   "src/ui/run/expedition.js"
+  ]
+ },
+ "{name}. Danger {level}. Locked: win {prev} to unlock.": {
+  "files": [
+   "src/ui/run/expedition.js"
+  ]
+ },
+ "{name}. Danger {level}. Locked: win the previous act to unlock.": {
+  "files": [
+   "src/ui/run/expedition.js"
+  ]
+ },
+ "{name}'s connection is unstable — {loss} packet loss": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "{names} (cosmetic)": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{new} replaces {old} — {nodes}": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "{note} · applies from the next reward page": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "{note} · applies from your next expedition": {
+  "files": [
+   "src/ui/run/challenge.js"
+  ]
+ },
+ "{note} · this run stays {challenge} — applies from your next expedition": {
+  "files": [
+   "src/ui/run/challenge.js"
+  ]
+ },
+ "{note} · this session runs {mode} (?party=)": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "{old} holds no nodes": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "{old}'s {n} node go to the {cls}'s bench": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "{old}'s {n} node go to the bench": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "{old}'s {n} nodes go to the {cls}'s bench": {
+  "files": [
+   "src/ui/run/draft.js"
+  ],
+  "plural": true,
+  "one": "{old}'s {n} node go to the {cls}'s bench"
+ },
+ "{old}'s {n} nodes go to the bench": {
+  "files": [
+   "src/ui/run/draft.js"
+  ],
+  "plural": true,
+  "one": "{old}'s {n} node go to the bench"
+ },
+ "{pct} %  ·  muted": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "{pct} % on the {curve} curve = {db}": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "{purse} Glint": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{rarity} · {kind} · limit {limit}/skill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "{rarity} HEIRLOOM": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{req}, then {cost} {currency}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{s} s": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{score} · #{rank} on your records": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "{score} · New best!": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "{sec}s": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "{secs} s": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "{skill} · socket {socket} of {sockets}": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "{skill} (not in this version)": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{skill} picked up — ↑ / ↓ to another skill, Enter to swap the rows": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "{source} — {url}": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "{text} Pays {n} {currency} once.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{time} · {challenge} challenge": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{where} · Room {room} of 8": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{where} · saved {date}.\nThis can't be undone.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "{who} is back on the {cls}": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "{who} keeps the {cls}": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "{who} lost connection — AI plays the {cls}": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "{who} stepped away — AI plays the {cls}": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "{who} took the {cls}": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "⇄ sidegrade": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "⇧ better": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "⇧ upgrade ({from} → {to})": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "⇧ upgrade (replaces a +0 node)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "⇧ upgrade (replaces a grey node)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "⇧ upgrades {skill} · replaces {node}": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "⇧ upgrades {skill} · replaces a +0 {node}": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "⇧ upgrades {skill} · replaces a grey {node}": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "⇩ downgrade ({from} → {to})": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "+ SUGGEST": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "+{embers} Embers — spend them at the camp (U)": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "+{embers} Embers · {deeds} — spend them at the camp (U)": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "＋0 inert": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "+1 count — one more bolt or target.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+1 count — one more bolt, target or recipient.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+12% per recent other skill.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+12% power per different Swordsman skill cast in the last 2 s (up to +36%).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+15% crit chance on every instance of this skill.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+15% crit chance on this skill.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+25% area — bigger bursts and zones; a wider arc (to 90°).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+25% area on this skill.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+25% power on the skill it sits in.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+25% power on this skill.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+25% range — farther bolts, placements and heal reach.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+25% range on this skill.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+40% after standing still.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+40% power when the Archer stood still for half a second before the cast.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+50% duration — zones last longer, statuses hold longer.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+50% duration on this skill.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+6 Glint every time a combat room is cleared.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "+7% critical chance on party hits and heals.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "+8% party damage for every curse taken this run (up to +40%).": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "×2 on enemies at ≤ 35% HP.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "×2 power — a passive: every pulse.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "×2 power on an enemy at or below 35% HP — the Stag included.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "×2 power on the skill it sits in — on a passive, every pulse ×2.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "<b>{filled}</b> / {sockets} nodes": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "<b>⇧</b> upgrades: <b>B</b> sockets · <b>F</b> auto-fill swaps them in": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "<b>8 sockets</b> per skill · <b>any node, any socket</b>": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> commit · <b>X</b> decline · <b>Esc</b> pause": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> take it": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> walk through": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "<b>A</b>/<b>D</b> or click a card to buy": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "<b>Begin Run</b> &nbsp;·&nbsp; Level 1 · {name}": {
+  "files": [
+   "src/scenes/camp.js"
+  ]
+ },
+ "<b>Cursed door (left): {name}.</b> {text} Clear the room for a relic.": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "<b>Cursed door (right): {name}.</b> {text} Clear the room for a relic.": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "<b>Enter</b> advance (one-way)": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "<b>Enter</b> buy this card": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "<b>Enter</b> return to camp": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "<b>Enter</b> set out now": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "<b>Major curse (left door): {name}.</b> {text} Clear the room for a greater relic (rare or legendary).": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "<b>Major curse (right door): {name}.</b> {text} Clear the room for a greater relic (rare or legendary).": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>W</b>/<b>S</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "<b>Spoils</b> → {cls}'s bench: {list}": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "<b>Spoils</b> → bench: {list}": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "<b>Spoils</b>: none — no common or rare node outranks your build any more": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "<b>W</b>/<b>S</b> or <b>↑</b>/<b>↓</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "−15% cooldown on the skill it sits in.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "−15% cooldown on this skill.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "⊘ {grey} grey": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "⊘ {reason} — refused": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "⊘ combat is live — sockets open between rooms only": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "⊘ full": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "⊘ grey": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "⊘ limit {limit}": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "⊘ sockets are for between rooms": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "▲ IN HAND": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "◆ live": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "◉ {n} · Done": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "✓ Done": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "✓ Playing": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "✓ SUGGESTED": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "✓ Take": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "✕ Leave": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "3 zones · a spent bolt bursts.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "4 skills · 8 sockets each · grey cells socket freely but contribute nothing": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "A 0.6 s guard: the next hit is blocked and answered with a 30 counter-arc.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A 2 u untouchable dash to the target, then a 18 cut.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A 2.4 u charge at the target, then a 22 arc that stuns for 0.6 s (not the Stag).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A backup from {date} ({where}) is intact.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "a bolt pierces one more enemy per copy, full power each.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A burst: 16 to up to 4 enemies around the hare.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A campaign runs from the level you choose through Level {level}. Clear a level to open the next.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "A charge at the target for 3 s: 12 per second to enemies inside.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "a connect cuts other cooldowns.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "a connecting cast cuts every other Swordsman skill’s cooldown by 0.3 s per copy.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A crescent sweep: 20, +50% for each other fox skill that just connected (up to +100%).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A crushing overhead arc: 34 to up to 3 enemies in reach.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A damaging shape of your own.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "A falling dew at the cursor for 5 s: 7 per second to allies inside.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A fissure at the target for 4 s: 10 per second to enemies inside.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A GIFT ON THE ROAD": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "A GREATER RELIC": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "A healer, three friends, and a world going wrong": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "A healing shape for the party.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "A heavy arrow: 30 to the first enemy in line.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A kit replaces one class’s starting skills. One kit per class.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "A lance that pierces: it strikes up to 3 enemies in a line, full power each.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A long thrust: 26 to up to 2 enemies 1.3 u ahead.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A name needs at least one visible character": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "a new host": {
+  "files": [
+   "src/net/session.js",
+   "src/ui/net/hud.js"
+  ]
+ },
+ "A new host is taking over the session.": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "A new version of Echoes is available": {
+  "files": [
+   "src/ui/net/update.js"
+  ]
+ },
+ "A new version of Echoes is available — reload the page": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "a Node draft": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "A passive field: 2 per second to allies inside, who take 15% less damage.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A passive field: every second, everyone within 1.3 u gains 3 shield (up to 12).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A passive field: every second, the 3 nearest enemies within 0.9 u take 4 — no knockback.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A passive field: it holds a slot and never needs a press.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "A passive kestrel: every second, the nearest enemy within 4 u takes 6.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A pinning arrow: 20 and a 0.75 s stun (not the Stag).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A plain run: the starting kits, no heirloom, no vows.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "A private room — friends join with its code": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "A RELIC ON THE ROAD": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "A roar: 6 to up to 6 nearby enemies, taunted 2.5 s (the Stag 1 s). Enemies prefer the Tank.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A save is being written": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "a short parry after the cast.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "a Skill draft": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "A spinning burst: 20 to up to 5 enemies around the Tank.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A storm of blades: 14 to up to 5 enemies around the fox.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A test probe is running": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "A tolling burst around you: 20 to up to 5 enemies, and a 0.5 s stun (not the Stag).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A warm burst: heals up to 4 allies 10 and hastes them 25% for 2 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A wide cleave: 16 to up to 6 enemies in an 80° arc.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A wide healing sweep: 70° either side, 1.8 u, up to 4 allies.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "a zone lands as 3 smaller zones (60%) · a bolt that flies out without a hit bursts into 3 shards (40%).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Abandon the campaign — the party returns to camp": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Abandon this campaign — back to camp": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Abandoned": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Abyss Walker": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Abyssal tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Act {act}": {
+  "files": [
+   "src/ui/menu/pause.js",
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "ACT {act}": {
+  "files": [
+   "src/ui/run/expedition.js"
+  ]
+ },
+ "Address": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Adds a line under the in-game connection chip: round trip, jitter, loss, snapshot rate and bandwidth.": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Adjust with ← / → (the D-pad on a gamepad), or drag with the mouse.": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Advance to {boss}": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "Aegis": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "after the cast the Archer hops 1.0 u away from the nearest enemy · Vault Shot vaults 0.8 u further.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "after the cast, a 24-tick parry: the next hit is blocked and answered at 50% power · on Riposte: its window +24.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "AI": {
+  "files": [
+   "src/ui/menu/lobby.js",
+   "src/ui/run/partystrip.js"
+  ]
+ },
+ "AI · take it": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "AI ✓ Take": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "AI ✕ Leave": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "AI fills the empty seats": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "AI plays": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "AI plays {n} seat": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "AI plays {n} seats": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ],
+  "plural": true,
+  "one": "AI plays {n} seat"
+ },
+ "AI plays the {cls}": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "AI re-sorts keys to cast order: {skill} → key {key}": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "AI-held — the host builds it": {
+  "files": [
+   "src/ui/run/partystrip.js"
+  ]
+ },
+ "AI-held allies arrive pre-picked — one Enter commits the page; you can change any card": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "AI-held allies build themselves — a one-line summary on each page": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "Aim": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "All 4 skills are equipped and every socket already holds a node no reward could beat.": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "all 8 sockets on this skill are full": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "ally": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Ally builds": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "Already in this language": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "Always shown for this page address (?fps / ?debug / a harness boot)": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Ambience": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "An empty slot. Saving here keeps your current camp or run exactly as it is now.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "An heirloom you have not found yet.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Anchor": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Another save is still being written": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "Another save is still being written — try again in a moment.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Anything since the last save is lost.": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Anything since your last save will be lost.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Applies to allies played by the computer. In multiplayer each player builds their own character. Suggested: their reward cards arrive pre-picked (one Enter commits) and their benches fill themselves. Manual: you decide every ally card and socket. Automatic: allies build themselves, shown as one summary line.": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "Apply language": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "arc": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "ARC": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "Archer": {
+  "files": [
+   "src/data/classes.js",
+   "src/net/protocol/messages.js",
+   "src/net/seats.js",
+   "src/ui/menu/saves.js",
+   "src/ui/run/transit.js"
+  ],
+  "data": true
+ },
+ "Archer effects burn in Heron Mist colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Archer effects burn in Thornbloom colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Are you sure?": {
+  "files": [
+   "src/ui/menu/confirm.js"
+  ]
+ },
+ "area": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "AREA": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "area hits pull enemies in.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "area hits stun 18 ticks.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "area strikes PULL non-boss enemies 0.5 u toward the Tank (a zone: its centre) instead of knocking them back.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "area strikes stun non-boss enemies for 18 ticks (a zone: its first tick on each).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "ARENA · NO RUN": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "Arrows rain on an area for 4 s: 7 per second, enemies inside slowed 25%.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Ascend": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Ash Feather": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Ashen Crown": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "At the pedlar": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "at the reward": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "at the shop": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Audio": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ],
+  "data": true
+ },
+ "Auto": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Auto ✓ Take": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Auto ✕ Leave": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "auto-fill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Auto-fill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Auto-fill all": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "auto-fill all: {n} node socketed across the party": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "auto-fill all: {n} nodes socketed across the party": {
+  "files": [
+   "src/ui/socket/index.js"
+  ],
+  "plural": true,
+  "one": "auto-fill all: {n} node socketed across the party"
+ },
+ "auto-fill sent — your sockets update in a moment": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "auto-fill socketed {n} node": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "auto-fill socketed {n} nodes": {
+  "files": [
+   "src/ui/socket/index.js"
+  ],
+  "plural": true,
+  "one": "auto-fill socketed {n} node"
+ },
+ "auto-fill: nothing on the bench fills or upgrades a socket": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Auto-pick in {secs} s": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Automatic": {
+  "files": [
+   "src/ui/menu/mpmenu.js",
+   "src/ui/menu/tabs/network.js",
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "Automatic · {list}": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Automatic (this build’s server)": {
+  "files": [
+   "src/net/address.js"
+  ],
+  "data": true
+ },
+ "Automatic (this computer)": {
+  "files": [
+   "src/net/address.js"
+  ],
+  "data": true
+ },
+ "Automatic (this site)": {
+  "files": [
+   "src/net/address.js"
+  ],
+  "data": true
+ },
+ "Automatic server": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Autosave": {
+  "files": [
+   "src/save/describe.js"
+  ]
+ },
+ "Autosave, then the title": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Autosaves & quicksave": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "back": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Back": {
+  "files": [
+   "src/ui/menu/mpjoin.js",
+   "src/ui/menu/mpmenu.js",
+   "src/ui/menu/records.js",
+   "src/ui/menu/saves.js",
+   "src/ui/menu/settings.js",
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Back to camp": {
+  "files": [
+   "src/ui/run/classpick.js",
+   "src/ui/run/expedition.js",
+   "src/ui/run/levels.js",
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Back to the title": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Backup from {date} available": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Backup restored — the slot is loadable again": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Badger": {
+  "files": [
+   "src/net/seats.js"
+  ],
+  "data": true
+ },
+ "Barrow Gate": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Basic attack (hold)": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "BC": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Beaten Clearing": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "BEFORE THE RUN": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "Begin every run holding Ash Feather. Dodges recover 25% faster.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Ashen Crown. +8% party damage for every curse taken this run (up to +40%).": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Ember Tooth. Party critical hits deal ×2 instead of ×1.5.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Glass Heart. The party deals 35% more damage but takes 20% more.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Grave Coin. +6 Glint every time a combat room is cleared.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Hawk Feather. +7% critical chance on party hits and heals.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Hearthstone. Clearing a room heals the party for 25% of max HP.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Heron Quill. Every room opens with all party skills ready.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Lantern Oil. Healing on the party is 20% stronger.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Last Light. Once per room, each member who would fall stays up at 1 HP.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Leech Fang. Each party kill heals the most wounded member for 4 HP.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Millstone. Party hits knock enemies back 75% farther.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding one relic. Find a relic in a run to reveal its heirloom.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Begin every run holding Peddler's Seal. Your shelf at the peddler is 25% cheaper.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Spore Sac. Party kills leave no hazards behind and puff spores that slow nearby enemies by 35%.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Thorn Mail. Enemies that hit the party take 60% of it back.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Whetstone. The party deals 12% more damage.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Wyrm Scale. The party takes 15% less damage.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run with 15 extra Glint.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run with 30 extra Glint.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run with 45 extra Glint.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run with extra Glint for the draft and the peddler.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Begin with Dewfall and Mending Tide: healing pools and a sweeping mend.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begins at Level I with the starting kit": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Begins with the starting kit": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Behaviour": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Bell Toll": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Bell Tower": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "BENCH": {
+  "files": [
+   "src/ui/run/transit.js",
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Best score": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Between levels": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "BETWEEN LEVELS": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "between rooms": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "BETWEEN RUNS": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Blade Storm": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "BLOCKED": {
+  "files": [
+   "src/render/enemies/extras.js"
+  ]
+ },
+ "bolts pierce one more.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Bounce": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "BOUND": {
+  "files": [
+   "src/ui/run/relicstrip.js"
+  ]
+ },
+ "Bound for the run: {name}. {text} Clear this room for a greater relic.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Brace": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Bramble Maze": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Brazilian Portuguese": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Brittle Bones": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Browser fullscreen (F11) is on — press F11 to leave": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Browser storage {kb} KB used": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Brutal Cleave": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "BS": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "BT": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "BUILD COMPLETE": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Build workbench (between rooms)": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Bulwark": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Burial mounds": {
+  "files": [
+   "src/ui/run/expedition.js",
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Burial mounds under a cold moon, where the corruption is oldest.": {
+  "files": [
+   "src/data/levels.js"
+  ],
+  "data": true
+ },
+ "Buy": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Buy / wear / take off": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Caltrops": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Camp": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Camp — {phase}": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Camp — at the hearth": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "CAMPAIGN": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Campaign {span}": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Campaign complete": {
+  "files": [
+   "src/ui/menu/records.js",
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "CAMPAIGN COMPLETE": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "CAMPAIGN LENGTH": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Campaigns completed": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Can’t reach {url} ({error}) — is the server running there?": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Can’t reach the Echoes server at {url}.": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Can't set out right now": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Cancel": {
+  "files": [
+   "src/app/app.js",
+   "src/ui/menu/confirm.js",
+   "src/ui/menu/mpmenu.js",
+   "src/ui/menu/saves.js",
+   "src/ui/menu/settings.js",
+   "src/ui/menu/tabs/gameplay.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Cancel edit": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Caps how many frames the game renders per second. The game simulation always runs at 60 steps per second, whatever this is set to.": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "catchup": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "cd": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "CD": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "CF": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Challenge": {
+  "files": [
+   "src/ui/run/challenge.js"
+  ]
+ },
+ "Change": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Change cancelled — your name is still “{name}”": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Change cancelled. {status}": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Change server": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "character": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Check": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Checking the server…": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Checking…": {
+  "files": [
+   "src/ui/menu/mpmenu.js",
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Choose": {
+  "files": [
+   "src/ui/menu/lobby.js",
+   "src/ui/menu/mpmenu.js",
+   "src/ui/menu/pause.js",
+   "src/ui/menu/saves.js",
+   "src/ui/menu/tabs/controls.js",
+   "src/ui/menu/title.js",
+   "src/ui/run/expedition.js",
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Choose a level": {
+  "files": [
+   "src/campaign/maptable.js",
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Choose a level (E)": {
+  "files": [
+   "src/campaign/maptable.js"
+  ]
+ },
+ "Choose a slot — autosaves and the quicksave (F5) are kept separately": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Choose an expedition": {
+  "files": [
+   "src/ui/run/expedition.js"
+  ]
+ },
+ "Choose what it leaves behind.": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "Choose what it pays.": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "Choose with ← / → (the D-pad on a gamepad), or click the arrows.": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Choose your class": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "Choosing a boon": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Choosing a door": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "choosing a path": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Class": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "Class · {name}": {
+  "files": [
+   "src/scenes/camp.js"
+  ]
+ },
+ "Clear {level} to unlock": {
+  "files": [
+   "src/save/index.js",
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Clear a level on the Harrowing challenge.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Clear a level wearing 2 vows.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "clear every enemy": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "Clear Level {level}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Clear Level I.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "CLEAR THE ADDS": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
+ "CLEAR THE CLEARING": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "CLEAR THE ROOM": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "Cleared ×{n}": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Clearing a room heals the party for 25% of max HP.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Click": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "close": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Close": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Close Settings. Every change is already applied and saved.": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Closed": {
+  "files": [
+   "src/sim/interactables.js"
+  ],
+  "data": true
+ },
+ "Closed · {secs} s": {
+  "files": [
+   "src/ui/interact/index.js"
+  ]
+ },
+ "CNT": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "Co-op for up to four — the host plays the Healer, the AI fills empty seats": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Combat and world sounds, placed left / right and by distance from the camera.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Committing in {secs} s": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "common": {
+  "files": [
+   "src/ui/run/unlocks.js",
+   "src/ui/socket/index.js"
+  ],
+  "data": true
+ },
+ "Complete a campaign": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Complete a campaign (Levels I to III).": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Concussive": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Confirm": {
+  "files": [
+   "src/ui/menu/confirm.js"
+  ]
+ },
+ "Connection {level}": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Connection details in game": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Connection fair": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Connection good": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Connection lost — reconnecting ({s} s)": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Connection lost — reconnecting…": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Connection poor": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Connection to the server was lost.": {
+  "files": [
+   "src/net/lobbyClient.js",
+   "src/net/session.js",
+   "src/ui/menu/lobby.js"
+  ],
+  "data": true
+ },
+ "Continue": {
+  "files": [
+   "src/ui/menu/title.js",
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Controls": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ],
+  "data": true
+ },
+ "converts 25% of base healing — unmodified by any other socket, crit, or buff.": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Couldn't buy {name}.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Couldn't change {name}.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Couldn’t change ready ({reason})": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Couldn't continue that save": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Couldn't export": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Couldn’t find a match ({reason}).": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Couldn't import that file — {why}": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Couldn’t join {code} ({reason}).": {
+  "files": [
+   "src/ui/menu/mpjoin.js"
+  ]
+ },
+ "Couldn't load save \"{slot}\"": {
+  "files": [
+   "src/app/app.js",
+   "src/main.js"
+  ]
+ },
+ "Couldn't load the quicksave": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "Couldn’t open a room ({reason}).": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Couldn't quicksave": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "Couldn’t rejoin — {reason}.": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Couldn't rejoin {code} — {why}": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "Couldn't rename": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Couldn't restore the backup": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Couldn't restore the session on this page — another player carries on hosting.": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "Couldn't save": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Couldn’t start ({reason})": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Couldn't start a new game": {
+  "files": [
+   "src/app/app.js"
+  ]
+ },
+ "count": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Crescent Finisher": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "crit": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "crits deal ×2.2.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "crits from this skill deal ×2.2 instead of ×1.5.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Crowded": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "CT": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Cursebearer": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "CURSED": {
+  "files": [
+   "src/ui/run/relicstrip.js"
+  ]
+ },
+ "Cursed room: {name}. {text} Clear it for a relic.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Curve": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Curve: {curve}": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Custom address": {
+  "files": [
+   "src/net/address.js"
+  ],
+  "data": true
+ },
+ "Custom address — “Reset to automatic” goes back to this site’s server": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "damage": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "damage exposes (+20% taken) · heals inspire (+15% dealt) · a field inspires allies inside.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Damage from range: arrows, volleys and traps. Keep your distance.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "damage self-heals · heals scorch the nearest enemy.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "damage shields you (20% of it, up to 30) · overheal becomes a shield · a field adds shield.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "damage skills self-heal · heal skills scorch the nearest enemy within 2.0 u.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "damage slows the enemies hit 40% · heals haste allies 20% · a field slows enemies inside.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Damaged": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Danger {level}": {
+  "files": [
+   "src/ui/run/expedition.js",
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Danger rises every depth": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "dash to the target first.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Date": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "DC": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Decline": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "DEED": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Deed: {name}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Deeds": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "DEEPEST EVER": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Deepest: Depth {depth}": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Defeat": {
+  "files": [
+   "src/ui/menu/records.js",
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Defeat {boss}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "defeat card": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Defeat the Barrow Wyrm.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Defeat the Drowned Heron.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Defeat the Hollow Stag.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Defeat the Lich Ram.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Defeat the Millwheel.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Defeat the Thornmother.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Defend": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Delete": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Delete “{name}”?": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Deleted “{name}”": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Depth {depth} · {name}": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "Depth {depth} · {name} · danger rises": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "DEPTH {depth} · {where}": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "Depth {depth} cleared": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "DEPTH {depth} CLEARED": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "DEPTH REACHED": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "DEPTHS CLEARED": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "DESCENT LENGTH": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Detonate": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Detonating Charge": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Dewfall": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "DF": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "direct": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Disengage": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Display": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ],
+  "data": true
+ },
+ "Display ~{hz} Hz · rendering {fps} fps · frame work {ms} ms": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Display mode": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Display settings changed": {
+  "files": [
+   "src/ui/menu/keepdisplay.js"
+  ]
+ },
+ "Display, audio, gameplay, controls": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Dodge": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Dodges recover 25% faster.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Done — I’m finished shopping": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "Done — waiting for the party": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Done — waiting for the party — {secs} s": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Done ✓ — waiting for the party": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "drafted": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Drink": {
+  "files": [
+   "src/sim/interactables.js"
+  ],
+  "data": true
+ },
+ "Drowned Granary": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Dry": {
+  "files": [
+   "src/sim/interactables.js"
+  ],
+  "data": true
+ },
+ "Dry Crossroads": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Duelist": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Each party kill heals the most wounded member for 4 HP.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Each player builds their own character between rooms; the host builds the AI-held seats. Anyone can drop in later.": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Each player builds their own character between rooms; the host plays the {hostCls} and builds the AI-held seats. Anyone can drop in later.": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Echo": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Echoes — title": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Effects": {
+  "files": [
+   "src/ui/run/effects.js"
+  ]
+ },
+ "Elite Tide": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Elites are far more common in every combat room. Embers +25%.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Elites are far more common in this room.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Elites are more common in every combat room for the rest of the run.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Ember Tooth": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Emberforge tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Embers": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "empty slot": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Empty socket": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Empty-handed": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "ENDLESS": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Enemies and the Stag: {hp} HP, {dmg} damage": {
+  "files": [
+   "src/ui/run/challenge.js"
+  ]
+ },
+ "Enemies in every combat room deal 35% more damage. Embers +25%.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Enemies in every combat room have 15% more HP for the rest of the run.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Enemies in every combat room have 40% more HP. Embers +25%.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Enemies in this room deal 35% more damage.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Enemies in this room have 40% more HP.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Enemies that hit the party take 60% of it back.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Enemy attack warnings in this room are 20% shorter (never under 0.6 s).": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "English": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Enter on a socket places it · Esc keeps it on the bench": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Enter picks it up": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Enter picks this skill up to REORDER — its sockets travel with it": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Enter places it here": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Enter swaps {from} (key {fromKey}) with {to} (key {toKey}) — keys follow the new order": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Enter swaps it in here": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Enter swaps it in here — an upgrade": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Enter the 5-letter room code a host shares": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Equip": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Equipped": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "every 3rd cast — or pulse — at ×2.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "every 3rd cast of this skill resolves at ×2 power — on a passive, every 3rd pulse.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "every cast shields the Tank +8 per copy (4 s) · on Iron Stance +2 per pulse (up to 12).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "every cast shields the Tank +8.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "every character’s bench goes into its own live sockets — the same policy as F, for all four": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Every class effect, debris and camera kick": {
+  "files": [
+   "src/ui/run/effects.js"
+  ]
+ },
+ "Every player must be ready first.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "Every room opens with all party skills ready.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Every save slot is in use — delete one first, or pick a slot to replace.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Every save slot is in use — pick a slot to overwrite": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "Every setting on this tab goes back to its default.": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Every slot is in use.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Every wave in every combat room is half again as large. Embers +25%.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Every wave in this room is half again as large.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Everyone is here": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Everything is unlocked. Wear vows for more.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Execute": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Exit": {
+  "files": [
+   "src/app/app.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Exit Echoes?": {
+  "files": [
+   "src/app/app.js"
+  ]
+ },
+ "Export": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Export the raw file to keep it, or delete the slot.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Exported {file}": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Fades everything out while you are in another window or tab, and back in when you return.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Fallen Oak": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Famine": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Fast blade in the thick of it: quick strikes, dashes and burst damage.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "Fastest campaign": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Fell the Barrow Wyrm": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the Drowned Heron": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the Hollow Stag": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the Lich Ram": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the Millwheel": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the Thornmother": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "File": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "fill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Fill all": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "FINAL LEVEL": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Find {relic} in a run": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Finish {n} runs": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Finish 10 runs.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Finish a run to earn {currency}: {per} per room, more for each level and boss, and deeds pay once.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "first hit per enemy crits.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "First Light": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "fits the {cls}'s kit": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "fits your kit": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "FL": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Flooded Cellar": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Flooded mill": {
+  "files": [
+   "src/ui/run/expedition.js",
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Flooded millrace and rotting weirs; the water runs wrong.": {
+  "files": [
+   "src/data/levels.js"
+  ],
+  "data": true
+ },
+ "Flow": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Flurry": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "for 2 s after the cast, anything that hits the Tank takes 25% of this skill’s base power back.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "FOR THE {cls}": {
+  "files": [
+   "src/ui/run/partystrip.js"
+  ]
+ },
+ "FOR THE HEALER": {
+  "files": [
+   "src/ui/run/partystrip.js"
+  ]
+ },
+ "for the whole party · paid from the {cls}'s purse · <b>5</b>/<b>6</b>": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "FOR YOU — THE HEALER": {
+  "files": [
+   "src/ui/run/partystrip.js"
+  ]
+ },
+ "Forget the custom server address and connect to the Echoes server of the site you opened the game from — what every player gets without touching a setting.": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Fox": {
+  "files": [
+   "src/net/seats.js"
+  ],
+  "data": true
+ },
+ "Fox Step": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Frame-rate limit": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Frames paced to your display (~{hz} Hz)": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "French": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Friends on your network open {link} — no settings needed": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Friends on your network open {link} — no settings needed · code {code}": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Friends on your network open this game’s Network address (npm run dev -- --host or npm run serve prints it)": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Friends on your network open this game’s Network address (npm run dev -- --host or npm run serve prints it) · code {code}": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Friends on your network: server {url} · code {code}": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Friends open {link} — no settings needed": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Friends open {link} — no settings needed · code {code}": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Friends open Multiplayer ▸ Join by Code and type {code}.": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "FS": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Full": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js",
+   "src/ui/run/effects.js"
+  ]
+ },
+ "Full camera shake on kills and stomps": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "Fullscreen": {
+  "files": [
+   "src/ui/menu/tabs/controls.js",
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Fullscreen (browser)": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Fullscreen lasts for this visit — browsers leave it when the page reloads.": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Furthest level": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "FURTHEST LEVEL": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Galvanize": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Gameplay": {
+  "files": [
+   "src/ui/menu/lobby.js",
+   "src/ui/menu/settings.js"
+  ],
+  "data": true
+ },
+ "GB": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "GC": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "General": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "German": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Glass Heart": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Glint": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "GLINT": {
+  "files": [
+   "src/ui/hud/index.js",
+   "src/ui/run/shop.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "GLINT EARNED": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "grant": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Grave Coin": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Gravefrost tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "grey socket — contributes nothing on this skill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Ground Crack": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "ground zone": {
+  "files": [
+   "src/ui/run/cards.js",
+   "src/ui/socket/index.js"
+  ],
+  "data": true
+ },
+ "Grovekeeper": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "guard": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Guardian Bond": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Half the particles, no camera kick, softer light": {
+  "files": [
+   "src/ui/run/effects.js"
+  ]
+ },
+ "Half-strength camera shake": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "Hare": {
+  "files": [
+   "src/net/seats.js"
+  ],
+  "data": true
+ },
+ "Harrowed": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Harrowing": {
+  "files": [
+   "src/ui/menu/records.js",
+   "src/ui/menu/saves.js",
+   "src/ui/run/challenge.js"
+  ]
+ },
+ "Hawk Feather": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "heal": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Healer": {
+  "files": [
+   "src/data/classes.js",
+   "src/net/protocol/messages.js",
+   "src/net/seats.js",
+   "src/scenes/camp.js",
+   "src/ui/menu/saves.js",
+   "src/ui/run/transit.js"
+  ],
+  "data": true
+ },
+ "Healer effects burn in Moonlit colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Healer effects burn in Wyrmfire colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Healing on the party is 20% stronger.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Healing on the party is 25% weaker for the rest of the run.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Healing on the party is 60% weaker in this room.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Heals the neediest ally 16 and shields them for 20 (4 s).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Health <b>{hp}</b>": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "Hearthsong": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Hearthstone": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Heartseeker": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Heavy Slam": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Heirloom: {name}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Heirlooms": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Heron Mist tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Heron Quill": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "High latency — {ms} ms ping": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "hits and overheals become shields.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "hits expose · heals inspire allies.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "hits slow · heals haste · fields slow.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "hits taunt enemies onto the Tank; enemies prefer the Tank.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "hits taunt onto the Tank (90 ticks, Stag 45) · Shield Wall: near its shields · Iron Stance: 2 inside · enemies prefer the Tank.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Hold 5 relics at once.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Hold Esc to leave fullscreen": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "hold the Waystone": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "HOLD THE WAYSTONE": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "Holds the front: heavy blows, taunts and the most health. Slow on its feet.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "hop away after the cast.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Host": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Host a Game": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Host a Public Game": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Host connection lost — handing over…": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Host connection lost — waiting ({s} s)": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Hosting": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "How hard the camera shakes on kills, the Stag’s stomps and quake landings. Applies to the next shake.": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "How hard the enemies of your NEXT expedition are. Relaxed: 75% HP, 70% damage. Standard: as designed. Harrowing: 125% HP, 130% damage. The challenge is fixed when you step through the camp gate, so a run in progress keeps the one it started with. Harrowing scores ×1.5, Relaxed ×0.75.": {
+  "files": [
+   "src/ui/run/challenge.js"
+  ]
+ },
+ "How much the skills, hits and the Stag throw on screen. Reduced keeps every warning and every heal sign, with half the particles and no camera kick.": {
+  "files": [
+   "src/ui/run/effects.js"
+  ]
+ },
+ "HP": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "HS": {
+  "files": [
+   "src/sim/allies.js",
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Hunt": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Hunted": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "If the host does not come back, another player takes over and the run continues.": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "impacts split into 2 shards at 40%.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Import…": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Imported into “{name}”": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Imported into “{name}” — {detail}": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Imported save": {
+  "files": [
+   "src/save/describe.js"
+  ]
+ },
+ "In the arena": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "In the fight": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "In use — {source}: {url}": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Interact · Begin a run at the portal": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Interface": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Into the Deep": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Iron Hide": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Iron Stance": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "IS": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "it": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "it may not load in this version": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "Its contents changed after it was saved (the checksum doesn't match).": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Japanese": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Join": {
+  "files": [
+   "src/ui/menu/mpjoin.js"
+  ]
+ },
+ "Join a game": {
+  "files": [
+   "src/ui/menu/mpjoin.js"
+  ]
+ },
+ "Join an open public room, or open one and wait": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Join by code": {
+  "files": [
+   "src/ui/menu/mpjoin.js"
+  ]
+ },
+ "Join by Code": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Joined {code} — the game is under way. You play the {cls}.": {
+  "files": [
+   "src/ui/menu/mpjoin.js"
+  ]
+ },
+ "Joined {code} — the game is under way. You play the ally.": {
+  "files": [
+   "src/ui/menu/mpjoin.js"
+  ]
+ },
+ "Joining {code}…": {
+  "files": [
+   "src/ui/menu/mpjoin.js",
+   "src/ui/net/hud.js"
+  ]
+ },
+ "just now": {
+  "files": [
+   "src/ui/menu/saves.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Keen": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Keep": {
+  "files": [
+   "src/ui/menu/keepdisplay.js"
+  ]
+ },
+ "Keep My Run": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Keep Playing": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Keep these display settings?": {
+  "files": [
+   "src/ui/menu/keepdisplay.js"
+  ]
+ },
+ "Keeps the party standing: heals, wards and the revive. Fragile, so stay behind the line.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "Kestrel Watch": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "key {key} · row {row} of {rows}": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Key rebinding isn’t available in this version — this is the full control reference.": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Kills": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "kills by this skill explode · full heals burst-heal — 50% power in 1.2 u.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "kills explode · full heals burst — 50% within 1.2 u.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Kind": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Kindred Shield": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "KIT": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "KIT · {name}": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "Kits": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "knockback ×2.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Korean": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "KS": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "KW": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Language": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "Lantern Flurry": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Lantern Oil": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Lanternbearer": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Last Light": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "LAST PLAYED": {
+  "files": [
+   "src/ui/run/expedition.js"
+  ]
+ },
+ "LAST RUN": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Leave": {
+  "files": [
+   "src/ui/menu/lobby.js",
+   "src/ui/menu/pause.js",
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Leave it on Automatic: the game connects to the Echoes server of the site you opened it from (wss:// on an https site) — players just open the host’s link. Enter ws://host:port/echoes only to use a different server, e.g. ws://192.168.1.20:7800/echoes for `npm run net -- --host 0.0.0.0` on another computer. An empty address is Automatic.": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Leave Session": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Leave the online session to load a save": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "Leave the room?": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Leave the session?": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Leech Fang": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Left early": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "legal here, but it contributes nothing on this skill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "legendary": {
+  "files": [
+   "src/ui/run/unlocks.js",
+   "src/ui/socket/index.js"
+  ],
+  "data": true
+ },
+ "Lethality": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Level": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Level {from} → {to}": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Level {level}": {
+  "files": [
+   "src/ui/menu/records.js",
+   "src/ui/menu/saves.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "LEVEL {level}": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Level {level} — between levels": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Level {level} · {name}": {
+  "files": [
+   "src/ui/menu/saves.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "LEVEL {level} · {name}": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "Level {level} · {name} · Room {room}": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Level {level} cleared": {
+  "files": [
+   "src/save/describe.js",
+   "src/ui/menu/records.js",
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "LEVEL {level} CLEARED": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "Level {level} cleared — next: Level {next}": {
+  "files": [
+   "src/save/describe.js"
+  ]
+ },
+ "Level {level} cleared — next: Level {next} · {name}": {
+  "files": [
+   "src/save/describe.js"
+  ]
+ },
+ "Level {level} only": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Level {level}, {name}.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Level {level}, {name}. Locked: {line}.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Levels": {
+  "files": [
+   "src/scenes/camp.js"
+  ]
+ },
+ "LEVELS CLEARED": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Levels open": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "LF": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Lifetime": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Lighting the hearth…": {
+  "files": [
+   "src/ui/menu/loading.js"
+  ]
+ },
+ "limit {n}/skill": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "limited to {w} × {h}": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Linear": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Linger": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Load": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Load “{name}”?": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Load Game": {
+  "files": [
+   "src/ui/menu/pause.js",
+   "src/ui/menu/saves.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Loading is unavailable in this build": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Lobby": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Local only — start the server with --host 0.0.0.0 to let friends on your network join.": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Locked": {
+  "files": [
+   "src/save/index.js",
+   "src/ui/run/expedition.js",
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Log (perceptual)": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Log (perceptual): each half of the slider sounds about half as loud (−10 dB at 50 %), the way most PC games feel.\nLinear: the gain follows the slider directly (−6 dB at 50 %), so the top of the slider changes very little.\nSwitching keeps the current loudness — the slider moves to the matching spot.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Looking for players… {s} s": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "LS": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Lunge Strike": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Made by a newer version of Echoes": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Magpie": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Manual": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "Mark the next enemy": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Master": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Master gain now: {db}": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Master is muted": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "MB": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Mending Bolt": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Mending Tide": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Menu clicks, rewards, purchases and progress chimes.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Menus — gamepad": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Menus — keyboard & mouse": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Millpond": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Millstone": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Momentum": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Moonlit tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Moonwell": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Mossy Hollow": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Most kills in a run": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Mouse": {
+  "files": [
+   "src/net/seats.js",
+   "src/ui/menu/tabs/controls.js"
+  ],
+  "data": true
+ },
+ "move": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Move": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Move · Choose · Back": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Moving on": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "MT": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Multiplayer": {
+  "files": [
+   "src/ui/menu/mpmenu.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Multiplayer connects to the session server of the site you opened the game from, and this site isn’t running one right now. If you host it: start it with {serve}, or forward {path} to {net} (README ▸ Host it on a server), then press Retry. If a friend hosts it, ask them — or press Change server to use another address.": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Multiplayer connects to this site’s {path}, which the dev and preview servers forward to the session server on this computer — and it isn’t running. In the game folder run {net}, then press Retry. ({serve} runs the game and the server together.)": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Multiplayer runs through a small server on the host’s computer. On that computer, in the game folder, run {net} (for players on your network: {netHost}), then press Retry.": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Multiply": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Music": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Mute": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Mute when the game loses focus": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Muted": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Muted for this visit by the ?audio=0 link — unmute Master to hear sound.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "NB": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Need {n} more": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Network": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ],
+  "data": true
+ },
+ "New Game": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "NEW SKILL — SWAP": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Newer version": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "NEWEST": {
+  "files": [
+   "src/ui/run/expedition.js"
+  ]
+ },
+ "NEXT": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "NEXT ROOM": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "NEXT RUN WEARS": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "NIGHT · BEFORE THE ROAD": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "Night woodland": {
+  "files": [
+   "src/ui/run/expedition.js",
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Night-dark woodland where the beasts first turned.": {
+  "files": [
+   "src/data/levels.js"
+  ],
+  "data": true
+ },
+ "no answer": {
+  "files": [
+   "src/ui/menu/mpjoin.js",
+   "src/ui/menu/mpmenu.js",
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "No camera shake": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "No descent yet": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "No picture": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "No quicksave yet — press F5 to make one": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "No room with that code.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "No runs finished yet.\nYour ten best runs will be listed here.": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "No saved games yet": {
+  "files": [
+   "src/ui/menu/pause.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "No saved games yet.\nYour game autosaves at every room and at the camp — or import a save file.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "no skills": {
+  "files": [
+   "src/ui/menu/saves.js",
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "no slot free — offering a Node instead": {
+  "files": [
+   "src/sim/draft.js"
+  ],
+  "data": true
+ },
+ "no such socket": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "no updates": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "no updates from the host": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "No updates from the host — the world may freeze for a moment": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "nobody near": {
+  "files": [
+   "src/ui/socket/fizzle.js"
+  ]
+ },
+ "NODE · {rarity}": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "Nodes": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "NODES HELD": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "non-boss hits are knocked back twice as far.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Not a server address — e.g. ws://192.168.1.20:7800/echoes": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Not applied ({reason})": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "Not available right now": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Not cleared yet": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Not during combat": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "Not enough browser storage — delete a slot or export saves to files": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "Not enough browser storage — delete a slot or export saves to files.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Not enough Glint in your purse": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "Not now": {
+  "files": [
+   "src/net/session.js",
+   "src/ui/menu/saves.js",
+   "src/ui/net/update.js"
+  ]
+ },
+ "Not ready": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "not won": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Not yet": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "nothing in the {cls}'s kit uses this yet": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "nothing in your kit sockets a Node — offering a Skill instead": {
+  "files": [
+   "src/sim/draft.js"
+  ],
+  "data": true
+ },
+ "nothing in your kit uses this yet": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "nothing left to sell you": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "nothing on the bench — nodes arrive as clear spoils, from node drafts and from the shop": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Nothing outranks this build": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "NOTHING TO OFFER": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Nothing to reset on this tab": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "nova": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Nova Bloom": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Oathbound": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "OF {n}": {
+  "files": [
+   "src/ui/run/path.js",
+   "src/ui/run/shop.js"
+  ]
+ },
+ "Off": {
+  "files": [
+   "src/app/widgets.js",
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "Off: Renders uncapped. Browsers always show frames at your display's refresh and never tear, so extra frames are not displayed; this can lower input latency slightly and raises power use.": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "OK": {
+  "files": [
+   "src/ui/menu/confirm.js",
+   "src/ui/menu/keepdisplay.js"
+  ]
+ },
+ "On": {
+  "files": [
+   "src/app/widgets.js"
+  ]
+ },
+ "on impact two shards fly on at ±35° (40%) · heals splash the 2 nearest allies (40%).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "on the bench ×{count} · {from}": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "ON THE ROAD": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "On your network: {urls}": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "On: every node your own character gets from a reward page, spoils or the shop is socketed for you (the same policy as Auto-fill) when the page commits. Off: they wait on your bench for you to place.": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "On: one frame per display refresh — smooth, no wasted work.": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Once per room, each member who would fall stays up at 1 HP.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "one extra hop within 2.2 u — ricochet, or chain-heal.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "One-off feats. Each pays its {currency} once, on the run that does it.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Online": {
+  "files": [
+   "src/ui/menu/mpmenu.js",
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Online — {url} answered in {ms} ms": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Online — {url} answered in {ms} ms · LAN {lan}": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Online — the game keeps running": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Online · {cls}": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Online · {ms} ms": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "online (host)": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Online as a guest: the host’s kits, heirloom, purse and vows set this party’s run. Yours apply when you host. You still earn on your own profile, and your tints show on your screen.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Online as host: your kits, heirloom, purse and vows set the whole party’s run. Every player earns on their own profile.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Only the host can do that.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "Only the host can save an online session": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "Open Grave": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Ossuary Row": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Overwrite": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Overwrite “{name}”?": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Own {unlock}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Owned": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "PA": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "packet loss in {lossIn}": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "packet loss in {lossIn} out {lossOut}": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "packet loss out {lossOut}": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "pad": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Pale Lance": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Parry": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Parts of the game state are missing from the file.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "party": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Party": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "PARTY": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "Party builds": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Party critical hits deal ×2 instead of ×1.5.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Party hits knock enemies back 75% farther.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Party kills leave no hazards behind and puff spores that slow nearby enemies by 35%.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "passive": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "passive · aura field": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "passive aura": {
+  "files": [
+   "src/ui/run/cards.js",
+   "src/ui/socket/index.js"
+  ],
+  "data": true
+ },
+ "Past the Barrow the road turns back into the wood, darker each time. The three lands repeat, harder at every depth, until the party falls.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Pause · Resume": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Pause when the window loses focus": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "Paused": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Peddler's Seal": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "pick · place": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "pick a bench node (Tab, then Enter) — or F to auto-fill every live socket": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Pick a save to see it here.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Pick a slot to save into.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "picked up — ↑ / ↓ or 1–4 to another skill, Enter there swaps the two rows · Esc drops it": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Picture on its way…": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Piercing Shot": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Pilgrim's Purse I": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Pilgrim's Purse II": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Pilgrim's Purse III": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "ping {ms} ms": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Pinning Arrow": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "PL": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "place": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Plain run (take everything off)": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Plain run: kits, heirloom, purse and vows taken off.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "plan": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Play": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "Play — keyboard & mouse": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Play this class": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "Played": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Played by {name}": {
+  "files": [
+   "src/ui/run/partystrip.js"
+  ]
+ },
+ "player": {
+  "files": [
+   "src/ui/run/partystrip.js"
+  ]
+ },
+ "Player name": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Players join by opening the host’s link — the game finds the Echoes server of the site it came from, so there is nothing to set here. Hosting: “npm run serve” serves the game and multiplayer from one port (README ▸ Host it on a server); with the dev or preview server, run “npm run net” beside it. Traffic travels over WebSocket; the game models packet loss and delay on top and never pauses for one player.": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Plays a hit on your left, in the centre and on your right.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Plays a short ambience sample at its current level.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Plays a short interface sample at its current level.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Plays a short music sample at its current level.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Plays an interface chime and a hit at the current Master level.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "power": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Preparing {name}… {built}/{total}": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "Press any key or click": {
+  "files": [
+   "src/ui/menu/loading.js"
+  ]
+ },
+ "Press Enter or click — browsers don't let a gamepad button switch to fullscreen": {
+  "files": [
+   "src/app/display.js",
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "preview": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Private — share the code": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "PROFILE": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "projectile": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Provoke": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "PS": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Public — Quick Match can fill empty seats": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Pull": {
+  "files": [
+   "src/sim/interactables.js"
+  ],
+  "data": true
+ },
+ "purchased": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Purse": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "PURSE": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Purse: +{glint} Glint": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Pursuit": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Puts every setting on this tab back to its default. Asks first.": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "PWR": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "QH": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Quick": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Quick Match": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Quick Match can fill the empty seats": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Quicken": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Quickloaded": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "Quicksave": {
+  "files": [
+   "src/save/describe.js"
+  ]
+ },
+ "Quicksave · Quickload": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Quicksaved": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "Quiet Hearth": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Quit": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Quit to Lobby": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Quit to the lobby?": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Quit to the title?": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Quit to Title": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "RA": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Rain of Arrows": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Rally the party": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "range": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Rapid cuts: 11 to up to 6 enemies in reach.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "rare": {
+  "files": [
+   "src/ui/run/unlocks.js",
+   "src/ui/socket/index.js"
+  ],
+  "data": true
+ },
+ "Razor Wake": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Reach": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Reach Depth {depth} of the Endless Descent": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Reach Depth 5 of the Endless Descent.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Reach Depth 8 of the Endless Descent.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "read-only — only your own character": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Read-only — the {cls}'s build is its player's": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Read-only — the {who} sets the sockets": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "read-only — the Healer sets the sockets": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Read-only — the Healer sets the sockets": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Ready": {
+  "files": [
+   "src/ui/menu/loading.js",
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Ready: {cost} {currency}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Receiving the world from the host": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Recolour a class’s effects. Cosmetic, and only on your screen.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Reconnecting…": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Records": {
+  "files": [
+   "src/ui/menu/records.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Records are not available in this browser mode.": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Reduced": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js",
+   "src/ui/run/effects.js"
+  ]
+ },
+ "refused on this skill — try another row": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Rejoin": {
+  "files": [
+   "src/net/session.js",
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Rejoin {code}": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Rejoin {code}?": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "Rejoining…": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Relaxed": {
+  "files": [
+   "src/ui/menu/records.js",
+   "src/ui/menu/saves.js",
+   "src/ui/run/challenge.js"
+  ]
+ },
+ "RELICS": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "Relics last the whole run. Choose one.": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "Reload": {
+  "files": [
+   "src/ui/menu/mpmenu.js",
+   "src/ui/net/update.js"
+  ]
+ },
+ "Reload now": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "Reload the game in the language picked above.": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "remove": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Rename": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Rename save": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Renamed to “{name}”": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Render resolution {size} ({pct}%) · native": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Render resolution {size} ({pct}%) · sharper UI, softer 3D, faster": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Render resolution {size} ({pct}%) · supersampled — slower": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Rendering … fps (measuring)": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Rendering {fps} fps": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Rendering {fps} fps · your device renders about {fps} fps here, below the limit": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Rendering {fps} fps · Your display caps this at ~{cap} fps": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Renders the 3D scene at a fraction or multiple of your window’s pixels. The menus and HUD are drawn separately and stay sharp at every scale.\nBelow 100%: sharper UI, softer 3D, faster.\nAbove 100%: supersampled — slower.": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Renders uncapped — measuring…": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Renders uncapped. Browsers always show frames at your display's refresh and never tear, so extra frames are not displayed; this can lower input latency slightly and raises power use.": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "reorder": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "repeat limit — {limit} per skill already socketed here": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "repeat limit reached on this skill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Replace": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "replace · ◈ {n}": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Replace “{name}” with the imported file?": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Replace a saved run?": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Reset": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Reset {label} settings?": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Reset to automatic": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Reset to defaults": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Resets · {secs} s": {
+  "files": [
+   "src/ui/interact/index.js"
+  ]
+ },
+ "Resolution scale": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Resolution scale {pct}% — render resolution {size}": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Resonance": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "resonance {n}/3": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Restorative Wave": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Restore": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Restore backup": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Restore the backup from {date}?": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Restore the backup?": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "restored to full": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "Result": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Resume": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Retaliate": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Retry": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Return to Camp": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Return to Title": {
+  "files": [
+   "src/ui/menu/farewell.js"
+  ]
+ },
+ "Returning to camp in {secs} s &nbsp;·&nbsp; <b>Enter</b> return now": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Revert": {
+  "files": [
+   "src/ui/menu/keepdisplay.js"
+  ]
+ },
+ "Reverting in {n} s": {
+  "files": [
+   "src/ui/menu/keepdisplay.js"
+  ]
+ },
+ "Revive a downed ally (hold)": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Right mouse": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Right-click": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Ring": {
+  "files": [
+   "src/sim/interactables.js"
+  ],
+  "data": true
+ },
+ "Riposte": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "RNG": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "Room": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "ROOM": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "Room {code} · {n} player": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Room {code} · {n} players": {
+  "files": [
+   "src/ui/net/hud.js"
+  ],
+  "plural": true,
+  "one": "Room {code} · {n} player"
+ },
+ "ROOM {room} OF {total} · {what}": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "Room {room}/{rooms}": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "ROOM {room}/{total} · {what}": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "room {room}/8": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Room codes are 5 letters or digits (no 0, O, 1 or I).": {
+  "files": [
+   "src/ui/menu/mpjoin.js"
+  ]
+ },
+ "Room codes are 5 letters/digits (no 0, O, 1 or I).": {
+  "files": [
+   "src/net/lobbyClient.js"
+  ],
+  "data": true
+ },
+ "Rooms": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "ROOMS CLEARED": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Roots at the cursor for 5 s: 6 per second to enemies inside, and they are slowed 45%.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Rootsnare": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Round trip, loss and bandwidth while playing online": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "rows {from} ⇄ {to} — keys follow the new order": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "RP": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "RS": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Run": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "RUN LENGTH": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Run over": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Run over · defeat": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Run over · victory": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "RUN SEED": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Rung": {
+  "files": [
+   "src/sim/interactables.js"
+  ],
+  "data": true
+ },
+ "Runs": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Runs · victories": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Russian": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "RW": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "RZ": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "SA": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Sanctuary": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Save": {
+  "files": [
+   "src/ui/menu/mpmenu.js",
+   "src/ui/menu/saves.js",
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Save & Quit": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Save & Quit to Title": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Save and quit to the title?": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Save Game": {
+  "files": [
+   "src/ui/menu/pause.js",
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Save here": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Save your game here": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Saved": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Saved — press Check to test it": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Saved — shown in lobbies from now on": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Saved by a newer version of Echoes — using defaults": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Saved to “{name}”": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Saves last for this visit only (browser storage is off)": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Saving is not available right now.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Saving is unavailable in this build": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Saving…": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Say hello first.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "SB": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "SC": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Scales every other channel. Music, Sound Effects, Ambience and Interface never change each other.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Scatter": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Score": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "SCORE": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Screen shake": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "Scroll": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Scroll with ↑ / ↓ (the D-pad or the right stick on a gamepad) or the mouse wheel.": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Select": {
+  "files": [
+   "src/ui/menu/confirm.js",
+   "src/ui/menu/keepdisplay.js",
+   "src/ui/menu/lobby.js",
+   "src/ui/menu/mpmenu.js",
+   "src/ui/menu/pause.js",
+   "src/ui/menu/saves.js",
+   "src/ui/menu/settings.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Select an ally for a heal": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Server": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Server {url}": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Server address": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Server addresses start with ws:// or wss://": {
+  "files": [
+   "src/ui/menu/mpmenu.js",
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Session {code} is open in another tab of this browser — carry on there.": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "Set by the page link (?net=)": {
+  "files": [
+   "src/net/address.js"
+  ],
+  "data": true
+ },
+ "Set by the page link (?net=) — {url}": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Set out": {
+  "files": [
+   "src/ui/run/expedition.js",
+   "src/ui/run/levels.js"
+  ]
+ },
+ "SETTING OUT": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "Setting out — Level {level}": {
+  "files": [
+   "src/save/describe.js"
+  ]
+ },
+ "Setting out — Level {level} · {name}": {
+  "files": [
+   "src/save/describe.js"
+  ]
+ },
+ "Setting out · Level {level}": {
+  "files": [
+   "src/save/describe.js"
+  ]
+ },
+ "Setting out · Level {level} · {name}": {
+  "files": [
+   "src/save/describe.js"
+  ]
+ },
+ "Setting out…": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "Settings": {
+  "files": [
+   "src/ui/menu/lobby.js",
+   "src/ui/menu/pause.js",
+   "src/ui/menu/settings.js",
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Settings can't be saved in this browser mode": {
+  "files": [
+   "src/app/app.js",
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Settings were reset — the saved file was unreadable": {
+  "files": [
+   "src/app/app.js",
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Share": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Sharp Fangs": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Sharpen": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Shield Wall": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Shields the two neediest allies in 3 u (the Tank included) for 24, 4 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Shop": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Short Fuse": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Shoulder Charge": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Show FPS counter": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Shown in lobbies and on the connection chip": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "Shows the rendered frames per second in the bottom-right corner.": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Silences Ambience without moving its slider.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Silences everything without moving any slider.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Silences Interface without moving its slider.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Silences Music without moving its slider.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Silences Sound Effects without moving its slider.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Simplified Chinese": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Single-player only — online games keep running": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "Single-player: the game stops while the tab is hidden or another window has focus. An online game keeps running — the shared world cannot pause for one player.": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "Siphon": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Skewer": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "skill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "SKILL · {kind}": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "skill slot {slot} is empty — skills arrive from drafts": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "SKILL SLOTS FREE": {
+  "files": [
+   "src/ui/run/draft.js",
+   "src/ui/run/path.js"
+  ]
+ },
+ "SKILL SLOTS FULL · CHOOSE ONE TO REPLACE, OR LEAVE": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Skills": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Skills ({n} slot)": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Skills ({n} slots)": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ],
+  "plural": true,
+  "one": "Skills ({n} slot)"
+ },
+ "SKILLS CARRIED": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "Slot {n}": {
+  "files": [
+   "src/save/describe.js"
+  ]
+ },
+ "slot order = keys 1–4": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "slot order = keys 1–4 = the order the AI casts in": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Sluice Gates": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "SM": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "SN": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Snare": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Socket my new nodes": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "socketed — +0 right now (every target already covered)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "socketed — +0 right now: {why}": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "socketed — grey here: it contributes nothing on this skill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "socketed <b>{filled}</b> / {total}": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "SOCKETS": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "SOCKETS FILLED": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "sockets open between rooms only": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "SOLD": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "Sound Effects": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Sound is on · {rate} kHz stereo. Changes apply instantly and are saved.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Sound is on. Changes apply instantly and are saved.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Sound is paused by the browser — press any key or click to resume.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Sound is unavailable in this build.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Sound is unavailable right now": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Sound starts after your first key press or click": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Sound starts after your first key press or click (a browser rule).": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Sound: {state}": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Spanish": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Speed <b>{speed}</b>": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "Spikes at the target for 5 s: 8 per second to enemies inside.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Spirit Bolt": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Split": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "spoils": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Spore Sac": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Standard": {
+  "files": [
+   "src/ui/menu/records.js",
+   "src/ui/menu/saves.js",
+   "src/ui/run/challenge.js"
+  ]
+ },
+ "Start": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Start a new game?": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Start New Game": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Start now": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Start or load a game first": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "Starter kit: +{skills} skills · {nodes} nodes · {glint} Glint": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "STARTER NODES": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "STARTER SKILLS": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "Starting in {s} s": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Starting…": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "STARTS WITH": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "stat": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Stay": {
+  "files": [
+   "src/ui/menu/lobby.js",
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Steady Aim": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Still joining {code}…": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Suggested": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "suggested: Leave — the current four outrank it": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Sundering Nova": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "SW": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "swaps out {node} (it banks to the bench)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Swear": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Swift Mend": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Switch to {language}?": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "Switch with Enter, ← / → or a click (A on a gamepad).": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Switching to fullscreen…": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Swordsman": {
+  "files": [
+   "src/data/classes.js",
+   "src/net/protocol/messages.js",
+   "src/net/seats.js",
+   "src/ui/menu/saves.js",
+   "src/ui/run/transit.js"
+  ],
+  "data": true
+ },
+ "Swordsman effects burn in Abyssal colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Swordsman effects burn in Gravefrost colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Sworn": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Tabs": {
+  "files": [
+   "src/ui/menu/settings.js",
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Tabs · Pause": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Take": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Take · Replace": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Take off": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Taken": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "TAKEN": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "Tank": {
+  "files": [
+   "src/data/classes.js",
+   "src/net/protocol/messages.js",
+   "src/net/seats.js",
+   "src/ui/menu/saves.js",
+   "src/ui/run/transit.js"
+  ],
+  "data": true
+ },
+ "Tank effects burn in Emberforge colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Tank wards while this cools down.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Taunting Roar": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "technique": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Test": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Test {channel}": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Thanks for playing Echoes.": {
+  "files": [
+   "src/ui/menu/farewell.js"
+  ]
+ },
+ "That address comes from the page link (?net=). {how}": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "That class is taken ({reason})": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "That game is starting or does not allow joining mid-run.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "That is another player’s character — only your own tab is yours to change": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "That is not a server address — e.g. ws://192.168.1.20:7800/echoes": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "That is not possible right now.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "That is the custom address saved in Settings ▸ Network. {how} Or press “Use this site’s server” to go back to automatic.": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "That is the Healer’s build, not yours — your own character is on your tab": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "That level is locked": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "that node is not on the bench": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "That room is full.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "That room runs a different version of Echoes.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "That save failed its integrity check — it was changed or damaged.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "That save file failed its integrity check — it was changed or damaged": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "That save file is damaged": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "That save file is damaged.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "That save is in a level you haven't unlocked yet": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "That save needs content this version of Echoes doesn't have — it can't be loaded here": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "That save was made by a newer version of Echoes": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "That save was made by a newer version of Echoes — this build cannot read it.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "That seat is taken.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "That server runs an older version of Echoes than this page. Whoever runs it: update the game folder and restart it ({serve}), then press Retry.": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "That session is open in another tab of this browser.": {
+  "files": [
+   "src/net/lobbyClient.js"
+  ],
+  "data": true
+ },
+ "that skill is not in your kit": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "That slot is empty": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "That slot is empty.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "The {cls} (for the {ally}) is choosing…": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The {cls} (for the {ally}) is choosing… — {secs} s": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The {cls} (for the {ally}) is shopping…": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The {cls} (for the {ally}) is shopping… — {secs} s": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The {cls} is choosing the reward…": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The {cls} is choosing…": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The {cls} is played by AI": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "The {cls} is shopping…": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The {cls} leads on to the next level…": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The {cls} picks the door — point with ←/→ and Enter": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The {cls} picks the door — your pick was shown to the party": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "The {cls} picks the party's relic — your pick was shown to the party": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "The {cls}'s build": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "THE {critter}": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "The address of the Echoes server — ws://host:port/echoes (wss:// for a secure server). Automatic uses the server of the site you opened the game from.": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "The Archer begins with Pinning Arrow, Rain of Arrows and Kestrel Watch.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "The Ashen Barrow": {
+  "files": [
+   "src/data/levels.js",
+   "src/ui/menu/records.js"
+  ],
+  "data": true
+ },
+ "The Barrow Wyrm": {
+  "files": [
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE BARROW WYRM": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Barrow Wyrm is still. The long night lifts.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "the bench is empty — clear spoils, node drafts and the shop fill it": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "The browser blocked fullscreen — press Enter or click to try again": {
+  "files": [
+   "src/app/display.js"
+  ]
+ },
+ "The Camp": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "The campaign begins here and runs on to the final level.": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "THE CAMPAIGN ENDS": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "The campaign is won. The road does not end; it turns back into the dark wood, deeper than before.": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The campaign was won, and the party went on. The dark took them at Depth {depth}.": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "the cast repeats 1.0 s later — 50% damage, 100% heal.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "THE CURSE LIFTS": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "The damaged file in this slot will be replaced.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "The damaged file is replaced by its backup.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "The damaged file is replaced by the backup from {date} ({where}).": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "THE DESCENT ENDS": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "THE DESCENT GOES ON": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "The Drowned Heron": {
+  "files": [
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE DROWNED HERON": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Drowned Heron sinks. The water runs clear again.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The Echoes server at {url} runs an older version.": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "The elite dropped a relic: {name}. {text}": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The Endless Descent": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "THE ENDLESS DESCENT": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The Endless Descent.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "The Endless Descent. Locked: {line}.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "The file could not be read.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "The file holds data Echoes cannot read.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "The file is cut short or garbled — the write may have been interrupted.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "The file's version stamp is missing.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "the first hit of each cast on each enemy is a guaranteed crit.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "the fox dashes up to 1.2 u toward the target before an arc or burst · Fox Step dashes 1.0 u further.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "The game has ended": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "The game is still starting": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "The game keeps running here; your party sees you as reconnecting.": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "The game keeps running in the background": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "The game reloads in the new language. A run carries on from its last autosave (the start of the current room) through Continue; an online game is left.": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "The gate opens onto three roads. Each is a full run of eight rooms.": {
+  "files": [
+   "src/ui/run/expedition.js"
+  ]
+ },
+ "The gods applaud.": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "The hare vaults 1.6 u away (untouchable), then shoots: 18 and a 30% slow.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "The Healer carries · {skills}": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The Healer leads on…": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "THE HEARTH CAMP": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "The hearth fire at camp, wind and water on expeditions.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "THE HOLLOW": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "the Hollow Stag": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "The Hollow Stag": {
+  "files": [
+   "src/data/levels.js",
+   "src/data/unlocks.js",
+   "src/ui/menu/saves.js",
+   "src/ui/run/shop.js"
+  ],
+  "data": true
+ },
+ "THE HOLLOW STAG": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "The Hollow Stag falls. The wood breathes out.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The Hollow Wood": {
+  "files": [
+   "src/data/levels.js",
+   "src/ui/menu/records.js"
+  ],
+  "data": true
+ },
+ "The host is back": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "The host leads the party between levels — your press was shown to the party": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "The host quit to the lobby — the campaign ended and the party is back at camp": {
+  "files": [
+   "src/main.js"
+  ]
+ },
+ "The host's game hasn't sent the world yet. Keep waiting, or leave with Esc → Leave Session.": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "the impact hops once more per copy, within 2.2 u — a ricochet on damage, a chain-heal on a heal.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "The language of every menu, card and message. Switching reloads the game in the new language; a run carries on from its last autosave through Continue.": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "the last common / rare upgrade: <b>F</b> auto-fill swaps it in": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "The last of the old beasts falls. Every level is clear — the long night is over.": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "The Lich Ram": {
+  "files": [
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE LICH RAM": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Lich Ram crumbles. The graves close; the long night lifts.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The Long Road": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "The Millwheel": {
+  "files": [
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE MILLWHEEL": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Millwheel shatters. The water runs clear again.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The name other players see in the lobby and above your seat in the connection chip. Up to 16 characters.": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "The new game autosaves to its own slot.": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "The new game's autosaves will replace your older run in progress:\n{run}": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "THE PARTY": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "The party deals 12% more damage.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "The party deals 35% more damage but takes 20% more.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "The party fell at Depth {depth}, before the Barrow. The gods applaud.": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "THE PARTY HAS FALLEN": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "The party leaves in {secs} s": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "The party moved on — your node in hand is back on the bench": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "The party takes 12% more damage for the rest of the run.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "The party takes 15% less damage.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "THE PEDDLER": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "THE PEDDLER'S CLEARING": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "THE PEDDLER'S SHELF": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "THE PROVING CLEARING": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "The request was not understood.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "The room closed": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "THE RUN ENDS": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "the run moves on": {
+  "files": [
+   "src/sim/draft.js"
+  ],
+  "data": true
+ },
+ "The run resumed from {secs} s earlier": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "The save from {date} ({where}) will be replaced.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "The score: menu, camp, combat, boss and the victory / defeat stingers.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "the seat was released": {
+  "files": [
+   "src/net/session.js",
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "The server can’t be reached right now — go Back and Retry.": {
+  "files": [
+   "src/ui/menu/mpjoin.js"
+  ]
+ },
+ "The server closed this session.": {
+  "files": [
+   "src/net/lobbyClient.js"
+  ],
+  "data": true
+ },
+ "The server is full right now.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "The server was updated — a new version of Echoes is available.": {
+  "files": [
+   "src/net/lobbyClient.js"
+  ],
+  "data": true
+ },
+ "The session ended — everyone else left.": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "The session ended.": {
+  "files": [
+   "src/net/lobbyClient.js",
+   "src/net/session.js"
+  ],
+  "data": true
+ },
+ "The session expired.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "The shop closes — {secs} s": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "the starting kit": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The Sunken Mill": {
+  "files": [
+   "src/data/levels.js",
+   "src/ui/menu/records.js"
+  ],
+  "data": true
+ },
+ "The Swordsman begins with Fox Step, Riposte and Crescent Finisher.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "The Tank begins with Shield Wall, Taunting Roar and Iron Stance.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "the Tank strikes back for 2 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "the Tank takes 20% less damage while this skill cools down · shields ward their bearers · Iron Stance wards allies inside.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "The Thornmother": {
+  "files": [
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE THORNMOTHER": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Thornmother falls. The briars let the wood go.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The way ahead opens.": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "THE WAY ON": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "the whole cast repeats 1.0 s later — 50% power on damage, 100% on a heal.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Thick Hide": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "This abandons the campaign for the whole party — everyone returns to camp. Unlocks and records are kept.": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "This abandons the current campaign and returns you to camp. Unlocks and records are kept.": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "This browser doesn't allow fullscreen here": {
+  "files": [
+   "src/app/display.js",
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "This browser has no Web Audio — sound is unavailable.": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "This browser isn't letting Echoes store saves (private mode?) — export to a file instead": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "This browser isn't letting Echoes store saves (private mode?). Export to a file instead.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "This build was made to connect to that server. Whoever runs it: start it ({net}), then press Retry — or press Change server to use another address.": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "This can't be undone.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "this computer’s server": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "This file could not be read": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "This isn't an Echoes save file.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "This page is {mine}; the host runs {latest}. Reload to update — your settings, saves and records stay in this browser.": {
+  "files": [
+   "src/ui/net/update.js"
+  ]
+ },
+ "This page is {mine}; the server now runs {latest}. Reload to update — your settings, saves and records stay in this browser.": {
+  "files": [
+   "src/ui/net/update.js"
+  ]
+ },
+ "This page is {mine}; this site now serves {latest}. Reload to update — your settings, saves and records stay in this browser.": {
+  "files": [
+   "src/ui/net/update.js"
+  ]
+ },
+ "This page is older than the game on the server. Reload to update — your settings, saves and records stay in this browser.": {
+  "files": [
+   "src/ui/net/update.js"
+  ]
+ },
+ "This page is served over https, so the browser only allows secure (wss://) servers.": {
+  "files": [
+   "src/ui/menu/mpmenu.js",
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "This page was opened as a file, so there is no site to find a server on. In the game folder run {serve} and open the address it prints (friends on your network open the same link) — or run {net} and press Retry.": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "This reward has nowhere to go in this kit.": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "This run is lost.": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "This save could not be loaded": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "This session continued in another window.": {
+  "files": [
+   "src/net/lobbyClient.js"
+  ],
+  "data": true
+ },
+ "This tab could not be loaded.": {
+  "files": [
+   "src/ui/menu/settings.js"
+  ]
+ },
+ "Thorn Mail": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Thornbloom tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Three arrows in a fan: 14 each.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Three lantern bolts in a 12° fan, 9 each.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Through all three lands and down again, until the party falls.": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "Time": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Time played": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Time's up — the {who}'s reward was picked (left)": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Time's up — the {who}'s reward was picked (left) — you can re-socket it between rooms": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Time's up — the {who}'s reward was picked (taken)": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Time's up — the {who}'s reward was picked (taken) — you can re-socket it between rooms": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Time's up — the left door was taken": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Tints": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "To keep both, load the older run from Load Game and save it to a numbered slot first.": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Too late — that choice already closed": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "Too many requests — slow down.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "TR": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Trade Swift Mend for Lantern Flurry: three lantern darts that hit back.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Traditional Chinese": {
+  "files": [
+   "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Tremor": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Type the room code the host sees in their lobby.": {
+  "files": [
+   "src/ui/menu/mpjoin.js"
+  ]
+ },
+ "UNEASY WOODLAND": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "Unknown heirloom": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Unlimited": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Unlocked: {names}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Unlocks": {
+  "files": [
+   "src/scenes/camp.js",
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Unreachable": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Unstable connection — {loss} packet loss": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Unstable connection — high jitter": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Update available": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Use this site’s server": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Uses {site} instead of the custom address": {
+  "files": [
+   "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "V-Sync": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Vault Shot": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Veteran": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Victories · defeats": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Victory": {
+  "files": [
+   "src/ui/menu/records.js",
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "VICTORY": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "VICTORY · RETURNING TO CAMP": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "victory card": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "VO": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Volley": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Volume": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "VOW": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Vow: Crowded": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Vow: Elite Tide": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Vow: Iron Hide": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Vow: Sharp Fangs": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Vows": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "VS": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "WA": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Wait for the transition to finish": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "Waiting for {names} — auto-pick in {secs} s": {
+  "files": [
+   "src/ui/run/draft.js"
+  ]
+ },
+ "Waiting for {names} to be ready": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Waiting for the {cls}…": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Walk through 3 cursed doors in one run.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Warden": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Warding Aura": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "WAVE {shown}/{total}": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
+ "WAYSTONE": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
+ "WAYSTONE LOST": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
+ "Wear vows to curse every combat room. Each vow pays {pct}% more {currency}.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Weir": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Welcome back — you are hosting again": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "Welcome back — you are hosting again (the run resumed from {secs} s earlier)": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "WG": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "WHAT COMES NEXT": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Where": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Whetstone": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Whirling Guard": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Widen": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Win {name} to unlock": {
+  "files": [
+   "src/ui/run/expedition.js"
+  ]
+ },
+ "Win the campaign to unlock": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Windowed": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Windowed keeps the browser tab as it is. Fullscreen (browser) fills your screen with the game.\nFullscreen lasts for this visit — browsers leave it when the page reloads.\nPress Enter or click to switch — browsers don’t let a gamepad button switch to fullscreen.": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "With Master: {db}": {
+  "files": [
+   "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "Withering": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Without saving": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "won": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Wood · Mill · Barrow · and down again": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Wyrm Scale": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Wyrmfire tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "X removes it to the bench · Enter picks it up to move it": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "you": {
+  "files": [
+   "src/ui/run/partystrip.js"
+  ]
+ },
+ "You are already in a room — leave it first.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "You are not in a room.": {
+  "files": [
+   "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "You are now hosting — the session continues": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "You are now hosting (no keyframe: continuing from your last view)": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "You are now the host": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "You are the host — the room passes to the next player, or closes if nobody is left.": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "You can join again with the same code while the room is open.": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "You can't save right now": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "You can't save right now.": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "You cannot save right now": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "You carry {n} relic: {names}.": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "You carry {n} relics: {names}.": {
+  "files": [
+   "src/ui/run/relic.js"
+  ],
+  "plural": true,
+  "one": "You carry {n} relic: {names}."
+ },
+ "You decide every ally card, shelf and bench yourself": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "you own {n}": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "you own {n} · on the bench": {
+  "files": [
+   "src/ui/run/cards.js"
+  ]
+ },
+ "You play as {name} (change it in Settings ▸ Network)": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "You play one of the four. The AI plays the other three, so the party is always whole.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "You play the {cls}": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "You play the {cls} and build it yourself between rooms — its skills, nodes and shop picks. The host builds the AI-held seats; anyone can drop in later.": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "You play the {cls} and build it yourself between rooms — its skills, nodes and shop picks. The host plays the {hostCls} and builds the AI-held seats; anyone can drop in later.": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "You play the {cls}. Between rooms each player builds their own character; you also build the AI-held seats ({path}). Anyone can drop in later.": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "You return to the title. Your single-player saves are untouched.": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "You were hosting — your party is waiting for you": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "You were hosting {code} — your party is waiting. Rejoin to carry on the run.": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "Your {cls} seat is held for a minute after a disconnect": {
+  "files": [
+   "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Your {cls} seat is held for a minute after a disconnect. Rejoin the session now?": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "Your allies caught up: {n} nodes each": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Your bench is auto-filled at every commit": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "Your browser keeps this tab open — close it whenever you like. Your progress is saved.": {
+  "files": [
+   "src/ui/menu/farewell.js"
+  ]
+ },
+ "Your browser keeps this tab open — close it whenever you like. Your settings are saved.": {
+  "files": [
+   "src/ui/menu/farewell.js"
+  ]
+ },
+ "Your build": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "Your card — auto-pick — {secs} s": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Your character": {
+  "files": [
+   "src/ui/run/partystrip.js"
+  ]
+ },
+ "Your device renders about {fps} fps here — uncapped can't go faster than your GPU": {
+  "files": [
+   "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Your first relic of the run.": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "Your friends keep playing — another player takes over as host.": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Your latest run stays in Load Game:\n{run}": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Your new nodes wait on the bench": {
+  "files": [
+   "src/ui/run/partysettings.js"
+  ]
+ },
+ "Your pick is in — waiting for the party": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Your pick is in — waiting for the party — {secs} s": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Your profile is unavailable in this browser mode.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Your progress and settings are saved.": {
+  "files": [
+   "src/app/app.js"
+  ]
+ },
+ "Your run in progress stays in Load Game:\n{runs}": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Your run is written to the autosave slot first.": {
+  "files": [
+   "src/ui/menu/pause.js"
+  ]
+ },
+ "Your runs in progress stay in Load Game:\n{runs}": {
+  "files": [
+   "src/ui/menu/title.js"
+  ]
+ },
+ "Your saves": {
+  "files": [
+   "src/ui/menu/saves.js"
+  ]
+ },
+ "Your seat is held — the AI plays it until you are back.": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Your seat was released — the session moved on without you.": {
+  "files": [
+   "src/net/lobbyClient.js"
+  ],
+  "data": true
+ },
+ "Your settings are saved.": {
+  "files": [
+   "src/app/app.js"
+  ]
+ },
+ "Your settings were saved by a newer version of Echoes — using defaults for now": {
+  "files": [
+   "src/app/app.js"
+  ]
+ },
+ "Your shelf at the peddler is 25% cheaper.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ }
+}

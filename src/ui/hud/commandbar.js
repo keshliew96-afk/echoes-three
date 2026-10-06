@@ -43,6 +43,7 @@ import { PALETTE } from '../../data/palette.js';
 import { DODGE, TICK_HZ, SKILL_SLOTS, SOCKETS_PER_SKILL } from '../../core/constants.js';
 import { ACCENTS, CHROME } from './style.js';
 import { iconEl, hasIcon } from './icons.js';
+import { t } from '../../i18n/index.js';
 
 // Cooldown ring geometry (40-box viewBox over the medallion): r 16.5 -> the
 // Parchment arc that grows clockwise from 12 as the skill recharges.
@@ -395,7 +396,11 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
         if (g) grey += 1;
       }
       s.sockets = d ? { filled, live, grey, of: SOCKETS_PER_SKILL } : null;
-      s.col.title = d ? `${filled} / ${SOCKETS_PER_SKILL} sockets filled${grey ? ` (${grey} contribute nothing here)` : ''}` : '';
+      s.col.title = d
+        ? grey
+          ? t('{filled} / {total} sockets filled ({grey} contribute nothing here)', { filled, total: SOCKETS_PER_SKILL, grey })
+          : t('{filled} / {total} sockets filled', { filled, total: SOCKETS_PER_SKILL })
+        : '';
     }
   }
   el('div', 'hud-sep', bar);
@@ -788,7 +793,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     st.id = 'nt-bar-style';
     st.textContent =
       `.hud-port.nt-self { outline: 2px solid ${PALETTE.hearthAmber}; outline-offset: 2px; border-radius: 10px; }` +
-      `.hud-slot .nt-abbr { position: relative; z-index: 2; font: 800 18px/1 "Nunito", "Trebuchet MS", system-ui, sans-serif; color: ${PALETTE.parchment}; letter-spacing: 0.02em; }`;
+      `.hud-slot .nt-abbr { position: relative; z-index: 2; font: 800 18px/1 "Nunito", "Trebuchet MS", system-ui, var(--i18n-font, sans-serif); color: ${PALETTE.parchment}; letter-spacing: 0.02em; }`;
     document.head.appendChild(st);
   }
   // eslint-disable-next-line no-func-assign
@@ -824,10 +829,10 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       // Ally kit skills have no drawn icon: their two-letter abbrev fills
       // the medallion instead (Parchment, >= 16 real px).
       if (!hasIcon(d.id) && s.iconHost.childElementCount === 0) {
-        const t = document.createElement('span');
-        t.className = 'nt-abbr';
-        t.textContent = d.abbrev;
-        s.iconHost.appendChild(t);
+        const ab = document.createElement('span');
+        ab.className = 'nt-abbr';
+        ab.textContent = t(d.abbrev);
+        s.iconHost.appendChild(ab);
       }
       paintCooldown(s, d.remainingTicks, d.totalTicks);
     }

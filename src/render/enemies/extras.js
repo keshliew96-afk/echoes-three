@@ -29,6 +29,7 @@ import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
 import { sharedGeo } from '../geocache.js';
 import { impactFx } from '../vfx/hub.js';
 import { HIDE } from './style.js';
+import { t } from '../../i18n/index.js';
 
 const GLOB_PEAK = 1.7; // u — arc height at mid-flight
 const WAKE_STEP = 0.16; // u of tunnelling between dirt clods
@@ -138,9 +139,9 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
   function makeBlockedEl() {
     const el = document.createElement('div');
     el.className = 'ix-blocked';
-    el.textContent = 'BLOCKED';
+    el.textContent = t('BLOCKED');
     el.style.cssText =
-      'position:fixed;left:0;top:0;pointer-events:none;z-index:41;font:800 18px/1 system-ui,"Segoe UI",sans-serif;' +
+      'position:fixed;left:0;top:0;pointer-events:none;z-index:41;font:800 18px/1 system-ui,"Segoe UI",var(--i18n-font, sans-serif);' +
       `letter-spacing:0.08em;color:${PALETTE.bone};text-shadow:2px 0 0 ${PALETTE.voidCharcoal},-2px 0 0 ${PALETTE.voidCharcoal},0 2px 0 ${PALETTE.voidCharcoal},0 -2px 0 ${PALETTE.voidCharcoal};` +
       'transform:translate(-50%,-50%);opacity:0;will-change:transform,opacity;';
     document.body.appendChild(el);

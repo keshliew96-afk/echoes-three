@@ -12,14 +12,14 @@
 import { registerSettingsRow, service } from '../../app/registry.js';
 import { V } from '../../app/settings.js';
 import { CHALLENGE } from '../../data/difficulty.js';
+import { t } from '../../i18n/index.js';
 
 export const CHALLENGE_KEY = 'gameplay.challenge';
 const ORDER = ['relaxed', 'standard', 'harrowing'];
-const LABEL = { relaxed: 'Relaxed', standard: 'Standard', harrowing: 'Harrowing' };
+// Looked up when the row is built (the language is set by then).
+const labelOf = (id) => ({ relaxed: t('Relaxed'), standard: t('Standard'), harrowing: t('Harrowing') })[id];
 const pct = (m) => `${Math.round(m * 100)}%`;
-const NOTE = Object.fromEntries(
-  ORDER.map((id) => [id, `Enemies and the Stag: ${pct(CHALLENGE[id].hp)} HP, ${pct(CHALLENGE[id].dmg)} damage`])
-);
+const noteOf = (id) => t('Enemies and the Stag: {hp} HP, {dmg} damage', { hp: pct(CHALLENGE[id].hp), dmg: pct(CHALLENGE[id].dmg) });
 
 export function registerChallengeSetting(settings) {
   if (settings && typeof settings.register === 'function') {
@@ -38,11 +38,12 @@ export function registerChallengeSetting(settings) {
       };
       const w = widgets.select({
         id: 'ex-gameplay-challenge',
-        label: 'Challenge',
-        options: ORDER.map((id) => ({ value: id, label: LABEL[id], note: NOTE[id] })),
+        label: t('Challenge'),
+        options: ORDER.map((id) => ({ value: id, label: labelOf(id), note: noteOf(id) })),
         value: store.get(CHALLENGE_KEY) ?? 'standard',
-        help:
-          'How hard the enemies of your NEXT expedition are. Relaxed: 75% HP, 70% damage. Standard: as designed. Harrowing: 125% HP, 130% damage. The challenge is fixed when you step through the camp gate, so a run in progress keeps the one it started with. Harrowing scores ×1.5, Relaxed ×0.75.',
+        help: t(
+          'How hard the enemies of your NEXT expedition are. Relaxed: 75% HP, 70% damage. Standard: as designed. Harrowing: 125% HP, 130% damage. The challenge is fixed when you step through the camp gate, so a run in progress keeps the one it started with. Harrowing scores ×1.5, Relaxed ×0.75.'
+        ),
         onChange: (v) => {
           store.set(CHALLENGE_KEY, v, { source: 'ui' });
           paintNote();
@@ -51,8 +52,12 @@ export function registerChallengeSetting(settings) {
       function paintNote() {
         const cur = store.get(CHALLENGE_KEY) ?? 'standard';
         const run = liveRun();
-        const base = NOTE[cur];
-        w.setNote?.(run && run !== cur ? `${base} · this run stays ${LABEL[run]} — applies from your next expedition` : `${base} · applies from your next expedition`);
+        const note = noteOf(cur);
+        w.setNote?.(
+          run && run !== cur
+            ? t('{note} · this run stays {challenge} — applies from your next expedition', { note, challenge: labelOf(run) })
+            : t('{note} · applies from your next expedition', { note })
+        );
       }
       paintNote();
       // fix-M1-r5: the Gameplay tab calls sync() on every gameplay.* change

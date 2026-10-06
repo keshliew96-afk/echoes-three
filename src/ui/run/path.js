@@ -11,24 +11,25 @@ import { curseIconHtml } from './relicicons.js';
 import { esc } from './style.js';
 import { WIN_GLYPH, REWARD_GLYPH } from '../../sim/run.js';
 import { bossNameOfRun } from '../../data/levels.js';
+import { t } from '../../i18n/index.js';
 
 const WIN_LABEL = {
-  kill_all: 'clear every enemy',
-  defend: 'hold the Waystone',
-  boss: 'the Hollow Stag',
+  kill_all: () => t('clear every enemy'),
+  defend: () => t('hold the Waystone'),
+  boss: () => t('the Hollow Stag'),
 };
-const REWARD_LABEL = { skill: 'a Skill draft', node: 'a Node draft' };
+const REWARD_LABEL = { skill: () => t('a Skill draft'), node: () => t('a Node draft') };
 
 export function createPathScreen({ run }) {
   const el = document.createElement('div');
   el.className = 'rn-page rn-path';
   el.innerHTML = `
-    <div class="rn-title">THE WAY ON</div>
+    <div class="rn-title">${esc(t('THE WAY ON'))}</div>
     <div class="rn-orn">◆ ◆ ◆</div>
     <div class="rn-strip">
-      <span class="rn-lab">SKILL SLOTS FREE</span><span class="rn-num rn-free">0</span>
-      <span class="rn-lab">· NEXT ROOM</span><span class="rn-num rn-next">2</span>
-      <span class="rn-lab">OF 8</span>
+      <span class="rn-lab">${esc(t('SKILL SLOTS FREE'))}</span><span class="rn-num rn-free">0</span>
+      <span class="rn-lab">· ${esc(t('NEXT ROOM'))}</span><span class="rn-num rn-next">2</span>
+      <span class="rn-lab">${esc(t('OF {n}', { n: 8 }))}</span>
     </div>
     <div class="rn-doors">
       <div class="rn-doorwrap" data-side="0">
@@ -50,7 +51,7 @@ export function createPathScreen({ run }) {
     </div>
     <div class="rn-legend"></div>
     <div class="rl-cursenote" style="display:none"></div>
-    <div class="rn-hint"><b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> walk through</div>`;
+    <div class="rn-hint">${t('<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> walk through')}</div>`;
 
   const wraps = [...el.querySelectorAll('.rn-doorwrap')];
   const doors = wraps.map((w) => w.querySelector('.rn-door'));
@@ -102,16 +103,27 @@ export function createPathScreen({ run }) {
     // once, so no door carries a third piece of information.
     const win = p.options[0].win;
     legendEl.innerHTML = `
-      <span><b>${WIN_GLYPH[win] ?? '⚔'}</b> ${esc(win === 'boss' ? bossNameOfRun(view).replace(/^The /, 'the ') : WIN_LABEL[win] ?? win)}</span>
-      <span><b>${REWARD_GLYPH.skill}</b> ${esc(REWARD_LABEL.skill)}</span>
-      <span><b>${REWARD_GLYPH.node}</b> ${esc(REWARD_LABEL.node)}</span>`;
+      <span><b>${WIN_GLYPH[win] ?? '⚔'}</b> ${esc(win === 'boss' ? t(bossNameOfRun(view)).replace(/^The /, 'the ') : WIN_LABEL[win] ? WIN_LABEL[win]() : win)}</span>
+      <span><b>${REWARD_GLYPH.skill}</b> ${esc(REWARD_LABEL.skill())}</span>
+      <span><b>${REWARD_GLYPH.node}</b> ${esc(REWARD_LABEL.node())}</span>`;
     // RELICS: what the cursed door costs and pays (words, not colour alone).
     const cursed = p.options.find((o) => o.curse);
     const c = cursed ? CURSES[cursed.curse] : null;
     curseNote.style.display = c ? '' : 'none';
     curseNote.classList.toggle('rl-majornote', !!(cursed && cursed.major));
-    if (c && cursed.major) curseNote.innerHTML = `${curseIconHtml(26, true)}<div><b>Major curse (${cursed.side === 0 ? 'left' : 'right'} door): ${esc(c.name)}.</b> ${esc(c.text)} Clear the room for a greater relic (rare or legendary).</div>`;
-    else if (c) curseNote.innerHTML = `${curseIconHtml(26)}<div><b>Cursed door (${cursed.side === 0 ? 'left' : 'right'}): ${esc(c.name)}.</b> ${esc(c.text)} Clear the room for a relic.</div>`;
+    const left = cursed && cursed.side === 0;
+    if (c && cursed.major)
+      curseNote.innerHTML = `${curseIconHtml(26, true)}<div>${
+        left
+          ? t('<b>Major curse (left door): {name}.</b> {text} Clear the room for a greater relic (rare or legendary).', { name: esc(t(c.name)), text: esc(t(c.text)) })
+          : t('<b>Major curse (right door): {name}.</b> {text} Clear the room for a greater relic (rare or legendary).', { name: esc(t(c.name)), text: esc(t(c.text)) })
+      }</div>`;
+    else if (c)
+      curseNote.innerHTML = `${curseIconHtml(26)}<div>${
+        left
+          ? t('<b>Cursed door (left): {name}.</b> {text} Clear the room for a relic.', { name: esc(t(c.name)), text: esc(t(c.text)) })
+          : t('<b>Cursed door (right): {name}.</b> {text} Clear the room for a relic.', { name: esc(t(c.name)), text: esc(t(c.text)) })
+      }</div>`;
     shownFocus = p.focus;
   }
   // fix-M3-r5 (AUD5-F1): the focused door as drawn, the selection signature

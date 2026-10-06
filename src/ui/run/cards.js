@@ -5,6 +5,7 @@ import { NODES } from '../../sim/nodes.js';
 import { PALETTE } from '../../data/palette.js';
 import { esc } from './style.js';
 import { iconHtml, hasIcon } from '../hud/icons.js';
+import { t } from '../../i18n/index.js';
 
 export const RARITY_COLOR = {
   common: PALETTE.bone, // §19.1 Bone = common
@@ -147,7 +148,7 @@ export const NODE_EFFECT_SHORT = {
   heartseeker: 'first hit per enemy crits.',
 };
 
-const SHAPE_LABEL = {
+export const SHAPE_LABEL = {
   projectile: 'projectile',
   direct: 'direct',
   nova: 'nova',
@@ -161,7 +162,7 @@ const ARCH_GLYPH = { heal: '✚', damage: '✦', passive: '◍', guard: '⬡' };
 // §23.3: what each Gauntlet skill does beyond its stat row (the status it
 // carries, the pierce, the field) — the card states it in words, with the
 // authored numbers.
-const SKILL_BODY = {
+export const SKILL_BODY = {
   lantern_flurry: 'Three lantern bolts in a 12° fan, 9 each.',
   pale_lance: 'A lance that pierces: it strikes up to 3 enemies in a line, full power each.',
   bell_toll: 'A tolling burst around you: 20 to up to 5 enemies, and a 0.5 s stun (not the Stag).',
@@ -203,31 +204,32 @@ export function skillCardHtml(id) {
   const def = SKILLS[id];
   if (!def) return '';
   const stats = [];
-  stats.push(`<span><i>PWR</i> ${def.power}</span>`);
-  if (def.cd !== undefined) stats.push(`<span><i>CD</i> ${def.cd}s</span>`);
-  if (def.range !== undefined) stats.push(`<span><i>RNG</i> ${def.range}</span>`);
+  stats.push(`<span><i>${esc(t('PWR'))}</i> ${def.power}</span>`);
+  if (def.cd !== undefined) stats.push(`<span><i>${esc(t('CD'))}</i> ${esc(t('{sec}s', { sec: def.cd }))}</span>`);
+  if (def.range !== undefined) stats.push(`<span><i>${esc(t('RNG'))}</i> ${def.range}</span>`);
   if (def.area !== undefined && def.area > 0)
-    stats.push(`<span><i>${def.shape === 'melee_arc' ? 'ARC' : 'AREA'}</i> ${def.area}${def.shape === 'melee_arc' ? '°' : ''}</span>`);
-  if (def.count !== undefined) stats.push(`<span><i>CNT</i> ${def.count}</span>`);
-  const body = SKILL_BODY[id] ?? (
+    stats.push(`<span><i>${esc(def.shape === 'melee_arc' ? t('ARC') : t('AREA'))}</i> ${def.area}${def.shape === 'melee_arc' ? '°' : ''}</span>`);
+  if (def.count !== undefined) stats.push(`<span><i>${esc(t('CNT'))}</i> ${def.count}</span>`);
+  const body = SKILL_BODY[id] ? t(SKILL_BODY[id]) : (
     def.shape === 'aura'
-      ? 'A passive field: it holds a slot and never needs a press.'
+      ? t('A passive field: it holds a slot and never needs a press.')
       : def.archetype === 'heal'
-        ? 'A healing shape for the party.'
-        : 'A damaging shape of your own.');
+        ? t('A healing shape for the party.')
+        : t('A damaging shape of your own.'));
   return `
-    <div class="rn-cardkind">SKILL · ${esc(def.archetype)}</div>
+    <div class="rn-cardkind">${esc(t('SKILL · {kind}', { kind: t(def.archetype) }))}</div>
     <div class="rn-cardicon">${cardIconHtml(id, 40)}</div>
-    <div class="rn-cardname">${esc(def.name)}</div>
+    <div class="rn-cardname">${esc(t(def.name))}</div>
     <div class="rn-cardsub">${ARCH_GLYPH[def.archetype] ?? ''} ${esc(
-      SHAPE_LABEL[def.shape] ?? def.shape
+      t(SHAPE_LABEL[def.shape] ?? def.shape)
     )}</div>
     <div class="rn-stats">${stats.join('')}</div>
     <div class="rn-body">${esc(body)}</div>`;
 }
 
-// A node candidate card body. `verdict` is the §15.5 kit line, `extra` any
-// binding card copy (Siphon's line).
+// A node candidate card body. `verdict` is the §15.5 kit line (already
+// translated; `cold` = the sim's verdict is not a fit), `extra` any binding
+// card copy (Siphon's line, English — translated here).
 // `row` = the shop's shelf layout (icon medallion beside the name; the
 // rarity tag leads the sub line). Same words as the column card, arranged so
 // a narrow shelf card never wraps its header — the round-1 "Ascend" defect was
@@ -240,41 +242,56 @@ export function upgradeLine(upgrade) {
   if (!upgrade || !upgrade.skill) return '';
   const sk = SKILLS[upgrade.skill];
   const occ = NODES[upgrade.replaces];
-  const skillName = sk ? sk.name : upgrade.skill;
-  const occName = occ ? occ.name : upgrade.replaces;
-  const dead = upgrade.why === 'grey' ? 'a grey ' : upgrade.why === 'inert' ? 'a +0 ' : '';
-  return `⇧ upgrades ${skillName} · replaces ${dead}${occName}`;
+  const skill = sk ? t(sk.name) : upgrade.skill;
+  const node = occ ? t(occ.name) : upgrade.replaces;
+  if (upgrade.why === 'grey') return t('⇧ upgrades {skill} · replaces a grey {node}', { skill, node });
+  if (upgrade.why === 'inert') return t('⇧ upgrades {skill} · replaces a +0 {node}', { skill, node });
+  return t('⇧ upgrades {skill} · replaces {node}', { skill, node });
+}
+
+// §15.5 kit verdict (sim/nodes.js kitVerdict: 'fits your kit' / 'nothing in
+// your kit uses this yet') as shown; `cls` = an ally's class name (English),
+// whose kit it then names.
+export function kitVerdictText(v, cls = null) {
+  if (!v) return v;
+  if (!cls) return t(v);
+  if (v === 'fits your kit') return t("fits the {cls}'s kit", { cls: t(cls) });
+  if (v === 'nothing in your kit uses this yet') return t("nothing in the {cls}'s kit uses this yet", { cls: t(cls) });
+  return t(v);
 }
 
 export function nodeCardHtml(
   id,
-  { verdict = null, extra = null, owned = 0, compact = false, bench = false, row = false, upgrade = null } = {}
+  { verdict = null, cold = null, extra = null, owned = 0, compact = false, bench = false, row = false, upgrade = null } = {}
 ) {
   const n = NODES[id];
   if (!n) return '';
   const effect = (compact ? NODE_EFFECT_SHORT[id] : NODE_EFFECT[id]) ?? NODE_EFFECT[id] ?? '';
+  const limit = t('limit {n}/skill', { n: n.limit });
   const head = row
     ? `<div class="rn-cardicon">${cardIconHtml(id, 30)}</div>
-    <div class="rn-cardhead"><span class="rn-cardname">${esc(n.name)}</span></div>
-    <div class="rn-cardsub"><span class="rn-cardkind">${esc(n.rarity)}</span> ${esc(n.kind)}<span class="rn-sublimit">limit ${n.limit}/skill</span></div>`
-    : `<div class="rn-cardkind">NODE · ${esc(n.rarity)}</div>
+    <div class="rn-cardhead"><span class="rn-cardname">${esc(t(n.name))}</span></div>
+    <div class="rn-cardsub"><span class="rn-cardkind">${esc(t(n.rarity))}</span> ${esc(t(n.kind))}<span class="rn-sublimit">${esc(limit)}</span></div>`
+    : `<div class="rn-cardkind">${esc(t('NODE · {rarity}', { rarity: t(n.rarity) }))}</div>
     <div class="rn-cardicon">${cardIconHtml(id, 40)}</div>
-    <div class="rn-cardname">${esc(n.name)}</div>
-    <div class="rn-cardsub">${esc(n.kind)} · limit ${n.limit}/skill</div>`;
+    <div class="rn-cardname">${esc(t(n.name))}</div>
+    <div class="rn-cardsub">${esc(t(n.kind))} · ${esc(limit)}</div>`;
+  // The cold tint follows the sim's verdict, never the displayed words.
+  const isCold = cold ?? (verdict ? !verdict.startsWith('fits') : false);
   return `
     ${head}
-    <div class="rn-body">${esc(effect)}</div>
-    ${extra ? `<div class="rn-body">“${esc(extra)}”</div>` : ''}
+    <div class="rn-body">${esc(effect ? t(effect) : '')}</div>
+    ${extra ? `<div class="rn-body">“${esc(t(extra))}”</div>` : ''}
     ${
       upgrade
         ? `<div class="rn-verdict rn-upgrade">${esc(upgradeLine(upgrade))}</div>`
         : verdict
-          ? `<div class="rn-verdict${verdict.startsWith('fits') ? '' : ' rn-cold'}">${esc(verdict)}</div>`
+          ? `<div class="rn-verdict${isCold ? ' rn-cold' : ''}">${esc(verdict)}</div>`
           : ''
     }
     ${
       owned > 0
-        ? `<div class="rn-owned">you own ${owned}${bench ? ' · on the bench' : ''}</div>`
+        ? `<div class="rn-owned">${esc(bench ? t('you own {n} · on the bench', { n: owned }) : t('you own {n}', { n: owned }))}</div>`
         : ''
     }`;
 }
