@@ -28,20 +28,27 @@
 // from anywhere on the screen (screen.onScroll), the wheel as always.
 import { settingsTabs, settingsTab, service } from '../../app/registry.js';
 import { createHints } from './hints.js';
+import { t } from '../../i18n/index.js';
 
 const LIVE_MS = 250;
+
+// Tab names are registered in English (Display, Audio, Gameplay, Controls,
+// Network) and translated where they are shown.
+function tabLabel(def) {
+  return def.label ? t(def.label) : def.id;
+}
 
 export function createSettingsScreen(ctx) {
   const { app, manager, settings, widgets } = ctx;
   const el = document.createElement('div');
   el.className = 'ap-settings';
   el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', 'Settings');
+  el.setAttribute('aria-label', t('Settings'));
   el.innerHTML = `
     <div class="ap-veil"></div>
     <div class="ap-panel ap-plate">
       <div class="ap-set-head">
-        <h2 class="ap-h2">Settings</h2>
+        <h2 class="ap-h2">${t('Settings')}</h2>
         <div class="ap-tabs" role="tablist"></div>
       </div>
       <div class="ap-set-body">
@@ -64,10 +71,10 @@ export function createSettingsScreen(ctx) {
   const foot = el.querySelector('.ap-set-foot');
   const footNote = el.querySelector('.ap-foot-note');
   const HINTS = [
-    ['move', 'Select'],
-    ['adjust', 'Change'],
-    ['tabs', 'Tabs'],
-    ['back', 'Back'],
+    ['move', t('Select')],
+    ['adjust', t('Change')],
+    ['tabs', t('Tabs')],
+    ['back', t('Back')],
   ];
   const hints = createHints(app, HINTS);
   foot.insertBefore(hints.el, footNote);
@@ -78,18 +85,18 @@ export function createSettingsScreen(ctx) {
     const n = focusedEl && el.contains(focusedEl) ? focusedEl : null;
     if (n && n.dataset && n.dataset.navScroll === '1') {
       return hints.setItems([
-        ['move', 'Scroll'],
-        ['tabs', 'Tabs'],
-        ['back', 'Back'],
+        ['move', t('Scroll')],
+        ['tabs', t('Tabs')],
+        ['back', t('Back')],
       ]);
     }
     const text = !!n && n.tagName === 'INPUT' && (n.type || 'text') === 'text' && document.activeElement === n;
     if (!text) return hints.setItems(HINTS);
     const dirty = typeof n.__navDirty === 'function' && n.__navDirty();
     hints.setItems([
-      ['move', 'Select'],
-      ['confirm', 'Save'],
-      ['back', dirty ? 'Cancel edit' : 'Back'],
+      ['move', t('Select')],
+      ['confirm', t('Save')],
+      ['back', dirty ? t('Cancel edit') : t('Back')],
     ]);
   }
   el.addEventListener('input', syncHints);
@@ -97,16 +104,16 @@ export function createSettingsScreen(ctx) {
   el.addEventListener('focusin', syncHints);
   el.addEventListener('focusout', () => setTimeout(syncHints, 0));
   const resetBtn = widgets.button({
-    label: 'Reset to defaults',
+    label: t('Reset to defaults'),
     id: 'ap-settings-reset',
-    help: 'Puts every setting on this tab back to its default. Asks first.',
+    help: t('Puts every setting on this tab back to its default. Asks first.'),
     onPress: () => resetTab(),
   });
   const backBtn = widgets.button({
-    label: 'Back',
+    label: t('Back'),
     id: 'ap-settings-back',
     variant: 'primary',
-    help: 'Close Settings. Every change is already applied and saved.',
+    help: t('Close Settings. Every change is already applied and saved.'),
     onPress: () => requestClose(),
   });
   foot.append(resetBtn.el, backBtn.el);
@@ -125,10 +132,10 @@ export function createSettingsScreen(ctx) {
     try {
       const r = def.available();
       if (r === true || r === undefined) return { ok: true };
-      if (r === false) return { ok: false, reason: 'Not available right now' };
-      return { ok: r.ok !== false, reason: r.reason || '' };
+      if (r === false) return { ok: false, reason: t('Not available right now') };
+      return { ok: r.ok !== false, reason: r.reason ? t(r.reason) : '' };
     } catch {
-      return { ok: false, reason: 'Not available right now' };
+      return { ok: false, reason: t('Not available right now') };
     }
   }
 
@@ -155,13 +162,13 @@ export function createSettingsScreen(ctx) {
     let inst;
     const av = availability(def);
     if (!av.ok) {
-      inst = { el: widgets.note(av.reason || 'Not available right now', 'warn'), unavailable: true };
+      inst = { el: widgets.note(av.reason || t('Not available right now'), 'warn'), unavailable: true };
     } else {
       try {
         inst = def.build(tabCtx()) || {};
       } catch (err) {
         console.error(`[settings] tab '${id}' failed to build`, err);
-        inst = { el: widgets.note('This tab could not be loaded.', 'warn'), failed: true };
+        inst = { el: widgets.note(t('This tab could not be loaded.'), 'warn'), failed: true };
       }
     }
     if (inst.el) body.appendChild(inst.el);
@@ -173,7 +180,7 @@ export function createSettingsScreen(ctx) {
   }
 
   // ------------------------------------------ overflow (fix-M1-r5 F2) --
-  const SCROLL_HELP = 'Scroll with ↑ / ↓ (the D-pad or the right stick on a gamepad) or the mouse wheel.';
+  const SCROLL_HELP = t('Scroll with ↑ / ↓ (the D-pad or the right stick on a gamepad) or the mouse wheel.');
   const scrollMax = () => Math.max(0, wrap.scrollHeight - wrap.clientHeight);
   function syncFades() {
     const max = scrollMax();
@@ -190,16 +197,16 @@ export function createSettingsScreen(ctx) {
     const others = manager.navigable(rec.body).filter((n) => n !== region);
     const want = scrollMax() > 1 && others.length === 0;
     if (want === region.hasAttribute('data-nav')) return;
-    const label = rec.def.label || rec.def.id;
+    const label = tabLabel(rec.def);
     if (want) {
       if (!region.id) region.id = `ap-scroll-${rec.def.id}`;
       region.classList.add('ap-scrollstop');
       region.setAttribute('data-nav', '');
       region.tabIndex = -1;
       region.setAttribute('role', 'region');
-      region.setAttribute('aria-label', `${label} — scroll with ↑ ↓`);
+      region.setAttribute('aria-label', t('{label} — scroll with ↑ ↓', { label }));
       region.dataset.navScroll = '1';
-      region.dataset.helpTitle = `${label} reference`;
+      region.dataset.helpTitle = t('{label} reference', { label });
       region.dataset.help = SCROLL_HELP;
     } else {
       const wasFocused = focusedEl === region;
@@ -246,11 +253,12 @@ export function createSettingsScreen(ctx) {
       b.type = 'button';
       b.className = 'ap-tab';
       b.id = `ap-tab-${def.id}`;
-      b.textContent = def.label || def.id;
+      const label = tabLabel(def);
+      b.textContent = label;
       b.setAttribute('role', 'tab');
       b.setAttribute('data-nav', '');
-      b.dataset.helpTitle = def.label || def.id;
-      b.dataset.help = `${def.label || def.id} settings. Switch tabs with Q / E (LB / RB on a gamepad) from anywhere on this screen.`;
+      b.dataset.helpTitle = label;
+      b.dataset.help = t('{label} settings. Switch tabs with Q / E (LB / RB on a gamepad) from anywhere on this screen.', { label });
       b.classList.toggle('ap-active', def.id === activeId);
       b.setAttribute('aria-selected', def.id === activeId ? 'true' : 'false');
       b.addEventListener('click', () => activate(def.id, { focus: 'tab' }));
@@ -297,7 +305,7 @@ export function createSettingsScreen(ctx) {
     if (changed) wrap.scrollTop = 0;
     syncOverflow();
     const resettable = next.inst.resettable !== false && !next.inst.unavailable && !next.inst.failed;
-    resetBtn.setDisabled(!resettable, 'Nothing to reset on this tab');
+    resetBtn.setDisabled(!resettable, t('Nothing to reset on this tab'));
     const target = focus === 'tab' ? tabBtns.get(id) : firstRow(next) || tabBtns.get(id);
     // The manager's fallback focus is this tab's first row, never another
     // tab's button (it was the tab the screen opened on).
@@ -357,19 +365,19 @@ export function createSettingsScreen(ctx) {
   async function resetTab() {
     const rec = activeId && built.get(activeId);
     if (!rec) return;
-    const label = rec.def.label || rec.def.id;
+    const label = tabLabel(rec.def);
     const ok = await app.confirm({
-      title: `Reset ${label} settings?`,
-      body: 'Every setting on this tab goes back to its default.',
-      confirmLabel: 'Reset',
-      cancelLabel: 'Cancel',
+      title: t('Reset {label} settings?', { label }),
+      body: t('Every setting on this tab goes back to its default.'),
+      confirmLabel: t('Reset'),
+      cancelLabel: t('Cancel'),
       danger: true,
       defaultFocus: 'cancel',
     });
     if (!ok) return;
     if (typeof rec.inst.reset === 'function') rec.inst.reset();
     else settings.reset(rec.def.id);
-    app.toast(`${label} settings reset to defaults`, { tone: 'good' });
+    app.toast(t('{label} settings reset to defaults', { label }), { tone: 'good' });
   }
 
   // The vertical ring (see the header). Inside the tab the items are grouped
@@ -464,9 +472,9 @@ export function createSettingsScreen(ctx) {
     if (!body) body = inline;
     if (!body) {
       // A contributed row without help text: say how to operate it.
-      if (node.type === 'range') body = 'Adjust with ← / → (the D-pad on a gamepad), or drag with the mouse.';
-      else if (node.getAttribute('role') === 'switch') body = 'Switch with Enter, ← / → or a click (A on a gamepad).';
-      else if (node.classList.contains('ap-choice')) body = 'Choose with ← / → (the D-pad on a gamepad), or click the arrows.';
+      if (node.type === 'range') body = t('Adjust with ← / → (the D-pad on a gamepad), or drag with the mouse.');
+      else if (node.getAttribute('role') === 'switch') body = t('Switch with Enter, ← / → or a click (A on a gamepad).');
+      else if (node.classList.contains('ap-choice')) body = t('Choose with ← / → (the D-pad on a gamepad), or click the arrows.');
     }
     return { title, body };
   }
@@ -475,7 +483,7 @@ export function createSettingsScreen(ctx) {
     const node = focusedEl && el.contains(focusedEl) ? focusedEl : null;
     const rec = activeId && built.get(activeId);
     const h = helpFor(node);
-    infoTitle.textContent = h.title || (rec ? rec.def.label : '');
+    infoTitle.textContent = h.title || (rec ? tabLabel(rec.def) : '');
     infoBody.textContent = h.body;
     let live = '';
     if (rec && typeof rec.inst.info === 'function') {
@@ -492,9 +500,9 @@ export function createSettingsScreen(ctx) {
   function updateFootNote() {
     const r = settings.loadReport;
     const notes = [];
-    if (r.storage === 'memory') notes.push("Settings can't be saved in this browser mode");
-    if (r.status === 'recovered') notes.push('Settings were reset — the saved file was unreadable');
-    if (r.status === 'newer') notes.push('Saved by a newer version of Echoes — using defaults');
+    if (r.storage === 'memory') notes.push(t("Settings can't be saved in this browser mode"));
+    if (r.status === 'recovered') notes.push(t('Settings were reset — the saved file was unreadable'));
+    if (r.status === 'newer') notes.push(t('Saved by a newer version of Echoes — using defaults'));
     footNote.textContent = notes.join(' · ');
     footNote.style.display = notes.length ? '' : 'none';
   }

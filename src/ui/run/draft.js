@@ -29,13 +29,14 @@
 // pre-decided (4 Enters). Automatic: AI-held cards are a summary line.
 import { esc, isCompact } from './style.js';
 import { viewerSeat } from '../../app/viewerseat.js';
-import { skillCardHtml, nodeCardHtml, RARITY_COLOR, NODE_GLYPH, cardIconHtml } from './cards.js';
+import { skillCardHtml, nodeCardHtml, kitVerdictText, RARITY_COLOR, NODE_GLYPH, cardIconHtml } from './cards.js';
 import { NODES } from '../../sim/nodes.js';
 import { SPOILS_PER_CLEAR } from '../../sim/draft.js';
 import { SKILLS } from '../../sim/skills.js';
 import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
 import { createPartyStrip, ownerBandHtml, netOwners } from './partystrip.js';
 import { service } from '../../app/registry.js';
+import { t, tn } from '../../i18n/index.js';
 
 const TICK_HZ = 60;
 
@@ -43,13 +44,13 @@ export function createDraftScreen({ run, build, party = () => null }) {
   const el = document.createElement('div');
   el.className = 'rn-page rn-draft';
   el.innerHTML = `
-    <div class="rn-title">A GIFT ON THE ROAD</div>
+    <div class="rn-title">${esc(t('A GIFT ON THE ROAD'))}</div>
     <div class="rn-orn">◆ ◆ ◆</div>
     <div class="rn-striphost"></div>
     <div class="rn-headrow">
       <div class="rn-strip">
-        <span class="rn-lab rn-freelab">SKILL SLOTS FREE</span><span class="rn-num rn-free">0</span>
-        <span class="rn-lab">· ROOM</span><span class="rn-num rn-room">1</span>
+        <span class="rn-lab rn-freelab">${esc(t('SKILL SLOTS FREE'))}</span><span class="rn-num rn-free">0</span>
+        <span class="rn-lab">${esc(t('· ROOM'))}</span><span class="rn-num rn-room">1</span>
       </div>
       <div class="rn-ownerhost"></div>
     </div>
@@ -65,8 +66,8 @@ export function createDraftScreen({ run, build, party = () => null }) {
       <div class="rn-note rn-countdown" style="display:none"></div>
     </div>
     <div class="rn-buttons">
-      <div class="rn-btn rn-take rn-primary">Take</div>
-      <div class="rn-btn rn-decline">Decline</div>
+      <div class="rn-btn rn-take rn-primary">${esc(t('Take'))}</div>
+      <div class="rn-btn rn-decline">${esc(t('Decline'))}</div>
     </div>
     <div class="rn-hint rn-drafthint"></div>`;
 
@@ -85,13 +86,16 @@ export function createDraftScreen({ run, build, party = () => null }) {
   const repEl = el.querySelector('.rn-replace');
   const repLine = el.querySelector('.rn-repline');
   const hintEl = el.querySelector('.rn-drafthint');
-  const HINT_PARTY =
-    '<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause';
-  const HINT_SWAP =
-    '<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>W</b>/<b>S</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave';
-  const HINT_SOLO = '<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> commit · <b>X</b> decline · <b>Esc</b> pause';
-  const HINT_SOLO_SWAP =
-    '<b>W</b>/<b>S</b> or <b>↑</b>/<b>↓</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause';
+  const HINT_PARTY = t(
+    '<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause'
+  );
+  const HINT_SWAP = t(
+    '<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>W</b>/<b>S</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave'
+  );
+  const HINT_SOLO = t('<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> commit · <b>X</b> decline · <b>Esc</b> pause');
+  const HINT_SOLO_SWAP = t(
+    '<b>W</b>/<b>S</b> or <b>↑</b>/<b>↓</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause'
+  );
 
   // 0 = Take (the rn-primary), 1 = Leave. PER PAGE state, re-initialised when
   // the page opens and whenever the viewed candidate changes, so a Leave the
@@ -268,14 +272,21 @@ export function createDraftScreen({ run, build, party = () => null }) {
   function chipOf(v, seat, page) {
     const c = cardOf(v, seat);
     if (!c) return { chip: '—' };
-    if (!c.type) return { chip: '— nothing' };
+    if (!c.type) return { chip: t('— nothing') };
     const ai = page && page.owners && page.owners[seat] !== 'human' && seat !== 0;
     if (c.decided) {
-      const lab = c.choice === 'take' ? '✓ Take' : '✕ Leave';
-      return { chip: `${c.by === 'ai' || (ai && page.mode === 'auto') ? 'AI ' : c.by === 'timeout' ? 'Auto ' : ''}${lab}`, tone: c.choice === 'take' ? 'take' : '' };
+      const take = c.choice === 'take';
+      const by = c.by === 'ai' || (ai && page.mode === 'auto') ? 'ai' : c.by === 'timeout' ? 'auto' : '';
+      const chip =
+        by === 'ai'
+          ? take ? t('AI ✓ Take') : t('AI ✕ Leave')
+          : by === 'auto'
+            ? take ? t('Auto ✓ Take') : t('Auto ✕ Leave')
+            : take ? t('✓ Take') : t('✕ Leave');
+      return { chip, tone: take ? 'take' : '' };
     }
     const dl = page && page.deadlineInTicks !== null && page.deadlineInTicks !== undefined ? Math.ceil(page.deadlineInTicks / TICK_HZ) : null;
-    return { chip: dl !== null && dl <= 10 ? `… ${dl} s` : '… choose', tone: 'wait' };
+    return { chip: dl !== null && dl <= 10 ? t('… {secs} s', { secs: dl }) : t('… choose'), tone: 'wait' };
   }
 
   // gauntlet r5 PARTY F3 — the party page is ONE FIXED FRAME while it is open.
@@ -398,7 +409,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
     // Strip text: the viewed character's free slots / the swap line.
     const slots = slotsOf(seat);
     const free = slots.filter((x) => !x).length;
-    freeLab.textContent = c.swap ? 'SKILL SLOTS FULL · CHOOSE ONE TO REPLACE, OR LEAVE' : page && seat !== 0 ? `${CLASS_NAME[CLASS_OF_SEAT[seat]].toUpperCase()} · SKILL SLOTS FREE` : 'SKILL SLOTS FREE';
+    freeLab.textContent = c.swap ? t('SKILL SLOTS FULL · CHOOSE ONE TO REPLACE, OR LEAVE') : page && seat !== 0 ? t('{cls} · SKILL SLOTS FREE', { cls: t(CLASS_NAME[CLASS_OF_SEAT[seat]]).toUpperCase() }) : t('SKILL SLOTS FREE');
     freeEl.style.display = c.swap ? 'none' : '';
     freeEl.textContent = String(seat === 0 ? view.freeSkillSlots : free);
     hintEl.innerHTML = page ? (c.swap ? HINT_SWAP : HINT_PARTY) : c.swap ? HINT_SOLO_SWAP : HINT_SOLO;
@@ -407,16 +418,18 @@ export function createDraftScreen({ run, build, party = () => null }) {
       host.innerHTML = `<div class="rn-card" data-seat="${seat}" style="--rar:${RARITY_COLOR.common}">${skillCardHtml(c.id)}</div>`;
       if (c.swap) {
         const kind = host.querySelector('.rn-cardkind');
-        if (kind) kind.innerHTML = '<span class="rn-swapkind">NEW SKILL — SWAP</span>';
+        if (kind) kind.innerHTML = `<span class="rn-swapkind">${esc(t('NEW SKILL — SWAP'))}</span>`;
       }
     } else if (c.type === 'node') {
       const n = NODES[c.id];
       const sys = seat === 0 ? build() : party() ? party().build(seat) : null;
-      let verdict = sys ? sys.kitVerdict(c.id) : null;
-      if (verdict && seat !== 0) verdict = verdict.replace('your kit', `the ${CLASS_NAME[CLASS_OF_SEAT[seat]]}'s kit`);
+      const kit = sys ? sys.kitVerdict(c.id) : null;
+      const verdict = kit ? kitVerdictText(kit, seat !== 0 ? CLASS_NAME[CLASS_OF_SEAT[seat]] : null) : null;
+      const cold = kit ? !kit.startsWith('fits') : null; // the sim's verdict, not the shown words
       const extra = c.id === 'siphon' && sys ? sys.siphonCardLine() : null;
       host.innerHTML = `<div class="rn-card${n && n.rarity === 'legendary' ? ' rn-legendary' : ''}" data-seat="${seat}" style="--rar:${RARITY_COLOR[n ? n.rarity : 'common']}">${nodeCardHtml(c.id, {
         verdict,
+        cold,
         extra,
         compact: isCompact(),
         upgrade: c.upgrade ?? null,
@@ -424,21 +437,21 @@ export function createDraftScreen({ run, build, party = () => null }) {
     } else {
       const complete = c.reason === 'build_complete';
       host.innerHTML = `<div class="rn-card" data-seat="${seat}" style="--rar:${complete ? RARITY_COLOR.legendary : RARITY_COLOR.common}">
-        <div class="rn-cardkind">${complete ? 'BUILD COMPLETE' : 'NOTHING TO OFFER'}</div>
+        <div class="rn-cardkind">${esc(complete ? t('BUILD COMPLETE') : t('NOTHING TO OFFER'))}</div>
         <div class="rn-cardicon">${complete ? '★' : '·'}</div>
-        <div class="rn-cardname">${complete ? 'Nothing outranks this build' : 'Empty-handed'}</div>
-        <div class="rn-body">${
+        <div class="rn-cardname">${esc(complete ? t('Nothing outranks this build') : t('Empty-handed'))}</div>
+        <div class="rn-body">${esc(
           complete
-            ? 'All 4 skills are equipped and every socket already holds a node no reward could beat.'
-            : 'This reward has nowhere to go in this kit.'
-        }</div></div>`;
+            ? t('All 4 skills are equipped and every socket already holds a node no reward could beat.')
+            : t('This reward has nowhere to go in this kit.')
+        )}</div></div>`;
     }
     renderSwap(c, seat);
     renderSpoils(view, c, seat);
     // Substitution / empty line (§16).
     if (c.line) {
       subline.style.display = '';
-      subline.textContent = c.line;
+      subline.textContent = t(c.line);
     } else {
       subline.style.display = 'none';
       subline.textContent = '';
@@ -449,13 +462,13 @@ export function createDraftScreen({ run, build, party = () => null }) {
         .filter((s) => page.owners[s] !== 'human')
         .map((s) => {
           const cc = page.cards[s];
-          const nm = CLASS_NAME[CLASS_OF_SEAT[s]];
-          if (!cc.type) return `${nm}: nothing`;
-          const what = cc.type === 'skill' ? SKILLS[cc.id].name : NODES[cc.id].name;
-          return cc.choice === 'take' ? `${nm} takes ${what}` : `${nm} leaves ${what}`;
+          const cls = t(CLASS_NAME[CLASS_OF_SEAT[s]]);
+          if (!cc.type) return t('{cls}: nothing', { cls });
+          const what = t(cc.type === 'skill' ? SKILLS[cc.id].name : NODES[cc.id].name);
+          return cc.choice === 'take' ? t('{cls} takes {what}', { cls, what }) : t('{cls} leaves {what}', { cls, what });
         });
       summaryEl.style.display = '';
-      summaryEl.textContent = `Automatic · ${bits.join(' · ')}`;
+      summaryEl.textContent = t('Automatic · {list}', { list: bits.join(' · ') });
     } else {
       summaryEl.style.display = 'none';
       summaryEl.textContent = '';
@@ -467,16 +480,16 @@ export function createDraftScreen({ run, build, party = () => null }) {
     const armed = !!page && page.deadlineInTicks !== null && page.deadlineInTicks !== undefined;
     if (armed) {
       const secs = Math.ceil(page.deadlineInTicks / TICK_HZ);
-      const waiting = [0, 1, 2, 3].filter((s) => page.owners[s] === 'human' && !page.cards[s].decided).map((s) => CLASS_NAME[CLASS_OF_SEAT[s]]);
-      const all = [0, 1, 2, 3].filter((s) => page.owners[s] === 'human').map((s) => CLASS_NAME[CLASS_OF_SEAT[s]]);
+      const waiting = [0, 1, 2, 3].filter((s) => page.owners[s] === 'human' && !page.cards[s].decided).map((s) => t(CLASS_NAME[CLASS_OF_SEAT[s]]));
+      const all = [0, 1, 2, 3].filter((s) => page.owners[s] === 'human').map((s) => t(CLASS_NAME[CLASS_OF_SEAT[s]]));
       const live = page.deadlineInTicks <= 600;
       countdownEl.style.display = '';
       countdownEl.style.visibility = live ? '' : 'hidden';
       countdownEl.textContent = live
         ? waiting.length
-          ? `Waiting for ${waiting.join(', ')} — auto-pick in ${secs} s`
-          : `Committing in ${secs} s`
-        : `Waiting for ${all.join(', ')} — auto-pick in 10 s`; // the reserve's size
+          ? t('Waiting for {names} — auto-pick in {secs} s', { names: waiting.join(', '), secs })
+          : t('Committing in {secs} s', { secs })
+        : t('Waiting for {names} — auto-pick in {secs} s', { names: all.join(', '), secs: 10 }); // the reserve's size
     } else {
       countdownEl.style.display = 'none';
       countdownEl.style.visibility = '';
@@ -487,8 +500,8 @@ export function createDraftScreen({ run, build, party = () => null }) {
     const empty = !c.type;
     const mine = owns(seat, page);
     btnTake.style.display = empty ? 'none' : '';
-    btnDecline.textContent = empty ? 'Continue' : c.swap ? 'Leave' : seat === 0 && !page ? 'Decline' : 'Leave';
-    btnTake.textContent = c.swap ? 'Take · Replace' : 'Take';
+    btnDecline.textContent = empty ? t('Continue') : c.swap ? t('Leave') : seat === 0 && !page ? t('Decline') : t('Leave');
+    btnTake.textContent = c.swap ? t('Take · Replace') : t('Take');
     btnTake.classList.toggle('rn-disabled', !mine);
     btnDecline.classList.toggle('rn-disabled', !mine);
     if (empty) focus = 1;
@@ -547,19 +560,24 @@ export function createDraftScreen({ run, build, party = () => null }) {
         return `<div class="rn-rep${sel ? ' rn-sel' : ''}" data-slot="${i}" data-skill="${esc(sk.id)}" data-seat="${seat}">
           <span class="rn-repkey">${i + 1}</span><span class="rn-repx">✕</span>
           ${cardIconHtml(sk.id, 30)}
-          <div class="rn-repname">${esc(def ? def.name : sk.id)}</div>
-          <div class="rn-repmeta">${sel ? 'replace · ' : ''}◈ ${sk.filled}</div>
+          <div class="rn-repname">${esc(def ? t(def.name) : sk.id)}</div>
+          <div class="rn-repmeta">${sel ? esc(t('replace · ◈ {n}', { n: sk.filled })) : `◈ ${sk.filled}`}</div>
         </div>`;
       })
       .join('');
     const out = skills[rep];
-    const newName = SKILLS[c.id] ? SKILLS[c.id].name : c.id;
-    const oldName = out && SKILLS[out.id] ? SKILLS[out.id].name : out ? out.id : '';
+    const newName = SKILLS[c.id] ? t(SKILLS[c.id].name) : c.id;
+    const oldName = out && SKILLS[out.id] ? t(SKILLS[out.id].name) : out ? out.id : '';
     const n = out ? out.filled : 0;
-    const whose = seat === 0 ? 'the bench' : `the ${CLASS_NAME[CLASS_OF_SEAT[seat]]}'s bench`;
-    const nodes = n === 0 ? `${oldName} holds no nodes` : `${oldName}'s ${n} node${n === 1 ? '' : 's'} go to ${whose}`;
+    const cls = seat === 0 ? '' : t(CLASS_NAME[CLASS_OF_SEAT[seat]]);
+    const nodes =
+      n === 0
+        ? t('{old} holds no nodes', { old: oldName })
+        : seat === 0
+          ? tn(n, "{old}'s {n} node go to the bench", "{old}'s {n} nodes go to the bench", { old: oldName })
+          : tn(n, "{old}'s {n} node go to the {cls}'s bench", "{old}'s {n} nodes go to the {cls}'s bench", { old: oldName, cls });
     const sug = seat === 0 ? c.suggest : c.suggest && c.suggest.choice;
-    const advice = sug === 'leave' ? ' · suggested: Leave — the current four outrank it' : '';
+    const advice = sug === 'leave' ? t('suggested: Leave — the current four outrank it') : '';
     // PARTY6-F1: a key the player chooses is where the skill lands. Only the
     // AI's own untouched Take on a seat whose keys the AI still orders is
     // re-sorted to its cast order (§25.8) — then the card says where it lands.
@@ -570,10 +588,10 @@ export function createDraftScreen({ run, build, party = () => null }) {
       placed[rep] = c.id;
       const order = P.aiOrder(seat, placed);
       const at = order ? order.indexOf(c.id) : rep;
-      if (order && order.some((id, i) => id !== placed[i])) lands = ` · AI re-sorts keys to cast order: ${newName} → key ${at + 1}`;
+      if (order && order.some((id, i) => id !== placed[i])) lands = t('AI re-sorts keys to cast order: {skill} → key {key}', { skill: newName, key: at + 1 });
     }
     repLine.style.display = '';
-    repLine.textContent = `${newName} replaces ${oldName} — ${nodes}${advice}${lands}`;
+    repLine.textContent = [t('{new} replaces {old} — {nodes}', { new: newName, old: oldName, nodes }), advice, lands].filter(Boolean).join(' · ');
   }
 
   // The viewed character's clear spoils (already on its bench).
@@ -583,24 +601,28 @@ export function createDraftScreen({ run, build, party = () => null }) {
     const spUp = seat === 0 && dropped && view.spoils.upgrades ? view.spoils.upgrades : [];
     const want = seat === 0 ? SPOILS_PER_CLEAR : 1;
     const short = dropped && sp.length < want;
-    const whose = seat === 0 ? 'bench' : `${CLASS_NAME[CLASS_OF_SEAT[seat]]}'s bench`;
     if (sp.length) {
       spoilsEl.style.display = '';
       const tail = short
-        ? ' — the last common / rare upgrade: <b>F</b> auto-fill swaps it in'
+        ? ` — ${t('the last common / rare upgrade: <b>F</b> auto-fill swaps it in')}`
         : spUp.length
-          ? ' — <b>⇧</b> upgrades: <b>B</b> sockets · <b>F</b> auto-fill swaps them in'
+          ? ` — ${t('<b>⇧</b> upgrades: <b>B</b> sockets · <b>F</b> auto-fill swaps them in')}`
           : '';
-      spoilsEl.innerHTML = `<b>Spoils</b> → ${esc(whose)}: ${sp
+      const list = sp
         .map((id) => {
           const n = NODES[id];
           const up = spUp.includes(id) ? '⇧ ' : '';
-          return `<span style="color:${RARITY_COLOR[n ? n.rarity : 'common']}">${up}${esc(NODE_GLYPH[id] ?? '')} ${esc(n ? n.name : id)}</span>`;
+          return `<span style="color:${RARITY_COLOR[n ? n.rarity : 'common']}">${up}${esc(NODE_GLYPH[id] ?? '')} ${esc(n ? t(n.name) : id)}</span>`;
         })
-        .join(' · ')}${tail}`;
+        .join(' · ');
+      const head =
+        seat === 0
+          ? t('<b>Spoils</b> → bench: {list}', { list })
+          : t("<b>Spoils</b> → {cls}'s bench: {list}", { cls: esc(t(CLASS_NAME[CLASS_OF_SEAT[seat]])), list });
+      spoilsEl.innerHTML = `${head}${tail}`;
     } else if (short && seat === 0) {
       spoilsEl.style.display = '';
-      spoilsEl.innerHTML = '<b>Spoils</b>: none — no common or rare node outranks your build any more';
+      spoilsEl.innerHTML = t('<b>Spoils</b>: none — no common or rare node outranks your build any more');
     } else {
       spoilsEl.style.display = 'none';
       spoilsEl.textContent = '';

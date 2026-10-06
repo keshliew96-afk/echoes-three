@@ -45,6 +45,7 @@
 import { Color, Group, Mesh, MeshBasicMaterial, RingGeometry, Vector3 } from 'three';
 import { ARENA, CAMERA, TICK_HZ } from '../core/constants.js';
 import { PALETTE } from '../data/palette.js';
+import { t } from '../i18n/index.js';
 import { createArenaScene } from './arena.js';
 import { createCritter, setInkViewport } from '../render/critters/index.js';
 import { setPropInkViewport, buildShadowInstances, ORDER } from '../env/props.js';
@@ -145,7 +146,7 @@ const CAMP_CSS = `
     background: ${PALETTE.voidCharcoal}F2;
     border: 2px solid ${PALETTE.hearthAmber}AA;
     box-shadow: 0 0 22px ${PALETTE.hearthAmber}33, inset 0 0 0 1px ${PALETTE.bone}22;
-    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-family: system-ui, -apple-system, 'Segoe UI', var(--i18n-font, sans-serif);
     color: ${PALETTE.parchment};
     font-size: 19px; letter-spacing: 0.06em;
     user-select: none;
@@ -302,13 +303,13 @@ export function createCampScene(stage, toggles, ctx) {
   // starts — Level 1, always — and offers the Level Select beside it. Both
   // halves are also clickable (the prompt itself ignores the mouse).
   prompt.innerHTML =
-    `<span class="cp-chip cp-begin"><span class="cp-key">E</span><span class="cp-lab"><b>Begin Run</b> &nbsp;·&nbsp; Level 1 · ${levelFor(FIRST_LEVEL).name}</span></span>` +
+    `<span class="cp-chip cp-begin"><span class="cp-key">E</span><span class="cp-lab">${t('<b>Begin Run</b> &nbsp;·&nbsp; Level 1 · {name}', { name: t(levelFor(FIRST_LEVEL).name) })}</span></span>` +
     '<span class="cp-sep"></span>' +
-    '<span class="cp-chip cp-levels"><span class="cp-key">L</span><span class="cp-lab">Levels</span></span>' +
+    `<span class="cp-chip cp-levels"><span class="cp-key">L</span><span class="cp-lab">${t('Levels')}</span></span>` +
     '<span class="cp-sep"></span>' +
-    '<span class="cp-chip cp-unlocks"><span class="cp-key">U</span><span class="cp-lab">Unlocks</span></span>' +
+    `<span class="cp-chip cp-unlocks"><span class="cp-key">U</span><span class="cp-lab">${t('Unlocks')}</span></span>` +
     '<span class="cp-sep"></span>' +
-    '<span class="cp-chip cp-class"><span class="cp-key">C</span><span class="cp-lab">Class · <b class="cp-class-n">Healer</b></span></span>';
+    `<span class="cp-chip cp-class"><span class="cp-key">C</span><span class="cp-lab">${t('Class · {name}', { name: `<b class="cp-class-n">${t('Healer')}</b>` })}</span></span>`;
   document.body.appendChild(prompt);
   {
     const st = document.createElement('style');
@@ -908,7 +909,7 @@ export function createCampScene(stage, toggles, ctx) {
     flies.update(elapsedSec);
     {
       const cn = prompt.querySelector('.cp-class-n');
-      const want = CLASS_NAME[playingClass()];
+      const want = t(CLASS_NAME[playingClass()]);
       if (cn && cn.textContent !== want) cn.textContent = want;
       const chip = prompt.querySelector('.cp-class');
       const hide = inSession();

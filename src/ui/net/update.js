@@ -11,17 +11,22 @@
 // Not now. A single-player run in progress is never interrupted: the dialog
 // waits for the title.
 import { forgetStoredSessions } from '../../net/tabsession.js';
+import { t } from '../../i18n/index.js';
 
 export function updateCopy(u) {
   const mine = u && u.mine ? `v${u.mine}` : null;
   const latest = u && u.latest && u.latest !== u.mine ? `v${u.latest}` : null;
-  const where = u && u.via === 'room' ? 'the host runs' : u && u.via === 'site' ? 'this site now serves' : 'the server now runs';
+  const v = { mine, latest };
   return {
-    title: 'A new version of Echoes is available',
+    title: t('A new version of Echoes is available'),
     body:
       mine && latest
-        ? `This page is ${mine}; ${where} ${latest}. Reload to update — your settings, saves and records stay in this browser.`
-        : 'This page is older than the game on the server. Reload to update — your settings, saves and records stay in this browser.',
+        ? u && u.via === 'room'
+          ? t('This page is {mine}; the host runs {latest}. Reload to update — your settings, saves and records stay in this browser.', v)
+          : u && u.via === 'site'
+            ? t('This page is {mine}; this site now serves {latest}. Reload to update — your settings, saves and records stay in this browser.', v)
+            : t('This page is {mine}; the server now runs {latest}. Reload to update — your settings, saves and records stay in this browser.', v)
+        : t('This page is older than the game on the server. Reload to update — your settings, saves and records stay in this browser.'),
   };
 }
 
@@ -68,7 +73,7 @@ export function installUpdatePrompt({ app, net }) {
     open = true;
     const c = updateCopy(u);
     app
-      .confirm({ title: c.title, body: c.body, confirmLabel: 'Reload', cancelLabel: 'Not now', defaultFocus: 'confirm' })
+      .confirm({ title: c.title, body: c.body, confirmLabel: t('Reload'), cancelLabel: t('Not now'), defaultFocus: 'confirm' })
       .then((yes) => {
         open = false;
         if (yes) reloadForUpdate();

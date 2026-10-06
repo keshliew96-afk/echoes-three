@@ -16,18 +16,21 @@ import { SKILLS } from '../../sim/skills.js';
 import { service } from '../../app/registry.js';
 import { bossFor, levelFor } from '../../data/levels.js';
 import { endlessBossIndex } from '../../data/endless.js';
+import { t, tn } from '../../i18n/index.js';
+
+const skillCount = (b) => (b.skills || []).filter(Boolean).length;
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 const FLAVOUR = {
-  1: 'The Hollow Stag falls. The wood breathes out.',
-  2: 'The Drowned Heron sinks. The water runs clear again.',
-  3: 'The Barrow Wyrm is still. The long night lifts.',
+  1: () => t('The Hollow Stag falls. The wood breathes out.'),
+  2: () => t('The Drowned Heron sinks. The water runs clear again.'),
+  3: () => t('The Barrow Wyrm is still. The long night lifts.'),
 };
 // Slice 2: the second boss of each act has its own line.
 const BOSS_FLAVOUR = {
-  thornmother: 'The Thornmother falls. The briars let the wood go.',
-  millwheel: 'The Millwheel shatters. The water runs clear again.',
-  lichram: 'The Lich Ram crumbles. The graves close; the long night lifts.',
+  thornmother: () => t('The Thornmother falls. The briars let the wood go.'),
+  millwheel: () => t('The Millwheel shatters. The water runs clear again.'),
+  lichram: () => t('The Lich Ram crumbles. The graves close; the long night lifts.'),
 };
 
 export const TRANSIT_CSS = `
@@ -60,11 +63,11 @@ export const TRANSIT_CSS = `
 // PARTY (BUILD_BRIEF §25.6): "Tank · 4 skills · 12/32 · ◉ 30" × 4.
 export function buildsHtml(builds) {
   if (!Array.isArray(builds) || builds.length === 0) return '';
-  const NAME = { healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer' };
+  const NAME = { healer: () => t('Healer'), tank: () => t('Tank'), swordsman: () => t('Swordsman'), archer: () => t('Archer') };
   return builds
     .map(
       (b) =>
-        `<span class="rn-bn" data-seat="${b.seat}">${esc(NAME[b.classId] ?? b.classId)}</span><span class="rn-bv">${(b.skills || []).filter(Boolean).length} skills</span><span class="rn-bv">${b.filled}/${b.sockets ?? 32}</span><span class="rn-bv">◉ ${b.purse ?? 0}</span>`
+        `<span class="rn-bn" data-seat="${b.seat}">${esc(NAME[b.classId] ? NAME[b.classId]() : b.classId)}</span><span class="rn-bv">${esc(tn(skillCount(b), '{n} skill', '{n} skills'))}</span><span class="rn-bv">${b.filled}/${b.sockets ?? 32}</span><span class="rn-bv">◉ ${b.purse ?? 0}</span>`
     )
     .join('');
 }
@@ -77,13 +80,13 @@ export function createTransitScreen({ run }) {
     <div class="rn-title rn-headline"></div>
     <div class="rn-orn">◆ ◆ ◆</div>
     <div class="rn-sub rn-flavour"></div>
-    <div class="rn-next"><span class="rn-lab">NEXT</span><b class="rn-nextname"></b></div>
+    <div class="rn-next"><span class="rn-lab">${esc(t('NEXT'))}</span><b class="rn-nextname"></b></div>
     <div class="rn-carry"></div>
     <div class="rn-kit"></div>
     <div class="rn-builds"></div>
     <div class="rn-bar"><i></i></div>
     <div class="rn-ready" aria-live="polite"></div>
-    <div class="rn-hint"><b>Enter</b> set out now</div>`;
+    <div class="rn-hint">${t('<b>Enter</b> set out now')}</div>`;
   const kicker = el.querySelector('.rn-kicker');
   const headline = el.querySelector('.rn-headline');
   const flavour = el.querySelector('.rn-flavour');
@@ -123,35 +126,42 @@ export function createTransitScreen({ run }) {
         const lv = levelFor(card.from);
         met = lv.bosses ? lv.bosses[endlessBossIndex(depth - 1, rv.frame.seed)].kind : met;
       }
-      kicker.textContent = depth !== null ? `DEPTH ${depth - 1} CLEARED` : `LEVEL ${ROMAN[card.from] ?? card.from} CLEARED`;
-      headline.textContent = (card.fromName || '').toUpperCase();
+      kicker.textContent = depth !== null ? t('DEPTH {depth} CLEARED', { depth: depth - 1 }) : t('LEVEL {level} CLEARED', { level: ROMAN[card.from] ?? card.from });
+      headline.textContent = (card.fromName ? t(card.fromName) : '').toUpperCase();
+      const boss = BOSS_FLAVOUR[met] ?? FLAVOUR[card.from];
       flavour.textContent =
         depth === 4
-          ? 'The campaign is won. The road does not end; it turns back into the dark wood, deeper than before.'
-          : BOSS_FLAVOUR[met] ?? FLAVOUR[card.from] ?? 'The way ahead opens.';
+          ? t('The campaign is won. The road does not end; it turns back into the dark wood, deeper than before.')
+          : boss ? boss() : t('The way ahead opens.');
       nextRow.style.display = '';
-      nextName.textContent = depth !== null ? `Depth ${depth} · ${card.name}${depth > 3 ? ' · danger rises' : ''}` : `Level ${ROMAN[to] ?? to} · ${card.name}`;
+      const name = card.name ? t(card.name) : card.name;
+      nextName.textContent =
+        depth !== null
+          ? depth > 3
+            ? t('Depth {depth} · {name} · danger rises', { depth, name })
+            : t('Depth {depth} · {name}', { depth, name })
+          : t('Level {level} · {name}', { level: ROMAN[to] ?? to, name });
       carryEl.innerHTML = [
-        row('SKILLS CARRIED', `${(s.skills || []).length} / 4`),
-        row('SOCKETS FILLED', `${s.socketed ?? 0} / ${s.sockets ?? 0}`),
-        row('BENCH', String(s.bench ?? 0)),
-        row('GLINT', String(s.wallet ?? 0)),
-        row('PARTY', 'restored to full'),
+        row(t('SKILLS CARRIED'), `${(s.skills || []).length} / 4`),
+        row(t('SOCKETS FILLED'), `${s.socketed ?? 0} / ${s.sockets ?? 0}`),
+        row(t('BENCH'), String(s.bench ?? 0)),
+        row(t('GLINT'), String(s.wallet ?? 0)),
+        row(t('PARTY'), t('restored to full')),
       ].join('');
     } else {
-      kicker.textContent = depth !== null ? 'THE ENDLESS DESCENT' : 'SETTING OUT';
-      headline.textContent = `LEVEL ${ROMAN[to] ?? to} · ${String(card.name || '').toUpperCase()}`;
-      flavour.textContent = depth !== null ? 'Through all three lands and down again, until the party falls.' : 'The campaign begins here and runs on to the final level.';
+      kicker.textContent = depth !== null ? t('THE ENDLESS DESCENT') : t('SETTING OUT');
+      headline.textContent = t('LEVEL {level} · {name}', { level: ROMAN[to] ?? to, name: (card.name ? t(String(card.name)) : '').toUpperCase() });
+      flavour.textContent = depth !== null ? t('Through all three lands and down again, until the party falls.') : t('The campaign begins here and runs on to the final level.');
       nextRow.style.display = 'none';
       const g = s.grant;
       carryEl.innerHTML = g
-        ? [row('STARTER SKILLS', `+${(g.skills || []).length}`), row('STARTER NODES', String((g.nodes || []).length)), row('SOCKETS FILLED', `${s.socketed ?? 0} / ${s.sockets ?? 0}`), row('GLINT', String(s.wallet ?? 0))].join('')
-        : row('KIT', 'the starting kit');
+        ? [row(t('STARTER SKILLS'), `+${(g.skills || []).length}`), row(t('STARTER NODES'), String((g.nodes || []).length)), row(t('SOCKETS FILLED'), `${s.socketed ?? 0} / ${s.sockets ?? 0}`), row(t('GLINT'), String(s.wallet ?? 0))].join('')
+        : row(t('KIT'), t('the starting kit'));
     }
-    const names = (s.skills || []).map((id) => (SKILLS[id] ? SKILLS[id].name : id));
+    const names = (s.skills || []).map((id) => (SKILLS[id] ? t(SKILLS[id].name) : id));
     // (a network guest sees the party leader's build — it says whose it is)
-    kitEl.textContent = guest() && names.length ? `The Healer carries · ${names.join(' · ')}` : names.join(' · ');
-    hintEl.innerHTML = guest() ? 'The Healer leads on…' : '<b>Enter</b> set out now';
+    kitEl.textContent = guest() && names.length ? t('The Healer carries · {skills}', { skills: names.join(' · ') }) : names.join(' · ');
+    hintEl.innerHTML = guest() ? t('The Healer leads on…') : t('<b>Enter</b> set out now');
     // PARTY: all four builds carry (skills in slot order, sockets, bench, purse).
     buildsEl.innerHTML = buildsHtml(s.builds);
     buildsEl.style.display = s.builds ? '' : 'none';
@@ -168,9 +178,10 @@ export function createTransitScreen({ run }) {
     const st = mgr && typeof mgr.status === 'function' ? mgr.status() : null;
     let line = '';
     if (st && st.level === card.to) {
-      if (!st.ready) line = `Preparing ${card.name}… ${st.built}/${st.total}`;
-      else if (card.due) line = `Setting out…`;
-      else line = `${card.name} is ready · setting out in ${Math.max(1, Math.ceil((card.untilTick - card.startTick - card.elapsedTicks) / 60))} s`;
+      const name = card.name ? t(card.name) : card.name;
+      if (!st.ready) line = t('Preparing {name}… {built}/{total}', { name, built: st.built, total: st.total });
+      else if (card.due) line = t('Setting out…');
+      else line = t('{name} is ready · setting out in {secs} s', { name, secs: Math.max(1, Math.ceil((card.untilTick - card.startTick - card.elapsedTicks) / 60)) });
     }
     if (readyEl.textContent !== line) readyEl.textContent = line;
   }

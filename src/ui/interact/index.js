@@ -13,6 +13,7 @@
 import { Vector3 } from 'three';
 import { PALETTE } from '../../data/palette.js';
 import { TICK_HZ } from '../../core/constants.js';
+import { t } from '../../i18n/index.js';
 
 const REACH = 1.1;
 const REVIVE_RANGE = 0.6;
@@ -25,7 +26,7 @@ const CSS = `
     background: ${PALETTE.voidCharcoal}F0;
     border: 2px solid ${PALETTE.hearthAmber}A0;
     box-shadow: 0 0 18px ${PALETTE.hearthAmber}2A, inset 0 0 0 1px ${PALETTE.bone}22;
-    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-family: system-ui, -apple-system, 'Segoe UI', var(--i18n-font, sans-serif);
     color: ${PALETTE.parchment}; font-size: 18px; letter-spacing: 0.05em; font-weight: 600;
     transform-origin: bottom center; user-select: none; white-space: nowrap;
   }
@@ -115,15 +116,16 @@ export function createInteractPrompts({ stage, world, runUi = null }) {
     const st = availability(e, tick);
     let text;
     let glyph = '';
-    if (st === 'ready') text = `<span class="ix-sep">·</span> ${e.verb ?? 'Use'}`;
+    if (st === 'ready') text = `<span class="ix-sep">·</span> ${t(e.verb ?? 'Use')}`;
     else if (st === 'used') {
       glyph = '✕';
-      text = e.spentLabel ?? 'Spent';
+      text = t(e.spentLabel ?? 'Spent');
     } else {
       glyph = '◷';
       const closed = tick < (e.activeUntilTick ?? 0);
       const left = closed ? e.activeUntilTick - tick : e.cooldownUntilTick - tick;
-      text = `${closed ? 'Closed' : 'Resets'} · ${Math.ceil(left / TICK_HZ)} s`;
+      const secs = Math.ceil(left / TICK_HZ);
+      text = closed ? t('Closed · {secs} s', { secs }) : t('Resets · {secs} s', { secs });
     }
     const key = `${e.id}|${st}|${text}`;
     if (key !== lastText) {

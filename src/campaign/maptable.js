@@ -21,6 +21,7 @@ import {
 import { toonMaterial } from '../render/toon.js';
 import { ENV } from '../env/colors.js';
 import { PALETTE } from '../data/palette.js';
+import { t } from '../i18n/index.js';
 
 // West of the gate road, between the west rune stone and the NW tent: clear of
 // every camp collider (nearest: rune stone 1.6 u, lantern pole 1.9 u, tent 1.9 u).
@@ -33,7 +34,7 @@ const CSS = `
     align-items: center; gap: 12px; padding: 10px 18px; border-radius: 12px;
     background: ${PALETTE.voidCharcoal}F2; border: 2px solid ${PALETTE.hearthAmber}AA;
     box-shadow: 0 0 22px ${PALETTE.hearthAmber}33, inset 0 0 0 1px ${PALETTE.bone}22;
-    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: ${PALETTE.parchment};
+    font-family: system-ui, -apple-system, 'Segoe UI', var(--i18n-font, sans-serif); color: ${PALETTE.parchment};
     font-size: 19px; letter-spacing: 0.06em; user-select: none; cursor: pointer; pointer-events: auto;
   }
   #cg-table-prompt.cg-on { display: flex; }
@@ -165,8 +166,8 @@ export function createTablePrompt(onClick) {
   const el = document.createElement('div');
   el.id = 'cg-table-prompt';
   el.setAttribute('role', 'button');
-  el.setAttribute('aria-label', 'Choose a level (E)');
-  el.innerHTML = '<span class="cg-key">E</span><span><b>Choose a level</b></span>';
+  el.setAttribute('aria-label', t('Choose a level (E)'));
+  el.innerHTML = `<span class="cg-key">E</span><span><b>${t('Choose a level')}</b></span>`;
   el.addEventListener('click', (e) => {
     e.stopPropagation();
     onClick('click');

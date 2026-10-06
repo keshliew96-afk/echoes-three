@@ -15,23 +15,63 @@
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { service } from '../../app/registry.js';
-import { UNLOCKS, UNLOCK_IDS, UNLOCK_KINDS, KIND_LABEL, DEEDS, DEED_IDS, CURRENCY, EMBER_RULES, unlockState, reqText, nextGoals } from '../../data/unlocks.js';
+import { UNLOCKS, UNLOCK_IDS, UNLOCK_KINDS, KIND_LABEL, DEEDS, DEED_IDS, CURRENCY, EMBER_RULES, BOSSES, unlockState, nextGoals } from '../../data/unlocks.js';
 import { CLASS_NAME } from '../../data/classes.js';
 import { RELICS } from '../../sim/relics.js';
 import { SKILLS } from '../../sim/skills.js';
 import { relicIconHtml } from './relicicons.js';
+import { t, tn } from '../../i18n/index.js';
 
 const STYLE_ID = 'ul-unlocks-style';
 const TABS = [...UNLOCK_KINDS, 'deed'];
 const TAB_LABEL = { ...KIND_LABEL, deed: 'Deeds' };
 const TAB_BLURB = {
-  kit: 'A kit replaces one class’s starting skills. One kit per class.',
-  heirloom: 'Begin every run holding one relic. Find a relic in a run to reveal its heirloom.',
-  purse: 'Begin every run with extra Glint for the draft and the peddler.',
-  vow: `Wear vows to curse every combat room. Each vow pays ${Math.round(EMBER_RULES.perVow * 100)}% more ${CURRENCY}.`,
-  tint: 'Recolour a class’s effects. Cosmetic, and only on your screen.',
-  deed: `One-off feats. Each pays its ${CURRENCY} once, on the run that does it.`,
+  kit: () => t('A kit replaces one class’s starting skills. One kit per class.'),
+  heirloom: () => t('Begin every run holding one relic. Find a relic in a run to reveal its heirloom.'),
+  purse: () => t('Begin every run with extra Glint for the draft and the peddler.'),
+  vow: () => t('Wear vows to curse every combat room. Each vow pays {pct}% more {currency}.', { pct: Math.round(EMBER_RULES.perVow * 100), currency: t(CURRENCY) }),
+  tint: () => t('Recolour a class’s effects. Cosmetic, and only on your screen.'),
+  deed: () => t('One-off feats. Each pays its {currency} once, on the run that does it.', { currency: t(CURRENCY) }),
 };
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+const theName = (name) => t(name).replace(/^The /, 'the ');
+
+// The requirement line (data/unlocks.js reqText), built here so each form is
+// one translatable sentence with the name as a placeholder.
+function reqLabel(req) {
+  if (!req) return '';
+  if (req.level) return t('Clear Level {level}', { level: ROMAN[req.level] ?? req.level });
+  if (req.campaign) return t('Complete a campaign');
+  if (req.boss) {
+    const b = BOSSES.find((x) => x.kind === req.boss);
+    return t('Defeat {boss}', { boss: b ? theName(b.name) : req.boss });
+  }
+  if (req.relic) return t('Find {relic} in a run', { relic: RELICS[req.relic] ? t(RELICS[req.relic].name) : req.relic });
+  if (req.unlock) return t('Own {unlock}', { unlock: UNLOCKS[req.unlock] ? t(UNLOCKS[req.unlock].name) : req.unlock });
+  if (req.runs) return t('Finish {n} runs', { n: req.runs });
+  if (req.depth) return t('Reach Depth {depth} of the Endless Descent', { depth: req.depth });
+  return '';
+}
+
+// A requirement with its price after it ("Clear Level I, then 40 Embers").
+function reqWithCost(u) {
+  return u.cost ? t('{req}, then {cost} {currency}', { req: reqLabel(u.req), cost: u.cost, currency: t(CURRENCY) }) : reqLabel(u.req);
+}
+
+// The last run's award lines are built in English by data/unlocks.js awardFor
+// and stored on the profile; each known form is shown as its own sentence.
+function awardLabel(label) {
+  const s = String(label);
+  let m;
+  if ((m = /^(\d+) rooms? cleared$/.exec(s))) return tn(Number(m[1]), '{n} room cleared', '{n} rooms cleared');
+  if ((m = /^Level (\S+) cleared$/.exec(s))) return t('Level {level} cleared', { level: m[1] });
+  if ((m = /^Depth (\d+) cleared$/.exec(s))) return t('Depth {depth} cleared', { depth: m[1] });
+  if (s === 'Campaign complete') return t('Campaign complete');
+  if ((m = /^(\d+) vows? \+(\d+)%$/.exec(s))) return tn(Number(m[1]), '{n} vow +{pct}%', '{n} vows +{pct}%', { pct: m[2] });
+  if ((m = /^(\w+) ×(.+)$/.exec(s))) return t('{challenge} ×{mul}', { challenge: t(m[1]), mul: m[2] });
+  if ((m = /^Deed: (.+)$/.exec(s))) return t('Deed: {name}', { name: t(m[1]) });
+  return s;
+}
 const EMBER_SVG =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c1.2 3.4 5.6 5.6 5.6 10.6A5.6 5.6 0 0 1 12 18.7a5.6 5.6 0 0 1-5.6-5.6c0-2.6 1.6-3.9 2.6-5.6.3 1.7 1 2.6 2 3.1-.3-2.8.2-5.6 1-8.1z" fill="currentColor"/></svg>';
 const LOCK_SVG =
@@ -138,7 +178,7 @@ const netRole = () => {
   }
   return null;
 };
-const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 function profileCtx() {
   const s = saveSvc();
@@ -166,25 +206,25 @@ export function createUnlocksScreen(ctx) {
   el.className = 'ul-unlocks';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
-  el.setAttribute('aria-label', `${CURRENCY} and unlocks`);
+  el.setAttribute('aria-label', t('{currency} and unlocks', { currency: t(CURRENCY) }));
   el.innerHTML = `
     <div class="ap-veil"></div>
     <div class="ul-wrap ap-plate">
       <div class="ul-head">
         <div class="ul-title">
-          <div class="ul-kicker">BETWEEN RUNS</div>
-          <h2 class="ap-h2">${CURRENCY} &amp; Unlocks</h2>
+          <div class="ul-kicker">${esc(t('BETWEEN RUNS'))}</div>
+          <h2 class="ap-h2">${esc(t('{currency} & Unlocks', { currency: t(CURRENCY) }))}</h2>
         </div>
-        <div class="ul-bal" aria-live="polite">${EMBER_SVG}<b class="ul-bal-n">0</b><span class="ul-bal-t">${CURRENCY}</span></div>
+        <div class="ul-bal" aria-live="polite">${EMBER_SVG}<b class="ul-bal-n">0</b><span class="ul-bal-t">${esc(t(CURRENCY))}</span></div>
       </div>
       <div class="ul-side">
-        <div class="ul-box ul-last"><h3>LAST RUN</h3><div class="ul-last-b"></div></div>
-        <div class="ul-box ul-next"><h3>WHAT COMES NEXT</h3><div class="ul-next-b"></div></div>
-        <div class="ul-box ul-wear"><h3>NEXT RUN WEARS</h3><div class="ul-wear-b"></div>
-          <button type="button" class="ul-plain" data-nav>Plain run (take everything off)</button>
+        <div class="ul-box ul-last"><h3>${esc(t('LAST RUN'))}</h3><div class="ul-last-b"></div></div>
+        <div class="ul-box ul-next"><h3>${esc(t('WHAT COMES NEXT'))}</h3><div class="ul-next-b"></div></div>
+        <div class="ul-box ul-wear"><h3>${esc(t('NEXT RUN WEARS'))}</h3><div class="ul-wear-b"></div>
+          <button type="button" class="ul-plain" data-nav>${esc(t('Plain run (take everything off)'))}</button>
           <div class="ul-net"></div>
         </div>
-        <div class="ul-box ul-life"><h3>PROFILE</h3><div class="ul-life-b"></div></div>
+        <div class="ul-box ul-life"><h3>${esc(t('PROFILE'))}</h3><div class="ul-life-b"></div></div>
       </div>
       <div class="ul-main">
         <div class="ul-tabs" role="tablist"></div>
@@ -193,9 +233,9 @@ export function createUnlocksScreen(ctx) {
       </div>
       <div class="ul-note" aria-live="polite"></div>
       <div class="ul-foot-keys">
-        <span><b>Q</b><b>E</b>Kind</span>
-        <span><b>Enter</b>Buy / wear / take off</span>
-        <span><b>Esc</b>Back to camp</span>
+        <span><b>Q</b><b>E</b>${esc(t('Kind'))}</span>
+        <span><b>Enter</b>${esc(t('Buy / wear / take off'))}</span>
+        <span><b>Esc</b>${esc(t('Back to camp'))}</span>
       </div>
     </div>`;
   const $ = (s) => el.querySelector(s);
@@ -206,8 +246,8 @@ export function createUnlocksScreen(ctx) {
   let off = null;
   let log = []; // probe: the last actions { id, action, ok, reason }
 
-  function note(t) {
-    noteEl.textContent = t || '';
+  function note(s) {
+    noteEl.textContent = s || '';
   }
 
   // ------------------------------------------------------------ side --
@@ -216,69 +256,87 @@ export function createUnlocksScreen(ctx) {
     $('.ul-bal-n').textContent = String(m.embers);
     const last = m.lastAward;
     const lastB = $('.ul-last-b');
-    if (!last) lastB.innerHTML = `<div class="ul-empty">Finish a run to earn ${CURRENCY}: ${EMBER_RULES.perRoom} per room, more for each level and boss, and deeds pay once.</div>`;
+    if (!last) lastB.innerHTML = `<div class="ul-empty">${esc(t('Finish a run to earn {currency}: {per} per room, more for each level and boss, and deeds pay once.', { currency: t(CURRENCY), per: EMBER_RULES.perRoom }))}</div>`;
     else {
-      const res = { victory: 'Victory', defeat: 'Defeat', abandoned: 'Left early' }[last.result] ?? '';
+      const res = { victory: () => t('Victory'), defeat: () => t('Defeat'), abandoned: () => t('Left early') }[last.result];
       lastB.innerHTML =
-        (last.lines || []).map((l) => `<div class="ul-line"><span>${esc(l.label)}</span><b>${l.embers >= 0 ? '+' : ''}${l.embers}</b></div>`).join('') +
-        `<div class="ul-line ul-total"><span>${esc(res)}</span><b>+${last.embers}</b></div>` +
-        (last.unlocked && last.unlocked.length ? `<div class="ul-line"><i>Unlocked: ${last.unlocked.map((id) => esc(UNLOCKS[id] ? UNLOCKS[id].name : id)).join(', ')}</i></div>` : '');
+        (last.lines || []).map((l) => `<div class="ul-line"><span>${esc(awardLabel(l.label))}</span><b>${l.embers >= 0 ? '+' : ''}${l.embers}</b></div>`).join('') +
+        `<div class="ul-line ul-total"><span>${esc(res ? res() : '')}</span><b>+${last.embers}</b></div>` +
+        (last.unlocked && last.unlocked.length ? `<div class="ul-line"><i>${esc(t('Unlocked: {names}', { names: last.unlocked.map((id) => (UNLOCKS[id] ? t(UNLOCKS[id].name) : id)).join(', ') }))}</i></div>` : '');
     }
     const goals = nextGoals(c, 3);
+    const goalHow = (g) => {
+      const u = UNLOCKS[g.id];
+      if (!u) return g.how;
+      const st = unlockState(g.id, c);
+      if (st === 'buy') return t('Ready: {cost} {currency}', { cost: u.cost, currency: t(CURRENCY) });
+      if (st === 'poor') return t('{n} more {currency}', { n: u.cost - c.meta.embers, currency: t(CURRENCY) });
+      return reqWithCost(u);
+    };
     $('.ul-next-b').innerHTML = goals.length
-      ? goals.map((g) => `<div class="ul-line"><span>${esc(g.name)}</span><i>${esc(g.how)}</i></div>`).join('')
-      : '<div class="ul-empty">Everything is unlocked. Wear vows for more.</div>';
+      ? goals.map((g) => `<div class="ul-line"><span>${esc(t(g.name))}</span><i>${esc(goalHow(g))}</i></div>`).join('')
+      : `<div class="ul-empty">${esc(t('Everything is unlocked. Wear vows for more.'))}</div>`;
     const l = m.loadout;
     const wear = [];
-    for (const cls of Object.keys(l.kits)) if (l.kits[cls]) wear.push(`${CLASS_NAME[cls]}: ${UNLOCKS[l.kits[cls]].name} kit`);
-    if (l.heirloom) wear.push(`Heirloom: ${UNLOCKS[l.heirloom].name}`);
-    if (l.purse) wear.push(`Purse: +${UNLOCKS[`purse_${l.purse}`].glint} Glint`);
-    for (const v of l.vows) wear.push(UNLOCKS[v].name);
-    const tints = Object.keys(l.tints).filter((k) => l.tints[k]).map((k) => UNLOCKS[l.tints[k]].name);
+    for (const cls of Object.keys(l.kits)) if (l.kits[cls]) wear.push(t('{cls}: {name} kit', { cls: t(CLASS_NAME[cls]), name: t(UNLOCKS[l.kits[cls]].name) }));
+    if (l.heirloom) wear.push(t('Heirloom: {name}', { name: t(UNLOCKS[l.heirloom].name) }));
+    if (l.purse) wear.push(t('Purse: +{glint} Glint', { glint: UNLOCKS[`purse_${l.purse}`].glint }));
+    for (const v of l.vows) wear.push(t(UNLOCKS[v].name));
+    const tints = Object.keys(l.tints).filter((k) => l.tints[k]).map((k) => t(UNLOCKS[l.tints[k]].name));
     $('.ul-wear-b').innerHTML =
-      (wear.length ? wear.map((w) => `<div class="ul-line"><span>${esc(w)}</span></div>`).join('') : '<div class="ul-empty">A plain run: the starting kits, no heirloom, no vows.</div>') +
-      (tints.length ? `<div class="ul-line"><i>${esc(tints.join(', '))} (cosmetic)</i></div>` : '') +
-      (l.vows.length ? `<div class="ul-line"><i>${CURRENCY} +${Math.round(EMBER_RULES.perVow * 100 * l.vows.length)}%</i></div>` : '');
+      (wear.length ? wear.map((w) => `<div class="ul-line"><span>${esc(w)}</span></div>`).join('') : `<div class="ul-empty">${esc(t('A plain run: the starting kits, no heirloom, no vows.'))}</div>`) +
+      (tints.length ? `<div class="ul-line"><i>${esc(t('{names} (cosmetic)', { names: tints.join(', ') }))}</i></div>` : '') +
+      (l.vows.length ? `<div class="ul-line"><i>${esc(t('{currency} +{pct}%', { currency: t(CURRENCY), pct: Math.round(EMBER_RULES.perVow * 100 * l.vows.length) }))}</i></div>` : '');
     const role = netRole();
     $('.ul-net').textContent =
       role === 'guest'
-        ? 'Online as a guest: the host’s kits, heirloom, purse and vows set this party’s run. Yours apply when you host. You still earn on your own profile, and your tints show on your screen.'
+        ? t('Online as a guest: the host’s kits, heirloom, purse and vows set this party’s run. Yours apply when you host. You still earn on your own profile, and your tints show on your screen.')
         : role === 'host'
-          ? 'Online as host: your kits, heirloom, purse and vows set the whole party’s run. Every player earns on their own profile.'
+          ? t('Online as host: your kits, heirloom, purse and vows set the whole party’s run. Every player earns on their own profile.')
           : '';
     const r = c.records;
     $('.ul-life-b').innerHTML =
-      `<div class="ul-line"><span>Runs · victories</span><b>${r.runs || 0} · ${r.victories || 0}</b></div>` +
-      `<div class="ul-line"><span>${CURRENCY} earned</span><b>${m.earned}</b></div>` +
-      `<div class="ul-line"><span>Unlocks</span><b>${Object.keys(m.owned).length} / ${UNLOCK_IDS.length}</b></div>` +
-      `<div class="ul-line"><span>Deeds</span><b>${m.deeds.length} / ${DEED_IDS.length}</b></div>`;
+      `<div class="ul-line"><span>${esc(t('Runs · victories'))}</span><b>${r.runs || 0} · ${r.victories || 0}</b></div>` +
+      `<div class="ul-line"><span>${esc(t('{currency} earned', { currency: t(CURRENCY) }))}</span><b>${m.earned}</b></div>` +
+      `<div class="ul-line"><span>${esc(t('Unlocks'))}</span><b>${Object.keys(m.owned).length} / ${UNLOCK_IDS.length}</b></div>` +
+      `<div class="ul-line"><span>${esc(t('Deeds'))}</span><b>${m.deeds.length} / ${DEED_IDS.length}</b></div>`;
   }
 
   // ------------------------------------------------------------ tabs --
   function renderTabs(c) {
     tabsEl.textContent = '';
-    for (const t of TABS) {
+    for (const k of TABS) {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'ul-tab';
-      b.dataset.tab = t;
+      b.dataset.tab = k;
       b.setAttribute('role', 'tab');
       b.setAttribute('data-nav', '');
-      b.setAttribute('aria-selected', String(t === tab));
-      const ids = t === 'deed' ? DEED_IDS : UNLOCK_IDS.filter((id) => UNLOCKS[id].kind === t);
-      const have = t === 'deed' ? c.meta.deeds.length : ids.filter((id) => c.meta.owned[id] !== undefined).length;
-      b.innerHTML = `${TAB_LABEL[t]}<small>${have}/${ids.length}</small>`;
-      b.addEventListener('click', () => setTab(t));
+      b.setAttribute('aria-selected', String(k === tab));
+      const ids = k === 'deed' ? DEED_IDS : UNLOCK_IDS.filter((id) => UNLOCKS[id].kind === k);
+      const have = k === 'deed' ? c.meta.deeds.length : ids.filter((id) => c.meta.owned[id] !== undefined).length;
+      b.innerHTML = `${esc(t(TAB_LABEL[k]))}<small>${have}/${ids.length}</small>`;
+      b.addEventListener('click', () => setTab(k));
       tabsEl.appendChild(b);
     }
-    $('.ul-blurb').textContent = TAB_BLURB[tab];
+    $('.ul-blurb').textContent = TAB_BLURB[tab]();
   }
 
   function cardHtml(id, c) {
     const u = UNLOCKS[id];
     const st = unlockState(id, c);
     const eq = st === 'owned' && isEquipped(id, c.meta);
-    let kind = u.kind === 'kit' || u.kind === 'tint' ? `${CLASS_NAME[u.cls].toUpperCase()} ${u.kind === 'kit' ? 'KIT' : 'TINT'}` : u.kind === 'heirloom' ? `${u.rarity.toUpperCase()} HEIRLOOM` : u.kind === 'vow' ? 'VOW' : 'PURSE';
+    let kind = esc(
+      u.kind === 'kit'
+        ? t('{cls} KIT', { cls: t(CLASS_NAME[u.cls]).toUpperCase() })
+        : u.kind === 'tint'
+          ? t('{cls} TINT', { cls: t(CLASS_NAME[u.cls]).toUpperCase() })
+          : u.kind === 'heirloom'
+            ? t('{rarity} HEIRLOOM', { rarity: t(u.rarity).toUpperCase() })
+            : u.kind === 'vow'
+              ? t('VOW')
+              : t('PURSE'),
+    );
     let ico = '';
     if (u.kind === 'heirloom' && st !== 'locked') {
       try {
@@ -288,23 +346,23 @@ export function createUnlocksScreen(ctx) {
       }
     }
     let extra = '';
-    if (u.kind === 'kit') extra = `<div class="ul-text">${esc(u.text)}<br><i style="font-style:normal;color:${P.warmGrey}">${u.skills.map((s) => esc(SKILLS[s] ? SKILLS[s].name : s)).join(' · ')}</i></div>`;
-    else if (u.kind === 'tint') extra = `<div class="ul-text">${esc(u.text)}</div><div class="ul-swatch"><i style="background:${u.colors.glow};color:${u.colors.glow}"></i><i style="background:${u.colors.second};color:${u.colors.second}"></i></div>`;
-    else if (u.kind === 'heirloom' && st === 'locked') extra = `<div class="ul-text">An heirloom you have not found yet.</div>`;
-    else extra = `<div class="ul-text">${esc(u.text)}</div>`;
-    const name = u.kind === 'heirloom' && st === 'locked' ? 'Unknown heirloom' : u.name;
+    if (u.kind === 'kit') extra = `<div class="ul-text">${esc(t(u.text))}<br><i style="font-style:normal;color:${P.warmGrey}">${u.skills.map((s) => esc(SKILLS[s] ? t(SKILLS[s].name) : s)).join(' · ')}</i></div>`;
+    else if (u.kind === 'tint') extra = `<div class="ul-text">${esc(t(u.text))}</div><div class="ul-swatch"><i style="background:${u.colors.glow};color:${u.colors.glow}"></i><i style="background:${u.colors.second};color:${u.colors.second}"></i></div>`;
+    else if (u.kind === 'heirloom' && st === 'locked') extra = `<div class="ul-text">${esc(t('An heirloom you have not found yet.'))}</div>`;
+    else extra = `<div class="ul-text">${esc(t(u.text))}</div>`;
+    const name = u.kind === 'heirloom' && st === 'locked' ? t('Unknown heirloom') : t(u.name);
     let foot;
-    if (st === 'locked') foot = `<span>${LOCK_SVG} ${esc(reqText(u.req))}</span>${u.cost ? `<span>${u.cost} ${EMBER_SVG}</span>` : ''}`;
-    else if (st === 'buy') foot = `<span>Buy</span><span>${u.cost} ${EMBER_SVG}</span>`;
-    else if (st === 'poor') foot = `<span>Need ${u.cost - c.meta.embers} more</span><span>${u.cost} ${EMBER_SVG}</span>`;
-    else foot = eq ? `<span>✓ ${u.kind === 'vow' ? 'Sworn' : 'Equipped'}</span><span>Take off</span>` : `<span>Owned</span><span>${u.kind === 'vow' ? 'Swear' : 'Equip'}</span>`;
+    if (st === 'locked') foot = `<span>${LOCK_SVG} ${esc(reqLabel(u.req))}</span>${u.cost ? `<span>${u.cost} ${EMBER_SVG}</span>` : ''}`;
+    else if (st === 'buy') foot = `<span>${esc(t('Buy'))}</span><span>${u.cost} ${EMBER_SVG}</span>`;
+    else if (st === 'poor') foot = `<span>${esc(t('Need {n} more', { n: u.cost - c.meta.embers }))}</span><span>${u.cost} ${EMBER_SVG}</span>`;
+    else foot = eq ? `<span>✓ ${esc(u.kind === 'vow' ? t('Sworn') : t('Equipped'))}</span><span>${esc(t('Take off'))}</span>` : `<span>${esc(t('Owned'))}</span><span>${esc(u.kind === 'vow' ? t('Swear') : t('Equip'))}</span>`;
     return { st, eq, html: `<div class="ul-kind">${ico}${kind}</div><div class="ul-name">${esc(name)}</div>${extra}<div class="ul-foot">${foot}</div>` };
   }
 
   function deedHtml(id, c) {
     const d = DEEDS[id];
     const done = c.meta.deeds.includes(id);
-    return { st: done ? 'done' : 'locked', html: `<div class="ul-kind">DEED</div><div class="ul-name">${esc(d.name)}</div><div class="ul-text">${esc(d.text)}</div><div class="ul-foot"><span>${done ? '✓ Done' : 'Not yet'}</span><span>+${d.embers} ${EMBER_SVG}</span></div>` };
+    return { st: done ? 'done' : 'locked', html: `<div class="ul-kind">${esc(t('DEED'))}</div><div class="ul-name">${esc(t(d.name))}</div><div class="ul-text">${esc(t(d.text))}</div><div class="ul-foot"><span>${esc(done ? t('✓ Done') : t('Not yet'))}</span><span>+${d.embers} ${EMBER_SVG}</span></div>` };
   }
 
   function renderGrid(c, { rebuild = false } = {}) {
@@ -335,7 +393,7 @@ export function createUnlocksScreen(ctx) {
   function render({ rebuild = false } = {}) {
     const c = profileCtx();
     if (!c) {
-      note('Your profile is unavailable in this browser mode.');
+      note(t('Your profile is unavailable in this browser mode.'));
       return;
     }
     renderSide(c);
@@ -343,13 +401,13 @@ export function createUnlocksScreen(ctx) {
     renderGrid(c, { rebuild });
   }
 
-  function setTab(t, { focus = true } = {}) {
-    if (!TABS.includes(t)) return;
-    tab = t;
+  function setTab(k, { focus = true } = {}) {
+    if (!TABS.includes(k)) return;
+    tab = k;
     note('');
     render({ rebuild: true });
     if (focus && manager && typeof manager.focusElement === 'function') {
-      const first = gridEl.querySelector('.ul-card') || tabsEl.querySelector(`[data-tab="${t}"]`);
+      const first = gridEl.querySelector('.ul-card') || tabsEl.querySelector(`[data-tab="${k}"]`);
       if (first) manager.focusElement(first);
     }
   }
@@ -367,7 +425,7 @@ export function createUnlocksScreen(ctx) {
     const c = profileCtx();
     if (!s || !c) return;
     if (tab === 'deed') {
-      note(c.meta.deeds.includes(id) ? `${DEEDS[id].name}: done.` : `${DEEDS[id].text} Pays ${DEEDS[id].embers} ${CURRENCY} once.`);
+      note(c.meta.deeds.includes(id) ? t('{name}: done.', { name: t(DEEDS[id].name) }) : t('{text} Pays {n} {currency} once.', { text: t(DEEDS[id].text), n: DEEDS[id].embers, currency: t(CURRENCY) }));
       return;
     }
     const u = UNLOCKS[id];
@@ -375,22 +433,22 @@ export function createUnlocksScreen(ctx) {
     let r;
     if (st === 'locked') {
       r = { ok: false, reason: 'locked' };
-      note(`${u.kind === 'heirloom' ? 'Unknown heirloom' : u.name}: ${reqText(u.req)}${u.cost ? `, then ${u.cost} ${CURRENCY}` : ''}.`);
+      note(t('{name}: {req}.', { name: u.kind === 'heirloom' ? t('Unknown heirloom') : t(u.name), req: reqWithCost(u) }));
       bump(card, 'ul-shake');
     } else if (st === 'poor') {
       r = { ok: false, reason: 'poor' };
-      note(`${u.name} costs ${u.cost} ${CURRENCY}. You have ${c.meta.embers}.`);
+      note(t('{name} costs {cost} {currency}. You have {have}.', { name: t(u.name), cost: u.cost, currency: t(CURRENCY), have: c.meta.embers }));
       bump(card, 'ul-shake');
     } else if (st === 'buy') {
       r = s.buyUnlock(id);
       if (r.ok) {
-        note(`${u.name} unlocked${u.kind === 'vow' ? '' : ' and equipped'}.`);
+        note(u.kind === 'vow' ? t('{name} unlocked.', { name: t(u.name) }) : t('{name} unlocked and equipped.', { name: t(u.name) }));
         bump(card, 'ul-pulse');
-      } else note(`Couldn't buy ${u.name}.`);
+      } else note(t('Couldn\'t buy {name}.', { name: t(u.name) }));
     } else {
       const on = !isEquipped(id, c.meta);
       r = s.equipUnlock(id, on);
-      note(r.ok ? `${u.name} ${on ? (u.kind === 'vow' ? 'sworn' : 'equipped') : 'taken off'}.` : `Couldn't change ${u.name}.`);
+      note(r.ok ? (on ? (u.kind === 'vow' ? t('{name} sworn.', { name: t(u.name) }) : t('{name} equipped.', { name: t(u.name) })) : t('{name} taken off.', { name: t(u.name) })) : t('Couldn\'t change {name}.', { name: t(u.name) }));
       if (r.ok) bump(card, 'ul-pulse');
     }
     log.push({ id, state: st, ok: !!(r && r.ok), reason: r && r.reason ? r.reason : null });
@@ -402,7 +460,7 @@ export function createUnlocksScreen(ctx) {
     const s = saveSvc();
     if (!s) return;
     s.clearLoadout();
-    note('Plain run: kits, heirloom, purse and vows taken off.');
+    note(t('Plain run: kits, heirloom, purse and vows taken off.'));
     render();
   });
 

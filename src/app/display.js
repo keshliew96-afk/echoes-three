@@ -21,6 +21,8 @@
 // are not user activation: the request is refused and the UI says so.
 // Keyboard Lock (Chromium) keeps Esc for the game while fullscreen: a short Esc
 // reaches the page, holding Esc leaves fullscreen.
+import { t } from '../i18n/index.js';
+
 const MAX_BUFFER = Object.freeze({ w: 3840, h: 2160 });
 
 export function createDisplay({ settings, stage, scheduler, toast, lastSource }) {
@@ -89,10 +91,10 @@ export function createDisplay({ settings, stage, scheduler, toast, lastSource })
     settings.set('display.fullscreen', !!fsElement(), { source: 'system' });
     const msg =
       source === 'gamepad'
-        ? "Press Enter or click — browsers don't let a gamepad button switch to fullscreen"
+        ? t("Press Enter or click — browsers don't let a gamepad button switch to fullscreen")
         : reason === 'unsupported'
-          ? "This browser doesn't allow fullscreen here"
-          : 'The browser blocked fullscreen — press Enter or click to try again';
+          ? t("This browser doesn't allow fullscreen here")
+          : t('The browser blocked fullscreen — press Enter or click to try again');
     if (toast) toast(msg, { tone: 'warn', ms: 3600 });
     note({ ev: 'fullscreen_refused', reason, source });
   }

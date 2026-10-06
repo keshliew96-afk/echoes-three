@@ -32,6 +32,7 @@ import { createDisplay } from './display.js';
 import { createTitleCam } from './titlecam.js';
 import { LEGACY_HARNESS_PARAMS } from './params.js';
 import { registerCoreMenus } from '../ui/menu/index.js';
+import { t } from '../i18n/index.js';
 
 export const APP_STATES = Object.freeze(['boot', 'title', 'playing', 'farewell']);
 export const APP_UI_ROOT_ID = 'app-ui';
@@ -247,9 +248,9 @@ export function createApp({ params }) {
     if (loadReported) return;
     loadReported = true;
     const r = settings.loadReport;
-    if (r.status === 'recovered') toast('Settings were reset — the saved file was unreadable', { tone: 'warn', ms: 5200 });
-    else if (r.status === 'newer') toast('Your settings were saved by a newer version of Echoes — using defaults for now', { tone: 'warn', ms: 5200 });
-    else if (r.storage === 'memory') toast("Settings can't be saved in this browser mode", { tone: 'warn', ms: 4200 });
+    if (r.status === 'recovered') toast(t('Settings were reset — the saved file was unreadable'), { tone: 'warn', ms: 5200 });
+    else if (r.status === 'newer') toast(t('Your settings were saved by a newer version of Echoes — using defaults for now'), { tone: 'warn', ms: 5200 });
+    else if (r.storage === 'memory') toast(t("Settings can't be saved in this browser mode"), { tone: 'warn', ms: 4200 });
   }
 
   function showTitle() {
@@ -400,7 +401,7 @@ export function createApp({ params }) {
             if (r && r.ok) enterPlaying();
             else {
               showTitle();
-              toast(`Couldn't load save "${params.slot}"`, { tone: 'warn' });
+              toast(t(`Couldn't load save "{slot}"`, { slot: params.slot }), { tone: 'warn' });
             }
           })
           .catch(() => showTitle());
@@ -469,7 +470,7 @@ export function createApp({ params }) {
         if (save && typeof save.resetToFresh === 'function') {
           const r = save.resetToFresh({ seed: seed ?? randomSeed() });
           if (r && r.ok === false) {
-            toast("Couldn't start a new game", { tone: 'error' });
+            toast(t("Couldn't start a new game"), { tone: 'error' });
             return Promise.resolve(false);
           }
         } else {
@@ -524,10 +525,10 @@ export function createApp({ params }) {
       try {
         const hasSave = !!service('save');
         const ok = await app.confirm({
-          title: 'Exit Echoes?',
-          body: hasSave ? 'Your progress and settings are saved.' : 'Your settings are saved.',
-          confirmLabel: 'Exit',
-          cancelLabel: 'Cancel',
+          title: t('Exit Echoes?'),
+          body: hasSave ? t('Your progress and settings are saved.') : t('Your settings are saved.'),
+          confirmLabel: t('Exit'),
+          cancelLabel: t('Cancel'),
           danger: true,
           defaultFocus: 'cancel',
         });
@@ -646,7 +647,7 @@ export function createApp({ params }) {
     service: (name) => service(name),
     confirm: (o) => app.confirm(o),
     keepDisplay: (o) => app.keepDisplay(o),
-    toast: (t, o) => app.toast(t, o),
+    toast: (msg, o) => app.toast(msg, o),
     requestPause: (src) => app.requestPause(src),
     newGame: (o) => app.newGame(o),
     exit: () => app.exit(),

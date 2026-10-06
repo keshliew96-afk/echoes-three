@@ -58,6 +58,7 @@ import { createRelicStrip, RELIC_STRIP_CSS } from './relicstrip.js';
 import { RELICS, CURSES } from '../../sim/relics.js';
 // @gnt:M3 RUN-NAV-SOUND (fix-M3-r5): selection ticks for the build pages.
 import { createSelectionSound } from '../../audio/uiselect.js';
+import { t } from '../../i18n/index.js';
 
 // phase -> screen name. Anything absent means "no meta screen".
 const SCREEN_FOR = {
@@ -844,14 +845,21 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   bus.on('party_catchup', (ev) => {
     const a = service('app');
     const each = ev.perSeat ? Math.max(...Object.values(ev.perSeat)) : 0;
-    if (a && typeof a.toast === 'function') a.toast(`Your allies caught up: ${each} nodes each`, { tone: 'info', ms: 5200 });
+    if (a && typeof a.toast === 'function') a.toast(t('Your allies caught up: {n} nodes each', { n: each }), { tone: 'info', ms: 5200 });
   });
   bus.on('party_autopick', (ev) => {
     const a = service('app');
     if (!a || typeof a.toast !== 'function') return;
-    const who = ['Healer', 'Tank', 'Swordsman', 'Archer'][ev.seat] ?? 'party';
-    if (ev.reason === 'door_timeout') a.toast("Time's up — the left door was taken", { tone: 'info', ms: 4200 });
-    else a.toast(`Time's up — the ${who}'s reward was picked (${ev.choice === 'take' ? 'taken' : 'left'})${ev.seat === ownSeat() ? ' — you can re-socket it between rooms' : ''}`, { tone: 'info', ms: 4800 });
+    const cls = ['Healer', 'Tank', 'Swordsman', 'Archer'][ev.seat];
+    const who = cls ? t(cls) : t('party');
+    if (ev.reason === 'door_timeout') a.toast(t("Time's up — the left door was taken"), { tone: 'info', ms: 4200 });
+    else {
+      const mine = ev.seat === ownSeat();
+      const msg = ev.choice === 'take'
+        ? (mine ? t("Time's up — the {who}'s reward was picked (taken) — you can re-socket it between rooms", { who }) : t("Time's up — the {who}'s reward was picked (taken)", { who }))
+        : (mine ? t("Time's up — the {who}'s reward was picked (left) — you can re-socket it between rooms", { who }) : t("Time's up — the {who}'s reward was picked (left)", { who }));
+      a.toast(msg, { tone: 'info', ms: 4800 });
+    }
   });
   function ownSeat() {
     return viewerSeat();
@@ -862,19 +870,19 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const a = service('app');
     const c = CURSES[ev.curse];
     if (!a || typeof a.toast !== 'function' || !c) return;
-    if (c.major) a.toast(`Bound for the run: ${c.name}. ${c.text} Clear this room for a greater relic.`, { tone: 'info', ms: 6000 });
-    else a.toast(`Cursed room: ${c.name}. ${c.text} Clear it for a relic.`, { tone: 'info', ms: 5200 });
+    if (c.major) a.toast(t('Bound for the run: {name}. {text} Clear this room for a greater relic.', { name: t(c.name), text: t(c.text) }), { tone: 'info', ms: 6000 });
+    else a.toast(t('Cursed room: {name}. {text} Clear it for a relic.', { name: t(c.name), text: t(c.text) }), { tone: 'info', ms: 5200 });
   });
   // Slice 2: an elite's relic drop, a relic bought at the peddler.
   bus.on('relic_drop', (ev) => {
     const a = service('app');
     const r = RELICS[ev.relic];
-    if (a && typeof a.toast === 'function' && r) a.toast(`The elite dropped a relic: ${r.name}. ${r.text}`, { tone: 'info', ms: 5600 });
+    if (a && typeof a.toast === 'function' && r) a.toast(t('The elite dropped a relic: {name}. {text}', { name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 5600 });
   });
   bus.on('relic_purchase', (ev) => {
     const a = service('app');
     const r = RELICS[ev.relic];
-    if (a && typeof a.toast === 'function' && r) a.toast(`${r.name} joins the party. ${r.text}`, { tone: 'info', ms: 4200 });
+    if (a && typeof a.toast === 'function' && r) a.toast(t('{name} joins the party. {text}', { name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 4200 });
   });
   // A run ending or a room starting must never leave a page hanging.
   bus.on('room_start', () => setScreen('none'));
@@ -904,7 +912,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   guestNote.className = 'nt-guest-note';
   guestNote.style.cssText =
     'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:70;padding:8px 18px;border-radius:12px;' +
-    `background:${'#221F1B'}EE;color:#F4EFE6;font:700 18px/1.2 "Nunito","Trebuchet MS",system-ui,sans-serif;` +
+    `background:${'#221F1B'}EE;color:#F4EFE6;font:700 18px/1.2 "Nunito","Trebuchet MS",system-ui,var(--i18n-font, sans-serif);` +
     'border:1px solid #9C918688;pointer-events:none;display:none;';
   document.body.appendChild(guestNote);
   const pingCss = document.createElement('style');
@@ -918,11 +926,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // host and a human is back on the Healer (then the host's class decides;
   // net/seats.js chooserSeat).
   const GUEST_LINES = {
-    draft: (w) => `The ${w} is choosing the reward…`,
-    path: (w) => `The ${w} picks the door — point with ←/→ and Enter`,
-    shop: (w) => `The ${w} is shopping…`,
-    end: (w) => `Waiting for the ${w}…`,
-    transit: (w) => `The ${w} leads on to the next level…`,
+    draft: (w) => t('The {cls} is choosing the reward…', { cls: t(w) }),
+    path: (w) => t('The {cls} picks the door — point with ←/→ and Enter', { cls: t(w) }),
+    shop: (w) => t('The {cls} is shopping…', { cls: t(w) }),
+    end: (w) => t('Waiting for the {cls}…', { cls: t(w) }),
+    transit: (w) => t('The {cls} leads on to the next level…', { cls: t(w) }),
   };
   const chooserLabel = () => {
     const n = service('net');
@@ -945,24 +953,36 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const seat = pr.viewSeat;
     const me = ownSeat();
     const left = current === 'draft' ? party.deadlineInTicks : [party.leaveInTicks, party.deadlineInTicks].filter((t) => t !== null && t !== undefined).reduce((a, b) => Math.min(a, b), Infinity);
-    const secs = Number.isFinite(left) && left !== null && left <= 600 ? ` — ${Math.max(0, Math.ceil(left / 60))} s` : '';
+    const timed = Number.isFinite(left) && left !== null && left <= 600;
+    const secs = timed ? Math.max(0, Math.ceil(left / 60)) : 0;
     if (seat === me) {
       if (current === 'draft') {
         const c = party.cards && party.cards[seat];
-        return c && c.decided ? `Your pick is in — waiting for the party${secs}` : secs ? `Your card — auto-pick${secs}` : '';
+        if (c && c.decided) return timed ? t('Your pick is in — waiting for the party — {secs} s', { secs }) : t('Your pick is in — waiting for the party');
+        return timed ? t('Your card — auto-pick — {secs} s', { secs }) : '';
       }
-      return party.done && party.done[seat] ? `Done — waiting for the party${secs}` : secs ? `The shop closes${secs}` : '';
+      if (party.done && party.done[seat]) return timed ? t('Done — waiting for the party — {secs} s', { secs }) : t('Done — waiting for the party');
+      return timed ? t('The shop closes — {secs} s', { secs }) : '';
     }
     const owners = current === 'draft' ? party.owners : null;
     const human = seat === 0 || (owners ? owners[seat] === 'human' : false);
-    const who = seat === 0 ? w : human ? `${SEAT_NAME[seat]}'s player` : `the ${w} (for the ${SEAT_NAME[seat]})`;
-    return current === 'draft' ? `${who.charAt(0).toUpperCase()}${who.slice(1)} is choosing…${secs}` : `${who.charAt(0).toUpperCase()}${who.slice(1)} is shopping…${secs}`;
+    const cls = t(w);
+    const ally = t(SEAT_NAME[seat] ?? '');
+    const up = (x) => `${x.charAt(0).toUpperCase()}${x.slice(1)}`;
+    if (current === 'draft') {
+      if (seat === 0) return up(timed ? t('{cls} is choosing… — {secs} s', { cls, secs }) : t('{cls} is choosing…', { cls }));
+      if (human) return up(timed ? t("{ally}'s player is choosing… — {secs} s", { ally, secs }) : t("{ally}'s player is choosing…", { ally }));
+      return up(timed ? t('The {cls} (for the {ally}) is choosing… — {secs} s', { cls, ally, secs }) : t('The {cls} (for the {ally}) is choosing…', { cls, ally }));
+    }
+    if (seat === 0) return up(timed ? t('{cls} is shopping… — {secs} s', { cls, secs }) : t('{cls} is shopping…', { cls }));
+    if (human) return up(timed ? t("{ally}'s player is shopping… — {secs} s", { ally, secs }) : t("{ally}'s player is shopping…", { ally }));
+    return up(timed ? t('The {cls} (for the {ally}) is shopping… — {secs} s', { cls, ally, secs }) : t('The {cls} (for the {ally}) is shopping…', { cls, ally }));
   }
   function syncGuestNote() {
     const on = current !== 'none' && netGuest();
     const w = on ? chooserLabel() : 'Healer';
     const tab = on ? partyTabLine(w) : null;
-    const text = on ? (tab !== null ? tab : GUEST_LINES[current] ? GUEST_LINES[current](w) : `The ${w} is choosing…`) : '';
+    const text = on ? (tab !== null ? tab : GUEST_LINES[current] ? GUEST_LINES[current](w) : t('The {cls} is choosing…', { cls: t(w) })) : '';
     const changed = guestNote.textContent !== text || guestNote.style.display !== (on && text ? '' : 'none');
     if (guestNote.textContent !== text) guestNote.textContent = text;
     const disp = on && text ? '' : 'none';

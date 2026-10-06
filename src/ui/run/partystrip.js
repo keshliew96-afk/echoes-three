@@ -19,6 +19,7 @@ import { iconHtml } from '../hud/icons.js';
 import { portraitCache } from '../hud/portraits.js';
 import { esc } from './style.js';
 import { service } from '../../app/registry.js';
+import { t } from '../../i18n/index.js';
 
 export const PARTY_STRIP_CSS = `
   .rn-pstrip { display: flex; gap: 8px; margin: 0 0 10px; justify-content: center; }
@@ -166,14 +167,14 @@ const faceHtml = (classId, px = 40) => {
   const src = portraitCache()[classId];
   return src
     ? `<img alt="" src="${src}" width="${px}" height="${px}">`
-    : `<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;font-weight:900;font-size:18px">${esc(CLASS_NAME[classId][0])}</span>`;
+    : `<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;font-weight:900;font-size:18px">${esc(t(CLASS_NAME[classId])[0])}</span>`;
 };
 
 // The owner band markup ("FOR THE TANK" + portrait + accent stripe).
 export function ownerBandHtml(seat, { you = false } = {}) {
   const classId = CLASS_OF_SEAT[seat];
   const acc = CLASS_ACCENTS[classId];
-  const label = seat === 0 ? (you ? 'FOR YOU — THE HEALER' : 'FOR THE HEALER') : `FOR THE ${CLASS_NAME[classId].toUpperCase()}`;
+  const label = seat === 0 ? (you ? t('FOR YOU — THE HEALER') : t('FOR THE HEALER')) : t('FOR THE {cls}', { cls: t(CLASS_NAME[classId]).toUpperCase() });
   return `<div class="rn-owner" data-seat="${seat}" style="--acc:${acc}"><span class="rn-ownerface">${faceHtml(classId, 22)}</span>${iconHtml(`cls_${classId}`, { size: 18 })}<span>${esc(label)}</span></div>`;
 }
 
@@ -218,6 +219,15 @@ export function netOwners(kinds = null) {
   });
 }
 
+// The owner line as shown: netOwners' 'you' / 'AI' / 'player' markers are
+// translated; a player's own name is shown as typed.
+export function ownerLabel(o) {
+  if (o === 'you') return t('you');
+  if (o === 'AI') return t('AI');
+  if (o === 'player') return t('player');
+  return o;
+}
+
 export function createPartyStrip({ onSelect = null, host = null } = {}) {
   const el = document.createElement('div');
   el.className = 'rn-pstrip';
@@ -231,22 +241,22 @@ export function createPartyStrip({ onSelect = null, host = null } = {}) {
     faces = Object.keys(portraitCache()).join(',');
     for (let seat = 0; seat < 4; seat++) {
       const classId = CLASS_OF_SEAT[seat];
-      const t = document.createElement('div');
-      t.className = 'rn-ptab';
-      t.dataset.seat = String(seat);
-      t.setAttribute('role', 'tab');
-      t.innerHTML = `<span class="rn-pcaret">▼</span>
+      const tab = document.createElement('div');
+      tab.className = 'rn-ptab';
+      tab.dataset.seat = String(seat);
+      tab.setAttribute('role', 'tab');
+      tab.innerHTML = `<span class="rn-pcaret">▼</span>
         <span class="rn-pface">${faceHtml(classId)}<span class="rn-pglyph">${iconHtml(`cls_${classId}`, { size: 16 })}</span></span>
-        <span class="rn-pname">${esc(CLASS_NAME[classId])}</span>
+        <span class="rn-pname">${esc(t(CLASS_NAME[classId]))}</span>
         <span class="rn-pchip">—</span>
         <span class="rn-powner"></span>
         <i class="rn-paccent" style="background:${CLASS_ACCENTS[classId]}"></i>`;
-      t.addEventListener('click', (e) => {
+      tab.addEventListener('click', (e) => {
         e.stopPropagation();
         if (onSelect) onSelect(seat, 'mouse');
       });
-      tabs.push(t);
-      el.appendChild(t);
+      tabs.push(tab);
+      el.appendChild(tab);
     }
   }
   build();
@@ -258,25 +268,26 @@ export function createPartyStrip({ onSelect = null, host = null } = {}) {
     view = viewSeat;
     let owners = null;
     for (let s = 0; s < 4; s++) {
-      const t = tabs[s];
+      const tab = tabs[s];
       const r = (rows && rows[s]) || {};
-      const chip = t.querySelector('.rn-pchip');
+      const chip = tab.querySelector('.rn-pchip');
       const txt = r.chip ?? '—';
       if (chip.textContent !== txt) chip.textContent = txt;
       chip.className = `rn-pchip${r.tone === 'take' ? ' rn-ptake' : r.tone === 'wait' ? ' rn-pwait' : ''}`;
       // A row without an `owner` (the shop and socket strips) takes the
       // session's owner line; '' = no line (single-player).
-      const own = t.querySelector('.rn-powner');
+      const own = tab.querySelector('.rn-powner');
       const o = r.owner !== undefined && r.owner !== null ? String(r.owner) : (owners || (owners = netOwners()))[s];
-      if (own.textContent !== o) {
-        own.textContent = o;
-        own.title = o === 'you' ? 'Your character' : o === 'AI' ? 'AI-held — the host builds it' : o ? `Played by ${o}` : '';
+      const shown = ownerLabel(o);
+      if (own.textContent !== shown) {
+        own.textContent = shown;
+        own.title = o === 'you' ? t('Your character') : o === 'AI' ? t('AI-held — the host builds it') : o ? t('Played by {name}', { name: shown }) : '';
       }
       own.className = `rn-powner${o === 'you' ? ' rn-pyou' : o === 'AI' ? ' rn-pai' : ''}`;
-      t.classList.toggle('rn-howner', !!o);
+      tab.classList.toggle('rn-howner', !!o);
       const on = s === viewSeat;
-      t.classList.toggle('rn-pview', on);
-      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      tab.classList.toggle('rn-pview', on);
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
     }
   }
   return { el, update, viewSeat: () => view, tabs: () => tabs.slice() };

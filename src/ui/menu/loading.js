@@ -15,6 +15,7 @@
 // A gamepad A / Start also advances (pads cannot unlock audio — the title is
 // then silent until the first key or click, which the hook still catches).
 import { service } from '../../app/registry.js';
+import { t } from '../../i18n/index.js';
 
 const MIN_FRAMES = 30;
 const MAX_MS = 8000;
@@ -32,8 +33,8 @@ export function createLoadingScreen(ctx) {
         <div class="ap-logo-rule">◆</div>
       </div>
       <div class="ap-bar"><i></i></div>
-      <div class="ap-load-status">Lighting the hearth…</div>
-      <button type="button" class="ap-press ap-focusable" data-nav>Press any key or click</button>
+      <div class="ap-load-status">${t('Lighting the hearth…')}</div>
+      <button type="button" class="ap-press ap-focusable" data-nav>${t('Press any key or click')}</button>
     </div>`;
   const bar = el.querySelector('.ap-bar > i');
   const status = el.querySelector('.ap-load-status');
@@ -88,10 +89,10 @@ export function createLoadingScreen(ctx) {
       if (audioLocked()) {
         waiting = true;
         info.waitedForGesture = true;
-        status.textContent = 'Ready';
+        status.textContent = t('Ready');
         press.classList.add('ap-on');
       } else {
-        status.textContent = 'Ready';
+        status.textContent = t('Ready');
         advance('auto');
         return;
       }

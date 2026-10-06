@@ -13,6 +13,7 @@ import { createHints } from './hints.js';
 import { installMpStyle, mkBtn } from './mpmenu.js';
 import { normalizeCode } from '../../net/protocol/messages.js';
 import { SEAT_LABELS } from '../../net/seats.js';
+import { t } from '../../i18n/index.js';
 
 export function createJoinScreen(ctx) {
   installMpStyle();
@@ -20,12 +21,12 @@ export function createJoinScreen(ctx) {
   const el = document.createElement('div');
   el.className = 'ap-dialog nt-join';
   el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', 'Join by code');
+  el.setAttribute('aria-label', t('Join by code'));
   el.innerHTML = `
     <div class="ap-veil"></div>
     <div class="ap-dlg ap-plate">
-      <div class="ap-dlg-title">Join a game</div>
-      <div class="ap-dlg-body">Type the room code the host sees in their lobby.</div>
+      <div class="ap-dlg-title">${t('Join a game')}</div>
+      <div class="ap-dlg-body">${t('Type the room code the host sees in their lobby.')}</div>
       <input type="text" id="nt-join-code" class="nt-input nt-codein" maxlength="9" autocomplete="off" spellcheck="false" placeholder="ABCDE" data-nav data-nav-default />
       <div class="nt-err" aria-live="polite"></div>
       <div class="ap-dlg-btns"></div>
@@ -34,22 +35,22 @@ export function createJoinScreen(ctx) {
   const err = el.querySelector('.nt-err');
   const btns = el.querySelector('.ap-dlg-btns');
   let busy = false;
-  function setErr(t, bad = true) {
-    err.textContent = t || '';
-    err.classList.toggle('nt-bad', !!t && bad);
+  function setErr(text, bad = true) {
+    err.textContent = text || '';
+    err.classList.toggle('nt-bad', !!text && bad);
   }
   async function join() {
     if (busy) return;
     const code = normalizeCode(input.value);
     if (!code) {
-      setErr('Room codes are 5 letters or digits (no 0, O, 1 or I).');
+      setErr(t('Room codes are 5 letters or digits (no 0, O, 1 or I).'));
       return;
     }
     const n = service('net');
     if (!n) return;
     busy = true;
     joinBtn.disabled = true;
-    setErr(`Joining ${code}…`, false);
+    setErr(t('Joining {code}…', { code }), false);
     try {
       const r = await n.join(code);
       if (!r || !r.ok) {
@@ -61,10 +62,10 @@ export function createJoinScreen(ctx) {
         }
         const why =
           r && r.reason === 'unreachable'
-            ? 'The server can’t be reached right now — go Back and Retry.'
+            ? t('The server can’t be reached right now — go Back and Retry.')
             : r && r.text
-              ? r.text
-              : `Couldn’t join ${code} (${(r && r.reason) || 'no answer'}).`;
+              ? t(r.text)
+              : t('Couldn’t join {code} ({reason}).', { code, reason: (r && r.reason) || t('no answer') });
         setErr(why);
         return;
       }
@@ -77,8 +78,13 @@ export function createJoinScreen(ctx) {
       if (running) {
         if (app.state === 'playing') manager.clear();
         else if (manager.top() === 'mp-join') manager.pop();
-        const seatName = SEAT_LABELS[r.seat] || 'ally';
-        app.toast(`Joined ${code} — the game is under way. You play the ${seatName}.`, { tone: 'good', ms: 4200 });
+        const seatName = SEAT_LABELS[r.seat];
+        app.toast(
+          seatName
+            ? t('Joined {code} — the game is under way. You play the {cls}.', { code, cls: t(seatName) })
+            : t('Joined {code} — the game is under way. You play the ally.', { code }),
+          { tone: 'good', ms: 4200 }
+        );
         return;
       }
       manager.replace('lobby', { via: 'join' });
@@ -87,12 +93,12 @@ export function createJoinScreen(ctx) {
       joinBtn.disabled = false;
     }
   }
-  const joinBtn = mkBtn('Join', 'nt-join-ok', { cls: 'ap-primary', onPress: join });
-  const back = mkBtn('Back', 'nt-join-back', { onPress: () => manager.pop() });
+  const joinBtn = mkBtn(t('Join'), 'nt-join-ok', { cls: 'ap-primary', onPress: join });
+  const back = mkBtn(t('Back'), 'nt-join-back', { onPress: () => manager.pop() });
   btns.append(joinBtn, back);
   const hints = createHints(app, [
-    ['confirm', 'Join'],
-    ['back', 'Back'],
+    ['confirm', t('Join')],
+    ['back', t('Back')],
   ]);
   hints.el.style.justifyContent = 'flex-end';
   el.querySelector('.ap-dlg').appendChild(hints.el);

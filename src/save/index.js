@@ -17,6 +17,7 @@
 // the next clock.onTickEnd; a direct capture() mid-tick is refused with a
 // CapturePointError instead of recording a half-resolved tick.
 import { VERSION } from '../version.js';
+import { t, tn } from '../i18n/index.js';
 import { hashState, fnv1a64Hex } from '../core/hash.js';
 import { canonicalJSON } from '../core/canonical.js';
 import { createGameplayRng } from '../core/rng.js';
@@ -27,7 +28,7 @@ import { levelFor } from '../data/levels.js';
 import { createStateIO } from './capture.js';
 import { reconcileContent, describeRepair } from './content.js';
 import { buildFile, parseFile, encodeOrdered, clonePlain, SCHEMA, campaignMeta, buildsMeta } from './codec.js';
-import { lockLine, FIRST_LEVEL } from '../data/campaign.js';
+import { lockLine, prevLevel, FIRST_LEVEL } from '../data/campaign.js';
 import { createSaveStorage, INDEX_KEY, PROFILE_KEY, SAVE_PREFIX } from './storage.js';
 import {
   ALL_SLOTS,
@@ -97,33 +98,41 @@ const calmFrames = (n = 3, maxMs = 1500) =>
     requestAnimationFrame(f);
   });
 
+// Player-facing lines, looked up in the current language when read (getters:
+// the i18n table is loaded at boot, after this module is evaluated).
 export const SAVE_ERRORS = Object.freeze({
-  quota: 'Not enough browser storage — delete a slot or export saves to files',
-  unavailable: "This browser isn't letting Echoes store saves (private mode?) — export to a file instead",
-  not_allowed: "You can't save right now",
-  busy: 'Another save is still being written',
-  missing: 'That slot is empty',
-  corrupt: 'That save file is damaged',
-  version: 'That save was made by a newer version of Echoes',
-  hash: "That save file failed its integrity check — it was changed or damaged",
-  full: 'Every save slot is in use — pick a slot to overwrite',
-  guest: 'Only the host can save an online session',
+  get quota() { return t('Not enough browser storage — delete a slot or export saves to files'); },
+  get unavailable() { return t("This browser isn't letting Echoes store saves (private mode?) — export to a file instead"); },
+  get not_allowed() { return t("You can't save right now"); },
+  get busy() { return t('Another save is still being written'); },
+  get missing() { return t('That slot is empty'); },
+  get corrupt() { return t('That save file is damaged'); },
+  get version() { return t('That save was made by a newer version of Echoes'); },
+  get hash() { return t('That save file failed its integrity check — it was changed or damaged'); },
+  get full() { return t('Every save slot is in use — pick a slot to overwrite'); },
+  get guest() { return t('Only the host can save an online session'); },
   // CAMPAIGN (PLAN §12.7): a save whose run sits in a level this profile has
   // not unlocked (a copied / imported file) is refused, like every other path.
-  locked: "That save is in a level you haven't unlocked yet",
+  get locked() { return t("That save is in a level you haven't unlocked yet"); },
   // fix-M2-r6 (SAVE6-F1): a save this build cannot run even after removing
   // the content it lacks (content.js) — rolled back, the game carries on.
-  content: "That save needs content this version of Echoes doesn't have — it can't be loaded here",
+  get content() { return t("That save needs content this version of Echoes doesn't have — it can't be loaded here"); },
 });
 
+// The lock line (data/campaign.js lockLine) in the player's language.
+function lockText(level) {
+  const p = prevLevel(level);
+  return p === null ? t('Locked') : t('Clear {level} to unlock', { level: t(levelFor(p).name) });
+}
+
 const CAN_SAVE_REASON = Object.freeze({
-  boot: 'The game is still starting',
-  title: 'Start or load a game first',
-  farewell: 'The game has ended',
-  transition: 'Wait for the transition to finish',
-  guest: 'Only the host can save an online session',
-  busy: 'A save is being written',
-  probe: 'A test probe is running',
+  get boot() { return t('The game is still starting'); },
+  get title() { return t('Start or load a game first'); },
+  get farewell() { return t('The game has ended'); },
+  get transition() { return t('Wait for the transition to finish'); },
+  get guest() { return t('Only the host can save an online session'); },
+  get busy() { return t('A save is being written'); },
+  get probe() { return t('A test probe is running'); },
 });
 
 export function createSaveSystem({
@@ -372,7 +381,7 @@ export function createSaveSystem({
     return { ok: true };
   }
   function canLoad() {
-    if (netRole()) return { ok: false, reason: 'Leave the online session to load a save', code: 'net' };
+    if (netRole()) return { ok: false, reason: t('Leave the online session to load a save'), code: 'net' };
     if (probing) return { ok: false, reason: CAN_SAVE_REASON.probe, code: 'probe' };
     return { ok: true };
   }
@@ -688,7 +697,7 @@ export function createSaveSystem({
       return { ok: false, error: pf.error, detail: pf.detail, backup: backupMeta(store, id) };
     }
     const lock = lockCheck(pf.file.state);
-    if (lock) return { ok: false, error: 'locked', reason: `${SAVE_ERRORS.locked} — ${lock.line}`, detail: lock.line, level: lock.level };
+    if (lock) return { ok: false, error: 'locked', reason: `${SAVE_ERRORS.locked} — ${lockText(lock.level)}`, detail: lock.line, level: lock.level };
     const r = applyTree(pf.file.state, 'load', { slot: id });
     if (!r.ok) return { ok: false, error: r.error, detail: r.detail, reason: r.error === 'content' ? SAVE_ERRORS.content : undefined, backup: backupMeta(store, id) };
     const meta = slots[id] ?? metaOf(pf.file, { id, bytes: text.length });
@@ -781,7 +790,7 @@ export function createSaveSystem({
     try {
       return describeRepair(reconcileContent(clonePlain(tree)));
     } catch (err) {
-      return { line: `content check failed (${String(err && err.message).slice(0, 80)})`, short: 'it may not load in this version', counts: null };
+      return { line: `content check failed (${String(err && err.message).slice(0, 80)})`, short: t('it may not load in this version'), counts: null };
     }
   }
   function importText(text, target = null) {
@@ -1073,9 +1082,12 @@ export function createSaveSystem({
     lastAward.runEndTick = ev.tick;
     notify(profileListeners, 'award');
     if (lastAward.embers > 0 && app && typeof app.toast === 'function') {
-      const extra = lastAward.deeds.length ? ` · ${lastAward.deeds.length} deed${lastAward.deeds.length === 1 ? '' : 's'}` : '';
+      const nd = lastAward.deeds.length;
       try {
-        app.toast(`+${lastAward.embers} Embers${extra} — spend them at the camp (U)`, { tone: 'good', ms: 4200 });
+        const line = nd
+          ? t('+{embers} Embers · {deeds} — spend them at the camp (U)', { embers: lastAward.embers, deeds: tn(nd, '{n} deed', '{n} deeds') })
+          : t('+{embers} Embers — spend them at the camp (U)', { embers: lastAward.embers });
+        app.toast(line, { tone: 'good', ms: 4200 });
       } catch {
         /* UI only */
       }
@@ -1106,18 +1118,18 @@ export function createSaveSystem({
       if (e.repeat) return;
       if (e.code === 'F5') {
         save(QUICK_SLOT, { kind: 'quick', name: 'Quicksave' }).then((r) => {
-          if (r.ok) app.toast('Quicksaved', { tone: 'good', ms: 1600 });
-          else app.toast(r.reason || SAVE_ERRORS[r.error] || "Couldn't quicksave", { tone: 'warn' });
+          if (r.ok) app.toast(t('Quicksaved'), { tone: 'good', ms: 1600 });
+          else app.toast(r.reason || SAVE_ERRORS[r.error] || t("Couldn't quicksave"), { tone: 'warn' });
         });
       } else {
         ensureFresh();
         if (!slots[QUICK_SLOT]) {
-          app.toast('No quicksave yet — press F5 to make one', { tone: 'info' });
+          app.toast(t('No quicksave yet — press F5 to make one'), { tone: 'info' });
           return;
         }
         load(QUICK_SLOT).then((r) => {
-          if (r.ok) app.toast('Quickloaded', { tone: 'good', ms: 1600 });
-          else app.toast(SAVE_ERRORS[r.error] || "Couldn't load the quicksave", { tone: 'warn' });
+          if (r.ok) app.toast(t('Quickloaded'), { tone: 'good', ms: 1600 });
+          else app.toast(SAVE_ERRORS[r.error] || t("Couldn't load the quicksave"), { tone: 'warn' });
         });
       }
     });

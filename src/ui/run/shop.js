@@ -43,7 +43,7 @@
 // every AI-held tab the player did not buy on. Q / E, PgUp / PgDn, F1-F4 and
 // pad LB / RB switch character; 1-4 buy on the viewed tab.
 import { esc, isCompact } from './style.js';
-import { nodeCardHtml, RARITY_COLOR } from './cards.js';
+import { nodeCardHtml, kitVerdictText, RARITY_COLOR } from './cards.js';
 import { iconHtml } from '../hud/icons.js';
 import { NODES } from '../../sim/nodes.js';
 import { PALETTE, CLASS_ACCENTS } from '../../data/palette.js';
@@ -52,9 +52,10 @@ import { createPartyStrip } from './partystrip.js';
 import { service } from '../../app/registry.js';
 import { bossNameOfRun } from '../../data/levels.js';
 import { relicIconHtml } from './relicicons.js';
+import { t } from '../../i18n/index.js';
 
 // 'Advance to the Drowned Heron' — the act's own room-8 boss.
-const advanceLabel = (view) => `Advance to ${bossNameOfRun(view).replace(/^The /, 'the ')}`;
+const advanceLabel = (view) => t('Advance to {boss}', { boss: t(bossNameOfRun(view)).replace(/^The /, 'the ') });
 
 // The viewer's seat in a network session (a guest: its class seat).
 function netSeat() {
@@ -114,12 +115,12 @@ export function createShopScreen({ run, build, party = () => null }) {
     <i class="rn-cap rn-cap-bl"></i><i class="rn-cap rn-cap-br"></i>
     <div class="rn-lamp"></div>
     <div class="rn-head">
-      <div class="rn-title">THE PEDDLER'S SHELF</div>
+      <div class="rn-title">${esc(t("THE PEDDLER'S SHELF"))}</div>
       <div class="rn-orn"><i></i><b class="rn-lantern"><i class="rn-lanternglow"></i>${iconHtml('lantern', { size: 34 })}</b><i></i></div>
       <div class="rn-strip">
         <span class="rn-glint"><span class="rn-coin">${iconHtml('coin', { size: 18 })}</span><span class="rn-amt">0</span></span>
-        <span class="rn-lab">GLINT<span class="rn-labsep"> · </span><span class="rn-labbr"></span><span class="rn-labrm">ROOM</span></span><span class="rn-num">7</span>
-        <span class="rn-lab">OF 8</span>
+        <span class="rn-lab">${esc(t('GLINT'))}<span class="rn-labsep"> · </span><span class="rn-labbr"></span><span class="rn-labrm">${esc(t('ROOM'))}</span></span><span class="rn-num">7</span>
+        <span class="rn-lab">${esc(t('OF {n}', { n: 8 }))}</span>
       </div>
     </div>
     <div class="rn-shopstrip"></div>
@@ -128,9 +129,9 @@ export function createShopScreen({ run, build, party = () => null }) {
     <div class="rn-note rn-bought" style="display:none"></div>
     <div class="rl-rack" style="display:none"></div>
     <div class="rn-buttons">
-      <span class="rn-hint rn-hint-l"><b>A</b>/<b>D</b> or click a card to buy</span>
-      <div class="rn-btn rn-advance rn-primary rn-focus">Advance to the Hollow Stag</div>
-      <span class="rn-hint rn-hint-r"><b>Enter</b> advance (one-way)</span>
+      <span class="rn-hint rn-hint-l">${t('<b>A</b>/<b>D</b> or click a card to buy')}</span>
+      <div class="rn-btn rn-advance rn-primary rn-focus">${esc(t('Advance to {boss}', { boss: t('The Hollow Stag').replace(/^The /, 'the ') }))}</div>
+      <span class="rn-hint rn-hint-r">${t('<b>Enter</b> advance (one-way)')}</span>
     </div>
     <div class="rn-fx"></div>`;
 
@@ -153,7 +154,7 @@ export function createShopScreen({ run, build, party = () => null }) {
   // width and moving the focus never re-flows the shelf.
   const hintR = el.querySelector('.rn-hint-r');
   hintR.style.display = 'grid';
-  hintR.innerHTML = '<span style="grid-area:1/1"><b>Enter</b> advance (one-way)</span><span style="grid-area:1/1;visibility:hidden"><b>Enter</b> buy this card</span>';
+  hintR.innerHTML = `<span style="grid-area:1/1">${t('<b>Enter</b> advance (one-way)')}</span><span style="grid-area:1/1;visibility:hidden">${t('<b>Enter</b> buy this card')}</span>`;
   const [hintLampEl, hintCardEl] = hintR.children;
   // PARTY: the character tabs on the top rail.
   let viewSeat = 0;
@@ -268,21 +269,22 @@ export function createShopScreen({ run, build, party = () => null }) {
   function itemInner(seat, item, i, sys, aiTab) {
     const n = NODES[item.node];
     const clsName = CLASS_NAME[CLASS_OF_SEAT[seat]];
-    let verdict = sys ? sys.kitVerdict(item.node) : null;
-    if (verdict && seat !== 0) verdict = verdict.replace('your kit', `the ${clsName}'s kit`);
+    const kit = sys ? sys.kitVerdict(item.node) : null;
+    const verdict = kit ? kitVerdictText(kit, seat !== 0 ? clsName : null) : null;
+    const cold = kit ? !kit.startsWith('fits') : null; // the sim's verdict, not the shown words
     const extra = item.node === 'siphon' && sys ? sys.siphonCardLine() : null;
     const rar = RARITY_COLOR[item.rarity] ?? RARITY_COLOR.common;
-    const mark = aiTab && !item.sold ? `<div class="rn-suggest${item.marked ? ' rn-on' : ''}" data-idx="${i}">${item.marked ? '✓ SUGGESTED' : '+ SUGGEST'}</div>` : '';
+    const mark = aiTab && !item.sold ? `<div class="rn-suggest${item.marked ? ' rn-on' : ''}" data-idx="${i}">${esc(item.marked ? t('✓ SUGGESTED') : t('+ SUGGEST'))}</div>` : '';
     return `
-        <div class="rn-itemtabs"><div class="rn-minowner" style="--acc:${CLASS_ACCENTS[CLASS_OF_SEAT[seat]]}">${esc(clsName.toUpperCase())}</div>${mark}</div>
+        <div class="rn-itemtabs"><div class="rn-minowner" style="--acc:${CLASS_ACCENTS[CLASS_OF_SEAT[seat]]}">${esc(t(clsName).toUpperCase())}</div>${mark}</div>
         <div class="rn-card${n && n.rarity === 'legendary' ? ' rn-legendary' : ''}" data-seat="${seat}"
              style="--rar:${rar};--rarGlow:${rar}77">
-          ${nodeCardHtml(item.node, { verdict, extra, owned: item.owned, compact: true, bench: item.sold, row: true, upgrade: item.sold ? null : item.upgrade ?? null })}
-          <div class="rn-stamp">SOLD</div>
+          ${nodeCardHtml(item.node, { verdict, cold, extra, owned: item.owned, compact: true, bench: item.sold, row: true, upgrade: item.sold ? null : item.upgrade ?? null })}
+          <div class="rn-stamp">${esc(t('SOLD'))}</div>
         </div>
         <div class="rn-plaque${item.affordable === false ? ' rn-short' : ''}">
           <span class="rn-plaque-coin">${iconHtml('coin', { size: 18 })}</span>
-          <span class="rn-price">${item.price}</span><span class="rn-cur">GLINT</span>
+          <span class="rn-price">${item.price}</span><span class="rn-cur">${esc(t('GLINT'))}</span>
         </div>`;
   }
 
@@ -401,7 +403,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     });
     const bare = (s.stock ?? []).length === 0;
     emptyEl.style.display = bare ? '' : 'none';
-    emptyEl.textContent = bare ? 'nothing left to sell you' : '';
+    emptyEl.textContent = bare ? t('nothing left to sell you') : '';
     boughtEl.style.display = 'none';
     boughtEl.textContent = '';
     buildMotes();
@@ -421,8 +423,8 @@ export function createShopScreen({ run, build, party = () => null }) {
     lastView = view;
     if (view.phase !== 'shop') return;
     if (!view.partyShop) {
-      const t = advanceLabel(view);
-      if (advanceBtn.textContent !== t) advanceBtn.textContent = t;
+      const lbl = advanceLabel(view);
+      if (advanceBtn.textContent !== lbl) advanceBtn.textContent = lbl;
     }
     if (viewSeat > 0 && !view.partyShop) viewSeat = 0;
     // PARTY: a network guest's shop opens on its own tab.
@@ -438,7 +440,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     const ps = view.partyShop;
     const P = party();
     if (ps) {
-      const rows = [0, 1, 2, 3].map((k) => ({ chip: `◉ ${k === 0 ? view.shop.wallet : ps.shelves[k].purse}${ps.done && ps.done[k] ? ' · Done' : ''}`, tone: k === viewSeat ? 'take' : '' }));
+      const rows = [0, 1, 2, 3].map((k) => ({ chip: ps.done && ps.done[k] ? t('◉ {n} · Done', { n: k === 0 ? view.shop.wallet : ps.shelves[k].purse }) : `◉ ${k === 0 ? view.shop.wallet : ps.shelves[k].purse}`, tone: k === viewSeat ? 'take' : '' }));
       strip.update(rows, viewSeat);
       const buyers = [1, 2, 3].filter((k) => !ps.touched[k] && ps.shelves[k].stock.some((c) => c.marked && !c.sold)).map((k) => CLASS_NAME[CLASS_OF_SEAT[k]]);
       const base = advanceLabel(view);
@@ -447,14 +449,14 @@ export function createShopScreen({ run, build, party = () => null }) {
       const lamp =
         gSeat !== null
           ? ps.done && ps.done[gSeat]
-            ? 'Done ✓ — waiting for the party'
-            : 'Done — I’m finished shopping'
+            ? t('Done ✓ — waiting for the party')
+            : t('Done — I’m finished shopping')
           : buyers.length
-            ? `${base} · ${buyers.join(', ')} buy suggested`
+            ? t('{advance} · {classes} buy suggested', { advance: base, classes: buyers.map((b) => t(b)).join(', ') })
             : base;
       const left = [ps.leaveInTicks, ps.deadlineInTicks !== null && ps.deadlineInTicks !== undefined && ps.deadlineInTicks <= 600 ? ps.deadlineInTicks : null].filter((t) => t !== null && t !== undefined);
-      const cd = left.length ? ` · leaving in ${Math.ceil(Math.min(...left) / 60)} s` : '';
-      if (advanceBtn.textContent !== lamp + cd) advanceBtn.textContent = lamp + cd;
+      const text = left.length ? t('{lamp} · leaving in {secs} s', { lamp, secs: Math.ceil(Math.min(...left) / 60) }) : lamp;
+      if (advanceBtn.textContent !== text) advanceBtn.textContent = text;
     }
     el.querySelector('.rn-shopstrip').style.display = ps ? '' : 'none';
     placeStrip(!!ps);
@@ -518,16 +520,16 @@ export function createShopScreen({ run, build, party = () => null }) {
     const who = CLASS_NAME[CLASS_OF_SEAT[viewSeat]] ?? 'Healer';
     rackEl.style.display = '';
     rackEl.innerHTML =
-      `<div class="rl-racklab"><b>RELICS</b><span>for the whole party · paid from the ${esc(who)}'s purse · <b>5</b>/<b>6</b></span></div>` +
+      `<div class="rl-racklab"><b>${esc(t('RELICS'))}</b><span>${t("for the whole party · paid from the {cls}'s purse · <b>5</b>/<b>6</b>", { cls: esc(t(who)) })}</span></div>` +
       `<div class="rl-rackrow">${items
         .map(
           (r, i) => `
-        <div class="rl-ritem${r.sold ? ' rl-rsold' : ''}" data-i="${i}" style="--rar:${RARITY_COLOR[r.rarity] ?? RARITY_COLOR.common}" title="${esc(`${r.name} — ${r.text}`)}">
+        <div class="rl-ritem${r.sold ? ' rl-rsold' : ''}" data-i="${i}" style="--rar:${RARITY_COLOR[r.rarity] ?? RARITY_COLOR.common}" title="${esc(`${t(r.name)} — ${t(r.text)}`)}">
           <div class="rl-ricon">${relicIconHtml(r.id, 30)}</div>
-          <div class="rl-rtext"><div class="rl-rname">${esc(r.name)} <span class="rl-rrar">${esc(r.rarity.toUpperCase())}</span></div><div class="rl-rbody">${esc(r.text)}</div></div>
+          <div class="rl-rtext"><div class="rl-rname">${esc(t(r.name))} <span class="rl-rrar">${esc(t(r.rarity).toUpperCase())}</span></div><div class="rl-rbody">${esc(t(r.text))}</div></div>
           ${
             r.sold
-              ? '<div class="rl-rstamp">TAKEN</div>'
+              ? `<div class="rl-rstamp">${esc(t('TAKEN'))}</div>`
               : `<div class="rn-plaque rl-rplaque${purse < r.price ? ' rn-short' : ''}"><span class="rn-plaque-coin">${iconHtml('coin', { size: 16 })}</span><span class="rn-price">${r.price}</span></div>`
           }
         </div>`

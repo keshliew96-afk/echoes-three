@@ -20,6 +20,7 @@ import { installMpStyle, mkBtn, httpsPage } from '../mpmenu.js';
 import { validateServerUrl } from '../../../net/lobbyClient.js';
 import { sanitizeName } from '../../../net/protocol/messages.js';
 import { sourceLabel } from '../../../net/address.js';
+import { t } from '../../../i18n/index.js';
 
 function textRow({ id, label, help, value, maxLength, onCommit, onCancel, placeholder = '' }) {
   const row = document.createElement('div');
@@ -64,7 +65,7 @@ function textRow({ id, label, help, value, maxLength, onCommit, onCancel, placeh
   // no blur-'change' can save it — and the note says so; with nothing to
   // cancel, back leaves Settings as usual.
   let committed = String(value == null ? '' : value);
-  const setNote = (t) => (note.textContent = t || '');
+  const setNote = (text) => (note.textContent = text || '');
   input.__navDirty = () => input.value !== committed; // Settings' footer: "Esc Cancel edit"
   input.__navCancelEdit = () => {
     if (input.value === committed) return false;
@@ -95,24 +96,24 @@ function buildNetworkTab(ctx) {
 
   const name = textRow({
     id: 'nt-set-name',
-    label: 'Player name',
-    help: 'The name other players see in the lobby and above your seat in the connection chip. Up to 16 characters.',
+    label: t('Player name'),
+    help: t('The name other players see in the lobby and above your seat in the connection chip. Up to 16 characters.'),
     value: settings.get('net.playerName'),
     maxLength: 16,
     onCommit: (v) => {
       const clean = sanitizeName(v, '');
       if (!clean) {
         name.set(settings.get('net.playerName'));
-        name.setNote('A name needs at least one visible character');
+        name.setNote(t('A name needs at least one visible character'));
         return;
       }
       settings.set('net.playerName', clean, { source: 'ui' });
       name.set(clean);
-      name.setNote('Saved — shown in lobbies from now on');
+      name.setNote(t('Saved — shown in lobbies from now on'));
     },
-    onCancel: (v) => name.setNote(`Change cancelled — your name is still “${v}”`),
+    onCancel: (v) => name.setNote(t('Change cancelled — your name is still “{name}”', { name: v })),
   });
-  name.setNote('Shown in lobbies and on the connection chip');
+  name.setNote(t('Shown in lobbies and on the connection chip'));
 
   // DEPLOY (PLAN §14.1): '' = Automatic — the server of the site this page
   // came from; the note always names the address it resolves to.
@@ -124,17 +125,17 @@ function buildNetworkTab(ctx) {
   function autoNote() {
     const a = info();
     const saved = settings.get('net.serverUrl');
-    if (a.source === 'param') return `Set by the page link (?net=) — ${a.url}`;
-    if (saved) return `Custom address — “Reset to automatic” goes back to this site’s server`;
-    return `${sourceLabel(a.source)} — ${a.url}`;
+    if (a.source === 'param') return t('Set by the page link (?net=) — {url}', { url: a.url });
+    if (saved) return t('Custom address — “Reset to automatic” goes back to this site’s server');
+    return t('{source} — {url}', { source: t(sourceLabel(a.source)), url: a.url });
   }
   const server = textRow({
     id: 'nt-set-server',
-    label: 'Server address',
-    help: 'Leave it on Automatic: the game connects to the Echoes server of the site you opened it from (wss:// on an https site) — players just open the host’s link. Enter ws://host:port/echoes only to use a different server, e.g. ws://192.168.1.20:7800/echoes for `npm run net -- --host 0.0.0.0` on another computer. An empty address is Automatic.',
+    label: t('Server address'),
+    help: t('Leave it on Automatic: the game connects to the Echoes server of the site you opened it from (wss:// on an https site) — players just open the host’s link. Enter ws://host:port/echoes only to use a different server, e.g. ws://192.168.1.20:7800/echoes for `npm run net -- --host 0.0.0.0` on another computer. An empty address is Automatic.'),
     value: settings.get('net.serverUrl'),
     maxLength: 200,
-    placeholder: 'Automatic',
+    placeholder: t('Automatic'),
     onCommit: (v) => {
       if (!String(v || '').trim()) {
         resetAuto();
@@ -144,14 +145,14 @@ function buildNetworkTab(ctx) {
       if (!r.ok) {
         server.setNote(
           r.reason === 'insecure_on_https'
-            ? 'This page is served over https, so the browser only allows secure (wss://) servers.'
+            ? t('This page is served over https, so the browser only allows secure (wss://) servers.')
             : r.reason === 'not_ws'
-              ? 'Server addresses start with ws:// or wss://'
+              ? t('Server addresses start with ws:// or wss://')
               : r.reason === 'incomplete'
-                ? `“${r.typed}” isn’t a full address (it would reach ${r.host}) — e.g. ws://192.168.1.20:7800/echoes`
+                ? t('“{typed}” isn’t a full address (it would reach {host}) — e.g. ws://192.168.1.20:7800/echoes', { typed: r.typed, host: r.host })
                 : r.reason === 'unroutable'
-                  ? `${r.host} is where a server listens, not an address to reach — use the host computer’s address, e.g. ws://192.168.1.20:7800/echoes`
-                  : 'Not a server address — e.g. ws://192.168.1.20:7800/echoes'
+                  ? t('{host} is where a server listens, not an address to reach — use the host computer’s address, e.g. ws://192.168.1.20:7800/echoes', { host: r.host })
+                  : t('Not a server address — e.g. ws://192.168.1.20:7800/echoes')
         );
         return;
       }
@@ -159,26 +160,28 @@ function buildNetworkTab(ctx) {
       const n = netSvc();
       if (n) n.serverUrl = r.url; // applies at once, also on a ?net= page
       server.set(r.url);
-      server.setNote('Saved — press Check to test it');
+      server.setNote(t('Saved — press Check to test it'));
       syncAuto();
     },
-    onCancel: () => server.setNote(`Change cancelled. ${autoNote()}`),
+    onCancel: () => server.setNote(t('Change cancelled. {status}', { status: autoNote() })),
   });
   server.setNote(autoNote());
-  const check = mkBtn('Check', 'nt-set-check', {
+  const check = mkBtn(t('Check'), 'nt-set-check', {
     onPress: async () => {
       const n = netSvc();
       if (!n) return;
-      server.setNote('Checking…');
+      server.setNote(t('Checking…'));
       check.disabled = true;
       try {
         const r = await n.probe(settings.get('net.serverUrl') || null);
         server.setNote(
           r.state === 'online'
-            ? `Online — ${r.url} answered in ${r.ms} ms${r.lanUrls && r.lanUrls.length ? ` · LAN ${r.lanUrls.join(', ')}` : ''}`
+            ? r.lanUrls && r.lanUrls.length
+              ? t('Online — {url} answered in {ms} ms · LAN {lan}', { url: r.url, ms: r.ms, lan: r.lanUrls.join(', ') })
+              : t('Online — {url} answered in {ms} ms', { url: r.url, ms: r.ms })
             : r.state === 'update'
-              ? 'A new version of Echoes is available — reload the page'
-              : `Can’t reach ${r.url || 'it'} (${r.error || 'no answer'}) — is the server running there?`
+              ? t('A new version of Echoes is available — reload the page')
+              : t('Can’t reach {url} ({error}) — is the server running there?', { url: r.url || t('it'), error: r.error || t('no answer') })
         );
       } finally {
         check.disabled = false;
@@ -192,17 +195,17 @@ function buildNetworkTab(ctx) {
   // "Reset to automatic" (its own row so the address row keeps its width).
   const autoRow = document.createElement('div');
   autoRow.className = 'ap-row nt-autorow';
-  autoRow.dataset.helpTitle = 'Reset to automatic';
-  autoRow.dataset.help = 'Forget the custom server address and connect to the Echoes server of the site you opened the game from — what every player gets without touching a setting.';
+  autoRow.dataset.helpTitle = t('Reset to automatic');
+  autoRow.dataset.help = t('Forget the custom server address and connect to the Echoes server of the site you opened the game from — what every player gets without touching a setting.');
   autoRow.dataset.rowId = 'nt-set-autorow';
   const autoLab = document.createElement('span');
   autoLab.className = 'ap-label';
-  autoLab.textContent = 'Automatic server';
+  autoLab.textContent = t('Automatic server');
   const autoCtl = document.createElement('div');
   autoCtl.className = 'ap-ctl';
   const autoNoteEl = document.createElement('div');
   autoNoteEl.className = 'ap-note';
-  const autoBtn = mkBtn('Reset to automatic', 'nt-set-auto', { onPress: () => resetAuto() });
+  const autoBtn = mkBtn(t('Reset to automatic'), 'nt-set-auto', { onPress: () => resetAuto() });
   autoBtn.style.minHeight = HIT;
   autoCtl.appendChild(autoBtn);
   autoRow.append(autoLab, autoCtl, autoNoteEl);
@@ -221,25 +224,24 @@ function buildNetworkTab(ctx) {
     const a = info();
     const site = a.site || null;
     autoNoteEl.textContent = custom
-      ? `Uses ${site || 'this computer’s server'} instead of the custom address`
-      : `In use — ${sourceLabel(a.source)}: ${a.url}`;
-    server.input.placeholder = 'Automatic';
+      ? t('Uses {site} instead of the custom address', { site: site || t('this computer’s server') })
+      : t('In use — {source}: {url}', { source: t(sourceLabel(a.source)), url: a.url });
+    server.input.placeholder = t('Automatic');
   }
   syncAuto();
 
   const stats = widgets.toggle({
     id: 'nt-set-stats',
-    label: 'Connection details in game',
+    label: t('Connection details in game'),
     value: settings.get('net.showStats'),
-    help: 'Adds a line under the in-game connection chip: round trip, jitter, loss, snapshot rate and bandwidth.',
+    help: t('Adds a line under the in-game connection chip: round trip, jitter, loss, snapshot rate and bandwidth.'),
     onChange: (v) => settings.set('net.showStats', !!v, { source: 'ui' }),
   });
-  stats.setNote('Round trip, loss and bandwidth while playing online');
+  stats.setNote(t('Round trip, loss and bandwidth while playing online'));
 
   const how = document.createElement('p');
   how.className = 'ap-note';
-  how.textContent =
-    'Players join by opening the host’s link — the game finds the Echoes server of the site it came from, so there is nothing to set here. Hosting: “npm run serve” serves the game and multiplayer from one port (README ▸ Host it on a server); with the dev or preview server, run “npm run net” beside it. Traffic travels over WebSocket; the game models packet loss and delay on top and never pauses for one player.';
+  how.textContent = t('Players join by opening the host’s link — the game finds the Echoes server of the site it came from, so there is nothing to set here. Hosting: “npm run serve” serves the game and multiplayer from one port (README ▸ Host it on a server); with the dev or preview server, run “npm run net” beside it. Traffic travels over WebSocket; the game models packet loss and delay on top and never pauses for one player.');
 
   el.append(name.el, server.el, autoRow, stats.el, how);
   const offs = [

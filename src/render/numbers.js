@@ -115,7 +115,7 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
         position: absolute;
         left: 0;
         top: 0;
-        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        font-family: system-ui, -apple-system, 'Segoe UI', var(--i18n-font, sans-serif);
         font-weight: 700;
         font-variant-numeric: tabular-nums;
         line-height: 1;

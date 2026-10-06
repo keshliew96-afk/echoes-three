@@ -26,6 +26,7 @@ import { installMpStyle, mkBtn, setCaption, inviteLine } from './mpmenu.js';
 import { SEAT_LABELS, SEAT_CRITTERS, SEAT_CLASSES } from '../../net/seats.js';
 import { PLAY_CLASS_KEY } from '../../app/playclass.js';
 import { QUICK_MATCH_ALONE_MS } from '../../net/protocol/constants.js';
+import { t, tn } from '../../i18n/index.js';
 
 const CSS = `
 .nt-lobby .nt-panel { width: min(${px(1280)}, calc(100vw - 32px)); }
@@ -70,12 +71,19 @@ export function howtoLine(room, peerId) {
   const seats = (room && room.seats) || [];
   const mine = seats.find((s) => s.peerId && s.peerId === peerId) || null;
   const hostSeat = seats.find((s) => s.peerId && room && s.peerId === room.hostPeerId) || null;
-  const cls = (s) => SEAT_LABELS[s.index] || 'ally';
+  const cls = (s) => (SEAT_LABELS[s.index] ? t(SEAT_LABELS[s.index]) : t('ally'));
   if (mine && hostSeat && mine === hostSeat)
-    return `You play the ${cls(mine)}. Between rooms each player builds their own character; you also build the AI-held seats (Settings${NBSP}▸${NBSP}Gameplay). Anyone can drop in later.`;
-  const host = hostSeat ? `the host plays the ${cls(hostSeat)} and builds the AI-held seats` : 'the host builds the AI-held seats';
-  if (mine) return `You play the ${cls(mine)} and build it yourself between rooms — its skills, nodes and shop picks. ${host.charAt(0).toUpperCase()}${host.slice(1)}; anyone can drop in later.`;
-  return `Each player builds their own character between rooms; ${host}. Anyone can drop in later.`;
+    return t('You play the {cls}. Between rooms each player builds their own character; you also build the AI-held seats ({path}). Anyone can drop in later.', {
+      cls: cls(mine),
+      path: [t('Settings'), t('Gameplay')].join(`${NBSP}▸${NBSP}`),
+    });
+  if (mine)
+    return hostSeat
+      ? t('You play the {cls} and build it yourself between rooms — its skills, nodes and shop picks. The host plays the {hostCls} and builds the AI-held seats; anyone can drop in later.', { cls: cls(mine), hostCls: cls(hostSeat) })
+      : t('You play the {cls} and build it yourself between rooms — its skills, nodes and shop picks. The host builds the AI-held seats; anyone can drop in later.', { cls: cls(mine) });
+  return hostSeat
+    ? t('Each player builds their own character between rooms; the host plays the {hostCls} and builds the AI-held seats. Anyone can drop in later.', { hostCls: cls(hostSeat) })
+    : t('Each player builds their own character between rooms; the host builds the AI-held seats. Anyone can drop in later.');
 }
 
 export function createLobbyScreen(ctx) {
@@ -84,15 +92,15 @@ export function createLobbyScreen(ctx) {
   const el = document.createElement('div');
   el.className = 'nt-mp nt-lobby';
   el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', 'Lobby');
+  el.setAttribute('aria-label', t('Lobby'));
   el.innerHTML = `
     <div class="ap-veil"></div>
     <div class="nt-panel ap-plate">
-      <div class="nt-head"><h2 class="ap-h2">Room</h2><span class="nt-roomcode">·····</span><div class="nt-sub nt-vis"></div></div>
+      <div class="nt-head"><h2 class="ap-h2">${t('Room')}</h2><span class="nt-roomcode">·····</span><div class="nt-sub nt-vis"></div></div>
       <div class="nt-body">
         <div class="nt-seats"></div>
         <aside class="nt-side">
-          <h3>Share</h3>
+          <h3>${t('Share')}</h3>
           <div class="nt-line nt-share"></div>
           <div class="nt-line nt-lanline"></div>
           <div class="nt-line nt-howto"></div>
@@ -112,15 +120,15 @@ export function createLobbyScreen(ctx) {
   const errEl = el.querySelector('.nt-err');
   const acts = el.querySelector('.nt-acts');
   const hints = createHints(app, [
-    ['move', 'Select'],
-    ['confirm', 'Choose'],
-    ['back', 'Leave'],
+    ['move', t('Select')],
+    ['confirm', t('Choose')],
+    ['back', t('Leave')],
   ]);
   el.querySelector('.nt-foot').prepend(hints.el);
 
-  const readyBtn = mkBtn('Ready', 'nt-lobby-ready', { cls: 'ap-primary', onPress: () => toggleReady() });
-  const startBtn = mkBtn('Start', 'nt-lobby-start', { cls: 'ap-primary', caption: ' ', onPress: () => start() });
-  const leaveBtn = mkBtn('Leave', 'nt-lobby-leave', { onPress: () => leave() });
+  const readyBtn = mkBtn(t('Ready'), 'nt-lobby-ready', { cls: 'ap-primary', onPress: () => toggleReady() });
+  const startBtn = mkBtn(t('Start'), 'nt-lobby-start', { cls: 'ap-primary', caption: ' ', onPress: () => start() });
+  const leaveBtn = mkBtn(t('Leave'), 'nt-lobby-leave', { onPress: () => leave() });
   startBtn.style.alignItems = 'flex-start';
   startBtn.style.flexDirection = 'column';
   const seatBtns = [0, 1, 2, 3].map((i) => {
@@ -129,7 +137,7 @@ export function createLobbyScreen(ctx) {
     b.className = 'ap-btn nt-seat';
     b.id = `nt-seat-${i}`;
     b.setAttribute('data-nav', '');
-    b.innerHTML = `<span class="nt-sclass" style="background:${CLASS_TINT[i]}">${SEAT_LABELS[i][0]}</span><span class="nt-swho"><span class="nt-sname"></span><span class="nt-srole"></span></span><span class="nt-stag"></span>`;
+    b.innerHTML = `<span class="nt-sclass" style="background:${CLASS_TINT[i]}">${t(SEAT_LABELS[i]).charAt(0)}</span><span class="nt-swho"><span class="nt-sname"></span><span class="nt-srole"></span></span><span class="nt-stag"></span>`;
     b.addEventListener('click', () => seatPressed(i));
     seatsEl.appendChild(b);
     return b;
@@ -167,9 +175,11 @@ export function createLobbyScreen(ctx) {
     }
   }
 
-  function setErr(t) {
-    errEl.textContent = t || '';
-    errEl.classList.toggle('nt-bad', !!t);
+  let lookingShown = false; // the error line holds the quick-match "Looking for players…" count
+  function setErr(text) {
+    lookingShown = false;
+    errEl.textContent = text || '';
+    errEl.classList.toggle('nt-bad', !!text);
   }
   function me() {
     const net = n();
@@ -191,32 +201,33 @@ export function createLobbyScreen(ctx) {
     }
     codeEl.textContent = r.code;
     const host = amHost();
-    visEl.textContent = r.visibility === 'public' ? 'Public — Quick Match can fill empty seats' : 'Private — share the code';
+    visEl.textContent = r.visibility === 'public' ? t('Public — Quick Match can fill empty seats') : t('Private — share the code');
     for (const s of r.seats) {
       const b = seatBtns[s.index];
       const mine = s.peerId && s.peerId === net.peerId;
       const isHostSeat = s.peerId && s.peerId === r.hostPeerId;
       b.classList.toggle('nt-mine', !!mine);
       b.classList.toggle('nt-empty', !s.peerId);
-      b.querySelector('.nt-sname').textContent = s.peerId ? `${s.name}${mine ? ' (you)' : ''}` : 'AI';
-      const ping = s.peerId && Number.isFinite(s.rttMs) ? ` · ${Math.round(s.rttMs)} ms` : '';
-      b.querySelector('.nt-srole').textContent = `${SEAT_LABELS[s.index]} · the ${SEAT_CRITTERS[s.index]}${ping}`;
+      b.querySelector('.nt-sname').textContent = s.peerId ? (mine ? t('{name} (you)', { name: s.name }) : s.name) : t('AI');
+      const ping = s.peerId && Number.isFinite(s.rttMs) ? ` · ${t('{ms} ms', { ms: Math.round(s.rttMs) })}` : '';
+      b.querySelector('.nt-srole').textContent = `${t('{cls} · the {critter}', { cls: t(SEAT_LABELS[s.index]), critter: t(SEAT_CRITTERS[s.index]) })}${ping}`;
       const tag = b.querySelector('.nt-stag');
       tag.className = 'nt-stag';
-      if (!s.peerId) tag.textContent = r.state === 'lobby' ? 'AI · take it' : 'AI plays';
-      else if (!s.connected) tag.textContent = 'Reconnecting…';
+      if (!s.peerId) tag.textContent = r.state === 'lobby' ? t('AI · take it') : t('AI plays');
+      else if (!s.connected) tag.textContent = t('Reconnecting…');
       else if (isHostSeat) {
-        tag.textContent = 'Host';
+        tag.textContent = t('Host');
         tag.classList.add('nt-host');
       } else if (s.ready) {
-        tag.textContent = 'Ready';
+        tag.textContent = t('Ready');
         tag.classList.add('nt-ready');
-      } else tag.textContent = 'Not ready';
-      if (s.peerId && !mine) b.querySelector('.nt-srole').textContent += ' · Taken';
+      } else tag.textContent = t('Not ready');
+      if (s.peerId && !mine) b.querySelector('.nt-srole').textContent += ` · ${t('Taken')}`;
       const canTake = !s.peerId && r.state === 'lobby';
-      b.setAttribute('aria-label', `${SEAT_LABELS[s.index]}: ${s.peerId ? s.name : 'AI'}${canTake ? ' — press to take this seat' : ''}`);
+      const seatVars = { cls: t(SEAT_LABELS[s.index]), who: s.peerId ? s.name : t('AI') };
+      b.setAttribute('aria-label', canTake ? t('{cls}: {who} — press to take this seat', seatVars) : t('{cls}: {who}', seatVars));
     }
-    shareEl.textContent = `Friends open Multiplayer ▸ Join by Code and type ${r.code}.`;
+    shareEl.textContent = t('Friends open Multiplayer ▸ Join by Code and type {code}.', { code: r.code });
     // DEPLOY (PLAN §14): the invite is the page link when the game is served
     // from a site (no address to type); the LAN server line otherwise.
     lanEl.textContent = inviteLine(net, { code: r.code });
@@ -229,7 +240,7 @@ export function createLobbyScreen(ctx) {
     if (host) {
       const alone = others.length === 0;
       const waitedLong = queuedSince !== null && performance.now() - queuedSince >= QUICK_MATCH_ALONE_MS;
-      startBtn.querySelector('.nt-bl').textContent = alone && waitedLong ? 'Start now' : 'Start';
+      startBtn.querySelector('.nt-bl').textContent = alone && waitedLong ? t('Start now') : t('Start');
       const can = notReady.length === 0 && r.state === 'lobby';
       startBtn.disabled = !can;
       startBtn.setAttribute('aria-disabled', can ? 'false' : 'true');
@@ -237,25 +248,26 @@ export function createLobbyScreen(ctx) {
         startBtn,
         !can
           ? r.state !== 'lobby'
-            ? 'Starting…'
-            : `Waiting for ${notReady.map((s) => s.name).join(', ')} to be ready`
+            ? t('Starting…')
+            : t('Waiting for {names} to be ready', { names: notReady.map((s) => s.name).join(', ') })
           : ai
             ? alone && waitedLong
-              ? 'AI fills the empty seats'
-              : `AI plays ${ai} seat${ai === 1 ? '' : 's'}`
-            : 'Everyone is here'
+              ? t('AI fills the empty seats')
+              : tn(ai, 'AI plays {n} seat', 'AI plays {n} seats')
+            : t('Everyone is here')
       );
       acts.append(startBtn, leaveBtn);
       startBtn.setAttribute('data-nav-default', '');
       readyBtn.removeAttribute('data-nav-default');
       if (queuedSince !== null && alone && !waitedLong) {
         const s = Math.floor((performance.now() - queuedSince) / 1000);
-        setErr(`Looking for players… ${s} s`);
+        setErr(t('Looking for players… {s} s', { s }));
         errEl.classList.remove('nt-bad');
-      } else if (errEl.textContent.startsWith('Looking')) setErr('');
+        lookingShown = true;
+      } else if (lookingShown) setErr('');
     } else {
       const mine = me();
-      readyBtn.textContent = mine && mine.ready ? 'Not ready' : 'Ready';
+      readyBtn.textContent = mine && mine.ready ? t('Not ready') : t('Ready');
       acts.append(readyBtn, leaveBtn);
       readyBtn.setAttribute('data-nav-default', '');
       startBtn.removeAttribute('data-nav-default');
@@ -269,7 +281,7 @@ export function createLobbyScreen(ctx) {
     busy = true;
     try {
       const r = await net.setReady(!mine.ready);
-      if (!r.ok) setErr(r.text || `Couldn’t change ready (${r.reason})`);
+      if (!r.ok) setErr(r.text ? t(r.text) : t('Couldn’t change ready ({reason})', { reason: r.reason }));
     } finally {
       busy = false;
       render();
@@ -281,7 +293,7 @@ export function createLobbyScreen(ctx) {
     busy = true;
     try {
       const r = await net.start();
-      if (!r.ok) setErr(r.text || `Couldn’t start (${r.reason})`);
+      if (!r.ok) setErr(r.text ? t(r.text) : t('Couldn’t start ({reason})', { reason: r.reason }));
     } finally {
       busy = false;
     }
@@ -296,7 +308,7 @@ export function createLobbyScreen(ctx) {
     busy = true;
     try {
       const r = await net.selectSeat(i);
-      if (!r.ok) setErr(r.text || `That class is taken (${r.reason})`);
+      if (!r.ok) setErr(r.text ? t(r.text) : t('That class is taken ({reason})', { reason: r.reason }));
       else {
         setErr('');
         // The lobby pick is this player's class from now on (camp too).
@@ -309,7 +321,13 @@ export function createLobbyScreen(ctx) {
     return undefined;
   }
   async function leave() {
-    const ok = await app.confirm({ title: 'Leave the room?', body: amHost() ? 'You are the host — the room passes to the next player, or closes if nobody is left.' : 'You can join again with the same code while the room is open.', confirmLabel: 'Leave', cancelLabel: 'Stay', defaultFocus: 'cancel' });
+    const ok = await app.confirm({
+      title: t('Leave the room?'),
+      body: amHost() ? t('You are the host — the room passes to the next player, or closes if nobody is left.') : t('You can join again with the same code while the room is open.'),
+      confirmLabel: t('Leave'),
+      cancelLabel: t('Stay'),
+      defaultFocus: 'cancel',
+    });
     if (!ok) return;
     const net = n();
     if (net) await net.leave();
@@ -332,9 +350,9 @@ export function createLobbyScreen(ctx) {
     if (!open) return;
     const left = countdownUntil - performance.now();
     if (left > 0) {
-      cdEl.textContent = `Starting in ${(left / 1000).toFixed(1)} s`;
+      cdEl.textContent = t('Starting in {s} s', { s: (left / 1000).toFixed(1) });
       cdTimer = setTimeout(tickCountdown, 100);
-    } else if (countdownUntil) cdEl.textContent = 'Starting…';
+    } else if (countdownUntil) cdEl.textContent = t('Starting…');
     if (queuedSince !== null) render();
   }
 
@@ -370,13 +388,13 @@ export function createLobbyScreen(ctx) {
           net.on('room_closed', () => {
             if (manager.top() === 'lobby') {
               manager.pop();
-              app.toast('The room closed', { tone: 'warn' });
+              app.toast(t('The room closed'), { tone: 'warn' });
             }
           }),
           net.on('session_lost', (m) => {
             if (manager.top() === 'lobby') {
               manager.pop();
-              app.toast((m && m.text) || 'Connection to the server was lost.', { tone: 'warn', ms: 5200 });
+              app.toast(m && m.text ? t(m.text) : t('Connection to the server was lost.'), { tone: 'warn', ms: 5200 });
             }
           }),
         ];

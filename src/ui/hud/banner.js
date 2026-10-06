@@ -29,6 +29,7 @@ import { PALETTE } from '../../data/palette.js';
 import { CHROME, mix } from './style.js';
 import { TICK_HZ } from '../../core/constants.js';
 import { iconEl } from './icons.js';
+import { t, tn } from '../../i18n/index.js';
 
 // §11 add-phase thresholds, drawn as pips on the boss bar (75 / 50 / 25 %).
 // Mirrors sim/boss.js STAG.addPhases; the sim's `phasesFired` fills them.
@@ -163,7 +164,7 @@ export function createBanner() {
 
     if (mode === 'boss') {
       setMedal(boss.kind);
-      const name = (boss.name ?? 'THE HOLLOW STAG').toUpperCase();
+      const name = t(boss.name ?? 'THE HOLLOW STAG').toUpperCase();
       const frac = boss.maxHp > 0 ? Math.max(0, boss.hp / boss.maxHp) : 0;
       // §11: clear = boss AND adds all dead, so the room can outlive the Stag.
       // A felled boss is not "0/1800" — the plate says what the player still
@@ -174,7 +175,7 @@ export function createBanner() {
       const key = `b|${medalKind}|${name}|${felled ? 'F' + adds : Math.round(boss.hp)}|${boss.maxHp}`;
       if (key === lastKey) return changed;
       lastKey = key;
-      label.textContent = felled ? `${name} · FELLED` : name;
+      label.textContent = felled ? t('{name} · FELLED', { name }) : name;
       label.className = 'hud-bn-label';
       showBar(PALETTE.godstuffViolet, mix(PALETTE.godstuffViolet, PALETTE.godstuffVioletPeak, 0.6), frac);
       const fired = felled ? BOSS_PHASES.length : Math.max(0, Math.min(BOSS_PHASES.length, boss.phasesFired ?? 0));
@@ -184,8 +185,8 @@ export function createBanner() {
       }
       num.textContent = felled
         ? adds != null && adds > 0
-          ? `${adds} ADD${adds === 1 ? '' : 'S'} REMAIN`
-          : 'CLEAR THE ADDS'
+          ? tn(adds, '{n} ADD REMAIN', '{n} ADDS REMAIN')
+          : t('CLEAR THE ADDS')
         : `${Math.max(0, Math.ceil(boss.hp))}/${boss.maxHp}`;
       num.className = 'hud-bn-num';
       return true;
@@ -199,7 +200,7 @@ export function createBanner() {
       const key = `d|${hp}|${maxHp}|${Math.ceil(left / TICK_HZ)}|${room.softFailed}`;
       if (key === lastKey) return changed;
       lastKey = key;
-      label.textContent = room.softFailed ? 'WAYSTONE LOST' : 'WAYSTONE';
+      label.textContent = room.softFailed ? t('WAYSTONE LOST') : t('WAYSTONE');
       showBar(PALETTE.hearthAmber, mix(PALETTE.hearthAmber, PALETTE.parchment, 0.45), maxHp > 0 ? hp / maxHp : 0);
       num.textContent = `${hp}/${maxHp}`;
       num.className = 'hud-bn-num';
@@ -216,9 +217,9 @@ export function createBanner() {
     const key = `k|${shown}|${total}|${alive}`;
     if (key === lastKey) return changed;
     lastKey = key;
-    label.textContent = `WAVE ${shown}/${total}`;
+    label.textContent = t('WAVE {shown}/{total}', { shown, total });
     setPips(total, idx, idx);
-    num.textContent = `${alive} LEFT`;
+    num.textContent = t('{alive} LEFT', { alive });
     num.className = 'hud-bn-label hud-bn-sub';
     return true;
   }

@@ -62,7 +62,7 @@ export const RUN_CSS = `
        instead of sitting on top of it. The same reserve feeds the scaler in
        ui/run/index.js, so a tall page shrinks instead of running off the top. */
     padding-bottom: var(--rn-reserve, 120px);
-    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-family: system-ui, -apple-system, 'Segoe UI', var(--i18n-font, sans-serif);
     color: ${PALETTE.parchment};
     user-select: none;
     opacity: 0;

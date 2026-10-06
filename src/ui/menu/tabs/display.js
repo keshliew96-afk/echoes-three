@@ -14,23 +14,23 @@
 // settings screen when the player leaves the tab or closes Settings. Leaving
 // fullscreen applies at once and disarms (re-entering from a timeout would
 // need a gesture the timer does not have). V-Sync and the limit never prompt.
+import { t } from '../../../i18n/index.js';
+
 const LIMITS = [30, 60, 120, 144, 0];
 
-const HELP = {
-  scale:
-    'Renders the 3D scene at a fraction or multiple of your window’s pixels. The menus and HUD are drawn separately and stay sharp at every scale.\nBelow 100%: sharper UI, softer 3D, faster.\nAbove 100%: supersampled — slower.',
-  mode:
-    'Windowed keeps the browser tab as it is. Fullscreen (browser) fills your screen with the game.\nFullscreen lasts for this visit — browsers leave it when the page reloads.\nPress Enter or click to switch — browsers don’t let a gamepad button switch to fullscreen.',
-  vsyncOn: 'On: one frame per display refresh — smooth, no wasted work.',
-  vsyncOff:
-    "Off: Renders uncapped. Browsers always show frames at your display's refresh and never tear, so extra frames are not displayed; this can lower input latency slightly and raises power use.",
-  limit:
-    'Caps how many frames the game renders per second. The game simulation always runs at 60 steps per second, whatever this is set to.',
-  fps: 'Shows the rendered frames per second in the bottom-right corner.',
-};
+// Looked up when the tab is built (after boot picks the language).
+const helpText = () => ({
+  scale: t('Renders the 3D scene at a fraction or multiple of your window’s pixels. The menus and HUD are drawn separately and stay sharp at every scale.\nBelow 100%: sharper UI, softer 3D, faster.\nAbove 100%: supersampled — slower.'),
+  mode: t('Windowed keeps the browser tab as it is. Fullscreen (browser) fills your screen with the game.\nFullscreen lasts for this visit — browsers leave it when the page reloads.\nPress Enter or click to switch — browsers don’t let a gamepad button switch to fullscreen.'),
+  vsyncOn: t('On: one frame per display refresh — smooth, no wasted work.'),
+  vsyncOff: t("Off: Renders uncapped. Browsers always show frames at your display's refresh and never tear, so extra frames are not displayed; this can lower input latency slightly and raises power use."),
+  limit: t('Caps how many frames the game renders per second. The game simulation always runs at 60 steps per second, whatever this is set to.'),
+  fps: t('Shows the rendered frames per second in the bottom-right corner.'),
+});
 
 export function buildDisplayTab(ctx) {
   const { settings, widgets, app } = ctx;
+  const HELP = helpText();
   const el = document.createElement('div');
   el.className = 'ap-tabcontent ap-display';
   el.style.display = 'flex';
@@ -48,7 +48,7 @@ export function buildDisplayTab(ctx) {
 
   const scale = widgets.slider({
     id: 'ap-display-renderScale',
-    label: 'Resolution scale',
+    label: t('Resolution scale'),
     min: 50,
     max: 150,
     step: 5,
@@ -78,10 +78,10 @@ export function buildDisplayTab(ctx) {
   };
   const mode = widgets.select({
     id: 'ap-display-mode',
-    label: 'Display mode',
+    label: t('Display mode'),
     options: [
-      { value: false, label: 'Windowed' },
-      { value: true, label: 'Fullscreen (browser)' },
+      { value: false, label: t('Windowed') },
+      { value: true, label: t('Fullscreen (browser)') },
     ],
     value: isFs(),
     help: HELP.mode,
@@ -108,7 +108,7 @@ export function buildDisplayTab(ctx) {
 
   const vsync = widgets.toggle({
     id: 'ap-display-vsync',
-    label: 'V-Sync',
+    label: t('V-Sync'),
     value: settings.get('display.vsync'),
     help: `${HELP.vsyncOn}\n${HELP.vsyncOff}`,
     onChange: (v) => {
@@ -119,8 +119,8 @@ export function buildDisplayTab(ctx) {
 
   const limit = widgets.select({
     id: 'ap-display-frameLimit',
-    label: 'Frame-rate limit',
-    options: LIMITS.map((n) => ({ value: n, label: n === 0 ? 'Unlimited' : `${n} fps` })),
+    label: t('Frame-rate limit'),
+    options: LIMITS.map((n) => ({ value: n, label: n === 0 ? t('Unlimited') : t('{n} fps', { n }) })),
     value: settings.get('display.frameLimit'),
     help: HELP.limit,
     onChange: (v) => {
@@ -131,7 +131,7 @@ export function buildDisplayTab(ctx) {
 
   const fps = widgets.toggle({
     id: 'ap-display-showFps',
-    label: 'Show FPS counter',
+    label: t('Show FPS counter'),
     value: settings.get('display.showFps'),
     help: HELP.fps,
     onChange: (v) => {
@@ -159,22 +159,27 @@ export function buildDisplayTab(ctx) {
     const pct = Math.round(s * 100);
     const d = display();
     const st = d ? d.state() : null;
-    const tone = s < 0.999 ? 'sharper UI, softer 3D, faster' : s > 1.001 ? 'supersampled — slower' : 'native';
-    let t = `Render resolution ${bufferText()} (${pct}%) · ${tone}`;
-    if (st && st.clamped) t += ` · limited to ${st.maxBuffer.w} × ${st.maxBuffer.h}`;
-    return t;
+    const vars = { size: bufferText(), pct };
+    let out =
+      s < 0.999
+        ? t('Render resolution {size} ({pct}%) · sharper UI, softer 3D, faster', vars)
+        : s > 1.001
+          ? t('Render resolution {size} ({pct}%) · supersampled — slower', vars)
+          : t('Render resolution {size} ({pct}%) · native', vars);
+    if (st && st.clamped) out += ` · ${t('limited to {w} × {h}', { w: st.maxBuffer.w, h: st.maxBuffer.h })}`;
+    return out;
   }
 
   function modeNote() {
     const d = display();
-    if (d && !d.fullscreenSupported()) return "This browser doesn't allow fullscreen here";
+    if (d && !d.fullscreenSupported()) return t("This browser doesn't allow fullscreen here");
     const parts = [];
-    if (d && d.browserFullscreen()) parts.push('Browser fullscreen (F11) is on — press F11 to leave');
-    else if (isFs() && d && d.keyboardLock) parts.push('Hold Esc to leave fullscreen');
-    else if (!isFs() && settings.get('display.fullscreen')) parts.push('Switching to fullscreen…');
+    if (d && d.browserFullscreen()) parts.push(t('Browser fullscreen (F11) is on — press F11 to leave'));
+    else if (isFs() && d && d.keyboardLock) parts.push(t('Hold Esc to leave fullscreen'));
+    else if (!isFs() && settings.get('display.fullscreen')) parts.push(t('Switching to fullscreen…'));
     // A gamepad button can LEAVE fullscreen (no gesture needed) but not enter it.
-    if (!isFs() && app.nav && app.nav.lastSource === 'gamepad') parts.push("Press Enter or click — browsers don't let a gamepad button switch to fullscreen");
-    parts.push('Fullscreen lasts for this visit — browsers leave it when the page reloads.');
+    if (!isFs() && app.nav && app.nav.lastSource === 'gamepad') parts.push(t("Press Enter or click — browsers don't let a gamepad button switch to fullscreen"));
+    parts.push(t('Fullscreen lasts for this visit — browsers leave it when the page reloads.'));
     return parts.join(' · ');
   }
 
@@ -191,34 +196,34 @@ export function buildDisplayTab(ctx) {
   function vsyncNote() {
     const st = stats();
     if (!st) return '';
-    if (st.vsync) return `Frames paced to your display (~${fmtHz(hz(st))} Hz)`;
-    if (st.samples < 20) return 'Renders uncapped — measuring…';
-    if (gpuBound(st)) return `Your device renders about ${Math.round(st.renderedFps)} fps here — uncapped can't go faster than your GPU`;
+    if (st.vsync) return t('Frames paced to your display (~{hz} Hz)', { hz: fmtHz(hz(st)) });
+    if (st.samples < 20) return t('Renders uncapped — measuring…');
+    if (gpuBound(st)) return t("Your device renders about {fps} fps here — uncapped can't go faster than your GPU", { fps: Math.round(st.renderedFps) });
     // PLAN §5 binding copy, always on the row (not only in the info panel).
-    return "Renders uncapped. Browsers always show frames at your display's refresh and never tear, so extra frames are not displayed; this can lower input latency slightly and raises power use.";
+    return t("Renders uncapped. Browsers always show frames at your display's refresh and never tear, so extra frames are not displayed; this can lower input latency slightly and raises power use.");
   }
 
   function limitNote() {
     const st = stats();
     if (!st) return '';
-    if (st.samples < 20) return 'Rendering … fps (measuring)';
+    if (st.samples < 20) return t('Rendering … fps (measuring)');
     const lim = st.limit;
-    let t = `Rendering ${Math.round(st.renderedFps)} fps`;
+    const fps = Math.round(st.renderedFps);
     const cap = hz(st);
-    if (st.vsync && cap > 0 && (lim === 0 || lim > cap * 1.02)) t += ` · Your display caps this at ~${Math.round(cap)} fps`;
-    else if (lim > 0 && st.renderedFps < lim * 0.93) t += ` · your device renders about ${Math.round(st.renderedFps)} fps here, below the limit`;
-    return t;
+    if (st.vsync && cap > 0 && (lim === 0 || lim > cap * 1.02)) return t('Rendering {fps} fps · Your display caps this at ~{cap} fps', { fps, cap: Math.round(cap) });
+    if (lim > 0 && st.renderedFps < lim * 0.93) return t('Rendering {fps} fps · your device renders about {fps} fps here, below the limit', { fps });
+    return t('Rendering {fps} fps', { fps });
   }
 
   function fpsNote() {
-    if (app.fpsForced) return 'Always shown for this page address (?fps / ?debug / a harness boot)';
+    if (app.fpsForced) return t('Always shown for this page address (?fps / ?debug / a harness boot)');
     return '';
   }
 
   function measuredText() {
     const st = stats();
     if (!st) return '';
-    return `Display ~${fmtHz(hz(st))} Hz · rendering ${st.samples < 20 ? '…' : Math.round(st.renderedFps)} fps · frame work ${st.workMsP50.toFixed(1)} ms`;
+    return t('Display ~{hz} Hz · rendering {fps} fps · frame work {ms} ms', { hz: fmtHz(hz(st)), fps: st.samples < 20 ? '…' : Math.round(st.renderedFps), ms: st.workMsP50.toFixed(1) });
   }
 
   function paint() {
@@ -231,7 +236,7 @@ export function buildDisplayTab(ctx) {
     measured.textContent = measuredText();
     const d = display();
     const supported = !d || d.fullscreenSupported();
-    mode.setDisabled(!supported, "This browser doesn't allow fullscreen here");
+    mode.setDisabled(!supported, t("This browser doesn't allow fullscreen here"));
   }
 
   // Live mirror of the store (the fullscreen mirror flips on Esc / F11 /
@@ -269,8 +274,8 @@ export function buildDisplayTab(ctx) {
 
   function describe() {
     const out = [];
-    if (armed.scale) out.push(`Resolution scale ${Math.round(settings.get('display.renderScale') * 100)}% — render resolution ${bufferText()}`);
-    if (armed.fullscreen && isFs()) out.push('Fullscreen');
+    if (armed.scale) out.push(t('Resolution scale {pct}% — render resolution {size}', { pct: Math.round(settings.get('display.renderScale') * 100), size: bufferText() }));
+    if (armed.fullscreen && isFs()) out.push(t('Fullscreen'));
     return out;
   }
 
@@ -322,7 +327,7 @@ export function buildDisplayTab(ctx) {
       const id = node && node.id;
       if (id === 'ap-display-vsync') {
         const lines = [st.vsync ? HELP.vsyncOn : HELP.vsyncOff, measuredText()];
-        if (!st.vsync && gpuBound(st)) lines.push(`Your device renders about ${Math.round(st.renderedFps)} fps here — uncapped can't go faster than your GPU`);
+        if (!st.vsync && gpuBound(st)) lines.push(t("Your device renders about {fps} fps here — uncapped can't go faster than your GPU", { fps: Math.round(st.renderedFps) }));
         return lines.join('\n');
       }
       if (id === 'ap-display-frameLimit') return `${limitNote()}\n${measuredText()}`;

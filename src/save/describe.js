@@ -14,13 +14,15 @@
 // Stag room (meta.room 8), a setting-out card before any room (meta.room 0).
 import { levelFor } from '../data/levels.js';
 import { nextLevel } from '../data/campaign.js';
+import { t } from '../i18n/index.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 export const roman = (n) => (Number.isFinite(Number(n)) && ROMAN[Number(n)] ? ROMAN[Number(n)] : String(n ?? ''));
 
 function levelName(n) {
   try {
-    return levelFor(Number(n)).name || null;
+    const nm = levelFor(Number(n)).name;
+    return nm ? t(nm) : null;
   } catch {
     return null;
   }
@@ -47,25 +49,40 @@ export function transitCard(meta) {
 //   clear:  "Level I cleared — next: Level II · The Sunken Mill"
 //   depart: "Setting out — Level II · The Sunken Mill" (the level has not begun)
 export function transitWhere(meta) {
-  const t = transitCard(meta);
-  if (!t) return null;
-  if (t.kind === 'depart') {
-    const nm = levelName(t.to);
-    return `Setting out — Level ${roman(t.to)}${nm ? ` · ${nm}` : ''}`;
+  const c = transitCard(meta);
+  if (!c) return null;
+  if (c.kind === 'depart') {
+    const nm = levelName(c.to);
+    return nm ? t('Setting out — Level {level} · {name}', { level: roman(c.to), name: nm }) : t('Setting out — Level {level}', { level: roman(c.to) });
   }
-  if (t.to === null) return `Level ${roman(t.from)} cleared`;
-  const nm = levelName(t.to);
-  return `Level ${roman(t.from)} cleared — next: Level ${roman(t.to)}${nm ? ` · ${nm}` : ''}`;
+  if (c.to === null) return t('Level {level} cleared', { level: roman(c.from) });
+  const nm = levelName(c.to);
+  return nm
+    ? t('Level {level} cleared — next: Level {next} · {name}', { level: roman(c.from), next: roman(c.to), name: nm })
+    : t('Level {level} cleared — next: Level {next}', { level: roman(c.from), next: roman(c.to) });
 }
 
 // Short form (the title's Continue caption, clamped to two lines).
 //   clear:  "Level I cleared"      depart: "Setting out · Level II · The Sunken Mill"
 export function transitShort(meta) {
-  const t = transitCard(meta);
-  if (!t) return null;
-  if (t.kind === 'depart') {
-    const nm = levelName(t.to);
-    return `Setting out · Level ${roman(t.to)}${nm ? ` · ${nm}` : ''}`;
+  const c = transitCard(meta);
+  if (!c) return null;
+  if (c.kind === 'depart') {
+    const nm = levelName(c.to);
+    return nm ? t('Setting out · Level {level} · {name}', { level: roman(c.to), name: nm }) : t('Setting out · Level {level}', { level: roman(c.to) });
   }
-  return `Level ${roman(t.from)} cleared`;
+  return t('Level {level} cleared', { level: roman(c.from) });
+}
+
+// A slot's name as shown: the default names the game gives a slot (stored in
+// the file in English, src/save/slots.js defaultSlotName / 'Imported save')
+// are shown in the player's language; a name the player typed is shown as is.
+export function slotDisplayName(name) {
+  const s = String(name ?? '');
+  if (s === 'Autosave') return t('Autosave');
+  if (s === 'Quicksave') return t('Quicksave');
+  if (s === 'Imported save') return t('Imported save');
+  const m = /^Slot (\d+)$/.exec(s);
+  if (m) return t('Slot {n}', { n: Number(m[1]) });
+  return s;
 }

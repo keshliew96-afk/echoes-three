@@ -20,9 +20,10 @@ import { PALETTE as P } from '../../data/palette.js';
 import { seatLabel } from '../../net/seats.js';
 import { service } from '../../app/registry.js';
 import { QUALITY_THRESHOLDS } from '../../net/transport.js';
+import { t, tn } from '../../i18n/index.js';
 
 const CSS = `
-#nt-hud { position: fixed; inset: 0; pointer-events: none; z-index: 64; font-family: "Nunito", "Trebuchet MS", system-ui, sans-serif; }
+#nt-hud { position: fixed; inset: 0; pointer-events: none; z-index: 64; font-family: "Nunito", "Trebuchet MS", system-ui, var(--i18n-font, sans-serif); }
 #nt-hud.nt-off { display: none; }
 .nt-chip { position: absolute; left: 14px; bottom: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 10px;
   background: ${P.voidCharcoal}E6; color: ${P.parchment}; border: 1px solid ${P.warmGrey}66; border-radius: 10px;
@@ -366,8 +367,8 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     const hidden = typeof document !== 'undefined' && document.hidden;
     if (hidden) joiningSince = 0;
     else if (!joiningSince) joiningSince = performance.now();
-    if (!hidden && performance.now() - joiningSince >= JOIN_SLOW_MS) setBanner(`Still joining ${code || ''}…`, "The host's game hasn't sent the world yet. Keep waiting, or leave with Esc → Leave Session.");
-    else setBanner(`Joining ${code || ''}…`, 'Receiving the world from the host');
+    if (!hidden && performance.now() - joiningSince >= JOIN_SLOW_MS) setBanner(t('Still joining {code}…', { code: code || '' }), t("The host's game hasn't sent the world yet. Keep waiting, or leave with Esc → Leave Session."));
+    else setBanner(t('Joining {code}…', { code: code || '' }), t('Receiving the world from the host'));
   }
   let lostUntil = 0;
   let reconnectUntil = 0;
@@ -405,11 +406,11 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     const loss = q && Number.isFinite(q.lossPct) ? q.lossPct : s && Number.isFinite(s.lossPct) ? s.lossPct : 0;
     const stalled = !!(q && q.reasons.includes('stalled'));
     const parts = [];
-    if (stalled) parts.push('no updates');
-    else if (rtt !== null) parts.push(`${rtt} ms`);
+    if (stalled) parts.push(t('no updates'));
+    else if (rtt !== null) parts.push(t('{ms} ms', { ms: rtt }));
     // No quality = no live link (reconnecting): a stale loss figure would
     // contradict the reconnect banner, so only the last ping stays.
-    if (!stalled && q && loss >= 1) parts.push(`${lossText(loss)} loss`);
+    if (!stalled && q && loss >= 1) parts.push(t('{loss} loss', { loss: lossText(loss) }));
     ltEl.textContent = parts.join(' · ');
     const level = q ? q.level : null;
     linkEl.classList.toggle('nt-off', !level && !parts.length);
@@ -421,10 +422,12 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     const outP = s && Number.isFinite(s.lossOutPct) ? s.lossOutPct : null;
     let label = '';
     if (level) {
-      label = `Connection ${level}`;
-      if (rtt !== null) label += `, ping ${rtt} ms`;
-      if (inP !== null || outP !== null) label += `, packet loss${inP !== null ? ` in ${lossText(inP)}` : ''}${outP !== null ? ` out ${lossText(outP)}` : ''}`;
-      if (stalled) label += ', no updates from the host';
+      label = level === 'good' ? t('Connection good') : level === 'fair' ? t('Connection fair') : level === 'poor' ? t('Connection poor') : t('Connection {level}', { level });
+      if (rtt !== null) label += `, ${t('ping {ms} ms', { ms: rtt })}`;
+      if (inP !== null && outP !== null) label += `, ${t('packet loss in {lossIn} out {lossOut}', { lossIn: lossText(inP), lossOut: lossText(outP) })}`;
+      else if (inP !== null) label += `, ${t('packet loss in {lossIn}', { lossIn: lossText(inP) })}`;
+      else if (outP !== null) label += `, ${t('packet loss out {lossOut}', { lossOut: lossText(outP) })}`;
+      if (stalled) label += `, ${t('no updates from the host')}`;
     }
     chip.setAttribute('title', label);
     chip.setAttribute('aria-label', `${main.textContent} ${sub.textContent} ${label}`.trim());
@@ -432,19 +435,19 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     // note per 15 s, and the SAME reason again only after 45 s (a link that
     // sits on a threshold flips fair/poor without repeating itself).
     if (level === 'poor' && linkLevel !== 'poor' && !(last && (last.reconnecting || last.hostLost))) {
-      const t = performance.now();
+      const now = performance.now();
       const why = q.reasons[0];
-      if (t - lastReasonNoteAt >= (why === lastReason ? REASON_REPEAT_MS : REASON_NOTE_MS)) {
-        lastReasonNoteAt = t;
+      if (now - lastReasonNoteAt >= (why === lastReason ? REASON_REPEAT_MS : REASON_NOTE_MS)) {
+        lastReasonNoteAt = now;
         lastReason = why;
-        let text = 'Unstable connection — high jitter';
-        if (why === 'stalled') text = 'No updates from the host — the world may freeze for a moment';
+        let text = t('Unstable connection — high jitter');
+        if (why === 'stalled') text = t('No updates from the host — the world may freeze for a moment');
         // The figures that EARNED the level (a held level keeps them).
         const c = q.cause || {};
         const cLoss = Number.isFinite(c.lossPct) ? c.lossPct : loss;
         const cRtt = Number.isFinite(c.rttMs) ? Math.round(c.rttMs) : rtt;
-        if (why === 'loss') text = `Unstable connection — ${lossText(cLoss)} packet loss`;
-        else if (why === 'latency') text = `High latency — ${cRtt} ms ping`;
+        if (why === 'loss') text = t('Unstable connection — {loss} packet loss', { loss: lossText(cLoss) });
+        else if (why === 'latency') text = t('High latency — {ms} ms ping', { ms: cRtt });
         note(text);
       }
     }
@@ -452,16 +455,16 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     // are fine gets named once (every 30 s at most) — its own chip already
     // warns that player; the host learns why that seat may act late.
     if (last && last.role === 'host' && s && s.lossBySeat && typeof s.lossBySeat === 'object') {
-      const t = performance.now();
+      const now = performance.now();
       const ownPoor = loss >= QUALITY_THRESHOLDS.poor.lossPct;
       for (const [k, v] of Object.entries(s.lossBySeat)) {
         const seat = Number(k);
         const bad = !ownPoor && Number.isFinite(v) && v >= QUALITY_THRESHOLDS.poor.lossPct;
         const streak = bad ? (seatStreak.get(seat) || 0) + 1 : 0;
         seatStreak.set(seat, streak);
-        if (streak < 3 || t - (seatNoteAt.get(seat) ?? -Infinity) < SEAT_NOTE_MS) continue;
-        seatNoteAt.set(seat, t);
-        note(`${nameOfSeat(seat) || seatLabel(seat)}'s connection is unstable — ${lossText(v)} packet loss`);
+        if (streak < 3 || now - (seatNoteAt.get(seat) ?? -Infinity) < SEAT_NOTE_MS) continue;
+        seatNoteAt.set(seat, now);
+        note(t("{name}'s connection is unstable — {loss} packet loss", { name: nameOfSeat(seat) || t(seatLabel(seat)), loss: lossText(v) }));
       }
     }
     // The optional detail line (Settings > Network > Connection details) can
@@ -502,11 +505,11 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
   function update(st) {
     last = st;
     placeChip();
-    const role = st.role === 'host' ? 'Hosting' : st.role === 'guest' ? `Online · ${seatLabel(st.seat ?? 0)}` : 'Online';
+    const role = st.role === 'host' ? t('Hosting') : st.role === 'guest' ? t('Online · {cls}', { cls: t(seatLabel(st.seat ?? 0)) }) : t('Online');
     main.textContent = role;
     const humans = st.seats.filter((s) => s.name && s.connected).length;
-    sub.textContent = `${st.code ? `Room ${st.code} · ` : ''}${humans} player${humans === 1 ? '' : 's'}`;
-    shortEl.textContent = `${humans} player${humans === 1 ? '' : 's'}`;
+    sub.textContent = st.code ? tn(humans, 'Room {code} · {n} player', 'Room {code} · {n} players', { code: st.code }) : tn(humans, '{n} player', '{n} players');
+    shortEl.textContent = tn(humans, '{n} player', '{n} players');
     refreshLink();
     chip.classList.toggle('nt-warn', !!(st.reconnecting || st.hostLost));
     if (st.reconnecting) {
@@ -528,7 +531,10 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
 
   function drawReconnect() {
     const left = reconnectUntil ? Math.max(0, Math.ceil((reconnectUntil - performance.now()) / 1000)) : null;
-    setBanner(left !== null ? `Connection lost — reconnecting (${left} s)` : 'Connection lost — reconnecting…', last && last.role === 'host' ? 'The game keeps running here; your party sees you as reconnecting.' : 'Your seat is held — the AI plays it until you are back.');
+    setBanner(
+      left !== null ? t('Connection lost — reconnecting ({s} s)', { s: left }) : t('Connection lost — reconnecting…'),
+      last && last.role === 'host' ? t('The game keeps running here; your party sees you as reconnecting.') : t('Your seat is held — the AI plays it until you are back.')
+    );
   }
 
   function tick() {
@@ -536,8 +542,8 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     if (reconnectUntil) drawReconnect();
     if (lostUntil) {
       const left = Math.max(0, Math.ceil((lostUntil - performance.now()) / 1000));
-      if (left > 0) setBanner(`Host connection lost — waiting (${left} s)`, 'If the host does not come back, another player takes over and the run continues.');
-      else setBanner('Host connection lost — handing over…', 'A new host is taking over the session.');
+      if (left > 0) setBanner(t('Host connection lost — waiting ({s} s)', { s: left }), t('If the host does not come back, another player takes over and the run continues.'));
+      else setBanner(t('Host connection lost — handing over…'), t('A new host is taking over the session.'));
     }
     if (settings.get('net.showStats') && api && typeof api.statsLine === 'function') {
       detail.style.display = '';
@@ -605,11 +611,12 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     hostBack(who) {
       lostUntil = 0;
       setBanner(null);
-      if (who) note(who === 'you' ? 'You are now the host' : `${who} is now hosting`);
-      else note('The host is back');
+      if (who) note(who === 'you' ? t('You are now the host') : t('{name} is now hosting', { name: who === 'a new host' ? t('a new host') : who }));
+      else note(t('The host is back'));
     },
     ping(p, who) {
-      pingEl.textContent = `${who} points at ${p.page === 'path' ? 'door' : p.page === 'shop' ? 'item' : 'card'} ${Number.isInteger(p.index) ? p.index + 1 : ''}`;
+      const pv = { name: who, n: Number.isInteger(p.index) ? p.index + 1 : '' };
+      pingEl.textContent = p.page === 'path' ? t('{name} points at door {n}', pv) : p.page === 'shop' ? t('{name} points at item {n}', pv) : t('{name} points at card {n}', pv);
       pingEl.title = pingEl.textContent;
       notes.appendChild(pingEl);
       notesRev += 1;

@@ -69,11 +69,12 @@ import { SKILLS } from '../../sim/skills.js';
 import { NODES } from '../../sim/nodes.js';
 import { SKILL_SLOTS } from '../../core/constants.js';
 import { iconHtml, hasIcon } from '../hud/icons.js';
-import { NODE_EFFECT, NODE_GLYPH as CARD_GLYPH } from '../run/cards.js';
+import { NODE_EFFECT, NODE_GLYPH as CARD_GLYPH, skillAbbrev } from '../run/cards.js';
 import { createPartyStrip } from '../run/partystrip.js';
 import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
 import { CLASS_ACCENTS } from '../../data/palette.js';
 import { service } from '../../app/registry.js';
+import { t, tn } from '../../i18n/index.js';
 // @gnt:M3 RUN-NAV-SOUND (fix-M3-r5 AUD5-F1): cursor / tab moves tick like a menu move.
 import { createSelectionSound } from '../../audio/uiselect.js';
 
@@ -107,23 +108,195 @@ const NODE_GLYPH = {
   ...Object.fromEntries(Object.entries(CARD_GLYPH).filter(([k]) => !['sharpen', 'quicken', 'multiply', 'ascend', 'bounce', 'siphon', 'echo', 'detonate', 'widen', 'reach', 'linger', 'keen', 'snare', 'galvanize', 'bulwark', 'split', 'resonance'].includes(k))),
 };
 
+// Getters: looked up (translated) when read, after the language has loaded.
 const SHAPE_LABEL = {
-  projectile: 'projectile',
-  direct: 'direct',
-  nova: 'nova',
-  ground_aoe: 'ground zone',
-  aura: 'passive aura',
-  melee_arc: 'arc',
+  get projectile() {
+    return t('projectile');
+  },
+  get direct() {
+    return t('direct');
+  },
+  get nova() {
+    return t('nova');
+  },
+  get ground_aoe() {
+    return t('ground zone');
+  },
+  get aura() {
+    return t('passive aura');
+  },
+  get melee_arc() {
+    return t('arc');
+  },
 };
 
-const DENY_COPY = {
-  limit: 'repeat limit reached on this skill',
-  full: 'all 8 sockets on this skill are full',
-  combat_active: 'sockets open between rooms only',
-  no_such_slot: 'no such socket',
-  not_on_bench: 'that node is not on the bench',
-  skill_not_owned: 'that skill is not in your kit',
+// Sim words the screen shows (node rarity / kind, skill archetype, bench
+// provenance), translated when read; an unknown word shows as the sim has it.
+const WORD = {
+  get common() {
+    return t('common');
+  },
+  get rare() {
+    return t('rare');
+  },
+  get legendary() {
+    return t('legendary');
+  },
+  get stat() {
+    return t('stat');
+  },
+  get technique() {
+    return t('technique');
+  },
+  get damage() {
+    return t('damage');
+  },
+  get guard() {
+    return t('guard');
+  },
+  get heal() {
+    return t('heal');
+  },
+  get passive() {
+    return t('passive');
+  },
+  get drafted() {
+    return t('drafted');
+  },
+  get purchased() {
+    return t('purchased');
+  },
+  get spoils() {
+    return t('spoils');
+  },
+  get grant() {
+    return t('grant');
+  },
+  get catchup() {
+    return t('catchup');
+  },
+  get plan() {
+    return t('plan');
+  },
+  get preview() {
+    return t('preview');
+  },
 };
+const word = (w) => (Object.prototype.hasOwnProperty.call(WORD, w) ? WORD[w] : String(w ?? ''));
+
+const DENY_COPY = {
+  get limit() {
+    return t('repeat limit reached on this skill');
+  },
+  get full() {
+    return t('all 8 sockets on this skill are full');
+  },
+  get combat_active() {
+    return t('sockets open between rooms only');
+  },
+  get no_such_slot() {
+    return t('no such socket');
+  },
+  get not_on_bench() {
+    return t('that node is not on the bench');
+  },
+  get skill_not_owned() {
+    return t('that skill is not in your kit');
+  },
+};
+
+// The sim's live preview lines (src/sim/nodes.js preview() / verdict
+// reasons) are English with the numbers baked in. Each known form is matched
+// here and re-said through its own key; a line no pattern knows shows as the
+// sim wrote it (docs/I18N.md).
+const STAT_WORD = {
+  get power() {
+    return t('power');
+  },
+  get cooldown() {
+    return t('cooldown');
+  },
+  get count() {
+    return t('count');
+  },
+  get area() {
+    return t('area');
+  },
+  get range() {
+    return t('range');
+  },
+  get 'arc half-angle'() {
+    return t('arc half-angle');
+  },
+};
+const PREVIEW_FIXED = () => ({
+  'legal to socket — contributes nothing': t('legal to socket — contributes nothing'),
+  'contributes nothing on this skill right now': t('contributes nothing on this skill right now'),
+  'legal to socket — contributes nothing while this holds': t('legal to socket — contributes nothing while this holds'),
+  'already socketed here — this is its live contribution': t('already socketed here — this is its live contribution'),
+  'reapply: one bonus full-strength pulse every 3.0 s': t('reapply: one bonus full-strength pulse every 3.0 s'),
+  'enemies inside the field are slowed 25% (refreshed every pulse)': t('enemies inside the field are slowed 25% (refreshed every pulse)'),
+  'healed allies gain haste 20% for 1.5 s': t('healed allies gain haste 20% for 1.5 s'),
+  'enemies hit are slowed 40% for 1.5 s': t('enemies hit are slowed 40% for 1.5 s'),
+  'allies inside are inspired: +10% damage dealt (refreshed every pulse)': t('allies inside are inspired: +10% damage dealt (refreshed every pulse)'),
+  'healed allies are inspired: +15% damage dealt for 3 s': t('healed allies are inspired: +15% damage dealt for 3 s'),
+  'enemies hit are exposed: +20% damage taken for 3 s': t('enemies hit are exposed: +20% damage taken for 3 s'),
+  'each pulse adds 2 shield to the allies inside (up to 10)': t('each pulse adds 2 shield to the allies inside (up to 10)'),
+  'you gain a shield worth 20% of the damage dealt (up to 30)': t('you gain a shield worth 20% of the damage dealt (up to 30)'),
+  'no cooldown stat on this skill': t('no cooldown stat on this skill'),
+  'no count stat on this skill': t('no count stat on this skill'),
+  'no power stat on this skill': t('no power stat on this skill'),
+  'no power stat': t('no power stat'),
+  'no range stat on this skill': t('no range stat on this skill'),
+  'single-target shape — no area to widen': t('single-target shape — no area to widen'),
+  'nothing on this skill lasts — no duration to extend': t('nothing on this skill lasts — no duration to extend'),
+  'a passive field — nothing here for this technique to act on': t('a passive field — nothing here for this technique to act on'),
+  'needs a retargetable impact (projectile or direct)': t('needs a retargetable impact (projectile or direct)'),
+  'shields never crit': t('shields never crit'),
+  'a shield drains nothing': t('a shield drains nothing'),
+  'a hostile field of another class': t('a hostile field of another class'),
+  'no hostile delivery to stagger with': t('no hostile delivery to stagger with'),
+  'no hostile area delivery to pull with': t('no hostile area delivery to pull with'),
+  'the counter answers an attacker already in reach': t('the counter answers an attacker already in reach'),
+  'the delivery is placed at range — nothing to close': t('the delivery is placed at range — nothing to close'),
+  'only a bolt can pierce': t('only a bolt can pierce'),
+  'a self burst has nothing to scatter': t('a self burst has nothing to scatter'),
+  'already a full 90° half-angle (the §23.4 clamp)': t('already a full 90° half-angle (the §23.4 clamp)'),
+  'the whole party is already reached': t('the whole party is already reached'),
+  'fits your kit': t('fits your kit'),
+  'nothing in your kit uses this yet': t('nothing in your kit uses this yet'),
+});
+const STATUS_WORD = () => ({ haste: t('haste'), shield: t('shield'), slow: t('slow'), stun: t('stun'), taunt: t('taunt'), ward: t('ward'), zone: t('zone') });
+const UNIT = (u) => (u === ' s' ? t(' s') : u === ' u' ? t(' u') : u || '');
+const PREVIEW_FORMS = [
+  [/^\+1 target — currently \+0 \(all (\d+) allies already hit\)$/, (m) => t('+1 target — currently +0 (all {n} allies already hit)', { n: m[1] })],
+  [/^crit chance (\d+)% → (\d+)%$/, (m) => t('crit chance {a}% → {b}%', { a: m[1], b: m[2] })],
+  [/^zone (\d+) ticks → (\d+) ticks \(([\d.]+) s → ([\d.]+) s\)$/, (m) => t('zone {a} ticks → {b} ticks ({sa} s → {sb} s)', { a: m[1], b: m[2], sa: m[3], sb: m[4] })],
+  [/^(power|cooldown|count|area|range|arc half-angle) ([\d.]+)( s| u|°)? → ([\d.]+)( s| u|°)?$/, (m) => t('{stat} {a} → {b}', { stat: STAT_WORD[m[1]], a: m[2] + UNIT(m[3]), b: m[4] + UNIT(m[5]) })],
+  [/^([a-z]+) (\d+) → (\d+) ticks$/, (m) => t('{status} {a} → {b} ticks', { status: STATUS_WORD()[m[1]] ?? m[1], a: m[2], b: m[3] })],
+  [/^heal chains to the next-lowest-HP other ally within ([\d.]+) u — full power, 1 hop per copy$/, (m) => t('heal chains to the next-lowest-HP other ally within {r} u — full power, 1 hop per copy', { r: m[1] })],
+  [/^impact ricochets to the nearest other enemy within ([\d.]+) u — full power, 1 hop per copy$/, (m) => t('impact ricochets to the nearest other enemy within {r} u — full power, 1 hop per copy', { r: m[1] })],
+  [/^damages the nearest enemy within ([\d.]+) u of the healed ally for ([\d.]+)$/, (m) => t('damages the nearest enemy within {r} u of the healed ally for {n}', { r: m[1], n: m[2] })],
+  [/^self-heals ([\d.]+) per instance$/, (m) => t('self-heals {n} per instance', { n: m[1] })],
+  [/^full recast 1\.0 s later at (\d+)% power$/, (m) => t('full recast 1.0 s later at {pct}% power', { pct: m[1] })],
+  [/^full heals burst-heal allies within ([\d.]+) u for 50% power$/, (m) => t('full heals burst-heal allies within {r} u for 50% power', { r: m[1] })],
+  [/^kills by this skill explode — 50% power burst, radius ([\d.]+) u$/, (m) => t('kills by this skill explode — 50% power burst, radius {r} u', { r: m[1] })],
+  [/^overhealing becomes a shield — up to ([\d.]+) per heal, 4 s$/, (m) => t('overhealing becomes a shield — up to {n} per heal, 4 s', { n: m[1] })],
+  [/^the 2 nearest other allies within ([\d.]+) u get ([\d.]+) too$/, (m) => t('the 2 nearest other allies within {r} u get {n} too', { r: m[1], n: m[2] })],
+  [/^on impact: 2 shards at ±([\d.]+)°, ([\d.]+) power, ([\d.]+) u$/, (m) => t('on impact: 2 shards at ±{deg}°, {n} power, {r} u', { deg: m[1], n: m[2], r: m[3] })],
+  [/^every 3rd pulse resolves at ×2 power \(([\d.]+) per ally\)$/, (m) => t('every 3rd pulse resolves at ×2 power ({n} per ally)', { n: m[1] })],
+  [/^every 3rd cast resolves at ×2 power \(([\d.]+)\)$/, (m) => t('every 3rd cast resolves at ×2 power ({n})', { n: m[1] })],
+];
+function previewText(line) {
+  const l = String(line ?? '');
+  const fixed = PREVIEW_FIXED()[l.replace(/^\+0\s*—\s*/, '')];
+  if (fixed !== undefined) return fixed;
+  for (const [re, say] of PREVIEW_FORMS) {
+    const m = re.exec(l);
+    if (m) return say(m);
+  }
+  return t(l); // the siphon card line and anything keyed elsewhere
+}
 
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -175,7 +348,7 @@ export function createSocketScreen({ bus, world }) {
       position: fixed; inset: 0; z-index: 30; display: none;
       align-items: center; justify-content: center;
       background: radial-gradient(ellipse at center, ${PALETTE.voidCharcoal}99 0%, ${PALETTE.voidCharcoal}D9 100%);
-      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-family: system-ui, -apple-system, 'Segoe UI', var(--i18n-font, sans-serif);
       color: ${PALETTE.parchment};
       user-select: none;
     }
@@ -390,9 +563,10 @@ export function createSocketScreen({ bus, world }) {
     .nd-dline.nd-quote { font-style: italic; }
     .nd-dverdict { font-size: 16px; color: ${PALETTE.warmGrey}; font-style: italic; }
     .nd-foot {
-      flex: none; height: 32px; padding: 0 20px; display: flex; align-items: center; gap: 18px;
-      font-size: 16px; color: ${PALETTE.warmGrey}; white-space: nowrap; overflow: hidden;
+      flex: none; min-height: 32px; padding: 0 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 18px;
+      font-size: 16px; color: ${PALETTE.warmGrey}; overflow: hidden;
     }
+    .nd-foot > * { white-space: nowrap; }
     .nd-foot b { color: ${PALETTE.bone}; font-weight: 800; }
     .nd-foot .nd-pad { margin-left: auto; }
     .nd-toast {
@@ -413,14 +587,14 @@ export function createSocketScreen({ bus, world }) {
     <div class="nd-page">
       <div class="nd-head">
         <span class="nd-orn">◆ ◇</span>
-        <span class="nd-title">SOCKETS</span>
+        <span class="nd-title">${t('SOCKETS')}</span>
         <span class="nd-orn">◇ ◆</span>
-        <span class="nd-sub"><b>8 sockets</b> per skill · <b>any node, any socket</b></span>
+        <span class="nd-sub">${t('<b>8 sockets</b> per skill · <b>any node, any socket</b>')}</span>
         <span class="nd-headr">
           <span class="nd-total"></span>
-          <span class="nd-btn nd-auto" data-act="auto"><span class="nd-k">F</span>Auto-fill</span>
-          <span class="nd-btn nd-autoall" data-act="autoall"><span class="nd-k">⇧F</span>Fill all</span>
-          <span class="nd-btn nd-close" data-act="close"><span class="nd-k">Esc</span>Close</span>
+          <span class="nd-btn nd-auto" data-act="auto"><span class="nd-k">F</span>${t('Auto-fill')}</span>
+          <span class="nd-btn nd-autoall" data-act="autoall"><span class="nd-k">⇧F</span>${t('Fill all')}</span>
+          <span class="nd-btn nd-close" data-act="close"><span class="nd-k">Esc</span>${t('Close')}</span>
         </span>
       </div>
       <div class="nd-strip"></div>
@@ -428,15 +602,15 @@ export function createSocketScreen({ bus, world }) {
       <div class="nd-main">
         <div class="nd-rows"></div>
         <div class="nd-benchp">
-          <div class="nd-sect">BENCH<b class="nd-bcount"></b></div>
+          <div class="nd-sect">${t('BENCH')}<b class="nd-bcount"></b></div>
           <div class="nd-bench"></div>
         </div>
       </div>
       <div class="nd-detail"></div>
       <div class="nd-foot">
-        <span><b>←↑→↓</b> move</span><span><b>Enter</b> pick · place</span><span><b>X</b> remove</span>
-        <span><b>F</b> auto-fill</span><span><b>1–4</b> skill</span><span><b>Q</b>/<b>E</b> character</span><span><b>←</b> reorder</span><span><b>Esc</b> close</span>
-        <span class="nd-pad">pad <b>LB</b>/<b>RB</b> character <b>Ⓐ</b> place <b>Ⓧ</b> remove <b>Ⓨ</b> fill <b>Ⓑ</b> back</span>
+        <span><b>←↑→↓</b> ${t('move')}</span><span><b>Enter</b> ${t('pick · place')}</span><span><b>X</b> ${t('remove')}</span>
+        <span><b>F</b> ${t('auto-fill')}</span><span><b>1–4</b> ${t('skill')}</span><span><b>Q</b>/<b>E</b> ${t('character')}</span><span><b>←</b> ${t('reorder')}</span><span><b>Esc</b> ${t('close')}</span>
+        <span class="nd-pad">${t('pad')} <b>LB</b>/<b>RB</b> ${t('character')} <b>Ⓐ</b> ${t('place')} <b>Ⓧ</b> ${t('remove')} <b>Ⓨ</b> ${t('fill')} <b>Ⓑ</b> ${t('back')}</span>
       </div>
       <div class="nd-toast"></div>
     </div>`;
@@ -532,16 +706,16 @@ export function createSocketScreen({ bus, world }) {
     const n = info(nodeId);
     if (!n) return { k: 'grey', text: '—' };
     const copies = sk.sockets.filter((s) => s && s.node === nodeId).length;
-    if (copies >= n.limit) return { k: 'limit', text: `⊘ limit ${n.limit}` };
+    if (copies >= n.limit) return { k: 'limit', text: t('⊘ limit {limit}', { limit: n.limit }) };
     if (!sk.sockets.some((s) => s === null)) {
       const up = typeof sys.upgradeIn === 'function' ? sys.upgradeIn(sk.id, nodeId) : null;
-      if (up) return { k: 'upgrade', text: '⇧ better', up }; // fits the 76 px verdict column
-      return { k: 'full', text: '⊘ full' };
+      if (up) return { k: 'upgrade', text: t('⇧ better'), up }; // fits the 76 px verdict column
+      return { k: 'full', text: t('⊘ full') };
     }
     const v = sys.verdictFor(sk.id, nodeId);
-    if (v.state === 'grey') return { k: 'grey', text: '⊘ grey' };
-    if (v.state === 'inert') return { k: 'inert', text: '＋0 inert' };
-    return { k: 'live', text: '◆ live' };
+    if (v.state === 'grey') return { k: 'grey', text: t('⊘ grey') };
+    if (v.state === 'inert') return { k: 'inert', text: t('＋0 inert') };
+    return { k: 'live', text: t('◆ live') };
   }
 
   // Where the auto-fill policy would place `nodeId` (fewest filled live row,
@@ -583,18 +757,18 @@ export function createSocketScreen({ bus, world }) {
 
   function statsLine(sk) {
     const stats = [];
-    stats.push(fmtStat('power', sk.base.power, sk.resolved.power));
-    if (sk.base.cd !== null) stats.push(fmtStat('cd', sk.base.cd, sk.resolved.cd, ' s'));
-    if (sk.base.count !== null) stats.push(fmtStat('count', sk.base.count, sk.resolved.count));
+    stats.push(fmtStat(t('power'), sk.base.power, sk.resolved.power));
+    if (sk.base.cd !== null) stats.push(fmtStat(t('cd'), sk.base.cd, sk.resolved.cd, t(' s')));
+    if (sk.base.count !== null) stats.push(fmtStat(t('count'), sk.base.count, sk.resolved.count));
     if (sk.base.area !== null && sk.resolved.area !== null && sk.resolved.area !== sk.base.area)
-      stats.push(fmtStat('area', sk.base.area, sk.resolved.area, sk.shape === 'melee_arc' ? '°' : ' u'));
+      stats.push(fmtStat(t('area'), sk.base.area, sk.resolved.area, sk.shape === 'melee_arc' ? '°' : t(' u')));
     if (sk.base.range !== null && sk.resolved.range !== null && sk.resolved.range !== sk.base.range)
-      stats.push(fmtStat('range', sk.base.range, sk.resolved.range, ' u'));
-    if (sk.resolved.critBonus > 0) stats.push(fmtStat('crit', '5%', `${Math.round((0.05 + sk.resolved.critBonus) * 100)}%`));
-    if (sk.resonance > 0) stats.push(`resonance ${sk.resonance % 3}/3`);
+      stats.push(fmtStat(t('range'), sk.base.range, sk.resolved.range, t(' u')));
+    if (sk.resolved.critBonus > 0) stats.push(fmtStat(t('crit'), '5%', `${Math.round((0.05 + sk.resolved.critBonus) * 100)}%`));
+    if (sk.resonance > 0) stats.push(t('resonance {n}/3', { n: sk.resonance % 3 }));
     const grey = sk.sockets.filter((s) => s && s.verdict === 'grey').length;
     const inert = sk.sockets.filter((s) => s && s.verdict === 'inert').length;
-    if (grey) stats.push(`<span class="nd-warn">⊘ ${grey} grey</span>`);
+    if (grey) stats.push(`<span class="nd-warn">${t('⊘ {grey} grey', { grey })}</span>`);
     if (inert) stats.push(`<span class="nd-warn">＋0 ×${inert}</span>`);
     return stats.join(' · ');
   }
@@ -617,10 +791,10 @@ export function createSocketScreen({ bus, world }) {
     if (held && !bench.some((b) => b.node === held.node)) held = null;
 
     lockEl.classList.toggle('nd-on', view.combatActive);
-    lockEl.textContent = view.combatActive ? '⊘ combat is live — sockets open between rooms only' : '';
+    lockEl.textContent = view.combatActive ? t('⊘ combat is live — sockets open between rooms only') : '';
     const filled = view.skills.reduce((a, s) => a + s.filled, 0);
     const total = view.skills.length * view.socketCount;
-    totalEl.innerHTML = `socketed <b>${filled}</b> / ${total}`;
+    totalEl.innerHTML = t('socketed <b>{filled}</b> / {total}', { filled, total });
     const canFill = typeof sys.planFill === 'function' && !view.combatActive && sys.planFill().length > 0;
     autoBtn.classList.toggle('nd-off', !canFill);
 
@@ -633,7 +807,7 @@ export function createSocketScreen({ bus, world }) {
       if (!sk) {
         const e = document.createElement('div');
         e.className = 'nd-rowempty';
-        e.textContent = `skill slot ${r + 1} is empty — skills arrive from drafts`;
+        e.textContent = t('skill slot {slot} is empty — skills arrive from drafts', { slot: r + 1 });
         rowsEl.appendChild(e);
         continue;
       }
@@ -647,15 +821,15 @@ export function createSocketScreen({ bus, world }) {
       const vd = held ? rowVerdict(sys, sk, held.node) : null;
       row.innerHTML = `
         <div class="nd-rowhead">
-          <span class="nd-ricon${iconCls}">${hasIcon(sk.id) ? iconHtml(sk.id, { size: 28 }) : esc(def ? def.abbrev : '?')}<span class="nd-rkey">${r + 1}</span></span>
+          <span class="nd-ricon${iconCls}">${hasIcon(sk.id) ? iconHtml(sk.id, { size: 28 }) : esc(skillAbbrev(def))}<span class="nd-rkey">${r + 1}</span></span>
           <span style="min-width:0">
-            <div class="nd-rname">${esc(sk.name)}</div>
-            <div class="nd-rsub">${sk.shape === 'aura' ? 'passive · aura field' : `${esc(sk.archetype)} · ${esc(SHAPE_LABEL[sk.shape] ?? sk.shape)}`}</div>
+            <div class="nd-rname">${esc(t(sk.name))}</div>
+            <div class="nd-rsub">${sk.shape === 'aura' ? t('passive · aura field') : `${esc(word(sk.archetype))} · ${esc(SHAPE_LABEL[sk.shape] ?? sk.shape)}`}</div>
           </span>
         </div>
         <div class="nd-cells"></div>
         <div class="nd-rfill"><span class="nd-n">${sk.filled}</span><span class="nd-of"> / ${view.socketCount}</span>${
-          vd ? `<span class="nd-verd v-${vd.k}">${esc(vd.text)}</span>` : `<span class="nd-verd" style="color:${PALETTE.warmGrey}">${sk.live} live</span>`
+          vd ? `<span class="nd-verd v-${vd.k}">${esc(vd.text)}</span>` : `<span class="nd-verd" style="color:${PALETTE.warmGrey}">${t('{n} live', { n: sk.live })}</span>`
         }</div>
         <div class="nd-rstats">${statsLine(sk)}</div>`;
       const head = row.querySelector('.nd-rowhead');
@@ -694,7 +868,7 @@ export function createSocketScreen({ bus, world }) {
     if (chips.length === 0) {
       const d = document.createElement('div');
       d.className = 'nd-bench-empty';
-      d.textContent = 'nothing on the bench — nodes arrive as clear spoils, from node drafts and from the shop';
+      d.textContent = t('nothing on the bench — nodes arrive as clear spoils, from node drafts and from the shop');
       benchEl.appendChild(d);
     }
     chips.forEach((g, i) => {
@@ -709,7 +883,7 @@ export function createSocketScreen({ bus, world }) {
       chip.dataset.node = g.node;
       chip.innerHTML = `
         <span class="nd-chip-ico">${hasIcon(g.node) ? iconHtml(g.node, { size: 22 }) : esc(NODE_GLYPH[g.node] ?? '?')}</span>
-        <span class="nd-chip-name">${esc(n ? n.name : g.node)}</span>
+        <span class="nd-chip-name">${esc(n ? t(n.name) : g.node)}</span>
         <span class="nd-chip-n">${g.count > 1 ? `×${g.count}` : ''}</span>`;
       chip.addEventListener('mouseenter', () => setFocus({ zone: 'bench', i }));
       chip.addEventListener('click', () => {
@@ -812,7 +986,7 @@ export function createSocketScreen({ bus, world }) {
   function nodeTitle(id, extra = '') {
     const n = info(id);
     if (!n) return '';
-    return `<span style="color:${RARITY_COLOR[n.rarity]}">${esc(NODE_GLYPH[id] ?? '')} ${esc(n.name)}</span><span class="nd-rar" style="color:${RARITY_COLOR[n.rarity]}">${esc(n.rarity)} · ${esc(n.kind)} · limit ${n.limit}/skill</span>${extra}`;
+    return `<span style="color:${RARITY_COLOR[n.rarity]}">${esc(NODE_GLYPH[id] ?? '')} ${esc(t(n.name))}</span><span class="nd-rar" style="color:${RARITY_COLOR[n.rarity]}">${esc(t('{rarity} · {kind} · limit {limit}/skill', { rarity: word(n.rarity), kind: word(n.kind), limit: n.limit }))}</span>${extra}`;
   }
 
   function renderDetail() {
@@ -821,37 +995,37 @@ export function createSocketScreen({ bus, world }) {
     const lines = [];
     let title = '';
     let verdict = '';
-    const handTag = held ? `<span class="nd-hand">▲ IN HAND</span>` : '';
+    const handTag = held ? `<span class="nd-hand">${t('▲ IN HAND')}</span>` : '';
     if (focus.zone === 'head' && view.skills[focus.r]) {
       // PARTY reorder zone.
       const sk = view.skills[focus.r];
-      title = `<span>${esc(sk.name)}</span><span class="nd-rar">key ${focus.r + 1} · row ${focus.r + 1} of ${view.skills.length}</span>`;
-      if (headerInHand === null) lines.push('Enter picks this skill up to REORDER — its sockets travel with it');
-      else if (headerInHand === focus.r) lines.push('picked up — ↑ / ↓ or 1–4 to another skill, Enter there swaps the two rows · Esc drops it');
-      else lines.push(`Enter swaps ${esc(view.skills[headerInHand].name)} (key ${headerInHand + 1}) with ${esc(sk.name)} (key ${focus.r + 1}) — keys follow the new order`);
-      lines.push(esc(viewSeat === 0 ? 'slot order = keys 1–4' : 'slot order = keys 1–4 = the order the AI casts in'));
+      title = `<span>${esc(t(sk.name))}</span><span class="nd-rar">${t('key {key} · row {row} of {rows}', { key: focus.r + 1, row: focus.r + 1, rows: view.skills.length })}</span>`;
+      if (headerInHand === null) lines.push(t('Enter picks this skill up to REORDER — its sockets travel with it'));
+      else if (headerInHand === focus.r) lines.push(t('picked up — ↑ / ↓ or 1–4 to another skill, Enter there swaps the two rows · Esc drops it'));
+      else lines.push(t('Enter swaps {from} (key {fromKey}) with {to} (key {toKey}) — keys follow the new order', { from: esc(t(view.skills[headerInHand].name)), fromKey: headerInHand + 1, to: esc(t(sk.name)), toKey: focus.r + 1 }));
+      lines.push(esc(viewSeat === 0 ? t('slot order = keys 1–4') : t('slot order = keys 1–4 = the order the AI casts in')));
     } else if (focus.zone === 'autoall') {
-      title = '<span>Auto-fill all</span>';
-      lines.push('every character’s bench goes into its own live sockets — the same policy as F, for all four');
+      title = `<span>${t('Auto-fill all')}</span>`;
+      lines.push(t('every character’s bench goes into its own live sockets — the same policy as F, for all four'));
     } else if (focus.zone === 'bench' && chips[focus.i]) {
       const g = chips[focus.i];
       const prov = Object.entries(g.provenance)
-        .map(([k, v]) => `${k}${v > 1 ? ` ×${v}` : ''}`)
+        .map(([k, v]) => `${word(k)}${v > 1 ? ` ×${v}` : ''}`)
         .join(', ');
-      title = (held && held.node === g.node ? handTag : '') + nodeTitle(g.node, `<span class="nd-rar" style="color:${PALETTE.warmGrey}">on the bench ×${g.count} · ${esc(prov)}</span>`);
-      if (g.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(sys.siphonCardLine())}”</span>`);
-      else lines.push(esc(NODE_EFFECT[g.node] ?? ''));
+      title = (held && held.node === g.node ? handTag : '') + nodeTitle(g.node, `<span class="nd-rar" style="color:${PALETTE.warmGrey}">${t('on the bench ×{count} · {from}', { count: g.count, from: esc(prov) })}</span>`);
+      if (g.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(t(sys.siphonCardLine()))}”</span>`);
+      else lines.push(esc(t(NODE_EFFECT[g.node] ?? '')));
       const per = view.skills.map((sk) => {
         const vd = rowVerdict(sys, sk, g.node);
         const cls = vd.k === 'live' || vd.k === 'upgrade' ? 'nd-live' : 'nd-warn';
-        return `${esc(sk.name)} <span class="${cls}">${esc(vd.text)}</span>`;
+        return `${esc(t(sk.name))} <span class="${cls}">${esc(vd.text)}</span>`;
       });
       if (per.length) lines.push(per.join(' · '));
-      verdict = `${sys.kitVerdict(g.node)} — ${held && held.node === g.node ? 'Enter on a socket places it · Esc keeps it on the bench' : 'Enter picks it up'}`;
+      verdict = `${previewText(sys.kitVerdict(g.node))} — ${held && held.node === g.node ? t('Enter on a socket places it · Esc keeps it on the bench') : t('Enter picks it up')}`;
     } else if (focus.zone === 'cells' && view.skills[focus.r]) {
       const sk = view.skills[focus.r];
       const rec = sk.sockets[focus.c];
-      const where = `<span class="nd-rar" style="color:${PALETTE.warmGrey}">${esc(sk.name)} · socket ${focus.c + 1} of ${view.socketCount}</span>`;
+      const where = `<span class="nd-rar" style="color:${PALETTE.warmGrey}">${t('{skill} · socket {socket} of {sockets}', { skill: esc(t(sk.name)), socket: focus.c + 1, sockets: view.socketCount })}</span>`;
       if (held) {
         const p = sys.preview(sk.id, held.node);
         const vd = rowVerdict(sys, sk, held.node);
@@ -859,44 +1033,50 @@ export function createSocketScreen({ bus, world }) {
         const mark = vd.k === 'live' ? '◆' : vd.k === 'upgrade' ? '⇧' : vd.k === 'inert' ? '＋0' : '⊘';
         const why =
           vd.k === 'limit'
-            ? `repeat limit — ${info(held.node).limit} per skill already socketed here`
+            ? t('repeat limit — {limit} per skill already socketed here', { limit: info(held.node).limit })
             : vd.k === 'full' && !rec
               ? DENY_COPY.full
               : p && p.lines
-                ? p.lines.filter((l) => l !== sys.siphonCardLine()).join(' — ')
+                ? p.lines.filter((l) => l !== sys.siphonCardLine()).map(previewText).join(' — ')
                 : '';
         lines.push(`<span class="${vd.k === 'live' || vd.k === 'upgrade' ? 'nd-live' : 'nd-warn'}">${mark}</span> ${esc(why)}`);
         // fix-M4a-r4: a swap says whether it is an upgrade (the node in hand
         // outranks this occupant: a grey / +0 one, or a lower rarity), a
         // sidegrade or a downgrade — words + glyph, never colour alone.
-        const tag = rec ? swapTag(held.node, rec) : '';
-        if (held.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(sys.siphonCardLine())}”</span>`);
-        else if (rec) lines.push(`${tag ? `${esc(tag)} — ` : ''}swaps out ${esc(info(rec.node).name)} (it banks to the bench)`);
+        const swap = rec ? swapTag(held.node, rec) : null;
+        const tag = swap ? swap.text : '';
+        if (held.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(t(sys.siphonCardLine()))}”</span>`);
+        else if (rec) {
+          const out = t('swaps out {node} (it banks to the bench)', { node: esc(t(info(rec.node).name)) });
+          lines.push(tag ? `${esc(tag)} — ${out}` : out);
+        }
         verdict =
           vd.k === 'limit'
-            ? 'refused on this skill — try another row'
+            ? t('refused on this skill — try another row')
             : vd.k === 'grey'
-              ? 'legal here, but it contributes nothing on this skill'
+              ? t('legal here, but it contributes nothing on this skill')
               : rec
-                ? `Enter swaps it in here${tag.startsWith('⇧') ? ' — an upgrade' : ''}`
-                : 'Enter places it here';
+                ? swap && swap.up
+                  ? t('Enter swaps it in here — an upgrade')
+                  : t('Enter swaps it in here')
+                : t('Enter places it here');
       } else if (rec) {
         title = nodeTitle(rec.node, where);
         const p = sys.preview(sk.id, rec.node);
         const mark = rec.verdict === 'live' ? '◆' : rec.verdict === 'inert' ? '＋0' : '⊘';
-        const body = p && p.lines ? p.lines.filter((l) => !/already socketed/.test(l) && l !== sys.siphonCardLine()).join(' — ') : rec.verdict;
+        const body = p && p.lines ? p.lines.filter((l) => !/already socketed/.test(l) && l !== sys.siphonCardLine()).map(previewText).join(' — ') : word(rec.verdict);
         lines.push(`<span class="${rec.verdict === 'live' ? 'nd-live' : 'nd-warn'}">${mark}</span> ${esc(body)}`);
-        if (rec.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(sys.siphonCardLine())}”</span>`);
-        else lines.push(esc(NODE_EFFECT[rec.node] ?? ''));
-        verdict = 'X removes it to the bench · Enter picks it up to move it';
+        if (rec.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(t(sys.siphonCardLine()))}”</span>`);
+        else lines.push(esc(t(NODE_EFFECT[rec.node] ?? '')));
+        verdict = t('X removes it to the bench · Enter picks it up to move it');
       } else {
-        title = `<span>Empty socket</span>${where}`;
-        lines.push(chips.length ? 'pick a bench node (Tab, then Enter) — or F to auto-fill every live socket' : 'the bench is empty — clear spoils, node drafts and the shop fill it');
+        title = `<span>${t('Empty socket')}</span>${where}`;
+        lines.push(chips.length ? t('pick a bench node (Tab, then Enter) — or F to auto-fill every live socket') : t('the bench is empty — clear spoils, node drafts and the shop fill it'));
         lines.push(`<span>${statsLine(sk)}</span>`);
       }
     } else {
-      title = `<span>${viewSeat === 0 ? 'Your build' : `The ${esc(CLASS_NAME[CLASS_OF_SEAT[viewSeat]])}'s build`}</span>`;
-      lines.push('4 skills · 8 sockets each · grey cells socket freely but contribute nothing');
+      title = `<span>${viewSeat === 0 ? t('Your build') : t("The {cls}'s build", { cls: esc(t(CLASS_NAME[CLASS_OF_SEAT[viewSeat]])) })}</span>`;
+      lines.push(t('4 skills · 8 sockets each · grey cells socket freely but contribute nothing'));
     }
     detailEl.innerHTML = `
       <div class="nd-dtitle">${title}</div>
@@ -920,7 +1100,7 @@ export function createSocketScreen({ bus, world }) {
     const sys = sysOk();
     if (!sys || !view) return;
     if (view.combatActive) {
-      toast('⊘ sockets are for between rooms');
+      toast(t('⊘ sockets are for between rooms'));
       return;
     }
     if (focus.zone === 'bench') {
@@ -942,13 +1122,13 @@ export function createSocketScreen({ bus, world }) {
       const r = sys.socket(sk.id, held.node, focus.c, bi >= 0 ? bi : null);
       if (r && !r.denied) {
         held = null;
-        if (r.verdict === 'grey') toast('socketed — grey here: it contributes nothing on this skill');
+        if (r.verdict === 'grey') toast(t('socketed — grey here: it contributes nothing on this skill'));
         else if (r.verdict === 'inert') {
           // A class cell's +0 has its own reason (§25.3); only the Healer's
           // saturated Multiply is "every target already covered".
           const v = sys.verdictFor(sk.id, r.node, r.slot);
           const why = v && typeof v.reason === 'string' && v.reason !== 'saturated' ? v.reason.replace(/^\+0\s*—\s*/, '') : '';
-          toast(why ? `socketed — +0 right now: ${why}` : 'socketed — +0 right now (every target already covered)');
+          toast(why ? t('socketed — +0 right now: {why}', { why: previewText(why) }) : t('socketed — +0 right now (every target already covered)'));
         }
         renderAll();
       }
@@ -973,7 +1153,7 @@ export function createSocketScreen({ bus, world }) {
     if (!view || !view.skills[focus.r]) return;
     if (headerInHand === null) {
       headerInHand = focus.r;
-      toast(`${view.skills[focus.r].name} picked up — ↑ / ↓ to another skill, Enter to swap the rows`);
+      toast(t('{skill} picked up — ↑ / ↓ to another skill, Enter to swap the rows', { skill: t(view.skills[focus.r].name) }));
       renderAll();
       return;
     }
@@ -988,8 +1168,8 @@ export function createSocketScreen({ bus, world }) {
     const run = world.runSystem();
     const r = run && typeof run.reorderLoadout === 'function' ? run.reorderLoadout(viewSeat, from, to) : null;
     if (r && r.denied) toast(`⊘ ${DENY_COPY[r.denied] ?? r.denied}`);
-    else if (r === false) toast('read-only — only your own character');
-    else toast(`rows ${from + 1} ⇄ ${to + 1} — keys follow the new order`);
+    else if (r === false) toast(t('read-only — only your own character'));
+    else toast(t('rows {from} ⇄ {to} — keys follow the new order', { from: from + 1, to: to + 1 }));
     renderAll();
   }
   function autoFillAll() {
@@ -1002,7 +1182,7 @@ export function createSocketScreen({ bus, world }) {
     held = null;
     renderAll();
     const n = Array.isArray(r) ? r.reduce((a, x) => a + (x.socketed ? x.socketed.length : 0), 0) : 0;
-    toast(r === false ? 'read-only — only your own character' : `auto-fill all: ${n} node${n === 1 ? '' : 's'} socketed across the party`);
+    toast(r === false ? t('read-only — only your own character') : tn(n, 'auto-fill all: {n} node socketed across the party', 'auto-fill all: {n} nodes socketed across the party'));
     return r;
   }
 
@@ -1020,12 +1200,21 @@ export function createSocketScreen({ bus, world }) {
   function swapTag(nodeId, rec) {
     const a = info(nodeId);
     const b = info(rec.node);
-    if (!a || !b || rec.node === nodeId) return '';
+    if (!a || !b || rec.node === nodeId) return null;
     const ra = RARITY_RANK[a.rarity] ?? 0;
     const rb = rec.verdict === 'live' ? RARITY_RANK[b.rarity] ?? 0 : -1;
-    if (ra > rb) return rec.verdict === 'live' ? `⇧ upgrade (${b.rarity} → ${a.rarity})` : `⇧ upgrade (replaces a ${rec.verdict === 'grey' ? 'grey' : '+0'} node)`;
-    if (ra === rb) return '⇄ sidegrade';
-    return `⇩ downgrade (${b.rarity} → ${a.rarity})`;
+    if (ra > rb)
+      return {
+        up: true,
+        text:
+          rec.verdict === 'live'
+            ? t('⇧ upgrade ({from} → {to})', { from: word(b.rarity), to: word(a.rarity) })
+            : rec.verdict === 'grey'
+              ? t('⇧ upgrade (replaces a grey node)')
+              : t('⇧ upgrade (replaces a +0 node)'),
+      };
+    if (ra === rb) return { up: false, text: t('⇄ sidegrade') };
+    return { up: false, text: t('⇩ downgrade ({from} → {to})', { from: word(b.rarity), to: word(a.rarity) }) };
   }
 
   function autoFill() {
@@ -1034,7 +1223,7 @@ export function createSocketScreen({ bus, world }) {
     const r = sys.autoFill();
     if (r === false) {
       // Another player's (or, on a guest, the Healer's) build: read-only.
-      toast(viewSeat === 0 ? 'read-only — the Healer sets the sockets' : 'read-only — only your own character');
+      toast(viewSeat === 0 ? t('read-only — the Healer sets the sockets') : t('read-only — only your own character'));
       return r;
     }
     if (r && r.denied) {
@@ -1045,15 +1234,17 @@ export function createSocketScreen({ bus, world }) {
     renderAll();
     if (r && r.pending) {
       // PARTY: a guest's own tab — the host applies it (replicated back).
-      toast('auto-fill sent — your sockets update in a moment');
+      toast(t('auto-fill sent — your sockets update in a moment'));
       return r;
     }
     const n = r && r.socketed ? r.socketed.length : 0;
     const u = r && r.upgraded ? r.upgraded : 0;
     toast(
       n > 0
-        ? `auto-fill socketed ${n} node${n === 1 ? '' : 's'}${u ? ` (${u} upgrade${u === 1 ? '' : 's'} — the replaced node${u === 1 ? ' is' : 's are'} on the bench)` : ''} · ${r.bench} left on the bench`
-        : 'auto-fill: nothing on the bench fills or upgrades a socket'
+        ? u
+          ? `${tn(n, 'auto-fill socketed {n} node', 'auto-fill socketed {n} nodes')} ${tn(u, '({n} upgrade — the replaced node is on the bench)', '({n} upgrades — the replaced nodes are on the bench)')} · ${t('{bench} left on the bench', { bench: r.bench })}`
+          : `${tn(n, 'auto-fill socketed {n} node', 'auto-fill socketed {n} nodes')} · ${t('{bench} left on the bench', { bench: r.bench })}`
+        : t('auto-fill: nothing on the bench fills or upgrades a socket')
     );
     return r;
   }
@@ -1166,7 +1357,7 @@ export function createSocketScreen({ bus, world }) {
     if (!open) return;
     setOpen(false);
     const a = service('app');
-    if (a && typeof a.toast === 'function') a.toast('The party moved on — your node in hand is back on the bench', { tone: 'info', ms: 4200 });
+    if (a && typeof a.toast === 'function') a.toast(t('The party moved on — your node in hand is back on the bench'), { tone: 'info', ms: 4200 });
   });
   // The leave countdown every open socket screen shows (a door held for a
   // socket screen, the shop leaving, a page deadline): its last 10 s.
@@ -1177,7 +1368,7 @@ export function createSocketScreen({ bus, world }) {
   countEl.className = 'nd-count';
   countEl.style.cssText =
     'flex:none;white-space:nowrap;padding:5px 14px;border-radius:10px;' +
-    'background:#3A2A12EE;color:#F4EFE6;font:800 16px/1.2 "Nunito","Trebuchet MS",system-ui,sans-serif;border:1px solid #E8A23D;display:none;';
+    'background:#3A2A12EE;color:#F4EFE6;font:800 16px/1.2 "Nunito","Trebuchet MS",system-ui,var(--i18n-font, sans-serif);border:1px solid #E8A23D;display:none;';
   const subEl = rootEl.querySelector('.nd-sub');
   subEl.after(countEl);
   function leaveIn() {
@@ -1199,7 +1390,8 @@ export function createSocketScreen({ bus, world }) {
   }
   setInterval(() => {
     const l = open ? leaveIn() : null;
-    const text = l ? `${l.what === 'page' ? 'Auto-pick' : 'The party leaves'} in ${Math.max(0, Math.ceil(l.ticks / 60))} s` : '';
+    const secs = l ? Math.max(0, Math.ceil(l.ticks / 60)) : 0;
+    const text = l ? (l.what === 'page' ? t('Auto-pick in {secs} s', { secs }) : t('The party leaves in {secs} s', { secs })) : '';
     if (countEl.textContent !== text) countEl.textContent = text;
     const disp = l ? '' : 'none';
     if (countEl.style.display !== disp) {
@@ -1226,7 +1418,7 @@ export function createSocketScreen({ bus, world }) {
       if (e.repeat) return;
       if (e.code === 'KeyB') {
         const r = setOpen(true);
-        if (r.denied) toast('⊘ sockets are for between rooms');
+        if (r.denied) toast(t('⊘ sockets are for between rooms'));
       }
       return;
     }
@@ -1297,7 +1489,7 @@ export function createSocketScreen({ bus, world }) {
     if (!open) {
       if (i === 8) {
         const r = setOpen(true);
-        if (r.denied) toast('⊘ sockets are for between rooms');
+        if (r.denied) toast(t('⊘ sockets are for between rooms'));
       }
       return;
     }
@@ -1398,7 +1590,7 @@ export function createSocketScreen({ bus, world }) {
   bus.on('node_socketed', (ev) => {
     if (!open) return;
     renderAll();
-    if (ev.verdict === 'grey') toast('grey socket — contributes nothing on this skill');
+    if (ev.verdict === 'grey') toast(t('grey socket — contributes nothing on this skill'));
   });
   bus.on('node_unsocketed', () => open && renderAll());
   // §16: a room starting flips combat_active — the workbench must never be the
@@ -1420,14 +1612,14 @@ export function createSocketScreen({ bus, world }) {
     // Ruling A17: a taken swap releases the replaced skill's nodes.
     if (ev.reward === 'skill' && ev.swap && Array.isArray(ev.released) && ev.released.length > 0) {
       const n = ev.released.length;
-      const was = SKILLS[ev.replaced] ? SKILLS[ev.replaced].name : ev.replaced;
-      swapNote = `${n} node${n === 1 ? '' : 's'} from ${was} back on the bench — F auto-fills them`;
+      const was = SKILLS[ev.replaced] ? t(SKILLS[ev.replaced].name) : ev.replaced;
+      swapNote = tn(n, '{n} node from {skill} back on the bench — F auto-fills them', '{n} nodes from {skill} back on the bench — F auto-fills them', { skill: was });
     }
   });
   bus.on('socket_denied', (ev) => {
     if (!open) return;
     shakeCell(ev.skill, ev.slot);
-    toast(`⊘ ${DENY_COPY[ev.reason] ?? esc(ev.reason)} — refused`);
+    toast(t('⊘ {reason} — refused', { reason: DENY_COPY[ev.reason] ?? esc(ev.reason) }));
   });
 
   // __echoes.cmd bridge (main.js routes these two names here).
@@ -1454,8 +1646,8 @@ export function createSocketScreen({ bus, world }) {
     guestNote.className = 'nt-socket-note';
     guestNote.style.cssText =
       'position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:5;padding:6px 16px;border-radius:10px;' +
-      'background:#221F1BEE;color:#F4EFE6;font:700 16px/1.2 "Nunito","Trebuchet MS",system-ui,sans-serif;border:1px solid #9C918688;display:none;';
-    guestNote.textContent = 'Read-only — the Healer sets the sockets';
+      'background:#221F1BEE;color:#F4EFE6;font:700 16px/1.2 "Nunito","Trebuchet MS",system-ui,var(--i18n-font, sans-serif);border:1px solid #9C918688;display:none;';
+    guestNote.textContent = t('Read-only — the Healer sets the sockets');
     rootEl.appendChild(guestNote);
     // PARTY: a guest's OWN tab is editable (its CMDs go to the host); every
     // other tab is read-only and says whose build it is.
@@ -1473,7 +1665,7 @@ export function createSocketScreen({ bus, world }) {
       }
       const own = guest && viewSeat === ownSeat();
       const cls = CLASS_NAME[CLASS_OF_SEAT[viewSeat]] ?? 'Healer';
-      const text = viewSeat === 0 ? `Read-only — the ${who} sets the sockets` : `Read-only — the ${cls}'s build is its player's`;
+      const text = viewSeat === 0 ? t('Read-only — the {who} sets the sockets', { who: t(who) }) : t("Read-only — the {cls}'s build is its player's", { cls: t(cls) });
       if (guestNote.textContent !== text) guestNote.textContent = text;
       guestNote.style.display = open && guest && !own ? '' : 'none';
     };

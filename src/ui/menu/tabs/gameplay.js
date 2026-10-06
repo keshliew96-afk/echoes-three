@@ -1,4 +1,7 @@
 // Settings ▸ Gameplay (docs/gauntlet/PLAN.md §3.2). Owner: M1.
+//   Language      one of the ten (docs/I18N.md) -> ui.language, held until
+//                 "Apply language", which reloads the game in it (asks first
+//                 while playing)
 //   Screen shake  Off / Reduced / Full  -> gameplay.screenshake 0 / 0.5 / 1
 //                 (camera shake amplitude on kills, stomps and quake landings,
 //                 read live by the scene's shake listener)
@@ -16,6 +19,7 @@
 // thing while the store holds another (fix-M1-r5, MENU-R5-F1: the "Socket my
 // new nodes" line stayed at its boot value all session).
 import { settingsRows } from '../../../app/registry.js';
+import { t, LANGUAGES, LANGUAGE_KEY, getLanguage, applyLanguage } from '../../../i18n/index.js';
 
 export function buildGameplayTab(ctx) {
   const { settings, widgets, app } = ctx;
@@ -25,30 +29,71 @@ export function buildGameplayTab(ctx) {
   el.style.flexDirection = 'column';
   el.style.gap = 'calc(10px * var(--ap-s, 1))';
 
+  // Language (docs/I18N.md): the choice is held until Apply, because a switch
+  // reloads the page so every screen is rebuilt in the new language.
+  const current = getLanguage();
+  let pendingLang = current;
+  const english = (code) => {
+    const l = LANGUAGES.find((x) => x.code === code);
+    return l ? t(l.english) : code;
+  };
+  const language = widgets.select({
+    id: 'ap-gameplay-language',
+    label: t('Language'),
+    options: LANGUAGES.map((l) => ({ value: l.code, label: l.name, note: l.code === current ? english(l.code) : t('{language} · press Apply to switch', { language: english(l.code) }) })),
+    value: current,
+    help: t('The language of every menu, card and message. Switching reloads the game in the new language; a run carries on from its last autosave through Continue.'),
+    onChange: (v) => {
+      pendingLang = v;
+      applyBtn.setDisabled(v === current, t('Already in this language'));
+    },
+  });
+  const applyBtn = widgets.button({
+    id: 'ap-gameplay-language-apply',
+    label: t('Apply language'),
+    disabled: true,
+    reason: t('Already in this language'),
+    help: t('Reload the game in the language picked above.'),
+    onPress: async () => {
+      if (pendingLang === getLanguage()) return;
+      const name = (LANGUAGES.find((x) => x.code === pendingLang) || {}).name || pendingLang;
+      if (app && app.state === 'playing' && typeof app.confirm === 'function') {
+        const ok = await app.confirm({
+          title: t('Switch to {language}?', { language: name }),
+          body: t('The game reloads in the new language. A run carries on from its last autosave (the start of the current room) through Continue; an online game is left.'),
+          confirmLabel: t('Reload now'),
+          cancelLabel: t('Cancel'),
+        });
+        if (!ok) return;
+      }
+      applyLanguage(pendingLang, settings);
+    },
+  });
+
   const shake = widgets.select({
     id: 'ap-gameplay-screenshake',
-    label: 'Screen shake',
+    label: t('Screen shake'),
     options: [
-      { value: 0, label: 'Off', note: 'No camera shake' },
-      { value: 0.5, label: 'Reduced', note: 'Half-strength camera shake' },
-      { value: 1, label: 'Full', note: 'Full camera shake on kills and stomps' },
+      { value: 0, label: t('Off'), note: t('No camera shake') },
+      { value: 0.5, label: t('Reduced'), note: t('Half-strength camera shake') },
+      { value: 1, label: t('Full'), note: t('Full camera shake on kills and stomps') },
     ],
     value: settings.get('gameplay.screenshake'),
-    help: 'How hard the camera shakes on kills, the Stag’s stomps and quake landings. Applies to the next shake.',
+    help: t('How hard the camera shakes on kills, the Stag’s stomps and quake landings. Applies to the next shake.'),
     onChange: (v) => settings.set('gameplay.screenshake', v, { source: 'ui' }),
   });
 
   const autoPause = widgets.toggle({
     id: 'ap-gameplay-autoPause',
-    label: 'Pause when the window loses focus',
+    label: t('Pause when the window loses focus'),
     value: settings.get('gameplay.autoPause'),
-    help: 'Single-player: the game stops while the tab is hidden or another window has focus. An online game keeps running — the shared world cannot pause for one player.',
+    help: t('Single-player: the game stops while the tab is hidden or another window has focus. An online game keeps running — the shared world cannot pause for one player.'),
     onChange: (v) => settings.set('gameplay.autoPause', !!v, { source: 'ui' }),
   });
-  const autoNote = () => (settings.get('gameplay.autoPause') ? 'Single-player only — online games keep running' : 'The game keeps running in the background');
+  const autoNote = () => (settings.get('gameplay.autoPause') ? t('Single-player only — online games keep running') : t('The game keeps running in the background'));
   autoPause.setNote(autoNote());
 
-  el.append(shake.el, autoPause.el);
+  el.append(language.el, applyBtn.el, shake.el, autoPause.el);
 
   // Rows contributed by other keys (registerSettingsRow('gameplay', ...)).
   const extra = document.createElement('div');

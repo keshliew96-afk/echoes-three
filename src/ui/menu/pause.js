@@ -31,6 +31,7 @@ import { service, registerScreen } from '../../app/registry.js';
 import { createHints } from './hints.js';
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
+import { t } from '../../i18n/index.js';
 
 const CSS = `
 .pz-pause .pz-wrap {
@@ -102,20 +103,21 @@ const ROMAN = ['', 'I', 'II', 'III'];
 
 // "Act II · Room 3/8 · Choosing a boon" — where the player is, so a pause that
 // lasted a coffee break still lands them back in context.
+// Getters: read in the player's language.
 const PAGE_WHERE = {
-  draft: 'Choosing a boon',
-  path: 'Choosing a door',
-  shop: 'At the pedlar',
-  end: 'Run over',
-  transit: 'Between levels',
+  get draft() { return t('Choosing a boon'); },
+  get path() { return t('Choosing a door'); },
+  get shop() { return t('At the pedlar'); },
+  get end() { return t('Run over'); },
+  get transit() { return t('Between levels'); },
 };
 const PHASE_WHERE = {
-  combat: 'In the fight',
-  reward: 'Choosing a boon',
-  path: 'Choosing a door',
-  shop: 'At the pedlar',
-  fade: 'Moving on',
-  transit: 'Between levels',
+  get combat() { return t('In the fight'); },
+  get reward() { return t('Choosing a boon'); },
+  get path() { return t('Choosing a door'); },
+  get shop() { return t('At the pedlar'); },
+  get fade() { return t('Moving on'); },
+  get transit() { return t('Between levels'); },
 };
 
 // Injected by main.js's INT-WIRING block (the app shell knows nothing about
@@ -132,16 +134,16 @@ export function createPauseScreen(ctx) {
   el.className = 'pz-pause';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
-  el.setAttribute('aria-label', 'Paused');
+  el.setAttribute('aria-label', t('Paused'));
   el.innerHTML = `
     <div class="pz-veil"></div>
     <div class="pz-wrap">
       <div class="pz-plate ap-plate">
         <div class="pz-head">
           <div class="ap-orn">◆ ◆ ◆</div>
-          <h2 class="ap-h2">Paused</h2>
+          <h2 class="ap-h2">${t('Paused')}</h2>
           <div class="pz-where"></div>
-          <div class="pz-online" hidden>Online — the game keeps running</div>
+          <div class="pz-online" hidden>${t('Online — the game keeps running')}</div>
         </div>
         <div class="pz-items" role="menu"></div>
         <div class="pz-foot"></div>
@@ -152,9 +154,9 @@ export function createPauseScreen(ctx) {
   const itemsEl = el.querySelector('.pz-items');
   const foot = el.querySelector('.pz-foot');
   const hints = createHints(app, [
-    ['move', 'Select'],
-    ['confirm', 'Choose'],
-    ['back', 'Resume'],
+    ['move', t('Select')],
+    ['confirm', t('Choose')],
+    ['back', t('Resume')],
   ]);
   foot.appendChild(hints.el);
 
@@ -211,12 +213,12 @@ export function createPauseScreen(ctx) {
     // summary is built), so it is read from the page, not from the run view.
     if (page === 'end') {
       const r = v && v.phase === 'defeat' ? 'defeat' : v && v.phase === 'victory' ? 'victory' : null;
-      return r ? `Run over · ${r}` : 'Run over';
+      return r === 'defeat' ? t('Run over · defeat') : r === 'victory' ? t('Run over · victory') : t('Run over');
     }
-    if (!v || !v.active) return 'The Camp';
+    if (!v || !v.active) return t('The Camp');
     const bits = [];
-    bits.push(v.actName || `Act ${ROMAN[v.act] || v.act || ''}`.trim());
-    if (v.room) bits.push(`Room ${v.room}/${v.rooms}`);
+    bits.push(v.actName ? t(v.actName) : t('Act {act}', { act: ROMAN[v.act] || v.act || '' }).trim());
+    if (v.room) bits.push(t('Room {room}/{rooms}', { room: v.room, rooms: v.rooms }));
     const w = (page && PAGE_WHERE[page]) || PHASE_WHERE[v.phase] || null;
     if (w) bits.push(w);
     return bits.filter(Boolean).join(' · ');
@@ -263,14 +265,14 @@ export function createPauseScreen(ctx) {
     const svc = service('save');
     const can = svc && typeof svc.canSave === 'function' ? svc.canSave() : { ok: false };
     const ok = await app.confirm({
-      title: save ? 'Save and quit to the title?' : 'Quit to the title?',
+      title: save ? t('Save and quit to the title?') : t('Quit to the title?'),
       body: save
-        ? 'Your run is written to the autosave slot first.'
+        ? t('Your run is written to the autosave slot first.')
         : svc && can.ok
-          ? 'Anything since the last save is lost.'
-          : 'This run is lost.',
-      confirmLabel: save ? 'Save & Quit' : 'Quit',
-      cancelLabel: 'Keep Playing',
+          ? t('Anything since the last save is lost.')
+          : t('This run is lost.'),
+      confirmLabel: save ? t('Save & Quit') : t('Quit'),
+      cancelLabel: t('Keep Playing'),
       danger: !save,
       defaultFocus: 'cancel',
     });
@@ -288,12 +290,12 @@ export function createPauseScreen(ctx) {
     if (busy) return;
     const host = netRole() === 'host';
     const ok = await app.confirm({
-      title: 'Quit to the lobby?',
+      title: t('Quit to the lobby?'),
       body: host
-        ? 'This abandons the campaign for the whole party — everyone returns to camp. Unlocks and records are kept.'
-        : 'This abandons the current campaign and returns you to camp. Unlocks and records are kept.',
-      confirmLabel: 'Quit to Lobby',
-      cancelLabel: 'Keep Playing',
+        ? t('This abandons the campaign for the whole party — everyone returns to camp. Unlocks and records are kept.')
+        : t('This abandons the current campaign and returns you to camp. Unlocks and records are kept.'),
+      confirmLabel: t('Quit to Lobby'),
+      cancelLabel: t('Keep Playing'),
       danger: true,
       defaultFocus: 'cancel',
     });
@@ -313,10 +315,10 @@ export function createPauseScreen(ctx) {
     if (busy) return;
     const role = netRole();
     const ok = await app.confirm({
-      title: 'Leave the session?',
-      body: role === 'host' ? 'Your friends keep playing — another player takes over as host.' : 'You return to the title. Your single-player saves are untouched.',
-      confirmLabel: 'Leave',
-      cancelLabel: 'Stay',
+      title: t('Leave the session?'),
+      body: role === 'host' ? t('Your friends keep playing — another player takes over as host.') : t('You return to the title. Your single-player saves are untouched.'),
+      confirmLabel: t('Leave'),
+      cancelLabel: t('Stay'),
       danger: true,
       defaultFocus: 'cancel',
     });
@@ -336,12 +338,12 @@ export function createPauseScreen(ctx) {
 
   function defs() {
     const list = [];
-    list.push({ id: 'resume', label: 'Resume', primary: true, onPress: resume });
-    list.push({ id: 'settings', label: 'Settings', caption: 'Display, audio, gameplay, controls', onPress: () => manager.push('settings') });
+    list.push({ id: 'resume', label: t('Resume'), primary: true, onPress: resume });
+    list.push({ id: 'settings', label: t('Settings'), caption: t('Display, audio, gameplay, controls'), onPress: () => manager.push('settings') });
 
     const svc = service('save');
-    const canSave = svc && typeof svc.canSave === 'function' ? svc.canSave() : { ok: false, reason: 'Saving is unavailable in this build' };
-    const canLoad = svc && typeof svc.canLoad === 'function' ? svc.canLoad() : { ok: false, reason: 'Loading is unavailable in this build' };
+    const canSave = svc && typeof svc.canSave === 'function' ? svc.canSave() : { ok: false, reason: t('Saving is unavailable in this build') };
+    const canLoad = svc && typeof svc.canLoad === 'function' ? svc.canLoad() : { ok: false, reason: t('Loading is unavailable in this build') };
     const hasAny = (() => {
       try {
         return !!(svc && typeof svc.hasAny === 'function' && svc.hasAny());
@@ -351,16 +353,16 @@ export function createPauseScreen(ctx) {
     })();
     list.push({
       id: 'save',
-      label: 'Save Game',
+      label: t('Save Game'),
       disabled: !(svc && canSave.ok),
-      reason: svc ? canSave.reason || 'You cannot save right now' : 'Saving is unavailable in this build',
+      reason: svc ? canSave.reason || t('You cannot save right now') : t('Saving is unavailable in this build'),
       onPress: () => manager.push('saves', { mode: 'save' }),
     });
     list.push({
       id: 'load',
-      label: 'Load Game',
+      label: t('Load Game'),
       disabled: !(svc && canLoad.ok && hasAny),
-      reason: !svc ? 'Loading is unavailable in this build' : !canLoad.ok ? canLoad.reason : 'No saved games yet',
+      reason: !svc ? t('Loading is unavailable in this build') : !canLoad.ok ? canLoad.reason : t('No saved games yet'),
       onPress: () => manager.push('saves', { mode: 'load' }),
     });
 
@@ -370,24 +372,24 @@ export function createPauseScreen(ctx) {
       const v = readRun();
       const role = netRole();
       if (v && v.active && typeof sources.abandon === 'function' && (!inSession() || role === 'host')) {
-        list.push({ id: 'lobby', label: 'Quit to Lobby', caption: role === 'host' ? 'Abandon the campaign — the party returns to camp' : 'Abandon this campaign — back to camp', danger: true, onPress: quitToLobby });
+        list.push({ id: 'lobby', label: t('Quit to Lobby'), caption: role === 'host' ? t('Abandon the campaign — the party returns to camp') : t('Abandon this campaign — back to camp'), danger: true, onPress: quitToLobby });
       }
     }
     if (inSession()) {
-      list.push({ id: 'leave', label: 'Leave Session', caption: 'Back to the title', danger: true, onPress: leaveSession });
+      list.push({ id: 'leave', label: t('Leave Session'), caption: t('Back to the title'), danger: true, onPress: leaveSession });
       return list;
     }
     if (svc) {
       list.push({
         id: 'savequit',
-        label: 'Save & Quit to Title',
+        label: t('Save & Quit to Title'),
         disabled: !canSave.ok,
-        reason: canSave.reason || 'You cannot save right now',
-        caption: 'Autosave, then the title',
+        reason: canSave.reason || t('You cannot save right now'),
+        caption: t('Autosave, then the title'),
         onPress: () => quit({ save: true }),
       });
     }
-    list.push({ id: 'quit', label: 'Quit to Title', danger: true, caption: svc ? 'Without saving' : '', onPress: () => quit({ save: false }) });
+    list.push({ id: 'quit', label: t('Quit to Title'), danger: true, caption: svc ? t('Without saving') : '', onPress: () => quit({ save: false }) });
     return list;
   }
 

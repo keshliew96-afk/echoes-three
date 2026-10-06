@@ -9,24 +9,25 @@ import { esc } from './style.js';
 import { SKILLS } from '../../sim/skills.js';
 import { service } from '../../app/registry.js'; // M2 NEW-BEST: the save service's run record
 import { levelFor } from '../../data/levels.js';
+import { t } from '../../i18n/index.js';
 
 // Per-act victory line (matches ui/run/transit.js FLAVOUR).
 const WIN_FLAVOUR = {
-  1: 'The Hollow Stag falls. The wood breathes out.',
-  2: 'The Drowned Heron sinks. The water runs clear again.',
-  3: 'The Barrow Wyrm is still. The long night lifts.',
+  1: () => t('The Hollow Stag falls. The wood breathes out.'),
+  2: () => t('The Drowned Heron sinks. The water runs clear again.'),
+  3: () => t('The Barrow Wyrm is still. The long night lifts.'),
 };
 const BOSS_WIN_FLAVOUR = {
-  thornmother: 'The Thornmother falls. The briars let the wood go.',
-  millwheel: 'The Millwheel shatters. The water runs clear again.',
-  lichram: 'The Lich Ram crumbles. The graves close; the long night lifts.',
+  thornmother: () => t('The Thornmother falls. The briars let the wood go.'),
+  millwheel: () => t('The Millwheel shatters. The water runs clear again.'),
+  lichram: () => t('The Lich Ram crumbles. The graves close; the long night lifts.'),
 };
 import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
 import { PALETTE } from '../../data/palette.js';
 import { CLASS_NAME, CLASS_OF_SEAT } from '../../data/classes.js';
 import { iconHtml, hasIcon } from '../hud/icons.js';
 import { portraitCache } from '../hud/portraits.js';
-import { netOwners } from './partystrip.js';
+import { netOwners, ownerLabel } from './partystrip.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 
@@ -131,7 +132,7 @@ export const END_CSS = `
 
 const faceHtml = (classId) => {
   const src = portraitCache()[classId];
-  return src ? `<img alt="" src="${src}" width="30" height="30">` : esc((CLASS_NAME[classId] || '?')[0]);
+  return src ? `<img alt="" src="${src}" width="30" height="30">` : esc((CLASS_NAME[classId] ? t(CLASS_NAME[classId]) : '?')[0]);
 };
 
 // One row per character: [portrait · class (· owner)] [skill chips] [n / 32 nodes] [purse].
@@ -148,36 +149,36 @@ function partyHtml(builds) {
       const skills = (b.skills || []).filter(Boolean);
       const chips = skills.length
         ? skills
-            .map((id) => `<span class="rn-chip" data-skill="${esc(id)}">${hasIcon(id) ? iconHtml(id, { size: 20 }) : ''}${esc(SKILLS[id] ? SKILLS[id].name : id)}</span>`)
+            .map((id) => `<span class="rn-chip" data-skill="${esc(id)}">${hasIcon(id) ? iconHtml(id, { size: 20 }) : ''}${esc(SKILLS[id] ? t(SKILLS[id].name) : id)}</span>`)
             .join('')
-        : '<span class="rn-chip rn-none">no skills</span>';
+        : `<span class="rn-chip rn-none">${esc(t('no skills'))}</span>`;
       // (a network session names who played each character, under the class)
-      const own = owners[b.seat] ? `<span class="rn-pown">${esc(owners[b.seat])}</span>` : '';
+      const own = owners[b.seat] ? `<span class="rn-pown">${esc(ownerLabel(owners[b.seat]))}</span>` : '';
       return `<div class="rn-prow" data-seat="${b.seat}">
-        <div class="rn-pwho"><span class="rn-pface">${faceHtml(classId)}</span><span class="rn-pid"><span class="rn-pname">${esc(CLASS_NAME[classId] ?? classId)}</span>${own}</span></div>
+        <div class="rn-pwho"><span class="rn-pface">${faceHtml(classId)}</span><span class="rn-pid"><span class="rn-pname">${esc(CLASS_NAME[classId] ? t(CLASS_NAME[classId]) : classId)}</span>${own}</span></div>
         <div class="rn-pskills">${chips}</div>
-        <div class="rn-pnodes"><b>${b.filled ?? 0}</b> / ${b.sockets ?? 32} nodes</div>
+        <div class="rn-pnodes">${t('<b>{filled}</b> / {sockets} nodes', { filled: b.filled ?? 0, sockets: b.sockets ?? 32 })}</div>
         <div class="rn-ppurse">${iconHtml('coin', { size: 18 })}<b>${b.purse ?? 0}</b></div>
       </div>`;
     })
     .join('');
-  return `<div class="rn-party-head">THE PARTY</div>${rows}`;
+  return `<div class="rn-party-head">${esc(t('THE PARTY'))}</div>${rows}`;
 }
 
 export function createEndScreen({ run }) {
   const el = document.createElement('div');
   el.className = 'rn-page rn-end';
   el.innerHTML = `
-    <div class="rn-title rn-headline">VICTORY</div>
+    <div class="rn-title rn-headline">${esc(t('VICTORY'))}</div>
     <div class="rn-orn">◆ ◆ ◆</div>
     <div class="rn-sub rn-flavour"></div>
     <div class="rn-summary"></div>
     <div class="rn-party" style="display:none"></div>
     <div class="rn-endfoot">
       <div class="rn-buttons">
-        <div class="rn-btn rn-camp rn-primary rn-focus">Return to Camp</div>
+        <div class="rn-btn rn-camp rn-primary rn-focus">${esc(t('Return to Camp'))}</div>
       </div>
-      <div class="rn-hint"><b>Enter</b> return to camp</div>
+      <div class="rn-hint">${t('<b>Enter</b> return to camp')}</div>
     </div>`;
 
   const headline = el.querySelector('.rn-headline');
@@ -201,20 +202,20 @@ export function createEndScreen({ run }) {
     // ENDLESS (docs/ENDLESS.md): a descent always ends in a fall; its card
     // leads with the depth reached and the profile's depth record.
     const deep = camp && camp.endless ? camp : null;
-    headline.textContent = deep ? 'THE DESCENT ENDS' : win ? (complete ? 'CAMPAIGN COMPLETE' : 'VICTORY') : camp ? 'THE CAMPAIGN ENDS' : 'THE RUN ENDS';
+    headline.textContent = deep ? t('THE DESCENT ENDS') : win ? (complete ? t('CAMPAIGN COMPLETE') : t('VICTORY')) : camp ? t('THE CAMPAIGN ENDS') : t('THE RUN ENDS');
     flavour.textContent = deep
       ? deep.won
-        ? `The campaign was won, and the party went on. The dark took them at Depth ${deep.depth}.`
-        : `The party fell at Depth ${deep.depth}, before the Barrow. The gods applaud.`
+        ? t('The campaign was won, and the party went on. The dark took them at Depth {depth}.', { depth: deep.depth })
+        : t('The party fell at Depth {depth}, before the Barrow. The gods applaud.', { depth: deep.depth })
       : win
       ? complete
-        ? 'The last of the old beasts falls. Every level is clear — the long night is over.'
-        : BOSS_WIN_FLAVOUR[view.actBoss && view.actBoss.kind] ?? WIN_FLAVOUR[view.act] ?? WIN_FLAVOUR[1]
-      : 'The gods applaud.';
+        ? t('The last of the old beasts falls. Every level is clear — the long night is over.')
+        : (BOSS_WIN_FLAVOUR[view.actBoss && view.actBoss.kind] ?? WIN_FLAVOUR[view.act] ?? WIN_FLAVOUR[1])()
+      : t('The gods applaud.');
     {
       const c = run().campaign ? run().campaign() : null;
       const secs = c && c.autoReturnInTicks !== null && c.autoReturnInTicks !== undefined ? Math.ceil(c.autoReturnInTicks / 60) : null;
-      hintEl.innerHTML = secs !== null && win ? `Returning to camp in ${secs} s &nbsp;·&nbsp; <b>Enter</b> return now` : '<b>Enter</b> return to camp';
+      hintEl.innerHTML = secs !== null && win ? t('Returning to camp in {secs} s &nbsp;·&nbsp; <b>Enter</b> return now', { secs }) : t('<b>Enter</b> return to camp');
     }
     if (!s) {
       summaryEl.innerHTML = '';
@@ -231,8 +232,8 @@ export function createEndScreen({ run }) {
       // (CAMPAIGN: matched by seed + length — a campaign's rooms span levels.)
       const same = rec && rec.summary && rec.summary.seed === s.seed && Math.round(rec.summary.timeSec * 60) === s.ticks;
       if (same) {
-        const tail = rec.newBest ? ' · New best!' : rec.rank ? ` · #${rec.rank} on your records` : '';
-        scoreRow = row('SCORE', `${rec.score.toLocaleString()}${tail}`);
+        const score = rec.score.toLocaleString();
+        scoreRow = row(t('SCORE'), rec.newBest ? t('{score} · New best!', { score }) : rec.rank ? t('{score} · #{rank} on your records', { score, rank: rec.rank }) : score);
       }
     }
     // @gnt:M2 NEW-BEST end
@@ -245,17 +246,18 @@ export function createEndScreen({ run }) {
       const sv = service('save');
       const rec = sv && typeof sv.lastRecord === 'function' ? sv.lastRecord() : null;
       const e = rec && rec.endless && rec.summary && rec.summary.seed === s.seed ? rec.endless : null;
-      pairs.push(['DEPTH REACHED', `${deep.depth} · ${levelFor(deep.level).name}${e && e.newDepthRecord ? ' · New record!' : ''}`]);
-      pairs.push(['DEEPEST EVER', String(e ? Math.max(e.depth, e.prevBestDepth) : deep.depth)]);
-      pairs.push(['DEPTHS CLEARED', String(deep.depthsCleared ?? deep.levelsCleared)]);
-      pairs.push(['CAMPAIGN', deep.won ? 'won' : 'not won']);
+      const land = t(levelFor(deep.level).name);
+      pairs.push([t('DEPTH REACHED'), e && e.newDepthRecord ? t('{depth} · {land} · New record!', { depth: deep.depth, land }) : `${deep.depth} · ${land}`]);
+      pairs.push([t('DEEPEST EVER'), String(e ? Math.max(e.depth, e.prevBestDepth) : deep.depth)]);
+      pairs.push([t('DEPTHS CLEARED'), String(deep.depthsCleared ?? deep.levelsCleared)]);
+      pairs.push([t('CAMPAIGN'), deep.won ? t('won') : t('not won')]);
       const n = (camp.levels || []).reduce((acc, l) => acc + (l.rooms || 0), 0);
       rooms = [String(n)];
     } else if (camp) {
       const span = CAMPAIGN_LEVELS.filter((l) => l >= camp.startLevel);
       const n = (camp.levels || []).reduce((acc, l) => acc + (l.rooms || 0), 0);
-      pairs.push(['LEVELS CLEARED', `${camp.levelsCleared} / ${span.length}`]);
-      pairs.push([complete ? 'FINAL LEVEL' : 'FURTHEST LEVEL', `${ROMAN[camp.level] ?? camp.level} · ${levelFor(camp.level).name}`]);
+      pairs.push([t('LEVELS CLEARED'), `${camp.levelsCleared} / ${span.length}`]);
+      pairs.push([complete ? t('FINAL LEVEL') : t('FURTHEST LEVEL'), `${ROMAN[camp.level] ?? camp.level} · ${t(levelFor(camp.level).name)}`]);
       rooms = [`${n} / ${8 * (camp.levels || []).length}`];
     }
     // PARTY (BUILD_BRIEF §25.9 "the end card shows the four builds"): the
@@ -266,9 +268,9 @@ export function createEndScreen({ run }) {
     const nodesHeld = builds
       ? builds.reduce((n, b) => n + (b.filled || 0) + (Number.isFinite(b.bench) ? b.bench : 0), 0)
       : s.nodes.bench.length + s.nodes.socketed.length;
-    pairs.push(['ROOMS CLEARED', rooms[0]], ['GLINT EARNED', String(s.glint)]);
-    pairs.push(['SKILLS CARRIED', String(skillsHeld)], ['NODES HELD', String(nodesHeld)]);
-    pairs.push(['RUN SEED', String(s.seed ?? '—')], [deep ? 'DESCENT LENGTH' : camp ? 'CAMPAIGN LENGTH' : 'RUN LENGTH', `${Math.round(s.ticks / 60)} s`]);
+    pairs.push([t('ROOMS CLEARED'), rooms[0]], [t('GLINT EARNED'), String(s.glint)]);
+    pairs.push([t('SKILLS CARRIED'), String(skillsHeld)], [t('NODES HELD'), String(nodesHeld)]);
+    pairs.push([t('RUN SEED'), String(s.seed ?? '—')], [deep ? t('DESCENT LENGTH') : camp ? t('CAMPAIGN LENGTH') : t('RUN LENGTH'), t('{secs} s', { secs: Math.round(s.ticks / 60) })]);
     summaryEl.innerHTML =
       (scoreRow ? `<div class="rn-hero">${scoreRow}</div>` : '') +
       pairs.map(([k, v], i) => (i % 2 ? row(k, v).replace('class="rn-k"', 'class="rn-k rn-k2"') : row(k, v))).join('');
