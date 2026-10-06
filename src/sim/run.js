@@ -107,6 +107,13 @@ const cloneData = (v) => (v === null || v === undefined ? v : structuredClone(v)
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
+// TUTORIAL (docs/TUTORIAL.md): the guided room's layout (Level 1's clearing
+// with a dewfont) and how much gentler it is than a real room 1.
+export const TUTORIAL_LAYOUT = 2;
+export function tutorialDiff(d) {
+  return Object.freeze({ ...d, budget: d.budget * 0.5, hpMul: d.hpMul * 0.6, dmgMul: d.dmgMul * 0.4, eliteChance: 0 });
+}
+
 export const RUN = Object.freeze({
   rooms: 8, // §2
   combatRooms: 6, // rooms 1-6
@@ -293,14 +300,25 @@ export function createRunSystem({
     const level = isLevel(o.level ?? o.act) ? Number(o.level ?? o.act) : FIRST_LEVEL;
     // ENDLESS: an endless descent always sets out from the first level.
     const endless = !!o.endless;
-    openRun({ act: endless ? FIRST_LEVEL : level, challenge: o.challenge, mode: 'campaign', harness: !!o.harness, endless, boons: o.boons });
+    // TUTORIAL (docs/TUTORIAL.md): the guided first room — always Level 1,
+    // never endless, no boons.
+    const tutorial = !!o.tutorial && !endless;
+    openRun({
+      act: endless || tutorial ? FIRST_LEVEL : level,
+      challenge: o.challenge,
+      mode: 'campaign',
+      harness: !!o.harness,
+      endless,
+      boons: tutorial ? null : o.boons,
+      tutorial,
+    });
     if (o.harness && typeof o.boss === 'string') bossPick = o.boss;
     if (o.depart) beginTransit('depart', null, act, getTick());
     else enterRoom(1);
     return view();
   }
 
-  function openRun({ act: a, challenge: c, mode, harness, endless = false, boons: rawBoons = null }) {
+  function openRun({ act: a, challenge: c, mode, harness, endless = false, boons: rawBoons = null, tutorial = false }) {
     // UNLOCKS: what the player equipped between runs (campaigns only). null =
     // nothing picked, and then nothing below differs from a plain run.
     const boons = mode === 'campaign' ? sanitizeBoons(rawBoons) : null;
@@ -338,6 +356,10 @@ export function createRunSystem({
       // final level was cleared (the campaign itself is won).
       ...(endless && mode === 'campaign' ? { endless: true, won: false } : {}),
       ...(boons ? { boons } : {}),
+      // TUTORIAL: present only on the guided first room. `hold` keeps the
+      // waves back until the player has moved, attacked, dodged and used the
+      // spring (cmd('tutorialRelease') from the coach, src/ui/tutorial/).
+      ...(tutorial && mode === 'campaign' ? { tutorial: { hold: true } } : {}),
     };
     // PARTY: every ally back to its starting loadout, empty build, purse 0;
     // the party stream seeded from the run SEED (no gameplay draw).
@@ -352,7 +374,7 @@ export function createRunSystem({
     }
     if (pages) pages.reset();
     // RELICS: on for campaigns, off for the legacy single-level run (goldens).
-    relics.reset(frame.seed, mode === 'campaign' && relicsDefault);
+    relics.reset(frame.seed, mode === 'campaign' && relicsDefault && !tutorial);
     // Payload unchanged since v0.5.x (the goldens hash every event).
     events.emit(getTick(), 'run_start', {
       seed: frame.seed,
@@ -362,6 +384,8 @@ export function createRunSystem({
       act,
       actName: levelFor(act).name,
       challenge,
+      // TUTORIAL: key present only on the guided room (golden payloads unchanged).
+      ...(tutorial && mode === 'campaign' ? { tutorial: true } : {}),
     });
     // PARTY: an explicit harness grant (?partygrant) REPLACES a Level-N
     // start's ally grant (never stacks, BUILD_BRIEF §25.10); `max` = the
@@ -510,6 +534,9 @@ export function createRunSystem({
     // RELICS: a cursed room rolls its waves with the curse's numbers.
     const roomCurse = combatRoom ? relics.curseFor(n) : null;
     let diff = roomCurse ? cursedDiff(baseDiff, roomCurse) : baseDiff;
+    // TUTORIAL: a gentle room (half the threat, softer and weaker beasts, no
+    // elites) so a first-time player learns rather than dies.
+    if (combatRoom && tutorialOn()) diff = tutorialDiff(diff);
     // RELICS: each major curse the run holds reshapes every combat room.
     if (combatRoom) for (const m of relics.majorCurses()) diff = cursedDiff(diff, m);
     // UNLOCKS: each vow the party wears curses every combat room.
@@ -517,7 +544,9 @@ export function createRunSystem({
     if (vows) for (const v of vows) diff = cursedDiff(diff, v);
     if (combatRoom) waves.planRoom(mode, { act, room: n, challenge, level, diff });
     // Layout AFTER the schedule (one fixed roll order per room).
-    const layoutId = rollLayout(n, mode);
+    // TUTORIAL: always the clearing with a dewfont (the spring the coach
+    // sends the player to); no layout draw.
+    const layoutId = tutorialOn() ? TUTORIAL_LAYOUT : rollLayout(n, mode);
     // A slice-2 layout's own spawn ring: move the rolled units onto it.
     const ring = combatRoom ? LAYOUTS[layoutId]?.spawns : null;
     if (ring) waves.relocateSpawns(ring);
@@ -555,7 +584,8 @@ export function createRunSystem({
     });
     if (combatRoom) {
       phase = 'combat'; // §13 step 7: next room's first tick, combat_active := true
-      waves.beginRoom();
+      // TUTORIAL: the waves wait for the coach's release.
+      if (!(tutorialOn() && campaign.tutorial.hold)) waves.beginRoom();
       relics.onRoomEnter(n, mode);
     } else if (mode === 'shop') {
       phase = 'shop';
@@ -937,6 +967,11 @@ export function createRunSystem({
     const next = path.nextRoom;
     if (opt.curse) relics.takeCurse(opt.curse, next);
     path = null;
+    // TUTORIAL: the door is the last lesson — back to camp.
+    if (tutorialOn()) {
+      endTutorial('done');
+      return { nextRoom: next, reward: opt.reward, win: opt.win, tutorial: 'done' };
+    }
     beginFade(next);
     return { nextRoom: next, reward: opt.reward, win: opt.win, ...(opt.curse ? { curse: opt.curse } : {}), ...(opt.major ? { major: true } : {}) };
   }
@@ -1237,10 +1272,42 @@ export function createRunSystem({
     return view();
   }
 
+  // ------------------------------------------------ tutorial (TUTORIAL.md) --
+  // The guided first room: Level 1 room 1 at tutorialDiff, the waves held
+  // until tutorialRelease(), relics off, and the door choice ends it. It ends
+  // as run_end { result: 'tutorial' } (the profile records nothing) and goes
+  // straight home: return_to_camp { reason: 'tutorial' }.
+  function tutorialOn() {
+    return !!(active && campaign && campaign.tutorial);
+  }
+  function tutorialRelease() {
+    if (!tutorialOn() || !campaign.tutorial.hold) return null;
+    campaign.tutorial.hold = false;
+    if (phase === 'combat' && roomIndex === 1) waves.beginRoom();
+    events.emit(getTick(), 'tutorial_release', { room: roomIndex });
+    return { released: true };
+  }
+  function endTutorial(reason = 'done') {
+    if (!tutorialOn()) return null;
+    const tick = getTick();
+    events.emit(tick, 'tutorial_end', { reason });
+    endRun('tutorial');
+    phase = 'idle';
+    autoReturnTick = null;
+    const leaked = registry.all().filter((e) => e.faction === 'hostile').length;
+    waves.stop('return_to_camp');
+    boss.despawn();
+    enemies.reset();
+    events.emit(tick, 'return_to_camp', { enemies: leaked, reason: 'tutorial' });
+    return { tutorial: reason };
+  }
+
   // Quit to Lobby (pause menu, confirmed): the campaign is abandoned — the
   // records count it — and the world returns to camp with no end card.
   function abandonRun(reason = 'quit') {
     if (!active) return null;
+    // TUTORIAL: leaving the guided room is never a counted run.
+    if (tutorialOn()) return endTutorial(typeof reason === 'string' ? reason : 'quit');
     const tick = getTick();
     const s = endRun('abandoned');
     phase = 'idle';
@@ -1277,6 +1344,7 @@ export function createRunSystem({
       index: c.index,
       next: nextOf(c, c.level),
       ...(c.endless ? { endless: true, depth: c.index, won: !!c.won } : {}),
+      ...(c.tutorial ? { tutorial: { hold: !!c.tutorial.hold } } : {}),
       levels: cloneData(c.levels),
       levelsCleared: c.levels.filter((l) => l.cleared).length,
       clearedAt: c.clearedAt,
@@ -1511,7 +1579,7 @@ export function createRunSystem({
     // is up, so the level (and a fallen party) is what the card sits over.
     // The loadout reset (run_wiped) happens with the return to camp. A Quit
     // to Lobby has no card and resets at once.
-    if (result === 'abandoned') wipeState({ silent: false });
+    if (result === 'abandoned' || result === 'tutorial') wipeState({ silent: false });
     else endWorld();
     phase = result; // 'victory' | 'defeat'
     return summary;
@@ -1671,6 +1739,11 @@ export function createRunSystem({
   // rule). The ally block owns the predicate and emits `defeat`.
   function onDefeat() {
     if (!active) return;
+    // TUTORIAL: a fallen party just goes home (no defeat card, no record).
+    if (tutorialOn()) {
+      endTutorial('defeat');
+      return;
+    }
     endRun('defeat');
   }
 
@@ -1693,6 +1766,8 @@ export function createRunSystem({
       ...(active && roomIndex >= 6 ? { actBoss: { kind: currentBoss().kind, name: currentBoss().name } } : {}),
       // ENDLESS: present only on an endless descent (hash-stable view).
       ...(endlessDepth() ? { endless: { depth: endlessDepth(), won: !!campaign.won } } : {}),
+      // TUTORIAL: present only in the guided first room (hash-stable view).
+      ...(tutorialOn() ? { tutorial: { hold: !!campaign.tutorial.hold } } : {}),
       layout: layout ? { ...layout } : null,
       mode: frame && roomIndex ? frame.modes[roomIndex - 1] : null,
       wallet,
@@ -1792,6 +1867,10 @@ export function createRunSystem({
         return campaignAdvance(args[0] ?? 'skip');
       case 'abandonRun':
         return abandonRun(args[0] ?? 'quit');
+      case 'tutorialRelease':
+        return tutorialRelease();
+      case 'endTutorial':
+        return endTutorial(args[0] ?? 'skip');
       case 'campaignState':
         return campaignView();
       case 'campaignRules':
@@ -2160,6 +2239,8 @@ export function createRunSystem({
     startCampaign,
     campaignAdvance,
     abandonRun,
+    tutorialRelease,
+    endTutorial,
     campaign: campaignView,
     campaignRules,
     endRun,

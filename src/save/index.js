@@ -1021,7 +1021,7 @@ export function createSaveSystem({
     tracker.runKillBase = world.stats.kills;
     tracker.levelKillBase = world.stats.kills;
     tracker.levelKills = [];
-    if (Number.isFinite(ev.act)) {
+    if (Number.isFinite(ev.act) && !ev.tutorial) {
       profileStore.noteRunStart(ev.act);
       profileStore.noteLevelReached(ev.act);
     }
@@ -1042,6 +1042,8 @@ export function createSaveSystem({
   });
   bus.on('run_end', (ev) => {
     if (probing) return;
+    // TUTORIAL (docs/TUTORIAL.md): the guided room is not a run — no record, no Embers.
+    if (ev && ev.result === 'tutorial') return;
     const run = world.runSystem();
     const s = run.view().summary ?? null;
     const kills = Math.max(0, world.stats.kills - tracker.runKillBase);

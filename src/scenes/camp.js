@@ -646,13 +646,21 @@ export function createCampScene(stage, toggles, ctx) {
     return beginLevel(harness ?? FIRST_LEVEL, { harness: harness !== null, via: 'portal' });
   }
 
-  function beginLevel(level, { harness = false, via = 'portal', endless = false } = {}) {
+  function beginLevel(level, { harness = false, via = 'portal', endless = false, tutorial = false } = {}) {
     if (!canBegin()) return false;
-    begin = { pressedAt: performance.now(), started: false, level, act: level, harness, via, endless };
+    begin = { pressedAt: performance.now(), started: false, level, act: level, harness, via, endless, tutorial };
     fade.classList.add('cp-on');
     prompt.classList.remove('cp-on');
     if (tablePrompt) tablePrompt.classList.remove('cg-on');
     return true;
+  }
+
+  // TUTORIAL (docs/TUTORIAL.md): the guided first room, from anywhere in
+  // camp (the first New Game, Settings ▸ Gameplay ▸ Play the tutorial).
+  // Single-player only: a network session never starts it.
+  function beginTutorial(via = 'cmd') {
+    if (!canBegin() || picking || inSession()) return false;
+    return beginLevel(FIRST_LEVEL, { harness: false, via, tutorial: true });
   }
 
   // The Level Select (app screen 'levels', src/ui/run/levels.js).
@@ -774,8 +782,16 @@ export function createCampScene(stage, toggles, ctx) {
     const level = isLevel(begin.level) ? begin.level : FIRST_LEVEL;
     const ready = arena.levelStatus ? arena.levelStatus(level).ready : true;
     const depart = level !== FIRST_LEVEL || !ready;
-    const boons = equippedBoons(!!begin.harness);
-    world.runSystem().startCampaign({ level, challenge, depart, harness: !!begin.harness, ...(begin.endless ? { endless: true } : {}), ...(boons ? { boons } : {}) });
+    const boons = begin.tutorial ? null : equippedBoons(!!begin.harness);
+    world.runSystem().startCampaign({
+      level,
+      challenge: begin.tutorial ? 'standard' : challenge,
+      depart,
+      harness: !!begin.harness,
+      ...(begin.endless ? { endless: true } : {}),
+      ...(begin.tutorial ? { tutorial: true } : {}),
+      ...(boons ? { boons } : {}),
+    });
     begin.started = true;
     begin.startedAt = performance.now();
     lastBegin = {
@@ -787,6 +803,7 @@ export function createCampScene(stage, toggles, ctx) {
       ready,
       harness: !!begin.harness,
       endless: !!begin.endless,
+      tutorial: !!begin.tutorial,
       challenge,
       boons,
       pressedAt: Math.round(begin.pressedAt),
@@ -1158,6 +1175,8 @@ export function createCampScene(stage, toggles, ctx) {
         return chooseLevel(args[0], 'cmd');
       case 'campClasses':
         return openClasses('cmd');
+      case 'campTutorial':
+        return beginTutorial(args[0] || 'cmd');
       // @gnt:CAMPAIGN CAMP-CMD end
       // @gnt:M5b CAMP-CMD begin (followSeat)
       // Network play: install (fn(alpha) -> { x, z, aim } | null) or clear

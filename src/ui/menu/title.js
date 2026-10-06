@@ -136,7 +136,10 @@ export function createTitleScreen(ctx) {
     } catch {
       impact = null;
     }
-    if (!impact || !impact.runs || !impact.runs.length) return app.newGame();
+    // TUTORIAL (docs/TUTORIAL.md): the first New Game offers the guided room.
+    const tut = service('tutorial');
+    const startGame = () => (tut && typeof tut.offerOnNewGame === 'function' ? tut.offerOnNewGame(() => app.newGame()) : app.newGame());
+    if (!impact || !impact.runs || !impact.runs.length) return startGame();
     const where = (m) => slotCaption(m);
     let body;
     const lost = impact.replaced;
@@ -168,7 +171,7 @@ export function createTitleScreen(ctx) {
       asking = false;
     }
     if (!ok) return false;
-    return app.newGame();
+    return startGame();
   }
 
   function items() {
