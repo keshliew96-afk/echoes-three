@@ -197,10 +197,23 @@ export function createBanner() {
       const hp = ws ? Math.max(0, Math.ceil(ws.hp)) : 0;
       const maxHp = ws ? ws.maxHp : 150;
       const left = room.defendTicksLeft ?? 0;
-      const key = `d|${hp}|${maxHp}|${Math.ceil(left / TICK_HZ)}|${room.softFailed}`;
+      // v0.5.227 (Kesh: "the building reach 0 hp, but we still can play"):
+      // a lost Waystone is the §11 SOFT-FAIL — the room's reward is forfeited
+      // and the rest of the schedule must be cleared. The plate now says so
+      // and counts what is left instead of a dead 0/150 and a timer.
+      const alive = (room.aliveEnemies ?? 0) + (room.pendingSpawns ?? 0);
+      const key = `d|${hp}|${maxHp}|${Math.ceil(left / TICK_HZ)}|${room.softFailed}|${room.softFailed ? alive : ''}`;
       if (key === lastKey) return changed;
       lastKey = key;
-      label.textContent = room.softFailed ? t('WAYSTONE LOST') : t('WAYSTONE');
+      if (room.softFailed) {
+        label.textContent = t('WAYSTONE LOST · NO REWARD');
+        showBar(PALETTE.hearthAmber, mix(PALETTE.hearthAmber, PALETTE.parchment, 0.45), 0);
+        num.textContent = t('{alive} LEFT', { alive });
+        num.className = 'hud-bn-label hud-bn-sub';
+        timer.textContent = '';
+        return true;
+      }
+      label.textContent = t('WAYSTONE');
       showBar(PALETTE.hearthAmber, mix(PALETTE.hearthAmber, PALETTE.parchment, 0.45), maxHp > 0 ? hp / maxHp : 0);
       num.textContent = `${hp}/${maxHp}`;
       num.className = 'hud-bn-num';

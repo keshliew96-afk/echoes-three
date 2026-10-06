@@ -1340,6 +1340,13 @@ export function createSocketScreen({ bus, world }) {
     return { open };
   }
   let guestSeatShown = false;
+  // CAMP FIXES (v0.5.227): B (or the pad's View) opens on the character the
+  // player controls — the class chosen in class select, a co-op seat — not
+  // on the Healer's tab. The reward chains keep opening on their own card.
+  function openOwn() {
+    if (!open) viewSeat = ownSeat();
+    return setOpen(true);
+  }
   // PARTY (BUILD_BRIEF §25.7): in a session the host learns which socket
   // screens are open — a committed door waits <= 8 s for them.
   function reportScreen(on) {
@@ -1417,7 +1424,7 @@ export function createSocketScreen({ bus, world }) {
     if (!open) {
       if (e.repeat) return;
       if (e.code === 'KeyB') {
-        const r = setOpen(true);
+        const r = openOwn();
         if (r.denied) toast(t('⊘ sockets are for between rooms'));
       }
       return;
@@ -1488,7 +1495,7 @@ export function createSocketScreen({ bus, world }) {
     if (padLog.length > 30) padLog.shift();
     if (!open) {
       if (i === 8) {
-        const r = setOpen(true);
+        const r = openOwn();
         if (r.denied) toast(t('⊘ sockets are for between rooms'));
       }
       return;

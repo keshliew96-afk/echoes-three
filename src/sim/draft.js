@@ -42,8 +42,8 @@ import { SKILLS, STARTING_SKILLS, HEALER_SKILL_IDS } from './skills.js';
 import { NODES, SHARED_NODE_IDS } from './nodes.js';
 
 // §16 "Skill pool = draftable healer skills − owned": every authored healer
-// skill (17 after §23.3) minus the 2 the Healer starts with = 15. Sorted ascending id (the §16
-// draw order).
+// skill (17 after §23.3) minus the ones the Healer starts with (none since
+// v0.5.227, so all 17). Sorted ascending id (the §16 draw order).
 export const DRAFTABLE_SKILL_IDS = Object.freeze(
   HEALER_SKILL_IDS.filter((id) => !STARTING_SKILLS.includes(id))
 );

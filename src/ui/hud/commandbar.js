@@ -811,7 +811,18 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       const s = skillEls[i];
       const d = slots[i];
       if (!d) {
-        s.slot.style.display = 'none';
+        // v0.5.227: every seat starts with empty slots — draw them as the
+        // Healer's empty tiles (dashed frame, the key, a dot), never a gap.
+        s.slot.style.display = '';
+        s.slot.classList.add('is-empty');
+        s.slot.classList.remove('is-passive', 'is-grey');
+        if (s.pips && s.pipSig !== 'guest') {
+          s.pips.style.visibility = 'hidden';
+          s.pipSig = 'guest';
+          s.sockets = null;
+        }
+        setIcon(s, null, '·');
+        paintCooldown(s, 0, 0);
         continue;
       }
       s.slot.style.display = '';

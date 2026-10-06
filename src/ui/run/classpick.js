@@ -85,7 +85,7 @@ function wornKit(cls) {
 
 function startSkills(cls, kit) {
   const ids = kit && Array.isArray(kit.skills) ? kit.skills : cls === 'healer' ? STARTING_SKILLS : STARTING_LOADOUT[cls] || [];
-  return ids.map((id) => (SKILLS[id] ? t(SKILLS[id].name) : id));
+  return ids.filter(Boolean).map((id) => (SKILLS[id] ? t(SKILLS[id].name) : id));
 }
 
 export function createClassesScreen(ctx) {
@@ -142,7 +142,7 @@ export function createClassesScreen(ctx) {
         `<div class="cs-name">${esc(t(CLASS_NAME[cls]))}</div>` +
         `<div class="cs-role">${esc(ROLE[cls]())}</div>` +
         `<div class="cs-stats"><span>${t('Health <b>{hp}</b>', { hp: st.maxHp })}</span><span>${t('Speed <b>{speed}</b>', { speed: st.moveSpeed })}</span></div>` +
-        `<div class="cs-kit"><h4>${esc(kit ? t('KIT · {name}', { name: t(kit.name).toUpperCase() }) : t('STARTS WITH'))}</h4>${skills.map(esc).join(' · ')}</div>` +
+        `<div class="cs-kit"><h4>${esc(kit ? t('KIT · {name}', { name: t(kit.name).toUpperCase() }) : t('STARTS WITH'))}</h4>${skills.length ? skills.map(esc).join(' · ') : esc(t('Basic attack and dodge. Skills come from wave rewards.'))}</div>` +
         `<div class="cs-foot">${esc(cls === on ? t('✓ Playing') : t('Play'))}</div>`;
       b.setAttribute('aria-label', b.textContent.replace(/\s+/g, ' ').trim());
     });

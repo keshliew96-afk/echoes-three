@@ -32,12 +32,21 @@ export const CLASS_SKILLS = Object.freeze({
   archer: Object.freeze(['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova', 'vault_shot', 'pinning_arrow', 'rain_of_arrows', 'kestrel_watch']),
 });
 
-// The §7 kits = the starting loadouts, in kit (= slot = key) order.
-export const STARTING_LOADOUT = Object.freeze({
+// The §7 kits, in kit (= slot = key) order. Since v0.5.227 they are no
+// longer anyone's starting loadout (CAMP FIXES, Kesh 2026-10-06: "remove any
+// starting skill ... all skill need to get from wave reward"); they stay as
+// the class's reference kit (render warm-up, the AI range rule's examples).
+export const CLASS_BASE_KIT = Object.freeze({
   tank: Object.freeze(['heavy_slam', 'brutal_cleave', 'ground_crack', 'whirling_guard']),
   swordsman: Object.freeze(['flurry', 'lunge_strike', 'blade_storm', 'caltrops']),
   archer: Object.freeze(['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova']),
 });
+
+// Every class starts a run with its four skill slots EMPTY (v0.5.227): skills
+// come only from wave rewards (or an equipped Unlocks kit). The basic attack
+// and the dodge are not skills and stay.
+const EMPTY_KIT = Object.freeze([null, null, null, null]);
+export const STARTING_LOADOUT = Object.freeze({ tank: EMPTY_KIT, swordsman: EMPTY_KIT, archer: EMPTY_KIT });
 
 // §25.3 class nodes (6 per class, all techniques) — the rows live in
 // sim/nodes.js NODES (cls-tagged).

@@ -2078,6 +2078,11 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Basic attack and dodge. Skills come from wave rewards.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "BC": {
   "files": [
    "src/sim/allies.js"
@@ -2226,6 +2231,12 @@
   ]
  },
  "Begin with Dewfall and Mending Tide: healing pools and a sweeping mend.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin with Mending Bolt and Lantern Flurry: three lantern darts that hit back.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -7946,7 +7957,7 @@
    "src/ui/menu/mpmenu.js"
   ]
  },
- "The Archer begins with Pinning Arrow, Rain of Arrows and Kestrel Watch.": {
+ "The Archer begins with Piercing Shot, Pinning Arrow, Rain of Arrows and Kestrel Watch.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -8508,13 +8519,13 @@
   ],
   "data": true
  },
- "The Swordsman begins with Fox Step, Riposte and Crescent Finisher.": {
+ "The Swordsman begins with Flurry, Fox Step, Riposte and Crescent Finisher.": {
   "files": [
    "src/data/unlocks.js"
   ],
   "data": true
  },
- "The Tank begins with Shield Wall, Taunting Roar and Iron Stance.": {
+ "The Tank begins with Heavy Slam, Shield Wall, Taunting Roar and Iron Stance.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -8784,12 +8795,6 @@
   ],
   "data": true
  },
- "Trade Swift Mend for Lantern Flurry: three lantern darts that hit back.": {
-  "files": [
-   "src/data/unlocks.js"
-  ],
-  "data": true
- },
  "Traditional Chinese": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
@@ -9023,7 +9028,7 @@
    "src/ui/hud/banner.js"
   ]
  },
- "WAYSTONE LOST": {
+ "WAYSTONE LOST · NO REWARD": {
   "files": [
    "src/ui/hud/banner.js"
   ]

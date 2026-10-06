@@ -833,6 +833,9 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // `{ tick, type, ...payload }`, so the reward's kind cannot live on `type`
   // without erasing the event's own name — see the note in sim/run.js.
   bus.on('draft_taken', (ev) => {
+    // v0.5.227: the Healer's card chains to its socket screen only for the
+    // player who plays the Healer; an AI Healer sockets its own nodes.
+    if (viewerSeat() !== 0) return;
     if (ev.reward === 'node' && socket) socket.cmd('openSocket');
     // Ruling A17: a taken SWAP whose replaced skill held nodes chains into the
     // socket screen too — the released nodes wait on the bench with the

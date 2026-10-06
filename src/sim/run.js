@@ -773,6 +773,8 @@ export function createRunSystem({
     const taken = choice0 === 'take' && reward && reward.type ? applyTake(reward.swap ? reward.replace : undefined) : applyDecline();
     if (pages && pages.isOpen()) pages.applyAllies(reason);
     if (party && party.autoSocketOwn(0) && controllers()[0] === 'human') buildSys.autoFill();
+    // v0.5.227: an AI-held Healer sockets its own nodes, like the AI seats.
+    else if (party && controllers()[0] !== 'human' && party.mode() !== 'manual') buildSys.autoFill();
     afterReward(taken);
     return taken ?? { declined: true };
   }
