@@ -61,7 +61,9 @@ export default {
     ctx.strike(e, [target], ctx.dmg(e, S.damage), e.x, e.z);
   },
 
-  // The spore burst: a zero-distance glob at the corpse.
+  // The spore burst: a zero-distance glob at the corpse. A death HAZARD, so
+  // Spore Sac (sim/relics.js) smothers it on a party kill.
+  deathHazard: true,
   onDeath(ctx, e, tick) {
     ctx.spawnGlob(e, tick, {
       tx: e.x,

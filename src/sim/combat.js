@@ -285,6 +285,8 @@ export function createCombat({
           z: r2(target.z),
         });
       } else {
+        // RELICS (Spore Sac): a party kill's corpse may leave no hazard.
+        if (partyDeals && target.faction === 'hostile' && target.lifecycle !== 'break') M.beforeKill(target);
         kill(target, { delivery });
         if (partyDeals && target.faction === 'hostile' && target.lifecycle !== 'break') M.onKill(target);
       }
@@ -379,5 +381,5 @@ export function createCombat({
   const setMods = (m) => {
     mods = m ?? null;
   };
-  return { applyDamage, applyHeal, kill, status: STATUS, saveState, loadState, setHooks, setMods };
+  return { applyDamage, applyHeal, kill, status: STATUS, saveState, loadState, setHooks, setMods, getMods: () => mods };
 }

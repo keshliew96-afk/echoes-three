@@ -117,7 +117,7 @@ The run has no persistent modifiers today. Two kinds are planned, both stored in
 1. ✅ **Slice 1**: Drowned Heron + Barrow Wyrm, Rotcap / Lantern Snail / Barrow Crow / Brood Spider (+ Broodling), boss names across the HUD, shop, path, end and save screens. (This PR.)
 2. **Slice 2**: ✅ the six slice-2 enemies, the Act I balance pass (Rotcap into the wood) and, pulled forward from slice 3, the second boss of each act; six layouts.
 3. **Slice 3**: ✅ boss icons and stings (Boss identity), full VFX for the slice-2 creatures (PR #9).
-4. **Slice 4**: relics and curses.
+4. **Slice 4**: ✅ relics and curses (PR #5: 15 relics, 5 curses), then slice 2 (v0.5.225): Ash Feather, Spore Sac, Short Fuse, four run-long major curses, elite relic drops and the peddler's relic shelf. docs/RELICS.md has the numbers.
 
 ## 7. How slice 1 was verified
 

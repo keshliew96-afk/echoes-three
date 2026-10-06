@@ -16,6 +16,12 @@
 // through the combat pipeline (Hearthstone's heal, Thorn Mail's reflect) draw
 // their crit rolls from the gameplay stream like any other instance.
 //
+// Slice 2 (docs/RELICS.md "Slice 2"): two more relics (Ash Feather, Spore
+// Sac), a sixth room curse (Short Fuse), MAJOR curses that bind the party for
+// the rest of the run and pay a greater relic (rare or legendary), relic
+// drops from elite kills (one roll per elite, at most one drop a level) and a
+// relic shelf at the room-7 peddler. Every new roll is on the relic stream.
+//
 // Scope: relics are ON for campaign runs (Begin Run, the Level Select) and
 // OFF for the legacy single-level startRun() the act runner, the golden
 // traces and ?run=1 use; cmd('relics', true) turns them on for a probe. With
@@ -45,6 +51,9 @@ export const RELICS = Object.freeze({
   last_light: { name: 'Last Light', rarity: 'legendary', text: 'Once per room, each member who would fall stays up at 1 HP.', lastLight: true },
   glass_heart: { name: 'Glass Heart', rarity: 'legendary', text: 'The party deals 35% more damage but takes 20% more.', dealt: 0.35, taken: 0.2 },
   ashen_crown: { name: 'Ashen Crown', rarity: 'legendary', text: '+8% party damage for every curse taken this run (up to +40%).', perCurse: 0.08, perCurseMax: 5 },
+  // Slice 2.
+  ash_feather: { name: 'Ash Feather', rarity: 'common', text: 'Dodges recover 25% faster.', dodgeCd: -0.25 },
+  spore_sac: { name: 'Spore Sac', rarity: 'rare', text: 'Party kills leave no hazards behind and puff spores that slow nearby enemies by 35%.', spores: true },
 });
 export const RELIC_IDS = Object.freeze(Object.keys(RELICS));
 
@@ -56,14 +65,43 @@ export const CURSES = Object.freeze({
   iron_hide: { name: 'Iron Hide', text: 'Enemies in this room have 40% more HP.', diff: { hpMul: 1.4 } },
   sharp_fangs: { name: 'Sharp Fangs', text: 'Enemies in this room deal 35% more damage.', diff: { dmgMul: 1.35 } },
   famine: { name: 'Famine', text: 'Healing on the party is 60% weaker in this room.', healCut: 0.6 },
+  short_fuse: { name: 'Short Fuse', text: 'Enemy attack warnings in this room are 20% shorter (never under 0.6 s).', fuse: { mul: 0.8, minTicks: 36 } },
+  // MAJOR curses: taken on a door like any curse, but they bind the party for
+  // the rest of the run (across levels) and the room they open pays a GREATER
+  // relic pick (rare and legendary only). `diff` reshapes every combat room;
+  // `taken` / `healCut` hold everywhere, the boss room included.
+  hunted: { name: 'Hunted', major: true, text: 'Elites are more common in every combat room for the rest of the run.', diff: { eliteAdd: 0.15 } },
+  thick_hide: { name: 'Thick Hide', major: true, text: 'Enemies in every combat room have 15% more HP for the rest of the run.', diff: { hpMul: 1.15 } },
+  brittle_bones: { name: 'Brittle Bones', major: true, text: 'The party takes 12% more damage for the rest of the run.', taken: 0.12 },
+  withering: { name: 'Withering', major: true, text: 'Healing on the party is 25% weaker for the rest of the run.', healCut: 0.25 },
 });
-export const CURSE_IDS = Object.freeze(Object.keys(CURSES));
+// The room curses a door can carry, and the major ones.
+export const CURSE_IDS = Object.freeze(Object.keys(CURSES).filter((id) => !CURSES[id].major));
+export const MAJOR_CURSE_IDS = Object.freeze(Object.keys(CURSES).filter((id) => CURSES[id].major));
 
 export const RELIC_RULES = Object.freeze({
   choices: 3, // relics per pick
   curseChance: 0.6, // a path screen carries a cursed door
   emptyPoolGlint: 20, // a pick with every relic owned pays Glint instead
+  majorChance: 0.3, // a cursed door carries a MAJOR curse instead
+  majorMax: 3, // major curses a run can hold
+  eliteDrop: 0.05, // an elite killed by the party drops a relic (at most one a level)
+  shelfSize: 2, // relics on the peddler's relic shelf
+  shelfPrice: Object.freeze({ common: 30, rare: 40, legendary: 55 }),
+  spore: Object.freeze({ radius: 1.8, slow: 0.35, ticks: 90 }), // Spore Sac's kill puff
 });
+
+// Pick one relic id from `pool` by rarity weight (removes it from `pool`).
+function weightedTake(stream, pool) {
+  const total = pool.reduce((s, id) => s + RELIC_WEIGHT[RELICS[id].rarity], 0);
+  let roll = stream.float() * total;
+  let k = 0;
+  for (; k < pool.length - 1; k++) {
+    roll -= RELIC_WEIGHT[RELICS[pool[k]].rarity];
+    if (roll < 0) break;
+  }
+  return pool.splice(k, 1)[0];
+}
 
 // The relic stream's seed: derived from the run SEED with no gameplay draw.
 export function relicSeed(seed) {
@@ -96,6 +134,12 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   let owned = []; // relic ids in pick order
   let curse = null; // { id, room } — the room the party walked into cursed
   let cursesTaken = 0;
+  let majors = []; // major curse ids, run-long, in the order taken
+  let shelf = null; // the peddler's relic shelf: [{ id, price, sold }]
+  let roomNow = 0; // the combat room being fought (elite drop cap)
+  let dropped = false; // an elite already dropped a relic this level
+  let forced = null; // probe: the next path screen's cursed door
+  let dropNext = false; // probe / VFX lab: the next elite kill drops (no draw)
   let due = null; // { room, source } — a pick owed once the draft is done
   let offer = null; // { room, source, choices: [id], focus }
   let savedThisRoom = []; // Last Light: party ids already saved this room
@@ -111,6 +155,11 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     owned = [];
     curse = null;
     cursesTaken = 0;
+    majors = [];
+    shelf = null;
+    roomNow = 0;
+    dropped = false;
+    forced = null;
     due = null;
     offer = null;
     savedThisRoom = [];
@@ -120,23 +169,29 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
 
   // ------------------------------------------------------- combat mods --
   // Read by sim/combat.js on every instance while relics are on. With nothing
-  // owned and no curse every factor is exactly 1 (and every bonus 0).
+  // owned and no curse every factor is exactly 1 (and every bonus 0). Live
+  // for the whole relic run (not only once a relic is owned) so an elite
+  // killed in room 1 can already drop one.
+  const majorSum = (key) => majors.reduce((s, id) => s + (CURSES[id][key] ?? 0), 0);
   const mods = {
-    active: () => on && live() && (owned.length > 0 || curse !== null),
+    active: () => on && live(),
     dealtMul() {
       let m = 1 + sum('dealt');
       if (has('ashen_crown')) m += RELICS.ashen_crown.perCurse * Math.min(RELICS.ashen_crown.perCurseMax, cursesTaken);
       return m;
     },
-    takenMul: () => Math.max(0.1, 1 + sum('taken')),
+    takenMul: () => Math.max(0.1, 1 + sum('taken') + majorSum('taken')),
     critChance: () => sum('crit'),
     critMulAdd: () => sum('critMul'),
     kbMul: () => 1 + sum('kb'),
     healMul() {
       let m = 1 + sum('heal');
-      if (curse && CURSES[curse.id] && CURSES[curse.id].healCut) m *= 1 - CURSES[curse.id].healCut;
+      if (curse && CURSES[curse.id] && CURSES[curse.id].healCut && !CURSES[curse.id].major) m *= 1 - CURSES[curse.id].healCut;
+      for (const id of majors) if (CURSES[id].healCut) m *= 1 - CURSES[id].healCut;
       return m;
     },
+    // Ash Feather: the dodge cooldown factor (1 = unchanged).
+    dodgeCdMul: () => Math.max(0.2, 1 + sum('dodgeCd')),
     // Last Light: true = the blow leaves this member at 1 HP instead.
     saveFromDown(target) {
       if (!has('last_light') || savedThisRoom.includes(target.id)) return false;
@@ -148,10 +203,32 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       if (!has('thorn_mail') || !attacker || !(amount > 0)) return;
       pending.push({ kind: 'thorns', attacker: attacker.id, amount: amount * RELICS.thorn_mail.thorns, from: target.id });
     },
-    onKill() {
+    // A party blow is about to kill `target` (before its death event).
+    // Spore Sac: the corpse leaves no hazard (sim/enemies.js reads the flag).
+    beforeKill(target) {
+      if (has('spore_sac')) target.noDeathHazard = true;
+    },
+    onKill(target) {
       if (has('leech_fang')) pending.push({ kind: 'leech' });
+      if (!target) return;
+      if (has('spore_sac')) pending.push({ kind: 'spores', x: target.x, z: target.z, id: target.id });
+      if (target.elite && (!dropped || dropNext)) pending.push({ kind: 'drop', x: target.x, z: target.z, id: target.id, etype: target.kind });
     },
   };
+
+  // Short Fuse: the live room's telegraph rule ({ mul, minTicks }) or null.
+  // sim/enemies.js shortens every new telegraph by it.
+  function fuse() {
+    if (!on || !curse) return null;
+    const c = CURSES[curse.id];
+    return c && c.fuse ? c.fuse : null;
+  }
+
+  // A relic arrives without a pick (elite drop, shop, probe grant).
+  function gain(id, source, at, extra = {}) {
+    owned.push(id);
+    events.emit(getTick(), 'relic_gain', { relic: id, rarity: RELICS[id].rarity, room: roomNow, source, owned: owned.length, x: r2(at.x), z: r2(at.z), ...extra });
+  }
 
   // Procs land at the end of the tick, after every attack of the tick has
   // resolved, so a reflected blow never despawns an enemy mid-swing.
@@ -165,6 +242,27 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         if (!a || !(a.hp > 0)) continue;
         const r = combat.applyDamage(a, p.amount, { delivery: 'skill', shape: 'thorns', attacker: null, source: 'thorn_mail' });
         if (r && r.amount > 0) events.emit(getTick(), 'relic_proc', { relic: 'thorn_mail', target: a.id, from: p.from, x: r2(a.x), z: r2(a.z) });
+      } else if (p.kind === 'spores') {
+        const S = RELIC_RULES.spore;
+        const tick = getTick();
+        let n = 0;
+        for (const e of registry.all()) {
+          if (e.faction !== 'hostile' || !(e.hp > 0) || e.lifecycle === 'break' || e.kind === 'eglob') continue;
+          if (Math.hypot(e.x - p.x, e.z - p.z) > S.radius + (e.radius ?? 0)) continue;
+          if (combat.status.apply(e, 'slow', S.slow, S.ticks, tick, null)) n += 1;
+        }
+        events.emit(tick, 'relic_proc', { relic: 'spore_sac', x: r2(p.x), z: r2(p.z), radius: S.radius, slowed: n });
+      } else if (p.kind === 'drop') {
+        // One roll per elite kill, at most one drop a level.
+        if (dropped && !dropNext) continue;
+        if (dropNext) dropNext = false;
+        else if (!(stream.float() < RELIC_RULES.eliteDrop)) continue;
+        const pool = RELIC_IDS.filter((id) => !owned.includes(id));
+        if (pool.length === 0) continue;
+        const id = weightedTake(stream, pool);
+        dropped = true;
+        events.emit(getTick(), 'relic_drop', { relic: id, rarity: RELICS[id].rarity, room: roomNow, from: p.id, etype: p.etype, x: r2(p.x), z: r2(p.z), px: r2(player.x), pz: r2(player.z) });
+        gain(id, 'elite', player, { fromX: r2(p.x), fromZ: r2(p.z) });
       } else if (p.kind === 'leech') {
         let best = null;
         for (const e of partyBodies()) if (e.hp > 0 && e.hp < e.maxHp && (!best || e.hp / e.maxHp < best.hp / best.maxHp)) best = e;
@@ -180,9 +278,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   function onRoomEnter(room, mode) {
     if (!on) return;
     savedThisRoom = [];
+    roomNow = room;
     if (curse && curse.room !== room) curse = null;
     if (curse) {
-      events.emit(getTick(), 'curse_apply', { curse: curse.id, room, mode, x: r2(player.x), z: r2(player.z) });
+      events.emit(getTick(), 'curse_apply', { curse: curse.id, room, mode, ...(CURSES[curse.id].major ? { major: true } : {}), x: r2(player.x), z: r2(player.z) });
     }
     if (has('heron_quill')) {
       const tick = getTick();
@@ -210,7 +309,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       curse = null;
     }
     if (boss || forfeited) return;
-    if (cursed) due = { room, source: 'curse', curse: cursed };
+    if (cursed) due = { room, source: CURSES[cursed].major ? 'major' : 'curse', curse: cursed };
     else if (room === 1) due = { room, source: 'free' };
   }
 
@@ -220,18 +319,15 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     if (!on || !due) return false;
     const d = due;
     due = null;
-    const pool = RELIC_IDS.filter((id) => !owned.includes(id));
-    const choices = [];
-    while (choices.length < RELIC_RULES.choices && pool.length > 0) {
-      const total = pool.reduce((s, id) => s + RELIC_WEIGHT[RELICS[id].rarity], 0);
-      let roll = stream.float() * total;
-      let k = 0;
-      for (; k < pool.length - 1; k++) {
-        roll -= RELIC_WEIGHT[RELICS[pool[k]].rarity];
-        if (roll < 0) break;
-      }
-      choices.push(pool.splice(k, 1)[0]);
+    let pool = RELIC_IDS.filter((id) => !owned.includes(id));
+    // A major curse pays a GREATER pick: rare and legendary relics only
+    // (any relic once those run out).
+    if (d.source === 'major') {
+      const greater = pool.filter((id) => RELICS[id].rarity !== 'common');
+      if (greater.length > 0) pool = greater;
     }
+    const choices = [];
+    while (choices.length < RELIC_RULES.choices && pool.length > 0) choices.push(weightedTake(stream, pool));
     if (choices.length === 0) {
       gainGlint(RELIC_RULES.emptyPoolGlint, 'relic_pool_empty');
       return false;
@@ -261,26 +357,69 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     return id;
   }
 
-  // Path screen: does one door carry a curse? -> { side, curse } | null.
+  // Path screen: does one door carry a curse? -> { side, curse, major? } | null.
+  // A cursed door is major with RELIC_RULES.majorChance while the run holds
+  // fewer than majorMax major curses (one more stream draw only then).
   function rollDoorCurse() {
     if (!on) return null;
+    if (forced) {
+      const f = forced;
+      forced = null;
+      return { side: f.side, curse: f.curse, ...(CURSES[f.curse].major ? { major: true } : {}) };
+    }
     if (!(stream.float() < RELIC_RULES.curseChance)) return null;
     const side = stream.int(2);
+    const free = MAJOR_CURSE_IDS.filter((id) => !majors.includes(id));
+    if (free.length > 0 && majors.length < RELIC_RULES.majorMax && stream.float() < RELIC_RULES.majorChance) {
+      return { side, curse: free[stream.int(free.length)], major: true };
+    }
     const id = CURSE_IDS[stream.int(CURSE_IDS.length)];
     return { side, curse: id };
   }
 
   function takeCurse(id, room) {
     if (!on || !CURSES[id]) return;
-    curse = { id, room };
+    const major = !!CURSES[id].major;
+    if (major && majors.includes(id)) return;
+    curse = { id, room, ...(major ? { major: true } : {}) };
+    if (major) majors.push(id);
     cursesTaken += 1;
-    events.emit(getTick(), 'curse_taken', { curse: id, room, taken: cursesTaken });
+    events.emit(getTick(), 'curse_taken', { curse: id, room, taken: cursesTaken, ...(major ? { major: true, majors: majors.length } : {}) });
   }
 
-  const curseFor = (room) => (on && curse && curse.room === room ? curse.id : null);
+  // The ROOM curse that reshapes room `room`'s numbers (a major curse's
+  // numbers come from majorCurses(), every combat room).
+  const curseFor = (room) => (on && curse && curse.room === room && !curse.major ? curse.id : null);
+
+  // ------------------------------------------------- the relic shelf --
+  // The room-7 peddler's relic shelf: RELIC_RULES.shelfSize relics (relic
+  // stream, by rarity weight, none owned), priced by rarity. Any character
+  // buys from its own purse; the relic is the party's.
+  function openShelf() {
+    if (!on) return null;
+    const pool = RELIC_IDS.filter((id) => !owned.includes(id));
+    const ids = [];
+    while (ids.length < RELIC_RULES.shelfSize && pool.length > 0) ids.push(weightedTake(stream, pool));
+    shelf = ids.map((id) => ({ id, price: RELIC_RULES.shelfPrice[RELICS[id].rarity], sold: false }));
+    events.emit(getTick(), 'relic_shelf', { stock: shelf.map((s) => ({ relic: s.id, rarity: RELICS[s.id].rarity, price: s.price })) });
+    return shelf;
+  }
+  const shelfItem = (i) => (on && shelf && shelf[i] && !shelf[i].sold && !owned.includes(shelf[i].id) ? shelf[i] : null);
+  // The purse was charged by the run; the relic joins the party.
+  function sellShelf(i, seat, purse) {
+    const item = shelfItem(i);
+    if (!item) return null;
+    item.sold = true;
+    events.emit(getTick(), 'relic_purchase', { relic: item.id, rarity: RELICS[item.id].rarity, price: item.price, seat, wallet: purse, index: i });
+    gain(item.id, 'shop', player, { seat });
+    return item.id;
+  }
 
   // Level reset (level clear): nothing level-bound survives but the relics.
   function levelReset() {
+    shelf = null;
+    dropped = false;
+    roomNow = 0;
     curse = null;
     due = null;
     offer = null;
@@ -297,8 +436,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   function view() {
     return {
       owned: owned.map((id) => ({ id, name: RELICS[id].name, rarity: RELICS[id].rarity, text: RELICS[id].text })),
-      curse: curse ? { id: curse.id, room: curse.room, name: CURSES[curse.id].name, text: CURSES[curse.id].text } : null,
+      curse: curse ? { id: curse.id, room: curse.room, name: CURSES[curse.id].name, text: CURSES[curse.id].text, ...(curse.major ? { major: true } : {}) } : null,
       cursesTaken,
+      majors: majors.map((id) => ({ id, name: CURSES[id].name, text: CURSES[id].text })),
+      shelf: shelf ? shelf.map((s) => ({ id: s.id, name: RELICS[s.id].name, rarity: RELICS[s.id].rarity, text: RELICS[s.id].text, price: s.price, sold: s.sold || owned.includes(s.id) })) : null,
       offer: offer
         ? {
             room: offer.room,
@@ -319,6 +460,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       owned: [...owned],
       curse: curse ? { ...curse } : null,
       cursesTaken,
+      majors: [...majors],
+      shelf: shelf ? shelf.map((s) => ({ ...s })) : null,
+      roomNow,
+      dropped,
       due: due ? { ...due } : null,
       offer: offer ? { ...offer, choices: [...offer.choices] } : null,
       savedThisRoom: [...savedThisRoom],
@@ -334,6 +479,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     owned = Array.isArray(d.owned) ? d.owned.filter((id) => RELICS[id]) : [];
     curse = d.curse && CURSES[d.curse.id] ? { ...d.curse } : null;
     cursesTaken = Number.isFinite(d.cursesTaken) ? d.cursesTaken : 0;
+    majors = Array.isArray(d.majors) ? d.majors.filter((id) => CURSES[id] && CURSES[id].major) : [];
+    shelf = Array.isArray(d.shelf) ? d.shelf.filter((s) => s && RELICS[s.id]).map((s) => ({ id: s.id, price: Number(s.price) || 0, sold: !!s.sold })) : null;
+    roomNow = Number.isFinite(d.roomNow) ? d.roomNow : 0;
+    dropped = !!d.dropped;
     due = d.due ? { ...d.due } : null;
     offer = d.offer && Array.isArray(d.offer.choices) ? { ...d.offer, choices: d.offer.choices.filter((id) => RELICS[id]) } : null;
     savedThisRoom = Array.isArray(d.savedThisRoom) ? [...d.savedThisRoom] : [];
@@ -359,14 +508,29 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     rollDoorCurse,
     takeCurse,
     curseFor,
+    majorCurses: () => (on ? [...majors] : []),
+    fuse,
+    openShelf,
+    shelfItem,
+    sellShelf,
+    dropNext() {
+      if (!on) return false;
+      dropNext = true;
+      return true;
+    },
+    forceDoor(curseId, side = 0) {
+      // Probe: the next path screen's cursed door (no stream draw).
+      if (!on || !CURSES[curseId]) return null;
+      forced = { curse: curseId, side: side === 1 ? 1 : 0 };
+      return forced;
+    },
     levelReset,
     shopPrice,
     owned: () => [...owned],
     grant(id) {
       // Probe / harness: give a relic now (no pick).
       if (!on || !RELICS[id] || owned.includes(id)) return null;
-      owned.push(id);
-      events.emit(getTick(), 'relic_gain', { relic: id, rarity: RELICS[id].rarity, room: 0, source: 'grant', owned: owned.length, x: r2(player.x), z: r2(player.z) });
+      gain(id, 'grant', player);
       return id;
     },
     view,

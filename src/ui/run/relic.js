@@ -39,6 +39,55 @@ export const RELIC_CSS = `
   }
   .rn-path .rl-cursenote b { color: ${PALETTE.godstuffViolet}; }
   .rn-path .rl-cursenote .rl-icon { color: ${PALETTE.godstuffViolet}; flex: none; }
+  /* Slice 2: a MAJOR curse's door — a double violet rim that breathes, and a
+     heavier note (shape + words, never colour alone). */
+  .rn-door.rl-major { border-color: ${PALETTE.godstuffViolet}; box-shadow: inset 0 0 0 2px ${PALETTE.voidCharcoal}, inset 0 0 0 4px ${PALETTE.godstuffViolet}88, inset 0 -18px 34px #00000066; animation: rl-bind 1.8s ease-in-out infinite; }
+  .rn-door.rl-major .rl-gcurse { top: 10px; right: 10px; }
+  @keyframes rl-bind {
+    0%, 100% { box-shadow: inset 0 0 0 2px ${PALETTE.voidCharcoal}, inset 0 0 0 4px ${PALETTE.godstuffViolet}66, inset 0 -18px 34px #00000066, 0 0 10px ${PALETTE.godstuffViolet}33; }
+    50% { box-shadow: inset 0 0 0 2px ${PALETTE.voidCharcoal}, inset 0 0 0 4px ${PALETTE.godstuffViolet}CC, inset 0 -18px 34px #00000066, 0 0 30px ${PALETTE.godstuffViolet}77; }
+  }
+  /* Slice 2: the peddler's RELIC SHELF — a compact rack under the node
+     shelf. Each tile: the drawn icon in its rarity rim, the name + effect,
+     a brass plaque (dashed when the viewed purse is short; never greyed). */
+  #run-screen .rn-shop .rl-rack { margin: 8px 0 2px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  #run-screen .rn-shop .rl-racklab { display: flex; align-items: baseline; gap: 10px; font-size: 14px; color: ${PALETTE.warmGrey}; letter-spacing: 0.04em; }
+  #run-screen .rn-shop .rl-racklab > b { color: ${PALETTE.paleGold}; letter-spacing: 0.16em; font-size: 15px; }
+  #run-screen .rn-shop .rl-racklab span b { color: ${PALETTE.bone}; }
+  #run-screen .rn-shop .rl-rackrow { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  #run-screen .rn-shop .rl-ritem {
+    position: relative; display: flex; align-items: center; gap: 10px; width: 400px; max-width: 44vw;
+    padding: 7px 10px 7px 8px; border-radius: 12px; cursor: pointer;
+    background: linear-gradient(180deg, #2F2A23 0%, ${PALETTE.voidCharcoal} 100%);
+    border: 2px solid var(--rar, ${PALETTE.bone}); box-shadow: 0 0 14px #00000088, inset 0 0 12px #00000066;
+    transition: top 110ms ease, box-shadow 110ms ease; top: 0;
+  }
+  #run-screen .rn-shop .rl-ritem.rl-rhover { top: -4px; box-shadow: 0 0 0 2px ${PALETTE.voidCharcoal}, 0 0 0 4px ${PALETTE.parchment}, 0 0 22px var(--rar, ${PALETTE.bone}); }
+  #run-screen .rn-shop .rl-ricon {
+    flex: none; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    color: var(--rar, ${PALETTE.bone}); border: 2px solid var(--rar, ${PALETTE.bone});
+    background: radial-gradient(circle at 40% 32%, #47402F 0%, #1C2230 100%); box-shadow: 0 0 12px var(--rar, transparent);
+  }
+  #run-screen .rn-shop .rl-rtext { flex: 1; min-width: 0; }
+  #run-screen .rn-shop .rl-rname { font-size: 17px; font-weight: 800; color: ${PALETTE.parchment}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #run-screen .rn-shop .rl-rrar { font-size: 11px; letter-spacing: 0.14em; color: var(--rar, ${PALETTE.bone}); margin-left: 4px; }
+  #run-screen .rn-shop .rl-rbody { font-size: 14px; line-height: 1.25; color: ${PALETTE.bone}; }
+  #run-screen .rn-shop .rl-rplaque { flex: none; padding: 5px 10px; gap: 5px; }
+  #run-screen .rn-shop .rl-rplaque .rn-price { font-size: 20px; }
+  #run-screen .rn-shop .rl-rplaque.rl-rdeny { animation: rl-deny 300ms linear 1; border-color: ${PALETTE.hearthAmber}; }
+  @keyframes rl-deny { 0% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(2px); } 100% { transform: translateX(0); } }
+  #run-screen .rn-shop .rl-ritem.rl-rsold { cursor: default; opacity: 0.82; }
+  #run-screen .rn-shop .rl-ritem.rl-rsold .rl-ricon { box-shadow: 0 0 22px var(--rar); }
+  #run-screen .rn-shop .rl-rstamp {
+    flex: none; padding: 4px 10px; border-radius: 6px; transform: rotate(-6deg);
+    border: 2px solid ${PALETTE.hearthAmber}; color: ${PALETTE.hearthAmber}; font-weight: 900; letter-spacing: 0.16em; font-size: 15px;
+  }
+  #run-screen .rn-shop .rl-ritem.rl-rflare { animation: rl-flare 900ms ease-out 1; }
+  #run-screen .rn-shop .rl-ritem.rl-rflare .rl-rstamp { animation: rl-slam 380ms cubic-bezier(.3,1.6,.5,1) 1; }
+  @keyframes rl-flare { 0% { box-shadow: 0 0 0 0 var(--rar), 0 0 46px var(--rar); } 100% { box-shadow: 0 0 14px #00000088, inset 0 0 12px #00000066; } }
+  @keyframes rl-slam { 0% { transform: rotate(-6deg) scale(2.2); opacity: 0; } 100% { transform: rotate(-6deg) scale(1); opacity: 1; } }
+
+  .rn-path .rl-cursenote.rl-majornote { border-width: 2px; border-color: ${PALETTE.godstuffViolet}; box-shadow: 0 0 22px ${PALETTE.godstuffViolet}44; }
 `;
 
 const RARITY_WORD = { common: 'common', rare: 'rare', legendary: 'legendary' };
@@ -79,7 +128,10 @@ export function createRelicScreen({ run }) {
     shownFocus = o.focus;
   }
   function build(view, o) {
-    if (o.source === 'curse' && o.curse) {
+    if (o.source === 'major' && o.curse) {
+      titleEl.textContent = 'A GREATER RELIC';
+      subEl.innerHTML = `<span class="rl-lift">${curseIconHtml(20, true)} ${esc(o.curse.name)} binds you for the rest of the run.</span><span>Choose what it pays.</span>`;
+    } else if (o.source === 'curse' && o.curse) {
       titleEl.textContent = 'THE CURSE LIFTS';
       subEl.innerHTML = `<span class="rl-lift">${curseIconHtml(20)} ${esc(o.curse.name)} is broken.</span><span>Choose what it leaves behind.</span>`;
     } else {

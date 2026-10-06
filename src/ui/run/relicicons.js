@@ -36,6 +36,10 @@ const RELIC_SVG = {
   glass_heart: `<path d="M16 27 L5 15 Q4 7 11 6 Q15 6 16 10 Q17 6 21 6 Q28 7 27 15 Z" ${STROKE}/><path d="M16 10 L13 17 L16 27 M13 17 L5 15 M16 10 L20 17 L27 15 M20 17 L16 27" ${STROKE}/>`,
   // A three-point crown.
   ashen_crown: `<path d="M5 23 L7 9 L12 16 L16 6 L20 16 L25 9 L27 23 Z" ${STROKE}/><path d="M6 26 H26" ${STROKE}/>`,
+  // A short curled feather trailing two ash flecks.
+  ash_feather: `<path d="M9 23 Q8 11 21 5 Q22 17 9 23 Z" ${STROKE}/><path d="M9 23 L17 11" ${STROKE}/><circle cx="21" cy="22" r="1.8" ${FILL}/><circle cx="25" cy="27" r="1.3" ${FILL}/><path d="M6 27 L9 23" ${STROKE}/>`,
+  // A puffed spore pod with three motes rising off it.
+  spore_sac: `<path d="M16 28 Q6 28 7 19 Q8 12 16 12 Q24 12 25 19 Q26 28 16 28 Z" ${STROKE}/><circle cx="13" cy="20" r="1.6" ${FILL}/><circle cx="19" cy="22" r="1.6" ${FILL}/><circle cx="11" cy="6" r="1.8" ${FILL}/><circle cx="17" cy="4" r="1.4" ${FILL}/><circle cx="22" cy="8" r="1.6" ${FILL}/>`,
 };
 
 // The curse mark: a crescent moon cut by an eye slit.
@@ -46,6 +50,9 @@ const svg = (body, size) => `<svg class="rl-icon" width="${size}" height="${size
 export function relicIconHtml(id, size = 32) {
   return svg(RELIC_SVG[id] ?? `<circle cx="16" cy="16" r="10" ${STROKE}/>`, size);
 }
-export function curseIconHtml(size = 32) {
-  return svg(CURSE_SVG, size);
+// A MAJOR curse: the same mark bound inside a chained ring.
+const MAJOR_SVG = `<circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3.2 2.2"/><g transform="translate(3.2 3.2) scale(0.8)">${CURSE_SVG}</g>`;
+
+export function curseIconHtml(size = 32, major = false) {
+  return svg(major ? MAJOR_SVG : CURSE_SVG, size);
 }

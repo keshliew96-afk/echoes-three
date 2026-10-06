@@ -1971,6 +1971,11 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     return b ? { x: b.x, z: b.z } : { x: ev.x ?? player()?.x ?? 0, z: ev.z ?? player()?.z ?? 0 };
   };
   bus.on('relic_gain', (ev) => {
+    // An elite's drop reaches the party after its loot beam (relic_drop).
+    if (ev.source === 'elite') after(0.5, () => relicRise(ev));
+    else relicRise(ev);
+  });
+  function relicRise(ev) {
     const p = player();
     const x = p ? p.x : ev.x ?? 0;
     const z = p ? p.z : ev.z ?? 0;
@@ -1983,6 +1988,59 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       kit.streak({ a: { x: x + Math.cos(a) * 0.5, y: 0.1, z: z + Math.sin(a) * 0.5 }, b: { x: x + Math.cos(a) * 0.35, y: 1.9, z: z + Math.sin(a) * 0.35 }, width: 0.05, tailW: 0, core: PARCH, glow: c, life: 0.6, delay: i * 0.04, fall: 0.6 });
     }
     spray('spark', x, 0.4, z, ev.rarity === 'legendary' ? 18 : 10, { color: c, speed: [0.2, 0.7], up: [1.4, 2.6], size: [0.05, 0.1], life: [0.8, 1.3], gravity: -0.2, drag: 1.2, jitter: 0.5, opacity: 0.9 });
+  }
+
+  // Slice 2 — an ELITE'S RELIC DROP: the corpse throws up a loot beam in the
+  // relic's rarity colour (hot core inside a wide glow column, a ground
+  // shockwave, a light pool, sparks climbing the beam), then the relic arcs
+  // to the party and rises off it (relic_gain, 0.5 s later).
+  const SPORE_R = vfxMatterColor('spore');
+  bus.on('relic_drop', (ev) => {
+    mark('relic_drop');
+    const { x, z } = ev;
+    const c = RELIC_RARITY[ev.rarity] ?? BONE;
+    kit.pillar({ x, z, radius: 0.55, height: 6.5, color: c, life: 1.6, opacity: 0.42 });
+    kit.pillar({ x, z, radius: 0.16, height: 7.5, color: PARCH, life: 1.3, opacity: 0.9 });
+    flare(x, 1.1, z, c, 1.6, { kind: 'burst', life: 0.3 });
+    kit.flash({ x, y: 1.2, z, color: c, size: 1.6, life: 0.5, hold: 0.12 });
+    kit.light({ x, z, radius: 4.2, color: c, opacity: 0.65, life: 1.4 });
+    kit.ring({ x, z, r0: 0.2, r1: 3.0, width: 0.18, life: 0.6, core: PARCH, glow: c, soft: 0.5, y: 0.05 });
+    kit.ring({ x, z, r0: 0.3, r1: 1.6, width: 0.1, life: 0.9, core: c, glow: c, soft: 0.7, y: 0.05, delay: 0.12, opacity: 0.7 });
+    spray('spark', x, 0.3, z, N(ev.rarity === 'legendary' ? 30 : 20), { color: c, speed: [0.05, 0.3], up: [2.2, 4.2], size: [0.05, 0.11], life: [0.9, 1.5], gravity: -0.1, drag: 0.9, jitter: 0.35, opacity: 0.95 });
+    spray('smoke', x, 0.3, z, N(3), { color: c, speed: [0.2, 0.5], up: [0.2, 0.5], size: [0.5, 0.7], grow: 1.6, life: [0.9, 1.2], opacity: 0.25, gravity: -0.1, drag: 2.2, jitter: 0.3 });
+    kit.mark({ x, z, radius: 1.4, kind: 'splash', stain: c, glow: c, life: 2.4, opacity: 0.3 });
+    camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.05, 0.12);
+    // The relic's flight to the party: three trails along a shallow arc.
+    after(0.32, () => {
+      const p = player();
+      if (!p) return;
+      for (let i = 0; i < 3; i++) {
+        const lift = 1.4 + i * 0.35;
+        kit.streak({ a: { x, y: lift, z }, b: { x: (x + p.x) / 2, y: lift + 0.9, z: (z + p.z) / 2 }, width: 0.07, tailW: 0, core: PARCH, glow: c, life: 0.22, delay: i * 0.03, fall: 1.0 });
+        kit.streak({ a: { x: (x + p.x) / 2, y: lift + 0.9, z: (z + p.z) / 2 }, b: { x: p.x, y: 1.0, z: p.z }, width: 0.07, tailW: 0, core: PARCH, glow: c, life: 0.22, delay: 0.1 + i * 0.03, fall: 1.0 });
+      }
+    });
+  });
+
+  // Spore Sac: a party kill's corpse puffs a low spore ring that slows what
+  // it touches (pale spore green, soft and short — it fires on every kill).
+  bus.on('relic_proc', (ev) => {
+    if (ev.relic !== 'spore_sac') return;
+    const { x, z } = ev;
+    const r = ev.radius ?? 1.8;
+    kit.ring({ x, z, r0: 0.2, r1: r, width: 0.32, life: 0.55, core: SPORE_R, glow: SPORE_R, soft: 0.9, y: 0.1, opacity: 0.5, gain: 0.5 });
+    kit.ring({ x, z, r0: 0.1, r1: r * 0.9, width: 0.05, life: 0.4, core: PARCH, glow: SPORE_R, soft: 0.4, y: 0.05, opacity: 0.6 });
+    for (let i = 0; i < N(5); i++) {
+      const a = (i / 5) * TAU + rnd(-0.3, 0.3);
+      spray('smoke', x, 0.25, z, 1, { color: SPORE_R, speed: r * 1.6, up: [0.05, 0.25], size: [0.3, 0.42], grow: 1.5, life: [0.7, 1.0], opacity: 0.3, gravity: -0.08, drag: 3.0, dir: { x: Math.cos(a), z: Math.sin(a) }, dirBias: 1 });
+    }
+    spray('spark', x, 0.2, z, N(ev.slowed > 0 ? 10 : 6), { color: SPORE_R, speed: [0.1, 0.5], up: [0.3, 0.9], size: [0.04, 0.07], life: [0.8, 1.3], gravity: -0.1, drag: 1.6, jitter: r * 0.6, opacity: 0.8 });
+  });
+  // A Rotcap smothered by Spore Sac: the cap sags shut, no burst.
+  bus.on('hazard_smothered', (ev) => {
+    const { x, z } = ev;
+    spray('smoke', x, 0.35, z, N(2), { color: SPORE_R, speed: [0.05, 0.15], up: [0.1, 0.3], size: [0.25, 0.35], grow: 1.2, life: [0.6, 0.9], opacity: 0.25, gravity: 0.2, drag: 2.5, jitter: 0.15 });
+    kit.ring({ x, z, r0: 0.9, r1: 0.15, width: 0.06, life: 0.3, core: SPORE_R, glow: SPORE_R, soft: 0.6, y: 0.05, opacity: 0.6 });
   });
   bus.on('relic_proc', (ev) => {
     const { x, z } = bodyAt(ev);
@@ -2011,6 +2069,25 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     kit.ring({ x, z, r0: 5.5, r1: 0.6, width: 0.22, life: 0.9, core: VIOLET_PEAK, glow: VIOLET, soft: 0.5, y: 0.06 });
     kit.light({ x, z, radius: 3.4, color: VIOLET, opacity: 0.45, life: 1.0 });
     spray('spark', x, 0.1, z, 16, { color: VIOLET, speed: [0.1, 0.5], up: [0.6, 1.4], size: [0.06, 0.12], life: [1.0, 1.6], gravity: -0.35, drag: 1.4, jitter: 3.0, opacity: 0.85 });
+    if (ev.major) {
+      // A MAJOR curse binds: a second, slower ring, six violet chains that
+      // drop around the party and snap inward, a deep pulse and a shove.
+      mark('curse_major');
+      kit.ring({ x, z, r0: 7.5, r1: 1.2, width: 0.32, life: 1.3, core: VIOLET, glow: VIOLET, soft: 0.7, y: 0.07, delay: 0.15, opacity: 0.8 });
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * TAU + 0.3;
+        const px = x + Math.cos(a) * 3.2;
+        const pz = z + Math.sin(a) * 3.2;
+        kit.pillar({ x: px, z: pz, radius: 0.12, height: 3.2, color: VIOLET, life: 0.9, opacity: 0.8, delay: 0.05 * i });
+        kit.streak({ a: { x: px, y: 2.4, z: pz }, b: { x: x + Math.cos(a) * 0.7, y: 0.6, z: z + Math.sin(a) * 0.7 }, width: 0.06, tailW: 0.02, core: VIOLET_PEAK, glow: VIOLET, life: 0.35, delay: 0.35 + 0.04 * i, fall: 1.1 });
+      }
+      kit.flash({ x, y: 1.0, z, color: VIOLET, size: 1.4, life: 0.5, hold: 0.1, delay: 0.6 });
+      after(0.6, () => camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.06, 0.16));
+    } else if (ev.curse === 'short_fuse') {
+      // Short Fuse: ember sparks fizz round the ring like a lit fuse.
+      kit.ring({ x, z, r0: 4.2, r1: 4.6, width: 0.06, life: 1.0, core: EMBER, glow: EMBER, soft: 0.4, y: 0.05, opacity: 0.8 });
+      spray('spark', x, 0.15, z, N(22), { color: EMBER, speed: [0.4, 1.2], up: [0.6, 1.6], size: [0.03, 0.06], life: [0.4, 0.8], gravity: 0.6, drag: 0.8, jitter: 4.2, opacity: 0.95 });
+    }
   });
   bus.on('curse_lift', (ev) => {
     if (ev.forfeited) return;

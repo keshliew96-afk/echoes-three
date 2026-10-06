@@ -783,6 +783,10 @@ export const DEFAULT_EVENT_CUES = {
   shop_open: () => [{ cue: 'shop_open' }],
   shop_purchase: () => [{ cue: 'purchase' }],
   currency_denied: () => [{ cue: 'deny' }],
+  // RELICS slice 2: an elite's relic drop, the relic shelf.
+  relic_drop: () => [{ cue: 'reward' }],
+  relic_purchase: () => [{ cue: 'purchase' }],
+  relic_denied: () => [{ cue: 'deny' }],
   glint_gain: () => [{ cue: 'glint' }],
   node_socketed: () => [{ cue: 'socket' }],
   node_unsocketed: () => [{ cue: 'unsocket' }],

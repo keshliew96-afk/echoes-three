@@ -12,6 +12,7 @@
 //   Enemies  spawn a pair of one enemy type in front of the party; they
 //            fight, telegraph, hit and die as in a run
 //   Boss     force the add phase / enrage, or end the fight
+//   Relics   an elite's relic drop, Spore Sac, a major curse, Short Fuse
 //   Sound    each boss's sting, phase and fall stings and its boss groove
 //
 // Off unless the URL asks for it; touches nothing else in the UI.
@@ -203,6 +204,44 @@ export function mountVfxLab() {
         say(`${k} x2: watch them attack and die`);
       });
   }
+
+  // --------------------------------------------------------------- relics --
+  // Relics slice 2, through the real sim: relics on for the live room, then
+  // an elite that drops a relic when killed, Spore Sac on a Rotcap pack, a
+  // major curse and Short Fuse laid on the room the party stands in.
+  const rel2 = section('Relics and curses');
+  async function relicRoom(act) {
+    await ensureCombat(act);
+    X().cmd('relics', true);
+  }
+  button(rel2, 'Elite drop', async () => {
+    await relicRoom(3);
+    X().cmd('relicDropNext');
+    const f = front();
+    X().cmd('spawn', 'knight', f.x, f.z - 1.4);
+    say('kill the Barrow Knight: it drops a relic');
+  }, 'a Barrow Knight (always Elite) that drops a relic');
+  button(rel2, 'Spore Sac', async () => {
+    await relicRoom(2);
+    X().cmd('relicGrant', 'spore_sac');
+    const f = front();
+    for (const dx of [-1.4, 0, 1.4]) X().cmd('spawn', 'rotcap', f.x + dx, f.z - 1.6);
+    X().cmd('spawn', 'boar', f.x, f.z - 2.6);
+    say('Spore Sac: Rotcaps die with no burst, kills slow');
+  }, 'Spore Sac on three Rotcaps and a boar');
+  button(rel2, 'Major curse', async () => {
+    await relicRoom(1);
+    X().cmd('relicCurseHere', 'hunted');
+    say('a major curse binds the party');
+  }, 'Hunted laid on this room');
+  button(rel2, 'Short Fuse', async () => {
+    await relicRoom(1);
+    X().cmd('relicCurseHere', 'short_fuse');
+    const f = front();
+    X().cmd('spawn', 'wasp', f.x - 1.2, f.z - 2.2);
+    X().cmd('spawn', 'mantis', f.x + 1.2, f.z - 2.2);
+    say('Short Fuse: telegraphs 20% shorter');
+  }, 'Short Fuse on this room, with wasps and a mantis');
 
   // ----------------------------------------------------------------- boss --
   const boss = section('Boss');

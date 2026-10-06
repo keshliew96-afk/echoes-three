@@ -51,6 +51,7 @@ import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
 import { createPartyStrip } from './partystrip.js';
 import { service } from '../../app/registry.js';
 import { bossNameOfRun } from '../../data/levels.js';
+import { relicIconHtml } from './relicicons.js';
 
 // 'Advance to the Drowned Heron' — the act's own room-8 boss.
 const advanceLabel = (view) => `Advance to ${bossNameOfRun(view).replace(/^The /, 'the ')}`;
@@ -125,6 +126,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     <div class="rn-shelf"></div>
     <div class="rn-note rn-empty" style="display:none"></div>
     <div class="rn-note rn-bought" style="display:none"></div>
+    <div class="rl-rack" style="display:none"></div>
     <div class="rn-buttons">
       <span class="rn-hint rn-hint-l"><b>A</b>/<b>D</b> or click a card to buy</span>
       <div class="rn-btn rn-advance rn-primary rn-focus">Advance to the Hollow Stag</div>
@@ -144,6 +146,7 @@ export function createShopScreen({ run, build, party = () => null }) {
   const lantern = el.querySelector('.rn-lantern');
   const lanternGlow = el.querySelector('.rn-lanternglow');
   const advanceBtn = el.querySelector('.rn-advance');
+  const rackEl = el.querySelector('.rl-rack');
   advanceBtn.addEventListener('click', () => run().advanceFromShop());
   // What Enter does now (fix-M3-r5, keyboard half of PLAN §16.4): both lines
   // share one grid cell and only visibility flips, so the hint keeps its
@@ -481,8 +484,82 @@ export function createShopScreen({ run, build, party = () => null }) {
       shelf.style.minHeight = shelfFrame.h > 0 ? `${shelfFrame.h}px` : '';
       build3(view);
     }
+    renderRack(view);
     fitHead(view);
     startMotes();
+  }
+
+  // ------------------------------------------------- the relic shelf --
+  // RELICS slice 2: the peddler's relic shelf (sim/relics.js openShelf) — a
+  // compact rack under the node shelf. A relic is the whole PARTY's; the
+  // viewed character's purse pays (the Glint strip above). Click a tile,
+  // 5 / 6, or pad focus past the last card then A.
+  let rackSig = '';
+  const rackTiles = [];
+  const rackOf = (view) => (view && view.relics && Array.isArray(view.relics.shelf) && view.relics.shelf.length ? view.relics.shelf : null);
+  const buyRelic = (i) => {
+    const r = run();
+    if (r && typeof r.buyRelic === 'function') r.buyRelic(viewSeat, i);
+  };
+  function renderRack(view) {
+    const items = rackOf(view);
+    const purse = items ? shelfOf(view, viewSeat).wallet : 0;
+    const sig = items ? `${viewSeat}|${purse}|${items.map((r) => `${r.id}:${r.price}:${r.sold ? 1 : 0}`).join(',')}` : 'off';
+    if (sig === rackSig) return;
+    const was = rackSig;
+    rackSig = sig;
+    rackTiles.length = 0;
+    if (!items) {
+      rackEl.style.display = 'none';
+      rackEl.innerHTML = '';
+      if (was !== 'off' && was !== '') dirtyFlag = true;
+      return;
+    }
+    const who = CLASS_NAME[CLASS_OF_SEAT[viewSeat]] ?? 'Healer';
+    rackEl.style.display = '';
+    rackEl.innerHTML =
+      `<div class="rl-racklab"><b>RELICS</b><span>for the whole party · paid from the ${esc(who)}'s purse · <b>5</b>/<b>6</b></span></div>` +
+      `<div class="rl-rackrow">${items
+        .map(
+          (r, i) => `
+        <div class="rl-ritem${r.sold ? ' rl-rsold' : ''}" data-i="${i}" style="--rar:${RARITY_COLOR[r.rarity] ?? RARITY_COLOR.common}" title="${esc(`${r.name} — ${r.text}`)}">
+          <div class="rl-ricon">${relicIconHtml(r.id, 30)}</div>
+          <div class="rl-rtext"><div class="rl-rname">${esc(r.name)} <span class="rl-rrar">${esc(r.rarity.toUpperCase())}</span></div><div class="rl-rbody">${esc(r.text)}</div></div>
+          ${
+            r.sold
+              ? '<div class="rl-rstamp">TAKEN</div>'
+              : `<div class="rn-plaque rl-rplaque${purse < r.price ? ' rn-short' : ''}"><span class="rn-plaque-coin">${iconHtml('coin', { size: 16 })}</span><span class="rn-price">${r.price}</span></div>`
+          }
+        </div>`
+        )
+        .join('')}</div>`;
+    rackEl.querySelectorAll('.rl-ritem').forEach((t) => {
+      const i = Number(t.dataset.i);
+      rackTiles[i] = t;
+      t.addEventListener('click', () => buyRelic(i));
+      t.addEventListener('mouseenter', () => t.classList.add('rl-rhover'));
+      t.addEventListener('mouseleave', () => t.classList.remove('rl-rhover'));
+    });
+    if (was === 'off' || was === '' || was.split('|')[0] !== String(viewSeat)) dirtyFlag = true;
+    if (pendingFlare !== null && rackTiles[pendingFlare]) rackTiles[pendingFlare].classList.add('rl-rflare');
+    pendingFlare = null;
+    paintPadFocus();
+  }
+  // A bought relic flares; a denied one shakes its plaque (same 300 ms rule).
+  // (The sim's event lands before the rack is rebuilt as sold, so the flare
+  // is applied to the rebuilt tile.)
+  let pendingFlare = null;
+  function onRelicPurchase(ev) {
+    pendingFlare = ev.index ?? null;
+  }
+  function onRelicDenied(ev) {
+    if ((ev.seat ?? 0) !== viewSeat) return;
+    const t = rackTiles[ev.index ?? -1];
+    const pl = t && t.querySelector('.rl-rplaque');
+    if (!pl) return;
+    pl.classList.remove('rl-rdeny');
+    void pl.offsetWidth;
+    pl.classList.add('rl-rdeny');
   }
 
   // ------------------------------------------------------- purchase --
@@ -883,6 +960,10 @@ export function createShopScreen({ run, build, party = () => null }) {
       if (fresh) setView(viewSeat + (code === 'KeyQ' || code === 'PageUp' ? -1 : 1));
       return true;
     }
+    if (code === 'Digit5' || code === 'Digit6') {
+      if (fresh) buyRelic(Number(code.slice(5)) - 5);
+      return true;
+    }
     if (code === 'Digit1' || code === 'Digit2' || code === 'Digit3' || code === 'Digit4') {
       const i = Number(code.slice(5)) - 1;
       if (e && e.shiftKey && viewSeat > 0) run().partyShopMark(viewSeat, i);
@@ -898,8 +979,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     }
     if (code === 'Enter' || code === 'NumpadEnter') {
       if (!fresh) return true; // fresh-press rule: never advance on a held key
-      if (padFocus >= 0) buyOn(padFocus);
-      else run().advanceFromShop();
+      focusBuy();
       return true;
     }
     // Esc passes through unconsumed to the pause menu (PLAN §1.5, ruling
@@ -943,15 +1023,14 @@ export function createShopScreen({ run, build, party = () => null }) {
       setView(viewSeat + (action === 'tabPrev' ? -1 : 1));
       return true;
     }
-    const n = (shelfOf(view, viewSeat).stock ?? []).length;
+    const n = (shelfOf(view, viewSeat).stock ?? []).length + rackTiles.length;
     if (action === 'left' || action === 'right') {
       padFocus = Math.max(-1, Math.min(n - 1, padFocus + (action === 'left' ? -1 : 1)));
       paintPadFocus();
       return true;
     }
     if (action === 'confirm') {
-      if (padFocus >= 0) buyOn(padFocus);
-      else run().advanceFromShop();
+      focusBuy();
       return true;
     }
     if (action === 'tertiary' && padFocus >= 0 && viewSeat > 0) {
@@ -962,8 +1041,16 @@ export function createShopScreen({ run, build, party = () => null }) {
   }
   // The keyboard / pad card focus as drawn: the lifted card, the lamp's ring
   // and what Enter does now (fix-M3-r5: the keyboard half of PLAN §16.4).
+  // The focus runs lamp (-1) -> node cards -> relic tiles.
+  function focusBuy() {
+    const nc = cards.length;
+    if (padFocus < 0) run().advanceFromShop();
+    else if (padFocus < nc) buyOn(padFocus);
+    else buyRelic(padFocus - nc);
+  }
   function paintPadFocus() {
     cards.forEach((c, k) => c && c.classList.toggle('rn-hover', k === padFocus));
+    rackTiles.forEach((t, k) => t && t.classList.toggle('rl-rhover', k + cards.length === padFocus));
     advanceBtn.classList.toggle('rn-focus', padFocus < 0);
     hintLampEl.style.visibility = padFocus < 0 ? '' : 'hidden';
     hintCardEl.style.visibility = padFocus < 0 ? 'hidden' : '';
@@ -978,6 +1065,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     shelfFrame.h = 0;
     shelfFrame.stack = false;
     signature = '';
+    rackSig = '';
     headFit.key = '';
     paintPadFocus();
   }
@@ -990,7 +1078,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     if ((ev.seat ?? 0) === viewSeat) denyShake(ev.index ?? 0);
   };
 
-  return { el, render, key, pad, open, denyShake, denyShakeSeat, onPurchase, animState, pin, probe, sel, setView, resetView, dirty, name: 'shop' };
+  return { el, render, key, pad, open, denyShake, denyShakeSeat, onPurchase, onRelicPurchase, onRelicDenied, animState, pin, probe, sel, setView, resetView, dirty, name: 'shop' };
 }
 
 export { PALETTE as _shopPalette };

@@ -38,6 +38,15 @@ export const RELIC_STRIP_CSS = `
   }
   #relic-strip .rl-curse .rl-icon { width: 22px; height: 22px; }
   #relic-strip .rl-curse span { color: ${PALETTE.bone}; font-weight: 600; letter-spacing: 0; }
+  /* Slice 2: the run-long MAJOR curses, a violet row of bound marks. */
+  #relic-strip .rl-majors {
+    display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 6px; border-radius: 10px;
+    background: ${PALETTE.voidCharcoal}E6; border: 1px solid ${PALETTE.godstuffViolet}66;
+    font-size: 13px; font-weight: 800; letter-spacing: 0.08em; color: ${PALETTE.godstuffViolet};
+  }
+  #relic-strip .rl-major { height: 26px; display: flex; align-items: center; gap: 3px; color: ${PALETTE.godstuffViolet}; }
+  #relic-strip .rl-major span { color: ${PALETTE.bone}; font-weight: 600; letter-spacing: 0; font-size: 14px; }
+  #relic-strip .rl-major .rl-icon { width: 22px; height: 22px; }
 `;
 
 export function createRelicStrip() {
@@ -68,8 +77,9 @@ export function createRelicStrip() {
   function update(view) {
     const R = view && view.active && view.relics ? view.relics : null;
     const curseLive = R && R.curse && view.room === R.curse.room && view.phase === 'combat' ? R.curse : null;
-    const show = !!R && (R.owned.length > 0 || !!curseLive);
-    const s = show ? `${R.owned.map((o) => o.id).join(',')}|${curseLive ? curseLive.id : '-'}` : 'off';
+    const majors = R && Array.isArray(R.majors) ? R.majors : [];
+    const show = !!R && (R.owned.length > 0 || !!curseLive || majors.length > 0);
+    const s = show ? `${R.owned.map((o) => o.id).join(',')}|${curseLive ? curseLive.id : '-'}|${majors.map((m) => m.id).join(',')}` : 'off';
     if (s !== sig) {
       sig = s;
       el.classList.toggle('rl-on', show);
@@ -84,9 +94,15 @@ export function createRelicStrip() {
           })
           .join('');
         known = new Set(R.owned.map((o) => o.id));
+        // The bound row carries every major curse, by mark and name, for the
+        // rest of the run (its own room included); the CURSED line is the
+        // room curse being fought.
+        const bound = majors.map((m) => `<div class="rl-major" title="${esc(`${m.name} (bound for the run) — ${m.text}`)}">${curseIconHtml(22, true)}<span>${esc(m.name)}</span></div>`).join('');
+        const roomCurse = curseLive && !curseLive.major ? curseLive : null;
         el.innerHTML =
           (badges ? `<div class="rl-badges">${badges}</div>` : '') +
-          (curseLive ? `<div class="rl-curse" title="${esc(curseLive.text)}">${curseIconHtml(22)} CURSED <span>${esc(curseLive.name)}</span></div>` : '');
+          (bound ? `<div class="rl-majors">BOUND ${bound}</div>` : '') +
+          (roomCurse ? `<div class="rl-curse" title="${esc(roomCurse.text)}">${curseIconHtml(22)} CURSED <span>${esc(roomCurse.name)}</span></div>` : '');
       }
       place(true);
     } else if (show) place();

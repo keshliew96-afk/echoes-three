@@ -58,7 +58,7 @@ const KEY_OF = { dodge: 'Space', interact: 'KeyE', basic: 'Mouse2' };
 for (let i = 1; i <= 4; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
 // (+ CAMPAIGN, PLAN §12.9: a guest can neither start, advance nor abandon a
 // campaign — the host drives every level transition.)
-const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
+const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'buyRelic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
 // M4c: autoFill (the socket screen's F / pad Y) mutates the build too — a guest's
 // press becomes the same refused CMD as a socket() (build decisions are the host's).
 const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);
@@ -72,13 +72,15 @@ const GUEST_PARTY_RUN = {
   partyPick: (seat, choice, replace) => ({ op: 'pick', seat, choice: choice === 'take' ? 'take' : 'leave', replace: Number.isInteger(replace) ? replace : null }),
   partyReplace: (seat, slot) => ({ op: 'replace', seat, slot }),
   partyBuy: (seat, index) => ({ op: 'buy', seat, index }),
+  // RELICS slice 2: a guest buys a relic off the relic shelf from its OWN purse.
+  buyRelic: (seat, index) => ({ op: 'relic', seat, index }),
   partyShopMark: (seat, index, on) => ({ op: 'mark', seat, index, on: on === undefined ? null : !!on }),
   partyShopDone: (seat) => ({ op: 'done', seat }),
   reorderLoadout: (seat, from, to) => ({ op: 'reorder', seat, from, to }),
 };
 const PARTY_SYS_MUTATORS = new Set(['swap', 'reorder', 'aiSort', 'grantNode', 'autoFill', 'gainPurse', 'setPurse', 'spend', 'pulse', 'applyGrant', 'stress', 'setMode', 'setAutoSocketOwn', 'resetForRun', 'resetLevelState']);
 const SEAT_BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'releaseSkill', 'echoArm', 'setResonance', 'attachSkills']);
-const PARTY_OPS = new Set(['pick', 'replace', 'buy', 'mark', 'done', 'reorder', 'socket', 'unsocket', 'autofill', 'pref', 'screen']);
+const PARTY_OPS = new Set(['pick', 'replace', 'buy', 'relic', 'mark', 'done', 'reorder', 'socket', 'unsocket', 'autofill', 'pref', 'screen']);
 // fix-DEPLOY-r6 (DEP6-F2): a guest's refused press on a SHARED decision says
 // whose it is — the doors and the level flow are the host's seat's (w = the
 // chooser's class); anything else is the Healer's own build, which belongs to
@@ -512,6 +514,9 @@ export function createNetSession(ctx) {
         break;
       case 'buy':
         r = R.partyBuy(seat, Number(cmd.index));
+        break;
+      case 'relic':
+        r = typeof R.buyRelic === 'function' ? R.buyRelic(seat, Number(cmd.index)) : null;
         break;
       case 'mark':
         r = R.partyShopMark(seat, Number(cmd.index), cmd.on === null || cmd.on === undefined ? undefined : !!cmd.on);
