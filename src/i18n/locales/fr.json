@@ -1725,7 +1725,6 @@
  "Warding Aura": "Aura protectrice",
  "WAVE {shown}/{total}": "VAGUE {shown}/{total}",
  "WAYSTONE": "BORNE",
- "WAYSTONE LOST": "BORNE PERDUE",
  "Wear vows to curse every combat room. Each vow pays {pct}% more {currency}.": "Jure des vœux pour maudire chaque salle de combat. Chaque vœu rapporte {pct} % de {currency} en plus.",
  "Weir": "Barrage",
  "Welcome back — you are hosting again": "Bon retour — tu es de nouveau l’hôte",
@@ -1807,5 +1806,6 @@
  "zone": "zone",
  "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "zone {a} ticks → {b} ticks ({sa} s → {sb} s)",
  "HS@@Hearthsong": "CÂ",
- "Basic attack and dodge. Skills come from wave rewards.": "Attaque de base et esquive. Les compétences viennent des récompenses de vague."
+ "Basic attack and dodge. Skills come from wave rewards.": "Attaque de base et esquive. Les compétences viennent des récompenses de vague.",
+ "WAYSTONE LOST · NO REWARD": "BORNE PERDUE · PAS DE RÉCOMPENSE"
 }

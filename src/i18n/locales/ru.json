@@ -1743,7 +1743,6 @@
  "Warding Aura": "Охранная аура",
  "WAVE {shown}/{total}": "ВОЛНА {shown}/{total}",
  "WAYSTONE": "ПУТЕВОЙ КАМЕНЬ",
- "WAYSTONE LOST": "КАМЕНЬ ПОТЕРЯН",
  "Wear vows to curse every combat room. Each vow pays {pct}% more {currency}.": "Обеты проклинают каждую боевую комнату. Каждый обет: {currency} +{pct}%.",
  "Weir": "Запруда",
  "Welcome back — you are hosting again": "С возвращением — ты снова хост",
@@ -1826,5 +1825,6 @@
  "zone": "зона",
  "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "зона (тики): {a} → {b} ({sa} с → {sb} с)",
  "HS@@Hearthsong": "ПУ",
- "Basic attack and dodge. Skills come from wave rewards.": "Обычная атака и уклонение. Навыки дают награды за волны."
+ "Basic attack and dodge. Skills come from wave rewards.": "Обычная атака и уклонение. Навыки дают награды за волны.",
+ "WAYSTONE LOST · NO REWARD": "КАМЕНЬ ПОТЕРЯН · БЕЗ НАГРАДЫ"
 }

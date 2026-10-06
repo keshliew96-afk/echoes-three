@@ -1707,7 +1707,6 @@
  "Warding Aura": "Schutzaura",
  "WAVE {shown}/{total}": "WELLE {shown}/{total}",
  "WAYSTONE": "WEGSTEIN",
- "WAYSTONE LOST": "WEGSTEIN VERLOREN",
  "Wear vows to curse every combat room. Each vow pays {pct}% more {currency}.": "Leiste Schwüre, um jeden Kampfraum zu verfluchen. Jeder Schwur bringt {pct}% mehr {currency}.",
  "Weir": "Wehr",
  "Welcome back — you are hosting again": "Willkommen zurück — du hostest wieder",
@@ -1788,5 +1787,6 @@
  "zone": "Zone",
  "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "Zone {a} Ticks → {b} Ticks ({sa} s → {sb} s)",
  "HS@@Hearthsong": "HS",
- "Basic attack and dodge. Skills come from wave rewards.": "Grundangriff und Ausweichen. Fertigkeiten gibt es als Wellenbelohnung."
+ "Basic attack and dodge. Skills come from wave rewards.": "Grundangriff und Ausweichen. Fertigkeiten gibt es als Wellenbelohnung.",
+ "WAYSTONE LOST · NO REWARD": "WEGSTEIN VERLOREN · KEINE BELOHNUNG"
 }

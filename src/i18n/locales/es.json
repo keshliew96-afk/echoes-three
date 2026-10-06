@@ -1725,7 +1725,6 @@
  "Warding Aura": "Aura Protectora",
  "WAVE {shown}/{total}": "OLEADA {shown}/{total}",
  "WAYSTONE": "PIEDRA GUÍA",
- "WAYSTONE LOST": "PIEDRA GUÍA PERDIDA",
  "Wear vows to curse every combat room. Each vow pays {pct}% more {currency}.": "Lleva votos para maldecir cada sala de combate. Cada voto paga un {pct}% más de {currency}.",
  "Weir": "Presa",
  "Welcome back — you are hosting again": "Bienvenido de nuevo: vuelves a ser el anfitrión",
@@ -1807,5 +1806,6 @@
  "zone": "zona",
  "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "zona {a} tics → {b} tics ({sa} s → {sb} s)",
  "HS@@Hearthsong": "CH",
- "Basic attack and dodge. Skills come from wave rewards.": "Ataque básico y esquiva. Las habilidades llegan como recompensa de oleada."
+ "Basic attack and dodge. Skills come from wave rewards.": "Ataque básico y esquiva. Las habilidades llegan como recompensa de oleada.",
+ "WAYSTONE LOST · NO REWARD": "PIEDRA GUÍA PERDIDA · SIN RECOMPENSA"
 }

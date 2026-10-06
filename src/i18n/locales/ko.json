@@ -1653,7 +1653,6 @@
  "Warding Aura": "수호 오라",
  "WAVE {shown}/{total}": "웨이브 {shown}/{total}",
  "WAYSTONE": "이정석",
- "WAYSTONE LOST": "이정석 상실",
  "Wear vows to curse every combat room. Each vow pays {pct}% more {currency}.": "서약을 걸면 모든 전투 방에 저주가 걸립니다. 서약마다 {currency} {pct}% 추가.",
  "Weir": "둑",
  "Welcome back — you are hosting again": "돌아오신 걸 환영합니다 — 다시 호스트입니다",
@@ -1731,5 +1730,6 @@
  "zone": "지대",
  "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "지대 {a}틱 → {b}틱 ({sa}초 → {sb}초)",
  "HS@@Hearthsong": "노래",
- "Basic attack and dodge. Skills come from wave rewards.": "기본 공격과 회피. 스킬은 웨이브 보상으로 얻습니다."
+ "Basic attack and dodge. Skills come from wave rewards.": "기본 공격과 회피. 스킬은 웨이브 보상으로 얻습니다.",
+ "WAYSTONE LOST · NO REWARD": "이정석 상실 · 보상 없음"
 }

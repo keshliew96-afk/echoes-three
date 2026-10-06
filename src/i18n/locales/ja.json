@@ -1653,7 +1653,6 @@
  "Warding Aura": "守りのオーラ",
  "WAVE {shown}/{total}": "ウェーブ {shown}/{total}",
  "WAYSTONE": "道標石",
- "WAYSTONE LOST": "道標石 喪失",
  "Wear vows to curse every combat room. Each vow pays {pct}% more {currency}.": "誓いを立てるとすべての戦闘部屋が呪われます。誓い1つごとに{currency}が{pct}%増加。",
  "Weir": "堰",
  "Welcome back — you are hosting again": "おかえりなさい — 再びホストになりました",
@@ -1731,5 +1730,6 @@
  "zone": "ゾーン",
  "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "ゾーン {a}ティック → {b}ティック（{sa}秒 → {sb}秒）",
  "HS@@Hearthsong": "HS",
- "Basic attack and dodge. Skills come from wave rewards.": "通常攻撃と回避のみ。スキルはウェーブ報酬で手に入る。"
+ "Basic attack and dodge. Skills come from wave rewards.": "通常攻撃と回避のみ。スキルはウェーブ報酬で手に入る。",
+ "WAYSTONE LOST · NO REWARD": "道標石 喪失 · 報酬なし"
 }

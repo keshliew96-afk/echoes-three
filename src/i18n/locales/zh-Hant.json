@@ -1653,7 +1653,6 @@
  "Warding Aura": "守護光環",
  "WAVE {shown}/{total}": "第 {shown}/{total} 波",
  "WAYSTONE": "引路石",
- "WAYSTONE LOST": "引路石失守",
  "Wear vows to curse every combat room. Each vow pays {pct}% more {currency}.": "立下誓約讓每間戰鬥房間受到詛咒。每個誓約多給 {pct}% {currency}。",
  "Weir": "攔水堰",
  "Welcome back — you are hosting again": "歡迎回來，你再次擔任房主",
@@ -1731,5 +1730,6 @@
  "zone": "區域",
  "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": "區域 {a} 刻 → {b} 刻（{sa} 秒 → {sb} 秒）",
  "HS@@Hearthsong": "爐歌",
- "Basic attack and dodge. Skills come from wave rewards.": "普通攻擊和閃避。技能來自波次獎勵。"
+ "Basic attack and dodge. Skills come from wave rewards.": "普通攻擊和閃避。技能來自波次獎勵。",
+ "WAYSTONE LOST · NO REWARD": "引路石失守 · 本房間無獎勵"
 }
