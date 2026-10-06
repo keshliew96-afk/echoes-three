@@ -158,6 +158,13 @@ export function languageName(code = lang) {
   return l ? l.name : code;
 }
 
+// A key may carry a disambiguating context after '@@' ('Mouse@@input device'
+// vs the critter 'Mouse'); English shows the text before it.
+const bare = (k) => {
+  const i = k.indexOf('@@');
+  return i < 0 ? k : k.slice(0, i);
+};
+
 function fill(s, vars) {
   if (!vars) return s;
   return s.replace(/\{(\w+)\}/g, (m, k) => (Object.prototype.hasOwnProperty.call(vars, k) && vars[k] !== undefined && vars[k] !== null ? String(vars[k]) : m));
@@ -170,12 +177,12 @@ export function t(en, vars) {
   const key = String(en);
   if (!key) return '';
   seen.add(key);
-  if (!table) return fill(key, vars);
+  if (!table) return fill(bare(key), vars);
   const hit = table[key];
   if (typeof hit === 'string') return fill(hit, vars);
   if (hit && typeof hit === 'object' && typeof hit.other === 'string') return fill(hit.other, vars);
   misses.add(key);
-  return fill(key, vars);
+  return fill(bare(key), vars);
 }
 
 // Plural line: English picks `one` for n === 1, else `other`; a translation

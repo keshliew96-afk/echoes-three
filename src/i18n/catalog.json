@@ -4990,10 +4990,14 @@
  },
  "Mouse": {
   "files": [
-   "src/net/seats.js",
-   "src/ui/menu/tabs/controls.js"
+   "src/net/seats.js"
   ],
   "data": true
+ },
+ "Mouse@@input device": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
  },
  "move": {
   "files": [

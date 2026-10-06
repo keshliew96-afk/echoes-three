@@ -85,7 +85,7 @@ export function buildControlsTab(ctx) {
     const ORDER = ['KeyW', 'KeyA', 'KeyS', 'KeyD'];
     const move = map ? [...map.move].sort((x, y) => (ORDER.indexOf(x) + 99) % 99 - (ORDER.indexOf(y) + 99) % 99) : ORDER;
     left.appendChild(row(t('Move'), move.map(keyName)));
-    left.appendChild(row(t('Aim'), [t('Mouse')]));
+    left.appendChild(row(t('Aim'), [t('Mouse@@input device')]));
     left.appendChild(row(t('Basic attack (hold)'), [t('Right mouse')]));
     if (skills.length) {
       const first = keyName(skills[0].code);
