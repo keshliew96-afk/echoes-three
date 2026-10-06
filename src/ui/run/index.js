@@ -819,6 +819,13 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   bus.on('shop_purchase', (ev) => {
     if (current === 'shop') screens.shop.onPurchase(ev);
   });
+  // RELICS slice 2: the relic shelf's own buy flare and denial shake.
+  bus.on('relic_purchase', (ev) => {
+    if (current === 'shop') screens.shop.onRelicPurchase(ev);
+  });
+  bus.on('relic_denied', (ev) => {
+    if (current === 'shop') screens.shop.onRelicDenied(ev);
+  });
   // §16: "Taking a node chains straight into the Socket screen with the
   // candidate pre-focused." The socket screen owns that focus; we only open it.
   // `ev.reward` (not `ev.type`): the bus builds events as
@@ -854,7 +861,20 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   bus.on('curse_apply', (ev) => {
     const a = service('app');
     const c = CURSES[ev.curse];
-    if (a && typeof a.toast === 'function' && c) a.toast(`Cursed room: ${c.name}. ${c.text} Clear it for a relic.`, { tone: 'info', ms: 5200 });
+    if (!a || typeof a.toast !== 'function' || !c) return;
+    if (c.major) a.toast(`Bound for the run: ${c.name}. ${c.text} Clear this room for a greater relic.`, { tone: 'info', ms: 6000 });
+    else a.toast(`Cursed room: ${c.name}. ${c.text} Clear it for a relic.`, { tone: 'info', ms: 5200 });
+  });
+  // Slice 2: an elite's relic drop, a relic bought at the peddler.
+  bus.on('relic_drop', (ev) => {
+    const a = service('app');
+    const r = RELICS[ev.relic];
+    if (a && typeof a.toast === 'function' && r) a.toast(`The elite dropped a relic: ${r.name}. ${r.text}`, { tone: 'info', ms: 5600 });
+  });
+  bus.on('relic_purchase', (ev) => {
+    const a = service('app');
+    const r = RELICS[ev.relic];
+    if (a && typeof a.toast === 'function' && r) a.toast(`${r.name} joins the party. ${r.text}`, { tone: 'info', ms: 4200 });
   });
   // A run ending or a room starting must never leave a page hanging.
   bus.on('room_start', () => setScreen('none'));

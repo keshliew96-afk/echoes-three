@@ -187,8 +187,22 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     if (ev.playerTargeted && ev.tick > lastPlayerTelegraphStart) lastPlayerTelegraphStart = ev.tick;
   });
 
+  // RELICS (Short Fuse): a provider of the live room's telegraph rule
+  // ({ mul, minTicks } | null). Every new telegraph's duration goes through
+  // fused(); with no rule it is returned untouched.
+  let fuseRule = () => null;
+  function fused(ticks) {
+    const f = fuseRule();
+    if (!f || !(ticks > f.minTicks)) return ticks;
+    return Math.max(f.minTicks, Math.round(ticks * f.mul));
+  }
+
   // --- archetype context (PLAN §3.6): everything an archetype module may use.
   function startTelegraph(e, tick, rec) {
+    if (Number.isFinite(rec.resolveTick)) {
+      const d = fused(rec.resolveTick - tick);
+      rec.resolveTick = tick + d;
+    }
     e.telegraph = rec;
     if (rec.playerTargeted) governor.noteStart(tick);
     events.emit(tick, 'telegraph_start', {
@@ -290,6 +304,11 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     if (!A || typeof A.onDeath !== 'function') return;
     const e = registry.byId(ev.id);
     if (!e || e.state !== 'active') return;
+    // RELICS (Spore Sac): a party kill leaves no death hazard behind.
+    if (A.deathHazard && e.noDeathHazard) {
+      events.emit(ev.tick, 'hazard_smothered', { id: e.id, etype: e.kind, x: r2(e.x), z: r2(e.z) });
+      return;
+    }
     A.onDeath(ctx, e, ev.tick);
   });
 
@@ -599,6 +618,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
   // land even if the thrower dies. The Ember ring at the landing point is the
   // glob's own telegraph (plain data on the glob).
   function spawnGlob(owner, tick, o) {
+    o = { ...o, flightTicks: fused(o.flightTicks) };
     const g = registry.spawn({
       kind: 'eglob',
       faction: 'hostile',
@@ -819,7 +839,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       if (playerTargeted && !governorGrants(tick)) continue; // cadence governor
       e.telegraph = {
         startTick: tick,
-        resolveTick: tick + S.telegraphTicks, // §11: visible >= 0.7 s
+        resolveTick: tick + fused(S.telegraphTicks), // §11: visible >= 0.7 s (Short Fuse: >= 0.6 s)
         x: target.x, // locked impact zone (the Ember decal sits here)
         z: target.z,
         dirX: dx / d,
@@ -933,6 +953,10 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     // Boss kits (sim/boss.js kctx): the same glob and shot models the
     // archetypes use, owned by the boss body.
     spawnGlob: (owner, tick, o) => spawnGlob(owner, tick, o),
+    // RELICS (Short Fuse): fn() -> { mul, minTicks } | null.
+    setFuse(fn) {
+      fuseRule = typeof fn === 'function' ? fn : () => null;
+    },
     fireShot: (owner, tick, dirX, dirZ, o) => ctx.fireShot(owner, tick, dirX, dirZ, o),
     hasType: (etype) => !!(ENEMY_STATS[etype] || ARCHETYPES[etype]),
     isEnemyKind,

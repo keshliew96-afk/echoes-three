@@ -75,7 +75,7 @@ const r2 = (v) => Math.round(v * 100) / 100;
 // cdTicks, passive } | null — so tiles, cooldowns and predicted casts follow
 // swaps, reorders and sockets. Without it (or before the first snapshot)
 // the §7 starting kit.
-export function createActionShadow({ bus, seat, cosmetics = null, now = () => performance.now(), kit: kitFn = null }) {
+export function createActionShadow({ bus, seat, cosmetics = null, now = () => performance.now(), kit: kitFn = null, dodgeCd = () => DODGE.cooldownTicks }) {
   const classId = SEAT_CLASSES[seat];
   const staticKit = seat > 0 && ALLY_KITS[classId] ? ALLY_KITS[classId].map((d) => ({ id: d.id, abbrev: d.abbrev, def: d, cdTicks: Math.max(CD_FLOOR, secTicks(d.cd)), passive: false })) : null;
   const kitNow = () => {
@@ -110,7 +110,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   let lastAuth = null; // { cds: [4], basic, dodge, fire, k }
 
   const cdOf = (kind, slot) => {
-    if (kind === 'dodge') return DODGE.cooldownTicks;
+    if (kind === 'dodge') return dodgeCd(); // RELICS: Ash Feather
     if (kind === 'basic') return INTERVAL;
     const k = slot >= 0 ? kitNow() : null;
     return k && k[slot] ? k[slot].cdTicks : null;
@@ -148,7 +148,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
     if (kind === 'dodge') {
       if (ctx.dashing || ctx.seq < dodgeAt) return null;
       const prev = dodgeAt;
-      dodgeAt = ctx.seq + DODGE.cooldownTicks;
+      dodgeAt = ctx.seq + dodgeCd();
       const p = record('dodge', -1, ctx.seq, ctx.keyAt, prev);
       replay({ tick: ctx.tick, type: 'ally_dodge', id: ctx.entityId, partyIndex: seat, classId, dx: r2(d.x), dz: r2(d.z), predicted: true, predId: p.predId, seat });
       return p.predId;
@@ -492,7 +492,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
     const k = kitNow();
     return k.map((e, i) => (e ? { id: e.id, abbrev: e.abbrev, passive: !!e.passive, remainingTicks: e.passive ? 0 : Math.max(0, readyAt[i] - seqNow), totalTicks: e.cdTicks } : null));
   }
-  const dodgeView = (seqNow = curSeq) => ({ remaining: Math.max(0, dodgeAt - seqNow), total: DODGE.cooldownTicks });
+  const dodgeView = (seqNow = curSeq) => ({ remaining: Math.max(0, dodgeAt - seqNow), total: dodgeCd() });
 
   // reset() — a new authority / timeline (migration, return from away): every
   // open prediction is meaningless now and is retracted quietly; the log and

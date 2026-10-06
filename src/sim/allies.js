@@ -1347,8 +1347,11 @@ export function createAllySystem({
           const mv = f.moves[f.moves.length - 1];
           a.dashVel = dodgeVelocity(a, mv, a.aim, { x: a.faceX ?? 0, z: a.faceZ ?? 1 });
           a.dashTicksLeft = HUMAN_DODGE.durationTicks;
-          a.dodgeReadyTick = tick + HUMAN_DODGE.cooldownTicks;
-          T.dodge = dtag.inputSeq + HUMAN_DODGE.cooldownTicks;
+          // RELICS (Ash Feather): the relic run's dodge cooldown factor.
+          const M = combat.getMods ? combat.getMods() : null;
+          const dcd = M && M.active() ? Math.round(HUMAN_DODGE.cooldownTicks * M.dodgeCdMul()) : HUMAN_DODGE.cooldownTicks;
+          a.dodgeReadyTick = tick + dcd;
+          T.dodge = dtag.inputSeq + dcd;
           a.dashing = true;
           a.iframeUntilTick = tick + 1;
           const l = Math.hypot(a.dashVel.x, a.dashVel.z) || 1;

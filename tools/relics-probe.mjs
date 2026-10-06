@@ -88,9 +88,10 @@ function playCampaign(seed) {
     step(ap);
     const v = run.view();
     // A cursed combat room: its plan must carry the curse's numbers.
-    if (v.phase === 'combat' && v.relics && v.relics.curse && v.relics.curse.room === v.room && !cursedPlan) {
+    if (v.phase === 'combat' && v.relics && v.relics.curse && v.relics.curse.room === v.room && !v.relics.curse.major && !cursedPlan) {
       const plan = run.roomPlan();
-      const want = cursedDiff(difficulty(v.act, Math.min(6, v.room), v.challenge), v.relics.curse.id);
+      let want = cursedDiff(difficulty(v.act, Math.min(6, v.room), v.challenge), v.relics.curse.id);
+      for (const m of v.relics.majors) want = cursedDiff(want, m.id); // slice 2: run-long majors
       cursedPlan = { curse: v.relics.curse.id, room: v.room, plan, want };
     }
     if (v.phase === 'victory' || v.phase === 'defeat') {
@@ -99,12 +100,14 @@ function playCampaign(seed) {
     }
   }
   const offers = log.filter((e) => e.type === 'relic_offer');
-  const gains = log.filter((e) => e.type === 'relic_gain');
+  const allGains = log.filter((e) => e.type === 'relic_gain');
+  // Slice 2: elite drops and shop buys arrive without a pick.
+  const gains = allGains.filter((e) => e.source !== 'elite' && e.source !== 'shop');
   const doors = log.filter((e) => e.type === 'path_offer');
   const cursedDoors = doors.filter((e) => e.options.some((o) => o.curse));
   const taken = log.filter((e) => e.type === 'curse_taken');
   const levels = log.filter((e) => e.type === 'level_clear').length;
-  return { seed, summary, offers, gains, doors: doors.length, cursedDoors: cursedDoors.length, taken, levels, cursedPlan, sig: gains.map((g) => g.relic).join(',') + '|' + taken.map((t) => t.curse).join(','), outcome: summary ? summary.result : 'timeout' };
+  return { seed, summary, offers, gains, allGains, doors: doors.length, cursedDoors: cursedDoors.length, taken, levels, cursedPlan, sig: gains.map((g) => g.relic).join(',') + '|' + taken.map((t) => t.curse).join(','), outcome: summary ? summary.result : 'timeout' };
 }
 
 const results = [];
@@ -112,14 +115,14 @@ for (const seed of SEEDS) {
   const r = playCampaign(seed);
   results.push(r);
   const freeOffers = r.offers.filter((o) => o.source === 'free');
-  const curseOffers = r.offers.filter((o) => o.source === 'curse');
+  const curseOffers = r.offers.filter((o) => o.source === 'curse' || o.source === 'major');
   check(freeOffers.length >= 1 && freeOffers.every((o) => o.room === 1), `seed ${seed}: a free relic pick after room 1 of each level (got ${freeOffers.map((o) => o.room)})`);
   check(freeOffers.length === Math.min(3, r.levels + (r.outcome === 'defeat' ? 1 : 0)) || r.outcome !== 'victory', `seed ${seed}: one free pick per level played (free ${freeOffers.length}, levels cleared ${r.levels})`);
   check(r.offers.every((o) => o.choices.length === 3 && new Set(o.choices).size === 3), `seed ${seed}: every pick offers three distinct relics`);
   check(r.gains.length === r.offers.length, `seed ${seed}: every pick was taken (offers ${r.offers.length}, gains ${r.gains.length})`);
-  check(new Set(r.gains.map((g) => g.relic)).size === r.gains.length, `seed ${seed}: no relic twice`);
+  check(new Set(r.allGains.map((g) => g.relic)).size === r.allGains.length, `seed ${seed}: no relic twice`);
   check(r.cursedDoors > 0, `seed ${seed}: some path screens carry a cursed door (${r.cursedDoors}/${r.doors})`);
-  if (r.summary) check(Array.isArray(r.summary.relics) && r.summary.relics.length === r.gains.length, `seed ${seed}: the run summary lists the relics (${r.summary.relics})`);
+  if (r.summary) check(Array.isArray(r.summary.relics) && r.summary.relics.length === r.allGains.length, `seed ${seed}: the run summary lists the relics (${r.summary.relics})`);
   // Every cursed room that was cleared (a later room was entered) paid a pick.
   check(curseOffers.length <= r.taken.length, `seed ${seed}: curse picks never exceed curses taken`);
   if (r.cursedPlan) {
@@ -228,7 +231,7 @@ check(again.sig === results[0].sig, `seed ${SEEDS[0]} replays the same relics an
 }
 
 for (const r of results)
-  console.log(`seed ${r.seed}: ${r.outcome}, levels cleared ${r.levels}, relics [${r.gains.map((g) => g.relic).join(', ')}], cursed doors ${r.cursedDoors}/${r.doors}, curses taken [${r.taken.map((t) => `${t.curse}@${t.room}`).join(', ')}]`);
+  console.log(`seed ${r.seed}: ${r.outcome}, levels cleared ${r.levels}, relics [${r.allGains.map((g) => g.relic + (g.source === 'elite' ? '(elite)' : '')).join(', ')}], cursed doors ${r.cursedDoors}/${r.doors}, curses taken [${r.taken.map((t) => `${t.curse}@${t.room}`).join(', ')}]`);
 if (fails.length) {
   console.log(`\nFAIL (${fails.length})`);
   for (const f of fails) console.log(`  - ${f}`);

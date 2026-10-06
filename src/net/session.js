@@ -28,7 +28,7 @@ import { BIN, SNAPSHOT_EVERY_TICKS, SIM_HZ } from './protocol/constants.js';
 import { createSnapshotClient } from './protocol/snapshot.js';
 import { encodeInputPacket, decodeEvents, decodeEventsBundle, decodeCmd, encodeCmd, decodeKeyframe, fromBase64 } from './protocol/codec.js';
 import { frameFromSnapshot, seatInputOf, quantAim } from '../sim/netseats.js';
-import { moveIndex } from '../sim/remote.js';
+import { moveIndex, HUMAN_DODGE } from '../sim/remote.js';
 import { scriptedInput } from '../sim/script.js';
 import { isStunned } from '../sim/status.js';
 import { restoreShapes } from '../sim/shapes.js';
@@ -49,6 +49,7 @@ import { LEGACY_DEFAULT_URL } from './address.js';
 import { sanitizeName } from './protocol/messages.js';
 import { SKILLS } from '../sim/skills.js';
 import { cdTicksOf } from '../sim/allycast.js';
+import { dodgeCooldownTicks } from '../sim/relics.js';
 
 const now = () => performance.now();
 // A seat plays at most 4 skills (keys 1-4; the user's correction — the
@@ -58,7 +59,7 @@ const KEY_OF = { dodge: 'Space', interact: 'KeyE', basic: 'Mouse2' };
 for (let i = 1; i <= 4; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
 // (+ CAMPAIGN, PLAN §12.9: a guest can neither start, advance nor abandon a
 // campaign — the host drives every level transition.)
-const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
+const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'buyRelic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
 // M4c: autoFill (the socket screen's F / pad Y) mutates the build too — a guest's
 // press becomes the same refused CMD as a socket() (build decisions are the host's).
 const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);
@@ -72,13 +73,15 @@ const GUEST_PARTY_RUN = {
   partyPick: (seat, choice, replace) => ({ op: 'pick', seat, choice: choice === 'take' ? 'take' : 'leave', replace: Number.isInteger(replace) ? replace : null }),
   partyReplace: (seat, slot) => ({ op: 'replace', seat, slot }),
   partyBuy: (seat, index) => ({ op: 'buy', seat, index }),
+  // RELICS slice 2: a guest buys a relic off the relic shelf from its OWN purse.
+  buyRelic: (seat, index) => ({ op: 'relic', seat, index }),
   partyShopMark: (seat, index, on) => ({ op: 'mark', seat, index, on: on === undefined ? null : !!on }),
   partyShopDone: (seat) => ({ op: 'done', seat }),
   reorderLoadout: (seat, from, to) => ({ op: 'reorder', seat, from, to }),
 };
 const PARTY_SYS_MUTATORS = new Set(['swap', 'reorder', 'aiSort', 'grantNode', 'autoFill', 'gainPurse', 'setPurse', 'spend', 'pulse', 'applyGrant', 'stress', 'setMode', 'setAutoSocketOwn', 'resetForRun', 'resetLevelState']);
 const SEAT_BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'releaseSkill', 'echoArm', 'setResonance', 'attachSkills']);
-const PARTY_OPS = new Set(['pick', 'replace', 'buy', 'mark', 'done', 'reorder', 'socket', 'unsocket', 'autofill', 'pref', 'screen']);
+const PARTY_OPS = new Set(['pick', 'replace', 'buy', 'relic', 'mark', 'done', 'reorder', 'socket', 'unsocket', 'autofill', 'pref', 'screen']);
 // fix-DEPLOY-r6 (DEP6-F2): a guest's refused press on a SHARED decision says
 // whose it is — the doors and the level flow are the host's seat's (w = the
 // chooser's class); anything else is the Healer's own build, which belongs to
@@ -513,6 +516,9 @@ export function createNetSession(ctx) {
       case 'buy':
         r = R.partyBuy(seat, Number(cmd.index));
         break;
+      case 'relic':
+        r = typeof R.buyRelic === 'function' ? R.buyRelic(seat, Number(cmd.index)) : null;
+        break;
       case 'mark':
         r = R.partyShopMark(seat, Number(cmd.index), cmd.on === null || cmd.on === undefined ? undefined : !!cmd.on);
         if (typeof r === 'boolean') r = { ok: true };
@@ -637,7 +643,20 @@ export function createNetSession(ctx) {
   }
   function hostSeatDodge(seat) {
     const e = seatEntity(seat);
-    return e ? { remaining: Math.max(0, (e.dodgeReadyTick || 0) - world.tick), total: 72 } : null;
+    return e ? { remaining: Math.max(0, (e.dodgeReadyTick || 0) - world.tick), total: partyDodgeCd() } : null;
+  }
+  // RELICS (Ash Feather): the dodge cooldown the run's relics give, read from
+  // the (replicated) run view — the guest predictors and HUD rings use it.
+  function partyDodgeCd() {
+    let ids = null;
+    try {
+      const R = rawRunSystem();
+      const rl = R && typeof R.relics === 'function' ? R.relics() : R && R.view ? R.view().relics : null;
+      ids = rl && Array.isArray(rl.owned) ? rl.owned.map((o) => o.id) : null;
+    } catch {
+      ids = null;
+    }
+    return dodgeCooldownTicks(HUMAN_DODGE.cooldownTicks, ids);
   }
 
   // ---------------------------------------------------- audio cue hooks --
@@ -785,7 +804,7 @@ export function createNetSession(ctx) {
       dec: createSnapshotClient(),
       replica: createReplica({ world, registry, bus, scene, restoreShapes, restoreMovement, log }),
       interp: createInterpClock({ snapshotEveryTicks: net.snapshotEveryTicks || SNAPSHOT_EVERY_TICKS }),
-      own: createOwnSeat({ seat, kit: () => seatKit(seat) }),
+      own: createOwnSeat({ seat, kit: () => seatKit(seat), dodgeCd: () => partyDodgeCd() }),
       shadow: null,
       seq: 0,
       frames: [],
@@ -820,7 +839,7 @@ export function createNetSession(ctx) {
       batches: { seen: new Set(), toTick: new Map(), contig: 0, throughTick: 0, dupCopies: 0, viaReliable: 0, viaUnreliable: 0 },
       bytesCh: {},
     };
-    g.shadow = createActionShadow({ bus, seat, cosmetics, kit: () => seatKit(seat) });
+    g.shadow = createActionShadow({ bus, seat, cosmetics, kit: () => seatKit(seat), dodgeCd: () => partyDodgeCd() });
     g.party = createPartyShadow({ seat });
     g.replica.setSuppress((ev) => g.suppressed.has(ev));
     guest = g;

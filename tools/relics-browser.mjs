@@ -96,7 +96,7 @@ check(v.relics.owned.length === 1 && v.relics.owned[0].id === want, `a click tak
 let cursedRoom = null;
 for (let guard = 0; guard < 5 && !cursedRoom; guard++) {
   v = await waitPhase(['path']);
-  const side = v.path.options.findIndex((o) => o.curse);
+  const side = v.path.options.findIndex((o) => o.curse && !o.major); // a room curse (tools/relics2-browser.mjs covers majors)
   await settle();
   if (side >= 0) {
     const note = await page.evaluate(() => {
@@ -109,7 +109,8 @@ for (let guard = 0; guard < 5 && !cursedRoom; guard++) {
     await page.click(`.rn-path .rn-doorwrap[data-side="${side}"]`);
     cursedRoom = { room: v.path.nextRoom, curse: v.path.options[side].curse };
   } else {
-    await page.click('.rn-path .rn-doorwrap[data-side="0"]');
+    const clean = Math.max(0, v.path.options.findIndex((o) => !o.curse)); // step around a major curse
+    await page.click(`.rn-path .rn-doorwrap[data-side="${clean}"]`);
     v = await clearToReward();
     v = await takeDraft();
     if (v.phase === 'relic') await cmd('relicChoose', 0);

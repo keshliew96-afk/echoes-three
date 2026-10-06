@@ -185,6 +185,8 @@ export function createRunSystem({
     return !everStarted || (active && phase === 'combat');
   }
   enemies.setSpawnGate(combatAllowed);
+  // RELICS (Short Fuse): a cursed room's shorter telegraphs.
+  if (typeof enemies.setFuse === 'function') enemies.setFuse(() => (active ? relics.fuse() : null));
 
   let active = false;
   // fix-M4a-r5 (GP.8, data/classes.js AI_ENGAGE): the AI-held seats' campaign
@@ -508,6 +510,8 @@ export function createRunSystem({
     // RELICS: a cursed room rolls its waves with the curse's numbers.
     const roomCurse = combatRoom ? relics.curseFor(n) : null;
     let diff = roomCurse ? cursedDiff(baseDiff, roomCurse) : baseDiff;
+    // RELICS: each major curse the run holds reshapes every combat room.
+    if (combatRoom) for (const m of relics.majorCurses()) diff = cursedDiff(diff, m);
     // UNLOCKS: each vow the party wears curses every combat room.
     const vows = combatRoom ? runVows() : null;
     if (vows) for (const v of vows) diff = cursedDiff(diff, v);
@@ -879,7 +883,10 @@ export function createRunSystem({
     ];
     // RELICS: one door may carry a curse (key present only then).
     const dc = relics.rollDoorCurse();
-    if (dc) options[dc.side].curse = dc.curse;
+    if (dc) {
+      options[dc.side].curse = dc.curse;
+      if (dc.major) options[dc.side].major = true;
+    }
     path = {
       nextRoom,
       options,
@@ -891,7 +898,7 @@ export function createRunSystem({
     events.emit(getTick(), 'path_offer', {
       room: roomIndex,
       nextRoom,
-      options: options.map((o) => ({ side: o.side, win: o.win, reward: o.reward, ...(o.curse ? { curse: o.curse } : {}) })),
+      options: options.map((o) => ({ side: o.side, win: o.win, reward: o.reward, ...(o.curse ? { curse: o.curse } : {}), ...(o.major ? { major: true } : {}) })),
       freeSkillSlots: path.freeSkillSlots,
     });
   }
@@ -929,7 +936,7 @@ export function createRunSystem({
     if (opt.curse) relics.takeCurse(opt.curse, next);
     path = null;
     beginFade(next);
-    return { nextRoom: next, reward: opt.reward, win: opt.win, ...(opt.curse ? { curse: opt.curse } : {}) };
+    return { nextRoom: next, reward: opt.reward, win: opt.win, ...(opt.curse ? { curse: opt.curse } : {}), ...(opt.major ? { major: true } : {}) };
   }
 
   // §13/§16 transition fade (<= 300 ms) between the meta screens and the next
@@ -1303,6 +1310,30 @@ export function createRunSystem({
     });
     // PARTY: each ally's own 4-card class shelf (party stream, seats 1 → 3).
     if (allyOn()) pages.openShop(roomIndex);
+    // RELICS: the relic shelf (relic stream; null when relics are off).
+    relics.openShelf();
+  }
+
+  // RELICS: buy relic `index` off the relic shelf from `seat`'s purse (the
+  // Healer's is the run wallet). The relic is the whole party's.
+  function buyRelic(seat, index) {
+    if (phase !== 'shop' || !shop) return null;
+    const s = Number(seat) | 0;
+    const i = Number(index) | 0;
+    const item = relics.shelfItem(i);
+    if (!item) return null;
+    if (s !== 0 && !(allyOn() && party && party.purse(s) !== null)) return null;
+    const purse = s === 0 ? wallet : party.purse(s);
+    const tick = getTick();
+    if (purse < item.price) {
+      events.emit(tick, 'relic_denied', { seat: s, relic: item.id, price: item.price, wallet: purse, index: i });
+      return { denied: 'insufficient_funds', price: item.price, purse };
+    }
+    if (s === 0) wallet -= item.price;
+    else party.spend(s, item.price);
+    const left = s === 0 ? wallet : party.purse(s);
+    const id = relics.sellShelf(i, s, left);
+    return { relic: id, price: item.price, purse: left, seat: s };
   }
 
   // PARTY: a purchase for an ally, from ITS purse (`partyBuy`); seat 0 is
@@ -1895,6 +1926,22 @@ export function createRunSystem({
         return relicsDefault;
       case 'relicGrant':
         return relics.grant(args[0]);
+      case 'relicBuy':
+        // ('relicBuy', index[, seat]) — buy off the shop's relic shelf.
+        return buyRelic(args[1] ?? 0, args[0] ?? 0);
+      case 'relicDropNext':
+        // Probe / VFX lab: the next elite the party kills drops a relic.
+        return relics.dropNext();
+      case 'relicCurseHere':
+        // Probe / VFX lab: ('relicCurseHere', curseId) curses the live room now
+        // (its telegraph and healing rules; its wave numbers are already rolled).
+        if (!relics.enabled() || phase !== 'combat') return null;
+        relics.takeCurse(args[0], roomIndex);
+        relics.onRoomEnter(roomIndex, frame ? frame.modes[roomIndex - 1] : 'kill_all');
+        return relics.view().curse;
+      case 'relicDoor':
+        // ('relicDoor', curseId[, side]) — the next path screen's cursed door.
+        return relics.forceDoor(args[0], args[1] ?? 0);
       case 'pathFocus':
         return focusPath(args[0] ?? 0);
       case 'pathChoose':
@@ -2174,6 +2221,7 @@ export function createRunSystem({
     // RELICS: the relic page's entry points.
     focusRelic,
     chooseRelic,
+    buyRelic,
     relics: () => (relics.enabled() ? relics.view() : null),
     buy,
     advanceFromShop,

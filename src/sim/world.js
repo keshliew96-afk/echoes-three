@@ -794,7 +794,10 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     const perTick = DODGE.distance / DODGE.durationTicks;
     player.dashVel = { x: dx * perTick, z: dz * perTick };
     player.dashTicksLeft = DODGE.durationTicks;
-    player.dodgeReadyTick = currentTick + DODGE.cooldownTicks;
+    // RELICS (Ash Feather): the relic run's dodge cooldown factor.
+    const M = combat.getMods ? combat.getMods() : null;
+    const cd = M && M.active() ? Math.round(DODGE.cooldownTicks * M.dodgeCdMul()) : DODGE.cooldownTicks;
+    player.dodgeReadyTick = currentTick + cd;
   }
 
   // --- Wisp resolution: one heading-jitter roll per tick (keeps the draw

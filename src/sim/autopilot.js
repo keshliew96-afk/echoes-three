@@ -188,9 +188,12 @@ export function createAutopilot({ registry, player, run, skills, build }) {
     if (v.phase === 'path') {
       autoSocket();
       // RELICS: `curses: 'avoid'` walks the other door when the configured
-      // one is cursed (default 'take': the configured door, cursed or not).
+      // one is cursed (default 'take': the configured door, cursed or not,
+      // except a MAJOR curse, which binds the whole run: the bot steps around
+      // it unless `curses: 'all'`).
       let side = cfg.doors === 1 ? 1 : 0;
-      if (cfg.curses === 'avoid' && v.path && v.path.options[side] && v.path.options[side].curse) side = 1 - side;
+      const o = v.path && v.path.options[side];
+      if (o && o.curse && (cfg.curses === 'avoid' || (o.major && cfg.curses !== 'all'))) side = 1 - side;
       r.choosePath(side);
       stats.doors += 1;
       return true;

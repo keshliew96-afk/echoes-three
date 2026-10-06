@@ -88,7 +88,14 @@ export function createPathScreen({ run }) {
       rewEls[i].textContent = REWARD_GLYPH[o.reward] ?? '✦';
       doors[i].classList.toggle('rn-focus', p.focus === i);
       doors[i].classList.toggle('rl-cursed', !!o.curse);
+      doors[i].classList.toggle('rl-major', !!o.major);
       curseMarks[i].style.display = o.curse ? '' : 'none';
+      // Slice 2: a MAJOR curse wears the chained mark.
+      const mk = o.major ? 'major' : 'room';
+      if (curseMarks[i].dataset.mk !== mk) {
+        curseMarks[i].dataset.mk = mk;
+        curseMarks[i].innerHTML = curseIconHtml(30, !!o.major);
+      }
       wraps[i].classList.toggle('rn-on', p.focus === i);
     }
     // Screen-level legend: decodes the two glyph families for BOTH doors at
@@ -102,7 +109,9 @@ export function createPathScreen({ run }) {
     const cursed = p.options.find((o) => o.curse);
     const c = cursed ? CURSES[cursed.curse] : null;
     curseNote.style.display = c ? '' : 'none';
-    if (c) curseNote.innerHTML = `${curseIconHtml(26)}<div><b>Cursed door (${cursed.side === 0 ? 'left' : 'right'}): ${esc(c.name)}.</b> ${esc(c.text)} Clear the room for a relic.</div>`;
+    curseNote.classList.toggle('rl-majornote', !!(cursed && cursed.major));
+    if (c && cursed.major) curseNote.innerHTML = `${curseIconHtml(26, true)}<div><b>Major curse (${cursed.side === 0 ? 'left' : 'right'} door): ${esc(c.name)}.</b> ${esc(c.text)} Clear the room for a greater relic (rare or legendary).</div>`;
+    else if (c) curseNote.innerHTML = `${curseIconHtml(26)}<div><b>Cursed door (${cursed.side === 0 ? 'left' : 'right'}): ${esc(c.name)}.</b> ${esc(c.text)} Clear the room for a relic.</div>`;
     shownFocus = p.focus;
   }
   // fix-M3-r5 (AUD5-F1): the focused door as drawn, the selection signature
