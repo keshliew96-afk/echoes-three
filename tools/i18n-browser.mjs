@@ -45,11 +45,18 @@ for (const l of LANGS) {
     tables[l] = {};
   }
 }
-// English text that legitimately stays English in a language.
-const keptAs = (l, s) => {
-  const v = tables[l] && tables[l][s];
-  return typeof v === 'string' && v === s;
-};
+// English text that legitimately stays English in a language: a line whose
+// translation is the English itself (compared on letters only, any case, so
+// "✦ nova" and "RARE" count), and gamepad button names.
+const norm = (s) => String(s).toLowerCase().replace(/[^\p{L}]+/gu, '');
+const same = {};
+for (const [l, tab] of Object.entries(tables)) {
+  same[l] = new Set();
+  for (const [k, v] of Object.entries(tab)) if (typeof v === 'string' && norm(k.split('@@')[0]) === norm(v)) same[l].add(norm(v));
+}
+// Words the language spells like English inside a longer translated line.
+const SPELLED_ALIKE = { fr: ['pause'] };
+const keptAs = (l, s) => (same[l] && same[l].has(norm(s))) || /^(D-pad|Start|Select|Back)$/.test(s) || (SPELLED_ALIKE[l] || []).includes(s);
 
 const extra = (process.env.ECHOES_CHROME_ARGS || '').split(/\s+/).filter(Boolean);
 const browser = await puppeteer.launch({
@@ -86,7 +93,8 @@ function scanPage() {
     const cs = getComputedStyle(el);
     const r = el.getBoundingClientRect();
     const tag = `${el.tagName.toLowerCase()}${el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : ''}`;
-    const clipX = el.scrollWidth > el.clientWidth + 2 && /hidden|clip/.test(cs.overflowX) && el.clientWidth > 0;
+    // An ellipsis is the layout's own answer to a long name, not a break.
+    const clipX = el.scrollWidth > el.clientWidth + 2 && /hidden|clip/.test(cs.overflowX) && el.clientWidth > 0 && cs.textOverflow !== 'ellipsis';
     const clipY = el.scrollHeight > el.clientHeight + 2 && /hidden|clip/.test(cs.overflowY) && el.clientHeight > 0;
     const off = r.right > innerWidth + 2 || r.left < -2 || r.bottom > innerHeight + 2;
     // Off-window text inside a scroll box the player can scroll is fine.
@@ -243,6 +251,14 @@ for (const lang of LANGS) {
         if (!/[A-Za-z]{3,}/.test(tx) || /^(Esc|Enter|Shift|Space|Tab|SPC|ECHOES|Echoes|LB|RB|LT|RT|Ctrl|Alt|Backspace|WASD|F\d+)$/i.test(tx)) continue;
         if (/^v?\d[\d.]*$|^[A-Z0-9]{5}$/.test(tx)) continue; // versions, room codes
         rep.english.push(`${name}: ${tx.slice(0, 80)}`);
+      }
+      // Scripts with no Latin letters of their own: English words left inside
+      // a translated line (a sim-built phrase glued into it) also count.
+      if (/^(zh|ja|ko|ru)/.test(lang)) {
+        for (const tx of new Set(s.texts)) {
+          const words = tx.replace(/https?:\S+|ws:\S+|npm run \w+|\?net=\S*|README ▸ Host it on a server|\b(Echoes|ECHOES|Enter|Esc|Shift|Space|Tab|SPC|LB|RB|LT|RT|D-pad|Start|WASD|AI|HP|CT|KI|v\d[\d.]*)\b/g, ' ').match(/[A-Za-z]{3,}(?:[ '’-]+[A-Za-z]{2,})+/g);
+          if (words && !rep.english.some((e) => e.endsWith(tx.slice(0, 80)))) rep.english.push(`${name}: ${tx.slice(0, 80)} [${words.join(' | ')}]`);
+        }
       }
       const enClip = new Set(base.clipped.map((c) => c.replace(/ ".*"/, '')));
       for (const c of s.clipped) if (!enClip.has(c.replace(/ ".*"/, ''))) rep.clipped.push(`${name}: ${c}`);

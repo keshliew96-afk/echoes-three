@@ -42,7 +42,7 @@ function installStyle() {
   st.textContent = `
 .cg-levels .cg-wrap {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: min(96vw, ${px(1720)}); max-height: 94vh; padding: ${px(28)} ${px(34)} ${px(22)};
+  width: min(96vw, ${px(1720)}); max-height: 94vh; overflow: auto; padding: ${px(28)} ${px(34)} ${px(22)};
   display: flex; flex-direction: column; align-items: center; gap: ${px(14)};
 }
 .cg-levels .cg-head { display: flex; flex-direction: column; align-items: center; gap: ${px(4)}; text-align: center; }
@@ -90,8 +90,17 @@ function installStyle() {
 .cg-levels .cg-foot { display: flex; gap: ${px(24)}; align-items: center; flex-wrap: wrap; justify-content: center; font-size: ${px(20)}; color: ${P.warmGrey}; }
 .cg-levels .cg-foot b { display: inline-flex; align-items: center; justify-content: center; min-width: ${px(34)}; height: ${px(32)}; padding: 0 ${px(8)}; margin-right: ${px(6)};
   border-radius: ${px(7)}; border: max(1px, ${px(2)}) solid ${P.warmGrey}AA; background: ${P.voidCharcoal}; color: ${P.bone}; font-weight: 700; }
+/* A short window, and the longer languages (docs/I18N.md): the cards keep
+   their shape and the text steps down so the key hints stay on screen. */
 @media (max-height: 640px) {
   .cg-levels .cg-card { min-height: ${px(280)}; }
+  .cg-levels .cg-wrap { gap: ${px(10)}; padding: ${px(20)} ${px(34)} ${px(16)}; }
+  .cg-levels .cg-name { font-size: ${px(28)}; }
+  .cg-levels .cg-blurb { font-size: ${px(19)}; line-height: 1.28; }
+  .cg-levels .cg-sub, .cg-levels .cg-note { font-size: ${px(19)}; }
+  .cg-levels .cg-status, .cg-levels .cg-grant, .cg-levels .cg-biome { font-size: ${px(17)}; }
+  .cg-levels .cg-lock { font-size: ${px(18)}; }
+  .cg-levels .cg-note { min-height: ${px(22)}; }
 }
 `;
   document.head.appendChild(st);

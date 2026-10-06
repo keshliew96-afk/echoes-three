@@ -205,6 +205,99 @@ const DENY_COPY = {
   },
 };
 
+// The sim's live preview lines (src/sim/nodes.js preview() / verdict
+// reasons) are English with the numbers baked in. Each known form is matched
+// here and re-said through its own key; a line no pattern knows shows as the
+// sim wrote it (docs/I18N.md).
+const STAT_WORD = {
+  get power() {
+    return t('power');
+  },
+  get cooldown() {
+    return t('cooldown');
+  },
+  get count() {
+    return t('count');
+  },
+  get area() {
+    return t('area');
+  },
+  get range() {
+    return t('range');
+  },
+  get 'arc half-angle'() {
+    return t('arc half-angle');
+  },
+};
+const PREVIEW_FIXED = () => ({
+  'legal to socket — contributes nothing': t('legal to socket — contributes nothing'),
+  'contributes nothing on this skill right now': t('contributes nothing on this skill right now'),
+  'legal to socket — contributes nothing while this holds': t('legal to socket — contributes nothing while this holds'),
+  'already socketed here — this is its live contribution': t('already socketed here — this is its live contribution'),
+  'reapply: one bonus full-strength pulse every 3.0 s': t('reapply: one bonus full-strength pulse every 3.0 s'),
+  'enemies inside the field are slowed 25% (refreshed every pulse)': t('enemies inside the field are slowed 25% (refreshed every pulse)'),
+  'healed allies gain haste 20% for 1.5 s': t('healed allies gain haste 20% for 1.5 s'),
+  'enemies hit are slowed 40% for 1.5 s': t('enemies hit are slowed 40% for 1.5 s'),
+  'allies inside are inspired: +10% damage dealt (refreshed every pulse)': t('allies inside are inspired: +10% damage dealt (refreshed every pulse)'),
+  'healed allies are inspired: +15% damage dealt for 3 s': t('healed allies are inspired: +15% damage dealt for 3 s'),
+  'enemies hit are exposed: +20% damage taken for 3 s': t('enemies hit are exposed: +20% damage taken for 3 s'),
+  'each pulse adds 2 shield to the allies inside (up to 10)': t('each pulse adds 2 shield to the allies inside (up to 10)'),
+  'you gain a shield worth 20% of the damage dealt (up to 30)': t('you gain a shield worth 20% of the damage dealt (up to 30)'),
+  'no cooldown stat on this skill': t('no cooldown stat on this skill'),
+  'no count stat on this skill': t('no count stat on this skill'),
+  'no power stat on this skill': t('no power stat on this skill'),
+  'no power stat': t('no power stat'),
+  'no range stat on this skill': t('no range stat on this skill'),
+  'single-target shape — no area to widen': t('single-target shape — no area to widen'),
+  'nothing on this skill lasts — no duration to extend': t('nothing on this skill lasts — no duration to extend'),
+  'a passive field — nothing here for this technique to act on': t('a passive field — nothing here for this technique to act on'),
+  'needs a retargetable impact (projectile or direct)': t('needs a retargetable impact (projectile or direct)'),
+  'shields never crit': t('shields never crit'),
+  'a shield drains nothing': t('a shield drains nothing'),
+  'a hostile field of another class': t('a hostile field of another class'),
+  'no hostile delivery to stagger with': t('no hostile delivery to stagger with'),
+  'no hostile area delivery to pull with': t('no hostile area delivery to pull with'),
+  'the counter answers an attacker already in reach': t('the counter answers an attacker already in reach'),
+  'the delivery is placed at range — nothing to close': t('the delivery is placed at range — nothing to close'),
+  'only a bolt can pierce': t('only a bolt can pierce'),
+  'a self burst has nothing to scatter': t('a self burst has nothing to scatter'),
+  'already a full 90° half-angle (the §23.4 clamp)': t('already a full 90° half-angle (the §23.4 clamp)'),
+  'the whole party is already reached': t('the whole party is already reached'),
+  'fits your kit': t('fits your kit'),
+  'nothing in your kit uses this yet': t('nothing in your kit uses this yet'),
+});
+const STATUS_WORD = () => ({ haste: t('haste'), shield: t('shield'), slow: t('slow'), stun: t('stun'), taunt: t('taunt'), ward: t('ward'), zone: t('zone') });
+const UNIT = (u) => (u === ' s' ? t(' s') : u === ' u' ? t(' u') : u || '');
+const PREVIEW_FORMS = [
+  [/^\+1 target — currently \+0 \(all (\d+) allies already hit\)$/, (m) => t('+1 target — currently +0 (all {n} allies already hit)', { n: m[1] })],
+  [/^crit chance (\d+)% → (\d+)%$/, (m) => t('crit chance {a}% → {b}%', { a: m[1], b: m[2] })],
+  [/^zone (\d+) ticks → (\d+) ticks \(([\d.]+) s → ([\d.]+) s\)$/, (m) => t('zone {a} ticks → {b} ticks ({sa} s → {sb} s)', { a: m[1], b: m[2], sa: m[3], sb: m[4] })],
+  [/^(power|cooldown|count|area|range|arc half-angle) ([\d.]+)( s| u|°)? → ([\d.]+)( s| u|°)?$/, (m) => t('{stat} {a} → {b}', { stat: STAT_WORD[m[1]], a: m[2] + UNIT(m[3]), b: m[4] + UNIT(m[5]) })],
+  [/^([a-z]+) (\d+) → (\d+) ticks$/, (m) => t('{status} {a} → {b} ticks', { status: STATUS_WORD()[m[1]] ?? m[1], a: m[2], b: m[3] })],
+  [/^heal chains to the next-lowest-HP other ally within ([\d.]+) u — full power, 1 hop per copy$/, (m) => t('heal chains to the next-lowest-HP other ally within {r} u — full power, 1 hop per copy', { r: m[1] })],
+  [/^impact ricochets to the nearest other enemy within ([\d.]+) u — full power, 1 hop per copy$/, (m) => t('impact ricochets to the nearest other enemy within {r} u — full power, 1 hop per copy', { r: m[1] })],
+  [/^damages the nearest enemy within ([\d.]+) u of the healed ally for ([\d.]+)$/, (m) => t('damages the nearest enemy within {r} u of the healed ally for {n}', { r: m[1], n: m[2] })],
+  [/^self-heals ([\d.]+) per instance$/, (m) => t('self-heals {n} per instance', { n: m[1] })],
+  [/^full recast 1\.0 s later at (\d+)% power$/, (m) => t('full recast 1.0 s later at {pct}% power', { pct: m[1] })],
+  [/^full heals burst-heal allies within ([\d.]+) u for 50% power$/, (m) => t('full heals burst-heal allies within {r} u for 50% power', { r: m[1] })],
+  [/^kills by this skill explode — 50% power burst, radius ([\d.]+) u$/, (m) => t('kills by this skill explode — 50% power burst, radius {r} u', { r: m[1] })],
+  [/^overhealing becomes a shield — up to ([\d.]+) per heal, 4 s$/, (m) => t('overhealing becomes a shield — up to {n} per heal, 4 s', { n: m[1] })],
+  [/^the 2 nearest other allies within ([\d.]+) u get ([\d.]+) too$/, (m) => t('the 2 nearest other allies within {r} u get {n} too', { r: m[1], n: m[2] })],
+  [/^on impact: 2 shards at ±([\d.]+)°, ([\d.]+) power, ([\d.]+) u$/, (m) => t('on impact: 2 shards at ±{deg}°, {n} power, {r} u', { deg: m[1], n: m[2], r: m[3] })],
+  [/^every 3rd pulse resolves at ×2 power \(([\d.]+) per ally\)$/, (m) => t('every 3rd pulse resolves at ×2 power ({n} per ally)', { n: m[1] })],
+  [/^every 3rd cast resolves at ×2 power \(([\d.]+)\)$/, (m) => t('every 3rd cast resolves at ×2 power ({n})', { n: m[1] })],
+];
+function previewText(line) {
+  const l = String(line ?? '');
+  const fixed = PREVIEW_FIXED()[l.replace(/^\+0\s*—\s*/, '')];
+  if (fixed !== undefined) return fixed;
+  for (const [re, say] of PREVIEW_FORMS) {
+    const m = re.exec(l);
+    if (m) return say(m);
+  }
+  return t(l); // the siphon card line and anything keyed elsewhere
+}
+
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -470,9 +563,10 @@ export function createSocketScreen({ bus, world }) {
     .nd-dline.nd-quote { font-style: italic; }
     .nd-dverdict { font-size: 16px; color: ${PALETTE.warmGrey}; font-style: italic; }
     .nd-foot {
-      flex: none; height: 32px; padding: 0 20px; display: flex; align-items: center; gap: 18px;
-      font-size: 16px; color: ${PALETTE.warmGrey}; white-space: nowrap; overflow: hidden;
+      flex: none; min-height: 32px; padding: 0 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 18px;
+      font-size: 16px; color: ${PALETTE.warmGrey}; overflow: hidden;
     }
+    .nd-foot > * { white-space: nowrap; }
     .nd-foot b { color: ${PALETTE.bone}; font-weight: 800; }
     .nd-foot .nd-pad { margin-left: auto; }
     .nd-toast {
@@ -919,7 +1013,7 @@ export function createSocketScreen({ bus, world }) {
         .map(([k, v]) => `${word(k)}${v > 1 ? ` ×${v}` : ''}`)
         .join(', ');
       title = (held && held.node === g.node ? handTag : '') + nodeTitle(g.node, `<span class="nd-rar" style="color:${PALETTE.warmGrey}">${t('on the bench ×{count} · {from}', { count: g.count, from: esc(prov) })}</span>`);
-      if (g.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(sys.siphonCardLine())}”</span>`);
+      if (g.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(t(sys.siphonCardLine()))}”</span>`);
       else lines.push(esc(t(NODE_EFFECT[g.node] ?? '')));
       const per = view.skills.map((sk) => {
         const vd = rowVerdict(sys, sk, g.node);
@@ -927,7 +1021,7 @@ export function createSocketScreen({ bus, world }) {
         return `${esc(t(sk.name))} <span class="${cls}">${esc(vd.text)}</span>`;
       });
       if (per.length) lines.push(per.join(' · '));
-      verdict = `${sys.kitVerdict(g.node)} — ${held && held.node === g.node ? t('Enter on a socket places it · Esc keeps it on the bench') : t('Enter picks it up')}`;
+      verdict = `${previewText(sys.kitVerdict(g.node))} — ${held && held.node === g.node ? t('Enter on a socket places it · Esc keeps it on the bench') : t('Enter picks it up')}`;
     } else if (focus.zone === 'cells' && view.skills[focus.r]) {
       const sk = view.skills[focus.r];
       const rec = sk.sockets[focus.c];
@@ -943,7 +1037,7 @@ export function createSocketScreen({ bus, world }) {
             : vd.k === 'full' && !rec
               ? DENY_COPY.full
               : p && p.lines
-                ? p.lines.filter((l) => l !== sys.siphonCardLine()).join(' — ')
+                ? p.lines.filter((l) => l !== sys.siphonCardLine()).map(previewText).join(' — ')
                 : '';
         lines.push(`<span class="${vd.k === 'live' || vd.k === 'upgrade' ? 'nd-live' : 'nd-warn'}">${mark}</span> ${esc(why)}`);
         // fix-M4a-r4: a swap says whether it is an upgrade (the node in hand
@@ -951,7 +1045,7 @@ export function createSocketScreen({ bus, world }) {
         // sidegrade or a downgrade — words + glyph, never colour alone.
         const swap = rec ? swapTag(held.node, rec) : null;
         const tag = swap ? swap.text : '';
-        if (held.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(sys.siphonCardLine())}”</span>`);
+        if (held.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(t(sys.siphonCardLine()))}”</span>`);
         else if (rec) {
           const out = t('swaps out {node} (it banks to the bench)', { node: esc(t(info(rec.node).name)) });
           lines.push(tag ? `${esc(tag)} — ${out}` : out);
@@ -970,9 +1064,9 @@ export function createSocketScreen({ bus, world }) {
         title = nodeTitle(rec.node, where);
         const p = sys.preview(sk.id, rec.node);
         const mark = rec.verdict === 'live' ? '◆' : rec.verdict === 'inert' ? '＋0' : '⊘';
-        const body = p && p.lines ? p.lines.filter((l) => !/already socketed/.test(l) && l !== sys.siphonCardLine()).join(' — ') : rec.verdict;
+        const body = p && p.lines ? p.lines.filter((l) => !/already socketed/.test(l) && l !== sys.siphonCardLine()).map(previewText).join(' — ') : word(rec.verdict);
         lines.push(`<span class="${rec.verdict === 'live' ? 'nd-live' : 'nd-warn'}">${mark}</span> ${esc(body)}`);
-        if (rec.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(sys.siphonCardLine())}”</span>`);
+        if (rec.node === 'siphon') lines.push(`<span class="nd-quote">“${esc(t(sys.siphonCardLine()))}”</span>`);
         else lines.push(esc(t(NODE_EFFECT[rec.node] ?? '')));
         verdict = t('X removes it to the bench · Enter picks it up to move it');
       } else {
@@ -1034,7 +1128,7 @@ export function createSocketScreen({ bus, world }) {
           // saturated Multiply is "every target already covered".
           const v = sys.verdictFor(sk.id, r.node, r.slot);
           const why = v && typeof v.reason === 'string' && v.reason !== 'saturated' ? v.reason.replace(/^\+0\s*—\s*/, '') : '';
-          toast(why ? t('socketed — +0 right now: {why}', { why }) : t('socketed — +0 right now (every target already covered)'));
+          toast(why ? t('socketed — +0 right now: {why}', { why: previewText(why) }) : t('socketed — +0 right now (every target already covered)'));
         }
         renderAll();
       }

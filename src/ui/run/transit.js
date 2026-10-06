@@ -18,6 +18,8 @@ import { bossFor, levelFor } from '../../data/levels.js';
 import { endlessBossIndex } from '../../data/endless.js';
 import { t, tn } from '../../i18n/index.js';
 
+const skillCount = (b) => (b.skills || []).filter(Boolean).length;
+
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 const FLAVOUR = {
   1: () => t('The Hollow Stag falls. The wood breathes out.'),
@@ -65,7 +67,7 @@ export function buildsHtml(builds) {
   return builds
     .map(
       (b) =>
-        `<span class="rn-bn" data-seat="${b.seat}">${esc(NAME[b.classId] ? NAME[b.classId]() : b.classId)}</span><span class="rn-bv">${esc(tn((b.skills || []).filter(Boolean).length, '{n} skills', '{n} skills'))}</span><span class="rn-bv">${b.filled}/${b.sockets ?? 32}</span><span class="rn-bv">◉ ${b.purse ?? 0}</span>`
+        `<span class="rn-bn" data-seat="${b.seat}">${esc(NAME[b.classId] ? NAME[b.classId]() : b.classId)}</span><span class="rn-bv">${esc(tn(skillCount(b), '{n} skill', '{n} skills'))}</span><span class="rn-bv">${b.filled}/${b.sockets ?? 32}</span><span class="rn-bv">◉ ${b.purse ?? 0}</span>`
     )
     .join('');
 }

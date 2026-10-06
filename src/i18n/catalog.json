@@ -452,6 +452,18 @@
   "plural": true,
   "one": "{n} save · newest first"
  },
+ "{n} skill": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "{n} skills": {
+  "files": [
+   "src/ui/run/transit.js"
+  ],
+  "plural": true,
+  "one": "{n} skill"
+ },
  "{n} vow +{pct}%": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -748,6 +760,16 @@
    "src/ui/menu/tabs/network.js"
   ]
  },
+ "{stat} {a} → {b}": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "{status} {a} → {b} ticks": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "{text} Pays {n} {currency} once.": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -869,6 +891,11 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "+1 target — currently +0 (all {n} allies already hit)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
  },
  "+12% per recent other skill.": {
   "files": [
@@ -1317,6 +1344,11 @@
   ],
   "data": true
  },
+ "a hostile field of another class": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "A kit replaces one class’s starting skills. One kit per class.": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -1363,6 +1395,11 @@
  "a Node draft": {
   "files": [
    "src/ui/run/path.js"
+  ]
+ },
+ "a passive field — nothing here for this technique to act on": {
+  "files": [
+   "src/ui/socket/index.js"
   ]
  },
  "A passive field: 2 per second to allies inside, who take 15% less damage.": {
@@ -1424,6 +1461,16 @@
  "A save is being written": {
   "files": [
    "src/save/index.js"
+  ]
+ },
+ "a self burst has nothing to scatter": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "a shield drains nothing": {
+  "files": [
+   "src/ui/socket/index.js"
   ]
  },
  "a short parry after the cast.": {
@@ -1643,6 +1690,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "allies inside are inspired: +10% damage dealt (refreshed every pulse)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "ally": {
   "files": [
    "src/ui/menu/lobby.js"
@@ -1653,9 +1705,19 @@
    "src/ui/run/partysettings.js"
   ]
  },
+ "already a full 90° half-angle (the §23.4 clamp)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Already in this language": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "already socketed here — this is its live contribution": {
+  "files": [
+   "src/ui/socket/index.js"
   ]
  },
  "Always shown for this page address (?fps / ?debug / a harness boot)": {
@@ -1722,6 +1784,11 @@
  "ARC": {
   "files": [
    "src/ui/run/cards.js"
+  ]
+ },
+ "arc half-angle": {
+  "files": [
+   "src/ui/socket/index.js"
   ]
  },
  "Archer": {
@@ -2768,6 +2835,11 @@
    "src/ui/run/draft.js"
   ]
  },
+ "contributes nothing on this skill right now": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Controls": {
   "files": [
    "src/ui/menu/settings.js"
@@ -2779,6 +2851,11 @@
    "src/sim/nodes.js"
   ],
   "data": true
+ },
+ "cooldown": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
  },
  "Couldn't buy {name}.": {
   "files": [
@@ -2897,6 +2974,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "crit chance {a}% → {b}%": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "crits deal ×2.2.": {
   "files": [
    "src/ui/run/cards.js"
@@ -3001,6 +3083,11 @@
  "Damaged": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "damages the nearest enemy within {r} u of the healed ally for {n}": {
+  "files": [
+   "src/ui/socket/index.js"
   ]
  },
  "Danger {level}": {
@@ -3316,6 +3403,11 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "each pulse adds 2 shield to the allies inside (up to 10)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Echo": {
   "files": [
    "src/sim/nodes.js"
@@ -3400,6 +3492,16 @@
    "src/ui/run/challenge.js"
   ]
  },
+ "enemies hit are exposed: +20% damage taken for 3 s": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "enemies hit are slowed 40% for 1.5 s": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Enemies in every combat room deal 35% more damage. Embers +25%.": {
   "files": [
    "src/data/unlocks.js"
@@ -3429,6 +3531,11 @@
    "src/sim/relics.js"
   ],
   "data": true
+ },
+ "enemies inside the field are slowed 25% (refreshed every pulse)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
  },
  "Enemies that hit the party take 60% of it back.": {
   "files": [
@@ -3509,6 +3616,16 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "every 3rd cast resolves at ×2 power ({n})": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "every 3rd pulse resolves at ×2 power ({n} per ally)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
  },
  "every cast shields the Tank +8 per copy (4 s) · on Iron Stance +2 per pulse (up to 12).": {
   "files": [
@@ -3741,7 +3858,8 @@
  },
  "fits your kit": {
   "files": [
-   "src/sim/nodes.js"
+   "src/sim/nodes.js",
+   "src/ui/socket/index.js"
   ],
   "data": true
  },
@@ -3895,6 +4013,16 @@
  "Full camera shake on kills and stomps": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "full heals burst-heal allies within {r} u for 50% power": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "full recast 1.0 s later at {pct}% power": {
+  "files": [
+   "src/ui/socket/index.js"
   ]
  },
  "Fullscreen": {
@@ -4065,6 +4193,11 @@
    "src/ui/run/challenge.js"
   ]
  },
+ "haste": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Hawk Feather": {
   "files": [
    "src/data/unlocks.js",
@@ -4073,6 +4206,21 @@
   "data": true
  },
  "heal": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "heal chains to the next-lowest-HP other ally within {r} u — full power, 1 hop per copy": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "healed allies are inspired: +15% damage dealt for 3 s": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "healed allies gain haste 20% for 1.5 s": {
   "files": [
    "src/ui/socket/index.js"
   ]
@@ -4318,6 +4466,11 @@
    "src/ui/net/hud.js"
   ]
  },
+ "impact ricochets to the nearest other enemy within {r} u — full power, 1 hop per copy": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "impacts split into 2 shards at 40%.": {
   "files": [
    "src/ui/run/cards.js"
@@ -4513,6 +4666,11 @@
    "src/ui/menu/records.js"
   ]
  },
+ "kills by this skill explode — 50% power burst, radius {r} u": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "kills by this skill explode · full heals burst-heal — 50% power in 1.2 u.": {
   "files": [
    "src/ui/run/cards.js"
@@ -4662,6 +4820,16 @@
   ]
  },
  "legal here, but it contributes nothing on this skill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "legal to socket — contributes nothing": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "legal to socket — contributes nothing while this holds": {
   "files": [
    "src/ui/socket/index.js"
   ]
@@ -5088,6 +5256,11 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "needs a retargetable impact (projectile or direct)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Network": {
   "files": [
    "src/ui/menu/settings.js"
@@ -5158,9 +5331,29 @@
    "src/ui/menu/tabs/gameplay.js"
   ]
  },
+ "no cooldown stat on this skill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "no count stat on this skill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "No descent yet": {
   "files": [
    "src/ui/run/levels.js"
+  ]
+ },
+ "no hostile area delivery to pull with": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "no hostile delivery to stagger with": {
+  "files": [
+   "src/ui/socket/index.js"
   ]
  },
  "No picture": {
@@ -5168,9 +5361,24 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "no power stat": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "no power stat on this skill": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "No quicksave yet — press F5 to make one": {
   "files": [
    "src/save/index.js"
+  ]
+ },
+ "no range stat on this skill": {
+  "files": [
+   "src/ui/socket/index.js"
   ]
  },
  "No room with that code.": {
@@ -5328,7 +5536,8 @@
  },
  "nothing in your kit uses this yet": {
   "files": [
-   "src/sim/nodes.js"
+   "src/sim/nodes.js",
+   "src/ui/socket/index.js"
   ],
   "data": true
  },
@@ -5338,6 +5547,11 @@
   ]
  },
  "nothing on the bench — nodes arrive as clear spoils, from node drafts and from the shop": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "nothing on this skill lasts — no duration to extend": {
   "files": [
    "src/ui/socket/index.js"
   ]
@@ -5407,6 +5621,11 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "on impact: 2 shards at ±{deg}°, {n} power, {r} u": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
  },
  "on the bench ×{count} · {from}": {
   "files": [
@@ -5496,6 +5715,11 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "only a bolt can pierce": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Only the host can do that.": {
   "files": [
    "src/net/protocol/messages.js"
@@ -5518,6 +5742,11 @@
    "src/data/layouts.js"
   ],
   "data": true
+ },
+ "overhealing becomes a shield — up to {n} per heal, 4 s": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
  },
  "Overwrite": {
   "files": [
@@ -6097,6 +6326,11 @@
  "Ready: {cost} {currency}": {
   "files": [
    "src/ui/run/unlocks.js"
+  ]
+ },
+ "reapply: one bonus full-strength pulse every 3.0 s": {
+  "files": [
+   "src/ui/socket/index.js"
   ]
  },
  "Receiving the world from the host": {
@@ -6782,6 +7016,11 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "self-heals {n} per instance": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Server": {
   "files": [
    "src/ui/menu/mpmenu.js"
@@ -6892,11 +7131,21 @@
   ],
   "data": true
  },
+ "shield": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Shield Wall": {
   "files": [
    "src/sim/skills.js"
   ],
   "data": true
+ },
+ "shields never crit": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
  },
  "Shields the two neediest allies in 3 u (the Tank included) for 24, 4 s.": {
   "files": [
@@ -6977,6 +7226,11 @@
    "src/ui/menu/tabs/gameplay.js"
   ]
  },
+ "single-target shape — no area to widen": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Siphon": {
   "files": [
    "src/sim/nodes.js"
@@ -7049,6 +7303,11 @@
   ]
  },
  "slot order = keys 1–4 = the order the AI casts in": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "slow": {
   "files": [
    "src/ui/socket/index.js"
   ]
@@ -7292,6 +7551,11 @@
    "src/ui/net/hud.js"
   ]
  },
+ "stun": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Suggested": {
   "files": [
    "src/ui/run/partysettings.js"
@@ -7429,6 +7693,11 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "taunt": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
  },
  "Taunting Roar": {
   "files": [
@@ -7662,6 +7931,11 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "the 2 nearest other allies within {r} u get {n} too": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "The address of the Echoes server — ws://host:port/echoes (wss:// for a secure server). Automatic uses the server of the site you opened the game from.": {
   "files": [
    "src/ui/menu/mpmenu.js"
@@ -7740,6 +8014,11 @@
   ],
   "data": true
  },
+ "the counter answers an attacker already in reach": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "THE CURSE LIFTS": {
   "files": [
    "src/ui/run/relic.js"
@@ -7758,6 +8037,11 @@
  "The damaged file is replaced by the backup from {date} ({where}).": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "the delivery is placed at range — nothing to close": {
+  "files": [
+   "src/ui/socket/index.js"
   ]
  },
  "THE DESCENT ENDS": {
@@ -8278,6 +8562,11 @@
   ],
   "data": true
  },
+ "the whole party is already reached": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Thick Hide": {
   "files": [
    "src/sim/relics.js"
@@ -8702,6 +8991,11 @@
   ],
   "data": true
  },
+ "ward": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "Warden": {
   "files": [
    "src/data/unlocks.js"
@@ -8923,6 +9217,11 @@
    "src/ui/run/partysettings.js"
   ]
  },
+ "you gain a shield worth 20% of the damage dealt (up to 30)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
  "you own {n}": {
   "files": [
    "src/ui/run/cards.js"
@@ -9114,5 +9413,15 @@
    "src/sim/relics.js"
   ],
   "data": true
+ },
+ "zone": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
+ },
+ "zone {a} ticks → {b} ticks ({sa} s → {sb} s)": {
+  "files": [
+   "src/ui/socket/index.js"
+  ]
  }
 }
