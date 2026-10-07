@@ -41,7 +41,7 @@ AI allies: seats step sideways out of any lance lane that covers them (`laneGoal
 
 ## Boss room
 
-Act IV bosses are a later slice (content plan 2, item 5). Until then Level IV's boss room, the Heart Chamber, meets the Barrow Wyrm or the Lich Ram, rolled by seed like any act, on Act IV numbers. Their adds are husks and lancers. `STAG_DMG_LEVEL[4] = 0.85` keeps their hits close to their Act III damage, because their kits were tuned for Act III.
+Level IV's boss room, the Heart Chamber, meets **the Hollow Cantor** (the campaign's final boss) or, on some seeds, **the Geode Colossus**, rolled by seed like any act (seeds 1 to 40: 22 Cantor, 18 Colossus). Their kits, adds, tuning and sound are in docs/ACT_IV_BOSSES.md. `STAG_DMG_LEVEL[4] = 0.85` stays as it was.
 
 ## Endless Descent
 

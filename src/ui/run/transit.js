@@ -44,6 +44,9 @@ const BOSS_FLAVOUR = {
   thornmother: () => t('The Thornmother falls. The briars let the wood go.'),
   millwheel: () => t('The Millwheel shatters. The water runs clear again.'),
   lichram: () => t('The Lich Ram crumbles. The graves close; the long night lifts.'),
+  // Act IV (docs/ACT_IV_BOSSES.md).
+  cantor: () => t('The Hollow Cantor’s last note fades. The Heart falls quiet.'),
+  colossus: () => t('The Geode Colossus shatters. Below the Barrow, the old beat falters.'),
 };
 
 export const TRANSIT_CSS = `

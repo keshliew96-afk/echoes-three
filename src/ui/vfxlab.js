@@ -54,6 +54,8 @@ const BOSSES = [
   ['Millwheel', 2, 'millwheel'],
   ['Wyrm', 3, 'wyrm'],
   ['Lich Ram', 3, 'lichram'],
+  ['Cantor', 4, 'cantor'],
+  ['Colossus', 4, 'colossus'],
 ];
 
 export function mountVfxLab() {
@@ -153,6 +155,35 @@ export function mountVfxLab() {
   const rooms = section('Rooms');
   for (const a of [1, 2, 3, 4]) button(rooms, `Act ${['I', 'II', 'III', 'IV'][a - 1]} room`, () => room(a, 3));
   for (const [label, a, kind] of BOSSES) button(rooms, label, () => room(a, 8, kind), `Act ${a} boss room: ${label}`);
+
+  // Act IV bosses (docs/ACT_IV_BOSSES.md): jump the fight to a beat. The HP
+  // cuts go through the run's own bossHp hook, so each verse / enrage plays
+  // exactly as it would in a fight.
+  const act4 = section('Act IV bosses');
+  async function act4Boss(kind) {
+    const b = run().boss;
+    if (!(run().active && run().room === 8 && b && b.kind === kind && b.active)) await room(4, 8, kind);
+  }
+  const bossCut = async (kind, pct, msg) => {
+    await act4Boss(kind);
+    X().cmd('bossHp', pct);
+    say(msg);
+  };
+  button(act4, 'Cantor verse I', () => bossCut('cantor', 0.74, 'Cantor: the Wood verse (boars, mantis)'), 'cut to 74%: the first verse and its adds');
+  button(act4, 'verse II', () => bossCut('cantor', 0.49, 'Cantor: the Mill verse (echoing notes, Echo Step)'), 'cut to 49%');
+  button(act4, 'verse III', () => bossCut('cantor', 0.24, 'Cantor: the Barrow verse (Heart Pulse)'), 'cut to 24%');
+  button(act4, 'step', async () => {
+    await bossCut('cantor', 0.49, 'Cantor: crowd it to make it step');
+    const b = run().boss;
+    if (b) X().cmd('teleport', b.x, b.z + 1.6);
+  }, 'stand next to it in the Second Verse');
+  button(act4, 'Colossus enrage', () => bossCut('colossus', 0.39, 'Colossus: enraged (faster fissures, burst shards)'), 'cut to 39%');
+  button(act4, 'burst', async () => {
+    await act4Boss('colossus');
+    const b = run().boss;
+    if (b) X().cmd('teleport', b.x, b.z + 1.8);
+    say('Colossus: stand close for a Geode Burst');
+  }, 'stand next to it');
 
   // ---------------------------------------------------------------- party --
   function seatOf(cls) {

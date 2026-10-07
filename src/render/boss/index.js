@@ -33,6 +33,7 @@ import { buildStag } from './stag.js';
 import { buildHeron } from './heron.js';
 import { buildWyrm } from './wyrm.js';
 import { buildThornmother, buildMillwheel, buildLichram } from './slice2.js';
+import { buildCantor, buildColossus } from './heart.js';
 import { createTelegraphShapes } from '../enemies/shapes.js';
 import { makeQuakeRing, makeQuakeBurst } from './quake.js';
 import { releaseTree } from '../geocache.js';
@@ -42,7 +43,7 @@ import { impactFx } from '../vfx/hub.js';
 
 // One rig builder per boss kind (docs/CONTENT_PLAN.md §2). Every rig shares
 // the Stag's interface: { group, setYaw, setFlash, pose }.
-const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: buildWyrm, thornmother: buildThornmother, millwheel: buildMillwheel, lichram: buildLichram };
+const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: buildWyrm, thornmother: buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus };
 const isBossBody = (e) => e.kind === 'stag' || e.boss === true;
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;
@@ -103,7 +104,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   // and one burst are built and COMPILED a few frames after boot, parked far
   // under the floor, and then pooled for reuse.
   const spareRigs = []; // Stag rigs
-  const spareByKind = { heron: [], wyrm: [], thornmother: [], millwheel: [], lichram: [] };
+  const spareByKind = { heron: [], wyrm: [], thornmother: [], millwheel: [], lichram: [], cantor: [], colossus: [] };
   // Lane / cone telegraphs (the Heron's spear, the Wyrm's breath) reuse the
   // enemy layer's pooled Ember shapes; rings stay the Stag's quake ring.
   const shapes = createTelegraphShapes(root);
@@ -192,6 +193,10 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   bus.on('boss_wingbeat', burstAt);
   bus.on('boss_surface', burstAt);
   bus.on('boss_emerge', burstAt);
+  // Act IV: the Cantor's note and pulse, the Colossus' geode burst.
+  bus.on('boss_note', burstAt);
+  bus.on('boss_heart_pulse', burstAt);
+  bus.on('boss_geode_burst', burstAt);
   bus.on('death', (ev) => {
     if (!rec || ev.id !== rec.id) return;
     rec.rig.setFlash(BOSS_FLASH.peak);

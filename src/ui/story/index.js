@@ -13,7 +13,7 @@
 // Nothing here touches the sim.
 import { provide, service } from '../../app/registry.js';
 import { PALETTE as P } from '../../data/palette.js';
-import { BOSS_VOICE, NPCS, isHeartLevel } from '../../data/story.js';
+import { BOSS_VOICE, NPCS, voiceKeyFor } from '../../data/story.js';
 import { t } from '../../i18n/index.js';
 
 const POLL_MS = 200;
@@ -139,9 +139,9 @@ export function createStory({ app, world, scene: campScene = null, params = null
     } else if (!idle) campSince = 0;
 
     // The Hollow Voice under a boss's title, the first time each boss is met.
-    // (Level IV's Heart Chamber has its own line, whichever boss stands in it.)
+    // (Level IV's two bosses speak their own; a stand-in there gets the Heart's.)
     const met = v && v.active && v.boss && v.actBoss && !v.tutorial ? v.actBoss.kind : null;
-    const boss = met && isHeartLevel(v.act) ? 'heart' : met;
+    const boss = voiceKeyFor(met, v ? v.act : null);
     const key = boss ? `${v.frame ? v.frame.seed : ''}|${v.act}|${boss}` : null;
     if (key && key !== bossKey) {
       bossKey = key;

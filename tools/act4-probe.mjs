@@ -348,7 +348,7 @@ function inLaneOf(t, p) {
   steps(W, 60);
   const v = W.run.view();
   const boss = v.actBoss && v.actBoss.kind;
-  check((boss === 'wyrm' || boss === 'lichram') && v.layout?.layoutId === 18, `the Heart Chamber holds ${boss} (layout ${v.layout?.layoutId})`);
+  check((boss === 'cantor' || boss === 'colossus') && v.layout?.layoutId === 18, `the Heart Chamber holds ${boss} (layout ${v.layout?.layoutId})`);
   W.run.cmd('killBoss');
   let won = null;
   for (let i = 0; i < 4000 && !won; i++) {

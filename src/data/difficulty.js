@@ -117,8 +117,9 @@ export const LEVEL_DMG = Object.freeze([null, 0.75, 1.0, 1.0, 1.0]);
 // a down) went to the design owner, who ruled (2026-10-03) that Level 1's bite
 // is an HP dip below 35 % counted over seeds 1-40 against v0.5.150: 13 of 40
 // vs 7 of 40 at x2.1 (tools/gntPARTY-band.mjs 18/18).
-// Act IV: the Barrow's bosses stand in on Level 4 until it has its own; their
-// kits were tuned on the Act III multiplier, so x0.85 keeps their hits there.
+// Act IV: x0.85. Its own bosses (the Hollow Cantor, the Geode Colossus,
+// docs/ACT_IV_BOSSES.md) are tuned on it, with base hits in the Barrow
+// bosses' range (13-18), so a hit lands near the Act III bosses' damage.
 export const STAG_DMG_LEVEL = Object.freeze([null, 2.1, 2.0, 1.0, 0.85]);
 // PARTY (PLAN §16.9): the determinism proof's Node-only switch — the
 // v0.5.150 (CAMPAIGN) constants back in force (cmd('difficultyLegacy')). The

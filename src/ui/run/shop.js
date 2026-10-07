@@ -51,7 +51,7 @@ import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
 import { createPartyStrip } from './partystrip.js';
 import { service } from '../../app/registry.js';
 import { bossNameOfRun } from '../../data/levels.js';
-import { rumourFor, isHeartLevel, NPCS } from '../../data/story.js';
+import { rumourFor, isHeartLevel, HEART_BOSSES, NPCS } from '../../data/story.js';
 import { relicIconHtml } from './relicicons.js';
 import { t } from '../../i18n/index.js';
 import { viewerSeat } from '../../app/viewerseat.js';
@@ -465,7 +465,7 @@ export function createShopScreen({ run, build, party = () => null }) {
       const lineEl = rumourEl.querySelector('.rn-rline');
       if (lineEl.textContent !== line) {
         lineEl.textContent = line;
-        rumourEl.dataset.boss = isHeartLevel(view.act) ? 'heart' : kind;
+        rumourEl.dataset.boss = isHeartLevel(view.act) && !HEART_BOSSES.includes(kind) ? 'heart' : kind;
         dirtyFlag = true;
       }
     }

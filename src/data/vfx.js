@@ -270,6 +270,35 @@ export const BOSS_VFX = Object.freeze({
     grave: Object.freeze({ chunk: 10, bones: 6 }),
     camera: Object.freeze({ dolly: 0.08, kick: 0.06 }),
   }),
+  // Act IV's two bosses (docs/ACT_IV_BOSSES.md).
+  //   cantor    God-stuff violet and the heart's light: notes that ring out
+  //             in Ember and echo as crystal, a sung lance, verses that open
+  //             the three lands' doors, an echo that folds away (the final boss)
+  //   colossus  slate rock and pale glass over the heart's purple: a fissure
+  //             torn down the floor, geodes from the ceiling, a chest that
+  //             bursts (the Heart's own body)
+  cantor: Object.freeze({
+    id: 'cantor',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'heartcrystal',
+    second: 'heartvein',
+    note: Object.freeze({ rings: 3, motes: 14 }),
+    verse: Object.freeze({ pillar: 4.2, motes: 26 }),
+    camera: Object.freeze({ dolly: 0.09, kick: 0.07 }),
+  }),
+  colossus: Object.freeze({
+    id: 'colossus',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'stone',
+    second: 'heartcrystal',
+    fissure: Object.freeze({ speed: 16, spikes: 3 }),
+    burst: Object.freeze({ spikes: 14, shards: 18 }),
+    camera: Object.freeze({ dolly: 0.1, kick: 0.08 }),
+  }),
 });
 export function isVfxBoss(kind) {
   return Object.prototype.hasOwnProperty.call(BOSS_VFX, kind);

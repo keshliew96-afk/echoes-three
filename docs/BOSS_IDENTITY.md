@@ -20,6 +20,8 @@ cut-outs done with evenodd, on the violet boss rim and studs.
 | The Millwheel | II | spoked water-wheel with paddles | oak and iron |
 | The Barrow Wyrm | III | horned dragon head, jaws open, spined neck | cinder and earth |
 | The Lich Ram | III | ram skull with curled horns and a grave-flame | grave mist and bone |
+| The Hollow Cantor | IV | hooded mask, open singing mouth, halo of notes | heart vein |
+| The Geode Colossus | IV | split geode chest between two slabs | stone and heart crystal |
 
 The run view's `boss.kind` (or `actBoss.kind`) names the boss; the Stag's view
 has no kind and falls back to the Stag medal.
@@ -50,7 +52,10 @@ groove as it was. Each act's second boss (Thornmother, Millwheel, Lich Ram)
 plays a variant of it (`BOSS_MUSIC` in `src/audio/music.js`): same key,
 tempo, drone and pad, its own progression, ostinato figure, drum pattern and
 lead (briar lute with a rustling shaker; mechanical bell ostinato and reed;
-galloping drums and brass horn calls). The engine picks it from the run
+galloping drums and brass horn calls). Act IV's two bosses (Hollow Cantor,
+Geode Colossus; docs/ACT_IV_BOSSES.md) both play their own variant of the
+`heart` groove: a hymn with a glass arpeggio and choir lead, and a heavy march
+with a brass lead. The engine picks it from the run
 view's boss from room 6 on, so the groove is prebaked before the boss room.
 
 Levels are calibrated like the M4b cues: `node tools/boss-identity-cuecal.mjs

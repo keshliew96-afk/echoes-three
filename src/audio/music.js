@@ -313,6 +313,27 @@ export const BOSS_MUSIC = Object.freeze({
     lead: 'brass',
     motif: [[0, 0, 2], [2, 0, 2], [4, 4, 6], [12, 3, 4], [16, 0, 2], [18, 0, 2], [20, 1, 10]],
   },
+  // Act IV (docs/ACT_IV_BOSSES.md): both keep the heart theme's key, tempo
+  // and heartbeat. The Cantor's groove is a hymn (a slow choir lead over a
+  // glass ostinato that climbs, the flat second leaning on the tonic); the
+  // Colossus' is a march (glass on every beat, a heavier drum, a lead that
+  // falls like struck crystal).
+  cantor: {
+    theme: 'heart',
+    prog: [0, 1, 0, 6],
+    arp: { instr: 'glass', pattern: [0, 2, 4, 2, 1, 3, 5, 3] },
+    drum: { 0: 1, 4: 0.5, 8: 0.9, 11: 0.4, 12: 0.6 },
+    lead: 'choir',
+    motif: [[0, 0, 6], [6, 1, 2], [8, 2, 4], [12, 1, 4], [16, 4, 6], [22, 3, 2], [24, 1, 4], [28, 0, 4]],
+  },
+  colossus: {
+    theme: 'heart',
+    prog: [0, 5, 1, 0],
+    arp: { instr: 'glass', pattern: [0, 0, 4, 0, 3, 0, 1, 0] },
+    drum: { 0: 1, 2: 0.5, 4: 0.85, 6: 0.5, 8: 1, 10: 0.5, 12: 0.85, 14: 0.6 },
+    lead: 'brass',
+    motif: [[0, 4, 4], [4, 3, 4], [8, 1, 4], [12, 0, 4], [16, 4, 2], [18, 3, 2], [20, 1, 4], [24, 0, 8]],
+  },
 });
 export const bossMusicKey = (kind) => (kind && BOSS_MUSIC[kind] ? kind : null);
 

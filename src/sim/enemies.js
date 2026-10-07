@@ -1037,6 +1037,8 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       fuseRule = typeof fn === 'function' ? fn : () => null;
     },
     fireShot: (owner, tick, dirX, dirZ, o) => ctx.fireShot(owner, tick, dirX, dirZ, o),
+    // A ground patch with no glob in front of it (the Geode Colossus' fissure).
+    spawnSlick: (owner, x, z, o) => spawnSlick(owner, x, z, o),
     hasType: (etype) => !!(ENEMY_STATS[etype] || ARCHETYPES[etype]),
     isEnemyKind,
     governor,
