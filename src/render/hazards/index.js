@@ -48,6 +48,8 @@ import {
   Sprite,
   SpriteMaterial,
   SRGBColorSpace,
+  LinearSRGBColorSpace,
+  TorusGeometry,
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE } from '../../data/palette.js';
@@ -205,6 +207,16 @@ const SLIP_LOOK = {
     glaze: hslColor(192, 0.32, 0.4),
     sheen: hslColor(184, 0.35, 0.72),
   },
+  // heart crystal (Hollow Heart): polished violet facets with bright edges
+  glass: {
+    stoneA: hslColor(274, 0.36, 0.11),
+    stoneB: hslColor(266, 0.42, 0.3),
+    film: hslColor(292, 0.3, 0.24),
+    joint: hslColor(270, 0.5, 0.06),
+    rim: hslColor(264, 0.62, 0.74),
+    glaze: hslColor(258, 0.42, 0.52),
+    sheen: hslColor(262, 0.5, 0.88),
+  },
   // grave frost (Barrow): a thin rime over dark grave earth, pale cracks
   frost: {
     stoneA: hslColor(218, 0.16, 0.15),
@@ -225,6 +237,7 @@ function makeSlipMaterial(skin, radius, seed) {
       uS: { value: radius + SLIP_PAD },
       uSeed: { value: seed },
       uFrost: { value: skin === 'frost' ? 1 : 0 },
+      uGlass: { value: skin === 'glass' ? 1 : 0 },
       uStir: { value: 0 },
       uStoneA: { value: L.stoneA },
       uStoneB: { value: L.stoneB },
@@ -252,6 +265,7 @@ function makeSlipMaterial(skin, radius, seed) {
       uniform float uR;
       uniform float uSeed;
       uniform float uFrost;
+      uniform float uGlass;
       uniform float uStir;
       uniform vec3 uStoneA;
       uniform vec3 uStoneB;
@@ -336,7 +350,27 @@ function makeSlipMaterial(skin, radius, seed) {
         float rim = smoothstep( 0.16, 0.05, toEdge ) * smoothstep( -0.03, 0.03, toEdge );
         float rimN = 0.75 + 0.25 * noise( vec2( ang * 12.0, uT * 0.5 ) );
         col = mix( col, uRim, rim * rimN * 0.85 );
-        float a = inside * mix( 0.9, 0.95, uFrost );
+        // Heart crystal: one polished gem slab — every facet its own value
+        // (a fixed light direction against a per-facet tilt), black seams
+        // with a bright cut edge beside them, a deep violet heart under the
+        // centre and a strong sheen. Replaces the stone/film look outright.
+        if ( uGlass > 0.5 ) {
+          vec3 gc = cells( p * 1.25 + 3.1 );
+          vec2 tilt = hash2( vec2( gc.z * 91.7, gc.z * 13.3 ) ) - 0.5;
+          float facet = clamp( 0.5 + dot( tilt, normalize( vec2( -0.6, -0.8 ) ) ) * 1.6, 0.0, 1.0 );
+          vec3 gq = mix( uStoneA, uStoneB, facet );
+          gq = mix( gq, uFilm, smoothstep( 0.6, 1.0, d / ( uR + 0.001 ) ) * 0.35 );
+          float seam = 1.0 - smoothstep( 0.015, 0.05, gc.y );
+          float edgeLit = ( 1.0 - smoothstep( 0.05, 0.11, gc.y ) ) - seam;
+          gq = mix( gq, uJoint, seam * 0.9 );
+          gq = mix( gq, uRim, edgeLit * ( 0.35 + 0.45 * facet ) );
+          gq = mix( gq, uGlaze, ( 0.1 + 0.18 * sky ) );
+          gq = mix( gq, uSheen, clamp( hi * 0.75, 0.0, 0.8 ) );
+          gq += uSheen * star * wink * 1.4;
+          gq = mix( gq, uRim, rim * rimN * 0.9 );
+          col = gq;
+        }
+        float a = inside * mix( mix( 0.9, 0.95, uFrost ), 0.97, uGlass );
         gl_FragColor = vec4( col, a );
       }
     `,
@@ -643,6 +677,24 @@ function buildRubble(e) {
   };
 }
 
+// Vein vent (gravefire skin 'vein', Act IV): linear (unlit, untoned) violet
+// for the veins / breath / column core, and the rose flesh / throat tones.
+const VENT_GLOW = [0.5, 0.36, 1.35];
+const VENT_CORE = [0.78, 0.6, 1.6];
+const VENT_LIP = hslColor(334, 0.3, 0.24);
+const VENT_THROAT = hslColor(282, 0.5, 0.035);
+function ventVeinsGeo() {
+  const parts = [];
+  for (let k = 0; k < 6; k++) {
+    const a = k * 1.05 + 0.25;
+    const len = 0.24 + (k % 3) * 0.1;
+    parts.push(new BoxGeometry(len, 0.012, 0.04 - (k % 2) * 0.012).translate(0.3 + len / 2, 0.008, 0).rotateY(a));
+    // a short fork off every other vein
+    if (k % 2 === 0) parts.push(new BoxGeometry(0.18, 0.012, 0.02).translate(0.09, 0.008, 0).rotateY(0.6).translate(0.3 + len * 0.6, 0, 0).rotateY(a));
+  }
+  return mergeGeometries(parts);
+}
+
 function buildGravefire(h) {
   const g = new Group();
   const vents = [];
@@ -656,16 +708,40 @@ function buildGravefire(h) {
   );
   const slabMat = toonMaterial({ color: STONE });
   const crackMat = new MeshBasicMaterial({ color: CRACK_AMBER, toneMapped: false });
+  // Act IV skin 'vein' (the Hollow Heart): a vein vent — a swollen rose lip
+  // round a black orifice, violet veins running out of it across the floor
+  // and a cold violet breath over it. Idle stays violet (never Ember); the
+  // telegraph is the shared Ember ring and, as it closes, the veins heat to
+  // Ember; the eruption is a violet-cored column with an Ember skin.
+  const vein = h.skin === 'vein';
+  const veinMat = vein ? new MeshBasicMaterial({ toneMapped: false }) : null;
+  if (veinMat) veinMat.color.setRGB(0.24, 0.08, 0.64, LinearSRGBColorSpace);
+  const veinBase = veinMat ? veinMat.color.clone() : null;
+  const lipMat = vein ? toonMaterial({ color: VENT_LIP }) : null;
+  const throatMat = vein ? new MeshBasicMaterial({ color: VENT_THROAT }) : null;
   for (let i = 0; i < h.vents.length; i++) {
     const v = h.vents[i];
     const p = new Group();
     p.position.set(v.x, 0, v.z);
     p.rotation.y = (i * 0.7 + h.id) % 3;
-    const slab = new Mesh(slabG, slabMat);
-    addInk(slab);
-    p.add(slab);
-    p.add(new Mesh(crackG, crackMat));
-    const warm = makeGlowSprite({ color: PALETTE.hearthAmber, size: 0.7, opacity: 0.18 });
+    if (vein) {
+      const lip = new Mesh(sharedGeo('hz-vent-lip', () => new TorusGeometry(0.3, 0.1, 6, 14).rotateX(Math.PI / 2).scale(1, 0.62, 1).translate(0, 0.05, 0)), lipMat);
+      addInk(lip);
+      p.add(lip);
+      const throat = new Mesh(sharedGeo('hz-vent-throat', () => new CircleGeometry(0.27, 16).rotateX(-Math.PI / 2).translate(0, 0.06, 0)), throatMat);
+      p.add(throat);
+      p.add(new Mesh(sharedGeo('hz-vent-veins', ventVeinsGeo), veinMat));
+    } else {
+      const slab = new Mesh(slabG, slabMat);
+      addInk(slab);
+      p.add(slab);
+      p.add(new Mesh(crackG, crackMat));
+    }
+    const warm = makeGlowSprite({ color: vein ? PALETTE.godstuffViolet : PALETTE.hearthAmber, size: vein ? 0.8 : 0.7, opacity: 0.18 });
+    if (vein) {
+      warm.material.toneMapped = false;
+      warm.material.color.setRGB(VENT_GLOW[0], VENT_GLOW[1], VENT_GLOW[2], LinearSRGBColorSpace);
+    }
     warm.position.y = 0.2;
     p.add(warm);
     // The column: Ember-tinted flame billboards + a hot core + halo.
@@ -674,7 +750,8 @@ function buildGravefire(h) {
     const flames = [];
     for (let k = 0; k < 3; k++) {
       const f = makeFlameSprite(1.25 - k * 0.25, 1, 0.96);
-      f.material.color.copy(EMBER_EXACT).lerp(new Color('#FFFFFF'), 0.12 + k * 0.1);
+      if (vein && k > 0) f.material.color.setRGB(VENT_CORE[0], VENT_CORE[1], VENT_CORE[2], LinearSRGBColorSpace).lerp(new Color('#FFFFFF'), 0.1 + k * 0.12);
+      else f.material.color.copy(EMBER_EXACT).lerp(new Color('#FFFFFF'), 0.12 + k * 0.1);
       f.position.set((k - 1) * 0.12, 0.6 - k * 0.08, 0.05 * k);
       col.add(f);
       flames.push(f);
@@ -684,6 +761,13 @@ function buildGravefire(h) {
     halo.material.toneMapped = false;
     halo.position.y = 0.4;
     col.add(halo);
+    if (vein) {
+      const core = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 0.9, opacity: 0.6 });
+      core.material.toneMapped = false;
+      core.material.color.setRGB(VENT_CORE[0], VENT_CORE[1], VENT_CORE[2], LinearSRGBColorSpace);
+      core.position.y = 0.5;
+      col.add(core);
+    }
     p.add(col);
     g.add(p);
     vents.push({ p, warm, col, flames, halo, tele: null, was: 'idle' });
@@ -695,7 +779,8 @@ function buildGravefire(h) {
       e.vents.forEach((v, i) => {
         const r = vents[i];
         if (!r) return;
-        r.warm.material.opacity = 0.14 + 0.05 * Math.sin(tSec * 1.3 + i);
+        r.warm.material.opacity = vein ? 0.2 + 0.08 * Math.sin(tSec * 1.6 + i * 1.3) : 0.14 + 0.05 * Math.sin(tSec * 1.3 + i);
+        let heat = 0;
         if (v.phase === 'telegraph') {
           if (!r.tele) r.tele = ctx.shapes.acquire('ring');
           const t0 = (v.phaseUntilTick ?? tick) - 54;
@@ -703,9 +788,21 @@ function buildGravefire(h) {
           r.tele.set({ x: v.x, z: v.z, radius: 0.7 }, tSec, prog);
           ctx.live.push(v);
           r.warm.material.opacity = 0.2 + 0.25 * prog;
+          heat = prog;
         } else if (r.tele) {
           ctx.shapes.release(r.tele);
           r.tele = null;
+        }
+        if (vein && i === 0) {
+          // One shared vein material per gravefire: heat it with the
+          // furthest-along vent (the vents of one line fire together).
+          let hmax = heat;
+          e.vents.forEach((w) => {
+            if (w.phase === 'telegraph') hmax = Math.max(hmax, Math.min(1, Math.max(0, (tick - ((w.phaseUntilTick ?? tick) - 54)) / 54)));
+            else if (w.phase === 'active') hmax = 1;
+          });
+          const k = hmax * hmax;
+          veinMat.color.copy(veinBase).multiplyScalar(1 + 0.25 * Math.sin(tSec * 2.2)).lerp(EMBER_EXACT, k * 0.85);
         }
         const on = v.phase === 'active';
         r.col.visible = on;
@@ -732,7 +829,9 @@ function buildGravefire(h) {
 
 function buildSlip(h) {
   const g = new Group();
-  const skin = h.skin === 'frost' ? 'frost' : 'wet';
+  const skin = h.skin === 'frost' || h.skin === 'glass' ? h.skin : 'wet';
+  // Glass rides the frost behaviours (crystal dust spray, glints, low haze).
+  const icy = skin !== 'wet';
   const L = SLIP_LOOK[skin];
   const r = h.radius ?? 1.4;
   const seed = ((h.id ?? 1) * 0.6180339) % 1;
@@ -762,7 +861,7 @@ function buildSlip(h) {
   const mists = [];
   const mistN = skin === 'frost' ? 3 : 1;
   for (let i = 0; i < mistN; i++) {
-    const w = makeGlowSprite({ color: skin === 'frost' ? L.glaze : L.film, size: r * (skin === 'frost' ? 1.3 : 1.9), opacity: 0 });
+    const w = makeGlowSprite({ color: icy ? L.glaze : L.film, size: r * (skin === 'frost' ? 1.3 : skin === 'glass' ? 1.6 : 1.9), opacity: 0 });
     w.position.y = skin === 'frost' ? 0.22 : 0.05;
     g.add(w);
     mists.push({ w, phase: i * 2.1 + seed * 4 });
@@ -781,7 +880,7 @@ function buildSlip(h) {
         st.sp.material.rotation = tSec * 0.4 + st.phase;
       }
       mists.forEach((m, i) => {
-        m.w.material.opacity = skin === 'frost' ? 0.05 + 0.03 * Math.sin(tSec * 0.5 + m.phase) : 0.04 + 0.02 * Math.sin(tSec * 0.8);
+        m.w.material.opacity = skin === 'frost' ? 0.05 + 0.03 * Math.sin(tSec * 0.5 + m.phase) : skin === 'glass' ? 0.06 + 0.03 * Math.sin(tSec * 0.9) : 0.04 + 0.02 * Math.sin(tSec * 0.8);
         m.w.position.x = Math.sin(tSec * 0.17 + m.phase) * r * 0.35;
         m.w.position.z = Math.cos(tSec * 0.13 + m.phase * 1.3) * r * 0.3;
         void i;
@@ -795,7 +894,7 @@ function buildSlip(h) {
         while (sprayDebt >= 1) {
           sprayDebt -= 1;
           const dir = { x: -b.vx / (b.speed || 1), z: -b.vz / (b.speed || 1) };
-          if (skin === 'frost') {
+          if (icy) {
             impactFx.spray('spark', b.x, 0.05, b.z, 1, { color: L.rim, speed: [0.4, 1.2], up: [0.3, 0.9], size: [0.04, 0.08], life: [0.3, 0.55], opacity: 0.9, dir, dirBias: 0.7, jitter: 0.15 });
             if (ctx.cosmetic.chance(0.3)) impactFx.spray('smoke', b.x, 0.08, b.z, 1, { color: L.glaze, speed: [0.2, 0.5], up: [0.1, 0.3], size: [0.25, 0.4], grow: 0.6, life: [0.5, 0.8], opacity: 0.22, dir, dirBias: 0.6 });
           } else {
@@ -916,8 +1015,11 @@ export function createHazardLayer({ stage, world, bus, cosmetic }) {
       gravefire: { id: 0, vents: [{ x: 0, z: 0 }] },
       slip: { id: 1, radius: 1.4, skin: 'wet' },
       slipFrost: { id: 2, radius: 1.4, skin: 'frost' },
+      slipGlass: { id: 3, radius: 1.4, skin: 'glass' },
+      gravefireVein: { id: 1, vents: [{ x: 0, z: 0 }], skin: 'vein' },
     };
-    for (const [k, f] of Object.entries(fake)) warmPark(root, BUILD[k === 'slipFrost' ? 'slip' : k](f).group);
+    const kindOf = (k) => (k.startsWith('slip') ? 'slip' : k.startsWith('gravefire') ? 'gravefire' : k);
+    for (const [k, f] of Object.entries(fake)) warmPark(root, BUILD[kindOf(k)](f).group);
     warmPark(root, buildRubble({ x: 0, z: 0 }).group);
     const back = shapes.prewarm();
     setTimeout(back, 250);

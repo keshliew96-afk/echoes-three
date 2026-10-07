@@ -52,6 +52,7 @@ for (const [lid, L] of Object.entries(LAYOUTS)) {
     for (const b of dress.braziers ?? []) anchors.push({ x: b[0], z: b[1], r: 0.55, what: 'brazier' });
     for (const t of dress.torches ?? []) anchors.push({ x: t[0], z: t[1], r: 0.4, what: 'torch' });
     for (const t of dress.lanterns ?? []) anchors.push({ x: t[0], z: t[1], r: 0.45, what: 'lantern' });
+    for (const c of dress.crystals ?? []) anchors.push({ x: c[0], z: c[1], r: 0.55, what: 'crystal' });
     if (dress.monolith) anchors.push({ x: dress.monolith[0], z: dress.monolith[1], r: 0.95, what: 'monolith' });
     if (dress.millwheel) anchors.push({ x: dress.millwheel[0], z: dress.millwheel[1], r: 1.2, what: 'millwheel' });
     if (dress.veinStones) anchors.push({ x: dress.veinStones[0], z: dress.veinStones[1], r: 1.3, what: 'veinStones' });

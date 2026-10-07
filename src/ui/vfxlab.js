@@ -4,7 +4,7 @@
 // probes use (__echoes.cmd), so what plays is exactly what a run plays, at
 // the real frame rate:
 //
-//   Rooms    jump to a live Act I / II / III room (enemies cleared) or to
+//   Rooms    jump to a live Act I / II / III / IV room (enemies cleared) or to
 //            either boss of an act
 //   Party    equip one of the class skill sets and play it as a reel: each
 //            skill fires at a cluster of training targets in front of the
@@ -44,6 +44,7 @@ const ENEMIES = [
   ['Act I', 1, ['boar', 'mantis', 'quillback', 'toad', 'moth', 'ram', 'mole', 'wasp', 'thornling']],
   ['Act II', 2, ['rotcap', 'snail', 'crab', 'lamprey']],
   ['Act III', 3, ['crow', 'brood', 'knight', 'gravewisp']],
+  ['Act IV', 4, ['husk', 'lancer', 'geode', 'censer']],
 ];
 // Each act's two bosses: [label, act, boss kind].
 const BOSSES = [
@@ -150,7 +151,7 @@ export function mountVfxLab() {
     return f;
   }
   const rooms = section('Rooms');
-  for (const a of [1, 2, 3]) button(rooms, `Act ${['I', 'II', 'III'][a - 1]} room`, () => room(a, 3));
+  for (const a of [1, 2, 3, 4]) button(rooms, `Act ${['I', 'II', 'III', 'IV'][a - 1]} room`, () => room(a, 3));
   for (const [label, a, kind] of BOSSES) button(rooms, label, () => room(a, 8, kind), `Act ${a} boss room: ${label}`);
 
   // ---------------------------------------------------------------- party --
@@ -203,6 +204,18 @@ export function mountVfxLab() {
         if (run().act !== act || run().room === 8 || run().phase !== 'combat') await room(act, 3);
         X().cmd('killAllEnemies');
         const f = front();
+        // Husks surge on one shared heartbeat: show a pack of four.
+        if (k === 'husk') {
+          for (const dx of [-1.8, -0.6, 0.6, 1.8]) X().cmd('spawn', 'husk', f.x + dx, f.z - 2.4);
+          return say('husk x4: watch the veins swell and the pack surge on the beat');
+        }
+        // A censer only mends with kin in reach: hang it behind two husks.
+        if (k === 'censer') {
+          X().cmd('spawn', 'husk', f.x - 0.8, f.z - 1.6);
+          X().cmd('spawn', 'husk', f.x + 0.8, f.z - 1.6);
+          X().cmd('spawn', 'censer', f.x, f.z - 3.4);
+          return say('censer + 2 husks: hit the husks, watch it gather and mend');
+        }
         // A wisp only acts with someone to ward: pair it with a Barrow Ram.
         X().cmd('spawn', k === 'gravewisp' ? 'ram' : k, f.x - 1.1, f.z - 1.6);
         X().cmd('spawn', k, f.x + 1.1, f.z - 1.6);
@@ -307,7 +320,7 @@ export function mountVfxLab() {
   // Each boss's own stings and groove, without fighting it (the boss room
   // buttons above show its medal on the live banner and play its beats).
   const audio = () => X().app.service('audio');
-  const THEME = { 1: 'wood', 2: 'mill', 3: 'barrow' };
+  const THEME = { 1: 'wood', 2: 'mill', 3: 'barrow', 4: 'heart' };
   for (const [label, a, kind] of BOSSES) {
     const row = section(`Sound, ${label}`);
     for (const [part, name] of [['sting', 'Sting'], ['phase', 'Phase'], ['fall', 'Fall']]) {

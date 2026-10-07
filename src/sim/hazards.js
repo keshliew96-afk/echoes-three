@@ -762,6 +762,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         ...(h.kind === 'rubble' ? { untilTick: h.untilTick } : {}),
         ...(h.htype === 'puffcap' ? { bursts: h.bursts } : {}),
         ...(h.htype === 'slip' ? { skin: h.skin, grip: h.grip } : {}),
+        ...(h.htype !== 'slip' && h.skin ? { skin: h.skin } : {}), // Act IV's vein gravefire (dressing only)
       }));
   }
 

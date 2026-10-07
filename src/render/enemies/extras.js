@@ -17,6 +17,7 @@ import {
   BoxGeometry,
   CanvasTexture,
   CircleGeometry,
+  ConeGeometry,
   Group,
   IcosahedronGeometry,
   Mesh,
@@ -29,9 +30,13 @@ import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
 import { sharedGeo } from '../geocache.js';
 import { impactFx } from '../vfx/hub.js';
-import { HIDE } from './style.js';
+import { HIDE, HEART } from './style.js';
+import { mergeGeometries as mergeRaw } from 'three/addons/utils/BufferGeometryUtils.js';
+import { makeGlowSprite } from '../glow.js';
 import { t } from '../../i18n/index.js';
 
+// Merge mixed primitives (polyhedra are non-indexed, the rest indexed).
+const mergeGeometries = (list) => mergeRaw(list.map((g) => (g.index ? g.toNonIndexed() : g)));
 const GLOB_PEAK = 1.7; // u — arc height at mid-flight
 const WAKE_STEP = 0.16; // u of tunnelling between dirt clods
 const WAKE_LIFE = 1.4; // s
@@ -79,6 +84,8 @@ function getSlickTexture() {
 export function createContentExtras({ root, stage, world, bus, cosmetic, shapes }) {
   const globs = new Map(); // glob id -> { g, core, shadow, ring }
   const slicks = new Map(); // slick id -> mesh
+  const crystals = new Map(); // crystal slick id -> { g, disc, cluster, glow } (Act IV)
+  const shardIds = new Set(); // live Geode shard glob ids (their landing is the director's)
   const tethers = new Map(); // gravewisp id -> beam (slice 2)
   const wake = []; // { mesh, age }
   const wakePool = [];
@@ -102,6 +109,48 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
     core.add(sheen);
     const shadow = groundShadow(0.2, 0.5);
     return { g, core, shadow };
+  }
+
+  // Act IV: a Geode Brute's crystal SHARD in flight — a spinning violet
+  // bipyramid with a halo (it is the brute's matter, not a toad's bulb; its
+  // Ember ring on the ground stays the warning).
+  const shardGeo = sharedGeo('h4-shard', () => mergeGeometries([new ConeGeometry(0.09, 0.26, 4).translate(0, 0.13, 0), new ConeGeometry(0.09, 0.14, 4).rotateX(Math.PI).translate(0, -0.07, 0)]));
+  function makeShard() {
+    const g = new Group();
+    const core = new Mesh(shardGeo, toonMaterial({ color: HEART.crystal, emissive: HEART.vein, emissiveIntensity: 0.7 }));
+    addInk(core);
+    g.add(core);
+    const halo = makeGlowSprite({ color: '#FFFFFF', size: 0.6, opacity: 0.55 });
+    halo.material.toneMapped = false;
+    halo.material.color.copy(HEART.glow);
+    g.add(halo);
+    const shadow = groundShadow(0.16, 0.5);
+    return { g, core, shadow, shard: true };
+  }
+  // ...and the patch it leaves: a jagged cluster of violet crystal punched up
+  // through the floor over a dark bruise, never a liquid puddle. It grows in
+  // and sinks back on the patch's sim clock.
+  const clusterGeo = sharedGeo('h4-crystal-cluster', () => {
+    const parts = [];
+    const spots = [[0, 0, 0.55, 0.11, 0, 0], [0.42, 0.1, 0.36, 0.08, 0.5, 0.15], [-0.36, 0.22, 0.42, 0.09, -0.45, 0.3], [0.12, -0.45, 0.3, 0.07, 0.15, -0.5], [-0.2, -0.36, 0.26, 0.06, -0.3, -0.45], [0.5, -0.3, 0.22, 0.06, 0.6, -0.3], [-0.55, -0.08, 0.2, 0.05, -0.7, 0], [0.22, 0.5, 0.24, 0.06, 0.25, 0.6]];
+    for (const [x, z, h, r, lx, lz] of spots) parts.push(new ConeGeometry(r, h, 4).translate(0, h / 2, 0).rotateX(lz * 0.8).rotateZ(-lx * 0.8).translate(x, 0, z));
+    return mergeGeometries(parts);
+  });
+  function makeCrystalPatch() {
+    const g = new Group();
+    const disc = makeSlick();
+    disc.material.color.copy(HEART.fleshDark).multiplyScalar(1.1);
+    disc.position.y = 0.012;
+    g.add(disc);
+    const cluster = new Mesh(clusterGeo, toonMaterial({ color: HEART.crystal, emissive: HEART.vein, emissiveIntensity: 0.55 }));
+    addInk(cluster);
+    g.add(cluster);
+    const glow = makeGlowSprite({ color: '#FFFFFF', size: 1.6, opacity: 0.25 });
+    glow.material.toneMapped = false;
+    glow.material.color.copy(HEART.glow);
+    glow.position.y = 0.25;
+    g.add(glow);
+    return { g, disc, cluster, glow };
   }
 
   function makeSlick() {
@@ -160,6 +209,7 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
   });
   bus.on('enemy_glob_land', (ev) => {
     if (ev.affix) return; // ELITE AFFIXES: the director draws its burst
+    if (shardIds.delete(ev.id)) return; // Act IV: a crystal shard shatters (director)
     counters.splashes += 1;
     impactFx.impact(ev.x, ev.z, { color: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.5).getHex(), n: 10 });
     impactFx.embers(ev.x, ev.z, { n: 6, radius: 0.5, tall: 1.1 });
@@ -203,7 +253,11 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
         seenG.add(e.id);
         let r = globs.get(e.id);
         if (!r) {
-          r = makeGlob();
+          r = e.shard ? makeShard() : makeGlob();
+          if (e.shard) {
+            shardIds.add(e.id);
+            if (shardIds.size > 64) shardIds.clear();
+          }
           root.add(r.g);
           root.add(r.shadow);
           r.ring = e.telegraph ? shapes.acquire('ring') : null;
@@ -220,13 +274,32 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
         const x = e.fromX + (e.tx - e.fromX) * u;
         const z = e.fromZ + (e.tz - e.fromZ) * u;
         r.g.position.set(x, 0.35 + GLOB_PEAK * 4 * u * (1 - u), z);
-        r.g.rotation.set(tSec * 5, tSec * 3, 0);
+        if (r.shard) r.g.rotation.set(0.5, tSec * 9, 0.35 + u * 2.4);
+        else r.g.rotation.set(tSec * 5, tSec * 3, 0);
         r.shadow.position.set(x, 0, z);
         r.shadow.scale.setScalar(0.6 + 0.4 * u);
         if (r.ring && e.telegraph) {
           r.ring.set(e.telegraph, tSec, u);
           liveTelegraphs.push(e.telegraph);
         }
+      } else if (e.kind === 'slick' && e.variant === 'crystal') {
+        seenS.add(e.id);
+        let c = crystals.get(e.id);
+        if (!c) {
+          c = makeCrystalPatch();
+          c.g.position.set(e.x, 0, e.z);
+          c.g.rotation.y = (e.id * 2.399963) % (Math.PI * 2);
+          c.g.scale.setScalar(e.radius);
+          root.add(c.g);
+          crystals.set(e.id, c);
+        }
+        const inK = Math.min(1, (tick - e.startTick) / 6);
+        const outK = Math.min(1, Math.max(0, (e.untilTick - tick) / 24));
+        c.cluster.scale.set(1, Math.max(0.01, (inK < 1 ? 1.15 * inK : 1) * outK), 1);
+        c.cluster.position.y = -0.04 * (1 - outK);
+        c.disc.material.opacity = 0.7 * Math.min(1, inK * 2) * outK;
+        c.cluster.material.emissiveIntensity = 0.5 + 0.08 * Math.sin(tSec * 2.2 + e.id) + 0.6 * (1 - inK);
+        c.glow.material.opacity = (0.18 + 0.05 * Math.sin(tSec * 2.2 + e.id)) * outK;
       } else if (e.kind === 'slick') {
         seenS.add(e.id);
         let m = slicks.get(e.id);
@@ -280,12 +353,24 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
       root.remove(r.g);
       root.remove(r.shadow);
       if (r.ring) shapes.release(r.ring);
+      if (r.shard) {
+        r.core.material.dispose();
+        r.shadow.material.dispose();
+      }
       globs.delete(id);
     }
     for (const [id, m] of slicks) {
       if (seenS.has(id)) continue;
       root.remove(m);
       slicks.delete(id);
+    }
+    for (const [id, c] of crystals) {
+      if (seenS.has(id)) continue;
+      root.remove(c.g);
+      c.disc.material.dispose();
+      c.cluster.material.dispose();
+      c.glow.material.dispose();
+      crystals.delete(id);
     }
     // Slice 2: the Grave Wisp's TETHER — a thin pulsing indigo thread from the
     // wisp to the enemy it wards (the director adds the take, the motes
@@ -362,7 +447,16 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
     const cl = makeClod();
     cl.position.set(0, -60, 0);
     root.add(cl);
+    // Act IV: the crystal shard and its patch.
+    const sh = makeShard();
+    sh.g.position.set(0, -60, 0);
+    root.add(sh.g);
+    const cp = makeCrystalPatch();
+    cp.g.position.set(0, -60, 0);
+    root.add(cp.g);
     setTimeout(() => {
+      root.remove(sh.g);
+      root.remove(cp.g);
       root.remove(g.g);
       root.remove(sl);
       root.remove(cl);
@@ -374,7 +468,7 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
   function debugState() {
     return {
       globs: globs.size,
-      slicks: slicks.size,
+      slicks: slicks.size + crystals.size,
       moleWake: wake.length,
       blockedLabels: blocked.length,
       ...counters,

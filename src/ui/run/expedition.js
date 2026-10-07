@@ -80,7 +80,7 @@ function installStyle() {
 const LOCK_SVG =
   '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="7" y="14" width="18" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M11 14 V10 A5 5 0 0 1 21 10 V14" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="16" cy="20.5" r="2" fill="currentColor"/></svg>';
 
-const BIOME_LABEL = { wood: () => t('Night woodland'), mill: () => t('Flooded mill'), barrow: () => t('Burial mounds') };
+const BIOME_LABEL = { wood: () => t('Night woodland'), mill: () => t('Flooded mill'), barrow: () => t('Burial mounds'), heart: () => t('The hollow under the Barrow') };
 
 export function createExpeditionScreen(ctx) {
   installStyle();

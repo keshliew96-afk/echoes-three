@@ -861,18 +861,18 @@ export function createArenaScene(stage, toggles, ctx) {
       // No embers (it is not a fire) and no flicker: it breathes slowly.
       const CRY = [0.62, 0.46, 1.7];
       const size = em.size ?? 1.15;
-      const glow = makeGlowSprite({ color: PALETTE.godstuffViolet, size, opacity: 0.42 });
+      const glow = makeGlowSprite({ color: PALETTE.godstuffViolet, size, opacity: 0.36 });
       glow.renderOrder = HALO_ORDER;
       glow.material.toneMapped = false;
       glow.material.color.setRGB(CRY[0], CRY[1], CRY[2], LinearSRGBColorSpace);
       glow.position.set(em.x, em.y, em.z);
       dRoot.add(glow);
-      const pool = groundPool(PALETTE.godstuffViolet, em.pool ?? 2.3, 0.3, poolY(), true);
+      const pool = groundPool(PALETTE.godstuffViolet, em.pool ?? 2.3, 0.24, poolY(), true);
       pool.material.color.setRGB(CRY[0] * 0.7, CRY[1] * 0.8, CRY[2], LinearSRGBColorSpace);
       pool.position.x = em.x;
       pool.position.z = em.z;
       dRoot.add(pool);
-      pulses.push({ glow, base: 0.42, rate: 0.7, amp: 0.08, jitter: 0, phase: cosmetic.range(0, Math.PI * 2) });
+      pulses.push({ glow, base: 0.36, rate: 0.7, amp: 0.07, jitter: 0, phase: cosmetic.range(0, Math.PI * 2) });
     }
   }
 
@@ -915,8 +915,8 @@ export function createArenaScene(stage, toggles, ctx) {
   for (const idx of spec.crystalLightIdx ?? []) {
     const em = crystalEmitters[idx];
     if (!em) continue;
-    const light = new PointLight(new Color(PALETTE.godstuffViolet).lerp(new Color('#FFFFFF'), 0.35), TORCH_LIGHT.intensity * 0.8, TORCH_LIGHT.distance, TORCH_LIGHT.decay);
-    light.position.set(em.x, em.y + 0.4, em.z);
+    const light = new PointLight(new Color(PALETTE.godstuffViolet).lerp(new Color('#FFFFFF'), 0.35), TORCH_LIGHT.intensity * 0.5, TORCH_LIGHT.distance, TORCH_LIGHT.decay);
+    light.position.set(em.x, em.y + 1.3, em.z);
     dRoot.add(light);
     pulses.push({ glow: { material: { opacity: 0 } }, base: 0, rate: 0, amp: 0, jitter: 0, phase: cosmetic.range(0, Math.PI * 2), light, lightBase: light.intensity });
   }
