@@ -75,9 +75,9 @@ import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
 import { PARTY_ALLIES, STARTING_SKILLS, SKILLS } from './skills.js';
 import { createDraftSystem, SPOILS_PER_CLEAR } from './draft.js';
 import { NODES } from './nodes.js';
-import { levelFor, ACT_IDS, bossFor } from '../data/levels.js';
+import { levelFor, ACT_IDS, ENDLESS_ACTS, bossFor } from '../data/levels.js';
 // ENDLESS (docs/ENDLESS.md): the descent past Act III.
-import { endlessDifficulty, endlessLevel, endlessBossIndex, endlessNextLevel, endlessRules, levelOfDepth } from '../data/endless.js';
+import { endlessDifficulty, endlessLevel, endlessBossIndex, endlessNextLevel, endlessRules, levelOfDepth, beyondCampaign } from '../data/endless.js';
 import { LAYOUTS } from '../data/layouts.js';
 import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
@@ -259,9 +259,9 @@ export function createRunSystem({
   // pure hash of the seed, nothing saved. `bossPick` is the harness override
   // (cmd('startRun', { act, boss })), saved only while it is set.
   let bossPick = null;
-  // ENDLESS: past Depth 3 each cycle meets the act's other boss in turn.
+  // ENDLESS: past the first cycle each cycle meets the act's other boss in turn.
   const currentBoss = () => {
-    if (!bossPick && endlessDepth() > 3) {
+    if (!bossPick && beyondCampaign(endlessDepth())) {
       const lv = levelFor(act);
       if (lv.bosses && lv.bosses.length) return lv.bosses[endlessBossIndex(endlessDepth(), frame ? frame.seed : null)];
     }
@@ -566,7 +566,7 @@ export function createRunSystem({
     path = null;
     positionParty();
     const combatRoom = mode === 'kill_all' || mode === 'defend' || isObjectiveMode(mode);
-    const baseDiff = depth > 3 ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
+    const baseDiff = beyondCampaign(depth) ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
     // RELICS: a cursed room rolls its waves with the curse's numbers.
     const roomCurse = combatRoom ? relics.curseFor(n) : null;
     let diff = roomCurse ? cursedDiff(baseDiff, roomCurse) : baseDiff;
@@ -1173,7 +1173,7 @@ export function createRunSystem({
     const depth = endlessDepth();
     const level = depth ? endlessLevel(depth) : levelFor(act);
     const n = roomIndex;
-    const base = depth > 3 ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
+    const base = beyondCampaign(depth) ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
     const A = EVENT_RULES.ambush;
     let diff = { ...base, budget: r2(base.budget * A.budgetMul), eliteChance: r2(Math.min(0.9, (base.eliteChance ?? 0) + A.eliteAdd)) };
     for (const m of relics.majorCurses()) diff = cursedDiff(diff, m);
@@ -2117,7 +2117,7 @@ export function createRunSystem({
         campaign.index = d - 1;
         act = levelOfDepth(d - 1);
         campaign.level = act;
-        if (d - 1 > 3) campaign.won = true;
+        if (d - 1 > ACT_IDS.length) campaign.won = true;
         campaign.levels.push({ level: act, index: campaign.index, startTick: tick, rooms: 0, cleared: false, ticks: 0 });
         onLevelCleared(tick);
         return campaignView();
@@ -2394,7 +2394,7 @@ export function createRunSystem({
   });
   function restoreExpedition(d) {
     if (!d) return;
-    act = ACT_IDS.includes(d.act) ? d.act : 1;
+    act = ENDLESS_ACTS.includes(d.act) ? d.act : 1;
     challenge = CHALLENGE[d.challenge] ? d.challenge : 'standard';
     layout = d.layout ? { ...d.layout } : null;
     lastCombatLayout = d.lastCombatLayout ?? null;
@@ -2462,7 +2462,7 @@ export function createRunSystem({
     roomsDone = d.roomsDone ?? 0;
     startTick = d.startTick ?? 0;
     everStarted = !!d.everStarted;
-    act = ACT_IDS.includes(d.act) ? d.act : 1;
+    act = ENDLESS_ACTS.includes(d.act) ? d.act : 1;
     challenge = CHALLENGE[d.challenge] ? d.challenge : 'standard';
     bossPick = typeof d.bossPick === 'string' ? d.bossPick : null;
     layout = d.layout ?? null;

@@ -273,6 +273,9 @@ registerAudioTab();
 // Boss identity: each boss's stings and beat cues (src/audio/bosscues.js).
 import { registerBossCues } from './audio/bosscues.js';
 registerBossCues(service('audio'));
+// Act IV (docs/ACT_IV.md): the Hollow Heart's creatures' voices.
+import { registerHeartCues } from './audio/heartcues.js';
+registerHeartCues(service('audio'));
 // @gnt:AUDIO end
 
 const buildScene = SCENES[sceneKey];

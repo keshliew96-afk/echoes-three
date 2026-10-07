@@ -26,7 +26,7 @@ import { t, tn } from '../../i18n/index.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 const STYLE_ID = 'cg-levels-style';
-const BIOME_LABEL = { wood: () => t('Night woodland'), mill: () => t('Flooded mill'), barrow: () => t('Burial mounds') };
+const BIOME_LABEL = { wood: () => t('Night woodland'), mill: () => t('Flooded mill'), barrow: () => t('Burial mounds'), heart: () => t('The hollow under the Barrow') };
 // data/campaign.js lockLine, as one translatable sentence per form.
 const lockText = (level) => {
   const prev = prevLevel(level);
@@ -73,6 +73,15 @@ function installStyle() {
 .cg-levels .cg-status { font-size: ${px(19)}; color: ${P.parchment}; letter-spacing: 0.02em; }
 .cg-levels .cg-status b { color: ${P.hearthAmber}; }
 .cg-levels .cg-grant { font-size: ${px(18)}; color: ${P.bone}; }
+/* Five cards (four levels plus Endless, docs/ACT_IV.md): a tighter cut so they fit one row. */
+.cg-levels .cg-cards.cg-many { gap: ${px(14)}; }
+.cg-levels .cg-cards.cg-many .cg-card { padding: ${px(15)} ${px(15)} ${px(14)}; min-height: ${px(310)}; }
+.cg-levels .cg-cards.cg-many .cg-name { font-size: ${px(27)}; }
+.cg-levels .cg-cards.cg-many .cg-blurb { font-size: ${px(18)}; }
+.cg-levels .cg-cards.cg-many .cg-biome,
+.cg-levels .cg-cards.cg-many .cg-status { font-size: ${px(17)}; }
+.cg-levels .cg-cards.cg-many .cg-grant { font-size: ${px(16)}; }
+.cg-levels .cg-cards.cg-many .cg-danger { font-size: ${px(18)}; gap: ${px(7)}; }
 .cg-levels .cg-card[aria-disabled="true"] { cursor: default; border-style: dashed; border-color: ${P.bone}77; }
 .cg-levels .cg-card[aria-disabled="true"] .cg-name,
 .cg-levels .cg-card[aria-disabled="true"] .cg-blurb { color: ${P.warmGrey}; }
@@ -154,7 +163,7 @@ export function endlessInfo() {
   return {
     level: 'endless',
     name: t('The Endless Descent'),
-    blurb: t('Past the Barrow the road turns back into the wood, darker each time. The three lands repeat, harder at every depth, until the party falls.'),
+    blurb: t('Past the Heart the road turns back into the wood, darker each time. The four lands repeat, harder at every depth, until the party falls.'),
     unlocked: harness || endlessUnlockedFrom(profile),
     bestDepth: rec.endlessBestDepth || 0,
     runs: rec.endlessRuns || 0,
@@ -223,6 +232,7 @@ export function createLevelsScreen(ctx) {
   function render() {
     cardsEl.textContent = '';
     infos = levelInfo();
+    cardsEl.classList.toggle('cg-many', infos.length >= 4);
     const open = infos.filter((i) => i.unlocked);
     const preselect = open.length ? open[open.length - 1].level : FIRST_LEVEL;
     for (const info of infos) {
@@ -275,7 +285,7 @@ export function createLevelsScreen(ctx) {
         <div class="cg-lvl">${t('ENDLESS')}</div>
         <div class="cg-name"></div>
         <div class="cg-blurb"></div>
-        <div class="cg-biome">${t('Wood · Mill · Barrow · and down again')}</div>
+        <div class="cg-biome">${t('Wood · Mill · Barrow · Heart · and down again')}</div>
         <div class="cg-danger"><span>${t('Danger rises every depth')}</span></div>
         <div class="cg-status"></div>
         <div class="cg-grant">${t('Begins at Level I with the starting kit')}</div>

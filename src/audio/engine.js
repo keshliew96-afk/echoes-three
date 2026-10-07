@@ -110,7 +110,7 @@ const BLUR_TAU = 0.1;
 const CLIP_KNEE = 0.85;
 const LEGACY_SLOT = { shoot: 'shoot', impact: 'hit', hurt: 'hit', kill: 'kill', boss_death: 'kill', heal: 'heal', heal_crit: 'heal' };
 const LOBBY_SCREENS = new Set(['mp-menu', 'lobby', 'mp-join']);
-const THEME_BY_ACT = { 1: 'wood', 2: 'mill', 3: 'barrow' };
+const THEME_BY_ACT = { 1: 'wood', 2: 'mill', 3: 'barrow', 4: 'heart' };
 // A live hostile body (enemy / boss / add) — not its shots, not neutral
 // hazards or breakables. Enemy kinds are their etype ('boar', 'mantis', …).
 const isHostileBody = (e) => e.faction === 'hostile' && e.hp > 0 && e.kind !== 'eshot' && e.hittable !== false;

@@ -853,6 +853,26 @@ export function createArenaScene(stage, toggles, ctx) {
       pool.position.z = em.z;
       dRoot.add(pool);
       pulses.push({ glow, base: 0.6, rate: 0.9, amp: 0.12, jitter: 0, phase: cosmetic.range(0, Math.PI * 2), spark });
+    } else if (em.kind === 'crystal') {
+      // Act IV (env/biomes/heart.js): a violet crystal glow — the Hollow
+      // Heart's light sources in place of fire. Halo + a broad cold pool on
+      // the floor, in the monolith's blue-leaning pre-compensated violet so a
+      // blend over the rose stone falls to mauve, never into the Ember band.
+      // No embers (it is not a fire) and no flicker: it breathes slowly.
+      const CRY = [0.62, 0.46, 1.7];
+      const size = em.size ?? 1.15;
+      const glow = makeGlowSprite({ color: PALETTE.godstuffViolet, size, opacity: 0.42 });
+      glow.renderOrder = HALO_ORDER;
+      glow.material.toneMapped = false;
+      glow.material.color.setRGB(CRY[0], CRY[1], CRY[2], LinearSRGBColorSpace);
+      glow.position.set(em.x, em.y, em.z);
+      dRoot.add(glow);
+      const pool = groundPool(PALETTE.godstuffViolet, em.pool ?? 2.3, 0.3, poolY(), true);
+      pool.material.color.setRGB(CRY[0] * 0.7, CRY[1] * 0.8, CRY[2], LinearSRGBColorSpace);
+      pool.position.x = em.x;
+      pool.position.z = em.z;
+      dRoot.add(pool);
+      pulses.push({ glow, base: 0.42, rate: 0.7, amp: 0.08, jitter: 0, phase: cosmetic.range(0, Math.PI * 2) });
     }
   }
 
@@ -887,6 +907,18 @@ export function createArenaScene(stage, toggles, ctx) {
     light.position.set(em.x, em.y + 0.3, em.z);
     dRoot.add(light);
     torchLights.push({ light, phase: cosmetic.range(0, Math.PI * 2) });
+  }
+  // Act IV: the heart has no torches — its two real lights ride crystal
+  // glows (`spec.crystalLightIdx`), cold violet-white, so every dressing
+  // still carries exactly two point lights (no program relinks on a swap).
+  const crystalEmitters = emitters.filter((e) => e.kind === 'crystal');
+  for (const idx of spec.crystalLightIdx ?? []) {
+    const em = crystalEmitters[idx];
+    if (!em) continue;
+    const light = new PointLight(new Color(PALETTE.godstuffViolet).lerp(new Color('#FFFFFF'), 0.35), TORCH_LIGHT.intensity * 0.8, TORCH_LIGHT.distance, TORCH_LIGHT.decay);
+    light.position.set(em.x, em.y + 0.4, em.z);
+    dRoot.add(light);
+    pulses.push({ glow: { material: { opacity: 0 } }, base: 0, rate: 0, amp: 0, jitter: 0, phase: cosmetic.range(0, Math.PI * 2), light, lightBase: light.intensity });
   }
   return { flames, pulses, fireSources, torchLights, embers };
   };
@@ -1415,7 +1447,7 @@ export function createArenaScene(stage, toggles, ctx) {
     let bootAct = null;
     try {
       const a = Number(new URLSearchParams(window.location.search).get('act'));
-      if (a >= 1 && a <= 3) bootAct = a;
+      if (a >= 1 && a <= 4) bootAct = a;
     } catch {
       /* no location (tests) */
     }
@@ -1671,6 +1703,7 @@ export function createArenaScene(stage, toggles, ctx) {
         pu.wick.scale.set(w * 0.66, w, 1);
       }
       if (pu.spark) pu.spark.material.opacity = Math.max(0.2, 0.5 + 0.2 * Math.sin(tSec * 1.7 + pu.phase));
+      if (pu.light) pu.light.intensity = pu.lightBase * (1 + 0.1 * Math.sin(tSec * 0.8 + pu.phase));
     }
     // The monolith's own veins breathe with the halo (capped well below the
     // clipping point so the vein cores stay violet instead of blowing white).
@@ -1708,9 +1741,11 @@ export function createArenaScene(stage, toggles, ctx) {
       flyPos[i * 3 + 2] = d.z + Math.cos(tSec * d.rz + d.phase) * d.az;
       // Fade: mostly-on with slow dips to near-zero (a firefly blink).
       const f = 0.5 + 0.5 * Math.sin(tSec * d.fadeRate + d.phase * 2.3);
-      flyCol[i * 3] = moteColor.r * f;
-      flyCol[i * 3 + 1] = moteColor.g * f;
-      flyCol[i * 3 + 2] = moteColor.b * f;
+      // Act IV: the heart's motes are violet spores (`spec.moteTint`).
+      const mt = active.spec.moteTint;
+      flyCol[i * 3] = (mt ? mt[0] : moteColor.r) * f;
+      flyCol[i * 3 + 1] = (mt ? mt[1] : moteColor.g) * f;
+      flyCol[i * 3 + 2] = (mt ? mt[2] : moteColor.b) * f;
     }
     flyPosAttr.needsUpdate = true;
     flyColAttr.needsUpdate = true;

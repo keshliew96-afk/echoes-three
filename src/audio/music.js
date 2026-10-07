@@ -10,11 +10,13 @@
 // States: menu · camp · combat · boss · victory · defeat · lobby · silence.
 // Themes (act identity, run states only): wood (D dorian, combat 104 bpm,
 // lute + hand drum) · mill (A aeolian, 96 bpm, water-drip plucks, reeds,
-// frame drum) · barrow (E phrygian, 88 bpm, bell tolls, choir pad, taiko).
+// frame drum) · barrow (E phrygian, 88 bpm, bell tolls, choir pad, taiko) ·
+// heart (Act IV, docs/ACT_IV.md: C# harmonic minor, 86 bpm, glass bells, a
+// low choir, and a lub-dub heartbeat drum under everything).
 // Tempo table (bpm) — every state differs from every other by >= 18 % inside
 // a theme (G3.5 distinctness), boss = combat x 1.22:
-//   defeat 44 · menu 56 · lobby 64 · camp 72 · combat 104/96/88 ·
-//   boss 127/117/107 · victory 152
+//   defeat 44 · menu 56 · lobby 64 · camp 72 · combat 104/96/88/86 ·
+//   boss 127/117/107/105 · victory 152
 // Every state keeps a sustained pad/drone layer so the music tap never
 // drops out between notes (G3.5 "never below -50 dBFS for > 1 s").
 // Crossfades are equal-power (sin/cos gain curves). Intensity (0..1) opens
@@ -37,6 +39,14 @@ const THEMES = {
   wood: { id: 'wood', root: 50, scale: 'dorian', combatBpm: 104, prog: [0, 6, 5, 6], bossScale: 'phrygian', bossProg: [0, 1, 6, 0], ostinato: 'lute', drum: 'hand', lead: 'flute', padType: 'sawtooth', padCut: 1100 },
   mill: { id: 'mill', root: 45, scale: 'aeolian', combatBpm: 96, prog: [0, 5, 2, 6], bossScale: 'phrygian', bossProg: [0, 1, 5, 6], ostinato: 'drip', drum: 'frame', lead: 'reed', padType: 'square', padCut: 800 },
   barrow: { id: 'barrow', root: 52, scale: 'phrygian', combatBpm: 88, prog: [0, 1, 0, 6], bossScale: 'harmonic', bossProg: [0, 1, 4, 0], ostinato: 'bell', drum: 'taiko', lead: 'choir', padType: 'sawtooth', padCut: 700, formant: 750 },
+  // Act IV: the heartbeat is the drum (lub-dub on 1 and 3, with a ghost
+  // before each pair), glass bells carry the ostinato, a dark choir leads.
+  heart: {
+    id: 'heart', root: 49, scale: 'harmonic', combatBpm: 86, prog: [0, 5, 3, 4], bossScale: 'phrygian', bossProg: [0, 1, 5, 4],
+    ostinato: 'glass', drum: 'heartbeat', lead: 'choir', padType: 'sawtooth', padCut: 560, formant: 620,
+    drumHits: { 0: 1, 2: 0.7, 7: 0.3, 8: 0.95, 10: 0.65, 15: 0.3 },
+    bossDrumHits: { 0: 1, 2: 0.7, 4: 0.45, 6: 0.6, 8: 1, 10: 0.7, 12: 0.5, 14: 0.75 },
+  },
 };
 
 // Per-state output trims (dB) that bring each state to about -18 dBFS RMS
@@ -44,10 +54,12 @@ const THEMES = {
 export const MUSIC_TRIM = {
   // @trim begin
   'boss:barrow': -9.6,
+  'boss:heart': -9.8,
   'boss:mill': -8.9,
   'boss:wood': -9.5,
   'camp': -7.6,
   'combat:barrow': -9.1,
+  'combat:heart': -9.0,
   'combat:mill': -7.8,
   'combat:wood': -7.9,
   'defeat': -7,
@@ -124,6 +136,11 @@ const INSTR = {
     Math.max(k.tone(d, t, { f0: 125, f1: 68, d: 0.24, gain: v }), k.noise(d, t, { type: 'lowpass', f0: 950, q: 0.8, d: 0.09, gain: v * 0.5 })),
   taiko: (k, d, t, f, v) =>
     Math.max(k.tone(d, t, { f0: 72, f1: 42, d: 0.55, gain: v }), k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 320, q: 0.7, d: 0.22, gain: v * 0.8 })),
+  // Act IV: a heartbeat thump (a chest-deep sine drop with a muffled body).
+  heartbeat: (k, d, t, f, v) =>
+    Math.max(k.tone(d, t, { f0: 62, f1: 36, d: 0.34, gain: v }), k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 200, q: 0.8, d: 0.16, gain: v * 0.75 })),
+  // Act IV: glass — a cold, inharmonic bell (crystal struck, not cast metal).
+  glass: (k, d, t, f, v) => Math.max(k.bell(d, t, { f, ratio: 5.04, index: 0.9, d: 1.2, gain: v * 0.75 }), k.tone(d, t, { f0: f * 2, a: 0.003, d: 0.25, gain: v * 0.12 })),
   shaker: (k, d, t, f, v) => k.noise(d, t, { type: 'highpass', f0: 6500, q: 0.7, a: 0.004, d: 0.045, gain: v }),
 };
 
@@ -262,6 +279,7 @@ const MOTIFS = {
   wood: [[0, 4, 3], [4, 2, 2], [6, 4, 2], [8, 5, 4], [12, 4, 4], [16, 2, 3], [20, 0, 2], [22, 1, 2], [24, 2, 8]],
   mill: [[0, 0, 6], [6, 2, 2], [8, 4, 6], [14, 3, 2], [16, 2, 8], [24, 1, 4], [28, 0, 4]],
   barrow: [[0, 4, 8], [8, 5, 4], [12, 4, 4], [16, 1, 8], [24, 0, 8]],
+  heart: [[0, 0, 6], [6, 1, 2], [8, 0, 8], [16, 4, 4], [20, 3, 4], [24, -1, 8]],
 };
 
 // Boss identity: the second boss of each act plays its own variant of the
@@ -330,7 +348,7 @@ export function stateSpec(state, themeId = 'wood', bossKind = null) {
         layers: [
           padLayer(0.32, { oct: 0 }),
           bassLayer(0.5, [0, 3, 6, 8, 11, 14], { lenSteps: 2 }),
-          drumLayer('drum', 0.55, th.drum, { 0: 1, 4: 0.5, 7: 0.6, 8: 0.85, 10: 0.4, 12: 0.55, 14: 0.45 }, { min: 0.12 }),
+          drumLayer('drum', 0.55, th.drum, th.drumHits ?? { 0: 1, 4: 0.5, 7: 0.6, 8: 0.85, 10: 0.4, 12: 0.55, 14: 0.45 }, { min: 0.12 }),
           arpLayer('ostinato', 0.45, ost, { every: 1, oct: 1, pattern: [0, 1, 2, 1, 3, 2, 1, 2], min: 0.32 }),
           shakerLayer(0.2, { min: 0.52 }),
           leadLayer(0.42, th.lead, MOTIFS[th.id], { min: 0.72 }),
@@ -346,6 +364,7 @@ export function stateSpec(state, themeId = 'wood', bossKind = null) {
             droneLayer(0.4),
             padLayer(0.25, { oct: 0, every: 32 }),
             drumLayer('taiko', 0.62, 'taiko', v.drum),
+            ...(th.bossDrumHits ? [drumLayer('heartbeat', 0.45, th.drum, th.bossDrumHits)] : []),
             bassLayer(0.45, [0, 2, 4, 6, 8, 10, 12, 14], { lenSteps: 1.6 }),
             arpLayer('ostinato', 0.4, v.arp.instr, { every: 1, oct: 1, pattern: v.arp.pattern, min: 0.25 }),
             ...(v.shaker ? [shakerLayer(0.16, { min: 0.4, every: 2 })] : []),
@@ -360,8 +379,10 @@ export function stateSpec(state, themeId = 'wood', bossKind = null) {
           droneLayer(0.4),
           padLayer(0.25, { oct: 0, every: 32 }),
           drumLayer('taiko', 0.62, 'taiko', { 0: 1, 3: 0.55, 6: 0.7, 8: 0.9, 11: 0.5, 12: 0.6, 14: 0.75 }),
+          // Act IV: the heartbeat quickens under the boss.
+          ...(th.bossDrumHits ? [drumLayer('heartbeat', 0.5, th.drum, th.bossDrumHits)] : []),
           bassLayer(0.45, [0, 2, 4, 6, 8, 10, 12, 14], { lenSteps: 1.6 }),
-          arpLayer('ostinato', 0.4, th.ostinato === 'bell' ? 'bell' : 'lute', { every: 1, oct: 1, pattern: [0, 1, 0, 2, 0, 1, 3, 2], min: 0.25 }),
+          arpLayer('ostinato', 0.4, th.ostinato === 'bell' || th.ostinato === 'glass' ? th.ostinato : 'lute', { every: 1, oct: 1, pattern: [0, 1, 0, 2, 0, 1, 3, 2], min: 0.25 }),
           stabLayer(0.4, [0, 6, 12], { min: 0.5 }),
           leadLayer(0.38, th.lead, MOTIFS[th.id], { min: 0.75, oct: 1 }),
         ],
@@ -429,7 +450,7 @@ const LEN_INSTR = new Set(['lute', 'flute', 'reed', 'choir', 'bass']);
 // pitch x velocity x length keys (~2.5-3 MB of samples per state). The calm
 // states (menu, camp, lobby, stingers: 5-56 notes per cycle, long harp/bell
 // tails) stay live; pads and drones always do (long, rare).
-const BAKED_INSTR = new Set(['hand', 'frame', 'taiko', 'shaker']);
+const BAKED_INSTR = new Set(['hand', 'frame', 'taiko', 'shaker', 'heartbeat']);
 const BAKED_STATES = new Set(['combat', 'boss']);
 const bakesNote = (state, instr) => BAKED_INSTR.has(instr) || BAKED_STATES.has(state);
 const noteKey = (instr, f, v, len) => `n:${instr}:${Math.round(f * 100)}:${Math.round(v * 100)}:${LEN_INSTR.has(instr) ? Math.round(len * 1000) : 0}`;

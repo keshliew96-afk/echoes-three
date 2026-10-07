@@ -2023,5 +2023,22 @@
  "Elite powers": "Poderes de élite",
  "Some elites carry named powers, shown on the plate above them. A red ring on the ground warns before a Molten or Frozen burst lands, and a Warded elite takes no damage while its ward glows.": "Algunas élites tienen poderes con nombre, que se ven en la placa sobre ellas. Un anillo rojo en el suelo avisa antes de que estalle un poder Fundido o Gélido, y una élite Protegida no recibe daño mientras brilla su guarda.",
  "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler, slick floors and elite powers show again the next time you meet each.": "Los consejos de una sola vez sobre la elección de clase, las reliquias, las puertas malditas, las puertas «?», el buhonero, el suelo resbaladizo y los poderes de élite se mostrarán de nuevo la próxima vez que los encuentres.",
- "Heals for part of the damage it deals.": "Se cura con buena parte del daño que inflige."
+ "Heals for part of the damage it deals.": "Se cura con buena parte del daño que inflige.",
+ "Beneath the Barrow, where the corruption first took root and still beats.": "Bajo el Túmulo, donde la corrupción echó raíces y aún late.",
+ "Clear Level IV, the Hollow Heart.": "Supera el Nivel IV, el Corazón Hueco.",
+ "Complete a campaign (Levels I to IV).": "Completa una campaña (Niveles I a IV).",
+ "Geode Hall": "Sala de Geodas",
+ "Heart Chamber": "Cámara del Corazón",
+ "Heartbreaker": "Rompecorazones",
+ "Past the Heart the road turns back into the wood, darker each time. The four lands repeat, harder at every depth, until the party falls.": "Tras el Corazón, el camino vuelve al bosque, cada vez más oscuro. Las cuatro tierras se repiten, más duras, hasta que el grupo cae.",
+ "Root Gate": "Puerta de Raíces",
+ "The Heart's warden falls. Below the Barrow, the old beat falters.": "Cae el guardián del Corazón. Bajo el Túmulo, el viejo latido flaquea.",
+ "The Hollow Heart": "El Corazón Hueco",
+ "The hollow under the Barrow": "La oquedad bajo el Túmulo",
+ "The party fell at Depth {depth}, before the Heart. The gods applaud.": "El grupo cayó en la Profundidad {depth}, antes del Corazón. Los dioses aplauden.",
+ "Through all four lands and down again, until the party falls.": "Por las cuatro tierras y otra vez abajo, hasta que el grupo caiga.",
+ "Vein Gallery": "Galería de Venas",
+ "Weeping Wells": "Pozos Llorosos",
+ "Wood · Mill · Barrow · Heart · and down again": "Bosque · Molino · Túmulo · Corazón · y otra vez abajo",
+ "Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).": "Puntuación = la suma por cada nivel jugado de (100 × salas + 5 × bajas + 1000 si se supera) × nivel (I 1,0 · II 1,5 · III 2,0 · IV 2,5), × desafío (relajado 0,75 · estándar 1 · implacable 1,5), más un bonus de velocidad en una campaña completada (900 × niveles jugados − segundos)."
 }

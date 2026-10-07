@@ -15,7 +15,7 @@ import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { t } from '../../i18n/index.js';
 
-const ROMAN = ['', 'I', 'II', 'III'];
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 const STYLE_ID = 'ex-style';
 
 function installStyle() {

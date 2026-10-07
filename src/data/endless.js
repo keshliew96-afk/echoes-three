@@ -2,15 +2,17 @@
 // (docs/ENDLESS.md). Owner: ENDLESS.
 //
 // An endless campaign is an ordinary campaign from Level 1 whose final level
-// does not end the run: clearing Depth 3 (the Ashen Barrow, the campaign won)
-// leads to Depth 4 in the Hollow Wood, and the three biomes cycle on until
-// the party falls. Depth = the campaign's level index (1, 2, 3, 4, ...).
+// does not end the run: clearing Depth 4 (the Hollow Heart, the campaign won)
+// leads to Depth 5 in the Hollow Wood, and the four biomes cycle on until
+// the party falls. Depth = the campaign's level index (1, 2, 3, 4, 5, ...).
+// (Act IV, docs/ACT_IV.md: the cycle was three biomes, Depth 4 the first
+// past the campaign, on the Act III numbers.)
 //
-// Depths 1-3 ARE the campaign: the same difficulty(), rosters and bosses,
-// number for number. From Depth 4 on:
-//   - every depth is built on the Act III numbers (difficulty(3, room)) — a
-//     Depth-4 woodland is never easier than the Barrow the party just left —
-//     and each depth past 4 multiplies them by a named step (DEPTH_STEP);
+// Depths 1-4 play each act on its own numbers: the same difficulty(),
+// rosters and bosses, number for number. From Depth 5 on:
+//   - every depth is built on the Act IV numbers (difficulty(4, room)) — a
+//     Depth-5 woodland is never easier than the Heart the party just left —
+//     and each depth past 5 multiplies them by a named step (DEPTH_STEP);
 //   - rosters mix: the home biome's roster plus every other act's creatures
 //     at GUEST_WEIGHT of their own weight (one room later than at home);
 //   - the boss alternates: each cycle meets the act's OTHER boss from the
@@ -20,12 +22,16 @@
 //
 // Pure data + helpers (sim-importable): no DOM, no three.
 import { difficulty } from './difficulty.js';
-import { LEVELS, ACT_IDS, levelFor, bossIndexFor } from './levels.js';
+import { LEVELS, ACT_IDS, ENDLESS_ACTS, levelFor, bossIndexFor } from './levels.js';
 
-const ORDER = Object.freeze([...ACT_IDS].sort((a, b) => a - b));
-export const CYCLE = ORDER.length; // 3 biomes per cycle
+// The descent cycles every act's biome, Act IV included even when the
+// campaign keeps three levels (levels.js CAMPAIGN_ACTS).
+const ORDER = Object.freeze([...ENDLESS_ACTS].sort((a, b) => a - b));
+export const CYCLE = ORDER.length; // 4 biomes per cycle
+const FINAL = Math.max(...ACT_IDS); // the campaign's final level
 
-// Per depth past Depth 4 (k = depth - 4; Depth 4 plays the Act III numbers). Tuned against the headless
+// Per depth past the first cycle (k = depth - CYCLE - 1; the first depth past
+// it plays the Act IV numbers). Tuned against the headless
 // endless runner (tools/endless-run.mjs, seeds 1-16, docs/ENDLESS.md): the
 // survival curve falls a step at a time, not off a cliff. Balance pass
 // (2026-10-05, docs/BALANCE_PASS.md): hp .18 -> .21 and dmg .10 -> .12, so
@@ -38,12 +44,14 @@ export const DEPTH_STEP = Object.freeze({
   elite: 0.03, // elite chance: + elite k (capped at ELITE_CAP)
 });
 export const ELITE_CAP = 0.55;
-// The boss of an Act I / Act II biome met past Depth 3: its kit was tuned
-// for its own act's damage multiplier (2.1 / 4.2 against Act III's 4.8), so
-// on the Act III numbers its hits land at this share of them.
-export const BOSS_HOME_DMG = Object.freeze({ 1: 0.7, 2: 0.9, 3: 1 });
+// The boss of a biome met past the first cycle: its kit was tuned for its
+// own act's damage multiplier (2.1 / 4.2 against the ~4.8 of Act III and of
+// Act IV, data/difficulty.js STAG_DMG_LEVEL), so past the first cycle its
+// hits land at this share of them. Act IV meets the Barrow's bosses until it
+// has its own (docs/ACT_IV.md).
+export const BOSS_HOME_DMG = Object.freeze({ 1: 0.7, 2: 0.9, 3: 1, 4: 1 });
 export const GUEST_WEIGHT = 0.35;
-export const MIX_FROM_DEPTH = 4;
+export const MIX_FROM_DEPTH = CYCLE + 1;
 
 export const levelOfDepth = (depth) => ORDER[(Math.max(1, depth | 0) - 1) % CYCLE];
 export const cycleOfDepth = (depth) => Math.floor((Math.max(1, depth | 0) - 1) / CYCLE);
@@ -51,13 +59,13 @@ export const beyondCampaign = (depth) => (depth | 0) > CYCLE;
 
 const r4 = (v) => Math.round(v * 10000) / 10000;
 
-// The room's difficulty numbers at `depth`. Depths 1-3: difficulty(act, room)
-// exactly. Past 3: the Act III numbers scaled by DEPTH_STEP.
+// The room's difficulty numbers at `depth`. The first cycle: difficulty(act,
+// room) exactly. Past it: the Act IV numbers scaled by DEPTH_STEP.
 export function endlessDifficulty(depth, room, challenge = 'standard') {
   const d = Math.max(1, depth | 0);
   if (!beyondCampaign(d)) return difficulty(levelOfDepth(d), room, challenge);
   const base = difficulty(ORDER[ORDER.length - 1], room, challenge);
-  const k = d - CYCLE - 1; // Depth 4 = the Act III numbers; each depth after adds a step
+  const k = d - CYCLE - 1; // the first depth past the cycle = the Act IV numbers; each depth after adds a step
   const home = levelOfDepth(d);
   const hp = 1 + DEPTH_STEP.hp * k;
   const dmg = 1 + DEPTH_STEP.dmg * k;
@@ -80,7 +88,7 @@ export function endlessDifficulty(depth, room, challenge = 'standard') {
 }
 
 // The level row the wave director rolls from at `depth`: the home act's own
-// row through Depth 3; past it the home roster plus every other act's
+// row through the first cycle; past it the home roster plus every other act's
 // creatures at GUEST_WEIGHT (introduced one room later than at home).
 export function endlessLevel(depth) {
   const d = Math.max(1, depth | 0);
@@ -126,6 +134,6 @@ export function endlessRules() {
 export function endlessUnlockedFrom(profile) {
   const r = profile && profile.records ? profile.records : null;
   if (!r) return false;
-  const final = ORDER[ORDER.length - 1];
+  const final = FINAL;
   return !!(r.gameWon || (r.campaignsCompleted ?? 0) > 0 || (r.levelClears && r.levelClears[final] > 0));
 }

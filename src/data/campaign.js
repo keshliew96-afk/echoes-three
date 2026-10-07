@@ -3,8 +3,9 @@
 //
 // A CAMPAIGN is one continuous run from a starting level through the final
 // level: Level 1 The Hollow Wood -> Level 2 The Sunken Mill -> Level 3 The
-// Ashen Barrow. The order is DATA (derived from data/levels.js), so a Level 4
-// is appended by adding a LEVELS row — nothing here or in sim/run.js names a
+// Ashen Barrow -> Level 4 The Hollow Heart (Act IV, docs/ACT_IV.md). The
+// order is DATA (derived from data/levels.js ACT_IDS), so Level 4 was
+// appended by adding a LEVELS row — nothing here or in sim/run.js names a
 // level by number.
 //
 // Pure data + pure helpers (sim-importable): no DOM, no three, no wall clock.
@@ -100,6 +101,9 @@ export const STARTER_GRANT = Object.freeze({
   // v0.5.150 Level-2-start damage; the Healer's own grant is unchanged).
   2: Object.freeze({ skills: 2, nodes: 18, legendaries: 1, glint: 34, allies: Object.freeze({ swaps: 1, nodes: 3, legendaries: 0, glint: 34 }) }),
   3: Object.freeze({ skills: 2, nodes: 30, legendaries: 2, glint: 60, allies: Object.freeze({ swaps: 3, nodes: 19, legendaries: 2, glint: 43 }) }),
+  // Act IV (docs/ACT_IV.md): a Level-4 start gets a full Level-3 build plus
+  // one Level's worth more (the carried build is 32/32 by then).
+  4: Object.freeze({ skills: 2, nodes: 40, legendaries: 3, glint: 80, allies: Object.freeze({ swaps: 4, nodes: 26, legendaries: 3, glint: 56 }) }),
 });
 
 export function grantFor(level) {

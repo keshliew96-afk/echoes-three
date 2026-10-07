@@ -16,6 +16,7 @@ const WIN_FLAVOUR = {
   1: () => t('The Hollow Stag falls. The wood breathes out.'),
   2: () => t('The Drowned Heron sinks. The water runs clear again.'),
   3: () => t('The Barrow Wyrm is still. The long night lifts.'),
+  4: () => t('The Heart\'s warden falls. Below the Barrow, the old beat falters.'),
 };
 const BOSS_WIN_FLAVOUR = {
   thornmother: () => t('The Thornmother falls. The briars let the wood go.'),
@@ -206,11 +207,11 @@ export function createEndScreen({ run }) {
     flavour.textContent = deep
       ? deep.won
         ? t('The campaign was won, and the party went on. The dark took them at Depth {depth}.', { depth: deep.depth })
-        : t('The party fell at Depth {depth}, before the Barrow. The gods applaud.', { depth: deep.depth })
+        : t('The party fell at Depth {depth}, before the Heart. The gods applaud.', { depth: deep.depth })
       : win
       ? complete
         ? t('The last of the old beasts falls. Every level is clear — the long night is over.')
-        : (BOSS_WIN_FLAVOUR[view.actBoss && view.actBoss.kind] ?? WIN_FLAVOUR[view.act] ?? WIN_FLAVOUR[1])()
+        : ((view.act === 4 ? null : BOSS_WIN_FLAVOUR[view.actBoss && view.actBoss.kind]) ?? WIN_FLAVOUR[view.act] ?? WIN_FLAVOUR[1])()
       : t('The gods applaud.');
     {
       const c = run().campaign ? run().campaign() : null;
