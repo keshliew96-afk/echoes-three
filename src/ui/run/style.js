@@ -341,6 +341,7 @@ export const RUN_CSS = `
   .rn-shelf { display: flex; gap: 26px; margin: 4px 0 2px; align-items: flex-start; }
   .rn-item { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 220px; }
   .rn-item .rn-card { width: 220px; cursor: pointer; }
+  .rn-item.rn-viewonly .rn-card { cursor: default; }
   .rn-plaque {
     display: flex; align-items: center; gap: 8px;
     padding: 7px 16px; border-radius: 10px;

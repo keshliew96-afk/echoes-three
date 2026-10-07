@@ -1935,5 +1935,7 @@
  "Elite powers": "정예 능력",
  "Some elites carry named powers, shown on the plate above them. A red ring on the ground warns before a Molten or Frozen burst lands, and a Warded elite takes no damage while its ward glows.": "일부 정예는 이름 붙은 능력을 지니며, 머리 위 명판에 표시됩니다. 용암이나 빙결 폭발이 터지기 전에 바닥에 붉은 고리가 경고하고, 결계 정예는 결계가 빛나는 동안 피해를 받지 않습니다.",
  "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler, slick floors and elite powers show again the next time you meet each.": "직업 선택, 유물, 저주받은 문, \"?\" 문, 행상인, 미끄러운 바닥, 정예 능력의 일회성 팁이 다음에 만날 때 다시 표시됩니다.",
- "Heals for part of the damage it deals.": "입힌 피해의 일부만큼 회복합니다."
+ "Heals for part of the damage it deals.": "입힌 피해의 일부만큼 회복합니다.",
+ "The {cls} is AI-controlled and does its own shopping.": "{cls}은(는) AI가 조종하며 직접 쇼핑합니다.",
+ "The {cls} shops on their own screen.": "{cls}은(는) 자신의 화면에서 쇼핑합니다."
 }

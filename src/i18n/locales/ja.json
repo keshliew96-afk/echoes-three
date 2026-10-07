@@ -1935,5 +1935,7 @@
  "Elite powers": "エリートの能力",
  "Some elites carry named powers, shown on the plate above them. A red ring on the ground warns before a Molten or Frozen burst lands, and a Warded elite takes no damage while its ward glows.": "名前のついた能力を持つエリートがいる。能力は頭上のプレートに表示される。溶岩や凍結の爆発の前には地面に赤い輪が出る。結界のエリートは結界が光っている間ダメージを受けない。",
  "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler, slick floors and elite powers show again the next time you meet each.": "クラス選択、レリック、呪われた扉、「?」の扉、行商人、滑る床、エリートの能力の一度きりのヒントを、次に出会ったときにもう一度表示する。",
- "Heals for part of the damage it deals.": "与えたダメージの一部で回復する。"
+ "Heals for part of the damage it deals.": "与えたダメージの一部で回復する。",
+ "The {cls} is AI-controlled and does its own shopping.": "{cls}はAIが操作し、自分で買い物をします。",
+ "The {cls} shops on their own screen.": "{cls}は自分の画面で買い物をします。"
 }
