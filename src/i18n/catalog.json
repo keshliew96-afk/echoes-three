@@ -2490,6 +2490,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Beneath the Barrow, where the corruption first took root and still beats.": {
+  "files": [
+   "src/data/levels.js"
+  ],
+  "data": true
+ },
  "Best score": {
   "files": [
    "src/ui/menu/records.js"
@@ -3018,6 +3024,12 @@
   ],
   "data": true
  },
+ "Clear Level IV, the Hollow Heart.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "CLEAR THE ADDS": {
   "files": [
    "src/ui/hud/banner.js"
@@ -3144,7 +3156,7 @@
    "src/ui/run/unlocks.js"
   ]
  },
- "Complete a campaign (Levels I to III).": {
+ "Complete a campaign (Levels I to IV).": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -4638,6 +4650,12 @@
   ],
   "data": true
  },
+ "Geode Hall": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "German": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
@@ -4902,9 +4920,21 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "Heart Chamber": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Heart@@verse": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Heartbreaker": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -6754,7 +6784,7 @@
   ],
   "data": true
  },
- "Past the Barrow the road turns back into the wood, darker each time. The three lands repeat, harder at every depth, until the party falls.": {
+ "Past the Heart the road turns back into the wood, darker each time. The four lands repeat, harder at every depth, until the party falls.": {
   "files": [
    "src/ui/run/levels.js"
   ]
@@ -7732,6 +7762,12 @@
   ],
   "data": true
  },
+ "Root Gate": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Root@@verse": {
   "files": [
    "src/data/story.js"
@@ -8000,7 +8036,7 @@
    "src/ui/run/endscreens.js"
   ]
  },
- "Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).": {
+ "Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).": {
   "files": [
    "src/ui/menu/records.js"
   ]
@@ -9487,6 +9523,12 @@
   ],
   "data": true
  },
+ "The Heart's warden falls. Below the Barrow, the old beat falters.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
  "THE HEARTH CAMP": {
   "files": [
    "src/ui/hud/index.js"
@@ -9519,6 +9561,13 @@
   "files": [
    "src/ui/hud/index.js"
   ]
+ },
+ "The Hollow Heart": {
+  "files": [
+   "src/data/levels.js",
+   "src/ui/menu/records.js"
+  ],
+  "data": true
  },
  "the Hollow Stag": {
   "files": [
@@ -9556,6 +9605,12 @@
    "src/data/story.js"
   ],
   "data": true
+ },
+ "The hollow under the Barrow": {
+  "files": [
+   "src/ui/run/expedition.js",
+   "src/ui/run/levels.js"
+  ]
  },
  "The Hollow Voice": {
   "files": [
@@ -9725,7 +9780,7 @@
   ],
   "data": true
  },
- "The party fell at Depth {depth}, before the Barrow. The gods applaud.": {
+ "The party fell at Depth {depth}, before the Heart. The gods applaud.": {
   "files": [
    "src/ui/run/endscreens.js"
   ]
@@ -10234,7 +10289,7 @@
   ],
   "data": true
  },
- "Through all three lands and down again, until the party falls.": {
+ "Through all four lands and down again, until the party falls.": {
   "files": [
    "src/ui/run/transit.js"
   ]
@@ -10461,6 +10516,12 @@
   ],
   "data": true
  },
+ "Vein Gallery": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Verse of {verse}": {
   "files": [
    "src/ui/story/page.js"
@@ -10670,6 +10731,12 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "Weeping Wells": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Weir": {
   "files": [
    "src/data/layouts.js"
@@ -10701,6 +10768,12 @@
   "files": [
    "src/ui/run/unlocks.js"
   ]
+ },
+ "Whatever waits in the Heart Chamber wears a warden’s shape, but the song in it is the Heart’s own. Don’t listen too closely.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "Where": {
   "files": [
@@ -10803,7 +10876,7 @@
    "src/ui/run/endscreens.js"
   ]
  },
- "Wood · Mill · Barrow · and down again": {
+ "Wood · Mill · Barrow · Heart · and down again": {
   "files": [
    "src/ui/run/levels.js"
   ]
@@ -10898,6 +10971,12 @@
   "files": [
    "src/ui/menu/pause.js"
   ]
+ },
+ "You carried three verses all the way down. Sing them for me.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "You carry {n} relic: {names}.": {
   "files": [

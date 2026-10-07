@@ -2,11 +2,11 @@
 // ENDLESS in the real game (docs/ENDLESS.md): against `npm run dev` (port
 // 5199), boots into camp with ?endless=1 (the harness unlock), opens the
 // Level Select, clicks the Endless Descent card, jumps the descent to the
-// Depth 3 -> 4 card (cmd endlessJump), sets out into Depth 4 and ends the run
+// Depth 4 -> 5 card (cmd endlessJump), sets out into Depth 5 and ends the run
 // on a fall. Captures:
 //   captures/endless-1-select.png   the Level Select with the Endless card
-//   captures/endless-2-card.png     "DEPTH 3 CLEARED" -> Depth 4
-//   captures/endless-3-hud.png      Depth 4 in combat, the depth on the HUD
+//   captures/endless-2-card.png     "DEPTH 4 CLEARED" -> Depth 5
+//   captures/endless-3-hud.png      Depth 5 in combat, the depth on the HUD
 //   captures/endless-4-end.png      "THE DESCENT ENDS" end card
 // and fails on any page error or a missing page.
 //
@@ -64,14 +64,14 @@ try {
     const c = document.querySelector('.cg-levels .cg-card[data-level="endless"]');
     return { cards: document.querySelectorAll('.cg-levels .cg-card').length, locked: c.getAttribute('aria-disabled') === 'true', text: c.textContent.replace(/\s+/g, ' ').trim() };
   });
-  check(sel.cards === 4 && !sel.locked && /Endless Descent/.test(sel.text), `the Endless Descent card is the fourth card, open (${sel.text.slice(0, 80)})`);
+  check(sel.cards === 5 && !sel.locked && /Endless Descent/.test(sel.text), `the Endless Descent card is the fifth card, open (${sel.text.slice(0, 80)})`);
   await page.screenshot({ path: 'captures/endless-1-select.png' });
   await page.click('.cg-levels .cg-card[data-level="endless"]');
 
-  // 2. The descent starts at Level I; jump to the Depth 3 -> 4 card.
+  // 2. The descent starts at Level I; jump to the Depth 4 -> 5 card.
   let v = await waitPhase(['combat']);
   check(v.endless && v.endless.depth === 1 && v.act === 1, `clicking it sets out on Depth 1 in the Hollow Wood (${JSON.stringify(v.endless)})`);
-  await cmd('endlessJump', 4);
+  await cmd('endlessJump', 5);
   v = await waitPhase(['transit']);
   await settle();
   const card = await page.evaluate(() => ({
@@ -79,16 +79,16 @@ try {
     next: document.querySelector('.rn-transit .rn-nextname')?.textContent,
     flavour: document.querySelector('.rn-transit .rn-flavour')?.textContent,
   }));
-  check(card.kicker === 'DEPTH 3 CLEARED' && /^Depth 4 · The Hollow Wood/.test(card.next || '') && /campaign is won/.test(card.flavour || ''), `the card reads ${JSON.stringify(card)}`);
+  check(card.kicker === 'DEPTH 4 CLEARED' && /^Depth 5 · The Hollow Wood/.test(card.next || '') && /campaign is won/.test(card.flavour || ''), `the card reads ${JSON.stringify(card)}`);
   await page.screenshot({ path: 'captures/endless-2-card.png' });
 
-  // 3. Into Depth 4: the HUD names the depth.
+  // 3. Into Depth 5: the HUD names the depth.
   await page.keyboard.press('Enter');
   v = await waitPhase(['combat']);
-  check(v.endless && v.endless.depth === 4 && v.act === 1, `Depth 4 is live in the Wood (${JSON.stringify(v.endless)})`);
+  check(v.endless && v.endless.depth === 5 && v.act === 1, `Depth 5 is live in the Wood (${JSON.stringify(v.endless)})`);
   await settle(4000);
   const hud = await page.evaluate(() => ({ name: document.querySelector('.hud-loc-name')?.textContent, sub: document.querySelector('.hud-loc-sub')?.textContent }));
-  check(/^DEPTH 4 · ROOM 1\/8/.test(hud.sub || ''), `the HUD plate reads ${JSON.stringify(hud)}`);
+  check(/^DEPTH 5 · ROOM 1\/8/.test(hud.sub || ''), `the HUD plate reads ${JSON.stringify(hud)}`);
   await page.screenshot({ path: 'captures/endless-3-hud.png' });
 
   // 4. A fall ends the descent: the end card and the profile record.
@@ -100,13 +100,13 @@ try {
     flavour: document.querySelector('.rn-end .rn-flavour')?.textContent,
     summary: document.querySelector('.rn-end .rn-summary')?.textContent.replace(/\s+/g, ' ').trim(),
   }));
-  check(end.head === 'THE DESCENT ENDS' && /DEPTH REACHED\s*4/.test(end.summary || '') && /New record/.test(end.summary || ''), `the end card reads ${JSON.stringify(end)}`);
+  check(end.head === 'THE DESCENT ENDS' && /DEPTH REACHED\s*5/.test(end.summary || '') && /New record/.test(end.summary || ''), `the end card reads ${JSON.stringify(end)}`);
   await page.screenshot({ path: 'captures/endless-4-end.png' });
   const rec = await page.evaluate(() => {
     const r = window.__echoes.save.profile().records;
     return { gameWon: r.gameWon, endlessRuns: r.endlessRuns, endlessBestDepth: r.endlessBestDepth };
   });
-  check(rec.gameWon === true && rec.endlessRuns === 1 && rec.endlessBestDepth === 4, `the profile keeps ${JSON.stringify(rec)}`);
+  check(rec.gameWon === true && rec.endlessRuns === 1 && rec.endlessBestDepth === 5, `the profile keeps ${JSON.stringify(rec)}`);
 } catch (err) {
   check(false, `probe error: ${err && err.message ? err.message : err}`);
 }

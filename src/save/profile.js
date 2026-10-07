@@ -43,7 +43,7 @@ import { PROFILE_KEY } from './storage.js';
 import { CAMPAIGN_LEVELS, FIRST_LEVEL, nextLevel } from '../data/campaign.js';
 import { freshMeta, saneMeta, runFacts, awardFor, grantFree, UNLOCKS, reqMet } from '../data/unlocks.js';
 
-export const ACT_MUL = Object.freeze({ 1: 1.0, 2: 1.5, 3: 2.0 });
+export const ACT_MUL = Object.freeze({ 1: 1.0, 2: 1.5, 3: 2.0, 4: 2.5 });
 export const CHALLENGE_MUL = Object.freeze({ relaxed: 0.75, standard: 1, harrowing: 1.5 });
 const MAX_SCORES = 10;
 
@@ -60,7 +60,7 @@ export function scoreCampaign({ levels = [], challenge = 'standard', complete = 
   const chMul = CHALLENGE_MUL[challenge] ?? 1;
   let sum = 0;
   for (const l of levels) {
-    const deep = (l.index ?? 0) > CAMPAIGN_LEVELS.length; // ENDLESS: past Depth 3
+    const deep = (l.index ?? 0) > CAMPAIGN_LEVELS.length; // ENDLESS: past the campaign's depths
     const actMul = deep ? ACT_MUL[CAMPAIGN_LEVELS.length] + 0.5 * (l.index - CAMPAIGN_LEVELS.length) : ACT_MUL[l.level] ?? 1;
     sum += (100 * (l.rooms || 0) + 5 * (l.kills || 0) + 1000 * (l.cleared ? 1 : 0)) * actMul;
   }
@@ -79,9 +79,9 @@ export function freshProfile() {
       victories: 0,
       defeats: 0,
       bestScore: 0,
-      fastestVictorySec: { 1: null, 2: null, 3: null },
+      fastestVictorySec: { 1: null, 2: null, 3: null, 4: null },
       mostKills: 0,
-      deepestRoom: { 1: 0, 2: 0, 3: 0 },
+      deepestRoom: { 1: 0, 2: 0, 3: 0, 4: 0 },
       // CAMPAIGN (PLAN §12.8)
       campaigns: 0,
       campaignsCompleted: 0,

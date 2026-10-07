@@ -132,7 +132,7 @@ const EVENT_CUES = {
   enemy_charge_end: (ev) => (ev.cause === 'wall' ? [{ cue: 'm4b_thud', ...at(ev) }] : null),
   // ELITE AFFIXES: a Molten / Frozen burst is not a lob (src/audio/cues.js).
   enemy_lob: (ev) => (ev.affix ? [] : [{ cue: 'm4b_lob', ...at(ev) }]),
-  enemy_glob_land: (ev) => (ev.affix === 'frozen' ? [{ cue: 'frost_burst', ...at(ev) }] : ev.affix === 'molten' ? [{ cue: 'molten_burst', ...at(ev) }] : [{ cue: 'm4b_splash', ...at(ev) }]),
+  enemy_glob_land: (ev) => (ev.shard ? null : ev.affix === 'frozen' ? [{ cue: 'frost_burst', ...at(ev) }] : ev.affix === 'molten' ? [{ cue: 'molten_burst', ...at(ev) }] : [{ cue: 'm4b_splash', ...at(ev) }]),
   enemy_swoop: (ev) => [{ cue: 'm4b_swoop', ...at(ev) }],
   enemy_slam: (ev) => [{ cue: 'm4b_thud', ...at(ev), pitch: 0.85 }],
   enemy_burrow: (ev) => [{ cue: 'm4b_dig', ...at(ev) }],

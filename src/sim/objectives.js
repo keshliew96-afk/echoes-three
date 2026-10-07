@@ -68,7 +68,7 @@ export const OBJECTIVE_RULES = Object.freeze({
 });
 
 // The quarry each act sends: a fast or sturdy body that reads well running.
-export const QUARRY = Object.freeze({ 1: 'boar', 2: 'crab', 3: 'ram' });
+export const QUARRY = Object.freeze({ 1: 'boar', 2: 'crab', 3: 'ram', 4: 'husk' });
 export const quarryFor = (act) => QUARRY[act] ?? 'boar';
 
 // Waypoints the quarry runs between (inside every layout's walkable field).

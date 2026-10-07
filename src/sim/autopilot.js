@@ -420,7 +420,7 @@ export function createAutopilot({ registry, player, run, skills, build }) {
         if (def.archetype !== 'damage') continue;
         // Novas measure from us to the NEAREST foe; aimed shapes to the target.
         const reach = def.shape === 'nova' ? def.area + 0.3 : (def.range ?? BASIC_RANGE);
-        if ((def.shape === 'nova' ? nearFoe.d : target.d) > reach) continue;
+        if ((def.shape === 'nova' ? (nearFoe ? nearFoe.d : Infinity) : target.d) > reach) continue;
         press(i);
       }
       // 5. Basic attack the target in range (only while aimed at it).

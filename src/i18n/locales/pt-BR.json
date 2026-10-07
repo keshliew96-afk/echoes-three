@@ -2026,6 +2026,23 @@
  "Heals for part of the damage it deals.": "Se cura com boa parte do dano que causa.",
  "The {cls} is AI-controlled and does its own shopping.": "O {cls} é controlado pela IA e faz as próprias compras.",
  "The {cls} shops on their own screen.": "O {cls} faz compras na própria tela.",
+ "Beneath the Barrow, where the corruption first took root and still beats.": "Sob o Túmulo, onde a corrupção criou raízes e ainda pulsa.",
+ "Clear Level IV, the Hollow Heart.": "Conclua o Nível IV, o Coração Oco.",
+ "Complete a campaign (Levels I to IV).": "Complete uma campanha (Níveis I a IV).",
+ "Geode Hall": "Salão dos Geodos",
+ "Heart Chamber": "Câmara do Coração",
+ "Heartbreaker": "Quebra-Corações",
+ "Past the Heart the road turns back into the wood, darker each time. The four lands repeat, harder at every depth, until the party falls.": "Depois do Coração a estrada volta ao bosque, mais escuro a cada vez. As quatro terras se repetem, mais difíceis a cada profundidade, até o grupo cair.",
+ "Root Gate": "Portão das Raízes",
+ "The Heart's warden falls. Below the Barrow, the old beat falters.": "O guardião do Coração cai. Sob o Túmulo, a velha batida vacila.",
+ "The Hollow Heart": "O Coração Oco",
+ "The hollow under the Barrow": "O oco sob o Túmulo",
+ "The party fell at Depth {depth}, before the Heart. The gods applaud.": "O grupo caiu na Profundidade {depth}, antes do Coração. Os deuses aplaudem.",
+ "Through all four lands and down again, until the party falls.": "Pelas quatro terras e para baixo de novo, até o grupo cair.",
+ "Vein Gallery": "Galeria das Veias",
+ "Weeping Wells": "Poços que Choram",
+ "Wood · Mill · Barrow · Heart · and down again": "Bosque · Moinho · Túmulo · Coração · e para baixo de novo",
+ "Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).": "Pontuação = soma, nos níveis jogados, de (100 × salas + 5 × abates + 1000 se concluído) × nível (I 1,0 · II 1,5 · III 2,0 · IV 2,5), × desafio (tranquilo 0,75 · padrão 1 · tormentoso 1,5), mais um bônus de velocidade numa campanha concluída (900 × níveis jogados − segundos).",
  "{n} more verses are still missing, somewhere past the edge of the map.": {
   "one": "Ainda falta {n} verso, em algum lugar além da borda do mapa.",
   "many": "Ainda faltam {n} versos, em algum lugar além da borda do mapa.",
@@ -2134,5 +2151,7 @@
  "You again! The road bends the same way for both of us, it seems.": "Você de novo! Parece que a estrada faz a mesma curva para nós dois.",
  "You carry my bell. I rang it once, in the Hollow Wood, long before you.": "Você carrega o meu sino. Eu o toquei uma vez, no Bosque Oco, muito antes de você.",
  "You will come back. Everything echoes.": "Você vai voltar. Tudo ecoa.",
- "Your bell is the last one that still rings the true note. Take it, and take your friends. Bring the verses home.": "O seu sino é o último que ainda toca a nota verdadeira. Leve-o, e leve seus amigos. Tragam os versos para casa."
+ "Your bell is the last one that still rings the true note. Take it, and take your friends. Bring the verses home.": "O seu sino é o último que ainda toca a nota verdadeira. Leve-o, e leve seus amigos. Tragam os versos para casa.",
+ "Whatever waits in the Heart Chamber wears a warden’s shape, but the song in it is the Heart’s own. Don’t listen too closely.": "O que espera na Câmara do Coração tem a forma de um guardião, mas a canção nele é a do próprio Coração. Não escute com muita atenção.",
+ "You carried three verses all the way down. Sing them for me.": "Vocês carregaram três versos até aqui embaixo. Cantem-nos para mim."
 }

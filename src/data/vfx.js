@@ -148,6 +148,14 @@ export const ENEMY_VFX = Object.freeze({
   lamprey: Object.freeze({ matter: 'eel', family: 'burrower', shard: 'drop', chunk: 2, dust: 0 }),
   gravewisp: Object.freeze({ matter: 'wisp', family: 'flyer', shard: null, chunk: 0, dust: 3 }),
   knight: Object.freeze({ matter: 'boneplate', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),
+  // Act IV, the Hollow Heart (docs/ACT_IV.md). `heart` marks a body made of
+  // the Heart's violet: its kill motes leave violet, not the indigo tell.
+  // Their beats (the heartbeat surge, the lance, the crystal slam and its
+  // shards, the censer's gather / mend / spill) are director recipes.
+  husk: Object.freeze({ matter: 'heartflesh', family: 'charger', shard: null, chunk: 3, dust: 1, heart: true, wakeEvery: 0.3 }), // they surge in packs: a sparse wake
+  lancer: Object.freeze({ matter: 'heartflesh', family: 'shooter', shard: 'needle', chunk: 2, dust: 0, heart: true }),
+  geode: Object.freeze({ matter: 'heartcrystal', family: 'brute', shard: 'needle', chunk: 8, dust: 3, heart: true }),
+  censer: Object.freeze({ matter: 'heartbone', family: 'flyer', shard: null, chunk: 3, dust: 2, heart: true }),
 });
 
 const FAMILY_DEFAULT = Object.freeze({

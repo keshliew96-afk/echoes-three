@@ -397,20 +397,118 @@ export const LAYOUTS = Object.freeze({
       { type: 'keg', x: 4.6, z: -2.6 },
     ]),
   }),
+
+  // ---------------------------------------------------------- Act IV
+  // The Hollow Heart (docs/ACT_IV.md): vein vents (gravefire, skin 'vein'),
+  // heart-crystal floors (slip, skin 'glass'), rockfall from the roots
+  // overhead, crystal barricades. 18 is also the boss room's dressing.
+  16: Object.freeze({
+    id: 16,
+    act: 4,
+    biome: 'heart',
+    name: 'Root Gate',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gravefire', vents: [[-6.8, -3.4], [-5.4, -4.0], [-4.0, -4.6]], offset: 0, skin: 'vein' },
+      { type: 'slip', x: 5.6, z: 3.6, r: 1.4, skin: 'glass' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'dewfont', x: 4.6, z: -3.8 },
+      { type: 'barricade', x: -4.2, z: 1.2, yaw: 1.3, skin: 'crystal' },
+      { type: 'barricade', x: 3.8, z: 0.8, yaw: -0.4, skin: 'crystal' },
+      { type: 'keg', x: -6.4, z: 0.2 },
+      { type: 'keg', x: 6.6, z: -0.4 },
+    ]),
+  }),
+  17: Object.freeze({
+    id: 17,
+    act: 4,
+    biome: 'heart',
+    name: 'Vein Gallery',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gravefire', vents: [[-2.0, -4.6], [0.0, -4.6], [2.0, -4.6]], offset: 0, skin: 'vein' },
+      { type: 'gravefire', vents: [[-6.2, 4.0], [-4.6, 4.2], [-3.0, 4.4]], offset: 210, skin: 'vein' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'dewfont', x: 6.4, z: 2.2 },
+      { type: 'barricade', x: -4.4, z: -1.6, yaw: 0.3, skin: 'crystal' },
+      { type: 'barricade', x: 4.2, z: -1.2, yaw: -0.3, skin: 'crystal' },
+      { type: 'keg', x: -7.0, z: 1.8 },
+      { type: 'keg', x: 3.2, z: 4.6 },
+    ]),
+  }),
+  18: Object.freeze({
+    id: 18,
+    act: 4,
+    biome: 'heart',
+    name: 'Heart Chamber',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gravefire', vents: [[-1.4, 5.2], [0.0, 5.6], [1.4, 5.2]], offset: 120, skin: 'vein' },
+      { type: 'slip', x: -5.8, z: -3.4, r: 1.5, skin: 'glass' },
+      { type: 'slip', x: 5.8, z: -3.4, r: 1.5, skin: 'glass' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'dewfont', x: 0.0, z: -5.2 },
+      { type: 'barricade', x: -3.6, z: 2.6, yaw: 0.5, skin: 'crystal' },
+      { type: 'barricade', x: 3.6, z: 2.6, yaw: -0.5, skin: 'crystal' },
+      { type: 'keg', x: -7.2, z: 1.6 },
+      { type: 'keg', x: 7.2, z: 1.6 },
+    ]),
+  }),
+  19: Object.freeze({
+    id: 19,
+    act: 4,
+    biome: 'heart',
+    name: 'Geode Hall',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      // The floor is the threat: three spreads of heart crystal.
+      { type: 'slip', x: -4.4, z: -3.4, r: 1.6, skin: 'glass' },
+      { type: 'slip', x: 4.4, z: -3.4, r: 1.6, skin: 'glass' },
+      { type: 'slip', x: 0.0, z: 5.8, r: 1.4, skin: 'glass' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'dewfont', x: -7.2, z: -0.6 },
+      { type: 'barricade', x: -2.6, z: 3.6, yaw: 0.0, skin: 'crystal' },
+      { type: 'barricade', x: 2.6, z: 3.6, yaw: 0.0, skin: 'crystal' },
+      { type: 'keg', x: 6.8, z: -1.0 },
+      { type: 'keg', x: -0.2, z: -5.4 },
+    ]),
+  }),
+  20: Object.freeze({
+    id: 20,
+    act: 4,
+    biome: 'heart',
+    name: 'Weeping Wells',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gravefire', vents: [[-7.4, -2.4], [-6.4, -1.2], [-5.4, 0.0]], offset: 0, skin: 'vein' },
+      { type: 'gravefire', vents: [[5.4, 0.0], [6.4, 1.2], [7.4, 2.4]], offset: 210, skin: 'vein' },
+      { type: 'slip', x: 0.0, z: -5.2, r: 1.2, skin: 'glass' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'dewfont', x: -3.2, z: 4.6 },
+      { type: 'barricade', x: 4.2, z: -3.2, yaw: 0.8, skin: 'crystal' },
+      { type: 'keg', x: 4.0, z: 4.4 },
+      { type: 'keg', x: -3.8, z: -3.6 },
+    ]),
+  }),
 });
 
-export const LAYOUT_IDS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+export const LAYOUT_IDS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
 
 export function layoutFor(id) {
   return LAYOUTS[id] ?? null;
 }
 
-// Act of a layout id (4-6, 12-13 -> II; 7-9, 14-15 -> III), used by ?variant=N / ?layout=N.
+// Act of a layout id (4-6, 12-13 -> II; 7-9, 14-15 -> III; 16-20 -> IV), used by ?variant=N / ?layout=N.
 export function actOfLayout(id) {
   return LAYOUTS[id] ? LAYOUTS[id].act : 1;
 }
 
-export const BIOME_OF_ACT = Object.freeze({ 1: 'wood', 2: 'mill', 3: 'barrow' });
+export const BIOME_OF_ACT = Object.freeze({ 1: 'wood', 2: 'mill', 3: 'barrow', 4: 'heart' });
 
 // §11 spawn ring + the constraints tools/gntM4b-layoutcheck.mjs audits.
 export const PLACEMENT_RULES = Object.freeze({

@@ -48,6 +48,7 @@ export const VFX_BIOME = Object.freeze({
   1: '#5B6B43',
   2: '#4F6672',
   3: '#5E5450',
+  4: '#4E4458', // Act IV, the Hollow Heart: bruised violet dusk
 });
 
 // Enemy debris materials (design-VFX.md §5). The threat colour is always
@@ -79,6 +80,13 @@ export const VFX_MATTER = Object.freeze({
   boneplate: '#C9C0AE', // Bone Knight, Lich Ram: old bone armour
   iron: '#5A5C60', // Bone Knight's shield, the Millwheel's tyre
   oak: '#5C4630', // the Millwheel's planks
+  // Act IV, the Hollow Heart (docs/ACT_IV.md): the corruption is the body.
+  heartflesh: '#54465E', // Hollow Husk, Vein Lancer: dark bruised flesh
+  heartcrystal: '#A874EE', // Geode Brute, its shards: the Heart's violet crystal
+  heartvein: '#B565F5', // the Heart's lit violet (lance, coals, veins): God-stuff Violet pushed toward purple so it never reads blue in the Heart's blue-violet air
+  heartpeak: '#F4E8FF', // its white-hot core
+  heartbone: '#BDB2C4', // Heart Censer: old bone gone lilac-grey
+  heartrose: '#D58FCB', // Heart Censer's mend: rose-violet (never Bright Heal, never Ember)
 });
 
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): each power's own hue on the elite's

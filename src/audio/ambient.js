@@ -8,6 +8,8 @@
 //   wood   — Act I: night wind through trees, faint leaf hiss, an owl
 //   mill   — Act II: running water, babble, drips from the weir
 //   barrow — Act III: cold low wind, a thin whistle, a distant tolling bell
+//   heart  — Act IV: a deep throb under the rock, a glassy crystal shimmer,
+//            and a slow, far heartbeat (lub-dub) every few seconds
 // Crossfades between beds are equal-power over 2.5 s. BED_TRIM levels each
 // bed to about -18 dBFS RMS pre-bus (decision D18, docs/gauntlet/build-M3.md:
 // PLAN §3.5 says -24; the beds carry part of the combat master level G3.4
@@ -17,6 +19,7 @@ export const BED_TRIM = {
   // @trim begin
   barrow: -3.2,
   camp: -0.3,
+  heart: -2.4,
   mill: 0.5,
   wood: 3.1,
   // @trim end
@@ -125,6 +128,37 @@ const BEDS = {
     return {
       srcs,
       details: { every: [10, 16], play: (t) => kit.bell(out, t, { f: 196, ratio: 2.76, index: 1.4, d: 3.2, gain: 0.08 }) },
+    };
+  },
+  heart(ctx, kit, out) {
+    const srcs = [];
+    // The throb: brown noise through a low resonant band, slowly breathing.
+    const thr = loop(ctx, kit.buffers.brown, 0.6);
+    const tf = filt(ctx, 'lowpass', 180, 1.6);
+    const tg = gainN(ctx, 0.8);
+    thr.connect(tf).connect(tg).connect(out);
+    srcs.push(thr, lfo(ctx, tf.frequency, 0.13, 60), lfo(ctx, tg.gain, 0.21, 0.22));
+    // The crystal shimmer: a narrow high band that drifts.
+    const sh = loop(ctx, kit.buffers.white, 1);
+    const sf = filt(ctx, 'bandpass', 4200, 9);
+    const sg = gainN(ctx, 0.09);
+    sh.connect(sf).connect(sg).connect(out);
+    srcs.push(sh, lfo(ctx, sf.frequency, 0.037, 1300), lfo(ctx, sg.gain, 0.071, 0.05));
+    // A low drone a tritone apart (C# and G), barely there.
+    for (const [f, v] of [[34.65, 0.07], [49, 0.035]]) {
+      const o = ctx.createOscillator();
+      o.frequency.value = f;
+      const g = gainN(ctx, v);
+      o.connect(g).connect(out);
+      o.start();
+      srcs.push(o, lfo(ctx, g.gain, 0.03 + f / 3000, v * 0.4));
+    }
+    return {
+      srcs,
+      details: {
+        every: [4, 7],
+        play: (t) => [0, 0.28].map((o, i) => kit.tone(out, t + o, { f0: 60 - i * 6, f1: 36, d: 0.32, gain: 0.16 - i * 0.05 })),
+      },
     };
   },
 };

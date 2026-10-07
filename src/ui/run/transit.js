@@ -15,7 +15,7 @@ import { esc } from './style.js';
 import { SKILLS } from '../../sim/skills.js';
 import { service } from '../../app/registry.js';
 import { bossFor, levelFor } from '../../data/levels.js';
-import { endlessBossIndex } from '../../data/endless.js';
+import { endlessBossIndex, beyondCampaign, CYCLE } from '../../data/endless.js';
 import { t, tn } from '../../i18n/index.js';
 import { chapterFor } from '../../data/story.js';
 import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
@@ -36,6 +36,8 @@ const FLAVOUR = {
   1: () => t('The Hollow Stag falls. The wood breathes out.'),
   2: () => t('The Drowned Heron sinks. The water runs clear again.'),
   3: () => t('The Barrow Wyrm is still. The long night lifts.'),
+  // Act IV (docs/ACT_IV.md): whichever warden held the Heart, its line is the Heart's.
+  4: () => t('The Heart\'s warden falls. Below the Barrow, the old beat falters.'),
 };
 // Slice 2: the second boss of each act has its own line.
 const BOSS_FLAVOUR = {
@@ -137,15 +139,15 @@ export function createTransitScreen({ run }) {
     if (card.kind === 'clear') {
       const rv = v && !v.__card ? v : null;
       let met = rv && rv.frame ? bossFor(card.from, rv.frame.seed).kind : null;
-      if (depth !== null && depth - 1 > 3 && rv && rv.frame) {
+      if (depth !== null && beyondCampaign(depth - 1) && rv && rv.frame) {
         const lv = levelFor(card.from);
         met = lv.bosses ? lv.bosses[endlessBossIndex(depth - 1, rv.frame.seed)].kind : met;
       }
       kicker.textContent = depth !== null ? t('DEPTH {depth} CLEARED', { depth: depth - 1 }) : t('LEVEL {level} CLEARED', { level: ROMAN[card.from] ?? card.from });
       headline.textContent = (card.fromName ? t(card.fromName) : '').toUpperCase();
-      const boss = BOSS_FLAVOUR[met] ?? FLAVOUR[card.from];
+      const boss = (card.from === 4 ? null : BOSS_FLAVOUR[met]) ?? FLAVOUR[card.from];
       flavour.textContent =
-        depth === 4
+        depth === CYCLE + 1
           ? t('The campaign is won. The road does not end; it turns back into the dark wood, deeper than before.')
           : boss ? boss() : t('The way ahead opens.');
       verseEl.textContent = verseLine(card.from, depth !== null ? depth - 1 : null);
@@ -153,7 +155,7 @@ export function createTransitScreen({ run }) {
       const name = card.name ? t(card.name) : card.name;
       nextName.textContent =
         depth !== null
-          ? depth > 3
+          ? beyondCampaign(depth)
             ? t('Depth {depth} · {name} · danger rises', { depth, name })
             : t('Depth {depth} · {name}', { depth, name })
           : t('Level {level} · {name}', { level: ROMAN[to] ?? to, name });
@@ -167,7 +169,7 @@ export function createTransitScreen({ run }) {
     } else {
       kicker.textContent = depth !== null ? t('THE ENDLESS DESCENT') : t('SETTING OUT');
       headline.textContent = t('LEVEL {level} · {name}', { level: ROMAN[to] ?? to, name: (card.name ? t(String(card.name)) : '').toUpperCase() });
-      flavour.textContent = depth !== null ? t('Through all three lands and down again, until the party falls.') : t('The campaign begins here and runs on to the final level.');
+      flavour.textContent = depth !== null ? t('Through all four lands and down again, until the party falls.') : t('The campaign begins here and runs on to the final level.');
       nextRow.style.display = 'none';
       verseEl.textContent = '';
       const g = s.grant;

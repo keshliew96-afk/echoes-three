@@ -152,7 +152,12 @@ export const RUMOURS = Object.freeze({
   lichram: { text: 'The Lich Ram walks ahead, and the graves answer it. Break what rises before it gathers.' },
   other: { text: 'Something old waits beyond the next door. I haven’t seen its like before.' },
 });
-export const rumourFor = (kind) => (RUMOURS[kind] ?? RUMOURS.other).text;
+// Level IV (the Hollow Heart): whichever boss guards the Heart Chamber, the
+// peddler speaks of the Heart itself.
+export const HEART_RUMOUR = Object.freeze({ text: 'Whatever waits in the Heart Chamber wears a warden’s shape, but the song in it is the Heart’s own. Don’t listen too closely.' });
+const heartLevel = () => (CHAPTERS.find((c) => c.verse === 'heart') || {}).level;
+export const isHeartLevel = (level) => level !== null && level !== undefined && level === heartLevel();
+export const rumourFor = (kind, level = null) => (isHeartLevel(level) ? HEART_RUMOUR : RUMOURS[kind] ?? RUMOURS.other).text;
 
 // Event-room NPCs: one line per meeting, the last one repeats.
 export const ENCOUNTER_LINES = Object.freeze({
@@ -189,6 +194,8 @@ export const BOSS_VOICE = Object.freeze({
   millwheel: { text: 'Even the mill turns to my tune.' },
   wyrm: { text: 'It guarded my door. Now it guards my song.' },
   lichram: { text: 'The dead remember every song. Mine they remember best.' },
+  // Level IV: the Heart Chamber, whichever boss stands in it.
+  heart: { text: 'You carried three verses all the way down. Sing them for me.' },
 });
 
 // The level-clear card: the verse the bell catches.

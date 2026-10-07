@@ -164,7 +164,9 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
     n.talkIdx += 1;
     n.talkUntil = performance.now() + TALK_MS;
     n.body.setTalking(true);
-    n.lastKey = ''; // repaint
+    n.lastKey = ''; // repaint the chips on the next frame
+    n.line = lineFor(n); // the line itself changes at once
+    n.bubble.querySelector('.nb-line').textContent = t(n.line);
     return true;
   }
 

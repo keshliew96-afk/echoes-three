@@ -2004,6 +2004,23 @@
  "Heals for part of the damage it deals.": "Heilt sich um einen Teil des Schadens, den es verursacht.",
  "The {cls} is AI-controlled and does its own shopping.": "Der {cls} wird von der KI gesteuert und kauft selbst ein.",
  "The {cls} shops on their own screen.": "Der {cls} kauft auf dem eigenen Bildschirm ein.",
+ "Beneath the Barrow, where the corruption first took root and still beats.": "Unter dem Aschengrab, wo die Verderbnis zuerst Wurzeln schlug und noch immer schlägt.",
+ "Clear Level IV, the Hollow Heart.": "Schließe Level IV ab, das Hohle Herz.",
+ "Complete a campaign (Levels I to IV).": "Schließe einen Feldzug ab (Level I bis IV).",
+ "Geode Hall": "Geodenhalle",
+ "Heart Chamber": "Herzkammer",
+ "Heartbreaker": "Herzensbrecher",
+ "Past the Heart the road turns back into the wood, darker each time. The four lands repeat, harder at every depth, until the party falls.": "Hinter dem Herzen führt der Weg zurück in den Wald, jedes Mal dunkler. Die vier Lande wiederholen sich, mit jeder Tiefe härter, bis die Gruppe fällt.",
+ "Root Gate": "Wurzeltor",
+ "The Heart's warden falls. Below the Barrow, the old beat falters.": "Der Wächter des Herzens fällt. Unter dem Aschengrab stockt der alte Schlag.",
+ "The Hollow Heart": "Das Hohle Herz",
+ "The hollow under the Barrow": "Die Höhle unter dem Grab",
+ "The party fell at Depth {depth}, before the Heart. The gods applaud.": "Die Gruppe fiel auf Tiefe {depth}, vor dem Hohlen Herzen. Die Götter applaudieren.",
+ "Through all four lands and down again, until the party falls.": "Durch alle vier Lande und wieder hinab, bis die Gruppe fällt.",
+ "Vein Gallery": "Adergalerie",
+ "Weeping Wells": "Weinende Brunnen",
+ "Wood · Mill · Barrow · Heart · and down again": "Wald · Mühle · Grab · Herz · und wieder hinab",
+ "Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).": "Punkte = Summe über die gespielten Level von (100 × Räume + 5 × Kills + 1000 falls geschafft) × Level (I 1,0 · II 1,5 · III 2,0 · IV 2,5), × Herausforderung (entspannt 0,75 · Standard 1 · zermürbend 1,5), plus ein Tempobonus bei abgeschlossenem Feldzug (900 × gespielte Level − Sekunden).",
  "{n} more verses are still missing, somewhere past the edge of the map.": {
   "one": "{n} weitere Strophe fehlt noch, irgendwo jenseits des Kartenrands.",
   "other": "{n} weitere Strophen fehlen noch, irgendwo jenseits des Kartenrands."
@@ -2111,5 +2128,7 @@
  "You again! The road bends the same way for both of us, it seems.": "Du schon wieder! Der Weg biegt wohl für uns beide in dieselbe Richtung.",
  "You carry my bell. I rang it once, in the Hollow Wood, long before you.": "Du trägst meine Glocke. Ich habe sie einst im Hohlwald geläutet, lange vor dir.",
  "You will come back. Everything echoes.": "Du wirst zurückkommen. Alles hallt wider.",
- "Your bell is the last one that still rings the true note. Take it, and take your friends. Bring the verses home.": "Deine Glocke ist die letzte, die noch den wahren Ton anschlägt. Nimm sie, und nimm deine Freunde mit. Bring die Strophen heim."
+ "Your bell is the last one that still rings the true note. Take it, and take your friends. Bring the verses home.": "Deine Glocke ist die letzte, die noch den wahren Ton anschlägt. Nimm sie, und nimm deine Freunde mit. Bring die Strophen heim.",
+ "Whatever waits in the Heart Chamber wears a warden’s shape, but the song in it is the Heart’s own. Don’t listen too closely.": "Was auch immer in der Herzkammer wartet, trägt die Gestalt eines Wächters, doch das Lied darin ist das des Herzens selbst. Hör nicht zu genau hin.",
+ "You carried three verses all the way down. Sing them for me.": "Ihr habt drei Verse den ganzen Weg hinab getragen. Singt sie für mich."
 }

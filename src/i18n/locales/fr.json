@@ -2026,6 +2026,23 @@
  "Heals for part of the damage it deals.": "Se soigne d’une bonne part des dégâts qu’il inflige.",
  "The {cls} is AI-controlled and does its own shopping.": "Le {cls} est contrôlé par l'IA et fait ses propres achats.",
  "The {cls} shops on their own screen.": "Le {cls} fait ses achats sur son propre écran.",
+ "Beneath the Barrow, where the corruption first took root and still beats.": "Sous le Tertre, là où la corruption a pris racine et bat encore.",
+ "Clear Level IV, the Hollow Heart.": "Termine le niveau IV, le Cœur Creux.",
+ "Complete a campaign (Levels I to IV).": "Termine une campagne (niveaux I à IV).",
+ "Geode Hall": "Salle des Géodes",
+ "Heart Chamber": "Chambre du Cœur",
+ "Heartbreaker": "Brise-cœur",
+ "Past the Heart the road turns back into the wood, darker each time. The four lands repeat, harder at every depth, until the party falls.": "Après le Cœur, la route retourne dans le bois, plus sombre à chaque fois. Les quatre terres se répètent, plus dures à chaque profondeur, jusqu’à ce que le groupe tombe.",
+ "Root Gate": "Porte des Racines",
+ "The Heart's warden falls. Below the Barrow, the old beat falters.": "Le gardien du Cœur tombe. Sous le Tertre, le vieux battement faiblit.",
+ "The Hollow Heart": "Le Cœur Creux",
+ "The hollow under the Barrow": "Le creux sous le Tertre",
+ "The party fell at Depth {depth}, before the Heart. The gods applaud.": "Le groupe est tombé à la profondeur {depth}, avant le Cœur. Les dieux applaudissent.",
+ "Through all four lands and down again, until the party falls.": "À travers les quatre terres et de nouveau vers le bas, jusqu’à ce que le groupe tombe.",
+ "Vein Gallery": "Galerie des Veines",
+ "Weeping Wells": "Puits Pleureurs",
+ "Wood · Mill · Barrow · Heart · and down again": "Bois · Moulin · Tertre · Cœur · et on recommence",
+ "Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).": "Score = la somme, sur les niveaux joués, de (100 × salles + 5 × victimes + 1000 si terminé) × niveau (I 1,0 · II 1,5 · III 2,0 · IV 2,5), × difficulté (détendue 0,75 · standard 1 · éprouvante 1,5), plus un bonus de vitesse pour une campagne terminée (900 × niveaux joués − secondes).",
  "{n} more verses are still missing, somewhere past the edge of the map.": {
   "one": "Il manque encore {n} couplet, quelque part au-delà du bord de la carte.",
   "many": "Il manque encore {n} couplets, quelque part au-delà du bord de la carte.",
@@ -2134,5 +2151,7 @@
  "You again! The road bends the same way for both of us, it seems.": "Encore toi ! On dirait que la route tourne du même côté pour nous deux.",
  "You carry my bell. I rang it once, in the Hollow Wood, long before you.": "Tu portes ma cloche. Je l’ai fait sonner une fois, dans le Bois Creux, bien avant toi.",
  "You will come back. Everything echoes.": "Tu reviendras. Tout fait écho.",
- "Your bell is the last one that still rings the true note. Take it, and take your friends. Bring the verses home.": "Ta cloche est la dernière à sonner encore la note juste. Prends-la, et prends tes amis. Ramenez les couplets à la maison."
+ "Your bell is the last one that still rings the true note. Take it, and take your friends. Bring the verses home.": "Ta cloche est la dernière à sonner encore la note juste. Prends-la, et prends tes amis. Ramenez les couplets à la maison.",
+ "Whatever waits in the Heart Chamber wears a warden’s shape, but the song in it is the Heart’s own. Don’t listen too closely.": "Ce qui attend dans la Chambre du Cœur a la forme d’un gardien, mais le chant qui l’habite est celui du Cœur. N’écoute pas de trop près.",
+ "You carried three verses all the way down. Sing them for me.": "Vous avez porté trois vers jusqu’ici. Chantez-les pour moi."
 }

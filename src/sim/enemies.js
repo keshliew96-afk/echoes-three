@@ -84,6 +84,12 @@ import crab from './enemies/crab.js';
 import lamprey from './enemies/lamprey.js';
 import gravewisp from './enemies/gravewisp.js';
 import knight from './enemies/knight.js';
+// Act IV (docs/ACT_IV.md): the Hollow Heart's Husk, Lancer, Geode Brute and
+// Censer. The same module contract; the Geode's shards are globs (`shard`).
+import husk from './enemies/husk.js';
+import lancer from './enemies/lancer.js';
+import geode from './enemies/geode.js';
+import censer from './enemies/censer.js';
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): named powers on campaign elites.
 import { createAffixLogic, rollAffixes, AFFIX_IDS } from './affixes.js';
 import { staticClearance } from './movement.js';
@@ -147,7 +153,7 @@ function circleContactT(px, pz, dx, dz, cx, cz, R) {
 }
 
 // Gauntlet archetypes (M4b): etype -> plain-data module (PLAN §3.6).
-export const ARCHETYPES = Object.freeze({ quillback, toad, moth, ram, mole, rotcap, snail, crow, brood, broodling, wasp, thornling, crab, lamprey, gravewisp, knight });
+export const ARCHETYPES = Object.freeze({ quillback, toad, moth, ram, mole, rotcap, snail, crow, brood, broodling, wasp, thornling, crab, lamprey, gravewisp, knight, husk, lancer, geode, censer });
 // Every hostile enemy kind this system owns (the boss is sim/boss.js's).
 export const ENEMY_KINDS = Object.freeze(new Set(['boar', 'mantis', ...Object.keys(ARCHETYPES)]));
 // §23.5 Elite modifier (any non-boss).
@@ -689,6 +695,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       ...(o.slickVariant ? { slickVariant: o.slickVariant } : {}),
       ...(o.slickBurn ? { slickBurn: o.slickBurn } : {}),
       ...(o.affix ? { affix: o.affix } : {}),
+      ...(o.shard ? { shard: true } : {}),
       telegraph: {
         kind: 'ring',
         startTick: tick,
@@ -754,6 +761,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       radius: g.blastRadius,
       victims: victims.length,
       ...(g.affix ? { affix: g.affix } : {}),
+      ...(g.shard ? { shard: true } : {}),
     });
     registry.despawn(g.id);
     const src = owner ?? { id: g.ownerId, kind: g.ownerKind, faceX: 0, faceZ: 1 };

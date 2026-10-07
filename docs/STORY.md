@@ -25,11 +25,11 @@ a warden and lines, and nothing else has to change.
 | Who | Where | What they do for the player |
 |---|---|---|
 | **Wick**, the Hearth-Keeper (an owl) | camp, on the woodpile by the hearth | Tells the prologue. E near him: his next line, which follows the verses held. U near him points at the Offerings (the cross-run unlocks). |
-| **Bramble**, the Peddler (a tortoise) | camp stall; the peddler's clearing in a run | In camp, E: her next line. On her shelf (room 7) she tells the **rumour**: the boss behind the next door, by name, with one hint on how it fights. |
+| **Bramble**, the Peddler (a tortoise) | camp stall; the peddler's clearing in a run | In camp, E: her next line. On her shelf (room 7) she tells the **rumour**: the boss behind the next door, by name, with one hint on how it fights. On Level IV she speaks of the Heart Chamber instead, whichever boss stands in it. |
 | **Quill**, the Chronicler | camp, at the map table | J (or his chip) opens **The story so far**: verse pips, one card per chapter (locked until its level is cleared), and the people met. |
 | **Sedge**, the Lost Pilgrim | the Lost Pilgrim event room | Speaks on the card; a new line each time she is met (four). |
 | **The First Bell** | the Wandering Spirit event room | Speaks on the card; four lines across meetings. |
-| **The Hollow Voice** | the corrupted altar; each boss's first meeting | A violet line under the screen title: once per boss per profile, and when the altar is taken or left. |
+| **The Hollow Voice** | the corrupted altar; each boss's first meeting | A violet line under the screen title: once per boss per profile (Level IV's Heart Chamber counts as its own meeting), and when the altar is taken or left. |
 | **The Chorus** (the gods) | run end cards | The defeat card's flavour line: a boss-room line, an early-fall line, a cursed-run line, or one of five general lines (seeded). |
 | **Freed wardens** | camp edge | The Stag, the Heron and the Wyrm stand at the camp's edge as pale spirits once their level's boss (either one) has been felled, each with one line. |
 

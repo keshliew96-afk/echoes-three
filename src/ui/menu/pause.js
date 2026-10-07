@@ -99,7 +99,7 @@ function installStyle() {
   document.head.appendChild(s);
 }
 
-const ROMAN = ['', 'I', 'II', 'III'];
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 
 // "Act II · Room 3/8 · Choosing a boon" — where the player is, so a pause that
 // lasted a coffee break still lands them back in context.
