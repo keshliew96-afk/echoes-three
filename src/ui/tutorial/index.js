@@ -16,7 +16,11 @@
 // THE TIPS. A short card the first time the player meets class select, a
 // relic pick, a cursed door and the peddler: a centred card over the page,
 // which waits (its keys are held) until Got it / Enter / Space / Esc. Each
-// shows once: it is marked seen the moment it appears. The reward and the
+// shows once: it is marked seen the moment it appears. The slick floor tip
+// (docs/SLICK_FLOOR.md) comes up mid-fight, the first time the player's own
+// body stands on a slick patch, so it rides the coach card at the bottom
+// instead: nothing is held, the fight goes on, and it leaves after a few
+// seconds or on Got it. The reward and the
 // door lessons of the guided room use the same card.
 // Settings ▸ Gameplay ▸ Show tips again brings them back.
 //
@@ -39,13 +43,14 @@ import { cap, padCap, moveCaps, skillsCap, usingPad, onHintsChange } from '../..
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
-export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler']);
+export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick']);
 
 const MOVE_DIST = 2.5; // world units walked to pass the move step
 const ATTACK_MS = 450; // right button held this long (in total) passes the attack step
 const USE_GIVE_UP_MS = 45000; // the spring step lets go after this long
 const DONE_MS = 16000; // the closing card's own timeout
 const POLL_MS = 200;
+const FLOOR_TIP_MS = 9000; // the slick floor tip's time on screen
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -118,6 +123,11 @@ function tipText(id) {
       };
     case 'peddler':
       return { title: t('The peddler'), body: t('Spend the Glint you earned clearing rooms on nodes for your skills and relics for the party. Advance when you are done.') };
+    case 'slick':
+      return {
+        title: t('Slick floor'),
+        body: t('Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.'),
+      };
     default:
       return null;
   }
@@ -336,9 +346,35 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     renderCoach();
   }
 
+  // The slick floor tip on the coach card (never during the guided room).
+  let floorTip = null; // null | { id, until }
+  function renderFloorTip() {
+    const txt = floorTip ? tipText(floorTip.id) : null;
+    if (!txt) return;
+    coach.querySelector('.tu-kicker').textContent = t('Tip');
+    coach.querySelector('.tu-title').textContent = txt.title;
+    coach.querySelector('.tu-step').textContent = '';
+    coach.querySelector('.tu-body').textContent = txt.body;
+    coach.querySelector('.tu-keys').innerHTML = '';
+    coach.querySelector('.tu-skip').style.display = 'none';
+    const ok = coach.querySelector('.tu-ok');
+    ok.textContent = t('Got it');
+    ok.style.display = '';
+    coach.dataset.tip = floorTip.id;
+    delete coach.dataset.step;
+    syncCoachVisible();
+  }
+  function closeFloorTip() {
+    if (!floorTip) return;
+    floorTip = null;
+    delete coach.dataset.tip;
+    syncCoachVisible();
+  }
+
   function renderCoach() {
     const txt = step && !LESSONS.includes(step) ? stepText(step) : null;
     if (!txt) {
+      if (floorTip) return renderFloorTip();
       coach.classList.remove('tu-on');
       delete coach.dataset.step;
       return;
@@ -360,12 +396,13 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     syncCoachVisible();
   }
   function syncCoachVisible() {
-    const on = !!step && !LESSONS.includes(step) && !!stepText(step) && app.state === 'playing' && !screensOpen() && !shown;
+    const lesson = !!step && !LESSONS.includes(step) && !!stepText(step);
+    const on = (lesson || (!step && !!floorTip)) && app.state === 'playing' && !screensOpen() && !shown;
     coach.classList.toggle('tu-on', on);
   }
 
   coach.querySelector('.tu-skip').addEventListener('click', () => skipTutorial());
-  coach.querySelector('.tu-ok').addEventListener('click', () => setStep(null));
+  coach.querySelector('.tu-ok').addEventListener('click', () => (floorTip && !step ? closeFloorTip() : setStep(null)));
 
   function skipTutorial() {
     const r = run();
@@ -465,7 +502,32 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     if (v.phase === 'shop') return 'peddler';
     return null;
   }
+  // Is the player's own body standing on a slick patch in a live fight?
+  function onSlick() {
+    if (app.state !== 'playing' || screensOpen()) return false;
+    const v = view();
+    if (!v || !v.active || v.tutorial || v.phase !== 'combat') return false;
+    const b = localBody();
+    if (!b || !(b.hp > 0) || typeof world.entities !== 'function') return false;
+    for (const e of world.entities()) {
+      if (e.kind === 'hazard' && e.htype === 'slip' && Math.hypot(b.x - e.x, b.z - e.z) <= e.radius) return true;
+    }
+    return false;
+  }
+  function pollFloorTip() {
+    if (floorTip) {
+      if (performance.now() >= floorTip.until || step) closeFloorTip();
+      else syncCoachVisible();
+      return;
+    }
+    if (!tipsOn || step || shown || tipsSeen().includes('slick') || !onSlick()) return;
+    floorTip = { id: 'slick', until: performance.now() + FLOOR_TIP_MS };
+    markTip('slick');
+    renderFloorTip();
+  }
+
   function pollTips() {
+    pollFloorTip();
     const ctx = tipContext();
     if (shown && shown.kind === 'tip') {
       if (ctx !== shown.id) closeModal(); // its page closed under it
@@ -561,7 +623,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
       const tips = widgets.button({
         id: 'ap-gameplay-tips',
         label: t('Show tips again'),
-        help: t('The one-time tips for class select, relics, cursed doors and the peddler show again the next time you meet each.'),
+        help: t('The one-time tips for class select, relics, cursed doors, the peddler and slick floors show again the next time you meet each.'),
         onPress: () => {
           settings.set(TUTORIAL_TIPS_KEY, '', { source: 'ui' });
           if (typeof app.toast === 'function') app.toast(t('Tips will show again'), { tone: 'good' });
@@ -599,6 +661,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
       coach: coach.classList.contains('tu-on'),
       card: shown ? { ...shown } : null,
       tip: shown && shown.kind === 'tip' ? shown.id : null,
+      floorTip: floorTip ? floorTip.id : null,
       tipsSeen: tipsSeen(),
       seen: !!settings.get(TUTORIAL_SEEN_KEY),
       tipsOn,

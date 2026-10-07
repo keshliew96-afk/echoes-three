@@ -1747,7 +1747,7 @@
  "Start or continue a game first": "先にゲームを始めるか続きから再開してください",
  "Step {n} of {total}": "ステップ {n} / {total}",
  "The guided first room: moving, attacking, dodging, the spring, a wave reward and a door. Starts from the camp.": "ガイド付きの最初の部屋：移動、攻撃、回避、泉、ウェーブ報酬、扉。キャンプから始まる。",
- "The one-time tips for class select, relics, cursed doors and the peddler show again the next time you meet each.": "クラス選択、レリック、呪われた扉、行商人の一度きりのヒントを、次に出会ったときにもう一度表示する。",
+ "The one-time tips for class select, relics, cursed doors, the peddler and slick floors show again the next time you meet each.": "クラス選択、レリック、呪われた扉、行商人、滑る床の一度きりのヒントを、次に出会ったときにもう一度表示する。",
  "The peddler": "行商人",
  "Tip": "ヒント",
  "Tips will show again": "ヒントがまた表示される",
@@ -1844,5 +1844,7 @@
  "Your cloud code: {code}": "あなたのクラウドコード：{code}",
  "Your code: {code}": "あなたのコード：{code}",
  "{n} Embers": "残り火{n}",
- "{n} save slots": "セーブスロット{n}個"
+ "{n} save slots": "セーブスロット{n}個",
+ "Slick floor": "滑る床",
+ "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "濡れた石と墓の霜は滑りやすい。止まっても滑り続け、曲がりにくくなり、回避はより遠くまで進む。地上の敵も滑る。"
 }

@@ -1804,7 +1804,7 @@
  "Start or continue a game first": "Starte oder setze zuerst ein Spiel fort",
  "Step {n} of {total}": "Schritt {n} von {total}",
  "The guided first room: moving, attacking, dodging, the spring, a wave reward and a door. Starts from the camp.": "Der geführte erste Raum: Bewegen, Angreifen, Ausweichen, die Quelle, eine Wellenbelohnung und eine Tür. Beginnt im Lager.",
- "The one-time tips for class select, relics, cursed doors and the peddler show again the next time you meet each.": "Die einmaligen Tipps zu Klassenwahl, Relikten, verfluchten Türen und dem Krämer erscheinen beim nächsten Mal wieder.",
+ "The one-time tips for class select, relics, cursed doors, the peddler and slick floors show again the next time you meet each.": "Die einmaligen Tipps zu Klassenwahl, Relikten, verfluchten Türen, dem Krämer und rutschigem Boden erscheinen beim nächsten Mal wieder.",
  "The peddler": "Der Krämer",
  "Tip": "Tipp",
  "Tips will show again": "Tipps werden wieder angezeigt",
@@ -1907,5 +1907,7 @@
  "{n} save slots": {
   "one": "{n} Speicherplatz",
   "other": "{n} Speicherplätze"
- }
+ },
+ "Slick floor": "Rutschiger Boden",
+ "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "Nasser Stein und Grabreif sind rutschig: Du rutschst beim Anhalten weiter, wendest schwerfällig, und dein Ausweichen trägt dich weiter. Bodengegner rutschen auch."
 }

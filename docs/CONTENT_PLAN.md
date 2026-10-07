@@ -93,7 +93,7 @@ Six new layouts, two per expedition, using the existing hazard and interactable 
 **Shipped** (campaign rooms; the legacy single-level run keeps each level's `legacyLayouts`, so the Node goldens are unchanged). Each new layout also has its own spawn ring (`spawns` in `src/data/layouts.js`): the wave roll still draws a point index and the run frame moves the rolled units onto the room's ring, with no extra draw. Where the build differs from the hooks above:
 - *Fallen Oak*: the trunk is a row of five timber barricades (it blocks, and it can be chopped through); the crown is a bramble thicket at its east end.
 - *Sluice Gates*: the two races surge half a cycle apart; each sluice is still pulled by a player, as everywhere else.
-- *Flooded Cellar*: "narrow" comes from two races along the long walls; there is no slick floor type yet.
+- *Flooded Cellar*: "narrow" comes from two races along the long walls. Its slick floor came with the Slick floor slice (v0.5.231, docs/SLICK_FLOOR.md): wet flagstone at the flooded east and west ends, also in the Weir, and grave frost in the Moonwell and the Bell Tower.
 - *Bell Tower*: rockfall stays party-targeted; the ring is four broken cairn walls round the middle with doorways at the corners.
 - *Open Grave*: the grid is five gravefire lines rippling a fifth of a cycle apart. Its moles and broods came with the balance pass (v0.5.224, docs/BALANCE_PASS.md): a layout `mix` retypes part of the rolled schedule after the layout roll, with no draw, so moles and broods are 58 % of its units (other Barrow layouts 35 %).
 

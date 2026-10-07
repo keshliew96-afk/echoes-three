@@ -31,10 +31,10 @@ import {
   SKILL_SLOTS,
 } from '../core/constants.js';
 import { DENIAL } from '../core/intents.js';
-import { innerBounds, walkStep, sweptStep } from './movement.js';
+import { innerBounds, walkStep, sweptStep, slipPatches, slipFollow, SLIP } from './movement.js';
 import { createProjectileSystem } from './projectiles.js';
 import { createCombat } from './combat.js';
-import { createEnemySystem } from './enemies.js';
+import { createEnemySystem, ENEMY_KINDS } from './enemies.js';
 import { createWaveDirector } from './waves.js';
 import { createSkillSystem, STARTING_SKILLS, PARTY_ALLIES, SKILLS as SKILLS_REF } from './skills.js';
 import { createBuildSystem } from './nodes.js';
@@ -517,11 +517,35 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // §9 #3 knockback displacement: impulse away from the hit over kbTicks,
     // swept vs walls (no slide — wall contact ends the impulse). Runs before
     // projectiles so bolts sweep against final positions this tick.
+    const slick = slipPatches().length > 0;
+    const knocked = slick ? new Set() : null;
     for (const e of registry.all()) {
       if (!(e.kbTicks > 0)) continue;
+      if (knocked) knocked.add(e.id);
       const { hit } = sweptStep(e, e.kbVx, e.kbVz, e.radius);
       e.kbTicks -= 1;
       if (hit) e.kbTicks = 0;
+    }
+    // Slick floor (sim/movement.js slipFollow): every walking body's whole
+    // step this tick (own motion, pushes, knockback) eases into its momentum
+    // on a slip patch. Human seats slide per input frame inside their own
+    // step (sim/remote.js), so only a knockback reaches them here. A dash or
+    // a knockback is taken whole and slides on after it ends. Rooms without
+    // a patch skip this entirely (no field is ever written).
+    if (slick) {
+      for (const e of registry.all()) {
+        if (e.flier || e.burrowed || e.boss === true || e.kind === 'stag') continue;
+        const party = e.partyIndex !== undefined;
+        if (!party && !(e.kind === 'dummy' || (ENEMY_KINDS.has(e.kind) && e.state === 'active'))) continue;
+        const kb = knocked.has(e.id);
+        if (e.controller === 'human' && !kb) continue;
+        const snap = kb || e.dashTicksLeft > 0 || !!(e.skillDash && e.skillDash.ticksLeft > 0);
+        // AI party members step carefully: they slide, but recover fast.
+        const gripMul = party && e !== player && e.controller !== 'human' ? SLIP.aiGripMul : 1;
+        slipFollow(e, e.px, e.pz, { snap, gripMul });
+      }
+    } else {
+      for (const e of registry.all()) if (e.slipVx !== undefined && e.controller !== 'human') slipFollow(e, e.px, e.pz);
     }
 
     // Projectiles advance (swept) after actors. Skill bolts share the phase;

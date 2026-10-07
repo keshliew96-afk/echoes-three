@@ -111,11 +111,132 @@ export function serializeMovement() {
         ? { id: c.id, x: c.x, z: c.z, hx: c.hx, hz: c.hz, yaw: Number.isFinite(c.yaw) ? c.yaw : Math.atan2(c.s, c.c) }
         : { id: c.id, x: c.x, z: c.z, r: c.r }
     ),
+    // Slick floor: only while a room has patches, so every tree without one
+    // (the goldens, Level 1, camp) keeps its exact shape and hash.
+    ...(slips.length > 0 ? { slips: slips.map((p) => ({ id: p.id, x: p.x, z: p.z, r: p.r, grip: p.grip })) } : {}),
   };
 }
 
 export function restoreMovement(data) {
   setDynamicColliders(data && Array.isArray(data.dynamics) ? data.dynamics : null);
+  setSlipPatches(data && Array.isArray(data.slips) ? data.slips : null);
+}
+
+// --- Slick floor (slip patches) ---------------------------------------------
+// Ground the layout made slick (sim/hazards.js 'slip': wet flagstones in the
+// Mill, grave frost in the Barrow). The hazard system installs the patch list
+// every tick, like the dynamic colliders; the save tree and the co-op
+// snapshot carry it, so a guest's own-seat predictor slides on exactly the
+// patches the host does.
+//
+// The model is one rule, applied AFTER a body's own motion for the tick:
+// the body's momentum (slipVx/slipVz, u per tick) eases toward the step it
+// meant to take by `grip` per tick instead of matching it at once. So on a
+// patch a body keeps sliding when it stops, turns wide, and a dodge or a
+// knockback (snapped in as momentum while it lasts) carries on after it ends.
+// Speed is never raised above the step taken: a slide only ever spends the
+// momentum a body already had. Leaving the patch, the momentum bleeds off at
+// SLIP.exitGrip, then the fields are dropped. Fliers and burrowers never slip.
+export const SLIP = Object.freeze({
+  grip: 0.08, // default per-tick ease toward the intended step
+  exitGrip: 0.3, // off the patch: a quick stop on dry ground
+  aiGripMul: 2.5, // AI party members step carefully (sim/world.js)
+  teleport: 0.4, // u per tick: anything faster is a reposition, never momentum
+  rest: 1e-4, // u per tick: momentum below this is dropped
+});
+let slips = [];
+
+// Install (or clear) the slip patch list: [{ id, x, z, r, grip }].
+export function setSlipPatches(list) {
+  slips = [];
+  if (!list) return 0;
+  for (const p of list) slips.push({ id: p.id ?? null, x: p.x, z: p.z, r: p.r, grip: Number.isFinite(p.grip) ? p.grip : SLIP.grip });
+  return slips.length;
+}
+
+export function slipPatches() {
+  return slips;
+}
+
+// The patch under (x, z), or null.
+export function slipAt(x, z) {
+  for (const p of slips) {
+    const dx = x - p.x;
+    const dz = z - p.z;
+    if (dx * dx + dz * dz <= p.r * p.r) return p;
+  }
+  return null;
+}
+
+// The momentum blend for one tick (pure): the body's displacement after the
+// rule, given the step (ix, iz) it took on its own. null = no slip applies.
+export function slipBlend(e, ix, iz, gripMul = 1) {
+  if (e.flier || e.burrowed) return null;
+  const p = slips.length > 0 ? slipAt(e.x, e.z) : null;
+  const has = e.slipVx !== undefined;
+  if (!p && !has) return null;
+  if (!has) return null; // entering a patch: the first step seeds the momentum
+  const g = Math.min(1, (p ? p.grip : SLIP.exitGrip) * gripMul);
+  return { x: e.slipVx + (ix - e.slipVx) * g, z: e.slipVz + (iz - e.slipVz) * g, onPatch: !!p };
+}
+
+// slipFollow(e, x0, z0, { snap, gripMul }) — apply the rule to a body that
+// stepped from (x0, z0) to (e.x, e.z) this tick (or this input frame).
+// `snap`: the step is a dash / knockback — taken as is and kept as momentum.
+// Moves the body (walkStep: walls and colliders stay solid) and updates its
+// momentum. Returns true when the slide moved it.
+export function slipFollow(e, x0, z0, { snap = false, gripMul = 1 } = {}) {
+  if (e.flier || e.burrowed) {
+    if (e.slipVx !== undefined) dropSlip(e);
+    return false;
+  }
+  const p = slips.length > 0 ? slipAt(e.x, e.z) : null;
+  const has = e.slipVx !== undefined;
+  if (!p && !has) return false;
+  const ix = e.x - x0;
+  const iz = e.z - z0;
+  if (ix * ix + iz * iz > SLIP.teleport * SLIP.teleport) {
+    // A reposition (room entry, a rescue, a teleport): no momentum.
+    if (p) {
+      e.slipVx = 0;
+      e.slipVz = 0;
+    } else dropSlip(e);
+    return false;
+  }
+  if (!has || snap) {
+    if (!p) {
+      dropSlip(e);
+      return false;
+    }
+    e.slipVx = ix;
+    e.slipVz = iz;
+    return false;
+  }
+  const g = Math.min(1, (p ? p.grip : SLIP.exitGrip) * gripMul);
+  const vx = e.slipVx + (ix - e.slipVx) * g;
+  const vz = e.slipVz + (iz - e.slipVz) * g;
+  const cx = vx - ix;
+  const cz = vz - iz;
+  let moved = false;
+  if (cx * cx + cz * cz > 1e-12) {
+    walkStep(e, cx, cz, e.radius ?? 0.3);
+    moved = true;
+  }
+  // Momentum = what the body actually travelled (a wall eats it).
+  const ax = e.x - x0;
+  const az = e.z - z0;
+  if (!p && Math.hypot(ax - ix, az - iz) < SLIP.rest) {
+    dropSlip(e);
+    return moved;
+  }
+  e.slipVx = Math.abs(ax) < SLIP.rest ? 0 : ax;
+  e.slipVz = Math.abs(az) < SLIP.rest ? 0 : az;
+  return moved;
+}
+
+function dropSlip(e) {
+  delete e.slipVx;
+  delete e.slipVz;
 }
 
 // Signed clearance of a circle at (x, z) from the nearest static collider

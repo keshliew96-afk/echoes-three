@@ -56,6 +56,7 @@ import {
 import { ARENA, CAMERA, DODGE, DUMMY, TICK_HZ } from '../core/constants.js';
 import { createCritter, setInkViewport } from '../render/critters/index.js';
 import { PALETTE } from '../data/palette.js';
+import { LAYOUTS } from '../data/layouts.js';
 import { makeGlowSprite, getRadialTexture } from '../render/glow.js';
 import { createGrayboxScene } from './graybox.js';
 import { layoutSpec, biomeInfo, biomeOfLayout, LAYOUT_SPEC_IDS } from '../env/biomes/index.js';
@@ -463,7 +464,9 @@ export function createArenaScene(stage, toggles, ctx) {
     const { emitters, shadows, footprints, mats, typeCount, monolithMat, dressing, roomDressingDispose } = buildProps(group, dspec, layout);
     buildShadowInstances(group, shadows);
     yield;
-    const foliage = buildFoliage(group, dspec, layout, footprints);
+    // Slick floor: no grass grows through wet stone or frost (cosmetic only).
+    const slipFeet = (LAYOUTS[dspec.id]?.hazards ?? []).filter((h) => h.type === 'slip').map((h) => ({ x: h.x, z: h.z, r: h.r + 0.15 }));
+    const foliage = buildFoliage(group, dspec, layout, slipFeet.length ? footprints.concat(slipFeet) : footprints);
     const glassBase = mats?.glass ? mats.glass.color.clone() : null;
     yield;
     // --- The built boundary (walls + coping + capstone run).

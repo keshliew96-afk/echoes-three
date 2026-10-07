@@ -1823,7 +1823,7 @@
  "Start or continue a game first": "Commence ou continue d’abord une partie",
  "Step {n} of {total}": "Étape {n} sur {total}",
  "The guided first room: moving, attacking, dodging, the spring, a wave reward and a door. Starts from the camp.": "La première salle guidée : se déplacer, attaquer, esquiver, la source, une récompense de vague et une porte. Commence au camp.",
- "The one-time tips for class select, relics, cursed doors and the peddler show again the next time you meet each.": "Les conseils uniques sur le choix de classe, les reliques, les portes maudites et le colporteur s’afficheront de nouveau la prochaine fois que tu les rencontreras.",
+ "The one-time tips for class select, relics, cursed doors, the peddler and slick floors show again the next time you meet each.": "Les conseils uniques sur le choix de classe, les reliques, les portes maudites, le colporteur et les sols glissants s’afficheront de nouveau la prochaine fois que tu les rencontreras.",
  "The peddler": "Le colporteur",
  "Tip": "Conseil",
  "Tips will show again": "Les conseils s’afficheront de nouveau",
@@ -1928,5 +1928,7 @@
   "one": "{n} emplacement de sauvegarde",
   "many": "{n} emplacements de sauvegarde",
   "other": "{n} emplacements de sauvegarde"
- }
+ },
+ "Slick floor": "Sol glissant",
+ "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "La pierre mouillée et le givre des tombes sont glissants : tu continues de glisser à l’arrêt, tu tournes large et l’esquive te porte plus loin. Les ennemis au sol glissent aussi."
 }

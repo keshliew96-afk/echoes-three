@@ -13,6 +13,9 @@
 //            fight, telegraph, hit and die as in a run
 //   Boss     force the add phase / enrage, or end the fight
 //   Relics   an elite's relic drop, Spore Sac, a major curse, Short Fuse
+//   Floors   a slick floor patch (wet stone / grave frost) under the party
+//            with boars charging across it, or a whole room that carries
+//            the floor (Flooded Cellar, Bell Tower)
 //   Sound    each boss's sting, phase and fall stings and its boss groove
 //
 // Off unless the URL asks for it; touches nothing else in the UI.
@@ -242,6 +245,29 @@ export function mountVfxLab() {
     X().cmd('spawn', 'mantis', f.x + 1.2, f.z - 2.2);
     say('Short Fuse: telegraphs 20% shorter');
   }, 'Short Fuse on this room, with wasps and a mantis');
+
+  // --------------------------------------------------------------- floors --
+  // Slick floor (docs/SLICK_FLOOR.md): a patch laid where the party stands,
+  // with two boars charging across it so the enemy slide reads too.
+  const floors = section('Slick floor');
+  async function slickHere(act, skin) {
+    await ensureCombat(act);
+    const p = X().content.world().player;
+    const x = p ? p.x : 0;
+    const z = p ? p.z : 0;
+    X().cmd('spawnHazard', 'slip', x, z - 0.6, { r: 1.8, skin });
+    X().cmd('spawn', 'boar', x - 2.2, z - 4.2);
+    X().cmd('spawn', 'boar', x + 2.2, z - 4.2);
+    say(`${skin === 'frost' ? 'grave frost' : 'wet stone'} under the party: walk, stop, dodge on it`);
+  }
+  button(floors, 'Wet stone', () => slickHere(2, 'wet'), 'a wet flagstone patch (Act II) under the party, two boars');
+  button(floors, 'Grave frost', () => slickHere(3, 'frost'), 'a grave frost patch (Act III) under the party, two boars');
+  for (const [label, act, id] of [['Flooded Cellar', 2, 13], ['Bell Tower', 3, 14]])
+    button(floors, label, async () => {
+      await ensureCombat(act);
+      X().cmd('setLayout', id);
+      say(`${label}: the room's own slick floor`);
+    }, `layout ${id} placed in this room`);
 
   // ----------------------------------------------------------------- boss --
   const boss = section('Boss');

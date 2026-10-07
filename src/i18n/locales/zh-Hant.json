@@ -1747,7 +1747,7 @@
  "Start or continue a game first": "請先開始或繼續一局遊戲",
  "Step {n} of {total}": "第 {n} 步，共 {total} 步",
  "The guided first room: moving, attacking, dodging, the spring, a wave reward and a door. Starts from the camp.": "引導式的第一個房間：移動、攻擊、閃避、泉水、一次波次獎勵和一扇門。從營地開始。",
- "The one-time tips for class select, relics, cursed doors and the peddler show again the next time you meet each.": "職業選擇、遺物、詛咒之門和行商的一次性提示，會在你下次遇到時再次顯示。",
+ "The one-time tips for class select, relics, cursed doors, the peddler and slick floors show again the next time you meet each.": "職業選擇、遺物、詛咒之門、行商和濕滑地面的一次性提示，會在你下次遇到時再次顯示。",
  "The peddler": "行商",
  "Tip": "提示",
  "Tips will show again": "提示將再次顯示",
@@ -1844,5 +1844,7 @@
  "Your cloud code: {code}": "你的雲端代碼：{code}",
  "Your code: {code}": "你的代碼：{code}",
  "{n} Embers": "{n} 餘燼",
- "{n} save slots": "{n} 個存檔欄位"
+ "{n} save slots": "{n} 個存檔欄位",
+ "Slick floor": "濕滑地面",
+ "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "濕石與墓地寒霜很滑：停下後你還會繼續滑行，轉向變得遲緩，閃避也會衝得更遠。地面上的敵人同樣會打滑。"
 }

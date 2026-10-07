@@ -1823,7 +1823,7 @@
  "Start or continue a game first": "Primero empieza o continúa una partida",
  "Step {n} of {total}": "Paso {n} de {total}",
  "The guided first room: moving, attacking, dodging, the spring, a wave reward and a door. Starts from the camp.": "La primera sala guiada: moverse, atacar, esquivar, el manantial, una recompensa de oleada y una puerta. Empieza desde el campamento.",
- "The one-time tips for class select, relics, cursed doors and the peddler show again the next time you meet each.": "Los consejos de una sola vez sobre la elección de clase, las reliquias, las puertas malditas y el buhonero se mostrarán de nuevo la próxima vez que los encuentres.",
+ "The one-time tips for class select, relics, cursed doors, the peddler and slick floors show again the next time you meet each.": "Los consejos de una sola vez sobre la elección de clase, las reliquias, las puertas malditas, el buhonero y el suelo resbaladizo se mostrarán de nuevo la próxima vez que los encuentres.",
  "The peddler": "El buhonero",
  "Tip": "Consejo",
  "Tips will show again": "Los consejos se mostrarán de nuevo",
@@ -1928,5 +1928,7 @@
   "one": "{n} ranura de guardado",
   "many": "{n} ranuras de guardado",
   "other": "{n} ranuras de guardado"
- }
+ },
+ "Slick floor": "Suelo resbaladizo",
+ "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "La piedra mojada y la escarcha de tumba resbalan: sigues deslizándote al parar, giras con dificultad y la esquiva te lleva más lejos. Los enemigos de tierra también resbalan."
 }

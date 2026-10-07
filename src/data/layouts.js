@@ -22,6 +22,8 @@
 //     millrace     x0 z0 x1 z1 (flow from 0 -> 1), w (1.4), offset (ticks toward the first surge)
 //     rockfall     (no position — targets the party)
 //     gravefire    vents [[x, z] x3], offset (ticks into its 420-tick cycle)
+//     slip         r (1.1-1.9), skin ('wet' Mill | 'frost' Barrow)  slick floor:
+//                  bodies keep sliding (Acts II and III only, never Level 1)
 //   interactables:  { type, x, z, yaw?, ...params }
 //     dewfont · barricade (yaw, skin) · keg · sluice (lanes: millrace indices) · bell
 //   spawns (optional): [[x, z] x 8] this room's spawn ring, index-aligned with
@@ -115,6 +117,9 @@ export const LAYOUTS = Object.freeze({
       { type: 'millrace', x0: 7.4, z0: 8, x1: 7.4, z1: -8, w: 1.4, offset: 330 },
       { type: 'puffcap', x: -4.6, z: 2.6, offset: 40 },
       { type: 'puffcap', x: 4.4, z: 4.4, offset: 190 },
+      // Slick floor: wet stones below the weir, by the south bank.
+      { type: 'slip', x: -7.8, z: 5.3, r: 1.5, skin: 'wet' },
+      { type: 'slip', x: 1.0, z: 5.1, r: 1.1, skin: 'wet' },
     ]),
     interactables: Object.freeze([
       { type: 'sluice', x: 1.2, z: -6.2, yaw: 0, lanes: [0, 1] },
@@ -192,6 +197,9 @@ export const LAYOUTS = Object.freeze({
     hazards: Object.freeze([
       { type: 'rockfall' },
       { type: 'gravefire', vents: [[3.6, -4.6], [5.0, -4.0], [6.4, -3.4]], offset: 90 },
+      // Slick floor: the moonwell's frost has crept out across both flanks.
+      { type: 'slip', x: 5.4, z: -0.9, r: 1.65, skin: 'frost' },
+      { type: 'slip', x: -8.8, z: -0.1, r: 1.65, skin: 'frost' },
     ]),
     interactables: Object.freeze([
       { type: 'bell', x: -4.6, z: -3.6 },
@@ -308,6 +316,10 @@ export const LAYOUTS = Object.freeze({
     hazards: Object.freeze([
       { type: 'millrace', x0: -9.0, z0: -5.2, x1: 9.0, z1: -5.2, w: 1.4, offset: 90 },
       { type: 'millrace', x0: 9.0, z0: 5.4, x1: -9.0, z1: 5.4, w: 1.4, offset: 360 },
+      // Slick floor: the flooded ends are wet, algae-slick flagstone, so
+      // every body walking in from east or west crosses it.
+      { type: 'slip', x: -7.2, z: -0.1, r: 1.7, skin: 'wet' },
+      { type: 'slip', x: 7.8, z: 0.7, r: 1.3, skin: 'wet' },
     ]),
     interactables: Object.freeze([
       { type: 'barricade', x: -4.4, z: -0.2, yaw: 1.5708, skin: 'timber' },
@@ -335,6 +347,9 @@ export const LAYOUTS = Object.freeze({
     hazards: Object.freeze([
       { type: 'rockfall' },
       { type: 'gravefire', vents: [[-1.5, 6.3], [0.0, 6.6], [1.5, 6.3]], offset: 140 },
+      // Slick floor: frost in the two south doorways, uphill of the fire line.
+      { type: 'slip', x: -5.4, z: 3.9, r: 1.7, skin: 'frost' },
+      { type: 'slip', x: 5.4, z: 3.9, r: 1.7, skin: 'frost' },
     ]),
     interactables: Object.freeze([
       { type: 'barricade', x: -2.4, z: -4.4, yaw: 0.0, skin: 'cairn' },
