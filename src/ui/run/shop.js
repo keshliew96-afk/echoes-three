@@ -51,6 +51,7 @@ import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
 import { createPartyStrip } from './partystrip.js';
 import { service } from '../../app/registry.js';
 import { bossNameOfRun } from '../../data/levels.js';
+import { rumourFor, NPCS } from '../../data/story.js';
 import { relicIconHtml } from './relicicons.js';
 import { t } from '../../i18n/index.js';
 import { viewerSeat } from '../../app/viewerseat.js';
@@ -142,6 +143,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     <div class="rn-note rn-empty" style="display:none"></div>
     <div class="rn-note rn-bought" style="display:none"></div>
     <div class="rn-note rn-lock" style="display:none"></div>
+    <div class="rn-note rn-rumour"><b class="rn-rwho"></b><span class="rn-rline"></span></div>
     <div class="rl-rack" style="display:none"></div>
     <div class="rn-buttons">
       <span class="rn-hint rn-hint-l">${t('<b>A</b>/<b>D</b> or click a card to buy')}</span>
@@ -158,6 +160,10 @@ export function createShopScreen({ run, build, party = () => null }) {
   // ("you own N · on the bench"), so the note stays removed.
   const boughtEl = el.querySelector('.rn-bought');
   const lockEl = el.querySelector('.rn-lock');
+  // THE HEARTH SONG (docs/STORY.md): Bramble's rumour — who waits behind the
+  // next door (the boss kind the run view already names) and how to meet it.
+  const rumourEl = el.querySelector('.rn-rumour');
+  rumourEl.querySelector('.rn-rwho').textContent = t('{name}:', { name: t(NPCS.peddler.short) });
   const fx = el.querySelector('.rn-fx');
   const lamp = el.querySelector('.rn-lamp');
   const lantern = el.querySelector('.rn-lantern');
@@ -453,6 +459,16 @@ export function createShopScreen({ run, build, party = () => null }) {
   function render(view) {
     lastView = view;
     if (view.phase !== 'shop') return;
+    {
+      const kind = view.actBoss && view.actBoss.kind ? view.actBoss.kind : 'stag';
+      const line = `“${t(rumourFor(kind))}”`;
+      const lineEl = rumourEl.querySelector('.rn-rline');
+      if (lineEl.textContent !== line) {
+        lineEl.textContent = line;
+        rumourEl.dataset.boss = kind;
+        dirtyFlag = true;
+      }
+    }
     if (!view.partyShop) {
       const lbl = advanceLabel(view);
       if (advanceBtn.textContent !== lbl) advanceBtn.textContent = lbl;

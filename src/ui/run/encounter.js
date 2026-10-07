@@ -12,6 +12,8 @@ import { esc } from './style.js';
 import { PALETTE } from '../../data/palette.js';
 import { t } from '../../i18n/index.js';
 import { cap } from '../../app/controls.js';
+import { service } from '../../app/registry.js';
+import { ENCOUNTER_NPC, ENCOUNTER_LINES, NPCS, VOICE_TAKE, VOICE_LEAVE } from '../../data/story.js';
 
 // Each encounter's accent (the card rim, the sigil, the plate's mark). Violet
 // only on the corrupted altar (corruption), Bright Heal only on the spring
@@ -48,6 +50,10 @@ export const ENCOUNTER_CSS = `
   .rn-encounter .ev-card .rn-cardicon { color: var(--evc); border-color: var(--evc); box-shadow: 0 0 22px var(--evc), inset 0 0 14px #00000088;
     background: radial-gradient(circle at 50% 38%, #3A342C 0%, #1C2230 100%); }
   .rn-encounter .ev-flavour { font-size: 17px; font-style: italic; color: ${PALETTE.warmGrey}; text-align: center; line-height: 1.35; }
+  /* THE HEARTH SONG: the character who speaks on the card. */
+  .rn-encounter .ev-say { display: block; box-sizing: border-box; flex: none; align-self: stretch; text-align: left; width: 100%; padding: 8px 12px; border-radius: 9px; border-left: 3px solid var(--evc); background: #00000040; }
+  .rn-encounter .ev-say b { display: block; font-size: 14px; letter-spacing: 0.16em; color: var(--evc); text-transform: uppercase; }
+  .rn-encounter .ev-say span { display: block; margin-top: 2px; font-size: 17px; color: ${PALETTE.parchment}; line-height: 1.32; }
   .rn-encounter .ev-rows { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 4px; }
   .rn-encounter .ev-row { display: flex; gap: 12px; align-items: baseline; padding: 7px 10px; border-radius: 9px; background: #00000033; border: 1px solid ${PALETTE.warmGrey}44; }
   .rn-encounter .ev-row b { flex: none; width: 92px; font-size: 14px; letter-spacing: 0.18em; color: ${PALETTE.warmGrey}; }
@@ -58,6 +64,7 @@ export const ENCOUNTER_CSS = `
   .rn-encounter .rn-btn.rn-focus { background: ${PALETTE.hearthAmber}; color: ${PALETTE.voidCharcoal}; border-color: ${PALETTE.hearthAmber}; }
   .rn-encounter .rn-btn.ev-off { opacity: 0.5; border-style: dashed; }
   #run-screen.rn-compact .rn-encounter .ev-flavour,
+  #run-screen.rn-compact .rn-encounter .ev-say,
   #run-screen.rn-compact .rn-encounter .ev-rows { grid-column: 1 / -1; }
   #run-screen.rn-compact .rn-encounter .ev-flavour { text-align: left; }
 
@@ -107,6 +114,7 @@ export function createEncounterScreen({ run }) {
       <div class="rn-cardicon ev-icon"></div>
       <div class="rn-cardname ev-name"></div>
       <div class="ev-flavour"></div>
+      <div class="ev-say" style="display:none"><b class="ev-who"></b><span class="ev-said"></span></div>
       <div class="ev-rows">
         <div class="ev-row ev-cost"><b>${esc(t('COST'))}</b><span class="ev-detail"></span></div>
         <div class="ev-row ev-gain"><b>${esc(t('REWARD'))}</b><span class="ev-effect"></span></div>
@@ -123,6 +131,41 @@ export function createEncounterScreen({ run }) {
   const icon = el.querySelector('.ev-icon');
   const nameEl = el.querySelector('.ev-name');
   const flavour = el.querySelector('.ev-flavour');
+  const sayEl = el.querySelector('.ev-say');
+  // THE HEARTH SONG (docs/STORY.md): Sedge, the First Bell and the Hollow
+  // Voice are the same characters every time; each card met counts once (per
+  // run seed and room) and picks that meeting's line.
+  const meetings = new Map(); // `${seed}|${act}|${room}|${npc}` -> meeting number
+  function meetingFor(view, npc) {
+    const k = `${view.frame ? view.frame.seed : ''}|${view.act}|${view.room}|${npc}`;
+    if (!meetings.has(k)) {
+      const sv = service('save');
+      let n = 1;
+      try {
+        n = sv && typeof sv.meetNpc === 'function' ? sv.meetNpc(npc) || 1 : 1;
+      } catch {
+        n = 1;
+      }
+      meetings.set(k, n);
+    }
+    return meetings.get(k);
+  }
+  // After a choice on the altar the Voice answers (take or leave), once the
+  // card has actually closed (a refused Take stays on the card).
+  function answer(choice, id) {
+    if (ENCOUNTER_NPC[id] !== 'voice') return;
+    queueMicrotask(() => {
+      const v = run().view();
+      if (v.phase === 'encounter') return;
+      const st = service('story');
+      if (st && typeof st.voice === 'function') st.voice(choice === 'take' ? VOICE_TAKE.text : VOICE_LEAVE.text);
+    });
+  }
+  function choose(choice) {
+    const e = run().view().encounter;
+    run().chooseEncounter(choice);
+    if (e) answer(choice, e.id);
+  }
   const detail = el.querySelector('.ev-detail');
   const effect = el.querySelector('.ev-effect');
   const refused = el.querySelector('.ev-refused');
@@ -133,7 +176,7 @@ export function createEncounterScreen({ run }) {
     b.addEventListener('mouseenter', () => run().focusEncounter(i));
     b.addEventListener('click', () => {
       run().focusEncounter(i);
-      run().chooseEncounter(i === 0 ? 'take' : 'leave');
+      choose(i === 0 ? 'take' : 'leave');
     });
   });
 
@@ -146,6 +189,18 @@ export function createEncounterScreen({ run }) {
     icon.innerHTML = encounterSigil(e.id, 46);
     nameEl.textContent = t(e.name);
     flavour.textContent = t(e.text);
+    const npc = ENCOUNTER_NPC[e.id];
+    if (npc) {
+      const lines = ENCOUNTER_LINES[npc].text;
+      const n = meetingFor(view, npc);
+      sayEl.querySelector('.ev-who').textContent = t(NPCS[npc].name);
+      sayEl.querySelector('.ev-said').textContent = `“${t(lines[Math.min(n, lines.length) - 1])}”`;
+      sayEl.dataset.npc = npc;
+      sayEl.dataset.meeting = String(n);
+      sayEl.style.display = '';
+    } else {
+      sayEl.style.display = 'none';
+    }
     detail.textContent = t(e.detail);
     effect.textContent = t(e.effect);
     const why = e.refused && REFUSED[e.refused] ? REFUSED[e.refused](e, view) : null;
@@ -167,7 +222,7 @@ export function createEncounterScreen({ run }) {
     }
     if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') {
       if (!fresh) return true; // §16 fresh-press rule
-      sys.chooseEncounter(e && e.focus === 1 ? 'leave' : 'take');
+      choose(e && e.focus === 1 ? 'leave' : 'take');
       return true;
     }
     return false; // Esc passes through to the pause menu
@@ -182,7 +237,7 @@ export function createEncounterScreen({ run }) {
     }
     if (action === 'confirm') {
       const e = sys.view().encounter;
-      sys.chooseEncounter(e && e.focus === 1 ? 'leave' : 'take');
+      choose(e && e.focus === 1 ? 'leave' : 'take');
       return true;
     }
     return false;

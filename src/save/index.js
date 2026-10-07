@@ -1473,6 +1473,10 @@ export function createSaveSystem({
     clearLoadout: unlockCall(profileStore.clearLoadout),
     grantFreeUnlocks: unlockCall(profileStore.grantFreeUnlocks),
     boons: () => loadoutBoons(profileStore.get().meta),
+    // THE HEARTH SONG (docs/STORY.md): story beats seen and NPC meetings.
+    story: () => profileStore.get().story,
+    noteStory: (id) => profileStore.noteStory(id),
+    meetNpc: (id) => profileStore.meetNpc(id),
     tints: () => loadoutTints(profileStore.get().meta),
     thumb: thumbOf,
     // A save whose picture is still being encoded (attached when it lands).

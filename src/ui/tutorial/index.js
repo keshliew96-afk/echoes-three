@@ -626,6 +626,11 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
   const shouldOffer = () => !settings.get(TUTORIAL_SEEN_KEY) && !harness;
 
   async function offerOnNewGame(newGame) {
+    // THE HEARTH SONG (docs/STORY.md): Wick's prologue comes first, once.
+    {
+      const story = service('story');
+      if (story && typeof story.prologueFirst === 'function') await story.prologueFirst();
+    }
     if (!shouldOffer() || typeof app.confirm !== 'function') return newGame();
     const play = await app.confirm({
       title: t('Play the tutorial?'),

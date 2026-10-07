@@ -50,6 +50,8 @@ function actionLabel(id) {
       return t('Unlocks');
     case 'classes':
       return t('Class select');
+    case 'story':
+      return t('Story so far');
     default: {
       const m = /^(skill|ally)(\d)$/.exec(id);
       if (m && m[1] === 'skill') return t('Skill {n}', { n: m[2] });

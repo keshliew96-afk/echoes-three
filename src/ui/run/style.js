@@ -262,6 +262,11 @@ export const RUN_CSS = `
     font-size: 18px; color: ${PALETTE.bone}; text-align: center;
   }
 
+  /* THE HEARTH SONG: the peddler's rumour on her shelf. */
+  .rn-note.rn-rumour { display: flex; gap: 8px; align-items: baseline; justify-content: center; max-width: 860px;
+    border-color: ${PALETTE.hearthAmber}55; font-size: 17px; }
+  .rn-note.rn-rumour b { flex: none; color: ${PALETTE.hearthAmber}; font-weight: 800; letter-spacing: 0.04em; }
+  .rn-note.rn-rumour span { font-style: italic; }
   /* --------------------------------------------------------------- buttons */
   .rn-buttons { display: flex; gap: 16px; margin-top: 16px; }
   .rn-btn {
