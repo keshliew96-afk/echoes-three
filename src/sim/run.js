@@ -642,6 +642,7 @@ export function createRunSystem({
         hp: diff.bossHp,
         dmgMul: diff.bossDmgMul,
         adds: bd.adds.map(([et, k]) => [et, k]),
+        ...(bd.addsByPhase ? { addsByPhase: bd.addsByPhase.map((list) => list.map(([et, k]) => [et, k])) } : {}),
         addHpMul: diff.addHpMul,
         addDmgMul: diff.addDmgMul,
       });
@@ -2378,6 +2379,11 @@ export function createRunSystem({
         // ('bossHp', pct[, skipPhases]) — skipPhases marks the add waves at or
         // above pct as already played, so no adds spawn for them.
         return boss.setHpPct(args[0] ?? 0.5, args[1] === true);
+      case 'bossPick':
+        // ('bossPick', kind | null) — probes and benches: the boss room meets
+        // this boss when it belongs to the level (data/levels.js bossFor).
+        bossPick = typeof args[0] === 'string' ? args[0] : null;
+        return bossPick;
       case 'killBoss': {
         const b = boss.entity();
         if (!b) return null;

@@ -48,6 +48,8 @@ export const BOSS_MEDAL = Object.freeze({
   millwheel: 'boss_millwheel',
   wyrm: 'boss_wyrm',
   lichram: 'boss_lichram',
+  cantor: 'boss_cantor',
+  colossus: 'boss_colossus',
 });
 
 const el = (tag, cls, parent) => {

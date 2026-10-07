@@ -777,6 +777,10 @@ ${Object.entries({
   millwheel: mix(VFX_MATTER.oak, VFX_MATTER.iron, 0.35),
   wyrm: mix(VFX_MATTER.cinder, VFX_MATTER.earth, 0.5),
   lichram: mix(VFX_MATTER.wisp, VFX_MATTER.boneplate, 0.25),
+  // Act IV: the Cantor sinks into the heart's own violet light, the
+  // Colossus into slate and pale glass.
+  cantor: mix(VFX_MATTER.heartvein, VFX_MATTER.heartpeak, 0.3),
+  colossus: mix(VFX_MATTER.stone, VFX_MATTER.heartcrystal, 0.4),
 })
   .map(
     ([k, tint]) => `.hud-bn-medal[data-boss="${k}"] {

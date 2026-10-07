@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Boss identity probe (docs/CONTENT_PLAN.md slice 3). For each of the six
+// Boss identity probe (docs/CONTENT_PLAN.md slice 3). For each of the eight
 // bosses, in a real browser against `npm run dev`:
 //   - force its boss room (startRun { act, boss } + skipToRoom 8)
 //   - the banner medal is that boss's own icon (hud.bossPlate)
@@ -29,6 +29,8 @@ const BOSSES = [
   { act: 2, kind: 'millwheel', icon: 'boss_millwheel', groove: 'millwheel' },
   { act: 3, kind: 'wyrm', icon: 'boss_wyrm', groove: null },
   { act: 3, kind: 'lichram', icon: 'boss_lichram', groove: 'lichram' },
+  { act: 4, kind: 'cantor', icon: 'boss_cantor', groove: 'cantor' },
+  { act: 4, kind: 'colossus', icon: 'boss_colossus', groove: 'colossus' },
 ].filter((b) => !ONLY || b.kind === ONLY);
 
 mkdirSync(SHOTS, { recursive: true });

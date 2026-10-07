@@ -38,8 +38,7 @@ export const EMBER_RULES = Object.freeze({
 });
 
 // Every boss of every level, in level order ({ kind, name, level }).
-// (Act IV borrows the Barrow's bosses until it has its own: each boss is
-// listed once, at the first level it belongs to.)
+// (Each boss is listed once, at the first level it belongs to.)
 export const BOSSES = Object.freeze(
   ACT_IDS.flatMap((a) => (LEVELS[a].bosses ?? []).map((b) => Object.freeze({ kind: b.kind, name: b.name, level: a }))).filter(
     (b, i, all) => all.findIndex((o) => o.kind === b.kind) === i
@@ -105,6 +104,9 @@ const TINT_ROWS = [
   ['tint_wyrmfire', 'healer', 'Wyrmfire', { glow: '#FF5A3C', second: '#FFC27A', debris: '#FFE2C0' }, 0, { boss: 'wyrm' }],
   ['tint_heronmist', 'archer', 'Heron Mist', { glow: '#A9C6D8', second: '#EEF4F8', debris: '#EEF4F8' }, 0, { boss: 'heron' }],
   ['tint_abyssal', 'swordsman', 'Abyssal', { glow: '#7A5CFF', second: '#D8CCFF', debris: '#D8CCFF' }, 0, { depth: 6 }],
+  // Act IV's bosses (docs/ACT_IV_BOSSES.md).
+  ['tint_hollowsong', 'tank', 'Hollow Song', { glow: '#B565F5', second: '#F4E8FF', debris: '#E3D2FF' }, 0, { boss: 'cantor' }],
+  ['tint_geodeglass', 'archer', 'Geode Glass', { glow: '#C9B8FF', second: '#F2F4FF', debris: '#8C8794' }, 0, { boss: 'colossus' }],
 ];
 
 function build() {

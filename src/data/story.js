@@ -48,7 +48,7 @@ export const CHAPTERS = Object.freeze([
     name: 'Heart@@verse',
     title: 'Chapter IV · The Hollow Heart',
     summary:
-      'The singer at the bottom is not a god but a god’s echo, left behind when the gods fell silent. Silencing it frees the Verse of Heart, and for the first time the gods stop applauding.',
+      'The singer at the bottom is the Hollow Cantor: not a god but a god’s echo, left behind when the gods fell silent. When it will not come out, the Heart grows a Geode Colossus to sing through. Silencing either frees the Verse of Heart, and for the first time the gods stop applauding.',
   },
 ]);
 
@@ -150,14 +150,23 @@ export const RUMOURS = Object.freeze({
   millwheel: { text: 'The Millwheel has torn loose ahead. It owns the edge of the room, so fight from the middle.' },
   wyrm: { text: 'The Barrow Wyrm coils beyond this clearing. It guards the way down. Don’t stand in front of it.' },
   lichram: { text: 'The Lich Ram walks ahead, and the graves answer it. Break what rises before it gathers.' },
+  // Level IV's own bosses (docs/ACT_IV_BOSSES.md).
+  cantor: { text: 'The Hollow Cantor itself waits in the Heart Chamber. It sings the verses it stole from every land, and their beasts come with each one. Crowd it and it steps away.' },
+  colossus: { text: 'The singer won’t come out today. The Heart has grown a Geode Colossus to guard its chamber. Step off the line when it raises a fist.' },
   other: { text: 'Something old waits beyond the next door. I haven’t seen its like before.' },
 });
-// Level IV (the Hollow Heart): whichever boss guards the Heart Chamber, the
-// peddler speaks of the Heart itself.
+// Level IV (the Hollow Heart): the peddler names its own two bosses; a boss
+// from another land standing in the Heart Chamber gets the Heart's own line.
 export const HEART_RUMOUR = Object.freeze({ text: 'Whatever waits in the Heart Chamber wears a warden’s shape, but the song in it is the Heart’s own. Don’t listen too closely.' });
 const heartLevel = () => (CHAPTERS.find((c) => c.verse === 'heart') || {}).level;
 export const isHeartLevel = (level) => level !== null && level !== undefined && level === heartLevel();
-export const rumourFor = (kind, level = null) => (isHeartLevel(level) ? HEART_RUMOUR : RUMOURS[kind] ?? RUMOURS.other).text;
+// The kinds that belong to the Heart Chamber (their rumour and Hollow Voice
+// line are their own).
+export const HEART_BOSSES = Object.freeze(['cantor', 'colossus']);
+export const rumourFor = (kind, level = null) => (isHeartLevel(level) && !HEART_BOSSES.includes(kind) ? HEART_RUMOUR : RUMOURS[kind] ?? RUMOURS.other).text;
+// The Hollow Voice key for a boss met on `level` (the Heart Chamber line for a
+// stand-in from another land).
+export const voiceKeyFor = (kind, level = null) => (kind && isHeartLevel(level) && !HEART_BOSSES.includes(kind) ? 'heart' : kind);
 
 // Event-room NPCs: one line per meeting, the last one repeats.
 export const ENCOUNTER_LINES = Object.freeze({
@@ -194,7 +203,10 @@ export const BOSS_VOICE = Object.freeze({
   millwheel: { text: 'Even the mill turns to my tune.' },
   wyrm: { text: 'It guarded my door. Now it guards my song.' },
   lichram: { text: 'The dead remember every song. Mine they remember best.' },
-  // Level IV: the Heart Chamber, whichever boss stands in it.
+  // Level IV: the singer itself, and the body it grows to sing through.
+  cantor: { text: 'You carried three verses all the way down. Sing them for me.' },
+  colossus: { text: 'I would not come out for you, so I grew a body that would.' },
+  // A boss from another land standing in the Heart Chamber.
   heart: { text: 'You carried three verses all the way down. Sing them for me.' },
 });
 

@@ -530,6 +530,23 @@ const ICONS = {
     ['path', { d: 'M11 12.4 C11 8.6 21 8.6 21 12.4 L20 19.6 L18.2 26.4 H13.8 L12 19.6 Z M12.8 13.4 L15.2 12.6 L15.4 15.4 L13.4 15.8 Z M19.2 13.4 L16.8 12.6 L16.6 15.4 L18.6 15.8 Z M15 20.6 H17 L16 22.6 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
     ['path', { d: 'M16 1.6 C18.4 3.8 17.6 6 16 7.2 C14.4 6 13.6 3.8 16 1.6 Z', fill: 'currentColor', stroke: 'none' }],
   ],
+  // The Hollow Cantor: a hooded, faceless singer, mouth open on a note, a
+  // halo of notes behind the hood.
+  boss_cantor: [
+    ['path', { d: 'M5.6 12.6 A10.6 10.6 0 0 1 26.4 12.6', 'stroke-width': 1.6 }],
+    ...[-60, -30, 0, 30, 60].map((a) => ['circle', { cx: 16, cy: 2.6, r: 1.5, fill: 'currentColor', stroke: 'none', transform: `rotate(${a} 16 13)` }]),
+    ['path', { d: 'M16 6 C10.4 6 8.2 10.6 8.4 15.4 C8.6 20 6.6 25 4.6 30.5 H27.4 C25.4 25 23.4 20 23.6 15.4 C23.8 10.6 21.6 6 16 6 Z M16 10 C13.2 10 12 12.6 12 15.2 C12 18.6 13.8 21.4 16 21.4 C18.2 21.4 20 18.6 20 15.2 C20 12.6 18.8 10 16 10 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['path', { d: 'M13.8 14.6 L15 15.2 M18.2 14.6 L17 15.2', 'stroke-width': 1.1 }],
+    ['ellipse', { cx: 16, cy: 18.4, rx: 1.2, ry: 1.8, fill: 'currentColor', stroke: 'none' }],
+  ],
+  // The Geode Colossus: a hunched rock giant, shoulders of crystal, a geode
+  // split open in its chest.
+  boss_colossus: [
+    ['path', { d: 'M5 30.5 L3.4 21 C3 15.6 6.6 11.4 11 10.6 L13.4 7.2 H18.6 L21 10.6 C25.4 11.4 29 15.6 28.6 21 L27 30.5 Z M16 15 L12.6 18.6 L13.6 23.4 L16 25.6 L18.4 23.4 L19.4 18.6 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['path', { d: 'M16 17.6 L15 20.4 L16 22.8 L17 20.4 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M6.4 11.6 L4.6 4.4 L9.4 9.8 Z M25.6 11.6 L27.4 4.4 L22.6 9.8 Z M11.4 9.4 L10.2 2.8 L13.6 7.6 Z M20.6 9.4 L21.8 2.8 L18.4 7.6 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M14.2 9.8 L15.2 10.4 M17.8 9.8 L16.8 10.4', 'stroke-width': 1.1 }],
+  ],
   // Glint coin: rim, inner ring, a glint stroke.
   coin: [
     ['circle', { cx: 16, cy: 16, r: 12.5 }],

@@ -51,6 +51,9 @@ const ENEMY_SHOT_TRAIL = Object.freeze({
   crow: Object.freeze({ y: ESHOT_Y, len: 0.55, width: 0.07, core: BONE, glow: EMBER, tailW: 0.05 }),
   // The Millwheel's cog shards: a hot iron splinter, short and bright.
   millwheel: Object.freeze({ y: ESHOT_Y, len: 0.6, width: 0.09, core: PARCH, glow: PALETTE.hearthAmber, tailW: 0.1 }),
+  // Act IV: the Cantor's echo and the Colossus' burst throw crystal shards.
+  cantor: Object.freeze({ y: ESHOT_Y, len: 0.7, width: 0.1, core: PARCH, glow: PALETTE.godstuffViolet, tailW: 0.1 }),
+  colossus: Object.freeze({ y: ESHOT_Y, len: 0.6, width: 0.1, core: '#DCD6F2', glow: EMBER, tailW: 0.1 }),
 });
 
 export function createSignatureFx({ stage, world, bus, cosmetic, settings = null }) {
@@ -744,7 +747,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     }
     if (kind === 'thornmother') return thornRoot(ev.x, ev.z, ev.radius ?? 1.0);
     if (kind === 'lichram') return graveBurst(ev.x, ev.z, ev.radius ?? 1.0);
-    if (kind === 'geode') return crystalShatter(ev.x, ev.z, ev.radius ?? 0.8);
+    if (kind === 'geode' || kind === 'colossus') return crystalShatter(ev.x, ev.z, ev.radius ?? 0.8);
     const owner = byId(ev.owner);
     const es = vfxEnemyStyle(owner?.kind ?? 'toad', 'lobber');
     const matter = vfxMatterColor(es.matter);
@@ -1200,6 +1203,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   });
   bus.on('boss_enrage', (ev) => {
     if (byId(ev.id)?.kind === 'lichram') return lichEnrage(ev);
+    if (byId(ev.id)?.kind === 'colossus') return colossusEnrage(ev);
     mark('wyrm_enrage');
     const { x, z } = ev;
     kit.pillar({ x, z, radius: 0.5, height: 2.6, color: WYRM.corruption, life: 0.7, opacity: 0.5 });
@@ -1978,6 +1982,258 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     camfx.dolly(x, z, LICH.camera.dolly, 0.5);
   }
 
+  // ---------------------------------------------- Act IV bosses --
+  // (docs/ACT_IV_BOSSES.md) Same law as every boss: Ember on the frame that
+  // hurts, the body's matter on what breaks, violet for the boss. The
+  // Cantor's violet is the God-stuff anchor itself (it is a god's echo), not
+  // the Heart's purple veins; the Colossus is slate and pale glass over them.
+  const CANT = vfxBossStyle('cantor');
+  const COLO = vfxBossStyle('colossus');
+  const GLASS = '#DCD6F2';
+  const SLATE = vfxMatterColor('stone');
+  // The Hollow Note: the Ember ring bursts and the note rings out as three
+  // violet rings; from the Second Verse its echo throws crystal along the floor.
+  bus.on('boss_note', (ev) => {
+    mark('cantor_note');
+    const r = ev.radius ?? 1.7;
+    const C = CANT.note;
+    flare(ev.x, 0.5, ev.z, EMBER, 1.6, { kind: 'burst', life: 0.22, core: CANT.peak });
+    kit.flash({ x: ev.x, y: 0.5, z: ev.z, color: PARCH, size: 1.0, life: 0.12 });
+    shock(ev.x, ev.z, r * 1.05, EMBER, { life: 0.26, width: 0.1 });
+    for (let i = 0; i < C.rings; i++) shock(ev.x, ev.z, r * (1.3 + i * 0.45), CANT.corruption, { life: 0.5 + i * 0.12, width: 0.07, core: CANT.peak, delay: 0.05 + i * 0.09, y: 0.08 + i * 0.25 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.3, kind: 'sigil', stain: INK, glow: CANT.corruption, glowOpacity: 0.45, cool: 1.0, life: 2.6, opacity: 0.22 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.5, color: CANT.corruption, opacity: 0.45, life: 0.5, attack: 0.02 });
+    spray('spark', ev.x, 0.3, ev.z, C.motes, { color: CANT.corruption, speed: [0.3, 1.2], up: [1.0, 2.2], size: [0.05, 0.1], life: [0.8, 1.3], gravity: -0.3, drag: 1.4, jitter: r * 0.6 });
+    if (ev.echo > 0) {
+      spikes(ev.x, ev.z, r * 0.7, 6, CRYSTAL, { h: 0.55, life: 0.4, core: CANT.peak, delay: 0.03 });
+      spray('shard', ev.x, 0.4, ev.z, 10, { color: CRYSTAL, tile: SHARD_TILE.needle, speed: [1.4, 3.0], up: [0.6, 1.4], size: [0.09, 0.14], life: [0.4, 0.7], gravity: 4, spin: [-10, 10] });
+    }
+  });
+  // The Sung Lance: the lane fills from its chest in one breath — a violet
+  // beam with a white core, the Ember edge flashing the full width (the hit).
+  bus.on('boss_sung_lance', (ev) => {
+    mark('cantor_lance');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const len = ev.len ?? 6;
+    const ang = Math.atan2(d.z, d.x);
+    const ex = ev.x + d.x * len;
+    const ez = ev.z + d.z * len;
+    const SPEED = 28;
+    const sweep = len / SPEED;
+    flare(ev.x + d.x * 0.6, 2.0, ev.z + d.z * 0.6, CANT.corruption, 1.8, { life: 0.24, core: CANT.peak, angle: ang });
+    kit.streak({ a: { x: ev.x, y: 0.12, z: ev.z }, b: { x: ex, y: 0.12, z: ez }, width: 1.2, tailW: 1.0, core: EMBER, glow: EMBER, life: 0.26, fall: 2.2, opacity: 0.55 });
+    kit.streak({ a: { x: ev.x + d.x * 0.5, y: 1.6, z: ev.z + d.z * 0.5 }, b: { x: ex, y: 0.5, z: ez }, width: 0.34, tailW: 0.2, core: CANT.peak, glow: CANT.corruption, life: sweep + 0.45, fall: 1.2, opacity: 1 });
+    kit.streak({ a: { x: ev.x, y: 1.5, z: ev.z }, b: { x: ev.x + d.x, y: 1.4, z: ev.z + d.z }, width: 0.16, tailW: 0.5, core: PARCH, glow: CANT.corruption, life: sweep, travel: { x: d.x * SPEED, y: -2.2, z: d.z * SPEED }, fall: 0.3 });
+    after(sweep, () => {
+      flare(ex, 0.5, ez, CANT.corruption, 1.3, { kind: 'burst', life: 0.24, core: CANT.peak });
+      shock(ex, ez, 1.2, CANT.corruption, { life: 0.35, width: 0.1, core: CANT.peak });
+    });
+    const marks = Math.max(2, Math.min(5, Math.round(len / 1.8)));
+    for (let i = 1; i <= marks; i++) {
+      const k = (i - 0.5) / marks;
+      kit.mark({ x: ev.x + d.x * len * k, z: ev.z + d.z * len * k, radius: (len / marks) * 0.6, kind: 'gouge', angle: ang, stretch: 2.2, stain: INK, glow: CANT.corruption, glowOpacity: 0.45, cool: 0.7, life: 2.6, opacity: 0.38, delay: sweep * k });
+      const px = ev.x + d.x * len * k;
+      const pz = ev.z + d.z * len * k;
+      after(sweep * k, () => spray('spark', px, 0.5, pz, 3, { color: i % 2 ? EMBER : CANT.corruption, speed: [1.0, 2.2], up: [0.5, 1.4], size: [0.03, 0.07], life: [0.25, 0.45] }));
+    }
+    kit.light({ x: (ev.x + ex) / 2, z: (ev.z + ez) / 2, radius: Math.min(2.8, len * 0.4), color: CANT.corruption, opacity: 0.4, life: 0.35, attack: 0.02 });
+    camfx.kick(d.x, d.z, CANT.camera.kick * 0.5, 0.12);
+  });
+  // A verse taken: a column of violet light, a sigil the size of the room's
+  // heart, the verse's land in the motes (moss green, millrace blue, ash).
+  const VERSE_TINT = [null, vfxMatterColor('bramble'), vfxMatterColor('water'), vfxMatterColor('ash')];
+  bus.on('boss_verse', (ev) => {
+    mark('cantor_verse');
+    const V = CANT.verse;
+    const tint = VERSE_TINT[ev.verse] ?? CANT.corruption;
+    anticipate(ev.x, ev.z, 2.2, CANT.corruption, { y: 1.6, lines: 10, core: CANT.peak });
+    after(ANTICIP, () => {
+      kit.pillar({ x: ev.x, z: ev.z, radius: 0.8, height: V.pillar, color: CANT.corruption, life: 1.1, opacity: 0.6 });
+      flare(ev.x, 2.0, ev.z, CANT.corruption, 2.8, { kind: 'burst', life: 0.4, core: CANT.peak, spin: 0.6 });
+      kit.ring({ x: ev.x, z: ev.z, r0: 0.4, r1: 4.2, width: 0.24, life: 0.9, core: CANT.peak, glow: CANT.corruption, soft: 0.5, y: 0.06 });
+      kit.mark({ x: ev.x, z: ev.z, radius: 3.2, kind: 'sigil', stain: INK, glow: CANT.corruption, glowOpacity: 0.5, cool: 1.6, life: 3.4, opacity: 0.26 });
+      spray('spark', ev.x, 0.4, ev.z, V.motes, { color: CANT.corruption, speed: [0.2, 0.9], up: [1.2, 2.6], size: [0.06, 0.12], life: [1.2, 1.9], gravity: -0.35, drag: 1.3, jitter: 1.2 });
+      spray('spark', ev.x, 0.4, ev.z, 14, { color: tint, speed: [0.3, 1.0], up: [1.0, 2.2], size: [0.05, 0.1], life: [1.0, 1.6], gravity: -0.3, drag: 1.3, jitter: 1.6 });
+      kit.light({ x: ev.x, z: ev.z, radius: 4.2, color: CANT.corruption, opacity: 0.6, life: 1.0, attack: 0.05 });
+      camfx.dolly(ev.x, ev.z, CANT.camera.dolly * 0.7, 0.4);
+    });
+  });
+  // The Echo Step: it folds into a streak of light that runs to where it
+  // will stand, and unfolds there.
+  bus.on('boss_echo_step', (ev) => {
+    mark('cantor_echo_step');
+    kit.pillar({ x: ev.x, z: ev.z, radius: 0.5, height: 3.4, color: CANT.corruption, life: 0.45, opacity: 0.55 });
+    flare(ev.x, 1.6, ev.z, CANT.corruption, 1.8, { kind: 'star', life: 0.24, core: CANT.peak });
+    spray('spark', ev.x, 1.2, ev.z, 16, { color: CANT.corruption, speed: [0.4, 1.4], up: [0.2, 1.2], size: [0.05, 0.1], life: [0.5, 0.9], gravity: -0.2, drag: 1.6, jitter: 0.6 });
+    const d = unit2(ev.tx - ev.x, ev.tz - ev.z);
+    const len = Math.hypot(ev.tx - ev.x, ev.tz - ev.z);
+    kit.streak({ a: { x: ev.x, y: 1.6, z: ev.z }, b: { x: ev.tx, y: 1.6, z: ev.tz }, width: 0.12, tailW: 0, core: CANT.peak, glow: CANT.corruption, life: 0.45, fall: 1.4, opacity: 0.7 });
+    kit.streak({ a: { x: ev.x, y: 1.6, z: ev.z }, b: { x: ev.x + d.x * 0.8, y: 1.6, z: ev.z + d.z * 0.8 }, width: 0.22, tailW: 0.6, core: PARCH, glow: CANT.corruption, life: 0.3, travel: { x: (d.x * len) / 0.3, y: 0, z: (d.z * len) / 0.3 }, fall: 0.3 });
+    kit.mark({ x: ev.tx, z: ev.tz, radius: 1.6, kind: 'sigil', stain: INK, glow: CANT.corruption, glowOpacity: 0.5, cool: 0.8, life: 1.6, opacity: 0.25 });
+  });
+  bus.on('boss_echo_land', (ev) => {
+    mark('cantor_echo_land');
+    flare(ev.x, 1.6, ev.z, CANT.corruption, 2.0, { kind: 'burst', life: 0.28, core: CANT.peak });
+    shock(ev.x, ev.z, 2.0, CANT.corruption, { life: 0.4, width: 0.1, core: CANT.peak });
+    spray('spark', ev.x, 0.6, ev.z, 14, { color: CANT.corruption, speed: [0.3, 1.0], up: [0.8, 1.8], size: [0.05, 0.1], life: [0.7, 1.1], gravity: -0.3, drag: 1.4, jitter: 0.5 });
+    kit.light({ x: ev.x, z: ev.z, radius: 2.4, color: CANT.corruption, opacity: 0.45, life: 0.5 });
+  });
+  // The Heart Pulse: the room's heart beats through it — an Ember ring the
+  // full radius (the hit), a thick violet shockwave and the floor cracking.
+  bus.on('boss_heart_pulse', (ev) => {
+    mark('cantor_pulse');
+    const r = ev.radius ?? 3.2;
+    flare(ev.x, 1.2, ev.z, CANT.corruption, 3.0, { kind: 'burst', life: 0.32, core: CANT.peak });
+    kit.flash({ x: ev.x, y: 0.8, z: ev.z, color: PARCH, size: 1.6, life: 0.14 });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.3, width: 0.14 });
+    shock(ev.x, ev.z, r * 1.25, CANT.corruption, { life: 0.55, width: 0.3, core: CANT.peak, delay: 0.03 });
+    shock(ev.x, ev.z, r * 1.6, HV, { life: 0.75, width: 0.16, core: HVP, delay: 0.08 });
+    kit.crack({ x: ev.x, z: ev.z, radius: r * 0.8, glow: CANT.corruption, life: 2.2, cool: 0.8 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.1, kind: 'crater', stain: INK, glow: CANT.corruption, glowOpacity: 0.45, cool: 1.4, life: 4, opacity: 0.45 });
+    spray('spark', ev.x, 0.3, ev.z, 24, { color: CANT.corruption, speed: [1.0, 2.6], up: [0.4, 1.4], size: [0.05, 0.1], life: [0.5, 0.9], drag: 1.2, jitter: 0.6 });
+    spray('smoke', ev.x, 0.2, ev.z, 5, { color: vfxMatterColor('ash'), speed: [1.0, 2.0], up: [0.1, 0.3], size: [0.4, 0.58], grow: 1.5, life: [0.7, 1.0], opacity: 0.3, gravity: -0.1, drag: 2.4, jitter: 0.8 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.4, color: CANT.corruption, opacity: 0.65, life: 0.6, attack: 0.02 });
+    camfx.dolly(ev.x, ev.z, CANT.camera.dolly, 0.35);
+  });
+  function cantorDeath(x, z) {
+    // The last note: the singer unravels into a column of violet light, the
+    // seven-note halo scatters, and the room's heart goes quiet.
+    mark('cantor_death');
+    kit.pillar({ x, z, radius: 1.2, height: 5.0, color: CANT.corruption, life: 1.8, opacity: 0.75 });
+    flare(x, 2.0, z, CANT.corruption, 4.2, { kind: 'burst', life: 0.6, core: CANT.peak, spin: 0.8 });
+    kit.flash({ x, y: 1.6, z, color: PARCH, size: 2.4, life: 0.25 });
+    for (let i = 0; i < 3; i++) kit.ring({ x, z, r0: 0.5, r1: 4 + i * 1.5, width: 0.3, life: 1.0 + i * 0.3, core: CANT.peak, glow: CANT.corruption, soft: 0.5, y: 0.06 + i * 0.4, delay: i * 0.12 });
+    kit.mark({ x, z, radius: 3.6, kind: 'sigil', stain: INK, glow: CANT.corruption, glowOpacity: 0.6, cool: 2.4, life: 7, opacity: 0.35 });
+    for (let i = 0; i < N(7); i++) {
+      const a = (i / 7) * TAU;
+      kit.streak({ a: { x, y: 2.8, z }, b: { x: x + Math.cos(a) * 0.3, y: 2.8, z: z + Math.sin(a) * 0.3 }, width: 0.1, tailW: 0, core: CANT.peak, glow: CANT.corruption, life: 0.6, travel: { x: Math.cos(a) * 4, y: 2, z: Math.sin(a) * 4 }, fall: 0.2 });
+    }
+    spray('spark', x, 0.6, z, 44, { color: CANT.corruption, speed: [0.3, 1.4], up: [1.0, 2.8], size: [0.06, 0.14], life: [1.6, 2.6], gravity: -0.3, drag: 1.2, jitter: 1.2 });
+    spray('shard', x, 1.2, z, 18, { color: CRYSTAL, tile: SHARD_TILE.needle, speed: [1.0, 2.6], up: [1.4, 3.0], size: [0.1, 0.16], life: [0.8, 1.2], gravity: 4, spin: [-10, 10], jitter: 0.6 });
+    kit.light({ x, z, radius: 5, color: CANT.corruption, opacity: 0.75, life: 1.8 });
+    camfx.dolly(x, z, CANT.camera.dolly * 1.2, 0.6);
+  }
+
+  // The Geode Colossus. The Fissure: the fist lands, a white-hot crack runs
+  // the lane at speed throwing slate and glass, its Ember edge the hit, and
+  // the crystal patches the sim leaves grow along it.
+  bus.on('boss_fissure', (ev) => {
+    mark('colossus_fissure');
+    const F = COLO.fissure;
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const len = ev.len ?? 6;
+    const ang = Math.atan2(d.z, d.x);
+    const fx = ev.x + d.x * 1.3;
+    const fz = ev.z + d.z * 1.3;
+    flare(fx, 0.4, fz, EMBER, 1.8, { kind: 'burst', life: 0.26, core: PARCH });
+    shock(fx, fz, 1.6, SLATE, { life: 0.4, width: 0.2, core: GLASS, jag: 0.9 });
+    kit.streak({ a: { x: ev.x, y: 0.1, z: ev.z }, b: { x: ev.x + d.x * len, y: 0.1, z: ev.z + d.z * len }, width: 1.0, tailW: 0.8, core: EMBER, glow: EMBER, life: 0.3, fall: 2.2, opacity: 0.55 });
+    laneDrive(ev.x, ev.z, d, len, F.speed, { wake: CRYSTAL, wakeW: 0.4, head: COLO.corruption, peak: COLO.peak, stain: SLATE, glow: HV, marks: 4, markKind: 'gouge' });
+    const sweep = len / F.speed;
+    const n = Math.max(3, Math.round(len / 1.4));
+    for (let i = 1; i <= n; i++) {
+      const k = i / n;
+      const px = ev.x + d.x * len * k;
+      const pz = ev.z + d.z * len * k;
+      after(sweep * k, () => {
+        spikes(px, pz, 0.5, F.spikes, CRYSTAL, { h: 0.6, life: 0.45, core: GLASS });
+        spray('chunk', px, 0.2, pz, 3, { color: SLATE, speed: [0.6, 1.6], up: [1.4, 2.6], size: [0.07, 0.13], life: [0.5, 0.8], jitter: 0.3 });
+      });
+    }
+    kit.crack({ x: fx, z: fz, radius: 1.4, glow: HV, life: 2.4, cool: 0.8 });
+    kit.light({ x: ev.x + d.x * len * 0.5, z: ev.z + d.z * len * 0.5, radius: Math.min(3, len * 0.4), color: HV, opacity: 0.4, life: 0.45, attack: 0.02 });
+    camfx.kick(d.x, d.z, COLO.camera.kick * 0.7, 0.16);
+    void ang;
+  });
+  // Geode Rain: the chest flares as it calls them, and a glint marks each
+  // geode's fall (they land as crystal shatters, below).
+  bus.on('boss_geode_rain', (ev) => {
+    mark('colossus_rain');
+    const b = byId(ev.id);
+    const bx = b?.x ?? ev.x;
+    const bz = b?.z ?? ev.z;
+    anticipate(bx, bz, 1.4, HV, { y: 1.8, lines: 8, core: GLASS });
+    after(ANTICIP, () => {
+      flare(bx, 2.6, bz, HV, 1.8, { kind: 'burst', life: 0.3, core: HVP });
+      kit.light({ x: bx, z: bz, radius: 2.4, color: HV, opacity: 0.4, life: 0.5 });
+      for (const gid of ev.globs || []) {
+        const g = byId(gid);
+        if (!g) continue;
+        kit.streak({ a: { x: g.tx, y: 5.5, z: g.tz }, b: { x: g.tx, y: 4.6, z: g.tz }, width: 0.08, tailW: 0, core: GLASS, glow: HV, life: 0.5, fall: 1.2, opacity: 0.7 });
+        spray('chunk', g.tx, 4.4, g.tz, 2, { color: SLATE, speed: [0.05, 0.2], up: [-0.6, -0.2], size: [0.05, 0.09], life: [0.6, 0.9], gravity: 6, jitter: 0.5 });
+      }
+    });
+  });
+  // The Geode Burst: the chest splits wide — an Ember ring (the hit), glass
+  // spikes punched out round it, violet light out of the geode, debris.
+  bus.on('boss_geode_burst', (ev) => {
+    mark('colossus_burst');
+    const B = COLO.burst;
+    const r = ev.radius ?? 2.6;
+    flare(ev.x, 1.4, ev.z, HV, 3.0, { kind: 'burst', life: 0.32, core: HVP, spin: 0.5 });
+    kit.flash({ x: ev.x, y: 1.0, z: ev.z, color: PARCH, size: 1.5, life: 0.14 });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.3, width: 0.14, jag: 0.6 });
+    shock(ev.x, ev.z, r * 1.3, CRYSTAL, { life: 0.55, width: 0.26, core: GLASS, delay: 0.03, jag: 0.9 });
+    spikes(ev.x, ev.z, r * 0.9, B.spikes, CRYSTAL, { h: 0.9, life: 0.6, core: GLASS, delay: 0.02 });
+    kit.crack({ x: ev.x, z: ev.z, radius: r * 0.8, glow: HV, life: 2.2, cool: 0.8 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.2, kind: 'crater', stain: SLATE, glow: CRYSTAL, glowOpacity: 0.45, cool: 1.4, life: 4.2, opacity: 0.55 });
+    spray('shard', ev.x, 0.8, ev.z, B.shards, { color: CRYSTAL, tile: SHARD_TILE.needle, speed: [1.6, 3.4], up: [1.0, 2.6], size: [0.1, 0.17], life: [0.6, 1.0], gravity: 5, drag: 0.4, spin: [-10, 10], jitter: 0.5 });
+    spray('chunk', ev.x, 0.6, ev.z, 10, { color: SLATE, speed: [1.2, 2.6], up: [1.6, 3.0], size: [0.08, 0.16], life: [0.6, 1.0], jitter: 0.6 });
+    spray('smoke', ev.x, 0.3, ev.z, 5, { color: SLATE, speed: [0.8, 1.6], up: [0.1, 0.4], size: [0.4, 0.58], grow: 1.5, life: [0.8, 1.1], opacity: 0.32, gravity: -0.12, drag: 2.4, jitter: 0.6 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.4, color: HV, opacity: 0.6, life: 0.55, attack: 0.02 });
+    camfx.dolly(ev.x, ev.z, COLO.camera.dolly, 0.35);
+  });
+  bus.on('boss_geode_recover', (ev) => {
+    mark('colossus_recover');
+    spray('chunk', ev.x, 0.4, ev.z, 5, { color: SLATE, speed: [0.3, 0.8], up: [0.8, 1.4], size: [0.05, 0.1], life: [0.4, 0.7], jitter: 0.8 });
+    spray('spark', ev.x, 1.4, ev.z, 8, { color: HV, speed: [0.1, 0.4], up: [0.4, 0.9], size: [0.05, 0.09], life: [0.6, 0.9], gravity: -0.3, drag: 1.4, jitter: 0.6 });
+  });
+  function colossusEnrage(ev) {
+    mark('colossus_enrage');
+    const { x, z } = ev;
+    kit.pillar({ x, z, radius: 0.7, height: 3.4, color: HV, life: 0.8, opacity: 0.5 });
+    flare(x, 1.6, z, HV, 2.6, { kind: 'burst', life: 0.32, core: HVP });
+    kit.ring({ x, z, r0: 0.5, r1: 3.4, width: 0.2, life: 0.75, core: GLASS, glow: HV, soft: 0.5, y: 0.06 });
+    kit.crack({ x, z, radius: 2.0, glow: HV, life: 2.4, cool: 0.9 });
+    spikes(x, z, 1.8, 8, CRYSTAL, { h: 0.7, life: 0.5, core: GLASS });
+    spray('shard', x, 1.4, z, 12, { color: CRYSTAL, tile: SHARD_TILE.needle, speed: [0.8, 2.0], up: [0.8, 2.0], size: [0.09, 0.14], life: [0.6, 0.9], gravity: 5, spin: [-10, 10], jitter: 0.6 });
+    kit.light({ x, z, radius: 3, color: HV, opacity: 0.5, life: 0.8 });
+  }
+  function colossusDeath(x, z) {
+    // The body breaks: slate falls away, the glass shatters outward, and the
+    // geode's violet heart goes up in one last beat.
+    mark('colossus_death');
+    kit.pillar({ x, z, radius: 1.1, height: 4.2, color: HV, life: 1.5, opacity: 0.7 });
+    flare(x, 1.4, z, HV, 3.6, { kind: 'burst', life: 0.5, core: HVP, spin: 0.8 });
+    kit.ring({ x, z, r0: 0.5, r1: 4.4, width: 0.4, life: 1.0, core: GLASS, glow: HV, soft: 0.5, y: 0.06 });
+    kit.mark({ x, z, radius: 3.6, kind: 'crater', stain: SLATE, glow: HV, glowOpacity: 0.5, cool: 2.2, life: 6, opacity: 0.6 });
+    kit.crack({ x, z, radius: 2.6, glow: HV, life: 3, cool: 1.2 });
+    spikes(x, z, 2.2, 14, CRYSTAL, { h: 1.0, life: 0.7, core: GLASS });
+    spray('chunk', x, 1.0, z, 26, { color: SLATE, speed: [1.2, 3.0], up: [1.8, 3.8], size: [0.1, 0.2], life: [0.9, 1.3], jitter: 0.8 });
+    spray('shard', x, 1.2, z, 28, { color: CRYSTAL, tile: SHARD_TILE.needle, speed: [1.2, 3.0], up: [1.4, 3.0], size: [0.1, 0.17], life: [0.8, 1.2], gravity: 5, spin: [-10, 10], jitter: 0.6 });
+    spray('spark', x, 0.6, z, 30, { color: HV, speed: [0.3, 1.2], up: [0.8, 2.2], size: [0.06, 0.13], life: [1.4, 2.2], gravity: -0.3, drag: 1.2, jitter: 1.0 });
+    spray('smoke', x, 0.5, z, 10, { color: SLATE, speed: [0.4, 1.2], up: [0.4, 1.0], size: [0.5, 0.7], grow: 1.6, life: [1.4, 2.0], opacity: 0.38, gravity: -0.25, drag: 2.0, jitter: 1.2 });
+    kit.light({ x, z, radius: 4.4, color: HV, opacity: 0.65, life: 1.5 });
+    camfx.dolly(x, z, COLO.camera.dolly, 0.55);
+  }
+  // Per frame: the Cantor sheds violet motes as it floats (thicker with
+  // each verse) and the Colossus drips glass dust while it is spent.
+  function heartBossFrame(e, rec) {
+    if (e.kind === 'cantor') {
+      if (e.mode === 'fade' || rec.clock < 0.2 - 0.04 * (e.verse | 0)) return;
+      rec.clock = 0;
+      spray('spark', e.x, 0.5, e.z, 1, { color: rnd(0, 1) < 0.3 ? CANT.peak : CANT.corruption, speed: [0.05, 0.25], up: [0.4, 1.0], size: [0.05, 0.1], life: [0.8, 1.3], gravity: -0.25, drag: 1.4, jitter: 0.7, opacity: 0.85 });
+    } else if (e.kind === 'colossus') {
+      if (e.mode === 'spent' && rec.clock >= 0.12) {
+        rec.clock = 0;
+        spray('chunk', e.x, 1.6, e.z, 1, { color: SLATE, speed: [0.05, 0.3], up: [0.0, 0.3], size: [0.04, 0.08], life: [0.5, 0.8], jitter: 0.8 });
+      } else if (e.enraged && rec.clock >= 0.25) {
+        rec.clock = 0;
+        spray('spark', e.x, 1.5, e.z, 1, { color: HV, speed: [0.05, 0.2], up: [0.5, 0.9], size: [0.05, 0.09], life: [0.7, 1.0], gravity: -0.3, drag: 1.4, jitter: 0.7, opacity: 0.85 });
+      }
+    }
+  }
+
   // Per frame, slice-2 bodies: the Thornmother tears earth up as she
   // charges; the Millwheel drips and sparks on the rim, throws a fan of
   // sparks off its tyre down the crosscut and wobbles dizzy after; the Lich
@@ -1992,6 +2248,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       if (e.tetherId != null && e.state === 'active') wispFrame(e, rec);
       return;
     }
+    if (e.kind === 'cantor' || e.kind === 'colossus') return heartBossFrame(e, rec);
     if (e.kind === 'thornmother') {
       if (e.mode !== 'charge' || rec.clock < THORN.charge.every) return;
       rec.clock = 0;
@@ -2030,13 +2287,13 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       }
     }
   }
-  const KIT_BOSS_DEATH = { heron: heronDeath, wyrm: wyrmDeath, thornmother: thornmotherDeath, millwheel: millwheelDeath, lichram: lichramDeath };
+  const KIT_BOSS_DEATH = { heron: heronDeath, wyrm: wyrmDeath, thornmother: thornmotherDeath, millwheel: millwheelDeath, lichram: lichramDeath, cantor: cantorDeath, colossus: colossusDeath };
 
   // Per frame: the Heron's drive throws spray off its legs and stops in a
   // splash; the burrowed Wyrm leaves a trail of turned earth so the party can
   // read where it is tunnelling.
   const bossMode = new Map(); // boss id -> { mode, clock }
-  const S2_FRAME = new Set(['thornmother', 'millwheel', 'lichram', 'gravewisp']);
+  const S2_FRAME = new Set(['thornmother', 'millwheel', 'lichram', 'gravewisp', 'cantor', 'colossus']);
   function bossFrame(dt) {
     for (const e of world.entities()) {
       if (S2_FRAME.has(e.kind)) {

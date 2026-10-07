@@ -126,9 +126,10 @@ export const LEVELS = Object.freeze({
     unlock: Object.freeze({ afterVictory: 2 }),
   }),
   // Act IV (docs/ACT_IV.md, content plan 2 slice 4): under the Barrow, where
-  // the violet corruption begins. Its own bosses are a later slice; until
-  // then room 8 holds the Barrow's two bosses (rolled by seed, like every
-  // act) on the Act IV numbers, with Act IV adds.
+  // the violet corruption begins. Its bosses (slice 5, docs/ACT_IV_BOSSES.md):
+  // the Hollow Cantor, the campaign's final boss, whose three verses call the
+  // three lands' beasts in turn, or the Geode Colossus the Heart grows when
+  // the singer will not come out, rolled by seed like every act.
   4: Object.freeze({
     id: 'hollow_heart',
     act: 4,
@@ -144,16 +145,26 @@ export const LEVELS = Object.freeze({
     introduce: Object.freeze({ husk: 1, lancer: 1, crow: 1, moth: 1, geode: 2, brood: 2, censer: 3, gravewisp: 3, knight: 4 }),
     hazards: Object.freeze(['rockfall', 'gravefire', 'slip']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg']),
-    boss: 'wyrm',
-    bossName: 'The Barrow Wyrm',
+    boss: 'cantor',
+    bossName: 'The Hollow Cantor',
     bossAdds: Object.freeze([
-      ['husk', 2],
-      ['lancer', 1],
+      ['boar', 2],
+      ['mantis', 1],
     ]),
     bosses: Object.freeze([
-      Object.freeze({ kind: 'wyrm', name: 'The Barrow Wyrm', adds: Object.freeze([Object.freeze(['husk', 2]), Object.freeze(['lancer', 1])]) }),
-      // It raises moles itself (Grave Call), so its phases bring a lancer.
-      Object.freeze({ kind: 'lichram', name: 'The Lich Ram', adds: Object.freeze([Object.freeze(['husk', 1]), Object.freeze(['lancer', 1])]) }),
+      Object.freeze({
+        kind: 'cantor',
+        name: 'The Hollow Cantor',
+        adds: Object.freeze([Object.freeze(['boar', 2]), Object.freeze(['mantis', 1])]),
+        // One verse a phase, each land's beasts: the Wood's, the Mill's, the Barrow's.
+        addsByPhase: Object.freeze([
+          Object.freeze([Object.freeze(['boar', 2]), Object.freeze(['mantis', 1])]),
+          Object.freeze([Object.freeze(['toad', 1]), Object.freeze(['moth', 2])]),
+          Object.freeze([Object.freeze(['ram', 1]), Object.freeze(['mole', 1]), Object.freeze(['crow', 1])]),
+        ]),
+      }),
+      // The Heart's own beasts: husks and a censer that mends them.
+      Object.freeze({ kind: 'colossus', name: 'The Geode Colossus', adds: Object.freeze([Object.freeze(['husk', 2]), Object.freeze(['censer', 1])]) }),
     ]),
     unlock: Object.freeze({ afterVictory: 3 }),
   }),

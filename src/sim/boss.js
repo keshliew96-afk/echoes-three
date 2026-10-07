@@ -24,7 +24,7 @@
 // the seeded stream only (the only draws are the crit rolls inside
 // combat.applyDamage plus the add-spawn point picks).
 import { SCREENSHAKE, TICK_HZ } from '../core/constants.js';
-import { walkStep, innerBounds } from './movement.js';
+import { walkStep, innerBounds, staticClearance } from './movement.js';
 import { SPAWN_POINTS } from './waves.js';
 import { GOVERNOR } from './enemies.js';
 import { partyInRadius, neutralsInRadius } from './enemies/common.js';
@@ -34,6 +34,9 @@ import wyrm from './bosses/wyrm.js';
 import thornmother from './bosses/thornmother.js';
 import millwheel from './bosses/millwheel.js';
 import lichram from './bosses/lichram.js';
+// Content plan 2, slice 5: Act IV's two bosses (docs/ACT_IV_BOSSES.md).
+import cantor from './bosses/cantor.js';
+import colossus from './bosses/colossus.js';
 
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -78,7 +81,7 @@ export const STAG = Object.freeze({
 // and view shapes are hashed by the golden traces); every other boss is a
 // plain-data kit module (src/sim/bosses/<id>.js) driven through `kctx`, and
 // its body carries `boss: true` (status.isBoss) instead of kind 'stag'.
-export const BOSS_KITS = Object.freeze({ heron, wyrm, thornmother, millwheel, lichram });
+export const BOSS_KITS = Object.freeze({ heron, wyrm, thornmother, millwheel, lichram, cantor, colossus });
 export const BOSS_KINDS = Object.freeze(['stag', ...Object.keys(BOSS_KITS)]);
 export const isBossKind = (k) => k === 'stag' || !!BOSS_KITS[k];
 // Display names per boss kind (HUD banner, end screens, path text).
@@ -182,6 +185,10 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
     // system's models; `power` is the final damage, so scale it with dmgMul()).
     spawnGlob: (b, tick, o) => enemies.spawnGlob(b, tick, o),
     fireShot: (b, tick, dx, dz, o) => enemies.fireShot(b, tick, dx, dz, o),
+    // A crystal patch on the floor ({ radius, ticks, slow, variant }).
+    spawnSlick: (b, x, z, o) => enemies.spawnSlick(b, x, z, o),
+    // Free distance from (x, z) to the nearest prop (the Cantor's Echo Step).
+    clearance: (x, z, r) => staticClearance(x, z, r),
     // A kit-raised add (the Lich Ram's graves): scaled like the phase adds,
     // counted against the same §11 add cap, and part of "clear = boss and
     // adds dead".
@@ -256,6 +263,11 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
       adds: Array.isArray(o.adds) && o.adds.length > 0 ? o.adds.flatMap(([et, n]) => new Array(Math.max(0, n | 0)).fill(et)) : null,
       addHpMul: Number.isFinite(o.addHpMul) && o.addHpMul > 0 ? o.addHpMul : 1,
       addDmgMul: Number.isFinite(o.addDmgMul) && o.addDmgMul > 0 ? o.addDmgMul : 1,
+      // Act IV's Cantor calls a different land's adds each phase; only set
+      // when the level row has them, so every other boss's saves are unchanged.
+      ...(Array.isArray(o.addsByPhase) && o.addsByPhase.length > 0
+        ? { addsByPhase: o.addsByPhase.map((list) => list.flatMap(([et, n]) => new Array(Math.max(0, n | 0)).fill(et))) }
+        : {}),
     };
     const D = def();
     const { mx, mz } = innerBounds(D.radius);
@@ -569,10 +581,11 @@ export function createBossSystem({ registry, events, rng, combat, getTick, enemi
 
   function spawnAdds(tick, pct) {
     const spawned = [];
-    for (const etype of scale.adds ?? def().addComposition) {
+    const byPhase = scale.addsByPhase ? scale.addsByPhase[Math.min(scale.addsByPhase.length - 1, phasesFired - 1)] : null;
+    for (const etype of byPhase ?? scale.adds ?? def().addComposition) {
       if (liveAdds() >= STAG.addCap) break; // §11 concurrent cap
       const [sx, sz] = SPAWN_POINTS[rng.int(SPAWN_POINTS.length)];
-      const scaled = scale.adds && typeof enemies.spawnScaled === 'function';
+      const scaled = (byPhase || scale.adds) && typeof enemies.spawnScaled === 'function';
       const e = scaled
         ? enemies.spawnScaled(etype, sx, sz, { hpMul: scale.addHpMul, dmgMul: scale.addDmgMul, wave: 100 + phasesFired })
         : enemies.spawn(etype, sx, sz, 100 + phasesFired);

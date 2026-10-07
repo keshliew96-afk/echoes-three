@@ -1996,6 +1996,12 @@
   ],
   "data": true
  },
+ "Archer effects burn in Geode Glass colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Archer effects burn in Heron Mist colours. Cosmetic.": {
   "files": [
    "src/data/unlocks.js"
@@ -3612,6 +3618,18 @@
   ],
   "data": true
  },
+ "Defeat the Geode Colossus.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Defeat the Hollow Cantor.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Defeat the Hollow Stag.": {
   "files": [
    "src/data/unlocks.js"
@@ -4298,6 +4316,18 @@
   ],
   "data": true
  },
+ "Fell the Geode Colossus": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the Hollow Cantor": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Fell the Hollow Stag": {
   "files": [
    "src/data/unlocks.js"
@@ -4647,6 +4677,12 @@
  "GC": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Geode Glass tint": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -5054,6 +5090,12 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "Hollow Song tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "hop away after the cast.": {
   "files": [
    "src/ui/run/cards.js"
@@ -5156,6 +5198,12 @@
   "data": true
  },
  "I went down alone. A bell needs a party around it. You have that.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "I would not come out for you, so I grew a body that would.": {
   "files": [
    "src/data/story.js"
   ],
@@ -8878,6 +8926,12 @@
   ],
   "data": true
  },
+ "Tank effects burn in Hollow Song colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Tank wards while this cools down.": {
   "files": [
    "src/ui/run/cards.js"
@@ -9437,6 +9491,25 @@
    "src/ui/run/expedition.js"
   ]
  },
+ "The Geode Colossus": {
+  "files": [
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE GEODE COLOSSUS": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Geode Colossus shatters. Below the Barrow, the old beat falters.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
  "The glowing spring heals the whole party once per room. Walk up to it and press {key} to drink.": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -9560,6 +9633,31 @@
  "THE HOLLOW": {
   "files": [
    "src/ui/hud/index.js"
+  ]
+ },
+ "The Hollow Cantor": {
+  "files": [
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE HOLLOW CANTOR": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Hollow Cantor itself waits in the Heart Chamber. It sings the verses it stole from every land, and their beasts come with each one. Crowd it and it steps away.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Hollow Cantor’s last note fades. The Heart falls quiet.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
   ]
  },
  "The Hollow Heart": {
@@ -9947,13 +10045,19 @@
    "src/ui/run/index.js"
   ]
  },
- "The singer at the bottom is not a god but a god’s echo, left behind when the gods fell silent. Silencing it frees the Verse of Heart, and for the first time the gods stop applauding.": {
+ "The singer at the bottom is the Hollow Cantor: not a god but a god’s echo, left behind when the gods fell silent. When it will not come out, the Heart grows a Geode Colossus to sing through. Silencing either frees the Verse of Heart, and for the first time the gods stop applauding.": {
   "files": [
    "src/data/story.js"
   ],
   "data": true
  },
  "The singer under the Barrow. Speaks through altars, and before every boss.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The singer won’t come out today. The Heart has grown a Geode Colossus to guard its chamber. Step off the line when it raises a fist.": {
   "files": [
    "src/data/story.js"
   ],
