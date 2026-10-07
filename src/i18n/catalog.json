@@ -1301,6 +1301,11 @@
   ],
   "data": true
  },
+ "A cursed door makes the next room harder, and clearing it earns an extra relic pick. A chained mark is a major curse that stays for the whole run.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "A damaging shape of your own.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1447,6 +1452,11 @@
    "src/ui/menu/mpmenu.js"
   ]
  },
+ "A relic helps the whole party for the rest of the run. Pick one of the three; there is no reroll.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "A RELIC ON THE ROAD": {
   "files": [
    "src/ui/run/relic.js"
@@ -1471,6 +1481,11 @@
  "a shield drains nothing": {
   "files": [
    "src/ui/socket/index.js"
+  ]
+ },
+ "A short guided fight teaches moving, attacking, dodging and how skills arrive. Your party comes along. You can replay it any time from Settings ▸ Gameplay.": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "a short parry after the cast.": {
@@ -1678,6 +1693,11 @@
  "Aim": {
   "files": [
    "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Aim with the mouse and hold the right mouse button to attack.": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "All 4 skills are equipped and every socket already holds a node no reward could beat.": {
@@ -1898,6 +1918,11 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Attack": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Audio": {
   "files": [
    "src/ui/menu/settings.js"
@@ -2023,6 +2048,11 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Available in camp, between runs": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "back": {
   "files": [
    "src/ui/socket/index.js"
@@ -2088,6 +2118,11 @@
    "src/sim/allies.js"
   ],
   "data": true
+ },
+ "Beasts are coming. Your three friends fight beside you, played by the AI. Clear every wave to win the room.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
  },
  "Beaten Clearing": {
   "files": [
@@ -2622,6 +2657,11 @@
    "src/ui/run/relic.js"
   ]
  },
+ "Choose who you play": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Choose with ← / → (the D-pad on a gamepad), or click the arrows.": {
   "files": [
    "src/ui/menu/settings.js"
@@ -2704,6 +2744,11 @@
  "CLEAR THE ROOM": {
   "files": [
    "src/ui/hud/index.js"
+  ]
+ },
+ "Clear the waves": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "Cleared ×{n}": {
@@ -3025,6 +3070,11 @@
    "src/ui/run/relicstrip.js"
   ]
  },
+ "Cursed doors": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Cursed room: {name}. {text} Clear it for a relic.": {
   "files": [
    "src/ui/run/index.js"
@@ -3334,7 +3384,8 @@
  },
  "Dodge": {
   "files": [
-   "src/ui/menu/tabs/controls.js"
+   "src/ui/menu/tabs/controls.js",
+   "src/ui/tutorial/index.js"
   ]
  },
  "Dodges recover 25% faster.": {
@@ -3397,6 +3448,16 @@
    "src/data/unlocks.js"
   ],
   "data": true
+ },
+ "Each door shows what waits behind it: the kind of fight and the reward for clearing it. In a run it leads to the next room. Here it ends the tutorial.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "Each hero has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
  },
  "Each party kill heals the most wounded member for 4 HP.": {
   "files": [
@@ -3707,6 +3768,11 @@
  "Everyone is here": {
   "files": [
    "src/ui/menu/lobby.js"
+  ]
+ },
+ "Everyone starts with only the basic attack and dodge. Skills come from wave rewards: take the skill on your card and it fills an empty slot, cast with 1 to 4. Between rooms, B opens the sockets where nodes power your skills up.": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "Everything is unlocked. Wear vows for more.": {
@@ -4120,6 +4186,11 @@
  "GLINT EARNED": {
   "files": [
    "src/ui/run/endscreens.js"
+  ]
+ },
+ "Got it": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "grant": {
@@ -5190,7 +5261,8 @@
  },
  "Move": {
   "files": [
-   "src/ui/menu/tabs/controls.js"
+   "src/ui/menu/tabs/controls.js",
+   "src/ui/tutorial/index.js"
   ]
  },
  "Move · Choose · Back": {
@@ -5436,6 +5508,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "No tips shown yet": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "no updates": {
   "files": [
    "src/ui/net/hud.js"
@@ -5515,6 +5592,11 @@
  "Not enough Glint in your purse": {
   "files": [
    "src/net/session.js"
+  ]
+ },
+ "Not in an online game": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "Not now": {
@@ -5919,6 +6001,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Pick a door": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Pick a save to see it here.": {
   "files": [
    "src/ui/menu/saves.js"
@@ -6010,6 +6097,16 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Play the tutorial": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "Play the tutorial?": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Play this class": {
   "files": [
    "src/ui/run/classpick.js"
@@ -6084,6 +6181,11 @@
   "files": [
    "src/app/display.js",
    "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Press Space to dodge. You dash a short way, and nothing can hit you while you do.": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "preview": {
@@ -6414,6 +6516,11 @@
    "src/ui/run/challenge.js"
   ]
  },
+ "Relics": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "RELICS": {
   "files": [
    "src/ui/run/shop.js"
@@ -6675,7 +6782,8 @@
  },
  "Right mouse": {
   "files": [
-   "src/ui/menu/tabs/controls.js"
+   "src/ui/menu/tabs/controls.js",
+   "src/ui/tutorial/index.js"
   ]
  },
  "Right-click": {
@@ -7191,6 +7299,11 @@
    "src/ui/menu/tabs/display.js"
   ]
  },
+ "Show tips again": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Shown in lobbies and on the connection chip": {
   "files": [
    "src/ui/menu/tabs/network.js"
@@ -7306,6 +7419,16 @@
   "files": [
    "src/ui/run/endscreens.js",
    "src/ui/run/transit.js"
+  ]
+ },
+ "Skip": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "Skip tutorial": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "Slot {n}": {
@@ -7453,6 +7576,11 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "Spend the Glint you earned clearing rooms on nodes for your skills and relics for the party. Advance when you are done.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Spikes at the target for 5 s: 8 per second to enemies inside.": {
   "files": [
    "src/ui/run/cards.js"
@@ -7510,6 +7638,11 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "Start or continue a game first": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Start or load a game first": {
   "files": [
    "src/save/index.js"
@@ -7561,6 +7694,11 @@
    "src/sim/nodes.js"
   ],
   "data": true
+ },
+ "Step {n} of {total}": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
  },
  "Still joining {code}…": {
   "files": [
@@ -8181,9 +8319,19 @@
    "src/ui/run/expedition.js"
   ]
  },
+ "The glowing spring heals the whole party once per room. Walk up to it and press E to drink.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "The gods applaud.": {
   "files": [
    "src/ui/run/endscreens.js"
+  ]
+ },
+ "The guided first room: moving, attacking, dodging, the spring, a wave reward and a door. Starts from the camp.": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "The hare vaults 1.6 u away (untouchable), then shoots: 18 and a 30% slow.": {
@@ -8349,6 +8497,11 @@
    "src/ui/menu/title.js"
   ]
  },
+ "The one-time tips for class select, relics, cursed doors and the peddler show again the next time you meet each.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "THE PARTY": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -8397,6 +8550,11 @@
    "src/sim/relics.js"
   ],
   "data": true
+ },
+ "The peddler": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
  },
  "THE PEDDLER": {
   "files": [
@@ -8640,6 +8798,11 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "This is the camp. C picks your class, U spends Embers between runs. Walk to the portal at the north gate and press E to set out.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "This isn't an Echoes save file.": {
   "files": [
    "src/ui/menu/saves.js"
@@ -8773,6 +8936,16 @@
   ],
   "data": true
  },
+ "Tip": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "Tips will show again": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "To keep both, load the older run from Load Game and save it to a numbered slot first.": {
   "files": [
    "src/ui/menu/title.js"
@@ -8806,6 +8979,21 @@
    "src/sim/nodes.js"
   ],
   "data": true
+ },
+ "Tutorial": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "Tutorial complete": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "Tutorial skipped": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
  },
  "Type the room code the host sees in their lobby.": {
   "files": [
@@ -8856,6 +9044,11 @@
  "Update available": {
   "files": [
    "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Use": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "Use this site’s server": {
@@ -8993,6 +9186,11 @@
  "Waiting for the {cls}…": {
   "files": [
    "src/ui/run/index.js"
+  ]
+ },
+ "Walk around the clearing.": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "Walk through 3 cursed doors in one run.": {
@@ -9195,6 +9393,11 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "You can play it again from Settings ▸ Gameplay.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "You can't save right now": {
   "files": [
    "src/save/index.js"
@@ -9340,6 +9543,11 @@
  "Your first relic of the run.": {
   "files": [
    "src/ui/run/relic.js"
+  ]
+ },
+ "Your first skill": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "Your friends keep playing — another player takes over as host.": {

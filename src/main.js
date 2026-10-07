@@ -479,6 +479,9 @@ registerScreen('unlocks', createUnlocksScreen);
 // CLASS SELECT (docs/CLASS_SELECT.md): the camp's class picker (C / the portal prompt's Class chip).
 import { createClassesScreen } from './ui/run/classpick.js';
 registerScreen('classes', createClassesScreen);
+// TUTORIAL (docs/TUTORIAL.md): the guided first room's coach and the one-time tips.
+import { createTutorial } from './ui/tutorial/index.js';
+if (PLAYABLE) createTutorial({ app, world, bus, scene: activeScene, params: bootParams });
 {
   const applyTints = () => {
     try {
@@ -970,6 +973,7 @@ window.__echoes = {
   // CLASS SELECT (docs/CLASS_SELECT.md): the class the local player plays.
   playClass: () => playClass.debug(),
   i18n: () => i18nDebug(), // docs/I18N.md: { lang, misses, seen }
+  tutorial: () => service('tutorial'), // docs/TUTORIAL.md: { startNow, skip, debug() ... }
   // @gnt:DEBUG-API begin — Gauntlet namespaces (PLAN §6.4). Each resolves its
   // module's service lazily, so owners never edit this file for their probes:
   // provide('<name>', impl) with impl.debug = { ... }.
