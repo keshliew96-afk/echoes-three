@@ -76,7 +76,7 @@ const KEY_OF = { dodge: 'Space', interact: 'KeyE', basic: 'Mouse2' };
 for (let i = 1; i <= 4; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
 // (+ CAMPAIGN, PLAN §12.9: a guest can neither start, advance nor abandon a
 // campaign — the host drives every level transition.)
-const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'buyRelic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
+const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'openEncounter', 'focusEncounter', 'chooseEncounter', 'buyRelic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
 // M4c: autoFill (the socket screen's F / pad Y) mutates the build too — a guest's
 // press becomes the same refused CMD as a socket() (build decisions are the host's).
 const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);
@@ -108,6 +108,8 @@ const LEVEL_FLOW_OPS = new Set(['returnToCamp', 'startRun', 'endRun', 'startCamp
 function hostDecidesCopy(what, w) {
   if (what === 'choosePath') return t('The {cls} picks the door — your pick was shown to the party', { cls: t(w) });
   if (what === 'chooseRelic' || what === 'focusRelic') return t("The {cls} picks the party's relic — your pick was shown to the party", { cls: t(w) });
+  // EVENT ROOMS: the encounter's card is the host's call, like the doors.
+  if (what === 'chooseEncounter' || what === 'focusEncounter' || what === 'openEncounter') return t('The {cls} decides the encounter — your pick was shown to the party', { cls: t(w) });
   if (LEVEL_FLOW_OPS.has(what)) return t('The host leads the party between levels — your press was shown to the party');
   return t('That is the Healer’s build, not yours — your own character is on your tab');
 }

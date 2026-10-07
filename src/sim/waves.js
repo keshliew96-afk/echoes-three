@@ -217,7 +217,8 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       };
       if (roster.length === 0) plan.roster = [['boar', 1]];
       if (m === 'kill_all') {
-        const n = WAVE_RULES.killAll.minWaves + rng.int(WAVE_RULES.killAll.extraWaves) + (runPlan.room >= 4 ? 1 : 0);
+        // EVENT ROOMS: the trapped chest's ambush fixes its wave count (no draw).
+        const n = Number.isInteger(runPlan.waves) ? runPlan.waves : WAVE_RULES.killAll.minWaves + rng.int(WAVE_RULES.killAll.extraWaves) + (runPlan.room >= 4 ? 1 : 0);
         for (let w = 0; w < n; w++) schedule.push(rollBudgetWave(d.budget, plan));
       } else {
         for (let w = 0; w < WAVE_RULES.defend.waveAtTicks.length; w++)

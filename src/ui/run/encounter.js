@@ -1,0 +1,224 @@
+// EVENT ROOMS (docs/EVENT_ROOMS.md): the encounter card (phase 'encounter')
+// and the plate that names the encounter while the party walks up to it
+// (phase 'event').
+//
+// The card: the encounter's drawn sigil in its own colour, a line of flavour,
+// then COST and REWARD rows in words (never colour alone), and Take / Leave.
+// A / D or arrows move, Enter commits under the run UI's fresh-press rule
+// and settle window; a click on a button commits it; pad left / right / A.
+// Take refused (too little Glint, no relic to give, every major curse
+// taken) says why under the card; Leave always walks on.
+import { esc } from './style.js';
+import { PALETTE } from '../../data/palette.js';
+import { t } from '../../i18n/index.js';
+import { cap } from '../../app/controls.js';
+
+// Each encounter's accent (the card rim, the sigil, the plate's mark). Violet
+// only on the corrupted altar (corruption), Bright Heal only on the spring
+// (its water heals).
+export const ENCOUNTER_COLOR = Object.freeze({
+  blood_shrine: '#C2505F',
+  wishing_well: PALETTE.signalBlue,
+  trapped_chest: PALETTE.paleGold,
+  lost_pilgrim: PALETTE.hearthAmber,
+  corrupted_altar: PALETTE.godstuffViolet,
+  wandering_spirit: '#A8D2DC',
+  forgotten_cache: PALETTE.paleGold,
+  healing_spring: PALETTE.brightHeal,
+});
+
+// Line-drawn sigils, 24-unit box, stroke = currentColor.
+const SIGIL = {
+  blood_shrine: '<path d="M5 13h14l-2 5H7z"/><path d="M12 13V6"/><path d="M12 3.5c1.6 1.8 2.2 2.9 2.2 3.8a2.2 2.2 0 0 1-4.4 0c0-.9.6-2 2.2-3.8z"/><path d="M8 21h8"/>',
+  wishing_well: '<path d="M5 11h14v9H5z"/><path d="M4 11l8-6 8 6"/><path d="M12 5v8"/><circle cx="12" cy="15" r="1.6"/><path d="M8 20v-3M16 20v-3"/>',
+  trapped_chest: '<path d="M4 10h16v10H4z"/><path d="M4 10c0-3 3.5-5 8-5s8 2 8 5"/><path d="M11 13h2v3h-2z"/><path d="M2 7l3 2M22 7l-3 2M12 2v2"/>',
+  lost_pilgrim: '<circle cx="10" cy="5" r="2"/><path d="M10 8l-3 6 2 1-1 6M10 8l2 5-1 8"/><path d="M14 9l3 1v4"/><path d="M15.5 14h3v4h-3z"/>',
+  corrupted_altar: '<path d="M5 20h14M7 20v-6h10v6"/><path d="M6 14h12"/><path d="M12 3l3 5-3 4-3-4z"/><path d="M4 6l2 1M20 6l-2 1"/>',
+  wandering_spirit: '<path d="M7 20V10a5 5 0 0 1 10 0v10l-2-2-1.5 2-1.5-2-1.5 2L9 18z"/><circle cx="10" cy="10" r=".9"/><circle cx="14" cy="10" r=".9"/>',
+  forgotten_cache: '<path d="M3 12h9v8H3zM12 14h9v6h-9zM6 6h9v6H6z"/><path d="M3 12l3-6M21 14l-6-2"/>',
+  healing_spring: '<path d="M4 18c2.5-2 5.5-2 8 0s5.5 2 8 0"/><path d="M12 4c2.4 3 3.6 5 3.6 6.6a3.6 3.6 0 0 1-7.2 0C8.4 9 9.6 7 12 4z"/><path d="M7 21h10"/>',
+};
+export function encounterSigil(id, size = 44) {
+  const p = SIGIL[id] ?? '<path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .8-1 1.5V14M12 17.5v.5"/>';
+  return `<svg class="ev-sigil" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+}
+
+export const ENCOUNTER_CSS = `
+  .rn-encounter .ev-card { width: 460px; max-width: 86vw; --rar: var(--evc); }
+  .rn-encounter .ev-card .rn-cardicon { color: var(--evc); border-color: var(--evc); box-shadow: 0 0 22px var(--evc), inset 0 0 14px #00000088;
+    background: radial-gradient(circle at 50% 38%, #3A342C 0%, #1C2230 100%); }
+  .rn-encounter .ev-flavour { font-size: 17px; font-style: italic; color: ${PALETTE.warmGrey}; text-align: center; line-height: 1.35; }
+  .rn-encounter .ev-rows { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 4px; }
+  .rn-encounter .ev-row { display: flex; gap: 12px; align-items: baseline; padding: 7px 10px; border-radius: 9px; background: #00000033; border: 1px solid ${PALETTE.warmGrey}44; }
+  .rn-encounter .ev-row b { flex: none; width: 92px; font-size: 14px; letter-spacing: 0.18em; color: ${PALETTE.warmGrey}; }
+  .rn-encounter .ev-row span { font-size: 17px; color: ${PALETTE.bone}; line-height: 1.3; }
+  .rn-encounter .ev-row.ev-cost b { color: ${PALETTE.hearthAmber}; }
+  .rn-encounter .ev-row.ev-gain b { color: ${PALETTE.paleGold}; }
+  .rn-encounter .ev-refused { margin-top: 10px; font-size: 17px; color: ${PALETTE.hearthAmber}; text-align: center; }
+  .rn-encounter .rn-btn.rn-focus { background: ${PALETTE.hearthAmber}; color: ${PALETTE.voidCharcoal}; border-color: ${PALETTE.hearthAmber}; }
+  .rn-encounter .rn-btn.ev-off { opacity: 0.5; border-style: dashed; }
+  #run-screen.rn-compact .rn-encounter .ev-flavour,
+  #run-screen.rn-compact .rn-encounter .ev-rows { grid-column: 1 / -1; }
+  #run-screen.rn-compact .rn-encounter .ev-flavour { text-align: left; }
+
+  /* The "?" door: a gold-rimmed door with one big mark (shape + the words in
+     the note below, never colour alone). */
+  .rn-door.ev-door { border-color: ${PALETTE.paleGold}AA; background: radial-gradient(circle at 50% 42%, #4A4130 0%, #24211C 72%); }
+  .rn-door.ev-door.rn-focus { border-color: ${PALETTE.paleGold}; box-shadow: inset 0 0 0 2px ${PALETTE.voidCharcoal}, inset 0 -18px 34px #00000066, 0 0 30px ${PALETTE.paleGold}77; }
+  .rn-door.ev-door .rn-gwin { font-size: 96px; font-weight: 900; color: ${PALETTE.paleGold}; text-shadow: 0 0 18px ${PALETTE.paleGold}88; line-height: 1; }
+  .rn-door.ev-door .rn-split, .rn-door.ev-door .rn-grew { display: none; }
+  .rn-path .ev-note {
+    margin-top: 12px; padding: 8px 14px; border-radius: 10px; max-width: 560px;
+    border: 1px solid ${PALETTE.paleGold}88; background: ${PALETTE.voidCharcoal};
+    font-size: 17px; color: ${PALETTE.bone}; text-align: center;
+  }
+  .rn-path .ev-note b { color: ${PALETTE.paleGold}; }
+
+  /* The plate over the event room while the party walks up. */
+  #ev-plate {
+    position: fixed; left: 50%; bottom: 138px; transform: translateX(-50%); z-index: 30;
+    display: flex; align-items: center; gap: 12px; padding: 8px 18px 8px 12px; border-radius: 12px;
+    background: ${PALETTE.voidCharcoal}E6; border: 2px solid var(--evc, ${PALETTE.paleGold});
+    box-shadow: 0 0 22px #000000AA, 0 0 16px var(--evc, transparent);
+    font-family: system-ui, var(--i18n-font, sans-serif); color: ${PALETTE.parchment};
+    pointer-events: none; opacity: 0; transition: opacity 220ms ease;
+  }
+  #ev-plate.ev-on { opacity: 1; }
+  #ev-plate .ev-sigil { color: var(--evc); flex: none; }
+  #ev-plate .ev-pname { font-size: 19px; font-weight: 800; letter-spacing: 0.08em; }
+  #ev-plate .ev-phint { font-size: 15px; color: ${PALETTE.bone}; }
+  #ev-plate kbd { font: inherit; font-weight: 800; padding: 0 6px; border-radius: 5px; border: 1px solid ${PALETTE.bone}; color: ${PALETTE.parchment}; }
+`;
+
+const REFUSED = {
+  glint: (e, v) => t('Not enough Glint: it costs {price} and you carry {wallet}.', { price: e.price ?? 0, wallet: v.wallet ?? 0 }),
+  relic: () => t('You carry no relic to give.'),
+  major: () => t('Every major curse is already on you.'),
+};
+
+export function createEncounterScreen({ run }) {
+  const el = document.createElement('div');
+  el.className = 'rn-page rn-encounter';
+  el.innerHTML = `
+    <div class="rn-title ev-title"></div>
+    <div class="rn-orn">◆ ◆ ◆</div>
+    <div class="rn-card ev-card">
+      <div class="rn-cardkind">${esc(t('AN ENCOUNTER'))}</div>
+      <div class="rn-cardicon ev-icon"></div>
+      <div class="rn-cardname ev-name"></div>
+      <div class="ev-flavour"></div>
+      <div class="ev-rows">
+        <div class="ev-row ev-cost"><b>${esc(t('COST'))}</b><span class="ev-detail"></span></div>
+        <div class="ev-row ev-gain"><b>${esc(t('REWARD'))}</b><span class="ev-effect"></span></div>
+      </div>
+    </div>
+    <div class="ev-refused" style="display:none"></div>
+    <div class="rn-buttons">
+      <div class="rn-btn ev-take rn-primary">${esc(t('Take'))}</div>
+      <div class="rn-btn ev-leave">${esc(t('Leave'))}</div>
+    </div>
+    <div class="rn-hint">${t('<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> confirm')}</div>`;
+  const titleEl = el.querySelector('.ev-title');
+  const card = el.querySelector('.ev-card');
+  const icon = el.querySelector('.ev-icon');
+  const nameEl = el.querySelector('.ev-name');
+  const flavour = el.querySelector('.ev-flavour');
+  const detail = el.querySelector('.ev-detail');
+  const effect = el.querySelector('.ev-effect');
+  const refused = el.querySelector('.ev-refused');
+  const btns = [el.querySelector('.ev-take'), el.querySelector('.ev-leave')];
+  let shownFocus = null;
+
+  btns.forEach((b, i) => {
+    b.addEventListener('mouseenter', () => run().focusEncounter(i));
+    b.addEventListener('click', () => {
+      run().focusEncounter(i);
+      run().chooseEncounter(i === 0 ? 'take' : 'leave');
+    });
+  });
+
+  function render(view) {
+    const e = view.encounter;
+    if (!e) return;
+    const c = ENCOUNTER_COLOR[e.id] ?? PALETTE.paleGold;
+    card.style.setProperty('--evc', c);
+    titleEl.textContent = t(e.name).toUpperCase();
+    icon.innerHTML = encounterSigil(e.id, 46);
+    nameEl.textContent = t(e.name);
+    flavour.textContent = t(e.text);
+    detail.textContent = t(e.detail);
+    effect.textContent = t(e.effect);
+    const why = e.refused && REFUSED[e.refused] ? REFUSED[e.refused](e, view) : null;
+    refused.style.display = why ? '' : 'none';
+    refused.textContent = why ?? '';
+    btns[0].classList.toggle('ev-off', !!why);
+    btns.forEach((b, i) => b.classList.toggle('rn-focus', e.focus === i));
+    shownFocus = e.focus;
+  }
+  const sel = () => (shownFocus === null ? null : `0|${shownFocus}`);
+
+  function key(code, fresh) {
+    const sys = run();
+    const e = sys.view().encounter;
+    if (code === 'KeyA' || code === 'ArrowLeft' || code === 'KeyD' || code === 'ArrowRight') {
+      sys.focusEncounter(code === 'KeyA' || code === 'ArrowLeft' ? 0 : 1);
+      render(sys.view());
+      return true;
+    }
+    if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') {
+      if (!fresh) return true; // §16 fresh-press rule
+      sys.chooseEncounter(e && e.focus === 1 ? 'leave' : 'take');
+      return true;
+    }
+    return false; // Esc passes through to the pause menu
+  }
+
+  function pad(action) {
+    const sys = run();
+    if (action === 'left' || action === 'right') {
+      sys.focusEncounter(action === 'left' ? 0 : 1);
+      render(sys.view());
+      return true;
+    }
+    if (action === 'confirm') {
+      const e = sys.view().encounter;
+      sys.chooseEncounter(e && e.focus === 1 ? 'leave' : 'take');
+      return true;
+    }
+    return false;
+  }
+
+  function open() {
+    shownFocus = null;
+  }
+
+  return { el, render, key, pad, sel, open, name: 'encounter' };
+}
+
+// The plate over the "?" room until the card opens: the encounter's sigil,
+// its name and how to reach it (the interact key as bound right now).
+export function createEventPlate() {
+  const el = document.createElement('div');
+  el.id = 'ev-plate';
+  el.innerHTML = `<span class="ev-pico"></span><div><div class="ev-pname"></div><div class="ev-phint"></div></div>`;
+  document.body.appendChild(el);
+  const ico = el.querySelector('.ev-pico');
+  const nameEl = el.querySelector('.ev-pname');
+  const hint = el.querySelector('.ev-phint');
+  let shown = '';
+  function update(v) {
+    const e = v && v.active && v.phase === 'event' ? v.encounter : null;
+    const key = e ? `${e.id}:${cap('interact')}` : '';
+    if (key !== shown) {
+      shown = key;
+      if (e) {
+        el.style.setProperty('--evc', ENCOUNTER_COLOR[e.id] ?? PALETTE.paleGold);
+        ico.innerHTML = encounterSigil(e.id, 34);
+        nameEl.textContent = t(e.name).toUpperCase();
+        hint.innerHTML = t('Walk up to it and press {key}', { key: `<kbd>${esc(cap('interact'))}</kbd>` });
+      }
+    }
+    el.classList.toggle('ev-on', !!e);
+  }
+  return { el, update };
+}

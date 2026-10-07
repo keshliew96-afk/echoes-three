@@ -191,6 +191,20 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       stats.relics = (stats.relics ?? 0) + 1;
       return true;
     }
+    // EVENT ROOMS: walk up to the encounter (no walk needed: open its card),
+    // then take the safe option — Take only when the encounter is safe (no
+    // HP, curse, relic or fight) and affordable; else Leave.
+    if (v.phase === 'event') {
+      if (typeof r.openEncounter === 'function') r.openEncounter();
+      return true;
+    }
+    if (v.phase === 'encounter') {
+      const e = v.encounter;
+      const take = !!(e && e.safe && !e.refused && cfg.events !== 'leave');
+      r.chooseEncounter(take ? 'take' : 'leave');
+      stats.events = (stats.events ?? 0) + 1;
+      return true;
+    }
     if (v.phase === 'path') {
       autoSocket();
       // RELICS: `curses: 'avoid'` walks the other door when the configured
@@ -200,6 +214,8 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       let side = cfg.doors === 1 ? 1 : 0;
       const o = v.path && v.path.options[side];
       if (o && o.curse && (cfg.curses === 'avoid' || (o.major && cfg.curses !== 'all'))) side = 1 - side;
+      // EVENT ROOMS: `events: 'avoid'` walks the other door when this one is "?".
+      else if (o && o.event && cfg.events === 'avoid') side = 1 - side;
       r.choosePath(side);
       stats.doors += 1;
       return true;
