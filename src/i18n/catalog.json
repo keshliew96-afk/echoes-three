@@ -434,6 +434,18 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "{n} more verse is still missing, somewhere past the edge of the map.": {
+  "files": [
+   "src/ui/story/page.js"
+  ]
+ },
+ "{n} more verses are still missing, somewhere past the edge of the map.": {
+  "files": [
+   "src/ui/story/page.js"
+  ],
+  "plural": true,
+  "one": "{n} more verse is still missing, somewhere past the edge of the map."
+ },
  "{n} NEST LEFT": {
   "files": [
    "src/ui/hud/banner.js"
@@ -660,6 +672,11 @@
  "{name} unlocked.": {
   "files": [
    "src/ui/run/unlocks.js"
+  ]
+ },
+ "{name}:": {
+  "files": [
+   "src/ui/run/shop.js"
   ]
  },
  "{name}: {req}.": {
@@ -2230,7 +2247,8 @@
    "src/ui/run/classpick.js",
    "src/ui/run/expedition.js",
    "src/ui/run/levels.js",
-   "src/ui/run/unlocks.js"
+   "src/ui/run/unlocks.js",
+   "src/ui/story/page.js"
   ]
  },
  "Back to the title": {
@@ -2559,9 +2577,21 @@
   ],
   "data": true
  },
+ "Bramble": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Bramble Maze": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Bramble, the Peddler": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -2795,6 +2825,40 @@
    "src/ui/menu/mpmenu.js"
   ]
  },
+ "Chapter {n} · ???": {
+  "files": [
+   "src/ui/story/page.js"
+  ]
+ },
+ "Chapter I · The Hollow Wood": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Chapter II · The Sunken Mill": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Chapter III · The Ashen Barrow": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Chapter IV · The Hollow Heart": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "CHAPTERS": {
+  "files": [
+   "src/ui/story/page.js"
+  ]
+ },
  "character": {
   "files": [
    "src/ui/socket/index.js"
@@ -2947,6 +3011,11 @@
  "Clear Level {level}": {
   "files": [
    "src/ui/run/unlocks.js"
+  ]
+ },
+ "Clear Level {n} to read on.": {
+  "files": [
+   "src/ui/story/page.js"
   ]
  },
  "Clear Level I.": {
@@ -3150,7 +3219,8 @@
  "Continue": {
   "files": [
    "src/ui/menu/title.js",
-   "src/ui/run/draft.js"
+   "src/ui/run/draft.js",
+   "src/ui/story/page.js"
   ]
  },
  "contributes nothing on this skill right now": {
@@ -3378,6 +3448,12 @@
   "files": [
    "src/ui/run/index.js"
   ]
+ },
+ "Curtain. The gods applaud.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "Curve": {
   "files": [
@@ -3864,6 +3940,12 @@
   ],
   "data": true
  },
+ "Embers you bring home can be offered to the hearth. Press U, and I’ll see what they buy.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "empty slot": {
   "files": [
    "src/ui/menu/saves.js"
@@ -4002,6 +4084,12 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "Even the mill turns to my tune.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "every 3rd cast — or pulse — at ×2.": {
   "files": [
    "src/ui/run/cards.js"
@@ -4023,6 +4111,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Every beast out there was a neighbour once. The song turned them, not their hearts.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "every cast shields the Tank +8 per copy (4 s) · on Iron Stance +2 per pulse (up to 12).": {
   "files": [
@@ -4057,6 +4151,12 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Every land you clear, I ink onto the map. Right now it’s mostly blank.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Every major curse is already on you.": {
   "files": [
    "src/ui/run/encounter.js"
@@ -4065,6 +4165,12 @@
  "Every player must be ready first.": {
   "files": [
    "src/net/protocol/messages.js"
+  ],
+  "data": true
+ },
+ "Every road I take ends up crossing yours. Maybe that means something.": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -4246,6 +4352,12 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "Find me before the boss and I’ll tell you who waits behind the door.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Finish {n} runs": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -4359,6 +4471,18 @@
   ],
   "data": true
  },
+ "Four lands, and the edges are still blank. The road goes further than we have.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Four verses burn. Three are still missing, out where the map runs blank.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Fox": {
   "files": [
    "src/net/seats.js"
@@ -4386,6 +4510,11 @@
    "src/sim/encounters.js"
   ],
   "data": true
+ },
+ "Freed warden": {
+  "files": [
+   "src/scenes/campnpcs.js"
+  ]
  },
  "French": {
   "files": [
@@ -4568,6 +4697,18 @@
   "files": [
    "src/ui/run/endscreens.js"
   ]
+ },
+ "Glint is Glint, from the Wood or the Mill. I take it all.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Good. Now you sound a little more like me.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "Got it": {
   "files": [
@@ -4785,6 +4926,12 @@
   ],
   "data": true
  },
+ "Heart@@verse": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Heartbreaker": {
   "files": [
    "src/data/unlocks.js"
@@ -4996,6 +5143,30 @@
   ],
   "data": true
  },
+ "I set up in the clearing before every warden’s den. I always get there first. Slow and steady.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "I stopped at the Heart. I listened too long, and it sang me hollow.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "I went down alone. A bell needs a party around it. You have that.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "I’m walking to the Choir. They say it sings where the gods sat down to listen.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "If the host does not come back, another player takes over and the run continues.": {
   "files": [
    "src/ui/net/hud.js"
@@ -5037,6 +5208,12 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "In the beginning the gods sang the world, and the world sang back. Every living thing still carries an echo of that song.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "In the fight": {
   "files": [
    "src/ui/menu/pause.js"
@@ -5046,6 +5223,12 @@
   "files": [
    "src/ui/menu/tabs/network.js"
   ]
+ },
+ "Inks each land you clear onto the map, and keeps this book.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "Inspect": {
   "files": [
@@ -5096,6 +5279,12 @@
   "files": [
    "src/ui/menu/tabs/network.js"
   ]
+ },
+ "It guarded my door. Now it guards my song.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "it may not load in this version": {
   "files": [
@@ -5190,6 +5379,12 @@
   "files": [
    "src/ui/menu/keepdisplay.js"
   ]
+ },
+ "Keeps the Hearth-Fire lit and tells the story. Sits on the woodpile.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "Keeps the party standing: heals, wards and the revive. Fragile, so stay behind the line.": {
   "files": [
@@ -5893,6 +6088,12 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "My shell has walked every road on that map, and a few that aren’t on it.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "NB": {
   "files": [
    "src/sim/skills.js"
@@ -6108,6 +6309,12 @@
    "src/ui/net/hud.js"
   ]
  },
+ "No warden here, only the Thornmother. She fights the floor, so keep off her briars.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "nobody near": {
   "files": [
    "src/ui/socket/fizzle.js"
@@ -6293,6 +6500,11 @@
    "src/ui/menu/tabs/display.js"
   ]
  },
+ "Offerings to the hearth": {
+  "files": [
+   "src/scenes/campnpcs.js"
+  ]
+ },
  "OK": {
   "files": [
    "src/ui/menu/confirm.js",
@@ -6349,6 +6561,12 @@
  "one extra hop within 2.2 u — ricochet, or chain-heal.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "One night the gods fell silent and sat down to watch. In the silence, something under the Barrow began to sing in their place. Its song is only echo, everything repeated back hollow, and the beasts that hear it turn violet.": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -6592,6 +6810,11 @@
    "src/sim/relics.js"
   ],
   "data": true
+ },
+ "PEOPLE": {
+  "files": [
+   "src/ui/story/page.js"
+  ]
  },
  "pick · place": {
   "files": [
@@ -6949,6 +7172,18 @@
   ],
   "data": true
  },
+ "Quill": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Quill, the Chronicler": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Quit": {
   "files": [
    "src/ui/menu/pause.js"
@@ -7037,6 +7272,11 @@
    "src/data/unlocks.js"
   ],
   "data": true
+ },
+ "Read the prologue again": {
+  "files": [
+   "src/ui/story/page.js"
+  ]
  },
  "read-only — only your own character": {
   "files": [
@@ -7430,6 +7670,12 @@
   ],
   "data": true
  },
+ "Ring it for me when you reach the bottom.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Riposte": {
   "files": [
    "src/sim/skills.js"
@@ -7504,9 +7750,27 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "Root and Water. The Mill runs clear again, and the hearth is warmer for it.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Root burns in the hearth now. Hear it? The fire sings a little louder.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Root Gate": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Root@@verse": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -7792,6 +8056,18 @@
    "src/ui/menu/settings.js"
   ]
  },
+ "Sedge": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Sedge, the Lost Pilgrim": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Select": {
   "files": [
    "src/ui/menu/confirm.js",
@@ -7808,6 +8084,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Sells in the clearing before every boss, and knows who waits behind the door.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "Server": {
   "files": [
@@ -8210,6 +8492,23 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Someone you have not met yet.": {
+  "files": [
+   "src/ui/story/page.js"
+  ]
+ },
+ "Something old waits beyond the next door. I haven’t seen its like before.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Somewhere above, a god throws a flower.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Sound Effects": {
   "files": [
    "src/ui/menu/tabs/audio.js"
@@ -8407,11 +8706,23 @@
    "src/ui/net/hud.js"
   ]
  },
+ "Stone@@verse": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Stops to charge a frost nova that slows.": {
   "files": [
    "src/sim/affixes.js"
   ],
   "data": true
+ },
+ "Story so far": {
+  "files": [
+   "src/scenes/campnpcs.js",
+   "src/ui/menu/tabs/controls.js"
+  ]
  },
  "stun": {
   "files": [
@@ -8525,6 +8836,12 @@
   ],
   "data": true
  },
+ "Take it. Everything you take, I give back to you, emptied.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Take off": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -8538,6 +8855,11 @@
  "TAKEN": {
   "files": [
    "src/ui/run/shop.js"
+  ]
+ },
+ "Talk": {
+  "files": [
+   "src/scenes/campnpcs.js"
   ]
  },
  "Tank": {
@@ -8860,11 +9182,34 @@
   ],
   "data": true
  },
+ "The Barrow Wyrm coils beyond this clearing. It guards the way down. Don’t stand in front of it.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Barrow Wyrm guarded the way down, not the dead. The violet is oldest here because the Heart lies directly below. Felling the Wyrm or the Lich Ram frees the Verse of Stone.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "The Barrow Wyrm is still. The long night lifts.": {
   "files": [
    "src/ui/run/endscreens.js",
    "src/ui/run/transit.js"
   ]
+ },
+ "The bell catches a verse: {verse}.": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The bell still rings true. Take it into the Hollow Wood, and listen for the warden.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "the bench is empty — clear spoils, node drafts and the shop fill it": {
   "files": [
@@ -8907,6 +9252,12 @@
   ],
   "data": true
  },
+ "The Chorus": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "THE CORRUPTION TOOK ROOT · NO REWARD": {
   "files": [
    "src/ui/hud/banner.js"
@@ -8936,6 +9287,12 @@
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "The dead remember every song. Mine they remember best.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "the delivery is placed at range — nothing to close": {
   "files": [
@@ -8970,6 +9327,12 @@
    "src/ui/run/endscreens.js",
    "src/ui/run/transit.js"
   ]
+ },
+ "The Drowned Heron stands in the next pool. Watch the water: it strikes from below.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "The Echoes server at {url} runs an older version.": {
   "files": [
@@ -9020,6 +9383,12 @@
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "The First Bell": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "the first hit of each cast on each enemy is a guaranteed crit.": {
   "files": [
@@ -9073,10 +9442,53 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "The gods applaud {boss}. A fine performance.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The gods applaud politely.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "The gods applaud.": {
   "files": [
-   "src/ui/run/endscreens.js"
-  ]
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The gods applaud. A short play, but a sincere one.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The gods applaud. The second act was better.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The gods applaud. They do love a curse.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The gods are still watching. They always are. Don’t play to them.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The gods. They watch, and they applaud.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "The guided first room: moving, attacking, dodging, the spring, a wave reward and a door. Starts from the camp.": {
   "files": [
@@ -9099,6 +9511,18 @@
    "src/ui/run/transit.js"
   ]
  },
+ "The Healer who carried the bell before you. Trades relics for better ones.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Heart is quiet. Four verses burn in the hearth. Three are still missing, and somewhere above the world, the gods have stopped clapping.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "The Heart's warden falls. Below the Barrow, the old beat falters.": {
   "files": [
    "src/ui/run/endscreens.js",
@@ -9114,6 +9538,24 @@
   "files": [
    "src/ui/menu/tabs/audio.js"
   ]
+ },
+ "The Hearth Song": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Hearth-Fire is where those echoes gather. We keep it lit.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Heron stands quietly, listening to clear water.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "THE HOLLOW": {
   "files": [
@@ -9152,15 +9594,40 @@
    "src/ui/run/transit.js"
   ]
  },
+ "The Hollow Stag waits beyond the next door. It was the wood’s warden once. Step aside when it lowers its antlers.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Hollow Stag was the wood’s warden, the first creature to hear the hollow song. Where no warden stood, the briars grew a Thornmother instead. Felling either frees the Verse of Root.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "The hollow under the Barrow": {
   "files": [
+   "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
   ]
+ },
+ "The Hollow Voice": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "The Hollow Wood": {
   "files": [
    "src/data/levels.js",
    "src/ui/menu/records.js"
+  ],
+  "data": true
+ },
+ "The Hollow Wood is on the map now. Shall I read you the story so far?": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -9239,6 +9706,12 @@
    "src/ui/run/transit.js"
   ]
  },
+ "The Lich Ram walks ahead, and the graves answer it. Break what rises before it gathers.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "The Long Road": {
   "files": [
    "src/data/unlocks.js"
@@ -9255,6 +9728,12 @@
  "THE MILLWHEEL": {
   "files": [
    "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Millwheel has torn loose ahead. It owns the edge of the room, so fight from the middle.": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -9369,6 +9848,17 @@
   ],
   "data": true
  },
+ "The river carries my song now. Drink.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The road below the Barrow is not on the map yet.": {
+  "files": [
+   "src/ui/story/page.js"
+  ]
+ },
  "The room closed": {
   "files": [
    "src/ui/menu/lobby.js"
@@ -9457,14 +9947,43 @@
    "src/ui/run/index.js"
   ]
  },
+ "The singer at the bottom is not a god but a god’s echo, left behind when the gods fell silent. Silencing it frees the Verse of Heart, and for the first time the gods stop applauding.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The singer under the Barrow. Speaks through altars, and before every boss.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The song travels with water. The Drowned Heron kept the river; the Millwheel is the mill itself, turned. Felling either frees the Verse of Water.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "The spirit takes {name}.": {
   "files": [
    "src/ui/run/index.js"
   ]
  },
+ "The Stag rests at the edge of the wood, free of the hollow song.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "the starting kit": {
   "files": [
    "src/ui/run/transit.js"
+  ]
+ },
+ "The story so far": {
+  "files": [
+   "src/ui/story/page.js"
   ]
  },
  "The Sunken Mill": {
@@ -9517,6 +10036,12 @@
    "src/ui/run/transit.js"
   ]
  },
+ "The violet is louder down here. The Choir must be past it, further down.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "The way ahead opens.": {
   "files": [
    "src/ui/run/transit.js"
@@ -9553,6 +10078,18 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "The wood’s warden heard me first. Listen to how well it sings.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Wyrm sleeps at last. Its long watch is over.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "They teach the party: a Skill draft for every hero.": {
   "files": [
@@ -9734,9 +10271,21 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Three lands. Below the Barrow there is no map at all. Yet.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Three lantern bolts in a 12° fan, 9 each.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Three verses home. Yet below the Barrow, something is still singing.": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -9862,6 +10411,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Two lands inked. The Mill’s ink is still wet.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Type the code another device showed after Save to cloud (like ABCD-EFGH), then press Load from cloud.": {
   "files": [
    "src/ui/menu/cloud.js"
@@ -9966,6 +10521,16 @@
    "src/data/layouts.js"
   ],
   "data": true
+ },
+ "Verse of {verse}": {
+  "files": [
+   "src/ui/story/page.js"
+  ]
+ },
+ "Verses in the hearth: {n} of {total}": {
+  "files": [
+   "src/ui/story/page.js"
+  ]
  },
  "Veteran": {
   "files": [
@@ -10105,6 +10670,12 @@
    "src/ui/run/encounter.js"
   ]
  },
+ "Walking to the Choir, past the Heart. Trades a lesson for a little Glint.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Wandering Spirit": {
   "files": [
    "src/sim/encounters.js"
@@ -10131,6 +10702,12 @@
  "Warding Aura": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Water@@verse": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -10192,10 +10769,22 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "Whatever waits in the Heart Chamber wears a warden’s shape, but the song in it is the Heart’s own. Don’t listen too closely.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Where": {
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "Where no warden stood, I grew one.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "Whetstone": {
   "files": [
@@ -10207,6 +10796,24 @@
  "Whirling Guard": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Wick": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Wick, at the hearth: “Below the Barrow, something is still singing.”": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Wick, the Hearth-Keeper": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -10297,6 +10904,12 @@
    "src/ui/run/partystrip.js"
   ]
  },
+ "You again! The road bends the same way for both of us, it seems.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "You are already in a room — leave it first.": {
   "files": [
    "src/net/protocol/messages.js"
@@ -10359,6 +10972,12 @@
    "src/ui/menu/pause.js"
   ]
  },
+ "You carried three verses all the way down. Sing them for me.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "You carry {n} relic: {names}.": {
   "files": [
    "src/ui/run/relic.js"
@@ -10370,6 +10989,12 @@
   ],
   "plural": true,
   "one": "You carry {n} relic: {names}."
+ },
+ "You carry my bell. I rang it once, in the Hollow Wood, long before you.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "You carry no relic to give.": {
   "files": [
@@ -10441,6 +11066,12 @@
    "src/net/session.js"
   ]
  },
+ "You will come back. Everything echoes.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Your {cls} seat is held for a minute after a disconnect": {
   "files": [
    "src/ui/menu/mpmenu.js"
@@ -10455,6 +11086,12 @@
   "files": [
    "src/ui/run/index.js"
   ]
+ },
+ "Your bell is the last one that still rings the true note. Take it, and take your friends. Bring the verses home.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "Your bench is auto-filled at every commit": {
   "files": [

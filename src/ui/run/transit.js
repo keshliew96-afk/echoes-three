@@ -17,6 +17,17 @@ import { service } from '../../app/registry.js';
 import { bossFor, levelFor } from '../../data/levels.js';
 import { endlessBossIndex, beyondCampaign, CYCLE } from '../../data/endless.js';
 import { t, tn } from '../../i18n/index.js';
+import { chapterFor } from '../../data/story.js';
+import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
+
+// THE HEARTH SONG (docs/STORY.md): the verse the bell catches on a level's
+// clear ('' past the campaign's own levels, deep in the Endless Descent).
+export function verseLine(level, depth = null) {
+  const ch = chapterFor(level);
+  if (!ch || !CAMPAIGN_LEVELS.includes(ch.level)) return '';
+  if (depth !== null && depth > CAMPAIGN_LEVELS.length) return '';
+  return t('The bell catches a verse: {verse}.', { verse: t(ch.name) });
+}
 
 const skillCount = (b) => (b.skills || []).filter(Boolean).length;
 
@@ -44,6 +55,8 @@ export const TRANSIT_CSS = `
     background: radial-gradient(ellipse at 50% 44%,
       rgba(150, 118, 80, 0.88) 0%, rgba(96, 74, 52, 0.92) 50%, rgba(58, 46, 36, 0.95) 100%);
   }
+  .rn-verse { margin-top: 2px; font-size: 18px; font-weight: 700; letter-spacing: 0.06em; color: #E8A23D; text-align: center; }
+  .rn-verse:empty { display: none; }
   .rn-transit .rn-kicker { font-size: 18px; font-weight: 800; letter-spacing: 0.3em; color: #E8A23D; margin-bottom: 4px; }
   .rn-transit .rn-next { display: flex; align-items: baseline; gap: 12px; margin: 10px 0 6px; font-size: 22px; color: #F4EFE6; }
   .rn-transit .rn-next .rn-lab { font-size: 17px; letter-spacing: 0.2em; color: #9C9186; }
@@ -82,6 +95,7 @@ export function createTransitScreen({ run }) {
     <div class="rn-title rn-headline"></div>
     <div class="rn-orn">◆ ◆ ◆</div>
     <div class="rn-sub rn-flavour"></div>
+    <div class="rn-verse"></div>
     <div class="rn-next"><span class="rn-lab">${esc(t('NEXT'))}</span><b class="rn-nextname"></b></div>
     <div class="rn-carry"></div>
     <div class="rn-kit"></div>
@@ -92,6 +106,7 @@ export function createTransitScreen({ run }) {
   const kicker = el.querySelector('.rn-kicker');
   const headline = el.querySelector('.rn-headline');
   const flavour = el.querySelector('.rn-flavour');
+  const verseEl = el.querySelector('.rn-verse');
   const nextName = el.querySelector('.rn-nextname');
   const nextRow = el.querySelector('.rn-next');
   const carryEl = el.querySelector('.rn-carry');
@@ -135,6 +150,7 @@ export function createTransitScreen({ run }) {
         depth === CYCLE + 1
           ? t('The campaign is won. The road does not end; it turns back into the dark wood, deeper than before.')
           : boss ? boss() : t('The way ahead opens.');
+      verseEl.textContent = verseLine(card.from, depth !== null ? depth - 1 : null);
       nextRow.style.display = '';
       const name = card.name ? t(card.name) : card.name;
       nextName.textContent =
@@ -155,6 +171,7 @@ export function createTransitScreen({ run }) {
       headline.textContent = t('LEVEL {level} · {name}', { level: ROMAN[to] ?? to, name: (card.name ? t(String(card.name)) : '').toUpperCase() });
       flavour.textContent = depth !== null ? t('Through all four lands and down again, until the party falls.') : t('The campaign begins here and runs on to the final level.');
       nextRow.style.display = 'none';
+      verseEl.textContent = '';
       const g = s.grant;
       carryEl.innerHTML = g
         ? [row(t('STARTER SKILLS'), `+${(g.skills || []).length}`), row(t('STARTER NODES'), String((g.nodes || []).length)), row(t('SOCKETS FILLED'), `${s.socketed ?? 0} / ${s.sockets ?? 0}`), row(t('GLINT'), String(s.wallet ?? 0))].join('')

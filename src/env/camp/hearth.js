@@ -153,6 +153,7 @@ export function createCampEmitters(root, emitters, cosmetic) {
 
   let hearthLight = null;
   let hearthFlame = null;
+  let hearthBoost = 1; // STORY: setHearthBoost(verses)
 
   for (const em of emitters) {
     const s = em.s ?? 1;
@@ -507,7 +508,8 @@ export function createCampEmitters(root, emitters, cosmetic) {
         Math.sin(tSec * 29 + f.phase * 2.7) * 0.3 +
         Math.sin(tSec * 6.3 + f.phase * 0.6) * 0.2;
       const jit = cosmetic.range(-0.05, 0.05);
-      const h = f.base * (1 + f.amp * n + jit);
+      const fb = f === hearthFlame ? hearthBoost : 1; // STORY: a step per verse
+      const h = f.base * fb * (1 + f.amp * n + jit);
       f.body.scale.set(h * 0.66 * (1 - 0.1 * n), h, 1);
       f.body.position.x = f.x + Math.sin(tSec * 5.1 + f.phase) * 0.02;
       f.body.position.y = f.y + 0.03 * n;
@@ -520,7 +522,7 @@ export function createCampEmitters(root, emitters, cosmetic) {
         }
       }
       f.glow.material.opacity = Math.max(0.16, f.glowO + f.glowO * 0.2 * n + jit);
-      f.glow.scale.setScalar(f.glowS * (1 + 0.09 * n));
+      f.glow.scale.setScalar(f.glowS * fb * (1 + 0.09 * n));
       f.pool.material.opacity = Math.max(0.2, f.poolO + 0.05 * n);
       if (f.core) f.core.material.opacity = Math.max(0.16, f.coreO + 0.07 * n);
       if (f.hot) {
@@ -555,7 +557,7 @@ export function createCampEmitters(root, emitters, cosmetic) {
 
     for (const l of lights) {
       l.light.intensity =
-        l.base * (1 + 0.1 * Math.sin(tSec * 11 + l.phase) + 0.05 * Math.sin(tSec * 23 + l.phase));
+        l.base * (l.light === hearthLight ? 1 + (hearthBoost - 1) * 1.2 : 1) * (1 + 0.1 * Math.sin(tSec * 11 + l.phase) + 0.05 * Math.sin(tSec * 23 + l.phase));
     }
 
     embers.update(tSec);
@@ -581,8 +583,17 @@ export function createCampEmitters(root, emitters, cosmetic) {
     }
   }
 
+  // THE HEARTH SONG (docs/STORY.md): the Hearth-Fire burns one step
+  // brighter for each verse of the song the player has brought home.
+  function setHearthBoost(verses) {
+    const v = Math.max(0, Math.min(7, Math.floor(Number(verses) || 0)));
+    hearthBoost = 1 + 0.05 * v;
+  }
+
   return {
     update,
+    setHearthBoost,
+    hearthBoost: () => Math.round(hearthBoost * 100) / 100,
     hearthLight,
     hearthFlame,
     counts: {

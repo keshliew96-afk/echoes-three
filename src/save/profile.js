@@ -102,7 +102,25 @@ export function freshProfile() {
     // older or damaged block to the current shape, so a v1 profile without it
     // loads with a fresh one.
     meta: freshMeta(),
+    // THE HEARTH SONG (docs/STORY.md): the story beats this player has seen
+    // (the prologue, each boss's Hollow Voice line) and how many times they
+    // met each recurring NPC. A profile without it loads with a fresh one.
+    story: freshStory(),
   };
+}
+
+export function freshStory() {
+  return { seen: [], met: {} };
+}
+const STORY_ID = /^[a-z0-9_:-]{1,40}$/;
+export function saneStory(s) {
+  const out = freshStory();
+  if (!s || typeof s !== 'object') return out;
+  if (Array.isArray(s.seen)) out.seen = [...new Set(s.seen.filter((x) => typeof x === 'string' && STORY_ID.test(x)))].slice(0, 200);
+  if (s.met && typeof s.met === 'object') {
+    for (const [k, v] of Object.entries(s.met)) if (STORY_ID.test(k) && Number.isFinite(v) && v > 0) out.met[k] = Math.min(9999, Math.floor(v));
+  }
+  return out;
 }
 
 function sane(p) {
@@ -119,6 +137,7 @@ function sane(p) {
   out.unlocks = { acts: Array.isArray(p.unlocks && p.unlocks.acts) ? [...new Set([1, ...p.unlocks.acts])].sort((a, b) => a - b) : [1] };
   out.playtimeSec = Number.isFinite(p.playtimeSec) ? p.playtimeSec : 0;
   out.meta = saneMeta(p.meta);
+  out.story = saneStory(p.story);
   return out;
 }
 
@@ -327,6 +346,26 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     });
     return { ok: w.ok, level: n, next: nx, unlocked: result.unlocked, clears: result.clears };
   }
+  // THE HEARTH SONG (docs/STORY.md): a story beat seen (idempotent; true
+  // when it was new) and a recurring NPC met (returns the meeting number).
+  function noteStory(id) {
+    if (typeof id !== 'string' || !STORY_ID.test(id)) return false;
+    sync();
+    if (profile.story.seen.includes(id)) return false;
+    return commit((p) => {
+      if (p.story.seen.includes(id)) return false;
+      p.story.seen.push(id);
+      return true;
+    }).result === true;
+  }
+  function meetNpc(id) {
+    if (typeof id !== 'string' || !STORY_ID.test(id)) return 0;
+    return commit((p) => {
+      p.story.met[id] = (p.story.met[id] ?? 0) + 1;
+      return p.story.met[id];
+    }).result;
+  }
+
   // A level entered (run start / level start): the furthest level reached.
   function noteLevelReached(level) {
     const n = Number(level);
@@ -533,6 +572,8 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     noteLevelReached, // CAMPAIGN
     unlockLevel, // CAMPAIGN
     awardRun, // UNLOCKS
+    noteStory, // THE HEARTH SONG
+    meetNpc, // THE HEARTH SONG
     // probe seam (tools/unlocks-net.mjs): add Embers as one atomic write
     debugEmbers: (n) => commit((p) => {
       p.meta.embers += Math.max(0, Math.round(n));
@@ -562,8 +603,10 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       // UNLOCKS: a records reset clears scores and records, never the Embers
       // and unlocks the player earned (docs/UNLOCKS.md).
       const keepMeta = saneMeta(profile.meta);
+      const keepStory = saneStory(profile.story);
       base = freshProfile();
       base.meta = keepMeta;
+      base.story = keepStory;
       baseText = null;
       rebuild();
       profile.savedAt = now();

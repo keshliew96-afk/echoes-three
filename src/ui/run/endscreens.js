@@ -8,7 +8,9 @@
 import { esc } from './style.js';
 import { SKILLS } from '../../sim/skills.js';
 import { service } from '../../app/registry.js'; // M2 NEW-BEST: the save service's run record
-import { levelFor } from '../../data/levels.js';
+import { levelFor, bossNameOfRun } from '../../data/levels.js';
+import { chorusLine, ENDING } from '../../data/story.js';
+import { verseLine } from './transit.js';
 import { t } from '../../i18n/index.js';
 
 // Per-act victory line (matches ui/run/transit.js FLAVOUR).
@@ -166,6 +168,19 @@ function partyHtml(builds) {
   return `<div class="rn-party-head">${esc(t('THE PARTY'))}</div>${rows}`;
 }
 
+// THE HEARTH SONG (docs/STORY.md): the Chorus — the gods, an audience —
+// picks its line by how the party fell; the run seed picks among the rest.
+function chorus(view, s) {
+  const line = chorusLine({
+    bossRoom: !!(s && s.lastRoom === 8),
+    room: s ? s.lastRoom : 0,
+    level: view.act ?? 1,
+    curses: s && s.curses ? (Array.isArray(s.curses) ? s.curses.length : Number(s.curses) || 0) : 0,
+    seed: s && Number.isFinite(s.seed) ? s.seed : 0,
+  });
+  return t(line, { boss: t(bossNameOfRun(view)).replace(/^The /, 'the ') });
+}
+
 export function createEndScreen({ run }) {
   const el = document.createElement('div');
   el.className = 'rn-page rn-end';
@@ -173,6 +188,7 @@ export function createEndScreen({ run }) {
     <div class="rn-title rn-headline">${esc(t('VICTORY'))}</div>
     <div class="rn-orn">◆ ◆ ◆</div>
     <div class="rn-sub rn-flavour"></div>
+    <div class="rn-verse"></div>
     <div class="rn-summary"></div>
     <div class="rn-party" style="display:none"></div>
     <div class="rn-endfoot">
@@ -184,6 +200,7 @@ export function createEndScreen({ run }) {
 
   const headline = el.querySelector('.rn-headline');
   const flavour = el.querySelector('.rn-flavour');
+  const verseEl = el.querySelector('.rn-verse');
   const summaryEl = el.querySelector('.rn-summary');
   const partyEl = el.querySelector('.rn-party');
   const hintEl = el.querySelector('.rn-hint');
@@ -212,7 +229,10 @@ export function createEndScreen({ run }) {
       ? complete
         ? t('The last of the old beasts falls. Every level is clear — the long night is over.')
         : ((view.act === 4 ? null : BOSS_WIN_FLAVOUR[view.actBoss && view.actBoss.kind]) ?? WIN_FLAVOUR[view.act] ?? WIN_FLAVOUR[1])()
-      : t('The gods applaud.');
+      : chorus(view, s);
+    // THE HEARTH SONG (docs/STORY.md): a won level hands the bell its verse;
+    // a complete campaign closes on the story's ending for its length.
+    verseEl.textContent = deep || !win ? '' : complete ? `${verseLine(view.act)} ${t(CAMPAIGN_LEVELS.length >= 4 ? ENDING.heart.text : ENDING.barrow.text)}` : verseLine(view.act);
     {
       const c = run().campaign ? run().campaign() : null;
       const secs = c && c.autoReturnInTicks !== null && c.autoReturnInTicks !== undefined ? Math.ceil(c.autoReturnInTicks / 60) : null;

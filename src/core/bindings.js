@@ -41,6 +41,7 @@ export const ACTIONS = Object.freeze([
   { id: 'levels', def: 'KeyL', group: 'camp' },
   { id: 'unlocks', def: 'KeyU', group: 'camp' },
   { id: 'classes', def: 'KeyC', group: 'camp' },
+  { id: 'story', def: 'KeyJ', group: 'camp' },
 ]);
 export const ACTION_IDS = Object.freeze(ACTIONS.map((a) => a.id));
 export const DEFAULT_BINDINGS = Object.freeze(Object.fromEntries(ACTIONS.map((a) => [a.id, a.def])));

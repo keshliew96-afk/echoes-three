@@ -73,6 +73,7 @@ import { levelFor } from '../data/levels.js';
 import { endlessUnlockedFrom } from '../data/endless.js';
 import { CLASS_OF_SEAT, CLASS_NAME } from '../data/classes.js';
 import { bindings, PAD } from '../core/bindings.js';
+import { createCampNpcs } from './campnpcs.js';
 import { cap, padCap, usingPad, onHintsChange } from '../app/controls.js';
 
 // §18: "deep indigo/teal ambient". Two numbers carry the whole night read —
@@ -226,6 +227,17 @@ export function createCampScene(stage, toggles, ctx) {
   root.add(mapTable.group);
   root.add(mapTable.ring);
   // @gnt:CAMPAIGN MAP-TABLE end
+  // THE HEARTH SONG (docs/STORY.md): Wick, Bramble, Quill and the freed
+  // wardens. Their bubbles hide with the camp; the sim sees Bramble's collider.
+  const npcs = createCampNpcs({
+    root,
+    stage,
+    cosmetic,
+    svc: (n) => svc(n),
+    toScreen: (x, y, z) => toScreen(x, y, z),
+    openUnlocks: (via) => openUnlocks(via),
+    openStory: (via) => openStory(via),
+  });
   const shadows = camp.shadows.concat(edge.shadows, [mapTable.shadow]);
   buildShadowInstances(root, shadows);
   const footprints = camp.footprints.concat(edge.footprints, ground.footprints, [mapTable.footprint]);
@@ -369,7 +381,7 @@ export function createCampScene(stage, toggles, ctx) {
   // holds the three critters on their hearth seats (A2) — both only while the
   // camp is the live scene. Cleared the instant a run starts, so the combat
   // path never sees a collider or a seat.
-  const colliders = buildCampColliders(CAMP_SPEC).concat([mapTable.collider]); // CAMPAIGN: the map table is solid
+  const colliders = buildCampColliders(CAMP_SPEC).concat([mapTable.collider], npcs.colliders); // CAMPAIGN: the map table is solid; STORY: Bramble
   // Layout guard (Round D2 camp critic F1): every authored road must stay
   // walkable for a body — a prop on a path centreline is a bug, not dressing.
   const roadViolations = campRoadsClear(CAMP_SPEC);
@@ -402,6 +414,7 @@ export function createCampScene(stage, toggles, ctx) {
   let runs = 0;
   let inRange = false;
   let tableTick = 0; // CAMPAIGN: map-table waymark refresh cadence
+  let storyRefresh = 0; // STORY: frames until the NPCs re-read the profile
 
   bus.on('basic_fire', () => {
     firedFlag = true;
@@ -444,6 +457,8 @@ export function createCampScene(stage, toggles, ctx) {
     mode = next;
     const inCamp = next === 'camp';
     root.visible = inCamp;
+    npcs.setVisible(inCamp);
+    if (inCamp) storyRefresh = 0;
     for (const r of arenaRoots) r.visible = !inCamp;
     if (inCamp) applyCampLighting();
     else applyRunLighting();
@@ -747,6 +762,25 @@ export function createCampScene(stage, toggles, ctx) {
     app.screens.push('classes', { via });
     return true;
   }
+  // THE HEARTH SONG (docs/STORY.md): the Story so far page (app screen
+  // 'story', src/ui/story/page.js) — J, Quill's bubble, or the table prompt.
+  // A network guest may open it too: it reads that player's own profile.
+  function openStory(via = 'key') {
+    if (mode !== 'camp' || begin || picking) return false;
+    const app = svc('app');
+    if (!app || !app.screens || !appReg || !appReg.screenFactory?.('story')) return false;
+    if (app.state !== 'playing' || app.screens.isOpen()) return false;
+    picking = true;
+    prompt.classList.remove('cp-on');
+    if (tablePrompt) tablePrompt.classList.remove('cg-on');
+    const off = app.screens.on('change', () => {
+      if (app.screens.has('story')) return;
+      picking = false;
+      if (typeof off === 'function') off();
+    });
+    app.screens.push('story', { via });
+    return true;
+  }
   function playingClass() {
     const nv = world.netView;
     return CLASS_OF_SEAT[nv && nv.seat > 0 ? nv.seat : 0];
@@ -833,6 +867,7 @@ export function createCampScene(stage, toggles, ctx) {
   function campInteract() {
     if (withinPortal()) beginRun();
     else if (withinTable(localBody().x, localBody().z)) openLevels('table');
+    else npcs.interact(localBody()); // STORY: talk to Wick or Bramble
   }
   window.addEventListener('keydown', (e) => {
     if (e.repeat || mode !== 'camp') return;
@@ -846,6 +881,7 @@ export function createCampScene(stage, toggles, ctx) {
     if (bindings.is(e.code, 'levels')) openLevels('key');
     else if (bindings.is(e.code, 'unlocks')) openUnlocks('key');
     else if (bindings.is(e.code, 'classes')) openClasses('key');
+    else if (bindings.is(e.code, 'story')) openStory('key');
   });
   // Gamepad in camp (Controls slice): A = interact, B / Y / X = Levels /
   // Unlocks / Classes (nobody fights in camp). core/input.js reports these
@@ -960,6 +996,19 @@ export function createCampScene(stage, toggles, ctx) {
 
     fx.update(elapsedSec);
     flies.update(elapsedSec);
+    // THE HEARTH SONG: the NPCs idle and speak; the profile is re-read on
+    // the way into camp and twice a second (a level cleared, a warden felled,
+    // another tab's write) — the hearth burns a step brighter per verse.
+    if (--storyRefresh <= 0) {
+      storyRefresh = 30;
+      npcs.refresh();
+      if (fx.setHearthBoost) fx.setHearthBoost(npcs.verses());
+    }
+    {
+      const appSvc = svc('app');
+      const menusOpen = !!(appSvc && appSvc.screens && appSvc.screens.isOpen());
+      npcs.update(dt, elapsedSec, localBody(), !!begin || picking || menusOpen);
+    }
     {
       const cn = prompt.querySelector('.cp-class-n');
       const want = t(CLASS_NAME[playingClass()]);
@@ -1085,6 +1134,9 @@ export function createCampScene(stage, toggles, ctx) {
         unlocked: unlockedLevels(),
       },
       portalPromptText: prompt.textContent.replace(/\s+/g, ' ').trim(),
+      // THE HEARTH SONG (docs/STORY.md): the NPCs, their bubbles, the wardens.
+      story: npcs.debug(),
+      hearthBoost: fx.hearthBoost ? fx.hearthBoost() : null,
       party: {
         healerAnim: healerRig.getAnim(),
         healerYaw: Math.round(healerYaw * 100) / 100,
@@ -1213,6 +1265,10 @@ export function createCampScene(stage, toggles, ctx) {
         return openClasses('cmd');
       case 'campTutorial':
         return beginTutorial(args[0] || 'cmd');
+      case 'campStory':
+        return openStory('cmd');
+      case 'campTalk':
+        return npcs.interact(localBody());
       // @gnt:CAMPAIGN CAMP-CMD end
       // @gnt:M5b CAMP-CMD begin (followSeat)
       // Network play: install (fn(alpha) -> { x, z, aim } | null) or clear

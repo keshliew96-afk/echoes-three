@@ -528,6 +528,13 @@ registerScreen('classes', createClassesScreen);
 // TUTORIAL (docs/TUTORIAL.md): the guided first room's coach and the one-time tips.
 import { createTutorial } from './ui/tutorial/index.js';
 if (PLAYABLE) createTutorial({ app, world, bus, scene: activeScene, params: bootParams });
+// THE HEARTH SONG (docs/STORY.md): the Story so far page (J / Quill), the
+// prologue, and the Hollow Voice's lines.
+import { createStoryScreen, createPrologueScreen } from './ui/story/page.js';
+import { createStory } from './ui/story/index.js';
+registerScreen('story', createStoryScreen);
+registerScreen('prologue', createPrologueScreen);
+if (PLAYABLE) createStory({ app, world, scene: activeScene, params: bootParams });
 {
   const applyTints = () => {
     try {
@@ -1028,6 +1035,7 @@ window.__echoes = {
   playClass: () => playClass.debug(),
   i18n: () => i18nDebug(), // docs/I18N.md: { lang, misses, seen }
   tutorial: () => service('tutorial'), // docs/TUTORIAL.md: { startNow, skip, debug() ... }
+  story: () => service('story'), // docs/STORY.md: { showPrologue, voice, debug() }
   // CONTROLS (docs/CONTROLS.md): key bindings, the device in use, live input.
   controls: {
     state: () => {
