@@ -100,6 +100,8 @@ async function tipAtDoors(want, shotName) {
   }
   return null;
 }
+// The door into the objective room (a "?" door may sit beside it).
+const doorOf = (v, m) => Math.max(0, v.path.options.findIndex((o) => o.win === m));
 async function toPath() {
   for (let i = 0; i < 40; i++) {
     const v = await runView();
@@ -125,7 +127,7 @@ check(!!(await cmd('objectiveRoom', 'purge', 3)), 'room 3 forced to a purge');
 
 // ------------------------------------------------------------------ hunt --
 let v = await toPath();
-check(v.phase === 'path' && v.path.options.every((o) => o.win === 'hunt'), `the doors lead to the hunt (${v.path && v.path.options.map((o) => o.win)})`);
+check(v.phase === 'path' && v.path.options.some((o) => o.win === 'hunt') && v.path.options.every((o) => o.win === 'hunt' || o.event), `the doors lead to the hunt (${v.path && v.path.options.map((o) => o.win)})`);
 const tip = await tipAtDoors('hunt', 'objective-tip-hunt');
 check(tip === 'hunt', `the first-hunt tip shows on the doors (${tip})`);
 await sleep(600);
@@ -133,9 +135,9 @@ const door = await page.evaluate(() => ({
   glyphs: [...document.querySelectorAll('.rn-path .rn-gwin')].map((e) => e.textContent),
   legend: (document.querySelector('.rn-path .rn-legend') || {}).textContent ?? '',
 }));
-check(door.glyphs.every((g) => g === '➶'), `the doors wear the hunt glyph (${door.glyphs.join(' ')})`);
+check(door.glyphs.includes('➶') && door.glyphs.every((g) => g === '➶' || g === '?'), `the doors wear the hunt glyph (${door.glyphs.join(' ')})`);
 await page.screenshot({ path: `captures/objective-door-hunt${sfx}.png` });
-await cmd('pathChoose', 0);
+await cmd('pathChoose', doorOf(v, 'hunt'));
 v = await waitPhase(['combat']);
 check(v.mode === 'hunt', `room 2 is a hunt (${v.mode})`);
 await page.waitForFunction(() => { const r = window.__echoes.state().room; return !!(r && r.quarry && r.quarry.spawned); }, { timeout: 60000, polling: 250 });
@@ -162,11 +164,11 @@ check(r1 && r1.quarry && r1.huntTicksLeft > 0, `the room counts the escape down 
 
 // ----------------------------------------------------------------- purge --
 v = await toPath();
-check(v.phase === 'path' && v.path.options.every((o) => o.win === 'purge'), `the doors lead to the purge (${v.path && v.path.options.map((o) => o.win)})`);
+check(v.phase === 'path' && v.path.options.some((o) => o.win === 'purge') && v.path.options.every((o) => o.win === 'purge' || o.event), `the doors lead to the purge (${v.path && v.path.options.map((o) => o.win)})`);
 const tip2 = await tipAtDoors('purge', 'objective-tip-purge');
 check(tip2 === 'purge', `the first-purge tip shows on the doors (${tip2})`);
 await sleep(600);
-await cmd('pathChoose', 0);
+await cmd('pathChoose', doorOf(v, 'purge'));
 v = await waitPhase(['combat']);
 check(v.mode === 'purge', `room 3 is a purge (${v.mode})`);
 await sleep(1500);
