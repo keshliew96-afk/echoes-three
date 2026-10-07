@@ -91,6 +91,11 @@ export const MSG = Object.freeze({
   START_GAME: 'start_game',
   RECONNECT: 'reconnect',
   PING: 'ping',
+  // WEBRTC CO-OP (docs/WEBRTC_COOP.md): peer-connection signalling between the
+  // host and one guest — { t: 'rtc', to|from: seat, id, kind: 'offer' |
+  // 'answer' | 'cand', sdp?, cand? }. The server only checks and forwards it
+  // (client -> server carries `to`, server -> client carries `from`).
+  RTC: 'rtc',
   // server -> client
   WELCOME: 'welcome',
   ROOM_STATE: 'room_state',

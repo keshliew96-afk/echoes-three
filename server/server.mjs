@@ -42,6 +42,7 @@ import { acceptUpgrade, CLOSE } from './ws.mjs';
 import { Lobby } from './lobby.mjs';
 import { quickMatch, cancelMatch } from './matchmaking.mjs';
 import { createLink, linkStats, routeBinary } from './relay.mjs';
+import { touchHost } from './keyframes.mjs';
 import { createHttpHandler } from './admin.mjs';
 import { createCloudStore } from './cloud.mjs';
 import { createStaticHandler, createBuildInfoReader } from './static.mjs';
@@ -186,6 +187,7 @@ export function createEchoesServer(options = {}) {
     rejectedHello: 0,
     originRejected: 0,
     ipRejected: 0,
+    signals: 0, // WEBRTC CO-OP: rtc signalling messages forwarded
   };
   const logRing = [];
   function log(kind, data = {}) {
@@ -384,12 +386,44 @@ export function createEchoesServer(options = {}) {
         // Heartbeat reply travels unreliable (a game's latency probe is never
         // retransmitted — RTT samples stay pure).
         sendRec(peer.rec, encodeMessage(MSG.PONG, { ts: m.ts, serverTime: now() }), { unreliable: true });
+        // WEBRTC CO-OP: a host whose guests are all on direct links sends the
+        // server only keyframes (every 2 s) — its pings mark it alive too, so
+        // a migration keyframe's stateAgeMs stays honest.
+        {
+          const room = lobby.roomOf(peer);
+          if (room && room.hostPeerId === peer.id) touchHost(room, now());
+        }
         break;
       }
+      case MSG.RTC:
+        forwardSignal(peer, m);
+        break;
       default:
         sendControl(peer, MSG.ERROR, { reason: ERR.BAD_REQUEST, re: m.t });
     }
     return undefined;
+  }
+
+  // WEBRTC CO-OP (docs/WEBRTC_COOP.md): the server only matches and relays
+  // the signalling of a direct link. Both ends sit in the same room, one of
+  // them is its host, the target seat is held by a connected player; the
+  // message goes on with `from` = the sender's seat (never trusted from the
+  // sender). Anything else is dropped silently: a stale offer for a seat that
+  // just changed hands is normal, and the link simply stays on the relay.
+  function forwardSignal(peer, m) {
+    const room = lobby.roomOf(peer);
+    if (!room || room.state === 'closed') return;
+    const from = lobby.seatOf(room, peer.id);
+    const to = room.seats[m.to];
+    if (!from || !to || !to.peerId || !to.connected || to.peerId === peer.id) return;
+    if (peer.id !== room.hostPeerId && to.peerId !== room.hostPeerId) return;
+    const target = room.peerRef.get(to.peerId);
+    if (!target) return;
+    counters.signals += 1;
+    const out = { from: from.index, id: m.id, kind: m.kind };
+    if (m.sdp !== undefined) out.sdp = m.sdp;
+    if (m.cand !== undefined) out.cand = { candidate: m.cand.candidate, sdpMid: m.cand.sdpMid ?? null, sdpMLineIndex: m.cand.sdpMLineIndex ?? null };
+    sendControl(target, MSG.RTC, out);
   }
 
   function onHello(rec, m) {

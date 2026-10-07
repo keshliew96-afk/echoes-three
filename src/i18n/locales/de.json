@@ -1909,5 +1909,10 @@
   "other": "{n} Speicherplätze"
  },
  "Slick floor": "Rutschiger Boden",
- "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "Nasser Stein und Grabreif sind rutschig: Du rutschst beim Anhalten weiter, wendest schwerfällig, und dein Ausweichen trägt dich weiter. Bodengegner rutschen auch."
+ "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "Nasser Stein und Grabreif sind rutschig: Du rutschst beim Anhalten weiter, wendest schwerfällig, und dein Ausweichen trägt dich weiter. Bodengegner rutschen auch.",
+ "Direct@@network path": "Direkt",
+ "Relay@@network path": "Relay",
+ "Direct {direct} · Relay {relay}": "Direkt {direct} · Relay {relay}",
+ "{cls}: direct connection": "{cls}: direkte Verbindung",
+ "{cls}: through the server relay": "{cls}: über das Server-Relay"
 }

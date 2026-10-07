@@ -1930,5 +1930,10 @@
   "other": "{n} espaços de salvamento"
  },
  "Slick floor": "Chão escorregadio",
- "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "Pedra molhada e geada de túmulo escorregam: você continua deslizando ao parar, vira com dificuldade e a esquiva leva mais longe. Inimigos terrestres também escorregam."
+ "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "Pedra molhada e geada de túmulo escorregam: você continua deslizando ao parar, vira com dificuldade e a esquiva leva mais longe. Inimigos terrestres também escorregam.",
+ "Direct@@network path": "Direta",
+ "Relay@@network path": "Retransmissão",
+ "Direct {direct} · Relay {relay}": "Direta {direct} · Retransmissão {relay}",
+ "{cls}: direct connection": "{cls}: conexão direta",
+ "{cls}: through the server relay": "{cls}: pelo servidor"
 }

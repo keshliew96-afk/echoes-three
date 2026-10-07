@@ -223,6 +223,10 @@ export function createLobbyScreen(ctx) {
         tag.classList.add('nt-ready');
       } else tag.textContent = t('Not ready');
       if (s.peerId && !mine) b.querySelector('.nt-srole').textContent += ` · ${t('Taken')}`;
+      // WEBRTC CO-OP: the path this page's game traffic to that player takes
+      // (a host sees each guest, a guest sees the host).
+      const path = net.paths ? net.paths()[s.index] : undefined;
+      if (path) b.querySelector('.nt-srole').textContent += ` · ${path === 'direct' ? t('Direct@@network path') : t('Relay@@network path')}`;
       const canTake = !s.peerId && r.state === 'lobby';
       const seatVars = { cls: t(SEAT_LABELS[s.index]), who: s.peerId ? s.name : t('AI') };
       b.setAttribute('aria-label', canTake ? t('{cls}: {who} — press to take this seat', seatVars) : t('{cls}: {who}', seatVars));
@@ -377,6 +381,9 @@ export function createLobbyScreen(ctx) {
             }
           }),
           net.on('state', () => closeIfPlaying()),
+          net.on('path', () => {
+            if (open) render();
+          }),
           net.on('game_starting', (m) => {
             countdownUntil = performance.now() + (m.countdownMs || 1500);
             if (!cdTimer) tickCountdown();

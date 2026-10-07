@@ -47,9 +47,10 @@ import {
 import { createTransport, RateMeter, SeqLossMeter, createQualityTracker } from './transport.js';
 import { normalizeCode, sanitizeName, reasonText } from './protocol/messages.js';
 import { createSnapshotHost, createSnapshotClient, pct, readSnapHeader } from './protocol/snapshot.js';
-import { encodeInputPacket, decodeInputPacket, encodeKeyframe, encodeEvents, decodeEvents, decodeCmd, encodeCmd, SEAT_ALL, channelOf } from './protocol/codec.js';
+import { encodeInputPacket, decodeInputPacket, encodeKeyframe, encodeEvents, decodeEvents, decodeCmd, encodeCmd, SEAT_ALL, channelOf, withSeat } from './protocol/codec.js';
 import { validateServerUrl, resolveServerAddress, pageLocation, isNewerVersion, fetchSiteBuild, ownEntryChunk } from './address.js';
 import { createTabSessions } from './tabsession.js';
+import { createMesh, CONNECT_MS, SILENT_MS } from './mesh.js';
 
 // The single-record key of builds <= v0.5.133; sessions are stored PER TAB
 // since fix-M5b-r4 (tabsession.js, `echoes.net.sessions`).
@@ -120,6 +121,52 @@ export function createNetClient(opts = {}) {
   let snapEvery = params.netRate ? Math.max(1, Math.round(SIM_HZ / Math.max(10, Math.min(60, params.netRate)))) : SNAPSHOT_EVERY_TICKS;
 
   const transport = createTransport({ WebSocketImpl, cond: params.netCond || null, now });
+
+  // WEBRTC CO-OP (docs/WEBRTC_COOP.md): direct browser-to-browser links carry
+  // the game's binary frames; this socket stays the lobby, the signalling
+  // path, the keyframe store and the relay for every seat without a direct
+  // link. ?p2p=0 keeps everything on the relay (as does a runtime with no
+  // WebRTC — the Node bots).
+  const mesh = createMesh({
+    enabled: params.p2p !== false,
+    ...(Number.isFinite(params.p2pWait) && params.p2pWait > 0 ? { connectMs: params.p2pWait, silentMs: Math.round((params.p2pWait * SILENT_MS) / CONNECT_MS) } : {}),
+    signal: (m) => transport.sendControl(m),
+    deliver: (u8) => transport.injectBinary(u8),
+    log: (k, d) => log(k, d),
+    now,
+  });
+  const HOST_OUT = new Set([BIN.SNAP, BIN.EVENTS, BIN.EVENTS_U, BIN.CMD]);
+  const GUEST_OUT = new Set([BIN.INPUT, BIN.CMD]);
+  transport.setRouter((u8, wsSend) => {
+    if (!mesh.enabled || !room || room.state !== 'in_game') return false;
+    const sent = routeDirect(u8, wsSend);
+    // The game's own send cadence used to keep this socket alive (the server
+    // drops a silent peer after 5 s, a host after 3 s) and it runs where
+    // timers do not (a hidden tab's Worker metronome). With the frames on a
+    // direct link, it now carries the heartbeat instead — twice per ping
+    // interval, so a page that stalls for a moment still beats the server's
+    // silence limit about as well as a stream of frames did.
+    if (sent && now() - lastPingAt >= PING_INTERVAL_MS / 2) sendPing();
+    return sent;
+  });
+  function routeDirect(u8, wsSend) {
+    const ch = u8[0];
+    if (role === 'guest') return GUEST_OUT.has(ch) && mesh.hostSeat !== null && mesh.send(mesh.hostSeat, u8);
+    if (role !== 'host' || !HOST_OUT.has(ch)) return false; // KEYFRAME: always the server
+    const dest = u8[1];
+    if (dest !== SEAT_ALL) return mesh.send(dest, u8);
+    // A broadcast: direct seats get their copy on their link, the others one
+    // addressed copy each through the relay (never the relay's broadcast —
+    // that would hand the direct seats a duplicate).
+    const guests = room.seats.filter((x) => x.peerId && x.connected && x.peerId !== peerId);
+    if (!guests.some((x) => mesh.isDirect(x.index))) return false;
+    for (const x of guests) {
+      const f = withSeat(u8, x.index);
+      if (!mesh.send(x.index, f)) wsSend(f);
+    }
+    return true;
+  }
+  mesh.on('path', (e) => emit('path', e));
   savedUrl = initialSaved();
   let url = resolveUrl();
 
@@ -307,6 +354,8 @@ export function createNetClient(opts = {}) {
       log('state', { from: prev, to: next });
       emit('state', { state: next, prev });
     }
+    // No socket or no room: no direct links either (a reconnect re-offers).
+    if (!room || next === 'offline' || next === 'reconnecting' || next === 'connecting') mesh.reset(next);
     syncStreams();
   }
   function applyRoom(r) {
@@ -315,6 +364,7 @@ export function createNetClient(opts = {}) {
     seat = s ? s.index : null;
     role = !room || !s ? 'none' : room.hostPeerId === peerId ? 'host' : 'guest';
     if (room && s) saveSession();
+    mesh.sync({ room, peerId });
     emit('room', room);
     recompute();
   }
@@ -502,10 +552,13 @@ export function createNetClient(opts = {}) {
     if (watchdog) clearInterval(watchdog);
     pingTimer = null;
     watchdog = null;
+    lastCheckAt = null;
   }
   let lastSessionSave = 0;
+  let lastPingAt = -Infinity;
   function sendPing() {
     if (transport.state !== 'open') return;
+    lastPingAt = now();
     // Unreliable heartbeat: a lost ping/pong yields no sample (never a
     // retransmit-inflated one); silence detection still sees every frame.
     transport.sendControl({ t: MSG.PING, ts: now(), rttMs: rtt.samples.length ? Math.round(median(rtt.samples.slice(-5)) * 10) / 10 : undefined }, { unreliable: true });
@@ -525,10 +578,28 @@ export function createNetClient(opts = {}) {
     if (rtt.samples.length > 120) rtt.samples.shift();
     if (Number.isFinite(m.serverTime)) rtt.offsetMs = m.serverTime - (wallNow() - sample / 2);
   }
+  let lastCheckAt = null;
+  let skippedCheck = false;
   function checkSilence() {
     if (transport.state !== 'open') return;
+    // A watchdog that itself ran seconds late means THIS page stalled (a long
+    // frame, a starved tab): the frames that arrived meanwhile are still
+    // queued behind this timer, so judge on the next run, not now (once per
+    // stall — a throttled tab whose every run is late still gets judged).
+    const t = now();
+    const late = lastCheckAt !== null && t - lastCheckAt > 3000;
+    lastCheckAt = t;
+    if (late && !skippedCheck) {
+      skippedCheck = true;
+      return;
+    }
+    skippedCheck = false;
     const limit = role === 'host' && room && room.state === 'in_game' ? HOST_TIMEOUT_MS : PEER_TIMEOUT_MS;
-    const silent = now() - transport.lastRecvAt;
+    // A frame on a direct link is life too: the host's heartbeats and game
+    // frames come that way now (a socket that really died is still noticed —
+    // the server drops this player, the host closes the direct link, and the
+    // silence follows).
+    const silent = now() - Math.max(transport.lastRecvAt, mesh.lastRecvAt());
     if (silent > limit) {
       log('silence', { silentMs: Math.round(silent), limit });
       linkLost(4000, 'silence');
@@ -678,6 +749,9 @@ export function createNetClient(opts = {}) {
       case MSG.PONG:
         onPong(m);
         break;
+      case MSG.RTC:
+        mesh.onSignal(m);
+        return;
       case MSG.PEER_JOINED:
       case MSG.PEER_RESTORED:
         log(m.t, { peer: m.peerId, seat: m.seat });
@@ -1274,6 +1348,9 @@ export function createNetClient(opts = {}) {
       awaySeats: null,
       replayedOnce: null,
       conditioner: transport.conditioner.get(),
+      // WEBRTC CO-OP: how each other player's frames travel (linkPaths()).
+      paths: linkPaths(),
+      p2p: mesh.stats(),
     };
     for (const fn of statExtensions) {
       try {
@@ -1316,6 +1393,20 @@ export function createNetClient(opts = {}) {
     const s = [...a].sort((x, y) => x - y);
     const m = s.length >> 1;
     return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+  // WEBRTC CO-OP: seat -> 'direct' | 'connecting' | 'relay' for every OTHER
+  // player this page exchanges game frames with — a host: each connected
+  // guest; a guest: the host. ({} outside a room.)
+  function linkPaths() {
+    const out = {};
+    if (!room) return out;
+    for (const x of room.seats) {
+      if (!x.peerId || !x.connected || x.peerId === peerId) continue;
+      if (role === 'guest' && x.peerId !== room.hostPeerId) continue;
+      if (role !== 'guest' && role !== 'host') continue;
+      out[x.index] = mesh.pathOf(x.index);
+    }
+    return out;
   }
   function peers() {
     return room ? room.seats.map((s) => ({ ...s, me: s.peerId === peerId })) : [];
@@ -1439,6 +1530,8 @@ export function createNetClient(opts = {}) {
     sendBinary: (u8) => transport.sendBinary(u8),
     sendCmd: (cmd, cmdSeq = 0) => transport.sendBinary(encodeCmd(seat ?? 0, cmdSeq, cmd)),
     probeStreams: () => ({ host: hostStream, guest: guestStream }),
+    paths: linkPaths,
+    mesh,
   };
   api.debug = api;
 

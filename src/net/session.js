@@ -1809,6 +1809,13 @@ export function createNetSession(ctx) {
     if (hud) hud.update(api.status());
     changed();
   });
+  // WEBRTC CO-OP: a direct link that broke mid-game drops the frames it had
+  // in flight; the seat is on the relay from now on. A guest re-baselines
+  // exactly as after a reconnect (full snapshot), the host carries on.
+  net.on('path', (e) => {
+    if (e.prev === 'direct' && e.path === 'relay' && role === 'guest') requestFull('p2p_fallback');
+    if (hud) hud.update(api.status());
+  });
   net.on('peer_dropped', (m) => {
     if (hud && m.seat !== localSeat()) hud.note(t('{name} reconnecting…', { name: nameOfSeat(m.seat) || lastSeatNames[m.seat] || t(seatLabel(m.seat)) }));
   });

@@ -60,6 +60,8 @@ export function parseBootParams(search = typeof window !== 'undefined' ? window.
     netName: p.get('netname'),
     netSeat: int('netseat'),
     netCond: p.get('netcond'), // client-side conditioner spec, e.g. lat75,jit10,loss10
+    p2p: flagOf(p, 'p2p', true), // WEBRTC CO-OP: ?p2p=0 keeps every co-op frame on the server relay
+    p2pWait: int('p2pwait'), // WEBRTC CO-OP: connect window in ms (slow probe browsers; default 6000)
     netRate: int('netrate'), // M5a: snapshot rate override 10..60 Hz (tests)
     // PARTY (PLAN §16.11): the Ally builds mode for this boot (not saved), and
     // a harness grant for every ally at run start (N = STARTER_GRANT[N].allies,

@@ -1951,5 +1951,10 @@
   "other": "{n} ячейки сохранения"
  },
  "Slick floor": "Скользкий пол",
- "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "Мокрый камень и могильный иней скользкие: остановившись, ты продолжаешь скользить, поворачиваешь медленно, а уклонение уносит дальше. Наземные враги тоже скользят."
+ "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "Мокрый камень и могильный иней скользкие: остановившись, ты продолжаешь скользить, поворачиваешь медленно, а уклонение уносит дальше. Наземные враги тоже скользят.",
+ "Direct@@network path": "Напрямую",
+ "Relay@@network path": "Через сервер",
+ "Direct {direct} · Relay {relay}": "Напрямую {direct} · Через сервер {relay}",
+ "{cls}: direct connection": "{cls}: прямое соединение",
+ "{cls}: through the server relay": "{cls}: через сервер"
 }
