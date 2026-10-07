@@ -66,7 +66,10 @@ try {
   await waitOn(guest, 'return E.content.world().entities().filter((e) => e.kind === "hazard" && e.htype === "slip").length === 3;', { timeout: 60000 });
   const hs = await slipsOn(host);
   const gs = await slipsOn(guest);
-  check('the guest\'s replica holds the same three patches (place, size, skin)', hs.length === 3 && JSON.stringify(hs) === JSON.stringify(gs), { host: hs, guest: gs });
+  // Snapshot positions are quantised (1/256 u): the replica's entities sit
+  // within that of the host's; the slip list below is carried exactly.
+  const same = hs.length === 3 && gs.length === 3 && hs.every((h, i) => h.id === gs[i].id && h.skin === gs[i].skin && h.r === gs[i].r && Math.hypot(h.x - gs[i].x, h.z - gs[i].z) < 0.01);
+  check('the guest\'s replica holds the same three patches (place, size, skin)', same, { host: hs, guest: gs });
   await sleep(1500);
   const hm = await moduleSlips(host);
   const gm = await moduleSlips(guest);
