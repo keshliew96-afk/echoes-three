@@ -173,6 +173,8 @@ function stepUntil(w, pred, guard, each = null) {
   const qs = w.log.find((e) => e.type === 'quarry_spawn');
   const q = qs && w.registry.byId(qs.id);
   check('hunt', "the quarry is the act's own enemy, elite, with the hunt's HP", !!q && q.kind === O.quarryFor(1) && q.elite === true && Math.abs(q.maxHp - R.hunt.hp * w.run().roomPlan().hpMul) < 1, q && { kind: q.kind, elite: q.elite, maxHp: q.maxHp });
+  // ELITE AFFIXES (docs/ELITE_AFFIXES.md): prey carries no elite powers.
+  check('hunt', 'the quarry carries no elite powers', !!q && !q.affixes && q.affixSpeed === undefined, q && q.affixes);
   const x0 = q.x;
   const z0 = q.z;
   let winded = false;
@@ -252,7 +254,10 @@ let saveTree = null;
 // -------------------------------------------------------------- rooted --
 {
   const w = into(SEED, 'purge', 5);
-  const rooted = stepUntil(w, () => w.log.some((e) => e.type === 'purge_rooted'), R.purge.timerTicks + 240, () => holdParty(w));
+  // The AI seats still chip at the nests while the party idles; keep them whole
+  // so only the timer decides (an affixed elite's fight can tip a nest over).
+  const holdNests = () => { for (const e of w.registry.all()) if (e.kind === 'nest' && e.hp > 0) e.hp = e.maxHp; };
+  const rooted = stepUntil(w, () => w.log.some((e) => e.type === 'purge_rooted'), R.purge.timerTicks + 240, () => { holdParty(w); holdNests(); });
   check('rooted', 'the corruption takes root when the purge timer runs out', rooted);
   check('rooted', 'the room soft-fails', w.log.some((e) => e.type === 'room_soft_fail' && e.mode === 'purge'));
   const alive = w.log.filter((e) => e.type === 'nest_spawn').map((e) => w.registry.byId(e.id)).filter((e) => e && e.hp > 0);

@@ -84,8 +84,12 @@ import crab from './enemies/crab.js';
 import lamprey from './enemies/lamprey.js';
 import gravewisp from './enemies/gravewisp.js';
 import knight from './enemies/knight.js';
+// ELITE AFFIXES (docs/ELITE_AFFIXES.md): named powers on campaign elites.
+import { createAffixLogic, rollAffixes, AFFIX_IDS } from './affixes.js';
+import { staticClearance } from './movement.js';
 
 const TICK_DT = 1 / TICK_HZ;
+const AFFIX_BURN_EVERY = 30; // AFFIX_RULES.molten.burnEvery
 const r2 = (v) => Math.round(v * 100) / 100;
 
 // §11 enemy table — verbatim rows (ticks = seconds x 60, integer).
@@ -281,6 +285,24 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     // planted thicket): { radius, ticks, slow, variant }.
     spawnSlick: (owner, x, z, o) => spawnSlick(owner, x, z, o),
   };
+  // ELITE AFFIXES: the run installs a rule () => { count, salt } | null (null
+  // = no affixes: the ?room= harness, the legacy run, the tutorial).
+  let affixRule = () => null;
+  const affix = createAffixLogic({
+    registry,
+    events,
+    combat,
+    governor,
+    spawnGlob: (owner, tick, o) => spawnGlob(owner, tick, o),
+    spawnChild: (etype, x, z, o) => spawn(etype, x, z, o && o.wave !== undefined ? o.wave : -1, o),
+    statsOf: (etype) => enemyStats(etype),
+    nearestTarget: (e) => nearestTarget(e),
+    stunned: (e, tick) => statusMod.isStunned(e, tick),
+    movement: { innerBounds, staticClearance, sweptContactT },
+  });
+  events.on('hit', (ev) => {
+    if (ev.amount > 0 && ev.attacker != null) affix.onHit(ev);
+  });
   function spawnSlick(owner, x, z, o) {
     const tick = getTick();
     const s = registry.spawn({
@@ -303,6 +325,10 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
   // onDeath hooks (Rotcap spore burst, Brood split). The `death` event fires
   // inside combat.kill before the body is despawned, so the corpse is readable.
   events.on('death', (ev) => {
+    if (isEnemyKind(ev.kind)) {
+      const d = registry.byId(ev.id);
+      if (d && d.affixes && d.state === 'active') affix.onDeath(d, ev.tick);
+    }
     const A = ARCHETYPES[ev.kind];
     if (!A || typeof A.onDeath !== 'function') return;
     const e = registry.byId(ev.id);
@@ -373,13 +399,20 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       ...(hpMul !== 1 ? { hp: r2(hp) } : {}),
     });
     if (elite) events.emit(tick, 'elite_spawn', { id: e.id, etype, x: r2(sx), z: r2(sz) });
+    // ELITE AFFIXES: forced (probes, the vfx lab) or rolled by the run's rule.
+    if (elite && !(opts && opts.noAffix)) {
+      const forced = opts && Array.isArray(opts.affixes) ? opts.affixes.filter((id) => AFFIX_IDS.includes(id)) : null;
+      const rule = forced ? null : affixRule();
+      const list = forced ?? (rule && rule.count > 0 ? rollAffixes(rule.salt, e.id, etype, rule.count) : null);
+      if (list && list.length) affix.arm(e, list, tick);
+    }
     return e;
   }
 
   // PLAN §3.6: difficulty applies through here (the wave director and the
   // boss's add phases call it with data/difficulty.js numbers).
-  function spawnScaled(etype, x, z, { hpMul = 1, dmgMul = 1, elite = false, wave = -1 } = {}) {
-    return spawn(etype, x, z, wave, { hpMul, dmgMul, elite });
+  function spawnScaled(etype, x, z, { hpMul = 1, dmgMul = 1, elite = false, wave = -1, noAffix = false } = {}) {
+    return spawn(etype, x, z, wave, noAffix ? { hpMul, dmgMul, elite, noAffix } : { hpMul, dmgMul, elite });
   }
 
   // MENACE (constants.js MENACE, PLAN GP.5): the world installs a threat
@@ -492,7 +525,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       const dz = target.z - e.z;
       const d = Math.hypot(dx, dz);
       // Statuses (slow / stun) scale the steering step; exactly x1 without one.
-      const sm = e.status ? statusMod.speedMul(e, tick) : 1;
+      const sm = e.status || e.affixSpeed !== undefined ? statusMod.speedMul(e, tick) : 1;
       const step = sm === 1 ? S.moveSpeed * TICK_DT : S.moveSpeed * TICK_DT * sm;
 
       if (e.kind === 'boar') {
@@ -654,6 +687,8 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       slickTicks: o.slickTicks,
       slickSlow: o.slickSlow,
       ...(o.slickVariant ? { slickVariant: o.slickVariant } : {}),
+      ...(o.slickBurn ? { slickBurn: o.slickBurn } : {}),
+      ...(o.affix ? { affix: o.affix } : {}),
       telegraph: {
         kind: 'ring',
         startTick: tick,
@@ -689,6 +724,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       tx: r2(o.tx),
       tz: r2(o.tz),
       landTick: g.landTick,
+      ...(o.affix ? { affix: o.affix } : {}),
     });
     return g;
   }
@@ -717,6 +753,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       z: r2(g.tz),
       radius: g.blastRadius,
       victims: victims.length,
+      ...(g.affix ? { affix: g.affix } : {}),
     });
     registry.despawn(g.id);
     const src = owner ?? { id: g.ownerId, kind: g.ownerKind, faceX: 0, faceZ: 1 };
@@ -735,6 +772,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       untilTick: tick + g.slickTicks,
       ownerId: g.ownerId,
       ...(g.slickVariant ? { variant: g.slickVariant } : {}),
+      ...(g.slickBurn ? { burn: g.slickBurn } : {}),
     });
     events.emit(tick, 'slick_spawn', { id: slick.id, x: r2(g.tx), z: r2(g.tz), radius: g.slickRadius, untilTick: slick.untilTick, ...(g.slickVariant ? { variant: g.slickVariant } : {}) });
   }
@@ -749,9 +787,13 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
         registry.despawn(s.id);
         continue;
       }
+      // ELITE AFFIXES (Molten): a burning pool scorches who stands in it.
+      const burnNow = s.burn > 0 && (tick - s.startTick) % AFFIX_BURN_EVERY === 0 && tick > s.startTick;
       for (const t of registry.all()) {
         if (t.partyIndex === undefined || !(t.hp > 0) || t.flier) continue;
         if (Math.hypot(t.x - s.x, t.z - s.z) > s.radius) continue;
+        if (burnNow) combat.applyDamage(t, s.burn, { delivery: 'contact', shape: 'molten', attacker: null, source: 'molten' });
+        if (!(s.slow > 0)) continue;
         const cur = t.status && t.status.slow;
         if (cur && cur.untilTick >= tick + 4 && cur.mag >= s.slow) continue;
         statusMod.apply(t, 'slow', s.slow, 8, tick, s.id);
@@ -764,6 +806,16 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
   // iteration order IS ordinal order).
   function resolveAll() {
     const tick = getTick();
+    resolveEnemies(tick);
+    // ELITE AFFIXES: each affixed elite's powers, then the molten cores.
+    let cores = false;
+    for (const e of registry.all()) {
+      if (e.affixes && isEnemyKind(e.kind) && e.state === 'active' && registry.byId(e.id)) affix.resolve(e, tick);
+      else if (e.kind === 'affix_core') cores = true;
+    }
+    if (cores) affix.stepCores(tick);
+  }
+  function resolveEnemies(tick) {
     for (const e of registry.all()) {
       if (e.kind === 'eglob') {
         if (registry.byId(e.id) && tick >= e.landTick) landGlob(e, tick);
@@ -915,6 +967,11 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
         registry.despawn(e.id);
         continue;
       }
+      if (e.kind === 'affix_core') {
+        events.emit(tick, 'affix_core_end', { id: e.id, cause: 'room_clear' });
+        registry.despawn(e.id);
+        continue;
+      }
       if (e.kind !== 'eshot') continue;
       events.emit(tick, 'eshot_despawn', { id: e.id, cause: 'room_clear' });
       registry.despawn(e.id);
@@ -926,7 +983,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
   function reset() {
     const tick = getTick();
     for (const e of registry.all()) {
-      if (isEnemyKind(e.kind) || e.kind === 'eshot' || e.kind === 'waystone' || e.kind === 'nest' || e.kind === 'eglob' || e.kind === 'slick') {
+      if (isEnemyKind(e.kind) || e.kind === 'eshot' || e.kind === 'waystone' || e.kind === 'nest' || e.kind === 'eglob' || e.kind === 'slick' || e.kind === 'affix_core') {
         events.emit(tick, 'enemy_despawn', { id: e.id, etype: e.kind, cause: 'reset' });
         registry.despawn(e.id);
       }
@@ -990,6 +1047,10 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     debugSpawn,
     setSpawnGate: (fn) => {
       spawnGate = typeof fn === "function" ? fn : null;
+    },
+    // ELITE AFFIXES: () => { count, salt } | null — the live room's roll rule.
+    setAffixRule: (fn) => {
+      affixRule = typeof fn === 'function' ? fn : () => null;
     },
     // MENACE (PLAN GP.5): () => Map(bodyId -> u) | null; null uninstalls.
     setThreat: (fn) => {

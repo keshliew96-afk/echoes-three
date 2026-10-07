@@ -419,7 +419,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     const S = enemyStats(p.etype);
     const want = H.hp * (plan ? plan.hpMul : 1);
     const hpMul = S && S.hp > 0 ? want / (S.hp * ELITE.hpMul) : 1;
-    const e = enemies.spawnScaled(p.etype, p.x, p.z, { hpMul, dmgMul: plan ? plan.dmgMul : 1, elite: true, wave: p.wave });
+    const e = enemies.spawnScaled(p.etype, p.x, p.z, { hpMul, dmgMul: plan ? plan.dmgMul : 1, elite: true, wave: p.wave, noAffix: true }); // prey: no elite powers
     if (!e) return null;
     const tick = getTick();
     e.quarry = quarryState(tick);

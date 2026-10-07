@@ -43,7 +43,7 @@ import { cap, padCap, moveCaps, skillsCap, usingPad, onHintsChange } from '../..
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
-export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge']);
+export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix']);
 
 const MOVE_DIST = 2.5; // world units walked to pass the move step
 const ATTACK_MS = 450; // right button held this long (in total) passes the attack step
@@ -132,6 +132,11 @@ function tipText(id) {
       return {
         title: t('Slick floor'),
         body: t('Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.'),
+      };
+    case 'affix':
+      return {
+        title: t('Elite powers'),
+        body: t('Some elites carry named powers, shown on the plate above them. A red ring on the ground warns before a Molten or Frozen burst lands, and a Warded elite takes no damage while its ward glows.'),
       };
     // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): on the doors before the first one.
     case 'hunt':
@@ -541,15 +546,25 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     }
     return false;
   }
+  // ELITE AFFIXES: is an elite with named powers in the live fight?
+  function affixElite() {
+    if (app.state !== 'playing' || screensOpen()) return false;
+    const v = view();
+    if (!v || !v.active || v.tutorial || v.phase !== 'combat' || typeof world.entities !== 'function') return false;
+    for (const e of world.entities()) if (Array.isArray(e.affixes) && e.affixes.length && e.state === 'active') return true;
+    return false;
+  }
   function pollFloorTip() {
     if (floorTip) {
       if (performance.now() >= floorTip.until || step) closeFloorTip();
       else syncCoachVisible();
       return;
     }
-    if (!tipsOn || step || shown || tipsSeen().includes('slick') || !onSlick()) return;
-    floorTip = { id: 'slick', until: performance.now() + FLOOR_TIP_MS };
-    markTip('slick');
+    if (!tipsOn || step || shown) return;
+    const id = !tipsSeen().includes('slick') && onSlick() ? 'slick' : !tipsSeen().includes('affix') && affixElite() ? 'affix' : null;
+    if (!id) return;
+    floorTip = { id, until: performance.now() + FLOOR_TIP_MS };
+    markTip(id);
     renderFloorTip();
   }
 
@@ -650,7 +665,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
       const tips = widgets.button({
         id: 'ap-gameplay-tips',
         label: t('Show tips again'),
-        help: t('The one-time tips for class select, relics, cursed doors, "?" doors, the peddler and slick floors show again the next time you meet each.'),
+        help: t('The one-time tips for class select, relics, cursed doors, "?" doors, the peddler, slick floors and elite powers show again the next time you meet each.'),
         onPress: () => {
           settings.set(TUTORIAL_TIPS_KEY, '', { source: 'ui' });
           if (typeof app.toast === 'function') app.toast(t('Tips will show again'), { tone: 'good' });

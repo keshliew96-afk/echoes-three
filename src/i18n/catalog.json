@@ -1647,6 +1647,12 @@
   ],
   "data": true
  },
+ "A ward makes it immune for a few seconds at a time.": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
  "A warm burst: heals up to 4 allies 10 and hastes them 25% for 2 s.": {
   "files": [
    "src/ui/run/cards.js"
@@ -2502,6 +2508,12 @@
   ],
   "data": true
  },
+ "Blinking": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
  "BLOCKED": {
   "files": [
    "src/render/enemies/extras.js"
@@ -2618,6 +2630,12 @@
  "Burial mounds under a cold moon, where the corruption is oldest.": {
   "files": [
    "src/data/levels.js"
+  ],
+  "data": true
+ },
+ "Bursts into a burning pool when it dies.": {
+  "files": [
+   "src/sim/affixes.js"
   ],
   "data": true
  },
@@ -3791,6 +3809,11 @@
    "src/ui/run/effects.js"
   ]
  },
+ "Elite powers": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Elite Tide": {
   "files": [
    "src/sim/relics.js"
@@ -4403,6 +4426,12 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "Frozen": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
  "FS": {
   "files": [
    "src/sim/skills.js"
@@ -4625,6 +4654,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Hasted": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
  "Hawk Feather": {
   "files": [
    "src/data/unlocks.js",
@@ -4714,6 +4749,12 @@
   ],
   "data": true
  },
+ "Heals for part of the damage it deals.": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
  "Heals the neediest ally 16 and shields them for 20 (4 s).": {
   "files": [
    "src/ui/run/cards.js"
@@ -4788,6 +4829,12 @@
  "hits expose · heals inspire allies.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Hits from close range sting back.": {
+  "files": [
+   "src/sim/affixes.js"
   ],
   "data": true
  },
@@ -5608,6 +5655,12 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Marks a spot beside you, then blinks to it.": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
  "Master": {
   "files": [
    "src/ui/menu/tabs/audio.js"
@@ -5666,6 +5719,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Molten": {
+  "files": [
+   "src/sim/affixes.js"
   ],
   "data": true
  },
@@ -5739,6 +5798,12 @@
   "files": [
    "src/ui/menu/tabs/controls.js"
   ]
+ },
+ "Moves much faster.": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
  },
  "Moving on": {
   "files": [
@@ -8109,6 +8174,11 @@
    "src/ui/run/shop.js"
   ]
  },
+ "Some elites carry named powers, shown on the plate above them. A red ring on the ground warns before a Molten or Frozen burst lands, and a Warded elite takes no damage while its ward glows.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Sound Effects": {
   "files": [
    "src/ui/menu/tabs/audio.js"
@@ -8185,6 +8255,18 @@
  "Split": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Splits into two smaller copies when it dies.": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
+ "Splitting": {
+  "files": [
+   "src/sim/affixes.js"
   ],
   "data": true
  },
@@ -8293,6 +8375,12 @@
   "files": [
    "src/ui/net/hud.js"
   ]
+ },
+ "Stops to charge a frost nova that slows.": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
  },
  "stun": {
   "files": [
@@ -9132,7 +9220,7 @@
    "src/ui/menu/title.js"
   ]
  },
- "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler and slick floors show again the next time you meet each.": {
+ "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler, slick floors and elite powers show again the next time you meet each.": {
   "files": [
    "src/ui/tutorial/index.js"
   ]
@@ -9570,6 +9658,12 @@
   ],
   "data": true
  },
+ "Thorned": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
  "Three arrows in a fan: 14 each.": {
   "files": [
    "src/ui/run/cards.js"
@@ -9796,6 +9890,12 @@
    "src/ui/menu/tabs/display.js"
   ]
  },
+ "Vampiric": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
  "Vault Shot": {
   "files": [
    "src/sim/skills.js"
@@ -9950,6 +10050,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Warded": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
  },
  "Warden": {
   "files": [

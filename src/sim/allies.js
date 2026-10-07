@@ -706,12 +706,13 @@ export function createAllySystem({
     // Balance pass: a Grave Wisp's ward makes its enemy immune, so a seat
     // looks past a warded hostile to the nearest one it can hurt (all three
     // seats used to stand on a warded Crow while its wisp hovered unhit).
+    // ELITE AFFIXES: a Warded elite's live ward reads the same way.
     const near = nearestHostileTo(anchor.x, anchor.z);
-    if (!near || !near.wardedBy) return near;
+    if (!near || !(near.wardedBy || near.affixWard === 'on')) return near;
     let best = null;
     let bd = Infinity;
     for (const e of hostiles()) {
-      if (e.wardedBy) continue;
+      if (e.wardedBy || e.affixWard === 'on') continue;
       const q = dist2(e.x, e.z, anchor.x, anchor.z);
       if (q < bd) {
         bd = q;
@@ -747,12 +748,14 @@ export function createAllySystem({
   // ring's centre first; when the leash ring blocks that way, the nearest
   // turn of it (45° steps, left before right) that stays inside the leash
   // and clear of every ring.
-  function evadeGoal(a, anchor, LR) {
+  // ELITE AFFIXES: `affixOnly` (melee seats) counts only the Molten and
+  // Frozen bursts, which hit hard enough that a melee seat steps out too.
+  function evadeGoal(a, anchor, LR, affixOnly = false) {
     const rings = [];
     // R = the ring's reach on this body plus the margin: a seat inside R
     // keeps walking out (to R + exit), so it never hovers on the edge and
     // drifts back in towards its stand-off spot.
-    for (const g of registry.all()) if (g.kind === 'eglob') rings.push({ x: g.tx, z: g.tz, R: (g.blastRadius ?? 0) + a.radius + AI_EVADE.margin, g });
+    for (const g of registry.all()) if (g.kind === 'eglob' && (!affixOnly || g.affix)) rings.push({ x: g.tx, z: g.tz, R: (g.blastRadius ?? 0) + a.radius + AI_EVADE.margin, g });
     let hit = null;
     for (const r of rings) if (Math.hypot(a.x - r.x, a.z - r.z) < r.R && (!hit || r.g.landTick < hit.g.landTick)) hit = r;
     if (!hit) return null;
@@ -777,6 +780,8 @@ export function createAllySystem({
     }
     return { x: hit.x + ux * (hit.R + AI_EVADE.exit), z: hit.z + uz * (hit.R + AI_EVADE.exit) };
   }
+
+  const affixGlobs = () => registry.all().some((g) => g.kind === 'eglob' && g.affix);
 
   // Distance t >= 0 along unit (vx, vz) from offset (px, pz) to the circle R.
   function solveExit(px, pz, vx, vz, R) {
@@ -921,7 +926,7 @@ export function createAllySystem({
       // Balance pass (AI_EVADE): a glob ring a ranged seat stands in wins over
       // the stand-off spot; it walks out, still aiming. Melee seats hold their
       // ground (they stay on the enemies; Toad rooms otherwise dragged on).
-      const ev = engageOn() && !isMelee(a) ? evadeGoal(a, anchor, LR) : null;
+      const ev = engageOn() ? (!isMelee(a) ? evadeGoal(a, anchor, LR) : affixGlobs() ? evadeGoal(a, anchor, LR, true) : null) : null;
       if (ev) {
         gx = ev.x;
         gz = ev.z;

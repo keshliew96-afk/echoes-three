@@ -80,3 +80,17 @@ export const VFX_MATTER = Object.freeze({
   iron: '#5A5C60', // Bone Knight's shield, the Millwheel's tyre
   oak: '#5C4630', // the Millwheel's planks
 });
+
+// ELITE AFFIXES (docs/ELITE_AFFIXES.md): each power's own hue on the elite's
+// aura, its name plate chip and its bursts. All clear of Bright Heal and the
+// Stag's violet; the threat itself (every telegraph) stays Ember.
+export const AFFIX_COLORS = Object.freeze({
+  molten: '#FF8A3D', // lava orange (ember-adjacent: it is the threat)
+  frozen: '#9FD8F0', // glacier blue
+  vampiric: '#C8243F', // blood crimson
+  warded: '#E3C46A', // rune gold
+  blinking: '#6F86FF', // cobalt
+  splitting: '#B6B04A', // sick mustard
+  hasted: '#F3E76A', // spark yellow
+  thorned: '#A27A4A', // bark brown (bone tips)
+});
