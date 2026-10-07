@@ -43,7 +43,7 @@ import { cap, padCap, moveCaps, skillsCap, usingPad, onHintsChange } from '../..
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
-export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'affix']);
+export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix']);
 
 const MOVE_DIST = 2.5; // world units walked to pass the move step
 const ATTACK_MS = 450; // right button held this long (in total) passes the attack step
@@ -137,6 +137,17 @@ function tipText(id) {
       return {
         title: t('Elite powers'),
         body: t('Some elites carry named powers, shown on the plate above them. A red ring on the ground warns before a Molten or Frozen burst lands, and a Warded elite takes no damage while its ward glows.'),
+      };
+    // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): on the doors before the first one.
+    case 'hunt':
+      return {
+        title: t('The hunt'),
+        body: t('A marked quarry breaks cover and runs. Chase it down and kill it before its timer runs out; it stops to catch its breath every few seconds. If it escapes, the room pays no reward.'),
+      };
+    case 'purge':
+      return {
+        title: t('The purge'),
+        body: t('Three corruption nests keep spawning enemies. Destroy all three before the timer runs out; a wounded nest spawns faster. If the corruption takes root, the room pays no reward and the nests must still fall.'),
       };
     default:
       return null;
@@ -509,12 +520,17 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     if (!v || !v.active || v.tutorial) return null;
     if (v.phase === 'relic') return 'relic';
     const doors = v.phase === 'path' && v.path && Array.isArray(v.path.options) ? v.path.options : [];
-    // EVENT ROOMS: a screen with a cursed door and a "?" door shows the
-    // curse tip first, then (once it is seen) the "?" tip.
-    const curse = doors.some((o) => o.curse);
-    const event = doors.some((o) => o.event);
-    if (curse && (!event || !tipsSeen().includes('curse') || (shown && shown.id === 'curse'))) return 'curse';
-    if (event) return 'event';
+    // A cursed door, a "?" door and an objective room can meet on one
+    // screen: the tip on screen stays, else the first not yet seen speaks
+    // (curse, then "?", then hunt / purge).
+    const want = [];
+    if (doors.some((o) => o.curse)) want.push('curse');
+    if (doors.some((o) => o.event)) want.push('event');
+    for (const m of ['hunt', 'purge']) if (doors.some((o) => o.win === m)) want.push(m);
+    if (want.length) {
+      if (shown && want.includes(shown.id)) return shown.id;
+      return want.find((id) => !tipsSeen().includes(id)) ?? want[0];
+    }
     if (v.phase === 'shop') return 'peddler';
     return null;
   }

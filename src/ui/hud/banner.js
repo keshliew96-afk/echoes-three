@@ -3,6 +3,11 @@
 //   kill_all -> wave progress cue ("WAVE 2/3" + remaining pips + enemies left)
 //   defend   -> Waystone HP bar + current/max numeral + countdown timer
 //   boss     -> ornate boss HP bar + name plate ("THE HOLLOW STAG")
+//   hunt     -> the quarry's HP bar (Signal Blue, the mark colour) + its
+//               escape countdown; "QUARRY ESCAPED · NO REWARD" on a soft-fail
+//   purge    -> one pip per nest (filled = destroyed) + nests left + the purge
+//               countdown; "THE CORRUPTION TOOK ROOT · NO REWARD" on a soft-fail
+//   (ROOM OBJECTIVES, docs/ROOM_OBJECTIVES.md)
 //
 // DEVIATION (documented): the sim's wave director (src/sim/waves.js) ships
 // kill_all and defend only — the room-8 Hollow Stag lands with the boss block.
@@ -142,6 +147,7 @@ export function createBanner() {
     else if (boss) next = 'boss';
     else if (room && !room.cleared && room.mode === 'defend') next = 'defend';
     else if (room && !room.cleared && room.mode === 'kill_all') next = 'kill_all';
+    else if (room && !room.cleared && (room.mode === 'hunt' || room.mode === 'purge')) next = room.mode;
 
     let changed = false;
     if (next !== mode) {
@@ -152,11 +158,13 @@ export function createBanner() {
       // Anchor the opacity transition NOW (synchronous style flush), not at
       // the next style recalc — which may sit behind the reward page build.
       void root.offsetWidth;
-      pips.style.display = mode === 'kill_all' ? 'flex' : 'none';
-      bar.style.display = mode === 'kill_all' ? 'none' : 'block';
-      barRow.style.display = mode === 'kill_all' ? 'none' : 'flex';
+      const pipped = mode === 'kill_all' || mode === 'purge';
+      pips.style.display = pipped ? 'flex' : 'none';
+      bar.style.display = pipped ? 'none' : 'block';
+      barRow.style.display = pipped ? 'none' : 'flex';
       phasesShown = -1;
-      timer.style.display = mode === 'defend' ? 'inline' : 'none';
+      timer.style.display = mode === 'defend' || mode === 'hunt' || mode === 'purge' ? 'inline' : 'none';
+      root.dataset.mode = mode;
       num.style.display = mode === 'kill_all' ? 'inline' : 'inline';
       lastKey = '';
     }
@@ -219,6 +227,48 @@ export function createBanner() {
       num.className = 'hud-bn-num';
       timer.textContent = clock(left);
       timer.className = 'hud-bn-num' + (left <= 10 * TICK_HZ ? ' warn' : '');
+      return true;
+    }
+
+    if (mode === 'hunt') {
+      const q = room.quarry ?? {};
+      const hp = Math.max(0, Math.ceil(q.hp ?? 0));
+      const maxHp = Math.max(1, Math.ceil(q.maxHp || 1));
+      const left = room.huntTicksLeft ?? 0;
+      const alive = (room.aliveEnemies ?? 0) + (room.pendingSpawns ?? 0);
+      const key = `h|${hp}|${maxHp}|${Math.ceil(left / TICK_HZ)}|${room.softFailed}|${q.winded}|${room.softFailed ? alive : ''}`;
+      if (key === lastKey) return changed;
+      lastKey = key;
+      if (room.softFailed) {
+        label.textContent = t('QUARRY ESCAPED · NO REWARD');
+        showBar(PALETTE.signalBlue, mix(PALETTE.signalBlue, PALETTE.parchment, 0.45), 0);
+        num.textContent = t('{alive} LEFT', { alive });
+        num.className = 'hud-bn-label hud-bn-sub';
+        timer.textContent = '';
+        return true;
+      }
+      label.textContent = q.winded ? t('THE HUNT · WINDED') : t('THE HUNT');
+      showBar(PALETTE.signalBlue, mix(PALETTE.signalBlue, PALETTE.parchment, 0.45), q.spawned ? hp / maxHp : 1);
+      num.textContent = q.spawned ? `${hp}/${maxHp}` : '';
+      num.className = 'hud-bn-num';
+      timer.textContent = q.spawned ? clock(left) : '';
+      timer.className = 'hud-bn-num' + (left <= 10 * TICK_HZ ? ' warn' : '');
+      return true;
+    }
+
+    if (mode === 'purge') {
+      const total = Math.max(1, room.nestsTotal ?? 3);
+      const nestsLeft = room.nestsAlive ?? 0;
+      const left = room.purgeTicksLeft ?? 0;
+      const key = `p|${nestsLeft}|${total}|${Math.ceil(left / TICK_HZ)}|${room.softFailed}`;
+      if (key === lastKey) return changed;
+      lastKey = key;
+      setPips(total, total - nestsLeft, -1);
+      label.textContent = room.softFailed ? t('THE CORRUPTION TOOK ROOT · NO REWARD') : t('PURGE THE NESTS');
+      num.textContent = tn(nestsLeft, '{n} NEST LEFT', '{n} NESTS LEFT');
+      num.className = 'hud-bn-label hud-bn-sub';
+      timer.textContent = room.softFailed ? '' : clock(left);
+      timer.className = 'hud-bn-num' + (left <= 15 * TICK_HZ ? ' warn' : '');
       return true;
     }
 

@@ -813,7 +813,7 @@ export function createLayoutSystem({ registry, events, getTick, hazards, interac
       return null;
     }
     const m = mode ?? 'kill_all';
-    const spawn = m === 'kill_all' || m === 'defend';
+    const spawn = m === 'kill_all' || m === 'defend' || m === 'hunt' || m === 'purge';
     active = { layoutId, act: act ?? L.act, biome: L.biome, room, mode: m, spawned: spawn };
     hazards.setDormant(false);
     if (spawn) {

@@ -10,6 +10,8 @@ that hurt (Molten and Frozen) warn with the usual red (Ember) ring first.
 - Campaign wave rooms (kill and defend), Endless included, and the trapped
   chest's ambush. Never the boss room (its adds), the tutorial, the legacy
   single-level run or the `?room=` harness, so the nine goldens never see one.
+- Room objectives: the Hunt's quarry never carries a power (it is prey);
+  elites a Purge nest spawns roll like any wave elite.
 - How many: **one** on Level I; on Level II one in rooms 1 to 3 and **two**
   from room 4; **two** on Level III and at every Endless depth.
 - Which: a hash of the run seed, the level, the room and the elite's spawn
