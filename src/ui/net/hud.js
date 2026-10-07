@@ -411,6 +411,9 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     // No quality = no live link (reconnecting): a stale loss figure would
     // contradict the reconnect banner, so only the last ping stays.
     if (!stalled && q && loss >= 1) parts.push(t('{loss} loss', { loss: lossText(loss) }));
+    // WEBRTC CO-OP: which way this player's game traffic travels.
+    const path = pathSummary(s);
+    if (path.text) parts.push(path.text);
     ltEl.textContent = parts.join(' · ');
     const level = q ? q.level : null;
     linkEl.classList.toggle('nt-off', !level && !parts.length);
@@ -429,6 +432,7 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
       else if (outP !== null) label += `, ${t('packet loss out {lossOut}', { lossOut: lossText(outP) })}`;
       if (stalled) label += `, ${t('no updates from the host')}`;
     }
+    if (path.detail) label += label ? `. ${path.detail}` : path.detail;
     chip.setAttribute('title', label);
     chip.setAttribute('aria-label', `${main.textContent} ${sub.textContent} ${label}`.trim());
     // Say WHY once when the link turns poor (not on every flap): at most one
@@ -478,6 +482,27 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
     if (last && last.role === 'guest' && !synced && !last.reconnecting && !last.hostLost) joinBanner(last.code);
     linkLevel = level;
     lastLink = { level, reasons: q ? q.reasons.slice() : [], rttMs: rtt, lossPct: loss, lossInPct: inP, lossOutPct: outP, lossBySeat: s && s.lossBySeat ? s.lossBySeat : null, text: ltEl.textContent };
+  }
+  // WEBRTC CO-OP (docs/WEBRTC_COOP.md): net.stats().paths = seat -> 'direct'
+  // | 'connecting' | 'relay' for each other player this page trades frames
+  // with (a guest: the host; a host: each guest). A link still coming up is
+  // on the relay meanwhile, so it reads Relay. One word when every link
+  // agrees, the two counts when they differ; the tooltip names each seat.
+  function pathSummary(s) {
+    const paths = s && s.paths && typeof s.paths === 'object' ? Object.entries(s.paths) : [];
+    if (!paths.length) return { text: '', detail: '' };
+    let direct = 0;
+    const lines = [];
+    for (const [k, v] of paths) {
+      const cls = t(seatLabel(Number(k)));
+      if (v === 'direct') {
+        direct += 1;
+        lines.push(t('{cls}: direct connection', { cls }));
+      } else lines.push(t('{cls}: through the server relay', { cls }));
+    }
+    const relay = paths.length - direct;
+    const text = !relay ? t('Direct@@network path') : !direct ? t('Relay@@network path') : t('Direct {direct} · Relay {relay}', { direct, relay });
+    return { text, detail: lines.join(', ') };
   }
   function startLinkTimer() {
     if (linkTimer) return;

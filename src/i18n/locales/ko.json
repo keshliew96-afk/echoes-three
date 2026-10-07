@@ -1846,5 +1846,10 @@
  "{n} Embers": "불씨 {n}",
  "{n} save slots": "저장 슬롯 {n}개",
  "Slick floor": "미끄러운 바닥",
- "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "젖은 돌과 무덤 서리는 미끄럽습니다. 멈춰도 계속 미끄러지고, 방향을 크게 돌며, 회피는 더 멀리 나갑니다. 지상의 적도 미끄러집니다."
+ "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "젖은 돌과 무덤 서리는 미끄럽습니다. 멈춰도 계속 미끄러지고, 방향을 크게 돌며, 회피는 더 멀리 나갑니다. 지상의 적도 미끄러집니다.",
+ "Direct@@network path": "직접",
+ "Relay@@network path": "중계",
+ "Direct {direct} · Relay {relay}": "직접 {direct} · 중계 {relay}",
+ "{cls}: direct connection": "{cls}: 직접 연결",
+ "{cls}: through the server relay": "{cls}: 서버 중계 경유"
 }

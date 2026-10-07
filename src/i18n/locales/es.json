@@ -1930,5 +1930,10 @@
   "other": "{n} ranuras de guardado"
  },
  "Slick floor": "Suelo resbaladizo",
- "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "La piedra mojada y la escarcha de tumba resbalan: sigues deslizándote al parar, giras con dificultad y la esquiva te lleva más lejos. Los enemigos de tierra también resbalan."
+ "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": "La piedra mojada y la escarcha de tumba resbalan: sigues deslizándote al parar, giras con dificultad y la esquiva te lleva más lejos. Los enemigos de tierra también resbalan.",
+ "Direct@@network path": "Directa",
+ "Relay@@network path": "Retransmisión",
+ "Direct {direct} · Relay {relay}": "Directa {direct} · Retransmisión {relay}",
+ "{cls}: direct connection": "{cls}: conexión directa",
+ "{cls}: through the server relay": "{cls}: a través del servidor"
 }

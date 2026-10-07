@@ -191,9 +191,19 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "{cls}: direct connection": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
  "{cls}: nothing": {
   "files": [
    "src/ui/run/draft.js"
+  ]
+ },
+ "{cls}: through the server relay": {
+  "files": [
+   "src/ui/net/hud.js"
   ]
  },
  "{currency} & Unlocks": {
@@ -3466,6 +3476,17 @@
  "direct": {
   "files": [
    "src/ui/socket/index.js"
+  ]
+ },
+ "Direct {direct} · Relay {relay}": {
+  "files": [
+   "src/ui/net/hud.js"
+  ]
+ },
+ "Direct@@network path": {
+  "files": [
+   "src/ui/menu/lobby.js",
+   "src/ui/net/hud.js"
   ]
  },
  "Disengage": {
@@ -6788,6 +6809,12 @@
    "src/ui/menu/records.js",
    "src/ui/menu/saves.js",
    "src/ui/run/challenge.js"
+  ]
+ },
+ "Relay@@network path": {
+  "files": [
+   "src/ui/menu/lobby.js",
+   "src/ui/net/hud.js"
   ]
  },
  "Relics": {

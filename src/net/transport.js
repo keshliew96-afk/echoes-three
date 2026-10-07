@@ -430,7 +430,43 @@ export function createTransport({ WebSocketImpl = null, cond = null, now = defau
     if (!ws || state !== 'open') return false;
     counts.binaryOut += 1;
     const my = gen;
-    out.send(u8, { reliable: !isUnreliableChannel(u8[0]), bytes: u8.length, stream: u8[0] }, (d) => my === gen && rawSend(d, d.length));
+    out.send(u8, { reliable: !isUnreliableChannel(u8[0]), bytes: u8.length, stream: u8[0] }, (d) => my === gen && routeOut(d));
+    return true;
+  }
+  // WEBRTC CO-OP (docs/WEBRTC_COOP.md): a router may carry a binary frame on
+  // a direct peer link instead of this socket. It runs AFTER the conditioner
+  // (?netcond= shapes both paths alike) and gets this socket's send for the
+  // part it leaves to the relay (a broadcast with some seats still on it).
+  let router = null;
+  const wsSend = (d) => rawSend(d, d.length);
+  function routeOut(d) {
+    if (router) {
+      let done = false;
+      try {
+        done = router(d, wsSend);
+      } catch {
+        done = false;
+      }
+      if (done) {
+        outMeter.add(d.length);
+        return true;
+      }
+    }
+    return rawSend(d, d.length);
+  }
+  // A frame that arrived on a direct link: same meters, conditioner and
+  // listeners as a socket frame, but it never refreshes lastRecvAt — that
+  // clock is the SOCKET's silence detector (pongs), which must still notice
+  // a dead socket while the direct link carries the game.
+  function injectBinary(u8) {
+    if (state !== 'open') return false;
+    const my = gen;
+    inMeter.add(u8.length);
+    inc.send(u8, { reliable: !isUnreliableChannel(u8[0]), bytes: u8.length, stream: u8[0] }, (d) => {
+      if (my !== gen) return;
+      counts.binaryIn += 1;
+      emit('binary', d);
+    });
     return true;
   }
 
@@ -462,6 +498,10 @@ export function createTransport({ WebSocketImpl = null, cond = null, now = defau
     on,
     sendControl,
     sendBinary,
+    injectBinary,
+    setRouter(fn) {
+      router = typeof fn === 'function' ? fn : null;
+    },
     get state() {
       return state;
     },

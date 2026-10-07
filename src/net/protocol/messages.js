@@ -99,6 +99,20 @@ const C2S = {
   // ping { ts, rttMs? } -> pong { ts, serverTime }. The timestamp is `ts`
   // (PLAN's table writes `t`, which is already the message-type field).
   [MSG.PING]: (m) => (Number.isFinite(m.ts) && optional(m.rttMs, (x) => Number.isFinite(x) && x >= 0 && x < 600000) ? null : 'bad_request'),
+  // WEBRTC CO-OP: signalling for a direct link (host <-> one guest). The SDP
+  // of a data-channel-only offer is ~0.5-1 KB (candidates trickle apart).
+  [MSG.RTC]: (m) =>
+    !isInt(m.to, 0, MAX_SEATS - 1) || !isInt(m.id, 1, 0x7fffffff)
+      ? 'bad_request'
+      : m.kind === 'offer' || m.kind === 'answer'
+        ? isStr(m.sdp, 3800) && m.sdp.length > 0
+          ? null
+          : 'bad_request'
+        : m.kind === 'cand'
+          ? m.cand && typeof m.cand === 'object' && isStr(m.cand.candidate, 600) && optional(m.cand.sdpMid, (x) => isStr(x, 32)) && optional(m.cand.sdpMLineIndex, (x) => isInt(x, 0, 16))
+            ? null
+            : 'bad_request'
+          : 'bad_request',
 };
 
 export const CLIENT_TYPES = Object.freeze(Object.keys(C2S));
