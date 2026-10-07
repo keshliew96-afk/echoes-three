@@ -45,6 +45,8 @@ import { ACCENTS, CHROME } from './style.js';
 import { iconEl, hasIcon } from './icons.js';
 import { t } from '../../i18n/index.js';
 import { skillAbbrev } from '../run/cards.js';
+import { bindings } from '../../core/bindings.js';
+import { cap, keyCap, onHintsChange } from '../../app/controls.js';
 
 // Cooldown ring geometry (40-box viewBox over the medallion): r 16.5 -> the
 // Parchment arc that grows clockwise from 12 as the skill recharges.
@@ -235,6 +237,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       fill,
       num,
       key,
+      eGlyph,
       top,
       rf,
       rally,
@@ -316,6 +319,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     line.setAttribute('stroke-linecap', 'round');
     return {
       slot,
+      keyEl: k,
       abbrev,
       iconHost,
       iconId: null,
@@ -412,6 +416,30 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   // double chevron reads as "dash" at 20 px and carries no floor.
   setIcon(dodge, 'dodge', 'DASH');
   dodgeGroup.appendChild(dodge.slot);
+
+  // Controls slice: the key caps follow Settings ▸ Controls and turn into pad
+  // buttons while a gamepad is in use (Space keeps its short "SPC" cap). The
+  // portrait F-key chips keep naming keys: the pad cycles heal targets with
+  // the D-pad instead of one button per ally.
+  const shortCap = (c) => (c === 'Space' ? 'SPC' : c);
+  function paintCaps() {
+    skillEls.forEach((s, i) => {
+      s.keyEl.textContent = shortCap(cap(`skill${i + 1}`));
+    });
+    dodge.keyEl.textContent = shortCap(cap('dodge'));
+    ports.forEach((p) => {
+      const c = keyCap(bindings.code(`ally${p.i + 1}`));
+      const m = /^F(\d+)$/.exec(c);
+      p.key.textContent = '';
+      if (m) {
+        el('i', null, p.key).textContent = 'F';
+        p.key.append(m[1]);
+      } else p.key.textContent = c;
+      if (p.eGlyph) p.eGlyph.textContent = cap('interact');
+    });
+  }
+  paintCaps();
+  onHintsChange(paintCaps);
 
   // ----------------------------------------------------------- events ---
   const forcedGrey = new Set(); // debug-only override for capture scripts

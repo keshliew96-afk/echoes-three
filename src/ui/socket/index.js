@@ -77,6 +77,7 @@ import { service } from '../../app/registry.js';
 import { t, tn } from '../../i18n/index.js';
 // @gnt:M3 RUN-NAV-SOUND (fix-M3-r5 AUD5-F1): cursor / tab moves tick like a menu move.
 import { createSelectionSound } from '../../audio/uiselect.js';
+import { bindings } from '../../core/bindings.js';
 
 const RARITY_COLOR = {
   common: PALETTE.bone,
@@ -1423,13 +1424,15 @@ export function createSocketScreen({ bus, world }) {
   window.addEventListener('keydown', (e) => {
     if (!open) {
       if (e.repeat) return;
-      if (e.code === 'KeyB') {
+      if (bindings.is(e.code, 'backpack')) {
         const r = openOwn();
         if (r.denied) toast(t('⊘ sockets are for between rooms'));
       }
       return;
     }
-    const code = e.code;
+    // The player's backpack key closes the screen like B (Settings ▸ Controls),
+    // unless it is one of this screen's own keys.
+    const code = !OWN_KEYS.has(e.code) && !KEY_DIR[e.code] && bindings.is(e.code, 'backpack') ? 'KeyB' : e.code;
     selSound.input('keyboard', code === 'Escape' || code === 'KeyB'); // @gnt:M3 RUN-NAV-SOUND
     const dir = KEY_DIR[code];
     let used = true;

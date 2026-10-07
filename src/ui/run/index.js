@@ -59,6 +59,7 @@ import { RELICS, CURSES } from '../../sim/relics.js';
 // @gnt:M3 RUN-NAV-SOUND (fix-M3-r5): selection ticks for the build pages.
 import { createSelectionSound } from '../../audio/uiselect.js';
 import { t } from '../../i18n/index.js';
+import { bindings } from '../../core/bindings.js';
 
 // phase -> screen name. Anything absent means "no meta screen".
 const SCREEN_FOR = {
@@ -241,6 +242,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     ...Array.from({ length: SKILL_SLOTS }, (_, i) => `Digit${i + 1}`),
     'KeyW', 'KeyS', 'KeyR', 'KeyE', 'Tab', 'F1', 'F2', 'F3', 'F4',
   ]);
+  // Controls slice: a rebound play key carries over like its default did.
+  const isPlayKey = (code) => {
+    const a = bindings.action(code);
+    return !!a && a !== 'pause' && a !== 'backpack' && !/^move(Left|Right)$/.test(a) && !/^(levels|unlocks|classes)$/.test(a);
+  };
   let openedAt = -Infinity; // performance.now() when the current page appeared
   let carryAt = -Infinity; // last carry-over key pressed on the current page
   const sinceOpen = () => performance.now() - openedAt;
@@ -766,7 +772,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       if (socket && socket.isOpen()) return;
       // A combat-only key on a page = the fight pattern is still running:
       // restart the settle (see the settle-window note; capped there).
-      if (CARRY_KEYS.has(code) && !e.repeat) carryAt = performance.now();
+      if ((CARRY_KEYS.has(code) || isPlayKey(code)) && !e.repeat) carryAt = performance.now();
       const nav = NAV_KEYS.has(code);
       if ((nav || COMMIT_KEYS.has(code)) && !settled()) {
         // Settle window: the press belongs to the fight that just ended, not

@@ -11,8 +11,10 @@
 // (no screen open) / back on the pause menu / confirm on the loading and title
 // screens. Right stick Y (axis 3, deadzone 0.3) = onScroll(dy): continuous
 // scrolling of the open menu's content, up to 1100 CSS px/s at full tilt
-// (fix-M1-r5, MENU-R5-F2 — read-only content below the fold). Gameplay on a
-// gamepad is out of scope this iteration (menus only).
+// (fix-M1-r5, MENU-R5-F2 — read-only content below the fold). Play on a
+// gamepad (sticks, triggers, face buttons) is read by core/input.js once per
+// sim tick (Controls slice, docs/CONTROLS.md); this poller keeps the menus,
+// Start = pause, and cancels a rebind waiting on Settings ▸ Controls.
 // Gamepad buttons are NOT user activation in browsers: fullscreen and audio
 // unlock cannot be triggered from here, and the Display tab says so.
 const DEADZONE = 0.5;

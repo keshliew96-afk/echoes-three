@@ -381,6 +381,14 @@ p.ap-note.ap-note-warn { color: ${P.bone}; }
 .ap-ref-row { display: flex; align-items: center; justify-content: space-between; gap: ${px(12)}; min-height: ${px(38)}; padding: 0 ${px(8)}; border-bottom: 1px solid ${P.warmGrey}22; }
 .ap-ref-row .ap-ref-act { font-size: ${px(22)}; color: ${P.parchment}; }
 .ap-ref-row .ap-ref-keys { display: inline-flex; gap: ${px(6)}; flex-wrap: wrap; justify-content: flex-end; }
+/* Controls slice: a rebindable key cap is a button (focus ring = the kit's
+   .ap-focusable ring); armed it glows amber; a changed key gets an amber tick. */
+.ap-bind { font-family: ${AP_FONT}; cursor: pointer; min-width: ${px(64)}; }
+.ap-bind:hover { border-color: ${P.hearthAmber}AA; }
+.ap-bind.ap-capturing { color: ${P.hearthAmber}; border-color: ${P.hearthAmber}; box-shadow: 0 0 ${px(12)} ${P.hearthAmber}55; }
+.ap-bind-row.ap-bind-changed .ap-ref-act::after { content: ' •'; color: ${P.hearthAmber}; }
+.ap-controls .ap-ref-row .ap-ref-act { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ap-controls-status { min-height: 1.3em; }
 /* The honest "no rebinding" line: a quiet plate above the reference. */
 p.ap-note.ap-note-ref {
   color: ${P.bone}; padding: ${px(6)} ${px(14)}; border-radius: ${px(10)};

@@ -21,6 +21,7 @@ import {
 import { toonMaterial } from '../render/toon.js';
 import { ENV } from '../env/colors.js';
 import { PALETTE } from '../data/palette.js';
+import { cap, onHintsChange } from '../app/controls.js';
 import { t } from '../i18n/index.js';
 
 // West of the gate road, between the west rune stone and the NW tent: clear of
@@ -168,6 +169,13 @@ export function createTablePrompt(onClick) {
   el.setAttribute('role', 'button');
   el.setAttribute('aria-label', t('Choose a level (E)'));
   el.innerHTML = `<span class="cg-key">E</span><span><b>${t('Choose a level')}</b></span>`;
+  // Controls slice: the cap follows the interact binding / the pad's A.
+  const keyEl = el.querySelector('.cg-key');
+  const paint = () => {
+    keyEl.textContent = cap('interact');
+  };
+  paint();
+  onHintsChange(paint);
   el.addEventListener('click', (e) => {
     e.stopPropagation();
     onClick('click');
