@@ -936,11 +936,6 @@
    "src/ui/socket/index.js"
   ]
  },
- "+ SUGGEST": {
-  "files": [
-   "src/ui/run/shop.js"
-  ]
- },
  "+{embers} Embers — spend them at the camp (U)": {
   "files": [
    "src/save/index.js"
@@ -8769,6 +8764,11 @@
    "src/net/session.js"
   ]
  },
+ "The {cls} is AI-controlled and does its own shopping.": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
  "The {cls} is choosing the reward…": {
   "files": [
    "src/ui/run/index.js"
@@ -8807,6 +8807,11 @@
  "The {cls} picks the party's relic — your pick was shown to the party": {
   "files": [
    "src/net/session.js"
+  ]
+ },
+ "The {cls} shops on their own screen.": {
+  "files": [
+   "src/ui/run/shop.js"
   ]
  },
  "The {cls}'s build": {

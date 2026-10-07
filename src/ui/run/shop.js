@@ -53,6 +53,7 @@ import { service } from '../../app/registry.js';
 import { bossNameOfRun } from '../../data/levels.js';
 import { relicIconHtml } from './relicicons.js';
 import { t } from '../../i18n/index.js';
+import { viewerSeat } from '../../app/viewerseat.js';
 
 // 'Advance to the Drowned Heron' — the act's own room-8 boss.
 const advanceLabel = (view) => t('Advance to {boss}', { boss: t(bossNameOfRun(view)).replace(/^The /, 'the ') });
@@ -66,6 +67,19 @@ function netSeat() {
     /* no session */
   }
   return null;
+}
+
+// The seat controllers (['human'|'ai' ×4]) off the live world, or null.
+function controllersNow() {
+  try {
+    const c = service('content');
+    const w = c && typeof c.world === 'function' ? c.world() : null;
+    const a = w && typeof w.allySystem === 'function' ? w.allySystem() : null;
+    const ctl = a && typeof a.controllers === 'function' ? a.controllers() : null;
+    return Array.isArray(ctl) ? ctl : null;
+  } catch {
+    return null;
+  }
 }
 
 // ROUND-2 CERTIFICATION FIX (shop check 10 "motion juice", player scorer 1/2).
@@ -127,6 +141,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     <div class="rn-shelf"></div>
     <div class="rn-note rn-empty" style="display:none"></div>
     <div class="rn-note rn-bought" style="display:none"></div>
+    <div class="rn-note rn-lock" style="display:none"></div>
     <div class="rl-rack" style="display:none"></div>
     <div class="rn-buttons">
       <span class="rn-hint rn-hint-l">${t('<b>A</b>/<b>D</b> or click a card to buy')}</span>
@@ -142,6 +157,7 @@ export function createShopScreen({ run, build, party = () => null }) {
   // §16: a purchase "departs to bench" — the receipt rides ON the sold card
   // ("you own N · on the bench"), so the note stays removed.
   const boughtEl = el.querySelector('.rn-bought');
+  const lockEl = el.querySelector('.rn-lock');
   const fx = el.querySelector('.rn-fx');
   const lamp = el.querySelector('.rn-lamp');
   const lantern = el.querySelector('.rn-lantern');
@@ -247,6 +263,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     padFocus = -1;
     signature = '';
     lastView = null;
+    guestRoom = -1;
     headFit.key = '';
   }
   // The viewed shelf in the Healer's shape ({ wallet, stock }).
@@ -255,7 +272,26 @@ export function createShopScreen({ run, build, party = () => null }) {
     const s = view.partyShop.shelves[seat];
     return s ? { wallet: s.purse, stock: s.stock } : view.shop;
   }
-  const buyOn = (i) => (viewSeat === 0 ? run().buy(i) : run().partyBuy(viewSeat, i));
+  // v0.5.237 (Kesh: "the default shop i view should be the character i
+  // controlling ... the Healer's shop should be done by AI"): the shelf opens
+  // on the viewer's own character and buys only there. Another character's
+  // tab is view-only — an AI seat shops for itself (its Suggested picks on
+  // Advance, Auto at once) — except under Ally builds: Manual, where the
+  // player builds the AI seats by hand.
+  const ownSeat = () => viewerSeat();
+  const aiHeldSeat = (seat) => {
+    const ctl = controllersNow();
+    return ctl ? ctl[seat] !== 'human' : seat !== ownSeat();
+  };
+  const partyMode = () => {
+    const P = party();
+    return P && typeof P.mode === 'function' ? P.mode() : 'suggest';
+  };
+  const canBuyOn = (seat) => !lastView || !lastView.partyShop || seat === ownSeat() || (aiHeldSeat(seat) && partyMode() === 'manual');
+  const buyOn = (i) => {
+    if (!canBuyOn(viewSeat)) return null;
+    return viewSeat === 0 ? run().buy(i) : run().partyBuy(viewSeat, i);
+  };
 
   const plaques = []; // index -> plaque element
   const cards = []; // index -> card element
@@ -274,7 +310,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     const cold = kit ? !kit.startsWith('fits') : null; // the sim's verdict, not the shown words
     const extra = item.node === 'siphon' && sys ? sys.siphonCardLine() : null;
     const rar = RARITY_COLOR[item.rarity] ?? RARITY_COLOR.common;
-    const mark = aiTab && !item.sold ? `<div class="rn-suggest${item.marked ? ' rn-on' : ''}" data-idx="${i}">${esc(item.marked ? t('✓ SUGGESTED') : t('+ SUGGEST'))}</div>` : '';
+    const mark = aiTab && !item.sold && item.marked ? `<div class="rn-suggest rn-on" data-idx="${i}">${esc(t('✓ SUGGESTED'))}</div>` : '';
     return `
         <div class="rn-itemtabs"><div class="rn-minowner" style="--acc:${CLASS_ACCENTS[CLASS_OF_SEAT[seat]]}">${esc(t(clsName).toUpperCase())}</div>${mark}</div>
         <div class="rn-card${n && n.rarity === 'legendary' ? ' rn-legendary' : ''}" data-seat="${seat}"
@@ -333,7 +369,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     const fill = (k, withSold = true) => {
       const sh = shelfOf(view, k);
       const sys = k === 0 ? build() : P ? P.build(k) : null;
-      const html = (item, i) => `<div class="rn-item${item.sold ? ' rn-sold' : ''}">${itemInner(k, item, i, sys, k > 0 && !!ps)}</div>`;
+      const html = (item, i) => `<div class="rn-item${item.sold ? ' rn-sold' : ''}">${itemInner(k, { ...item, marked: true }, i, sys, k !== ownSeat() && !!ps)}</div>`;
       const stock = sh.stock ?? [];
       const sold = withSold ? stock.filter((it) => !it.sold).map((it) => ({ ...it, sold: true, owned: Math.max(1, (it.owned || 0) + 1), upgrade: null })) : [];
       twin.innerHTML = stock.map(html).join('') + sold.map((it) => html(it, stock.indexOf(stock.find((s) => s.node === it.node)))).join('');
@@ -342,7 +378,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     let stack = shelfFrame.stack;
     if (!stack && ps) {
       el.classList.remove('rn-ribstack');
-      for (const k of [1, 2, 3]) {
+      for (const k of [0, 1, 2, 3]) {
         fill(k);
         for (const it of twin.querySelectorAll('.rn-item')) {
           const o = it.querySelector('.rn-minowner');
@@ -372,7 +408,7 @@ export function createShopScreen({ run, build, party = () => null }) {
   function build3(view) {
     const s = shelfOf(view, viewSeat);
     const seat = viewSeat;
-    const aiTab = seat > 0 && !!view.partyShop;
+    const aiTab = !!view.partyShop && seat !== ownSeat() && aiHeldSeat(seat);
     const P = party();
     shelf.innerHTML = '';
     plaques.length = 0;
@@ -386,12 +422,7 @@ export function createShopScreen({ run, build, party = () => null }) {
       wrap.innerHTML = itemInner(seat, item, i, sys, aiTab);
       const card = wrap.querySelector('.rn-card');
       card.addEventListener('click', () => buyOn(i));
-      // A click on the SUGGESTED ribbon toggles the mark (never a purchase).
-      const rib = wrap.querySelector('.rn-suggest');
-      if (rib) rib.addEventListener('click', (e) => {
-        e.stopPropagation();
-        run().partyShopMark(seat, i);
-      });
+      if (!canBuyOn(seat)) wrap.classList.add('rn-viewonly');
       // Hover state also settable by class (captures fire synthetic events
       // that do not move the real pointer).
       card.addEventListener('mouseenter', () => card.classList.add('rn-hover'));
@@ -427,22 +458,33 @@ export function createShopScreen({ run, build, party = () => null }) {
       if (advanceBtn.textContent !== lbl) advanceBtn.textContent = lbl;
     }
     if (viewSeat > 0 && !view.partyShop) viewSeat = 0;
-    // PARTY: a network guest's shop opens on its own tab.
+    // PARTY: the shop opens on the viewer's own tab (a network guest's class
+    // seat, a host's seat, the class picked for single player).
     const gSeat = netSeat();
-    if (gSeat !== null && view.partyShop && view.partyShop.room !== guestRoom) {
-      guestRoom = view.partyShop.room;
-      viewSeat = gSeat;
+    const ps0 = view.partyShop;
+    if (ps0 && ps0.room !== guestRoom) {
+      guestRoom = ps0.room;
+      viewSeat = ownSeat();
       signature = '';
     }
     const s = shelfOf(view, viewSeat);
     if (!s) return;
+    // Another character's tab: who does its shopping (view-only note).
+    const lock = ps0 && !canBuyOn(viewSeat);
+    const lockText = lock ? (aiHeldSeat(viewSeat) ? t('The {cls} is AI-controlled and does its own shopping.', { cls: t(CLASS_NAME[CLASS_OF_SEAT[viewSeat]]) }) : t('The {cls} shops on their own screen.', { cls: t(CLASS_NAME[CLASS_OF_SEAT[viewSeat]]) })) : '';
+    if (lockEl.textContent !== lockText) {
+      lockEl.textContent = lockText;
+      lockEl.style.display = lock ? '' : 'none';
+      dirtyFlag = true;
+    }
     // PARTY: the strip (chips = purses) + the lamp copy.
     const ps = view.partyShop;
     const P = party();
     if (ps) {
       const rows = [0, 1, 2, 3].map((k) => ({ chip: ps.done && ps.done[k] ? t('◉ {n} · Done', { n: k === 0 ? view.shop.wallet : ps.shelves[k].purse }) : `◉ ${k === 0 ? view.shop.wallet : ps.shelves[k].purse}`, tone: k === viewSeat ? 'take' : '' }));
       strip.update(rows, viewSeat);
-      const buyers = [1, 2, 3].filter((k) => !ps.touched[k] && ps.shelves[k].stock.some((c) => c.marked && !c.sold)).map((k) => CLASS_NAME[CLASS_OF_SEAT[k]]);
+      const healerMarks = !!(view.shop && !view.shop.touched && view.shop.stock.some((c) => c.marked && !c.sold));
+      const buyers = [0, 1, 2, 3].filter((k) => (k === 0 ? healerMarks : !ps.touched[k] && ps.shelves[k].stock.some((c) => c.marked && !c.sold))).map((k) => CLASS_NAME[CLASS_OF_SEAT[k]]);
       const base = advanceLabel(view);
       // BUILD_BRIEF §25.7: a guest's lamp reads "Done" (the host's Advance
       // leaves at once when every human is Done, else a 15 s countdown).
@@ -501,7 +543,7 @@ export function createShopScreen({ run, build, party = () => null }) {
   const rackOf = (view) => (view && view.relics && Array.isArray(view.relics.shelf) && view.relics.shelf.length ? view.relics.shelf : null);
   const buyRelic = (i) => {
     const r = run();
-    if (r && typeof r.buyRelic === 'function') r.buyRelic(viewSeat, i);
+    if (r && typeof r.buyRelic === 'function' && canBuyOn(viewSeat)) r.buyRelic(viewSeat, i);
   };
   function renderRack(view) {
     const items = rackOf(view);
@@ -968,8 +1010,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     }
     if (code === 'Digit1' || code === 'Digit2' || code === 'Digit3' || code === 'Digit4') {
       const i = Number(code.slice(5)) - 1;
-      if (e && e.shiftKey && viewSeat > 0) run().partyShopMark(viewSeat, i);
-      else buyOn(i);
+      if (!(e && e.shiftKey)) buyOn(i);
       return true;
     }
     // PLAN §16.4 input map ("buy — Enter on the focused card", "Advance —
@@ -1033,10 +1074,6 @@ export function createShopScreen({ run, build, party = () => null }) {
     }
     if (action === 'confirm') {
       focusBuy();
-      return true;
-    }
-    if (action === 'tertiary' && padFocus >= 0 && viewSeat > 0) {
-      run().partyShopMark(viewSeat, padFocus);
       return true;
     }
     return false;

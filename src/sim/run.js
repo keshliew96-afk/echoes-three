@@ -96,6 +96,7 @@ import { sanitizeBoons } from '../data/unlocks.js';
 import { swapSuggestion, CLASS_OF_SEAT, PARTY_DEADLINES } from '../data/classes.js';
 // PARTY (PLAN §16.3): the party page + the party shelves.
 import { createPartyPages } from './partypage.js';
+import { suggestShelf } from './partyai.js';
 import { fillStress } from './party.js';
 import { STRESS_LOADOUT } from '../data/classes.js';
 import { SHARED_NODE_IDS } from './nodes.js';
@@ -1607,6 +1608,22 @@ export function createRunSystem({
     });
     // PARTY: each ally's own 4-card class shelf (party stream, seats 1 → 3).
     if (allyOn()) pages.openShop(roomIndex);
+    // v0.5.237 (Kesh: "shouldn't be able to control the Healer's shop ... it
+    // should be done by AI"): a Healer the player does not control (class
+    // select, or an AI seat in co-op) shops like the other AI seats — its
+    // picks marked under Suggested (bought on Advance), bought now under Auto.
+    if (healerAiShops()) {
+      const picks = suggestShelf(shop.stock, wallet);
+      if (party.mode() === 'suggest') {
+        shop.marked = shop.stock.map((_, k) => picks.includes(k));
+        shop.touched = false;
+      } else if (party.mode() === 'auto') {
+        for (const k of picks) {
+          const r = buy(k, { by: 'ai' });
+          if (!r || r.denied) break;
+        }
+      }
+    }
     // RELICS: the relic shelf (relic stream; null when relics are off).
     relics.openShelf();
   }
@@ -1643,6 +1660,14 @@ export function createRunSystem({
   }
   function partyShopMark(seat, index, on) {
     if (phase !== 'shop' || !pages || !pages.shopOpen()) return null;
+    if (Number(seat) === 0) {
+      // The AI-held Healer's Suggested marks live on the run's own shelf.
+      if (!shop || !shop.marked || !shop.stock[index]) return null;
+      const v = on === undefined ? !shop.marked[index] : !!on;
+      shop.marked[index] = v;
+      events.emit(getTick(), 'party_shop_mark', { seat: 0, index, on: v });
+      return v;
+    }
     return pages.mark(Number(seat), index, on);
   }
   function partyShopDone(seat) {
@@ -1666,7 +1691,9 @@ export function createRunSystem({
   // §14: integer wallet, atomic spend; insufficient funds => `currency_denied`
   // no-op — the item is NEVER hidden or greyed for price (§16: plaque emphasis
   // + one ~300 ms shake, item stays).
-  function buy(index) {
+  // An AI-held Healer (controllers()[0] is not 'human') in a party run.
+  const healerAiShops = () => allyOn() && !!party && controllers()[0] !== 'human';
+  function buy(index, { by = 'human' } = {}) {
     if (phase !== 'shop' || !shop) return null;
     const card = shop.stock[index];
     if (!card || card.sold) return null;
@@ -1683,6 +1710,11 @@ export function createRunSystem({
     wallet -= card.price;
     buildSys.grantNode(card.node, 'purchased'); // card departs to the bench
     card.sold = true;
+    // The player bought for an AI-held Healer (Manual): its marks are void.
+    if (by === 'human' && shop.marked) {
+      shop.touched = true;
+      shop.marked = shop.marked.map(() => false);
+    }
     const owned = draft.ownedCount(card.node);
     events.emit(tick, 'shop_purchase', {
       node: card.node,
@@ -1709,6 +1741,13 @@ export function createRunSystem({
     }
     // PARTY: every AI-held shelf's still-marked buys (Suggested), benches
     // auto-filled, then the shelves close.
+    if (shop && shop.marked && !shop.touched && healerAiShops() && party.mode() === 'suggest') {
+      shop.marked.forEach((m, k) => {
+        if (m && !shop.stock[k].sold && wallet >= shop.stock[k].price) buy(k, { by: 'ai' });
+      });
+      shop.marked = shop.marked.map(() => false);
+    }
+    if (healerAiShops() && party.mode() !== 'manual') buildSys.autoFill();
     if (pages && pages.shopOpen()) pages.closeShop();
     // The shop room is a room the player leaves behind, so it counts toward
     // the §18 summary row (it pays no stipend — `clearedRooms` is untouched).
@@ -2058,7 +2097,11 @@ export function createRunSystem({
               // build — present only then (hash-stable view).
               ...upgradeKey(s.sold ? null : s.node),
               affordable: wallet >= s.price,
+              // An AI-held Healer's Suggested pick (key present only then).
+              ...(shop.marked ? { marked: !!shop.marked[shop.stock.indexOf(s)] } : {}),
             })),
+            // The AI-held Healer's shelf: the player bought on it (Manual).
+            ...(shop.marked ? { touched: !!shop.touched } : {}),
           }
         : null,
       boss: active && roomIndex === RUN.bossRoom ? boss.view() : null,
