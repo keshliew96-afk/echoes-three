@@ -43,6 +43,8 @@ import { ENV } from '../../env/colors.js';
 import { hslColor } from '../../env/colors.js';
 import { warmPark } from '../warmup.js';
 import { HITFLASH } from '../../core/constants.js';
+// EVENT ROOMS (docs/EVENT_ROOMS.md): the eight encounter bodies.
+import { buildEncounter, ENCOUNTER_KINDS } from './encounters.js';
 
 const HEAL = exactColor(PALETTE.brightHeal);
 const BONE_STONE = new Color(PALETTE.bone).multiplyScalar(0.8);
@@ -452,6 +454,8 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
         return buildSluice(e, world);
       case 'bell':
         return buildBell(e);
+      case 'encounter':
+        return buildEncounter(e);
       default:
         return null;
     }
@@ -469,6 +473,16 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
     const r = rigs.get(ev.id);
     if (r && r.r.onUse) r.r.onUse(ev);
   });
+  // EVENT ROOMS: the card opening, a Take and a Leave drive the live rig.
+  for (const type of ['event_open', 'event_take', 'event_leave']) {
+    bus.on(type, (ev) => {
+      for (const rec of rigs.values()) {
+        if (rec.kind !== 'encounter' || !rec.r.onEvent) continue;
+        const p = rec.r.group.position;
+        rec.r.onEvent(type, ev, p.x, p.z);
+      }
+    });
+  }
   bus.on('keg_blast', (ev) => {
     // White-hot flash + fire burst + scorch at the blast (the §19.4 layers).
     impactFx.kill(ev.x, ev.z, { color: PALETTE.emberDanger });
@@ -481,6 +495,13 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
     flashes.push({ s, age: 0, base: ev.radius * 2.6 });
   });
 
+  // EVENT ROOMS: was the live encounter already resolved (taken or left)?
+  function encounterSpent() {
+    const rs = typeof world.runSystem === 'function' ? world.runSystem() : null;
+    const v = rs ? rs.view() : null;
+    return !!(v && v.encounter && v.encounter.state === 'done');
+  }
+
   let lastT = null;
   function update(tSec) {
     const dt = lastT === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastT));
@@ -488,7 +509,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
     const ctx = { tick: world.tick, cosmetic, camQuat: stage.camera.quaternion };
     const seen = new Set();
     for (const e of world.entities()) {
-      if (e.kind !== 'dewfont' && e.kind !== 'barricade' && e.kind !== 'keg' && e.kind !== 'kegfuse' && e.kind !== 'sluice' && e.kind !== 'bell') continue;
+      if (e.kind !== 'dewfont' && e.kind !== 'barricade' && e.kind !== 'keg' && e.kind !== 'kegfuse' && e.kind !== 'sluice' && e.kind !== 'bell' && e.kind !== 'encounter') continue;
       seen.add(e.id);
       let rec = rigs.get(e.id);
       if (!rec) {
@@ -498,6 +519,9 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
         r.group.rotation.y = e.yaw ?? 0;
         rec = { r, kind: e.kind };
         rigs.set(e.id, rec);
+        // EVENT ROOMS: a rig rebuilt after a load (or on a joining guest)
+        // shows a spent encounter as spent.
+        if (e.kind === 'encounter' && r.restore) r.restore(e.uses === 0 && encounterSpent());
         root.add(r.group);
       }
       rec.r.update(e, tSec, ctx, dt);
@@ -546,6 +570,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
     warmPark(root, buildKeg().group);
     warmPark(root, buildSluice({ laneIds: [] }, world).group);
     warmPark(root, buildBell().group);
+    for (const encounter of ENCOUNTER_KINDS) warmPark(root, buildEncounter({ encounter, uses: 1 }).group);
     const back = shapes.prewarm();
     setTimeout(back, 250);
   }

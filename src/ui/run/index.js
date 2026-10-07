@@ -55,6 +55,9 @@ import { createTransitScreen, TRANSIT_CSS } from './transit.js';
 // RELICS (docs/CONTENT_PLAN.md §5): the relic page + the relic strip.
 import { createRelicScreen, RELIC_CSS } from './relic.js';
 import { createRelicStrip, RELIC_STRIP_CSS } from './relicstrip.js';
+// EVENT ROOMS (docs/EVENT_ROOMS.md): the encounter card + the walk-up plate.
+import { createEncounterScreen, createEventPlate, ENCOUNTER_CSS } from './encounter.js';
+import { ENCOUNTERS } from '../../sim/encounters.js';
 import { RELICS, CURSES } from '../../sim/relics.js';
 // @gnt:M3 RUN-NAV-SOUND (fix-M3-r5): selection ticks for the build pages.
 import { createSelectionSound } from '../../audio/uiselect.js';
@@ -70,12 +73,13 @@ const SCREEN_FOR = {
   defeat: 'end',
   transit: 'transit', // CAMPAIGN: level-clear / setting-out card
   relic: 'relic', // RELICS: pick one of three
+  encounter: 'encounter', // EVENT ROOMS: Take or Leave
 };
 
 export function createRunUi({ bus, world, socket = null, autostart = false }) {
   const style = document.createElement('style');
   style.id = 'run-style';
-  style.textContent = RUN_CSS + TRANSIT_CSS + PARTY_STRIP_CSS + END_CSS + RELIC_CSS + RELIC_STRIP_CSS; // fix-INT-r5: + the end card
+  style.textContent = RUN_CSS + TRANSIT_CSS + PARTY_STRIP_CSS + END_CSS + RELIC_CSS + RELIC_STRIP_CSS + ENCOUNTER_CSS; // fix-INT-r5: + the end card
   document.head.appendChild(style);
 
   // Veil sits UNDER #hud (§16: Zone 1 persists beneath); the page and the
@@ -102,7 +106,9 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     end: createEndScreen({ run }),
     transit: createTransitScreen({ run }),
     relic: createRelicScreen({ run }),
+    encounter: createEncounterScreen({ run }),
   };
+  const eventPlate = createEventPlate();
   const relicStrip = createRelicStrip();
   for (const s of Object.values(screens)) {
     s.el.style.display = 'none';
@@ -335,6 +341,8 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
         : '-',
       p ? `${p.nextRoom}:${p.focus}:${p.options.map((o) => o.win + o.reward + (o.curse ?? '')).join(',')}` : '-',
       // RELICS: the relic page's offer and focus.
+      // EVENT ROOMS: the card's state, focus and refusal.
+      v.encounter ? `${v.encounter.id}:${v.encounter.state}:${v.encounter.focus}:${v.encounter.refused ?? ''}` : '-',
       v.relics && v.relics.offer ? `${v.relics.offer.room}:${v.relics.offer.focus}:${v.relics.offer.choices.map((c) => c.id).join(',')}:${v.relics.owned.length}` : '-',
       s ? s.stock.map((i) => `${i.node}${i.price}${i.sold ? 'x' : ''}${i.owned}`).join('|') : '-',
       v.summary ? `${v.summary.result}:${v.summary.rooms}:${v.summary.glint}` : '-',
@@ -736,6 +744,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     if (!sys) return;
     const v = sys.view();
     relicStrip.update(v); // RELICS: the strip under the Glint plate
+    eventPlate.update(v); // EVENT ROOMS: the plate over a "?" room
     setScreen(SCREEN_FOR[v.phase] ?? 'none');
     setVeilTone(v.phase);
     fade.classList.toggle('rn-on', v.phase === 'fade');
@@ -881,6 +890,26 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     if (!a || typeof a.toast !== 'function' || !c) return;
     if (c.major) a.toast(t('Bound for the run: {name}. {text} Clear this room for a greater relic.', { name: t(c.name), text: t(c.text) }), { tone: 'info', ms: 6000 });
     else a.toast(t('Cursed room: {name}. {text} Clear it for a relic.', { name: t(c.name), text: t(c.text) }), { tone: 'info', ms: 5200 });
+  });
+  // EVENT ROOMS: what an encounter paid out when no page follows it, and
+  // what it took (the spirit's relic, the altar's curse).
+  bus.on('event_take', (ev) => {
+    const a = service('app');
+    if (!a || typeof a.toast !== 'function') return;
+    const name = ENCOUNTERS[ev.encounter] ? t(ENCOUNTERS[ev.encounter].name) : '';
+    const r = ev.relic ? RELICS[ev.relic] : null;
+    const c = ev.curse ? CURSES[ev.curse] : null;
+    if (ev.encounter === 'wishing_well' && r) a.toast(t('The well gives a relic: {name}. {text}', { name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 5600 });
+    else if (ev.encounter === 'wishing_well') a.toast(t('The well gives back {n} Glint.', { n: ev.glint ?? 0 }), { tone: 'info', ms: 4200 });
+    else if (ev.encounter === 'forgotten_cache') a.toast(t('{name}: +{n} Glint, and some for each ally.', { name, n: ev.glint ?? 0 }), { tone: 'info', ms: 4200 });
+    else if (ev.encounter === 'healing_spring') a.toast(t('{name}: the party is whole again.', { name }), { tone: 'info', ms: 4200 });
+    else if (ev.encounter === 'trapped_chest') a.toast(t('Ambush! Win the fight to open the chest.'), { tone: 'info', ms: 4200 });
+    else if (c) a.toast(t('Bound for the run: {name}. {text}', { name: t(c.name), text: t(c.text) }), { tone: 'info', ms: 6000 });
+  });
+  bus.on('relic_lose', (ev) => {
+    const a = service('app');
+    const r = RELICS[ev.relic];
+    if (a && typeof a.toast === 'function' && r) a.toast(t('The spirit takes {name}.', { name: t(r.name) }), { tone: 'info', ms: 4200 });
   });
   // Slice 2: an elite's relic drop, a relic bought at the peddler.
   bus.on('relic_drop', (ev) => {

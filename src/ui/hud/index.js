@@ -67,6 +67,8 @@ function locationCopy(scene, rv, short = false) {
     const place = rv.act > 1 && rv.actName ? t(String(rv.actName)).toUpperCase() : null;
     if (room >= total) return { name: place ?? t('THE HOLLOW'), sub: roomLine(short, room, total, t(bossNameOfRun(rv)).toUpperCase()) };
     if (rv.phase === 'shop' || rv.mode === 'shop') return { name: t("THE PEDDLER'S CLEARING"), sub: roomLine(short, room, total, MODE_WORD.shop) };
+    // EVENT ROOMS: a "?" room (the chest's ambush keeps the name).
+    if (rv.mode === 'event') return { name: place ?? t('UNEASY WOODLAND'), sub: roomLine(short, room, total, t('AN ENCOUNTER')) };
     const mode = rv.mode === 'kill_all' && place ? t('CLEAR THE ROOM') : MODE_WORD[rv.mode] ?? t('ON THE ROAD');
     return { name: place ?? t('UNEASY WOODLAND'), sub: roomLine(short, room, total, mode) };
   }

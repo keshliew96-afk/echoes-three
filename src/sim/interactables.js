@@ -36,7 +36,37 @@ export const INTERACT_TYPES = Object.freeze({
   keg: Object.freeze({ hp: 1, radius: 0.3, fuseTicks: 60, damage: 30, blastRadius: 1.6 }),
   sluice: Object.freeze({ verb: 'Pull', spentLabel: 'Closed', radius: 0.4, stopTicks: 720, cooldownTicks: 1200 }),
   bell: Object.freeze({ verb: 'Ring', spentLabel: 'Rung', radius: 0.42, stunRadius: 3.0, stunTicks: 60, uses: 1 }),
+  // EVENT ROOMS (docs/EVENT_ROOMS.md): spawned by sim/run.js in a "?" room.
+  encounter: Object.freeze({ verb: 'Inspect', spentLabel: 'Settled', radius: 0.55, uses: 1 }),
 });
+
+// EVENT ROOMS: the encounter body (plain entity data for registry.spawn).
+export function encounterSpec(encounterId, x, z, solid = 0) {
+  const T = INTERACT_TYPES.encounter;
+  return {
+    kind: 'encounter',
+    itype: 'encounter',
+    encounter: encounterId,
+    faction: 'neutral',
+    x,
+    z,
+    px: x,
+    pz: z,
+    yaw: 0,
+    interactable: true,
+    interactRadius: INTERACT_RADIUS,
+    radius: T.radius,
+    verb: T.verb,
+    spentLabel: T.spentLabel,
+    uses: T.uses,
+    cooldownUntilTick: 0,
+    activeUntilTick: 0,
+    usedTick: -1,
+    usedBy: null,
+    // A solid footprint: bodies walk round it (sim/movement.js dynamic colliders).
+    ...(solid > 0 ? { collider: { r: solid }, blocksMovement: true } : {}),
+  };
+}
 // Revive adjacency (sim/allies.js REVIVE.range, §10).
 const REVIVE_RANGE = 0.6;
 
@@ -243,7 +273,9 @@ export function createInteractableSystem({ registry, events, combat, getTick, pl
   }
 
   function availability(e, tick = getTick()) {
-    if (dormant && e.itype !== 'dewfont') return 'dormant';
+    // EVENT ROOMS: an encounter is never a combat asset, so a cleared room's
+    // dormancy never reaches it.
+    if (dormant && e.itype !== 'dewfont' && e.itype !== 'encounter') return 'dormant';
     if (e.uses !== null && e.uses <= 0) return 'used';
     if (tick < e.cooldownUntilTick) return 'cooldown';
     if (e.itype === 'sluice' && (!e.laneIds || e.laneIds.length === 0)) return 'no_lane';
@@ -278,6 +310,9 @@ export function createInteractableSystem({ registry, events, combat, getTick, pl
         if (statusMod.apply(t, 'stun', 1, T.stunTicks, tick, e.id)) stunned += 1;
       }
       events.emit(tick, 'bell_ring', { id: e.id, by: actor.id, x: r2(e.x), z: r2(e.z), radius: T.stunRadius, stunned });
+    } else if (e.itype === 'encounter') {
+      // EVENT ROOMS: the run system opens the encounter's card (sim/run.js).
+      events.emit(tick, 'event_touch', { id: e.id, encounter: e.encounter, by: actor.id });
     } else if (e.itype === 'sluice') {
       const T = INTERACT_TYPES.sluice;
       const stopped = [];
@@ -351,6 +386,7 @@ export function createInteractableSystem({ registry, events, combat, getTick, pl
               ...(e.laneIds ? { laneIds: [...e.laneIds] } : {}),
             }
           : {}),
+        ...(e.itype === 'encounter' ? { encounter: e.encounter } : {}),
         ...(e.kind === 'barricade' ? { hp: r2(e.hp), maxHp: e.maxHp, collider: { ...e.collider }, skin: e.skin } : {}),
         ...(e.kind === 'keg' ? { hp: e.hp } : {}),
         ...(e.kind === 'kegfuse' ? { blastTick: e.blastTick, keg: e.kegId } : {}),
