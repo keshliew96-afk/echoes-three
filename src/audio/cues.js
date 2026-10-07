@@ -699,6 +699,87 @@ function skillFamily(ev) {
   return 'cast_heal';
 }
 
+// ELITE AFFIXES (docs/ELITE_AFFIXES.md): each power's own voice.
+// An affixed elite arrives: a low struck bell with a glassy shimmer over it.
+cue('affix_reveal', { levelDb: -11, priority: 3, maxVoices: 2, cooldownMs: 250 }, (k, t, d, p) =>
+  Math.max(
+    k.bell(d, t, { f: P(p, 147), ratio: 2.4, index: 2.2, d: 1.1, gain: 0.8 }),
+    k.noise(d, t + 0.04, { f0: 5200, f1: 3400, q: 6, a: 0.05, d: 0.5, gain: 0.3 })
+  )
+);
+// Frozen: the nova charging (a rising glass whine), then the burst (shatter).
+cue('frost_charge', { levelDb: -12, priority: 4, maxVoices: 2, cooldownMs: 120 }, (k, t, d, p) =>
+  Math.max(
+    k.tone(d, t, { type: 'triangle', f0: P(p, 620), f1: P(p, 1480), a: 0.3, d: 0.95, gain: 0.5 }),
+    k.noise(d, t, { type: 'highpass', f0: 3800, f1: 6400, q: 0.9, a: 0.4, d: 0.95, gain: 0.4 })
+  )
+);
+cue('frost_burst', { levelDb: -9, priority: 4, maxVoices: 2, cooldownMs: 120 }, (k, t, d, p) =>
+  Math.max(
+    k.noise(d, t, { f0: P(p, 5600), f1: P(p, 2400), q: 3, d: 0.35, gain: 1 }),
+    k.bell(d, t, { f: P(p, 1320), ratio: 2.76, index: 3, d: 0.6, gain: 0.35 }),
+    k.tone(d, t, { f0: P(p, 180), f1: P(p, 90), d: 0.18, gain: 0.5 })
+  )
+);
+// Molten: the core's burst (a low boom with a lava crackle).
+cue('molten_burst', { levelDb: -7, priority: 4, maxVoices: 2, cooldownMs: 120 }, (k, t, d, p) =>
+  Math.max(
+    k.tone(d, t, { f0: P(p, 110), f1: P(p, 38), d: 0.55, gain: 1 }),
+    k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 1200, f1: 200, q: 0.8, d: 0.6, gain: 0.8 }),
+    k.noise(d, t + 0.08, { f0: 2600, q: 4, a: 0.05, d: 0.5, gain: 0.25 })
+  )
+);
+cue('molten_core', { levelDb: -14, maxVoices: 2, cooldownMs: 120 }, (k, t, d, p) =>
+  k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 600, f1: 1400, q: 1.2, a: 0.08, d: 0.4, gain: 1 })
+);
+// Warded: the ward closes (a bright bell), and breaks (a glass tinkle).
+cue('ward_up', { levelDb: -12, priority: 3, maxVoices: 2, cooldownMs: 200 }, (k, t, d, p) =>
+  Math.max(
+    k.bell(d, t, { f: P(p, 523), ratio: 3.01, index: 1.4, d: 0.9, gain: 0.7 }),
+    k.bell(d, t + 0.05, { f: P(p, 784), ratio: 2.0, index: 1.0, d: 0.7, gain: 0.35 })
+  )
+);
+cue('ward_down', { levelDb: -15, maxVoices: 2, cooldownMs: 200 }, (k, t, d) =>
+  Math.max(
+    k.noise(d, t, { f0: 6200, f1: 4200, q: 5, d: 0.22, gain: 1 }),
+    k.noise(d, t + 0.06, { f0: 5200, q: 6, d: 0.16, gain: 0.6 })
+  )
+);
+cue('ward_warn', { levelDb: -16, maxVoices: 2, cooldownMs: 200 }, (k, t, d, p) =>
+  k.tone(d, t, { type: 'triangle', f0: P(p, 880), f1: P(p, 1040), a: 0.2, d: 0.6, gain: 0.6 })
+);
+// Blinking: the spot is marked (a soft rising zap), the blink (a zap whoosh).
+cue('blink_mark', { levelDb: -14, priority: 4, maxVoices: 2, cooldownMs: 120 }, (k, t, d, p) =>
+  k.tone(d, t, { type: 'sawtooth', f0: P(p, 300), f1: P(p, 900), a: 0.1, d: 0.6, gain: 0.35, filter: { f0: 1800, q: 2 } })
+);
+cue('blink', { levelDb: -10, maxVoices: 2, cooldownMs: 100 }, (k, t, d, p) =>
+  Math.max(
+    k.tone(d, t, { type: 'square', f0: P(p, 1400), f1: P(p, 220), d: 0.14, gain: 0.35, filter: { f0: 3000, q: 1 } }),
+    k.noise(d, t, { f0: 4200, f1: 900, q: 1.5, d: 0.18, gain: 0.8 })
+  )
+);
+// Splitting: a wet crack.
+cue('split', { levelDb: -9, priority: 3, maxVoices: 2, cooldownMs: 100 }, (k, t, d, p) =>
+  Math.max(
+    k.noise(d, t, { f0: P(p, 900), f1: P(p, 300), q: 2.4, d: 0.22, gain: 1 }),
+    k.tone(d, t, { type: 'square', f0: P(p, 160), f1: P(p, 60), d: 0.16, gain: 0.4, filter: { f0: 1200, q: 0.8 } })
+  )
+);
+// Vampiric: a low suck as the blood comes back.
+cue('leech', { levelDb: -15, maxVoices: 2, cooldownMs: 160 }, (k, t, d, p) =>
+  Math.max(
+    k.noise(d, t, { type: 'lowpass', f0: 300, f1: 1100, q: 3, a: 0.06, d: 0.24, gain: 1 }),
+    k.tone(d, t, { f0: P(p, 70), f1: P(p, 140), a: 0.05, d: 0.22, gain: 0.5 })
+  )
+);
+// Thorned: a sharp splintering tick.
+cue('thorns', { levelDb: -14, maxVoices: 2, cooldownMs: 90 }, (k, t, d) =>
+  Math.max(
+    k.noise(d, t, { f0: 3800, q: 4, d: 0.05, gain: 1 }),
+    k.noise(d, t + 0.025, { f0: 2600, q: 5, d: 0.05, gain: 0.7 })
+  )
+);
+
 export const DEFAULT_EVENT_CUES = {
   basic_fire: (ev, h) => one('shoot', at(ev, h)),
   ally_basic: (ev, h) =>
@@ -783,6 +864,16 @@ export const DEFAULT_EVENT_CUES = {
   shop_open: () => [{ cue: 'shop_open' }],
   shop_purchase: () => [{ cue: 'purchase' }],
   currency_denied: () => [{ cue: 'deny' }],
+  // ELITE AFFIXES (docs/ELITE_AFFIXES.md).
+  elite_affixes: (ev, h) => one('affix_reveal', at(ev, h, ev.id)),
+  affix_frost: (ev, h) => one('frost_charge', at(ev, h, ev.id)),
+  affix_core: (ev, h) => one('molten_core', at(ev, h)),
+  affix_ward: (ev, h) => one(ev.stage === 'on' ? 'ward_up' : ev.stage === 'off' ? 'ward_down' : 'ward_warn', at(ev, h, ev.id)),
+  affix_blink_mark: (ev, h) => one('blink_mark', at(ev, h)),
+  affix_blink: (ev, h) => one('blink', at(ev, h, ev.id)),
+  affix_split: (ev, h) => one('split', at(ev, h)),
+  affix_leech: (ev, h) => one('leech', at(ev, h, ev.id)),
+  affix_thorns: (ev, h) => one('thorns', at(ev, h, ev.id)),
   // RELICS slice 2: an elite's relic drop, the relic shelf.
   relic_drop: () => [{ cue: 'reward' }],
   relic_purchase: () => [{ cue: 'purchase' }],

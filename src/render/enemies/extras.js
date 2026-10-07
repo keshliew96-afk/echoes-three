@@ -13,6 +13,7 @@
 //   - dust at a quillback's charge start and at a ram's slam
 // Render-only: reads sim entities and bus events, never mutates sim state.
 import {
+  AdditiveBlending,
   BoxGeometry,
   CanvasTexture,
   CircleGeometry,
@@ -23,7 +24,7 @@ import {
   SRGBColorSpace,
   Vector3,
 } from 'three';
-import { PALETTE } from '../../data/palette.js';
+import { PALETTE, AFFIX_COLORS } from '../../data/palette.js';
 import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
 import { sharedGeo } from '../geocache.js';
@@ -158,6 +159,7 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
     impactFx.impact(x, z, { color: PALETTE.bone, n: 7 });
   });
   bus.on('enemy_glob_land', (ev) => {
+    if (ev.affix) return; // ELITE AFFIXES: the director draws its burst
     counters.splashes += 1;
     impactFx.impact(ev.x, ev.z, { color: mix(PALETTE.sageCloak, PALETTE.signalBlue, 0.5).getHex(), n: 10 });
     impactFx.embers(ev.x, ev.z, { n: 6, radius: 0.5, tall: 1.1 });
@@ -205,6 +207,12 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
           root.add(r.g);
           root.add(r.shadow);
           r.ring = e.telegraph ? shapes.acquire('ring') : null;
+          // ELITE AFFIXES: a Molten / Frozen burst swells where it lies (its
+          // own visuals are render/enemies/affixes.js); only the ring shows.
+          if (e.affix) {
+            r.g.visible = false;
+            r.shadow.visible = false;
+          }
           globs.set(e.id, r);
         }
         const span = Math.max(1, e.landTick - e.startTick);
@@ -227,6 +235,14 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
           // Slice 2: a thorn patch (Thornling, Thornmother) reads as dark
           // bramble-green, not the toad's black-teal.
           if (e.variant === 'thorn') m.material.color.copy(mix(PALETTE.voidCharcoal, PALETTE.sageCloak, 0.7).multiplyScalar(1.5));
+          // ELITE AFFIXES: a Frozen patch reads as pale glacier ice, a Molten
+          // pool as glowing lava (additive, it lights the floor).
+          if (e.variant === 'frost') m.material.color.set(AFFIX_COLORS.frozen).multiplyScalar(1.15);
+          if (e.variant === 'molten') {
+            m.material.color.set(AFFIX_COLORS.molten).multiplyScalar(1.4);
+            m.material.blending = AdditiveBlending;
+            m.userData.molten = true;
+          }
           m.position.x = e.x;
           m.position.z = e.z;
           m.scale.set(e.radius, e.radius, 1);
@@ -235,7 +251,7 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
         }
         const inK = Math.min(1, (tick - e.startTick) / 8);
         const outK = Math.min(1, Math.max(0, (e.untilTick - tick) / 30));
-        m.material.opacity = 0.82 * inK * outK;
+        m.material.opacity = (m.userData.molten ? 0.62 + 0.18 * Math.sin(tSec * 7 + e.id) : 0.82) * inK * outK;
         m.rotation.z = tSec * 0.1;
       } else if (e.kind === 'mole') {
         const last = moleTrack.get(e.id);

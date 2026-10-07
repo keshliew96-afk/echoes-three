@@ -13,6 +13,8 @@
 //            fight, telegraph, hit and die as in a run
 //   Boss     force the add phase / enrage, or end the fight
 //   Relics   an elite's relic drop, Spore Sac, a major curse, Short Fuse
+//   Affixes  an elite with one of the eight named powers (or two), in front
+//            of the party, so its plate, aura, telegraph and burst play
 //   Floors   a slick floor patch (wet stone / grave frost) under the party
 //            with boars charging across it, or a whole room that carries
 //            the floor (Flooded Cellar, Bell Tower)
@@ -245,6 +247,27 @@ export function mountVfxLab() {
     X().cmd('spawn', 'mantis', f.x + 1.2, f.z - 2.2);
     say('Short Fuse: telegraphs 20% shorter');
   }, 'Short Fuse on this room, with wasps and a mantis');
+
+  // -------------------------------------------------------------- affixes --
+  // ELITE AFFIXES (docs/ELITE_AFFIXES.md): one elite per power, spawned with
+  // that power forced, so each warning and burst can be reviewed.
+  const aff = section('Elite affixes');
+  const AFFIX_DEMO = { molten: 'boar', frozen: 'ram', vampiric: 'boar', warded: 'knight', blinking: 'mantis', splitting: 'boar', hasted: 'boar', thorned: 'ram' };
+  for (const [id, kind] of Object.entries(AFFIX_DEMO)) {
+    button(aff, id[0].toUpperCase() + id.slice(1), async () => {
+      await ensureCombat(id === 'warded' ? 3 : 1);
+      const f = front();
+      X().cmd('spawn', kind, f.x, f.z - 2.6, { elite: true, affixes: [id] });
+      say(`${id}: a ${kind} elite with that power`);
+    }, `an elite ${kind} that is ${id}`);
+  }
+  button(aff, 'Two powers', async () => {
+    await ensureCombat(2);
+    const f = front();
+    X().cmd('spawn', 'crab', f.x - 1.2, f.z - 2.6, { elite: true, affixes: ['molten', 'hasted'] });
+    X().cmd('spawn', 'boar', f.x + 1.2, f.z - 2.6, { elite: true, affixes: ['frozen', 'warded'] });
+    say('two elites with two powers each');
+  }, 'Molten + Hasted crab, Frozen + Warded boar');
 
   // --------------------------------------------------------------- floors --
   // Slick floor (docs/SLICK_FLOOR.md): a patch laid where the party stands,

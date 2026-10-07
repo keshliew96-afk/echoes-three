@@ -86,6 +86,8 @@ import { createAutopilot } from './autopilot.js';
 import { createRelicSystem, cursedDiff } from './relics.js';
 // EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
 import { createEncounterSystem, ENCOUNTERS, EVENT_RULES } from './encounters.js';
+// ELITE AFFIXES (docs/ELITE_AFFIXES.md): how many powers an elite carries.
+import { affixCountFor, AFFIX_RULES, AFFIXES } from './affixes.js';
 import { encounterSpec } from './interactables.js';
 // CROSS-RUN UNLOCKS (docs/UNLOCKS.md): the boons a campaign is started with.
 import { sanitizeBoons } from '../data/unlocks.js';
@@ -201,6 +203,17 @@ export function createRunSystem({
   enemies.setSpawnGate(combatAllowed);
   // RELICS (Short Fuse): a cursed room's shorter telegraphs.
   if (typeof enemies.setFuse === 'function') enemies.setFuse(() => (active ? relics.fuse() : null));
+  // ELITE AFFIXES (docs/ELITE_AFFIXES.md): elites in a campaign's wave rooms
+  // (and the trapped chest's ambush) carry named powers. Never the boss room,
+  // the tutorial, the legacy single-level run or the ?room= harness (relics
+  // off), so the nine golden traces see none.
+  if (typeof enemies.setAffixRule === 'function') enemies.setAffixRule(affixRule);
+  function affixRule() {
+    if (!active || phase !== 'combat' || !frame || !campaign || campaign.mode !== 'campaign' || campaign.tutorial || !relics.enabled()) return null;
+    if (frame.modes[roomIndex - 1] === 'boss') return null;
+    const depth = endlessDepth();
+    return { count: affixCountFor({ act, room: roomIndex, endless: depth > 0 }), salt: `${frame.seed}:${depth || act}:${campaign.index}:${roomIndex}` };
+  }
 
   let active = false;
   // fix-M4a-r5 (GP.8, data/classes.js AI_ENGAGE): the AI-held seats' campaign
@@ -2223,6 +2236,18 @@ export function createRunSystem({
       case 'relicDoor':
         // ('relicDoor', curseId[, side]) — the next path screen's cursed door.
         return relics.forceDoor(args[0], args[1] ?? 0);
+      // ----------------------------------------------- ELITE AFFIXES --
+      case 'affixRule':
+        // The live room's roll rule ({ count, salt } | null).
+        return affixRule();
+      case 'affixes':
+        // Every live affixed elite: { id, etype, affixes, ward, blink }.
+        return registry
+          .all()
+          .filter((e) => Array.isArray(e.affixes) && e.state === 'active')
+          .map((e) => ({ id: e.id, etype: e.kind, affixes: [...e.affixes], hp: Math.round(e.hp * 100) / 100, maxHp: e.maxHp, ward: e.affixWard ?? null, blink: e.blink ? { ...e.blink } : null, x: Math.round(e.x * 100) / 100, z: Math.round(e.z * 100) / 100 }));
+      case 'affixData':
+        return { ids: Object.keys(AFFIXES), rules: AFFIX_RULES };
       // ------------------------------------------------- EVENT ROOMS --
       case 'eventDoor':
         // ('eventDoor', encounterId[, side]) — the next path screen's "?" door.

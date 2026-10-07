@@ -65,14 +65,18 @@ function live(e, kind, tick) {
 
 // ------------------------------------------------------------- read side --
 export function speedMul(e, tick) {
-  if (!e || !e.status) return 1;
+  if (!e) return 1;
+  // ELITE AFFIXES: Hasted (x1.4) and the Frozen wind-up (x0) ride on the
+  // body as `affixSpeed`; absent on every other body (x1, the old rule).
+  const am = e.affixSpeed;
+  if (!e.status) return am === undefined ? 1 : am;
   if (live(e, 'stun', tick)) return 0;
   let m = 1;
   const sl = live(e, 'slow', tick);
   if (sl) m *= 1 - Math.min(STATUS_RULES.slowCap, sl.mag);
   const ha = live(e, 'haste', tick);
   if (ha) m *= 1 + ha.mag;
-  return m;
+  return am === undefined ? m : m * am;
 }
 
 export function isStunned(e, tick) {
