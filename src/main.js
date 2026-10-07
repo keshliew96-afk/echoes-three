@@ -624,6 +624,11 @@ import { registerNetworkTab } from './ui/menu/tabs/network.js';
 }
 // @gnt:NET end
 
+// CLOUD SAVES (docs/CLOUD_SAVES.md): Settings ▸ Gameplay ▸ Cloud save —
+// the save kept on the session server under a short code, plus backup files.
+import { registerCloudSaveRows } from './ui/menu/cloud.js';
+const cloudSaves = registerCloudSaveRows({ app, world });
+
 const overlay = createDebugOverlay(VERSION, {
   debug: flag('debug', false),
   providers: {
@@ -1014,6 +1019,7 @@ const simDebug = {
 
 // --- Debug API (docs/TESTING.md). cmd surface grows as systems land.
 window.__echoes = {
+  cloud: () => cloudSaves.debug(),
   version: VERSION,
   // CLASS SELECT (docs/CLASS_SELECT.md): the class the local player plays.
   playClass: () => playClass.debug(),

@@ -48,6 +48,7 @@ import { createProfileStore, scoreRun } from './profile.js';
 import { loadoutBoons, loadoutTints } from '../data/unlocks.js';
 import { createThumbnailer } from './thumbnail.js';
 import { createAutosave } from './autosave.js';
+import { makeBundle, readBundle, applyBundle } from './cloud.js';
 
 const TICK_HZ = 60;
 const r1 = (v) => Math.round(v * 10) / 10;
@@ -824,6 +825,62 @@ export function createSaveSystem({
     return importText(text, target);
   }
 
+  // ------------------------------------------- cloud / backup bundle --
+  // docs/CLOUD_SAVES.md. The bundle is what is ON DISK: the autosave the
+  // throttle is holding (a run's room-start safe point) and this tab's profile
+  // changes are written first, so a mid-run cloud save resumes at the start of
+  // the current room — exactly what Continue would.
+  function bundle() {
+    try {
+      autosaver.flushNow('cloud');
+    } catch {
+      /* the last write on disk still goes */
+    }
+    try {
+      profileStore.addPlaytime(profileTicks / TICK_HZ);
+      profileTicks = 0;
+      profileStore.flush();
+    } catch {
+      /* best effort */
+    }
+    return makeBundle(store, { game: VERSION });
+  }
+  // Replaces the profile and every slot, then freezes storage: the caller
+  // reloads the page so every screen reads the new files.
+  function applyCloud(value) {
+    try {
+      autosaver.setEnabled?.(false);
+    } catch {
+      /* the frozen store refuses its writes anyway */
+    }
+    return applyBundle(store, value);
+  }
+  function backupName() {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    return `echoes-backup-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.json`;
+  }
+  function exportBackup() {
+    try {
+      const text = JSON.stringify(bundle());
+      const filename = backupName();
+      const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 1000);
+      return { ok: true, filename, bytes: text.length };
+    } catch (err) {
+      return { ok: false, error: 'unavailable', detail: String(err && err.message) };
+    }
+  }
+
   // --------------------------------------------------------- autosave --
   const autosaver = createAutosave({
     bus,
@@ -1393,6 +1450,12 @@ export function createSaveSystem({
     exportText,
     importFile,
     importText,
+    // CLOUD SAVES (docs/CLOUD_SAVES.md)
+    cloudBundle: bundle,
+    readBundle,
+    applyBundle: applyCloud,
+    exportBackup,
+    storageFrozen: () => store.frozen,
     autosave,
     resetToFresh,
     // Gauntlet r3 J3-F3: what a New Game does to the runs in progress the

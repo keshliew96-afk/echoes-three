@@ -385,6 +385,18 @@
   "plural": true,
   "one": "{n} descent"
  },
+ "{n} Ember": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "{n} Embers": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ],
+  "plural": true,
+  "one": "{n} Ember"
+ },
  "{n} fps": {
   "files": [
    "src/ui/menu/tabs/display.js"
@@ -464,6 +476,18 @@
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "{n} save slot": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "{n} save slots": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ],
+  "plural": true,
+  "one": "{n} save slot"
  },
  "{n} saves · newest first": {
   "files": [
@@ -2115,6 +2139,11 @@
    "src/ui/menu/pause.js"
   ]
  },
+ "Backup file saved: {file}": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "Backup from {date} available": {
   "files": [
    "src/ui/menu/saves.js"
@@ -2573,6 +2602,7 @@
  "Cancel": {
   "files": [
    "src/app/app.js",
+   "src/ui/menu/cloud.js",
    "src/ui/menu/confirm.js",
    "src/ui/menu/mpmenu.js",
    "src/ui/menu/saves.js",
@@ -2846,6 +2876,16 @@
    "src/ui/interact/index.js"
   ]
  },
+ "Cloud code": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "Cloud save": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "CNT": {
   "files": [
    "src/ui/run/cards.js"
@@ -2854,6 +2894,11 @@
  "Co-op for up to four — the host plays the Healer, the AI fills empty seats": {
   "files": [
    "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Code copied: {code}": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "Combat and world sounds, placed left / right and by distance from the camera.": {
@@ -2966,6 +3011,16 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Copies your cloud code so you can paste it somewhere safe or on another device.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "Copy code": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "Couldn't buy {name}.": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -3017,6 +3072,11 @@
    "src/save/index.js"
   ]
  },
+ "Couldn’t make the backup file": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "Couldn’t open a room ({reason}).": {
   "files": [
    "src/ui/menu/mpmenu.js"
@@ -3025,6 +3085,11 @@
  "Couldn't quicksave": {
   "files": [
    "src/save/index.js"
+  ]
+ },
+ "Couldn’t reach the server. Check your connection and try again.": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "Couldn’t rejoin — {reason}.": {
@@ -3465,6 +3530,11 @@
  "Done ✓ — waiting for the party": {
   "files": [
    "src/ui/run/shop.js"
+  ]
+ },
+ "Downloads your profile and every save slot as one file. Load it here on any device, even when the server has forgotten your cloud code.": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "drafted": {
@@ -3932,6 +4002,11 @@
    "src/data/unlocks.js"
   ],
   "data": true
+ },
+ "Fetches the save under the code above and, after you confirm, replaces the profile and save slots on this device with it. The game then reloads.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
  },
  "File": {
   "files": [
@@ -4720,6 +4795,11 @@
    "src/save/index.js"
   ]
  },
+ "It replaces the profile (records, Embers, unlocks) and every save slot on this device, then the game reloads. Save a backup file first if you want to keep what is here.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "Its contents changed after it was saved (the checksum doesn't match).": {
   "files": [
    "src/ui/menu/saves.js"
@@ -4807,6 +4887,16 @@
  "Keeps the party standing: heals, wards and the revive. Fragile, so stay behind the line.": {
   "files": [
    "src/ui/run/classpick.js"
+  ]
+ },
+ "Kept for a year after your last cloud save.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "Kept until the server restarts: on this free hosting that is about 15 minutes after the last player leaves, and every update.": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "Kestrel Watch": {
@@ -5164,11 +5254,41 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Load a backup file": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "Load cloud save {code}?": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "Load from cloud": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "Load Game": {
   "files": [
    "src/ui/menu/pause.js",
    "src/ui/menu/saves.js",
    "src/ui/menu/title.js"
+  ]
+ },
+ "Load this backup file?": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "Loaded from cloud code {code}.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "Loaded. Reloading…": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "Loading is unavailable in this build": {
@@ -5206,6 +5326,11 @@
  "Looking for players… {s} s": {
   "files": [
    "src/ui/menu/lobby.js"
+  ]
+ },
+ "Looking up {code}…": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "LS": {
@@ -5527,6 +5652,21 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "No cloud save under {code}. It may have expired, or the server forgot it when it restarted. Save to cloud again on the device that made it, or load a backup file.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "No cloud save yet. Your save lives on this device.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "No code yet": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "no cooldown stat on this skill": {
   "files": [
    "src/ui/socket/index.js"
@@ -5705,6 +5845,11 @@
  "Not in an online game": {
   "files": [
    "src/ui/tutorial/index.js"
+  ]
+ },
+ "Not loaded. Your save on this device is unchanged.": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "Not now": {
@@ -5942,6 +6087,11 @@
    "src/data/layouts.js"
   ],
   "data": true
+ },
+ "Opens a backup file and, after you confirm, replaces the profile and save slots on this device with it. The game then reloads.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
  },
  "Ossuary Row": {
   "files": [
@@ -6776,6 +6926,11 @@
    "src/ui/menu/title.js"
   ]
  },
+ "Replace and reload": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "Reset": {
   "files": [
    "src/ui/menu/settings.js"
@@ -7111,6 +7266,11 @@
    "src/ui/menu/pause.js"
   ]
  },
+ "Save a backup file": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "Save and quit to the title?": {
   "files": [
    "src/ui/menu/pause.js"
@@ -7125,6 +7285,11 @@
  "Save here": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "Save to cloud": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "Save your game here": {
@@ -7147,6 +7312,16 @@
    "src/ui/menu/tabs/network.js"
   ]
  },
+ "saved {when}": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "Saved {when}": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "Saved by a newer version of Echoes — using defaults": {
   "files": [
    "src/ui/menu/settings.js"
@@ -7155,6 +7330,11 @@
  "Saved to “{name}”": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "Saved to the cloud. Your code: {code}": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "Saves last for this visit only (browser storage is off)": {
@@ -7170,6 +7350,11 @@
  "Saving is unavailable in this build": {
   "files": [
    "src/ui/menu/pause.js"
+  ]
+ },
+ "Saving to the cloud…": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "Saving…": {
@@ -8038,6 +8223,11 @@
    "src/net/session.js"
   ]
  },
+ "That isn’t a cloud code. Codes are 8 letters and digits, like ABCD-EFGH (there is no 0, O, 1, I or L).": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "That level is locked": {
   "files": [
    "src/ui/run/levels.js"
@@ -8752,6 +8942,11 @@
   ],
   "data": true
  },
+ "The server couldn’t do that right now ({status}). Try again later.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "The server is full right now.": {
   "files": [
    "src/net/protocol/messages.js"
@@ -8915,6 +9110,11 @@
    "src/ui/menu/tabs/network.js"
   ]
  },
+ "This device has no room left for the save. Nothing was changed.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "This file could not be read": {
   "files": [
    "src/ui/menu/saves.js"
@@ -8971,9 +9171,24 @@
    "src/ui/menu/pause.js"
   ]
  },
+ "This save comes from a newer version of Echoes. Reload the page to update the game, then try again.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "This save could not be loaded": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "This save is damaged or empty and can’t be loaded.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "This save is too large for the cloud. Save a backup file instead.": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "This session continued in another window.": {
@@ -9084,6 +9299,11 @@
   ],
   "data": true
  },
+ "Too many tries. Wait a few minutes and try again.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "TR": {
   "files": [
    "src/sim/skills.js"
@@ -9115,6 +9335,11 @@
  "Tutorial skipped": {
   "files": [
    "src/ui/tutorial/index.js"
+  ]
+ },
+ "Type the code another device showed after Save to cloud (like ABCD-EFGH), then press Load from cloud.": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "Type the room code the host sees in their lobby.": {
@@ -9167,6 +9392,16 @@
  "Update available": {
   "files": [
    "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Uploads your profile (records, Embers, unlocks) and every save slot to this game’s server and shows a short code. Enter the code on another device with Load from cloud. Saving again keeps the same code. The server keeps it for a year after your last cloud save. Your save on this device is never changed.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "Uploads your profile (records, Embers, unlocks) and every save slot to this game’s server and shows a short code. Enter the code on another device with Load from cloud. Saving again keeps the same code. This site runs on free hosting whose server forgets cloud saves when it restarts (about 15 minutes after the last player leaves, and on every update), so use the code right away and keep a backup file for anything longer. Your save on this device is never changed.": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "Use": {
@@ -9485,6 +9720,11 @@
   ],
   "data": true
  },
+ "You are in a run: it is replaced too. After the reload, Continue resumes the loaded save’s run at the start of its room. An online game is left.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "You are not in a room.": {
   "files": [
    "src/net/protocol/messages.js"
@@ -9656,6 +9896,16 @@
  "Your character": {
   "files": [
    "src/ui/run/partystrip.js"
+  ]
+ },
+ "Your cloud code: {code}": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
+ "Your code: {code}": {
+  "files": [
+   "src/ui/menu/cloud.js"
   ]
  },
  "Your device renders about {fps} fps here — uncapped can't go faster than your GPU": {

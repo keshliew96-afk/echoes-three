@@ -6,6 +6,7 @@
 //   POST /admin/conditioner { target: 'all'|peerId|roomCode, up, down }
 //   POST /admin/drop        { peerId, mode: 'close'|'blackhole', forMs }
 //   POST /admin/kill-host   { code }
+//   GET/POST /cloud/...                always: cloud saves (cloud.mjs)
 //
 // `up` / `down` are conditioner specs (object or compact string, e.g.
 // "lat75,jit10,loss10"; "off" clears). The admin API exists only when the
@@ -16,6 +17,8 @@
 // connects from 127.0.0.1 — behind Caddy / nginx the admin API stays closed.
 // Every other path goes to the static game server when one is configured
 // (`--static`, static.mjs), else 404.
+import { handleCloud } from './cloud.mjs';
+
 const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 const MAX_BODY = 64 * 1024;
 
@@ -63,6 +66,13 @@ export function createHttpHandler(server) {
       return res.end();
     }
     if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname === '/health') return json(res, 200, server.health());
+    if (server.cloud && url.pathname.startsWith('/cloud/')) {
+      // Another website's page may not read or write saves here (the same
+      // Origin allow-list as the WebSocket); a request with no Origin is a tool.
+      if (!server.originAllowed(req)) return json(res, 403, { ok: false, error: 'origin' });
+      const origin = req.headers.origin ? String(req.headers.origin) : '*';
+      return void (await handleCloud(req, res, { store: server.cloud, ip: server.clientIp(req), cors: { 'access-control-allow-origin': origin, vary: 'origin' } }));
+    }
     const isAdminPath = url.pathname === '/stats' || url.pathname.startsWith('/admin/');
     if (!isAdminPath) {
       if (server.serveStatic) return server.serveStatic(req, res);
