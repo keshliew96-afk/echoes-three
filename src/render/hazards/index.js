@@ -19,6 +19,17 @@
 //   gravefire  cracked grave slabs with a faint AMBER glow in the cracks (not
 //              Ember); each vent's Ember glyph ring runs 54 ticks, then an
 //              Ember fire column erupts for 12
+//   slip       slick floor (docs/SLICK_FLOOR.md), in the biome palette and
+//              never Ember (it never hurts): one shader disc per patch with an
+//              organic edge kept on the sim's circle. 'wet' = algae-slick
+//              flagstones under a film of water (Mill); 'frost' = grave
+//              rime with pale crystal cracks (Barrow). Layers: the surface
+//              with a bright rim at the slip boundary; a gloss sheen that
+//              sweeps across it every few seconds plus a steady sky glaze;
+//              four-point star glints that wink in turn; low cold mist
+//              (frost) or drip rings (wet); and spray kicked up by every
+//              body sliding on it (droplets / ice dust) with a skid streak
+//              when a dodge crosses it
 import {
   AdditiveBlending,
   BoxGeometry,
@@ -34,6 +45,8 @@ import {
   PlaneGeometry,
   ShaderMaterial,
   SphereGeometry,
+  Sprite,
+  SpriteMaterial,
   SRGBColorSpace,
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -174,6 +187,178 @@ function makeWaterMaterial() {
         gl_FragColor = vec4( col, a * 0.96 );
       }
     `,
+  });
+}
+
+// Slick floor surface shader. Local units are world units (the quad is
+// 2 (r + pad) wide); the slip boundary sits on |p| = uR, wobbled a little
+// so the edge reads organic while it stays on the sim's circle.
+const SLIP_PAD = 0.3;
+const SLIP_LOOK = {
+  // wet flagstone (Mill): slate stones, a teal algae film, black joints
+  wet: {
+    stoneA: hslColor(208, 0.12, 0.12),
+    stoneB: hslColor(198, 0.14, 0.19),
+    film: hslColor(170, 0.3, 0.15),
+    joint: hslColor(200, 0.3, 0.045),
+    rim: hslColor(178, 0.3, 0.4),
+    glaze: hslColor(192, 0.32, 0.4),
+    sheen: hslColor(184, 0.35, 0.72),
+  },
+  // grave frost (Barrow): a thin rime over dark grave earth, pale cracks
+  frost: {
+    stoneA: hslColor(218, 0.16, 0.15),
+    stoneB: hslColor(210, 0.2, 0.24),
+    film: hslColor(204, 0.3, 0.36),
+    joint: hslColor(222, 0.24, 0.1),
+    rim: hslColor(198, 0.4, 0.62),
+    glaze: hslColor(202, 0.36, 0.46),
+    sheen: hslColor(196, 0.42, 0.78),
+  },
+};
+function makeSlipMaterial(skin, radius, seed) {
+  const L = SLIP_LOOK[skin] || SLIP_LOOK.wet;
+  return new ShaderMaterial({
+    uniforms: {
+      uT: { value: 0 },
+      uR: { value: radius },
+      uS: { value: radius + SLIP_PAD },
+      uSeed: { value: seed },
+      uFrost: { value: skin === 'frost' ? 1 : 0 },
+      uStir: { value: 0 },
+      uStoneA: { value: L.stoneA },
+      uStoneB: { value: L.stoneB },
+      uFilm: { value: L.film },
+      uJoint: { value: L.joint },
+      uRim: { value: L.rim },
+      uGlaze: { value: L.glaze },
+      uSheen: { value: L.sheen },
+    },
+    transparent: true,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
+    vertexShader: /* glsl */ `
+      varying vec2 vP;
+      uniform float uS;
+      void main() {
+        vP = ( uv - 0.5 ) * 2.0 * uS;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform float uT;
+      uniform float uR;
+      uniform float uSeed;
+      uniform float uFrost;
+      uniform float uStir;
+      uniform vec3 uStoneA;
+      uniform vec3 uStoneB;
+      uniform vec3 uFilm;
+      uniform vec3 uJoint;
+      uniform vec3 uRim;
+      uniform vec3 uGlaze;
+      uniform vec3 uSheen;
+      varying vec2 vP;
+      float hash( vec2 p ) { return fract( sin( dot( p, vec2( 127.1, 311.7 ) ) ) * 43758.5453 ); }
+      vec2 hash2( vec2 p ) { return fract( sin( vec2( dot( p, vec2( 127.1, 311.7 ) ), dot( p, vec2( 269.5, 183.3 ) ) ) ) * 43758.5453 ); }
+      float noise( vec2 p ) {
+        vec2 i = floor( p ); vec2 f = fract( p );
+        vec2 u = f * f * ( 3.0 - 2.0 * f );
+        return mix( mix( hash( i ), hash( i + vec2( 1, 0 ) ), u.x ), mix( hash( i + vec2( 0, 1 ) ), hash( i + vec2( 1, 1 ) ), u.x ), u.y );
+      }
+      float fbm( vec2 p ) { return 0.55 * noise( p ) + 0.3 * noise( p * 2.1 + 7.3 ) + 0.15 * noise( p * 4.3 + 1.7 ); }
+      // Voronoi: x = F1, y = F2 - F1 (joint / crack width), z = cell id hash.
+      vec3 cells( vec2 p ) {
+        vec2 i = floor( p ); vec2 f = fract( p );
+        float d1 = 8.0; float d2 = 8.0; float id = 0.0;
+        for ( int y = -1; y <= 1; y++ ) for ( int x = -1; x <= 1; x++ ) {
+          vec2 g = vec2( float( x ), float( y ) );
+          vec2 o = hash2( i + g + uSeed );
+          float d = length( g + o - f );
+          if ( d < d1 ) { d2 = d1; d1 = d; id = hash( i + g + uSeed * 1.7 ); }
+          else if ( d < d2 ) d2 = d;
+        }
+        return vec3( d1, d2 - d1, id );
+      }
+      void main() {
+        vec2 p = vP;
+        float d = length( p );
+        float ang = atan( p.y, p.x );
+        float wob = ( noise( vec2( ang * 2.6 + uSeed * 3.0, uSeed ) ) - 0.5 ) * 0.14 + ( noise( p * 2.3 + uSeed ) - 0.5 ) * 0.08;
+        float edge = uR + wob;
+        float inside = 1.0 - smoothstep( edge - 0.06, edge + 0.05, d );
+        if ( inside <= 0.002 ) discard;
+        float toEdge = edge - d; // u inside the boundary
+        vec3 cl = cells( p * mix( 1.55, 2.3, uFrost ) );
+        float joint = 1.0 - smoothstep( mix( 0.05, 0.018, uFrost ), mix( 0.11, 0.05, uFrost ), cl.y );
+        float n = fbm( p * 1.3 + uSeed );
+        // Body: per-stone value, a film of algae / rime over it.
+        vec3 col = mix( uStoneA, uStoneB, cl.z * 0.7 + n * 0.3 );
+        float film = smoothstep( 0.35, 0.75, fbm( p * 0.8 + uSeed * 2.0 ) );
+        col = mix( col, uFilm, film * mix( 0.45, 0.55, uFrost ) );
+        // Wet: joints are dark water lines. Frost: cracks glow pale.
+        col = mix( col, uJoint, joint * ( 1.0 - uFrost ) * 0.85 );
+        col = mix( col, uRim, joint * uFrost * 0.45 );
+        // Frost feathers: dense rime toward the rim, fern-like streaks.
+        float fern = smoothstep( 0.55, 0.85, noise( vec2( ang * 9.0, d * 3.0 ) + uSeed ) ) * smoothstep( 0.9, 0.1, toEdge );
+        col = mix( col, uRim, fern * uFrost * 0.4 );
+        // Steady glaze: a cool sky reflection across the whole surface, and
+        // the puddled (wet) / polished (frost) areas reflect the most.
+        float gloss = mix( 0.35 + 0.65 * smoothstep( 0.45, 0.7, n ), 0.6, uFrost );
+        float sky = 0.5 + 0.5 * ( -p.y / ( uR + 0.001 ) );
+        col = mix( col, uGlaze, gloss * ( 0.12 + 0.16 * sky ) );
+        // Ripple when bodies slide across it (wet only).
+        float rip = sin( d * 14.0 - uT * 6.0 ) * 0.5 + 0.5;
+        col += uGlaze * rip * uStir * 0.08 * ( 1.0 - uFrost ) * gloss;
+        // The sheen: a soft bright band sweeping across the patch on a slow
+        // loop, so a still frame always shows a highlight somewhere on it.
+        vec2 dir = normalize( vec2( 0.82, -0.57 ) );
+        float span = 2.0 * uR + 2.4;
+        float s = dot( p, dir ) + uR + 1.2;
+        float ph = fract( uT * 0.16 + uSeed * 0.37 );
+        float band = exp( -pow( ( s - ph * span ) / 0.42, 2.0 ) );
+        float band2 = exp( -pow( ( s - ph * span + 0.55 ) / 0.16, 2.0 ) ) * 0.6;
+        float hi = ( band + band2 ) * gloss;
+        col = mix( col, uSheen, clamp( hi * 0.6, 0.0, 0.7 ) );
+        // Glints: tiny four-point stars that wink in turn.
+        vec2 g = p * 3.2;
+        vec2 gi = floor( g );
+        vec2 gf = fract( g ) - 0.5;
+        float h = hash( gi + uSeed * 5.0 );
+        float wink = pow( max( 0.0, sin( uT * ( 1.6 + h * 1.8 ) + h * 40.0 ) ), 40.0 ) * step( 0.55, h );
+        vec2 o = gf - ( hash2( gi + 3.0 ) - 0.5 ) * 0.5;
+        float star = max( 0.0, 1.0 - abs( o.x ) * 40.0 - abs( o.y ) * 4.0 ) + max( 0.0, 1.0 - abs( o.y ) * 40.0 - abs( o.x ) * 4.0 );
+        star += max( 0.0, 1.0 - length( o ) * 9.0 );
+        col += uSheen * star * wink * gloss * 1.2;
+        // The boundary rim: a crisp light line where the slip starts.
+        float rim = smoothstep( 0.16, 0.05, toEdge ) * smoothstep( -0.03, 0.03, toEdge );
+        float rimN = 0.75 + 0.25 * noise( vec2( ang * 12.0, uT * 0.5 ) );
+        col = mix( col, uRim, rim * rimN * 0.85 );
+        float a = inside * mix( 0.9, 0.95, uFrost );
+        gl_FragColor = vec4( col, a );
+      }
+    `,
+  });
+}
+
+// A four-point star (glints over the slick floor).
+function starTex() {
+  return tex('slip-star', 64, (ctx, S) => {
+    const c = S / 2;
+    const g = ctx.createRadialGradient(c, c, 0, c, c, S * 0.5);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.18, 'rgba(255,255,255,0.55)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(c, 0);
+    ctx.quadraticCurveTo(c + 3, c - 3, S, c);
+    ctx.quadraticCurveTo(c + 3, c + 3, c, S);
+    ctx.quadraticCurveTo(c - 3, c + 3, 0, c);
+    ctx.quadraticCurveTo(c - 3, c - 3, c, 0);
+    ctx.fill();
   });
 }
 
@@ -545,7 +730,84 @@ function buildGravefire(h) {
   };
 }
 
-const BUILD = { bramble: buildBramble, puffcap: buildPuffcap, millrace: buildMillrace, rockfall: buildRockfall, gravefire: buildGravefire };
+function buildSlip(h) {
+  const g = new Group();
+  const skin = h.skin === 'frost' ? 'frost' : 'wet';
+  const L = SLIP_LOOK[skin];
+  const r = h.radius ?? 1.4;
+  const seed = ((h.id ?? 1) * 0.6180339) % 1;
+  const mat = makeSlipMaterial(skin, r, seed * 10);
+  const disc = new Mesh(sharedGeo('hz-water-quad', () => new PlaneGeometry(1, 1)), mat);
+  disc.rotation.x = -Math.PI / 2;
+  disc.scale.set(2 * (r + SLIP_PAD), 2 * (r + SLIP_PAD), 1);
+  disc.position.y = 0.012;
+  disc.renderOrder = -6;
+  g.add(disc);
+  // Star glints standing just above the floor: a handful, each winking on
+  // its own clock (deterministic per patch, never the sim's RNG).
+  const stars = [];
+  const n = Math.round(3 + r * 2);
+  for (let i = 0; i < n; i++) {
+    const m = new SpriteMaterial({ map: starTex(), color: L.sheen.clone(), blending: AdditiveBlending, transparent: true, depthWrite: false, toneMapped: false });
+    m.opacity = 0;
+    const sp = new Sprite(m);
+    const a = i * 2.39996 + seed * 6.28;
+    const rr = r * (0.25 + 0.65 * (((i * 7 + 3) % 10) / 10));
+    sp.position.set(Math.cos(a) * rr, 0.06, Math.sin(a) * rr);
+    sp.scale.setScalar(0.001);
+    g.add(sp);
+    stars.push({ sp, rate: 0.55 + ((i * 13) % 7) * 0.09, phase: i * 0.37 + seed, size: 0.32 + ((i * 5) % 4) * 0.07 });
+  }
+  // Frost: low cold mist drifting over it. Wet: a soft cool sheen glow.
+  const mists = [];
+  const mistN = skin === 'frost' ? 3 : 1;
+  for (let i = 0; i < mistN; i++) {
+    const w = makeGlowSprite({ color: skin === 'frost' ? L.glaze : L.film, size: r * (skin === 'frost' ? 1.3 : 1.9), opacity: 0 });
+    w.position.y = skin === 'frost' ? 0.22 : 0.05;
+    g.add(w);
+    mists.push({ w, phase: i * 2.1 + seed * 4 });
+  }
+  let stir = 0;
+  let sprayDebt = 0;
+  return {
+    group: g,
+    update(e, tSec, ctx, dt) {
+      mat.uniforms.uT.value = tSec;
+      for (const st of stars) {
+        const k = Math.max(0, Math.sin(tSec * st.rate * 2.2 + st.phase * 6.28));
+        const w = Math.pow(k, 14);
+        st.sp.material.opacity = 0.95 * w;
+        st.sp.scale.setScalar(0.001 + st.size * w);
+        st.sp.material.rotation = tSec * 0.4 + st.phase;
+      }
+      mists.forEach((m, i) => {
+        m.w.material.opacity = skin === 'frost' ? 0.05 + 0.03 * Math.sin(tSec * 0.5 + m.phase) : 0.04 + 0.02 * Math.sin(tSec * 0.8);
+        m.w.position.x = Math.sin(tSec * 0.17 + m.phase) * r * 0.35;
+        m.w.position.z = Math.cos(tSec * 0.13 + m.phase * 1.3) * r * 0.3;
+        void i;
+      });
+      // Bodies sliding on it: spray at their feet, the surface stirs.
+      const sliders = ctx.sliders(e);
+      stir += ((sliders.length > 0 ? 1 : 0) - stir) * Math.min(1, dt * 4);
+      mat.uniforms.uStir.value = stir;
+      for (const b of sliders) {
+        sprayDebt += dt * (b.fast ? 26 : 7 * Math.min(1, b.speed / 2.5));
+        while (sprayDebt >= 1) {
+          sprayDebt -= 1;
+          const dir = { x: -b.vx / (b.speed || 1), z: -b.vz / (b.speed || 1) };
+          if (skin === 'frost') {
+            impactFx.spray('spark', b.x, 0.05, b.z, 1, { color: L.rim, speed: [0.4, 1.2], up: [0.3, 0.9], size: [0.04, 0.08], life: [0.3, 0.55], opacity: 0.9, dir, dirBias: 0.7, jitter: 0.15 });
+            if (ctx.cosmetic.chance(0.3)) impactFx.spray('smoke', b.x, 0.08, b.z, 1, { color: L.glaze, speed: [0.2, 0.5], up: [0.1, 0.3], size: [0.25, 0.4], grow: 0.6, life: [0.5, 0.8], opacity: 0.22, dir, dirBias: 0.6 });
+          } else {
+            impactFx.spray('spark', b.x, 0.04, b.z, 1, { color: L.glaze, speed: [0.6, 1.5], up: [0.6, 1.4], size: [0.04, 0.07], life: [0.25, 0.45], opacity: 0.85, dir, dirBias: 0.65, jitter: 0.12 });
+          }
+        }
+      }
+    },
+  };
+}
+
+const BUILD = { slip: buildSlip, bramble: buildBramble, puffcap: buildPuffcap, millrace: buildMillrace, rockfall: buildRockfall, gravefire: buildGravefire };
 
 // ------------------------------------------------------------------ layer --
 export function createHazardLayer({ stage, world, bus, cosmetic }) {
@@ -584,10 +846,27 @@ export function createHazardLayer({ stage, world, bus, cosmetic }) {
     return false;
   }
 
+  // Party and hostile bodies on a slip patch that are moving this frame:
+  // [{ x, z, vx, vz (u/s), speed, fast (a dash or a fast slide) }].
+  function sliders(h) {
+    const out = [];
+    for (const e of world.entities()) {
+      if (e.partyIndex === undefined && e.faction !== 'hostile') continue;
+      if (!(e.hp > 0) || e.flier || e.burrowed) continue;
+      if (Math.hypot(e.x - h.x, e.z - h.z) > h.radius) continue;
+      const vx = (e.x - (e.px ?? e.x)) * TICK_HZ;
+      const vz = (e.z - (e.pz ?? e.z)) * TICK_HZ;
+      const speed = Math.hypot(vx, vz);
+      if (speed < 0.6) continue;
+      out.push({ x: e.x, z: e.z, vx, vz, speed, fast: speed > 4 || e.dashTicksLeft > 0 });
+    }
+    return out;
+  }
+
   function update(tSec) {
     const dt = lastT === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastT));
     lastT = tSec;
-    const ctx = { tick: world.tick, shapes, live: [], dust: spawnDust, bodiesInside, cosmetic };
+    const ctx = { tick: world.tick, shapes, live: [], dust: spawnDust, bodiesInside, sliders, cosmetic };
     const seen = new Set();
     for (const e of world.entities()) {
       if (e.kind !== 'hazard' && e.kind !== 'rubble') continue;
@@ -635,8 +914,10 @@ export function createHazardLayer({ stage, world, bus, cosmetic }) {
       millrace: { x: 0, z: 0, len: 4, dirX: 1, dirZ: 0, lane: { x0: -2, z0: 0, x1: 2, z1: 0, w: 1.4 } },
       rockfall: {},
       gravefire: { id: 0, vents: [{ x: 0, z: 0 }] },
+      slip: { id: 1, radius: 1.4, skin: 'wet' },
+      slipFrost: { id: 2, radius: 1.4, skin: 'frost' },
     };
-    for (const [k, f] of Object.entries(fake)) warmPark(root, BUILD[k](f).group);
+    for (const [k, f] of Object.entries(fake)) warmPark(root, BUILD[k === 'slipFrost' ? 'slip' : k](f).group);
     warmPark(root, buildRubble({ x: 0, z: 0 }).group);
     const back = shapes.prewarm();
     setTimeout(back, 250);

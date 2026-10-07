@@ -20,6 +20,7 @@ import { stepHumanMove, dodgeVelocity, aimDir, moveOf, DOWNED_CRAWL_SPEED, HUMAN
 import { speedMul, isStunned } from '../sim/status.js';
 import { ALLY_CLASSES } from '../sim/allies.js';
 import { TICK_HZ } from '../core/constants.js';
+import { slipBlend } from '../sim/movement.js';
 import { CORRECTION_TAU_MS, CORRECTION_SNAP_U } from './protocol/constants.js';
 import { SEAT_CLASSES } from './seats.js';
 import { pct } from './protocol/snapshot.js';
@@ -85,6 +86,8 @@ export function createOwnSeat({ seat, kit = null, dodgeCd = () => HUMAN_DODGE.co
       faceX: e.faceX ?? (e.facing ? e.facing.x : 0),
       faceZ: e.faceZ ?? (e.facing ? e.facing.z : 1),
       status: e.status,
+      // Slick floor: the host's momentum after frame k (sim/movement.js).
+      ...(Number.isFinite(e.slipVx) ? { slipVx: e.slipVx, slipVz: Number.isFinite(e.slipVz) ? e.slipVz : 0 } : {}),
       // PARTY: the seat's skill timers (input-frame clock) and a displaced
       // cast still waiting for its dash to end (its Disengage hop follows).
       cdSeq: timers && Array.isArray(timers.cds) ? timers.cds.slice(0, 4) : [0, 0, 0, 0],
@@ -305,6 +308,12 @@ export function createOwnSeat({ seat, kit = null, dodgeCd = () => HUMAN_DODGE.co
       vx = mv.x * s;
       vz = mv.z * s;
       moving = mv.x !== 0 || mv.z !== 0;
+      // Slick floor: the next frame's step is the slide, not the key.
+      const sl = slipBlend(body, vx, vz);
+      if (sl) {
+        vx = sl.x;
+        vz = sl.z;
+      }
     }
     if (!previewing) {
       if (moving && !wasMoving) startLead = START_LEAD;

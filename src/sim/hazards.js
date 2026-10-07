@@ -21,6 +21,14 @@
 //              r 0.7 for 54 ticks per vent, then a 12-tick column (12 dmg once
 //              per body); cycle 420 ticks
 //
+//   slip       slick floor (Slick floor slice, docs/SLICK_FLOOR.md): a patch
+//              r 1.1-1.9 of wet flagstone (skin 'wet', Mill) or grave frost
+//              (skin 'frost', Barrow). Walking bodies on it keep their
+//              momentum (sim/movement.js slipFollow): they slide when they
+//              stop, turn wide, and dodges and knockbacks carry further.
+//              Fliers, burrowers and bosses never slip. No damage, no phases:
+//              the surface itself is the telegraph
+//
 // Telegraph discipline (§23.6): every hazard telegraph is Ember and >= 42
 // ticks; idle states are drawn in the biome palette. No two SCHEDULED hazard
 // resolutions land within 0.6 s (36 ticks) of each other: every resolution is
@@ -33,7 +41,7 @@
 // director's roll order. Everything is plain entity data + the few scalars
 // serialize() returns (PLAN §3.4).
 import { TICK_HZ, SCREENSHAKE } from '../core/constants.js';
-import { walkStep, resolveStatics } from './movement.js';
+import { walkStep, resolveStatics, setSlipPatches, slipPatches } from './movement.js';
 import * as statusMod from './status.js';
 import { ENEMY_KINDS } from './enemies.js';
 import { LAYOUTS } from '../data/layouts.js';
@@ -44,6 +52,7 @@ const TICK_DT = 1 / TICK_HZ;
 
 export const HAZARD_TYPES = Object.freeze({
   bramble: Object.freeze({ slow: 0.35, affects: 'ground' }),
+  slip: Object.freeze({ radius: 1.4, affects: 'ground' }),
   puffcap: Object.freeze({
     idleTicks: 300,
     telegraphTicks: 60,
@@ -86,6 +95,12 @@ export const HAZARD_TYPES = Object.freeze({
     firstDelay: 120, // ticks into the room before the first cycle (scaffold)
     affects: 'all',
   }),
+});
+// Slick floor skins: how much grip each surface leaves (per-tick ease of a
+// body's momentum toward its step; lower = slicker). Frost is the slicker.
+export const SLIP_SKINS = Object.freeze({
+  wet: Object.freeze({ grip: 0.09 }),
+  frost: Object.freeze({ grip: 0.07 }),
 });
 export const HAZARD_SPACING_TICKS = 36; // §23.6: no two resolutions inside 0.6 s
 
@@ -184,6 +199,9 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
     let h;
     if (htype === 'bramble') {
       h = registry.spawn({ ...base, radius: params.r ?? 1.1, phase: 'active', slow: T.slow });
+    } else if (htype === 'slip') {
+      const skin = SLIP_SKINS[params.skin] ? params.skin : 'wet';
+      h = registry.spawn({ ...base, radius: params.r ?? T.radius, phase: 'active', skin, grip: SLIP_SKINS[skin].grip });
     } else if (htype === 'puffcap') {
       const off = Math.max(0, Math.min(T.idleTicks - 60, params.offset ?? 0));
       h = registry.spawn({
@@ -265,6 +283,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
     }
     if (!h) return null;
     events.emit(tick, 'hazard_spawn', { id: h.id, htype, x: r2(h.x), z: r2(h.z), radius: h.radius });
+    if (htype === 'slip') installSlips();
     return h;
   }
 
@@ -276,6 +295,15 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
     return got - T.telegraphTicks;
   }
 
+  // The movement module's slip patch list, rebuilt from the live 'slip'
+  // hazards (ascending id). Only touched once a patch has existed, so a room
+  // without one never writes it.
+  function installSlips() {
+    const list = [];
+    for (const e of registry.all()) if (e.kind === 'hazard' && e.htype === 'slip') list.push({ id: e.id, x: e.x, z: e.z, r: e.radius, grip: e.grip });
+    if (list.length > 0 || slipPatches().length > 0) setSlipPatches(list);
+  }
+
   function despawnAll(tick, cause = 'room_exit') {
     for (const e of registry.all()) {
       if (e.kind === 'hazard' || e.kind === 'rubble') {
@@ -284,6 +312,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
       }
     }
     reservations = [];
+    if (slipPatches().length > 0) setSlipPatches(null);
   }
 
   // ------------------------------------------------------------ continuous --
@@ -292,6 +321,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
   function continuous() {
     const tick = getTick();
     const all = registry.all();
+    installSlips(); // a load or a debug despawn changes the list between ticks
     for (const h of all) {
       if (h.kind !== 'hazard') continue;
       if (h.htype === 'puffcap') {
@@ -699,7 +729,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         h.telegraph = null;
         events.emit(tick, 'telegraph_cancel', { id: h.id, etype: h.htype, reason: 'room_clear', playerTargeted: true });
       }
-      if (h.htype !== 'bramble') h.phase = 'idle';
+      if (h.htype !== 'bramble' && h.htype !== 'slip') h.phase = 'idle';
       if (h.vents) for (const v of h.vents) v.phase = 'idle';
       if (live) events.emit(tick, 'hazard_cancel', { id: h.id, htype: h.htype, cause: 'room_clear' });
     }
@@ -725,6 +755,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         ...(h.htype === 'rockfall' ? { next: h.schedule[h.next] ?? null, drops: h.drops, telegraph: h.telegraph ? { ...h.telegraph } : null } : {}),
         ...(h.kind === 'rubble' ? { untilTick: h.untilTick } : {}),
         ...(h.htype === 'puffcap' ? { bursts: h.bursts } : {}),
+        ...(h.htype === 'slip' ? { skin: h.skin, grip: h.grip } : {}),
       }));
   }
 

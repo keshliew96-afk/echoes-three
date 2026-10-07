@@ -19,7 +19,7 @@ try {
   dressFor = (id) => VARIANTS[id] ?? null;
 }
 
-const FOOT = { bramble: null, puffcap: 0.35, millrace: null, gravefire: 0.7, dewfont: 0.55, barricade: 0.75, keg: 0.3, sluice: 0.45, bell: 0.45 };
+const FOOT = { bramble: null, slip: null, puffcap: 0.35, millrace: null, gravefire: 0.7, dewfont: 0.55, barricade: 0.75, keg: 0.3, sluice: 0.45, bell: 0.45 };
 const segDist = (px, pz, ax, az, bx, bz) => {
   const dx = bx - ax;
   const dz = bz - az;
@@ -33,7 +33,7 @@ function shapesOf(p) {
   if (p.type === 'millrace') return [{ kind: 'seg', ax: p.x0, az: p.z0, bx: p.x1, bz: p.z1, r: 0 }];
   if (p.type === 'gravefire') return p.vents.map(([x, z]) => ({ kind: 'pt', x, z, r: FOOT.gravefire }));
   if (p.type === 'rockfall') return [];
-  const r = p.type === 'bramble' ? p.r : FOOT[p.type] ?? 0.4;
+  const r = p.type === 'bramble' || p.type === 'slip' ? p.r : FOOT[p.type] ?? 0.4;
   return [{ kind: 'pt', x: p.x, z: p.z, r }];
 }
 const distTo = (s, x, z) => (s.kind === 'pt' ? Math.hypot(s.x - x, s.z - z) - s.r : segDist(x, z, s.ax, s.az, s.bx, s.bz));

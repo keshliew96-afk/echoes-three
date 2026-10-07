@@ -14,7 +14,9 @@
 // drains two buffered frames in one host tick, so the guest's per-frame
 // prediction and the host's per-frame resolution never drift apart.
 import { TICK_HZ, DODGE, HEALER } from '../core/constants.js';
-import { walkStep, sweptStep } from './movement.js';
+import { walkStep, sweptStep, slipFollow, slipPatches } from './movement.js';
+
+const hasSlip = () => slipPatches().length > 0;
 
 const TICK_DT = 1 / TICK_HZ;
 
@@ -63,18 +65,27 @@ export function moveOf(index) {
 //   speed: u/s for a walking step (class speed x status speedMul; the Downed
 //          crawl is never scaled — the caller passes DOWNED_CRAWL_SPEED)
 // Returns { dashed, ended, wall, moved }.
+// Slick floor (sim/movement.js slipFollow): the step is followed by the slip
+// rule, per input frame, on the host and in the guest's predictor alike. A
+// dash is taken as is and becomes the momentum it slides on afterwards.
 export function stepHumanMove(body, move, speed) {
+  const x0 = body.x;
+  const z0 = body.z;
   if (body.dashTicksLeft > 0) {
     const { hit } = sweptStep(body, body.dashVel.x, body.dashVel.z, body.radius);
     body.dashTicksLeft -= 1;
     if (hit) body.dashTicksLeft = 0;
+    if (body.slipVx !== undefined || hasSlip()) slipFollow(body, x0, z0, { snap: body.dashTicksLeft > 0 });
     return { dashed: true, ended: body.dashTicksLeft === 0, wall: hit, moved: true };
   }
+  let moved = false;
   if (move && (move.x !== 0 || move.z !== 0)) {
     walkStep(body, move.x * speed * TICK_DT, move.z * speed * TICK_DT, body.radius);
-    return { dashed: false, ended: false, wall: false, moved: true };
+    moved = true;
   }
-  return { dashed: false, ended: false, wall: false, moved: false };
+  // A slide is not a walk (`moved` stays the body's own step: idle pose).
+  if (body.slipVx !== undefined || hasSlip()) slipFollow(body, x0, z0);
+  return { dashed: false, ended: false, wall: false, moved };
 }
 
 // dodgeVelocity(body, move, aim, facing) -> { x, z } u per tick — §5 exactly
