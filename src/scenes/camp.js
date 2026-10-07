@@ -72,6 +72,8 @@ import { FIRST_LEVEL, isLevel, lockLine } from '../data/campaign.js';
 import { levelFor } from '../data/levels.js';
 import { endlessUnlockedFrom } from '../data/endless.js';
 import { CLASS_OF_SEAT, CLASS_NAME } from '../data/classes.js';
+import { bindings, PAD } from '../core/bindings.js';
+import { cap, padCap, usingPad, onHintsChange } from '../app/controls.js';
 
 // §18: "deep indigo/teal ambient". Two numbers carry the whole night read —
 // the key drops to a cold moon (a twelfth of the Act-1 sun) and the hemisphere
@@ -311,6 +313,20 @@ export function createCampScene(stage, toggles, ctx) {
     '<span class="cp-sep"></span>' +
     `<span class="cp-chip cp-class"><span class="cp-key">C</span><span class="cp-lab">${t('Class · {name}', { name: `<b class="cp-class-n">${t('Healer')}</b>` })}</span></span>`;
   document.body.appendChild(prompt);
+  // Controls slice: each cap names the player's key, or the pad button while
+  // a gamepad is in use.
+  const paintCampCaps = () => {
+    const set = (sel, id) => {
+      const k = prompt.querySelector(`${sel} .cp-key`);
+      if (k) k.textContent = id === 'interact' ? cap('interact') : usingPad() ? padCap(id) : cap(id);
+    };
+    set('.cp-begin', 'interact');
+    set('.cp-levels', 'levels');
+    set('.cp-unlocks', 'unlocks');
+    set('.cp-class', 'classes');
+  };
+  paintCampCaps();
+  onHintsChange(paintCampCaps);
   {
     const st = document.createElement('style');
     st.id = 'camp-campaign-style';
@@ -813,18 +829,38 @@ export function createCampScene(stage, toggles, ctx) {
     fade.classList.remove('cp-on');
   }
 
+  // Keys follow Settings ▸ Controls (core/bindings.js); defaults E, L, U, C.
+  function campInteract() {
+    if (withinPortal()) beginRun();
+    else if (withinTable(localBody().x, localBody().z)) openLevels('table');
+  }
   window.addEventListener('keydown', (e) => {
     if (e.repeat || mode !== 'camp') return;
-    if (e.code === 'KeyE') {
-      if (withinPortal()) beginRun();
-      else if (withinTable(localBody().x, localBody().z)) openLevels('table');
+    if (bindings.is(e.code, 'interact')) {
+      campInteract();
       return;
     }
     // L = the Levels entry of the camp prompt (anywhere in camp; the portal
     // prompt shows the key).
-    if (e.code === 'KeyL' && !e.ctrlKey && !e.metaKey && !e.altKey) openLevels('key');
-    if (e.code === 'KeyU' && !e.ctrlKey && !e.metaKey && !e.altKey) openUnlocks('key');
-    if (e.code === 'KeyC' && !e.ctrlKey && !e.metaKey && !e.altKey) openClasses('key');
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (bindings.is(e.code, 'levels')) openLevels('key');
+    else if (bindings.is(e.code, 'unlocks')) openUnlocks('key');
+    else if (bindings.is(e.code, 'classes')) openClasses('key');
+  });
+  // Gamepad in camp (Controls slice): A = interact, B / Y / X = Levels /
+  // Unlocks / Classes (nobody fights in camp). core/input.js reports these
+  // only while play input is live (no menu, no build page).
+  // The press arrives inside a sim tick, so the screen opens just after it.
+  const CAMP_PAD = { [PAD.B]: () => openLevels('pad'), [PAD.Y]: () => openUnlocks('pad'), [PAD.X]: () => openClasses('pad') };
+  bindings.onPad((i) => {
+    if (mode !== 'camp') return false;
+    if (i === PAD.A) {
+      queueMicrotask(campInteract); // the press still feeds the sim (revive / interact)
+      return false;
+    }
+    if (!CAMP_PAD[i]) return false;
+    queueMicrotask(CAMP_PAD[i]);
+    return true; // X / Y / B open camp screens here, never cast
   });
   // @gnt:M4a BEGIN-RUN end
 

@@ -14,6 +14,7 @@ import { Vector3 } from 'three';
 import { PALETTE } from '../../data/palette.js';
 import { TICK_HZ } from '../../core/constants.js';
 import { t } from '../../i18n/index.js';
+import { cap, onHintsChange } from '../../app/controls.js';
 
 const REACH = 1.1;
 const REVIVE_RANGE = 0.6;
@@ -54,6 +55,12 @@ export function createInteractPrompts({ stage, world, runUi = null }) {
   el.innerHTML = '<span class="ix-key">E</span><span class="ix-glyph" style="display:none"></span><span class="ix-lab"></span>';
   document.body.appendChild(el);
   const keyEl = el.querySelector('.ix-key');
+  // Controls slice: the cap names the interact key, or A on a gamepad.
+  const paintKey = () => {
+    keyEl.textContent = cap('interact');
+  };
+  paintKey();
+  onHintsChange(paintKey);
   const glyphEl = el.querySelector('.ix-glyph');
   const labEl = el.querySelector('.ix-lab');
   const pv = new Vector3();

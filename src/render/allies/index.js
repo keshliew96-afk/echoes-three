@@ -54,6 +54,7 @@ import { exactColor, exactHex, makeSwingSmear } from '../critters/common.js';
 import { ALLY_CLASSES, ALLY_KITS, REVIVE } from '../../sim/allies.js';
 import { vfxClassStyle } from '../../data/vfx.js';
 import { impactFx } from '../vfx/hub.js';
+import { cap, onHintsChange } from '../../app/controls.js';
 
 const PARCH = PALETTE.parchment;
 const AMBER = PALETTE.hearthAmber;
@@ -201,22 +202,32 @@ function getHoldETexture() {
   c.width = 128;
   c.height = 128;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = exactHex(CHARCOAL);
-  ctx.globalAlpha = 0.85;
-  ctx.beginPath();
-  ctx.roundRect(18, 18, 92, 92, 22);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-  ctx.strokeStyle = exactHex(PARCH);
-  ctx.lineWidth = 6;
-  ctx.stroke();
-  ctx.font = '900 74px system-ui, -apple-system, "Segoe UI", sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = exactHex(PARCH);
-  ctx.fillText('E', 64, 68);
+  // Controls slice: the glyph names the player's interact key (A on a pad),
+  // repainted when the binding or the device changes.
+  const paint = () => {
+    const label = cap('interact');
+    ctx.clearRect(0, 0, 128, 128);
+    ctx.fillStyle = exactHex(CHARCOAL);
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath();
+    ctx.roundRect(18, 18, 92, 92, 22);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = exactHex(PARCH);
+    ctx.lineWidth = 6;
+    ctx.stroke();
+    const size = label.length <= 1 ? 74 : label.length <= 2 ? 52 : label.length <= 3 ? 38 : 26;
+    ctx.font = `900 ${size}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = exactHex(PARCH);
+    ctx.fillText(label, 64, 68, 84);
+    if (eTexture) eTexture.needsUpdate = true;
+  };
+  paint();
   eTexture = new CanvasTexture(c);
   eTexture.colorSpace = SRGBColorSpace;
+  onHintsChange(paint);
   return eTexture;
 }
 

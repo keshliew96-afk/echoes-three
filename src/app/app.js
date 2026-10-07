@@ -27,6 +27,8 @@ import { widgets } from './widgets.js';
 import { installAppStyle } from './style.js';
 import { createNav } from './nav.js';
 import { createGamepadPoller } from './gamepad.js';
+import { installControls } from './controls.js';
+import { bindings } from '../core/bindings.js';
 import { createToaster } from './toast.js';
 import { createDisplay } from './display.js';
 import { createTitleCam } from './titlecam.js';
@@ -96,6 +98,7 @@ export function createApp({ params }) {
 
   const settings = createSettingsStore();
   provide('settings', settings);
+  installControls(settings); // controls.key.* -> core/bindings.js
   installAppStyle();
 
   // #app-ui: the one DOM root every app-layer screen mounts under. It has no
@@ -122,10 +125,20 @@ export function createApp({ params }) {
   });
   const gamepad = createGamepadPoller({
     onAction(action, meta) {
+      bindings.setDevice('gamepad');
+      // Controls slice: a rebind waiting for a key is cancelled by any pad
+      // button (pad buttons are not rebindable), never navigated past.
+      if (bindings.capture) {
+        if (!meta || !meta.repeat) bindings.capture.cancel();
+        return;
+      }
       if (!screens.isOpen()) {
+        // The tutorial's centred card (a lesson or a tip) takes A / B first.
+        const tut = service('tutorial');
+        if (tut && typeof tut.padAction === 'function' && tut.padAction(action)) return;
         // PARTY (PLAN §16.4): the build pages — the socket screen, then the
         // run's party page / shop — take the pad (LB/RB characters, D-pad,
-        // A / X / Y). Gameplay on a gamepad stays out of scope.
+        // A / X / Y). Play itself reads the pad in core/input.js.
         const sock = ctx && ctx.socket;
         if (sock && typeof sock.isOpen === 'function' && sock.isOpen() && typeof sock.padAction === 'function') {
           sock.padAction(action, meta);
@@ -142,6 +155,11 @@ export function createApp({ params }) {
       if (screens.isOpen()) screens.scroll(dy, 'gamepad');
     },
     onStart(meta) {
+      bindings.setDevice('gamepad');
+      if (bindings.capture) {
+        bindings.capture.cancel();
+        return;
+      }
       const top = screens.top();
       if (!top) {
         if (state === 'playing') app.requestPause('gamepad');

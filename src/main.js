@@ -43,6 +43,8 @@ import { createGameplayRng, createCosmeticRng } from './core/rng.js';
 import { createRegistry } from './core/registry.js';
 import { createEventBus } from './core/events.js';
 import { createInputController } from './core/input.js';
+import { bindings } from './core/bindings.js';
+import { rebind, resetControls } from './app/controls.js';
 import { createWorld } from './sim/world.js';
 import { createSkillFx } from './render/skillfx/index.js';
 import { createEnemyLayer } from './render/enemies/index.js';
@@ -180,7 +182,48 @@ function screenToWorld(sx, sy) {
     : null;
 }
 
-const input = createInputController({ screenToWorld });
+// GAMEPAD AIM (Controls slice): the right stick points the aim from the
+// body the player drives; a foe inside a narrow cone along the stick takes
+// the aim (light aim assist). With the stick at rest the aim turns to the
+// nearest foe in reach, else keeps the last direction, else follows the move.
+const PAD_AIM_REACH = 6;
+const PAD_ASSIST_RANGE = 13;
+const PAD_ASSIST_COS = Math.cos((22 * Math.PI) / 180);
+let padAimDir = null;
+function padAim(dir, { move } = {}) {
+  const nv = world.netView;
+  const b = (nv && typeof nv.followTarget === 'function' ? nv.followTarget() : null) || world.player;
+  if (!b || !Number.isFinite(b.x)) return null;
+  let best = null;
+  let bestScore = -Infinity;
+  for (const e of registry.all()) {
+    if (e.faction !== 'hostile' || !(e.hp > 0)) continue;
+    const dx = e.x - b.x;
+    const dz = e.z - b.z;
+    const d = Math.hypot(dx, dz);
+    if (d < 1e-3 || d > PAD_ASSIST_RANGE) continue;
+    let score;
+    if (dir) {
+      const c = (dx * dir.x + dz * dir.z) / d;
+      if (c < PAD_ASSIST_COS) continue;
+      score = c * 4 - d / PAD_ASSIST_RANGE;
+    } else score = -d;
+    if (score > bestScore) {
+      bestScore = score;
+      best = e;
+    }
+  }
+  if (best) {
+    const d = Math.hypot(best.x - b.x, best.z - b.z);
+    padAimDir = { x: (best.x - b.x) / d, z: (best.z - b.z) / d };
+    return { x: best.x, z: best.z };
+  }
+  if (dir) padAimDir = dir;
+  const aimDir = padAimDir || (move && (move.x || move.z) ? move : null);
+  return aimDir ? { x: b.x + aimDir.x * PAD_AIM_REACH, z: b.z + aimDir.z * PAD_AIM_REACH } : null;
+}
+
+const input = createInputController({ screenToWorld, padAim });
 
 // Scene registry — later blocks add camp/combat rooms on top of graybox.
 const SCENES = {
@@ -647,6 +690,8 @@ function sampleIntents() {
 function frame(now) {
   const frameMs = now - last;
   last = now;
+  // The pad gives no play presses while a build page owns it (core/input.js).
+  input.setPadSuppressed(!!(socketScreen?.isOpen() || runUi?.isOpen()));
 
   let alpha = lastAlpha;
   if (!simFrozen && !app.simPaused()) {
@@ -756,10 +801,10 @@ registerPauseScreen({
 //     Escape (its decline is X), so the pause opens OVER the page, which keeps
 //     its DOM, its focus and its settle window.
 // An Esc that ended element fullscreen must not also open a menu (PLAN §1.5).
-const PAUSE_KEYS = new Set(['Escape', 'KeyP']);
+// Esc always pauses; the second pause key is the player's (Settings ▸ Controls).
 window.addEventListener('keydown', (e) => {
   if (e.defaultPrevented || e.repeat) return;
-  if (!PAUSE_KEYS.has(e.code)) return;
+  if (e.code !== 'Escape' && !bindings.is(e.code, 'pause')) return;
   if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
   if (app.state !== 'playing' || app.screens.isOpen()) return;
   const disp = app.display;
@@ -974,6 +1019,16 @@ window.__echoes = {
   playClass: () => playClass.debug(),
   i18n: () => i18nDebug(), // docs/I18N.md: { lang, misses, seen }
   tutorial: () => service('tutorial'), // docs/TUTORIAL.md: { startNow, skip, debug() ... }
+  // CONTROLS (docs/CONTROLS.md): key bindings, the device in use, live input.
+  controls: {
+    state: () => {
+      const nv = world.netView;
+      const b = (nv && typeof nv.followTarget === 'function' ? nv.followTarget() : null) || world.player;
+      return { keys: bindings.all(), device: bindings.device, input: input.debug(), body: b ? { x: b.x, z: b.z } : null };
+    },
+    rebind: (id, code) => rebind(id, code),
+    reset: () => resetControls(),
+  },
   // @gnt:DEBUG-API begin — Gauntlet namespaces (PLAN §6.4). Each resolves its
   // module's service lazily, so owners never edit this file for their probes:
   // provide('<name>', impl) with impl.debug = { ... }.

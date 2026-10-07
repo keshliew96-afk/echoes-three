@@ -34,6 +34,8 @@ import { V } from '../../app/settings.js';
 import { AP_FONT } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { t } from '../../i18n/index.js';
+import { bindings, PAD, MOUSE_BUTTON_CODE } from '../../core/bindings.js';
+import { cap, padCap, moveCaps, skillsCap, usingPad, onHintsChange } from '../../app/controls.js';
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
@@ -47,24 +49,38 @@ const POLL_MS = 200;
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-// Every line on the coach, by step. Keys stay untranslated (docs/I18N.md rule 5).
+// Every line on the coach, by step. Keys stay untranslated (docs/I18N.md rule
+// 5). Controls slice: the keys are the player's own (Settings ▸ Controls), and
+// gamepad buttons while a gamepad is in use.
 function stepText(id) {
+  const pad = usingPad();
   switch (id) {
     case 'move':
-      return { title: t('Move'), body: t('Walk around the clearing.'), keys: ['W', 'A', 'S', 'D'] };
+      return { title: t('Move'), body: t('Walk around the clearing.'), keys: moveCaps() };
     case 'attack':
-      return { title: t('Attack'), body: t('Aim with the mouse and hold the right mouse button to attack.'), keys: [t('Right mouse')] };
+      return {
+        title: t('Attack'),
+        body: pad
+          ? t('Aim with the right stick and hold {key} to attack. With the stick at rest you aim at the nearest foe.', { key: cap('attack') })
+          : bindings.isDefault('attack')
+            ? t('Aim with the mouse and hold the right mouse button to attack.')
+            : t('Aim with the mouse and hold {key} to attack.', { key: cap('attack') }),
+        keys: pad ? [padCap('aim'), cap('attack')] : [cap('attack')],
+      };
     case 'dodge':
-      return { title: t('Dodge'), body: t('Press Space to dodge. You dash a short way, and nothing can hit you while you do.'), keys: ['Space'] };
+      return { title: t('Dodge'), body: t('Press {key} to dodge. You dash a short way, and nothing can hit you while you do.', { key: cap('dodge') }), keys: [cap('dodge')] };
     case 'use':
-      return { title: t('Use'), body: t('The glowing spring heals the whole party once per room. Walk up to it and press E to drink.'), keys: ['E'] };
+      return { title: t('Use'), body: t('The glowing spring heals the whole party once per room. Walk up to it and press {key} to drink.', { key: cap('interact') }), keys: [cap('interact')] };
     case 'fight':
       return { title: t('Clear the waves'), body: t('Beasts are coming. Your three friends fight beside you, played by the AI. Clear every wave to win the room.'), keys: [] };
     case 'reward':
       return {
         title: t('Your first skill'),
-        body: t('Everyone starts with only the basic attack and dodge. Skills come from wave rewards: take the skill on your card and it fills an empty slot, cast with 1 to 4. Between rooms, B opens the sockets where nodes power your skills up.'),
-        keys: ['1', '2', '3', '4'],
+        body: t('Everyone starts with only the basic attack and dodge. Skills come from wave rewards: take the skill on your card and it fills an empty slot, cast with {skills}. Between rooms, {backpack} opens the sockets where nodes power your skills up.', {
+          skills: skillsCap(),
+          backpack: cap('backpack'),
+        }),
+        keys: ['skill1', 'skill2', 'skill3', 'skill4'].map((k) => cap(k)),
       };
     case 'door':
       return {
@@ -75,7 +91,11 @@ function stepText(id) {
     case 'done':
       return {
         title: t('Tutorial complete'),
-        body: t('This is the camp. C picks your class, U spends Embers between runs. Walk to the portal at the north gate and press E to set out.'),
+        body: t('This is the camp. {classes} picks your class, {unlocks} spends Embers between runs. Walk to the portal at the north gate and press {interact} to set out.', {
+          classes: cap('classes'),
+          unlocks: cap('unlocks'),
+          interact: cap('interact'),
+        }),
         keys: [],
       };
     case 'skipped':
@@ -257,7 +277,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     const skip = modal.querySelector('.tu-skip');
     skip.textContent = t('Skip tutorial');
     skip.style.display = kind === 'lesson' ? '' : 'none';
-    modal.querySelector('.tu-ok').innerHTML = `${esc(t('Got it'))}<span class="tu-kc">Enter</span>`;
+    modal.querySelector('.tu-ok').innerHTML = `${esc(t('Got it'))}<span class="tu-kc">${usingPad() ? 'A' : 'Enter'}</span>`;
     modal.classList.add('tu-on');
     veil.classList.add('tu-on');
     modalKeys = () => closeModal();
@@ -352,20 +372,33 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     if (r && typeof r.endTutorial === 'function') r.endTutorial('skip');
   }
 
-  // DOM input for the held lessons (class-agnostic: whatever body the player
-  // drives, these are the keys that drive it).
-  window.addEventListener('mousedown', (e) => {
-    if (e.button === 2 && step === 'attack') rmbDownAt = performance.now();
-  });
-  window.addEventListener('mouseup', (e) => {
-    if (e.button === 2 && rmbDownAt) {
-      rmbTotal += performance.now() - rmbDownAt;
-      rmbDownAt = 0;
-    }
-  });
+  // Input for the held lessons (class-agnostic: whatever body the player
+  // drives, these are the controls that drive it). Controls slice: the
+  // attack is the input controller's live hold (the bound key or mouse
+  // button, or RT), sampled every poll; the dodge is the bound key or LT.
   window.addEventListener('keydown', (e) => {
     if (e.repeat || screensOpen()) return;
-    if (e.code === 'Space' && step === 'dodge') setStep('use');
+    if (bindings.is(e.code, 'dodge') && step === 'dodge') setStep('use');
+  });
+  window.addEventListener('mousedown', (e) => {
+    if (screensOpen()) return;
+    if (bindings.is(MOUSE_BUTTON_CODE[e.button], 'dodge') && step === 'dodge') setStep('use');
+  });
+  bindings.onPad((i) => {
+    if (i === PAD.LT && step === 'dodge') queueMicrotask(() => step === 'dodge' && setStep('use'));
+    return false;
+  });
+  let attackPollAt = 0;
+  function pollAttack(now) {
+    const live = app.input && typeof app.input.attackHeld === 'function' && app.input.attackHeld();
+    if (live && attackPollAt) rmbTotal += Math.min(POLL_MS * 2, now - attackPollAt);
+    rmbDownAt = live ? rmbDownAt || now : 0;
+    attackPollAt = live ? now : 0;
+  }
+  // A rebind or a switch between keyboard and gamepad repaints the cards.
+  onHintsChange(() => {
+    if (step && !LESSONS.includes(step)) renderCoach();
+    if (shown) openModal(shown.kind, shown.id);
   });
 
   bus.on('interact', (ev) => {
@@ -388,8 +421,8 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
             if (!origin && b) origin = { x: b.x, z: b.z };
             if (b && origin && Math.hypot(b.x - origin.x, b.z - origin.z) >= MOVE_DIST) setStep('attack');
           } else if (step === 'attack') {
-            const held = rmbTotal + (rmbDownAt ? now - rmbDownAt : 0);
-            if (held >= ATTACK_MS) setStep('dodge');
+            pollAttack(now);
+            if (rmbTotal >= ATTACK_MS) setStep('dodge');
           } else if (step === 'use' && now - stepAt >= USE_GIVE_UP_MS) {
             setStep('fight');
           }
@@ -549,6 +582,12 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
   });
 
   const api = {
+    // The pad on the centred card (app.js routes it here first): A / B close it.
+    padAction(action) {
+      if (!shown) return false;
+      if (action === 'confirm' || action === 'back') closeModal();
+      return true;
+    },
     startNow,
     offerOnNewGame,
     shouldOffer,

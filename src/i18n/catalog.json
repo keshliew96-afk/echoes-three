@@ -46,9 +46,24 @@
   "plural": true,
   "one": "({n} upgrade — the replaced node is on the bench)"
  },
+ "{action} already uses {key}.": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
  "{action} in {n} s": {
   "files": [
    "src/ui/menu/confirm.js"
+  ]
+ },
+ "{action} now uses {key}.": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "{action} now uses {key}. {other} took {old}.": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
   ]
  },
  "{advance} · {classes} buy suggested": {
@@ -260,6 +275,11 @@
  "{kb} KB": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "{key} keeps its own job and can’t be bound. Press another key, or Esc to cancel.": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
   ]
  },
  "{label} — scroll with ↑ ↓": {
@@ -1690,12 +1710,22 @@
    "src/ui/run/partysettings.js"
   ]
  },
- "Aim": {
+ "Aim · rests on the nearest foe": {
   "files": [
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Aim with the mouse and hold {key} to attack.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Aim with the mouse and hold the right mouse button to attack.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "Aim with the right stick and hold {key} to attack. With the stick at rest you aim at the nearest foe.": {
   "files": [
    "src/ui/tutorial/index.js"
   ]
@@ -1743,6 +1773,11 @@
  "Always shown for this page address (?fps / ?debug / a harness boot)": {
   "files": [
    "src/ui/menu/tabs/display.js"
+  ]
+ },
+ "Always: Esc pauses, Alt + Enter is fullscreen, F5 / F9 quicksave and quickload, the mouse aims.": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
   ]
  },
  "Ambience": {
@@ -2064,8 +2099,7 @@
    "src/ui/menu/mpmenu.js",
    "src/ui/menu/records.js",
    "src/ui/menu/saves.js",
-   "src/ui/menu/settings.js",
-   "src/ui/menu/tabs/controls.js"
+   "src/ui/menu/settings.js"
   ]
  },
  "Back to camp": {
@@ -2480,6 +2514,16 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Camp — gamepad": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Camp & between rooms": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
  "CAMPAIGN": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -2620,7 +2664,6 @@
    "src/ui/menu/mpmenu.js",
    "src/ui/menu/pause.js",
    "src/ui/menu/saves.js",
-   "src/ui/menu/tabs/controls.js",
    "src/ui/menu/title.js",
    "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
@@ -2697,6 +2740,11 @@
    "src/scenes/camp.js"
   ]
  },
+ "Class select": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
  "Clear {level} to unlock": {
   "files": [
    "src/save/index.js",
@@ -2762,7 +2810,12 @@
   ],
   "data": true
  },
- "Click": {
+ "Click a key to change it": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Click a key, or pick it and press Enter, then press the new key or mouse button.": {
   "files": [
    "src/ui/menu/tabs/controls.js"
   ]
@@ -3721,6 +3774,11 @@
    "src/ui/run/effects.js"
   ]
  },
+ "Every key is back to its default.": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
  "Every player must be ready first.": {
   "files": [
    "src/net/protocol/messages.js"
@@ -3770,7 +3828,7 @@
    "src/ui/menu/lobby.js"
   ]
  },
- "Everyone starts with only the basic attack and dodge. Skills come from wave rewards: take the skill on your card and it fills an empty slot, cast with 1 to 4. Between rooms, B opens the sockets where nodes power your skills up.": {
+ "Everyone starts with only the basic attack and dodge. Skills come from wave rewards: take the skill on your card and it fills an empty slot, cast with {skills}. Between rooms, {backpack} opens the sockets where nodes power your skills up.": {
   "files": [
    "src/ui/tutorial/index.js"
   ]
@@ -4104,7 +4162,6 @@
  },
  "Fullscreen": {
   "files": [
-   "src/ui/menu/tabs/controls.js",
    "src/ui/menu/tabs/display.js"
   ]
  },
@@ -4134,6 +4191,11 @@
   ],
   "data": true
  },
+ "Gamepad": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
  "Gameplay": {
   "files": [
    "src/ui/menu/lobby.js",
@@ -4152,11 +4214,6 @@
    "src/sim/allies.js"
   ],
   "data": true
- },
- "General": {
-  "files": [
-   "src/ui/menu/tabs/controls.js"
-  ]
  },
  "German": {
   "files": [
@@ -4295,6 +4352,21 @@
  "heal chains to the next-lowest-HP other ally within {r} u — full power, 1 hop per copy": {
   "files": [
    "src/ui/socket/index.js"
+  ]
+ },
+ "Heal target: ally {n}": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Heal target: press again to clear": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Heal target: previous · next ally": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
   ]
  },
  "healed allies are inspired: +15% damage dealt for 3 s": {
@@ -4604,6 +4676,11 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Interact · Revive (hold)": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
  "Interface": {
   "files": [
    "src/ui/menu/tabs/audio.js"
@@ -4743,7 +4820,12 @@
    "src/ui/socket/index.js"
   ]
  },
- "Key rebinding isn’t available in this version — this is the full control reference.": {
+ "Keyboard & mouse": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Keyboard & mouse lists every key and lets you change it. Gamepad shows the button layout, which is fixed in this version.": {
   "files": [
    "src/ui/menu/tabs/controls.js"
   ]
@@ -4906,6 +4988,11 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "Left mouse": {
+  "files": [
+   "src/app/controls.js"
+  ]
+ },
  "legal here, but it contributes nothing on this skill": {
   "files": [
    "src/ui/socket/index.js"
@@ -5016,7 +5103,8 @@
  },
  "Levels": {
   "files": [
-   "src/scenes/camp.js"
+   "src/scenes/camp.js",
+   "src/ui/menu/tabs/controls.js"
   ]
  },
  "LEVELS CLEARED": {
@@ -5196,9 +5284,9 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
- "Menus — keyboard & mouse": {
+ "Middle mouse": {
   "files": [
-   "src/ui/menu/tabs/controls.js"
+   "src/app/controls.js"
   ]
  },
  "Millpond": {
@@ -5249,11 +5337,6 @@
   ],
   "data": true
  },
- "Mouse@@input device": {
-  "files": [
-   "src/ui/menu/tabs/controls.js"
-  ]
- },
  "move": {
   "files": [
    "src/ui/socket/index.js"
@@ -5266,6 +5349,26 @@
   ]
  },
  "Move · Choose · Back": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Move down": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Move left": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Move right": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Move up": {
   "files": [
    "src/ui/menu/tabs/controls.js"
   ]
@@ -5417,6 +5520,11 @@
  "No camera shake": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "No change.": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
   ]
  },
  "no cooldown stat on this skill": {
@@ -5916,7 +6024,8 @@
  },
  "Party": {
   "files": [
-   "src/ui/menu/saves.js"
+   "src/ui/menu/saves.js",
+   "src/ui/menu/tabs/controls.js"
   ]
  },
  "PARTY": {
@@ -5969,7 +6078,7 @@
    "src/ui/run/levels.js"
   ]
  },
- "Pause · Resume": {
+ "Pause (Esc works too)": {
   "files": [
    "src/ui/menu/tabs/controls.js"
   ]
@@ -6092,6 +6201,11 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "Play — gamepad": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
  "Play — keyboard & mouse": {
   "files": [
    "src/ui/menu/tabs/controls.js"
@@ -6172,6 +6286,21 @@
    "src/ui/run/transit.js"
   ]
  },
+ "Press {key} to dodge. You dash a short way, and nothing can hit you while you do.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "Press a key or mouse button for {action} (click the key again for the left button). Esc cancels.": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Press a key…": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
  "Press any key or click": {
   "files": [
    "src/ui/menu/loading.js"
@@ -6183,9 +6312,9 @@
    "src/ui/menu/tabs/display.js"
   ]
  },
- "Press Space to dodge. You dash a short way, and nothing can hit you while you do.": {
+ "Press Enter or click, then press the new key or mouse button. A key another action uses swaps with this one. Esc cancels.": {
   "files": [
-   "src/ui/tutorial/index.js"
+   "src/ui/menu/tabs/controls.js"
   ]
  },
  "preview": {
@@ -6303,11 +6432,6 @@
  "Quicksave": {
   "files": [
    "src/save/describe.js"
-  ]
- },
- "Quicksave · Quickload": {
-  "files": [
-   "src/ui/menu/tabs/controls.js"
   ]
  },
  "Quicksaved": {
@@ -6775,20 +6899,9 @@
    "src/ui/menu/keepdisplay.js"
   ]
  },
- "Revive a downed ally (hold)": {
-  "files": [
-   "src/ui/menu/tabs/controls.js"
-  ]
- },
  "Right mouse": {
   "files": [
-   "src/ui/menu/tabs/controls.js",
-   "src/ui/tutorial/index.js"
-  ]
- },
- "Right-click": {
-  "files": [
-   "src/ui/menu/tabs/controls.js"
+   "src/app/controls.js"
   ]
  },
  "Ring": {
@@ -7135,11 +7248,6 @@
    "src/ui/menu/title.js"
   ]
  },
- "Select an ally for a heal": {
-  "files": [
-   "src/ui/menu/tabs/controls.js"
-  ]
- },
  "self-heals {n} per instance": {
   "files": [
    "src/ui/socket/index.js"
@@ -7294,6 +7402,11 @@
   ],
   "data": true
  },
+ "Show controls for": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
  "Show FPS counter": {
   "files": [
    "src/ui/menu/tabs/display.js"
@@ -7380,6 +7493,11 @@
  "SKILL · {kind}": {
   "files": [
    "src/ui/run/cards.js"
+  ]
+ },
+ "Skill {n}": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
   ]
  },
  "skill slot {slot} is empty — skills arrive from drafts": {
@@ -7792,8 +7910,7 @@
  },
  "Tabs": {
   "files": [
-   "src/ui/menu/settings.js",
-   "src/ui/menu/tabs/controls.js"
+   "src/ui/menu/settings.js"
   ]
  },
  "Tabs · Pause": {
@@ -8314,12 +8431,17 @@
    "src/ui/menu/tabs/gameplay.js"
   ]
  },
+ "The gamepad layout is fixed": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
+  ]
+ },
  "The gate opens onto three roads. Each is a full run of eight rooms.": {
   "files": [
    "src/ui/run/expedition.js"
   ]
  },
- "The glowing spring heals the whole party once per room. Walk up to it and press E to drink.": {
+ "The glowing spring heals the whole party once per room. Walk up to it and press {key} to drink.": {
   "files": [
    "src/ui/tutorial/index.js"
   ]
@@ -8798,7 +8920,7 @@
    "src/ui/menu/saves.js"
   ]
  },
- "This is the camp. C picks your class, U spends Embers between runs. Walk to the portal at the north gate and press E to set out.": {
+ "This is the camp. {classes} picks your class, {unlocks} spends Embers between runs. Walk to the portal at the north gate and press {interact} to set out.": {
   "files": [
    "src/ui/tutorial/index.js"
   ]
@@ -9023,6 +9145,7 @@
  "Unlocks": {
   "files": [
    "src/scenes/camp.js",
+   "src/ui/menu/tabs/controls.js",
    "src/ui/run/unlocks.js"
   ]
  },
