@@ -41,6 +41,10 @@ const DESPERATE_HOLD = 0.3; //   ...and hold it (no dodge) while HP stays above 
 // AI-held allies spend their kits. The plain autopilot (harness runs, the
 // act runner) keeps the 70% rule and its single target.
 const LEADER_HEAL_BELOW = 0.9;
+// ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): in a hunt the bot runs the
+// quarry down (the leashed party follows it), in a purge it walks from nest
+// to nest; within this distance it stops closing and shoots.
+const CHASE_U = 3.0;
 const DEFAULT_CFG = Object.freeze({ seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto' });
 
 const d2 = (ax, az, bx, bz) => (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
@@ -342,7 +346,23 @@ export function createAutopilot({ registry, player, run, skills, build }) {
     }
     const flank = !target && nearFoe && guardedAgainst(nearFoe.e, player.x, player.z) ? nearFoe : null;
     if (!target) target = nearFoe;
+    // ROOM OBJECTIVES: the quarry, else the nearest nest, is the bot's job.
+    let goal = null;
+    for (const e of registry.all()) {
+      if (!(e.hp > 0) || !e.hittable) continue;
+      if (e.quarry && e.state === 'active') {
+        goal = { e, d: Math.hypot(e.x - player.x, e.z - player.z) };
+        break;
+      }
+      if (e.kind === 'nest') {
+        const d = Math.hypot(e.x - player.x, e.z - player.z);
+        if (!goal || d < goal.d) goal = { e, d };
+      }
+    }
+    if (goal && goal.d <= BASIC_RANGE && !(target && target.d < 1.6)) target = goal;
+    else if (goal && !target) target = goal;
     if (inside) s.move = inside.esc;
+    else if (goal && goal.d > CHASE_U) s.move = norm(goal.e.x - player.x, goal.e.z - player.z);
     else if (flank) {
       // Circle the guarded foe at ~1.6 u: tangential speed 2.4 u/s at that
       // radius (~86°/s) plus the slam's lock is enough to slip off its horns.

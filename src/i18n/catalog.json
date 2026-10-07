@@ -434,6 +434,18 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "{n} NEST LEFT": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
+ "{n} NESTS LEFT": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ],
+  "plural": true,
+  "one": "{n} NEST LEFT"
+ },
  "{n} node from {skill} back on the bench — F auto-fills them": {
   "files": [
    "src/ui/socket/index.js"
@@ -1460,6 +1472,11 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "A marked quarry breaks cover and runs. Chase it down and kill it before its timer runs out; it stops to catch its breath every few seconds. If it escapes, the room pays no reward.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
  },
  "A name needs at least one visible character": {
   "files": [
@@ -3578,6 +3595,11 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "destroy the three nests": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
  "Detonate": {
   "files": [
    "src/sim/nodes.js"
@@ -4884,6 +4906,16 @@
  "Hunt": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "HUNT THE QUARRY": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "hunt the quarry before it escapes": {
+  "files": [
+   "src/ui/run/path.js"
   ]
  },
  "Hunted": {
@@ -6736,6 +6768,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "PURGE THE NESTS": {
+  "files": [
+   "src/ui/hud/banner.js",
+   "src/ui/hud/index.js"
+  ]
+ },
  "Purse": {
   "files": [
    "src/data/unlocks.js"
@@ -6773,6 +6811,11 @@
    "src/sim/skills.js"
   ],
   "data": true
+ },
+ "QUARRY ESCAPED · NO REWARD": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
  },
  "Quick": {
   "files": [
@@ -8735,6 +8778,11 @@
   ],
   "data": true
  },
+ "THE CORRUPTION TOOK ROOT · NO REWARD": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
  "the counter answers an attacker already in reach": {
   "files": [
    "src/ui/socket/index.js"
@@ -8989,6 +9037,21 @@
    "src/ui/net/hud.js"
   ]
  },
+ "The hunt": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "THE HUNT": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
+ "THE HUNT · WINDED": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
  "the impact hops once more per copy, within 2.2 u — a ricochet on damage, a chain-heal on a heal.": {
   "files": [
    "src/ui/run/cards.js"
@@ -9146,6 +9209,11 @@
  "THE PROVING CLEARING": {
   "files": [
    "src/ui/hud/index.js"
+  ]
+ },
+ "The purge": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "The request was not understood.": {
@@ -9507,6 +9575,11 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "Three corruption nests keep spawning enemies. Destroy all three before the timer runs out; a wounded nest spawns faster. If the corruption takes root, the room pays no reward and the nests must still fall.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
  },
  "Three lantern bolts in a 12° fan, 9 each.": {
   "files": [

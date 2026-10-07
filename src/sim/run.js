@@ -84,6 +84,8 @@ import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
 // RELICS (docs/CONTENT_PLAN.md §5): run-long relics + cursed doors.
 import { createRelicSystem, cursedDiff } from './relics.js';
+// ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt and purge rooms.
+import { assignObjectives, isObjectiveMode, OBJECTIVE_RULES } from './objectives.js';
 // EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
 import { createEncounterSystem, ENCOUNTERS, EVENT_RULES } from './encounters.js';
 import { encounterSpec } from './interactables.js';
@@ -132,7 +134,7 @@ export const RUN = Object.freeze({
 });
 
 // §16 path doors carry ONLY these two glyph channels.
-export const WIN_GLYPH = Object.freeze({ kill_all: '⚔', defend: '⛨', boss: '☠', event: '?' });
+export const WIN_GLYPH = Object.freeze({ kill_all: '⚔', defend: '⛨', boss: '☠', event: '?', hunt: '➶', purge: '✹' });
 export const REWARD_GLYPH = Object.freeze({ skill: '✦', node: '◈' });
 
 export function createRunSystem({
@@ -259,6 +261,14 @@ export function createRunSystem({
   // CAMPAIGN COMPLETE card -> camp at this tick (survives the run-end wipe).
   let autoReturnTick = null;
 
+  // ROOM OBJECTIVES: on for campaigns (Endless too), off for the tutorial and
+  // the legacy single-level run (the goldens).
+  const objectivesOn = () => !!(campaign && campaign.mode === 'campaign' && !campaign.tutorial);
+  // The quarry is marked for the whole party the moment it breaks cover.
+  events.on('quarry_spawn', (ev) => {
+    if (active && allySys && typeof allySys.cmd === 'function') allySys.cmd('mark', [ev.id]);
+  });
+
   // ------------------------------------------------------------ run frame --
   // ONE fixed roll sequence (defend positions, then the 5 path side bits) so a
   // seed reproduces the frame exactly. Room 1 is always kill_all (A3).
@@ -368,6 +378,9 @@ export function createRunSystem({
       // spring (cmd('tutorialRelease') from the coach, src/ui/tutorial/).
       ...(tutorial && mode === 'campaign' ? { tutorial: { hold: true } } : {}),
     };
+    // ROOM OBJECTIVES: campaigns (never the tutorial) turn one kill_all room
+    // of rooms 4-6 into a hunt or a purge (two on later levels). No draws.
+    if (objectivesOn()) assignObjectives(frame.modes, frame.seed, campaign.index);
     // PARTY: every ally back to its starting loadout, empty build, purse 0;
     // the party stream seeded from the run SEED (no gameplay draw).
     // UNLOCKS: an equipped kit replaces a class's starting skills.
@@ -539,7 +552,7 @@ export function createRunSystem({
     reward = null;
     path = null;
     positionParty();
-    const combatRoom = mode === 'kill_all' || mode === 'defend';
+    const combatRoom = mode === 'kill_all' || mode === 'defend' || isObjectiveMode(mode);
     const baseDiff = depth > 3 ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
     // RELICS: a cursed room rolls its waves with the curse's numbers.
     const roomCurse = combatRoom ? relics.curseFor(n) : null;
@@ -573,9 +586,9 @@ export function createRunSystem({
       layoutId,
       hpMul: combatRoom ? diff.hpMul : null,
       dmgMul: combatRoom ? diff.dmgMul : null,
-      budget: mode === 'kill_all' ? diff.budget : mode === 'defend' ? diff.defendBudget : null,
+      budget: mode === 'kill_all' || isObjectiveMode(mode) ? diff.budget : mode === 'defend' ? diff.defendBudget : null,
       eliteChance: combatRoom ? diff.eliteChance : null,
-      waveIntervalTicks: mode === 'kill_all' ? diff.waveIntervalTicks : null,
+      waveIntervalTicks: mode === 'kill_all' || mode === 'hunt' ? diff.waveIntervalTicks : null,
       waystoneHp: mode === 'defend' ? diff.waystoneHp : null,
       bossHp: mode === 'boss' ? diff.bossHp : null,
       bossDmgMul: mode === 'boss' ? diff.bossDmgMul : null,
@@ -654,6 +667,8 @@ export function createRunSystem({
     roomsDone = Math.max(roomsDone, roomIndex);
     gainGlint(RUN.stipend, 'clear_stipend');
     if (allyOn()) pages.stipend('clear_stipend'); // PARTY: +12 per ally purse
+    // ROOM OBJECTIVES: a hunt or a purge won pays its bounty.
+    if (ev.objective && ev.won) gainGlint(OBJECTIVE_RULES.bounty, `${ev.objective}_bounty`);
     // RELICS: clear procs (Grave Coin, Hearthstone), the curse lifts, and a
     // relic pick is owed after room 1 and after a cursed room.
     relics.onRoomCleared(roomIndex, { forfeited: !!ev.softFailed, gainGlint, boss: roomIndex === RUN.bossRoom });
@@ -1447,6 +1462,7 @@ export function createRunSystem({
       lastCombatLayout = null;
       roomPlanView = null;
       campaign.index += 1;
+      if (objectivesOn()) assignObjectives(frame.modes, frame.seed, campaign.index);
       campaign.levels.push({ level: to, index: campaign.index, startTick: tick, rooms: 0, cleared: false, ticks: 0 });
     } else {
       const rec = campaign.levels[campaign.levels.length - 1];
@@ -2220,6 +2236,17 @@ export function createRunSystem({
         relics.takeCurse(args[0], roomIndex);
         relics.onRoomEnter(roomIndex, frame ? frame.modes[roomIndex - 1] : 'kill_all');
         return relics.view().curse;
+      // ----------------------------------------------- ROOM OBJECTIVES --
+      case 'objectiveRoom': {
+        // ('objectiveRoom', 'hunt'|'purge'|'kill_all', room) — a later combat
+        // room of this level becomes that room (probes, screenshots).
+        const m = args[0];
+        const n = Number(args[1]);
+        if (!active || !frame || !(isObjectiveMode(m) || m === 'kill_all')) return null;
+        if (!(Number.isInteger(n) && n > roomIndex && n >= 2 && n <= 6) || frame.modes[n - 1] === 'defend') return null;
+        frame.modes[n - 1] = m;
+        return [...frame.modes];
+      }
       case 'relicDoor':
         // ('relicDoor', curseId[, side]) — the next path screen's cursed door.
         return relics.forceDoor(args[0], args[1] ?? 0);
@@ -2269,7 +2296,7 @@ export function createRunSystem({
         // — walking to room 7 or room 8 both land on the deterministic 72.
         const combatBefore = frame.modes
           .slice(0, n - 1)
-          .filter((m) => m === 'kill_all' || m === 'defend' || m === 'boss').length;
+          .filter((m) => m === 'kill_all' || m === 'defend' || m === 'boss' || isObjectiveMode(m)).length;
         while (clearedRooms < combatBefore) {
           clearedRooms += 1;
           gainGlint(RUN.stipend, 'skip_stipend');

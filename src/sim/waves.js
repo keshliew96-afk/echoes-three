@@ -35,6 +35,11 @@
 // (gate G4a.6).
 import { innerBounds } from './movement.js';
 import { THREAT, ELITE_COST, WAVE_SIZE_CAP, ROOM_CONCURRENT_CAP } from '../data/difficulty.js';
+// ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt and purge rooms. Their
+// state lives in `obj` (null in kill_all / defend rooms, so those rooms save,
+// hash and replay exactly as before).
+import { OBJECTIVE_RULES, quarryFor, quarryState, nestSpots, isObjectiveMode } from './objectives.js';
+import { enemyStats, ELITE } from './enemies.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -89,6 +94,9 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
   // difficulty numbers the schedule was rolled with + what spawns carry.
   let plan = null; // { act, room, challenge, hpMul, dmgMul, eliteChance, intervalTicks, waystoneHp, budget, defendBudget }
   let planned = null; // mode staged by planRoom(), started by beginRoom()
+  // ROOM OBJECTIVES: { kind: 'hunt'|'purge', ...} while a hunt / purge room
+  // is planned or live (see objectives.js for the rules).
+  let obj = null;
 
   // Live hostile wave bodies (every enemy kind, by faction — PLAN §3.6 (d)):
   // the Stag and enemy shots are not wave members; retreating bodies no
@@ -166,12 +174,34 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     return { size: out.length, units: out, budget: Math.round(budget * 100) / 100, cost: Math.round(cost * 100) / 100 };
   }
 
+  // ROOM OBJECTIVES: a nest's spawn list — the same weighted type draw and
+  // elite roll as a wave unit, no budget (the nest's cadence is its budget).
+  function rollNestList(n, p) {
+    const roster = p.roster;
+    const total = roster.reduce((s, [, w]) => s + w, 0);
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      let r = rng.float() * total;
+      let etype = roster[roster.length - 1][0];
+      for (const [et, w] of roster) {
+        if (r < w) {
+          etype = et;
+          break;
+        }
+        r -= w;
+      }
+      const elite = p.eliteChance > 0 ? rng.chance(p.eliteChance) : false;
+      out.push(elite ? { etype, elite: true } : { etype });
+    }
+    return out;
+  }
+
   // planRoom(m, runPlan?) rolls the whole schedule (no events, no spawns);
   // beginRoom() then starts it. The run system rolls its room layout BETWEEN
   // the two (PLAN §3.6 (a): "after the wave schedule") and emits
   // layout_enter / room_enter before the room begins.
   function planRoom(m, runPlan = null) {
-    if (m !== 'kill_all' && m !== 'defend') return null;
+    if (m !== 'kill_all' && m !== 'defend' && !(isObjectiveMode(m) && runPlan)) return null;
     enemies.reset();
     if (waystoneId !== null && registry.byId(waystoneId)) registry.despawn(waystoneId);
     mode = null;
@@ -182,6 +212,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     softFailed = false;
     waystoneId = null;
     plan = null;
+    obj = null;
     schedule = [];
     if (!runPlan) {
       // One fixed roll sequence (see header) — the whole room frame up front.
@@ -220,6 +251,24 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
         // EVENT ROOMS: the trapped chest's ambush fixes its wave count (no draw).
         const n = Number.isInteger(runPlan.waves) ? runPlan.waves : WAVE_RULES.killAll.minWaves + rng.int(WAVE_RULES.killAll.extraWaves) + (runPlan.room >= 4 ? 1 : 0);
         for (let w = 0; w < n; w++) schedule.push(rollBudgetWave(d.budget, plan));
+      } else if (m === 'hunt') {
+        // The kill_all wave count on a lighter budget; the quarry leads wave 1.
+        const H = OBJECTIVE_RULES.hunt;
+        const n = WAVE_RULES.killAll.minWaves + rng.int(WAVE_RULES.killAll.extraWaves) + (runPlan.room >= 4 ? 1 : 0);
+        for (let w = 0; w < n; w++) schedule.push(rollBudgetWave(r2(d.budget * H.budgetMul), plan));
+        const etype = knownType(quarryFor(runPlan.act)) ? quarryFor(runPlan.act) : 'boar';
+        const [qx, qz] = SPAWN_POINTS[rng.int(SPAWN_POINTS.length)];
+        schedule[0].units.unshift({ etype, x: qx, z: qz, cost: 0, elite: true, quarry: true });
+        schedule[0].size = schedule[0].units.length;
+        obj = { kind: 'hunt', etype, quarryId: null, escapeTick: null, escaped: false, won: false };
+      } else if (m === 'purge') {
+        // One opening wave; then the nests feed the room from their own lists.
+        const P = OBJECTIVE_RULES.purge;
+        schedule.push(rollBudgetWave(r2(d.budget * P.openingBudgetMul), plan));
+        const start = rng.int(SPAWN_POINTS.length);
+        const lists = [];
+        for (let k = 0; k < P.nests; k++) lists.push(rollNestList(P.spawnsPerNest, plan));
+        obj = { kind: 'purge', start, lists, nests: [], endTick: null, rooted: false, won: false, ring: null };
       } else {
         for (let w = 0; w < WAVE_RULES.defend.waveAtTicks.length; w++)
           schedule.push(rollBudgetWave(d.defendBudget, plan));
@@ -255,6 +304,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       waystoneId = ws.id;
       events.emit(tick, 'waystone_spawn', { id: ws.id, x: WAYSTONE.x, z: WAYSTONE.z, hp });
     }
+    if (obj && obj.kind === 'purge') beginPurge(tick);
     events.emit(tick, 'room_start', { mode: m, waves: schedule.map((w) => w.size) });
     beginWave(0);
     return { mode: m, waves: schedule.map((w) => w.size) };
@@ -266,6 +316,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
   // draws, and the relocated schedule is what serialize() already saves.
   function relocateSpawns(ring) {
     if (!Array.isArray(ring) || ring.length !== SPAWN_POINTS.length) return;
+    if (obj && obj.kind === 'purge') obj.ring = ring.map((p) => [p[0], p[1]]);
     for (const w of schedule) {
       for (const u of w.units) {
         let k = 0;
@@ -302,7 +353,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     for (const w of schedule) {
       const before = swapped;
       for (const u of w.units) {
-        if (favour.includes(u.etype)) continue;
+        if (u.quarry || favour.includes(u.etype)) continue;
         if ((THREAT[u.etype] ?? 1) > (mix.maxThreat ?? 2)) continue;
         seen += 1;
         if ((seen - 1) % every !== 0) continue;
@@ -332,11 +383,21 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       pending.push({ ...u, spawnTick, wave: i });
       const ev = { etype: u.etype, x: u.x, z: u.z, spawnTick, wave: i };
       if (u.elite) ev.elite = true;
+      if (u.quarry) ev.quarry = true;
       events.emit(tick, 'spawn_telegraph', ev);
     }
   }
 
   function spawnUnit(p) {
+    if (p.quarry) return spawnQuarry(p);
+    if (p.nest !== undefined) {
+      const e = enemies.spawnScaled(p.etype, p.x, p.z, { hpMul: plan.hpMul, dmgMul: plan.dmgMul, elite: !!p.elite, wave: p.wave });
+      if (e) {
+        e.nestOf = p.nest;
+        events.emit(getTick(), 'nest_brood', { nest: p.nest, id: e.id, etype: p.etype });
+      }
+      return e;
+    }
     if (plan && typeof enemies.spawnScaled === 'function') {
       return enemies.spawnScaled(p.etype, p.x, p.z, { hpMul: plan.hpMul, dmgMul: plan.dmgMul, elite: !!p.elite, wave: p.wave });
     }
@@ -348,6 +409,105 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       e.dmgMul = plan.dmgMul;
     }
     return e;
+  }
+
+  // ------------------------------------------------- ROOM OBJECTIVES --
+  // The quarry: an elite of the act's own roster with the hunt's HP, its
+  // archetype's attacks off (sim/enemies.js runs quarryFlee instead).
+  function spawnQuarry(p) {
+    const H = OBJECTIVE_RULES.hunt;
+    const S = enemyStats(p.etype);
+    const want = H.hp * (plan ? plan.hpMul : 1);
+    const hpMul = S && S.hp > 0 ? want / (S.hp * ELITE.hpMul) : 1;
+    const e = enemies.spawnScaled(p.etype, p.x, p.z, { hpMul, dmgMul: plan ? plan.dmgMul : 1, elite: true, wave: p.wave });
+    if (!e) return null;
+    const tick = getTick();
+    e.quarry = quarryState(tick);
+    e.telegraph = null;
+    if (e.guard) e.guard.active = false; // a fleeing Ram drops its horn guard
+    obj.quarryId = e.id;
+    obj.escapeTick = e.quarry.escapeTick;
+    events.emit(tick, 'quarry_spawn', { id: e.id, etype: p.etype, x: r2(e.x), z: r2(e.z), hp: r2(e.hp), escapeTick: e.quarry.escapeTick });
+    return e;
+  }
+
+  // The nests stand at three points of the room's spawn ring.
+  function beginPurge(tick) {
+    const P = OBJECTIVE_RULES.purge;
+    const ring = obj.ring ?? SPAWN_POINTS.map((q) => [q[0], q[1]]);
+    // The drawn point first, then each next the ring point farthest from
+    // the ones already taken (ties: ring order), so the nests spread out.
+    const idx = [obj.start % ring.length];
+    while (idx.length < P.nests) {
+      let best = -1;
+      let bestD = -1;
+      ring.forEach(([x, z], i) => {
+        if (idx.includes(i)) return;
+        const d = Math.min(...idx.map((j) => Math.hypot(x - ring[j][0], z - ring[j][1])));
+        if (d > bestD + 1e-9) {
+          bestD = d;
+          best = i;
+        }
+      });
+      idx.push(best);
+    }
+    const spots = nestSpots(idx.map((i) => ring[i]));
+    const hp = r2(P.hp * (plan ? plan.hpMul : 1));
+    obj.nests = [];
+    obj.endTick = tick + P.timerTicks;
+    spots.forEach((sp, k) => {
+      const e = registry.spawn({
+        kind: 'nest',
+        faction: 'hostile',
+        hittable: true,
+        knockbackable: false,
+        hp,
+        maxHp: hp,
+        radius: P.radius,
+        x: sp.x,
+        z: sp.z,
+        px: sp.x,
+        pz: sp.z,
+        iframeUntilTick: 0,
+        nest: { index: k, nextSpawnTick: tick + P.firstSpawnTicks + k * P.staggerTicks, spawned: 0 },
+      });
+      obj.nests.push(e.id);
+      events.emit(tick, 'nest_spawn', { id: e.id, index: k, x: sp.x, z: sp.z, hp });
+    });
+    events.emit(tick, 'purge_start', { nests: obj.nests.length, endTick: obj.endTick });
+  }
+
+  const liveNests = () => (obj && obj.kind === 'purge' ? obj.nests.map((id) => registry.byId(id)).filter((e) => e && e.hp > 0) : []);
+
+  // A nest's turn: one telegraphed spawn from its list when it has room.
+  function stepNests(tick) {
+    const P = OBJECTIVE_RULES.purge;
+    for (const nest of liveNests()) {
+      const st = nest.nest;
+      if (tick < st.nextSpawnTick) continue;
+      let kids = 0;
+      for (const e of registry.all()) if (e.nestOf === nest.id && e.state === 'active' && e.hp > 0) kids += 1;
+      for (const p of pending) if (p.nest === nest.id) kids += 1;
+      if (kids >= P.childCap) {
+        st.nextSpawnTick = tick + 30;
+        continue;
+      }
+      const list = obj.lists[st.index % obj.lists.length];
+      const u = list[st.spawned % list.length];
+      const a = st.spawned * 2.39996 + st.index;
+      const x = r2(nest.x + Math.cos(a) * (nest.radius + 0.55));
+      const z = r2(nest.z + Math.sin(a) * (nest.radius + 0.55));
+      const spawnTick = tick + WAVE_RULES.spawnTelegraphTicks;
+      const unit = { etype: u.etype, x, z, spawnTick, wave: Math.max(0, waveIndex), nest: nest.id };
+      if (u.elite) unit.elite = true;
+      pending.push(unit);
+      st.spawned += 1;
+      st.nextSpawnTick = tick + (nest.hp < nest.maxHp * 0.5 ? P.woundedCadenceTicks : P.cadenceTicks);
+      const ev = { etype: u.etype, x, z, spawnTick, wave: unit.wave, nest: nest.id };
+      if (u.elite) ev.elite = true;
+      events.emit(tick, 'spawn_telegraph', ev);
+      events.emit(tick, 'nest_pulse', { id: nest.id, etype: u.etype, x: r2(nest.x), z: r2(nest.z) });
+    }
   }
 
   // End-of-tick director work (§4 ④ slot; §11 clear predicates are evaluated
@@ -398,15 +558,41 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       events.emit(tick, 'room_soft_fail', { mode });
     }
 
+    // ROOM OBJECTIVES: the quarry's escape, the nests' spawns and the purge
+    // timer.
+    if (mode === 'hunt' && obj && obj.quarryId !== null && !obj.escaped && !obj.won) {
+      const q = registry.byId(obj.quarryId);
+      if (!q) obj.won = true; // killed (an escape keeps the body until it is out)
+      else if (q.state === 'active' && tick >= q.quarry.escapeTick) {
+        obj.escaped = true;
+        enemies.startRetreat(q);
+        events.emit(tick, 'quarry_escape', { id: q.id, x: r2(q.x), z: r2(q.z) });
+        softFailed = true;
+        events.emit(tick, 'room_soft_fail', { mode });
+      }
+    }
+    let nestsAlive = 0;
+    if (mode === 'purge' && obj) {
+      stepNests(tick);
+      nestsAlive = liveNests().length;
+      if (nestsAlive === 0 && !obj.won && !obj.rooted) obj.won = true;
+      if (nestsAlive > 0 && !softFailed && tick >= obj.endTick) {
+        obj.rooted = true;
+        softFailed = true;
+        events.emit(tick, 'purge_rooted', { nests: nestsAlive });
+        events.emit(tick, 'room_soft_fail', { mode });
+      }
+    }
+
     // Wave progression.
     const lastWave = waveIndex >= schedule.length - 1;
-    if (mode === 'kill_all') {
+    if (mode === 'kill_all' || mode === 'hunt') {
       if (!lastWave && pending.length === 0 && fullySpawnedTick >= 0) {
         const timer =
           fullySpawnedTick + WAVE_RULES.killAll.graceTicks + (plan ? plan.intervalTicks : WAVE_RULES.killAll.intervalTicks);
         if (alive === 0 || tick >= timer) beginWave(waveIndex + 1); // §11 whichever first
       }
-    } else {
+    } else if (mode === 'defend') {
       // Defend waves ride absolute room time and run to completion regardless
       // of objective state (§11).
       const at = WAVE_RULES.defend.waveAtTicks;
@@ -415,7 +601,14 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
 
     // Clear predicates (end of tick).
     const scheduleExhausted = waveIndex === schedule.length - 1 && pending.length === 0;
-    if (mode === 'kill_all' || softFailed) {
+    if (mode === 'purge') {
+      // Won: the last nest fell (the rest retreat). Rooted: every nest and
+      // every body must still go.
+      if (!softFailed && nestsAlive === 0) doClear();
+      else if (softFailed && nestsAlive === 0 && scheduleExhausted && alive === 0 && shots === 0 && partyUp) doClear();
+    } else if (mode === 'hunt' && !softFailed) {
+      if (obj && obj.won) doClear();
+    } else if (mode === 'kill_all' || softFailed) {
       if (scheduleExhausted && alive === 0 && shots === 0 && partyUp) doClear();
     } else if (mode === 'defend') {
       const waystoneAlive = waystoneId !== null && !!registry.byId(waystoneId);
@@ -429,7 +622,9 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     pending = [];
     enemies.despawnShots(); // §13: no instance may land after the clear tick
     enemies.retreatAllSurvivors(); // §11: survivors retreat + despawn
-    events.emit(tick, 'room_cleared', { mode, softFailed });
+    // ROOM OBJECTIVES: what the room was won by (keys only in hunt / purge).
+    const extra = obj && !softFailed ? { objective: obj.kind, won: true } : obj ? { objective: obj.kind } : {};
+    events.emit(tick, 'room_cleared', { mode, softFailed, ...extra });
   }
 
   // Run end (§2 "all run state is wiped at run end"; §18 "Corruption never
@@ -442,6 +637,8 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     if (mode === null && pending.length === 0) return false;
     const tick = getTick();
     if (waystoneId !== null && registry.byId(waystoneId)) registry.despawn(waystoneId);
+    if (obj && obj.kind === 'purge') for (const id of obj.nests) if (registry.byId(id)) registry.despawn(id);
+    obj = null;
     const dropped = pending.length;
     mode = null;
     planned = null;
@@ -489,6 +686,38 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
           ? Math.max(0, startTick + WAVE_RULES.defend.timerTicks - tick)
           : null,
       waystone: ws ? { id: ws.id, hp: ws.hp, maxHp: ws.maxHp } : null,
+      ...(obj ? objectiveState(tick) : {}),
+    };
+  }
+
+  // ROOM OBJECTIVES: the HUD / probe view of a hunt or a purge.
+  function objectiveState(tick) {
+    if (obj.kind === 'hunt') {
+      const q = obj.quarryId !== null ? registry.byId(obj.quarryId) : null;
+      return {
+        quarry: {
+          id: obj.quarryId,
+          etype: obj.etype,
+          hp: q && !obj.escaped ? Math.max(0, q.hp) : 0,
+          maxHp: q ? q.maxHp : 0,
+          spawned: obj.quarryId !== null,
+          winded: !!(q && q.quarry && q.quarry.winded),
+          escaped: obj.escaped,
+          killed: obj.won,
+        },
+        huntTicksLeft: obj.escapeTick !== null && !obj.escaped && !obj.won && !cleared ? Math.max(0, obj.escapeTick - tick) : null,
+      };
+    }
+    const nests = obj.nests.map((id) => {
+      const e = registry.byId(id);
+      return { id, hp: e ? Math.max(0, e.hp) : 0, maxHp: e ? e.maxHp : 0, alive: !!(e && e.hp > 0) };
+    });
+    return {
+      nests,
+      nestsAlive: nests.filter((n) => n.alive).length,
+      nestsTotal: OBJECTIVE_RULES.purge.nests,
+      purgeTicksLeft: obj.endTick !== null && !softFailed && !cleared ? Math.max(0, obj.endTick - tick) : null,
+      rooted: obj.rooted,
     };
   }
 
@@ -521,6 +750,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       })),
       waveIndex,
       pendingSpawns: pending.length,
+      ...(obj ? { objective: obj.kind, ...(obj.kind === 'hunt' ? { quarry: obj.etype } : { nestLists: obj.lists.map((l) => l.map((u) => u.etype)) }) } : {}),
     };
   }
 
@@ -539,6 +769,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       waystoneId,
       cleared,
       softFailed,
+      ...(obj ? { obj: structuredClone(obj) } : {}),
     };
   }
   function restore(d) {
@@ -554,6 +785,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     waystoneId = d.waystoneId ?? null;
     cleared = !!d.cleared;
     softFailed = !!d.softFailed;
+    obj = d.obj ? structuredClone(d.obj) : null;
   }
 
   return {

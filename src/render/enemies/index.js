@@ -36,6 +36,8 @@ import { EMBER_EXACT, SHOT_CORE, HIDE } from './style.js';
 import { ARCH_BUILDERS, CROWN_Y, makeEliteMark } from './archetypes.js';
 import { createTelegraphShapes } from './shapes.js';
 import { createContentExtras } from './extras.js';
+// ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): the quarry's marks, the nests.
+import { createObjectiveFx } from './objectives.js';
 import { registerContentProbe } from '../../data/content.js';
 import { impactFx } from '../vfx/hub.js';
 import { releaseTree } from '../geocache.js';
@@ -73,6 +75,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   const shapeTele = new Map(); // enemy id -> { shape, last }
   const fadingShapes = []; // { shape, age }
   const extras = createContentExtras({ root, stage, world, bus, cosmetic, shapes });
+  const objfx = createObjectiveFx({ root, world, bus, cosmetic });
   function releaseShape(id) {
     const rec = shapeTele.get(id);
     if (!rec) return;
@@ -228,6 +231,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     const back = shapes.prewarm();
     setTimeout(back, 250);
     extras.prewarm();
+    objfx.prewarm(warmPark);
   }
 
   let lastElapsed = null;
@@ -377,6 +381,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     }
     // Globs, slicks, the mole wake, BLOCKED beats (render/enemies/extras.js).
     extras.update(tSec, dt, alpha, rigs, liveTelegraphs);
+    objfx.update(tSec, dt, alpha, rigs);
     for (const id of lastTelegraph.keys()) if (!seen.has(id)) lastTelegraph.delete(id);
 
     // Telegraph dissolves (see removeDecal).
@@ -540,6 +545,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       elites: [...rigs.values()].filter((r) => r.elite).length,
       shapes: shapes.stats(),
       ...extras.debugState(),
+      objectives: objfx.debugState(),
     };
   }
 

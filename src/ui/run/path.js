@@ -16,6 +16,8 @@ import { t } from '../../i18n/index.js';
 const WIN_LABEL = {
   kill_all: () => t('clear every enemy'),
   defend: () => t('hold the Waystone'),
+  hunt: () => t('hunt the quarry before it escapes'),
+  purge: () => t('destroy the three nests'),
   boss: () => t('the Hollow Stag'),
 };
 const REWARD_LABEL = { skill: () => t('a Skill draft'), node: () => t('a Node draft') };
