@@ -331,10 +331,19 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     let pool = RELIC_IDS.filter((id) => !owned.includes(id));
     // A major curse pays a GREATER pick: rare and legendary relics only
     // (any relic once those run out).
-    if (d.source === 'major') {
+    // EVENT ROOMS: the altar pays legendaries (rare when none are left), the
+    // spirit pays the greater pool like a major curse.
+    if (d.source === 'altar') {
+      const legend = pool.filter((id) => RELICS[id].rarity === 'legendary');
+      const greater = pool.filter((id) => RELICS[id].rarity !== 'common');
+      if (legend.length > 0) pool = legend;
+      else if (greater.length > 0) pool = greater;
+    }
+    if (d.source === 'major' || d.source === 'spirit') {
       const greater = pool.filter((id) => RELICS[id].rarity !== 'common');
       if (greater.length > 0) pool = greater;
     }
+    if (Array.isArray(d.not)) pool = pool.filter((id) => !d.not.includes(id));
     const choices = [];
     while (choices.length < RELIC_RULES.choices && pool.length > 0) choices.push(weightedTake(stream, pool));
     if (choices.length === 0) {
@@ -540,6 +549,36 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       // Probe / harness: give a relic now (no pick).
       if (!on || !RELICS[id] || owned.includes(id)) return null;
       gain(id, 'grant', player);
+      return id;
+    },
+    // EVENT ROOMS (docs/EVENT_ROOMS.md): a pick owed by an encounter (shown
+    // by the next presentDue), a relic given outright, the newest relic
+    // taken back, and a major curse taken in an event room.
+    owe(room, source, { not = null, curse = null } = {}) {
+      if (!on) return false;
+      due = { room, source, ...(Array.isArray(not) && not.length ? { not: [...not] } : {}), ...(curse && CURSES[curse] ? { curse } : {}) };
+      return true;
+    },
+    grantRandom(source, at = player) {
+      if (!on) return null;
+      const pool = RELIC_IDS.filter((id) => !owned.includes(id));
+      if (pool.length === 0) return null;
+      const id = weightedTake(stream, pool);
+      gain(id, source, at);
+      return id;
+    },
+    loseNewest(source) {
+      if (!on || owned.length === 0) return null;
+      const id = owned.pop();
+      events.emit(getTick(), 'relic_lose', { relic: id, rarity: RELICS[id].rarity, source, owned: owned.length, x: r2(player.x), z: r2(player.z) });
+      return id;
+    },
+    freeMajors: () => (on && majors.length < RELIC_RULES.majorMax ? MAJOR_CURSE_IDS.filter((id) => !majors.includes(id)) : []),
+    takeMajor(id, room) {
+      if (!on || !CURSES[id] || !CURSES[id].major || majors.includes(id)) return null;
+      majors.push(id);
+      cursesTaken += 1;
+      events.emit(getTick(), 'curse_taken', { curse: id, room, taken: cursesTaken, major: true, majors: majors.length, source: 'altar' });
       return id;
     },
     view,

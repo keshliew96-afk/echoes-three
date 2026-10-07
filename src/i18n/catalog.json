@@ -667,9 +667,19 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "{name}: +{n} Glint, and some for each ally.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "{name}: done.": {
   "files": [
    "src/ui/run/unlocks.js"
+  ]
+ },
+ "{name}: the party is whole again.": {
+  "files": [
+   "src/ui/run/index.js"
   ]
  },
  "{name}. Danger {level}.": {
@@ -1089,6 +1099,16 @@
   ],
   "data": true
  },
+ "<b>? Left door: an event.</b> No fight: a trade of HP, Glint, a curse or a relic for a reward. It takes the place of this room and its draft.": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "<b>? Right door: an event.</b> No fight: a trade of HP, Glint, a curse or a relic for a reward. It takes the place of this room and its draft.": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
  "<b>{filled}</b> / {sockets} nodes": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -1107,6 +1127,11 @@
  "<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> commit · <b>X</b> decline · <b>Esc</b> pause": {
   "files": [
    "src/ui/run/draft.js"
+  ]
+ },
+ "<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> confirm": {
+  "files": [
+   "src/ui/run/encounter.js"
   ]
  },
  "<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> take it": {
@@ -1292,9 +1317,20 @@
   ],
   "data": true
  },
+ "30 Glint for the party purse and 15 for each ally.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "4 skills · 8 sockets each · grey cells socket freely but contribute nothing": {
   "files": [
    "src/ui/socket/index.js"
+  ]
+ },
+ "A \"?\" door leads to a room with no fight. Something waits inside that trades HP, Glint, a curse or a relic for a reward, and you may always walk away. It takes the place of the room and its draft.": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "A 0.6 s guard: the next hit is blocked and answered with a 30 counter-arc.": {
@@ -1473,6 +1509,12 @@
    "src/ui/run/path.js"
   ]
  },
+ "A pale shape that trades in old things.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "a passive field — nothing here for this technique to act on": {
   "files": [
    "src/ui/socket/index.js"
@@ -1576,6 +1618,12 @@
   ],
   "data": true
  },
+ "A stone bowl, dark and warm. It drinks what it is given.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "A storm of blades: 14 to up to 5 enemies around the fox.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1590,6 +1638,12 @@
  "A tolling burst around you: 20 to up to 5 enemies, and a 0.5 s stun (not the Stag).": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A traveller with a lantern and a story, short of coin.": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -1836,15 +1890,32 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "Ambush! Win the fight to open the chest.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "An empty slot. Saving here keeps your current camp or run exactly as it is now.": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "AN ENCOUNTER": {
+  "files": [
+   "src/ui/hud/index.js",
+   "src/ui/run/encounter.js"
   ]
  },
  "An heirloom you have not found yet.": {
   "files": [
    "src/ui/run/unlocks.js"
   ]
+ },
+ "An iron-bound chest, too easy to reach.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "Anchor": {
   "files": [
@@ -2436,6 +2507,12 @@
    "src/render/enemies/extras.js"
   ]
  },
+ "Blood Shrine": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "bolts pierce one more.": {
   "files": [
    "src/ui/run/cards.js"
@@ -2451,6 +2528,11 @@
  "BOUND": {
   "files": [
    "src/ui/run/relicstrip.js"
+  ]
+ },
+ "Bound for the run: {name}. {text}": {
+  "files": [
+   "src/ui/run/index.js"
   ]
  },
  "Bound for the run: {name}. {text} Clear this room for a greater relic.": {
@@ -2747,6 +2829,24 @@
    "src/ui/run/expedition.js"
   ]
  },
+ "Choose one of three legendary relics (rare when none are left).": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "Choose one of three rare or legendary relics.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "Choose one of three relics.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Choose what it leaves behind.": {
   "files": [
    "src/ui/run/relic.js"
@@ -2856,6 +2956,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Clear water wells up between the stones.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Cleared ×{n}": {
   "files": [
    "src/ui/run/levels.js"
@@ -2927,6 +3033,12 @@
   "files": [
    "src/ui/menu/cloud.js"
   ]
+ },
+ "Coins glint far down in the black water.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "Combat and world sounds, placed left / right and by distance from the camera.": {
   "files": [
@@ -3048,6 +3160,17 @@
    "src/ui/menu/cloud.js"
   ]
  },
+ "Corrupted Altar": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "COST": {
+  "files": [
+   "src/ui/run/encounter.js"
+  ]
+ },
  "Couldn't buy {name}.": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -3163,6 +3286,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Crates under a rotten tarp. Nobody has come back for them.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "Crescent Finisher": {
   "files": [
@@ -3887,9 +4016,20 @@
    "src/ui/run/effects.js"
   ]
  },
+ "Every hero gives a quarter of their max HP (never below 1).": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Every key is back to its default.": {
   "files": [
    "src/ui/menu/tabs/controls.js"
+  ]
+ },
+ "Every major curse is already on you.": {
+  "files": [
+   "src/ui/run/encounter.js"
   ]
  },
  "Every player must be ready first.": {
@@ -4183,6 +4323,12 @@
    "src/ui/menu/tabs/network.js"
   ]
  },
+ "Forgotten Cache": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Fox": {
   "files": [
    "src/net/seats.js"
@@ -4204,6 +4350,12 @@
   "files": [
    "src/ui/menu/tabs/display.js"
   ]
+ },
+ "Free.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "French": {
   "files": [
@@ -4339,6 +4491,18 @@
   ],
   "data": true
  },
+ "Give the pilgrim 20 Glint.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "Give up your newest relic.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Glass Heart": {
   "files": [
    "src/data/unlocks.js",
@@ -4425,6 +4589,12 @@
   "files": [
    "src/ui/run/effects.js"
   ]
+ },
+ "Half the time a relic, otherwise 35 Glint back.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "Half-strength camera shake": {
   "files": [
@@ -4535,6 +4705,12 @@
  "Healing on the party is 60% weaker in this room.": {
   "files": [
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Healing Spring": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -4798,6 +4974,12 @@
   "files": [
    "src/ui/menu/tabs/network.js"
   ]
+ },
+ "Inspect": {
+  "files": [
+   "src/sim/interactables.js"
+  ],
+  "data": true
  },
  "Interact · Begin a run at the portal": {
   "files": [
@@ -5091,7 +5273,8 @@
   "files": [
    "src/ui/menu/lobby.js",
    "src/ui/menu/pause.js",
-   "src/ui/run/draft.js"
+   "src/ui/run/draft.js",
+   "src/ui/run/encounter.js"
   ]
  },
  "Leave it on Automatic: the game connects to the Echoes server of the site you opened it from (wss:// on an https site) — players just open the host’s link. Enter ws://host:port/echoes only to use a different server, e.g. ws://192.168.1.20:7800/echoes for `npm run net -- --host 0.0.0.0` on another computer. An empty address is Automatic.": {
@@ -5385,6 +5568,12 @@
   "files": [
    "src/ui/menu/cloud.js"
   ]
+ },
+ "Lost Pilgrim": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "LS": {
   "files": [
@@ -5895,6 +6084,11 @@
    "src/net/session.js"
   ]
  },
+ "Not enough Glint: it costs {price} and you carry {wallet}.": {
+  "files": [
+   "src/ui/run/encounter.js"
+  ]
+ },
  "Not in an online game": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -6138,6 +6332,12 @@
  "Open Grave": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Opening it springs an ambush of elites.": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -7124,6 +7324,11 @@
    "src/ui/menu/keepdisplay.js"
   ]
  },
+ "REWARD": {
+  "files": [
+   "src/ui/run/encounter.js"
+  ]
+ },
  "Right mouse": {
   "files": [
    "src/app/controls.js"
@@ -7600,6 +7805,12 @@
    "src/app/app.js",
    "src/ui/menu/settings.js"
   ]
+ },
+ "Settled": {
+  "files": [
+   "src/sim/interactables.js"
+  ],
+  "data": true
  },
  "Share": {
   "files": [
@@ -8180,13 +8391,20 @@
  },
  "Take": {
   "files": [
-   "src/ui/run/draft.js"
+   "src/ui/run/draft.js",
+   "src/ui/run/encounter.js"
   ]
  },
  "Take · Replace": {
   "files": [
    "src/ui/run/draft.js"
   ]
+ },
+ "Take a major curse for the rest of the run.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "Take off": {
   "files": [
@@ -8397,6 +8615,11 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "The \"?\" door": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "The {cls} (for the {ally}) is choosing…": {
   "files": [
    "src/ui/run/index.js"
@@ -8415,6 +8638,11 @@
  "The {cls} (for the {ally}) is shopping… — {secs} s": {
   "files": [
    "src/ui/run/index.js"
+  ]
+ },
+ "The {cls} decides the encounter — your pick was shown to the party": {
+  "files": [
+   "src/net/session.js"
   ]
  },
  "The {cls} is choosing the reward…": {
@@ -8904,7 +9132,7 @@
    "src/ui/menu/title.js"
   ]
  },
- "The one-time tips for class select, relics, cursed doors, the peddler and slick floors show again the next time you meet each.": {
+ "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler and slick floors show again the next time you meet each.": {
   "files": [
    "src/ui/tutorial/index.js"
   ]
@@ -9082,6 +9310,11 @@
    "src/ui/run/index.js"
   ]
  },
+ "The spirit takes {name}.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "the starting kit": {
   "files": [
    "src/ui/run/transit.js"
@@ -9147,9 +9380,25 @@
    "src/ui/run/path.js"
   ]
  },
+ "The well gives a relic: {name}. {text}": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The well gives back {n} Glint.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "the whole cast repeats 1.0 s later — 50% power on damage, 100% on a heal.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "The whole party heals to full.": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -9157,6 +9406,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "They teach the party: a Skill draft for every hero.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "Thick Hide": {
   "files": [
@@ -9409,6 +9664,12 @@
    "src/ui/menu/cloud.js"
   ]
  },
+ "Toss 15 Glint into the well.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "TR": {
   "files": [
    "src/sim/skills.js"
@@ -9418,6 +9679,12 @@
  "Traditional Chinese": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Trapped Chest": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -9567,6 +9834,12 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Violet light pulses in the stone. It offers power for a price.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "VO": {
   "files": [
    "src/sim/allies.js"
@@ -9659,6 +9932,17 @@
  "Walk through 3 cursed doors in one run.": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Walk up to it and press {key}": {
+  "files": [
+   "src/ui/run/encounter.js"
+  ]
+ },
+ "Wandering Spirit": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -9765,6 +10049,12 @@
    "src/ui/run/levels.js"
   ]
  },
+ "Win the fight for 25 Glint and a choice of three relics.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Windowed": {
   "files": [
    "src/ui/menu/tabs/display.js"
@@ -9774,6 +10064,12 @@
   "files": [
    "src/ui/menu/tabs/display.js"
   ]
+ },
+ "Wishing Well": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "With Master: {db}": {
   "files": [
@@ -9897,6 +10193,11 @@
   ],
   "plural": true,
   "one": "You carry {n} relic: {names}."
+ },
+ "You carry no relic to give.": {
+  "files": [
+   "src/ui/run/encounter.js"
+  ]
  },
  "You decide every ally card, shelf and bench yourself": {
   "files": [

@@ -43,7 +43,7 @@ import { cap, padCap, moveCaps, skillsCap, usingPad, onHintsChange } from '../..
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
-export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'hunt', 'purge']);
+export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge']);
 
 const MOVE_DIST = 2.5; // world units walked to pass the move step
 const ATTACK_MS = 450; // right button held this long (in total) passes the attack step
@@ -123,6 +123,11 @@ function tipText(id) {
       };
     case 'peddler':
       return { title: t('The peddler'), body: t('Spend the Glint you earned clearing rooms on nodes for your skills and relics for the party. Advance when you are done.') };
+    case 'event':
+      return {
+        title: t('The "?" door'),
+        body: t('A "?" door leads to a room with no fight. Something waits inside that trades HP, Glint, a curse or a relic for a reward, and you may always walk away. It takes the place of the room and its draft.'),
+      };
     case 'slick':
       return {
         title: t('Slick floor'),
@@ -509,13 +514,17 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     const v = view();
     if (!v || !v.active || v.tutorial) return null;
     if (v.phase === 'relic') return 'relic';
-    if (v.phase === 'path' && v.path && Array.isArray(v.path.options)) {
-      // A cursed door and an objective room can meet on one screen: the
-      // first tip not yet seen speaks.
-      const want = [];
-      if (v.path.options.some((o) => o.curse)) want.push('curse');
-      for (const m of ['hunt', 'purge']) if (v.path.options.some((o) => o.win === m)) want.push(m);
-      if (want.length) return want.find((id) => !tipsSeen().includes(id)) ?? want[0];
+    const doors = v.phase === 'path' && v.path && Array.isArray(v.path.options) ? v.path.options : [];
+    // A cursed door, a "?" door and an objective room can meet on one
+    // screen: the tip on screen stays, else the first not yet seen speaks
+    // (curse, then "?", then hunt / purge).
+    const want = [];
+    if (doors.some((o) => o.curse)) want.push('curse');
+    if (doors.some((o) => o.event)) want.push('event');
+    for (const m of ['hunt', 'purge']) if (doors.some((o) => o.win === m)) want.push(m);
+    if (want.length) {
+      if (shown && want.includes(shown.id)) return shown.id;
+      return want.find((id) => !tipsSeen().includes(id)) ?? want[0];
     }
     if (v.phase === 'shop') return 'peddler';
     return null;
@@ -641,7 +650,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
       const tips = widgets.button({
         id: 'ap-gameplay-tips',
         label: t('Show tips again'),
-        help: t('The one-time tips for class select, relics, cursed doors, the peddler and slick floors show again the next time you meet each.'),
+        help: t('The one-time tips for class select, relics, cursed doors, "?" doors, the peddler and slick floors show again the next time you meet each.'),
         onPress: () => {
           settings.set(TUTORIAL_TIPS_KEY, '', { source: 'ui' });
           if (typeof app.toast === 'function') app.toast(t('Tips will show again'), { tone: 'good' });

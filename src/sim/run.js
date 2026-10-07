@@ -86,6 +86,9 @@ import { createAutopilot } from './autopilot.js';
 import { createRelicSystem, cursedDiff } from './relics.js';
 // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt and purge rooms.
 import { assignObjectives, isObjectiveMode, OBJECTIVE_RULES } from './objectives.js';
+// EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
+import { createEncounterSystem, ENCOUNTERS, EVENT_RULES } from './encounters.js';
+import { encounterSpec } from './interactables.js';
 // CROSS-RUN UNLOCKS (docs/UNLOCKS.md): the boons a campaign is started with.
 import { sanitizeBoons } from '../data/unlocks.js';
 import { swapSuggestion, CLASS_OF_SEAT, PARTY_DEADLINES } from '../data/classes.js';
@@ -131,7 +134,7 @@ export const RUN = Object.freeze({
 });
 
 // §16 path doors carry ONLY these two glyph channels.
-export const WIN_GLYPH = Object.freeze({ kill_all: '⚔', defend: '⛨', boss: '☠', hunt: '➶', purge: '✹' });
+export const WIN_GLYPH = Object.freeze({ kill_all: '⚔', defend: '⛨', boss: '☠', event: '?', hunt: '➶', purge: '✹' });
 export const REWARD_GLYPH = Object.freeze({ skill: '✦', node: '◈' });
 
 export function createRunSystem({
@@ -177,6 +180,10 @@ export function createRunSystem({
   if (typeof buildSys.attachSkills === 'function') buildSys.attachSkills(skillSys);
   const statusTracker = createStatusTracker({ registry, events, getTick });
   const relics = createRelicSystem({ registry, events, getTick, combat, skillSys, player, live: () => active });
+  // EVENT ROOMS: on with the relics (campaigns only, never the tutorial).
+  const encounters = createEncounterSystem({ events, getTick });
+  const encCtx = () => ({ wallet, relics: relics.owned().length, freeMajors: relics.freeMajors().length });
+  events.on('event_touch', () => openEncounter());
   const autopilot = createAutopilot({
     registry,
     player,
@@ -388,6 +395,7 @@ export function createRunSystem({
     if (pages) pages.reset();
     // RELICS: on for campaigns, off for the legacy single-level run (goldens).
     relics.reset(frame.seed, mode === 'campaign' && relicsDefault && !tutorial);
+    encounters.reset(frame.seed, mode === 'campaign' && relicsDefault && !tutorial);
     // Payload unchanged since v0.5.x (the goldens hash every event).
     events.emit(getTick(), 'run_start', {
       seed: frame.seed,
@@ -501,7 +509,9 @@ export function createRunSystem({
     const level = levelFor(act);
     if (mode === 'boss') return level.bossLayout;
     const table = campaign && campaign.mode !== 'campaign' && level.legacyLayouts ? level.legacyLayouts : level.layouts;
-    if (mode === 'shop') return lastCombatLayout ?? table[0];
+    // EVENT ROOMS: a "?" room stands in the last combat room's clearing, as
+    // the shop does (no draw).
+    if (mode === 'shop' || mode === 'event') return lastCombatLayout ?? table[0];
     const pool = table.filter((id) => id !== lastCombatLayout);
     const pick = pool.length > 0 ? pool[rng.int(pool.length)] : table[0];
     lastCombatLayout = pick;
@@ -603,6 +613,8 @@ export function createRunSystem({
     } else if (mode === 'shop') {
       phase = 'shop';
       openShop();
+    } else if (mode === 'event') {
+      enterEvent(n, tick);
     } else if (mode === 'boss') {
       phase = 'combat';
       enemies.reset();
@@ -631,6 +643,12 @@ export function createRunSystem({
   function onRoomCleared(ev) {
     if (!active || phase !== 'combat') return;
     const tick = getTick();
+    // EVENT ROOMS: the trapped chest's ambush is won — the chest pays.
+    const enc = encounters.live();
+    if (enc && enc.state === 'ambush' && enc.room === roomIndex) {
+      ambushCleared(tick);
+      return;
+    }
     // 2. every live combat entity ends — the player-side half (enemy shots and
     //    survivors are handled by the enemy block, ally zones/bolts by the ally
     //    block). No instance may land after the clear tick.
@@ -934,6 +952,9 @@ export function createRunSystem({
       options[dc.side].curse = dc.curse;
       if (dc.major) options[dc.side].major = true;
     }
+    // EVENT ROOMS: maybe a "?" door, never the cursed one (keys present only then).
+    const ed = encounters.rollDoor(nextRoom, dc ? dc.side : null, encCtx());
+    if (ed) options[ed.side] = { side: ed.side, win: 'event', reward: 'event', event: true, encounter: ed.id };
     path = {
       nextRoom,
       options,
@@ -945,7 +966,7 @@ export function createRunSystem({
     events.emit(getTick(), 'path_offer', {
       room: roomIndex,
       nextRoom,
-      options: options.map((o) => ({ side: o.side, win: o.win, reward: o.reward, ...(o.curse ? { curse: o.curse } : {}), ...(o.major ? { major: true } : {}) })),
+      options: options.map((o) => ({ side: o.side, win: o.win, reward: o.reward, ...(o.curse ? { curse: o.curse } : {}), ...(o.major ? { major: true } : {}), ...(o.event ? { event: true } : {}) })),
       freeSkillSlots: path.freeSkillSlots,
     });
   }
@@ -981,6 +1002,12 @@ export function createRunSystem({
     });
     const next = path.nextRoom;
     if (opt.curse) relics.takeCurse(opt.curse, next);
+    // EVENT ROOMS: the "?" door turns the next room into its event room.
+    if (opt.event) {
+      frame.modes[next - 1] = 'event';
+      frame.defendAt = frame.defendAt.filter((r) => r !== next);
+      encounters.arm(next, opt.encounter);
+    }
     path = null;
     // TUTORIAL: the door is the last lesson — back to camp.
     if (tutorialOn()) {
@@ -988,7 +1015,177 @@ export function createRunSystem({
       return { nextRoom: next, reward: opt.reward, win: opt.win, tutorial: 'done' };
     }
     beginFade(next);
-    return { nextRoom: next, reward: opt.reward, win: opt.win, ...(opt.curse ? { curse: opt.curse } : {}), ...(opt.major ? { major: true } : {}) };
+    return { nextRoom: next, reward: opt.reward, win: opt.win, ...(opt.curse ? { curse: opt.curse } : {}), ...(opt.major ? { major: true } : {}), ...(opt.event ? { event: true } : {}) };
+  }
+
+  // ------------------------------------------------------- event rooms --
+  // EVENT ROOMS (docs/EVENT_ROOMS.md). Phase 'event': the party walks in
+  // with the encounter standing ahead (E · Inspect). Phase 'encounter': its
+  // card (Take or Leave). Take pays the cost, then the reward: a relic page,
+  // a Skill draft, Glint, a heal, or (the trapped chest) a short fight first.
+  // Then the doors, as after any room.
+  function enterEvent(n, tick) {
+    phase = 'event';
+    const enc = encounters.enter(n);
+    relics.onRoomEnter(n, 'event');
+    if (!enc) {
+      afterRelic(); // defensive: a "?" room with nothing armed walks on
+      return;
+    }
+    const e = registry.spawn(encounterSpec(enc.id, EVENT_RULES.spot.x, EVENT_RULES.spot.z, EVENT_RULES.bodyRadius));
+    events.emit(tick, 'interactable_spawn', { id: e.id, itype: 'encounter', x: r2(e.x), z: r2(e.z) });
+  }
+
+  const encounterBody = () => registry.all().find((e) => e.itype === 'encounter');
+
+  function openEncounter() {
+    if (phase !== 'event' || !encounters.open(encCtx())) return null;
+    const body = encounterBody();
+    if (body && body.uses > 0) body.uses = 0;
+    phase = 'encounter';
+    return encounters.view(encCtx());
+  }
+
+  function focusEncounter(i) {
+    if (phase !== 'encounter') return null;
+    return encounters.focus(i);
+  }
+
+  function spend(amount, reason) {
+    wallet = Math.max(0, wallet - amount);
+    events.emit(getTick(), 'glint_spend', { amount, wallet, reason, room: roomIndex });
+  }
+
+  // choice: 'take' | 'leave' (default: the card's focus).
+  function chooseEncounter(choice) {
+    if (phase !== 'encounter') return null;
+    const enc = encounters.live();
+    if (!enc) return null;
+    const pick = choice === 'take' || choice === 'leave' ? choice : enc.focus === 1 ? 'leave' : 'take';
+    const tick = getTick();
+    const room = roomIndex;
+    if (pick === 'take') {
+      const why = encounters.refusal(encCtx());
+      if (why) {
+        events.emit(tick, 'event_denied', { room, encounter: enc.id, reason: why });
+        return { denied: why };
+      }
+    }
+    roomsDone = Math.max(roomsDone, room);
+    if (pick === 'leave') {
+      encounters.finish('done', { left: true });
+      events.emit(tick, 'event_leave', { room, encounter: enc.id });
+      afterRelic();
+      return { left: true, encounter: enc.id };
+    }
+    const E = ENCOUNTERS[enc.id];
+    const R = EVENT_RULES;
+    const result = { took: true };
+    const bodies = registry.all().filter((e) => e.partyIndex !== undefined && e.hp > 0);
+    switch (enc.id) {
+      case 'blood_shrine': {
+        let paid = 0;
+        for (const e of bodies) {
+          const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * R.hpCost));
+          e.hp = r2(e.hp - loss);
+          paid += loss;
+        }
+        result.hp = r2(paid);
+        relics.owe(room, 'shrine');
+        break;
+      }
+      case 'wishing_well': {
+        spend(E.price, 'event_well');
+        const relic = encounters.coin() ? relics.grantRandom('well', encounterBody() ?? player) : null;
+        if (relic) result.relic = relic;
+        else {
+          gainGlint(R.wellGlint, 'event_well');
+          result.glint = R.wellGlint;
+        }
+        break;
+      }
+      case 'trapped_chest':
+        startAmbush(tick);
+        events.emit(tick, 'event_take', { room, encounter: enc.id, ambush: true });
+        return { ambush: true, encounter: enc.id };
+      case 'lost_pilgrim':
+        spend(E.price, 'event_pilgrim');
+        result.draft = 'skill';
+        break;
+      case 'corrupted_altar': {
+        const id = encounters.pick(relics.freeMajors());
+        relics.takeMajor(id, room);
+        relics.owe(room, 'altar', { curse: id });
+        result.curse = id;
+        break;
+      }
+      case 'wandering_spirit': {
+        const lost = relics.loseNewest('spirit');
+        relics.owe(room, 'spirit', { not: lost ? [lost] : null });
+        result.lost = lost;
+        break;
+      }
+      case 'forgotten_cache':
+        gainGlint(R.cacheGlint, 'event_cache');
+        if (allyOn()) for (const seat of [1, 2, 3]) party.gainPurse(seat, R.cachePurse, 'event_cache');
+        result.glint = R.cacheGlint;
+        break;
+      case 'healing_spring': {
+        let healed = 0;
+        for (const e of bodies) {
+          if (e.hp >= e.maxHp) continue;
+          combat.applyHeal(e, e.maxHp - e.hp, { source: 'healing_spring' });
+          e.hp = e.maxHp; // full, whatever the curses and relics say
+          healed += 1;
+        }
+        result.healed = healed;
+        break;
+      }
+      default:
+        break;
+    }
+    encounters.finish('done', result);
+    events.emit(tick, 'event_take', { room, encounter: enc.id, ...result });
+    if (result.draft) {
+      rewardFor[room] = 'skill';
+      presentReward(null);
+      return { took: true, encounter: enc.id, ...result };
+    }
+    afterReward(null);
+    return { took: true, encounter: enc.id, ...result };
+  }
+
+  // The trapped chest: two short elite-heavy waves in the event room.
+  function startAmbush(tick) {
+    const depth = endlessDepth();
+    const level = depth ? endlessLevel(depth) : levelFor(act);
+    const n = roomIndex;
+    const base = depth > 3 ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
+    const A = EVENT_RULES.ambush;
+    let diff = { ...base, budget: r2(base.budget * A.budgetMul), eliteChance: r2(Math.min(0.9, (base.eliteChance ?? 0) + A.eliteAdd)) };
+    for (const m of relics.majorCurses()) diff = cursedDiff(diff, m);
+    const vows = runVows();
+    if (vows) for (const v of vows) diff = cursedDiff(diff, v);
+    encounters.finish('ambush');
+    waves.planRoom('kill_all', { act, room: n, challenge, level, diff, waves: A.waves });
+    const ring = layout ? LAYOUTS[layout.layoutId]?.spawns : null;
+    if (ring) waves.relocateSpawns(ring);
+    phase = 'combat';
+    waves.beginRoom();
+    events.emit(tick, 'event_ambush', { room: n, encounter: 'trapped_chest' });
+  }
+
+  function ambushCleared(tick) {
+    sweepPlayerTransients(tick, 'room_clear');
+    skillSys.clearOverride();
+    events.emit(tick, 'heal_override', { index: null });
+    roomsDone = Math.max(roomsDone, roomIndex);
+    const R = EVENT_RULES;
+    gainGlint(R.chestGlint, 'event_chest');
+    relics.owe(roomIndex, 'chest');
+    encounters.finish('done', { took: true, glint: R.chestGlint });
+    events.emit(tick, 'event_chest', { room: roomIndex, glint: R.chestGlint });
+    afterReward(null);
   }
 
   // §13/§16 transition fade (<= 300 ms) between the meta screens and the next
@@ -1055,6 +1252,7 @@ export function createRunSystem({
     // PARTY: the party page, the four shelves and every deadline are level-bound.
     if (pages) pages.reset();
     relics.levelReset(); // RELICS: the relics ride on; curse / pick do not
+    encounters.levelReset(); // EVENT ROOMS: two "?" doors a level
     if (party && CARRY_RULES.resetEntities) party.resetLevelState();
     reward = null;
     path = null;
@@ -1859,6 +2057,8 @@ export function createRunSystem({
       ...(pages && pages.screensAny() ? { socketScreens: pages.screens() } : {}),
       // RELICS: present only while a run with relics is live (hash-stable).
       ...(active && relics.enabled() ? { relics: relics.view() } : {}),
+      // EVENT ROOMS: present only while an encounter is live (hash-stable).
+      ...(active && encounters.view(encCtx()) ? { encounter: encounters.view(encCtx()) } : {}),
       // UNLOCKS: the run's boons (present only when the player picked some).
       ...(active && campaign && campaign.boons ? { boons: cloneData(campaign.boons) } : {}),
       summary,
@@ -2050,6 +2250,18 @@ export function createRunSystem({
       case 'relicDoor':
         // ('relicDoor', curseId[, side]) — the next path screen's cursed door.
         return relics.forceDoor(args[0], args[1] ?? 0);
+      // ------------------------------------------------- EVENT ROOMS --
+      case 'eventDoor':
+        // ('eventDoor', encounterId[, side]) — the next path screen's "?" door.
+        return encounters.force(args[0], args[1] ?? 0);
+      case 'eventOpen':
+        return openEncounter();
+      case 'eventFocus':
+        return focusEncounter(args[0] ?? 0);
+      case 'eventChoose':
+        return chooseEncounter(args[0]);
+      case 'eventState':
+        return encounters.view(encCtx());
       case 'pathFocus':
         return focusPath(args[0] ?? 0);
       case 'pathChoose':
@@ -2202,6 +2414,8 @@ export function createRunSystem({
       ...(pages && (pages.isOpen() || pages.shopOpen() || pages.doorDeadline() !== null || pages.screensAny()) ? { partyPages: pages.saveState() } : {}),
       // RELICS: present only when the run rolls relics.
       ...(active && relics.enabled() ? { relics: relics.saveState() } : {}),
+      // EVENT ROOMS: present only when the run rolls "?" doors.
+      ...(active && encounters.enabled() ? { encounters: encounters.saveState() } : {}),
       ...(bossPick ? { bossPick } : {}),
     };
   }
@@ -2256,6 +2470,7 @@ export function createRunSystem({
     autoReturnTick = Number.isFinite(d.autoReturnTick) ? d.autoReturnTick : null;
     if (pages) pages.loadState(d.partyPages ?? null);
     relics.loadState(d.relics ?? null);
+    encounters.loadState(d.encounters ?? null);
   }
 
   const api = {
@@ -2332,6 +2547,10 @@ export function createRunSystem({
     focusRelic,
     chooseRelic,
     buyRelic,
+    // EVENT ROOMS: the encounter card's entry points.
+    openEncounter,
+    focusEncounter,
+    chooseEncounter,
     relics: () => (relics.enabled() ? relics.view() : null),
     buy,
     advanceFromShop,

@@ -53,6 +53,7 @@ export function createPathScreen({ run }) {
     </div>
     <div class="rn-legend"></div>
     <div class="rl-cursenote" style="display:none"></div>
+    <div class="ev-note" style="display:none"></div>
     <div class="rn-hint">${t('<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> walk through')}</div>`;
 
   const wraps = [...el.querySelectorAll('.rn-doorwrap')];
@@ -61,6 +62,7 @@ export function createPathScreen({ run }) {
   const rewEls = wraps.map((w) => w.querySelector('.rn-grew'));
   const legendEl = el.querySelector('.rn-legend');
   const curseNote = el.querySelector('.rl-cursenote');
+  const eventNote = el.querySelector('.ev-note');
   const curseMarks = doors.map((d) => {
     const m = document.createElement('div');
     m.className = 'rl-gcurse';
@@ -92,6 +94,8 @@ export function createPathScreen({ run }) {
       doors[i].classList.toggle('rn-focus', p.focus === i);
       doors[i].classList.toggle('rl-cursed', !!o.curse);
       doors[i].classList.toggle('rl-major', !!o.major);
+      // EVENT ROOMS: the "?" door wears one big mark and no reward glyph.
+      doors[i].classList.toggle('ev-door', !!o.event);
       curseMarks[i].style.display = o.curse ? '' : 'none';
       // Slice 2: a MAJOR curse wears the chained mark.
       const mk = o.major ? 'major' : 'room';
@@ -103,7 +107,9 @@ export function createPathScreen({ run }) {
     }
     // Screen-level legend: decodes the two glyph families for BOTH doors at
     // once, so no door carries a third piece of information.
-    const win = p.options[0].win;
+    // EVENT ROOMS: the legend decodes the room behind the plain door.
+    const plain = p.options.find((o) => !o.event) ?? p.options[0];
+    const win = plain.win;
     legendEl.innerHTML = `
       <span><b>${WIN_GLYPH[win] ?? '⚔'}</b> ${esc(win === 'boss' ? t(bossNameOfRun(view)).replace(/^The /, 'the ') : WIN_LABEL[win] ? WIN_LABEL[win]() : win)}</span>
       <span><b>${REWARD_GLYPH.skill}</b> ${esc(REWARD_LABEL.skill())}</span>
@@ -126,6 +132,14 @@ export function createPathScreen({ run }) {
           ? t('<b>Cursed door (left): {name}.</b> {text} Clear the room for a relic.', { name: esc(t(c.name)), text: esc(t(c.text)) })
           : t('<b>Cursed door (right): {name}.</b> {text} Clear the room for a relic.', { name: esc(t(c.name)), text: esc(t(c.text)) })
       }</div>`;
+    // EVENT ROOMS: what the "?" door means (words, not the mark alone).
+    const ev = p.options.find((o) => o.event);
+    eventNote.style.display = ev ? '' : 'none';
+    if (ev)
+      eventNote.innerHTML =
+        ev.side === 0
+          ? t('<b>? Left door: an event.</b> No fight: a trade of HP, Glint, a curse or a relic for a reward. It takes the place of this room and its draft.')
+          : t('<b>? Right door: an event.</b> No fight: a trade of HP, Glint, a curse or a relic for a reward. It takes the place of this room and its draft.');
     shownFocus = p.focus;
   }
   // fix-M3-r5 (AUD5-F1): the focused door as drawn, the selection signature
