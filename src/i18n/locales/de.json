@@ -2001,5 +2001,7 @@
  "Elite powers": "Elitenkräfte",
  "Some elites carry named powers, shown on the plate above them. A red ring on the ground warns before a Molten or Frozen burst lands, and a Warded elite takes no damage while its ward glows.": "Manche Eliten tragen benannte Kräfte, die auf dem Schild über ihnen stehen. Ein roter Ring am Boden warnt, bevor ein Geschmolzen- oder Gefroren-Ausbruch einschlägt, und eine geschützte Elite nimmt keinen Schaden, solange ihr Bann leuchtet.",
  "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler, slick floors and elite powers show again the next time you meet each.": "Die einmaligen Tipps zu Klassenwahl, Relikten, verfluchten Türen, „?“-Türen, dem Krämer, rutschigem Boden und Elitenkräften erscheinen beim nächsten Mal wieder.",
- "Heals for part of the damage it deals.": "Heilt sich um einen Teil des Schadens, den es verursacht."
+ "Heals for part of the damage it deals.": "Heilt sich um einen Teil des Schadens, den es verursacht.",
+ "The {cls} is AI-controlled and does its own shopping.": "Der {cls} wird von der KI gesteuert und kauft selbst ein.",
+ "The {cls} shops on their own screen.": "Der {cls} kauft auf dem eigenen Bildschirm ein."
 }

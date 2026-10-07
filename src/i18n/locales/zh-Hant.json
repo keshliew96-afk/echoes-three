@@ -1935,5 +1935,7 @@
  "Elite powers": "精英能力",
  "Some elites carry named powers, shown on the plate above them. A red ring on the ground warns before a Molten or Frozen burst lands, and a Warded elite takes no damage while its ward glows.": "有些精英帶有具名能力，顯示在它們頭頂的銘牌上。熔岩或冰凍爆發落下前，地面會出現紅圈預警；結界精英在結界發光時不受傷害。",
  "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler, slick floors and elite powers show again the next time you meet each.": "職業選擇、遺物、詛咒之門、「?」門、行商、濕滑地面和精英能力的一次性提示，會在你下次遇到時再次顯示。",
- "Heals for part of the damage it deals.": "以造成傷害的一部分為自己治療。"
+ "Heals for part of the damage it deals.": "以造成傷害的一部分為自己治療。",
+ "The {cls} is AI-controlled and does its own shopping.": "{cls}由AI控制，會自己購物。",
+ "The {cls} shops on their own screen.": "{cls}在自己的螢幕上購物。"
 }
