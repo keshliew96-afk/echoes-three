@@ -429,7 +429,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     // corruption leaving as indigo motes, a stain that lingers.
     flare(x, 0.5, z, BONE, 1.0, { kind: 'burst', life: 0.22 });
     shock(x, z, 1.0, matter, { life: 0.35, width: 0.1, core: BONE });
-    spray('spark', x, 0.4, z, 6, { color: TELL_INDIGO_GLOW, speed: [0.05, 0.3], up: [0.9, 1.6], size: [0.05, 0.09], life: [0.8, 1.3], gravity: -0.4, drag: 1.4, jitter: 0.25, opacity: 0.85 });
+    spray('spark', x, 0.4, z, 6, { color: es.heart ? vfxMatterColor('heartvein') : TELL_INDIGO_GLOW, speed: [0.05, 0.3], up: [0.9, 1.6], size: [0.05, 0.09], life: [0.8, 1.3], gravity: -0.4, drag: 1.4, jitter: 0.25, opacity: 0.85 });
     const wet = es.matter === 'slime' || es.matter === 'ichor' || es.matter === 'water';
     kit.mark({ x, z, radius: 0.9, kind: wet ? 'splash' : 'scorch', stain: matter, glow: null, life: 3.5, opacity: 0.45 });
     if (es.shard) spray('shard', x, 0.45, z, 6, { color: matter, tile: SHARD_TILE[es.shard] ?? 0, speed: [1.2, 2.6], up: [1.0, 2.2], size: [0.11, 0.17], life: [0.5, 0.9], gravity: 4, drag: 0.6, spin: [-8, 8] });
@@ -730,7 +730,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (ev.glob != null) globKind.set(ev.glob, kind);
     if (ev.affix) return; // ELITE AFFIXES: no lob, the burst swells in place
     // The spore burst, the seed volley and the grave call are their own recipes.
-    if (kind === 'rotcap' || kind === 'thornmother' || kind === 'lichram') return;
+    if (kind === 'rotcap' || kind === 'thornmother' || kind === 'lichram' || kind === 'geode') return; // (the geode's shards fly off its slam)
     const es = vfxEnemyStyle(owner?.kind ?? 'toad', 'lobber');
     spray('shard', ev.x, 0.55, ev.z, 3, { color: vfxMatterColor(es.matter), tile: SHARD_TILE.drop, speed: [0.4, 1.0], up: [1.2, 2.0], size: [0.1, 0.14], life: [0.4, 0.6], gravity: 6, spin: [-2, 2] });
   });
@@ -744,6 +744,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     }
     if (kind === 'thornmother') return thornRoot(ev.x, ev.z, ev.radius ?? 1.0);
     if (kind === 'lichram') return graveBurst(ev.x, ev.z, ev.radius ?? 1.0);
+    if (kind === 'geode') return crystalShatter(ev.x, ev.z, ev.radius ?? 0.8);
     const owner = byId(ev.owner);
     const es = vfxEnemyStyle(owner?.kind ?? 'toad', 'lobber');
     const matter = vfxMatterColor(es.matter);
@@ -1475,6 +1476,224 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     },
   });
 
+  // ------------------------------------------------- the Hollow Heart --
+  // Act IV (docs/ACT_IV.md). Down here the violet is the creatures' body, so
+  // their beats wear it — but the law holds: whatever HURTS is Ember on the
+  // frame it lands (the lance's edge, the slam ring, a shard's ring), the
+  // violet only says what it was made of. No camera on rank-and-file.
+  const HV = vfxMatterColor('heartvein');
+  const HVP = vfxMatterColor('heartpeak');
+  const CRYSTAL = vfxMatterColor('heartcrystal');
+  const HFLESH = vfxMatterColor('heartflesh');
+  const HBONE = vfxMatterColor('heartbone');
+  const ROSE = vfxMatterColor('heartrose');
+  const CENSER_Y = 1.25;
+
+  // Hollow Husk — "the room's heart beats". Every husk surges on the same
+  // tick, so this stays tiny per body (a vein flash at the chest and a scuff
+  // of dust behind the feet) and drops the flash past the first few husks of
+  // a beat: the rigs' own vein flare carries the rest.
+  let surgeTick = -1;
+  let surgeCount = 0;
+  bus.on('husk_surge', (ev) => {
+    mark('husk_surge');
+    if (ev.tick !== surgeTick) {
+      surgeTick = ev.tick;
+      surgeCount = 0;
+    }
+    surgeCount += 1;
+    const h = byId(ev.id);
+    const d = faceOf(h);
+    if (surgeCount <= 4) kit.flash({ x: ev.x + d.x * 0.15, y: 0.75, z: ev.z + d.z * 0.15, color: HV, size: 0.55, life: 0.18, opacity: 0.8 });
+    if (surgeCount <= 8) spray('smoke', ev.x - d.x * 0.2, 0.1, ev.z - d.z * 0.2, 1, { color: HFLESH, speed: [0.3, 0.6], up: [0.1, 0.3], size: [0.22, 0.32], grow: 1.1, life: [0.35, 0.55], opacity: 0.28, gravity: -0.1, drag: 2.6, dir: { x: -d.x, z: -d.z }, dirBias: 0.7 });
+    spray('spark', ev.x, 0.7, ev.z, 1, { color: HV, speed: [0.1, 0.3], up: [0.4, 0.8], size: [0.04, 0.07], life: [0.3, 0.5], gravity: -0.2, drag: 1.5, jitter: 0.15, opacity: 0.9 });
+  });
+
+  // Vein Lancer — "the lance". The lane IS the attack, so the release fills
+  // it at once: a violet-cored beam from the lancer to the lane's end, a
+  // white-hot head running down it, an Ember edge that flashes the full
+  // width (that is what hit you), sparks thrown off along it and a scorched
+  // line burned into the floor that cools from Ember to violet.
+  bus.on('lancer_lance', (ev) => {
+    mark('lancer_lance');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const len = ev.length ?? 7;
+    const w = ev.width ?? 0.8;
+    const ang = Math.atan2(d.z, d.x);
+    const ox = ev.x + d.x * 0.35;
+    const oz = ev.z + d.z * 0.35;
+    const ex = ev.x + d.x * len;
+    const ez = ev.z + d.z * len;
+    const SPEED = 34; // u/s — the head crosses a full lane in ~0.2 s
+    const sweep = len / SPEED;
+    // Release at the hand.
+    flare(ox, 0.95, oz, HV, 1.2, { life: 0.2, core: HVP, angle: ang });
+    kit.flash({ x: ox, y: 0.95, z: oz, color: HVP, size: 0.7, life: 0.12 });
+    // The Ember edge: the full lane width, hot for a blink (the hit).
+    kit.streak({ a: { x: ev.x, y: 0.12, z: ev.z }, b: { x: ex, y: 0.12, z: ez }, width: w, tailW: w * 0.85, core: EMBER, glow: EMBER, life: 0.24, fall: 2.2, opacity: 0.55 });
+    // The violet beam with its pale core.
+    kit.streak({ a: { x: ox, y: 0.7, z: oz }, b: { x: ex, y: 0.6, z: ez }, width: 0.26, tailW: 0.16, core: HVP, glow: HV, life: sweep + 0.4, fall: 1.3, opacity: 1 });
+    // The head: a short white-hot dart running the lane.
+    kit.streak({ a: { x: ox, y: 0.68, z: oz }, b: { x: ox + d.x * 0.9, y: 0.66, z: oz + d.z * 0.9 }, width: 0.12, tailW: 0.4, core: PARCH, glow: HV, life: sweep, travel: { x: d.x * SPEED, y: -0.2, z: d.z * SPEED }, fall: 0.3 });
+    // Where it stops: a violet star over an Ember burst.
+    after(sweep, () => {
+      flare(ex, 0.55, ez, HV, 1.0, { kind: 'burst', life: 0.22, core: HVP });
+      kit.flash({ x: ex, y: 0.5, z: ez, color: EMBER, size: 0.5, life: 0.12 });
+      spray('shard', ex, 0.5, ez, 4, { color: CRYSTAL, tile: SHARD_TILE.needle, speed: [0.8, 1.8], up: [0.6, 1.4], size: [0.09, 0.13], life: [0.4, 0.7], gravity: 4, spin: [-8, 8], dir: d, dirBias: 0.4 });
+    });
+    // Sparks off the lane edges and the scorched line it leaves.
+    const steps = Math.max(2, Math.round(len / 1.6));
+    for (let i = 0; i < steps; i++) {
+      const k = (i + 0.5) / steps;
+      const px = ev.x + d.x * len * k;
+      const pz = ev.z + d.z * len * k;
+      const side = i % 2 ? 1 : -1;
+      after(sweep * k, () => spray('spark', px, 0.5, pz, 2, { color: i % 2 ? EMBER : HV, speed: [1.0, 2.2], up: [0.5, 1.2], size: [0.03, 0.06], life: [0.2, 0.4], dir: { x: -d.z * side + d.x * 0.5, z: d.x * side + d.z * 0.5 }, dirBias: 0.7 }));
+    }
+    const marks = Math.max(2, Math.min(4, Math.round(len / 2)));
+    for (let i = 1; i <= marks; i++) {
+      const k = (i - 0.5) / marks;
+      kit.mark({ x: ev.x + d.x * len * k, z: ev.z + d.z * len * k, radius: (len / marks) * 0.62, kind: 'gouge', angle: ang, stretch: 2.2, stain: INK, glow: EMBER, glowOpacity: 0.4, cool: 0.5, life: 2.6, opacity: 0.4, delay: sweep * k });
+    }
+    kit.light({ x: (ev.x + ex) / 2, z: (ev.z + ez) / 2, radius: Math.min(2.4, len * 0.35), color: HV, opacity: 0.3, life: 0.3, attack: 0.02 });
+    // The vein-spear reforms in the lancer's hand (the rig regrows it).
+    after(0.3, () => spray('spark', ev.x, 0.9, ev.z, 4, { color: HV, speed: [0.05, 0.2], up: [0.2, 0.6], size: [0.04, 0.07], life: [0.4, 0.6], gravity: -0.3, drag: 1.6, jitter: 0.2, opacity: 0.9 }));
+  });
+
+  // Geode Brute — "the crystal slam". The fists land in an Ember ring (the
+  // hit) that cracks into a burst of violet crystal punched up through the
+  // floor; stone and crystal chips fly. The three shards it throws are
+  // their own recipe when they land (crystalShatter).
+  bus.on('geode_slam', (ev) => {
+    mark('geode_slam');
+    const r = ev.radius ?? 1.5;
+    const g = byId(ev.id);
+    const d = faceOf(g);
+    const sx = g ? g.x : ev.x - d.x * 0.9;
+    const sz = g ? g.z : ev.z - d.z * 0.9;
+    kit.streak({ a: { x: sx + d.x * 0.3, y: 1.8, z: sz + d.z * 0.3 }, b: { x: ev.x, y: 0.1, z: ev.z }, width: 0.18, tailW: 0.45, core: PARCH, glow: EMBER, life: 0.16, fall: 2.2 });
+    flare(ev.x, 0.35, ev.z, EMBER, 1.5, { kind: 'burst', life: 0.24 });
+    kit.flash({ x: ev.x, y: 0.4, z: ev.z, color: PARCH, size: 0.85, life: 0.14 });
+    shock(ev.x, ev.z, r * 1.05, EMBER, { life: 0.3, width: 0.12, jag: 0.7 });
+    shock(ev.x, ev.z, r * 1.35, CRYSTAL, { life: 0.5, width: 0.22, core: HVP, delay: 0.04, jag: 0.9 });
+    spikes(ev.x, ev.z, r * 0.95, 9, CRYSTAL, { h: 0.75, delay: 0.03, life: 0.55, core: HVP });
+    kit.crack({ x: ev.x, z: ev.z, radius: r * 0.85, glow: EMBER, life: 1.4, cool: 0.4 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.3, kind: 'crater', stain: vfxMatterColor('stone'), glow: CRYSTAL, glowOpacity: 0.5, cool: 1.2, life: 3.4, opacity: 0.55 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.4, color: HV, opacity: 0.4, life: 0.45, attack: 0.02 });
+    spray('chunk', ev.x, 0.3, ev.z, 6, { color: vfxMatterColor('stone'), speed: [1.0, 2.4], up: [1.6, 3.0], size: [0.07, 0.14], life: [0.5, 0.8], jitter: 0.3 });
+    spray('shard', ev.x, 0.35, ev.z, 10, { color: CRYSTAL, tile: SHARD_TILE.needle, speed: [1.2, 2.8], up: [1.4, 2.8], size: [0.1, 0.16], life: [0.5, 0.9], gravity: 5, drag: 0.5, spin: [-10, 10], jitter: 0.3 });
+    spray('spark', ev.x, 0.4, ev.z, 6, { color: PARCH, speed: [1.6, 3.0], up: [0.6, 1.6], size: [0.04, 0.08], life: [0.15, 0.3] });
+    spray('smoke', ev.x, 0.2, ev.z, 3, { color: vfxMatterColor('stone'), speed: [0.6, 1.2], up: [0.1, 0.4], size: [0.36, 0.5], grow: 1.4, life: [0.7, 1.0], opacity: 0.3, gravity: -0.15, drag: 2.4, jitter: 0.4 });
+  });
+  // A thrown shard lands: its Ember ring flashes (the hit), the crystal
+  // shatters into needles and punches a small cluster up (the patch the
+  // enemy layer then grows in its place).
+  function crystalShatter(x, z, radius) {
+    mark('geode_shard_land');
+    kit.ring({ x, z, r0: 0.15, r1: radius, width: 0.08, life: 0.3, core: EMBER, glow: EMBER, soft: 0.5, y: 0.04, opacity: 0.75, gain: 0.7 });
+    flare(x, 0.3, z, CRYSTAL, 0.85, { kind: 'star', life: 0.18, core: HVP });
+    spikes(x, z, radius * 0.6, 4, CRYSTAL, { h: 0.45, life: 0.4, core: HVP });
+    spray('shard', x, 0.3, z, 7, { color: CRYSTAL, tile: SHARD_TILE.needle, speed: [1.0, 2.2], up: [1.0, 2.0], size: [0.08, 0.13], life: [0.4, 0.7], gravity: 5, drag: 0.5, spin: [-10, 10] });
+    spray('spark', x, 0.3, z, 4, { color: PARCH, speed: [1.2, 2.4], up: [0.6, 1.2], size: [0.03, 0.06], life: [0.12, 0.24] });
+    kit.mark({ x, z, radius: radius * 1.2, kind: 'scorch', stain: INK, glow: CRYSTAL, glowOpacity: 0.3, cool: 1.0, life: 3.0, opacity: 0.35 });
+  }
+
+  // Heart Censer — "it gathers, then it mends". Nothing here hurts the party,
+  // so none of it is Ember: the gather draws the mend's whole reach in (a
+  // rose ring closing from 4.2 u onto the censer, violet motes streaming to
+  // its coals); the mend is a rose-violet pulse out to the same edge with a
+  // streak to every body it healed and a glow on each. A stun mid-gather
+  // spills the coals on the floor.
+  bus.on('censer_gather', (ev) => {
+    mark('censer_gather');
+    const r = ev.radius ?? 4.2;
+    const c = byId(ev.id);
+    const cx = c?.x ?? ev.x;
+    const cz = c?.z ?? ev.z;
+    const life = ev.untilTick != null && ev.tick != null ? Math.max(0.3, (ev.untilTick - ev.tick) / 60) : 0.8;
+    kit.ring({ x: cx, z: cz, r0: r, r1: 0.35, width: 0.07, life, core: ROSE, glow: HV, soft: 0.6, y: 0.05, opacity: 0.55, gain: 0.6 });
+    kit.mark({ x: cx, z: cz, radius: r, kind: 'sigil', stain: INK, glow: HV, glowOpacity: 0.35, cool: life, life: life + 0.3, opacity: 0.1 });
+    kit.flash({ x: cx, y: CENSER_Y, z: cz, color: HV, size: 0.8, life: 0.25 });
+    const n = N(8);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * TAU + rnd(-0.3, 0.3);
+      const rr = r * rnd(0.55, 0.95);
+      const dl = rnd(0, life * 0.6);
+      const fl = Math.min(0.45, life - dl);
+      const px = cx + Math.cos(a) * rr;
+      const pz = cz + Math.sin(a) * rr;
+      kit.streak({ a: { x: px, y: 0.35, z: pz }, b: { x: px - Math.cos(a) * 0.4, y: 0.45, z: pz - Math.sin(a) * 0.4 }, width: 0.05, tailW: 0, core: HVP, glow: HV, life: fl, delay: dl, travel: { x: (-Math.cos(a) * rr) / fl, y: (CENSER_Y - 0.4) / fl, z: (-Math.sin(a) * rr) / fl }, fall: 1.0, opacity: 0.85 });
+    }
+  });
+  bus.on('censer_mend', (ev) => {
+    mark('censer_mend');
+    const { x, z } = ev;
+    const r = ev.radius ?? 4.2;
+    flare(x, CENSER_Y, z, HV, 1.2, { kind: 'burst', life: 0.3, core: HVP });
+    kit.flash({ x, y: CENSER_Y, z, color: ROSE, size: 1.0, life: 0.3, hold: 0.06 });
+    kit.ring({ x, z, r0: 0.3, r1: r, width: 0.12, life: 0.6, core: ROSE, glow: HV, soft: 0.55, y: 0.05, opacity: 0.8 });
+    kit.ring({ x, z, r0: 0.2, r1: r * 0.75, width: 0.3, life: 0.7, core: HV, glow: HV, soft: 0.9, y: 0.08, delay: 0.05, opacity: 0.35, gain: 0.4 });
+    kit.light({ x, z, radius: r * 0.6, color: HV, opacity: 0.35, life: 0.55, attack: 0.05 });
+    const healed = ev.healed || [];
+    for (let i = 0; i < healed.length; i++) {
+      const t = byId(healed[i].id);
+      if (!t) continue;
+      const dl = Math.min(0.2, i * 0.025);
+      kit.streak({ a: { x, y: CENSER_Y, z }, b: { x: t.x, y: 0.55, z: t.z }, width: 0.05, tailW: 0.06, core: ROSE, glow: HV, life: 0.42, delay: dl, fall: 1.0, opacity: 0.85 });
+      kit.flash({ x: t.x, y: 0.55, z: t.z, color: ROSE, size: 0.6, life: 0.3, delay: dl + 0.08 });
+      spray('spark', t.x, 0.35, t.z, 3, { color: ROSE, speed: [0.05, 0.2], up: [0.7, 1.2], size: [0.04, 0.08], life: [0.6, 0.9], gravity: -0.3, drag: 1.6, jitter: 0.25, opacity: 0.9 });
+    }
+  });
+  bus.on('censer_spill', (ev) => {
+    mark('censer_spill');
+    const { x, z } = ev;
+    kit.flash({ x, y: CENSER_Y, z, color: HV, size: 0.5, life: 0.12 });
+    spray('shard', x, CENSER_Y - 0.1, z, 6, { color: CRYSTAL, tile: SHARD_TILE.drop, speed: [0.3, 0.9], up: [0.2, 0.8], size: [0.08, 0.12], life: [0.6, 0.9], gravity: 6, drag: 0.4, spin: [-4, 4] });
+    spray('smoke', x, CENSER_Y, z, 2, { color: HBONE, speed: [0.2, 0.5], up: [-0.2, 0.2], size: [0.3, 0.42], grow: 1.3, life: [0.6, 0.9], opacity: 0.3, gravity: 0.1, drag: 2.2 });
+    after(0.32, () => {
+      kit.mark({ x, z, radius: 0.7, kind: 'scorch', stain: INK, glow: HV, glowOpacity: 0.4, cool: 0.9, life: 2.4, opacity: 0.4 });
+      spray('spark', x, 0.1, z, 6, { color: HV, speed: [0.4, 1.2], up: [0.4, 1.0], size: [0.03, 0.06], life: [0.3, 0.6], drag: 1.2 });
+    });
+  });
+
+  // Their deaths, on top of enemyDeath's shared break (whose kill motes go
+  // violet for a `heart` row).
+  Object.assign(CREATURE_DEATH, {
+    husk: (es, matter, x, z) => {
+      // The heart in the rib cavity bursts. Cheap: husks die in numbers.
+      mark('husk_death');
+      flare(x, 0.65, z, HV, 0.8, { kind: 'burst', life: 0.2, core: HVP });
+      spray('spark', x, 0.6, z, 5, { color: HV, speed: [0.6, 1.4], up: [0.4, 1.0], size: [0.04, 0.07], life: [0.3, 0.6], drag: 1.3 });
+    },
+    lancer: (es, matter, x, z) => {
+      // The vein-spear shatters into violet needles.
+      mark('lancer_death');
+      flare(x, 0.95, z, HV, 0.9, { kind: 'star', life: 0.22, core: HVP });
+      spray('shard', x, 0.9, z, 7, { color: CRYSTAL, tile: SHARD_TILE.needle, speed: [1.0, 2.2], up: [0.6, 1.6], size: [0.1, 0.15], life: [0.5, 0.8], gravity: 4, spin: [-10, 10] });
+      spray('smoke', x, 0.8, z, 2, { color: HFLESH, speed: [0.2, 0.5], up: [0.1, 0.4], size: [0.32, 0.44], grow: 1.3, life: [0.7, 1.0], opacity: 0.3, gravity: -0.15, drag: 2.2 });
+    },
+    geode: (es, matter, x, z) => {
+      // The spires break off and the boulder cracks open: crystal and stone.
+      mark('geode_death');
+      flare(x, 0.9, z, HV, 1.4, { kind: 'burst', life: 0.28, core: HVP });
+      shock(x, z, 1.6, CRYSTAL, { life: 0.45, width: 0.16, core: HVP, jag: 0.8 });
+      spikes(x, z, 0.8, 6, CRYSTAL, { h: 0.6, life: 0.6, core: HVP });
+      kit.light({ x, z, radius: 1.8, color: HV, opacity: 0.45, life: 0.5 });
+      spray('chunk', x, 0.6, z, 8, { color: vfxMatterColor('stone'), speed: [1.0, 2.4], up: [1.6, 2.8], size: [0.1, 0.18], life: [0.6, 0.9] });
+      spray('shard', x, 1.0, z, 8, { color: CRYSTAL, tile: SHARD_TILE.needle, speed: [1.2, 2.6], up: [1.2, 2.4], size: [0.12, 0.18], life: [0.6, 1.0], gravity: 5, spin: [-10, 10] });
+    },
+    censer: (es, matter, x, z) => {
+      // The chain lets go: the censer drops and its coals scatter.
+      mark('censer_death');
+      flare(x, CENSER_Y, z, HV, 1.1, { kind: 'burst', life: 0.26, core: HVP });
+      kit.flash({ x, y: CENSER_Y, z, color: ROSE, size: 0.8, life: 0.2 });
+      shock(x, z, 1.2, ROSE, { life: 0.4, width: 0.08, core: HVP, y: CENSER_Y - 0.2 });
+      spray('chunk', x, CENSER_Y, z, 4, { color: HBONE, speed: [0.6, 1.4], up: [0.2, 1.0], size: [0.07, 0.12], life: [0.6, 0.9] });
+      spray('shard', x, CENSER_Y, z, 6, { color: CRYSTAL, tile: SHARD_TILE.drop, speed: [0.6, 1.6], up: [0.4, 1.2], size: [0.08, 0.12], life: [0.6, 0.9], gravity: 6, spin: [-4, 4] });
+      after(0.35, () => kit.mark({ x, z, radius: 0.8, kind: 'scorch', stain: INK, glow: HV, glowOpacity: 0.4, cool: 1.0, life: 2.6, opacity: 0.4 }));
+    },
+  });
+
   // ------------------------------------------------- the Thornmother --
   // "She fights the floor." Style: bramble over violet rot. Shapes: thorn
   // spikes punching up where her seed pods root, a torn-earth charge lane,
@@ -2064,7 +2283,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         if (!flyer && sp < TRAIL_SPEED) continue;
         if (!flyer && es.family !== 'charger' && es.family !== 'brute') continue;
         const c = (wakeClock.get(e.id) ?? 0) + dt;
-        const every = flyer ? 0.35 : 0.09;
+        const every = es.wakeEvery ?? (flyer ? 0.35 : 0.09);
         if (c < every) {
           wakeClock.set(e.id, c);
           continue;

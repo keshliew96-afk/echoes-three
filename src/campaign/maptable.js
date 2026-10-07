@@ -61,9 +61,10 @@ function paintMap(canvas, unlocked) {
   g.fillStyle = grd;
   g.fillRect(0, 0, W, H);
   const pts = [
-    [W * 0.2, H * 0.72],
-    [W * 0.5, H * 0.42],
-    [W * 0.8, H * 0.24],
+    [W * 0.14, H * 0.74],
+    [W * 0.38, H * 0.46],
+    [W * 0.62, H * 0.26],
+    [W * 0.86, H * 0.5],
   ];
   g.strokeStyle = '#6B5A45';
   g.lineWidth = 5;
@@ -86,7 +87,7 @@ function paintMap(canvas, unlocked) {
     g.font = 'bold 22px serif';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    g.fillText(['I', 'II', 'III'][i] ?? String(i + 1), x, y + 1);
+    g.fillText(['I', 'II', 'III', 'IV'][i] ?? String(i + 1), x, y + 1);
   });
 }
 

@@ -46,6 +46,26 @@ function tuftGeometry() {
   return mergeGeometries(blades);
 }
 
+// Act IV (`spec.tuft: 'shard'`): a sprig of crystal shards breaking through
+// the stone instead of a grass tuft — closed hexagonal points, one tall and
+// three tilted.
+function shardGeometry() {
+  const parts = [];
+  const mk = (h, r, tz, ry, ox, oz) => {
+    const g = new ConeGeometry(r, h, 5, 1);
+    g.translate(0, h / 2, 0);
+    g.rotateZ(tz);
+    g.rotateY(ry);
+    g.translate(ox, 0, oz);
+    return g;
+  };
+  parts.push(mk(0.3, 0.05, 0.06, 0, 0, 0));
+  parts.push(mk(0.19, 0.04, 0.5, 0.6, 0.05, 0.02));
+  parts.push(mk(0.16, 0.036, 0.62, 2.7, -0.05, 0.03));
+  parts.push(mk(0.12, 0.03, 0.55, 4.4, 0.0, -0.05));
+  return mergeGeometries(parts);
+}
+
 function blockedBy(footprints, x, z) {
   for (let i = 0; i < footprints.length; i++) {
     const f = footprints[i];
@@ -107,7 +127,12 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
   const bl = g.blade ?? g;
 
   // --- Grass tufts.
-  const grass = new InstancedMesh(tuftGeometry(), toonMaterial({ color: '#FFFFFF' }), spec.grass);
+  const shard = spec.tuft === 'shard';
+  const grass = new InstancedMesh(
+    shard ? shardGeometry() : tuftGeometry(),
+    shard ? toonMaterial({ color: '#FFFFFF', emissive: hslColor(bl.h, 0.5, 0.3), emissiveIntensity: 0.16 }) : toonMaterial({ color: '#FFFFFF' }),
+    spec.grass
+  );
   grass.frustumCulled = false;
   let placed = 0;
   while (placed < spec.grass) {

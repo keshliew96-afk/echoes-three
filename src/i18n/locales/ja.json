@@ -1937,5 +1937,22 @@
  "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler, slick floors and elite powers show again the next time you meet each.": "クラス選択、レリック、呪われた扉、「?」の扉、行商人、滑る床、エリートの能力の一度きりのヒントを、次に出会ったときにもう一度表示する。",
  "Heals for part of the damage it deals.": "与えたダメージの一部で回復する。",
  "The {cls} is AI-controlled and does its own shopping.": "{cls}はAIが操作し、自分で買い物をします。",
- "The {cls} shops on their own screen.": "{cls}は自分の画面で買い物をします。"
+ "The {cls} shops on their own screen.": "{cls}は自分の画面で買い物をします。",
+ "Beneath the Barrow, where the corruption first took root and still beats.": "古塚の下、腐敗が最初に根を張り、今も脈打つ場所。",
+ "Clear Level IV, the Hollow Heart.": "レベルIV「うつろの心臓」をクリアする。",
+ "Complete a campaign (Levels I to IV).": "キャンペーンを完遂する（レベルI〜IV）。",
+ "Geode Hall": "晶洞の広間",
+ "Heart Chamber": "心臓の間",
+ "Heartbreaker": "ハートブレイカー",
+ "Past the Heart the road turns back into the wood, darker each time. The four lands repeat, harder at every depth, until the party falls.": "心臓の先で道は森へと戻り、そのたびに闇が深まる。四つの地は深度ごとに厳しさを増して繰り返し、パーティが倒れるまで続く。",
+ "Root Gate": "根の門",
+ "The Heart's warden falls. Below the Barrow, the old beat falters.": "心臓の番人が倒れた。古塚の下で、古き鼓動が弱まっていく。",
+ "The Hollow Heart": "うつろの心臓",
+ "The hollow under the Barrow": "古塚の下のうろ",
+ "The party fell at Depth {depth}, before the Heart. The gods applaud.": "パーティは心臓を前に、深度{depth}で倒れた。神々が喝采を送る。",
+ "Through all four lands and down again, until the party falls.": "四つの地を巡り、また下へ。パーティが倒れるまで。",
+ "Vein Gallery": "脈の回廊",
+ "Weeping Wells": "涙の井戸",
+ "Wood · Mill · Barrow · Heart · and down again": "森・水車小屋・古塚・心臓・そしてまた下へ",
+ "Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).": "スコア = プレイした各レベルの (100 × 部屋数 + 5 × 撃破数 + クリア時1000) × レベル倍率 (I 1.0・II 1.5・III 2.0・IV 2.5) × 難易度倍率 (ゆったり 0.75・標準 1・苦難 1.5) の合計。キャンペーン達成時はスピードボーナス (900 × プレイしたレベル数 − 秒数) を加算。"
 }

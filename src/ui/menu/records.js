@@ -13,6 +13,7 @@ const ACT_NAME = {
   get 1() { return t('The Hollow Wood'); },
   get 2() { return t('The Sunken Mill'); },
   get 3() { return t('The Ashen Barrow'); },
+  get 4() { return t('The Hollow Heart'); },
 };
 const CHALLENGE_NAME = {
   get relaxed() { return t('Relaxed'); },
@@ -209,7 +210,7 @@ export function createRecordsScreen(ctx) {
     const f = document.createElement('div');
     f.className = 'sv-formula';
     f.textContent =
-      t('Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).');
+      t('Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).');
     side.append(h3, dl, f);
   }
 

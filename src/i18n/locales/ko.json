@@ -1937,5 +1937,22 @@
  "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler, slick floors and elite powers show again the next time you meet each.": "직업 선택, 유물, 저주받은 문, \"?\" 문, 행상인, 미끄러운 바닥, 정예 능력의 일회성 팁이 다음에 만날 때 다시 표시됩니다.",
  "Heals for part of the damage it deals.": "입힌 피해의 일부만큼 회복합니다.",
  "The {cls} is AI-controlled and does its own shopping.": "{cls}은(는) AI가 조종하며 직접 쇼핑합니다.",
- "The {cls} shops on their own screen.": "{cls}은(는) 자신의 화면에서 쇼핑합니다."
+ "The {cls} shops on their own screen.": "{cls}은(는) 자신의 화면에서 쇼핑합니다.",
+ "Beneath the Barrow, where the corruption first took root and still beats.": "고분 아래, 타락이 처음 뿌리내려 아직도 고동치는 곳.",
+ "Clear Level IV, the Hollow Heart.": "레벨 IV, 공허의 심장 클리어.",
+ "Complete a campaign (Levels I to IV).": "캠페인 완료 (레벨 I~IV).",
+ "Geode Hall": "정동 홀",
+ "Heart Chamber": "심장의 방",
+ "Heartbreaker": "심장 파괴자",
+ "Past the Heart the road turns back into the wood, darker each time. The four lands repeat, harder at every depth, until the party falls.": "심장을 지나면 길은 다시 숲으로 돌아가고, 갈 때마다 더 어두워진다. 네 땅이 반복되며 심도마다 더 험해진다. 파티가 쓰러질 때까지.",
+ "Root Gate": "뿌리의 문",
+ "The Heart's warden falls. Below the Barrow, the old beat falters.": "심장의 수호자가 쓰러진다. 고분 아래, 오래된 고동이 잦아든다.",
+ "The Hollow Heart": "공허의 심장",
+ "The hollow under the Barrow": "고분 아래의 공동",
+ "The party fell at Depth {depth}, before the Heart. The gods applaud.": "파티는 심장에 닿기 전, 심도 {depth}에서 쓰러졌다. 신들이 갈채를 보낸다.",
+ "Through all four lands and down again, until the party falls.": "네 땅을 모두 지나 다시 아래로, 파티가 쓰러질 때까지.",
+ "Vein Gallery": "핏줄 회랑",
+ "Weeping Wells": "눈물의 우물",
+ "Wood · Mill · Barrow · Heart · and down again": "숲 · 방앗간 · 고분 · 심장 · 그리고 다시 아래로",
+ "Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).": "점수 = 플레이한 레벨별 (100 × 방 + 5 × 처치 + 클리어 시 1000) × 레벨 배율(I 1.0 · II 1.5 · III 2.0 · IV 2.5)의 합 × 난이도(느긋함 0.75 · 보통 1 · 혹독함 1.5), 캠페인 완료 시 속도 보너스(900 × 플레이한 레벨 수 − 초) 추가."
 }

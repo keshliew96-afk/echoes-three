@@ -115,3 +115,31 @@ export const TELL_INDIGO_GLOW = tellIndigo(0.52, 0.85);
 // enemy attack VFX are the ONLY red-orange in a frame).
 export const EMBER_EXACT = exactColor(PALETTE.emberDanger);
 export const SHOT_CORE = exactColor(PALETTE.parchment); // white-hot core (§19.4)
+
+// --- Act IV, the Hollow Heart (docs/ACT_IV.md) ------------------------------
+// Down here the corruption is not a tell, it is the body: the Heart's
+// creatures wear its violet in their veins and crystal over dark bruised
+// flesh, black cloth and old bone. Threat stays Ember — the violet never
+// warns, it only says WHERE you are. The hue is pushed a step past God-stuff
+// Violet toward purple (~282 deg) because the Heart's own air is blue-violet:
+// at the raw anchor's hue a vein glowing over that floor reads BLUE. A rose
+// second tone belongs to the Censer's mend alone. Bodies keep a hard value
+// split (pale ash / bone against near-black plum) so they cut out of a floor
+// that is already violet.
+const heartHsl = (h, s, l) => exactColor(new Color().setHSL(h / 360, s, l, SRGBColorSpace).getHex());
+export const HEART = Object.freeze({
+  vein: heartHsl(282, 0.82, 0.62), // resting vein / crystal glow
+  veinDim: heartHsl(284, 0.6, 0.4), // between beats
+  veinHot: heartHsl(286, 0.9, 0.82), // the swell before a surge, a lit coal
+  glow: heartHsl(286, 0.95, 0.6), // halo sprites
+  rose: heartHsl(318, 0.66, 0.72), // the Censer's mend
+  // Bodies.
+  ash: heartHsl(268, 0.1, 0.6), // husk skin: pale, bloodless, faintly lilac
+  flesh: heartHsl(284, 0.22, 0.3), // bruised plum
+  fleshDark: heartHsl(286, 0.25, 0.17),
+  bone: heartHsl(40, 0.12, 0.74), // old bone (warm-neutral, under the colour gate)
+  cloth: heartHsl(280, 0.18, 0.11), // near-black plum
+  stone: heartHsl(250, 0.07, 0.34), // dark slate rock
+  stoneDark: heartHsl(255, 0.08, 0.2),
+  crystal: heartHsl(274, 0.66, 0.66),
+});

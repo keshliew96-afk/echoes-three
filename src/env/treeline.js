@@ -20,6 +20,7 @@
 // Everything is instanced (7 draw calls for the whole surround) and everything
 // is placed from the COSMETIC stream (§1: foliage placement is cosmetic).
 import {
+  ConeGeometry,
   CylinderGeometry,
   IcosahedronGeometry,
   InstancedMesh,
@@ -162,7 +163,59 @@ export function buildTreeline(root, spec, cosmetic) {
       sy: height,
     });
   }
-  place(
+  if (style === 'heart') {
+    // The Hollow Heart: the band beyond the wall is the hollow's own rock —
+    // black-violet columns with lit ledges, and among them (about one in
+    // four) violet crystal stands that catch the cold light.
+    crownGeo.dispose();
+    capGeo.dispose();
+    const column = mergeGeometries([
+      new CylinderGeometry(0.05, 0.17, 1.0, 5).translate(0, 0.5, 0),
+      new CylinderGeometry(0.03, 0.1, 0.62, 5).rotateZ(0.12).translate(0.15, 0.31, 0.06),
+    ]);
+    const ledge = mergeGeometries([
+      new IcosahedronGeometry(0.15, 0).scale(1.2, 0.36, 1).translate(0.02, 0.42, 0.02),
+      new IcosahedronGeometry(0.11, 0).scale(1.1, 0.4, 1).translate(-0.06, 0.7, -0.03),
+    ]);
+    const prism = (r, h, tz, tx, x, z) =>
+      mergeGeometries([
+        new CylinderGeometry(r, r * 1.12, h, 6).translate(0, h / 2, 0),
+        new ConeGeometry(r, r * 2.4, 6).translate(0, h + r * 1.2, 0),
+      ])
+        .rotateZ(tz)
+        .rotateX(tx)
+        .translate(x, 0, z);
+    const crystalGeo = mergeGeometries([
+      prism(0.11, 0.62, 0.0, 0.05, 0, 0),
+      prism(0.08, 0.42, 0.45, 0.1, 0.12, 0.04),
+      prism(0.07, 0.36, -0.5, -0.2, -0.11, 0.05),
+      prism(0.06, 0.26, 0.2, -0.6, 0.02, -0.12),
+    ]);
+    const mCrystal = toonMaterial({ color: TL.crystal, emissive: TL.crystal, emissiveIntensity: 0.32 });
+    const mCrystalLit = toonMaterial({ color: TL.crystalLit, emissive: TL.crystal, emissiveIntensity: 0.22 });
+    const cols = [];
+    const crys = [];
+    for (const t of trees) {
+      if (cosmetic.chance(0.26)) crys.push({ ...t, s: t.s * 0.95, sy: Math.min(t.sy, 2.6) * 0.85 });
+      else cols.push(t);
+    }
+    place(
+      root,
+      [
+        { geo: column, mat: mTrunk, ink: true },
+        { geo: ledge, mat: mCap },
+      ],
+      cols
+    );
+    // Crystal stands keep their proportion (a prism stretched 4x reads as a
+    // needle): scale them uniformly from their height.
+    place(
+      root,
+      [{ geo: crystalGeo, mat: mCrystal, ink: true }],
+      crys.map((t) => ({ ...t, s: Math.min(1.9, t.sy * 0.75), sy: Math.min(1.9, t.sy * 0.75) }))
+    );
+    void mCrystalLit;
+  } else place(
     root,
     style === 'barrow'
       ? [
@@ -190,6 +243,13 @@ export function buildTreeline(root, spec, cosmetic) {
               .translate(Math.cos(k * 2.4) * 0.16, 0.32, Math.sin(k * 2.4) * 0.16)
           )
         )
+      : style === 'heart'
+        ? mergeGeometries([
+            // Root-flesh humps: low swollen lobes with a root rope over them.
+            new IcosahedronGeometry(0.42, 1).scale(1.3, 0.42, 0.95).translate(0, 0.1, 0),
+            new IcosahedronGeometry(0.24, 0).scale(1, 0.6, 1).translate(0.46, 0.1, 0.18),
+            new IcosahedronGeometry(0.16, 0).scale(1, 0.7, 1).translate(-0.42, 0.08, -0.16),
+          ])
       : style === 'barrow'
         ? mergeGeometries([
             // Burial mounds: long low grassed humps.

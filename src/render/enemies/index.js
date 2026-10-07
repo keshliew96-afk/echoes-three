@@ -308,6 +308,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
 
       r.build.pose({
         t: tSec,
+        tick: tick - 1 + alpha, // interpolated sim tick (Act IV: the husks' shared heartbeat)
         walkPhase: r.walkPhase,
         moveK: r.moveK,
         lungeK: r.lungeLeft > 0 ? Math.sin((r.lungeLeft / 0.18) * Math.PI) : 0,

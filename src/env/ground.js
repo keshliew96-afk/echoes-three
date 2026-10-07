@@ -452,6 +452,18 @@ export function* paintGroundSteps(spec, cosmetic) {
   if (spec.water) {
     yield* waterSteps(ctx, spec.water, ppu, cx, cz, cosmetic);
   }
+  // Act IV (Hollow Heart): the root-vein network grown through the stone and
+  // the violet crystal flecks breaking through it. Both run off their own
+  // deterministic streams (never the layout stream), so the glowing decal
+  // props.js lays over the veins lands on exactly these strokes.
+  if (g.veins && spec.veinNet) {
+    paintVeins(ctx, veinNetwork(spec), g.veins, ppu, cx, cz);
+    yield;
+  }
+  if (g.flecks) {
+    paintFlecks(ctx, spec, g.flecks, W, H);
+    yield;
+  }
 
   // 4 — dirt path(s): cool dark under-stroke, jittered warm dirt body, dry
   // highlights, wheel ruts, pebbles.
@@ -691,6 +703,130 @@ export function* paintGroundSteps(spec, cosmetic) {
 }
 
 // --- GAUNTLET biome passes -------------------------------------------------
+// Act IV root-vein network: a deterministic branching walk from each authored
+// seed [x, z, angleDeg, len, width] (angle 0 = +x, 90 = +z / south). Returns
+// world-space segments { ax, az, bx, bz, w } whose width tapers to nothing at
+// the tips. Its own mulberry32 per layout id, so the floor painter (here, on
+// the worker or the main thread) and the glow decal (props.js) agree exactly
+// and neither consumes a single draw from the layout stream.
+const veinCache = new Map();
+function veinRng(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+export function veinNetwork(spec) {
+  if (!spec || !spec.veinNet) return [];
+  const key = spec.id;
+  if (veinCache.has(key)) return veinCache.get(key);
+  const rnd = veinRng(0x51ed27 ^ (((spec.id | 0) + 3) * 0x9e3779b1));
+  const R = (a, b) => a + rnd() * (b - a);
+  const segs = [];
+  const lim = (x, z) => Math.abs(x) < ARENA.halfW - 0.05 && Math.abs(z) < ARENA.halfD - 0.05;
+  const walk = (x, z, ang, len, w, depth) => {
+    const step = 0.22;
+    const n = Math.max(2, Math.round(len / step));
+    let a = ang;
+    let bend = 0;
+    for (let i = 0; i < n; i++) {
+      const t = i / n;
+      // Taper: full width for the first third, then down to a hair.
+      const wi = w * (t < 0.3 ? 1 : 1 - ((t - 0.3) / 0.7) * 0.92);
+      // A root meanders: a slowly wandering turn rate, not per-step jitter
+      // (per-step jitter reads as lightning, not as something that grew).
+      bend = bend * 0.82 + R(-0.09, 0.09);
+      a += bend + R(-0.05, 0.05);
+      const nx = x + Math.cos(a) * step;
+      const nz = z + Math.sin(a) * step;
+      if (!lim(nx, nz)) break;
+      segs.push({ ax: x, az: z, bx: nx, bz: nz, w: wi });
+      x = nx;
+      z = nz;
+      if (depth < 2 && i > 2 && rnd() < 0.085) {
+        walk(x, z, a + (rnd() < 0.5 ? -1 : 1) * R(0.55, 1.05), len * (1 - t) * R(0.45, 0.8), wi * 0.62, depth + 1);
+      }
+    }
+  };
+  for (const [x, z, deg, len, w] of spec.veinNet.seeds ?? []) walk(x, z, (deg * Math.PI) / 180, len, w, 0);
+  veinCache.set(key, segs);
+  return segs;
+}
+
+// Painted veins: a dark rose root channel sunk into the stone, a raised flesh
+// ridge, then the violet core (the glow decal adds the light on top).
+function paintVeins(ctx, segs, V, ppu, cx, cz) {
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const pass = (wMul, minPx, style) => {
+    ctx.strokeStyle = style;
+    for (const s of segs) {
+      ctx.lineWidth = Math.max(minPx, s.w * wMul * ppu);
+      ctx.beginPath();
+      ctx.moveTo(cx(s.ax), cz(s.az));
+      ctx.lineTo(cx(s.bx), cz(s.bz));
+      ctx.stroke();
+    }
+  };
+  pass(3.2, 3, hsl(V.rootH, V.rootS, V.rootL, 1));
+  pass(2.0, 2.2, hsl(V.fleshH, V.fleshS, V.fleshL, 1));
+  pass(1.15, 1.5, hsl(V.fleshH + 6, V.fleshS + 0.04, V.fleshL + 0.08, 1));
+  pass(0.42, 0.9, hsl(V.coreH, V.coreS, V.coreL, 1));
+}
+
+// Crystal flecks: little faceted violet chips in clusters, each with a dark
+// socket and a bright lit facet, kept out toward the walls.
+function paintFlecks(ctx, spec, F, W, H) {
+  const rnd = veinRng(0x7f4a7c15 ^ (((spec.id | 0) + 11) * 0x85ebca6b));
+  const R = (a, b) => a + rnd() * (b - a);
+  for (let i = 0; i < F.n; i++) {
+    let x = R(0, W);
+    let z = R(0, H);
+    // Two in three clusters hug a wall band.
+    if (rnd() < 0.66) {
+      const side = Math.floor(R(0, 4));
+      const band = W * 0.12;
+      if (side === 0) z = R(0, band);
+      else if (side === 1) z = R(H - band, H);
+      else if (side === 2) x = R(0, band);
+      else x = R(W - band, W);
+    }
+    const n = 3 + Math.floor(R(0, 6));
+    for (let k = 0; k < n; k++) {
+      const px = x + R(-34, 34);
+      const pz = z + R(-24, 24);
+      const sz = R(3, 9);
+      const a = R(0, Math.PI);
+      ctx.save();
+      ctx.translate(px, pz);
+      ctx.rotate(a);
+      ctx.fillStyle = hsl(F.h + 40, 0.3, 0.06, 0.6);
+      ctx.beginPath();
+      ctx.ellipse(0, sz * 0.3, sz * 1.1, sz * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = hsl(F.h + R(-8, 8), F.s, F.l * R(0.55, 0.8), 0.95);
+      ctx.beginPath();
+      ctx.moveTo(-sz * 0.5, 0);
+      ctx.lineTo(0, -sz);
+      ctx.lineTo(sz * 0.5, 0);
+      ctx.lineTo(0, sz * 0.45);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = hsl(F.h - 6, F.s * 0.8, Math.min(0.85, F.l * 1.45), 0.9);
+      ctx.beginPath();
+      ctx.moveTo(-sz * 0.12, -sz * 0.1);
+      ctx.lineTo(0, -sz * 0.9);
+      ctx.lineTo(sz * 0.38, -sz * 0.05);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
 // Flagstone mosaic: irregular slabs on a jittered course grid, each a subtly
 // different value of the lit stone, split by dark grout — the "tile variation"
 // of reference B, drawn only where it reads (the lit field; the painter's
@@ -713,10 +849,30 @@ function* flagstoneSteps(ctx, W, H, ppu, g, cosmetic) {
       ctx.translate(cxp, cyp);
       ctx.rotate(a);
       ctx.fillStyle = hsl((F.h ?? g.h) + r(-6, 6), (F.s ?? 0.12) + r(-0.03, 0.03), (F.l ?? g.l) * (0.82 + lit * 0.3), F.alpha ?? 0.34);
-      ctx.fillRect(-w / 2, -h / 2, w, h);
-      ctx.strokeStyle = hsl(F.groutH ?? 210, F.groutS ?? 0.2, F.groutL ?? 0.06, F.groutA ?? 0.42);
-      ctx.lineWidth = F.grout ?? 3;
-      ctx.strokeRect(-w / 2, -h / 2, w, h);
+      if (F.organic) {
+        // Act IV: irregular plates of flesh-stone, not cut flags — a jittered
+        // polygon per slab (same RNG budget per slab whatever the shape).
+        const nv = 7;
+        ctx.beginPath();
+        for (let k = 0; k < nv; k++) {
+          const t = (k / nv) * Math.PI * 2 + r(-0.25, 0.25);
+          const j = r(0.78, 1.08);
+          const px = Math.cos(t) * (w / 2) * j;
+          const py = Math.sin(t) * (h / 2) * j;
+          if (k === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = hsl(F.groutH ?? 210, F.groutS ?? 0.2, F.groutL ?? 0.06, F.groutA ?? 0.42);
+        ctx.lineWidth = F.grout ?? 3;
+        ctx.stroke();
+      } else {
+        ctx.fillRect(-w / 2, -h / 2, w, h);
+        ctx.strokeStyle = hsl(F.groutH ?? 210, F.groutS ?? 0.2, F.groutL ?? 0.06, F.groutA ?? 0.42);
+        ctx.lineWidth = F.grout ?? 3;
+        ctx.strokeRect(-w / 2, -h / 2, w, h);
+      }
       // a chipped corner / crack on a third of the slabs
       if (lit < 0.33) {
         ctx.beginPath();
@@ -862,11 +1018,22 @@ export function* paintApronSteps(spec, cosmetic) {
   // Mist band: a bright cool haze hugging the outside of the wall. This is the
   // value break that stops the wall and the void reading as one dark mass.
   const mistW = 6.0 * ppu;
+  // GAUNTLET: a biome may tint the mist band (`apron.mist` = [r, g, b]); the
+  // default is the certified cool blue-grey, value-for-value.
+  const MI = A && A.mist ? A.mist : null;
+  const mistA = (a, k) =>
+    MI
+      ? `rgba(${Math.round(MI[0] * k)},${Math.round(MI[1] * k)},${Math.round(MI[2] * k)},${a})`
+      : k === 1
+        ? `rgba(122,136,156,${a})`
+        : k === 0.76
+          ? `rgba(92,104,124,${a})`
+          : `rgba(56,66,82,${a})`;
   const mistGrad = (x0, y0, x1, y1) => {
     const gr = ctx.createLinearGradient(x0, y0, x1, y1);
-    gr.addColorStop(0, 'rgba(122,136,156,0.2)');
-    gr.addColorStop(0.3, 'rgba(92,104,124,0.1)');
-    gr.addColorStop(1, 'rgba(56,66,82,0)');
+    gr.addColorStop(0, mistA(0.2, 1));
+    gr.addColorStop(0.3, mistA(0.1, 0.76));
+    gr.addColorStop(1, mistA(0, 0.46));
     return gr;
   };
   ctx.fillStyle = mistGrad(0, inner.z0, 0, inner.z0 - mistW);
@@ -886,7 +1053,7 @@ export function* paintApronSteps(spec, cosmetic) {
     else if (side === 1) { px = r(inner.x0 - mistW, inner.x1 + mistW); pz = inner.z1 + r(0, mistW); }
     else if (side === 2) { px = inner.x0 - r(0, mistW); pz = r(inner.z0 - mistW, inner.z1 + mistW); }
     else { px = inner.x1 + r(0, mistW); pz = r(inner.z0 - mistW, inner.z1 + mistW); }
-    blob(ctx, px, pz, r(30, 95), `rgba(120,134,154,${r(0.05, 0.13).toFixed(3)})`);
+    blob(ctx, px, pz, r(30, 95), MI ? `rgba(${MI[0]},${MI[1]},${MI[2]},${r(0.05, 0.13).toFixed(3)})` : `rgba(120,134,154,${r(0.05, 0.13).toFixed(3)})`);
   }
 
   // Rim fade to the charcoal background at the far edge only.

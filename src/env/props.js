@@ -36,6 +36,7 @@
 // 4. EVERY TYPE CARRIES A SILHOUETTE-BREAKING DETAIL LAYER (crate lid + slats,
 //    slab inset course + chipped corners + moss, stump root flare + ring cut).
 import {
+  AdditiveBlending,
   BackSide,
   BoxGeometry,
   CanvasTexture,
@@ -43,6 +44,7 @@ import {
   Color,
   ConeGeometry,
   CylinderGeometry,
+  Group,
   IcosahedronGeometry,
   InstancedMesh,
   LatheGeometry,
@@ -51,6 +53,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshToonMaterial,
+  PlaneGeometry,
   Quaternion,
   ShaderMaterial,
   SRGBColorSpace,
@@ -65,6 +68,7 @@ import { PALETTE } from '../data/palette.js';
 import { COOL, ENV, hslColor, mix, shade } from './colors.js';
 import { pathClearance } from './variants.js';
 import { buildRoomDressing } from './dressing.js';
+import { veinNetwork } from './ground.js';
 
 // Ground-plane render order band. The additive warm light pools draw FIRST, the
 // contact shadows draw on top of them: a black blob under an additive pool that
@@ -1186,6 +1190,273 @@ function propTypes(mats, spec) {
     }
   }
 
+  // ---------------------------------------------------------------------
+  // Act IV — The Hollow Heart (env/biomes/heart.js): crystal spire (a light
+  // source: a 'crystal' emitter), crystal cluster, geode, root arch, root
+  // tangle, vein rock, ribcage, bone pile, heart polyp, fallen shard. Violet
+  // crystal carries a low emissive so it reads lit from within; vein lines
+  // are the monolith's pre-compensated violet (unlit, never toned).
+  // ---------------------------------------------------------------------
+  if (mats.crystal) {
+    // A hexagonal crystal: shaft + pointed tip, sharing one transform so the
+    // two layers (body / lighter tip) stay glued.
+    const crystalPair = (r, h, tz, tx, x, z, ry = 0) => {
+      const xf = (g) => g.rotateY(ry).rotateZ(tz).rotateX(tx).translate(x, 0, z);
+      return {
+        shaft: xf(new CylinderGeometry(r, r * 1.14, h, 6).translate(0, h / 2, 0)),
+        tip: xf(new ConeGeometry(r, r * 2.3, 6).translate(0, h + r * 1.15, 0)),
+      };
+    };
+    const crystalLayers = (list) => {
+      const parts = list.map((a) => crystalPair(...a));
+      return { shaft: mergeGeometries(parts.map((p) => p.shaft)), tip: mergeGeometries(parts.map((p) => p.tip)) };
+    };
+    // --- Crystal spire: a tall violet stand on a black rock socket (light).
+    {
+      const base = mergeGeometries([
+        new IcosahedronGeometry(0.3, 0).scale(1.2, 0.42, 1).translate(0, 0.07, 0),
+        new IcosahedronGeometry(0.17, 0).scale(1, 0.5, 1).translate(0.27, 0.05, 0.14),
+        new IcosahedronGeometry(0.13, 0).scale(1, 0.55, 1).translate(-0.24, 0.04, -0.12),
+      ]);
+      const c = crystalLayers([
+        [0.105, 0.74, 0.05, 0.04, 0, 0],
+        [0.078, 0.48, 0.44, 0.1, 0.13, 0.05, 0.4],
+        [0.072, 0.42, -0.48, -0.12, -0.12, 0.04, 1.1],
+        [0.056, 0.28, 0.3, -0.6, 0.03, -0.13, 2.0],
+      ]);
+      T.crystalspire = {
+        layers: [
+          { geo: base, mat: mats.heartRock, ink: PROP_INK_PX },
+          { geo: c.shaft, mat: mats.crystal, ink: PROP_INK_PX },
+          { geo: c.tip, mat: mats.crystalLit, ink: DETAIL_INK_PX },
+        ],
+        foot: 0.36,
+        faint: true,
+        emitter: (t) => ({ kind: 'crystal', x: t.x, y: 0.62 * (t.sy ?? t.s ?? 1), z: t.z }),
+      };
+    }
+    // --- Crystal cluster: a low spray of small points out of a rock.
+    {
+      const base = new IcosahedronGeometry(0.2, 0).scale(1.2, 0.4, 1).translate(0, 0.05, 0);
+      const c = crystalLayers([
+        [0.07, 0.36, 0.12, 0.05, 0, 0],
+        [0.055, 0.24, 0.55, 0.15, 0.1, 0.06, 0.7],
+        [0.06, 0.28, -0.5, 0.0, -0.1, 0.02, 1.9],
+        [0.045, 0.16, 0.25, -0.7, 0.02, -0.1, 2.8],
+        [0.04, 0.14, -0.3, 0.7, -0.04, 0.12, 4.0],
+      ]);
+      T.crystalcluster = {
+        layers: [
+          { geo: base, mat: mats.heartRock, ink: PROP_INK_PX },
+          { geo: c.shaft, mat: mats.crystal, ink: PROP_INK_PX },
+          { geo: c.tip, mat: mats.crystalLit, ink: DETAIL_INK_PX },
+        ],
+        foot: 0.28,
+      };
+    }
+    // --- Geode: a cracked-open rock rim brimming with crystal teeth.
+    {
+      const rim = mergeGeometries([
+        new TorusGeometry(0.27, 0.12, 5, 11).rotateX(Math.PI / 2).scale(1, 1, 0.82).translate(0, 0.1, 0),
+      ]);
+      const lumps = mergeGeometries([
+        new IcosahedronGeometry(0.14, 0).scale(1, 0.6, 1).translate(0.36, 0.06, 0.08),
+        new IcosahedronGeometry(0.12, 0).scale(1, 0.6, 1).translate(-0.3, 0.05, -0.16),
+        new IcosahedronGeometry(0.1, 0).scale(1, 0.6, 1).translate(-0.06, 0.05, 0.32),
+      ]);
+      const teeth = [];
+      for (let k = 0; k < 9; k++) {
+        const a = k * 2.39996;
+        const rr = k === 0 ? 0 : 0.08 + (k % 3) * 0.04;
+        teeth.push([0.04 + (k % 2) * 0.015, 0.14 + ((k * 5) % 4) * 0.04, Math.cos(a) * 0.35 * (rr > 0 ? 1 : 0), Math.sin(a) * 0.35 * (rr > 0 ? 1 : 0), Math.cos(a) * rr, Math.sin(a) * rr * 0.82, a]);
+      }
+      const c = crystalLayers(teeth);
+      const bed = new CylinderGeometry(0.22, 0.2, 0.05, 10).translate(0, 0.06, 0);
+      T.geode = {
+        layers: [
+          { geo: rim, mat: mats.heartRock, ink: PROP_INK_PX },
+          { geo: lumps, mat: mats.heartRockLit, ink: DETAIL_INK_PX },
+          { geo: bed, mat: mats.crystalDeep },
+          { geo: c.shaft, mat: mats.crystal, ink: 1.15 },
+          { geo: c.tip, mat: mats.crystalLit },
+        ],
+        foot: 0.42,
+        rz: 0.36,
+      };
+    }
+    // --- Root arch: a gnarled root looping out of the stone and back in.
+    {
+      const arch = mergeGeometries([
+        new TorusGeometry(0.46, 0.085, 6, 14, Math.PI).translate(0, -0.04, 0),
+        new TorusGeometry(0.32, 0.06, 5, 12, Math.PI * 0.92).rotateY(0.5).translate(0.12, -0.03, 0.12),
+      ]);
+      const knots = mergeGeometries([
+        new IcosahedronGeometry(0.13, 0).scale(1.2, 0.55, 1).translate(0.46, 0.04, 0),
+        new IcosahedronGeometry(0.12, 0).scale(1.2, 0.55, 1).translate(-0.46, 0.04, 0),
+        new IcosahedronGeometry(0.07, 0).translate(0.08, 0.43, 0.02),
+      ]);
+      T.rootarch = {
+        layers: [
+          { geo: arch, mat: mats.root, ink: PROP_INK_PX },
+          { geo: knots, mat: mats.rootLit, ink: DETAIL_INK_PX },
+        ],
+        foot: 0.56,
+        rz: 0.24,
+      };
+    }
+    // --- Root tangle: roots crawling out of a knot and back under the stone.
+    {
+      const roots = [];
+      for (let k = 0; k < 6; k++) {
+        const a = k * 1.13 + 0.3;
+        const len = 0.42 + (k % 3) * 0.14;
+        const rr = 0.032 + (k % 2) * 0.016;
+        roots.push(
+          new CylinderGeometry(rr * 0.4, rr, len, 5)
+            .rotateZ(Math.PI / 2 - 0.16 - (k % 2) * 0.1)
+            .translate(len / 2 + 0.06, 0.05, 0)
+            .rotateY(a)
+        );
+      }
+      const knot = mergeGeometries([
+        new IcosahedronGeometry(0.15, 0).scale(1.1, 0.6, 1).translate(0, 0.07, 0),
+        new IcosahedronGeometry(0.08, 0).scale(1, 0.7, 1).translate(0.1, 0.13, 0.04),
+      ]);
+      T.roots = {
+        layers: [
+          { geo: mergeGeometries(roots), mat: mats.root, ink: 1.5 },
+          { geo: knot, mat: mats.rootLit, ink: DETAIL_INK_PX },
+        ],
+        foot: 0.46,
+      };
+    }
+    // --- Vein rock: a black boulder split by glowing violet veins.
+    {
+      const R = [0.4, 0.26, 0.35];
+      const rock = new IcosahedronGeometry(1, 1).scale(R[0], R[1], R[2]).translate(0, 0.2, 0);
+      const chunk = new IcosahedronGeometry(0.15, 0).scale(1, 0.62, 1).translate(0.42, 0.07, -0.16);
+      const arcs = [];
+      for (const [ry, tilt, a0, al] of [[0.3, 0.2, 0.25, 1.9], [1.6, -0.25, 0.4, 1.6], [2.5, 0.35, 0.9, 1.4], [-0.9, 0.0, 0.2, 1.2]]) {
+        arcs.push(
+          new TorusGeometry(1, 0.055, 3, 14, al)
+            .rotateZ(a0)
+            .rotateX(tilt)
+            .rotateY(ry)
+            .scale(R[0] * 1.03, R[1] * 1.05, R[2] * 1.03)
+            .translate(0, 0.2, 0)
+        );
+      }
+      T.veinrock = {
+        layers: [
+          { geo: rock, mat: mats.heartRock, ink: PROP_INK_PX },
+          { geo: chunk, mat: mats.heartRockLit, ink: DETAIL_INK_PX },
+          { geo: mergeGeometries(arcs), mat: mats.vein },
+        ],
+        foot: 0.42,
+      };
+    }
+    // --- Ribcage: a long-dead thing's spine and ribs, its skull beside it.
+    {
+      const ribs = [new CylinderGeometry(0.028, 0.034, 0.74, 5).rotateZ(Math.PI / 2).translate(0.02, 0.05, 0)];
+      for (let k = 0; k < 4; k++) {
+        const x = -0.2 + k * 0.15;
+        const r = 0.2 - k * 0.025;
+        ribs.push(new TorusGeometry(r, 0.022, 4, 9, Math.PI * (0.78 + (k % 2) * 0.1)).rotateY(Math.PI / 2).scale(1, 0.92, 1).translate(x, 0.02, 0));
+      }
+      const skull = mergeGeometries([
+        new IcosahedronGeometry(0.11, 1).scale(1.1, 0.9, 1).translate(-0.5, 0.1, 0.06),
+        new IcosahedronGeometry(0.07, 0).scale(1.2, 0.6, 1).translate(-0.6, 0.05, 0.08),
+      ]);
+      const sockets = mergeGeometries([
+        new IcosahedronGeometry(0.03, 0).translate(-0.6, 0.13, 0.03),
+        new IcosahedronGeometry(0.03, 0).translate(-0.6, 0.13, 0.11),
+      ]);
+      T.ribcage = {
+        layers: [
+          { geo: mergeGeometries(ribs), mat: mats.bone, ink: 1.4 },
+          { geo: skull, mat: mats.bone, ink: PROP_INK_PX },
+          { geo: sockets, mat: mats.heartRock },
+        ],
+        foot: 0.44,
+        rz: 0.3,
+      };
+    }
+    // --- Bone pile: scattered long bones and a skull.
+    {
+      const bones = mergeGeometries([
+        new CylinderGeometry(0.024, 0.024, 0.4, 5).toNonIndexed().rotateZ(Math.PI / 2).rotateY(0.4).translate(0.04, 0.03, 0.02),
+        new IcosahedronGeometry(0.04, 0).translate(0.22, 0.04, -0.06),
+        new IcosahedronGeometry(0.04, 0).translate(-0.14, 0.04, 0.1),
+        new CylinderGeometry(0.02, 0.02, 0.32, 5).toNonIndexed().rotateZ(Math.PI / 2 - 0.25).rotateY(-0.9).translate(-0.02, 0.07, 0.04),
+        new CylinderGeometry(0.02, 0.02, 0.26, 5).toNonIndexed().rotateZ(Math.PI / 2).rotateY(1.7).translate(0.1, 0.02, 0.12),
+      ]);
+      const skull = new IcosahedronGeometry(0.1, 1).scale(1.1, 0.88, 1).translate(-0.16, 0.08, -0.14);
+      T.bonepile = {
+        layers: [
+          { geo: bones, mat: mats.bone, ink: 1.15 },
+          { geo: skull, mat: mats.bone, ink: PROP_INK_PX },
+        ],
+        foot: 0.3,
+      };
+    }
+    // --- Heart polyp: a swollen flesh pod with a violet-lit slit, rooted.
+    {
+      const profile = [[0.001, 0], [0.12, 0.02], [0.2, 0.13], [0.22, 0.28], [0.17, 0.44], [0.09, 0.54], [0.001, 0.58]].map(([x, y]) => new Vector2(x, y));
+      const pod = new LatheGeometry(profile, 11);
+      const veins = mergeGeometries(
+        [0, 1, 2, 3].map((k) =>
+          new BoxGeometry(0.018, 0.3, 0.018)
+            .rotateX(0.3)
+            .translate(0, 0.27, 0.205)
+            .rotateY(k * 1.57 + 0.4)
+        )
+      );
+      const slit = new IcosahedronGeometry(0.055, 0).scale(1, 1.4, 1).translate(0, 0.57, 0);
+      const tendrils = mergeGeometries(
+        [0, 1, 2, 3].map((k) =>
+          new CylinderGeometry(0.012, 0.035, 0.36, 5)
+            .rotateZ(Math.PI / 2 - 0.2)
+            .translate(0.3, 0.04, 0)
+            .rotateY(k * 1.6 + 0.8)
+        )
+      );
+      T.polyp = {
+        layers: [
+          { geo: pod, mat: mats.flesh, ink: PROP_INK_PX },
+          { geo: tendrils, mat: mats.fleshDark, ink: 1.15 },
+          { geo: veins, mat: mats.vein },
+          { geo: slit, mat: mats.vein },
+        ],
+        foot: 0.3,
+      };
+    }
+    // --- Fallen shard: a broken crystal lying on its side by its stump.
+    {
+      const lying = crystalLayers([[0.11, 0.78, Math.PI / 2 - 0.12, 0, 0.36, 0.0, 0]]);
+      // lift it so it rests on its edge instead of sinking through the floor
+      lying.shaft.translate(0, 0.1, 0);
+      lying.tip.translate(0, 0.1, 0);
+      const stump = crystalLayers([
+        [0.09, 0.18, 0.1, 0.0, -0.18, 0.12, 0.3],
+        [0.05, 0.1, -0.4, 0.2, -0.3, -0.06, 1.2],
+      ]);
+      const chips = mergeGeometries([
+        new ConeGeometry(0.035, 0.09, 5).rotateZ(1.2).translate(0.1, 0.02, 0.18),
+        new ConeGeometry(0.03, 0.08, 5).rotateZ(-1.0).translate(-0.06, 0.02, -0.2),
+        new ConeGeometry(0.03, 0.07, 5).rotateX(1.3).translate(0.3, 0.02, -0.16),
+      ]);
+      T.shardfall = {
+        layers: [
+          { geo: mergeGeometries([lying.shaft, stump.shaft]), mat: mats.crystal, ink: PROP_INK_PX },
+          { geo: mergeGeometries([lying.tip, stump.tip]), mat: mats.crystalLit, ink: DETAIL_INK_PX },
+          { geo: chips, mat: mats.crystalDeep },
+        ],
+        foot: 0.5,
+        rz: 0.26,
+      };
+    }
+  }
+
   void spec;
   return T;
 }
@@ -1474,6 +1745,375 @@ function buildVeinStones(root, [x, z, yaw], shadows, emitters, cosmetic, footpri
 }
 
 // ---------------------------------------------------------------------------
+// Act IV — The Hollow Heart landmarks. One per layout is the act's violet
+// tell (a `monolith` emitter: violet halo + underglow); built as plain meshes
+// (each is placed once) with screen-space ink like the monolith.
+// ---------------------------------------------------------------------------
+// The heart's beat on the wall clock: a lub-dub every 1.3 s, 0 at rest and
+// 1 at the peak of the first beat. The vein decal and every heart share it.
+export function heartBeat(tSec) {
+  const ph = (tSec / 1.3) % 1;
+  const lub = Math.exp(-Math.pow((ph - 0.04) / 0.045, 2));
+  const dub = 0.6 * Math.exp(-Math.pow((ph - 0.22) / 0.05, 2));
+  return lub + dub;
+}
+const nowSec = () => (typeof performance !== 'undefined' ? performance.now() / 1000 : 0);
+
+// A lumpy organic mass: an icosphere with a deterministic low-frequency
+// swell on every vertex (no RNG: a landmark looks the same on every load).
+function lumpyGeo(radius, detail, sx, sy, sz, k = 0.16, seed = 1) {
+  const g = new IcosahedronGeometry(radius, detail);
+  const pos = g.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const n = Math.sin(x * 4.1 + seed) * Math.sin(y * 3.7 + seed * 2.1) * Math.sin(z * 4.6 + seed * 0.7);
+    const f = 1 + k * n + 0.05 * Math.sin((x + z) * 9 + seed);
+    pos.setXYZ(i, x * f * sx, y * f * sy, z * f * sz);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
+// Vein lines over an ellipsoid of radii R centred at height cy: great-circle
+// torus arcs scaled onto the surface (the vein rock's grammar, bigger).
+function ellipsoidVeins(R, cy, specs, tube = 0.045) {
+  return mergeGeometries(
+    specs.map(([ry, tilt, a0, al]) =>
+      new TorusGeometry(1, tube, 3, 18, al)
+        .rotateZ(a0)
+        .rotateX(tilt)
+        .rotateY(ry)
+        .scale(R[0] * 1.03, R[1] * 1.04, R[2] * 1.03)
+        .translate(0, cy, 0)
+    )
+  );
+}
+
+function meshInk(root, geo, mat, x, z, yaw, ink = PROP_INK_PX) {
+  const m = new Mesh(geo, mat);
+  m.position.set(x, 0, z);
+  m.rotation.y = yaw;
+  if (ink) addPropInk(m, ink);
+  root.add(m);
+  return m;
+}
+
+function buildLandmark(root, [x, z, rad = 1, kind = 'heart', yaw = 0], shadows, emitters, footprints, mats, cosmetic) {
+  if (!mats.crystal) return null;
+  const S = rad;
+  if (kind === 'heart' || kind === 'heartnode') {
+    const big = kind === 'heart';
+    const k = big ? S / 1.3 : S / 1.0 * 0.78;
+    // Everything that beats lives in one group scaled about the heart's base.
+    const beat = new Group();
+    beat.position.set(x, 0, z);
+    beat.rotation.y = yaw;
+    root.add(beat);
+    const R = [0.92 * k, 0.9 * k, 0.76 * k];
+    const cy = 0.78 * k;
+    const massGeo = lumpyGeo(1, 3, R[0], R[1], R[2], 0.07, 1.7).translate(0, cy, 0);
+    const fleshMat = toonMaterial({ color: hslColor(343, 0.42, 0.42), emissive: hslColor(336, 0.6, 0.2), emissiveIntensity: 0.45 });
+    const mass = new Mesh(massGeo, fleshMat);
+    addPropInk(mass);
+    beat.add(mass);
+    // Ventricle lobes and the darker cleft between them.
+    const lobes = new Mesh(
+      mergeGeometries([
+        lumpyGeo(0.5 * k, 2, 1, 0.9, 0.9, 0.1, 3.1).translate(-0.62 * k, 0.4 * k, 0.28 * k),
+        lumpyGeo(0.44 * k, 2, 1, 0.9, 0.9, 0.1, 4.3).translate(0.66 * k, 0.36 * k, 0.24 * k),
+      ]),
+      toonMaterial({ color: hslColor(338, 0.36, 0.31) })
+    );
+    addPropInk(lobes);
+    beat.add(lobes);
+    if (big) {
+      // Arteries arching up and back into the wall.
+      const art = new Mesh(
+        mergeGeometries([
+          new TorusGeometry(0.36 * k, 0.13 * k, 7, 12, Math.PI * 0.85).rotateY(Math.PI / 2).translate(-0.2 * k, 1.28 * k, -0.25 * k),
+          new TorusGeometry(0.28 * k, 0.1 * k, 7, 12, Math.PI * 0.8).rotateY(Math.PI / 2 + 0.5).translate(0.3 * k, 1.22 * k, -0.2 * k),
+          new CylinderGeometry(0.1 * k, 0.15 * k, 0.6 * k, 7).rotateX(-0.5).translate(0.05 * k, 1.42 * k, -0.4 * k),
+        ]),
+        toonMaterial({ color: hslColor(334, 0.3, 0.34) })
+      );
+      addPropInk(art);
+      beat.add(art);
+    }
+    // The violet veins over the heart: brightest at the beat.
+    // Deeper, more saturated violet than the stone veins: over the rose
+    // flesh a paler violet read as white scar lines.
+    const veinMat = new MeshBasicMaterial({ toneMapped: false });
+    veinMat.color.setRGB(0.3, 0.1, 0.78, LinearSRGBColorSpace);
+    const vBase = veinMat.color.clone();
+    const veins = new Mesh(
+      ellipsoidVeins(R, cy, [
+        [0.2, 0.25, 0.3, 2.2],
+        [1.1, -0.3, 0.5, 1.8],
+        [2.0, 0.2, 0.2, 2.0],
+        [2.9, -0.15, 0.7, 1.5],
+        [-0.8, 0.4, 0.1, 1.7],
+        [-1.7, -0.2, 0.6, 1.6],
+      ], 0.042),
+      veinMat
+    );
+    veins.renderOrder = 2;
+    beat.add(veins);
+    // Roots / tendrils spreading from the base onto the floor (not beating).
+    const tend = [];
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2 + 0.3;
+      const len = (0.7 + (i % 3) * 0.25) * k;
+      tend.push(
+        new CylinderGeometry(0.03 * k, 0.1 * k, len, 5)
+          .rotateZ(Math.PI / 2 - 0.12)
+          .translate(len / 2 + 0.55 * k, 0.05, 0)
+          .rotateY(a)
+      );
+    }
+    meshInk(root, mergeGeometries(tend), mats.root, x, z, yaw, 1.5);
+    const tendVeins = [];
+    for (let i = 0; i < 9; i += 2) {
+      const a = (i / 9) * Math.PI * 2 + 0.3;
+      const len = (0.7 + (i % 3) * 0.25) * k;
+      tendVeins.push(new BoxGeometry(len * 0.8, 0.02, 0.022).translate(len * 0.45 + 0.6 * k, 0.1 * k + 0.02, 0).rotateY(a));
+    }
+    const tv = new Mesh(mergeGeometries(tendVeins), veinMat);
+    tv.position.set(x, 0, z);
+    tv.rotation.y = yaw;
+    tv.renderOrder = 2;
+    root.add(tv);
+    // Lub-dub: the mass swells and the veins flare on the beat.
+    mass.onBeforeRender = () => {
+      const b = heartBeat(nowSec() + (big ? 0 : 0.35));
+      const s = 1 + (big ? 0.05 : 0.04) * b;
+      beat.scale.set(s, 1 + (s - 1) * 0.7, s);
+      veinMat.color.copy(vBase).multiplyScalar(0.62 + 0.5 * b);
+      fleshMat.emissiveIntensity = 0.38 + 0.4 * b;
+    };
+    shadows.push({ x, z, rx: R[0] * 1.5, rz: R[2] * 1.4, yaw });
+    footprints.push({ x, z, r: R[0] * 1.1 });
+    emitters.push({ kind: 'monolith', x, y: cy, z: z + 0.35 * k });
+    if (big) emitters.push({ kind: 'crystal', x, y: cy * 0.6, z: z + 0.9 * k, size: 1.6, pool: 2.8 });
+    return null;
+  }
+  if (kind === 'rootgate') {
+    // Three great roots arching out of the north wall over a black mouth
+    // that glows violet from deep inside.
+    const k = S / 1.4;
+    const arches = mergeGeometries([
+      new TorusGeometry(1.0 * k, 0.17 * k, 7, 18, Math.PI).translate(0, -0.05, 0),
+      new TorusGeometry(0.86 * k, 0.12 * k, 6, 16, Math.PI * 0.94).rotateY(0.18).translate(0.1 * k, -0.04, -0.3 * k),
+      new TorusGeometry(1.16 * k, 0.11 * k, 6, 18, Math.PI * 0.9).rotateZ(0.08).rotateY(-0.14).translate(-0.05 * k, -0.06, -0.55 * k),
+    ]);
+    meshInk(root, arches, mats.rootLit, x, z, yaw);
+    const knots = mergeGeometries([
+      lumpyGeo(0.28 * k, 1, 1.3, 0.6, 1.1, 0.15, 2).translate(1.0 * k, 0.08, 0),
+      lumpyGeo(0.26 * k, 1, 1.3, 0.6, 1.1, 0.15, 5).translate(-1.0 * k, 0.08, 0),
+      lumpyGeo(0.16 * k, 1, 1, 0.7, 1, 0.1, 7).translate(0.25 * k, 1.12 * k, 0.05),
+    ]);
+    meshInk(root, knots, mats.root, x, z, yaw, DETAIL_INK_PX);
+    // The mouth: a deep violet-black hole under the arch, banded with light.
+    const mouth = new Mesh(
+      new CircleGeometry(0.8 * k, 20, 0, Math.PI).translate(0, 0, 0),
+      new MeshBasicMaterial({ color: hslColor(276, 0.5, 0.05), toneMapped: false })
+    );
+    mouth.position.set(x, 0.0, z - 0.42 * k);
+    mouth.rotation.y = yaw;
+    root.add(mouth);
+    const depth = new Mesh(new CircleGeometry(0.42 * k, 18, 0, Math.PI), veinMaterial(0.22));
+    depth.position.set(x, 0.0, z - 0.4 * k);
+    depth.rotation.y = yaw;
+    root.add(depth);
+    const vm = veinMaterial(0.45);
+    const vBase = vm.color.clone();
+    const arcV = new Mesh(
+      mergeGeometries([
+        new TorusGeometry(1.0 * k, 0.02, 3, 22, Math.PI * 0.42).rotateZ(0.2).translate(0, 0.12 * k, 0.14 * k),
+        new TorusGeometry(1.0 * k, 0.02, 3, 22, Math.PI * 0.3).rotateZ(Math.PI * 0.62).translate(0, 0.1 * k, 0.15 * k),
+        new TorusGeometry(0.86 * k, 0.018, 3, 18, Math.PI * 0.5).rotateZ(0.6).rotateY(0.18).translate(0.1 * k, 0.08 * k, -0.18 * k),
+      ]),
+      vm
+    );
+    arcV.position.set(x, 0, z);
+    arcV.rotation.y = yaw;
+    arcV.renderOrder = 2;
+    root.add(arcV);
+    depth.onBeforeRender = () => {
+      const b = heartBeat(nowSec() + 0.6);
+      vm.color.copy(vBase).multiplyScalar(0.7 + 0.35 * b);
+    };
+    shadows.push({ x, z, rx: 1.4 * k, rz: 0.55 * k, yaw });
+    footprints.push({ x, z, r: 1.25 * k });
+    emitters.push({ kind: 'crystal', x, y: 0.35 * k, z: z + 0.25, size: 1.1, pool: 2.4 });
+    return null;
+  }
+  if (kind === 'geode') {
+    // A great open geode: a broken black rock shell brimming with crystals.
+    const k = S / 1.2;
+    const shell = mergeGeometries([
+      new TorusGeometry(0.78 * k, 0.3 * k, 6, 16).rotateX(Math.PI / 2).scale(1, 1, 0.8).translate(0, 0.2 * k, 0),
+    ]);
+    meshInk(root, shell, mats.heartRock, x, z, yaw);
+    const lumps = mergeGeometries([
+      lumpyGeo(0.36 * k, 1, 1.2, 0.8, 1, 0.15, 1).translate(-0.7 * k, 0.32 * k, -0.42 * k),
+      lumpyGeo(0.3 * k, 1, 1.2, 0.9, 1, 0.15, 4).translate(0.62 * k, 0.3 * k, -0.48 * k),
+      lumpyGeo(0.2 * k, 0, 1, 0.7, 1, 0.1, 6).translate(0.9 * k, 0.1, 0.3 * k),
+    ]);
+    meshInk(root, lumps, mats.heartRockLit, x, z, yaw, DETAIL_INK_PX);
+    const bed = new Mesh(new CylinderGeometry(0.62 * k, 0.6 * k, 0.12, 14).translate(0, 0.08, 0), mats.crystalDeep);
+    bed.position.set(x, 0, z);
+    bed.rotation.y = yaw;
+    bed.scale.z = 0.8;
+    root.add(bed);
+    const shafts = [];
+    const tips = [];
+    for (let i = 0; i < 15; i++) {
+      const a = i * 2.39996;
+      const rr = i === 0 ? 0 : (0.16 + ((i * 7) % 5) * 0.09) * k;
+      const r0 = (0.07 + ((i * 3) % 4) * 0.018) * k;
+      const h = (i === 0 ? 0.92 : 0.28 + ((i * 11) % 6) * 0.08) * k;
+      const tilt = i === 0 ? 0.05 : 0.18 + rr * 0.55;
+      const xf = (g) => g.rotateZ(Math.cos(a) * -tilt).rotateX(Math.sin(a) * tilt).translate(Math.cos(a) * rr, 0.08, Math.sin(a) * rr * 0.8);
+      shafts.push(xf(new CylinderGeometry(r0, r0 * 1.14, h, 6).translate(0, h / 2, 0)));
+      tips.push(xf(new ConeGeometry(r0, r0 * 2.3, 6).translate(0, h + r0 * 1.15, 0)));
+    }
+    meshInk(root, mergeGeometries(shafts), mats.crystal, x, z, yaw);
+    meshInk(root, mergeGeometries(tips), mats.crystalLit, x, z, yaw, DETAIL_INK_PX);
+    shadows.push({ x, z, rx: 1.2 * k, rz: 1.0 * k, yaw });
+    footprints.push({ x, z, r: 1.1 * k });
+    emitters.push({ kind: 'monolith', x, y: 0.55 * k, z });
+    void cosmetic;
+    return null;
+  }
+  if (kind === 'well') {
+    // A weeping well: a ring of black stones round a pool of the heart's
+    // violet ichor, which brims and weeps over the lip onto the floor.
+    const k = S / 1.1;
+    const ring = mergeGeometries([new TorusGeometry(0.78 * k, 0.17 * k, 6, 20).rotateX(Math.PI / 2).scale(1, 1, 1.0).translate(0, 0.16 * k, 0)]);
+    meshInk(root, ring, mats.heartRock, x, z, yaw);
+    const stones = [];
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2 + 0.2;
+      stones.push(new BoxGeometry(0.3 * k, 0.12 * k, 0.2 * k).rotateY(-a + Math.PI / 2).translate(Math.cos(a) * 0.8 * k, 0.3 * k, Math.sin(a) * 0.8 * k));
+    }
+    meshInk(root, mergeGeometries(stones), mats.heartRockLit, x, z, yaw, DETAIL_INK_PX);
+    const poolMat = new MeshBasicMaterial({ toneMapped: false });
+    poolMat.color.setRGB(0.16, 0.05, 0.46, LinearSRGBColorSpace);
+    const pBase = poolMat.color.clone();
+    const pool = new Mesh(new CircleGeometry(0.66 * k, 28).rotateX(-Math.PI / 2), poolMat);
+    pool.position.set(x, 0.24 * k, z);
+    root.add(pool);
+    const sheenMat = new MeshBasicMaterial({ toneMapped: false });
+    sheenMat.color.setRGB(0.5, 0.3, 1.25, LinearSRGBColorSpace);
+    const sheen = new Mesh(new RingGeometryLite(0.36 * k, 0.46 * k), sheenMat);
+    sheen.position.set(x, 0.245 * k, z);
+    root.add(sheen);
+    // The weep: violet runnels over the lip and out across the floor.
+    const runs = [];
+    for (const a of [0.5, 2.2, 3.9, 5.1]) {
+      runs.push(new BoxGeometry(0.06 * k, 0.012, 0.5 * k).translate(0, 0.012, 0.98 * k).rotateY(a));
+      runs.push(new BoxGeometry(0.05 * k, 0.03, 0.22 * k).rotateX(-0.9).translate(0, 0.18 * k, 0.86 * k).rotateY(a));
+    }
+    const rm = new Mesh(mergeGeometries(runs), veinMaterial(0.62));
+    rm.position.set(x, 0, z);
+    rm.rotation.y = yaw;
+    rm.renderOrder = 2;
+    root.add(rm);
+    // Crystals growing on the rim.
+    const shafts = [];
+    const tips = [];
+    for (const [a, h, r0] of [[1.2, 0.36, 0.07], [1.45, 0.22, 0.05], [4.4, 0.3, 0.06], [4.15, 0.18, 0.045], [5.9, 0.2, 0.05]]) {
+      const xf = (g) => g.rotateZ(-0.35).rotateY(-a).translate(Math.cos(a) * 0.86 * k, 0.24 * k, Math.sin(a) * 0.86 * k);
+      shafts.push(xf(new CylinderGeometry(r0 * k, r0 * 1.14 * k, h * k, 6).translate(0, (h * k) / 2, 0)));
+      tips.push(xf(new ConeGeometry(r0 * k, r0 * 2.3 * k, 6).translate(0, h * k + r0 * 1.15 * k, 0)));
+    }
+    meshInk(root, mergeGeometries(shafts), mats.crystal, x, z, yaw);
+    meshInk(root, mergeGeometries(tips), mats.crystalLit, x, z, yaw, DETAIL_INK_PX);
+    pool.onBeforeRender = () => {
+      const tS = nowSec();
+      const b = heartBeat(tS + x * 0.05);
+      poolMat.color.copy(pBase).multiplyScalar(0.85 + 0.3 * b);
+      sheen.rotation.z = tS * 0.2;
+    };
+    shadows.push({ x, z, rx: 1.15 * k, rz: 1.0 * k, yaw });
+    footprints.push({ x, z, r: 1.05 * k });
+    emitters.push({ kind: 'crystal', x, y: 0.75 * k, z: z - 0.3 * k, size: 0.9, pool: 2.2 });
+    return null;
+  }
+  return null;
+}
+
+// A flat ring lying on the floor (the well's slow sheen).
+function RingGeometryLite(r0, r1) {
+  const segs = 28;
+  const g = new TorusGeometry((r0 + r1) / 2, (r1 - r0) / 2, 2, segs, Math.PI * 1.2);
+  g.rotateX(-Math.PI / 2).scale(1, 0.02, 1);
+  return g;
+}
+
+// The vein network's light: the walk env/ground.js paints into the floor,
+// stroked again on a black canvas (opaque greys, so overlaps never bead) and
+// laid over the floor ADDITIVELY in the act's pre-compensated violet. It
+// breathes with the heart.
+function buildVeinGlow(root, spec) {
+  if (typeof document === 'undefined') return null;
+  const segs = veinNetwork(spec);
+  if (segs.length === 0) return null;
+  const W = 1536;
+  const H = Math.round(W * (ARENA.halfD / ARENA.halfW));
+  const ppu = W / (ARENA.halfW * 2);
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const cx = (wx) => (wx + ARENA.halfW) * ppu;
+  const cz = (wz) => (wz + ARENA.halfD) * ppu;
+  for (const [mul, grey, minPx] of [[3.6, 10, 3], [2.4, 22, 2.4], [1.5, 48, 1.8], [0.85, 100, 1.3], [0.42, 180, 0.9]]) {
+    ctx.strokeStyle = `rgb(${grey},${grey},${grey})`;
+    for (const sg of segs) {
+      ctx.lineWidth = Math.max(minPx, sg.w * mul * ppu);
+      ctx.beginPath();
+      ctx.moveTo(cx(sg.ax), cz(sg.az));
+      ctx.lineTo(cx(sg.bx), cz(sg.bz));
+      ctx.stroke();
+    }
+  }
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  tex.anisotropy = 4;
+  const mat = new MeshBasicMaterial({
+    map: tex,
+    transparent: true,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    toneMapped: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+  });
+  const GAIN = 0.22;
+  const base = new Color().setRGB(VEIN_LINEAR[0] * GAIN * 0.8, VEIN_LINEAR[1] * GAIN * 0.66, VEIN_LINEAR[2] * GAIN, LinearSRGBColorSpace);
+  mat.color.copy(base);
+  const mesh = new Mesh(new PlaneGeometry(ARENA.halfW * 2, ARENA.halfD * 2), mat);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = 0.004;
+  mesh.renderOrder = ORDER.pool - 1;
+  mesh.name = 'heart-veins';
+  mesh.onBeforeRender = () => {
+    const b = heartBeat(nowSec() + 0.12);
+    mat.color.copy(base).multiplyScalar(0.72 + 0.34 * b);
+  };
+  root.add(mesh);
+  return mat;
+}
+
+// ---------------------------------------------------------------------------
 // Cluster expansion: authored anchors -> 2-4 scattered props with scale jitter.
 // ---------------------------------------------------------------------------
 function expandClusters(spec, cosmetic, types, seedDiscs = [], clusters = spec.clusters) {
@@ -1582,6 +2222,20 @@ export function buildProps(root, spec, cosmetic) {
     mats.reed = toonMaterial({ color: hslColor(84, 0.34, 0.24) });
     mats.rope = toonMaterial({ color: shade(mix(PALETTE.bone, PALETTE.paleGold, 0.3), 0.55) });
   }
+  if (spec.propFamily === 'heart') {
+    mats.crystal = toonMaterial({ color: hslColor(268, 0.5, 0.46), emissive: hslColor(268, 0.6, 0.3), emissiveIntensity: 0.55 });
+    mats.crystalLit = toonMaterial({ color: hslColor(262, 0.46, 0.72), emissive: hslColor(264, 0.55, 0.42), emissiveIntensity: 0.5 });
+    mats.crystalDeep = toonMaterial({ color: hslColor(276, 0.42, 0.26), emissive: hslColor(272, 0.5, 0.22), emissiveIntensity: 0.4 });
+    mats.heartRock = toonMaterial({ color: hslColor(282, 0.12, 0.15) });
+    mats.heartRockLit = toonMaterial({ color: hslColor(296, 0.1, 0.25) });
+    mats.flesh = toonMaterial({ color: hslColor(338, 0.3, 0.3) });
+    mats.fleshLit = toonMaterial({ color: hslColor(342, 0.3, 0.42) });
+    mats.fleshDark = toonMaterial({ color: hslColor(328, 0.28, 0.16) });
+    mats.root = toonMaterial({ color: hslColor(318, 0.16, 0.17) });
+    mats.rootLit = toonMaterial({ color: hslColor(326, 0.17, 0.27) });
+    mats.bone = toonMaterial({ color: shade(mix(PALETTE.bone, COOL.mist, 0.22), 0.66) });
+    mats.vein = veinMaterial(0.72);
+  }
   if (spec.propFamily === 'barrow') {
     mats.boneStone = toonMaterial({ color: shade(mix(PALETTE.bone, COOL.mist, 0.18), 0.62) });
     mats.boneStoneLit = toonMaterial({ color: shade(mix(PALETTE.bone, PALETTE.parchment, 0.2), 0.72) });
@@ -1621,7 +2275,22 @@ export function buildProps(root, spec, cosmetic) {
       s: sc,
     };
   });
+  // Act IV crystal spires (the heart's light sources) keep their authored
+  // positions like the fire bowls they replace.
+  const crystalT = types.crystalspire
+    ? (spec.crystals ?? []).map(([x, z]) => {
+        const sc = r(0.95, 1.15);
+        return {
+          x: clampIn(x, ARENA.halfW, types.crystalspire.foot * sc),
+          z: clampIn(z, ARENA.halfD, types.crystalspire.foot * sc),
+          yaw: r(0, Math.PI * 2),
+          s: sc,
+        };
+      })
+    : [];
   const seedDiscs = [
+    ...crystalT.map((t) => ({ x: t.x, z: t.z, r: types.crystalspire.foot * t.s + 0.3 })),
+    ...(spec.landmarks ?? []).map(([x, z, rad]) => ({ x, z, r: rad })),
     ...torchT.map((t) => ({ x: t.x, z: t.z, r: types.torch.foot * t.s + 0.28 })),
     ...lanternT.map((t) => ({ x: t.x, z: t.z, r: types.lantern.foot + 0.3 })),
     ...brazierT.map((t) => ({ x: t.x, z: t.z, r: types.brazier.foot * t.s + 0.3 })),
@@ -1636,6 +2305,7 @@ export function buildProps(root, spec, cosmetic) {
   placed.set('torch', torchT);
   placed.set('lantern', lanternT);
   if (brazierT.length > 0) placed.set('brazier', brazierT);
+  if (crystalT.length > 0) placed.set('crystalspire', [...(placed.get('crystalspire') ?? []), ...crystalT]);
 
   let typeCount = 0;
   for (const [name, transforms] of placed) {
@@ -1676,6 +2346,16 @@ export function buildProps(root, spec, cosmetic) {
     monolithMat = buildVeinStones(root, spec.veinStones, shadows, emitters, cosmetic, footprints, mats, types);
     typeCount += 1;
   }
+
+  // Act IV: the layout's built landmarks (the beating heart, the root gate,
+  // the great geodes, the weeping wells) and the glowing vein network laid
+  // over the painted floor veins.
+  for (const lm of spec.landmarks ?? []) {
+    const m = buildLandmark(root, lm, shadows, emitters, footprints, mats, cosmetic);
+    if (m) monolithMat = monolithMat ?? m;
+    typeCount += 1;
+  }
+  if (spec.veinNet) buildVeinGlow(root, spec);
 
   // Per-room dressing (boss ring, shop stall) -- hidden groups the run's
   // `room_enter` events reveal; see env/dressing.js. Placement continues the

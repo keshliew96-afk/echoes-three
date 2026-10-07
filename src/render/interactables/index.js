@@ -5,7 +5,7 @@
 //              colour — this water IS heal output) with rising motes; drinking
 //              drains it to a dry cracked bowl
 //   barricade  destructible cover in three skins (timber planks / a crate row /
-//              a bone-stone cairn wall): hit flash, a cracked lean below half
+//              a bone-stone cairn wall / a violet crystal ridge): hit flash, a cracked lean below half
 //              HP, a splinter burst when it breaks
 //   keg        a hooped powder keg; lit, its fuse spits Ember sparks, it shakes,
 //              and the Ember ring shows the 1.6 u blast for the whole 60-tick
@@ -21,6 +21,7 @@ import {
   BoxGeometry,
   CircleGeometry,
   Color,
+  ConeGeometry,
   CylinderGeometry,
   Group,
   IcosahedronGeometry,
@@ -54,6 +55,10 @@ const FONT_STONE_DARK = hslColor(210, 0.1, 0.2);
 const BRONZE = mix(PALETTE.paleGold, PALETTE.bruiseUmber, 0.45).multiplyScalar(0.9);
 const BRONZE_LIT = mix(PALETTE.paleGold, PALETTE.parchment, 0.2);
 const POWDER = mix(PALETTE.voidCharcoal, PALETTE.warmGrey, 0.18);
+// Crystal wall (Act IV): the Hollow Heart's violet crystal on black rock.
+const CRYSTAL = hslColor(268, 0.48, 0.46);
+const CRYSTAL_LIT = hslColor(262, 0.44, 0.7);
+const CRYSTAL_ROCK = hslColor(282, 0.12, 0.17);
 
 const flashable = (color) => toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0 });
 
@@ -184,6 +189,53 @@ function buildBarricade(e) {
       slat.rotation.y = r;
       yawG.add(slat);
     }
+  } else if (skin === 'crystal') {
+    // Crystal wall (Act IV, the Hollow Heart): a ridge of violet crystal
+    // growths out of a black rock footing — the heart's own cover. The
+    // crystal carries a low violet emissive; the hit flash rides the white
+    // emissive on the tracked rock + crystal materials like every skin.
+    const rock = track(flashable(CRYSTAL_ROCK));
+    const cry = track(toonMaterial({ color: CRYSTAL, emissive: '#FFFFFF', emissiveIntensity: 0 }));
+    const tip = track(toonMaterial({ color: CRYSTAL_LIT, emissive: '#FFFFFF', emissiveIntensity: 0 }));
+    const base = new Mesh(
+      sharedGeo('ix-crystal-footing', () =>
+        mergeGeometries([
+          new IcosahedronGeometry(0.3, 0).scale(1.3, 0.42, 0.75).translate(-0.4, 0.1, 0),
+          new IcosahedronGeometry(0.32, 0).scale(1.35, 0.45, 0.8).translate(0.32, 0.1, 0.02),
+          new IcosahedronGeometry(0.18, 0).scale(1, 0.5, 0.9).translate(0.0, 0.08, 0.16),
+        ])
+      ),
+      rock
+    );
+    addInk(base);
+    yawG.add(base);
+    const spec = [
+      // [x, z, r, h, tiltZ, tiltX]
+      [-0.5, 0.0, 0.11, 0.62, 0.28, 0.05],
+      [-0.24, -0.04, 0.14, 0.86, 0.08, -0.08],
+      [0.06, 0.04, 0.16, 0.98, -0.06, 0.06],
+      [0.36, -0.02, 0.13, 0.74, -0.24, -0.05],
+      [0.58, 0.04, 0.09, 0.46, -0.5, 0.1],
+      [-0.06, -0.12, 0.08, 0.42, 0.4, -0.5],
+      [0.2, 0.14, 0.08, 0.38, -0.3, 0.55],
+    ];
+    const shafts = sharedGeo('ix-crystal-shafts', () =>
+      mergeGeometries(spec.map(([x, z, r, h, tz, tx]) => new CylinderGeometry(r, r * 1.14, h, 6).translate(0, h / 2, 0).rotateZ(tz).rotateX(tx).translate(x, 0.04, z)))
+    );
+    const tips = sharedGeo('ix-crystal-tips', () =>
+      mergeGeometries(spec.map(([x, z, r, h, tz, tx]) => new ConeGeometry(r, r * 2.3, 6).translate(0, h + r * 1.15, 0).rotateZ(tz).rotateX(tx).translate(x, 0.04, z)))
+    );
+    const sm = new Mesh(shafts, cry);
+    addInk(sm);
+    yawG.add(sm);
+    const tm = new Mesh(tips, tip);
+    addInk(tm);
+    yawG.add(tm);
+    // A violet glow breathing inside the ridge (not tracked: no flash).
+    const glow = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 1.3, opacity: 0.22 });
+    glow.material.toneMapped = false;
+    glow.position.y = 0.45;
+    yawG.add(glow);
   } else {
     // Bone-stone cairn wall (Act III): stacked pale blocks, a dark chink course.
     const bone = track(flashable(BONE_STONE));
@@ -224,8 +276,9 @@ function buildBarricade(e) {
       yawG.position.y = -0.04 * dmg;
     },
     onBreak(e) {
-      impactFx.hit(e.x, e.z, { color: PALETTE.bone, scale: 2.2 });
-      impactFx.impact(e.x, e.z, { color: PALETTE.bone, n: 14 });
+      const debris = skin === 'crystal' ? PALETTE.godstuffViolet : PALETTE.bone;
+      impactFx.hit(e.x, e.z, { color: debris, scale: 2.2 });
+      impactFx.impact(e.x, e.z, { color: debris, n: 14 });
       impactFx.splat(e.x, e.z);
     },
   };
@@ -566,7 +619,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
   function prewarm() {
     warmed = true;
     warmPark(root, buildDewfont().group);
-    for (const skin of ['timber', 'crates', 'cairn']) warmPark(root, buildBarricade({ skin, collider: { yaw: 0 } }).group);
+    for (const skin of ['timber', 'crates', 'cairn', 'crystal']) warmPark(root, buildBarricade({ skin, collider: { yaw: 0 } }).group);
     warmPark(root, buildKeg().group);
     warmPark(root, buildSluice({ laneIds: [] }, world).group);
     warmPark(root, buildBell().group);

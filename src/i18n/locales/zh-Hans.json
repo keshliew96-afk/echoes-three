@@ -1937,5 +1937,22 @@
  "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler, slick floors and elite powers show again the next time you meet each.": "职业选择、遗物、受诅之门、\"?\" 门、行商、湿滑地面和精英能力的一次性提示，会在你下次遇到时再次显示。",
  "Heals for part of the damage it deals.": "以造成伤害的一部分为自己治疗。",
  "The {cls} is AI-controlled and does its own shopping.": "{cls}由AI控制，会自己购物。",
- "The {cls} shops on their own screen.": "{cls}在自己的屏幕上购物。"
+ "The {cls} shops on their own screen.": "{cls}在自己的屏幕上购物。",
+ "Beneath the Barrow, where the corruption first took root and still beats.": "古冢之下，腐化最初扎根之处，至今仍在跳动。",
+ "Clear Level IV, the Hollow Heart.": "通关关卡 IV：空洞之心。",
+ "Complete a campaign (Levels I to IV).": "完成一次战役（关卡 I 至 IV）。",
+ "Geode Hall": "晶洞大厅",
+ "Heart Chamber": "心之密室",
+ "Heartbreaker": "碎心者",
+ "Past the Heart the road turns back into the wood, darker each time. The four lands repeat, harder at every depth, until the party falls.": "越过空洞之心，道路又折回森林，一次比一次黑暗。四片土地循环往复，每一层都更艰难，直到队伍倒下。",
+ "Root Gate": "根之门",
+ "The Heart's warden falls. Below the Barrow, the old beat falters.": "心之守卫倒下了。古冢之下，那古老的心跳渐渐衰弱。",
+ "The Hollow Heart": "空洞之心",
+ "The hollow under the Barrow": "古冢之下的空洞",
+ "The party fell at Depth {depth}, before the Heart. The gods applaud.": "队伍在深度 {depth} 倒下，未能抵达空洞之心。众神为之喝彩。",
+ "Through all four lands and down again, until the party falls.": "穿越四片土地，再次深入，直到队伍倒下。",
+ "Vein Gallery": "脉络长廊",
+ "Weeping Wells": "泣泉",
+ "Wood · Mill · Barrow · Heart · and down again": "森林 · 磨坊 · 古冢 · 心 · 再次深入",
+ "Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).": "分数 = 各已玩关卡的（100 × 房间数 + 5 × 击杀数 + 通关则 1000）× 关卡系数（I 1.0 · II 1.5 · III 2.0 · IV 2.5）之和，× 难度系数（轻松 0.75 · 标准 1 · 煎熬 1.5），完成战役时另加速度奖励（900 × 已玩关卡数 − 秒数）。"
 }

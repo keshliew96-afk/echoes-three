@@ -2003,5 +2003,22 @@
  "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler, slick floors and elite powers show again the next time you meet each.": "Die einmaligen Tipps zu Klassenwahl, Relikten, verfluchten Türen, „?“-Türen, dem Krämer, rutschigem Boden und Elitenkräften erscheinen beim nächsten Mal wieder.",
  "Heals for part of the damage it deals.": "Heilt sich um einen Teil des Schadens, den es verursacht.",
  "The {cls} is AI-controlled and does its own shopping.": "Der {cls} wird von der KI gesteuert und kauft selbst ein.",
- "The {cls} shops on their own screen.": "Der {cls} kauft auf dem eigenen Bildschirm ein."
+ "The {cls} shops on their own screen.": "Der {cls} kauft auf dem eigenen Bildschirm ein.",
+ "Beneath the Barrow, where the corruption first took root and still beats.": "Unter dem Aschengrab, wo die Verderbnis zuerst Wurzeln schlug und noch immer schlägt.",
+ "Clear Level IV, the Hollow Heart.": "Schließe Level IV ab, das Hohle Herz.",
+ "Complete a campaign (Levels I to IV).": "Schließe einen Feldzug ab (Level I bis IV).",
+ "Geode Hall": "Geodenhalle",
+ "Heart Chamber": "Herzkammer",
+ "Heartbreaker": "Herzensbrecher",
+ "Past the Heart the road turns back into the wood, darker each time. The four lands repeat, harder at every depth, until the party falls.": "Hinter dem Herzen führt der Weg zurück in den Wald, jedes Mal dunkler. Die vier Lande wiederholen sich, mit jeder Tiefe härter, bis die Gruppe fällt.",
+ "Root Gate": "Wurzeltor",
+ "The Heart's warden falls. Below the Barrow, the old beat falters.": "Der Wächter des Herzens fällt. Unter dem Aschengrab stockt der alte Schlag.",
+ "The Hollow Heart": "Das Hohle Herz",
+ "The hollow under the Barrow": "Die Höhle unter dem Grab",
+ "The party fell at Depth {depth}, before the Heart. The gods applaud.": "Die Gruppe fiel auf Tiefe {depth}, vor dem Hohlen Herzen. Die Götter applaudieren.",
+ "Through all four lands and down again, until the party falls.": "Durch alle vier Lande und wieder hinab, bis die Gruppe fällt.",
+ "Vein Gallery": "Adergalerie",
+ "Weeping Wells": "Weinende Brunnen",
+ "Wood · Mill · Barrow · Heart · and down again": "Wald · Mühle · Grab · Herz · und wieder hinab",
+ "Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).": "Punkte = Summe über die gespielten Level von (100 × Räume + 5 × Kills + 1000 falls geschafft) × Level (I 1,0 · II 1,5 · III 2,0 · IV 2,5), × Herausforderung (entspannt 0,75 · Standard 1 · zermürbend 1,5), plus ein Tempobonus bei abgeschlossenem Feldzug (900 × gespielte Level − Sekunden)."
 }

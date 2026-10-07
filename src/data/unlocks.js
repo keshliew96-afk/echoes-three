@@ -20,7 +20,7 @@ import { RELICS, RELIC_IDS, CURSES } from '../sim/relics.js';
 import { SKILLS } from '../sim/skills.js';
 import { CLASS_NAME, CLASS_OF_SEAT } from './classes.js';
 import { LEVELS, ACT_IDS, bossFor } from './levels.js';
-import { endlessBossIndex } from './endless.js';
+import { endlessBossIndex, CYCLE } from './endless.js';
 
 export const META_VERSION = 1;
 export const CURRENCY = 'Embers';
@@ -28,18 +28,22 @@ export const CURRENCY = 'Embers';
 // -------------------------------------------------------------- earning --
 export const EMBER_RULES = Object.freeze({
   perRoom: 3, // every room left behind (combat + shop)
-  perLevelClear: Object.freeze({ 1: 20, 2: 40, 3: 60 }), // the level's boss killed
+  perLevelClear: Object.freeze({ 1: 20, 2: 40, 3: 60, 4: 80 }), // the level's boss killed
   campaignComplete: 50,
-  // The Endless Descent (docs/ENDLESS.md): a depth past 3 cleared pays the
-  // Act III clear plus this much per depth beyond 3.
+  // The Endless Descent (docs/ENDLESS.md): a depth past the first cycle (4)
+  // cleared pays the Act IV clear plus this much per depth beyond 4.
   perDeepDepth: 20,
   challengeMul: Object.freeze({ relaxed: 0.75, standard: 1, harrowing: 1.5 }),
   perVow: 0.25, // +25% of the run's Embers for each vow worn
 });
 
 // Every boss of every level, in level order ({ kind, name, level }).
+// (Act IV borrows the Barrow's bosses until it has its own: each boss is
+// listed once, at the first level it belongs to.)
 export const BOSSES = Object.freeze(
-  ACT_IDS.flatMap((a) => (LEVELS[a].bosses ?? []).map((b) => Object.freeze({ kind: b.kind, name: b.name, level: a })))
+  ACT_IDS.flatMap((a) => (LEVELS[a].bosses ?? []).map((b) => Object.freeze({ kind: b.kind, name: b.name, level: a }))).filter(
+    (b, i, all) => all.findIndex((o) => o.kind === b.kind) === i
+  )
 );
 
 // One-off deeds: paid once, on the run that first meets them (not multiplied).
@@ -51,7 +55,9 @@ export const DEEDS = Object.freeze(
   Object.fromEntries([
     ['first_light', { name: 'First Light', text: 'Clear Level I.', embers: 20, test: (r) => r.cleared.includes(1) }],
     ...bossDeeds,
-    ['long_road', { name: 'The Long Road', text: 'Complete a campaign (Levels I to III).', embers: 60, test: (r) => r.complete }],
+    ['long_road', { name: 'The Long Road', text: ACT_IDS.length === 4 ? 'Complete a campaign (Levels I to IV).' : 'Complete a campaign (Levels I to III).', embers: 60, test: (r) => r.complete }],
+    // Act IV (docs/ACT_IV.md): the first clear of the Hollow Heart.
+    ...(ACT_IDS.includes(4) ? [['heart_cleared', { name: 'Heartbreaker', text: 'Clear Level IV, the Hollow Heart.', embers: 50, test: (r) => r.cleared.includes(4) }]] : []),
     ['harrowed', { name: 'Harrowed', text: 'Clear a level on the Harrowing challenge.', embers: 40, test: (r) => r.cleared.length > 0 && r.challenge === 'harrowing' }],
     ['cursebearer', { name: 'Cursebearer', text: 'Walk through 3 cursed doors in one run.', embers: 25, test: (r) => r.curses >= 3 }],
     ['magpie', { name: 'Magpie', text: 'Hold 5 relics at once.', embers: 25, test: (r) => r.relics.length >= 5 }],
@@ -237,11 +243,11 @@ export function runFacts(summary, records = {}) {
   const camp = s.campaign && Array.isArray(s.campaign.levels) ? s.campaign : null;
   const clearedRows = camp ? camp.levels.filter((l) => l.cleared) : s.result === 'victory' ? [{ level: s.act ?? 1, index: 1 }] : [];
   const cleared = clearedRows.map((l) => l.level);
-  // ENDLESS (docs/ENDLESS.md): levels past Depth 3 carry their depth as
-  // `index`; the boss each one met is the run's own record when it has one.
-  const isDeep = (l) => !!(camp && camp.endless) && num(l.index) > 3;
+  // ENDLESS (docs/ENDLESS.md): levels past the first cycle (Depth 4) carry
+  // their depth as `index`; the boss each one met is the run's own record.
+  const isDeep = (l) => !!(camp && camp.endless) && num(l.index) > CYCLE;
   const deep = clearedRows.filter(isDeep).map((l) => l.index);
-  // (past Depth 3 the boss alternates by depth: endlessBossIndex; within the
+  // (past the first cycle the boss alternates by depth: endlessBossIndex; within the
   // campaign the seed decides: bossFor)
   const deepBoss = (l) => {
     const list = LEVELS[l.level] && LEVELS[l.level].bosses;
@@ -276,7 +282,7 @@ export function awardFor(facts, meta) {
   const lines = [];
   if (facts.rooms > 0) lines.push({ label: `${facts.rooms} room${facts.rooms === 1 ? '' : 's'} cleared`, embers: facts.rooms * R.perRoom });
   for (const lv of facts.cleared) lines.push({ label: `Level ${ROMAN[lv] ?? lv} cleared`, embers: R.perLevelClear[lv] ?? 20 });
-  for (const d of facts.deep || []) lines.push({ label: `Depth ${d} cleared`, embers: R.perLevelClear[3] + R.perDeepDepth * (d - 3) });
+  for (const d of facts.deep || []) lines.push({ label: `Depth ${d} cleared`, embers: R.perLevelClear[CYCLE] + R.perDeepDepth * (d - CYCLE) });
   if (facts.complete) lines.push({ label: 'Campaign complete', embers: R.campaignComplete });
   let base = lines.reduce((n, l) => n + l.embers, 0);
   const chMul = R.challengeMul[facts.challenge] ?? 1;

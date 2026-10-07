@@ -1,4 +1,4 @@
-// Level configurations — the three EXPEDITIONS (docs/gauntlet/PLAN.md §4.1,
+// Level configurations — the four EXPEDITIONS (three until Act IV) (docs/gauntlet/PLAN.md §4.1,
 // docs/BUILD_BRIEF.md §23.1). Owner: M4a (numbers, rosters, wiring into
 // sim/run.js + sim/waves.js). Readers: M4b (biome dressing, hazards,
 // interactables, boss adds), M3/INT (music theme), M2 (save meta: act name).
@@ -125,9 +125,47 @@ export const LEVELS = Object.freeze({
     ]),
     unlock: Object.freeze({ afterVictory: 2 }),
   }),
+  // Act IV (docs/ACT_IV.md, content plan 2 slice 4): under the Barrow, where
+  // the violet corruption begins. Its own bosses are a later slice; until
+  // then room 8 holds the Barrow's two bosses (rolled by seed, like every
+  // act) on the Act IV numbers, with Act IV adds.
+  4: Object.freeze({
+    id: 'hollow_heart',
+    act: 4,
+    name: 'The Hollow Heart',
+    blurb: 'Beneath the Barrow, where the corruption first took root and still beats.',
+    tier: 4,
+    biome: 'heart',
+    layouts: Object.freeze([16, 17, 18, 19, 20]),
+    legacyLayouts: Object.freeze([16, 17, 18]),
+    bossLayout: 18,
+    music: 'heart',
+    roster: Object.freeze({ husk: 0.26, lancer: 0.14, geode: 0.12, censer: 0.08, moth: 0.08, brood: 0.08, gravewisp: 0.06, knight: 0.05, crow: 0.09 }),
+    introduce: Object.freeze({ husk: 1, lancer: 1, crow: 1, moth: 1, geode: 2, brood: 2, censer: 3, gravewisp: 3, knight: 4 }),
+    hazards: Object.freeze(['rockfall', 'gravefire', 'slip']),
+    interactables: Object.freeze(['dewfont', 'barricade', 'keg']),
+    boss: 'wyrm',
+    bossName: 'The Barrow Wyrm',
+    bossAdds: Object.freeze([
+      ['husk', 2],
+      ['lancer', 1],
+    ]),
+    bosses: Object.freeze([
+      Object.freeze({ kind: 'wyrm', name: 'The Barrow Wyrm', adds: Object.freeze([Object.freeze(['husk', 2]), Object.freeze(['lancer', 1])]) }),
+      // It raises moles itself (Grave Call), so its phases bring a lancer.
+      Object.freeze({ kind: 'lichram', name: 'The Lich Ram', adds: Object.freeze([Object.freeze(['husk', 1]), Object.freeze(['lancer', 1])]) }),
+    ]),
+    unlock: Object.freeze({ afterVictory: 3 }),
+  }),
 });
 
-export const ACT_IDS = Object.freeze([1, 2, 3]);
+// The campaign's levels, in order. CAMPAIGN_ACTS decides how many of them a
+// campaign plays: four since Act IV (docs/ACT_IV.md). Setting it to 3 keeps
+// the campaign at three levels and leaves Act IV to the Endless Descent only
+// (data/endless.js reads ENDLESS_ACTS).
+export const CAMPAIGN_ACTS = 4;
+export const ENDLESS_ACTS = Object.freeze([1, 2, 3, 4]);
+export const ACT_IDS = Object.freeze([1, 2, 3, 4].slice(0, CAMPAIGN_ACTS));
 
 export function levelFor(act) {
   return LEVELS[act] ?? LEVELS[1];

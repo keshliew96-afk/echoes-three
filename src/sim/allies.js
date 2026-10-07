@@ -755,7 +755,7 @@ export function createAllySystem({
     // R = the ring's reach on this body plus the margin: a seat inside R
     // keeps walking out (to R + exit), so it never hovers on the edge and
     // drifts back in towards its stand-off spot.
-    for (const g of registry.all()) if (g.kind === 'eglob' && (!affixOnly || g.affix)) rings.push({ x: g.tx, z: g.tz, R: (g.blastRadius ?? 0) + a.radius + AI_EVADE.margin, g });
+    for (const g of registry.all()) if (g.kind === 'eglob' && (!affixOnly || g.affix || g.shard)) rings.push({ x: g.tx, z: g.tz, R: (g.blastRadius ?? 0) + a.radius + AI_EVADE.margin, g });
     let hit = null;
     for (const r of rings) if (Math.hypot(a.x - r.x, a.z - r.z) < r.R && (!hit || r.g.landTick < hit.g.landTick)) hit = r;
     if (!hit) return null;
@@ -781,7 +781,42 @@ export function createAllySystem({
     return { x: hit.x + ux * (hit.R + AI_EVADE.exit), z: hit.z + uz * (hit.R + AI_EVADE.exit) };
   }
 
-  const affixGlobs = () => registry.all().some((g) => g.kind === 'eglob' && g.affix);
+  // ELITE AFFIXES / Act IV: globs every seat steps out of (Molten and Frozen
+  // bursts, a Geode Brute's crystal shards).
+  const affixGlobs = () => registry.all().some((g) => g.kind === 'eglob' && (g.affix || g.shard));
+
+  // Act IV (docs/ACT_IV.md): a Vein Lancer's lance lane covering this seat —
+  // every seat steps sideways out of it (the near side, inside the leash),
+  // or null when no lance covers it.
+  function laneGoal(a, anchor, LR) {
+    let best = null;
+    for (const e of registry.all()) {
+      const t = e.telegraph;
+      if (!t || !t.lance || e.faction !== 'hostile') continue;
+      const px = a.x - t.fromX;
+      const pz = a.z - t.fromZ;
+      const along = px * t.dirX + pz * t.dirZ;
+      if (along < -a.radius || along > t.length + a.radius) continue;
+      const cross = px * t.dirZ - pz * t.dirX; // signed distance from the centreline
+      const need = t.width / 2 + a.radius + AI_EVADE.margin;
+      if (Math.abs(cross) >= need) continue;
+      if (best && best.t.resolveTick <= t.resolveTick) continue;
+      best = { t, cross, need };
+    }
+    if (!best) return null;
+    const { t, cross, need } = best;
+    const nx = t.dirZ;
+    const nz = -t.dirX; // +cross side
+    for (const side of [cross > 0 || (cross === 0 && a.id % 2 === 0) ? 1 : -1]) {
+      for (const sgn of [side, -side]) {
+        const off = sgn * need + sgn * AI_EVADE.exit - cross;
+        const x = a.x + nx * off;
+        const z = a.z + nz * off;
+        if (Math.hypot(x - anchor.x, z - anchor.z) <= LR) return { x, z };
+      }
+    }
+    return null;
+  }
 
   // Distance t >= 0 along unit (vx, vz) from offset (px, pz) to the circle R.
   function solveExit(px, pz, vx, vz, R) {
@@ -926,7 +961,9 @@ export function createAllySystem({
       // Balance pass (AI_EVADE): a glob ring a ranged seat stands in wins over
       // the stand-off spot; it walks out, still aiming. Melee seats hold their
       // ground (they stay on the enemies; Toad rooms otherwise dragged on).
-      const ev = engageOn() ? (!isMelee(a) ? evadeGoal(a, anchor, LR) : affixGlobs() ? evadeGoal(a, anchor, LR, true) : null) : null;
+      const ev = engageOn()
+        ? laneGoal(a, anchor, LR) ?? (!isMelee(a) ? evadeGoal(a, anchor, LR) : affixGlobs() ? evadeGoal(a, anchor, LR, true) : null)
+        : null;
       if (ev) {
         gx = ev.x;
         gz = ev.z;

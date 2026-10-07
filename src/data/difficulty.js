@@ -75,14 +75,16 @@
 // Pure module. The ?room= harness (no run, no act) never calls this: it keeps
 // the legacy §11 composition exactly (PLAN gate G4a.6).
 
-export const ACT_TIER = Object.freeze([null, 1.0, 1.6, 3.1]);
+// Act IV (docs/ACT_IV.md, 2026-10-07): T 3.6 — the carried build is full by
+// Level 3 (32/32 sockets), so Level 4's waves grow on numbers alone.
+export const ACT_TIER = Object.freeze([null, 1.0, 1.6, 3.1, 3.6]);
 export const ROOM_SLOPE = 0.21;
 export const BASE_BUDGET = 4.0;
 export const DEFEND_BUDGET_SCALE = 1.25;
 export const STAG_BASE_HP = 2400; // bossHp = STAG_BASE_HP × T × STAG_HP_LEVEL[act]
 // Per-level Stag HP factor (CAMPAIGN retune, 2026-09-25): the Stag meets a
 // CARRIED build from Level 2 on; 1.0 keeps a level on the plain formula.
-export const STAG_HP_LEVEL = Object.freeze([null, 1.0, 1.8, 1.2]);
+export const STAG_HP_LEVEL = Object.freeze([null, 1.0, 1.8, 1.2, 1.1]);
 export const BOSS_DMG_SLOPE = 1.8; // bossDmgMul = addDmgMul = 1 + BOSS_DMG_SLOPE × (T − 1)
 // fix-M4a-r5 (content r5 F5 / F7, GP.13 — the dated BUILD_BRIEF §23.2 note):
 // the per-level enemy-damage factor on the combat rooms (dmgMul). The AI
@@ -91,7 +93,7 @@ export const BOSS_DMG_SLOPE = 1.8; // bossDmgMul = addDmgMul = 1 + BOSS_DMG_SLOP
 // arrows used to prevent — and Level 1's median party damage per combat room
 // rose to x1.5 of the v0.5.150 baseline (GP.13 (b) caps it at x1.35); Level 1's
 // enemies hit 25 % softer so the first level keeps its measured feel.
-export const LEVEL_DMG = Object.freeze([null, 0.75, 1.0, 1.0]);
+export const LEVEL_DMG = Object.freeze([null, 0.75, 1.0, 1.0, 1.0]);
 // fix-PARTY-r5 (party critic r5 F9 — GP.13 (d) ">= 1 party down per level on
 // >= 2 of 5 seeds"; the dated BUILD_BRIEF §23.2 note): the per-level factor on
 // the STAG's own hits (quake, trample — never its adds). Once the four
@@ -115,11 +117,13 @@ export const LEVEL_DMG = Object.freeze([null, 0.75, 1.0, 1.0]);
 // a down) went to the design owner, who ruled (2026-10-03) that Level 1's bite
 // is an HP dip below 35 % counted over seeds 1-40 against v0.5.150: 13 of 40
 // vs 7 of 40 at x2.1 (tools/gntPARTY-band.mjs 18/18).
-export const STAG_DMG_LEVEL = Object.freeze([null, 2.1, 2.0, 1.0]);
+// Act IV: the Barrow's bosses stand in on Level 4 until it has its own; their
+// kits were tuned on the Act III multiplier, so x0.85 keeps their hits there.
+export const STAG_DMG_LEVEL = Object.freeze([null, 2.1, 2.0, 1.0, 0.85]);
 // PARTY (PLAN §16.9): the determinism proof's Node-only switch — the
 // v0.5.150 (CAMPAIGN) constants back in force (cmd('difficultyLegacy')). The
 // game never sets it; tools/gntPARTY-goldenproof.mjs does.
-const LEGACY = Object.freeze({ tier: Object.freeze([null, 1.0, 1.6, 2.8]), slope: 0.16, stag: Object.freeze([null, 1.0, 1.35, 1.0]), bossSlope: 0.9 });
+const LEGACY = Object.freeze({ tier: Object.freeze([null, 1.0, 1.6, 2.8, 3.6]), slope: 0.16, stag: Object.freeze([null, 1.0, 1.35, 1.0, 1.1]), bossSlope: 0.9 });
 let legacy = false;
 export function setDifficultyLegacy(on) {
   legacy = !!on;
@@ -127,7 +131,7 @@ export function setDifficultyLegacy(on) {
 }
 export const isDifficultyLegacy = () => legacy;
 export const WAVE_INTERVAL_TICKS = 480; // §11 8 s
-export const INTERVAL_ACT = Object.freeze([null, 1.0, 0.95, 0.9]);
+export const INTERVAL_ACT = Object.freeze([null, 1.0, 0.95, 0.9, 0.86]);
 export const WAVE_SIZE_CAP = 8; // enemies per wave
 export const ROOM_CONCURRENT_CAP = 20; // live hostiles per room (§1 hard ceiling is 40)
 
@@ -161,6 +165,11 @@ export const THREAT = Object.freeze({
   lamprey: 1.6,
   gravewisp: 1.4,
   knight: 5.4, // always Elite: 3.0 x ELITE_COST baked in
+  // Act IV, The Hollow Heart (docs/ACT_IV.md).
+  husk: 1.1,
+  lancer: 1.6,
+  geode: 3.2,
+  censer: 1.5,
 });
 export const ELITE_COST = 1.8;
 export const ELITE_MUL = Object.freeze({ hp: 1.8, dmg: 1.25, scale: 1.2 });
@@ -170,14 +179,15 @@ const ELITE = Object.freeze([
   (room) => (room <= 3 ? 0 : 0.08),
   (room) => 0.12 + 0.02 * (room - 1),
   (room) => 0.2 + 0.03 * (room - 1),
+  (room) => 0.24 + 0.03 * (room - 1),
 ]);
 
 const r4 = (v) => Math.round(v * 10000) / 10000;
 
-// difficulty(act = 1..3, room = 1..8, challenge = 'standard') -> numbers for
+// difficulty(act = 1..4, room = 1..8, challenge = 'standard') -> numbers for
 // one room. Rooms 7 (shop) and 8 (boss) reuse room 6's ramp for their adds.
 export function difficulty(act = 1, room = 1, challenge = 'standard') {
-  const a = Math.min(3, Math.max(1, act | 0));
+  const a = Math.min(ACT_TIER.length - 1, Math.max(1, act | 0));
   const r = Math.min(6, Math.max(1, room | 0));
   const c = CHALLENGE[challenge] ?? CHALLENGE.standard;
   const tiers = legacy ? LEGACY.tier : ACT_TIER;
@@ -211,6 +221,6 @@ export function difficulty(act = 1, room = 1, challenge = 'standard') {
 // The whole curve as a table (debug API / critic probe: __echoes.cmd('difficultyTable')).
 export function difficultyTable(challenge = 'standard') {
   const rows = [];
-  for (let act = 1; act <= 3; act++) for (let room = 1; room <= 6; room++) rows.push(difficulty(act, room, challenge));
+  for (let act = 1; act < ACT_TIER.length; act++) for (let room = 1; room <= 6; room++) rows.push(difficulty(act, room, challenge));
   return rows;
 }

@@ -2047,5 +2047,22 @@
  "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler, slick floors and elite powers show again the next time you meet each.": "Разовые подсказки о выборе класса, реликвиях, проклятых дверях, дверях «?», коробейнике, скользком поле и силах элиты покажутся снова при следующей встрече.",
  "Heals for part of the damage it deals.": "Лечится частью урона, который наносит.",
  "The {cls} is AI-controlled and does its own shopping.": "{cls} под управлением ИИ и делает покупки сам.",
- "The {cls} shops on their own screen.": "{cls} делает покупки на своём экране."
+ "The {cls} shops on their own screen.": "{cls} делает покупки на своём экране.",
+ "Beneath the Barrow, where the corruption first took root and still beats.": "Под Курганом, где порча впервые пустила корни и всё ещё бьётся.",
+ "Clear Level IV, the Hollow Heart.": "Пройди уровень IV, Полое Сердце.",
+ "Complete a campaign (Levels I to IV).": "Заверши кампанию (уровни I–IV).",
+ "Geode Hall": "Зал Жеод",
+ "Heart Chamber": "Камера Сердца",
+ "Heartbreaker": "Сердцелом",
+ "Past the Heart the road turns back into the wood, darker each time. The four lands repeat, harder at every depth, until the party falls.": "За Сердцем дорога снова уходит в лес, с каждым разом темнее. Четыре земли повторяются, всё сложнее с каждой глубиной, пока отряд не падёт.",
+ "Root Gate": "Корневые Врата",
+ "The Heart's warden falls. Below the Barrow, the old beat falters.": "Страж Сердца падает. Под Курганом слабеет древний стук.",
+ "The Hollow Heart": "Полое Сердце",
+ "The hollow under the Barrow": "Пустота под Курганом",
+ "The party fell at Depth {depth}, before the Heart. The gods applaud.": "Отряд пал на глубине {depth}, не дойдя до Сердца. Боги рукоплещут.",
+ "Through all four lands and down again, until the party falls.": "Через все четыре земли и снова вниз, пока отряд не падёт.",
+ "Vein Gallery": "Галерея Жил",
+ "Weeping Wells": "Плачущие Колодцы",
+ "Wood · Mill · Barrow · Heart · and down again": "Лес · Мельница · Курган · Сердце · и снова вниз",
+ "Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).": "Счёт = сумма по сыгранным уровням (100 × комнаты + 5 × убийства + 1000 за прохождение) × уровень (I 1,0 · II 1,5 · III 2,0 · IV 2,5), × сложность (лёгкая 0,75 · обычная 1 · суровая 1,5), плюс бонус за скорость в пройденной кампании (900 × сыгранные уровни − секунды)."
 }

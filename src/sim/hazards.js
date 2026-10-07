@@ -22,8 +22,9 @@
 //              per body); cycle 420 ticks
 //
 //   slip       slick floor (Slick floor slice, docs/SLICK_FLOOR.md): a patch
-//              r 1.1-1.9 of wet flagstone (skin 'wet', Mill) or grave frost
-//              (skin 'frost', Barrow). Walking bodies on it keep their
+//              r 1.1-1.9 of wet flagstone (skin 'wet', Mill), grave frost
+//              (skin 'frost', Barrow) or heart crystal (skin 'glass', Act
+//              IV). Walking bodies on it keep their
 //              momentum (sim/movement.js slipFollow): they slide when they
 //              stop, turn wide, and dodges and knockbacks carry further.
 //              Fliers, burrowers and bosses never slip. No damage, no phases:
@@ -101,6 +102,8 @@ export const HAZARD_TYPES = Object.freeze({
 export const SLIP_SKINS = Object.freeze({
   wet: Object.freeze({ grip: 0.09 }),
   frost: Object.freeze({ grip: 0.07 }),
+  // Act IV (docs/ACT_IV.md): polished violet crystal in the Hollow Heart.
+  glass: Object.freeze({ grip: 0.08 }),
 });
 export const HAZARD_SPACING_TICKS = 36; // §23.6: no two resolutions inside 0.6 s
 
@@ -277,6 +280,9 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         pz: mz,
         radius: T.radius,
         vents,
+        // Act IV: the Heart's vein vents ('vein') are gravefire in its own
+        // colours; the skin is dressing only.
+        ...(params.skin ? { skin: params.skin } : {}),
         cycleStart: reserveLine(tick, tick + T.firstDelay + (params.offset ?? 0)),
         cycles: 0,
       });
@@ -756,6 +762,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         ...(h.kind === 'rubble' ? { untilTick: h.untilTick } : {}),
         ...(h.htype === 'puffcap' ? { bursts: h.bursts } : {}),
         ...(h.htype === 'slip' ? { skin: h.skin, grip: h.grip } : {}),
+        ...(h.htype !== 'slip' && h.skin ? { skin: h.skin } : {}), // Act IV's vein gravefire (dressing only)
       }));
   }
 
