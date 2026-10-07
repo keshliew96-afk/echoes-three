@@ -843,6 +843,10 @@ ${Object.entries({
 }
 .hud-bn-pip.done { background: ${PALETTE.parchment}; border-color: ${PALETTE.parchment}; }
 .hud-bn-pip.now  { background: ${PALETTE.hearthAmber}; border-color: ${PALETTE.hearthAmber}; }
+/* ROOM OBJECTIVES: a purge's pips are its nests — violet while one stands,
+   a hollow ring once it is destroyed. */
+.hud-banner[data-mode="purge"] .hud-bn-pip { width: 16px; height: 16px; background: ${PALETTE.godstuffViolet}; border-color: ${PALETTE.godstuffVioletPeak}; box-shadow: 0 0 8px ${PALETTE.godstuffViolet}; }
+.hud-banner[data-mode="purge"] .hud-bn-pip.done { background: transparent; border-color: ${CHROME.rimHot}; box-shadow: none; opacity: 0.6; }
 .hud-bn-bar {
   position: relative;
   width: 300px; height: 18px;

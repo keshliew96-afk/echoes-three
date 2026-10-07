@@ -714,7 +714,10 @@ export const DEFAULT_EVENT_CUES = {
     return out;
   },
   hit_immune: (ev, h) => one('whiff', at(ev, h, ev.target)),
-  death: (ev, h) => one(isBoss(ev) ? 'boss_death' : 'kill', at(ev, h, ev.id)),
+  death: (ev, h) =>
+    ev.kind === 'nest' // ROOM OBJECTIVES: a nest bursts (a kill plus a crack of stone)
+      ? [...one('kill', at(ev, h), { pitch: 0.62 }), ...one('break', at(ev, h), { pitch: 0.7 })]
+      : one(isBoss(ev) ? 'boss_death' : 'kill', at(ev, h, ev.id)),
   heal: (ev, h) => one(ev.crit ? 'heal_crit' : 'heal', at(ev, h, ev.target)),
   full_heal: (ev, h) => one('sparkle', at(ev, h, ev.target)),
   // PARTY: a class passive pulse (ev.seat) plays its own quiet cue only when
@@ -769,6 +772,13 @@ export const DEFAULT_EVENT_CUES = {
   waystone_spawn: (ev, h) => one('waystone', at(ev, h, ev.id)),
   broken: (ev, h) => one('break', at(ev, h, ev.id)),
   room_soft_fail: () => [{ cue: 'soft_fail' }],
+  // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): the quarry breaks cover with a
+  // horn and its mark; it escapes with a rush of air; a nest swells as it spawns.
+  quarry_spawn: (ev, h) => [...one('horn', at({}, h)), ...one('mark', at(ev, h, ev.id), { pitch: 1.2 })],
+  quarry_escape: (ev, h) => one('whoosh', at(ev, h, ev.id), { pitch: 0.75 }),
+  quarry_winded: (ev, h) => one('whoosh', at(ev, h, ev.id), { pitch: 1.6 }),
+  nest_spawn: (ev, h) => one('waystone', at(ev, h, ev.id), { pitch: 0.6 }),
+  nest_pulse: (ev, h) => one('shimmer', at(ev, h, ev.id), { pitch: 0.7 }),
   // Progression / UI bus (non-spatial).
   room_start: () => [{ cue: 'room_start' }],
   // (fix-M3-r5: the first wave no longer plays 3 dB under the others — at the

@@ -41,6 +41,13 @@ const MODE_WORD = {
   get defend() {
     return t('HOLD THE WAYSTONE');
   },
+  // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md).
+  get hunt() {
+    return t('HUNT THE QUARRY');
+  },
+  get purge() {
+    return t('PURGE THE NESTS');
+  },
   get shop() {
     return t('THE PEDDLER');
   },

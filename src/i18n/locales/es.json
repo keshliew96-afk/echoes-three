@@ -1935,5 +1935,22 @@
  "Relay@@network path": "Retransmisión",
  "Direct {direct} · Relay {relay}": "Directa {direct} · Retransmisión {relay}",
  "{cls}: direct connection": "{cls}: conexión directa",
- "{cls}: through the server relay": "{cls}: a través del servidor"
+ "{cls}: through the server relay": "{cls}: a través del servidor",
+ "THE HUNT": "LA CACERÍA",
+ "THE HUNT · WINDED": "LA CACERÍA · SIN ALIENTO",
+ "QUARRY ESCAPED · NO REWARD": "LA PRESA ESCAPÓ · SIN RECOMPENSA",
+ "PURGE THE NESTS": "PURGA LOS NIDOS",
+ "THE CORRUPTION TOOK ROOT · NO REWARD": "LA CORRUPCIÓN ECHÓ RAÍCES · SIN RECOMPENSA",
+ "{n} NESTS LEFT": {
+  "one": "QUEDA {n} NIDO",
+  "many": "QUEDAN {n} NIDOS",
+  "other": "QUEDAN {n} NIDOS"
+ },
+ "HUNT THE QUARRY": "CAZA LA PRESA",
+ "hunt the quarry before it escapes": "caza la presa antes de que escape",
+ "destroy the three nests": "destruye los tres nidos",
+ "The hunt": "La cacería",
+ "A marked quarry breaks cover and runs. Chase it down and kill it before its timer runs out; it stops to catch its breath every few seconds. If it escapes, the room pays no reward.": "Una presa marcada sale de su escondite y huye. Persíguela y mátala antes de que se acabe su tiempo; cada pocos segundos se detiene a recuperar el aliento. Si escapa, la sala no da recompensa.",
+ "The purge": "La purga",
+ "Three corruption nests keep spawning enemies. Destroy all three before the timer runs out; a wounded nest spawns faster. If the corruption takes root, the room pays no reward and the nests must still fall.": "Tres nidos de corrupción no dejan de generar enemigos. Destruye los tres antes de que se acabe el tiempo; un nido herido genera más rápido. Si la corrupción echa raíces, la sala no da recompensa y los nidos aún deben caer."
 }

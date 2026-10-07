@@ -58,6 +58,9 @@ import {
   innerBounds,
 } from './movement.js';
 import * as statusMod from './status.js';
+// ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): the hunt's quarry runs its own
+// flight instead of its archetype's attack loop.
+import { quarryFlee, QUARRY_STEP } from './objectives.js';
 import { strike, partyInRadius, neutralsInRadius } from './enemies/common.js';
 import quillback from './enemies/quillback.js';
 import toad from './enemies/toad.js';
@@ -463,6 +466,16 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
         e.kbVx *= e.kbScale;
         e.kbVz *= e.kbScale;
       }
+      // ROOM OBJECTIVES: the quarry flees (it never attacks).
+      if (e.quarry) {
+        if (e.kbTicks > 0) continue;
+        const sm = e.status ? statusMod.speedMul(e, tick) : 1;
+        const bodies = all.filter((t) => t.faction === 'party' && t.hp > 0 && t.kind !== 'waystone');
+        const was = e.quarry.winded;
+        quarryFlee(e, bodies, tick, QUARRY_STEP(sm));
+        if (!was && e.quarry.winded) events.emit(tick, 'quarry_winded', { id: e.id, x: r2(e.x), z: r2(e.z) });
+        continue;
+      }
       const A = ARCHETYPES[e.kind];
       if (A) {
         A.continuous(ctx, e, tick);
@@ -521,7 +534,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       for (let j = 0; j < all.length; j++) {
         if (i === j) continue;
         const b = all[j];
-        const bSolid = (isEnemyKind(b.kind) && b.state === 'active' && !b.burrowed) || b.kind === 'waystone';
+        const bSolid = (isEnemyKind(b.kind) && b.state === 'active' && !b.burrowed) || b.kind === 'waystone' || b.kind === 'nest';
         if (!bSolid) continue;
         if (!!a.flier !== !!b.flier) continue; // fliers only jostle fliers
         const dx = a.x - b.x;
@@ -762,6 +775,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
         cancelTelegraph(e, tick, 'stun');
         continue;
       }
+      if (e.quarry) continue; // ROOM OBJECTIVES: prey, never a threat
       const A = ARCHETYPES[e.kind];
       if (A) {
         A.resolve(ctx, e, tick);
@@ -912,7 +926,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
   function reset() {
     const tick = getTick();
     for (const e of registry.all()) {
-      if (isEnemyKind(e.kind) || e.kind === 'eshot' || e.kind === 'waystone' || e.kind === 'eglob' || e.kind === 'slick') {
+      if (isEnemyKind(e.kind) || e.kind === 'eshot' || e.kind === 'waystone' || e.kind === 'nest' || e.kind === 'eglob' || e.kind === 'slick') {
         events.emit(tick, 'enemy_despawn', { id: e.id, etype: e.kind, cause: 'reset' });
         registry.despawn(e.id);
       }
