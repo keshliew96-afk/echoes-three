@@ -25,6 +25,8 @@
 // host, "*" = any — the default) · --max-per-ip n (WebSocket connections per
 // client IP, default 16; 0 = no cap; direct loopback exempt) ·
 // --build <version> (the deployed build when the game is served elsewhere).
+// CLOUD SAVES (docs/CLOUD_SAVES.md): --cloud-dir <dir> (where saves are
+// written; default $ECHOES_CLOUD_DIR or ./.echoes-cloud) · --no-cloud.
 import { pathToFileURL } from 'node:url';
 import { resolve, join } from 'node:path';
 import { existsSync, statSync } from 'node:fs';
@@ -124,6 +126,8 @@ if (isMain) {
     origins,
     maxPerIp,
     build: a.build && a.build !== true ? String(a.build) : null,
+    cloud: !a['no-cloud'],
+    cloudDir: a['cloud-dir'] && a['cloud-dir'] !== true ? String(a['cloud-dir']) : null,
   });
   srv
     .listen()
@@ -148,6 +152,7 @@ if (isMain) {
         } else console.log('[echoes-net]   (only this computer can connect — add --host 0.0.0.0 for players on your network)');
       }
       console.log(`[echoes-net]   health: ${info.health}   admin API: ${a.admin ? 'on (loopback only)' : 'off'}   conditioner: ${formatCond(cond)}`);
+      if (srv.cloud) console.log(`[echoes-net]   cloud saves: ${srv.cloud.kind}${srv.cloud.durable ? ' (durable)' : ' (kept until this server restarts — docs/CLOUD_SAVES.md)'}`);
       console.log(`[echoes-net]   origins: ${origins && origins.length ? origins.join(', ') : 'any'}   per-IP cap: ${maxPerIp || 'off'}`);
       console.log(`[echoes-net] ready ${JSON.stringify({ port: info.port, host, url: info.url, lanUrls: info.lanUrls, path: WS_PATH, admin: !!a.admin, pid: process.pid, site: info.site, siteUrls: info.siteUrls, build: info.build })}`);
     })

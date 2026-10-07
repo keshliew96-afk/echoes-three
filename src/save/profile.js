@@ -122,6 +122,15 @@ function sane(p) {
   return out;
 }
 
+// A stored profile's text -> the profile, or null (cloud / backup bundles).
+export function parseProfile(text) {
+  try {
+    return sane(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
 // SEVERAL TABS (gauntlet r4, SAVE4-F1). Every open tab of the game holds its
 // own copy of the profile, and another tab may write the file at any moment
 // (a run recorded, a level unlocked). A tab never writes its copy blindly

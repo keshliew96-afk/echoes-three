@@ -54,6 +54,10 @@ function defaultStorage() {
 
 export function createSaveStorage({ storage = defaultStorage() } = {}) {
   let quotaSim = false;
+  // freeze(): every later write and removal is refused — a cloud / backup
+  // load wrote new files and the page is about to reload, so nothing the
+  // page still holds (a pagehide autosave, the profile flush) may overwrite them.
+  let frozen = false;
   let available = false;
   try {
     if (storage) {
@@ -88,10 +92,12 @@ export function createSaveStorage({ storage = defaultStorage() } = {}) {
     }
   }
   function write(key, text) {
+    if (frozen) throw new Error('storage frozen (reloading)');
     if (quotaSim) throw quotaError();
     backend.setItem(key, text);
   }
   function remove(key) {
+    if (frozen) return false;
     try {
       backend.removeItem(key);
       return true;
@@ -182,6 +188,12 @@ export function createSaveStorage({ storage = defaultStorage() } = {}) {
     writePlain,
     simulateTornWrite,
     usage,
+    freeze() {
+      frozen = true;
+    },
+    get frozen() {
+      return frozen;
+    },
     simulateQuota(on) {
       quotaSim = !!on;
       return quotaSim;

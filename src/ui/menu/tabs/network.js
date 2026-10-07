@@ -22,7 +22,7 @@ import { sanitizeName } from '../../../net/protocol/messages.js';
 import { sourceLabel } from '../../../net/address.js';
 import { t } from '../../../i18n/index.js';
 
-function textRow({ id, label, help, value, maxLength, onCommit, onCancel, placeholder = '' }) {
+export function textRow({ id, label, help, value, maxLength, onCommit, onCancel, placeholder = '' }) {
   const row = document.createElement('div');
   row.className = 'ap-row nt-textrow';
   row.dataset.help = help;

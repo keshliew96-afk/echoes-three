@@ -43,6 +43,7 @@ import { Lobby } from './lobby.mjs';
 import { quickMatch, cancelMatch } from './matchmaking.mjs';
 import { createLink, linkStats, routeBinary } from './relay.mjs';
 import { createHttpHandler } from './admin.mjs';
+import { createCloudStore } from './cloud.mjs';
 import { createStaticHandler, createBuildInfoReader } from './static.mjs';
 
 export const HELLO_TIMEOUT_MS = 5000;
@@ -148,6 +149,8 @@ export function createEchoesServer(options = {}) {
     origins: null, // DEPLOY: Origin allow-list (null = any)
     maxPerIp: MAX_PER_IP, // DEPLOY: WebSocket connections per client IP (0 = no cap)
     build: null, // DEPLOY: the deployed build when it is not served here ({ version, entry } or a version string)
+    cloud: true, // cloud saves at /cloud/ (cloud.mjs); cloudDir: where they are written
+    cloudDir: null,
     ...options,
   };
   const serveStatic = opt.static ? createStaticHandler({ root: opt.static, log: (k, d) => log(k, d) }) : null;
@@ -667,7 +670,25 @@ export function createEchoesServer(options = {}) {
 
   // ----------------------------------------------------------- listen --
   const http = createServer();
-  const server = { opt, lobby, peers, conns, counters, health, stats, setConditioner, dropPeer, killHost, log: logRing, serveStatic, servedBuild };
+  const cloud = opt.cloud ? createCloudStore({ dir: opt.cloudDir }) : null;
+  const server = {
+    opt,
+    lobby,
+    peers,
+    conns,
+    counters,
+    health,
+    stats,
+    setConditioner,
+    dropPeer,
+    killHost,
+    log: logRing,
+    serveStatic,
+    servedBuild,
+    cloud,
+    originAllowed: (req) => originAllowed(req, opt.origins),
+    clientIp: (req) => clientIp(req).ip,
+  };
   const handler = createHttpHandler(server);
   http.on('request', (req, res) => {
     handler(req, res).catch(() => {
