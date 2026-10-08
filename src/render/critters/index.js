@@ -24,7 +24,7 @@
 //             └ torso  THE single lean pivot at hip height: pitch, roll, yaw.
 //                      Head, arms and props are all children, so a lean can
 //                      never separate the head from the shoulders.
-import { Group, Vector3 } from 'three';
+import { Color, Group, Vector3 } from 'three';
 import { CLASS_ACCENTS } from '../../data/palette.js';
 import { groundRing, groundShadow, desatTarget, setInkViewport } from './common.js';
 import { createPoseDriver, CLIPS } from './driver.js';
@@ -52,6 +52,9 @@ const PITCH_MAX = 0.21;
 const PITCH_MIN = -0.36;
 const HEAD_COUNTER = 0.88; // fraction of torso pitch cancelled at the neck
 const CHIN_UP = 0.18; // rad (~10.3°) — presents the face to a 52° top-down cam
+
+// Materials already owned by a critter's hit flash (see hitFlash).
+const CLAIMED = new WeakSet();
 
 export function createCritter(classId, { cosmetic = null } = {}) {
   const build = BUILDERS[classId];
@@ -164,6 +167,33 @@ export function createCritter(classId, { cosmetic = null } = {}) {
 
   update(0); // rest pose before the first frame
 
+  // HIT FEEDBACK (render/vfx/hitfeedback.js): a struck party member's body
+  // flashes toward a colour through its toon materials' emissive. The
+  // materials are this critter's own (collected once, lazily; a material
+  // another critter already claimed is skipped so a flash never leaks).
+  let flashMats = null;
+  let flashK = 0;
+  const flashCol = new Color();
+  function hitFlash(k, hex = 0xff4a4a) {
+    k = Math.max(0, Math.min(1, k || 0));
+    if (k === 0 && flashK === 0) return;
+    if (!flashMats) {
+      flashMats = [];
+      rig.traverse((o) => {
+        const m = o.isMesh ? o.material : null;
+        if (!m || !m.isMeshToonMaterial || CLAIMED.has(m)) return;
+        CLAIMED.add(m);
+        flashMats.push({ m, e: m.emissive.clone(), i: m.emissiveIntensity });
+      });
+    }
+    flashK = k;
+    flashCol.set(hex);
+    for (const f of flashMats) {
+      f.m.emissive.copy(f.e).lerp(flashCol, k);
+      f.m.emissiveIntensity = f.i + (1 - f.i) * k;
+    }
+  }
+
   return {
     classId,
     accent,
@@ -171,6 +201,8 @@ export function createCritter(classId, { cosmetic = null } = {}) {
     metrics: { ...M, ringRadius },
     setAnim: driver.setAnim,
     getAnim: () => driver.anim,
+    hitFlash,
+    hitFlashLevel: () => flashK,
     setYaw: (rad) => {
       yawGroup.rotation.y = rad;
     },

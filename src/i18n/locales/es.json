@@ -2434,5 +2434,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "Sigue adelante sin ganar ni perder nada.",
  "Warder": "Protector",
- "Weir Crab": "Cangrejo de la Presa"
+ "Weir Crab": "Cangrejo de la Presa",
+ "Hit feedback": "Aviso de golpes",
+ "When you are hit, the screen edge pulses red toward the attacker, a struck character flashes and heavy hits kick the camera. Turn it off if flashing bothers you.": "Cuando te golpean, el borde de la pantalla late en rojo hacia el atacante, el personaje golpeado destella y los golpes fuertes sacuden la cámara. Desactívalo si te molestan los destellos.",
+ "Red edge pulse, flash and camera kick when you are hit": "Pulso rojo en el borde, destello y sacudida de cámara al recibir un golpe",
+ "No flash or kick when you are hit": "Sin destello ni sacudida al recibir un golpe"
 }

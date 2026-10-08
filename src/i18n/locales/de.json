@@ -2406,5 +2406,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "Geh weiter, ohne etwas zu gewinnen oder zu verlieren.",
  "Warder": "Bannhüter",
- "Weir Crab": "Wehrkrabbe"
+ "Weir Crab": "Wehrkrabbe",
+ "Hit feedback": "Treffer-Feedback",
+ "When you are hit, the screen edge pulses red toward the attacker, a struck character flashes and heavy hits kick the camera. Turn it off if flashing bothers you.": "Wenn du getroffen wirst, pulsiert der Bildschirmrand rot in Richtung des Angreifers, die getroffene Figur blitzt auf und schwere Treffer stoßen die Kamera an. Schalte es aus, wenn dich das Blinken stört.",
+ "Red edge pulse, flash and camera kick when you are hit": "Roter Randpuls, Aufblitzen und Kamerastoß bei Treffern",
+ "No flash or kick when you are hit": "Kein Aufblitzen und kein Stoß bei Treffern"
 }

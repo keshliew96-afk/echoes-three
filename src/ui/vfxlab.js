@@ -20,6 +20,7 @@
 //            the floor (Flooded Cellar, Bell Tower)
 //   Sound    each boss's sting, phase and fall stings and its boss groove;
 //            each event room, room objective and slide cue
+//   Hit      a light / heavy / over-time / downed hit on your character
 //
 // Off unless the URL asks for it; touches nothing else in the UI.
 const HEALER_SETS = [
@@ -497,6 +498,36 @@ export function mountVfxLab() {
       }
       say(`slide on ${skin === 'wet' ? 'wet stone' : skin === 'frost' ? 'grave frost' : 'heart crystal'} (the Slick floor row plays it live)`);
     }, `sl_${skin}`);
+
+  // Hit feedback (docs/HIT_FEEDBACK.md): a hit on your own character from
+  // the upper left, played through the real layer (edge pulse, arc, rig
+  // flash, kick, sound) without touching the sim; Live hits lets two boars
+  // and a mantis at the party so real blows land.
+  const hitRow = section('Hit feedback');
+  for (const [name, tier] of [['Light', 'light'], ['Heavy', 'heavy'], ['Over time', 'soft'], ['Downed', 'down']])
+    button(hitRow, name, async () => {
+      await ensureCombat(1);
+      if (tier === 'soft') {
+        for (let i = 0; i < 6; i++) {
+          X().content.hitPreview('soft');
+          await wait(250);
+        }
+      } else if (!X().content.hitPreview(tier)) {
+        say('hit feedback is off (Settings > Gameplay)');
+        return;
+      }
+      say(`hit feedback: ${name.toLowerCase()} hit`);
+    }, `a ${name.toLowerCase()} hit on your character`);
+  button(hitRow, 'Live hits', async () => {
+    await ensureCombat(1);
+    const p = X().content.world().player;
+    const x = p ? p.x : 0;
+    const z = p ? p.z : 0;
+    X().cmd('spawn', 'boar', x - 2.4, z - 2.2);
+    X().cmd('spawn', 'boar', x + 2.4, z + 1.6);
+    X().cmd('spawn', 'mantis', x + 2.6, z - 2.4);
+    say('two boars and a mantis at the party: real hits');
+  }, 'enemies that reach the party');
 
   const rel = section('Music');
   button(rel, 'Release', () => {

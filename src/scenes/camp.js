@@ -1329,6 +1329,7 @@ export function createCampScene(stage, toggles, ctx) {
     // The ally render layer adopts THESE — the arena's critters, the bodies
     // that fight. See the header note.
     allies: arena.allies,
+    healer: arena.healer,
     isCamp: () => mode === 'camp',
   };
 }
