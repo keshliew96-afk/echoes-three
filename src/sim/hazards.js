@@ -822,7 +822,10 @@ export function createLayoutSystem({ registry, events, getTick, hazards, interac
     const m = mode ?? 'kill_all';
     const spawn = m === 'kill_all' || m === 'defend' || m === 'hunt' || m === 'purge';
     active = { layoutId, act: act ?? L.act, biome: L.biome, room, mode: m, spawned: spawn };
+    // A fresh room wakes both: the last room's clear put the bells and
+    // sluices to sleep along with the hazards (onRoomCleared).
     hazards.setDormant(false);
+    interactables.setDormant(false);
     if (spawn) {
       const laneIds = [];
       for (const p of L.hazards) {
