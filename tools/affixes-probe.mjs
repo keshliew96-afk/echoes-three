@@ -190,13 +190,18 @@ function parkParty(W, x = 0, z = 4.5) {
   let rs = 5, a = rollsOf(rs);
   while (!a.length && rs < 20) a = rollsOf(++rs);
   check(a.length > 0 && a === rollsOf(rs), `the same seed rolls the same powers (seed ${rs}: ${a.slice(0, 60)}...)`);
-  // Endless: two powers at depth 1.
+  // Endless: Depths 1-4 count as their level (one power at Depth 1), two
+  // powers from Depth 5 on.
   {
     const W = makeWorld(4);
     W.run.startCampaign({ endless: true, harness: true });
     for (let i = 0; i < 4000 && W.run.view().phase !== 'combat'; i++) W.step();
     const r = W.run.cmd('affixRule');
-    check(!!r && r.count === 2, `Endless elites carry two powers (rule count ${r ? r.count : '-'})`);
+    check(!!r && r.count === 1, `Endless Depth 1 elites carry Level I's one power (rule count ${r ? r.count : '-'})`);
+    W.world.cmd('endlessJump', 5);
+    for (let i = 0; i < 8000 && !(W.run.view().phase === 'combat' && W.run.view().endless && W.run.view().endless.depth === 5); i++) W.step();
+    const r5 = W.run.cmd('affixRule');
+    check(!!r5 && r5.count === 2, `Endless Depth 5 elites carry two powers (rule count ${r5 ? r5.count : '-'})`);
   }
   // Never: the legacy single-level run, the tutorial, the ?room= harness.
   {
