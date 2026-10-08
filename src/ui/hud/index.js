@@ -24,6 +24,7 @@ import { createBanner } from './banner.js';
 import { createThreatLayer } from './threat.js';
 import { iconEl } from './icons.js';
 import { t } from '../../i18n/index.js';
+import { viewerSeat } from '../../app/viewerseat.js';
 
 const BAR_EDGE_PX = 16; // real px from the window bottom to the command bar
 const BANNER_EDGE_PX = 14; // real px from the window top to the banner
@@ -304,7 +305,10 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
       locSub.textContent = copy.sub;
       publishZones();
     }
-    const wallet = rv && typeof rv.wallet === 'number' ? Math.max(0, Math.round(rv.wallet)) : 0;
+    // The viewer's own Glint: a seat other than the Healer's reads its purse.
+    const seat = viewerSeat();
+    const own = rv && Array.isArray(rv.purses) && typeof rv.purses[seat] === 'number' ? rv.purses[seat] : rv && rv.wallet;
+    const wallet = typeof own === 'number' ? Math.max(0, Math.round(own)) : 0;
     if (wallet !== glintShown) {
       glintShown = wallet;
       glintNum.textContent = String(wallet);

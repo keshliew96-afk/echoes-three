@@ -36,6 +36,7 @@ const { createWorld } = await import(u('src/sim/world.js'));
 const { emptySnapshot } = await import(u('src/core/intents.js'));
 const { AFFIX_IDS, AFFIXES, AFFIX_RULES, rollAffixes } = await import(u('src/sim/affixes.js'));
 const { quantizeEntity, viewEntity } = await import(u('src/net/protocol/quantize.js'));
+const { default: KNIGHT } = await import(u('src/sim/enemies/knight.js'));
 const TUNE = process.argv.includes('--tune');
 
 function makeWorld(seed, { harness = false, room = null } = {}) {
@@ -184,8 +185,11 @@ function parkParty(W, x = 0, z = 4.5) {
     }
     return out.join(',');
   };
-  const a = rollsOf(5);
-  check(a.length > 0 && a === rollsOf(5), `the same seed rolls the same powers (${a.slice(0, 60)}...)`);
+  // Elites are a chance roll, so a seed may field none in six waves: take
+  // the first seed from 5 that does, then replay it.
+  let rs = 5, a = rollsOf(rs);
+  while (!a.length && rs < 20) a = rollsOf(++rs);
+  check(a.length > 0 && a === rollsOf(rs), `the same seed rolls the same powers (seed ${rs}: ${a.slice(0, 60)}...)`);
   // Endless: two powers at depth 1.
   {
     const W = makeWorld(4);
@@ -390,6 +394,7 @@ function parkParty(W, x = 0, z = 4.5) {
   let worstConcurrent = 0;
   let minGap = Infinity;
   let affixTels = 0;
+  let starvedSwings = 0;
   for (const seed of [2, 5]) {
     const W = makeWorld(seed);
     const ap = W.run.autopilot;
@@ -400,7 +405,11 @@ function parkParty(W, x = 0, z = 4.5) {
       if (!e.playerTargeted) return;
       const g = W.registry.byId(e.id);
       if (g && g.affix) affixTels += 1;
-      if (last > -1e9) minGap = Math.min(minGap, e.tick - last);
+      // Balance pass (v0.5.224): a Knight the governor held back for
+      // starveTicks swings anyway, so its start is not held to the stagger.
+      const starved = g && g.kind === 'knight' && g.heldLast === e.tick && e.tick - g.heldSince >= KNIGHT.stats.starveTicks;
+      if (starved) starvedSwings += 1;
+      else if (last > -1e9) minGap = Math.min(minGap, e.tick - last);
       last = e.tick;
     });
     for (let i = 0; i < 9000; i++) {
@@ -411,7 +420,7 @@ function parkParty(W, x = 0, z = 4.5) {
       if (W.run.view().phase === 'defeat') break;
     }
   }
-  check(affixTels > 0 && worstConcurrent <= 2 && minGap >= 72, `governor over Level III: ${affixTels} affix telegraphs, at most ${worstConcurrent} live, starts >= ${minGap} ticks apart`);
+  check(affixTels > 0 && worstConcurrent <= 2 && minGap >= 72, `governor over Level III: ${affixTels} affix telegraphs, at most ${worstConcurrent} live, starts >= ${minGap} ticks apart (${starvedSwings} starved Knight swings exempt)`);
 }
 
 // ---------------------------------------------------------------- 4. AI --

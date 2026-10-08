@@ -1359,6 +1359,15 @@ export function createNetClient(opts = {}) {
         /* a broken extension never breaks stats() */
       }
     }
+    // Small fixes: the round trip to the other players, not to the server —
+    // a direct link's own heartbeat ping, or on the relay this page's server
+    // round trip plus that player's (the frames go through the server).
+    // peerRttMs = the slowest of them (a host with several guests).
+    out.peerRttBySeat = peerRtts(out.rttMs);
+    {
+      const v = Object.values(out.peerRttBySeat).filter((x) => Number.isFinite(x));
+      out.peerRttMs = v.length ? Math.max(...v) : null;
+    }
     // Link quality (NET-F2) — after the extensions, so a host's figures are
     // its session driver's (incoming input loss). lossInPct / lossOutPct:
     // per direction, null while unmeasured; snapshotAgeMs: since the newest
@@ -1405,6 +1414,17 @@ export function createNetClient(opts = {}) {
       if (role === 'guest' && x.peerId !== room.hostPeerId) continue;
       if (role !== 'guest' && role !== 'host') continue;
       out[x.index] = mesh.pathOf(x.index);
+    }
+    return out;
+  }
+  function peerRtts(ownRtt) {
+    const out = {};
+    if (!room) return out;
+    for (const k of Object.keys(linkPaths())) {
+      const seat = Number(k);
+      const direct = mesh.rttOf(seat);
+      const x = room.seats.find((r) => r.index === seat);
+      out[seat] = Number.isFinite(direct) ? direct : Number.isFinite(ownRtt) && x && Number.isFinite(x.rttMs) ? Math.round(ownRtt + x.rttMs) : null;
     }
     return out;
   }

@@ -34,6 +34,12 @@ export const HEARTBEAT_MS = 500;
 export const UNREL_MAX = 1150; // one SCTP packet: a bigger frame rides 'r'
 export const BUFFER_LIMIT = 4 * 1024 * 1024; // a link this far behind is dead weight
 const HEARTBEAT = 0xf0;
+// The heartbeat doubles as the peer ping: [HEARTBEAT, PING, f64 sent-at]
+// out, the same 8 bytes back as [HEARTBEAT, PONG, …] — the sender's clock on
+// both ends, so no clock sync. The chip shows the median of the last few.
+const PING = 1;
+const PONG = 2;
+const RTT_SAMPLES = 5;
 // Public STUN only (no TURN on the free plan): players whose networks block a
 // direct path stay on the relay, which is the fallback for exactly that.
 export const ICE_SERVERS = Object.freeze([{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }, { urls: 'stun:stun.cloudflare.com:3478' }]);
@@ -94,7 +100,7 @@ export function createMesh({ signal, deliver, log = () => {}, now = defaultNow, 
       log('p2p_pc_error', { error: String(err && err.message) });
       return null;
     }
-    const L = { seat, peerId, id, initiator, pc, r: null, u: null, path: 'relay', startedAt: now(), openAt: null, lastRecvAt: now(), pendingCands: [], outCands: [], described: false, remoteSet: false, closed: false, timer: null };
+    const L = { seat, peerId, id, initiator, pc, r: null, u: null, path: 'relay', startedAt: now(), openAt: null, lastRecvAt: now(), rtts: [], pendingCands: [], outCands: [], described: false, remoteSet: false, closed: false, timer: null };
     links.set(seat, L);
     pc.onicecandidate = (ev) => {
       if (L.closed || !ev.candidate || !ev.candidate.candidate) return;
@@ -154,9 +160,38 @@ export function createMesh({ signal, deliver, log = () => {}, now = defaultNow, 
       const d = ev.data;
       const u8 = d instanceof ArrayBuffer ? new Uint8Array(d) : ArrayBuffer.isView(d) ? new Uint8Array(d.buffer, d.byteOffset, d.byteLength) : null;
       if (!u8 || u8.length < 2) return;
-      if (u8[0] === HEARTBEAT) return;
+      if (u8[0] === HEARTBEAT) {
+        beatIn(L, u8);
+        return;
+      }
       receive(L, u8);
     };
+  }
+
+  function beatIn(L, u8) {
+    if (u8.length !== 10) return;
+    if (u8[1] === PING) {
+      const back = new Uint8Array(u8);
+      back[1] = PONG;
+      try {
+        if (L.u && L.u.readyState === 'open') L.u.send(back);
+      } catch {
+        /* the close handler takes it */
+      }
+    } else if (u8[1] === PONG) {
+      const sent = new DataView(u8.buffer, u8.byteOffset, u8.byteLength).getFloat64(2);
+      const ms = now() - sent;
+      if (!(ms >= 0 && ms < 60000)) return;
+      L.rtts.push(ms);
+      if (L.rtts.length > RTT_SAMPLES) L.rtts.shift();
+    }
+  }
+  function beatOut() {
+    const u8 = new Uint8Array(10);
+    u8[0] = HEARTBEAT;
+    u8[1] = PING;
+    new DataView(u8.buffer).setFloat64(2, now());
+    return u8;
   }
 
   function receive(L, u8) {
@@ -229,7 +264,7 @@ export function createMesh({ signal, deliver, log = () => {}, now = defaultNow, 
           continue;
         }
         try {
-          if (L.u && L.u.readyState === 'open') L.u.send(new Uint8Array([HEARTBEAT, 0]));
+          if (L.u && L.u.readyState === 'open') L.u.send(beatOut());
         } catch {
           /* the close handler takes it */
         }
@@ -437,9 +472,17 @@ export function createMesh({ signal, deliver, log = () => {}, now = defaultNow, 
       fail(L, reason);
       return true;
     },
+    // The round trip to `seat` over its direct link (median of the last few
+    // heartbeats, ms), or null when not direct or not measured yet.
+    rttOf(seat) {
+      const L = links.get(seat);
+      if (!L || L.path !== 'direct' || !L.rtts.length) return null;
+      const a = [...L.rtts].sort((x, y) => x - y);
+      return Math.round(a[a.length >> 1] * 10) / 10;
+    },
     stats() {
       const per = {};
-      for (const L of links.values()) per[L.seat] = { path: L.path, openMs: L.openAt === null ? null : Math.round(L.openAt - L.startedAt), lastRecvAgoMs: Math.round(now() - L.lastRecvAt) };
+      for (const L of links.values()) per[L.seat] = { path: L.path, rttMs: L.rtts.length ? Math.round(L.rtts[L.rtts.length - 1]) : null, openMs: L.openAt === null ? null : Math.round(L.openAt - L.startedAt), lastRecvAgoMs: Math.round(now() - L.lastRecvAt) };
       return { enabled: on, role: me.role, links: per, ...counters };
     },
   };

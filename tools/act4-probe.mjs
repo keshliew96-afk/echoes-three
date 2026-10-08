@@ -48,6 +48,7 @@ const { LAYOUTS } = await import(u('src/data/layouts.js'));
 const E = await import(u('src/data/endless.js'));
 const { affixCountFor } = await import(u('src/sim/affixes.js'));
 const { HEARTBEAT } = await import(u('src/sim/enemies/husk.js'));
+const { speedMul } = await import(u('src/sim/status.js'));
 
 function makeWorld(seed, { harness = false } = {}) {
   let impl = createGameplayRng(seed >>> 0);
@@ -139,10 +140,18 @@ const spawn = (W, kind, x, z, o = { hpMul: 30 }) => W.registry.byId(W.world.cmd(
   parkParty(W, 0, 5);
   const hs = [spawn(W, 'husk', -3, -4), spawn(W, 'husk', 0, -4.5), spawn(W, 'husk', 3, -4)];
   // Wait for a surge boundary, then compare a stalk step with a surge step.
+  // The room's waves and the allies' fire keep running, so only free steps
+  // count: a tick with knockback or a speed status on the husk measures the
+  // party's hits, not the husk's own pace.
   const speedOver = (e, n) => {
-    const x0 = e.x, z0 = e.z;
-    steps(W, n);
-    return Math.hypot(e.x - x0, e.z - z0) / n;
+    let dist = 0, free = 0;
+    for (let i = 0; i < n; i++) {
+      const x0 = e.x, z0 = e.z;
+      const clean = !(e.kbTicks > 0) && speedMul(e, W.clock.tick) === 1;
+      steps(W, 1);
+      if (clean && !(e.kbTicks > 0)) { dist += Math.hypot(e.x - x0, e.z - z0); free++; }
+    }
+    return free ? dist / free : 0;
   };
   let guard = 0;
   while ((W.clock.tick % HEARTBEAT.period) !== HEARTBEAT.surge + 4 && guard++ < 400) W.step();
@@ -151,9 +160,12 @@ const spawn = (W, kind, x, z, o = { hpMul: 30 }) => W.registry.byId(W.world.cmd(
   while ((W.clock.tick % HEARTBEAT.period) !== 2 && guard++ < 800) W.step();
   parkParty(W, 0, 5);
   const surge = speedOver(hs[1], 20);
-  const surges = W.log.filter((e) => e.type === 'husk_surge');
+  // Later waves may roll more husks into the room: they share the beat too,
+  // but the count below is about the three spawned here.
+  const allTicks = new Set(W.log.filter((e) => e.type === 'husk_surge').map((e) => e.tick));
+  const surges = W.log.filter((e) => e.type === 'husk_surge' && hs.some((h) => h.id === e.id));
   const ticks = new Set(surges.map((e) => e.tick));
-  check(surges.length >= 3 && ticks.size === Math.ceil(surges.length / 3), `the room's husks surge together on the beat (${surges.length} surges on ${ticks.size} ticks)`);
+  check(surges.length >= 3 && ticks.size === Math.ceil(surges.length / 3) && allTicks.size === ticks.size, `the room's husks surge together on the beat (${surges.length} surges on ${ticks.size} ticks)`);
   check(surge > stalk * 1.6, `a surging husk runs faster (${stalk.toFixed(3)} -> ${surge.toFixed(3)} u/tick)`);
   mend(W);
   steps(W, 400);

@@ -239,7 +239,9 @@ export function createPartyPages(ctx) {
   }
 
   // -------------------------------------------------------------- shop --
-  function openShop(room) {
+  // `reserve` (by seat): Glint an AI seat holds for a relic (Suggested), so
+  // its card marks are picked from the rest.
+  function openShop(room, reserve = null) {
     const tick = getTick();
     const mode = party.mode();
     const shelves = [null];
@@ -248,7 +250,7 @@ export function createPartyPages(ctx) {
       const stock = party.draft(i).shopStock().map((s) => ({ ...s, sold: false }));
       shelves.push(stock);
       const m = stock.map(() => false);
-      if (aiHeld(i) && mode === 'suggest') for (const k of suggestShelf(stock, party.purse(i))) m[k] = true;
+      if (aiHeld(i) && mode === 'suggest') for (const k of suggestShelf(stock, party.purse(i) - (reserve ? reserve[i] : 0))) m[k] = true;
       marked.push(m);
     }
     shop = { room, shelves, marked, touched: [false, false, false, false], done: [false, false, false, false], openedTick: tick, leaveTick: null, deadlineTick: null };

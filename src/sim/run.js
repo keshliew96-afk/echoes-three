@@ -1639,14 +1639,20 @@ export function createRunSystem({
       stock: stock.map((s) => ({ node: s.node, rarity: s.rarity, price: s.price })),
       affordableAny2: stock.length >= 2,
     });
+    // RELICS: the relic shelf (relic stream; null when relics are off).
+    relics.openShelf();
+    // Small fixes: an AI-held seat with the Glint takes a relic first (bought
+    // now under Auto, on Advance under Suggested), so its cards below are
+    // picked from what is left.
+    const reserve = planAiRelics();
     // PARTY: each ally's own 4-card class shelf (party stream, seats 1 → 3).
-    if (allyOn()) pages.openShop(roomIndex);
+    if (allyOn()) pages.openShop(roomIndex, reserve);
     // v0.5.237 (Kesh: "shouldn't be able to control the Healer's shop ... it
     // should be done by AI"): a Healer the player does not control (class
     // select, or an AI seat in co-op) shops like the other AI seats — its
     // picks marked under Suggested (bought on Advance), bought now under Auto.
     if (healerAiShops()) {
-      const picks = suggestShelf(shop.stock, wallet);
+      const picks = suggestShelf(shop.stock, wallet - reserve[0]);
       if (party.mode() === 'suggest') {
         shop.marked = shop.stock.map((_, k) => picks.includes(k));
         shop.touched = false;
@@ -1657,9 +1663,49 @@ export function createRunSystem({
         }
       }
     }
-    // RELICS: the relic shelf (relic stream; null when relics are off).
-    relics.openShelf();
   }
+
+  // Small fixes: AI-held seats (Healer first, then seats 1 → 3; none under
+  // Ally builds Manual) each take at most one relic off the shelf: its own
+  // class relic, else one for no class, when its purse covers the price.
+  // Another class's relic stays for that seat. Under Auto the relic is bought
+  // at once; under Suggested it is held (shop.relicPlan) and bought first on
+  // Advance. Returns each seat's held Glint. Nothing when relics are off.
+  function planAiRelics() {
+    const reserve = [0, 0, 0, 0];
+    if (!allyOn() || !party || party.mode() === 'manual') return reserve;
+    const shelf = relics.view().shelf;
+    if (!shelf) return reserve;
+    const c = controllers();
+    const plan = {};
+    const taken = new Set();
+    for (const seat of [0, 1, 2, 3]) {
+      if (c[seat] === 'human') continue;
+      const purse = seat === 0 ? wallet : party.purse(seat);
+      const cls = CLASS_OF_SEAT[seat];
+      const fits = (k) => !taken.has(k) && relics.shelfItem(k) && shelf[k].price <= purse;
+      const own = shelf.findIndex((r, k) => r.cls === cls && fits(k));
+      const k = own >= 0 ? own : shelf.findIndex((r, k2) => !r.cls && fits(k2));
+      if (k < 0) continue;
+      taken.add(k);
+      if (party.mode() === 'auto') buyRelic(seat, k);
+      else {
+        plan[seat] = k;
+        reserve[seat] = shelf[k].price;
+      }
+    }
+    if (Object.keys(plan).length) shop.relicPlan = plan;
+    return reserve;
+  }
+  // Suggested: the held relics, bought as the party leaves (a seat a human
+  // took over since, or a relic gone or now too dear, is skipped).
+  function buyPlannedRelics() {
+    if (!shop || !shop.relicPlan) return;
+    const c = controllers();
+    for (const [seat, k] of Object.entries(shop.relicPlan)) if (c[seat] !== 'human') buyRelic(Number(seat), k);
+    delete shop.relicPlan;
+  }
+
 
   // RELICS: buy relic `index` off the relic shelf from `seat`'s purse (the
   // Healer's is the run wallet). The relic is the whole party's.
@@ -1726,6 +1772,7 @@ export function createRunSystem({
   // + one ~300 ms shake, item stays).
   // An AI-held Healer (controllers()[0] is not 'human') in a party run.
   const healerAiShops = () => allyOn() && !!party && controllers()[0] !== 'human';
+  const seatPursesOn = () => allyOn() && !!party && controllers().some((c, i) => (i === 0 ? c !== 'human' : c === 'human'));
   function buy(index, { by = 'human' } = {}) {
     if (phase !== 'shop' || !shop) return null;
     const card = shop.stock[index];
@@ -1773,7 +1820,9 @@ export function createRunSystem({
       }
     }
     // PARTY: every AI-held shelf's still-marked buys (Suggested), benches
-    // auto-filled, then the shelves close.
+    // auto-filled, then the shelves close. Held relics go first: the marks
+    // were picked from what they leave.
+    buyPlannedRelics();
     if (shop && shop.marked && !shop.touched && healerAiShops() && party.mode() === 'suggest') {
       shop.marked.forEach((m, k) => {
         if (m && !shop.stock[k].sold && wallet >= shop.stock[k].price) buy(k, { by: 'ai' });
@@ -2084,6 +2133,11 @@ export function createRunSystem({
       layout: layout ? { ...layout } : null,
       mode: frame && roomIndex ? frame.modes[roomIndex - 1] : null,
       wallet,
+      // Small fixes: every seat's Glint ([Healer wallet, seat 1-3 purses]) so
+      // the HUD counter reads the viewer's own; present only when a seat
+      // other than the Healer is played (class select, co-op), so a solo
+      // Healer run hashes as before.
+      ...(seatPursesOn() ? { purses: [wallet, party.purse(1), party.purse(2), party.purse(3)] } : {}),
       clearedRooms,
       roomsDone,
       freeSkillSlots: draft.freeSkillSlots(),

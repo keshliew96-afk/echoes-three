@@ -400,7 +400,10 @@ export function createNetHud({ app, settings, api, nameOfSeat = () => null }) {
   function refreshLink() {
     const s = readLink();
     const q = s && s.quality ? s.quality : null;
-    const rtt = s && Number.isFinite(s.rttMs) ? Math.round(s.rttMs) : last && Number.isFinite(last.rttMs) ? Math.round(last.rttMs) : null;
+    // The ping to the other players (peerRttMs: direct-link heartbeat, or
+    // both server legs on the relay); the server round trip only until one
+    // is known.
+    const rtt = s && Number.isFinite(s.peerRttMs) ? Math.round(s.peerRttMs) : s && Number.isFinite(s.rttMs) ? Math.round(s.rttMs) : last && Number.isFinite(last.rttMs) ? Math.round(last.rttMs) : null;
     // The loss the quality judged (a guest: the worse direction; a host: its
     // own link = the loss every guest's inputs share), else lossPct.
     const loss = q && Number.isFinite(q.lossPct) ? q.lossPct : s && Number.isFinite(s.lossPct) ? s.lossPct : 0;
