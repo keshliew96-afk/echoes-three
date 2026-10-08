@@ -594,6 +594,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     }
     renderRack(view);
     fitHead(view);
+    fitHints();
     startMotes();
   }
 
@@ -910,6 +911,30 @@ export function createShopScreen({ run, build, party = () => null }) {
     coinEl.classList.remove('rn-catch');
     amtEl.textContent = String(a.walletTo);
     buyAnim = null;
+  }
+
+  // SHOP REFRESH: the Refresh button takes room from the two key hints that
+  // flank the lamp. In a narrow window they would wrap into a tall column
+  // (four lines in German at 1024 px) and the docked page would grow past
+  // the window, so a hint that needs more than two lines steps aside; the
+  // button and the lamp carry their own keys. Re-measured only when the
+  // window or the hint text changes (never per frame).
+  const hintL = el.querySelector('.rn-hint-l');
+  const hintFit = { key: '' };
+  function fitHints() {
+    const key = `${window.innerWidth}x${window.innerHeight}|${advanceBtn.textContent}|${refreshBtn.style.visibility}|${refreshBtn.textContent}`;
+    if (key === hintFit.key) return;
+    hintFit.key = key;
+    const was = `${el.classList.contains('rn-hintless')}${el.classList.contains('rn-rfslim')}`;
+    el.classList.remove('rn-hintless', 'rn-rfslim');
+    const line = parseFloat(getComputedStyle(hintL).lineHeight) || parseFloat(getComputedStyle(hintL).fontSize) * 1.25 || 22;
+    const tall = [hintL, hintR].some((h) => h.offsetHeight > line * 2 + 2);
+    el.classList.toggle('rn-hintless', tall);
+    // Still wider than the panel (a long lamp in German): the button keeps
+    // its arrows, price and key, and its word moves to the tooltip.
+    const row = refreshBtn.parentElement;
+    if (tall && row.scrollWidth > row.clientWidth + 0.5) el.classList.add('rn-rfslim');
+    if (`${tall}${el.classList.contains('rn-rfslim')}` !== was) dirtyFlag = true; // the run UI re-fits the page on its next frame
   }
 
   // --------------------------------------------------------- refresh --

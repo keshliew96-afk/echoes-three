@@ -678,6 +678,9 @@ export const RUN_CSS = `
   @keyframes rn-rfshake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-7px) rotate(-1.5deg); }
     40% { transform: translateX(5px) rotate(1deg); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
   #run-screen.rn-compact .rn-shop .rn-refresh { padding: 6px 10px; font-size: 15px; gap: 6px; }
+  /* A narrow window: the key hints step aside rather than wrap into columns. */
+  #run-screen .rn-shop.rn-hintless .rn-hint { visibility: hidden; flex: 1 1 0; min-width: 0; height: 0; overflow: hidden; }
+  #run-screen .rn-shop.rn-rfslim .rn-refresh .rn-rflab { display: none; }
   /* The light sweep across the shelf during a refresh. */
   .rn-rfsweep {
     position: absolute; width: 120px; pointer-events: none; opacity: 0;

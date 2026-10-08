@@ -13,7 +13,7 @@
 //   6. the AI Healer never refreshes (its count stays 0) and keeps its picks.
 // Screenshots: captures/shoprefresh-<class>-*.png (pinned flip frames).
 //
-//   node tools/shop-refresh-browser.mjs [--url http://127.0.0.1:5199/] [--seed 7] [--class swordsman] [--lang de]
+//   node tools/shop-refresh-browser.mjs [--url http://127.0.0.1:5199/] [--seed 7] [--class swordsman] [--lang de] [--size 1280x720]
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=.../chrome and
 // ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader".
 import { mkdirSync } from 'node:fs';
@@ -28,6 +28,7 @@ const URL0 = opt('url', 'http://127.0.0.1:5199/');
 const SEED = Number(opt('seed', '7'));
 const ONLY = opt('class');
 const LANG = opt('lang');
+const [VW, VH] = (opt('size', '1600x900')).split('x').map(Number);
 const SEAT = { healer: 0, tank: 1, swordsman: 2, archer: 3 };
 const FKEY = ['F1', 'F2', 'F3', 'F4'];
 mkdirSync('captures', { recursive: true });
@@ -35,7 +36,7 @@ const extra = (process.env.ECHOES_CHROME_ARGS || '').split(/\s+/).filter(Boolean
 const browser = await puppeteer.launch({
   headless: true,
   protocolTimeout: 900000,
-  defaultViewport: { width: 1600, height: 900, deviceScaleFactor: 1 },
+  defaultViewport: { width: VW, height: VH, deviceScaleFactor: 1 },
   args: ['--disable-dev-shm-usage', '--no-first-run', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', ...extra],
 });
 const fails = [];
@@ -69,7 +70,7 @@ const PAD_MOCK = () => {
 
 for (const cls of ONLY ? [ONLY] : ['healer', 'swordsman']) {
   const own = SEAT[cls];
-  const tag = `${cls}${LANG ? `-${LANG}` : ''}`;
+  const tag = `${cls}${LANG ? `-${LANG}` : ''}${VW !== 1600 ? `-${VW}` : ''}`;
   const page = await browser.newPage();
   await page.evaluateOnNewDocument(PAD_MOCK);
   const errors = [];

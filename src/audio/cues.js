@@ -84,6 +84,7 @@ export const CUE_CAL = {
   shimmer: -6,
   shoot: -2.2,
   shop_open: -3.1,
+  shop_refresh: -8.4,
   siphon: -6.8,
   siphon_heal: -3.1,
   socket: -6,
