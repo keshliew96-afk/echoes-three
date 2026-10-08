@@ -1,7 +1,8 @@
 // THE HEARTH SONG (docs/STORY.md): two app screens.
 //
-//   'story'     The Story so far — J in camp, Quill's bubble on the map table.
-//               The verses held (seven pips, the missing ones blank), one
+//   'story'     The Journal — J in camp, Quill's bubble on the map table. Its
+//               first page is the Story so far (docs/JOURNAL.md has the
+//               rest: Bestiary, Relics, Events, Deeds). The verses held (seven pips, the missing ones blank), one
 //               card per chapter (held chapters tell their summary, the rest
 //               say how to read on), and the people met so far.
 //   'prologue'  Wick tells the prologue: once per profile, the first time a
@@ -16,6 +17,7 @@ import { service } from '../../app/registry.js';
 import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
 import { CHAPTERS, PROLOGUE, TOTAL_VERSES, NPCS, PEOPLE, versesHeld } from '../../data/story.js';
 import { t, tn } from '../../i18n/index.js';
+import { journalInfo, createJournalPage, createDeedsPage, JOURNAL_TABS, TAB_LABEL, JOURNAL_CSS } from './journal.js';
 
 const STYLE_ID = 'st-story-style';
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
@@ -67,6 +69,7 @@ function installStyle() {
 .st-foot { display: flex; gap: ${px(24)}; align-items: center; flex-wrap: wrap; justify-content: center; font-size: ${px(20)}; color: ${P.warmGrey}; }
 .st-foot b { display: inline-flex; align-items: center; justify-content: center; min-width: ${px(34)}; height: ${px(32)}; padding: 0 ${px(8)}; margin-right: ${px(6)};
   border-radius: ${px(7)}; border: max(1px, ${px(2)}) solid ${P.warmGrey}AA; background: ${P.voidCharcoal}; color: ${P.bone}; font-weight: 700; }
+${JOURNAL_CSS}
 @media (max-height: 640px) {
   .st-chap .st-cs { font-size: ${px(19)}; }
   .st-text p { font-size: ${px(22)}; }
@@ -109,20 +112,24 @@ export function createStoryScreen(ctx) {
   el.className = 'st-story';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
-  el.setAttribute('aria-label', t('The story so far'));
+  el.setAttribute('aria-label', t('Journal'));
   el.innerHTML = `
     <div class="ap-veil"></div>
     <div class="st-wrap ap-plate">
       <div class="st-head">
         <div class="ap-orn">◆ ◇ ◆</div>
-        <h2 class="ap-h2">${esc(t('The story so far'))}</h2>
-        <div class="st-verses"></div>
+        <h2 class="ap-h2">${esc(t('Journal'))}</h2>
+        <div class="st-tabs" role="tablist"></div>
       </div>
-      <div class="st-cols">
-        <div class="st-col st-chapters"></div>
-        <div class="st-col st-people"></div>
+      <div class="st-pane st-page-story">
+        <div class="st-verses"></div>
+        <div class="st-cols">
+          <div class="st-col st-chapters"></div>
+          <div class="st-col st-people"></div>
+        </div>
       </div>
       <div class="st-foot">
+        <span><b>Q</b><b>E</b>${esc(t('Turn the page'))}</span>
         <button type="button" class="ap-btn st-again" data-nav>${esc(t('Read the prologue again'))}</button>
         <button type="button" class="ap-btn ap-primary st-close" data-nav data-nav-default>${esc(t('Back to camp'))}</button>
       </div>
@@ -130,9 +137,59 @@ export function createStoryScreen(ctx) {
   const versesEl = el.querySelector('.st-verses');
   const chapEl = el.querySelector('.st-chapters');
   const peopleEl = el.querySelector('.st-people');
+  const tabsEl = el.querySelector('.st-tabs');
+  const storyPane = el.querySelector('.st-page-story');
   el.querySelector('.st-close').addEventListener('click', () => close());
   el.querySelector('.st-again').addEventListener('click', () => reread());
   let info = null;
+  // THE JOURNAL (docs/JOURNAL.md): the pages after the Hearth Song.
+  let jinfo = null;
+  const pages = {
+    bestiary: createJournalPage('bestiary', () => jinfo),
+    relics: createJournalPage('relics', () => jinfo),
+    events: createJournalPage('events', () => jinfo),
+    deeds: createDeedsPage(() => jinfo),
+  };
+  const foot = el.querySelector('.st-foot');
+  for (const pg of Object.values(pages)) {
+    pg.el.hidden = true;
+    el.querySelector('.st-wrap').insertBefore(pg.el, foot);
+  }
+  let tab = 'story';
+  function setTab(id, { focus = false } = {}) {
+    if (!JOURNAL_TABS.includes(id)) id = 'story';
+    if (tab !== id && pages[tab]) pages[tab].pause();
+    tab = id;
+    storyPane.hidden = id !== 'story';
+    el.querySelector('.st-again').style.display = id === 'story' ? '' : 'none';
+    for (const [k, pg] of Object.entries(pages)) pg.el.hidden = k !== id;
+    for (const b of tabsEl.querySelectorAll('.st-tab')) {
+      const on = b.dataset.tab === id;
+      b.classList.toggle('st-on', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    }
+    const first = pages[id] ? pages[id].open() : null;
+    if (focus) {
+      const target = first || tabsEl.querySelector(`.st-tab[data-tab="${id}"]`);
+      if (target && manager.focusElement) manager.focusElement(target, 'api', { scroll: true });
+    }
+  }
+  function renderTabs() {
+    tabsEl.innerHTML = '';
+    for (const id of JOURNAL_TABS) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'st-tab';
+      b.dataset.nav = '';
+      b.dataset.tab = id;
+      b.setAttribute('role', 'tab');
+      const tot = id === 'story' ? { met: info.verses, of: info.total } : jinfo.totals[id];
+      b.innerHTML = `<span></span><small>${tot.met}/${tot.of}</small>`;
+      b.querySelector('span').textContent = t(TAB_LABEL[id]);
+      b.addEventListener('click', () => setTab(id));
+      tabsEl.appendChild(b);
+    }
+  }
 
   function close() {
     if (manager.top() === 'story') manager.pop();
@@ -197,20 +254,41 @@ export function createStoryScreen(ctx) {
     }
   }
 
-  return {
+  const screen = {
     el,
     blocking: true,
     layer: 'screen',
     reusable: false,
     defaultFocus: '.st-close',
-    onOpen() {
+    onOpen(params = {}) {
       render();
+      jinfo = journalInfo(profile());
+      renderTabs();
+      setTab(params && params.tab ? params.tab : 'story');
+    },
+    onClose() {
+      for (const pg of Object.values(pages)) pg.dispose();
+    },
+    onNav(action) {
+      if (action !== 'tabPrev' && action !== 'tabNext') return false;
+      const i = JOURNAL_TABS.indexOf(tab);
+      const n = JOURNAL_TABS.length;
+      setTab(JOURNAL_TABS[(i + (action === 'tabNext' ? 1 : n - 1)) % n], { focus: true });
+      return true;
+    },
+    onFocusChange(node) {
+      if (pages[tab]) pages[tab].focusChanged(node);
     },
     back() {
       close();
       return true;
     },
+    // probe seams
+    setTab: (id) => setTab(id, { focus: true }),
     debug: () => ({
+      tab,
+      journal: jinfo,
+      page: pages[tab] ? pages[tab].debug() : null,
       info,
       text: el.querySelector('.st-wrap').textContent.replace(/\s+/g, ' ').trim(),
       rect: (() => {
@@ -219,6 +297,8 @@ export function createStoryScreen(ctx) {
       })(),
     }),
   };
+  el.__journal = () => screen.debug(); // probe seam (tools/journal-browser.mjs)
+  return screen;
 }
 
 export function createPrologueScreen(ctx) {

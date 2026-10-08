@@ -102,6 +102,7 @@ for (const f of dataFiles) {
 const EXTRA = {
   'src/ui/menu/settings.js': ['Display', 'Audio', 'Controls', 'Gameplay', 'Network'],
   'src/ui/run/unlocks.js': ['common', 'rare', 'legendary'],
+  'src/ui/story/journal.js': ['Story', 'Bestiary', 'Relics', 'Events', 'Deeds'],
   'src/sim/nodes.js': ['fits your kit', 'nothing in your kit uses this yet'],
   'src/ui/menu/tabs/gameplay.js': LANGUAGE_GLOSSES,
   'src/net/address.js': ['Set by the page link (?net=)', 'Custom address', 'Automatic (this build’s server)', 'Automatic (this site)', 'Automatic (this computer)'],

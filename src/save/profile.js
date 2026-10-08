@@ -106,7 +106,27 @@ export function freshProfile() {
     // (the prologue, each boss's Hollow Voice line) and how many times they
     // met each recurring NPC. A profile without it loads with a fresh one.
     story: freshStory(),
+    // THE JOURNAL (docs/JOURNAL.md): what this player has met, per kind, each
+    // id with a count (enemies and bosses felled, relics taken, curses borne,
+    // event rooms entered; 0 = met but never counted). A profile without it
+    // loads with a fresh one.
+    journal: freshJournal(),
   };
+}
+
+export const JOURNAL_KINDS = Object.freeze(['enemy', 'boss', 'relic', 'curse', 'event']);
+export function freshJournal() {
+  return { seen: Object.fromEntries(JOURNAL_KINDS.map((k) => [k, {}])) };
+}
+export function saneJournal(j) {
+  const out = freshJournal();
+  if (!j || typeof j !== 'object' || !j.seen || typeof j.seen !== 'object') return out;
+  for (const k of JOURNAL_KINDS) {
+    const m = j.seen[k];
+    if (!m || typeof m !== 'object') continue;
+    for (const [id, n] of Object.entries(m).slice(0, 200)) if (STORY_ID.test(id) && Number.isFinite(n) && n >= 0) out.seen[k][id] = Math.min(999999, Math.floor(n));
+  }
+  return out;
 }
 
 export function freshStory() {
@@ -138,6 +158,7 @@ function sane(p) {
   out.playtimeSec = Number.isFinite(p.playtimeSec) ? p.playtimeSec : 0;
   out.meta = saneMeta(p.meta);
   out.story = saneStory(p.story);
+  out.journal = saneJournal(p.journal);
   return out;
 }
 
@@ -366,6 +387,19 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     }).result;
   }
 
+  // THE JOURNAL (docs/JOURNAL.md): a batch of meetings, { kind: { id: n } }
+  // (n = how many to add; 0 = met). One atomic write per batch.
+  function noteJournal(batch) {
+    if (!batch || typeof batch !== 'object') return false;
+    const clean = saneJournal({ seen: batch }).seen;
+    if (!JOURNAL_KINDS.some((k) => Object.keys(clean[k]).length)) return false;
+    return commit((p) => {
+      p.journal = saneJournal(p.journal);
+      for (const k of JOURNAL_KINDS) for (const [id, n] of Object.entries(clean[k])) p.journal.seen[k][id] = Math.min(999999, (p.journal.seen[k][id] ?? 0) + n);
+      return true;
+    }).w.ok;
+  }
+
   // A level entered (run start / level start): the furthest level reached.
   function noteLevelReached(level) {
     const n = Number(level);
@@ -574,6 +608,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     awardRun, // UNLOCKS
     noteStory, // THE HEARTH SONG
     meetNpc, // THE HEARTH SONG
+    noteJournal, // THE JOURNAL
     // probe seam (tools/unlocks-net.mjs): add Embers as one atomic write
     debugEmbers: (n) => commit((p) => {
       p.meta.embers += Math.max(0, Math.round(n));
@@ -604,9 +639,11 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       // and unlocks the player earned (docs/UNLOCKS.md).
       const keepMeta = saneMeta(profile.meta);
       const keepStory = saneStory(profile.story);
+      const keepJournal = saneJournal(profile.journal);
       base = freshProfile();
       base.meta = keepMeta;
       base.story = keepStory;
+      base.journal = keepJournal;
       baseText = null;
       rebuild();
       profile.savedAt = now();
