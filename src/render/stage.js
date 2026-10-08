@@ -179,7 +179,10 @@ export function createStage({ container, toggles = {} } = {}) {
 
   // antialias:false — the default framebuffer only ever receives the
   // composer's fullscreen quad; AA happens via MSAA on the composer target.
-  const renderer = new WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+  // depth:false for the same reason (MEMORY, docs/MEMORY.md): a fullscreen
+  // quad never depth-tests, and the scene's depth lives in the composer
+  // target, so a canvas depth buffer was 4 bytes a pixel for nothing.
+  const renderer = new WebGLRenderer({ antialias: false, depth: false, powerPreference: 'high-performance' });
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.toneMapping = ACESFilmicToneMapping;
   // ACES input gain. The composer renders to a HalfFloat target, so the
@@ -235,6 +238,24 @@ export function createStage({ container, toggles = {} } = {}) {
     samples: msaa,
   });
   const composer = new EffectComposer(renderer, target);
+  // MEMORY (docs/MEMORY.md): the composer's second buffer only ever receives
+  // fullscreen passes (OutputPass, grade, FXAA), never the scene, so it needs
+  // no depth buffer (and no MSAA under ?msaa=N). three clones the first
+  // buffer for it; this one holds the same half-float colour, nothing else.
+  composer.renderTarget2.dispose();
+  composer.renderTarget2 = new WebGLRenderTarget(target.width, target.height, { type: HalfFloatType, depthBuffer: false });
+  composer.renderTarget2.texture.name = 'EffectComposer.rt2';
+  // The scene (RenderPass, ink, bloom) always lands in `target`: the
+  // composer renders into its read buffer, so that buffer is pinned to it
+  // before and after every frame. Without the pin an odd number of swapping
+  // passes (the FXAA chain has three) trades the buffers each frame.
+  const settleBuffers = () => {
+    if (composer.readBuffer !== target) {
+      composer.writeBuffer = composer.readBuffer;
+      composer.readBuffer = target;
+    }
+  };
+  settleBuffers();
   composer.setPixelRatio(pixelRatio);
   composer.setSize(width, height);
 
@@ -279,7 +300,9 @@ export function createStage({ container, toggles = {} } = {}) {
   // @gnt:M1 RESIZE end
 
   function render() {
+    settleBuffers();
     composer.render();
+    settleBuffers();
     // @gnt:M2 THUMBNAIL begin — one onNextRender hook line (save thumbnail
     // read right after composer.render(), no preserveDrawingBuffer, §3.4).
     if (renderer.__echoesNextRender && renderer.__echoesNextRender.length) for (const fn of renderer.__echoesNextRender.splice(0)) fn(renderer.domElement);
