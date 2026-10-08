@@ -1,6 +1,8 @@
 {
  " s": " 秒",
  " u": " u",
+ "REFRESH": "入れ替え",
+ "Redraw this shelf for {n} Glint": "グリント{n}でこの棚を入れ替える",
  "— nothing": "— なし",
  "… {secs} s": "… {secs}秒",
  "… choose": "… 選択中",
@@ -2330,5 +2332,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "何も得ず、何も失わずに先へ進む。",
  "Warder": "守護",
- "Weir Crab": "堰ガニ"
+ "Weir Crab": "堰ガニ",
+ "Hit feedback": "被弾エフェクト",
+ "When you are hit, the screen edge pulses red toward the attacker, a struck character flashes and heavy hits kick the camera. Turn it off if flashing bothers you.": "攻撃を受けると、画面の端が攻撃者の方向に赤く光り、被弾したキャラクターが光り、強打ではカメラが揺れます。点滅が気になる場合はオフにしてください。",
+ "Red edge pulse, flash and camera kick when you are hit": "被弾時に画面端が赤く光り、キャラが光り、カメラが揺れる",
+ "No flash or kick when you are hit": "被弾時に点滅も揺れもなし"
 }

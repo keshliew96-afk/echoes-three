@@ -1,6 +1,8 @@
 {
  " s": "초",
  " u": " u",
+ "REFRESH": "새로고침",
+ "Redraw this shelf for {n} Glint": "글린트 {n}(으)로 이 진열대를 새로 채웁니다",
  "— nothing": "— 없음",
  "… {secs} s": "… {secs}초",
  "… choose": "… 선택",
@@ -2330,5 +2332,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "얻은 것도 잃은 것도 없이 길을 나선다.",
  "Warder": "결계",
- "Weir Crab": "둑 게"
+ "Weir Crab": "둑 게",
+ "Hit feedback": "피격 표시",
+ "When you are hit, the screen edge pulses red toward the attacker, a struck character flashes and heavy hits kick the camera. Turn it off if flashing bothers you.": "공격을 받으면 화면 가장자리가 공격자 쪽으로 붉게 번쩍이고, 맞은 캐릭터가 번쩍이며, 강한 공격에는 카메라가 흔들립니다. 깜빡임이 불편하면 끄세요.",
+ "Red edge pulse, flash and camera kick when you are hit": "피격 시 화면 가장자리 붉은 번쩍임, 캐릭터 번쩍임, 카메라 흔들림",
+ "No flash or kick when you are hit": "피격 시 번쩍임과 흔들림 없음"
 }

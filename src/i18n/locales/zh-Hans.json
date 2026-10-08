@@ -1,6 +1,8 @@
 {
  " s": " 秒",
  " u": " u",
+ "REFRESH": "刷新",
+ "Redraw this shelf for {n} Glint": "花 {n} 微光重新摆满这排货架",
  "— nothing": "——无",
  "… {secs} s": "… {secs} 秒",
  "… choose": "… 请选择",
@@ -2330,5 +2332,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "继续前行，无所得，亦无所失。",
  "Warder": "结界",
- "Weir Crab": "堰坝蟹"
+ "Weir Crab": "堰坝蟹",
+ "Hit feedback": "受击提示",
+ "When you are hit, the screen edge pulses red toward the attacker, a struck character flashes and heavy hits kick the camera. Turn it off if flashing bothers you.": "你受到攻击时，屏幕边缘会朝攻击者方向闪红，被击中的角色会闪光，重击还会让镜头一震。如果闪光让你不适，可以关闭。",
+ "Red edge pulse, flash and camera kick when you are hit": "受击时屏幕边缘闪红、角色闪光、镜头震动",
+ "No flash or kick when you are hit": "受击时不闪光、不震动"
 }

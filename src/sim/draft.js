@@ -58,6 +58,14 @@ export const NODE_IDS = SHARED_NODE_IDS;
 // invariants read: the whole 4-card shelf = 15+15+20+25 = 75 > 72 (never all
 // of it), any three ≤ 15+20+25 = 60 ≤ 72 (any three affordable).
 export const PRICES = Object.freeze({ common: 15, rare: 20, legendary: 25 });
+// SHOP REFRESH (v0.5.248, Kesh: "spend glint for a refresh of shop items"):
+// a refresh redraws one character's whole 4-card shelf. The first costs a
+// third of a common card; each further refresh in the same visit costs one
+// step more (5, 10, 15, ...), and the count starts over at the next shop.
+// With the deterministic 72 Glint at the shop one refresh still leaves any
+// two cards affordable (72 - 5 = 67 >= 20 + 25).
+export const REFRESH_PRICE = Object.freeze({ base: 5, step: 5 });
+export const refreshPrice = (n) => REFRESH_PRICE.base + REFRESH_PRICE.step * Math.max(0, n | 0);
 export const RARITY_ORDER = Object.freeze(['common', 'rare', 'legendary']);
 // Shelf strata, in draw order: two commons, one rare, one legendary.
 export const SHOP_STRATA = Object.freeze(['common', 'common', 'rare', 'legendary']);

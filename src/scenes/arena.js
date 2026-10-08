@@ -1915,6 +1915,8 @@ export function createArenaScene(stage, toggles, ctx) {
     update,
     debugState,
     allies,
+    // HIT FEEDBACK: the playable Healer's rig flashes when struck.
+    healer: healerRig,
     applyLayout,
     layoutState,
     // @gnt:CAMPAIGN ARENA-API begin (PLAN §12.5 level manager)

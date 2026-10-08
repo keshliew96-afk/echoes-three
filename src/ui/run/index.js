@@ -242,7 +242,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   const NAV_KEYS = new Set(['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyS', 'ArrowUp', 'ArrowDown', 'KeyQ', 'KeyE', 'PageUp', 'PageDown', 'F1', 'F2', 'F3', 'F4']);
   // X (the draft's decline, ruling A13) is a commit key: settle-guarded and
   // fresh-press only, exactly like Enter.
-  const COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'KeyX']);
+  const COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'KeyX', 'KeyR']);
   // §23.9: the carry-over set follows the skill keys (Digit1..Digit8).
   const CARRY_KEYS = new Set([
     ...Array.from({ length: SKILL_SLOTS }, (_, i) => `Digit${i + 1}`),
@@ -345,6 +345,8 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       v.encounter ? `${v.encounter.id}:${v.encounter.state}:${v.encounter.focus}:${v.encounter.refused ?? ''}` : '-',
       v.relics && v.relics.offer ? `${v.relics.offer.room}:${v.relics.offer.focus}:${v.relics.offer.choices.map((c) => c.id).join(',')}:${v.relics.owned.length}` : '-',
       s ? s.stock.map((i) => `${i.node}${i.price}${i.sold ? 'x' : ''}${i.owned}`).join('|') : '-',
+      // SHOP REFRESH: the Refresh button's price moves with each refresh.
+      s ? `r${s.refreshes || 0}:${v.partyShop && v.partyShop.refreshes ? v.partyShop.refreshes.join(',') : ''}` : '-',
       v.summary ? `${v.summary.result}:${v.summary.rooms}:${v.summary.glint}` : '-',
       campaignSig(v),
     ].join('/');
@@ -836,6 +838,13 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     if (current === 'shop') screens.shop.onPurchase(ev);
   });
   // RELICS slice 2: the relic shelf's own buy flare and denial shake.
+  // SHOP REFRESH: the shelf flip on the viewed shelf, and the button's shake.
+  bus.on('shop_refresh', (ev) => {
+    if (current === 'shop') screens.shop.onRefresh(ev);
+  });
+  bus.on('refresh_denied', (ev) => {
+    if (current === 'shop') screens.shop.onRefreshDenied(ev);
+  });
   bus.on('relic_purchase', (ev) => {
     if (current === 'shop') screens.shop.onRelicPurchase(ev);
   });
@@ -1134,11 +1143,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // decides and emits the app `nav` event the audio engine already plays.
   // Commit keys never tick (their own cue plays: draft_take, path, purchase).
   const selSound = createSelectionSound('run');
-  const SEL_COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'KeyX', 'Escape']);
+  const SEL_COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'KeyX', 'KeyR', 'Escape']);
   const HOVER_SEL = {
     draft: '.rn-btn, .rn-rep, .rn-ptab',
     path: '.rn-doorwrap',
-    shop: '.rn-card, .rn-suggest, .rn-advance, .rn-ptab',
+    shop: '.rn-card, .rn-suggest, .rn-advance, .rn-refresh, .rn-ptab',
     end: '.rn-btn',
   };
   const pageOpen = () => current !== 'none' && !(socket && socket.isOpen());
