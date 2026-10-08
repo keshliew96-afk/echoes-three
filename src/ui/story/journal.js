@@ -87,9 +87,9 @@ export const JOURNAL_CSS = `
 .jr-tile.jr-unseen { border-style: dashed; border-color: ${P.warmGrey}66; }
 .jr-tile.jr-unseen img, .jr-tile.jr-unseen svg { filter: brightness(0) drop-shadow(0 0 ${px(3)} ${P.warmGrey}AA); opacity: 0.75; }
 .jr-tile.jr-sel { transform: translateY(-${px(2)}); box-shadow: 0 0 0 max(2px, ${px(2)}) ${P.parchment}, 0 0 ${px(18)} var(--rim, ${P.hearthAmber}); }
-.jr-detail { display: flex; flex-direction: column; gap: ${px(10)}; min-width: 0; padding: ${px(16)} ${px(20)}; border-radius: ${px(14)};
+.jr-detail { display: flex; flex-direction: column; gap: ${px(10)}; min-width: 0; max-height: 64vh; overflow: auto; padding: ${px(16)} ${px(20)}; border-radius: ${px(14)};
   background: linear-gradient(172deg, #2C2823 0%, ${P.voidCharcoal} 80%); border: max(2px, ${px(2)}) solid var(--rim, ${P.warmGrey})88; }
-.jr-stage { position: relative; align-self: center; width: min(100%, ${px(400)}); aspect-ratio: 1; border-radius: 50%;
+.jr-stage { position: relative; flex: none; align-self: center; width: min(100%, ${px(380)}, 34vh); aspect-ratio: 1; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   background: radial-gradient(circle at 50% 58%, color-mix(in srgb, var(--rim, ${P.hearthAmber}) 22%, transparent) 0%, transparent 62%),
     radial-gradient(ellipse at 50% 80%, #00000088 0%, transparent 55%); }
