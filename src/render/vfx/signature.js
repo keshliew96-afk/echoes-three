@@ -856,6 +856,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   });
   bus.on('aura_pulse', (ev) => {
     if (ev.skill !== 'crimson_edge') return;
+    if ((ev.hit || []).length) mark('skill:crimson_edge');
     const st = vfxClassStyle('swordsman');
     for (const id of ev.hit || []) {
       const e = byId(id);
