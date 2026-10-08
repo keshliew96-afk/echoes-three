@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// HP BARS (docs/HP_BARS.md, v0.5.252) — overhead party health bars and their
+// HP BARS (docs/HP_BARS.md, v0.5.253) — overhead party health bars and their
 // Settings ▸ Gameplay toggle, driven the way a player meets them (dev server
 // on 5199):
 //   1. camp: all four seats show a full bar over the hero's head;
@@ -38,6 +38,7 @@ const browser = await puppeteer.launch({
 });
 const page = await browser.newPage();
 const errors = [];
+page.on('dialog', (d) => d.accept().catch(() => {}));
 page.on('pageerror', (e) => errors.push(String(e && e.message ? e.message : e)));
 const fails = [];
 const check = (ok, what, detail) => {
@@ -147,7 +148,9 @@ check(shownCount(b) === 0 && b.every((x) => !x.shown), 'off: no bar on screen, a
 await shot('5-room-off');
 // Survives a reload.
 await page.evaluate(() => window.__echoes.app.service('settings').persist());
-await page.reload({ waitUntil: 'domcontentloaded', timeout: 300000 });
+// A fresh navigation, not reload(): under software GL a reload's lifecycle
+// event was missed once in ten runs while the page itself came up fine.
+await page.goto(`${URL0}?menu=0&seed=7&tips=0&lang=${LANG}`, { waitUntil: 'domcontentloaded', timeout: 300000 }).catch(() => null);
 await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60, { timeout: 300000, polling: 500 });
 await settle(1200);
 await frames(20);
