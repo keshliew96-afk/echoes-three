@@ -155,6 +155,7 @@ export function createPartyTech(ctx) {
       pctCast += Math.min(CLASS_TECH.momentumMax, distinct.size * CLASS_TECH.momentumPct);
     }
     if (has('steady_aim') && st && tick - (st.stillSince ?? tick) >= CLASS_TECH.steadyAimStillTicks) pctCast += CLASS_TECH.steadyAimPct;
+    if (has('duel') && dueling(a)) pctCast += CLASS_TECH.duelPct;
     let resonance = false;
     let resMul = 1;
     if (!echo && !counter && b && has('resonance')) {
@@ -174,6 +175,8 @@ export function createPartyTech(ctx) {
     const sk = techs.filter((t) => t === 'skewer').length;
     if (sk && def.shape === 'projectile') flags.pierceAdd = sk * CLASS_TECH.skewerPierce;
     if (has('scatter') && (def.shape === 'projectile' || def.shape === 'ground_aoe')) flags.scatter = true;
+    if (has('crush')) flags.crush = true;
+    if (has('longshot') && def.shape === 'projectile') flags.longshot = true;
     const anyFlag = Object.keys(flags).length > 0;
     if (pctCast === 0 && !resonance && !anyFlag && !combo) return null;
     let power = def.power;
@@ -185,6 +188,14 @@ export function createPartyTech(ctx) {
     if (resonance) M.resonance = true;
     if (combo) M.combo = combo;
     return M;
+  }
+
+  // Duel: one enemy at most within 2.5 u of the fox (and at least one).
+  function dueling(a) {
+    const r2max = CLASS_TECH.duelRadiusU * CLASS_TECH.duelRadiusU;
+    let n = 0;
+    for (const e of hostiles()) if ((e.x - a.x) ** 2 + (e.z - a.z) ** 2 <= r2max) n += 1;
+    return n === 1;
   }
 
   // ----------------------------------------------------------- after cast --
@@ -219,6 +230,15 @@ export function createPartyTech(ctx) {
         st.retaliate = st.retaliate || {};
         st.retaliate[baseDef.id] = tick + CLASS_TECH.retaliateTicks;
         events.emit(tick, 'technique_pulse', { seat, skill: baseDef.id, node: 'retaliate', untilTick: tick + CLASS_TECH.retaliateTicks, targets: [a.id] });
+      }
+      // MORE CLASS SKILLS: Rampart wards the Tank, Gale Step hastes the fox.
+      if (has('rampart') && a.hp > 0) {
+        S().apply(a, 'ward', CLASS_TECH.rampartWard, CLASS_TECH.rampartTicks, tick, a.id);
+        events.emit(tick, 'technique_pulse', { seat, skill: baseDef.id, node: 'rampart', targets: [a.id] });
+      }
+      if (has('gale_step') && a.hp > 0) {
+        S().apply(a, 'haste', CLASS_TECH.galeHaste, CLASS_TECH.galeTicks, tick, a.id);
+        events.emit(tick, 'technique_pulse', { seat, skill: baseDef.id, node: 'gale_step', targets: [a.id] });
       }
       if (has('aegis')) {
         const cdT = Math.min(CLASS_TECH.aegisMaxTicks, Math.max(CD_FLOOR_TICKS, secTicks(def.cd ?? 0)));
@@ -392,6 +412,7 @@ export function createPartyTech(ctx) {
   // ------------------------------------------------------------- listener --
   let lastHitBySeat = [null, null, null, null];
   const flowDone = new Map(); // castId -> true (Flow fires once per cast)
+  const preyDone = new Map(); // cast / zone tick / pulse key -> true (Prey: its first hit only)
   events.on('*', (ev) => {
     switch (ev.type) {
       case 'hit': {
@@ -462,6 +483,21 @@ export function createPartyTech(ctx) {
               b.tech.withSuppress(() => {
                 if (e && S().apply(e, 'stun', 1, CLASS_TECH.tremorTicks, getTick(), a.id))
                   events.emit(getTick(), 'technique_pulse', { seat, skill: src, node: 'tremor', targets: [target] });
+              });
+            });
+          } else if (t === 'prey') {
+            // Prey: the first enemy each cast hits (a zone: each tick's
+            // first; a passive: each pulse's) is exposed.
+            const key = c ? (c.pulse ? `p${src}@${ev.tick}` : c.zone !== undefined ? `z${c.zone}@${ev.tick}` : c.castId) : `${src}@${ev.tick}`;
+            if (preyDone.has(key)) continue;
+            preyDone.set(key, true);
+            if (preyDone.size > 128) preyDone.delete(preyDone.keys().next().value);
+            const { target } = ev;
+            queueContinuation(() => {
+              const e = registry.byId(target);
+              b.tech.withSuppress(() => {
+                if (e && e.hp > 0 && S().apply(e, 'exposed', CLASS_TECH.preyExposed, CLASS_TECH.preyTicks, getTick(), a.id))
+                  events.emit(getTick(), 'technique_pulse', { seat, skill: src, node: 'prey', targets: [target] });
               });
             });
           } else if (t === 'flow') {
@@ -572,6 +608,10 @@ export function createPartyTech(ctx) {
           const tank = bodyOf(1);
           const copies = techs.filter((x) => x === 'brace').length;
           if (tank && tank.hp > 0) S().addShield(tank, CLASS_TECH.bracePassive * copies, CLASS_TECH.bracePassiveCap, CLASS_TECH.braceTicks, tick, a.id);
+        } else if (t === 'rampart') {
+          if (a.hp > 0) S().apply(a, 'ward', CLASS_TECH.rampartPassiveWard, TECH.pulseStatusTicks, tick, a.id);
+        } else if (t === 'gale_step' && hit.length > 0) {
+          if (a.hp > 0) S().apply(a, 'haste', CLASS_TECH.galePassiveHaste, TECH.pulseStatusTicks, tick, a.id);
         } else if (t === 'aegis' && def.field === 'ally') {
           for (const id of inside) S().apply(registry.byId(id), 'ward', CLASS_TECH.aegisPassiveWard, TECH.pulseStatusTicks, tick, a.id);
         } else if (t === 'flow' && hit.length > 0) {
@@ -603,6 +643,7 @@ export function createPartyTech(ctx) {
       pct += Math.min(CLASS_TECH.momentumMax, distinct.size * CLASS_TECH.momentumPct);
     }
     if (has('steady_aim') && st && tick - (st.stillSince ?? tick) >= CLASS_TECH.steadyAimStillTicks) pct += CLASS_TECH.steadyAimPct;
+    if (has('duel') && dueling(a)) pct += CLASS_TECH.duelPct;
     const flags = {};
     if (has('lethality')) flags.critMul = CLASS_TECH.lethalityCritMul;
     if (has('heartseeker')) flags.forceCrit = true;
@@ -646,11 +687,14 @@ export function createPartyTech(ctx) {
     return {
       firstHits: [...firstHits.entries()].map(([k, s]) => [k, [...s]]),
       flowDone: [...flowDone.keys()],
+      ...(preyDone.size ? { preyDone: [...preyDone.keys()] } : {}),
     };
   }
   function loadState(d) {
     firstHits.clear();
     flowDone.clear();
+    preyDone.clear();
+    for (const k of (d && d.preyDone) || []) preyDone.set(k, true);
     for (const [k, ids] of (d && d.firstHits) || []) firstHits.set(k, new Set(ids));
     for (const k of (d && d.flowDone) || []) flowDone.set(k, true);
   }

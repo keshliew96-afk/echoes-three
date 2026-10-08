@@ -86,7 +86,12 @@ export const EMPTY_REASON = Object.freeze({
 // PARTY (PLAN §16.3): a seat's draft system passes its CLASS pools —
 // `skillIds` (its 8 class skills, ascending id) and `nodeIds` (its class node
 // pool, ascending id); the Healer's defaults are unchanged.
+// MORE CLASS SKILLS: either pool may be a function returning the ascending-id
+// list, read at each draw (sim/run.js gates the 2026-10-08 additions to
+// campaign runs).
 export function createDraftSystem({ rng, build, slots, skillIds = HEALER_SKILL_IDS, nodeIds = NODE_IDS }) {
+  const skillList = typeof skillIds === 'function' ? skillIds : () => skillIds;
+  const nodeList = typeof nodeIds === 'function' ? nodeIds : () => nodeIds;
   const ownedSkillIds = () => slots().filter(Boolean).map((s) => s.id);
   const freeSkillSlots = () => slots().filter((s) => !s).length;
 
@@ -119,11 +124,11 @@ export function createDraftSystem({ rng, build, slots, skillIds = HEALER_SKILL_I
   // unchanged.
   function skillPool() {
     const owned = new Set(ownedSkillIds());
-    return skillIds.filter((id) => !owned.has(id));
+    return skillList().filter((id) => !owned.has(id));
   }
 
   function nodePool() {
-    return nodeIds.filter(usableByParty);
+    return nodeList().filter(usableByParty);
   }
 
   // fix-M4a-r4 UPGRADE layer: where this node would replace the weakest
@@ -139,7 +144,7 @@ export function createDraftSystem({ rng, build, slots, skillIds = HEALER_SKILL_I
   // Nodes with NO vacant usable socket that still upgrade the build, sorted
   // ascending id (the §16 draw order).
   function upgradePool() {
-    return nodeIds.filter((id) => upgradeInfo(id) !== null);
+    return nodeList().filter((id) => upgradeInfo(id) !== null);
   }
 
   // ONE candidate for a promised reward type. Returns

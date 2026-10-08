@@ -59,6 +59,13 @@ export const NODE_GLYPH = {
   disengage: '↶',
   scatter: '∴', // PARTY decision: the §25.3 '⁂' collided with Resonance's glyph on the Archer's own pool
   heartseeker: '♡',
+  // MORE CLASS SKILLS (docs/CLASS_SKILLS.md).
+  rampart: '⊓',
+  crush: '⊗',
+  gale_step: '≫',
+  duel: '⚔',
+  longshot: '⟶',
+  prey: '◇',
 };
 
 // §15.1 "Effect" column + the §15.3 matrix summarised per node.
@@ -103,6 +110,13 @@ export const NODE_EFFECT = {
   disengage: 'after the cast the Archer hops 1.0 u away from the nearest enemy · Vault Shot vaults 0.8 u further.',
   scatter: 'a zone lands as 3 smaller zones (60%) · a bolt that flies out without a hit bursts into 3 shards (40%).',
   heartseeker: 'the first hit of each cast on each enemy is a guaranteed crit.',
+  // MORE CLASS SKILLS (docs/CLASS_SKILLS.md).
+  rampart: 'after the cast the Tank takes 15% less damage for 2 s · on a passive: 10% while it pulses.',
+  crush: '×1.5 power on an enemy that is stunned or taunted.',
+  gale_step: 'after the cast the Swordsman runs 30% faster for 1.5 s · on a passive: 15% while it hits.',
+  duel: '+30% power while only one enemy stands within 2.5 u of the Swordsman.',
+  longshot: 'an arrow lands +10% harder for every unit it flew, up to +50%.',
+  prey: 'the first enemy each cast hits takes 25% more damage for 3 s.',
 };
 
 // The same effects in one breath. Used by the compact reflow (short windows),
@@ -146,6 +160,12 @@ export const NODE_EFFECT_SHORT = {
   disengage: 'hop away after the cast.',
   scatter: '3 zones · a spent bolt bursts.',
   heartseeker: 'first hit per enemy crits.',
+  rampart: 'the Tank is warded after the cast.',
+  crush: '×1.5 on stunned or taunted foes.',
+  gale_step: 'run faster after the cast.',
+  duel: '+30% with one enemy near.',
+  longshot: 'farther arrows hit harder.',
+  prey: 'the first hit exposes its target.',
 };
 
 // A skill's two-letter medallion (shown where a skill has no icon art). Two
@@ -205,6 +225,18 @@ export const SKILL_BODY = {
   pinning_arrow: 'A pinning arrow: 20 and a 0.75 s stun (not the Stag).',
   rain_of_arrows: 'Arrows rain on an area for 4 s: 7 per second, enemies inside slowed 25%.',
   kestrel_watch: 'A passive kestrel: every second, the nearest enemy within 4 u takes 6.',
+  // MORE CLASS SKILLS (docs/CLASS_SKILLS.md).
+  lantern_ward: 'Heals every ally within 3.8 u for 10, and they take 20% less damage for 3 s.',
+  dawn_brand: 'A brand of dawn at the cursor for 4 s: 6 per second to enemies inside, who take 20% more damage.',
+  earthshatter: 'A fault torn 1.8 u ahead: 46 to up to 4 enemies in a narrow line, and a 0.5 s stun (not the bosses).',
+  rallying_cry: 'A battle cry: everyone within 3.5 u gains 10 shield and deals 20% more damage for 3 s.',
+  earthen_grasp: 'The ground seizes up to 6 enemies within 2.3 u: 12, dragged toward the Tank and slowed 30%.',
+  moonfang: 'A 3.2 u untouchable dash to the target, then a 24 cut that leaves enemies taking 20% more for 2 s.',
+  blade_dance: 'A whirl of blades: 10 to up to 6 enemies around the fox, then it runs 30% faster for 2 s.',
+  crimson_edge: 'A passive edge: every second, the nearest enemy within 1.5 u takes 9, with +25% crit chance.',
+  hunters_mark: 'A long marking arrow: 12, and the enemy takes 30% more damage for 3 s.',
+  barbed_trap: 'A trap at the target for 3 s: 16 per second, and it snaps shut with a 0.7 s stun (not the bosses).',
+  feather_fan: 'Five arrows in a wide spray, 9 each, then the hare darts off 30% faster for 1.5 s.',
 };
 
 // A skill candidate card body (no frame — the caller owns .rn-card).

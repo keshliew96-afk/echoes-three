@@ -339,6 +339,9 @@ export function createAllyCaster(ctx) {
       M,
       extra,
     });
+    // MORE CLASS SKILLS: `selfStatus` (Blade Dance, Feather Fan) lands on the
+    // caster with the cast (never on an echo or a counter).
+    if (def.selfStatus && combat.status && a.hp > 0) combat.status.apply(a, def.selfStatus.kind, def.selfStatus.mag, def.selfStatus.ticks, tick, a.id);
     if (T) T.afterCast(a, baseDef, def, { slot, tick, cast, castId, human, aim: human && how.f ? how.f.aim : null, target: human ? null : how.target, tag: how.tag ?? null, M });
     return cast;
   }
@@ -404,11 +407,14 @@ export function createAllyCaster(ctx) {
       const opts = { delivery: 'skill', shape, dirX: (t.x - a.x) / tl, dirZ: (t.z - a.z) / tl, attacker: a.id, source: srcLabel ?? def.id };
       if (def.critBonus) opts.critBonus = def.critBonus;
       let p = power;
+      // MORE CLASS SKILLS: `pull` (Earthen Grasp) drags the enemy in.
+      if (def.pull) opts.kbDist = -def.pull;
       if (M) {
         if (M.critMul) opts.critMul = M.critMul;
         if (M.kbScale !== undefined) opts.kbScale = M.kbScale;
         if (M.kbDist !== undefined) opts.kbDist = M.kbDist;
         if (M.execute && t.faction === 'hostile' && t.hp <= t.maxHp * CLASS_TECH.executeFrac) p *= CLASS_TECH.executeMul;
+        if (M.crush && crushable(t)) p *= CLASS_TECH.crushMul;
         if (M.heartseeker && T && T.firstHit(castId, t.id)) opts.forceCrit = true;
       }
       if (T && !srcLabel) T.instance({ seat, castId, echo: echoFlag, skill: def.id }, () => combat.applyDamage(t, p, opts));
@@ -416,6 +422,14 @@ export function createAllyCaster(ctx) {
       else combat.applyDamage(t, p, opts);
     }
     applySkillStatus(a, def, targets);
+  }
+
+  // Crush: a stunned or taunted enemy takes x1.5.
+  function crushable(t) {
+    const S = combat.status;
+    if (!S || !t || t.faction !== 'hostile') return false;
+    const tick = getTick();
+    return S.isStunned(t, tick) || S.tauntSource(t, tick) !== null;
   }
 
   function applySkillStatus(a, def, targets) {
@@ -476,6 +490,8 @@ export function createAllyCaster(ctx) {
         if (!S) break;
         const rec = S.apply(m, 'shield', power, ticks, tick, a.id);
         if (rec) rec.skill = def.id;
+        // MORE CLASS SKILLS: `grant` (Rallying Cry) — a second status on each.
+        if (def.grant) S.apply(m, def.grant.kind, def.grant.mag, def.grant.ticks, tick, a.id);
       }
       if (T) T.guardApplied(a, def, recips, power, { echo: !!echo, castId });
       return cast;
@@ -617,6 +633,8 @@ export function createAllyCaster(ctx) {
       if (M.execute) put('execute', true);
       if (M.heartseeker) put('heartseeker', true);
       if (M.scatter && def.shape === 'projectile') put('scatter', true);
+      if (M.crush) put('crush', true);
+      if (M.longshot && def.shape === 'projectile') put('longshot', true);
     }
     if (def.critBonus) put('critBonus', def.critBonus);
     if (!any) return null;
@@ -644,6 +662,9 @@ export function createAllyCaster(ctx) {
     if (m.kbDist !== undefined) opts.kbDist = m.kbDist;
     let p = bolt.power;
     if (m.execute && t.faction === 'hostile' && t.hp <= t.maxHp * CLASS_TECH.executeFrac) p *= CLASS_TECH.executeMul;
+    if (m.crush && crushable(t)) p *= CLASS_TECH.crushMul;
+    // Longshot: the farther the bolt flew, the harder it lands.
+    if (m.longshot) p *= 1 + Math.min(CLASS_TECH.longshotMax, (bolt.traveled ?? 0) * CLASS_TECH.longshotPerU);
     const T = tech();
     const src = registry.byId(bolt.sourceId);
     const seat = src ? src.partyIndex : null;
@@ -691,6 +712,7 @@ export function createAllyCaster(ctx) {
     if (m.kbDist !== undefined) opts.kbDist = m.kbDist;
     let p = z.power;
     if (m.execute && t.faction === 'hostile' && t.hp <= t.maxHp * CLASS_TECH.executeFrac) p *= CLASS_TECH.executeMul;
+    if (m.crush && crushable(t)) p *= CLASS_TECH.crushMul;
     const T = tech();
     const src = registry.byId(z.sourceId);
     const seat = src ? src.partyIndex : null;

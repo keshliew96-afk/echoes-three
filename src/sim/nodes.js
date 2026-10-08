@@ -125,6 +125,13 @@ export const NODES = Object.freeze({
   disengage: Object.freeze({ id: 'disengage', name: 'Disengage', kind: 'technique', rarity: 'rare', limit: 1, cls: 'archer' }),
   scatter: Object.freeze({ id: 'scatter', name: 'Scatter', kind: 'technique', rarity: 'rare', limit: 1, cls: 'archer' }),
   heartseeker: Object.freeze({ id: 'heartseeker', name: 'Heartseeker', kind: 'technique', rarity: 'legendary', limit: 1, cls: 'archer' }),
+  // MORE CLASS SKILLS (docs/CLASS_SKILLS.md): two more per class.
+  rampart: Object.freeze({ id: 'rampart', name: 'Rampart', kind: 'technique', rarity: 'common', limit: 1, cls: 'tank' }),
+  crush: Object.freeze({ id: 'crush', name: 'Crush', kind: 'technique', rarity: 'rare', limit: 1, cls: 'tank' }),
+  gale_step: Object.freeze({ id: 'gale_step', name: 'Gale Step', kind: 'technique', rarity: 'common', limit: 1, cls: 'swordsman' }),
+  duel: Object.freeze({ id: 'duel', name: 'Duel', kind: 'technique', rarity: 'rare', limit: 1, cls: 'swordsman' }),
+  prey: Object.freeze({ id: 'prey', name: 'Prey', kind: 'technique', rarity: 'common', limit: 1, cls: 'archer' }),
+  longshot: Object.freeze({ id: 'longshot', name: 'Longshot', kind: 'technique', rarity: 'rare', limit: 1, cls: 'archer' }),
 });
 
 // The Healer's 17 shared nodes (class nodes excluded), ascending id.
@@ -331,6 +338,20 @@ export function classVerdict(d, id) {
     case 'scatter':
       if (d.shape === 'ground_aoe' || d.shape === 'projectile') return L;
       return G(passive ? PASSIVE_GREY : 'a self burst has nothing to scatter');
+    // MORE CLASS SKILLS (docs/CLASS_SKILLS.md).
+    case 'rampart':
+      if (passive && d.field !== 'ally') return G('a hostile field of another class');
+      return L;
+    case 'crush':
+      if (!dmg) return G(passive ? PASSIVE_GREY : 'no hit to crush with');
+      return L;
+    case 'gale_step':
+    case 'prey':
+      return L;
+    case 'duel':
+      return dmg || (passive && d.field === 'hostile') ? L : G('no hit to duel with');
+    case 'longshot':
+      return d.shape === 'projectile' ? L : G('only a bolt flies far');
     default:
       return G('unknown_node');
   }

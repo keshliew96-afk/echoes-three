@@ -1045,6 +1045,18 @@
   ],
   "data": true
  },
+ "+30% power while only one enemy stands within 2.5 u of the Swordsman.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+30% with one enemy near.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "+40% after standing still.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1084,6 +1096,18 @@
  "+8% party damage for every curse taken this run (up to +40%).": {
   "files": [
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "×1.5 on stunned or taunted foes.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "×1.5 power on an enemy that is stunned or taunted.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -1363,12 +1387,30 @@
   ],
   "data": true
  },
+ "A 3.2 u untouchable dash to the target, then a 24 cut that leaves enemies taking 20% more for 2 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "A backup from {date} ({where}) is intact.": {
   "files": [
    "src/ui/menu/saves.js"
   ]
  },
+ "A battle cry: everyone within 3.5 u gains 10 shield and deals 20% more damage for 3 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "a bolt pierces one more enemy per copy, full power each.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A brand of dawn at the cursor for 4 s: 6 per second to enemies inside, who take 20% more damage.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -1431,6 +1473,12 @@
   ],
   "data": true
  },
+ "A fault torn 1.8 u ahead: 46 to up to 4 enemies in a narrow line, and a 0.5 s stun (not the bosses).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "A fissure at the target for 4 s: 10 per second to enemies inside.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1474,6 +1522,12 @@
   ]
  },
  "A lance that pierces: it strikes up to 3 enemies in a line, full power each.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A long marking arrow: 12, and the enemy takes 30% more damage for 3 s.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -1524,6 +1578,12 @@
  "A pale shape that trades in old things.": {
   "files": [
    "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "A passive edge: every second, the nearest enemy within 1.5 u takes 9, with +25% crit chance.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -1653,6 +1713,12 @@
   ],
   "data": true
  },
+ "A trap at the target for 3 s: 16 per second, and it snaps shut with a 0.7 s stun (not the bosses).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "A traveller with a lantern and a story, short of coin.": {
   "files": [
    "src/sim/encounters.js"
@@ -1666,6 +1732,12 @@
   "data": true
  },
  "A warm burst: heals up to 4 allies 10 and hastes them 25% for 2 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A whirl of blades: 10 to up to 6 enemies around the fox, then it runs 30% faster for 2 s.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -1754,6 +1826,18 @@
   "data": true
  },
  "after the cast the Archer hops 1.0 u away from the nearest enemy · Vault Shot vaults 0.8 u further.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "after the cast the Swordsman runs 30% faster for 1.5 s · on a passive: 15% while it hits.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "after the cast the Tank takes 15% less damage for 2 s · on a passive: 10% while it pulses.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -1912,6 +1996,12 @@
   "files": [
    "src/ui/run/index.js"
   ]
+ },
+ "an arrow lands +10% harder for every unit it flew, up to +50%.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
  },
  "An empty slot. Saving here keeps your current camp or run exactly as it is now.": {
   "files": [
@@ -2234,6 +2324,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "BA": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "back": {
   "files": [
    "src/ui/socket/index.js"
@@ -2283,6 +2379,12 @@
   ],
   "data": true
  },
+ "Barbed Trap": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Barrow Gate": {
   "files": [
    "src/data/layouts.js"
@@ -2302,6 +2404,12 @@
  "BC": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "BD": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -2526,6 +2634,12 @@
   "files": [
    "src/ui/run/unlocks.js"
   ]
+ },
+ "Blade Dance": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "Blade Storm": {
   "files": [
@@ -2799,6 +2913,12 @@
   "files": [
    "src/ui/run/cards.js"
   ]
+ },
+ "CE": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "CF": {
   "files": [
@@ -3400,6 +3520,12 @@
   ],
   "data": true
  },
+ "Crimson Edge": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "crit": {
   "files": [
    "src/ui/socket/index.js"
@@ -3425,6 +3551,12 @@
  "Crowded": {
   "files": [
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Crush": {
+  "files": [
+   "src/sim/nodes.js"
   ],
   "data": true
  },
@@ -3553,6 +3685,18 @@
   "files": [
    "src/ui/menu/records.js"
   ]
+ },
+ "Dawn Brand": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "DB": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "DC": {
   "files": [
@@ -3857,6 +4001,12 @@
   ],
   "data": true
  },
+ "Duel": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Duelist": {
   "files": [
    "src/data/unlocks.js"
@@ -3894,6 +4044,18 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Earthen Grasp": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Earthshatter": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Echo": {
   "files": [
    "src/sim/nodes.js"
@@ -3909,6 +4071,12 @@
   "files": [
    "src/ui/run/effects.js"
   ]
+ },
+ "EG": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "Elite powers": {
   "files": [
@@ -4102,6 +4270,12 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "ES": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Even the mill turns to my tune.": {
   "files": [
    "src/data/story.js"
@@ -4294,6 +4468,12 @@
   ],
   "data": true
  },
+ "farther arrows hit harder.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Fast blade in the thick of it: quick strikes, dashes and burst damage.": {
   "files": [
    "src/ui/run/classpick.js"
@@ -4303,6 +4483,12 @@
   "files": [
    "src/ui/menu/records.js"
   ]
+ },
+ "Feather Fan": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "Fell the Barrow Wyrm": {
   "files": [
@@ -4356,6 +4542,12 @@
   "files": [
    "src/ui/menu/cloud.js"
   ]
+ },
+ "FF": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "File": {
   "files": [
@@ -4425,6 +4617,12 @@
   "files": [
    "src/sim/nodes.js",
    "src/ui/socket/index.js"
+  ],
+  "data": true
+ },
+ "Five arrows in a wide spray, 9 each, then the hare darts off 30% faster for 1.5 s.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -4649,6 +4847,12 @@
   "files": [
    "src/ui/run/endscreens.js"
   ]
+ },
+ "Gale Step": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
  },
  "Galvanize": {
   "files": [
@@ -4939,6 +5143,12 @@
   ],
   "data": true
  },
+ "Heals every ally within 3.8 u for 10, and they take 20% less damage for 3 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Heals for part of the damage it deals.": {
   "files": [
    "src/sim/affixes.js"
@@ -5064,6 +5274,12 @@
   ],
   "data": true
  },
+ "HM": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Hold 5 relics at once.": {
   "files": [
    "src/data/unlocks.js"
@@ -5182,6 +5398,12 @@
  "Hunted": {
   "files": [
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Hunter's Mark": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -5561,6 +5783,12 @@
   ],
   "data": true
  },
+ "Lantern Ward": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Lanternbearer": {
   "files": [
    "src/data/unlocks.js"
@@ -5874,6 +6102,12 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "Longshot": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Looking for players… {s} s": {
   "files": [
    "src/ui/menu/lobby.js"
@@ -5899,6 +6133,12 @@
  "Lunge Strike": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "LW": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -5972,6 +6212,12 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "MF": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Middle mouse": {
   "files": [
    "src/app/controls.js"
@@ -5999,6 +6245,12 @@
  "Momentum": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Moonfang": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -7086,6 +7338,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Prey": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Private — share the code": {
   "files": [
    "src/ui/menu/lobby.js"
@@ -7274,6 +7532,18 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Rallying Cry": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Rampart": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "range": {
   "files": [
    "src/ui/socket/index.js"
@@ -7293,6 +7563,12 @@
   "data": true
  },
  "Razor Wake": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "RC": {
   "files": [
    "src/sim/skills.js"
   ],
@@ -7860,6 +8136,12 @@
   "files": [
    "src/ui/menu/title.js"
   ]
+ },
+ "run faster after the cast.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
  },
  "RUN LENGTH": {
   "files": [
@@ -9444,6 +9726,18 @@
   ],
   "data": true
  },
+ "the first enemy each cast hits takes 25% more damage for 3 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "the first hit exposes its target.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "the first hit of each cast on each enemy is a guaranteed crit.": {
   "files": [
    "src/ui/run/cards.js"
@@ -9560,6 +9854,12 @@
  "The gods. They watch, and they applaud.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The ground seizes up to 6 enemies within 2.3 u: 12, dragged toward the Tank and slowed 30%.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -10106,6 +10406,12 @@
  "The Tank begins with Heavy Slam, Shield Wall, Taunting Roar and Iron Stance.": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "the Tank is warded after the cast.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },

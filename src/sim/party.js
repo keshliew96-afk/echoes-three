@@ -31,6 +31,7 @@ import {
   STRESS_LOADOUT,
   STRESS_ORDER,
   ALLY_CLASS_IDS,
+  gatedPool,
 } from '../data/classes.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -128,7 +129,10 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     });
     seats.push(s);
   }
-  // A draft system per seat over its class pools (party stream).
+  // A draft system per seat over its class pools (party stream). MORE CLASS
+  // SKILLS: the run system says whether the 2026-10-08 additions are in
+  // (setPoolGate; off until it does, so a harness party draws the old pools).
+  let poolGate = () => false;
   const drafts = [null];
   for (const i of PARTY_SEATS) {
     const s = seats[i];
@@ -137,8 +141,8 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
         rng: { int: (n) => stream.int(n) },
         build: () => s.build,
         slots: () => s.slots.map((id) => (id ? { id } : null)),
-        skillIds: [...CLASS_SKILLS[s.classId]].sort(),
-        nodeIds: nodePoolOf(s.classId),
+        skillIds: () => gatedPool([...CLASS_SKILLS[s.classId]].sort(), poolGate()),
+        nodeIds: () => gatedPool(nodePoolOf(s.classId), poolGate()),
       })
     );
   }
@@ -487,7 +491,7 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
         if (SKILLS[want[k]].shape === 'aura') s.auraNext[want[k]] = getTick() + AURA_CADENCE_TICKS;
       }
     }
-    fillStress(s.build, want, nodePoolOf(s.classId));
+    fillStress(s.build, want, gatedPool(nodePoolOf(s.classId), false));
   }
   function reorderRaw(i, from, to) {
     const s = seats[i];
@@ -677,6 +681,9 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
       return true;
     },
     draft: (i) => (S(i) ? drafts[i] : null),
+    setPoolGate: (fn) => {
+      poolGate = typeof fn === 'function' ? fn : () => false;
+    },
     stream: () => stream,
     applyGrant,
     stress,

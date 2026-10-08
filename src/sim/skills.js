@@ -159,6 +159,19 @@ export const SKILLS = Object.freeze({
     power: 2, area: 1.2, cadenceSec: 1.0, // 2 per pulse, 1.0 s cadence
     status: Object.freeze({ kind: 'ward', mag: 0.15, ticks: 72 }), // allies inside: ward 15%, pulse-refreshed
   }),
+  // MORE CLASS SKILLS (docs/CLASS_SKILLS.md): the Healer's two new rows.
+  lantern_ward: Object.freeze({
+    id: 'lantern_ward', name: 'Lantern Ward', abbrev: 'LW',
+    archetype: 'heal', shape: 'direct',
+    power: 10, cd: 10.0, range: 3.8, count: 4, // the whole party in reach
+    status: Object.freeze({ kind: 'ward', mag: 0.2, ticks: 180 }), // + ward 20% for 3 s
+  }),
+  dawn_brand: Object.freeze({
+    id: 'dawn_brand', name: 'Dawn Brand', abbrev: 'DB',
+    archetype: 'damage', shape: 'ground_aoe',
+    power: 6, cd: 9.0, range: 4.5, area: 1.2, durationSec: 4, // 6 per zone tick, 4 s
+    status: Object.freeze({ kind: 'exposed', mag: 0.2, ticks: 72 }), // enemies inside take 20% more, refreshed each tick
+  }),
 
   // ------------------------------------ PARTY class skills (BUILD_BRIEF §25.2) --
   // `cls` = the only class that may hold the row (Healer rows carry none).
@@ -239,6 +252,59 @@ export const SKILLS = Object.freeze({
   kestrel_watch: Object.freeze({
     id: 'kestrel_watch', name: 'Kestrel Watch', abbrev: 'KW', cls: 'archer', archetype: 'passive', field: 'hostile', output: 'damage', shape: 'aura',
     power: 6, area: 4.0, count: 1, cadenceSec: 1.0, // the nearest hostile within 4.0 u (basic-hit knockback)
+  }),
+
+  // MORE CLASS SKILLS (docs/CLASS_SKILLS.md, 2026-10-08): three more per
+  // class. Plain-data modifiers added with them: `pull` (an area strike drags
+  // non-boss enemies toward the caster instead of knocking them back),
+  // `grant` (a guard's recipients also gain this status) and `selfStatus`
+  // (the caster gains this status as the cast lands).
+  earthshatter: Object.freeze({
+    id: 'earthshatter', name: 'Earthshatter', abbrev: 'ES', cls: 'tank', archetype: 'damage', shape: 'melee_arc',
+    power: 46, cd: 11, range: 1.8, area: 22, count: 4, // a long narrow fault ahead of the Tank
+    status: Object.freeze({ kind: 'stun', mag: 1, ticks: 30 }), // non-boss
+  }),
+  rallying_cry: Object.freeze({
+    id: 'rallying_cry', name: 'Rallying Cry', abbrev: 'RC', cls: 'tank', archetype: 'guard', shape: 'direct',
+    power: 10, cd: 12, range: 3.5, count: 4, // every member in reach (Tank included)
+    status: Object.freeze({ kind: 'shield', mag: 10, ticks: 240 }),
+    grant: Object.freeze({ kind: 'inspired', mag: 0.2, ticks: 180 }), // + 20% damage dealt for 3 s
+  }),
+  earthen_grasp: Object.freeze({
+    id: 'earthen_grasp', name: 'Earthen Grasp', abbrev: 'EG', cls: 'tank', archetype: 'damage', shape: 'nova',
+    power: 12, cd: 9, area: 2.3, count: 6,
+    pull: 0.9, // non-boss enemies hit are dragged 0.9 u toward the Tank
+    status: Object.freeze({ kind: 'slow', mag: 0.3, ticks: 90 }),
+  }),
+  moonfang: Object.freeze({
+    id: 'moonfang', name: 'Moonfang', abbrev: 'MF', cls: 'swordsman', archetype: 'damage', shape: 'melee_arc',
+    power: 24, cd: 7, range: 1.0, area: 45, count: 4,
+    dash: Object.freeze({ dist: 3.2, speed: 13, iframes: true }), // a longer untouchable dash than Fox Step
+    status: Object.freeze({ kind: 'exposed', mag: 0.2, ticks: 120 }), // the cut marks: +20% taken for 2 s
+  }),
+  blade_dance: Object.freeze({
+    id: 'blade_dance', name: 'Blade Dance', abbrev: 'BD', cls: 'swordsman', archetype: 'damage', shape: 'nova',
+    power: 10, cd: 6, area: 1.3, count: 6,
+    selfStatus: Object.freeze({ kind: 'haste', mag: 0.3, ticks: 120 }), // the fox runs 30% faster for 2 s
+  }),
+  crimson_edge: Object.freeze({
+    id: 'crimson_edge', name: 'Crimson Edge', abbrev: 'CE', cls: 'swordsman', archetype: 'passive', field: 'hostile', output: 'damage', shape: 'aura',
+    power: 9, area: 1.5, count: 1, cadenceSec: 1.0, critBonus: 0.25, knockback: 0, // the nearest hostile within 1.5 u; +25% crit chance
+  }),
+  hunters_mark: Object.freeze({
+    id: 'hunters_mark', name: "Hunter's Mark", abbrev: 'HM', cls: 'archer', archetype: 'damage', shape: 'projectile',
+    power: 12, cd: 6, range: 6.5, speed: 7.5, count: 1, area: 0,
+    status: Object.freeze({ kind: 'exposed', mag: 0.3, ticks: 180 }), // marked: +30% taken for 3 s
+  }),
+  barbed_trap: Object.freeze({
+    id: 'barbed_trap', name: 'Barbed Trap', abbrev: 'BA', cls: 'archer', archetype: 'damage', shape: 'ground_aoe',
+    power: 16, cd: 9, range: 3.6, area: 0.75, durationSec: 3,
+    status: Object.freeze({ kind: 'stun', mag: 1, ticks: 40 }), // snaps shut: a stun (not the bosses), then the stun immunity
+  }),
+  feather_fan: Object.freeze({
+    id: 'feather_fan', name: 'Feather Fan', abbrev: 'FF', cls: 'archer', archetype: 'damage', shape: 'projectile',
+    power: 9, cd: 5, range: 3.2, speed: 6.5, count: 5, area: 0, // a close five-arrow spray
+    selfStatus: Object.freeze({ kind: 'haste', mag: 0.3, ticks: 90 }), // then the hare darts off: 30% faster for 1.5 s
   }),
 });
 
