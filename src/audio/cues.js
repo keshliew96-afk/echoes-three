@@ -684,6 +684,16 @@ export const CLASS_SKILL_CUE = Object.freeze({
   vault_shot: 'archer_vault',
   pinning_arrow: 'archer_pin',
   rain_of_arrows: 'archer_rain',
+  // MORE CLASS SKILLS (docs/CLASS_SKILLS.md): each borrows the class cue
+  // closest to its body, so every new skill still sounds like its class.
+  earthshatter: 'tank_charge',
+  rallying_cry: 'tank_roar',
+  earthen_grasp: 'tank_stance',
+  moonfang: 'sword_finisher',
+  blade_dance: 'sword_step',
+  hunters_mark: 'archer_pin',
+  barbed_trap: 'archer_pin',
+  feather_fan: 'archer_vault',
 });
 function skillFamily(ev) {
   const s = ev.skill;
@@ -807,7 +817,7 @@ export const DEFAULT_EVENT_CUES = {
     if (ev.seat === undefined) return one('aura', at({}, h));
     const did = (ev.hit && ev.hit.length) || (ev.shielded && ev.shielded.length);
     if (!did) return null;
-    const c = ev.skill === 'iron_stance' ? 'tank_stance' : ev.skill === 'razor_wake' ? 'sword_wake' : 'archer_kestrel';
+    const c = ev.skill === 'iron_stance' ? 'tank_stance' : ev.skill === 'razor_wake' || ev.skill === 'crimson_edge' ? 'sword_wake' : 'archer_kestrel';
     return one(c, at(ev, h));
   },
   zone_tick: (ev, h) => one('zone_pulse', at(ev, h, ev.id)),

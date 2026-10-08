@@ -446,6 +446,104 @@ const ICONS = {
     ['path', { d: 'M16 21 L21 21 L21 16', 'stroke-width': 2 }],
   ],
 
+  // ---------------------------- MORE CLASS SKILLS (docs/CLASS_SKILLS.md) --
+  // Lantern Ward: a lantern hanging over a ward arc (heal plus ward).
+  lantern_ward: [
+    ['path', { d: 'M16 3 V7 M12 7 H20 L22 11 V18 L20 21 H12 L10 18 V11 Z' }],
+    ['circle', { cx: 16, cy: 14.5, r: 2.4, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M4 27 A13 9 0 0 1 28 27', 'stroke-width': 1.8 }],
+  ],
+  // Dawn Brand: a sun sigil on the ground, rays out (damage zone, exposes).
+  dawn_brand: [
+    ['circle', { cx: 16, cy: 16, r: 5, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M16 3 V8 M16 24 V29 M3 16 H8 M24 16 H29 M7 7 L10.5 10.5 M21.5 21.5 L25 25 M25 7 L21.5 10.5 M10.5 21.5 L7 25', 'stroke-width': 1.8 }],
+  ],
+  // Earthshatter: a fault zig-zagging away from a fist-stone.
+  earthshatter: [
+    ['path', { d: 'M3 25 L9 21 L12 24 L17 15 L20 18 L27 5', 'stroke-width': 2.6 }],
+    ['path', { d: 'M3 29 H29', 'stroke-width': 1.6 }],
+    ['path', { d: 'M22 22 L25 19 L28 22 L25 25 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Rallying Cry: a horn with three sound arcs.
+  rallying_cry: [
+    ['path', { d: 'M4 20 L14 13 V25 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M18 12 A6 6 0 0 1 18 26', 'stroke-width': 1.8 }],
+    ['path', { d: 'M22 8 A11 11 0 0 1 22 30', 'stroke-width': 1.8 }],
+    ['path', { d: 'M26 5 A15 15 0 0 1 26 31', 'stroke-width': 1.4 }],
+  ],
+  // Earthen Grasp: four arrows pulling into a stone core.
+  earthen_grasp: [
+    ['circle', { cx: 16, cy: 16, r: 3.6, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M3 3 L10 10 M29 3 L22 10 M3 29 L10 22 M29 29 L22 22', 'stroke-width': 2.2 }],
+    ['path', { d: 'M10 6 V10 H6 M22 6 V10 H26 M10 26 V22 H6 M22 26 V22 H26', 'stroke-width': 1.8 }],
+  ],
+  // Moonfang: a crescent moon with a fang tip.
+  moonfang: [
+    ['path', { d: 'M22 4 A12 12 0 1 0 28 22 A9 9 0 1 1 22 4 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M27 23 L30 30 L23 27', 'stroke-width': 1.8 }],
+  ],
+  // Blade Dance: three blades in a spinning triskele.
+  blade_dance: [
+    ...[0, 120, 240].map((a) => ['path', { d: 'M16 16 Q22 8 16 3', 'stroke-width': 2.4, transform: `rotate(${a} 16 16)` }]),
+    ['circle', { cx: 16, cy: 16, r: 2.2, fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Crimson Edge: a sword edge with a falling drop (passive crit field).
+  crimson_edge: [
+    ['path', { d: 'M5 27 L23 9 L27 5 L23 13 L9 27 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M24 19 C26 22 27 24 25 26 C23 27 21.5 25 22 23 Z' }],
+  ],
+  // Hunter's Mark: crosshairs around a dot.
+  hunters_mark: [
+    ['circle', { cx: 16, cy: 16, r: 9 }],
+    ['path', { d: 'M16 2 V10 M16 22 V30 M2 16 H10 M22 16 H30', 'stroke-width': 1.8 }],
+    ['circle', { cx: 16, cy: 16, r: 2.4, fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Barbed Trap: open jaws with teeth.
+  barbed_trap: [
+    ['path', { d: 'M3 17 A13 11 0 0 0 29 17', 'stroke-width': 2.2 }],
+    ['path', { d: 'M3 15 A13 11 0 0 1 29 15', 'stroke-width': 2.2 }],
+    ['path', { d: 'M8 10 L10 15 L12 8 L14 15 L16 7 L18 15 L20 8 L22 15 L24 10', 'stroke-width': 1.4 }],
+  ],
+  // Feather Fan: five feathers fanned from one point.
+  feather_fan: [
+    ...[-50, -25, 0, 25, 50].map((a) => ['path', { d: 'M16 28 L16 6 M16 9 L13 13 M16 9 L19 13', 'stroke-width': 1.6, transform: `rotate(${a} 16 28)` }]),
+  ],
+  // Rampart (node): a tower wall with crenels.
+  rampart: [
+    ['path', { d: 'M6 28 V10 H10 V6 H14 V10 H18 V6 H22 V10 H26 V28 Z' }],
+    ['path', { d: 'M13 28 V21 A3 3 0 0 1 19 21 V28', fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Crush (node): a hammer over a cracked star (stunned or taunted bonus).
+  crush: [
+    ['path', { d: 'M7 5 H21 V12 H7 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M14 12 V20', 'stroke-width': 2.6 }],
+    ['path', { d: 'M6 27 L11 23 L16 27 L21 23 L26 27', 'stroke-width': 1.8 }],
+  ],
+  // Gale Step (node): a boot print trailing wind.
+  gale_step: [
+    ['path', { d: 'M18 5 H25 V20 L28 25 H14 V20 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M2 10 H12 M4 16 H11 M2 22 H10', 'stroke-width': 1.8 }],
+  ],
+  // Duel (node): two crossed blades over one target ring.
+  duel: [
+    ['path', { d: 'M5 5 L22 22 M27 5 L10 22', 'stroke-width': 2.4 }],
+    ['circle', { cx: 16, cy: 26, r: 3.2 }],
+  ],
+  // Longshot (node): a long arrow with distance ticks.
+  longshot: [
+    ['path', { d: 'M3 16 H27', 'stroke-width': 2 }],
+    ['path', { d: 'M22 11 L28 16 L22 21', 'stroke-width': 2 }],
+    ['path', { d: 'M7 22 V26 M13 22 V26 M19 22 V26', 'stroke-width': 1.4 }],
+  ],
+  // Prey (node): a paw print under a small mark.
+  prey: [
+    ['circle', { cx: 16, cy: 21, r: 5, fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 8, cy: 13, r: 2.4, fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 13, cy: 9, r: 2.4, fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 19, cy: 9, r: 2.4, fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 24, cy: 13, r: 2.4, fill: 'currentColor', stroke: 'none' }],
+  ],
+
   // ------------------------------------ class glyphs (§25.6 strip) --
   // The §19.2 silhouette props, drawn in Parchment ink on the party strip.
   cls_healer: [

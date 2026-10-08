@@ -25,19 +25,23 @@ const HEALER_SETS = [
   ['spirit_bolt', 'mending_bolt', 'nova_bloom', 'sanctuary'],
   ['bell_toll', 'pale_lance', 'rootsnare', 'mending_tide'],
   ['restorative_wave', 'guardian_bond', 'lantern_flurry', 'hearthsong'],
+  ['lantern_ward', 'dawn_brand', 'swift_mend', 'spirit_bolt'],
 ];
 const CLASS_SETS = {
   tank: [
     ['heavy_slam', 'ground_crack', 'taunting_roar', 'shoulder_charge'],
     ['brutal_cleave', 'whirling_guard', 'shield_wall', 'iron_stance'],
+    ['earthshatter', 'rallying_cry', 'earthen_grasp', 'heavy_slam'],
   ],
   swordsman: [
     ['flurry', 'blade_storm', 'crescent_finisher', 'fox_step'],
     ['lunge_strike', 'caltrops', 'riposte', 'razor_wake'],
+    ['moonfang', 'blade_dance', 'crimson_edge', 'flurry'],
   ],
   archer: [
     ['piercing_shot', 'volley', 'rain_of_arrows', 'detonating_charge'],
     ['sundering_nova', 'pinning_arrow', 'vault_shot', 'kestrel_watch'],
+    ['hunters_mark', 'barbed_trap', 'feather_fan', 'piercing_shot'],
   ],
 };
 const ENEMIES = [
@@ -224,8 +228,8 @@ export function mountVfxLab() {
     say('healer reel done');
   }
   const party = section('Party skills (reels)');
-  for (const cls of ['tank', 'swordsman', 'archer']) CLASS_SETS[cls].forEach((set, i) => button(party, `${cls[0].toUpperCase()}${cls.slice(1)} ${'AB'[i]}`, () => classReel(cls, set), set.join(', ')));
-  HEALER_SETS.forEach((set, i) => button(party, `Healer ${'ABC'[i]}`, () => healerReel(set), set.join(', ')));
+  for (const cls of ['tank', 'swordsman', 'archer']) CLASS_SETS[cls].forEach((set, i) => button(party, `${cls[0].toUpperCase()}${cls.slice(1)} ${'ABC'[i]}`, () => classReel(cls, set), set.join(', ')));
+  HEALER_SETS.forEach((set, i) => button(party, `Healer ${'ABCD'[i]}`, () => healerReel(set), set.join(', ')));
 
   // -------------------------------------------------------------- enemies --
   for (const [title, act, kinds] of ENEMIES) {

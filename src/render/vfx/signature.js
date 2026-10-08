@@ -685,6 +685,257 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     }
   });
 
+  // ------------------------------------------- MORE CLASS SKILLS (2026-10-08) --
+  // docs/CLASS_SKILLS.md: each new skill's signature beat, layered over the
+  // class's generic shape recipe above (which already plays its swing, burst,
+  // release or placement). Anticipation, a white-hot impact, then something
+  // left behind: the same three movements as every other class beat.
+  const AMBER = PALETTE.hearthAmber;
+  const lineAt = (x0, z0, dx, dz, k) => ({ x: x0 + dx * k, z: z0 + dz * k });
+  const SKILL_SIG = {
+    // Tank — a fault runs out along the line, earth heaving up segment by
+    // segment, the far end bursting.
+    earthshatter(st, ev) {
+      const dx = ev.dx ?? 1;
+      const dz = ev.dz ?? 0;
+      const reach = (ev.reach ?? 1.8) + 0.4;
+      const ang = Math.atan2(dz, dx);
+      anticipate(ev.x + dx * 0.4, ev.z + dz * 0.4, 0.6, st.glow, { lines: 8 });
+      const n = 5;
+      for (let i = 1; i <= n; i++) {
+        const k = (i / n) * reach;
+        const p = lineAt(ev.x, ev.z, dx, dz, k);
+        after(ANTICIP + i * 0.045, () => {
+          kit.crack({ x: p.x, z: p.z, radius: 0.45 + i * 0.06, glow: st.glow, life: 1.6, cool: 0.45 });
+          spray('chunk', p.x, 0.2, p.z, 4, { color: st.debrisColor, speed: [0.4, 1.4], up: [2.6, 4.2], size: [0.07, 0.16], life: [0.6, 1.0], jitter: 0.25 });
+          spray('smoke', p.x, 0.15, p.z, 2, { color: st.second, speed: [0.3, 0.9], up: [0.3, 0.7], size: [0.34, 0.5], grow: 1.3, life: [0.6, 1.0], opacity: 0.3, gravity: -0.2, drag: 2.4, jitter: 0.2 });
+          kit.flash({ x: p.x, y: 0.3, z: p.z, color: st.glow, size: 0.45, life: 0.14 });
+        });
+      }
+      const end = lineAt(ev.x, ev.z, dx, dz, reach);
+      after(ANTICIP + (n + 1) * 0.045, () => {
+        flare(end.x, 0.5, end.z, st.glow, 1.5, { kind: 'burst', life: 0.28 });
+        shock(end.x, end.z, 1.3, st.glow, { jag: 0.7, width: 0.12 });
+        kit.mark({ x: (ev.x + end.x) / 2, z: (ev.z + end.z) / 2, radius: reach * 0.6, kind: 'gouge', angle: ang, stretch: 2.6, stain: st.debrisColor, glow: st.glow, cool: 1.0, life: 3.4, opacity: 0.55 });
+        kit.light({ x: end.x, z: end.z, radius: 1.6, color: st.glow, opacity: st.light.opacity * 1.2, life: 0.4 });
+        camfx.kick(dx, dz, st.camera.kick * 1.6, 0.16);
+        camfx.dolly(end.x, end.z, st.camera.dolly, 0.22);
+      });
+    },
+    // Tank — a war cry: a tall steel ring rolls out, amber chevrons rise
+    // over every member it reaches.
+    rallying_cry(st, ev) {
+      const R = 3.5;
+      anticipate(ev.x, ev.z, 0.8, AMBER, { core: PARCH });
+      after(ANTICIP, () => {
+        kit.ring({ x: ev.x, z: ev.z, r0: 0.4, r1: R, width: 0.16, life: 0.55, core: PARCH, glow: st.glow, soft: 0.3, jag: 0.4, y: 0.06, gain: 1.2 });
+        kit.ring({ x: ev.x, z: ev.z, r0: 0.3, r1: R * 0.85, width: 0.08, life: 0.6, core: AMBER, glow: AMBER, soft: 0.5, y: 0.9, delay: 0.05, opacity: 0.6 });
+        flare(ev.x, 1.0, ev.z, AMBER, 1.6, { kind: 'burst', life: 0.3 });
+        kit.light({ x: ev.x, z: ev.z, radius: R * 0.8, color: AMBER, opacity: 0.4, life: 0.5 });
+        camfx.dolly(ev.x, ev.z, st.camera.dolly, 0.24);
+        for (const id of ev.targets || []) {
+          const t = byId(id);
+          if (!t) continue;
+          kit.streak({ a: { x: ev.x, y: 0.8, z: ev.z }, b: { x: t.x, y: 0.9, z: t.z }, width: 0.06, tailW: 0.1, core: PARCH, glow: AMBER, life: 0.24, fall: 1.2 });
+          embersUp(t.x, t.z, AMBER, 8, { radius: 0.3, life: [0.7, 1.1] });
+          kit.flash({ x: t.x, y: 1.2, z: t.z, color: AMBER, size: 0.5, life: 0.22, delay: 0.08 });
+        }
+      });
+    },
+    // Tank — the ground grabs: a ring collapses inward, earth streaks drag
+    // toward the badger, every caught enemy is hauled in on a line.
+    earthen_grasp(st, ev) {
+      const R = ev.radius ?? 2.3;
+      kit.ring({ x: ev.x, z: ev.z, r0: R * 1.1, r1: 0.4, width: 0.18, life: 0.32, core: st.core, glow: st.glow, soft: 0.35, jag: 0.8, y: 0.06, gain: 1.2 });
+      for (let i = 0; i < N(10); i++) {
+        const a = (i / 10) * TAU + rnd(-0.2, 0.2);
+        const r = R * rnd(0.8, 1.05);
+        kit.streak({ a: { x: ev.x + Math.cos(a) * r, y: 0.12, z: ev.z + Math.sin(a) * r }, b: { x: ev.x + Math.cos(a) * (r - 0.5), y: 0.12, z: ev.z + Math.sin(a) * (r - 0.5) }, width: 0.14, tailW: 0.2, core: st.second, glow: st.glow, life: 0.3, travel: { x: -Math.cos(a) * r * 2.4, y: 0, z: -Math.sin(a) * r * 2.4 }, fall: 1.2 });
+      }
+      kit.crack({ x: ev.x, z: ev.z, radius: R * 0.7, glow: st.glow, life: 1.4, cool: 0.4 });
+      for (const id of ev.targets || []) {
+        const t = byId(id);
+        if (!t) continue;
+        kit.streak({ a: { x: t.x, y: 0.3, z: t.z }, b: { x: ev.x, y: 0.3, z: ev.z }, width: 0.1, tailW: 0.05, core: st.second, glow: st.glow, life: 0.3, fall: 1.4, opacity: 0.8 });
+        spray('chunk', t.x, 0.15, t.z, 3, { color: st.debrisColor, speed: [0.6, 1.4], up: [0.8, 1.6], size: [0.05, 0.1], life: [0.4, 0.7], dir: { x: ev.x - t.x, z: ev.z - t.z }, dirBias: 0.8 });
+      }
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), st.camera.kick, 0.12);
+    },
+    // Swordsman — the moon's fang: one huge silver crescent over the swing
+    // and a scatter of moon motes hanging after it.
+    moonfang(st, ev) {
+      const ang = Math.atan2(ev.dz ?? 0, ev.dx ?? 1);
+      const tip = lineAt(ev.x, ev.z, ev.dx ?? 1, ev.dz ?? 0, 0.8);
+      kit.slash({ x: ev.x, z: ev.z, angle: ang, radius: 1.25, width: 0.26, span: 2.2, sweep: 0.06, life: 0.34, core: PARCH, glow: st.second, soft: 0.1, lift: 0.3, y: 0.55, gain: 1.4, tail: 0.9 });
+      kit.slash({ x: ev.x, z: ev.z, angle: ang, radius: 1.0, width: 0.12, span: 1.9, sweep: 0.07, life: 0.3, delay: 0.03, core: st.second, glow: st.glow, soft: 0.2, lift: 0.2, y: 0.5, gain: 1.1, reverse: true });
+      flare(tip.x, 0.6, tip.z, st.second, 1.3, { life: 0.24, core: PARCH });
+      for (let i = 0; i < N(10); i++) {
+        const a = ang + rnd(-1, 1);
+        const r = rnd(0.4, 1.3);
+        spray('spark', ev.x + Math.cos(a) * r, 0.6, ev.z + Math.sin(a) * r, 1, { color: st.second, speed: [0.05, 0.2], up: [0.2, 0.5], size: [0.05, 0.09], life: [0.7, 1.2], gravity: -0.15, drag: 2, opacity: 0.9 });
+      }
+      kit.light({ x: tip.x, z: tip.z, radius: 1.2, color: st.second, opacity: 0.35, life: 0.3 });
+    },
+    // Swordsman — a dance of six cuts spiralling out, then wind at the heels.
+    blade_dance(st, ev) {
+      const R = ev.radius ?? 1.3;
+      const a0 = rnd(0, TAU);
+      for (let i = 0; i < 6; i++) {
+        kit.slash({ x: ev.x, z: ev.z, angle: a0 + i * 1.15, radius: R * (0.55 + i * 0.09), width: st.slash.width * 1.3, span: 1.5, sweep: 0.05, life: 0.24, delay: i * 0.04, core: i % 2 ? st.second : PARCH, glow: st.glow, soft: 0.15, lift: 0.16, y: 0.42 + i * 0.03, gain: 1.2, reverse: i % 2 === 0 });
+      }
+      after(0.26, () => {
+        kit.ring({ x: ev.x, z: ev.z, r0: 0.3, r1: R * 1.2, width: 0.06, life: 0.3, core: st.second, glow: st.glow, soft: 0.2, y: 0.07 });
+        for (let i = 0; i < 4; i++) {
+          const a = rnd(0, TAU);
+          kit.streak({ a: { x: ev.x, y: 0.3, z: ev.z }, b: { x: ev.x + Math.cos(a) * 0.8, y: 0.35, z: ev.z + Math.sin(a) * 0.8 }, width: 0.04, tailW: 0, core: PARCH, glow: st.glow, life: 0.22, fall: 1.4 });
+        }
+      });
+    },
+    // Archer — a long marking arrow: a jade rune where it leaves the bow.
+    hunters_mark(st, ev) {
+      const dx = ev.dx ?? 1;
+      const dz = ev.dz ?? 0;
+      const p = lineAt(ev.x, ev.z, dx, dz, 0.5);
+      kit.ring({ x: p.x, z: p.z, r0: 0.5, r1: 0.15, width: 0.05, life: 0.2, core: PARCH, glow: st.glow, soft: 0.2, y: 0.6 });
+      kit.streak({ a: { x: p.x, y: BOLT_Y, z: p.z }, b: { x: p.x + dx * 1.6, y: BOLT_Y, z: p.z + dz * 1.6 }, width: 0.04, tailW: 0, core: PARCH, glow: st.glow, life: 0.18, fall: 1.2 });
+    },
+    // Archer — a spray of five: a jade fan of wind and a burst of feathers.
+    feather_fan(st, ev) {
+      const dx = ev.dx ?? 1;
+      const dz = ev.dz ?? 0;
+      const base = Math.atan2(dz, dx);
+      for (let i = -2; i <= 2; i++) {
+        const a = base + (i * 12 * Math.PI) / 180;
+        kit.streak({ a: { x: ev.x + Math.cos(a) * 0.3, y: 0.55, z: ev.z + Math.sin(a) * 0.3 }, b: { x: ev.x + Math.cos(a) * 1.6, y: 0.55, z: ev.z + Math.sin(a) * 1.6 }, width: 0.05, tailW: 0.12, core: PARCH, glow: st.glow, life: 0.2, delay: Math.abs(i) * 0.015, fall: 1.4 });
+      }
+      kit.slash({ x: ev.x, z: ev.z, angle: base, radius: 0.9, width: 0.08, span: 1.0, sweep: 0.05, life: 0.2, core: PARCH, glow: st.glow, soft: 0.3, y: 0.55, gain: 1 });
+      spray('shard', ev.x, 0.6, ev.z, 8, { color: st.debrisColor, tile: SHARD_TILE.feather, speed: [0.8, 1.8], up: [0.6, 1.4], size: [0.11, 0.17], life: [0.8, 1.3], gravity: 0.9, drag: 1.8, spin: [-4, 4], flutter: 0.5, dir: { x: -dx, z: -dz }, dirBias: 0.5 });
+      camfx.kick(-dx, -dz, st.camera.kick, 0.08);
+    },
+  };
+  // Placement beats (ground_aoe) and the class passive pulse.
+  const ZONE_SIG = {
+    // Archer — iron jaws bloom open in jade, teeth pointing in.
+    barbed_trap(st, x, z, r) {
+      kit.ring({ x, z, r0: 0.15, r1: r, width: 0.07, life: 0.4, core: PARCH, glow: st.glow, soft: 0.25, y: 0.05 });
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * TAU;
+        kit.streak({ a: { x: x + Math.cos(a) * r, y: 0.12, z: z + Math.sin(a) * r }, b: { x: x + Math.cos(a) * r * 0.55, y: 0.18, z: z + Math.sin(a) * r * 0.55 }, width: 0.05, tailW: 0, core: BONE, glow: st.glow, life: 0.9, fall: 0.6, opacity: 0.85 });
+      }
+      kit.mark({ x, z, radius: r * 1.3, kind: 'sigil', stain: INK, glow: st.glow, cool: 1.6, life: 3.2, opacity: 0.3 });
+    },
+  };
+  bus.on('ally_cast', (ev) => {
+    const fn = SKILL_SIG[ev.skill];
+    if (!fn || ev.x == null) return;
+    mark(`skill:${ev.skill}`);
+    fn(vfxClassStyle(ev.classId), ev);
+  });
+  bus.on('azone_spawn', (ev) => {
+    const fn = ZONE_SIG[ev.skill];
+    if (!fn) return;
+    mark(`zone:${ev.skill}`);
+    const st = vfxClassStyle(ev.classId ?? vfxSkillClass(ev.skill));
+    after(ANTICIP, () => fn(st, ev.x, ev.z, ev.radius ?? 0.75));
+  });
+  bus.on('azone_tick', (ev) => {
+    if (ev.skill !== 'barbed_trap') return;
+    const zEnt = byId(ev.id);
+    if (!zEnt) return;
+    const st = vfxClassStyle('archer');
+    const { x, z } = zEnt;
+    const r = zEnt.radius ?? 0.75;
+    // The jaws snap shut: teeth slam to the centre, sparks and a bone flash.
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * TAU + rnd(-0.1, 0.1);
+      kit.streak({ a: { x: x + Math.cos(a) * r, y: 0.2, z: z + Math.sin(a) * r }, b: { x: x + Math.cos(a) * r * 0.7, y: 0.25, z: z + Math.sin(a) * r * 0.7 }, width: 0.06, tailW: 0.06, core: BONE, glow: st.glow, life: 0.12, travel: { x: -Math.cos(a) * r * 6, y: 0, z: -Math.sin(a) * r * 6 }, fall: 1.5 });
+    }
+    kit.flash({ x, y: 0.3, z, color: BONE, size: 0.55, life: 0.12, delay: 0.08 });
+    spray('spark', x, 0.3, z, 7, { color: st.glow, speed: [1.4, 2.6], up: [0.6, 1.4], size: [0.04, 0.08], life: [0.18, 0.3] });
+    camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.02, 0.06);
+  });
+  bus.on('aura_pulse', (ev) => {
+    if (ev.skill !== 'crimson_edge') return;
+    const st = vfxClassStyle('swordsman');
+    for (const id of ev.hit || []) {
+      const e = byId(id);
+      if (!e) continue;
+      // A single crimson flick with a silver edge, and a drop of light.
+      const a = rnd(0, TAU);
+      kit.slash({ x: e.x, z: e.z, angle: a, radius: 0.45, width: 0.1, span: 2.0, sweep: 0.04, life: 0.2, core: st.second, glow: st.glow, soft: 0.1, lift: 0.12, y: 0.55, gain: 1.4, tail: 0.8 });
+      kit.flash({ x: e.x, y: 0.55, z: e.z, color: st.glow, size: 0.32, life: 0.12 });
+      spray('spark', e.x, 0.55, e.z, 3, { color: st.second, speed: [1.2, 2.2], up: [0.3, 0.9], size: [0.03, 0.06], life: [0.14, 0.24] });
+    }
+  });
+  // A Hunter's Mark arrow lands: a jade target rune locks onto the enemy.
+  bus.on('hit', (ev) => {
+    if (ev.source !== 'hunters_mark') return;
+    const st = vfxClassStyle('archer');
+    const t = byId(ev.target);
+    const x = t?.x ?? ev.x;
+    const z = t?.z ?? ev.z;
+    if (x == null) return;
+    mark('skill:hunters_mark:hit');
+    kit.ring({ x, z, r0: 1.0, r1: 0.42, width: 0.06, life: 0.3, core: PARCH, glow: st.glow, soft: 0.2, y: 0.06 });
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * TAU + Math.PI / 4;
+      kit.streak({ a: { x: x + Math.cos(a) * 0.75, y: 0.08, z: z + Math.sin(a) * 0.75 }, b: { x: x + Math.cos(a) * 0.45, y: 0.08, z: z + Math.sin(a) * 0.45 }, width: 0.06, tailW: 0, core: PARCH, glow: st.glow, life: 0.6, fall: 0.6 });
+    }
+    flare(x, 0.6, z, st.glow, 1.0, { life: 0.2 });
+  });
+  // The Healer's two: Lantern Ward lights a lantern over each ward; Dawn
+  // Brand burns a sun sigil into the floor that flares on every tick.
+  bus.on('skill_cast', (ev) => {
+    if (ev.skill === 'lantern_ward' && Array.isArray(ev.targets)) {
+      const st = vfxClassStyle('healer');
+      mark('skill:lantern_ward');
+      const p = player();
+      if (p) {
+        kit.ring({ x: p.x, z: p.z, r0: 0.3, r1: 3.8, width: 0.08, life: 0.5, core: PARCH, glow: st.glow, soft: 0.8, y: 0.05, opacity: 0.6 });
+        flare(p.x, 0.9, p.z, st.glow, 1.2, { kind: 'burst', life: 0.28 });
+      }
+      for (const id of ev.targets) {
+        const t = byId(id);
+        if (!t) continue;
+        if (p) kit.streak({ a: { x: p.x, y: 0.9, z: p.z }, b: { x: t.x, y: 1.0, z: t.z }, width: 0.05, tailW: 0.08, core: PARCH, glow: st.glow, life: 0.26, fall: 1.2 });
+        kit.ring({ x: t.x, z: t.z, r0: 0.2, r1: 0.65, width: 0.07, life: 0.55, core: PARCH, glow: st.glow, soft: 0.6, y: 1.25, delay: 0.1 });
+        kit.flash({ x: t.x, y: 1.25, z: t.z, color: st.glow, size: 0.5, life: 0.3, delay: 0.1 });
+        embersUp(t.x, t.z, st.glow, 5, { radius: 0.3, life: [0.8, 1.3] });
+      }
+    }
+  });
+  const dawnZones = new Set();
+  bus.on('zone_spawn', (ev) => {
+    if (ev.skill !== 'dawn_brand') return;
+    dawnZones.add(ev.id);
+    mark('zone:dawn_brand');
+    const st = vfxClassStyle('healer');
+    const { x, z } = ev;
+    const r = ev.radius ?? 1.2;
+    anticipate(x, z, r * 0.8, st.glow, { y: 0.15, lines: 8 });
+    after(ANTICIP, () => {
+      kit.ring({ x, z, r0: 0.2, r1: r, width: 0.1, life: 0.5, core: PARCH, glow: st.glow, soft: 0.4, y: 0.05 });
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * TAU;
+        kit.streak({ a: { x: x + Math.cos(a) * r * 0.25, y: 0.06, z: z + Math.sin(a) * r * 0.25 }, b: { x: x + Math.cos(a) * r * 0.95, y: 0.06, z: z + Math.sin(a) * r * 0.95 }, width: 0.07, tailW: 0, core: PARCH, glow: st.glow, life: 0.8, fall: 0.6, opacity: 0.8 });
+      }
+      kit.mark({ x, z, radius: r * 1.4, kind: 'sigil', stain: INK, glow: st.glow, cool: 2.4, life: 4.4, opacity: 0.35 });
+      flare(x, 0.4, z, st.glow, 1.3, { kind: 'burst', life: 0.26 });
+      kit.light({ x, z, radius: r * 1.6, color: st.glow, opacity: 0.45, life: 0.6 });
+    });
+  });
+  bus.on('zone_tick', (ev) => {
+    if (ev.skill !== 'dawn_brand' || !dawnZones.has(ev.id)) return;
+    const zEnt = byId(ev.id);
+    if (!zEnt) return;
+    const st = vfxClassStyle('healer');
+    const r = zEnt.radius ?? 1.2;
+    kit.ring({ x: zEnt.x, z: zEnt.z, r0: r * 0.3, r1: r, width: 0.06, life: 0.35, core: PARCH, glow: st.glow, soft: 0.4, y: 0.06 });
+    embersUp(zEnt.x, zEnt.z, st.glow, 6, { radius: r * 0.7, life: [0.6, 1.0] });
+    kit.light({ x: zEnt.x, z: zEnt.z, radius: r * 1.3, color: st.glow, opacity: 0.3, life: 0.35 });
+  });
+  bus.on('zone_expire', (ev) => dawnZones.delete(ev.id));
+
   // ------------------------------------------------------------ hits --
   const lastClassHit = new Map(); // victim id -> class id of the last party hit
   bus.on('hit', (ev) => {
