@@ -57,6 +57,12 @@ All five new lines are in the ten language tables.
   direct sends (at least twice a second) so a hidden tab, whose timers are
   throttled, still keeps its socket alive the way its stream of frames used
   to.
+- **The chip's ping (v0.5.244)** is the round trip to the other players, not
+  to the server: on a direct link the heartbeat carries a ping (the sender's
+  clock out, echoed back; median of the last five); on the relay it is this
+  page's server round trip plus that player's (from the room's seat list).
+  A host with several guests shows the slowest. `stats().peerRttMs` /
+  `peerRttBySeat`.
 - **Routing.** `src/net/lobbyClient.js` installs a router on the transport
   (`transport.setRouter`). It runs after the client's network conditioner, so
   `?netcond=` shapes both paths alike. A host broadcast (`seat 0xFF`) goes to

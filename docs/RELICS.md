@@ -96,6 +96,12 @@ walks into it); it still walks room curses.
   past the last card. Short purses get the dashed plaque and a 300 ms shake,
   never a greyed tile. A network guest buys from its own purse (`relic` party
   CMD). Peddler's Seal does not discount the rack.
+- **AI shoppers (v0.5.244).** An AI-held seat (Healer first, then seats 1-3;
+  never under Ally builds Manual) takes at most one relic off the rack when
+  its purse covers it: its own class relic, else one for no class (another
+  class's relic stays for that seat). Under Auto it buys at the door; under
+  Suggested the relic is held and bought first on Advance, and the seat's card
+  picks are chosen from what it leaves. Probe `tools/small-fixes-probe.mjs`.
 - New heirlooms: Ash Feather and Spore Sac each add an heirloom unlock (36
   unlocks), found by holding them in a run like the others.
 

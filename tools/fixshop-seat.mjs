@@ -124,13 +124,19 @@ for (const cls of ONLY ? [ONLY] : ['healer', 'tank', 'swordsman', 'archer']) {
     await viewTab(own);
     await page.evaluate(() => {
       window.__fsClose = null;
+      window.__fsRelic = 0;
       window.__echoes.on('shop_close', (ev) => (window.__fsClose = ev));
+      // v0.5.244: an AI Healer with the Glint also takes a relic on Advance.
+      window.__echoes.on('relic_purchase', (ev) => {
+        if (ev.seat === 0) window.__fsRelic += ev.price;
+      });
     });
     await page.evaluate(() => document.querySelector('.rn-shop .rn-advance').click());
     await settle(1200);
     const close = await page.evaluate(() => window.__fsClose);
+    const relic = await page.evaluate(() => window.__fsRelic);
     const expect = marks.reduce((a, k) => a + v.shop.stock[k].price, 0);
-    check(!!close && close.wallet === w0 - expect, `[${cls}] Advance: the AI Healer bought its picks (wallet ${w0} -> ${close && close.wallet}, picks cost ${expect})`);
+    check(!!close && close.wallet === w0 - expect - relic, `[${cls}] Advance: the AI Healer bought its picks (wallet ${w0} -> ${close && close.wallet}, picks cost ${expect}, relic ${relic})`);
   }
   check(errors.length === 0, `[${cls}] no page errors (${errors.slice(0, 3).join(' | ')})`);
   await page.close();

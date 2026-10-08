@@ -120,6 +120,16 @@ try {
   await sleep(1200);
   const chipG = await chipText(guest);
   check('A4 the guest chip says Direct', /Direct/.test(chipG), chipG);
+  // A4b (v0.5.244): the chip's ping is the round trip to the host over the
+  // direct link (heartbeat ping), not the guest's server round trip.
+  const pingA = await until(async () => {
+    const st = await netEval(guest, `const s = n.stats(); return { peer: s.peerRttMs, server: s.rttMs, link: s.p2p.links[${hSeat}] ? s.p2p.links[${hSeat}].rttMs : null };`);
+    const chip = await chipText(guest);
+    const m = /(\d+) ms/.exec(chip);
+    const shown = m ? Number(m[1]) : null;
+    return { ok: Number.isFinite(st.peer) && Number.isFinite(st.link) && shown !== null && Math.abs(shown - Math.round(st.peer)) <= 1, ...st, shown, chip };
+  }, 30000);
+  check('A4b the guest chip shows the ping to the host over the direct link', !!pingA && pingA.ok, pingA);
   await shot(guest, '1-guest-direct');
   await shot(host, '2-host-direct');
 

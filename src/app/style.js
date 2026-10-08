@@ -387,7 +387,10 @@ p.ap-note.ap-note-warn { color: ${P.bone}; }
 .ap-bind:hover { border-color: ${P.hearthAmber}AA; }
 .ap-bind.ap-capturing { color: ${P.hearthAmber}; border-color: ${P.hearthAmber}; box-shadow: 0 0 ${px(12)} ${P.hearthAmber}55; }
 .ap-bind-row.ap-bind-changed .ap-ref-act::after { content: ' •'; color: ${P.hearthAmber}; }
-.ap-controls .ap-ref-row .ap-ref-act { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* Small fixes: a long label (German "Interagieren · Wiederbeleben (halten)")
+   wraps onto a second line instead of losing its end to an ellipsis. */
+.ap-controls .ap-ref-row .ap-ref-act { overflow: hidden; min-width: 0; line-height: 1.2; padding: ${px(4)} 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.ap-controls .ap-ref-row .ap-ref-keys { flex-shrink: 0; }
 .ap-controls-status { min-height: 1.3em; }
 /* The honest "no rebinding" line: a quiet plate above the reference. */
 p.ap-note.ap-note-ref {
