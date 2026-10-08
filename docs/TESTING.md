@@ -2278,7 +2278,7 @@ Linux sandboxes: `PUPPETEER_EXECUTABLE_PATH` to the installed Chromium, and
 --enable-unsafe-swiftshader"` for the two probes above (software GL runs the
 page at a few fps; both probes hold keys across frames and wait on sim state).
 
-**HP bars probe (v0.5.249, docs/HP_BARS.md).**
+**HP bars probe (v0.5.251, docs/HP_BARS.md).**
 `node tools/hpbars-browser.mjs [--url http://127.0.0.1:5199/] [--lang en]
 [--shots captures]` — the overhead party health bars and their Settings ▸
 Gameplay switch: four full bars in camp; in a room each bar's fill is its

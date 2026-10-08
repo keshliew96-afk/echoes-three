@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// HP BARS (docs/HP_BARS.md, v0.5.249) — overhead party health bars and their
+// HP BARS (docs/HP_BARS.md, v0.5.251) — overhead party health bars and their
 // Settings ▸ Gameplay toggle, driven the way a player meets them (dev server
 // on 5199):
 //   1. camp: all four seats show a full bar over the hero's head;

@@ -279,6 +279,10 @@ registerHeartCues(service('audio'));
 // Event rooms, room objectives and the slick floor slide (src/audio/encountercues.js).
 import { registerEncounterCues } from './audio/encountercues.js';
 registerEncounterCues(service('audio'));
+// Hit feedback: the heavy / soft / downed hit sounds on your own character
+// (src/audio/hitcues.js).
+import { registerHitCues } from './audio/hitcues.js';
+registerHitCues(service('audio'), { world, settings: app.settings });
 // @gnt:AUDIO end
 
 const buildScene = SCENES[sceneKey];
@@ -437,6 +441,19 @@ if (signaturefx) {
   setImpactFxDirected(true);
   signaturefx.prewarm();
   service('content').vfx = () => signaturefx.debugCounts();
+}
+// Hit feedback (docs/HIT_FEEDBACK.md): the red edge pulse toward the
+// attacker, the party's hit flash and the heavy-hit kick — render and HUD
+// only. Probe / lab: __echoes.content.hitFeedback(), .hitPreview(tier).
+import { createHitFeedback } from './render/vfx/hitfeedback.js';
+import { registerHitFeedbackSetting } from './ui/run/hitfeedback.js';
+registerHitFeedbackSetting(app.settings);
+const hitfx = PLAYABLE
+  ? createHitFeedback({ stage, world, bus, settings: app.settings, scene: activeScene, camfx: signaturefx?.camfx ?? null, audio: () => service('audio') })
+  : null;
+if (hitfx) {
+  service('content').hitFeedback = () => hitfx.debug();
+  service('content').hitPreview = (tier) => hitfx.preview(tier);
 }
 // Probe surface: __echoes.content.fx() -> the layer's live element counts.
 if (contentfx) service('content').fx = () => contentfx.debugCounts();
@@ -748,6 +765,7 @@ function frame(now) {
   contentfx?.update(now / 1000, alpha);
   classfx?.update(now / 1000, alpha);
   signaturefx?.update(now / 1000);
+  hitfx?.update(now / 1000);
   // @gnt:M4a RENDER-TICK end
   // @gnt:M4b RENDER-TICK begin
   m4bLayers?.update(now / 1000, alpha);

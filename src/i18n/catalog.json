@@ -5819,6 +5819,11 @@
    "src/ui/net/hud.js"
   ]
  },
+ "Hit feedback": {
+  "files": [
+   "src/ui/run/hitfeedback.js"
+  ]
+ },
  "hits and overheals become shields.": {
   "files": [
    "src/ui/run/cards.js"
@@ -7290,6 +7295,11 @@
    "src/ui/run/levels.js"
   ]
  },
+ "No flash or kick when you are hit": {
+  "files": [
+   "src/ui/run/hitfeedback.js"
+  ]
+ },
  "no hostile area delivery to pull with": {
   "files": [
    "src/ui/socket/index.js"
@@ -8550,6 +8560,11 @@
  "Records are not available in this browser mode.": {
   "files": [
    "src/ui/menu/records.js"
+  ]
+ },
+ "Red edge pulse, flash and camera kick when you are hit": {
+  "files": [
+   "src/ui/run/hitfeedback.js"
   ]
  },
  "Reduced": {
@@ -12346,6 +12361,11 @@
    "src/data/story.js"
   ],
   "data": true
+ },
+ "When you are hit, the screen edge pulses red toward the attacker, a struck character flashes and heavy hits kick the camera. Turn it off if flashing bothers you.": {
+  "files": [
+   "src/ui/run/hitfeedback.js"
+  ]
  },
  "Where": {
   "files": [
