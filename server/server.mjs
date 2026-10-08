@@ -45,6 +45,7 @@ import { createLink, linkStats, routeBinary } from './relay.mjs';
 import { touchHost } from './keyframes.mjs';
 import { createHttpHandler } from './admin.mjs';
 import { createCloudStore } from './cloud.mjs';
+import { createDailyStore } from './daily.mjs';
 import { createStaticHandler, createBuildInfoReader } from './static.mjs';
 
 export const HELLO_TIMEOUT_MS = 5000;
@@ -705,6 +706,9 @@ export function createEchoesServer(options = {}) {
   // ----------------------------------------------------------- listen --
   const http = createServer();
   const cloud = opt.cloud ? createCloudStore({ dir: opt.cloudDir }) : null;
+  // DAILY DESCENT (docs/DAILY.md): the day's leaderboard, in the cloud
+  // saves' store (Upstash) or in memory. Off with the cloud (--no-cloud).
+  const daily = opt.cloud ? createDailyStore() : null;
   const server = {
     opt,
     lobby,
@@ -720,6 +724,7 @@ export function createEchoesServer(options = {}) {
     serveStatic,
     servedBuild,
     cloud,
+    daily,
     originAllowed: (req) => originAllowed(req, opt.origins),
     clientIp: (req) => clientIp(req).ip,
   };

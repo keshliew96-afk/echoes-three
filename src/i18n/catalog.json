@@ -475,6 +475,11 @@
    "src/ui/net/hud.js"
   ]
  },
+ "{n} player today": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
  "{n} players": {
   "files": [
    "src/ui/net/hud.js"
@@ -482,10 +487,29 @@
   "plural": true,
   "one": "{n} player"
  },
+ "{n} players today": {
+  "files": [
+   "src/ui/run/daily.js"
+  ],
+  "plural": true,
+  "one": "{n} player today"
+ },
+ "{n} room": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
  "{n} room cleared": {
   "files": [
    "src/ui/run/unlocks.js"
   ]
+ },
+ "{n} rooms": {
+  "files": [
+   "src/ui/run/daily.js"
+  ],
+  "plural": true,
+  "one": "{n} room"
  },
  "{n} rooms cleared": {
   "files": [
@@ -906,6 +930,16 @@
  "{who} took the {cls}": {
   "files": [
    "src/net/session.js"
+  ]
+ },
+ "#{rank} of {total} today": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "#{rank} of {total} today · Your best today!": {
+  "files": [
+   "src/ui/run/endscreens.js"
   ]
  },
  "⇄ sidegrade": {
@@ -1547,6 +1581,11 @@
  "A name needs at least one visible character": {
   "files": [
    "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "A new descent in {h} h {m} min": {
+  "files": [
+   "src/ui/run/daily.js"
   ]
  },
  "a new host": {
@@ -2347,6 +2386,7 @@
  "Back to camp": {
   "files": [
    "src/ui/run/classpick.js",
+   "src/ui/run/daily.js",
    "src/ui/run/expedition.js",
    "src/ui/run/levels.js",
    "src/ui/run/unlocks.js",
@@ -2675,6 +2715,11 @@
    "src/ui/menu/records.js"
   ]
  },
+ "Best today: {place}": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "Between levels": {
   "files": [
    "src/ui/menu/pause.js"
@@ -2723,6 +2768,11 @@
    "src/sim/encounters.js"
   ],
   "data": true
+ },
+ "BOARD": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
  },
  "bolts pierce one more.": {
   "files": [
@@ -2924,6 +2974,11 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Play as often as you like: your best run counts.": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
  "Campaigns completed": {
   "files": [
    "src/ui/menu/records.js"
@@ -2941,6 +2996,7 @@
  },
  "Can't set out right now": {
   "files": [
+   "src/ui/run/daily.js",
    "src/ui/run/levels.js"
   ]
  },
@@ -3346,6 +3402,7 @@
  },
  "common": {
   "files": [
+   "src/ui/run/daily.js",
    "src/ui/run/unlocks.js",
    "src/ui/socket/index.js"
   ],
@@ -3537,6 +3594,11 @@
    "src/ui/menu/cloud.js"
   ]
  },
+ "Couldn’t reach the server. The run still counts on this device; the board will have it when you post a run online.": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
  "Couldn’t rejoin — {reason}.": {
   "files": [
    "src/ui/menu/mpmenu.js"
@@ -3640,6 +3702,11 @@
   ],
   "data": true
  },
+ "Curse: {name}": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "Cursebearer": {
   "files": [
    "src/data/unlocks.js"
@@ -3686,6 +3753,21 @@
  "Custom address — “Reset to automatic” goes back to this site’s server": {
   "files": [
    "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "DAILY": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "DAILY · {day}": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "DAILY · {where}": {
+  "files": [
+   "src/ui/hud/index.js"
   ]
  },
  "damage": {
@@ -3890,6 +3972,11 @@
  "Deleted “{name}”": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "Depth": {
+  "files": [
+   "src/ui/run/daily.js"
   ]
  },
  "Depth {depth} · {name}": {
@@ -4440,6 +4527,11 @@
    "src/data/story.js"
   ],
   "data": true
+ },
+ "Every level cleared": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
  },
  "Every major curse is already on you.": {
   "files": [
@@ -6011,6 +6103,7 @@
  },
  "legendary": {
   "files": [
+   "src/ui/run/daily.js",
    "src/ui/run/unlocks.js",
    "src/ui/socket/index.js"
   ],
@@ -6063,6 +6156,11 @@
  "Level {level} · {name} · Room {room}": {
   "files": [
    "src/ui/menu/title.js"
+  ]
+ },
+ "Level {level} · {rooms}": {
+  "files": [
+   "src/ui/run/daily.js"
   ]
  },
  "Level {level} cleared": {
@@ -6284,6 +6382,11 @@
    "src/data/unlocks.js"
   ],
   "data": true
+ },
+ "Major curse · the whole run": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
  },
  "Manual": {
   "files": [
@@ -6533,6 +6636,11 @@
   ],
   "data": true
  },
+ "Name": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
  "NB": {
   "files": [
    "src/sim/skills.js"
@@ -6754,6 +6862,11 @@
   ],
   "data": true
  },
+ "Nobody has gone down today yet. Be the first on the board.": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
  "nobody near": {
   "files": [
    "src/ui/socket/fizzle.js"
@@ -6840,6 +6953,21 @@
    "src/net/session.js",
    "src/ui/menu/saves.js",
    "src/ui/net/update.js"
+  ]
+ },
+ "Not played today": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Not posted": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Not posted: the server could not be reached": {
+  "files": [
+   "src/ui/run/endscreens.js"
   ]
  },
  "Not ready": {
@@ -7009,6 +7137,16 @@
   ],
   "data": true
  },
+ "One run a day, the same for every player: the same levels, doors and bosses, and the same relic and curse from the first room. Go as deep as you can; the fastest breaks a tie.": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
+ "One seed for everyone": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "One-off feats. Each pays its {currency} once, on the run that does it.": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -7091,6 +7229,11 @@
  "Opens a backup file and, after you confirm, replaces the profile and save slots on this device with it. The game then reloads.": {
   "files": [
    "src/ui/menu/cloud.js"
+  ]
+ },
+ "Opens today's board": {
+  "files": [
+   "src/ui/run/levels.js"
   ]
  },
  "Ossuary Row": {
@@ -7450,6 +7593,11 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "Posting to the board…": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
  "power": {
   "files": [
    "src/ui/socket/index.js"
@@ -7715,6 +7863,7 @@
  },
  "rare": {
   "files": [
+   "src/ui/run/daily.js",
    "src/ui/run/unlocks.js",
    "src/ui/socket/index.js"
   ],
@@ -7785,6 +7934,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Reading the board…": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
  "Ready": {
   "files": [
    "src/ui/menu/loading.js",
@@ -7833,6 +7987,11 @@
    "src/ui/run/effects.js"
   ]
  },
+ "Refresh the board": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
  "refused on this skill — try another row": {
   "files": [
    "src/ui/socket/index.js"
@@ -7870,6 +8029,16 @@
   "files": [
    "src/ui/menu/lobby.js",
    "src/ui/net/hud.js"
+  ]
+ },
+ "Relic · {rarity}": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
+ "Relic: {name}": {
+  "files": [
+   "src/ui/run/levels.js"
   ]
  },
  "Relics": {
@@ -8618,6 +8787,7 @@
  },
  "Set out": {
   "files": [
+   "src/ui/run/daily.js",
    "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
   ]
@@ -8789,6 +8959,11 @@
    "src/ui/menu/tabs/gameplay.js"
   ],
   "data": true
+ },
+ "Single player only": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
  },
  "Single-player only — online games keep running": {
   "files": [
@@ -9723,6 +9898,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "The board is not available right now.": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
  "The browser blocked fullscreen — press Enter or click to try again": {
   "files": [
    "src/app/display.js"
@@ -9778,6 +9958,32 @@
  "THE CURSE LIFTS": {
   "files": [
    "src/ui/run/relic.js"
+  ]
+ },
+ "The Daily Descent": {
+  "files": [
+   "src/ui/run/daily.js",
+   "src/ui/run/levels.js"
+  ]
+ },
+ "THE DAILY DESCENT ENDS": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "THE DAILY DESCENT IS CLEARED": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "The Daily Descent.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "The Daily Descent. Locked: {line}.": {
+  "files": [
+   "src/ui/run/levels.js"
   ]
  },
  "The damaged file in this slot will be replaced.": {
@@ -10455,6 +10661,11 @@
    "src/net/session.js"
   ]
  },
+ "The same run for every player today, with a fixed relic and curse. Go deeper than the rest.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "The save from {date} ({where}) will be replaced.": {
   "files": [
    "src/ui/menu/saves.js"
@@ -10823,6 +11034,11 @@
    "src/ui/menu/cloud.js"
   ]
  },
+ "This server forgets the board when it restarts.": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
  "This session continued in another window.": {
   "files": [
    "src/net/lobbyClient.js"
@@ -10889,7 +11105,8 @@
  },
  "Time": {
   "files": [
-   "src/ui/menu/records.js"
+   "src/ui/menu/records.js",
+   "src/ui/run/daily.js"
   ]
  },
  "Time played": {
@@ -10941,6 +11158,16 @@
  "To keep both, load the older run from Load Game and save it to a numbered slot first.": {
   "files": [
    "src/ui/menu/title.js"
+  ]
+ },
+ "Today's board": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
+ "Today's omen": {
+  "files": [
+   "src/ui/run/daily.js"
   ]
  },
  "Too late — that choice already closed": {
@@ -11611,6 +11838,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "You have not gone down today.": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
  "you own {n}": {
   "files": [
    "src/ui/run/cards.js"
@@ -11696,6 +11928,11 @@
  "Your bench is auto-filled at every commit": {
   "files": [
    "src/ui/run/partysettings.js"
+  ]
+ },
+ "Your best today: <b>{place}</b> in {time}": {
+  "files": [
+   "src/ui/run/daily.js"
   ]
  },
  "Your browser keeps this tab open — close it whenever you like. Your progress is saved.": {

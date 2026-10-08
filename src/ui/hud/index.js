@@ -67,6 +67,11 @@ function locationCopy(scene, rv, short = false) {
     const c = locationCopy(scene, { ...rv, endless: undefined }, true);
     return { name: c.name, sub: t('DEPTH {depth} · {where}', { depth: rv.endless.depth, where: c.sub }), depth: rv.endless.depth };
   }
+  // DAILY DESCENT (docs/DAILY.md): the plate says it is the day's run.
+  if (rv && rv.active && rv.room >= 1 && rv.daily) {
+    const c = locationCopy(scene, { ...rv, daily: undefined }, true);
+    return { name: c.name, sub: t('DAILY · {where}', { where: c.sub }) };
+  }
   if (rv && rv.active && rv.room >= 1) {
     const room = rv.room;
     const total = rv.rooms ?? 8;

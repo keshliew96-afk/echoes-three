@@ -7,6 +7,7 @@
 //   POST /admin/drop        { peerId, mode: 'close'|'blackhole', forMs }
 //   POST /admin/kill-host   { code }
 //   GET/POST /cloud/...                always: cloud saves (cloud.mjs)
+//   GET/POST /daily/...                always: the Daily Descent board (daily.mjs)
 //
 // `up` / `down` are conditioner specs (object or compact string, e.g.
 // "lat75,jit10,loss10"; "off" clears). The admin API exists only when the
@@ -18,6 +19,7 @@
 // Every other path goes to the static game server when one is configured
 // (`--static`, static.mjs), else 404.
 import { handleCloud } from './cloud.mjs';
+import { handleDaily } from './daily.mjs';
 
 const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 const MAX_BODY = 64 * 1024;
@@ -72,6 +74,12 @@ export function createHttpHandler(server) {
       if (!server.originAllowed(req)) return json(res, 403, { ok: false, error: 'origin' });
       const origin = req.headers.origin ? String(req.headers.origin) : '*';
       return void (await handleCloud(req, res, { store: server.cloud, ip: server.clientIp(req), cors: { 'access-control-allow-origin': origin, vary: 'origin' } }));
+    }
+    if (server.daily && url.pathname.startsWith('/daily/')) {
+      // The same Origin allow-list as cloud saves.
+      if (!server.originAllowed(req)) return json(res, 403, { ok: false, error: 'origin' });
+      const origin = req.headers.origin ? String(req.headers.origin) : '*';
+      return void (await handleDaily(req, res, { store: server.daily, ip: server.clientIp(req), cors: { 'access-control-allow-origin': origin, vary: 'origin' } }));
     }
     const isAdminPath = url.pathname === '/stats' || url.pathname.startsWith('/admin/');
     if (!isAdminPath) {

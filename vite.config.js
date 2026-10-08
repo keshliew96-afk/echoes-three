@@ -93,6 +93,8 @@ function netProxy() {
     },
     // Cloud saves (docs/CLOUD_SAVES.md) live on the same session server.
     '^/cloud/': { target: NET_TARGET, xfwd: true },
+    // ... and so does the Daily Descent board (docs/DAILY.md).
+    '^/daily/': { target: NET_TARGET, xfwd: true },
   };
 }
 

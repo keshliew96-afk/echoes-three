@@ -83,7 +83,9 @@ import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
 // RELICS (docs/CONTENT_PLAN.md §5): run-long relics + cursed doors.
-import { createRelicSystem, cursedDiff } from './relics.js';
+import { createRelicSystem, cursedDiff, dailyOmen } from './relics.js';
+// DAILY DESCENT (docs/DAILY.md): the shared run of the UTC day.
+import { isDailyKey, dailySeed, dailyLevelSeed, dailyDepth, DAILY_RULES } from '../data/daily.js';
 // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt and purge rooms.
 import { assignObjectives, isObjectiveMode, OBJECTIVE_RULES } from './objectives.js';
 // EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
@@ -292,6 +294,13 @@ export function createRunSystem({
   // ------------------------------------------------------------ run frame --
   // ONE fixed roll sequence (defend positions, then the 5 path side bits) so a
   // seed reproduces the frame exactly. Room 1 is always kill_all (A3).
+  // DAILY: point the gameplay stream at `seed` (the app's handle swaps its
+  // stream; a bare stream, in Node tools, is set to a fresh one's state).
+  function reseedTo(seed) {
+    if (typeof rng.reseed === 'function') rng.reseed(seed >>> 0);
+    else if (typeof rng.setState === 'function') rng.setState({ seed: seed >>> 0, s: seed | 0, draws: 0 });
+  }
+
   function rollFrame() {
     const modes = new Array(RUN.rooms).fill('kill_all');
     const candidates = [1, 2, 3, 4, 5]; // 0-based indices of rooms 2..6
@@ -336,18 +345,22 @@ export function createRunSystem({
     const o = opts && typeof opts === 'object' ? opts : {};
     const level = isLevel(o.level ?? o.act) ? Number(o.level ?? o.act) : FIRST_LEVEL;
     // ENDLESS: an endless descent always sets out from the first level.
-    const endless = !!o.endless;
+    // DAILY DESCENT (docs/DAILY.md): the day's shared run — Level 1 on,
+    // Standard, nothing equipped; never endless, never the tutorial.
+    const daily = o.daily && isDailyKey(o.daily.key) ? { key: o.daily.key } : null;
+    const endless = !!o.endless && !daily;
     // TUTORIAL (docs/TUTORIAL.md): the guided first room — always Level 1,
     // never endless, no boons.
-    const tutorial = !!o.tutorial && !endless;
+    const tutorial = !!o.tutorial && !endless && !daily;
     openRun({
-      act: endless || tutorial ? FIRST_LEVEL : level,
-      challenge: o.challenge,
+      act: endless || tutorial || daily ? FIRST_LEVEL : level,
+      challenge: daily ? DAILY_RULES.challenge : o.challenge,
       mode: 'campaign',
       harness: !!o.harness,
       endless,
-      boons: tutorial ? null : o.boons,
+      boons: tutorial || daily ? null : o.boons,
       tutorial,
+      daily,
     });
     if (o.harness && typeof o.boss === 'string') bossPick = o.boss;
     if (o.depart) beginTransit('depart', null, act, getTick());
@@ -355,7 +368,7 @@ export function createRunSystem({
     return view();
   }
 
-  function openRun({ act: a, challenge: c, mode, harness, endless = false, boons: rawBoons = null, tutorial = false }) {
+  function openRun({ act: a, challenge: c, mode, harness, endless = false, boons: rawBoons = null, tutorial = false, daily = null }) {
     // UNLOCKS: what the player equipped between runs (campaigns only). null =
     // nothing picked, and then nothing below differs from a plain run.
     const boons = mode === 'campaign' ? sanitizeBoons(rawBoons) : null;
@@ -364,6 +377,9 @@ export function createRunSystem({
     bossPick = null;
     act = ACT_IDS.includes(Number(a)) ? Number(a) : 1;
     challenge = CHALLENGE[c] ? c : 'standard';
+    // DAILY: the day's seed, whatever stream the session was on.
+    const day = daily && mode === 'campaign' ? { key: daily.key, seed: dailySeed(daily.key) } : null;
+    if (day) reseedTo(day.seed);
     frame = rollFrame();
     active = true;
     everStarted = true;
@@ -397,6 +413,12 @@ export function createRunSystem({
       // waves back until the player has moved, attacked, dodged and used the
       // spring (cmd('tutorialRelease') from the coach, src/ui/tutorial/).
       ...(tutorial && mode === 'campaign' ? { tutorial: { hold: true } } : {}),
+      // DAILY: present only on the day's run (the day's relic and curse).
+      ...(day
+        ? {
+            daily: { key: day.key, seed: day.seed, ...dailyOmen(day.seed) },
+          }
+        : {}),
     };
     // ROOM OBJECTIVES: campaigns (never the tutorial) turn one kill_all room
     // of rooms 4-6 into a hunt or a purge (two on later levels). No draws.
@@ -416,6 +438,7 @@ export function createRunSystem({
     // RELICS: on for campaigns, off for the legacy single-level run (goldens).
     relics.reset(frame.seed, mode === 'campaign' && relicsDefault && !tutorial);
     encounters.reset(frame.seed, mode === 'campaign' && relicsDefault && !tutorial);
+    if (campaign.daily) relics.grantDaily(campaign.daily.relic, campaign.daily.curse);
     // Payload unchanged since v0.5.x (the goldens hash every event).
     events.emit(getTick(), 'run_start', {
       seed: frame.seed,
@@ -1469,6 +1492,9 @@ export function createRunSystem({
       // reseed), and fresh per-level counters. (A 'depart' card's level was
       // opened — frame rolled, grant applied — before the card.)
       act = to;
+      // DAILY: every level of the day's run rolls from the day, not from
+      // what the party drew in the level before.
+      if (campaign.daily) reseedTo(dailyLevelSeed(campaign.daily.seed, campaign.index + 1));
       frame = rollFrame();
       roomIndex = 0;
       clearedRooms = 0;
@@ -1823,6 +1849,18 @@ export function createRunSystem({
             grant: cloneData(campaign.grant),
             // ENDLESS: how deep the descent went (present only on one).
             ...(campaign.endless ? { endless: true, depth: campaign.index, depthsCleared: campaign.levels.filter((l) => l.cleared).length, won: !!campaign.won } : {}),
+            // DAILY: the day and how deep the run got (rooms across levels).
+            ...(campaign.daily
+              ? {
+                  daily: {
+                    key: campaign.daily.key,
+                    relic: campaign.daily.relic,
+                    curse: campaign.daily.curse,
+                    depth: dailyDepth({ index: campaign.index, rooms: roomsDone, won: result === 'victory', levels: campaign.index }),
+                    won: result === 'victory',
+                  },
+                }
+              : {}),
           }
         : null,
     };
@@ -2039,6 +2077,8 @@ export function createRunSystem({
       ...(active && roomIndex >= 6 ? { actBoss: { kind: currentBoss().kind, name: currentBoss().name } } : {}),
       // ENDLESS: present only on an endless descent (hash-stable view).
       ...(endlessDepth() ? { endless: { depth: endlessDepth(), won: !!campaign.won } } : {}),
+      // DAILY: present only on the day's run (hash-stable view).
+      ...(active && campaign && campaign.daily ? { daily: { key: campaign.daily.key } } : {}),
       // TUTORIAL: present only in the guided first room (hash-stable view).
       ...(tutorialOn() ? { tutorial: { hold: !!campaign.tutorial.hold } } : {}),
       layout: layout ? { ...layout } : null,

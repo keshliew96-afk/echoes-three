@@ -639,6 +639,15 @@ import { registerNetworkTab } from './ui/menu/tabs/network.js';
 import { registerCloudSaveRows } from './ui/menu/cloud.js';
 const cloudSaves = registerCloudSaveRows({ app, world });
 
+// DAILY DESCENT (docs/DAILY.md): the day's shared run — its screen (from the
+// Level Select's Daily card) and the leaderboard client, which posts a
+// finished daily run to the session server.
+import { createDailyScreen } from './ui/run/daily.js';
+import { createDailyClient } from './daily/client.js';
+registerScreen('daily', createDailyScreen);
+const dailyClient = createDailyClient({ bus, world, service, settings: app.settings, classOf: () => playClass.debug().classId });
+provide('daily', dailyClient);
+
 const overlay = createDebugOverlay(VERSION, {
   debug: flag('debug', false),
   providers: {
@@ -1030,6 +1039,7 @@ const simDebug = {
 // --- Debug API (docs/TESTING.md). cmd surface grows as systems land.
 window.__echoes = {
   cloud: () => cloudSaves.debug(),
+  daily: () => dailyClient, // docs/DAILY.md: { today, omen, board, last, debug() ... }
   version: VERSION,
   // CLASS SELECT (docs/CLASS_SELECT.md): the class the local player plays.
   playClass: () => playClass.debug(),

@@ -153,6 +153,7 @@ if (isMain) {
       }
       console.log(`[echoes-net]   health: ${info.health}   admin API: ${a.admin ? 'on (loopback only)' : 'off'}   conditioner: ${formatCond(cond)}`);
       if (srv.cloud) console.log(`[echoes-net]   cloud saves: ${srv.cloud.kind}${srv.cloud.durable ? ' (durable)' : ' (kept until this server restarts — docs/CLOUD_SAVES.md)'}`);
+      if (srv.daily) console.log(`[echoes-net]   daily board: ${srv.daily.kind}${srv.daily.durable ? ' (durable)' : ' (kept until this server restarts — docs/DAILY.md)'}`);
       console.log(`[echoes-net]   origins: ${origins && origins.length ? origins.join(', ') : 'any'}   per-IP cap: ${maxPerIp || 'off'}`);
       console.log(`[echoes-net] ready ${JSON.stringify({ port: info.port, host, url: info.url, lanUrls: info.lanUrls, path: WS_PATH, admin: !!a.admin, pid: process.pid, site: info.site, siteUrls: info.siteUrls, build: info.build })}`);
     })

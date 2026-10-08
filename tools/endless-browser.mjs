@@ -62,9 +62,10 @@ try {
   await settle();
   const sel = await page.evaluate(() => {
     const c = document.querySelector('.cg-levels .cg-card[data-level="endless"]');
-    return { cards: document.querySelectorAll('.cg-levels .cg-card').length, locked: c.getAttribute('aria-disabled') === 'true', text: c.textContent.replace(/\s+/g, ' ').trim() };
+    const all = [...document.querySelectorAll('.cg-levels .cg-card')];
+    return { cards: all.length, fifth: all.indexOf(c) === 4, locked: c.getAttribute('aria-disabled') === 'true', text: c.textContent.replace(/\s+/g, ' ').trim() };
   });
-  check(sel.cards === 5 && !sel.locked && /Endless Descent/.test(sel.text), `the Endless Descent card is the fifth card, open (${sel.text.slice(0, 80)})`);
+  check(sel.cards === 6 && sel.fifth && !sel.locked && /Endless Descent/.test(sel.text), `the Endless Descent card is the fifth card, open (${sel.text.slice(0, 80)})`);
   await page.screenshot({ path: 'captures/endless-1-select.png' });
   await page.click('.cg-levels .cg-card[data-level="endless"]');
 
