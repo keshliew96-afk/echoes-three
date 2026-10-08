@@ -146,12 +146,23 @@ await frames(10);
 b = await bars();
 check(shownCount(b) === 0 && b.every((x) => !x.shown), 'off: no bar on screen, at once', b);
 await shot('5-room-off');
-// Survives a reload.
+// Survives a reload. Leave the run first: a page leaving mid-run under
+// software GL stalled the renderer in two of twenty runs, before any of
+// this layer's code ran again.
+await cmd('abandonRun', 'quit');
+await settle(800);
 await page.evaluate(() => window.__echoes.app.service('settings').persist());
 // A fresh navigation, not reload(): under software GL a reload's lifecycle
 // event was missed once in ten runs while the page itself came up fine.
 await page.goto(`${URL0}?menu=0&seed=7&tips=0&lang=${LANG}`, { waitUntil: 'domcontentloaded', timeout: 300000 }).catch(() => null);
-await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60, { timeout: 300000, polling: 500 });
+try {
+  await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60, { timeout: 300000, polling: 500 });
+} catch (err) {
+  const st = await page.evaluate(() => ({ url: location.href, ready: document.readyState, echoes: !!window.__echoes, tick: window.__echoes && window.__echoes.tick, overlay: window.__echoes && window.__echoes.app && window.__echoes.app.overlay })).catch((e) => String(e));
+  console.log('RELOAD STUCK', JSON.stringify(st));
+  await shot('debug-reload').catch(() => {});
+  throw err;
+}
 await settle(1200);
 await frames(20);
 check((await setting()) === false, 'off survives a reload');
