@@ -2460,5 +2460,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "Иди дальше, ничего не обретя и ничего не потеряв.",
  "Warder": "Хранитель",
- "Weir Crab": "Запрудный Краб"
+ "Weir Crab": "Запрудный Краб",
+ "Hit feedback": "Отклик на удары",
+ "When you are hit, the screen edge pulses red toward the attacker, a struck character flashes and heavy hits kick the camera. Turn it off if flashing bothers you.": "Когда вас бьют, край экрана вспыхивает красным со стороны атакующего, раненый персонаж мигает, а сильные удары встряхивают камеру. Отключите, если вспышки мешают.",
+ "Red edge pulse, flash and camera kick when you are hit": "Красная вспышка по краю, мигание и толчок камеры при ударе",
+ "No flash or kick when you are hit": "Без вспышек и толчков при ударе"
 }

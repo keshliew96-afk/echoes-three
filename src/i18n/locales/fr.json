@@ -2432,5 +2432,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "Passe ton chemin, sans rien gagner ni rien perdre.",
  "Warder": "Protecteur",
- "Weir Crab": "Crabe du barrage"
+ "Weir Crab": "Crabe du barrage",
+ "Hit feedback": "Retour des coups",
+ "When you are hit, the screen edge pulses red toward the attacker, a struck character flashes and heavy hits kick the camera. Turn it off if flashing bothers you.": "Quand vous êtes touché, le bord de l’écran pulse en rouge vers l’attaquant, le personnage touché clignote et les coups lourds secouent la caméra. Désactivez-le si les flashs vous gênent.",
+ "Red edge pulse, flash and camera kick when you are hit": "Pulsation rouge au bord, flash et secousse de caméra quand vous êtes touché",
+ "No flash or kick when you are hit": "Ni flash ni secousse quand vous êtes touché"
 }
