@@ -477,6 +477,8 @@ export function mountVfxLab() {
       ['Hunt horn', 'ob_horn'], ['Winded', 'ob_winded'], ['Escape', 'ob_escape'], ['Purge', 'ob_purge'],
       ['Nest', 'ob_nest'], ['Nest births', 'ob_pulse'], ['Nest bursts', 'ob_burst'], ['Rooted', 'ob_rooted'], ['Won', 'ob_won'],
     ]],
+    // SHOP REFRESH (src/audio/cues.js): the peddler's riffle beside the buy.
+    ['Sound, shop', [['Buy', 'purchase'], ['Refresh', 'shop_refresh'], ['Too dear', 'deny']]],
   ];
   for (const [title, list] of ENC_SOUNDS) {
     const row = section(title);

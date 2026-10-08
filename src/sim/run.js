@@ -73,7 +73,7 @@
 //     first level clear, so the 9 goldens stay bit-identical.
 import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
 import { PARTY_ALLIES, STARTING_SKILLS, SKILLS, HEALER_SKILL_IDS } from './skills.js';
-import { createDraftSystem, SPOILS_PER_CLEAR } from './draft.js';
+import { createDraftSystem, SPOILS_PER_CLEAR, refreshPrice } from './draft.js';
 import { NODES } from './nodes.js';
 import { levelFor, ACT_IDS, ENDLESS_ACTS, bossFor } from '../data/levels.js';
 // ENDLESS (docs/ENDLESS.md): the descent past Act III.
@@ -1807,6 +1807,45 @@ export function createRunSystem({
     return { node: card.node, price: card.price, wallet, owned };
   }
 
+  // SHOP REFRESH (v0.5.248): the price `seat`'s next refresh costs this
+  // visit (the Peddler's Seal discount applies, like the cards).
+  function refreshCost(seat) {
+    const s = Number(seat) | 0;
+    const n = s === 0 ? (shop && shop.refreshes) || 0 : pages ? pages.refreshes(s) : 0;
+    return relics.shopPrice(refreshPrice(n));
+  }
+  // A press on the shelf's Refresh: `seat` pays from its own purse (the
+  // Healer's is the run wallet) and its whole node shelf is redrawn from its
+  // class pool under the same stratified draw as the open (the Healer's from
+  // the run's seeded stream, an ally's from the party stream). The relic
+  // shelf is the whole party's and stays. AI seats never refresh, so a run
+  // with no press draws exactly as before.
+  function refreshShop(seat = 0) {
+    if (phase !== 'shop' || !shop) return null;
+    const s = Number(seat) | 0;
+    const price = refreshCost(s);
+    if (s !== 0) {
+      if (!allyOn() || !pages || !pages.shopOpen() || party.purse(s) === null) return null;
+      return pages.refresh(s, price);
+    }
+    const tick = getTick();
+    const n = shop.refreshes || 0;
+    if (wallet < price) {
+      events.emit(tick, 'refresh_denied', { seat: 0, price, wallet });
+      return { denied: 'insufficient_funds', price, wallet };
+    }
+    wallet -= price;
+    shop.stock = draft.shopStock().map((c) => ({ ...c, price: relics.shopPrice(c.price), sold: false }));
+    shop.refreshes = n + 1;
+    // The player chose for an AI-held Healer's shelf (Manual): marks void.
+    if (shop.marked) {
+      shop.touched = true;
+      shop.marked = shop.stock.map(() => false);
+    }
+    events.emit(tick, 'shop_refresh', { seat: 0, price, wallet, n: n + 1, stock: shop.stock.map((c) => ({ node: c.node, rarity: c.rarity, price: c.price })) });
+    return { seat: 0, price, wallet, refreshes: n + 1 };
+  }
+
   function advanceFromShop({ force = false, by = null } = {}) {
     if (phase !== 'shop') return null;
     // PARTY (BUILD_BRIEF §25.7): with >= 2 humans the Advance leaves at once
@@ -2204,6 +2243,9 @@ export function createRunSystem({
             })),
             // The AI-held Healer's shelf: the player bought on it (Manual).
             ...(shop.marked ? { touched: !!shop.touched } : {}),
+            // SHOP REFRESH: how often the Healer's shelf was redrawn this
+            // visit (present only after one — hash-stable).
+            ...(shop.refreshes ? { refreshes: shop.refreshes } : {}),
           }
         : null,
       boss: active && roomIndex === RUN.bossRoom ? boss.view() : null,
@@ -2474,6 +2516,11 @@ export function createRunSystem({
         return choosePath(args[0] ?? 0);
       case 'shopBuy':
         return buy(args[0] ?? 0);
+      case 'shopRefresh':
+        // ('shopRefresh'[, seat]) — redraw that seat's shelf for Glint.
+        return refreshShop(args[0] ?? 0);
+      case 'shopRefreshCost':
+        return phase === 'shop' ? refreshCost(args[0] ?? 0) : null;
       case 'shopAdvance':
         return advanceFromShop();
       case 'returnToCamp':
@@ -2764,6 +2811,8 @@ export function createRunSystem({
     chooseEncounter,
     relics: () => (relics.enabled() ? relics.view() : null),
     buy,
+    refreshShop,
+    refreshCost,
     advanceFromShop,
     returnToCamp,
     wallet: () => wallet,
