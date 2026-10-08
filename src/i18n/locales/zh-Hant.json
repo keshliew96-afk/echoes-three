@@ -1,6 +1,8 @@
 {
  " s": " 秒",
  " u": " u",
+ "REFRESH": "刷新",
+ "Redraw this shelf for {n} Glint": "花 {n} 閃晶重新擺滿這排貨架",
  "— nothing": "— 無",
  "… {secs} s": "… {secs} 秒",
  "… choose": "… 選擇",

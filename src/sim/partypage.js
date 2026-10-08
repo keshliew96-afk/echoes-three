@@ -283,6 +283,30 @@ export function createPartyPages(ctx) {
     events.emit(tick, 'shop_purchase', { seat, node: card.node, price: card.price, wallet: party.purse(seat), owned, index, by });
     return { node: card.node, price: card.price, purse: party.purse(seat), owned };
   }
+  // SHOP REFRESH (v0.5.248): `seat` pays `price` from ITS purse and its
+  // whole shelf is redrawn from its class pool (party stream, the same
+  // stratified draw as the open). The player chose for that shelf, so any
+  // Suggested marks on it are void. Only on a press (never by the AI), so a
+  // run nobody refreshes in draws exactly as before.
+  function refresh(seat, price) {
+    if (!shop) return { denied: 'closed' };
+    if (!shop.shelves[seat]) return null;
+    const tick = getTick();
+    const purse = party.purse(seat);
+    const n = shop.refreshes ? shop.refreshes[seat] : 0;
+    if (purse < price) {
+      events.emit(tick, 'refresh_denied', { seat, price, wallet: purse });
+      return { denied: 'insufficient_funds', price, purse };
+    }
+    party.spend(seat, price);
+    shop.shelves[seat] = party.draft(seat).shopStock().map((s) => ({ ...s, sold: false }));
+    shop.marked[seat] = shop.shelves[seat].map(() => false);
+    shop.touched[seat] = true;
+    if (!shop.refreshes) shop.refreshes = [0, 0, 0, 0];
+    shop.refreshes[seat] = n + 1;
+    events.emit(tick, 'shop_refresh', { seat, price, wallet: party.purse(seat), n: n + 1, stock: shop.shelves[seat].map((c) => ({ node: c.node, rarity: c.rarity, price: c.price })) });
+    return { seat, price, purse: party.purse(seat), refreshes: n + 1 };
+  }
   function aiBuy(seat, indices, by) {
     for (const k of indices) {
       const r = buy(seat, k, { by });
@@ -448,6 +472,8 @@ export function createPartyPages(ctx) {
       leaveTick: shop.leaveTick,
       deadlineInTicks: shop.deadlineTick !== null ? Math.max(0, shop.deadlineTick - tick) : null,
       leaveInTicks: shop.leaveTick !== null ? Math.max(0, shop.leaveTick - tick) : null,
+      // SHOP REFRESH: per-seat refresh counts (present only after one).
+      ...(shop.refreshes ? { refreshes: [...shop.refreshes] } : {}),
       shelves: [
         null,
         ...PARTY_SEATS.map((i) => ({
@@ -478,6 +504,8 @@ export function createPartyPages(ctx) {
     applyAllies,
     openShop,
     buy,
+    refresh,
+    refreshes: (seat) => (shop && shop.refreshes ? shop.refreshes[seat] : 0),
     mark,
     done,
     closeShop,

@@ -1,6 +1,8 @@
 {
  " s": " 秒",
  " u": " u",
+ "REFRESH": "入れ替え",
+ "Redraw this shelf for {n} Glint": "グリント{n}でこの棚を入れ替える",
  "— nothing": "— なし",
  "… {secs} s": "… {secs}秒",
  "… choose": "… 選択中",

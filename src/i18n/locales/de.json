@@ -1,6 +1,8 @@
 {
  " s": " s",
  " u": " u",
+ "REFRESH": "NEU AUSLEGEN",
+ "Redraw this shelf for {n} Glint": "Dieses Regal für {n} Glimmer neu auslegen",
  "— nothing": "— nichts",
  "… {secs} s": "… {secs} s",
  "… choose": "… wählen",

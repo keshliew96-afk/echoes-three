@@ -1,6 +1,8 @@
 {
  " s": " с",
  " u": " u",
+ "REFRESH": "ОБНОВИТЬ",
+ "Redraw this shelf for {n} Glint": "Обновить полку за {n} Блеска",
  "— nothing": "— ничего",
  "… {secs} s": "… {secs} с",
  "… choose": "… выбирай",

@@ -1,6 +1,8 @@
 {
  " s": "초",
  " u": " u",
+ "REFRESH": "새로고침",
+ "Redraw this shelf for {n} Glint": "글린트 {n}(으)로 이 진열대를 새로 채웁니다",
  "— nothing": "— 없음",
  "… {secs} s": "… {secs}초",
  "… choose": "… 선택",

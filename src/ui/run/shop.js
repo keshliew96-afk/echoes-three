@@ -42,6 +42,17 @@
 // viewing a tab never cancels them; Advance buys the still-marked cards of
 // every AI-held tab the player did not buy on. Q / E, PgUp / PgDn, F1-F4 and
 // pad LB / RB switch character; 1-4 buy on the viewed tab.
+//
+// SHOP REFRESH (v0.5.248, Kesh: "spend glint for a refresh of shop items"):
+// a Refresh button beside the Advance lamp redraws the viewed character's
+// whole node shelf for Glint from THAT character's purse (5, then 10, 15 ...
+// within one visit; sim/draft.js refreshPrice). R / pad X press it; it is
+// there only on a tab the player may buy on, and cools to unlit brass when
+// the purse cannot pay (a press then shakes it, like a card's plaque). The
+// redraw plays as a SHELF FLIP: the old cards turn edge-on one after another,
+// the shelf is rebuilt, the new cards turn face-up through a gold edge flare,
+// a light sweep crosses the shelf, the coins fly from the Glint strip into
+// the button and the lantern flares.
 import { esc, isCompact } from './style.js';
 import { nodeCardHtml, kitVerdictText, RARITY_COLOR } from './cards.js';
 import { iconHtml } from '../hud/icons.js';
@@ -55,6 +66,9 @@ import { rumourFor, isHeartLevel, HEART_BOSSES, NPCS } from '../../data/story.js
 import { relicIconHtml } from './relicicons.js';
 import { t } from '../../i18n/index.js';
 import { viewerSeat } from '../../app/viewerseat.js';
+import { usingPad } from '../../app/controls.js';
+import { refreshPrice } from '../../sim/draft.js';
+import { RELICS } from '../../sim/relics.js';
 
 // 'Advance to the Drowned Heron' — the act's own room-8 boss.
 const advanceLabel = (view) => t('Advance to {boss}', { boss: t(bossNameOfRun(view)).replace(/^The /, 'the ') });
@@ -107,6 +121,15 @@ const SHAKE_AMP = 8; // px at the first swing, decaying to 0
 const DENY_HOLD_MS = 700; // plaque emphasis lingers past the shake
 const MOTE_N = 12; // plaque glitter motes
 const DUST_N = 7; // hearth dust drifting through the lantern pool
+// SHOP REFRESH: the shelf flip.
+const RF_OUT_MS = 170; // one card turning edge-on
+const RF_STAGGER = 70; // card-to-card delay, both halves
+const RF_IN_MS = 300; // one new card turning face-up (with a small overshoot)
+const RF_FLARE_MS = 700; // the gold edge flare on a new card
+const RF_SWEEP_MS = 650; // the light sweep across the shelf
+const RF_COIN_N = 6;
+const RF_COIN_MS = 420;
+const RF_TAIL_MS = 1100; // the rebuilt half runs at least this long
 
 const clamp01 = (k) => Math.max(0, Math.min(1, k));
 // Hearth Amber #E8A23D warmed toward its lit tone by k, per channel — the
@@ -147,6 +170,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     <div class="rl-rack" style="display:none"></div>
     <div class="rn-buttons">
       <span class="rn-hint rn-hint-l">${t('<b>A</b>/<b>D</b> or click a card to buy')}</span>
+      <div class="rn-btn rn-refresh" role="button"><span class="rn-rfico"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M19.4 9.2A8 8 0 0 0 5.1 7.3M4.6 14.8a8 8 0 0 0 14.3 1.9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M20.6 3.6l-.9 5.9-5.6-1.9zM3.4 20.4l.9-5.9 5.6 1.9z" fill="currentColor"/></svg></span><span class="rn-rflab">${esc(t('REFRESH'))}</span><span class="rn-rfprice"><span class="rn-plaque-coin">${iconHtml('coin', { size: 16 })}</span><b class="rn-rfamt">5</b></span><kbd class="rn-rfkey">R</kbd></div>
       <div class="rn-btn rn-advance rn-primary rn-focus">${esc(t('Advance to {boss}', { boss: t('The Hollow Stag').replace(/^The /, 'the ') }))}</div>
       <span class="rn-hint rn-hint-r">${t('<b>Enter</b> advance (one-way)')}</span>
     </div>
@@ -171,6 +195,10 @@ export function createShopScreen({ run, build, party = () => null }) {
   const advanceBtn = el.querySelector('.rn-advance');
   const rackEl = el.querySelector('.rl-rack');
   advanceBtn.addEventListener('click', () => run().advanceFromShop());
+  const refreshBtn = el.querySelector('.rn-refresh');
+  const refreshAmt = el.querySelector('.rn-rfamt');
+  const refreshKey = el.querySelector('.rn-rfkey');
+  refreshBtn.addEventListener('click', () => refreshOn());
   // What Enter does now (fix-M3-r5, keyboard half of PLAN §16.4): both lines
   // share one grid cell and only visibility flips, so the hint keeps its
   // width and moving the focus never re-flows the shelf.
@@ -252,6 +280,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     padFocus = -1;
     signature = '';
     if (buyAnim) finishBuy();
+    if (rfAnim) finishRefresh();
     if (lastView) render(lastView);
     dirtyFlag = true; // the run UI re-fits the page on its next frame
   }
@@ -297,6 +326,21 @@ export function createShopScreen({ run, build, party = () => null }) {
   const buyOn = (i) => {
     if (!canBuyOn(viewSeat)) return null;
     return viewSeat === 0 ? run().buy(i) : run().partyBuy(viewSeat, i);
+  };
+  // SHOP REFRESH: what the viewed character's next refresh costs, read off
+  // the view (so a network guest's replica prices it the same as the host):
+  // the visit's count, then the Peddler's Seal discount the cards get.
+  function refreshCostOf(view, seat) {
+    if (!view) return refreshPrice(0);
+    const n = seat === 0 ? (view.shop && view.shop.refreshes) || 0 : (view.partyShop && view.partyShop.refreshes && view.partyShop.refreshes[seat]) || 0;
+    const p = refreshPrice(n);
+    const seal = !!(view.relics && Array.isArray(view.relics.owned) && view.relics.owned.some((r) => r.id === 'peddlers_seal'));
+    return seal ? Math.max(1, Math.round(p * (1 - RELICS.peddlers_seal.shop))) : p;
+  }
+  const refreshOn = () => {
+    if (!canBuyOn(viewSeat) || rfAnim) return null;
+    const r = run();
+    return r && typeof r.refreshShop === 'function' ? r.refreshShop(viewSeat) : null;
   };
 
   const plaques = []; // index -> plaque element
@@ -453,6 +497,7 @@ export function createShopScreen({ run, build, party = () => null }) {
       pendingBuy = null;
       startBuy(idx);
     }
+    if (rfAnim && rfAnim.phase === 'built') beginRefreshIn();
   }
 
   let guestRoom = -1;
@@ -521,8 +566,9 @@ export function createShopScreen({ run, build, party = () => null }) {
     void P;
     // The strip numeral is owned by the coin-fly countdown while a purchase
     // animates; it lands on the true wallet when the animation ends.
-    if (!buyAnim) amtEl.textContent = String(s.wallet);
+    if (!buyAnim && !rfAnim) amtEl.textContent = String(s.wallet);
     lastWallet = s.wallet;
+    paintRefresh(view, s);
     // fix-M5a-r6: the window size is part of the shelf signature. A resize
     // while the shelf is open used to keep the previous size's fixed frame
     // and card copy until the first character switch re-measured it — the
@@ -538,7 +584,9 @@ export function createShopScreen({ run, build, party = () => null }) {
             }`
         )
         .join('|');
-    if (sig !== signature) {
+    // SHOP REFRESH: while the old cards are still turning edge-on the shelf
+    // keeps them; the rebuild waits for the flip's midpoint.
+    if (sig !== signature && !(rfAnim && rfAnim.phase === 'out')) {
       signature = sig;
       measureShelves(view);
       shelf.style.minHeight = shelfFrame.h > 0 ? `${shelfFrame.h}px` : '';
@@ -546,6 +594,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     }
     renderRack(view);
     fitHead(view);
+    fitHints();
     startMotes();
   }
 
@@ -812,6 +861,11 @@ export function createShopScreen({ run, build, party = () => null }) {
           cancelAnimationFrame(buyRaf);
           buyRaf = requestAnimationFrame(stepBuy);
         }
+        if (rfAnim) {
+          rfAnim.t0 = performance.now() - was;
+          cancelAnimationFrame(rfRaf);
+          rfRaf = requestAnimationFrame(stepRefresh);
+        }
         for (const rec of shakeState.values()) {
           rec.t0 = performance.now() - was;
           cancelAnimationFrame(rec.raf);
@@ -824,6 +878,12 @@ export function createShopScreen({ run, build, party = () => null }) {
     if (buyAnim) {
       cancelAnimationFrame(buyRaf);
       stepBuy(performance.now());
+    }
+    if (rfAnim) {
+      cancelAnimationFrame(rfRaf);
+      // A pin past the turn's midpoint rebuilds the shelf first.
+      if (rfAnim.phase === 'out' && pinT >= outEnd(rfAnim.olds.length)) rebuildForRefresh();
+      if (rfAnim) stepRefresh(performance.now());
     }
     for (const rec of shakeState.values()) {
       cancelAnimationFrame(rec.raf);
@@ -851,6 +911,224 @@ export function createShopScreen({ run, build, party = () => null }) {
     coinEl.classList.remove('rn-catch');
     amtEl.textContent = String(a.walletTo);
     buyAnim = null;
+  }
+
+  // SHOP REFRESH: the Refresh button takes room from the two key hints that
+  // flank the lamp. In a narrow window they would wrap into a tall column
+  // (four lines in German at 1024 px) and the docked page would grow past
+  // the window, so a hint that needs more than two lines steps aside; the
+  // button and the lamp carry their own keys. Re-measured only when the
+  // window or the hint text changes (never per frame).
+  const hintL = el.querySelector('.rn-hint-l');
+  const hintFit = { key: '' };
+  function fitHints() {
+    const key = `${window.innerWidth}x${window.innerHeight}|${advanceBtn.textContent}|${refreshBtn.style.visibility}|${refreshBtn.textContent}`;
+    if (key === hintFit.key) return;
+    hintFit.key = key;
+    const was = `${el.classList.contains('rn-hintless')}${el.classList.contains('rn-rfslim')}`;
+    el.classList.remove('rn-hintless', 'rn-rfslim');
+    const line = parseFloat(getComputedStyle(hintL).lineHeight) || parseFloat(getComputedStyle(hintL).fontSize) * 1.25 || 22;
+    const tall = [hintL, hintR].some((h) => h.offsetHeight > line * 2 + 2);
+    el.classList.toggle('rn-hintless', tall);
+    // Still wider than the panel (a long lamp in German): the button keeps
+    // its arrows, price and key, and its word moves to the tooltip.
+    const row = refreshBtn.parentElement;
+    if (tall && row.scrollWidth > row.clientWidth + 0.5) el.classList.add('rn-rfslim');
+    if (`${tall}${el.classList.contains('rn-rfslim')}` !== was) dirtyFlag = true; // the run UI re-fits the page on its next frame
+  }
+
+  // --------------------------------------------------------- refresh --
+  // The Refresh button: its price, whether the purse covers it (unlit brass
+  // when not, never hidden for price, like the plaques) and whether this tab
+  // is one the player may refresh at all (hidden, keeping its place, when not).
+  let rfPaint = '';
+  function paintRefresh(view, s) {
+    const may = canBuyOn(viewSeat);
+    const price = refreshCostOf(view, viewSeat);
+    const short = (s.wallet ?? 0) < price;
+    const capTxt = usingPad() ? 'X' : 'R';
+    const key = `${may ? 1 : 0}|${price}|${short ? 1 : 0}|${capTxt}`;
+    if (key === rfPaint) return;
+    rfPaint = key;
+    refreshBtn.style.visibility = may ? '' : 'hidden';
+    refreshAmt.textContent = String(price);
+    refreshBtn.classList.toggle('rn-short', short);
+    refreshKey.textContent = capTxt;
+    refreshBtn.title = t('Redraw this shelf for {n} Glint', { n: price });
+  }
+  let rfLastFrames = 0;
+  let rfAnim = null; // { phase: 'out'|'built'|'in', t0, tIn, olds, news, coins, sweep, walletFrom, walletTo }
+  let rfRaf = 0;
+  function onRefresh(ev) {
+    if ((ev.seat ?? 0) !== viewSeat) return;
+    if (buyAnim) finishBuy();
+    if (rfAnim) finishRefresh();
+    const from = centreOf(coinEl);
+    const to = centreOf(refreshBtn);
+    const coins = [];
+    for (let i = 0; i < RF_COIN_N; i++) {
+      const c = document.createElement('i');
+      c.className = 'rn-flycoin';
+      c.style.left = `${from.x}px`;
+      c.style.top = `${from.y}px`;
+      c.style.opacity = '0';
+      fx.appendChild(c);
+      coins.push({ node: c, start: i * 45, bulge: 40 + 14 * i, dx: (i - 2.5) * 7 });
+    }
+    // The light sweep: a tall warm band crossing the shelf left to right.
+    const sh = centreOf(shelf);
+    const sb = shelf.getBoundingClientRect();
+    const sweep = document.createElement('i');
+    sweep.className = 'rn-rfsweep';
+    sweep.style.top = `${(sh.y - sb.height / 2).toFixed(1)}px`;
+    sweep.style.height = `${sb.height.toFixed(1)}px`;
+    sweep.style.opacity = '0';
+    fx.appendChild(sweep);
+    rfAnim = {
+      phase: 'out',
+      t0: performance.now(),
+      tIn: null,
+      olds: cards.slice(),
+      oldPlaques: plaques.slice(),
+      news: [],
+      newPlaques: [],
+      coins,
+      from,
+      to,
+      sweep,
+      sweepX0: sh.x - sb.width / 2,
+      sweepW: sb.width,
+      walletFrom: (ev.wallet ?? 0) + (ev.price ?? 0),
+      walletTo: ev.wallet ?? 0,
+      frames: 0,
+    };
+    refreshBtn.classList.add('rn-rfpress');
+    rfRaf = requestAnimationFrame(stepRefresh);
+  }
+  const outEnd = (n) => RF_OUT_MS + RF_STAGGER * Math.max(0, n - 1);
+  // The out-half is done: the shelf rebuilds from the new view (build3 then
+  // calls beginRefreshIn on the fresh cards).
+  function rebuildForRefresh() {
+    rfAnim.phase = 'built';
+    dirtyFlag = true; // the run UI re-fits the page on its next frame
+    if (lastView) render(lastView);
+    if (rfAnim && rfAnim.phase === 'built') beginRefreshIn(); // signature unchanged (the view lagged)
+  }
+  function beginRefreshIn() {
+    const a = rfAnim;
+    a.phase = 'in';
+    // The new half is scheduled from the old half's end, not from the frame
+    // that happened to rebuild, so a slow frame or a capture pin never shifts it.
+    a.tIn = outEnd(a.olds.length);
+    a.news = cards.slice();
+    a.newPlaques = plaques.slice();
+    for (const c of [...a.news, ...a.newPlaques]) {
+      if (!c) continue;
+      c.style.transform = 'scaleX(0.04)';
+    }
+    for (const c of a.news) if (c) c.classList.add('rn-rfnew');
+  }
+  function stepRefresh(now) {
+    const a = rfAnim;
+    if (!a) return;
+    const t = pinT !== null ? pinT : now - a.t0;
+    a.frames++;
+    // 1. the old cards turn edge-on, one after another
+    if (a.phase === 'out') {
+      a.olds.forEach((c, i) => {
+        if (!c) return;
+        const k = clamp01((t - i * RF_STAGGER) / RF_OUT_MS);
+        const sx = `scaleX(${Math.max(0.04, Math.cos((k * Math.PI) / 2)).toFixed(3)})`;
+        c.style.transform = sx;
+        c.style.filter = `brightness(${(1 + 0.6 * k).toFixed(2)})`;
+        if (a.oldPlaques[i]) a.oldPlaques[i].style.transform = sx;
+      });
+      if (t >= outEnd(a.olds.length) && pinT === null) rebuildForRefresh();
+    }
+    // 2. the new cards turn face-up with a small overshoot and a gold edge flare
+    if (a.phase === 'in') {
+      const ti = t - a.tIn;
+      a.news.forEach((c, i) => {
+        if (!c) return;
+        const k = clamp01((ti - i * RF_STAGGER) / RF_IN_MS);
+        const sx = k < 1 ? Math.max(0.04, Math.sin((k * Math.PI) / 2) * (1 + 0.08 * Math.sin(k * Math.PI))) : 1;
+        c.style.transform = k >= 1 ? '' : `scaleX(${sx.toFixed(3)})`;
+        if (a.newPlaques[i]) a.newPlaques[i].style.transform = c.style.transform;
+        const fk = clamp01((ti - i * RF_STAGGER) / RF_FLARE_MS);
+        const glow = fk > 0 && fk < 1 ? Math.sin(fk * Math.PI) : 0;
+        c.style.boxShadow = glow > 0.01 ? `0 0 ${(14 + 34 * glow).toFixed(0)}px rgba(240,220,168,${(0.85 * glow).toFixed(2)}), 0 0 ${(40 + 60 * glow).toFixed(0)}px var(--rarGlow, rgba(232,162,61,0.4))` : '';
+        c.style.filter = glow > 0.01 ? `brightness(${(1 + 0.35 * glow).toFixed(2)})` : '';
+      });
+    }
+    // 3. the light sweep (crosses during the turn-over)
+    const swk = (t - outEnd(a.olds.length) * 0.5) / RF_SWEEP_MS;
+    if (swk > 0 && swk < 1) {
+      const x = a.sweepX0 - 120 + (a.sweepW + 240) * easeOut(swk);
+      a.sweep.style.left = `${x.toFixed(1)}px`;
+      a.sweep.style.opacity = (Math.sin(swk * Math.PI) * 0.9).toFixed(2);
+    } else a.sweep.style.opacity = '0';
+    // 4. coins fly from the Glint strip into the button; the purse counts down
+    let alive = 0;
+    for (const c of a.coins) {
+      const k = (t - c.start) / RF_COIN_MS;
+      if (k < 0) {
+        alive++;
+        continue;
+      }
+      if (k >= 1) {
+        c.node.style.opacity = '0';
+        continue;
+      }
+      alive++;
+      const e = easeOut(k);
+      c.node.style.left = `${(a.from.x + (a.to.x - a.from.x) * e + c.dx * Math.sin(k * Math.PI)).toFixed(1)}px`;
+      c.node.style.top = `${(a.from.y + (a.to.y - a.from.y) * e - c.bulge * Math.sin(k * Math.PI)).toFixed(1)}px`;
+      c.node.style.opacity = String(k < 0.85 ? 1 : (1 - k) / 0.15);
+    }
+    const wk = clamp01(t / (RF_COIN_MS + 45 * RF_COIN_N));
+    amtEl.textContent = String(Math.round(a.walletFrom + (a.walletTo - a.walletFrom) * easeOut(wk)));
+    // 5. the lantern flares with the turn
+    const lf = Math.sin(clamp01(t / 900) * Math.PI);
+    lantern.style.filter = lf > 0.02 ? `drop-shadow(0 0 ${(6 + 16 * lf).toFixed(0)}px rgba(255,214,140,${(0.9 * lf).toFixed(2)}))` : '';
+    if (pinT !== null) return;
+    const done = a.phase === 'in' && t - a.tIn >= Math.max(RF_TAIL_MS, RF_FLARE_MS + RF_STAGGER * a.news.length) && alive === 0;
+    if (done) {
+      finishRefresh();
+      return;
+    }
+    rfRaf = requestAnimationFrame(stepRefresh);
+  }
+  function finishRefresh() {
+    const a = rfAnim;
+    if (!a) return;
+    cancelAnimationFrame(rfRaf);
+    rfLastFrames = a.frames;
+    rfAnim = null;
+    for (const c of a.coins) c.node.remove();
+    a.sweep.remove();
+    for (const p of [...a.oldPlaques, ...a.newPlaques]) if (p) p.style.transform = '';
+    for (const c of [...a.olds, ...a.news]) {
+      if (!c) continue;
+      c.style.transform = '';
+      c.style.filter = '';
+      c.style.boxShadow = '';
+      c.classList.remove('rn-rfnew');
+    }
+    lantern.style.filter = '';
+    refreshBtn.classList.remove('rn-rfpress');
+    amtEl.textContent = String(lastWallet ?? a.walletTo);
+    rfPaint = '';
+    if (a.phase === 'out' && lastView) {
+      signature = '';
+      render(lastView);
+    }
+  }
+  // A refresh the purse cannot pay: the button shakes once (the §16 rule).
+  function onRefreshDenied(ev) {
+    if ((ev.seat ?? 0) !== viewSeat) return;
+    refreshBtn.classList.remove('rn-rfdeny');
+    void refreshBtn.offsetWidth;
+    refreshBtn.classList.add('rn-rfdeny');
   }
 
   // ---------------------------------------------------------- denial --
@@ -1020,6 +1298,10 @@ export function createShopScreen({ run, build, party = () => null }) {
       if (fresh) setView(viewSeat + (code === 'KeyQ' || code === 'PageUp' ? -1 : 1));
       return true;
     }
+    if (code === 'KeyR') {
+      if (fresh) refreshOn();
+      return true;
+    }
     if (code === 'Digit5' || code === 'Digit6') {
       if (fresh) buyRelic(Number(code.slice(5)) - 5);
       return true;
@@ -1070,6 +1352,11 @@ export function createShopScreen({ run, build, party = () => null }) {
       hover: cards.map((c) => c.classList.contains('rn-hover')),
       shakeMs: SHAKE_MS,
       buyMs: BUY_MS,
+      refreshing: rfAnim ? rfAnim.phase : null,
+      refreshFrames: rfAnim ? rfAnim.frames : rfLastFrames,
+      refreshPrice: refreshAmt.textContent,
+      refreshShown: refreshBtn.style.visibility !== 'hidden',
+      refreshShort: refreshBtn.classList.contains('rn-short'),
     };
   }
 
@@ -1090,6 +1377,10 @@ export function createShopScreen({ run, build, party = () => null }) {
     }
     if (action === 'confirm') {
       focusBuy();
+      return true;
+    }
+    if (action === 'secondary') {
+      refreshOn();
       return true;
     }
     return false;
@@ -1122,6 +1413,8 @@ export function createShopScreen({ run, build, party = () => null }) {
     signature = '';
     rackSig = '';
     headFit.key = '';
+    rfPaint = '';
+    if (rfAnim) finishRefresh();
     paintPadFocus();
   }
   // Probe: the viewed seat + what the shelf shows.
@@ -1133,7 +1426,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     if ((ev.seat ?? 0) === viewSeat) denyShake(ev.index ?? 0);
   };
 
-  return { el, render, key, pad, open, denyShake, denyShakeSeat, onPurchase, onRelicPurchase, onRelicDenied, animState, pin, probe, sel, setView, resetView, dirty, name: 'shop' };
+  return { el, render, key, pad, open, denyShake, denyShakeSeat, onPurchase, onRelicPurchase, onRelicDenied, onRefresh, onRefreshDenied, animState, pin, probe, sel, setView, resetView, dirty, name: 'shop' };
 }
 
 export { PALETTE as _shopPalette };
