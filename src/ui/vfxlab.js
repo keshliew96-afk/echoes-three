@@ -18,7 +18,8 @@
 //   Floors   a slick floor patch (wet stone / grave frost) under the party
 //            with boars charging across it, or a whole room that carries
 //            the floor (Flooded Cellar, Bell Tower)
-//   Sound    each boss's sting, phase and fall stings and its boss groove
+//   Sound    each boss's sting, phase and fall stings and its boss groove;
+//            each event room, room objective and slide cue
 //
 // Off unless the URL asks for it; touches nothing else in the UI.
 const HEALER_SETS = [
@@ -419,10 +420,11 @@ export function mountVfxLab() {
     X().cmd('spawnHazard', 'slip', x, z - 0.6, { r: 1.8, skin });
     X().cmd('spawn', 'boar', x - 2.2, z - 4.2);
     X().cmd('spawn', 'boar', x + 2.2, z - 4.2);
-    say(`${skin === 'frost' ? 'grave frost' : 'wet stone'} under the party: walk, stop, dodge on it`);
+    say(`${skin === 'frost' ? 'grave frost' : skin === 'glass' ? 'heart crystal' : 'wet stone'} under the party: walk, stop, dodge on it`);
   }
   button(floors, 'Wet stone', () => slickHere(2, 'wet'), 'a wet flagstone patch (Act II) under the party, two boars');
   button(floors, 'Grave frost', () => slickHere(3, 'frost'), 'a grave frost patch (Act III) under the party, two boars');
+  button(floors, 'Heart crystal', () => slickHere(4, 'glass'), 'a heart crystal patch (Act IV) under the party, two boars');
   for (const [label, act, id] of [['Flooded Cellar', 2, 13], ['Bell Tower', 3, 14]])
     button(floors, label, async () => {
       await ensureCombat(act);
@@ -461,6 +463,39 @@ export function mountVfxLab() {
       say(`${label}: boss groove (Release to hand back)`);
     }, 'its boss music at full intensity');
   }
+  // Event rooms, room objectives and the slick floor slide
+  // (src/audio/encountercues.js): each cue on its own, without walking a
+  // run to the room.
+  const ENC_SOUNDS = [
+    ['Sound, event rooms', [
+      ['Enter', 'ev_enter'], ['Card', 'ev_open'], ['Leave', 'ev_leave'],
+      ['Shrine', 'ev_shrine'], ['Well', 'ev_well'], ['Chest', 'ev_ambush'], ['Pilgrim', 'ev_pilgrim'],
+      ['Altar', 'ev_altar'], ['Spirit', 'ev_spirit'], ['Cache', 'ev_cache'], ['Spring', 'ev_spring'], ['Chest won', 'ev_chest'],
+    ]],
+    ['Sound, objectives', [
+      ['Hunt horn', 'ob_horn'], ['Winded', 'ob_winded'], ['Escape', 'ob_escape'], ['Purge', 'ob_purge'],
+      ['Nest', 'ob_nest'], ['Nest births', 'ob_pulse'], ['Nest bursts', 'ob_burst'], ['Rooted', 'ob_rooted'], ['Won', 'ob_won'],
+    ]],
+  ];
+  for (const [title, list] of ENC_SOUNDS) {
+    const row = section(title);
+    for (const [name, id] of list)
+      button(row, name, () => {
+        audio().play(id);
+        say(`${title.slice(7)}: ${name.toLowerCase()}`);
+      }, id);
+  }
+  const slideRow = section('Sound, slide');
+  for (const [name, skin] of [['Wet', 'wet'], ['Frost', 'frost'], ['Glass', 'glass']])
+    button(slideRow, name, async () => {
+      // A second of grains at a running pace, as a slide plays them.
+      for (let i = 0; i < 9; i++) {
+        audio().play(`sl_${skin}`, { gainDb: -3 + i * 0.3, pitch: 1 });
+        await wait(115);
+      }
+      say(`slide on ${skin === 'wet' ? 'wet stone' : skin === 'frost' ? 'grave frost' : 'heart crystal'} (the Slick floor row plays it live)`);
+    }, `sl_${skin}`);
+
   const rel = section('Music');
   button(rel, 'Release', () => {
     const au = audio();

@@ -19,7 +19,7 @@ export const BED_TRIM = {
   // @trim begin
   barrow: -3.2,
   camp: -0.3,
-  heart: -2.4,
+  heart: -3.4,
   mill: 0.5,
   wood: 3.1,
   // @trim end
