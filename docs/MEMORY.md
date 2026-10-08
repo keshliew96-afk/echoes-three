@@ -1,7 +1,7 @@
 # Memory use
 
 What the game holds in memory, where it goes, and the probe that keeps it
-from creeping back (v0.5.247).
+from creeping back (v0.5.252).
 
 ## Where it goes
 
@@ -18,7 +18,7 @@ process figures are what Chrome's renderer and GPU processes really hold.
 | Audio | ~1.5 MB of AudioBuffers plus the bake cache (capped at 24 MB, `src/audio/bake.js`) | |
 | Journal Bestiary | +13 MB while open | Its own WebGL context, lost on close (`src/ui/story/viewer.js`). |
 
-## What v0.5.247 changed
+## What v0.5.252 changed
 
 - **Paint canvases released after upload** (`src/scenes/arena.js`,
   `releaseAfterUpload`). Each dressing texture lets go of its canvas in
