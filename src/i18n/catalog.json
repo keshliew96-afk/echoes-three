@@ -2441,7 +2441,31 @@
   ],
   "data": true
  },
+ "Begin every run holding Bounty Writ. Each elite the party kills pays 6 Glint, plus 4 for every affix it carried.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Cinder Pact. In a cursed room the party deals 30% more damage and takes 15% less. Each major curse held adds 5% damage everywhere.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Ember Tooth. Party critical hits deal ×2 instead of ×1.5.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Fletcher's Knot. The Archer's hits on an exposed enemy ricochet to another enemy nearby for 60% of the damage.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Fox Ribbon. The Swordsman's critical hits cut again for half the damage.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -2477,6 +2501,18 @@
   ],
   "data": true
  },
+ "Begin every run holding Huntsman's Horn. In Hunt and Purge rooms the party deals 25% more damage, and winning one pays 15 more Glint.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Kindling Coal. Party critical hits flare, dealing 8 damage to other enemies nearby (16 with Ember Tooth).": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Lantern Oil. Healing on the party is 20% stronger.": {
   "files": [
    "src/data/unlocks.js"
@@ -2490,6 +2526,12 @@
   "data": true
  },
  "Begin every run holding Leech Fang. Each party kill heals the most wounded member for 4 HP.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Mercy Bell. The Healer's healing past full health becomes a shield, up to 20% of max HP.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -2512,13 +2554,31 @@
   ],
   "data": true
  },
+ "Begin every run holding Pilgrim's Lamp. Entering an event room heals the party for 30% of max HP and pays 10 Glint.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Spore Sac. Party kills leave no hazards behind and puff spores that slow nearby enemies by 35%.": {
   "files": [
    "src/data/unlocks.js"
   ],
   "data": true
  },
+ "Begin every run holding Sun Chalice. Party healing also sears the nearest enemy for the health it restores.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Thorn Mail. Enemies that hit the party take 60% of it back.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Warden's Oath. Each enemy the Tank taunts heals the Tank for 6 HP (once per enemy every 3 seconds).": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -2690,6 +2750,13 @@
   "files": [
    "src/ui/run/index.js"
   ]
+ },
+ "Bounty Writ": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Brace": {
   "files": [
@@ -3095,6 +3162,13 @@
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "Cinder Pact": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Class": {
   "files": [
@@ -4018,6 +4092,18 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Each elite the party kills pays 6 Glint, plus 4 for every affix it carried.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Each enemy the Tank taunts heals the Tank for 6 HP (once per enemy every 3 seconds).": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Each hero has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -4259,6 +4345,12 @@
   "files": [
    "src/ui/menu/mpmenu.js"
   ]
+ },
+ "Entering an event room heals the party for 30% of max HP and pays 10 Glint.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Equip": {
   "files": [
@@ -4632,6 +4724,13 @@
   ],
   "data": true
  },
+ "Fletcher's Knot": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Flooded Cellar": {
   "files": [
    "src/data/layouts.js"
@@ -4714,6 +4813,13 @@
  "Fox": {
   "files": [
    "src/net/seats.js"
+  ],
+  "data": true
+ },
+ "Fox Ribbon": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -5407,6 +5513,13 @@
   ],
   "data": true
  },
+ "Huntsman's Horn": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "I set up in the clearing before every warden’s den. I always get there first. Slow and steady.": {
   "files": [
    "src/data/story.js"
@@ -5472,6 +5585,18 @@
   "files": [
    "src/save/describe.js"
   ]
+ },
+ "In a cursed room the party deals 30% more damage and takes 15% less. Each major curse held adds 5% damage everywhere.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "In Hunt and Purge rooms the party deals 25% more damage, and winning one pays 15 more Glint.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "In the arena": {
   "files": [
@@ -5718,6 +5843,13 @@
   "files": [
    "src/ui/run/unlocks.js"
   ]
+ },
+ "Kindling Coal": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Kindred Shield": {
   "files": [
@@ -6211,6 +6343,13 @@
   "files": [
    "src/ui/menu/tabs/controls.js"
   ]
+ },
+ "Mercy Bell": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "MF": {
   "files": [
@@ -7055,6 +7194,18 @@
   ],
   "data": true
  },
+ "Party critical hits flare, dealing 8 damage to other enemies nearby (16 with Ember Tooth).": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Party healing also sears the nearest enemy for the health it restores.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Party hits knock enemies back 75% farther.": {
   "files": [
    "src/sim/relics.js"
@@ -7154,6 +7305,13 @@
  "Piercing Shot": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Pilgrim's Lamp": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -9069,6 +9227,13 @@
    "src/ui/run/draft.js"
   ]
  },
+ "Sun Chalice": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Sundering Nova": {
   "files": [
    "src/sim/allies.js"
@@ -9498,6 +9663,12 @@
   ],
   "data": true
  },
+ "The Archer's hits on an exposed enemy ricochet to another enemy nearby for 60% of the damage.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "The Ashen Barrow": {
   "files": [
    "src/data/levels.js",
@@ -9887,6 +10058,12 @@
  "The Healer who carried the bell before you. Trades relics for better ones.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Healer's healing past full health becomes a shield, up to 20% of max HP.": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -10400,6 +10577,12 @@
  "The Swordsman begins with Flurry, Fox Step, Riposte and Crescent Finisher.": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "The Swordsman's critical hits cut again for half the damage.": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -11106,6 +11289,13 @@
  "Warden": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Warden's Oath": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
   ],
   "data": true
  },
