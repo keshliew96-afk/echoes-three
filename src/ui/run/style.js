@@ -639,6 +639,51 @@ export const RUN_CSS = `
     box-shadow: 0 0 34px ${PALETTE.hearthAmber}AA, 0 0 80px ${PALETTE.hearthAmber}55,
                 inset 0 1px 0 #FFF6DDCC, 0 8px 18px #000000AA;
   }
+  /* SHOP REFRESH: a brass button beside the lamp (lit while the purse can pay,
+     unlit dashed brass when it cannot — never hidden for price), its price on
+     a small plaque and its key cap. */
+  #run-screen .rn-shop .rn-refresh {
+    flex: 0 0 auto; min-width: 0; display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 12px 8px 12px; font-size: 17px; letter-spacing: 0.08em; white-space: nowrap;
+    color: #F6E4B4;
+    background: linear-gradient(180deg, #6B5530 0%, #44381F 50%, #2A241C 100%);
+    border-color: ${PALETTE.paleGold}CC;
+    box-shadow: 0 0 16px ${PALETTE.paleGold}44, inset 0 1px 0 #F0DCA866, inset 0 -5px 9px #00000066, 0 6px 14px #000000AA;
+    transform: none; transition: box-shadow 120ms ease, border-color 120ms ease, filter 120ms ease;
+  }
+  #run-screen .rn-shop .rn-refresh:hover {
+    border-color: #FFF0C8; filter: brightness(1.15);
+    box-shadow: 0 0 26px ${PALETTE.paleGold}88, inset 0 1px 0 #F0DCA899, 0 6px 14px #000000AA;
+  }
+  #run-screen .rn-shop .rn-refresh .rn-rfico { display: inline-flex; color: ${PALETTE.paleGold}; filter: drop-shadow(0 0 6px ${PALETTE.paleGold}99); }
+  #run-screen .rn-shop .rn-refresh .rn-rfprice { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px 1px 4px;
+    border-radius: 6px; background: #00000055; border: 1px solid ${PALETTE.paleGold}88; }
+  #run-screen .rn-shop .rn-refresh .rn-rfprice b { color: #FFF3D2; text-shadow: 0 0 10px ${PALETTE.paleGold}CC; font-weight: 800; }
+  #run-screen .rn-shop .rn-refresh .rn-rfkey { font: 800 14px/1 inherit; font-family: inherit; color: ${PALETTE.voidCharcoal};
+    background: ${PALETTE.bone}; border-radius: 4px; padding: 3px 6px; box-shadow: inset 0 -2px 0 #00000044; }
+  #run-screen .rn-shop .rn-refresh.rn-short {
+    color: ${PALETTE.bone}; border-style: dashed; border-color: ${PALETTE.warmGrey};
+    background: linear-gradient(180deg, #4A443B 0%, #322D27 46%, ${PALETTE.voidCharcoal} 100%);
+    box-shadow: 0 6px 14px #000000AA, inset 0 1px 0 ${PALETTE.warmGrey}44;
+  }
+  #run-screen .rn-shop .rn-refresh.rn-short .rn-rfico { color: ${PALETTE.warmGrey}; filter: none; }
+  #run-screen .rn-shop .rn-refresh.rn-short .rn-rfprice b { color: ${PALETTE.bone}; text-shadow: none; }
+  /* The press: the arrows spin once and the brass flashes. */
+  #run-screen .rn-shop .rn-refresh.rn-rfpress { border-color: #FFF0C8;
+    box-shadow: 0 0 34px ${PALETTE.paleGold}CC, 0 0 70px ${PALETTE.hearthAmber}66, inset 0 0 12px #FFF6DD55, 0 6px 14px #000000AA; }
+  #run-screen .rn-shop .rn-refresh.rn-rfpress .rn-rfico { animation: rn-rfspin 620ms cubic-bezier(.2,.8,.3,1) 1; }
+  @keyframes rn-rfspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  #run-screen .rn-shop .rn-refresh.rn-rfdeny { animation: rn-rfshake 300ms linear 1; border-style: solid; border-color: ${PALETTE.hearthAmber};
+    box-shadow: 0 0 22px ${PALETTE.hearthAmber}88, 0 6px 14px #000000AA; }
+  @keyframes rn-rfshake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-7px) rotate(-1.5deg); }
+    40% { transform: translateX(5px) rotate(1deg); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+  #run-screen.rn-compact .rn-shop .rn-refresh { padding: 6px 10px; font-size: 15px; gap: 6px; }
+  /* The light sweep across the shelf during a refresh. */
+  .rn-rfsweep {
+    position: absolute; width: 120px; pointer-events: none; opacity: 0;
+    background: linear-gradient(90deg, transparent 0%, #FFE9B822 30%, #FFF3D277 50%, #FFE9B822 70%, transparent 100%);
+    filter: blur(2px); mix-blend-mode: screen;
+  }
   /* Purchase / glitter layer — above the shelf, never catching the pointer. */
   /* PERF (round-2). The glitter/dust/coin layer is written per frame with
      LAYOUT properties (left/top) because a composited CSS animation does not

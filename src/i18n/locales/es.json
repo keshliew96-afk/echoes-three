@@ -1,6 +1,8 @@
 {
  " s": " s",
  " u": " u",
+ "REFRESH": "RENOVAR",
+ "Redraw this shelf for {n} Glint": "Renueva este estante por {n} de Destello",
  "— nothing": "— nada",
  "… {secs} s": "… {secs} s",
  "… choose": "… elige",

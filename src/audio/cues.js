@@ -605,6 +605,16 @@ ui('purchase', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) =>
     k.noise(d, t, { type: 'highpass', f0: 6000, q: 0.7, d: 0.12, gain: 0.2 })
   )
 );
+// SHOP REFRESH: the peddler riffles the shelf — six quick paper flicks
+// running up in pitch while the cards turn, then a soft two-note shimmer as
+// the new ones land face-up.
+ui('shop_refresh', { slot: 'progress', levelDb: UI_PEAK_DB, cooldownMs: 120 }, (k, t, d, p) =>
+  Math.max(
+    ...[0, 0.055, 0.105, 0.15, 0.19, 0.225].map((o, i) => k.noise(d, t + o, { type: 'bandpass', f0: P(p, 1800 + i * 420), q: 1.6, d: 0.035, gain: 0.55 + i * 0.05 })),
+    k.tone(d, t + 0.3, { f0: P(p, 1318.5), d: 0.18, gain: 0.3 }),
+    k.tone(d, t + 0.36, { f0: P(p, 1975.5), d: 0.26, gain: 0.26 })
+  )
+);
 ui('deny', { slot: 'progress', levelDb: UI_PEAK_DB }, (k, t, d, p) =>
   k.tone(d, t, { type: 'square', f0: P(p, 150), d: 0.13, gain: 0.55, filter: { f0: 1200, q: 0.7 } })
 );
@@ -898,6 +908,8 @@ export const DEFAULT_EVENT_CUES = {
   shop_open: () => [{ cue: 'shop_open' }],
   shop_purchase: () => [{ cue: 'purchase' }],
   currency_denied: () => [{ cue: 'deny' }],
+  shop_refresh: () => [{ cue: 'shop_refresh' }],
+  refresh_denied: () => [{ cue: 'deny' }],
   // ELITE AFFIXES (docs/ELITE_AFFIXES.md).
   elite_affixes: (ev, h) => one('affix_reveal', at(ev, h, ev.id)),
   affix_frost: (ev, h) => one('frost_charge', at(ev, h, ev.id)),
