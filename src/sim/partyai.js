@@ -193,6 +193,46 @@ function ruleFor(a, id, def, target, tick, ctx, u) {
       if (best && bestN >= 3) return best;
       return inRange ? target : null;
     }
+    // MORE CLASS SKILLS (docs/CLASS_SKILLS.md).
+    case 'rallying_cry': {
+      // Two or more members in reach, one of them hurt or under a telegraph.
+      const party = ctx.party().filter((m) => m.hp > 0 && (m.id === a.id || dist(m) <= def.range));
+      const need = party.some((m) => m.hp < m.maxHp * 0.8 || telegraphCovers(ctx.registry, m.x, m.z, tick));
+      return party.length >= 2 && need ? a : null;
+    }
+    case 'earthen_grasp':
+    case 'blade_dance': {
+      const around = near(a.x, a.z, def.area);
+      if (around.length >= 2) return target ?? around[0];
+      return null;
+    }
+    case 'moonfang': {
+      if (!target) return null;
+      const d = dist(target);
+      return d > 0.75 && d <= 4.0 ? target : null;
+    }
+    case 'feather_fan': {
+      const close = near(a.x, a.z, 2.4);
+      if (close.length === 0) return null;
+      if (target && dist(target) <= 2.4) return target;
+      return close.sort((p, q) => d2(p.x, p.z, a.x, a.z) - d2(q.x, q.z, a.x, a.z) || p.id - q.id)[0];
+    }
+    case 'hunters_mark': {
+      // The toughest hostile in range: a boss or an elite first, else the target.
+      const inR = hostiles.filter((e) => dist(e) <= def.range);
+      const big = inR.filter((e) => e.boss === true || e.kind === 'stag' || e.elite).sort((p, q) => q.hp - p.hp || p.id - q.id)[0];
+      return big ?? (inRange ? target : null);
+    }
+    case 'barbed_trap': {
+      // A hostile coming at the Healer or the Archer, else the target.
+      const h = ctx.healer();
+      for (const an of [h, a]) {
+        if (!an || !(an.hp > 0)) continue;
+        const c = near(an.x, an.z, 1.8).filter((e) => dist(e) <= def.range).sort((p, q) => p.id - q.id)[0];
+        if (c) return c;
+      }
+      return inRange ? target : null;
+    }
     default:
       // The 12 starting skills: §7 — target in shape range.
       return inRange ? target : null;

@@ -72,7 +72,7 @@
 //     campaign is read through campaign(), and no new event fires before the
 //     first level clear, so the 9 goldens stay bit-identical.
 import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
-import { PARTY_ALLIES, STARTING_SKILLS, SKILLS } from './skills.js';
+import { PARTY_ALLIES, STARTING_SKILLS, SKILLS, HEALER_SKILL_IDS } from './skills.js';
 import { createDraftSystem, SPOILS_PER_CLEAR } from './draft.js';
 import { NODES } from './nodes.js';
 import { levelFor, ACT_IDS, ENDLESS_ACTS, bossFor } from '../data/levels.js';
@@ -98,7 +98,7 @@ import { swapSuggestion, CLASS_OF_SEAT, PARTY_DEADLINES } from '../data/classes.
 import { createPartyPages } from './partypage.js';
 import { suggestShelf } from './partyai.js';
 import { fillStress } from './party.js';
-import { STRESS_LOADOUT } from '../data/classes.js';
+import { STRESS_LOADOUT, gatedPool } from '../data/classes.js';
 import { SHARED_NODE_IDS } from './nodes.js';
 import {
   CARRY_RULES,
@@ -155,11 +155,17 @@ export function createRunSystem({
   combat,
   party = null, // PARTY: the party system (sim/party.js)
 }) {
+  // MORE CLASS SKILLS (docs/CLASS_SKILLS.md): the 2026-10-08 skills and
+  // nodes join the pools in a campaign (Endless too), never in the tutorial or
+  // the legacy single-level run, so the nine golden traces draw as before.
+  const poolsGrown = () => !!(campaign && campaign.mode === 'campaign' && !campaign.tutorial);
   const draft = createDraftSystem({
     rng,
     build: () => buildSys,
     slots: () => skillSys.slotsView(),
+    skillIds: () => gatedPool(HEALER_SKILL_IDS, poolsGrown()),
   });
+  if (party && typeof party.setPoolGate === 'function') party.setPoolGate(poolsGrown);
   // Late-bound cross links between the skill kit and the build system (both
   // exist before the run system): Resonance's per-cast hook, and Echo's
   // recasts / passive Reapply pulses through the kit's own delivery.

@@ -26,11 +26,31 @@ export const ALLY_CLASS_IDS = Object.freeze(['tank', 'swordsman', 'archer']);
 
 // §25.2 class skill pools, in the §25.2 table order (the 4 starting rows
 // first). The rows themselves live in sim/skills.js SKILLS (cls-tagged).
+// MORE CLASS SKILLS (docs/CLASS_SKILLS.md): the last three of each pool are
+// the 2026-10-08 additions (8 -> 11 per class).
 export const CLASS_SKILLS = Object.freeze({
-  tank: Object.freeze(['heavy_slam', 'brutal_cleave', 'ground_crack', 'whirling_guard', 'taunting_roar', 'shield_wall', 'shoulder_charge', 'iron_stance']),
-  swordsman: Object.freeze(['flurry', 'lunge_strike', 'blade_storm', 'caltrops', 'fox_step', 'crescent_finisher', 'riposte', 'razor_wake']),
-  archer: Object.freeze(['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova', 'vault_shot', 'pinning_arrow', 'rain_of_arrows', 'kestrel_watch']),
+  tank: Object.freeze(['heavy_slam', 'brutal_cleave', 'ground_crack', 'whirling_guard', 'taunting_roar', 'shield_wall', 'shoulder_charge', 'iron_stance', 'earthshatter', 'rallying_cry', 'earthen_grasp']),
+  swordsman: Object.freeze(['flurry', 'lunge_strike', 'blade_storm', 'caltrops', 'fox_step', 'crescent_finisher', 'riposte', 'razor_wake', 'moonfang', 'blade_dance', 'crimson_edge']),
+  archer: Object.freeze(['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova', 'vault_shot', 'pinning_arrow', 'rain_of_arrows', 'kestrel_watch', 'hunters_mark', 'barbed_trap', 'feather_fan']),
 });
+
+// MORE CLASS SKILLS: what joined the pools on 2026-10-08 — nine class skills,
+// two Healer skills and six class nodes. They enter a draft, a shelf or a
+// spoils drop only in a campaign run (the tutorial excluded), so the legacy
+// single-level run, the ?room= harness and the nine golden traces draw from
+// the old pools exactly as before (data/classes.js poolGate in sim/run.js).
+export const CAMPAIGN_ONLY_SKILLS = Object.freeze([
+  'earthshatter', 'rallying_cry', 'earthen_grasp',
+  'moonfang', 'blade_dance', 'crimson_edge',
+  'hunters_mark', 'barbed_trap', 'feather_fan',
+  'lantern_ward', 'dawn_brand',
+]);
+export const CAMPAIGN_ONLY_NODES = Object.freeze(['rampart', 'crush', 'gale_step', 'duel', 'longshot', 'prey']);
+// The pool a draft draws from: everything, or the old pool outside a campaign.
+export function gatedPool(ids, campaign) {
+  if (campaign) return ids;
+  return ids.filter((id) => !CAMPAIGN_ONLY_SKILLS.includes(id) && !CAMPAIGN_ONLY_NODES.includes(id));
+}
 
 // The §7 kits, in kit (= slot = key) order. Since v0.5.227 they are no
 // longer anyone's starting loadout (CAMP FIXES, Kesh 2026-10-06: "remove any
@@ -51,9 +71,9 @@ export const STARTING_LOADOUT = Object.freeze({ tank: EMPTY_KIT, swordsman: EMPT
 // §25.3 class nodes (6 per class, all techniques) — the rows live in
 // sim/nodes.js NODES (cls-tagged).
 export const CLASS_NODES = Object.freeze({
-  tank: Object.freeze(['provoke', 'brace', 'tremor', 'anchor', 'retaliate', 'aegis']),
-  swordsman: Object.freeze(['flow', 'momentum', 'parry', 'pursuit', 'lethality', 'execute']),
-  archer: Object.freeze(['skewer', 'concussive', 'steady_aim', 'disengage', 'scatter', 'heartseeker']),
+  tank: Object.freeze(['provoke', 'brace', 'tremor', 'anchor', 'retaliate', 'aegis', 'rampart', 'crush']),
+  swordsman: Object.freeze(['flow', 'momentum', 'parry', 'pursuit', 'lethality', 'execute', 'gale_step', 'duel']),
+  archer: Object.freeze(['skewer', 'concussive', 'steady_aim', 'disengage', 'scatter', 'heartseeker', 'longshot', 'prey']),
 });
 
 // §25.3 shared-node access per class (the Healer: all 17, unchanged).
@@ -76,20 +96,20 @@ export const AI_PRIORITY = Object.freeze({
   healer: Object.freeze([
     'mending_tide', 'guardian_bond', 'nova_bloom', 'mending_bolt', 'swift_mend',
     'kindred_shield', 'hearthsong', 'restorative_wave', 'dewfall', 'sanctuary',
-    'quiet_hearth', 'warding_aura', 'bell_toll', 'pale_lance', 'lantern_flurry',
-    'rootsnare', 'spirit_bolt',
+    'quiet_hearth', 'warding_aura', 'lantern_ward', 'bell_toll', 'pale_lance', 'dawn_brand',
+    'lantern_flurry', 'rootsnare', 'spirit_bolt',
   ]),
   tank: Object.freeze([
-    'shield_wall', 'taunting_roar', 'heavy_slam', 'shoulder_charge',
-    'whirling_guard', 'iron_stance', 'brutal_cleave', 'ground_crack',
+    'shield_wall', 'taunting_roar', 'rallying_cry', 'heavy_slam', 'earthshatter', 'shoulder_charge',
+    'earthen_grasp', 'whirling_guard', 'iron_stance', 'brutal_cleave', 'ground_crack',
   ]),
   swordsman: Object.freeze([
-    'flurry', 'crescent_finisher', 'fox_step', 'lunge_strike',
-    'riposte', 'blade_storm', 'razor_wake', 'caltrops',
+    'flurry', 'crescent_finisher', 'moonfang', 'fox_step', 'lunge_strike',
+    'blade_dance', 'riposte', 'blade_storm', 'crimson_edge', 'razor_wake', 'caltrops',
   ]),
   archer: Object.freeze([
-    'piercing_shot', 'volley', 'pinning_arrow', 'vault_shot',
-    'rain_of_arrows', 'kestrel_watch', 'detonating_charge', 'sundering_nova',
+    'piercing_shot', 'hunters_mark', 'volley', 'pinning_arrow', 'feather_fan', 'vault_shot',
+    'rain_of_arrows', 'barbed_trap', 'kestrel_watch', 'detonating_charge', 'sundering_nova',
   ]),
 });
 
@@ -233,6 +253,20 @@ export const CLASS_TECH = Object.freeze({
   scatterShardFrac: 0.4, // a spent bolt bursts into 3 shards (±30°, 40% power, 1.5 u)
   scatterShardDeg: 30,
   scatterShardRangeU: 1.5,
+  // MORE CLASS SKILLS (docs/CLASS_SKILLS.md): the six new class nodes.
+  rampartWard: 0.15, // Rampart: the Tank takes 15% less damage for 2 s after the cast
+  rampartTicks: 120,
+  rampartPassiveWard: 0.1, // on a passive: 10% while it pulses
+  crushMul: 1.5, // Crush: x1.5 power on a stunned or taunted enemy
+  galeHaste: 0.3, // Gale Step: the fox runs 30% faster for 1.5 s after the cast
+  galeTicks: 90,
+  galePassiveHaste: 0.15, // on a passive: 15% while it pulses and hits
+  duelPct: 0.3, // Duel: +30% power while one enemy at most stands within 2.5 u
+  duelRadiusU: 2.5,
+  longshotPerU: 0.1, // Longshot: +10% power per unit a bolt flew, up to +50%
+  longshotMax: 0.5,
+  preyExposed: 0.25, // Prey: the first enemy each cast hits takes 25% more for 3 s
+  preyTicks: 180,
 });
 
 // §25.10 MAX-STRESS build (GP.10 / GP.15 precondition; `?partygrant=max`,
