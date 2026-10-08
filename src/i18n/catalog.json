@@ -1434,6 +1434,11 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "A bar over every hero in the party": {
+  "files": [
+   "src/ui/run/hpbars.js"
+  ]
+ },
  "A barrow lord in a rusted helm, still keeping a watch nobody asked for.": {
   "files": [
    "src/data/journal.js"
@@ -1783,6 +1788,11 @@
  "a Skill draft": {
   "files": [
    "src/ui/run/path.js"
+  ]
+ },
+ "A small health bar floats over the head of each hero in the party, yours and your allies’, human or AI. It flashes on a hit and drains behind so you can read the damage. The portraits at the bottom keep showing health either way.": {
+  "files": [
+   "src/ui/run/hpbars.js"
   ]
  },
  "A spinning burst: 20 to up to 5 enemies around the Tank.": {
@@ -5707,6 +5717,16 @@
  "Health <b>{hp}</b>": {
   "files": [
    "src/ui/run/classpick.js"
+  ]
+ },
+ "Health bars over heroes": {
+  "files": [
+   "src/ui/run/hpbars.js"
+  ]
+ },
+ "Health shows on the party portraits only": {
+  "files": [
+   "src/ui/run/hpbars.js"
   ]
  },
  "Heart Censer": {

@@ -2404,5 +2404,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "Geh weiter, ohne etwas zu gewinnen oder zu verlieren.",
  "Warder": "Bannhüter",
- "Weir Crab": "Wehrkrabbe"
+ "Weir Crab": "Wehrkrabbe",
+ "Health bars over heroes": "Lebensbalken über Helden",
+ "A bar over every hero in the party": "Ein Balken über jedem Helden der Gruppe",
+ "Health shows on the party portraits only": "Leben nur auf den Gruppenporträts",
+ "A small health bar floats over the head of each hero in the party, yours and your allies’, human or AI. It flashes on a hit and drains behind so you can read the damage. The portraits at the bottom keep showing health either way.": "Über dem Kopf jedes Helden der Gruppe schwebt ein kleiner Lebensbalken, über deinem und dem deiner Verbündeten, ob Mensch oder KI. Bei einem Treffer blitzt er auf und läuft hinterher ab, damit du den Schaden ablesen kannst. Die Porträts unten zeigen das Leben in jedem Fall."
 }

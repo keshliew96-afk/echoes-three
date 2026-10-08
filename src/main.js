@@ -333,6 +333,16 @@ const allyfx =
     ? createAllyLayer({ stage, world, bus, cosmetic, scene: activeScene })
     : null;
 
+// Overhead party health bars (docs/HP_BARS.md): one DOM bar per seat over
+// the hero's head, render-only, gated live by Settings ▸ Gameplay.
+import { createHpBarLayer } from './render/hpbars.js';
+import { registerHpBarsSetting, HP_BARS_KEY } from './ui/run/hpbars.js';
+registerHpBarsSetting(app.settings);
+const hpbars =
+  PLAYABLE
+    ? createHpBarLayer({ world, camera: stage.camera, enabled: () => app.settings.get(HP_BARS_KEY) !== false })
+    : null;
+
 // Combat HUD (§17): Zone-1 command bar (4 model-rendered party portraits with
 // the full state machine + 4 skill slots + dodge, one cooldown grammar, §17
 // denial nudges), Zone-2 contextual room banner, and the world-anchored
@@ -750,6 +760,7 @@ function frame(now) {
   // final camera of this frame). No scene swap can freeze the pool.
   if (numeralWarmWait > 0 && --numeralWarmWait === 0) prewarmNumberPools(6);
   updateNumberPools(Math.min(0.1, Math.max(0, frameMs / 1000)));
+  hpbars?.update(now / 1000, alpha);
   // Title backdrop framing (src/app/titlecam.js): after every layer placed
   // the camera, before it draws.
   app.beforeRender(now);
@@ -1134,6 +1145,7 @@ window.__echoes = {
   // HUD probe surface (§17 block): portrait states, cooldown boxes, zone
   // metrics, banner mode and the off-screen threat audit.
   hud: hud ? hud.debug : null,
+  hpBars: hpbars ? hpbars.debug : null,
   // Run meta-screen probe surface (run block): active screen, door glyphs,
   // card/plaque boxes, fresh-press key sets.
   runUi: runUi ? runUi.debug : null,

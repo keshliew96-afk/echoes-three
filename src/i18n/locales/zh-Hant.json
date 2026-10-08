@@ -2330,5 +2330,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "繼續前行，無所得，亦無所失。",
  "Warder": "結界",
- "Weir Crab": "堰壩蟹"
+ "Weir Crab": "堰壩蟹",
+ "Health bars over heroes": "英雄頭頂血條",
+ "A bar over every hero in the party": "隊伍中每位英雄頭頂都有血條",
+ "Health shows on the party portraits only": "生命值只顯示在隊伍頭像上",
+ "A small health bar floats over the head of each hero in the party, yours and your allies’, human or AI. It flashes on a hit and drains behind so you can read the damage. The portraits at the bottom keep showing health either way.": "隊伍中每位英雄的頭頂都會浮現一條小血條，你的和隊友的都有，無論是玩家還是 AI。受擊時血條會閃一下，並延遲扣減，方便你看清傷害。下方頭像上的生命值始終顯示。"
 }

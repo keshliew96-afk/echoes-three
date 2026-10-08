@@ -2330,5 +2330,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "얻은 것도 잃은 것도 없이 길을 나선다.",
  "Warder": "결계",
- "Weir Crab": "둑 게"
+ "Weir Crab": "둑 게",
+ "Health bars over heroes": "영웅 머리 위 체력 바",
+ "A bar over every hero in the party": "파티의 모든 영웅 위에 바 표시",
+ "Health shows on the party portraits only": "체력은 파티 초상화에만 표시",
+ "A small health bar floats over the head of each hero in the party, yours and your allies’, human or AI. It flashes on a hit and drains behind so you can read the damage. The portraits at the bottom keep showing health either way.": "파티의 각 영웅 머리 위에 작은 체력 바가 떠 있습니다. 내 영웅과 동료 모두, 사람이든 AI든 같습니다. 피격 시 번쩍이고 뒤늦게 줄어들어 피해량을 읽을 수 있습니다. 아래 초상화의 체력 표시는 어느 쪽이든 유지됩니다."
 }

@@ -2460,5 +2460,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "Иди дальше, ничего не обретя и ничего не потеряв.",
  "Warder": "Хранитель",
- "Weir Crab": "Запрудный Краб"
+ "Weir Crab": "Запрудный Краб",
+ "Health bars over heroes": "Полоски здоровья над героями",
+ "A bar over every hero in the party": "Полоска над каждым героем отряда",
+ "Health shows on the party portraits only": "Здоровье видно только на портретах отряда",
+ "A small health bar floats over the head of each hero in the party, yours and your allies’, human or AI. It flashes on a hit and drains behind so you can read the damage. The portraits at the bottom keep showing health either way.": "Над головой каждого героя отряда висит небольшая полоска здоровья — над вашим и над союзниками, будь то люди или ИИ. При ударе она вспыхивает и убывает с задержкой, чтобы был виден урон. Портреты внизу показывают здоровье в любом случае."
 }

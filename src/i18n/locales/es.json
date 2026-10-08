@@ -2432,5 +2432,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "Sigue adelante sin ganar ni perder nada.",
  "Warder": "Protector",
- "Weir Crab": "Cangrejo de la Presa"
+ "Weir Crab": "Cangrejo de la Presa",
+ "Health bars over heroes": "Barras de vida sobre los héroes",
+ "A bar over every hero in the party": "Una barra sobre cada héroe del grupo",
+ "Health shows on the party portraits only": "La vida solo se ve en los retratos del grupo",
+ "A small health bar floats over the head of each hero in the party, yours and your allies’, human or AI. It flashes on a hit and drains behind so you can read the damage. The portraits at the bottom keep showing health either way.": "Una pequeña barra de vida flota sobre la cabeza de cada héroe del grupo, el tuyo y los de tus aliados, humanos o IA. Destella con cada golpe y se vacía con retardo para que leas el daño. Los retratos de abajo siguen mostrando la vida en cualquier caso."
 }

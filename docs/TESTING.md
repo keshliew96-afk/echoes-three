@@ -2277,3 +2277,12 @@ Linux sandboxes: `PUPPETEER_EXECUTABLE_PATH` to the installed Chromium, and
 `ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader
 --enable-unsafe-swiftshader"` for the two probes above (software GL runs the
 page at a few fps; both probes hold keys across frames and wait on sim state).
+
+**HP bars probe (v0.5.249, docs/HP_BARS.md).**
+`node tools/hpbars-browser.mjs [--url http://127.0.0.1:5199/] [--lang en]
+[--shots captures]` — the overhead party health bars and their Settings ▸
+Gameplay switch: four full bars in camp; in a room each bar's fill is its
+hero's HP, a hit flashes and leaves a lag chunk that drains to the new value, a
+heal snaps, a downed hero has no bar and gets it back; the switch turns the
+bars off and on at once and survives a reload; the row is translated; 0 page
+errors (exit 0).

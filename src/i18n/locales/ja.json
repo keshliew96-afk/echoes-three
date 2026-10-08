@@ -2330,5 +2330,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "何も得ず、何も失わずに先へ進む。",
  "Warder": "守護",
- "Weir Crab": "堰ガニ"
+ "Weir Crab": "堰ガニ",
+ "Health bars over heroes": "ヒーローの頭上にHPバー",
+ "A bar over every hero in the party": "パーティ全員の頭上にバーを表示",
+ "Health shows on the party portraits only": "HPはパーティの肖像にのみ表示",
+ "A small health bar floats over the head of each hero in the party, yours and your allies’, human or AI. It flashes on a hit and drains behind so you can read the damage. The portraits at the bottom keep showing health either way.": "パーティの各ヒーローの頭上に小さなHPバーが浮かびます。自分も仲間も、人間でもAIでも同じです。被弾すると光り、遅れて減っていくのでダメージ量が読めます。下の肖像のHP表示はどちらの設定でも残ります。"
 }
