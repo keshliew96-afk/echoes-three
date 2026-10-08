@@ -241,7 +241,19 @@
   const getContext = HTMLCanvasElement.prototype.getContext;
   HTMLCanvasElement.prototype.getContext = function (type, attrs) {
     const gl = getContext.call(this, type, attrs);
-    if (gl && /webgl/.test(String(type))) stateOf(gl);
+    if (gl && /webgl/.test(String(type)) && !byGl.has(gl)) {
+      const s = stateOf(gl);
+      // A lost context frees everything it held: the ledger starts over.
+      this.addEventListener('webglcontextlost', () => {
+        s.tex.clear();
+        s.buf.clear();
+        s.rb.clear();
+        s.texBytes = s.bufBytes = s.rbBytes = 0;
+        s.texCount = s.bufCount = s.rbCount = 0;
+        s.programs = 0;
+        s.losses = (s.losses || 0) + 1;
+      });
+    }
     return gl;
   };
 
@@ -301,6 +313,7 @@
         rbMB: MB(s.rbBytes),
         drawingMB: MB(drawing),
         programs: s.programs,
+        losses: s.losses || 0,
       };
       row.totalMB = MB(lost ? 0 : s.texBytes + s.bufBytes + s.rbBytes + drawing);
       if (!lost) total += s.texBytes + s.bufBytes + s.rbBytes + drawing;
