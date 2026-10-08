@@ -276,6 +276,9 @@ registerBossCues(service('audio'));
 // Act IV (docs/ACT_IV.md): the Hollow Heart's creatures' voices.
 import { registerHeartCues } from './audio/heartcues.js';
 registerHeartCues(service('audio'));
+// Event rooms, room objectives and the slick floor slide (src/audio/encountercues.js).
+import { registerEncounterCues } from './audio/encountercues.js';
+registerEncounterCues(service('audio'));
 // @gnt:AUDIO end
 
 const buildScene = SCENES[sceneKey];

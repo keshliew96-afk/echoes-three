@@ -889,6 +889,7 @@ function buildSlip(h) {
       const sliders = ctx.sliders(e);
       stir += ((sliders.length > 0 ? 1 : 0) - stir) * Math.min(1, dt * 4);
       mat.uniforms.uStir.value = stir;
+      if (sliders.length > 0 && ctx.slide) ctx.slide(sliders, skin); // the slide's hiss (src/audio/encountercues.js)
       for (const b of sliders) {
         sprayDebt += dt * (b.fast ? 26 : 7 * Math.min(1, b.speed / 2.5));
         while (sprayDebt >= 1) {
@@ -909,7 +910,7 @@ function buildSlip(h) {
 const BUILD = { slip: buildSlip, bramble: buildBramble, puffcap: buildPuffcap, millrace: buildMillrace, rockfall: buildRockfall, gravefire: buildGravefire };
 
 // ------------------------------------------------------------------ layer --
-export function createHazardLayer({ stage, world, bus, cosmetic }) {
+export function createHazardLayer({ stage, world, bus, cosmetic, slide = null }) {
   const root = new Group();
   root.name = 'hazardfx';
   stage.scene.add(root);
@@ -965,7 +966,7 @@ export function createHazardLayer({ stage, world, bus, cosmetic }) {
   function update(tSec) {
     const dt = lastT === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastT));
     lastT = tSec;
-    const ctx = { tick: world.tick, shapes, live: [], dust: spawnDust, bodiesInside, sliders, cosmetic };
+    const ctx = { tick: world.tick, shapes, live: [], dust: spawnDust, bodiesInside, sliders, slide, cosmetic };
     const seen = new Set();
     for (const e of world.entities()) {
       if (e.kind !== 'hazard' && e.kind !== 'rubble') continue;

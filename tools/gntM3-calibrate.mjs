@@ -7,13 +7,15 @@
 // markers so the engine lands each at its PLAN §3.5 gain-staging target:
 // cue peak = levelDb, music -20 dBFS RMS into the glue compressor then
 // -13.5 dBFS RMS pre-bus (--only post), beds -18 dBFS RMS (decision D18).
-//   node tools/gntM3-calibrate.mjs [--only cues|music|post|beds] [--dry]
+//   node tools/gntM3-calibrate.mjs [--only cues|music|post|beds] [--keys k1,k2] [--dry]
 import fs from 'node:fs';
 import { openAudio, ev, sleep, out, BASE } from './gntM3-lib.mjs';
 
 const argv = process.argv.slice(2);
 const only = argv.includes('--only') ? argv[argv.indexOf('--only') + 1] : null;
 const dry = argv.includes('--dry');
+// --keys combat:heart,boss:heart,heart measures (and writes) only those rows.
+const keys = argv.includes('--keys') ? argv[argv.indexOf('--keys') + 1].split(',') : null;
 // No ?fresh=1: an HMR reload mid-run would wipe the unity levels (the
 // browser profile is fresh anyway). setup() is re-applied before every
 // measurement for the same reason.
@@ -142,7 +144,10 @@ if (!only || only === 'music') {
     ['boss', 'wood', 0.7],
     ['boss', 'mill', 0.7],
     ['boss', 'barrow', 0.7],
-  ];
+    // Act IV (docs/ACT_IV.md): the Hollow Heart's theme.
+    ['combat', 'heart', 0.6],
+    ['boss', 'heart', 0.7],
+  ].filter(([st, th]) => !keys || keys.includes(st === 'combat' || st === 'boss' ? `${st}:${th}` : st));
   for (const [st, th, inten] of plan) {
     const secs = st === 'victory' || st === 'defeat' ? 3 : 7;
     process.stderr.write(`music ${st}:${th}
@@ -174,7 +179,7 @@ if (only === 'post') {
 }
 
 if (!only || only === 'beds') {
-  for (const bed of ['camp', 'wood', 'mill', 'barrow']) {
+  for (const bed of ['camp', 'wood', 'mill', 'barrow', 'heart'].filter((b) => !keys || keys.includes(b))) {
     await setup();
     const r = await ev(
       page,

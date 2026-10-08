@@ -13,7 +13,9 @@ that hurt (Molten and Frozen) warn with the usual red (Ember) ring first.
 - Room objectives: the Hunt's quarry never carries a power (it is prey);
   elites a Purge nest spawns roll like any wave elite.
 - How many: **one** on Level I; on Level II one in rooms 1 to 3 and **two**
-  from room 4; **two** on Level III and at every Endless depth.
+  from room 4; **two** on Levels III and IV and at every Endless depth past
+  the campaign (Depth 5 on). Endless Depths 1 to 4 count as their level
+  (small fixes 2, v0.5.246, Kesh's call).
 - Which: a hash of the run seed, the level, the room and the elite's spawn
   ordinal (no gameplay RNG draws), so a seed replays the same powers. Molten
   and Frozen never share an elite, and a few kinds skip powers that would

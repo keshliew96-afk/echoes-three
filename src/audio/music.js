@@ -54,12 +54,12 @@ const THEMES = {
 export const MUSIC_TRIM = {
   // @trim begin
   'boss:barrow': -9.6,
-  'boss:heart': -9.8,
+  'boss:heart': -10.6,
   'boss:mill': -8.9,
   'boss:wood': -9.5,
   'camp': -7.6,
   'combat:barrow': -9.1,
-  'combat:heart': -9.0,
+  'combat:heart': -10.3,
   'combat:mill': -7.8,
   'combat:wood': -7.9,
   'defeat': -7,

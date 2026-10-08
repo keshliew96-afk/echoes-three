@@ -102,6 +102,19 @@ async function toPath() {
   return runView();
 }
 const npc = async (id) => (await camp()).story.npcs.find((n) => n.id === id);
+// Wait on the state, not the clock: under software GL a camp bubble shows
+// anywhere from 0.3 s to 4 s after the hero arrives (cloud probe recipe).
+async function until(read, ok, timeout = 12000) {
+  const t0 = Date.now();
+  let v = await read();
+  while (!ok(v) && Date.now() - t0 < timeout) {
+    await sleep(250);
+    v = await read();
+  }
+  return v;
+}
+const bubbled = (n) => !!(n && n.near && n.bubble);
+const npcBubble = (id, timeout) => until(() => npc(id), bubbled, timeout);
 const english = !LANG || LANG === 'en';
 
 // 1 — the prologue opens by itself once the camp settles.
@@ -124,8 +137,7 @@ const english = !LANG || LANG === 'en';
 // 2 — Wick.
 {
   await cmd('teleport', -1.95, 3.05);
-  await sleep(1500);
-  let w = await npc('keeper');
+  let w = await npcBubble('keeper');
   check(w && w.near && w.bubble, `Wick's bubble shows on approach (${w && w.text})`);
   if (english) check(w && w.line === KEEPER_LINES.byVerses.text[0], 'Wick opens with the first chapter line');
   await shot('story-2-wick');
@@ -142,8 +154,7 @@ const english = !LANG || LANG === 'en';
 // 3 — Bramble.
 {
   await cmd('teleport', 4.3, 2.0);
-  await sleep(1500);
-  const b = await npc('peddler');
+  const b = await npcBubble('peddler');
   check(b && b.near && b.bubble, `Bramble's bubble shows at the stall (${b && b.text})`);
   await shot('story-3-bramble');
 }
@@ -151,8 +162,7 @@ const english = !LANG || LANG === 'en';
 // 4 — Quill and the Story so far page.
 {
   await cmd('teleport', -2.75, -4.95);
-  await sleep(1500);
-  const q = await npc('chronicler');
+  const q = await npcBubble('chronicler');
   check(q && q.near && q.bubble, `Quill's bubble shows at the map table (${q && q.text})`);
   await key('KeyJ');
   const open = await page.waitForFunction(() => !!document.querySelector('.st-story'), { timeout: 10000, polling: 200 }).then(() => true).catch(() => false);
@@ -247,13 +257,10 @@ const english = !LANG || LANG === 'en';
   const stag = c.story.wardens.find((w) => w.kind === 'stag');
   check(stag && stag.visible, 'the freed Stag stands at the camp\'s edge');
   await cmd('teleport', -1.95, 3.05);
-  await sleep(1500);
-  const w = await npc('keeper');
+  const w = await npcBubble('keeper');
   if (english) check(w && w.line === KEEPER_LINES.byVerses.text[1], `Wick speaks of Root now (${w && w.line})`);
   await cmd('teleport', -8.6, -3.2);
-  await sleep(1800);
-  const c2 = await camp();
-  const s2 = c2.story.wardens.find((x) => x.kind === 'stag');
+  const s2 = await until(async () => (await camp()).story.wardens.find((x) => x.kind === 'stag'), bubbled);
   check(s2 && s2.near && s2.bubble, 'the Stag\'s line shows nearby');
   await shot('story-9-camp');
 }
