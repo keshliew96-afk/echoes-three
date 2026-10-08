@@ -178,10 +178,14 @@ if (process.env.ENDLESS_CHILD) {
     const sum = t.reduce((a, b) => a + b, 0) || 1;
     return t.map((n) => Math.round((n / sum) * 100));
   };
-  console.log(`down share % (healer/tank/swordsman/archer): depths 1-3 ${share(1, 3).join('/')}  depths 4+ ${share(4, 99).join('/')}`);
+  // Four lands since Act IV: the campaign depths are 1-4 and the descent
+  // proper starts at 5 (the 4+ split is kept for comparison with the
+  // three-land numbers in docs/ENDLESS.md and docs/BALANCE_PASS.md).
+  const shares = { d1to3: share(1, 3), d4plus: share(4, 99), d1to4: share(1, 4), d5plus: share(5, 99) };
+  console.log(`down share % (healer/tank/swordsman/archer): depths 1-3 ${shares.d1to3.join('/')}  depths 4+ ${shares.d4plus.join('/')}  depths 1-4 ${shares.d1to4.join('/')}  depths 5+ ${shares.d5plus.join('/')}`);
   const best = results.map((r) => r.depthsCleared).sort((a, b) => a - b);
   console.log(`median depths cleared ${best[Math.floor(best.length / 2)]}  stuck ${results.filter((r) => r.outcome === 'stuck').length}  ${Math.round((Date.now() - t0) / 1000)} s`);
   mkdirSync(dirname(join(here, OUT)), { recursive: true });
-  writeFileSync(join(here, OUT), JSON.stringify({ seeds: SEEDS, maxDepth: MAX_DEPTH, plain: PLAIN, root: ROOT, curve, results }, null, 1));
+  writeFileSync(join(here, OUT), JSON.stringify({ seeds: SEEDS, maxDepth: MAX_DEPTH, plain: PLAIN, root: ROOT, curve, shares, results }, null, 1));
   console.log(`-> ${OUT}`);
 }

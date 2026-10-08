@@ -223,7 +223,8 @@ export function createRunSystem({
     if (!active || phase !== 'combat' || !frame || !campaign || campaign.mode !== 'campaign' || campaign.tutorial || !relics.enabled()) return null;
     if (frame.modes[roomIndex - 1] === 'boss') return null;
     const depth = endlessDepth();
-    return { count: affixCountFor({ act, room: roomIndex, endless: depth > 0 }), salt: `${frame.seed}:${depth || act}:${campaign.index}:${roomIndex}` };
+    // Endless: Depths 1-4 are the campaign's own count; two powers from Depth 5.
+    return { count: affixCountFor({ act, room: roomIndex, endless: beyondCampaign(depth) }), salt: `${frame.seed}:${depth || act}:${campaign.index}:${roomIndex}` };
   }
 
   let active = false;
