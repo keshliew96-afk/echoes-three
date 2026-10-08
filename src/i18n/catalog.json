@@ -397,12 +397,14 @@
  },
  "{n} Ember": {
   "files": [
-   "src/ui/menu/cloud.js"
+   "src/ui/menu/cloud.js",
+   "src/ui/story/journal.js"
   ]
  },
  "{n} Embers": {
   "files": [
-   "src/ui/menu/cloud.js"
+   "src/ui/menu/cloud.js",
+   "src/ui/story/journal.js"
   ],
   "plural": true,
   "one": "{n} Ember"
@@ -1432,15 +1434,45 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "A barrow lord in a rusted helm, still keeping a watch nobody asked for.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "A battle cry: everyone within 3.5 u gains 10 shield and deals 20% more damage for 3 s.": {
   "files": [
    "src/ui/run/cards.js"
   ],
   "data": true
  },
+ "A beast emptied out, with the Heart beating violet in its veins.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "A bloated grave spider, heavy with young.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "a bolt pierces one more enemy per copy, full power each.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A bramble sprite that plants a thicket wherever it stands still.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "A bramble-backed sow who turns the clearing into a thicket.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -1460,6 +1492,18 @@
   "files": [
    "src/ui/run/levels.js"
   ]
+ },
+ "A carrion bird that picks the barrow clean and calls to its kin.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "A censer on a chain of bone, swinging violet smoke over the fight.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "A charge at the target for 3 s: 12 per second to enemies inside.": {
   "files": [
@@ -1516,6 +1560,18 @@
  "A fissure at the target for 4 s: 10 per second to enemies inside.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A gaunt wading bird whose bill is a spear.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "A giant of black rock and pale crystal that the Heart grew to sing through.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -1613,6 +1669,12 @@
   "files": [
    "src/ui/run/path.js"
   ]
+ },
+ "A pale light that will not let the dead be hurt.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "A pale shape that trades in old things.": {
   "files": [
@@ -1745,6 +1807,12 @@
   "files": [
    "src/save/index.js"
   ]
+ },
+ "A toadstool that learned to walk. It bursts like any mushroom, only angrier.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "A tolling burst around you: 20 to up to 5 enemies, and a 0.5 s stun (not the Stag).": {
   "files": [
@@ -2016,6 +2084,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Always elite. Its shield blocks arrows and blades from the front. The overhead slam has the longest wind-up in the game: a warning ring for 12.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Always shown for this page address (?fps / ?debug / a harness boot)": {
   "files": [
    "src/ui/menu/tabs/display.js"
@@ -2036,9 +2110,21 @@
    "src/ui/run/index.js"
   ]
  },
+ "Ambusher": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "an arrow lands +10% harder for every unit it flew, up to +50%.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "An ash-scaled grave worm that swims through the burial mound.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -2079,6 +2165,12 @@
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "Antler Quake: a warning ring under a hero bursts for 15. Close in, it tramples for 12 with no warning. Calls boars and a mantis at 75%, 50% and 25% health.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Anything since the last save is lost.": {
   "files": [
@@ -2193,9 +2285,21 @@
   ],
   "data": true
  },
+ "Artillery": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Ascend": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Ash Breath: a warning cone for 14. It burrows, then bursts out of a warning ring for 16 and lies exposed afterwards. Breathes faster below half health.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -2231,6 +2335,11 @@
  "Attack": {
   "files": [
    "src/ui/tutorial/index.js"
+  ]
+ },
+ "ATTACKS AND TELLS": {
+  "files": [
+   "src/ui/story/journal.js"
   ]
  },
  "Audio": {
@@ -2425,9 +2534,21 @@
   ],
   "data": true
  },
+ "Barrow Crow": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Barrow Gate": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Barrow Ram": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -2720,6 +2841,12 @@
    "src/ui/run/levels.js"
   ]
  },
+ "Bestiary": {
+  "files": [
+   "src/ui/story/journal.js"
+  ],
+  "data": true
+ },
  "Between levels": {
   "files": [
    "src/ui/menu/pause.js"
@@ -2739,6 +2866,30 @@
   "files": [
    "src/ui/run/unlocks.js"
   ]
+ },
+ "Bill Spear: drives down a warning lane for 16. Wingbeat punishes crowding it. During add waves it hides under the water and resurfaces in a burst.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Bites for 7, but its death is the danger: the cap bursts in a warning ring for 10 and leaves slowing spores. Kill it from range.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Bites for 8. When it dies it bursts into two fast Broodlings that bite for 3. The room holds until the young are dead too.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Bites for 9. Every husk surges on the same heartbeat; their veins swell just before. Step back on the pulse and swing between beats.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Blade Dance": {
   "files": [
@@ -2763,6 +2914,18 @@
    "src/render/enemies/extras.js"
   ]
  },
+ "Blocks arrows and bolts from the front and turns slowly. Its horn slam is a warning cone for 18. Fight it from the flanks.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Blocks arrows and bolts from the front. Within 1.3 u it snaps in a warning cone for 10, and its guard is down for a moment after.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Blood Shrine": {
   "files": [
    "src/sim/encounters.js"
@@ -2774,11 +2937,46 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "Bog Lamprey": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "bolts pierce one more.": {
   "files": [
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "Bone Knight": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Borne {n} time": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
+ "Borne {n} times": {
+  "files": [
+   "src/ui/story/journal.js"
+  ],
+  "plural": true,
+  "one": "Borne {n} time"
+ },
+ "Boss": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Bosses": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
  },
  "Bounce": {
   "files": [
@@ -2838,9 +3036,21 @@
   ],
   "data": true
  },
+ "Briar Wasp": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Brittle Bones": {
   "files": [
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Brood Spider": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -2898,6 +3108,24 @@
  "Burial mounds under a cold moon, where the corruption is oldest.": {
   "files": [
    "src/data/levels.js"
+  ],
+  "data": true
+ },
+ "Burrower": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Burrows toward a hero, then a warning ring marks where it will burst out, for 11. It stays above ground for 2 s afterwards.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Bursting": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -3113,6 +3341,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Charger": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Check": {
   "files": [
    "src/ui/menu/tabs/network.js"
@@ -3223,6 +3457,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Circles a hero, then swoops down a long warning lane for 9 to every hero it crosses. Flies over hazards and blockers.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -3394,6 +3634,12 @@
   "files": [
    "src/ui/menu/tabs/audio.js"
   ]
+ },
+ "Comes in threes. Each sister darts down a short warning lane for 4, one after another, so the swarm reads as a rolling string of lanes.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Committing in {secs} s": {
   "files": [
@@ -3702,6 +3948,12 @@
   ],
   "data": true
  },
+ "Curled into a ball of quills, it rolls at anything that moves.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Curse: {name}": {
   "files": [
    "src/ui/run/levels.js"
@@ -3726,6 +3978,11 @@
  "Cursed room: {name}. {text} Clear it for a relic.": {
   "files": [
    "src/ui/run/index.js"
+  ]
+ },
+ "Curses": {
+  "files": [
+   "src/ui/story/journal.js"
   ]
  },
  "Curtain. The gods applaud.": {
@@ -3877,8 +4134,10 @@
  },
  "Deeds": {
   "files": [
-   "src/ui/run/unlocks.js"
-  ]
+   "src/ui/run/unlocks.js",
+   "src/ui/story/journal.js"
+  ],
+  "data": true
  },
  "DEEPEST EVER": {
   "files": [
@@ -4108,6 +4367,11 @@
   ],
   "data": true
  },
+ "Done": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
  "Done — I’m finished shopping": {
   "files": [
    "src/ui/run/shop.js"
@@ -4137,6 +4401,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Drawn to the party lanterns, and to whatever holds them.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Drink": {
   "files": [
@@ -4248,6 +4518,12 @@
  "EG": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Elite heavy": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -4458,6 +4734,22 @@
  "Even the mill turns to my tune.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "EVENT ROOM": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
+ "Event rooms": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
+ "Events": {
+  "files": [
+   "src/ui/story/journal.js"
   ],
   "data": true
  },
@@ -4722,6 +5014,11 @@
   ],
   "data": true
  },
+ "Felled: {n}": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
  "Fetches the save under the code above and, after you confirm, replaces the profile and save slots on this device with it. The game then reloads.": {
   "files": [
    "src/ui/menu/cloud.js"
@@ -4792,6 +5089,12 @@
   ],
   "data": true
  },
+ "Fissure: a warning lane for 17 that leaves crystal behind. Geode Rain drops four warning rings. Too close, it bursts round itself for 20.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "fits the {cls}'s kit": {
   "files": [
    "src/ui/run/cards.js"
@@ -4820,6 +5123,18 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Flier": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Flings three seed pods that root thorn patches. Her Briar Charge runs down a long warning lane for 18 and tears up every patch it crosses.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -5070,6 +5385,12 @@
   ],
   "data": true
  },
+ "Gardener": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "GB": {
   "files": [
    "src/sim/skills.js"
@@ -5079,6 +5400,12 @@
  "GC": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Geode Brute": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -5142,6 +5469,12 @@
   ],
   "data": true
  },
+ "Gloam Moth": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Good. Now you sound a little more like me.": {
   "files": [
    "src/data/story.js"
@@ -5162,6 +5495,18 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Grave Mole": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Grave Wisp": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -5364,6 +5709,12 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "Heart Censer": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Heart Chamber": {
   "files": [
    "src/data/layouts.js"
@@ -5401,6 +5752,12 @@
   ],
   "data": true
  },
+ "Heavy": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Heavy Slam": {
   "files": [
    "src/sim/allies.js"
@@ -5428,6 +5785,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Hidden and untouchable until it surfaces. Then it lunges down a warning lane for 12 and lies beached on the bank: the time to hit it.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -5503,6 +5866,18 @@
   "files": [
    "src/ui/run/classpick.js"
   ]
+ },
+ "Hollow Husk": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Hollow Note: a warning ring for 10 that later throws crystal shards. Sung Lance: a warning lane for 16. Each verse calls the beasts of one land above.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Hollow Song tint": {
   "files": [
@@ -5773,6 +6148,12 @@
   ],
   "data": true
  },
+ "It holds its claws up like a door and scuttles sideways round any blade.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "it may not load in this version": {
   "files": [
    "src/save/index.js"
@@ -5783,10 +6164,58 @@
    "src/ui/menu/cloud.js"
   ]
  },
+ "It swallows the millrace mud and throws it back.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "It throws a lance of the Heart itself.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "It tunnels through the grave dirt, untouched by blade or arrow.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "It waits in the ferns, folded like a prayer, and spits before it is seen.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "It waits under the water where the millrace runs wrong.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "It walks where its horns point, and its horns point at you.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Its contents changed after it was saved (the checksum doesn't match).": {
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "Its horns block arrows and bolts from the front. Grave Call cracks three graves around a hero and raises a Grave Mole. Bone Rush charges along its horns.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Its shell carries a lantern it never lets go out.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Japanese": {
   "files": [
@@ -5835,6 +6264,12 @@
    "src/ui/net/hud.js"
   ]
  },
+ "Journal": {
+  "files": [
+   "src/ui/menu/tabs/controls.js",
+   "src/ui/story/page.js"
+  ]
+ },
  "just now": {
   "files": [
    "src/ui/menu/saves.js",
@@ -5866,6 +6301,18 @@
   "files": [
    "src/ui/menu/keepdisplay.js"
   ]
+ },
+ "Keeps about 3.5 u back and spits one shot for 10. A warning mark shows the shot for 0.7 s before it flies: step off the line.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Keeps its distance, caws a warning cone, then fires a fan of three feathers for 5 each. Sidestep wide, not a little.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Keeps the Hearth-Fire lit and tells the story. Sits on the woodpile.": {
   "files": [
@@ -6007,6 +6454,12 @@
   ],
   "data": true
  },
+ "Lantern Snail": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Lantern Ward": {
   "files": [
    "src/sim/skills.js"
@@ -6041,7 +6494,8 @@
    "src/ui/menu/lobby.js",
    "src/ui/menu/pause.js",
    "src/ui/run/draft.js",
-   "src/ui/run/encounter.js"
+   "src/ui/run/encounter.js",
+   "src/ui/story/journal.js"
   ]
  },
  "Leave it on Automatic: the game connects to the Echoes server of the site you opened it from (wss:// on an https site) — players just open the host’s link. Enter ws://host:port/echoes only to use a different server, e.g. ws://192.168.1.20:7800/echoes for `npm run net -- --host 0.0.0.0` on another computer. An empty address is Automatic.": {
@@ -6310,6 +6764,12 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "Lobs a glob at where a hero stood. The warning ring on the floor is where it lands, for 12, leaving a slowing slick. It flies over barricades.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Local only — start the server with --host 0.0.0.0 to let friends on your network join.": {
   "files": [
    "src/ui/menu/mpmenu.js"
@@ -6321,6 +6781,12 @@
    "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
   ]
+ },
+ "Locks a warning lane up to 6 u long, then rolls down it for 12. A charge that hits a wall leaves it stunned for half a second.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Log (perceptual)": {
   "files": [
@@ -6347,6 +6813,12 @@
   "files": [
    "src/ui/menu/cloud.js"
   ]
+ },
+ "Lord of the Hollow Wood, crowned in dead antlers.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Lost Pilgrim": {
   "files": [
@@ -6425,6 +6897,12 @@
   ],
   "data": true
  },
+ "Mender": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Mending Bolt": {
   "files": [
    "src/sim/skills.js"
@@ -6475,6 +6953,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Mire Toad": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -6663,6 +7147,12 @@
   ],
   "data": true
  },
+ "Never bites. It roots and plants thorn patches that slow by 35% and prick for 3. Up to three patches at once; chase it through them or kill it fast.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "New Game": {
   "files": [
    "src/ui/menu/title.js"
@@ -6721,6 +7211,24 @@
    "src/ui/menu/mpmenu.js",
    "src/ui/menu/tabs/network.js"
   ]
+ },
+ "No attack. Every 4 s its lantern swells and mends its kin within 3.2 u for 12. Kill it first or the wave refuses to die.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "No attack. It tethers to a nearby enemy and makes it immune while the tether holds. Kill the wisp, or wait out the ward.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "No attack. Its coals flare, then it mends every enemy near it by 15% of their health. A stun spills the mend. Kill it first.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "No camera shake": {
   "files": [
@@ -6893,6 +7401,12 @@
   ],
   "data": true
  },
+ "Not a god but a god's echo, singing verses it stole from the lands above.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Not a server address — e.g. ws://192.168.1.20:7800/echoes": {
   "files": [
    "src/ui/menu/tabs/network.js"
@@ -6906,6 +7420,11 @@
  "Not available right now": {
   "files": [
    "src/ui/menu/settings.js"
+  ]
+ },
+ "Not borne yet.": {
+  "files": [
+   "src/ui/story/journal.js"
   ]
  },
  "Not cleared yet": {
@@ -6938,6 +7457,16 @@
    "src/ui/run/encounter.js"
   ]
  },
+ "Not found yet.": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
+ "Not found yet. Look behind a door marked ?.": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
  "Not in an online game": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -6946,6 +7475,16 @@
  "Not loaded. Your save on this device is unchanged.": {
   "files": [
    "src/ui/menu/cloud.js"
+  ]
+ },
+ "Not met yet": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
+ "Not met yet. It lives in {land}.": {
+  "files": [
+   "src/ui/story/journal.js"
   ]
  },
  "Not now": {
@@ -7796,6 +8335,12 @@
   ],
   "data": true
  },
+ "Quillback": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Quit": {
   "files": [
    "src/ui/menu/pause.js"
@@ -7854,6 +8399,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Ranged": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Rapid cuts: 11 to up to 6 enemies in reach.": {
   "files": [
@@ -8043,8 +8594,10 @@
  },
  "Relics": {
   "files": [
+   "src/ui/story/journal.js",
    "src/ui/tutorial/index.js"
-  ]
+  ],
+  "data": true
  },
  "RELICS": {
   "files": [
@@ -8338,6 +8891,12 @@
    "src/ui/run/cards.js"
   ]
  },
+ "Rolls round the rim of the room. It fires fans of cog shards, and its Crosscut rolls straight across the room for 14, grinding every barricade in the way.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Room": {
   "files": [
    "src/ui/menu/lobby.js"
@@ -8437,6 +8996,12 @@
   ],
   "data": true
  },
+ "Rotcap": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Round trip, loss and bandwidth while playing online": {
   "files": [
    "src/ui/menu/tabs/network.js"
@@ -8510,6 +9075,18 @@
   "files": [
    "src/ui/run/unlocks.js"
   ]
+ },
+ "Runs straight at the nearest hero and bites on contact for 8. No warning: keep moving and it never lands twice in a row.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Rusher": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Russian": {
   "files": [
@@ -8725,6 +9302,11 @@
   ],
   "data": true
  },
+ "Seen, never taken": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
  "Select": {
   "files": [
    "src/ui/menu/confirm.js",
@@ -8869,6 +9451,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Shield": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Shield Wall": {
   "files": [
@@ -9055,6 +9643,12 @@
   "files": [
    "src/ui/tutorial/index.js"
   ]
+ },
+ "Slams a warning ring for 14 that throws three crystal shards, each landing a second later for 8 and leaving slowing crystal.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Slick floor": {
   "files": [
@@ -9245,6 +9839,12 @@
   ],
   "data": true
  },
+ "Spitting Mantis": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Split": {
   "files": [
    "src/sim/nodes.js"
@@ -9254,6 +9854,12 @@
  "Splits into two smaller copies when it dies.": {
   "files": [
    "src/sim/affixes.js"
+  ],
+  "data": true
+ },
+ "Splitter": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -9281,6 +9887,12 @@
    "src/ui/menu/saves.js",
    "src/ui/run/challenge.js"
   ]
+ },
+ "Stands still and aims a warning lane up to 7 u long, then every hero inside takes 10 at once. Nothing flies: step out of the lane.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Start": {
   "files": [
@@ -9381,10 +9993,15 @@
   ],
   "data": true
  },
+ "Story": {
+  "files": [
+   "src/ui/story/journal.js"
+  ],
+  "data": true
+ },
  "Story so far": {
   "files": [
-   "src/scenes/campnpcs.js",
-   "src/ui/menu/tabs/controls.js"
+   "src/scenes/campnpcs.js"
   ]
  },
  "stun": {
@@ -9425,6 +10042,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Swarm": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Swear": {
   "files": [
@@ -9492,7 +10115,8 @@
  "Take": {
   "files": [
    "src/ui/run/draft.js",
-   "src/ui/run/encounter.js"
+   "src/ui/run/encounter.js",
+   "src/ui/story/journal.js"
   ]
  },
  "Take · Replace": {
@@ -9526,6 +10150,18 @@
   "files": [
    "src/ui/run/shop.js"
   ]
+ },
+ "Taken {n} time": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
+ "Taken {n} times": {
+  "files": [
+   "src/ui/story/journal.js"
+  ],
+  "plural": true,
+  "one": "Taken {n} time"
  },
  "Talk": {
   "files": [
@@ -9846,6 +10482,7 @@
  },
  "The Ashen Barrow": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/ui/menu/records.js"
   ],
@@ -9853,6 +10490,7 @@
  },
  "The Barrow Wyrm": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/data/unlocks.js"
   ],
@@ -10024,6 +10662,7 @@
  },
  "The Drowned Heron": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/data/unlocks.js"
   ],
@@ -10097,6 +10736,12 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "The first beast of the Wood to turn. It still charges like it is being hunted.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The First Bell": {
   "files": [
    "src/data/story.js"
@@ -10164,6 +10809,7 @@
  },
  "The Geode Colossus": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/data/unlocks.js"
   ],
@@ -10320,6 +10966,7 @@
  },
  "The Hollow Cantor": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/data/unlocks.js"
   ],
@@ -10345,6 +10992,7 @@
  },
  "The Hollow Heart": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/ui/menu/records.js"
   ],
@@ -10357,6 +11005,7 @@
  },
  "The Hollow Stag": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/data/unlocks.js",
    "src/ui/menu/saves.js",
@@ -10401,6 +11050,7 @@
  },
  "The Hollow Wood": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/ui/menu/records.js"
   ],
@@ -10470,6 +11120,7 @@
  },
  "The Lich Ram": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/data/unlocks.js"
   ],
@@ -10499,8 +11150,15 @@
   ],
   "data": true
  },
+ "The mill's own wheel, torn off its axle and turned against you.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The Millwheel": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/data/unlocks.js"
   ],
@@ -10751,6 +11409,12 @@
   ],
   "data": true
  },
+ "The skeleton of the first ram, walked out of its mound.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The song travels with water. The Drowned Heron kept the river; the Millwheel is the mill itself, turned. Felling either frees the Verse of Water.": {
   "files": [
    "src/data/story.js"
@@ -10773,13 +11437,9 @@
    "src/ui/run/transit.js"
   ]
  },
- "The story so far": {
-  "files": [
-   "src/ui/story/page.js"
-  ]
- },
  "The Sunken Mill": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/ui/menu/records.js"
   ],
@@ -10823,6 +11483,7 @@
  },
  "The Thornmother": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/data/unlocks.js"
   ],
@@ -10892,6 +11553,12 @@
  "The Wyrm sleeps at last. Its long watch is over.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "They nest in briars and never come alone.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -11050,6 +11717,12 @@
    "src/ui/menu/settings.js"
   ]
  },
+ "Thorn Boar": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Thorn Mail": {
   "files": [
    "src/data/unlocks.js",
@@ -11066,6 +11739,12 @@
  "Thorned": {
   "files": [
    "src/sim/affixes.js"
+  ],
+  "data": true
+ },
+ "Thornling": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -11216,6 +11895,11 @@
   ],
   "data": true
  },
+ "Turn the page": {
+  "files": [
+   "src/ui/story/page.js"
+  ]
+ },
  "Tutorial": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -11342,6 +12026,12 @@
   ],
   "data": true
  },
+ "Vein Lancer": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Verse of {verse}": {
   "files": [
    "src/ui/story/page.js"
@@ -11384,11 +12074,29 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Violet crystal has grown right through it. It does not seem to mind.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Violet light pulses in the stone. It offers power for a price.": {
   "files": [
    "src/sim/encounters.js"
   ],
   "data": true
+ },
+ "Visited {n} time": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
+ "Visited {n} times": {
+  "files": [
+   "src/ui/story/journal.js"
+  ],
+  "plural": true,
+  "one": "Visited {n} time"
  },
  "VO": {
   "files": [
@@ -11479,6 +12187,11 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Walk on with nothing gained and nothing lost.": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
  "Walk through 3 cursed doors in one run.": {
   "files": [
    "src/data/unlocks.js"
@@ -11526,6 +12239,12 @@
   ],
   "data": true
  },
+ "Warder": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Warding Aura": {
   "files": [
    "src/sim/skills.js"
@@ -11567,6 +12286,12 @@
  "Weir": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Weir Crab": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },

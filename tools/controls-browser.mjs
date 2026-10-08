@@ -124,7 +124,7 @@ async function arm(id) {
 await bootTitle(`menu=1&fresh=1&lang=${LANG}`);
 await openControls();
 const ids = await page.$$eval('.ap-bind', (ns) => ns.map((n) => n.dataset.action));
-check(ids.length === 22, `the Controls tab lists every action as a key button (${ids.length})`);
+check(ids.length === 23, `the Controls tab lists every action as a key button (${ids.length})`);
 check((await capText('moveUp')) === 'W' && (await capText('dodge')) === 'Space' && (await capText('skill1')) === '1', 'defaults read W / Space / 1');
 check((await page.$eval('#ap-settings-reset', (n) => n.disabled)) === false, 'Reset to defaults is available on this tab');
 

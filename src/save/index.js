@@ -46,6 +46,7 @@ import {
 } from './slots.js';
 import { createProfileStore, scoreRun } from './profile.js';
 import { loadoutBoons, loadoutTints } from '../data/unlocks.js';
+import { JOURNAL_ALIAS, ENEMY_JOURNAL_IDS, BOSS_JOURNAL_IDS } from '../data/journal.js';
 import { createThumbnailer } from './thumbnail.js';
 import { createAutosave } from './autosave.js';
 import { makeBundle, readBundle, applyBundle } from './cloud.js';
@@ -1153,6 +1154,55 @@ export function createSaveSystem({
     }
   });
   let lastAward = null;
+
+  // THE JOURNAL (docs/JOURNAL.md): every enemy, boss, relic, curse and event
+  // room this player meets in a campaign run (Endless and the Daily included;
+  // never the tutorial or a developer's plain run) is gathered here and
+  // written as one batch when a room clears, a level ends or the run ends.
+  // A presentation listener: it reads the bus and writes only the profile, so
+  // a network guest keeps its own journal from the host's events.
+  let journalBatch = null;
+  const journalOn = () => {
+    if (probing) return false;
+    try {
+      const run = world.runSystem();
+      const c = run && typeof run.campaign === 'function' ? run.campaign() : null;
+      return !!(c && c.mode === 'campaign' && !c.tutorial);
+    } catch {
+      return false;
+    }
+  };
+  function journalNote(kind, id, n = 0) {
+    if (typeof id !== 'string' || !journalOn()) return;
+    const k = JOURNAL_ALIAS[id] ?? id;
+    if (kind === 'enemy' && BOSS_JOURNAL_IDS.includes(k)) kind = 'boss';
+    if ((kind === 'enemy' && !ENEMY_JOURNAL_IDS.includes(k)) || (kind === 'boss' && !BOSS_JOURNAL_IDS.includes(k))) return;
+    if (!journalBatch) journalBatch = {};
+    const m = (journalBatch[kind] = journalBatch[kind] || {});
+    m[k] = (m[k] ?? 0) + n;
+  }
+  function journalFlush() {
+    if (!journalBatch) return;
+    const b = journalBatch;
+    journalBatch = null;
+    profileStore.noteJournal(b);
+  }
+  bus.on('enemy_spawn', (ev) => journalNote('enemy', ev.etype));
+  bus.on('boss_spawn', (ev) => journalNote('boss', ev.kind ?? 'stag'));
+  bus.on('death', (ev) => journalNote('enemy', ev.kind, 1));
+  bus.on('relic_offer', (ev) => {
+    for (const id of ev.choices ?? []) journalNote('relic', id);
+  });
+  bus.on('relic_shelf', (ev) => {
+    for (const s of ev.stock ?? []) journalNote('relic', s.relic);
+  });
+  bus.on('relic_gain', (ev) => journalNote('relic', ev.relic, 1));
+  bus.on('curse_taken', (ev) => journalNote('curse', ev.curse, 1));
+  bus.on('event_enter', (ev) => journalNote('event', ev.encounter, 1));
+  bus.on('room_cleared', journalFlush);
+  bus.on('level_clear', journalFlush);
+  bus.on('run_end', journalFlush);
+  if (typeof window !== 'undefined') window.addEventListener('pagehide', journalFlush);
   // The Unlocks screen's calls: each is one atomic profile write.
   const unlockCall = (fn) => (...args) => {
     const r = fn(...args);

@@ -51,7 +51,7 @@ function actionLabel(id) {
     case 'classes':
       return t('Class select');
     case 'story':
-      return t('Story so far');
+      return t('Journal');
     default: {
       const m = /^(skill|ally)(\d)$/.exec(id);
       if (m && m[1] === 'skill') return t('Skill {n}', { n: m[2] });
