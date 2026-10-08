@@ -49,7 +49,7 @@ The descent now cycles four biomes: Wood, Mill, Barrow, Heart. Depths 1-4 play e
 
 ## Look and sound
 
-- **Music.** A `heart` theme in C♯ harmonic minor at 86 BPM, with a heartbeat kick on the off-beats, a glass ostinato and a choir lead; the boss state uses the phrygian scale and adds a heavier heartbeat layer. Mix trims are estimates, not measured.
+- **Music.** A `heart` theme in C♯ harmonic minor at 86 BPM, with a heartbeat kick on the off-beats, a glass ostinato and a choir lead; the boss state uses the phrygian scale and adds a heavier heartbeat layer. Mix trims are measured (small fixes 2, v0.5.246): `node tools/gntM3-calibrate.mjs --only music --keys combat:wood,combat:mill,combat:barrow,combat:heart,boss:wood,boss:mill,boss:barrow,boss:heart --dry` (and `--only beds --keys wood,mill,barrow,heart`) three times; the heart states came out 1.3 dB (combat), 0.8 dB (boss) and 0.95 dB (bed) louder than the mean of the other three acts in the same run, so their trims went down by that much (combat -9.0 to -10.3, boss -9.8 to -10.6, bed -2.4 to -3.4). The sandbox's software audio moves every state's absolute level by up to 3 dB run to run, so the comparison is within a run, not against the -20 dBFS target. The creatures' cues (src/audio/heartcues.js) are calibrated too (`node tools/smallfixes2-cuecal.mjs`).
 - **Ambience.** A low brown-noise throb, a crystal shimmer band, a C♯/G drone and a heartbeat every 4-7 s.
 - **Cues.** `src/audio/heartcues.js`: husk surge, lance, slam, shard shatter, censer gather, mend and spill.
 - **Visuals.** Biome dressing in `src/env/biomes/heart.js`; enemy rigs in `src/render/enemies/heart.js`; telegraphs and impact effects on the AAA bar, with a vfx lab row for the four enemies (`?vfxlab=1`).

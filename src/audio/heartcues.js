@@ -13,6 +13,21 @@
 //   hx_spill   a stunned Censer spills its coals: a sputter
 const P = (p, f) => f * (p && p.pitch ? p.pitch : 1);
 
+// Measured design peaks (dBFS at unity gain, max of 3 takes) so each cue
+// peaks at its levelDb — tools/smallfixes2-cuecal.mjs --write (shipped with
+// Act IV at 0, i.e. unmeasured).
+export const HEART_CUE_CAL = {
+  // @cal begin
+  hx_surge: -0.2,
+  hx_lance: 1.5,
+  hx_slam: 1.7,
+  hx_shard: -1.8,
+  hx_gather: -6.2,
+  hx_mend: -10.4,
+  hx_spill: -9.1,
+  // @cal end
+};
+
 const CUES = {
   hx_surge: { levelDb: -12, priority: 2, maxVoices: 1, cooldownMs: 900, fn: (k, t, d, p) =>
     Math.max(
@@ -83,7 +98,7 @@ export function registerHeartCues(engine) {
   if (!engine || typeof engine.registerCue !== 'function') return 0;
   for (const [id, def] of Object.entries(CUES)) {
     const { fn, ...rest } = def;
-    engine.registerCue(id, { slot: id, calDb: 0, ...rest, voice: (ctx, t, dest, p) => fn(p.kit, t, dest, p) });
+    engine.registerCue(id, { slot: id, calDb: HEART_CUE_CAL[id] ?? 0, ...rest, voice: (ctx, t, dest, p) => fn(p.kit, t, dest, p) });
   }
   for (const [type, fn] of Object.entries(createHeartEventCues())) engine.registerEventCue(type, fn);
   return HEART_CUE_IDS.length;

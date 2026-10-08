@@ -61,7 +61,8 @@ export const AFFIX_RULES = Object.freeze({
 });
 
 // How many powers an elite carries: one on Level I, one in rooms 1-3 and two
-// from room 4 on Level II, two on Levels III and IV and in every Endless depth.
+// from room 4 on Level II, two on Levels III and IV and at every Endless
+// depth past the campaign (Depth 5 on; Depths 1-4 count as their level).
 export function affixCountFor({ act = 1, room = 1, endless = false } = {}) {
   if (endless) return 2;
   if (act >= 3) return 2;

@@ -8,13 +8,14 @@ import { createHazardLayer } from './index.js';
 import { createInteractableLayer } from '../interactables/index.js';
 import { createInteractPrompts } from '../../ui/interact/index.js';
 import { registerContentCues } from './cues.js';
+import { createSlideSound } from '../../audio/encountercues.js';
 import { registerContentProbe } from '../../data/content.js';
 import { service, whenService } from '../../app/registry.js';
 import { pumpDressings } from '../../env/biomes/builder.js';
 import { biomeInfo } from '../../env/biomes/index.js';
 
 export function createWorldContentLayers({ stage, world, bus, cosmetic, runUi = null, scene = null, params = null, sceneKey = 'camp' }) {
-  const hazards = createHazardLayer({ stage, world, bus, cosmetic });
+  const hazards = createHazardLayer({ stage, world, bus, cosmetic, slide: createSlideSound(() => service('audio')) });
   const assets = createInteractableLayer({ stage, world, bus, cosmetic });
   const prompts = createInteractPrompts({ stage, world, runUi });
 
