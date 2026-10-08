@@ -40,6 +40,26 @@ const RELIC_SVG = {
   ash_feather: `<path d="M9 23 Q8 11 21 5 Q22 17 9 23 Z" ${STROKE}/><path d="M9 23 L17 11" ${STROKE}/><circle cx="21" cy="22" r="1.8" ${FILL}/><circle cx="25" cy="27" r="1.3" ${FILL}/><path d="M6 27 L9 23" ${STROKE}/>`,
   // A puffed spore pod with three motes rising off it.
   spore_sac: `<path d="M16 28 Q6 28 7 19 Q8 12 16 12 Q24 12 25 19 Q26 28 16 28 Z" ${STROKE}/><circle cx="13" cy="20" r="1.6" ${FILL}/><circle cx="19" cy="22" r="1.6" ${FILL}/><circle cx="11" cy="6" r="1.8" ${FILL}/><circle cx="17" cy="4" r="1.4" ${FILL}/><circle cx="22" cy="8" r="1.6" ${FILL}/>`,
+  // Batch 3. A kite shield with a bar across it and a heart on its boss.
+  wardens_oath: `<path d="M16 4 L26 8 Q26 20 16 28 Q6 20 6 8 Z" ${STROKE}/><path d="M16 19 L12.5 15.5 Q12.5 12 16 13.6 Q19.5 12 19.5 15.5 Z" ${FILL}/><path d="M6 11 L26 11" ${STROKE}/>`,
+  // A ribbon tied in a bow whose tails flick like a fox's brush.
+  fox_ribbon: `<path d="M16 14 Q9 6 6 11 Q8 16 16 14 Z" ${STROKE}/><path d="M16 14 Q23 6 26 11 Q24 16 16 14 Z" ${STROKE}/><circle cx="16" cy="14" r="2" ${FILL}/><path d="M15 16 Q12 22 8 27 M17 16 Q21 21 25 25" ${STROKE}/>`,
+  // An arrow bent at a knot, glancing off toward a second mark.
+  fletchers_knot: `<path d="M4 24 L15 15" ${STROKE}/><circle cx="16" cy="14" r="2.6" ${STROKE}/><path d="M18 13 L27 6" ${STROKE}/><path d="M22 6 L27 6 L27 11" ${STROKE}/><path d="M4 24 L4 20 M4 24 L8 24" ${STROKE}/>`,
+  // A hand bell with a clapper and two chime arcs.
+  mercy_bell: `<path d="M9 23 Q9 10 16 8 Q23 10 23 23 Z" ${STROKE}/><path d="M7 23 H25" ${STROKE}/><circle cx="16" cy="26" r="1.8" ${FILL}/><path d="M16 5 V8" ${STROKE}/><path d="M4 12 Q3 16 5 20 M28 12 Q29 16 27 20" ${STROKE}/>`,
+  // A faceted coal with a flame licking up out of its crack.
+  kindling_coal: `<path d="M6 21 L11 14 L20 13 L26 19 L22 27 L10 27 Z" ${STROKE}/><path d="M14 22 L17 17 L19 22" ${STROKE}/><path d="M16 12 Q12 8 16 3 Q17 7 20 8 Q20 12 16 12 Z" ${FILL}/>`,
+  // A chalice under a rayed sun.
+  sun_chalice: `<path d="M9 14 H23 Q23 21 16 22 Q9 21 9 14 Z" ${STROKE}/><path d="M16 22 V26 M11 27 H21" ${STROKE}/><circle cx="16" cy="8" r="3" ${FILL}/><path d="M16 2 V3.5 M10 5 L11 6 M22 5 L21 6 M8.5 9 H10 M22 9 H23.5" ${STROKE}/>`,
+  // A pact scroll sealed with an ember drop, its corners curling.
+  cinder_pact: `<rect x="8" y="6" width="16" height="20" rx="2" ${STROKE}/><path d="M12 11 H20 M12 15 H20" ${STROKE}/><path d="M16 19 Q19 22 16 25 Q13 22 16 19 Z" ${FILL}/><path d="M6 6 Q8 3 10 6 M22 26 Q24 29 26 26" ${STROKE}/>`,
+  // A pinned writ with a coin stamped on it.
+  bounty_writ: `<path d="M7 5 H22 L25 8 V27 H7 Z" ${STROKE}/><circle cx="16" cy="18" r="5" ${STROKE}/><path d="M16 15 V21" ${STROKE}/><circle cx="16" cy="5" r="2" ${FILL}/><path d="M10 10 H19" ${STROKE}/>`,
+  // A curled hunting horn with its sound lines.
+  huntsmans_horn: `<path d="M5 20 Q6 9 18 9 L24 6 L25 15 L19 14 Q11 14 9 22 Z" ${STROKE}/><path d="M5 20 Q4 25 9 24" ${STROKE}/><path d="M27 4 L29 2 M28 10 L31 10" ${STROKE}/>`,
+  // A pilgrim's lamp on a staff head, with a hood over the flame.
+  pilgrims_lamp: `<path d="M16 3 V7" ${STROKE}/><path d="M10 9 Q16 5 22 9 L22 20 Q16 24 10 20 Z" ${STROKE}/><path d="M16 12 Q19 15.5 16 19 Q13 15.5 16 12 Z" ${FILL}/><path d="M16 23 V29" ${STROKE}/>`,
 };
 
 // The curse mark: a crescent moon cut by an eye slit.

@@ -2928,6 +2928,176 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       kit.ring({ x, z, r0: 0.3, r1: 1.6, width: 0.1, life: 0.45, core: PARCH, glow: PALETTE.signalBlue, soft: 0.5, y: 0.06 });
     }
   });
+  // Batch 3 — the synergy relics. Each proc reads as its relic: the class
+  // relics in that class's own hues, the rest in the relic's matter (coal,
+  // sun, horn, lamp, coin), all short and light so a busy room stays legible.
+  const RELIC3 = {
+    tank: vfxClassStyle('tank'),
+    swordsman: vfxClassStyle('swordsman'),
+    archer: vfxClassStyle('archer'),
+    healer: vfxClassStyle('healer'),
+  };
+  const GOLD = PALETTE.hearthAmber;
+  bus.on('relic_proc', (ev) => {
+    switch (ev.relic) {
+      case 'wardens_oath': {
+        // A Tank taunt pays: an amber tether runs from the taunted enemy to
+        // the Tank, a heart-warm ring closes on the Tank, motes rise.
+        mark('relic_wardens_oath');
+        const st = RELIC3.tank;
+        const { x, z } = bodyAt(ev);
+        if (Number.isFinite(ev.fx)) kit.streak({ a: { x: ev.fx, y: 0.7, z: ev.fz }, b: { x, y: 0.9, z }, width: 0.06, tailW: 0.02, core: PARCH, glow: GOLD, life: 0.32, fall: 0.9 });
+        kit.ring({ x, z, r0: 1.3, r1: 0.35, width: 0.12, life: 0.45, core: PARCH, glow: st.glow, soft: 0.5, y: 0.07 });
+        kit.ring({ x, z, r0: 0.3, r1: 0.9, width: 0.06, life: 0.5, core: HEAL, glow: HEAL, soft: 0.6, y: 0.05, delay: 0.12, opacity: 0.7 });
+        kit.light({ x, z, radius: 1.6, color: GOLD, opacity: 0.45, life: 0.5 });
+        spray('spark', x, 0.4, z, N(6), { color: HEAL, speed: [0.1, 0.3], up: [0.9, 1.6], size: [0.05, 0.08], life: [0.6, 0.9], gravity: -0.3, drag: 1.4, jitter: 0.4, opacity: 0.85 });
+        break;
+      }
+      case 'fox_ribbon': {
+        // A Swordsman crit cuts again: a second, crossing crimson crescent a
+        // beat after the first, with a ribbon of sparks along it.
+        mark('relic_fox_ribbon');
+        const st = RELIC3.swordsman;
+        const { x, z } = bodyAt(ev);
+        const ang = Math.atan2(ev.dz || 0.0001, ev.dx || 0.0001) + Math.PI / 2;
+        kit.slash({ x, z, angle: ang, radius: 0.7, width: 0.16, span: 2.0, sweep: 0.05, life: 0.24, core: PARCH, glow: st.glow, soft: 0.12, lift: 0.18, y: 0.55, gain: 1.4, reverse: true });
+        kit.slash({ x, z, angle: ang + 0.5, radius: 0.55, width: 0.07, span: 1.6, sweep: 0.06, life: 0.22, delay: 0.03, core: st.second, glow: st.glow, soft: 0.2, lift: 0.1, y: 0.5, gain: 1.0, opacity: 0.7 });
+        flare(x, 0.6, z, st.glow, 0.8, { kind: 'star', life: 0.16 });
+        spray('spark', x, 0.55, z, N(7), { color: st.second, speed: [1.0, 2.2], up: [0.2, 0.8], size: [0.03, 0.06], life: [0.25, 0.45], gravity: 0.8, drag: 1.8, jitter: 0.15, opacity: 0.95 });
+        break;
+      }
+      case 'fletchers_knot': {
+        // An Archer arrow glances off the exposed enemy: a jade streak arcs
+        // to the next one, a knot flash where it turned, a pop where it lands.
+        mark('relic_fletchers_knot');
+        const st = RELIC3.archer;
+        const { x, z } = bodyAt(ev);
+        const fx = ev.fx ?? x;
+        const fz = ev.fz ?? z;
+        flare(fx, 0.6, fz, st.glow, 0.7, { kind: 'burst', life: 0.14 });
+        kit.streak({ a: { x: fx, y: 0.6, z: fz }, b: { x: (fx + x) / 2, y: 1.05, z: (fz + z) / 2 }, width: 0.06, tailW: 0, core: PARCH, glow: st.glow, life: 0.16, fall: 1.2 });
+        kit.streak({ a: { x: (fx + x) / 2, y: 1.05, z: (fz + z) / 2 }, b: { x, y: 0.6, z }, width: 0.06, tailW: 0, core: PARCH, glow: st.glow, life: 0.16, delay: 0.06, fall: 1.2 });
+        after(0.1, () => {
+          flare(x, 0.6, z, st.second, 0.9, { kind: 'star', life: 0.18 });
+          kit.ring({ x, z, r0: 0.15, r1: 0.7, width: 0.06, life: 0.3, core: PARCH, glow: st.glow, soft: 0.4, y: 0.06 });
+          spray('spark', x, 0.6, z, N(6), { color: st.second, speed: [0.6, 1.4], up: [0.3, 0.9], size: [0.03, 0.06], life: [0.25, 0.45], gravity: 0.9, drag: 1.6, jitter: 0.1, opacity: 0.9 });
+        });
+        break;
+      }
+      case 'mercy_bell': {
+        // The Healer's overheal rings into a shield: a bell-shaped dome of
+        // light settles over the member with two chime rings.
+        mark('relic_mercy_bell');
+        const st = RELIC3.healer;
+        const { x, z } = bodyAt(ev);
+        kit.ring({ x, z, r0: 0.25, r1: 0.95, width: 0.07, life: 0.4, core: PARCH, glow: GOLD, soft: 0.5, y: 1.25 });
+        kit.ring({ x, z, r0: 0.2, r1: 1.15, width: 0.05, life: 0.5, core: PARCH, glow: st.glow, soft: 0.6, y: 0.1, delay: 0.1, opacity: 0.8 });
+        kit.pillar({ x, z, radius: 0.5, height: 1.6, color: GOLD, life: 0.45, opacity: 0.22 });
+        spray('spark', x, 1.4, z, N(5), { color: GOLD, speed: [0.2, 0.5], up: [-0.6, -0.2], size: [0.04, 0.07], life: [0.5, 0.8], gravity: 0.4, drag: 1.6, jitter: 0.35, opacity: 0.85 });
+        break;
+      }
+      case 'kindling_coal': {
+        // A crit flares: a hot ember bloom, a cinder ring out to the flare's
+        // reach, and a tongue of flame to every enemy it caught.
+        mark('relic_kindling_coal');
+        const { x, z } = ev;
+        const r = ev.radius ?? 1.6;
+        const hot = ev.ember ? PALETTE.hearthAmber : EMBER;
+        flare(x, 0.55, z, hot, ev.ember ? 1.3 : 1.0, { kind: 'burst', life: 0.2 });
+        kit.ring({ x, z, r0: 0.2, r1: r, width: 0.14, life: 0.32, core: PARCH, glow: hot, soft: 0.45, y: 0.08, gain: 1.2 });
+        kit.light({ x, z, radius: r + 0.6, color: hot, opacity: 0.5, life: 0.35 });
+        for (const id of ev.hit ?? []) {
+          const b = byId(id);
+          if (!b) continue;
+          kit.streak({ a: { x, y: 0.5, z }, b: { x: b.x, y: 0.55, z: b.z }, width: 0.07, tailW: 0.02, core: PARCH, glow: hot, life: 0.16, fall: 1.3 });
+          spray('spark', b.x, 0.5, b.z, N(4), { color: hot, speed: [0.3, 0.9], up: [0.6, 1.4], size: [0.04, 0.07], life: [0.3, 0.55], gravity: 0.4, drag: 1.4, jitter: 0.15, opacity: 0.95 });
+        }
+        spray('spark', x, 0.4, z, N(ev.ember ? 12 : 8), { color: hot, speed: [0.8, 2.0], up: [0.6, 1.8], size: [0.03, 0.07], life: [0.3, 0.6], gravity: 0.7, drag: 1.2, jitter: 0.2, opacity: 0.95 });
+        spray('smoke', x, 0.3, z, N(1), { color: CINDER, speed: [0.1, 0.2], up: [0.3, 0.6], size: [0.3, 0.45], grow: 1.4, life: [0.5, 0.8], opacity: 0.25, gravity: -0.2, drag: 2.4 });
+        break;
+      }
+      case 'sun_chalice': {
+        // A heal sears: a sun-gold beam drops from above onto the nearest
+        // enemy, a burn ring and a scorch mark under it.
+        mark('relic_sun_chalice');
+        const { x, z } = bodyAt(ev);
+        if (Number.isFinite(ev.fx)) kit.streak({ a: { x: ev.fx, y: 1.1, z: ev.fz }, b: { x, y: 2.6, z }, width: 0.04, tailW: 0, core: PARCH, glow: GOLD, life: 0.2, fall: 1.0, opacity: 0.6 });
+        kit.pillar({ x, z, radius: 0.22, height: 3.2, color: PARCH, life: 0.32, opacity: 0.85, delay: 0.08 });
+        kit.pillar({ x, z, radius: 0.5, height: 2.8, color: GOLD, life: 0.42, opacity: 0.35, delay: 0.08 });
+        kit.ring({ x, z, r0: 0.15, r1: 0.9, width: 0.1, life: 0.35, core: PARCH, glow: GOLD, soft: 0.4, y: 0.06, delay: 0.1 });
+        kit.light({ x, z, radius: 1.8, color: GOLD, opacity: 0.6, life: 0.45, delay: 0.08 });
+        kit.mark({ x, z, radius: 0.6, kind: 'scorch', stain: INK, glow: GOLD, life: 1.6, opacity: 0.3 });
+        after(0.1, () => spray('spark', x, 0.4, z, N(8), { color: GOLD, speed: [0.3, 1.0], up: [0.8, 1.8], size: [0.04, 0.08], life: [0.4, 0.7], gravity: 0.3, drag: 1.3, jitter: 0.2, opacity: 0.95 }));
+        break;
+      }
+      case 'cinder_pact': {
+        // A cursed room with the pact: the violet ring is answered by an
+        // ember one burning outward from the party, and cinders spiral up.
+        mark('relic_cinder_pact');
+        const p = player();
+        const x = p ? p.x : ev.x ?? 0;
+        const z = p ? p.z : ev.z ?? 0;
+        kit.ring({ x, z, r0: 0.5, r1: 4.6, width: 0.2, life: 0.9, core: PARCH, glow: EMBER, soft: 0.5, y: 0.07, delay: 0.5 });
+        kit.ring({ x, z, r0: 0.3, r1: 3.2, width: 0.08, life: 0.8, core: VIOLET_PEAK, glow: EMBER, soft: 0.6, y: 0.05, delay: 0.62, opacity: 0.75 });
+        kit.light({ x, z, radius: 3.6, color: EMBER, opacity: 0.5, life: 0.9, delay: 0.5 });
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * TAU;
+          after(0.5 + i * 0.03, () => spray('spark', x + Math.cos(a) * 0.6, 0.2, z + Math.sin(a) * 0.6, N(2), { color: i % 2 ? EMBER : VIOLET, speed: [0.2, 0.5], up: [1.2, 2.4], size: [0.05, 0.09], life: [0.8, 1.2], gravity: -0.2, drag: 1.0, dir: { x: -Math.sin(a), z: Math.cos(a) }, dirBias: 0.7, opacity: 0.9 }));
+        }
+        break;
+      }
+      case 'bounty_writ': {
+        // An elite's bounty: coins burst from the corpse and arc to the
+        // party, one more for each affix it carried.
+        mark('relic_bounty_writ');
+        const { x, z } = ev;
+        const n = 3 + (ev.affixes ?? 0);
+        flare(x, 0.8, z, GOLD, 1.0, { kind: 'burst', life: 0.2 });
+        spray('spark', x, 0.6, z, N(6 + 3 * n), { color: GOLD, speed: [0.4, 1.2], up: [1.4, 2.6], size: [0.06, 0.1], life: [0.6, 0.9], gravity: 2.4, drag: 0.6, jitter: 0.2, opacity: 1 });
+        const p = player();
+        if (p) {
+          for (let i = 0; i < Math.min(6, n); i++) {
+            kit.streak({ a: { x, y: 0.9, z }, b: { x: (x + p.x) / 2, y: 1.8, z: (z + p.z) / 2 }, width: 0.05, tailW: 0, core: PARCH, glow: GOLD, life: 0.2, delay: 0.25 + i * 0.05, fall: 1.0 });
+            kit.streak({ a: { x: (x + p.x) / 2, y: 1.8, z: (z + p.z) / 2 }, b: { x: p.x, y: 1.0, z: p.z }, width: 0.05, tailW: 0, core: PARCH, glow: GOLD, life: 0.2, delay: 0.33 + i * 0.05, fall: 1.0 });
+          }
+        }
+        break;
+      }
+      case 'huntsmans_horn': {
+        // The horn: on a Hunt or Purge room's first tick a long low wave
+        // rolls out across the room; on the win, a bright amber burst.
+        mark('relic_huntsmans_horn');
+        const p = player();
+        const x = p ? p.x : ev.x ?? 0;
+        const z = p ? p.z : ev.z ?? 0;
+        if (ev.stage === 'won') {
+          kit.flash({ x, y: 1.3, z, color: GOLD, size: 1.2, life: 0.45, hold: 0.1 });
+          kit.ring({ x, z, r0: 0.3, r1: 3.0, width: 0.14, life: 0.6, core: PARCH, glow: GOLD, soft: 0.5, y: 0.06 });
+          spray('spark', x, 0.6, z, N(14), { color: GOLD, speed: [0.3, 0.9], up: [1.6, 2.8], size: [0.05, 0.09], life: [0.8, 1.2], gravity: 1.2, drag: 0.8, jitter: 0.4, opacity: 1 });
+        } else {
+          for (let i = 0; i < 3; i++) kit.ring({ x, z, r0: 0.6, r1: 7 + i * 1.5, width: 0.16 - i * 0.03, life: 1.1, core: i ? GOLD : PARCH, glow: GOLD, soft: 0.6, y: 0.06, delay: i * 0.18, opacity: 0.8 - i * 0.2 });
+          kit.light({ x, z, radius: 3.0, color: GOLD, opacity: 0.4, life: 0.8 });
+          camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.03, 0.12);
+        }
+        break;
+      }
+      case 'pilgrims_lamp': {
+        // The lamp lights the event room: a warm pool spreads from the
+        // party, a lantern glow over each member, healing motes drift up.
+        mark('relic_pilgrims_lamp');
+        const p = player();
+        const x = p ? p.x : ev.x ?? 0;
+        const z = p ? p.z : ev.z ?? 0;
+        kit.light({ x, z, radius: 4.0, color: GOLD, opacity: 0.55, life: 1.4 });
+        kit.ring({ x, z, r0: 0.4, r1: 3.6, width: 0.18, life: 1.0, core: PARCH, glow: GOLD, soft: 0.6, y: 0.06 });
+        kit.flash({ x, y: 1.6, z, color: GOLD, size: 1.0, life: 0.6, hold: 0.2 });
+        spray('spark', x, 0.3, z, N(16), { color: HEAL, speed: [0.1, 0.4], up: [0.6, 1.2], size: [0.05, 0.09], life: [1.2, 1.8], gravity: -0.15, drag: 1.6, jitter: 2.2, opacity: 0.85 });
+        break;
+      }
+      default:
+        break;
+    }
+  });
   bus.on('curse_apply', (ev) => {
     const p = player();
     const x = p ? p.x : ev.x ?? 0;

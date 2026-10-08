@@ -296,6 +296,96 @@ export function mountVfxLab() {
     say('Short Fuse: telegraphs 20% shorter');
   }, 'Short Fuse on this room, with wasps and a mantis');
 
+  // ------------------------------------------------------ synergy relics --
+  // RELICS batch 3 (docs/RELICS.md "Batch 3"): each relic granted, then its
+  // trigger driven through the real pipeline (a party hit, heal or status).
+  const rel3 = section('Synergy relics');
+  const idOf = (r) => (r && typeof r === 'object' ? r.id : r);
+  const seatBody = (i) => X().content.world().entities().find((e) => e.partyIndex === i) ?? null;
+  async function relicFoes(id, n = 1, dx = 1.0, kind = 'boar') {
+    await relicRoom(1);
+    X().cmd('relicGrant', id);
+    const f = front();
+    const ids = [];
+    for (let i = 0; i < n; i++) ids.push(idOf(X().cmd('spawn', kind, f.x + (i - (n - 1) / 2) * dx, f.z - 0.6)));
+    await wait(120);
+    return ids;
+  }
+  button(rel3, "Warden's Oath", async () => {
+    const ids = await relicFoes('wardens_oath', 3);
+    const tank = seatBody(1);
+    if (tank) tank.hp = Math.max(1, tank.maxHp * 0.4);
+    for (const id of ids) X().cmd('relicStatus', id, 'taunt', 1, 120, 1);
+    say("Warden's Oath: three taunts heal the Tank");
+  }, 'three enemies taunted by the Tank');
+  button(rel3, 'Fox Ribbon', async () => {
+    const [id] = await relicFoes('fox_ribbon', 1);
+    const sw = seatBody(2);
+    X().cmd('relicHit', id, sw ? sw.id : null, 20, true);
+    say('Fox Ribbon: a Swordsman crit cuts again');
+  }, 'a Swordsman critical hit on a boar');
+  button(rel3, "Fletcher's Knot", async () => {
+    const [a] = await relicFoes('fletchers_knot', 2, 2.2);
+    const ar = seatBody(3);
+    X().cmd('relicStatus', a, 'exposed', 0.3, 180, 3);
+    await wait(60);
+    X().cmd('relicHit', a, ar ? ar.id : null, 20, false);
+    say("Fletcher's Knot: the arrow glances to the next boar");
+  }, 'an Archer hit on an exposed boar, with a second one beside it');
+  button(rel3, 'Mercy Bell', async () => {
+    await relicFoes('mercy_bell', 0);
+    const tank = seatBody(1);
+    const h = seatBody(0);
+    if (tank) X().cmd('relicHeal', tank.id, h ? h.id : null, 45);
+    say("Mercy Bell: the Healer's overheal becomes a shield");
+  }, 'a Healer heal on a Tank at full health');
+  button(rel3, 'Kindling Coal', async () => {
+    X().cmd('relicGrant', 'ember_tooth');
+    const ids = await relicFoes('kindling_coal', 4, 0.7);
+    const tank = seatBody(1);
+    X().cmd('relicHit', ids[1], tank ? tank.id : null, 12, true);
+    say('Kindling Coal (with Ember Tooth): a crit flares through the pack');
+  }, 'a critical hit inside a pack of four');
+  button(rel3, 'Sun Chalice', async () => {
+    const [id] = await relicFoes('sun_chalice', 1);
+    const h = seatBody(0);
+    if (h) {
+      h.hp = Math.max(1, h.maxHp * 0.4);
+      X().cmd('relicHeal', h.id, h.id, 30);
+    }
+    say('Sun Chalice: the heal sears the nearest enemy');
+    void id;
+  }, 'a heal on the wounded Healer, a boar nearby');
+  button(rel3, 'Cinder Pact', async () => {
+    await relicRoom(1);
+    X().cmd('relicGrant', 'cinder_pact');
+    X().cmd('relicCurseHere', 'sharp_fangs');
+    say('Cinder Pact: a cursed room burns back');
+  }, 'Sharp Fangs laid on this room with the pact held');
+  button(rel3, 'Bounty Writ', async () => {
+    const [id] = await relicFoes('bounty_writ', 1, 1, 'knight');
+    X().cmd('setHp', id, 0.02);
+    const tank = seatBody(1);
+    X().cmd('relicHit', id, tank ? tank.id : null, 30, false);
+    say('Bounty Writ: an elite pays its bounty');
+  }, 'a Barrow Knight (always Elite) killed by the Tank');
+  button(rel3, "Huntsman's Horn", async () => {
+    await relicRoom(1);
+    X().cmd('relicGrant', 'huntsmans_horn');
+    X().cmd('relicRoomEnter', 'hunt');
+    say("Huntsman's Horn: a Hunt room opens");
+  }, "the horn's call on entering a Hunt room");
+  button(rel3, "Pilgrim's Lamp", async () => {
+    await relicRoom(1);
+    X().cmd('relicGrant', 'pilgrims_lamp');
+    for (const i of [0, 1, 2, 3]) {
+      const b = seatBody(i);
+      if (b) b.hp = Math.max(1, b.maxHp * 0.5);
+    }
+    X().cmd('relicRoomEnter', 'event');
+    say("Pilgrim's Lamp: an event room lights up");
+  }, 'the lamp on entering an event room, the party at half health');
+
   // -------------------------------------------------------------- affixes --
   // ELITE AFFIXES (docs/ELITE_AFFIXES.md): one elite per power, spawned with
   // that power forced, so each warning and burst can be reviewed.

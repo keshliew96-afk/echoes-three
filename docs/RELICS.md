@@ -24,7 +24,7 @@ and curses you can choose to walk into for a relic. Code: `src/sim/relics.js`
 - Network play: the relic page is a party decision made by the host seat, like
   the doors. A guest's press is shown to the party as a ping.
 
-## Relics (17)
+## Relics (27)
 
 Weights for the three-card roll: common 6, rare 3, legendary 1 (drawn without
 replacement; an owned relic never comes back). With every relic owned, a pick
@@ -49,6 +49,8 @@ pays 20 Glint instead.
 | Ashen Crown | legendary | +8% party damage per curse taken this run (max +40%) |
 | Ash Feather | common | Dodges recover 25% faster (72 → 54 ticks); a network guest's dodge prediction and every dodge ring use the same cooldown |
 | Spore Sac | rare | Party kills leave no death hazard (a Rotcap's spore burst) and puff a spore ring (r 1.8) that slows enemies 35% for 1.5 s |
+
+The ten batch-3 relics are listed under [Batch 3](#batch-3-synergy-relics).
 
 ## Curses (6 room curses, 4 major)
 
@@ -97,6 +99,53 @@ walks into it); it still walks room curses.
 - New heirlooms: Ash Feather and Spore Sac each add an heirloom unlock (36
   unlocks), found by holding them in a run like the others.
 
+## Batch 3: synergy relics
+
+Content plan 2, slice 7 (v0.5.242). Ten relics built around what the party
+already does: four **class relics** (one per class), relics that pair with
+other relics, and relics that answer the curses, elite affixes, Hunt and Purge
+rooms and event rooms. Each adds an heirloom like the others (46 unlocks).
+
+| Relic | Rarity | Class | Effect | Pairs with |
+|---|---|---|---|---|
+| Warden's Oath | rare | Tank | Each enemy the Tank taunts heals the Tank 6 HP; once per enemy every 3 s, at most 4 a tick | Taunting Roar, Provoke, Crush |
+| Fox Ribbon | common | Swordsman | A Swordsman crit cuts again for 50% of the blow | Hawk Feather, Crimson Edge, Ember Tooth |
+| Fletcher's Knot | rare | Archer | An Archer hit on an exposed enemy ricochets to the nearest other enemy within 3.2 u for 60% | Hunter's Mark, Prey, Moonfang, Dawn Brand |
+| Mercy Bell | common | Healer | The Healer's heals past full HP become a shield (cap 20% max HP, 5 s) | Lantern Oil, every big heal |
+| Kindling Coal | rare | | A party crit flares for 8 to up to 4 other enemies within 1.6 u; 16 with Ember Tooth | Ember Tooth, Hawk Feather, Fox Ribbon |
+| Sun Chalice | legendary | | Every party heal sears the nearest enemy (4.5 u from the healed member) for the HP it restored | Lantern Oil, Leech Fang, Mercy Bell, Warden's Oath |
+| Cinder Pact | legendary | | In a cursed room: +30% party damage, -15% damage taken; +5% damage per major curse held, everywhere | Ashen Crown, major curses |
+| Bounty Writ | common | | An elite kill pays 6 Glint + 4 per affix | Elite affixes, Hunted, Elite Tide |
+| Huntsman's Horn | rare | | +25% party damage in Hunt and Purge rooms; a won one pays +15 Glint over its bounty | Room objectives |
+| Pilgrim's Lamp | common | | Entering an event room heals the party 30% of max HP and pays 10 Glint | Event rooms (the blood shrine's price) |
+
+- **Class relics** carry `cls` in `RELICS`. Every pool (a pick, an elite drop,
+  the shelf, the wishing well) offers one only while a body of that class is in
+  the party (`pool()` / `cmd('relicPool')`). Today the party always holds all
+  four seats, so all ten roll; the gate matters once a seat can be empty. The
+  card and the shelf tile name the class after the rarity ("RARE · TANK").
+- **Procs** come from the sim's own bus: `hit` (Fox Ribbon, Fletcher's Knot,
+  Kindling Coal), `heal` (Mercy Bell, Sun Chalice) and `status_apply` (a taunt
+  from the Tank, Warden's Oath). The listeners only queue; the proc lands in
+  `endOfTick()` like Thorn Mail. A relic's own damage (source = a relic id)
+  never procs another relic, so nothing chains. The queue rides in the save.
+- Cinder Pact and Huntsman's Horn change `dealtMul()` / `takenMul()`; Bounty
+  Writ and Pilgrim's Lamp pay through the run's wallet (`glint_gain` reasons
+  `relic_bounty_writ`, `relic_pilgrims_lamp`, `relic_huntsmans_horn`).
+- **Look and sound.** `relic_proc` per relic in `src/render/vfx/signature.js`
+  (the "Batch 3" block): an amber tether and closing ring for the Oath, a
+  second crossing crimson crescent for the Ribbon, a jade glance arc for the
+  Knot, a bell dome for Mercy Bell, an ember bloom with flame tongues for
+  Kindling Coal, a sun beam and scorch for the Chalice, an ember ring
+  answering the curse for the Pact, coins arcing to the party for the Writ,
+  rolling horn waves for the Horn and a warm pool for the Lamp. Sounds reuse
+  existing cues (`RELIC_PROC_CUE` in `src/audio/cues.js`). Icons in
+  `src/ui/run/relicicons.js`. `?vfxlab=1` → "Synergy relics" plays each one.
+- Probe commands: `cmd('relicPool')`, `cmd('relicHit', id, attackerId, power,
+  crit)`, `cmd('relicHeal', id, healerId, amount)`, `cmd('relicStatus', id,
+  kind, mag, ticks, seat)` and `cmd('relicRoomEnter', mode)` (the VFX lab).
+- The numbers are first guesses; see the PR for the caveat.
+
 ## Determinism and the legacy traces
 
 - Every relic roll (curse on a door, which door, which curse, which three
@@ -117,6 +166,11 @@ walks into it); it still walks room curses.
   its configured door; `autopilot({ curses: 'avoid' })` steps around a cursed one.
 
 ## Verification
+
+- `node tools/relics3-probe.mjs` (headless, batch 3, 24 checks): the data
+  (27 relics, one class relic per class, rarities, heirlooms), the class gate,
+  each new relic through the real pipeline in a live campaign room, nothing in
+  the legacy run, and a queued proc riding through a save.
 
 - `node tools/relics-probe.mjs --seeds 1-4` (headless, fast): free pick after
   room 1 of each level, three distinct relics per pick, cursed doors appear,

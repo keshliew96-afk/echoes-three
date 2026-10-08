@@ -584,7 +584,7 @@ export function createShopScreen({ run, build, party = () => null }) {
           (r, i) => `
         <div class="rl-ritem${r.sold ? ' rl-rsold' : ''}" data-i="${i}" style="--rar:${RARITY_COLOR[r.rarity] ?? RARITY_COLOR.common}" title="${esc(`${t(r.name)} — ${t(r.text)}`)}">
           <div class="rl-ricon">${relicIconHtml(r.id, 30)}</div>
-          <div class="rl-rtext"><div class="rl-rname">${esc(t(r.name))} <span class="rl-rrar">${esc(t(r.rarity).toUpperCase())}</span></div><div class="rl-rbody">${esc(t(r.text))}</div></div>
+          <div class="rl-rtext"><div class="rl-rname">${esc(t(r.name))} <span class="rl-rrar">${esc(t(r.rarity).toUpperCase())}${r.cls && CLASS_NAME[r.cls] ? ` · ${esc(t(CLASS_NAME[r.cls]).toUpperCase())}` : ''}</span></div><div class="rl-rbody">${esc(t(r.text))}</div></div>
           ${
             r.sold
               ? `<div class="rl-rstamp">${esc(t('TAKEN'))}</div>`

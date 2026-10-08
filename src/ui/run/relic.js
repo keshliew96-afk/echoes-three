@@ -7,6 +7,7 @@ import { esc } from './style.js';
 import { RARITY_COLOR } from './cards.js';
 import { relicIconHtml, curseIconHtml } from './relicicons.js';
 import { PALETTE } from '../../data/palette.js';
+import { CLASS_NAME } from '../../data/classes.js';
 import { t, tn } from '../../i18n/index.js';
 
 export const RELIC_CSS = `
@@ -144,7 +145,7 @@ export function createRelicScreen({ run }) {
         (c, i) => `
       <div class="rl-slot" data-i="${i}">
         <div class="rn-card rn-${c.rarity}" style="--rar:${RARITY_COLOR[c.rarity] ?? PALETTE.bone}">
-          <div class="rn-cardkind">${esc(t(RARITY_WORD[c.rarity] ?? c.rarity).toUpperCase())}</div>
+          <div class="rn-cardkind">${esc(t(RARITY_WORD[c.rarity] ?? c.rarity).toUpperCase())}${c.cls && CLASS_NAME[c.cls] ? ` · ${esc(t(CLASS_NAME[c.cls]).toUpperCase())}` : ''}</div>
           <div class="rn-cardicon">${relicIconHtml(c.id, 44)}</div>
           <div class="rn-cardname">${esc(t(c.name))}</div>
           <div class="rn-body">${esc(t(c.text))}</div>

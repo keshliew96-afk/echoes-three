@@ -44,6 +44,7 @@ const { createWorld } = await import(u('src/sim/world.js'));
 const { emptySnapshot } = await import(u('src/core/intents.js'));
 const { difficulty } = await import(u('src/data/difficulty.js'));
 const { cursedDiff, RELICS } = await import(u('src/sim/relics.js'));
+const { CAMPAIGN_ACTS } = await import(u('src/data/levels.js'));
 
 function makeWorld(seed) {
   let impl = createGameplayRng(seed >>> 0);
@@ -102,7 +103,9 @@ function playCampaign(seed) {
   const offers = log.filter((e) => e.type === 'relic_offer');
   const allGains = log.filter((e) => e.type === 'relic_gain');
   // Slice 2: elite drops and shop buys arrive without a pick.
-  const gains = allGains.filter((e) => e.source !== 'elite' && e.source !== 'shop');
+  // Picks only: an elite drop, a shelf buy, a wishing well's relic and an
+  // heirloom arrive with no page.
+  const gains = allGains.filter((e) => !['elite', 'shop', 'well', 'grant'].includes(e.source));
   const doors = log.filter((e) => e.type === 'path_offer');
   const cursedDoors = doors.filter((e) => e.options.some((o) => o.curse));
   const taken = log.filter((e) => e.type === 'curse_taken');
@@ -117,7 +120,7 @@ for (const seed of SEEDS) {
   const freeOffers = r.offers.filter((o) => o.source === 'free');
   const curseOffers = r.offers.filter((o) => o.source === 'curse' || o.source === 'major');
   check(freeOffers.length >= 1 && freeOffers.every((o) => o.room === 1), `seed ${seed}: a free relic pick after room 1 of each level (got ${freeOffers.map((o) => o.room)})`);
-  check(freeOffers.length === Math.min(3, r.levels + (r.outcome === 'defeat' ? 1 : 0)) || r.outcome !== 'victory', `seed ${seed}: one free pick per level played (free ${freeOffers.length}, levels cleared ${r.levels})`);
+  check(freeOffers.length === Math.min(CAMPAIGN_ACTS, r.levels + (r.outcome === 'defeat' ? 1 : 0)) || r.outcome !== 'victory', `seed ${seed}: one free pick per level played (free ${freeOffers.length}, levels cleared ${r.levels})`);
   check(r.offers.every((o) => o.choices.length === 3 && new Set(o.choices).size === 3), `seed ${seed}: every pick offers three distinct relics`);
   check(r.gains.length === r.offers.length, `seed ${seed}: every pick was taken (offers ${r.offers.length}, gains ${r.gains.length})`);
   check(new Set(r.allGains.map((g) => g.relic)).size === r.allGains.length, `seed ${seed}: no relic twice`);

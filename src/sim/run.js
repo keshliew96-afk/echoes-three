@@ -188,7 +188,7 @@ export function createRunSystem({
   const allyOn = () => supplyOn && !!pages;
   if (typeof buildSys.attachSkills === 'function') buildSys.attachSkills(skillSys);
   const statusTracker = createStatusTracker({ registry, events, getTick });
-  const relics = createRelicSystem({ registry, events, getTick, combat, skillSys, player, live: () => active });
+  const relics = createRelicSystem({ registry, events, getTick, combat, skillSys, player, live: () => active, glint: (n, reason) => gainGlint(n, reason) });
   // EVENT ROOMS: on with the relics (campaigns only, never the tutorial).
   const encounters = createEncounterSystem({ events, getTick });
   const encCtx = () => ({ wallet, relics: relics.owned().length, freeMajors: relics.freeMajors().length });
@@ -692,7 +692,7 @@ export function createRunSystem({
     if (ev.objective && ev.won) gainGlint(OBJECTIVE_RULES.bounty, `${ev.objective}_bounty`);
     // RELICS: clear procs (Grave Coin, Hearthstone), the curse lifts, and a
     // relic pick is owed after room 1 and after a cursed room.
-    relics.onRoomCleared(roomIndex, { forfeited: !!ev.softFailed, gainGlint, boss: roomIndex === RUN.bossRoom });
+    relics.onRoomCleared(roomIndex, { forfeited: !!ev.softFailed, gainGlint, boss: roomIndex === RUN.bossRoom, objective: ev.objective ?? null, won: !!ev.won });
 
     if (roomIndex === RUN.bossRoom) {
       onLevelCleared(tick);
@@ -2289,6 +2289,42 @@ export function createRunSystem({
       case 'relicBuy':
         // ('relicBuy', index[, seat]) — buy off the shop's relic shelf.
         return buyRelic(args[1] ?? 0, args[0] ?? 0);
+      case 'relicPool':
+        // Batch 3: the relic ids a pick could offer now (class relics only
+        // while their class stands in the party).
+        return relics.enabled() ? relics.pool() : null;
+      case 'relicHit': {
+        // Batch 3 probe: ('relicHit', targetId, attackerId|null, power, crit)
+        // — one real party hit through the §9 pipeline.
+        const [id, by = null, power = 10, crit = false] = args;
+        const t = registry.byId(id);
+        if (!t) return null;
+        return combat.applyDamage(t, power, { delivery: 'basic', shape: 'debug', attacker: by, source: 'relic_probe', forceCrit: !!crit, kbDist: 0 });
+      }
+      case 'relicStatus': {
+        // Batch 3 probe / VFX lab: ('relicStatus', id, kind, mag, ticks,
+        // seat|null) — a real status from a party seat (a Tank taunt, an
+        // exposure), announced like any other at the end of the tick.
+        const [id, kind, mag = 1, ticks = 120, seat = null] = args;
+        const t = registry.byId(id);
+        const src = Number.isInteger(seat) ? registry.all().find((e) => e.partyIndex === seat) : null;
+        if (!t) return null;
+        return !!combat.status.apply(t, kind, mag, ticks, getTick(), src ? src.id : null);
+      }
+      case 'relicRoomEnter':
+        // VFX lab: ('relicRoomEnter', mode) — replay the relics' room-entry
+        // procs as if this room were a `mode` room (Huntsman's Horn,
+        // Pilgrim's Lamp).
+        if (!relics.enabled() || !active) return null;
+        relics.onRoomEnter(roomIndex, args[0]);
+        return true;
+      case 'relicHeal': {
+        // Batch 3 probe: ('relicHeal', targetId, healerId|null, amount).
+        const [id, by = null, amount = 10] = args;
+        const t = registry.byId(id);
+        if (!t) return null;
+        return combat.applyHeal(t, amount, { healer: by, source: 'relic_probe' });
+      }
       case 'relicDropNext':
         // Probe / VFX lab: the next elite the party kills drops a relic.
         return relics.dropNext();

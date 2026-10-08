@@ -672,6 +672,20 @@ const PARTY_KINDS = new Set(['player', 'ally']);
 // `boss: true` on their events (or register their own death cue).
 const isBoss = (ev) => ev.kind === 'stag' || ev.kind === 'boss' || ev.boss === true;
 
+// RELICS batch 3 (docs/RELICS.md): the proc cue per relic (older relics
+// stay silent, as before).
+const RELIC_PROC_CUE = Object.freeze({
+  wardens_oath: { cue: 'siphon_heal', pitch: 0.8 },
+  fox_ribbon: { cue: 'swing', pitch: 1.35 },
+  fletchers_knot: { cue: 'shoot', pitch: 1.4 },
+  mercy_bell: { cue: 'sparkle', pitch: 1.25 },
+  kindling_coal: { cue: 'crit', pitch: 0.8 },
+  sun_chalice: { cue: 'shimmer', pitch: 0.85 },
+  cinder_pact: { cue: 'zone_spawn', pitch: 0.7 },
+  bounty_writ: { cue: 'reward', pitch: 1.4 },
+  huntsmans_horn: { cue: 'horn' },
+  pilgrims_lamp: { cue: 'heal_crit', pitch: 0.9 },
+});
 const HEAL_SKILLS = new Set(['mending_bolt', 'swift_mend', 'restorative_wave', 'guardian_bond']);
 // PARTY: the new class skills' own cues (BUILD_BRIEF §25.2 audio column).
 export const CLASS_SKILL_CUE = Object.freeze({
@@ -898,6 +912,11 @@ export const DEFAULT_EVENT_CUES = {
   relic_drop: () => [{ cue: 'reward' }],
   relic_purchase: () => [{ cue: 'purchase' }],
   relic_denied: () => [{ cue: 'deny' }],
+  // RELICS batch 3: each synergy relic's proc, voiced with existing cues.
+  relic_proc: (ev, h) => {
+    const c = RELIC_PROC_CUE[ev.relic];
+    return c ? one(c.cue, at(ev, h, ev.target), c.pitch ? { pitch: c.pitch } : undefined) : null;
+  },
   glint_gain: () => [{ cue: 'glint' }],
   node_socketed: () => [{ cue: 'socket' }],
   node_unsocketed: () => [{ cue: 'unsocket' }],
