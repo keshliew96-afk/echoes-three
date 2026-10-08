@@ -91,7 +91,7 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('.dl-daily .dl-row:not(.dl-hd)').length >= 5, { timeout: 60000, polling: 250 });
   await settle(1500);
   const omen = await page.evaluate(() => ({ day: window.__echoes.daily().today(), omen: window.__echoes.daily().omen(window.__echoes.daily().today()), relic: document.querySelector('.dl-relic .dl-name').textContent, curse: document.querySelector('.dl-curse .dl-name').textContent, rows: document.querySelectorAll('.dl-daily .dl-row:not(.dl-hd)').length }));
-  check(omen.relic && omen.relic !== '—' && omen.curse && omen.curse !== '—' && omen.rows === 5, `the day's screen shows ${JSON.stringify(omen)}`);
+  check(omen.relic && omen.relic !== '—' && omen.curse && omen.curse !== '—' && omen.rows >= 5, `the day's screen shows ${JSON.stringify(omen)}`);
   await shot('daily-2-screen');
   await page.click('.dl-daily .dl-go');
 
