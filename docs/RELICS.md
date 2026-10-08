@@ -123,7 +123,7 @@ rooms and event rooms. Each adds an heirloom like the others (46 unlocks).
   the shelf, the wishing well) offers one only while a body of that class is in
   the party (`pool()` / `cmd('relicPool')`). Today the party always holds all
   four seats, so all ten roll; the gate matters once a seat can be empty. The
-  card and the shelf tile name the class after the rarity ("RARE · TANK").
+  relic card names the class after the rarity ("RARE · TANK").
 - **Procs** come from the sim's own bus: `hit` (Fox Ribbon, Fletcher's Knot,
   Kindling Coal), `heal` (Mercy Bell, Sun Chalice) and `status_apply` (a taunt
   from the Tank, Warden's Oath). The listeners only queue; the proc lands in
@@ -144,6 +144,9 @@ rooms and event rooms. Each adds an heirloom like the others (46 unlocks).
 - Probe commands: `cmd('relicPool')`, `cmd('relicHit', id, attackerId, power,
   crit)`, `cmd('relicHeal', id, healerId, amount)`, `cmd('relicStatus', id,
   kind, mag, ticks, seat)` and `cmd('relicRoomEnter', mode)` (the VFX lab).
+- `node tools/relics3-browser.mjs` against `npm run dev`: the relic page,
+  Kindling Coal, Warden's Oath, Sun Chalice and the shelf, with screenshots in
+  `captures/relics3-*.png`.
 - The numbers are first guesses; see the PR for the caveat.
 
 ## Determinism and the legacy traces
