@@ -6,7 +6,9 @@
 // does the boss cues: each recipe's design peak at unity (dBFS, the MAX of 3
 // takes: noise recipes vary take to take) becomes its calDb, so the loudest
 // take peaks at its authored levelDb.
-//   node tools/smallfixes2-cuecal.mjs [--write] [--verify]
+//   node tools/smallfixes2-cuecal.mjs [--write] [--verify] [--only hitcues]
+// Hit feedback adds src/audio/hitcues.js (hurt_heavy / hurt_soft /
+// hurt_down); --only <file stem> measures just that file.
 // --write rewrites the `@cal begin/end` blocks; --verify re-measures: every
 // cue within 2 dB of levelDb and no SFX peak above the -6 dBFS pre-bus
 // ceiling. Do not --write while another probe uses the dev server (HMR).
@@ -19,7 +21,8 @@ const VERIFY = argv.includes('--verify');
 const FILES = [
   { file: 'src/audio/heartcues.js', match: (id) => id.startsWith('hx_') },
   { file: 'src/audio/encountercues.js', match: (id) => /^(ev|ob|sl)_/.test(id) },
-];
+  { file: 'src/audio/hitcues.js', match: (id) => /^hurt_(heavy|soft|down)$/.test(id) },
+].filter((f) => !argv.includes('--only') || f.file.includes(argv[argv.indexOf('--only') + 1]));
 const { browser, page, errors } = await openAudio(`${BASE}?menu=0&seed=7`);
 try {
   await sleep(3500);

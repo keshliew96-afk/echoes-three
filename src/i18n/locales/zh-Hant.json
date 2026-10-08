@@ -2330,5 +2330,9 @@
  },
  "Walk on with nothing gained and nothing lost.": "繼續前行，無所得，亦無所失。",
  "Warder": "結界",
- "Weir Crab": "堰壩蟹"
+ "Weir Crab": "堰壩蟹",
+ "Hit feedback": "受擊提示",
+ "When you are hit, the screen edge pulses red toward the attacker, a struck character flashes and heavy hits kick the camera. Turn it off if flashing bothers you.": "你受到攻擊時，螢幕邊緣會朝攻擊者方向閃紅，被擊中的角色會閃光，重擊還會讓鏡頭一震。如果閃光讓你不適，可以關閉。",
+ "Red edge pulse, flash and camera kick when you are hit": "受擊時螢幕邊緣閃紅、角色閃光、鏡頭震動",
+ "No flash or kick when you are hit": "受擊時不閃光、不震動"
 }
