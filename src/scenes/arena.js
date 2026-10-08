@@ -61,7 +61,7 @@ import { makeGlowSprite, getRadialTexture } from '../render/glow.js';
 import { createGrayboxScene } from './graybox.js';
 import { layoutSpec, biomeInfo, biomeOfLayout, LAYOUT_SPEC_IDS } from '../env/biomes/index.js';
 import { registerDressingPump, pumpStatsDebug } from '../env/biomes/builder.js';
-import { requestPaint, stats as paintStats } from '../env/biomes/paint-client.js';
+import { requestPaint, paintWorkerAvailable, stats as paintStats } from '../env/biomes/paint-client.js';
 import { paintGroundSteps, groundMeshFromCanvas, paintApronSteps, apronMeshFromCanvas, drain } from '../env/ground.js';
 import { buildTreeline } from '../env/treeline.js';
 import { buildWalls } from '../env/walls.js';
@@ -425,6 +425,31 @@ export function createArenaScene(stage, toggles, ctx) {
   const residencyLog = { disposals: 0, disposedIds: [], lastMs: 0, maxMs: 0, freed: { geometries: 0, materials: 0, textures: 0 } };
   // @gnt:CAMPAIGN RESIDENCY-STATE end
   let mountEmitters = null; // bound below (needs the emitter FX helpers)
+  // MEMORY (docs/MEMORY.md): a dressing's two paint canvases (floor 2048 px,
+  // apron 1600 px: ~20 MB of CPU pixels per layout, six layouts resident)
+  // are only needed until the GPU holds its copy. Each texture lets go of its
+  // canvas the moment three has uploaded it; the GPU copy, mips included, is
+  // what draws. A restored WebGL context rebuilds those dressings instead
+  // (below). ?keepPaint=1 keeps the canvases (window.__groundCanvas critics).
+  const keepPaint = params.get('keepPaint') === '1';
+  const paintLog = { released: 0, mb: 0 };
+  function releaseAfterUpload(tex) {
+    if (keepPaint || !tex) return;
+    tex.onUpdate = () => {
+      tex.onUpdate = null;
+      const img = tex.image;
+      if (!img || typeof img.width !== 'number' || !img.width) return;
+      paintLog.released += 1;
+      paintLog.mb = Math.round((paintLog.mb + (img.width * img.height * 4) / 1048576) * 10) / 10;
+      try {
+        img.width = 0;
+        img.height = 0;
+      } catch {
+        /* not a canvas */
+      }
+      tex.userData.paintReleased = true;
+    };
+  }
   // `offThread`: the background builder paints the two canvases in the paint
   // worker (env/biomes/paint-worker.js) and yields WAIT until they land; the
   // synchronous path (boot, a room entered before its build finished) paints
@@ -451,10 +476,12 @@ export function createArenaScene(stage, toggles, ctx) {
     }
     if (!groundCanvas) groundCanvas = yield* paintGroundSteps(dspec, layout);
     const ground = groundMeshFromCanvas(groundCanvas);
+    releaseAfterUpload(ground.material.map);
     group.add(ground);
     yield;
     if (!apronCanvas) apronCanvas = yield* paintApronSteps(dspec, layout);
     const apron = apronMeshFromCanvas(apronCanvas);
+    releaseAfterUpload(apron.material.map);
     group.add(apron);
     yield;
     const treeline = buildTreeline(group, dspec, layout);
@@ -966,8 +993,15 @@ export function createArenaScene(stage, toggles, ctx) {
   // CAMPAIGN (PLAN §12.5): paint prefetch for the queued layouts of the
   // resident level + a per-layout timeline (probe: where preload time goes).
   const prefetched = new Map(); // layoutId -> paint request
+  // MEMORY (docs/MEMORY.md): at most PREFETCH_AHEAD paints are held (~20 MB
+  // of canvases each until their dressing uploads). Painting a whole level
+  // ahead held ~100 MB through the boss fight; the builder now asks for the
+  // next layout's paint as it starts each job, so the worker still paints
+  // one layout ahead of the main-thread steps.
+  const PREFETCH_AHEAD = 2;
   function prefetchPaints(ids) {
     for (const id of ids) {
+      if (prefetched.size >= PREFETCH_AHEAD) break;
       if (prefetched.has(id) || dressings.has(id) || (job && job.id === id)) continue;
       prefetched.set(id, requestPaint(id));
     }
@@ -1168,6 +1202,9 @@ export function createArenaScene(stage, toggles, ctx) {
       if (!queue.length || pick < 0) return;
       const id = queue.splice(pick, 1)[0];
       job = { id, gen: buildDressingSteps(layoutSpec(id), true), t0, waiting: false, step: 0 };
+      // the worker paints the next queued layout while this one builds
+      const nextUp = queue.find((i) => !dressings.has(i) && (residentAct !== null ? wantedId(i) : runAct ? biomeInfo(i)?.act === runAct : true));
+      if (nextUp !== undefined && paintWorkerAvailable()) prefetchPaints([nextUp]);
       tl(id, 'start');
     }
     let ran = 0;
@@ -1365,6 +1402,20 @@ export function createArenaScene(stage, toggles, ctx) {
     if (buildStats.built.length > 32) buildStats.built.splice(0, buildStats.built.length - 32);
     return doomed.length;
   }
+  // A lost and restored context re-uploads every texture from its image, and
+  // a released paint canvas has none left: those dressings are rebuilt (the
+  // one on screen at once, the rest by the background builder).
+  stage.renderer.domElement.addEventListener('webglcontextrestored', () => {
+    const stale = [...dressings.values()].filter((d) => !d.disposed && d.textures.some((t) => t.userData.paintReleased));
+    if (!stale.length) return;
+    const shownId = active && stale.includes(active) ? active.id : null;
+    disposeDressings(stale, 'restored');
+    if (shownId != null) {
+      active = null;
+      applyLayout(shownId);
+    }
+    enqueueAll(residentAct);
+  });
   function setResidentLevel(act, { keepActive = true } = {}) {
     const a = Number(act);
     residentAct = Number.isFinite(a) && a > 0 ? a : null;
@@ -1416,6 +1467,7 @@ export function createArenaScene(stage, toggles, ctx) {
       ...residencyLog,
       disposedIds: [...residencyLog.disposedIds],
       freed: { ...residencyLog.freed },
+      paint: { ...paintLog, kept: keepPaint },
     };
   }
   // @gnt:CAMPAIGN LEVEL-RESIDENCY end
