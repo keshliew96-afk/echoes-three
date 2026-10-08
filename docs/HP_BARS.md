@@ -31,8 +31,8 @@ all four. Enemies and bosses are unchanged (their own rings and the boss plate).
   world to screen every frame in `main.js` after the camera settles (next to
   the damage numerals). Head heights per class in `HEAD_Y`; size `BAR_W` x
   `BAR_H` at 1920x1080, scaled with the window (0.8x to 1.6x).
-- `src/ui/run/hpbars.js`: the setting and its Gameplay row (order 6, after
-  Effects), through `registerSettingsRow`.
+- `src/ui/run/hpbars.js`: the setting and its Gameplay row (order 7, after
+  Effects and Hit feedback), through `registerSettingsRow`.
 - Render-only: the sim is never read for anything but `hp`, `maxHp` and the
   position, never written, so the nine goldens stay byte-identical. It adds no
   geometry, texture or shader.

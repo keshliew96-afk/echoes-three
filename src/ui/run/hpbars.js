@@ -16,7 +16,7 @@ export function registerHpBarsSetting(settings) {
   }
   registerSettingsRow('gameplay', {
     id: 'hpBars',
-    order: 6,
+    order: 7,
     build(ctx) {
       const store = ctx.settings;
       const note = () => (store.get(HP_BARS_KEY) !== false ? t('A bar over every hero in the party') : t('Health shows on the party portraits only'));
