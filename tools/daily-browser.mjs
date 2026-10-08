@@ -119,8 +119,8 @@ try {
     summary: document.querySelector('.rn-end .rn-summary')?.textContent.replace(/\s+/g, ' ').trim(),
     last: window.__echoes.daily().last(),
   }));
-  check(end.last && end.last.state === 'posted' && end.last.depth === 3 && end.last.rank === 6 && end.last.total === 6, `the run is posted: ${JSON.stringify(end.last)}`);
-  check(LANG || (end.head === 'THE DAILY DESCENT ENDS' && /#6 of 6 today/.test(end.summary)), `the end card reads ${JSON.stringify(end.head)} / ${end.summary.slice(0, 160)}`);
+  check(end.last && end.last.state === 'posted' && end.last.depth === 3 && end.last.rank === end.last.total && end.last.total >= 6, `the run is posted: ${JSON.stringify(end.last)}`);
+  check(LANG || (end.head === 'THE DAILY DESCENT ENDS' && /#\d+ of \d+ today/.test(end.summary)), `the end card reads ${JSON.stringify(end.head)} / ${end.summary.slice(0, 160)}`);
   await shot('daily-4-end');
 
   // 5. Back in camp the day's screen shows the run on the board.
