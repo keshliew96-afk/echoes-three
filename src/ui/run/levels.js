@@ -22,7 +22,10 @@ import { service } from '../../app/registry.js';
 import { CAMPAIGN_LEVELS, FIRST_LEVEL, FINAL_LEVEL, grantFor, prevLevel } from '../../data/campaign.js';
 import { levelFor } from '../../data/levels.js';
 import { endlessUnlockedFrom } from '../../data/endless.js';
-import { t, tn } from '../../i18n/index.js';
+import { t, tn, getLanguage } from '../../i18n/index.js';
+import { RELICS, CURSES } from '../../sim/relics.js';
+import { clockOf } from '../../data/daily.js';
+import { placeLine } from './daily.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 const STYLE_ID = 'cg-levels-style';
@@ -93,6 +96,17 @@ function installStyle() {
 .cg-levels .cg-lock svg { width: ${px(26)}; height: ${px(26)}; flex: none; }
 .cg-levels .cg-card.cg-endless { background: linear-gradient(172deg, #2A2433 0%, ${P.voidCharcoal} 72%); }
 .cg-levels .cg-card.cg-endless .cg-lvl { color: ${P.hearthAmber}; }
+.cg-levels .cg-card.cg-daily {
+  background:
+    radial-gradient(ellipse 90% 45% at 50% 0%, ${P.hearthAmber}2E 0%, ${P.hearthAmber}00 75%),
+    linear-gradient(172deg, #2E2A1E 0%, ${P.voidCharcoal} 72%);
+  border-color: ${P.hearthAmber}77;
+}
+.cg-levels .cg-card.cg-daily .cg-lvl { color: ${P.hearthAmber}; }
+.cg-levels .cg-omen { display: flex; flex-direction: column; gap: ${px(2)}; font-size: ${px(17)}; line-height: 1.25; }
+.cg-levels .cg-omen .cg-o-relic { color: ${P.paleGold}; }
+.cg-levels .cg-omen .cg-o-curse { color: ${P.godstuffViolet}; }
+.cg-levels .cg-card[aria-disabled="true"] .cg-omen { display: none; }
 .cg-levels .cg-card.cg-shake { animation: cg-shake 320ms ease; }
 @keyframes cg-shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(${px(-9)}); } 40% { transform: translateX(${px(8)}); } 60% { transform: translateX(${px(-6)}); } 80% { transform: translateX(${px(4)}); } }
 .cg-levels .cg-note { min-height: ${px(28)}; font-size: ${px(21)}; color: ${P.bone}; text-align: center; }
@@ -171,6 +185,40 @@ export function endlessInfo() {
   };
 }
 
+// DAILY DESCENT (docs/DAILY.md): the day's card — open to a single player
+// (a network session plays the campaign or Endless), with the day's relic
+// and curse and this device's best run of the day.
+export function dailyInfo() {
+  const d = service('daily');
+  let solo = true;
+  try {
+    const n = service('net');
+    solo = !(n && ((typeof n.isGuest === 'function' && n.isGuest()) || (typeof n.isHost === 'function' && n.isHost())));
+  } catch {
+    solo = true;
+  }
+  const key = d ? d.today() : null;
+  const omen = d && key ? d.omen(key) : { relic: null, curse: null };
+  let day = key || '';
+  try {
+    if (key) day = new Date(`${key}T12:00:00Z`).toLocaleDateString(getLanguage(), { timeZone: 'UTC', day: 'numeric', month: 'short' });
+  } catch {
+    day = key || '';
+  }
+  return {
+    level: 'daily',
+    key,
+    day,
+    name: t('The Daily Descent'),
+    blurb: t('The same run for every player today, with a fixed relic and curse. Go deeper than the rest.'),
+    relic: omen.relic && RELICS[omen.relic] ? t(RELICS[omen.relic].name) : '—',
+    curse: omen.curse && CURSES[omen.curse] ? t(CURSES[omen.curse].name) : '—',
+    best: d && key ? d.localBest(key) : null,
+    unlocked: !!d && !!key && solo,
+    lockLine: t('Single player only'),
+  };
+}
+
 export function createLevelsScreen(ctx) {
   installStyle();
   const { manager, app } = ctx;
@@ -216,7 +264,7 @@ export function createLevelsScreen(ctx) {
     const r = p?.onChoose?.(level);
     if (r && r.ok === false && app && typeof app.toast === 'function') {
       const line = r.line ? (typeof level === 'number' ? lockText(level) : t(r.line)) : t('That level is locked');
-      app.toast(r.reason === 'locked' ? line : t("Can't set out right now"), { tone: 'warn' });
+      app.toast(r.reason === 'locked' || r.reason === 'solo' ? line : t("Can't set out right now"), { tone: 'warn' });
     }
   }
 
@@ -304,6 +352,43 @@ export function createLevelsScreen(ctx) {
       });
       cardsEl.appendChild(card);
     }
+    // DAILY DESCENT: the day's card after Endless.
+    {
+      const info = dailyInfo();
+      infos.push(info);
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'cg-card cg-daily';
+      card.dataset.level = 'daily';
+      card.setAttribute('data-nav', '');
+      if (!info.unlocked) card.setAttribute('aria-disabled', 'true');
+      card.innerHTML = `
+        <div class="cg-lvl">${t('DAILY · {day}', { day: info.day })}</div>
+        <div class="cg-name"></div>
+        <div class="cg-blurb"></div>
+        <div class="cg-omen"><span class="cg-o-relic"></span><span class="cg-o-curse"></span></div>
+        <div class="cg-danger"><span>${t('One seed for everyone')}</span></div>
+        <div class="cg-status"></div>
+        <div class="cg-grant">${t("Opens today's board")}</div>
+        <div class="cg-lock">${LOCK_SVG}<span class="cg-lock-t"></span></div>`;
+      card.querySelector('.cg-name').textContent = info.name;
+      card.querySelector('.cg-blurb').textContent = info.blurb;
+      card.querySelector('.cg-o-relic').textContent = t('Relic: {name}', { name: info.relic });
+      card.querySelector('.cg-o-curse').textContent = t('Curse: {name}', { name: info.curse });
+      card.querySelector('.cg-status').innerHTML = info.best
+        ? `<b>${t('Best today: {place}', { place: placeLine(info.best.depth, info.best.won) })}</b> · ${clockOf(info.best.ticks)}`
+        : t('Not played today');
+      card.querySelector('.cg-lock-t').textContent = info.lockLine;
+      card.setAttribute('aria-label', info.unlocked ? t('The Daily Descent.') : t('The Daily Descent. Locked: {line}.', { line: info.lockLine }));
+      card.addEventListener('click', () => {
+        if (!info.unlocked) {
+          deny(card, info, 'click');
+          return;
+        }
+        finish('daily');
+      });
+      cardsEl.appendChild(card);
+    }
     noteEl.textContent = '';
   }
 
@@ -353,7 +438,7 @@ export function createLevelsScreen(ctx) {
       cards: [...cardsEl.querySelectorAll('.cg-card')].map((c) => {
         const r = c.getBoundingClientRect();
         return {
-          level: c.dataset.level === 'endless' ? 'endless' : Number(c.dataset.level),
+          level: c.dataset.level === 'endless' || c.dataset.level === 'daily' ? c.dataset.level : Number(c.dataset.level),
           locked: c.getAttribute('aria-disabled') === 'true',
           focused: c.classList.contains('ap-focus'),
           text: c.textContent.replace(/\s+/g, ' ').trim(),

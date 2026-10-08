@@ -34,6 +34,9 @@ import { CLASS_NAME, CLASS_OF_SEAT } from '../../data/classes.js';
 import { iconHtml, hasIcon } from '../hud/icons.js';
 import { portraitCache } from '../hud/portraits.js';
 import { netOwners, ownerLabel } from './partystrip.js';
+// DAILY DESCENT (docs/DAILY.md): the day's place and the board's answer.
+import { placeLine, dayLabel } from './daily.js';
+import { clockOf } from '../../data/daily.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 
@@ -223,7 +226,9 @@ export function createEndScreen({ run }) {
     // ENDLESS (docs/ENDLESS.md): a descent always ends in a fall; its card
     // leads with the depth reached and the profile's depth record.
     const deep = camp && camp.endless ? camp : null;
-    headline.textContent = deep ? t('THE DESCENT ENDS') : win ? (complete ? t('CAMPAIGN COMPLETE') : t('VICTORY')) : camp ? t('THE CAMPAIGN ENDS') : t('THE RUN ENDS');
+    const daily = camp && camp.daily ? camp.daily : null;
+    dailySeen = dailyRev();
+    headline.textContent = daily ? (daily.won ? t('THE DAILY DESCENT IS CLEARED') : t('THE DAILY DESCENT ENDS')) : deep ? t('THE DESCENT ENDS') : win ? (complete ? t('CAMPAIGN COMPLETE') : t('VICTORY')) : camp ? t('THE CAMPAIGN ENDS') : t('THE RUN ENDS');
     flavour.textContent = deep
       ? deep.won
         ? t('The campaign was won, and the party went on. The dark took them at Depth {depth}.', { depth: deep.depth })
@@ -266,6 +271,23 @@ export function createEndScreen({ run }) {
     // key of a row is indented from the first pair's value).
     const pairs = [];
     let rooms = [`${s.rooms} / 8`];
+    if (daily) {
+      // The day's place first, then what the board made of it.
+      const d = service('daily');
+      const post = d ? d.last() : null;
+      const mine = post && post.key === daily.key && post.ticks === s.ticks ? post : null;
+      const board = !mine
+        ? t('Not posted')
+        : mine.state === 'posting'
+        ? t('Posting to the board…')
+        : mine.state === 'posted'
+        ? mine.best
+          ? t('#{rank} of {total} today · Your best today!', { rank: mine.rank, total: mine.total })
+          : t('#{rank} of {total} today', { rank: mine.rank, total: mine.total })
+        : t('Not posted: the server could not be reached');
+      pairs.push([t('DAILY'), dayLabel(daily.key)], [t('BOARD'), board]);
+      pairs.push([t('DEPTH REACHED'), `${placeLine(daily.depth, daily.won)} · ${clockOf(s.ticks)}`]);
+    }
     if (deep) {
       const sv = service('save');
       const rec = sv && typeof sv.lastRecord === 'function' ? sv.lastRecord() : null;
@@ -315,5 +337,13 @@ export function createEndScreen({ run }) {
     return false;
   }
 
-  return { el, render, key, name: 'end' };
+  // DAILY: repaint when the board answers the posted run.
+  let dailySeen = -1;
+  function dailyRev() {
+    const d = service('daily');
+    return d && typeof d.rev === 'function' ? d.rev() : 0;
+  }
+  const dirty = () => dailySeen !== -1 && dailyRev() !== dailySeen;
+
+  return { el, render, key, dirty, name: 'end' };
 }

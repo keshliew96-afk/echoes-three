@@ -677,9 +677,9 @@ export function createCampScene(stage, toggles, ctx) {
     return beginLevel(harness ?? FIRST_LEVEL, { harness: harness !== null, via: 'portal' });
   }
 
-  function beginLevel(level, { harness = false, via = 'portal', endless = false, tutorial = false } = {}) {
+  function beginLevel(level, { harness = false, via = 'portal', endless = false, tutorial = false, daily = null } = {}) {
     if (!canBegin()) return false;
-    begin = { pressedAt: performance.now(), started: false, level, act: level, harness, via, endless, tutorial };
+    begin = { pressedAt: performance.now(), started: false, level, act: level, harness, via, endless, tutorial, daily };
     fade.classList.add('cp-on');
     prompt.classList.remove('cp-on');
     if (tablePrompt) tablePrompt.classList.remove('cg-on');
@@ -708,6 +708,32 @@ export function createCampScene(stage, toggles, ctx) {
       onChoose: (level) => {
         picking = false;
         return chooseLevel(level, 'select');
+      },
+      onCancel: () => {
+        picking = false;
+      },
+    });
+    return true;
+  }
+
+  // DAILY DESCENT (docs/DAILY.md): the day's screen (app screen 'daily',
+  // src/ui/run/daily.js) — the day's relic and curse and its leaderboard,
+  // then Set out. Single player only: the board ranks one player's runs.
+  function openDaily(via = 'select') {
+    if (mode !== 'camp' || begin || picking || inSession()) return false;
+    const app = svc('app');
+    if (!app || !app.screens || !appReg || !appReg.screenFactory?.('daily')) return false;
+    if (app.state !== 'playing' || app.screens.isOpen()) return false;
+    picking = true;
+    prompt.classList.remove('cp-on');
+    if (tablePrompt) tablePrompt.classList.remove('cg-on');
+    app.screens.push('daily', {
+      via,
+      onChoose: (key) => {
+        picking = false;
+        if (!canBegin() || inSession()) return { ok: false, reason: 'busy' };
+        beginLevel(FIRST_LEVEL, { harness: false, via, daily: { key } });
+        return { ok: true, level: 'daily', key };
       },
       onCancel: () => {
         picking = false;
@@ -801,6 +827,13 @@ export function createCampScene(stage, toggles, ctx) {
   // PLAYER-FACING start at a level (the Level Select, cmd('campChoose'),
   // __echoes.campaign.choose): refuses a locked level (PLAN §12.7).
   function chooseLevel(level, via = 'select') {
+    // DAILY DESCENT (docs/DAILY.md): the day's card opens its screen first.
+    if (level === 'daily') {
+      if (inSession()) return { ok: false, reason: 'solo', level, line: 'Single player only' };
+      if (!canBegin()) return { ok: false, reason: 'busy', level };
+      queueMicrotask(() => openDaily(via));
+      return { ok: true, level, daily: true };
+    }
     // ENDLESS (docs/ENDLESS.md): the Endless Descent card, open once the game is won.
     if (level === 'endless') {
       if (!endlessOpen()) return { ok: false, reason: 'locked', level, line: 'Win the campaign to unlock' };
@@ -832,7 +865,7 @@ export function createCampScene(stage, toggles, ctx) {
     const level = isLevel(begin.level) ? begin.level : FIRST_LEVEL;
     const ready = arena.levelStatus ? arena.levelStatus(level).ready : true;
     const depart = level !== FIRST_LEVEL || !ready;
-    const boons = begin.tutorial ? null : equippedBoons(!!begin.harness);
+    const boons = begin.tutorial || begin.daily ? null : equippedBoons(!!begin.harness);
     world.runSystem().startCampaign({
       level,
       challenge: begin.tutorial ? 'standard' : challenge,
@@ -840,6 +873,7 @@ export function createCampScene(stage, toggles, ctx) {
       harness: !!begin.harness,
       ...(begin.endless ? { endless: true } : {}),
       ...(begin.tutorial ? { tutorial: true } : {}),
+      ...(begin.daily ? { daily: { key: begin.daily.key } } : {}),
       ...(boons ? { boons } : {}),
     });
     begin.started = true;
@@ -854,7 +888,8 @@ export function createCampScene(stage, toggles, ctx) {
       harness: !!begin.harness,
       endless: !!begin.endless,
       tutorial: !!begin.tutorial,
-      challenge,
+      ...(begin.daily ? { daily: begin.daily.key } : {}),
+      challenge: begin.daily ? 'standard' : challenge,
       boons,
       pressedAt: Math.round(begin.pressedAt),
       startedAt: Math.round(begin.startedAt),
@@ -1263,6 +1298,8 @@ export function createCampScene(stage, toggles, ctx) {
         return chooseLevel(args[0], 'cmd');
       case 'campClasses':
         return openClasses('cmd');
+      case 'campDaily':
+        return openDaily('cmd');
       case 'campTutorial':
         return beginTutorial(args[0] || 'cmd');
       case 'campStory':

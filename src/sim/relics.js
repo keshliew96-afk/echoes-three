@@ -30,6 +30,7 @@
 import { createGameplayRng } from '../core/rng.js';
 import { CLASS_OF_SEAT } from '../data/classes.js';
 import * as STATUS from './status.js';
+import { dailyPick } from '../data/daily.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -94,6 +95,15 @@ export const CURSES = Object.freeze({
 // The room curses a door can carry, and the major ones.
 export const CURSE_IDS = Object.freeze(Object.keys(CURSES).filter((id) => !CURSES[id].major));
 export const MAJOR_CURSE_IDS = Object.freeze(Object.keys(CURSES).filter((id) => CURSES[id].major));
+
+// DAILY DESCENT (docs/DAILY.md): the day's fixed relic (any relic not bound
+// to a class) and its fixed major curse, from the day's seed.
+export function dailyOmen(seed) {
+  return {
+    relic: dailyPick(seed, RELIC_IDS.filter((id) => !RELICS[id].cls), 'relic'),
+    curse: dailyPick(seed, MAJOR_CURSE_IDS, 'curse'),
+  };
+}
 
 export const RELIC_RULES = Object.freeze({
   choices: 3, // relics per pick
@@ -726,6 +736,18 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     shopPrice,
     owned: () => [...owned],
     pool: () => (on ? pool0() : []),
+    // DAILY DESCENT (docs/DAILY.md): the day's fixed relic and major curse,
+    // held from the first room. The curse binds like one taken on a door
+    // but opens no room, so it owes no pick.
+    grantDaily(relicId, curseId) {
+      if (!on) return null;
+      if (RELICS[relicId] && !owned.includes(relicId)) gain(relicId, 'daily', player);
+      if (CURSES[curseId] && CURSES[curseId].major && !majors.includes(curseId)) {
+        takeCurse(curseId, 0);
+        curse = null;
+      }
+      return { relic: relicId, curse: curseId };
+    },
     grant(id) {
       // Probe / harness: give a relic now (no pick).
       if (!on || !RELICS[id] || owned.includes(id)) return null;
