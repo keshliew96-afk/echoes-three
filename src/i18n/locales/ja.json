@@ -2336,5 +2336,9 @@
  "Hit feedback": "被弾エフェクト",
  "When you are hit, the screen edge pulses red toward the attacker, a struck character flashes and heavy hits kick the camera. Turn it off if flashing bothers you.": "攻撃を受けると、画面の端が攻撃者の方向に赤く光り、被弾したキャラクターが光り、強打ではカメラが揺れます。点滅が気になる場合はオフにしてください。",
  "Red edge pulse, flash and camera kick when you are hit": "被弾時に画面端が赤く光り、キャラが光り、カメラが揺れる",
- "No flash or kick when you are hit": "被弾時に点滅も揺れもなし"
+ "No flash or kick when you are hit": "被弾時に点滅も揺れもなし",
+ "Health bars over heroes": "ヒーローの頭上にHPバー",
+ "A bar over every hero in the party": "パーティ全員の頭上にバーを表示",
+ "Health shows on the party portraits only": "HPはパーティの肖像にのみ表示",
+ "A small health bar floats over the head of each hero in the party, yours and your allies’, human or AI. It flashes on a hit and drains behind so you can read the damage. The portraits at the bottom keep showing health either way.": "パーティの各ヒーローの頭上に小さなHPバーが浮かびます。自分も仲間も、人間でもAIでも同じです。被弾すると光り、遅れて減っていくのでダメージ量が読めます。下の肖像のHP表示はどちらの設定でも残ります。"
 }

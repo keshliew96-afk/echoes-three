@@ -2336,5 +2336,9 @@
  "Hit feedback": "受擊提示",
  "When you are hit, the screen edge pulses red toward the attacker, a struck character flashes and heavy hits kick the camera. Turn it off if flashing bothers you.": "你受到攻擊時，螢幕邊緣會朝攻擊者方向閃紅，被擊中的角色會閃光，重擊還會讓鏡頭一震。如果閃光讓你不適，可以關閉。",
  "Red edge pulse, flash and camera kick when you are hit": "受擊時螢幕邊緣閃紅、角色閃光、鏡頭震動",
- "No flash or kick when you are hit": "受擊時不閃光、不震動"
+ "No flash or kick when you are hit": "受擊時不閃光、不震動",
+ "Health bars over heroes": "英雄頭頂血條",
+ "A bar over every hero in the party": "隊伍中每位英雄頭頂都有血條",
+ "Health shows on the party portraits only": "生命值只顯示在隊伍頭像上",
+ "A small health bar floats over the head of each hero in the party, yours and your allies’, human or AI. It flashes on a hit and drains behind so you can read the damage. The portraits at the bottom keep showing health either way.": "隊伍中每位英雄的頭頂都會浮現一條小血條，你的和隊友的都有，無論是玩家還是 AI。受擊時血條會閃一下，並延遲扣減，方便你看清傷害。下方頭像上的生命值始終顯示。"
 }
