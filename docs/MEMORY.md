@@ -13,7 +13,7 @@ process figures are what Chrome's renderer and GPU processes really hold.
 |---|---|---|
 | Room dressings | ~27 MB of GPU each, five resident | Each layout has a painted floor (2048 px) and apron (1600 px), mipmapped. The level's layouts are built ahead in the background (`src/scenes/arena.js`, residency) so a room never waits on a build. |
 | Paint canvases | ~20 MB of CPU each (was) | The floor and apron canvases the dressing was painted on. Now released the moment the GPU has its copy. |
-| Frame buffers | ~28 bytes per drawing-buffer pixel (was ~36) | Composer target (half-float colour + depth), its second buffer (half-float colour), bloom chain at half resolution, the canvas. At 1920x1080 and a 150 % Windows scale that is ~130 MB. |
+| Frame buffers | ~4 bytes per drawing-buffer pixel less than before | Composer target (half-float colour + depth), its second buffer (half-float colour), bloom chain at half resolution, the canvas (colour only now). |
 | JS heap | 34-45 MB | Flat across rooms and runs. |
 | Audio | ~1.5 MB of AudioBuffers plus the bake cache (capped at 24 MB, `src/audio/bake.js`) | |
 | Journal Bestiary | +13 MB while open | Its own WebGL context, lost on close (`src/ui/story/viewer.js`). |
@@ -34,7 +34,8 @@ process figures are what Chrome's renderer and GPU processes really hold.
   and the composer's second buffer only receive fullscreen passes, so
   neither has a depth buffer now, and the second buffer never carries MSAA
   under `?msaa=N`. The scene always renders into the first buffer (pinned
-  before and after each frame). Same pixels, 8 bytes a pixel less.
+  before and after each frame). Same pixels; the canvas depth buffer alone
+  was 4 bytes a pixel (19 MB at a 2880x1620 drawing buffer).
 
 Nothing here touches the sim: the nine goldens are byte-identical.
 

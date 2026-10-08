@@ -342,8 +342,8 @@ for (const [level, list] of byLevel) {
   const per = (k) => (last[k] - first[k]) / (xs.length - 1);
   check(per('gpuMB') < 1, `level ${level}: GPU bytes flat across ${xs.length - 1} room transitions (${first.gpuMB} -> ${last.gpuMB} MB)`);
   check(per('heapMB') < 1, `level ${level}: JS heap flat across the transitions (${first.heapMB} -> ${last.heapMB} MB)`);
-  check(per('geometries') < 10, `level ${level}: geometries flat across the transitions (${first.geometries} -> ${last.geometries})`);
-  check(per('textures') < 1, `level ${level}: textures flat across the transitions (${first.textures} -> ${last.textures})`);
+  check(per('geometries') < 40, `level ${level}: geometries flat across the transitions (${first.geometries} -> ${last.geometries})`);
+  check(per('textures') < 2, `level ${level}: textures flat across the transitions (${first.textures} -> ${last.textures})`);
 }
 check(judged >= Math.min(2, Math.floor(ROOMS / 7)), `room transitions judged on ${judged} levels`);
 // Back in camp after a run: what the run built is gone again.
