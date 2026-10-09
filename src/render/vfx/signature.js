@@ -2151,6 +2151,9 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         spray('chunk', x, 0.2, z, 6, { color: STONE, speed: [0.6, 1.6], up: [1.0, 2.0], size: [0.07, 0.13], life: [0.5, 0.8] });
       });
       spray('smoke', x, 0.8, z, 5, { color: FLOUR, speed: [0.4, 1.0], up: [0.2, 0.6], size: [0.42, 0.6], grow: 1.5, life: [1.0, 1.5], opacity: 0.3, gravity: -0.1, drag: 2.0, jitter: 0.3 });
+    },
+  });
+
   // ------------------------------------- new enemies, Barrow and Heart --
   // docs/NEW_ENEMIES_BARROW_HEART.md. The law holds: what hurts is Ember on
   // the frame it lands (the keen's cone, the snare's jaws, the bloom's ring,

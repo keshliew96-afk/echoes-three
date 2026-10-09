@@ -15,7 +15,6 @@
 import {
   AdditiveBlending,
   BoxGeometry,
-  Color,
   CanvasTexture,
   CircleGeometry,
   Color,
