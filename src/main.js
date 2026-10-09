@@ -285,6 +285,10 @@ registerChampionCues(service('audio'));
 // KEYS AND VAULTS (docs/VAULTS.md): the key, the vault and its hoard.
 import { registerVaultCues } from './audio/vaultcues.js';
 registerVaultCues(service('audio'));
+// NEW ENEMIES (docs/NEW_ENEMIES_BARROW_HEART.md): the Keener, Sexton, Bloom
+// and Siphon voices.
+import { registerBarrowHeartCues } from './audio/barrowheartcues.js';
+registerBarrowHeartCues(service('audio'));
 // Hit feedback: the heavy / soft / downed hit sounds on your own character
 // (src/audio/hitcues.js).
 import { registerHitCues } from './audio/hitcues.js';

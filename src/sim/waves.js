@@ -43,6 +43,7 @@ import { OBJECTIVE_RULES, quarryFor, quarryState, nestSpots, isObjectiveMode } f
 // and the act's champion, which leads wave 1; cleared like a kill_all.
 import { CHAMPION_RULES, CHAMPION_SPOTS, championFor } from './champions.js';
 import { enemyStats, ELITE } from './enemies.js';
+import { CAMPAIGN_ONLY_ENEMIES } from '../data/levels.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -235,6 +236,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       const roster = Object.keys(level.roster)
         .sort()
         .filter((et) => (level.introduce[et] ?? 1) <= runPlan.room && knownType(et))
+        .filter((et) => runPlan.campaignKinds || !CAMPAIGN_ONLY_ENEMIES.includes(et))
         .map((et) => [et, level.roster[et]]);
       plan = {
         act: runPlan.act,

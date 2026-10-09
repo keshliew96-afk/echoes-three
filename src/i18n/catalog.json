@@ -1593,6 +1593,12 @@
   ],
   "data": true
  },
+ "A flower of violet crystal that grows wherever the Heart beats closest to the floor.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "A gaunt wading bird whose bill is a spear.": {
   "files": [
    "src/data/journal.js"
@@ -1802,6 +1808,12 @@
  "A roar: 6 to up to 6 nearby enemies, taunted 2.5 s (the Stag 1 s). Enemies prefer the Tank.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A sac of the Heart's blood that never has enough of it.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -2366,6 +2378,12 @@
   ],
   "data": true
  },
+ "Ash Keener": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Ashen Crown": {
   "files": [
    "src/data/unlocks.js",
@@ -2603,6 +2621,12 @@
   "data": true
  },
  "Barrow Ram": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Barrow Sexton": {
   "files": [
    "src/data/journal.js"
   ],
@@ -3974,6 +3998,12 @@
   ],
   "data": true
  },
+ "Creeps in on its roots, then takes root and never moves again. On every second heartbeat it opens in a warning ring round itself and snaps shut for 12. Every bloom in the room beats together.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Crescent Finisher": {
   "files": [
    "src/sim/skills.js"
@@ -4489,6 +4519,12 @@
  "Drink": {
   "files": [
    "src/sim/interactables.js"
+  ],
+  "data": true
+ },
+ "Drinker": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -5813,6 +5849,12 @@
    "src/ui/run/hpbars.js"
   ]
  },
+ "Heart Bloom": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Heart Censer": {
   "files": [
    "src/data/journal.js"
@@ -6268,6 +6310,12 @@
    "src/save/index.js"
   ]
  },
+ "It mourns every barrow it passes, and it wants company in its grief.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "It replaces the profile (records, Embers, unlocks) and every save slot on this device, then the game reloads. Save a backup file first if you want to keep what is here.": {
   "files": [
    "src/ui/menu/cloud.js"
@@ -6410,6 +6458,12 @@
   "files": [
    "src/ui/menu/keepdisplay.js"
   ]
+ },
+ "Keeps a few steps back, then wails down a long, narrow warning cone for 10. Whoever the wail finds is slowed by 40% for 2 s. Step out of the cone.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Keeps about 3.5 u back and spits one shot for 10. A warning mark shows the shot for 0.7 s before it flies: step off the line.": {
   "files": [
@@ -6578,6 +6632,12 @@
  "Lanternbearer": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Lashes a tendril down a warning lane for 5 and latches onto the first hero it finds, then drinks 2 every half second and heals by as much. Walk well away from it to snap the tether, or kill it.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -7117,6 +7177,12 @@
    "src/ui/menu/records.js"
   ]
  },
+ "Mourner": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Mouse": {
   "files": [
    "src/net/seats.js"
@@ -7262,6 +7328,12 @@
   "data": true
  },
  "Never bites. It roots and plants thorn patches that slow by 35% and prick for 3. Up to three patches at once; chase it through them or kill it fast.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Never strikes in person. It kneels and buries bone snares on the floor, three at most. Step on one and its jaws rise in a warning ring, then snap for 11 and hold you with a 60% slow. Step off before they close. Kill it and its snares crumble.": {
   "files": [
    "src/data/journal.js"
   ],
@@ -8360,6 +8432,12 @@
  "Pull": {
   "files": [
    "src/sim/interactables.js"
+  ],
+  "data": true
+ },
+ "Pulse": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -10651,6 +10729,12 @@
   ],
   "data": true
  },
+ "The barrow still has a gravedigger. He has stopped waiting for the dead to come to him.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The Barrow Wyrm": {
   "files": [
    "src/data/journal.js",
@@ -12138,6 +12222,12 @@
   ],
   "data": true
  },
+ "Trapper": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Tremor": {
   "files": [
    "src/sim/nodes.js"
@@ -12281,6 +12371,12 @@
   "data": true
  },
  "Vein Lancer": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Vein Siphon": {
   "files": [
    "src/data/journal.js"
   ],
