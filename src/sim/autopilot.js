@@ -202,6 +202,12 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       if (typeof r.openEncounter === 'function') r.openEncounter();
       return true;
     }
+    // KEYS AND VAULTS: open the vault's chest (no walk needed).
+    if (v.phase === 'vault') {
+      if (typeof r.openVault === 'function') r.openVault();
+      stats.vaults = (stats.vaults ?? 0) + 1;
+      return true;
+    }
     if (v.phase === 'encounter') {
       const e = v.encounter;
       const take = !!(e && e.safe && !e.refused && cfg.events !== 'leave');
@@ -220,6 +226,10 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       if (o && o.curse && (cfg.curses === 'avoid' || (o.major && cfg.curses !== 'all'))) side = 1 - side;
       // EVENT ROOMS: `events: 'avoid'` walks the other door when this one is "?".
       else if (o && o.event && cfg.events === 'avoid') side = 1 - side;
+      // KEYS AND VAULTS: with a key in hand, the vault door (`vaults: 'skip'`
+      // walks past it).
+      const vi = v.path ? v.path.options.findIndex((x) => x.vault) : -1;
+      if (vi >= 0 && cfg.vaults !== 'skip') side = vi;
       r.choosePath(side);
       stats.doors += 1;
       return true;

@@ -2364,5 +2364,19 @@
  "The Sluice Warden": "水門の番人",
  "Three voices of the Heart sung into one crystal body. It hums even when it is still.": "心臓の三つの声が一つの水晶の体に歌い込まれたもの。じっとしていても唸っている。",
  "THE CHAMPION'S CHEST": "チャンピオンの宝箱",
- "A rare or legendary relic for the run. Choose one.": "ラン中ずっと続くレアかレジェンダリーのレリック。1つ選ぶ。"
+ "A rare or legendary relic for the run. Choose one.": "ラン中ずっと続くレアかレジェンダリーのレリック。1つ選ぶ。",
+ "{key} <b>Left door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>左の扉：宝物庫。</b>鍵で開きます。戦いはなく、グリントの山、ごちそう、遺物の宝箱が待ち、その後に選択。鍵はこのレベルの間だけ有効です。",
+ "{key} <b>Right door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>右の扉：宝物庫。</b>鍵で開きます。戦いはなく、グリントの山、ごちそう、遺物の宝箱が待ち、その後に選択。鍵はこのレベルの間だけ有効です。",
+ "A relic from the hoard. Choose one.": "宝の山から遺物をひとつ。選んでください。",
+ "Champions, and now and then an elite, drop a key. While the party holds one, a vault door can appear on the path: behind it waits a treasure room with no fight, Glint, a feast and a relic chest. A key lasts only the level it was found in.": "チャンピオンと、ときどきエリートが鍵を落とします。パーティーが鍵を持っている間、道に宝物庫の扉が現れることがあります。その先は戦いのない宝の部屋で、グリント、ごちそう、遺物の宝箱が待っています。鍵は見つけたレベルの間だけ有効です。",
+ "LASTS THIS LEVEL": "このレベルの間だけ",
+ "Open": "開ける",
+ "OPEN THE CHEST": "宝箱を開けよ",
+ "Opened": "開封済み",
+ "THE HOARD IS YOURS": "宝はあなたのもの",
+ "the vault": "宝物庫",
+ "THE VAULT": "宝物庫",
+ "The vault door": "宝物庫の扉",
+ "THE VAULT'S CHEST": "宝物庫の宝箱",
+ "VAULT KEY": "宝物庫の鍵"
 }

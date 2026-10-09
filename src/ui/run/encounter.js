@@ -87,6 +87,17 @@ export const ENCOUNTER_CSS = `
   .rn-door.ch-door .rn-gwin { color: ${PALETTE.paleGold}; font-size: 76px; text-shadow: 0 0 20px ${PALETTE.paleGold}AA; animation: ch-crown 2.4s ease-in-out infinite; }
   @keyframes ch-crown { 0%, 100% { text-shadow: 0 0 14px ${PALETTE.paleGold}77; } 50% { text-shadow: 0 0 28px ${PALETTE.paleGold}EE; } }
   .rn-path .ch-note { border-color: ${PALETTE.paleGold}; }
+  /* KEYS AND VAULTS: the vault door, black iron banded in gold with a lit
+     keyhole that breathes; it keeps its reward glyph (the draft follows). */
+  .rn-door.vk-door { border-color: ${PALETTE.paleGold}; background:
+      repeating-linear-gradient(90deg, transparent 0 46px, ${PALETTE.paleGold}55 46px 50px, transparent 50px 96px),
+      radial-gradient(circle at 50% 34%, #3A3426 0%, #17161A 74%); }
+  .rn-door.vk-door.rn-focus { box-shadow: inset 0 0 0 2px ${PALETTE.voidCharcoal}, inset 0 -18px 34px #00000066, 0 0 38px ${PALETTE.paleGold}AA; }
+  .rn-door.vk-door .rn-gwin { color: #F7E7C0; filter: drop-shadow(0 0 10px ${PALETTE.paleGold}) drop-shadow(0 0 22px ${PALETTE.paleGold}88); animation: vk-hole 2.2s ease-in-out infinite; line-height: 0; }
+  .rn-door.vk-door .rn-gwin svg { width: 78px; height: 78px; }
+  @keyframes vk-hole { 0%, 100% { opacity: 0.82; } 50% { opacity: 1; } }
+  .rn-path .vk-note { border-color: ${PALETTE.paleGold}; }
+  .rn-path .vk-note svg { width: 22px; height: 22px; vertical-align: -5px; color: ${PALETTE.paleGold}; }
 
   /* The plate over the event room while the party walks up. */
   #ev-plate {

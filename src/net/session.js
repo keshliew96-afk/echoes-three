@@ -76,7 +76,7 @@ const KEY_OF = { dodge: 'Space', interact: 'KeyE', basic: 'Mouse2' };
 for (let i = 1; i <= 4; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
 // (+ CAMPAIGN, PLAN §12.9: a guest can neither start, advance nor abandon a
 // campaign — the host drives every level transition.)
-const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'refreshShop', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'openEncounter', 'focusEncounter', 'chooseEncounter', 'buyRelic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
+const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'refreshShop', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'openEncounter', 'focusEncounter', 'chooseEncounter', 'openVault', 'buyRelic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
 // M4c: autoFill (the socket screen's F / pad Y) mutates the build too — a guest's
 // press becomes the same refused CMD as a socket() (build decisions are the host's).
 const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);

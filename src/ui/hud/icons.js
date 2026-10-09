@@ -662,6 +662,17 @@ const ICONS = {
     ['path', { d: 'M9 26 H23 L21.5 29 H10.5 Z', fill: 'currentColor', stroke: 'none' }],
     ['path', { d: 'M16 14 C18.6 17 18.6 20.4 16 22.6 C13.4 20.4 13.4 17 16 14 Z', fill: 'currentColor', stroke: 'none' }],
   ],
+  // KEYS AND VAULTS (docs/VAULTS.md): the party's key (a ringed bow, a
+  // shaft and a two-tooth bit) and the vault door's keyhole.
+  key: [
+    ['circle', { cx: 9.5, cy: 16, r: 5.6 }],
+    ['circle', { cx: 9.5, cy: 16, r: 1.8, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M15.1 16 H29' }],
+    ['path', { d: 'M24.5 16 V21.5 M28.6 16 V20', 'stroke-width': 2.6 }],
+  ],
+  keyhole: [
+    ['path', { d: 'M16 5.2 A5.2 5.2 0 0 1 18.9 14.7 L21.2 27 H10.8 L13.1 14.7 A5.2 5.2 0 0 1 16 5.2 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
   // Location marker: a compass diamond on a pin.
   marker: [
     ['path', { d: 'M16 3 L22 14 L16 25 L10 14 Z' }],

@@ -2364,5 +2364,19 @@
  "The Sluice Warden": "수문 파수꾼",
  "Three voices of the Heart sung into one crystal body. It hums even when it is still.": "심장의 세 목소리가 하나의 수정 몸에 노래로 깃든 것. 가만히 있어도 웅웅거린다.",
  "THE CHAMPION'S CHEST": "챔피언의 상자",
- "A rare or legendary relic for the run. Choose one.": "이번 원정 내내 유지되는 희귀 또는 전설 유물. 하나를 고르세요."
+ "A rare or legendary relic for the run. Choose one.": "이번 원정 내내 유지되는 희귀 또는 전설 유물. 하나를 고르세요.",
+ "{key} <b>Left door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>왼쪽 문: 보물고.</b> 열쇠로 열 수 있습니다. 전투 없이 글린트 더미, 만찬, 유물 상자가 있고 그다음 선택이 이어집니다. 열쇠는 이번 레벨에서만 유효합니다.",
+ "{key} <b>Right door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>오른쪽 문: 보물고.</b> 열쇠로 열 수 있습니다. 전투 없이 글린트 더미, 만찬, 유물 상자가 있고 그다음 선택이 이어집니다. 열쇠는 이번 레벨에서만 유효합니다.",
+ "A relic from the hoard. Choose one.": "보물 더미에서 나온 유물. 하나를 고르세요.",
+ "Champions, and now and then an elite, drop a key. While the party holds one, a vault door can appear on the path: behind it waits a treasure room with no fight, Glint, a feast and a relic chest. A key lasts only the level it was found in.": "챔피언과 가끔 엘리트가 열쇠를 떨어뜨립니다. 파티가 열쇠를 가진 동안 길에 보물고 문이 나타날 수 있습니다. 그 너머에는 전투 없는 보물 방이 있고, 글린트와 만찬, 유물 상자가 기다립니다. 열쇠는 찾은 레벨에서만 유효합니다.",
+ "LASTS THIS LEVEL": "이번 레벨 동안",
+ "Open": "열기",
+ "OPEN THE CHEST": "상자를 여세요",
+ "Opened": "열림",
+ "THE HOARD IS YOURS": "보물은 당신의 것",
+ "the vault": "보물고",
+ "THE VAULT": "보물고",
+ "The vault door": "보물고 문",
+ "THE VAULT'S CHEST": "보물고의 상자",
+ "VAULT KEY": "보물고 열쇠"
 }

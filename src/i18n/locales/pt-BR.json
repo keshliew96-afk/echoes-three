@@ -2466,5 +2466,19 @@
  "The Sluice Warden": "O Guardião da Eclusa",
  "Three voices of the Heart sung into one crystal body. It hums even when it is still.": "Três vozes do Coração cantadas num só corpo de cristal. Ele zumbe mesmo parado.",
  "THE CHAMPION'S CHEST": "O BAÚ DO CAMPEÃO",
- "A rare or legendary relic for the run. Choose one.": "Uma relíquia rara ou lendária para a expedição inteira. Escolha uma."
+ "A rare or legendary relic for the run. Choose one.": "Uma relíquia rara ou lendária para a expedição inteira. Escolha uma.",
+ "{key} <b>Left door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>Porta esquerda: o cofre.</b> Sua chave o abre: sem luta, um tesouro de Brilho, um banquete e um baú de relíquias, depois a escolha. A chave só vale para este nível.",
+ "{key} <b>Right door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>Porta direita: o cofre.</b> Sua chave o abre: sem luta, um tesouro de Brilho, um banquete e um baú de relíquias, depois a escolha. A chave só vale para este nível.",
+ "A relic from the hoard. Choose one.": "Uma relíquia do tesouro. Escolha uma.",
+ "Champions, and now and then an elite, drop a key. While the party holds one, a vault door can appear on the path: behind it waits a treasure room with no fight, Glint, a feast and a relic chest. A key lasts only the level it was found in.": "Campeões, e de vez em quando um elite, deixam cair uma chave. Enquanto o grupo tiver uma, uma porta de cofre pode surgir no caminho: atrás dela espera uma sala do tesouro sem luta, com Brilho, um banquete e um baú de relíquias. Uma chave só vale para o nível em que foi encontrada.",
+ "LASTS THIS LEVEL": "VALE NESTE NÍVEL",
+ "Open": "Abrir",
+ "OPEN THE CHEST": "ABRA O BAÚ",
+ "Opened": "Aberto",
+ "THE HOARD IS YOURS": "O TESOURO É SEU",
+ "the vault": "o cofre",
+ "THE VAULT": "O COFRE",
+ "The vault door": "A porta do cofre",
+ "THE VAULT'S CHEST": "O BAÚ DO COFRE",
+ "VAULT KEY": "CHAVE DO COFRE"
 }

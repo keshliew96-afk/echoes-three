@@ -86,6 +86,8 @@ function locationCopy(scene, rv, short = false) {
     if (rv.phase === 'shop' || rv.mode === 'shop') return { name: t("THE PEDDLER'S CLEARING"), sub: roomLine(short, room, total, MODE_WORD.shop) };
     // EVENT ROOMS: a "?" room (the chest's ambush keeps the name).
     if (rv.mode === 'event') return { name: place ?? t('UNEASY WOODLAND'), sub: roomLine(short, room, total, t('AN ENCOUNTER')) };
+    // KEYS AND VAULTS: the vault the party's key opened.
+    if (rv.mode === 'vault') return { name: t('THE VAULT'), sub: roomLine(short, room, total, rv.phase === 'vault' ? t('OPEN THE CHEST') : t('THE HOARD IS YOURS')) };
     const mode = rv.mode === 'kill_all' && place ? t('CLEAR THE ROOM') : MODE_WORD[rv.mode] ?? t('ON THE ROAD');
     return { name: place ?? t('UNEASY WOODLAND'), sub: roomLine(short, room, total, mode) };
   }
@@ -143,6 +145,24 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
   glintLab.textContent = t('GLINT');
   glint.append(coin, glintNum, glintLab);
   root.appendChild(glint);
+  // KEYS AND VAULTS (docs/VAULTS.md): the party's key, while one is held.
+  const keyPlate = document.createElement('div');
+  keyPlate.className = 'hud-key';
+  const keyIco = document.createElement('span');
+  keyIco.className = 'hud-key-ico';
+  keyIco.appendChild(iconEl('key', { size: 30 }));
+  const keyTxt = document.createElement('span');
+  keyTxt.className = 'hud-key-txt';
+  const keyName = document.createElement('span');
+  keyName.className = 'hud-key-name';
+  keyName.textContent = t('VAULT KEY');
+  const keySub = document.createElement('span');
+  keySub.className = 'hud-key-sub';
+  keySub.textContent = t('LASTS THIS LEVEL');
+  keyTxt.append(keyName, keySub);
+  keyPlate.append(keyIco, keyTxt);
+  root.appendChild(keyPlate);
+  let keyShown = false;
   let locKey = '';
   let glintShown = -1;
 
@@ -222,7 +242,7 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     if (clash) root.style.setProperty('--bnH', `${(b2.height / (scale || 1) + 10).toFixed(1)}px`);
     loc.classList.toggle('hud-loc-drop', clash);
     // The corner plates are chrome too: a pointer must never hide under them.
-    for (const n of [loc, glint]) {
+    for (const n of [loc, glint, keyPlate]) {
       const r = n.getBoundingClientRect();
       if (r.width > 1) zoneList.push({ x: r.x, y: 0, w: r.width, h: r.y + r.height, edge: 'top' });
     }
@@ -243,6 +263,9 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     'room_transition',
     'level_transit', // CAMPAIGN: the level-clear card hides the combat chrome at once
     'level_start',
+    'key_pickup', // KEYS AND VAULTS: the key plate pops in at once
+    'vault_door_taken',
+    'key_lapse',
   ];
   // Run-end edges (round D, camp critic F2 / run critic F6): the banner,
   // the threat pointers and the bar's own combat residue are cleared IN THE
@@ -316,6 +339,17 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     if (wallet !== glintShown) {
       glintShown = wallet;
       glintNum.textContent = String(wallet);
+    }
+    const held = !!(rv && rv.active && rv.vaults && rv.vaults.key);
+    if (held !== keyShown) {
+      keyShown = held;
+      keyPlate.classList.toggle('hud-key-on', held);
+      keyPlate.classList.remove('hud-key-pop');
+      if (held) {
+        void keyPlate.offsetWidth; // restart the pop
+        keyPlate.classList.add('hud-key-pop');
+      }
+      publishZones();
     }
     greySkills.clear();
     for (const sk of snap.build?.skills ?? []) {

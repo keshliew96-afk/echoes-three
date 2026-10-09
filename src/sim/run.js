@@ -89,7 +89,11 @@ import { isDailyKey, dailySeed, dailyLevelSeed, dailyDepth, DAILY_RULES } from '
 // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt and purge rooms.
 import { assignObjectives, isObjectiveMode, OBJECTIVE_RULES } from './objectives.js';
 // CHAMPION ROOMS (docs/CHAMPIONS.md): the crown door and its relic chest.
-import { crownFor, crownSide, championFor, CHAMPION_RULES } from './champions.js';
+import { crownFor, crownSide, championFor, CHAMPION_RULES, isChampionKind } from './champions.js';
+// KEYS AND VAULTS (docs/VAULTS.md): keys from elites and champions, the vault
+// door and its treasure room.
+import { createVaultSystem, eliteDropsKey, vaultPref, vaultSide, VAULT_RULES, VAULT_SPOTS, VAULT_CHEST } from './vaults.js';
+import { staticClearance } from './movement.js';
 // EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
 import { createEncounterSystem, ENCOUNTERS, EVENT_RULES } from './encounters.js';
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): how many powers an elite carries.
@@ -141,7 +145,7 @@ export const RUN = Object.freeze({
 });
 
 // §16 path doors carry ONLY these two glyph channels.
-export const WIN_GLYPH = Object.freeze({ kill_all: '⚔', defend: '⛨', boss: '☠', event: '?', hunt: '➶', purge: '✹', champion: '♛' });
+export const WIN_GLYPH = Object.freeze({ kill_all: '⚔', defend: '⛨', boss: '☠', event: '?', hunt: '➶', purge: '✹', champion: '♛', vault: '⚿' });
 export const REWARD_GLYPH = Object.freeze({ skill: '✦', node: '◈' });
 
 export function createRunSystem({
@@ -293,6 +297,23 @@ export function createRunSystem({
   // the Daily; never the tutorial or the legacy single-level run).
   const championsOn = () => objectivesOn();
   let forcedCrown = null; // probe: the next path screen's crown ({ room, side })
+  // KEYS AND VAULTS: on with the champions (campaign, Endless and the Daily;
+  // never the tutorial or the legacy single-level run, so the goldens never
+  // see a key).
+  const vaults = createVaultSystem({ registry, events, getTick });
+  let forcedVault = null; // probe: the next path screen's vault side (0 | 1)
+  // The champion leaves a key where it fell (its chest spot)...
+  events.on('champion_fall', (ev) => {
+    if (active && vaults.enabled() && phase === 'combat') vaults.drop('champion', ev.champion, ev.x, ev.z, roomIndex);
+  });
+  // ...and an elite now and then (a hash of the level, the room and its id).
+  events.on('death', (ev) => {
+    if (!active || !vaults.enabled() || phase !== 'combat' || !frame || !campaign) return;
+    const e = registry.byId(ev.id);
+    if (!e || !e.elite || e.faction !== 'hostile' || isChampionKind(e.kind)) return;
+    if (eliteDropsKey(frame.seed, campaign.index, roomIndex, e.id)) vaults.drop('elite', e.kind, ev.x, ev.z, roomIndex);
+  });
+  events.on('vault_touch', () => openVault());
   // The quarry is marked for the whole party the moment it breaks cover.
   events.on('quarry_spawn', (ev) => {
     if (active && allySys && typeof allySys.cmd === 'function') allySys.cmd('mark', [ev.id]);
@@ -445,6 +466,7 @@ export function createRunSystem({
     // RELICS: on for campaigns, off for the legacy single-level run (goldens).
     relics.reset(frame.seed, mode === 'campaign' && relicsDefault && !tutorial);
     encounters.reset(frame.seed, mode === 'campaign' && relicsDefault && !tutorial);
+    vaults.reset(championsOn());
     if (campaign.daily) relics.grantDaily(campaign.daily.relic, campaign.daily.curse);
     // Payload unchanged since v0.5.x (the goldens hash every event).
     events.emit(getTick(), 'run_start', {
@@ -561,7 +583,8 @@ export function createRunSystem({
     const table = campaign && campaign.mode !== 'campaign' && level.legacyLayouts ? level.legacyLayouts : level.layouts;
     // EVENT ROOMS: a "?" room stands in the last combat room's clearing, as
     // the shop does (no draw).
-    if (mode === 'shop' || mode === 'event') return lastCombatLayout ?? table[0];
+    // KEYS AND VAULTS: so does the vault.
+    if (mode === 'shop' || mode === 'event' || mode === 'vault') return lastCombatLayout ?? table[0];
     const pool = table.filter((id) => id !== lastCombatLayout);
     const pick = pool.length > 0 ? pool[rng.int(pool.length)] : table[0];
     lastCombatLayout = pick;
@@ -571,6 +594,8 @@ export function createRunSystem({
   function exitRoom(tick) {
     if (layout && typeof roomHooks.exit === 'function') roomHooks.exit(tick);
     layout = null;
+    // KEYS AND VAULTS: the vault's piles and platter stay in their room.
+    for (const e of registry.all()) if (e.kind === 'vault_pile' || e.kind === 'vault_platter') registry.despawn(e.id);
   }
 
   function positionParty() {
@@ -665,6 +690,8 @@ export function createRunSystem({
       openShop();
     } else if (mode === 'event') {
       enterEvent(n, tick);
+    } else if (mode === 'vault') {
+      enterVault(n, tick);
     } else if (mode === 'boss') {
       phase = 'combat';
       enemies.reset();
@@ -694,6 +721,8 @@ export function createRunSystem({
   function onRoomCleared(ev) {
     if (!active || phase !== 'combat') return;
     const tick = getTick();
+    // KEYS AND VAULTS: a key still on the floor flies to the party.
+    vaults.sweep();
     // EVENT ROOMS: the trapped chest's ambush is won — the chest pays.
     const enc = encounters.live();
     if (enc && enc.state === 'ambush' && enc.room === roomIndex) {
@@ -1022,6 +1051,21 @@ export function createRunSystem({
       const keep = options[side].event ? { side, win: 'champion', reward: frame.sides[roomIndex - 1] === 0 ? (side === 0 ? 'skill' : 'node') : side === 0 ? 'node' : 'skill' } : { ...options[side], win: 'champion' };
       options[side] = { ...keep, champion: championFor(act).id };
     }
+    // KEYS AND VAULTS: while the party holds a key, the vault door (never the
+    // cursed or the crown door; over a "?" door only when it must). It keeps
+    // its door's own reward: the draft still follows the vault.
+    const R = VAULT_RULES;
+    if (vaults.enabled() && vaults.held() && vaults.open() && nextRoom >= R.doorRooms[0] && nextRoom <= R.doorRooms[1]) {
+      const crownAt = options.findIndex((o) => o.champion);
+      const eventAt = options.findIndex((o) => o.event);
+      const pref = forcedVault ?? vaultPref(frame.seed, campaign.index, nextRoom);
+      const side = vaultSide(pref, dc ? dc.side : null, eventAt >= 0 ? eventAt : null, crownAt >= 0 ? crownAt : null);
+      if (side !== null) {
+        const reward = frame.sides[roomIndex - 1] === 0 ? (side === 0 ? 'skill' : 'node') : side === 0 ? 'node' : 'skill';
+        options[side] = { side, win: 'vault', reward, vault: true };
+      }
+    }
+    forcedVault = null;
     path = {
       nextRoom,
       options,
@@ -1033,7 +1077,7 @@ export function createRunSystem({
     events.emit(getTick(), 'path_offer', {
       room: roomIndex,
       nextRoom,
-      options: options.map((o) => ({ side: o.side, win: o.win, reward: o.reward, ...(o.curse ? { curse: o.curse } : {}), ...(o.major ? { major: true } : {}), ...(o.event ? { event: true } : {}), ...(o.champion ? { champion: o.champion } : {}) })),
+      options: options.map((o) => ({ side: o.side, win: o.win, reward: o.reward, ...(o.curse ? { curse: o.curse } : {}), ...(o.major ? { major: true } : {}), ...(o.event ? { event: true } : {}), ...(o.champion ? { champion: o.champion } : {}), ...(o.vault ? { vault: true } : {}) })),
       freeSkillSlots: path.freeSkillSlots,
     });
   }
@@ -1081,6 +1125,12 @@ export function createRunSystem({
       frame.defendAt = frame.defendAt.filter((r) => r !== next);
       events.emit(getTick(), 'crown_door_taken', { room: next });
     }
+    // KEYS AND VAULTS: the key turns in the lock; the next room is the vault.
+    if (opt.vault) {
+      frame.modes[next - 1] = 'vault';
+      frame.defendAt = frame.defendAt.filter((r) => r !== next);
+      vaults.spend(next);
+    }
     path = null;
     // TUTORIAL: the door is the last lesson — back to camp.
     if (tutorialOn()) {
@@ -1088,7 +1138,7 @@ export function createRunSystem({
       return { nextRoom: next, reward: opt.reward, win: opt.win, tutorial: 'done' };
     }
     beginFade(next);
-    return { nextRoom: next, reward: opt.reward, win: opt.win, ...(opt.curse ? { curse: opt.curse } : {}), ...(opt.major ? { major: true } : {}), ...(opt.event ? { event: true } : {}), ...(opt.champion ? { champion: opt.champion } : {}) };
+    return { nextRoom: next, reward: opt.reward, win: opt.win, ...(opt.curse ? { curse: opt.curse } : {}), ...(opt.major ? { major: true } : {}), ...(opt.event ? { event: true } : {}), ...(opt.champion ? { champion: opt.champion } : {}), ...(opt.vault ? { vault: true } : {}) };
   }
 
   // ------------------------------------------------------- event rooms --
@@ -1228,6 +1278,134 @@ export function createRunSystem({
     return { took: true, encounter: enc.id, ...result };
   }
 
+  // --------------------------------------------------- keys and vaults --
+  // KEYS AND VAULTS (docs/VAULTS.md). Phase 'vault': the party walks into the
+  // treasure room. A hero walking over a Glint pile or the food platter takes
+  // it; E on the chest opens it, gathers whatever is left, then pays the
+  // door's draft and a relic pick. Then the doors, as after any room.
+  const clearSpot = (row, r) => {
+    for (const [x, z] of row) if (staticClearance(x, z, r) >= 0.15) return [x, z];
+    return row[0];
+  };
+  function enterVault(n, tick) {
+    phase = 'vault';
+    const v = vaults.enterRoom(n);
+    relics.onRoomEnter(n, 'vault');
+    const S = VAULT_SPOTS;
+    const [cx, cz] = clearSpot(S.chest, VAULT_RULES.chestRadius + 0.3);
+    const chest = registry.spawn(vaultChestSpec(cx, cz));
+    events.emit(tick, 'interactable_spawn', { id: chest.id, itype: 'vault_chest', x: r2(cx), z: r2(cz) });
+    const piles = S.piles.map((row, i) => {
+      const [x, z] = clearSpot(row, 0.4);
+      const e = registry.spawn({ kind: 'vault_pile', faction: 'neutral', pile: i, x, z, px: x, pz: z, yaw: i * 2.1 });
+      return { id: e.id, x: r2(x), z: r2(z) };
+    });
+    const [px, pz] = clearSpot(S.platter, 0.45);
+    const platter = registry.spawn({ kind: 'vault_platter', faction: 'neutral', x: px, z: pz, px, pz, yaw: 0.4 });
+    events.emit(tick, 'vault_enter', {
+      room: n,
+      chest: { id: chest.id, x: r2(cx), z: r2(cz) },
+      piles,
+      platter: { id: platter.id, x: r2(px), z: r2(pz) },
+      reward: rewardFor[n] ?? null,
+    });
+    return v;
+  }
+
+  function vaultChestSpec(x, z) {
+    return {
+      kind: 'vault_chest',
+      itype: 'vault_chest',
+      faction: 'neutral',
+      x,
+      z,
+      px: x,
+      pz: z,
+      yaw: 0,
+      interactable: true,
+      interactRadius: VAULT_CHEST.interactRadius,
+      radius: VAULT_RULES.chestRadius,
+      verb: VAULT_CHEST.verb,
+      spentLabel: VAULT_CHEST.spentLabel,
+      uses: 1,
+      cooldownUntilTick: 0,
+      activeUntilTick: 0,
+      usedTick: -1,
+      usedBy: null,
+      collider: { r: VAULT_RULES.chestRadius },
+      blocksMovement: true,
+    };
+  }
+
+  // A Glint pile: the Healer's wallet and each ally purse.
+  function takePile(e, by) {
+    const R = VAULT_RULES;
+    gainGlint(R.pileGlint, 'vault_pile');
+    if (allyOn()) for (const seat of [1, 2, 3]) party.gainPurse(seat, R.pilePurse, 'vault_pile');
+    const v = vaults.live();
+    if (v) v.glint += R.pileGlint;
+    events.emit(getTick(), 'vault_pile', { id: e.id, pile: e.pile, by, glint: R.pileGlint, x: r2(e.x), z: r2(e.z) });
+    registry.despawn(e.id);
+  }
+  // The food platter: every living hero heals half their max HP.
+  function takePlatter(e, by) {
+    let healed = 0;
+    for (const h of registry.all()) {
+      if (h.partyIndex === undefined || !(h.hp > 0) || h.hp >= h.maxHp) continue;
+      if (combat.applyHeal(h, h.maxHp * VAULT_RULES.platterHeal, { source: 'vault_platter' })) healed += 1;
+    }
+    const v = vaults.live();
+    if (v) v.healed = healed;
+    events.emit(getTick(), 'vault_platter', { id: e.id, by, healed, x: r2(e.x), z: r2(e.z) });
+    registry.despawn(e.id);
+  }
+  function stepVault() {
+    const v = vaults.live();
+    if (v && v.state === 'open') {
+      if (!v.paid && getTick() >= v.payAt) {
+        v.paid = true;
+        presentReward(null);
+      }
+      return;
+    }
+    for (const e of registry.all()) {
+      if (e.kind !== 'vault_pile' && e.kind !== 'vault_platter') continue;
+      const h = vaults.toucher(e);
+      if (!h) continue;
+      if (e.kind === 'vault_pile') takePile(e, h.id);
+      else takePlatter(e, h.id);
+    }
+  }
+
+  // E on the chest (any hero), the autopilot, or cmd('vaultOpen').
+  function openVault() {
+    if (phase !== 'vault') return null;
+    const v = vaults.live();
+    if (!v || v.state !== 'shut') return null;
+    const tick = getTick();
+    const chest = registry.all().find((e) => e.kind === 'vault_chest');
+    if (chest && chest.uses > 0) chest.uses = 0;
+    // The party gathers the rest of the hoard as the lid comes up.
+    for (const e of registry.all()) {
+      if (e.kind === 'vault_pile') takePile(e, null);
+      else if (e.kind === 'vault_platter') takePlatter(e, null);
+    }
+    vaults.finishRoom();
+    roomsDone = Math.max(roomsDone, roomIndex);
+    const owed = relics.owe(roomIndex, VAULT_RULES.chestSource);
+    events.emit(tick, 'vault_open', {
+      room: roomIndex,
+      glint: v.glint,
+      healed: v.healed,
+      relic: !!owed,
+      ...(chest ? { x: r2(chest.x), z: r2(chest.z) } : {}),
+    });
+    // The lid comes up and the hoard's light rises for a moment; then the
+    // door's own draft, the relic pick and the doors (stepVault).
+    v.payAt = tick + Math.round(VAULT_RULES.revealSec * TICK_HZ);
+    return { opened: true, room: roomIndex, glint: v.glint, healed: v.healed, relic: !!owed };
+  }
+
   // The trapped chest: two short elite-heavy waves in the event room.
   function startAmbush(tick) {
     const depth = endlessDepth();
@@ -1326,6 +1504,7 @@ export function createRunSystem({
     if (pages) pages.reset();
     relics.levelReset(); // RELICS: the relics ride on; curse / pick do not
     encounters.levelReset(); // EVENT ROOMS: two "?" doors a level
+    vaults.levelReset(act); // KEYS AND VAULTS: a key lasts its level
     if (party && CARRY_RULES.resetEntities) party.resetLevelState();
     reward = null;
     path = null;
@@ -2116,6 +2295,12 @@ export function createRunSystem({
   function endOfTick() {
     // RELICS: this tick's procs (Thorn Mail, Leech Fang) land first.
     if (active) relics.endOfTick();
+    // KEYS AND VAULTS: a fallen key lands; a hero walking over one takes it;
+    // in the vault, over a pile or the platter.
+    if (active && vaults.enabled()) {
+      vaults.step();
+      if (phase === 'vault') stepVault();
+    }
     if (active && roomIndex === RUN.bossRoom && phase === 'combat') boss.endOfTick();
     // Status bookkeeping for the tick that just resolved (announce + prune),
     // before a fade can walk into the next room.
@@ -2156,8 +2341,10 @@ export function createRunSystem({
       }
       commitPage('timeout');
     } else if (due === 'door' && phase === 'path') {
-      events.emit(tick, 'party_autopick', { seat: 0, reason: 'door_timeout', choice: 'left' });
-      choosePath(0);
+      // KEYS AND VAULTS: the AI takes the vault door when it holds a key.
+      const vs = path && path.options[1] && path.options[1].vault ? 1 : 0;
+      events.emit(tick, 'party_autopick', { seat: 0, reason: 'door_timeout', choice: vs ? 'right' : 'left' });
+      choosePath(vs);
     } else if (due === 'shop' && phase === 'shop') {
       advanceFromShop({ force: true });
     }
@@ -2287,6 +2474,8 @@ export function createRunSystem({
       ...(active && relics.enabled() ? { relics: relics.view() } : {}),
       // EVENT ROOMS: present only while an encounter is live (hash-stable).
       ...(active && encounters.view(encCtx()) ? { encounter: encounters.view(encCtx()) } : {}),
+      // KEYS AND VAULTS: present only in a run with keys (hash-stable).
+      ...(active && vaults.enabled() ? { vaults: vaults.view() } : {}),
       // UNLOCKS: the run's boons (present only when the player picked some).
       ...(active && campaign && campaign.boons ? { boons: cloneData(campaign.boons) } : {}),
       summary,
@@ -2530,6 +2719,36 @@ export function createRunSystem({
       case 'crownOf':
         // The crown this level rolled: { room, side }.
         return active && frame && championsOn() ? crownFor(frame.seed, campaign.index) : null;
+      // ------------------------------------------------ KEYS AND VAULTS --
+      case 'keyGive': {
+        // The party holds a key (probes, screenshots).
+        if (!active || !vaults.enabled()) return null;
+        if (!vaults.held()) vaults.loadState({ ...vaults.saveState(), key: { from: args[0] === 'elite' ? 'elite' : 'champion', room: roomIndex, kind: 'probe' } });
+        return vaults.view();
+      }
+      case 'keyDrop': {
+        // ('keyDrop'[, x, z]) — a key falls in the live room.
+        if (!active || !vaults.enabled()) return null;
+        return vaults.drop('elite', 'probe', Number(args[0] ?? 0), Number(args[1] ?? -2), roomIndex);
+      }
+      case 'vaultDoor':
+        // ('vaultDoor', side) — the next path screen's vault door prefers this side.
+        if (!active || !vaults.enabled()) return null;
+        forcedVault = args[0] === 1 ? 1 : 0;
+        return forcedVault;
+      case 'vaultRoom': {
+        // ('vaultRoom', n) — a later room of this level becomes the vault.
+        const n = Number(args[0]);
+        if (!active || !frame || !vaults.enabled()) return null;
+        if (!(Number.isInteger(n) && n > roomIndex && n >= 2 && n <= 6)) return null;
+        frame.modes[n - 1] = 'vault';
+        frame.defendAt = frame.defendAt.filter((r) => r !== n);
+        return [...frame.modes];
+      }
+      case 'vaultOpen':
+        return openVault();
+      case 'vaultState':
+        return vaults.enabled() ? vaults.view() : null;
       case 'relicDoor':
         // ('relicDoor', curseId[, side]) — the next path screen's cursed door.
         return relics.forceDoor(args[0], args[1] ?? 0);
@@ -2721,6 +2940,8 @@ export function createRunSystem({
       ...(active && relics.enabled() ? { relics: relics.saveState() } : {}),
       // EVENT ROOMS: present only when the run rolls "?" doors.
       ...(active && encounters.enabled() ? { encounters: encounters.saveState() } : {}),
+      // KEYS AND VAULTS: present only in a run with keys.
+      ...(active && vaults.enabled() ? { vaults: vaults.saveState() } : {}),
       ...(bossPick ? { bossPick } : {}),
     };
   }
@@ -2776,6 +2997,7 @@ export function createRunSystem({
     if (pages) pages.loadState(d.partyPages ?? null);
     relics.loadState(d.relics ?? null);
     encounters.loadState(d.encounters ?? null);
+    vaults.loadState(d.vaults ?? null);
   }
 
   const api = {
@@ -2856,6 +3078,8 @@ export function createRunSystem({
     openEncounter,
     focusEncounter,
     chooseEncounter,
+    // KEYS AND VAULTS: the chest (E does the same through the interactables).
+    openVault,
     relics: () => (relics.enabled() ? relics.view() : null),
     buy,
     refreshShop,

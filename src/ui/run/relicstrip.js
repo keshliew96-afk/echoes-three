@@ -58,16 +58,19 @@ export function createRelicStrip() {
   let known = new Set();
   let placedAt = -1;
 
-  // Under the Glint plate (re-measured now and then: the HUD scales with
-  // the window and the plate's width follows the wallet).
+  // Under the Glint plate, or under the vault key's plate while the party
+  // holds a key (re-measured now and then: the HUD scales with the window
+  // and the plate's width follows the wallet).
   function place(force = false) {
     const now = performance.now();
     if (!force && now - placedAt < 500) return;
     placedAt = now;
     const g = document.querySelector('.hud-glint');
     const r = g ? g.getBoundingClientRect() : null;
+    const k = document.querySelector('.hud-key.hud-key-on');
+    const kr = k ? k.getBoundingClientRect() : null;
     if (r && r.width > 1) {
-      el.style.top = `${Math.round(r.bottom + 8)}px`;
+      el.style.top = `${Math.round(Math.max(r.bottom, kr && kr.width > 1 ? kr.bottom : 0) + 8)}px`;
       el.style.right = `${Math.max(8, Math.round(window.innerWidth - r.right))}px`;
     } else {
       el.style.top = '86px';

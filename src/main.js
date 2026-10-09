@@ -282,6 +282,9 @@ registerEncounterCues(service('audio'));
 // CHAMPION ROOMS (docs/CHAMPIONS.md): stings, tells and move sounds.
 import { registerChampionCues } from './audio/championcues.js';
 registerChampionCues(service('audio'));
+// KEYS AND VAULTS (docs/VAULTS.md): the key, the vault and its hoard.
+import { registerVaultCues } from './audio/vaultcues.js';
+registerVaultCues(service('audio'));
 // Hit feedback: the heavy / soft / downed hit sounds on your own character
 // (src/audio/hitcues.js).
 import { registerHitCues } from './audio/hitcues.js';

@@ -2364,5 +2364,19 @@
  "The Sluice Warden": "閘門守衛",
  "Three voices of the Heart sung into one crystal body. It hums even when it is still.": "心臟的三個聲音被唱進同一具水晶軀體。即使靜止時它也在低吟。",
  "THE CHAMPION'S CHEST": "勇士的寶箱",
- "A rare or legendary relic for the run. Choose one.": "一件持續整局的稀有或傳說遺物。選一件。"
+ "A rare or legendary relic for the run. Choose one.": "一件持續整局的稀有或傳說遺物。選一件。",
+ "{key} <b>Left door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>左門：寶庫。</b>你們的鑰匙能打開它：沒有戰鬥，有成堆的閃晶、一桌盛宴和一個遺物寶箱，之後是挑選。鑰匙只在本關有效。",
+ "{key} <b>Right door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>右門：寶庫。</b>你們的鑰匙能打開它：沒有戰鬥，有成堆的閃晶、一桌盛宴和一個遺物寶箱，之後是挑選。鑰匙只在本關有效。",
+ "A relic from the hoard. Choose one.": "來自寶藏的遺物。選擇一件。",
+ "Champions, and now and then an elite, drop a key. While the party holds one, a vault door can appear on the path: behind it waits a treasure room with no fight, Glint, a feast and a relic chest. A key lasts only the level it was found in.": "勇士，以及偶爾的菁英，會掉落一把鑰匙。隊伍持有鑰匙時，路上可能出現寶庫之門：門後是一間沒有戰鬥的寶藏室，有閃晶、盛宴和遺物寶箱。鑰匙只在找到它的那一關有效。",
+ "LASTS THIS LEVEL": "僅限本關",
+ "Open": "打開",
+ "OPEN THE CHEST": "打開寶箱",
+ "Opened": "已打開",
+ "THE HOARD IS YOURS": "寶藏歸你們了",
+ "the vault": "寶庫",
+ "THE VAULT": "寶庫",
+ "The vault door": "寶庫之門",
+ "THE VAULT'S CHEST": "寶庫的寶箱",
+ "VAULT KEY": "寶庫鑰匙"
 }
