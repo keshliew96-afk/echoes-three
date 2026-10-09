@@ -5,7 +5,7 @@
 //   node tools/autopilot-probe.mjs [--out captures/autopilot-probe.json]
 //
 // Legs:
-//   heal    the plain bot presses a heal only when it reaches someone hurt,
+//   heal    the bot (plain and leader seat) presses a heal only when it reaches someone hurt,
 //           and keeps shooting while an ally is hurt and nothing reaches them
 //           (it used to hold its fire whenever any ally was under 70%).
 //   revive  alone with the party down it starts a revive from 35% HP (it
@@ -115,10 +115,15 @@ const pressedSlot = (s, i) => s.presses.some((p) => p.slot === i);
   s = W.ap.advise(W.clock.tick);
   check('heal', 'out of the bolt\'s reach too: no heal, the aim and the basic go back to the foe', !pressedSlot(s, mb) && !pressedSlot(s, nb) && s.basicAttackHeld === true && Math.abs(s.aim.x - foe.x) < 0.01, { presses: s.presses });
 
-  // The leader seat keeps its rule: an ally under 90% takes the aim.
+  // The leader seat (the AI Healer under a human on another class) takes
+  // the same reach rule, at its own 90% line.
   W.ap.configure({ leader: true, pages: false });
   s = W.ap.advise(W.clock.tick);
-  check('heal', 'the leader seat (AI Healer under a human) is unchanged: it still aims the hurt ally', s.aim && Math.abs(s.aim.x - archer.x) < 0.01, { aim: s.aim });
+  check('heal', 'the leader seat, ally out of every heal\'s reach: no heal, it shoots the foe', !pressedSlot(s, mb) && !pressedSlot(s, nb) && s.basicAttackHeld === true && Math.abs(s.aim.x - foe.x) < 0.01, { presses: s.presses, aim: s.aim });
+  W.world.cmd('placeAlly', 3, 3.0, 0);
+  W.world.cmd('setHp', archer.id, 0.85);
+  s = W.ap.advise(W.clock.tick);
+  check('heal', 'the leader seat, ally at 85% (under its 90% line) at 3 u: the bolt takes the aim', pressedSlot(s, mb) && s.aim && Math.abs(s.aim.x - archer.x) < 0.01, { presses: s.presses, aim: s.aim });
 
   // Over a whole carried Level I: the bot fires while allies are hurt, and no
   // nova heal goes out with nobody hurt inside it.

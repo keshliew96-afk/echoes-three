@@ -25,12 +25,13 @@
 // the nearest enemy in range; revive a Downed ally when nothing is on top of
 // it.
 //
-// AUTOPILOT AND ENDLESS (v0.5.260, docs/AUTOPILOT.md): the plain bot (not the
-// leader seat under a human) presses a heal only when it reaches someone
-// hurt, and keeps attacking while its heals cool down (it used to hold its
-// fire whenever any ally was under 70%, whatever was ready). Alone with the
-// party down it starts a revive from 35% HP and holds it to 20%: waiting for
-// 60% let a Healer with no damage kit stall a room forever.
+// AUTOPILOT AND ENDLESS (v0.5.260, docs/AUTOPILOT.md): the bot (the plain
+// autopilot and the leader seat under a human alike) presses a heal only when
+// it reaches someone hurt, and keeps attacking while its heals cool down (it
+// used to hold its fire whenever any ally was under its heal line, whatever
+// was ready). The plain bot, alone with the party down, starts a revive from
+// 35% HP and holds it to 20%: waiting for 60% let a Healer with no damage kit
+// stall a room forever.
 import { SKILLS } from './skills.js';
 import { emptySnapshot } from '../core/intents.js';
 import { SKILL_SLOTS, DODGE } from '../core/constants.js';
@@ -399,21 +400,13 @@ export function createAutopilot({ registry, player, run, skills, build }) {
     } else if (Math.hypot(cx - player.x, cz - player.z) > FOLLOW_U) s.move = norm(cx - player.x, cz - player.z);
     else if (nearFoe && nearFoe.d < 1.4) s.move = norm(player.x - nearFoe.e.x, player.z - nearFoe.e.z);
 
-    // 4. Casts. The neediest member (self included) below 70% gets the heals.
-    // Direct and nova heals need no aim, so they go out whatever we aim at;
-    // aimed heals (bolt, arc, zone) take the aim only when the neediest is an
-    // ally (a heal bolt cannot land on its own caster). Whenever the aim is
-    // free it goes to the target: damage skills + the basic attack.
-    let needy = null;
-    for (const m of party) {
-      if (!(m.hp > 0)) continue;
-      const f = m.hp / m.maxHp;
-      if (!needy || f < needy.f || (f === needy.f && m.partyIndex < needy.m.partyIndex)) needy = { m, f };
-    }
+    // 4. Casts. Heals go to members below the heal line (self included) that
+    // they reach; an aimed heal (bolt, arc, zone) takes the aim only for an
+    // ally it reaches (a heal bolt cannot land on its own caster). Whenever
+    // the aim is free it goes to the target: damage skills + the basic attack.
     const view = skills.slotsView();
     const healBelow = cfg.leader ? LEADER_HEAL_BELOW : HEAL_BELOW;
-    const healing = !!(needy && needy.f < healBelow);
-    let aimHeals = healing && needy.m.id !== player.id;
+    let aimHeals = false;
     const pressed = new Set();
     const press = (i) => {
       if (pressed.has(i)) return;
@@ -422,9 +415,9 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       stats.casts += 1;
     };
     const nSlots = Math.min(SKILL_SLOTS, view.length);
-    if (!cfg.leader) {
-      // Plain bot: each ready heal goes out only if it reaches someone below
-      // the line; an aimed heal (bolt, arc, zone) takes the aim for the
+    {
+      // Each ready heal goes out only if it reaches someone below the line
+      // (70%, the leader seat 90%); an aimed heal (bolt, arc, zone) takes the aim for the
       // neediest ally it reaches, else the aim stays on the target.
       const distTo = (m) => Math.hypot(m.x - player.x, m.z - player.z);
       const hurt = party
@@ -451,16 +444,6 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       }
       aimHeals = !!aimAt;
       if (aimAt) s.aim = { x: aimAt.x, z: aimAt.z };
-    } else if (healing) {
-      for (let i = 0; i < nSlots; i++) {
-        const sl = view[i];
-        if (!sl || sl.passive || sl.remainingTicks > 0) continue;
-        const def = SKILLS[sl.id];
-        if (def.archetype !== 'heal') continue;
-        const aimFree = def.shape === 'direct' || def.shape === 'nova';
-        if (aimFree || aimHeals) press(i);
-      }
-      if (aimHeals) s.aim = { x: needy.m.x, z: needy.m.z };
     }
     const healPresses = pressed.size;
     if (!aimHeals && target) {

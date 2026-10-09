@@ -17,7 +17,7 @@ The Healer itself takes about 5 % of the party's downs, so making the bot dodge 
 **The bot (`src/sim/autopilot.js`, the plain autopilot only).**
 - Each ready heal goes out only if it reaches someone below the line: a direct heal if a hurt member is in its range (or the Healer is hurt), a nova if a hurt member is inside its area, a bolt, arc or zone if the neediest hurt ally is in its reach. Only then does that heal take the aim; otherwise the aim and the basic attack stay on the target.
 - Alone with the party down it starts a revive from 35 % HP and holds it to 20 % (was 60 % and 30 %).
-- The leader seat (the AI Healer under a human playing another class, `cfg.leader`) keeps its old rules: it is player-facing and was not part of this measurement.
+- The leader seat (the AI Healer under a human playing another class, `cfg.leader`) takes the same heal rule at its own 90 % line (Kesh's pick at merge time): it too used to stop shooting whenever an ally was under its line. Its revive floors and its second-target casting are unchanged. Run as the leader over seeds 1-32, Level I goes from 23 to 30 clears (`AP_CFG`-style `configure({ leader: true })`, seat changes included).
 
 **The AI seats (`src/sim/allies.js`, campaign play only).** While the campaign engagement rules are on (`engageOn()`: a live run, never the `?room=` harness or the legacy run), every AI seat now steps out of
 - a boss's lane telegraph (the Thornmother's Briar Charge, the Heron's spear, the Millwheel's crosscut, the Lich Ram's rush, the Colossus's fissure, the Cantor's lance), the same sidestep the Vein Lancer's lance already got, and
@@ -56,6 +56,6 @@ A 16-seed sample swings by three or four clears either way; use 32 seeds at leas
 
 ## Tools
 
-- `node tools/autopilot-probe.mjs` (14 checks: the heal and attack rules, the lone revive, the seats in a Thornmother and a Stag fight, a replay hash). On v0.5.259 it passes 6 of 14.
+- `node tools/autopilot-probe.mjs` (15 checks: the heal and attack rules, the lone revive, the seats in a Thornmother and a Stag fight, a replay hash). On v0.5.259 it passes 6 of 14.
 - `node tools/endless-run.mjs --campaign 1 --seeds 1-64` for the bench; `--root <dir>` runs another tree for an A/B.
 - `node tools/gntM2-goldens.mjs` (9/9, unchanged).
