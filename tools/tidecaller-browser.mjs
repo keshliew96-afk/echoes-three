@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // THE TIDECALLER browser check (docs/TIDECALLER.md): the class picker shows
-// five cards, picking Rill opens "Who stays at camp?", the camp shows her at
-// the fire with the benched class idling apart, and the player's own Level 1
-// start seats her on the benched class's seat, where she fights and soaks.
+// five cards, picking Rill opens "Who joins the team?", the player swaps who
+// joins, the camp shows that team at the fire, and the player's own Level 1
+// start seats her, where she fights and soaks.
 // Screenshots under captures/ (or --out <dir>).
 //
 //   npx vite --port 5199 &   then   node tools/tidecaller-browser.mjs [--out dir]
@@ -55,25 +55,37 @@ check(cs.map((c) => c.cls).join(',') === 'healer,tank,swordsman,archer,tidecalle
 check(await page.evaluate(() => !!document.querySelector('.cs-card[data-cls="tidecaller"] .cs-new')), 'her card carries the NEW badge');
 await page.screenshot({ path: `${OUT}/tidecaller-1-five-cards.png` });
 
-// Picking her opens the bench view with the Archer at camp.
+// Picking her opens "Who joins the team?": the Healer and Rill locked in,
+// today's Tank and Swordsman with her, the Archer at camp.
 await page.click('.cs-classes .cs-card[data-cls="tidecaller"]');
 await settle(900);
 cs = await cards();
-check((await title()) === 'Who stays at camp?', `the bench view opens (${await title()})`);
-check(cs.map((c) => c.cls).join(',') === 'tank,swordsman,archer', `the bench choices are Tank, Swordsman, Archer (${cs.map((c) => c.cls).join(',')})`);
-check(cs.find((c) => c.cls === 'archer')?.on === true, 'the Archer stays at camp by default');
-await page.screenshot({ path: `${OUT}/tidecaller-2-who-stays.png` });
+const on = (list) => list.filter((c) => c.on).map((c) => c.cls).join(',');
+check((await title()) === 'Who joins the team?', `the team view opens (${await title()})`);
+check(cs.map((c) => c.cls).join(',') === 'healer,tank,swordsman,archer,tidecaller', `all five on the team view (${cs.map((c) => c.cls).join(',')})`);
+check(on(cs) === 'healer,tank,swordsman,tidecaller', `Rill joins in the Archer's place (${on(cs)})`);
+check(cs.find((c) => c.cls === 'healer').disabled && cs.find((c) => c.cls === 'tidecaller').disabled, 'the Healer and the class you play are locked in');
 
-// Bench the Swordsman instead.
+// Swap: the Swordsman stays, the Archer joins.
 await page.click('.cs-classes .cs-card[data-cls="swordsman"]');
+await settle(400);
+await page.click('.cs-classes .cs-card[data-cls="archer"]');
+await settle(700);
+cs = await cards();
+check(on(cs) === 'healer,tank,archer,tidecaller', `the player picks who joins (${on(cs)})`);
+await page.screenshot({ path: `${OUT}/tidecaller-2-who-joins.png` });
+await page.click('.cs-classes .cs-lineup');
+await settle(700);
+check((await title()) === 'Choose your class', 'Done goes back to the classes');
+await page.click('.cs-classes .cs-card[data-cls="tidecaller"]');
 await page.waitForFunction(() => !document.querySelector('.cs-classes .cs-card'), { timeout: 60000, polling: 250 });
 await settle(2500);
-const camp = await page.evaluate(() => window.__echoes.state().party.map((p) => p.classId || 'healer'));
-check(camp.join(',') === 'healer,tank,tidecaller,archer', `the camp party follows the plan (${camp.join(',')})`);
-check(await page.evaluate(() => /Swordsman/.test((document.querySelector('.cp-lineup') || {}).textContent || '')), 'the Lineup chip names the Swordsman');
+const camp = await page.evaluate(() => window.__echoes.state().party.slice().sort((a, b) => a.partyIndex - b.partyIndex).map((p) => p.classId || 'healer'));
+check(camp.join(',') === 'healer,tank,archer,tidecaller', `the camp party follows the team (${camp.join(',')})`);
+check(await page.evaluate(() => /Team/.test((document.querySelector('.cp-lineup') || {}).textContent || '')), 'the camp has a Team chip');
 await page.screenshot({ path: `${OUT}/tidecaller-3-camp.png` });
 
-// The player's own Level 1 start: Rill on seat 2, the Swordsman's.
+// The player's own Level 1 start: Rill on seat 3.
 await page.evaluate(() => {
   window.__tideSeen = { soaked: 0, crash: 0 };
   window.__echoes.on('status_apply', (e) => {
@@ -85,9 +97,9 @@ await cmd('campChoose', 1);
 await page.waitForFunction(() => window.__echoes.cmd('runState').phase === 'combat', { timeout: 300000, polling: 250 });
 await settle(2000);
 const p = await pc();
-check(p.classId === 'tidecaller' && p.seat === 2, `Rill is played on the benched seat (${JSON.stringify(p)})`);
+check(p.classId === 'tidecaller' && p.seat === 3, `Rill is played on her seat (${JSON.stringify(p)})`);
 const ports = await page.evaluate(() => [...document.querySelectorAll('.hud-port')].map((c) => c.dataset.class));
-check(ports.join(',') === 'healer,tank,tidecaller,archer', `the portraits follow (${ports.join(',')})`);
+check(ports.join(',') === 'healer,tank,archer,tidecaller', `the portraits follow (${ports.join(',')})`);
 
 // Hand her the four base skills (room 1 has no draft yet), let the party
 // AI drive, and bring a sturdy pack in so her kit has something to soak.
@@ -98,12 +110,12 @@ for (let i = 0; i < 200 && (await cmd('runState')).phase === 'combat'; i++) {
   await cmd('killAllEnemies');
   await settle(100);
 }
-for (const [k, id] of ['riverbolt', 'undertow', 'breaker', 'tidepool'].entries()) await cmd('partySwap', 2, id, k);
+for (const [k, id] of ['riverbolt', 'undertow', 'breaker', 'tidepool'].entries()) await cmd('partySwap', 3, id, k);
 await cmd('skipToRoom', 2);
 await page.waitForFunction(() => { const v = window.__echoes.cmd('runState'); return v.phase === 'combat' && v.room === 2; }, { timeout: 300000, polling: 250 });
 await settle(1500);
 await cmd('partyMode', 'auto');
-const me = await page.evaluate(() => window.__echoes.state().party.find((p) => p.partyIndex === 2));
+const me = await page.evaluate(() => window.__echoes.state().party.find((p) => p.partyIndex === 3));
 for (const [dx, dz] of [[2.5, 1], [3, 0], [2.6, -1], [-2.5, 1.2]]) await cmd('spawn', 'boar', me.x + dx, me.z + dz, { hpMul: 4 });
 let seen = { soaked: 0, crash: 0 };
 for (let i = 0; i < 40 && !(seen.soaked >= 3); i++) {

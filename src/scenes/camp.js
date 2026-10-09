@@ -72,7 +72,7 @@ import { FIRST_LEVEL, isLevel, lockLine } from '../data/campaign.js';
 import { levelFor } from '../data/levels.js';
 import { endlessUnlockedFrom } from '../data/endless.js';
 import { CLASS_NAME } from '../data/classes.js';
-import { classOfSeat, seatOfClass, activeLineup, sameLineup, benchOf, tidecallerOpen } from '../data/lineup.js';
+import { classOfSeat, seatOfClass, activeLineup, sameLineup, tidecallerOpen, normalizeLineup } from '../data/lineup.js';
 import { lineupFromSettings } from '../app/playclass.js';
 import { bindings, PAD } from '../core/bindings.js';
 import { createCampNpcs } from './campnpcs.js';
@@ -325,7 +325,7 @@ export function createCampScene(stage, toggles, ctx) {
     `<span class="cp-chip cp-class"><span class="cp-key">C</span><span class="cp-lab">${t('Class · {name}', { name: `<b class="cp-class-n">${t('Healer')}</b>` })}</span></span>` +
     // THE TIDECALLER: who stays at camp (opens the class screen's bench view).
     '<span class="cp-sep cp-lineup-sep"></span>' +
-    `<span class="cp-chip cp-lineup"><span class="cp-lab">${t('Lineup · {name} at camp', { name: `<b class="cp-lineup-n">${t('Tidecaller')}</b>` })}</span></span>`;
+    `<span class="cp-chip cp-lineup"><span class="cp-lab">${t('<b>Team</b> · who joins')}</span></span>`;
   document.body.appendChild(prompt);
   // Controls slice: each cap names the player's key, or the pad button while
   // a gamepad is in use.
@@ -368,7 +368,7 @@ export function createCampScene(stage, toggles, ctx) {
   });
   prompt.querySelector('.cp-lineup').addEventListener('click', (e) => {
     e.stopPropagation();
-    openClasses('lineup', { view: 'bench' });
+    openClasses('team', { view: 'team' });
   });
   const tablePrompt = createTablePrompt(() => openLevels('table'));
   const fitPrompt = () => {
@@ -407,15 +407,24 @@ export function createCampScene(stage, toggles, ctx) {
     setStaticColliders(colliders);
     world.cmd('campSeats', seatsNow());
   }
-  // THE TIDECALLER: the camp shows the party the next campaign takes (the
-  // class and bench settings). Solo only: in a session the host's bodies
-  // replicate, and a guest never seats a lineup itself.
-  function syncCampLineup() {
-    if (mode !== 'camp' || begin || inSession()) return false;
+  // THE TIDECALLER: the camp shows the party the next campaign takes. Solo,
+  // that is the class and team settings; a network host takes the team the
+  // lobby chose (net.room.lineup, docs/LINEUP.md). A guest never seats a
+  // lineup itself: the host's bodies replicate.
+  function plannedCampLineup() {
+    if (isGuest()) return null;
+    if (inSession()) {
+      const n = svc('net');
+      const room = n && n.room;
+      return room && Array.isArray(room.lineup) ? normalizeLineup(room.lineup) : null;
+    }
     const settings = svc('settings');
-    if (!settings || typeof settings.get !== 'function') return false;
-    const want = lineupFromSettings(settings);
-    if (sameLineup(want, activeLineup())) return false;
+    return settings && typeof settings.get === 'function' ? lineupFromSettings(settings) : null;
+  }
+  function syncCampLineup() {
+    if (mode !== 'camp' || begin) return false;
+    const want = plannedCampLineup();
+    if (!want || sameLineup(want, activeLineup())) return false;
     const r = world.cmd('campLineup', want);
     if (!r || !r.ok) return false;
     applyCampSim();
@@ -901,7 +910,7 @@ export function createCampScene(stage, toggles, ctx) {
       ...(begin.daily ? { daily: { key: begin.daily.key } } : {}),
       ...(boons ? { boons } : {}),
       // THE TIDECALLER: the lineup the camp shows (the tutorial ignores it).
-      ...(settings && typeof settings.get === 'function' ? { lineup: lineupFromSettings(settings) } : {}),
+      ...(plannedCampLineup() ? { lineup: plannedCampLineup() } : {}),
     });
     begin.started = true;
     begin.startedAt = performance.now();
@@ -1088,12 +1097,10 @@ export function createCampScene(stage, toggles, ctx) {
         chip.style.display = hide ? 'none' : '';
         if (chip.previousElementSibling) chip.previousElementSibling.style.display = hide ? 'none' : '';
       }
-      // THE TIDECALLER: the Lineup chip names who stays at camp.
+      // THE TIDECALLER: the Team chip opens "Who joins the team?" (solo; in
+      // a session the lobby decides the team).
       const lchip = prompt.querySelector('.cp-lineup');
       if (lchip) {
-        const ln = lchip.querySelector('.cp-lineup-n');
-        const away = t(CLASS_NAME[benchOf(activeLineup())[0] ?? 'tidecaller']);
-        if (ln && ln.textContent !== away) ln.textContent = away;
         const lhide = hide || !tidecallerOpen();
         if (lchip.style.display !== (lhide ? 'none' : '')) {
           lchip.style.display = lhide ? 'none' : '';

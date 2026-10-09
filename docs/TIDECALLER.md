@@ -1,6 +1,6 @@
 # The Tidecaller (Rill)
 
-v0.5.261. Slice 2 of the new-character plan
+v0.5.262. Slice 2 of the new-character plan
 (`/mnt/project-files/plan/NEW_CHARACTER_TIDECALLER.md`). Rill is an otter and
 a ranged control caster. She soaks enemies, drags them together, then
 crashes a wave into the soaked. This slice makes her playable with her base
@@ -14,9 +14,12 @@ the Journal.
   from the start. Slice 4 swaps it for the Level II boss unlock.
 - Campaigns only (Endless and Daily included). The tutorial, the legacy
   single-level run and `?room=` stay the default four.
-- Four seats, five classes: one of Tank, Swordsman and Archer stays at camp
-  and Rill takes that seat (docs/LINEUP.md). Picking her on the class picker
-  opens "Who stays at camp?"; with nothing chosen the Archer stays.
+- Four seats, five classes: the player chooses who joins the team
+  (docs/LINEUP.md). The Healer always does, the class you play always does,
+  and the rest is your pick, today's party by default. Picking her on the
+  class picker opens "Who joins the team?" with her in the Archer's place.
+- Co-op: each player picks a character in the lobby, then the host picks who
+  joins as AI for the empty seats.
 
 ## Kit
 

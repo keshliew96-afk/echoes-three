@@ -57,23 +57,28 @@ are unchanged.
   holds in the run's lineup. A class that stayed at camp falls back to the
   Healer's seat.
 
-## Slice 2 (v0.5.261, docs/TIDECALLER.md)
+## Slice 2 (v0.5.262, docs/TIDECALLER.md): who joins the team
 
-- `LINEUP_CLASSES` now holds the Tidecaller too. Four seats, five classes:
-  one of Tank, Swordsman and Archer stays at camp (`BENCH_CLASSES`).
-- The choice is the `gameplay.bench` setting, made on the class picker's
-  "Who stays at camp?" view or from the camp's Lineup chip.
-  `lineupFromSettings` (`app/playclass.js`) turns it into a lineup with
-  `plannedLineup` (`data/lineup.js`): Rill takes the benched class's seat.
-  Playing her with no bench chosen benches the Archer. The class you play is
-  never benched. With no bench and another class played, the lineup is the
-  default four, so the goldens do not move.
+- `LINEUP_CLASSES` now holds the Tidecaller too. Four seats, five classes,
+  and more to come, so the player chooses who JOINS rather than who stays.
+- Solo: the `gameplay.team` setting (up to three of `LINEUP_CLASSES`) is
+  made on the class picker's "Who joins the team?" view or from the camp's
+  Team chip. `lineupFromSettings` (`app/playclass.js`) turns it into a
+  lineup with `plannedLineup` (`data/lineup.js`): the Healer always joins on
+  seat 0, the class you play always joins (in place of the last pick when
+  the team is full), a short team is filled from today's party, and the
+  joiners sit in `LINEUP_CLASSES` order. An unchosen team is the default
+  four, so the goldens do not move.
 - Solo in camp, the camp (`scenes/camp.js` `syncCampLineup`) sends the
-  `campLineup` command so the ally rigs at the fire match the plan. The
-  benched critter idles at its own camp spot. The command is refused during
-  a run.
-- Co-op: the host's settings drive the lineup and guests mirror it as
-  before. The lobby has no lineup control yet.
+  `campLineup` command so the rigs at the fire match the plan. Whoever stays
+  behind idles at their own camp spot. The command is refused during a run.
+- Co-op (`server/lobby.mjs`, `ui/menu/lobby.js`): the room carries a lineup.
+  Each player picks a character from the whole roster (`select_class`): one
+  in the team is its seat; one that is not takes an AI seat's place (their
+  own seat first). Once every guest is ready, the host picks who joins as AI
+  for the empty seats (`set_team`); every human keeps their character and
+  follows it to its seat. The host's camp and run take the room's lineup;
+  guests mirror the bodies as before. The team is fixed once the game starts.
 
 ## Checks
 
@@ -89,4 +94,6 @@ are unchanged.
 - `node tools/lineup-browser.mjs` (needs Vite on 5199): the played Tank
   moves to its lineup seat, the bodies, portraits and HP bars follow, and a
   plain campaign afterwards is the default four.
+- `node tools/team-lobbyunit.mjs` (unit, no I/O): the co-op character and
+  team picks.
 - `node tools/gntM2-goldens.mjs` stays 9/9.

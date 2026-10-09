@@ -23,8 +23,9 @@ import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { createHints } from './hints.js';
 import { installMpStyle, mkBtn, setCaption, inviteLine } from './mpmenu.js';
-import { seatLabel, seatCritter, seatClass } from '../../net/seats.js';
-import { seatOfClass } from '../../data/lineup.js';
+import { seatLabel, seatClass, CLASS_LABEL, CLASS_CRITTER } from '../../net/seats.js';
+import { LINEUP_CLASSES, tidecallerOpen } from '../../data/lineup.js';
+import { ROSTER } from '../../net/protocol/messages.js';
 import { PLAY_CLASS_KEY } from '../../app/playclass.js';
 import { QUICK_MATCH_ALONE_MS } from '../../net/protocol/constants.js';
 import { t, tn } from '../../i18n/index.js';
@@ -45,6 +46,13 @@ const CSS = `
 .nt-seat .nt-stag.nt-host { color: ${P.parchment}; border-color: ${P.hearthAmber}AA; }
 .nt-seat.nt-empty .nt-sname { color: ${P.warmGrey}; }
 .nt-seat.nt-mine { border-color: ${P.hearthAmber}88; background: linear-gradient(180deg, #3A3226 0%, #2A251E 100%); }
+.nt-lobby .nt-pick { display: flex; flex-direction: column; gap: ${px(8)}; }
+.nt-lobby .nt-pick h3 { margin: ${px(6)} 0 0; font-size: ${px(20)}; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: ${P.parchment}; }
+.nt-lobby .nt-pickrow { display: flex; flex-wrap: wrap; gap: ${px(8)}; }
+.nt-lobby .nt-pickrow .ap-btn { min-height: ${px(48)}; padding: ${px(4)} ${px(14)}; font-size: ${px(20)}; }
+.nt-lobby .nt-pickrow .ap-btn[data-on="true"] { border-color: ${P.hearthAmber}; color: ${P.hearthAmber}; }
+.nt-lobby .nt-pickrow .ap-btn[disabled] { opacity: 0.5; }
+.nt-lobby .nt-pickcap { font-size: ${px(19)}; color: ${P.bone}; }
 .nt-lobby .nt-countdown { font-size: ${px(30)}; font-weight: 800; color: ${P.hearthAmber}; text-align: center; min-height: 1.2em; }
 `;
 let styled = false;
@@ -72,7 +80,7 @@ export function howtoLine(room, peerId) {
   const seats = (room && room.seats) || [];
   const mine = seats.find((s) => s.peerId && s.peerId === peerId) || null;
   const hostSeat = seats.find((s) => s.peerId && room && s.peerId === room.hostPeerId) || null;
-  const cls = (s) => (seatClass(s.index) ? t(seatLabel(s.index)) : t('ally'));
+  const cls = (s) => (s.classId && CLASS_LABEL[s.classId] ? t(CLASS_LABEL[s.classId]) : seatClass(s.index) ? t(seatLabel(s.index)) : t('ally'));
   if (mine && hostSeat && mine === hostSeat)
     return t('You play the {cls}. Between rooms each player builds their own character; you also build the AI-held seats ({path}). Anyone can drop in later.', {
       cls: cls(mine),
@@ -99,7 +107,10 @@ export function createLobbyScreen(ctx) {
     <div class="nt-panel ap-plate">
       <div class="nt-head"><h2 class="ap-h2">${t('Room')}</h2><span class="nt-roomcode">·····</span><div class="nt-sub nt-vis"></div></div>
       <div class="nt-body">
-        <div class="nt-seats"></div>
+        <div class="nt-seats">
+          <div class="nt-pick nt-pick-me"><h3>${t('Your character')}</h3><div class="nt-pickrow nt-row-me"></div></div>
+          <div class="nt-pick nt-pick-team"><h3>${t('Who joins as AI')}</h3><div class="nt-pickcap nt-cap-team"></div><div class="nt-pickrow nt-row-team"></div></div>
+        </div>
         <aside class="nt-side">
           <h3>${t('Share')}</h3>
           <div class="nt-line nt-share"></div>
@@ -132,6 +143,7 @@ export function createLobbyScreen(ctx) {
   const leaveBtn = mkBtn(t('Leave'), 'nt-lobby-leave', { onPress: () => leave() });
   startBtn.style.alignItems = 'flex-start';
   startBtn.style.flexDirection = 'column';
+  const pickMeEl = el.querySelector('.nt-pick-me');
   const seatBtns = [0, 1, 2, 3].map((i) => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -140,9 +152,40 @@ export function createLobbyScreen(ctx) {
     b.setAttribute('data-nav', '');
     b.innerHTML = `<span class="nt-sclass" style="background:${CLASS_TINT[seatClass(i)]}">${t(seatLabel(i)).charAt(0)}</span><span class="nt-swho"><span class="nt-sname"></span><span class="nt-srole"></span></span><span class="nt-stag"></span>`;
     b.addEventListener('click', () => seatPressed(i));
-    seatsEl.appendChild(b);
+    seatsEl.insertBefore(b, pickMeEl);
     return b;
   });
+  // THE TIDECALLER (docs/LINEUP.md): every player picks their own character
+  // from the whole roster; once every guest is ready, the host picks who
+  // joins as AI for the empty seats (the Healer always comes).
+  const roster = () => ROSTER.filter((c) => c !== 'tidecaller' || tidecallerOpen());
+  const meRow = el.querySelector('.nt-row-me');
+  const teamRow = el.querySelector('.nt-row-team');
+  const teamPick = el.querySelector('.nt-pick-team');
+  const teamCap = el.querySelector('.nt-cap-team');
+  const meBtns = new Map();
+  const teamBtns = new Map();
+  for (const c of roster()) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ap-btn';
+    b.dataset.cls = c;
+    b.setAttribute('data-nav', '');
+    b.addEventListener('click', () => classPressed(c));
+    meRow.appendChild(b);
+    meBtns.set(c, b);
+    if (c === 'healer') continue;
+    const tb = document.createElement('button');
+    tb.type = 'button';
+    tb.className = 'ap-btn';
+    tb.dataset.cls = c;
+    tb.setAttribute('data-nav', '');
+    tb.addEventListener('click', () => teamPressed(c));
+    teamRow.appendChild(tb);
+    teamBtns.set(c, tb);
+  }
+  let teamDraft = null; // the host's picks while fewer than three
+  const clsOf = (s) => s.classId || seatClass(s.index);
 
   let open = false;
   let queuedSince = null;
@@ -161,13 +204,12 @@ export function createLobbyScreen(ctx) {
     const mine = me();
     if (!mine) return;
     preferTried = r.code;
-    const want = seatOfClass(app.settings.get(PLAY_CLASS_KEY));
-    if (want < 0 || want === mine.index) return;
-    const target = r.seats[want];
-    if (!target || target.peerId) return;
+    const want = app.settings.get(PLAY_CLASS_KEY);
+    if (!ROSTER.includes(want) || clsOf(mine) === want) return;
+    if (r.seats.some((s) => s.peerId && s.peerId !== mine.peerId && clsOf(s) === want)) return;
     busy = true;
     try {
-      await net.selectSeat(want);
+      await net.selectClass(want);
     } catch {
       /* stays on its seat */
     } finally {
@@ -211,7 +253,12 @@ export function createLobbyScreen(ctx) {
       b.classList.toggle('nt-empty', !s.peerId);
       b.querySelector('.nt-sname').textContent = s.peerId ? (mine ? t('{name} (you)', { name: s.name }) : s.name) : t('AI');
       const ping = s.peerId && Number.isFinite(s.rttMs) ? ` · ${t('{ms} ms', { ms: Math.round(s.rttMs) })}` : '';
-      b.querySelector('.nt-srole').textContent = `${t('{cls} · the {critter}', { cls: t(seatLabel(s.index)), critter: t(seatCritter(s.index)) })}${ping}`;
+      const c = clsOf(s);
+      b.querySelector('.nt-srole').textContent = `${t('{cls} · the {critter}', { cls: t(CLASS_LABEL[c]), critter: t(CLASS_CRITTER[c]) })}${ping}`;
+      const badge = b.querySelector('.nt-sclass');
+      const letter = t(CLASS_LABEL[c]).charAt(0);
+      if (badge.textContent !== letter) badge.textContent = letter;
+      badge.style.background = CLASS_TINT[c];
       const tag = b.querySelector('.nt-stag');
       tag.className = 'nt-stag';
       if (!s.peerId) tag.textContent = r.state === 'lobby' ? t('AI · take it') : t('AI plays');
@@ -229,9 +276,10 @@ export function createLobbyScreen(ctx) {
       const path = net.paths ? net.paths()[s.index] : undefined;
       if (path) b.querySelector('.nt-srole').textContent += ` · ${path === 'direct' ? t('Direct@@network path') : t('Relay@@network path')}`;
       const canTake = !s.peerId && r.state === 'lobby';
-      const seatVars = { cls: t(seatLabel(s.index)), who: s.peerId ? s.name : t('AI') };
+      const seatVars = { cls: t(CLASS_LABEL[c]), who: s.peerId ? s.name : t('AI') };
       b.setAttribute('aria-label', canTake ? t('{cls}: {who} — press to take this seat', seatVars) : t('{cls}: {who}', seatVars));
     }
+    renderPicks(r, net, host);
     shareEl.textContent = t('Friends open Multiplayer ▸ Join by Code and type {code}.', { code: r.code });
     // DEPLOY (PLAN §14): the invite is the page link when the game is served
     // from a site (no address to type); the LAN server line otherwise.
@@ -279,6 +327,86 @@ export function createLobbyScreen(ctx) {
     }
   }
 
+  function renderPicks(r, net, host) {
+    const lobbyOpen = r.state === 'lobby';
+    const mine = me();
+    const humanOf = new Map(r.seats.filter((s) => s.peerId).map((s) => [clsOf(s), s]));
+    for (const [c, b] of meBtns) {
+      const holder = humanOf.get(c);
+      const own = !!(mine && clsOf(mine) === c);
+      const taken = !!holder && !own;
+      b.textContent = own ? t('✓ {cls}', { cls: t(CLASS_LABEL[c]) }) : taken ? t('{cls} · Taken', { cls: t(CLASS_LABEL[c]) }) : t(CLASS_LABEL[c]);
+      b.dataset.on = String(own);
+      b.disabled = !lobbyOpen || taken;
+    }
+    teamPick.style.display = host ? '' : 'none';
+    if (!host) return;
+    const team = r.lineup ? r.lineup.slice(1) : r.seats.slice(1).map(clsOf);
+    const waiting = r.seats.filter((s) => s.peerId && s.peerId !== r.hostPeerId && (!s.connected || !s.ready));
+    const draft = teamDraft || team;
+    teamCap.textContent = waiting.length
+      ? t('Waiting for {names} to choose their character', { names: waiting.map((s) => s.name).join(', ') })
+      : draft.length < 3
+        ? t('{n} of 3 chosen', { n: draft.length })
+        : t('The Healer always comes. Choose who fills the seats the AI plays.');
+    for (const [c, b] of teamBtns) {
+      const human = humanOf.get(c);
+      const joins = draft.includes(c);
+      b.textContent = human ? t('{cls} · {name}', { cls: t(CLASS_LABEL[c]), name: human.name }) : joins ? t('✓ {cls}', { cls: t(CLASS_LABEL[c]) }) : t(CLASS_LABEL[c]);
+      b.dataset.on = String(joins);
+      b.disabled = !lobbyOpen || !!human || waiting.length > 0;
+    }
+  }
+  async function classPressed(c) {
+    const net = n();
+    if (!net || !net.room || busy || net.room.state !== 'lobby') return;
+    const mine = me();
+    if (mine && clsOf(mine) === c) return;
+    busy = true;
+    try {
+      const r = await net.selectClass(c);
+      if (!r.ok) setErr(r.text ? t(r.text) : t('That class is taken ({reason})', { reason: r.reason }));
+      else {
+        setErr('');
+        teamDraft = null;
+        // The lobby pick is this player's class from now on (camp too).
+        if (app.settings) app.settings.set(PLAY_CLASS_KEY, c);
+      }
+    } finally {
+      busy = false;
+      render();
+    }
+  }
+  // The host's AI picks: a class joins or stays at camp; with three chosen
+  // the team goes to the server (a human's class always stays in).
+  async function teamPressed(c) {
+    const net = n();
+    const r0 = net && net.room;
+    if (!r0 || busy || r0.state !== 'lobby' || !amHost()) return;
+    const team = teamDraft || (r0.lineup ? r0.lineup.slice(1) : []);
+    let next;
+    if (team.includes(c)) next = team.filter((x) => x !== c);
+    else if (team.length >= 3) {
+      setErr(t('The team is full: choose someone to stay at camp first.'));
+      return;
+    } else next = LINEUP_CLASSES.filter((x) => x === c || team.includes(x));
+    setErr('');
+    if (next.length < 3) {
+      teamDraft = next;
+      render();
+      return;
+    }
+    teamDraft = null;
+    busy = true;
+    try {
+      const r = await net.setTeam(next);
+      if (!r.ok) setErr(r.text ? t(r.text) : t('Couldn’t change the team ({reason})', { reason: r.reason }));
+    } finally {
+      busy = false;
+      render();
+    }
+  }
+
   async function toggleReady() {
     const net = n();
     const mine = me();
@@ -317,7 +445,7 @@ export function createLobbyScreen(ctx) {
       else {
         setErr('');
         // The lobby pick is this player's class from now on (camp too).
-        if (app.settings) app.settings.set(PLAY_CLASS_KEY, seatClass(i));
+        if (app.settings) app.settings.set(PLAY_CLASS_KEY, clsOf(net.room.seats[i]));
       }
     } finally {
       busy = false;

@@ -7,7 +7,7 @@
 // Checks:
 //   1. Data and gate: her class row, Spit, the four base skills, all
 //      campaign-only; the default lineup is still the old four; the planned
-//      lineup rules (the bench).
+//      lineup rules (who joins the team).
 //   2. Soaked: the slow, a boss's 5% cap, stacking with a slow, a Frozen
 //      elite refusing it, the party never carrying it.
 //   3. A campaign with Rill on seat 3 (the Archer at camp): her body, max HP
@@ -111,10 +111,12 @@ function secondRoom(W, kit) {
   check(KIT.every((id) => C.CAMPAIGN_ONLY_SKILLS.includes(id)) && C.gatedPool(KIT, false).length === 0 && C.gatedPool(KIT, true).length === 4, 'all four are campaign-only');
   check(SKILLS.riverbolt.status.kind === 'soaked' && SKILLS.undertow.status.kind === 'soaked' && SKILLS.tidepool.status.kind === 'soaked' && SKILLS.breaker.crash === true && !SKILLS.breaker.status, 'Riverbolt, Undertow and Tidepool soak; Breaker crashes');
   check(same(L.DEFAULT_LINEUP, ['healer', 'tank', 'swordsman', 'archer']) && same(L.benchOf(L.DEFAULT_LINEUP), ['tidecaller']), 'the default lineup is the old four (Rill at camp)');
-  check(same(L.plannedLineup('tidecaller', 'none'), RILL), 'playing her benches the Archer by default');
-  check(same(L.plannedLineup('healer', 'tank'), ['healer', 'tidecaller', 'swordsman', 'archer']), 'benching the Tank puts her on seat 1');
-  check(same(L.plannedLineup('swordsman', 'swordsman'), RILL), 'the class you play never stays at camp');
-  check(L.plannedLineup('healer', 'none') === L.DEFAULT_LINEUP && L.plannedLineup('archer', undefined) === L.DEFAULT_LINEUP, 'no bench and not playing her is the default four');
+  check(same(L.plannedLineup('tidecaller', ''), RILL), 'playing her with no team chosen: she joins in the Archer\'s place');
+  check(same(L.plannedLineup('healer', 'tank,archer,tidecaller'), ['healer', 'tank', 'archer', 'tidecaller']), 'the chosen three join, in seat order');
+  check(same(L.plannedLineup('swordsman', 'tank,archer,tidecaller'), ['healer', 'tank', 'swordsman', 'archer']), 'the class you play always joins (in place of the last pick)');
+  check(same(L.plannedLineup('healer', 'tidecaller'), ['healer', 'tank', 'swordsman', 'tidecaller']), 'a short team is filled from today\'s party');
+  check(L.plannedLineup('healer', '') === L.DEFAULT_LINEUP && L.plannedLineup('archer', undefined) === L.DEFAULT_LINEUP && L.plannedLineup('tank', 'tank,swordsman,archer') === L.DEFAULT_LINEUP, 'no team chosen (or today\'s party) is the default four');
+  check(same(L.parseTeam('archer,healer,bogus,archer,tank,swordsman,tidecaller'), ['archer', 'tank', 'swordsman']), 'the setting keeps three known joiners');
   check(same(L.normalizeLineup(['healer', 'tidecaller', 'archer', 'tank']), ['healer', 'tidecaller', 'archer', 'tank']), 'any three of the four may hold the ally seats');
 }
 

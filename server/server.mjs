@@ -349,6 +349,12 @@ export function createEchoesServer(options = {}) {
       case MSG.SELECT_SEAT:
         lobby.selectSeat(peer, m.seat);
         break;
+      case MSG.SELECT_CLASS:
+        lobby.selectClass(peer, m.classId);
+        break;
+      case MSG.SET_TEAM:
+        lobby.setTeam(peer, m.team);
+        break;
       case MSG.SET_READY:
         lobby.setReady(peer, m.ready);
         break;

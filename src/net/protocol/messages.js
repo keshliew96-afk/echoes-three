@@ -11,6 +11,9 @@ export const MAX_CONTROL_BYTES = 4096;
 export const NAME_MAX = 16;
 export const CLASS_BY_SEAT = Object.freeze(['healer', 'tank', 'swordsman', 'archer']);
 export const SEAT_NAMES = Object.freeze(['Healer', 'Tank', 'Swordsman', 'Archer']);
+// THE TIDECALLER: every character a lobby player may pick (data/lineup.js
+// decides which of them are open and how a team is made).
+export const ROSTER = Object.freeze(['healer', 'tank', 'swordsman', 'archer', 'tidecaller']);
 
 // Extra (non-join) error reasons the server may answer with `error { reason }`.
 export const ERR = Object.freeze({
@@ -93,6 +96,8 @@ const C2S = {
   [MSG.CANCEL_MATCH]: () => null,
   [MSG.LEAVE_ROOM]: () => null,
   [MSG.SELECT_SEAT]: (m) => (isInt(m.seat, 0, MAX_SEATS - 1) ? null : 'bad_request'),
+  [MSG.SELECT_CLASS]: (m) => (ROSTER.includes(m.classId) ? null : 'bad_request'),
+  [MSG.SET_TEAM]: (m) => (Array.isArray(m.team) && m.team.length === 3 && m.team.every((c) => ROSTER.includes(c) && c !== 'healer') ? null : 'bad_request'),
   [MSG.SET_READY]: (m) => (typeof m.ready === 'boolean' ? null : 'bad_request'),
   [MSG.START_GAME]: (m) => (optional(m.seed, (x) => isInt(x, 0, 0xffffffff)) ? null : 'bad_request'),
   [MSG.RECONNECT]: (m) => (typeof m.token === 'string' && TOKEN_RE.test(m.token) && normalizeCode(m.code) !== null ? null : 'bad_request'),

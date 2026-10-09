@@ -126,9 +126,19 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "{cls} · {name}": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
  "{cls} · SKILL SLOTS FREE": {
   "files": [
    "src/ui/run/draft.js"
+  ]
+ },
+ "{cls} · Taken": {
+  "files": [
+   "src/ui/menu/lobby.js"
   ]
  },
  "{cls} · the {critter}": {
@@ -481,6 +491,16 @@
   ],
   "plural": true,
   "one": "{n} node from {skill} back on the bench — F auto-fills them"
+ },
+ "{n} of 3 chosen": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "{n} of 3 chosen · the rest from today’s party": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
  },
  "{n} player": {
   "files": [
@@ -1316,6 +1336,11 @@
    "src/ui/run/draft.js"
   ]
  },
+ "<b>Team</b> · who joins": {
+  "files": [
+   "src/scenes/camp.js"
+  ]
+ },
  "<b>W</b>/<b>S</b> or <b>↑</b>/<b>↓</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause": {
   "files": [
    "src/ui/run/draft.js"
@@ -1383,14 +1408,19 @@
    "src/ui/run/shop.js"
   ]
  },
- "✓ At camp": {
+ "✓ {cls}": {
   "files": [
-   "src/ui/run/classpick.js"
+   "src/ui/menu/lobby.js"
   ]
  },
  "✓ Done": {
   "files": [
    "src/ui/run/unlocks.js"
+  ]
+ },
+ "✓ Joins": {
+  "files": [
+   "src/ui/run/classpick.js"
   ]
  },
  "✓ Playing": {
@@ -2597,8 +2627,7 @@
    "src/ui/menu/mpmenu.js",
    "src/ui/menu/records.js",
    "src/ui/menu/saves.js",
-   "src/ui/menu/settings.js",
-   "src/ui/run/classpick.js"
+   "src/ui/menu/settings.js"
   ]
  },
  "Back to camp": {
@@ -3951,6 +3980,11 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "Couldn’t change the team ({reason})": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
  "Couldn't continue that save": {
   "files": [
    "src/ui/menu/title.js"
@@ -4548,6 +4582,7 @@
  },
  "Done": {
   "files": [
+   "src/ui/run/classpick.js",
    "src/ui/story/journal.js"
   ]
  },
@@ -5430,7 +5465,7 @@
   ],
   "data": true
  },
- "Four seats, five friends: one stays at camp. Rill takes their seat for the run.": {
+ "Four seats: the Healer always comes, you play your class, and you choose who fills the rest. The AI plays everyone you do not.": {
   "files": [
    "src/ui/run/classpick.js"
   ]
@@ -6521,6 +6556,11 @@
    "src/ui/net/hud.js"
   ]
  },
+ "Joins or stays": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "Journal": {
   "files": [
    "src/ui/menu/tabs/controls.js",
@@ -6985,16 +7025,6 @@
  "Linear": {
   "files": [
    "src/ui/menu/tabs/audio.js"
-  ]
- },
- "Lineup · {name} at camp": {
-  "files": [
-   "src/scenes/camp.js"
-  ]
- },
- "Lineup: the {cls} stays at camp": {
-  "files": [
-   "src/ui/run/classpick.js"
   ]
  },
  "Linger": {
@@ -9259,16 +9289,6 @@
    "src/app/controls.js"
   ]
  },
- "Rill stays at camp": {
-  "files": [
-   "src/ui/run/classpick.js"
-  ]
- },
- "Rill stays by the fire. The party is the usual four.": {
-  "files": [
-   "src/ui/run/classpick.js"
-  ]
- },
  "Ring": {
   "files": [
    "src/sim/interactables.js"
@@ -10395,11 +10415,6 @@
    "src/ui/run/classpick.js"
   ]
  },
- "Stays by the fire for the run. Rill takes the seat.": {
-  "files": [
-   "src/ui/run/classpick.js"
-  ]
- },
  "Steady Aim": {
   "files": [
    "src/sim/nodes.js"
@@ -10642,6 +10657,11 @@
   ],
   "data": true
  },
+ "Team: {names}": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "technique": {
   "files": [
    "src/ui/socket/index.js"
@@ -10883,11 +10903,6 @@
    "src/ui/run/shop.js"
   ]
  },
- "The {cls} stays at camp. Rill joins the party.": {
-  "files": [
-   "src/ui/run/classpick.js"
-  ]
- },
  "The {cls}'s build": {
   "files": [
    "src/ui/socket/index.js"
@@ -10982,6 +10997,11 @@
    "src/data/story.js"
   ],
   "data": true
+ },
+ "The bell-carrier always comes along.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
  },
  "the bench is empty — clear spoils, node drafts and the shop fill it": {
   "files": [
@@ -11377,6 +11397,11 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "The Healer always comes. Choose who fills the seats the AI plays.": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
  },
  "The Healer carries · {skills}": {
   "files": [
@@ -11792,6 +11817,11 @@
   ],
   "data": true
  },
+ "The rest of the team comes from today’s party": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "The river carries my song now. Drink.": {
   "files": [
    "src/data/story.js"
@@ -11993,6 +12023,12 @@
   ],
   "data": true
  },
+ "The team is full: choose someone to stay at camp first.": {
+  "files": [
+   "src/ui/menu/lobby.js",
+   "src/ui/run/classpick.js"
+  ]
+ },
  "The Thornmother": {
   "files": [
    "src/data/journal.js",
@@ -12011,11 +12047,6 @@
   "files": [
    "src/ui/run/endscreens.js",
    "src/ui/run/transit.js"
-  ]
- },
- "THE TIDECALLER JOINS": {
-  "files": [
-   "src/ui/run/classpick.js"
   ]
  },
  "the vault": {
@@ -12328,7 +12359,6 @@
  "Tidecaller": {
   "files": [
    "src/data/classes.js",
-   "src/scenes/camp.js",
    "src/ui/menu/saves.js",
    "src/ui/run/transit.js"
   ],
@@ -12776,6 +12806,11 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "Waiting for {names} to choose their character": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
  "Waiting for the {cls}…": {
   "files": [
    "src/ui/run/index.js"
@@ -12955,7 +12990,12 @@
   ],
   "data": true
  },
- "Who stays at camp?": {
+ "Who joins as AI": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Who joins the team?": {
   "files": [
    "src/ui/run/classpick.js"
   ]
@@ -13296,6 +13336,7 @@
  },
  "Your character": {
   "files": [
+   "src/ui/menu/lobby.js",
    "src/ui/run/partystrip.js"
   ]
  },

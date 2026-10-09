@@ -7,11 +7,13 @@
 // and the AI plays the other three. Esc / B backs out to the camp.
 //
 // THE TIDECALLER (docs/TIDECALLER.md): a fifth card, Rill the otter. Five
-// classes, four seats, so choosing her asks "Who stays at camp?" (Tank,
-// Swordsman or Archer; the Archer by default) in this same screen's second
-// view, which the camp's Lineup chip also opens (params { view: 'bench' }).
-// The answer is the `gameplay.bench` setting; data/lineup.js plannedLineup
-// turns the two settings into the next campaign's lineup.
+// classes, four seats, so the screen's second view asks "Who joins the
+// team?": the Healer always does, the class you play always does, and the
+// player chooses the rest (today's party by default). The Team button and
+// the camp's Team chip (params { view: 'team' }) open it, and so does
+// picking a class that was not in the team. The answer is the
+// `gameplay.team` setting; data/lineup.js plannedLineup turns the two
+// settings into the next campaign's lineup.
 // Blocking: the single-player sim pauses while it is open.
 import { px } from '../../app/style.js';
 import { PALETTE as P, CLASS_ACCENTS } from '../../data/palette.js';
@@ -22,8 +24,8 @@ import { ALLY_CLASSES } from '../../sim/allies.js';
 import { SKILLS, STARTING_SKILLS } from '../../sim/skills.js';
 import { UNLOCKS } from '../../data/unlocks.js';
 import { CLASS_CRITTER } from '../../net/seats.js';
-import { PLAY_CLASS_KEY, BENCH_KEY, PLAY_CLASSES, playable } from '../../app/playclass.js';
-import { BENCH_CLASSES, DEFAULT_BENCH, plannedLineup, benchOf } from '../../data/lineup.js';
+import { PLAY_CLASS_KEY, TEAM_KEY, PLAY_CLASSES, playable } from '../../app/playclass.js';
+import { LINEUP_CLASSES, plannedLineup, teamOf } from '../../data/lineup.js';
 import { t } from '../../i18n/index.js';
 
 const STYLE_ID = 'cs-classes-style';
@@ -134,13 +136,14 @@ export function createClassesScreen(ctx) {
   const lineupBtn = el.querySelector('.cs-lineup');
   const settings = app && app.settings ? app.settings : null;
   const chosen = () => (settings ? settings.get(PLAY_CLASS_KEY) : 'healer');
-  const bench = () => (settings ? settings.get(BENCH_KEY) : 'none');
-  // Who the next campaign leaves at camp (the Tidecaller herself by default).
-  const atCamp = () => benchOf(plannedLineup(chosen(), bench()))[0] ?? 'tidecaller';
-  let view = 'classes'; // 'classes' | 'bench'
-  let openedOnBench = false; // the camp's Lineup chip opens straight onto the bench view
+  const teamSetting = () => (settings ? settings.get(TEAM_KEY) : '');
+  // The three who join the Healer in the next campaign.
+  const teamNow = () => teamOf(plannedLineup(chosen(), teamSetting()));
+  let view = 'classes'; // 'classes' | 'team'
+  let openedOnTeam = false; // the camp's Team chip opens straight onto the team view
+  let draft = []; // the team view's picks (up to three joiners)
   let log = [];
-  lineupBtn.addEventListener('click', () => show('bench'));
+  lineupBtn.addEventListener('click', () => (view === 'team' ? done() : show('team')));
 
   function card(key, accent) {
     const b = document.createElement('button');
@@ -155,94 +158,90 @@ export function createClassesScreen(ctx) {
   function show(next) {
     view = next;
     gridEl.innerHTML = '';
-    if (view === 'bench') {
-      const opts = [...BENCH_CLASSES];
-      if (chosen() !== 'tidecaller') opts.push('none');
-      gridEl.style.setProperty('--cs-cols', String(opts.length));
-      for (const k of opts) {
-        const b = card(k, CLASS_ACCENTS[k === 'none' ? 'tidecaller' : k]);
-        b.addEventListener('click', () => pickBench(k));
-        gridEl.appendChild(b);
-      }
-    } else {
-      const list = PLAY_CLASSES.filter(playable);
-      gridEl.style.setProperty('--cs-cols', String(list.length));
-      for (const cls of list) {
-        const b = card(cls, CLASS_ACCENTS[cls]);
-        b.addEventListener('click', () => pick(cls));
-        gridEl.appendChild(b);
-      }
+    noteEl.textContent = '';
+    const list = PLAY_CLASSES.filter(playable);
+    gridEl.style.setProperty('--cs-cols', String(list.length));
+    if (view === 'team') draft = [...teamNow()];
+    for (const cls of list) {
+      const b = card(cls, CLASS_ACCENTS[cls]);
+      b.addEventListener('click', () => (view === 'team' ? toggle(cls) : pick(cls)));
+      gridEl.appendChild(b);
     }
     render();
-    const cur = gridEl.querySelector('.cs-card[data-on="true"]') || gridEl.querySelector('.cs-card:not([disabled])');
+    const cur = gridEl.querySelector('.cs-card[data-on="true"]:not([disabled])') || gridEl.querySelector('.cs-card:not([disabled])');
     if (cur && manager && typeof manager.focusElement === 'function') manager.focusElement(cur);
   }
 
   function render() {
-    const bench0 = view === 'bench';
-    el.querySelector('.cs-kicker').textContent = bench0 ? t('THE TIDECALLER JOINS') : t('BEFORE THE RUN');
-    el.querySelector('.cs-title').textContent = bench0 ? t('Who stays at camp?') : t('Choose your class');
-    el.setAttribute('aria-label', bench0 ? t('Who stays at camp?') : t('Choose your class'));
-    el.querySelector('.cs-blurb').textContent = bench0
-      ? t('Four seats, five friends: one stays at camp. Rill takes their seat for the run.')
+    const team0 = view === 'team';
+    el.querySelector('.cs-kicker').textContent = t('BEFORE THE RUN');
+    el.querySelector('.cs-title').textContent = team0 ? t('Who joins the team?') : t('Choose your class');
+    el.setAttribute('aria-label', team0 ? t('Who joins the team?') : t('Choose your class'));
+    el.querySelector('.cs-blurb').textContent = team0
+      ? t('Four seats: the Healer always comes, you play your class, and you choose who fills the rest. The AI plays everyone you do not.')
       : t('You play one of the five. The AI plays the rest of the party of four, so it is always whole.');
-    el.querySelector('.cs-k-move').textContent = bench0 ? t('Choose') : t('Class');
-    el.querySelector('.cs-k-pick').textContent = bench0 ? t('Stays at camp') : t('Play this class');
-    el.querySelector('.cs-k-back').textContent = bench0 ? t('Back') : t('Back to camp');
-    lineupBtn.style.display = bench0 ? 'none' : '';
-    const away = atCamp();
-    lineupBtn.textContent = t('Lineup: the {cls} stays at camp', { cls: t(CLASS_NAME[away]) });
+    el.querySelector('.cs-k-move').textContent = team0 ? t('Choose') : t('Class');
+    el.querySelector('.cs-k-pick').textContent = team0 ? t('Joins or stays') : t('Play this class');
+    el.querySelector('.cs-k-back').textContent = team0 ? t('Done') : t('Back to camp');
     const on = chosen();
+    const names = (list) => list.map((c) => t(CLASS_NAME[c])).join(', ');
+    lineupBtn.textContent = team0
+      ? draft.length === 3
+        ? t('Done')
+        : t('{n} of 3 chosen · the rest from today’s party', { n: draft.length })
+      : t('Team: {names}', { names: names(['healer', ...teamNow()]) });
     for (const b of gridEl.querySelectorAll('.cs-card')) {
-      const k = b.dataset.cls;
-      if (bench0) {
-        const you = k === on;
-        const cls = k === 'none' ? 'tidecaller' : k;
-        const isAway = k === 'none' ? away === 'tidecaller' : away === k;
-        b.dataset.on = String(isAway);
-        b.disabled = you;
+      const cls = b.dataset.cls;
+      const st = cls === 'healer' ? HEALER : ALLY_CLASSES[cls];
+      const head =
+        (cls === 'tidecaller' ? `<span class="cs-new">${esc(t('NEW'))}</span>` : '') +
+        `<div class="cs-crit">${esc(t('THE {critter}', { critter: t(CLASS_CRITTER[cls]).toUpperCase() }))}</div>` +
+        `<div class="cs-name">${esc(t(CLASS_NAME[cls]))}</div>`;
+      if (team0) {
+        const healer = cls === 'healer';
+        const you = cls === on && !healer;
+        const joins = healer || you || draft.includes(cls);
+        b.dataset.on = String(joins);
+        b.disabled = healer || you;
         b.innerHTML =
-          `<div class="cs-crit">${esc(t('THE {critter}', { critter: t(CLASS_CRITTER[cls]).toUpperCase() }))}</div>` +
-          `<div class="cs-name">${esc(t(CLASS_NAME[cls]))}</div>` +
-          `<div class="cs-role">${esc(
-            k === 'none'
-              ? t('Rill stays by the fire. The party is the usual four.')
-              : you
-                ? t('You play this class, so it comes along.')
-                : t('Stays by the fire for the run. Rill takes the seat.')
-          )}</div>` +
-          `<div class="cs-foot">${esc(isAway ? t('✓ At camp') : you ? t('Playing') : t('Stays at camp'))}</div>`;
+          head +
+          `<div class="cs-role">${esc(healer ? t('The bell-carrier always comes along.') : you ? t('You play this class, so it comes along.') : ROLE[cls]())}</div>` +
+          `<div class="cs-stats"><span>${t('Health <b>{hp}</b>', { hp: st.maxHp })}</span><span>${t('Speed <b>{speed}</b>', { speed: st.moveSpeed })}</span></div>` +
+          `<div class="cs-kit"></div>` +
+          `<div class="cs-foot">${esc(you ? t('Playing') : joins ? t('✓ Joins') : t('Stays at camp'))}</div>`;
       } else {
-        const cls = k;
-        const st = cls === 'healer' ? HEALER : ALLY_CLASSES[cls];
         const kit = wornKit(cls);
         const skills = startSkills(cls, kit);
+        const away = cls !== 'healer' && !teamNow().includes(cls);
         b.dataset.on = String(cls === on);
         b.disabled = false;
         b.innerHTML =
-          (cls === 'tidecaller' ? `<span class="cs-new">${esc(t('NEW'))}</span>` : '') +
-          `<div class="cs-crit">${esc(t('THE {critter}', { critter: t(CLASS_CRITTER[cls]).toUpperCase() }))}</div>` +
-          `<div class="cs-name">${esc(t(CLASS_NAME[cls]))}</div>` +
+          head +
           `<div class="cs-role">${esc(ROLE[cls]())}</div>` +
           `<div class="cs-stats"><span>${t('Health <b>{hp}</b>', { hp: st.maxHp })}</span><span>${t('Speed <b>{speed}</b>', { speed: st.moveSpeed })}</span></div>` +
           `<div class="cs-kit"><h4>${esc(kit ? t('KIT · {name}', { name: t(kit.name).toUpperCase() }) : t('STARTS WITH'))}</h4>${skills.length ? skills.map(esc).join(' · ') : esc(t('Basic attack and dodge. Skills come from wave rewards.'))}</div>` +
-          `<div class="cs-foot">${esc(cls === on ? t('✓ Playing') : cls === away ? t('At camp · Play') : t('Play'))}</div>`;
+          `<div class="cs-foot">${esc(cls === on ? t('✓ Playing') : away ? t('At camp · Play') : t('Play'))}</div>`;
       }
       b.setAttribute('aria-label', b.textContent.replace(/\s+/g, ' ').trim());
     }
   }
 
+  function save() {
+    if (settings) settings.set(TEAM_KEY, draft.join(','));
+  }
+
   function pick(cls) {
     if (!settings || !playable(cls)) return false;
+    const joined = cls === 'healer' || teamNow().includes(cls);
     settings.set(PLAY_CLASS_KEY, cls);
     log.push(cls);
     if (log.length > 20) log.shift();
     if (typeof app.toast === 'function') app.toast(t('You play the {cls}', { cls: t(CLASS_NAME[cls]) }), { tone: 'info', ms: 2600 });
-    // Choosing Rill means choosing who stays at camp (the Archer unless the
-    // player already chose).
-    if (cls === 'tidecaller') {
-      if (!BENCH_CLASSES.includes(bench())) settings.set(BENCH_KEY, DEFAULT_BENCH);
-      show('bench');
+    // A class that was not in the team joins in place of the last pick;
+    // show the team so the player sees who made room.
+    if (!joined) {
+      settings.set(TEAM_KEY, teamNow().join(','));
+      show('team');
       return true;
     }
     render();
@@ -250,15 +249,29 @@ export function createClassesScreen(ctx) {
     return true;
   }
 
-  function pickBench(k) {
-    if (!settings || (k !== 'none' && !BENCH_CLASSES.includes(k)) || k === chosen()) return false;
-    if (k === 'none' && chosen() === 'tidecaller') return false;
-    settings.set(BENCH_KEY, k);
-    log.push(`bench:${k}`);
+  // Team view: a card joins or stays at camp. The Healer and the class you
+  // play always join; three seats besides the Healer.
+  function toggle(cls) {
+    if (!settings || cls === 'healer' || cls === chosen() || !playable(cls)) return false;
+    if (draft.includes(cls)) draft = draft.filter((c) => c !== cls);
+    else if (draft.length >= 3) {
+      noteEl.textContent = t('The team is full: choose someone to stay at camp first.');
+      return false;
+    } else draft = LINEUP_CLASSES.filter((c) => c === cls || draft.includes(c));
+    noteEl.textContent = '';
+    save();
+    log.push(`team:${draft.join('+')}`);
     if (log.length > 20) log.shift();
-    if (typeof app.toast === 'function') app.toast(k === 'none' ? t('Rill stays at camp') : t('The {cls} stays at camp. Rill joins the party.', { cls: t(CLASS_NAME[k]) }), { tone: 'info', ms: 2600 });
     render();
-    if (manager.top() === 'classes') manager.pop();
+    return true;
+  }
+
+  function done() {
+    if (draft.length < 3 && typeof app.toast === 'function') app.toast(t('The rest of the team comes from today’s party'), { tone: 'info', ms: 2600 });
+    if (typeof app.toast === 'function' && draft.length === 3) app.toast(t('Team: {names}', { names: ['healer', ...teamNow()].map((c) => t(CLASS_NAME[c])).join(', ') }), { tone: 'info', ms: 2600 });
+    if (openedOnTeam) {
+      if (manager.top() === 'classes') manager.pop();
+    } else show('classes');
     return true;
   }
 
@@ -271,26 +284,24 @@ export function createClassesScreen(ctx) {
     onOpen(params = {}) {
       log = [];
       noteEl.textContent = '';
-      openedOnBench = !!(params && params.view === 'bench');
-      show(openedOnBench ? 'bench' : 'classes');
+      openedOnTeam = !!(params && params.view === 'team');
+      show(openedOnTeam ? 'team' : 'classes');
     },
     back() {
-      if (view === 'bench' && !openedOnBench) {
-        show('classes');
-        return true;
-      }
+      if (view === 'team') return done();
       if (manager.top() === 'classes') manager.pop();
       return true;
     },
     pick,
-    pickBench,
+    toggle,
+    done,
     show,
     debug: () => ({
       view,
       chosen: chosen(),
-      bench: bench(),
-      atCamp: atCamp(),
-      lineup: [...plannedLineup(chosen(), bench())],
+      team: [...teamNow()],
+      draft: draft.slice(),
+      lineup: [...plannedLineup(chosen(), teamSetting())],
       log: log.slice(),
       cards: [...gridEl.querySelectorAll('.cs-card')].map((b) => ({ cls: b.dataset.cls, on: b.dataset.on === 'true', disabled: b.disabled, focused: b.classList.contains('ap-focus') })),
     }),
