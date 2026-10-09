@@ -2394,5 +2394,21 @@
  "Fat with millrace water and something darker, it never lets go willingly.": "灌滿了水渠的水和某種更黑暗的東西，它絕不會主動鬆口。",
  "Leaps down a short warning lane. A hero it touches is bitten for 5, slowed and drained for 3 twice a second while it heals. Dodge, or hit it (an ally can too), to shake it off.": "沿一條短預警帶撲出。被它碰到的英雄會被咬 5 點並減速，它每秒吸取兩次、每次 3 點，同時治療自己。閃避或攻擊它（隊友也可以）就能把它甩掉。",
  "The last miller of the Sunken Mill, still at work after the water took him.": "沉沒磨坊的最後一位磨坊主，被水吞沒之後仍在幹活。",
- "Plods straight at you. Close in, he whirls his millstone in a warning ring for 13: walk out of it. At range he throws a flour sack at a warning ring for 10 that leaves slowing paste.": "徑直朝你走來。近身時他掄起磨盤，在預警圈內造成 13 點傷害：走出圈外。遠處時他向預警圈扔出麵粉袋，造成 10 點傷害並留下減速的麵糊。"
+ "Plods straight at you. Close in, he whirls his millstone in a warning ring for 13: walk out of it. At range he throws a flour sack at a warning ring for 10 that leaves slowing paste.": "徑直朝你走來。近身時他掄起磨盤，在預警圈內造成 13 點傷害：走出圈外。遠處時他向預警圈扔出麵粉袋，造成 10 點傷害並留下減速的麵糊。",
+ "Ash Keener": "灰燼哭喪者",
+ "Mourner": "哭喪者",
+ "It mourns every barrow it passes, and it wants company in its grief.": "它為途經的每座古塚哀悼,並想找人陪它一起悲傷。",
+ "Keeps a few steps back, then wails down a long, narrow warning cone for 10. Whoever the wail finds is slowed by 40% for 2 s. Step out of the cone.": "保持幾步距離,然後沿一道細長的警示錐形哀嚎,造成10點傷害。被哀嚎命中者減速40%,持續2秒。走出錐形區域。",
+ "Barrow Sexton": "古塚掘墓人",
+ "Trapper": "設陷者",
+ "The barrow still has a gravedigger. He has stopped waiting for the dead to come to him.": "古塚裡仍有一位掘墓人。他已不再等死者自己上門。",
+ "Never strikes in person. It kneels and buries bone snares on the floor, three at most. Step on one and its jaws rise in a warning ring, then snap for 11 and hold you with a 60% slow. Step off before they close. Kill it and its snares crumble.": "從不親自出手。它跪下在地面埋下骨製陷阱,最多三個。踩中後,陷阱的利齒會在警示圈中升起,隨後合攏造成11點傷害,並以60%減速困住你。在合攏前離開。殺死它,陷阱隨之崩碎。",
+ "Heart Bloom": "心之花",
+ "Pulse": "脈動",
+ "A flower of violet crystal that grows wherever the Heart beats closest to the floor.": "一朵紫色水晶之花,生長在心臟離地面最近跳動的地方。",
+ "Creeps in on its roots, then takes root and never moves again. On every second heartbeat it opens in a warning ring round itself and snaps shut for 12. Every bloom in the room beats together.": "靠根鬚緩緩爬近,扎根後便再不移動。每隔一次心跳,它會在自身周圍的警示圈中綻開,隨後合攏造成12點傷害。房間裡所有心之花一同跳動。",
+ "Vein Siphon": "血脈吸食者",
+ "Drinker": "吸食者",
+ "A sac of the Heart's blood that never has enough of it.": "一囊永遠喝不夠的心之血。",
+ "Lashes a tendril down a warning lane for 5 and latches onto the first hero it finds, then drinks 2 every half second and heals by as much. Walk well away from it to snap the tether, or kill it.": "沿一條警示通道甩出觸鬚,造成5點傷害,並纏住它找到的第一位英雄,隨後每半秒吸取2點並等量回復。走遠以扯斷連結,或殺死它。"
 }

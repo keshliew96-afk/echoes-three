@@ -2394,5 +2394,21 @@
  "Fat with millrace water and something darker, it never lets go willingly.": "물방아 수로의 물과 더 어두운 무언가로 잔뜩 부풀었습니다. 스스로 떨어지는 법이 없습니다.",
  "Leaps down a short warning lane. A hero it touches is bitten for 5, slowed and drained for 3 twice a second while it heals. Dodge, or hit it (an ally can too), to shake it off.": "짧은 경고 띠를 따라 도약합니다. 닿은 영웅을 물어 피해 5를 주고 느리게 만들며, 자신을 치유하면서 1초에 두 번 3씩 빨아들입니다. 회피하거나 공격해서(아군도 가능) 떼어내세요.",
  "The last miller of the Sunken Mill, still at work after the water took him.": "가라앉은 방앗간의 마지막 방앗간지기. 물에 휩쓸린 뒤에도 여전히 일하고 있습니다.",
- "Plods straight at you. Close in, he whirls his millstone in a warning ring for 13: walk out of it. At range he throws a flour sack at a warning ring for 10 that leaves slowing paste.": "곧장 당신에게 걸어옵니다. 가까이 있으면 맷돌을 휘둘러 경고 원에 피해 13을 줍니다. 원 밖으로 나가세요. 멀리 있으면 밀가루 자루를 경고 원에 던져 피해 10을 주고 느려지는 반죽을 남깁니다."
+ "Plods straight at you. Close in, he whirls his millstone in a warning ring for 13: walk out of it. At range he throws a flour sack at a warning ring for 10 that leaves slowing paste.": "곧장 당신에게 걸어옵니다. 가까이 있으면 맷돌을 휘둘러 경고 원에 피해 13을 줍니다. 원 밖으로 나가세요. 멀리 있으면 밀가루 자루를 경고 원에 던져 피해 10을 주고 느려지는 반죽을 남깁니다.",
+ "Ash Keener": "재의 곡녀",
+ "Mourner": "곡하는 자",
+ "It mourns every barrow it passes, and it wants company in its grief.": "지나는 무덤마다 애도하며, 그 슬픔에 길동무를 원한다.",
+ "Keeps a few steps back, then wails down a long, narrow warning cone for 10. Whoever the wail finds is slowed by 40% for 2 s. Step out of the cone.": "몇 걸음 떨어져 있다가 길고 좁은 경고 원뿔로 울부짖어 10의 피해를 준다. 울음에 닿은 자는 2초간 40% 느려진다. 원뿔에서 벗어나라.",
+ "Barrow Sexton": "무덤의 묘지기",
+ "Trapper": "덫꾼",
+ "The barrow still has a gravedigger. He has stopped waiting for the dead to come to him.": "무덤에는 아직 묘지기가 있다. 그는 더 이상 죽은 자가 오기를 기다리지 않는다.",
+ "Never strikes in person. It kneels and buries bone snares on the floor, three at most. Step on one and its jaws rise in a warning ring, then snap for 11 and hold you with a 60% slow. Step off before they close. Kill it and its snares crumble.": "직접 공격하지 않는다. 무릎을 꿇고 바닥에 뼈 덫을 묻는다(최대 셋). 밟으면 턱이 경고 고리로 솟아오른 뒤 닫히며 11의 피해와 60% 둔화로 붙잡는다. 닫히기 전에 벗어나라. 죽이면 덫이 무너진다.",
+ "Heart Bloom": "심장 꽃",
+ "Pulse": "맥동",
+ "A flower of violet crystal that grows wherever the Heart beats closest to the floor.": "심장이 바닥 가까이에서 뛰는 곳마다 자라는 보랏빛 수정 꽃.",
+ "Creeps in on its roots, then takes root and never moves again. On every second heartbeat it opens in a warning ring round itself and snaps shut for 12. Every bloom in the room beats together.": "뿌리로 기어오다가 뿌리를 내리면 다시는 움직이지 않는다. 심장이 두 번 뛸 때마다 자신 주위의 경고 고리로 열렸다가 닫히며 12의 피해를 준다. 방의 모든 꽃은 함께 뛴다.",
+ "Vein Siphon": "혈관 흡혈낭",
+ "Drinker": "흡혈자",
+ "A sac of the Heart's blood that never has enough of it.": "결코 만족하지 못하는 심장의 피주머니.",
+ "Lashes a tendril down a warning lane for 5 and latches onto the first hero it finds, then drinks 2 every half second and heals by as much. Walk well away from it to snap the tether, or kill it.": "경고 통로로 촉수를 휘둘러 5의 피해를 주고 처음 찾은 영웅에게 달라붙는다. 그 뒤 0.5초마다 2를 마시고 그만큼 회복한다. 멀리 걸어가 연결을 끊거나 처치하라."
 }

@@ -15,6 +15,7 @@
 import {
   AdditiveBlending,
   BoxGeometry,
+  Color,
   CanvasTexture,
   CircleGeometry,
   Color,
@@ -31,7 +32,7 @@ import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
 import { sharedGeo } from '../geocache.js';
 import { impactFx } from '../vfx/hub.js';
-import { HIDE, HEART } from './style.js';
+import { HIDE, HEART, TELL_INDIGO, TELL_INDIGO_GLOW } from './style.js';
 import { mergeGeometries as mergeRaw } from 'three/addons/utils/BufferGeometryUtils.js';
 import { makeGlowSprite } from '../glow.js';
 import { t } from '../../i18n/index.js';
@@ -88,6 +89,8 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
   const crystals = new Map(); // crystal slick id -> { g, disc, cluster, glow } (Act IV)
   const shardIds = new Set(); // live Geode shard glob ids (their landing is the director's)
   const tethers = new Map(); // gravewisp id -> beam (slice 2)
+  const snares = new Map(); // snare slick id -> { g, disc, teeth, glow, ring } (Barrow Sexton)
+  const drinks = new Map(); // siphon id -> { core, halo } (Vein Siphon tether)
   const wake = []; // { mesh, age }
   const wakePool = [];
   const moleTrack = new Map(); // mole id -> { x, z }
@@ -170,6 +173,46 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
     glow.position.y = 0.25;
     g.add(glow);
     return { g, disc, cluster, glow };
+  }
+
+  // NEW ENEMIES (docs/NEW_ENEMIES_BARROW_HEART.md): a Barrow Sexton's bone
+  // SNARE — a ring of grave-bone teeth half buried in a bruise of ash, with
+  // a faint indigo glint once it is armed. When it springs the teeth rise and
+  // lean in over the Ember ring (pooled shape) until the jaws close.
+  const snareTeethGeo = sharedGeo('bh-snare-teeth', () =>
+    mergeGeometries(
+      Array.from({ length: 10 }, (_, i) => {
+        const a = (i / 10) * Math.PI * 2;
+        const h = i % 2 ? 0.22 : 0.3;
+        return new ConeGeometry(0.045, h, 4).translate(0, h / 2, 0).rotateX(-0.35).rotateY(a + Math.PI).translate(Math.sin(a) * 0.62, 0, Math.cos(a) * 0.62);
+      })
+    )
+  );
+  function makeSnare() {
+    const g = new Group();
+    const disc = makeSlick();
+    disc.material.color.copy(mix(PALETTE.voidCharcoal, PALETTE.warmGrey, 0.35)).multiplyScalar(1.2);
+    g.add(disc);
+    const teeth = new Mesh(snareTeethGeo, toonMaterial({ color: new Color(PALETTE.bone).multiplyScalar(0.82), emissive: TELL_INDIGO, emissiveIntensity: 0 }));
+    addInk(teeth);
+    g.add(teeth);
+    const glow = makeGlowSprite({ color: '#FFFFFF', size: 1.3, opacity: 0 });
+    glow.material.toneMapped = false;
+    glow.material.color.copy(TELL_INDIGO_GLOW);
+    glow.position.y = 0.08;
+    g.add(glow);
+    return { g, disc, teeth, glow, ring: null };
+  }
+  // ...and a Vein Siphon's TETHER while it drinks: a violet vein from the sac
+  // to its prey, a pale core inside a soft halo, a gulp running up it.
+  function makeDrink() {
+    const box = sharedGeo('bh-drink', () => new BoxGeometry(1, 1, 1));
+    const core = new Mesh(box, new MeshBasicMaterial({ color: HEART.veinHot.clone(), transparent: true, opacity: 0.9, depthWrite: false, toneMapped: false }));
+    const halo = new Mesh(box, new MeshBasicMaterial({ color: HEART.vein.clone(), transparent: true, opacity: 0.35, depthWrite: false, toneMapped: false, blending: AdditiveBlending }));
+    const bead = makeGlowSprite({ color: '#FFFFFF', size: 0.45, opacity: 0.8 });
+    bead.material.toneMapped = false;
+    bead.material.color.copy(HEART.glow);
+    return { core, halo, bead };
   }
 
   function makeSlick() {
@@ -264,10 +307,12 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
     const seenG = new Set();
     const seenS = new Set();
     const wisps = [];
+    const siphons = [];
     const byId = new Map();
     for (const e of world.entities()) {
       byId.set(e.id, e);
       if (e.kind === 'gravewisp' && e.tetherId != null && e.state === 'active') wisps.push(e);
+      if (e.kind === 'siphon' && e.latchId != null && e.state === 'active') siphons.push(e);
       if (e.kind === 'eglob') {
         seenG.add(e.id);
         let r = globs.get(e.id);
@@ -301,6 +346,40 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
           r.ring.set(e.telegraph, tSec, u);
           liveTelegraphs.push(e.telegraph);
         }
+      } else if (e.kind === 'slick' && e.variant === 'snare') {
+        seenS.add(e.id);
+        let n = snares.get(e.id);
+        if (!n) {
+          n = makeSnare();
+          n.g.position.set(e.x, 0, e.z);
+          n.g.rotation.y = (e.id * 2.399963) % (Math.PI * 2);
+          n.g.scale.setScalar(e.radius);
+          root.add(n.g);
+          snares.set(e.id, n);
+        }
+        const inK = Math.min(1, (tick - e.startTick) / 10);
+        const armK = Math.min(1, Math.max(0, (tick - e.startTick) / Math.max(1, (e.armTick ?? e.startTick) - e.startTick)));
+        const outK = Math.min(1, Math.max(0, (e.untilTick - tick) / 24));
+        const armed = tick >= (e.armTick ?? 0);
+        let rise = 0;
+        if (e.telegraph) {
+          const span = Math.max(1, e.telegraph.resolveTick - e.telegraph.startTick);
+          rise = Math.min(1, Math.max(0, (tick - 1 + alpha - e.telegraph.startTick) / span));
+          if (!n.ring) n.ring = shapes.acquire('ring');
+          n.ring.set(e.telegraph, tSec, rise);
+          liveTelegraphs.push(e.telegraph);
+        } else if (n.ring) {
+          shapes.release(n.ring);
+          n.ring = null;
+        }
+        // Buried as it is laid, the tips break the ash as it arms; sprung,
+        // the teeth climb and lean in over the jaws' ring.
+        n.teeth.position.y = -0.2 + 0.14 * armK * outK + 0.35 * rise;
+        n.teeth.scale.set(1 - 0.3 * rise, 1 + 0.9 * rise, 1 - 0.3 * rise);
+        n.teeth.rotation.y = 0.4 * rise;
+        n.teeth.material.emissiveIntensity = armed ? 0.18 + 0.1 * Math.sin(tSec * 3 + e.id) + 0.8 * rise : 0;
+        n.disc.material.opacity = 0.75 * inK * outK;
+        n.glow.material.opacity = armed ? (0.12 + 0.06 * Math.sin(tSec * 3 + e.id) + 0.4 * rise) * outK : 0;
       } else if (e.kind === 'slick' && e.variant === 'crystal') {
         seenS.add(e.id);
         let c = crystals.get(e.id);
@@ -385,6 +464,15 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
       root.remove(m);
       slicks.delete(id);
     }
+    for (const [id, n] of snares) {
+      if (seenS.has(id)) continue;
+      root.remove(n.g);
+      if (n.ring) shapes.release(n.ring);
+      n.disc.material.dispose();
+      n.teeth.material.dispose();
+      n.glow.material.dispose();
+      snares.delete(id);
+    }
     for (const [id, c] of crystals) {
       if (seenS.has(id)) continue;
       root.remove(c.g);
@@ -425,6 +513,54 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
       root.remove(beam);
       beam.material.dispose();
       tethers.delete(id);
+    }
+    // NEW ENEMIES: the Vein Siphon's drinking tether, sac to prey, with a
+    // bead of what it drinks running up it twice a second.
+    const liveDrinks = new Set();
+    for (const sp of siphons) {
+      const t = byId.get(sp.latchId);
+      if (!t) continue;
+      liveDrinks.add(sp.id);
+      let d = drinks.get(sp.id);
+      if (!d) {
+        d = makeDrink();
+        root.add(d.halo);
+        root.add(d.core);
+        root.add(d.bead);
+        drinks.set(sp.id, d);
+      }
+      const ax = sp.px + (sp.x - sp.px) * alpha;
+      const az = sp.pz + (sp.z - sp.pz) * alpha;
+      const bx = t.px + (t.x - t.px) * alpha;
+      const bz = t.pz + (t.z - t.pz) * alpha;
+      const ay = 0.95;
+      const by = 0.55;
+      const len = Math.hypot(bx - ax, by - ay, bz - az);
+      const yaw = Math.atan2(bx - ax, bz - az);
+      const pitch = Math.atan2(ay - by, Math.hypot(bx - ax, bz - az));
+      const stretch = Math.min(1, len / 5.6);
+      const throb = 0.5 + 0.5 * Math.sin(tSec * Math.PI * 4 + sp.id);
+      for (const [m, w] of [[d.core, 0.035], [d.halo, 0.13]]) {
+        m.position.set((ax + bx) / 2, (ay + by) / 2, (az + bz) / 2);
+        m.rotation.set(pitch, yaw, 0, 'YXZ');
+        const thin = 1 - 0.55 * stretch; // it thins as the pair pull apart
+        m.scale.set(w * thin * (1 + 0.35 * throb), w * thin * (1 + 0.35 * throb), Math.max(0.01, len));
+      }
+      d.core.material.opacity = 0.75 + 0.2 * throb;
+      d.halo.material.opacity = (0.22 + 0.2 * throb) * (1 - 0.4 * stretch);
+      const k = (tSec * 2 + sp.id * 0.37) % 1; // prey -> sac
+      d.bead.position.set(bx + (ax - bx) * k, by + (ay - by) * k, bz + (az - bz) * k);
+      d.bead.material.opacity = 0.85 * Math.sin(k * Math.PI);
+    }
+    for (const [id, d] of drinks) {
+      if (liveDrinks.has(id)) continue;
+      root.remove(d.core);
+      root.remove(d.halo);
+      root.remove(d.bead);
+      d.core.material.dispose();
+      d.halo.material.dispose();
+      d.bead.material.dispose();
+      drinks.delete(id);
     }
     for (let i = wake.length - 1; i >= 0; i--) {
       const w = wake[i];
@@ -489,7 +625,9 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
   function debugState() {
     return {
       globs: globs.size,
-      slicks: slicks.size + crystals.size,
+      slicks: slicks.size + crystals.size + snares.size,
+      snares: snares.size,
+      drinks: drinks.size,
       moleWake: wake.length,
       blockedLabels: blocked.length,
       ...counters,

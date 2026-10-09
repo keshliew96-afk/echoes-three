@@ -163,6 +163,14 @@ export const ENEMY_VFX = Object.freeze({
   lasher: Object.freeze({ matter: 'bramble', family: 'support', shard: 'needle', chunk: 4, dust: 2 }),
   leech: Object.freeze({ matter: 'leech', family: 'charger', shard: 'drop', chunk: 3, dust: 0 }),
   miller: Object.freeze({ matter: 'stone', family: 'brute', shard: null, chunk: 6, dust: 3 }),
+  // New enemies, Barrow and Heart (docs/NEW_ENEMIES_BARROW_HEART.md). Their
+  // beats (the keen, the snare's bury / spring / snap / crumble, the bloom's
+  // rooting and pulse, the siphon's lash / latch / drink / snap) are director
+  // recipes keyed by the sim event.
+  keener: Object.freeze({ matter: 'ash', family: 'support', shard: null, chunk: 2, dust: 4 }),
+  sexton: Object.freeze({ matter: 'earth', family: 'support', shard: null, chunk: 5, dust: 4 }),
+  bloom: Object.freeze({ matter: 'heartcrystal', family: 'brute', shard: 'needle', chunk: 4, dust: 1, heart: true }),
+  siphon: Object.freeze({ matter: 'heartflesh', family: 'flyer', shard: 'drop', chunk: 2, dust: 0, heart: true }),
   // CHAMPIONS (docs/CHAMPIONS.md): the four lords. Their move beats and
   // deaths are director recipes keyed by champion_* events.
   briar_knight: Object.freeze({ matter: 'bramble', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),

@@ -49,8 +49,8 @@ const CLASS_SETS = {
 const ENEMIES = [
   ['Act I', 1, ['boar', 'mantis', 'quillback', 'toad', 'moth', 'ram', 'mole', 'wasp', 'thornling']],
   ['Act II', 2, ['rotcap', 'snail', 'crab', 'lamprey']],
-  ['Act III', 3, ['crow', 'brood', 'knight', 'gravewisp']],
-  ['Act IV', 4, ['husk', 'lancer', 'geode', 'censer']],
+  ['Act III', 3, ['crow', 'brood', 'knight', 'gravewisp', 'keener', 'sexton']],
+  ['Act IV', 4, ['husk', 'lancer', 'geode', 'censer', 'bloom', 'siphon']],
   // New enemies, Wood and Mill (docs/WOOD_MILL_ENEMIES.md).
   ['Wood, new', 1, ['owl', 'lasher']],
   ['Mill, new', 2, ['leech', 'miller']],
@@ -255,6 +255,17 @@ export function mountVfxLab() {
           X().cmd('spawn', 'husk', f.x + 0.8, f.z - 1.6);
           X().cmd('spawn', 'censer', f.x, f.z - 3.4);
           return say('censer + 2 husks: hit the husks, watch it gather and mend');
+        }
+        // Blooms root near the party and pulse on every second heartbeat.
+        if (k === 'bloom') {
+          X().cmd('spawn', 'bloom', f.x - 1.2, f.z - 2.2);
+          X().cmd('spawn', 'bloom', f.x + 1.2, f.z - 2.2);
+          return say('bloom x2: they root, then open and pulse together on the beat');
+        }
+        // A Sexton buries snares toward you: stand still and walk onto one.
+        if (k === 'sexton') {
+          X().cmd('spawn', 'sexton', f.x, f.z - 3.6);
+          return say('sexton: watch it kneel and bury a snare, then step on it');
         }
         // A wisp only acts with someone to ward: pair it with a Barrow Ram.
         X().cmd('spawn', k === 'gravewisp' ? 'ram' : k, f.x - 1.1, f.z - 1.6);

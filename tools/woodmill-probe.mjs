@@ -6,7 +6,7 @@
 //
 // Checks:
 //   1. Wiring: the four kinds have a kit, a threat cost, a VFX row, a journal
-//      row (37 entries), and their affix exclusions.
+//      row (41 with the Barrow and Heart four), and their affix exclusions.
 //   2. Gate: campaign Level I rooms 3+ roll from a roster with the Shriek Owl
 //      and the Vine Lasher, Level II rooms 3+ with the Mire Leech and the
 //      Drowned Miller; rooms 1-2, the tutorial and the legacy single-level
@@ -146,7 +146,7 @@ const cull = (W, keep) => W.registry.all().filter((e) => e.faction === 'hostile'
   check(NEW.every((k) => THREAT[k] > 0), `threat costs (${NEW.map((k) => `${k} ${THREAT[k]}`).join(', ')})`);
   check(NEW.every((k) => ENEMY_VFX[k]), 'one ENEMY_VFX row each');
   const rows = NEW.map((k) => BESTIARY.find((b) => b.id === k));
-  check(BESTIARY.length === 37 && rows.every((r) => r && r.lore && r.text && r.lands.length === 1), `journal rows (${BESTIARY.length} entries; lands ${rows.map((r) => r && r.lands.join()).join(', ')})`);
+  check(BESTIARY.length === 41 && rows.every((r) => r && r.lore && r.text && r.lands.length === 1), `journal rows (${BESTIARY.length} entries; lands ${rows.map((r) => r && r.lands.join()).join(', ')})`);
   check(rows.every((r) => !/ember/i.test(r.text)), 'journal text says warning ring / lane / cone, never Ember');
   check(AFFIXES.blinking.not.includes('leech') && AFFIXES.blinking.not.includes('lasher') && AFFIXES.frozen.not.includes('leech') && AFFIXES.vampiric.not.includes('leech'), 'affix exclusions: no Blinking leech or lasher, no Frozen or Vampiric leech');
 }

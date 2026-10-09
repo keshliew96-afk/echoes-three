@@ -122,8 +122,10 @@ export const LEVELS = Object.freeze({
     legacyLayouts: Object.freeze([7, 8, 9]),
     bossLayout: 9,
     music: 'barrow',
-    roster: Object.freeze({ mantis: 0.1, quillback: 0.1, moth: 0.14, ram: 0.16, mole: 0.22, crow: 0.14, brood: 0.14, gravewisp: 0.1, knight: 0.06 }),
-    introduce: Object.freeze({ mantis: 1, quillback: 1, moth: 1, mole: 1, ram: 2, crow: 1, brood: 2, gravewisp: 3, knight: 4 }),
+    // New enemies (docs/NEW_ENEMIES_BARROW_HEART.md): the Ash Keener and the
+    // Barrow Sexton join from room 3, in campaign rooms only (CAMPAIGN_ONLY_ENEMIES).
+    roster: Object.freeze({ mantis: 0.1, quillback: 0.1, moth: 0.14, ram: 0.16, mole: 0.22, crow: 0.14, brood: 0.14, gravewisp: 0.1, knight: 0.06, keener: 0.11, sexton: 0.09 }),
+    introduce: Object.freeze({ mantis: 1, quillback: 1, moth: 1, mole: 1, ram: 2, crow: 1, brood: 2, gravewisp: 3, knight: 4, keener: 3, sexton: 3 }),
     hazards: Object.freeze(['rockfall', 'gravefire', 'slip']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg', 'bell']),
     boss: 'wyrm',
@@ -155,8 +157,11 @@ export const LEVELS = Object.freeze({
     legacyLayouts: Object.freeze([16, 17, 18]),
     bossLayout: 18,
     music: 'heart',
-    roster: Object.freeze({ husk: 0.26, lancer: 0.14, geode: 0.12, censer: 0.08, moth: 0.08, brood: 0.08, gravewisp: 0.06, knight: 0.05, crow: 0.09 }),
-    introduce: Object.freeze({ husk: 1, lancer: 1, crow: 1, moth: 1, geode: 2, brood: 2, censer: 3, gravewisp: 3, knight: 4 }),
+    // New enemies (docs/NEW_ENEMIES_BARROW_HEART.md): the Heart Bloom and
+    // the Vein Siphon join from room 3, in campaign rooms only, so the Heart
+    // has six beasts of its own.
+    roster: Object.freeze({ husk: 0.26, lancer: 0.14, geode: 0.12, censer: 0.08, moth: 0.08, brood: 0.08, gravewisp: 0.06, knight: 0.05, crow: 0.09, bloom: 0.1, siphon: 0.11 }),
+    introduce: Object.freeze({ husk: 1, lancer: 1, crow: 1, moth: 1, geode: 2, brood: 2, censer: 3, gravewisp: 3, knight: 4, bloom: 3, siphon: 3 }),
     hazards: Object.freeze(['rockfall', 'gravefire', 'slip']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg']),
     boss: 'cantor',
@@ -183,6 +188,13 @@ export const LEVELS = Object.freeze({
     unlock: Object.freeze({ afterVictory: 3 }),
   }),
 });
+
+// NEW ENEMIES (docs/NEW_ENEMIES_BARROW_HEART.md): kinds that roll only in a
+// campaign's rooms (Endless and the Daily included), never the legacy
+// single-level run, the tutorial or the ?room= harness, so the golden traces
+// and the act runner's benches keep their draws. waves.js planRoom drops
+// them unless the run plan says `campaignKinds`.
+export const CAMPAIGN_ONLY_ENEMIES = Object.freeze(['keener', 'sexton', 'bloom', 'siphon']);
 
 // The campaign's levels, in order. CAMPAIGN_ACTS decides how many of them a
 // campaign plays: four since Act IV (docs/ACT_IV.md). Setting it to 3 keeps

@@ -288,6 +288,10 @@ registerVaultCues(service('audio'));
 // NEW ENEMIES (docs/WOOD_MILL_ENEMIES.md): the Wood's and the Mill's new creatures.
 import { registerWoodMillCues } from './audio/woodmillcues.js';
 registerWoodMillCues(service('audio'));
+// NEW ENEMIES (docs/NEW_ENEMIES_BARROW_HEART.md): the Keener, Sexton, Bloom
+// and Siphon voices.
+import { registerBarrowHeartCues } from './audio/barrowheartcues.js';
+registerBarrowHeartCues(service('audio'));
 // Hit feedback: the heavy / soft / downed hit sounds on your own character
 // (src/audio/hitcues.js).
 import { registerHitCues } from './audio/hitcues.js';
