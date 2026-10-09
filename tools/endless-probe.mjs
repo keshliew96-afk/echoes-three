@@ -38,7 +38,7 @@ const { canonicalJSON } = await import(u('src/core/canonical.js'));
 const { createStateIO } = await import(u('src/save/capture.js'));
 const { clonePlain } = await import(u('src/save/codec.js'));
 const { difficulty } = await import(u('src/data/difficulty.js'));
-const { levelFor } = await import(u('src/data/levels.js'));
+const { levelFor, campaignLevel } = await import(u('src/data/levels.js'));
 const E = await import(u('src/data/endless.js'));
 const { createProfileStore } = await import(u('src/save/profile.js'));
 const { createSaveStorage } = await import(u('src/save/storage.js'));
@@ -134,7 +134,8 @@ function descend(w) {
     for (let r = 1; r <= 6; r++)
       for (const c of ['relaxed', 'standard', 'harrowing']) if (JSON.stringify(E.endlessDifficulty(d, r, c)) !== JSON.stringify(difficulty(d, r, c))) same = false;
   check('data', 'Depths 1-4 roll difficulty(act, room) exactly (every room, every challenge)', same);
-  check('data', 'Depths 1-4 roll the act\'s own level row (roster, introduce)', [1, 2, 3, 4].every((d) => E.endlessLevel(d) === levelFor(d)));
+  // Endless is campaign play: each land's campaign-only creatures are in its row.
+  check('data', 'Depths 1-4 roll the act\'s own campaign row (roster, introduce)', [1, 2, 3, 4].every((d) => E.endlessLevel(d) === campaignLevel(levelFor(d))));
   check('data', 'the cycle wraps: Barrow -> Heart -> Wood -> Mill', E.endlessNextLevel(3) === 4 && E.endlessNextLevel(4) === 1 && E.endlessNextLevel(1) === 2 && E.levelOfDepth(4) === 4 && E.levelOfDepth(5) === 1 && E.levelOfDepth(11) === 3 && E.levelOfDepth(12) === 4 && E.levelOfDepth(13) === 1);
   let rising = true;
   const keys = ['hpMul', 'dmgMul', 'budget', 'bossHp', 'addHpMul'];

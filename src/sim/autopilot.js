@@ -24,6 +24,14 @@
 // below 70% HP; cast ready damage skills at the nearest enemy; basic-attack
 // the nearest enemy in range; revive a Downed ally when nothing is on top of
 // it.
+//
+// AUTOPILOT AND ENDLESS (v0.5.260, docs/AUTOPILOT.md): the bot (the plain
+// autopilot and the leader seat under a human alike) presses a heal only when
+// it reaches someone hurt, and keeps attacking while its heals cool down (it
+// used to hold its fire whenever any ally was under its heal line, whatever
+// was ready). The plain bot, alone with the party down, starts a revive from
+// 35% HP and holds it to 20%: waiting for 60% let a Healer with no damage kit
+// stall a room forever.
 import { SKILLS } from './skills.js';
 import { emptySnapshot } from '../core/intents.js';
 import { SKILL_SLOTS, DODGE } from '../core/constants.js';
@@ -35,6 +43,9 @@ const DODGE_LEAD_TICKS = 30; // dodge a covering telegraph this close to resolvi
 const REVIVE_SAFE_U = 2.0; // no hostile this close to the body before we channel
 const DESPERATE_START = 0.6; // with <= 1 ally up: start a channel under threat at >= 60% HP
 const DESPERATE_HOLD = 0.3; //   ...and hold it (no dodge) while HP stays above 30%
+// The plain bot's lone-revive floors (the leader seat keeps the two above).
+const LONE_START = 0.35;
+const LONE_HOLD = 0.2;
 // v0.5.227 — the AI Healer under a player on another class (`leader`): Kesh
 // saw it "only know basic attack". It now heals anyone below 90% and fires
 // each ready damage skill at the nearest foe that skill reaches, the way the
@@ -299,7 +310,8 @@ export function createAutopilot({ registry, player, run, skills, build }) {
     // A desperate revive (most of the party down) holds through a hit it can
     // afford: dodging breaks the channel, and a revive is worth one slam.
     const upNow = partyAll().filter((m) => m.id !== player.id && m.hp > 0).length;
-    const holdChannel = player.reviveTargetId != null && upNow <= 1 && player.hp > player.maxHp * DESPERATE_HOLD;
+    const holdFloor = cfg.leader ? DESPERATE_HOLD : LONE_HOLD;
+    const holdChannel = player.reviveTargetId != null && upNow <= 1 && player.hp > player.maxHp * holdFloor;
     if (inside && !holdChannel && inside.zn.left <= DODGE_LEAD_TICKS && tick >= player.dodgeReadyTick && !(player.dashTicksLeft > 0)) {
       s.move = inside.esc;
       s.presses.push({ kind: 'dodge' });
@@ -321,7 +333,8 @@ export function createAutopilot({ registry, player, run, skills, build }) {
     // keep one going down to a lower floor (hysteresis — a started channel is
     // worth finishing, a restarted one costs 5 s again).
     const channelingNow = player.reviveTargetId != null;
-    const desperate = upAllies <= 1 && player.hp >= player.maxHp * (channelingNow ? DESPERATE_HOLD : DESPERATE_START);
+    const startFloor = cfg.leader ? DESPERATE_START : LONE_START;
+    const desperate = upAllies <= 1 && player.hp >= player.maxHp * (channelingNow ? holdFloor : startFloor);
     if (body && (!inside || desperate)) {
       const threat = nearest(foes, body.e.x, body.e.z);
       if (!threat || threat.d > REVIVE_SAFE_U || desperate) {
@@ -387,20 +400,13 @@ export function createAutopilot({ registry, player, run, skills, build }) {
     } else if (Math.hypot(cx - player.x, cz - player.z) > FOLLOW_U) s.move = norm(cx - player.x, cz - player.z);
     else if (nearFoe && nearFoe.d < 1.4) s.move = norm(player.x - nearFoe.e.x, player.z - nearFoe.e.z);
 
-    // 4. Casts. The neediest member (self included) below 70% gets the heals.
-    // Direct and nova heals need no aim, so they go out whatever we aim at;
-    // aimed heals (bolt, arc, zone) take the aim only when the neediest is an
-    // ally (a heal bolt cannot land on its own caster). Whenever the aim is
-    // free it goes to the target: damage skills + the basic attack.
-    let needy = null;
-    for (const m of party) {
-      if (!(m.hp > 0)) continue;
-      const f = m.hp / m.maxHp;
-      if (!needy || f < needy.f || (f === needy.f && m.partyIndex < needy.m.partyIndex)) needy = { m, f };
-    }
+    // 4. Casts. Heals go to members below the heal line (self included) that
+    // they reach; an aimed heal (bolt, arc, zone) takes the aim only for an
+    // ally it reaches (a heal bolt cannot land on its own caster). Whenever
+    // the aim is free it goes to the target: damage skills + the basic attack.
     const view = skills.slotsView();
-    const healing = !!(needy && needy.f < (cfg.leader ? LEADER_HEAL_BELOW : HEAL_BELOW));
-    const aimHeals = healing && needy.m.id !== player.id;
+    const healBelow = cfg.leader ? LEADER_HEAL_BELOW : HEAL_BELOW;
+    let aimHeals = false;
     const pressed = new Set();
     const press = (i) => {
       if (pressed.has(i)) return;
@@ -409,16 +415,35 @@ export function createAutopilot({ registry, player, run, skills, build }) {
       stats.casts += 1;
     };
     const nSlots = Math.min(SKILL_SLOTS, view.length);
-    if (healing) {
+    {
+      // Each ready heal goes out only if it reaches someone below the line
+      // (70%, the leader seat 90%); an aimed heal (bolt, arc, zone) takes the aim for the
+      // neediest ally it reaches, else the aim stays on the target.
+      const distTo = (m) => Math.hypot(m.x - player.x, m.z - player.z);
+      const hurt = party
+        .filter((m) => m.hp > 0 && m.hp / m.maxHp < healBelow)
+        .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp || a.partyIndex - b.partyIndex);
+      const selfHurt = hurt.some((m) => m.id === player.id);
+      const reach = (def) => (def.shape === 'ground_aoe' ? def.range + def.area * 0.6 : def.range ?? BASIC_RANGE);
+      const ready = [];
       for (let i = 0; i < nSlots; i++) {
         const sl = view[i];
         if (!sl || sl.passive || sl.remainingTicks > 0) continue;
         const def = SKILLS[sl.id];
-        if (def.archetype !== 'heal') continue;
-        const aimFree = def.shape === 'direct' || def.shape === 'nova';
-        if (aimFree || aimHeals) press(i);
+        if (def.archetype === 'heal') ready.push({ i, def });
       }
-      if (aimHeals) s.aim = { x: needy.m.x, z: needy.m.z };
+      const aimed = ready.filter((h) => h.def.shape === 'projectile' || h.def.shape === 'melee_arc' || h.def.shape === 'ground_aoe');
+      const aimAt = hurt.find((m) => m.id !== player.id && aimed.some((h) => distTo(m) <= reach(h.def))) ?? null;
+      for (const { i, def } of ready) {
+        let go;
+        if (def.shape === 'direct') go = hurt.some((m) => m.id === player.id || distTo(m) <= def.range);
+        else if (def.shape === 'nova') go = hurt.some((m) => distTo(m) <= def.area);
+        else if (def.shape === 'melee_arc') go = selfHurt || (!!aimAt && distTo(aimAt) <= def.range);
+        else go = !!aimAt && distTo(aimAt) <= reach(def);
+        if (go) press(i);
+      }
+      aimHeals = !!aimAt;
+      if (aimAt) s.aim = { x: aimAt.x, z: aimAt.z };
     }
     const healPresses = pressed.size;
     if (!aimHeals && target) {

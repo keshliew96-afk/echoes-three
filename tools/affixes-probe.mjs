@@ -417,7 +417,15 @@ function parkParty(W, x = 0, z = 4.5) {
       else if (last > -1e9) minGap = Math.min(minGap, e.tick - last);
       last = e.tick;
     });
+    // Autopilot and Endless (v0.5.260): the carried party's path through
+    // Level III no longer meets a Frozen elite by chance on these seeds, so
+    // one joins room 1 (the governor still has to stagger it with the rest).
+    let joined = false;
     for (let i = 0; i < 9000; i++) {
+      if (!joined && W.run.view().phase === 'combat') {
+        W.world.cmd('spawn', 'boar', 0, -3, { elite: true, affixes: ['frozen'] });
+        joined = true;
+      }
       W.clock.stepOnce((t) => W.world.step(t, ap.intents(t, emptySnapshot())));
       let n = 0;
       for (const x of W.registry.all()) if (x.telegraph && x.telegraph.playerTargeted) n += 1;
