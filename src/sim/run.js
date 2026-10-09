@@ -92,7 +92,7 @@ import { assignObjectives, isObjectiveMode, OBJECTIVE_RULES } from './objectives
 import { crownFor, crownSide, championFor, CHAMPION_RULES, isChampionKind } from './champions.js';
 // KEYS AND VAULTS (docs/VAULTS.md): keys from elites and champions, the vault
 // door and its treasure room.
-import { createVaultSystem, eliteDropsKey, vaultPref, vaultSide, VAULT_RULES, VAULT_SPOTS } from './vaults.js';
+import { createVaultSystem, eliteDropsKey, vaultPref, vaultSide, VAULT_RULES, VAULT_SPOTS, VAULT_CHEST } from './vaults.js';
 import { staticClearance } from './movement.js';
 // EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
 import { createEncounterSystem, ENCOUNTERS, EVENT_RULES } from './encounters.js';
@@ -1323,10 +1323,10 @@ export function createRunSystem({
       pz: z,
       yaw: 0,
       interactable: true,
-      interactRadius: 1.1,
+      interactRadius: VAULT_CHEST.interactRadius,
       radius: VAULT_RULES.chestRadius,
-      verb: 'Open',
-      spentLabel: 'Opened',
+      verb: VAULT_CHEST.verb,
+      spentLabel: VAULT_CHEST.spentLabel,
       uses: 1,
       cooldownUntilTick: 0,
       activeUntilTick: 0,
@@ -1360,6 +1360,14 @@ export function createRunSystem({
     registry.despawn(e.id);
   }
   function stepVault() {
+    const v = vaults.live();
+    if (v && v.state === 'open') {
+      if (!v.paid && getTick() >= v.payAt) {
+        v.paid = true;
+        presentReward(null);
+      }
+      return;
+    }
     for (const e of registry.all()) {
       if (e.kind !== 'vault_pile' && e.kind !== 'vault_platter') continue;
       const h = vaults.toucher(e);
@@ -1392,8 +1400,9 @@ export function createRunSystem({
       relic: !!owed,
       ...(chest ? { x: r2(chest.x), z: r2(chest.z) } : {}),
     });
-    // The door's own draft, then the relic pick, then the doors.
-    presentReward(null);
+    // The lid comes up and the hoard's light rises for a moment; then the
+    // door's own draft, the relic pick and the doors (stepVault).
+    v.payAt = tick + Math.round(VAULT_RULES.revealSec * TICK_HZ);
     return { opened: true, room: roomIndex, glint: v.glint, healed: v.healed, relic: !!owed };
   }
 

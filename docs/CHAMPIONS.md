@@ -64,10 +64,10 @@ until someone plays them.
   Champion's Chest" (`relics.owe(room, 'champion')`).
 - No new currency.
 
-## Keys and vaults (the next slice)
+## Keys and vaults
 
-The key drop should hang off `champion_fall {id, champion, x, z}`, where `x`
-and `z` are the chest spot. Nothing in this slice drops a key.
+A falling champion drops a vault key at the `champion_fall {id, champion, x,
+z}` spot (src/sim/vaults.js, wired in src/sim/run.js). See docs/VAULTS.md.
 
 ## What the player sees and hears
 

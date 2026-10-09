@@ -287,6 +287,16 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "{key} <b>Left door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "{key} <b>Right door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
  "{key} keeps its own job and can’t be bound. Press another key, or Esc to cancel.": {
   "files": [
    "src/ui/menu/tabs/controls.js"
@@ -1770,6 +1780,11 @@
   ]
  },
  "A rare or legendary relic for the run. Choose one.": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "A relic from the hoard. Choose one.": {
   "files": [
    "src/ui/run/relic.js"
   ]
@@ -3338,6 +3353,11 @@
  "Champions": {
   "files": [
    "src/ui/story/journal.js"
+  ]
+ },
+ "Champions, and now and then an elite, drop a key. While the party holds one, a vault door can appear on the path: behind it waits a treasure room with no fight, Glint, a feast and a relic chest. A key lasts only the level it was found in.": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "Change": {
@@ -6578,6 +6598,11 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "LASTS THIS LEVEL": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
  "Leave": {
   "files": [
    "src/ui/menu/lobby.js",
@@ -7847,9 +7872,26 @@
    "src/save/index.js"
   ]
  },
+ "Open": {
+  "files": [
+   "src/sim/vaults.js"
+  ],
+  "data": true
+ },
  "Open Grave": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "OPEN THE CHEST": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "Opened": {
+  "files": [
+   "src/sim/vaults.js"
   ],
   "data": true
  },
@@ -11115,6 +11157,11 @@
   ],
   "data": true
  },
+ "THE HOARD IS YOURS": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
  "THE HOLLOW": {
   "files": [
    "src/ui/hud/index.js"
@@ -11677,6 +11724,26 @@
    "src/ui/run/transit.js"
   ]
  },
+ "the vault": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "THE VAULT": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "The vault door": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "THE VAULT'S CHEST": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
  "The violet is louder down here. The Choir must be past it, further down.": {
   "files": [
    "src/data/story.js"
@@ -12195,6 +12262,11 @@
    "src/sim/affixes.js"
   ],
   "data": true
+ },
+ "VAULT KEY": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
  },
  "Vault Shot": {
   "files": [

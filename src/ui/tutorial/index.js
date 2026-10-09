@@ -43,7 +43,7 @@ import { cap, padCap, moveCaps, skillsCap, usingPad, onHintsChange } from '../..
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
-export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion']);
+export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion', 'vault']);
 
 const MOVE_DIST = 2.5; // world units walked to pass the move step
 const ATTACK_MS = 450; // right button held this long (in total) passes the attack step
@@ -148,6 +148,12 @@ function tipText(id) {
       return {
         title: t('The purge'),
         body: t('Three corruption nests keep spawning enemies. Destroy all three before the timer runs out; a wounded nest spawns faster. If the corruption takes root, the room pays no reward and the nests must still fall.'),
+      };
+    // KEYS AND VAULTS (docs/VAULTS.md): on the first vault door.
+    case 'vault':
+      return {
+        title: t('The vault door'),
+        body: t('Champions, and now and then an elite, drop a key. While the party holds one, a vault door can appear on the path: behind it waits a treasure room with no fight, Glint, a feast and a relic chest. A key lasts only the level it was found in.'),
       };
     // CHAMPION ROOMS (docs/CHAMPIONS.md): on the first crown door.
     case 'champion':
@@ -534,6 +540,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     if (doors.some((o) => o.event)) want.push('event');
     for (const m of ['hunt', 'purge']) if (doors.some((o) => o.win === m)) want.push(m);
     if (doors.some((o) => o.champion)) want.push('champion');
+    if (doors.some((o) => o.vault)) want.push('vault');
     if (want.length) {
       if (shown && want.includes(shown.id)) return shown.id;
       return want.find((id) => !tipsSeen().includes(id)) ?? want[0];

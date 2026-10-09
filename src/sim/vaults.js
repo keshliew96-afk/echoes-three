@@ -40,7 +40,11 @@ export const VAULT_RULES = Object.freeze({
   platterHeal: 0.5, // the food platter heals every living hero this share of max HP
   chestSource: 'vault', // the relic pick the chest pays (the common pool)
   chestRadius: 0.55, // the chest's solid footprint
+  revealSec: 1.4, // s, the chest's opening plays before the draft comes up
 });
+
+// The vault's chest as an interactable (E · Open; spent: Opened).
+export const VAULT_CHEST = Object.freeze({ verb: 'Open', spentLabel: 'Opened', interactRadius: 1.1 });
 
 // The vault's treasure, laid out in an arc round the chest at the top of the
 // room (the party walks in at the centre). A spot blocked by the clearing's
@@ -91,7 +95,7 @@ export function createVaultSystem({ registry, events, getTick }) {
   // key: null | { from: 'champion'|'elite', room, kind } (held by the party)
   let key = null;
   let opened = 0; // vaults opened this level
-  let room = null; // the live vault room: { room, state: 'shut'|'open', glint, healed }
+  let room = null; // the live vault room: { room, state: 'shut'|'open', glint, healed, payAt?, paid? }
   let found = 0; // keys picked up this run (the end card / probes)
   let lapsed = 0; // keys a level ended with, unused
   // A key that fell this tick waits here and lands at the end of the tick

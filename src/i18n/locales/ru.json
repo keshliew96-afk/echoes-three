@@ -2494,5 +2494,19 @@
  "The Sluice Warden": "Шлюзовой страж",
  "Three voices of the Heart sung into one crystal body. It hums even when it is still.": "Три голоса Сердца, спетые в одно кристальное тело. Он гудит, даже когда неподвижен.",
  "THE CHAMPION'S CHEST": "СУНДУК ЧЕМПИОНА",
- "A rare or legendary relic for the run. Choose one.": "Редкая или легендарная реликвия на весь забег. Выбери одну."
+ "A rare or legendary relic for the run. Choose one.": "Редкая или легендарная реликвия на весь забег. Выбери одну.",
+ "{key} <b>Left door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>Левая дверь: сокровищница.</b> Ваш ключ откроет её: без боя — груда Блеска, пир и сундук с реликвией, затем выбор. Ключ действует только на этом уровне.",
+ "{key} <b>Right door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>Правая дверь: сокровищница.</b> Ваш ключ откроет её: без боя — груда Блеска, пир и сундук с реликвией, затем выбор. Ключ действует только на этом уровне.",
+ "A relic from the hoard. Choose one.": "Реликвия из сокровищницы. Выберите одну.",
+ "Champions, and now and then an elite, drop a key. While the party holds one, a vault door can appear on the path: behind it waits a treasure room with no fight, Glint, a feast and a relic chest. A key lasts only the level it was found in.": "Чемпионы, а иногда и элитные враги, роняют ключ. Пока он у отряда, на пути может появиться дверь сокровищницы: за ней ждёт комната без боя с Блеском, пиром и сундуком с реликвией. Ключ действует только на том уровне, где его нашли.",
+ "LASTS THIS LEVEL": "ДО КОНЦА УРОВНЯ",
+ "Open": "Открыть",
+ "OPEN THE CHEST": "ОТКРОЙТЕ СУНДУК",
+ "Opened": "Открыт",
+ "THE HOARD IS YOURS": "СОКРОВИЩА ВАШИ",
+ "the vault": "сокровищница",
+ "THE VAULT": "СОКРОВИЩНИЦА",
+ "The vault door": "Дверь сокровищницы",
+ "THE VAULT'S CHEST": "СУНДУК СОКРОВИЩНИЦЫ",
+ "VAULT KEY": "КЛЮЧ ОТ СОКРОВИЩНИЦЫ"
 }

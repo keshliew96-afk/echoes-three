@@ -2466,5 +2466,19 @@
  "The Sluice Warden": "El Guardián de la Esclusa",
  "Three voices of the Heart sung into one crystal body. It hums even when it is still.": "Tres voces del Corazón cantadas en un solo cuerpo de cristal. Zumba incluso cuando está quieto.",
  "THE CHAMPION'S CHEST": "EL COFRE DEL CAMPEÓN",
- "A rare or legendary relic for the run. Choose one.": "Una reliquia rara o legendaria para toda la partida. Elige una."
+ "A rare or legendary relic for the run. Choose one.": "Una reliquia rara o legendaria para toda la partida. Elige una.",
+ "{key} <b>Left door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>Puerta izquierda: la cámara del tesoro.</b> Vuestra llave la abre: sin combate, un tesoro de Destello, un festín y un cofre de reliquias, y luego la elección. La llave solo dura este nivel.",
+ "{key} <b>Right door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>Puerta derecha: la cámara del tesoro.</b> Vuestra llave la abre: sin combate, un tesoro de Destello, un festín y un cofre de reliquias, y luego la elección. La llave solo dura este nivel.",
+ "A relic from the hoard. Choose one.": "Una reliquia del tesoro. Elige una.",
+ "Champions, and now and then an elite, drop a key. While the party holds one, a vault door can appear on the path: behind it waits a treasure room with no fight, Glint, a feast and a relic chest. A key lasts only the level it was found in.": "Los campeones, y de vez en cuando un élite, sueltan una llave. Mientras el grupo tenga una, puede aparecer una puerta de cámara en el camino: tras ella espera una sala del tesoro sin combate, con Destello, un festín y un cofre de reliquias. Una llave solo dura el nivel en que se encontró.",
+ "LASTS THIS LEVEL": "DURA ESTE NIVEL",
+ "Open": "Abrir",
+ "OPEN THE CHEST": "ABRE EL COFRE",
+ "Opened": "Abierto",
+ "THE HOARD IS YOURS": "EL TESORO ES VUESTRO",
+ "the vault": "la cámara del tesoro",
+ "THE VAULT": "LA CÁMARA DEL TESORO",
+ "The vault door": "La puerta de la cámara",
+ "THE VAULT'S CHEST": "EL COFRE DE LA CÁMARA",
+ "VAULT KEY": "LLAVE DE LA CÁMARA"
 }

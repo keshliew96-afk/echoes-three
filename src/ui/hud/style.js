@@ -715,6 +715,28 @@ export function hudCss() {
   text-shadow: 0 0 10px ${PALETTE.paleGold}66;
 }
 .hud-glint-lab { font-size: ${FS_KEY}px; font-weight: 700; letter-spacing: 0.14em; color: ${CHROME.inkDim}; line-height: 1; }
+/* KEYS AND VAULTS (docs/VAULTS.md): the party's key, under the Glint plate
+   while one is held. It pops in on the pick-up and says it lasts the level. */
+.hud-key {
+  position: absolute;
+  right: var(--zx, 18px);
+  top: calc(var(--zt, 18px) + 64px);
+  display: none; align-items: center; gap: 8px;
+  padding: 4px 14px 4px 8px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, ${CHROME.plateHi} 0%, ${CHROME.plate} 55%);
+  border: 2px solid ${PALETTE.paleGold};
+  box-shadow: inset 0 0 0 1px ${CHROME.plateSunk}, 0 0 14px ${PALETTE.paleGold}55;
+  white-space: nowrap;
+}
+.hud-key.hud-key-on { display: flex; }
+.hud-key.hud-key-pop { animation: hud-key-pop 0.7s cubic-bezier(.2,1.6,.4,1); }
+@keyframes hud-key-pop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+.hud-key-ico { color: ${PALETTE.paleGold}; filter: drop-shadow(0 0 6px ${PALETTE.paleGold}AA); display: flex; }
+.hud-key-ico svg { display: block; width: 30px; height: 30px; }
+.hud-key-txt { display: flex; flex-direction: column; gap: 2px; }
+.hud-key-name { font-size: ${FS_KEY + 2}px; font-weight: 800; letter-spacing: 0.12em; color: ${PALETTE.paleGold}; line-height: 1; }
+.hud-key-sub { font-size: ${FS_KEY - 2}px; font-weight: 700; letter-spacing: 0.1em; color: ${CHROME.inkDim}; line-height: 1; }
 
 /* ------------------------------------------- ZONE 2 — room banner (§17) -- */
 #hud-banner {

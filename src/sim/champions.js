@@ -21,8 +21,8 @@
 // champion room; the other door keeps its own room. Endless gives each depth
 // its land's champion.
 //
-// KEYS AND VAULTS (the next slice) hang their drop off the `champion_fall`
-// event (id, champion, x, z): the chest spot is where a key would land.
+// KEYS AND VAULTS (src/sim/vaults.js, docs/VAULTS.md) hang their drop off
+// the `champion_fall` event (id, champion, x, z): the key lands there.
 //
 // Sim only: no DOM, no i18n (the UI translates the English names).
 import { fnv1a64Hex } from '../core/hash.js';

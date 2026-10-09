@@ -13,6 +13,7 @@ import { WIN_GLYPH, REWARD_GLYPH } from '../../sim/run.js';
 import { bossNameOfRun } from '../../data/levels.js';
 import { t } from '../../i18n/index.js';
 import { championById } from '../../sim/champions.js';
+import { iconHtml } from '../hud/icons.js';
 
 const WIN_LABEL = {
   kill_all: () => t('clear every enemy'),
@@ -20,6 +21,7 @@ const WIN_LABEL = {
   hunt: () => t('hunt the quarry before it escapes'),
   purge: () => t('destroy the three nests'),
   champion: () => t('fell the champion'),
+  vault: () => t('the vault'),
   boss: () => t('the Hollow Stag'),
 };
 const REWARD_LABEL = { skill: () => t('a Skill draft'), node: () => t('a Node draft') };
@@ -57,6 +59,7 @@ export function createPathScreen({ run }) {
     <div class="rl-cursenote" style="display:none"></div>
     <div class="ev-note" style="display:none"></div>
     <div class="ev-note ch-note" style="display:none"></div>
+    <div class="ev-note vk-note" style="display:none"></div>
     <div class="rn-hint">${t('<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> walk through')}</div>`;
 
   const wraps = [...el.querySelectorAll('.rn-doorwrap')];
@@ -65,8 +68,9 @@ export function createPathScreen({ run }) {
   const rewEls = wraps.map((w) => w.querySelector('.rn-grew'));
   const legendEl = el.querySelector('.rn-legend');
   const curseNote = el.querySelector('.rl-cursenote');
-  const eventNote = el.querySelector('.ev-note:not(.ch-note)');
+  const eventNote = el.querySelector('.ev-note:not(.ch-note):not(.vk-note)');
   const crownNote = el.querySelector('.ch-note');
+  const vaultNote = el.querySelector('.vk-note');
   const curseMarks = doors.map((d) => {
     const m = document.createElement('div');
     m.className = 'rl-gcurse';
@@ -93,7 +97,16 @@ export function createPathScreen({ run }) {
     nextEl.textContent = String(p.nextRoom);
     for (let i = 0; i < 2; i++) {
       const o = p.options[i];
-      winEls[i].textContent = WIN_GLYPH[o.win] ?? '⚔';
+      // KEYS AND VAULTS: the vault door wears a drawn keyhole (no font glyph).
+      if (o.vault) {
+        if (winEls[i].dataset.vk !== '1') {
+          winEls[i].dataset.vk = '1';
+          winEls[i].innerHTML = iconHtml('keyhole', { size: 78 });
+        }
+      } else {
+        delete winEls[i].dataset.vk;
+        winEls[i].textContent = WIN_GLYPH[o.win] ?? '⚔';
+      }
       rewEls[i].textContent = REWARD_GLYPH[o.reward] ?? '✦';
       doors[i].classList.toggle('rn-focus', p.focus === i);
       doors[i].classList.toggle('rl-cursed', !!o.curse);
@@ -102,6 +115,8 @@ export function createPathScreen({ run }) {
       doors[i].classList.toggle('ev-door', !!o.event);
       // CHAMPION ROOMS: the crown door is gold-rimmed and keeps its reward.
       doors[i].classList.toggle('ch-door', !!o.champion);
+      // KEYS AND VAULTS: the vault door is iron and gold and keeps its reward.
+      doors[i].classList.toggle('vk-door', !!o.vault);
       curseMarks[i].style.display = o.curse ? '' : 'none';
       // Slice 2: a MAJOR curse wears the chained mark.
       const mk = o.major ? 'major' : 'room';
@@ -115,7 +130,8 @@ export function createPathScreen({ run }) {
     // once, so no door carries a third piece of information.
     // EVENT ROOMS: the legend decodes the room behind the plain door.
     // CHAMPION ROOMS: and never the crown door (its note below says it all).
-    const plain = p.options.find((o) => !o.event && !o.champion) ?? p.options.find((o) => !o.event) ?? p.options[0];
+    // KEYS AND VAULTS: nor the vault door.
+    const plain = p.options.find((o) => !o.event && !o.champion && !o.vault) ?? p.options.find((o) => !o.event && !o.vault) ?? p.options[0];
     const win = plain.win;
     legendEl.innerHTML = `
       <span><b>${WIN_GLYPH[win] ?? '⚔'}</b> ${esc(win === 'boss' ? t(bossNameOfRun(view)).replace(/^The /, 'the ') : WIN_LABEL[win] ? WIN_LABEL[win]() : win)}</span>
@@ -157,6 +173,16 @@ export function createPathScreen({ run }) {
         cr.side === 0
           ? t('<b>♛ Left door: {name}.</b> A champion and two light waves. Fell it for a relic chest (rare or legendary) on top of the draft.', { name })
           : t('<b>♛ Right door: {name}.</b> A champion and two light waves. Fell it for a relic chest (rare or legendary) on top of the draft.', { name });
+    }
+    // KEYS AND VAULTS: the party's key opens the vault door.
+    const vd = p.options.find((o) => o.vault);
+    vaultNote.style.display = vd ? '' : 'none';
+    if (vd) {
+      const key = iconHtml('key', { size: 22 });
+      vaultNote.innerHTML =
+        vd.side === 0
+          ? t('{key} <b>Left door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.', { key })
+          : t('{key} <b>Right door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.', { key });
     }
     shownFocus = p.focus;
   }

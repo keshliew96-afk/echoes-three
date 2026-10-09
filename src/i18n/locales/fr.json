@@ -2466,5 +2466,19 @@
  "The Sluice Warden": "Le Gardien de l’Écluse",
  "Three voices of the Heart sung into one crystal body. It hums even when it is still.": "Trois voix du Cœur chantées dans un seul corps de cristal. Il bourdonne même immobile.",
  "THE CHAMPION'S CHEST": "LE COFFRE DU CHAMPION",
- "A rare or legendary relic for the run. Choose one.": "Une relique rare ou légendaire pour toute l’expédition. Choisis-en une."
+ "A rare or legendary relic for the run. Choose one.": "Une relique rare ou légendaire pour toute l’expédition. Choisis-en une.",
+ "{key} <b>Left door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>Porte de gauche : la chambre forte.</b> Votre clé l'ouvre : aucun combat, un trésor d'Éclats, un festin et un coffre à reliques, puis le choix. La clé ne vaut que pour ce niveau.",
+ "{key} <b>Right door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>Porte de droite : la chambre forte.</b> Votre clé l'ouvre : aucun combat, un trésor d'Éclats, un festin et un coffre à reliques, puis le choix. La clé ne vaut que pour ce niveau.",
+ "A relic from the hoard. Choose one.": "Une relique du trésor. Choisissez-en une.",
+ "Champions, and now and then an elite, drop a key. While the party holds one, a vault door can appear on the path: behind it waits a treasure room with no fight, Glint, a feast and a relic chest. A key lasts only the level it was found in.": "Les champions, et de temps en temps un élite, lâchent une clé. Tant que le groupe en détient une, une porte de chambre forte peut apparaître sur le chemin : derrière attend une salle au trésor sans combat, avec des Éclats, un festin et un coffre à reliques. Une clé ne vaut que pour le niveau où elle a été trouvée.",
+ "LASTS THIS LEVEL": "VAUT POUR CE NIVEAU",
+ "Open": "Ouvrir",
+ "OPEN THE CHEST": "OUVREZ LE COFFRE",
+ "Opened": "Ouvert",
+ "THE HOARD IS YOURS": "LE TRÉSOR EST À VOUS",
+ "the vault": "la chambre forte",
+ "THE VAULT": "LA CHAMBRE FORTE",
+ "The vault door": "La porte de la chambre forte",
+ "THE VAULT'S CHEST": "LE COFFRE DE LA CHAMBRE FORTE",
+ "VAULT KEY": "CLÉ DE LA CHAMBRE FORTE"
 }

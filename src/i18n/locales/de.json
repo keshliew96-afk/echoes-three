@@ -2438,5 +2438,19 @@
  "The Sluice Warden": "Der Schleusenwärter",
  "Three voices of the Heart sung into one crystal body. It hums even when it is still.": "Drei Stimmen des Herzens, in einen einzigen Kristallleib gesungen. Er summt selbst in der Ruhe.",
  "THE CHAMPION'S CHEST": "DIE KISTE DES CHAMPIONS",
- "A rare or legendary relic for the run. Choose one.": "Ein seltenes oder legendäres Relikt für den ganzen Lauf. Wähle eins."
+ "A rare or legendary relic for the run. Choose one.": "Ein seltenes oder legendäres Relikt für den ganzen Lauf. Wähle eins.",
+ "{key} <b>Left door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>Linke Tür: der Tresor.</b> Euer Schlüssel öffnet ihn: kein Kampf, ein Hort aus Glimmer, ein Festmahl und eine Reliktentruhe, dann die Wahl. Der Schlüssel gilt nur in diesem Level.",
+ "{key} <b>Right door: the vault.</b> Your key opens it: no fight, a hoard of Glint, a feast and a relic chest, then the draft. The key lasts only this level.": "{key} <b>Rechte Tür: der Tresor.</b> Euer Schlüssel öffnet ihn: kein Kampf, ein Hort aus Glimmer, ein Festmahl und eine Reliktentruhe, dann die Wahl. Der Schlüssel gilt nur in diesem Level.",
+ "A relic from the hoard. Choose one.": "Ein Relikt aus dem Hort. Wähle eines.",
+ "Champions, and now and then an elite, drop a key. While the party holds one, a vault door can appear on the path: behind it waits a treasure room with no fight, Glint, a feast and a relic chest. A key lasts only the level it was found in.": "Champions und hin und wieder ein Elite lassen einen Schlüssel fallen. Solange die Gruppe einen hält, kann auf dem Weg eine Tresortür erscheinen: Dahinter wartet eine Schatzkammer ohne Kampf, mit Glimmer, einem Festmahl und einer Reliktentruhe. Ein Schlüssel gilt nur in dem Level, in dem er gefunden wurde.",
+ "LASTS THIS LEVEL": "GILT IN DIESEM LEVEL",
+ "Open": "Öffnen",
+ "OPEN THE CHEST": "ÖFFNE DIE TRUHE",
+ "Opened": "Geöffnet",
+ "THE HOARD IS YOURS": "DER HORT GEHÖRT EUCH",
+ "the vault": "der Tresor",
+ "THE VAULT": "DER TRESOR",
+ "The vault door": "Die Tresortür",
+ "THE VAULT'S CHEST": "DIE TRUHE DES TRESORS",
+ "VAULT KEY": "TRESORSCHLÜSSEL"
 }

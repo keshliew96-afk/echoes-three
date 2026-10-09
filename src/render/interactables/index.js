@@ -46,6 +46,8 @@ import { warmPark } from '../warmup.js';
 import { HITFLASH } from '../../core/constants.js';
 // EVENT ROOMS (docs/EVENT_ROOMS.md): the eight encounter bodies.
 import { buildEncounter, ENCOUNTER_KINDS } from './encounters.js';
+// KEYS AND VAULTS (docs/VAULTS.md): the key, the hoard and the vault.
+import { buildVaultRig, VAULT_KINDS } from './vaults.js';
 
 const HEAL = exactColor(PALETTE.brightHeal);
 const BONE_STONE = new Color(PALETTE.bone).multiplyScalar(0.8);
@@ -510,7 +512,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
       case 'encounter':
         return buildEncounter(e);
       default:
-        return null;
+        return VAULT_KINDS.includes(e.kind) ? buildVaultRig(e) : null;
     }
   }
 
@@ -536,6 +538,10 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
       }
     });
   }
+  // KEYS AND VAULTS: the chest's opening drives its rig.
+  bus.on('vault_open', () => {
+    for (const rec of rigs.values()) if (rec.kind === 'vault_chest' && rec.r.onEvent) rec.r.onEvent('vault_open');
+  });
   bus.on('keg_blast', (ev) => {
     // White-hot flash + fire burst + scorch at the blast (the §19.4 layers).
     impactFx.kill(ev.x, ev.z, { color: PALETTE.emberDanger });
@@ -562,7 +568,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
     const ctx = { tick: world.tick, cosmetic, camQuat: stage.camera.quaternion };
     const seen = new Set();
     for (const e of world.entities()) {
-      if (e.kind !== 'dewfont' && e.kind !== 'barricade' && e.kind !== 'keg' && e.kind !== 'kegfuse' && e.kind !== 'sluice' && e.kind !== 'bell' && e.kind !== 'encounter') continue;
+      if (e.kind !== 'dewfont' && e.kind !== 'barricade' && e.kind !== 'keg' && e.kind !== 'kegfuse' && e.kind !== 'sluice' && e.kind !== 'bell' && e.kind !== 'encounter' && !VAULT_KINDS.includes(e.kind)) continue;
       seen.add(e.id);
       let rec = rigs.get(e.id);
       if (!rec) {
@@ -624,6 +630,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
     warmPark(root, buildSluice({ laneIds: [] }, world).group);
     warmPark(root, buildBell().group);
     for (const encounter of ENCOUNTER_KINDS) warmPark(root, buildEncounter({ encounter, uses: 1 }).group);
+    for (const kind of VAULT_KINDS) warmPark(root, buildVaultRig({ kind, uses: 1 }).group);
     const back = shapes.prewarm();
     setTimeout(back, 250);
   }

@@ -370,6 +370,8 @@ let vaultSave = null;
   for (let i = 0; i < 6 && !w.log.some((x) => x.type === 'vault_open'); i++) w.clock.stepOnce((t) => w.world.step(t, { ...emptySnapshot(), presses: [{ kind: 'interact' }] }));
   const op = w.log.find((x) => x.type === 'vault_open');
   check('vault', 'E on the chest opens it and gathers the rest of the hoard', !!op && op.glint === R.pileGlint * 3 && w.run().view().wallet === wallet0 + R.pileGlint * 3 && !w.registry.all().some((e) => e.kind === 'vault_pile'), { op, wallet: w.run().view().wallet });
+  check('vault', 'the draft waits while the lid comes up', w.run().view().phase === 'vault', { phase: w.run().view().phase });
+  for (let i = 0; i < 200 && w.run().view().phase === 'vault'; i++) w.clock.stepOnce((t) => w.world.step(t, emptySnapshot()));
   const ro = w.log.filter((x) => x.type === 'reward_offer').at(-1);
   check('vault', "then the door's own draft", w.run().view().phase === 'reward' && !!ro && ro.promised === door.reward, { phase: w.run().view().phase, ro });
   w.run().declineReward();
