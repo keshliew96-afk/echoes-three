@@ -818,7 +818,9 @@ cue('thorns', { levelDb: -14, maxVoices: 2, cooldownMs: 90 }, (k, t, d) =>
 export const DEFAULT_EVENT_CUES = {
   basic_fire: (ev, h) => one('shoot', at(ev, h)),
   ally_basic: (ev, h) =>
-    one(ev.shape === 'melee_arc' ? 'swing' : 'bow', at(ev, h, ev.id), { pitch: ev.classId === 'tank' ? 0.8 : 1 }),
+    // THE TIDECALLER: Spit borrows the bolt's voice a step up (her own water
+    // cues come with the rest of her kit).
+    ev.classId === 'tidecaller' ? one('bolt', at(ev, h, ev.id), { pitch: 1.3 }) : one(ev.shape === 'melee_arc' ? 'swing' : 'bow', at(ev, h, ev.id), { pitch: ev.classId === 'tank' ? 0.8 : 1 }),
   enemy_fire: (ev, h) => one('spit', at(ev, h, ev.id)),
   enemy_bite: (ev, h) => one('bite', at({}, h, ev.id)),
   hit: (ev, h) => {
@@ -851,8 +853,11 @@ export const DEFAULT_EVENT_CUES = {
     // combo stack); the starting kit keeps its class family.
     const own = CLASS_SKILL_CUE[ev.skill];
     if (own) return one(own, at(ev, h, ev.id), ev.combo ? { pitch: Math.pow(2, (3 * ev.combo) / 12) } : undefined);
+    if (ev.classId === 'tidecaller') return one(skillFamily(ev), at(ev, h, ev.id), { pitch: 0.85 });
     return one(ev.classId === 'tank' ? 'ally_cast_tank' : ev.classId === 'archer' ? 'ally_cast_archer' : 'ally_cast_sword', at(ev, h, ev.id));
   },
+  // THE TIDECALLER: a Crash on a soaked enemy — a heavy low splash-thump.
+  crash: (ev) => [{ cue: 'impact', x: ev.x, z: ev.z, pitch: 0.7 }, { cue: 'zone_spawn', x: ev.x, z: ev.z, pitch: 1.4 }],
   ally_dash: (ev, h) => one('whoosh', { x: ev.x0, z: ev.z0 }, { pitch: ev.cause === 'dash' ? 0.9 : 1.1 }),
   parry_counter: (ev, h) => one('sword_parry', at(ev, h, ev.id), { pitch: 1.25 }),
   skill_bolt_spawn: (ev, h) => one('bolt', at(ev, h, ev.id)),

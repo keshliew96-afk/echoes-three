@@ -72,7 +72,8 @@ import { FIRST_LEVEL, isLevel, lockLine } from '../data/campaign.js';
 import { levelFor } from '../data/levels.js';
 import { endlessUnlockedFrom } from '../data/endless.js';
 import { CLASS_NAME } from '../data/classes.js';
-import { classOfSeat } from '../data/lineup.js';
+import { classOfSeat, seatOfClass, activeLineup, sameLineup, benchOf, tidecallerOpen } from '../data/lineup.js';
+import { lineupFromSettings } from '../app/playclass.js';
 import { bindings, PAD } from '../core/bindings.js';
 import { createCampNpcs } from './campnpcs.js';
 import { cap, padCap, usingPad, onHintsChange } from '../app/controls.js';
@@ -273,21 +274,18 @@ export function createCampScene(stage, toggles, ctx) {
   // its own, and the ally render layer keeps adopting THOSE.
   const healerRig = createCritter('healer', { cosmetic });
   root.add(healerRig.group);
-  const allyRigs = [
-    { classId: 'tank', partyIndex: 1, rig: createCritter('tank', { cosmetic }), yaw: CAMP_SPOTS.tank.yaw },
-    {
-      classId: 'swordsman',
-      partyIndex: 2,
-      rig: createCritter('swordsman', { cosmetic }),
-      yaw: CAMP_SPOTS.swordsman.yaw,
+  // THE TIDECALLER (docs/TIDECALLER.md): four critters for three ally seats.
+  // A rig follows the seat its class holds in the lineup (`partyIndex` is
+  // read live); the class at camp stands at its own spot by the fire.
+  const allyRigs = ['tank', 'swordsman', 'archer', 'tidecaller'].map((classId) => ({
+    classId,
+    get partyIndex() {
+      const i = seatOfClass(classId);
+      return i > 0 ? i : null;
     },
-    {
-      classId: 'archer',
-      partyIndex: 3,
-      rig: createCritter('archer', { cosmetic }),
-      yaw: CAMP_SPOTS.archer.yaw,
-    },
-  ];
+    rig: createCritter(classId, { cosmetic }),
+    yaw: CAMP_SPOTS[classId].yaw,
+  }));
   for (const a of allyRigs) {
     a.rig.group.position.set(CAMP_SPOTS[a.classId].x, 0, CAMP_SPOTS[a.classId].z);
     a.rig.setYaw(a.yaw);
@@ -324,7 +322,10 @@ export function createCampScene(stage, toggles, ctx) {
     '<span class="cp-sep"></span>' +
     `<span class="cp-chip cp-unlocks"><span class="cp-key">U</span><span class="cp-lab">${t('Unlocks')}</span></span>` +
     '<span class="cp-sep"></span>' +
-    `<span class="cp-chip cp-class"><span class="cp-key">C</span><span class="cp-lab">${t('Class · {name}', { name: `<b class="cp-class-n">${t('Healer')}</b>` })}</span></span>`;
+    `<span class="cp-chip cp-class"><span class="cp-key">C</span><span class="cp-lab">${t('Class · {name}', { name: `<b class="cp-class-n">${t('Healer')}</b>` })}</span></span>` +
+    // THE TIDECALLER: who stays at camp (opens the class screen's bench view).
+    '<span class="cp-sep cp-lineup-sep"></span>' +
+    `<span class="cp-chip cp-lineup"><span class="cp-lab">${t('Lineup · {name} at camp', { name: `<b class="cp-lineup-n">${t('Tidecaller')}</b>` })}</span></span>`;
   document.body.appendChild(prompt);
   // Controls slice: each cap names the player's key, or the pad button while
   // a gamepad is in use.
@@ -365,6 +366,10 @@ export function createCampScene(stage, toggles, ctx) {
     e.stopPropagation();
     openClasses('prompt');
   });
+  prompt.querySelector('.cp-lineup').addEventListener('click', (e) => {
+    e.stopPropagation();
+    openClasses('lineup', { view: 'bench' });
+  });
   const tablePrompt = createTablePrompt(() => openLevels('table'));
   const fitPrompt = () => {
     const s = Math.min(1, Math.min(window.innerWidth / 1920, window.innerHeight / 1080) * 1.35);
@@ -389,14 +394,33 @@ export function createCampScene(stage, toggles, ctx) {
   if (roadViolations.length) {
     console.warn('[camp] road blocked by props:', roadViolations);
   }
-  const seats = Object.freeze({
-    1: { x: CAMP_SPOTS.tank.x, z: CAMP_SPOTS.tank.z },
-    2: { x: CAMP_SPOTS.swordsman.x, z: CAMP_SPOTS.swordsman.z },
-    3: { x: CAMP_SPOTS.archer.x, z: CAMP_SPOTS.archer.z },
-  });
+  // Each ally seat's hearth spot is its class's (the lineup decides which).
+  const seatsNow = () => {
+    const out = {};
+    for (const i of [1, 2, 3]) {
+      const spot = CAMP_SPOTS[classOfSeat(i)] ?? CAMP_SPOTS.archer;
+      out[i] = { x: spot.x, z: spot.z };
+    }
+    return out;
+  };
   function applyCampSim() {
     setStaticColliders(colliders);
-    world.cmd('campSeats', seats);
+    world.cmd('campSeats', seatsNow());
+  }
+  // THE TIDECALLER: the camp shows the party the next campaign takes (the
+  // class and bench settings). Solo only: in a session the host's bodies
+  // replicate, and a guest never seats a lineup itself.
+  function syncCampLineup() {
+    if (mode !== 'camp' || begin || inSession()) return false;
+    const settings = svc('settings');
+    if (!settings || typeof settings.get !== 'function') return false;
+    const want = lineupFromSettings(settings);
+    if (sameLineup(want, activeLineup())) return false;
+    const r = world.cmd('campLineup', want);
+    if (!r || !r.ok) return false;
+    applyCampSim();
+    seatParty();
+    return true;
   }
   function applyRunSim() {
     setStaticColliders(null);
@@ -476,7 +500,7 @@ export function createCampScene(stage, toggles, ctx) {
     healerRig.setAnim('idle');
     for (const a of allyRigs) {
       const spot = CAMP_SPOTS[a.classId];
-      world.cmd('placeAlly', a.partyIndex, spot.x, spot.z);
+      if (a.partyIndex !== null) world.cmd('placeAlly', a.partyIndex, spot.x, spot.z);
       a.rig.group.position.set(spot.x, 0, spot.z);
       a.rig.setYaw(spot.yaw);
       a.rig.setAnim('idle');
@@ -588,7 +612,7 @@ export function createCampScene(stage, toggles, ctx) {
   function seatDrift() {
     const out = {};
     for (const a of allyRigs) {
-      const e = world.entities().find((x) => x.kind === 'ally' && x.partyIndex === a.partyIndex);
+      const e = a.partyIndex === null ? null : world.entities().find((x) => x.kind === 'ally' && x.partyIndex === a.partyIndex);
       const spot = CAMP_SPOTS[a.classId];
       out[a.classId] = e ? r2(Math.hypot(e.x - spot.x, e.z - spot.z)) : null;
     }
@@ -773,7 +797,7 @@ export function createCampScene(stage, toggles, ctx) {
       return false;
     }
   }
-  function openClasses(via = 'key') {
+  function openClasses(via = 'key', extra = null) {
     if (mode !== 'camp' || begin || picking || inSession()) return false;
     const app = svc('app');
     if (!app || !app.screens || !appReg || !appReg.screenFactory?.('classes')) return false;
@@ -786,7 +810,7 @@ export function createCampScene(stage, toggles, ctx) {
       picking = false;
       if (typeof off === 'function') off();
     });
-    app.screens.push('classes', { via });
+    app.screens.push('classes', { via, ...(extra || {}) });
     return true;
   }
   // THE HEARTH SONG (docs/STORY.md): the Story so far page (app screen
@@ -876,6 +900,8 @@ export function createCampScene(stage, toggles, ctx) {
       ...(begin.tutorial ? { tutorial: true } : {}),
       ...(begin.daily ? { daily: { key: begin.daily.key } } : {}),
       ...(boons ? { boons } : {}),
+      // THE TIDECALLER: the lineup the camp shows (the tutorial ignores it).
+      ...(settings && typeof settings.get === 'function' ? { lineup: lineupFromSettings(settings) } : {}),
     });
     begin.started = true;
     begin.startedAt = performance.now();
@@ -1000,8 +1026,15 @@ export function createCampScene(stage, toggles, ctx) {
     // Allies: sim bodies drive them (the ally AI keeps them within the §12
     // leash of the player, so the party follows you around its own camp), and
     // they idle on the spot when nobody is walking anywhere.
+    syncCampLineup();
     for (const a of allyRigs) {
-      const e = world.entities().find((x) => x.kind === 'ally' && x.partyIndex === a.partyIndex);
+      const e = a.partyIndex === null ? null : world.entities().find((x) => x.kind === 'ally' && x.partyIndex === a.partyIndex);
+      if (!e) {
+        // At camp this run: stand by the fire at the class's own spot.
+        const spot = CAMP_SPOTS[a.classId];
+        a.rig.group.position.set(spot.x, 0, spot.z);
+        a.rig.setAnim('idle');
+      }
       if (e) {
         const ax = e.px + (e.x - e.px) * alpha;
         const az = e.pz + (e.z - e.pz) * alpha;
@@ -1054,6 +1087,18 @@ export function createCampScene(stage, toggles, ctx) {
       if (chip && chip.style.display !== (hide ? 'none' : '')) {
         chip.style.display = hide ? 'none' : '';
         if (chip.previousElementSibling) chip.previousElementSibling.style.display = hide ? 'none' : '';
+      }
+      // THE TIDECALLER: the Lineup chip names who stays at camp.
+      const lchip = prompt.querySelector('.cp-lineup');
+      if (lchip) {
+        const ln = lchip.querySelector('.cp-lineup-n');
+        const away = t(CLASS_NAME[benchOf(activeLineup())[0] ?? 'tidecaller']);
+        if (ln && ln.textContent !== away) ln.textContent = away;
+        const lhide = hide || !tidecallerOpen();
+        if (lchip.style.display !== (lhide ? 'none' : '')) {
+          lchip.style.display = lhide ? 'none' : '';
+          if (lchip.previousElementSibling) lchip.previousElementSibling.style.display = lhide ? 'none' : '';
+        }
       }
     }
     placePrompt();

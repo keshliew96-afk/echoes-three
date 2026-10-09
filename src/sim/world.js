@@ -1116,6 +1116,14 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         a.pz = a.z;
         return { id: a.id, x: r2(a.x), z: r2(a.z) };
       }
+      // THE TIDECALLER (docs/TIDECALLER.md): the camp shows the party the
+      // next campaign will take (scenes/camp.js, from the class and bench
+      // settings), so the chosen class walks its own body before the run.
+      // Refused while a run is live: a run keeps the lineup it started with.
+      case 'campLineup': {
+        if (runSys && runSys.isActive()) return { ok: false, reason: 'run_active' };
+        return { ok: true, lineup: [...partySys.setLineup(args[0])] };
+      }
       case 'setHp': {
         const [id, pct] = args;
         const e = registry.byId(id);

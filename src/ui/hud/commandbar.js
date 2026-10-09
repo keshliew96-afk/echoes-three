@@ -54,7 +54,7 @@ import { cap, keyCap, onHintsChange } from '../../app/controls.js';
 const CD_RING_R = 16.5;
 const CD_RING_LEN = 2 * Math.PI * CD_RING_R;
 
-const PORTRAIT_LETTER = { healer: 'H', tank: 'T', swordsman: 'S', archer: 'A' };
+const PORTRAIT_LETTER = { healer: 'H', tank: 'T', swordsman: 'S', archer: 'A', tidecaller: 'R' };
 const REVIVE_TOTAL_TICKS = 300; // §10 5.0 s channel (allies.js REVIVE.channelTicks)
 // DOWNED RING GEOMETRY (70-box viewBox over the tile's 60 px padding box).
 // Round D advisory: the F-key chip stays up on a downed tile (identity), and

@@ -508,6 +508,30 @@ const ICONS = {
   feather_fan: [
     ...[-50, -25, 0, 25, 50].map((a) => ['path', { d: 'M16 28 L16 6 M16 9 L13 13 M16 9 L19 13', 'stroke-width': 1.6, transform: `rotate(${a} 16 28)` }]),
   ],
+  // THE TIDECALLER (docs/TIDECALLER.md).
+  // Riverbolt: a water drop flying, with a wave trail.
+  riverbolt: [
+    ['path', { d: 'M27 7 C22 7 16 11 16 16 C16 19 18.5 21 21.5 21 C25 21 27 17 27 7 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M3 14 Q6 11 9 14 T15 14', 'stroke-width': 1.8 }],
+    ['path', { d: 'M4 21 Q7 18 10 21 T16 21', 'stroke-width': 1.6 }],
+  ],
+  // Undertow: a spiral pulling into its centre over a ground line.
+  undertow: [
+    ['path', { d: 'M16 15 C18 15 18.5 12.5 16.5 11.5 C13.5 10 11 13 12 16 C13.5 20 20 20.5 22 16 C24.5 10.5 19 5.5 13 7 C7 8.5 5 15 7.5 20', 'stroke-width': 2 }],
+    ['path', { d: 'M3 27 H29', 'stroke-width': 2 }],
+  ],
+  // Breaker: a curling wave crest breaking outward.
+  breaker: [
+    ['path', { d: 'M3 25 C6 13 14 6 23 7 C28 8 29 13 25 15 C22 16.5 19 14 21 11 C15 11 11 17 11 25 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M2 28.5 H30', 'stroke-width': 2 }],
+  ],
+  // Tidepool: three ripples around a pebble (passive soak field).
+  tidepool: [
+    ['ellipse', { cx: 16, cy: 18, rx: 13, ry: 8, 'stroke-width': 1.4, 'stroke-dasharray': '3 3' }],
+    ['ellipse', { cx: 16, cy: 18, rx: 8.5, ry: 5, 'stroke-width': 1.8 }],
+    ['ellipse', { cx: 16, cy: 18, rx: 3.6, ry: 2.4, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M16 3 C18.5 6.5 19.5 8.5 17.8 10.2 C16.8 11 15.2 11 14.2 10.2 C12.5 8.5 13.5 6.5 16 3 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
   // Rampart (node): a tower wall with crenels.
   rampart: [
     ['path', { d: 'M6 28 V10 H10 V6 H14 V10 H18 V6 H22 V10 H26 V28 Z' }],
@@ -565,6 +589,12 @@ const ICONS = {
     ['path', { d: 'M9 3 C23 9 23 23 9 29', 'stroke-width': 2.6 }],
     ['path', { d: 'M9 3 V29', 'stroke-width': 1.4 }],
     ['path', { d: 'M3 16 H27 M23 12 L28 16 L23 20', 'stroke-width': 2 }],
+  ],
+  // The Tidecaller: her reed staff with the shell cup and a water drop.
+  cls_tidecaller: [
+    ['path', { d: 'M12 29 L18 9', 'stroke-width': 2.6 }],
+    ['path', { d: 'M13 8 C14 3 23 3 24 8 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M24 14 C26.5 17.5 27 19.5 25.5 21 C24.5 22 23 22 22 21 C20.5 19.5 21.5 17.5 24 14 Z', fill: 'currentColor', stroke: 'none' }],
   ],
 
   // ----------------------------------------------------------- chrome --

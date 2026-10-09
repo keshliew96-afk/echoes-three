@@ -19,11 +19,17 @@ import { emptySnapshot } from '../core/intents.js';
 import { frameFromSnapshot, seatInputOf } from '../sim/netseats.js';
 import { SKILLS } from '../sim/skills.js';
 import { SEAT_CLASSES } from '../net/seats.js';
-import { seatOfClass as lineupSeatOf, classOfSeat } from '../data/lineup.js';
+import { seatOfClass as lineupSeatOf, classOfSeat, BENCH_CLASSES, tidecallerOpen, plannedLineup } from '../data/lineup.js';
 import { dodgeCooldownTicks } from '../sim/relics.js';
 
 export const PLAY_CLASS_KEY = 'gameplay.playClass';
-export const PLAY_CLASSES = SEAT_CLASSES;
+// THE TIDECALLER (docs/TIDECALLER.md): five classes for four seats. Who
+// stays at camp when she comes is `gameplay.bench` ('none' = she does).
+export const BENCH_KEY = 'gameplay.bench';
+export const PLAY_CLASSES = Object.freeze([...SEAT_CLASSES, 'tidecaller']);
+export const playable = (c) => SEAT_CLASSES.includes(c) || (c === 'tidecaller' && tidecallerOpen());
+// The lineup the next campaign takes from the two settings.
+export const lineupFromSettings = (settings) => plannedLineup(settings.get(PLAY_CLASS_KEY), settings.get(BENCH_KEY));
 // PARTY LINEUP (docs/LINEUP.md): the seat the class holds in the run's
 // lineup; a class that stayed at camp plays nothing, so the Healer's seat.
 export const seatOfClass = (cls) => Math.max(0, lineupSeatOf(cls));
@@ -34,7 +40,8 @@ export const seatOfClass = (cls) => Math.max(0, lineupSeatOf(cls));
 export const LEADER_BOT = Object.freeze({ seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto', pages: false, leader: true });
 
 export function registerPlayClassSetting(settings) {
-  settings.register(PLAY_CLASS_KEY, { default: 'healer', validate: (v) => (SEAT_CLASSES.includes(v) ? v : undefined) });
+  settings.register(PLAY_CLASS_KEY, { default: 'healer', validate: (v) => (playable(v) ? v : undefined) });
+  settings.register(BENCH_KEY, { default: 'none', validate: (v) => (v === 'none' || BENCH_CLASSES.includes(v) ? v : undefined) });
 }
 
 const cdTicksOf = (def) => Math.max(30, Math.round((def.cd || 0) * 60));

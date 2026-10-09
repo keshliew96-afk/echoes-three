@@ -12,8 +12,8 @@ import { classOfSeat } from '../data/lineup.js';
 export const SEAT_CLASSES = Object.freeze(['healer', 'tank', 'swordsman', 'archer']);
 export const SEAT_LABELS = Object.freeze(['Healer', 'Tank', 'Swordsman', 'Archer']);
 export const SEAT_CRITTERS = Object.freeze(['Mouse', 'Badger', 'Fox', 'Hare']);
-export const CLASS_LABEL = Object.freeze({ healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer' });
-export const CLASS_CRITTER = Object.freeze({ healer: 'Mouse', tank: 'Badger', swordsman: 'Fox', archer: 'Hare' });
+export const CLASS_LABEL = Object.freeze({ healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer', tidecaller: 'Tidecaller' });
+export const CLASS_CRITTER = Object.freeze({ healer: 'Mouse', tank: 'Badger', swordsman: 'Fox', archer: 'Hare', tidecaller: 'Otter' });
 
 export const seatClass = (i) => classOfSeat(i);
 export const seatLabel = (i) => CLASS_LABEL[classOfSeat(i)] ?? `Seat ${i + 1}`;
