@@ -87,6 +87,10 @@ export const VFX_MATTER = Object.freeze({
   heartpeak: '#F4E8FF', // its white-hot core
   heartbone: '#BDB2C4', // Heart Censer: old bone gone lilac-grey
   heartrose: '#D58FCB', // Heart Censer's mend: rose-violet (never Bright Heal, never Ember)
+  // New enemies, Wood and Mill (docs/WOOD_MILL_ENEMIES.md).
+  owlfeather: '#B8B3A8', // Shriek Owl: pale barred down
+  leech: '#2E3832', // Mire Leech: black-green hide
+  flour: '#D6D0C0', // Drowned Miller: wet flour paste (a grey-cream, never Bright Heal)
 });
 
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): each power's own hue on the elite's

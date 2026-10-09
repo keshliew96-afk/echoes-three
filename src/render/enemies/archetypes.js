@@ -43,6 +43,7 @@ import { makeGlowSprite } from '../glow.js';
 import { HIDE, TELL_INDIGO, TELL_INDIGO_DIM, TELL_INDIGO_GLOW } from './style.js';
 import { buildWasp, buildThornling, buildCrab, buildLamprey, buildGravewisp, buildKnight } from './slice2.js';
 import { buildHusk, buildLancer, buildGeode, buildCenser } from './heart.js';
+import { buildOwl, buildLasher, buildLeech, buildMiller } from './woodmill.js';
 import { buildKeener, buildSexton, buildBloom, buildSiphon } from './barrowheart.js';
 import { CHAMPION_BUILDERS, CHAMPION_CROWN_Y } from './champions.js';
 
@@ -1029,6 +1030,11 @@ export const ARCH_BUILDERS = Object.freeze({
   lancer: buildLancer,
   geode: buildGeode,
   censer: buildCenser,
+  // New enemies, Wood and Mill (render/enemies/woodmill.js).
+  owl: buildOwl,
+  lasher: buildLasher,
+  leech: buildLeech,
+  miller: buildMiller,
   // New enemies, Barrow and Heart (render/enemies/barrowheart.js).
   keener: buildKeener,
   sexton: buildSexton,
@@ -1038,4 +1044,4 @@ export const ARCH_BUILDERS = Object.freeze({
   ...CHAMPION_BUILDERS,
 });
 // Crown height per kind (world u above the ground at scale 1).
-export const CROWN_Y = Object.freeze({ boar: 0.95, mantis: 1.35, quillback: 0.95, toad: 0.72, moth: 1.75, ram: 1.12, mole: 0.62, rotcap: 0.78, snail: 0.92, crow: 0.92, brood: 0.85, broodling: 0.45, wasp: 1.2, thornling: 0.95, crab: 0.72, lamprey: 0.55, gravewisp: 1.55, knight: 1.55, husk: 1.3, lancer: 1.9, geode: 1.6, censer: 1.9, keener: 1.75, sexton: 1.35, bloom: 1.35, siphon: 1.95, ...CHAMPION_CROWN_Y });
+export const CROWN_Y = Object.freeze({ boar: 0.95, mantis: 1.35, quillback: 0.95, toad: 0.72, moth: 1.75, ram: 1.12, mole: 0.62, rotcap: 0.78, snail: 0.92, crow: 0.92, brood: 0.85, broodling: 0.45, wasp: 1.2, thornling: 0.95, crab: 0.72, lamprey: 0.55, gravewisp: 1.55, knight: 1.55, husk: 1.3, lancer: 1.9, geode: 1.6, censer: 1.9, owl: 2.0, lasher: 1.15, leech: 0.6, miller: 1.75, ...CHAMPION_CROWN_Y, keener: 1.75, sexton: 1.35, bloom: 1.35, siphon: 1.95 });

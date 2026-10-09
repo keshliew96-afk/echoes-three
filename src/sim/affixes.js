@@ -42,10 +42,10 @@ export const AFFIX_IDS = Object.freeze(['molten', 'frozen', 'vampiric', 'warded'
 // every power.
 export const AFFIXES = Object.freeze({
   molten: Object.freeze({ id: 'molten', name: 'Molten', text: 'Bursts into a burning pool when it dies.', not: Object.freeze([]), clash: Object.freeze(['frozen']) }),
-  frozen: Object.freeze({ id: 'frozen', name: 'Frozen', text: 'Stops to charge a frost nova that slows.', not: Object.freeze(['gravewisp', 'censer']), clash: Object.freeze(['molten']) }),
-  vampiric: Object.freeze({ id: 'vampiric', name: 'Vampiric', text: 'Heals for part of the damage it deals.', not: Object.freeze(['gravewisp', 'censer', 'siphon']), clash: Object.freeze([]) }),
+  frozen: Object.freeze({ id: 'frozen', name: 'Frozen', text: 'Stops to charge a frost nova that slows.', not: Object.freeze(['gravewisp', 'censer', 'leech']), clash: Object.freeze(['molten']) }),
+  vampiric: Object.freeze({ id: 'vampiric', name: 'Vampiric', text: 'Heals for part of the damage it deals.', not: Object.freeze(['gravewisp', 'censer', 'leech', 'siphon']), clash: Object.freeze([]) }),
   warded: Object.freeze({ id: 'warded', name: 'Warded', text: 'A ward makes it immune for a few seconds at a time.', not: Object.freeze([]), clash: Object.freeze([]) }),
-  blinking: Object.freeze({ id: 'blinking', name: 'Blinking', text: 'Marks a spot beside you, then blinks to it.', not: Object.freeze(['mole', 'lamprey', 'gravewisp', 'censer', 'bloom']), clash: Object.freeze([]) }),
+  blinking: Object.freeze({ id: 'blinking', name: 'Blinking', text: 'Marks a spot beside you, then blinks to it.', not: Object.freeze(['mole', 'lamprey', 'gravewisp', 'censer', 'leech', 'lasher', 'bloom']), clash: Object.freeze([]) }),
   splitting: Object.freeze({ id: 'splitting', name: 'Splitting', text: 'Splits into two smaller copies when it dies.', not: Object.freeze(['brood', 'broodling', 'knight', 'lamprey', 'gravewisp', 'censer']), clash: Object.freeze([]) }),
   hasted: Object.freeze({ id: 'hasted', name: 'Hasted', text: 'Moves much faster.', not: Object.freeze(['bloom']), clash: Object.freeze([]) }),
   thorned: Object.freeze({ id: 'thorned', name: 'Thorned', text: 'Hits from close range sting back.', not: Object.freeze(['gravewisp', 'censer']), clash: Object.freeze([]) }),

@@ -90,6 +90,14 @@ import husk from './enemies/husk.js';
 import lancer from './enemies/lancer.js';
 import geode from './enemies/geode.js';
 import censer from './enemies/censer.js';
+// NEW ENEMIES, Wood and Mill (content plan 3 slice 3, docs/WOOD_MILL_ENEMIES.md):
+// Shriek Owl + Vine Lasher (Wood), Mire Leech + Drowned Miller (Mill). The
+// same module contract; they join the rosters in campaign play only
+// (data/levels.js campaignRoster).
+import owl from './enemies/owl.js';
+import lasher from './enemies/lasher.js';
+import leech from './enemies/leech.js';
+import miller from './enemies/miller.js';
 // New enemies, Barrow and Heart (docs/NEW_ENEMIES_BARROW_HEART.md): the Ash
 // Keener and the Barrow Sexton (whose snares are slicks it steps itself),
 // the Heart Bloom and the Vein Siphon. Campaign rosters only.
@@ -163,7 +171,7 @@ function circleContactT(px, pz, dx, dz, cx, cz, R) {
 }
 
 // Gauntlet archetypes (M4b): etype -> plain-data module (PLAN §3.6).
-export const ARCHETYPES = Object.freeze({ quillback, toad, moth, ram, mole, rotcap, snail, crow, brood, broodling, wasp, thornling, crab, lamprey, gravewisp, knight, husk, lancer, geode, censer, keener, sexton, bloom, siphon, ...CHAMPION_KITS });
+export const ARCHETYPES = Object.freeze({ quillback, toad, moth, ram, mole, rotcap, snail, crow, brood, broodling, wasp, thornling, crab, lamprey, gravewisp, knight, husk, lancer, geode, censer, owl, lasher, leech, miller, ...CHAMPION_KITS, keener, sexton, bloom, siphon });
 // Every hostile enemy kind this system owns (the boss is sim/boss.js's).
 export const ENEMY_KINDS = Object.freeze(new Set(['boar', 'mantis', ...Object.keys(ARCHETYPES)]));
 // §23.5 Elite modifier (any non-boss).
@@ -706,6 +714,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       ...(o.slickBurn ? { slickBurn: o.slickBurn } : {}),
       ...(o.affix ? { affix: o.affix } : {}),
       ...(o.shard ? { shard: true } : {}),
+      ...(o.sack ? { sack: true } : {}),
       telegraph: {
         kind: 'ring',
         startTick: tick,
@@ -742,6 +751,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       tz: r2(o.tz),
       landTick: g.landTick,
       ...(o.affix ? { affix: o.affix } : {}),
+      ...(o.sack ? { sack: true } : {}),
     });
     return g;
   }
@@ -772,6 +782,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       victims: victims.length,
       ...(g.affix ? { affix: g.affix } : {}),
       ...(g.shard ? { shard: true } : {}),
+      ...(g.sack ? { sack: true } : {}),
     });
     registry.despawn(g.id);
     const src = owner ?? { id: g.ownerId, kind: g.ownerKind, faceX: 0, faceZ: 1 };

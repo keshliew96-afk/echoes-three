@@ -1494,6 +1494,12 @@
   ],
   "data": true
  },
+ "A bramble pod that learned to reach. It drags its meals home.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "A bramble sprite that plants a thicket wherever it stands still.": {
   "files": [
    "src/data/journal.js"
@@ -3150,6 +3156,12 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Bruiser": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Brutal Cleave": {
   "files": [
    "src/sim/allies.js"
@@ -3725,6 +3737,12 @@
   "files": [
    "src/ui/menu/cloud.js"
   ]
+ },
+ "Coils a whip-vine and marks a warning lane up to 5 u long. The lash hits for 9 and yanks every hero in it toward the pod, into whatever lies between.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Coins glint far down in the black water.": {
   "files": [
@@ -4534,6 +4552,12 @@
   ],
   "data": true
  },
+ "Drowned Miller": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Dry": {
   "files": [
    "src/sim/interactables.js"
@@ -5074,6 +5098,12 @@
    "src/ui/menu/records.js"
   ]
  },
+ "Fat with millrace water and something darker, it never lets go willingly.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Feather Fan": {
   "files": [
    "src/sim/skills.js"
@@ -5251,6 +5281,12 @@
   "data": true
  },
  "Flier": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Flies high and keeps its distance. It hangs still and marks a long, narrow warning cone, then shrieks for 8 and slows every hero in it. Sidestep, do not back away.": {
   "files": [
    "src/data/journal.js"
   ],
@@ -6305,6 +6341,12 @@
   ],
   "data": true
  },
+ "It hunted mice in the Hollow Wood. Now it hunts whatever still has a heartbeat.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "it may not load in this version": {
   "files": [
    "src/save/index.js"
@@ -6662,6 +6704,18 @@
   "files": [
    "src/ui/hud/index.js"
   ]
+ },
+ "Latcher": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Leaps down a short warning lane. A hero it touches is bitten for 5, slowed and drained for 3 twice a second while it heals. Dodge, or hit it (an ally can too), to shake it off.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Leave": {
   "files": [
@@ -7127,6 +7181,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Mire Leech": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -8340,6 +8400,12 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "Plods straight at you. Close in, he whirls his millstone in a warning ring for 13: walk out of it. At range he throws a flour sack at a warning ring for 10 that leaves slowing paste.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Posting to the board…": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -8432,6 +8498,12 @@
  "Pull": {
   "files": [
    "src/sim/interactables.js"
+  ],
+  "data": true
+ },
+ "Puller": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -9510,6 +9582,12 @@
    "src/ui/menu/records.js"
   ]
  },
+ "Screamer": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Screen shake": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
@@ -9757,6 +9835,12 @@
   "files": [
    "src/ui/menu/tabs/display.js"
   ]
+ },
+ "Shriek Owl": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Silences Ambience without moving its slider.": {
   "files": [
@@ -11413,6 +11497,12 @@
    "src/ui/run/draft.js"
   ]
  },
+ "The last miller of the Sunken Mill, still at work after the water took him.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The last of the old beasts falls. Every level is clear — the long night is over.": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -12423,6 +12513,12 @@
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "Vine Lasher": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Violet crystal has grown right through it. It does not seem to mind.": {
   "files": [

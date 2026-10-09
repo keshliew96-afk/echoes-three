@@ -22,7 +22,7 @@
 //
 // Pure data + helpers (sim-importable): no DOM, no three.
 import { difficulty } from './difficulty.js';
-import { LEVELS, ACT_IDS, ENDLESS_ACTS, levelFor, bossIndexFor } from './levels.js';
+import { LEVELS, ACT_IDS, ENDLESS_ACTS, levelFor, bossIndexFor, campaignLevel } from './levels.js';
 
 // The descent cycles every act's biome, Act IV included even when the
 // campaign keeps three levels (levels.js CAMPAIGN_ACTS).
@@ -92,12 +92,13 @@ export function endlessDifficulty(depth, room, challenge = 'standard') {
 // creatures at GUEST_WEIGHT (introduced one room later than at home).
 export function endlessLevel(depth) {
   const d = Math.max(1, depth | 0);
-  const home = levelFor(levelOfDepth(d));
+  // Endless is campaign play: every land's campaign-only creatures are in.
+  const home = campaignLevel(levelFor(levelOfDepth(d)));
   if (d < MIX_FROM_DEPTH) return home;
   const roster = { ...home.roster };
   const introduce = { ...home.introduce };
   for (const act of ORDER) {
-    const lv = LEVELS[act];
+    const lv = campaignLevel(LEVELS[act]);
     if (lv === home) continue;
     for (const et of Object.keys(lv.roster)) {
       if (et in home.roster) continue;

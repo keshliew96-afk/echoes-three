@@ -75,7 +75,7 @@ import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
 import { PARTY_ALLIES, STARTING_SKILLS, SKILLS, HEALER_SKILL_IDS } from './skills.js';
 import { createDraftSystem, SPOILS_PER_CLEAR, refreshPrice } from './draft.js';
 import { NODES } from './nodes.js';
-import { levelFor, ACT_IDS, ENDLESS_ACTS, bossFor } from '../data/levels.js';
+import { levelFor, ACT_IDS, ENDLESS_ACTS, bossFor, campaignLevel } from '../data/levels.js';
 // ENDLESS (docs/ENDLESS.md): the descent past Act III.
 import { endlessDifficulty, endlessLevel, endlessBossIndex, endlessNextLevel, endlessRules, levelOfDepth, beyondCampaign } from '../data/endless.js';
 import { LAYOUTS } from '../data/layouts.js';
@@ -168,6 +168,10 @@ export function createRunSystem({
   // nodes join the pools in a campaign (Endless too), never in the tutorial or
   // the legacy single-level run, so the nine golden traces draw as before.
   const poolsGrown = () => !!(campaign && campaign.mode === 'campaign' && !campaign.tutorial);
+  // NEW ENEMIES (docs/WOOD_MILL_ENEMIES.md): the campaign-only creatures join
+  // the wave rosters on the same gate (campaign, Endless, the Daily; never the
+  // tutorial or the legacy single-level run, so the goldens hold).
+  const roomLevel = (lv) => (poolsGrown() ? campaignLevel(lv) : lv);
   const draft = createDraftSystem({
     rng,
     build: () => buildSys,
@@ -629,7 +633,7 @@ export function createRunSystem({
     const mode = frame.modes[n - 1];
     const depth = endlessDepth();
     // ENDLESS: the wave director rolls from the depth's (mixed) roster.
-    const level = depth ? endlessLevel(depth) : levelFor(act);
+    const level = depth ? endlessLevel(depth) : roomLevel(levelFor(act));
     reward = null;
     path = null;
     positionParty();
@@ -1417,7 +1421,7 @@ export function createRunSystem({
   // The trapped chest: two short elite-heavy waves in the event room.
   function startAmbush(tick) {
     const depth = endlessDepth();
-    const level = depth ? endlessLevel(depth) : levelFor(act);
+    const level = depth ? endlessLevel(depth) : roomLevel(levelFor(act));
     const n = roomIndex;
     const base = beyondCampaign(depth) ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
     const A = EVENT_RULES.ambush;

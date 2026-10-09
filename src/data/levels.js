@@ -25,6 +25,12 @@
 //   music                      audio theme id (M3 registerMusicTheme)
 //   roster                     etype -> spawn weight for budget draws
 //   introduce                  etype -> earliest room it may appear
+//   campaignRoster /           extra etype -> weight / earliest room that join
+//   campaignIntroduce          roster / introduce in CAMPAIGN play only (the
+//                              campaign, Endless and the Daily; never the
+//                              tutorial, the legacy single-level run or the
+//                              ?room= harness): campaignLevel() merges them,
+//                              so the golden traces never draw them
 //   hazards / interactables    type ids allowed in this act (placements live in
 //                              data/layouts.js per layout)
 //   bossName                   display name of the room-8 boss (UI copy)
@@ -56,6 +62,10 @@ export const LEVELS = Object.freeze({
     // (the certified Act I traces) and the new bodies add to the late rooms.
     roster: Object.freeze({ boar: 0.45, mantis: 0.3, quillback: 0.25, rotcap: 0.14, wasp: 0.1, thornling: 0.1 }),
     introduce: Object.freeze({ boar: 1, mantis: 1, quillback: 2, rotcap: 4, wasp: 4, thornling: 5 }),
+    // NEW ENEMIES (content plan 3 slice 3, docs/WOOD_MILL_ENEMIES.md): the
+    // Shriek Owl and the Vine Lasher, campaign-only, from room 3.
+    campaignRoster: Object.freeze({ owl: 0.11, lasher: 0.1 }),
+    campaignIntroduce: Object.freeze({ owl: 3, lasher: 3 }),
     hazards: Object.freeze(['bramble', 'puffcap']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg']),
     boss: 'stag',
@@ -83,6 +93,10 @@ export const LEVELS = Object.freeze({
     music: 'mill',
     roster: Object.freeze({ boar: 0.1, mantis: 0.17, quillback: 0.12, toad: 0.2, moth: 0.2, rotcap: 0.11, snail: 0.1, crab: 0.12, lamprey: 0.1 }),
     introduce: Object.freeze({ boar: 1, mantis: 1, quillback: 1, toad: 1, moth: 2, rotcap: 1, snail: 2, crab: 2, lamprey: 3 }),
+    // NEW ENEMIES (content plan 3 slice 3): the Mire Leech and the Drowned
+    // Miller, campaign-only, from room 3.
+    campaignRoster: Object.freeze({ leech: 0.11, miller: 0.09 }),
+    campaignIntroduce: Object.freeze({ leech: 3, miller: 3 }),
     hazards: Object.freeze(['millrace', 'puffcap', 'slip']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg', 'sluice']),
     boss: 'heron',
@@ -192,6 +206,26 @@ export const ACT_IDS = Object.freeze([1, 2, 3, 4].slice(0, CAMPAIGN_ACTS));
 
 export function levelFor(act) {
   return LEVELS[act] ?? LEVELS[1];
+}
+
+// A level row with its campaign-only creatures merged into roster and
+// introduce (the row itself when it has none). Campaign play rolls its waves
+// from this; the legacy run and the harness keep the bare row. Cached per
+// row, so the result is one frozen object per level.
+const campaignRows = new WeakMap();
+export function campaignLevel(lv) {
+  if (!lv || !lv.campaignRoster) return lv;
+  let row = campaignRows.get(lv);
+  if (!row) {
+    row = Object.freeze({
+      ...lv,
+      roster: Object.freeze({ ...lv.roster, ...lv.campaignRoster }),
+      introduce: Object.freeze({ ...lv.introduce, ...(lv.campaignIntroduce ?? {}) }),
+      campaignRoster: null,
+    });
+    campaignRows.set(lv, row);
+  }
+  return row;
 }
 
 // Which of the act's bosses a run meets: a pure hash of (seed, act), so it

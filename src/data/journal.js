@@ -7,7 +7,7 @@
 //
 // Pure data (sim-importable): no DOM, no three. Names and lines are English
 // keys the UI shows through t() (docs/I18N.md).
-import { LEVELS, ACT_IDS } from './levels.js';
+import { LEVELS, ACT_IDS, campaignLevel } from './levels.js';
 import { CHAMPIONS } from '../sim/champions.js';
 
 // One row per enemy kind (sim etype), in the order a campaign meets them.
@@ -37,6 +37,11 @@ const ENEMY_ROWS = [
   ['lancer', 'Vein Lancer', 'Ranged', 'It throws a lance of the Heart itself.', 'Stands still and aims a warning lane up to 7 u long, then every hero inside takes 10 at once. Nothing flies: step out of the lane.'],
   ['geode', 'Geode Brute', 'Heavy', 'Violet crystal has grown right through it. It does not seem to mind.', 'Slams a warning ring for 14 that throws three crystal shards, each landing a second later for 8 and leaving slowing crystal.'],
   ['censer', 'Heart Censer', 'Mender', 'A censer on a chain of bone, swinging violet smoke over the fight.', 'No attack. Its coals flare, then it mends every enemy near it by 15% of their health. A stun spills the mend. Kill it first.'],
+  // New enemies, Wood and Mill (docs/WOOD_MILL_ENEMIES.md).
+  ['owl', 'Shriek Owl', 'Screamer', 'It hunted mice in the Hollow Wood. Now it hunts whatever still has a heartbeat.', 'Flies high and keeps its distance. It hangs still and marks a long, narrow warning cone, then shrieks for 8 and slows every hero in it. Sidestep, do not back away.'],
+  ['lasher', 'Vine Lasher', 'Puller', 'A bramble pod that learned to reach. It drags its meals home.', 'Coils a whip-vine and marks a warning lane up to 5 u long. The lash hits for 9 and yanks every hero in it toward the pod, into whatever lies between.'],
+  ['leech', 'Mire Leech', 'Latcher', 'Fat with millrace water and something darker, it never lets go willingly.', 'Leaps down a short warning lane. A hero it touches is bitten for 5, slowed and drained for 3 twice a second while it heals. Dodge, or hit it (an ally can too), to shake it off.'],
+  ['miller', 'Drowned Miller', 'Bruiser', 'The last miller of the Sunken Mill, still at work after the water took him.', 'Plods straight at you. Close in, he whirls his millstone in a warning ring for 13: walk out of it. At range he throws a flour sack at a warning ring for 10 that leaves slowing paste.'],
   ['bloom', 'Heart Bloom', 'Pulse', 'A flower of violet crystal that grows wherever the Heart beats closest to the floor.', 'Creeps in on its roots, then takes root and never moves again. On every second heartbeat it opens in a warning ring round itself and snaps shut for 12. Every bloom in the room beats together.'],
   ['siphon', 'Vein Siphon', 'Drinker', 'A sac of the Heart\'s blood that never has enough of it.', 'Lashes a tendril down a warning lane for 5 and latches onto the first hero it finds, then drinks 2 every half second and heals by as much. Walk well away from it to snap the tether, or kill it.'],
 ];
@@ -65,7 +70,7 @@ const BOSS_ROWS = {
 // The lands, in campaign order, and which of them each enemy lives in (its
 // level rosters; a boss's adds borrow it from there).
 export const JOURNAL_LANDS = Object.freeze(ACT_IDS.map((a) => Object.freeze({ level: a, name: LEVELS[a].name })));
-const landsOf = (etype) => ACT_IDS.filter((a) => (LEVELS[a].roster ?? {})[etype] > 0);
+const landsOf = (etype) => ACT_IDS.filter((a) => (campaignLevel(LEVELS[a]).roster ?? {})[etype] > 0);
 
 export const BESTIARY = Object.freeze([
   ...ENEMY_ROWS.map(([id, name, role, lore, text]) => Object.freeze({ id, boss: false, name, role, lore, text, lands: Object.freeze(landsOf(id)) })),

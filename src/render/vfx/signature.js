@@ -984,6 +984,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const kind = byId(ev.glob)?.ownerKind ?? owner?.kind ?? 'toad';
     if (ev.glob != null) globKind.set(ev.glob, kind);
     if (ev.affix) return; // ELITE AFFIXES: no lob, the burst swells in place
+    if (ev.sack) return millerToss(ev); // the Drowned Miller's flour sack
     // The spore burst, the seed volley and the grave call are their own recipes.
     if (kind === 'rotcap' || kind === 'thornmother' || kind === 'lichram' || kind === 'geode') return; // (the geode's shards fly off its slam)
     const es = vfxEnemyStyle(owner?.kind ?? 'toad', 'lobber');
@@ -993,6 +994,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const kind = globKind.get(ev.id);
     globKind.delete(ev.id);
     if (ev.affix) return affixBurst(ev); // ELITE AFFIXES: Molten / Frozen
+    if (ev.sack) return sackLand(ev);
     if (kind === 'rotcap') {
       sporeCloud(ev.x, ev.z, ev.radius ?? 1.2);
       return;
@@ -1950,6 +1952,205 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     },
   });
 
+  // ------------------------------------------ new enemies, Wood and Mill --
+  // (docs/WOOD_MILL_ENEMIES.md) Same grammar as the slices before them: the
+  // body's own matter on what breaks, Ember only on what hurts, indigo where
+  // the corruption leaves, no camera on rank-and-file enemies.
+  const OWLF = vfxMatterColor('owlfeather');
+  const LEECH = vfxMatterColor('leech');
+  const FLOUR = vfxMatterColor('flour');
+  const STONE = vfxMatterColor('stone');
+  const OWL_Y = 1.5;
+
+  // Shriek Owl — "the scream you can see". The shriek leaves the beak as a
+  // bright Ember edge filling the cone (that is what hit you), then three
+  // pale sound fronts roll down it, each wider and fainter; the floor under
+  // the cone is scoured pale, and down drifts off the owl.
+  bus.on('owl_shriek', (ev) => {
+    mark('owl_shriek');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const ang = Math.atan2(d.z, d.x);
+    const r = ev.radius ?? 3.8;
+    const span = ((ev.halfAngleDeg ?? 30) * 2 * Math.PI) / 180;
+    const bx = ev.x + d.x * 0.25;
+    const bz = ev.z + d.z * 0.25;
+    flare(bx, OWL_Y, bz, EMBER, 0.8, { kind: 'burst', life: 0.18, angle: ang });
+    kit.flash({ x: bx, y: OWL_Y, z: bz, color: PARCH, size: 0.55, life: 0.12 });
+    // The hit: the Ember edge sweeping the full cone at once.
+    kit.slash({ x: ev.x, z: ev.z, angle: ang, radius: r * 0.55, width: r * 0.9, span, sweep: 0.05, life: 0.22, core: EMBER, glow: EMBER, soft: 0.8, y: 0.12, lift: 0, grow: 0.3, gain: 0.5, opacity: 0.45 });
+    // The sound fronts: arcs travelling out from the beak, pale and thin.
+    for (let i = 0; i < 4; i++) {
+      const dl = i * 0.07;
+      const rr = 0.6 + i * 0.85;
+      kit.slash({ x: ev.x, z: ev.z, angle: ang, radius: rr, width: 0.12 - i * 0.015, span: span * (0.85 + i * 0.06), sweep: 0.04, life: 0.3, core: i === 0 ? PARCH : OWLF, glow: i === 0 ? EMBER : OWLF, soft: 0.5, y: OWL_Y - 0.25 * i, lift: 0, grow: 1.4, delay: dl, gain: 0.9 - i * 0.15, opacity: 0.95 - i * 0.18 });
+    }
+    kit.mark({ x: ev.x + d.x * r * 0.55, z: ev.z + d.z * r * 0.55, radius: r * 0.5, kind: 'gouge', angle: ang, stretch: 1.8, stain: OWLF, glow: EMBER, glowOpacity: 0.25, cool: 0.4, life: 2.2, opacity: 0.22 });
+    kit.light({ x: ev.x + d.x * r * 0.5, z: ev.z + d.z * r * 0.5, radius: r * 0.55, color: EMBER, opacity: 0.25, life: 0.25, attack: 0.02 });
+    spray('shard', ev.x, OWL_Y, ev.z, 5, { color: OWLF, tile: SHARD_TILE.feather, speed: [0.2, 0.6], up: [-0.1, 0.3], size: [0.1, 0.15], life: [1.0, 1.6], gravity: 0.6, drag: 1.8, spin: [-3, 3], flutter: 0.6, jitter: 0.2 });
+    spray('smoke', ev.x + d.x * r * 0.6, 0.15, ev.z + d.z * r * 0.6, 3, { color: OWLF, speed: [0.6, 1.2], up: [0.1, 0.3], size: [0.3, 0.42], grow: 1.3, life: [0.5, 0.8], opacity: 0.22, gravity: -0.1, drag: 2.2, dir: d, dirBias: 0.7, jitter: r * 0.2 });
+  });
+
+  // Vine Lasher — "the whip and the drag". The lash is a vine snapping down
+  // the lane at whip speed with a white crack where its hook lands and an
+  // Ember line torn into the floor; every hero it catches is dragged home
+  // along a taut green line with the ground skidding up under their feet.
+  bus.on('lasher_lash', (ev) => {
+    mark('lasher_lash');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const len = ev.length ?? 5;
+    const ang = Math.atan2(d.z, d.x);
+    const SPEED = 40;
+    const sweep = len / SPEED;
+    const ex = ev.x + d.x * len;
+    const ez = ev.z + d.z * len;
+    kit.streak({ a: { x: ev.x, y: 0.12, z: ev.z }, b: { x: ex, y: 0.12, z: ez }, width: ev.width ?? 0.7, tailW: (ev.width ?? 0.7) * 0.8, core: EMBER, glow: EMBER, life: 0.2, fall: 2.4, opacity: 0.45 });
+    kit.streak({ a: { x: ev.x + d.x * 0.3, y: 0.5, z: ev.z + d.z * 0.3 }, b: { x: ex, y: 0.35, z: ez }, width: 0.1, tailW: 0.07, core: BRAMBLE, glow: BRAMBLE, life: sweep + 0.3, fall: 1.6, opacity: 0.95 });
+    kit.streak({ a: { x: ev.x, y: 0.5, z: ev.z }, b: { x: ev.x + d.x * 0.7, y: 0.45, z: ev.z + d.z * 0.7 }, width: 0.08, tailW: 0.3, core: PARCH, glow: EMBER, life: sweep, travel: { x: d.x * SPEED, y: -0.3, z: d.z * SPEED }, fall: 0.3 });
+    after(sweep, () => {
+      mark('lasher_crack');
+      flare(ex, 0.4, ez, EMBER, 0.95, { kind: 'star', life: 0.16, angle: ang });
+      kit.flash({ x: ex, y: 0.4, z: ez, color: PARCH, size: 0.55, life: 0.1 });
+      shock(ex, ez, 0.8, BRAMBLE, { life: 0.26, width: 0.08, core: BONE });
+      spray('shard', ex, 0.4, ez, 6, { color: BRAMBLE, tile: SHARD_TILE.needle, speed: [1.0, 2.2], up: [0.6, 1.4], size: [0.09, 0.13], life: [0.4, 0.7], gravity: 5, spin: [-8, 8], dir: d, dirBias: 0.4 });
+    });
+    const marks = Math.max(2, Math.min(4, Math.round(len / 1.6)));
+    for (let i = 1; i <= marks; i++) {
+      const k = (i - 0.5) / marks;
+      kit.mark({ x: ev.x + d.x * len * k, z: ev.z + d.z * len * k, radius: (len / marks) * 0.6, kind: 'gouge', angle: ang, stretch: 2.0, stain: BRAMBLE, glow: EMBER, glowOpacity: 0.3, cool: 0.5, life: 2.6, opacity: 0.38, delay: sweep * k });
+    }
+  });
+  bus.on('lasher_yank', (ev) => {
+    mark('lasher_yank');
+    for (const id of ev.ids || []) {
+      const t = byId(id);
+      if (!t) continue;
+      const d = unit2(ev.x - t.x, ev.z - t.z);
+      const dist = Math.hypot(ev.x - t.x, ev.z - t.z);
+      // The taut vine, reeling in.
+      kit.streak({ a: { x: t.x, y: 0.55, z: t.z }, b: { x: ev.x, y: 0.5, z: ev.z }, width: 0.07, tailW: 0.05, core: BONE, glow: BRAMBLE, life: 0.24, fall: 1.4, opacity: 0.9 });
+      kit.flash({ x: t.x, y: 0.55, z: t.z, color: EMBER, size: 0.4, life: 0.12 });
+      // The skid: dust and torn earth thrown up as the feet drag.
+      spray('smoke', t.x, 0.1, t.z, 3, { color: DIRT, speed: [0.3, 0.7], up: [0.2, 0.5], size: [0.26, 0.38], grow: 1.3, life: [0.5, 0.8], opacity: 0.3, gravity: -0.1, drag: 2.4, dir: { x: -d.x, z: -d.z }, dirBias: 0.6 });
+      spray('chunk', t.x, 0.1, t.z, 3, { color: DIRT, speed: [0.5, 1.0], up: [0.8, 1.4], size: [0.04, 0.08], life: [0.4, 0.6], dir: { x: -d.x, z: -d.z }, dirBias: 0.6 });
+      kit.mark({ x: t.x + d.x * Math.min(1.8, dist) * 0.5, z: t.z + d.z * Math.min(1.8, dist) * 0.5, radius: 0.8, kind: 'gouge', angle: Math.atan2(d.z, d.x), stretch: 2.2, stain: DIRT, glow: null, life: 2.4, opacity: 0.35, delay: 0.1 });
+    }
+  });
+
+  // Mire Leech — "it gets on you". The leap is a wet black smear with an
+  // Ember head; the latch is a slap of water and a bite flash on the host;
+  // every drain pulls a thread of Ember motes off the host into the leech
+  // while its indigo ring pulses; a hit or a dodge flings it off in a spray.
+  bus.on('leech_leap', (ev) => {
+    mark('leech_leap');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const len = ev.length ?? 3;
+    laneDrive(ev.x, ev.z, d, len, 11, { wake: LEECH, wakeW: 0.35, head: EMBER, peak: PARCH, stain: LEECH, glow: null, marks: 2, markKind: 'splash' });
+    spray('shard', ev.x, 0.2, ev.z, 5, { color: WATER, tile: SHARD_TILE.drop, speed: [0.6, 1.4], up: [0.8, 1.6], size: [0.08, 0.12], life: [0.35, 0.6], gravity: 7, dir: { x: -d.x, z: -d.z }, dirBias: 0.5 });
+  });
+  bus.on('leech_latch', (ev) => {
+    mark('leech_latch');
+    flare(ev.x, 0.6, ev.z, EMBER, 0.75, { kind: 'burst', life: 0.16 });
+    kit.flash({ x: ev.x, y: 0.6, z: ev.z, color: TELL_INDIGO_GLOW, size: 0.5, life: 0.2 });
+    kit.ring({ x: ev.x, z: ev.z, r0: 0.2, r1: 0.9, width: 0.1, life: 0.35, core: WATER, glow: LEECH, soft: 0.7, y: 0.04, opacity: 0.6 });
+    spray('shard', ev.x, 0.6, ev.z, 8, { color: LEECH, tile: SHARD_TILE.drop, speed: [0.8, 1.8], up: [0.6, 1.6], size: [0.08, 0.13], life: [0.4, 0.7], gravity: 7, drag: 0.4, spin: [-2, 2] });
+    kit.mark({ x: ev.x, z: ev.z, radius: 0.7, kind: 'splash', stain: LEECH, glow: null, life: 2.6, opacity: 0.4 });
+  });
+  bus.on('leech_drain', (ev) => {
+    mark('leech_drain');
+    const l = byId(ev.id);
+    const lx = l ? l.x : ev.x;
+    const lz = l ? l.z : ev.z;
+    for (let i = 0; i < N(4); i++) {
+      const a = rnd(0, TAU);
+      const sx = ev.x + Math.cos(a) * 0.22;
+      const sz = ev.z + Math.sin(a) * 0.22;
+      const fl = 0.28;
+      kit.streak({ a: { x: sx, y: 0.5, z: sz }, b: { x: sx, y: 0.56, z: sz }, width: 0.04, tailW: 0, core: PARCH, glow: EMBER, life: fl, delay: i * 0.04, travel: { x: (lx - sx) / fl, y: 0.5, z: (lz - sz) / fl }, fall: 1.0, opacity: 0.85 });
+    }
+    kit.flash({ x: lx, y: 0.7, z: lz, color: TELL_INDIGO_GLOW, size: 0.42, life: 0.22, delay: 0.18 });
+  });
+  bus.on('leech_shed', (ev) => {
+    mark('leech_shed');
+    shock(ev.x, ev.z, 0.8, LEECH, { life: 0.3, width: 0.1, core: WATER });
+    ripples(ev.x, ev.z, 1, 0.9, 0.05);
+    spray('shard', ev.x, 0.3, ev.z, 7, { color: WATER, tile: SHARD_TILE.drop, speed: [0.8, 1.8], up: [1.0, 2.0], size: [0.08, 0.12], life: [0.4, 0.7], gravity: 7, drag: 0.4 });
+    kit.mark({ x: ev.x, z: ev.z, radius: 0.8, kind: 'splash', stain: LEECH, glow: null, life: 2.8, opacity: 0.4 });
+  });
+  bus.on('leech_miss', (ev) => {
+    mark('leech_miss');
+    kit.ring({ x: ev.x, z: ev.z, r0: 0.15, r1: 0.7, width: 0.1, life: 0.3, core: WATER, glow: LEECH, soft: 0.7, y: 0.04, opacity: 0.5 });
+    spray('shard', ev.x, 0.15, ev.z, 5, { color: LEECH, tile: SHARD_TILE.drop, speed: [0.5, 1.2], up: [0.6, 1.2], size: [0.07, 0.11], life: [0.35, 0.55], gravity: 7 });
+  });
+
+  // Drowned Miller — "the stone comes round". The sweep is a heavy grey arc
+  // of the millstone's path all the way round him with an Ember edge out to
+  // the ring (the hit), stone chips and a cloud of old flour knocked loose;
+  // a groove is ground into the floor. The sack bursts where it lands in a
+  // white-grey flour cloud over the Ember ring, leaving the paste.
+  bus.on('miller_sweep', (ev) => {
+    mark('miller_sweep');
+    const r = ev.radius ?? 2.2;
+    const m = byId(ev.id);
+    const start = m ? Math.atan2(m.faceZ ?? 1, m.faceX ?? 0) : rnd(0, TAU);
+    kit.slash({ x: ev.x, z: ev.z, angle: start, radius: r * 0.82, width: 0.42, span: TAU * 0.95, sweep: 0.14, life: 0.4, core: BONE, glow: STONE, soft: 0.5, jag: 0.4, lift: 0.04, y: 0.5, gain: 0.8 });
+    shock(ev.x, ev.z, r * 1.02, EMBER, { life: 0.3, width: 0.12, jag: 0.5 });
+    flare(ev.x, 0.5, ev.z, EMBER, 0.9, { kind: 'burst', life: 0.18 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.05, kind: 'sigil', stain: INK, glow: EMBER, glowOpacity: 0.3, cool: 0.6, life: 2.6, opacity: 0.18 });
+    kit.light({ x: ev.x, z: ev.z, radius: r, color: EMBER, opacity: 0.25, life: 0.3, attack: 0.02 });
+    for (let i = 0; i < 5; i++) {
+      const a = start + (i / 5) * TAU;
+      const px = ev.x + Math.cos(a) * r * 0.85;
+      const pz = ev.z + Math.sin(a) * r * 0.85;
+      after(0.03 * i, () => spray('chunk', px, 0.3, pz, 2, { color: STONE, speed: [0.8, 1.6], up: [0.8, 1.6], size: [0.05, 0.1], life: [0.4, 0.6], dir: { x: -Math.sin(a), z: Math.cos(a) }, dirBias: 0.6 }));
+    }
+    spray('smoke', ev.x, 0.4, ev.z, 4, { color: FLOUR, speed: [0.6, 1.4], up: [0.2, 0.5], size: [0.36, 0.5], grow: 1.4, life: [0.7, 1.1], opacity: 0.26, gravity: -0.12, drag: 2.2, jitter: r * 0.4 });
+  });
+  function millerToss(ev) {
+    mark('miller_toss');
+    spray('smoke', ev.x, 1.6, ev.z, 2, { color: FLOUR, speed: [0.2, 0.5], up: [0.1, 0.4], size: [0.24, 0.34], grow: 1.3, life: [0.5, 0.8], opacity: 0.25, gravity: -0.1, drag: 2.4 });
+    spray('spark', ev.x, 1.6, ev.z, 4, { color: FLOUR, speed: [0.2, 0.6], up: [0.2, 0.6], size: [0.03, 0.05], life: [0.5, 0.9], gravity: 0.3, drag: 1.6, opacity: 0.7 });
+  }
+  function sackLand(ev) {
+    mark('miller_sack_land');
+    const r = ev.radius ?? 1.1;
+    kit.ring({ x: ev.x, z: ev.z, r0: 0.2, r1: r, width: 0.12, life: 0.36, core: EMBER, glow: EMBER, soft: 0.6, y: 0.04, opacity: 0.6, gain: 0.7 });
+    flare(ev.x, 0.3, ev.z, EMBER, 0.85, { kind: 'burst', life: 0.18 });
+    kit.flash({ x: ev.x, y: 0.4, z: ev.z, color: FLOUR, size: 0.9, life: 0.2 });
+    shock(ev.x, ev.z, r * 1.3, FLOUR, { life: 0.45, width: 0.22, core: PARCH, delay: 0.03 });
+    spray('smoke', ev.x, 0.3, ev.z, 6, { color: FLOUR, speed: [0.8, 1.8], up: [0.3, 0.9], size: [0.4, 0.6], grow: 1.6, life: [0.9, 1.4], opacity: 0.32, gravity: -0.12, drag: 2.0, jitter: 0.2 });
+    spray('chunk', ev.x, 0.3, ev.z, 5, { color: FLOUR, speed: [0.8, 1.8], up: [1.0, 2.0], size: [0.05, 0.1], life: [0.4, 0.7] });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.2, kind: 'splash', stain: FLOUR, glow: EMBER, cool: 0.4, life: 3.0, opacity: 0.4 });
+  }
+
+  Object.assign(CREATURE_DEATH, {
+    owl: (es, matter, x, z) => {
+      // A burst of down that floats slowly to the floor.
+      mark('owl_death');
+      spray('shard', x, OWL_Y, z, 12, { color: OWLF, tile: SHARD_TILE.feather, speed: [0.4, 1.4], up: [0.2, 0.9], size: [0.12, 0.18], life: [1.4, 2.2], gravity: 0.5, drag: 1.6, spin: [-4, 4], flutter: 0.8 });
+      flare(x, OWL_Y, z, OWLF, 0.8, { kind: 'burst', life: 0.2 });
+    },
+    lasher: (es, matter, x, z) => {
+      // The pod splits and its indigo maw goes out.
+      mark('lasher_death');
+      spikes(x, z, 0.7, 6, BRAMBLE, { h: 0.5, life: 0.4 });
+      kit.flash({ x, y: 0.6, z, color: TELL_INDIGO_GLOW, size: 0.6, life: 0.2 });
+      spray('chunk', x, 0.5, z, 5, { color: BRAMBLE, speed: [0.8, 1.8], up: [1.0, 2.0], size: [0.06, 0.12], life: [0.5, 0.8] });
+    },
+    leech: (es, matter, x, z) => {
+      // It bursts like a full skin of black water.
+      mark('leech_death');
+      kit.ring({ x, z, r0: 0.2, r1: 1.0, width: 0.14, life: 0.4, core: WATER, glow: LEECH, soft: 0.7, y: 0.04, opacity: 0.6 });
+      spray('shard', x, 0.3, z, 9, { color: LEECH, tile: SHARD_TILE.drop, speed: [1.0, 2.2], up: [1.0, 2.0], size: [0.08, 0.14], life: [0.4, 0.7], gravity: 7, drag: 0.4 });
+    },
+    miller: (es, matter, x, z) => {
+      // The stone drops and cracks; the sack splits; old flour hangs.
+      mark('miller_death');
+      after(0.12, () => {
+        kit.crack({ x, z, radius: 0.7, glow: null, life: 1.2, cool: 0.3 });
+        shock(x, z, 1.1, STONE, { life: 0.35, width: 0.12, core: BONE });
+        spray('chunk', x, 0.2, z, 6, { color: STONE, speed: [0.6, 1.6], up: [1.0, 2.0], size: [0.07, 0.13], life: [0.5, 0.8] });
+      });
+      spray('smoke', x, 0.8, z, 5, { color: FLOUR, speed: [0.4, 1.0], up: [0.2, 0.6], size: [0.42, 0.6], grow: 1.5, life: [1.0, 1.5], opacity: 0.3, gravity: -0.1, drag: 2.0, jitter: 0.3 });
   // ------------------------------------- new enemies, Barrow and Heart --
   // docs/NEW_ENEMIES_BARROW_HEART.md. The law holds: what hurts is Ember on
   // the frame it lands (the keen's cone, the snare's jaws, the bloom's ring,

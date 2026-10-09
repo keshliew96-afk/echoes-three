@@ -285,6 +285,9 @@ registerChampionCues(service('audio'));
 // KEYS AND VAULTS (docs/VAULTS.md): the key, the vault and its hoard.
 import { registerVaultCues } from './audio/vaultcues.js';
 registerVaultCues(service('audio'));
+// NEW ENEMIES (docs/WOOD_MILL_ENEMIES.md): the Wood's and the Mill's new creatures.
+import { registerWoodMillCues } from './audio/woodmillcues.js';
+registerWoodMillCues(service('audio'));
 // NEW ENEMIES (docs/NEW_ENEMIES_BARROW_HEART.md): the Keener, Sexton, Bloom
 // and Siphon voices.
 import { registerBarrowHeartCues } from './audio/barrowheartcues.js';

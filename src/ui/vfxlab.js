@@ -51,6 +51,9 @@ const ENEMIES = [
   ['Act II', 2, ['rotcap', 'snail', 'crab', 'lamprey']],
   ['Act III', 3, ['crow', 'brood', 'knight', 'gravewisp', 'keener', 'sexton']],
   ['Act IV', 4, ['husk', 'lancer', 'geode', 'censer', 'bloom', 'siphon']],
+  // New enemies, Wood and Mill (docs/WOOD_MILL_ENEMIES.md).
+  ['Wood, new', 1, ['owl', 'lasher']],
+  ['Mill, new', 2, ['leech', 'miller']],
 ];
 // Each act's two bosses: [label, act, boss kind].
 const BOSSES = [

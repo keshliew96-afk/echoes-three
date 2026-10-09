@@ -171,6 +171,11 @@ export const THREAT = Object.freeze({
   lancer: 1.6,
   geode: 3.2,
   censer: 1.5,
+  // New enemies, Wood and Mill (docs/WOOD_MILL_ENEMIES.md).
+  owl: 1.4,
+  lasher: 1.4,
+  leech: 1.3,
+  miller: 2.4,
   // New enemies, Barrow and Heart (docs/NEW_ENEMIES_BARROW_HEART.md).
   keener: 1.4,
   sexton: 1.3,

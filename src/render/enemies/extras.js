@@ -18,6 +18,7 @@ import {
   Color,
   CanvasTexture,
   CircleGeometry,
+  Color,
   ConeGeometry,
   Group,
   IcosahedronGeometry,
@@ -26,7 +27,7 @@ import {
   SRGBColorSpace,
   Vector3,
 } from 'three';
-import { PALETTE, AFFIX_COLORS } from '../../data/palette.js';
+import { PALETTE, AFFIX_COLORS, VFX_MATTER } from '../../data/palette.js';
 import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
 import { sharedGeo } from '../geocache.js';
@@ -129,6 +130,24 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
     g.add(halo);
     const shadow = groundShadow(0.16, 0.5);
     return { g, core, shadow, shard: true };
+  }
+  // NEW ENEMIES (docs/WOOD_MILL_ENEMIES.md): the Drowned Miller's sodden
+  // flour sack in flight — a lumpy pale bag tied at the neck, tumbling; its
+  // Ember ring on the ground stays the warning.
+  const sackGeo = sharedGeo('wm-sack', () => new IcosahedronGeometry(0.15, 1));
+  const sackTieGeo = sharedGeo('wm-sack-tie', () => new ConeGeometry(0.06, 0.12, 5));
+  function makeSack() {
+    const g = new Group();
+    const core = new Mesh(sackGeo, toonMaterial({ color: new Color(VFX_MATTER.flour).multiplyScalar(0.82) }));
+    core.scale.set(1, 1.2, 0.85);
+    addInk(core);
+    g.add(core);
+    const tie = new Mesh(sackTieGeo, toonMaterial({ color: new Color(VFX_MATTER.flour).multiplyScalar(0.6) }));
+    tie.position.y = 0.2;
+    tie.rotation.x = Math.PI;
+    g.add(tie);
+    const shadow = groundShadow(0.2, 0.5);
+    return { g, core, shadow };
   }
   // ...and the patch it leaves: a jagged cluster of violet crystal punched up
   // through the floor over a dark bruise, never a liquid puddle. It grows in
@@ -298,7 +317,7 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
         seenG.add(e.id);
         let r = globs.get(e.id);
         if (!r) {
-          r = e.shard ? makeShard() : makeGlob();
+          r = e.shard ? makeShard() : e.sack ? makeSack() : makeGlob();
           if (e.shard) {
             shardIds.add(e.id);
             if (shardIds.size > 64) shardIds.clear();
@@ -387,6 +406,8 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
           // Slice 2: a thorn patch (Thornling, Thornmother) reads as dark
           // bramble-green, not the toad's black-teal.
           if (e.variant === 'thorn') m.material.color.copy(mix(PALETTE.voidCharcoal, PALETTE.sageCloak, 0.7).multiplyScalar(1.5));
+          // The Drowned Miller's wet flour paste: a grey-cream smear.
+          if (e.variant === 'flour') m.material.color.set(VFX_MATTER.flour).multiplyScalar(0.8);
           // ELITE AFFIXES: a Frozen patch reads as pale glacier ice, a Molten
           // pool as glowing lava (additive, it lights the floor).
           if (e.variant === 'frost') m.material.color.set(AFFIX_COLORS.frozen).multiplyScalar(1.15);
