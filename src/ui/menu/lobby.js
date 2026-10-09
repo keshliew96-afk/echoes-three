@@ -23,7 +23,8 @@ import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { createHints } from './hints.js';
 import { installMpStyle, mkBtn, setCaption, inviteLine } from './mpmenu.js';
-import { SEAT_LABELS, SEAT_CRITTERS, SEAT_CLASSES } from '../../net/seats.js';
+import { seatLabel, seatCritter, seatClass } from '../../net/seats.js';
+import { seatOfClass } from '../../data/lineup.js';
 import { PLAY_CLASS_KEY } from '../../app/playclass.js';
 import { QUICK_MATCH_ALONE_MS } from '../../net/protocol/constants.js';
 import { t, tn } from '../../i18n/index.js';
@@ -56,7 +57,7 @@ function installLobbyStyle() {
   s.textContent = CSS;
   document.head.appendChild(s);
 }
-const CLASS_TINT = ['#33513C', '#6B6157', '#6B2E3A', '#6E7A3F'];
+const CLASS_TINT = { healer: '#33513C', tank: '#6B6157', swordsman: '#6B2E3A', archer: '#6E7A3F' };
 
 // fix-DEPLOY-r6 (DEP6-F2): who plays and who builds what, told to THIS
 // viewer. PER-CHARACTER BUILDS (PLAN §16, BUILD_BRIEF §25.7): every human
@@ -71,7 +72,7 @@ export function howtoLine(room, peerId) {
   const seats = (room && room.seats) || [];
   const mine = seats.find((s) => s.peerId && s.peerId === peerId) || null;
   const hostSeat = seats.find((s) => s.peerId && room && s.peerId === room.hostPeerId) || null;
-  const cls = (s) => (SEAT_LABELS[s.index] ? t(SEAT_LABELS[s.index]) : t('ally'));
+  const cls = (s) => (seatClass(s.index) ? t(seatLabel(s.index)) : t('ally'));
   if (mine && hostSeat && mine === hostSeat)
     return t('You play the {cls}. Between rooms each player builds their own character; you also build the AI-held seats ({path}). Anyone can drop in later.', {
       cls: cls(mine),
@@ -137,7 +138,7 @@ export function createLobbyScreen(ctx) {
     b.className = 'ap-btn nt-seat';
     b.id = `nt-seat-${i}`;
     b.setAttribute('data-nav', '');
-    b.innerHTML = `<span class="nt-sclass" style="background:${CLASS_TINT[i]}">${t(SEAT_LABELS[i]).charAt(0)}</span><span class="nt-swho"><span class="nt-sname"></span><span class="nt-srole"></span></span><span class="nt-stag"></span>`;
+    b.innerHTML = `<span class="nt-sclass" style="background:${CLASS_TINT[seatClass(i)]}">${t(seatLabel(i)).charAt(0)}</span><span class="nt-swho"><span class="nt-sname"></span><span class="nt-srole"></span></span><span class="nt-stag"></span>`;
     b.addEventListener('click', () => seatPressed(i));
     seatsEl.appendChild(b);
     return b;
@@ -160,7 +161,7 @@ export function createLobbyScreen(ctx) {
     const mine = me();
     if (!mine) return;
     preferTried = r.code;
-    const want = SEAT_CLASSES.indexOf(app.settings.get(PLAY_CLASS_KEY));
+    const want = seatOfClass(app.settings.get(PLAY_CLASS_KEY));
     if (want < 0 || want === mine.index) return;
     const target = r.seats[want];
     if (!target || target.peerId) return;
@@ -210,7 +211,7 @@ export function createLobbyScreen(ctx) {
       b.classList.toggle('nt-empty', !s.peerId);
       b.querySelector('.nt-sname').textContent = s.peerId ? (mine ? t('{name} (you)', { name: s.name }) : s.name) : t('AI');
       const ping = s.peerId && Number.isFinite(s.rttMs) ? ` · ${t('{ms} ms', { ms: Math.round(s.rttMs) })}` : '';
-      b.querySelector('.nt-srole').textContent = `${t('{cls} · the {critter}', { cls: t(SEAT_LABELS[s.index]), critter: t(SEAT_CRITTERS[s.index]) })}${ping}`;
+      b.querySelector('.nt-srole').textContent = `${t('{cls} · the {critter}', { cls: t(seatLabel(s.index)), critter: t(seatCritter(s.index)) })}${ping}`;
       const tag = b.querySelector('.nt-stag');
       tag.className = 'nt-stag';
       if (!s.peerId) tag.textContent = r.state === 'lobby' ? t('AI · take it') : t('AI plays');
@@ -228,7 +229,7 @@ export function createLobbyScreen(ctx) {
       const path = net.paths ? net.paths()[s.index] : undefined;
       if (path) b.querySelector('.nt-srole').textContent += ` · ${path === 'direct' ? t('Direct@@network path') : t('Relay@@network path')}`;
       const canTake = !s.peerId && r.state === 'lobby';
-      const seatVars = { cls: t(SEAT_LABELS[s.index]), who: s.peerId ? s.name : t('AI') };
+      const seatVars = { cls: t(seatLabel(s.index)), who: s.peerId ? s.name : t('AI') };
       b.setAttribute('aria-label', canTake ? t('{cls}: {who} — press to take this seat', seatVars) : t('{cls}: {who}', seatVars));
     }
     shareEl.textContent = t('Friends open Multiplayer ▸ Join by Code and type {code}.', { code: r.code });
@@ -316,7 +317,7 @@ export function createLobbyScreen(ctx) {
       else {
         setErr('');
         // The lobby pick is this player's class from now on (camp too).
-        if (app.settings) app.settings.set(PLAY_CLASS_KEY, SEAT_CLASSES[i]);
+        if (app.settings) app.settings.set(PLAY_CLASS_KEY, seatClass(i));
       }
     } finally {
       busy = false;

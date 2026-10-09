@@ -29,7 +29,7 @@
 import { KNOCKBACK, TICK_HZ } from '../core/constants.js';
 import { SKILLS } from './skills.js';
 import { NODES, TECH } from './nodes.js';
-import { CLASS_TECH, CLASS_OF_SEAT } from '../data/classes.js';
+import { CLASS_TECH } from '../data/classes.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 const secTicks = (s) => Math.round(s * TICK_HZ);
@@ -53,9 +53,11 @@ function powerStages(build, skillId) {
 
 // ctx: registry, events, combat, getTick, queueContinuation, build(seat),
 // state(seat) (combo / recentCasts / retaliate / stillSince), body(seat),
-// caster() (sim/allycast.js).
+// caster() (sim/allycast.js), seatOfClass(cls) (the run's party lineup).
 export function createPartyTech(ctx) {
   const { registry, events, combat, getTick, queueContinuation } = ctx;
+  const DEFAULT_SEAT = { healer: 0, tank: 1, swordsman: 2, archer: 3 };
+  const seatOfClass = (cls) => (typeof ctx.seatOfClass === 'function' ? ctx.seatOfClass(cls) : DEFAULT_SEAT[cls] ?? -1);
   const buildOf = (seat) => ctx.build(seat);
   const stateOf = (seat) => ctx.state(seat);
   const bodyOf = (seat) => ctx.body(seat);
@@ -70,7 +72,13 @@ export function createPartyTech(ctx) {
   const seatOfSkill = (id) => {
     const d = SKILLS[id];
     if (!d || !d.cls || d.cls === 'healer') return null;
-    const i = CLASS_OF_SEAT.indexOf(d.cls);
+    const i = seatOfClass(d.cls);
+    return i > 0 ? i : null;
+  };
+  // PARTY LINEUP (docs/LINEUP.md): the seat each class holds this run (null
+  // when it stayed at camp). The default lineup gives Tank 1, Swordsman 2.
+  const tankSeat = () => {
+    const i = seatOfClass('tank');
     return i > 0 ? i : null;
   };
   const techsOf = (seat, skillId) => {
@@ -220,7 +228,7 @@ export function createPartyTech(ctx) {
     b.tech.withSuppress(() => {
       const brace = copiesOf(seat, baseDef.id, 'brace');
       if (brace > 0) {
-        const tank = bodyOf(1);
+        const tank = bodyOf(tankSeat());
         if (tank && tank.hp > 0) {
           const rec = S().addShield(tank, CLASS_TECH.braceShield * brace, Infinity, CLASS_TECH.braceTicks, tick, a.id);
           if (rec) events.emit(tick, 'technique_pulse', { seat, skill: baseDef.id, node: 'brace', targets: [tank.id], shield: r2(rec.mag) });
@@ -242,7 +250,7 @@ export function createPartyTech(ctx) {
       }
       if (has('aegis')) {
         const cdT = Math.min(CLASS_TECH.aegisMaxTicks, Math.max(CD_FLOOR_TICKS, secTicks(def.cd ?? 0)));
-        const tank = bodyOf(1);
+        const tank = bodyOf(tankSeat());
         if (tank && tank.hp > 0) {
           S().apply(tank, 'ward', CLASS_TECH.aegisWard, cdT, tick, a.id);
           events.emit(tick, 'technique_pulse', { seat, skill: baseDef.id, node: 'aegis', targets: [tank.id], ticks: cdT });
@@ -334,8 +342,8 @@ export function createPartyTech(ctx) {
   // ------------------------------------------------------------ retaliate --
   function onPartyDamaged(target, attacker, amount) {
     const seat = target.partyIndex;
-    if (seat !== 1 || !(amount > 0)) return;
-    const st = stateOf(1);
+    if (seat !== tankSeat() || !(amount > 0)) return;
+    const st = stateOf(seat);
     if (!st || !st.retaliate) return;
     const tick = getTick();
     for (const [skillId, until] of Object.entries(st.retaliate)) {
@@ -343,7 +351,7 @@ export function createPartyTech(ctx) {
         delete st.retaliate[skillId];
         continue;
       }
-      const b = buildOf(1);
+      const b = buildOf(tankSeat());
       if (!b || !b.tech.liveTechs(skillId).includes('retaliate')) continue;
       const dmg = r2(CLASS_TECH.retaliateFrac * b.tech.flatStagePower(skillId));
       const atkId = attacker.id;
@@ -355,7 +363,7 @@ export function createPartyTech(ctx) {
   function thorns(tank, e, skillId, amount) {
     if (!e || !(e.hp > 0) || !(amount > 0)) return;
     const tick = getTick();
-    const b = buildOf(1);
+    const b = buildOf(tankSeat());
     b.tech.withSuppress(() => {
       e.hp -= amount;
       events.emit(tick, 'hit', {
@@ -390,7 +398,7 @@ export function createPartyTech(ctx) {
         if (t === 'snare') for (const m of recips) b.tech.giveStatus(m, 'haste', TECH.snareHaste, TECH.snareTicks);
         else if (t === 'galvanize') for (const m of recips) b.tech.giveStatus(m, 'inspired', TECH.galvInspired, TECH.galvTicks);
         else if (t === 'bulwark') {
-          const tank = bodyOf(1);
+          const tank = bodyOf(tankSeat());
           if (tank && tank.hp > 0) S().addShield(tank, 0.5 * power * recips.filter((m) => m.id !== tank.id).length, Infinity, shieldTicks, tick, a.id, def.id);
         } else if (t === 'aegis') for (const m of recips) S().apply(m, 'ward', CLASS_TECH.aegisWard, shieldTicks, tick, a.id);
         else if (t === 'provoke') {
@@ -429,7 +437,7 @@ export function createPartyTech(ctx) {
         b.tech.setLastHit(ev);
         const st = stateOf(seat);
         // The Swordsman's combo memory (a REAL cast's connect).
-        if (seat === 2 && st && !(c && c.echo)) {
+        if (seat === seatOfClass('swordsman') && st && !(c && c.echo)) {
           st.combo = st.combo || {};
           st.combo[src] = ev.tick;
         }
@@ -605,7 +613,7 @@ export function createPartyTech(ctx) {
           for (const e of near) if (taunt(a, e, CLASS_TECH.provokePassiveTicks)) ids.push(e.id);
           events.emit(tick, 'technique_pulse', { seat, skill: skillId, node: 'provoke', targets: ids });
         } else if (t === 'brace') {
-          const tank = bodyOf(1);
+          const tank = bodyOf(tankSeat());
           const copies = techs.filter((x) => x === 'brace').length;
           if (tank && tank.hp > 0) S().addShield(tank, CLASS_TECH.bracePassive * copies, CLASS_TECH.bracePassiveCap, CLASS_TECH.braceTicks, tick, a.id);
         } else if (t === 'rampart') {

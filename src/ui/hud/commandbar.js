@@ -42,6 +42,7 @@ import { dodgeCooldownTicks } from '../../sim/relics.js';
 import { PALETTE } from '../../data/palette.js';
 import { DODGE, TICK_HZ, SKILL_SLOTS, SOCKETS_PER_SKILL } from '../../core/constants.js';
 import { ACCENTS, CHROME } from './style.js';
+import { classOfSeat } from '../../data/lineup.js';
 import { iconEl, hasIcon } from './icons.js';
 import { t } from '../../i18n/index.js';
 import { skillAbbrev } from '../run/cards.js';
@@ -53,7 +54,6 @@ import { cap, keyCap, onHintsChange } from '../../app/controls.js';
 const CD_RING_R = 16.5;
 const CD_RING_LEN = 2 * Math.PI * CD_RING_R;
 
-const CLASS_BY_INDEX = ['healer', 'tank', 'swordsman', 'archer'];
 const PORTRAIT_LETTER = { healer: 'H', tank: 'T', swordsman: 'S', archer: 'A' };
 const REVIVE_TOTAL_TICKS = 300; // §10 5.0 s channel (allies.js REVIVE.channelTicks)
 // DOWNED RING GEOMETRY (70-box viewBox over the tile's 60 px padding box).
@@ -146,7 +146,9 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   const portGroup = el('div', 'hud-group hud-group-port', bar);
   const ports = [];
   for (let i = 0; i < 4; i++) {
-    const classId = CLASS_BY_INDEX[i];
+    // PARTY LINEUP (data/lineup.js): the seat's class this run; a change
+    // (run start, load) re-dresses the portrait in updatePortraits.
+    const classId = classOfSeat(i);
     const acc = ACCENTS[classId];
     const cell = el('div', 'hud-port proto-port', portGroup);
     cell.style.setProperty('--accent', acc.base);
@@ -157,16 +159,20 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
 
     const tile = el('div', 'hud-port-tile', cell);
     const crop = el('div', 'hud-port-crop', tile);
-    let img = null;
-    if (portraits && portraits[classId]) {
-      img = el('img', 'hud-port-img', crop);
-      img.src = portraits[classId];
-      img.alt = '';
-      img.draggable = false;
-    } else {
+    const dressCrop = (cls) => {
+      crop.textContent = '';
+      if (portraits && portraits[cls]) {
+        const im = el('img', 'hud-port-img', crop);
+        im.src = portraits[cls];
+        im.alt = '';
+        im.draggable = false;
+        return im;
+      }
       const fb = el('div', 'hud-port-fallback', crop);
-      fb.textContent = PORTRAIT_LETTER[classId];
-    }
+      fb.textContent = PORTRAIT_LETTER[cls] ?? '';
+      return null;
+    };
+    const img = dressCrop(classId);
     const inner = el('div', 'hud-port-inner', tile);
     // Class-identity hairline, concentric inside the Bone downed ring (§10).
     el('div', 'hud-port-ident', tile);
@@ -230,6 +236,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     ports.push({
       i,
       classId,
+      dressCrop,
       cell,
       tile,
       inner,
@@ -573,6 +580,15 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     for (const p of ports) {
       const m = members[p.i] ?? null;
       p.entityId = m ? m.id : undefined;
+      const cls = classOfSeat(p.i);
+      if (cls !== p.classId && ACCENTS[cls]) {
+        p.classId = cls;
+        p.cell.dataset.class = cls;
+        p.cell.style.setProperty('--accent', ACCENTS[cls].base);
+        p.cell.style.setProperty('--accentLift', ACCENTS[cls].lift);
+        p.cell.style.setProperty('--accentDeep', ACCENTS[cls].deep);
+        p.img = p.dressCrop(cls);
+      }
       const ch = m ? channels.get(m.id) ?? null : null;
       const state = portraitState(m, ch);
       const downedish = state === 'downed' || state === 'revive' || state === 'drain';

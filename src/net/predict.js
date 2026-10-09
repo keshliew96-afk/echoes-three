@@ -56,7 +56,7 @@ import { ALLY_KITS, ALLY_CLASSES } from '../sim/allies.js';
 import { fanDirections, countFinal, clampPlacement } from '../sim/shapes.js';
 import { aimDir } from '../sim/remote.js';
 import { TICK_HZ, DODGE } from '../core/constants.js';
-import { SEAT_CLASSES } from './seats.js';
+import { classOfSeat } from '../data/lineup.js';
 import { pct } from './protocol/snapshot.js';
 
 const MATCH_WINDOW = 3;
@@ -74,10 +74,12 @@ const r2 = (v) => Math.round(v * 100) / 100;
 // swaps, reorders and sockets. Without it (or before the first snapshot)
 // the §7 starting kit.
 export function createActionShadow({ bus, seat, cosmetics = null, now = () => performance.now(), kit: kitFn = null, dodgeCd = () => DODGE.cooldownTicks }) {
-  const classId = SEAT_CLASSES[seat];
+  // PARTY LINEUP (data/lineup.js): the seat's class is the run's lineup,
+  // mirrored from the replicated bodies; sync() re-reads it before each use.
+  let classId = classOfSeat(seat);
   // v0.5.227: every seat starts a run with empty skill slots, so before the
   // first snapshot nothing is predicted for 1-4 (only basic / dodge).
-  const staticKit = seat > 0 && ALLY_KITS[classId] ? [null, null, null, null] : null;
+  let staticKit = seat > 0 && ALLY_KITS[classId] ? [null, null, null, null] : null;
   const kitNow = () => {
     let k = null;
     try {
@@ -87,9 +89,19 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
     }
     return k || staticKit;
   };
-  const S = seat > 0 ? ALLY_CLASSES[classId] : null;
-  const enabled = !!(staticKit && S);
-  const INTERVAL = enabled ? S.attackIntervalTicks : 0;
+  let S = seat > 0 ? ALLY_CLASSES[classId] : null;
+  let enabled = !!(staticKit && S);
+  let INTERVAL = enabled ? S.attackIntervalTicks : 0;
+  const sync = () => {
+    const c = classOfSeat(seat);
+    if (c === classId) return enabled;
+    classId = c;
+    staticKit = seat > 0 && ALLY_KITS[classId] ? [null, null, null, null] : null;
+    S = seat > 0 ? ALLY_CLASSES[classId] : null;
+    enabled = !!(staticKit && S);
+    INTERVAL = enabled ? S.attackIntervalTicks : 0;
+    return enabled;
+  };
   const readyAt = [0, 0, 0, 0];
   let basicAt = 0;
   let dodgeAt = 0;
@@ -111,7 +123,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
 
   const cdOf = (kind, slot) => {
     if (kind === 'dodge') return dodgeCd(); // RELICS: Ash Feather
-    if (kind === 'basic') return INTERVAL;
+    if (kind === 'basic') return sync() ? INTERVAL : 0;
     const k = slot >= 0 ? kitNow() : null;
     return k && k[slot] ? k[slot].cdTicks : null;
   };
@@ -141,7 +153,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   // {x, z, hp, faceX, faceZ}, aim, entityId, tick (host-tick estimate),
   // stunned, dashing, keyAt (keydown timeStamp) } -> predId | null
   function press(kind, ctx) {
-    if (!enabled || !ctx.body || !(ctx.body.hp > 0) || ctx.stunned) return null;
+    if (!sync() || !ctx.body || !(ctx.body.hp > 0) || ctx.stunned) return null;
     curSeq = Math.max(curSeq, ctx.seq - 1);
     const b = ctx.body;
     const d = aimDir(b, ctx.aim, { x: b.faceX ?? 0, z: b.faceZ ?? 1 });
@@ -232,7 +244,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   // itself — the fresh press is presented the moment it is dispatched). ctx
   // adds { stunned, dashing, channelling, fresh, keyAt } to press()'s.
   function basic(ctx) {
-    if (!enabled || !ctx.body || !Number.isInteger(ctx.seq)) return null;
+    if (!sync() || !ctx.body || !Number.isInteger(ctx.seq)) return null;
     const seq = ctx.seq;
     if (seq <= lastEvalSeq || frameLog.has(seq)) return null; // one evaluation per input frame
     const e = entryOf(ctx, true);
@@ -252,7 +264,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   // a dodge the step refused) the frame is re-run: a prediction the sent
   // frame cannot produce is retracted locally at once.
   function frame(ctx) {
-    if (!enabled || !Number.isInteger(ctx.seq)) return null;
+    if (!sync() || !Number.isInteger(ctx.seq)) return null;
     const seq = ctx.seq;
     const flags = entryOf(ctx, ctx.basic);
     let e = frameLog.get(seq);
@@ -292,7 +304,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   // `interact_denied` by this seat's body confirms / retracts it.
   let ownEntity = null;
   function interact(ctx) {
-    if (!enabled || !ctx.body || !(ctx.body.hp > 0) || !ctx.target) return null;
+    if (!sync() || !ctx.body || !(ctx.body.hp > 0) || !ctx.target) return null;
     ownEntity = ctx.entityId;
     const p = record('interact', -1, ctx.seq, ctx.keyAt, 0);
     p.targetId = ctx.target.id;
@@ -350,7 +362,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   // An authoritative event arrived (EVENTS batch). true = it confirms a
   // prediction: suppress its replay.
   function onAuthEvent(ev) {
-    if (!enabled || !isOwn(ev)) return false;
+    if (!sync() || !isOwn(ev)) return false;
     const kind = kindOf(ev);
     if (!kind) return false;
     let best = null;
@@ -416,7 +428,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   // absolute INPUT-FRAME seqs — exact, no tick mapping) at snapshot k;
   // `alive` = the seat's body had hp > 0 in that snapshot.
   function reseed(timers, k, alive = true) {
-    if (!enabled || !timers || !Number.isInteger(k)) return;
+    if (!sync() || !timers || !Number.isInteger(k)) return;
     lastAuth = { cds: Array.isArray(timers.cds) ? timers.cds.slice() : null, basic: timers.basic, dodge: timers.dodge, fire: Number.isInteger(timers.fire) ? timers.fire : null, k };
     // STATE-BASED proof: the input frame the host last fired each kind on.
     for (const p of pending) {
@@ -488,7 +500,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   // HUD provider (commandbar VIEW-SEAT): the four kit tiles + dodge, in
   // ticks remaining from the current local frame.
   function slotsView(seqNow = curSeq) {
-    if (!enabled) return null;
+    if (!sync()) return null;
     const k = kitNow();
     return k.map((e, i) => (e ? { id: e.id, abbrev: e.abbrev, passive: !!e.passive, remainingTicks: e.passive ? 0 : Math.max(0, readyAt[i] - seqNow), totalTicks: e.cdTicks } : null));
   }
@@ -529,7 +541,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
       curSeq = s;
     },
     get enabled() {
-      return enabled;
+      return sync();
     },
     pending: () => pending.map((p) => ({ ...p })),
     stats: () => ({

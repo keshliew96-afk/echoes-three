@@ -58,7 +58,8 @@ import { nodeCardHtml, kitVerdictText, RARITY_COLOR } from './cards.js';
 import { iconHtml } from '../hud/icons.js';
 import { NODES } from '../../sim/nodes.js';
 import { PALETTE, CLASS_ACCENTS } from '../../data/palette.js';
-import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
+import { CLASS_NAME } from '../../data/classes.js';
+import { classOfSeat } from '../../data/lineup.js';
 import { createPartyStrip } from './partystrip.js';
 import { service } from '../../app/registry.js';
 import { bossNameOfRun } from '../../data/levels.js';
@@ -354,7 +355,7 @@ export function createShopScreen({ run, build, party = () => null }) {
   // price plaque) — shared by the live shelf and the measuring twin below.
   function itemInner(seat, item, i, sys, aiTab) {
     const n = NODES[item.node];
-    const clsName = CLASS_NAME[CLASS_OF_SEAT[seat]];
+    const clsName = CLASS_NAME[classOfSeat(seat)];
     const kit = sys ? sys.kitVerdict(item.node) : null;
     const verdict = kit ? kitVerdictText(kit, seat !== 0 ? clsName : null) : null;
     const cold = kit ? !kit.startsWith('fits') : null; // the sim's verdict, not the shown words
@@ -362,7 +363,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     const rar = RARITY_COLOR[item.rarity] ?? RARITY_COLOR.common;
     const mark = aiTab && !item.sold && item.marked ? `<div class="rn-suggest rn-on" data-idx="${i}">${esc(t('✓ SUGGESTED'))}</div>` : '';
     return `
-        <div class="rn-itemtabs"><div class="rn-minowner" style="--acc:${CLASS_ACCENTS[CLASS_OF_SEAT[seat]]}">${esc(t(clsName).toUpperCase())}</div>${mark}</div>
+        <div class="rn-itemtabs"><div class="rn-minowner" style="--acc:${CLASS_ACCENTS[classOfSeat(seat)]}">${esc(t(clsName).toUpperCase())}</div>${mark}</div>
         <div class="rn-card${n && n.rarity === 'legendary' ? ' rn-legendary' : ''}" data-seat="${seat}"
              style="--rar:${rar};--rarGlow:${rar}77">
           ${nodeCardHtml(item.node, { verdict, cold, extra, owned: item.owned, compact: true, bench: item.sold, row: true, upgrade: item.sold ? null : item.upgrade ?? null })}
@@ -532,7 +533,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     if (!s) return;
     // Another character's tab: who does its shopping (view-only note).
     const lock = ps0 && !canBuyOn(viewSeat);
-    const lockText = lock ? (aiHeldSeat(viewSeat) ? t('The {cls} is AI-controlled and does its own shopping.', { cls: t(CLASS_NAME[CLASS_OF_SEAT[viewSeat]]) }) : t('The {cls} shops on their own screen.', { cls: t(CLASS_NAME[CLASS_OF_SEAT[viewSeat]]) })) : '';
+    const lockText = lock ? (aiHeldSeat(viewSeat) ? t('The {cls} is AI-controlled and does its own shopping.', { cls: t(CLASS_NAME[classOfSeat(viewSeat)]) }) : t('The {cls} shops on their own screen.', { cls: t(CLASS_NAME[classOfSeat(viewSeat)]) })) : '';
     if (lockEl.textContent !== lockText) {
       lockEl.textContent = lockText;
       lockEl.style.display = lock ? '' : 'none';
@@ -545,7 +546,7 @@ export function createShopScreen({ run, build, party = () => null }) {
       const rows = [0, 1, 2, 3].map((k) => ({ chip: ps.done && ps.done[k] ? t('◉ {n} · Done', { n: k === 0 ? view.shop.wallet : ps.shelves[k].purse }) : `◉ ${k === 0 ? view.shop.wallet : ps.shelves[k].purse}`, tone: k === viewSeat ? 'take' : '' }));
       strip.update(rows, viewSeat);
       const healerMarks = !!(view.shop && !view.shop.touched && view.shop.stock.some((c) => c.marked && !c.sold));
-      const buyers = [0, 1, 2, 3].filter((k) => (k === 0 ? healerMarks : !ps.touched[k] && ps.shelves[k].stock.some((c) => c.marked && !c.sold))).map((k) => CLASS_NAME[CLASS_OF_SEAT[k]]);
+      const buyers = [0, 1, 2, 3].filter((k) => (k === 0 ? healerMarks : !ps.touched[k] && ps.shelves[k].stock.some((c) => c.marked && !c.sold))).map((k) => CLASS_NAME[classOfSeat(k)]);
       const base = advanceLabel(view);
       // BUILD_BRIEF §25.7: a guest's lamp reads "Done" (the host's Advance
       // leaves at once when every human is Done, else a 15 s countdown).
@@ -624,7 +625,7 @@ export function createShopScreen({ run, build, party = () => null }) {
       if (was !== 'off' && was !== '') dirtyFlag = true;
       return;
     }
-    const who = CLASS_NAME[CLASS_OF_SEAT[viewSeat]] ?? 'Healer';
+    const who = CLASS_NAME[classOfSeat(viewSeat)] ?? 'Healer';
     rackEl.style.display = '';
     rackEl.innerHTML =
       `<div class="rl-racklab"><b>${esc(t('RELICS'))}</b><span>${t("for the whole party · paid from the {cls}'s purse · <b>5</b>/<b>6</b>", { cls: esc(t(who)) })}</span></div>` +

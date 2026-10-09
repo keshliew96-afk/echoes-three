@@ -28,7 +28,6 @@
 // relics off nothing here runs, no event fires and the run view carries no
 // `relics` key, so the 9 golden traces hash exactly as before.
 import { createGameplayRng } from '../core/rng.js';
-import { CLASS_OF_SEAT } from '../data/classes.js';
 import * as STATUS from './status.js';
 import { dailyPick } from '../data/daily.js';
 
@@ -189,7 +188,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   const partyBodies = () => registry.all().filter((e) => e.partyIndex !== undefined);
   // Batch 3: the body of a class's seat, and whether that class stands in
   // the party (a class relic is offered only then).
-  const seatBody = (cls) => partyBodies().find((e) => CLASS_OF_SEAT[e.partyIndex] === cls) ?? null;
+  const seatBody = (cls) => partyBodies().find((e) => (e.partyIndex === 0 ? 'healer' : e.classId) === cls) ?? null;
   const offerable = (id) => !owned.includes(id) && (!RELICS[id].cls || !!seatBody(RELICS[id].cls));
   const pool0 = () => RELIC_IDS.filter(offerable);
   const hostileLive = (e) => !!e && e.faction === 'hostile' && e.hp > 0 && e.lifecycle !== 'break' && e.kind !== 'eglob';
@@ -283,7 +282,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   // off, so the legacy run and the golden traces never see them.
   const bodyCls = (id) => {
     const b = id !== null && id !== undefined ? registry.byId(id) : null;
-    return b && b.partyIndex !== undefined ? CLASS_OF_SEAT[b.partyIndex] : null;
+    return b && b.partyIndex !== undefined ? (b.partyIndex === 0 ? 'healer' : b.classId) : null;
   };
   events.on('hit', (ev) => {
     if (!on || !live() || owned.length === 0 || relicSource(ev.source) || !(ev.amount > 0)) return;
