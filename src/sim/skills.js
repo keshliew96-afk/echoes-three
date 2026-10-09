@@ -306,6 +306,35 @@ export const SKILLS = Object.freeze({
     power: 9, cd: 5, range: 3.2, speed: 6.5, count: 5, area: 0, // a close five-arrow spray
     selfStatus: Object.freeze({ kind: 'haste', mag: 0.3, ticks: 90 }), // then the hare darts off: 30% faster for 1.5 s
   }),
+
+  // THE TIDECALLER (docs/TIDECALLER.md): the otter's four base skills. Her
+  // rhythm is soak, then crash: `status: soaked` soaks what it reaches (the
+  // status, sim/status.js), `crash` deals +60% to a soaked enemy and consumes
+  // the soak (sim/allycast.js), `drag` pulls a zone's occupants toward its
+  // centre each zone tick (not the bosses), `push` is an area strike's own
+  // knockback distance.
+  riverbolt: Object.freeze({
+    id: 'riverbolt', name: 'Riverbolt', abbrev: 'RB', cls: 'tidecaller', archetype: 'damage', shape: 'projectile',
+    power: 14, cd: 2.5, range: 5.0, speed: 6.0, count: 1, area: 0,
+    status: Object.freeze({ kind: 'soaked', mag: 0.15, ticks: 240 }),
+  }),
+  undertow: Object.freeze({
+    id: 'undertow', name: 'Undertow', abbrev: 'UT', cls: 'tidecaller', archetype: 'damage', shape: 'ground_aoe',
+    power: 6, cd: 8, range: 3.5, area: 1.0, durationSec: 4,
+    drag: 0.25, // each zone tick drags the enemies inside 0.25 u toward the centre (not the bosses)
+    status: Object.freeze({ kind: 'soaked', mag: 0.15, ticks: 240 }),
+  }),
+  breaker: Object.freeze({
+    id: 'breaker', name: 'Breaker', abbrev: 'BK', cls: 'tidecaller', archetype: 'damage', shape: 'nova',
+    power: 22, cd: 8, area: 1.4, count: 5,
+    crash: true, // +60% to a soaked enemy, and the soak is spent
+    push: 1.0, // knocks the enemies hit 1.0 u back
+  }),
+  tidepool: Object.freeze({
+    id: 'tidepool', name: 'Tidepool', abbrev: 'TP', cls: 'tidecaller', archetype: 'passive', field: 'hostile', output: 'damage', shape: 'aura',
+    power: 5, area: 2.5, count: 2, cadenceSec: 1.0, knockback: 0, // the 2 nearest enemies within 2.5 u, never pushed
+    status: Object.freeze({ kind: 'soaked', mag: 0.15, ticks: 240 }),
+  }),
 });
 
 // A skill's class (Healer rows carry no `cls`).

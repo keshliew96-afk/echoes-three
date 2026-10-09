@@ -409,6 +409,10 @@ export function createAllyCaster(ctx) {
       let p = power;
       // MORE CLASS SKILLS: `pull` (Earthen Grasp) drags the enemy in.
       if (def.pull) opts.kbDist = -def.pull;
+      // THE TIDECALLER: `push` (Breaker) is the strike's own knockback.
+      if (def.push) opts.kbDist = def.push;
+      const crashed = def.crash ? crashOn(t) : false;
+      if (crashed) p *= CLASS_TECH.crashMul;
       if (M) {
         if (M.critMul) opts.critMul = M.critMul;
         if (M.kbScale !== undefined) opts.kbScale = M.kbScale;
@@ -420,8 +424,23 @@ export function createAllyCaster(ctx) {
       if (T && !srcLabel) T.instance({ seat, castId, echo: echoFlag, skill: def.id }, () => combat.applyDamage(t, p, opts));
       else if (T && srcLabel) T.suppressed(seat, () => combat.applyDamage(t, p, opts));
       else combat.applyDamage(t, p, opts);
+      if (crashed) spendSoak(a.id, t, def.id);
     }
     applySkillStatus(a, def, targets);
+  }
+
+  // THE TIDECALLER (docs/TIDECALLER.md): a Crash skill on a soaked enemy
+  // deals +60% and spends the soak. Only her Crash skills ever ask, so every
+  // other cast is untouched.
+  function crashOn(t) {
+    const S = combat.status;
+    return !!(S && t && t.faction === 'hostile' && S.magnitude(t, 'soaked', getTick()) > 0);
+  }
+  function spendSoak(attackerId, t, skill) {
+    const S = combat.status;
+    if (S && t && t.status) S.clear(t, 'soaked');
+    const src = registry.byId(attackerId);
+    events.emit(getTick(), 'crash', { seat: src ? src.partyIndex : null, skill, target: t.id, x: r2(t.x), z: r2(t.z) });
   }
 
   // Crush: a stunned or taunted enemy takes x1.5.
@@ -580,6 +599,7 @@ export function createAllyCaster(ctx) {
       const zm = boltMods(def, M, castId, !!echo);
       if (zm) spec.mods = zm;
       if (def.status) spec.applies = { kind: def.status.kind, mag: def.status.mag, ticks: def.status.ticks };
+      if (def.drag) spec.drag = def.drag; // THE TIDECALLER: Undertow pulls its occupants in
       zones.push(registry.spawn(spec));
     }
     const z0 = zones[0];
@@ -637,6 +657,7 @@ export function createAllyCaster(ctx) {
       if (M.longshot && def.shape === 'projectile') put('longshot', true);
     }
     if (def.critBonus) put('critBonus', def.critBonus);
+    if (def.crash && def.shape === 'projectile') put('crash', true); // THE TIDECALLER: a crashing bolt
     if (!any) return null;
     put('castId', castId);
     if (echoFlag) put('echo', true);
@@ -669,7 +690,10 @@ export function createAllyCaster(ctx) {
     const src = registry.byId(bolt.sourceId);
     const seat = src ? src.partyIndex : null;
     if (m.heartseeker && T && T.firstHit(m.castId, t.id)) opts.forceCrit = true;
+    const crashed = m.crash ? crashOn(t) : false;
+    if (crashed) p *= CLASS_TECH.crashMul;
     const r = T ? T.instance({ seat, castId: m.castId ?? -1, echo: !!m.echo, skill: bolt.skill }, () => combat.applyDamage(t, p, opts)) : combat.applyDamage(t, p, opts);
+    if (crashed) spendSoak(bolt.sourceId, t, bolt.skill);
     if (m.applies && t.hp > 0 && t.faction === 'hostile' && combat.status) combat.status.apply(t, m.applies.kind, m.applies.mag, m.applies.ticks, tick, bolt.sourceId);
     return r;
   }

@@ -18,6 +18,9 @@
 //   inspired  damage dealt × (1 + mag)      party
 //   taunt     the enemy's target IS `src`   hostile (PARTY, BUILD_BRIEF §25.2): ≤ 240 ticks;
 //             the boss ≤ 60 ticks, then 300 ticks of taunt immunity
+//   soaked    move speed × (1 − mag)        hostile (THE TIDECALLER, docs/TIDECALLER.md): its own
+//             kind, so it stacks with a slow; a boss takes at most 5%; a Frozen elite refuses it.
+//             Crash skills deal +60% to a soaked enemy and consume the soak.
 // Refresh rule (§23.8): re-applying a kind keeps max(mag) and max(untilTick) —
 // never stacks. The one accumulating writer is addShield() (Bulwark), which
 // adds to a live shield up to its own cap; it is still bounded by the 50%
@@ -33,7 +36,7 @@
 // a tick or between ticks from a probe), is visible on the bus exactly once
 // per application.
 
-const KINDS = Object.freeze(['slow', 'stun', 'haste', 'shield', 'ward', 'exposed', 'inspired', 'taunt']);
+const KINDS = Object.freeze(['slow', 'stun', 'haste', 'shield', 'ward', 'exposed', 'inspired', 'taunt', 'soaked']);
 export const STATUS_KINDS = KINDS;
 
 // §23.8 caps and immunity windows (frozen; BUILD_BRIEF is the source).
@@ -46,12 +49,14 @@ export const STATUS_RULES = Object.freeze({
   tauntMaxTicks: 240,
   tauntBossMaxTicks: 60,
   tauntBossImmuneTicks: 300,
+  // THE TIDECALLER: a boss is slowed at most this much by a soak.
+  soakedBossCap: 0.05,
 });
 
 // Kind -> which side may carry it. The boss (the Hollow Stag, kind 'stag', or
 // any entity flagged `boss: true`) is immune to slow and stun.
 const PARTY_ONLY = new Set(['haste', 'shield', 'ward', 'inspired']);
-const HOSTILE_ONLY = new Set(['stun', 'exposed', 'taunt']);
+const HOSTILE_ONLY = new Set(['stun', 'exposed', 'taunt', 'soaked']);
 const IMMUNE_KEY = 'stunImmune'; // internal record (not a public kind)
 const TAUNT_IMMUNE_KEY = 'tauntImmune'; // internal record: the boss after a taunt
 
@@ -74,6 +79,8 @@ export function speedMul(e, tick) {
   let m = 1;
   const sl = live(e, 'slow', tick);
   if (sl) m *= 1 - Math.min(STATUS_RULES.slowCap, sl.mag);
+  const so = e.status.soaked ? live(e, 'soaked', tick) : null;
+  if (so) m *= 1 - (isBoss(e) ? Math.min(STATUS_RULES.soakedBossCap, so.mag) : so.mag);
   const ha = live(e, 'haste', tick);
   if (ha) m *= 1 + ha.mag;
   return am === undefined ? m : m * am;
@@ -140,6 +147,8 @@ export function refusal(e, kind, tick) {
   if (HOSTILE_ONLY.has(kind) && party) return 'hostile_only';
   if ((kind === 'slow' || kind === 'stun') && isBoss(e)) return 'boss_immune';
   if (kind === 'stun' && live(e, IMMUNE_KEY, tick)) return 'stun_immune';
+  // A Frozen elite is ice already (elite affixes): it cannot be soaked.
+  if (kind === 'soaked' && Array.isArray(e.affixes) && e.affixes.includes('frozen')) return 'frozen';
   if (kind === 'taunt' && live(e, TAUNT_IMMUNE_KEY, tick) && !live(e, 'taunt', tick)) return 'taunt_immune';
   return null;
 }

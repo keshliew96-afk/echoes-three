@@ -54,7 +54,7 @@ import { stepHumanMove, dodgeVelocity, aimDir, DOWNED_CRAWL_SPEED, HUMAN_DODGE }
 // is cast from the seat's LOADOUT (sim/party.js) through ONE pipeline
 // (sim/allycast.js); the AI picks with the §25.8 rules (sim/partyai.js).
 import { SKILLS } from './skills.js';
-import { CLASS_BASE_KIT, STARTING_LOADOUT, AI_ENGAGE, AI_EVADE, AI_KITE, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS } from '../data/classes.js';
+import { CLASS_BASE_KIT, STARTING_LOADOUT, AI_ENGAGE, AI_EVADE, AI_KITE, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS, CLASS_TECH } from '../data/classes.js';
 import { createAllyCaster, cdTicksOf } from './allycast.js';
 import { castChoice } from './partyai.js';
 
@@ -150,6 +150,21 @@ export const ALLY_CLASSES = Object.freeze({
     basicSpeed: 5.6, // projectile 5.6 u/s
     standRange: 4.5 * 0.8,
   }),
+  // THE TIDECALLER (docs/TIDECALLER.md, not a §7 row): the otter. Spit is a
+  // fast, light water bolt that never soaks (her skills do the soaking);
+  // Dive is the shared dodge plus a puddle that soaks (humanDodge below).
+  tidecaller: Object.freeze({
+    classId: 'tidecaller',
+    partyIndex: 3, // the seat she takes by default (the Archer stays at camp)
+    maxHp: 85,
+    moveSpeed: 2.5,
+    attackIntervalTicks: secTicks(0.35),
+    basicPower: 6,
+    basicShape: 'projectile',
+    basicRange: 4.5,
+    basicSpeed: 6.0,
+    standRange: 4.5 * 0.8,
+  }),
 });
 
 const BOLT_RADIUS = 0.05; // same swept-vs-wall scaffold radius as every other bolt
@@ -166,6 +181,7 @@ export const ALLY_KITS = Object.freeze({
   tank: Object.freeze(CLASS_BASE_KIT.tank.map((id) => SKILLS[id])),
   swordsman: Object.freeze(CLASS_BASE_KIT.swordsman.map((id) => SKILLS[id])),
   archer: Object.freeze(CLASS_BASE_KIT.archer.map((id) => SKILLS[id])),
+  tidecaller: Object.freeze(CLASS_BASE_KIT.tidecaller.map((id) => SKILLS[id])),
 });
 
 // The v0.5.150 kit table, verbatim (reference only — the SKILLS rows above
@@ -1439,6 +1455,7 @@ export function createAllySystem({
           a.iframeUntilTick = tick + 1;
           const l = Math.hypot(a.dashVel.x, a.dashVel.z) || 1;
           events.emit(tick, 'ally_dodge', { id: a.id, partyIndex: i, classId: a.classId, dx: r2(a.dashVel.x / l), dz: r2(a.dashVel.z / l), ...dtag });
+          if (a.classId === 'tidecaller') divePuddle(a, tick);
         }
       }
       // PARTY: a displaced press delivers when its dash ends.
@@ -2120,9 +2137,48 @@ export function createAllySystem({
 
   // §4 ④: persistent-zone scheduled ticks, ascending zone spawn ordinal. Each
   // tick creates normal instances (own crit roll; i-frame/Downed suppression).
+  // THE TIDECALLER: Dive drops her into a splash that leaves a puddle where
+  // she went under for 1 s; it soaks every enemy standing in it (no damage).
+  function divePuddle(a, tick) {
+    const z = registry.spawn({
+      kind: 'azone',
+      skill: 'dive',
+      classId: a.classId,
+      x: a.x,
+      z: a.z,
+      px: a.x,
+      pz: a.z,
+      radius: CLASS_TECH.diveSoakRadius,
+      power: 0,
+      sourceId: a.id,
+      puddle: true,
+      ticksDone: 0,
+      totalTicks: 1,
+      untilTick: tick + CLASS_TECH.diveSoakTicks,
+      nextTickTick: tick,
+    });
+    events.emit(tick, 'azone_spawn', { id: z.id, skill: 'dive', classId: a.classId, x: r2(z.x), z: r2(z.z), radius: z.radius, totalTicks: 1, puddle: true });
+  }
+  function puddleTick(z, tick) {
+    const S = combat.status;
+    if (S) {
+      for (const e of hostiles()) {
+        if (dist2(e.x, e.z, z.x, z.z) <= z.radius * z.radius) S.apply(e, 'soaked', CLASS_TECH.soakMag, CLASS_TECH.soakTicks, tick, z.sourceId);
+      }
+    }
+    if (tick >= z.untilTick) {
+      events.emit(tick, 'azone_expire', { id: z.id, skill: z.skill });
+      registry.despawn(z.id);
+    }
+  }
+
   function zonePhase(tick) {
     for (const z of registry.all()) {
       if (z.kind !== 'azone' || tick < z.nextTickTick) continue;
+      if (z.puddle) {
+        puddleTick(z, tick);
+        continue;
+      }
       z.ticksDone += 1;
       z.nextTickTick += ZONE_CADENCE_TICKS;
       const occupants = hostiles().filter(
@@ -2140,6 +2196,9 @@ export function createAllySystem({
           attacker: z.sourceId,
           source: z.skill,
         };
+        // THE TIDECALLER: Undertow drags its occupants toward the centre (a
+        // pull no farther than the centre itself; never a boss).
+        if (z.drag) opts.kbDist = t.boss === true || t.kind === 'stag' ? 0 : -Math.min(z.drag, Math.hypot(t.x - z.x, t.z - z.z));
         // PARTY: a built ally's zone (mods / a status) resolves through the
         // cast pipeline; a plain zone keeps this path.
         const r = z.mods || z.applies ? caster.zoneHit(z, t, opts) : combat.applyDamage(t, z.power, opts);

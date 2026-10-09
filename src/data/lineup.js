@@ -22,7 +22,31 @@ import { CLASS_OF_SEAT } from './classes.js';
 
 export const DEFAULT_LINEUP = CLASS_OF_SEAT;
 // The classes that may hold an ally seat (1-3). A new class joins here.
-export const LINEUP_CLASSES = Object.freeze(['tank', 'swordsman', 'archer']);
+// THE TIDECALLER (docs/TIDECALLER.md) is the fifth: choosing her means
+// choosing who of the other three stays at camp.
+export const LINEUP_CLASSES = Object.freeze(['tank', 'swordsman', 'archer', 'tidecaller']);
+// The classes that can stay at camp for her, and the default (the Archer,
+// the other ranged seat).
+export const BENCH_CLASSES = Object.freeze(['tank', 'swordsman', 'archer']);
+export const DEFAULT_BENCH = 'archer';
+// THE TIDECALLER is free from the start in this slice. The Level II boss
+// unlock replaces this one flag (the plan's slice 4).
+export const TIDECALLER_FREE = true;
+export const tidecallerOpen = () => TIDECALLER_FREE;
+
+// The lineup a new campaign takes from the player's two choices: the class
+// they play (`gameplay.playClass`) and who stays at camp for the Tidecaller
+// (`gameplay.bench`: 'none' = she stays at camp, the default four). She
+// takes the benched class's seat. Playing her always brings her (the Archer
+// stays when no bench was chosen); the class you play never stays at camp.
+export function plannedLineup(playClass, bench) {
+  let b = BENCH_CLASSES.includes(bench) ? bench : null;
+  if (!tidecallerOpen()) return DEFAULT_LINEUP;
+  if (playClass === 'tidecaller' && !b) b = DEFAULT_BENCH;
+  if (!b) return DEFAULT_LINEUP;
+  if (b === playClass) b = ['archer', 'swordsman', 'tank'].find((c) => c !== playClass);
+  return normalizeLineup(DEFAULT_LINEUP.map((c) => (c === b ? 'tidecaller' : c)));
+}
 
 // A valid lineup array (frozen), or DEFAULT_LINEUP.
 export function normalizeLineup(raw) {
@@ -30,6 +54,7 @@ export function normalizeLineup(raw) {
   const allies = raw.slice(1);
   if (!allies.every((c) => LINEUP_CLASSES.includes(c))) return DEFAULT_LINEUP;
   if (new Set(allies).size !== 3) return DEFAULT_LINEUP;
+  if (allies.includes('tidecaller') && !tidecallerOpen()) return DEFAULT_LINEUP;
   if (isDefaultLineup(raw)) return DEFAULT_LINEUP;
   return Object.freeze([...raw]);
 }

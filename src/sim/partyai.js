@@ -47,6 +47,10 @@ export function telegraphCovers(registry, x, z, tick) {
   return false;
 }
 
+// THE TIDECALLER: a live soak on an enemy (sim/status.js).
+const CHAMPIONS = new Set(['briar_knight', 'sluice_warden', 'bone_reeve', 'hollow_choir']);
+const soakedNow = (e, tick) => !!(e && e.status && e.status.soaked && e.status.soaked.untilTick > tick);
+
 // castChoice(a, tick, ctx) -> { slot, def, target } | null
 //   ctx: { registry, slots (ids ×4), resolve(def), baseDef(id), cds (a.cds),
 //          readySince (per-slot tick an active became ready), hostiles,
@@ -232,6 +236,46 @@ function ruleFor(a, id, def, target, tick, ctx, u) {
         if (c) return c;
       }
       return inRange ? target : null;
+    }
+    // ---------------------------------------------------- Tidecaller --
+    // THE TIDECALLER (docs/TIDECALLER.md §AI): soak, then crash.
+    case 'riverbolt': {
+      // Spread the soak: the target when it is dry, else the nearest dry
+      // hostile in range, else the target anyway (it refreshes the soak).
+      if (inRange && !soakedNow(target, tick)) return target;
+      const dry = hostiles.filter((e) => dist(e) <= def.range && !soakedNow(e, tick)).sort((p, q) => dist(p) - dist(q) || p.id - q.id)[0];
+      return dry ?? (inRange ? target : null);
+    }
+    case 'undertow': {
+      // The densest pack in reach, a pack within 2 u of the Tank (its arc) or
+      // of the Waystone (a defend room) first.
+      const tank = ctx.party().find((m) => m.classId === 'tank' && m.hp > 0) ?? null;
+      const w = ctx.waystone ? ctx.waystone() : null;
+      let best = null;
+      let bestScore = 0;
+      for (const e of hostiles) {
+        if (dist(e) > def.range) continue;
+        const n = near(e.x, e.z, def.area + 0.6).length;
+        const fed = (tank && d2(e.x, e.z, tank.x, tank.z) <= 4) || (w && d2(e.x, e.z, w.x, w.z) <= 4) ? 0.5 : 0;
+        const score = n + fed;
+        if (score > bestScore || (score === bestScore && best && e.id < best.id)) {
+          bestScore = score;
+          best = e;
+        }
+      }
+      if (best && bestScore >= 2) return best;
+      return inRange ? target : null;
+    }
+    case 'breaker': {
+      // A Crash waits for its payoff: two soaked enemies in the burst, or one
+      // soaked elite, champion or boss. A hostile on top of her (inside 0.9 u
+      // and after her) is the other reason: Breaker is her answer to a rush.
+      const around = near(a.x, a.z, def.area);
+      const wet = around.filter((e) => soakedNow(e, tick));
+      if (wet.length >= 2 || wet.some((e) => e.elite || CHAMPIONS.has(e.kind) || e.boss === true || e.kind === 'stag')) return wet[0];
+      const rush = near(a.x, a.z, 0.9).filter((e) => e.targetId === a.id);
+      if (rush.length >= 1) return rush[0];
+      return null;
     }
     default:
       // The 12 starting skills: §7 — target in shape range.
