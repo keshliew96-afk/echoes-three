@@ -2,12 +2,22 @@
 // Seat index == party index: seat 0 = the Healer, 1 Tank, 2 Swordsman,
 // 3 Archer. CLASS SELECT (docs/CLASS_SELECT.md): any player, the host
 // included, takes any free seat; an empty seat 0 is the leader bot's. Pure data.
+//
+// PARTY LINEUP (docs/LINEUP.md): which class holds seats 1-3 is the run's
+// lineup (data/lineup.js). SEAT_CLASSES / SEAT_LABELS / SEAT_CRITTERS stay
+// the default four (the class list, in picker order); a seat's label,
+// critter and class come from seatLabel / seatCritter / seatClass.
+import { classOfSeat } from '../data/lineup.js';
+
 export const SEAT_CLASSES = Object.freeze(['healer', 'tank', 'swordsman', 'archer']);
 export const SEAT_LABELS = Object.freeze(['Healer', 'Tank', 'Swordsman', 'Archer']);
 export const SEAT_CRITTERS = Object.freeze(['Mouse', 'Badger', 'Fox', 'Hare']);
+export const CLASS_LABEL = Object.freeze({ healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer' });
+export const CLASS_CRITTER = Object.freeze({ healer: 'Mouse', tank: 'Badger', swordsman: 'Fox', archer: 'Hare' });
 
-export const seatLabel = (i) => SEAT_LABELS[i] ?? `Seat ${i + 1}`;
-export const seatClass = (i) => SEAT_CLASSES[i] ?? null;
+export const seatClass = (i) => classOfSeat(i);
+export const seatLabel = (i) => CLASS_LABEL[classOfSeat(i)] ?? `Seat ${i + 1}`;
+export const seatCritter = (i) => CLASS_CRITTER[classOfSeat(i)] ?? '';
 
 // Human-readable reasons for a seat_control change (net HUD toasts).
 export function seatControlText(ev, nameOf = () => null) {

@@ -30,7 +30,8 @@ const BOSS_WIN_FLAVOUR = {
 };
 import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
 import { PALETTE } from '../../data/palette.js';
-import { CLASS_NAME, CLASS_OF_SEAT } from '../../data/classes.js';
+import { CLASS_NAME } from '../../data/classes.js';
+import { classOfSeat } from '../../data/lineup.js';
 import { iconHtml, hasIcon } from '../hud/icons.js';
 import { portraitCache } from '../hud/portraits.js';
 import { netOwners, ownerLabel } from './partystrip.js';
@@ -154,7 +155,7 @@ function partyHtml(builds) {
   }
   const rows = builds
     .map((b) => {
-      const classId = b.classId || CLASS_OF_SEAT[b.seat] || 'healer';
+      const classId = b.classId || classOfSeat(b.seat) || 'healer';
       const skills = (b.skills || []).filter(Boolean);
       const chips = skills.length
         ? skills

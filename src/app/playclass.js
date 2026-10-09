@@ -19,11 +19,14 @@ import { emptySnapshot } from '../core/intents.js';
 import { frameFromSnapshot, seatInputOf } from '../sim/netseats.js';
 import { SKILLS } from '../sim/skills.js';
 import { SEAT_CLASSES } from '../net/seats.js';
+import { seatOfClass as lineupSeatOf, classOfSeat } from '../data/lineup.js';
 import { dodgeCooldownTicks } from '../sim/relics.js';
 
 export const PLAY_CLASS_KEY = 'gameplay.playClass';
 export const PLAY_CLASSES = SEAT_CLASSES;
-export const seatOfClass = (cls) => Math.max(0, SEAT_CLASSES.indexOf(cls));
+// PARTY LINEUP (docs/LINEUP.md): the seat the class holds in the run's
+// lineup; a class that stayed at camp plays nothing, so the Healer's seat.
+export const seatOfClass = (cls) => Math.max(0, lineupSeatOf(cls));
 
 // The leader bot's config: the autopilot's healer play with its page driving
 // off (the human decides drafts, doors and the shop). `leader` marks it as
@@ -37,7 +40,10 @@ export function registerPlayClassSetting(settings) {
 const cdTicksOf = (def) => Math.max(30, Math.round((def.cd || 0) * 60));
 
 export function createPlayClass({ world, registry, settings, scene, sampleIntents }) {
-  let seat = seatOfClass(settings.get(PLAY_CLASS_KEY));
+  // The class is read while no run is live (a run keeps the class it started
+  // with); its seat follows the run's lineup, set at the run start or a load.
+  let chosen = settings.get(PLAY_CLASS_KEY);
+  let seat = seatOfClass(chosen);
   let presented = false;
   const autopilot = () => {
     const r = world.runSystem();
@@ -123,7 +129,8 @@ export function createPlayClass({ world, registry, settings, scene, sampleIntent
   }
 
   function step(tick) {
-    if (!runLive()) seat = seatOfClass(settings.get(PLAY_CLASS_KEY));
+    if (!runLive()) chosen = settings.get(PLAY_CLASS_KEY);
+    seat = seatOfClass(chosen);
     if (seat === 0) {
       if (presented) unpresent();
       if (leaderOn()) setLeader(false);
@@ -141,11 +148,11 @@ export function createPlayClass({ world, registry, settings, scene, sampleIntent
   return {
     step,
     seat: () => seat,
-    classId: () => SEAT_CLASSES[seat],
+    classId: () => classOfSeat(seat),
     // Leaving a network session: the next solo step re-installs what it needs.
     reset() {
       presented = false;
     },
-    debug: () => ({ seat, classId: SEAT_CLASSES[seat], chosen: settings.get(PLAY_CLASS_KEY), presented, leader: leaderOn() }),
+    debug: () => ({ seat, classId: classOfSeat(seat), chosen: settings.get(PLAY_CLASS_KEY), presented, leader: leaderOn() }),
   };
 }

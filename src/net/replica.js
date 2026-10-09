@@ -37,6 +37,8 @@
 // Events a guest must not present twice (its own confirmed predictions) are
 // filtered by the `suppress(ev)` hook; host-local feedback (`intent_denied`
 // — the Healer's HUD nudge + deny beep) is never replayed on a guest.
+import { syncLineupFromBodies } from '../data/lineup.js';
+
 const DEATH_CLASS = (t) => t === 'death' || t === 'broken' || t === 'downed' || t.endsWith('_despawn');
 const HOST_LOCAL = new Set(['intent_denied']);
 const EXTRAPOLATE_MAX_TICKS = 6; // 100 ms
@@ -228,6 +230,9 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
       lastScene = { mode: sc.mode, layout: lk };
     }
     registry.restore(view.registry);
+    // PARTY LINEUP (data/lineup.js): the seats' classes as the host's bodies
+    // show them (the party system's load says the same when it is in view).
+    syncLineupFromBodies(registry.all());
     world.loadState({ world: view.world, systems: view.systems });
     if (view.systems) {
       restoreShapes(view.systems.shapes);

@@ -33,7 +33,8 @@ import { skillCardHtml, nodeCardHtml, kitVerdictText, RARITY_COLOR, NODE_GLYPH, 
 import { NODES } from '../../sim/nodes.js';
 import { SPOILS_PER_CLEAR } from '../../sim/draft.js';
 import { SKILLS } from '../../sim/skills.js';
-import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
+import { CLASS_NAME } from '../../data/classes.js';
+import { classOfSeat } from '../../data/lineup.js';
 import { createPartyStrip, ownerBandHtml, netOwners } from './partystrip.js';
 import { service } from '../../app/registry.js';
 import { t, tn } from '../../i18n/index.js';
@@ -409,7 +410,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
     // Strip text: the viewed character's free slots / the swap line.
     const slots = slotsOf(seat);
     const free = slots.filter((x) => !x).length;
-    freeLab.textContent = c.swap ? t('SKILL SLOTS FULL · CHOOSE ONE TO REPLACE, OR LEAVE') : page && seat !== 0 ? t('{cls} · SKILL SLOTS FREE', { cls: t(CLASS_NAME[CLASS_OF_SEAT[seat]]).toUpperCase() }) : t('SKILL SLOTS FREE');
+    freeLab.textContent = c.swap ? t('SKILL SLOTS FULL · CHOOSE ONE TO REPLACE, OR LEAVE') : page && seat !== 0 ? t('{cls} · SKILL SLOTS FREE', { cls: t(CLASS_NAME[classOfSeat(seat)]).toUpperCase() }) : t('SKILL SLOTS FREE');
     freeEl.style.display = c.swap ? 'none' : '';
     freeEl.textContent = String(seat === 0 ? view.freeSkillSlots : free);
     hintEl.innerHTML = page ? (c.swap ? HINT_SWAP : HINT_PARTY) : c.swap ? HINT_SOLO_SWAP : HINT_SOLO;
@@ -424,7 +425,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
       const n = NODES[c.id];
       const sys = seat === 0 ? build() : party() ? party().build(seat) : null;
       const kit = sys ? sys.kitVerdict(c.id) : null;
-      const verdict = kit ? kitVerdictText(kit, seat !== 0 ? CLASS_NAME[CLASS_OF_SEAT[seat]] : null) : null;
+      const verdict = kit ? kitVerdictText(kit, seat !== 0 ? CLASS_NAME[classOfSeat(seat)] : null) : null;
       const cold = kit ? !kit.startsWith('fits') : null; // the sim's verdict, not the shown words
       const extra = c.id === 'siphon' && sys ? sys.siphonCardLine() : null;
       host.innerHTML = `<div class="rn-card${n && n.rarity === 'legendary' ? ' rn-legendary' : ''}" data-seat="${seat}" style="--rar:${RARITY_COLOR[n ? n.rarity : 'common']}">${nodeCardHtml(c.id, {
@@ -462,7 +463,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
         .filter((s) => page.owners[s] !== 'human')
         .map((s) => {
           const cc = page.cards[s];
-          const cls = t(CLASS_NAME[CLASS_OF_SEAT[s]]);
+          const cls = t(CLASS_NAME[classOfSeat(s)]);
           if (!cc.type) return t('{cls}: nothing', { cls });
           const what = t(cc.type === 'skill' ? SKILLS[cc.id].name : NODES[cc.id].name);
           return cc.choice === 'take' ? t('{cls} takes {what}', { cls, what }) : t('{cls} leaves {what}', { cls, what });
@@ -480,8 +481,8 @@ export function createDraftScreen({ run, build, party = () => null }) {
     const armed = !!page && page.deadlineInTicks !== null && page.deadlineInTicks !== undefined;
     if (armed) {
       const secs = Math.ceil(page.deadlineInTicks / TICK_HZ);
-      const waiting = [0, 1, 2, 3].filter((s) => page.owners[s] === 'human' && !page.cards[s].decided).map((s) => t(CLASS_NAME[CLASS_OF_SEAT[s]]));
-      const all = [0, 1, 2, 3].filter((s) => page.owners[s] === 'human').map((s) => t(CLASS_NAME[CLASS_OF_SEAT[s]]));
+      const waiting = [0, 1, 2, 3].filter((s) => page.owners[s] === 'human' && !page.cards[s].decided).map((s) => t(CLASS_NAME[classOfSeat(s)]));
+      const all = [0, 1, 2, 3].filter((s) => page.owners[s] === 'human').map((s) => t(CLASS_NAME[classOfSeat(s)]));
       const live = page.deadlineInTicks <= 600;
       countdownEl.style.display = '';
       countdownEl.style.visibility = live ? '' : 'hidden';
@@ -569,7 +570,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
     const newName = SKILLS[c.id] ? t(SKILLS[c.id].name) : c.id;
     const oldName = out && SKILLS[out.id] ? t(SKILLS[out.id].name) : out ? out.id : '';
     const n = out ? out.filled : 0;
-    const cls = seat === 0 ? '' : t(CLASS_NAME[CLASS_OF_SEAT[seat]]);
+    const cls = seat === 0 ? '' : t(CLASS_NAME[classOfSeat(seat)]);
     const nodes =
       n === 0
         ? t('{old} holds no nodes', { old: oldName })
@@ -618,7 +619,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
       const head =
         seat === 0
           ? t('<b>Spoils</b> → bench: {list}', { list })
-          : t("<b>Spoils</b> → {cls}'s bench: {list}", { cls: esc(t(CLASS_NAME[CLASS_OF_SEAT[seat]])), list });
+          : t("<b>Spoils</b> → {cls}'s bench: {list}", { cls: esc(t(CLASS_NAME[classOfSeat(seat)])), list });
       spoilsEl.innerHTML = `${head}${tail}`;
     } else if (short && seat === 0) {
       spoilsEl.style.display = '';

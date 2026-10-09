@@ -71,7 +71,8 @@ import { SKILL_SLOTS } from '../../core/constants.js';
 import { iconHtml, hasIcon } from '../hud/icons.js';
 import { NODE_EFFECT, NODE_GLYPH as CARD_GLYPH, skillAbbrev } from '../run/cards.js';
 import { createPartyStrip } from '../run/partystrip.js';
-import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
+import { CLASS_NAME } from '../../data/classes.js';
+import { classOfSeat } from '../../data/lineup.js';
 import { CLASS_ACCENTS } from '../../data/palette.js';
 import { service } from '../../app/registry.js';
 import { t, tn } from '../../i18n/index.js';
@@ -817,7 +818,7 @@ export function createSocketScreen({ bus, world }) {
       row.className = `nd-row${headerInHand === r ? ' nd-rowheld' : ''}`;
       row.dataset.skill = sk.id;
       row.dataset.seat = String(viewSeat); // PARTY: whose row (probes + the accent)
-      row.style.setProperty('--seatAcc', CLASS_ACCENTS[CLASS_OF_SEAT[viewSeat]]);
+      row.style.setProperty('--seatAcc', CLASS_ACCENTS[classOfSeat(viewSeat)]);
       const iconCls = def && def.archetype === 'heal' ? ' nd-heal' : def && def.archetype === 'damage' ? ' nd-damage' : '';
       const vd = held ? rowVerdict(sys, sk, held.node) : null;
       row.innerHTML = `
@@ -1076,7 +1077,7 @@ export function createSocketScreen({ bus, world }) {
         lines.push(`<span>${statsLine(sk)}</span>`);
       }
     } else {
-      title = `<span>${viewSeat === 0 ? t('Your build') : t("The {cls}'s build", { cls: esc(t(CLASS_NAME[CLASS_OF_SEAT[viewSeat]])) })}</span>`;
+      title = `<span>${viewSeat === 0 ? t('Your build') : t("The {cls}'s build", { cls: esc(t(CLASS_NAME[classOfSeat(viewSeat)])) })}</span>`;
       lines.push(t('4 skills · 8 sockets each · grey cells socket freely but contribute nothing'));
     }
     detailEl.innerHTML = `
@@ -1674,7 +1675,7 @@ export function createSocketScreen({ bus, world }) {
         guest = false;
       }
       const own = guest && viewSeat === ownSeat();
-      const cls = CLASS_NAME[CLASS_OF_SEAT[viewSeat]] ?? 'Healer';
+      const cls = CLASS_NAME[classOfSeat(viewSeat)] ?? 'Healer';
       const text = viewSeat === 0 ? t('Read-only — the {who} sets the sockets', { who: t(who) }) : t("Read-only — the {cls}'s build is its player's", { cls: t(cls) });
       if (guestNote.textContent !== text) guestNote.textContent = text;
       guestNote.style.display = open && guest && !own ? '' : 'none';

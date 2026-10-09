@@ -101,7 +101,8 @@ import { affixCountFor, AFFIX_RULES, AFFIXES } from './affixes.js';
 import { encounterSpec } from './interactables.js';
 // CROSS-RUN UNLOCKS (docs/UNLOCKS.md): the boons a campaign is started with.
 import { sanitizeBoons } from '../data/unlocks.js';
-import { swapSuggestion, CLASS_OF_SEAT, PARTY_DEADLINES } from '../data/classes.js';
+import { swapSuggestion, PARTY_DEADLINES } from '../data/classes.js';
+import { DEFAULT_LINEUP } from '../data/lineup.js';
 // PARTY (PLAN §16.3): the party page + the party shelves.
 import { createPartyPages } from './partypage.js';
 import { suggestShelf } from './partyai.js';
@@ -389,6 +390,7 @@ export function createRunSystem({
       boons: tutorial || daily ? null : o.boons,
       tutorial,
       daily,
+      lineup: o.lineup,
     });
     if (o.harness && typeof o.boss === 'string') bossPick = o.boss;
     if (o.depart) beginTransit('depart', null, act, getTick());
@@ -396,7 +398,7 @@ export function createRunSystem({
     return view();
   }
 
-  function openRun({ act: a, challenge: c, mode, harness, endless = false, boons: rawBoons = null, tutorial = false, daily = null }) {
+  function openRun({ act: a, challenge: c, mode, harness, endless = false, boons: rawBoons = null, tutorial = false, daily = null, lineup = null }) {
     // UNLOCKS: what the player equipped between runs (campaigns only). null =
     // nothing picked, and then nothing below differs from a plain run.
     const boons = mode === 'campaign' ? sanitizeBoons(rawBoons) : null;
@@ -454,6 +456,10 @@ export function createRunSystem({
     // PARTY: every ally back to its starting loadout, empty build, purse 0;
     // the party stream seeded from the run SEED (no gameplay draw).
     // UNLOCKS: an equipped kit replaces a class's starting skills.
+    // PARTY LINEUP (docs/LINEUP.md): a campaign (never the tutorial) may seat
+    // another class; every other run is the default four. Before the reset,
+    // so the reset loads each seat's own class.
+    if (party) party.setLineup(mode === 'campaign' && !tutorial ? lineup : DEFAULT_LINEUP);
     if (party) party.resetForRun(frame.seed, boons && boons.kits ? boons.kits : null);
     if (boons && boons.kits && boons.kits.healer) {
       const kit = new Array(SKILL_SLOTS).fill(null);
@@ -1641,7 +1647,7 @@ export function createRunSystem({
     ];
     for (const i of [1, 2, 3]) {
       const v = party.view(i);
-      out.push({ seat: i, classId: CLASS_OF_SEAT[i], skills: [...v.slots], filled: v.filled, sockets: 32, bench: v.bench.length, purse: v.purse });
+      out.push({ seat: i, classId: v.classId, skills: [...v.slots], filled: v.filled, sockets: 32, bench: v.bench.length, purse: v.purse });
     }
     return out;
   }
@@ -1892,7 +1898,7 @@ export function createRunSystem({
     for (const seat of [0, 1, 2, 3]) {
       if (c[seat] === 'human') continue;
       const purse = seat === 0 ? wallet : party.purse(seat);
-      const cls = CLASS_OF_SEAT[seat];
+      const cls = seat === 0 ? 'healer' : party.lineup()[seat];
       const fits = (k) => !taken.has(k) && relics.shelfItem(k) && shelf[k].price <= purse;
       const own = shelf.findIndex((r, k) => r.cls === cls && fits(k));
       const k = own >= 0 ? own : shelf.findIndex((r, k2) => !r.cls && fits(k2));

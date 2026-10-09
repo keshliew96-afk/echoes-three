@@ -32,6 +32,7 @@
 import { SKILLS } from '../sim/skills.js';
 import { NODES } from '../sim/nodes.js';
 import { CLASS_OF_SEAT, CLASS_NAME } from '../data/classes.js';
+import { LINEUP_CLASSES } from '../data/lineup.js';
 import { SKILL_SLOTS } from '../core/constants.js';
 
 const has = Object.prototype.hasOwnProperty;
@@ -305,10 +306,13 @@ export function reconcileContent(tree) {
 
   // ---- the allies (seats 1-3): systems.party.seats[i]
   const seats = sys.party && Array.isArray(sys.party.seats) ? sys.party.seats : [];
+  // PARTY LINEUP (docs/LINEUP.md): each saved seat names its class; a save
+  // from before the lineup is the default four.
+  const seatCls = [0, 1, 2, 3].map((i) => (i > 0 && seats[i] && LINEUP_CLASSES.includes(seats[i].classId) ? seats[i].classId : CLASS_OF_SEAT[i]));
   for (let i = 1; i < 4; i++) {
     const s = seats[i];
     if (!s || typeof s !== 'object') continue;
-    const classId = CLASS_OF_SEAT[i];
+    const classId = seatCls[i];
     let gone = new Set();
     if (Array.isArray(s.slots)) {
       const r = reconcileLoadout(s.slots, classId, i, R);
@@ -356,7 +360,7 @@ export function reconcileContent(tree) {
         continue;
       }
       if (e && e.kind === 'ally' && Number.isInteger(e.partyIndex) && e.partyIndex >= 1 && e.partyIndex <= 3 && typeof e.classId === 'string' && !has.call(CLASS_NAME, e.classId)) {
-        e.classId = CLASS_OF_SEAT[e.partyIndex];
+        e.classId = seatCls[e.partyIndex];
         R.changed = true;
         R.records += 1;
       }
@@ -397,7 +401,7 @@ export function reconcileContent(tree) {
         for (const c of pp.page.cards) {
           if (!c || typeof c !== 'object') continue;
           const seat = Number.isInteger(c.seat) && c.seat >= 0 && c.seat < 4 ? c.seat : 0;
-          reconcileCard(c, CLASS_OF_SEAT[seat], freeBySeat[seat], R);
+          reconcileCard(c, seatCls[seat], freeBySeat[seat], R);
         }
       }
       const sh = pp.shop;
