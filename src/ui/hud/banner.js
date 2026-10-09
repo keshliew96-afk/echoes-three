@@ -8,6 +8,10 @@
 //   purge    -> one pip per nest (filled = destroyed) + nests left + the purge
 //               countdown; "THE CORRUPTION TOOK ROOT · NO REWARD" on a soft-fail
 //   (ROOM OBJECTIVES, docs/ROOM_OBJECTIVES.md)
+//   champion -> the champion's name plate over a Pale Gold HP bar (gold, the
+//               crown's colour; violet stays the bosses'), "· ENRAGED" below
+//               half, then "FELLED" and what is left to clear
+//               (CHAMPION ROOMS, docs/CHAMPIONS.md)
 //
 // DEVIATION (documented): the sim's wave director (src/sim/waves.js) ships
 // kill_all and defend only — the room-8 Hollow Stag lands with the boss block.
@@ -35,6 +39,10 @@ import { CHROME, mix } from './style.js';
 import { TICK_HZ } from '../../core/constants.js';
 import { iconEl } from './icons.js';
 import { t, tn } from '../../i18n/index.js';
+import { CHAMPIONS } from '../../sim/champions.js';
+
+// CHAMPION ROOMS: champion kind -> its English name (translated when shown).
+const CHAMPION_NAME = Object.fromEntries(Object.values(CHAMPIONS).map((c) => [c.id, c.name]));
 
 // §11 add-phase thresholds, drawn as pips on the boss bar (75 / 50 / 25 %).
 // Mirrors sim/boss.js STAG.addPhases; the sim's `phasesFired` fills them.
@@ -149,7 +157,7 @@ export function createBanner() {
     else if (boss) next = 'boss';
     else if (room && !room.cleared && room.mode === 'defend') next = 'defend';
     else if (room && !room.cleared && room.mode === 'kill_all') next = 'kill_all';
-    else if (room && !room.cleared && (room.mode === 'hunt' || room.mode === 'purge')) next = room.mode;
+    else if (room && !room.cleared && (room.mode === 'hunt' || room.mode === 'purge' || room.mode === 'champion')) next = room.mode;
 
     let changed = false;
     if (next !== mode) {
@@ -255,6 +263,30 @@ export function createBanner() {
       num.className = 'hud-bn-num';
       timer.textContent = q.spawned ? clock(left) : '';
       timer.className = 'hud-bn-num' + (left <= 10 * TICK_HZ ? ' warn' : '');
+      return true;
+    }
+
+    if (mode === 'champion') {
+      const c = room.champion ?? {};
+      const hp = Math.max(0, Math.ceil(c.hp ?? 0));
+      const maxHp = Math.max(1, Math.ceil(c.maxHp || 1));
+      const alive = (room.aliveEnemies ?? 0) + (room.pendingSpawns ?? 0);
+      const key = `c|${c.kind}|${hp}|${maxHp}|${c.felled}|${c.rage}|${c.felled ? alive : ''}`;
+      if (key === lastKey) return changed;
+      lastKey = key;
+      const name = t(CHAMPION_NAME[c.kind] ?? 'The Champion').toUpperCase();
+      const gold = PALETTE.paleGold;
+      if (c.felled) {
+        label.textContent = t('{name} · FELLED', { name });
+        showBar(gold, mix(gold, PALETTE.parchment, 0.5), 0);
+        num.textContent = alive > 0 ? t('{alive} LEFT', { alive }) : t('THE CHEST AWAITS');
+        num.className = 'hud-bn-label hud-bn-sub';
+        return true;
+      }
+      label.textContent = c.rage ? t('{name} · ENRAGED', { name }) : name;
+      showBar(c.rage ? mix(gold, PALETTE.emberDanger, 0.45) : gold, mix(gold, PALETTE.parchment, 0.5), c.spawned ? hp / maxHp : 1);
+      num.textContent = c.spawned ? `${hp}/${maxHp}` : '';
+      num.className = 'hud-bn-num';
       return true;
     }
 

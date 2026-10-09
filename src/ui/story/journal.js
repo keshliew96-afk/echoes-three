@@ -9,6 +9,8 @@ import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { LEVELS, ACT_IDS } from '../../data/levels.js';
 import { BESTIARY, ENEMY_JOURNAL_IDS } from '../../data/journal.js';
+
+const CHAMPION_SET = new Set(BESTIARY.filter((b) => b.champion).map((b) => b.id));
 import { RELICS, RELIC_IDS, CURSES } from '../../sim/relics.js';
 import { ENCOUNTERS, ENCOUNTER_IDS } from '../../sim/encounters.js';
 import { DEEDS, DEED_IDS } from '../../data/unlocks.js';
@@ -154,6 +156,7 @@ export function createJournalPage(kind, getInfo) {
   }
   function rimOf(e) {
     if (e.kind === 'boss') return P.godstuffViolet;
+    if (e.kind === 'enemy' && CHAMPION_SET.has(e.id)) return P.paleGold;
     if (e.kind === 'relic') return RARITY_COLOR[RELICS[e.id].rarity] ?? P.bone;
     if (e.kind === 'curse') return P.godstuffViolet;
     if (e.kind === 'event') return ENCOUNTER_COLOR[e.id] ?? P.bone;
@@ -165,9 +168,11 @@ export function createJournalPage(kind, getInfo) {
     const groups = [];
     if (kind === 'bestiary') {
       for (const a of ACT_IDS) {
-        const ids = new Set(BESTIARY.filter((b) => !b.boss && b.lands[0] === a).map((b) => b.id));
+        const ids = new Set(BESTIARY.filter((b) => !b.boss && !b.champion && b.lands[0] === a).map((b) => b.id));
         groups.push([landName(a), all.filter((e) => e.kind === 'enemy' && ids.has(e.id))]);
       }
+      // CHAMPION ROOMS: the four champions, between the lands and the bosses.
+      groups.push([t('Champions'), all.filter((e) => e.kind === 'enemy' && CHAMPION_SET.has(e.id))]);
       groups.push([t('Bosses'), all.filter((e) => e.kind === 'boss')]);
     } else if (kind === 'relics') {
       groups.push([t('Relics'), all.filter((e) => e.kind === 'relic')]);

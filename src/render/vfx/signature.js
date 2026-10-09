@@ -2539,6 +2539,215 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       }
     }
   }
+  // ---------------------------------------------------- CHAMPIONS --
+  // (docs/CHAMPIONS.md) A champion is a heavy grown into a lord: its beats
+  // are a heavy's (Ember on the frame that hurts, its matter on what breaks)
+  // at a mini-boss's weight, with Pale Gold for the crown it wears. No
+  // violet: that is the bosses' and the corruption's alone.
+  const CH_GOLD = PALETTE.paleGold;
+  const CH_GOLD_HOT = '#F7E7C0';
+  const CH_WATER = vfxMatterColor('water');
+  const CH_SILT = vfxMatterColor('silt');
+  const CH_BRAMBLE = vfxMatterColor('bramble');
+  const CH_BONE = vfxMatterColor('boneplate');
+  const CH_CRYSTAL = vfxMatterColor('heartcrystal');
+  const CH_VEIN = vfxMatterColor('heartvein');
+  const CH_PEAK = vfxMatterColor('heartpeak');
+  // The wind-up: gold motes drawn into the champion, Ember lines into where
+  // the move will land.
+  bus.on('champion_tell', (ev) => {
+    mark('champion_tell');
+    const c = byId(ev.id);
+    if (c) {
+      spray('spark', c.x, 1.4, c.z, 6, { color: CH_GOLD, speed: [0.05, 0.2], up: [0.2, 0.6], size: [0.04, 0.08], life: [0.5, 0.8], gravity: -0.2, drag: 1.6, jitter: 0.9, opacity: 0.85 });
+      kit.flash({ x: c.x, y: 1.5, z: c.z, color: CH_GOLD, size: 0.7, life: 0.25, grow: -0.3, opacity: 0.7 });
+    }
+    anticipate(ev.x, ev.z, 1.6, EMBER, { y: 0.3, lines: 8 });
+  });
+  bus.on('champion_spawn', (ev) => {
+    mark('champion_spawn');
+    kit.pillar({ x: ev.x, z: ev.z, radius: 1.0, height: 6, color: CH_GOLD, life: 1.1, opacity: 0.6 });
+    kit.pillar({ x: ev.x, z: ev.z, radius: 0.4, height: 6.5, color: CH_GOLD_HOT, life: 0.8, opacity: 0.7 });
+    flare(ev.x, 1.2, ev.z, CH_GOLD, 3.0, { kind: 'burst', life: 0.4, spin: 0.6 });
+    kit.light({ x: ev.x, z: ev.z, radius: 3.4, color: CH_GOLD, opacity: 0.55, life: 1.0, attack: 0.05 });
+    kit.mark({ x: ev.x, z: ev.z, radius: 2.4, kind: 'crater', stain: vfxMatterColor('ash'), glow: CH_GOLD, cool: 1.4, life: 5, opacity: 0.5 });
+    kit.crack({ x: ev.x, z: ev.z, radius: 1.8, glow: CH_GOLD, life: 2.4, cool: 0.9 });
+    spray('chunk', ev.x, 0.3, ev.z, 10, { color: vfxMatterColor('earth'), speed: [1.0, 2.6], up: [1.4, 3.0], size: [0.08, 0.16], life: [0.6, 1.0], jitter: 0.6 });
+    camfx.dolly(ev.x, ev.z, 0.5, 0.45);
+  });
+  bus.on('champion_rage', (ev) => {
+    mark('champion_rage');
+    flare(ev.x, 1.4, ev.z, EMBER, 2.4, { kind: 'burst', life: 0.35, core: CH_GOLD_HOT });
+    shock(ev.x, ev.z, 3.0, EMBER, { life: 0.45, width: 0.18, jag: 0.6 });
+    kit.light({ x: ev.x, z: ev.z, radius: 3, color: EMBER, opacity: 0.45, life: 0.6 });
+    camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.6, 0.18);
+  });
+  // Each move's landing.
+  const CHAMP_MOVE = {
+    // Briar Knight: the charge sets off (its wake is laid as it runs) ...
+    bramble_charge(ev) {
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const c = byId(ev.id);
+      const len = c && c.charge ? c.charge.left * Math.hypot(c.charge.vx, c.charge.vz) : 5;
+      laneDrive(c ? c.x : ev.x, c ? c.z : ev.z, d, len, 9, { wake: CH_BRAMBLE, wakeW: 1.0, head: EMBER, peak: CH_GOLD_HOT, stain: vfxMatterColor('earth'), glow: EMBER, marks: 4 });
+      spray('shard', c ? c.x : ev.x, 0.5, c ? c.z : ev.z, 8, { color: CH_BRAMBLE, tile: SHARD_TILE.needle, speed: [1.0, 2.2], up: [0.6, 1.4], size: [0.1, 0.15], life: [0.5, 0.8], gravity: 4, spin: [-8, 8], dir: { x: -d.x, z: -d.z }, dirBias: 0.5 });
+    },
+    // ... and the Thorn Ring bursts round it.
+    thorn_ring(ev) {
+      const r = 2.8;
+      spikes(ev.x, ev.z, r, 18, CH_BRAMBLE, { h: 0.9, life: 0.6, core: PARCH });
+      flare(ev.x, 0.5, ev.z, EMBER, 2.0, { kind: 'star', life: 0.26 });
+      shock(ev.x, ev.z, r * 1.05, EMBER, { life: 0.35, width: 0.16, jag: 0.8 });
+      shock(ev.x, ev.z, r * 1.35, CH_BRAMBLE, { life: 0.55, width: 0.24, core: PARCH, delay: 0.05 });
+      kit.crack({ x: ev.x, z: ev.z, radius: r * 0.8, glow: EMBER, life: 1.6, cool: 0.5 });
+      kit.light({ x: ev.x, z: ev.z, radius: r * 1.2, color: EMBER, opacity: 0.45, life: 0.4, attack: 0.02 });
+      spray('shard', ev.x, 0.4, ev.z, 16, { color: CH_BRAMBLE, tile: SHARD_TILE.needle, speed: [1.2, 3.0], up: [1.0, 2.4], size: [0.1, 0.16], life: [0.5, 0.9], gravity: 4, spin: [-10, 10], jitter: 0.6 });
+      spray('shard', ev.x, 0.6, ev.z, 8, { color: CH_BRAMBLE, tile: SHARD_TILE.petal, speed: [0.3, 0.9], up: [0.6, 1.2], size: [0.1, 0.13], life: [1.2, 1.8], gravity: 0.5, drag: 1.8, spin: [-4, 4], flutter: 0.6 });
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.5, 0.14);
+    },
+    // Sluice Warden: the gate drives a wall of water down the cone.
+    floodgate(ev) {
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const ang = Math.atan2(d.z, d.x);
+      const R = 3.4;
+      for (let i = 0; i < N(7); i++) {
+        const a = ang + (i / 6 - 0.5) * 2 * 0.73;
+        kit.streak({ a: { x: ev.x + Math.cos(a) * 0.6, y: 0.3, z: ev.z + Math.sin(a) * 0.6 }, b: { x: ev.x + Math.cos(a) * R, y: 0.15, z: ev.z + Math.sin(a) * R }, width: 0.28, tailW: 0.5, core: PARCH, glow: CH_WATER, life: 0.35, fall: 1.6, opacity: 0.8, delay: Math.abs(i / 6 - 0.5) * 0.06 });
+      }
+      kit.streak({ a: { x: ev.x, y: 0.1, z: ev.z }, b: { x: ev.x + d.x * R, y: 0.1, z: ev.z + d.z * R }, width: R * 1.2, tailW: R * 1.1, core: EMBER, glow: EMBER, life: 0.22, fall: 2.2, opacity: 0.4 });
+      flare(ev.x + d.x * 0.9, 0.6, ev.z + d.z * 0.9, CH_WATER, 2.0, { kind: 'burst', life: 0.25, angle: ang });
+      spray('shard', ev.x + d.x * 1.6, 0.4, ev.z + d.z * 1.6, 22, { color: CH_WATER, tile: SHARD_TILE.drop, speed: [1.6, 3.4], up: [1.2, 2.6], size: [0.1, 0.16], life: [0.5, 0.9], gravity: 7, drag: 0.3, dir: d, dirBias: 0.8, jitter: 0.5 });
+      spray('smoke', ev.x + d.x * 2, 0.2, ev.z + d.z * 2, 4, { color: CH_SILT, speed: [0.6, 1.4], up: [0.05, 0.2], size: [0.5, 0.7], grow: 1.5, life: [1.0, 1.4], opacity: 0.35, drag: 2.4, dir: d, dirBias: 0.6, jitter: 0.6 });
+      kit.mark({ x: ev.x + d.x * 2, z: ev.z + d.z * 2, radius: 2.4, kind: 'splash', angle: ang, stretch: 1.4, stain: CH_SILT, glow: CH_WATER, glowOpacity: 0.3, cool: 0.8, life: 4, opacity: 0.45 });
+      camfx.kick(d.x, d.z, 0.55, 0.14);
+    },
+    // ... and the Undertow wells up under a hero.
+    undertow(ev) {
+      const r = 1.9;
+      ripples(ev.x, ev.z, 3, r * 1.2, 0);
+      kit.pillar({ x: ev.x, z: ev.z, radius: r * 0.6, height: 2.6, color: CH_WATER, life: 0.6, opacity: 0.55 });
+      flare(ev.x, 0.4, ev.z, EMBER, 1.6, { kind: 'burst', life: 0.22 });
+      shock(ev.x, ev.z, r * 1.05, EMBER, { life: 0.3, width: 0.12 });
+      spray('shard', ev.x, 0.3, ev.z, 22, { color: CH_WATER, tile: SHARD_TILE.drop, speed: [0.6, 1.6], up: [2.4, 4.0], size: [0.1, 0.16], life: [0.7, 1.0], gravity: 7, drag: 0.3, spin: [-2, 2], jitter: 0.5 });
+      kit.mark({ x: ev.x, z: ev.z, radius: r * 1.2, kind: 'splash', stain: CH_SILT, glow: CH_WATER, glowOpacity: 0.3, cool: 0.8, life: 5, opacity: 0.45 });
+    },
+    // Bone Reeve: a scythe arc of bone-white light with an Ember edge.
+    reaping_sweep(ev) {
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const ang = Math.atan2(d.z, d.x);
+      const R = 2.7;
+      const half = 75 * (Math.PI / 180);
+      const segs = 9;
+      for (let i = 0; i < segs; i++) {
+        const a0 = ang + half - (i / segs) * 2 * half;
+        const a1 = ang + half - ((i + 1) / segs) * 2 * half;
+        kit.streak({ a: { x: ev.x + Math.cos(a0) * R, y: 0.7, z: ev.z + Math.sin(a0) * R }, b: { x: ev.x + Math.cos(a1) * R, y: 0.7, z: ev.z + Math.sin(a1) * R }, width: 0.22, tailW: 0.1, core: PARCH, glow: CH_BONE, life: 0.28, fall: 1.4, delay: i * 0.012 });
+        kit.streak({ a: { x: ev.x + Math.cos(a0) * R * 0.95, y: 0.08, z: ev.z + Math.sin(a0) * R * 0.95 }, b: { x: ev.x + Math.cos(a1) * R * 0.95, y: 0.08, z: ev.z + Math.sin(a1) * R * 0.95 }, width: 0.3, tailW: 0.3, core: EMBER, glow: EMBER, life: 0.2, fall: 2, opacity: 0.6, delay: i * 0.012 });
+      }
+      flare(ev.x + d.x * R * 0.8, 0.7, ev.z + d.z * R * 0.8, CH_BONE, 1.6, { kind: 'star', life: 0.2, angle: ang });
+      spray('spark', ev.x + d.x * R * 0.7, 0.7, ev.z + d.z * R * 0.7, 10, { color: PARCH, speed: [1.4, 3.0], up: [0.3, 1.0], size: [0.04, 0.07], life: [0.15, 0.3], dir: d, dirBias: 0.6 });
+      kit.mark({ x: ev.x + d.x * 1.4, z: ev.z + d.z * 1.4, radius: 2.0, kind: 'gouge', angle: ang + Math.PI / 2, stretch: 2.2, stain: INK, glow: EMBER, cool: 0.6, life: 2.6, opacity: 0.4 });
+      camfx.kick(d.x, d.z, 0.4, 0.12);
+    },
+    // ... and the Grave Lance: bone spikes burst along the lane, one by one.
+    grave_lance(ev) {
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const c = byId(ev.id);
+      const ox = c ? c.x : ev.x - d.x * 4;
+      const oz = c ? c.z : ev.z - d.z * 4;
+      const len = Math.hypot(ev.x - ox, ev.z - oz) || 8;
+      kit.streak({ a: { x: ox, y: 0.1, z: oz }, b: { x: ev.x, y: 0.1, z: ev.z }, width: 1.1, tailW: 1.0, core: EMBER, glow: EMBER, life: 0.24, fall: 2.2, opacity: 0.5 });
+      const n = Math.max(4, Math.round(len / 0.8));
+      for (let i = 1; i <= n; i++) {
+        const k = i / n;
+        spikes(ox + d.x * len * k, oz + d.z * len * k, 0.5, 4, CH_BONE, { h: 1.0, life: 0.55, delay: k * 0.22, core: PARCH });
+      }
+      after(0.22, () => {
+        flare(ev.x, 0.5, ev.z, CH_BONE, 1.4, { kind: 'burst', life: 0.22 });
+        spray('chunk', ev.x, 0.3, ev.z, 8, { color: CH_BONE, speed: [1.0, 2.4], up: [1.4, 2.8], size: [0.08, 0.15], life: [0.6, 0.9] });
+      });
+      for (let i = 1; i <= 3; i++) kit.mark({ x: ox + d.x * len * (i / 3.5), z: oz + d.z * len * (i / 3.5), radius: 1.0, kind: 'gouge', angle: Math.atan2(d.z, d.x), stretch: 1.8, stain: vfxMatterColor('earth'), glow: EMBER, glowOpacity: 0.3, cool: 0.6, life: 3, opacity: 0.4, delay: i * 0.07 });
+      camfx.kick(d.x, d.z, 0.35, 0.12);
+    },
+    // Hollow Choir: the hymn's release, a violet flare at the heart, the
+    // shards fly on their own (the enemy-shot layer draws them).
+    shard_hymn(ev) {
+      const c = byId(ev.id);
+      const x = c ? c.x : ev.x;
+      const z = c ? c.z : ev.z;
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      flare(x + d.x * 0.6, 1.7, z + d.z * 0.6, CH_VEIN, 2.0, { kind: 'star', life: 0.24, core: CH_PEAK, angle: Math.atan2(d.z, d.x) });
+      kit.flash({ x, y: 1.7, z, color: CH_PEAK, size: 1.0, life: 0.15 });
+      kit.ring({ x, z, r0: 0.5, r1: 1.6, width: 0.1, life: 0.35, core: CH_PEAK, glow: CH_VEIN, soft: 0.5, y: 1.7, opacity: 0.8 });
+      spray('shard', x, 1.7, z, 8, { color: CH_CRYSTAL, tile: SHARD_TILE.needle, speed: [1.6, 3.0], up: [0.2, 0.8], size: [0.09, 0.13], life: [0.4, 0.7], gravity: 3, spin: [-8, 8], dir: d, dirBias: 0.7 });
+    },
+    // ... and Discord: two rings of dissonance, Ember where it hurts.
+    discord(ev) {
+      const r = 3.2;
+      flare(ev.x, 1.6, ev.z, CH_VEIN, 2.6, { kind: 'burst', life: 0.3, core: CH_PEAK, spin: 0.7 });
+      shock(ev.x, ev.z, r * 1.05, EMBER, { life: 0.4, width: 0.18 });
+      shock(ev.x, ev.z, r * 1.4, CH_VEIN, { life: 0.6, width: 0.26, core: CH_PEAK, delay: 0.08 });
+      kit.ring({ x: ev.x, z: ev.z, r0: 0.6, r1: r, width: 0.14, life: 0.45, core: CH_PEAK, glow: CH_VEIN, soft: 0.5, y: 1.6, opacity: 0.7 });
+      kit.light({ x: ev.x, z: ev.z, radius: r * 1.2, color: CH_VEIN, opacity: 0.5, life: 0.5 });
+      spray('shard', ev.x, 1.2, ev.z, 18, { color: CH_CRYSTAL, tile: SHARD_TILE.needle, speed: [1.6, 3.2], up: [0.4, 1.4], size: [0.09, 0.14], life: [0.5, 0.8], gravity: 4, spin: [-10, 10], jitter: 0.6 });
+      kit.mark({ x: ev.x, z: ev.z, radius: r, kind: 'scorch', stain: INK, glow: CH_VEIN, cool: 1.0, life: 3, opacity: 0.3 });
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.5, 0.15);
+    },
+  };
+  bus.on('champion_move', (ev) => {
+    mark(`champion_${ev.move}`);
+    const fn = CHAMP_MOVE[ev.move];
+    if (fn) fn(ev);
+  });
+  // The Briar Knight's charge stopping: on a wall, a crash; spent, a skid.
+  bus.on('champion_charge_end', (ev) => {
+    mark('champion_charge_end');
+    const c = byId(ev.id);
+    const d = faceOf(c);
+    const wall = ev.cause === 'wall';
+    flare(ev.x + d.x * 0.6, 0.7, ev.z + d.z * 0.6, wall ? EMBER : CH_BRAMBLE, wall ? 2.0 : 1.2, { kind: 'star', life: 0.24, angle: Math.atan2(d.z, d.x) });
+    shock(ev.x, ev.z, wall ? 2.2 : 1.4, wall ? EMBER : CH_BRAMBLE, { life: 0.35, width: 0.14, jag: wall ? 0.7 : 0 });
+    spray('chunk', ev.x + d.x * 0.6, 0.3, ev.z + d.z * 0.6, wall ? 12 : 6, { color: vfxMatterColor('earth'), speed: [1.0, 2.6], up: [1.0, 2.6], size: [0.08, 0.15], life: [0.5, 0.9], dir: { x: -d.x, z: -d.z }, dirBias: 0.4, jitter: 0.4 });
+    spray('smoke', ev.x, 0.2, ev.z, 4, { color: vfxMatterColor('earth'), speed: [0.6, 1.2], up: [0.1, 0.3], size: [0.4, 0.55], grow: 1.4, life: [0.8, 1.1], opacity: 0.32, drag: 2.4, jitter: 0.5 });
+    if (wall) camfx.kick(d.x, d.z, 0.7, 0.16);
+  });
+  // Their deaths, on top of enemyDeath's break: a gold column, the body's
+  // matter flying, the camera leaning in.
+  function championDeath(matter, color, x, z) {
+    kit.pillar({ x, z, radius: 0.9, height: 5, color: CH_GOLD, life: 1.2, opacity: 0.6 });
+    flare(x, 1.2, z, CH_GOLD, 3.0, { kind: 'burst', life: 0.42, core: CH_GOLD_HOT, spin: 0.8 });
+    kit.ring({ x, z, r0: 0.5, r1: 4.2, width: 0.36, life: 0.9, core: CH_GOLD_HOT, glow: CH_GOLD, soft: 0.5, y: 0.06 });
+    kit.light({ x, z, radius: 3.6, color: CH_GOLD, opacity: 0.6, life: 1.2 });
+    kit.mark({ x, z, radius: 2.6, kind: 'crater', stain: vfxMatterColor('ash'), glow: CH_GOLD, cool: 1.6, life: 6, opacity: 0.55 });
+    spray('chunk', x, 0.6, z, 14, { color: matter, speed: [1.2, 2.8], up: [1.8, 3.4], size: [0.1, 0.18], life: [0.7, 1.1], jitter: 0.6 });
+    spray('spark', x, 0.8, z, 24, { color, speed: [0.4, 1.6], up: [0.8, 2.4], size: [0.05, 0.11], life: [1.0, 1.8], gravity: -0.3, drag: 1.2, jitter: 0.8 });
+    camfx.dolly(x, z, 0.6, 0.5);
+  }
+  Object.assign(CREATURE_DEATH, {
+    briar_knight: (es, matter, x, z) => {
+      mark('briar_knight_death');
+      championDeath(CH_BRAMBLE, CH_GOLD, x, z);
+      spikes(x, z, 1.4, 10, CH_BRAMBLE, { h: 0.7, life: 0.6 });
+    },
+    sluice_warden: (es, matter, x, z) => {
+      mark('sluice_warden_death');
+      championDeath(vfxMatterColor('stone'), CH_GOLD, x, z);
+      ripples(x, z, 4, 3.0, 0.1);
+      spray('shard', x, 0.6, z, 20, { color: CH_WATER, tile: SHARD_TILE.drop, speed: [1.0, 2.4], up: [2.0, 3.6], size: [0.1, 0.16], life: [0.6, 1.0], gravity: 7, drag: 0.3, jitter: 0.6 });
+    },
+    bone_reeve: (es, matter, x, z) => {
+      mark('bone_reeve_death');
+      championDeath(CH_BONE, CH_GOLD, x, z);
+      spray('shard', x, 1.2, z, 16, { color: CH_BONE, tile: SHARD_TILE.needle, speed: [1.0, 2.4], up: [1.4, 2.8], size: [0.1, 0.15], life: [0.7, 1.0], gravity: 5, spin: [-10, 10], jitter: 0.5 });
+    },
+    hollow_choir: (es, matter, x, z) => {
+      mark('hollow_choir_death');
+      championDeath(CH_CRYSTAL, CH_VEIN, x, z);
+      flare(x, 1.7, z, CH_VEIN, 2.4, { kind: 'burst', life: 0.4, core: CH_PEAK });
+      spray('shard', x, 1.6, z, 22, { color: CH_CRYSTAL, tile: SHARD_TILE.needle, speed: [1.2, 3.0], up: [1.0, 2.6], size: [0.1, 0.15], life: [0.7, 1.1], gravity: 4, spin: [-10, 10], jitter: 0.6 });
+    },
+  });
+
   const KIT_BOSS_DEATH = { heron: heronDeath, wyrm: wyrmDeath, thornmother: thornmotherDeath, millwheel: millwheelDeath, lichram: lichramDeath, cantor: cantorDeath, colossus: colossusDeath };
 
   // Per frame: the Heron's drive throws spray off its legs and stops in a

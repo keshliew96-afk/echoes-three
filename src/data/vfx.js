@@ -156,6 +156,12 @@ export const ENEMY_VFX = Object.freeze({
   lancer: Object.freeze({ matter: 'heartflesh', family: 'shooter', shard: 'needle', chunk: 2, dust: 0, heart: true }),
   geode: Object.freeze({ matter: 'heartcrystal', family: 'brute', shard: 'needle', chunk: 8, dust: 3, heart: true }),
   censer: Object.freeze({ matter: 'heartbone', family: 'flyer', shard: null, chunk: 3, dust: 2, heart: true }),
+  // CHAMPIONS (docs/CHAMPIONS.md): the four lords. Their move beats and
+  // deaths are director recipes keyed by champion_* events.
+  briar_knight: Object.freeze({ matter: 'bramble', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),
+  sluice_warden: Object.freeze({ matter: 'stone', family: 'brute', shard: 'drop', chunk: 8, dust: 2 }),
+  bone_reeve: Object.freeze({ matter: 'boneplate', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),
+  hollow_choir: Object.freeze({ matter: 'heartcrystal', family: 'flyer', shard: 'needle', chunk: 4, dust: 1, heart: true, shot: Object.freeze({ look: 'dart', trail: 0.2 }) }),
 });
 
 const FAMILY_DEFAULT = Object.freeze({

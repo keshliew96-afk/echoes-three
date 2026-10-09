@@ -279,6 +279,9 @@ registerHeartCues(service('audio'));
 // Event rooms, room objectives and the slick floor slide (src/audio/encountercues.js).
 import { registerEncounterCues } from './audio/encountercues.js';
 registerEncounterCues(service('audio'));
+// CHAMPION ROOMS (docs/CHAMPIONS.md): stings, tells and move sounds.
+import { registerChampionCues } from './audio/championcues.js';
+registerChampionCues(service('audio'));
 // Hit feedback: the heavy / soft / downed hit sounds on your own character
 // (src/audio/hitcues.js).
 import { registerHitCues } from './audio/hitcues.js';

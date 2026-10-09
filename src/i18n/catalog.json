@@ -585,6 +585,11 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "{name} · ENRAGED": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
  "{name} · FELLED": {
   "files": [
    "src/ui/hud/banner.js"
@@ -1191,6 +1196,16 @@
    "src/ui/run/draft.js"
   ]
  },
+ "<b>♛ Left door: {name}.</b> A champion and two light waves. Fell it for a relic chest (rare or legendary) on top of the draft.": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "<b>♛ Right door: {name}.</b> A champion and two light waves. Fell it for a relic chest (rare or legendary) on top of the draft.": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
  "<b>8 sockets</b> per skill · <b>any node, any socket</b>": {
   "files": [
    "src/ui/socket/index.js"
@@ -1616,6 +1631,12 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "A knight of the old Hearth whose armour the Wood grew through. He still keeps his vigil.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "A lance that pierces: it strikes up to 3 enemies in a line, full power each.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1642,6 +1663,11 @@
  "A name needs at least one visible character": {
   "files": [
    "src/ui/menu/tabs/network.js"
+  ]
+ },
+ "A named champion waits behind the crown door: a mini-boss with two telegraphed moves that rages below half health. Fell it and clear its two light waves to open its relic chest, a rare or legendary relic on top of the draft.": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "A new descent in {h} h {m} min": {
@@ -1741,6 +1767,11 @@
  "A private room — friends join with its code": {
   "files": [
    "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "A rare or legendary relic for the run. Choose one.": {
+  "files": [
+   "src/ui/run/relic.js"
   ]
  },
  "A relic helps the whole party for the rest of the run. Pick one of the three; there is no reroll.": {
@@ -3028,6 +3059,12 @@
   ],
   "data": true
  },
+ "Bramble Charge: marks a long lane at the farthest hero and runs it down for 16. Thorn Ring: a warning ring round him bursts for 14 and leaves a slowing thicket. Below half health he rages: faster, and his moves come sooner.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Bramble Maze": {
   "files": [
    "src/data/layouts.js"
@@ -3290,6 +3327,17 @@
  "Challenge": {
   "files": [
    "src/ui/run/challenge.js"
+  ]
+ },
+ "Champion": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Champions": {
+  "files": [
+   "src/ui/story/journal.js"
   ]
  },
  "Change": {
@@ -4982,6 +5030,16 @@
   ],
   "data": true
  },
+ "fell the champion": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
+ "FELL THE CHAMPION": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
  "Fell the Drowned Heron": {
   "files": [
    "src/data/unlocks.js"
@@ -5163,6 +5221,12 @@
  "Flooded millrace and rotting weirs; the water runs wrong.": {
   "files": [
    "src/data/levels.js"
+  ],
+  "data": true
+ },
+ "Floodgate: a warning cone in front of him floods for 18. Undertow: a ring under a hero wells up for 12 and leaves slick water. Below half health he rages.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -8531,6 +8595,12 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "Reaping Sweep: a wide warning cone in front of him for 16. Grave Lance: bone spikes burst down a warning lane for 14. Below half health he rages.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "reapply: one bonus full-strength pulse every 3.0 s": {
   "files": [
    "src/ui/socket/index.js"
@@ -9472,6 +9542,12 @@
  "Settled": {
   "files": [
    "src/sim/interactables.js"
+  ],
+  "data": true
+ },
+ "Shard Hymn: a narrow warning cone, then five crystal shards for 9 each. Discord: a ring round it bursts for 15. It keeps its distance, and below half health it rages.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -10565,6 +10641,12 @@
    "src/ui/run/transit.js"
   ]
  },
+ "The barrow's bailiff, who still collects what the dead are owed.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The bell catches a verse: {verse}.": {
   "files": [
    "src/ui/run/transit.js"
@@ -10585,6 +10667,20 @@
   "files": [
    "src/ui/run/daily.js"
   ]
+ },
+ "The Bone Reeve": {
+  "files": [
+   "src/data/journal.js",
+   "src/sim/champions.js"
+  ],
+  "data": true
+ },
+ "The Briar Knight": {
+  "files": [
+   "src/data/journal.js",
+   "src/sim/champions.js"
+  ],
+  "data": true
  },
  "The browser blocked fullscreen — press Enter or click to try again": {
   "files": [
@@ -10622,6 +10718,16 @@
   ],
   "data": true
  },
+ "THE CHAMPION'S CHEST": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
+ "THE CHEST AWAITS": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
  "The Chorus": {
   "files": [
    "src/data/story.js"
@@ -10636,6 +10742,11 @@
  "the counter answers an attacker already in reach": {
   "files": [
    "src/ui/socket/index.js"
+  ]
+ },
+ "The crown door": {
+  "files": [
+   "src/ui/tutorial/index.js"
   ]
  },
  "THE CURSE LIFTS": {
@@ -11035,6 +11146,13 @@
    "src/ui/run/transit.js"
   ]
  },
+ "The Hollow Choir": {
+  "files": [
+   "src/data/journal.js",
+   "src/sim/champions.js"
+  ],
+  "data": true
+ },
  "The Hollow Heart": {
   "files": [
    "src/data/journal.js",
@@ -11145,6 +11263,12 @@
  "the impact hops once more per copy, within 2.2 u — a ricochet on damage, a chain-heal on a heal.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "The keeper of the mill race, iron-shod and patient as the water.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -11457,6 +11581,13 @@
  "The skeleton of the first ram, walked out of its mound.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "The Sluice Warden": {
+  "files": [
+   "src/data/journal.js",
+   "src/sim/champions.js"
   ],
   "data": true
  },
@@ -11819,6 +11950,12 @@
  "Three verses home. Yet below the Barrow, something is still singing.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Three voices of the Heart sung into one crystal body. It hums even when it is still.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },

@@ -88,6 +88,8 @@ import { createRelicSystem, cursedDiff, dailyOmen } from './relics.js';
 import { isDailyKey, dailySeed, dailyLevelSeed, dailyDepth, DAILY_RULES } from '../data/daily.js';
 // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt and purge rooms.
 import { assignObjectives, isObjectiveMode, OBJECTIVE_RULES } from './objectives.js';
+// CHAMPION ROOMS (docs/CHAMPIONS.md): the crown door and its relic chest.
+import { crownFor, crownSide, championFor, CHAMPION_RULES } from './champions.js';
 // EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
 import { createEncounterSystem, ENCOUNTERS, EVENT_RULES } from './encounters.js';
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): how many powers an elite carries.
@@ -139,7 +141,7 @@ export const RUN = Object.freeze({
 });
 
 // §16 path doors carry ONLY these two glyph channels.
-export const WIN_GLYPH = Object.freeze({ kill_all: '⚔', defend: '⛨', boss: '☠', event: '?', hunt: '➶', purge: '✹' });
+export const WIN_GLYPH = Object.freeze({ kill_all: '⚔', defend: '⛨', boss: '☠', event: '?', hunt: '➶', purge: '✹', champion: '♛' });
 export const REWARD_GLYPH = Object.freeze({ skill: '✦', node: '◈' });
 
 export function createRunSystem({
@@ -287,6 +289,10 @@ export function createRunSystem({
   // ROOM OBJECTIVES: on for campaigns (Endless too), off for the tutorial and
   // the legacy single-level run (the goldens).
   const objectivesOn = () => !!(campaign && campaign.mode === 'campaign' && !campaign.tutorial);
+  // CHAMPION ROOMS: the crown door rides the same gate (campaign, Endless and
+  // the Daily; never the tutorial or the legacy single-level run).
+  const championsOn = () => objectivesOn();
+  let forcedCrown = null; // probe: the next path screen's crown ({ room, side })
   // The quarry is marked for the whole party the moment it breaks cover.
   events.on('quarry_spawn', (ev) => {
     if (active && allySys && typeof allySys.cmd === 'function') allySys.cmd('mark', [ev.id]);
@@ -596,7 +602,7 @@ export function createRunSystem({
     reward = null;
     path = null;
     positionParty();
-    const combatRoom = mode === 'kill_all' || mode === 'defend' || isObjectiveMode(mode);
+    const combatRoom = mode === 'kill_all' || mode === 'defend' || mode === 'champion' || isObjectiveMode(mode);
     const baseDiff = beyondCampaign(depth) ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
     // RELICS: a cursed room rolls its waves with the curse's numbers.
     const roomCurse = combatRoom ? relics.curseFor(n) : null;
@@ -630,9 +636,9 @@ export function createRunSystem({
       layoutId,
       hpMul: combatRoom ? diff.hpMul : null,
       dmgMul: combatRoom ? diff.dmgMul : null,
-      budget: mode === 'kill_all' || isObjectiveMode(mode) ? diff.budget : mode === 'defend' ? diff.defendBudget : null,
+      budget: mode === 'kill_all' || mode === 'champion' || isObjectiveMode(mode) ? diff.budget : mode === 'defend' ? diff.defendBudget : null,
       eliteChance: combatRoom ? diff.eliteChance : null,
-      waveIntervalTicks: mode === 'kill_all' || mode === 'hunt' ? diff.waveIntervalTicks : null,
+      waveIntervalTicks: mode === 'kill_all' || mode === 'hunt' || mode === 'champion' ? diff.waveIntervalTicks : null,
       waystoneHp: mode === 'defend' ? diff.waystoneHp : null,
       bossHp: mode === 'boss' ? diff.bossHp : null,
       bossDmgMul: mode === 'boss' ? diff.bossDmgMul : null,
@@ -717,6 +723,13 @@ export function createRunSystem({
     // RELICS: clear procs (Grave Coin, Hearthstone), the curse lifts, and a
     // relic pick is owed after room 1 and after a cursed room.
     relics.onRoomCleared(roomIndex, { forfeited: !!ev.softFailed, gainGlint, boss: roomIndex === RUN.bossRoom, objective: ev.objective ?? null, won: !!ev.won });
+    // CHAMPION ROOMS: the champion's chest opens; its greater relic pick
+    // comes after the room's draft (the crown door is never cursed, so no
+    // other pick is owed here).
+    if (ev.champion && !ev.softFailed && relics.owe(roomIndex, CHAMPION_RULES.chestSource)) {
+      const at = ev.chest ?? { x: 0, z: 0 };
+      events.emit(tick, 'champion_chest', { room: roomIndex, champion: ev.champion, x: at.x, z: at.z });
+    }
 
     if (roomIndex === RUN.bossRoom) {
       onLevelCleared(tick);
@@ -1000,6 +1013,15 @@ export function createRunSystem({
     // EVENT ROOMS: maybe a "?" door, never the cursed one (keys present only then).
     const ed = encounters.rollDoor(nextRoom, dc ? dc.side : null, encCtx());
     if (ed) options[ed.side] = { side: ed.side, win: 'event', reward: 'event', event: true, encounter: ed.id };
+    // CHAMPION ROOMS: the level's crown door (never the cursed one; over the
+    // event door when the other is cursed). Its reward stays the door's own.
+    const crown = championsOn() ? (forcedCrown ?? crownFor(frame.seed, campaign.index)) : null;
+    forcedCrown = null;
+    if (crown && crown.room === nextRoom) {
+      const side = crownSide(crown.side, dc ? dc.side : null, ed ? ed.side : null);
+      const keep = options[side].event ? { side, win: 'champion', reward: frame.sides[roomIndex - 1] === 0 ? (side === 0 ? 'skill' : 'node') : side === 0 ? 'node' : 'skill' } : { ...options[side], win: 'champion' };
+      options[side] = { ...keep, champion: championFor(act).id };
+    }
     path = {
       nextRoom,
       options,
@@ -1011,7 +1033,7 @@ export function createRunSystem({
     events.emit(getTick(), 'path_offer', {
       room: roomIndex,
       nextRoom,
-      options: options.map((o) => ({ side: o.side, win: o.win, reward: o.reward, ...(o.curse ? { curse: o.curse } : {}), ...(o.major ? { major: true } : {}), ...(o.event ? { event: true } : {}) })),
+      options: options.map((o) => ({ side: o.side, win: o.win, reward: o.reward, ...(o.curse ? { curse: o.curse } : {}), ...(o.major ? { major: true } : {}), ...(o.event ? { event: true } : {}), ...(o.champion ? { champion: o.champion } : {}) })),
       freeSkillSlots: path.freeSkillSlots,
     });
   }
@@ -1053,6 +1075,12 @@ export function createRunSystem({
       frame.defendAt = frame.defendAt.filter((r) => r !== next);
       encounters.arm(next, opt.encounter);
     }
+    // CHAMPION ROOMS: the crown door turns the next room into the champion's.
+    if (opt.champion) {
+      frame.modes[next - 1] = 'champion';
+      frame.defendAt = frame.defendAt.filter((r) => r !== next);
+      events.emit(getTick(), 'crown_door_taken', { room: next });
+    }
     path = null;
     // TUTORIAL: the door is the last lesson — back to camp.
     if (tutorialOn()) {
@@ -1060,7 +1088,7 @@ export function createRunSystem({
       return { nextRoom: next, reward: opt.reward, win: opt.win, tutorial: 'done' };
     }
     beginFade(next);
-    return { nextRoom: next, reward: opt.reward, win: opt.win, ...(opt.curse ? { curse: opt.curse } : {}), ...(opt.major ? { major: true } : {}), ...(opt.event ? { event: true } : {}) };
+    return { nextRoom: next, reward: opt.reward, win: opt.win, ...(opt.curse ? { curse: opt.curse } : {}), ...(opt.major ? { major: true } : {}), ...(opt.event ? { event: true } : {}), ...(opt.champion ? { champion: opt.champion } : {}) };
   }
 
   // ------------------------------------------------------- event rooms --
@@ -2483,6 +2511,25 @@ export function createRunSystem({
         frame.modes[n - 1] = m;
         return [...frame.modes];
       }
+      // ------------------------------------------------- CHAMPION ROOMS --
+      case 'championRoom': {
+        // ('championRoom', room) — a later combat room of this level becomes
+        // the champion's room (probes, screenshots, the VFX lab).
+        const n = Number(args[0]);
+        if (!active || !frame || !championsOn()) return null;
+        if (!(Number.isInteger(n) && n > roomIndex && n >= 2 && n <= 6)) return null;
+        frame.modes[n - 1] = 'champion';
+        frame.defendAt = frame.defendAt.filter((r) => r !== n);
+        return [...frame.modes];
+      }
+      case 'crownDoor':
+        // ('crownDoor'[, side]) — the next path screen carries the crown door.
+        if (!active || !championsOn()) return null;
+        forcedCrown = { room: roomIndex + 1, side: args[0] === 1 ? 1 : 0 };
+        return { ...forcedCrown };
+      case 'crownOf':
+        // The crown this level rolled: { room, side }.
+        return active && frame && championsOn() ? crownFor(frame.seed, campaign.index) : null;
       case 'relicDoor':
         // ('relicDoor', curseId[, side]) — the next path screen's cursed door.
         return relics.forceDoor(args[0], args[1] ?? 0);
@@ -2549,7 +2596,7 @@ export function createRunSystem({
         // — walking to room 7 or room 8 both land on the deterministic 72.
         const combatBefore = frame.modes
           .slice(0, n - 1)
-          .filter((m) => m === 'kill_all' || m === 'defend' || m === 'boss' || isObjectiveMode(m)).length;
+          .filter((m) => m === 'kill_all' || m === 'defend' || m === 'boss' || m === 'champion' || isObjectiveMode(m)).length;
         while (clearedRooms < combatBefore) {
           clearedRooms += 1;
           gainGlint(RUN.stipend, 'skip_stipend');

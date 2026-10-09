@@ -136,6 +136,10 @@ export function createRelicScreen({ run }) {
     } else if (o.source === 'curse' && o.curse) {
       titleEl.textContent = t('THE CURSE LIFTS');
       subEl.innerHTML = `<span class="rl-lift">${curseIconHtml(20)} ${esc(t('{name} is broken.', { name: t(o.curse.name) }))}</span><span>${esc(t('Choose what it leaves behind.'))}</span>`;
+    } else if (o.source === 'champion') {
+      // CHAMPION ROOMS (docs/CHAMPIONS.md): the felled champion's chest.
+      titleEl.textContent = t("THE CHAMPION'S CHEST");
+      subEl.textContent = t('A rare or legendary relic for the run. Choose one.');
     } else {
       titleEl.textContent = t('A RELIC ON THE ROAD');
       subEl.textContent = t('Relics last the whole run. Choose one.');

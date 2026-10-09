@@ -80,6 +80,13 @@ export const ENCOUNTER_CSS = `
     font-size: 17px; color: ${PALETTE.bone}; text-align: center;
   }
   .rn-path .ev-note b { color: ${PALETTE.paleGold}; }
+  /* CHAMPION ROOMS: the crown door, gold-rimmed with a crown that breathes;
+     it keeps its reward glyph (the draft still follows the room). */
+  .rn-door.ch-door { border-color: ${PALETTE.paleGold}; background: radial-gradient(circle at 50% 30%, #5A4A2A 0%, #2A2418 70%); }
+  .rn-door.ch-door.rn-focus { box-shadow: inset 0 0 0 2px ${PALETTE.voidCharcoal}, inset 0 -18px 34px #00000066, 0 0 34px ${PALETTE.paleGold}99; }
+  .rn-door.ch-door .rn-gwin { color: ${PALETTE.paleGold}; font-size: 76px; text-shadow: 0 0 20px ${PALETTE.paleGold}AA; animation: ch-crown 2.4s ease-in-out infinite; }
+  @keyframes ch-crown { 0%, 100% { text-shadow: 0 0 14px ${PALETTE.paleGold}77; } 50% { text-shadow: 0 0 28px ${PALETTE.paleGold}EE; } }
+  .rn-path .ch-note { border-color: ${PALETTE.paleGold}; }
 
   /* The plate over the event room while the party walks up. */
   #ev-plate {

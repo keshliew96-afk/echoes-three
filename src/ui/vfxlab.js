@@ -409,6 +409,20 @@ export function mountVfxLab() {
     say('two elites with two powers each');
   }, 'Molten + Hasted crab, Frozen + Warded boar');
 
+  // ------------------------------------------------------------ champions --
+  // CHAMPION ROOMS (docs/CHAMPIONS.md): each act's champion spawned in front
+  // of the party in its own land (crown, sigil, both moves, the rage below
+  // half health and its fall all play live).
+  const champ = section('Champions');
+  for (const [act, kind, name] of [[1, 'briar_knight', 'Briar Knight'], [2, 'sluice_warden', 'Sluice Warden'], [3, 'bone_reeve', 'Bone Reeve'], [4, 'hollow_choir', 'Hollow Choir']]) {
+    button(champ, name, async () => {
+      await ensureCombat(act);
+      const f = front();
+      X().cmd('spawn', kind, f.x, f.z - 3.6);
+      say(`the ${name}: two telegraphed moves, rages below half health`);
+    }, `the ${name} in its own land`);
+  }
+
   // --------------------------------------------------------------- floors --
   // Slick floor (docs/SLICK_FLOOR.md): a patch laid where the party stands,
   // with two boars charging across it so the enemy slide reads too.
@@ -476,6 +490,16 @@ export function mountVfxLab() {
     ['Sound, objectives', [
       ['Hunt horn', 'ob_horn'], ['Winded', 'ob_winded'], ['Escape', 'ob_escape'], ['Purge', 'ob_purge'],
       ['Nest', 'ob_nest'], ['Nest births', 'ob_pulse'], ['Nest bursts', 'ob_burst'], ['Rooted', 'ob_rooted'], ['Won', 'ob_won'],
+    ]],
+    // CHAMPION ROOMS (src/audio/championcues.js).
+    ['Sound, champion stings', [
+      ['Briar Knight', 'ch_briar_knight_sting'], ['Sluice Warden', 'ch_sluice_warden_sting'], ['Bone Reeve', 'ch_bone_reeve_sting'], ['Hollow Choir', 'ch_hollow_choir_sting'],
+      ['Rage', 'ch_briar_knight_rage'], ['Fall', 'ch_fall'], ['Chest', 'ch_chest'], ['Crown door', 'ch_crown'],
+    ]],
+    ['Sound, champion moves', [
+      ['Tell', 'ch_tell'], ['Bramble Charge', 'ch_bramble_charge'], ['Charge stops', 'ch_charge_stop'], ['Thorn Ring', 'ch_thorn_ring'],
+      ['Floodgate', 'ch_floodgate'], ['Undertow', 'ch_undertow'], ['Reaping Sweep', 'ch_reaping_sweep'], ['Grave Lance', 'ch_grave_lance'],
+      ['Shard Hymn', 'ch_shard_hymn'], ['Discord', 'ch_discord'],
     ]],
     // SHOP REFRESH (src/audio/cues.js): the peddler's riffle beside the buy.
     ['Sound, shop', [['Buy', 'purchase'], ['Refresh', 'shop_refresh'], ['Too dear', 'deny']]],

@@ -135,7 +135,7 @@ const I = {
 };
 
 // notes: [dt, midi, instr, velocity, len]; pitch scales every note (bake).
-function phrase(k, t, d, p, notes) {
+export function phrase(k, t, d, p, notes) {
   let end = t;
   for (const [dt, m, ins, v, len = 0.3] of notes) end = Math.max(end, I[ins](k, d, t + dt, H(p, m), v, len));
   return end;
