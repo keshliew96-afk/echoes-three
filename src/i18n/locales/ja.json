@@ -2378,5 +2378,21 @@
  "THE VAULT": "宝物庫",
  "The vault door": "宝物庫の扉",
  "THE VAULT'S CHEST": "宝物庫の宝箱",
- "VAULT KEY": "宝物庫の鍵"
+ "VAULT KEY": "宝物庫の鍵",
+ "Shriek Owl": "金切りフクロウ",
+ "Vine Lasher": "つる鞭",
+ "Mire Leech": "泥沼ヒル",
+ "Drowned Miller": "溺れた粉屋",
+ "Screamer": "絶叫",
+ "Puller": "引き寄せ",
+ "Latcher": "吸着",
+ "Bruiser": "豪腕",
+ "It hunted mice in the Hollow Wood. Now it hunts whatever still has a heartbeat.": "かつてはうつろの森でネズミを狩っていた。今は心臓が動くものなら何でも狩る。",
+ "Flies high and keeps its distance. It hangs still and marks a long, narrow warning cone, then shrieks for 8 and slows every hero in it. Sidestep, do not back away.": "高く飛んで距離を保つ。空中で止まって細長い予兆の扇を示し、金切り声で中のヒーロー全員に8与えて鈍足にする。後ろではなく横へよけよう。",
+ "A bramble pod that learned to reach. It drags its meals home.": "手を伸ばすことを覚えたイバラの莢。獲物を巣まで引きずっていく。",
+ "Coils a whip-vine and marks a warning lane up to 5 u long. The lash hits for 9 and yanks every hero in it toward the pod, into whatever lies between.": "つるの鞭を巻き上げ、最大5 uの予兆の帯を示す。鞭は9を与え、帯の中のヒーロー全員を莢のほうへ、間にあるものごと引き寄せる。",
+ "Fat with millrace water and something darker, it never lets go willingly.": "水路の水と何か暗いもので膨れている。自分から離れることはない。",
+ "Leaps down a short warning lane. A hero it touches is bitten for 5, slowed and drained for 3 twice a second while it heals. Dodge, or hit it (an ally can too), to shake it off.": "短い予兆の帯に沿って跳びかかる。触れたヒーローに噛みついて5、鈍足にし、自分を回復しながら毎秒2回3ずつ吸う。回避するか、攻撃して（仲間の攻撃でもよい）振り払おう。",
+ "The last miller of the Sunken Mill, still at work after the water took him.": "沈んだ水車小屋の最後の粉屋。水にのまれた後も、まだ働いている。",
+ "Plods straight at you. Close in, he whirls his millstone in a warning ring for 13: walk out of it. At range he throws a flour sack at a warning ring for 10 that leaves slowing paste.": "まっすぐこちらへ歩いてくる。近くでは石臼を振り回し、予兆の輪で13。輪から出よう。離れると小麦粉の袋を予兆の輪へ投げて10、鈍足にする練り粉を残す。"
 }

@@ -2378,5 +2378,21 @@
  "THE VAULT": "보물고",
  "The vault door": "보물고 문",
  "THE VAULT'S CHEST": "보물고의 상자",
- "VAULT KEY": "보물고 열쇠"
+ "VAULT KEY": "보물고 열쇠",
+ "Shriek Owl": "비명 올빼미",
+ "Vine Lasher": "덩굴 채찍꾼",
+ "Mire Leech": "진창 거머리",
+ "Drowned Miller": "익사한 방앗간지기",
+ "Screamer": "비명",
+ "Puller": "끌어당김",
+ "Latcher": "흡착",
+ "Bruiser": "난폭꾼",
+ "It hunted mice in the Hollow Wood. Now it hunts whatever still has a heartbeat.": "텅 빈 숲에서 쥐를 사냥하던 올빼미. 이제는 심장이 뛰는 것이라면 무엇이든 사냥합니다.",
+ "Flies high and keeps its distance. It hangs still and marks a long, narrow warning cone, then shrieks for 8 and slows every hero in it. Sidestep, do not back away.": "높이 날며 거리를 둡니다. 공중에 멈춰 길고 좁은 경고 부채꼴을 표시한 뒤, 비명을 질러 그 안의 모든 영웅에게 피해 8을 주고 느리게 만듭니다. 뒤가 아니라 옆으로 피하세요.",
+ "A bramble pod that learned to reach. It drags its meals home.": "손을 뻗는 법을 배운 가시덤불 꼬투리. 먹이를 집까지 끌고 갑니다.",
+ "Coils a whip-vine and marks a warning lane up to 5 u long. The lash hits for 9 and yanks every hero in it toward the pod, into whatever lies between.": "덩굴 채찍을 감아올리고 최대 5u 길이의 경고 띠를 표시합니다. 채찍질은 피해 9를 주고, 띠 안의 모든 영웅을 사이에 있는 것과 함께 꼬투리 쪽으로 끌어당깁니다.",
+ "Fat with millrace water and something darker, it never lets go willingly.": "물방아 수로의 물과 더 어두운 무언가로 잔뜩 부풀었습니다. 스스로 떨어지는 법이 없습니다.",
+ "Leaps down a short warning lane. A hero it touches is bitten for 5, slowed and drained for 3 twice a second while it heals. Dodge, or hit it (an ally can too), to shake it off.": "짧은 경고 띠를 따라 도약합니다. 닿은 영웅을 물어 피해 5를 주고 느리게 만들며, 자신을 치유하면서 1초에 두 번 3씩 빨아들입니다. 회피하거나 공격해서(아군도 가능) 떼어내세요.",
+ "The last miller of the Sunken Mill, still at work after the water took him.": "가라앉은 방앗간의 마지막 방앗간지기. 물에 휩쓸린 뒤에도 여전히 일하고 있습니다.",
+ "Plods straight at you. Close in, he whirls his millstone in a warning ring for 13: walk out of it. At range he throws a flour sack at a warning ring for 10 that leaves slowing paste.": "곧장 당신에게 걸어옵니다. 가까이 있으면 맷돌을 휘둘러 경고 원에 피해 13을 줍니다. 원 밖으로 나가세요. 멀리 있으면 밀가루 자루를 경고 원에 던져 피해 10을 주고 느려지는 반죽을 남깁니다."
 }

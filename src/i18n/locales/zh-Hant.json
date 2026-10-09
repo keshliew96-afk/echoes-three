@@ -2378,5 +2378,21 @@
  "THE VAULT": "寶庫",
  "The vault door": "寶庫之門",
  "THE VAULT'S CHEST": "寶庫的寶箱",
- "VAULT KEY": "寶庫鑰匙"
+ "VAULT KEY": "寶庫鑰匙",
+ "Shriek Owl": "尖嘯貓頭鷹",
+ "Vine Lasher": "藤鞭莢",
+ "Mire Leech": "泥沼水蛭",
+ "Drowned Miller": "溺亡磨坊主",
+ "Screamer": "尖嘯",
+ "Puller": "拉拽",
+ "Latcher": "吸附",
+ "Bruiser": "蠻力",
+ "It hunted mice in the Hollow Wood. Now it hunts whatever still has a heartbeat.": "它曾在空心森林裡捕鼠。如今，它捕獵一切心臟還在跳動的東西。",
+ "Flies high and keeps its distance. It hangs still and marks a long, narrow warning cone, then shrieks for 8 and slows every hero in it. Sidestep, do not back away.": "高飛並保持距離。它在空中懸停，標出一個狹長的預警扇形，隨後尖嘯，對扇形內的每位英雄造成 8 點傷害並使其減速。向側面閃避，不要後退。",
+ "A bramble pod that learned to reach. It drags its meals home.": "一枚學會了伸手的荊棘莢。它會把獵物拖回家。",
+ "Coils a whip-vine and marks a warning lane up to 5 u long. The lash hits for 9 and yanks every hero in it toward the pod, into whatever lies between.": "捲起藤鞭並標出一條最長 5 u 的預警帶。鞭擊造成 9 點傷害，並把帶內的每位英雄拖向莢果，途中經過什麼就拖過什麼。",
+ "Fat with millrace water and something darker, it never lets go willingly.": "灌滿了水渠的水和某種更黑暗的東西，它絕不會主動鬆口。",
+ "Leaps down a short warning lane. A hero it touches is bitten for 5, slowed and drained for 3 twice a second while it heals. Dodge, or hit it (an ally can too), to shake it off.": "沿一條短預警帶撲出。被它碰到的英雄會被咬 5 點並減速，它每秒吸取兩次、每次 3 點，同時治療自己。閃避或攻擊它（隊友也可以）就能把它甩掉。",
+ "The last miller of the Sunken Mill, still at work after the water took him.": "沉沒磨坊的最後一位磨坊主，被水吞沒之後仍在幹活。",
+ "Plods straight at you. Close in, he whirls his millstone in a warning ring for 13: walk out of it. At range he throws a flour sack at a warning ring for 10 that leaves slowing paste.": "徑直朝你走來。近身時他掄起磨盤，在預警圈內造成 13 點傷害：走出圈外。遠處時他向預警圈扔出麵粉袋，造成 10 點傷害並留下減速的麵糊。"
 }
