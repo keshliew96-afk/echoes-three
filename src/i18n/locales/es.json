@@ -2480,5 +2480,21 @@
  "THE VAULT": "LA CÁMARA DEL TESORO",
  "The vault door": "La puerta de la cámara",
  "THE VAULT'S CHEST": "EL COFRE DE LA CÁMARA",
- "VAULT KEY": "LLAVE DE LA CÁMARA"
+ "VAULT KEY": "LLAVE DE LA CÁMARA",
+ "Ash Keener": "Plañidera de Ceniza",
+ "Mourner": "Plañidera",
+ "It mourns every barrow it passes, and it wants company in its grief.": "Llora cada túmulo por el que pasa, y quiere compañía en su duelo.",
+ "Keeps a few steps back, then wails down a long, narrow warning cone for 10. Whoever the wail finds is slowed by 40% for 2 s. Step out of the cone.": "Se mantiene a unos pasos y luego lanza un lamento por un cono de aviso largo y estrecho por 10. Quien alcance el lamento queda ralentizado un 40% durante 2 s. Sal del cono.",
+ "Barrow Sexton": "Sepulturero del Túmulo",
+ "Trapper": "Trampero",
+ "The barrow still has a gravedigger. He has stopped waiting for the dead to come to him.": "El túmulo aún tiene sepulturero. Ya no espera a que los muertos vengan a él.",
+ "Never strikes in person. It kneels and buries bone snares on the floor, three at most. Step on one and its jaws rise in a warning ring, then snap for 11 and hold you with a 60% slow. Step off before they close. Kill it and its snares crumble.": "Nunca ataca en persona. Se arrodilla y entierra trampas de hueso en el suelo, tres como máximo. Pisa una y sus fauces se alzan en un anillo de aviso, luego se cierran por 11 y te retienen con un 60% de ralentización. Apártate antes de que se cierren. Mátalo y sus trampas se desmoronan.",
+ "Heart Bloom": "Flor del Corazón",
+ "Pulse": "Pulso",
+ "A flower of violet crystal that grows wherever the Heart beats closest to the floor.": "Una flor de cristal violeta que crece allí donde el Corazón late más cerca del suelo.",
+ "Creeps in on its roots, then takes root and never moves again. On every second heartbeat it opens in a warning ring round itself and snaps shut for 12. Every bloom in the room beats together.": "Se arrastra sobre sus raíces, luego echa raíces y no vuelve a moverse. En cada segundo latido se abre en un anillo de aviso a su alrededor y se cierra por 12. Todas las flores de la sala laten a la vez.",
+ "Vein Siphon": "Sifón de Vena",
+ "Drinker": "Bebedor",
+ "A sac of the Heart's blood that never has enough of it.": "Un saco de la sangre del Corazón que nunca tiene suficiente.",
+ "Lashes a tendril down a warning lane for 5 and latches onto the first hero it finds, then drinks 2 every half second and heals by as much. Walk well away from it to snap the tether, or kill it.": "Lanza un tentáculo por un carril de aviso por 5 y se aferra al primer héroe que encuentra, luego bebe 2 cada medio segundo y se cura lo mismo. Aléjate bastante para romper el vínculo, o mátalo."
 }

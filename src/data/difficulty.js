@@ -171,6 +171,11 @@ export const THREAT = Object.freeze({
   lancer: 1.6,
   geode: 3.2,
   censer: 1.5,
+  // New enemies, Barrow and Heart (docs/NEW_ENEMIES_BARROW_HEART.md).
+  keener: 1.4,
+  sexton: 1.3,
+  bloom: 1.5,
+  siphon: 1.5,
 });
 export const ELITE_COST = 1.8;
 export const ELITE_MUL = Object.freeze({ hp: 1.8, dmg: 1.25, scale: 1.2 });
