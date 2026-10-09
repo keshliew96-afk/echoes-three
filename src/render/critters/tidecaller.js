@@ -31,7 +31,7 @@ export function buildTidecaller(rig, trackAccent) {
   const fur = mix(PALETTE.bruiseUmber, PALETTE.paleGold, 0.16);
   const furHex = fur.getHex();
   const furDark = mix(fur, PALETTE.voidCharcoal, 0.3).getHex();
-  const cream = mix(PALETTE.bone, PALETTE.parchment, 0.45).getHex();
+  const cream = PALETTE.bone; // Bone stays under the bloom threshold (Parchment glared)
   const reed = mix(PALETTE.bruiseUmber, PALETTE.paleGold, 0.5).getHex();
 
   const torso = new Group();
@@ -219,7 +219,7 @@ export function buildTidecaller(rig, trackAccent) {
   for (const side of [-1, 1]) {
     const foot = mitten(furDark, 0.064);
     foot.position.set(side * 0.11, 0.046, 0.21);
-    foot.scale.set(1.15, 0.7, 1.15);
+    foot.scale.multiply(new Vector3(1.15, 0.7, 1.15));
     rig.add(foot);
     feet.push(foot);
   }

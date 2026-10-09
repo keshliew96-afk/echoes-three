@@ -1197,7 +1197,7 @@ export function createCampScene(stage, toggles, ctx) {
       bookends: bookends.debug(),
       colliders: colliders.length,
       roadViolations: roadViolations.length,
-      seats,
+      seats: seatsNow(),
       seatDrift: seatDrift(),
       prompt: promptAudit(),
       // CAMPAIGN (PLAN §12.7): the Level Select's map table + its prompt.
