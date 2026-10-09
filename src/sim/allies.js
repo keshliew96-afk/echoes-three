@@ -787,12 +787,15 @@ export function createAllySystem({
 
   // Act IV (docs/ACT_IV.md): a Vein Lancer's lance lane covering this seat —
   // every seat steps sideways out of it (the near side, inside the leash),
-  // or null when no lance covers it.
+  // or null when no lance covers it. AUTOPILOT AND ENDLESS (v0.5.260): a
+  // boss's charge or sweep lane too (the Thornmother's Briar Charge was most
+  // of the carried party's Level I deaths).
   function laneGoal(a, anchor, LR) {
     let best = null;
     for (const e of registry.all()) {
       const t = e.telegraph;
-      if (!t || !t.lance || e.faction !== 'hostile') continue;
+      if (!t || e.faction !== 'hostile') continue;
+      if (!(t.lance || (isBossBody(e) && t.kind === 'lane' && Number.isFinite(t.fromX) && Number.isFinite(t.length)))) continue;
       const px = a.x - t.fromX;
       const pz = a.z - t.fromZ;
       const along = px * t.dirX + pz * t.dirZ;
@@ -814,6 +817,44 @@ export function createAllySystem({
         const z = a.z + nz * off;
         if (Math.hypot(x - anchor.x, z - anchor.z) <= LR) return { x, z };
       }
+    }
+    return null;
+  }
+
+  const isBossBody = (e) => e.boss === true || e.kind === 'stag';
+
+  // AUTOPILOT AND ENDLESS (v0.5.260): a boss's ring telegraph (the Stag's
+  // Antler Quake, a boss slam) covering this seat: every seat steps straight
+  // out of it (or up to 90 degrees off, inside the leash), or null.
+  function bossRingGoal(a, anchor, LR) {
+    let hit = null;
+    for (const e of registry.all()) {
+      const t = e.telegraph;
+      if (!t || e.faction !== 'hostile' || !isBossBody(e)) continue;
+      if ((t.kind ?? 'ring') !== 'ring' || !Number.isFinite(t.radius)) continue;
+      const cx = t.x ?? e.x;
+      const cz = t.z ?? e.z;
+      const R = t.radius + a.radius + AI_EVADE.margin;
+      if (Math.hypot(a.x - cx, a.z - cz) >= R) continue;
+      if (hit && hit.t.resolveTick <= t.resolveTick) continue;
+      hit = { t, cx, cz, R };
+    }
+    if (!hit) return null;
+    const d = Math.hypot(a.x - hit.cx, a.z - hit.cz);
+    let ux = d > 1e-4 ? (a.x - hit.cx) / d : anchor.x - hit.cx;
+    let uz = d > 1e-4 ? (a.z - hit.cz) / d : anchor.z - hit.cz;
+    const ul = Math.hypot(ux, uz) || 1;
+    ux /= ul;
+    uz /= ul;
+    for (const deg of [0, 45, -45, 90, -90]) {
+      const c = Math.cos((deg * Math.PI) / 180);
+      const sn = Math.sin((deg * Math.PI) / 180);
+      const vx = ux * c - uz * sn;
+      const vz = ux * sn + uz * c;
+      const t = solveExit(a.x - hit.cx, a.z - hit.cz, vx, vz, hit.R + AI_EVADE.exit);
+      const x = a.x + vx * t;
+      const z = a.z + vz * t;
+      if (Math.hypot(x - anchor.x, z - anchor.z) <= LR) return { x, z };
     }
     return null;
   }
@@ -962,7 +1003,7 @@ export function createAllySystem({
       // the stand-off spot; it walks out, still aiming. Melee seats hold their
       // ground (they stay on the enemies; Toad rooms otherwise dragged on).
       const ev = engageOn()
-        ? laneGoal(a, anchor, LR) ?? (!isMelee(a) ? evadeGoal(a, anchor, LR) : affixGlobs() ? evadeGoal(a, anchor, LR, true) : null)
+        ? laneGoal(a, anchor, LR) ?? bossRingGoal(a, anchor, LR) ?? (!isMelee(a) ? evadeGoal(a, anchor, LR) : affixGlobs() ? evadeGoal(a, anchor, LR, true) : null)
         : null;
       if (ev) {
         gx = ev.x;
