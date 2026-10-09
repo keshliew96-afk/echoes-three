@@ -27,6 +27,35 @@ Profile `records` gain three keys:
 
 An endless high-score entry carries `depth`. The run summary's `campaign` carries `endless`, `depth`, `depthsCleared` and `won`, and `recordRun` returns `endless: { depth, prevBestDepth, newDepthRecord }`. The sim emits `campaign_won` when a descent clears Depth 4; `level_clear`, `level_transit` and `level_start` carry `depth` on a descent. Levels played past Depth 4 score at act multiplier 2.5 + 0.5 per depth beyond 4 and stay out of the per-level records (deepest room, fastest clear).
 
+## Measured after the Depth 5 rule and the stronger autopilot (v0.5.260, seeds 1-32, standard challenge)
+
+Autopilot and Endless (docs/AUTOPILOT.md) re-measured the curve on gauntlet 8990030 (v0.5.259: elites' second power from Depth 5, champions, keys and vaults, both 10-09 enemy batches, the party lineup) and again on this slice's bot. No Endless constant changed.
+
+`node tools/endless-run.mjs --seeds 1-32 --max-depth 15 --jobs 2` (and `--root <tree>` for the v0.5.259 column):
+
+| depth | biome | v0.5.259 reached / cleared | v0.5.260 reached / cleared | downs per run (v0.5.260) |
+| --- | --- | --- | --- | --- |
+| 1 | Wood | 32 / 26 | 32 / 29 | 3.1 |
+| 2 | Mill | 26 / 24 | 29 / 28 | 2.4 |
+| 3 | Barrow | 24 / 19 | 28 / 18 | 4.6 |
+| 4 | Heart | 19 / 14 | 18 / 16 | 1.5 |
+| 5 | Wood | 14 / 14 | 16 / 16 | 0.4 |
+| 6 | Mill | 14 / 14 | 16 / 16 | 0.4 |
+| 7 | Barrow | 14 / 13 | 16 / 15 | 1.4 |
+| 8 | Heart | 13 / 10 | 15 / 10 | 4.1 |
+| 9 | Wood | 10 / 10 | 10 / 8 | 2.0 |
+| 10 | Mill | 10 / 9 | 8 / 6 | 3.5 |
+| 11 | Barrow | 9 / 4 | 6 / 2 | 8.3 |
+| 12 | Heart | 4 / 1 | 2 / 1 | 7.5 |
+| 13 | Wood | 1 / 1 | 1 / 0 | 7 |
+| 14 | Mill | 1 / 0 | | |
+
+Median depths cleared: 3 before, 6 after; deepest 13 before, 12 after; no stuck runs either way.
+
+- **Depths 1-4 now are the campaign.** With the second elite power held to Depth 5, the v0.5.259 column matches the plain campaign run number for number (Level I 26 of 32 both ways), as the rule intended. The 18-of-32 Depth 1 in the table below was the old two-power rule.
+- **The stronger bot moves the median, not the deep end.** More descents get through the campaign (16 against 14 reach Depth 5), so the median goes from 3 to 6, but past Depth 8 the curve is the same or a little lower: the depth steps still bite where they did, with the Heart at Depth 8 and the Barrow at Depth 11 as the walls. The boss-telegraph sidestep did not make the descent "too easy" the way melee glob dodging did in the balance pass.
+- **Down share by seat** (Healer / Tank / Swordsman / Archer): depths 1-4 6 / 20 / 53 / 20 %, Depth 5 on 8 / 27 / 35 / 31 % (v0.5.259: 5 / 19 / 46 / 30 and 7 / 24 / 40 / 30). The Archer stays near a third past the campaign.
+
 ## Measured with four lands (v0.5.246, headless autopilot, seeds 1-32, standard challenge)
 
 Small fixes 2 re-measured the curve on gauntlet 0070586 (Act IV, elite affixes, class skills and the third relic batch all in). The rules in `src/data/endless.js` were already re-keyed for four lands when Act IV landed: `CYCLE` is read from `ENDLESS_ACTS` (4), `k = depth - 5`, `BOSS_HOME_DMG` covers acts 1 to 4, mixing starts at Depth 5. No constant changed.
