@@ -57,12 +57,23 @@ are unchanged.
   holds in the run's lineup. A class that stayed at camp falls back to the
   Healer's seat.
 
-## Not yet (slice 2, with the Tidecaller)
+## Slice 2 (v0.5.261, docs/TIDECALLER.md)
 
-- The lineup choice itself, in camp and in the co-op lobby ("Who stays at
-  camp?").
-- A fifth class in `LINEUP_CLASSES`.
-- The bench critter standing at the camp fire.
+- `LINEUP_CLASSES` now holds the Tidecaller too. Four seats, five classes:
+  one of Tank, Swordsman and Archer stays at camp (`BENCH_CLASSES`).
+- The choice is the `gameplay.bench` setting, made on the class picker's
+  "Who stays at camp?" view or from the camp's Lineup chip.
+  `lineupFromSettings` (`app/playclass.js`) turns it into a lineup with
+  `plannedLineup` (`data/lineup.js`): Rill takes the benched class's seat.
+  Playing her with no bench chosen benches the Archer. The class you play is
+  never benched. With no bench and another class played, the lineup is the
+  default four, so the goldens do not move.
+- Solo in camp, the camp (`scenes/camp.js` `syncCampLineup`) sends the
+  `campLineup` command so the ally rigs at the fire match the plan. The
+  benched critter idles at its own camp spot. The command is refused during
+  a run.
+- Co-op: the host's settings drive the lineup and guests mirror it as
+  before. The lobby has no lineup control yet.
 
 ## Checks
 

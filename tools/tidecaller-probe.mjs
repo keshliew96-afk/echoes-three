@@ -251,10 +251,11 @@ let saved = null;
 // ----------------------------------------------------------- 5. the shop --
 {
   const W = saved;
-  const sh = cmd(W, 'partyShelves') || cmd(W, 'shopView') || null;
   const pools = P(W).pools(3);
+  const stock = typeof P(W).draft === 'function' ? P(W).draft(3).shopStock() : [];
+  const nodePool = C.nodePoolOf('tidecaller');
+  check(stock.length > 0 && stock.every((c) => nodePool.includes(c.node)), `her shop shelf stocks her node pool (${stock.map((c) => c.node).join(',')})`);
   check(pools.skill.every((id) => SKILLS[id].cls === 'tidecaller'), `her seat's skill pool holds only her skills (${pools.skill.join(',') || 'all owned'})`);
-  void sh;
 }
 
 console.log(`\n${passes.length}/${passes.length + fails.length} checks passed`);
