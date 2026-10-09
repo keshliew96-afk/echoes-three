@@ -71,7 +71,8 @@ import { buildMapTable, createTablePrompt, withinTable, MAP_TABLE } from '../cam
 import { FIRST_LEVEL, isLevel, lockLine } from '../data/campaign.js';
 import { levelFor } from '../data/levels.js';
 import { endlessUnlockedFrom } from '../data/endless.js';
-import { CLASS_OF_SEAT, CLASS_NAME } from '../data/classes.js';
+import { CLASS_NAME } from '../data/classes.js';
+import { classOfSeat } from '../data/lineup.js';
 import { bindings, PAD } from '../core/bindings.js';
 import { createCampNpcs } from './campnpcs.js';
 import { cap, padCap, usingPad, onHintsChange } from '../app/controls.js';
@@ -483,7 +484,7 @@ export function createCampScene(stage, toggles, ctx) {
     // Snap (not slide) the follow rig: a huge dt drives the exponential to 1.
     // CLASS SELECT: onto the chosen class's own spot.
     const nv = world.netView;
-    const own = nv && nv.seat > 0 ? CAMP_SPOTS[CLASS_OF_SEAT[nv.seat]] : null;
+    const own = nv && nv.seat > 0 ? CAMP_SPOTS[classOfSeat(nv.seat)] : null;
     followRig.update(5, (own || CAMP_SPOTS.healer).x, (own || CAMP_SPOTS.healer).z, null);
   }
 
@@ -809,7 +810,7 @@ export function createCampScene(stage, toggles, ctx) {
   }
   function playingClass() {
     const nv = world.netView;
-    return CLASS_OF_SEAT[nv && nv.seat > 0 ? nv.seat : 0];
+    return classOfSeat(nv && nv.seat > 0 ? nv.seat : 0);
   }
 
   // The boons a real Begin Run carries: what the player equipped (null =

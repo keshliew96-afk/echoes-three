@@ -22,9 +22,11 @@
 import { Vector3 } from 'three';
 import { PALETTE } from '../data/palette.js';
 import { ACCENTS, CHROME } from '../ui/hud/style.js';
+import { classOfSeat } from '../data/lineup.js';
 
-// Seat -> class (party_index 0..3; the same fixed map as the command bar).
-const CLASS_BY_INDEX = ['healer', 'tank', 'swordsman', 'archer'];
+// Seat -> class: the run's party lineup (data/lineup.js; the default is
+// Healer, Tank, Swordsman, Archer). A bar re-bands when its seat's class
+// changes (a run start or a load), checked each frame.
 
 // World height of the bar's anchor over each rig's feet (measured top of the
 // head / hat / helm at the 12 u / 52° gameplay rig, plus a little air).
@@ -148,7 +150,7 @@ export function createHpBarLayer({ world, camera, enabled = () => true, containe
 
   const bars = [];
   for (let i = 0; i < 4; i++) {
-    const classId = CLASS_BY_INDEX[i];
+    const classId = classOfSeat(i);
     const acc = BAND[classId];
     const el = document.createElement('div');
     el.className = 'hpbar';
@@ -188,6 +190,18 @@ export function createHpBarLayer({ world, camera, enabled = () => true, containe
       shown: false,
       painted: { fill: -1, lag: -1, flash: -1, rim: '', tf: '', op: -1 },
     });
+  }
+
+  // PARTY LINEUP: a seat whose class changed takes the new class's band.
+  function reband(b) {
+    const cls = classOfSeat(b.i);
+    if (cls === b.classId || !BAND[cls]) return;
+    const acc = BAND[cls];
+    b.classId = cls;
+    b.el.dataset.class = cls;
+    b.el.style.setProperty('--band', acc.band);
+    b.el.style.setProperty('--bandLift', acc.lift);
+    b.el.style.setProperty('--bandDeep', acc.deep);
   }
 
   const members = [null, null, null, null];
@@ -259,6 +273,7 @@ export function createHpBarLayer({ world, camera, enabled = () => true, containe
       let sx = 0;
       let sy = 0;
       if (m) {
+        reband(b);
         const x = m.px !== undefined ? m.px + (m.x - m.px) * alpha : m.x;
         const z = m.pz !== undefined ? m.pz + (m.z - m.pz) * alpha : m.z;
         v.set(x, HEAD_Y[b.classId] ?? 1.4, z).project(camera);

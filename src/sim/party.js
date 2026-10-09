@@ -21,7 +21,6 @@ import { NODES, createBuildSystem, classVerdict } from './nodes.js';
 import { createDraftSystem } from './draft.js';
 import { grantFor } from '../data/campaign.js';
 import {
-  CLASS_OF_SEAT,
   CLASS_SKILLS,
   STARTING_LOADOUT,
   nodePoolOf,
@@ -33,6 +32,8 @@ import {
   ALLY_CLASS_IDS,
   gatedPool,
 } from '../data/classes.js';
+import { DEFAULT_LINEUP, normalizeLineup, sameLineup, setActiveLineup, LINEUP_CLASSES } from '../data/lineup.js';
+import { ALLY_CLASSES } from './allies.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 const secTicks = (s) => Math.round(s * TICK_HZ);
@@ -91,9 +92,34 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     return { ...events, emit: (tick, type, payload = {}) => events.emit(tick, type, { ...payload, seat }) };
   };
 
+  // PARTY LINEUP (docs/LINEUP.md): which class holds seats 1-3 this run.
+  // The default is the old fixed mapping (Tank, Swordsman, Archer).
+  let lineup = DEFAULT_LINEUP;
+  setActiveLineup(lineup);
+  // A seat's build system is made for its class (owns() / verdicts), so a
+  // lineup change makes the seat a fresh one.
+  const makeBuild = (s) =>
+    createBuildSystem({
+      player,
+      registry,
+      events: seatEvents(s.seat),
+      combat,
+      getTick,
+      isIframed,
+      queueDeferred,
+      queueContinuation,
+      getSkillSlots: () => s.slots.map((id) => (id ? { id } : null)),
+      isCombatActive,
+      seat: s.seat,
+      classId: s.classId,
+      caster: () => body(s.seat) || player,
+      echoCast: (rec, def, power) => (caster ? caster.echo(s.seat, rec, def, power) : null),
+      pulseCast: (id, o) => pulse(s.seat, id, o),
+    });
+
   const seats = [null];
   for (const i of PARTY_SEATS) {
-    const classId = CLASS_OF_SEAT[i];
+    const classId = lineup[i];
     const s = {
       seat: i,
       classId,
@@ -110,23 +136,7 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
       arranged: false,
       build: null,
     };
-    s.build = createBuildSystem({
-      player,
-      registry,
-      events: seatEvents(i),
-      combat,
-      getTick,
-      isIframed,
-      queueDeferred,
-      queueContinuation,
-      getSkillSlots: () => s.slots.map((id) => (id ? { id } : null)),
-      isCombatActive,
-      seat: i,
-      classId,
-      caster: () => body(i) || player,
-      echoCast: (rec, def, power) => (caster ? caster.echo(i, rec, def, power) : null),
-      pulseCast: (id, o) => pulse(i, id, o),
-    });
+    s.build = makeBuild(s);
     seats.push(s);
   }
   // A draft system per seat over its class pools (party stream). MORE CLASS
@@ -555,6 +565,39 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
   // ---------------------------------------------------------- persistence --
   // `kits` (UNLOCKS, docs/UNLOCKS.md): { classId: [skillId...] } — a kit the
   // player equipped replaces that class's starting loadout for this run.
+  // setLineup(lineup) — seat the run's classes (run.js, before resetForRun;
+  // party.loadState from a save's seat classes). A seat whose class changes
+  // gets a fresh build and an empty loadout, and its body takes the class's
+  // §7 row (classId, max HP; full health) unless `bodies` is false (a load:
+  // the saved registry brings the bodies back as they were). The same lineup
+  // again is a no-op: no event, no draw, so the default lineup leaves every
+  // trace as it was.
+  function setLineup(raw, { bodies = true } = {}) {
+    const next = normalizeLineup(raw);
+    setActiveLineup(next);
+    if (sameLineup(next, lineup)) return lineup;
+    lineup = next;
+    for (const i of PARTY_SEATS) {
+      const s = seats[i];
+      const cls = lineup[i];
+      if (s.classId === cls) continue;
+      s.classId = cls;
+      s.slots = [...STARTING_LOADOUT[cls]];
+      s.arranged = false;
+      s.state = { combo: {}, recentCasts: [], retaliate: {}, stillSince: getTick() };
+      s.auraNext = {};
+      s.build = makeBuild(s);
+      const a = bodies ? body(i) : null;
+      const row = ALLY_CLASSES[cls];
+      if (a && row) {
+        a.classId = cls;
+        a.maxHp = row.maxHp;
+        a.hp = row.maxHp;
+      }
+    }
+    return lineup;
+  }
+
   function resetForRun(seed, kits = null) {
     stream = createGameplayRng(partySeed(seed));
     for (const i of PARTY_SEATS) {
@@ -619,6 +662,9 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     if (tech) tech.loadState(d.tech ?? null);
     if (caster) caster.setSeq(d.castSeq ?? 0);
     for (let k = 0; k < 4; k++) autoSocketOwn[k] = !!(d.autoSocketOwn && d.autoSocketOwn[k]);
+    // PARTY LINEUP: every saved seat names its class; a save from before the
+    // lineup (or a hand-edited one) falls back to the default four.
+    setLineup(['healer', ...PARTY_SEATS.map((i) => (d.seats[i] && LINEUP_CLASSES.includes(d.seats[i].classId) ? d.seats[i].classId : null))], { bodies: false });
     for (const i of PARTY_SEATS) {
       const s = seats[i];
       const src = d.seats[i];
@@ -694,6 +740,8 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     endOfTick,
     resetForRun,
     resetLevelState,
+    setLineup,
+    lineup: () => lineup,
     saveState,
     loadState,
     state,

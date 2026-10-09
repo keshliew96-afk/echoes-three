@@ -12,7 +12,7 @@ import { service } from '../../app/registry.js';
 import { createHints } from './hints.js';
 import { installMpStyle, mkBtn } from './mpmenu.js';
 import { normalizeCode } from '../../net/protocol/messages.js';
-import { SEAT_LABELS } from '../../net/seats.js';
+import { seatClass, seatLabel } from '../../net/seats.js';
 import { t } from '../../i18n/index.js';
 
 export function createJoinScreen(ctx) {
@@ -78,7 +78,7 @@ export function createJoinScreen(ctx) {
       if (running) {
         if (app.state === 'playing') manager.clear();
         else if (manager.top() === 'mp-join') manager.pop();
-        const seatName = SEAT_LABELS[r.seat];
+        const seatName = seatClass(r.seat) ? seatLabel(r.seat) : null;
         app.toast(
           seatName
             ? t('Joined {code} — the game is under way. You play the {cls}.', { code, cls: t(seatName) })

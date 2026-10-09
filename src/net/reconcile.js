@@ -22,7 +22,7 @@ import { ALLY_CLASSES } from '../sim/allies.js';
 import { TICK_HZ } from '../core/constants.js';
 import { slipBlend } from '../sim/movement.js';
 import { CORRECTION_TAU_MS, CORRECTION_SNAP_U } from './protocol/constants.js';
-import { SEAT_CLASSES } from './seats.js';
+import { classOfSeat } from '../data/lineup.js';
 import { pct } from './protocol/snapshot.js';
 import { seatDisplacement } from '../sim/allycast.js';
 
@@ -38,8 +38,11 @@ const MAX_CORRECTION_PER_FRAME = 0.1;
 // resolved skill, the walls; never a hostile position), started on the
 // press frame and stepped per input frame exactly like the dodge.
 export function createOwnSeat({ seat, kit = null, dodgeCd = () => HUMAN_DODGE.cooldownTicks }) {
-  const classId = SEAT_CLASSES[seat];
-  const baseSpeed = seat === 0 ? HEALER_MOVE_SPEED : ALLY_CLASSES[classId] ? ALLY_CLASSES[classId].moveSpeed : 2.4;
+  // PARTY LINEUP (data/lineup.js): the seat's class follows the run's lineup.
+  const baseSpeed = () => {
+    const classId = classOfSeat(seat);
+    return seat === 0 ? HEALER_MOVE_SPEED : ALLY_CLASSES[classId] ? ALLY_CLASSES[classId].moveSpeed : 2.4;
+  };
   let body = null;
   let authTick = 0;
   let authSeq = 0;
@@ -144,7 +147,7 @@ export function createOwnSeat({ seat, kit = null, dodgeCd = () => HUMAN_DODGE.co
 
   function speedAt(b, t) {
     if (!(b.hp > 0)) return DOWNED_CRAWL_SPEED;
-    return baseSpeed * speedMul(b, t);
+    return baseSpeed() * speedMul(b, t);
   }
 
   // One input frame on body b at host tick t (host order: move, then the

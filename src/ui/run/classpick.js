@@ -14,7 +14,7 @@ import { HEALER } from '../../core/constants.js';
 import { ALLY_CLASSES } from '../../sim/allies.js';
 import { SKILLS, STARTING_SKILLS } from '../../sim/skills.js';
 import { UNLOCKS } from '../../data/unlocks.js';
-import { SEAT_CLASSES, SEAT_CRITTERS } from '../../net/seats.js';
+import { SEAT_CLASSES, CLASS_CRITTER } from '../../net/seats.js';
 import { PLAY_CLASS_KEY } from '../../app/playclass.js';
 import { t } from '../../i18n/index.js';
 
@@ -131,14 +131,14 @@ export function createClassesScreen(ctx) {
 
   function render() {
     const on = chosen();
-    SEAT_CLASSES.forEach((cls, i) => {
+    SEAT_CLASSES.forEach((cls) => {
       const b = gridEl.querySelector(`[data-cls="${cls}"]`);
       const st = cls === 'healer' ? HEALER : ALLY_CLASSES[cls];
       const kit = wornKit(cls);
       const skills = startSkills(cls, kit);
       b.dataset.on = String(cls === on);
       b.innerHTML =
-        `<div class="cs-crit">${esc(t('THE {critter}', { critter: t(SEAT_CRITTERS[i]).toUpperCase() }))}</div>` +
+        `<div class="cs-crit">${esc(t('THE {critter}', { critter: t(CLASS_CRITTER[cls]).toUpperCase() }))}</div>` +
         `<div class="cs-name">${esc(t(CLASS_NAME[cls]))}</div>` +
         `<div class="cs-role">${esc(ROLE[cls]())}</div>` +
         `<div class="cs-stats"><span>${t('Health <b>{hp}</b>', { hp: st.maxHp })}</span><span>${t('Speed <b>{speed}</b>', { speed: st.moveSpeed })}</span></div>` +

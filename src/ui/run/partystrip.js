@@ -14,7 +14,8 @@
 // or PgUp / PgDn (previous / next, wrapping), F1-F4 (direct), pad LB / RB —
 // the page that owns the strip maps its keys to setView().
 import { PALETTE, CLASS_ACCENTS } from '../../data/palette.js';
-import { CLASS_OF_SEAT, CLASS_NAME } from '../../data/classes.js';
+import { CLASS_NAME } from '../../data/classes.js';
+import { classOfSeat } from '../../data/lineup.js';
 import { iconHtml } from '../hud/icons.js';
 import { portraitCache } from '../hud/portraits.js';
 import { esc } from './style.js';
@@ -172,7 +173,7 @@ const faceHtml = (classId, px = 40) => {
 
 // The owner band markup ("FOR THE TANK" + portrait + accent stripe).
 export function ownerBandHtml(seat, { you = false } = {}) {
-  const classId = CLASS_OF_SEAT[seat];
+  const classId = classOfSeat(seat);
   const acc = CLASS_ACCENTS[classId];
   const label = seat === 0 ? (you ? t('FOR YOU — THE HEALER') : t('FOR THE HEALER')) : t('FOR THE {cls}', { cls: t(CLASS_NAME[classId]).toUpperCase() });
   return `<div class="rn-owner" data-seat="${seat}" style="--acc:${acc}"><span class="rn-ownerface">${faceHtml(classId, 22)}</span>${iconHtml(`cls_${classId}`, { size: 18 })}<span>${esc(label)}</span></div>`;
@@ -240,7 +241,7 @@ export function createPartyStrip({ onSelect = null, host = null } = {}) {
     tabs.length = 0;
     faces = Object.keys(portraitCache()).join(',');
     for (let seat = 0; seat < 4; seat++) {
-      const classId = CLASS_OF_SEAT[seat];
+      const classId = classOfSeat(seat);
       const tab = document.createElement('div');
       tab.className = 'rn-ptab';
       tab.dataset.seat = String(seat);

@@ -291,6 +291,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     caster: () => allySys.caster(),
     seatDisplacement,
     slotsOf: (s) => partySys.slots(s) ?? [],
+    // PARTY LINEUP (docs/LINEUP.md): the seat a class holds this run (-1: camp).
+    seatOfClass: (cls) => partySys.lineup().indexOf(cls),
   });
   partySys.attach({ caster: allySys.caster(), tech: partyTech });
 
@@ -373,11 +375,14 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   // non-boss hostile weigh it closer when choosing whom to attack. Read from
   // the seat build each tick by enemies.js; nothing new is saved.
   enemies.setThreat(() => {
-    const tank = partySys.body(1);
+    // PARTY LINEUP: whichever seat the Tank holds (none when it stayed at camp).
+    const ts = partySys.lineup().indexOf('tank');
+    if (ts < 1) return null;
+    const tank = partySys.body(ts);
     if (!tank || !(tank.hp > 0)) return null;
-    const b = partySys.build(1);
+    const b = partySys.build(ts);
     let n = 0;
-    for (const id of partySys.slots(1) || []) {
+    for (const id of partySys.slots(ts) || []) {
       if (!id) continue;
       if (id === 'taunting_roar') n += 1;
       if (b && b.tech.liveTechs(id).includes('provoke')) n += 1;
