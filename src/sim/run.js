@@ -640,7 +640,9 @@ export function createRunSystem({
     // UNLOCKS: each vow the party wears curses every combat room.
     const vows = combatRoom ? runVows() : null;
     if (vows) for (const v of vows) diff = cursedDiff(diff, v);
-    if (combatRoom) waves.planRoom(mode, { act, room: n, challenge, level, diff });
+    // NEW ENEMIES: campaign kinds roll in campaign rooms only (levels.js
+    // CAMPAIGN_ONLY_ENEMIES), on the objectives' gate.
+    if (combatRoom) waves.planRoom(mode, { act, room: n, challenge, level, diff, campaignKinds: objectivesOn() });
     // Layout AFTER the schedule (one fixed roll order per room).
     // TUTORIAL: always the clearing with a dewfont (the spring the coach
     // sends the player to); no layout draw.
@@ -1418,7 +1420,7 @@ export function createRunSystem({
     const vows = runVows();
     if (vows) for (const v of vows) diff = cursedDiff(diff, v);
     encounters.finish('ambush');
-    waves.planRoom('kill_all', { act, room: n, challenge, level, diff, waves: A.waves });
+    waves.planRoom('kill_all', { act, room: n, challenge, level, diff, waves: A.waves, campaignKinds: objectivesOn() });
     const ring = layout ? LAYOUTS[layout.layoutId]?.spawns : null;
     if (ring) waves.relocateSpawns(ring);
     phase = 'combat';
