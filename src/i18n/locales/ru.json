@@ -2508,5 +2508,21 @@
  "THE VAULT": "СОКРОВИЩНИЦА",
  "The vault door": "Дверь сокровищницы",
  "THE VAULT'S CHEST": "СУНДУК СОКРОВИЩНИЦЫ",
- "VAULT KEY": "КЛЮЧ ОТ СОКРОВИЩНИЦЫ"
+ "VAULT KEY": "КЛЮЧ ОТ СОКРОВИЩНИЦЫ",
+ "Ash Keener": "Пепельная плакальщица",
+ "Mourner": "Плакальщица",
+ "It mourns every barrow it passes, and it wants company in its grief.": "Она оплакивает каждый курган на своём пути и ищет спутников в своём горе.",
+ "Keeps a few steps back, then wails down a long, narrow warning cone for 10. Whoever the wail finds is slowed by 40% for 2 s. Step out of the cone.": "Держится в нескольких шагах, затем воет вдоль длинного узкого конуса-предупреждения на 10. Кого настигнет вой, тот замедлен на 40% на 2 с. Выйдите из конуса.",
+ "Barrow Sexton": "Курганный могильщик",
+ "Trapper": "Ловчий",
+ "The barrow still has a gravedigger. He has stopped waiting for the dead to come to him.": "У кургана всё ещё есть могильщик. Он больше не ждёт, когда мёртвые придут к нему.",
+ "Never strikes in person. It kneels and buries bone snares on the floor, three at most. Step on one and its jaws rise in a warning ring, then snap for 11 and hold you with a 60% slow. Step off before they close. Kill it and its snares crumble.": "Никогда не бьёт сам. Он встаёт на колени и закапывает в пол костяные капканы, не больше трёх. Наступите на один, и его челюсти поднимутся кольцом-предупреждением, затем сомкнутся на 11 и удержат вас замедлением на 60%. Сойдите, пока они не сомкнулись. Убейте его, и капканы рассыплются.",
+ "Heart Bloom": "Цветок Сердца",
+ "Pulse": "Пульс",
+ "A flower of violet crystal that grows wherever the Heart beats closest to the floor.": "Цветок из фиолетового кристалла, растущий там, где Сердце бьётся ближе всего к полу.",
+ "Creeps in on its roots, then takes root and never moves again. On every second heartbeat it opens in a warning ring round itself and snaps shut for 12. Every bloom in the room beats together.": "Ползёт на корнях, затем укореняется и больше не двигается. На каждом втором ударе сердца раскрывается кольцом-предупреждением вокруг себя и захлопывается на 12. Все цветы в комнате бьются вместе.",
+ "Vein Siphon": "Жильный кровосос",
+ "Drinker": "Пьющий",
+ "A sac of the Heart's blood that never has enough of it.": "Мешок крови Сердца, которому всегда мало.",
+ "Lashes a tendril down a warning lane for 5 and latches onto the first hero it finds, then drinks 2 every half second and heals by as much. Walk well away from it to snap the tether, or kill it.": "Хлещет щупальцем вдоль полосы-предупреждения на 5 и цепляется за первого найденного героя, затем пьёт по 2 каждые полсекунды и лечится на столько же. Отойдите подальше, чтобы порвать привязь, или убейте его."
 }

@@ -2480,5 +2480,21 @@
  "THE VAULT": "O COFRE",
  "The vault door": "A porta do cofre",
  "THE VAULT'S CHEST": "O BAÚ DO COFRE",
- "VAULT KEY": "CHAVE DO COFRE"
+ "VAULT KEY": "CHAVE DO COFRE",
+ "Ash Keener": "Carpideira de Cinzas",
+ "Mourner": "Carpideira",
+ "It mourns every barrow it passes, and it wants company in its grief.": "Ela chora cada túmulo por onde passa, e quer companhia no seu luto.",
+ "Keeps a few steps back, then wails down a long, narrow warning cone for 10. Whoever the wail finds is slowed by 40% for 2 s. Step out of the cone.": "Fica a alguns passos e então lamenta por um cone de aviso longo e estreito causando 10. Quem o lamento alcança fica 40% mais lento por 2 s. Saia do cone.",
+ "Barrow Sexton": "Coveiro do Túmulo",
+ "Trapper": "Armadilheiro",
+ "The barrow still has a gravedigger. He has stopped waiting for the dead to come to him.": "O túmulo ainda tem um coveiro. Ele parou de esperar que os mortos venham até ele.",
+ "Never strikes in person. It kneels and buries bone snares on the floor, three at most. Step on one and its jaws rise in a warning ring, then snap for 11 and hold you with a 60% slow. Step off before they close. Kill it and its snares crumble.": "Nunca ataca pessoalmente. Ajoelha-se e enterra armadilhas de osso no chão, três no máximo. Pise em uma e suas mandíbulas sobem num anel de aviso, então se fecham causando 11 e prendem você com 60% de lentidão. Saia antes que se fechem. Mate-o e as armadilhas se desfazem.",
+ "Heart Bloom": "Flor do Coração",
+ "Pulse": "Pulso",
+ "A flower of violet crystal that grows wherever the Heart beats closest to the floor.": "Uma flor de cristal violeta que cresce onde o Coração bate mais perto do chão.",
+ "Creeps in on its roots, then takes root and never moves again. On every second heartbeat it opens in a warning ring round itself and snaps shut for 12. Every bloom in the room beats together.": "Rasteja sobre as raízes, depois se enraíza e nunca mais se move. A cada segundo batimento ela se abre num anel de aviso ao redor de si e se fecha causando 12. Todas as flores da sala batem juntas.",
+ "Vein Siphon": "Sifão de Veia",
+ "Drinker": "Bebedor",
+ "A sac of the Heart's blood that never has enough of it.": "Um saco do sangue do Coração que nunca tem o bastante.",
+ "Lashes a tendril down a warning lane for 5 and latches onto the first hero it finds, then drinks 2 every half second and heals by as much. Walk well away from it to snap the tether, or kill it.": "Chicoteia um tentáculo por uma faixa de aviso causando 5 e se prende ao primeiro herói que encontra, então bebe 2 a cada meio segundo e se cura o mesmo tanto. Afaste-se bastante para romper o elo, ou mate-o."
 }

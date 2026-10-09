@@ -2452,5 +2452,21 @@
  "THE VAULT": "DER TRESOR",
  "The vault door": "Die Tresortür",
  "THE VAULT'S CHEST": "DIE TRUHE DES TRESORS",
- "VAULT KEY": "TRESORSCHLÜSSEL"
+ "VAULT KEY": "TRESORSCHLÜSSEL",
+ "Ash Keener": "Aschenklagende",
+ "Mourner": "Klagende",
+ "It mourns every barrow it passes, and it wants company in its grief.": "Sie betrauert jedes Hügelgrab, an dem sie vorbeikommt, und will Gesellschaft in ihrem Kummer.",
+ "Keeps a few steps back, then wails down a long, narrow warning cone for 10. Whoever the wail finds is slowed by 40% for 2 s. Step out of the cone.": "Hält ein paar Schritte Abstand und klagt dann einen langen, schmalen Warnkegel hinab für 10. Wen die Klage trifft, der wird 2 s lang um 40% verlangsamt. Tritt aus dem Kegel.",
+ "Barrow Sexton": "Hügelgrab-Totengräber",
+ "Trapper": "Fallensteller",
+ "The barrow still has a gravedigger. He has stopped waiting for the dead to come to him.": "Das Hügelgrab hat noch einen Totengräber. Er wartet nicht mehr darauf, dass die Toten zu ihm kommen.",
+ "Never strikes in person. It kneels and buries bone snares on the floor, three at most. Step on one and its jaws rise in a warning ring, then snap for 11 and hold you with a 60% slow. Step off before they close. Kill it and its snares crumble.": "Schlägt nie selbst zu. Er kniet nieder und vergräbt Knochenfallen im Boden, höchstens drei. Tritt auf eine, und ihre Kiefer heben sich in einem Warnring, schnappen dann für 11 zu und halten dich mit 60% Verlangsamung fest. Tritt herunter, bevor sie zuschnappen. Töte ihn, und seine Fallen zerfallen.",
+ "Heart Bloom": "Herzblüte",
+ "Pulse": "Puls",
+ "A flower of violet crystal that grows wherever the Heart beats closest to the floor.": "Eine Blume aus violettem Kristall, die überall wächst, wo das Herz dem Boden am nächsten schlägt.",
+ "Creeps in on its roots, then takes root and never moves again. On every second heartbeat it opens in a warning ring round itself and snaps shut for 12. Every bloom in the room beats together.": "Kriecht auf ihren Wurzeln heran, schlägt dann Wurzeln und bewegt sich nie wieder. Bei jedem zweiten Herzschlag öffnet sie sich in einem Warnring um sich selbst und schnappt für 12 zu. Alle Blüten im Raum schlagen gemeinsam.",
+ "Vein Siphon": "Adernsauger",
+ "Drinker": "Trinker",
+ "A sac of the Heart's blood that never has enough of it.": "Ein Sack voll Herzblut, der nie genug davon bekommt.",
+ "Lashes a tendril down a warning lane for 5 and latches onto the first hero it finds, then drinks 2 every half second and heals by as much. Walk well away from it to snap the tether, or kill it.": "Peitscht eine Ranke eine Warnbahn hinab für 5 und hakt sich am ersten Helden fest, den sie findet, trinkt dann alle halbe Sekunde 2 und heilt sich um ebenso viel. Geh weit genug weg, um die Fessel zu zerreißen, oder töte ihn."
 }

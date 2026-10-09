@@ -2378,5 +2378,21 @@
  "THE VAULT": "宝物庫",
  "The vault door": "宝物庫の扉",
  "THE VAULT'S CHEST": "宝物庫の宝箱",
- "VAULT KEY": "宝物庫の鍵"
+ "VAULT KEY": "宝物庫の鍵",
+ "Ash Keener": "灰の泣き女",
+ "Mourner": "嘆き手",
+ "It mourns every barrow it passes, and it wants company in its grief.": "通りすがる塚をひとつ残らず悼み、その悲しみに道連れを求める。",
+ "Keeps a few steps back, then wails down a long, narrow warning cone for 10. Whoever the wail finds is slowed by 40% for 2 s. Step out of the cone.": "数歩離れて構え、細長い警告の円錐に嘆きを放つ(10ダメージ)。嘆きを受けた者は2秒間40%減速する。円錐から出よう。",
+ "Barrow Sexton": "塚の墓守",
+ "Trapper": "罠師",
+ "The barrow still has a gravedigger. He has stopped waiting for the dead to come to him.": "塚にはまだ墓守がいる。もう死者が来るのを待ってはいない。",
+ "Never strikes in person. It kneels and buries bone snares on the floor, three at most. Step on one and its jaws rise in a warning ring, then snap for 11 and hold you with a 60% slow. Step off before they close. Kill it and its snares crumble.": "自ら攻撃はしない。ひざまずいて床に骨の罠を埋める(最大3つ)。踏むと顎が警告の輪となってせり上がり、閉じて11ダメージと60%の減速で捕らえる。閉じる前に降りよう。倒せば罠は崩れる。",
+ "Heart Bloom": "心臓の花",
+ "Pulse": "脈動",
+ "A flower of violet crystal that grows wherever the Heart beats closest to the floor.": "心臓が床の近くで脈打つ場所に咲く、紫の結晶の花。",
+ "Creeps in on its roots, then takes root and never moves again. On every second heartbeat it opens in a warning ring round itself and snaps shut for 12. Every bloom in the room beats together.": "根で這い寄り、根を下ろすと二度と動かない。心拍二回ごとに自身の周りの警告の輪で開き、閉じて12ダメージ。部屋の花はすべて同時に脈打つ。",
+ "Vein Siphon": "血管の吸い手",
+ "Drinker": "吸血者",
+ "A sac of the Heart's blood that never has enough of it.": "決して満たされることのない、心臓の血の袋。",
+ "Lashes a tendril down a warning lane for 5 and latches onto the first hero it finds, then drinks 2 every half second and heals by as much. Walk well away from it to snap the tether, or kill it.": "警告のレーンに触手を打ちつけ(5ダメージ)、最初に見つけた英雄に食らいつく。その後0.5秒ごとに2を吸い、同じだけ回復する。十分に離れて繋がりを断つか、倒そう。"
 }

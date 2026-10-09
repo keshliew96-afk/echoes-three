@@ -26,6 +26,7 @@ const FILES = [
   { file: 'src/audio/hitcues.js', match: (id) => /^hurt_(heavy|soft|down)$/.test(id) },
   { file: 'src/audio/championcues.js', match: (id) => id.startsWith('ch_') },
   { file: 'src/audio/vaultcues.js', match: (id) => id.startsWith('vk_') },
+  { file: 'src/audio/barrowheartcues.js', match: (id) => id.startsWith('bh_') },
 ].filter((f) => !argv.includes('--only') || f.file.includes(argv[argv.indexOf('--only') + 1]));
 const { browser, page, errors } = await openAudio(`${BASE}?menu=0&seed=7`);
 try {
