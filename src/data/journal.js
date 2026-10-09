@@ -8,6 +8,7 @@
 // Pure data (sim-importable): no DOM, no three. Names and lines are English
 // keys the UI shows through t() (docs/I18N.md).
 import { LEVELS, ACT_IDS } from './levels.js';
+import { CHAMPIONS } from '../sim/champions.js';
 
 // One row per enemy kind (sim etype), in the order a campaign meets them.
 //   name   shown name          role  one word for its job in a fight
@@ -36,6 +37,15 @@ const ENEMY_ROWS = [
   ['censer', 'Heart Censer', 'Mender', 'A censer on a chain of bone, swinging violet smoke over the fight.', 'No attack. Its coals flare, then it mends every enemy near it by 15% of their health. A stun spills the mend. Kill it first.'],
 ];
 
+// CHAMPION ROOMS (docs/CHAMPIONS.md): one row per champion, keyed by kind;
+// its land is its act. They are counted like enemies (met, felled).
+const CHAMPION_ROWS = {
+  briar_knight: ['A knight of the old Hearth whose armour the Wood grew through. He still keeps his vigil.', 'Bramble Charge: marks a long lane at the farthest hero and runs it down for 16. Thorn Ring: a warning ring round him bursts for 14 and leaves a slowing thicket. Below half health he rages: faster, and his moves come sooner.'],
+  sluice_warden: ['The keeper of the mill race, iron-shod and patient as the water.', 'Floodgate: a warning cone in front of him floods for 18. Undertow: a ring under a hero wells up for 12 and leaves slick water. Below half health he rages.'],
+  bone_reeve: ['The barrow\'s bailiff, who still collects what the dead are owed.', 'Reaping Sweep: a wide warning cone in front of him for 16. Grave Lance: bone spikes burst down a warning lane for 14. Below half health he rages.'],
+  hollow_choir: ['Three voices of the Heart sung into one crystal body. It hums even when it is still.', 'Shard Hymn: a narrow warning cone, then five crystal shards for 9 each. Discord: a ring round it bursts for 15. It keeps its distance, and below half health it rages.'],
+};
+
 // One row per boss kind, in level order.
 const BOSS_ROWS = {
   stag: ['Lord of the Hollow Wood, crowned in dead antlers.', 'Antler Quake: a warning ring under a hero bursts for 15. Close in, it tramples for 12 with no warning. Calls boars and a mantis at 75%, 50% and 25% health.'],
@@ -55,6 +65,10 @@ const landsOf = (etype) => ACT_IDS.filter((a) => (LEVELS[a].roster ?? {})[etype]
 
 export const BESTIARY = Object.freeze([
   ...ENEMY_ROWS.map(([id, name, role, lore, text]) => Object.freeze({ id, boss: false, name, role, lore, text, lands: Object.freeze(landsOf(id)) })),
+  ...Object.values(CHAMPIONS).map((c) => {
+    const row = CHAMPION_ROWS[c.id] ?? ['', ''];
+    return Object.freeze({ id: c.id, boss: false, champion: true, name: c.name, role: 'Champion', lore: row[0], text: row[1], lands: Object.freeze([c.act]) });
+  }),
   ...ACT_IDS.flatMap((a) =>
     (LEVELS[a].bosses ?? []).map((b) => {
       const row = BOSS_ROWS[b.kind] ?? ['', ''];

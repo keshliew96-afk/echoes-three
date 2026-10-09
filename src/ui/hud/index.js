@@ -49,6 +49,10 @@ const MODE_WORD = {
   get purge() {
     return t('PURGE THE NESTS');
   },
+  // CHAMPION ROOMS (docs/CHAMPIONS.md).
+  get champion() {
+    return t('FELL THE CHAMPION');
+  },
   get shop() {
     return t('THE PEDDLER');
   },

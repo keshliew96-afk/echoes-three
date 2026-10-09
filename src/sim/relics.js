@@ -521,7 +521,8 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       if (legend.length > 0) pool = legend;
       else if (greater.length > 0) pool = greater;
     }
-    if (d.source === 'major' || d.source === 'spirit') {
+    // CHAMPION ROOMS: the champion's chest pays the greater pool too.
+    if (d.source === 'major' || d.source === 'spirit' || d.source === 'champion') {
       const greater = pool.filter((id) => RELICS[id].rarity !== 'common');
       if (greater.length > 0) pool = greater;
     }

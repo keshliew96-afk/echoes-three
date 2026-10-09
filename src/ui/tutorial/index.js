@@ -43,7 +43,7 @@ import { cap, padCap, moveCaps, skillsCap, usingPad, onHintsChange } from '../..
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
-export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix']);
+export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion']);
 
 const MOVE_DIST = 2.5; // world units walked to pass the move step
 const ATTACK_MS = 450; // right button held this long (in total) passes the attack step
@@ -148,6 +148,12 @@ function tipText(id) {
       return {
         title: t('The purge'),
         body: t('Three corruption nests keep spawning enemies. Destroy all three before the timer runs out; a wounded nest spawns faster. If the corruption takes root, the room pays no reward and the nests must still fall.'),
+      };
+    // CHAMPION ROOMS (docs/CHAMPIONS.md): on the first crown door.
+    case 'champion':
+      return {
+        title: t('The crown door'),
+        body: t('A named champion waits behind the crown door: a mini-boss with two telegraphed moves that rages below half health. Fell it and clear its two light waves to open its relic chest, a rare or legendary relic on top of the draft.'),
       };
     default:
       return null;
@@ -527,6 +533,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     if (doors.some((o) => o.curse)) want.push('curse');
     if (doors.some((o) => o.event)) want.push('event');
     for (const m of ['hunt', 'purge']) if (doors.some((o) => o.win === m)) want.push(m);
+    if (doors.some((o) => o.champion)) want.push('champion');
     if (want.length) {
       if (shown && want.includes(shown.id)) return shown.id;
       return want.find((id) => !tipsSeen().includes(id)) ?? want[0];

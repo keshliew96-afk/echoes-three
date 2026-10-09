@@ -12,12 +12,14 @@ import { esc } from './style.js';
 import { WIN_GLYPH, REWARD_GLYPH } from '../../sim/run.js';
 import { bossNameOfRun } from '../../data/levels.js';
 import { t } from '../../i18n/index.js';
+import { championById } from '../../sim/champions.js';
 
 const WIN_LABEL = {
   kill_all: () => t('clear every enemy'),
   defend: () => t('hold the Waystone'),
   hunt: () => t('hunt the quarry before it escapes'),
   purge: () => t('destroy the three nests'),
+  champion: () => t('fell the champion'),
   boss: () => t('the Hollow Stag'),
 };
 const REWARD_LABEL = { skill: () => t('a Skill draft'), node: () => t('a Node draft') };
@@ -54,6 +56,7 @@ export function createPathScreen({ run }) {
     <div class="rn-legend"></div>
     <div class="rl-cursenote" style="display:none"></div>
     <div class="ev-note" style="display:none"></div>
+    <div class="ev-note ch-note" style="display:none"></div>
     <div class="rn-hint">${t('<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> walk through')}</div>`;
 
   const wraps = [...el.querySelectorAll('.rn-doorwrap')];
@@ -62,7 +65,8 @@ export function createPathScreen({ run }) {
   const rewEls = wraps.map((w) => w.querySelector('.rn-grew'));
   const legendEl = el.querySelector('.rn-legend');
   const curseNote = el.querySelector('.rl-cursenote');
-  const eventNote = el.querySelector('.ev-note');
+  const eventNote = el.querySelector('.ev-note:not(.ch-note)');
+  const crownNote = el.querySelector('.ch-note');
   const curseMarks = doors.map((d) => {
     const m = document.createElement('div');
     m.className = 'rl-gcurse';
@@ -96,6 +100,8 @@ export function createPathScreen({ run }) {
       doors[i].classList.toggle('rl-major', !!o.major);
       // EVENT ROOMS: the "?" door wears one big mark and no reward glyph.
       doors[i].classList.toggle('ev-door', !!o.event);
+      // CHAMPION ROOMS: the crown door is gold-rimmed and keeps its reward.
+      doors[i].classList.toggle('ch-door', !!o.champion);
       curseMarks[i].style.display = o.curse ? '' : 'none';
       // Slice 2: a MAJOR curse wears the chained mark.
       const mk = o.major ? 'major' : 'room';
@@ -108,7 +114,8 @@ export function createPathScreen({ run }) {
     // Screen-level legend: decodes the two glyph families for BOTH doors at
     // once, so no door carries a third piece of information.
     // EVENT ROOMS: the legend decodes the room behind the plain door.
-    const plain = p.options.find((o) => !o.event) ?? p.options[0];
+    // CHAMPION ROOMS: and never the crown door (its note below says it all).
+    const plain = p.options.find((o) => !o.event && !o.champion) ?? p.options.find((o) => !o.event) ?? p.options[0];
     const win = plain.win;
     legendEl.innerHTML = `
       <span><b>${WIN_GLYPH[win] ?? '⚔'}</b> ${esc(win === 'boss' ? t(bossNameOfRun(view)).replace(/^The /, 'the ') : WIN_LABEL[win] ? WIN_LABEL[win]() : win)}</span>
@@ -140,6 +147,17 @@ export function createPathScreen({ run }) {
         ev.side === 0
           ? t('<b>? Left door: an event.</b> No fight: a trade of HP, Glint, a curse or a relic for a reward. It takes the place of this room and its draft.')
           : t('<b>? Right door: an event.</b> No fight: a trade of HP, Glint, a curse or a relic for a reward. It takes the place of this room and its draft.');
+    // CHAMPION ROOMS: who waits behind the crown door and what it pays.
+    const cr = p.options.find((o) => o.champion);
+    const champ = cr ? championById(cr.champion) : null;
+    crownNote.style.display = cr ? '' : 'none';
+    if (cr) {
+      const name = esc(t(champ ? champ.name : 'The Champion'));
+      crownNote.innerHTML =
+        cr.side === 0
+          ? t('<b>♛ Left door: {name}.</b> A champion and two light waves. Fell it for a relic chest (rare or legendary) on top of the draft.', { name })
+          : t('<b>♛ Right door: {name}.</b> A champion and two light waves. Fell it for a relic chest (rare or legendary) on top of the draft.', { name });
+    }
     shownFocus = p.focus;
   }
   // fix-M3-r5 (AUD5-F1): the focused door as drawn, the selection signature

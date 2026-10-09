@@ -33,12 +33,15 @@
 // 20 hostiles live per room (a spawn waits in its telegraph while the room is
 // full). The `?room=` harness (no plan) keeps the legacy §11 roll EXACTLY
 // (gate G4a.6).
-import { innerBounds } from './movement.js';
+import { innerBounds, staticClearance } from './movement.js';
 import { THREAT, ELITE_COST, WAVE_SIZE_CAP, ROOM_CONCURRENT_CAP } from '../data/difficulty.js';
 // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt and purge rooms. Their
 // state lives in `obj` (null in kill_all / defend rooms, so those rooms save,
 // hash and replay exactly as before).
 import { OBJECTIVE_RULES, quarryFor, quarryState, nestSpots, isObjectiveMode } from './objectives.js';
+// CHAMPION ROOMS (docs/CHAMPIONS.md): the crown door's room. Two light waves
+// and the act's champion, which leads wave 1; cleared like a kill_all.
+import { CHAMPION_RULES, CHAMPION_SPOTS, championFor } from './champions.js';
 import { enemyStats, ELITE } from './enemies.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -201,7 +204,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
   // the two (PLAN §3.6 (a): "after the wave schedule") and emits
   // layout_enter / room_enter before the room begins.
   function planRoom(m, runPlan = null) {
-    if (m !== 'kill_all' && m !== 'defend' && !(isObjectiveMode(m) && runPlan)) return null;
+    if (m !== 'kill_all' && m !== 'defend' && !((isObjectiveMode(m) || m === 'champion') && runPlan)) return null;
     enemies.reset();
     if (waystoneId !== null && registry.byId(waystoneId)) registry.despawn(waystoneId);
     mode = null;
@@ -261,6 +264,15 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
         schedule[0].units.unshift({ etype, x: qx, z: qz, cost: 0, elite: true, quarry: true });
         schedule[0].size = schedule[0].units.length;
         obj = { kind: 'hunt', etype, quarryId: null, escapeTick: null, escaped: false, won: false };
+      } else if (m === 'champion') {
+        // CHAMPION ROOMS: two light waves; the champion leads the first (its
+        // spot is chosen when it arrives, among the layout's props).
+        const C = CHAMPION_RULES;
+        for (let w = 0; w < C.waves; w++) schedule.push(rollBudgetWave(r2(d.budget * C.budgetMul), plan));
+        const etype = championFor(runPlan.act).id;
+        schedule[0].units.unshift({ etype, x: CHAMPION_SPOTS[0][0], z: CHAMPION_SPOTS[0][1], cost: 0, champion: true });
+        schedule[0].size = schedule[0].units.length;
+        obj = { kind: 'champion', etype, champId: null, felled: false, lx: 0, lz: 0, chest: null };
       } else if (m === 'purge') {
         // One opening wave; then the nests feed the room from their own lists.
         const P = OBJECTIVE_RULES.purge;
@@ -319,6 +331,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     if (obj && obj.kind === 'purge') obj.ring = ring.map((p) => [p[0], p[1]]);
     for (const w of schedule) {
       for (const u of w.units) {
+        if (u.champion) continue; // CHAMPION ROOMS: it picks its own spot
         let k = 0;
         let best = Infinity;
         for (let i = 0; i < SPAWN_POINTS.length; i++) {
@@ -353,7 +366,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     for (const w of schedule) {
       const before = swapped;
       for (const u of w.units) {
-        if (u.quarry || favour.includes(u.etype)) continue;
+        if (u.quarry || u.champion || favour.includes(u.etype)) continue;
         if ((THREAT[u.etype] ?? 1) > (mix.maxThreat ?? 2)) continue;
         seen += 1;
         if ((seen - 1) % every !== 0) continue;
@@ -384,12 +397,14 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       const ev = { etype: u.etype, x: u.x, z: u.z, spawnTick, wave: i };
       if (u.elite) ev.elite = true;
       if (u.quarry) ev.quarry = true;
+      if (u.champion) ev.champion = true;
       events.emit(tick, 'spawn_telegraph', ev);
     }
   }
 
   function spawnUnit(p) {
     if (p.quarry) return spawnQuarry(p);
+    if (p.champion) return spawnChampion(p);
     if (p.nest !== undefined) {
       const e = enemies.spawnScaled(p.etype, p.x, p.z, { hpMul: plan.hpMul, dmgMul: plan.dmgMul, elite: !!p.elite, wave: p.wave });
       if (e) {
@@ -428,6 +443,31 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     obj.quarryId = e.id;
     obj.escapeTick = e.quarry.escapeTick;
     events.emit(tick, 'quarry_spawn', { id: e.id, etype: p.etype, x: r2(e.x), z: r2(e.z), hp: r2(e.hp), escapeTick: e.quarry.escapeTick });
+    return e;
+  }
+
+  // CHAMPION ROOMS: the champion, with the room's champion HP (no elite
+  // bump, no affixes). Its spot: the first CHAMPION_SPOTS point clear of the
+  // layout's props (the spawn telegraph showed the first; a blocked one moves).
+  function spawnChampion(p) {
+    const tick = getTick();
+    const S = enemyStats(p.etype);
+    let [x, z] = CHAMPION_SPOTS[0];
+    for (const [sx, sz] of CHAMPION_SPOTS) {
+      if (staticClearance(sx, sz, S ? S.radius : 0.7) >= 0.2) {
+        x = sx;
+        z = sz;
+        break;
+      }
+    }
+    const want = CHAMPION_RULES.hp * (plan ? plan.hpMul : 1);
+    const hpMul = S && S.hp > 0 ? want / S.hp : 1;
+    const e = enemies.spawnScaled(p.etype, x, z, { hpMul, dmgMul: plan ? plan.dmgMul : 1, elite: false, wave: p.wave, noAffix: true });
+    if (!e) return null;
+    obj.champId = e.id;
+    obj.lx = e.x;
+    obj.lz = e.z;
+    events.emit(tick, 'champion_spawn', { id: e.id, champion: p.etype, x: r2(e.x), z: r2(e.z), hp: r2(e.hp) });
     return e;
   }
 
@@ -571,6 +611,18 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
         events.emit(tick, 'room_soft_fail', { mode });
       }
     }
+    // CHAMPION ROOMS: the champion falls where it stood and leaves its chest.
+    if (mode === 'champion' && obj && obj.champId !== null && !obj.felled) {
+      const c = registry.byId(obj.champId);
+      if (c && c.hp > 0) {
+        obj.lx = c.x;
+        obj.lz = c.z;
+      } else {
+        obj.felled = true;
+        obj.chest = { x: r2(obj.lx), z: r2(obj.lz) };
+        events.emit(tick, 'champion_fall', { id: obj.champId, champion: obj.etype, x: obj.chest.x, z: obj.chest.z });
+      }
+    }
     let nestsAlive = 0;
     if (mode === 'purge' && obj) {
       stepNests(tick);
@@ -586,7 +638,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
 
     // Wave progression.
     const lastWave = waveIndex >= schedule.length - 1;
-    if (mode === 'kill_all' || mode === 'hunt') {
+    if (mode === 'kill_all' || mode === 'hunt' || mode === 'champion') {
       if (!lastWave && pending.length === 0 && fullySpawnedTick >= 0) {
         const timer =
           fullySpawnedTick + WAVE_RULES.killAll.graceTicks + (plan ? plan.intervalTicks : WAVE_RULES.killAll.intervalTicks);
@@ -608,7 +660,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       else if (softFailed && nestsAlive === 0 && scheduleExhausted && alive === 0 && shots === 0 && partyUp) doClear();
     } else if (mode === 'hunt' && !softFailed) {
       if (obj && obj.won) doClear();
-    } else if (mode === 'kill_all' || softFailed) {
+    } else if (mode === 'kill_all' || mode === 'champion' || softFailed) {
       if (scheduleExhausted && alive === 0 && shots === 0 && partyUp) doClear();
     } else if (mode === 'defend') {
       const waystoneAlive = waystoneId !== null && !!registry.byId(waystoneId);
@@ -623,7 +675,14 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     enemies.despawnShots(); // §13: no instance may land after the clear tick
     enemies.retreatAllSurvivors(); // §11: survivors retreat + despawn
     // ROOM OBJECTIVES: what the room was won by (keys only in hunt / purge).
-    const extra = obj && !softFailed ? { objective: obj.kind, won: true } : obj ? { objective: obj.kind } : {};
+    const extra =
+      obj && obj.kind === 'champion'
+        ? { champion: obj.etype, ...(obj.chest ? { chest: { ...obj.chest } } : {}) }
+        : obj && !softFailed
+          ? { objective: obj.kind, won: true }
+          : obj
+            ? { objective: obj.kind }
+            : {};
     events.emit(tick, 'room_cleared', { mode, softFailed, ...extra });
   }
 
@@ -692,6 +751,21 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
 
   // ROOM OBJECTIVES: the HUD / probe view of a hunt or a purge.
   function objectiveState(tick) {
+    if (obj.kind === 'champion') {
+      const c = obj.champId !== null ? registry.byId(obj.champId) : null;
+      return {
+        champion: {
+          id: obj.champId,
+          kind: obj.etype,
+          hp: c && !obj.felled ? Math.max(0, c.hp) : 0,
+          maxHp: c ? c.maxHp : 0,
+          spawned: obj.champId !== null,
+          felled: obj.felled,
+          rage: !!(c && c.rage),
+        },
+        ...(obj.chest ? { chest: { ...obj.chest } } : {}),
+      };
+    }
     if (obj.kind === 'hunt') {
       const q = obj.quarryId !== null ? registry.byId(obj.quarryId) : null;
       return {
@@ -750,7 +824,8 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       })),
       waveIndex,
       pendingSpawns: pending.length,
-      ...(obj ? { objective: obj.kind, ...(obj.kind === 'hunt' ? { quarry: obj.etype } : { nestLists: obj.lists.map((l) => l.map((u) => u.etype)) }) } : {}),
+      ...(obj && obj.kind === 'champion' ? { champion: obj.etype } : {}),
+      ...(obj && obj.kind !== 'champion' ? { objective: obj.kind, ...(obj.kind === 'hunt' ? { quarry: obj.etype } : { nestLists: obj.lists.map((l) => l.map((u) => u.etype)) }) } : {}),
     };
   }
 

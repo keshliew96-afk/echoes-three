@@ -7,7 +7,7 @@ clicked too. Each tab shows how much of it the player has found.
 | Page | What it lists |
 |---|---|
 | Story | The Hearth Song page from the story slice (docs/STORY.md), unchanged: verses, chapters, people. The book opens here. |
-| Bestiary | The 21 enemies by land (the land they first appear in) and the 8 bosses. Each entry: a turning model of the game's own rig, its role, the lands it lives in, a lore line, its attacks and the tells that warn of them, and how many the player has felled. |
+| Bestiary | The 21 enemies by land (the land they first appear in), the 4 champions (docs/CHAMPIONS.md) and the 8 bosses. Each entry: a turning model of the game's own rig, its role, the lands it lives in, a lore line, its attacks and the tells that warn of them, and how many the player has felled. |
 | Relics | The 27 relics (icon in its rarity rim, rarity, class for class relics, effect, times taken) and the 10 curses (room or major, effect, times borne). |
 | Events | The 8 event rooms: their line, what taking costs and gives, what leaving does, times visited. |
 | Deeds | Every deed from Unlocks (docs/UNLOCKS.md), done or not, with its Ember reward. Deeds are goals, so none is hidden. |
