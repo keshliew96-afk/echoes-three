@@ -275,7 +275,8 @@ export function createInteractableSystem({ registry, events, combat, getTick, pl
   function availability(e, tick = getTick()) {
     // EVENT ROOMS: an encounter is never a combat asset, so a cleared room's
     // dormancy never reaches it.
-    if (dormant && e.itype !== 'dewfont' && e.itype !== 'encounter') return 'dormant';
+    // KEYS AND VAULTS: nor is the vault's chest.
+    if (dormant && e.itype !== 'dewfont' && e.itype !== 'encounter' && e.itype !== 'vault_chest') return 'dormant';
     if (e.uses !== null && e.uses <= 0) return 'used';
     if (tick < e.cooldownUntilTick) return 'cooldown';
     if (e.itype === 'sluice' && (!e.laneIds || e.laneIds.length === 0)) return 'no_lane';
@@ -313,6 +314,9 @@ export function createInteractableSystem({ registry, events, combat, getTick, pl
     } else if (e.itype === 'encounter') {
       // EVENT ROOMS: the run system opens the encounter's card (sim/run.js).
       events.emit(tick, 'event_touch', { id: e.id, encounter: e.encounter, by: actor.id });
+    } else if (e.itype === 'vault_chest') {
+      // KEYS AND VAULTS: the run system opens the vault's chest (sim/run.js).
+      events.emit(tick, 'vault_touch', { id: e.id, by: actor.id });
     } else if (e.itype === 'sluice') {
       const T = INTERACT_TYPES.sluice;
       const stopped = [];
