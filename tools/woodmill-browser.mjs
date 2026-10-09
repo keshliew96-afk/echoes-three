@@ -24,6 +24,7 @@ const opt = (k, d = null) => {
 };
 const URL0 = opt('url', 'http://127.0.0.1:5199/');
 const LANG = opt('lang', null);
+const PART = opt('part', 'all'); // all | wood | mill (the Journal only with all)
 const SHOTS = opt('shots', 'captures');
 const W = Number(opt('w', '1600'));
 const H = Number(opt('h', '900'));
@@ -78,6 +79,7 @@ await page.evaluate(() => {
 async function waitEvent(pred, timeout = 120000) {
   const t0 = Date.now();
   while (Date.now() - t0 < timeout) {
+    await heal();
     const hit = await page.evaluate((src) => window.__wm.find(new Function('e', `return ${src}`)) || null, pred);
     if (hit) return hit;
     await sleep(100);
@@ -103,8 +105,21 @@ async function campaignRoom(level) {
 async function showcase(kind, beat, dz) {
   await heal();
   await page.evaluate(() => (window.__wm.length = 0));
-  const p = await me();
-  const id = await cmd('spawn', kind, p.x, p.z + dz, { hpMul: 30 });
+  // Out on the far side from the allies (they run in to melee it, and it
+  // would turn on them), its first move ready now.
+  const id = await page.evaluate((k, dist) => {
+    const X = window.__echoes;
+    const w = X.content.world();
+    const party = w.entities().filter((e) => e.partyIndex !== undefined);
+    const p = party.find((e) => e.partyIndex === 0);
+    let ax = 0, az = 0;
+    for (const a of party) if (a !== p) { ax += a.x - p.x; az += a.z - p.z; }
+    const l = Math.hypot(ax, az) || 1;
+    const nid = X.cmd('spawn', k, p.x - (ax / l) * dist, p.z - (az / l) * dist, { hpMul: 30 });
+    const e = w.entities().find((x) => x.id === nid);
+    if (e) e.nextAttackTick = 0;
+    return nid;
+  }, kind, Math.abs(dz));
   const tel = await waitEvent(`e.type === 'telegraph_start' && e.id === ${id}`, 240000);
   if (tel) {
     await sleep(350);
@@ -116,8 +131,8 @@ async function showcase(kind, beat, dz) {
 }
 
 // --- the Wood ------------------------------------------------------------
+if (PART !== 'mill') {
 await campaignRoom(1);
-{
   const v = await cmd('runState');
   check(v.act === 1 && v.phase === 'combat', `a Level I campaign room (act ${v.act}, room ${v.room}, ${v.phase})`);
   const o = await showcase('owl', 'owl_shriek', -4.2);
@@ -136,8 +151,8 @@ await campaignRoom(1);
   await sleep(2500);
 }
 // --- the Mill ------------------------------------------------------------
+if (PART !== 'wood') {
 await campaignRoom(2);
-{
   const v = await cmd('runState');
   check(v.act === 2 && v.phase === 'combat', `a Level II campaign room (act ${v.act}, room ${v.room}, ${v.phase})`);
   const lt = await showcase('leech', 'leech_latch', -3.0);
@@ -178,7 +193,7 @@ await campaignRoom(2);
   if (sack) await shot('woodmill-miller-sack');
   check(!!sack, 'the Drowned Miller throws a flour sack');
   const fired = await recipes();
-  const want = ['owl_shriek', 'lasher_lash', 'leech_leap', 'leech_latch', 'miller_sweep', 'miller_sack_land'];
+  const want = PART === 'mill' ? ['leech_leap', 'leech_latch', 'miller_sweep', 'miller_sack_land'] : ['owl_shriek', 'lasher_lash', 'leech_leap', 'leech_latch', 'miller_sweep', 'miller_sack_land'];
   check(want.every((k) => fired[k] > 0), `their VFX recipes fired (${want.map((k) => `${k} ${fired[k] ?? 0}`).join(', ')})`);
   await cmd('killAllEnemies');
   await sleep(1500);
@@ -190,7 +205,7 @@ await campaignRoom(2);
 }
 
 // --- the Journal ---------------------------------------------------------
-{
+if (PART === 'all') {
   const seen = await page.evaluate(() => ((window.__echoes.save.profile() || {}).journal || {}).seen || {});
   const met = ['owl', 'lasher', 'leech', 'miller'].filter((k) => seen.enemy && k in seen.enemy);
   check(met.length === 4, `the profile's journal met all four (${JSON.stringify(seen.enemy || {})})`);
