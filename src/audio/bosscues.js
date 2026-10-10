@@ -92,6 +92,21 @@ export const BOSS_CUE_CAL = {
   bx_colossus_fissure: 1.1,
   bx_colossus_rain: -5,
   bx_colossus_burst: 3.3,
+  bx_gloamwolf_sting: 6.1,
+  bx_gloamwolf_phase: 6.3,
+  bx_gloamwolf_fall: 7.2,
+  bx_mireking_sting: 4.5,
+  bx_mireking_phase: 5.3,
+  bx_mireking_fall: 4,
+  bx_gloamwolf_tell: -3.8,
+  bx_gloamwolf_pounce: 2.4,
+  bx_gloamwolf_rend: 1.5,
+  bx_gloamwolf_howl: -1.8,
+  bx_mireking_tell: -2.5,
+  bx_mireking_lash: 1.7,
+  bx_mireking_flop: 3.2,
+  bx_mireking_gape: -2.5,
+  bx_mireking_swallow: 2.2,
   // @cal end
 };
 
