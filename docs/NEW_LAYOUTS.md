@@ -56,3 +56,12 @@ see the new rooms.
   every new layout rolled.
 - `tools/slice2-layouts-shots.mjs --ids 21,...,28 --out <dir>`: one screenshot
   per layout against `npm run dev`.
+
+## Memory
+
+Every layout of the level is built ahead and kept resident (`src/scenes/arena.js`),
+so seven layouts per act means seven resident dressings instead of five.
+`tools/memory-probe.mjs` (1600 x 900, software GL): GPU ledger in level 1
+rooms ~276 MB against ~223 MB on v0.5.267 (+53 MB, two dressings at ~27 MB),
+flat across room transitions, no page errors. Capping residency at five would
+win that back at the cost of a build during the door fade for the other two.
