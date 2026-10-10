@@ -74,6 +74,10 @@ try {
       const box = plate.medal.box;
       await page.screenshot({ path: `${SHOTS}/banner-${b.kind}${LANG ? `-${LANG}` : ''}.png`, clip: { x: Math.max(0, box.x - 40), y: Math.max(0, box.y - 24), width: 760, height: 120 } });
     }
+    // The sting lands with the banner; read it now, before the fight's beats
+    // push it out of the cue log.
+    const early = await cuesSince(mark);
+    check(`${b.kind}: its sting fired`, early.includes(`bx_${b.kind}_sting`));
     const mus = await ev(page, () => window.__echoes.audio.music());
     check(`${b.kind}: its boss groove`, mus.state === 'boss' && mus.boss === b.kind, { state: mus.state, boss: mus.boss });
     // Make it tough, then fight: alternate standing off and crowding it so
@@ -96,7 +100,6 @@ try {
       await page.screenshot({ path: `${SHOTS}/${b.kind}-room-${i}${LANG ? `-${LANG}` : ''}.png` });
     }
     const cues = await cuesSince(mark);
-    check(`${b.kind}: its sting fired`, cues.includes(`bx_${b.kind}_sting`));
     const beats = b.beats.filter((c) => cues.includes(c));
     check(`${b.kind}: its kit beats play (${beats.length}/${b.beats.length})`, beats.length >= 2, beats);
   }
