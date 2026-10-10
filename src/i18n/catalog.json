@@ -126,9 +126,19 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "{cls} · {name}": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
  "{cls} · SKILL SLOTS FREE": {
   "files": [
    "src/ui/run/draft.js"
+  ]
+ },
+ "{cls} · Taken": {
+  "files": [
+   "src/ui/menu/lobby.js"
   ]
  },
  "{cls} · the {critter}": {
@@ -481,6 +491,16 @@
   ],
   "plural": true,
   "one": "{n} node from {skill} back on the bench — F auto-fills them"
+ },
+ "{n} of 3 chosen": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "{n} of 3 chosen · the rest from today’s party": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
  },
  "{n} player": {
   "files": [
@@ -1316,6 +1336,11 @@
    "src/ui/run/draft.js"
   ]
  },
+ "<b>Team</b> · who joins": {
+  "files": [
+   "src/scenes/camp.js"
+  ]
+ },
  "<b>W</b>/<b>S</b> or <b>↑</b>/<b>↓</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause": {
   "files": [
    "src/ui/run/draft.js"
@@ -1383,9 +1408,19 @@
    "src/ui/run/shop.js"
   ]
  },
+ "✓ {cls}": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
  "✓ Done": {
   "files": [
    "src/ui/run/unlocks.js"
+  ]
+ },
+ "✓ Joins": {
+  "files": [
+   "src/ui/run/classpick.js"
   ]
  },
  "✓ Playing": {
@@ -1485,6 +1520,12 @@
  "A bloated grave spider, heavy with young.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "A bolt of river water: 14, and the enemy is soaked (15% slower for 4 s).": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -1770,6 +1811,12 @@
   ]
  },
  "A passive kestrel: every second, the nearest enemy within 4 u takes 6.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A passive pool: every second, the 2 nearest enemies within 2.5 u take 5 and are soaked.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -2224,6 +2271,12 @@
   ],
   "data": true
  },
+ "An undertow at the target for 4 s: 6 per second, soaks, and drags enemies inside toward its centre.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Anchor": {
   "files": [
    "src/sim/nodes.js"
@@ -2396,6 +2449,11 @@
    "src/sim/relics.js"
   ],
   "data": true
+ },
+ "At camp · Play": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
  },
  "At the pedlar": {
   "files": [
@@ -2911,6 +2969,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Bends the fight with water: soak enemies, drag them together, then crash a wave into the soaked.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "Beneath the Barrow, where the corruption first took root and still beats.": {
   "files": [
    "src/data/levels.js"
@@ -2974,6 +3037,12 @@
  "Bites for 9. Every husk surges on the same heartbeat; their veins swell just before. Step back on the pulse and swing between beats.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "BK": {
+  "files": [
+   "src/sim/allies.js"
   ],
   "data": true
  },
@@ -3125,6 +3194,12 @@
  "Brazilian Portuguese": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Breaker": {
+  "files": [
+   "src/sim/allies.js"
   ],
   "data": true
  },
@@ -3484,6 +3559,7 @@
    "src/ui/menu/pause.js",
    "src/ui/menu/saves.js",
    "src/ui/menu/title.js",
+   "src/ui/run/classpick.js",
    "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
   ]
@@ -3904,6 +3980,11 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "Couldn’t change the team ({reason})": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
  "Couldn't continue that save": {
   "files": [
    "src/ui/menu/title.js"
@@ -4009,6 +4090,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Crash. A breaking wave around the otter: 22 to up to 5 enemies, knocked back. +60% on a soaked enemy, which spends the soak.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
  },
  "Crates under a rotten tarp. Nobody has come back for them.": {
   "files": [
@@ -4495,6 +4582,7 @@
  },
  "Done": {
   "files": [
+   "src/ui/run/classpick.js",
    "src/ui/story/journal.js"
   ]
  },
@@ -5376,6 +5464,11 @@
    "src/data/story.js"
   ],
   "data": true
+ },
+ "Four seats: the Healer always comes, you play your class, and you choose who fills the rest. The AI plays everyone you do not.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
  },
  "Four verses burn. Three are still missing, out where the map runs blank.": {
   "files": [
@@ -6463,6 +6556,11 @@
    "src/ui/net/hud.js"
   ]
  },
+ "Joins or stays": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "Journal": {
   "files": [
    "src/ui/menu/tabs/controls.js",
@@ -7398,6 +7496,11 @@
    "src/data/journal.js"
   ],
   "data": true
+ },
+ "NEW": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
  },
  "New Game": {
   "files": [
@@ -8375,6 +8478,11 @@
    "src/ui/menu/tabs/network.js"
   ]
  },
+ "Playing": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "Plays a hit on your left, in the centre and on your right.": {
   "files": [
    "src/ui/menu/tabs/audio.js"
@@ -8709,6 +8817,12 @@
  "Razor Wake": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "RB": {
+  "files": [
+   "src/sim/allies.js"
   ],
   "data": true
  },
@@ -9190,6 +9304,12 @@
  "Riposte": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Riverbolt": {
+  "files": [
+   "src/sim/allies.js"
   ],
   "data": true
  },
@@ -10290,6 +10410,11 @@
    "src/ui/menu/pause.js"
   ]
  },
+ "Stays at camp": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "Steady Aim": {
   "files": [
    "src/sim/nodes.js"
@@ -10531,6 +10656,11 @@
    "src/sim/skills.js"
   ],
   "data": true
+ },
+ "Team: {names}": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
  },
  "technique": {
   "files": [
@@ -10867,6 +10997,11 @@
    "src/data/story.js"
   ],
   "data": true
+ },
+ "The bell-carrier always comes along.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
  },
  "the bench is empty — clear spoils, node drafts and the shop fill it": {
   "files": [
@@ -11262,6 +11397,11 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "The Healer always comes. Choose who fills the seats the AI plays.": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
  },
  "The Healer carries · {skills}": {
   "files": [
@@ -11677,6 +11817,11 @@
   ],
   "data": true
  },
+ "The rest of the team comes from today’s party": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "The river carries my song now. Drink.": {
   "files": [
    "src/data/story.js"
@@ -11877,6 +12022,12 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "The team is full: choose someone to stay at camp first.": {
+  "files": [
+   "src/ui/menu/lobby.js",
+   "src/ui/run/classpick.js"
+  ]
  },
  "The Thornmother": {
   "files": [
@@ -12205,6 +12356,20 @@
    "src/ui/run/transit.js"
   ]
  },
+ "Tidecaller": {
+  "files": [
+   "src/data/classes.js",
+   "src/ui/menu/saves.js",
+   "src/ui/run/transit.js"
+  ],
+  "data": true
+ },
+ "Tidepool": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
  "Time": {
   "files": [
    "src/ui/menu/records.js",
@@ -12294,6 +12459,12 @@
   ],
   "data": true
  },
+ "TP": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
  "TR": {
   "files": [
    "src/sim/skills.js"
@@ -12359,6 +12530,12 @@
   "files": [
    "src/ui/menu/mpjoin.js"
   ]
+ },
+ "Undertow": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
  },
  "UNEASY WOODLAND": {
   "files": [
@@ -12431,6 +12608,12 @@
   "files": [
    "src/ui/menu/tabs/network.js"
   ]
+ },
+ "UT": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
  },
  "V-Sync": {
   "files": [
@@ -12623,6 +12806,11 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "Waiting for {names} to choose their character": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
  "Waiting for the {cls}…": {
   "files": [
    "src/ui/run/index.js"
@@ -12801,6 +12989,16 @@
    "src/sim/allies.js"
   ],
   "data": true
+ },
+ "Who joins as AI": {
+  "files": [
+   "src/ui/menu/lobby.js"
+  ]
+ },
+ "Who joins the team?": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
  },
  "Wick": {
   "files": [
@@ -13034,7 +13232,7 @@
    "src/ui/menu/mpmenu.js"
   ]
  },
- "You play one of the four. The AI plays the other three, so the party is always whole.": {
+ "You play one of the five. The AI plays the rest of the party of four, so it is always whole.": {
   "files": [
    "src/ui/run/classpick.js"
   ]
@@ -13057,6 +13255,11 @@
  "You play the {cls}. Between rooms each player builds their own character; you also build the AI-held seats ({path}). Anyone can drop in later.": {
   "files": [
    "src/ui/menu/lobby.js"
+  ]
+ },
+ "You play this class, so it comes along.": {
+  "files": [
+   "src/ui/run/classpick.js"
   ]
  },
  "You return to the title. Your single-player saves are untouched.": {
@@ -13133,6 +13336,7 @@
  },
  "Your character": {
   "files": [
+   "src/ui/menu/lobby.js",
    "src/ui/run/partystrip.js"
   ]
  },

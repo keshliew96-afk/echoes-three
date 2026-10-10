@@ -45,6 +45,7 @@ const FRAMING = {
   tank: { xBias: 0.03, earPad: 0.0 },
   swordsman: { xBias: 0.11, earPad: 0.05 },
   archer: { xBias: 0.19, earPad: 0.1 },
+  tidecaller: { xBias: 0.05, earPad: 0.0 },
 };
 
 // PARTY: the rendered heads, cached for every build page's party strip.

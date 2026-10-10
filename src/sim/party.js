@@ -353,6 +353,8 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
         if (r && !r.immune && !r.blocked) {
           hit.push(t.id);
           pulseInfo.dealt += r.amount ?? 0;
+          // THE TIDECALLER: a passive that soaks (Tidepool) soaks what it hits.
+          if (base.status && t.hp > 0) combat.status.apply(t, base.status.kind, base.status.mag, base.status.ticks, tick, a.id);
         }
       }
       pulseInfo.hit = hit;

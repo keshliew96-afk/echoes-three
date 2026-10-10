@@ -54,7 +54,8 @@ let srv = null;
 let browser = null;
 try {
   srv = await startServer({ port, admin: true });
-  browser = await launchEchoes({ gpu: true, background: true, width: 1280, height: 720 });
+  const extraArgs = (process.env.ECHOES_CHROME_ARGS || '').split(/\s+/).filter(Boolean);
+  browser = await launchEchoes({ gpu: !extraArgs.length, background: true, width: 1280, height: 720, extraArgs });
   const host = await openClient(browser, { base: hostBase, server: srv.url, name: 'Host', seed: 7 });
   const guest = await openClient(browser, { base: guestBase, server: srv.url, name: 'Guest', seed: 8 });
 

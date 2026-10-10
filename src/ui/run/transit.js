@@ -81,7 +81,7 @@ export const TRANSIT_CSS = `
 // PARTY (BUILD_BRIEF §25.6): "Tank · 4 skills · 12/32 · ◉ 30" × 4.
 export function buildsHtml(builds) {
   if (!Array.isArray(builds) || builds.length === 0) return '';
-  const NAME = { healer: () => t('Healer'), tank: () => t('Tank'), swordsman: () => t('Swordsman'), archer: () => t('Archer') };
+  const NAME = { healer: () => t('Healer'), tank: () => t('Tank'), swordsman: () => t('Swordsman'), archer: () => t('Archer'), tidecaller: () => t('Tidecaller') };
   return builds
     .map(
       (b) =>

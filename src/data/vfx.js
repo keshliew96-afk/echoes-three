@@ -79,6 +79,23 @@ export const CLASS_VFX = Object.freeze({
     bolt: Object.freeze({ look: 'arrow', trail: 0.42, width: 0.07 }),
     camera: Object.freeze({ kick: 0.03, dolly: 0 }),
   }),
+  // THE TIDECALLER (docs/TIDECALLER.md): water. Round, flowing shapes in
+  // Deep Cobalt with Sea Foam, River Pebble grit. Her own per-skill beats
+  // come with the rest of her kit; this row gives every cast her colours.
+  tidecaller: Object.freeze({
+    id: 'tidecaller',
+    shape: 'round',
+    core: PALETTE.parchment,
+    glow: VFX_SIGNATURE.tidecaller.glow,
+    second: VFX_SIGNATURE.tidecaller.second,
+    debrisColor: VFX_SIGNATURE.tidecaller.second,
+    slash: Object.freeze({ width: 0.3, sweep: 0.12, life: 0.4, arcs: 1, soft: 0.7 }),
+    ring: Object.freeze({ width: 0.24, life: 0.5, jag: 0.15, soft: 0.6 }),
+    light: Object.freeze({ scale: 1.2, opacity: 0.42, life: 0.4 }),
+    debris: Object.freeze({ chunk: 0, dust: 0, spark: 5, shard: 4, shardKind: 'drop', rise: false }),
+    bolt: Object.freeze({ look: 'orb', trail: 0.36, width: 0.12 }),
+    camera: Object.freeze({ kick: 0.02, dolly: 0.02 }),
+  }),
 });
 
 // Unknown class ids (a future fifth character) borrow the Healer's soft look
@@ -110,7 +127,7 @@ const SKILL_OWNER = new Map();
 for (const cls of Object.keys(CLASS_SKILLS)) for (const id of CLASS_SKILLS[cls]) SKILL_OWNER.set(id, cls);
 export function vfxSkillClass(skillId) {
   if (!skillId) return null;
-  const m = /^(tank|swordsman|archer|healer)_basic$/.exec(skillId);
+  const m = /^(tank|swordsman|archer|healer|tidecaller)_basic$/.exec(skillId);
   if (m) return m[1];
   return SKILL_OWNER.get(skillId) ?? 'healer';
 }

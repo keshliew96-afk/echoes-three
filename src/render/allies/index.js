@@ -320,12 +320,12 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   // camp spots; adopt those (one factory instance per character, never two)
   // and let the scene keep driving their pose clocks. Anywhere else (graybox
   // probes) this layer builds its own and drives them itself.
-  const adopted = Array.isArray(scene?.allies) && scene.allies.length === 3;
+  const adopted = Array.isArray(scene?.allies) && scene.allies.length >= 3;
   const critters = new Map(); // classId -> critter
   if (adopted) {
     for (const c of scene.allies) critters.set(c.classId, c);
   } else {
-    for (const classId of ['tank', 'swordsman', 'archer']) {
+    for (const classId of ['tank', 'swordsman', 'archer', 'tidecaller']) {
       const c = createCritter(classId, { cosmetic });
       root.add(c.group);
       critters.set(classId, c);
@@ -792,10 +792,14 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     if (!warmed && ++warmFrames > 12) prewarm();
     if (inkWarmFrames > 0) inkWarmFrames--;
 
-    // --- ally rigs ride their sim bodies.
+    // --- ally rigs ride their sim bodies. THE TIDECALLER: four critters for
+    // three seats, so the class the run's lineup left at camp is hidden.
+    const seen = new Set();
     for (const a of allyEntities()) {
       const c = critters.get(a.classId);
       if (!c) continue;
+      seen.add(a.classId);
+      if (!c.group.visible) c.group.visible = true;
       const st = rigState.get(a.classId);
       const ix = a.px + (a.x - a.px) * alpha;
       const iz = a.pz + (a.z - a.pz) * alpha;
@@ -819,6 +823,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
 
       if (!adopted) c.update(dt);
     }
+    if (seen.size) for (const [cls, c] of critters) if (!seen.has(cls) && c.group.visible) c.group.visible = false;
 
     // --- §8 mark reticle on the marked enemy.
     const markId = allySys.getMark();

@@ -237,6 +237,11 @@ export const SKILL_BODY = {
   hunters_mark: 'A long marking arrow: 12, and the enemy takes 30% more damage for 3 s.',
   barbed_trap: 'A trap at the target for 3 s: 16 per second, and it snaps shut with a 0.7 s stun (not the bosses).',
   feather_fan: 'Five arrows in a wide spray, 9 each, then the hare darts off 30% faster for 1.5 s.',
+  // THE TIDECALLER (docs/TIDECALLER.md).
+  riverbolt: 'A bolt of river water: 14, and the enemy is soaked (15% slower for 4 s).',
+  undertow: 'An undertow at the target for 4 s: 6 per second, soaks, and drags enemies inside toward its centre.',
+  breaker: 'Crash. A breaking wave around the otter: 22 to up to 5 enemies, knocked back. +60% on a soaked enemy, which spends the soak.',
+  tidepool: 'A passive pool: every second, the 2 nearest enemies within 2.5 u take 5 and are soaked.',
 };
 
 // A skill candidate card body (no frame — the caller owns .rn-card).

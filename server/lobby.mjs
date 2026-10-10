@@ -10,6 +10,13 @@
 // belongs to the host at creation; seats 1-3 are Tank, Swordsman, Archer. In
 // the lobby any player (the host too) may move to any free seat (CLASS
 // SELECT). An empty or dropped seat is played by the AI on the host.
+//
+// THE TIDECALLER (docs/LINEUP.md): the room carries a LINEUP, the class on
+// each seat (the default four until changed). A player picks a character
+// from the whole roster (select_class): one already in the team is its seat;
+// one that is not takes an AI seat's place (their own seat first). Then the
+// host picks who fills the seats the AI plays (set_team); every human keeps
+// their character and moves to its seat.
 import { randomInt } from 'node:crypto';
 import {
   MSG,
@@ -22,6 +29,7 @@ import {
   HOST_GRACE_MS,
 } from '../src/net/protocol/constants.js';
 import { CLASS_BY_SEAT, ERR, sanitizeName } from '../src/net/protocol/messages.js';
+import { DEFAULT_LINEUP, LINEUP_CLASSES, normalizeLineup, sameLineup } from '../src/data/lineup.js';
 
 export const LOBBY_HOLD_MS = 10000; // a disconnected lobby member keeps the seat 10 s (page reload)
 export const START_COUNTDOWN_MS = 1500;
@@ -97,6 +105,7 @@ export class Lobby {
       hostPeerId: room.hostPeerId,
       hostSeat: room.hostPeerId ? this.seatOf(room, room.hostPeerId)?.index ?? null : null,
       seed: room.seed,
+      lineup: [...(room.lineup || DEFAULT_LINEUP)],
       createdAt: room.createdAt,
       startedAt: room.startedAt,
       seats: room.seats.map((s) => ({
@@ -147,6 +156,7 @@ export class Lobby {
       startAt: null,
       lastMatchStatusAt: 0,
       seats: Array.from({ length: MAX_SEATS }, (_, i) => newSeat(i)),
+      lineup: DEFAULT_LINEUP,
       peerRef: new Map(),
       keyframe: null,
       evicted: new Set(),
@@ -265,25 +275,94 @@ export class Lobby {
   }
 
   // ---------------------------------------------------------- seat/ready --
-  selectSeat(peer, want) {
+  selectSeat(peer, want, re = MSG.SELECT_SEAT) {
     const room = this.roomOf(peer);
-    if (!room) return this.error(peer, ERR.NOT_IN_ROOM, MSG.SELECT_SEAT);
-    if (room.state !== 'lobby') return this.error(peer, ERR.WRONG_STATE, MSG.SELECT_SEAT, { state: room.state });
+    if (!room) return this.error(peer, ERR.NOT_IN_ROOM, re);
+    if (room.state !== 'lobby') return this.error(peer, ERR.WRONG_STATE, re, { state: room.state });
     // CLASS SELECT: any player, the host included, takes any free seat.
     const cur = this.seatOf(room, peer.id);
     const target = room.seats[want];
-    if (!target) return this.error(peer, ERR.BAD_REQUEST, MSG.SELECT_SEAT);
+    if (!target) return this.error(peer, ERR.BAD_REQUEST, re);
     if (cur && cur.index === want) {
       this.pushState(room);
       return { ok: true };
     }
-    if (!this.isFree(target)) return this.error(peer, ERR.SEAT_TAKEN, MSG.SELECT_SEAT, { seat: want });
+    if (!this.isFree(target)) return this.error(peer, ERR.SEAT_TAKEN, re, { seat: want });
     const rtt = cur ? cur.rttMs : null;
     if (cur) this.clearSeat(cur);
     this.seatPeer(room, target, peer);
     target.rttMs = rtt;
     this.pushState(room);
     return { ok: true };
+  }
+
+  // THE TIDECALLER: pick a character from the roster. In the team: take its
+  // seat (selectSeat). Not in the team: it replaces the class on an AI seat
+  // (the player's own seat first, else the last free ally seat) and the
+  // player moves there. The Healer is always seat 0.
+  selectClass(peer, classId) {
+    const room = this.roomOf(peer);
+    if (!room) return this.error(peer, ERR.NOT_IN_ROOM, MSG.SELECT_CLASS);
+    if (room.state !== 'lobby') return this.error(peer, ERR.WRONG_STATE, MSG.SELECT_CLASS, { state: room.state });
+    const lineup = room.lineup || DEFAULT_LINEUP;
+    const at = lineup.indexOf(classId);
+    if (at >= 0) return this.selectSeat(peer, at, MSG.SELECT_CLASS);
+    if (!LINEUP_CLASSES.includes(classId)) return this.error(peer, ERR.BAD_REQUEST, MSG.SELECT_CLASS);
+    const cur = this.seatOf(room, peer.id);
+    const free = room.seats.filter((s) => s.index > 0 && this.isFree(s));
+    const target = cur && cur.index > 0 ? cur : free[free.length - 1];
+    if (!target) return this.error(peer, ERR.SEAT_TAKEN, MSG.SELECT_CLASS, { classId });
+    const next = normalizeLineup(lineup.map((c, i) => (i === target.index ? classId : c)));
+    if (next[target.index] !== classId) return this.error(peer, ERR.BAD_REQUEST, MSG.SELECT_CLASS);
+    if (cur !== target) {
+      const rtt = cur ? cur.rttMs : null;
+      if (cur) this.clearSeat(cur);
+      this.seatPeer(room, target, peer);
+      target.rttMs = rtt;
+    }
+    target.classId = classId;
+    this.applyLineup(room, next);
+    this.log('select_class', { code: room.code, peer: peer.id, classId, seat: target.index });
+    this.pushState(room);
+    return { ok: true };
+  }
+
+  // THE TIDECALLER: the host picks the three who join the Healer. Every
+  // human keeps their character, so the team must hold each human's class;
+  // humans move to their class's seat in the new lineup (seat order is
+  // LINEUP_CLASSES order, as in single player).
+  setTeam(peer, team) {
+    const room = this.roomOf(peer);
+    if (!room) return this.error(peer, ERR.NOT_IN_ROOM, MSG.SET_TEAM);
+    if (room.hostPeerId !== peer.id) return this.error(peer, ERR.NOT_HOST, MSG.SET_TEAM);
+    if (room.state !== 'lobby') return this.error(peer, ERR.WRONG_STATE, MSG.SET_TEAM, { state: room.state });
+    const next = normalizeLineup(['healer', ...LINEUP_CLASSES.filter((c) => team.includes(c))]);
+    const ok = new Set(team).size === 3 && team.every((c) => next.includes(c));
+    if (!ok) return this.error(peer, ERR.BAD_REQUEST, MSG.SET_TEAM);
+    const held = room.seats.filter((s) => s.peerId !== null && !this.isFree(s));
+    if (held.some((s) => !next.includes(s.classId))) return this.error(peer, ERR.SEAT_TAKEN, MSG.SET_TEAM);
+    this.applyLineup(room, next);
+    this.log('set_team', { code: room.code, peer: peer.id, lineup: next.join(',') });
+    this.pushState(room);
+    return { ok: true };
+  }
+
+  // Re-seat a room on a new lineup: each held seat follows its class to the
+  // class's new index; every other seat is a fresh AI seat of its class.
+  applyLineup(room, lineup) {
+    if (sameLineup(lineup, room.lineup || DEFAULT_LINEUP)) return;
+    const old = room.seats;
+    room.seats = lineup.map((cls, i) => {
+      const s = old.find((o) => o.classId === cls && o.peerId !== null) || newSeat(i);
+      s.index = i;
+      s.classId = cls;
+      if (s.peerId) {
+        const p = room.peerRef.get(s.peerId);
+        if (p) p.seat = i;
+      }
+      return s;
+    });
+    room.lineup = lineup;
   }
 
   setReady(peer, ready) {

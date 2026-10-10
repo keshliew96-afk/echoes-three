@@ -31,7 +31,7 @@ import {
   SpriteMaterial,
   SRGBColorSpace,
 } from 'three';
-import { PALETTE } from '../../data/palette.js';
+import { PALETTE, VFX_SIGNATURE } from '../../data/palette.js';
 import { SKILLS } from '../../sim/skills.js';
 import { makeGlowSprite } from '../glow.js';
 import { releaseTree, sharedGeo } from '../geocache.js';
@@ -39,6 +39,7 @@ import { warmPark } from '../warmup.js';
 
 const HEAL = PALETTE.brightHeal;
 const AMBER = PALETTE.hearthAmber;
+const SOAK = VFX_SIGNATURE.tidecaller; // THE TIDECALLER: Deep Cobalt / Sea Foam
 const PARCH = PALETTE.parchment;
 const BONE = PALETTE.bone;
 const BLUE = PALETTE.signalBlue;
@@ -411,7 +412,20 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
       st.position.set(-0.3, 0.3 + i * 0.22, (i - 1) * 0.12);
       haste.add(st);
     }
-    const parts = { slowInk, slow, slowGlow, exposed, exposedGlyph, stun, stunGlow, shell, hex, shieldGlow, ward, wardRim, inspired, inspiredGlow, haste };
+    // soaked (THE TIDECALLER): a wet cobalt sheen pooled at the feet (a soft
+    // filled disc, a Sea Foam rim) and a cool glow; drips fall off the body
+    // in update().
+    const soaked = new Mesh(slowGeo, additive(SOAK.glow, 0.32));
+    soaked.rotation.x = -Math.PI / 2;
+    soaked.position.y = 0.024;
+    soaked.scale.set(0.5, 0.5, 1);
+    const soakedRim = new Mesh(slowGeo, flat(SOAK.second, 0.7));
+    soakedRim.rotation.x = -Math.PI / 2;
+    soakedRim.position.y = 0.028;
+    soakedRim.scale.set(0.46, 0.46, 1);
+    const soakedGlow = makeGlowSprite({ color: SOAK.glow, size: 0.8, opacity: 0.22 });
+    soakedGlow.position.y = 0.55;
+    const parts = { slowInk, slow, slowGlow, exposed, exposedGlyph, stun, stunGlow, shell, hex, shieldGlow, ward, wardRim, inspired, inspiredGlow, haste, soaked, soakedRim, soakedGlow };
     for (const p of Object.values(parts)) {
       p.visible = false;
       g.add(p);
@@ -606,6 +620,15 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
       spawnRing(p.x, p.z, { color: AMBER, from: 0.3, to: 1.0, life: 0.45, opacity: 0.7, width: 0.1 });
     }
   });
+  // THE TIDECALLER: a Crash on a soaked enemy — the soak bursts off it in a
+  // foam-white flash and a spray of cobalt drops (her full wave beats come
+  // with the rest of her kit).
+  bus.on('crash', (ev) => {
+    if (!Number.isFinite(ev.x)) return;
+    spawnFlash(ev.x, 0.6, ev.z, { color: SOAK.second, size: 0.9, opacity: 0.85, life: 0.22, grow: 0.8 });
+    spawnFlash(ev.x, 0.5, ev.z, { color: SOAK.glow, size: 1.3, opacity: 0.4, life: 0.32, grow: 0.6 });
+    spawnMotes(ev.x, ev.z, { color: SOAK.second, count: 7, y: 0.6, spread: 0.3, vyMin: 0.8, vyMax: 1.8, life: [0.35, 0.6], size: [0.05, 0.1] });
+  });
   bus.on('skill_bolt_pierce', (ev) => {
     spawnFlash(ev.x, 0.55, ev.z, { color: PARCH, size: 0.35, opacity: 0.95, life: 0.16, grow: 0.3 });
     spawnFlash(ev.x, 0.55, ev.z, { color: AMBER, size: 0.7, opacity: 0.6, life: 0.26, grow: 0.5 });
@@ -690,7 +713,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
     const seen = new Set();
     for (const e of world.entities()) {
       if (!e.status || !(e.hp > 0)) continue;
-      const kinds = ['slow', 'stun', 'shield', 'haste', 'ward', 'exposed', 'inspired'];
+      const kinds = ['slow', 'stun', 'shield', 'haste', 'ward', 'exposed', 'inspired', 'soaked'];
       let any = false;
       for (const k of kinds) if (liveStatus(e, k, tick)) any = true;
       if (!any) continue;
@@ -745,6 +768,15 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
         P.hex.material.opacity = 0.3 + 0.25 * k;
         P.hex.rotation.z = tSec * 0.6;
         P.hex.scale.set(1.7 * scale, 1.7 * scale, 1);
+      }
+      const soak = !!liveStatus(e, 'soaked', tick);
+      P.soaked.visible = P.soakedRim.visible = P.soakedGlow.visible = soak;
+      if (soak) {
+        const r = 0.5 * scale + 0.04 * Math.sin(tSec * 3 + e.id);
+        P.soaked.scale.set(r, r, 1);
+        P.soakedRim.scale.set(r * 0.92, r * 0.92, 1);
+        P.soakedGlow.position.y = 0.55 * scale;
+        if (cosmetic.float() < 0.18) spawnMotes(pos.x, pos.z, { color: SOAK.second, count: 1, y: 0.7 * scale, spread: 0.22 * scale, vyMin: 0.6, vyMax: 1.1, life: [0.3, 0.5], size: [0.04, 0.07], fall: true });
       }
       const ward = !!liveStatus(e, 'ward', tick);
       P.ward.visible = P.wardRim.visible = ward;

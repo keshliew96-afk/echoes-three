@@ -21,7 +21,7 @@
 // Seat = party index = class (fixed).
 export const CLASS_OF_SEAT = Object.freeze(['healer', 'tank', 'swordsman', 'archer']);
 export const SEAT_OF_CLASS = Object.freeze({ healer: 0, tank: 1, swordsman: 2, archer: 3 });
-export const CLASS_NAME = Object.freeze({ healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer' });
+export const CLASS_NAME = Object.freeze({ healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer', tidecaller: 'Tidecaller' });
 export const ALLY_CLASS_IDS = Object.freeze(['tank', 'swordsman', 'archer']);
 
 // §25.2 class skill pools, in the §25.2 table order (the 4 starting rows
@@ -32,6 +32,9 @@ export const CLASS_SKILLS = Object.freeze({
   tank: Object.freeze(['heavy_slam', 'brutal_cleave', 'ground_crack', 'whirling_guard', 'taunting_roar', 'shield_wall', 'shoulder_charge', 'iron_stance', 'earthshatter', 'rallying_cry', 'earthen_grasp']),
   swordsman: Object.freeze(['flurry', 'lunge_strike', 'blade_storm', 'caltrops', 'fox_step', 'crescent_finisher', 'riposte', 'razor_wake', 'moonfang', 'blade_dance', 'crimson_edge']),
   archer: Object.freeze(['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova', 'vault_shot', 'pinning_arrow', 'rain_of_arrows', 'kestrel_watch', 'hunters_mark', 'barbed_trap', 'feather_fan']),
+  // THE TIDECALLER (docs/TIDECALLER.md): the otter's four base skills. The
+  // other seven join in the next slice.
+  tidecaller: Object.freeze(['riverbolt', 'undertow', 'breaker', 'tidepool']),
 });
 
 // MORE CLASS SKILLS: what joined the pools on 2026-10-08 — nine class skills,
@@ -44,6 +47,9 @@ export const CAMPAIGN_ONLY_SKILLS = Object.freeze([
   'moonfang', 'blade_dance', 'crimson_edge',
   'hunters_mark', 'barbed_trap', 'feather_fan',
   'lantern_ward', 'dawn_brand',
+  // THE TIDECALLER: her skills, like the class itself, only ever appear in a
+  // campaign (her seat exists only through a campaign lineup anyway).
+  'riverbolt', 'undertow', 'breaker', 'tidepool',
 ]);
 export const CAMPAIGN_ONLY_NODES = Object.freeze(['rampart', 'crush', 'gale_step', 'duel', 'longshot', 'prey']);
 // The pool a draft draws from: everything, or the old pool outside a campaign.
@@ -60,13 +66,14 @@ export const CLASS_BASE_KIT = Object.freeze({
   tank: Object.freeze(['heavy_slam', 'brutal_cleave', 'ground_crack', 'whirling_guard']),
   swordsman: Object.freeze(['flurry', 'lunge_strike', 'blade_storm', 'caltrops']),
   archer: Object.freeze(['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova']),
+  tidecaller: Object.freeze(['riverbolt', 'undertow', 'breaker', 'tidepool']),
 });
 
 // Every class starts a run with its four skill slots EMPTY (v0.5.227): skills
 // come only from wave rewards (or an equipped Unlocks kit). The basic attack
 // and the dodge are not skills and stay.
 const EMPTY_KIT = Object.freeze([null, null, null, null]);
-export const STARTING_LOADOUT = Object.freeze({ tank: EMPTY_KIT, swordsman: EMPTY_KIT, archer: EMPTY_KIT });
+export const STARTING_LOADOUT = Object.freeze({ tank: EMPTY_KIT, swordsman: EMPTY_KIT, archer: EMPTY_KIT, tidecaller: EMPTY_KIT });
 
 // §25.3 class nodes (6 per class, all techniques) — the rows live in
 // sim/nodes.js NODES (cls-tagged).
@@ -74,6 +81,8 @@ export const CLASS_NODES = Object.freeze({
   tank: Object.freeze(['provoke', 'brace', 'tremor', 'anchor', 'retaliate', 'aegis', 'rampart', 'crush']),
   swordsman: Object.freeze(['flow', 'momentum', 'parry', 'pursuit', 'lethality', 'execute', 'gale_step', 'duel']),
   archer: Object.freeze(['skewer', 'concussive', 'steady_aim', 'disengage', 'scatter', 'heartseeker', 'longshot', 'prey']),
+  // THE TIDECALLER: her eight class nodes come with the rest of her kit.
+  tidecaller: Object.freeze([]),
 });
 
 // §25.3 shared-node access per class (the Healer: all 17, unchanged).
@@ -81,6 +90,7 @@ export const SHARED_ACCESS = Object.freeze({
   tank: Object.freeze(['sharpen', 'quicken', 'multiply', 'ascend', 'widen', 'reach', 'linger', 'echo', 'snare', 'galvanize', 'bulwark', 'resonance']),
   swordsman: Object.freeze(['sharpen', 'quicken', 'multiply', 'ascend', 'widen', 'reach', 'keen', 'siphon', 'echo', 'detonate', 'galvanize', 'resonance']),
   archer: Object.freeze(['sharpen', 'quicken', 'multiply', 'ascend', 'reach', 'linger', 'keen', 'bounce', 'split', 'snare', 'detonate', 'echo', 'resonance']),
+  tidecaller: Object.freeze(['sharpen', 'quicken', 'multiply', 'ascend', 'widen', 'reach', 'linger', 'bounce', 'split', 'snare', 'echo', 'resonance', 'siphon']),
 });
 
 // A class's node pool, sorted ascending id (the §16 draw order).
@@ -111,6 +121,8 @@ export const AI_PRIORITY = Object.freeze({
     'piercing_shot', 'hunters_mark', 'volley', 'pinning_arrow', 'feather_fan', 'vault_shot',
     'rain_of_arrows', 'barbed_trap', 'kestrel_watch', 'detonating_charge', 'sundering_nova',
   ]),
+  // The plan's order for her whole kit, cut to the four she has so far.
+  tidecaller: Object.freeze(['riverbolt', 'undertow', 'breaker', 'tidepool']),
 });
 
 const rankOf = (list, id) => {
@@ -267,6 +279,12 @@ export const CLASS_TECH = Object.freeze({
   longshotMax: 0.5,
   preyExposed: 0.25, // Prey: the first enemy each cast hits takes 25% more for 3 s
   preyTicks: 180,
+  // THE TIDECALLER (docs/TIDECALLER.md): Crash and the Dive puddle.
+  crashMul: 1.6, // a Crash skill deals +60% to a soaked enemy (and spends the soak)
+  soakMag: 0.15, // the soak's slow (a boss: at most 5%, sim/status.js)
+  soakTicks: 240, // 4 s, refreshed by each new soak
+  diveSoakTicks: 60, // the Dive puddle lasts 1 s
+  diveSoakRadius: 0.7,
 });
 
 // §25.10 MAX-STRESS build (GP.10 / GP.15 precondition; `?partygrant=max`,

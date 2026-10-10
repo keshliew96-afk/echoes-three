@@ -88,6 +88,10 @@ export const MSG = Object.freeze({
   LEAVE_ROOM: 'leave_room',
   SET_READY: 'set_ready',
   SELECT_SEAT: 'select_seat',
+  // THE TIDECALLER (docs/LINEUP.md): a player picks a character from the
+  // roster, then the host picks who fills the AI seats.
+  SELECT_CLASS: 'select_class',
+  SET_TEAM: 'set_team',
   START_GAME: 'start_game',
   RECONNECT: 'reconnect',
   PING: 'ping',

@@ -27,6 +27,7 @@ export const CLASS_ACCENTS = Object.freeze({
   tank: '#6B6157',
   swordsman: '#6B2E3A',
   archer: '#6E7A3F',
+  tidecaller: '#2F5F8F', // THE TIDECALLER: river blue (rings, HP bars, trim)
 });
 
 // Class VFX signatures (docs/gauntlet/design-VFX.md §3). Each class keeps a
@@ -39,6 +40,7 @@ export const VFX_SIGNATURE = Object.freeze({
   tank: Object.freeze({ glow: '#9DB8CF', second: '#8F6B45', debris: '#5A4632' }), // Forge Steel / Earth Ochre
   swordsman: Object.freeze({ glow: '#E8577A', second: '#E7E3F0', debris: '#E7E3F0' }), // Fox Crimson / Moon Silver
   archer: Object.freeze({ glow: '#5ED3C0', second: '#C9C2B3', debris: '#C9C2B3' }), // Wind Jade / Feather Bone
+  tidecaller: Object.freeze({ glow: '#3F7FE6', second: '#E6F3F7', debris: '#7C8A93' }), // Deep Cobalt / Sea Foam / River Pebble
 });
 
 // Biome air (AAA VFX pass, design-VFX.md §10): the tone each act's smoke and

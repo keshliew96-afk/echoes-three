@@ -66,6 +66,7 @@ const CLASS_NAME = {
   get tank() { return t('Tank'); },
   get swordsman() { return t('Swordsman'); },
   get archer() { return t('Archer'); },
+  get tidecaller() { return t('Tidecaller'); },
 };
 
 // A player-facing reason for a damaged file (the raw detail stays in the

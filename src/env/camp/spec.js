@@ -55,6 +55,9 @@ export const CAMP_SPOTS = Object.freeze({
   // rather than inside its collider box (env/camp/colliders.js) — a seated
   // body that starts in a solid would be projected off its own seat.
   archer: Object.freeze({ x: -2.3, z: -2.5, yaw: 0.7 }),
+  // THE TIDECALLER: the east bench's end, the Archer's mirror — the sluice
+  // side of the fire.
+  tidecaller: Object.freeze({ x: 2.4, z: -2.35, yaw: -0.7 }),
 });
 
 export const CAMP_SPEC = Object.freeze({

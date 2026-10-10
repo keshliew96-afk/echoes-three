@@ -40,6 +40,8 @@
 // apply unchanged. Each page also re-initialises its own focus to its
 // rn-primary when it opens (draft: Take; path: the sim's door 0), so no page
 // ever inherits a focus from the page before it.
+import { CLASS_NAME } from '../../data/classes.js';
+import { classOfSeat } from '../../data/lineup.js';
 import { RUN_CSS, isCompact, isShort } from './style.js';
 import { viewerSeat } from '../../app/viewerseat.js';
 import { PARTY_STRIP_CSS } from './partystrip.js';
@@ -877,7 +879,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   bus.on('party_autopick', (ev) => {
     const a = service('app');
     if (!a || typeof a.toast !== 'function') return;
-    const cls = ['Healer', 'Tank', 'Swordsman', 'Archer'][ev.seat];
+    const cls = CLASS_NAME[classOfSeat(ev.seat)];
     const who = cls ? t(cls) : t('party');
     if (ev.reason === 'door_timeout') a.toast(t("Time's up — the left door was taken"), { tone: 'info', ms: 4200 });
     else {
@@ -989,7 +991,6 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   };
   // PARTY (PLAN §16.5): per tab — the guest's OWN card / shelf is its to
   // decide (no banner, or its own countdown); another tab says who decides.
-  const SEAT_NAME = ['Healer', 'Tank', 'Swordsman', 'Archer'];
   function partyTabLine(w) {
     if (current !== 'draft' && current !== 'shop') return null;
     const sc = screens[current];
@@ -1014,7 +1015,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const owners = current === 'draft' ? party.owners : null;
     const human = seat === 0 || (owners ? owners[seat] === 'human' : false);
     const cls = t(w);
-    const ally = t(SEAT_NAME[seat] ?? '');
+    const ally = t(CLASS_NAME[classOfSeat(seat)] ?? '');
     const up = (x) => `${x.charAt(0).toUpperCase()}${x.slice(1)}`;
     if (current === 'draft') {
       if (seat === 0) return up(timed ? t('{cls} is choosing… — {secs} s', { cls, secs }) : t('{cls} is choosing…', { cls }));

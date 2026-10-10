@@ -915,6 +915,20 @@ export function createNetClient(opts = {}) {
     transport.sendControl({ t: MSG.SELECT_SEAT, seat: want });
     return waitFor((m) => (m.t === MSG.ROOM_STATE && m.room.seats.some((s) => s.peerId === peerId && s.index === want) ? { ok: true, seat: want } : rejected(m, MSG.SELECT_SEAT)), 3000);
   }
+  // THE TIDECALLER (docs/LINEUP.md): pick a character from the roster (it
+  // may take an AI seat's place), and the host's pick of who fills the AI
+  // seats (three joiners besides the Healer).
+  async function selectClass(classId) {
+    if (!room) return { ok: false, reason: 'not_in_room' };
+    transport.sendControl({ t: MSG.SELECT_CLASS, classId });
+    return waitFor((m) => (m.t === MSG.ROOM_STATE && m.room.seats.some((s) => s.peerId === peerId && s.classId === classId) ? { ok: true, classId } : rejected(m, MSG.SELECT_CLASS)), 3000);
+  }
+  async function setTeam(team) {
+    if (!room) return { ok: false, reason: 'not_in_room' };
+    const want = [...team].sort().join(',');
+    transport.sendControl({ t: MSG.SET_TEAM, team: [...team] });
+    return waitFor((m) => (m.t === MSG.ROOM_STATE && Array.isArray(m.room.lineup) && m.room.lineup.slice(1).sort().join(',') === want ? { ok: true } : rejected(m, MSG.SET_TEAM)), 3000);
+  }
   async function start(seed = undefined) {
     if (!room) return { ok: false, reason: 'not_in_room' };
     transport.sendControl({ t: MSG.START_GAME, seed: Number.isInteger(seed) ? seed >>> 0 : undefined });
@@ -1519,6 +1533,8 @@ export function createNetClient(opts = {}) {
     leave,
     setReady,
     selectSeat,
+    selectClass,
+    setTeam,
     start,
     rejoin,
     rejoinInfo,

@@ -19,11 +19,17 @@ import { emptySnapshot } from '../core/intents.js';
 import { frameFromSnapshot, seatInputOf } from '../sim/netseats.js';
 import { SKILLS } from '../sim/skills.js';
 import { SEAT_CLASSES } from '../net/seats.js';
-import { seatOfClass as lineupSeatOf, classOfSeat } from '../data/lineup.js';
+import { seatOfClass as lineupSeatOf, classOfSeat, tidecallerOpen, plannedLineup, parseTeam } from '../data/lineup.js';
 import { dodgeCooldownTicks } from '../sim/relics.js';
 
 export const PLAY_CLASS_KEY = 'gameplay.playClass';
-export const PLAY_CLASSES = SEAT_CLASSES;
+// THE TIDECALLER (docs/TIDECALLER.md): five classes for four seats. Who
+// joins the Healer is `gameplay.team` (comma list; '' = today's party).
+export const TEAM_KEY = 'gameplay.team';
+export const PLAY_CLASSES = Object.freeze([...SEAT_CLASSES, 'tidecaller']);
+export const playable = (c) => SEAT_CLASSES.includes(c) || (c === 'tidecaller' && tidecallerOpen());
+// The lineup the next campaign takes from the two settings.
+export const lineupFromSettings = (settings) => plannedLineup(settings.get(PLAY_CLASS_KEY), settings.get(TEAM_KEY));
 // PARTY LINEUP (docs/LINEUP.md): the seat the class holds in the run's
 // lineup; a class that stayed at camp plays nothing, so the Healer's seat.
 export const seatOfClass = (cls) => Math.max(0, lineupSeatOf(cls));
@@ -34,7 +40,8 @@ export const seatOfClass = (cls) => Math.max(0, lineupSeatOf(cls));
 export const LEADER_BOT = Object.freeze({ seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto', pages: false, leader: true });
 
 export function registerPlayClassSetting(settings) {
-  settings.register(PLAY_CLASS_KEY, { default: 'healer', validate: (v) => (SEAT_CLASSES.includes(v) ? v : undefined) });
+  settings.register(PLAY_CLASS_KEY, { default: 'healer', validate: (v) => (playable(v) ? v : undefined) });
+  settings.register(TEAM_KEY, { default: '', validate: (v) => (typeof v === 'string' ? parseTeam(v).join(',') : undefined) });
 }
 
 const cdTicksOf = (def) => Math.max(30, Math.round((def.cd || 0) * 60));
