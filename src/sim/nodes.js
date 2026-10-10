@@ -132,6 +132,15 @@ export const NODES = Object.freeze({
   duel: Object.freeze({ id: 'duel', name: 'Duel', kind: 'technique', rarity: 'rare', limit: 1, cls: 'swordsman' }),
   prey: Object.freeze({ id: 'prey', name: 'Prey', kind: 'technique', rarity: 'common', limit: 1, cls: 'archer' }),
   longshot: Object.freeze({ id: 'longshot', name: 'Longshot', kind: 'technique', rarity: 'rare', limit: 1, cls: 'archer' }),
+  // THE TIDECALLER (docs/TIDECALLER.md): her eight, six common and two rare.
+  wellspring: Object.freeze({ id: 'wellspring', name: 'Wellspring', kind: 'technique', rarity: 'common', limit: 2, cls: 'tidecaller' }),
+  deluge: Object.freeze({ id: 'deluge', name: 'Deluge', kind: 'technique', rarity: 'common', limit: 1, cls: 'tidecaller' }),
+  current: Object.freeze({ id: 'current', name: 'Current', kind: 'technique', rarity: 'common', limit: 1, cls: 'tidecaller' }),
+  ebb: Object.freeze({ id: 'ebb', name: 'Ebb', kind: 'technique', rarity: 'common', limit: 1, cls: 'tidecaller' }),
+  spring_tide: Object.freeze({ id: 'spring_tide', name: 'Spring Tide', kind: 'technique', rarity: 'common', limit: 1, cls: 'tidecaller' }),
+  undercurrent: Object.freeze({ id: 'undercurrent', name: 'Undercurrent', kind: 'technique', rarity: 'common', limit: 1, cls: 'tidecaller' }),
+  riptide: Object.freeze({ id: 'riptide', name: 'Riptide', kind: 'technique', rarity: 'rare', limit: 1, cls: 'tidecaller' }),
+  confluence: Object.freeze({ id: 'confluence', name: 'Confluence', kind: 'technique', rarity: 'rare', limit: 1, cls: 'tidecaller' }),
 });
 
 // The Healer's 17 shared nodes (class nodes excluded), ascending id.
@@ -241,6 +250,8 @@ const GREY_REASONS = Object.freeze({
 // Static except the two per-copy saturation cases (Widen on a clamped arc,
 // Multiply on a guard that already reaches the party), resolved by the build.
 const isClassSkill = (def) => !!def && !!def.cls && def.cls !== 'healer';
+// THE TIDECALLER: a skill that soaks (its own status, or Bubble Ward's burst).
+const soaks = (d) => (!!d.status && d.status.kind === 'soaked') || !!d.burstSoak;
 const areaShape = (d) => d.shape === 'melee_arc' || d.shape === 'nova' || d.shape === 'ground_aoe';
 const rollsCrit = (d) => d.archetype === 'damage' || d.archetype === 'heal' || (isPassiveDef(d) && d.output !== 'shield');
 const PASSIVE_GREY = 'a passive field — nothing here for this technique to act on';
@@ -248,6 +259,8 @@ function classHasStat(d, stat) {
   if (stat === 'critBonus') return rollsCrit(d);
   if (stat === 'area') return d.area !== undefined && d.area > 0;
   if (stat === 'duration') return d.durationSec !== undefined || (!!d.status && !isPassiveDef(d)) || (!!d.parry && !isPassiveDef(d));
+  // Ripple Step's puddle lands at her feet: a range of 0 is no range to reach.
+  if (stat === 'range') return d.range !== undefined && d.range > 0;
   return d[stat] !== undefined;
 }
 const CLASS_GREY_STAT = Object.freeze({
@@ -352,6 +365,21 @@ export function classVerdict(d, id) {
       return dmg || (passive && d.field === 'hostile') ? L : G('no hit to duel with');
     case 'longshot':
       return d.shape === 'projectile' ? L : G('only a bolt flies far');
+    // THE TIDECALLER (docs/TIDECALLER.md).
+    case 'wellspring':
+    case 'spring_tide':
+      return soaks(d) ? L : G('nothing on this skill soaks');
+    case 'deluge':
+      return d.shape === 'projectile' ? L : G('only a bolt lands');
+    case 'current':
+      return dmg || (passive && d.field === 'hostile') ? L : G('no hit to swell');
+    case 'ebb':
+    case 'riptide':
+      return d.crash ? L : G('this skill never crashes');
+    case 'undercurrent':
+      return d.drag || d.push || d.drawIn ? L : G('nothing on this skill moves an enemy');
+    case 'confluence':
+      return passive ? G(PASSIVE_GREY) : L;
     default:
       return G('unknown_node');
   }

@@ -1,12 +1,13 @@
 # The Tidecaller (Rill)
 
-v0.5.262 (slice 2), v0.5.264 (slice 4). The new-character plan
-(`/mnt/project-files/plan/NEW_CHARACTER_TIDECALLER.md`). Rill is an otter and
-a ranged control caster. She soaks enemies, drags them together, then
-crashes a wave into the soaked. Slice 2 made her playable with her base kit.
-Slice 3 adds her other seven skills, her eight class nodes, the full VFX
-beats and sounds. Slice 4 (below, "Rill in the world") adds the Level II
-unlock, her story, kit and tints, two deeds, two relics, the Journal and tips.
+v0.5.262 (slice 2), v0.5.265 (slice 3), v0.5.264 (slice 4). The
+new-character plan (`/mnt/project-files/plan/NEW_CHARACTER_TIDECALLER.md`).
+Rill is an otter and a ranged control caster. She soaks enemies, drags them
+together, then crashes a wave into the soaked. Slice 2 made her playable with
+her base kit. Slice 3 adds her other seven skills, her eight class nodes, her
+VFX beats and her sounds. Slice 4 (below, "Rill in the world") adds the Level
+II unlock, her story, kit and tints, two deeds, two relics, the Journal and
+tips.
 
 ## Who gets her
 
@@ -54,6 +55,33 @@ unlock, her story, kit and tints, two deeds, two relics, the Journal and tips.
 | Undertow | ground zone, 4 s | 6 per second, cd 8, area 1.0, soaks, drags 0.25 u per pulse toward its centre (not bosses) |
 | Breaker | nova around her, **Crash** | 22 to up to 5, cd 8, area 1.4, knockback 1.0 |
 | Tidepool | passive aura | every second, 5 to the 2 nearest within 2.5, soaks |
+| Torrent | projectile, **Crash** | 18 to every enemy on a 5.5 u line (pierce 12), cd 6, speed 9 |
+| Whirlpool | ground zone, 5 s | 4 per second, cd 12, range 4, area 1.4, soaks, slows 30%, drags 0.5 u per pulse |
+| Ripple Step | vault + zone at her feet, 3 s | vaults 2.6 u away (untouchable, 14 ticks), leaves a puddle: 6 per second, area 0.8, soaks, cd 7 |
+| Bubble Ward | guard | a 14 shield for 4 s on the member enemies are after (the Tank last), cd 11, range 4; when it breaks or ends it pops and soaks enemies within 1 u |
+| Crashing Wave | 100° arc, **Crash** | 20 to up to 6 in 2.2 u, pushed back 1.2 u, cd 9 |
+| Rain Squall | ground zone, 6 s | 3 per second, cd 14, range 5, area 1.8, soaks, slows 25% |
+| Maelstrom | draw, then a burst, **Crash** | drags everything within 3 u in by 1 u (not bosses), then 1 s later 40 to the 8 nearest within 1.6 u, cd 16 |
+
+All eleven are campaign-only (`CAMPAIGN_ONLY_SKILLS`), so the goldens and the
+legacy run never see them.
+
+## Her nodes
+
+Class nodes (`CLASS_NODES.tidecaller`, campaign-only; `src/sim/nodes.js`,
+`src/sim/partytech.js`, `src/sim/allycast.js`). The card grey-outs come from
+`classVerdict`.
+
+| node | rarity | effect | live on |
+|---|---|---|---|
+| Wellspring | common, x2 | soaks from this skill last 2 s longer per copy | a skill that soaks |
+| Deluge | common | a bolt leaves a 2 s puddle (0.6 u) where it lands or falls; the puddle soaks | a projectile |
+| Current | common | +15% power per soaked enemy within 3 u of the landing, up to +45% | anything that hits |
+| Ebb | common | when its Crash lands, her other skills' cooldowns drop 0.5 s (once per cast) | a Crash skill |
+| Spring Tide | common | re-soaking a soaked enemy drenches it: 30% slow for the rest of the soak | a skill that soaks |
+| Undercurrent | common | drags 40% farther; a pushing skill pulls instead | a skill that drags, pushes or draws in |
+| Riptide | rare | its Crash also stuns 0.4 s (not bosses) | a Crash skill |
+| Confluence | rare | when a teammate hits a soaked enemy, this skill's cooldown runs 0.1 s faster (at most every 0.5 s) | any active |
 
 Body: 85 HP, move speed 2.5. Numbers are first guesses
 (`src/sim/skills.js`, `src/sim/allies.js`, `CLASS_TECH.tidecaller` in
@@ -77,6 +105,32 @@ Body: 85 HP, move speed 2.5. Numbers are first guesses
 - Breaker waits for two or more soaked enemies in reach, or one soaked elite,
   champion or boss, or an enemy rushing her.
 - Tidepool is passive.
+- Torrent wants a line of two or more (a soaked enemy counts twice).
+- Whirlpool and Rain Squall go on a pack of three or more, with the same
+  Tank and Waystone bonus as Undertow.
+- Ripple Step is her panic button: an enemy inside 1.2 u that is after her,
+  or anything inside 0.8 u. She vaults away from the nearest.
+- Bubble Ward goes up when a member in reach is under 70% or has an enemy
+  closing in.
+- Crashing Wave wants two soaked enemies in reach, a big soaked one, or
+  three close.
+- Maelstrom wants four enemies in its draw, or two soaked.
+
+## VFX and sound (slice 3)
+
+- `src/render/vfx/tidefx.js`, hooked into `src/render/vfx/signature.js`:
+  twisting Riverbolt and Torrent trails with foam motes and splash crowns
+  on the hit, the Torrent's muzzle shock ring, caustic spirals in Undertow
+  and Whirlpool, Breaker's and Crashing Wave's curling wave walls, wet
+  splash decals, the held refracting bubble and its pop, Rain Squall's
+  clouds, streaking rain and ripples, Ripple Step's spray arc, Deluge and
+  Dive puddles, a foam ring on every Crash (a spinning star on a Riptide
+  stun), and the Maelstrom's funnel, then its column on the burst.
+- `?vfxlab=1` has Tidecaller A, B and C reels: they start a Level 1
+  campaign with her on seat 3 when she is not in the party.
+- `src/audio/tidecues.js` (td_*): her own water voices, replacing the slice 2
+  placeholders in `src/audio/cues.js`. Calibrated with
+  `node tools/smallfixes2-cuecal.mjs --only tidecues --write`.
 
 ## Where it lives
 
@@ -122,6 +176,10 @@ Body: 85 HP, move speed 2.5. Numbers are first guesses
 
 ## Checks
 
+- `node tools/tidecaller-kit-probe.mjs` (headless, 65 checks): the kit data
+  and gate, every node verdict, each of the seven new skills in a room, each
+  node changing what it should, the AI casting all ten actives, and a save
+  round trip with her nodes socketed.
 - `node tools/tidecaller-probe.mjs` (headless, 43 checks): data, the soaked
   rules, Rill fighting in seat 3, Undertow pulling, Crash +60% and spending
   the soak, the Dive puddle, the shop shelf and a save round trip.

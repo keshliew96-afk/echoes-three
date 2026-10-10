@@ -821,8 +821,8 @@ cue('thorns', { levelDb: -14, maxVoices: 2, cooldownMs: 90 }, (k, t, d) =>
 export const DEFAULT_EVENT_CUES = {
   basic_fire: (ev, h) => one('shoot', at(ev, h)),
   ally_basic: (ev, h) =>
-    // THE TIDECALLER: Spit borrows the bolt's voice a step up (her own water
-    // cues come with the rest of her kit).
+    // THE TIDECALLER: a fallback only; her own Spit (td_spit) and the rest
+    // of her water voices replace these from src/audio/tidecues.js.
     ev.classId === 'tidecaller' ? one('bolt', at(ev, h, ev.id), { pitch: 1.3 }) : one(ev.shape === 'melee_arc' ? 'swing' : 'bow', at(ev, h, ev.id), { pitch: ev.classId === 'tank' ? 0.8 : 1 }),
   enemy_fire: (ev, h) => one('spit', at(ev, h, ev.id)),
   enemy_bite: (ev, h) => one('bite', at({}, h, ev.id)),

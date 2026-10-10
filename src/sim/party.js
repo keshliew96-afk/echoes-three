@@ -354,7 +354,11 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
           hit.push(t.id);
           pulseInfo.dealt += r.amount ?? 0;
           // THE TIDECALLER: a passive that soaks (Tidepool) soaks what it hits.
-          if (base.status && t.hp > 0) combat.status.apply(t, base.status.kind, base.status.mag, base.status.ticks, tick, a.id);
+          // (Wellspring and Spring Tide shape it through the cast pipeline.)
+          if (base.status && t.hp > 0) {
+            if (caster) caster.soakApply(t, caster.tideStatus(seat, skillId, base.status), tick, a.id);
+            else combat.status.apply(t, base.status.kind, base.status.mag, base.status.ticks, tick, a.id);
+          }
         }
       }
       pulseInfo.hit = hit;

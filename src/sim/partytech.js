@@ -139,7 +139,7 @@ export function createPartyTech(ctx) {
   // M = { power, resonance?, combo?, critMul?, heartseeker?, execute?,
   //       kbScale?, kbDist?, pierceAdd?, scatter? } — null for an unbuilt
   // skill with no base mechanic (the v0.5.150 path).
-  function castMods(a, baseDef, def, tick, { echo = false, counter = false } = {}) {
+  function castMods(a, baseDef, def, tick, { echo = false, counter = false, at = null } = {}) {
     const seat = a.partyIndex;
     const b = buildOf(seat);
     const st = stateOf(seat);
@@ -164,6 +164,8 @@ export function createPartyTech(ctx) {
     }
     if (has('steady_aim') && st && tick - (st.stillSince ?? tick) >= CLASS_TECH.steadyAimStillTicks) pctCast += CLASS_TECH.steadyAimPct;
     if (has('duel') && dueling(a)) pctCast += CLASS_TECH.duelPct;
+    // THE TIDECALLER: Current swells with the soaked around the landing.
+    if (has('current') && def.archetype === 'damage') pctCast += currentPct(at ?? a);
     let resonance = false;
     let resMul = 1;
     if (!echo && !counter && b && has('resonance')) {
@@ -185,6 +187,14 @@ export function createPartyTech(ctx) {
     if (has('scatter') && (def.shape === 'projectile' || def.shape === 'ground_aoe')) flags.scatter = true;
     if (has('crush')) flags.crush = true;
     if (has('longshot') && def.shape === 'projectile') flags.longshot = true;
+    // THE TIDECALLER's nodes: Riptide stuns on a Crash, Deluge puddles where a
+    // bolt lands, Undercurrent drags farther (and turns a push into a pull).
+    if (has('riptide') && def.crash) flags.riptide = true;
+    if (has('deluge') && def.shape === 'projectile') flags.deluge = true;
+    if (has('undercurrent')) {
+      if (def.drag || def.drawIn) flags.dragMul = CLASS_TECH.undercurrentMul;
+      if (def.push) flags.kbDist = -def.push;
+    }
     const anyFlag = Object.keys(flags).length > 0;
     if (pctCast === 0 && !resonance && !anyFlag && !combo) return null;
     let power = def.power;
@@ -196,6 +206,15 @@ export function createPartyTech(ctx) {
     if (resonance) M.resonance = true;
     if (combo) M.combo = combo;
     return M;
+  }
+
+  // Current: +15% per soaked enemy within 3 u of a point, up to +45%.
+  function currentPct(p) {
+    const tick = getTick();
+    const r2max = CLASS_TECH.currentRadiusU * CLASS_TECH.currentRadiusU;
+    let n = 0;
+    for (const e of hostiles()) if ((e.x - p.x) ** 2 + (e.z - p.z) ** 2 <= r2max && S().magnitude(e, 'soaked', tick) > 0) n += 1;
+    return Math.min(CLASS_TECH.currentMax, n * CLASS_TECH.currentPct);
   }
 
   // Duel: one enemy at most within 2.5 u of the fox (and at least one).
@@ -421,9 +440,25 @@ export function createPartyTech(ctx) {
   let lastHitBySeat = [null, null, null, null];
   const flowDone = new Map(); // castId -> true (Flow fires once per cast)
   const preyDone = new Map(); // cast / zone tick / pulse key -> true (Prey: its first hit only)
+  const ebbDone = new Map(); // castId -> true (Ebb fires once per cast)
   events.on('*', (ev) => {
     switch (ev.type) {
+      case 'crash': {
+        // THE TIDECALLER: Ebb — a landed Crash cuts her other cooldowns.
+        const seat = ev.seat;
+        if (seat === null || seat === undefined || seat < 1) return;
+        const b = buildOf(seat);
+        if (!b || !b.tech.liveTechs(ev.skill).includes('ebb')) return;
+        const key = ev.castId ?? `${ev.skill}@${ev.tick}`;
+        if (ebbDone.has(key)) return;
+        ebbDone.set(key, true);
+        if (ebbDone.size > 128) ebbDone.delete(ebbDone.keys().next().value);
+        const skill = ev.skill;
+        queueContinuation(() => flowCut(seat, skill, CLASS_TECH.ebbCutSec, 'ebb'));
+        return;
+      }
       case 'hit': {
+        confluence(ev);
         const src = ev.source;
         if (typeof src !== 'string' || src.includes(':')) return;
         const seat = seatOfSkill(src);
@@ -547,8 +582,38 @@ export function createPartyTech(ctx) {
     }
   });
 
+  // THE TIDECALLER: Confluence — a party member's hit on a soaked enemy
+  // ticks the skill that holds the node 0.1 s nearer (once per 0.5 s).
+  function confluence(ev) {
+    const seat = seatOfClass('tidecaller');
+    if (!(seat > 0)) return;
+    const b = buildOf(seat);
+    const a = bodyOf(seat);
+    if (!b || !a || ev.attacker === a.id || ev.attacker === null || ev.attacker === undefined) return;
+    const slots = ctx.slotsOf(seat);
+    if (!slots.some((id) => id && b.tech.liveTechs(id).includes('confluence'))) return;
+    const atk = registry.byId(ev.attacker);
+    if (!atk || atk.partyIndex === undefined) return;
+    const t = registry.byId(ev.target);
+    const tick = getTick();
+    if (!t || !(S().magnitude(t, 'soaked', tick) > 0)) return;
+    const st = stateOf(seat);
+    if (!st) return;
+    st.confluence = st.confluence || {};
+    for (let i = 0; i < slots.length; i++) {
+      const id = slots[i];
+      if (!id || !b.tech.liveTechs(id).includes('confluence')) continue;
+      if (tick - (st.confluence[id] ?? -Infinity) < CLASS_TECH.confluenceGapTicks) continue;
+      st.confluence[id] = tick;
+      if (Array.isArray(a.cds) && a.cds[i] > tick) {
+        a.cds[i] = Math.max(tick, a.cds[i] - secTicks(CLASS_TECH.confluenceCutSec));
+        events.emit(tick, 'technique_pulse', { seat, skill: id, node: 'confluence', cutTicks: secTicks(CLASS_TECH.confluenceCutSec) });
+      }
+    }
+  }
+
   // Flow: cut every OTHER skill's remaining cooldown (never below now).
-  function flowCut(seat, fromSkill, sec) {
+  function flowCut(seat, fromSkill, sec, node = 'flow') {
     const a = bodyOf(seat);
     if (!a || !Array.isArray(a.cds)) return;
     const tick = getTick();
@@ -563,7 +628,7 @@ export function createPartyTech(ctx) {
       }
     }
     if (ctx.humanCdCut) ctx.humanCdCut(seat, fromSkill, cut);
-    if (any) events.emit(tick, 'technique_pulse', { seat, skill: fromSkill, node: 'flow', cutTicks: cut });
+    if (any) events.emit(tick, 'technique_pulse', { seat, skill: fromSkill, node, cutTicks: cut });
   }
 
   // ------------------------------------------------------- passive pulses --
@@ -652,6 +717,7 @@ export function createPartyTech(ctx) {
     }
     if (has('steady_aim') && st && tick - (st.stillSince ?? tick) >= CLASS_TECH.steadyAimStillTicks) pct += CLASS_TECH.steadyAimPct;
     if (has('duel') && dueling(a)) pct += CLASS_TECH.duelPct;
+    if (has('current')) pct += currentPct(a);
     const flags = {};
     if (has('lethality')) flags.critMul = CLASS_TECH.lethalityCritMul;
     if (has('heartseeker')) flags.forceCrit = true;
@@ -696,13 +762,16 @@ export function createPartyTech(ctx) {
       firstHits: [...firstHits.entries()].map(([k, s]) => [k, [...s]]),
       flowDone: [...flowDone.keys()],
       ...(preyDone.size ? { preyDone: [...preyDone.keys()] } : {}),
+      ...(ebbDone.size ? { ebbDone: [...ebbDone.keys()] } : {}),
     };
   }
   function loadState(d) {
     firstHits.clear();
     flowDone.clear();
     preyDone.clear();
+    ebbDone.clear();
     for (const k of (d && d.preyDone) || []) preyDone.set(k, true);
+    for (const k of (d && d.ebbDone) || []) ebbDone.set(k, true);
     for (const [k, ids] of (d && d.firstHits) || []) firstHits.set(k, new Set(ids));
     for (const k of (d && d.flowDone) || []) flowDone.set(k, true);
   }

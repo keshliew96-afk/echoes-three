@@ -32,9 +32,9 @@ export const CLASS_SKILLS = Object.freeze({
   tank: Object.freeze(['heavy_slam', 'brutal_cleave', 'ground_crack', 'whirling_guard', 'taunting_roar', 'shield_wall', 'shoulder_charge', 'iron_stance', 'earthshatter', 'rallying_cry', 'earthen_grasp']),
   swordsman: Object.freeze(['flurry', 'lunge_strike', 'blade_storm', 'caltrops', 'fox_step', 'crescent_finisher', 'riposte', 'razor_wake', 'moonfang', 'blade_dance', 'crimson_edge']),
   archer: Object.freeze(['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova', 'vault_shot', 'pinning_arrow', 'rain_of_arrows', 'kestrel_watch', 'hunters_mark', 'barbed_trap', 'feather_fan']),
-  // THE TIDECALLER (docs/TIDECALLER.md): the otter's four base skills. The
-  // other seven join in the next slice.
-  tidecaller: Object.freeze(['riverbolt', 'undertow', 'breaker', 'tidepool']),
+  // THE TIDECALLER (docs/TIDECALLER.md): the otter's four base skills, then
+  // the seven of her whole kit (Tidecaller slice 3).
+  tidecaller: Object.freeze(['riverbolt', 'undertow', 'breaker', 'tidepool', 'torrent', 'whirlpool', 'ripple_step', 'bubble_ward', 'crashing_wave', 'rain_squall', 'maelstrom']),
 });
 
 // MORE CLASS SKILLS: what joined the pools on 2026-10-08 — nine class skills,
@@ -50,8 +50,13 @@ export const CAMPAIGN_ONLY_SKILLS = Object.freeze([
   // THE TIDECALLER: her skills, like the class itself, only ever appear in a
   // campaign (her seat exists only through a campaign lineup anyway).
   'riverbolt', 'undertow', 'breaker', 'tidepool',
+  'torrent', 'whirlpool', 'ripple_step', 'bubble_ward', 'crashing_wave', 'rain_squall', 'maelstrom',
 ]);
-export const CAMPAIGN_ONLY_NODES = Object.freeze(['rampart', 'crush', 'gale_step', 'duel', 'longshot', 'prey']);
+export const CAMPAIGN_ONLY_NODES = Object.freeze([
+  'rampart', 'crush', 'gale_step', 'duel', 'longshot', 'prey',
+  // THE TIDECALLER: her eight class nodes (her pool only exists in a campaign).
+  'wellspring', 'deluge', 'current', 'ebb', 'spring_tide', 'undercurrent', 'riptide', 'confluence',
+]);
 // The pool a draft draws from: everything, or the old pool outside a campaign.
 export function gatedPool(ids, campaign) {
   if (campaign) return ids;
@@ -81,8 +86,8 @@ export const CLASS_NODES = Object.freeze({
   tank: Object.freeze(['provoke', 'brace', 'tremor', 'anchor', 'retaliate', 'aegis', 'rampart', 'crush']),
   swordsman: Object.freeze(['flow', 'momentum', 'parry', 'pursuit', 'lethality', 'execute', 'gale_step', 'duel']),
   archer: Object.freeze(['skewer', 'concussive', 'steady_aim', 'disengage', 'scatter', 'heartseeker', 'longshot', 'prey']),
-  // THE TIDECALLER: her eight class nodes come with the rest of her kit.
-  tidecaller: Object.freeze([]),
+  // THE TIDECALLER (Tidecaller slice 3): six common, two rare.
+  tidecaller: Object.freeze(['wellspring', 'deluge', 'current', 'ebb', 'spring_tide', 'undercurrent', 'riptide', 'confluence']),
 });
 
 // §25.3 shared-node access per class (the Healer: all 17, unchanged).
@@ -121,8 +126,11 @@ export const AI_PRIORITY = Object.freeze({
     'piercing_shot', 'hunters_mark', 'volley', 'pinning_arrow', 'feather_fan', 'vault_shot',
     'rain_of_arrows', 'barbed_trap', 'kestrel_watch', 'detonating_charge', 'sundering_nova',
   ]),
-  // The plan's order for her whole kit, cut to the four she has so far.
-  tidecaller: Object.freeze(['riverbolt', 'undertow', 'breaker', 'tidepool']),
+  // The plan's order for her whole kit (§5).
+  tidecaller: Object.freeze([
+    'riverbolt', 'whirlpool', 'torrent', 'undertow', 'crashing_wave', 'maelstrom',
+    'breaker', 'bubble_ward', 'rain_squall', 'ripple_step', 'tidepool',
+  ]),
 });
 
 const rankOf = (list, id) => {
@@ -285,6 +293,21 @@ export const CLASS_TECH = Object.freeze({
   soakTicks: 240, // 4 s, refreshed by each new soak
   diveSoakTicks: 60, // the Dive puddle lasts 1 s
   diveSoakRadius: 0.7,
+  // Her whole kit (Tidecaller slice 3).
+  bubbleBurstU: 1.0, // Bubble Ward: the bubble bursts and soaks enemies this close
+  // Her eight class nodes.
+  wellspringTicks: 120, // Wellspring: +2 s on this skill's soaks, per copy
+  delugeTicks: 120, // Deluge: a landed bolt leaves a 2 s puddle
+  delugeRadius: 0.6,
+  currentPct: 0.15, // Current: +15% power per soaked enemy within 3 u of the landing
+  currentMax: 0.45,
+  currentRadiusU: 3,
+  ebbCutSec: 0.5, // Ebb: a landed Crash cuts her other skills' cooldowns 0.5 s
+  drenchMag: 0.3, // Spring Tide: re-soaking a soaked enemy drenches it (30% slow)
+  undercurrentMul: 1.4, // Undercurrent: drags 40% farther; a push becomes a pull
+  riptideTicks: 24, // Riptide: a Crash also stuns 0.4 s (not the bosses)
+  confluenceCutSec: 0.1, // Confluence: an ally's hit on a soaked enemy, this skill -0.1 s
+  confluenceGapTicks: 30, // at most once per 0.5 s
 });
 
 // §25.10 MAX-STRESS build (GP.10 / GP.15 precondition; `?partygrant=max`,

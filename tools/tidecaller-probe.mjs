@@ -84,6 +84,8 @@ const P = (W) => W.world.partySystem();
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const RILL = ['healer', 'tank', 'swordsman', 'tidecaller'];
 const KIT = ['riverbolt', 'undertow', 'breaker', 'tidepool'];
+// Slice 3 finished her kit: the four base skills lead her eleven.
+const FULL = [...KIT, 'torrent', 'whirlpool', 'ripple_step', 'bubble_ward', 'crashing_wave', 'rain_squall', 'maelstrom'];
 const near = (v, w, eps = 0.02) => Math.abs(v - w) <= eps;
 
 function campaign(seed, opts = {}) {
@@ -107,7 +109,7 @@ function secondRoom(W, kit) {
 {
   const row = ALLY_CLASSES.tidecaller;
   check(row && row.maxHp === 85 && row.basicShape === 'projectile' && row.basicPower === 6 && row.moveSpeed === ALLY_CLASSES.archer.moveSpeed, 'her class row: 85 HP, the Archer\'s speed, Spit a 6-power bolt');
-  check(same(C.CLASS_SKILLS.tidecaller, KIT) && KIT.every((id) => SKILLS[id] && SKILLS[id].cls === 'tidecaller'), 'four base skills, all hers');
+  check(same(C.CLASS_SKILLS.tidecaller, FULL) && FULL.every((id) => SKILLS[id] && SKILLS[id].cls === 'tidecaller'), 'her eleven skills (the four base ones first), all hers');
   check(KIT.every((id) => C.CAMPAIGN_ONLY_SKILLS.includes(id)) && C.gatedPool(KIT, false).length === 0 && C.gatedPool(KIT, true).length === 4, 'all four are campaign-only');
   check(SKILLS.riverbolt.status.kind === 'soaked' && SKILLS.undertow.status.kind === 'soaked' && SKILLS.tidepool.status.kind === 'soaked' && SKILLS.breaker.crash === true && !SKILLS.breaker.status, 'Riverbolt, Undertow and Tidepool soak; Breaker crashes');
   check(same(L.DEFAULT_LINEUP, ['healer', 'tank', 'swordsman', 'archer']) && same(L.benchOf(L.DEFAULT_LINEUP), ['tidecaller']), 'the default lineup is the old four (Rill at camp)');
@@ -147,7 +149,7 @@ let saved = null;
   const rill = ally(W, 3);
   check(same(p.lineup(), RILL) && rill.classId === 'tidecaller' && rill.maxHp === 85 && rill.hp === 85, `seat 3 is Rill (${rill.classId}, ${rill.maxHp} HP)`);
   const pool = p.pools(3);
-  check(same([...pool.classSkills].sort(), [...KIT].sort()), `her draft pool is her four skills (${pool.classSkills.join(',')})`);
+  check(same([...pool.classSkills].sort(), [...FULL].sort()), `her draft pool is her eleven skills (${pool.classSkills.join(',')})`);
   check(L.classOfSeat(3) === 'tidecaller' && L.seatOfClass('archer') === -1, 'the UI lookup: Rill on seat 3, the Archer at camp');
 
   secondRoom(W, { 3: KIT });

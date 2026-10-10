@@ -31,6 +31,7 @@ import { impactFx } from './hub.js';
 import { SHARD_TILE } from './particles.js';
 import { createVfxKit } from './kit.js';
 import { createCameraFx } from './camerafx.js';
+import { createTideFx } from './tidefx.js';
 
 const EMBER = PALETTE.emberDanger;
 const PARCH = PALETTE.parchment;
@@ -825,6 +826,9 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       kit.mark({ x, z, radius: r * 1.3, kind: 'sigil', stain: INK, glow: st.glow, cool: 1.6, life: 3.2, opacity: 0.3 });
     },
   };
+  // THE TIDECALLER's own beats (slice 3) live in tidefx.js; it borrows these
+  // helpers and rides the per-frame loop below for trails, zones and bubbles.
+  const tide = createTideFx({ kit, bus, byId, spray, flare, shock, after, anticipate, camfx, N, rnd, mark });
   bus.on('ally_cast', (ev) => {
     const fn = SKILL_SIG[ev.skill];
     if (!fn || ev.x == null) return;
@@ -3385,6 +3389,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   const trails = new Map(); // entity id -> { s, kind }
   const wakeClock = new Map(); // enemy id -> s since the last wake puff
   const trailFor = (e) => {
+    const tideTrail = tide.trail(e);
+    if (tideTrail) return tideTrail;
     if (e.kind === 'skillbolt') {
       const cls = vfxSkillClass(e.skill) ?? 'healer';
       const st = vfxClassStyle(cls);
@@ -3576,6 +3582,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
           rec = { spec, g, s: kit.streak({ a: { x: hx, y: spec.y, z: hz }, b: { x: hx, y: spec.y, z: hz }, width: spec.width, tailW: spec.tailW, core: spec.core, glow: spec.glow, hold: true, owner: e.id, fall: 1.6, opacity: 0.9 }) };
           trails.set(e.id, rec);
         }
+        if (k === 'skillbolt') tide.bolt(e, dt);
         if (rec.g && rec.g.owner === e.id) kit.setGlow(rec.g, hx, spec.y, hz);
         if (rec.s.owner !== e.id) continue; // its slot was recycled
         kit.setStreak(rec.s, hx - (vx / vl) * len, spec.y, hz - (vz / vl) * len, hx, spec.y, hz);
@@ -3615,6 +3622,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (wakeClock.size > 64) wakeClock.clear();
     if (shotKind.size > 64) shotKind.clear();
     if (globKind.size > 64) globKind.clear();
+    tide.frame(dt, world.entities());
     kit.update(dt);
   }
 

@@ -335,6 +335,62 @@ export const SKILLS = Object.freeze({
     power: 5, area: 2.5, count: 2, cadenceSec: 1.0, knockback: 0, // the 2 nearest enemies within 2.5 u, never pushed
     status: Object.freeze({ kind: 'soaked', mag: 0.15, ticks: 240 }),
   }),
+
+  // THE TIDECALLER, her whole kit (Tidecaller slice 3). New plain-data keys:
+  // `pierce` on a class bolt (Torrent runs through the line), `also` (a
+  // zone's second status, the slow inside Whirlpool and Rain Squall),
+  // `atOrigin` (Ripple Step's puddle lands where the vault began), `pick:
+  // 'threat'` (Bubble Ward's one recipient: the member most enemies are on),
+  // `burstSoak` (the bubble soaks enemies near it when it ends or breaks) and
+  // the Maelstrom's `drawIn` / `drawArea` / `delaySec` (drag the room in at
+  // the cast, burst a second later where she cast it).
+  torrent: Object.freeze({
+    id: 'torrent', name: 'Torrent', abbrev: 'TO', cls: 'tidecaller', archetype: 'damage', shape: 'projectile',
+    power: 18, cd: 6, range: 5.5, speed: 9.0, count: 1, area: 0,
+    pierce: 12, // through every enemy on the line
+    crash: true,
+  }),
+  whirlpool: Object.freeze({
+    id: 'whirlpool', name: 'Whirlpool', abbrev: 'WP', cls: 'tidecaller', archetype: 'damage', shape: 'ground_aoe',
+    power: 4, cd: 12, range: 4.0, area: 1.4, durationSec: 5,
+    drag: 0.5,
+    status: Object.freeze({ kind: 'soaked', mag: 0.15, ticks: 240 }),
+    also: Object.freeze({ kind: 'slow', mag: 0.3, ticks: 72 }), // refreshed by every zone tick
+  }),
+  ripple_step: Object.freeze({
+    id: 'ripple_step', name: 'Ripple Step', abbrev: 'RI', cls: 'tidecaller', archetype: 'damage', shape: 'ground_aoe',
+    power: 6, cd: 7, range: 0, area: 0.8, durationSec: 3,
+    vault: Object.freeze({ dist: 2.6, ticks: 14, iframes: true }), // away from the aim (the AI: from the nearest enemy)
+    atOrigin: true,
+    status: Object.freeze({ kind: 'soaked', mag: 0.15, ticks: 240 }),
+  }),
+  bubble_ward: Object.freeze({
+    id: 'bubble_ward', name: 'Bubble Ward', abbrev: 'BW', cls: 'tidecaller', archetype: 'guard', shape: 'direct',
+    power: 14, cd: 11, range: 4.0, count: 1,
+    pick: 'threat',
+    status: Object.freeze({ kind: 'shield', mag: 14, ticks: 240 }),
+    burstSoak: true,
+  }),
+  crashing_wave: Object.freeze({
+    id: 'crashing_wave', name: 'Crashing Wave', abbrev: 'CW', cls: 'tidecaller', archetype: 'damage', shape: 'melee_arc',
+    power: 20, cd: 9, range: 2.2, area: 50, count: 6, // a 100° wave rolling 2.2 u out
+    crash: true,
+    push: 1.2,
+  }),
+  rain_squall: Object.freeze({
+    id: 'rain_squall', name: 'Rain Squall', abbrev: 'SQ', cls: 'tidecaller', archetype: 'damage', shape: 'ground_aoe',
+    power: 3, cd: 14, range: 5.0, area: 1.8, durationSec: 6,
+    status: Object.freeze({ kind: 'soaked', mag: 0.15, ticks: 240 }),
+    also: Object.freeze({ kind: 'slow', mag: 0.25, ticks: 72 }),
+  }),
+  maelstrom: Object.freeze({
+    id: 'maelstrom', name: 'Maelstrom', abbrev: 'MA', cls: 'tidecaller', archetype: 'damage', shape: 'nova',
+    power: 40, cd: 16, area: 1.6, count: 8,
+    drawIn: 1.0, // at the cast: everything within 3.0 u is dragged 1.0 u in (not the bosses)
+    drawArea: 3.0,
+    delaySec: 1.0, // then the burst, where she cast it
+    crash: true,
+  }),
 });
 
 // A skill's class (Healer rows carry no `cls`).
