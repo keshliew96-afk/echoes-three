@@ -67,6 +67,8 @@ const BOSS_ROWS = {
   // Third bosses (docs/THIRD_BOSSES.md).
   gloamwolf: ['The Hollow Wood\'s oldest hunter, grey with years and hollow with the song.', 'Pounce: crouches, then lands in a warning ring for 15. Rend: a warning cone at its jaws for 13. Moon Howl: a ring round it for 8 that slows, then it pounces twice in a row.'],
   mireking: ['The millpond\'s old toad, grown vast on silt and crowned with the mill\'s grate.', 'Tongue Lash: a warning lane for 14 that drags you in. Belly Flop: lands in a warning ring for 16 and leaves mire. Swallow: its throat swells and pulls you close, then a ring round it snaps shut for 18.'],
+  ashraven: ['The barrow\'s carrion bird, grown huge on the ash of the pyres and masked in bone.', 'Carrion Dive: rises, then dives down a warning lane for 15. Wing Gust: a warning cone at its beak for 10 that blows you away. Omen: a warning ring that follows you, then locks and calls the crows down for 14.'],
+  veinweaver: ['The Heart\'s own spider, met only in the deep descent, spinning violet veins through the dark.', 'Bind: a warning lane for 9 that ties you to it for a few seconds. Heartbeat Slam: a ring round it for 18; at the end of the thread you are out of reach. Brood Sacs: three warning rings for 10 that leave webs.'],
   colossus: ['A giant of black rock and pale crystal that the Heart grew to sing through.', 'Fissure: a warning lane for 17 that leaves crystal behind. Geode Rain drops four warning rings. Too close, it bursts round itself for 20.'],
 };
 

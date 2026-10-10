@@ -354,6 +354,27 @@ export const BOSS_MUSIC = Object.freeze({
     lead: 'reed',
     motif: [[0, 0, 6], [6, 1, 2], [8, 0, 4], [12, -2, 4], [16, -3, 6], [22, -2, 2], [24, 0, 8]],
   },
+  // Slice 11. The Ash Raven's groove circles: a tolling bell ostinato that
+  // climbs and drops like wingbeats over a taiko on the downbeats, the toll
+  // lead calling a falling minor third (the crow's caw). The Vein Weaver's
+  // creeps: a glass ostinato picking out a web, the Heart's own beat as the
+  // drum, a choir lead that winds a thread up and lets it fall.
+  ashraven: {
+    theme: 'barrow',
+    prog: [0, 5, 3, 4],
+    arp: { instr: 'bell', pattern: [0, 2, 4, 2, 5, 4, 2, 1] },
+    drum: { 0: 1, 4: 0.55, 8: 0.9, 10: 0.5, 12: 0.6 },
+    lead: 'toll',
+    motif: [[0, 4, 2], [2, 2, 6], [8, 4, 2], [10, 2, 2], [12, 1, 4], [16, 4, 2], [18, 2, 4], [24, 0, 8]],
+  },
+  veinweaver: {
+    theme: 'heart',
+    prog: [0, 1, 0, 6],
+    arp: { instr: 'glass', pattern: [0, 3, 1, 4, 2, 5, 3, 6] },
+    drum: { 0: 1, 3: 0.7, 8: 0.95, 11: 0.65 },
+    lead: 'choir',
+    motif: [[0, 0, 2], [2, 1, 2], [4, 2, 2], [6, 3, 2], [8, 4, 6], [16, 3, 2], [18, 1, 2], [20, 0, 4], [24, -1, 8]],
+  },
 });
 export const bossMusicKey = (kind) => (kind && BOSS_MUSIC[kind] ? kind : null);
 

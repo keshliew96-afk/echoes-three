@@ -82,3 +82,94 @@ section firing each attack.
 landing, the yank, the Swallow's pull, the Hunt, the mire, the enrage, the
 governor (at most two player-targeted telegraphs, starts 72 ticks apart),
 level clears and save round trips. All numbers are first guesses until play.
+
+# Third bosses: the Barrow and the Heart (content plan 3, slice 11)
+
+The Ashen Barrow gets a third boss on the same gate as slice 10, and the
+Hollow Heart gets one that is met only in the Endless Descent, so the Hollow
+Cantor stays the campaign's final boss.
+
+- **The Barrow.** The Ash Raven (`gated: true` on `LEVELS[3].bosses`) joins
+  the Barrow's seed roll once the save has felled the Barrow Wyrm and the
+  Lich Ram. Unlocked, seeds 1 to 60 meet the Wyrm 21 times, the Raven 23 and
+  the Lich Ram 16 on Level III. Locked, every seed meets the boss it met
+  before.
+- **The Heart.** The Vein Weaver carries `gated: true` and `endlessOnly:
+  true`. `bossPool(lv, act, open, endless)` leaves an `endlessOnly` row out
+  unless `endless` is set, and only `endlessBossIndex` sets it, for depths
+  past the first cycle (`beyondCampaign`). So a campaign's Level IV, and
+  Endless Depth 4 (the campaign's own Heart), always end on the Cantor or the
+  Colossus, unlocked or not. Once the save has felled both of them, the Heart
+  at Depths 8, 12, ... cycles through all three: every seed meets the Weaver
+  at Depth 8 or Depth 12.
+- **The Daily** never meets either, whatever the save.
+
+| | The Ash Raven | The Vein Weaver |
+|---|---|---|
+| Role | the barrow's carrion bird: it owns the air above the mounds, dives the length of the room and calls its crows down on whoever it marks | the Heart's own spider: it ties the party to itself, then makes the Heart beat |
+| Kit | `src/sim/bosses/ashraven.js` | `src/sim/bosses/veinweaver.js` |
+| Model | `buildAshRaven` in `src/render/boss/third.js`: a huge black raven, ash-grey feather tips, a cracked bone mask with violet coals in the eye holes | `buildVeinWeaver` in the same file: plum flesh and legs, a cut-crystal abdomen whose veins light on the beat, violet eyes, bone fangs |
+| Room | Ash Amphitheatre (layout 25) | Hollow Nave (layout 27) |
+| HP | `hpMul` 1.0 | `hpMul` 1.1 |
+| Adds | two Barrow Crows and a Grave Wisp at 75 / 50 / 25 % | two Hollow Husks and a Vein Siphon at 75 / 50 / 25 % |
+| Deed, tint | Fell the Ash Raven; Tank tint **Ashfeather** | Fell the Vein Weaver; Swordsman tint **Veinsilk** |
+
+## The Ash Raven
+
+- **Carrion Dive.** A lane from it through its target (1.2 u wide, up to
+  9 u, 50-tick warning). It rises with its wings beating, then dives the
+  lane over the last 14 ticks for 15 and lands at the far end, where it
+  preens for 40 ticks: the party's punish window. Cooldown 250 ticks (180
+  enraged). `lance: true`, so AI allies step out of it.
+- **Wing Gust.** With a body inside 2.8 u, a cone in front (3.4 u, 60
+  degrees either side, 40-tick warning): 10 to every body in it, and each is
+  blown 2.6 u away over 10 ticks. Cooldown 280 ticks.
+- **Omen.** A ring r 1.4 on its target (84-tick warning). For the first 54
+  ticks the ring follows that hero at 2.4 u/s, so a hero who keeps running
+  stays ahead of it; it locks for the last 30, then the crows come down for
+  14. Enraged, it leaves a patch of ash (30 % slow, 4 s). Cooldown 420 ticks
+  (320 enraged), first at 4 s.
+- **Enrage** under 40 %: faster on its feet, shorter cooldowns.
+
+## The Vein Weaver
+
+- **Bind.** A lane toward its target (0.9 u wide, up to 8 u, 44-tick
+  warning): 9, and every body in it is bound for 2.5 s. A bound hero cannot
+  walk farther than 3.6 u from it (3.0 enraged): a hero caught at the far end
+  is reeled in to the leash over about ten ticks and held there.
+  Cooldown 300 ticks (220 enraged). `lance: true`.
+- **Heartbeat Slam.** With a body inside 2.6 u, or anyone bound, a ring r
+  2.8 round itself (60-tick warning) for 18, leaving four vein patches (40 %
+  slow, 4 s). A bound hero who pulls the thread tight stands just outside
+  it. A landed Bind brings the next Slam forward. Cooldown 300 ticks.
+- **Brood Sacs.** Three egg sacs lobbed at its target and either side of it,
+  each a ring r 1.1 (64-tick fall) that bursts for 10 and leaves a web (50 %
+  slow, 4 s). Cooldown 400 ticks (320 enraged).
+- **Enrage** under 40 %: faster, a shorter thread and shorter cooldowns.
+
+## Identity
+
+The same set as slice 10: a HUD medal, an intro sting, a boss groove, beat
+cues and tells, signature VFX for every attack, its enrage and its death
+(the Raven's dive tears a furrow of embers and feathers down the lane, its
+Omen brings streaks of crows down out of the sky; the Weaver's thread is
+drawn from its spinnerets to each bound hero while it holds, and its Slam
+cracks the floor into lit veins), a fall line on the end screens, a Bramble
+rumour, a Hollow Voice line, a Journal page, and the Chapter III and IV
+summaries name them. Felling the Raven frees the Barrow's warden at camp.
+The slicks carry two new variants, `ash` and `vein`
+(`src/render/enemies/extras.js`).
+
+The VFX lab (`?vfxlab=1`) lists both in its boss-room list and fires each
+attack from its "Third bosses" section.
+
+## Checks
+
+`node tools/third-bosses-bh-probe.mjs` (headless): the gate (old seeds
+unchanged while locked, the Heart never in a campaign, the Weaver only past
+the first Endless cycle, the Daily never, saves), wiring, translations,
+every attack landing, the Omen following then locking, the gust's shove, the
+Bind's leash, the enrage, the governor, level clears and save round trips.
+`node tools/third-bosses-bh-browser.mjs` (against `npm run dev`): rigs,
+arenas, medals, stings, grooves, beat cues and screenshots. All numbers are
+first guesses until play.

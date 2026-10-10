@@ -123,8 +123,10 @@ const addKinds = (W, from) => W.log.slice(from).filter((e) => e.type === 'boss_a
 // ---------------------------------------------------------------- 1. wiring --
 {
   const lv = LEVELS[4];
-  const kinds = (lv.bosses || []).map((b) => b.kind);
-  check(kinds.join() === 'cantor,colossus', `Level IV's bosses are the Hollow Cantor and the Geode Colossus (${kinds.join(', ')})`);
+  // (plan 3 slice 11's Vein Weaver is Endless-only: the campaign's Level IV
+  // still ends on these two.)
+  const kinds = (lv.bosses || []).filter((b) => !b.endlessOnly).map((b) => b.kind);
+  check(kinds.join() === 'cantor,colossus', `Level IV's campaign bosses are the Hollow Cantor and the Geode Colossus (${kinds.join(', ')})`);
   const rolled = new Set();
   for (let s = 1; s <= 40; s++) rolled.add(bossFor(4, s).kind);
   check(rolled.has('cantor') && rolled.has('colossus'), `seeds 1-40 meet both (${[...rolled].join(', ')})`);

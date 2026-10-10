@@ -410,6 +410,15 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
           // ELITE AFFIXES: a Frozen patch reads as pale glacier ice, a Molten
           // pool as glowing lava (additive, it lights the floor).
           if (e.variant === 'frost') m.material.color.set(AFFIX_COLORS.frozen).multiplyScalar(1.15);
+          // THIRD BOSSES (slice 11): the Ash Raven's omen ash, a cold grey
+          // cinder bed; the Vein Weaver's veins and webs, lit violet that
+          // pulses on the Heart's beat (additive, it lights the floor).
+          if (e.variant === 'ash') m.material.color.set(VFX_MATTER.cinder).multiplyScalar(0.9);
+          if (e.variant === 'vein') {
+            m.material.color.set(VFX_MATTER.heartvein).multiplyScalar(0.7);
+            m.material.blending = AdditiveBlending;
+            m.userData.vein = true;
+          }
           if (e.variant === 'molten') {
             m.material.color.set(AFFIX_COLORS.molten).multiplyScalar(1.4);
             m.material.blending = AdditiveBlending;
@@ -423,7 +432,7 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
         }
         const inK = Math.min(1, (tick - e.startTick) / 8);
         const outK = Math.min(1, Math.max(0, (e.untilTick - tick) / 30));
-        m.material.opacity = (m.userData.molten ? 0.62 + 0.18 * Math.sin(tSec * 7 + e.id) : 0.82) * inK * outK;
+        m.material.opacity = (m.userData.molten ? 0.62 + 0.18 * Math.sin(tSec * 7 + e.id) : m.userData.vein ? 0.42 + 0.2 * Math.max(0, Math.sin(tSec * 5.2)) : 0.82) * inK * outK;
         m.rotation.z = tSec * 0.1;
       } else if (e.kind === 'mole') {
         const last = moleTrack.get(e.id);

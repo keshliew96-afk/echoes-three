@@ -41,6 +41,10 @@ import colossus from './bosses/colossus.js';
 // (docs/THIRD_BOSSES.md).
 import gloamwolf from './bosses/gloamwolf.js';
 import mireking from './bosses/mireking.js';
+// Content plan 3, slice 11: the Barrow's third boss and the Heart's
+// Endless-only one (docs/THIRD_BOSSES.md).
+import ashraven from './bosses/ashraven.js';
+import veinweaver from './bosses/veinweaver.js';
 
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -85,7 +89,7 @@ export const STAG = Object.freeze({
 // and view shapes are hashed by the golden traces); every other boss is a
 // plain-data kit module (src/sim/bosses/<id>.js) driven through `kctx`, and
 // its body carries `boss: true` (status.isBoss) instead of kind 'stag'.
-export const BOSS_KITS = Object.freeze({ heron, wyrm, thornmother, millwheel, lichram, cantor, colossus, gloamwolf, mireking });
+export const BOSS_KITS = Object.freeze({ heron, wyrm, thornmother, millwheel, lichram, cantor, colossus, gloamwolf, mireking, ashraven, veinweaver });
 export const BOSS_KINDS = Object.freeze(['stag', ...Object.keys(BOSS_KITS)]);
 export const isBossKind = (k) => k === 'stag' || !!BOSS_KITS[k];
 // Display names per boss kind (HUD banner, end screens, path text).

@@ -134,7 +134,7 @@ const misses = async () => (LANG && LANG !== 'en' ? page.evaluate(() => (window.
   await sleep(3000);
   d = await dbg();
   const pg = d && d.page;
-  check(pg && pg.tiles === 43 && pg.unseen === 43, `43 entries (29, the four champions, the four Wood and Mill and the four Barrow and Heart newcomers, the two third bosses), all unmet (${pg && pg.tiles} / ${pg && pg.unseen})`);
+  check(pg && pg.tiles === 45 && pg.unseen === 45, `45 entries (29, the four champions, the four Wood and Mill and the four Barrow and Heart newcomers, the four third bosses), all unmet (${pg && pg.tiles} / ${pg && pg.unseen})`);
   check(pg && pg.viewer && pg.viewer.rigs.length > 0 && pg.viewer.rigs.every((r) => r.ok), `the model viewer builds its rigs (${pg && pg.viewer && JSON.stringify(pg.viewer.rigs.filter((r) => !r.ok))})`);
   check(pg && /\?\?\?/.test(pg.detail), 'an unmet entry has no name');
   console.log('viewer', JSON.stringify(pg && pg.viewer));

@@ -806,6 +806,9 @@ ${Object.entries({
   // Third bosses: the wolf in moonlit grey, the toad in millpond silt.
   gloamwolf: mix(VFX_MATTER.owlfeather, VFX_BIOME[1], 0.45),
   mireking: mix(VFX_MATTER.silt, VFX_MATTER.water, 0.4),
+  // Slice 11: the raven in pyre ash and bone, the weaver in lit vein.
+  ashraven: mix(VFX_MATTER.cinder, VFX_MATTER.boneplate, 0.35),
+  veinweaver: mix(VFX_MATTER.heartflesh, VFX_MATTER.heartvein, 0.45),
 })
   .map(
     ([k, tint]) => `.hud-bn-medal[data-boss="${k}"] {

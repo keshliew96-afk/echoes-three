@@ -40,7 +40,7 @@ export const CHAPTERS = Object.freeze([
     name: 'Stone@@verse',
     title: 'Chapter III · The Ashen Barrow',
     summary:
-      'The Barrow Wyrm guarded the way down, not the dead. The violet is oldest here because the Heart lies directly below. Felling the Wyrm or the Lich Ram frees the Verse of Stone.',
+      'The Barrow Wyrm guarded the way down, not the dead. The violet is oldest here because the Heart lies directly below. Over the mounds the Ash Raven, fat on the pyres, calls its crows down on the living. Felling the Wyrm, the Lich Ram or the Raven frees the Verse of Stone.',
   },
   {
     level: 4,
@@ -48,7 +48,7 @@ export const CHAPTERS = Object.freeze([
     name: 'Heart@@verse',
     title: 'Chapter IV · The Hollow Heart',
     summary:
-      'The singer at the bottom is the Hollow Cantor: not a god but a god’s echo, left behind when the gods fell silent. When it will not come out, the Heart grows a Geode Colossus to sing through. Silencing either frees the Verse of Heart, and for the first time the gods stop applauding.',
+      'The singer at the bottom is the Hollow Cantor: not a god but a god’s echo, left behind when the gods fell silent. When it will not come out, the Heart grows a Geode Colossus to sing through. Silencing either frees the Verse of Heart, and for the first time the gods stop applauding. Deeper still, past the end of the song, the Vein Weaver spins the Heart’s veins through the dark.',
   },
 ]);
 
@@ -176,6 +176,8 @@ export const RUMOURS = Object.freeze({
   // Third bosses (docs/THIRD_BOSSES.md).
   gloamwolf: { text: 'The Gloam Wolf hunts the ring of stones ahead. When it crouches, it is coming for you. When it howls, it is coming for all of you.' },
   mireking: { text: 'The Mire King sits in the drained basin. When its throat swells, walk away from it, and do not let its tongue catch you.' },
+  ashraven: { text: 'The Ash Raven circles the amphitheatre ahead. When it rises, step out of its line. When its mark finds you, keep running.' },
+  veinweaver: { text: 'The Vein Weaver waits in the nave below. If its thread catches you, pull it tight and stay at the end of it.' },
   // Level IV's own bosses (docs/ACT_IV_BOSSES.md).
   cantor: { text: 'The Hollow Cantor itself waits in the Heart Chamber. It sings the verses it stole from every land, and their beasts come with each one. Crowd it and it steps away.' },
   colossus: { text: 'The singer won’t come out today. The Heart has grown a Geode Colossus to guard its chamber. Step off the line when it raises a fist.' },
@@ -188,7 +190,7 @@ const heartLevel = () => (CHAPTERS.find((c) => c.verse === 'heart') || {}).level
 export const isHeartLevel = (level) => level !== null && level !== undefined && level === heartLevel();
 // The kinds that belong to the Heart Chamber (their rumour and Hollow Voice
 // line are their own).
-export const HEART_BOSSES = Object.freeze(['cantor', 'colossus']);
+export const HEART_BOSSES = Object.freeze(['cantor', 'colossus', 'veinweaver']);
 export const rumourFor = (kind, level = null) => (isHeartLevel(level) && !HEART_BOSSES.includes(kind) ? HEART_RUMOUR : RUMOURS[kind] ?? RUMOURS.other).text;
 // The Hollow Voice key for a boss met on `level` (the Heart Chamber line for a
 // stand-in from another land).
@@ -231,6 +233,8 @@ export const BOSS_VOICE = Object.freeze({
   lichram: { text: 'The dead remember every song. Mine they remember best.' },
   gloamwolf: { text: 'It hunted before the wood had a warden. Now it hunts for me.' },
   mireking: { text: 'It swallowed my song with the millpond. Listen to it croak.' },
+  ashraven: { text: 'It ate from my pyres until it could carry the ash. Now it carries my song.' },
+  veinweaver: { text: 'You came past the end of my song. My weaver will tie you to it.' },
   // Level IV: the singer itself, and the body it grows to sing through.
   cantor: { text: 'You carried three verses all the way down. Sing them for me.' },
   colossus: { text: 'I would not come out for you, so I grew a body that would.' },
@@ -288,7 +292,7 @@ export function chorusLine({ bossRoom = false, room = 0, level = 1, curses = 0, 
 export const WARDENS = Object.freeze({
   stag: { model: 'warden_stag', also: ['thornmother', 'gloamwolf'], x: -10.0, z: -3.9, yaw: 1.2, text: 'The Stag rests at the edge of the wood, free of the hollow song.' },
   heron: { model: 'warden_heron', also: ['millwheel', 'mireking'], x: 10.1, z: 4.6, yaw: -2.2, text: 'The Heron stands quietly, listening to clear water.' },
-  wyrm: { model: 'warden_wyrm', also: ['lichram'], x: 9.9, z: -4.1, yaw: -0.9, text: 'The Wyrm sleeps at last. Its long watch is over.' },
+  wyrm: { model: 'warden_wyrm', also: ['lichram', 'ashraven'], x: 9.9, z: -4.1, yaw: -0.9, text: 'The Wyrm sleeps at last. Its long watch is over.' },
 });
 
 // How many verses a profile holds: one per campaign level cleared at least once.

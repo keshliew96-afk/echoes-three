@@ -71,8 +71,10 @@ const BOSSES = [
   ['Mire King', 2, 'mireking'],
   ['Wyrm', 3, 'wyrm'],
   ['Lich Ram', 3, 'lichram'],
+  ['Ash Raven', 3, 'ashraven'],
   ['Cantor', 4, 'cantor'],
   ['Colossus', 4, 'colossus'],
+  ['Vein Weaver', 4, 'veinweaver'],
 ];
 
 export function mountVfxLab() {
@@ -227,6 +229,21 @@ export function mountVfxLab() {
     await thirdBoss('mireking', 2);
     X().cmd('bossHp', 0.39);
     say('Mire King: enraged (wider mire, faster lashes)');
+  }, 'cut to 39%');
+  // Slice 11: the Barrow's and the Heart's.
+  button(third, 'Raven dive', () => standAt('ashraven', 3, 5, 'Ash Raven: stand off for a Carrion Dive'), 'stand 5 u away');
+  button(third, 'gust', () => standAt('ashraven', 3, 1.8, 'Ash Raven: stand at its beak for a Wing Gust'), 'stand next to it');
+  button(third, 'omen', async () => {
+    await thirdBoss('ashraven', 3);
+    X().cmd('bossHp', 0.39);
+    say('Ash Raven: enraged; keep moving when its Omen follows you (it leaves ash)');
+  }, 'cut to 39%');
+  button(third, 'Weaver bind', () => standAt('veinweaver', 4, 4, 'Vein Weaver: stand off for a Bind, then pull the thread tight'), 'stand 4 u away');
+  button(third, 'slam', () => standAt('veinweaver', 4, 2.0, 'Vein Weaver: crowd it for a Heartbeat Slam'), 'stand next to it');
+  button(third, 'enrage', async () => {
+    await thirdBoss('veinweaver', 4);
+    X().cmd('bossHp', 0.39);
+    say('Vein Weaver: enraged (a shorter thread, faster binds)');
   }, 'cut to 39%');
 
   // ---------------------------------------------------------------- party --
