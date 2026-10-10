@@ -3,7 +3,7 @@
 //
 //   node tools/relics3-probe.mjs
 //
-//   1. Data: ten new relics (29 in all since the Tidecaller's two class
+//   1. Data: ten new relics (29 or more since the Tidecaller's two class
 //      relics, Otter's Pearl and Millrace Charm), one class relic per
 //      original class and two for the Tidecaller, rarities spread, an
 //      heirloom each.
@@ -116,7 +116,7 @@ const stepUntil = (W, pred, max = 600) => {
 {
   const rar = NEW.map((id) => RELICS[id] && RELICS[id].rarity);
   const n = (r) => rar.filter((x) => x === r).length;
-  check(RELIC_IDS.length === 29 && NEW.every((id) => RELICS[id]), `data: ${RELIC_IDS.length} relics, the ten new ones present`);
+  check(RELIC_IDS.length >= 29 && NEW.every((id) => RELICS[id]), `data: ${RELIC_IDS.length} relics, the ten new ones present`);
   const cls = Object.values(CLASS_RELICS).sort().join(',');
   check(cls === 'archer,healer,swordsman,tank,tidecaller,tidecaller', `data: one class relic per class, two for the Tidecaller (${cls})`);
   check(n('common') === 4 && n('rare') === 4 && n('legendary') === 2, `data: rarities common ${n('common')}, rare ${n('rare')}, legendary ${n('legendary')}`);
@@ -130,8 +130,8 @@ const stepUntil = (W, pred, max = 600) => {
   const archer = seat(W, 3);
   W.registry.despawn(archer.id);
   const gated = W.run.cmd('relicPool', []);
-  check(all.includes('fletchers_knot') && all.length === 27, `class gate: a full party is offered every relic (${all.length})`);
-  check(!gated.includes('fletchers_knot') && gated.includes('fox_ribbon') && gated.length === 26, "class gate: with no Archer, Fletcher's Knot leaves the pool");
+  check(all.includes('fletchers_knot') && all.length === RELIC_IDS.filter((id) => CLASS_RELICS[id] !== 'tidecaller').length, `class gate: a full party is offered every relic (${all.length})`);
+  check(!gated.includes('fletchers_knot') && gated.includes('fox_ribbon') && gated.length === all.length - 1, "class gate: with no Archer, Fletcher's Knot leaves the pool");
 }
 
 // ------------------------------------------------------- 3. Warden's Oath --

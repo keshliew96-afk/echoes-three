@@ -75,6 +75,19 @@ export const RELICS = Object.freeze({
   // (No dice: every fourth qualifying hit spreads, so holding it never moves
   // the relic stream.)
   millrace_charm: { name: 'Millrace Charm', rarity: 'rare', cls: 'tidecaller', text: 'Every fourth party hit on a soaked enemy spreads the soak to another enemy within 1.5 u.', charm: Object.freeze({ every: 4, range: 1.5 }) },
+  // Batch 4 (docs/RELICS.md "Batch 4"): relics that answer the rooms of
+  // content plan 3 (Escort, Hold, champions, keys, vaults, objective rooms,
+  // event rooms) and the curses themselves.
+  shepherds_crook: { name: "Shepherd's Crook", rarity: 'common', text: 'The pilgrim you escort has 50% more health, and bringing it home pays 15 Glint.', crook: Object.freeze({ hp: 0.5, glint: 15 }) },
+  vigil_candle: { name: 'Vigil Candle', rarity: 'rare', text: 'In Escort and Hold rooms the party takes 20% less damage.', vigil: Object.freeze({ taken: -0.2 }) },
+  warding_chalk: { name: 'Warding Chalk', rarity: 'rare', text: "A Hold room's sigil ring takes twice as long to go out, and party members inside it heal 2 HP a second.", chalk: Object.freeze({ fadeMul: 2, heal: 2, everyTicks: 60 }) },
+  champions_laurel: { name: "Champion's Laurel", rarity: 'rare', text: "The party deals 30% more damage to champions, and a champion's chest pays 25 Glint.", laurel: Object.freeze({ dealt: 0.3, glint: 25 }) },
+  jailers_ring: { name: "Jailer's Ring", rarity: 'common', text: 'Picking up a key heals the party for 15% of max HP and pays 10 Glint.', ring: Object.freeze({ heal: 0.15, glint: 10 }) },
+  vault_ledger: { name: 'Vault Ledger', rarity: 'rare', text: 'Glint piles in a vault pay twice as much.', ledger: Object.freeze({ mul: 2 }) },
+  banner_pennant: { name: 'Banner Pennant', rarity: 'common', text: 'Winning a Hunt, Purge, Escort or Hold room heals the party for 25% of max HP.', pennant: Object.freeze({ heal: 0.25 }) },
+  wanderers_token: { name: "Wanderer's Token", rarity: 'common', text: 'Each event offer the party takes pays 12 Glint.', token: Object.freeze({ glint: 12 }) },
+  geode_heart: { name: 'Geode Heart', rarity: 'legendary', text: 'A cleared cursed room pays a greater relic pick (rare or legendary) and 20 Glint.', geode: Object.freeze({ glint: 20 }) },
+  saints_ashes: { name: "Saint's Ashes", rarity: 'legendary', text: 'Major curses weigh half as much on the party.', ashes: Object.freeze({ scale: 0.5 }) },
 });
 // Batch 3: the class relics (a relic -> the class it needs in the party).
 export const CLASS_RELICS = Object.freeze(Object.fromEntries(Object.keys(RELICS).filter((id) => RELICS[id].cls).map((id) => [id, RELICS[id].cls])));
@@ -97,6 +110,11 @@ export const CURSES = Object.freeze({
   thick_hide: { name: 'Thick Hide', major: true, text: 'Enemies in every combat room have 15% more HP for the rest of the run.', diff: { hpMul: 1.15 } },
   brittle_bones: { name: 'Brittle Bones', major: true, text: 'The party takes 12% more damage for the rest of the run.', taken: 0.12 },
   withering: { name: 'Withering', major: true, text: 'Healing on the party is 25% weaker for the rest of the run.', healCut: 0.25 },
+  // Batch 4: two room curses and two major ones.
+  restless: { name: 'Restless', text: 'Waves in this room arrive 35% sooner.', diff: { waveMul: 0.65 } },
+  kindred_blood: { name: 'Kindred Blood', text: 'When an enemy falls in this room, enemies within 2.5 u heal 10% of their max HP.', kindred: Object.freeze({ heal: 0.1, radius: 2.5 }) },
+  teeming: { name: 'Teeming', major: true, text: 'Every wave is 12% larger for the rest of the run.', diff: { budgetMul: 1.12 } },
+  paupers_mark: { name: "Pauper's Mark", major: true, text: 'The party gains 20% less Glint for the rest of the run.', glintCut: 0.2 },
 });
 // The room curses a door can carry, and the major ones.
 export const CURSE_IDS = Object.freeze(Object.keys(CURSES).filter((id) => !CURSES[id].major));
@@ -154,18 +172,21 @@ export function relicSeed(seed) {
 
 // A room's difficulty numbers with the live curse applied (a plain copy; the
 // frozen difficulty() row is never touched).
-export function cursedDiff(diff, curseId) {
+// `scale` weakens the curse toward nothing (Saint's Ashes: 0.5 on a major).
+export function cursedDiff(diff, curseId, scale = 1) {
   const c = CURSES[curseId];
   if (!c || !c.diff) return diff;
   const d = { ...diff };
   const m = c.diff;
-  if (m.eliteAdd) d.eliteChance = r2(Math.min(0.9, (d.eliteChance ?? 0) + m.eliteAdd));
+  const k = (mul) => 1 + (mul - 1) * scale;
+  if (m.eliteAdd) d.eliteChance = r2(Math.min(0.9, (d.eliteChance ?? 0) + m.eliteAdd * scale));
   if (m.budgetMul) {
-    d.budget = r2(d.budget * m.budgetMul);
-    d.defendBudget = r2(d.defendBudget * m.budgetMul);
+    d.budget = r2(d.budget * k(m.budgetMul));
+    d.defendBudget = r2(d.defendBudget * k(m.budgetMul));
   }
-  if (m.hpMul) d.hpMul = r2(d.hpMul * m.hpMul);
-  if (m.dmgMul) d.dmgMul = r2(d.dmgMul * m.dmgMul);
+  if (m.hpMul) d.hpMul = r2(d.hpMul * k(m.hpMul));
+  if (m.dmgMul) d.dmgMul = r2(d.dmgMul * k(m.dmgMul));
+  if (m.waveMul && Number.isFinite(d.waveIntervalTicks)) d.waveIntervalTicks = Math.round(d.waveIntervalTicks * k(m.waveMul));
   return d;
 }
 
@@ -190,6 +211,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   let oathTick = -1; // ... and how many taunts healed on that tick
   let oathCount = 0;
   let charmHits = 0; // THE TIDECALLER: Millrace Charm's count of soaked hits
+  let ring = null; // batch 4: the live Hold ring { x, z, r } (Warding Chalk)
 
   const has = (id) => owned.includes(id);
   const sum = (key) => owned.reduce((s, id) => s + (RELICS[id][key] ?? 0), 0);
@@ -226,6 +248,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     oathTick = -1;
     oathCount = 0;
     charmHits = 0;
+    ring = null;
     if (combat && typeof combat.setMods === 'function') combat.setMods(on ? mods : null);
   }
 
@@ -234,10 +257,13 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   // owned and no curse every factor is exactly 1 (and every bonus 0). Live
   // for the whole relic run (not only once a relic is owned) so an elite
   // killed in room 1 can already drop one.
-  const majorSum = (key) => majors.reduce((s, id) => s + (CURSES[id][key] ?? 0), 0);
+  // Saint's Ashes: every major curse weighs this much (1 = in full).
+  const majorScale = () => (on && has('saints_ashes') ? RELICS.saints_ashes.ashes.scale : 1);
+  const majorSum = (key) => majors.reduce((s, id) => s + (CURSES[id][key] ?? 0), 0) * majorScale();
+  const cursedNow = (id) => cursedHere() && curse.id === id;
   const mods = {
     active: () => on && live(),
-    dealtMul() {
+    dealtMul(target = null) {
       let m = 1 + sum('dealt');
       if (has('ashen_crown')) m += RELICS.ashen_crown.perCurse * Math.min(RELICS.ashen_crown.perCurseMax, cursesTaken);
       if (has('cinder_pact')) {
@@ -246,16 +272,26 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         if (cursedHere()) m += P.dealt;
       }
       if (has('huntsmans_horn') && (roomMode === 'hunt' || roomMode === 'purge')) m += RELICS.huntsmans_horn.horn.dealt;
+      // Batch 4: Champion's Laurel on a champion.
+      if (target && target.champion && has('champions_laurel')) m += RELICS.champions_laurel.laurel.dealt;
       return m;
     },
-    takenMul: () => Math.max(0.1, 1 + sum('taken') + majorSum('taken') + (has('cinder_pact') && cursedHere() ? RELICS.cinder_pact.pact.taken : 0)),
+    takenMul: () =>
+      Math.max(
+        0.1,
+        1 +
+          sum('taken') +
+          majorSum('taken') +
+          (has('cinder_pact') && cursedHere() ? RELICS.cinder_pact.pact.taken : 0) +
+          (has('vigil_candle') && (roomMode === 'escort' || roomMode === 'hold') ? RELICS.vigil_candle.vigil.taken : 0),
+      ),
     critChance: () => sum('crit'),
     critMulAdd: () => sum('critMul'),
     kbMul: () => 1 + sum('kb'),
     healMul() {
       let m = 1 + sum('heal');
       if (curse && CURSES[curse.id] && CURSES[curse.id].healCut && !CURSES[curse.id].major) m *= 1 - CURSES[curse.id].healCut;
-      for (const id of majors) if (CURSES[id].healCut) m *= 1 - CURSES[id].healCut;
+      for (const id of majors) if (CURSES[id].healCut) m *= 1 - CURSES[id].healCut * majorScale();
       return m;
     },
     // Ash Feather: the dodge cooldown factor (1 = unchanged).
@@ -279,6 +315,8 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     onKill(target) {
       if (has('leech_fang')) pending.push({ kind: 'leech' });
       if (!target) return;
+      // Batch 4: Kindred Blood, the fallen's kin drink its death.
+      if (cursedNow('kindred_blood')) pending.push({ kind: 'kindred', x: target.x, z: target.z, id: target.id });
       if (has('spore_sac')) pending.push({ kind: 'spores', x: target.x, z: target.z, id: target.id });
       if (target.elite && has('bounty_writ')) pending.push({ kind: 'bounty', x: target.x, z: target.z, id: target.id, affixes: Array.isArray(target.affixes) ? target.affixes.length : 0 });
       if (target.elite && (!dropped || dropNext)) pending.push({ kind: 'drop', x: target.x, z: target.z, id: target.id, etype: target.kind });
@@ -345,6 +383,50 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     pending.push({ kind: 'oath', tank: ev.src, from: ev.id, x: ev.x ?? 0, z: ev.z ?? 0 });
   });
 
+  // ------------------------------------------------ batch 4 listeners --
+  // The rooms of content plan 3 announce themselves on the bus; each relic
+  // only queues a proc for endOfTick().
+  events.on('pilgrim_spawn', (ev) => {
+    if (on && live() && has('shepherds_crook')) pending.push({ kind: 'crook', target: ev.id });
+  });
+  events.on('pilgrim_arrive', (ev) => {
+    if (on && live() && has('shepherds_crook')) pending.push({ kind: 'crook_home', target: ev.id, x: ev.x, z: ev.z });
+  });
+  events.on('hold_start', (ev) => {
+    if (!on || !live()) return;
+    ring = { x: ev.x, z: ev.z, r: ev.radius, t0: getTick() };
+    if (has('warding_chalk')) events.emit(getTick(), 'relic_proc', { relic: 'warding_chalk', stage: 'drawn', radius: r2(ring.r), x: r2(ring.x), z: r2(ring.z) });
+  });
+  const ringDone = () => {
+    ring = null;
+  };
+  events.on('sigil_out', ringDone);
+  events.on('sigil_sealed', ringDone);
+  events.on('key_pickup', (ev) => {
+    if (on && live() && has('jailers_ring')) pending.push({ kind: 'jailer', by: ev.by, x: ev.x, z: ev.z });
+  });
+  events.on('event_take', (ev) => {
+    if (on && live() && has('wanderers_token')) pending.push({ kind: 'token', encounter: ev.encounter });
+  });
+  const healParty = (frac, source) => {
+    let n = 0;
+    for (const e of partyBodies()) if (e.hp > 0 && e.hp < e.maxHp && combat.applyHeal(e, e.maxHp * frac, { source })) n += 1;
+    return n;
+  };
+  // Warding Chalk: once a second, every standing member inside the ring.
+  function chalkTick() {
+    if (!ring || !has('warding_chalk')) return;
+    const C = RELICS.warding_chalk.chalk;
+    const tick = getTick();
+    if ((tick - ring.t0) % C.everyTicks !== 0 || tick === ring.t0) return;
+    const healed = [];
+    for (const e of partyBodies()) {
+      if (!(e.hp > 0) || e.hp >= e.maxHp || Math.hypot(e.x - ring.x, e.z - ring.z) > ring.r) continue;
+      if (combat.applyHeal(e, C.heal, { healer: null, source: 'warding_chalk' })) healed.push(e.id);
+    }
+    if (healed.length) events.emit(tick, 'relic_proc', { relic: 'warding_chalk', stage: 'mend', healed, radius: r2(ring.r), x: r2(ring.x), z: r2(ring.z) });
+  }
+
   // Short Fuse: the live room's telegraph rule ({ mul, minTicks }) or null.
   // sim/enemies.js shortens every new telegraph by it.
   function fuse() {
@@ -362,7 +444,9 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   // Procs land at the end of the tick, after every attack of the tick has
   // resolved, so a reflected blow never despawns an enemy mid-swing.
   function endOfTick() {
-    if (!on || pending.length === 0) return;
+    if (!on) return;
+    if (ring && live()) chalkTick();
+    if (pending.length === 0) return;
     const list = pending;
     pending = [];
     for (const p of list) {
@@ -484,6 +568,39 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         }
         if (!best || !combat.status.apply(best, 'soaked', CLASS_TECH.soakMag, CLASS_TECH.soakTicks, tick, p.src)) continue;
         events.emit(tick, 'relic_proc', { relic: 'millrace_charm', target: best.id, from: p.from, fx: r2(p.x), fz: r2(p.z), x: r2(best.x), z: r2(best.z) });
+      } else if (p.kind === 'crook') {
+        // Shepherd's Crook: the pilgrim walks out sturdier.
+        const t = registry.byId(p.target);
+        if (!t || !(t.hp > 0) || t.crooked) continue;
+        const H = RELICS.shepherds_crook.crook;
+        const add = t.maxHp * H.hp;
+        t.maxHp = r2(t.maxHp + add);
+        t.hp = r2(t.hp + add);
+        t.crooked = true;
+        events.emit(getTick(), 'relic_proc', { relic: 'shepherds_crook', stage: 'spawn', target: t.id, maxHp: t.maxHp, x: r2(t.x), z: r2(t.z) });
+      } else if (p.kind === 'crook_home') {
+        const G = RELICS.shepherds_crook.crook.glint;
+        pay(G, 'relic_shepherds_crook');
+        events.emit(getTick(), 'relic_proc', { relic: 'shepherds_crook', stage: 'home', target: p.target, glint: G, x: r2(p.x ?? 0), z: r2(p.z ?? 0) });
+      } else if (p.kind === 'jailer') {
+        const J = RELICS.jailers_ring.ring;
+        const healed = healParty(J.heal, 'jailers_ring');
+        pay(J.glint, 'relic_jailers_ring');
+        events.emit(getTick(), 'relic_proc', { relic: 'jailers_ring', by: p.by ?? null, healed, glint: J.glint, x: r2(p.x ?? player.x), z: r2(p.z ?? player.z) });
+      } else if (p.kind === 'token') {
+        const G = RELICS.wanderers_token.token.glint;
+        pay(G, 'relic_wanderers_token');
+        events.emit(getTick(), 'relic_proc', { relic: 'wanderers_token', encounter: p.encounter ?? null, glint: G, x: r2(player.x), z: r2(player.z) });
+      } else if (p.kind === 'kindred') {
+        // Kindred Blood (a room curse): the fallen's kin drink its death.
+        const K = CURSES.kindred_blood.kindred;
+        const healed = [];
+        for (const e of registry.all()) {
+          if (e.id === p.id || !hostileLive(e) || e.hp >= e.maxHp) continue;
+          if (Math.hypot(e.x - p.x, e.z - p.z) > K.radius + (e.radius ?? 0)) continue;
+          if (combat.applyHeal(e, e.maxHp * K.heal, { source: 'kindred_blood' })) healed.push(e.id);
+        }
+        events.emit(getTick(), 'curse_proc', { curse: 'kindred_blood', from: p.id, healed, radius: K.radius, x: r2(p.x), z: r2(p.z) });
       } else if (p.kind === 'leech') {
         let best = null;
         for (const e of partyBodies()) if (e.hp > 0 && e.hp < e.maxHp && (!best || e.hp / e.maxHp < best.hp / best.maxHp)) best = e;
@@ -507,6 +624,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       if (has('cinder_pact')) events.emit(getTick(), 'relic_proc', { relic: 'cinder_pact', room, majors: majors.length, x: r2(player.x), z: r2(player.z) });
     }
     if (has('huntsmans_horn') && (mode === 'hunt' || mode === 'purge')) events.emit(getTick(), 'relic_proc', { relic: 'huntsmans_horn', room, mode, stage: 'enter', x: r2(player.x), z: r2(player.z) });
+    if (has('vigil_candle') && (mode === 'escort' || mode === 'hold')) events.emit(getTick(), 'relic_proc', { relic: 'vigil_candle', room, mode, x: r2(player.x), z: r2(player.z) });
     if (has('pilgrims_lamp') && mode === 'event') {
       const L = RELICS.pilgrims_lamp.lamp;
       for (const e of partyBodies()) if (e.hp > 0 && e.hp < e.maxHp) combat.applyHeal(e, e.maxHp * L.heal, { source: 'pilgrims_lamp' });
@@ -525,10 +643,27 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
 
   // The room was cleared (boundary step 5). `gainGlint(n, reason)` is the
   // run's wallet. Returns nothing; queues the pick that is owed.
-  function onRoomCleared(room, { forfeited = false, gainGlint, boss = false, objective = null, won = false } = {}) {
+  function onRoomCleared(room, { forfeited = false, gainGlint, boss = false, objective = null, won = false, champion = null } = {}) {
     if (!on) return;
     const tick = getTick();
     roomMode = null;
+    ring = null;
+    // Batch 4: Banner Pennant (any objective won), Champion's Laurel (the
+    // chest), Geode Heart (a cursed room cleared).
+    if (has('banner_pennant') && objective && won) {
+      const healed = healParty(RELICS.banner_pennant.pennant.heal, 'banner_pennant');
+      events.emit(tick, 'relic_proc', { relic: 'banner_pennant', room, mode: objective, healed, x: r2(player.x), z: r2(player.z) });
+    }
+    if (has('champions_laurel') && champion && !forfeited) {
+      const G = RELICS.champions_laurel.laurel.glint;
+      gainGlint(G, 'relic_champions_laurel');
+      events.emit(tick, 'relic_proc', { relic: 'champions_laurel', room, champion, glint: G, x: r2(player.x), z: r2(player.z) });
+    }
+    if (has('geode_heart') && !forfeited && curse && curse.room === room) {
+      const G = RELICS.geode_heart.geode.glint;
+      gainGlint(G, 'relic_geode_heart');
+      events.emit(tick, 'relic_proc', { relic: 'geode_heart', room, curse: curse.id, glint: G, x: r2(player.x), z: r2(player.z) });
+    }
     if (has('huntsmans_horn') && objective && won) {
       gainGlint(RELICS.huntsmans_horn.horn.glint, 'relic_huntsmans_horn');
       events.emit(tick, 'relic_proc', { relic: 'huntsmans_horn', room, mode: objective, stage: 'won', glint: RELICS.huntsmans_horn.horn.glint, x: r2(player.x), z: r2(player.z) });
@@ -566,7 +701,8 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       else if (greater.length > 0) pool = greater;
     }
     // CHAMPION ROOMS: the champion's chest pays the greater pool too.
-    if (d.source === 'major' || d.source === 'spirit' || d.source === 'champion') {
+    // Batch 4: Geode Heart grows a plain cursed room's pick into a greater one.
+    if (d.source === 'major' || d.source === 'spirit' || d.source === 'champion' || (d.source === 'curse' && has('geode_heart'))) {
       const greater = pool.filter((id) => RELICS[id].rarity !== 'common');
       if (greater.length > 0) pool = greater;
     }
@@ -672,6 +808,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     pending = [];
     roomMode = null;
     oathAt = {};
+    ring = null;
   }
 
   // Shop: the Healer's shelf prices with Peddler's Seal.
@@ -717,6 +854,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       ...(roomMode ? { roomMode } : {}),
       ...(Object.keys(oathAt).length ? { oathAt: { ...oathAt } } : {}),
       ...(charmHits ? { charmHits } : {}),
+      ...(ring ? { ring: { ...ring } } : {}),
       ...(pending.length ? { pending: pending.map((p) => ({ ...p })) } : {}),
     };
   }
@@ -740,6 +878,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     roomMode = typeof d.roomMode === 'string' ? d.roomMode : null;
     oathAt = d.oathAt && typeof d.oathAt === 'object' ? { ...d.oathAt } : {};
     charmHits = Number.isFinite(d.charmHits) ? d.charmHits : 0;
+    ring = d.ring && Number.isFinite(d.ring.x) && Number.isFinite(d.ring.z) ? { x: d.ring.x, z: d.ring.z, r: Number(d.ring.r) || 0, t0: Number(d.ring.t0) || 0 } : null;
     pending = Array.isArray(d.pending) ? d.pending.filter((p) => p && typeof p.kind === 'string').map((p) => ({ ...p })) : [];
   }
 
@@ -764,6 +903,13 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     takeCurse,
     curseFor,
     majorCurses: () => (on ? [...majors] : []),
+    // Batch 4: how much each major curse weighs (Saint's Ashes), the Glint
+    // factor (Pauper's Mark), a vault pile's factor (Vault Ledger) and the
+    // Hold ring's fade factor (Warding Chalk). All exactly 1 with relics off.
+    majorScale,
+    glintMul: () => (on ? Math.max(0, 1 - majorSum('glintCut')) : 1),
+    vaultPileMul: () => (on && has('vault_ledger') ? RELICS.vault_ledger.ledger.mul : 1),
+    holdFadeMul: () => (on && has('warding_chalk') ? RELICS.warding_chalk.chalk.fadeMul : 1),
     fuse,
     openShelf,
     shelfItem,
@@ -794,6 +940,26 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         curse = null;
       }
       return { relic: relicId, curse: curseId };
+    },
+    // VFX lab (batch 4): play a room relic's beat where the party stands,
+    // with its real payout, without building the room around it.
+    demo(id) {
+      if (!on || !RELICS[id]) return null;
+      if (!owned.includes(id)) gain(id, 'grant', player);
+      const tick = getTick();
+      const at = { x: r2(player.x), z: r2(player.z) };
+      if (id === 'shepherds_crook') pending.push({ kind: 'crook_home', target: null, ...at });
+      else if (id === 'jailers_ring') pending.push({ kind: 'jailer', by: player.id, ...at });
+      else if (id === 'wanderers_token') pending.push({ kind: 'token', encounter: 'demo' });
+      else if (id === 'vault_ledger') events.emit(tick, 'relic_proc', { relic: id, pile: 0, glint: 24, x: at.x, z: r2(player.z - 1.5) });
+      else if (id === 'warding_chalk') {
+        ring = { x: at.x, z: at.z, r: 2.6, t0: tick };
+        events.emit(tick, 'relic_proc', { relic: id, stage: 'drawn', radius: 2.6, ...at });
+      } else if (id === 'banner_pennant') events.emit(tick, 'relic_proc', { relic: id, mode: 'hold', healed: healParty(RELICS.banner_pennant.pennant.heal, id), ...at });
+      else if (id === 'vigil_candle') events.emit(tick, 'relic_proc', { relic: id, mode: 'hold', ...at });
+      else if (id === 'champions_laurel') events.emit(tick, 'relic_proc', { relic: id, champion: 'demo', glint: RELICS.champions_laurel.laurel.glint, ...at });
+      else if (id === 'geode_heart') events.emit(tick, 'relic_proc', { relic: id, curse: 'restless', glint: RELICS.geode_heart.geode.glint, ...at });
+      return id;
     },
     grant(id) {
       // Probe / harness: give a relic now (no pick).

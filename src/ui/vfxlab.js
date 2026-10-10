@@ -465,6 +465,50 @@ export function mountVfxLab() {
     say("Pilgrim's Lamp: an event room lights up");
   }, 'the lamp on entering an event room, the party at half health');
 
+  // ---------------------------------------------------------- room relics --
+  // RELICS batch 4 (docs/RELICS.md "Batch 4"): the relics of the new rooms,
+  // each beat played where the party stands; the two new room curses laid
+  // on a live room.
+  const rel4 = section('Room relics');
+  const ROOM_RELICS = [
+    ['shepherds_crook', "Shepherd's Crook", 'the pilgrim brought home'],
+    ['vigil_candle', 'Vigil Candle', 'an Escort or Hold room opens'],
+    ['warding_chalk', 'Warding Chalk', 'the Hold ring drawn, then mending inside it'],
+    ['champions_laurel', "Champion's Laurel", "a champion's chest pays"],
+    ['jailers_ring', "Jailer's Ring", 'a key picked up'],
+    ['vault_ledger', 'Vault Ledger', 'a vault pile pays twice'],
+    ['banner_pennant', 'Banner Pennant', 'an objective room won'],
+    ['wanderers_token', "Wanderer's Token", 'an event offer taken'],
+    ['geode_heart', 'Geode Heart', 'a cursed room cleared'],
+  ];
+  for (const [id, label, what] of ROOM_RELICS) {
+    button(rel4, label, async () => {
+      await relicRoom(1);
+      for (const i of [0, 1, 2, 3]) {
+        const b = seatBody(i);
+        if (b) b.hp = Math.max(1, b.maxHp * 0.6);
+      }
+      X().cmd('relicDemo', id);
+      say(`${label}: ${what}`);
+    }, what);
+  }
+  button(rel4, 'Restless', async () => {
+    await relicRoom(1);
+    X().cmd('relicCurseHere', 'restless');
+    say('Restless: waves come 35% sooner');
+  }, 'Restless laid on this room');
+  button(rel4, 'Kindred Blood', async () => {
+    await relicRoom(1);
+    X().cmd('relicCurseHere', 'kindred_blood');
+    const f = front();
+    const ids = [-1.2, 0, 1.2].map((dx) => idOf(X().cmd('spawn', 'boar', f.x + dx, f.z - 1.6)));
+    await wait(200);
+    for (const id of ids.slice(1)) X().cmd('setHp', id, 0.5);
+    X().cmd('setHp', ids[0], 0.02);
+    X().cmd('relicHit', ids[0], seatBody(0)?.id ?? null, 30, false);
+    say('Kindred Blood: the fallen heals its kin');
+  }, 'Kindred Blood on this room, one of three boars killed');
+
   // -------------------------------------------------------------- affixes --
   // ELITE AFFIXES (docs/ELITE_AFFIXES.md): one elite per power, spawned with
   // that power forced, so each warning and burst can be reviewed.

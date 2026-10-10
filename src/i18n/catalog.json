@@ -1628,6 +1628,12 @@
   ],
   "data": true
  },
+ "A cleared cursed room pays a greater relic pick (rare or legendary) and 20 Glint.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "a connect cuts other cooldowns.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1751,6 +1757,12 @@
  "A heavy arrow: 30 to the first enemy in line.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A Hold room's sigil ring takes twice as long to go out, and party members inside it heal 2 HP a second.": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -2794,6 +2806,13 @@
   ],
   "data": true
  },
+ "Banner Pennant": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Barbed Trap": {
   "files": [
    "src/sim/skills.js"
@@ -2880,7 +2899,19 @@
   ],
   "data": true
  },
+ "Begin every run holding Banner Pennant. Winning a Hunt, Purge, Escort or Hold room heals the party for 25% of max HP.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Bounty Writ. Each elite the party kills pays 6 Glint, plus 4 for every affix it carried.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Champion's Laurel. The party deals 30% more damage to champions, and a champion's chest pays 25 Glint.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -2905,6 +2936,12 @@
   "data": true
  },
  "Begin every run holding Fox Ribbon. The Swordsman's critical hits cut again for half the damage.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Geode Heart. A cleared cursed room pays a greater relic pick (rare or legendary) and 20 Glint.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -2941,6 +2978,12 @@
   "data": true
  },
  "Begin every run holding Huntsman's Horn. In Hunt and Purge rooms the party deals 25% more damage, and winning one pays 15 more Glint.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Jailer's Ring. Picking up a key heals the party for 15% of max HP and pays 10 Glint.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -3011,6 +3054,18 @@
   ],
   "data": true
  },
+ "Begin every run holding Saint's Ashes. Major curses weigh half as much on the party.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Shepherd's Crook. The pilgrim you escort has 50% more health, and bringing it home pays 15 Glint.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Spore Sac. Party kills leave no hazards behind and puff spores that slow nearby enemies by 35%.": {
   "files": [
    "src/data/unlocks.js"
@@ -3029,7 +3084,31 @@
   ],
   "data": true
  },
+ "Begin every run holding Vault Ledger. Glint piles in a vault pay twice as much.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Vigil Candle. In Escort and Hold rooms the party takes 20% less damage.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Wanderer's Token. Each event offer the party takes pays 12 Glint.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Warden's Oath. Each enemy the Tank taunts heals the Tank for 6 HP (once per enemy every 3 seconds).": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Warding Chalk. A Hold room's sigil ring takes twice as long to go out, and party members inside it heal 2 HP a second.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -3634,6 +3713,13 @@
  "Champion": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Champion's Laurel": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -4946,6 +5032,12 @@
   ],
   "data": true
  },
+ "Each event offer the party takes pays 12 Glint.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Each hero has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -5383,6 +5475,12 @@
   "data": true
  },
  "Every wave in this room is half again as large.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Every wave is 12% larger for the rest of the run.": {
   "files": [
    "src/sim/relics.js"
   ],
@@ -6013,6 +6111,13 @@
   ],
   "data": true
  },
+ "Geode Heart": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "German": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
@@ -6058,6 +6163,12 @@
  "Glint is Glint, from the Wood or the Mill. I take it all.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Glint piles in a vault pay twice as much.": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -6723,6 +6834,12 @@
   ],
   "data": true
  },
+ "In Escort and Hold rooms the party takes 20% less damage.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "In Hunt and Purge rooms the party deals 25% more damage, and winning one pays 15 more Glint.": {
   "files": [
    "src/sim/relics.js"
@@ -6902,6 +7019,13 @@
  "Its shell carries a lantern it never lets go out.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Jailer's Ring": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -7090,6 +7214,12 @@
  "Kindling Coal": {
   "files": [
    "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Kindred Blood": {
+  "files": [
    "src/sim/relics.js"
   ],
   "data": true
@@ -7603,6 +7733,12 @@
   "files": [
    "src/ui/run/daily.js"
   ]
+ },
+ "Major curses weigh half as much on the party.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Manual": {
   "files": [
@@ -8755,6 +8891,12 @@
    "src/ui/run/levels.js"
   ]
  },
+ "Pauper's Mark": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Pause (Esc works too)": {
   "files": [
    "src/ui/menu/tabs/controls.js"
@@ -8811,6 +8953,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Picking up a key heals the party for 15% of max HP and pays 10 Glint.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Picture on its way…": {
   "files": [
@@ -9676,6 +9824,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Restless": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Restorative Wave": {
   "files": [
    "src/sim/skills.js"
@@ -10071,6 +10225,13 @@
   ],
   "data": true
  },
+ "Saint's Ashes": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Sanctuary": {
   "files": [
    "src/sim/skills.js"
@@ -10420,6 +10581,13 @@
  "Sharpen": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Shepherd's Crook": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -11280,6 +11448,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Teeming": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Test": {
   "files": [
@@ -12400,6 +12574,12 @@
   ],
   "data": true
  },
+ "The party deals 30% more damage to champions, and a champion's chest pays 25 Glint.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "The party deals 35% more damage but takes 20% more.": {
   "files": [
    "src/sim/relics.js"
@@ -12410,6 +12590,12 @@
   "files": [
    "src/ui/run/endscreens.js"
   ]
+ },
+ "The party gains 20% less Glint for the rest of the run.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "THE PARTY HAS FALLEN": {
   "files": [
@@ -12462,6 +12648,12 @@
   "files": [
    "src/ui/hud/banner.js"
   ]
+ },
+ "The pilgrim you escort has 50% more health, and bringing it home pays 15 Glint.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "THE PROVING CLEARING": {
   "files": [
@@ -13401,6 +13593,13 @@
    "src/ui/hud/index.js"
   ]
  },
+ "Vault Ledger": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Vault Shot": {
   "files": [
    "src/sim/skills.js"
@@ -13466,6 +13665,13 @@
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "Vigil Candle": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Vine Lasher": {
   "files": [
@@ -13613,6 +13819,13 @@
   ],
   "data": true
  },
+ "Wanderer's Token": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Wandering Spirit": {
   "files": [
    "src/sim/encounters.js"
@@ -13655,6 +13868,13 @@
   ],
   "data": true
  },
+ "Warding Chalk": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Water@@verse": {
   "files": [
    "src/data/story.js"
@@ -13665,6 +13885,12 @@
   "files": [
    "src/ui/hud/banner.js"
   ]
+ },
+ "Waves in this room arrive 35% sooner.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "WAYSTONE": {
   "files": [
@@ -13740,6 +13966,12 @@
  "when a Crash from this skill lands, her other skills cool down 0.5 s sooner.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "When an enemy falls in this room, enemies within 2.5 u heal 10% of their max HP.": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -13849,6 +14081,12 @@
   "files": [
    "src/ui/menu/tabs/display.js"
   ]
+ },
+ "Winning a Hunt, Purge, Escort or Hold room heals the party for 25% of max HP.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Wishing Well": {
   "files": [

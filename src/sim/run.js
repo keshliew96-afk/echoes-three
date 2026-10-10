@@ -226,6 +226,10 @@ export function createRunSystem({
   enemies.setSpawnGate(combatAllowed);
   // RELICS (Short Fuse): a cursed room's shorter telegraphs.
   if (typeof enemies.setFuse === 'function') enemies.setFuse(() => (active ? relics.fuse() : null));
+  // RELICS batch 4: Warding Chalk slows the Hold ring's fade; Pauper's Mark
+  // thins the ally purses too.
+  if (typeof waves.setHoldFadeMul === 'function') waves.setHoldFadeMul(() => (active ? relics.holdFadeMul() : 1));
+  if (party && typeof party.setGlintMul === 'function') party.setGlintMul(() => (active ? relics.glintMul() : 1));
   // ELITE AFFIXES (docs/ELITE_AFFIXES.md): elites in a campaign's wave rooms
   // (and the trapped chest's ambush) carry named powers. Never the boss room,
   // the tutorial, the legacy single-level run or the ?room= harness (relics
@@ -655,7 +659,7 @@ export function createRunSystem({
     // elites) so a first-time player learns rather than dies.
     if (combatRoom && tutorialOn()) diff = tutorialDiff(diff);
     // RELICS: each major curse the run holds reshapes every combat room.
-    if (combatRoom) for (const m of relics.majorCurses()) diff = cursedDiff(diff, m);
+    if (combatRoom) for (const m of relics.majorCurses()) diff = cursedDiff(diff, m, relics.majorScale());
     // UNLOCKS: each vow the party wears curses every combat room.
     const vows = combatRoom ? runVows() : null;
     if (vows) for (const v of vows) diff = cursedDiff(diff, v);
@@ -772,7 +776,7 @@ export function createRunSystem({
     if (ev.objective && ev.won) gainGlint(OBJECTIVE_RULES.bounty, `${ev.objective}_bounty`);
     // RELICS: clear procs (Grave Coin, Hearthstone), the curse lifts, and a
     // relic pick is owed after room 1 and after a cursed room.
-    relics.onRoomCleared(roomIndex, { forfeited: !!ev.softFailed, gainGlint, boss: roomIndex === RUN.bossRoom, objective: ev.objective ?? null, won: !!ev.won });
+    relics.onRoomCleared(roomIndex, { forfeited: !!ev.softFailed, gainGlint, boss: roomIndex === RUN.bossRoom, objective: ev.objective ?? null, won: !!ev.won, champion: ev.champion ?? null });
     // CHAMPION ROOMS: the champion's chest opens; its greater relic pick
     // comes after the room's draft (the crown door is never cursed, so no
     // other pick is owed here).
@@ -824,6 +828,9 @@ export function createRunSystem({
   }
 
   function gainGlint(amount, reason) {
+    // RELICS batch 4: Pauper's Mark (a major curse) thins every gain.
+    const gm = amount > 0 ? relics.glintMul() : 1;
+    if (gm !== 1) amount = Math.max(1, Math.round(amount * gm));
     wallet += amount;
     events.emit(getTick(), 'glint_gain', { amount, wallet, reason, room: roomIndex });
     return wallet;
@@ -1440,11 +1447,15 @@ export function createRunSystem({
   // A Glint pile: the Healer's wallet and each ally purse.
   function takePile(e, by) {
     const R = VAULT_RULES;
-    gainGlint(R.pileGlint, 'vault_pile');
-    if (allyOn()) for (const seat of [1, 2, 3]) party.gainPurse(seat, R.pilePurse, 'vault_pile');
+    // RELICS batch 4: Vault Ledger doubles each pile.
+    const lm = relics.vaultPileMul();
+    const g = Math.round(R.pileGlint * lm);
+    gainGlint(g, 'vault_pile');
+    if (allyOn()) for (const seat of [1, 2, 3]) party.gainPurse(seat, Math.round(R.pilePurse * lm), 'vault_pile');
     const v = vaults.live();
-    if (v) v.glint += R.pileGlint;
-    events.emit(getTick(), 'vault_pile', { id: e.id, pile: e.pile, by, glint: R.pileGlint, x: r2(e.x), z: r2(e.z) });
+    if (v) v.glint += g;
+    events.emit(getTick(), 'vault_pile', { id: e.id, pile: e.pile, by, glint: g, x: r2(e.x), z: r2(e.z) });
+    if (lm !== 1) events.emit(getTick(), 'relic_proc', { relic: 'vault_ledger', pile: e.pile, glint: g, x: r2(e.x), z: r2(e.z) });
     registry.despawn(e.id);
   }
   // The food platter: every living hero heals half their max HP.
@@ -1514,7 +1525,7 @@ export function createRunSystem({
     const base = beyondCampaign(depth) ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
     const A = EVENT_RULES.ambush;
     let diff = { ...base, budget: r2(base.budget * A.budgetMul), eliteChance: r2(Math.min(0.9, (base.eliteChance ?? 0) + A.eliteAdd)) };
-    for (const m of relics.majorCurses()) diff = cursedDiff(diff, m);
+    for (const m of relics.majorCurses()) diff = cursedDiff(diff, m, relics.majorScale());
     const vows = runVows();
     if (vows) for (const v of vows) diff = cursedDiff(diff, v);
     encounters.finish('ambush');
@@ -2740,6 +2751,9 @@ export function createRunSystem({
         return relicsDefault;
       case 'relicGrant':
         return relics.grant(args[0]);
+      case 'relicDemo':
+        // VFX lab: ('relicDemo', relicId) — a batch-4 room relic's beat here.
+        return relics.demo(args[0]);
       case 'relicBuy':
         // ('relicBuy', index[, seat]) — buy off the shop's relic shelf.
         return buyRelic(args[1] ?? 0, args[0] ?? 0);

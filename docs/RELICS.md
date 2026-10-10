@@ -155,6 +155,51 @@ rooms and event rooms. Each adds an heirloom like the others (46 unlocks).
   `captures/relics3-*.png`.
 - The numbers are first guesses; see the PR for the caveat.
 
+## Batch 4: room relics and four curses
+
+Content plan 3, slice 9 (v0.5.269). The plan's rooms (champions, keys, vaults,
+Escort, Hold, the objective rooms and the fourteen events) each get a relic
+that answers them, and the curses get two more room curses and two more major
+ones. 39 relics in all; heirlooms follow automatically. Numbers are first
+guesses until play.
+
+| Relic | Rarity | Effect |
+|---|---|---|
+| Shepherd's Crook | common | The Escort pilgrim walks out with 50% more HP; bringing it home pays 15 Glint. |
+| Vigil Candle | rare | In Escort and Hold rooms the party takes 20% less damage. |
+| Warding Chalk | rare | The Hold ring takes twice as long to go out (8 s empty instead of 4); standing members inside it heal 2 HP a second. |
+| Champion's Laurel | rare | +30% party damage to champions; the champion's chest also pays 25 Glint. |
+| Jailer's Ring | common | Picking up a key heals the party 15% of max HP and pays 10 Glint. |
+| Vault Ledger | rare | Each vault Glint pile pays double (wallet 24, each ally purse 12). |
+| Banner Pennant | common | Winning a Hunt, Purge, Escort or Hold room heals the party 25% of max HP. |
+| Wanderer's Token | common | Each event offer the party takes (Take, the trapped chest included) pays 12 Glint. |
+| Geode Heart | legendary | A cleared cursed room (room or major curse) pays 20 Glint, and a plain cursed room's pick becomes a greater one (rare or legendary). |
+| Saint's Ashes | legendary | Every major curse weighs half as much: its wave numbers, its damage taken, its healing cut and its Glint cut. |
+
+| Curse | Kind | Effect |
+|---|---|---|
+| Restless | room | The room's waves come 35% sooner (the kill-all wave interval x0.65). Purge, Hold and defend rooms keep their own clocks. |
+| Kindred Blood | room | When the party kills an enemy, enemies within 2.5 u heal 10% of their max HP. |
+| Teeming | major | Every wave is 12% larger for the rest of the run. |
+| Pauper's Mark | major | Every Glint gain (the wallet and each ally purse) is 20% smaller for the rest of the run, never under 1. |
+
+How they hook in:
+
+- Shepherd's Crook, Warding Chalk, Jailer's Ring and Wanderer's Token read the
+  sim's own `pilgrim_spawn`, `pilgrim_arrive`, `hold_start`, `sigil_out`,
+  `sigil_sealed`, `key_pickup` and `event_take` events and land at the end of
+  the tick like the batch 3 procs. Warding Chalk's fade factor reaches the
+  wave director through `waves.setHoldFadeMul()`.
+- Vigil Candle reads the room's mode (like Huntsman's Horn); Champion's
+  Laurel reads `target.champion` through `mods.dealtMul(target)`.
+- Vault Ledger multiplies the pile in `run.js takePile`; Pauper's Mark thins
+  `gainGlint` and `party.gainPurse` through `relics.glintMul()`; Saint's Ashes
+  passes `relics.majorScale()` to `cursedDiff(diff, curse, scale)`.
+- Kindred Blood queues on the party's kill (`mods.onKill`) and emits
+  `curse_proc`. Restless is a `diff.waveMul`.
+- `?vfxlab=1` → "Room relics": each relic's beat (`cmd('relicDemo', id)`) and
+  the two room curses on a live room.
+
 ## Determinism and the legacy traces
 
 - Every relic roll (curse on a door, which door, which curse, which three
@@ -175,6 +220,11 @@ rooms and event rooms. Each adds an heirloom like the others (46 unlocks).
   its configured door; `autopilot({ curses: 'avoid' })` steps around a cursed one.
 
 ## Verification
+
+- `node tools/relics4-probe.mjs` (headless, batch 4): the data (39 relics, 8
+  room curses and 6 major), each room relic in its real room (an Escort walk,
+  a Hold ring, a champion, a key, a vault, an event Take, a cursed room), the
+  four curses' numbers, nothing in the legacy run, and a save round trip.
 
 - `node tools/relics3-probe.mjs` (headless, batch 3, 24 checks): the data
   (27 relics, one class relic per class, rarities, heirlooms), the class gate,

@@ -431,9 +431,13 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     const s = S(which);
     return s ? s.build.autoFill() : { error: 'no_such_seat' };
   }
+  // RELICS batch 4 (Pauper's Mark): the run's Glint factor, 1 unless set.
+  let glintMul = () => 1;
   function gainPurse(seat, amount, reason) {
     const s = S(seat);
     if (!s) return null;
+    const gm = amount > 0 ? glintMul() : 1;
+    if (gm !== 1) amount = Math.max(1, Math.round(amount * gm));
     s.purse += amount;
     events.emit(getTick(), 'purse_gain', { seat, amount, purse: s.purse, reason });
     return s.purse;
@@ -719,6 +723,9 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
     grantNode,
     autoFill,
     gainPurse,
+    setGlintMul(fn) {
+      glintMul = typeof fn === 'function' ? fn : () => 1;
+    },
     purse: (i) => (S(i) ? seats[i].purse : null),
     setPurse: (i, n) => {
       const s = S(i);

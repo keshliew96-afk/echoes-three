@@ -657,6 +657,9 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     events.emit(tick, 'hold_start', { x: obj.x, z: obj.z, radius: H.radius, endTick: obj.endTick, rifts: obj.rifts.map((r) => ({ x: r.x, z: r.z })) });
   }
 
+  // RELICS batch 4 (Warding Chalk): the ring's fade factor, 1 unless set.
+  let holdFadeMul = () => 1;
+  const fadeTicksNow = () => OBJECTIVE_RULES.hold.fadeTicks * holdFadeMul();
   function stepHold(tick) {
     const H = OBJECTIVE_RULES.hold;
     if (obj.out || obj.won) return;
@@ -675,7 +678,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       obj.empty = false;
       events.emit(tick, 'sigil_relit', { x: obj.x, z: obj.z, fade: obj.fade });
     }
-    if (obj.fade >= H.fadeTicks) {
+    if (obj.fade >= fadeTicksNow()) {
       obj.out = true;
       softFailed = true;
       events.emit(tick, 'sigil_out', { x: obj.x, z: obj.z });
@@ -1021,7 +1024,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
           radius: H.radius,
           lit: !obj.out,
           empty: obj.empty && !obj.out,
-          fade: obj.out ? 1 : r2(Math.min(1, obj.fade / H.fadeTicks)),
+          fade: obj.out ? 1 : r2(Math.min(1, obj.fade / fadeTicksNow())),
           out: obj.out,
           surge: obj.surge,
           won: obj.won,
@@ -1123,6 +1126,9 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
   }
 
   return {
+    setHoldFadeMul(fn) {
+      holdFadeMul = typeof fn === 'function' ? fn : () => 1;
+    },
     startRoom,
     planRoom,
     beginRoom,

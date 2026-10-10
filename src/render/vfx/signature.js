@@ -3931,8 +3931,154 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         });
         break;
       }
+      // Batch 4 (docs/RELICS.md "Batch 4"): the relics of the new rooms.
+      case 'shepherds_crook': {
+        mark('relic_shepherds_crook');
+        const { x, z } = bodyAt(ev);
+        if (ev.stage === 'home') {
+          // Home safe: a warm column over the pilgrim, coins arc to the party.
+          kit.pillar({ x, z, radius: 0.5, height: 3.0, color: GOLD, life: 0.9, opacity: 0.55 });
+          kit.ring({ x, z, r0: 0.3, r1: 2.6, width: 0.14, life: 0.7, core: PARCH, glow: GOLD, soft: 0.5, y: 0.06 });
+          spray('spark', x, 0.6, z, N(12), { color: PALETTE.paleGold, speed: [0.3, 0.9], up: [1.4, 2.6], size: [0.05, 0.09], life: [0.7, 1.1], gravity: 2.2, drag: 0.6, jitter: 0.3, opacity: 1 });
+        } else {
+          // The crook's blessing: a shepherd-green hoop settles on the pilgrim.
+          kit.ring({ x, z, r0: 1.4, r1: 0.5, width: 0.1, life: 0.6, core: PARCH, glow: HEAL, soft: 0.5, y: 0.08 });
+          kit.flash({ x, y: 1.0, z, color: HEAL, size: 0.8, life: 0.4, hold: 0.1 });
+          spray('spark', x, 0.3, z, N(10), { color: HEAL, speed: [0.1, 0.3], up: [0.8, 1.4], size: [0.04, 0.07], life: [0.8, 1.2], gravity: -0.2, drag: 1.5, jitter: 0.5, opacity: 0.85 });
+        }
+        break;
+      }
+      case 'vigil_candle': {
+        // A candle-flame ward: a tall pale flame over the party, a wide
+        // amber ring that settles round it and holds a moment.
+        mark('relic_vigil_candle');
+        const p = player();
+        const x = p ? p.x : ev.x ?? 0;
+        const z = p ? p.z : ev.z ?? 0;
+        kit.light({ x, z, radius: 3.2, color: GOLD, opacity: 0.5, life: 1.4 });
+        kit.ring({ x, z, r0: 3.4, r1: 2.2, width: 0.16, life: 1.2, core: PARCH, glow: GOLD, soft: 0.6, y: 0.06 });
+        kit.pillar({ x, z, radius: 0.18, height: 2.4, color: PARCH, life: 0.8, opacity: 0.7 });
+        flare(x, 2.2, z, GOLD, 0.9, { kind: 'star', life: 0.4 });
+        spray('spark', x, 1.8, z, N(8), { color: GOLD, speed: [0.05, 0.2], up: [0.3, 0.7], size: [0.04, 0.06], life: [1.0, 1.5], gravity: -0.1, drag: 1.8, jitter: 0.25, opacity: 0.9 });
+        break;
+      }
+      case 'warding_chalk': {
+        mark('relic_warding_chalk');
+        const x = ev.x ?? 0;
+        const z = ev.z ?? 0;
+        const r = ev.radius ?? 2.6;
+        if (ev.stage === 'drawn') {
+          // The chalk line is drawn: a white ring traced round the sigil,
+          // dust kicked up along it.
+          kit.ring({ x, z, r0: r, r1: r + 0.05, width: 0.12, life: 1.2, core: PARCH, glow: BONE, soft: 0.3, y: 0.05, opacity: 0.9 });
+          for (let i = 0; i < 8; i++) {
+            const a = (i / 8) * TAU;
+            after(i * 0.05, () => spray('smoke', x + Math.cos(a) * r, 0.1, z + Math.sin(a) * r, 1, { color: BONE, speed: [0.05, 0.15], up: [0.1, 0.3], size: [0.2, 0.3], grow: 1.3, life: [0.6, 0.9], opacity: 0.3, gravity: -0.05, drag: 2.5 }));
+          }
+        } else {
+          // Once a second: a soft green pulse rises inside the ring.
+          kit.ring({ x, z, r0: 0.3, r1: r * 0.95, width: 0.06, life: 0.5, core: HEAL, glow: HEAL, soft: 0.6, y: 0.05, opacity: 0.45 });
+          for (const id of ev.healed ?? []) {
+            const b = byId(id);
+            if (b) spray('spark', b.x, 0.3, b.z, N(3), { color: HEAL, speed: [0.05, 0.2], up: [0.6, 1.0], size: [0.04, 0.06], life: [0.5, 0.8], gravity: -0.2, drag: 1.5, jitter: 0.25, opacity: 0.8 });
+          }
+        }
+        break;
+      }
+      case 'champions_laurel': {
+        // The laurel crowns the win: a gold wreath ring rises off the party
+        // and a shower of leaves and coins falls through it.
+        mark('relic_champions_laurel');
+        const p = player();
+        const x = p ? p.x : ev.x ?? 0;
+        const z = p ? p.z : ev.z ?? 0;
+        kit.ring({ x, z, r0: 1.0, r1: 1.4, width: 0.16, life: 0.9, core: PARCH, glow: GOLD, soft: 0.4, y: 2.0 });
+        kit.flash({ x, y: 2.0, z, color: GOLD, size: 1.3, life: 0.5, hold: 0.15 });
+        spray('spark', x, 2.4, z, N(16), { color: GOLD, speed: [0.2, 0.7], up: [0.2, 0.8], size: [0.05, 0.09], life: [0.9, 1.3], gravity: 1.6, drag: 0.8, jitter: 0.8, opacity: 1 });
+        spray('spark', x, 2.4, z, N(8), { color: PALETTE.sageCloak, speed: [0.1, 0.4], up: [0.1, 0.4], size: [0.06, 0.1], life: [1.0, 1.5], gravity: 0.8, drag: 1.4, jitter: 0.9, opacity: 0.9 });
+        break;
+      }
+      case 'jailers_ring': {
+        // The key rings home: iron sparks snap round the picker, a cool
+        // keyed chime-ring, then a heal wash over the party.
+        mark('relic_jailers_ring');
+        const by = ev.by != null ? byId(ev.by) : null;
+        const x = by ? by.x : ev.x ?? 0;
+        const z = by ? by.z : ev.z ?? 0;
+        kit.ring({ x, z, r0: 0.4, r1: 1.6, width: 0.1, life: 0.45, core: PARCH, glow: PALETTE.signalBlue, soft: 0.4, y: 0.08 });
+        flare(x, 1.0, z, PALETTE.paleGold, 0.8, { kind: 'star', life: 0.25 });
+        spray('spark', x, 0.8, z, N(10), { color: PALETTE.paleGold, speed: [0.6, 1.4], up: [0.8, 1.6], size: [0.03, 0.06], life: [0.3, 0.5], gravity: 2.4, drag: 0.8, jitter: 0.2, opacity: 1 });
+        if (ev.healed) after(0.15, () => kit.ring({ x, z, r0: 0.3, r1: 3.2, width: 0.14, life: 0.7, core: PARCH, glow: HEAL, soft: 0.6, y: 0.06 }));
+        break;
+      }
+      case 'vault_ledger': {
+        // The ledger counts twice: the pile's coins jump a second time.
+        mark('relic_vault_ledger');
+        const x = ev.x ?? 0;
+        const z = ev.z ?? 0;
+        after(0.18, () => {
+          flare(x, 0.7, z, PALETTE.paleGold, 0.8, { kind: 'burst', life: 0.2 });
+          spray('spark', x, 0.5, z, N(14), { color: PALETTE.paleGold, speed: [0.3, 1.0], up: [1.6, 2.8], size: [0.06, 0.1], life: [0.6, 0.9], gravity: 2.6, drag: 0.6, jitter: 0.3, opacity: 1 });
+          kit.ring({ x, z, r0: 0.2, r1: 1.2, width: 0.08, life: 0.35, core: PARCH, glow: GOLD, soft: 0.4, y: 0.05 });
+        });
+        break;
+      }
+      case 'banner_pennant': {
+        // Victory pennant: a tall amber banner-light over the party, a
+        // rippling heal ring.
+        mark('relic_banner_pennant');
+        const p = player();
+        const x = p ? p.x : ev.x ?? 0;
+        const z = p ? p.z : ev.z ?? 0;
+        kit.pillar({ x, z, radius: 0.3, height: 3.4, color: GOLD, life: 0.8, opacity: 0.6 });
+        for (let i = 0; i < 2; i++) kit.ring({ x, z, r0: 0.4, r1: 3.6, width: 0.16 - i * 0.05, life: 0.8, core: PARCH, glow: HEAL, soft: 0.6, y: 0.06, delay: i * 0.16 });
+        spray('spark', x, 3.0, z, N(10), { color: GOLD, speed: [0.3, 0.8], up: [0.1, 0.5], size: [0.05, 0.08], life: [0.8, 1.2], gravity: 1.4, drag: 0.8, jitter: 0.5, opacity: 1 });
+        break;
+      }
+      case 'wanderers_token': {
+        // The token flips: a spinning coin glint over the party.
+        mark('relic_wanderers_token');
+        const p = player();
+        const x = p ? p.x : ev.x ?? 0;
+        const z = p ? p.z : ev.z ?? 0;
+        flare(x, 1.9, z, PALETTE.paleGold, 0.9, { kind: 'star', life: 0.35, spin: 6 });
+        kit.ring({ x, z, r0: 0.3, r1: 1.8, width: 0.1, life: 0.5, core: PARCH, glow: PALETTE.paleGold, soft: 0.4, y: 0.06 });
+        spray('spark', x, 1.6, z, N(8), { color: PALETTE.paleGold, speed: [0.3, 0.8], up: [0.8, 1.6], size: [0.05, 0.08], life: [0.5, 0.8], gravity: 2.4, drag: 0.6, jitter: 0.2, opacity: 1 });
+        break;
+      }
+      case 'geode_heart': {
+        // The curse crystallises: violet shards burst outward and turn
+        // amber as they fall.
+        mark('relic_geode_heart');
+        const p = player();
+        const x = p ? p.x : ev.x ?? 0;
+        const z = p ? p.z : ev.z ?? 0;
+        kit.flash({ x, y: 1.2, z, color: VIOLET, size: 1.2, life: 0.4, hold: 0.1 });
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * TAU + 0.5;
+          kit.streak({ a: { x, y: 1.0, z }, b: { x: x + Math.cos(a) * 1.8, y: 1.6, z: z + Math.sin(a) * 1.8 }, width: 0.07, tailW: 0, core: VIOLET_PEAK, glow: VIOLET, life: 0.3, delay: i * 0.03, fall: 1.0 });
+        }
+        after(0.3, () => {
+          kit.flash({ x, y: 1.4, z, color: GOLD, size: 1.0, life: 0.45, hold: 0.1 });
+          spray('spark', x, 1.4, z, N(14), { color: GOLD, speed: [0.4, 1.2], up: [0.6, 1.6], size: [0.05, 0.09], life: [0.7, 1.0], gravity: 2.0, drag: 0.7, jitter: 0.3, opacity: 1 });
+        });
+        break;
+      }
       default:
         break;
+    }
+  });
+  // Batch 4: Kindred Blood, a dark thread from the fallen to each kin it heals.
+  bus.on('curse_proc', (ev) => {
+    if (ev.curse !== 'kindred_blood') return;
+    const x = ev.x ?? 0;
+    const z = ev.z ?? 0;
+    kit.ring({ x, z, r0: 0.3, r1: ev.radius ?? 2.5, width: 0.08, life: 0.45, core: VIOLET, glow: EMBER, soft: 0.5, y: 0.05, opacity: 0.6 });
+    for (const id of ev.healed ?? []) {
+      const b = byId(id);
+      if (!b) continue;
+      kit.streak({ a: { x, y: 0.4, z }, b: { x: b.x, y: 0.8, z: b.z }, width: 0.05, tailW: 0, core: EMBER, glow: VIOLET, life: 0.28, fall: 0.9 });
+      after(0.2, () => spray('spark', b.x, 0.7, b.z, N(4), { color: EMBER, speed: [0.05, 0.2], up: [0.4, 0.8], size: [0.04, 0.06], life: [0.4, 0.6], gravity: -0.2, drag: 1.5, jitter: 0.2, opacity: 0.85 }));
     }
   });
   bus.on('curse_apply', (ev) => {
@@ -3956,6 +4102,15 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       }
       kit.flash({ x, y: 1.0, z, color: VIOLET, size: 1.4, life: 0.5, hold: 0.1, delay: 0.6 });
       after(0.6, () => camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.06, 0.16));
+    } else if (ev.curse === 'restless') {
+      // Restless: the edge of the room shivers, four quick pulses inward.
+      for (let i = 0; i < 4; i++) kit.ring({ x, z, r0: 6.5, r1: 4.0, width: 0.07, life: 0.35, core: VIOLET_PEAK, glow: VIOLET, soft: 0.4, y: 0.05, delay: i * 0.12, opacity: 0.7 });
+    } else if (ev.curse === 'kindred_blood') {
+      // Kindred Blood: dark red veins run across the floor.
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * TAU + 0.2;
+        kit.streak({ a: { x: x + Math.cos(a) * 1.0, y: 0.05, z: z + Math.sin(a) * 1.0 }, b: { x: x + Math.cos(a) * 5.0, y: 0.05, z: z + Math.sin(a) * 5.0 }, width: 0.06, tailW: 0.02, core: EMBER, glow: VIOLET, life: 0.7, delay: i * 0.05, fall: 0.3 });
+      }
     } else if (ev.curse === 'short_fuse') {
       // Short Fuse: ember sparks fizz round the ring like a lit fuse.
       kit.ring({ x, z, r0: 4.2, r1: 4.6, width: 0.06, life: 1.0, core: EMBER, glow: EMBER, soft: 0.4, y: 0.05, opacity: 0.8 });
