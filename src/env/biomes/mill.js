@@ -290,4 +290,72 @@ export const LAYOUT_SPECS = Object.freeze({
     ],
     rooms: ROOMS,
   }),
+  // ---- 23 · Millrace Basin (plan 3 slice 8, ARENA): a drained basin, the
+  // race along its south wall, a pond in the north-east corner, the floor
+  // open between the lantern pools.
+  23: Object.freeze({
+    id: 23,
+    name: 'millbasin',
+    biome: 'mill',
+    mood: { key: 0.49, fill: 0.7, warmth: 0.0, keyWhite: 0.12, poolGain: 0.8, poolTint: '#E6B456', poolR: 0.95 },
+    ground: GROUND,
+    ...SHARED,
+    water: [
+      { pts: [[-8.6, 6.9], [8.6, 6.9]], w: 1.62 },
+      { pts: [[9.4, -6.6], [11.4, -5.6]], w: 2.0 },
+    ],
+    paths: [{ pts: [[-12.6, -0.4], [-5.6, 0.2], [0.0, -0.8], [5.6, 0.4], [12.6, -0.2]], w: 1.4 }],
+    torches: [[-11.2, 0.2], [11.2, 0.2], [-2.4, -7.2], [2.4, -7.2]],
+    lightIdx: [2, 3],
+    lanterns: [[-5.0, -7.3, -1.5708], [5.0, -7.3, -1.5708]],
+    braziers: [[-4.4, -0.4], [4.4, -0.4], [-2.4, 3.2], [2.4, 3.2]],
+    millwheel: [-10.2, 5.0, 1.5708],
+    clusters: [
+      [-8.4, -7.3, 0.6, 'reeds timberpile'],
+      [0.0, -7.3, 0.4, 'millhouse'],
+      [8.0, -7.3, 0.6, 'ropecrate crate'],
+      [-11.2, -5.0, 0.5, 'reeds'],
+      [11.2, 3.2, 0.5, 'timberpile reeds'],
+      [-11.2, 3.0, 0.4, 'reeds'],
+      [11.2, 6.6, 0.5, 'reeds'],
+      [-8.8, -5.2, 0.5, 'tower reeds'],
+      [8.8, -4.2, 0.5, 'banner'],
+    ],
+    rooms: ROOMS,
+  }),
+
+  // ---- 24 · Tailrace Steps (plan 3 slice 8): two races step down from
+  // opposite walls and spill into pools mid-room; a footpath crosses between.
+  24: Object.freeze({
+    id: 24,
+    name: 'tailrace',
+    biome: 'mill',
+    mood: { key: 0.45, fill: 0.72, warmth: 0.0, keyWhite: 0.13, poolGain: 0.8, poolTint: '#E6B456', poolR: 0.9 },
+    ground: GROUND,
+    ...SHARED,
+    water: [
+      { pts: [[-12.6, -4.6], [-2.6, -4.6]], w: 1.62 },
+      { pts: [[12.6, 4.8], [2.6, 4.8]], w: 1.62 },
+      { pts: [[-2.8, -4.8], [-1.6, -5.8]], w: 1.8 },
+      { pts: [[2.8, 5.0], [1.6, 6.0]], w: 1.8 },
+    ],
+    paths: [{ pts: [[-12.6, 1.0], [-6.4, 0.6], [-1.4, -0.4], [3.6, 0.2], [8.4, -0.6], [12.6, -1.0]], w: 1.4 }],
+    torches: [[-8.4, -7.2], [8.4, 7.2], [-11.2, 4.6], [11.2, -4.6]],
+    lightIdx: [0, 1],
+    lanterns: [[0.4, -7.3, -1.5708], [-0.4, 7.3, 1.5708]],
+    braziers: [[-4.0, 0.6], [4.2, -0.2], [-8.8, -1.8], [8.8, 2.0]],
+    millwheel: [-9.6, -6.6, 0],
+    clusters: [
+      [-4.6, -7.3, 0.6, 'sluiceframe reeds'],
+      [4.0, -7.3, 0.6, 'ropecrate crate barrel'],
+      [10.4, -7.0, 0.5, 'reeds'],
+      [-11.2, 0.4, 0.5, 'reeds timberpile'],
+      [11.2, 0.0, 0.5, 'ropecrate'],
+      [-4.0, 7.3, 0.6, 'crate sack'],
+      [-8.6, 7.3, 0.5, 'reeds'],
+      [9.2, -2.2, 0.5, 'tower reeds'],
+      [-9.4, 2.0, 0.5, 'banner timberpile'],
+    ],
+    rooms: ROOMS,
+  }),
 });

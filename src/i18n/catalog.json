@@ -2546,6 +2546,12 @@
   ],
   "data": true
  },
+ "Ash Amphitheatre": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Ash Breath: a warning cone for 14. It burrows, then bursts out of a warning ring for 16 and lies exposed afterwards. Breathes faster below half health.": {
   "files": [
    "src/data/journal.js"
@@ -3482,6 +3488,12 @@
   ],
   "data": true
  },
+ "Cairn Field": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Caltrops": {
   "files": [
    "src/sim/allies.js"
@@ -4358,6 +4370,12 @@
  "Crush": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Crystal Thicket": {
+  "files": [
+   "src/data/layouts.js"
   ],
   "data": true
  },
@@ -6502,6 +6520,12 @@
   ],
   "data": true
  },
+ "Hollow Nave": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Hollow Note: a warning ring for 10 that later throws crystal shards. Sung Lance: a warning lane for 16. Each verse calls the beasts of one land above.": {
   "files": [
    "src/data/journal.js"
@@ -7672,6 +7696,12 @@
  "Millrace": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Millrace Basin": {
+  "files": [
+   "src/data/layouts.js"
   ],
   "data": true
  },
@@ -11134,6 +11164,12 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Tailrace Steps": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Take": {
   "files": [
    "src/ui/run/draft.js",
@@ -12996,6 +13032,12 @@
   ],
   "data": true
  },
+ "Thornwood Ring": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Three arrows in a fan: 14 each.": {
   "files": [
    "src/ui/run/cards.js"
@@ -13130,6 +13172,12 @@
   "files": [
    "src/ui/menu/title.js"
   ]
+ },
+ "Toadstool Dell": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
  },
  "Today's board": {
   "files": [

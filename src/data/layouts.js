@@ -27,7 +27,9 @@
 //   interactables:  { type, x, z, yaw?, ...params }
 //     dewfont · barricade (yaw, skin) · keg · sluice (lanes: millrace indices) · bell
 //   spawns (optional): [[x, z] x 8] this room's spawn ring, index-aligned with
-//                   waves.js SPAWN_POINTS (layouts 10-15)
+//                   waves.js SPAWN_POINTS (layouts 10-15, 21, 23-25, 27)
+//   arena (optional): true on the act's open arena (21, 23, 25, 27), which
+//                   champion and Hold rooms prefer (sim/run.js rollLayout)
 export const LAYOUTS = Object.freeze({
   // ---------------------------------------------------------- Act I
   1: Object.freeze({
@@ -495,9 +497,228 @@ export const LAYOUTS = Object.freeze({
       { type: 'keg', x: -3.8, z: -3.6 },
     ]),
   }),
+
+  // ------------------------------- plan 3 slice 8 (CONTENT_PLAN_3.md, 8)
+  // Two more per act. One of each pair is the act's ARENA (`arena: true`):
+  // the playfield is the same size, so "large" means an open floor, no
+  // barricades, the hazards pushed to the walls and a spawn ring spread
+  // wide. Champion and Hold rooms stand in the act's arena whenever the
+  // previous combat room was not already it (sim/run.js rollLayout). Campaign
+  // tables only, like 10-15, so the goldens never see them.
+
+  // Act I · 21 — ARENA. A wide grass glade ringed by old stones: brambles in
+  // the four corners, puffcaps along the flanks, nothing in the middle.
+  21: Object.freeze({
+    id: 21,
+    act: 1,
+    biome: 'wood',
+    name: 'Thornwood Ring',
+    arena: true,
+    spawns: Object.freeze([[-7.4, -6.9], [7.4, -6.9], [-10.8, -3.4], [10.8, -3.4], [-10.8, 3.4], [10.8, 3.4], [-7.4, 6.9], [7.4, 6.9]]),
+    hazards: Object.freeze([
+      { type: 'bramble', x: -10.4, z: -6.5, r: 1.0 },
+      { type: 'bramble', x: 10.4, z: -6.5, r: 1.0 },
+      { type: 'bramble', x: -10.4, z: 6.5, r: 1.0 },
+      { type: 'bramble', x: 10.4, z: 6.5, r: 1.0 },
+      { type: 'puffcap', x: -7.6, z: 0.0, offset: 0, minRoom: 2 },
+      { type: 'puffcap', x: 7.6, z: 0.0, offset: 150, minRoom: 2 },
+      { type: 'puffcap', x: -3.6, z: -5.6, offset: 75, minRoom: 2 },
+      { type: 'puffcap', x: 3.6, z: -5.6, offset: 225, minRoom: 2 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'dewfont', x: 0.0, z: 6.2 },
+      { type: 'keg', x: -5.8, z: 4.4 },
+      { type: 'keg', x: 5.8, z: 4.4 },
+    ]),
+  }),
+  // Act I · 22 — a damp dell where the puffcaps grow in a ring round the
+  // middle, their bursts staggered so one is always about to go; two crate
+  // barricades shield the north approach, brambles choke both flanks.
+  22: Object.freeze({
+    id: 22,
+    act: 1,
+    biome: 'wood',
+    name: 'Toadstool Dell',
+    hazards: Object.freeze([
+      { type: 'puffcap', x: -4.6, z: -3.4, offset: 0, minRoom: 2 },
+      { type: 'puffcap', x: 4.6, z: -3.4, offset: 50, minRoom: 2 },
+      { type: 'puffcap', x: 5.4, z: 1.8, offset: 100, minRoom: 2 },
+      { type: 'puffcap', x: 2.4, z: 4.8, offset: 150, minRoom: 2 },
+      { type: 'puffcap', x: -2.4, z: 4.8, offset: 200, minRoom: 2 },
+      { type: 'puffcap', x: -5.4, z: 1.8, offset: 250, minRoom: 2 },
+      { type: 'bramble', x: -8.4, z: -0.2, r: 1.1 },
+      { type: 'bramble', x: 8.4, z: -0.2, r: 1.1 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'barricade', x: -2.6, z: -5.6, yaw: -0.2, skin: 'crates' },
+      { type: 'barricade', x: 2.6, z: -5.6, yaw: 0.2, skin: 'timber' },
+      { type: 'dewfont', x: 7.2, z: 5.2 },
+      { type: 'keg', x: -7.2, z: 5.0 },
+    ]),
+  }),
+
+  // Act II · 23 — ARENA. A drained mill basin: one race runs along the
+  // south wall (a sluice on its bank stops it), wet slick stones in the two
+  // north quarters, the floor between them open.
+  23: Object.freeze({
+    id: 23,
+    act: 2,
+    biome: 'mill',
+    name: 'Millrace Basin',
+    arena: true,
+    spawns: Object.freeze([[-7.0, -6.8], [7.0, -6.8], [-10.8, -3.2], [10.8, -3.2], [-10.8, 2.8], [10.8, 2.8], [-10.8, 6.6], [10.8, 6.6]]),
+    hazards: Object.freeze([
+      { type: 'millrace', x0: -8.6, z0: 6.9, x1: 8.6, z1: 6.9, w: 1.4, offset: 150 },
+      { type: 'slip', x: -6.0, z: -3.6, r: 1.3, skin: 'wet' },
+      { type: 'slip', x: 6.0, z: -3.6, r: 1.3, skin: 'wet' },
+      { type: 'puffcap', x: -9.6, z: 0.0, offset: 30 },
+      { type: 'puffcap', x: 9.6, z: 0.0, offset: 200 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'sluice', x: 0.0, z: 5.3, yaw: 3.1416, lanes: [0] },
+      { type: 'dewfont', x: -4.2, z: 4.6 },
+      { type: 'keg', x: 4.2, z: 4.6 },
+    ]),
+  }),
+  // Act II · 24 — two races step down the room in opposite corners: the
+  // north-west one flows east into the room, the south-east one flows west.
+  // Each has its own sluice; slick stones fill the other two corners and two
+  // barricades give cover in the middle lanes.
+  24: Object.freeze({
+    id: 24,
+    act: 2,
+    biome: 'mill',
+    name: 'Tailrace Steps',
+    spawns: Object.freeze([[-6.4, -7.0], [6.4, -6.8], [-10.8, -1.2], [10.8, -1.6], [-10.8, 2.0], [10.8, 1.8], [-6.4, 6.9], [6.4, 7.0]]),
+    hazards: Object.freeze([
+      { type: 'millrace', x0: -11.6, z0: -4.6, x1: -2.6, z1: -4.6, w: 1.4, offset: 40 },
+      { type: 'millrace', x0: 11.6, z0: 4.8, x1: 2.6, z1: 4.8, w: 1.4, offset: 310 },
+      { type: 'slip', x: 6.8, z: -3.6, r: 1.4, skin: 'wet' },
+      { type: 'slip', x: -6.8, z: 3.6, r: 1.4, skin: 'wet' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'sluice', x: -6.0, z: -2.8, yaw: 0, lanes: [0] },
+      { type: 'sluice', x: 6.0, z: 3.0, yaw: 3.1416, lanes: [1] },
+      { type: 'barricade', x: -3.0, z: 3.8, yaw: 0.3, skin: 'crates' },
+      { type: 'barricade', x: 3.0, z: -3.6, yaw: 0.3, skin: 'timber' },
+      { type: 'dewfont', x: -9.6, z: 5.4 },
+      { type: 'keg', x: 9.6, z: -5.2 },
+    ]),
+  }),
+
+  // Act III · 25 — ARENA. A sunken ring of ash where the barrow-folk held
+  // their rites: four gravefire arcs burn in the corners, a quarter cycle
+  // apart, under the rockfall; two bells on the flanks, the floor open.
+  25: Object.freeze({
+    id: 25,
+    act: 3,
+    biome: 'barrow',
+    name: 'Ash Amphitheatre',
+    arena: true,
+    spawns: Object.freeze([[-4.2, -7.0], [4.2, -7.0], [-10.8, -2.4], [10.8, -2.4], [-10.8, 2.4], [10.8, 2.4], [-4.2, 7.0], [4.2, 7.0]]),
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gravefire', vents: [[-10.4, -5.2], [-9.2, -6.2], [-7.8, -6.8]], offset: 0 },
+      { type: 'gravefire', vents: [[7.8, -6.8], [9.2, -6.2], [10.4, -5.2]], offset: 105 },
+      { type: 'gravefire', vents: [[10.4, 5.2], [9.2, 6.2], [7.8, 6.8]], offset: 210 },
+      { type: 'gravefire', vents: [[-7.8, 6.8], [-9.2, 6.2], [-10.4, 5.2]], offset: 315 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'bell', x: -6.4, z: 0.0 },
+      { type: 'bell', x: 6.4, z: 0.0 },
+      { type: 'dewfont', x: 0.0, z: 5.6 },
+      { type: 'keg', x: -7.0, z: 4.0 },
+      { type: 'keg', x: 7.0, z: -4.0 },
+    ]),
+  }),
+  // Act III · 26 — a field of tumbled cairns, eight of them standing as
+  // cover in a broken ring; a gravefire line across the north, frost on both
+  // flanks, a bell on the south edge.
+  26: Object.freeze({
+    id: 26,
+    act: 3,
+    biome: 'barrow',
+    name: 'Cairn Field',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gravefire', vents: [[-1.4, -5.8], [0.0, -6.2], [1.4, -5.8]], offset: 60 },
+      { type: 'slip', x: -9.4, z: 0.0, r: 1.4, skin: 'frost' },
+      { type: 'slip', x: 9.4, z: 0.0, r: 1.4, skin: 'frost' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'barricade', x: -7.0, z: -3.6, yaw: 0.5, skin: 'cairn' },
+      { type: 'barricade', x: -3.4, z: -4.6, yaw: -0.3, skin: 'cairn' },
+      { type: 'barricade', x: 3.4, z: -4.6, yaw: 0.3, skin: 'cairn' },
+      { type: 'barricade', x: 7.0, z: -3.6, yaw: -0.5, skin: 'cairn' },
+      { type: 'barricade', x: -6.6, z: 2.8, yaw: -0.4, skin: 'cairn' },
+      { type: 'barricade', x: 6.6, z: 2.8, yaw: 0.4, skin: 'cairn' },
+      { type: 'barricade', x: -3.4, z: 5.0, yaw: 0.2, skin: 'cairn' },
+      { type: 'barricade', x: 3.4, z: 5.0, yaw: -0.2, skin: 'cairn' },
+      { type: 'bell', x: 0.0, z: 6.2 },
+      { type: 'dewfont', x: -9.6, z: -6.0 },
+      { type: 'keg', x: 9.6, z: -6.0 },
+    ]),
+  }),
+
+  // Act IV · 27 — ARENA. The heart's long nave: vein vents bleed up both
+  // side walls, two glass floors gleam in the north quarters, roots drop
+  // from the vault above; the nave floor is open.
+  27: Object.freeze({
+    id: 27,
+    act: 4,
+    biome: 'heart',
+    name: 'Hollow Nave',
+    arena: true,
+    spawns: Object.freeze([[-6.0, -7.0], [6.0, -7.0], [-10.8, -4.4], [10.8, -4.4], [-10.8, 4.4], [10.8, 4.4], [-6.0, 7.0], [6.0, 7.0]]),
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gravefire', vents: [[-10.6, -1.4], [-10.6, 0.0], [-10.6, 1.4]], offset: 0, skin: 'vein' },
+      { type: 'gravefire', vents: [[10.6, 1.4], [10.6, 0.0], [10.6, -1.4]], offset: 210, skin: 'vein' },
+      { type: 'slip', x: -5.6, z: -4.2, r: 1.2, skin: 'glass' },
+      { type: 'slip', x: 5.6, z: -4.2, r: 1.2, skin: 'glass' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'dewfont', x: 0.0, z: 5.8 },
+      { type: 'keg', x: -6.4, z: 3.6 },
+      { type: 'keg', x: 6.4, z: 3.6 },
+    ]),
+  }),
+  // Act IV · 28 — a thicket of crystal: six crystal barricades in two
+  // chevrons, glass floors at the north edge and both flanks, a vein line
+  // across the south.
+  28: Object.freeze({
+    id: 28,
+    act: 4,
+    biome: 'heart',
+    name: 'Crystal Thicket',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gravefire', vents: [[-1.6, 6.4], [0.0, 6.8], [1.6, 6.4]], offset: 140, skin: 'vein' },
+      { type: 'slip', x: 0.0, z: -6.0, r: 1.3, skin: 'glass' },
+      { type: 'slip', x: -9.6, z: 0.0, r: 1.3, skin: 'glass' },
+      { type: 'slip', x: 9.6, z: 0.0, r: 1.3, skin: 'glass' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'barricade', x: -6.8, z: -2.6, yaw: 1.0, skin: 'crystal' },
+      { type: 'barricade', x: -4.6, z: -4.2, yaw: 0.5, skin: 'crystal' },
+      { type: 'barricade', x: 4.6, z: -4.2, yaw: -0.5, skin: 'crystal' },
+      { type: 'barricade', x: 6.8, z: -2.6, yaw: -1.0, skin: 'crystal' },
+      { type: 'barricade', x: -5.0, z: 3.6, yaw: -0.6, skin: 'crystal' },
+      { type: 'barricade', x: 5.0, z: 3.6, yaw: 0.6, skin: 'crystal' },
+      { type: 'dewfont', x: -9.6, z: -6.0 },
+      { type: 'keg', x: 9.6, z: -6.0 },
+      { type: 'keg', x: 9.4, z: 5.6 },
+    ]),
+  }),
 });
 
-export const LAYOUT_IDS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+export const LAYOUT_IDS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
+
+// Plan 3 slice 8: the act's arena (the layout flagged `arena`), or null.
+export function arenaOf(table) {
+  for (const id of table) if (LAYOUTS[id]?.arena) return id;
+  return null;
+}
 
 export function layoutFor(id) {
   return LAYOUTS[id] ?? null;

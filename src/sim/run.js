@@ -78,7 +78,7 @@ import { NODES } from './nodes.js';
 import { levelFor, ACT_IDS, ENDLESS_ACTS, bossFor, campaignLevel } from '../data/levels.js';
 // ENDLESS (docs/ENDLESS.md): the descent past Act III.
 import { endlessDifficulty, endlessLevel, endlessBossIndex, endlessNextLevel, endlessRules, levelOfDepth, beyondCampaign } from '../data/endless.js';
-import { LAYOUTS } from '../data/layouts.js';
+import { LAYOUTS, arenaOf } from '../data/layouts.js';
 import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
@@ -598,7 +598,14 @@ export function createRunSystem({
     // KEYS AND VAULTS: so does the vault.
     if (mode === 'shop' || mode === 'event' || mode === 'vault') return lastCombatLayout ?? table[0];
     const pool = table.filter((id) => id !== lastCombatLayout);
-    const pick = pool.length > 0 ? pool[rng.int(pool.length)] : table[0];
+    let pick = pool.length > 0 ? pool[rng.int(pool.length)] : table[0];
+    // NEW LAYOUTS (plan 3 slice 8): a champion or Hold room stands in the
+    // act's open arena, unless the last combat room was already it. The draw
+    // above still happens, so the stream keeps its length.
+    if (mode === 'champion' || mode === 'hold') {
+      const arena = arenaOf(table);
+      if (arena !== null && arena !== lastCombatLayout) pick = arena;
+    }
     lastCombatLayout = pick;
     return pick;
   }
