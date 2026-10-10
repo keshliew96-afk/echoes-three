@@ -153,7 +153,42 @@ export function createTransitScreen({ run }) {
     const to = card.to;
     // ENDLESS (docs/ENDLESS.md): `card.depth` = the depth the card leads to.
     const depth = Number.isFinite(card.depth) ? card.depth : null;
-    if (card.kind === 'clear') {
+    // BOSS RUSH (docs/BOSS_RUSH.md): `card.fight` = the fight the card leads to.
+    const fight = Number.isFinite(card.fight) ? card.fight : null;
+    if (fight !== null) {
+      const c = run().campaign ? run().campaign() : null;
+      const line = c && c.rush && Array.isArray(c.rush.line) ? c.rush.line : [];
+      const total = card.fights ?? line.length;
+      const bossName = (n) => (line[n - 1] ? t(line[n - 1].name) : '');
+      const landOf = (n) => (line[n - 1] ? t(levelFor(line[n - 1].act).name) : '');
+      verseEl.textContent = '';
+      nextRow.style.display = '';
+      nextName.textContent = t('Fight {n} of {total} · {boss} · {land}', { n: fight, total, boss: bossName(fight), land: landOf(fight) });
+      if (card.kind === 'clear') {
+        const met = line[fight - 2] ? line[fight - 2].kind : null;
+        kicker.textContent = t('FIGHT {n} OF {total} WON', { n: fight - 1, total });
+        headline.textContent = bossName(fight - 1).toUpperCase();
+        flavour.textContent = BOSS_FLAVOUR[met] ? BOSS_FLAVOUR[met]() : FLAVOUR[card.from] ? FLAVOUR[card.from]() : t('The way ahead opens.');
+        carryEl.innerHTML = [
+          row(t('SKILLS CARRIED'), `${(s.skills || []).length} / 4`),
+          row(t('SOCKETS FILLED'), `${s.socketed ?? 0} / ${s.sockets ?? 0}`),
+          row(t('BENCH'), String(s.bench ?? 0)),
+          row(t('GLINT'), String(s.wallet ?? 0)),
+          row(t('PARTY'), t('restored to full')),
+          row(t('BEFORE THE FIGHT'), t('The Peddler')),
+        ].join('');
+      } else {
+        kicker.textContent = t('THE BOSS RUSH');
+        headline.textContent = t('{n} BOSSES, BACK TO BACK', { n: total });
+        flavour.textContent = line.map((b) => t(b.name)).join(' · ');
+        const g = s.grant;
+        carryEl.innerHTML = [
+          row(t('STARTER SKILLS'), `+${g ? (g.skills || []).length : 0}`),
+          row(t('SOCKETS FILLED'), `${s.socketed ?? 0} / ${s.sockets ?? 0}`),
+          row(t('GLINT'), String(s.wallet ?? 0)),
+        ].join('');
+      }
+    } else if (card.kind === 'clear') {
       const rv = v && !v.__card ? v : null;
       let met = rv && rv.frame ? bossFor(card.from, rv.frame.seed, null, rv.thirdBosses ?? null).kind : null;
       if (depth !== null && beyondCampaign(depth - 1) && rv && rv.frame) {

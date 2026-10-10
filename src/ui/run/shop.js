@@ -159,7 +159,7 @@ export function createShopScreen({ run, build, party = () => null }) {
       <div class="rn-strip">
         <span class="rn-glint"><span class="rn-coin">${iconHtml('coin', { size: 18 })}</span><span class="rn-amt">0</span></span>
         <span class="rn-lab">${esc(t('GLINT'))}<span class="rn-labsep"> · </span><span class="rn-labbr"></span><span class="rn-labrm">${esc(t('ROOM'))}</span></span><span class="rn-num">7</span>
-        <span class="rn-lab">${esc(t('OF {n}', { n: 8 }))}</span>
+        <span class="rn-lab rn-labof">${esc(t('OF {n}', { n: 8 }))}</span>
       </div>
     </div>
     <div class="rn-shopstrip"></div>
@@ -502,9 +502,23 @@ export function createShopScreen({ run, build, party = () => null }) {
   }
 
   let guestRoom = -1;
+  // BOSS RUSH (docs/BOSS_RUSH.md): the strip counts fights, not rooms.
+  const stripRm = el.querySelector('.rn-labrm');
+  const stripNum = el.querySelector('.rn-num');
+  const stripOf = el.querySelector('.rn-labof');
+  function renderStrip(view) {
+    const rush = view.rush && Number.isFinite(view.rush.fight) ? view.rush : null;
+    const rm = rush ? t('FIGHT') : t('ROOM');
+    const num = String(rush ? rush.fight : 7);
+    const of = t('OF {n}', { n: rush ? rush.fights : 8 });
+    if (stripRm.textContent !== rm) stripRm.textContent = rm;
+    if (stripNum.textContent !== num) stripNum.textContent = num;
+    if (stripOf.textContent !== of) stripOf.textContent = of;
+  }
   function render(view) {
     lastView = view;
     if (view.phase !== 'shop') return;
+    renderStrip(view);
     {
       const kind = view.actBoss && view.actBoss.kind ? view.actBoss.kind : 'stag';
       const line = `“${t(rumourFor(kind, view.act ?? null))}”`;

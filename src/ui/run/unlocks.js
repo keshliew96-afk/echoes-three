@@ -70,6 +70,9 @@ function awardLabel(label) {
   if ((m = /^Level (\S+) cleared$/.exec(s))) return t('Level {level} cleared', { level: m[1] });
   if ((m = /^Depth (\d+) cleared$/.exec(s))) return t('Depth {depth} cleared', { depth: m[1] });
   if (s === 'Campaign complete') return t('Campaign complete');
+  // BOSS RUSH (docs/BOSS_RUSH.md).
+  if ((m = /^(\d+) boss(?:es)? felled in the rush$/.exec(s))) return tn(Number(m[1]), '{n} boss felled in the rush', '{n} bosses felled in the rush');
+  if (s === 'Boss Rush won') return t('Boss Rush won');
   if ((m = /^(\d+) vows? \+(\d+)%$/.exec(s))) return tn(Number(m[1]), '{n} vow +{pct}%', '{n} vows +{pct}%', { pct: m[2] });
   if ((m = /^(\w+) ×(.+)$/.exec(s))) return t('{challenge} ×{mul}', { challenge: t(m[1]), mul: m[2] });
   if ((m = /^Deed: (.+)$/.exec(s))) return t('Deed: {name}', { name: t(m[1]) });

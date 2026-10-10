@@ -71,6 +71,7 @@ import { buildMapTable, createTablePrompt, withinTable, MAP_TABLE } from '../cam
 import { FIRST_LEVEL, isLevel, lockLine } from '../data/campaign.js';
 import { levelFor, thirdBossActs } from '../data/levels.js';
 import { endlessUnlockedFrom } from '../data/endless.js';
+import { rushUnlockedFrom } from '../data/rush.js';
 import { CLASS_NAME } from '../data/classes.js';
 import { classOfSeat, seatOfClass, activeLineup, sameLineup, tidecallerOpen, normalizeLineup } from '../data/lineup.js';
 import { lineupFromSettings } from '../app/playclass.js';
@@ -684,6 +685,17 @@ export function createCampScene(stage, toggles, ctx) {
       return false;
     }
   }
+  // BOSS RUSH (docs/BOSS_RUSH.md): ?rush=1 (harness) / opens with Endless.
+  const rushParam = () => new URLSearchParams(window.location.search).get('rush') === '1';
+  function rushOpen() {
+    if (rushParam()) return true;
+    const save = svc('save');
+    try {
+      return rushUnlockedFrom(save && typeof save.profile === 'function' ? save.profile() : null);
+    } catch {
+      return false;
+    }
+  }
   function isGuest() {
     const netSvc = svc('net');
     return !!(netSvc && typeof netSvc.isGuest === 'function' && netSvc.isGuest());
@@ -714,13 +726,15 @@ export function createCampScene(stage, toggles, ctx) {
     if (!canBegin() || !withinPortal() || picking) return false;
     // ENDLESS: a menu-skip boot with ?endless=1 sets out on the descent.
     if (menuSkip() && endlessParam()) return beginLevel(FIRST_LEVEL, { harness: true, via: 'portal', endless: true });
+    // BOSS RUSH: so does ?rush=1 on the rush.
+    if (menuSkip() && rushParam()) return beginLevel(FIRST_LEVEL, { harness: true, via: 'portal', rush: true });
     const harness = menuSkip() ? bootLevel() : null;
     return beginLevel(harness ?? FIRST_LEVEL, { harness: harness !== null, via: 'portal' });
   }
 
-  function beginLevel(level, { harness = false, via = 'portal', endless = false, tutorial = false, daily = null } = {}) {
+  function beginLevel(level, { harness = false, via = 'portal', endless = false, tutorial = false, daily = null, rush = false } = {}) {
     if (!canBegin()) return false;
-    begin = { pressedAt: performance.now(), started: false, level, act: level, harness, via, endless, tutorial, daily };
+    begin = { pressedAt: performance.now(), started: false, level, act: level, harness, via, endless, tutorial, daily, rush };
     fade.classList.add('cp-on');
     prompt.classList.remove('cp-on');
     if (tablePrompt) tablePrompt.classList.remove('cg-on');
@@ -885,6 +899,15 @@ export function createCampScene(stage, toggles, ctx) {
       queueMicrotask(() => openDaily(via));
       return { ok: true, level, daily: true };
     }
+    // BOSS RUSH (docs/BOSS_RUSH.md): the rush card, open with Endless, single
+    // player only (co-op is untried, like the Daily).
+    if (level === 'rush') {
+      if (!rushOpen()) return { ok: false, reason: 'locked', level, line: 'Win the campaign to unlock' };
+      if (inSession()) return { ok: false, reason: 'solo', level, line: 'Single player only' };
+      if (!canBegin()) return { ok: false, reason: 'busy', level };
+      beginLevel(FIRST_LEVEL, { harness: false, via, rush: true });
+      return { ok: true, level, rush: true };
+    }
     // ENDLESS (docs/ENDLESS.md): the Endless Descent card, open once the game is won.
     if (level === 'endless') {
       if (!endlessOpen()) return { ok: false, reason: 'locked', level, line: 'Win the campaign to unlock' };
@@ -915,7 +938,8 @@ export function createCampScene(stage, toggles, ctx) {
     const challenge = (settings && typeof settings.get === 'function' && settings.get('gameplay.challenge')) || 'standard';
     const level = isLevel(begin.level) ? begin.level : FIRST_LEVEL;
     const ready = arena.levelStatus ? arena.levelStatus(level).ready : true;
-    const depart = level !== FIRST_LEVEL || !ready;
+    // BOSS RUSH: always the setting-out card first (it shows the line).
+    const depart = level !== FIRST_LEVEL || !ready || !!begin.rush;
     const boons = begin.tutorial || begin.daily ? null : equippedBoons(!!begin.harness);
     world.runSystem().startCampaign({
       level,
@@ -925,6 +949,7 @@ export function createCampScene(stage, toggles, ctx) {
       ...(begin.endless ? { endless: true } : {}),
       ...(begin.tutorial ? { tutorial: true } : {}),
       ...(begin.daily ? { daily: { key: begin.daily.key } } : {}),
+      ...(begin.rush ? { rush: true } : {}),
       ...(boons ? { boons } : {}),
       // THE TIDECALLER: the lineup the camp shows (the tutorial ignores it).
       ...(plannedCampLineup() ? { lineup: plannedCampLineup() } : {}),
@@ -944,6 +969,7 @@ export function createCampScene(stage, toggles, ctx) {
       harness: !!begin.harness,
       endless: !!begin.endless,
       tutorial: !!begin.tutorial,
+      ...(begin.rush ? { rush: true } : {}),
       ...(begin.daily ? { daily: begin.daily.key } : {}),
       challenge: begin.daily ? 'standard' : challenge,
       boons,

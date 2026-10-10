@@ -22,6 +22,7 @@ import { service } from '../../app/registry.js';
 import { CAMPAIGN_LEVELS, FIRST_LEVEL, FINAL_LEVEL, grantFor, prevLevel } from '../../data/campaign.js';
 import { levelFor } from '../../data/levels.js';
 import { endlessUnlockedFrom } from '../../data/endless.js';
+import { rushUnlockedFrom, RUSH_RULES } from '../../data/rush.js';
 import { t, tn, getLanguage } from '../../i18n/index.js';
 import { RELICS, CURSES } from '../../sim/relics.js';
 import { clockOf } from '../../data/daily.js';
@@ -29,6 +30,8 @@ import { placeLine } from './daily.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 const STYLE_ID = 'cg-levels-style';
+// BOSS RUSH: the card's own rust red (not Ember, which is enemy threat only).
+const RUSH_RED = '#D9654B';
 const BIOME_LABEL = { wood: () => t('Night woodland'), mill: () => t('Flooded mill'), barrow: () => t('Burial mounds'), heart: () => t('The hollow under the Barrow') };
 // data/campaign.js lockLine, as one translatable sentence per form.
 const lockText = (level) => {
@@ -103,6 +106,27 @@ function installStyle() {
   border-color: ${P.hearthAmber}77;
 }
 .cg-levels .cg-card.cg-daily .cg-lvl { color: ${P.hearthAmber}; }
+.cg-levels .cg-card.cg-rush {
+  background:
+    radial-gradient(ellipse 85% 40% at 50% 0%, ${RUSH_RED}33 0%, #00000000 75%),
+    linear-gradient(172deg, #33201E 0%, ${P.voidCharcoal} 72%);
+  border-color: ${RUSH_RED}88;
+}
+.cg-levels .cg-card.cg-rush .cg-lvl { color: ${RUSH_RED}; }
+.cg-levels .cg-skulls { display: inline-flex; gap: ${px(5)}; }
+.cg-levels .cg-skull { width: ${px(13)}; height: ${px(13)}; border-radius: 50%; border: max(2px, ${px(2)}) solid ${P.bone}; }
+.cg-levels .cg-skull.cg-on { background: ${RUSH_RED}; border-color: ${RUSH_RED}; }
+/* Seven cards (four levels, Endless, the Daily, Boss Rush): tighter still. */
+.cg-levels .cg-cards.cg-seven { gap: ${px(10)}; }
+.cg-levels .cg-cards.cg-seven .cg-card { padding: ${px(13)} ${px(12)} ${px(12)}; gap: ${px(7)}; }
+.cg-levels .cg-cards.cg-seven .cg-lvl { font-size: ${px(17)}; letter-spacing: 0.16em; }
+.cg-levels .cg-cards.cg-seven .cg-name { font-size: ${px(24)}; }
+.cg-levels .cg-cards.cg-seven .cg-blurb { font-size: ${px(16.5)}; }
+.cg-levels .cg-cards.cg-seven .cg-biome,
+.cg-levels .cg-cards.cg-seven .cg-status,
+.cg-levels .cg-cards.cg-seven .cg-omen { font-size: ${px(15.5)}; }
+.cg-levels .cg-cards.cg-seven .cg-grant { font-size: ${px(15)}; }
+.cg-levels .cg-cards.cg-seven .cg-danger { font-size: ${px(16)}; }
 .cg-levels .cg-omen { display: flex; flex-direction: column; gap: ${px(2)}; font-size: ${px(17)}; line-height: 1.25; }
 .cg-levels .cg-omen .cg-o-relic { color: ${P.paleGold}; }
 .cg-levels .cg-omen .cg-o-curse { color: ${P.godstuffViolet}; }
@@ -219,6 +243,40 @@ export function dailyInfo() {
   };
 }
 
+// BOSS RUSH (docs/BOSS_RUSH.md): the rush card — open once the game is won
+// (or with the ?rush=1 harness), single player only, with the profile's best
+// time and most bosses felled.
+export function rushInfo() {
+  let profile = null;
+  try {
+    const save = service('save');
+    profile = save && typeof save.profile === 'function' ? save.profile() : null;
+  } catch {
+    profile = null;
+  }
+  let solo = true;
+  try {
+    const n = service('net');
+    solo = !(n && ((typeof n.isGuest === 'function' && n.isGuest()) || (typeof n.isHost === 'function' && n.isHost())));
+  } catch {
+    solo = true;
+  }
+  const rec = profile && profile.records ? profile.records : {};
+  const harness = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('rush') === '1';
+  const open = harness || rushUnlockedFrom(profile);
+  return {
+    level: 'rush',
+    name: t('The Boss Rush'),
+    blurb: t('No rooms, no doors: the bosses one after another, a land at a time and then around again. A draft and the Peddler between fights.'),
+    unlocked: open && solo,
+    bestSec: rec.rushBestSec ?? null,
+    mostFelled: rec.rushMostFelled || 0,
+    runs: rec.rushRuns || 0,
+    fights: RUSH_RULES.fights,
+    lockLine: open ? t('Single player only') : t('Win the campaign to unlock'),
+  };
+}
+
 export function createLevelsScreen(ctx) {
   installStyle();
   const { manager, app } = ctx;
@@ -281,6 +339,7 @@ export function createLevelsScreen(ctx) {
     cardsEl.textContent = '';
     infos = levelInfo();
     cardsEl.classList.toggle('cg-many', infos.length >= 4);
+    cardsEl.classList.toggle('cg-seven', infos.length >= 4);
     const open = infos.filter((i) => i.unlocked);
     const preselect = open.length ? open[open.length - 1].level : FIRST_LEVEL;
     for (const info of infos) {
@@ -389,6 +448,45 @@ export function createLevelsScreen(ctx) {
       });
       cardsEl.appendChild(card);
     }
+    // BOSS RUSH: the seventh card, after the Daily.
+    {
+      const info = rushInfo();
+      infos.push(info);
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'cg-card cg-rush';
+      card.dataset.level = 'rush';
+      card.setAttribute('data-nav', '');
+      if (!info.unlocked) card.setAttribute('aria-disabled', 'true');
+      const skulls = Array.from({ length: info.fights }, (_, i) => `<i class="cg-skull${i < info.mostFelled ? ' cg-on' : ''}"></i>`).join('');
+      card.innerHTML = `
+        <div class="cg-lvl">${t('BOSS RUSH')}</div>
+        <div class="cg-name"></div>
+        <div class="cg-blurb"></div>
+        <div class="cg-biome">${t('{n} bosses · two laps of the four lands', { n: info.fights })}</div>
+        <div class="cg-danger"><span class="cg-skulls">${skulls}</span></div>
+        <div class="cg-status"></div>
+        <div class="cg-grant">${t('Begins with the Level II starter kit')}</div>
+        <div class="cg-lock">${LOCK_SVG}<span class="cg-lock-t"></span></div>`;
+      card.querySelector('.cg-name').textContent = info.name;
+      card.querySelector('.cg-blurb').textContent = info.blurb;
+      card.querySelector('.cg-status').innerHTML =
+        info.bestSec !== null
+          ? `<b>${t('Best time: {time}', { time: clockOf(info.bestSec * 60) })}</b> · ${tn(info.runs, '{n} rush', '{n} rushes')}`
+          : info.runs
+          ? `<b>${t('Most felled: {n} of {total}', { n: info.mostFelled, total: info.fights })}</b> · ${tn(info.runs, '{n} rush', '{n} rushes')}`
+          : t('No rush yet');
+      card.querySelector('.cg-lock-t').textContent = info.lockLine;
+      card.setAttribute('aria-label', info.unlocked ? t('The Boss Rush.') : t('The Boss Rush. Locked: {line}.', { line: info.lockLine }));
+      card.addEventListener('click', () => {
+        if (!info.unlocked) {
+          deny(card, info, 'click');
+          return;
+        }
+        finish('rush');
+      });
+      cardsEl.appendChild(card);
+    }
     noteEl.textContent = '';
   }
 
@@ -438,7 +536,7 @@ export function createLevelsScreen(ctx) {
       cards: [...cardsEl.querySelectorAll('.cg-card')].map((c) => {
         const r = c.getBoundingClientRect();
         return {
-          level: c.dataset.level === 'endless' || c.dataset.level === 'daily' ? c.dataset.level : Number(c.dataset.level),
+          level: c.dataset.level === 'endless' || c.dataset.level === 'daily' || c.dataset.level === 'rush' ? c.dataset.level : Number(c.dataset.level),
           locked: c.getAttribute('aria-disabled') === 'true',
           focused: c.classList.contains('ap-focus'),
           text: c.textContent.replace(/\s+/g, ' ').trim(),

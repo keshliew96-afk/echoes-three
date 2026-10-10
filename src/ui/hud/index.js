@@ -73,7 +73,13 @@ const roomLine = (short, room, total, what) =>
 function locationCopy(scene, rv, short = false) {
   // CAMPAIGN (PLAN §12.6): between two levels the plate says so (the card
   // names both levels).
-  if (rv && rv.active && rv.phase === 'transit') return { name: t('ON THE ROAD'), sub: rv.endless ? t('THE DESCENT GOES ON') : t('BETWEEN LEVELS') };
+  if (rv && rv.active && rv.phase === 'transit') return { name: t('ON THE ROAD'), sub: rv.rush ? t('THE NEXT BOSS WAITS') : rv.endless ? t('THE DESCENT GOES ON') : t('BETWEEN LEVELS') };
+  // BOSS RUSH (docs/BOSS_RUSH.md): the fight count leads the second line.
+  if (rv && rv.active && rv.room >= 1 && rv.rush) {
+    const place = rv.actName ? t(String(rv.actName)).toUpperCase() : t('THE HOLLOW');
+    const what = rv.phase === 'shop' || rv.mode === 'shop' ? MODE_WORD.shop : t(bossNameOfRun(rv)).toUpperCase();
+    return { name: rv.phase === 'shop' || rv.mode === 'shop' ? t("THE PEDDLER'S CLEARING") : place, sub: t('BOSS RUSH · FIGHT {n}/{total} · {what}', { n: rv.rush.fight, total: rv.rush.fights, what }) };
+  }
   // ENDLESS (docs/ENDLESS.md): the depth leads the plate's second line.
   if (rv && rv.active && rv.room >= 1 && rv.endless) {
     const c = locationCopy(scene, { ...rv, endless: undefined }, true);

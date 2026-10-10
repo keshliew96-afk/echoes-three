@@ -7,6 +7,7 @@
 //
 //   node tools/endless-run.mjs --seeds 1-16 [--max-depth 12] [--root dir] [--out f] [--jobs 8]
 //   --campaign 1   play a PLAIN campaign instead (the "before": depths 1-3)
+//   --rush 1       play Boss Rushes (a depth = a fight; --third 1,2,3,4 opens the third bosses)
 //
 // A room still live 180 s after it started is STUCK (the run stops there).
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -30,8 +31,10 @@ const SEEDS = seedsArg.includes('-')
 const MAX_DEPTH = Number(opt('max-depth', '12'));
 const ROOT = resolve(opt('root', here));
 const PLAIN = opt('campaign', '0') === '1';
+// BOSS RUSH (docs/BOSS_RUSH.md): --rush 1 plays Boss Rushes (a depth = a fight).
+const RUSH = opt('rush', '0') === '1';
 const JOBS = Number(opt('jobs', '8'));
-const OUT = opt('out', `captures/endless-${PLAIN ? 'campaign' : 'run'}-${seedsArg}.json`);
+const OUT = opt('out', `captures/endless-${RUSH ? 'rush' : PLAIN ? 'campaign' : 'run'}-${seedsArg}.json`);
 const STUCK_TICKS = 10800;
 
 async function runOne(seed) {
@@ -100,7 +103,7 @@ async function runOne(seed) {
   bus.on('level_clear', () => {
     if (depths.length >= MAX_DEPTH) stopNow = true;
   });
-  run.startCampaign({ level: 1, harness: true, endless: !PLAIN });
+  run.startCampaign({ level: 1, harness: true, ...(RUSH ? { rush: true, thirdBosses: (opt('third', '') || '').split(',').filter(Boolean).map(Number) } : { endless: !PLAIN }) });
   ap.configure(true);
   let outcome = null;
   let stuck = null;
