@@ -2568,5 +2568,20 @@
  "The smith reforges {old} into {name}. {text}": "铁匠把{old}重铸成了{name}。{text}",
  "Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}": "对子，{a} 和 {b}！陌生人付出一件遗物：{name}。{text}",
  "You roll {a} and {b}: {n} Glint.": "你掷出 {a} 和 {b}：{n} 微光。",
- "You roll {a} and {b}: the stranger keeps the stake.": "你掷出 {a} 和 {b}：陌生人收下了赌注。"
+ "You roll {a} and {b}: the stranger keeps the stake.": "你掷出 {a} 和 {b}：陌生人收下了赌注。",
+ "{n}% OF THE ROAD": "路程 {n}%",
+ "A lost pilgrim crosses the room with a lantern. It walks only while one of you stays near, and the beasts go for it. See it to the far side and the room is won; if it falls, the room pays no reward.": "一位迷途朝圣者提着灯笼穿过房间。只有你们中有人留在附近时它才会前进，而野兽会冲它而来。将它护送到另一侧即赢下房间；若它倒下，本房间不给奖励。",
+ "A sigil ring burns on the floor while rifts send beasts at it. Keep someone standing in it until the timer runs out. Left empty, it fades and goes out in a few seconds, and the room pays no reward.": "地面上燃着一道印环，裂隙不断放出野兽扑向它。在计时结束前，让至少一人站在环内。若环内无人，它会在几秒内黯淡熄灭，本房间不给奖励。",
+ "ESCORT THE PILGRIM": "护送朝圣者",
+ "HOLD THE SIGIL": "坚守印环",
+ "HOLD THE SIGIL · STAND IN THE RING": "坚守印环 · 站进环内",
+ "HOLD THE SIGIL · SURGE": "坚守印环 · 猛攻",
+ "keep the sigil ring lit": "让印环保持燃亮",
+ "see the pilgrim safely across": "将朝圣者安全护送过去",
+ "The escort": "护送",
+ "THE ESCORT": "护送",
+ "THE ESCORT · WAITING": "护送 · 正在等待",
+ "THE PILGRIM FELL · NO REWARD": "朝圣者倒下 · 本房间无奖励",
+ "The sigil ring": "印环",
+ "THE SIGIL WENT OUT · NO REWARD": "印环熄灭 · 本房间无奖励"
 }

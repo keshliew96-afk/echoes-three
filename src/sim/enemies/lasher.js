@@ -100,7 +100,7 @@ export default {
       ctx.events.emit(tick, 'lasher_lash', { id: e.id, x: r2(t.fromX), z: r2(t.fromZ), dx: r2(t.dirX), dz: r2(t.dirZ), length: r2(t.length), width: t.width, victims: party.length });
       // Knock props away down the lane; heroes are yanked back (below).
       for (const v of victims) ctx.strike(e, [v], ctx.dmg(e, S.damage), v.x - t.dirX, v.z - t.dirZ, { delivery: 'skill', shape: 'lane' });
-      const pulled = party.filter((v) => v.hp > 0 && v.kind !== 'waystone').map((v) => v.id);
+      const pulled = party.filter((v) => v.hp > 0 && v.kind !== 'waystone' && v.kind !== 'pilgrim').map((v) => v.id);
       if (pulled.length) {
         e.yank = { ids: pulled, ticksLeft: S.yankTicks };
         ctx.events.emit(tick, 'lasher_yank', { id: e.id, x: r2(e.x), z: r2(e.z), ids: pulled });

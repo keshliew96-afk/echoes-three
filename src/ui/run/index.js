@@ -917,6 +917,14 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   bus.on('event_chest', () => {
     takeHoldUntil = performance.now() + TAKE_HOLD_MS;
   });
+  // ESCORT AND HOLD: the pilgrim's arrival and the sealed ring get the same
+  // moment in view before the draft opens.
+  bus.on('pilgrim_arrive', () => {
+    takeHoldUntil = performance.now() + TAKE_HOLD_MS;
+  });
+  bus.on('sigil_sealed', () => {
+    takeHoldUntil = performance.now() + TAKE_HOLD_MS;
+  });
   bus.on('event_take', (ev) => {
     if (!ev.ambush) takeHoldUntil = performance.now() + TAKE_HOLD_MS;
     const a = service('app');

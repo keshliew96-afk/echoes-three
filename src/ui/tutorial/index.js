@@ -44,7 +44,7 @@ import { tidecallerOpen } from '../../data/lineup.js';
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
-export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion', 'vault', 'lineup', 'soaked']);
+export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion', 'vault', 'lineup', 'soaked', 'escort', 'hold']);
 
 const MOVE_DIST = 2.5; // world units walked to pass the move step
 const ATTACK_MS = 450; // right button held this long (in total) passes the attack step
@@ -158,6 +158,17 @@ function tipText(id) {
       return {
         title: t('The purge'),
         body: t('Three corruption nests keep spawning enemies. Destroy all three before the timer runs out; a wounded nest spawns faster. If the corruption takes root, the room pays no reward and the nests must still fall.'),
+      };
+    // ESCORT AND HOLD (docs/ROOM_OBJECTIVES.md): on the doors before the first one.
+    case 'escort':
+      return {
+        title: t('The escort'),
+        body: t('A lost pilgrim crosses the room with a lantern. It walks only while one of you stays near, and the beasts go for it. See it to the far side and the room is won; if it falls, the room pays no reward.'),
+      };
+    case 'hold':
+      return {
+        title: t('The sigil ring'),
+        body: t('A sigil ring burns on the floor while rifts send beasts at it. Keep someone standing in it until the timer runs out. Left empty, it fades and goes out in a few seconds, and the room pays no reward.'),
       };
     // KEYS AND VAULTS (docs/VAULTS.md): on the first vault door.
     case 'vault':
@@ -555,11 +566,11 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     const doors = v.phase === 'path' && v.path && Array.isArray(v.path.options) ? v.path.options : [];
     // A cursed door, a "?" door and an objective room can meet on one
     // screen: the tip on screen stays, else the first not yet seen speaks
-    // (curse, then "?", then hunt / purge).
+    // (curse, then "?", then hunt / purge / escort / hold).
     const want = [];
     if (doors.some((o) => o.curse)) want.push('curse');
     if (doors.some((o) => o.event)) want.push('event');
-    for (const m of ['hunt', 'purge']) if (doors.some((o) => o.win === m)) want.push(m);
+    for (const m of ['hunt', 'purge', 'escort', 'hold']) if (doors.some((o) => o.win === m)) want.push(m);
     if (doors.some((o) => o.champion)) want.push('champion');
     if (doors.some((o) => o.vault)) want.push('vault');
     if (want.length) {

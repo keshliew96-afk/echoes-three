@@ -610,6 +610,11 @@
   "plural": true,
   "one": "{n} vow +{pct}%"
  },
+ "{n}% OF THE ROAD": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
  "{name} — empty": {
   "files": [
    "src/ui/menu/saves.js"
@@ -1783,6 +1788,11 @@
   ],
   "data": true
  },
+ "A lost pilgrim crosses the room with a lantern. It walks only while one of you stays near, and the beasts go for it. See it to the far side and the room is won; if it falls, the room pays no reward.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "A marked quarry breaks cover and runs. Chase it down and kill it before its timer runs out; it stops to catch its breath every few seconds. If it escapes, the room pays no reward.": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -1984,6 +1994,11 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "A sigil ring burns on the floor while rifts send beasts at it. Keep someone standing in it until the timer runs out. Left empty, it fades and goes out in a few seconds, and the room pays no reward.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
  },
  "a Skill draft": {
   "files": [
@@ -5189,6 +5204,11 @@
   ],
   "data": true
  },
+ "ESCORT THE PILGRIM": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
  "Even the mill turns to my tune.": {
   "files": [
    "src/data/story.js"
@@ -6445,6 +6465,22 @@
    "src/ui/menu/tabs/display.js"
   ]
  },
+ "HOLD THE SIGIL": {
+  "files": [
+   "src/ui/hud/banner.js",
+   "src/ui/hud/index.js"
+  ]
+ },
+ "HOLD THE SIGIL · STAND IN THE RING": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
+ "HOLD THE SIGIL · SURGE": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
  "hold the Waystone": {
   "files": [
    "src/ui/run/path.js"
@@ -6928,6 +6964,11 @@
  "Keep Playing": {
   "files": [
    "src/ui/menu/pause.js"
+  ]
+ },
+ "keep the sigil ring lit": {
+  "files": [
+   "src/ui/run/path.js"
   ]
  },
  "Keep these display settings?": {
@@ -10196,6 +10237,11 @@
   ],
   "data": true
  },
+ "see the pilgrim safely across": {
+  "files": [
+   "src/ui/run/path.js"
+  ]
+ },
  "Seen, never taken": {
   "files": [
    "src/ui/story/journal.js"
@@ -11760,6 +11806,21 @@
    "src/ui/run/levels.js"
   ]
  },
+ "The escort": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "THE ESCORT": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
+ "THE ESCORT · WAITING": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
  "The file could not be read.": {
   "files": [
    "src/ui/menu/saves.js"
@@ -12361,6 +12422,11 @@
    "src/ui/run/shop.js"
   ]
  },
+ "THE PILGRIM FELL · NO REWARD": {
+  "files": [
+   "src/ui/hud/banner.js"
+  ]
+ },
  "THE PROVING CLEARING": {
   "files": [
    "src/ui/hud/index.js"
@@ -12494,6 +12560,16 @@
  "The shop closes — {secs} s": {
   "files": [
    "src/ui/run/index.js"
+  ]
+ },
+ "The sigil ring": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "THE SIGIL WENT OUT · NO REWARD": {
+  "files": [
+   "src/ui/hud/banner.js"
   ]
  },
  "The singer at the bottom is the Hollow Cantor: not a god but a god’s echo, left behind when the gods fell silent. When it will not come out, the Heart grows a Geode Colossus to sing through. Silencing either frees the Verse of Heart, and for the first time the gods stop applauding.": {

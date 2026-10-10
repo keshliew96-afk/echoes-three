@@ -98,6 +98,11 @@ function sortNearFar(targets, refX, refZ) {
 // party: living-or-not member list in ascending party_index order (the caller
 // passes registry truth); override: party_index 0–3 or null.
 // Returns { targets (near→far), overrideMode: 'forced'|'fallback'|null }.
+// ESCORT AND HOLD: the Healer's heals also reach the escort's pilgrim (a
+// party-faction body with no seat). It sorts after the seats on ties.
+export const isHealable = (e) => !!e && (e.partyIndex !== undefined || e.kind === 'pilgrim');
+const seatOrder = (e) => e.partyIndex ?? 9;
+
 export function selectDirect({ caster, party, range, count, override = null, isIframed = () => false }) {
   const n = countFinal(count);
   const r2max = range * range;
@@ -115,7 +120,7 @@ export function selectDirect({ caster, party, range, count, override = null, isI
     if (fa !== fb) return fa - fb;
     if (a.id === caster.id) return -1;
     if (b.id === caster.id) return 1;
-    return a.partyIndex - b.partyIndex;
+    return seatOrder(a) - seatOrder(b);
   });
 
   let overrideMode = null;
@@ -292,7 +297,7 @@ export function createSkillBolts({ registry, events, onImpact, owner = null, onE
     if (e.id === bolt.sourceId || !(e.hp > 0)) return false;
     if (e.collider) return false; // blockers are swept as colliders, never as circles
     if (bolt.hitIds && bolt.hitIds.includes(e.id)) return false; // a pierce hits each body once
-    if (bolt.heal) return e.partyIndex !== undefined; // first ally in path; passes enemies
+    if (bolt.heal) return isHealable(e); // first ally (or the pilgrim) in path; passes enemies
     return !!e.hittable && e.faction !== 'party'; // first hostile in path
   }
 

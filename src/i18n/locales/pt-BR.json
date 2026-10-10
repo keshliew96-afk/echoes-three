@@ -2670,5 +2670,20 @@
  "The smith reforges {old} into {name}. {text}": "O ferreiro reforja {old} em {name}. {text}",
  "Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}": "Dupla, {a} e {b}! O estranho paga uma relíquia: {name}. {text}",
  "You roll {a} and {b}: {n} Glint.": "Você tira {a} e {b}: {n} de Brilho.",
- "You roll {a} and {b}: the stranger keeps the stake.": "Você tira {a} e {b}: o estranho fica com a aposta."
+ "You roll {a} and {b}: the stranger keeps the stake.": "Você tira {a} e {b}: o estranho fica com a aposta.",
+ "{n}% OF THE ROAD": "{n}% DO CAMINHO",
+ "A lost pilgrim crosses the room with a lantern. It walks only while one of you stays near, and the beasts go for it. See it to the far side and the room is won; if it falls, the room pays no reward.": "Um peregrino perdido atravessa a sala com uma lanterna. Ele só anda enquanto um de vocês fica por perto, e as feras vão atrás dele. Leve-o até o outro lado e a sala está ganha; se ele cair, a sala não dá recompensa.",
+ "A sigil ring burns on the floor while rifts send beasts at it. Keep someone standing in it until the timer runs out. Left empty, it fades and goes out in a few seconds, and the room pays no reward.": "Um anel de selo arde no chão enquanto fendas lançam feras contra ele. Mantenha alguém de pé dentro dele até o tempo acabar. Se ficar vazio, ele esmorece e se apaga em poucos segundos, e a sala não dá recompensa.",
+ "ESCORT THE PILGRIM": "ESCOLTE O PEREGRINO",
+ "HOLD THE SIGIL": "SUSTENTE O SELO",
+ "HOLD THE SIGIL · STAND IN THE RING": "SUSTENTE O SELO · FIQUE NO ANEL",
+ "HOLD THE SIGIL · SURGE": "SUSTENTE O SELO · INVESTIDA",
+ "keep the sigil ring lit": "mantenha o anel de selo aceso",
+ "see the pilgrim safely across": "leve o peregrino em segurança até o outro lado",
+ "The escort": "A escolta",
+ "THE ESCORT": "A ESCOLTA",
+ "THE ESCORT · WAITING": "A ESCOLTA · ESPERANDO",
+ "THE PILGRIM FELL · NO REWARD": "O PEREGRINO CAIU · SEM RECOMPENSA",
+ "The sigil ring": "O anel de selo",
+ "THE SIGIL WENT OUT · NO REWARD": "O SELO SE APAGOU · SEM RECOMPENSA"
 }

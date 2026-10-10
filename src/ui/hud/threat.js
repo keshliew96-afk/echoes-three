@@ -83,7 +83,7 @@ function isThreat(e) {
 }
 // `hit` events carry the target's kind only: anything that is not a party
 // body can carry a pointer's damage tick (the key lookup filters the rest).
-const PARTY_KINDS = new Set(['player', 'ally', 'waystone']);
+const PARTY_KINDS = new Set(['player', 'ally', 'waystone', 'pilgrim']);
 const EDGE_INSET = 24; // px from the window edge to the marker centre
 const ZONE_PAD = 18; // px of clearance kept around a HUD zone rectangle
 const HYSTERESIS = 16; // px a marker must travel back inside before it clears

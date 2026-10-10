@@ -2568,5 +2568,20 @@
  "The smith reforges {old} into {name}. {text}": "대장장이가 {old}을(를) {name}(으)로 다시 벼립니다. {text}",
  "Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}": "더블, {a}와(과) {b}! 낯선 이가 유물을 내줍니다: {name}. {text}",
  "You roll {a} and {b}: {n} Glint.": "{a}와(과) {b}가 나왔습니다: 글린트 {n}.",
- "You roll {a} and {b}: the stranger keeps the stake.": "{a}와(과) {b}가 나왔습니다: 낯선 이가 판돈을 가져갑니다."
+ "You roll {a} and {b}: the stranger keeps the stake.": "{a}와(과) {b}가 나왔습니다: 낯선 이가 판돈을 가져갑니다.",
+ "{n}% OF THE ROAD": "길 {n}%",
+ "A lost pilgrim crosses the room with a lantern. It walks only while one of you stays near, and the beasts go for it. See it to the far side and the room is won; if it falls, the room pays no reward.": "길 잃은 순례자가 등불을 들고 방을 가로지릅니다. 일행 중 누군가 곁에 있을 때만 걸으며, 짐승들은 순례자를 노립니다. 반대편까지 무사히 데려가면 방을 차지하고, 쓰러지면 이 방의 보상은 없습니다.",
+ "A sigil ring burns on the floor while rifts send beasts at it. Keep someone standing in it until the timer runs out. Left empty, it fades and goes out in a few seconds, and the room pays no reward.": "바닥에 인장 고리가 타오르고, 균열에서 짐승들이 몰려옵니다. 시간이 끝날 때까지 누군가 고리 안에 서 있어야 합니다. 비워 두면 몇 초 만에 희미해져 꺼지고, 이 방의 보상은 없습니다.",
+ "ESCORT THE PILGRIM": "순례자를 호위하라",
+ "HOLD THE SIGIL": "인장을 지켜라",
+ "HOLD THE SIGIL · STAND IN THE RING": "인장을 지켜라 · 고리 안에 서라",
+ "HOLD THE SIGIL · SURGE": "인장을 지켜라 · 쇄도",
+ "keep the sigil ring lit": "인장 고리를 계속 밝혀 두기",
+ "see the pilgrim safely across": "순례자를 무사히 건너편까지 호위",
+ "The escort": "호위",
+ "THE ESCORT": "호위",
+ "THE ESCORT · WAITING": "호위 · 기다리는 중",
+ "THE PILGRIM FELL · NO REWARD": "순례자 쓰러짐 · 보상 없음",
+ "The sigil ring": "인장 고리",
+ "THE SIGIL WENT OUT · NO REWARD": "인장 꺼짐 · 보상 없음"
 }

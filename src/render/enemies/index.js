@@ -39,6 +39,7 @@ import { createContentExtras } from './extras.js';
 import { createAffixLayer } from './affixes.js';
 // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): the quarry's marks, the nests.
 import { createObjectiveFx } from './objectives.js';
+import { createEscortHoldFx } from './escorthold.js';
 // CHAMPION ROOMS (docs/CHAMPIONS.md): the crown, the sigil, the chest.
 import { createChampionFx } from './champions.js';
 import { registerContentProbe } from '../../data/content.js';
@@ -81,6 +82,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   // ELITE AFFIXES: name plates, auras and the blink / core / burst dressing.
   const affixes = createAffixLayer({ root, stage, world, bus, cosmetic, shapes });
   const objfx = createObjectiveFx({ root, world, bus, cosmetic });
+  const ehfx = createEscortHoldFx({ root, world, bus, cosmetic });
   const champfx = createChampionFx({ root, world, bus, cosmetic });
   function releaseShape(id) {
     const rec = shapeTele.get(id);
@@ -238,6 +240,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     setTimeout(back, 250);
     extras.prewarm();
     objfx.prewarm(warmPark);
+    ehfx.prewarm(warmPark);
     champfx.prewarm(warmPark);
   }
 
@@ -394,6 +397,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     extras.update(tSec, dt, alpha, rigs, liveTelegraphs);
     affixes.update(tSec, dt, alpha, rigs, liveTelegraphs);
     objfx.update(tSec, dt, alpha, rigs);
+    ehfx.update(tSec, dt, alpha);
     champfx.update(tSec, dt);
     for (const id of lastTelegraph.keys()) if (!seen.has(id)) lastTelegraph.delete(id);
 
@@ -560,6 +564,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       ...extras.debugState(),
       ...affixes.debugState(),
       objectives: objfx.debugState(),
+      escortHold: ehfx.debugState(),
       champions: champfx.debug(),
     };
   }

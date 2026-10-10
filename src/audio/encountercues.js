@@ -34,7 +34,19 @@
 //   ob_pulse   a nest births: a short wet throb
 //   ob_burst   a nest bursts: a stone crack and a wet splat
 //   ob_rooted  the purge timer runs out: a long groan falling
-//   ob_won     a hunt or purge won: a short horn triad (with the room clear)
+//   ob_won     an objective won: a short horn triad (with the room clear)
+//   Escort and Hold (slice 7):
+//   ob_pilgrim the pilgrim sets off: a lantern's glassy chime over a warm fifth
+//   ob_call    the pilgrim waits alone: a small handbell rung twice, asking
+//   ob_arrive  the pilgrim arrives: a rising warm chord blooming into bells
+//   ob_fall    the pilgrim falls: the lantern shatters, a low hollow drop
+//   ob_sigil   the ring kindles: a deep temple bell under a rising shimmer
+//   ob_fading  the ring stands empty: a thin tone wavering downward
+//   ob_relit   someone steps back in: a quick upward chime
+//   ob_out     the ring goes out: a snuffing whoosh and a dull stone thud
+//   ob_rift    a rift sends a beast: a tearing, airy rush
+//   ob_surge   the last stretch: two urgent bell tolls
+//   ob_sealed  the ring holds to the end: a bright bell bloom
 // Slick floor (spatial, SFX bus; src/render/hazards/index.js calls slide()):
 //   sl_wet / sl_frost / sl_glass  one grain of a body sliding on the patch;
 //              grains overlap into a hiss while the slide lasts
@@ -76,6 +88,17 @@ export const ENCOUNTER_CUE_CAL = {
   ob_burst: -1,
   ob_rooted: -5,
   ob_won: 0,
+  ob_pilgrim: -8.7,
+  ob_call: -6.3,
+  ob_arrive: -3.4,
+  ob_fall: -0.9,
+  ob_sigil: -0.6,
+  ob_fading: -9,
+  ob_relit: -7.9,
+  ob_out: 0.4,
+  ob_rift: -7.6,
+  ob_surge: -2.9,
+  ob_sealed: -4.7,
   sl_wet: -5.4,
   sl_frost: 0.2,
   sl_glass: -9.5,
@@ -236,6 +259,73 @@ const CUES = {
     ) },
   ob_won: { ...ui, cooldownMs: 400, fn: (k, t, d, p) =>
     Math.max(...[[293.7, 0], [370, 0.1], [440, 0.2]].map(([f, o]) => k.tone(d, t + o, { type: 'sawtooth', f0: P(p, f), a: 0.02, hold: 0.12, d: 0.35, gain: 0.3, filter: { f0: 1800, q: 1 } }))) },
+  // --------------------------------------------- escort and hold (slice 7) --
+  ob_pilgrim: { levelDb: -12, priority: 3, maxVoices: 1, cooldownMs: 600, fn: (k, t, d, p) =>
+    Math.max(
+      k.pad(d, t, { notes: [P(p, 196), P(p, 293.7)], dur: 0.7, a: 0.2, r: 0.7, gain: 0.35, cutoff: 900, type: 'triangle' }),
+      k.bell(d, t + 0.05, { f: P(p, 1318.5), ratio: 3.01, index: 0.6, d: 0.9, gain: 0.3 }),
+      k.bell(d, t + 0.32, { f: P(p, 1760), ratio: 3.01, index: 0.5, d: 0.8, gain: 0.24 })
+    ) },
+  ob_call: { levelDb: -12, priority: 3, maxVoices: 1, cooldownMs: 900, fn: (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, 987.8), ratio: 2.76, index: 1.1, d: 0.5, gain: 0.42 }),
+      k.bell(d, t + 0.28, { f: P(p, 880), ratio: 2.76, index: 1.1, d: 0.7, gain: 0.38 }),
+      k.noise(d, t, { type: 'highpass', f0: 5000, q: 0.7, d: 0.04, gain: 0.12 })
+    ) },
+  ob_arrive: { levelDb: -9, priority: 4, maxVoices: 1, cooldownMs: 800, fn: (k, t, d, p) =>
+    Math.max(
+      k.pad(d, t, { notes: [P(p, 261.6), P(p, 329.6), P(p, 392)], dur: 1.0, a: 0.15, r: 1.1, gain: 0.4, cutoff: 1600, type: 'triangle' }),
+      ...[523.3, 659.3, 784, 1046.5].map((f, i) => k.bell(d, t + 0.1 + i * 0.09, { f: P(p, f), ratio: 2, index: 0.7, d: 1.1, gain: 0.26 })),
+      k.noise(d, t + 0.1, { type: 'bandpass', f0: P(p, 3000), f1: P(p, 6000), q: 1, a: 0.2, d: 0.8, gain: 0.12 })
+    ) },
+  ob_fall: { levelDb: -8, priority: 4, maxVoices: 1, cooldownMs: 800, fn: (k, t, d, p) =>
+    Math.max(
+      ...[0, 0.03, 0.07, 0.12].map((o, i) => k.noise(d, t + o, { type: 'bandpass', f0: P(p, 4200 - i * 500), q: 5, d: 0.05, gain: 0.55 - i * 0.08 })),
+      k.bell(d, t, { f: P(p, 2349), ratio: 1.41, index: 2.5, d: 0.35, gain: 0.3 }),
+      k.tone(d, t + 0.05, { f0: P(p, 140), f1: P(p, 55), d: 0.55, gain: 0.8 }),
+      k.pad(d, t + 0.15, { notes: [P(p, 110), P(p, 116.5)], dur: 0.6, a: 0.1, r: 0.9, gain: 0.3, cutoff: 500, type: 'sawtooth' })
+    ) },
+  ob_sigil: { levelDb: -10, priority: 3, maxVoices: 1, cooldownMs: 600, fn: (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, 130.8), ratio: 2.76, index: 1.6, d: 1.6, gain: 0.55 }),
+      k.tone(d, t, { f0: P(p, 65.4), a: 0.05, d: 1.2, gain: 0.5 }),
+      k.noise(d, t + 0.1, { type: 'bandpass', f0: P(p, 1500), f1: P(p, 5200), q: 2, a: 0.4, d: 0.6, gain: 0.18 }),
+      ...[1046.5, 1318.5, 1568].map((f, i) => k.bell(d, t + 0.35 + i * 0.12, { f: P(p, f), ratio: 3.01, index: 0.4, d: 0.6, gain: 0.16 }))
+    ) },
+  ob_fading: { levelDb: -14, priority: 3, maxVoices: 1, cooldownMs: 700, fn: (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { type: 'triangle', f0: P(p, 880), f1: P(p, 622.3), a: 0.05, d: 0.8, gain: 0.45, detune: 14 }),
+      k.tone(d, t + 0.02, { type: 'triangle', f0: P(p, 886), f1: P(p, 616), a: 0.05, d: 0.8, gain: 0.32 }),
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 2400), f1: P(p, 900), q: 3, a: 0.1, d: 0.7, gain: 0.12 })
+    ) },
+  ob_relit: { levelDb: -14, priority: 2, maxVoices: 1, cooldownMs: 400, fn: (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, 784), ratio: 2, index: 0.6, d: 0.35, gain: 0.35 }),
+      k.bell(d, t + 0.07, { f: P(p, 1174.7), ratio: 2, index: 0.6, d: 0.45, gain: 0.32 })
+    ) },
+  ob_out: { levelDb: -9, priority: 4, maxVoices: 1, cooldownMs: 800, fn: (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { f0: P(p, 3200), f1: P(p, 400), q: 0.9, a: 0.02, d: 0.5, gain: 0.6 }),
+      k.tone(d, t + 0.12, { f0: P(p, 90), f1: P(p, 42), d: 0.45, gain: 0.9 }),
+      k.bell(d, t, { f: P(p, 261.6), ratio: 2.76, index: 1.4, d: 0.9, gain: 0.25 })
+    ) },
+  ob_rift: { levelDb: -15, priority: 2, maxVoices: 2, cooldownMs: 160, fn: (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 600), f1: P(p, 2600), q: 1.6, a: 0.08, d: 0.3, gain: 0.7 }),
+      k.tone(d, t, { type: 'sawtooth', f0: P(p, 70), f1: P(p, 110), a: 0.05, d: 0.3, gain: 0.3, filter: { f0: 500, q: 2 } })
+    ) },
+  ob_surge: { levelDb: -10, priority: 4, maxVoices: 1, cooldownMs: 800, fn: (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, 293.7), ratio: 1.41, index: 2, d: 0.8, gain: 0.45 }),
+      k.bell(d, t + 0.36, { f: P(p, 293.7), ratio: 1.41, index: 2, d: 1.0, gain: 0.5 }),
+      k.tone(d, t, { f0: P(p, 73.4), a: 0.05, d: 1.2, gain: 0.45 })
+    ) },
+  ob_sealed: { levelDb: -9, priority: 4, maxVoices: 1, cooldownMs: 800, fn: (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, 523.3), ratio: 2.76, index: 1.2, d: 1.6, gain: 0.45 }),
+      ...[784, 1046.5, 1568, 2093].map((f, i) => k.bell(d, t + 0.08 + i * 0.07, { f: P(p, f), ratio: 2, index: 0.5, d: 1.0, gain: 0.22 })),
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 2600), f1: P(p, 7000), q: 1, a: 0.05, d: 0.9, gain: 0.14 })
+    ) },
   // ----------------------------------------------------------- slick floor --
   sl_wet: { levelDb: -17, priority: 1, maxVoices: 3, cooldownMs: 90, fn: (k, t, d, p) =>
     Math.max(
@@ -297,9 +387,22 @@ export function createEncounterEventCues() {
     nest_spawn: (ev, h) => one('ob_nest', at(ev, h, ev.id)),
     nest_pulse: (ev, h) => one('ob_pulse', at(ev, h, ev.id)),
     purge_rooted: (ev, h) => one('ob_rooted', at({}, h)),
-    // A nest's death is its burst; every other death keeps the built-in cue.
-    death: (ev, h) => (ev.kind === 'nest' ? one('ob_burst', at(ev, h)) : null),
-    // A won hunt or purge adds the horn triad to the room-clear chord.
+    // ESCORT AND HOLD.
+    pilgrim_spawn: (ev, h) => one('ob_pilgrim', at(ev, h, ev.id)),
+    pilgrim_wait: (ev, h) => one('ob_call', at(ev, h, ev.id)),
+    pilgrim_arrive: (ev, h) => one('ob_arrive', at(ev, h, ev.id)),
+    pilgrim_lost: (ev, h) => one('ob_fall', at(ev, h)),
+    hold_start: (ev, h) => one('ob_sigil', at(ev, h)),
+    sigil_fading: (ev, h) => one('ob_fading', at(ev, h)),
+    sigil_relit: (ev, h) => one('ob_relit', at(ev, h)),
+    sigil_out: (ev, h) => one('ob_out', at(ev, h)),
+    rift_pulse: (ev, h) => one('ob_rift', at(ev, h)),
+    hold_surge: (ev, h) => one('ob_surge', at(ev, h)),
+    sigil_sealed: (ev, h) => one('ob_sealed', at(ev, h)),
+    // A nest's death is its burst; the pilgrim's is its lantern (pilgrim_lost);
+    // every other death keeps the built-in cue.
+    death: (ev, h) => (ev.kind === 'nest' ? one('ob_burst', at(ev, h)) : ev.kind === 'pilgrim' ? [] : null),
+    // A won objective adds the horn triad to the room-clear chord.
     room_cleared: (ev) => (ev.objective && ev.won ? [{ cue: 'room_clear' }, { cue: 'ob_won' }] : null),
   };
 }

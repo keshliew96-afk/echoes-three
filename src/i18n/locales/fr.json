@@ -2670,5 +2670,20 @@
  "The smith reforges {old} into {name}. {text}": "Le forgeron refond {old} en {name}. {text}",
  "Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}": "Un double, {a} et {b} ! L'inconnu paie une relique : {name}. {text}",
  "You roll {a} and {b}: {n} Glint.": "Tu fais {a} et {b} : {n} Éclats.",
- "You roll {a} and {b}: the stranger keeps the stake.": "Tu fais {a} et {b} : l'inconnu garde la mise."
+ "You roll {a} and {b}: the stranger keeps the stake.": "Tu fais {a} et {b} : l'inconnu garde la mise.",
+ "{n}% OF THE ROAD": "{n}% DU CHEMIN",
+ "A lost pilgrim crosses the room with a lantern. It walks only while one of you stays near, and the beasts go for it. See it to the far side and the room is won; if it falls, the room pays no reward.": "Un pèlerin égaré traverse la salle, sa lanterne à la main. Il n’avance que si l’un de vous reste près de lui, et les bêtes s’en prennent à lui. Mène-le de l’autre côté et la salle est gagnée ; s’il tombe, la salle ne rapporte aucune récompense.",
+ "A sigil ring burns on the floor while rifts send beasts at it. Keep someone standing in it until the timer runs out. Left empty, it fades and goes out in a few seconds, and the room pays no reward.": "Un cercle de sceau brûle au sol tandis que des failles lâchent des bêtes sur lui. Gardez quelqu’un debout dedans jusqu’à la fin du minuteur. Laissé vide, il pâlit et s’éteint en quelques secondes, et la salle ne rapporte aucune récompense.",
+ "ESCORT THE PILGRIM": "ESCORTE LE PÈLERIN",
+ "HOLD THE SIGIL": "TIENS LE SCEAU",
+ "HOLD THE SIGIL · STAND IN THE RING": "TIENS LE SCEAU · ENTRE DANS LE CERCLE",
+ "HOLD THE SIGIL · SURGE": "TIENS LE SCEAU · DÉFERLANTE",
+ "keep the sigil ring lit": "garde le cercle de sceau allumé",
+ "see the pilgrim safely across": "mène le pèlerin sain et sauf de l’autre côté",
+ "The escort": "L’escorte",
+ "THE ESCORT": "L’ESCORTE",
+ "THE ESCORT · WAITING": "L’ESCORTE · EN ATTENTE",
+ "THE PILGRIM FELL · NO REWARD": "LE PÈLERIN EST TOMBÉ · PAS DE RÉCOMPENSE",
+ "The sigil ring": "Le cercle de sceau",
+ "THE SIGIL WENT OUT · NO REWARD": "LE SCEAU S’EST ÉTEINT · PAS DE RÉCOMPENSE"
 }

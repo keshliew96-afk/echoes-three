@@ -527,7 +527,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       if (e.quarry) {
         if (e.kbTicks > 0) continue;
         const sm = e.status ? statusMod.speedMul(e, tick) : 1;
-        const bodies = all.filter((t) => t.faction === 'party' && t.hp > 0 && t.kind !== 'waystone');
+        const bodies = all.filter((t) => t.faction === 'party' && t.hp > 0 && t.kind !== 'waystone' && t.kind !== 'pilgrim');
         const was = e.quarry.winded;
         quarryFlee(e, bodies, tick, QUARRY_STEP(sm));
         if (!was && e.quarry.winded) events.emit(tick, 'quarry_winded', { id: e.id, x: r2(e.x), z: r2(e.z) });
@@ -591,7 +591,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       for (let j = 0; j < all.length; j++) {
         if (i === j) continue;
         const b = all[j];
-        const bSolid = (isEnemyKind(b.kind) && b.state === 'active' && !b.burrowed) || b.kind === 'waystone' || b.kind === 'nest';
+        const bSolid = (isEnemyKind(b.kind) && b.state === 'active' && !b.burrowed) || b.kind === 'waystone' || b.kind === 'nest' || b.kind === 'pilgrim';
         if (!bSolid) continue;
         if (!!a.flier !== !!b.flier) continue; // fliers only jostle fliers
         const dx = a.x - b.x;
@@ -1012,7 +1012,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
   function reset() {
     const tick = getTick();
     for (const e of registry.all()) {
-      if (isEnemyKind(e.kind) || e.kind === 'eshot' || e.kind === 'waystone' || e.kind === 'nest' || e.kind === 'eglob' || e.kind === 'slick' || e.kind === 'affix_core') {
+      if (isEnemyKind(e.kind) || e.kind === 'eshot' || e.kind === 'waystone' || e.kind === 'nest' || e.kind === 'pilgrim' || e.kind === 'eglob' || e.kind === 'slick' || e.kind === 'affix_core') {
         events.emit(tick, 'enemy_despawn', { id: e.id, etype: e.kind, cause: 'reset' });
         registry.despawn(e.id);
       }

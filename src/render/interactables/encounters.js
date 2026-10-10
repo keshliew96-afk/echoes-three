@@ -301,12 +301,15 @@ function propChest(g) {
   };
 }
 
-function propPilgrim(g) {
+// ESCORT AND HOLD: the Escort's walking pilgrim (render/enemies/escorthold.js)
+// is this same figure.
+export function propPilgrim(g) {
   const cloth = toonMaterial({ color: CLOTH });
+  const hood = toonMaterial({ color: hslColor(34, 0.26, 0.34) });
   const body = new Group();
   g.add(body);
   add(body, new Mesh(sharedGeo('ev-pil-robe', () => new ConeGeometry(0.34, 1.05, 10)), cloth), { y: 0.52 });
-  add(body, new Mesh(sharedGeo('ev-pil-hood', () => new SphereGeometry(0.18, 12, 10)), toonMaterial({ color: hslColor(34, 0.26, 0.34) })), { y: 1.1 });
+  add(body, new Mesh(sharedGeo('ev-pil-hood', () => new SphereGeometry(0.18, 12, 10)), hood), { y: 1.1 });
   const face = new Mesh(sharedGeo('ev-pil-face', () => new CircleGeometry(0.1, 12)), new MeshBasicMaterial({ color: new Color(PALETTE.voidCharcoal) }));
   add(body, face, { ink: false, y: 1.08, z: 0.15 });
   const staff = new Mesh(sharedGeo('ev-pil-staff', () => new CylinderGeometry(0.025, 0.03, 1.5, 6)), toonMaterial({ color: WOOD }));
@@ -319,6 +322,11 @@ function propPilgrim(g) {
   body.add(light);
   let bow = 0;
   return {
+    body,
+    staff,
+    lantern,
+    light,
+    mats: [cloth, hood],
     update(t, k, dt) {
       bow = Math.max(0, bow - dt * 0.9);
       body.rotation.z = 0.03 * Math.sin(t * 1.1);

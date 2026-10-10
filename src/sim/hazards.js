@@ -820,7 +820,7 @@ export function createLayoutSystem({ registry, events, getTick, hazards, interac
       return null;
     }
     const m = mode ?? 'kill_all';
-    const spawn = m === 'kill_all' || m === 'defend' || m === 'hunt' || m === 'purge' || m === 'champion';
+    const spawn = m === 'kill_all' || m === 'defend' || m === 'hunt' || m === 'purge' || m === 'escort' || m === 'hold' || m === 'champion';
     active = { layoutId, act: act ?? L.act, biome: L.biome, room, mode: m, spawned: spawn };
     // A fresh room wakes both: the last room's clear put the bells and
     // sluices to sleep along with the hazards (onRoomCleared).
