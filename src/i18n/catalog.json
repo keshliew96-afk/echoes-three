@@ -101,6 +101,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "{boss} ended the rush after {n} of {total}.": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
  "{challenge} ×{mul}": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -385,6 +390,28 @@
   "plural": true,
   "one": "{n} ADD REMAIN"
  },
+ "{n} boss felled in the rush": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "{n} bosses · two laps of the four lands": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "{n} bosses felled in the rush": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ],
+  "plural": true,
+  "one": "{n} boss felled in the rush"
+ },
+ "{n} BOSSES, BACK TO BACK": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
  "{n} d ago": {
   "files": [
    "src/ui/menu/saves.js",
@@ -561,6 +588,18 @@
   ],
   "plural": true,
   "one": "{n} run · {won} won"
+ },
+ "{n} rush": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "{n} rushes": {
+  "files": [
+   "src/ui/run/levels.js"
+  ],
+  "plural": true,
+  "one": "{n} rush"
  },
  "{n} save · newest first": {
   "files": [
@@ -937,6 +976,16 @@
  "{time} · {challenge} challenge": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "{time} · New best!": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "{time} · not finished": {
+  "files": [
+   "src/ui/run/endscreens.js"
   ]
  },
  "{where} · Room {room} of 8": {
@@ -2205,6 +2254,12 @@
   ],
   "data": true
  },
+ "Against the Clock": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "AI": {
   "files": [
    "src/ui/menu/lobby.js",
@@ -2776,6 +2831,12 @@
    "src/ui/menu/settings.js"
   ]
  },
+ "Back to Back": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Back to camp": {
   "files": [
    "src/ui/run/classpick.js",
@@ -2887,6 +2948,11 @@
    "src/data/layouts.js"
   ],
   "data": true
+ },
+ "BEFORE THE FIGHT": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
  },
  "BEFORE THE RUN": {
   "files": [
@@ -3172,6 +3238,11 @@
    "src/ui/run/levels.js"
   ]
  },
+ "Begins with the Level II starter kit": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "Begins with the starting kit": {
   "files": [
    "src/ui/run/levels.js"
@@ -3214,6 +3285,16 @@
  "Best score": {
   "files": [
    "src/ui/menu/records.js"
+  ]
+ },
+ "BEST TIME": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Best time: {time}": {
+  "files": [
+   "src/ui/run/levels.js"
   ]
  },
  "Best today: {place}": {
@@ -3371,9 +3452,29 @@
   ],
   "data": true
  },
+ "BOSS RUSH": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "BOSS RUSH · FIGHT {n}/{total} · {what}": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "Boss Rush won": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
  "Bosses": {
   "files": [
    "src/ui/story/journal.js"
+  ]
+ },
+ "BOSSES FELLED": {
+  "files": [
+   "src/ui/run/endscreens.js"
   ]
  },
  "Bounce": {
@@ -5146,6 +5247,11 @@
   ],
   "data": true
  },
+ "Eight bosses, back to back, and the party still stands.": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
  "Elite heavy": {
   "files": [
    "src/data/journal.js"
@@ -5655,6 +5761,12 @@
   ],
   "data": true
  },
+ "Fell the first four bosses of a Boss Rush.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Fell the Geode Colossus": {
   "files": [
    "src/data/unlocks.js"
@@ -5730,6 +5842,16 @@
    "src/sim/skills.js"
   ],
   "data": true
+ },
+ "Fight {n} of {total} · {boss} · {land}": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "FIGHT {n} OF {total} WON": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
  },
  "File": {
   "files": [
@@ -7408,6 +7530,11 @@
   ],
   "data": true
  },
+ "LAST BOSS": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
  "Last Light": {
   "files": [
    "src/data/unlocks.js",
@@ -8005,6 +8132,11 @@
   ],
   "data": true
  },
+ "Most felled: {n} of {total}": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "Most kills in a run": {
   "files": [
    "src/ui/menu/records.js"
@@ -8340,9 +8472,19 @@
   ],
   "data": true
  },
+ "No rooms, no doors: the bosses one after another, a land at a time and then around again. A draft and the Peddler between fights.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "No runs finished yet.\nYour ten best runs will be listed here.": {
   "files": [
    "src/ui/menu/records.js"
+  ]
+ },
+ "No rush yet": {
+  "files": [
+   "src/ui/run/levels.js"
   ]
  },
  "No saved games yet": {
@@ -8692,6 +8834,12 @@
   "files": [
    "src/ui/menu/tabs/display.js"
   ]
+ },
+ "Once Around": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "Once per room, each member who would fall stays up at 1 HP.": {
   "files": [
@@ -10302,6 +10450,16 @@
    "src/data/journal.js"
   ],
   "data": true
+ },
+ "RUSH LENGTH": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "RUSH TIME": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
  },
  "Rusher": {
   "files": [
@@ -11966,6 +12124,36 @@
   ],
   "data": true
  },
+ "The Boss Rush": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "THE BOSS RUSH": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "THE BOSS RUSH ENDS": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "THE BOSS RUSH IS WON": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "The Boss Rush.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "The Boss Rush. Locked: {line}.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "The Briar Knight": {
   "files": [
    "src/data/journal.js",
@@ -12774,6 +12962,11 @@
    "src/ui/menu/title.js"
   ]
  },
+ "THE NEXT BOSS WAITS": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
  "The one-time tips for class select, relics, cursed doors, \"?\" doors, the peddler, slick floors and elite powers show again the next time you meet each.": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -12855,6 +13048,11 @@
  "The peddler": {
   "files": [
    "src/ui/tutorial/index.js"
+  ]
+ },
+ "The Peddler": {
+  "files": [
+   "src/ui/run/transit.js"
   ]
  },
  "THE PEDDLER": {
@@ -14326,6 +14524,18 @@
   "files": [
    "src/ui/run/expedition.js"
   ]
+ },
+ "Win a Boss Rush in under 10 minutes.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Win a Boss Rush: all eight bosses.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "Win the campaign to unlock": {
   "files": [

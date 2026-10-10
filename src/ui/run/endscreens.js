@@ -233,9 +233,15 @@ export function createEndScreen({ run }) {
     // leads with the depth reached and the profile's depth record.
     const deep = camp && camp.endless ? camp : null;
     const daily = camp && camp.daily ? camp.daily : null;
+    // BOSS RUSH (docs/BOSS_RUSH.md): bosses felled of eight, and the time.
+    const rush = camp && camp.rush ? camp.rush : null;
     dailySeen = dailyRev();
-    headline.textContent = daily ? (daily.won ? t('THE DAILY DESCENT IS CLEARED') : t('THE DAILY DESCENT ENDS')) : deep ? t('THE DESCENT ENDS') : win ? (complete ? t('CAMPAIGN COMPLETE') : t('VICTORY')) : camp ? t('THE CAMPAIGN ENDS') : t('THE RUN ENDS');
-    flavour.textContent = deep
+    headline.textContent = rush ? (rush.won ? t('THE BOSS RUSH IS WON') : t('THE BOSS RUSH ENDS')) : daily ? (daily.won ? t('THE DAILY DESCENT IS CLEARED') : t('THE DAILY DESCENT ENDS')) : deep ? t('THE DESCENT ENDS') : win ? (complete ? t('CAMPAIGN COMPLETE') : t('VICTORY')) : camp ? t('THE CAMPAIGN ENDS') : t('THE RUN ENDS');
+    flavour.textContent = rush
+      ? rush.won
+        ? t('Eight bosses, back to back, and the party still stands.')
+        : t('{boss} ended the rush after {n} of {total}.', { boss: t((rush.line[rush.felled] || rush.line[rush.line.length - 1] || { name: '' }).name), n: rush.felled, total: rush.fights })
+      : deep
       ? deep.won
         ? t('The campaign was won, and the party went on. The dark took them at Depth {depth}.', { depth: deep.depth })
         : t('The party fell at Depth {depth}, before the Heart. The gods applaud.', { depth: deep.depth })
@@ -246,7 +252,7 @@ export function createEndScreen({ run }) {
       : chorus(view, s);
     // THE HEARTH SONG (docs/STORY.md): a won level hands the bell its verse;
     // a complete campaign closes on the story's ending for its length.
-    verseEl.textContent = deep || !win ? '' : complete ? `${verseLine(view.act)} ${t(CAMPAIGN_LEVELS.length >= 4 ? ENDING.heart.text : ENDING.barrow.text)}` : verseLine(view.act);
+    verseEl.textContent = rush || deep || !win ? '' : complete ? `${verseLine(view.act)} ${t(CAMPAIGN_LEVELS.length >= 4 ? ENDING.heart.text : ENDING.barrow.text)}` : verseLine(view.act);
     {
       const c = run().campaign ? run().campaign() : null;
       const secs = c && c.autoReturnInTicks !== null && c.autoReturnInTicks !== undefined ? Math.ceil(c.autoReturnInTicks / 60) : null;
@@ -266,7 +272,7 @@ export function createEndScreen({ run }) {
       const rec = sv && typeof sv.lastRecord === 'function' ? sv.lastRecord() : null;
       // (CAMPAIGN: matched by seed + length — a campaign's rooms span levels.)
       const same = rec && rec.summary && rec.summary.seed === s.seed && Math.round(rec.summary.timeSec * 60) === s.ticks;
-      if (same) {
+      if (same && !rush) {
         const score = rec.score.toLocaleString();
         scoreRow = row(t('SCORE'), rec.newBest ? t('{score} · New best!', { score }) : rec.rank ? t('{score} · #{rank} on your records', { score, rank: rec.rank }) : score);
       }
@@ -294,7 +300,17 @@ export function createEndScreen({ run }) {
       pairs.push([t('DAILY'), dayLabel(daily.key)], [t('BOARD'), board]);
       pairs.push([t('DEPTH REACHED'), `${placeLine(daily.depth, daily.won)} · ${clockOf(s.ticks)}`]);
     }
-    if (deep) {
+    if (rush) {
+      const sv = service('save');
+      const rec = sv && typeof sv.lastRecord === 'function' ? sv.lastRecord() : null;
+      const r = rec && rec.rush && rec.summary && rec.summary.seed === s.seed ? rec.rush : null;
+      const time = clockOf(s.ticks);
+      pairs.push([t('BOSSES FELLED'), `${rush.felled} / ${rush.fights}`]);
+      pairs.push([t('RUSH TIME'), rush.won && r && r.newBest ? t('{time} · New best!', { time }) : rush.won ? time : t('{time} · not finished', { time })]);
+      pairs.push([t('BEST TIME'), r && r.bestSec !== null && r.bestSec !== undefined ? clockOf(r.bestSec * 60) : '—']);
+      pairs.push([t('LAST BOSS'), t((rush.line[Math.min(rush.felled, rush.line.length - 1)] || { name: '—' }).name)]);
+      rooms = [`${rush.felled} / ${rush.fights}`];
+    } else if (deep) {
       const sv = service('save');
       const rec = sv && typeof sv.lastRecord === 'function' ? sv.lastRecord() : null;
       const e = rec && rec.endless && rec.summary && rec.summary.seed === s.seed ? rec.endless : null;
@@ -320,9 +336,10 @@ export function createEndScreen({ run }) {
     const nodesHeld = builds
       ? builds.reduce((n, b) => n + (b.filled || 0) + (Number.isFinite(b.bench) ? b.bench : 0), 0)
       : s.nodes.bench.length + s.nodes.socketed.length;
-    pairs.push([t('ROOMS CLEARED'), rooms[0]], [t('GLINT EARNED'), String(s.glint)]);
+    if (!rush) pairs.push([t('ROOMS CLEARED'), rooms[0]]);
+    pairs.push([t('GLINT EARNED'), String(s.glint)]);
     pairs.push([t('SKILLS CARRIED'), String(skillsHeld)], [t('NODES HELD'), String(nodesHeld)]);
-    pairs.push([t('RUN SEED'), String(s.seed ?? '—')], [deep ? t('DESCENT LENGTH') : camp ? t('CAMPAIGN LENGTH') : t('RUN LENGTH'), t('{secs} s', { secs: Math.round(s.ticks / 60) })]);
+    pairs.push([t('RUN SEED'), String(s.seed ?? '—')], [rush ? t('RUSH LENGTH') : deep ? t('DESCENT LENGTH') : camp ? t('CAMPAIGN LENGTH') : t('RUN LENGTH'), t('{secs} s', { secs: Math.round(s.ticks / 60) })]);
     summaryEl.innerHTML =
       (scoreRow ? `<div class="rn-hero">${scoreRow}</div>` : '') +
       pairs.map(([k, v], i) => (i % 2 ? row(k, v).replace('class="rn-k"', 'class="rn-k rn-k2"') : row(k, v))).join('');

@@ -1094,6 +1094,9 @@ export function createSaveSystem({
     tracker.levelKills.push(Math.max(0, world.stats.kills - tracker.levelKillBase));
     tracker.levelKillBase = world.stats.kills;
     if (probing) return;
+    // BOSS RUSH (docs/BOSS_RUSH.md): a fight won is not a level cleared (no
+    // clear count, no level unlocked); the run's end records the rush.
+    if (Number.isFinite(ev.fight)) return;
     lastLevelClear = { tick: ev.tick, level: ev.level, ...profileStore.noteLevelClear(ev.level) };
     // THE TIDECALLER (docs/TIDECALLER.md): the first Level II clear frees the
     // Verse of Water, and Rill joins (this player's profile; a guest hears

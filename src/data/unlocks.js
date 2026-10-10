@@ -22,6 +22,7 @@ import { CLASS_NAME } from './classes.js';
 import { LINEUP_CLASSES } from './lineup.js';
 import { LEVELS, ACT_IDS, bossFor } from './levels.js';
 import { endlessBossIndex, CYCLE } from './endless.js';
+import { RUSH_RULES } from './rush.js';
 
 export const META_VERSION = 1;
 export const CURRENCY = 'Embers';
@@ -63,6 +64,9 @@ export const EMBER_RULES = Object.freeze({
   perDeepDepth: 20,
   challengeMul: Object.freeze({ relaxed: 0.75, standard: 1, harrowing: 1.5 }),
   perVow: 0.25, // +25% of the run's Embers for each vow worn
+  // BOSS RUSH (docs/BOSS_RUSH.md): each boss a rush fells, and a rush won.
+  perRushBoss: 15,
+  rushWon: 60,
 });
 
 // Every boss of every level, in level order ({ kind, name, level }).
@@ -95,6 +99,10 @@ export const DEEDS = Object.freeze(
     // THE TIDECALLER (docs/TIDECALLER.md).
     ['rills_return', { name: "Rill's Return", text: 'Clear a level with the Tidecaller in the party.', embers: 25, test: (r) => r.cleared.length + (r.deep || []).length > 0 && (r.party || []).includes('tidecaller') }],
     ['high_water', { name: 'High Water', text: 'Crash 5 soaked enemies with one cast.', embers: 30, test: (r) => (r.crashBest || 0) >= 5 }],
+    // BOSS RUSH (docs/BOSS_RUSH.md).
+    ['rush_lap', { name: 'Once Around', text: 'Fell the first four bosses of a Boss Rush.', embers: 30, test: (r) => !!r.rush && r.rush.felled >= 4 }],
+    ['rush_won', { name: 'Back to Back', text: 'Win a Boss Rush: all eight bosses.', embers: 60, test: (r) => !!r.rush && r.rush.won }],
+    ['rush_swift', { name: 'Against the Clock', text: 'Win a Boss Rush in under 10 minutes.', embers: 80, test: (r) => !!r.rush && r.rush.won && r.rush.sec > 0 && r.rush.sec < RUSH_RULES.swiftSec }],
   ])
 );
 export const DEED_IDS = Object.freeze(Object.keys(DEEDS));
@@ -290,7 +298,9 @@ export function runFacts(summary, records = {}) {
   const s = summary || {};
   const camp = s.campaign && Array.isArray(s.campaign.levels) ? s.campaign : null;
   const clearedRows = camp ? camp.levels.filter((l) => l.cleared) : s.result === 'victory' ? [{ level: s.act ?? 1, index: 1 }] : [];
-  const cleared = clearedRows.map((l) => l.level);
+  // BOSS RUSH: a fight won fells its boss but clears no level.
+  const rush = camp && camp.rush ? camp.rush : null;
+  const cleared = rush ? [] : clearedRows.map((l) => l.level);
   // ENDLESS (docs/ENDLESS.md): levels past the first cycle (Depth 4) carry
   // their depth as `index`; the boss each one met is the run's own record.
   const isDeep = (l) => !!(camp && camp.endless) && num(l.index) > CYCLE;
@@ -312,8 +322,9 @@ export function runFacts(summary, records = {}) {
   const party = Array.isArray(s.builds) ? s.builds.map((b) => b && b.classId).filter((c) => typeof c === 'string') : [];
   return {
     result: s.result ?? (s.victory ? 'victory' : 'defeat'),
-    rooms: Math.max(0, num(s.roomsCleared ?? s.rooms)),
-    cleared: cleared.filter((_, i) => !isDeep(clearedRows[i])),
+    rooms: rush ? 0 : Math.max(0, num(s.roomsCleared ?? s.rooms)),
+    cleared: rush ? [] : cleared.filter((_, i) => !isDeep(clearedRows[i])),
+    ...(rush ? { rush: { felled: Math.max(0, num(rush.felled)), won: !!rush.won, sec: Math.round(num(s.timeSec ?? (num(s.ticks) / 60))) } } : {}),
     deep,
     depth,
     bosses,
@@ -337,6 +348,8 @@ export function awardFor(facts, meta) {
   for (const lv of facts.cleared) lines.push({ label: `Level ${ROMAN[lv] ?? lv} cleared`, embers: R.perLevelClear[lv] ?? 20 });
   for (const d of facts.deep || []) lines.push({ label: `Depth ${d} cleared`, embers: R.perLevelClear[CYCLE] + R.perDeepDepth * (d - CYCLE) });
   if (facts.complete) lines.push({ label: 'Campaign complete', embers: R.campaignComplete });
+  if (facts.rush && facts.rush.felled > 0) lines.push({ label: `${facts.rush.felled} boss${facts.rush.felled === 1 ? '' : 'es'} felled in the rush`, embers: facts.rush.felled * R.perRushBoss });
+  if (facts.rush && facts.rush.won) lines.push({ label: 'Boss Rush won', embers: R.rushWon });
   let base = lines.reduce((n, l) => n + l.embers, 0);
   const chMul = R.challengeMul[facts.challenge] ?? 1;
   const vowMul = 1 + R.perVow * facts.vows.length;

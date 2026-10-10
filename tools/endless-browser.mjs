@@ -4,7 +4,7 @@
 // Level Select, clicks the Endless Descent card, jumps the descent to the
 // Depth 4 -> 5 card (cmd endlessJump), sets out into Depth 5 and ends the run
 // on a fall. Captures:
-//   captures/endless-1-select.png   the Level Select with the Endless card
+//   captures/endless-1-select.png   the Level Select with the Endless card (seven cards since Boss Rush)
 //   captures/endless-2-card.png     "DEPTH 4 CLEARED" -> Depth 5
 //   captures/endless-3-hud.png      Depth 5 in combat, the depth on the HUD
 //   captures/endless-4-end.png      "THE DESCENT ENDS" end card
@@ -65,7 +65,7 @@ try {
     const all = [...document.querySelectorAll('.cg-levels .cg-card')];
     return { cards: all.length, fifth: all.indexOf(c) === 4, locked: c.getAttribute('aria-disabled') === 'true', text: c.textContent.replace(/\s+/g, ' ').trim() };
   });
-  check(sel.cards === 6 && sel.fifth && !sel.locked && /Endless Descent/.test(sel.text), `the Endless Descent card is the fifth card, open (${sel.text.slice(0, 80)})`);
+  check(sel.cards === 7 && sel.fifth && !sel.locked && /Endless Descent/.test(sel.text), `the Endless Descent card is the fifth card, open (${sel.text.slice(0, 80)})`);
   await page.screenshot({ path: 'captures/endless-1-select.png' });
   await page.click('.cg-levels .cg-card[data-level="endless"]');
 

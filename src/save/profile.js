@@ -93,6 +93,11 @@ export function freshProfile() {
       gameWon: false,
       endlessRuns: 0,
       endlessBestDepth: 0,
+      // BOSS RUSH (docs/BOSS_RUSH.md): rushes run, the most bosses one rush
+      // felled, and the fastest full rush (seconds; null until one is won).
+      rushRuns: 0,
+      rushMostFelled: 0,
+      rushBestSec: null,
     },
     unlocks: { acts: [1] },
     lastAct: null,
@@ -420,7 +425,12 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   // (another tab's runs included).
   function recordRun({ act = 1, victory = false, result = null, roomsCleared = 0, kills = 0, timeSec = 0, seed = null, challenge = 'standard', lastRoom = 0, campaign = null, builds = null }) {
     const res = result === 'abandoned' || result === 'defeat' || result === 'victory' ? result : victory ? 'victory' : 'defeat';
-    const camp = campaign && campaign.mode === 'campaign' && Array.isArray(campaign.levels) && campaign.levels.length ? campaign : null;
+    const camp0 = campaign && campaign.mode === 'campaign' && Array.isArray(campaign.levels) && campaign.levels.length ? campaign : null;
+    // BOSS RUSH (docs/BOSS_RUSH.md): a rush keeps its own records only (no
+    // level records, no score on the campaign table, never a won game).
+    const rush = camp0 && camp0.rush ? camp0.rush : null;
+    if (rush) return recordRush({ rush, res, timeSec, seed, challenge, builds });
+    const camp = camp0;
     const complete = !!(camp ? camp.complete : res === 'victory');
     const score = camp
       ? scoreCampaign({ levels: camp.levels, challenge, complete, timeSec })
@@ -500,6 +510,37 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       newBest: score > out.prevBest,
       prevBest: out.prevBest,
       ...(entry.depth ? { endless: { depth: entry.depth, prevBestDepth: out.prevDepth, newDepthRecord: entry.depth > out.prevDepth } } : {}),
+      entry,
+      written: w.ok,
+      error: w.ok ? null : w.error,
+    };
+  }
+
+  function recordRush({ rush, res, timeSec, seed, challenge, builds }) {
+    const felled = Math.max(0, rush.felled | 0);
+    const sec = Math.round(timeSec);
+    const won = !!rush.won && res === 'victory';
+    const entry = { score: 0, rush: true, felled, fights: rush.fights | 0, won, result: res, timeSec: sec, seed, challenge, date: now() };
+    if (Array.isArray(builds) && builds.length) entry.party = builds.map((b) => ({ classId: b.classId, skills: (b.skills || []).slice(0, 4), filled: b.filled | 0 }));
+    const { result: out, w } = commit((p) => {
+      const r = p.records;
+      const prevBestSec = r.rushBestSec ?? null;
+      r.runs += 1;
+      if (res === 'victory') r.victories += 1;
+      else if (res === 'abandoned') r.abandoned = (r.abandoned ?? 0) + 1;
+      else r.defeats += 1;
+      r.rushRuns = (r.rushRuns ?? 0) + 1;
+      if (felled > (r.rushMostFelled ?? 0)) r.rushMostFelled = felled;
+      const newBest = won && sec > 0 && (prevBestSec === null || sec < prevBestSec);
+      if (newBest) r.rushBestSec = sec;
+      return { prevBestSec, newBest, bestSec: r.rushBestSec ?? null };
+    });
+    return {
+      score: 0,
+      rank: null,
+      newBest: false,
+      prevBest: null,
+      rush: { felled, won, sec, newBest: out.newBest, prevBestSec: out.prevBestSec, bestSec: out.bestSec },
       entry,
       written: w.ok,
       error: w.ok ? null : w.error,

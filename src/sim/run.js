@@ -86,6 +86,8 @@ import { createAutopilot } from './autopilot.js';
 import { createRelicSystem, cursedDiff, dailyOmen, RELICS, RELIC_RULES } from './relics.js';
 // DAILY DESCENT (docs/DAILY.md): the shared run of the UTC day.
 import { isDailyKey, dailySeed, dailyLevelSeed, dailyDepth, DAILY_RULES } from '../data/daily.js';
+// BOSS RUSH (docs/BOSS_RUSH.md): the bosses back to back.
+import { RUSH_RULES, rushLine, rushDifficulty, rushNextLevel, rushSupply, rushReward, rushAct, rushRules } from '../data/rush.js';
 // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt and purge rooms.
 import { assignObjectives, isObjectiveMode, OBJECTIVE_RULES } from './objectives.js';
 // CHAMPION ROOMS (docs/CHAMPIONS.md): the crown door and its relic chest.
@@ -291,6 +293,13 @@ export function createRunSystem({
   let thirdOpen = [];
   // ENDLESS: past the first cycle each cycle meets the act's other boss in turn.
   const currentBoss = () => {
+    // BOSS RUSH: the fight's boss is the run's seeded line.
+    if (!bossPick && rushFight()) {
+      const want = campaign.rush.line[rushFight() - 1];
+      const lv = levelFor(act);
+      const row = want && lv.bosses ? lv.bosses.find((b) => b.kind === want.kind) : null;
+      if (row) return row;
+    }
     if (!bossPick && beyondCampaign(endlessDepth())) {
       const lv = levelFor(act);
       if (lv.bosses && lv.bosses.length) return lv.bosses[endlessBossIndex(endlessDepth(), frame ? frame.seed : null, thirdOpen)];
@@ -299,8 +308,14 @@ export function createRunSystem({
   };
   // ENDLESS: the depth of a live endless campaign (= its level index), else 0.
   const endlessDepth = () => (campaign && campaign.endless ? campaign.index : 0);
-  // The level after `level` in this campaign: the endless cycle wraps.
-  const nextOf = (c, level) => (c && c.mode === 'campaign' ? (c.endless ? endlessNextLevel(level) : nextLevel(level)) : null);
+  // BOSS RUSH: the fight of a live rush (= its level index, 1..8), else 0.
+  const rushFight = () => (campaign && campaign.rush ? campaign.index : 0);
+  // The level after `level` in this campaign: the endless cycle wraps; the
+  // rush's line runs on into its second lap and ends after its last fight.
+  const nextOf = (c, level) => (c && c.mode === 'campaign' ? (c.rush ? rushNextLevel(c.index) : c.endless ? endlessNextLevel(level) : nextLevel(level)) : null);
+  // The room a level opens in: room 1, or in the rush the boss room for the
+  // first fight and the Peddler's clearing (then the boss) for the others.
+  const firstRoom = () => (campaign && campaign.rush ? (campaign.index === 1 ? RUN.bossRoom : RUN.shopRoom) : 1);
   // CAMPAIGN COMPLETE card -> camp at this tick (survives the run-end wipe).
   let autoReturnTick = null;
 
@@ -391,11 +406,14 @@ export function createRunSystem({
     // Standard, nothing equipped; never endless, never the tutorial.
     const daily = o.daily && isDailyKey(o.daily.key) ? { key: o.daily.key } : null;
     const endless = !!o.endless && !daily;
+    // BOSS RUSH (docs/BOSS_RUSH.md): the bosses back to back from Level 1's;
+    // never endless, never the Daily.
+    const rush = !!o.rush && !daily && !endless;
     // TUTORIAL (docs/TUTORIAL.md): the guided first room — always Level 1,
     // never endless, no boons.
-    const tutorial = !!o.tutorial && !endless && !daily;
+    const tutorial = !!o.tutorial && !endless && !daily && !rush;
     openRun({
-      act: endless || tutorial || daily ? FIRST_LEVEL : level,
+      act: endless || tutorial || daily || rush ? FIRST_LEVEL : level,
       challenge: daily ? DAILY_RULES.challenge : o.challenge,
       mode: 'campaign',
       harness: !!o.harness,
@@ -403,18 +421,20 @@ export function createRunSystem({
       boons: tutorial || daily ? null : o.boons,
       tutorial,
       daily,
+      rush,
       lineup: o.lineup,
+      thirdBosses: o.thirdBosses,
     });
     // THIRD BOSSES: the Daily is the same run for everyone, so its gated
     // bosses never join; a campaign or Endless takes the acts the camp passed.
     thirdOpen = !daily && Array.isArray(o.thirdBosses) ? o.thirdBosses.map(Number).filter((a) => ACT_IDS.includes(a)) : [];
     if (o.harness && typeof o.boss === 'string') bossPick = o.boss;
     if (o.depart) beginTransit('depart', null, act, getTick());
-    else enterRoom(1);
+    else enterRoom(firstRoom());
     return view();
   }
 
-  function openRun({ act: a, challenge: c, mode, harness, endless = false, boons: rawBoons = null, tutorial = false, daily = null, lineup = null }) {
+  function openRun({ act: a, challenge: c, mode, harness, endless = false, boons: rawBoons = null, tutorial = false, daily = null, rush = false, lineup = null, thirdBosses = null }) {
     // UNLOCKS: what the player equipped between runs (campaigns only). null =
     // nothing picked, and then nothing below differs from a plain run.
     const boons = mode === 'campaign' ? sanitizeBoons(rawBoons) : null;
@@ -467,6 +487,13 @@ export function createRunSystem({
           }
         : {}),
     };
+    // BOSS RUSH: present only on a rush (the seeded line of eight bosses,
+    // rolled with the third bosses the camp passed).
+    if (rush && mode === 'campaign') {
+      const open = Array.isArray(thirdBosses) ? thirdBosses.map(Number).filter((x) => ACT_IDS.includes(x)) : [];
+      campaign.rush = { seed: frame.seed, line: rushLine(frame.seed, open), fights: RUSH_RULES.fights };
+      rewardFor[RUN.bossRoom] = rushReward(1);
+    }
     // ROOM OBJECTIVES: campaigns (never the tutorial) turn one kill_all room
     // of rooms 4-6 into a hunt, a purge, an escort or a hold (two of
     // different kinds on later levels). No draws.
@@ -510,6 +537,11 @@ export function createRunSystem({
     const hg = harnessGrant;
     harnessGrant = null;
     if (act !== FIRST_LEVEL && hg !== 'max') applyStarterGrant(act, { allies: hg === null });
+    // BOSS RUSH: the rush sets out with the Level II starter kit.
+    else if (campaign.rush && hg !== 'max') {
+      applyStarterGrant(RUSH_RULES.grantLevel, { allies: hg === null });
+      applyRushSupply(0);
+    }
     if (hg !== null && allyOn()) applyHarnessGrant(hg);
     if (boons) applyBoons(boons);
   }
@@ -662,7 +694,7 @@ export function createRunSystem({
     path = null;
     positionParty();
     const combatRoom = mode === 'kill_all' || mode === 'defend' || mode === 'champion' || isObjectiveMode(mode);
-    const baseDiff = beyondCampaign(depth) ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
+    const baseDiff = rushFight() ? rushDifficulty(rushFight(), challenge) : beyondCampaign(depth) ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
     // RELICS: a cursed room rolls its waves with the curse's numbers.
     const roomCurse = combatRoom ? relics.curseFor(n) : null;
     let diff = roomCurse ? cursedDiff(baseDiff, roomCurse) : baseDiff;
@@ -796,6 +828,10 @@ export function createRunSystem({
       events.emit(tick, 'champion_chest', { room: roomIndex, champion: ev.champion, x: at.x, z: at.z });
     }
 
+    if (roomIndex === RUN.bossRoom && rushFight()) {
+      rushCleared(tick);
+      return;
+    }
     if (roomIndex === RUN.bossRoom) {
       onLevelCleared(tick);
       return;
@@ -813,6 +849,68 @@ export function createRunSystem({
     // PARTY: each ally's clear spoils (party stream, after the Healer's).
     const allySpoils = allyOn() ? pages.dropSpoils(roomIndex) : null;
     presentReward(allySpoils);
+  }
+
+  // BOSS RUSH: a boss felled pays its bounty; then, before the next fight,
+  // the war chest, the fight's draft and (after odd fights) a relic pick.
+  // The level clears once those are done (afterRelic). The last fight ends
+  // the rush at once.
+  function rushCleared(tick) {
+    const n = rushFight();
+    gainGlint(RUSH_RULES.bounty, 'rush_bounty');
+    if (allyOn()) for (const i of [1, 2, 3]) party.gainPurse(i, RUSH_RULES.bounty, 'rush_bounty');
+    events.emit(tick, 'rush_felled', { fight: n, boss: currentBoss().kind ?? 'stag', of: RUSH_RULES.fights, ticks: tick - startTick });
+    if (n >= RUSH_RULES.fights) {
+      onLevelCleared(tick);
+      return;
+    }
+    // The fight is over: out of combat first, so the war chest's auto-fill
+    // may socket (the build refuses while combat is live).
+    phase = 'reward';
+    applyRushSupply(n);
+    if (RUSH_RULES.relicAfter.includes(n)) relics.owe(roomIndex, 'free');
+    dropSpoils(tick);
+    const allySpoils = allyOn() ? pages.dropSpoils(roomIndex) : null;
+    presentReward(allySpoils);
+  }
+
+  // The war chest (data/rush.js rushSupply): the Healer's skills and its nodes
+  // in pairs with the shared auto-fill (the starter grant's rule), its
+  // legendary, then each ally's share from the party stream.
+  function applyRushSupply(n) {
+    const g = rushSupply(n);
+    if (!g) return null;
+    const skills = [];
+    for (let i = 0; i < g.skills; i++) {
+      const pool = draft.skillPool();
+      if (pool.length === 0 || draft.freeSkillSlots() <= 0) break;
+      const id = pool[rng.int(pool.length)];
+      const r = skillSys.giveSkill(id);
+      if (r && r.error) break;
+      skills.push(id);
+    }
+    const nodes = [];
+    for (let left = g.nodes; left > 0; ) {
+      const ids = draft.spoils(Math.min(2, left));
+      if (ids.length === 0) break;
+      for (const id of ids) {
+        buildSys.grantNode(id, 'grant');
+        nodes.push(id);
+      }
+      left -= ids.length;
+      buildSys.autoFill();
+    }
+    for (let i = 0; i < g.legendaries; i++) {
+      const pool = draft.nodePool().filter((id) => NODES[id] && NODES[id].rarity === 'legendary');
+      if (pool.length === 0) break;
+      const id = pool[rng.int(pool.length)];
+      buildSys.grantNode(id, 'grant');
+      nodes.push(id);
+      buildSys.autoFill();
+    }
+    const allies = allyOn() ? party.applyGrant({ ...g.allies, glint: 0 }, 'grant') : null;
+    events.emit(getTick(), 'rush_supply', { fight: n, skills: [...skills], nodes: [...nodes], allies: allies ? allies.map((r) => r.nodes.length) : null });
+    return nodes;
   }
 
   function sweepPlayerTransients(tick, cause) {
@@ -1042,6 +1140,11 @@ export function createRunSystem({
     return taken;
   }
   function afterRelic() {
+    // BOSS RUSH: the fight's draft and pick are done; on to the next land.
+    if (rushFight() && roomIndex === RUN.bossRoom) {
+      onLevelCleared(getTick());
+      return;
+    }
     if (roomIndex <= RUN.pathRooms) {
       presentPath();
     } else {
@@ -1589,7 +1692,7 @@ export function createRunSystem({
         rec.cleared = true;
         rec.ticks = levelTicks;
         // THIRD BOSSES: the boss this level met (unlock facts read it).
-        if (thirdOpen.length) rec.boss = currentBoss().kind ?? 'stag';
+        if (thirdOpen.length || c.rush) rec.boss = currentBoss().kind ?? 'stag';
       }
       // ENDLESS: the final level's first clear wins the campaign; the
       // descent goes on.
@@ -1608,6 +1711,7 @@ export function createRunSystem({
       ticks: levelTicks,
       rooms: roomsDone,
       ...(c && c.endless ? { depth: c.index } : {}),
+      ...(c && c.rush ? { fight: c.index } : {}),
     });
     if (next === null) {
       endRun('victory');
@@ -1789,6 +1893,8 @@ export function createRunSystem({
       leftovers,
       // ENDLESS: the depth the card leads to (present only then).
       ...(campaign.endless ? { depth: campaign.index + (kind === 'clear' ? 1 : 0) } : {}),
+      // BOSS RUSH: the fight the card leads to (present only then).
+      ...(campaign.rush ? { fight: campaign.index + (kind === 'clear' ? 1 : 0), fights: campaign.rush.fights } : {}),
     };
     campaign.transitions += 1;
     phase = 'transit';
@@ -1841,6 +1947,7 @@ export function createRunSystem({
       lastCombatLayout = null;
       roomPlanView = null;
       campaign.index += 1;
+      if (campaign.rush) rewardFor[RUN.bossRoom] = rushReward(campaign.index);
       if (objectivesOn()) assignObjectives(frame.modes, frame.seed, campaign.index);
       campaign.levels.push({ level: to, index: campaign.index, startTick: tick, rooms: 0, cleared: false, ticks: 0 });
     } else {
@@ -1860,8 +1967,9 @@ export function createRunSystem({
       seed: frame.seed,
       modes: [...frame.modes],
       ...(campaign.endless ? { depth: campaign.index } : {}),
+      ...(campaign.rush ? { fight: campaign.index } : {}),
     });
-    enterRoom(1);
+    enterRoom(firstRoom());
     return view();
   }
 
@@ -1937,6 +2045,7 @@ export function createRunSystem({
       index: c.index,
       next: nextOf(c, c.level),
       ...(c.endless ? { endless: true, depth: c.index, won: !!c.won } : {}),
+      ...(c.rush ? { rush: { fight: c.index, fights: c.rush.fights, line: cloneData(c.rush.line) } } : {}),
       ...(c.tutorial ? { tutorial: { hold: !!c.tutorial.hold } } : {}),
       levels: cloneData(c.levels),
       levelsCleared: c.levels.filter((l) => l.cleared).length,
@@ -2265,10 +2374,21 @@ export function createRunSystem({
             index: campaign.index,
             levels: cloneData(campaign.levels),
             levelsCleared: campaign.levels.filter((l) => l.cleared).length,
-            complete: campaign.mode === 'campaign' && (result === 'victory' || !!campaign.won),
+            complete: campaign.mode === 'campaign' && !campaign.rush && (result === 'victory' || !!campaign.won),
             grant: cloneData(campaign.grant),
             // ENDLESS: how deep the descent went (present only on one).
             ...(campaign.endless ? { endless: true, depth: campaign.index, depthsCleared: campaign.levels.filter((l) => l.cleared).length, won: !!campaign.won } : {}),
+            // BOSS RUSH: how many bosses fell, of how many, and the line.
+            ...(campaign.rush
+              ? {
+                  rush: {
+                    felled: campaign.levels.filter((l) => l.cleared).length,
+                    fights: campaign.rush.fights,
+                    won: result === 'victory',
+                    line: cloneData(campaign.rush.line),
+                  },
+                }
+              : {}),
             // DAILY: the day and how deep the run got (rooms across levels).
             ...(campaign.daily
               ? {
@@ -2509,6 +2629,8 @@ export function createRunSystem({
       ...(endlessDepth() ? { endless: { depth: endlessDepth(), won: !!campaign.won } } : {}),
       // DAILY: present only on the day's run (hash-stable view).
       ...(active && campaign && campaign.daily ? { daily: { key: campaign.daily.key } } : {}),
+      // BOSS RUSH: present only on a rush (hash-stable view).
+      ...(active && campaign && campaign.rush ? { rush: { fight: campaign.index, fights: campaign.rush.fights } } : {}),
       // TUTORIAL: present only in the guided first room (hash-stable view).
       ...(tutorialOn() ? { tutorial: { hold: !!campaign.tutorial.hold } } : {}),
       layout: layout ? { ...layout } : null,
@@ -2636,6 +2758,23 @@ export function createRunSystem({
         return campaignRules();
       case 'endlessRules':
         return endlessRules();
+      case 'rushRules':
+        return rushRules();
+      case 'rushJump': {
+        // ('rushJump', fight) — probes: a live rush clears the fight it is in
+        // AS fight - 1 and opens the card to `fight` (marks the campaign
+        // harness). Never outside a rush.
+        if (!active || !campaign || !campaign.rush || phase === 'transit') return null;
+        const d = Math.min(RUSH_RULES.fights, Math.max(campaign.index + 1, Number(args[0]) | 0));
+        const tick = getTick();
+        campaign.harness = true;
+        campaign.index = d - 1;
+        act = rushAct(d - 1);
+        campaign.level = act;
+        campaign.levels.push({ level: act, index: campaign.index, startTick: tick, rooms: 0, cleared: false, ticks: 0 });
+        onLevelCleared(tick);
+        return campaignView();
+      }
       case 'endlessJump': {
         // ('endlessJump', depth) — probes: a live endless descent clears the
         // level it is in AS depth - 1 and opens the card to `depth` (marks
