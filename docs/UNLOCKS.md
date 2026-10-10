@@ -64,6 +64,61 @@ A run that is abandoned (Quit to Lobby) still pays for what it cleared. A whole 
 
 Kits use each class's skills outside its starting pool (CLASS_SKILLS in `src/data/classes.js`; the Healer's from its draft pool), so a kit changes how the opening rooms play without new skill data. Vows reuse the four room curses that reshape a room's numbers (Famine, which works through the relic system's healing factor, is left out). Only one kit per class, one heirloom and one purse tier are worn at a time; vows stack.
 
+## Round two (plan 3 slice 13)
+
+Deeds and Ember sinks for what landed after round one: event rooms, elite affixes, the four objective rooms, champions, vaults, the act arenas, relic batch four, the third bosses, the Tidecaller, the Daily and Boss Rush.
+
+### New deeds (17)
+
+| Deed | Condition | Embers | Counted |
+| --- | --- | --- | --- |
+| Wayfarer | Enter every kind of event room (14) | 60 | across runs |
+| Signbreaker | Fell an elite with each of the eight affixes | 60 | across runs |
+| Run to Ground | Win a Hunt room | 20 | one run |
+| Scorched Nests | Win a Purge room | 20 | one run |
+| Safe Home | Win an Escort room | 20 | one run |
+| Holdfast | Win a Hold room | 20 | one run |
+| Four Trials | Win a Hunt, a Purge, an Escort and a Hold room in one run | 50 | one run |
+| Crownbreaker | Fell a champion | 20 | one run |
+| Four Crowns | Fell all four champions | 60 | across runs |
+| Keyholder | Open a vault | 20 | one run |
+| Treasure Seeker | Open 3 vaults in one run | 50 | one run |
+| Ringwalker | Fight in all four arenas (layouts 21, 23, 25, 27) | 40 | across runs |
+| Hoarder | Hold 8 relics at once | 40 | one run |
+| Kingslayer | Fell every boss at least once (all twelve, the Vein Weaver included) | 120 | across runs |
+| Down the River | Complete a campaign with the Tidecaller in the party | 60 | one run |
+| Three Dawns | Play the Daily Descent three days in a row | 30 | across runs |
+| Seven Dawns | Play the Daily Descent seven days in a row | 80 | across runs |
+
+The Fell the … deeds already cover the third bosses (one per boss, built from the level tables), and Boss Rush has Once Around, Back to Back and Against the Clock from its own slice.
+
+A deed counted across runs shows its progress on its card ("5 of 14" with a bar). Those counts live in `meta.marks`:
+
+```
+meta.marks = { event: [encounterId], affix: [affixId], champion: [championId], arena: [layoutId],
+               daily: { last: 'YYYY-MM-DD' | null, streak, best } }
+```
+
+`saneMarks()` keeps only known ids, so an older profile loads with empty marks. A Daily run (any result) the day after the last one adds a day; the same day again or an older day changes nothing; a gap starts a new streak of one. The per-run facts come from `src/save/deedrun.js`, a bus listener in the save service (event rooms entered, affixes worn by elites felled, objective rooms won, champions felled, vaults opened, arenas fought in). It only reads events, so it never changes a run. A run continued from a save after a page reload counts only what happens after the reload.
+
+### New unlocks (11)
+
+| Kind | Unlock | Cost | Requirement | Effect |
+| --- | --- | --- | --- | --- |
+| Kit | Dawnwatch (Healer) | 100 | Clear Level III | Lantern Ward + Dawn Brand |
+| Kit | Earthwarden (Tank) | 100 | Clear Level III | Earthshatter, Rallying Cry, Earthen Grasp, Shield Wall |
+| Kit | Moonblade (Swordsman) | 100 | Clear Level III | Moonfang, Blade Dance, Crimson Edge, Razor Wake |
+| Kit | Huntmaster (Archer) | 100 | Clear Level III | Hunter's Mark, Barbed Trap, Feather Fan, Vault Shot |
+| Kit | Stormwater (Tidecaller) | 100 | Clear Level IV | Crashing Wave, Rain Squall, Maelstrom, Whirlpool |
+| Vow | Restless | free | Clear Level IV | Waves in every combat room arrive 35% sooner; Embers +25% |
+| Vow | Short Fuse | free | The deed Once Around (four Boss Rush bosses) | Enemy warnings in every combat room 20% shorter (never under 0.6 s); Embers +25% |
+| Tint | Heartlight (Healer), Censer Smoke (Tank), Hollow Tide (Tidecaller) | 40 | Clear Level IV | Act IV colours |
+| Tint | Crowned (Archer) | free | The deed Four Crowns | Gold |
+
+Kits draw on the newer skills of each class's eleven-skill pool. A new requirement form `{ deed: id }` opens an unlock once that deed is done. Short Fuse is the first vow with no wave numbers: the run reads it live from its boons (`vowFuse()` in `src/sim/run.js`) and shortens every enemy telegraph in a combat room, never in the boss room. Heirlooms for relic batch four arrive on their own (one per relic).
+
+Verification: `node tools/deeds-unlocks-2-probe.mjs` (headless, 51 checks: the catalogue and its text in all ten languages, every new deed met and one short, marks over several runs on a real profile store and a reload, the Daily streak, deed requirements, both vows in a real room, and whole autopilot campaigns with the tracker on the sim bus).
+
 ## Determinism: an unlock changes a run only when it is picked
 
 - Only a **real Begin Run from the camp** (the portal or the Level Select) passes `boons` to `startCampaign`, built by `loadoutBoons(meta)` from what is equipped. With nothing equipped it is `null`, the call is exactly the call it was before, and the run is event-for-event the same: `tools/unlocks-probe.mjs --base <gauntlet checkout>` hashes whole plain campaigns on both trees (seeds 1–3, identical), and the 9 golden traces (legacy `startRun()`, which never takes boons) match.

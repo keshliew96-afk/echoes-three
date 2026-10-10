@@ -46,6 +46,7 @@ import {
 } from './slots.js';
 import { createProfileStore, scoreRun } from './profile.js';
 import { loadoutBoons, loadoutTints, tidecallerFreed } from '../data/unlocks.js';
+import { createDeedRunTracker } from './deedrun.js';
 import { JOURNAL_ALIAS, ENEMY_JOURNAL_IDS, BOSS_JOURNAL_IDS } from '../data/journal.js';
 import { createThumbnailer } from './thumbnail.js';
 import { createAutosave } from './autosave.js';
@@ -1078,6 +1079,7 @@ export function createSaveSystem({
   bus.on('run_start', (ev) => {
     crashCasts.clear(); // THE TIDECALLER: High Water counts per run
     crashBest = 0;
+    deedRun.reset(); // UNLOCKS round two: this run's deed facts
     if (probing) return;
     tracker.runKillBase = world.stats.kills;
     tracker.levelKillBase = world.stats.kills;
@@ -1123,6 +1125,9 @@ export function createSaveSystem({
     if (crashCasts.size > 64) crashCasts.delete(crashCasts.keys().next().value);
     if (n > crashBest) crashBest = n;
   });
+  // UNLOCKS round two (docs/UNLOCKS.md): what this run did that a deed
+  // counts (save/deedrun.js; it only reads the bus).
+  const deedRun = createDeedRunTracker(bus);
   bus.on('level_start', (ev) => {
     tracker.levelKillBase = world.stats.kills;
     if (probing) return;
@@ -1169,6 +1174,7 @@ export function createSaveSystem({
       curses: s && Number.isFinite(s.curses) ? s.curses : 0,
       boons: s && s.boons ? s.boons : null,
       crashBest,
+      deedRun: deedRun.facts(),
     });
     lastAward.runEndTick = ev.tick;
     notify(profileListeners, 'award');
@@ -1612,6 +1618,16 @@ export function createSaveSystem({
     // THE TIDECALLER probes: free Rill (what the first Level II clear does).
     tidecallerFreed: () => api.tidecallerFreed(),
     noteFeat: (id) => api.noteFeat(id),
+    // UNLOCKS round two probes: record and award a made-up run (its level
+    // clears and records, then its Embers, deeds and marks), as a finished
+    // run would.
+    awardRun: (summary) => {
+      for (const l of (summary && summary.campaign && summary.campaign.levels) || []) if (l.cleared && !summary.campaign.daily) profileStore.noteLevelClear(l.level);
+      profileStore.recordRun(summary);
+      const r = profileStore.awardRun(summary);
+      notify(profileListeners, 'award');
+      return r;
+    },
     list,
     save: (slot, opts) => save(slot, opts),
     load: (slot) => (app && typeof app.loadSlot === 'function' ? app.loadSlot(slot) : load(slot)),

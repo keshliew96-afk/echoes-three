@@ -282,6 +282,11 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "{have} of {need}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
  "{help}\n←/→ or the D-pad change it in 5 % steps; drag with the mouse for fine control.": {
   "files": [
    "src/ui/menu/tabs/audio.js"
@@ -2533,6 +2538,12 @@
   ],
   "data": true
  },
+ "Archer effects burn in Crowned colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Archer effects burn in Geode Glass colours. Cosmetic.": {
   "files": [
    "src/data/unlocks.js"
@@ -3227,6 +3238,12 @@
   ],
   "data": true
  },
+ "Begin with Lantern Ward and Dawn Brand: a guarding lantern and a burning mark.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin with Mending Bolt and Lantern Flurry: three lantern darts that hit back.": {
   "files": [
    "src/data/unlocks.js"
@@ -3818,6 +3835,12 @@
   ],
   "data": true
  },
+ "Censer Smoke tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "CF": {
   "files": [
    "src/sim/skills.js"
@@ -4248,6 +4271,12 @@
   ],
   "data": true
  },
+ "Complete a campaign with the Tidecaller in the party.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Concussive": {
   "files": [
    "src/sim/nodes.js"
@@ -4572,6 +4601,18 @@
   ],
   "data": true
  },
+ "Crownbreaker": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Crowned tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Crush": {
   "files": [
    "src/sim/nodes.js"
@@ -4756,6 +4797,12 @@
  "Dawn Brand": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Dawnwatch": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -5088,6 +5135,12 @@
   ],
   "data": true
  },
+ "Down the River": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Downloads your profile and every save slot as one file. Load it here on any device, even when the server has forgotten your cloud code.": {
   "files": [
    "src/ui/menu/cloud.js"
@@ -5207,6 +5260,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Earn the deed {deed}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
  "Earthen Grasp": {
   "files": [
    "src/sim/skills.js"
@@ -5216,6 +5274,12 @@
  "Earthshatter": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Earthwarden": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -5388,6 +5452,12 @@
   ],
   "data": true
  },
+ "Enemy attack warnings in every combat room are 20% shorter (never under 0.6 s). Embers +25%.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Enemy attack warnings in this room are 20% shorter (never under 0.6 s).": {
   "files": [
    "src/sim/relics.js"
@@ -5397,6 +5467,12 @@
  "English": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Enter every kind of event room.": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -5726,6 +5802,30 @@
   ],
   "data": true
  },
+ "Fell a champion.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell an elite with each of the eight affixes.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell every boss at least once, the Vein Weaver included.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Fell the Ash Raven": {
   "files": [
    "src/data/unlocks.js"
@@ -5857,6 +5957,12 @@
   "files": [
    "src/ui/run/transit.js"
   ]
+ },
+ "Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre and the Hollow Nave.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "File": {
   "files": [
@@ -6055,6 +6161,12 @@
    "src/ui/story/journal.js"
   ]
  },
+ "Four Crowns": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Four lands, and the edges are still blank. The road goes further than we have.": {
   "files": [
    "src/data/story.js"
@@ -6070,6 +6182,12 @@
   "files": [
    "src/ui/run/classpick.js"
   ]
+ },
+ "Four Trials": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "Four verses burn. Three are still missing, out where the map runs blank.": {
   "files": [
@@ -6552,6 +6670,12 @@
   ],
   "data": true
  },
+ "Healer effects burn in Heartlight colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Healer effects burn in Millpond colours. Cosmetic.": {
   "files": [
    "src/data/unlocks.js"
@@ -6676,6 +6800,12 @@
   ],
   "data": true
  },
+ "Heartlight tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Heartseeker": {
   "files": [
    "src/sim/nodes.js"
@@ -6788,7 +6918,19 @@
   ],
   "data": true
  },
+ "Hoarder": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Hold 5 relics at once.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Hold 8 relics at once.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6825,6 +6967,12 @@
    "src/ui/hud/index.js"
   ]
  },
+ "Holdfast": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Holds the front: heavy blows, taunts and the most health. Slow on its feet.": {
   "files": [
    "src/ui/run/classpick.js"
@@ -6849,6 +6997,12 @@
   "data": true
  },
  "Hollow Song tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Hollow Tide tint": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6951,6 +7105,12 @@
  "Hunter's Mark": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Huntmaster": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -7407,6 +7567,12 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Keyholder": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Kills": {
   "files": [
    "src/ui/menu/records.js"
@@ -7450,6 +7616,12 @@
  "Kindred Shield": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Kingslayer": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -8110,6 +8282,12 @@
  "Momentum": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Moonblade": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -8947,6 +9125,18 @@
   ],
   "data": true
  },
+ "Open 3 vaults in one run.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Open a vault.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Open Grave": {
   "files": [
    "src/data/layouts.js"
@@ -9302,6 +9492,18 @@
   "files": [
    "src/ui/menu/tabs/controls.js"
   ]
+ },
+ "Play the Daily Descent seven days in a row.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Play the Daily Descent three days in a row.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "Play the tutorial": {
   "files": [
@@ -10236,6 +10438,12 @@
   ],
   "data": true
  },
+ "Ringwalker": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Riposte": {
   "files": [
    "src/sim/skills.js"
@@ -10434,6 +10642,12 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "Run to Ground": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Rung": {
   "files": [
    "src/sim/interactables.js"
@@ -10493,6 +10707,12 @@
  "SA": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Safe Home": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -10648,6 +10868,12 @@
  "Scatter": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Scorched Nests": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -10832,6 +11058,12 @@
   ],
   "data": true
  },
+ "Seven Dawns": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Shard Hymn: a narrow warning cone, then five crystal shards for 9 each. Discord: a ring round it bursts for 15. It keeps its distance, and below half health it rages.": {
   "files": [
    "src/data/journal.js"
@@ -10935,6 +11167,12 @@
  "Shriek Owl": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Signbreaker": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -11484,6 +11722,12 @@
   ],
   "data": true
  },
+ "Stormwater": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Story": {
   "files": [
    "src/ui/story/journal.js"
@@ -11688,6 +11932,12 @@
   "data": true
  },
  "Tank effects burn in Ashfeather colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Tank effects burn in Censer Smoke colours. Cosmetic.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -11999,6 +12249,12 @@
   "files": [
    "src/ui/menu/mpmenu.js"
   ]
+ },
+ "The Archer begins with Hunter's Mark, Barbed Trap, Feather Fan and Vault Shot.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "The Archer begins with Piercing Shot, Pinning Arrow, Rain of Arrows and Kestrel Watch.": {
   "files": [
@@ -13303,9 +13559,21 @@
   ],
   "data": true
  },
+ "The Swordsman begins with Moonfang, Blade Dance, Crimson Edge and Razor Wake.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "The Swordsman's critical hits cut again for half the damage.": {
   "files": [
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "The Tank begins with Earthshatter, Rallying Cry, Earthen Grasp and Shield Wall.": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -13358,6 +13626,12 @@
    "src/ui/run/endscreens.js",
    "src/ui/run/transit.js"
   ]
+ },
+ "The Tidecaller begins with Crashing Wave, Rain Squall, Maelstrom and Whirlpool.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "The Tidecaller begins with Riverbolt, Undertow, Torrent and Bubble Ward.": {
   "files": [
@@ -13698,6 +13972,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Three Dawns": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Three lands. Below the Barrow there is no map at all. Yet.": {
   "files": [
    "src/data/story.js"
@@ -13748,6 +14028,12 @@
   "data": true
  },
  "Tidecaller effects burn in Heron Rain colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Tidecaller effects burn in Hollow Tide colours. Cosmetic.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -13905,6 +14191,12 @@
  "Traveling Smith": {
   "files": [
    "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "Treasure Seeker": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -14212,7 +14504,19 @@
   ],
   "data": true
  },
+ "Vow: Restless": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Vow: Sharp Fangs": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Vow: Short Fuse": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -14355,9 +14659,21 @@
    "src/ui/hud/banner.js"
   ]
  },
+ "Waves in every combat room arrive 35% sooner. Embers +25%.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Waves in this room arrive 35% sooner.": {
   "files": [
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Wayfarer": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -14537,6 +14853,36 @@
   "data": true
  },
  "Win a Boss Rush: all eight bosses.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Win a Hold room: keep the sigil to the end.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Win a Hunt room: catch the quarry before it escapes.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Win a Hunt, a Purge, an Escort and a Hold room in one run.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Win a Purge room: break every nest in time.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Win an Escort room: bring the pilgrim home.": {
   "files": [
    "src/data/unlocks.js"
   ],
